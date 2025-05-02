@@ -635,7 +635,7 @@ void MB8877::cmd_seek()
 	seektrk = datareg;
 #endif
 	seektrk = (seektrk > 83) ? 83 : (seektrk < 0) ? 0 : seektrk;
-	seekvct = (datareg > trkreg) ? false : true;
+	seekvct = !(datareg > trkreg);
 	
 	REGISTER_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
 	REGISTER_EVENT(EVENT_SEEKEND, 300);

@@ -25,9 +25,6 @@
 #define FONT_OFS_UDC1	0x700
 #define CMT_BUF_SIZE	0x8000
 
-#define EVENT_BEEP	0
-#define EVENT_CMT	1
-
 class BEEO;
 class FIFO;
 class FILEIO;
@@ -48,6 +45,7 @@ private:
 	void recv_from_sub();
 	void ack_from_sub();
 	void process_sub();
+	cur_time_t cur_time;
 	FIFO* cmd_buf;
 	FIFO* rsp_buf;
 	uint8 sub_int;

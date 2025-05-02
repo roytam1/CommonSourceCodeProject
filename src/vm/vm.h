@@ -225,7 +225,7 @@
 #include "pc100/pc100.h"
 #endif
 
-// NEC-HE PC-ENGINE
+// NEC-HE PC Engine
 #ifdef _PCENGINE
 #include "pcengine/pcengine.h"
 #endif

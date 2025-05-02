@@ -25,8 +25,8 @@
 #include "../i386.h"
 #include "../io.h"
 #include "../mb8877.h"
+#include "../msm58321.h"
 #include "../pcm1bit.h"
-#include "../rtc58321.h"
 #include "../upd71071.h"
 
 #include "bios.h"
@@ -102,8 +102,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pic = new I8259(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
+	rtc = new MSM58321(this, emu);
 	pcm = new PCM1BIT(this, emu);
-	rtc = new RTC58321(this, emu);
 	dma = new UPD71071(this, emu);
 	
 	bios = new BIOS(this, emu);
@@ -166,6 +166,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 	fdc->set_context_drq(dma, SIG_UPD71071_CH0, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
+	rtc->set_context_data(timer, SIG_TIMER_RTC, 0x0f, 0);
+	rtc->set_context_busy(timer, SIG_TIMER_RTC, 0x80);
 	dma->set_context_memory(memory);
 	dma->set_context_ch0(fdc);
 //	dma->set_context_ch1(scsi);
@@ -196,6 +198,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	scsi->set_context_pic(pic);
 	timer->set_context_pcm(pcm);
 	timer->set_context_pic(pic);
+	timer->set_context_rtc(rtc);
 	
 	// cpu bus
 	if(is_i286) {
@@ -234,8 +237,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_rw(0x54, pit1, 2);
 	io->set_iomap_alias_rw(0x56, pit1, 3);
 	io->set_iomap_single_rw(0x60, timer);
-	io->set_iomap_alias_rw(0x70, rtc, 0);
-	io->set_iomap_alias_rw(0x80, rtc, 1);
+	io->set_iomap_single_rw(0x70, timer);
+	io->set_iomap_single_w(0x80, timer);
 #ifdef _FMRCARD
 	io->set_iomap_single_w(0x90, cmos);
 #endif

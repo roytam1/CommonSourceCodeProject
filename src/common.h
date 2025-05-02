@@ -109,4 +109,22 @@ typedef uint32 scrntype;
 bool check_file_extension(_TCHAR* filename, _TCHAR* ext);
 uint32 getcrc32(uint8 data[], int size);
 
+#define FROM_BCD(v)	(((v) & 0x0f) + (((v) >> 4) & 0x0f) * 10)
+#define TO_BCD(v)	((int)(((v) % 100) / 10) << 4) | ((v) % 10)
+#define TO_BCD_LO(v)	((v) % 10)
+#define TO_BCD_HI(v)	(int)(((v) % 100) / 10)
+
+#define LEAP_YEAR(y) (((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
+
+typedef struct cur_time_t {
+	int year, month, day, day_of_week, hour, minute, second;
+	bool initialized;
+	cur_time_t() {
+		initialized = false;
+	}
+	void increment();
+	void update_year();
+	void update_day_of_week();
+} cur_time_t;
+
 #endif

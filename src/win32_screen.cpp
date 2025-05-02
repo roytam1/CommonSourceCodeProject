@@ -614,6 +614,9 @@ void EMU::capture_screen()
 		vm->draw_screen();
 	}
 	
+	SYSTEMTIME sTime;
+	GetLocalTime(&sTime);
+	
 	_TCHAR file_name[_MAX_PATH];
 	_stprintf(file_name, _T("%d-%d-%d_%d-%d-%d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 	

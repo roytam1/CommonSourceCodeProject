@@ -143,20 +143,21 @@ void IO::initialize()
 	rsp7508_buf = new FIFO(16);
 	key_buf = new FIFO(7);
 	
-	// register events
-	register_frame_event(this);
-	register_event_by_clock(this, EVENT_FRC, 0x40000, true, NULL);
-	register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
-	register_event_by_clock(this, EVENT_6303, 100, true, NULL);
-	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);
 	pb = RGB_COLOR(160, 168, 160);
 	
 	// init 7508
+	emu->get_host_time(&cur_time);
 	onesec_intr = alarm_intr = false;
 	onesec_intr_enb = alarm_intr_enb = kb_intr_enb = true;
 	res_7508 = kb_caps = false;
+	
+	// register events
+	register_frame_event(this);
+	register_event_by_clock(this, EVENT_FRC, 0x40000, true, NULL);
+	register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
+	register_event_by_clock(this, EVENT_6303, 100, true, NULL);
 }
 
 void IO::release()
@@ -275,7 +276,13 @@ void IO::event_callback(int event_id, int err)
 		update_intr();
 	}
 	else if(event_id == EVENT_ONESEC) {
-		// 1sec interval event
+		// update rtc
+		if(cur_time.initialized) {
+			cur_time.increment();
+		} else {
+			emu->get_host_time(&cur_time);	// resync
+			cur_time.initialized = true;
+		}
 		onesec_intr = true;
 		if(onesec_intr_enb) {
 			isr |= BIT_7508;
@@ -515,19 +522,9 @@ void IO::update_intr()
 // 7508
 // ----------------------------------------------------------------------------
 
-#define YEAR		time[0]
-#define MONTH		time[1]
-#define DAY		time[2]
-#define DAY_OF_WEEK	time[3]
-#define HOUR		time[4]
-#define MINUTE		time[5]
-#define SECOND		time[6]
-
-#define DIGIT(t) ((int)((t) / 10) * 16 + (t) % 10)
-
 void IO::send_to_7508(uint8 val)
 {
-	int time[8], res;
+	int res;
 	
 	// process command
 	cmd7508_buf->write(val);
@@ -590,15 +587,14 @@ void IO::send_to_7508(uint8 val)
 	case 0x07:
 		// clock read
 		cmd7508_buf->read();
-		emu->get_timer(time);
-		rsp7508_buf->write((int)((YEAR % 100) / 10));
-		rsp7508_buf->write(YEAR % 10);
-		rsp7508_buf->write(DIGIT(MONTH));
-		rsp7508_buf->write(DIGIT(DAY));
-		rsp7508_buf->write(DIGIT(HOUR));
-		rsp7508_buf->write(DIGIT(MINUTE));
-		rsp7508_buf->write(DIGIT(SECOND));
-		rsp7508_buf->write(DAY_OF_WEEK);
+		rsp7508_buf->write(TO_BCD_HI(cur_time.year));
+		rsp7508_buf->write(TO_BCD_LO(cur_time.year));
+		rsp7508_buf->write(TO_BCD(cur_time.month));
+		rsp7508_buf->write(TO_BCD(cur_time.day));
+		rsp7508_buf->write(TO_BCD(cur_time.hour));
+		rsp7508_buf->write(TO_BCD(cur_time.minute));
+		rsp7508_buf->write(TO_BCD(cur_time.second));
+		rsp7508_buf->write(cur_time.day_of_week);
 		break;
 	case 0x08:
 		// power switch read
@@ -669,14 +665,43 @@ void IO::send_to_7508(uint8 val)
 		// clock write
 		if(cmd7508_buf->count() == 9) {
 			cmd7508_buf->read();
-			cmd7508_buf->read();	// year 10
-			cmd7508_buf->read();	// year 1
-			cmd7508_buf->read();	// month
-			cmd7508_buf->read();	// day
-			cmd7508_buf->read();	// hour
-			cmd7508_buf->read();	// minute
-			cmd7508_buf->read();	// second
-			cmd7508_buf->read();	// day of week
+			int year10 = cmd7508_buf->read();
+			int year1 = cmd7508_buf->read();
+			int month = cmd7508_buf->read();
+			int day = cmd7508_buf->read();
+			int hour = cmd7508_buf->read();
+			int minute = cmd7508_buf->read();
+			int second = cmd7508_buf->read();
+			int day_of_week = cmd7508_buf->read();
+			
+			if((month & 0x0f) == 0 || (day & 0x0f) == 0) {
+				// invalid date
+				emu->get_host_time(&cur_time);
+			} else {
+				if((year10 & 0x0f) != 0x0f && (year1 & 0x0f) != 0x0f) {
+					cur_time.year = (year10 & 0x0f) * 10 + (year1 & 0x0f);
+					cur_time.update_year();
+				}
+				if((month & 0x0f) != 0x0f) {
+					cur_time.month = FROM_BCD(month & 0x1f);
+				}
+				if((day & 0x0f) != 0x0f) {
+					cur_time.day = FROM_BCD(day & 0x3f);
+				}
+				if((hour & 0x0f) != 0x0f) {
+					cur_time.hour = FROM_BCD(hour & 0x3f);
+				}
+				if((minute & 0x0f) != 0x0f) {
+					cur_time.minute = FROM_BCD(minute & 0x7f);
+				}
+				if((second & 0x0f) != 0x0f) {
+					cur_time.second = FROM_BCD(second & 0x7f);
+				}
+//				if((day_of_week & 0x0f) != 0x0f) {
+//					cur_time.day_of_week = day_of_week & 0x07;
+//				}
+				cur_time.update_day_of_week();
+			}
 		}
 		break;
 	case 0x19:

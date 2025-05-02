@@ -254,7 +254,7 @@ void I8253::input_clock(int ch, int clock)
 loop:
 	if(counter[ch].mode == 3) {
 		int32 half = tmp >> 1;
-		set_signal(ch, (counter[ch].count > half) ? true : false);
+		set_signal(ch, counter[ch].count > half);
 	}
 	else {
 		if(counter[ch].count <= 1) {

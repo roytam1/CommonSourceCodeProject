@@ -30,9 +30,7 @@
 #include "../upd765a.h"
 
 #include "bios.h"
-#ifdef _PC98HA
 #include "calendar.h"
-#endif
 #include "floppy.h"
 #include "keyboard.h"
 #include "memory.h"
@@ -67,9 +65,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc = new UPD765A(this, emu);
 	
 	bios = new BIOS(this, emu);
-#ifdef _PC98HA
 	calendar = new CALENDAR(this, emu);
-#endif
 	floppy = new FLOPPY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
@@ -106,9 +102,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->raise_irq_when_media_changed = true;
 	
 	bios->set_context_fdc(fdc);
-#ifdef _PC98HA
 	calendar->set_context_rtc(rtc);
-#endif
 	floppy->set_context_fdc(fdc);
 	keyboard->set_context_sio(sio_k);
 	note->set_context_pic(pic);
@@ -128,7 +122,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _PC98HA
 	io->set_iomap_range_rw(0x22, 0x23, calendar);
 #else
-	io->set_iomap_single_w(0x20, rtc);
+	io->set_iomap_single_w(0x20, calendar);
 #endif
 	io->set_iomap_alias_rw(0x30, sio_r, 0);
 	io->set_iomap_alias_rw(0x32, sio_r, 1);

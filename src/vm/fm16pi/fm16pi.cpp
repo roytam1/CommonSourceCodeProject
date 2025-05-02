@@ -21,7 +21,7 @@
 #include "../io.h"
 #include "../mb8877.h"
 #include "../memory.h"
-#include "../msm5832.h"
+#include "../msm58321.h"
 #include "../not.h"
 #include "../pcm1bit.h"
 
@@ -46,7 +46,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	memory = new MEMORY(this, emu);
-	rtc = new MSM5832(this, emu);
+	rtc = new MSM58321(this, emu);
 	not = new NOT(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	

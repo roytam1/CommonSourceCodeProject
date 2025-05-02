@@ -25,16 +25,6 @@
 #define POFH	38
 #define POFD	39
 
-#define YEAR		time[0]
-#define MONTH		time[1]
-#define DAY		time[2]
-#define DAY_OF_WEEK	time[3]
-#define HOUR		time[4]
-#define MINUTE		time[5]
-#define SECOND		time[6]
-
-#define BCD(d) (((d) % 10) | ((uint8)((d) / 10) << 4))
-
 void RTC::initialize()
 {
 	// load rtc regs image
@@ -51,18 +41,16 @@ void RTC::initialize()
 	// init registers
 //	regs[POWON] &= 0x1f;	// local power on
 //	regs[POWOF] = 0x80;	// program power off
-
 	regs[POWON] = 0x10;	// cleared
 	regs[POWOF] = 0x20;	// illegal power off
-
-
 	regs[TCNT] = 0;
 	update_checksum();
 	
 	rtcmr = rtdsr = 0;
 	
 	// update calendar
-	update_calendar();
+	emu->get_host_time(&cur_time);
+	read_from_cur_time();
 	
 	// register event
 	register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, NULL);
@@ -72,9 +60,9 @@ void RTC::initialize()
 void RTC::release()
 {
 	// set power off time
-	regs[POFMI] = BCD(MINUTE);
-	regs[POFH] = BCD(HOUR);
-	regs[POFD] = BCD(DAY);
+	regs[POFMI] = TO_BCD(cur_time.minute);
+	regs[POFH] = TO_BCD(cur_time.hour);
+	regs[POFD] = TO_BCD(cur_time.day);
 	
 	// save rtc regs image
 	FILEIO* fio = new FILEIO();
@@ -125,7 +113,13 @@ void RTC::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_1HZ) {
 		// update calendar
-		update_calendar();
+		if(cur_time.initialized) {
+			cur_time.increment();
+		} else {
+			emu->get_host_time(&cur_time);	// resync
+			cur_time.initialized = true;
+		}
+		read_from_cur_time();
 		
 		// 1sec interrupt
 		rtdsr |= 4;
@@ -142,7 +136,11 @@ void RTC::event_callback(int event_id, int err)
 		}
 		else if(rtadr & 0x80) {
 			// write
-			if(ch == POWON) {
+			if(ch <= 6) {
+				regs[ch] = (uint8)rtobr;
+				write_to_cur_time();
+			}
+			else if(ch == POWON) {
 				regs[ch] = (regs[ch] & 0xe0) | (rtobr & 0x1f);
 				if((rtobr & 0xe0) == 0xc0) {
 					// reipl
@@ -173,16 +171,28 @@ void RTC::event_callback(int event_id, int err)
 	}
 }
 
-void RTC::update_calendar()
+void RTC::read_from_cur_time()
 {
-	emu->get_timer(time);
-	regs[0] = BCD(SECOND);
-	regs[1] = BCD(MINUTE);
-	regs[2] = BCD(HOUR);
-	regs[3] = DAY_OF_WEEK;
-	regs[4] = BCD(DAY);
-	regs[5] = BCD(MONTH);
-	regs[6] = BCD(YEAR);
+	regs[0] = TO_BCD(cur_time.second);
+	regs[1] = TO_BCD(cur_time.minute);
+	regs[2] = TO_BCD(cur_time.hour);
+	regs[3] = cur_time.day_of_week;
+	regs[4] = TO_BCD(cur_time.day);
+	regs[5] = TO_BCD(cur_time.month);
+	regs[6] = TO_BCD(cur_time.year);
+}
+
+void RTC::write_to_cur_time()
+{
+	cur_time.second = FROM_BCD(regs[0]);
+	cur_time.minute = FROM_BCD(regs[1]);
+	cur_time.hour = FROM_BCD(regs[2]);
+//	cur_time.day_of_week = regs[3];
+	cur_time.day = FROM_BCD(regs[4]);
+	cur_time.month = FROM_BCD(regs[5]);
+	cur_time.year = FROM_BCD(regs[6]);
+	cur_time.update_year();
+	cur_time.update_day_of_week();
 }
 
 void RTC::update_checksum()

@@ -24,6 +24,7 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define HAS_MB8876
+#define HAS_RP5C15
 #define TIMER_FREQ
 
 // memory wait
@@ -66,7 +67,7 @@ class I8255;
 class IO;
 class MB8877;
 class PCM1BIT;
-class RP5C15;
+class RP5C01;
 class W3100A;
 class YM2203;
 class Z80;
@@ -104,7 +105,7 @@ protected:
 	IO* io;
 	MB8877* fdc;
 	PCM1BIT* pcm;
-	RP5C15* rtc;
+	RP5C01* rtc;
 	W3100A* w3100a;
 	YM2203* opn;
 	Z80* cpu;

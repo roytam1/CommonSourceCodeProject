@@ -623,7 +623,7 @@
 #define MENU_POS_SOUND                  4
 #endif
 
-// NEC-HE PC-ENGINE
+// NEC-HE PC Engine
 #ifdef _PCENGINE
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1

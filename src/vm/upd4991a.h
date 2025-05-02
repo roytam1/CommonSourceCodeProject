@@ -17,9 +17,12 @@
 class UPD4991A : public DEVICE
 {
 private:
-	uint8 cur[13], tp1[13], tp2[13];
+	cur_time_t cur_time;
+	uint8 regs[3][13];
 	uint8 ctrl1, ctrl2, mode;
-	int time[8];
+	
+	void read_from_cur_time();
+	void write_to_cur_time();
 	
 public:
 	UPD4991A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -29,7 +32,7 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_frame();
+	void event_callback(int event_id, int err);
 };
 
 #endif

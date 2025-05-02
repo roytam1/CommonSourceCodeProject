@@ -145,7 +145,7 @@ void VDP::draw_text_screen()
 	uint8 cg = vdc1 >> 4;
 	
 	for(int y = 1; y < 16; y++) {
-		bool t = (ys <= y && y < ye) ? true : false;
+		bool t = (ys <= y && y < ye);
 		int y32 = y << 5;
 		
 		for(int x = 2; x < 29; x++) {
@@ -263,8 +263,8 @@ void VDP::draw_sprite_screen()
 		
 		int dx = atb2 & 0xfe;
 		int dy = atb0 & 0xfe;
-		bool conx = (atb2 & 1) ? true : false;
-		bool cony = (atb0 & 1) ? true : false;
+		bool conx = ((atb2 & 1) != 0);
+		bool cony = ((atb0 & 1) != 0);
 		uint8 col0 = atb1 & 0xf;
 		
 		int sx = 0, ex = 4;

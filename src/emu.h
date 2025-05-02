@@ -264,12 +264,6 @@ private:
 #endif
 	
 	// ----------------------------------------
-	// timer
-	// ----------------------------------------
-	void update_timer();
-	SYSTEMTIME sTime;
-	
-	// ----------------------------------------
 	// socket
 	// ----------------------------------------
 #ifdef USE_SOCKET
@@ -453,7 +447,7 @@ public:
 	scrntype* screen_buffer(int y);
 	
 	// timer
-	void get_timer(int time[]);
+	void get_host_time(cur_time_t* time);
 	
 	// media
 #ifdef USE_MEDIA

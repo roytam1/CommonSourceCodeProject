@@ -125,6 +125,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dmareg2 = new LS244(this, emu);
 	dmareg3 = new LS244(this, emu);
 	dmareg0 = new LS244(this, emu);
+	rtcreg = new LS244(this, emu);
 	memory = new MEMORY(this, emu);
 #if defined(HAS_I86) || defined(HAS_V30)
 	not = new NOT(this, emu);
@@ -225,6 +226,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dmareg2->set_context_output(dma, SIG_I8237_BANK2, 0x0f, 0);
 	dmareg3->set_context_output(dma, SIG_I8237_BANK3, 0x0f, 0);
 	dmareg0->set_context_output(dma, SIG_I8237_BANK0, 0x0f, 0);
+	rtcreg->set_context_output(rtc, SIG_UPD1990A_CMD, 0x07, 0);
+	rtcreg->set_context_output(rtc, SIG_UPD1990A_DIN, 0x20, 0);
+	rtcreg->set_context_output(rtc, SIG_UPD1990A_STB, 0x08, 0);
+	rtcreg->set_context_output(rtc, SIG_UPD1990A_CLK, 0x10, 0);
 	pic->set_context_cpu(cpu);
 	rtc->set_context_dout(pio_sys, SIG_I8255_PORT_B, 1);
 	opn->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR4, 1);
@@ -356,7 +361,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x25, dmareg3);
 	io->set_iomap_single_w(0x27, dmareg0);
 	
-	io->set_iomap_single_w(0x20, rtc);
+	io->set_iomap_single_w(0x20, rtcreg);
 	
 	io->set_iomap_alias_rw(0x30, sio_rs, 0);
 	io->set_iomap_alias_rw(0x32, sio_rs, 1);

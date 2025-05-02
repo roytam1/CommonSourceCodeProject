@@ -15,6 +15,10 @@
 #include "../z80.h"
 #include "../../fifo.h"
 
+#define EVENT_BEEP	0
+#define EVENT_CMT	1
+#define EVENT_1SEC	2
+
 static const uint8 sub_cmd_len[0x47] = {
 	1,	// 00	Unknown
 	1,	// 01	TimeCall
@@ -240,6 +244,9 @@ void IO::initialize()
 	}
 	delete fio;
 	
+	// init timer
+	emu->get_host_time(&cur_time);
+	
 	// init fifo
 	key_buf = new FIFO(20);
 	cmd_buf = new FIFO(256);
@@ -262,6 +269,7 @@ void IO::initialize()
 	cmt_play = cmt_rec = false;
 	
 	// video
+	register_event(this, EVENT_1SEC, 1000000, true, NULL);
 	register_frame_event(this);
 	register_vline_event(this);
 }
@@ -321,6 +329,14 @@ void IO::event_callback(int event_id, int err)
 	else if(event_id == EVENT_CMT) {
 		sub_int |= 2;
 		update_intr();
+	}
+	else if(event_id == EVENT_1SEC) {
+		if(cur_time.initialized) {
+			cur_time.increment();
+		} else {
+			emu->get_host_time(&cur_time);	// resync
+			cur_time.initialized = true;
+		}
 	}
 }
 
@@ -961,18 +977,9 @@ void IO::ack_from_sub()
 	}
 }
 
-#define YEAR		time[0]
-#define MONTH		time[1]
-#define DAY		time[2]
-#define DAY_OF_WEEK	time[3]
-#define HOUR		time[4]
-#define MINUTE		time[5]
-#define SECOND		time[6]
-
 void IO::process_sub()
 {
 	static uint8 dow[8] = {128, 192, 224, 240, 248, 252, 254, 255};
-	int time[8];
 	uint8 val;
 	uint16 addr;
 	int sx, sy, ex, ey, cr, i;
@@ -982,15 +989,14 @@ void IO::process_sub()
 	case 0x00:	// unknown
 		break;
 	case 0x01:	// TimeCall
-		emu->get_timer(time);
-		rsp_buf->write((YEAR >> 8) & 0xff);
-		rsp_buf->write(YEAR & 0xff);
-		rsp_buf->write(MONTH);
-		rsp_buf->write(DAY);
-		rsp_buf->write(dow[DAY_OF_WEEK]);
-		rsp_buf->write(HOUR);
-		rsp_buf->write(MINUTE);
-		rsp_buf->write(SECOND);
+		rsp_buf->write((cur_time.year >> 8) & 0xff);
+		rsp_buf->write(cur_time.year & 0xff);
+		rsp_buf->write(cur_time.month);
+		rsp_buf->write(cur_time.day);
+		rsp_buf->write(dow[cur_time.day_of_week]);
+		rsp_buf->write(cur_time.hour);
+		rsp_buf->write(cur_time.minute);
+		rsp_buf->write(cur_time.second);
 		break;
 	case 0x02:	// Stick
 		rsp_buf->write(stick);
@@ -1047,14 +1053,16 @@ void IO::process_sub()
 		line_clear(val);
 		break;
 	case 0x0a:	// TimeSet
-		cmd_buf->read();
-		cmd_buf->read();
-		cmd_buf->read();
-		cmd_buf->read();
-		cmd_buf->read();
-		cmd_buf->read();
-		cmd_buf->read();
-		cmd_buf->read();
+		cur_time.second = cmd_buf->read();
+		cur_time.minute = cmd_buf->read();
+		cur_time.hour = cmd_buf->read();
+		cmd_buf->read(); // day of week
+		cur_time.day = cmd_buf->read();
+		cur_time.month = cmd_buf->read();
+		cur_time.year = cmd_buf->read();
+		cur_time.year |= cmd_buf->read() << 8;		
+		cur_time.update_year();
+		cur_time.update_day_of_week();
 		break;
 	case 0x0b:	// CalcDay
 		break;

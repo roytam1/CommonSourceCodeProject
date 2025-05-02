@@ -391,28 +391,6 @@
 						/>
 					</FileConfiguration>
 				</File>
-				<File
-					RelativePath="src\win32_timer.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
 			</Filter>
 			<Filter
 				Name="VM Common Source Files"
@@ -661,7 +639,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\pcm1bit.cpp"
+					RelativePath="src\vm\msm58321.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -683,7 +661,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\rtc58321.cpp"
+					RelativePath="src\vm\pcm1bit.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -991,11 +969,11 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\pcm1bit.h"
+					RelativePath="src\vm\msm58321.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\rtc58321.h"
+					RelativePath="src\vm\pcm1bit.h"
 					>
 				</File>
 				<File

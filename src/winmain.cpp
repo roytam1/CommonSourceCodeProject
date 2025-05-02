@@ -60,7 +60,7 @@ void open_cart_dialog(HWND hWnd);
 #endif
 #ifdef USE_FD1
 void open_disk_dialog(HWND hWnd, int drv);
-void open_disk(int drv, _TCHAR* filename, int bank);
+void open_disk(int drv, _TCHAR* path, int bank);
 void close_disk(int drv);
 #endif
 #ifdef USE_QUICKDISK
@@ -74,6 +74,13 @@ void open_media_dialog(HWND hWnd);
 #endif
 #ifdef USE_BINARY_FILE1
 void open_binary_dialog(HWND hWnd, int drv, bool load);
+#endif
+
+#if defined(USE_CART) || defined(USE_FD1) || defined(USE_QUICKDISK) || defined(USE_BINARY_FILE1)
+#define SUPPORT_DRAG_DROP
+#endif
+#ifdef SUPPORT_DRAG_DROP
+void open_any_file(_TCHAR* path);
 #endif
 
 void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
@@ -314,6 +321,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	emu->set_display_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
 #endif
 	
+#ifdef SUPPORT_DRAG_DROP
 	// open command line path
 	if(szCmdLine[0]) {
 		if(szCmdLine[0] == _T('"')) {
@@ -323,20 +331,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		}
 		_TCHAR path[_MAX_PATH];
 		get_long_full_path_name(szCmdLine, path);
-#ifdef USE_CART
-		UPDATE_HISTORY(path, config.recent_cart_path);
-		emu->open_cart(path);
-		_tcscpy(config.initial_cart_path, get_parent_dir(path));
-#elif defined(USE_FD1)
-		UPDATE_HISTORY(path, config.recent_disk_path[0]);
-		open_disk(0, path, 0);
-		_tcscpy(config.initial_disk_path, get_parent_dir(path));
-#elif defined(USE_QUICKDISK)
-		UPDATE_HISTORY(path, config.recent_quickdisk_path);
-		emu->open_quickdisk(path);
-		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
-#endif
+		open_any_file(path);
 	}
+#endif
 	
 	// set priority
 	SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
@@ -483,6 +480,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			SetWindowFont(hButton[i], hFont[buttons[i].font_size], TRUE);
 		}
 #endif
+#ifdef SUPPORT_DRAG_DROP
+		DragAcceptFiles(hWnd, TRUE);
+#endif
 		break;
 	case WM_CLOSE:
 		// release emulation core
@@ -611,6 +611,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		break;
+#ifdef SUPPORT_DRAG_DROP
+	case WM_DROPFILES:
+		if(emu) {
+			HDROP hDrop = (HDROP)wParam;
+			if(DragQueryFile((HDROP)wParam, 0xFFFFFFFF, NULL, 0) == 1) {
+				DragQueryFile(hDrop, 0, path, _MAX_PATH);
+				open_any_file(path);
+			}
+			DragFinish(hDrop);
+		}
+		break;
+#endif
 #ifdef USE_SOCKET
 	case WM_SOCKET0:
 	case WM_SOCKET1:
@@ -1630,6 +1642,7 @@ void open_cart_dialog(HWND hWnd)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_cart_path);
+		_tcscpy(config.initial_cart_path, get_parent_dir(path));
 		emu->open_cart(path);
 	}
 }
@@ -1646,6 +1659,7 @@ void open_disk_dialog(HWND hWnd, int drv)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_disk_path[drv]);
+		_tcscpy(config.initial_disk_path, get_parent_dir(path));
 		open_disk(drv, path, 0);
 	}
 }
@@ -1656,7 +1670,7 @@ void open_disk(int drv, _TCHAR* path, int bank)
 	d88_file[drv].cur_bank = -1;
 	d88_file[drv].bank[0].offset = 0;
 	
-	if(check_file_extension(path, ".d88") || check_file_extension(path, ".d77")) {
+	if(check_file_extension(path, _T(".d88")) || check_file_extension(path, _T(".d77"))) {
 		FILE *fp = _tfopen(path, _T("rb"));
 		if(fp != NULL) {
 			try {
@@ -1726,6 +1740,7 @@ void open_quickdisk_dialog(HWND hWnd)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_quickdisk_path);
+		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
 		emu->open_quickdisk(path);
 	}
 }
@@ -1755,6 +1770,7 @@ void open_datarec_dialog(HWND hWnd, bool play)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_datarec_path);
+		_tcscpy(config.initial_datarec_path, get_parent_dir(path));
 		if(play) {
 			emu->play_datarec(path);
 		}
@@ -1776,6 +1792,7 @@ void open_media_dialog(HWND hWnd)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_media_path);
+		_tcscpy(config.initial_media_path, get_parent_dir(path));
 		emu->open_media(path);
 	}
 }
@@ -1796,6 +1813,7 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_binary_path[drv]);
+		_tcscpy(config.initial_binary_path, get_parent_dir(path));
 		if(load) {
 			emu->load_binary(drv, path);
 		}
@@ -1803,6 +1821,57 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 			emu->save_binary(drv, path);
 		}
 	}
+}
+#endif
+
+#ifdef SUPPORT_DRAG_DROP
+void open_any_file(_TCHAR* path)
+{
+#ifdef USE_CART
+	if(check_file_extension(path, _T(".rom")) || 
+	   check_file_extension(path, _T(".bin")) || 
+	   check_file_extension(path, _T(".pce"))) {
+		UPDATE_HISTORY(path, config.recent_cart_path);
+		_tcscpy(config.initial_cart_path, get_parent_dir(path));
+		emu->open_cart(path);
+		return;
+	}
+#endif
+#ifdef USE_FD1
+	if(check_file_extension(path, _T(".d88")) || 
+	   check_file_extension(path, _T(".d77")) || 
+	   check_file_extension(path, _T(".td0")) || 
+	   check_file_extension(path, _T(".imd")) || 
+	   check_file_extension(path, _T(".dsk")) || 
+	   check_file_extension(path, _T(".fdi")) || 
+	   check_file_extension(path, _T(".hdm")) || 
+	   check_file_extension(path, _T(".tfd")) || 
+	   check_file_extension(path, _T(".xdf")) || 
+	   check_file_extension(path, _T(".2d" )) || 
+	   check_file_extension(path, _T(".sf7"))) {
+		UPDATE_HISTORY(path, config.recent_disk_path[0]);
+		_tcscpy(config.initial_disk_path, get_parent_dir(path));
+		open_disk(0, path, 0);
+		return;
+	}
+#endif
+#ifdef USE_QUICKDISK
+	if(check_file_extension(path, _T(".mzt"))) {
+		UPDATE_HISTORY(path, config.recent_quickdisk_path);
+		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
+		emu->open_quickdisk(path);
+		return;
+	}
+#endif
+#ifdef USE_BINARY_FILE1
+	if(check_file_extension(path, _T(".ram")) || 
+	   check_file_extension(path, _T(".bin"))) {
+		UPDATE_HISTORY(path, config.recent_binary_path[0]);
+		_tcscpy(config.initial_binary_path, get_parent_dir(path));
+		emu->load_binary(0, path);
+		return;
+	}
+#endif
 }
 #endif
 

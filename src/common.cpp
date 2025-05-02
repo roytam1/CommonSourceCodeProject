@@ -7,6 +7,7 @@
 	[ common ]
 */
 
+#include <windows.h>
 #include "common.h"
 
 bool check_file_extension(_TCHAR* filename, _TCHAR* ext)
@@ -42,4 +43,51 @@ uint32 getcrc32(uint8 data[], int size)
 		c = table[(c ^ data[i]) & 0xff] ^ (c >> 8);
 	}
 	return ~c;
+}
+
+void cur_time_t::increment()
+{
+	if(++second >= 60) {
+		second = 0;
+		if(++minute >= 60) {
+			minute = 0;
+			if(++hour >= 24) {
+				hour = 0;
+				// days in this month
+				int days = 31;
+				if(month == 2) {
+					days = LEAP_YEAR(year) ? 29 : 28;
+				} else if(month == 4 || month == 6 || month == 9 || month == 11) {
+					days = 30;
+				}
+				if(++day > days) {
+					day = 1;
+					if(++month > 12) {
+						month = 1;
+						year++;
+					}
+				}
+				if(++day_of_week >= 7) {
+					day_of_week = 0;
+				}
+			}
+		}
+	}
+}
+
+void cur_time_t::update_year()
+{
+	// 1970-2069
+	if(year < 70) {
+		year += 2000;
+	} else if(year < 100) {
+		year += 1900;
+	}
+}
+
+void cur_time_t::update_day_of_week()
+{
+	static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+	int y = year - (month < 3);
+	day_of_week = (y + y / 4 - y / 100 + y / 400 + t[month - 1] + day) % 7;
 }

@@ -110,8 +110,8 @@ class I286;
 class I386;
 class IO;
 class MB8877;
+class MSM58321;
 class PCM1BIT;
-class RTC58321;
 class UPD71071;
 
 class BIOS;
@@ -143,8 +143,8 @@ protected:
 	I386* i386;
 	IO* io;
 	MB8877* fdc;
+	MSM58321* rtc;
 	PCM1BIT* pcm;
-	RTC58321* rtc;
 	UPD71071* dma;
 	
 	BIOS* bios;

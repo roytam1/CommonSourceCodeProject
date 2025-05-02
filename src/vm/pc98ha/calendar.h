@@ -1,4 +1,5 @@
 /*
+	NEC PC-98LT Emulator 'ePC-98LT'
 	NEC PC-98HA Emulator 'eHANDY98'
 	Skelton for retropc emulator
 
@@ -19,7 +20,9 @@ class CALENDAR : public DEVICE
 {
 private:
 	DEVICE *d_rtc;
+#ifdef _PC98HA
 	uint8 ch;
+#endif
 	
 public:
 	CALENDAR(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

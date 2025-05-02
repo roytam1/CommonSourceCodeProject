@@ -18,13 +18,14 @@
 
 #define SIG_TIMER_CH0	0
 #define SIG_TIMER_CH1	1
+#define SIG_TIMER_RTC	2
 
 class TIMER : public DEVICE
 {
 private:
-	DEVICE *d_pcm, *d_pic;
+	DEVICE *d_pcm, *d_pic, *d_rtc;
 	
-	uint8 ctrl;
+	uint8 intr_reg, rtc_data;
 	bool tmout0, tmout1;
 	void update_intr();
 	
@@ -44,6 +45,9 @@ public:
 	}
 	void set_context_pic(DEVICE* device) {
 		d_pic = device;
+	}
+	void set_context_rtc(DEVICE* device) {
+		d_rtc = device;
 	}
 };
 

@@ -47,7 +47,7 @@ This archive includes the all source codes of emulators listed below:
 	ePC-98DO	NEC PC-98DO
 	ePC-98LT	NEC PC-98LT
 	ePC-100		NEC PC-100
-	ePC-ENGINE	NEC PC-ENGINE / SuperGrafx
+	ePCEngine	NEC-HE PC Engine / SuperGrafx
 	ePHC-20		SANYO PHC-20
 	ePHC-25		SANYO PHC-25
 	ePV-1000	CASIO PV-1000

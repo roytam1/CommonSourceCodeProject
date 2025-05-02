@@ -18,7 +18,7 @@
 #include "../io.h"
 #include "../mb8877.h"
 #include "../pcm1bit.h"
-#include "../rp5c15.h"
+#include "../rp5c01.h"
 #include "../w3100a.h"
 #include "../ym2203.h"
 #include "../z80.h"
@@ -61,7 +61,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	pcm = new PCM1BIT(this, emu);
-	rtc = new RP5C15(this, emu);
+	rtc = new RP5C01(this, emu);	// RP-5C15
 	w3100a = new W3100A(this, emu);
 	opn = new YM2203(this, emu);
 	cpu = new Z80(this, emu);

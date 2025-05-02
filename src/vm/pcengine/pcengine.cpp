@@ -1,5 +1,5 @@
 /*
-	NEC Home Electronics PC-Engine Emulator 'ePC-Engine'
+	NEC-HE PC Engine Emulator 'ePCEngine'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya

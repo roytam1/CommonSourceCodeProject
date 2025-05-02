@@ -26,6 +26,7 @@
 #define HAS_I286
 #define I8259_MAX_CHIPS		2
 #define SINGLE_MODE_DMA
+#define HAS_RP5C15
 #define IO_ADDR_MAX		0x8000
 
 // device informations for win32
@@ -52,7 +53,7 @@ class I286;
 class IO;
 class MB8877;
 class PCM1BIT;
-class RP5C15;
+class RP5C01;
 //class SASI;
 class UPD71071;
 class YM2203;
@@ -83,7 +84,7 @@ protected:
 	IO* io;
 	MB8877* fdc;
 	PCM1BIT* pcm;
-	RP5C15* rtc;
+	RP5C01* rtc;
 //	SASI* sasi;
 	UPD71071* dma;
 	YM2203* opn;

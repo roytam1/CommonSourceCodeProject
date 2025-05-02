@@ -1,5 +1,5 @@
 /*
-	NEC Home Electronics PC-Engine Emulator 'ePC-Engine'
+	NEC-HE PC Engine Emulator 'ePCEngine'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -11,7 +11,7 @@
 #ifndef _PCENGINE_H_
 #define _PCENGINE_H_
 
-#define DEVICE_NAME		"NEC Home Electronics PC-Engine"
+#define DEVICE_NAME		"NEC-HE PC Engine"
 #define CONFIG_NAME		"pcengine"
 #define CONFIG_VERSION		0x01
 

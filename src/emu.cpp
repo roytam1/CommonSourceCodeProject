@@ -109,7 +109,6 @@ int EMU::frame_interval()
 int EMU::run()
 {
 	update_input();
-	update_timer();
 #ifdef USE_FD1
 	update_disk_insert();
 #endif
@@ -196,6 +195,24 @@ _TCHAR* EMU::bios_path(_TCHAR* file_name)
 	static _TCHAR file_path[_MAX_PATH];
 	_stprintf(file_path, _T("%s%s"), app_path, file_name);
 	return file_path;
+}
+
+// ----------------------------------------------------------------------------
+// timer
+// ----------------------------------------------------------------------------
+
+void EMU::get_host_time(cur_time_t* time)
+{
+	SYSTEMTIME sTime;
+	GetLocalTime(&sTime);
+	
+	time->year = sTime.wYear;
+	time->month = sTime.wMonth;
+	time->day = sTime.wDay;
+	time->day_of_week = sTime.wDayOfWeek;
+	time->hour = sTime.wHour;
+	time->minute = sTime.wMinute;
+	time->second = sTime.wSecond;
 }
 
 // ----------------------------------------------------------------------------

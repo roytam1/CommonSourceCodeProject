@@ -128,7 +128,7 @@ void DISK::open(_TCHAR path[], int offset)
 		write_protected = fi->IsProtected(path);
 		
 		// is this d88 format ?
-		if(check_file_extension(path, ".d88") || check_file_extension(path, ".d77")) {
+		if(check_file_extension(path, _T(".d88")) || check_file_extension(path, _T(".d77"))) {
 			fi->Fseek(offset + 0x1c, FILEIO_SEEK_SET);
 			file_size = fi->Fgetc();
 			file_size |= fi->Fgetc() << 8;

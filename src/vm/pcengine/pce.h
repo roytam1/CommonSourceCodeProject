@@ -1,5 +1,5 @@
 /*
-	NEC Home Electronics PC-Engine Emulator 'ePC-Engine'
+	NEC-HE PC Engine Emulator 'ePCEngine'
 	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
@@ -29,6 +29,8 @@ class PCE : public DEVICE
 private:
 	HUC6280* d_cpu;
 	
+	bool support_6btn, support_sgfx;
+	
 	// memory
 #ifdef SUPPORT_SUPER_GFX
 	uint8 ram[0x8000];	// ram 32kb
@@ -38,7 +40,7 @@ private:
 	uint8 cart[0x400000];	// max 4mb
 #ifdef SUPPORT_BACKUP_RAM
 	uint8 backup[0x2000];
-	uint32 crc32;
+	uint32 backup_crc32;
 #endif
 	uint32 bank;
 	uint8 buffer;

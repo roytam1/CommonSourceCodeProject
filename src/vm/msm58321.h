@@ -2,50 +2,59 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2009.05.03-
+	Date   : 2008.05.02-
 
-	[ MSM5832 ]
+	[ MSM58321/MSM5832 ]
 */
 
-#ifndef _MSM5832_H_
-#define _MSM5832_H_
+#ifndef _MSM58321_H_
+#define _MSM58321_H_
 
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_MSM5832_DATA	0
-#define SIG_MSM5832_ADDR	1
-#define SIG_MSM5832_CS		2
-#define SIG_MSM5832_HOLD	3
-#define SIG_MSM5832_READ	4
-#define SIG_MSM5832_WRITE	5
-#define SIG_MSM5832_ADDR_WRITE	6
+#define SIG_MSM58321_DATA	0
+#define SIG_MSM58321_CS		1
+#define SIG_MSM58321_READ	2
+#define SIG_MSM58321_WRITE	3
+// for MSM58321 only
+#define SIG_MSM58321_ADDR_WRITE	4
+// for MSM5832 only
+#define SIG_MSM5832_ADDR	5
+#define SIG_MSM5832_HOLD	6
 
-class MSM5832 : public DEVICE
+class MSM58321 : public DEVICE
 {
 private:
 	// output signals
 	outputs_t outputs_data;
+#ifndef HAS_MSM5832
 	outputs_t outputs_busy;
+#endif
 	
-	void output();
+	cur_time_t cur_time;
 	uint8 regs[16];
 	uint8 wreg, regnum;
-	bool cs, hold, rd, wr, addr_wr;
-	int time[8], cnt1, cnt2;
+	bool cs, rd, wr, addr_wr, busy, hold;
+	int count_1024hz, count_1s, count_1m, count_1h;
+	
+	void read_from_cur_time();
+	void write_to_cur_time();
+	void output_data();
+	void set_busy(bool val);
 	
 public:
-	MSM5832(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MSM58321(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_data);
+#ifndef HAS_MSM5832
 		init_output_signals(&outputs_busy);
+#endif
 	}
-	~MSM5832() {}
+	~MSM58321() {}
 	
 	// common functions
 	void initialize();
-	void write_io8(uint32 addr, uint32 data);
-	uint32 read_io8(uint32 addr);
 	void event_callback(int event_id, int err);
 	void write_signal(int id, uint32 data, uint32 mask);
 	
@@ -53,9 +62,11 @@ public:
 	void set_context_data(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&outputs_data, device, id, mask, shift);
 	}
+#ifndef HAS_MSM5832
 	void set_context_busy(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_busy, device, id, mask);
 	}
+#endif
 };
 
 #endif

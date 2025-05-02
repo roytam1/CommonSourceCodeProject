@@ -19,7 +19,7 @@ void PRINTER::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {
 	case 0xe2:
-		strobe = (data & 0x80) ? true : false;
+		strobe = ((data & 0x80) != 0);
 		break;
 	case 0xe3:
 		out = data;

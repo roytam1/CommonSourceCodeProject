@@ -1,5 +1,5 @@
 /*
-	NEC Home Electronics PC-Engine Emulator 'ePC-Engine'
+	NEC-HE PC Engine Emulator 'ePCEngine'
 	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
@@ -88,7 +88,7 @@ void PCE::initialize()
 	}
 	delete fio;
 	
-	crc32 = getcrc32(backup, sizeof(backup));
+	backup_crc32 = getcrc32(backup, sizeof(backup));
 #endif
 	running = false;
 }
@@ -96,7 +96,7 @@ void PCE::initialize()
 void PCE::release()
 {
 #ifdef SUPPORT_BACKUP_RAM
-	if(crc32 != getcrc32(backup, sizeof(backup))) {
+	if(backup_crc32 != getcrc32(backup, sizeof(backup))) {
 		FILEIO* fio = new FILEIO();
 		if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
 			fio->Fwrite(backup, sizeof(backup), 1);
@@ -125,10 +125,11 @@ void PCE::reset()
 void PCE::event_vline(int v, int clock)
 {
 #ifdef SUPPORT_SUPER_GFX
-	sgx_interrupt();
-#else
-	pce_interrupt();
+	if(support_sgfx) {
+		sgx_interrupt();
+	} else
 #endif
+	pce_interrupt();
 }
 
 void PCE::write_data8(uint32 addr, uint32 data)
@@ -151,36 +152,37 @@ void PCE::write_data8(uint32 addr, uint32 data)
 		}
 		return;
 #endif
-#ifdef SUPPORT_SUPER_GFX
 	case 0xf8:
+		ram[ofs] = data;
+		return;
+#ifdef SUPPORT_SUPER_GFX
 	case 0xf9:
 	case 0xfa:
 	case 0xfb:
-		ram[addr & 0x7fff] = data;
-		return;
-#else
-	case 0xf8:
-		ram[ofs] = data;
+		if(support_sgfx) {
+			ram[addr & 0x7fff] = data;
+		}
 		return;
 #endif
 	case 0xff:
 		switch(addr & 0x1c00) {
 		case 0x0000:	// vdc
 #ifdef SUPPORT_SUPER_GFX
-			switch(addr & 0x18) {
-			case 0x00:
-				vdc_w(0, addr, data);
-				break;
-			case 0x08:
-				vpc_w(addr, data);
-				break;
-			case 0x10:
-				vdc_w(1, addr, data);
-				break;
-			}
-#else
-			vdc_w(0, addr, data);
+			if(support_sgfx) {
+				switch(addr & 0x18) {
+				case 0x00:
+					vdc_w(0, addr, data);
+					break;
+				case 0x08:
+					vpc_w(addr, data);
+					break;
+				case 0x10:
+					vdc_w(1, addr, data);
+					break;
+				}
+			} else
 #endif
+			vdc_w(0, addr, data);
 			break;
 		case 0x0400:	// vce
 			vce_w(addr, data);
@@ -226,32 +228,34 @@ uint32 PCE::read_data8(uint32 addr)
 	case 0xf7:
 		return backup[ofs];
 #endif
-#ifdef SUPPORT_SUPER_GFX
 	case 0xf8:
+		return ram[ofs];
+#ifdef SUPPORT_SUPER_GFX
 	case 0xf9:
 	case 0xfa:
 	case 0xfb:
-		return ram[addr & 0x7fff];
-#else
-	case 0xf8:
-		return ram[ofs];
+		if(support_sgfx) {
+			return ram[addr & 0x7fff];
+		}
+		return 0xff;
 #endif
 	case 0xff:
 		switch (addr & 0x1c00) {
 		case 0x0000: // vdc
 #ifdef SUPPORT_SUPER_GFX
-			switch(addr & 0x18) {
-			case 0x00:
-				return vdc_r(0, addr);
-			case 0x08:
-				return vpc_r(addr);
-			case 0x10:
-				return vdc_r(1, addr);
-			}
-			return 0xff;
-#else
-			return vdc_r(0, addr);
+			if(support_sgfx) {
+				switch(addr & 0x18) {
+				case 0x00:
+					return vdc_r(0, addr);
+				case 0x08:
+					return vpc_r(addr);
+				case 0x10:
+					return vdc_r(1, addr);
+				}
+				return 0xff;
+			} else
 #endif
+			return vdc_r(0, addr);
 		case 0x0400: // vce
 			return vce_r(addr);
 		case 0x0800: // psg
@@ -277,19 +281,21 @@ uint32 PCE::read_data8(uint32 addr)
 void PCE::write_io8(uint32 addr, uint32 data)
 {
 #ifdef SUPPORT_SUPER_GFX
-	sgx_vdc_w(addr, data);
-#else
-	vdc_w(0, addr, data);
+	if(support_sgfx) {
+		sgx_vdc_w(addr, data);
+	} else
 #endif
+	vdc_w(0, addr, data);
 }
 
 uint32 PCE::read_io8(uint32 addr)
 {
 #ifdef SUPPORT_SUPER_GFX
-	return sgx_vdc_r(addr);
-#else
-	return vdc_r(0, addr);
+	if(support_sgfx) {
+		return sgx_vdc_r(addr);
+	} else
 #endif
+	return vdc_r(0, addr);
 }
 
 void PCE::draw_screen()
@@ -358,7 +364,15 @@ void PCE::open_cart(_TCHAR* file_path)
 			if (size <= 0x080000)
 				memcpy(cart + 0x080000, cart, 0x080000);
 		}
-		joy_6btn  = (size == 0x280000 && getcrc32(cart, size) == 0xd15cb6bb) | (size == 0x100000 && getcrc32(cart, size) == 0xd6fc51ce);
+		uint32 cart_crc32 = getcrc32(cart,size);
+		support_sgfx = (size == 0x100000 && cart_crc32 == 0x8c4588e2)	// 1941 Counter Attack
+		            || (size == 0x100000 && cart_crc32 == 0x4c2126b0)	// Aldynes
+		            || (size == 0x080000 && cart_crc32 == 0x3b13af61)	// Battle Ace
+		            || (size == 0x100000 && cart_crc32 == 0xb486a8ed)	// Daimakaimura
+		            || (size == 0x0c0000 && cart_crc32 == 0xbebfe042)	// Darius Plus
+		            || (size == 0x100000 && cart_crc32 == 0x1e1d0319)	// Darius Plus (1024K)
+		            || (size == 0x080000 && cart_crc32 == 0x1f041166);	// Grandzort
+		support_6btn = (size == 0x280000 && cart_crc32 == 0xd15cb6bb);	// Street Fighter II
 		running = true;
 	}
 	delete fio;
@@ -1666,7 +1680,7 @@ uint8 PCE::joy_read(uint16 addr)
 	} else if(joy_count == 1) {
 		stat = joy_stat[1];
 	}
-	if(joy_6btn && joy_bank) {
+	if(support_6btn && joy_bank) {
 		if(joy_sel) {
 			val = 0;
 		} else {

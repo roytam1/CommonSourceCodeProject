@@ -13,7 +13,7 @@
 #include "../i8255.h"
 #include "../i8259.h"
 #include "../mb8877.h"
-#include "../msm5832.h"
+#include "../msm58321.h"
 #include "../pcm1bit.h"
 
 #define EVENT_KEYSCAN	0
@@ -66,11 +66,11 @@ void SUB::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr) {
 	case 0x40:
-		d_rtc->write_signal(SIG_MSM5832_CS, data, 0x10);
-		d_rtc->write_signal(SIG_MSM5832_ADDR_WRITE, data, 0x20);
-		d_rtc->write_signal(SIG_MSM5832_READ, data, 0x40);
-		d_rtc->write_signal(SIG_MSM5832_WRITE, data, 0x80);
-		d_rtc->write_signal(SIG_MSM5832_DATA, data, 0x0f);
+		d_rtc->write_signal(SIG_MSM58321_CS, data, 0x10);
+		d_rtc->write_signal(SIG_MSM58321_ADDR_WRITE, data, 0x20);	// prev data is written
+		d_rtc->write_signal(SIG_MSM58321_DATA, data, 0x0f);
+		d_rtc->write_signal(SIG_MSM58321_READ, data, 0x40);
+		d_rtc->write_signal(SIG_MSM58321_WRITE, data, 0x80);		// current data is written
 		break;
 	case 0xa0:
 		if(!(data & 8)) {

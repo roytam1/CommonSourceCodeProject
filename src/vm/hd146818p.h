@@ -21,12 +21,14 @@ private:
 	outputs_t outputs_intr;
 	outputs_t outputs_sqw;
 	
-	uint8 ram[0x40];
-	int ch, sec, tm[8];
-	int period, event_id;
+	cur_time_t cur_time;
+	uint8 regs[0x40];
+	int ch, period, register_id;
 	bool intr, sqw;
 	
-	void update_calendar();
+	void read_from_cur_time();
+	void write_to_cur_time();
+	void check_alarm();
 	void update_intr();
 	
 public:
@@ -42,7 +44,6 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_frame();
 	void event_callback(int event_id, int err);
 	
 	// unique functions

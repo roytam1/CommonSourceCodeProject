@@ -11,29 +11,47 @@
 
 #include "timer.h"
 #include "../i8259.h"
+#include "../msm58321.h"
 #include "../pcm1bit.h"
 
 void TIMER::initialize()
 {
-	ctrl = 0;
+	intr_reg = rtc_data = 0;
 	tmout0 = tmout1 = false;
 }
 
 void TIMER::write_io8(uint32 addr, uint32 data)
 {
-	// $60: interrupt ctrl register
-	if(data & 0x80) {
-		tmout0 = false;
+	switch(addr) {
+	case 0x60:
+		if(data & 0x80) {
+			tmout0 = false;
+		}
+		intr_reg = data;
+		update_intr();
+		d_pcm->write_signal(SIG_PCM1BIT_ON, data, 4);
+		break;
+	case 0x70:
+		d_rtc->write_signal(SIG_MSM58321_DATA, data, 0x0f);
+		break;
+	case 0x80:
+		d_rtc->write_signal(SIG_MSM58321_CS, data, 0x80);
+		d_rtc->write_signal(SIG_MSM58321_READ, data, 0x04);
+		d_rtc->write_signal(SIG_MSM58321_WRITE, data, 0x02);
+		d_rtc->write_signal(SIG_MSM58321_ADDR_WRITE, data, 0x01);
+		break;
 	}
-	ctrl = data;
-	update_intr();
-	d_pcm->write_signal(SIG_PCM1BIT_ON, data, 4);
 }
 
 uint32 TIMER::read_io8(uint32 addr)
 {
-	// $60: interrupt cause register
-	return (tmout0 ? 1 : 0) | (tmout1 ? 2 : 0) | ((ctrl & 7) << 2) | 0xe0;
+	switch(addr) {
+	case 0x60:
+		return (tmout0 ? 1 : 0) | (tmout1 ? 2 : 0) | ((intr_reg & 7) << 2) | 0xe0;
+	case 0x70:
+		return rtc_data;
+	}
+	return 0xff;
 }
 
 void TIMER::write_signal(int id, uint32 data, uint32 mask)
@@ -48,10 +66,17 @@ void TIMER::write_signal(int id, uint32 data, uint32 mask)
 		tmout1 = ((data & mask) != 0);
 		update_intr();
 	}
+	else if(id == SIG_TIMER_RTC) {
+		rtc_data = (data & mask) | (rtc_data & ~mask);
+	}
 }
 
 void TIMER::update_intr()
 {
-	d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR0, (tmout0 && (ctrl & 1)) || (tmout1 && (ctrl & 2)) ? 1 : 0, 1);
+	if((tmout0 && (intr_reg & 1)) || (tmout1 && (intr_reg & 2))) {
+		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR0, 1, 1);
+	} else {
+		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR0, 0, 1);
+	}
 }
 

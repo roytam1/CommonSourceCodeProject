@@ -40,9 +40,9 @@ private:
 	void send_to_7508(uint8 val);
 	uint8 rec_from_7508();
 	FIFO *cmd7508_buf, *rsp7508_buf;
-	// one sec interrupt
+	// rtc
+	cur_time_t cur_time;
 	bool onesec_intr, onesec_intr_enb;
-	// alarm
 	bool alarm_intr, alarm_intr_enb;
 	uint8 alarm[6];
 	// keyboard

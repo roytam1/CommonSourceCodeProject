@@ -24,6 +24,7 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define SUPPORT_VARIABLE_TIMING
+#define HAS_MSM5832
 
 // device informations for win32
 #define USE_DATAREC
@@ -45,7 +46,7 @@ class DATAREC;
 class HD46505;
 class I8255;
 class IO;
-class MSM5832;
+class MSM58321;
 class SN76489AN;
 class Z80;
 
@@ -67,7 +68,7 @@ protected:
 	I8255* pio2;
 	I8255* pio3;
 	IO* io;
-	MSM5832* rtc;
+	MSM58321* rtc;
 	SN76489AN* psg;
 	Z80* cpu;
 	

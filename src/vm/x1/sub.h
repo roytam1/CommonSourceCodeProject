@@ -27,6 +27,8 @@ private:
 	DEVICE *d_cpu, *d_pio;
 	DATAREC *d_drec;
 	
+	cur_time_t cur_time;
+	
 	uint8 databuf[32][8], *datap;
 	uint8 mode, inbuf, outbuf;
 	bool ibf, obf;

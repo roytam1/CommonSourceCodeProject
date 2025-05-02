@@ -1240,7 +1240,7 @@ void PC88::play_datarec(_TCHAR* file_path)
 	close_datarec();
 	
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		if(check_file_extension(file_path, ".n80")) {
+		if(check_file_extension(file_path, _T(".n80"))) {
 			cmt_fio->Fread(ram + 0x8000, 0x7f40, 1);
 			cmt_fio->Fclose();
 			d_cpu->set_sp(ram[0xff3e] | (ram[0xff3f] << 8));

@@ -101,7 +101,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 		
 		if(cmd_addr == 0x8402) {
 			// y2 monster land
-			bool pause = (get_cpu_pc(0) == 0x96c) ? true : false;
+			bool pause = (get_cpu_pc(0) == 0x96c);
 			if(pause || !(params[0] == 0x1f && param_ptr > 5)) {
 				// terminate command
 				if(register_id != -1) {

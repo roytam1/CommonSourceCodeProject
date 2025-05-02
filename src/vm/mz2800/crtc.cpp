@@ -384,7 +384,7 @@ void CRTC::event_callback(int event_id, int err)
 void CRTC::event_vline(int v, int clock)
 {
 	// vblank
-	bool next = (GDEVS <= v && v < GDEVE) ? false : true;
+	bool next = !(GDEVS <= v && v < GDEVE);
 	if(vblank != next) {
 		// vblank on / off
 //		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, next ? 2 : 0, 2);
@@ -425,7 +425,7 @@ void CRTC::event_vline(int v, int clock)
 
 void CRTC::set_hsync(int h)
 {
-	hblank = (GDEHS <= h && h < GDEHE) ? false : true;
+	hblank = !(GDEHS <= h && h < GDEHE);
 	bool next = (hblank || vblank);
 	if(blank != next) {
 		d_pio->write_signal(SIG_I8255_PORT_B, next ? 1 : 0, 1);

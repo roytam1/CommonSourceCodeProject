@@ -62,8 +62,8 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 		text_page = (data >> 4) & 7;
 	}
 	else if(id == SIG_DISPLAY_I8255_1_C) {
-		blink = (data & 0x20) ? true : false;
-		pal_dis = (data & 8) ? true : false;
+		blink = ((data & 0x20) != 0);
+		pal_dis = ((data & 8) != 0);
 	}
 }
 

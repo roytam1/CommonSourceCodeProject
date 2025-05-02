@@ -22,8 +22,8 @@
 #include "../i86.h"
 #include "../io.h"
 #include "../memory.h"
+#include "../msm58321.h"
 #include "../pcm1bit.h"
-#include "../rtc58321.h"
 #include "../upd765a.h"
 
 #include "crtc.h"
@@ -50,8 +50,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu = new I86(this, emu);
 	io = new IO(this, emu);
 	memory = new MEMORY(this, emu);
+	rtc = new MSM58321(this, emu);
 	pcm = new PCM1BIT(this, emu);
-	rtc = new RTC58321(this, emu);
 	fdc = new UPD765A(this, emu);
 	
 	crtc = new CRTC(this, emu);
@@ -66,10 +66,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	and->set_context_out(cpu, SIG_CPU_NMI, 1);
 	and->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
 	sio->set_context_rxrdy(pic, SIG_I8259_IR1, 1);
-	pio0->set_context_port_a(rtc, SIG_RTC58321_WRITE, 1, 0);
-	pio0->set_context_port_a(rtc, SIG_RTC58321_READ, 2, 0);
-	pio0->set_context_port_a(rtc, SIG_RTC58321_SELECT, 4, 0);
-	pio0->set_context_port_c(rtc, SIG_RTC58321_DATA, 0x0f, 0);
+	pio0->set_context_port_a(rtc, SIG_MSM58321_READ, 1, 0);
+	pio0->set_context_port_a(rtc, SIG_MSM58321_WRITE, 2, 0);
+	pio0->set_context_port_a(rtc, SIG_MSM58321_ADDR_WRITE, 4, 0);
+	pio0->set_context_port_c(rtc, SIG_MSM58321_DATA, 0x0f, 0);
 	pio1->set_context_port_a(crtc, SIG_CRTC_BITMASK_LOW, 0xff, 0);
 	pio1->set_context_port_b(crtc, SIG_CRTC_BITMASK_HIGH, 0xff, 0);
 	pio1->set_context_port_c(crtc, SIG_CRTC_VRAM_PLANE, 0x3f, 0);

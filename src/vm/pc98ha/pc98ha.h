@@ -73,9 +73,7 @@ class UPD71071;
 class UPD765A;
 
 class BIOS;
-#ifdef _PC98HA
 class CALENDAR;
-#endif
 class FLOPPY;
 class KEYBOARD;
 class MEMORY;
@@ -107,9 +105,7 @@ protected:
 	UPD765A* fdc;
 	
 	BIOS* bios;
-#ifdef _PC98HA
 	CALENDAR* calendar;
-#endif
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;

@@ -17,7 +17,7 @@
 #include "../hd46505.h"
 #include "../i8255.h"
 #include "../io.h"
-#include "../msm5832.h"
+#include "../msm58321.h"
 #include "../sn76489an.h"
 #include "../z80.h"
 
@@ -42,7 +42,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2 = new I8255(this, emu);
 	pio3 = new I8255(this, emu);
 	io = new IO(this, emu);
-	rtc = new MSM5832(this, emu);
+	rtc = new MSM58321(this, emu);	// MSM5832
 	psg = new SN76489AN(this, emu);
 	cpu = new Z80(this, emu);
 	
@@ -100,13 +100,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_port_c(psg, SIG_SN76489AN_WE, 0x10, 0);
 	pio2->set_context_port_c(psg, SIG_SN76489AN_CS, 0x20, 0);
 	pio2->set_context_port_c(display, SIG_DISPLAY_MODE, 0xc0, 0);
-	pio3->set_context_port_b(rtc, SIG_MSM5832_DATA, 0xf, 0);
-	pio3->set_context_port_c(rtc, SIG_MSM5832_ADDR, 0xf, 0);
+	pio3->set_context_port_b(rtc, SIG_MSM58321_DATA, 0x0f, 0);
+	pio3->set_context_port_c(rtc, SIG_MSM5832_ADDR, 0x0f, 0);
 	pio3->set_context_port_c(rtc, SIG_MSM5832_HOLD, 0x10, 0);
-	pio3->set_context_port_c(rtc, SIG_MSM5832_READ, 0x20, 0);
-	pio3->set_context_port_c(rtc, SIG_MSM5832_WRITE, 0x40, 0);
-	pio3->set_context_port_c(rtc, SIG_MSM5832_CS, 0x80, 0);
-	rtc->set_context_data(pio3, SIG_I8255_PORT_B, 0xf, 0);
+	pio3->set_context_port_c(rtc, SIG_MSM58321_READ, 0x20, 0);
+	pio3->set_context_port_c(rtc, SIG_MSM58321_WRITE, 0x40, 0);
+	pio3->set_context_port_c(rtc, SIG_MSM58321_CS, 0x80, 0);
+	rtc->set_context_data(pio3, SIG_I8255_PORT_B, 0x0f, 0);
 	
 	display->set_regs_ptr(crtc->get_regs());
 	keyboard->set_context_cpu(cpu);

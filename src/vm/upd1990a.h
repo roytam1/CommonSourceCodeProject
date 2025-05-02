@@ -12,10 +12,11 @@
 
 #define SIG_UPD1990A_CLK	0
 #define SIG_UPD1990A_STB	1
-#define SIG_UPD1990A_C0		2
-#define SIG_UPD1990A_C1		3
-#define SIG_UPD1990A_C2		4
-#define SIG_UPD1990A_DIN	5
+#define SIG_UPD1990A_CMD	2
+#define SIG_UPD1990A_C0		3
+#define SIG_UPD1990A_C1		4
+#define SIG_UPD1990A_C2		5
+#define SIG_UPD1990A_DIN	6
 
 #include "vm.h"
 #include "../emu.h"
@@ -28,15 +29,14 @@ private:
 	outputs_t outputs_dout;
 	outputs_t outputs_tp;
 	
+	cur_time_t cur_time;
 	uint8 cmd, mode, tpmode;
-	int event_id;
-	uint64 shift_out;
+	uint64 shift_data;
 #ifdef HAS_UPD4990A
 	uint32 shift_cmd;
 #endif
 	bool clk, stb, din, tp;
-	
-	uint64 to_bcd(int data);
+	int register_id;
 	
 public:
 	UPD1990A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -51,10 +51,9 @@ public:
 	
 	// common functions
 	void initialize();
-	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int ch) {
-		return (uint32)(shift_out & 1);
+		return (uint32)(shift_data & 1);
 	}
 	void event_callback(int event_id, int err);
 	

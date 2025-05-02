@@ -20,11 +20,12 @@ class RTC : public DEVICE
 private:
 	DEVICE* d_pic;
 	
+	cur_time_t cur_time;
 	uint16 rtcmr, rtdsr, rtadr, rtobr, rtibr;
 	uint8 regs[40];
-	int time[8];
 	
-	void update_calendar();
+	void read_from_cur_time();
+	void write_to_cur_time();
 	void update_checksum();
 	void update_intr();
 public:

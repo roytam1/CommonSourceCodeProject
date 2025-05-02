@@ -564,7 +564,7 @@ void CRTC::event_callback(int event_id, int err)
 
 void CRTC::event_vline(int v, int clock)
 {
-	bool next = (GDEVS <= v && v < GDEVE) ? false : true;	// vblank = true
+	bool next = !(GDEVS <= v && v < GDEVE);	// vblank = true
 	if(vblank != next) {
 #ifdef VRAM_WAIT
 		d_mem->write_signal(SIG_MEMORY_VBLANK, next ? 1 : 0, 1);
@@ -594,7 +594,7 @@ void CRTC::event_vline(int v, int clock)
 
 void CRTC::set_hsync(int h)
 {
-	bool next = (GDEHS <= h && h < GDEHE) ? false : true;	// hblank = true
+	bool next = !(GDEHS <= h && h < GDEHE);	// hblank = true
 	if(hblank != next) {
 #ifdef VRAM_WAIT
 		d_mem->write_signal(SIG_MEMORY_HBLANK, next ? 1 : 0, 1);

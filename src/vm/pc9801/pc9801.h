@@ -227,6 +227,7 @@ protected:
 	LS244* dmareg2;
 	LS244* dmareg3;
 	LS244* dmareg0;
+	LS244* rtcreg;
 	MEMORY* memory;
 #if defined(HAS_I86) || defined(HAS_V30)
 	NOT* not;

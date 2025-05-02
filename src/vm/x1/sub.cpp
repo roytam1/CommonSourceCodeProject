@@ -16,13 +16,8 @@
 
 //#define DEBUG_COMMAND
 
-#define YEAR		time[0]
-#define MONTH		time[1]
-#define DAY		time[2]
-#define DAY_OF_WEEK	time[3]
-#define HOUR		time[4]
-#define MINUTE		time[5]
-#define SECOND		time[6]
+#define EVENT_1SEC	0
+#define EVENT_DRIVE	1
 
 // TODO: XFER = 0xe8 ???
 
@@ -140,9 +135,12 @@ void SUB::initialize()
 	key_buf = new FIFO(8);
 	key_stat = emu->key_buffer();
 	
-	// register event
+	emu->get_host_time(&cur_time);
+	
+	// register events
 	register_frame_event(this);
-	register_event(this, 0, 400, true, NULL);
+	register_event(this, EVENT_1SEC, 1000000, true, NULL);
+	register_event(this, EVENT_DRIVE, 400, true, NULL);
 }
 
 void SUB::release()
@@ -242,78 +240,89 @@ void SUB::event_frame()
 
 void SUB::event_callback(int event_id, int err)
 {
-	static const int cmdlen_tbl[] = {
-		0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 3, 0
-	};
-	
-#ifdef _X1TWIN
-	// clear key buffer
-	if(vm->pce_running()) {
-		// clear key
-		key_buf->clear();
+	if(event_id == EVENT_1SEC) {
+		if(cur_time.initialized) {
+			cur_time.increment();
+		} else {
+			emu->get_host_time(&cur_time);	// resync
+			cur_time.initialized = true;
+		}
 	}
-#endif
-	if(ibf) {
-		// sub cpu received data from main cpu
-		if(cmdlen) {
-			// this is command parameter
-			*datap++ = inbuf;
-#ifdef DEBUG_COMMAND
-			emu->out_debug(_T(" %2x"), inbuf);
-#endif
-			cmdlen--;
-		}
-		else {
-			// this is new command
-			mode = inbuf;
-#ifdef DEBUG_COMMAND
-			emu->out_debug(_T("X1SUB: cmd %2x"), inbuf);
-#endif
-			if(0xd0 <= mode && mode <= 0xd7) {
-				cmdlen = 6;
-				datap = &databuf[mode - 0xd0][0]; // receive buffer
-			}
-			else if(0xe3 <= mode && mode <= 0xef) {
-				cmdlen = cmdlen_tbl[mode - 0xe3];
-				datap = &databuf[mode - 0xd0][0]; // receive buffer
-			}
-		}
-		if(cmdlen == 0) {
-			// this command has no parameters or all parameters are received,
-			// so cpu processes the command
-#ifdef DEBUG_COMMAND
-			emu->out_debug(_T("\n"));
-#endif
-			process_cmd();
-		}
-		// sub cpu can accept new command or parameter
-		set_ibf(false);
-		set_obf(true);
+	else if(event_id == EVENT_DRIVE) {
+		// drive sub cpu
+		static const int cmdlen_tbl[] = {
+			0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 3, 0
+		};
 		
-		// if command is not finished, key irq is not raised
-		if(cmdlen || datalen) {
-			return;
+#ifdef _X1TWIN
+		// clear key buffer
+		if(vm->pce_running()) {
+			// clear key
+			key_buf->clear();
 		}
-	}
-	if(obf) {
-		// sub cpu can send data to main cpu
-		if(datalen) {
-			// sub cpu sends result data
-			outbuf = *datap++;
-			set_obf(false);
-			datalen--;
-		}
-		else if(!key_buf->empty() && databuf[0x14][0] && !intr && iei) {
-			// key buffer is not empty and interrupt is not disabled,
-			// so sub cpu sends vector and raise irq
-			outbuf = databuf[0x14][0];
-			set_obf(false);
-			intr = true;
-			update_intr();
+#endif
+		if(ibf) {
+			// sub cpu received data from main cpu
+			if(cmdlen) {
+				// this is command parameter
+				*datap++ = inbuf;
+#ifdef DEBUG_COMMAND
+				emu->out_debug(_T(" %2x"), inbuf);
+#endif
+				cmdlen--;
+			}
+			else {
+				// this is new command
+				mode = inbuf;
+#ifdef DEBUG_COMMAND
+				emu->out_debug(_T("X1SUB: cmd %2x"), inbuf);
+#endif
+				if(0xd0 <= mode && mode <= 0xd7) {
+					cmdlen = 6;
+					datap = &databuf[mode - 0xd0][0]; // receive buffer
+				}
+				else if(0xe3 <= mode && mode <= 0xef) {
+					cmdlen = cmdlen_tbl[mode - 0xe3];
+					datap = &databuf[mode - 0xd0][0]; // receive buffer
+				}
+			}
+			if(cmdlen == 0) {
+				// this command has no parameters or all parameters are received,
+				// so cpu processes the command
+#ifdef DEBUG_COMMAND
+				emu->out_debug(_T("\n"));
+#endif
+				process_cmd();
+			}
+			// sub cpu can accept new command or parameter
+			set_ibf(false);
+			set_obf(true);
 			
-			// read key buffer
-			mode = 0xe6;
-			process_cmd();
+			// if command is not finished, key irq is not raised
+			if(cmdlen || datalen) {
+				return;
+			}
+		}
+		if(obf) {
+			// sub cpu can send data to main cpu
+			if(datalen) {
+				// sub cpu sends result data
+				outbuf = *datap++;
+				set_obf(false);
+				datalen--;
+			}
+			else if(!key_buf->empty() && databuf[0x14][0] && !intr && iei) {
+				// key buffer is not empty and interrupt is not disabled,
+				// so sub cpu sends vector and raise irq
+				outbuf = databuf[0x14][0];
+				set_obf(false);
+				intr = true;
+				update_intr();
+				
+				// read key buffer
+				mode = 0xe6;
+				process_cmd();
+			}
 		}
 	}
 }
@@ -455,7 +464,6 @@ void SUB::push_stop()
 
 void SUB::process_cmd()
 {
-	int time[8];
 	uint16 lh = 0xff;
 	
 	// preset 
@@ -487,7 +495,7 @@ void SUB::process_cmd()
 	case 0xdd:
 	case 0xde:
 	case 0xdf:
-		// time read
+		// timer read
 		datap = &databuf[mode - 0xd8][0];	// data buffer for timer set
 		datalen = 6;
 		break;
@@ -622,24 +630,35 @@ void SUB::process_cmd()
 		break;
 	case 0xec:
 		// set calender
+		cur_time.year = FROM_BCD(databuf[0x1c][0]);
+		if((databuf[0x1c][1] & 0xf0) != 0) {
+			cur_time.month = databuf[0x1c][1] >> 4;
+		}
+//		cur_time.day_of_week = databuf[0x1c][1] & 7;
+		if(databuf[0x1c][2] != 0) {
+			cur_time.day = FROM_BCD(databuf[0x1c][2]);
+		}
+		cur_time.update_year();
+		cur_time.update_day_of_week();
 		break;
 	case 0xed:
 		// get calender
-		emu->get_timer(time);
-		databuf[0x1d][0] = ((int)((YEAR % 100) / 10) << 4) | (YEAR % 10);
-		databuf[0x1d][1] = (MONTH << 4) | DAY_OF_WEEK;
-		databuf[0x1d][2] = ((int)(DAY / 10) << 4) | (DAY % 10);
+		databuf[0x1d][0] = TO_BCD(cur_time.year);
+		databuf[0x1d][1] = (cur_time.month << 4) | cur_time.day_of_week;
+		databuf[0x1d][2] = TO_BCD(cur_time.day);
 		datalen = 3;
 		break;
 	case 0xee:
 		// set time
+		cur_time.hour = FROM_BCD(databuf[0x1e][0]);
+		cur_time.minute = FROM_BCD(databuf[0x1e][1] & 0x7f);
+		cur_time.second = FROM_BCD(databuf[0x1e][2] & 0x7f);
 		break;
 	case 0xef:
 		// get time
-		emu->get_timer(time);
-		databuf[0x1f][0] = ((int)(HOUR / 10) << 4) | (HOUR % 10);
-		databuf[0x1f][1] = ((int)(MINUTE / 10) << 4) | (MINUTE % 10);
-		databuf[0x1f][2] = ((int)(SECOND / 10) << 4) | (SECOND % 10);
+		databuf[0x1f][0] = TO_BCD(cur_time.hour);
+		databuf[0x1f][1] = TO_BCD(cur_time.minute);
+		databuf[0x1f][2] = TO_BCD(cur_time.second);
 		datalen = 3;
 		break;
 #ifdef DEBUG_COMMAND

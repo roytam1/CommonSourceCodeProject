@@ -54,7 +54,7 @@ class I86;
 class IO;
 class MB8877;
 class MEMORY;
-class MSM5832;
+class MSM58321;
 class NOT;
 class PCM1BIT;
 
@@ -76,7 +76,7 @@ protected:
 	IO* io;
 	MB8877* fdc;
 	MEMORY* memory;
-	MSM5832* rtc;
+	MSM58321* rtc;
 	NOT* not;
 	PCM1BIT* pcm;
 	

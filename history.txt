@@ -1,7 +1,40 @@
+1/23/2013
+
+[WINMAIN] support drag & drop a cart or disk image files
+
+[VM/HD146818P] support modifying the date and time
+[VM/MSM58321] renamed from RTC58321 to MSM58321
+[VM/MSM58321] support modifying the date and time
+[VM/MSM58321] support busy flag and base signal register
+[VM/MSM58321] remove ugly functions for FMR-50/60
+[VM/MS5832] removed and joined to MSM58321
+[VM/RP5C01] support modifying the date and time
+[VM/RP5C15] removed and joined to RP5C01
+[VM/UPD1990A] support modifying the date and time
+[VM/UPD1990A] remove ugly functions for PC-9801/PC-98LT
+[VM/UPD4991A] support modifying the date and time
+[VM/Z80] revert previous modification
+[VM/Z80] modify clocks for interrupt in mode2
+
+[FM16PI] replace rtc chip from msm5832 to rtc58321
+[FMR30/RTC] support modifying the date and time
+[FMR50/TIMER] support rtc with standard signal connections
+[HC40/IO] support modifying the date and time
+[HC80/IO] support modifying the date and time
+[PC9801] support rtc with standard signal connections
+[PC9801/DISPLAY] initialize year data in memory switch
+[PC98LT/CALENDAR] support rtc with standard signal connections
+[PC100] fix rtc signal connection and now rtc works fine
+[PCENGINE] fix to check the selected cart is for super grafx
+[X07/IO] support modifying the date and time
+[X1TURBO/SUB] support modifying the date and time
+[X1TWIN/SUB] support modifying the date and time
+
+
 1/18/2013
 
 [VM/DISK] fix to always save the converted disk image
-[VM/Z80] revirt reimplemented Z80 core based on MAME 0.145
+[VM/Z80] revert reimplemented Z80 core based on MAME 0.145
 
 [PC8801MA/PC88] support n80 format tape image
 
@@ -17,7 +50,7 @@
 
 [FAMILYBASIC/PPU] fix crash issue in ppu
 [PC8001MK2SR] support NEC PC-8001mkIISR
-[PCENGINE] support NEC Home Electronics PC-Engine / SuperGrafx
+[PCENGINE] support NEC-HE PC Engine / SuperGrafx
 
 
 10/25/2012
@@ -784,7 +817,7 @@ Fix typo (regist -> register, recieve -> receive)
 [VM/TMS9918A] fix screen mode selection
 [VM/UPD765A] support reset signal
 [VM/UPD765A] support index hole signal
-[VM/Z80] revirt reimplemented Z80 core (temporary)
+[VM/Z80] revert reimplemented Z80 core (temporary)
 
 [FM16PI] remove FUJITSU FM16pi skelton
 [PC3200] remove SHARP PC-3200 skelton

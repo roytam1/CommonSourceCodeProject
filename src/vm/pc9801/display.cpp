@@ -126,8 +126,16 @@ void DISPLAY::initialize()
 	memset(vram, 0, sizeof(vram));
 	
 	for(int i = 0; i < 16; i++) {
-		tvram[0x3fe0 + (i << 1)] = (i == 7 && sound_bios_ok) ? 0x08 : memsw_default[i];
+		tvram[0x3fe0 + (i << 1)] = memsw_default[i];
 	}
+	if(sound_bios_ok) {
+		tvram[0x3fee] = 8;
+	}
+#ifndef HAS_UPD4990A
+	cur_time_t cur_time;
+	emu->get_host_time(&cur_time);
+	tvram[0x3ffe] = TO_BCD(cur_time.year);
+#endif
 	
 	// register event
 	register_frame_event(this);
