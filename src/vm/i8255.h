@@ -38,6 +38,7 @@ public:
 			init_output_signals(&port[i].outputs);
 			port[i].wreg = port[i].rreg = 0;//0xff;
 		}
+		clear_ports_by_cmdreg = false;
 	}
 	~I8255() {}
 	
@@ -57,6 +58,7 @@ public:
 	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&port[2].outputs, device, id, mask, shift);
 	}
+	bool clear_ports_by_cmdreg;
 };
 
 #endif

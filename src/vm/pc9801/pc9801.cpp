@@ -282,10 +282,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_fdd->set_context_port_b(pio_sub, SIG_I8255_PORT_A, 0xff, 0);
 	pio_fdd->set_context_port_c(pio_sub, SIG_I8255_PORT_C, 0x0f, 4);
 	pio_fdd->set_context_port_c(pio_sub, SIG_I8255_PORT_C, 0xf0, -4);
+	pio_fdd->clear_ports_by_cmdreg = true;
 	pio_sub->set_context_port_a(pio_fdd, SIG_I8255_PORT_B, 0xff, 0);
 	pio_sub->set_context_port_b(pio_fdd, SIG_I8255_PORT_A, 0xff, 0);
 	pio_sub->set_context_port_c(pio_fdd, SIG_I8255_PORT_C, 0x0f, 4);
 	pio_sub->set_context_port_c(pio_fdd, SIG_I8255_PORT_C, 0xf0, -4);
+	pio_sub->clear_ports_by_cmdreg = true;
 	fdc_sub->set_context_irq(cpu_sub, SIG_CPU_IRQ, 1);
 	cpu_sub->set_context_mem(pc80s31k);
 	cpu_sub->set_context_io(pc80s31k);
@@ -524,10 +526,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88pio->set_context_port_b(pc88pio_sub, SIG_I8255_PORT_A, 0xff, 0);
 	pc88pio->set_context_port_c(pc88pio_sub, SIG_I8255_PORT_C, 0x0f, 4);
 	pc88pio->set_context_port_c(pc88pio_sub, SIG_I8255_PORT_C, 0xf0, -4);
+	pc88pio->clear_ports_by_cmdreg = true;
 	pc88pio_sub->set_context_port_a(pc88pio, SIG_I8255_PORT_B, 0xff, 0);
 	pc88pio_sub->set_context_port_b(pc88pio, SIG_I8255_PORT_A, 0xff, 0);
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0x0f, 4);
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0xf0, -4);
+	pc88pio_sub->clear_ports_by_cmdreg = true;
 	pc88fdc_sub->set_context_irq(pc88cpu_sub, SIG_CPU_IRQ, 1);
 #ifdef _FDC_DEBUG_LOG
 	pc88fdc_sub->set_context_cpu(pc88cpu_sub);

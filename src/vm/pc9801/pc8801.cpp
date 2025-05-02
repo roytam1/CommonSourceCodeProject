@@ -204,6 +204,7 @@ void PC8801::reset()
 	
 	port32 = 0;	// ???
 	alu_ctrl1 = alu_ctrl2 = 0;
+	opn_busy = true;
 	
 	// crtc
 	crtc_cmd = crtc_ptr = 0;
@@ -744,6 +745,13 @@ uint32 PC8801::read_io8(uint32 addr)
 	case 0x40:
 		return (vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0);
 	case 0x44:
+		val = d_opn->read_io8(addr);
+		if(opn_busy) {
+			// show busy flag for first access (for ALPHA)
+			val |= 0x80;
+			opn_busy = false;
+		}
+		return val;
 	case 0x45:
 #ifdef HAS_YM2608
 	case 0x46:

@@ -76,7 +76,7 @@ void EVENT::reset()
 	if(sound_tmp) {
 		memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	}
-	buffer_ptr = 0;
+//	buffer_ptr = 0;
 	
 #ifdef _DEBUG_LOG
 	initialize_done = true;

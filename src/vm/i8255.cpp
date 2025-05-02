@@ -47,9 +47,11 @@ void I8255::write_io8(uint32 addr, uint32 data)
 			port[1].mode = (data >> 2) & 1;
 			port[2].rmask = ((data & 8) ? 0xf0 : 0) | ((data & 1) ? 0xf : 0);
 			// clear ports
-			write_io8(0, 0);
-			write_io8(1, 0);
-			write_io8(2, 0);
+			if(clear_ports_by_cmdreg) {
+				write_io8(0, 0);
+				write_io8(1, 0);
+				write_io8(2, 0);
+			}
 		}
 		else {
 			uint32 val = port[2].wreg;

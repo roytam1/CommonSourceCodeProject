@@ -59,6 +59,7 @@ private:
 	int vram_wait_clocks;
 #endif
 	int busreq_clocks;
+	bool opn_busy;
 	
 	// crtc
 	uint8 crtc_cmd, crtc_ptr;
