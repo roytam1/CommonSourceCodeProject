@@ -1317,16 +1317,15 @@ void UPD765A::open_disk(_TCHAR path[], int drv)
 {
 	if(drv < MAX_DRIVE) {
 		disk[drv]->open(path);
-#ifdef UPD765A_MEDIA_CHANGE
-		// media is changed
 		if(disk[drv]->changed) {
 #ifdef _FDC_DEBUG_LOG
 			emu->out_debug("FDC: Disk Changed (Drive=%d)\n", drv);
 #endif
-			fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;
-			set_irq(true);
+			if(raise_irq_when_media_changed) {
+				fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;
+				set_irq(true);
+			}
 		}
-#endif
 	}
 }
 
@@ -1334,14 +1333,13 @@ void UPD765A::close_disk(int drv)
 {
 	if(drv < MAX_DRIVE && disk[drv]->inserted) {
 		disk[drv]->close();
-#ifdef UPD765A_MEDIA_CHANGE
-		// media is ejected
 #ifdef _FDC_DEBUG_LOG
 		emu->out_debug("FDC: Disk Ejected (Drive=%d)\n", drv);
 #endif
-		fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;
-		set_irq(true);
-#endif
+		if(raise_irq_when_media_changed) {
+			fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;
+			set_irq(true);
+		}
 	}
 }
 

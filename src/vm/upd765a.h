@@ -121,6 +121,7 @@ public:
 #ifdef _FDC_DEBUG_LOG
 		d_cpu = NULL;
 #endif
+		raise_irq_when_media_changed = false;
 	}
 	~UPD765A() {}
 	
@@ -166,6 +167,7 @@ public:
 	uint8 media_type(int drv);
 	void set_drive_type(int drv, uint8 type);
 	uint8 get_drive_type(int drv);
+	bool raise_irq_when_media_changed;
 };
 
 #endif

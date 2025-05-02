@@ -922,7 +922,7 @@ void PC8801::draw_text()
 //	if(!line200 || (crtc_reg[0][1] & 0x80)) {
 //		char_lines >>= 1;
 //	}
-	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : ((crtc_reg[0][4] & 0x1f) + 1) * 2;
+	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : (crtc_reg[0][4] & 0x1f) + 1;
 	uint8 attribs[80], flags[256];
 	if(attrib_num == 0) {
 		memset(attribs, 0xe0, sizeof(attribs));
@@ -934,7 +934,7 @@ void PC8801::draw_text()
 		if(attrib_num != 0) {
 			memset(flags, 0, sizeof(flags));
 			for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
-				flags[get_crtc_buffer(ofs + i + 80) & 0xff] = 1;
+				flags[get_crtc_buffer(ofs + i + 80) & 0x7f] = 1;
 			}
 			for(int cx = 0, pos = 0; cx < width && cx < 80; cx++) {
 				if(flags[cx]) {

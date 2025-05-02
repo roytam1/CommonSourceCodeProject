@@ -103,6 +103,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_ch3(fdc);	// 640KB
 	fdc->set_context_irq(pic, SIG_I8259_IR6, 1);
 	fdc->set_context_drq(dma, SIG_UPD71071_CH3, 1);
+	fdc->raise_irq_when_media_changed = true;
 	
 	bios->set_context_fdc(fdc);
 #ifdef _PC98HA

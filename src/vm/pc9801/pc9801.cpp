@@ -239,13 +239,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(SUPPORT_OLD_FDD_IF)
 	fdc_2hd->set_context_irq(floppy, SIG_FLOPPY_2HD_IRQ, 1);
 	fdc_2hd->set_context_drq(floppy, SIG_FLOPPY_2HD_DRQ, 1);
+	fdc_2hd->raise_irq_when_media_changed = true;
 	fdc_2dd->set_context_irq(floppy, SIG_FLOPPY_2DD_IRQ, 1);
 	fdc_2dd->set_context_drq(floppy, SIG_FLOPPY_2DD_DRQ, 1);
+	fdc_2dd->raise_irq_when_media_changed = true;
 	floppy->set_context_fdc_2hd(fdc_2hd);
 	floppy->set_context_fdc_2dd(fdc_2dd);
 #else
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
+	fdc->raise_irq_when_media_changed = true;
 	floppy->set_context_fdc(fdc);
 #endif
 	floppy->set_context_dma(dma);
