@@ -33,8 +33,9 @@ void YM2203::reset()
 void YM2203::write_io8(uint32 addr, uint32 data)
 {
 	if(addr & 1) {
-		if(ch == 7)
+		if(ch == 7) {
 			mode = data;
+		}
 		else if(ch == 14 || ch == 15) {
 			int p = ch - 14;
 			if(port[p].wreg != data || port[p].first) {
@@ -53,53 +54,64 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 	else {
 		ch = data;
 		// prescaler
-		if(0x2d <= ch && ch <= 0x2f)
+		if(0x2d <= ch && ch <= 0x2f) {
 			opn->SetReg(ch, 0);
+		}
 	}
 }
 
 uint32 YM2203::read_io8(uint32 addr)
 {
 	if(addr & 1) {
-		if(ch == 14)
+		if(ch == 14) {
 			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
-		else if(ch == 15)
+		}
+		else if(ch == 15) {
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
-		else
+		}
+		else {
 			return opn->GetReg(ch);
+		}
 	}
-	else
+	else {
 		return opn->ReadStatus();
+	}
 }
 
 void YM2203::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_YM2203_PORT_A)
+	if(id == SIG_YM2203_PORT_A) {
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
-	else if(id == SIG_YM2203_PORT_B)
+	}
+	else if(id == SIG_YM2203_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
-	else if(id == SIG_YM2203_MUTE)
+	}
+	else if(id == SIG_YM2203_MUTE) {
 		mute = ((data & mask) != 0);
+	}
 }
 
 void YM2203::event_vline(int v, int clock)
 {
 	bool next = opn->Count(usec);
 	if(irq != next) {
-		for(int i = 0; i < dcount_irq; i++)
+		for(int i = 0; i < dcount_irq; i++) {
 			d_irq[i]->write_signal(did_irq[i], next ? 0xffffffff : 0, dmask_irq[i]);
+		}
 		irq = next;
 	}
 }
 
 void YM2203::mix(int32* buffer, int cnt)
 {
-	if(mute)
+	if(mute) {
 		return;
+	}
 	_memset(sound_tmp, 0, cnt * 2 * sizeof(int32));
 	opn->Mix(sound_tmp, cnt);
-	for(int i = 0, j = 0; i < cnt; i++, j += 2)
-		buffer[i] = sound_tmp[j];
+	for(int i = 0, j = 0; i < cnt; i++, j += 2) {
+		buffer[i] += sound_tmp[j];
+	}
 }
 
 void YM2203::init(int rate, int clock, int samples, int volf, int volp)

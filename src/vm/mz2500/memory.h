@@ -60,7 +60,7 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void ipl_reset();
+	void special_reset();
 	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);

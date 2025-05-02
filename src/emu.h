@@ -251,8 +251,8 @@ public:
 	// drive virtual machine
 	void run();
 	void reset();
-#ifdef USE_IPL_RESET
-	void ipl_reset();
+#ifdef USE_SPECIAL_RESET
+	void special_reset();
 #endif
 	
 	// user interface

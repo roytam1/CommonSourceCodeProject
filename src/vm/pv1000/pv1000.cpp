@@ -60,12 +60,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	io->set_iomap_range_r(0xfc, 0xfd, joystick);
 	
-	// initialize and reset all devices
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->initialize();
-	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->reset();
+		if(device->this_device_id != event->this_device_id) {
+			device->initialize();
+		}
 	}
 }
 

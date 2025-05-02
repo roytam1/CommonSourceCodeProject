@@ -61,8 +61,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		fio->Fclose();
 		uint32 crc32 = emu->getcrc32(ipl, sizeof(ipl));
 		for(int i = 0;; i++) {
-			if(machine_ids[i][0] == -1)
+			if(machine_ids[i][0] == -1) {
 				break;
+			}
 			if(machine_ids[i][0] == crc32) {
 				machine_id = machine_ids[i][1];
 				break;
@@ -99,10 +100,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0 = new I8253(this, emu);
 	pit1 = new I8253(this, emu);
 	pic = new I8259(this, emu);
-	if(is_i286)
+	if(is_i286) {
 		i286 = new I86(this, emu);
-	else
+	}
+	else {
 		i386 = new I386(this, emu);
+	}
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	rtc = new RTC58321(this, emu);
@@ -118,10 +121,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	timer = new TIMER(this, emu);
 	
 	// set contexts
-	if(is_i286)
+	if(is_i286) {
 		event->set_context_cpu(i286);
-	else
+	}
+	else {
 		event->set_context_cpu(i386);
+	}
 	event->set_context_sound(beep);
 	
 /*	pic	0	timer
@@ -158,10 +163,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0->set_constant_clock(1, 307200);
 	pit0->set_constant_clock(2, 307200);
 	pit1->set_constant_clock(1, 1228800);
-	if(is_i286)
+	if(is_i286) {
 		pic->set_context(i286);
-	else
+	}
+	else {
 		pic->set_context(i386);
+	}
 	fdc->set_context_drq(dma, SIG_UPD71071_CH0, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	dma->set_context_memory(memory);
@@ -181,10 +188,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
 	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
 	keyboard->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
-	if(is_i286)
+	if(is_i286) {
 		memory->set_context_cpu(i286, SIG_I86_A20);
-	else
+	}
+	else {
 		memory->set_context_cpu(i386, SIG_I386_A20);
+	}
 	memory->set_machine_id(machine_id);
 	memory->set_context_fdc(fdc);
 	memory->set_context_bios(bios);
@@ -318,31 +327,31 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0xfd98, 0xfd9f, memory);	// crtc
 	io->set_iomap_single_r(0xfda0, memory);	// crtc
 	
-	// initialize and reset all devices
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
-	}
-	for(int i = 0; i < MAX_DRIVE; i++)
+	for(int i = 0; i < MAX_DRIVE; i++) {
 		bios->set_disk_handler(i, fdc->get_disk_handler(i));
+	}
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -354,11 +363,13 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 	// temporary fix...
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 }
 
 void VM::run()
@@ -408,10 +419,12 @@ uint32 VM::passed_clock(uint32 prev)
 
 uint32 VM::get_prv_pc()
 {
-	if(is_i286)
+	if(is_i286) {
 		return i286->get_prv_pc();
-	else
+	}
+	else {
 		return i386->get_prv_pc();
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -477,7 +490,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

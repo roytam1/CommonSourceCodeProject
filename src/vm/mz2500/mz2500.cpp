@@ -51,8 +51,6 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
-	uint8 opn_b = (config.monitor_type & 2) ? 0x77 : 0x37;
-	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -199,32 +197,28 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iowait_range_w(0xd8, 0xdf, 1);
 	io->set_iowait_range_w(0xe8, 0xeb, 1);
 	
-	// initialize and ipl reset all devices
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->ipl_reset();
-	}
-	
-	// set initial port status
-	opn->write_signal(SIG_YM2203_PORT_B, opn_b, 0xff);
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -236,15 +230,23 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
+	
+	// set initial port status
+	opn->write_signal(SIG_YM2203_PORT_B, (config.monitor_type & 2) ? 0x77 : 0x37, 0xff);
 }
 
-void VM::ipl_reset()
+void VM::special_reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
-		device->ipl_reset();
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->special_reset();
+	}
+	
+	// set initial port status
+	opn->write_signal(SIG_YM2203_PORT_B, (config.monitor_type & 2) ? 0x77 : 0x37, 0xff);
 }
 
 void VM::run()
@@ -385,7 +387,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

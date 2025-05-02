@@ -15,6 +15,11 @@
 #include "babbage2nd/babbage2nd.h"
 #endif
 
+// Nintendo Family BASIC
+#ifdef _FAMILYBASIC
+#include "familybasic/familybasic.h"
+#endif
+
 // FUJITSU FM-16pi
 #ifdef _FM16PI
 #include "fm16pi/fm16pi.h"

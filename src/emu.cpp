@@ -57,6 +57,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
+	vm->reset();
 }
 
 EMU::~EMU()
@@ -105,11 +106,11 @@ void EMU::reset()
 	restart_rec_sound();
 }
 
-#ifdef USE_IPL_RESET
-void EMU::ipl_reset()
+#ifdef USE_SPECIAL_RESET
+void EMU::special_reset()
 {
 	// reset virtual machine
-	vm->ipl_reset();
+	vm->special_reset();
 #ifdef USE_MEDIA
 	stop_media();
 #endif

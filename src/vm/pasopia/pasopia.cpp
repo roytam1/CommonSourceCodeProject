@@ -150,36 +150,28 @@ pio2	20	8255	out cmt, sound
 	io->set_iomap_alias_r(0x30, pio, 0);
 	io->set_iomap_alias_r(0x31, pio, 2);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
-	}
-	
-	// set initial port status
-#ifdef _LCD
-	pio1->write_signal(SIG_I8255_PORT_B, 0, 0x10);
-#else
-	pio1->write_signal(SIG_I8255_PORT_B, 0xffffffff, 0x10);
-#endif
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -191,8 +183,16 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
+	
+	// set initial port status
+#ifdef _LCD
+	pio1->write_signal(SIG_I8255_PORT_B, 0, 0x10);
+#else
+	pio1->write_signal(SIG_I8255_PORT_B, 0xffffffff, 0x10);
+#endif
 }
 
 void VM::run()
@@ -298,7 +298,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

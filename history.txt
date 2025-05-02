@@ -1,3 +1,15 @@
+8/13/2010
+
+[EMU/WIN32] reset virtual machine after emu class is initialized
+
+[VM/M6502] support M6502 and N2A03
+[VM/SN76489AN] fix mixer
+[VM/YM2151] fix mixer
+[VM/YM2203] fix mixer
+
+[FAMILYBASIC] support Nintendo Family BASIC
+
+
 8/9/2010
 
 [EMU/WIN32] disable ALT short cut key

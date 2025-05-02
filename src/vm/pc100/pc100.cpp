@@ -117,8 +117,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x3a, crtc);
 	io->set_iomap_single_w(0x3c, crtc);
 	io->set_iomap_single_w(0x3e, crtc);
-	for(int i = 0x40; i < 0x62; i++)
+	for(int i = 0x40; i < 0x62; i++) {
 		io->set_iomap_single_w(i, crtc);
+	}
 	io->set_iomap_single_w(0x80, kanji);
 	io->set_iomap_single_w(0x81, kanji);
 	io->set_iomap_single_w(0x84, kanji);
@@ -145,34 +146,34 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x3a, crtc);
 	io->set_iomap_single_r(0x3c, crtc);
 	io->set_iomap_single_r(0x3e, crtc);
-	for(int i = 0x40; i < 0x62; i++)
+	for(int i = 0x40; i < 0x62; i++) {
 		io->set_iomap_single_r(i, crtc);
+	}
 	io->set_iomap_single_r(0x80, kanji);
 	io->set_iomap_single_r(0x81, kanji);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
-	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
+		}
 	}
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -184,8 +185,9 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 }
 
 void VM::run()
@@ -301,7 +303,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

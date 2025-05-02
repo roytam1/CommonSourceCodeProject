@@ -80,7 +80,7 @@ BEGIN
     POPUP "Control"
     BEGIN
         MENUITEM "Reset",                       ID_RESET
-        MENUITEM "System Reset",                ID_IPL_RESET
+        MENUITEM "System Reset",                ID_SPECIAL_RESET
         MENUITEM SEPARATOR
         MENUITEM "CPU x1"                       ID_CPU_POWER0
         MENUITEM "CPU x2"                       ID_CPU_POWER1

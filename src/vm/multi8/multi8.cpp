@@ -120,15 +120,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0x40, 0x41, kanji);
 	io->set_iomap_range_r(0x70, 0x73, floppy);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
-		}
-	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id) {
-			device->reset();
 		}
 	}
 }

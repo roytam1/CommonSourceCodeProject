@@ -98,12 +98,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x1500, 0x17ff, display);
 	io->set_iomap_range_w(0x1800, 0x1801, crtc);
 	io->set_iomap_single_w(0x1900, sub);
-	for(int i = 0x1a00; i <= 0x1af0; i += 0x10)
+	for(int i = 0x1a00; i <= 0x1af0; i += 0x10) {
 		io->set_iomap_range_w(i, i + 3, pio);
-	for(int i = 0x1b00; i <= 0x1bff; i++)
+	}
+	for(int i = 0x1b00; i <= 0x1bff; i++) {
 		io->set_iomap_alias_w(i, psg, 1);
-	for(int i = 0x1c00; i <= 0x1cff; i++)
+	}
+	for(int i = 0x1c00; i <= 0x1cff; i++) {
 		io->set_iomap_alias_w(i, psg, 0);
+	}
 	io->set_iomap_range_w(0x1d00, 0x1eff, memory);
 	io->set_iomap_range_w(0x2000, 0x27ff, display);	// attr vram 
 	io->set_iomap_range_w(0x3000, 0x37ff, display);	// text vram
@@ -115,10 +118,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x1300, display);
 	io->set_iomap_range_r(0x1400, 0x17ff, display);
 	io->set_iomap_single_r(0x1900, sub);
-	for(int i = 0x1a00; i <= 0x1af0; i += 0x10)
+	for(int i = 0x1a00; i <= 0x1af0; i += 0x10) {
 		io->set_iomap_range_r(i, i + 2, pio);
-	for(int i = 0x1b00; i <= 0x1bff; i++)
+	}
+	for(int i = 0x1b00; i <= 0x1bff; i++) {
 		io->set_iomap_alias_r(i, psg, 1);
+	}
 	io->set_iomap_range_r(0x2000, 0x27ff, display);	// attr vram
 	io->set_iomap_range_r(0x3000, 0x37ff, display);	// text vram
 	
@@ -137,14 +142,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pce->set_context_cpu(pcecpu, SIG_HUC6260_IRQ2, SIG_HUC6260_IRQ1, SIG_HUC6260_TIRQ, SIG_HUC6260_INTMASK, SIG_HUC6260_INTSTAT);
 	pcecpu->set_context_mem(pce);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id && device->this_device_id != pceevent->this_device_id) {
 			device->initialize();
-	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
+		}
 	}
 	pce_running = false;
 }
@@ -152,15 +154,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -172,11 +176,12 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 }
 
-void VM::ipl_reset()
+void VM::special_reset()
 {
 	// nmi reset
 	cpu->write_signal(SIG_CPU_NMI, 1, 1);
@@ -185,8 +190,9 @@ void VM::ipl_reset()
 void VM::run()
 {
 	event->drive();
-	if(pce_running)
+	if(pce_running) {
 		pceevent->drive();
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -282,8 +288,9 @@ uint32 VM::pce_get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
-	if(pce_running)
+	if(pce_running) {
 		pce->draw_screen();
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -303,8 +310,9 @@ void VM::initialize_sound(int rate, int samples)
 
 uint16* VM::create_sound(int samples, bool fill)
 {
-	if(pce_running)
+	if(pce_running) {
 		return pceevent->create_sound(samples, fill);
+	}
 	return event->create_sound(samples, fill);
 }
 
@@ -314,8 +322,9 @@ uint16* VM::create_sound(int samples, bool fill)
 
 void VM::key_down(int code)
 {
-	if(!pce_running)
+	if(!pce_running) {
 		sub->key_down(code);
+	}
 }
 
 void VM::key_up(int code)
@@ -359,7 +368,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

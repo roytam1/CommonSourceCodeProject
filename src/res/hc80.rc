@@ -80,7 +80,7 @@ BEGIN
     POPUP "Control"
     BEGIN
         MENUITEM "Reset",                       ID_RESET
-        MENUITEM "System Reset",                ID_IPL_RESET
+        MENUITEM "System Reset",                ID_SPECIAL_RESET
         MENUITEM SEPARATOR
         MENUITEM "None",                        ID_HC80_RAMDISK0
         MENUITEM "Intelligent RAM Disk",        ID_HC80_RAMDISK1

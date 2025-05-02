@@ -177,34 +177,31 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0xc000, 0xdfff, cmos);
 	io->set_iomap_single_r(0xff00, system);
 	
-	// initialize and reset all devices
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
-	}
-	// set devices
-	for(int i = 0; i < MAX_DRIVE; i++)
+	for(int i = 0; i < MAX_DRIVE; i++) {
 		bios->set_disk_handler(i, fdc->get_disk_handler(i));
-	sio_kb->write_signal(SIG_I8251_DSR, 1, 1);
-	sio_sub->write_signal(SIG_I8251_DSR, 0, 0);
+	}
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -216,11 +213,17 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 	// temporary fix...
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
+	
+	// set devices
+	sio_kb->write_signal(SIG_I8251_DSR, 1, 1);
+	sio_sub->write_signal(SIG_I8251_DSR, 0, 0);
 }
 
 void VM::run()
@@ -336,7 +339,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

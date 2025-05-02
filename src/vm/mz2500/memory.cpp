@@ -62,28 +62,30 @@ void MEMORY::initialize()
 	blank = hblank = vblank = busreq = false;
 }
 
+// NOTE: IPL reset is done at system boot
+
 void MEMORY::reset()
 {
-	// init memory map
+	// ipl reset
 	bank = 0;
-	set_map(0x00);
-	set_map(0x01);
-	set_map(0x02);
-	set_map(0x03);
+	set_map(0x34);
+	set_map(0x35);
+	set_map(0x36);
+	set_map(0x37);
 	set_map(0x04);
 	set_map(0x05);
 	set_map(0x06);
 	set_map(0x07);
 }
 
-void MEMORY::ipl_reset()
+void MEMORY::special_reset()
 {
-	// init memory map
+	// reset
 	bank = 0;
-	set_map(0x34);
-	set_map(0x35);
-	set_map(0x36);
-	set_map(0x37);
+	set_map(0x00);
+	set_map(0x01);
+	set_map(0x02);
+	set_map(0x03);
 	set_map(0x04);
 	set_map(0x05);
 	set_map(0x06);

@@ -205,28 +205,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x8c10, memory);
 	io->set_iomap_single_r(0xcc10, memory);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
 		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id) {
-			device->reset();
-		}
-	}
-	
-	// initial device settings
-	pio_s->write_signal(SIG_I8255_PORT_A, 0xe3, 0xff);
-	pio_s->write_signal(SIG_I8255_PORT_B, 0xe0, 0xff);
-#ifdef _PC98HA
-	pio_p->write_signal(SIG_I8255_PORT_B, 0xde, 0xff);
-#else
-	pio_p->write_signal(SIG_I8255_PORT_B, 0xfc, 0xff);
-#endif
-	beep->write_signal(SIG_BEEP_ON, 1, 1);
-	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
 }
 
 VM::~VM()
@@ -257,6 +241,17 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
+	
+	// initial device settings
+	pio_s->write_signal(SIG_I8255_PORT_A, 0xe3, 0xff);
+	pio_s->write_signal(SIG_I8255_PORT_B, 0xe0, 0xff);
+#ifdef _PC98HA
+	pio_p->write_signal(SIG_I8255_PORT_B, 0xde, 0xff);
+#else
+	pio_p->write_signal(SIG_I8255_PORT_B, 0xfc, 0xff);
+#endif
+	beep->write_signal(SIG_BEEP_ON, 1, 1);
+	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
 }
 
 void VM::run()

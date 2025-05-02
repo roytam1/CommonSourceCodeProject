@@ -153,12 +153,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->reset();
+		}
 	}
 	
 	// set initial port status
@@ -172,15 +174,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -192,8 +196,9 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-//	for(DEVICE* device = first_device; device; device = device->next_device)
+//	for(DEVICE* device = first_device; device; device = device->next_device) {
 //		device->reset();
+//	}
 	event->reset();
 	memory->reset();
 	iotrap->do_reset();
@@ -314,7 +319,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

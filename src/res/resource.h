@@ -11,7 +11,7 @@
 #define ID_BUTTON                       1000
 
 #define ID_RESET                        40001
-#define ID_IPL_RESET                    40002
+#define ID_SPECIAL_RESET                40002
 #define ID_CPU_POWER0                   40003
 #define ID_CPU_POWER1                   40004
 #define ID_CPU_POWER2                   40005
@@ -206,6 +206,14 @@
 #ifdef _BABBAGE2ND
 #define MENU_POS_CONTROL                0
 #define MENU_POS_RAM                    1
+#endif
+
+// Nintendo Family BASIC
+#ifdef _FAMILYBASIC
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // FUJITSU FM-16pi

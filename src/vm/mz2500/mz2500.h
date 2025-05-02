@@ -42,7 +42,7 @@
 #define IRQ_RP5C15		5
 
 // device informations for win32
-#define USE_IPL_RESET
+#define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -143,7 +143,7 @@ public:
 	
 	// drive virtual machine
 	void reset();
-	void ipl_reset();
+	void special_reset();
 	void run();
 	
 	// draw screen

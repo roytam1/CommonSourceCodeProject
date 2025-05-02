@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/6/2010
+								8/13/2010
 
 --- What's this ?
 
@@ -16,7 +16,9 @@ This archive includes the all source codes of:
 	EmuZ-3500	SHARP MZ-3500 emulator
 	EmuZ-5500	SHARP MZ-5500 emulator
 	EmuZ-6500	SHARP MZ-6500 emulator
+	EmuZ-6550	SHARP MZ-6550 emulator
 	eBabbage-2nd	Gijutsu Hyoron Sha Babbage-2nd
+	eFamilyBASIC	Nintendo Family BASIC
 	eFMR-30		FUJITSU FMR-30 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
 	eFMR-60		FUJITSU FMR-60 emulator
@@ -66,8 +68,12 @@ under the GNU GENERAL PUBLIC LICENSE.
 	MAME i386 core
 - vm/i8259.*
 	Neko Project 2 and MESS 8259 core
+- vm/m6502.*
+	MAME m6502 core
 - vm/mb8877.*
 	XM7
+- vm/mc6847.*
+	MAME mc6847 core
 - vm/sn76489an.*
 	MAME SN76496 core
 - vm/tf20.*
@@ -88,6 +94,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Oh!Ishi for the chip specification info
 - vm/z80.*
 	MAME Z80 core
+- vm/familybasic
+	nester
 - vm/fmr50/bios.*
 	FM-TOWNS emulator on bochs
 	UNZ pseudo BIOS

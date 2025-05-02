@@ -26,7 +26,7 @@
 #define MAX_DRIVE		4
 
 // device informations for win32
-#define USE_IPL_RESET
+#define USE_SPECIAL_RESET
 #define USE_DIPSWITCH
 #define DIPSWITCH_DEFAULT	0x6f
 #define USE_FD1
@@ -82,7 +82,7 @@ public:
 	
 	// drive virtual machine
 	void reset();
-	void ipl_reset();
+	void special_reset();
 	void run();
 	
 	// draw screen

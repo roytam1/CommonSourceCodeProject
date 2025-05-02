@@ -29,7 +29,7 @@ void SN76489AN::reset()
 	}
 	for(int i = 0; i < 8; i += 2) {
 		regs[i + 0] = 0;
-		regs[i + 1] = 0xf;	// volume = 0
+		regs[i + 1] = 0x0f;	// volume = 0
 	}
 	noise_gen = NG_PRESET;
 	ch[3].signal = (NG_PRESET & 1) ? true : false;
@@ -41,8 +41,7 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 		index = (data >> 4) & 7;
 		int c = index >> 1;
 		
-		switch(index & 7)
-		{
+		switch(index & 7) {
 		case 0: case 2: case 4:
 			// tone : frequency
 			regs[index] = (regs[index] & 0x3f0) | (data & 0xf);
@@ -69,16 +68,16 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 	else {
 		int c = index >> 1;
 		
-		switch(index & 0x7)
-		{
+		switch(index & 0x7) {
 		case 0: case 2: case 4:
 			// tone : frequency
 			regs[index] = (regs[index] & 0xf) | (((uint16)data << 4) & 0x3f0);
 			ch[c].period = regs[index] ? regs[index] : 1;
 //			ch[c].count = 0;
 			// update noise shift frequency
-			if(index == 4 && (regs[6] & 3) == 0x3)
+			if(index == 4 && (regs[6] & 3) == 3) {
 				ch[3].period = ch[2].period << 1;
+			}
 			break;
 		}
 	}
@@ -86,60 +85,68 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 
 void SN76489AN::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_SN76489AN_MUTE)
+	if(id == SIG_SN76489AN_MUTE) {
 		mute = ((data & mask) != 0);
-	else if(id == SIG_SN76489AN_DATA)
+	}
+	else if(id == SIG_SN76489AN_DATA) {
 		val = data & mask;
+	}
 	else if(id == SIG_SN76489AN_CS) {
 		bool next = ((data & mask) != 0);
 		if(cs != next) {
-			if(!(cs = next) && !we)
+			if(!(cs = next) && !we) {
 				write_io8(0, val);
+			}
 		}
 	}
 	else if(id == SIG_SN76489AN_CS) {
 		bool next = ((data & mask) != 0);
 		if(cs != next) {
 			cs = next;
-			if(!cs && !we)
+			if(!cs && !we) {
 				write_io8(0, val);
+			}
 		}
 	}
 	else if(id == SIG_SN76489AN_WE) {
 		bool next = ((data & mask) != 0);
 		if(we != next) {
 			we = next;
-			if(!cs && !we)
+			if(!cs && !we) {
 				write_io8(0, val);
+			}
 		}
 	}
 }
 
 void SN76489AN::mix(int32* buffer, int cnt)
 {
-	if(mute)
+	if(mute) {
 		return;
+	}
 	for(int i = 0; i < cnt; i++) {
 		int32 vol = buffer[i];
 		for(int j = 0; j < 4; j++) {
-			if(!ch[j].volume)
+			if(!ch[j].volume) {
 				continue;
-			
+			}
 			ch[j].count -= diff;
 			if(ch[j].count < 0) {
 				ch[j].count += ch[j].period << 8;
 				if(j == 3) {
-					if(noise_gen & 1)
+					if(noise_gen & 1) {
 						noise_gen ^= noise_fb;
+					}
 					noise_gen >>= 1;
 					ch[3].signal = (noise_gen & 1) ? true : false;
 				}
-				else
+				else {
 					ch[j].signal = !ch[j].signal;
+				}
 			}
 			vol += ch[j].signal ? ch[j].volume : -ch[j].volume;
 		}
-		buffer[i] = vol;
+		buffer[i] += vol;
 	}
 }
 

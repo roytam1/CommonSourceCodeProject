@@ -73,29 +73,28 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x60, cmt);
 	io->set_iomap_single_r(0x90, prt);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
-	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
+		}
 	}
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -107,8 +106,9 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 }
 
 void VM::run()
@@ -194,8 +194,9 @@ uint16* VM::create_sound(int samples, bool fill)
 
 void VM::key_down(int code)
 {
-	if(!(code == 0x9 || code == 0x10 || code == 0x11))
+	if(!(code == 0x9 || code == 0x10 || code == 0x11)) {
 		key->key_down();
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -236,7 +237,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

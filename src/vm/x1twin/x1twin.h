@@ -33,7 +33,7 @@
 #define PCE_CPU_CLOCKS		7159090
 
 // device informations for win32
-#define USE_IPL_RESET
+#define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
 #define USE_CART
@@ -110,7 +110,7 @@ public:
 	
 	// drive virtual machine
 	void reset();
-	void ipl_reset();
+	void special_reset();
 	void run();
 	
 	// draw screen

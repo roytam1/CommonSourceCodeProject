@@ -140,12 +140,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x8c, 0x8d, memory);
 	io->set_iomap_single_w(0x8f, sysport);
 	io->set_iomap_range_w(0xa0, 0xa3, sio);
-	for(uint32 p = 0xae; p <= 0x1fae; p += 0x100)
+	for(uint32 p = 0xae; p <= 0x1fae; p += 0x100) {
 		io->set_iomap_single_w(p, crtc);
+	}
 //	io->set_iomap_single_w(0xaf, sasi);
 	io->set_iomap_range_w(0xc8, 0xc9, opn);
-	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100)
+	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100) {
 		io->set_iomap_single_w(p, calendar);
+	}
 	io->set_iomap_single_w(0xce, memory);
 	io->set_iomap_range_w(0xd8, 0xdb, fdc);
 	io->set_iomap_range_w(0xdc, 0xdf, floppy);
@@ -175,8 +177,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	io->set_iomap_single_r(0xaf, sasi);
 	io->set_iomap_single_r(0xbe, sysport);
 	io->set_iomap_single_r(0xca, sysport);
-	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100)
+	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100) {
 		io->set_iomap_single_r(p, calendar);
+	}
 	io->set_iomap_single_r(0xce, memory);
 	io->set_iomap_range_r(0xd8, 0xdb, fdc);
 	io->set_iomap_range_r(0xe0, 0xe2, pio0);
@@ -186,33 +189,28 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0xef, joystick);
 	io->set_iomap_single_r(0x274, memory);
 	
-	// initialize and ipl reset all devices
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
-	}
-	
-	// set initial port status
-	pio0->write_signal(SIG_I8255_PORT_B, 0x7c, 0xff);
-	opn->write_signal(SIG_YM2203_PORT_B, 0x37, 0xff);
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -224,11 +222,17 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 	// temporary fix...
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
+	
+	// set initial port status
+	pio0->write_signal(SIG_I8255_PORT_B, 0x7c, 0xff);
+	opn->write_signal(SIG_YM2203_PORT_B, 0x37, 0xff);
 }
 
 void VM::cpu_reset()
@@ -335,7 +339,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

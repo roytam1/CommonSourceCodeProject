@@ -95,15 +95,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	subcpu->set_context_mem(sub);
 	subcpu->set_context_io(sub);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
-		}
-	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id) {
-			device->reset();
 		}
 	}
 }

@@ -13,8 +13,9 @@
 void EVENT::initialize()
 {
 	// load config
-	if(!(0 <= config.cpu_power && config.cpu_power <= 4))
+	if(!(0 <= config.cpu_power && config.cpu_power <= 4)) {
 		config.cpu_power = 0;
+	}
 	power = config.cpu_power;
 	
 	// generate clocks per line and char
@@ -32,8 +33,9 @@ void EVENT::initialize()
 	accum = 0;
 	
 	// initialize event
-	for(int i = 0; i < MAX_EVENT; i++)
+	for(int i = 0; i < MAX_EVENT; i++) {
 		event[i].enable = false;
+	}
 	next_id = NO_EVENT;
 	next = past = 0;
 	event_cnt = frame_event_cnt = vline_event_cnt = 0;
@@ -41,6 +43,8 @@ void EVENT::initialize()
 	// initialize sound buffer
 	sound_buffer = NULL;
 	sound_tmp = NULL;
+	
+	first_reset = true;
 }
 
 void EVENT::initialize_sound(int rate, int samples)
@@ -59,18 +63,27 @@ void EVENT::initialize_sound(int rate, int samples)
 void EVENT::release()
 {
 	// release sound
-	if(sound_buffer)
+	if(sound_buffer) {
 		free(sound_buffer);
-	if(sound_tmp)
+	}
+	if(sound_tmp) {
 		free(sound_tmp);
+	}
 }
 
 void EVENT::reset()
 {
+	// skip the first reset request after the device is initialized
+	if(first_reset) {
+		first_reset = false;
+		return;
+	}
+	
 	// clear events (except loop event)
 	for(int i = 0; i < event_cnt; i++) {
-		if(!(event[i].enable && event[i].loop))
+		if(!(event[i].enable && event[i].loop)) {
 			event[i].enable = false;
+		}
 	}
 	
 	// get next event clock
@@ -83,22 +96,26 @@ void EVENT::reset()
 	}
 	
 	// reset sound
-	if(sound_buffer)
+	if(sound_buffer) {
 		_memset(sound_buffer, 0, sound_samples * sizeof(uint16));
-	if(sound_tmp)
+	}
+	if(sound_tmp) {
 		_memset(sound_tmp, 0, sound_samples * sizeof(int32));
+	}
 	buffer_ptr = 0;
 }
 
 void EVENT::drive()
 {
 	// run virtual machine for 1 frame period
-	for(int i = 0; i < frame_event_cnt; i++)
+	for(int i = 0; i < frame_event_cnt; i++) {
 		frame_event[i]->event_frame();
+	}
 	for(int v = 0; v < lines_per_frame; v++) {
 		// run virtual machine per line
-		for(int i = 0; i < vline_event_cnt; i++)
+		for(int i = 0; i < vline_event_cnt; i++) {
 			vline_event[i]->event_vline(v, vclocks[v]);
+		}
 		update_event(vclocks[v]);
 		update_sound();
 	}
@@ -121,16 +138,18 @@ void EVENT::update_event(int clock)
 #endif
 			int cpuclock = eventclock * cpu_power;
 			
-			for(int i = 0; i < dcount_cpu; i++)
+			for(int i = 0; i < dcount_cpu; i++) {
 				d_cpu[i]->run(cpuclock);
+			}
 			clock -= eventclock;
 			accum += eventclock;
 			past += eventclock;
 		}
 		// update event_clock
 		if(past) {
-			for(int i = 0; i < event_cnt; i++)
+			for(int i = 0; i < event_cnt; i++) {
 				event[i].clock -= past;
+			}
 			next -= past;
 			past = 0;
 		}
@@ -139,10 +158,12 @@ void EVENT::update_event(int clock)
 		while(!(next > 0 || next_id == NO_EVENT)) {
 			// run event
 			int err = event[next_id].clock;
-			if(event[next_id].loop)
+			if(event[next_id].loop) {
 				event[next_id].clock += event[next_id].loop;
-			else
+			}
+			else {
 				event[next_id].enable = false;
+			}
 			event[next_id].device->event_callback(event[next_id].event_id, err);
 			
 			// get next event clock
@@ -177,8 +198,9 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 	*regist_id = -1;
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
-			if(event_cnt < i + 1)
+			if(event_cnt < i + 1) {
 				event_cnt = i + 1;
+			}
 			int clock = (int)(cpu_clocks / 1000000. * usec + 0.5);
 			event[i].enable = true;
 			event[i].device = dev;
@@ -190,8 +212,9 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 		}
 	}
 #ifdef _DEBUG_LOG
-	if(*regist_id == -1)
+	if(*regist_id == -1) {
 		emu->out_debug(_T("EVENT: too many events !!!\n"));
+	}
 #endif
 	
 	// get next event clock
@@ -212,8 +235,9 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 	*regist_id = -1;
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
-			if(event_cnt < i + 1)
+			if(event_cnt < i + 1) {
 				event_cnt = i + 1;
+			}
 			event[i].enable = true;
 			event[i].device = dev;
 			event[i].event_id = event_id;
@@ -224,8 +248,9 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 		}
 	}
 #ifdef _DEBUG_LOG
-	if(*regist_id == -1)
+	if(*regist_id == -1) {
 		emu->out_debug(_T("EVENT: too many events !!!\n"));
+	}
 #endif
 	
 	// get next event clock
@@ -243,8 +268,9 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 void EVENT::cancel_event(int regist_id)
 {
 	// cancel registered event
-	if(0 <= regist_id && regist_id < MAX_EVENT)
+	if(0 <= regist_id && regist_id < MAX_EVENT) {
 		event[regist_id].enable = false;
+	}
 	
 	// get next event clock
 	next_id = NO_EVENT;
@@ -270,16 +296,19 @@ uint16* EVENT::create_sound(int samples, bool fill)
 {
 	// get samples to be created
 	int cnt = 0;
-	if(fill)
+	if(fill) {
 		cnt = sound_samples - buffer_ptr;
-	else
+	}
+	else {
 		cnt = (sound_samples - buffer_ptr < samples) ? sound_samples - buffer_ptr : samples;
+	}
 	
 	// create sound buffer
 	if(cnt) {
 		_memset(&sound_tmp[buffer_ptr], 0, cnt * sizeof(int32));
-		for(int i = 0; i < dcount_sound; i++)
+		for(int i = 0; i < dcount_sound; i++) {
 			d_sound[i]->mix(&sound_tmp[buffer_ptr], cnt);
+		}
 	}
 	
 	if(fill) {

@@ -7,6 +7,12 @@ devenv.com babbage2nd.vcproj /Rebuild Release
 mkdir build\babbage2nd
 copy Release\babbage2nd.exe build\babbage2nd\.
 
+devenv.com familybasic.vcproj /Rebuild Release
+mkdir build\familybasic_v2
+copy Release\familybasic.exe build\familybasic_v2\.
+mkdir build\familybasic_v3
+copy Release\familybasic.exe build\familybasic_v3\.
+
 devenv.com fmr30.vcproj /Rebuild Release
 mkdir build\fmr30
 copy Release\fmr30.exe build\fmr30\.
@@ -69,8 +75,8 @@ copy Release\mz6500.exe build\mz6500\.
 
 devenv.com pasopia.vcproj /Rebuild Release
 mkdir build\pasopia_t
-mkdir build\pasopia_oa
 copy Release\pasopia.exe build\pasopia_t\.
+mkdir build\pasopia_oa
 copy Release\pasopia.exe build\pasopia_oa\.
 
 devenv.com pasopia7.vcproj /Rebuild Release
@@ -131,8 +137,8 @@ copy Release\scv.exe build\scv\.
 
 devenv.com tk80bs.vcproj /Rebuild Release
 mkdir build\tk80bs_lv1
-mkdir build\tk80bs_lv2
 copy Release\tk80bs.exe build\tk80bs_lv1\.
+mkdir build\tk80bs_lv2
 copy Release\tk80bs.exe build\tk80bs_lv2\.
 
 devenv.com x07.vcproj /Rebuild Release

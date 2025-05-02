@@ -220,39 +220,28 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0xcc, floppy);
 	io->set_iomap_single_r(0xbe, floppy);
 	
-	// initialize and reset all devices except the event manager
+	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
-			device->reset();
-	}
-	
-	// initial device settings
-	sio_k->write_signal(SIG_I8251_DSR, 1, 1);		// DSR = 1
-	pio_s->write_io8(3, 0x92);
-	pio_s->write_signal(SIG_I8255_PORT_A, 0x04, 0xff);	// SW = FDD
-	pio_s->write_signal(SIG_I8255_PORT_B, 0xe1, 0xff);
-	pio_p->write_io8(3, 0x82);
-	pio_p->write_signal(SIG_I8255_PORT_B, 0x51, 0xff);
-	beep->write_signal(SIG_BEEP_ON, 1, 1);
-	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
 }
 
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -264,8 +253,19 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
+	
+	// initial device settings
+	sio_k->write_signal(SIG_I8251_DSR, 1, 1);		// DSR = 1
+	pio_s->write_io8(3, 0x92);
+	pio_s->write_signal(SIG_I8255_PORT_A, 0x04, 0xff);	// SW = FDD
+	pio_s->write_signal(SIG_I8255_PORT_B, 0xe1, 0xff);
+	pio_p->write_io8(3, 0x82);
+	pio_p->write_signal(SIG_I8255_PORT_B, 0x51, 0xff);
+	beep->write_signal(SIG_BEEP_ON, 1, 1);
+	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
 }
 
 void VM::run()
@@ -381,7 +381,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

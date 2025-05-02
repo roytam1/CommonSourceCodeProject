@@ -64,6 +64,8 @@ private:
 	int accum_samples, update_samples;
 	void update_sound();
 	
+	bool first_reset;
+	
 public:
 	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_cpu = dcount_sound = 0;

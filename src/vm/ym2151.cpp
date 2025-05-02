@@ -30,43 +30,50 @@ void YM2151::reset()
 
 void YM2151::write_io8(uint32 addr, uint32 data)
 {
-	if(addr & 1)
+	if(addr & 1) {
 		opm->SetReg(ch, data);
-	else
+	}
+	else {
 		ch = data;
+	}
 }
 
 uint32 YM2151::read_io8(uint32 addr)
 {
-	if(addr & 1)
+	if(addr & 1) {
 		return opm->ReadStatus();
+	}
 	return 0xff;
 }
 
 void YM2151::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_YM2151_MUTE)
+	if(id == SIG_YM2151_MUTE) {
 		mute = ((data & mask) != 0);
+	}
 }
 
 void YM2151::event_vline(int v, int clock)
 {
 	bool next = opn->Count(usec);
 	if(irq != next) {
-		for(int i = 0; i < dcount_irq; i++)
+		for(int i = 0; i < dcount_irq; i++) {
 			d_irq[i]->write_signal(did_irq[i], next ? 0xffffffff : 0, dmask_irq[i]);
+		}
 		irq = next;
 	}
 }
 
 void YM2151::mix(int32* buffer, int cnt)
 {
-	if(mute)
+	if(mute) {
 		return;
+	}
 	_memset(sound_tmp, 0, cnt * 2 * sizeof(int32));
 	opm->Mix(sound_tmp, cnt);
-	for(int i = 0, j = 0; i < cnt; i++, j += 2)
-		buffer[i] = sound_tmp[j];
+	for(int i = 0, j = 0; i < cnt; i++, j += 2) {
+		buffer[i] += sound_tmp[j];
+	}
 }
 
 void YM2151::init(int rate, int clock, int samples, int vol)

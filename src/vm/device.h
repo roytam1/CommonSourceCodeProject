@@ -55,10 +55,7 @@ public:
 	
 	// control
 	virtual void reset() {}
-	virtual void soft_reset() {
-		reset();
-	}
-	virtual void ipl_reset() {
+	virtual void special_reset() {
 		reset();
 	}
 	

@@ -605,10 +605,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			rec_next_time = rec_accum_time = 0;
 			break;
-#ifdef USE_IPL_RESET
-		case ID_IPL_RESET:
+#ifdef USE_SPECIAL_RESET
+		case ID_SPECIAL_RESET:
 			if(emu) {
-				emu->ipl_reset();
+				emu->special_reset();
 			}
 			rec_next_time = rec_accum_time = 0;
 			break;
