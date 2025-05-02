@@ -39,7 +39,7 @@ static void i386_task_switch(i386_state* cpustate, UINT16 selector, UINT8 nested
 
 /*************************************************************************/
 
-#define INT_DEBUG	1
+#define INT_DEBUG   1
 
 static UINT32 i386_load_protected_mode_segment(i386_state *cpustate, I386_SREG *seg, UINT64 *desc )
 {
@@ -584,25 +584,25 @@ static void i386_sreg_load(i386_state *cpustate, UINT16 selector, UINT8 reg, boo
 static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level)
 {
 	/*  I386 Interrupts/Traps/Faults:
-     *
-     *  0x00    Divide by zero
-     *  0x01    Debug exception
-     *  0x02    NMI
-     *  0x03    Int3
-     *  0x04    Overflow
-     *  0x05    Array bounds check
-     *  0x06    Illegal Opcode
-     *  0x07    FPU not available
-     *  0x08    Double fault
-     *  0x09    Coprocessor segment overrun
-     *  0x0a    Invalid task state
-     *  0x0b    Segment not present
-     *  0x0c    Stack exception
-     *  0x0d    General Protection Fault
-     *  0x0e    Page fault
-     *  0x0f    Reserved
-     *  0x10    Coprocessor error
-     */
+	 *
+	 *  0x00    Divide by zero
+	 *  0x01    Debug exception
+	 *  0x02    NMI
+	 *  0x03    Int3
+	 *  0x04    Overflow
+	 *  0x05    Array bounds check
+	 *  0x06    Illegal Opcode
+	 *  0x07    FPU not available
+	 *  0x08    Double fault
+	 *  0x09    Coprocessor segment overrun
+	 *  0x0a    Invalid task state
+	 *  0x0b    Segment not present
+	 *  0x0c    Stack exception
+	 *  0x0d    General Protection Fault
+	 *  0x0e    Page fault
+	 *  0x0f    Reserved
+	 *  0x10    Coprocessor error
+	 */
 	UINT32 v1, v2;
 	UINT32 offset, oldflags = get_flags(cpustate);
 	UINT16 segment;
@@ -856,7 +856,7 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 					REG16(SP) = i386_get_stack_ptr(cpustate,DPL);
 				if(V8086_MODE)
 				{
-					logerror("IRQ (%08x): Interrupt during V8086 task\n",cpustate->pc);
+					//logerror("IRQ (%08x): Interrupt during V8086 task\n",cpustate->pc);
 					if(type & 0x08)
 					{
 						PUSH32(cpustate,cpustate->sreg[GS].selector & 0xffff);
@@ -1090,7 +1090,7 @@ static void i286_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 	}
 
 	/* For nested tasks, we write the outgoing task's selector to the back-link field of the new TSS,
-       and set the NT flag in the EFLAGS register */
+	   and set the NT flag in the EFLAGS register */
 	if(nested != 0)
 	{
 		WRITE16(cpustate,tss+0,old_task);
@@ -1205,7 +1205,7 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 	}
 
 	/* For nested tasks, we write the outgoing task's selector to the back-link field of the new TSS,
-       and set the NT flag in the EFLAGS register */
+	   and set the NT flag in the EFLAGS register */
 	if(nested != 0)
 	{
 		WRITE32(cpustate,tss+0,old_task);
@@ -1345,7 +1345,6 @@ static void i386_protected_mode_jump(i386_state *cpustate, UINT16 seg, UINT32 of
 				else
 					i286_task_switch(cpustate,desc.selector,0);
 				return;
-				break;
 			case 0x04:  // 286 Call Gate
 			case 0x0c:  // 386 Call Gate
 				logerror("JMP: Call gate at %08x\n",cpustate->pc);
@@ -1482,7 +1481,6 @@ static void i386_protected_mode_jump(i386_state *cpustate, UINT16 seg, UINT32 of
 				else
 					i286_task_switch(cpustate,call_gate.selector,0);
 				return;
-				break;
 			default:  // invalid segment type
 				logerror("JMP: Invalid segment type (%i) to jump to.\n",desc.flags & 0x000f);
 				FAULT(FAULT_GP,segment & 0xfffc)
@@ -1634,7 +1632,6 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 				else
 					i286_task_switch(cpustate,desc.selector,1);
 				return;
-				break;
 			case 0x04:  // 286 call gate
 			case 0x0c:  // 386 call gate
 				if((desc.flags & 0x000f) == 0x04)
@@ -1911,7 +1908,6 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 				else
 					i286_task_switch(cpustate,desc.selector,1);
 				return;
-				break;
 			default:
 				logerror("CALL: Invalid special segment type (%i) to jump to.\n",desc.flags & 0x000f);
 				FAULT(FAULT_GP,selector & ~0x07)  // #GP(selector)
@@ -2308,7 +2304,7 @@ static void i386_protected_mode_iret(i386_state* cpustate, int operand32)
 			newESP = READ32(cpustate, ea+12);
 			newSS = READ32(cpustate, ea+16) & 0xffff;
 			/* Return to v86 mode */
-			logerror("IRET (%08x): Returning to Virtual 8086 mode.\n",cpustate->pc);
+			//logerror("IRET (%08x): Returning to Virtual 8086 mode.\n",cpustate->pc);
 			if(CPL != 0)
 			{
 				UINT32 oldflags = get_flags(cpustate);
@@ -2650,7 +2646,7 @@ static void i386_protected_mode_iret(i386_state* cpustate, int operand32)
 static UINT8 *cycle_table_rm[X86_NUM_CPUS];
 static UINT8 *cycle_table_pm[X86_NUM_CPUS];
 
-#define CYCLES_NUM(x)	(cpustate->cycles -= (x))
+#define CYCLES_NUM(x)   (cpustate->cycles -= (x))
 
 INLINE void CYCLES(i386_state *cpustate,int x)
 {
@@ -2926,9 +2922,9 @@ static CPU_RESET( i386 )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
-	cpustate->sreg[CS].valid	= true;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
+	cpustate->sreg[CS].valid    = true;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
 	cpustate->sreg[DS].limit = cpustate->sreg[ES].limit = cpustate->sreg[FS].limit = cpustate->sreg[GS].limit = cpustate->sreg[SS].limit = 0xffff;
@@ -3083,8 +3079,8 @@ static CPU_RESET( i486 )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3132,8 +3128,8 @@ static CPU_RESET( pentium )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3165,9 +3161,9 @@ static CPU_RESET( pentium )
 	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];
 	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];
 
-	cpustate->cpuid_id0 = 0x756e6547;	// Genu
-	cpustate->cpuid_id1 = 0x49656e69;	// ineI
-	cpustate->cpuid_id2 = 0x6c65746e;	// ntel
+	cpustate->cpuid_id0 = 0x756e6547;   // Genu
+	cpustate->cpuid_id1 = 0x49656e69;   // ineI
+	cpustate->cpuid_id2 = 0x6c65746e;   // ntel
 
 	cpustate->cpuid_max_input_value_eax = 0x01;
 	cpustate->cpu_version = REG32(EDX);
@@ -3197,8 +3193,8 @@ static CPU_RESET( mediagx )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3222,16 +3218,16 @@ static CPU_RESET( mediagx )
 	// [ 3:0] Stepping ID
 	// Family 4, Model 4 (MediaGX)
 	REG32(EAX) = 0;
-	REG32(EDX) = (4 << 8) | (4 << 4) | (1);	/* TODO: is this correct? */
+	REG32(EDX) = (4 << 8) | (4 << 4) | (1); /* TODO: is this correct? */
 
 	build_x87_opcode_table(cpustate);
 	build_opcode_table(cpustate, OP_I386 | OP_FPU | OP_I486 | OP_PENTIUM | OP_CYRIX);
 	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_MEDIAGX];
 	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_MEDIAGX];
 
-	cpustate->cpuid_id0 = 0x69727943;	// Cyri
-	cpustate->cpuid_id1 = 0x736e4978;	// xIns
-	cpustate->cpuid_id2 = 0x6d616574;	// tead
+	cpustate->cpuid_id0 = 0x69727943;   // Cyri
+	cpustate->cpuid_id1 = 0x736e4978;   // xIns
+	cpustate->cpuid_id2 = 0x6d616574;   // tead
 
 	cpustate->cpuid_max_input_value_eax = 0x01;
 	cpustate->cpu_version = REG32(EDX);
@@ -3255,8 +3251,8 @@ static CPU_RESET( pentium_pro )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3281,22 +3277,22 @@ static CPU_RESET( pentium_pro )
 	// [ 3:0] Stepping ID
 	// Family 6, Model 1 (Pentium Pro)
 	REG32(EAX) = 0;
-	REG32(EDX) = (6 << 8) | (1 << 4) | (1);	/* TODO: is this correct? */
+	REG32(EDX) = (6 << 8) | (1 << 4) | (1); /* TODO: is this correct? */
 
 	build_x87_opcode_table(cpustate);
 	build_opcode_table(cpustate, OP_I386 | OP_FPU | OP_I486 | OP_PENTIUM | OP_PPRO);
-	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
-	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
+	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
+	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
 
-	cpustate->cpuid_id0 = 0x756e6547;	// Genu
-	cpustate->cpuid_id1 = 0x49656e69;	// ineI
-	cpustate->cpuid_id2 = 0x6c65746e;	// ntel
+	cpustate->cpuid_id0 = 0x756e6547;   // Genu
+	cpustate->cpuid_id1 = 0x49656e69;   // ineI
+	cpustate->cpuid_id2 = 0x6c65746e;   // ntel
 
 	cpustate->cpuid_max_input_value_eax = 0x02;
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;		// TODO: enable relevant flags here
+	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3314,8 +3310,8 @@ static CPU_RESET( pentium_mmx )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3344,18 +3340,18 @@ static CPU_RESET( pentium_mmx )
 
 	build_x87_opcode_table(cpustate);
 	build_opcode_table(cpustate, OP_I386 | OP_FPU | OP_I486 | OP_PENTIUM | OP_MMX);
-	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
-	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
+	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
+	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
 
-	cpustate->cpuid_id0 = 0x756e6547;	// Genu
-	cpustate->cpuid_id1 = 0x49656e69;	// ineI
-	cpustate->cpuid_id2 = 0x6c65746e;	// ntel
+	cpustate->cpuid_id0 = 0x756e6547;   // Genu
+	cpustate->cpuid_id1 = 0x49656e69;   // ineI
+	cpustate->cpuid_id2 = 0x6c65746e;   // ntel
 
 	cpustate->cpuid_max_input_value_eax = 0x01;
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;		// TODO: enable relevant flags here
+	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3373,8 +3369,8 @@ static CPU_RESET( pentium2 )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3399,22 +3395,22 @@ static CPU_RESET( pentium2 )
 	// [ 3:0] Stepping ID
 	// Family 6, Model 3 (Pentium II / Klamath)
 	REG32(EAX) = 0;
-	REG32(EDX) = (6 << 8) | (3 << 4) | (1);	/* TODO: is this correct? */
+	REG32(EDX) = (6 << 8) | (3 << 4) | (1); /* TODO: is this correct? */
 
 	build_x87_opcode_table(cpustate);
 	build_opcode_table(cpustate, OP_I386 | OP_FPU | OP_I486 | OP_PENTIUM | OP_PPRO | OP_MMX);
-	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
-	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
+	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
+	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
 
-	cpustate->cpuid_id0 = 0x756e6547;	// Genu
-	cpustate->cpuid_id1 = 0x49656e69;	// ineI
-	cpustate->cpuid_id2 = 0x6c65746e;	// ntel
+	cpustate->cpuid_id0 = 0x756e6547;   // Genu
+	cpustate->cpuid_id1 = 0x49656e69;   // ineI
+	cpustate->cpuid_id2 = 0x6c65746e;   // ntel
 
 	cpustate->cpuid_max_input_value_eax = 0x02;
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;		// TODO: enable relevant flags here
+	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3432,8 +3428,8 @@ static CPU_RESET( pentium3 )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3462,18 +3458,20 @@ static CPU_RESET( pentium3 )
 
 	build_x87_opcode_table(cpustate);
 	build_opcode_table(cpustate, OP_I386 | OP_FPU | OP_I486 | OP_PENTIUM | OP_PPRO | OP_MMX | OP_SSE);
-	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
-	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
+	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
+	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
 
-	cpustate->cpuid_id0 = 0x756e6547;	// Genu
-	cpustate->cpuid_id1 = 0x49656e69;	// ineI
-	cpustate->cpuid_id2 = 0x6c65746e;	// ntel
+	cpustate->cpuid_id0 = 0x756e6547;   // Genu
+	cpustate->cpuid_id1 = 0x49656e69;   // ineI
+	cpustate->cpuid_id2 = 0x6c65746e;   // ntel
 
 	cpustate->cpuid_max_input_value_eax = 0x03;
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;		// TODO: enable relevant flags here
+	// [ 4:4] Time Stamp Counter
+	// [ D:D] PTE Global Bit
+	cpustate->feature_flags = 0x00002011;       // TODO: enable relevant flags here
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3491,8 +3489,8 @@ static CPU_RESET( pentium4 )
 	clear_cpustate(cpustate);
 
 	cpustate->sreg[CS].selector = 0xf000;
-	cpustate->sreg[CS].base		= 0xffff0000;
-	cpustate->sreg[CS].limit	= 0xffff;
+	cpustate->sreg[CS].base     = 0xffff0000;
+	cpustate->sreg[CS].limit    = 0xffff;
 	cpustate->sreg[CS].flags    = 0x009b;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
@@ -3524,18 +3522,18 @@ static CPU_RESET( pentium4 )
 
 	build_x87_opcode_table(cpustate);
 	build_opcode_table(cpustate, OP_I386 | OP_FPU | OP_I486 | OP_PENTIUM | OP_PPRO | OP_MMX | OP_SSE | OP_SSE2);
-	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
-	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];	// TODO: generate own cycle tables
+	cpustate->cycle_table_rm = cycle_table_rm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
+	cpustate->cycle_table_pm = cycle_table_pm[CPU_CYCLES_PENTIUM];  // TODO: generate own cycle tables
 
-	cpustate->cpuid_id0 = 0x756e6547;	// Genu
-	cpustate->cpuid_id1 = 0x49656e69;	// ineI
-	cpustate->cpuid_id2 = 0x6c65746e;	// ntel
+	cpustate->cpuid_id0 = 0x756e6547;   // Genu
+	cpustate->cpuid_id1 = 0x49656e69;   // ineI
+	cpustate->cpuid_id2 = 0x6c65746e;   // ntel
 
 	cpustate->cpuid_max_input_value_eax = 0x02;
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;		// TODO: enable relevant flags here
+	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }

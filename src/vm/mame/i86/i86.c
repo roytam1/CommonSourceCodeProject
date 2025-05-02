@@ -18,14 +18,14 @@ extern int i386_dasm_one(char *buffer, UINT32 eip, const UINT8 *oprom, int mode)
 
 
 /* All pre-i286 CPUs have a 1MB address space */
-#define AMASK	0xfffff
+#define AMASK   0xfffff
 
 
 /* I86 registers */
 union i8086basicregs
-{									   /* eight general registers */
-	UINT16 w[8];					   /* viewed as 16 bits registers */
-	UINT8 b[16];					   /* or as 8 bit registers */
+{                                      /* eight general registers */
+	UINT16 w[8];                       /* viewed as 16 bits registers */
+	UINT8 b[16];                       /* or as 8 bit registers */
 };
 
 struct i8086_state
@@ -36,10 +36,10 @@ struct i8086_state
 	UINT32 base[4];
 	UINT16 sregs[4];
 	UINT16 flags;
-	INT32 AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal;		/* 0 or non-0 valued flags */
+	INT32 AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal;      /* 0 or non-0 valued flags */
 	UINT8 ParityVal;
-	UINT8 TF, IF;				   /* 0 or 1 valued flags */
-	UINT8 MF;						   /* V30 mode flag */
+	UINT8 TF, IF;                  /* 0 or 1 valued flags */
+	UINT8 MF;                          /* V30 mode flag */
 	UINT8 int_vector;
 	INT8 nmi_state;
 	INT8 irq_state;
@@ -64,11 +64,11 @@ struct i8086_state
 #endif
 	int icount;
 
-	char seg_prefix;				   /* prefix segment indicator */
-	UINT8	prefix_seg;					/* The prefixed segment */
+	char seg_prefix;                   /* prefix segment indicator */
+	UINT8   prefix_seg;                 /* The prefixed segment */
 	unsigned ea;
 	UINT16 eo; /* HJB 12/13/98 effective offset of the address (before segment is added) */
-	UINT8 ea_seg;	/* effective segment of the address */
+	UINT8 ea_seg;   /* effective segment of the address */
 };
 
 #include "i86time.c"
@@ -140,7 +140,7 @@ static CPU_INIT( i80186 )
 
 static CPU_RESET( i8086 )
 {
-	memset( cpustate, 0, sizeof(*cpustate) );
+	memset(cpustate, 0, sizeof(*cpustate));
 
 	cpustate->sregs[CS] = 0xffff;
 	cpustate->base[CS] = SegBase(CS);
@@ -251,9 +251,11 @@ static CPU_EXECUTE( i8086 )
 	cpustate->extra_cycles = 0;
 
 	int passed_icount = base_icount - cpustate->icount;
+
 	if (cpustate->icount > 0 && cpustate->busreq) {
 		cpustate->icount = 0;
 	}
+
 	return passed_icount;
 }
 
@@ -317,9 +319,11 @@ static CPU_EXECUTE( i80186 )
 	cpustate->extra_cycles = 0;
 
 	int passed_icount = base_icount - cpustate->icount;
+
 	if (cpustate->icount > 0 && cpustate->busreq) {
 		cpustate->icount = 0;
 	}
+
 	return passed_icount;
 }
 

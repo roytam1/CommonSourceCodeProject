@@ -25,7 +25,7 @@
 #define DEVICE_NAME		"SHARP X1"
 #define CONFIG_NAME		"x1"
 #endif
-#define CONFIG_VERSION		0x03
+#define CONFIG_VERSION		0x04
 
 // device informations for virtual machine (x1)
 //#ifdef _X1TURBO
@@ -52,6 +52,18 @@
 #endif
 #define SUPPORT_VARIABLE_TIMING
 
+#ifdef _X1TURBO
+#define IPL_ROM_FILE_SIZE	0x8000
+#define IPL_ROM_FILE_NAME	_T("IPLROM.X1T")
+#define SUB_ROM_FILE_NAME	_T("SUBROM.X1T")
+#define KBD_ROM_FILE_NAME	_T("KBDROM.X1T")
+#else
+#define IPL_ROM_FILE_SIZE	0x1000
+#define IPL_ROM_FILE_NAME	_T("IPLROM.X1")
+#define SUB_ROM_FILE_NAME	_T("SUBROM.X1")
+#define KBD_ROM_FILE_NAME	_T("KBDROM.X1")
+#endif
+
 #ifdef _X1TWIN
 // device informations for virtual machine (pce)
 #define PCE_FRAMES_PER_SEC	60
@@ -61,11 +73,14 @@
 
 // device informations for win32
 #define USE_SPECIAL_RESET
+#ifdef _X1TURBO
+#define USE_DIPSWITCH
+#define DIPSWITCH_DEFAULT	0
+#endif
 #define USE_FD1
 #define USE_FD2
 #define FD_BASE_NUMBER		0
 #define USE_TAPE
-#define USE_TAPE_BUTTON
 #define TAPE_TAP
 #ifdef _X1TWIN
 #define USE_CART
@@ -105,7 +120,12 @@ class FLOPPY;
 class IO;
 class JOYSTICK;
 class MEMORY;
+class PSUB;
+
+class MCS48;
+class UPD1990A;
 class SUB;
+class KEYBOARD;
 
 #ifdef _X1TWIN
 class HUC6280;
@@ -142,8 +162,17 @@ protected:
 	IO* io;
 	JOYSTICK* joy;
 	MEMORY* memory;
+	PSUB* psub;
+	
+	MCS48* cpu_sub;
+	UPD1990A* rtc_sub;
+	I8255* pio_sub;
 	SUB* sub;
 	
+	MCS48* cpu_kbd;
+	KEYBOARD* kbd;
+	
+	bool pseudo_sub_cpu;
 	int sound_device_type;
 	
 #ifdef _X1TWIN
@@ -192,8 +221,6 @@ public:
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
-	void push_play();
-	void push_stop();
 	bool now_skip();
 #ifdef _X1TWIN
 	void open_cart(_TCHAR* file_path);

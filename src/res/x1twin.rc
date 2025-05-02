@@ -114,9 +114,6 @@ BEGIN
         MENUITEM "Rec",                         ID_REC_TAPE
         MENUITEM "Close",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
-        MENUITEM "Play Button",                 ID_PLAY_BUTTON
-        MENUITEM "Stop Button",                 ID_STOP_BUTTON
-        MENUITEM SEPARATOR
         MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE

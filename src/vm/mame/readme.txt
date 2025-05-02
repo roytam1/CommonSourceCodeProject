@@ -1,1 +1,2 @@
-This package is derived from MAME 0.147
+h6280, nec		delivered from MAME 0.147
+i86, i386, softfloat	delivered from MAME 0.148

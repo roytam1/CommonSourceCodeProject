@@ -47,6 +47,7 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	uint32 read_signal(int id);
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {

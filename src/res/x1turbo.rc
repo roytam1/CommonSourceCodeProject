@@ -83,6 +83,8 @@ BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM "NMI",                         ID_SPECIAL_RESET
         MENUITEM SEPARATOR
+        MENUITEM "Keyboard Mode B",             ID_DIPSWITCH1
+        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
@@ -113,9 +115,6 @@ BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
         MENUITEM "Close",                       ID_CLOSE_TAPE
-        MENUITEM SEPARATOR
-        MENUITEM "Play Button",                 ID_PLAY_BUTTON
-        MENUITEM "Stop Button",                 ID_STOP_BUTTON
         MENUITEM SEPARATOR
         MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR

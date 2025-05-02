@@ -32,6 +32,7 @@ private:
 public:
 	FILEIO();
 	~FILEIO();
+	bool IsFileExists(_TCHAR *filename);
 	bool IsProtected(_TCHAR *filename);
 	bool Fopen(_TCHAR *filename, int mode);
 	void Fclose();

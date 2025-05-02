@@ -19,6 +19,15 @@ FILEIO::~FILEIO(void)
 	Fclose();
 }
 
+bool FILEIO::IsFileExists(_TCHAR *filename)
+{
+	DWORD attr = GetFileAttributes(filename);
+	if(attr == -1) {
+		return false;
+	}
+	return ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
+}
+
 bool FILEIO::IsProtected(_TCHAR *filename)
 {
 	return ((GetFileAttributes(filename) & FILE_ATTRIBUTE_READONLY) != 0);

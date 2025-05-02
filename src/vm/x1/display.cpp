@@ -550,11 +550,11 @@ void DISPLAY::get_cur_pcg(uint32 addr)
 
 void DISPLAY::get_cur_code_line()
 {
-#ifdef _X1TURBO
-	int ht_clock = hires ? 161 : 250;
-#else
+//#ifdef _X1TURBO
+//	int ht_clock = hires ? 161 : 250;
+//#else
 	#define ht_clock 250
-#endif
+//#endif
 	int clock = passed_clock(vblank_clock);
 	int vt_line = vt_disp * ch_height + (int)(clock / ht_clock);
 	
@@ -724,35 +724,33 @@ void DISPLAY::draw_text(int y)
 		}
 		
 		// check vertical doubled char
-		uint8 is_top = 0, is_bottom = prev_top[x];
-		if(attr & 0x40) {
-			if(is_bottom) {
-				// bottom 4 rasters of vertical doubled char
+		uint8 is_top = 0;
+		if(prev_top[x]) {
+			// bottom 4 rasters of vertical doubled char
 #ifdef _X1TURBO
-				int half = (hires && !shift) ? 8 : 4;
+			int half = (hires && !shift) ? 8 : 4;
 #else
-				#define half 4
+			#define half 4
 #endif
-				pattern_b += half;
-				pattern_r += half;
-				pattern_g += half;
+			pattern_b += half;
+			pattern_r += half;
+			pattern_g += half;
+		}
+		else if(attr & 0x40) {
+			// check next line
+			uint8 next_code = 0, next_attr = 0;
+			if(y < vt_disp - 1) {
+				uint16 addr = (src + hz_disp) & 0x7ff;
+				next_code = vram_t[addr];
+				next_attr = vram_a[addr];
+			}
+			if(code == next_code && attr == next_attr) {
+				// top 4 rasters of vertical doubled char
+				is_top = 1;
 			}
 			else {
-				// check next line
-				uint8 next_code = 0, next_attr = 0;
-				if(y < vt_disp - 1) {
-					uint16 addr = (src + hz_disp) & 0x7ff;
-					next_code = vram_t[addr];
-					next_attr = vram_a[addr];
-				}
-				if(code == next_code && attr == next_attr) {
-					// top 4 rasters of vertical doubled char
-					is_top = 1;
-				}
-				else {
-					// this is not vertical doubled char !!!
-					attr &= ~0x40;
-				}
+				// this is not vertical doubled char !!!
+				attr &= ~0x40;
 			}
 		}
 		prev_top[x] = is_top;
@@ -798,10 +796,11 @@ void DISPLAY::draw_text(int y)
 				d[7] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 			}
 		}
-		if(attr & 0x80) {
+		if((attr & 0x80) && x < width - 1) {
 			// skip next one char
 			src++;
 			x++;
+			prev_top[x] = 0;
 		}
 		src++;
 	}

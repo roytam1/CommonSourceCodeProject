@@ -501,6 +501,46 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\mcs48.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\upd1990a.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\ym2151.cpp"
 					>
 					<FileConfiguration
@@ -851,7 +891,47 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\x1\keyboard.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\x1\memory.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\x1\psub.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -974,6 +1054,14 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\mcs48.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\upd1990a.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\vm.h"
 					>
 				</File>
@@ -1075,7 +1163,15 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\x1\keyboard.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\x1\memory.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\x1\psub.h"
 					>
 				</File>
 				<File

@@ -12,10 +12,10 @@
 #define LOG(x) do { if (VERBOSE) mame_printf_debug x; } while (0)
 
 /* All post-i286 CPUs have a 16MB address space */
-#define AMASK	cpustate->amask
+#define AMASK   cpustate->amask
 
 
-#define INPUT_LINE_A20		1
+#define INPUT_LINE_A20      1
 
 #include "i286.h"
 
@@ -28,21 +28,21 @@
 /* I86 registers */
 union i80286basicregs
 {                   /* eight general registers */
-    UINT16 w[8];    /* viewed as 16 bits registers */
-    UINT8  b[16];   /* or as 8 bit registers */
+	UINT16 w[8];    /* viewed as 16 bits registers */
+	UINT8  b[16];   /* or as 8 bit registers */
 };
 
 struct i80286_state
 {
-    i80286basicregs regs;
-	UINT32	amask;			/* address mask */
-    UINT32  pc;
-    UINT32  prevpc;
-	UINT16	flags;
-	UINT16	msw;
-	UINT32	base[4];
-	UINT16	sregs[4];
-	UINT16	limit[4];
+	i80286basicregs regs;
+	UINT32  amask;          /* address mask */
+	UINT32  pc;
+	UINT32  prevpc;
+	UINT16  flags;
+	UINT16  msw;
+	UINT32  base[4];
+	UINT16  sregs[4];
+	UINT16  limit[4];
 	UINT8 rights[4];
 	bool valid[4];
 	struct {
@@ -64,15 +64,15 @@ struct i80286_state
 #ifdef SINGLE_MODE_DMA
 	DEVICE *dma;
 #endif
-	INT32	AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal; /* 0 or non-0 valued flags */
-	UINT8	ParityVal;
-	UINT8	TF, IF; 	/* 0 or 1 valued flags */
-	UINT8	int_vector;
-	INT8	nmi_state;
-	INT8	irq_state;
-	INT8	test_state;
+	INT32   AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal; /* 0 or non-0 valued flags */
+	UINT8   ParityVal;
+	UINT8   TF, IF;     /* 0 or 1 valued flags */
+	UINT8   int_vector;
+	INT8    nmi_state;
+	INT8    irq_state;
+	INT8    test_state;
 	UINT8 rep_in_progress;
-	INT32	extra_cycles;       /* extra cycles for interrupts */
+	INT32   extra_cycles;       /* extra cycles for interrupts */
 
 	int halted;         /* Is the CPU halted ? */
 	int busreq;
@@ -80,10 +80,10 @@ struct i80286_state
 
 	int icount;
 	char seg_prefix;
-	UINT8	prefix_seg;
+	UINT8   prefix_seg;
 	unsigned ea;
 	UINT16 eo; /* HJB 12/13/98 effective offset of the address (before segment is added) */
-	UINT8 ea_seg;	/* effective segment of the address */
+	UINT8 ea_seg;   /* effective segment of the address */
 };
 
 #define INT_IRQ 0x01
@@ -261,7 +261,7 @@ static CPU_EXECUTE( i80286 )
 		{
 			i80286_trap2(cpustate,e);
 		}
-    }
+	}
 
 	/* adjust for any interrupts that came in */
 	cpustate->icount -= cpustate->extra_cycles;

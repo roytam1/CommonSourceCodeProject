@@ -1,3 +1,16 @@
+5/11/2013
+
+[VM/I286] reimplement based on MAME 0.148
+[VM/I386] reimplement based on MAME 0.148
+[VM/I8255] improve mode #1 and #2
+[VM/MCS48] support mcs48 based on MAME 0.148
+
+[X1TURBO] support real sub cpu and keyboard emulation
+[X1TURBO/DISPLAY] fix routine to get currently displayed character address
+[X1TURBO/DISPLAY] fix routine to render Vx2 character
+[X1TURBO/PSUB] improve key repeat timing
+
+
 4/25/2013
 
 [VM/DATAREC] fix mzt image converter based on Bin2Wav

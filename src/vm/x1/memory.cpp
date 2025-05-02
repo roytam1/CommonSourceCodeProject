@@ -25,14 +25,6 @@
 	} \
 }
 
-#ifdef _X1TURBO
-#define ROM_FILE_SIZE	0x8000
-#define ROM_FILE_NAME	_T("IPLROM.X1T")
-#else
-#define ROM_FILE_SIZE	0x1000
-#define ROM_FILE_NAME	_T("IPLROM.X1")
-#endif
-
 void MEMORY::initialize()
 {
 	// init memory
@@ -41,12 +33,12 @@ void MEMORY::initialize()
 	
 	// load ipl
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(rom, ROM_FILE_SIZE, 1);
-		fio->Fclose();
-	} else if(fio->Fopen(emu->bios_path(ROM_FILE_NAME), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(IPL_ROM_FILE_NAME), FILEIO_READ_BINARY)) {
 		// xmillenium rom
-		fio->Fread(rom, ROM_FILE_SIZE, 1);
+		fio->Fread(rom, IPL_ROM_FILE_SIZE, 1);
+		fio->Fclose();
+	} else if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(rom, IPL_ROM_FILE_SIZE, 1);
 		fio->Fclose();
 	}
 	delete fio;

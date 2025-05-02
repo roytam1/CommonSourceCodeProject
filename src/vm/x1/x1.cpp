@@ -34,7 +34,12 @@
 #include "io.h"
 #include "joystick.h"
 #include "memory.h"
+#include "psub.h"
+
+#include "../mcs48.h"
+#include "../upd1990a.h"
 #include "sub.h"
+#include "keyboard.h"
 
 #ifdef _X1TWIN
 #include "../huc6280.h"
@@ -42,6 +47,7 @@
 #endif
 
 #include "../../config.h"
+#include "../../fileio.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -49,6 +55,10 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+	FILEIO* fio = new FILEIO();
+	pseudo_sub_cpu = !(fio->IsFileExists(emu->bios_path(SUB_ROM_FILE_NAME)) && fio->IsFileExists(emu->bios_path(KBD_ROM_FILE_NAME)));
+	delete fio;
+	
 	sound_device_type = config.sound_device_type;
 	
 	// create devices
@@ -86,10 +96,27 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	joy = new JOYSTICK(this, emu);
 	memory = new MEMORY(this, emu);
-	sub = new SUB(this, emu);
+	
+	if(pseudo_sub_cpu) {
+		psub = new PSUB(this, emu);
+	} else {
+		// sub cpu
+		cpu_sub = new MCS48(this, emu);
+		pio_sub = new I8255(this, emu);
+		rtc_sub = new UPD1990A(this, emu);
+		sub = new SUB(this, emu);
+		
+		// keyboard
+		cpu_kbd = new MCS48(this, emu);
+		kbd = new KEYBOARD(this, emu);
+	}
 	
 	// set contexts
 	event->set_context_cpu(cpu);
+	if(!pseudo_sub_cpu) {
+		event->set_context_cpu(cpu_sub, 6000000 / 15);
+		event->set_context_cpu(cpu_kbd, 6000000 / 15);
+	}
 	if(sound_device_type >= 1) {
 		event->set_context_sound(opm1);
 	}
@@ -99,8 +126,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	drec->set_context_out(pio, SIG_I8255_PORT_B, 0x02);
-	drec->set_context_remote(sub, SIG_SUB_TAPE_REMOTE, 1);
-	drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 0x04);
@@ -145,8 +170,34 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _X1TURBO
 	memory->set_context_pio(pio);
 #endif
-	sub->set_context_pio(pio);
-	sub->set_context_drec(drec);
+	
+	if(pseudo_sub_cpu) {
+		drec->set_context_remote(psub, SIG_PSUB_TAPE_REMOTE, 1);
+		drec->set_context_end(psub, SIG_PSUB_TAPE_END, 1);
+		psub->set_context_pio(pio);
+		psub->set_context_drec(drec);
+	} else {
+		// sub cpu
+		cpu_sub->set_context_io(sub);
+		drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
+		pio_sub->set_context_port_c(sub, SIG_SUB_PIO_PORT_C, 0x80, 0);
+		// pc1:break -> pb0 of 8255(main)
+		pio_sub->set_context_port_c(pio, SIG_I8255_PORT_B, 0x02, -1);
+		// pc5:ibf -> pb6 of 8255(main)
+		pio_sub->set_context_port_c(pio, SIG_I8255_PORT_B, 0x20, 1);
+		// pc7:obf -> pb5 of 8255(main)
+		pio_sub->set_context_port_c(pio, SIG_I8255_PORT_B, 0x80, -2);
+		// pc7:obf -> pb7 of 8255(sub)
+		pio_sub->set_context_port_c(pio_sub, SIG_I8255_PORT_B, 0x80, 0);
+		
+		sub->set_context_pio(pio_sub);
+		sub->set_context_rtc(rtc_sub);
+		sub->set_context_drec(drec);
+		
+		// keyboard
+		cpu_kbd->set_context_io(kbd);
+		kbd->set_context_cpu(cpu_sub);
+	}
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -180,7 +231,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	Z80_DAISY_CHAIN(dma);
 	Z80_DAISY_CHAIN(ctc);
 #endif
-	Z80_DAISY_CHAIN(sub);
+	if(pseudo_sub_cpu) {
+		Z80_DAISY_CHAIN(psub);
+	} else {
+		Z80_DAISY_CHAIN(sub);
+	}
 	
 	// i/o bus
 	if(sound_device_type >= 1) {
@@ -210,7 +265,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(int i = 0x1800; i <= 0x18ff; i += 0x10) {
 		io->set_iomap_range_rw(i, i + 1, crtc);
 	}
-	io->set_iomap_range_rw(0x1900, 0x19ff, sub);
+	if(pseudo_sub_cpu) {
+		io->set_iomap_range_rw(0x1900, 0x19ff, psub);
+	} else {
+		io->set_iomap_range_rw(0x1900, 0x19ff, sub);
+	}
 	for(int i = 0x1a00; i <= 0x1aff; i += 4) {
 		io->set_iomap_range_rw(i, i + 3, pio);
 	}
@@ -260,6 +319,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
+	}
+	if(!pseudo_sub_cpu) {
+		// load rom images after cpustate is allocated
+		cpu_sub->load_rom_image(emu->bios_path(SUB_ROM_FILE_NAME));
+		cpu_kbd->load_rom_image(emu->bios_path(KBD_ROM_FILE_NAME));
+		
+		// patch to set the current year
+		uint8 *rom = cpu_sub->get_rom_ptr();
+		if(rom[0x23] == 0xb9 && rom[0x24] == 0x35 && rom[0x25] == 0xb1) {
+			cur_time_t cur_time;
+			emu->get_host_time(&cur_time);
+			rom[0x26] = TO_BCD(cur_time.year);
+		}
 	}
 	// NOTE: motor seems to be on automatically when fdc command is requested,
 	// so motor is always on temporary
@@ -399,24 +471,30 @@ uint16* VM::create_sound(int* extra_frames)
 void VM::key_down(int code, bool repeat)
 {
 #ifdef _X1TWIN
-	if(!pce->cart_inserted() && !repeat) {
-		sub->key_down(code, false);
-	}
+	if(!repeat && !pce->cart_inserted()) {
 #else
 	if(!repeat) {
-		sub->key_down(code, false);
-	}
 #endif
+		if(pseudo_sub_cpu) {
+			psub->key_down(code, false);
+		} else {
+			kbd->key_down(code, false);
+		}
+	}
 }
 
 void VM::key_up(int code)
 {
 #ifdef _X1TWIN
 	if(!pce->cart_inserted()) {
-		sub->key_up(code);
+#endif
+		if(pseudo_sub_cpu) {
+			psub->key_up(code);
+		} else {
+			//kbd->key_up(code);
+		}
+#ifdef _X1TWIN
 	}
-#else
-	sub->key_up(code);
 #endif
 }
 
@@ -442,36 +520,40 @@ bool VM::disk_inserted(int drv)
 void VM::play_tape(_TCHAR* file_path)
 {
 	bool value = drec->play_tape(file_path);
-	sub->close_tape();
-	sub->play_tape(value);
+	if(pseudo_sub_cpu) {
+		psub->close_tape();
+		psub->play_tape(value);
+	} else {
+		sub->close_tape();
+		sub->play_tape(value);
+	}
 }
 
 void VM::rec_tape(_TCHAR* file_path)
 {
 	bool value = drec->rec_tape(file_path);
-	sub->close_tape();
-	sub->rec_tape(value);
+	if(pseudo_sub_cpu) {
+		psub->close_tape();
+		psub->rec_tape(value);
+	} else {
+		sub->close_tape();
+		sub->rec_tape(value);
+	}
 }
 
 void VM::close_tape()
 {
 	drec->close_tape();
-	sub->close_tape();
+	if(pseudo_sub_cpu) {
+		psub->close_tape();
+	} else {
+		sub->close_tape();
+	}
 }
 
 bool VM::tape_inserted()
 {
 	return drec->tape_inserted();
-}
-
-void VM::push_play()
-{
-	sub->push_play();
-}
-
-void VM::push_stop()
-{
-	sub->push_stop();
 }
 
 bool VM::now_skip()
