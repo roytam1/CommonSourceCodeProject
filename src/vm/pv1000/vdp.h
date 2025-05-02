@@ -25,6 +25,7 @@ private:
 	uint8* pcg;
 	uint8* pattern;
 	uint8* base;
+	bool force_pattern;
 	
 	void draw_pattern(int x8, int y8, uint16 top);
 	void draw_pcg(int x8, int y8, uint16 top);
@@ -35,6 +36,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	void event_callback(int event_id, int err);
 	void event_vline(int v, int clock);

@@ -1,5 +1,11 @@
+1/17/2010
+
+[PV1000/VDP] fix pattern offset register for Dig-Dag and Space Panic
+
+
 1/16/2010
 
+[VM/YM2203] support AY-3-8190/8192
 [VM/Z80SIO] fix transmit/status interrupt
 
 [SCV/SOUND] support 2nd and 3rd square wave generators (by Mr.kazz)

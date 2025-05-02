@@ -22,6 +22,11 @@ void VDP::initialize()
 	vm->regist_vline_event(this);
 }
 
+void VDP::reset()
+{
+	force_pattern = false;
+}
+
 void VDP::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {
@@ -30,11 +35,8 @@ void VDP::write_io8(uint32 addr, uint32 data)
 		pcg = base + (data << 8) + 0x400;
 		break;
 	case 0xff:
-		if(vm->get_prv_pc() == 0x000f && data == 4) {
-			// space panic ???
-			data = 0;
-		}
-		pattern = base + (data << 8);
+		pattern = base + ((data & 0x20) << 8);
+		force_pattern = ((data & 0x10) != 0);
 		break;
 	}
 }
@@ -64,11 +66,11 @@ void VDP::draw_screen()
 	for(int y = 0; y < 24; y++) {
 		int y8 = y << 3, y32 = y << 5;
 		
-		for(int x = 0; x < 32; x++) {
+		for(int x = 2; x < 30; x++) {
 			int x8 = x << 3;
 			uint8 code = vram[y32 + x];
 			
-			if(code < 0xe0) {
+			if(code < 0xe0 || force_pattern) {
 				draw_pattern(x8, y8, code << 5);
 			}
 			else {
