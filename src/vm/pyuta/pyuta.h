@@ -11,24 +11,9 @@
 #ifndef _PYUTA_H_
 #define _PYUTA_H_
 
-// device informations for win32
 #define DEVICE_NAME		"TOMY PyuTa"
 #define CONFIG_NAME		"pyuta"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		256
-#define WINDOW_HEIGHT1		192
-#define WINDOW_WIDTH2		512
-#define WINDOW_HEIGHT2		384
-
-#define USE_CART
-#define USE_DATAREC
-#define DATAREC_BINARY_ONLY
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_CAPS
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -40,6 +25,15 @@
 #define SCREEN_HEIGHT		192
 #define TMS9918A_VRAM_SIZE	0x4000
 //#define TMS9918A_LIMIT_SPRITES
+
+// device informations for win32
+#define USE_CART
+#define USE_DATAREC
+#define DATAREC_BINARY_ONLY
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
 
 #include "../../common.h"
 

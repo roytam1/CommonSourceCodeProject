@@ -26,13 +26,17 @@
 #endif
 
 // FUJITSU FMR-50
-// FUJITSU FMR-CARD
 #ifdef _FMR50
 #include "fmr50/fmr50.h"
 #endif
 
 // FUJITSU FMR-60
 #ifdef _FMR60
+#include "fmr50/fmr50.h"
+#endif
+
+// FUJITSU FMR-CARD
+#ifdef _FMRCARD
 #include "fmr50/fmr50.h"
 #endif
 

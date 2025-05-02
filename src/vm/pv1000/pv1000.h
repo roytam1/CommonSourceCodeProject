@@ -11,19 +11,9 @@
 #ifndef _PV1000_H_
 #define _PV1000_H_
 
-// device informations for win32
 #define DEVICE_NAME		"CASIO PV-1000"
 #define CONFIG_NAME		"pv1000"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		256
-#define WINDOW_HEIGHT1		192
-#define WINDOW_WIDTH2		512
-#define WINDOW_HEIGHT2		384
-
-#define USE_CART
-#define USE_KEY_TO_JOY
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	592
@@ -33,9 +23,12 @@
 #define CPU_CLOCKS		3579545
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		192
-
 #define LINES_PER_HBLANK 	51
 #define CLOCKS_PER_HBLANK	800
+
+// device informations for win32
+#define USE_CART
+#define USE_KEY_TO_JOY
 
 #include "../../common.h"
 

@@ -11,22 +11,9 @@
 #ifndef _N5200_H_
 #define _N5200_H_
 
-// device informations for win32
 #define DEVICE_NAME		"NEC N5200"
 #define CONFIG_NAME		"n5200"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_FD1
-#define USE_FD2
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -43,6 +30,14 @@
 //#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
 #define IO_ADDR_MAX		0x10000
+
+// device informations for win32
+#define USE_FD1
+#define USE_FD2
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
 
 #include "../../common.h"
 

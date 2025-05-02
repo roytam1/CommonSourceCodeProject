@@ -577,7 +577,12 @@ void UPD765A::seek(int drv, int trk)
 	// get distance
 	int seektime = 100;//(trk == fdc[drv].track) ? 100 : 40 * abs(trk - fdc[drv].track) + 500; //usec
 	
-	if(drv < MAX_DRIVE) {
+	if(drv >= MAX_DRIVE) {
+		// invalid drive number
+		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR | ST0_AT;
+		set_intr(true);
+	}
+	else {
 		fdc[drv].track = trk;
 		event_drv = drv;
 #ifdef UPD765A_WAIT_SEEK
@@ -589,11 +594,6 @@ void UPD765A::seek(int drv, int trk)
 #else
 		seek_event(drv);
 #endif
-	}
-	else {
-		// invalid drive number
-		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR | ST0_AT;
-		set_intr(true);
 	}
 }
 
@@ -608,7 +608,11 @@ void UPD765A::seek_event(int drv)
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE;
 	}
 	else {
+#ifdef UPD765A_NO_DISK_ST0_AT
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR;
+#else
+		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR | ST0_AT;
+#endif
 	}
 	set_intr(true);
 	seekstat &= ~(1 << drv);

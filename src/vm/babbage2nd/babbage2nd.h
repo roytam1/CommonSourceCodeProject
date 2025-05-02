@@ -11,18 +11,9 @@
 #ifndef _BABBAGE_2ND_H_
 #define _BABBAGE_2ND_H_
 
-// device informations for win32
 #define DEVICE_NAME		"GIJUTSU HYORON SHA Babbage-2nd"
 #define CONFIG_NAME		"babbage2nd"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		483
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		483
-
-#define USE_RAM
-#define NOTIFY_KEY_DOWN
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	300
@@ -33,13 +24,16 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		483
 
-#include "../../common.h"
-
+// device informations for win32
+#define USE_RAM
+#define NOTIFY_KEY_DOWN
 #define USE_BITMAP
 #define USE_BUTTON
 #define MAX_BUTTONS		21
 #define USE_LED
 #define MAX_LEDS		14
+
+#include "../../common.h"
 
 const struct {
 	const _TCHAR* caption;

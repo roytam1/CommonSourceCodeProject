@@ -28,10 +28,10 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	// get module path
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
-	while(app_path[pt] != '\\') {
+	while(pt >= 0 && app_path[pt] != _T('\\')) {
 		pt--;
 	}
-	app_path[pt + 1] = '\0';
+	app_path[pt + 1] = _T('\0');
 	
 	// load sound config
 	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
@@ -217,9 +217,9 @@ void EMU::push_stop()
 }
 #endif
 
-bool EMU::now_skip()
+BOOL EMU::now_skip()
 {
-	return vm->now_skip();
+	return (BOOL)vm->now_skip();
 }
 
 void EMU::update_config()

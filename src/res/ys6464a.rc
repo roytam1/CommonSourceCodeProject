@@ -103,11 +103,6 @@ BEGIN
         MENUITEM "Recent 7",                    ID_RECENT_RAM7
         MENUITEM "Recent 8",                    ID_RECENT_RAM8
     END
-    POPUP "Screen"
-    BEGIN
-        MENUITEM "Window",                      ID_SCREEN_WINDOW1
-        MENUITEM "Fullscreen",                  ID_SCREEN_FULLSCREEN
-    END
 END
 
 

@@ -11,23 +11,9 @@
 #ifndef _PC100_H_
 #define _PC100_H_
 
-// device informations for win32
 #define DEVICE_NAME		"NEC PC-100"
 #define CONFIG_NAME		"pc100"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		720
-#define WINDOW_HEIGHT1		512
-#define WINDOW_WIDTH2		512
-#define WINDOW_HEIGHT2		720
-
-#define USE_FD1
-#define USE_FD2
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCREEN_ROTATE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -47,6 +33,15 @@
 #define UPD765A_STRICT_ID
 #define UPD765A_NO_DISK_ST0_AT
 #define IO_ADDR_MAX		0x10000
+
+// device informations for win32
+#define USE_FD1
+#define USE_FD2
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCREEN_ROTATE
 
 #include "../../common.h"
 

@@ -41,11 +41,13 @@ void MEMORY::initialize()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 	wbank[addr >> 11][addr & 0x7ff] = data;
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 

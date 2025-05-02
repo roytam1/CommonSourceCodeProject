@@ -9,6 +9,7 @@
 #define ID_ACCEL_MOUSE                  105
 #define ID_BITMAP1                      106
 #define ID_BUTTON                       1000
+
 #define ID_RESET                        40001
 #define ID_IPL_RESET                    40002
 #define ID_CPU_POWER0                   40003
@@ -17,145 +18,187 @@
 #define ID_CPU_POWER3                   40006
 #define ID_CPU_POWER4                   40007
 #define ID_EXIT                         40008
-#define ID_OPEN_FD1                     40009
-#define ID_CLOSE_FD1                    40010
-#define ID_RECENT_FD11                  40011
-#define ID_RECENT_FD12                  40012
-#define ID_RECENT_FD13                  40013
-#define ID_RECENT_FD14                  40014
-#define ID_RECENT_FD15                  40015
-#define ID_RECENT_FD16                  40016
-#define ID_RECENT_FD17                  40017
-#define ID_RECENT_FD18                  40018
-#define ID_OPEN_FD2                     40019
-#define ID_CLOSE_FD2                    40020
-#define ID_RECENT_FD21                  40021
-#define ID_RECENT_FD22                  40022
-#define ID_RECENT_FD23                  40023
-#define ID_RECENT_FD24                  40024
-#define ID_RECENT_FD25                  40025
-#define ID_RECENT_FD26                  40026
-#define ID_RECENT_FD27                  40027
-#define ID_RECENT_FD28                  40028
-#define ID_OPEN_FD3                     40029
-#define ID_CLOSE_FD3                    40030
-#define ID_RECENT_FD31                  40031
-#define ID_RECENT_FD32                  40032
-#define ID_RECENT_FD33                  40033
-#define ID_RECENT_FD34                  40034
-#define ID_RECENT_FD35                  40035
-#define ID_RECENT_FD36                  40036
-#define ID_RECENT_FD37                  40037
-#define ID_RECENT_FD38                  40038
-#define ID_OPEN_FD4                     40039
-#define ID_CLOSE_FD4                    40040
-#define ID_RECENT_FD41                  40041
-#define ID_RECENT_FD42                  40042
-#define ID_RECENT_FD43                  40043
-#define ID_RECENT_FD44                  40044
-#define ID_RECENT_FD45                  40045
-#define ID_RECENT_FD46                  40046
-#define ID_RECENT_FD47                  40047
-#define ID_RECENT_FD48                  40048
-#define ID_OPEN_CART                    40049
-#define ID_CLOSE_CART                   40050
-#define ID_RECENT_CART1                 40051
-#define ID_RECENT_CART2                 40052
-#define ID_RECENT_CART3                 40053
-#define ID_RECENT_CART4                 40054
-#define ID_RECENT_CART5                 40055
-#define ID_RECENT_CART6                 40056
-#define ID_RECENT_CART7                 40057
-#define ID_RECENT_CART8                 40058
-#define ID_PLAY_DATAREC                 40059
-#define ID_REC_DATAREC                  40060
-#define ID_CLOSE_DATAREC                40061
-#define ID_RECENT_DATAREC1              40062
-#define ID_RECENT_DATAREC2              40063
-#define ID_RECENT_DATAREC3              40064
-#define ID_RECENT_DATAREC4              40065
-#define ID_RECENT_DATAREC5              40066
-#define ID_RECENT_DATAREC6              40067
-#define ID_RECENT_DATAREC7              40068
-#define ID_RECENT_DATAREC8              40069
-#define ID_OPEN_MEDIA                   40070
-#define ID_CLOSE_MEDIA                  40071
-#define ID_RECENT_MEDIA1                40072
-#define ID_RECENT_MEDIA2                40073
-#define ID_RECENT_MEDIA3                40074
-#define ID_RECENT_MEDIA4                40075
-#define ID_RECENT_MEDIA5                40076
-#define ID_RECENT_MEDIA6                40077
-#define ID_RECENT_MEDIA7                40078
-#define ID_RECENT_MEDIA8                40079
-#define ID_LOAD_RAM                     40080
-#define ID_SAVE_RAM                     40081
-#define ID_RECENT_RAM1                  40082
-#define ID_RECENT_RAM2                  40083
-#define ID_RECENT_RAM3                  40084
-#define ID_RECENT_RAM4                  40085
-#define ID_RECENT_RAM5                  40086
-#define ID_RECENT_RAM6                  40087
-#define ID_RECENT_RAM7                  40088
-#define ID_RECENT_RAM8                  40089
-#define ID_SCREEN_REC60                 40090
-#define ID_SCREEN_REC30                 40091
-#define ID_SCREEN_REC15                 40092
-#define ID_SCREEN_STOP                  40093
-#define ID_SCREEN_WINDOW1               40094
-#define ID_SCREEN_WINDOW2               40095
-#define ID_SCREEN_FULLSCREEN            40096
-#define ID_SCREEN_MONITOR_TYPE0         40105
-#define ID_SCREEN_MONITOR_TYPE1         40106
-#define ID_SCREEN_MONITOR_TYPE2         40107
-#define ID_SCREEN_MONITOR_TYPE3         40108
-#define ID_SCREEN_SCANLINE              40109
-#define ID_SOUND_REC                    40110
-#define ID_SOUND_STOP                   40111
-#define ID_SOUND_FREQ0                  40112
-#define ID_SOUND_FREQ1                  40113
-#define ID_SOUND_FREQ2                  40114
-#define ID_SOUND_FREQ3                  40115
-#define ID_SOUND_FREQ4                  40116
-#define ID_SOUND_FREQ5                  40117
-#define ID_SOUND_FREQ6                  40118
-#define ID_SOUND_FREQ7                  40119
-#define ID_SOUND_LATE0                  40120
-#define ID_SOUND_LATE1                  40121
-#define ID_SOUND_LATE2                  40122
-#define ID_SOUND_LATE3                  40123
-#define ID_AUTOKEY_START                40136
-#define ID_AUTOKEY_STOP                 40137
-#define ID_JOYKEY_DIR0                  40138
-#define ID_JOYKEY_DIR1                  40139
-#define ID_JOYKEY_DIR2                  40140
-#define ID_JOYKEY_DIR3                  40141
-#define ID_JOYKEY_DIR4                  40142
-#define ID_JOYKEY_BTN0                  40143
-#define ID_JOYKEY_BTN1                  40144
-#define ID_JOYKEY_BTN2                  40145
-#define ID_DIPSWITCH1                   40146
-#define ID_DIPSWITCH2                   40147
-#define ID_DIPSWITCH3                   40148
-#define ID_DIPSWITCH4                   40149
-#define ID_DIPSWITCH5                   40150
-#define ID_DIPSWITCH6                   40151
-#define ID_DIPSWITCH7                   40152
-#define ID_DIPSWITCH8                   40153
-#define ID_HC80_RAMDISK0                40154
-#define ID_HC80_RAMDISK1                40155
-#define ID_HC80_RAMDISK2                40156
-#define ID_PLAY_BUTTON                  40157
-#define ID_STOP_BUTTON                  40158
-#define ID_OPEN_MZT                     40159
-#define ID_RECENT_MZT1                  40160
-#define ID_RECENT_MZT2                  40161
-#define ID_RECENT_MZT3                  40162
-#define ID_RECENT_MZT4                  40163
-#define ID_RECENT_MZT5                  40164
-#define ID_RECENT_MZT6                  40165
-#define ID_RECENT_MZT7                  40166
-#define ID_RECENT_MZT8                  40167
+
+#define ID_AUTOKEY_START                40011
+#define ID_AUTOKEY_STOP                 40012
+#define ID_DIPSWITCH1                   40021
+#define ID_DIPSWITCH2                   40022
+#define ID_DIPSWITCH3                   40023
+#define ID_DIPSWITCH4                   40024
+#define ID_DIPSWITCH5                   40025
+#define ID_DIPSWITCH6                   40026
+#define ID_DIPSWITCH7                   40027
+#define ID_DIPSWITCH8                   40028
+#define ID_HC80_RAMDISK0                40031
+#define ID_HC80_RAMDISK1                40032
+#define ID_HC80_RAMDISK2                40033
+
+#define ID_OPEN_FD1                     40101
+#define ID_CLOSE_FD1                    40102
+#define ID_RECENT_FD11                  40111
+#define ID_RECENT_FD12                  40112
+#define ID_RECENT_FD13                  40113
+#define ID_RECENT_FD14                  40114
+#define ID_RECENT_FD15                  40115
+#define ID_RECENT_FD16                  40116
+#define ID_RECENT_FD17                  40117
+#define ID_RECENT_FD18                  40118
+
+#define ID_OPEN_FD2                     40201
+#define ID_CLOSE_FD2                    40202
+#define ID_RECENT_FD21                  40211
+#define ID_RECENT_FD22                  40212
+#define ID_RECENT_FD23                  40213
+#define ID_RECENT_FD24                  40214
+#define ID_RECENT_FD25                  40215
+#define ID_RECENT_FD26                  40216
+#define ID_RECENT_FD27                  40217
+#define ID_RECENT_FD28                  40218
+
+#define ID_OPEN_FD3                     40301
+#define ID_CLOSE_FD3                    40302
+#define ID_RECENT_FD31                  40311
+#define ID_RECENT_FD32                  40312
+#define ID_RECENT_FD33                  40313
+#define ID_RECENT_FD34                  40314
+#define ID_RECENT_FD35                  40315
+#define ID_RECENT_FD36                  40316
+#define ID_RECENT_FD37                  40317
+#define ID_RECENT_FD38                  40318
+
+#define ID_OPEN_FD4                     40401
+#define ID_CLOSE_FD4                    40402
+#define ID_RECENT_FD41                  40411
+#define ID_RECENT_FD42                  40412
+#define ID_RECENT_FD43                  40413
+#define ID_RECENT_FD44                  40414
+#define ID_RECENT_FD45                  40415
+#define ID_RECENT_FD46                  40416
+#define ID_RECENT_FD47                  40417
+#define ID_RECENT_FD48                  40418
+
+#define ID_OPEN_CART                    40501
+#define ID_CLOSE_CART                   40502
+#define ID_RECENT_CART1                 40511
+#define ID_RECENT_CART2                 40512
+#define ID_RECENT_CART3                 40513
+#define ID_RECENT_CART4                 40514
+#define ID_RECENT_CART5                 40515
+#define ID_RECENT_CART6                 40516
+#define ID_RECENT_CART7                 40517
+#define ID_RECENT_CART8                 40518
+
+#define ID_PLAY_DATAREC                 40601
+#define ID_REC_DATAREC                  40602
+#define ID_CLOSE_DATAREC                40603
+#define ID_PLAY_BUTTON                  40604
+#define ID_STOP_BUTTON                  40605
+#define ID_RECENT_DATAREC1              40611
+#define ID_RECENT_DATAREC2              40612
+#define ID_RECENT_DATAREC3              40613
+#define ID_RECENT_DATAREC4              40614
+#define ID_RECENT_DATAREC5              40615
+#define ID_RECENT_DATAREC6              40616
+#define ID_RECENT_DATAREC7              40617
+#define ID_RECENT_DATAREC8              40618
+
+#define ID_OPEN_MEDIA                   40701
+#define ID_CLOSE_MEDIA                  40702
+#define ID_RECENT_MEDIA1                40711
+#define ID_RECENT_MEDIA2                40712
+#define ID_RECENT_MEDIA3                40713
+#define ID_RECENT_MEDIA4                40714
+#define ID_RECENT_MEDIA5                40715
+#define ID_RECENT_MEDIA6                40716
+#define ID_RECENT_MEDIA7                40717
+#define ID_RECENT_MEDIA8                40718
+
+#define ID_LOAD_RAM                     40801
+#define ID_SAVE_RAM                     40802
+#define ID_RECENT_RAM1                  40811
+#define ID_RECENT_RAM2                  40812
+#define ID_RECENT_RAM3                  40813
+#define ID_RECENT_RAM4                  40814
+#define ID_RECENT_RAM5                  40815
+#define ID_RECENT_RAM6                  40816
+#define ID_RECENT_RAM7                  40817
+#define ID_RECENT_RAM8                  40818
+
+#define ID_OPEN_MZT                     40901
+#define ID_RECENT_MZT1                  40911
+#define ID_RECENT_MZT2                  40912
+#define ID_RECENT_MZT3                  40913
+#define ID_RECENT_MZT4                  40914
+#define ID_RECENT_MZT5                  40915
+#define ID_RECENT_MZT6                  40916
+#define ID_RECENT_MZT7                  40917
+#define ID_RECENT_MZT8                  40918
+
+#define ID_SCREEN_REC60                 41001
+#define ID_SCREEN_REC30                 41002
+#define ID_SCREEN_REC15                 41003
+#define ID_SCREEN_STOP                  41004
+#define ID_SCREEN_WINDOW1               41011
+#define ID_SCREEN_WINDOW2               41012
+#define ID_SCREEN_WINDOW3               41013
+#define ID_SCREEN_WINDOW4               41014
+#define ID_SCREEN_WINDOW5               41015
+#define ID_SCREEN_WINDOW6               41016
+#define ID_SCREEN_WINDOW7               41017
+#define ID_SCREEN_WINDOW8               41018
+#define ID_SCREEN_FULLSCREEN1           41021
+#define ID_SCREEN_FULLSCREEN2           41022
+#define ID_SCREEN_FULLSCREEN3           41023
+#define ID_SCREEN_FULLSCREEN4           41024
+#define ID_SCREEN_FULLSCREEN5           41025
+#define ID_SCREEN_FULLSCREEN6           41026
+#define ID_SCREEN_FULLSCREEN7           41027
+#define ID_SCREEN_FULLSCREEN8           41028
+#define ID_SCREEN_FULLSCREEN9           41029
+#define ID_SCREEN_FULLSCREEN10          41030
+#define ID_SCREEN_FULLSCREEN11          41031
+#define ID_SCREEN_FULLSCREEN12          41032
+#define ID_SCREEN_FULLSCREEN13          41033
+#define ID_SCREEN_FULLSCREEN14          41034
+#define ID_SCREEN_FULLSCREEN15          41035
+#define ID_SCREEN_FULLSCREEN16          41036
+#define ID_SCREEN_FULLSCREEN17          41037
+#define ID_SCREEN_FULLSCREEN18          41038
+#define ID_SCREEN_FULLSCREEN19          41039
+#define ID_SCREEN_FULLSCREEN20          41040
+#define ID_SCREEN_STRETCH               41041
+
+#define ID_SCREEN_MONITOR_TYPE0         41051
+#define ID_SCREEN_MONITOR_TYPE1         41052
+#define ID_SCREEN_MONITOR_TYPE2         41053
+#define ID_SCREEN_MONITOR_TYPE3         41054
+#define ID_SCREEN_SCANLINE              41055
+
+#define ID_SOUND_REC                    41101
+#define ID_SOUND_STOP                   41102
+#define ID_SOUND_FREQ0                  41111
+#define ID_SOUND_FREQ1                  41112
+#define ID_SOUND_FREQ2                  41113
+#define ID_SOUND_FREQ3                  41114
+#define ID_SOUND_FREQ4                  41115
+#define ID_SOUND_FREQ5                  41116
+#define ID_SOUND_FREQ6                  41117
+#define ID_SOUND_FREQ7                  41118
+#define ID_SOUND_LATE0                  41121
+#define ID_SOUND_LATE1                  41122
+#define ID_SOUND_LATE2                  41123
+#define ID_SOUND_LATE3                  41124
+
+// Next default values for new objects
+// 
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NEXT_RESOURCE_VALUE        107
+#define _APS_NEXT_COMMAND_VALUE         41125
+#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_SYMED_VALUE           101
+#endif
+#endif
 
 // menu positions
 
@@ -163,7 +206,6 @@
 #ifdef _BABBAGE2ND
 #define MENU_POS_CONTROL                0
 #define MENU_POS_RAM                    1
-#define MENU_POS_SCREEN                 2
 #endif
 
 // FUJITSU FM-16pi
@@ -493,16 +535,4 @@
 #ifdef _YS6464A
 #define MENU_POS_CONTROL                0
 #define MENU_POS_RAM                    1
-#define MENU_POS_SCREEN                 2
-#endif
-
-// Next default values for new objects
-// 
-#ifdef APSTUDIO_INVOKED
-#ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        107
-#define _APS_NEXT_COMMAND_VALUE         40168
-#define _APS_NEXT_CONTROL_VALUE         1001
-#define _APS_NEXT_SYMED_VALUE           101
-#endif
 #endif

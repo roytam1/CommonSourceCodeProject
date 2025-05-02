@@ -11,28 +11,9 @@
 #ifndef _X07_H_
 #define _X07_H_
 
-// device informations for win32
 #define DEVICE_NAME		"CANON X-07"
 #define CONFIG_NAME		"x07"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		240
-#define WINDOW_HEIGHT1		64
-#define WINDOW_WIDTH2		480
-#define WINDOW_HEIGHT2		128
-#define TV_WINDOW_WIDTH1	256
-#define TV_WINDOW_HEIGHT1	192
-#define TV_WINDOW_WIDTH2	512
-#define TV_WINDOW_HEIGHT2	384
-
-#define USE_DATAREC
-#define DATAREC_BINARY_ONLY
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		6
-#define USE_AUTO_KEY_RELEASE	10
-#define USE_AUTO_KEY_CAPS
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -46,6 +27,20 @@
 #define TV_SCREEN_WIDTH		256
 #define TV_SCREEN_HEIGHT	192
 #define NSC800
+
+// device informations for win32
+#define WINDOW_WIDTH		(SCREEN_WIDTH * 2)
+#define WINDOW_HEIGHT		(SCREEN_HEIGHT * 2)
+#define TV_WINDOW_WIDTH		TV_SCREEN_WIDTH
+#define TV_WINDOW_HEIGHT	TV_SCREEN_HEIGHT
+
+#define USE_DATAREC
+#define DATAREC_BINARY_ONLY
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		6
+#define USE_AUTO_KEY_RELEASE	10
+#define USE_AUTO_KEY_CAPS
 
 #include "../../common.h"
 

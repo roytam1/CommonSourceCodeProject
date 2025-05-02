@@ -11,24 +11,9 @@
 #ifndef _MZ700_H_
 #define _MZ700_H_
 
-// device informations for win32
 #define DEVICE_NAME		"SHARP MZ-700"
 #define CONFIG_NAME		"mz700"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		320
-#define WINDOW_HEIGHT1		200
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_DATAREC
-#define USE_DATAREC_BUTTON
-#define USE_MZT
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_CAPS
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -41,9 +26,16 @@
 #define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
 //#define EVENT_PRECISE		4
-
-// memory wait
 #define CPU_MEMORY_WAIT
+
+// device informations for win32
+#define USE_DATAREC
+#define USE_DATAREC_BUTTON
+#define USE_MZT
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
 
 #include "../../common.h"
 

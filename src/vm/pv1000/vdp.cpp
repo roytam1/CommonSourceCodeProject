@@ -18,8 +18,7 @@ void VDP::initialize()
 
 void VDP::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xfe:
 		vram = base + (data << 8);
 		pcg = base + (data << 8) + 0x400;
@@ -47,7 +46,7 @@ void VDP::event_vline(int v, int clock)
 		vm->regist_event_by_clock(this, 0, 800, false, &id);
 	}
 	else {
-		// vsync interrupt (not pending ???)
+		// hsync interrupt (not pending ???)
 		d_cpu->set_intr_line(true, false, 0);
 	}
 }
@@ -63,16 +62,19 @@ void VDP::draw_screen()
 			int x8 = x << 3;
 			uint8 code = vram[y32 + x];
 			
-			if(code < 0xe0)
+			if(code < 0xe0) {
 				draw_pattern(x8, y8, code << 5);
-			else
+			}
+			else {
 				draw_pcg(x8, y8, (code & 0x1f) << 5);
+			}
 		}
 	}
 	for(int y = 0; y < 192; y++) {
 		scrntype* dest = emu->screen_buffer(y);
-		for(int x = 0; x < 256; x++)
+		for(int x = 0; x < 256; x++) {
 			dest[x] = palette_pc[bg[y][x] & 7];
+		}
 	}
 }
 

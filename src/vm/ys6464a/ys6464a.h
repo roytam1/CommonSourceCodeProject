@@ -11,17 +11,9 @@
 #ifndef _BABBAGE_2ND_H_
 #define _BABBAGE_2ND_H_
 
-// device informations for win32
 #define DEVICE_NAME		"SHINKO SANGYO YS-6464A"
 #define CONFIG_NAME		"ys6464a"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		357
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		357
-
-#define USE_RAM
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	300
@@ -34,13 +26,15 @@
 //#define USE_PCM1BIT
 //#define PCM1BIT_HIGH_QUALITY
 
-#include "../../common.h"
-
+// device informations for win32
+#define USE_RAM
 #define USE_BITMAP
 #define USE_BUTTON
 #define MAX_BUTTONS		21
 #define USE_LED
 #define MAX_LEDS		6
+
+#include "../../common.h"
 
 const struct {
 	const _TCHAR* caption;

@@ -11,25 +11,9 @@
 #ifndef _X1TWIN_H_
 #define _X1TWIN_H_
 
-// device informations for win32
 #define DEVICE_NAME		"SHARP X1twin"
 #define CONFIG_NAME		"x1twin"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_IPL_RESET
-#define USE_FD1
-#define USE_FD2
-#define USE_CART
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
 
 // device informations for virtual machine (x1)
 #define FRAMES_PER_10SECS	600
@@ -48,8 +32,16 @@
 #define PCE_LINES_PER_FRAME 	263
 #define PCE_CPU_CLOCKS		7159090
 
-// memory wait
-//#define CPU_MEMORY_WAIT
+// device informations for win32
+#define USE_IPL_RESET
+#define USE_FD1
+#define USE_FD2
+#define USE_CART
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCANLINE
 
 #include "../../common.h"
 

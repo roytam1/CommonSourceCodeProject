@@ -11,7 +11,6 @@
 #ifndef _PASOPIA_H_
 #define _PASOPIA_H_
 
-// device informations for win32
 #ifdef _LCD
 #define DEVICE_NAME		"TOSHIBA PASOPIA with LCD"
 #define CONFIG_NAME		"pasopialcd"
@@ -21,24 +20,6 @@
 #define CONFIG_NAME		"pasopia"
 #define CONFIG_VERSION		0x01
 #endif
-
-#ifdef _LCD
-#define WINDOW_WIDTH1		320
-#define WINDOW_HEIGHT1		128
-#define WINDOW_WIDTH2		320
-#define WINDOW_HEIGHT2		128
-#else
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-#endif
-
-#define USE_DATAREC
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
 
 // device informations for virtual machine
 #ifdef _LCD
@@ -63,11 +44,18 @@
 #define DONT_KEEP_BEEP_FREQ
 
 // irq priority
-#define IRQ_Z80PIO	0
-//			1
-#define IRQ_Z80CTC	2
-//			3-5
-#define IRQ_EXTERNAL	6
+#define IRQ_Z80PIO		0
+//				1
+#define IRQ_Z80CTC		2
+//				3-5
+#define IRQ_EXTERNAL		6
+
+// device informations for win32
+#define USE_DATAREC
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCANLINE
 
 #include "../../common.h"
 

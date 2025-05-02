@@ -21,7 +21,7 @@ private:
 	uint8* key;
 	uint8* joy;
 	uint8 column;
-	uint8 stat0, stat1;
+	uint8 status;
 	
 public:
 	JOYSTICK(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

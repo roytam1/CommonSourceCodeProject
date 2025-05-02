@@ -11,7 +11,6 @@
 #ifndef _PASOPIA7_H_
 #define _PASOPIA7_H_
 
-// device informations for win32
 #ifdef _LCD
 #define DEVICE_NAME		"TOSHIBA PASOPIA 7 with LCD"
 #define CONFIG_NAME		"pasopia7lcd"
@@ -21,28 +20,6 @@
 #define CONFIG_NAME		"pasopia7"
 #define CONFIG_VERSION		0x01
 #endif
-
-#ifdef _LCD
-#define WINDOW_WIDTH1		320
-#define WINDOW_HEIGHT1		128
-#define WINDOW_WIDTH2		320
-#define WINDOW_HEIGHT2		128
-#else
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-#endif
-
-#define USE_DATAREC
-#define USE_FD1
-#define USE_FD2
-//#define USE_FD3
-//#define USE_FD4
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
 
 // device informations for virtual machine
 #ifdef _LCD
@@ -67,6 +44,17 @@
 #define MAX_DRIVE		4
 //#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
+
+// device informations for win32
+#define USE_DATAREC
+#define USE_FD1
+#define USE_FD2
+//#define USE_FD3
+//#define USE_FD4
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCANLINE
 
 #include "../../common.h"
 

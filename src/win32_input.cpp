@@ -42,7 +42,7 @@ void EMU::initialize_input()
 	}
 	
 	// mouse emulation is disenabled
-	mouse_enable = false;
+	mouse_enabled = FALSE;
 	
 #ifdef USE_AUTO_KEY
 	// initialize autokey
@@ -55,7 +55,7 @@ void EMU::initialize_input()
 void EMU::release_input()
 {
 	// release mouse
-	if(mouse_enable) {
+	if(mouse_enabled) {
 		disenable_mouse();
 	}
 	
@@ -121,18 +121,18 @@ void EMU::update_input()
 	
 	// update mouse status
 	_memset(mouse_status, 0, sizeof(mouse_status));
-	if(mouse_enable) {
+	if(mouse_enabled) {
 		// get current status
 		POINT pt;
 		GetCursorPos(&pt);
 		ScreenToClient(main_window_handle, &pt);
-		mouse_status[0] = pt.x - window_width / 2;
-		mouse_status[1] = pt.y - window_height / 2;
+		mouse_status[0] = pt.x - display_width / 2;
+		mouse_status[1] = pt.y - display_height / 2;
 		mouse_status[2] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000 ? 1 : 0) | (GetAsyncKeyState(VK_RBUTTON) & 0x8000 ? 2 : 0);
 		// move mouse cursor to the center of window
 		if(!(mouse_status[0] == 0 && mouse_status[1] == 0)) {
-			pt.x = window_width / 2;
-			pt.y = window_height / 2;
+			pt.x = display_width / 2;
+			pt.y = display_height / 2;
 			ClientToScreen(main_window_handle, &pt);
 			SetCursorPos(pt.x, pt.y);
 		}
@@ -283,32 +283,32 @@ void EMU::press_button(int num)
 void EMU::enable_mouse()
 {
 	// enable mouse emulation
-	if(!mouse_enable) {
+	if(!mouse_enabled) {
 		// hide mouse cursor
 		ShowCursor(FALSE);
 		// move mouse cursor to the center of window
 		POINT pt;
-		pt.x = window_width / 2;
-		pt.y = window_height / 2;
+		pt.x = display_width / 2;
+		pt.y = display_height / 2;
 		ClientToScreen(main_window_handle, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
-	mouse_enable = true;
+	mouse_enabled = TRUE;
 }
 
 void EMU::disenable_mouse()
 {
 	// disenable mouse emulation
-	if(mouse_enable) {
+	if(mouse_enabled) {
 		ShowCursor(TRUE);
 	}
-	mouse_enable = false;
+	mouse_enabled = FALSE;
 }
 
 void EMU::toggle_mouse()
 {
 	// toggle mouse enable / disenable
-	if(mouse_enable) {
+	if(mouse_enabled) {
 		disenable_mouse();
 	}
 	else {

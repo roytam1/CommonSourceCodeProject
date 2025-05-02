@@ -11,23 +11,9 @@
 #ifndef _MYCOMZ80A_H_
 #define _MYCOMZ80A_H_
 
-// device informations for win32
 #define DEVICE_NAME		"Japan Electronics College MYCOMZ-80A"
 #define CONFIG_NAME		"mycomz80a"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_DATAREC
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_CAPS
-#define USE_SCANLINE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -38,6 +24,15 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 //#define EVENT_PRECISE		4
+
+// device informations for win32
+#define USE_DATAREC
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
+#define USE_SCANLINE
 
 #include "../../common.h"
 

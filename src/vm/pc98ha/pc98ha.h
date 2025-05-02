@@ -12,7 +12,6 @@
 #ifndef _PC98HA_H_
 #define _PC98HA_H_
 
-// device informations for win32
 #ifdef _PC98HA
 #define DEVICE_NAME		"NEC PC-98HA"
 #define CONFIG_NAME		"pc98ha"
@@ -21,17 +20,6 @@
 #define CONFIG_NAME		"pc98lt"
 #endif
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_FD1
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -59,6 +47,13 @@
 #ifdef _PC98HA
 //#define DOCKING_STATION
 #endif
+
+// device informations for win32
+#define USE_FD1
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
 
 #include "../../common.h"
 

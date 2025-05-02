@@ -11,15 +11,23 @@
 #ifndef _HC40_H_
 #define _HC40_H_
 
-// device informations for win32
 #define DEVICE_NAME		"EPSON HC-40"
 #define CONFIG_NAME		"hc40"
 #define CONFIG_VERSION		0x01
 
-#define WINDOW_WIDTH1		240
-#define WINDOW_HEIGHT1		64
-#define WINDOW_WIDTH2		480
-#define WINDOW_HEIGHT2		128
+// device informations for virtual machine
+#define FRAMES_PER_10SECS	720
+#define FRAMES_PER_SEC		72
+#define LINES_PER_FRAME		64
+#define CHARS_PER_LINE		1
+#define CPU_CLOCKS		3686400
+#define SCREEN_WIDTH		240
+#define SCREEN_HEIGHT		64
+#define MAX_DRIVE		4
+
+// device informations for win32
+#define WINDOW_WIDTH		(SCREEN_WIDTH * 2)
+#define WINDOW_HEIGHT		(SCREEN_HEIGHT * 2)
 
 #define USE_IPL_RESET
 #define USE_DIPSWITCH
@@ -33,17 +41,6 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
-#define USE_SCREEN_X2
-
-// device informations for virtual machine
-#define FRAMES_PER_10SECS	720
-#define FRAMES_PER_SEC		72
-#define LINES_PER_FRAME		64
-#define CHARS_PER_LINE		1
-#define CPU_CLOCKS		3686400
-#define SCREEN_WIDTH		240
-#define SCREEN_HEIGHT		64
-#define MAX_DRIVE		4
 
 #include "../../common.h"
 

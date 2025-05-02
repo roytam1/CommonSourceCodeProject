@@ -11,25 +11,9 @@
 #ifndef _TK80BS_H_
 #define _TK80BS_H_
 
-// device informations for win32
 #define DEVICE_NAME		"NEC TK-80BS"
 #define CONFIG_NAME		"tk80bs"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		256
-#define WINDOW_HEIGHT1		164
-#define WINDOW_WIDTH2		512
-#define WINDOW_HEIGHT2		328
-
-#define USE_DATAREC
-#define DATAREC_BINARY_ONLY
-#define USE_RAM
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_NO_CAPS
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	599
@@ -42,6 +26,16 @@
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		164
 //#define IO_ADDR_MAX		8
+
+// device informations for win32
+#define USE_DATAREC
+#define DATAREC_BINARY_ONLY
+#define USE_RAM
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_NO_CAPS
 
 #include "../../common.h"
 

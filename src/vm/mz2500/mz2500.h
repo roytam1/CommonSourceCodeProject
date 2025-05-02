@@ -11,28 +11,9 @@
 #ifndef _MZ2500_H_
 #define _MZ2500_H_
 
-// device informations for win32
 #define DEVICE_NAME		"SHARP MZ-2500"
 #define CONFIG_NAME		"mz2500"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_IPL_RESET
-#define USE_FD1
-#define USE_FD2
-#define USE_FD3
-#define USE_FD4
-#define USE_MEDIA
-#define USE_SOCKET
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
-#define USE_MONITOR_TYPE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -53,12 +34,26 @@
 #define VRAM_WAIT
 
 // irq priority
-#define IRQ_Z80PIO	0
-#define IRQ_Z80SIO	1
-#define IRQ_CRTC	2
-#define IRQ_I8253	3
-#define IRQ_PRINTER	4
-#define IRQ_RP5C15	5
+#define IRQ_Z80PIO		0
+#define IRQ_Z80SIO		1
+#define IRQ_CRTC		2
+#define IRQ_I8253		3
+#define IRQ_PRINTER		4
+#define IRQ_RP5C15		5
+
+// device informations for win32
+#define USE_IPL_RESET
+#define USE_FD1
+#define USE_FD2
+#define USE_FD3
+#define USE_FD4
+#define USE_MEDIA
+#define USE_SOCKET
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCANLINE
+#define USE_MONITOR_TYPE
 
 #include "../../common.h"
 

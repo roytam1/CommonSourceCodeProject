@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x23
+#define FILE_VERSION	0x30
 
 void init_config();
 void load_config();
@@ -25,45 +25,54 @@ typedef struct {
 	
 	// recent files
 #ifdef USE_CART
-	_TCHAR recent_cart[8][_MAX_PATH];
+	_TCHAR initial_cart_path[_MAX_PATH];
+	_TCHAR recent_cart_path[8][_MAX_PATH];
 #endif
 #ifdef USE_FD1
-	_TCHAR recent_disk[4][8][_MAX_PATH];
+	_TCHAR initial_disk_path[_MAX_PATH];
+	_TCHAR recent_disk_path[4][8][_MAX_PATH];
 #endif
 #ifdef USE_DATAREC
-	_TCHAR recent_datarec[8][_MAX_PATH];
+	_TCHAR initial_datarec_path[_MAX_PATH];
+	_TCHAR recent_datarec_path[8][_MAX_PATH];
 #endif
 #ifdef USE_MEDIA
-	_TCHAR recent_media[8][_MAX_PATH];
+	_TCHAR initial_media_path[_MAX_PATH];
+	_TCHAR recent_media_path[8][_MAX_PATH];
 #endif
 #ifdef USE_RAM
-	_TCHAR recent_ram[8][_MAX_PATH];
+	_TCHAR initial_ram_path[_MAX_PATH];
+	_TCHAR recent_ram_path[8][_MAX_PATH];
 #endif
 #ifdef USE_MZT
-	_TCHAR recent_mzt[8][_MAX_PATH];
+	_TCHAR initial_mzt_path[_MAX_PATH];
+	_TCHAR recent_mzt_path[8][_MAX_PATH];
 #endif
-	// control
-	int cpu_power;		// cpu clock <<= cpu_power
+	
+	// screen
+	int window_mode;
+	bool stretch_screen;
+	
+	// sound
+	int sound_frequency;
+	int sound_latency;
+	
+	// virtual machine
+	int cpu_power;
 #ifdef USE_FD1
 	bool ignore_crc;
 #endif
-	// screen
-#ifdef USE_SCANLINE
-	bool scan_line;
-#endif
-#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
-	int monitor_type;
-#endif;
-	int window_mode;
-	// sound
-	int sound_frequency;	// 0=2000Hz, 1=4000Hz, 2=8000Hz, 3=11025Hz, 4=22050Hz, 5=44100Hz, 6=48000Hz
-	int sound_latency;	// 0=100msec, 1=200msec, 2=300msec, 3=400msec
-	// virtual machine
 #ifdef USE_DIPSWITCH
 	uint8 dipswitch;
 #endif
 #ifdef _HC80
-	int ramdisk_type;	// 0=None, 1=Intelligent ram disk, 2=Nonintelligent ram disk
+	int ramdisk_type;
+#endif
+#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
+	int monitor_type;
+#endif;
+#ifdef USE_SCANLINE
+	bool scan_line;
 #endif
 } config_t;
 

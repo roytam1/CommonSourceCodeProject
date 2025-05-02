@@ -11,27 +11,9 @@
 #ifndef _MULTI8_H_
 #define _MULTI8_H_
 
-// device informations for win32
 #define DEVICE_NAME		"MITSUBISHI Elec. MULTI 8"
 #define CONFIG_NAME		"multi8"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_DATAREC
-#define DATAREC_BINARY_ONLY
-#define USE_FD1
-#define USE_FD2
-//#define USE_FD3
-//#define USE_FD4
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_CAPS
-#define USE_SCANLINE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	599
@@ -45,6 +27,19 @@
 #define MAX_DRIVE		4
 //#define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
+
+// device informations for win32
+#define USE_DATAREC
+#define DATAREC_BINARY_ONLY
+#define USE_FD1
+#define USE_FD2
+//#define USE_FD3
+//#define USE_FD4
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
+#define USE_SCANLINE
 
 #include "../../common.h"
 

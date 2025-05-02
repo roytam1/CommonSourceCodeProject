@@ -9,6 +9,7 @@
 */
 
 #include "crtc.h"
+#include "../../config.h"
 
 void CRTC::initialize()
 {
@@ -26,14 +27,14 @@ void CRTC::initialize()
 
 void CRTC::event_vline(int v, int clock)
 {
-	if(v == 512)
+	if(v == 512) {
 		d_pic->write_signal(did_pic, 1, 1);
+	}
 }
 
 void CRTC::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x38:
 		sel = data;
 		break;
@@ -97,8 +98,7 @@ uint32 CRTC::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr & 0x3ff)
-	{
+	switch(addr & 0x3ff) {
 	case 0x38:
 		return sel;
 	case 0x3a:
@@ -214,10 +214,21 @@ void CRTC::draw_screen()
 	if(stat_f) {
 		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 512 - 8; y < 512; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 720 - 8; x < 720; x++)
-				dest[x] = col;
+		if(config.monitor_type) {
+			for(int y = 0; y < 8; y++) {
+				scrntype *dest = emu->screen_buffer(y);
+				for(int x = 720 - 8; x < 720; x++) {
+					dest[x] = col;
+				}
+			}
+		}
+		else {
+			for(int y = 512 - 8; y < 512; y++) {
+				scrntype *dest = emu->screen_buffer(y);
+				for(int x = 720 - 8; x < 720; x++) {
+					dest[x] = col;
+				}
+			}
 		}
 	}
 }

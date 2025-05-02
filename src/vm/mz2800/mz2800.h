@@ -11,26 +11,9 @@
 #ifndef _MZ2800_H_
 #define _MZ2800_H_
 
-// device informations for win32
 #define DEVICE_NAME		"SHARP MZ-2800"
 #define CONFIG_NAME		"mz2800"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-//#define USE_IPL_RESET
-#define USE_FD1
-#define USE_FD2
-#define USE_FD3
-#define USE_FD4
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
-#define USE_MONITOR_TYPE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -44,6 +27,17 @@
 #define HAS_I286
 #define I8259_MAX_CHIPS		2
 #define IO_ADDR_MAX		0x8000
+
+// device informations for win32
+#define USE_FD1
+#define USE_FD2
+#define USE_FD3
+#define USE_FD4
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCANLINE
+#define USE_MONITOR_TYPE
 
 #include "../../common.h"
 

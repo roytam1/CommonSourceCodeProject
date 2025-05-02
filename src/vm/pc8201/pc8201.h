@@ -11,7 +11,6 @@
 #ifndef _PC8201_H_
 #define _PC8201_H_
 
-// device informations for win32
 #ifdef _PC8201A
 #define DEVICE_NAME		"NEC PC-8201A"
 #define CONFIG_NAME		"pc8201a"
@@ -20,19 +19,6 @@
 #define CONFIG_NAME		"pc8201"
 #endif
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		240
-#define WINDOW_HEIGHT1		64
-#define WINDOW_WIDTH2		480
-#define WINDOW_HEIGHT2		128
-
-//#define USE_DATAREC
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_CAPS
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -45,6 +31,14 @@
 #define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
 #define HAS_I8085
+
+// device informations for win32
+//#define USE_DATAREC
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
 
 #include "../../common.h"
 

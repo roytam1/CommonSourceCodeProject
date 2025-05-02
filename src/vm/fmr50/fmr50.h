@@ -13,7 +13,6 @@
 #ifndef _FMR50_H_
 #define _FMR50_H_
 
-// device informations for win32
 #if defined(_FMR50)
 #define DEVICE_NAME		"FUJITSU FMR-50"
 #define CONFIG_NAME		"fmr50"
@@ -32,33 +31,6 @@
 #endif
 #define CONFIG_VERSION		0x01
 
-#if defined(_FMR60)
-#define WINDOW_WIDTH1		1120
-#define WINDOW_HEIGHT1		750
-#define WINDOW_WIDTH2		1120
-#define WINDOW_HEIGHT2		750
-#elif defined(_OASYSPOCKET3)
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		200
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		200
-#else
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-#endif
-
-//#define USE_IPL_RESET
-#define USE_FD1
-#define USE_FD2
-#define USE_FD3
-#define USE_FD4
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
@@ -69,7 +41,6 @@
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		108
 #endif
-
 //#if defined(_FMRCARD) || defined(_OASYS30) || defined(_OASYSPOCKET3)
 #define CPU_CLOCKS		8000000
 //#else
@@ -94,6 +65,16 @@
 #define I386_BIOS_CALL
 #define I8259_MAX_CHIPS		2
 #define IO_ADDR_MAX		0x10000
+
+// device informations for win32
+#define USE_FD1
+#define USE_FD2
+#define USE_FD3
+#define USE_FD4
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
 
 #include "../../common.h"
 

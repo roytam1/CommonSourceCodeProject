@@ -11,19 +11,9 @@
 #ifndef _SCV_H_
 #define _SCV_H_
 
-// device informations for win32
 #define DEVICE_NAME		"EPOCH SCV"
 #define CONFIG_NAME		"scv"
 #define CONFIG_VERSION		0x01
-
-#define WINDOW_WIDTH1		288
-#define WINDOW_HEIGHT1		222
-#define WINDOW_WIDTH2		576
-#define WINDOW_HEIGHT2		444
-
-#define USE_CART
-#define USE_KEY_TO_JOY
-#define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -37,6 +27,10 @@
 
 // memory wait
 //#define CPU_MEMORY_WAIT
+
+// device informations for win32
+#define USE_CART
+#define USE_KEY_TO_JOY
 
 #include "../../common.h"
 

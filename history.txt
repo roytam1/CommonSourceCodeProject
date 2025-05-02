@@ -1,3 +1,18 @@
+6/4/2010
+
+[EMU/WIN32] update screen stretch/rotation
+[EMU/WIN32] support window x3 - x8 modes
+[EMU/WIN32] support fullscreen mode with any resolutions
+[EMU/WIN32] fix video recorder
+[EMU/WIN32] hide menu bar in full screen mode
+[EMU/WIN32] save opened file dir for common dialog's initial dir
+
+[VM/UPD765A] fix result status for recalib/seek commands
+
+[PV1000/PGS] support sound generation (based on MESS driver)
+[PV1000/JOYSTICK] fix $fc status register
+
+
 5/12/2010
 
 [EMU/WIN32] remove Windows CE support

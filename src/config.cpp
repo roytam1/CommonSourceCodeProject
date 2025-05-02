@@ -16,54 +16,33 @@ config_t config;
 void init_config()
 {
 	// initial settings
+	_memset(&config, 0, sizeof(config_t));
+	
 	config.version1 = FILE_VERSION;
 	config.version2 = CONFIG_VERSION;
 	
-	for(int i = 0; i < 8; i++) {
-#ifdef USE_CART
-		_tcscpy(config.recent_cart[i], _T(""));
-#endif
-#ifdef USE_FD1
-		for(int j = 0; j < 4; j++) {
-			_tcscpy(config.recent_disk[j][i], _T(""));
-		}
-#endif
-#ifdef USE_DATAREC
-		_tcscpy(config.recent_datarec[i], _T(""));
-#endif
-#ifdef USE_MEDIA
-		_tcscpy(config.recent_media[i], _T(""));
-#endif
-#ifdef USE_RAM
-		_tcscpy(config.recent_ram[i], _T(""));
-#endif
-#ifdef USE_MZT
-		_tcscpy(config.recent_mzt[i], _T(""));
-#endif
-	}
+	config.window_mode = 0;
+	config.stretch_screen = false;
+	
+	config.sound_frequency = 5;	// 44100Hz
+	config.sound_latency = 0;
+	
 	config.cpu_power = 0;
 #ifdef USE_FD1
 	config.ignore_crc = false;
-#endif
-#ifdef USE_SCANLINE
-	config.scan_line = false;
-#endif
-#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
-	config.monitor_type = 0;
 #endif
 #ifdef USE_DIPSWITCH
 	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
 #ifdef _HC80
-	config.ramdisk_type = 2;	// default = Nonintelligent ram disk
+	config.ramdisk_type = 2;	// Nonintelligent ram disk
 #endif
-#ifdef USE_SCREEN_X2
-	config.window_mode = 1;
-#else
-	config.window_mode = 0;
+#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
+	config.monitor_type = 0;
 #endif
-	config.sound_frequency = 5;
-	config.sound_latency = 0;
+#ifdef USE_SCANLINE
+	config.scan_line = false;
+#endif
 }
 
 void load_config()
@@ -75,10 +54,10 @@ void load_config()
 	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
-	while(app_path[pt] != '\\') {
+	while(pt >= 0 && app_path[pt] != _T('\\')) {
 		pt--;
 	}
-	app_path[pt + 1] = '\0';
+	app_path[pt + 1] = _T('\0');
 	_stprintf(config_path, _T("%s%s.cfg"), app_path, _T(CONFIG_NAME));
 	
 	// load config
@@ -101,10 +80,10 @@ void save_config()
 	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
-	while(app_path[pt] != '\\') {
+	while(pt >= 0 && app_path[pt] != _T('\\')) {
 		pt--;
 	}
-	app_path[pt + 1] = '\0';
+	app_path[pt + 1] = _T('\0');
 	_stprintf(config_path, _T("%s%s.cfg"), app_path, _T(CONFIG_NAME));
 	
 	// save config

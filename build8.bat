@@ -1,4 +1,5 @@
 echo off
+rem set path=%path%;"C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE"
 set path=%path%;"C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE"
 mkdir build
 
@@ -17,10 +18,6 @@ copy Release\fmr50.exe build\fmr50\.
 devenv.com fmr60.vcproj /Rebuild Release
 mkdir build\fmr60
 copy Release\fmr60.exe build\fmr60\.
-
-devenv.com fmrcard.vcproj /Rebuild Release
-mkdir build\fmrcard
-copy Release\fmrcard.exe build\fmrcard\.
 
 devenv.com hc40.vcproj /Rebuild Release
 mkdir build\hc40
@@ -61,10 +58,6 @@ copy Release\mz5500.exe build\mz5500\.
 devenv.com mz6500.vcproj /Rebuild Release
 mkdir build\mz6500
 copy Release\mz6500.exe build\mz6500\.
-
-devenv.com n5200.vcproj /Rebuild Release
-mkdir build\n5200
-copy Release\n5200.exe build\n5200\.
 
 devenv.com pasopia.vcproj /Rebuild Release
 mkdir build\pasopia_t

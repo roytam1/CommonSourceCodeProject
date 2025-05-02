@@ -20,7 +20,7 @@ void EMU::initialize_sound(int rate, int samples)
 	sound_rate = rate;
 	sound_samples = samples;
 	vm->initialize_sound(sound_rate, sound_samples);
-	sound_ok = now_mute = now_recs = false;
+	sound_ok = now_mute = now_recs = FALSE;
 	
 	// initialize direct sound
 	PCMWAVEFORMAT pcmwf;
@@ -71,7 +71,7 @@ void EMU::initialize_sound(int rate, int samples)
 	
 	// start play
 	lpdsb->Play(0, 0, DSBPLAY_LOOPING);
-	sound_ok = first_half = true;
+	sound_ok = first_half = TRUE;
 }
 
 void EMU::release_sound()
@@ -96,7 +96,7 @@ void EMU::release_sound()
 
 void EMU::update_sound()
 {
-	now_mute = false;
+	now_mute = FALSE;
 	
 	if(sound_ok) {
 		// check current position
@@ -160,7 +160,7 @@ void EMU::mute_sound()
 		}
 		lpdsb->Unlock(ptr1, size1, ptr2, size2);
 	}
-	now_mute = true;
+	now_mute = TRUE;
 }
 
 void EMU::start_rec_sound()
@@ -174,7 +174,7 @@ void EMU::start_rec_sound()
 		if(rec->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 			// write wave header
 			rec_bufs = 0;
-			now_recs = true;
+			now_recs = TRUE;
 		}
 		else {
 			// failed to open the wave file
@@ -188,7 +188,7 @@ void EMU::stop_rec_sound()
 	if(now_recs) {
 		rec->Fclose();
 		delete rec;
-		now_recs = false;
+		now_recs = FALSE;
 		
 		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH], tmp_path[_MAX_PATH];
 		application_path(app_path);
@@ -247,7 +247,7 @@ void EMU::restart_rec_sound()
 	if(now_recs) {
 		rec->Fclose();
 		delete rec;
-		now_recs = false;
+		now_recs = FALSE;
 		
 		start_rec_sound();
 	}

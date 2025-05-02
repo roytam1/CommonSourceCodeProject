@@ -14,8 +14,8 @@
 #include "../../fifo.h"
 
 //memo: how to request the display size changing
-//emu->change_screen_size(TV_SCREEN_WIDTH, TV_SCREEN_HEIGHT, 0, TV_WINDOW_WIDTH1, TV_WINDOW_HEIGHT1, TV_WINDOW_WIDTH2, TV_WINDOW_HEIGHT2);
-//emu->change_screen_size(SCREEN_WIDTH, SCREEN_HEIGHT, 0, WINDOW_WIDTH1, WINDOW_HEIGHT1, WINDOW_WIDTH2, WINDOW_HEIGHT2);
+//emu->change_screen_size(TV_SCREEN_WIDTH, TV_SCREEN_HEIGHT, -1, -1, TV_WINDOW_WIDTH, TV_WINDOW_HEIGHT);
+//emu->change_screen_size(SCREEN_WIDTH, SCREEN_HEIGHT, -1, -1, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 void IO::initialize()
 {

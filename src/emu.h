@@ -31,19 +31,20 @@
 #define WM_SOCKET2 (WM_USER + 4)
 #define WM_SOCKET3 (WM_USER + 5)
 
-#if defined(USE_SCREEN_X2) || defined(USE_SCREEN_ROTATE)
-#define USE_SECOND_BUFFER
-#define SECOND_BUFFER_WIDTH 1024
-#define SECOND_BUFFER_HEIGHT 768
+#if defined(SCREEN_WIDTH_ASPECT) || defined(SCREEN_HEIGHT_ASPECT)
+#define USE_SCREEN_STRETCH_HIGH_QUALITY
 #endif
 #ifndef SCREEN_WIDTH_ASPECT
 #define SCREEN_WIDTH_ASPECT SCREEN_WIDTH
 #endif
-#ifndef WINDOW_WIDTH2
-#define WINDOW_WIDTH2 WINDOW_WIDTH1
+#ifndef SCREEN_HEIGHT_ASPECT
+#define SCREEN_HEIGHT_ASPECT SCREEN_HEIGHT
 #endif
-#ifndef WINDOW_HEIGHT2
-#define WINDOW_HEIGHT2 WINDOW_HEIGHT1
+#ifndef WINDOW_WIDTH
+#define WINDOW_WIDTH SCREEN_WIDTH_ASPECT
+#endif
+#ifndef WINDOW_HEIGHT
+#define WINDOW_HEIGHT SCREEN_HEIGHT_ASPECT
 #endif
 
 #include <dsound.h>
@@ -83,7 +84,7 @@ private:
 	JOYCAPS joycaps[2];
 	
 	int mouse_status[3];	// x, y, button (b0 = left, b1 = right)
-	bool mouse_enable;
+	BOOL mouse_enabled;
 	
 #ifdef USE_AUTO_KEY
 	FIFO* autokey_buffer;
@@ -95,46 +96,61 @@ private:
 	// ----------------------------------------
 	void initialize_screen();
 	void release_screen();
-	void create_screen_buffer(HDC hdc);
-	void release_screen_buffer();
+	void create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib);
+	void release_dib_section(HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf);
 	
 	HWND main_window_handle;
 	HINSTANCE instance_handle;
+	
 	int screen_width, screen_height;
-	int screen_width_aspect;
-	int window_width1, window_height1;
-	int window_width2, window_height2;
+	int screen_width_aspect, screen_height_aspect;
 	int window_width, window_height;
-	
-	int buffer_x, buffer_y;
+	int display_width, display_height;
+	int stretch_width, stretch_height;
+	BOOL stretch_screen;
+#ifdef USE_SCREEN_STRETCH_HIGH_QUALITY
+	BOOL stretch_screen_high_quality;
+#endif
 	int dest_x, dest_y;
-#ifdef USE_SECOND_BUFFER
-#ifdef USE_SCREEN_X2
-	int stretch_x, stretch_y;
-#elif defined(USE_SCREEN_ROTATE)
-	bool now_rotate;
-#endif
-	bool use_buffer;
-#endif
-	bool first_invalidate;
-	bool self_invalidate;
 	
-	// for render
+	// update flags
+	int source_buffer;
+	BOOL first_draw_screen;
+	BOOL first_invalidate;
+	BOOL self_invalidate;
+	
+	// screen buffer
 	HDC hdcDib;
 	HBITMAP hBmp;
 	LPBYTE lpBuf;
 	scrntype* lpBmp;
 	LPBITMAPINFO lpDib;
-#ifdef USE_SECOND_BUFFER
-	HDC hdcDibOut;
-	HBITMAP hBmpOut;
-	LPBYTE lpBufOut;
-	scrntype* lpBmpOut;
-	LPBITMAPINFO lpDibOut;
+	
+#ifdef USE_SCREEN_ROTATE
+	// rotate buffer
+	HDC hdcDibRotate;
+	HBITMAP hBmpRotate;
+	LPBYTE lpBufRotate;
+	scrntype* lpBmpRotate;
+	LPBITMAPINFO lpDibRotate;
+#endif
+#ifdef USE_SCREEN_STRETCH_HIGH_QUALITY
+	// stretch buffer
+	HDC hdcDibStretch1;
+	HBITMAP hBmpStretch1;
+	LPBYTE lpBufStretch1;
+	scrntype* lpBmpStretch1;
+	LPBITMAPINFO lpDibStretch1;
+	
+	HDC hdcDibStretch2;
+	HBITMAP hBmpStretch2;
+	LPBYTE lpBufStretch2;
+	scrntype* lpBmpStretch2;
+	LPBITMAPINFO lpDibStretch2;
 #endif
 	
 	// record video
-	bool now_recv;
+	BOOL now_recv;
 	int rec_frames, rec_fps;
 	PAVIFILE pAVIFile;
 	PAVISTREAM pAVIStream;
@@ -149,12 +165,12 @@ private:
 	void update_sound();
 	
 	int sound_rate, sound_samples;
-	bool sound_ok, now_mute;
+	BOOL sound_ok, now_mute;
 	
 	// direct sound
 	LPDIRECTSOUND lpds;
 	LPDIRECTSOUNDBUFFER lpdsb, lpdsp;
-	bool first_half;
+	BOOL first_half;
 	
 	// record sound
 	typedef struct {
@@ -174,7 +190,7 @@ private:
 	} wavheader_t;
 	FILEIO* rec;
 	int rec_bufs;
-	bool now_recs;
+	BOOL now_recs;
 	
 	// ----------------------------------------
 	// media
@@ -202,7 +218,7 @@ private:
 	void update_socket();
 	
 	int soc[SOCKET_MAX];
-	bool is_tcp[SOCKET_MAX];
+	BOOL is_tcp[SOCKET_MAX];
 	struct sockaddr_in udpaddr[SOCKET_MAX];
 	int socket_delay[SOCKET_MAX];
 	char recv_buffer[SOCKET_MAX][SOCKET_BUFFER_MAX];
@@ -268,17 +284,17 @@ public:
 #ifdef USE_MZT
 	void open_mzt(_TCHAR* filename);
 #endif
-	bool now_skip();
+	BOOL now_skip();
 	
 	void start_rec_sound();
 	void stop_rec_sound();
 	void restart_rec_sound();
-	bool now_rec_sound() { return now_recs; }
+	BOOL now_rec_sound() { return now_recs; }
 	
-	void start_rec_video(int fps, bool show_dialog);
+	void start_rec_video(int fps, BOOL show_dialog);
 	void stop_rec_video();
 	void restart_rec_video();
-	bool now_rec_video() { return now_recv; }
+	BOOL now_rec_video() { return now_recv; }
 	
 	void update_config();
 	
@@ -292,21 +308,22 @@ public:
 	void enable_mouse();
 	void disenable_mouse();
 	void toggle_mouse();
+	BOOL get_mouse_enabled() { return mouse_enabled; }
 	
 #ifdef USE_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
-	bool now_auto_key() { return (autokey_phase != 0); }
+	BOOL now_auto_key() { return (autokey_phase != 0); }
 #endif
 	
 	// screen
 	int get_window_width(int mode);
 	int get_window_height(int mode);
-	void set_window_size(int width, int height);
+	void set_display_size(int width, int height, BOOL window_mode);
 	void draw_screen();
 	void update_screen(HDC hdc);
 #ifdef USE_BITMAP
-	void reload_bitmap() { first_invalidate = true; }
+	void reload_bitmap() { first_invalidate = TRUE; }
 #endif
 	
 	// sound
@@ -355,7 +372,7 @@ public:
 	int* mouse_buffer() { return mouse_status; }
 	
 	// screen
-	void change_screen_size(int sw, int sh, int swa, int ww1, int wh1, int ww2, int wh2);
+	void change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh);
 	scrntype* screen_buffer(int y);
 	
 	// timer

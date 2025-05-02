@@ -18,6 +18,13 @@
 class PSG : public DEVICE
 {
 private:
+	typedef struct {
+		int count;
+		int period;
+		bool signal;
+	} channel_t;
+	channel_t ch[3];
+	int diff;
 	
 public:
 	PSG(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

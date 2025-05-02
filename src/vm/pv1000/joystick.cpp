@@ -21,18 +21,18 @@ void JOYSTICK::initialize()
 
 void JOYSTICK::reset()
 {
-	stat0 = 0;
+	status = 0;
 }
 
 void JOYSTICK::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xfc:
-		stat0 = stat1 = data;
+//		status = data;
 		break;
 	case 0xfd:
 		column = data;
+		status |= 2;
 		break;
 	}
 //	emu->out_debug(_T("OUT\t%2x, %2x\n"), addr & 0xff, data);
@@ -42,10 +42,10 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xfc:
-		val = stat1;
+		val = status;
+		status &= ~1;
 		break;
 	case 0xfd:
 		val = 0;
@@ -73,6 +73,7 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 			if( joy[1] & 0x10              ) val |= 4;	// #2 trig1
 			if( joy[1] & 0x20              ) val |= 8;	// #2 trig2
 		}
+//		status &= ~2;
 		break;
 	}
 //	emu->out_debug(_T("IN\t%2x, %2x\n"), addr & 0xff, val);
@@ -81,5 +82,5 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 
 void JOYSTICK::event_frame()
 {
-	stat1 = stat1 ? 0 : stat0;
+	status |= 1;
 }

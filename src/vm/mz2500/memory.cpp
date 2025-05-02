@@ -92,6 +92,7 @@ void MEMORY::ipl_reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 	int b = addr >> 13;
 #ifdef VRAM_WAIT
 	if(is_vram[b] && !blank) {
@@ -102,14 +103,18 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 #endif
 	if(page_type[b] == PAGE_TYPE_MODIFY) {
 		// read write modify
-		if(page[b] == 0x30)
+		if(page[b] == 0x30) {
 			d_crtc->write_data8((addr & 0x1fff) + 0x0000, data);
-		else if(page[b] == 0x31)
+		}
+		else if(page[b] == 0x31) {
 			d_crtc->write_data8((addr & 0x1fff) + 0x2000, data);
-		else if(page[b] == 0x32)
+		}
+		else if(page[b] == 0x32) {
 			d_crtc->write_data8((addr & 0x1fff) + 0x4000, data);
-		else
+		}
+		else {
 			d_crtc->write_data8((addr & 0x1fff) + 0x6000, data);
+		}
 		return;
 	}
 	wbank[addr >> 11][addr & 0x7ff] = data;
@@ -117,6 +122,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 	int b = addr >> 13;
 #ifdef VRAM_WAIT
 	if(is_vram[b] && !blank) {
@@ -127,14 +133,18 @@ uint32 MEMORY::read_data8(uint32 addr)
 #endif
 	if(page_type[b] == PAGE_TYPE_MODIFY) {
 		// read write modify
-		if(page[b] == 0x30)
+		if(page[b] == 0x30) {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x0000);
-		else if(page[b] == 0x31)
+		}
+		else if(page[b] == 0x31) {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x2000);
-		else if(page[b] == 0x32)
+		}
+		else if(page[b] == 0x32) {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x4000);
-		else
+		}
+		else {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x6000);
+		}
 	}
 	return rbank[addr >> 11][addr & 0x7ff];
 }
@@ -152,18 +162,21 @@ uint32 MEMORY::read_data16(uint32 addr)
 
 void MEMORY::write_data8w(uint32 addr, uint32 data, int* wait)
 {
+	addr &= 0xffff;
 	*wait = page_wait[addr >> 13];
 	write_data8(addr, data);
 }
 
 uint32 MEMORY::read_data8w(uint32 addr, int* wait)
 {
+	addr &= 0xffff;
 	*wait = page_wait[addr >> 13];
 	return read_data8(addr);
 }
 
 void MEMORY::write_data16w(uint32 addr, uint32 data, int* wait)
 {
+	addr &= 0xffff;
 	*wait = page_wait[addr >> 13] << 1;
 	write_data8(addr, data & 0xff);
 	write_data8(addr + 1, data >> 8);
@@ -171,14 +184,14 @@ void MEMORY::write_data16w(uint32 addr, uint32 data, int* wait)
 
 uint32 MEMORY::read_data16w(uint32 addr, int* wait)
 {
+	addr &= 0xffff;
 	*wait = page_wait[addr >> 13] << 1;
 	return read_data8(addr) | (read_data8(addr + 1) << 8);
 }
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xb4:
 		// map bank
 		bank = data & 7;
@@ -215,8 +228,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_io8(uint32 addr)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xb4:
 		// map bank
 		return bank;
@@ -232,10 +244,12 @@ uint32 MEMORY::read_io8(uint32 addr)
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 #ifdef VRAM_WAIT
-	if(id == SIG_MEMORY_HBLANK)
-		hblank = (data & mask) ? true : false;
-	else if(id == SIG_MEMORY_VBLANK)
-		vblank = (data & mask) ? true : false;
+	if(id == SIG_MEMORY_HBLANK) {
+		hblank = ((data & mask) != 0);
+	}
+	else if(id == SIG_MEMORY_VBLANK) {
+		vblank = ((data & mask) != 0);
+	}
 	
 	// if blank, disable busreq
 	bool next = hblank || vblank;
@@ -262,22 +276,22 @@ void MEMORY::set_map(uint8 data)
 		// vram
 		int ofs = 0;
 		switch (data) {
-			case 0x20: ofs = 0x0; break;
-			case 0x21: ofs = 0x1; break;
-			case 0x22: ofs = 0x4; break;
-			case 0x23: ofs = 0x5; break;
-			case 0x24: ofs = 0x8; break;
-			case 0x25: ofs = 0x9; break;
-			case 0x26: ofs = 0xc; break;
-			case 0x27: ofs = 0xd; break;
-			case 0x28: ofs = 0x2; break;
-			case 0x29: ofs = 0x3; break;
-			case 0x2a: ofs = 0x6; break;
-			case 0x2b: ofs = 0x7; break;
-			case 0x2c: ofs = 0xa; break;
-			case 0x2d: ofs = 0xb; break;
-			case 0x2e: ofs = 0xe; break;
-			case 0x2f: ofs = 0xf; break;
+		case 0x20: ofs = 0x0; break;
+		case 0x21: ofs = 0x1; break;
+		case 0x22: ofs = 0x4; break;
+		case 0x23: ofs = 0x5; break;
+		case 0x24: ofs = 0x8; break;
+		case 0x25: ofs = 0x9; break;
+		case 0x26: ofs = 0xc; break;
+		case 0x27: ofs = 0xd; break;
+		case 0x28: ofs = 0x2; break;
+		case 0x29: ofs = 0x3; break;
+		case 0x2a: ofs = 0x6; break;
+		case 0x2b: ofs = 0x7; break;
+		case 0x2c: ofs = 0xa; break;
+		case 0x2d: ofs = 0xb; break;
+		case 0x2e: ofs = 0xe; break;
+		case 0x2f: ofs = 0xf; break;
 		}
 		SET_BANK(base,  base + 0x1fff, vram + ofs * 0x2000, vram + ofs * 0x2000);
 		page_type[bank] = PAGE_TYPE_VRAM;

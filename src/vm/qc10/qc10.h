@@ -11,7 +11,6 @@
 #ifndef _QC10_H_
 #define _QC10_H_
 
-// device informations for win32
 #ifdef _COLOR_MONITOR
 #define DEVICE_NAME		"EPSON QC-10 with color monitor subboard"
 #define CONFIG_NAME		"qc10cms"
@@ -20,18 +19,6 @@
 #define CONFIG_NAME		"qc10"
 #endif
 #define CONFIG_VERSION		0x02
-
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-
-#define USE_DIPSWITCH
-#define DIPSWITCH_DEFAULT	0xe0
-#define USE_FD1
-#define USE_FD2
-#define NOTIFY_KEY_DOWN
-#define USE_ALT_F10_KEY
 
 // device informations for virtual machine
 #ifdef _COLOR_MONITOR
@@ -53,6 +40,14 @@
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
 //#define UPD765A_STRICT_ID
+
+// device informations for win32
+#define USE_DIPSWITCH
+#define DIPSWITCH_DEFAULT	0xe0
+#define USE_FD1
+#define USE_FD2
+#define NOTIFY_KEY_DOWN
+#define USE_ALT_F10_KEY
 
 #include "../../common.h"
 
