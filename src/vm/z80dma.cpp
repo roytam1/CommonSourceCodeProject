@@ -83,8 +83,8 @@
 #define PORTA_MEMORY		(((WR1 >> 3) & 1) == 0)
 #define PORTB_MEMORY		(((WR2 >> 3) & 1) == 0)
 
-#define PORTA_CYCLE_LEN		(4 - (PORTA_TIMING & 3))
-#define PORTB_CYCLE_LEN		(4 - (PORTB_TIMING & 3))
+#define PORTA_CYCLE_LEN		(((PORTA_TIMING & 3) != 3) ? (4 - (PORTA_TIMING & 3)) : PORTA_MEMORY ? 3 : 4)
+#define PORTB_CYCLE_LEN		(((PORTB_TIMING & 3) != 3) ? (4 - (PORTB_TIMING & 3)) : PORTB_MEMORY ? 3 : 4)
 
 #define PORTA_IS_SOURCE		((WR0 >> 2) & 1)
 #define PORTB_IS_SOURCE		(!PORTA_IS_SOURCE)
@@ -95,9 +95,12 @@
 #define EOB_F_SET		(status &= ~0x20)
 #define EOB_F_CLEAR		(status |= 0x20)
 
+#define STOP_ON_MATCH		((WR3 >> 2) & 1)
+
 #define OPERATING_MODE		((WR4 >> 5) & 3)
 
 #define READY_ACTIVE_HIGH	((WR5 >> 3) & 1)
+#define CHECK_WAIT_SIGNAL	((WR5 >> 4) & 1)
 #define AUTO_RESTART		((WR5 >> 5) & 1)
 
 #define INTERRUPT_ENABLE	(WR3 & 0x20)
@@ -110,6 +113,9 @@ void Z80DMA::reset()
 {
 	WR3 &= ~0x20; // disable interrupt
 	status = 0x30;
+	
+	PORTA_TIMING |= 3;
+	PORTB_TIMING |= 3;
 	
 	wr_num = wr_ptr = 0;
 	rr_num = rr_ptr = 0;
@@ -126,6 +132,7 @@ void Z80DMA::reset()
 	upcount = 0;
 	blocklen = 0;
 	dma_stop = false;
+	bus_master = false;
 }
 
 void Z80DMA::write_io8(uint32 addr, uint32 data)
@@ -258,6 +265,9 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				// reset upcount
 				WR3 &= ~0x20;
 				upcount = 0;
+				// reset timing
+				PORTA_TIMING |= 3;
+				PORTB_TIMING |= 3;
 				break;
 			case CMD_LOAD:
 				force_ready = false;
@@ -287,10 +297,10 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 #endif
 				break;
 			case CMD_RESET_PORT_A_TIMING:
-				PORTA_TIMING = 0;
+				PORTA_TIMING |= 3;
 				break;
 			case CMD_RESET_PORT_B_TIMING:
-				PORTB_TIMING = 0;
+				PORTB_TIMING |= 3;
 				break;
 			case CMD_FORCE_READY:
 				force_ready = true;
@@ -363,21 +373,21 @@ uint32 Z80DMA::read_io8(uint32 addr)
 void Z80DMA::write_signal(int id, uint32 data, uint32 mask)
 {
 	// ready signal (wired-or)
-	uint8 bit = 1 << id;
+	bool prev_ready = now_ready();
 	
 	if(data & mask) {
-		if(!(ready & bit)) {
-			if(!ready && INT_ON_READY) {
-				request_intr(INT_RDY);
-			}
-			ready |= bit;
-#ifndef SINGLE_MODE_DMA
-			do_dma();
-#endif
-		}
+		ready |= (1 << id);
 	}
 	else {
-		ready &= ~bit;
+		ready &= ~(1 << id);
+	}
+	if(!prev_ready && now_ready()) {
+		if(INT_ON_READY) {
+			request_intr(INT_RDY);
+		}
+#ifndef SINGLE_MODE_DMA
+		do_dma();
+#endif
 	}
 }
 
@@ -386,6 +396,7 @@ bool Z80DMA::now_ready()
 	if(force_ready) {
 		return true;
 	}
+	// FIXME: DRQ active is really L, but FDC class sends H
 	if(READY_ACTIVE_HIGH) {
 		return (ready == 0);
 	}
@@ -429,7 +440,11 @@ void Z80DMA::do_dma()
 		return;
 	}
 	bool occured = false;
+	bool finished = false;
 	bool found = false;
+#ifdef DMA_DEBUG
+	int count = 0;
+#endif
 	
 	// from Xmillenium (thanks Y.S.)
 	if(BLOCKLEN == 0) {
@@ -453,35 +468,56 @@ restart:
 			dma_stop = false;
 			goto inc_ports;
 		}
-		uint32 data = 0;
+		
+		// request bus
+		request_bus();
 		
 		// read
+		uint32 data = 0;
+		int wait_r = 0, wait_w = 0;
+		
 		if(PORTA_IS_SOURCE) {
 			if(PORTA_MEMORY) {
-				data = d_mem->read_dma_data8(addr_a);
+				data = d_mem->read_dma_data8w(addr_a, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_a, data);
 #endif
 			}
 			else {
-				data = d_io->read_dma_io8(addr_a);
+				data = d_io->read_dma_io8w(addr_a, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_a, data);
 #endif
 			}
+			if(d_cpu != NULL) {
+				if(CHECK_WAIT_SIGNAL) {
+					d_cpu->set_extra_clock(PORTA_CYCLE_LEN + wait_r);
+				}
+				else {
+					d_cpu->set_extra_clock(PORTA_CYCLE_LEN);
+				}
+			}
 		}
 		else {
 			if(PORTB_MEMORY) {
-				data = d_mem->read_dma_data8(addr_b);
+				data = d_mem->read_dma_data8w(addr_b, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_b, data);
 #endif
 			}
 			else {
-				data = d_io->read_dma_io8(addr_b);
+				data = d_io->read_dma_io8w(addr_b, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_b, data);
 #endif
+			}
+			if(d_cpu != NULL) {
+				if(CHECK_WAIT_SIGNAL) {
+					d_cpu->set_extra_clock(PORTB_CYCLE_LEN + wait_r);
+				}
+				else {
+					d_cpu->set_extra_clock(PORTB_CYCLE_LEN);
+				}
 			}
 		}
 		
@@ -492,13 +528,21 @@ restart:
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("RAM[%4x]\n"), addr_b);
 #endif
-					d_mem->write_dma_data8(addr_b, data);
+					d_mem->write_dma_data8w(addr_b, data, &wait_w);
 				}
 				else {
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("OUT(%4x)\n"), addr_b);
 #endif
-					d_io->write_dma_io8(addr_b, data);
+					d_io->write_dma_io8w(addr_b, data, &wait_w);
+				}
+				if(d_cpu != NULL) {
+					if(CHECK_WAIT_SIGNAL) {
+						d_cpu->set_extra_clock(PORTB_CYCLE_LEN + wait_w);
+					}
+					else {
+						d_cpu->set_extra_clock(PORTB_CYCLE_LEN);
+					}
 				}
 			}
 			else {
@@ -506,15 +550,28 @@ restart:
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("RAM[%4x]\n"), addr_a);
 #endif
-					d_mem->write_dma_data8(addr_a, data);
+					d_mem->write_dma_data8w(addr_a, data, &wait_w);
 				}
 				else {
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("OUT(%4x)\n"), addr_a);
 #endif
-					d_io->write_dma_io8(addr_a, data);
+					d_io->write_dma_io8w(addr_a, data, &wait_w);
+				}
+				if(d_cpu != NULL) {
+					if(CHECK_WAIT_SIGNAL) {
+						d_cpu->set_extra_clock(PORTA_CYCLE_LEN + wait_w);
+					}
+					else {
+						d_cpu->set_extra_clock(PORTA_CYCLE_LEN);
+					}
 				}
 			}
+		}
+		
+		// release bus
+		if(OPERATING_MODE == OM_BYTE) {
+			release_bus();
 		}
 		
 		// search
@@ -525,6 +582,9 @@ restart:
 		}
 		upcount++;
 		occured = true;
+#ifdef DMA_DEBUG
+		count++;
+#endif
 		
 		if(found || !now_ready()) {
 			if(upcount < blocklen) {
@@ -589,16 +649,56 @@ inc_ports:
 			if(INT_ON_END_OF_BLOCK) {
 				level |= INT_END_OF_BLOCK;
 			}
+			finished = true;
 		}
 		if(found) {
 			// match found
 			if(INT_ON_MATCH) {
 				level |= INT_MATCH;
 			}
+			if(STOP_ON_MATCH) {
+				finished = true;
+			}
 		}
 		if(level) {
 			request_intr(level);
 		}
+	}
+	
+	// release bus
+	if(finished || OPERATING_MODE == OM_BYTE || (OPERATING_MODE == OM_BURST && !now_ready())) {
+		release_bus();
+	}
+}
+
+void Z80DMA::request_bus()
+{
+	if(!bus_master) {
+		if(d_cpu != NULL) {
+#ifdef SINGLE_MODE_DMA
+			d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+#endif
+			d_cpu->set_extra_clock(3);
+		}
+		bus_master = true;
+	}
+}
+
+void Z80DMA::release_bus()
+{
+	if(bus_master) {
+		if(d_cpu != NULL) {
+#ifdef SINGLE_MODE_DMA
+			d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
+#endif
+			if(OPERATING_MODE == OM_BYTE) {
+				d_cpu->set_extra_clock(2);
+			}
+			else {
+				d_cpu->set_extra_clock(3);
+			}
+		}
+		bus_master = false;
 	}
 }
 
@@ -628,7 +728,7 @@ void Z80DMA::set_intr_iei(bool val)
 #define set_intr_oei(val) { \
 	if(oei != val) { \
 		oei = val; \
-		if(d_child) { \
+		if(d_child != NULL) { \
 			d_child->set_intr_iei(oei); \
 		} \
 	} \
@@ -650,7 +750,7 @@ void Z80DMA::update_intr()
 	if((next = iei) == true) {
 		next = (!in_service && req_intr);
 	}
-	if(d_cpu) {
+	if(d_cpu != NULL) {
 		d_cpu->set_intr_line(next, true, intr_bit);
 	}
 }
@@ -669,7 +769,7 @@ uint32 Z80DMA::intr_ack()
 		update_intr();
 		return vector;
 	}
-	if(d_child) {
+	if(d_child != NULL) {
 		return d_child->intr_ack();
 	}
 	return 0xff;
@@ -683,7 +783,7 @@ void Z80DMA::intr_reti()
 		update_intr();
 		return;
 	}
-	if(d_child) {
+	if(d_child != NULL) {
 		d_child->intr_reti();
 	}
 }

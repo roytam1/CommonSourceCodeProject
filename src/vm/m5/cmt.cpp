@@ -1,6 +1,5 @@
 /*
 	SORD m5 Emulator 'Emu5'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.08.18 -

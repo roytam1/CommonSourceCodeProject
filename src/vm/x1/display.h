@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.14-
@@ -17,17 +17,17 @@
 #include "../device.h"
 
 #define SIG_DISPLAY_VBLANK		0
-#define SIG_DISPLAY_COLUMN		1
+#define SIG_DISPLAY_COLUMN40		1
 #define SIG_DISPLAY_DETECT_VBLANK	2
 
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 class HD46505;
 #endif
 
 class DISPLAY : public DEVICE
 {
 private:
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	DEVICE *d_cpu;
 	HD46505 *d_crtc;
 #endif
@@ -35,14 +35,14 @@ private:
 	uint8* regs;
 	uint8 vram_t[0x800];
 	uint8 vram_a[0x800];
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint8 vram_k[0x800];
 #endif
 	uint8* vram_ptr;
 	uint8 pcg_b[256][8];
 	uint8 pcg_r[256][8];
 	uint8 pcg_g[256][8];
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint8 gaiji_b[128][16];
 	uint8 gaiji_r[128][16];
 	uint8 gaiji_g[128][16];
@@ -58,13 +58,13 @@ private:
 	uint8 pal[3];
 	uint8 priority, pri[8][8];	// pri[cg][txt]
 	
-	uint8 column;
-#ifdef _X1TURBO
+	bool column40;
+#ifdef _X1TURBO_FEATURE
 	uint8 mode1, mode2;
-	bool hires;
+	bool hireso;
 #endif
 	
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint8 text[400][640];
 	uint8 cg[400][640];
 	uint8 pri_line[400][8][8];
@@ -98,7 +98,7 @@ private:
 	
 	uint16 jis2adr_x1(uint16 jis);
 	uint32 adr2knj_x1(uint16 adr);
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint32 adr2knj_x1t(uint16 adr);
 #endif
 	uint32 jis2knj(uint16 jis);
@@ -120,7 +120,7 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}

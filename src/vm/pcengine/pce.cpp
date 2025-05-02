@@ -1,7 +1,6 @@
 /*
 	NEC-HE PC Engine Emulator 'ePCEngine'
 	SHARP X1twin Emulator 'eX1twin'
-	Skelton for retropc emulator
 
 	Origin : Ootake (joypad)
 	       : xpce (psg)

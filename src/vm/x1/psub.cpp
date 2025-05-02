@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.15-
@@ -383,7 +383,7 @@ void PSUB::key_down(int code, bool repeat)
 			key_break = code;
 		}
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	else if(key_prev == 0 && IS_LOWBYTE_KEY(code)) {
 		key_buf->write(0xff);
 	}
@@ -404,7 +404,7 @@ void PSUB::key_up(int code)
 		key_graph = false;
 		break;
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	if(code == key_prev || (key_prev == 0 && IS_LOWBYTE_KEY(code))) {
 #else
 	if(code == key_prev) {
@@ -497,7 +497,7 @@ void PSUB::process_cmd()
 		datap = &databuf[mode - 0xd8][0];	// data buffer for timer set
 		datalen = 6;
 		break;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	case 0xe3:
 		// game key read (for turbo)
 		databuf[0x13][0] = databuf[0x13][1] = databuf[0x13][2] = 0;
@@ -561,7 +561,7 @@ void PSUB::process_cmd()
 				databuf[0x16][1] = lh >> 8;
 			}
 		}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		databuf[0x16][0] &= ~0x1f;
 		databuf[0x16][0] |= get_key_low() & 0x1f;
 #endif
@@ -770,7 +770,7 @@ uint16 PSUB::get_key(int code, bool repeat)
 			}
 		}
 	}
-#ifndef _X1TURBO
+#ifndef _X1TURBO_FEATURE
 	if(!h) {
 		l = 0xff;
 	}

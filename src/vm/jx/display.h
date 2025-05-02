@@ -1,6 +1,5 @@
 /*
 	IBM Japan Ltd PC/JX Emulator 'eJX'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.05.09-

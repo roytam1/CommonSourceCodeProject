@@ -1,6 +1,5 @@
 /*
 	CASIO FP-1100 Emulator 'eFP-1100'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.06.18-
@@ -24,7 +23,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-//#define UPD765A_DONT_WAIT_SEEK
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32

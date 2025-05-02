@@ -2064,7 +2064,7 @@ void Z80::reset()
 	after_ei = after_ldair = false;
 	intr_req_bit = intr_pend_bit = 0;
 	
-	icount = 0;
+	icount = extra_icount = 0;
 #ifdef _CPU_DEBUG_LOG
 	debug_count = 0;
 #endif
@@ -2112,14 +2112,21 @@ int Z80::run(int clock)
 {
 	// return now if BUSREQ
 	if(busreq) {
-		icount = 0;
-		return 1;
+#ifdef SINGLE_MODE_DMA
+		if(d_dma) {
+			d_dma->do_dma();
+		}
+#endif
+		int passed_icount = max(1, extra_icount);
+		icount = extra_icount = 0;
+		return passed_icount;
 	}
 	
 	// run cpu
 	if(clock == -1) {
 		// run only one opcode
-		icount = 0;
+		icount = -extra_icount;
+		extra_icount = 0;
 		run_one_opecode();
 		return -icount;
 	}
@@ -2127,6 +2134,8 @@ int Z80::run(int clock)
 		// run cpu while given clocks
 		icount += clock;
 		int first_icount = icount;
+		icount -= extra_icount;
+		extra_icount = 0;
 		
 		while(icount > 0 && !busreq) {
 			run_one_opecode();
@@ -2251,12 +2260,7 @@ void Z80::run_one_opecode()
 				// mode 2
 				PUSH(pc);
 				RM16((vector & 0xff) | (I << 8), &pc);
-#if defined(_X1TWIN) || defined(_X1TURBO)
-				// FIXME: ugly hack for ARCUS :-(
-				icount -= 7;
-#else
 				icount -= cc_op[0xcd] + cc_ex[0xff];
-#endif
 			}
 			iff1 = iff2 = 0;
 			intr_req_bit = 0;
@@ -2272,6 +2276,8 @@ void Z80::run_one_opecode()
 		d_dma->do_dma();
 	}
 #endif
+	icount -= extra_icount;
+	extra_icount = 0;
 }
 
 #ifdef _CPU_DEBUG_LOG

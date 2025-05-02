@@ -40,6 +40,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int icount;
+	int extra_icount;
 	uint16 prevpc;
 	pair pc, sp, af, bc, de, hl, ix, iy, wz;
 	pair af2, bc2, de2, hl2;
@@ -140,6 +141,12 @@ public:
 		uint32 mask = 1 << bit;
 		intr_req_bit = line ? (intr_req_bit | mask) : (intr_req_bit & ~mask);
 		intr_pend_bit = pending ? (intr_pend_bit | mask) : (intr_pend_bit & ~mask);
+	}
+	void set_extra_clock(int clock) {
+		extra_icount += clock;
+	}
+	int get_extra_clock() {
+		return extra_icount;
 	}
 	uint32 get_pc() {
 		return prevpc;

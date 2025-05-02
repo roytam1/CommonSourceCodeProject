@@ -1,7 +1,6 @@
 /*
 	TOSHIBA PASOPIA Emulator 'EmuPIA'
 	TOSHIBA PASOPIA 7 Emulator 'EmuPIA7'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.09.20 -

@@ -1,6 +1,5 @@
 /*
 	NEC PC-8201 Emulator 'ePC-8201'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.31-

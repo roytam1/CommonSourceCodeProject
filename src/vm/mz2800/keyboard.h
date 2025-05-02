@@ -1,6 +1,5 @@
 /*
 	SHARP MZ-2800 Emulator 'EmuZ-2800'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2007.08.13 -

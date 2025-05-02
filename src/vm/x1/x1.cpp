@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.11-
@@ -23,7 +23,7 @@
 #include "../ym2203.h"
 #include "../z80.h"
 #include "../z80ctc.h"
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 #include "../z80dma.h"
 #include "../z80sio.h"
 #endif
@@ -83,7 +83,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	if(sound_device_type == 2) {
 		ctc2 = new Z80CTC(this, emu);
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	ctc = new Z80CTC(this, emu);
 	dma = new Z80DMA(this, emu);
 	sio = new Z80SIO(this, emu);
@@ -129,9 +129,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 0x04);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x01, 0);
-	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
+	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN40, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x60, 0);
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	fdc->set_context_drq(dma, SIG_Z80DMA_READY, 1);
 #endif
 #ifdef _FDC_DEBUG_LOG
@@ -139,15 +139,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	if(sound_device_type >= 1) {
 		ctc1->set_context_zc0(ctc1, SIG_Z80CTC_TRIG_3, 1);
-		ctc1->set_constant_clock(1, CPU_CLOCKS >> 1);
-		ctc1->set_constant_clock(2, CPU_CLOCKS >> 1);
+//		ctc1->set_constant_clock(1, CPU_CLOCKS >> 1);
+//		ctc1->set_constant_clock(2, CPU_CLOCKS >> 1);
 	}
 	if(sound_device_type == 2) {
 		ctc2->set_context_zc0(ctc2, SIG_Z80CTC_TRIG_3, 1);
-		ctc2->set_constant_clock(1, CPU_CLOCKS >> 1);
-		ctc2->set_constant_clock(2, CPU_CLOCKS >> 1);
+//		ctc2->set_constant_clock(1, CPU_CLOCKS >> 1);
+//		ctc2->set_constant_clock(2, CPU_CLOCKS >> 1);
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
 	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
@@ -155,18 +155,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_io(io);
 #endif
 	
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	display->set_context_cpu(cpu);
 	display->set_context_crtc(crtc);
 #endif
 	display->set_vram_ptr(io->get_vram());
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
-#ifdef _X1TURBO
-	floppy->set_context_dma(dma);
-#endif
+	io->set_context_cpu(cpu);
 	joy->set_context_psg(psg);
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	memory->set_context_pio(pio);
 #endif
 	
@@ -201,7 +199,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-#if defined(_X1TURBO) && defined(SINGLE_MODE_DMA)
+#if defined(_X1TURBO_FEATURE) && defined(SINGLE_MODE_DMA)
 	cpu->set_context_dma(dma);
 #endif
 	
@@ -224,7 +222,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	if(sound_device_type == 2) {
 		Z80_DAISY_CHAIN(ctc2);
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	Z80_DAISY_CHAIN(sio);
 	Z80_DAISY_CHAIN(dma);
 	Z80_DAISY_CHAIN(ctc);
@@ -248,7 +246,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_single_rw(0x709, opm2);
 		io->set_iomap_range_rw(0x70c, 0x70f, ctc2);
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	io->set_iomap_single_rw(0xb00, memory);
 #endif
 	io->set_iomap_range_rw(0xd00, 0xd03, emm);
@@ -256,7 +254,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0xe80, 0xe82, display);
 	io->set_iomap_range_rw(0xff8, 0xffb, fdc);
 	io->set_iomap_single_w(0xffc, floppy);
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	io->set_iomap_range_r(0xffc, 0xfff, floppy);
 #endif
 	io->set_iomap_range_rw(0x1000, 0x17ff, display);
@@ -278,7 +276,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_alias_w(i, psg, 0);
 	}
 	io->set_iomap_range_w(0x1d00, 0x1eff, memory);
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	io->set_iomap_range_rw(0x1f80, 0x1f8f, dma);
 	io->set_iomap_range_rw(0x1f90, 0x1f93, sio);
 	io->set_iomap_range_rw(0x1fa0, 0x1fa3, ctc);
@@ -332,15 +330,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			rom[0x26] = TO_BCD(cur_time.year);
 		}
 	}
-	// NOTE: motor seems to be on automatically when fdc command is requested,
-	// so motor is always on temporary
-	fdc->write_signal(SIG_MB8877_MOTOR, 1, 1);
-	for(int i = 0; i < 4; i++) {
-#ifdef _X1TURBO
+	for(int i = 0; i < MAX_DRIVE; i++) {
+#ifdef _X1TURBO_FEATURE
 		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
 #else
 		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 #endif
+//		fdc->set_drive_rpm(i, 300);
+//		fdc->set_drive_mfm(i, true);
 	}
 }
 
@@ -609,12 +606,12 @@ void VM::update_config()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	update_dipswitch();
 #endif
 }
 
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 void VM::update_dipswitch()
 {
 	// bit0		0=High 1=Standard

@@ -1,6 +1,5 @@
 /*
 	CASIO FP-1100 Emulator 'eFP-1100'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.06.09-

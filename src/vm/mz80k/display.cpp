@@ -1,7 +1,6 @@
 /*
 	SHARP MZ-80K Emulator 'EmuZ-80K'
 	SHARP MZ-1200 Emulator 'EmuZ-1200'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.08.18-

@@ -1,6 +1,5 @@
 /*
 	NEC N5200 Emulator 'eN5200'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.06.10 -

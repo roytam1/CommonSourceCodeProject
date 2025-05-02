@@ -1,6 +1,5 @@
 /*
 	CASIO FP-200 Emulator 'eFP-200'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2013.03.21-

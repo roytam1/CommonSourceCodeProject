@@ -1,6 +1,5 @@
 /*
 	NEC PC-100 Emulator 'ePC-100'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.07.12 -

@@ -1,6 +1,5 @@
 /*
 	TOMY PyuTa Emulator 'ePyuTa'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2007.07.15 -

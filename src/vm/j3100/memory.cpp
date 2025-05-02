@@ -1,6 +1,5 @@
 /*
 	TOSHIBA J-3100GT Emulator 'eJ-3100GT'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.08.28-

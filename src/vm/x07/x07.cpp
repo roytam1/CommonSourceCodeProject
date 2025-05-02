@@ -1,6 +1,5 @@
 /*
 	CANON X-07 Emulator 'eX-07'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2007.12.26 -

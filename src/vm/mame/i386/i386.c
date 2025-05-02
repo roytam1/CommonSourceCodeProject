@@ -2994,9 +2994,15 @@ static CPU_EXECUTE( i386 )
 
 	if (cpustate->halted || cpustate->busreq)
 	{
-		cpustate->tsc += 1;
-		cpustate->cycles = 0;
-		return 1;
+#ifdef SINGLE_MODE_DMA
+		if(cpustate->dma != NULL) {
+			cpustate->dma->do_dma();
+		}
+#endif
+		int passed_cycles = max(1, cpustate->extra_cycles);
+		cpustate->tsc += passed_cycles;
+		cpustate->cycles = cpustate->extra_cycles = 0;
+		return passed_cycles;
 	}
 
 	if (cycles == -1) {
@@ -3005,6 +3011,10 @@ static CPU_EXECUTE( i386 )
 		cpustate->cycles += cycles;
 	}
 	cpustate->base_cycles = cpustate->cycles;
+
+	/* adjust for any interrupts that came in */
+	cpustate->cycles -= cpustate->extra_cycles;
+	cpustate->extra_cycles = 0;
 
 	while( cpustate->cycles > 0 && !cpustate->busreq )
 	{
@@ -3035,11 +3045,6 @@ static CPU_EXECUTE( i386 )
 		try
 		{
 			I386OP(decode_opcode)(cpustate);
-#ifdef SINGLE_MODE_DMA
-			if(cpustate->dma != NULL) {
-				cpustate->dma->do_dma();
-			}
-#endif
 			if(cpustate->TF && old_tf)
 			{
 				cpustate->prev_eip = cpustate->eip;
@@ -3053,6 +3058,14 @@ static CPU_EXECUTE( i386 )
 			cpustate->ext = 1;
 			i386_trap_with_error(cpustate,e&0xffffffff,0,0,e>>32);
 		}
+#ifdef SINGLE_MODE_DMA
+		if(cpustate->dma != NULL) {
+			cpustate->dma->do_dma();
+		}
+#endif
+		/* adjust for any interrupts that came in */
+		cpustate->cycles -= cpustate->extra_cycles;
+		cpustate->extra_cycles = 0;
 	}
 
 	int passed_cycles = cpustate->base_cycles - cpustate->cycles;

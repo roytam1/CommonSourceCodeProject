@@ -1,6 +1,5 @@
 /*
 	SHARP MZ-3500 Emulator 'EmuZ-3500'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.08.31-
@@ -21,7 +20,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-//#define UPD765A_DONT_WAIT_SEEK
 #define UPD765A_WAIT_RESULT7
 #define UPD765A_EXT_DRVSEL
 #define UPD7220_HORIZ_FREQ	20860

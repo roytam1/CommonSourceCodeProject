@@ -1,6 +1,5 @@
 /*
 	NEC TK-80BS (COMPO BS/80) Emulator 'eTK-80BS'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.08.26 -

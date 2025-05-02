@@ -149,6 +149,24 @@ public:
 	virtual uint32 read_dma_data32(uint32 addr) {
 		return read_data32(addr);
 	}
+	virtual void write_dma_data8w(uint32 addr, uint32 data, int* wait) {
+		write_data8w(addr, data, wait);
+	}
+	virtual uint32 read_dma_data8w(uint32 addr, int* wait) {
+		return read_data8w(addr, wait);
+	}
+	virtual void write_dma_data16w(uint32 addr, uint32 data, int* wait) {
+		write_data16w(addr, data, wait);
+	}
+	virtual uint32 read_dma_data16w(uint32 addr, int* wait) {
+		return read_data16w(addr, wait);
+	}
+	virtual void write_dma_data32w(uint32 addr, uint32 data, int* wait) {
+		write_data32w(addr, data, wait);
+	}
+	virtual uint32 read_dma_data32w(uint32 addr, int* wait) {
+		return read_data32w(addr, wait);
+	}
 	
 	// i/o bus
 	virtual void write_io8(uint32 addr, uint32 data) {}
@@ -236,6 +254,24 @@ public:
 	}
 	virtual uint32 read_dma_io32(uint32 addr) {
 		return read_io32(addr);
+	}
+	virtual void write_dma_io8w(uint32 addr, uint32 data, int* wait) {
+		write_io8w(addr, data, wait);
+	}
+	virtual uint32 read_dma_io8w(uint32 addr, int* wait) {
+		return read_io8w(addr, wait);
+	}
+	virtual void write_dma_io16w(uint32 addr, uint32 data, int* wait) {
+		write_io16w(addr, data, wait);
+	}
+	virtual uint32 read_dma_io16w(uint32 addr, int* wait) {
+		return read_io16w(addr, wait);
+	}
+	virtual void write_dma_io32w(uint32 addr, uint32 data, int* wait) {
+		write_io32w(addr, data, wait);
+	}
+	virtual uint32 read_dma_io32w(uint32 addr, int* wait) {
+		return read_io32w(addr, wait);
 	}
 	
 	// memory mapped i/o
@@ -375,6 +411,11 @@ public:
 		// when clock == -1, run one opecode
 		return 0;
 	}
+	virtual void set_extra_clock(int clock) {
+	}
+	virtual int get_extra_clock() {
+		return 0;
+	}
 	virtual uint32 get_pc() {
 		return 0;
 	}
@@ -440,6 +481,12 @@ public:
 			event_manager = vm->first_device->next_device;
 		}
 		return event_manager->passed_clock(prev);
+	}
+	virtual double passed_usec(uint32 prev) {
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
+		}
+		return event_manager->passed_usec(prev);
 	}
 	virtual uint32 get_cpu_pc(int index) {
 		if(event_manager == NULL) {

@@ -12,6 +12,8 @@
 #include "upd765a.h"
 #include "../fileio.h"
 
+//#define _DEBUG_PC80S31K
+
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 13, eb = (e) >> 13; \
 	for(int i = sb; i <= eb; i++) { \
@@ -110,7 +112,9 @@ uint32 PC80S31K::read_io8(uint32 addr)
 	case 0xfc:
 	case 0xfd:
 		val = d_pio->read_io8(addr & 3);
+#ifdef _DEBUG_PC80S31K
 		emu->out_debug("SUB\tIN RECV(%d)=%2x\n", addr & 3, val);
+#endif
 		return val;
 	case 0xfe:
 		val = d_pio->read_io8(addr & 3);
@@ -155,7 +159,9 @@ void PC80S31K::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0xfc:
 	case 0xfd:
+#ifdef _DEBUG_PC80S31K
 		emu->out_debug("SUB\tOUT SEND(%d)=%2x\n", addr & 3, data);
+#endif
 		d_pio->write_io8(addr & 3, data);
 		break;
 	case 0xfe:

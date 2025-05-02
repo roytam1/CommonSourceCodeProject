@@ -1,6 +1,5 @@
 /*
 	CASIO PV-2000 Emulator 'EmuGaki'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.08.18 -

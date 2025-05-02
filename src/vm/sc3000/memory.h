@@ -1,6 +1,5 @@
 /*
 	SEGA SC-3000 Emulator 'eSC-3000'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.08.17-

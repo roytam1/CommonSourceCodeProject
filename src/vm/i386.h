@@ -47,6 +47,8 @@ public:
 	int run(int cycles);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
+	void set_extra_clock(int cycles);
+	int get_extra_clock();
 	uint32 get_pc();
 	
 	// unique function

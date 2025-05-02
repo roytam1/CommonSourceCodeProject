@@ -1,7 +1,6 @@
 /*
 	NEC PC-98LT Emulator 'ePC-98LT'
 	NEC PC-98HA Emulator 'eHANDY98'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.08.14 -

@@ -165,6 +165,18 @@ void I286::set_intr_line(bool line, bool pending, uint32 bit)
 	set_irq_line(cpustate, INPUT_LINE_IRQ, line ? HOLD_LINE : CLEAR_LINE);
 }
 
+void I286::set_extra_clock(int icount)
+{
+	cpu_state *cpustate = (cpu_state *)opaque;
+	cpustate->extra_cycles += icount;
+}
+
+int I286::get_extra_clock()
+{
+	cpu_state *cpustate = (cpu_state *)opaque;
+	return cpustate->extra_cycles;
+}
+
 uint32 I286::get_pc()
 {
 	cpu_state *cpustate = (cpu_state *)opaque;

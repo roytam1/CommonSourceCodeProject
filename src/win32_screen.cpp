@@ -582,7 +582,22 @@ void EMU::update_screen(HDC hdc)
 #ifdef USE_ACCESS_LAMP
 		// draw access lamps of drives
 		int status = vm->access_lamp() & 7;
-		static int prev_status = 0;
+		static int prev_status = 0, tmp_status = 0;
+		static int remain = 0;
+		
+		if(status == 0) {
+			if(remain > 0) {
+				status = prev_status = tmp_status;
+				remain--;
+			}
+		} else {
+#ifdef SUPPORT_VARIABLE_TIMING
+			remain = (int)(vm->frame_rate() / 4.0 + 0,5);
+#else
+			remain = (int)(FRAMES_PER_SEC / 4.0 + 0.5);
+#endif
+			tmp_status = status;
+		}
 		bool render_in = (status != 0);
 		bool render_out = (prev_status != status);
 		prev_status = status;
@@ -617,7 +632,7 @@ void EMU::capture_screen()
 	GetLocalTime(&sTime);
 	
 	_TCHAR file_name[_MAX_PATH];
-	_stprintf(file_name, _T("%4d-%2d-%2d_%2d-%2d-%2d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+	_stprintf(file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 	
 	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
 	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);

@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.14-
@@ -26,6 +26,8 @@
 class IO : public DEVICE
 {
 private:
+	DEVICE *d_cpu;
+	
 	// i/o map
 	typedef struct {
 		DEVICE* dev;
@@ -48,13 +50,12 @@ private:
 	uint32 prv_raddr, prv_rdata;
 	
 	// vram
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint8 vram[0x18000];
 #else
 	uint8 vram[0xc000];
 #endif
-	bool vram_mode, signal, column, hires;
-	int vram_wait, tvram_wait;
+	bool vram_mode, signal;
 	
 	uint8* vram_b;
 	uint8* vram_r;
@@ -62,14 +63,16 @@ private:
 	
 	uint8 vdisp;
 	
-#ifdef _X1TURBO
+	uint32 prev_clock, vram_wait_index;
+	bool column40;
+#ifdef _X1TURBO_FEATURE
 	uint8 crtc_regs[18];
 	int crtc_ch;
+	bool hireso;
 #endif
-	
 	void write_port8(uint32 addr, uint32 data, bool is_dma, int* wait);
 	uint32 read_port8(uint32 addr, bool is_dma, int* wait);
-	void update_vram_wait();
+	int get_vram_wait();
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -89,17 +92,15 @@ public:
 	void initialize();
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
-#ifdef Z80_IO_WAIT
 	void write_io8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_io8w(uint32 addr, int* wait);
-#else
-	void write_io8(uint32 addr, uint32 data);
-	uint32 read_io8(uint32 addr);
-#endif
-	void write_dma_io8(uint32 addr, uint32 data);
-	uint32 read_dma_io8(uint32 addr);
+	void write_dma_io8w(uint32 addr, uint32 data, int* wait);
+	uint32 read_dma_io8w(uint32 addr, int* wait);
 	
 	// unique functions
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
 	uint8* get_vram() {
 		return vram;
 	}

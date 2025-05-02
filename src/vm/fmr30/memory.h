@@ -1,6 +1,5 @@
 /*
 	FUJITSU FMR-30 Emulator 'eFMR-30'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.12.30 -

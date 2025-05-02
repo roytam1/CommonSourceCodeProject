@@ -1,7 +1,6 @@
 /*
 	NEC PC-8801MA Emulator 'ePC-8801MA'
 	NEC PC-8001mkIISR Emulator 'ePC-8001mkIISR'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2012.02.16-
@@ -75,6 +74,7 @@
 // slow enough for N88-“ú–{ŒêBASIC
 #define USE_AUTO_KEY		8
 #define USE_AUTO_KEY_RELEASE	10
+#define USE_MONITOR_TYPE	2
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
 

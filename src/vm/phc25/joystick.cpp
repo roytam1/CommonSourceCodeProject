@@ -1,7 +1,6 @@
 /*
 	SANYO PHC-25 Emulator 'ePHC-25'
 	SEIKO MAP-1010 Emulator 'eMAP-1010'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.08.06-

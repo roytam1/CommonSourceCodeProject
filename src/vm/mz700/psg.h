@@ -1,7 +1,6 @@
 /*
 	SHARP MZ-700 Emulator 'EmuZ-700'
 	SHARP MZ-1500 Emulator 'EmuZ-1500'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.09.02 -

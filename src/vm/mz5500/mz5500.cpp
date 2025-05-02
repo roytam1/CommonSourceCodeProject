@@ -1,6 +1,5 @@
 /*
 	SHARP MZ-5500 Emulator 'EmuZ-5500'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.04.10 -
@@ -13,6 +12,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../disk.h"
 #include "../i8237.h"
 #include "../i8255.h"
 #include "../i8259.h"
@@ -147,6 +147,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
+	}
+	for(int i = 0; i < 4; i++) {
+#if defined(_MZ6500) || defined(_MZ6550)
+		fdc->set_drive_type(i, DRIVE_TYPE_2HD);
+#else
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
+#endif
 	}
 }
 

@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.11-
@@ -9,8 +9,8 @@
 	[ virtual machine ]
 */
 
-#ifndef _X1TWIN_H_
-#define _X1TWIN_H_
+#ifndef _X1_H_
+#define _X1_H_
 
 #if defined(_X1TURBOZ)
 #define DEVICE_NAME		"SHARP X1turboZ"
@@ -26,8 +26,12 @@
 #define CONFIG_NAME		"x1"
 #endif
 
+#if defined(_X1TURBO) || defined(_X1TURBOZ)
+#define _X1TURBO_FEATURE
+#endif
+
 // device informations for virtual machine (x1)
-//#ifdef _X1TURBO
+//#ifdef _X1TURBO_FEATURE
 //24KHz
 //#define FRAMES_PER_SEC	55.49
 //#define LINES_PER_FRAME	448
@@ -46,13 +50,13 @@
 #define MAX_DRIVE		4
 #define IO_ADDR_MAX		0x10000
 #define HAS_AY_3_8912
-//#define Z80_IO_WAIT
-#ifdef _X1TURBO
+#define Z80_IO_WAIT
+#ifdef _X1TURBO_FEATURE
 #define SINGLE_MODE_DMA
 #endif
 #define SUPPORT_VARIABLE_TIMING
 
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 #define IPL_ROM_FILE_SIZE	0x8000
 #define IPL_ROM_FILE_NAME	_T("IPLROM.X1T")
 #define SUB_ROM_FILE_NAME	_T("SUBROM.X1T")
@@ -75,7 +79,7 @@
 
 // device informations for win32
 #define USE_SPECIAL_RESET
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 #define USE_DEVICE_TYPE		2
 #endif
 #define USE_FD1
@@ -110,7 +114,7 @@ class YM2151;
 class YM2203;
 class Z80;
 class Z80CTC;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 class Z80DMA;
 class Z80SIO;
 #endif
@@ -151,7 +155,7 @@ protected:
 	Z80* cpu;
 	Z80CTC* ctc1;
 	Z80CTC* ctc2;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	Z80DMA* dma;
 	Z80SIO* sio;
 	Z80CTC* ctc;
@@ -231,7 +235,7 @@ public:
 #endif
 	
 	void update_config();
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	void update_dipswitch();
 #endif
 	

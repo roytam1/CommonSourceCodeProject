@@ -1,6 +1,5 @@
 /*
 	FUJITSU FM16pi Emulator 'eFM16pi'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.12.25-

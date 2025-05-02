@@ -137,6 +137,7 @@ public:
 	void register_vline_event(DEVICE* device);
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	double passed_usec(uint32 prev);
 	uint32 get_cpu_pc(int index);
 	void set_skip_frames(bool value);
 	

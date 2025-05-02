@@ -51,8 +51,9 @@ private:
 	
 	int phase, prevphase;
 	uint8 status, seekstat, command;
-	uint32 result;
-	bool no_dma_mode, motor;
+	uint32 result, result_tmp;
+	int step_rate_time;
+	bool no_dma_mode, motor_on;
 #ifdef UPD765A_DMA_MODE
 	bool dma_data_lost;
 #endif
@@ -65,7 +66,16 @@ private:
 	int phase_id, drq_id, lost_id, result7_id, seek_id[4];
 	bool force_ready;
 	bool reset_signal;
-	uint8 index_count;
+	bool prev_index;
+	
+	// timing
+	int cur_position[4];
+	int next_trans_position[4];
+	uint32 prev_clock[4];
+	uint32 prev_drq_clock;
+	
+	int get_cur_position(int drv);
+	double get_usec_to_exec_phase();
 	
 	// update status
 	void set_irq(bool val);
@@ -167,6 +177,8 @@ public:
 	uint8 media_type(int drv);
 	void set_drive_type(int drv, uint8 type);
 	uint8 get_drive_type(int drv);
+	void set_drive_rpm(int drv, int rpm);
+	void set_drive_mfm(int drv, bool mfm);
 	bool raise_irq_when_media_changed;
 };
 

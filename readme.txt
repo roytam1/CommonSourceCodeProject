@@ -61,6 +61,7 @@ This archive includes the all source codes of emulators listed below:
 	eSCV		EPOCH Super Cassette Vision
 	eTK-80BS	NEC TK-80BS (COMPO BS/80)
 	eX-07		CANON X-07
+	eX1		SHARP X1
 	eX1twin		SHARP X1twin
 	eX1turbo	SHARP X1turbo
 	eYS-6464A	Shinko Sangyo YS-6464A

@@ -1,6 +1,5 @@
 /*
 	BANDAI RX-78 Emulator 'eRX-78'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.08.21 -

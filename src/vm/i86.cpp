@@ -620,7 +620,7 @@ void I86::reset()
 	DirVal = 1;
 	ParityVal = TF = IF = MF = 0;
 	
-	icount = 0;
+	icount = extra_icount = 0;
 	int_state = 0;
 	test_state = false;
 	halted = false;
@@ -652,14 +652,21 @@ int I86::run(int clock)
 {
 	/* return now if BUSREQ */
 	if(busreq) {
-		icount = 0;
-		return 1;
+#ifdef SINGLE_MODE_DMA
+		if(d_dma) {
+			d_dma->do_dma();
+		}
+#endif
+		int passed_icount = max(1, extra_icount);
+		icount = extra_icount = 0;
+		return passed_icount;
 	}
 	
 	// run cpu
 	if(clock == -1) {
 		// run only one opcode
-		icount = 0;
+		icount = -extra_icount;
+		extra_icount = 0;
 		run_one_opecode();
 		return -icount;
 	}
@@ -667,6 +674,8 @@ int I86::run(int clock)
 		/* run cpu while given clocks */
 		icount += clock;
 		int first_icount = icount;
+		icount -= extra_icount;
+		extra_icount = 0;
 		
 		while(icount > 0 && !busreq) {
 			run_one_opecode();
@@ -723,6 +732,8 @@ void I86::run_one_opecode()
 		d_dma->do_dma();
 	}
 #endif
+	icount -= extra_icount;
+	extra_icount = 0;
 }
 
 void I86::write_signal(int id, uint32 data, uint32 mask)

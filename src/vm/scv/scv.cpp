@@ -1,6 +1,5 @@
 /*
 	EPOCH Super Cassette Vision Emulator 'eSCV'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.08.21 -

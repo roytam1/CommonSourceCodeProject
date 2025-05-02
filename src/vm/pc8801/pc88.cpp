@@ -2,7 +2,6 @@
 	NEC PC-98DO Emulator 'ePC-98DO'
 	NEC PC-8801MA Emulator 'ePC-8801MA'
 	NEC PC-8001mkIISR Emulator 'ePC-8001mkIISR'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.12.29-
@@ -42,7 +41,11 @@
 #define Port31_RMODE	(port[0x31] & 0x04)
 #define Port31_GRAPH	(port[0x31] & 0x08)
 #define Port31_HCOLOR	(port[0x31] & 0x10)
+#if !defined(_PC8001SR)
 #define Port31_400LINE	!(port[0x31] & 0x11)
+#else
+#define Port31_400LINE	false
+#endif
 
 #define Port31_COLOR	(port[0x31] & 0x04)	// PC-8001
 #define Port31_320x200	(port[0x31] & 0x10)	// PC-8001
@@ -300,6 +303,12 @@ void PC88::release()
 
 void PC88::reset()
 {
+#if defined(_PC8001SR)
+	hireso = false;
+#else
+	hireso = (config.monitor_type == 0);
+#endif
+	
 	// memory
 	memset(port, 0, sizeof(port));
 	port[0x31] = 0x01;
@@ -332,11 +341,12 @@ void PC88::reset()
 	// memory wait
 	mem_wait_on = ((config.dipswitch & 1) != 0);
 	update_mem_wait();
+	tvram_wait_clocks_r = tvram_wait_clocks_w = 0;
 	
 	// crtc
 	memset(&crtc, 0, sizeof(crtc));
-	crtc.reset();
-	update_frames_per_sec();
+	crtc.reset(hireso);
+	update_timing();
 	
 	for(int i = 0; i < 9; i++) {
 		palette[i].b = (i & 1) ? 7 : 0;
@@ -376,28 +386,36 @@ void PC88::reset()
 void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
 {
 	addr &= 0xffff;
-	*wait = mem_wait_clocks;
+	*wait = mem_wait_clocks_w;
 	
-#if defined(_PC8001SR)
-	if((addr & 0xc000) == 0x8000) {
+#if !defined(_PC8001SR)
+	if((addr & 0xfc00) == 0x8000) {
+		// text window
+		if(!Port31_MMODE && !Port31_RMODE) {
+			addr = (Port70_TEXTWND << 8) + (addr & 0x3ff);
+		}
+		ram[addr & 0xffff] = data;
+		return;
+	}
+	else if((addr & 0xc000) == 0xc000) {
 #else
-	if((addr & 0xc000) == 0xc000) {
+	if((addr & 0xc000) == 0x8000) {
 #endif
 		switch(gvram_sel) {
 		case 1:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_w;
 			gvram[(addr & 0x3fff) | 0x0000] = data;
 			return;
 		case 2:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_w;
 			gvram[(addr & 0x3fff) | 0x4000] = data;
 			return;
 		case 4:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_w;
 			gvram[(addr & 0x3fff) | 0x8000] = data;
 			return;
 		case 8:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_w;
 			addr &= 0x3fff;
 			switch(Port35_GDM) {
 			case 0x00:
@@ -431,13 +449,9 @@ void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
 		}
 	}
 #if !defined(_PC8001SR)
-	else if((addr & 0xfc00) == 0x8000) {
-		// text window
-		if(!Port31_MMODE && !Port31_RMODE) {
-			addr = (Port70_TEXTWND << 8) + (addr & 0x3ff);
-		}
-		ram[addr & 0xffff] = data;
-		return;
+	if((addr & 0xf000) == 0xf000) {
+		// high speed ram
+		*wait += tvram_wait_clocks_w;
 	}
 #endif
 	wbank[addr >> 12][addr & 0xfff] = data;
@@ -446,26 +460,33 @@ void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
 uint32 PC88::read_data8w(uint32 addr, int* wait)
 {
 	addr &= 0xffff;
-	*wait = mem_wait_clocks;
+	*wait = mem_wait_clocks_r;
 	
-#if defined(_PC8001SR)
-	if((addr & 0xc000) == 0x8000) {
+#if !defined(_PC8001SR)
+	if((addr & 0xfc00) == 0x8000) {
+		// text window
+		if(!Port31_MMODE && !Port31_RMODE) {
+			addr = (Port70_TEXTWND << 8) + (addr & 0x3ff);
+		}
+		return ram[addr & 0xffff];
+	}
+	else if((addr & 0xc000) == 0xc000) {
 #else
-	if((addr & 0xc000) == 0xc000) {
+	if((addr & 0xc000) == 0x8000) {
 #endif
 		uint8 b, r, g;
 		switch(gvram_sel) {
 		case 1:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_r;
 			return gvram[(addr & 0x3fff) | 0x0000];
 		case 2:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_r;
 			return gvram[(addr & 0x3fff) | 0x4000];
 		case 4:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_r;
 			return gvram[(addr & 0x3fff) | 0x8000];
 		case 8:
-			*wait = gvram_wait_clocks;
+			*wait = gvram_wait_clocks_r;
 			addr &= 0x3fff;
 			alu_reg[0] = gvram[addr | 0x0000];
 			alu_reg[1] = gvram[addr | 0x4000];
@@ -482,12 +503,9 @@ uint32 PC88::read_data8w(uint32 addr, int* wait)
 #endif
 	}
 #if !defined(_PC8001SR)
-	else if((addr & 0xfc00) == 0x8000) {
-		// text window
-		if(!Port31_MMODE && !Port31_RMODE) {
-			addr = (Port70_TEXTWND << 8) + (addr & 0x3ff);
-		}
-		return ram[addr & 0xffff];
+	if((addr & 0xf000) == 0xf000) {
+		// high speed ram
+		*wait += tvram_wait_clocks_r;
 	}
 #endif
 	return rbank[addr >> 12][addr & 0xfff];
@@ -603,10 +621,14 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		if(mod & 0x06) {
 			update_low_memmap();
 		}
+		if(mod & 0x08) {
+			update_gvram_wait();
+		}
 		if(mod & 0x11) {
-			update_frames_per_sec();
+			update_timing();
 			update_palette = true;
 		}
+		
 		break;
 	case 0x32:
 		if(mod & 0x03) {
@@ -671,9 +693,9 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x50:
 		crtc.write_param(data);
-		if(crtc.height_changed) {
-			update_frames_per_sec();
-			crtc.height_changed = false;
+		if(crtc.timing_changed) {
+			update_timing();
+			crtc.timing_changed = false;
 		}
 		break;
 	case 0x51:
@@ -849,7 +871,7 @@ uint32 PC88::read_io8(uint32 addr)
 		return port[0x32];
 #endif
 	case 0x40:
-		return (crtc.vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0) | (usart_dcd ? 4 : 0) | 0xc0;
+		return (crtc.vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0) | (usart_dcd ? 4 : 0) | (hireso ? 0 : 2) | 0xc0;
 	case 0x44:
 		val = d_opn->read_io8(addr);
 		if(opn_busy) {
@@ -946,58 +968,59 @@ void PC88::write_dma_io8(uint32 addr, uint32 data)
 	crtc.write_buffer(data);
 }
 
-void PC88::update_frames_per_sec()
+void PC88::update_timing()
 {
-	if(Port31_400LINE) {
-		if(crtc.height < 25) {
-			set_frames_per_sec(56.424);
-		} else {
-			set_frames_per_sec(55.416);
-		}
-		set_lines_per_frame(448);
-	} else {
-		if(crtc.height < 25) {
-			set_frames_per_sec(61.462);
-		} else {
-			set_frames_per_sec(62.422);
-		}
-		set_lines_per_frame(260);
-	}
+	int lines_per_frame = (crtc.height + crtc.vretrace) * crtc.char_height;
+	double frames_per_sec = (hireso ? 24860.0 * 56.424 / 56.5 : 15980.0) / (double)lines_per_frame;
+	
+	set_frames_per_sec(frames_per_sec);
+	set_lines_per_frame(lines_per_frame);
+	
+	emu->out_debug("H=%d,V=%d,CH=%d,SKIP=%d\n",crtc.height,crtc.vretrace,crtc.char_height,crtc.skip_line);
 }
 
 void PC88::update_mem_wait()
 {
-	if(mem_wait_on) {
-		m1_wait_clocks = 0;
-		mem_wait_clocks = cpu_clock_low ? 1 : 2;
-	} else {
-#if defined(_PC8001SR)
-		if(config.boot_mode == MODE_PC80_V1 || config.boot_mode == MODE_PC80_N) {
-#else
-		if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
-#endif
-			m1_wait_clocks = cpu_clock_low ? 1 : 0;
-		} else {
-			m1_wait_clocks = 0;
-		}
-		mem_wait_clocks = cpu_clock_low ? 0 : 1;
-	}
-}
-
-void PC88::update_gvram_wait()
-{
-	// from M88
 #if defined(_PC8001SR)
 	if(config.boot_mode == MODE_PC80_V1 || config.boot_mode == MODE_PC80_N) {
 #else
 	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
 #endif
-		static const int wait[8] = {30, 3, 72, 7, 4, 3, 8, 4};
-		gvram_wait_clocks = wait[(crtc.vblank ? 1 : 0) | (cpu_clock_low ? 0 : 2) | (Port40_GHSM ? 4 : 0)];
+		m1_wait_clocks = (!mem_wait_on && cpu_clock_low) ? 1 : 0;
 	} else {
-		static const int wait[4] = {2, 1, 5, 3};
-		gvram_wait_clocks = wait[(crtc.vblank ? 1 : 0) | (cpu_clock_low ? 0 : 2)];
+		m1_wait_clocks = 0;
 	}
+	if(mem_wait_on) {
+		mem_wait_clocks_r = cpu_clock_low ? 1 : 2;
+		mem_wait_clocks_w = cpu_clock_low ? 0 : 2;
+	} else {
+		mem_wait_clocks_r = mem_wait_clocks_w = cpu_clock_low ? 0 : 1;
+	}
+}
+
+void PC88::update_gvram_wait()
+{
+	if(Port31_GRAPH) {
+#if defined(_PC8001SR)
+		if((config.boot_mode == MODE_PC80_V1 || config.boot_mode == MODE_PC80_N) && !Port40_GHSM) {
+#else
+		if((config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) && !Port40_GHSM) {
+#endif
+			static const int wait[8] = {96,0, 116,3, 138,0, 178,3};
+			gvram_wait_clocks_r = gvram_wait_clocks_w = wait[(crtc.vblank ? 1 : 0) | (cpu_clock_low ? 0 : 2) | (hireso ? 4 : 0)];
+		} else {
+			static const int wait[4] = {2,0, 5,3};
+			gvram_wait_clocks_r = gvram_wait_clocks_w = wait[(crtc.vblank ? 1 : 0) | (cpu_clock_low ? 0 : 2)];
+		}
+	} else {
+		if(cpu_clock_low && mem_wait_on) {
+			gvram_wait_clocks_r = cpu_clock_low ? 1 : 2;
+			gvram_wait_clocks_w = cpu_clock_low ? 0 : 2;
+		} else {
+			gvram_wait_clocks_r = gvram_wait_clocks_w = cpu_clock_low ? 0 : 3;
+		}
+	}
+
 }
 
 void PC88::update_gvram_sel()
@@ -1108,8 +1131,11 @@ void PC88::update_tvram_memmap()
 {
 	if(Port32_TMODE) {
 		SET_BANK(0xf000, 0xffff, ram + 0xf000, ram + 0xf000);
+		tvram_wait_clocks_r = tvram_wait_clocks_w = 0;
 	} else {
 		SET_BANK(0xf000, 0xffff, tvram, tvram);
+		tvram_wait_clocks_r = cpu_clock_low ? 0 : mem_wait_on ?  0 : 1;
+		tvram_wait_clocks_w = cpu_clock_low ? 0 : mem_wait_on ? -1 : 0;
 	}
 }
 #endif
@@ -1202,11 +1228,7 @@ void PC88::event_frame()
 
 void PC88::event_vline(int v, int clock)
 {
-#if defined(_PC8001SR)
-	int disp_line = 200;
-#else
-	int disp_line = Port31_400LINE ? 400 : 200;
-#endif
+	int disp_line = crtc.height * crtc.char_height;
 	
 	if(v == 0) {
 		if(crtc.status & 0x10) {
@@ -1368,11 +1390,7 @@ bool PC88::check_data_carrier(uint8 *p)
 void PC88::draw_screen()
 {
 	// render text screen
-#if defined(_PC8001SR)
-	crtc.expand_attribs(false);
-#else
-	crtc.expand_attribs(Port31_400LINE);
-#endif
+	crtc.expand_attribs(hireso, Port31_400LINE);
 	draw_text();
 	
 	// render graph screen
@@ -1531,12 +1549,12 @@ void PC88::draw_text()
 	int char_height = crtc.char_height;
 	uint8 color_mask = Port30_COLOR ? 0 : 7;
 	
-#if !defined(_PC8001SR)
+	if(!hireso) {
+		char_height <<= 1;
+	}
 	if(Port31_400LINE || !crtc.skip_line) {
 		char_height >>= 1;
 	}
-#endif
-	
 	for(int cy = 0, ytop = 0, ofs = 0; cy < crtc.height && ytop < 200; cy++, ytop += char_height, ofs += 80 + crtc.attrib.num * 2) {
 		for(int x = 0, cx = 0; cx < crtc.width && cx < 80; x += 8, cx++) {
 			if(Port30_40 && (cx & 1)) {
@@ -1899,7 +1917,7 @@ void PC88::intr_ei()
 	CRTC (uPD3301)
 ---------------------------------------------------------------------------- */
 
-void pc88_crtc_t::reset()
+void pc88_crtc_t::reset(bool hireso)
 {
 	blink.rate = 24;
 	cursor.type = cursor.mode = -1;
@@ -1909,9 +1927,10 @@ void pc88_crtc_t::reset()
 	attrib.num = 20;
 	width = 80;
 	height = 25;
-	height_changed = false;
-	char_height = 16;
-	skip_line = true;
+	char_height = hireso ? 16 : 8;
+	skip_line = false;
+	vretrace = hireso ? 3 : 7;
+	timing_changed = false;
 }
 
 void pc88_crtc_t::write_cmd(uint8 data)
@@ -1957,14 +1976,23 @@ void pc88_crtc_t::write_param(uint8 data)
 		case 1:
 			if(height != (data & 0x3f) + 1) {
 				height = (data & 0x3f) + 1;
-				height_changed = true;
+				timing_changed = true;
 			}
 			blink.rate = 32 * ((data >> 6) + 1);
 			break;
 		case 2:
-			char_height = (data & 0x1f) + 1;
+			if(char_height != (data & 0x1f) + 1) {
+				char_height = (data & 0x1f) + 1;
+				timing_changed = true;
+			}
 			cursor.mode = (data >> 5) & 3;
 			skip_line = ((data & 0x80) != 0);
+			break;
+		case 3:
+			if(vretrace != ((data >> 5) & 7) + 1) {
+				vretrace = ((data >> 5) & 7) + 1;
+				timing_changed = true;
+			}
 			break;
 		case 4:
 			mode = (data >> 5) & 7;
@@ -2027,14 +2055,18 @@ void pc88_crtc_t::update_blink()
 	blink.cursor = (blink.counter <= blink.rate / 4) || (blink.rate / 2 <= blink.counter && blink.counter <= 3 * blink.rate / 4);
 }
 
-void pc88_crtc_t::expand_attribs(bool hireso)
+void pc88_crtc_t::expand_attribs(bool hireso, bool line400)
 {
 	if(!(status & 0x10) || attrib.num == 0) {
 		memset(attrib.expand, 0xe0, sizeof(attrib.expand));
 		return;
 	}
 	int char_height_tmp = char_height;
-	if(hireso || !skip_line) {
+	
+	if(!hireso) {
+		char_height_tmp <<= 1;
+	}
+	if(line400 || !skip_line) {
 		char_height_tmp >>= 1;
 	}
 	for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {

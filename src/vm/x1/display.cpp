@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Origin : X1EMU by KM (kanji rom)
 	         X-millenium by Yui (ank16 patch)
@@ -12,7 +12,7 @@
 */
 
 #include "display.h"
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 #include "../hd46505.h"
 #endif
 #include "../i8255.h"
@@ -155,17 +155,17 @@ void DISPLAY::initialize()
 	pal[2] = 0xf0;
 	priority = 0;
 	update_pal();
-	column = 0x40;
+	column40 = true;
 	
 	memset(vram_t, 0, sizeof(vram_t));
 	memset(vram_a, 0, sizeof(vram_a));
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	memset(vram_k, 0, sizeof(vram_k));
 #endif
 	memset(pcg_b, 0, sizeof(pcg_b));
 	memset(pcg_r, 0, sizeof(pcg_r));
 	memset(pcg_g, 0, sizeof(pcg_g));
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	memset(gaiji_b, 0, sizeof(gaiji_b));
 	memset(gaiji_r, 0, sizeof(gaiji_r));
 	memset(gaiji_g, 0, sizeof(gaiji_g));
@@ -178,10 +178,10 @@ void DISPLAY::initialize()
 
 void DISPLAY::reset()
 {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	mode1 = 0;//3;
 	mode2 = 0;
-	hires = true;
+	hireso = true;
 #endif
 	cur_line = cur_code = 0;
 	vblank_clock = 0;
@@ -220,25 +220,25 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x1500:
 		get_cur_pcg(addr);
 		pcg_b[cur_code][cur_line] = data;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		gaiji_b[cur_code >> 1][(cur_line << 1) | (cur_code & 1)] = data;
 #endif
 		break;
 	case 0x1600:
 		get_cur_pcg(addr);
 		pcg_r[cur_code][cur_line] = data;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		gaiji_r[cur_code >> 1][(cur_line << 1) | (cur_code & 1)] = data;
 #endif
 		break;
 	case 0x1700:
 		get_cur_pcg(addr);
 		pcg_g[cur_code][cur_line] = data;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		gaiji_g[cur_code >> 1][(cur_line << 1) | (cur_code & 1)] = data;
 #endif
 		break;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	case 0x1f00:
 		switch(addr) {
 		case 0x1fd0:
@@ -246,7 +246,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 				d_crtc->set_horiz_freq((data & 1) ? 24860 : 15980);
 			}
 			mode1 = data;
-//			hires = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
+//			hireso = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
 			break;
 		case 0x1fe0:
 			mode2 = data;
@@ -293,7 +293,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x3d00:
 	case 0x3e00:
 	case 0x3f00:
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		vram_k[addr & 0x7ff] = data;
 #else
 		vram_t[addr & 0x7ff] = data; // mirror
@@ -371,7 +371,7 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	case 0x3d00:
 	case 0x3e00:
 	case 0x3f00:
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		return vram_k[addr & 0x7ff];
 #else
 		return vram_t[addr & 0x7ff]; // mirror
@@ -387,8 +387,8 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 			// enter vblank
 			vblank_clock = current_clock();
 		}
-	} else if(id == SIG_DISPLAY_COLUMN) {
-		column = data & mask;
+	} else if(id == SIG_DISPLAY_COLUMN40) {
+		column40 = ((data & mask) != 0);
 	} else if(id == SIG_DISPLAY_DETECT_VBLANK) {
 		// hack: cpu detects vblank
 		vblank_clock = current_clock();
@@ -406,16 +406,16 @@ void DISPLAY::event_frame()
 	vt_disp = regs[6] & 0x7f;
 	st_addr = (regs[12] << 8) | regs[13];
 	
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	int vt_total = ((regs[4] & 0x7f) + 1) * ch_height + (regs[5] & 0x1f);
-	hires = (vt_total > 400);
+	hireso = (vt_total > 400);
 #endif
 }
 
 void DISPLAY::event_vline(int v, int clock)
 {
-#ifdef _X1TURBO
-	if(hires) {
+#ifdef _X1TURBO_FEATURE
+	if(hireso) {
 		if(v < 400) {
 			draw_line(v);
 		}
@@ -424,7 +424,7 @@ void DISPLAY::event_vline(int v, int clock)
 		if(v < 200) {
 			draw_line(v);
 		}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	}
 	// restart cpu after pcg/cgrom is accessed
 	d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
@@ -438,7 +438,7 @@ void DISPLAY::update_pal()
 		uint8 bit = 1 << i;
 		pal2[i] = ((pal[0] & bit) ? 1 : 0) | ((pal[1] & bit) ? 2 : 0) | ((pal[2] & bit) ? 4 : 0) | 8;
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	if(mode2 & 0x10) pal2[0] = 8;
 	if(mode2 & 0x20) pal2[1] = 8;
 #endif
@@ -447,7 +447,7 @@ void DISPLAY::update_pal()
 			if(priority & (1 << c)) {
 				pri[c][t] = pal2[c];
 			} else if(t) {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 				pri[c][t] = ((mode2 & 8) && (mode2 & 7) == t) ? 0 : t;
 #else
 				pri[c][t] = t;
@@ -461,7 +461,7 @@ void DISPLAY::update_pal()
 
 uint8 DISPLAY::get_cur_font(uint32 addr)
 {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	if(mode1 & 0x20) {
 		// wait next raster
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
@@ -501,7 +501,7 @@ uint8 DISPLAY::get_cur_font(uint32 addr)
 
 void DISPLAY::get_cur_pcg(uint32 addr)
 {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	if(mode1 & 0x20) {
 		// wait next raster
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
@@ -533,8 +533,8 @@ void DISPLAY::get_cur_pcg(uint32 addr)
 
 void DISPLAY::get_cur_code_line()
 {
-//#ifdef _X1TURBO
-//	int ht_clock = hires ? 161 : 250;
+//#ifdef _X1TURBO_FEATURE
+//	int ht_clock = hireso ? 161 : 250;
 //#else
 	#define ht_clock 250
 //#endif
@@ -574,10 +574,10 @@ void DISPLAY::draw_line(int v)
 void DISPLAY::draw_screen()
 {
 	// copy to real screen
-#ifdef _X1TURBO
-	if(hires) {
+#ifdef _X1TURBO_FEATURE
+	if(hireso) {
 		// 400 lines
-		if(column & 0x40) {
+		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 400; y++) {
 				scrntype* dest = emu->screen_buffer(y);
@@ -603,7 +603,7 @@ void DISPLAY::draw_screen()
 	} else {
 #endif
 		// 200 lines
-		if(column & 0x40) {
+		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 200; y++) {
 				scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
@@ -638,14 +638,14 @@ void DISPLAY::draw_screen()
 				}
 			}
 		}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	}
 #endif
 }
 
 void DISPLAY::draw_text(int y)
 {
-	int width = (column & 0x40) ? 40 : 80;
+	int width = column40 ? 40 : 80;
 	uint16 src = st_addr + hz_disp * y;
 	
 	bool cur_vert_double = true;
@@ -654,7 +654,7 @@ void DISPLAY::draw_text(int y)
 	for(int x = 0; x < hz_disp && x < width; x++) {
 		src &= 0x7ff;
 		uint8 code = vram_t[src];
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		uint8 knj = vram_k[src];
 #endif
 		uint8 attr = vram_a[src];
@@ -667,12 +667,12 @@ void DISPLAY::draw_text(int y)
 		
 		// select pcg or ank
 		const uint8 *pattern_b, *pattern_r, *pattern_g;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		int shift = 0;
 #endif
 		if(attr & 0x20) {
 			// pcg
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 			if(knj & 0x90) {
 				pattern_b = gaiji_b[code >> 1];
 				pattern_r = gaiji_r[code >> 1];
@@ -682,13 +682,13 @@ void DISPLAY::draw_text(int y)
 				pattern_b = pcg_b[code];
 				pattern_r = pcg_r[code];
 				pattern_g = pcg_g[code];
-#ifdef _X1TURBO
-				shift = hires ? 1 : 0;
+#ifdef _X1TURBO_FEATURE
+				shift = hireso ? 1 : 0;
 			}
 #endif
 		}
-#ifdef _X1TURBO
-		else if(hires) {
+#ifdef _X1TURBO_FEATURE
+		else if(hireso) {
 			// ank 8x16 or kanji
 			uint32 ofs = code << 4;
 			if(knj & 0x80) {
@@ -713,7 +713,7 @@ void DISPLAY::draw_text(int y)
 		// render character
 		for(int l = 0; l < ch_height; l++) {
 			int line = cur_vert_double ? raster + (l >> 1) : l;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 			line >>= shift;
 #endif
 			uint8 b, r, g;
@@ -726,12 +726,18 @@ void DISPLAY::draw_text(int y)
 				r = prev_pattern_r[line] = pattern_r[line];
 				g = prev_pattern_g[line] = pattern_g[line];
 			}
-			b = (!(col & 1)) ? 0 : reverse ? ~b : b;
-			r = (!(col & 2)) ? 0 : reverse ? ~r : r;
-			g = (!(col & 4)) ? 0 : reverse ? ~g : g;
+			if(reverse) {
+				b = (!(col & 1)) ? 0xff : ~b;
+				r = (!(col & 2)) ? 0xff : ~r;
+				g = (!(col & 4)) ? 0xff : ~g;
+			} else {
+				b = (!(col & 1)) ? 0 : b;
+				r = (!(col & 2)) ? 0 : r;
+				g = (!(col & 4)) ? 0 : g;
+			}
 			
 			int yy = y * ch_height + l;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 			if(yy >= 400) {
 #else
 			if(yy >= 200) {
@@ -770,7 +776,7 @@ void DISPLAY::draw_text(int y)
 
 void DISPLAY::draw_cg(int line)
 {
-	int width = (column & 0x40) ? 40 : 80;
+	int width = column40 ? 40 : 80;
 	
 	int y = line / ch_height;
 	int l = line % ch_height;
@@ -778,9 +784,9 @@ void DISPLAY::draw_cg(int line)
 		return;
 	}
 	int ofs, src = st_addr + hz_disp * y;
-#ifdef _X1TURBO
-	int page = (hires && !(mode1 & 2)) ? (l & 1) : (mode1 & 8);
-	int ll = hires ? (l >> 1) : l;
+#ifdef _X1TURBO_FEATURE
+	int page = (hireso && !(mode1 & 2)) ? (l & 1) : (mode1 & 8);
+	int ll = hireso ? (l >> 1) : l;
 	
 	if(mode1 & 4) {
 		ofs = (0x400 * (ll & 15)) + (page ? 0xc000 : 0);
@@ -901,7 +907,7 @@ uint32 DISPLAY::adr2knj_x1(uint16 adr)
 	return jis2knj(jis);
 }
 
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 uint32 DISPLAY::adr2knj_x1t(uint16 adr)
 {
 	uint16 j1, j2;

@@ -1,6 +1,5 @@
 /*
 	SHINKO SANGYO YS-6464A Emulator 'eYS-6464A'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.12.30 -

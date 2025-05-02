@@ -307,6 +307,7 @@ struct i386_state
 	int segment_override;
 
 	int cycles;
+	int extra_cycles;
 	int base_cycles;
 	UINT8 opcode;
 

@@ -1,6 +1,5 @@
 /*
 	EPSON HC-40 Emulator 'eHC-40'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.02.23 -

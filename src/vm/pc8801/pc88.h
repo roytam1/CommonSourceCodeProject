@@ -2,7 +2,6 @@
 	NEC PC-98DO Emulator 'ePC-98DO'
 	NEC PC-8801MA Emulator 'ePC-8801MA'
 	NEC PC-8001mkIISR Emulator 'ePC-8001mkIISR'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.12.29-
@@ -44,9 +43,10 @@ typedef struct pc88_crtc_t {
 		uint8 expand[200][80];
 	} attrib;
 	int width, height;
-	bool height_changed;
 	int char_height;
 	bool skip_line;
+	int vretrace;
+	bool timing_changed;
 	uint8 buffer[120 * 200];
 	int buffer_ptr;
 	uint8 cmd;
@@ -54,7 +54,7 @@ typedef struct pc88_crtc_t {
 	uint8 mode, status;
 	bool vblank;
 	
-	void reset();
+	void reset(bool hireso);
 	void write_cmd(uint8 data);
 	void write_param(uint8 data);
 	uint8 read_status();
@@ -62,7 +62,7 @@ typedef struct pc88_crtc_t {
 	uint8 read_buffer(int ofs);
 	void clear_buffer();
 	void update_blink();
-	void expand_attribs(bool hireso);
+	void expand_attribs(bool hireso, bool line400);
 } pc88_crtc_t;
 
 typedef struct pc88_dmac_t {
@@ -122,7 +122,7 @@ private:
 	uint8 alu_reg[3];
 	uint8 gvram_plane, gvram_sel;
 	
-	void update_frames_per_sec();
+	void update_timing();
 	void update_mem_wait();
 	void update_gvram_wait();
 	void update_gvram_sel();
@@ -138,8 +138,9 @@ private:
 	bool cpu_clock_low;
 	bool mem_wait_on;
 	int m1_wait_clocks;
-	int mem_wait_clocks;
-	int gvram_wait_clocks;
+	int mem_wait_clocks_r, mem_wait_clocks_w;
+	int tvram_wait_clocks_r, tvram_wait_clocks_w;
+	int gvram_wait_clocks_r, gvram_wait_clocks_w;
 	int busreq_clocks;
 	
 	// screen
@@ -147,6 +148,7 @@ private:
 		uint8 b, r, g;
 	} palette[9];
 	bool update_palette;
+	bool hireso;
 	
 	uint8 sg_pattern[0x800];
 	uint8 text[200][640];

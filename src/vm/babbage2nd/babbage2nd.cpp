@@ -1,6 +1,5 @@
 /*
 	Gijutsu-Hyoron-Sha Babbage-2nd Emulator 'eBabbage-2nd'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.12.26 -

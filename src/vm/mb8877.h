@@ -56,22 +56,29 @@ private:
 	uint8 cmdtype;
 	
 	// event
-	int register_id[7];
+	int register_id[8];
 	
 	// status
 	bool now_search;
 	bool now_seek, after_seek;
 	int seektrk;
 	bool seekvct;
-	int indexcnt;
-	int sectorcnt;
-	bool motor;
+	bool motor_on;
+	
+	// timing
+	int cur_position[MAX_DRIVE];
+	int next_trans_position[MAX_DRIVE];
+	int next_sync_position[MAX_DRIVE];
+	uint32 prev_clock[MAX_DRIVE];
+	uint32 prev_drq_clock;
+	
+	int get_cur_position();
+	double get_usec_to_start_trans();
 	
 	// image handler
 	uint8 search_track();
 	uint8 search_sector(int trk, int side, int sct, bool compare);
 	uint8 search_addr();
-	bool make_track();
 	
 	// command
 	void process_cmd();
@@ -98,6 +105,7 @@ public:
 #ifdef _FDC_DEBUG_LOG
 		d_cpu = NULL;
 #endif
+		motor_on = false;
 	}
 	~MB8877() {}
 	
@@ -134,6 +142,8 @@ public:
 	bool disk_inserted(int drv);
 	void set_drive_type(int drv, uint8 type);
 	uint8 get_drive_type(int drv);
+	void set_drive_rpm(int drv, int rpm);
+	void set_drive_mfm(int drv, bool mfm);
 	uint8 fdc_status();
 };
 

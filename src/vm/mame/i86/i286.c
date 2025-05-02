@@ -220,8 +220,14 @@ static CPU_EXECUTE( i80286 )
 {
 	if (cpustate->halted || cpustate->busreq)
 	{
-		cpustate->icount = 0;
-		return 1;
+#ifdef SINGLE_MODE_DMA
+		if (cpustate->dma != NULL) {
+			cpustate->dma->do_dma();
+		}
+#endif
+		int passed_icount = min(1, cpustate->extra_cycles);
+		cpustate->icount = cpustate->extra_cycles = 0;
+		return passed_icount;
 	}
 
 	if (icount == -1) {
@@ -250,22 +256,20 @@ static CPU_EXECUTE( i80286 )
 			cpustate->prevpc = cpustate->pc;
 
 			TABLE286 // call instruction
-
-#ifdef SINGLE_MODE_DMA
-			if (cpustate->dma != NULL) {
-				cpustate->dma->do_dma();
-			}
-#endif
 		}
 		catch (UINT32 e)
 		{
 			i80286_trap2(cpustate,e);
 		}
+#ifdef SINGLE_MODE_DMA
+		if (cpustate->dma != NULL) {
+			cpustate->dma->do_dma();
+		}
+#endif
+		/* adjust for any interrupts that came in */
+		cpustate->icount -= cpustate->extra_cycles;
+		cpustate->extra_cycles = 0;
 	}
-
-	/* adjust for any interrupts that came in */
-	cpustate->icount -= cpustate->extra_cycles;
-	cpustate->extra_cycles = 0;
 
 	int passed_icount = base_icount - cpustate->icount;
 

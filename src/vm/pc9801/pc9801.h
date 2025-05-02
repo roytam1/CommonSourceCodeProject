@@ -2,7 +2,6 @@
 	NEC PC-9801 Emulator 'ePC-9801'
 	NEC PC-9801E/F/M Emulator 'ePC-9801E'
 	NEC PC-98DO Emulator 'ePC-98DO'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.09.15-
@@ -141,6 +140,7 @@
 // slow enough for N88-“ú–{ŒêBASIC
 #define USE_AUTO_KEY		8
 #define USE_AUTO_KEY_RELEASE	10
+#define USE_MONITOR_TYPE	2
 #define USE_SCANLINE
 #else
 #define USE_AUTO_KEY		5

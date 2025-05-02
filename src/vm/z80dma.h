@@ -45,6 +45,7 @@ private:
 	int upcount;
 	int blocklen;
 	bool dma_stop;
+	bool bus_master;
 	
 	bool iei, oei;
 	uint32 intr_bit;
@@ -53,6 +54,8 @@ private:
 	uint8 vector;
 	
 	bool now_ready();
+	void request_bus();
+	void release_bus();
 	void update_read_buffer();
 	void request_intr(int level);
 	void update_intr();

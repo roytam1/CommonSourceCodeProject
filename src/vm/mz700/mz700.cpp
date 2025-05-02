@@ -2,7 +2,6 @@
 	SHARP MZ-700 Emulator 'EmuZ-700'
 	SHARP MZ-800 Emulator 'EmuZ-800'
 	SHARP MZ-1500 Emulator 'EmuZ-1500'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.06.05 -
@@ -30,6 +29,7 @@
 #include "ramfile.h"
 
 #if defined(_MZ800) || defined(_MZ1500)
+#include "../disk.h"
 #include "../mb8877.h"
 #if defined(_MZ800)
 #include "../not.h"
@@ -310,6 +310,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
+#if defined(_MZ800) || defined(_MZ1500)
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
+	}
+#endif
 }
 
 VM::~VM()

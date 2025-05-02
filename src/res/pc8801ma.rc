@@ -181,6 +181,9 @@ BEGIN
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
         MENUITEM SEPARATOR
+        MENUITEM "High Resolution",             ID_SCREEN_MONITOR_TYPE0
+        MENUITEM "Standard",                    ID_SCREEN_MONITOR_TYPE1
+        MENUITEM SEPARATOR
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"

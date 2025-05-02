@@ -102,7 +102,7 @@ void HD46505::event_pre_frame()
 	}
 #ifdef HD46505_HORIZ_FREQ
 	if(horiz_freq != next_horiz_freq) {
-		uint8 r8=regs[8]&3;
+		uint8 r8 = regs[8] & 3;
 		horiz_freq = next_horiz_freq;
 		frames_per_sec = (double)horiz_freq / (double)vt_total;
 		if(regs[8] & 1) {

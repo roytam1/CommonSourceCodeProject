@@ -1,6 +1,5 @@
 /*
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.11.24 -
@@ -14,6 +13,7 @@
 #include "../event.h"
 
 #include "../datarec.h"
+#include "../disk.h"
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../io.h"
@@ -174,6 +174,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
+	}
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
 	}
 	monitor_type = config.monitor_type;
 }

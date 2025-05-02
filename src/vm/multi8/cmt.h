@@ -1,6 +1,5 @@
 /*
 	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.09.16 -

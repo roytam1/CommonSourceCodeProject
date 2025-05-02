@@ -224,6 +224,11 @@ uint32 EVENT::passed_clock(uint32 prev)
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
 }
 
+double EVENT::passed_usec(uint32 prev)
+{
+	return 1000000.0 * passed_clock(prev) / d_cpu[0].cpu_clocks;
+}
+
 uint32 EVENT::get_cpu_pc(int index)
 {
 	return d_cpu[index].device->get_pc();

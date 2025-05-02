@@ -1,6 +1,5 @@
 /*
 	SANYO PHC-20 Emulator 'ePHC-20'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.09.03-

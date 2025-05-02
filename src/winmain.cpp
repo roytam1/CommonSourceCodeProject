@@ -1714,6 +1714,7 @@ void open_disk(int drv, _TCHAR* path, int bank)
 void close_disk(int drv)
 {
 	emu->close_disk(drv);
+	d88_file[drv].bank_num = 0;
 	d88_file[drv].cur_bank = -1;
 
 }

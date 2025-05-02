@@ -1,7 +1,6 @@
 /*
 	TOSHIBA J-3100GT Emulator 'eJ-3100GT'
 	TOSHIBA J-3100SL Emulator 'eJ-3100SL'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.08.16-
@@ -31,6 +30,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	

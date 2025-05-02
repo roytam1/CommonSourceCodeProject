@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.14-
@@ -17,7 +17,7 @@
 #include "../device.h"
 
 class MB8877;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 class Z80DMA;
 #endif
 
@@ -25,35 +25,29 @@ class FLOPPY : public DEVICE
 {
 private:
 	MB8877 *d_fdc;
-#ifdef _X1TURBO
-	Z80DMA *d_dma;
-	
-	int drive;
-#endif
+	int prev;
+	bool motor_on;
+	int register_id;
 	
 public:
 	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-#ifdef _X1TURBO
-		drive = 0;
-#endif
+		prev = 0;
+		motor_on = false;
 	}
 	~FLOPPY() {}
 	
 	// common functions
+	void reset();
 	void write_io8(uint32 addr, uint32 data);
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint32 read_io8(uint32 addr);
 #endif
+	void event_callback(int event_id, int err);
 	
 	// unique functions
 	void set_context_fdc(MB8877* device) {
 		d_fdc = device;
 	}
-#ifdef _X1TURBO
-	void set_context_dma(Z80DMA* device) {
-		d_dma = device;
-	}
-#endif
 };
 
 #endif

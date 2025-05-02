@@ -1,6 +1,5 @@
 /*
 	SHARP MZ-5500 Emulator 'EmuZ-5500'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.04.10 -

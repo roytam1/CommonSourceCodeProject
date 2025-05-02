@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.14-
@@ -10,7 +10,7 @@
 */
 
 #include "memory.h"
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 #include "../i8255.h"
 #else
 #include "../z80.h"
@@ -42,7 +42,7 @@ void MEMORY::initialize()
 		fio->Fclose();
 	}
 	delete fio;
-#ifndef _X1TURBO
+#ifndef _X1TURBO_FEATURE
 	for(int ofs = 0x1000; ofs < 0x8000; ofs += 0x1000) {
 		memcpy(rom + ofs, rom, 0x1000);
 	}
@@ -54,7 +54,7 @@ void MEMORY::reset()
 	SET_BANK(0x0000, 0x7fff, ram, rom);
 	SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
 	romsel = 1;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	bank = 0x10;
 	d_pio->write_signal(SIG_I8255_PORT_B, 0x00, 0x10);
 #else
@@ -74,7 +74,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 	return rbank[addr >> 12][addr & 0xfff];
 }
 
-#ifndef _X1TURBO
+#ifndef _X1TURBO_FEATURE
 uint32 MEMORY::fetch_op(uint32 addr, int *wait)
 {
 	*wait = m1_cycle;
@@ -87,7 +87,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	bool update_map_required = false;
 	
 	switch(addr & 0xff00) {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	case 0xb00:
 		if((bank & 0x1f) != (data & 0x1f)) {
 			update_map_required = true;
@@ -99,7 +99,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		if(!romsel) {
 			romsel = 1;
 			update_map_required = true;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 			d_pio->write_signal(SIG_I8255_PORT_B, 0x00, 0x10);
 #else
 			m1_cycle = 1;
@@ -110,7 +110,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		if(romsel) {
 			romsel = 0;
 			update_map_required = true;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 			d_pio->write_signal(SIG_I8255_PORT_B, 0x10, 0x10);
 #else
 			m1_cycle = 0;
@@ -119,7 +119,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		break;
 	}
 	if(update_map_required) {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 		if(!(bank & 0x10)) {
 			uint8 *ptr = extram + 0x8000 * (bank & 0x0f);
 			SET_BANK(0x0000, 0x7fff, ptr, ptr);
@@ -137,7 +137,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_io8(uint32 addr)
 {
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	switch(addr & 0xff00) {
 	case 0xb00:
 		return bank;

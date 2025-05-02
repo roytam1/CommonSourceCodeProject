@@ -1,6 +1,5 @@
 /*
 	CASIO FP-1100 Emulator 'eFP-1100'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2010.06.18-
@@ -14,6 +13,7 @@
 #include "../event.h"
 
 #include "../beep.h"
+#include "../disk.h"
 #include "../hd46505.h"
 #include "../upd765a.h"
 #include "../upd7801.h"
@@ -99,6 +99,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
+	}
+	for(int i = 0; i < 4; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 	}
 }
 

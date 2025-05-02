@@ -1,6 +1,5 @@
 /*
 	CASIO PV-1000 Emulator 'ePV-1000'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.11.16 -

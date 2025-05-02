@@ -1,3 +1,35 @@
+8/1/2013
+
+[VM/DEVICE] support virtual function to set or get expend cpu clocks
+[VM/DEVICE] support virtual function to get passed usec
+[VM/DEVICE] support virtual functions for dma access with i/o wait
+[VM/DISK] support function to get perid to transfer specified bytes
+[VM/DISK] support functions to get drive rpm and track size
+[VM/DISK] improva make track image
+[VM/DEVICE] support function to get passed usec
+[VM/I86] support function to get and set expend cpu clocks
+[VM/I86] fix single mode dma when busreq is active
+[VM/I286] support function to get and set expend cpu clocks
+[VM/I386] fix single mode dma when busreq is active
+[VM/I386] support function to get and set expend cpu clocks
+[VM/I386] fix single mode dma when busreq is active
+[VM/MB8877] improve timing of index hole, seek, search sector and transfer data
+[VM/MB8877] improve to raise drq signal for each data
+[VM/MB8877] improve timing of index hole, seek, search sector and transfer data
+[VM/UPD765A] improve read data command to read sector gaps among sectors
+[VM/UPD765A] improve read id command to read id of first found sector
+[VM/Z80] support function to get and set expend cpu clocks
+[VM/Z80] fix single mode dma when busreq is active
+[VM/Z80DMA] improve timing of data transfer, bus request and release
+
+[PC8801/PC88] support to select hireso/standard display type
+[PC8801/PC88] improve memory wait (thanks Mr.Crazy Unit)
+[X1TURBO] fix not to input 2MHz to Z80CTC on CZ-8BS1
+[X1TURBO/DISPLAY] fix color reverse attribute (thanks Mr.Enri)
+[X1TURBO/FLOPPY] support motor on/off signal (thanks Mr.Sato)
+[X1TURBO/IO] improve i/o wait (thanks Mr.Sato)
+
+
 7/25/2013
 
 [X1TURBO/DISPLAY] fix text renderer for vertical/horizontal doubled character

@@ -1,6 +1,5 @@
 /*
 	EPSON QC-10 Emulator 'eQC-10'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.02.18 -

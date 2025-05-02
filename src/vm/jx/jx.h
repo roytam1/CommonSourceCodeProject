@@ -1,6 +1,5 @@
 /*
 	IBM Japan Ltd PC/JX Emulator 'eJX'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.05.09-
@@ -25,7 +24,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
-//#define UPD765A_WAIT_RESULT7
 #define UPD765A_SENCE_INTSTAT_RESULT
 #define HAS_I86
 #define I8259_MAX_CHIPS		1

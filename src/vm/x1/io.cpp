@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.14-
@@ -10,17 +10,20 @@
 */
 
 #include "io.h"
+#include "io_wait.h"
+#ifdef _X1TURBO_FEATURE
+#include "io_wait_hireso.h"
+#endif
 #include "display.h"
 
 void IO::initialize()
 {
-	column = true;
-	hires = false;
-	update_vram_wait();
-	
-#ifdef _X1TURBO
+	prev_clock = vram_wait_index = 0;
+	column40 = true;
+#ifdef _X1TURBO_FEATURE
 	memset(crtc_regs, 0, sizeof(crtc_regs));
 	crtc_ch = 0;
+	hireso = true;
 #endif
 }
 
@@ -42,12 +45,9 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 		vram_mode = true;
 	}
 	signal = next;
-	
-	column = ((data & 0x40) != 0);
-	update_vram_wait();
+	column40 = ((data & 0x40) != 0);
 }
 
-#ifdef Z80_IO_WAIT
 void IO::write_io8w(uint32 addr, uint32 data, int* wait)
 {
 	write_port8(addr, data, false, wait);
@@ -57,30 +57,15 @@ uint32 IO::read_io8w(uint32 addr, int* wait)
 {
 	return read_port8(addr, false, wait);
 }
-#else
-void IO::write_io8(uint32 addr, uint32 data)
+
+void IO::write_dma_io8w(uint32 addr, uint32 data, int* wait)
 {
-	int wait;
-	write_port8(addr, data, false, &wait);
+	write_port8(addr, data, true, wait);
 }
 
-uint32 IO::read_io8(uint32 addr)
+uint32 IO::read_dma_io8w(uint32 addr, int* wait)
 {
-	int wait;
-	return read_port8(addr, false, &wait);
-}
-#endif
-
-void IO::write_dma_io8(uint32 addr, uint32 data)
-{
-	int wait;
-	write_port8(addr, data, true, &wait);
-}
-
-uint32 IO::read_dma_io8(uint32 addr)
-{
-	int wait;
-	return read_port8(addr, true, &wait);
+	return read_port8(addr, true, wait);
 }
 
 void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
@@ -92,7 +77,7 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 			vram_b[addr & 0x3fff] = data;
 			vram_r[addr & 0x3fff] = data;
 			vram_g[addr & 0x3fff] = data;
-			*wait = vram_wait;
+			*wait = get_vram_wait();
 			return;
 		}
 		break;
@@ -103,7 +88,7 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 		} else {
 			vram_b[addr & 0x3fff] = data;
 		}
-		*wait = vram_wait;
+		*wait = get_vram_wait();
 		return;
 	case 0x8000:
 		if(vram_mode) {
@@ -112,7 +97,7 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 		} else {
 			vram_r[addr & 0x3fff] = data;
 		}
-		*wait = vram_wait;
+		*wait = get_vram_wait();
 		return;
 	case 0xc000:
 		if(vram_mode) {
@@ -121,10 +106,10 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 		} else {
 			vram_g[addr & 0x3fff] = data;
 		}
-		*wait = vram_wait;
+		*wait = get_vram_wait();
 		return;
 	}
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	if(addr == 0x1fd0) {
 		int ofs = (data & 0x10) ? 0xc000 : 0;
 		vram_b = vram + 0x0000 + ofs;
@@ -137,8 +122,7 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 		// update vram wait
 		int ch_height = (crtc_regs[9] & 0x1f) + 1;
 		int vt_total = ((crtc_regs[4] & 0x7f) + 1) * ch_height + (crtc_regs[5] & 0x1f);
-		hires = (vt_total > 400);
-		update_vram_wait();
+		hireso = (vt_total > 400);
 	}
 #endif
 	// i/o
@@ -162,10 +146,20 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 	} else {
 		wr_table[laddr].dev->write_io8(addr2, data & 0xff);
 	}
-	if((addr & 0xe000) == 0x2000) {
-		*wait = tvram_wait;
+	if(addr >= 0x2000 && addr < 0x4000) {
+		// tvram
+		*wait = get_vram_wait();
 	} else {
-		*wait = 0;
+		switch(addr & 0xff00) {
+		case 0x1900:	// sub cpu
+		case 0x1b00:	// psg
+		case 0x1c00:	// psg
+			*wait = 1;
+			break;
+		default:
+			*wait = 0;
+			break;
+		}
 	}
 }
 
@@ -175,13 +169,13 @@ uint32 IO::read_port8(uint32 addr, bool is_dma, int* wait)
 	vram_mode = false;
 	switch(addr & 0xc000) {
 	case 0x4000:
-		*wait = vram_wait;
+		*wait = get_vram_wait();
 		return vram_b[addr & 0x3fff];
 	case 0x8000:
-		*wait = vram_wait;
+		*wait = get_vram_wait();
 		return vram_r[addr & 0x3fff];
 	case 0xc000:
-		*wait = vram_wait;
+		*wait = get_vram_wait();
 		return vram_g[addr & 0x3fff];
 	}
 	// i/o
@@ -206,23 +200,38 @@ uint32 IO::read_port8(uint32 addr, bool is_dma, int* wait)
 	}
 	prv_waddr = -1;
 #endif
-	if((addr & 0xe000) == 0x2000) {
-		*wait = tvram_wait;
+	if(addr >= 0x2000 && addr < 0x4000) {
+		// tvram
+		*wait = get_vram_wait();
 	} else {
-		*wait = 0;
+		switch(addr & 0xff00) {
+		case 0x1900:	// sub cpu
+		case 0x1b00:	// psg
+		case 0x1c00:	// psg
+			*wait = 1;
+			break;
+		default:
+			*wait = 0;
+			break;
+		}
 	}
 	return val & 0xff;
 }
 
-void IO::update_vram_wait()
+int IO::get_vram_wait()
 {
-#ifdef _X1TURBO
-	if(hires) {
-		vram_wait = column ? 2 : 1;
+	vram_wait_index += passed_clock(prev_clock);
+	vram_wait_index %= 2112;
+	prev_clock = current_clock();
+#ifdef _X1TURBO_FEATURE
+	int tmp_index = (vram_wait_index + d_cpu->get_extra_clock()) % 2112; // consider dma access
+	if(hireso) {
+		return column40 ? vram_wait_40_hireso[tmp_index] : vram_wait_80_hireso[tmp_index];
 	} else
+#else
+	#define tmp_index vram_wait_index
 #endif
-	vram_wait = column ? 4 : 2;
-	tvram_wait = vram_wait;	// temporary
+	return column40 ? vram_wait_40[tmp_index] : vram_wait_80[tmp_index];
 }
 
 // register

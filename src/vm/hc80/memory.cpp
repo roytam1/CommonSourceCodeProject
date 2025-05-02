@@ -1,6 +1,5 @@
 /*
 	EPSON HC-80 Emulator 'eHC-80'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.03.14 -

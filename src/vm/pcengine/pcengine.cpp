@@ -1,6 +1,5 @@
 /*
 	NEC-HE PC Engine Emulator 'ePCEngine'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2012.10.31-

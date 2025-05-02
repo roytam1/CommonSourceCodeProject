@@ -193,6 +193,18 @@ void I386::set_intr_line(bool line, bool pending, uint32 bit)
 	i386_set_irq_line(cpustate, INPUT_LINE_IRQ, line ? HOLD_LINE : CLEAR_LINE);
 }
 
+void I386::set_extra_clock(int cycles)
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	cpustate->extra_cycles += cycles;
+}
+
+int I386::get_extra_clock()
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	return cpustate->extra_cycles;
+}
+
 uint32 I386::get_pc()
 {
 	i386_state *cpustate = (i386_state *)opaque;

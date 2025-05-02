@@ -300,13 +300,18 @@
 #include "x07/x07.h"
 #endif
 
-// SHARP X1turbo
-#ifdef _X1TURBO
+// SHARP X1
+#ifdef _X1
 #include "x1/x1.h"
 #endif
 
 // SHARP X1twin
 #ifdef _X1TWIN
+#include "x1/x1.h"
+#endif
+
+// SHARP X1turbo
+#ifdef _X1TURBO
 #include "x1/x1.h"
 #endif
 

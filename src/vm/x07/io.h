@@ -1,6 +1,5 @@
 /*
 	CANON X-07 Emulator 'eX-07'
-	Skelton for retropc emulator
 
 	Origin : J.Brigaud
 	Author : Takeda.Toshiya

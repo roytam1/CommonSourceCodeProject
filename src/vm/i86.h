@@ -69,6 +69,7 @@ private:
 	bool busreq, halted;
 	
 	int icount;
+	int extra_icount;
 	
 	bool seg_prefix;	/* prefix segment indicator */
 	uint8 prefix_seg;	/* The prefixed segment */
@@ -373,6 +374,12 @@ public:
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
+	void set_extra_clock(int clock) {
+		extra_icount += clock;
+	}
+	int get_extra_clock() {
+		return extra_icount;
+	}
 	uint32 get_pc() {
 		return prevpc;
 	}

@@ -1,7 +1,6 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
 	FUJITSU FMR-60 Emulator 'eFMR-60'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2008.05.01 -

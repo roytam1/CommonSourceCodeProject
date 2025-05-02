@@ -1,7 +1,7 @@
 /*
+	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.03.14-
@@ -19,7 +19,7 @@
 class MEMORY : public DEVICE
 {
 private:
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	DEVICE *d_pio;
 #endif
 	
@@ -29,7 +29,7 @@ private:
 	uint8 rom[0x8000];
 	uint8 ram[0x10000];
 	uint8 romsel;
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	uint8 extram[0x90000]; // 32kb*16bank
 	uint8 bank;
 #else
@@ -45,14 +45,14 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-#ifndef _X1TURBO
+#ifndef _X1TURBO_FEATURE
 	uint32 fetch_op(uint32 addr, int *wait);
 #endif
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	
 	// unique function
-#ifdef _X1TURBO
+#ifdef _X1TURBO_FEATURE
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}

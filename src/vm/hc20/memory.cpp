@@ -1,6 +1,5 @@
 /*
 	EPSON HC-20 Emulator 'eHC-20'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2011.05.23-

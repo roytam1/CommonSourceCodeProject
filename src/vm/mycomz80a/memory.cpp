@@ -1,6 +1,5 @@
 /*
 	Japan Electronics College MYCOMZ-80A Emulator 'eMYCOMZ-80A'
-	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2009.05.13-

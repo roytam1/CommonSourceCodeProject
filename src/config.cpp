@@ -52,11 +52,14 @@ void init_config()
 	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
 #if defined(_HC80)
-	config.device_type = 2;	// Nonintelligent ram disk
+	config.device_type = 2;		// Nonintelligent ram disk
 #endif
 #if defined(_PC8801MA)
-	config.boot_mode = 2;	// V2 mode, 4MHz
+	config.boot_mode = 2;		// V2 mode, 4MHz
 	config.cpu_type = 1;
+#endif
+#if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
+	config.sound_device_type = 1;	// CZ-8BS1
 #endif
 }
 

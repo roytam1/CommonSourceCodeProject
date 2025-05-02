@@ -24,7 +24,6 @@
 #define DRIVE_TYPE_2HD	MEDIA_TYPE_2HD
 #define DRIVE_TYPE_UNK	MEDIA_TYPE_UNK
 
-
 // d88 constant
 #define DISK_BUFFER_SIZE	0x180000	// 1.5MB
 #define TRACK_BUFFER_SIZE	0x8000		// 32KB
@@ -144,18 +143,28 @@ public:
 	bool make_track(int trk, int side);
 	bool get_sector(int trk, int side, int index);
 	
+	int get_rpm();
+	int get_track_size();
+	double get_usec_per_bytes(int bytes);
+	
 	bool inserted;
 	bool ejected;
 	bool write_protected;
 	bool changed;
 	uint8 media_type;
 	uint8 drive_type;
+	int drive_rpm;
+	bool drive_mfm;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];
-	int track_size;
-	int track_offset;
 	int sector_num;
+	int data_size_shift;
+	
+	uint8 verify[256];
+	int sync_position[256];
+	int id_position[256];
+	int data_position[256];
 	
 	// sector
 	uint8* sector;
@@ -164,7 +173,6 @@ public:
 	uint8 density;
 	uint8 deleted;
 	uint8 status;
-	uint8 verify[128];
 };
 
 #endif

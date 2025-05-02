@@ -1,6 +1,5 @@
 /*
 	Nintendo Family BASIC Emulator 'eFamilyBASIC'
-	Skelton for retropc emulator
 
 	Origin : nester
 	Author : Takeda.Toshiya
