@@ -16,41 +16,32 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#ifdef _WIN32_WCE
-#define EMM_SIZE	0x100000
-#else
-#define EMM_SIZE	0x1000000
-#endif
-#define EMM_MASK	(EMM_SIZE - 1)
-
-class FILEIO;
-
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_ctc, *d_pio;
-#ifdef _MZ1500
-	DEVICE *d_psg_l, *d_psg_r;
-#endif
+	DEVICE *d_cpu, *d_pit, *d_pio;
 	
 	uint8* rbank[32];
 	uint8* wbank[32];
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
+	
+	uint8 ipl[0x1000];	// IPL 4KB
+	uint8 font[0x1000];	// CGROM 4KB
 	uint8 ram[0x10000];	// Main RAM 64KB
 	uint8 vram[0x1000];	// VRAM 4KB
-	uint8 ipl[0x1000];	// IPL 4KB
+	uint8 mem_bank;
 #ifdef _MZ1500
 	uint8 ext[0x1800];	// EXT 6KB
-#endif
-	uint8 font[0x1000];	// CGROM 4KB
 	uint8 pcg[0x6000];	// PCG 8KB * 3
-	uint8 emm[EMM_SIZE];
-	uint32 emm_ptr;
+	uint8 pcg_bank;
+#endif
 	
-	uint8 mem_bank, pcg_bank;
 	bool blink, tempo;
-	bool hblank;
+	bool hblank_vram;
+#ifdef _MZ1500
+	bool hblank_pcg;
+#endif
 	void update_map_low();
 	void update_map_high();
 	
@@ -78,26 +69,17 @@ public:
 	uint32 read_data16w(uint32 addr, int* wait);
 	
 	void write_io8(uint32 addr, uint32 data);
-	uint32 read_io8(uint32 addr);
 	
-	// unitque function
+	// unitque functions
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
-	void set_context_ctc(DEVICE* device) {
-		d_ctc = device;
+	void set_context_pit(DEVICE* device) {
+		d_pit = device;
 	}
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
-#ifdef _MZ1500
-	void set_context_psg_l(DEVICE* device) {
-		d_psg_l = device;
-	}
-	void set_context_psg_r(DEVICE* device) {
-		d_psg_r = device;
-	}
-#endif
 	uint8* get_vram() {
 		return vram;
 	}

@@ -30,6 +30,7 @@
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		192
 
+#define MC6847_ATTR_OFS		0x800
 #define MC6847_ATTR_INV		0x01
 #define MC6847_ATTR_AS		0x02
 #define MC6847_ATTR_CSS		0x04
@@ -100,7 +101,7 @@ public:
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	// user interface
 	void play_datarec(_TCHAR* filename);

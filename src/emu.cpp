@@ -37,20 +37,21 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
 	static double late_table[4] = {0.1, 0.2, 0.3, 0.4};
 	
-	if(!(0 <= config.sound_frequency && config.sound_frequency <= 7)) {
-		config.sound_frequency = 5;
+	if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
+		config.sound_frequency = 5;	// default: 44.1KHz
 	}
-	if(!(0 <= config.sound_latency && config.sound_latency <= 3)) {
-		config.sound_latency = 0;
+	if(!(0 <= config.sound_latency && config.sound_latency < 4)) {
+		config.sound_latency = 0;	// default: 0.1sec
 	}
 	int frequency = freq_table[config.sound_frequency];
-	int latency = (int)(frequency * late_table[config.sound_latency]);
+	int frames = (int)(FRAMES_PER_SEC * late_table[config.sound_latency] + 0.5);
+	int samples = (int)((frequency * frames) / FRAMES_PER_SEC);
 	
 	// initialize
 	vm = new VM(this);
 	initialize_input();
 	initialize_screen();
-	initialize_sound(frequency, latency);
+	initialize_sound(frequency, samples);
 #ifdef USE_MEDIA
 	initialize_media();
 #endif
@@ -85,13 +86,17 @@ void EMU::run()
 {
 	// run real machine
 	update_input();
-	update_sound();
 	update_timer();
 #ifdef USE_SOCKET
 	update_socket();
 #endif
+	int extra_frames = 0;
+	update_sound(&extra_frames);
+	
 	// run virtual machine
-	vm->run();
+	if(extra_frames == 0) {
+		vm->run();
+	}
 }
 
 void EMU::reset()

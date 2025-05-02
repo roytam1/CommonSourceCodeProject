@@ -197,9 +197,9 @@ void VM::initialize_sound(int rate, int samples)
 	psg->init(rate, 1996750, samples, 0, 0);
 }
 
-uint16* VM::create_sound(int samples, bool fill)
+uint16* VM::create_sound(int* extra_frames)
 {
-	return event->create_sound(samples, fill);
+	return event->create_sound(extra_frames);
 }
 
 // ----------------------------------------------------------------------------

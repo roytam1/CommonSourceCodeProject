@@ -1,3 +1,22 @@
+9/4/2010
+
+[VM/EVENT] support to run extra frames for continuous sound
+[VM/IO] support to register the return value
+[VM/IO] refine i/o map registrations
+[VM/UPD765A] support external drive selection
+[VM/UPD765A] fix not to output index hole signal if disk is not inserted
+
+[MZ1500] fix sound mask (for thunder force)
+[MZ1500/DISPLAY] fix to refer bit3 of pcg attribute
+[MZ1500/MEMORY] support pcg ram wait
+[MZ1500/MEMORY] fix memory mapped i/o range
+[MZ1500/RAMFILE] support ram file
+[MZ3500] reimplement SHARP MZ-3500 (not work)
+[PASOPIA7/IO] refine i/o map registrations
+[PHC20] support SANYO PHC-20
+[X1TWIN/IO] refine i/o map registrations
+
+
 8/31/2010
 
 [VM/UPD765A] support dack signal

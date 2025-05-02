@@ -11,7 +11,6 @@
 #include "vm/vm.h"
 #include "fileio.h"
 
-#define WAVEOUT_BUFFER_SIZE (DWORD)(sound_samples * 2)
 #define DSOUND_BUFFER_SIZE (DWORD)(sound_samples * 4)
 #define DSOUND_BUFFER_HALF (DWORD)(sound_samples * 2)
 
@@ -94,8 +93,9 @@ void EMU::release_sound()
 	stop_rec_sound();
 }
 
-void EMU::update_sound()
+void EMU::update_sound(int* extra_frames)
 {
+	*extra_frames = 0;
 	now_mute = FALSE;
 	
 	if(sound_ok) {
@@ -120,7 +120,7 @@ void EMU::update_sound()
 		}
 		
 		// sound buffer must be updated
-		uint16* sound_buffer = vm->create_sound(0, true);
+		uint16* sound_buffer = vm->create_sound(extra_frames);
 		if(now_recs) {
 			// record sound
 			rec->Fwrite(sound_buffer, sound_samples * 2, 1);

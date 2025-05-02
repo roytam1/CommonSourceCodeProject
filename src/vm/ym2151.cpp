@@ -64,13 +64,12 @@ void YM2151::event_vline(int v, int clock)
 
 void YM2151::mix(int32* buffer, int cnt)
 {
-	if(mute) {
-		return;
-	}
-	_memset(sound_tmp, 0, cnt * 2 * sizeof(int32));
-	opm->Mix(sound_tmp, cnt);
-	for(int i = 0, j = 0; i < cnt; i++, j += 2) {
-		buffer[i] += sound_tmp[j];
+	if(cnt > 0 && !mute) {
+		_memset(sound_tmp, 0, cnt * 2 * sizeof(int32));
+		opm->Mix(sound_tmp, cnt);
+		for(int i = 0, j = 0; i < cnt; i++, j += 2) {
+			buffer[i] += sound_tmp[j];
+		}
 	}
 }
 

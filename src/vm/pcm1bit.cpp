@@ -16,8 +16,9 @@ void PCM1BIT::initialize()
 	mute = false;
 	
 #ifdef PCM1BIT_HIGH_QUALITY
-	prev_clock = 0;
 	sample_count = 0;
+	prev_clock = 0;
+	prev_vol = 0;
 #endif
 	update = 0;
 	
@@ -37,8 +38,8 @@ void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 				sample_count++;
 			}
 #endif
-			// mute if signal is not changed in 4 frames
-			update = 4;
+			// mute if signal is not changed in 2 frames
+			update = 2;
 			signal = next;
 		}
 	}
@@ -52,8 +53,10 @@ void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 
 void PCM1BIT::event_frame()
 {
-	if(update) {
-		update--;
+	if(update && --update == 0) {
+#ifdef PCM1BIT_HIGH_QUALITY
+		prev_vol = 0;
+#endif
 	}
 }
 
@@ -103,8 +106,9 @@ void PCM1BIT::mix(int32* buffer, int cnt)
 			}
 			int clocks = on_clocks + off_clocks;
 			if(clocks) {
-				buffer[i] += max_vol * (on_clocks - off_clocks) / clocks;
+				prev_vol = max_vol * (on_clocks - off_clocks) / clocks;
 			}
+			buffer[i] += prev_vol;
 		}
 	}
 	prev_clock = cur_clock;
@@ -121,7 +125,6 @@ void PCM1BIT::mix(int32* buffer, int cnt)
 
 void PCM1BIT::init(int rate, int volume)
 {
-	// create gain
 	max_vol = volume;
 }
 

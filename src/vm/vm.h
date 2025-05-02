@@ -165,6 +165,11 @@
 #include "pc100/pc100.h"
 #endif
 
+// SANYO PHC-20
+#ifdef _PHC20
+#include "phc20/phc20.h"
+#endif
+
 // SANYO PHC-25
 #ifdef _PHC25
 #include "phc25/phc25.h"

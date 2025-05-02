@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/27/2010
+								9/4/2010
 
 --- What's this ?
 
@@ -35,6 +35,7 @@ This archive includes the all source codes of emulators listed below:
 	ePC-8201	NEC PC-8201/PC-8201A
 	ePC-98LT	NEC PC-98LT
 	ePC-100		NEC PC-100
+	ePHC-20		SANYO PHC-20
 	ePHC-25		SANYO PHC-25
 	ePV-1000	CASIO PV-1000
 	ePyuTa		TOMY PyuTa/PyuTa Jr.

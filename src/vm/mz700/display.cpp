@@ -50,6 +50,9 @@ void DISPLAY::event_vline(int v, int clock)
 		int ptr = (v >> 3) * 40;
 		for(int x = 0; x < 320; x += 8) {
 			uint8 attr = vram_attr[ptr];
+#ifdef _MZ1500
+			uint8 pcg_attr = vram_pcg_attr[ptr];
+#endif
 			uint16 code = (vram_char[ptr] << 3) | ((attr & 0x80) << 4);
 			uint8 col_b = attr & 7;
 			uint8 col_f = (attr >> 4) & 7;
@@ -57,9 +60,9 @@ void DISPLAY::event_vline(int v, int clock)
 			uint8* dest = &screen[v][x];
 			
 #ifdef _MZ1500
-			if(priority & 1) {
-				uint16 pcg_code = (vram_pcg_char[ptr] << 3) | ((vram_pcg_attr[ptr] & 0xc0) << 5);
-				uint8 pcg_dot[7];
+			if((priority & 1) && (pcg_attr & 8)) {
+				uint16 pcg_code = (vram_pcg_char[ptr] << 3) | ((pcg_attr & 0xc0) << 5);
+				uint8 pcg_dot[8];
 				uint8 pat_b = pcg_b[pcg_code | (v & 7)];
 				uint8 pat_r = pcg_r[pcg_code | (v & 7)];
 				uint8 pat_g = pcg_g[pcg_code | (v & 7)];

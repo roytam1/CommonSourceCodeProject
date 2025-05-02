@@ -487,6 +487,14 @@
 #define MENU_POS_SOUND                  2
 #endif
 
+// SANYO PHC-20
+#ifdef _PHC20
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // SANYO PHC-25
 #ifdef _PHC25
 #define MENU_POS_CONTROL                0

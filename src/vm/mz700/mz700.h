@@ -56,16 +56,21 @@ class I8253;
 class I8255;
 class IO;
 class PCM1BIT;
+class Z80;
+
+//class CMOS;
+class DISPLAY;
+class EMM;
+class KEYBOARD;
+class MEMORY;
+class RAMFILE;
+
 #ifdef _MZ1500
 class SN76489AN;
 class Z80PIO;
 //class Z80SIO;
+class PSG;
 #endif
-class Z80;
-
-class DISPLAY;
-class KEYBOARD;
-class MEMORY;
 
 class VM
 {
@@ -75,24 +80,31 @@ protected:
 	// devices
 	EVENT* event;
 	
-	AND* and;
+	AND* and_int;
 	DATAREC* drec;
-	I8253* ctc;
+	I8253* pit;
 	I8255* pio;
 	IO* io;
 	PCM1BIT* pcm;
+	Z80* cpu;
+	
+//	CMOS* cmos;
+	DISPLAY* display;
+	EMM* emm;
+	KEYBOARD* keyboard;
+	MEMORY* memory;
+	RAMFILE* ramfile;
+	
 #ifdef _MZ1500
+	AND* and_snd;
 	SN76489AN* psg_l;
 	SN76489AN* psg_r;
 	Z80PIO* pio_int;
 //	Z80SIO* sio_rs;	// RS-232C
 //	Z80SIO* sio_qd;	// QD
-#endif
-	Z80* cpu;
 	
-	DISPLAY* display;
-	KEYBOARD* keyboard;
-	MEMORY* memory;
+	PSG* psg;
+#endif
 	
 public:
 	// ----------------------------------------
@@ -115,7 +127,7 @@ public:
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	// user interface
 	void open_mzt(_TCHAR* filename);

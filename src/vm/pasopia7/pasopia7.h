@@ -44,6 +44,7 @@
 #define MAX_DRIVE		4
 //#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
+#define IO_ADDR_MAX		0x100
 
 // device informations for win32
 #define USE_DATAREC
@@ -132,7 +133,7 @@ public:
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	// user interface
 	void open_disk(_TCHAR* filename, int drv);

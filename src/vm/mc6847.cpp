@@ -10,8 +10,8 @@
 #include "mc6847.h"
 #include "../fileio.h"
 
-#ifndef MC6847_ATTR_OFS
-#define MC6847_ATTR_OFS	0x800
+#ifndef MC6847_VRAM_OFS
+#define MC6847_VRAM_OFS	0
 #endif
 
 #define LIGHTGREEN	0
@@ -26,6 +26,8 @@
 // text
 #define GREEN		9
 #define BEIGE		10
+// phc20
+#define GRAY		11
 
 // from mess m6847.c
 static const uint8 intfont[64 * 12] = {
@@ -142,6 +144,7 @@ void MC6847::initialize()
 	palette_pc[BLACK     ] = RGB_COLOR(  0,  0,  0);
 	palette_pc[GREEN     ] = RGB_COLOR( 22,134, 10);
 	palette_pc[BEIGE     ] = RGB_COLOR(255,198,170);
+	palette_pc[GRAY      ] = RGB_COLOR( 32, 32, 32);
 	
 	// LINES_PER_FRAME must be 262
 	tWHS = (int)(CPU_CLOCKS / FRAMES_PER_SEC / LINES_PER_FRAME * 16.5 / 227.5 + 0.5);
@@ -328,8 +331,10 @@ void MC6847::draw_alpha()
 	
 	for(int y = 0; y < 192; y += 12) {
 		for(int x = 0; x < 256; x += 8) {
-			uint8 data = vram_ptr[ofs];
+			uint8 data = vram_ptr[ofs + MC6847_VRAM_OFS];
+#ifdef MC6847_ATTR_OFS
 			uint8 attr = vram_ptr[ofs + MC6847_ATTR_OFS];
+#endif
 			if(++ofs >= vram_size) {
 				ofs = 0;
 			}
@@ -350,6 +355,7 @@ void MC6847::draw_alpha()
 #ifdef MC6847_VRAM_INV
 			inv2 = ((data & MC6847_VRAM_INV) != 0);
 #endif
+#ifdef MC6847_ATTR_OFS
 #ifdef MC6847_ATTR_AS
 			as2 = ((attr & MC6847_ATTR_AS) != 0);
 #endif
@@ -362,6 +368,7 @@ void MC6847::draw_alpha()
 #ifdef MC6847_ATTR_INV
 			inv2 = ((attr & MC6847_ATTR_INV) != 0);
 #endif
+#endif
 			uint8 *pattern;
 			uint8 col_fore, col_back;
 			if(!as2) {
@@ -372,13 +379,19 @@ void MC6847::draw_alpha()
 					// internal alphanumerics
 					pattern = (uint8 *)(&intfont[12 * (data & 0x3f)]);
 				}
+				// note: we need to overwrite the color table by each driver
 				static const uint8 color_table[6] = {
+#ifdef _PHC20
+					WHITE, GRAY, WHITE, GRAY, WHITE, GRAY
+#else
 					LIGHTGREEN, GREEN, BEIGE, RED, GREEN, BLACK
+#endif
 				};
 				int col = (css2 ? 2 : 0) | (inv2 ? 1 : 0);
 				col_fore = color_table[col];
 				col_back = color_table[col ^ 1];
-			} else {
+			}
+			else {
 				if(intext2) {
 					// semiggraphics 6
 					pattern = &sg6[12 * (data & 0x3f)];

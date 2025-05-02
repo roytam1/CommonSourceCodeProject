@@ -131,7 +131,11 @@ void UPD765A::initialize()
 	
 	set_irq(false);
 	set_drq(false);
+#ifdef UPD765A_EXT_DRVSEL
+	hdu = 0;
+#else
 	set_hdu(0);
+#endif
 	set_acctc(false);
 	
 	// index hole event
@@ -340,9 +344,12 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_UPD765A_MOTOR) {
 		motor = ((data & mask) != 0);
 	}
-	else if(id == SIG_UPD765A_SELECT) {
-		sel = data & DRIVE_MASK;
+#ifdef UPD765A_EXT_DRVSEL
+	else if(id == SIG_UPD765A_DRVSEL) {
+		hdu = data & DRIVE_MASK;
+		write_signals(&outputs_hdu, hdu);
 	}
+#endif
 	else if(id == SIG_UPD765A_FREADY) {
 		force_ready = ((data & mask) != 0);
 	}
@@ -391,10 +398,14 @@ void UPD765A::event_callback(int event_id, int err)
 		lost_id = -1;
 	}
 	else if(event_id == EVENT_INDEX) {
-		if(index_count == 0 || index_count == 1) {
-			write_signals(&outputs_index, (index_count == 0) ? 0xffffffff : 0);
+		int drv = hdu & DRIVE_MASK;
+		if(disk[drv]->insert) {
+			write_signals(&outputs_index, (index_count == 0) ? 0 : 0xffffffff);
+			index_count = (index_count + 1) & 15;
 		}
-		index_count = (index_count + 1) & 15;
+		else {
+			write_signals(&outputs_index, 0xffffffff);
+		}
 	}
 }
 
@@ -443,14 +454,16 @@ void UPD765A::set_drq(bool val)
 
 void UPD765A::set_hdu(uint8 val)
 {
-	write_signals(&outputs_hdu, val);
+#ifndef UPD765A_EXT_DRVSEL
 	hdu = val;
+	write_signals(&outputs_hdu, hdu);
+#endif
 }
 
 void UPD765A::set_acctc(bool val)
 {
-	write_signals(&outputs_acctc, val ? 0xffffffff : 0);
 	acctc = val;
+	write_signals(&outputs_acctc, acctc ? 0xffffffff : 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -1302,9 +1315,6 @@ uint8 UPD765A::fdc_status()
 #elif defined(_QC10)
 	int drv = hdu & DRIVE_MASK;
 	return (disk[drv]->insert ? 8 : 0) | (motor ? 0 : 2) | (irq ? 1 : 0);
-#elif defined(_MZ3500)
-	index = (disk[sel]->insert) ? !index : true;
-	return (motor ? 4 : 0) | (index ? 2 : 0) | (drq ? 1 : 0);
 #else
 	return 0;
 #endif

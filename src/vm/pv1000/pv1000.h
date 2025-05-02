@@ -16,8 +16,8 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	592
-#define FRAMES_PER_SEC		59
+#define FRAMES_PER_10SECS	600
+#define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		67
 #define CHARS_PER_LINE		1
 #define CPU_CLOCKS		3579545
@@ -81,7 +81,7 @@ public:
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	// user interface
 	void open_cart(_TCHAR* filename);

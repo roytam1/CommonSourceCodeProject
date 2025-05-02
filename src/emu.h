@@ -17,6 +17,9 @@
 
 // for debug
 //#define _DEBUG_LOG
+#ifdef _DEBUG_LOG
+#define _IO_DEBUG_LOG
+#endif
 
 #include <windows.h>
 #include <windowsx.h>
@@ -162,7 +165,7 @@ private:
 	// ----------------------------------------
 	void initialize_sound(int rate, int samples);
 	void release_sound();
-	void update_sound();
+	void update_sound(int* extra_frames);
 	
 	int sound_rate, sound_samples;
 	BOOL sound_ok, now_mute;

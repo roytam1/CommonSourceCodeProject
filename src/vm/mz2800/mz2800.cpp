@@ -313,9 +313,9 @@ void VM::initialize_sound(int rate, int samples)
 	pcm->init(rate, 4096);
 }
 
-uint16* VM::create_sound(int samples, bool fill)
+uint16* VM::create_sound(int* extra_frames)
 {
-	return event->create_sound(samples, fill);
+	return event->create_sound(extra_frames);
 }
 
 // ----------------------------------------------------------------------------

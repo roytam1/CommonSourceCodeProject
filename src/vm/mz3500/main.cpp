@@ -26,7 +26,7 @@
 		} \
 		else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
-		}
+		} \
 	} \
 }
 
@@ -56,12 +56,6 @@ void MAIN::initialize()
 		fio->Fclose();
 	}
 	delete fio;
-	
-	// interrupt
-	intfd = int0 = int1 = int2 = int3 = int4 = false;
-	me = false;
-	prev_irq = false;
-	inp = 0;
 }
 
 void MAIN::reset()
@@ -74,13 +68,12 @@ void MAIN::reset()
 	// sub cpu
 	srqb = 2;
 	sres = 0;
-	sack = false;
-	srdy = true;
+	sack = true;
+	srdy = false;
 	
 	// interrupt
 	intfd = int0 = int1 = int2 = int3 = int4 = false;
-	me = false;
-	prev_irq = false;
+	me = e1 = false;
 	inp = 0;
 	
 	// mfd
@@ -101,20 +94,22 @@ uint32 MAIN::read_data8(uint32 addr)
 
 void MAIN::write_io8(uint32 addr, uint32 data)
 {
+//emu->out_debug("OUT %2x %2x\n",addr&0xff,data&0xff);
 	switch(addr & 0xff) {
-	case 0xec:
+	case 0xec:	// mz3500sm p.17
 	case 0xed:
 	case 0xee:
 	case 0xef:
 		int0 = false;
 		update_irq();
 		break;
-	case 0xf8:
+	case 0xf8:	// mz3500sm p.59
 	case 0xfa:
 		if(data & 0x40) {
 			for(int i = 0; i < 3; i++) {
 				if(data & (1 << i)) {
-					d_fdc->write_signal(SIG_UPD765A_SELECT, i, 3);
+emu->out_debug("MAIN->FDC\tDRIVE=%d\n", i);
+					d_fdc->write_signal(SIG_UPD765A_DRVSEL, i, 3);
 					break;
 				}
 			}
@@ -125,33 +120,33 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 		me = ((data & 0x80) != 0);
 		update_irq();
 		break;
-	case 0xf9:
-	case 0xfb;
+	case 0xf9:	// mz3500sm p.59
+	case 0xfb:
 		d_fdc->write_signal(SIG_UPD765A_DACK, 1, 1);
 		break;
-	case 0xfc:
+	case 0xfc:	// mz3500sm p.23
 		if((srqb & 2) != (data & 2)) {
+emu->out_debug("MAIN->SUB\tBUSREQ=%d\n",(data&2)?1:0);
 			d_subcpu->write_signal(SIG_CPU_BUSREQ, data, 2);
 			srqb = data & 2;
 		}
 		e1 = data & 1;
 		break;
-	case 0xfd:
+	case 0xfd:	// mz3500sm p.23
 		if(!(sres & 0x80) && (data & 0x80)) {
-			d_subcpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
-			srqb = 0;
+emu->out_debug("MAIN->SUB\tRESET\n");
 			d_subcpu->reset();
 		}
 		sres = data & 0x80;
 		ms = data & 3;
 		update_bank();
 		break;
-	case 0xfe:
+	case 0xfe:	// mz3500sm p.23
 		mo = data & 7;
 		ma = (data >> 4) & 0x0f;
 		update_bank();
 		break;
-	case 0xff:
+	case 0xff:	// mz3500sm p.23
 		me1 = ((data & 1) != 0);
 		me2 = ((data & 2) != 0);
 //		update_bank();
@@ -161,35 +156,49 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 
 uint32 MAIN::read_io8(uint32 addr)
 {
+	uint32 val = 0xff;
+	
 	switch(addr & 0xff) {
-	case 0xec:
+	case 0xec:	// mz3500sm p.17
 	case 0xed:
 	case 0xee:
 	case 0xef:
 		int0 = false;
 		update_irq();
 		break;
-	case 0xf8:
+	case 0xf8:	// mz3500sm p.59
 	case 0xfa:
-		return (drq ? 1 : 0) | (index ? 2 : 0) | (motor ? 4 : 0);
-	case 0xfe:
+		return 0xf8 | (drq ? 1 : 0) | (index ? 2 : 0) | (motor ? 4 : 0);
+	case 0xfe:	// mz3500sm p.23,85-86
 		return 0xe4;
-	case 0xff:
-		return 0xe0 | (srdy ? 0 : 0x10) | (sack ? 0 : 8) | inp;
+	case 0xff:	// mz3500sm p.23,85-86
+//emu->out_debug("PC=%4x\tIN %2x\n",vm->get_prv_pc(),addr&0xff);
+		val = 0xe0 | (srdy ? 0 : 0x10) | (sack ? 0 : 8) | inp;
+		srdy = false;
+		return val;
+//		return 0xe0 | (srdy ? 0 : 0x10) | (sack ? 0 : 8) | inp;
 	}
 	return 0xff;
 }
 
-void MAIN::write_signal(uint32 id, uint32 data, uint32 mask)
+void MAIN::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MAIN_SACK) {
 		sack = ((data & mask) != 0);
+emu->out_debug("SUB->MAIN\tSACK=%d\n",sack?1:0);
 	}
 	else if(id == SIG_MAIN_SRDY) {
 		srdy = ((data & mask) != 0);
+emu->out_debug("SUB->MAIN\tSRDY=%d\n",srdy?1:0);
+	}
+	else if(id == SIG_MAIN_INTFD) {
+		intfd = ((data & mask) != 0);
+emu->out_debug("FDC->MAIN\tINTFD=%d\n",intfd?1:0);
+		update_irq();
 	}
 	else if(id == SIG_MAIN_INT0) {
 		int0 = ((data & mask) != 0);
+emu->out_debug("SUB->MAIN\tINT0=%d\n",int0?1:0);
 		update_irq();
 	}
 	else if(id == SIG_MAIN_INT1) {
@@ -206,10 +215,6 @@ void MAIN::write_signal(uint32 id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_MAIN_INT4) {
 		int4 = ((data & mask) != 0);
-		update_irq();
-	}
-	else if(id == SIG_MAIN_INTFD) {
-		intfd = ((data & mask) != 0);
 		update_irq();
 	}
 	else if(id == SIG_MAIN_DRQ) {
@@ -229,37 +234,31 @@ void MAIN::update_irq()
 		inp = 0;
 		next = true;
 	}
-	else if(!e1) {
-		// irq disabled
+	else if(e1) {
+		if(int0) {
+			inp = 1;
+			next = true;
+		}
+		else if(int1) {
+			inp = 2;
+			next = true;
+		}
+		else if(int2) {
+			inp = 3;
+			next = true;
+		}
+		else if(int3) {
+			inp = 4;
+			next = true;
+		}
+		else if(int4) {
+			inp = 5;
+			next = true;
+		}
 	}
-	else if(int0) {
-		int0 = false;
-		inp = 1;
-		next = true;
-	}
-	else if(int1) {
-		int1 = false;
-		inp = 2;
-		next = true;
-	}
-	else if(int2) {
-		int2 = false;
-		inp = 3;
-		next = true;
-	}
-	else if(int3) {
-		int3 = false;
-		inp = 4;
-		next = true;
-	}
-	else if(int4) {
-		int4 = false;
-		inp = 5;
-		next = true;
-	}
-	if(prev_irq != next) {
-		d_cpu->set_intr_line(next, true, 0);
-		prev_irq = next;
+	if(next) {
+emu->out_debug("MAIN IRQ=%d\n", next?1:0);
+		d_cpu->set_intr_line(true, true, 0);
 	}
 }
 
@@ -270,7 +269,7 @@ void MAIN::update_bank()
 	if((ms & 3) == 0) {
 		// SD0: INITIALIZE STATE
 		SET_BANK(0x0000, 0x0fff, wdmy, ipl + 0x1000);
-//		SET_BANK(0x1000, 0x1fff, wdmy, ipl + 0x1000);
+		SET_BANK(0x1000, 0x1fff, wdmy, ipl + 0x1000);
 		SET_BANK(0x2000, 0x3fff, wdmy, basic + 0x2000);
 		SET_BANK(0x4000, 0xbfff, ram + 0x4000, ram + 0x4000);	// note: check me1 and me2
 		switch(ma & 0x0f) {

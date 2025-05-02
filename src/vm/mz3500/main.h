@@ -15,6 +15,17 @@
 #include "../../emu.h"
 #include "../device.h"
 
+#define SIG_MAIN_SACK	0
+#define SIG_MAIN_SRDY	1
+#define SIG_MAIN_INTFD	2
+#define SIG_MAIN_INT0	3
+#define SIG_MAIN_INT1	4
+#define SIG_MAIN_INT2	5
+#define SIG_MAIN_INT3	6
+#define SIG_MAIN_INT4	7
+#define SIG_MAIN_DRQ	8
+#define SIG_MAIN_INDEX	9
+
 class MAIN : public DEVICE
 {
 private:
@@ -36,15 +47,18 @@ private:
 	uint8 srqb, sres;
 	bool sack, srdy;
 	bool intfd, int0, int1, int2, int3, int4;
-	bool me, prev_irq;
+	bool me, e1;
 	uint8 inp;
-	bool drq, index;
+	bool motor, drq, index;
 	
 	void update_irq();
 	void update_bank();
 	
 public:
-	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		intfd = int0 = int1 = int2 = int3 = int4 = false;
+		me = e1 = false;
+	}
 	~MAIN() {}
 	
 	// common functions
@@ -52,9 +66,15 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_data16(uint32 addr, uint32 data) {
+		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+	}
+	uint32 read_data16(uint32 addr) {
+		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void write_signal(uint32 id, uint32 data, uint32 mask);
+	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device) {

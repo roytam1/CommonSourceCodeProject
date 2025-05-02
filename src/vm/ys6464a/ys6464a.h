@@ -128,7 +128,7 @@ public:
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	// user interface
 	void load_ram(_TCHAR* filename);

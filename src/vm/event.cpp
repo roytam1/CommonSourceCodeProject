@@ -10,6 +10,12 @@
 #include "event.h"
 #include "../config.h"
 
+#ifndef EVENT_CONTINUOUS_SOUND
+//#ifdef PCM1BIT_HIGH_QUALITY
+#define EVENT_CONTINUOUS_SOUND
+//#endif
+#endif
+
 void EVENT::initialize()
 {
 	// load config
@@ -51,12 +57,17 @@ void EVENT::initialize_sound(int rate, int samples)
 {
 	// initialize sound
 	sound_samples = samples;
+#ifdef EVENT_CONTINUOUS_SOUND
+	sound_tmp_samples = samples + (int)(rate / frames_per_sec * 2);
+#else
+	sound_tmp_samples = samples;
+#endif
 	update_samples = (int)(1024. * rate / frames_per_sec / lines_per_frame + 0.5);
 	
-	sound_buffer = (uint16*)malloc(samples * sizeof(uint16));
-	_memset(sound_buffer, 0, samples * sizeof(uint16));
-	sound_tmp = (int32*)malloc(samples * sizeof(int32));
-	_memset(sound_tmp, 0, samples * sizeof(int32));
+	sound_buffer = (uint16*)malloc(sound_samples * sizeof(uint16));
+	_memset(sound_buffer, 0, sound_samples * sizeof(uint16));
+	sound_tmp = (int32*)malloc(sound_tmp_samples * sizeof(int32));
+	_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32));
 	buffer_ptr = accum_samples = 0;
 }
 
@@ -100,7 +111,7 @@ void EVENT::reset()
 		_memset(sound_buffer, 0, sound_samples * sizeof(uint16));
 	}
 	if(sound_tmp) {
-		_memset(sound_tmp, 0, sound_samples * sizeof(int32));
+		_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32));
 	}
 	buffer_ptr = 0;
 }
@@ -193,14 +204,6 @@ void EVENT::update_event(int clock)
 uint32 EVENT::current_clock()
 {
 	return accum + (d_cpu[0]->passed_clock() >> power);
-}
-
-void EVENT::update_sound()
-{
-	accum_samples += update_samples;
-	int samples = accum_samples >> 10;
-	accum_samples -= samples << 10;
-	create_sound(samples, false);
 }
 
 void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* regist_id)
@@ -303,49 +306,80 @@ void EVENT::regist_vline_event(DEVICE* dev)
 	vline_event[vline_event_cnt++] = dev;
 }
 
-uint16* EVENT::create_sound(int samples, bool fill)
+void EVENT::mix_sound(int samples)
 {
-	// get samples to be created
-	int cnt = 0;
-	if(fill) {
-		cnt = sound_samples - buffer_ptr;
+	if(samples > 0) {
+		_memset(sound_tmp + buffer_ptr, 0, samples * sizeof(int32));
+		for(int i = 0; i < dcount_sound; i++) {
+			d_sound[i]->mix(sound_tmp + buffer_ptr, samples);
+		}
+		buffer_ptr += samples;
 	}
 	else {
-		cnt = ((sound_samples - buffer_ptr) < samples) ? (sound_samples - buffer_ptr) : samples;
-	}
-	
-	// create sound buffer
-	if(cnt) {
-		_memset(&sound_tmp[buffer_ptr], 0, cnt * sizeof(int32));
+		// notify to sound devices
 		for(int i = 0; i < dcount_sound; i++) {
-			d_sound[i]->mix(&sound_tmp[buffer_ptr], cnt);
+			d_sound[i]->mix(sound_tmp + buffer_ptr, 0);
 		}
 	}
+}
+
+void EVENT::update_sound()
+{
+	accum_samples += update_samples;
+	int samples = accum_samples >> 10;
+	accum_samples -= samples << 10;
 	
-	if(fill) {
-#ifdef LOW_PASS_FILTER
-		// low-pass filter
-		for(int i = 0; i < sound_samples - 1; i++) {
-			sound_tmp[i] = (sound_tmp[i] + sound_tmp[i + 1]) / 2;
-		}
-#endif
-		// copy to buffer
-		for(int i = 0; i < sound_samples; i++) {
-			int dat = sound_tmp[i];
-			uint16 highlow = (uint16)(dat & 0x0000ffff);
-			
-			if((dat > 0) && (highlow >= 0x8000)) {
-				sound_buffer[i] = 0x7fff;
-				continue;
-			}
-			if((dat < 0) && (highlow < 0x8000)) {
-				sound_buffer[i] = 0x8000;
-				continue;
-			}
-			sound_buffer[i] = highlow;
-		}
+	// mix sound
+	if(sound_tmp_samples - buffer_ptr < samples) {
+		samples = sound_tmp_samples - buffer_ptr;
 	}
-	buffer_ptr = fill ? 0 : (buffer_ptr + cnt);
+	mix_sound(samples);
+}
+
+uint16* EVENT::create_sound(int* extra_frames)
+{
+	int frames = 0;
+	
+#ifdef EVENT_CONTINUOUS_SOUND
+	// drive extra frames to fill the sound buffer
+	while(sound_samples > buffer_ptr) {
+		drive();
+		frames++;
+	}
+#else
+	// fill sound buffer
+	int samples = sound_samples - buffer_ptr;
+	mix_sound(samples);
+#endif
+#ifdef LOW_PASS_FILTER
+	// low-pass filter
+	for(int i = 0; i < sound_samples - 1; i++) {
+		sound_tmp[i] = (sound_tmp[i] + sound_tmp[i + 1]) / 2;
+	}
+#endif
+	// copy to buffer
+	for(int i = 0; i < sound_samples; i++) {
+		int dat = sound_tmp[i];
+		uint16 highlow = (uint16)(dat & 0x0000ffff);
+		
+		if((dat > 0) && (highlow >= 0x8000)) {
+			sound_buffer[i] = 0x7fff;
+			continue;
+		}
+		if((dat < 0) && (highlow < 0x8000)) {
+			sound_buffer[i] = 0x8000;
+			continue;
+		}
+		sound_buffer[i] = highlow;
+	}
+	if(buffer_ptr > sound_samples) {
+		buffer_ptr -= sound_samples;
+		_memcpy(sound_tmp, sound_tmp + sound_samples, buffer_ptr * sizeof(int32));
+	}
+	else {
+		buffer_ptr = 0;
+	}
+	*extra_frames = frames;
 	return sound_buffer;
 }
 

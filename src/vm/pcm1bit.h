@@ -27,8 +27,9 @@ private:
 	bool samples_signal[1024];
 	bool samples_out[1024];
 	uint32 samples_clock[1024];
-	uint32 prev_clock;
 	int sample_count;
+	uint32 prev_clock;
+	int32 prev_vol;
 #endif
 	int max_vol;
 	int update;

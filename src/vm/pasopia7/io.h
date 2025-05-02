@@ -17,14 +17,26 @@
 
 #define SIG_IO_MIO	0
 
+#ifndef IO_ADDR_MAX
+#define IO_ADDR_MAX 0x100
+#endif
+#define IO_ADDR_MASK (IO_ADDR_MAX - 1)
+
 class IO : public DEVICE
 {
 private:
 	// i/o map
-	DEVICE* wdev[256];
-	DEVICE* rdev[256];
-	uint32 waddr[256];
-	uint32 raddr[256];
+	typedef struct {
+		DEVICE* dev;
+		uint32 addr;
+	} iomap_t;
+	
+	iomap_t write_table[IO_ADDR_MAX];
+	iomap_t read_table[IO_ADDR_MAX];
+	
+	// for debug
+	uint32 prv_waddr, prv_wdata;
+	uint32 prv_raddr, prv_rdata;
 	
 	// i/o mapped memory
 	uint8* ram;
@@ -33,10 +45,11 @@ private:
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		// vm->dummy must be generated first !
-		for(uint32 i = 0; i < 256; i++) {
-			wdev[i & 0xff] = rdev[i & 0xff] = vm->dummy;
-			waddr[i & 0xff] = raddr[i & 0xff] = i & 0xff;
+		for(int i = 0; i < IO_ADDR_MAX; i++) {
+			write_table[i].dev = read_table[i].dev = vm->dummy;
+			write_table[i].addr = read_table[i].addr = i;
 		}
+		prv_waddr = prv_raddr = -1;
 	}
 	~IO() {}
 	
@@ -46,34 +59,36 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_ram_ptr(uint8* ptr) { ram = ptr; }
 	void set_iomap_single_w(uint32 addr, DEVICE* device) {
-		wdev[addr & 0xff] = device;
-		waddr[addr & 0xff] = addr & 0xff;
+		write_table[addr & IO_ADDR_MASK].dev = device;
+		write_table[addr & IO_ADDR_MASK].addr = addr & IO_ADDR_MASK;
 	}
 	void set_iomap_single_r(uint32 addr, DEVICE* device) {
-		rdev[addr & 0xff] = device;
-		raddr[addr & 0xff] = addr & 0xff;
+		read_table[addr & IO_ADDR_MASK].dev = device;
+		read_table[addr & IO_ADDR_MASK].addr = addr & IO_ADDR_MASK;
 	}
 	void set_iomap_alias_w(uint32 addr, DEVICE* device, uint32 alias) {
-		wdev[addr & 0xff] = device;
-		waddr[addr & 0xff] = alias & 0xff;
+		write_table[addr & IO_ADDR_MASK].dev = device;
+		write_table[addr & IO_ADDR_MASK].addr = alias & IO_ADDR_MASK;
 	}
 	void set_iomap_alias_r(uint32 addr, DEVICE* device, uint32 alias) {
-		rdev[addr & 0xff] = device;
-		raddr[addr & 0xff] = alias & 0xff;
+		read_table[addr & IO_ADDR_MASK].dev = device;
+		read_table[addr & IO_ADDR_MASK].addr = alias & IO_ADDR_MASK;
 	}
 	void set_iomap_range_w(uint32 s, uint32 e, DEVICE* device) {
 		for(uint32 i = s; i <= e; i++) {
-			wdev[i & 0xff] = device;
-			waddr[i & 0xff] = i & 0xff;
+			write_table[i & IO_ADDR_MASK].dev = device;
+			write_table[i & IO_ADDR_MASK].addr = i & IO_ADDR_MASK;
 		}
 	}
 	void set_iomap_range_r(uint32 s, uint32 e, DEVICE* device) {
 		for(uint32 i = s; i <= e; i++) {
-			rdev[i & 0xff] = device;
-			raddr[i & 0xff] = i & 0xff;
+			read_table[i & IO_ADDR_MASK].dev = device;
+			read_table[i & IO_ADDR_MASK].addr = i & IO_ADDR_MASK;
 		}
+	}
+	void set_ram_ptr(uint8* ptr) {
+		ram = ptr;
 	}
 };
 

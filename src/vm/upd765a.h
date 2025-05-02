@@ -18,7 +18,7 @@
 #define SIG_UPD765A_DACK	0
 #define SIG_UPD765A_TC		1
 #define SIG_UPD765A_MOTOR	2
-#define SIG_UPD765A_SELECT	3
+#define SIG_UPD765A_DRVSEL	3
 #define SIG_UPD765A_FREADY	4
 #define SIG_UPD765A_RESET	5
 
@@ -48,8 +48,7 @@ private:
 	int phase, prevphase;
 	uint8 status, seekstat, command;
 	uint32 result;
-	bool acctc, irq, drq, motor, index;
-	int sel;	// external drive select
+	bool acctc, irq, drq, motor;
 	
 	uint8* bufptr;
 	uint8 buffer[0x4000];

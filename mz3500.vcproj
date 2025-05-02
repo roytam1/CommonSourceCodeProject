@@ -381,26 +381,6 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\beep.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\disk.cpp"
 					>
 					<FileConfiguration
@@ -521,6 +501,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\pcm1bit.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\upd1990a.cpp"
 					>
 					<FileConfiguration
@@ -606,67 +606,7 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\mz3500\display.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\mz3500\keyboard.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\mz3500\memory.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\mz3500\mfd.cpp"
+					RelativePath="src\vm\mz3500\main.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -706,7 +646,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\mz3500\submemory.cpp"
+					RelativePath="src\vm\mz3500\sub.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -761,10 +701,6 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\beep.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\device.h"
 					>
 				</File>
@@ -793,7 +729,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\ls244.h"
+					RelativePath="src\vm\pcm1bit.h"
 					>
 				</File>
 				<File
@@ -822,19 +758,7 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\mz3500\display.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mz3500\keyboard.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mz3500\memory.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mz3500\mfd.h"
+					RelativePath="src\vm\mz3500\main.h"
 					>
 				</File>
 				<File
@@ -842,7 +766,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\mz3500\submemory.h"
+					RelativePath="src\vm\mz3500\sub.h"
 					>
 				</File>
 			</Filter>

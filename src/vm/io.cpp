@@ -12,44 +12,44 @@
 void IO::write_io8(uint32 addr, uint32 data)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-#ifdef _DEBUG_LOG
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-//		if(!wdev[laddr]->this_device_id) {
-//			emu->out_debug("UNKNOWN:\t");
-//		}
-//		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", vm->get_prv_pc(), laddr | haddr, data);
+		if(!write_table[laddr].dev->this_device_id) {
+			emu->out_debug("UNKNOWN:\t");
+		}
+		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", vm->get_prv_pc(), laddr | haddr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
 	prv_raddr = -1;
 #endif
-	wdev[laddr]->write_io8(haddr | waddr[laddr], data);
+	write_table[laddr].dev->write_io8(haddr | write_table[laddr].addr, data & 0xff);
 }
 
 uint32 IO::read_io8(uint32 addr)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	uint32 val = rdev[laddr]->read_io8(haddr | raddr[laddr]);
-#ifdef _DEBUG_LOG
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-//		if(!rdev[laddr]->this_device_id) {
-//			emu->out_debug("UNKNOWN:\t");
-//		}
-//		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), laddr | haddr, val);
+		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
+			emu->out_debug("UNKNOWN:\t");
+		}
+		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), laddr | haddr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}
 	prv_waddr = -1;
 #endif
-	return val;
+	return val & 0xff;
 }
 
 void IO::write_io16(uint32 addr, uint32 data)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-#ifdef _DEBUG_LOG
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wdev[laddr]->this_device_id) {
+		if(!write_table[laddr].dev->this_device_id) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tOUT16\t%4x,%4x\n", vm->get_prv_pc(), laddr | haddr, data);
@@ -58,16 +58,16 @@ void IO::write_io16(uint32 addr, uint32 data)
 	}
 	prv_raddr = -1;
 #endif
-	wdev[laddr]->write_io16(haddr | waddr[laddr], data);
+	write_table[laddr].dev->write_io16(haddr | write_table[laddr].addr, data & 0xffff);
 }
 
 uint32 IO::read_io16(uint32 addr)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	uint32 val = rdev[laddr]->read_io16(haddr | raddr[laddr]);
-#ifdef _DEBUG_LOG
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io16(haddr | read_table[laddr].addr);
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rdev[laddr]->this_device_id) {
+		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tIN16\t%4x = %4x\n", vm->get_prv_pc(), laddr | haddr, val);
@@ -76,15 +76,15 @@ uint32 IO::read_io16(uint32 addr)
 	}
 	prv_waddr = -1;
 #endif
-	return val;
+	return val & 0xffff;
 }
 
 void IO::write_io32(uint32 addr, uint32 data)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-#ifdef _DEBUG_LOG
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wdev[laddr]->this_device_id) {
+		if(!write_table[laddr].dev->this_device_id) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tOUT16\t%4x,%4x\n", vm->get_prv_pc(), laddr | haddr, data);
@@ -93,16 +93,16 @@ void IO::write_io32(uint32 addr, uint32 data)
 	}
 	prv_raddr = -1;
 #endif
-	wdev[laddr]->write_io32(haddr | waddr[laddr], data);
+	write_table[laddr].dev->write_io32(haddr | write_table[laddr].addr, data);
 }
 
 uint32 IO::read_io32(uint32 addr)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	uint32 val = rdev[laddr]->read_io32(haddr | raddr[laddr]);
-#ifdef _DEBUG_LOG
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io32(haddr | read_table[laddr].addr);
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rdev[laddr]->this_device_id) {
+		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tIN16\t%4x = %4x\n", vm->get_prv_pc(), laddr | haddr, val);
@@ -117,10 +117,10 @@ uint32 IO::read_io32(uint32 addr)
 void IO::write_io8w(uint32 addr, uint32 data, int* wait)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	*wait = wwait[laddr];
-#ifdef _DEBUG_LOG
+	*wait = write_table[laddr].wait;
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wdev[laddr]->this_device_id) {
+		if(!write_table[laddr].dev->this_device_id) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", vm->get_prv_pc(), laddr | haddr, data);
@@ -129,17 +129,17 @@ void IO::write_io8w(uint32 addr, uint32 data, int* wait)
 	}
 	prv_raddr = -1;
 #endif
-	wdev[laddr]->write_io8(haddr | waddr[laddr], data);
+	write_table[laddr].dev->write_io8(haddr | write_table[laddr].addr, data & 0xff);
 }
 
 uint32 IO::read_io8w(uint32 addr, int* wait)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	*wait = rwait[laddr];
-	uint32 val = rdev[laddr]->read_io8(haddr | raddr[laddr]);
-#ifdef _DEBUG_LOG
+	*wait = read_table[laddr].wait;
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rdev[laddr]->this_device_id) {
+		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), laddr | haddr, val);
@@ -148,16 +148,16 @@ uint32 IO::read_io8w(uint32 addr, int* wait)
 	}
 	prv_waddr = -1;
 #endif
-	return val;
+	return val & 0xff;
 }
 
 void IO::write_io16w(uint32 addr, uint32 data, int* wait)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	*wait = wwait[laddr];
-#ifdef _DEBUG_LOG
+	*wait = write_table[laddr].wait;
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wdev[laddr]->this_device_id) {
+		if(!write_table[laddr].dev->this_device_id) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tOUT16\t%4x,%4x\n", vm->get_prv_pc(), laddr | haddr, data);
@@ -166,17 +166,17 @@ void IO::write_io16w(uint32 addr, uint32 data, int* wait)
 	}
 	prv_raddr = -1;
 #endif
-	wdev[laddr]->write_io16(haddr | waddr[laddr], data);
+	write_table[laddr].dev->write_io16(haddr | write_table[laddr].addr, data & 0xffff);
 }
 
 uint32 IO::read_io16w(uint32 addr, int* wait)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	*wait = rwait[laddr];
-	uint32 val = rdev[laddr]->read_io16(haddr | raddr[laddr]);
-#ifdef _DEBUG_LOG
+	*wait = read_table[laddr].wait;
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io16(haddr | read_table[laddr].addr);
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rdev[laddr]->this_device_id) {
+		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tIN16\t%4x = %4x\n", vm->get_prv_pc(), laddr | haddr, val);
@@ -185,16 +185,16 @@ uint32 IO::read_io16w(uint32 addr, int* wait)
 	}
 	prv_waddr = -1;
 #endif
-	return val;
+	return val & 0xffff;
 }
 
 void IO::write_io32w(uint32 addr, uint32 data, int* wait)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	*wait = wwait[laddr];
-#ifdef _DEBUG_LOG
+	*wait = write_table[laddr].wait;
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wdev[laddr]->this_device_id) {
+		if(!write_table[laddr].dev->this_device_id) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tOUT16\t%4x,%4x\n", vm->get_prv_pc(), laddr | haddr, data);
@@ -203,17 +203,17 @@ void IO::write_io32w(uint32 addr, uint32 data, int* wait)
 	}
 	prv_raddr = -1;
 #endif
-	wdev[laddr]->write_io32(haddr | waddr[laddr], data);
+	write_table[laddr].dev->write_io32(haddr | write_table[laddr].addr, data);
 }
 
 uint32 IO::read_io32w(uint32 addr, int* wait)
 {
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	*wait = rwait[laddr];
-	uint32 val = rdev[laddr]->read_io32(haddr | raddr[laddr]);
-#ifdef _DEBUG_LOG
+	*wait = read_table[laddr].wait;
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io32(haddr | read_table[laddr].addr);
+#ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rdev[laddr]->this_device_id) {
+		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
 			emu->out_debug("UNKNOWN:\t");
 		}
 		emu->out_debug("%6x\tIN16\t%4x = %4x\n", vm->get_prv_pc(), laddr | haddr, val);

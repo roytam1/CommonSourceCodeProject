@@ -24,10 +24,10 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-#define I8259_MAX_CHIPS		2
 #define UPD765A_DMA_MODE
-#define UPD765A_WAIT_SEEK
+//#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
+#define UPD765A_EXT_DRVSEL
 #define IO_ADDR_MAX		0x100
 
 // device informations for win32
@@ -46,22 +46,18 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
 class I8251;
 class I8253;
 class I8255;
 class IO;
-class LS244;
+class PCM1BIT;
 class UPD1990A;
 class UPD7220;
 class UPD765A;
 class Z80;
 
-class DISPLAY;
-class KEYBOARD;
-class MEMORY;
-class MFD;
-class SUBMEMORY;
+class MAIN;
+class SUB;
 
 class VM
 {
@@ -71,27 +67,23 @@ protected:
 	// devices
 	EVENT* event;
 	
+	// for main cpu
 	IO* io;
 	UPD765A* fdc;
 	Z80* cpu;
+	MAIN* main;
 	
-	MEMORY* memory;
-	MFD* mfd;
-	
-	BEEP* beep;
+	// for sub cpu
 	I8251* sio;
-	I8253* ctc;
+	I8253* pit;
 	I8255* pio;
 	IO* subio;
-	LS244* ls244;
+	PCM1BIT* pcm;
 	UPD1990A* rtc;
 	UPD7220* gdc_chr;
 	UPD7220* gdc_gfx;
 	Z80* subcpu;
-	
-	DISPLAY* display;
-	KEYBOARD* keyboard;
-	SUBMEMORY* submemory;
+	SUB* sub;
 	
 public:
 	// ----------------------------------------
@@ -114,7 +106,7 @@ public:
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	// notify key
 	void key_down(int code);
@@ -142,6 +134,7 @@ public:
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
 	uint32 get_prv_pc();
+	uint32 get_sub_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

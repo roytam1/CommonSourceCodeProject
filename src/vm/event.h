@@ -61,7 +61,9 @@ private:
 	int32* sound_tmp;
 	int buffer_ptr;
 	int sound_samples;
+	int sound_tmp_samples;
 	int accum_samples, update_samples;
+	void mix_sound(int samples);
 	void update_sound();
 	
 	bool first_reset;
@@ -92,7 +94,7 @@ public:
 	void regist_vline_event(DEVICE* dev);
 	
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int samples, bool fill);
+	uint16* create_sound(int* extra_frames);
 	
 	void set_context_cpu(DEVICE* device) {
 		d_cpu[dcount_cpu++] = device;
