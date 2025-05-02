@@ -33,6 +33,10 @@ devenv.com fp1100.vcproj /Rebuild Release
 mkdir build\fp1100
 copy Release\fp1100.exe build\fp1100\.
 
+devenv.com hc20.vcproj /Rebuild Release
+mkdir build\hc20
+copy Release\hc20.exe build\hc20\.
+
 devenv.com hc40.vcproj /Rebuild Release
 mkdir build\hc40
 copy Release\hc40.exe build\hc40\.

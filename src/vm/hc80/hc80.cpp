@@ -45,7 +45,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
 	
-	tf20->set_context(io, SIG_IO_TF20);
+	tf20->set_context_sio(io, SIG_IO_TF20);
 	
 	io->set_context_cpu(cpu);
 	io->set_context_mem(memory);

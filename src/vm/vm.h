@@ -50,6 +50,11 @@
 #include "fp1100/fp1100.h"
 #endif
 
+// EPSON HC-20
+#ifdef _HC20
+#include "hc20/hc20.h"
+#endif
+
 // EPSON HC-40
 #ifdef _HC40
 #include "hc40/hc40.h"

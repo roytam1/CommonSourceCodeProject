@@ -279,7 +279,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				wr_tmp[wr_num++] = GET_REGNUM(READ_MASK);
 				break;
 			case CMD_CONTINUE:
-				upcount = 0;
+				upcount = (dma_stop && upcount != blocklen) ? -1 : 0;
 				enabled = true;
 				status |= 0x30;
 #ifndef SINGLE_MODE_DMA
@@ -447,6 +447,9 @@ restart:
 #endif
 	while(enabled && now_ready() && !(upcount == blocklen || found)) {
 		if(dma_stop) {
+			if(upcount < blocklen) {
+				upcount++;
+			}
 			dma_stop = false;
 			goto inc_ports;
 		}
@@ -524,6 +527,9 @@ restart:
 		occured = true;
 		
 		if(found || !now_ready()) {
+			if(upcount < blocklen) {
+				upcount--;
+			}
 			dma_stop = true;
 			break;
 		}

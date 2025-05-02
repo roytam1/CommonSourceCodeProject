@@ -135,7 +135,8 @@ pio2	20	8255	out cmt, sound
 	// i/o bus
 	io->set_iomap_range_rw(0x00, 0x03, pio0);
 	io->set_iomap_range_rw(0x08, 0x0b, pio1);
-	io->set_iomap_range_rw(0x10, 0x11, display);
+	io->set_iomap_range_r(0x10, 0x11, crtc);
+	io->set_iomap_range_w(0x10, 0x11, display);
 	io->set_iomap_range_rw(0x18, 0x1b, pac2);
 	io->set_iomap_range_rw(0x20, 0x23, pio2);
 	io->set_iomap_range_rw(0x28, 0x2b, ctc);

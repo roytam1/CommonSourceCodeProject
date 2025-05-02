@@ -45,7 +45,7 @@ void HD46505::initialize()
 	
 	hz_clock = (int)(CPU_CLOCKS / FRAMES_PER_SEC / vt_total);
 	
-	// register event
+	// register events
 	vm->register_frame_event(this);
 	vm->register_vline_event(this);
 }

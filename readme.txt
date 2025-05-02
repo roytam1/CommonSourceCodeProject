@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								5/18/2011
+								5/28/2011
 
 --- What's this ?
 
@@ -29,6 +29,7 @@ This archive includes the all source codes of emulators listed below:
 	eFMR-60		FUJITSU FMR-60
 	eFP-1100	CASIO FP-1100
 	eHANDY98	NEC PC-98HA
+	eHC-20		EPSON HC-20/HX-20
 	eHC-40		EPSON HC-40/PX-4
 	eHC-80		EPSON HC-80/PX-8/Geneva
 	eJX		IBM Japan Ltd PC/JX
@@ -85,6 +86,10 @@ under the GNU GENERAL PUBLIC LICENSE.
 	MAME m6502 core
 - vm/mb8877.*
 	XM7
+- vm/mc6800.*
+	MAME mc6800 core
+- vm/mc6809.*
+	MAME mc6809 core
 - vm/mc6847.*
 	MAME mc6847 core
 - vm/sn76489an.*

@@ -1,0 +1,101 @@
+/*
+	EPSON HC-20 Emulator 'eHC-20'
+	Skelton for retropc emulator
+
+	Author : Takeda.Toshiya
+	Date   : 2011.05.23-
+
+	[ memory ]
+*/
+
+#ifndef _MEMORY_H_
+#define _MEMORY_H_
+
+#include "../vm.h"
+#include "../../emu.h"
+#include "../device.h"
+
+#define SIG_MEMORY_PORT_2	0
+#define SIG_MEMORY_PORT_3	1
+#define SIG_MEMORY_PORT_4	2
+#define SIG_MEMORY_SIO		3
+#define SIG_MEMORY_RTC_IRQ	4
+
+class FIFO;
+
+class MEMORY : public DEVICE
+{
+private:
+	DEVICE *d_beep, *d_cpu, *d_drec, *d_rtc, *d_tf20;
+	
+	uint8 wdmy[0x2000];
+	uint8 rdmy[0x2000];
+	uint8* wbank[8];
+	uint8* rbank[8];
+	
+	// memory with expansion unit
+	uint8 ram[0x8000];	// 0000h-7fffh
+	uint8 ext[0x4000];	// 8000h-bfffh
+	uint8 rom[0x8000];	// 8000h-ffffh (internal)
+	
+	FIFO *cmd_buf;
+	uint8 sio_select;
+	
+	uint8 *key_stat;
+	int key_data, key_strobe, key_intmask;
+	
+	typedef struct {
+		uint8 buffer[80];
+		int bank;
+		int addr;
+	} lcd_t;
+	lcd_t lcd[6];
+	
+	scrntype lcd_render[32][120];
+	scrntype pd, pb;
+	uint8 lcd_select, lcd_data;
+	int lcd_clock;
+	
+	int int_status;
+	int int_mask;
+	
+	void update_keyboard();
+	void update_intr();
+	void send_to_subcpu(uint8 val);
+	void send_to_maincpu(uint8 val);
+	
+public:
+	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~MEMORY() {}
+	
+	// common functions
+	void initialize();
+	void release();
+	void reset();
+	void write_data8(uint32 addr, uint32 data);
+	uint32 read_data8(uint32 addr);
+	void write_signal(int id, uint32 data, uint32 mask);
+	void event_frame();
+	
+	// unitque function
+	void set_context_beep(DEVICE* device) {
+		d_beep = device;
+	}
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+	void set_context_drec(DEVICE* device) {
+		d_drec = device;
+	}
+	void set_context_rtc(DEVICE* device) {
+		d_rtc = device;
+	}
+	void set_context_tf20(DEVICE* device) {
+		d_tf20 = device;
+	}
+	void notify_power_off();
+	void draw_screen();
+};
+
+#endif
+

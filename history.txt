@@ -1,3 +1,14 @@
+5/28/2011
+
+[VM/MB8877] clear track register and index hole counter in reset()
+[VM/MC6800] support mc6800/mc6801/hd6301
+[VM/MC6809] support mc6809
+[VM/Z80DMA] fix issues for X1/X1turbo games (thanks Y.S.)
+
+[HC20] support EPSON HC-20
+[PASOPIA] fix OA-BASIC issue
+
+
 5/20/2011
 
 [EMU/WIN32] support sound latency 50msec

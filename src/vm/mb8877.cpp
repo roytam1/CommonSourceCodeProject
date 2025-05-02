@@ -92,12 +92,6 @@ void MB8877::initialize()
 	status = cmdreg = trkreg = secreg = datareg = sidereg = cmdtype = 0;
 	drvreg = 0;
 	motor = false;	// motor off
-	
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		fdc[i].track = 0;
-		fdc[i].index = 0;
-		fdc[i].access = false;
-	}
 }
 
 void MB8877::release()
@@ -110,6 +104,11 @@ void MB8877::release()
 
 void MB8877::reset()
 {
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		fdc[i].track = 0;
+		fdc[i].index = 0;
+		fdc[i].access = false;
+	}
 	for(int i = 0; i < 7; i++) {
 		register_id[i] = -1;
 	}
