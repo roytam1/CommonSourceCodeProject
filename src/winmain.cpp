@@ -1003,6 +1003,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_USE_WAVE_SHAPER:
 			config.wave_shaper = !config.wave_shaper;
 			break;
+#ifdef TAPE_MZT_2000
+		case ID_DIRECT_LOAD_MZT:
+			config.direct_load_mzt = !config.direct_load_mzt;
+			break;
+#endif
 		case ID_RECENT_TAPE + 0:
 		case ID_RECENT_TAPE + 1:
 		case ID_RECENT_TAPE + 2:
@@ -1506,6 +1511,9 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		EnableMenuItem(hMenu, ID_STOP_BUTTON, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
 #endif
 		CheckMenuItem(hMenu, ID_USE_WAVE_SHAPER, config.wave_shaper ? MF_CHECKED : MF_UNCHECKED);
+#ifdef TAPE_MZT_2000
+		CheckMenuItem(hMenu, ID_DIRECT_LOAD_MZT, config.direct_load_mzt ? MF_CHECKED : MF_UNCHECKED);
+#endif
 	}
 #endif
 #ifdef MENU_POS_BINARY1

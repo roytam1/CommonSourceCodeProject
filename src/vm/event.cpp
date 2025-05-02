@@ -365,8 +365,8 @@ void EVENT::mix_sound(int samples)
 			d_sound[i]->mix(buffer, samples);
 		}
 		if(!sound_changed) {
-			for(int i = 0; i < samples * 2; i++) {
-				if(buffer[i] != 0) {
+			for(int i = 0; i < samples * 2; i += 2) {
+				if(buffer[i] != sound_tmp[0] || buffer[i + 1] != sound_tmp[1]) {
 					sound_changed = true;
 					break;
 				}

@@ -1,3 +1,14 @@
+8/10/2013
+
+[VM/DATAREC] fix not to skip frames while doint ff/rew
+[VM/DATAREC] support ff/rew for cas and tap images
+[VM/DATAREC] support APSS signals and doing APSS for SHARP X1
+
+[MZ2200] support to select if loading mzt to ram directly or not
+[X1TURBO] fix cmt ff/rew speed to x16
+[X1TURBO/PSUB] support APSS command
+
+
 8/9/2013
 
 [EMU/WIN32] improve debug log function

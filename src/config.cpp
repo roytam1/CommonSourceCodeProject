@@ -48,6 +48,9 @@ void init_config()
 #if defined(USE_TAPE)
 	config.wave_shaper = true;
 #endif
+#if defined(TAPE_MZT_2000)
+	config.direct_load_mzt = true;
+#endif
 #if defined(USE_DIPSWITCH) && defined(DIPSWITCH_DEFAULT)
 	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
@@ -99,6 +102,9 @@ void load_config()
 #endif
 #ifdef USE_TAPE
 	config.wave_shaper = GetPrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
+#endif
+#ifdef TAPE_MZT_2000
+	config.direct_load_mzt = GetPrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
 #endif
 	
 	// recent files
@@ -203,6 +209,9 @@ void save_config()
 #endif
 #ifdef USE_TAPE
 	WritePrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
+#endif
+#ifdef TAPE_MZT_2000
+	WritePrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
 #endif
 	
 	// recent files

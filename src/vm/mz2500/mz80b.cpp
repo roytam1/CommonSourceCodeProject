@@ -348,7 +348,7 @@ void VM::play_tape(_TCHAR* file_path)
 		memory->load_dat_image(file_path);
 		return;
 	} else if(check_file_extension(file_path, _T(".mzt"))) {
-		if(memory->load_mzt_image(file_path)) {
+		if(config.direct_load_mzt && memory->load_mzt_image(file_path)) {
 			return;
 		}
 	} else if(check_file_extension(file_path, _T(".mtw"))) {

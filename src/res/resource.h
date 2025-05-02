@@ -152,6 +152,7 @@
 #define ID_PLAY_BUTTON                  40944
 #define ID_STOP_BUTTON                  40945
 #define ID_USE_WAVE_SHAPER              40946
+#define ID_DIRECT_LOAD_MZT              40947
 #define ID_RECENT_TAPE                  40951 // 40951-40958
 
 #define ID_LOAD_BINARY1                 40961

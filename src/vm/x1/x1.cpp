@@ -177,6 +177,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		// sub cpu
 		cpu_sub->set_context_io(sub);
 		drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
+		drec->set_context_apss(sub, SIG_SUB_TAPE_APSS, 1);
 		pio_sub->set_context_port_c(sub, SIG_SUB_PIO_PORT_C, 0x80, 0);
 		// pc1:break -> pb0 of 8255(main)
 		pio_sub->set_context_port_c(pio, SIG_I8255_PORT_B, 0x02, -1);

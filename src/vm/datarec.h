@@ -29,6 +29,7 @@ private:
 	outputs_t outputs_rotate;
 	outputs_t outputs_end;
 	outputs_t outputs_top;
+	outputs_t outputs_apss;
 	
 	// data recorder
 	FILEIO* fio;
@@ -48,6 +49,10 @@ private:
 #endif
 	int buffer_ptr, buffer_length;
 	bool is_wav;
+	
+	bool *apss_buffer;
+	int apss_ptr, apss_count, apss_remain;
+	bool apss_signals;
 	
 #ifdef DATAREC_SOUND
 	int16 *mix_buffer;
@@ -70,6 +75,7 @@ public:
 		init_output_signals(&outputs_rotate);
 		init_output_signals(&outputs_end);
 		init_output_signals(&outputs_top);
+		init_output_signals(&outputs_apss);
 	}
 	~DATAREC() {}
 	
@@ -103,6 +109,9 @@ public:
 	void set_context_top(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_top, device, id, mask);
 	}
+	void set_context_apss(DEVICE* device, int id, uint32 mask) {
+		register_output_signal(&outputs_apss, device, id, mask);
+	}
 	bool play_tape(_TCHAR* file_path);
 	bool rec_tape(_TCHAR* file_path);
 	void close_tape();
@@ -111,6 +120,7 @@ public:
 	}
 	void set_remote(bool value);
 	void set_ff_rew(int value);
+	bool do_apss(int value);
 #ifdef DATAREC_SOUND
 	void initialize_sound(int rate, int samples);
 #endif

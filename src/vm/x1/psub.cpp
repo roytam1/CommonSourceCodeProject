@@ -621,6 +621,14 @@ void PSUB::process_cmd()
 				break;
 			case CMT_APSS_PLUS:
 			case CMT_APSS_MINUS:
+				if(play) {
+					d_drec->do_apss((databuf[0x19][0] == CMT_APSS_PLUS) ? 1 : -1);
+					new_status = CMT_STOP;
+				} else if(rec) {
+					new_status = CMT_STOP;
+				} else {
+					new_status = CMT_EJECT;
+				}
 				break;
 			case CMT_REC:
 				if(play) {

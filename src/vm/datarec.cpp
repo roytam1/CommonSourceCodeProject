@@ -52,6 +52,7 @@ void DATAREC::initialize()
 #ifdef DATAREC_SOUND
 	snd_buffer = NULL;
 #endif
+	apss_buffer = NULL;
 	buffer_ptr = buffer_length = 0;
 	is_wav = false;
 	
@@ -113,7 +114,7 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 void DATAREC::event_frame()
 {
 	static bool prev = false;
-	bool next = (changed > 10);
+	bool next = (changed > 10) && (ff_rew == 0);
 	if(prev != next) {
 		set_skip_frames(next);
 		prev = next;
@@ -179,6 +180,37 @@ void DATAREC::event_callback(int event_id, int err)
 				changed++;
 				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
 			}
+			// chek apss state
+			if(apss_buffer != NULL) {
+				int ptr = (apss_ptr++) % (sample_rate * 2);
+				if(apss_buffer[ptr]) {
+					apss_count--;
+				}
+				if(in_signal) {
+					apss_count++;
+				}
+				apss_buffer[ptr] = in_signal;
+				
+				if(apss_ptr >= sample_rate * 2) {
+					double rate = (double)apss_count / (double)(sample_rate * 2);
+					if(rate > 0.9 || rate < 0.1) {
+						if(apss_signals) {
+							if(apss_remain > 0) {
+								apss_remain--;
+							} else if(apss_remain < 0) {
+								apss_remain++;
+							}
+							write_signals(&outputs_apss, 0xffffffff);
+							apss_signals = false;
+						}
+					} else {
+						if(!apss_signals) {
+							write_signals(&outputs_apss, 0);
+							apss_signals = true;
+						}
+					}
+				}
+			}
 		} else if(rec) {
 			if(out_signal) {
 				positive_clocks += passed_clock(prev_clock);
@@ -236,8 +268,37 @@ void DATAREC::set_ff_rew(int value)
 			register_id = -1;
 		}
 		ff_rew = value;
+		apss_signals = false;
 		update_event();
 	}
+}
+
+bool DATAREC::do_apss(int value)
+{
+	bool result = false;
+	
+	if(play) {
+		set_ff_rew(0);
+		set_remote(true);
+		set_ff_rew(value > 0 ? 1 : -1);
+		apss_remain = value;
+		
+		while(apss_remain != 0 && remote) {
+			event_callback(EVENT_SIGNAL, 0);
+		}
+		result = (apss_remain == 0);
+	}
+	
+	// stop cmt
+	set_remote(false);
+	set_ff_rew(0);
+	
+	if(value > 0) {
+		emu->out_message(_T("CMT: APSS (+%d)"), value);
+	} else {
+		emu->out_message(_T("CMT: APSS (%d)"), value);
+	}
+	return result;
 }
 
 void DATAREC::update_event()
@@ -311,6 +372,7 @@ bool DATAREC::play_tape(_TCHAR* file_path)
 			}
 			buffer = (uint8 *)malloc(buffer_length);
 			load_tap_image();
+			is_wav = true;
 		} else if(check_file_extension(file_path, _T(".mzt")) || check_file_extension(file_path, _T(".m12"))) {
 			// SHARP MZ series tape image
 			if((buffer_length = load_mzt_image()) == 0) {
@@ -328,11 +390,17 @@ bool DATAREC::play_tape(_TCHAR* file_path)
 				return false;
 			}
 			is_wav = true;
-		} else {
+		} else if(check_file_extension(file_path, _T(".cas"))) {
 			// standard cas image for my emulator
 			if((buffer_length = load_cas_image()) == 0) {
 				return false;
 			}
+			buffer = (uint8 *)malloc(buffer_length);
+			load_cas_image();
+			is_wav = true;
+		} else {
+			// unknown image
+			return false;
 		}
 		if(!is_wav && buffer_length != 0) {
 			buffer_bak = (uint8 *)malloc(buffer_length);
@@ -345,6 +413,13 @@ bool DATAREC::play_tape(_TCHAR* file_path)
 			write_signals(&outputs_out, signal ? 0xffffffff : 0);
 			in_signal = signal;
 		}
+		
+		// initialize apss
+		apss_buffer = (bool *)calloc(sample_rate * 2, 1);
+		apss_ptr = apss_count = 0;
+		apss_signals = false;
+		write_signals(&outputs_apss, 0);
+		
 		play = true;
 		update_event();
 	}
@@ -415,6 +490,10 @@ void DATAREC::close_file()
 		snd_buffer = NULL;
 	}
 #endif
+	if(apss_buffer != NULL) {
+		free(apss_buffer);
+		apss_buffer = NULL;
+	}
 }
 
 // standard cas image for my emulator
@@ -423,17 +502,17 @@ int DATAREC::load_cas_image()
 {
 	sample_rate = 48000;
 	
-	// get file size
-	fio->Fseek(0, FILEIO_SEEK_END);
-	int file_size = fio->Ftell();
-	
-	// load samples
-	if(file_size > 0) {
-		buffer = (uint8 *)malloc(file_size);
-		fio->Fseek(0, FILEIO_SEEK_SET);
-		fio->Fread(buffer, file_size, 1);
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	int ptr = 0, data;
+	while((data = fio->Fgetc()) != EOF) {
+		for(int i = 0; i < (data & 0x7f); i++) {
+			if(buffer != NULL) {
+				buffer[ptr] = (data & 0x80) ? 255 : 0;
+			}
+			ptr++;
+		}
 	}
-	return file_size;
+	return ptr;
 }
 
 // standard PCM wave file
@@ -746,28 +825,15 @@ int DATAREC::load_tap_image()
 	
 	// load samples
 	int ptr = 0, data;
-	uint8 prev_data = 0;
 	while((data = fio->Fgetc()) != EOF) {
 		for(int i = 0, bit = 0x80; i < 8; i++, bit >>= 1) {
-			// inc pointer
-			bool prev_signal = ((prev_data & 0x80) != 0);
-			bool cur_signal = ((data & bit) != 0);
-			if(prev_signal != cur_signal || (prev_data & 0x7f) == 0x7f) {
-				if((prev_data & 0x7f) == 0) {
-					// don't inc pointer
-				} else {
-					ptr++;
-				}
-				prev_data = cur_signal ? 0x80 : 0;
-			}
-			// inc pulse count
-			prev_data++;
 			if(buffer != NULL) {
-				buffer[ptr] = prev_data;
+				buffer[ptr] = ((data & bit) != 0) ? 255 : 0;
 			}
+			ptr++;
 		}
 	}
-	return (ptr + 1);
+	return ptr;
 }
 
 // SHARP MZ series tape image
