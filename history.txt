@@ -1,3 +1,10 @@
+3/29/2013
+
+[MZ2200] support quick disk drive (MZ-1E18 and MZ-1F11)
+[MZ2200/MZ1R12] support to load MZ-1E18 ipl rom image
+[MZ2200/MZ1R13] support to switch kanji/dictionary roms
+
+
 3/28/2013
 
 [WINMAIN] fix to support max 30 screen resolutions

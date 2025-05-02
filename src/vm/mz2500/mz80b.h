@@ -19,7 +19,7 @@
 #define DEVICE_NAME		"SHARP MZ-2200"
 #define CONFIG_NAME		"mz2200"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -29,6 +29,9 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define HAS_MB8876
+// 1byte=32clock/3.25MHz*8=79usec
+#define Z80SIO_DELAY_SEND	100
+#define Z80SIO_DELAY_RECV	100
 #define PCM1BIT_HIGH_QUALITY
 
 // memory wait
@@ -42,6 +45,9 @@
 #define USE_FD2
 #define USE_FD3
 #define USE_FD4
+#ifndef _MZ80B
+#define USE_QUICKDISK
+#endif
 #define USE_DATAREC
 #define USE_DATAREC_BUTTON
 #define DATAREC_MZT_2000
@@ -78,6 +84,11 @@ class MZ1R12;
 class MZ1R13;
 class TIMER;
 
+#ifndef _MZ80B
+class Z80SIO;
+class QUICKDISK;
+#endif
+
 class VM
 {
 protected:
@@ -93,7 +104,7 @@ protected:
 	MB8877* fdc;
 	PCM1BIT* pcm;
 	Z80* cpu;
-	Z80PIO* pio_z;
+	Z80PIO* pio;
 	
 	CASSETTE* cassette;
 	FLOPPY* floppy;
@@ -102,6 +113,11 @@ protected:
 	MZ1R12* mz1r12;
 	MZ1R13* mz1r13;
 	TIMER* timer;
+	
+#ifndef _MZ80B
+	Z80SIO* sio;
+	QUICKDISK* qd;
+#endif
 	
 public:
 	// ----------------------------------------
@@ -132,6 +148,10 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+#ifndef _MZ80B
+	void open_quickdisk(_TCHAR* file_path);
+	void close_quickdisk();
+#endif
 	void play_datarec(_TCHAR* file_path);
 	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();

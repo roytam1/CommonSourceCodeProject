@@ -31,6 +31,11 @@
 #include "mz1r13.h"
 #include "timer.h"
 
+#ifndef _MZ80B
+#include "../z80sio.h"
+#include "../mz700/quickdisk.h"
+#endif
+
 #include "../../config.h"
 
 // ----------------------------------------------------------------------------
@@ -51,7 +56,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc = new MB8877(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	cpu = new Z80(this, emu);
-	pio_z = new Z80PIO(this, emu);
+	pio = new Z80PIO(this, emu);
 	
 	cassette = new CASSETTE(this, emu);
 	floppy = new FLOPPY(this, emu);
@@ -60,6 +65,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	mz1r12 = new MZ1R12(this, emu);
 	mz1r13 = new MZ1R13(this, emu);
 	timer = new TIMER(this, emu);
+	
+#ifndef _MZ80B
+	sio = new Z80SIO(this, emu);
+	qd = new QUICKDISK(this, emu);
+#endif
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -80,30 +90,56 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _FDC_DEBUG_LOG
 	fdc->set_context_cpu(cpu);
 #endif
-	pio_z->set_context_port_a(memory, SIG_MEMORY_VRAM_SEL, 0xc0, 0);
-	pio_z->set_context_port_a(memory, SIG_CRTC_WIDTH80, 0x20, 0);
-	pio_z->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x1f, 0);
+	pio->set_context_port_a(memory, SIG_MEMORY_VRAM_SEL, 0xc0, 0);
+	pio->set_context_port_a(memory, SIG_CRTC_WIDTH80, 0x20, 0);
+	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x1f, 0);
 	
 	cassette->set_context_pio(pio_i);
 	cassette->set_context_datarec(drec);
 	floppy->set_context_fdc(fdc);
 	keyboard->set_context_pio_i(pio_i);
-	keyboard->set_context_pio_z(pio_z);
+	keyboard->set_context_pio(pio);
 	memory->set_context_cpu(cpu);
 	memory->set_context_pio(pio_i);
 	timer->set_context_pit(pit);
 	
+#ifndef _MZ80B
+	// Z80SIO:RTSA -> QD:WRGA
+	sio->set_context_rts0(qd, QUICKDISK_SIO_RTSA, 1);
+	// Z80SIO:DTRB -> QD:MTON
+	sio->set_context_dtr1(qd, QUICKDISK_SIO_DTRB, 1);
+	// Z80SIO:SENDA -> QD:RECV
+	sio->set_context_sync0(qd, QUICKDISK_SIO_SYNC, 1);
+	sio->set_context_rxdone0(qd, QUICKDISK_SIO_RXDONE, 1);
+	sio->set_context_send0(qd, QUICKDISK_SIO_DATA);
+	sio->set_context_break0(qd, QUICKDISK_SIO_BREAK, 1);
+	// Z80SIO:CTSA <- QD:PROTECT
+	// Z80SIO:DCDA <- QD:INSERT
+	// Z80SIO:DCDB <- QD:HOE
+	qd->set_context_sio(sio);
+#endif
+	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_intr(pio_z);
+	cpu->set_context_intr(pio);
 	
 	// z80 family daisy chain
-	pio_z->set_context_intr(cpu, 0);
+	pio->set_context_intr(cpu, 0);
+#ifndef _MZ80B
+	pio->set_context_child(sio);
+	sio->set_context_intr(cpu, 1);
+#endif
 	
 	// i/o bus
-	io->set_iomap_range_rw(0xb8, 0xb9, mz1r13);
+	io->set_iomap_range_rw(0xb8, 0xbb, mz1r13);
 	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
+#ifndef _MZ80B
+	io->set_iomap_alias_rw(0xd0, sio, 0);
+	io->set_iomap_alias_rw(0xd1, sio, 2);
+	io->set_iomap_alias_rw(0xd2, sio, 1);
+	io->set_iomap_alias_rw(0xd3, sio, 3);
+#endif
 	io->set_iomap_range_w(0xdc, 0xdd, floppy);
 	io->set_iomap_single_rw(0xe0, pio_i);
 	io->set_iomap_single_r(0xe1, pio_i);
@@ -111,7 +147,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_rw(0xe2, pio_i);
 	io->set_iomap_single_w(0xe3, pio_i);
 	io->set_iomap_range_rw(0xe4, 0xe7, pit);
-	io->set_iomap_range_rw(0xe8, 0xeb, pio_z);
+	io->set_iomap_range_rw(0xe8, 0xeb, pio);
 	io->set_iomap_range_w(0xf0, 0xf3, timer);
 #ifndef _MZ80B
 	io->set_iomap_range_w(0xf4, 0xf7, memory);
@@ -186,7 +222,11 @@ void VM::draw_screen()
 
 int VM::access_lamp()
 {
+#ifndef _MZ80B
+	uint32 status = fdc->read_signal(0) | qd->read_signal(0);
+#else
 	uint32 status = fdc->read_signal(0);
+#endif
 	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
@@ -226,6 +266,18 @@ bool VM::disk_inserted(int drv)
 {
 	return fdc->disk_inserted(drv);
 }
+
+#ifndef _MZ80B
+void VM::open_quickdisk(_TCHAR* file_path)
+{
+	qd->open_disk(file_path);
+}
+
+void VM::close_quickdisk()
+{
+	qd->close_disk();
+}
+#endif
 
 void VM::play_datarec(_TCHAR* file_path)
 {

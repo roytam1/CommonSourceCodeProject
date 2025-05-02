@@ -101,7 +101,7 @@ protected:
 	W3100A* w3100a;
 	YM2203* opn;
 	Z80* cpu;
-	Z80PIO* pio_z;
+	Z80PIO* pio;
 	Z80SIO* sio;
 	
 	CALENDAR* calendar;

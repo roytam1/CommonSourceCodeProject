@@ -64,7 +64,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	w3100a = new W3100A(this, emu);
 	opn = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
-	pio_z = new Z80PIO(this, emu);
+	pio = new Z80PIO(this, emu);
 	sio = new Z80SIO(this, emu);
 	
 	calendar = new CALENDAR(this, emu);
@@ -109,8 +109,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	opn->set_context_port_a(floppy, SIG_FLOPPY_REVERSE, 0x02, 0);
 	opn->set_context_port_a(crtc, SIG_CRTC_PALLETE, 0x04, 0);
 	opn->set_context_port_a(mouse, SIG_MOUSE_SEL, 0x08, 0);
-	pio_z->set_context_port_a(crtc, SIG_CRTC_COLUMN_SIZE, 0x20, 0);
-	pio_z->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x1f, 0);
+	pio->set_context_port_a(crtc, SIG_CRTC_COLUMN_SIZE, 0x20, 0);
+	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x1f, 0);
 	sio->set_context_dtr1(mouse, SIG_MOUSE_DTR, 1);
 	
 	calendar->set_context_rtc(rtc);
@@ -125,7 +125,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_pcg_ptr(memory->get_pcg());
 	floppy->set_context_fdc(fdc);
 	keyboard->set_context_pio_i(pio_i);
-	keyboard->set_context_pio_z(pio_z);
+	keyboard->set_context_pio(pio);
 	memory->set_context_cpu(cpu);
 	memory->set_context_crtc(crtc);
 	mouse->set_context_sio(sio);
@@ -134,11 +134,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_intr(pio_z);
+	cpu->set_context_intr(pio);
 	
 	// z80 family daisy chain
-	pio_z->set_context_intr(cpu, 0);
-	pio_z->set_context_child(sio);
+	pio->set_context_intr(cpu, 0);
+	pio->set_context_child(sio);
 	sio->set_context_intr(cpu, 1);
 	sio->set_context_child(interrupt);
 	interrupt->set_context_intr(cpu, 2);
@@ -167,7 +167,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_rw(0xe2, pio_i);
 	io->set_iomap_single_w(0xe3, pio_i);
 	io->set_iomap_range_rw(0xe4, 0xe7, pit);
-	io->set_iomap_range_rw(0xe8, 0xeb, pio_z);
+	io->set_iomap_range_rw(0xe8, 0xeb, pio);
 	io->set_iomap_single_rw(0xef, joystick);
 	io->set_iomap_range_w(0xf0, 0xf3, timer);
 	io->set_iomap_range_rw(0xf4, 0xf7, crtc);

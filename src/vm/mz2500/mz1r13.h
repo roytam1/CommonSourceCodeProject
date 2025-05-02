@@ -20,8 +20,11 @@
 class MZ1R13 : public DEVICE
 {
 private:
-	uint8 rom[0x20000];
+	uint8 kanji[0x20000];
+	uint8 dic[0x4000];
+	
 	uint16 address;
+	bool select_kanji;
 	
 public:
 	MZ1R13(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

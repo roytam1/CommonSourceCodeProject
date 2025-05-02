@@ -72,6 +72,6 @@ void KEYBOARD::create_keystat()
 {
 	uint8 val = keys[(column & 0x10) ? (column & 0x0f) : 0x0f];
 	d_pio_i->write_signal(SIG_I8255_PORT_B, val, 0x80);	// to i8255 port b
-	d_pio_z->write_signal(SIG_Z80PIO_PORT_B, val, 0xff);	// to z80pio port b
+	d_pio->write_signal(SIG_Z80PIO_PORT_B, val, 0xff);	// to z80pio port b
 }
 

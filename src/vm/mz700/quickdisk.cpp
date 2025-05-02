@@ -1,6 +1,7 @@
 /*
 	SHARP MZ-800 Emulator 'EmuZ-800'
 	SHARP MZ-1500 Emulator 'EmuZ-1500'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya

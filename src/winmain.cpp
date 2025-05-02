@@ -1719,7 +1719,7 @@ void open_quickdisk_dialog(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.mzt)\0*.mzt\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.mzt;*.q20)\0*.mzt;*.q20\0All Files (*.*)\0*.*\0\0"),
 		_T("Quick Disk"),
 		config.initial_quickdisk_path
 	);

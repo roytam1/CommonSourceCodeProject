@@ -20,6 +20,7 @@ class MZ1R12 : public DEVICE
 {
 private:
 	uint8 sram[0x8000];
+	bool read_only;
 	uint16 address;
 	uint32 crc32;
 	

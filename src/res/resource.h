@@ -389,11 +389,11 @@
 // SHARP MZ-80B
 #ifdef _MZ80B
 #define MENU_POS_CONTROL                0
-#define MENU_POS_FD1                    1
-#define MENU_POS_FD2                    2
-#define MENU_POS_FD3                    3
-#define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
+#define MENU_POS_DATAREC                1
+#define MENU_POS_FD1                    2
+#define MENU_POS_FD2                    3
+#define MENU_POS_FD3                    4
+#define MENU_POS_FD4                    5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
 #endif
@@ -417,8 +417,8 @@
 // SHARP MZ-800
 #ifdef _MZ800
 #define MENU_POS_CONTROL                0
-#define MENU_POS_QUICKDISK              1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_DATAREC                1
+#define MENU_POS_QUICKDISK              2
 #define MENU_POS_FD1                    3
 #define MENU_POS_FD2                    4
 #define MENU_POS_SCREEN                 5
@@ -436,8 +436,8 @@
 // SHARP MZ-1500
 #ifdef _MZ1500
 #define MENU_POS_CONTROL                0
-#define MENU_POS_QUICKDISK              1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_DATAREC                1
+#define MENU_POS_QUICKDISK              2
 #define MENU_POS_FD1                    3
 #define MENU_POS_FD2                    4
 #define MENU_POS_SCREEN                 5
@@ -447,13 +447,14 @@
 // SHARP MZ-2200
 #ifdef _MZ2200
 #define MENU_POS_CONTROL                0
-#define MENU_POS_FD1                    1
-#define MENU_POS_FD2                    2
-#define MENU_POS_FD3                    3
-#define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
-#define MENU_POS_SCREEN                 6
-#define MENU_POS_SOUND                  7
+#define MENU_POS_DATAREC                1
+#define MENU_POS_QUICKDISK              2
+#define MENU_POS_FD1                    3
+#define MENU_POS_FD2                    4
+#define MENU_POS_FD3                    5
+#define MENU_POS_FD4                    6
+#define MENU_POS_SCREEN                 7
+#define MENU_POS_SOUND                  8
 #endif
 
 // SHARP MZ-2500

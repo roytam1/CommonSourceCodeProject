@@ -22,8 +22,7 @@
 class KEYBOARD : public DEVICE
 {
 private:
-	DEVICE* d_pio_i;	// i8255
-	DEVICE* d_pio_z;	// z80pio
+	DEVICE *d_pio_i, *d_pio;	// i8255, z80pio
 	
 	// keyboard
 	uint8* key_stat;
@@ -44,8 +43,8 @@ public:
 	void set_context_pio_i(DEVICE* device) {
 		d_pio_i = device;
 	}
-	void set_context_pio_z(DEVICE* device) {
-		d_pio_z = device;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 };
 

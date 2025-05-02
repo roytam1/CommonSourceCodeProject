@@ -616,11 +616,55 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="src\vm\z80sio.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
 			</Filter>
 			<Filter
 				Name="VM Driver Source Files"
 				Filter="cpp"
 				>
+				<File
+					RelativePath="src\vm\mz700\quickdisk.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
 				<File
 					RelativePath="src\vm\mz2500\cassette.cpp"
 					>
@@ -880,11 +924,19 @@
 					RelativePath="src\vm\z80pio.h"
 					>
 				</File>
+				<File
+					RelativePath="src\vm\z80sio.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="VM Driver Header Files"
 				Filter="h"
 				>
+				<File
+					RelativePath="src\vm\mz700\quickdisk.h"
+					>
+				</File>
 				<File
 					RelativePath="src\vm\mz2500\cassette.h"
 					>
