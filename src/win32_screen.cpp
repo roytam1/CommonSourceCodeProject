@@ -511,9 +511,16 @@ void EMU::draw_screen()
 	UpdateWindow(main_window_handle);
 	self_invalidate = true;
 	
-	// record picture
+	// record avi file
 	if(now_rec_vid) {
-		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmpSource, pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK) {
+		LONG lBytesWritten;
+		if(AVIStreamWrite(pAVICompressed, lAVIFrames++, 1, (LPBYTE)lpBmpSource, pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, &lBytesWritten) == AVIERR_OK) {
+			// if avi file size > (2GB - 16MB), create new avi file
+			if((dwAVIFileSize += lBytesWritten) >= 2130706432) {
+				stop_rec_video();
+				start_rec_video(-1);
+			}
+		} else {
 			stop_rec_video();
 		}
 	}
@@ -628,12 +635,14 @@ void EMU::capture_screen()
 		vm->draw_screen();
 	}
 	
+	// create file name
 	SYSTEMTIME sTime;
 	GetLocalTime(&sTime);
 	
 	_TCHAR file_name[_MAX_PATH];
 	_stprintf(file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 	
+	// create bitmap
 	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
 	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 	bmFileHeader.bfSize = bmFileHeader.bfOffBits + pbmInfoHeader->biSizeImage;
@@ -646,11 +655,25 @@ void EMU::capture_screen()
 	CloseHandle(hFile);
 }
 
-void EMU::start_rec_video(int fps, bool show_dialog)
+void EMU::start_rec_video(int fps)
 {
+	bool show_dialog = (fps > 0);
+	static int prev_fps = 0;
+	if(fps > 0) {
+		prev_fps = fps;
+	} else {
+		fps = prev_fps;
+	}
+	
+	// create file name
+	SYSTEMTIME sTime;
+	GetLocalTime(&sTime);
+	
+	_stprintf(vid_file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.avi"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+	
 	// initialize vfw
 	AVIFileInit();
-	if(AVIFileOpen(&pAVIFile, bios_path(_T("video.avi")), OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
+	if(AVIFileOpen(&pAVIFile, bios_path(vid_file_name), OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
 		return;
 	}
 	
@@ -684,8 +707,8 @@ void EMU::start_rec_video(int fps, bool show_dialog)
 		stop_rec_video();
 		return;
 	}
-	rec_frames = 0;
-	rec_fps = fps;
+	dwAVIFileSize = 0;
+	lAVIFrames = 0;
 	now_rec_vid = true;
 }
 
@@ -708,7 +731,7 @@ void EMU::stop_rec_video()
 	
 	// repair header
 	if(now_rec_vid) {
-		FILE* fp = _tfopen(bios_path(_T("video.avi")), _T("r+b"));
+		FILE* fp = _tfopen(bios_path(vid_file_name), _T("r+b"));
 		if(fp != NULL) {
 			// copy fccHandler
 			uint8 buf[4];
@@ -722,27 +745,5 @@ void EMU::stop_rec_video()
 		}
 	}
 	now_rec_vid = false;
-}
-
-void EMU::restart_rec_video()
-{
-	if(now_rec_vid) {
-		// release vfw
-		if(pAVIStream) {
-			AVIStreamClose(pAVIStream);
-		}
-		if(pAVICompressed) {
-			AVIStreamClose(pAVICompressed);
-		}
-		if(pAVIFile) {
-			AVIFileClose(pAVIFile);
-			AVIFileExit();
-		}
-		pAVIStream = NULL;
-		pAVICompressed = NULL;
-		pAVIFile = NULL;
-		
-		start_rec_video(rec_fps, false);
-	}
 }
 

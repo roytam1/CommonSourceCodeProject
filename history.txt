@@ -1,3 +1,13 @@
+8/2/2013
+
+[EMU/WIN32] fix to create new avi file when current file is close to 2GB
+
+[VM/DISK] support 1.20MB/1.44MB/2.88MB floppy disk images
+[VM/DISK] fix to add index mark in track image
+[VM/UPD765A] fix read data command when sector size or number is invalid
+[VM/UPD765A] fix seek time for MZ-3500
+
+
 8/1/2013
 
 [VM/DEVICE] support virtual function to set or get expend cpu clocks
@@ -5,7 +15,7 @@
 [VM/DEVICE] support virtual functions for dma access with i/o wait
 [VM/DISK] support function to get perid to transfer specified bytes
 [VM/DISK] support functions to get drive rpm and track size
-[VM/DISK] improva make track image
+[VM/DISK] improve make track image
 [VM/DEVICE] support function to get passed usec
 [VM/I86] support function to get and set expend cpu clocks
 [VM/I86] fix single mode dma when busreq is active

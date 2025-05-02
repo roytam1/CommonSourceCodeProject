@@ -105,7 +105,10 @@ static const fd_format fd_formats[] = {
 	{ MEDIA_TYPE_2DD, 80, 2,  8,  512 },	// 2DD  640KB
 #endif
 	{ MEDIA_TYPE_2DD, 80, 2,  9,  512 },	// 2DD  720KB
+	{ MEDIA_TYPE_2HD, 80, 2, 15,  512 },	// 2HC 1.20MB
 	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024 },	// 2HD 1.25MB
+	{ MEDIA_TYPE_144, 80, 2, 18,  512 },	// 2HD 1.44MB
+	{ MEDIA_TYPE_144, 80, 2, 36,  512 },	// 2ED 2.88MB
 	{ -1, 0, 0, 0, 0 },
 };
 
@@ -118,6 +121,7 @@ void DISK::open(_TCHAR path[], int offset)
 		}
 		close();
 	}
+	media_type = MEDIA_TYPE_UNK;
 	
 	// open disk image
 	fi = new FILEIO();
@@ -237,7 +241,29 @@ file_loaded:
 		if(buffer[0x1a] != 0) {
 			write_protected = true;
 		}
-		media_type = buffer[0x1b];
+		if(media_type == MEDIA_TYPE_UNK) {
+			if((media_type = buffer[0x1b]) == MEDIA_TYPE_2HD) {
+				for(int trkside = 0; trkside < 164; trkside++) {
+					uint32 offset = buffer[0x20 + trkside * 4 + 0];
+					offset |= buffer[0x20 + trkside * 4 + 1] << 8;
+					offset |= buffer[0x20 + trkside * 4 + 2] << 16;
+					offset |= buffer[0x20 + trkside * 4 + 3] << 24;
+					
+					if(!offset) {
+						continue;
+					}
+					// track found
+					uint8 *t = buffer + offset;
+					int sector_num = t[4] | (t[5] << 8);
+					int data_size = t[14] | (t[15] << 8);
+					
+					if(sector_num >= 18 && data_size == 512) {
+						media_type = MEDIA_TYPE_144;
+					}
+					break;
+				}
+			}
+		}
 	}
 	delete fi;
 }
@@ -290,13 +316,14 @@ bool DISK::get_track(int trk, int side)
 	// track found
 	sector = buffer + offset;
 	sector_num = sector[4] | (sector[5] << 8);
-	data_size_shift = 0;
 	
 	// create each sector position in track
 	int sync_size  = drive_mfm ? 12 : 6;
 	int am_size = drive_mfm ? 3 : 0;
 	int gap2_size = drive_mfm ? 22 : 11;
-	bool too_many_sectors = false;
+	
+	data_size_shift = 0;
+	too_many_sectors = false;
 retry:
 	uint8* t = sector;
 	int total = 0, gap3_size;
@@ -304,7 +331,7 @@ retry:
 	for(int i = 0; i < sector_num; i++) {
 		int data_size = t[14] | (t[15] << 8);
 		
-		if(data_size >> data_size_shift < 0x80) {
+		if((data_size >> data_size_shift) < 0x80) {
 			too_many_sectors = true;
 			break;
 		}
@@ -324,13 +351,13 @@ retry:
 		goto retry;
 	}
 	t = sector;
-	total = gap3_size;
+	total = gap3_size * 2;
 	
 	for(int i = 0; i < sector_num; i++) {
 		int data_size = t[14] | (t[15] << 8);
 		
 		if(too_many_sectors) {
-			total = gap3_size + (get_track_size() - gap3_size * 2) * i / sector_num;
+			total = gap3_size * 2 + (get_track_size() - gap3_size * 2) * i / sector_num;
 		}
 		sync_position[i] = total;
 		total += sync_size + (am_size + 1);
@@ -363,8 +390,25 @@ bool DISK::make_track(int trk, int side)
 	int gap2_size = drive_mfm ? 22 : 11;
 	uint8 gap_data = drive_mfm ? 0x4e : 0xff;
 	
-	uint8 *t = sector;
+	// preamble
 	memset(track, gap_data, track_size);
+	
+	if(sync_position[0] >= (sync_size + am_size + 1) + (8 + 5)) {
+		int p = (sync_position[0] - (sync_size + am_size + 1)) * 8 / (8 + 5);
+		
+		// sync
+		for(int i = 0; i < sync_size; i++) {
+			track[p++] = 0x00;
+		}
+		// index mark
+		for(int i = 0; i < am_size; i++) {
+			track[p++] = 0xc2;
+		}
+		track[p++] = 0xfc;
+	}
+	
+	// sectors
+	uint8 *t = sector;
 	
 	for(int i = 0; i < sector_num; i++) {
 		int data_size = t[14] | (t[15] << 8);
@@ -481,10 +525,8 @@ int DISK::get_rpm()
 	if(drive_rpm != 0) {
 		return drive_rpm;
 	} else if(inserted) {
-		// FIXME: 2HD 1.44MB is 300rpm
 		return (media_type == MEDIA_TYPE_2HD) ? 360 : 300;
 	} else {
-		// FIXME: 2HD 1.44MB is 300rpm
 		return (drive_type == DRIVE_TYPE_2HD) ? 360 : 300;
 	}
 }
@@ -492,9 +534,9 @@ int DISK::get_rpm()
 int DISK::get_track_size()
 {
 	if(inserted) {
-		return (media_type == MEDIA_TYPE_2HD) ? 12500 : drive_mfm ? 6250 : 3100;
+		return (media_type == MEDIA_TYPE_2HD || media_type == MEDIA_TYPE_144) ? 12500 : drive_mfm ? 6250 : 3100;
 	} else {
-		return (drive_type == DRIVE_TYPE_2HD) ? 12500 : drive_mfm ? 6250 : 3100;
+		return (drive_type == DRIVE_TYPE_2HD || drive_type == DRIVE_TYPE_144) ? 12500 : drive_mfm ? 6250 : 3100;
 	}
 }
 
@@ -512,6 +554,8 @@ bool DISK::check_media_type()
 		return (media_type == MEDIA_TYPE_2D || media_type == MEDIA_TYPE_2DD);
 	case DRIVE_TYPE_2HD:
 		return (media_type == MEDIA_TYPE_2HD);
+	case DRIVE_TYPE_144:
+		return (media_type == MEDIA_TYPE_144);
 	case DRIVE_TYPE_UNK:
 		return true; // always okay
 	}
@@ -1011,7 +1055,7 @@ bool DISK::imagedisk_to_d88()
 			trkptr += sizeof(d88_sct_t) + d88_sct.size;
 		}
 	}
-	d88_hdr.type = (mode == 0) ? MEDIA_TYPE_2HD : (trkcnt > 120) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
+	d88_hdr.type = (mode == 0) ? MEDIA_TYPE_2HD : ((trkcnt >> 1) > 60) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
 	d88_hdr.size = trkptr;
 	memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
 	return true;
@@ -1113,7 +1157,8 @@ bool DISK::standard_to_d88(int type, int ncyl, int nside, int nsec, int size)
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "STANDARD");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = type;
+	d88_hdr.type = (type == MEDIA_TYPE_144) ? MEDIA_TYPE_2HD : type;
+	media_type = type;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// sector length

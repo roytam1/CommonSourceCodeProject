@@ -173,8 +173,16 @@ void EMU::mute_sound()
 void EMU::start_rec_sound()
 {
 	if(!now_rec_snd) {
+		// create file name
+		SYSTEMTIME sTime;
+		GetLocalTime(&sTime);
+		
+		_TCHAR file_name[_MAX_PATH];
+		_stprintf(file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.wav"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+		
+		// create wave file
 		rec = new FILEIO();
-		if(rec->Fopen(bios_path(_T("sound.wav")), FILEIO_WRITE_BINARY)) {
+		if(rec->Fopen(bios_path(file_name), FILEIO_WRITE_BINARY)) {
 			// write dummy wave header
 			struct wavheader_t header;
 			memset(&header, 0, sizeof(wavheader_t));
@@ -215,17 +223,6 @@ void EMU::stop_rec_sound()
 		
 		delete rec;
 		now_rec_snd = false;
-	}
-}
-
-void EMU::restart_rec_sound()
-{
-	if(now_rec_snd) {
-		rec->Fclose();
-		delete rec;
-		now_rec_snd = false;
-		
-		start_rec_sound();
 	}
 }
 

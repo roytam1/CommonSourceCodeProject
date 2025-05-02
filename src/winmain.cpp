@@ -1076,8 +1076,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				static int fps[3] = {60, 30, 15};
 				static int delay[3][3] = {{16, 17, 17}, {33, 33, 34}, {66, 67, 67}};
 				no = LOWORD(wParam) - ID_SCREEN_REC60;
-				emu->start_rec_video(fps[no], true);
 				emu->start_rec_sound();
+				emu->start_rec_video(fps[no]);
 				memcpy(rec_delay, delay[no], sizeof(rec_delay));
 				rec_next_time = rec_accum_time = 0;
 			}

@@ -665,7 +665,7 @@ void UPD765A::seek(int drv, int trk)
 	if(disk[drv]->drive_type == DRIVE_TYPE_2HD) {
 		seektime /= 2;
 	}
-	seektime = (trk == fdc[drv].track) ? 120 : seektime * abs(trk - fdc[drv].track) + 50; //usec
+	seektime = (trk == fdc[drv].track) ? 120 : seektime * abs(trk - fdc[drv].track) + 500; //usec
 	
 	if(drv >= MAX_DRIVE) {
 		// invalid drive number
@@ -947,9 +947,9 @@ void UPD765A::read_diagnostic()
 	}
 	
 	// read from the 1st sector data
-	next_trans_position[drv] = disk[drv]->data_position[0];
 	memcpy(buffer, disk[drv]->track + disk[drv]->data_position[0], disk[drv]->get_track_size() - disk[drv]->data_position[0]);
 	memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[0], disk[drv]->track, disk[drv]->data_position[0]);
+	next_trans_position[drv] = disk[drv]->data_position[0];
 	
 	shift_to_read(0x80 << __min(8, id[3]));
 	return;
@@ -985,9 +985,15 @@ uint32 UPD765A::read_sector()
 			continue;
 		}
 		// sector number is matched
+		if(disk[drv]->data_size_shift != 0 || disk[drv]->too_many_sectors) {
+			memset(buffer, disk[drv]->drive_mfm ? 0x4e : 0xff, sizeof(buffer));
+			memcpy(buffer, disk[drv]->sector, disk[drv]->sector_size);
+		}
+		else {
+			memcpy(buffer, disk[drv]->track + disk[drv]->data_position[i], disk[drv]->get_track_size() - disk[drv]->data_position[i]);
+			memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[i], disk[drv]->track, disk[drv]->data_position[i]);
+		}
 		next_trans_position[drv] = disk[drv]->data_position[i];
-		memcpy(buffer, disk[drv]->track + disk[drv]->data_position[i], disk[drv]->get_track_size() - disk[drv]->data_position[i]);
-		memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[i], disk[drv]->track, disk[drv]->data_position[i]);
 		
 		if(disk[drv]->status) {
 			return ST0_AT | ST1_DE | ST2_DD;
@@ -1160,7 +1166,7 @@ void UPD765A::cmd_read_id()
 //			REGISTER_PHASE_EVENT(PHASE_EXEC, 1000000);
 //			break;
 		}
-		if((result_tmp = read_id()) == 0) {
+		if((result = read_id()) == 0) {
 			int drv = hdu & DRIVE_MASK;
 			int bytes = next_trans_position[drv] - get_cur_position(drv);
 			if(bytes < 0) {
@@ -1173,7 +1179,6 @@ void UPD765A::cmd_read_id()
 		}
 		break;
 	case PHASE_TIMER:
-		result = result_tmp;
 		shift_to_result7();
 		break;
 	}
@@ -1349,11 +1354,14 @@ void UPD765A::shift_to_result7()
 #ifdef UPD765A_WAIT_RESULT7
 	if(result7_id != -1) {
 		cancel_event(result7_id);
+		result7_id = -1;
 	}
-	register_event(this, EVENT_RESULT7, 100, false, &result7_id);
-#else
-	shift_to_result7_event();
+	if(phase != PHASE_TIMER) {
+		register_event(this, EVENT_RESULT7, 100, false, &result7_id);
+	}
+	else
 #endif
+	shift_to_result7_event();
 }
 
 void UPD765A::shift_to_result7_event()

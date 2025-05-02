@@ -17,11 +17,13 @@
 #define MEDIA_TYPE_2D	0x00
 #define MEDIA_TYPE_2DD	0x10
 #define MEDIA_TYPE_2HD	0x20
+#define MEDIA_TYPE_144	0x30
 #define MEDIA_TYPE_UNK	0xff
 
 #define DRIVE_TYPE_2D	MEDIA_TYPE_2D
 #define DRIVE_TYPE_2DD	MEDIA_TYPE_2DD
 #define DRIVE_TYPE_2HD	MEDIA_TYPE_2HD
+#define DRIVE_TYPE_144	MEDIA_TYPE_144
 #define DRIVE_TYPE_UNK	MEDIA_TYPE_UNK
 
 // d88 constant
@@ -160,6 +162,7 @@ public:
 	uint8 track[TRACK_BUFFER_SIZE];
 	int sector_num;
 	int data_size_shift;
+	bool too_many_sectors;
 	
 	uint8 verify[256];
 	int sync_position[256];

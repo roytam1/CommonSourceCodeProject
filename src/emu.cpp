@@ -152,8 +152,12 @@ void EMU::reset()
 #endif
 	
 	// restart recording
-	restart_rec_video();
-	restart_rec_sound();
+	bool s = now_rec_snd;
+	bool v = now_rec_vid;
+	stop_rec_sound();
+	stop_rec_video();
+	if(s) start_rec_sound();
+	if(v) start_rec_video(-1);
 }
 
 #ifdef USE_SPECIAL_RESET
@@ -163,8 +167,12 @@ void EMU::special_reset()
 	vm->special_reset();
 	
 	// restart recording
-	restart_rec_video();
-	restart_rec_sound();
+	bool s = now_rec_snd;
+	bool v = now_rec_vid;
+	stop_rec_sound();
+	stop_rec_video();
+	if(s) start_rec_sound();
+	if(v) start_rec_video(-1);
 }
 #endif
 
@@ -351,8 +359,12 @@ void EMU::open_cart(int drv, _TCHAR* file_path)
 		out_message(_T("Cart%d: %s"), drv + 1, file_path);
 		
 		// restart recording
-		restart_rec_video();
-		restart_rec_sound();
+		bool s = now_rec_snd;
+		bool v = now_rec_vid;
+		stop_rec_sound();
+		stop_rec_video();
+		if(s) start_rec_sound();
+		if(v) start_rec_video(-1);
 	}
 }
 

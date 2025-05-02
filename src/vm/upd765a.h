@@ -51,7 +51,7 @@ private:
 	
 	int phase, prevphase;
 	uint8 status, seekstat, command;
-	uint32 result, result_tmp;
+	uint32 result;
 	int step_rate_time;
 	bool no_dma_mode, motor_on;
 #ifdef UPD765A_DMA_MODE

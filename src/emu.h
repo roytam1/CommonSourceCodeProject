@@ -193,11 +193,13 @@ private:
 	
 	// record video
 	bool now_rec_vid;
-	int rec_frames, rec_fps;
+	_TCHAR vid_file_name[_MAX_PATH];
 	PAVIFILE pAVIFile;
 	PAVISTREAM pAVIStream;
 	PAVISTREAM pAVICompressed;
 	AVICOMPRESSOPTIONS opts;
+	DWORD dwAVIFileSize;
+	LONG lAVIFrames;
 	
 	// ----------------------------------------
 	// sound
@@ -360,15 +362,13 @@ public:
 	
 	void start_rec_sound();
 	void stop_rec_sound();
-	void restart_rec_sound();
 	bool now_rec_sound() {
 		return now_rec_snd;
 	}
 	
 	void capture_screen();
-	void start_rec_video(int fps, bool show_dialog);
+	void start_rec_video(int fps);
 	void stop_rec_video();
-	void restart_rec_video();
 	bool now_rec_video() {
 		return now_rec_vid;
 	}
