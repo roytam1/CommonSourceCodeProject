@@ -627,6 +627,7 @@ void MC6800::initialize()
 void MC6800::release()
 {
 	recv_buffer->release();
+	delete recv_buffer;
 }
 #endif
 

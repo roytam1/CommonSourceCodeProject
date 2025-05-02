@@ -360,6 +360,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		// check window message
 		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 			if(!GetMessage(&msg, NULL, 0, 0)) {
+#ifdef _DEBUG
+				_CrtDumpMemoryLeaks();
+#endif
 				ExitProcess(0);	// trick
 				return msg.wParam;
 			}
@@ -439,6 +442,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			}
 		}
 	}
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
 	return 0;
 }
 

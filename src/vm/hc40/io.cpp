@@ -115,6 +115,15 @@ void IO::release()
 		fio->Fclose();
 	}
 	delete fio;
+	
+	cmd_buf->release();
+	delete cmd_buf;
+	rsp_buf->release();
+	delete rsp_buf;
+	key_buf->release();
+	delete key_buf;
+	art_buf->release();
+	delete art_buf;
 }
 
 void IO::reset()

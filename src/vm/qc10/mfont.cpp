@@ -38,6 +38,14 @@ void MFONT::initialize()
 	status = 0;
 }
 
+void MFONT::release()
+{
+	cmd->release();
+	delete cmd;
+	res->release();
+	delete res;
+}
+
 void MFONT::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {

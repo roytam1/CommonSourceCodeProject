@@ -44,7 +44,7 @@ void QUICKDISK::initialize()
 
 void QUICKDISK::release()
 {
-	close_disk();
+	release_disk();
 }
 
 void QUICKDISK::reset()
@@ -449,6 +449,18 @@ void QUICKDISK::open_disk(_TCHAR path[])
 
 void QUICKDISK::close_disk()
 {
+	release_disk();
+	set_insert(false);
+	set_protect(false);
+	set_home(true);
+	
+	// cancel all events
+	CANCEL_RESTORE_EVENT();
+	CANCEL_END_EVENT();
+}
+
+void QUICKDISK::release_disk()
+{
 	if(insert && !protect && modified) {
 		// save blocks
 		FILEIO* fio = new FILEIO();
@@ -492,12 +504,5 @@ void QUICKDISK::close_disk()
 		}
 		delete fio;
 	}
-	set_insert(false);
-	set_protect(false);
-	set_home(true);
-	
-	// cancel all events
-	CANCEL_RESTORE_EVENT();
-	CANCEL_END_EVENT();
 }
 

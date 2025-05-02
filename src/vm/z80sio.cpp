@@ -84,12 +84,15 @@ void Z80SIO::release()
 {
 	for(int ch = 0; ch < 2; ch++) {
 		if(port[ch].send) {
+			port[ch].send->release();
 			delete port[ch].send;
 		}
 		if(port[ch].recv) {
+			port[ch].recv->release();
 			delete port[ch].recv;
 		}
 		if(port[ch].rtmp) {
+			port[ch].rtmp->release();
 			delete port[ch].rtmp;
 		}
 	}

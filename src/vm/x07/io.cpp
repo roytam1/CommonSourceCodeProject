@@ -274,6 +274,13 @@ void IO::release()
 {
 	close_datarec();
 	delete cmt_fio;
+	
+	key_buf->release();
+	delete key_buf;
+	cmd_buf->release();
+	delete cmd_buf;
+	rsp_buf->release();
+	delete rsp_buf;
 }
 
 void IO::reset()

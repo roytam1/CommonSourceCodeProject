@@ -95,6 +95,7 @@ void UPD7220::initialize()
 
 void UPD7220::release()
 {
+	fo->release();
 	delete fo;
 }
 

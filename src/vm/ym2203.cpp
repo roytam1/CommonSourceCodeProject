@@ -97,14 +97,14 @@ uint32 YM2203::read_io8(uint32 addr)
 #endif
 	case 1:
 		if(ch == 14) {
-#ifdef _PC98DO
+#if defined(_PC98DO) || defined(_PC8801MA)
 			return port[0].rreg;
 #else
 			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
 #endif
 		}
 		else if(ch == 15) {
-#ifdef _PC98DO
+#if defined(_PC98DO) || defined(_PC8801MA)
 			return port[1].rreg;
 #else
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;

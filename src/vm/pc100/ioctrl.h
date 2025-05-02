@@ -41,6 +41,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void release();
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);

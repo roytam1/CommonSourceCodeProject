@@ -136,6 +136,7 @@ void MEMORY::initialize()
 		fio->Fclose();
 	}
 #endif
+	delete fio;
 	
 	// set memory
 	amask = 0xffffff;

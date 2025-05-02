@@ -76,6 +76,14 @@
 #include <winsock.h>
 #endif
 
+// check memory leaks
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#define malloc(s) _malloc_dbg(s, _NORMAL_BLOCK, __FILE__, __LINE__)
+#define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#endif
+
 #ifdef USE_MEDIA
 #define MEDIA_MAX 64
 #endif

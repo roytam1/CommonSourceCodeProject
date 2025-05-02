@@ -31,6 +31,8 @@ private:
 	uint8 buffer[BUFFER_SIZE];
 	bool play, rec, remote;
 	
+	void release_datarec();
+	
 public:
 	CMT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~CMT() {}

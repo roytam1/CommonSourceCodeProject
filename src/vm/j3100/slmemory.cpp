@@ -106,6 +106,7 @@ void MEMORY::release()
 		fio->Fwrite(backup, sizeof(backup), 1);
 		fio->Fclose();
 	}
+	delete fio;
 }
 
 void MEMORY::reset()

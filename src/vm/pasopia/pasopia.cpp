@@ -154,8 +154,11 @@ pio2	20	8255	out cmt, sound
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device) {
+	for(DEVICE* device = first_device; device;) {
+		DEVICE *next_device = device->next_device;
 		device->release();
+		delete device;
+		device = next_device;
 	}
 }
 

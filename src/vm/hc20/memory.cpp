@@ -139,6 +139,7 @@ void MEMORY::release()
 		fio->Fwrite(ram, sizeof(ram), 1);
 		fio->Fclose();
 	}
+	delete fio;
 	
 	// release datarec
 	close_datarec();
@@ -146,6 +147,7 @@ void MEMORY::release()
 	
 	// release command buffer
 	cmd_buf->release();
+	delete cmd_buf;
 }
 
 void MEMORY::reset()

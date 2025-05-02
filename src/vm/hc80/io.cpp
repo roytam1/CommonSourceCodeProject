@@ -192,6 +192,20 @@ void IO::release()
 		fio->Fclose();
 	}
 	delete fio;
+	
+	cmd6303_buf->release();
+	delete cmd6303_buf;
+	rsp6303_buf->release();
+	delete rsp6303_buf;
+	tf20_buf->release();
+	delete tf20_buf;
+	
+	cmd7508_buf->release();
+	delete cmd7508_buf;
+	rsp7508_buf->release();
+	delete rsp7508_buf;
+	key_buf->release();
+	delete key_buf;
 }
 
 void IO::reset()

@@ -219,11 +219,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 
 VM::~VM()
 {
-	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->release();
-	}
+	// save memory
 	memory->write_bios(_T("BACKUP.BIN"), ram, sizeof(ram));
+	
+	// delete all devices
+	for(DEVICE* device = first_device; device;) {
+		DEVICE *next_device = device->next_device;
+		device->release();
+		delete device;
+		device = next_device;
+	}
 }
 
 DEVICE* VM::get_device(int id)

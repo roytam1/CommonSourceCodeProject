@@ -49,6 +49,7 @@ void SUB::initialize()
 void SUB::release()
 {
 	key_buffer->release();
+	delete key_buffer;
 }
 
 void SUB::reset()

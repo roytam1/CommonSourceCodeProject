@@ -46,6 +46,7 @@ void IOCTRL::initialize()
 	// init keyboard
 	key_stat = emu->key_buffer();
 	mouse_stat = emu->mouse_buffer();
+	key_buf = new FIFO(64);
 	caps = kana = false;
 	
 	// timer
@@ -58,13 +59,18 @@ void IOCTRL::initialize()
 	register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, NULL);
 }
 
+void IOCTRL::release()
+{
+	key_buf->release();
+	delete key_buf;
+}
+
 void IOCTRL::reset()
 {
 	key_val = key_mouse = 0;
 	key_prev = -1;
 	key_res = false;
 	key_done = true;
-	key_buf = new FIFO(64);
 	key_buf->clear();
 	key_buf->write(0x1f0);
 	key_buf->write(0x100);

@@ -550,8 +550,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device) {
+	for(DEVICE* device = first_device; device;) {
+		DEVICE *next_device = device->next_device;
 		device->release();
+		delete device;
+		device = next_device;
 	}
 }
 
@@ -863,6 +866,7 @@ bool VM::disk_inserted(int drv)
 #else
 	return fdc->disk_inserted(drv);
 #endif
+	return false;
 }
 
 #if defined(SUPPORT_CMT_IF)

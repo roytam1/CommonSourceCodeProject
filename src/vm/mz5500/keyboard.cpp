@@ -195,6 +195,14 @@ void KEYBOARD::initialize()
 	register_frame_event(this);
 }
 
+void KEYBOARD::release()
+{
+	key_buf->release();
+	delete key_buf;
+	rsp_buf->release();
+	delete rsp_buf;
+}
+
 void KEYBOARD::reset()
 {
 	key_buf->clear();

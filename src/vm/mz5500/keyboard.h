@@ -42,6 +42,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void release();
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();

@@ -46,7 +46,9 @@ void I8251::initialize()
 void I8251::release()
 {
 	recv_buffer->release();
+	delete recv_buffer;
 	send_buffer->release();
+	delete send_buffer;
 }
 
 void I8251::reset()

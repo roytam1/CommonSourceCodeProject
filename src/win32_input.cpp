@@ -60,6 +60,7 @@ void EMU::release_input()
 #ifdef USE_AUTO_KEY
 	// release autokey buffer
 	if(autokey_buffer) {
+		autokey_buffer->release();
 		delete autokey_buffer;
 	}
 #endif

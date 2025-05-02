@@ -145,6 +145,12 @@ void SUB::initialize()
 	register_event(this, 0, 400, true, NULL);
 }
 
+void SUB::release()
+{
+	key_buf->release();
+	delete key_buf;
+}
+
 void SUB::reset()
 {
 	memset(databuf, 0, sizeof(databuf));

@@ -51,6 +51,7 @@ void KEYBOARD::initialize()
 
 void KEYBOARD::release()
 {
+	key_buf->release();
 	delete key_buf;
 }
 

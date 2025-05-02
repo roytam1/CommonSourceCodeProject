@@ -19,6 +19,12 @@ void KEYBOARD::initialize()
 	register_frame_event(this);
 }
 
+void KEYBOARD::release()
+{
+	key_buf->release();
+	delete key_buf;
+}
+
 void KEYBOARD::reset()
 {
 	memset(table, 0, sizeof(table));

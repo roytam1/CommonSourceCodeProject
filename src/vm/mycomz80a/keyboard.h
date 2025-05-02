@@ -34,6 +34,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void release();
 	void reset();
 	void event_frame();
 	

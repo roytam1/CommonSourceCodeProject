@@ -13,6 +13,12 @@
 #define ADDR_MASK (MEMORY_ADDR_MAX - 1)
 #define BANK_MASK (MEMORY_BANK_SIZE - 1)
 
+void MEMORY::release()
+{
+	free(read_table);
+	free(write_table);
+}
+
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	int bank = (addr & ADDR_MASK) >> addr_shift;

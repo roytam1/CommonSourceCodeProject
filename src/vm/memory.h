@@ -59,12 +59,10 @@ public:
 		}
 		memset(read_dummy, 0xff, MEMORY_BANK_SIZE);
 	}
-	~MEMORY() {
-		free(read_table);
-		free(write_table);
-	}
+	~MEMORY() {}
 	
 	// common functions
+	void release();
 	uint32 read_data8(uint32 addr);
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data16(uint32 addr);

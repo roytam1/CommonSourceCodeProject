@@ -20,7 +20,7 @@ void CMT::initialize()
 
 void CMT::release()
 {
-	close_datarec();
+	release_datarec();
 	delete fio;
 }
 
@@ -80,6 +80,15 @@ void CMT::rec_datarec(_TCHAR* file_path)
 void CMT::close_datarec()
 {
 	// close file
+	release_datarec();
+	
+	// clear sio buffer
+	d_sio->write_signal(SIG_I8251_CLEAR, 0, 0);
+}
+
+void CMT::release_datarec()
+{
+	// close file
 	if(rec && bufcnt) {
 		fio->Fwrite(buffer, bufcnt, 1);
 	}
@@ -87,8 +96,5 @@ void CMT::close_datarec()
 		fio->Fclose();
 	}
 	play = rec = false;
-	
-	// clear sio buffer
-	d_sio->write_signal(SIG_I8251_CLEAR, 0, 0);
 }
 

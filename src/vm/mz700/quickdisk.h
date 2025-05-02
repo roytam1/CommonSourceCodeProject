@@ -50,6 +50,7 @@ private:
 	void set_insert(bool val);
 	void set_protect(bool val);
 	void set_home(bool val);
+	void release_disk();
 	
 public:
 	QUICKDISK(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

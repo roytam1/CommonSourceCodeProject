@@ -47,7 +47,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cmt = new CMT(this, emu);
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
-	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -133,8 +132,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device) {
+	for(DEVICE* device = first_device; device;) {
+		DEVICE *next_device = device->next_device;
 		device->release();
+		delete device;
+		device = next_device;
 	}
 }
 

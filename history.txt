@@ -1,3 +1,14 @@
+2/22/2012
+
+[WINMAIN] add codes to check memory leaks in debug build
+[VM/*] Fix memory leaks
+
+[MULTI8/CMT] Fix not to refer other device in release() function
+[MZ1500/QUICKDISK] Fix not to refer other device in release() function
+[PC9801/CMT] Fix not to refer other device in release() function
+[TK80BS/CMT] Fix not to refer other device in release() function
+
+
 2/21/2012
 
 [PC8801MA/PC88] update memory wait cycles
