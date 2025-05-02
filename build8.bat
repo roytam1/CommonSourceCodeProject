@@ -127,6 +127,10 @@ devenv.com pc8201a.vcproj /Rebuild Release
 mkdir build\pc8201a
 copy Release\pc8201a.exe build\pc8201a\.
 
+devenv.com pc8801ma.vcproj /Rebuild Release
+mkdir build\pc8801ma
+copy Release\pc8801ma.exe build\pc8801ma\.
+
 devenv.com pc9801.vcproj /Rebuild Release
 mkdir build\pc9801
 copy Release\pc9801.exe build\pc9801\.

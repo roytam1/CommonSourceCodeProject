@@ -1,9 +1,9 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MAME
+	Origin : MAME 0.145
 	Author : Takeda.Toshiya
-	Date   : 2006.08.18 -
+	Date   : 2012.02.15-
 
 	[ Z80 ]
 */
@@ -24,7 +24,6 @@
 #define SIG_NSC800_RSTB	3
 #define SIG_NSC800_RSTC	4
 #endif
-#define NMI_REQ_BIT	0x80000000
 
 class Z80 : public DEVICE
 {
@@ -43,171 +42,34 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
-	int count;
+	int icount;
 #ifdef Z80_M1_CYCLE_WAIT
 	int m1_cycle_wait;
 #endif
-	bool busreq, halt, ei_done;
-	pair regs[6];
-	uint8 _I, _R, IM, IFF1, IFF2, ICR;
-	uint16 SP, PC, prevPC, exAF, exBC, exDE, exHL, EA;
+	uint16 prevpc;
+	pair pc, sp, af, bc, de, hl, ix, iy, wz;
+	pair af2, bc2, de2, hl2;
+	uint8 I, R, R2;
+	uint32 ea;
+	
+	bool busreq, halt;
+	uint8 im, iff1, iff2, icr;
+	bool after_ei, after_ldair;
 	uint32 intr_req_bit, intr_pend_bit;
 	
-	/* ---------------------------------------------------------------------------
-	virtual machine interfaces
-	--------------------------------------------------------------------------- */
+	inline uint8 RM8(uint32 addr);
+	inline void WM8(uint32 addr, uint8 val);
+	inline void RM16(uint32 addr, pair *r);
+	inline void WM16(uint32 addr, pair *r);
+	inline uint8 FETCHOP();
+	inline uint8 FETCH8();
+	inline uint32 FETCH16();
+	inline uint8 IN8(uint32 addr);
+	inline void OUT8(uint32 addr, uint8 val);
 	
-	// memory
-	inline uint8 RM8(uint16 addr) {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		uint8 val = d_mem->read_data8w(addr, &wait);
-		count -= wait;
-		return val;
-#else
-		return d_mem->read_data8(addr);
-#endif
-	}
-	inline void WM8(uint16 addr, uint8 val) {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		d_mem->write_data8w(addr, val, &wait);
-		count -= wait;
-#else
-		d_mem->write_data8(addr, val);
-#endif
-	}
-	
-	inline uint16 RM16(uint16 addr) {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		uint16 val = d_mem->read_data16w(addr, &wait);
-		count -= wait;
-		return val;
-#else
-		return d_mem->read_data16(addr);
-#endif
-	}
-	inline void WM16(uint16 addr, uint16 val) {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		d_mem->write_data16w(addr, val, &wait);
-		count -= wait;
-#else
-		d_mem->write_data16(addr, val);
-#endif
-	}
-	inline uint8 FETCHOP() {
-		_R = (_R & 0x80) | ((_R + 1) & 0x7f);
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		uint8 val = d_mem->read_data8w(PC++, &wait);
-		count -= wait;
-		return val;
-#else
-#ifdef Z80_M1_CYCLE_WAIT
-		count -= m1_cycle_wait;
-#endif
-		return d_mem->read_data8(PC++);
-#endif
-	}
-	inline uint8 FETCH8() {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		uint8 val = d_mem->read_data8w(PC++, &wait);
-		count -= wait;
-		return val;
-#else
-		return d_mem->read_data8(PC++);
-#endif
-	}
-	inline uint16 FETCH16() {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		uint16 val = d_mem->read_data16w(PC, &wait);
-		count -= wait;
-#else
-		uint16 val = d_mem->read_data16(PC);
-#endif
-		PC += 2;
-		return val;
-	}
-	inline uint16 POP16() {
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		uint16 val = d_mem->read_data16w(SP, &wait);
-		count -= wait;
-#else
-		uint16 val = d_mem->read_data16(SP);
-#endif
-		SP += 2;
-		return val;
-	}
-	inline void PUSH16(uint16 val) {
-		SP -= 2;
-#ifdef Z80_MEMORY_WAIT
-		int wait;
-		d_mem->write_data16w(SP, val, &wait);
-		count -= wait;
-#else
-		d_mem->write_data16(SP, val);
-#endif
-	}
-	
-	// i/o
-	inline uint8 IN8(uint8 laddr, uint8 haddr) {
-		uint32 addr = laddr | (haddr << 8);
-#ifdef Z80_IO_WAIT
-		int wait;
-		uint8 val = d_io->read_io8w(addr, &wait);
-		count -= wait;
-		return val;
-#else
-		return d_io->read_io8(addr);
-#endif
-	}
-	inline void OUT8(uint8 laddr, uint8 haddr, uint8 val) {
-#ifdef HAS_NSC800
-		if(laddr == 0xbb) {
-			ICR = val;
-			return;
-		}
-#endif
-		uint32 addr = laddr | (haddr << 8);
-#ifdef Z80_IO_WAIT
-		int wait;
-		d_io->write_io8w(addr, val, &wait);
-		count -= wait;
-#else
-		d_io->write_io8(addr, val);
-#endif
-	}
-	
-	// interrupt
-	inline void NOTIFY_RETI() {
-		d_pic->intr_reti();
-	}
-	inline uint32 ACK_INTR() {
-		return d_pic->intr_ack();
-	}
-	
-	/* ---------------------------------------------------------------------------
-	opecodes
-	--------------------------------------------------------------------------- */
-	
-	// opecode
-	void run_one_opecode();
-	void OP(uint8 code);
-	void OP_CB();
-	void OP_DD();
-	void OP_ED();
-	void OP_FD();
-	void OP_XY();
-	
-	inline uint16 EXSP(uint16 reg);
 	inline uint8 INC(uint8 value);
 	inline uint8 DEC(uint8 value);
-	inline uint16 ADD16(uint16 dreg, uint16 sreg);
+	
 	inline uint8 RLC(uint8 value);
 	inline uint8 RRC(uint8 value);
 	inline uint8 RL(uint8 value);
@@ -216,8 +78,17 @@ private:
 	inline uint8 SRA(uint8 value);
 	inline uint8 SLL(uint8 value);
 	inline uint8 SRL(uint8 value);
+	
 	inline uint8 RES(uint8 bit, uint8 value);
 	inline uint8 SET(uint8 bit, uint8 value);
+	
+	void OP_CB(uint8 code);
+	void OP_XY(uint8 code);
+	void OP_DD(uint8 code);
+	void OP_FD(uint8 code);
+	void OP_ED(uint8 code);
+	void OP(uint8 code);
+	void run_one_opecode();
 	
 	/* ---------------------------------------------------------------------------
 	debug
@@ -241,12 +112,11 @@ private:
 		return val;
 	}
 	inline int8 DEBUG_FETCH8_REL() {
-		int res = debug_ops[debug_ptr++];
-		return (res < 128) ? res : (res - 256);
+		return (int8)debug_ops[debug_ptr++];
 	}
 	inline uint16 DEBUG_FETCH8_RELPC() {
-		int res = debug_ops[debug_ptr++];
-		return prevPC + debug_ptr + ((res < 128) ? res : (res - 256));
+		int8 res = (int8)debug_ops[debug_ptr++];
+		return prevPC + debug_ptr + res;
 	}
 	void DASM();
 	void DASM_CB();
@@ -271,6 +141,7 @@ public:
 	~Z80() {}
 	
 	// common functions
+	void initialize();
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
@@ -280,7 +151,7 @@ public:
 		intr_pend_bit = pending ? (intr_pend_bit | mask) : (intr_pend_bit & ~mask);
 	}
 	uint32 get_pc() {
-		return prevPC;
+		return prevpc;
 	}
 	
 	// unique function

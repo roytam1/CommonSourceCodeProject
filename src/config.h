@@ -72,10 +72,10 @@ typedef struct {
 #ifdef _HC80
 	int ramdisk_type;
 #endif
-#if defined(_MZ800) || defined(_PC98DO)
+#if defined(_MZ800) || defined(_PC98DO) || defined(_PC8801MA)
 	int boot_mode;
 #endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
 	bool cpu_clock_low;	// 10MHz <-> 8MHz
 #endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)

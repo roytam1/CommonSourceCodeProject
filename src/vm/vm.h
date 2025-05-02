@@ -180,6 +180,11 @@
 #include "pc8201/pc8201.h"
 #endif
 
+// NEC PC-8801MA
+#ifdef _PC8801MA
+#include "pc9801/pc8801.h"
+#endif
+
 // NEC PC-9801
 #ifdef _PC9801
 #include "pc9801/pc9801.h"

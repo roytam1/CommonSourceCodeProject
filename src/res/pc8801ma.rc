@@ -82,14 +82,13 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "PC-98"                        ID_PC98DO_BOOT_MODE_PC98
-        MENUITEM "PC-88 V1(S)"                  ID_PC8801_BOOT_MODE_V1S
-        MENUITEM "PC-88 V1(H)"                  ID_PC8801_BOOT_MODE_V1H
-        MENUITEM "PC-88 V2"                     ID_PC8801_BOOT_MODE_V2
-        MENUITEM "PC-88 N"                      ID_PC8801_BOOT_MODE_N
+        MENUITEM "N88-V1(S) mode"               ID_PC8801_BOOT_MODE_V1S
+        MENUITEM "N88-V1(H) mode"               ID_PC8801_BOOT_MODE_V1H
+        MENUITEM "N88-V2 mode"                  ID_PC8801_BOOT_MODE_V2
+        MENUITEM "N mode"                       ID_PC8801_BOOT_MODE_N
         MENUITEM SEPARATOR
-        MENUITEM "CPU 10/8MHz",                 ID_PC9801_CPU_CLOCK_HIGH
-        MENUITEM "CPU 8/4MHz",                  ID_PC9801_CPU_CLOCK_LOW
+        MENUITEM "CPU 8MHz",                    ID_PC9801_CPU_CLOCK_HIGH
+        MENUITEM "CPU 4MHz",                    ID_PC9801_CPU_CLOCK_LOW
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -102,7 +101,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "PC98-FDD #1"
+    POPUP "FDD #1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
@@ -129,34 +128,6 @@ BEGIN
         MENUITEM "Recent 6",                    ID_RECENT_FD26
         MENUITEM "Recent 7",                    ID_RECENT_FD27
         MENUITEM "Recent 8",                    ID_RECENT_FD28
-    END
-    POPUP "PC88-FDD #1"
-    BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD3
-        MENUITEM "Close",                       ID_CLOSE_FD3
-        MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD31
-        MENUITEM "Recent 2",                    ID_RECENT_FD32
-        MENUITEM "Recent 3",                    ID_RECENT_FD33
-        MENUITEM "Recent 4",                    ID_RECENT_FD34
-        MENUITEM "Recent 5",                    ID_RECENT_FD35
-        MENUITEM "Recent 6",                    ID_RECENT_FD36
-        MENUITEM "Recent 7",                    ID_RECENT_FD37
-        MENUITEM "Recent 8",                    ID_RECENT_FD38
-    END
-    POPUP "FDD #2"
-    BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD4
-        MENUITEM "Close",                       ID_CLOSE_FD4
-        MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD41
-        MENUITEM "Recent 2",                    ID_RECENT_FD42
-        MENUITEM "Recent 3",                    ID_RECENT_FD43
-        MENUITEM "Recent 4",                    ID_RECENT_FD44
-        MENUITEM "Recent 5",                    ID_RECENT_FD45
-        MENUITEM "Recent 6",                    ID_RECENT_FD46
-        MENUITEM "Recent 7",                    ID_RECENT_FD47
-        MENUITEM "Recent 8",                    ID_RECENT_FD48
     END
     POPUP "Screen"
     BEGIN
@@ -228,7 +199,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "pc98do.ico"
+IDI_ICON1               ICON    DISCARDABLE     "pc8801ma.ico"
 #endif    // âpåÍ (±“ÿ∂) resources
 /////////////////////////////////////////////////////////////////////////////
 

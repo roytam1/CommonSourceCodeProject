@@ -157,8 +157,8 @@ int screen_mode_height[20];
 void set_window(HWND hWnd, int mode);
 
 // timing control
-#define MIN_SKIP_FRAMES 0
 #define MAX_SKIP_FRAMES 10
+
 DWORD rec_next_time, rec_accum_time;
 int rec_delay[3];
 
@@ -318,10 +318,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	}
 	
 	// main loop
-	int current_interval = get_interval(), next_interval;
-	int skip_frames = 0, rec_cnt = 0, fps = 0, total = 0;
+	int total_frames = 0, draw_frames = 0, skip_frames = 0;
+	int rec_delay_ptr = 0;
 	DWORD next_time = timeGetTime();
-	DWORD fps_time = next_time + 1000;
+	DWORD update_fps_time = next_time + 1000;
 	MSG msg;
 	
 	while(1) {
@@ -338,72 +338,72 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		}
 		else if(emu) {
 			// get next period
-			next_time += emu->now_skip() ? 0 : current_interval;
-			rec_next_time += current_interval;
-			next_interval = get_interval();
+			int interval = get_interval();
+			next_time += emu->now_skip() ? 0 : interval;
 			
 			// drive machine
 			emu->run();
-			total++;
+			total_frames++;
 			
 			if(emu->now_rec_video()) {
+				rec_next_time += interval;
 				while(rec_next_time >= rec_accum_time) {
 					// rec pictures 15/30/60 frames per 1 second
 					emu->draw_screen();
-					fps++;
-					rec_accum_time += rec_delay[rec_cnt];
-					rec_cnt = (rec_cnt == 2) ? 0 : rec_cnt + 1;
+					draw_frames++;
+					rec_accum_time += rec_delay[rec_delay_ptr++];
+					rec_delay_ptr %= 3;
 				}
 				
-				DWORD tmp = timeGetTime();
-				if(next_time > tmp) {
+				DWORD current_time = timeGetTime();
+				if(next_time > current_time) {
 					skip_frames = 0;
 					
 					// sleep 1 frame priod if need
-					if((int)(next_time - tmp) >= next_interval) {
-						Sleep(next_interval);
+					if((int)(next_time - current_time) >= interval) {
+						Sleep(interval);
 					}
 				}
 				else if(++skip_frames > MAX_SKIP_FRAMES) {
 					skip_frames = 0;
-					next_time = tmp;
+					next_time = current_time;
 				}
 			}
 			else {
 				if(next_time > timeGetTime()) {
-					if(skip_frames >= MIN_SKIP_FRAMES) {
-						// update window if enough time
-						emu->draw_screen();
-						skip_frames = 0;
-						fps++;
-					}
-					else {
-						skip_frames++;
-					}
+					// update window if enough time
+					emu->draw_screen();
+					draw_frames++;
+					skip_frames = 0;
+					
 					// sleep 1 frame priod if need
-					if((int)(next_time - timeGetTime()) >= next_interval) {
-						Sleep(next_interval);
+					if((int)(next_time - timeGetTime()) >= interval) {
+						Sleep(interval);
 					}
 				}
 				else if(++skip_frames > MAX_SKIP_FRAMES) {
 					// update window at least once per 10 frames
 					emu->draw_screen();
+					draw_frames++;
 					skip_frames = 0;
-					fps++;
 					next_time = timeGetTime();
 				}
 			}
-			current_interval = next_interval;
 			Sleep(0);
 			
 			// calc frame rate
-			if(fps_time <= timeGetTime()) {
-				_TCHAR buf[32];
-				int ratio = (int)(100 * fps / total + 0.5);
-				_stprintf(buf, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), fps, ratio);
+			DWORD current_time = timeGetTime();
+			if(update_fps_time <= current_time) {
+				_TCHAR buf[256];
+				int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
+				_stprintf(buf, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
 				SetWindowText(hWnd, buf);
-				fps_time += 1000;
-				fps = total = 0;
+				
+				update_fps_time += 1000;
+				if(update_fps_time <= current_time) {
+					update_fps_time = current_time + 1000;
+				}
+				total_frames = draw_frames = 0;
 			}
 		}
 	}
@@ -656,17 +656,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #endif
 #ifdef _PC98DO
 		case ID_PC98DO_BOOT_MODE_PC98:
-		case ID_PC98DO_BOOT_MODE_PC88_V1S:
-		case ID_PC98DO_BOOT_MODE_PC88_V1H:
-		case ID_PC98DO_BOOT_MODE_PC88_V2:
-		case ID_PC98DO_BOOT_MODE_PC88_N:
+		case ID_PC8801_BOOT_MODE_V1S:
+		case ID_PC8801_BOOT_MODE_V1H:
+		case ID_PC8801_BOOT_MODE_V2:
+		case ID_PC8801_BOOT_MODE_N:
 			config.boot_mode = LOWORD(wParam) - ID_PC98DO_BOOT_MODE_PC98;
 			if(emu) {
 				emu->update_config();
 			}
 			break;
 #endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+#ifdef _PC8801MA
+		case ID_PC8801_BOOT_MODE_V1S:
+		case ID_PC8801_BOOT_MODE_V1H:
+		case ID_PC8801_BOOT_MODE_V2:
+		case ID_PC8801_BOOT_MODE_N:
+			config.boot_mode = LOWORD(wParam) - ID_PC8801_BOOT_MODE_V1S;
+			if(emu) {
+				emu->update_config();
+			}
+			break;
+#endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
 		case ID_PC9801_CPU_CLOCK_HIGH:
 			config.cpu_clock_low = false;
 			break;
@@ -1051,13 +1062,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_REC15:
 			if(emu) {
 				static int fps[3] = {60, 30, 15};
-				static int delay[3][3] = {{16, 33, 66}, {17, 33, 67}, {17, 34, 67}};
+				static int delay[3][3] = {{16, 17, 17}, {33, 33, 34}, {66, 67, 67}};
 				no = LOWORD(wParam) - ID_SCREEN_REC60;
 				emu->start_rec_video(fps[no], TRUE);
 				emu->start_rec_sound();
-				rec_delay[0] = delay[0][no];
-				rec_delay[1] = delay[1][no];
-				rec_delay[2] = delay[2][no];
+				memcpy(rec_delay, delay[no], sizeof(rec_delay));
 				rec_next_time = rec_accum_time = 0;
 			}
 			break;
@@ -1289,10 +1298,15 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #endif
 #ifdef _PC98DO
 		if(config.boot_mode >= 0 && config.boot_mode < 5) {
-			CheckMenuRadioItem(hMenu, ID_PC98DO_BOOT_MODE_PC98, ID_PC98DO_BOOT_MODE_PC88_N, ID_PC98DO_BOOT_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_PC98DO_BOOT_MODE_PC98, ID_PC8801_BOOT_MODE_N, ID_PC98DO_BOOT_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
 		}
 #endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+#ifdef _PC8801MA
+		if(config.boot_mode >= 0 && config.boot_mode < 4) {
+			CheckMenuRadioItem(hMenu, ID_PC8801_BOOT_MODE_V1S, ID_PC8801_BOOT_MODE_N, ID_PC8801_BOOT_MODE_V1S + config.boot_mode, MF_BYCOMMAND);
+		}
+#endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
 		if(config.cpu_clock_low) {
 			CheckMenuRadioItem(hMenu, ID_PC9801_CPU_CLOCK_HIGH, ID_PC9801_CPU_CLOCK_LOW, ID_PC9801_CPU_CLOCK_LOW, MF_BYCOMMAND);
 		}

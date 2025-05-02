@@ -58,7 +58,7 @@
 #include "../beep.h"
 #include "../pc80s31k.h"
 #include "../z80.h"
-#include "pc8801.h"
+#include "pc88.h"
 #endif
 
 #include "../../config.h"
@@ -475,7 +475,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88event->set_frames_per_sec(60);
 	pc88event->set_lines_per_frame(260);
 	
-	pc88 = new PC8801(this, emu);
+	pc88 = new PC88(this, emu);
 	pc88->set_context_event_manager(pc88event);
 	pc88beep = new BEEP(this, emu);
 	pc88beep->set_context_event_manager(pc88event);
@@ -517,7 +517,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu->set_context_mem(pc88);
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
-	pc88opn->set_context_irq(pc88, SIG_PC8801_SOUND_IRQ, 1);
+	pc88opn->set_context_irq(pc88, SIG_PC88_SOUND_IRQ, 1);
 	
 	pc88sub->set_context_cpu(pc88cpu_sub);
 	pc88sub->set_context_fdc(pc88fdc_sub);

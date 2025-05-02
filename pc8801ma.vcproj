@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="pc98do"
+	Name="pc8801ma"
 	ProjectGUID="{699AB843-1860-4ABF-B52C-D6A84D0F81E8}"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,18 +42,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/pc98do.tlb"
+				TypeLibraryName=".\Debug/pc8801ma.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_PC98DO"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_PC8801MA"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/pc98do.pch"
+				PrecompiledHeaderFile=".\Debug/pc8801ma.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -76,11 +76,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Debug/pc98do.exe"
+				OutputFile=".\Debug/pc8801ma.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/pc98do.pdb"
+				ProgramDatabaseFile=".\Debug/pc8801ma.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -98,7 +98,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/pc98do.bsc"
+				OutputFile=".\Debug/pc8801ma.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -138,7 +138,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/pc98do.tlb"
+				TypeLibraryName=".\Release/pc8801ma.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -146,11 +146,11 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_PC98DO"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_PC8801MA"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/pc98do.pch"
+				PrecompiledHeaderFile=".\Release/pc8801ma.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -172,10 +172,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Release/pc98do.exe"
+				OutputFile=".\Release/pc8801ma.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/pc98do.pdb"
+				ProgramDatabaseFile=".\Release/pc8801ma.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/pc98do.bsc"
+				OutputFile=".\Release/pc8801ma.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -465,28 +465,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\i8237.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\i8251.cpp"
 					>
 					<FileConfiguration
@@ -509,117 +487,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\i8253.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\i8255.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\i8259.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\i86.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\io.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\memory.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -686,28 +554,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\upd1990a.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\upd7220.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -915,160 +761,6 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\pc9801\cmt.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\display.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\floppy.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\fmsound.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\joystick.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\keyboard.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\mouse.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\pc9801\pc88.cpp"
 					>
 					<FileConfiguration
@@ -1091,7 +783,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\pc9801\pc9801.cpp"
+					RelativePath="src\vm\pc9801\pc8801.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1164,43 +856,11 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\i8237.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\i8251.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\i8253.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\i8255.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\i8259.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\i86.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\io.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\ls244.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\memory.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\not.h"
 					>
 				</File>
 				<File
@@ -1213,10 +873,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\upd1990a.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\upd7220.h"
 					>
 				</File>
 				<File
@@ -1285,39 +941,11 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\pc9801\cmt.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\display.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\floppy.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\fmsound.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\joystick.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\keyboard.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\mouse.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\pc9801\pc88.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\pc9801\pc9801.h"
+					RelativePath="src\vm\pc9801\pc8801.h"
 					>
 				</File>
 			</Filter>
@@ -1327,11 +955,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\pc98do.ico"
+				RelativePath="src\res\pc8801ma.ico"
 				>
 			</File>
 			<File
-				RelativePath="src\res\pc98do.rc"
+				RelativePath="src\res\pc8801ma.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

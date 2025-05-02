@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/31/2011
+								2/16/2012
 
 --- What's this ?
 
@@ -39,6 +39,7 @@ This archive includes the all source codes of emulators listed below:
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A
 	eN5200		NEC N5200
 	ePC-8201	NEC PC-8201/PC-8201A
+	ePC-8801MA	NEC PC-8801MA
 	ePC-9801	NEC PC-9801
 	ePC-9801E	NEC PC-9801E/F/M
 	ePC-9801VM	NEC PC-9801VM
@@ -136,7 +137,7 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Based on MON80 by Mr.Tesuya Suzuki
 - vm/mz2500/sasi.*
 	X millenium
-- vm/pc9801/pc8801.*
+- vm/pc9801/pc88.*
 	M88 and MESS PC-8801 driver
 - vm/phc25/*
 	PHC-25 emulator by Mr.Tago

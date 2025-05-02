@@ -44,9 +44,6 @@
 #define WM_SOCKET2 (WM_USER + 4)
 #define WM_SOCKET3 (WM_USER + 5)
 
-#if defined(SCREEN_WIDTH_ASPECT) || defined(SCREEN_HEIGHT_ASPECT)
-#define USE_SCREEN_STRETCH_HIGH_QUALITY
-#endif
 #ifndef SCREEN_WIDTH_ASPECT
 #define SCREEN_WIDTH_ASPECT SCREEN_WIDTH
 #endif
@@ -115,24 +112,28 @@ private:
 	void initialize_screen();
 	void release_screen();
 	void create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib);
-	void release_dib_section(HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf);
 	
 	HWND main_window_handle;
 	HINSTANCE instance_handle;
 	
+	// screen settings
 	int screen_width, screen_height;
 	int screen_width_aspect, screen_height_aspect;
 	int window_width, window_height;
 	int display_width, display_height;
-	int stretch_width, stretch_height;
+	
+	HDC hdcDibSource;
+	scrntype* lpBmpSource;
+	LPBITMAPINFO lpDibSource;
+	LPBITMAPINFOHEADER pbmInfoHeader;
+	
+	int source_width, source_height;
+	int stretched_width, stretched_height;
+	int stretch_pow_x, stretch_pow_y;
+	int screen_dest_x, screen_dest_y;
 	BOOL stretch_screen;
-#ifdef USE_SCREEN_STRETCH_HIGH_QUALITY
-	BOOL stretch_screen_high_quality;
-#endif
-	int dest_x, dest_y;
 	
 	// update flags
-	int source_buffer;
 	BOOL first_draw_screen;
 	BOOL first_invalidate;
 	BOOL self_invalidate;
@@ -143,7 +144,6 @@ private:
 	LPBYTE lpBuf;
 	scrntype* lpBmp;
 	LPBITMAPINFO lpDib;
-	LPBITMAPINFOHEADER pbmInfoHeader;
 	
 #ifdef USE_SCREEN_ROTATE
 	// rotate buffer
@@ -153,7 +153,7 @@ private:
 	scrntype* lpBmpRotate;
 	LPBITMAPINFO lpDibRotate;
 #endif
-#ifdef USE_SCREEN_STRETCH_HIGH_QUALITY
+	
 	// stretch buffer
 	HDC hdcDibStretch1;
 	HBITMAP hBmpStretch1;
@@ -166,10 +166,9 @@ private:
 	LPBYTE lpBufStretch2;
 	scrntype* lpBmpStretch2;
 	LPBITMAPINFO lpDibStretch2;
-#endif
 	
 	// record video
-	BOOL now_recv;
+	BOOL now_rec_vid;
 	int rec_frames, rec_fps;
 	PAVIFILE pAVIFile;
 	PAVISTREAM pAVIStream;
@@ -209,7 +208,7 @@ private:
 	} wavheader_t;
 	FILEIO* rec;
 	int rec_bytes;
-	BOOL now_recs;
+	BOOL now_rec_snd;
 	
 	// ----------------------------------------
 	// media
@@ -317,7 +316,7 @@ public:
 	void stop_rec_sound();
 	void restart_rec_sound();
 	BOOL now_rec_sound() {
-		return now_recs;
+		return now_rec_snd;
 	}
 	
 	void capture_screen();
@@ -325,7 +324,7 @@ public:
 	void stop_rec_video();
 	void restart_rec_video();
 	BOOL now_rec_video() {
-		return now_recv;
+		return now_rec_vid;
 	}
 	
 	void update_config();

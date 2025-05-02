@@ -1,6 +1,20 @@
+2/16/2012
+
+[WINMAIN] simplify timing controls
+[EMU/WIN32] simplify screen manager
+[EMU/WIN32] fix to capture the rotated screen in vertical screen mode
+
+[VM/Z80] reimplement based on MAME 0.145 Z80 core
+
+[PC8801MA] support NEC PC-8801MA
+[PC8801MA/PC88] fix to initialize main ram pettern
+[PC8801MA/PC88] fix text window
+[PC8801MA/PC88] fix to clear vram bank when alu is active
+[PC98DO] remove dictionary rom, joystick and opna sound
+
 2/13/2012
 
-[PC98DO/PC8801] fix to show opn busy flag at the first access (for ALPHA)
+[PC98DO/PC88] fix to show opn busy flag at the first access (for ALPHA)
 
 [VM/EVENT] fix not to clear sound buffer index in reset function
 [VM/I8255] fix not to clear output signals in default setting
@@ -8,11 +22,11 @@
 
 2/11/2012
 
-[PC98DO/PC8801] fix to select hireso screen only in monochrome mode
-[PC98DO/PC8801] fix crtc registers
-[PC98DO/PC8801] fix the character scan lines and screen height again
-[PC98DO/PC8801] fix to consider the number of attributes data
-[PC98DO/PC8801] add a ugly patch for attributes issue for alpha
+[PC98DO/PC88] fix to select hireso screen only in monochrome mode
+[PC98DO/PC88] fix crtc registers
+[PC98DO/PC88] fix the character scan lines and screen height again
+[PC98DO/PC88] fix to consider the number of attributes data
+[PC98DO/PC88] add a ugly patch for attributes issue for alpha
 
 [VM/I8255] fix to clear output signals when control register is written
 [VM/Z80] fix not to output debug log for continuously executed halt command
@@ -22,9 +36,9 @@
 
 [EMU/WIN32] fix to release all pressed keys when the main window lost focus
 
-[PC98DO/PC8801] fix hireso/mono graphic screen renderer
-[PC98DO/PC8801] support dictionary rom
-[PC98DO/PC8801] fix the character scan lines and screen height again
+[PC98DO/PC88] fix hireso/mono graphic screen renderer
+[PC98DO/PC88] support dictionary rom
+[PC98DO/PC88] fix the character scan lines and screen height again
 
 
 2/7/2012
@@ -40,9 +54,9 @@
 [VM/YM2203] support YM2608(OPNA)
 [VM/YM2203] fix to raise irq when timer is expired before it is reset
 
-[PC98DO/PC8801] fix to clear text screen when dma overrun occurs
-[PC98DO/PC8801] fix to refer same palettes in 8/512 color mode
-[PC98DO/PC8801] support OPNA sound (though PC-98DO does not support OPNA...)
+[PC98DO/PC88] fix to clear text screen when dma overrun occurs
+[PC98DO/PC88] fix to refer same palettes in 8/512 color mode
+[PC98DO/PC88] support OPNA sound (though PC-98DO does not support OPNA...)
 [PC98DO/PC9801] support OPNA sound (though PC-98DO does not support OPNA...)
 
 
@@ -52,27 +66,27 @@
 
 [PC9801] disable i/o port to change mouse irq frequency
 [PC9801E] disable i/o port to change mouse irq frequency
-[PC98DO/PC8801] fix to raise vrtc irq when crtc is not started
+[PC98DO/PC88] fix to raise vrtc irq when crtc is not started
 
 
 1/31/2012
 
 [VM/UPD1990A] support uPD4990A
 
-[PC98DO/PC8801] support caps/kana lock
-[PC98DO/PC8801] fix to reverse strobe signal to rtc
+[PC98DO/PC88] support caps/kana lock
+[PC98DO/PC88] fix to reverse strobe signal to rtc
 
 
 1/30/2012
 
-[PC98DO/PC8801] fix text attributes again
-[PC98DO/PC8801] fix not to raise irq when disk is changed
+[PC98DO/PC88] fix text attributes again
+[PC98DO/PC88] fix not to raise irq when disk is changed
 
 
 1/29/2012
 
-[PC98DO/PC8801] fix to canel the requested irq when it is masked
-[PC98DO/PC8801] fix text attributes
+[PC98DO/PC88] fix to canel the requested irq when it is masked
+[PC98DO/PC88] fix text attributes
 
 
 1/27/2012
@@ -105,9 +119,9 @@
 [PC100/IOCTRL] move keyborad initialization from intialize() to reset()
 [PC98DO] raise irq when disk is inserted or ejected
 [PC98DO/MOUSE] fix not to clear the registered event when machine is reset
-[PC98DO/PC8801] fix extended vram selection mode
-[PC98DO/PC8801] fix the key code table for ins/del
-[PC98DO/PC8801] fix to convert the pressed ins/f6-10 keys to shift + del/f1-f5
+[PC98DO/PC88] fix extended vram selection mode
+[PC98DO/PC88] fix the key code table for ins/del
+[PC98DO/PC88] fix to convert the pressed ins/f6-10 keys to shift + del/f1-f5
 [SC3000] support SF-7000
 [SC3000] fix to negate the motor on/off signal from pio pc1
 
@@ -122,12 +136,12 @@
 [VM/YM2203] fix to read the input port value though the port mode is output
 [VM/Z80] fix to refer read_data8w() to fetch opcode if memory wait is active
 
-[PC98DO/PC8801] support joystick (though PC-98DO does not support joystick...)
-[PC98DO/PC8801] fix i/o port to read expanded ram selection in $e2
-[PC98DO/PC8801] fix i/o port to read 15KHz/24KHz monitor type in $40
-[PC98DO/PC8801] fix hireso/mono graphic screen renderer
-[PC98DO/PC8801] support memory access wait (temporary)
-[PC98DO/PC8801] fix to raise busreq while dma is running in V1(S)/N mode
+[PC98DO/PC88] support joystick (though PC-98DO does not support joystick...)
+[PC98DO/PC88] fix i/o port to read expanded ram selection in $e2
+[PC98DO/PC88] fix i/o port to read 15KHz/24KHz monitor type in $40
+[PC98DO/PC88] fix hireso/mono graphic screen renderer
+[PC98DO/PC88] support memory access wait (temporary)
+[PC98DO/PC88] fix to raise busreq while dma is running in V1(S)/N mode
 [VM/X1TWIN] remove the routine to detect the shift and numpad keys are pressed
 
 
@@ -161,13 +175,13 @@
 [VM/YM2203] fix to update the period that fmgen is driven in vline
 [VM/YM2151] fix to update the period that fmgen is driven in vline
 
-[PC98DO/PC8801] fix to connect opn irq line to the interrupt controller
-[PC98DO/PC8801] fix to initialize opn input ports
-[PC98DO/PC8801] fix to access high speed tvram through dma in V1(H)/V2 mode
-[PC98DO/PC8801] fix to draw text screen when crtc is already started
-[PC98DO/PC8801] fix the initial attribute before it is changed
-[PC98DO/PC8801] fix the character scan lines (temporary)
-[PC98DO/PC8801] support 2HD disks
+[PC98DO/PC88] fix to connect opn irq line to the interrupt controller
+[PC98DO/PC88] fix to initialize opn input ports
+[PC98DO/PC88] fix to access high speed tvram through dma in V1(H)/V2 mode
+[PC98DO/PC88] fix to draw text screen when crtc is already started
+[PC98DO/PC88] fix the initial attribute before it is changed
+[PC98DO/PC88] fix the character scan lines (temporary)
+[PC98DO/PC88] support 2HD disks
 
 
 1/5/2012

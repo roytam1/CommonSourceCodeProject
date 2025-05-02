@@ -58,6 +58,10 @@
 #define MODE_PC88_V1H	2
 #define MODE_PC88_V2	3
 #define MODE_PC88_N	4
+//#define SUPPORT_PC88_DICTIONARY
+#define SUPPORT_PC88_HIGH_CLOCK
+//#define SUPPORT_PC88_JOYSTICK
+#define PC88_EXRAM_BANKS	4
 #endif
 
 // device informations for virtual machine
@@ -86,7 +90,7 @@
 #endif
 #if defined(_PC98DO)
 #define HAS_UPD4990A
-#define HAS_YM2608
+//#define HAS_YM2608
 #define Z80_MEMORY_WAIT
 #endif
 #define I8259_MAX_CHIPS		2
@@ -178,7 +182,7 @@ class Z80;
 #if defined(_PC98DO)
 class BEEP;
 class PC80S31K;
-class PC8801;
+class PC88;
 class Z80;
 #endif
 
@@ -261,7 +265,7 @@ protected:
 #if defined(_PC98DO)
 	EVENT* pc88event;
 	
-	PC8801* pc88;
+	PC88* pc88;
 	BEEP* pc88beep;
 	I8251* pc88sio;
 	I8255* pc88pio;

@@ -19,7 +19,7 @@ void EMU::initialize_sound(int rate, int samples)
 	sound_rate = rate;
 	sound_samples = samples;
 	vm->initialize_sound(sound_rate, sound_samples);
-	sound_ok = now_mute = now_recs = FALSE;
+	sound_ok = now_mute = now_rec_snd = FALSE;
 	
 	// initialize direct sound
 	PCMWAVEFORMAT pcmwf;
@@ -121,7 +121,7 @@ void EMU::update_sound(int* extra_frames)
 		
 		// sound buffer must be updated
 		uint16* sound_buffer = vm->create_sound(extra_frames);
-		if(now_recs) {
+		if(now_rec_snd) {
 			// record sound
 			int length = sound_samples * sizeof(uint16) * 2; // stereo
 			rec->Fwrite(sound_buffer, length, 1);
@@ -166,7 +166,7 @@ void EMU::mute_sound()
 
 void EMU::start_rec_sound()
 {
-	if(!now_recs) {
+	if(!now_rec_snd) {
 		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 		application_path(app_path);
 		_stprintf(file_path, _T("%ssound.wav"), app_path);
@@ -178,7 +178,7 @@ void EMU::start_rec_sound()
 			memset(&header, 0, sizeof(wavheader_t));
 			rec->Fwrite(&header, sizeof(wavheader_t), 1);
 			rec_bytes = 0;
-			now_recs = TRUE;
+			now_rec_snd = TRUE;
 		}
 		else {
 			// failed to open the wave file
@@ -189,7 +189,7 @@ void EMU::start_rec_sound()
 
 void EMU::stop_rec_sound()
 {
-	if(now_recs) {
+	if(now_rec_snd) {
 		// update wave header
 		struct wavheader_t header;
 		header.dwRIFF = 0x46464952;
@@ -211,16 +211,16 @@ void EMU::stop_rec_sound()
 		rec->Fclose();
 		
 		delete rec;
-		now_recs = FALSE;
+		now_rec_snd = FALSE;
 	}
 }
 
 void EMU::restart_rec_sound()
 {
-	if(now_recs) {
+	if(now_rec_snd) {
 		rec->Fclose();
 		delete rec;
-		now_recs = FALSE;
+		now_rec_snd = FALSE;
 		
 		start_rec_sound();
 	}

@@ -1,178 +1,151 @@
 /*
-	NEC PC-98DO Emulator 'ePC-98DO'
+	NEC PC-8801MA Emulator 'ePC-8801MA'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2011.12.29-
+	Date   : 2012.02.16-
 
-	[ PC-8801 ]
+	[ virtual machine ]
 */
 
 #ifndef _PC8801_H_
 #define _PC8801_H_
 
-#include "../vm.h"
-#include "../../emu.h"
-#include "../device.h"
-
-#define SIG_PC8801_SOUND_IRQ	0
-
-class PC8801 : public DEVICE
-{
-private:
-	DEVICE *d_cpu, *d_beep, *d_opn, *d_pcm, *d_pio, *d_rtc, *d_sio;
-	
-	uint8* rbank[64];
-	uint8* wbank[64];
-	uint8 wdmy[0x400];
-	uint8 rdmy[0x400];
-	
-	uint8 ram[0x10000];
-	uint8 eram[0x20000];
-	uint8 gvram[0xc000];
-	uint8 tvram[0x1000];
-	uint8 n88rom[0x8000];
-	uint8 n88erom[0x8000];
-	uint8 n80rom[0x8000];
-	uint8 kanji1[0x20000];
-	uint8 kanji2[0x20000];
-	uint8 dicrom[0x80000];
-	
-	// memory mapper
-	uint8 rm_mode;
-	uint8 erom_sel, erom_bank;
-	uint8 eram_sel, eram_bank;
-	uint8 tw_ofs;
-	uint8 gvram_sel, tvram_sel;
-	uint8 dicrom_sel, dicrom_bank;
-	
-	void update_low_memmap();
-	void update_tw_memmap();
-	void update_dic_memmap();
-	void update_tvram_memmap();
-	
-	// misc
-	uint8 port32;
-	uint8 alu_ctrl1, alu_ctrl2, alu_reg[3];
-	bool cpu_clock_low;
-#ifdef Z80_MEMORY_WAIT
-	int vram_wait_clocks;
+#if defined(_PC8801MA)
+#define DEVICE_NAME		"NEC PC-8801MA"
+#define CONFIG_NAME		"pc8801ma"
 #endif
-	int busreq_clocks;
-	bool opn_busy;
+#define CONFIG_VERSION		0x01
+
+#define MODE_PC88_V1S	0
+#define MODE_PC88_V1H	1
+#define MODE_PC88_V2	2
+#define MODE_PC88_N	3
+
+#if defined(_PC8801MA)
+#define SUPPORT_PC88_DICTIONARY
+#define SUPPORT_PC88_HIGH_CLOCK
+#define SUPPORT_PC88_OPNA
+#define PC88_EXRAM_BANKS	4
+//#define Z80_MEMORY_WAIT
+#endif
+#define SUPPORT_PC88_JOYSTICK
+
+// device informations for virtual machine
+#define FRAMES_PER_SEC		60
+#define LINES_PER_FRAME 	260
+#define CPU_CLOCKS		3993600
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
+#define MAX_DRIVE		2
+#define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
+//#define HAS_UPD4990A
+#ifdef SUPPORT_PC88_OPNA
+#define HAS_YM2608
+#endif
+#define PCM1BIT_HIGH_QUALITY
+#define SUPPORT_VARIABLE_TIMING
+
+// device informations for win32
+#define USE_FD1
+#define USE_FD2
+#define NOTIFY_KEY_DOWN
+#define USE_SHIFT_NUMPAD_KEY
+#define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_ACCESS_LAMP
+#define USE_SCANLINE
+
+#include "../../common.h"
+
+class EMU;
+class DEVICE;
+class EVENT;
+
+class BEEP;
+class I8251;
+class I8255;
+class PCM1BIT;
+class UPD1990A;
+class YM2203;
+class Z80;
+
+class PC80S31K;
+class UPD765A;
+
+class PC88;
+
+class VM
+{
+protected:
+	EMU* emu;
 	
-	// crtc
-	uint8 crtc_cmd, crtc_ptr;
-	uint8 crtc_status;
+	// devices
+	EVENT* pc88event;
 	
-	uint8 text_attrib;
-	int attrib_num;
+	BEEP* pc88beep;
+	I8251* pc88sio;
+	I8255* pc88pio;
+	PCM1BIT* pc88pcm;
+	UPD1990A* pc88rtc;
+	YM2203* pc88opn;
+	Z80* pc88cpu;
 	
-	int text_width, text_height, char_height;
-	bool skip_line;
+	PC80S31K* pc88sub;
+	I8255* pc88pio_sub;
+	UPD765A* pc88fdc_sub;
+	Z80* pc88cpu_sub;
 	
-	bool cursor_on, cursor_blink;
-	int cursor_x, cursor_y, cursor_line;
+	PC88* pc88;
 	
-	bool blink_on;
-	int blink_rate, blink_counter;
-	
-	uint8 crtc_buffer[120 * 200];
-	int crtc_buffer_ptr;
-	
-	uint8 disp_ctrl, text_mode, graph_mode;
-	bool line200, vblank;
-	
-	typedef struct {
-		uint8 b, r, g;
-	} palette_t;
-	palette_t palette[9];
-	bool update_palette;
-	
-	uint8 sg_pattern[0x800];
-	uint8 text[200][640];
-	uint8 graph[400][640];
-	scrntype palette_text_pc[9];	// 8=non transparent black
-	scrntype palette_graph_pc[9];	// 8=back color
-	
-	uint8 get_crtc_buffer(int ofs);
-	void draw_text();
-	void draw_color_graph(int y);
-	void draw_mono_graph(int y);
-	void draw_mono_hires_graph(int y);
-	
-	// dma (temporary)
-	typedef struct {
-		pair start, length;
-	} dma_t;
-	dma_t dma_reg[4];
-	uint8 dma_mode, dma_status;
-	bool dma_hl;
-	
-	// keyboard
-	uint8 *key_status;
-	uint8 *joy_status;
-	uint8 key_status_bak[8];
-	uint8 caps, kana;
-	
-	// kanji rom
-	pair kanji1_addr, kanji2_addr;
-	
-	// intterrupt
-	uint8 intr_req;
-	uint8 intr_mask1, intr_mask2;
-	void request_intr(int level, bool status);
-	void update_intr();
+	int boot_mode;
 	
 public:
-	PC8801(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
-	~PC8801() {}
+	// ----------------------------------------
+	// initialize
+	// ----------------------------------------
 	
-	// common functions
-	void initialize();
+	VM(EMU* parent_emu);
+	~VM();
+	
+	// ----------------------------------------
+	// for emulation class
+	// ----------------------------------------
+	
+	// drive virtual machine
 	void reset();
-#ifdef Z80_MEMORY_WAIT
-	void write_data8w(uint32 addr, uint32 data, int* wait);
-	uint32 read_data8w(uint32 addr, int* wait);
-#else
-	void write_data8(uint32 addr, uint32 data);
-	uint32 read_data8(uint32 addr);
-#endif
-	void write_io8(uint32 addr, uint32 data);
-	uint32 read_io8(uint32 addr);
-	void write_dma_io8(uint32 addr, uint32 data);
-	uint32 read_dma_data8(uint32 addr);
-	void write_signal(int id, uint32 data, uint32 mask);
-	void event_callback(int event_id, int err);
-	void event_frame();
-	void event_vline(int v, int clock);
-	uint32 intr_ack();
+	void run();
+	double frame_rate();
 	
-	// unique functions
-	void set_context_beep(DEVICE* device) {
-		d_beep = device;
-	}
-	void set_context_cpu(DEVICE* device) {
-		d_cpu = device;
-	}
-	void set_context_opn(DEVICE* device) {
-		d_opn = device;
-	}
-	void set_context_pcm(DEVICE* device) {
-		d_pcm = device;
-	}
-	void set_context_pio(DEVICE* device) {
-		d_pio = device;
-	}
-	void set_context_rtc(DEVICE* device) {
-		d_rtc = device;
-	}
-	void set_context_sio(DEVICE* device) {
-		d_sio = device;
-	}
-	void key_down(int code, bool repeat);
+	// draw screen
 	void draw_screen();
+	int access_lamp();
+	
+	// sound generation
+	void initialize_sound(int rate, int samples);
+	uint16* create_sound(int* extra_frames);
+	
+	// notify key
+	void key_down(int code, bool repeat);
+	void key_up(int code);
+	
+	// user interface
+	void open_disk(_TCHAR* file_path, int drv);
+	void close_disk(int drv);
+	bool now_skip();
+	
+	void update_config();
+	
+	// ----------------------------------------
+	// for each device
+	// ----------------------------------------
+	
+	// devices
+	DEVICE* get_device(int id);
+	DEVICE* dummy;
+	DEVICE* first_device;
+	DEVICE* last_device;
 };
 
 #endif
-

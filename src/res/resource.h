@@ -39,10 +39,10 @@
 #define ID_MZ800_BOOT_MODE_MZ700        40032
 
 #define ID_PC98DO_BOOT_MODE_PC98        40031
-#define ID_PC98DO_BOOT_MODE_PC88_V1S    40032
-#define ID_PC98DO_BOOT_MODE_PC88_V1H    40033
-#define ID_PC98DO_BOOT_MODE_PC88_V2     40034
-#define ID_PC98DO_BOOT_MODE_PC88_N      40035
+#define ID_PC8801_BOOT_MODE_V1S         40032
+#define ID_PC8801_BOOT_MODE_V1H         40033
+#define ID_PC8801_BOOT_MODE_V2          40034
+#define ID_PC8801_BOOT_MODE_N           40035
 
 #define ID_PC9801_CPU_CLOCK_HIGH        40041
 #define ID_PC9801_CPU_CLOCK_LOW         40042
@@ -560,6 +560,15 @@
 //#define MENU_POS_DATAREC                1
 #define MENU_POS_SCREEN                 1
 #define MENU_POS_SOUND                  2
+#endif
+
+// NEC PC-8801MA
+#ifdef _PC8801MA
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
 #endif
 
 // NEC PC-9801
