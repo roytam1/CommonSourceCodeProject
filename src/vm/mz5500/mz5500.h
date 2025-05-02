@@ -45,6 +45,7 @@
 #define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x400
 #define HAS_AY_3_8912
+#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_SPECIAL_RESET
@@ -129,6 +130,7 @@ public:
 	void reset();
 	void special_reset();
 	void run();
+	double frame_rate();
 	
 	// draw screen
 	void draw_screen();

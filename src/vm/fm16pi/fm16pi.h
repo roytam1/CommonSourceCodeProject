@@ -29,7 +29,6 @@
 #define MEMORY_ADDR_MAX		0x100000
 #define MEMORY_BANK_SIZE	0x4000
 #define IO_ADDR_MAX		0x10000
-//#define EVENT_PRECISE		10
 
 // device informations for win32
 #define USE_FD1

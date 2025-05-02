@@ -19,9 +19,6 @@
 #define MAX_LINES	1024
 #define MAX_EVENT	64
 #define NO_EVENT	-1
-//#ifndef EVENT_PRECISE
-//#define EVENT_PRECISE	40
-//#endif
 
 class EVENT : public DEVICE
 {

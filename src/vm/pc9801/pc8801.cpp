@@ -105,6 +105,7 @@ void PC8801::initialize()
 	memset(n80rom, 0xff, sizeof(n80rom));
 	memset(kanji1, 0xff, sizeof(kanji1));
 	memset(kanji2, 0xff, sizeof(kanji2));
+	memset(dicrom, 0xff, sizeof(dicrom));
 	
 	// load font data
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -151,6 +152,11 @@ void PC8801::initialize()
 		fio->Fread(kanji2, 0x20000, 1);
 		fio->Fclose();
 	}
+	_stprintf(file_path, _T("%sJISYO.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(dicrom, 0x80000, 1);
+		fio->Fclose();
+	}
 	delete fio;
 	
 	// create semi graphics pattern
@@ -190,6 +196,8 @@ void PC8801::reset()
 	tw_ofs = 0x80; // ???
 	gvram_sel = 0;
 	tvram_sel = 0x10;
+	dicrom_sel = 1;
+	dicrom_bank = 0;
 	
 	SET_BANK(0x0000, 0x7fff, ram, n88rom);
 	SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
@@ -406,8 +414,8 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 			}
 		}
 		if(tvram_sel != (data & 0x10)) {
-			tvram_sel = data & 0x10;
 			if(config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2) {
+				tvram_sel = data & 0x10;
 				update_tvram_memmap();
 			}
 		}
@@ -602,6 +610,20 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 	case 0xed:
 		kanji2_addr.b.h = data;
 		break;
+	case 0xf0:
+		if(dicrom_bank != (data & 0x1f)) {
+			dicrom_bank = data & 0x1f;
+			if(dicrom_sel == 0) {
+				update_dic_memmap();
+			}
+		}
+		break;
+	case 0xf1:
+		if(dicrom_sel != (data & 1)) {
+			dicrom_sel = data & 1;
+			update_dic_memmap();
+		}
+		break;
 	case 0xfc:
 		d_pio->write_io8(0, data);
 		break;
@@ -776,13 +798,39 @@ void PC8801::update_tw_memmap()
 	SET_BANK(0x8000, 0x83ff, ram + ofs, ram + ofs);
 }
 
-void PC8801::update_tvram_memmap()
+void PC8801::update_dic_memmap()
 {
-	if(tvram_sel == 0) {
-		SET_BANK(0xf000, 0xffff, tvram, tvram);
+	// read
+	if(dicrom_sel == 0) {
+		SET_BANK_R(0xc000, 0xffff, dicrom + 0x4000 * dicrom_bank);
+	}
+	else if(tvram_sel == 0) {
+		SET_BANK_R(0xc000, 0xefff, ram + 0xc000);
+		SET_BANK_R(0xf000, 0xffff, tvram);
 	}
 	else {
-		SET_BANK(0xf000, 0xffff, ram + 0xf000, ram + 0xf000);
+		SET_BANK_R(0xc000, 0xffff, ram + 0xc000);
+	}
+}
+
+void PC8801::update_tvram_memmap()
+{
+	// read
+	if(dicrom_sel != 0) {
+		if(tvram_sel == 0) {
+			SET_BANK_R(0xf000, 0xffff, tvram);
+		}
+		else {
+			SET_BANK_R(0xf000, 0xffff, ram + 0xf000);
+		}
+	}
+	
+	// write
+	if(tvram_sel == 0) {
+		SET_BANK_W(0xf000, 0xffff, tvram);
+	}
+	else {
+		SET_BANK_W(0xf000, 0xffff, ram + 0xf000);
 	}
 }
 
@@ -887,22 +935,10 @@ void PC8801::key_down(int code, bool repeat)
 void PC8801::draw_screen()
 {
 	memset(text, 0, sizeof(text));
-//	memset(graph, 0, sizeof(graph));
 	
 	if(!(disp_ctrl & 1) && (crtc_status & 0x10)) {
 		draw_text();
 	}
-//	if(graph_mode & 8) {
-//		if(graph_mode & 0x10) {
-//			draw_color_graph();
-//		}
-//		else if(line200) {
-//			draw_mono_graph();
-//		}
-//		else {
-//			draw_mono_hires_graph();
-//		}
-//	}
 	if(update_palette) {
 		if(graph_mode & 0x10) {
 			for(int i = 0; i < 9; i++) {
@@ -959,17 +995,28 @@ uint8 PC8801::get_crtc_buffer(int ofs)
 	return 0;
 }
 
+#ifndef abs
+#define abs(v) ((v) < 0 ? -(v) : (v))
+#endif
+
 void PC8801::draw_text()
 {
 	int width = (crtc_reg[0][0] & 0x7f) + 2;
-	int height = (crtc_reg[0][1] & 0x3f) + 1;
+//	int height = (crtc_reg[0][1] & 0x3f) + 1;
+	int height = (dma_reg[2].length.sd + 1) / 120;
 	int char_lines = (crtc_reg[0][2] & 0x1f) + 1;
-//	if(char_lines >= 16) {
-//		char_lines >>= 1;
-//	}
+#if 1
+	// ugly patch :-(
+	int err_f = char_lines * height - 200;
+	int err_h = (char_lines >> 1) * height - 200;
+	if(abs(err_f) > abs(err_h)) {
+		char_lines >>= 1;
+	}
+#else
 	if(!line200 || (crtc_reg[0][1] & 0x80)) {
 		char_lines >>= 1;
 	}
+#endif
 	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : (crtc_reg[0][4] & 0x1f) + 1;
 	uint8 attribs[80], flags[256];
 	if(attrib_num == 0) {
@@ -1074,79 +1121,69 @@ void PC8801::draw_text()
 
 void PC8801::draw_color_graph(int y)
 {
-//	int addr = 0;
 	int addr = y * 80;
-//	for(int y = 0; y < 200; y++) {
-		for(int x = 0; x < 640; x += 8) {
-			uint8 b = gvram[addr | 0x0000];
-			uint8 r = gvram[addr | 0x4000];
-			uint8 g = gvram[addr | 0x8000];
-			addr++;
-			uint8 *dest = &graph[y][x];
-			dest[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-			dest[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-			dest[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-			dest[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-			dest[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-			dest[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04)     );
-			dest[6] = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1);
-			dest[7] = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
-		}
-//	}
+	
+	for(int x = 0; x < 640; x += 8) {
+		uint8 b = gvram[addr | 0x0000];
+		uint8 r = gvram[addr | 0x4000];
+		uint8 g = gvram[addr | 0x8000];
+		addr++;
+		uint8 *dest = &graph[y][x];
+		dest[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+		dest[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+		dest[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+		dest[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+		dest[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+		dest[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04)     );
+		dest[6] = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1);
+		dest[7] = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+	}
 }
 
 void PC8801::draw_mono_graph(int y)
 {
-//	int addr = 0;
 	int addr = y * 80;
-//	for(int y = 0; y < 200; y++) {
-		for(int x = 0; x < 640; x += 8) {
-			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
-			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
-			uint8 g = (disp_ctrl & 8) ? 0 : gvram[addr | 0x8000];
-			addr++;
-			uint8 *dest = &graph[y][x];
-			dest[0] = ((b | r | g) & 0x80) >> 7;
-			dest[1] = ((b | r | g) & 0x40) >> 6;
-			dest[2] = ((b | r | g) & 0x20) >> 5;
-			dest[3] = ((b | r | g) & 0x10) >> 4;
-			dest[4] = ((b | r | g) & 0x08) >> 3;
-			dest[5] = ((b | r | g) & 0x04) >> 2;
-			dest[6] = ((b | r | g) & 0x02) >> 1;
-			dest[7] = ((b | r | g) & 0x01)     ;
-		}
-//	}
+	
+	for(int x = 0; x < 640; x += 8) {
+		uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
+		uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
+		uint8 g = (disp_ctrl & 8) ? 0 : gvram[addr | 0x8000];
+		addr++;
+		uint8 *dest = &graph[y][x];
+		dest[0] = ((b | r | g) & 0x80) >> 7;
+		dest[1] = ((b | r | g) & 0x40) >> 6;
+		dest[2] = ((b | r | g) & 0x20) >> 5;
+		dest[3] = ((b | r | g) & 0x10) >> 4;
+		dest[4] = ((b | r | g) & 0x08) >> 3;
+		dest[5] = ((b | r | g) & 0x04) >> 2;
+		dest[6] = ((b | r | g) & 0x02) >> 1;
+		dest[7] = ((b | r | g) & 0x01)     ;
+	}
 }
 
 void PC8801::draw_mono_hires_graph(int y)
 {
-//	int addr = 0;
-	int addr = y * 80;
-//	for(int y = 0; y < 200; y++) {
-		for(int x = 0; x < 640; x += 8) {
-			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
-			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
-			addr++;
-			uint8 *dest0 = &graph[y      ][x];
-			uint8 *dest1 = &graph[y + 200][x];
-			dest0[0] = (b & 0x80) >> 7;
-			dest0[1] = (b & 0x40) >> 6;
-			dest0[2] = (b & 0x20) >> 5;
-			dest0[3] = (b & 0x10) >> 4;
-			dest0[4] = (b & 0x08) >> 3;
-			dest0[5] = (b & 0x04) >> 2;
-			dest0[6] = (b & 0x02) >> 1;
-			dest0[7] = (b & 0x01)     ;
-			dest1[0] = (r & 0x80) >> 7;
-			dest1[1] = (r & 0x40) >> 6;
-			dest1[2] = (r & 0x20) >> 5;
-			dest1[3] = (r & 0x10) >> 4;
-			dest1[4] = (r & 0x08) >> 3;
-			dest1[5] = (r & 0x04) >> 2;
-			dest1[6] = (r & 0x02) >> 1;
-			dest1[7] = (r & 0x01)     ;
+	int addr = (y % 200) * 80;
+	
+	for(int x = 0; x < 640; x += 8) {
+		uint8 br;
+		if(y < 200) {
+			br = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
 		}
-//	}
+		else {
+			br = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
+		}
+		addr++;
+		uint8 *dest = &graph[y][x];
+		dest[0] = (br & 0x80) >> 7;
+		dest[1] = (br & 0x40) >> 6;
+		dest[2] = (br & 0x20) >> 5;
+		dest[3] = (br & 0x10) >> 4;
+		dest[4] = (br & 0x08) >> 3;
+		dest[5] = (br & 0x04) >> 2;
+		dest[6] = (br & 0x02) >> 1;
+		dest[7] = (br & 0x01)     ;
+	}
 }
 
 void PC8801::request_intr(int level, bool status)

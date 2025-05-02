@@ -1,3 +1,12 @@
+2/8/2012
+
+[EMU/WIN32] fix to release all pressed keys when the main window lost focus
+
+[PC98DO/PC8801] fix hireso/mono graphic screen renderer
+[PC98DO/PC8801] support dictionary rom
+[PC98DO/PC8801] fix the character scan lines and screen height again
+
+
 2/7/2012
 
 [VM/UPD765A] fix the wait time to finish seek command
@@ -56,7 +65,7 @@
 
 [WINMAIN] support to specify the minimum window width
 
-[EMU/INPUT] fix the routine to detect the shift and numpad keys are pressed
+[EMU/WIN32] fix the routine to detect the shift and numpad keys are pressed
 
 [VM/DISK] fix to check if the inserted disk image is really d88 format
 [VM/EVENT] update event manager to check events in every cpu opecode
@@ -85,7 +94,7 @@
 
 1/18/2012
 
-[EMU/INPUT] support to detect the shift and numpad keys are pressed
+[EMU/WIN32] support to detect the shift and numpad keys are pressed
 
 [VM/I8080] fix to refer read_data8w() to fetch opcode if memory wait is active
 [VM/UPD765A] fix to accept seek command before other seek is not finished

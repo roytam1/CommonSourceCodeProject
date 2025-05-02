@@ -94,10 +94,10 @@
 #define MEMORY_ADDR_MAX		0x100000
 #define MEMORY_BANK_SIZE	0x800
 #define IO_ADDR_MAX		0x10000
-//#define EVENT_PRECISE		10
 #if !defined(SUPPORT_OLD_BUZZER)
 #define PCM1BIT_HIGH_QUALITY
 #endif
+#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_FD1
@@ -127,7 +127,6 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_ACCESS_LAMP
 #if defined(_PC98DO)
-#define SUPPORT_VARIABLE_TIMING
 #define USE_SCANLINE
 #endif
 
@@ -294,9 +293,7 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
-#if defined(_PC98DO)
 	double frame_rate();
-#endif
 	
 	// draw screen
 	void draw_screen();

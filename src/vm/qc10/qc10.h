@@ -39,6 +39,7 @@
 #define UPD7220_FIXED_PITCH
 #define UPD765A_DMA_MODE
 //#define SINGLE_MODE_DMA
+#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_DIPSWITCH
@@ -117,6 +118,7 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	double frame_rate();
 	
 	// draw screen
 	void draw_screen();

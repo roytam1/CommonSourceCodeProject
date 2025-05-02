@@ -94,6 +94,8 @@ private:
 	uint8 key_converted[256];
 	BOOL key_shift_pressed, key_shift_released;
 #endif
+	BOOL lost_focus;
+	
 	uint8 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4-b7 = trigger #1-#4
 	int joy_num;
 	uint32 joy_xmin[2], joy_xmax[2];
@@ -314,19 +316,26 @@ public:
 	void start_rec_sound();
 	void stop_rec_sound();
 	void restart_rec_sound();
-	BOOL now_rec_sound() { return now_recs; }
+	BOOL now_rec_sound() {
+		return now_recs;
+	}
 	
 	void capture_screen();
 	void start_rec_video(int fps, BOOL show_dialog);
 	void stop_rec_video();
 	void restart_rec_video();
-	BOOL now_rec_video() { return now_recv; }
+	BOOL now_rec_video() {
+		return now_recv;
+	}
 	
 	void update_config();
 	
 	// input device
 	void key_down(int code, bool repeat);
 	void key_up(int code);
+	void key_lost_focus() {
+		lost_focus = TRUE;
+	}
 #ifdef USE_BUTTON
 	void press_button(int num);
 #endif
@@ -334,12 +343,16 @@ public:
 	void enable_mouse();
 	void disenable_mouse();
 	void toggle_mouse();
-	BOOL get_mouse_enabled() { return mouse_enabled; }
+	BOOL get_mouse_enabled() {
+		return mouse_enabled;
+	}
 	
 #ifdef USE_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
-	BOOL now_auto_key() { return (autokey_phase != 0); }
+	BOOL now_auto_key() {
+		return (autokey_phase != 0);
+	}
 #endif
 	
 	// screen
@@ -349,7 +362,9 @@ public:
 	void draw_screen();
 	void update_screen(HDC hdc);
 #ifdef USE_BITMAP
-	void reload_bitmap() { first_invalidate = TRUE; }
+	void reload_bitmap() {
+		first_invalidate = TRUE;
+	}
 #endif
 	
 	// sound
@@ -357,7 +372,9 @@ public:
 	
 	// socket
 #ifdef USE_SOCKET
-	int get_socket(int ch) { return soc[ch]; }
+	int get_socket(int ch) {
+		return soc[ch];
+	}
 	void socket_connected(int ch);
 	void socket_disconnected(int ch);
 	void send_data(int ch);
@@ -369,12 +386,20 @@ public:
 	// ----------------------------------------
 	
 	// power off
-	void power_off() { PostMessage(main_window_handle, WM_CLOSE, 0, 0L); }
+	void power_off() {
+		PostMessage(main_window_handle, WM_CLOSE, 0, 0L);
+	}
 	
 	// input device
-	uint8* key_buffer() { return key_status; }
-	uint8* joy_buffer() { return joy_status; }
-	int* mouse_buffer() { return mouse_status; }
+	uint8* key_buffer() {
+		return key_status;
+	}
+	uint8* joy_buffer() {
+		return joy_status;
+	}
+	int* mouse_buffer() {
+		return mouse_status;
+	}
 	
 	// screen
 	void change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh);

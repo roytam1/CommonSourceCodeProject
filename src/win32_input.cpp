@@ -47,6 +47,7 @@ void EMU::initialize_input()
 	autokey_buffer->clear();
 	autokey_phase = autokey_shift = 0;
 #endif
+	lost_focus = FALSE;
 }
 
 void EMU::release_input()
@@ -66,8 +67,8 @@ void EMU::release_input()
 
 void EMU::update_input()
 {
-	// update key status
 #ifdef USE_SHIFT_NUMPAD_KEY
+	// update numpad key status
 	if(key_shift_pressed && !key_shift_released) {
 		if(key_status[VK_SHIFT] == 0) {
 			// shift key is newly pressed
@@ -91,16 +92,38 @@ void EMU::update_input()
 	}
 	key_shift_pressed = key_shift_released = FALSE;
 #endif
-	for(int i = 0; i < 256; i++) {
-		if(key_status[i] & 0x7f) {
-			key_status[i] = (key_status[i] & 0x80) | ((key_status[i] & 0x7f) - 1);
-#ifdef NOTIFY_KEY_DOWN
-			if(!key_status[i]) {
-				vm->key_up(i);
-			}
+	
+	// release keys
+#ifdef USE_AUTO_KEY
+	if(lost_focus && autokey_phase == 0) {
+#else
+	if(lost_focus) {
 #endif
+		// we lost key focus so release all pressed keys
+		for(int i = 0; i < 256; i++) {
+			if(key_status[i] & 0x80) {
+				key_status[i] &= 0x7f;
+#ifdef NOTIFY_KEY_DOWN
+				if(!key_status[i]) {
+					vm->key_up(i);
+				}
+#endif
+			}
 		}
 	}
+	else {
+		for(int i = 0; i < 256; i++) {
+			if(key_status[i] & 0x7f) {
+				key_status[i] = (key_status[i] & 0x80) | ((key_status[i] & 0x7f) - 1);
+#ifdef NOTIFY_KEY_DOWN
+				if(!key_status[i]) {
+					vm->key_up(i);
+				}
+#endif
+			}
+		}
+	}
+	lost_focus = FALSE;
 	
 	// update joystick status
 	memset(joy_status, 0, sizeof(joy_status));

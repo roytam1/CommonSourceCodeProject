@@ -490,6 +490,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 #endif
+	case WM_KILLFOCUS:
+		if(emu) {
+			emu->key_lost_focus();
+		}
+		break;
 	case WM_PAINT:
 		if(emu) {
 			PAINTSTRUCT ps;

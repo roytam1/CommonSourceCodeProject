@@ -27,6 +27,7 @@
 #define UPD765A_EXT_DRVSEL
 #define UPD7220_HORIZ_FREQ	20860
 #define IO_ADDR_MAX		0x100
+#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_FD1
@@ -100,6 +101,7 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	double frame_rate();
 	
 	// draw screen
 	void draw_screen();

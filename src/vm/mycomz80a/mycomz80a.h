@@ -23,7 +23,6 @@
 #define CPU_CLOCKS		2500000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
-//#define EVENT_PRECISE		4
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32

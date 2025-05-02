@@ -36,6 +36,7 @@ private:
 	uint8 n80rom[0x8000];
 	uint8 kanji1[0x20000];
 	uint8 kanji2[0x20000];
+	uint8 dicrom[0x80000];
 	
 	// memory mapper
 	uint8 rm_mode;
@@ -43,9 +44,11 @@ private:
 	uint8 eram_sel, eram_bank;
 	uint8 tw_ofs;
 	uint8 gvram_sel, tvram_sel;
+	uint8 dicrom_sel, dicrom_bank;
 	
 	void update_low_memmap();
 	void update_tw_memmap();
+	void update_dic_memmap();
 	void update_tvram_memmap();
 	
 	// misc

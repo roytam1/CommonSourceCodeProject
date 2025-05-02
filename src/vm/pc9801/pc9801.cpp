@@ -653,17 +653,19 @@ void VM::run()
 #endif
 }
 
-#if defined(_PC98DO)
 double VM::frame_rate()
 {
-	if(config.boot_mode == 0) {
-		return event->frame_rate();
-	}
-	else {
+#if defined(_PC98DO)
+	if(config.boot_mode != 0) {
 		return pc88event->frame_rate();
 	}
-}
+	else {
 #endif
+		return event->frame_rate();
+#if defined(_PC98DO)
+	}
+#endif
+}
 
 // ----------------------------------------------------------------------------
 // draw screen
