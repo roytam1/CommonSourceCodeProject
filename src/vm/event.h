@@ -39,7 +39,7 @@ private:
 	int vclocks[MAX_LINES];
 	int power;
 	int event_remain;
-	int cpu_remain, cpu_accum;
+	int cpu_remain, cpu_accum, cpu_done;
 	uint64 event_clocks;
 	
 	typedef struct event_t {
@@ -97,6 +97,8 @@ public:
 		}
 		first_free_event = &event[0];
 		first_fire_event = NULL;
+		
+		event_clocks = 0;
 		
 		// force update timing in the first frame
 		frames_per_sec = 0.0;

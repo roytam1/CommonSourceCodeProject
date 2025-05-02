@@ -167,14 +167,13 @@ void DISK::open(_TCHAR path[])
 			}
 		}
 		if(0 < file_size && file_size <= DISK_BUFFER_SIZE) {
+			memset(buffer, 0, sizeof(buffer));
 			fi->Fread(buffer, file_size, 1);
 			
 			// check d88 format (temporary)
-			for(int ofs = 0x20; ofs < 0x2b0; ofs += 4) {
-				if(*(uint32 *)(buffer + ofs) == 0x2b0) {
-					inserted = changed = true;
-					goto file_loaded;
-				}
+			if(*(uint32 *)(buffer + 0x1c) == file_size) {
+				inserted = changed = true;
+				goto file_loaded;
 			}
 			_stprintf(file_path, _T("%s.D88"), path);
 			

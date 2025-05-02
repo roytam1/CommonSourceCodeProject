@@ -41,7 +41,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
-	event->initialize();		// must be initialized first
 	
 	beep = new BEEP(this, emu);
 	cpu = new I386(this, emu);
@@ -221,9 +220,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id) {
-			device->initialize();
-		}
+		device->initialize();
 	}
 }
 

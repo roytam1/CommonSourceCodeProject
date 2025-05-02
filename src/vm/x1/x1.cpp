@@ -55,7 +55,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
-	event->initialize();		// must be initialized first
 	
 	drec = new DATAREC(this, emu);
 	crtc = new HD46505(this, emu);
@@ -245,7 +244,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pceevent = new EVENT(this, emu);
 	pceevent->set_frames_per_sec(PCE_FRAMES_PER_SEC);
 	pceevent->set_lines_per_frame(PCE_LINES_PER_FRAME);
-	pceevent->initialize();
 	
 	pcecpu = new HUC6260(this, emu);
 	pce = new PCE(this, emu);
@@ -259,13 +257,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-#ifdef _X1TWIN
-		if(device->this_device_id != event->this_device_id && device->this_device_id != pceevent->this_device_id) {
-#else
-		if(device->this_device_id != event->this_device_id) {
-#endif
-			device->initialize();
-		}
+		device->initialize();
 	}
 	// NOTE: motor seems to be on automatically when fdc command is requested,
 	// so motor is always on temporary

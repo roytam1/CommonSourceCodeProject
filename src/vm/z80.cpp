@@ -859,7 +859,7 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_CPU_IRQ) {
 		intr_req_bit = (intr_req_bit & ~mask) | (data & mask);
 		// always pending (temporary)
-		intr_pend_bit = (intr_pend_bit & ~mask) | (data & mask);
+		intr_pend_bit = (intr_pend_bit & ~mask) | (0xffffffff & mask);
 	}
 	else if(id == SIG_CPU_NMI) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | NMI_REQ_BIT) : (intr_req_bit & ~NMI_REQ_BIT);

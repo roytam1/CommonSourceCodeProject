@@ -98,7 +98,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
-	event->initialize();		// must be initialized first
 	
 #if defined(SUPPORT_OLD_BUZZER)
 	beep = new BEEP(this, emu);
@@ -174,7 +173,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		14 
 		15 (RESERVED)
 	*/
-
+	
 	// set contexts
 	event->set_context_cpu(cpu, cpu_clocks);
 #if defined(SUPPORT_320KB_FDD_IF)
@@ -460,7 +459,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88event = new EVENT(this, emu);
 	pc88event->set_frames_per_sec(60);
 	pc88event->set_lines_per_frame(260);
-	pc88event->initialize();
 	
 	pc88 = new PC8801(this, emu);
 	pc88->set_context_event_manager(pc88event);
@@ -528,9 +526,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id) {
-			device->initialize();
-		}
+		device->initialize();
 	}
 }
 

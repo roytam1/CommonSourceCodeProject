@@ -111,7 +111,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
-	event->initialize();		// must be initialized first
 	
 	crtc = new HD46505(this, emu);
 #ifdef _FMR60
@@ -305,9 +304,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id) {
-			device->initialize();
-		}
+		device->initialize();
 	}
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		bios->set_disk_handler(i, fdc->get_disk_handler(i));

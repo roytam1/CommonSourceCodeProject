@@ -29,7 +29,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
-	event->initialize();		// must be initialized first
 	
 	beep = new BEEP(this, emu);
 	memory = new MEMORY(this, emu);

@@ -202,6 +202,7 @@ void PC8801::reset()
 	crtc_cmd = crtc_ptr = 0;
 	crtc_status = 0;
 	text_mode = graph_mode = 0;
+	text_attrib = 0;
 	disp_ctrl = 0;
 	
 	if(!line200) {
@@ -229,7 +230,8 @@ void PC8801::reset()
 	kanji1_addr.d = kanji2_addr.d = 0;
 	
 	// interrupt
-	intr_req = intr_mask1 = intr_mask2 = 0;
+	intr_req = intr_mask1 = 0;
+	intr_mask2 = 0xff;
 	
 	// fdd i/f
 	d_pio->write_io8(1, 0);
@@ -409,6 +411,10 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		if((port32 & 0x20) != (data & 0x20)) {
 			update_palette = true;
 		}
+		if((port32 & 0x80) != (data & 0x80)) {
+			intr_mask2 = (intr_mask2 & ~0x10) | ((data & 0x80) ? 0 : 0x10);
+			update_intr();
+		}
 		port32 = data;
 		break;
 	case 0x34:
@@ -563,7 +569,7 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		update_intr();
 		break;
 	case 0xe6:
-		intr_mask2 = 0xf8 | ((data & 1) << 2) | (data & 2) | ((data & 4) >> 2);
+		intr_mask2 = (intr_mask2 & ~7) | ((data & 1) << 2) | (data & 2) | ((data & 4) >> 2);
 		update_intr();
 		break;
 	case 0xe8:
@@ -752,9 +758,7 @@ void PC8801::update_tvram_memmap()
 void PC8801::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_PC8801_SOUND_IRQ) {
-		if(!(port32 & 0x80)) {
-			request_intr(IRQ_SOUND, ((data & mask) != 0));
-		}
+		request_intr(IRQ_SOUND, ((data & mask) != 0));
 	}
 }
 
@@ -919,7 +923,7 @@ void PC8801::draw_text()
 //		char_lines >>= 1;
 //	}
 	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : ((crtc_reg[0][4] & 0x1f) + 1) * 2;
-	uint8 attribs[80], flags[128], cur_attrib = 0;
+	uint8 attribs[80], flags[256];
 	if(attrib_num == 0) {
 		memset(attribs, 0xe0, sizeof(attribs));
 	}
@@ -930,14 +934,14 @@ void PC8801::draw_text()
 		if(attrib_num != 0) {
 			memset(flags, 0, sizeof(flags));
 			for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
-				flags[get_crtc_buffer(ofs + i + 80) & 0x7f] = 1;
+				flags[get_crtc_buffer(ofs + i + 80) & 0xff] = 1;
 			}
 			for(int cx = 0, pos = 0; cx < width && cx < 80; cx++) {
 				if(flags[cx]) {
-					cur_attrib = get_crtc_buffer(ofs + pos + 81);
+					text_attrib = get_crtc_buffer(ofs + pos + 81);
 					pos += 2;
 				}
-				attribs[cx] = cur_attrib;
+				attribs[cx] = text_attrib;
 			}
 		}
 		bool cursor_now_y = (cursor_draw && cy == crtc_reg[4][1]);
@@ -1104,10 +1108,10 @@ void PC8801::request_intr(int level, bool status)
 void PC8801::update_intr()
 {
 	if(intr_req & intr_mask1 & intr_mask2) {
-		d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+		d_cpu->set_intr_line(true, true, 0);
 	}
 	else {
-		d_cpu->write_signal(SIG_CPU_IRQ, 0, 0);
+		d_cpu->set_intr_line(false, true, 0);
 	}
 }
 

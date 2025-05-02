@@ -27,8 +27,6 @@ void EVENT::initialize()
 	// initialize sound buffer
 	sound_buffer = NULL;
 	sound_tmp = NULL;
-	
-	event_clocks = 0;
 }
 
 void EVENT::initialize_sound(int rate, int samples)
@@ -69,7 +67,7 @@ void EVENT::reset()
 	}
 	
 	event_remain = 0;
-	cpu_remain = cpu_accum = 0;
+	cpu_remain = cpu_accum = cpu_done = 0;
 	
 	// reset sound
 	if(sound_buffer) {
@@ -144,18 +142,30 @@ void EVENT::drive()
 			int event_done = event_remain;
 			if(cpu_remain > 0) {
 				// run one opecode on primary cpu
-				int cpu_done = d_cpu[0].device->run(-1);
-				for(int i = 1; i < dcount_cpu; i++) {
-					// run sub cpus
-					d_cpu[i].accum_clocks += d_cpu[i].update_clocks * cpu_done;
-					int sub_clock = d_cpu[i].accum_clocks >> 10;
-					if(sub_clock) {
-						d_cpu[i].accum_clocks -= sub_clock << 10;
-						d_cpu[i].device->run(sub_clock);
+				int cpu_done_tmp;
+				if(dcount_cpu == 1) {
+					cpu_done_tmp = d_cpu[0].device->run(-1);
+				}
+				else {
+					// sync to sub cpus
+					if(cpu_done == 0) {
+						cpu_done = d_cpu[0].device->run(-1);
+					}
+					cpu_done_tmp = (cpu_done < 4) ? cpu_done : 4;
+					cpu_done -= cpu_done_tmp;
+					
+					for(int i = 1; i < dcount_cpu; i++) {
+						// run sub cpus
+						d_cpu[i].accum_clocks += d_cpu[i].update_clocks * cpu_done_tmp;
+						int sub_clock = d_cpu[i].accum_clocks >> 10;
+						if(sub_clock) {
+							d_cpu[i].accum_clocks -= sub_clock << 10;
+							d_cpu[i].device->run(sub_clock);
+						}
 					}
 				}
-				cpu_remain -= cpu_done;
-				cpu_accum += cpu_done;
+				cpu_remain -= cpu_done_tmp;
+				cpu_accum += cpu_done_tmp;
 				event_done = cpu_accum >> power;
 				cpu_accum -= event_done << power;
 			}

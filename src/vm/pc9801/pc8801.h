@@ -60,7 +60,7 @@ private:
 	// crtc
 	uint8 crtc_reg[8][5], crtc_cmd, crtc_ptr;
 	uint8 crtc_status;
-	uint8 disp_ctrl, text_mode, graph_mode, line200;
+	uint8 disp_ctrl, text_mode, text_attrib, graph_mode, line200;
 	
 	bool cursor_on, blink_on, vdisp;
 	int blink_counter;
