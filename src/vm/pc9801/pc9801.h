@@ -35,9 +35,11 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define I8259_MAX_CHIPS		2
-#define UPD765A_DMA_MODE
+//#define UPD765A_DMA_MODE
+//#define UPD765A_DRQ_DELAY
 //#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
+#define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
 #define UPD765A_MEDIA_CHANGE
 #define UPD7220_MSB_FIRST
 #define HAS_I86
@@ -45,8 +47,7 @@
 #define MEMORY_ADDR_MAX		0x100000
 #define MEMORY_BANK_SIZE	0x1000
 #define IO_ADDR_MAX		0x10000
-//#define EVENT_PRECISE	40
-#define EVENT_PRECISE	1
+//#define EVENT_PRECISE		10
 
 // device informations for win32
 #define USE_FD1

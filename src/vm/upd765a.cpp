@@ -262,8 +262,10 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				vm->regist_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
 				status |= S_RQM;
-#endif
+				// update data lost event
 				CANCEL_LOST();
+				vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+#endif
 			}
 			else {
 #ifdef UPD765A_DRQ_DELAY
@@ -293,8 +295,10 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				vm->regist_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
 				status |= S_RQM;
-#endif
+				// update data lost event
 				CANCEL_LOST();
+				vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+#endif
 			}
 			else {
 #ifdef UPD765A_DRQ_DELAY
@@ -343,8 +347,10 @@ uint32 UPD765A::read_io8(uint32 addr)
 					vm->regist_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
 					status |= S_RQM;
-#endif
+					// update data lost event
 					CANCEL_LOST();
+					vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+#endif
 				}
 				else {
 #ifdef UPD765A_DRQ_DELAY
@@ -432,6 +438,7 @@ void UPD765A::event_callback(int event_id, int err)
 		drq_id = -1;
 	}
 	else if(event_id == EVENT_LOST) {
+emu->out_debug("FDC: DATA LOST\n");
 		result = ST1_OR;
 		shift_to_result7();
 		set_drq(false);
@@ -473,6 +480,7 @@ void UPD765A::req_irq_ndma(bool val)
 
 void UPD765A::set_drq(bool val)
 {
+emu->out_debug("FDC: DRQ=%d\n",val?1:0);
 #ifdef UPD765A_DMA_MODE
 	if(val) {
 		drq = dma_data_lost = true;
@@ -680,7 +688,8 @@ void UPD765A::seek_event(int drv)
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE;
 	}
 	else {
-#ifdef UPD765A_NO_DISK_ST0_AT
+#ifdef UPD765A_NO_ST0_AT_FOR_SEEK
+		// for NEC PC-100
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR;
 #else
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR | ST0_AT;
@@ -1137,8 +1146,8 @@ void UPD765A::cmd_read_id()
 //		break;
 	case PHASE_EXEC:
 		if(check_cond(false) & ST1_MA) {
-			REGIST_EVENT(PHASE_EXEC, 1000000);
-			break;
+//			REGIST_EVENT(PHASE_EXEC, 1000000);
+//			break;
 		}
 		REGIST_EVENT(PHASE_TIMER, 5000);
 		break;
@@ -1307,6 +1316,10 @@ void UPD765A::shift_to_result7()
 
 void UPD765A::shift_to_result7_event()
 {
+#ifdef UPD765A_NO_ST1_EN_OR_FOR_RESULT7
+	// for NEC PC-9801 (XANADU)
+	result &= ~(ST1_EN | ST1_OR);
+#endif
 	buffer[0] = (result & 0xf8) | (hdue & 7);
 	buffer[1] = uint8(result >>  8);
 	buffer[2] = uint8(result >> 16);
@@ -1314,7 +1327,17 @@ void UPD765A::shift_to_result7_event()
 	buffer[4] = id[1];
 	buffer[5] = id[2];
 	buffer[6] = id[3];
+	
+#ifdef UPD765A_NO_IRQ_FOR_RESULT7
+	// for EPSON QC-10
 	req_irq(true);
+#else
+	// for sence interrupt status
+	int drv = hdu & DRIVE_MASK;
+	fdc[drv].result = buffer[0];
+	
+	set_irq(true);
+#endif
 	shift_to_result(7);
 }
 

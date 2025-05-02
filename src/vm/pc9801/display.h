@@ -28,9 +28,9 @@ private:
 	
 	uint8 tvram[0x4000];
 #ifdef _PC9801
-	uint8 vram[0x18000];
+	uint8 vram[0x20000];
 #else
-	uint8 vram[0x30000];
+	uint8 vram[0x40000];
 #endif
 	uint8 *vram_disp_b;
 	uint8 *vram_disp_r;

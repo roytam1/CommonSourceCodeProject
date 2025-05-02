@@ -461,6 +461,46 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\io.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\memory.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\pcm1bit.cpp"
 					>
 					<FileConfiguration
@@ -527,26 +567,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\tk80bs\keyboard.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\tk80bs\memory.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -641,6 +661,14 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\io.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\memory.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\pcm1bit.h"
 					>
 				</File>
@@ -663,10 +691,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\tk80bs\keyboard.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\tk80bs\memory.h"
 					>
 				</File>
 				<File

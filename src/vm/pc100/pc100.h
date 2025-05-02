@@ -31,7 +31,9 @@
 #define UPD765A_DRQ_DELAY
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
-#define UPD765A_NO_DISK_ST0_AT
+#define UPD765A_NO_ST0_AT_FOR_SEEK
+#define MEMORY_ADDR_MAX		0x100000
+#define MEMORY_BANK_SIZE	0x8000
 #define IO_ADDR_MAX		0x10000
 
 // device informations for win32
@@ -56,6 +58,7 @@ class I8255;
 class I8259;
 class I86;
 class IO;
+class MEMORY;
 class PCM1BIT;
 class RTC58321;
 class UPD765A;
@@ -63,7 +66,6 @@ class UPD765A;
 class CRTC;
 class IOCTRL;
 class KANJI;
-class MEMORY;
 
 class VM
 {
@@ -81,6 +83,7 @@ protected:
 	I8259* pic;	// includes 2chips
 	I86* cpu;
 	IO* io;
+	MEMORY* memory;
 	PCM1BIT* pcm;
 	RTC58321* rtc;
 	UPD765A* fdc;
@@ -88,7 +91,10 @@ protected:
 	CRTC* crtc;
 	IOCTRL* ioctrl;
 	KANJI* kanji;
-	MEMORY* memory;
+	
+	// memory
+	uint8 ram[0xc0000];	// Main RAM 768KB
+	uint8 ipl[0x8000];	// IPL 32KB
 	
 public:
 	// ----------------------------------------

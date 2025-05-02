@@ -25,6 +25,8 @@
 #define SCREEN_HEIGHT		357
 //#define USE_PCM1BIT
 //#define PCM1BIT_HIGH_QUALITY
+#define MEMORY_ADDR_MAX		0x10000
+#define MEMORY_BANK_SIZE	0x2000
 
 // device informations for win32
 #define USE_RAM
@@ -83,12 +85,12 @@ class EVENT;
 
 class IO;
 class I8255;
+class MEMORY;
 //class PCM1BIT;
 class Z80;
 
 class DISPLAY;
 class KEYBOARD;
-class MEMORY;
 
 class VM
 {
@@ -100,12 +102,16 @@ protected:
 	
 	IO* io;
 	I8255* pio;
+	MEMORY* memory;
 //	PCM1BIT* pcm;
 	Z80* cpu;
 	
 	DISPLAY* display;
 	KEYBOARD* keyboard;
-	MEMORY* memory;
+	
+	// memory
+	uint8 rom[0x2000];
+	uint8 ram[0x2000];
 	
 public:
 	// ----------------------------------------
@@ -131,8 +137,8 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void load_ram(_TCHAR* filename);
-	void save_ram(_TCHAR* filename);
+	void load_ram(_TCHAR* file_path);
+	void save_ram(_TCHAR* file_path);
 	bool now_skip();
 	
 	void update_config();

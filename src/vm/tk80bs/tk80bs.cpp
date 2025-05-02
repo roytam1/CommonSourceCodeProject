@@ -16,12 +16,13 @@
 #include "../i8080.h"
 #include "../i8251.h"
 #include "../i8255.h"
+#include "../io.h"
+#include "../memory.h"
 #include "../pcm1bit.h"
 
 #include "cmt.h"
 #include "display.h"
 #include "keyboard.h"
-#include "memory.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -38,6 +39,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio_b = new I8251(this, emu);	// on TK-80BS
 	pio_b = new I8255(this, emu);
 	pio_t = new I8255(this, emu);	// on TK-80
+	memio = new IO(this, emu);
+	memory = new MEMORY(this, emu);
 	pcm0 = new PCM1BIT(this, emu);
 	pcm1 = new PCM1BIT(this, emu);
 	cpu = new I8080(this, emu);
@@ -71,18 +74,56 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	cmt->set_context_sio(sio_b);
 	display->set_context_key(keyboard);
-	display->set_vram_ptr(memory->get_vram());
-	display->set_led_ptr(memory->get_led());
+	display->set_vram_ptr(vram);
+	display->set_led_ptr(ram + 0x3f8);
 	keyboard->set_context_pio_b(pio_b);
 	keyboard->set_context_pio_t(pio_t);
 	keyboard->set_context_cpu(cpu);
-	memory->set_context_sio(sio_b);
-	memory->set_context_pio(pio_b);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(pio_t);
 	cpu->set_context_intr(keyboard);
+	
+	// memory bus
+	_memset(mon, 0xff, sizeof(mon));
+	_memset(ext, 0xff, sizeof(ext));
+	_memset(basic, 0xff, sizeof(basic));
+	_memset(bsmon, 0xff, sizeof(bsmon));
+	_memset(ram, 0, sizeof(ram));
+	_memset(vram, 0x20, sizeof(vram));
+	
+	static const uint8 top[3] = {0xc3, 0x00, 0xf0};
+	static const uint8 rst[3] = {0xc3, 0xdd, 0x83};
+	
+	if(!memory->read_bios(_T("TK80.ROM"), mon, sizeof(mon))) {
+		// default
+		_memcpy(mon, top, 3);
+		_memcpy(mon + 0x38, rst, 3);
+	}
+	memory->read_bios(_T("EXT.ROM"), ext, sizeof(ext));
+	memory->read_bios(_T("LV1BASIC.ROM"), basic + 0x1000, 0x1000);
+	memory->read_bios(_T("LV2BASIC.ROM"), basic, sizeof(basic));
+	if(memory->read_bios(_T("BSMON.ROM"), bsmon, sizeof(bsmon))) {
+		// patch
+		_memcpy(mon + 0x38, rst, 3);
+	}
+	
+	memory->set_memory_r(0x0000, 0x07ff, mon);
+	memory->set_memory_r(0x0c00, 0x7bff, ext);
+	memory->set_memory_mapped_io_rw(0x7c00, 0x7dff, memio);
+	memory->set_memory_rw(0x7e00, 0x7fff, vram);
+	memory->set_memory_rw(0x8000, 0xcfff, ram);
+	memory->set_memory_r(0xd000, 0xefff, basic);
+	memory->set_memory_r(0xf000, 0xffff, bsmon);
+	
+	// memory mapped i/o
+	memio->set_iomap_alias_rw(0x7df8, sio_b, 0);
+	memio->set_iomap_alias_rw(0x7df9, sio_b, 1);
+	memio->set_iomap_alias_rw(0x7dfc, pio_b, 0);
+	memio->set_iomap_alias_rw(0x7dfd, pio_b, 1);
+	memio->set_iomap_alias_rw(0x7dfe, pio_b, 2);
+	memio->set_iomap_alias_w(0x7dff, pio_b, 3);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -222,24 +263,24 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::load_ram(_TCHAR* filename)
+void VM::load_ram(_TCHAR* file_path)
 {
-	memory->load_ram(filename);
+	memory->read_image(file_path, ram, sizeof(ram));
 }
 
-void VM::save_ram(_TCHAR* filename)
+void VM::save_ram(_TCHAR* file_path)
 {
-	memory->save_ram(filename);
+	memory->write_image(file_path, ram, sizeof(ram));
 }
 
-void VM::play_datarec(_TCHAR* filename)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	cmt->play_datarec(filename);
+	cmt->play_datarec(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	cmt->rec_datarec(filename);
+	cmt->rec_datarec(file_path);
 }
 
 void VM::close_datarec()

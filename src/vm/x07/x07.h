@@ -27,6 +27,8 @@
 #define TV_SCREEN_WIDTH		256
 #define TV_SCREEN_HEIGHT	192
 #define NSC800
+#define MEMORY_ADDR_MAX		0x10000
+#define MEMORY_BANK_SIZE	0x800
 
 // device informations for win32
 #define WINDOW_WIDTH		(SCREEN_WIDTH * 2)
@@ -49,10 +51,10 @@ class DEVICE;
 class EVENT;
 
 class BEEP;
+class MEMORY;
 class Z80;
 
 class IO;
-class MEMORY;
 
 class VM
 {
@@ -63,10 +65,18 @@ protected:
 	EVENT* event;
 	
 	BEEP* beep;
+	MEMORY* memory;
 	Z80* cpu;
 	
 	IO* io;
-	MEMORY* memory;
+	
+	// memory
+//	uint8 c3[0x2000];
+	uint8 ram[0x6000];
+	uint8 app[0x2000];
+	uint8 vram[0x1800];
+	uint8 tv[0x1000];
+	uint8 bas[0x5000];
 	
 public:
 	// ----------------------------------------

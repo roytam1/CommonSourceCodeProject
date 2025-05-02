@@ -20,6 +20,7 @@
 #include "../i8259.h"
 #include "../i86.h"
 #include "../io.h"
+#include "../memory.h"
 #include "../pcm1bit.h"
 #include "../rtc58321.h"
 #include "../upd765a.h"
@@ -27,7 +28,6 @@
 #include "crtc.h"
 #include "ioctrl.h"
 #include "kanji.h"
-#include "memory.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -49,6 +49,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pic = new I8259(this, emu);
 	cpu = new I86(this, emu);
 	io = new IO(this, emu);
+	memory = new MEMORY(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	rtc = new RTC58321(this, emu);
 	fdc = new UPD765A(this, emu);
@@ -56,7 +57,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc = new CRTC(this, emu);
 	ioctrl = new IOCTRL(this, emu);
 	kanji = new KANJI(this, emu);
-	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -69,21 +69,20 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0->set_context_port_a(rtc, SIG_RTC58321_WRITE, 1, 0);
 	pio0->set_context_port_a(rtc, SIG_RTC58321_READ, 2, 0);
 	pio0->set_context_port_a(rtc, SIG_RTC58321_SELECT, 4, 0);
-	pio0->set_context_port_c(rtc, SIG_RTC58321_DATA, 0xf, 0);
-	pio1->set_context_port_a(memory, SIG_MEMORY_BITMASK_LOW, 0xff, 0);
-	pio1->set_context_port_b(memory, SIG_MEMORY_BITMASK_HIGH, 0xff, 0);
-	pio1->set_context_port_c(memory, SIG_MEMORY_VRAM_PLANE, 0x3f, 0);
+	pio0->set_context_port_c(rtc, SIG_RTC58321_DATA, 0x0f, 0);
+	pio1->set_context_port_a(crtc, SIG_CRTC_BITMASK_LOW, 0xff, 0);
+	pio1->set_context_port_b(crtc, SIG_CRTC_BITMASK_HIGH, 0xff, 0);
+	pio1->set_context_port_c(crtc, SIG_CRTC_VRAM_PLANE, 0x3f, 0);
 	pio1->set_context_port_c(and, SIG_AND_BIT_0, 0x80, 0);
 	pio1->set_context_port_c(ioctrl, SIG_IOCTRL_RESET, 0x40, 0);
 	pic->set_context_cpu(cpu);
-	rtc->set_context_data(pio0, SIG_I8255_PORT_C, 0xf, 0);
+	rtc->set_context_data(pio0, SIG_I8255_PORT_C, 0x0f, 0);
 	rtc->set_context_busy(pio0, SIG_I8255_PORT_C, 0x10);
 	fdc->set_context_irq(cpu, SIG_CPU_NMI, 1);
 	fdc->set_context_drq(and, SIG_AND_BIT_1, 1);
 	
 	crtc->set_context_pic(pic);
 	crtc->set_context_fdc(fdc);
-	crtc->set_vram_ptr(memory->get_vram());
 	ioctrl->set_context_pic(pic);
 	ioctrl->set_context_fdc(fdc);
 	ioctrl->set_context_beep(beep);
@@ -93,6 +92,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+	
+	// memory bus
+	_memset(ram, 0, sizeof(ram));
+	_memset(ipl, 0xff, sizeof(ipl));
+	
+	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
+	
+	memory->set_memory_rw(0x00000, 0xbffff, ram);
+	memory->set_memory_mapped_io_rw(0xc0000, 0xdffff, crtc);
+	memory->set_memory_r(0xf8000, 0xfffff, ipl);
 	
 	// i/o bus
 	io->set_iomap_alias_w(0x00, pic, 0);
@@ -112,7 +121,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x24, ioctrl);
 	io->set_iomap_alias_w(0x28, sio, 0);
 	io->set_iomap_alias_w(0x2a, sio, 1);
-	io->set_iomap_single_w(0x30, memory);
+	io->set_iomap_single_w(0x30, crtc);
 	io->set_iomap_single_w(0x38, crtc);
 	io->set_iomap_single_w(0x3a, crtc);
 	io->set_iomap_single_w(0x3c, crtc);
@@ -141,7 +150,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x22, ioctrl);
 	io->set_iomap_alias_r(0x28, sio, 0);
 	io->set_iomap_alias_r(0x2a, sio, 1);
-	io->set_iomap_single_r(0x30, memory);
+	io->set_iomap_single_r(0x30, crtc);
 	io->set_iomap_single_r(0x38, crtc);
 	io->set_iomap_single_r(0x3a, crtc);
 	io->set_iomap_single_r(0x3c, crtc);

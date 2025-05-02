@@ -142,13 +142,13 @@ void DISPLAY::kanji_copy(uint8 *dst, uint8 *src, int from, int to)
 
 void DISPLAY::reset()
 {
-	vram_disp_b = vram + 0x00000;
-	vram_disp_r = vram + 0x08000;
-	vram_disp_g = vram + 0x10000;
-	vram_draw = vram + 0x00000;
+	vram_disp_b = vram + 0x08000;
+	vram_disp_r = vram + 0x10000;
+	vram_disp_g = vram + 0x18000;
+	vram_draw   = vram + 0x08000;
 	
 	d_gdc_chr->set_vram_ptr(tvram, 0x2000);
-	d_gdc_gfx->set_vram_ptr(vram_draw, 0x18000);
+	d_gdc_gfx->set_vram_ptr(vram, 0x20000);
 	
 	crtv = 2;
 	
@@ -208,50 +208,51 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	// vram select
 	case 0xa4:
 		if(data & 1) {
-			vram_disp_b = vram + 0x18000;
-			vram_disp_r = vram + 0x20000;
-			vram_disp_g = vram + 0x28000;
+			vram_disp_b = vram + 0x28000;
+			vram_disp_r = vram + 0x30000;
+			vram_disp_g = vram + 0x38000;
 		}
 		else {
-			vram_disp_b = vram + 0x00000;
-			vram_disp_r = vram + 0x08000;
-			vram_disp_g = vram + 0x10000;
+			vram_disp_b = vram + 0x08000;
+			vram_disp_r = vram + 0x10000;
+			vram_disp_g = vram + 0x18000;
 		}
 		break;
 	case 0xa6:
 		if(data & 1) {
-			vram_draw = vram + 0x18000;
+			vram_draw = vram + 0x28000;
+			d_gdc_gfx->set_vram_ptr(vram + 0x20000, 0x20000);
 		}
 		else {
-			vram_draw = vram + 0x00000;
+			vram_draw = vram + 0x08000;
+			d_gdc_gfx->set_vram_ptr(vram, 0x20000);
 		}
-		d_gdc_gfx->set_vram_ptr(vram_draw, 0x18000);
 		break;
 #endif
 	// palette
 	case 0xa8:
 		digipal[0] = data;
-		palette_gfx[7] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[7] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[3] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[3] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	case 0xaa:
 		digipal[1] = data;
-		palette_gfx[6] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[5] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[2] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[1] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	case 0xac:
 		digipal[2] = data;
-		palette_gfx[5] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[6] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[1] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[2] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	case 0xae:
 		digipal[3] = data;
-		palette_gfx[4] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[4] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[0] = RGB_COLOR((data & 1) ? 0xff : 0, (data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0);
+		palette_gfx[0] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	// cg window
 	case 0xa1:
@@ -381,7 +382,7 @@ void DISPLAY::draw_chr_screen()
 	if(pl) {
 		pl = 32 - pl;
 	}
-	int bl = scroll[SCROLL_BL] + 1;
+	int bl = scroll[SCROLL_BL] + pl + 1;
 	int cl = scroll[SCROLL_CL];
 	int ssl = scroll[SCROLL_SSL];
 	int sur = scroll[SCROLL_SUR] & 31;

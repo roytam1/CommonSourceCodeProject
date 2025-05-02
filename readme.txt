@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/20/2010
+								9/29/2010
 
 --- What's this ?
 
@@ -50,7 +50,7 @@ This archive includes the all source codes of emulators listed below:
 	eX1twin		SHARP X1twin
 	eYS-6464A	Shinko Sangyo YS-6464A
 
-You can compile them with Microsoft Visual C++ 2008 width SP1.
+You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
 
 
 --- License

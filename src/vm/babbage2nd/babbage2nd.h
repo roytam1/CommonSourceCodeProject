@@ -23,6 +23,8 @@
 #define CPU_CLOCKS		2500000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		483
+#define MEMORY_ADDR_MAX		0x10000
+#define MEMORY_BANK_SIZE	0x800
 
 // device informations for win32
 #define USE_RAM
@@ -89,13 +91,13 @@ class DEVICE;
 class EVENT;
 
 class IO;
+class MEMORY;
 class Z80;
 class Z80CTC;
 class Z80PIO;
 
 class DISPLAY;
 class KEYBOARD;
-class MEMORY;
 
 class VM
 {
@@ -106,6 +108,7 @@ protected:
 	EVENT* event;
 	
 	IO* io;
+	MEMORY* memory;
 	Z80* cpu;
 	Z80CTC* ctc;
 	Z80PIO* pio1;
@@ -113,7 +116,10 @@ protected:
 	
 	DISPLAY* display;
 	KEYBOARD* keyboard;
-	MEMORY* memory;
+	
+	// memory
+	uint8 rom[0x800];
+	uint8 ram[0x800];
 	
 public:
 	// ----------------------------------------
@@ -143,8 +149,8 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void load_ram(_TCHAR* filename);
-	void save_ram(_TCHAR* filename);
+	void load_ram(_TCHAR* file_path);
+	void save_ram(_TCHAR* file_path);
 	bool now_skip();
 	
 	void update_config();

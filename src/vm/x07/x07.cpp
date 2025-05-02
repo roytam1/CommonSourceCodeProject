@@ -14,10 +14,10 @@
 #include "../event.h"
 
 #include "../beep.h"
+#include "../memory.h"
 #include "../z80.h"
 
 #include "io.h"
-#include "memory.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -32,10 +32,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	beep = new BEEP(this, emu);
+	memory = new MEMORY(this, emu);
 	cpu = new Z80(this, emu);
 	
 	io = new IO(this, emu);
-	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -43,7 +43,23 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	io->set_context_beep(beep);
 	io->set_context_cpu(cpu);
-	io->set_context_mem(memory, memory->get_ram());
+	io->set_context_mem(memory, ram);
+	
+	// memory bus
+	_memset(ram, 0, sizeof(ram));
+	_memset(app, 0xff, sizeof(app));
+	_memset(tv, 0xff, sizeof(tv));
+	_memset(bas, 0xff, sizeof(bas));
+	
+	memory->read_bios(_T("APP.ROM"), app, sizeof(app));
+	memory->read_bios(_T("TV.ROM"), tv, sizeof(tv));
+	memory->read_bios(_T("BASIC.ROM"), bas, sizeof(bas));
+	
+	memory->set_memory_rw(0x0000, 0x5fff, ram);
+	memory->set_memory_r(0x6000, 0x7fff, app);
+	memory->set_memory_rw(0x8000, 0x97ff, vram);
+	memory->set_memory_r(0xa000, 0xafff, tv);
+	memory->set_memory_r(0xb000, 0xffff, bas);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

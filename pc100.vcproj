@@ -575,6 +575,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\memory.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\pcm1bit.cpp"
 					>
 					<FileConfiguration
@@ -712,28 +734,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\pc100\memory.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\pc100\pc100.cpp"
 					>
 					<FileConfiguration
@@ -831,6 +831,10 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\memory.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\pcm1bit.h"
 					>
 				</File>
@@ -861,10 +865,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc100\kanji.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc100\memory.h"
 					>
 				</File>
 				<File

@@ -15,6 +15,10 @@
 #include "../../emu.h"
 #include "../device.h"
 
+#define SIG_CRTC_BITMASK_LOW	0
+#define SIG_CRTC_BITMASK_HIGH	1
+#define SIG_CRTC_VRAM_PLANE	2
+
 class CRTC : public DEVICE
 {
 private:
@@ -24,7 +28,10 @@ private:
 	uint16 palette[16];
 	uint8 sel, regs[8];
 	uint16 vs, cmd;
-	uint8 *vram0, *vram1, *vram2, *vram3;
+	
+	uint8 vram[0x80000];	// VRAM 128KB * 4planes
+	uint32 shift, maskl, maskh, busl, bush;
+	uint32 write_plane, read_plane;
 	
 	void update_palette(int num);
 	
@@ -38,6 +45,11 @@ public:
 	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_memory_mapped_io8(uint32 addr, uint32 data);
+	uint32 read_memory_mapped_io8(uint32 addr);
+	void write_memory_mapped_io16(uint32 addr, uint32 data);
+	uint32 read_memory_mapped_io16(uint32 addr);
+	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
 	void set_context_pic(DEVICE* device) {
@@ -45,12 +57,6 @@ public:
 	}
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
-	}
-	void set_vram_ptr(uint8* ptr) {
-		vram0 = ptr + 0x00000;
-		vram1 = ptr + 0x20000;
-		vram2 = ptr + 0x40000;
-		vram3 = ptr + 0x60000;
 	}
 	void draw_screen();
 };

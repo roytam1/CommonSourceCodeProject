@@ -140,8 +140,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
 	bool sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
-	bool fd_bios_2hd_ok = memory->read_bios(_T("2HDIF.ROM"), fd_bios_2hd, sizeof(fd_bios_2hd));
-	bool fd_bios_2dd_ok = memory->read_bios(_T("2DDIF.ROM"), fd_bios_2dd, sizeof(fd_bios_2dd));
+	memory->read_bios(_T("2HDIF.ROM"), fd_bios_2hd, sizeof(fd_bios_2hd));
+	memory->read_bios(_T("2DDIF.ROM"), fd_bios_2dd, sizeof(fd_bios_2dd));
 	
 	memory->set_memory_rw(0x00000, 0x9ffff, ram);
 	// A0000h - A1FFFh: TEXT VRAM
@@ -152,15 +152,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	if(sound_bios_ok) {
 		memory->set_memory_r(0xcc000, 0xcdfff, sound_bios);
 	}
-	if(fd_bios_2dd_ok) {
-		memory->set_memory_r(0xd6000, 0xd6fff, fd_bios_2dd);
-	}
-	if(fd_bios_2hd_ok) {
-		memory->set_memory_r(0xd7000, 0xd7fff, fd_bios_2hd);
-	}
+	memory->set_memory_r(0xd6000, 0xd6fff, fd_bios_2dd);
+	memory->set_memory_r(0xd7000, 0xd7fff, fd_bios_2hd);
 	memory->set_memory_r(0xe8000, 0xfffff, ipl);
 	
-	display->sound_bios_ok = sound_bios_ok;
+	display->sound_bios_ok = sound_bios_ok;	// memory switch
 	
 	// i/o bus
 	io->set_iomap_alias_rw(0x00, pic, 0);
@@ -236,11 +232,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// 80h, 82h: SASI
 	
-	if(fd_bios_2hd_ok) {
-		io->set_iomap_alias_rw(0x90, fdc_2hd, 0);
-		io->set_iomap_alias_rw(0x92, fdc_2hd, 1);
-		io->set_iomap_single_rw(0x94, floppy);
-	}
+	io->set_iomap_alias_rw(0x90, fdc_2hd, 0);
+	io->set_iomap_alias_rw(0x92, fdc_2hd, 1);
+#ifdef _PC9801
+	io->set_iomap_single_w(0x94, floppy);
+#else
+	io->set_iomap_single_rw(0x94, floppy);
+#endif
 	
 	// 91h, 93h, 95h, 97h: CMT I/F
 	
@@ -261,11 +259,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0xa5, display);
 	io->set_iomap_single_rw(0xa9, display);
 	
-	if(fd_bios_2dd_ok) {
-		io->set_iomap_alias_rw(0xc8, fdc_2dd, 0);
-		io->set_iomap_alias_rw(0xca, fdc_2dd, 1);
-		io->set_iomap_single_rw(0xcc, floppy);
-	}
+	io->set_iomap_alias_rw(0xc8, fdc_2dd, 0);
+	io->set_iomap_alias_rw(0xca, fdc_2dd, 1);
+	io->set_iomap_single_rw(0xcc, floppy);
 	
 	io->set_iomap_alias_rw(0x188, opn, 0);
 	io->set_iomap_alias_rw(0x18a, opn, 1);
@@ -423,11 +419,9 @@ void VM::open_disk(_TCHAR* file_path, int drv)
 {
 	if(drv == 0 || drv == 1) {
 		fdc_2hd->open_disk(file_path, drv);
-//		pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR3, 1, 1);
 	}
 	else if(drv == 2 || drv == 3) {
 		fdc_2dd->open_disk(file_path, drv - 2);
-//		pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR2, 1, 1);
 	}
 }
 
@@ -435,11 +429,9 @@ void VM::close_disk(int drv)
 {
 	if(drv == 0 || drv == 1) {
 		fdc_2hd->close_disk(drv);
-//		pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR3, 1, 1);
 	}
 	else if(drv == 2 || drv == 3) {
 		fdc_2dd->close_disk(drv - 2);
-//		pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR2, 1, 1);
 	}
 }
 

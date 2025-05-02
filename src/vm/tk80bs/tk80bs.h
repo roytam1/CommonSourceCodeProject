@@ -25,7 +25,9 @@
 #define HAS_I8080
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		164
-//#define IO_ADDR_MAX		8
+#define MEMORY_ADDR_MAX		0x10000
+#define MEMORY_BANK_SIZE	0x200
+#define IO_ADDR_MAX		0x10000
 
 // device informations for win32
 #define USE_DATAREC
@@ -45,13 +47,14 @@ class EVENT;
 
 class I8251;
 class I8255;
+class IO;
+class MEMORY;
 class PCM1BIT;
 class I8080;
 
 class CMT;
 class DISPLAY;
 class KEYBOARD;
-class MEMORY;
 
 class VM
 {
@@ -64,6 +67,8 @@ protected:
 	I8251* sio_b;
 	I8255* pio_b;
 	I8255* pio_t;
+	IO* memio;
+	MEMORY* memory;
 	PCM1BIT* pcm0;
 	PCM1BIT* pcm1;
 	I8080* cpu;
@@ -71,7 +76,14 @@ protected:
 	CMT* cmt;
 	DISPLAY* display;
 	KEYBOARD* keyboard;
-	MEMORY* memory;
+	
+	// memory
+	uint8 mon[0x800];
+	uint8 ext[0x7000];
+	uint8 basic[0x2000];
+	uint8 bsmon[0x1000];
+	uint8 ram[0x5000];	// with TK-M20K
+	uint8 vram[0x200];
 	
 public:
 	// ----------------------------------------
@@ -101,10 +113,10 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void load_ram(_TCHAR* filename);
-	void save_ram(_TCHAR* filename);
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void load_ram(_TCHAR* file_path);
+	void save_ram(_TCHAR* file_path);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	bool now_skip();
 	

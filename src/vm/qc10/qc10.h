@@ -40,6 +40,7 @@
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
 //#define UPD765A_STRICT_ID
+#define UPD765A_NO_IRQ_FOR_RESULT7
 
 // device informations for win32
 #define USE_DIPSWITCH

@@ -25,6 +25,8 @@
 #define SCREEN_HEIGHT		192
 #define LINES_PER_HBLANK 	51
 #define CLOCKS_PER_HBLANK	800
+#define MEMORY_ADDR_MAX		0x10000
+#define MEMORY_BANK_SIZE	0x800
 
 // device informations for win32
 #define USE_CART
@@ -37,10 +39,10 @@ class DEVICE;
 class EVENT;
 
 class IO;
+class MEMORY;
 class Z80;
 
 class JOYSTICK;
-class MEMORY;
 class PSG;
 class VDP;
 
@@ -53,12 +55,15 @@ protected:
 	EVENT* event;
 	
 	IO* io;
+	MEMORY* memory;
 	Z80* cpu;
 	
 	JOYSTICK* joystick;
-	MEMORY* memory;
 	PSG* psg;
 	VDP* vdp;
+	
+	// memory
+	uint8 mem[0x10000];
 	
 public:
 	// ----------------------------------------
@@ -84,7 +89,7 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	bool now_skip();
 	

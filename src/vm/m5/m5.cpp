@@ -15,6 +15,7 @@
 
 #include "../datarec.h"
 #include "../io.h"
+#include "../memory.h"
 #include "../sn76489an.h"
 #include "../tms9918a.h"
 #include "../z80.h"
@@ -22,7 +23,6 @@
 
 #include "cmt.h"
 #include "keyboard.h"
-#include "memory.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -38,6 +38,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	drec = new DATAREC(this, emu);
 	io = new IO(this, emu);
+	memory = new MEMORY(this, emu);
 	psg = new SN76489AN(this, emu);
 	vdp = new TMS9918A(this, emu);
 	cpu = new Z80(this, emu);
@@ -45,7 +46,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	cmt = new CMT(this, emu);
 	key = new KEYBOARD(this, emu);
-	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -62,6 +62,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// z80 family daisy chain
 	ctc->set_context_intr(cpu, 0);
+	
+	// memory bus
+	_memset(ram, 0, sizeof(ram));
+	_memset(ext, 0, sizeof(ext));
+	_memset(ipl, 0xff, sizeof(ipl));
+	_memset(cart, 0xff, sizeof(cart));
+	
+	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
+	
+	memory->set_memory_r(0x0000, 0x1fff, ipl);
+	memory->set_memory_r(0x2000, 0x6fff, cart);
+	memory->set_memory_rw(0x7000, 0x7fff, ram);
+	memory->set_memory_rw(0x8000, 0xffff, ext);
 	
 	// i/o bus
 	io->set_iomap_range_w(0x00, 0x03, ctc);
@@ -194,26 +207,27 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* filename)
+void VM::open_cart(_TCHAR* file_path)
 {
-	memory->open_cart(filename);
+	_memset(cart, 0xff, sizeof(cart));
+	memory->read_image(file_path, cart, sizeof(cart));
 	reset();
 }
 
 void VM::close_cart()
 {
-	memory->close_cart();
+	_memset(cart, 0xff, sizeof(cart));
 	reset();
 }
 
-void VM::play_datarec(_TCHAR* filename)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	drec->play_datarec(filename);
+	drec->play_datarec(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	drec->rec_datarec(filename);
+	drec->rec_datarec(file_path);
 }
 
 void VM::close_datarec()

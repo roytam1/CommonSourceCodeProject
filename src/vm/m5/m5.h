@@ -25,6 +25,8 @@
 #define SCREEN_HEIGHT		192
 #define TMS9918A_VRAM_SIZE	0x4000
 //#define TMS9918A_LIMIT_SPRITES
+#define MEMORY_ADDR_MAX		0x10000
+#define MEMORY_BANK_SIZE	0x1000
 
 // device informations for win32
 #define USE_CART
@@ -42,6 +44,7 @@ class EVENT;
 
 class DATAREC;
 class IO;
+class MEMORY;
 class SN76489AN;
 class TMS9918A;
 class Z80;
@@ -49,7 +52,6 @@ class Z80CTC;
 
 class CMT;
 class KEYBOARD;
-class MEMORY;
 
 class VM
 {
@@ -61,6 +63,7 @@ protected:
 	
 	DATAREC* drec;
 	IO* io;
+	MEMORY* memory;
 	SN76489AN* psg;
 	TMS9918A* vdp;
 	Z80* cpu;
@@ -68,7 +71,12 @@ protected:
 	
 	CMT* cmt;
 	KEYBOARD* key;
-	MEMORY* memory;
+	
+	// memory
+	uint8 ipl[0x2000];	// ipl (8k)
+	uint8 cart[0x5000];	// cartridge (20k)
+	uint8 ram[0x1000];	// ram (4k)
+	uint8 ext[0x8000];	// ext ram (32k)
 	
 public:
 	// ----------------------------------------
@@ -94,10 +102,10 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	bool now_skip();
 	

@@ -14,10 +14,10 @@
 #include "../event.h"
 
 #include "../io.h"
+#include "../memory.h"
 #include "../z80.h"
 
 #include "joystick.h"
-#include "memory.h"
 #include "psg.h"
 #include "vdp.h"
 
@@ -34,10 +34,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	io = new IO(this, emu);
+	memory = new MEMORY(this, emu);
 	cpu = new Z80(this, emu);
 	
 	joystick = new JOYSTICK(this, emu);
-	memory = new MEMORY(this, emu);
 	psg = new PSG(this, emu);
 	vdp = new VDP(this, emu);
 	
@@ -46,12 +46,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	vdp->set_context_cpu(cpu);
-	vdp->set_memory_ptr(memory->get_memory());
+	vdp->set_memory_ptr(mem);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(dummy);
+	
+	// memory bus
+	_memset(mem, 0xff, 0x8000);
+	_memset(mem + 0x8000, 0, 0x8000);
+	
+	memory->set_memory_r(0x0000, 0x7fff, mem);
+	memory->set_memory_rw(0xb800, 0xbfff, mem + 0xb800);
 	
 	// i/o bus
 	io->set_iomap_range_w(0xf8, 0xfa, psg);
@@ -179,15 +186,16 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* filename)
+void VM::open_cart(_TCHAR* file_path)
 {
-	memory->open_cart(filename);
+	_memset(mem, 0xff, 0x8000);
+	memory->read_image(file_path, mem, 0x8000);
 	reset();
 }
 
 void VM::close_cart()
 {
-	memory->close_cart();
+	_memset(mem, 0xff, 0x8000);
 	reset();
 }
 

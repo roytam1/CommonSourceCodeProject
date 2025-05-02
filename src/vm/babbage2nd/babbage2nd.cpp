@@ -14,13 +14,13 @@
 #include "../event.h"
 
 #include "../io.h"
+#include "../memory.h"
 #include "../z80.h"
 #include "../z80ctc.h"
 #include "../z80pio.h"
 
 #include "display.h"
 #include "keyboard.h"
-#include "memory.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -35,6 +35,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	io = new IO(this, emu);
+	memory = new MEMORY(this, emu);
 	cpu = new Z80(this, emu);
 	ctc = new Z80CTC(this, emu);
 	pio1 = new Z80PIO(this, emu);
@@ -42,7 +43,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
-	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -67,6 +67,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio1->set_context_intr(cpu, 1);
 	pio1->set_context_child(pio2);
 	pio2->set_context_intr(cpu, 2);
+	
+	// memory bus
+	_memset(ram, 0, sizeof(ram));
+	_memset(rom, 0xff, sizeof(rom));
+	
+	memory->read_bios(_T("MON.ROM"), rom, sizeof(rom));
+	
+	memory->set_memory_r(0x0000, 0x07ff, rom);
+	memory->set_memory_rw(0x1000, 0x17ff, ram);
 	
 	// i/o bus
 	io->set_iomap_range_w(0x00, 0x03, ctc);
@@ -207,14 +216,14 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::load_ram(_TCHAR* filename)
+void VM::load_ram(_TCHAR* file_path)
 {
-	memory->load_ram(filename);
+	memory->read_image(file_path, ram, sizeof(ram));
 }
 
-void VM::save_ram(_TCHAR* filename)
+void VM::save_ram(_TCHAR* file_path)
 {
-	memory->save_ram(filename);
+	memory->write_image(file_path, ram, sizeof(ram));
 }
 
 bool VM::now_skip()
