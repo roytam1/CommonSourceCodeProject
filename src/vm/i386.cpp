@@ -535,6 +535,11 @@ void I386::run(int clock)
 			trap(interrupt, 1);
 		}
 		decode_opcode();
+#ifdef SINGLE_MODE_DMA
+		if(d_dma) {
+			d_dma->do_dma();
+		}
+#endif
 	}
 #if defined(HAS_PENTIUM) || defined(HAS_MEDIAGX)
 	tsc += (base_cycles - cycles);

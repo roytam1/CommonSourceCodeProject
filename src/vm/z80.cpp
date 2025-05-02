@@ -1033,6 +1033,11 @@ void Z80::run(int clock)
 			}
 #endif
 		}
+#ifdef SINGLE_MODE_DMA
+		if(d_dma) {
+			d_dma->do_dma();
+		}
+#endif
 	}
 	first = count;
 }

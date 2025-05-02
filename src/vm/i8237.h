@@ -32,6 +32,9 @@ class I8237 : public DEVICE
 {
 private:
 	DEVICE* d_mem;
+#ifdef SINGLE_MODE_DMA
+	DEVICE* d_dma;
+#endif
 	
 	typedef struct {
 		DEVICE* dev;
@@ -53,14 +56,15 @@ private:
 	uint8 tc;
 	uint32 tmp;
 	
-	void do_dma();
-	
 public:
 	I8237(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		for(int i = 0; i < 4; i++) {
 			dma[i].dev = vm->dummy;
 			dma[i].bankreg = dma[i].incmask = 0;
 		}
+#ifdef SINGLE_MODE_DMA
+		d_dma = NULL;
+#endif
 	}
 	~I8237() {}
 	
@@ -69,6 +73,7 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void do_dma();
 	
 	// unique functions
 	void set_context_memory(DEVICE* device) {
@@ -86,6 +91,11 @@ public:
 	void set_context_ch3(DEVICE* device) {
 		dma[3].dev = device;
 	}
+#ifdef SINGLE_MODE_DMA
+	void set_context_child_dma(DEVICE* device) {
+		d_dma = device;
+	}
+#endif
 };
 
 #endif

@@ -44,6 +44,8 @@ copy Release\hc80.exe build\hc80\.
 devenv.com jx.vcproj /Rebuild Release
 mkdir build\jx
 copy Release\jx.exe build\jx\.
+mkdir build\jx_hires
+copy Release\jx.exe build\jx_hires\.
 
 devenv.com m5.vcproj /Rebuild Release
 mkdir build\m5

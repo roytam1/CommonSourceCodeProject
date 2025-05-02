@@ -30,6 +30,7 @@
 #define I86_BIOS_CALL
 #define HAS_I8254
 #define I8259_MAX_CHIPS		2
+//#define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x10000
 
 // device informations for win32

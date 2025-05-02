@@ -232,12 +232,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		i286->set_context_io(io);
 		i286->set_context_intr(pic);
 		i286->set_context_bios(bios);
+#ifdef SINGLE_MODE_DMA
+		i286->set_context_dma(dma);
+#endif
 	}
 	else {
 		i386->set_context_mem(memory);
 		i386->set_context_io(io);
 		i386->set_context_intr(pic);
 		i386->set_context_bios(bios);
+#ifdef SINGLE_MODE_DMA
+		i386->set_context_dma(dma);
+#endif
 	}
 	
 	// i/o bus

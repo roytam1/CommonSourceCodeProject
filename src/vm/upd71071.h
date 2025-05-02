@@ -22,23 +22,33 @@
 class UPD71071 : public DEVICE
 {
 private:
-	// output signals
+	DEVICE* d_mem;
+#ifdef SINGLE_MODE_DMA
+	DEVICE* d_dma;
+#endif
 	outputs_t outputs_tc;
 	
-	DEVICE *d_mem, *dev[4];
-	uint32 areg[4], bareg[4];
-	uint16 creg[4], bcreg[4];
-	uint8 mode[4];
+	typedef struct {
+		DEVICE* dev;
+		uint32 areg, bareg;
+		uint16 creg, bcreg;
+		uint8 mode;
+	} dma_t;
+	dma_t dma[4];
+	
 	uint8 b16, selch, base;
 	uint16 cmd, tmp;
 	uint8 req, sreq, mask, tc;
 	
-	void do_dma();
-	
 public:
 	UPD71071(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		for(int i = 0; i < 4; i++) {
+			dma[i].dev = vm->dummy;
+		}
+#ifdef SINGLE_MODE_DMA
+		d_dma = NULL;
+#endif
 		init_output_signals(&outputs_tc);
-		dev[0] = dev[1] = dev[2] = dev[3] = vm->dummy;
 	}
 	~UPD71071() {}
 	
@@ -47,23 +57,29 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void do_dma();
 	
 	// unique functions
 	void set_context_memory(DEVICE* device) {
 		d_mem = device;
 	}
 	void set_context_ch0(DEVICE* device) {
-		dev[0] = device;
+		dma[0].dev = device;
 	}
 	void set_context_ch1(DEVICE* device) {
-		dev[1] = device;
+		dma[1].dev = device;
 	}
 	void set_context_ch2(DEVICE* device) {
-		dev[2] = device;
+		dma[2].dev = device;
 	}
 	void set_context_ch3(DEVICE* device) {
-		dev[3] = device;
+		dma[3].dev = device;
 	}
+#ifdef SINGLE_MODE_DMA
+	void set_context_child_dma(DEVICE* device) {
+		d_dma = device;
+	}
+#endif
 	void set_context_tc(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_tc, device, id, mask);
 	}

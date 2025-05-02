@@ -34,6 +34,9 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	DEVICE *d_mem, *d_io, *d_pic;
+#ifdef SINGLE_MODE_DMA
+	DEVICE *d_dma;
+#endif
 	outputs_t outputs_busack;
 	
 	/* ---------------------------------------------------------------------------
@@ -253,6 +256,9 @@ public:
 		m1_cycle_wait = Z80_M1_CYCLE_WAIT;
 #endif
 		busreq = false;
+#ifdef SINGLE_MODE_DMA
+		d_dma = NULL;
+#endif
 		init_output_signals(&outputs_busack);
 	}
 	~Z80() {}
@@ -286,6 +292,11 @@ public:
 	void set_context_intr(DEVICE* device) {
 		d_pic = device;
 	}
+#ifdef SINGLE_MODE_DMA
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
+	}
+#endif
 	void set_context_busack(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_busack, device, id, mask);
 	}

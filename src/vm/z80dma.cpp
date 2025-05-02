@@ -3,6 +3,7 @@
 
 	Origin : MAME Z80DMA / Xmillenium
 	Author : Takeda.Toshiya
+	         Y.S. (Xmil106RS)
 	Date   : 2011.04.96-
 
 	[ Z80DMA ]
@@ -32,6 +33,10 @@
 #define TM_TRANSFER		1
 #define TM_SEARCH		2
 #define TM_SEARCH_TRANSFER	3
+
+#define OM_BYTE			0
+#define OM_CONTINUOUS		1
+#define OM_BURST		2
 
 #define INT_RDY			0
 #define INT_MATCH		1
@@ -75,8 +80,8 @@
 #define PORTB_INC		(WR2 & 0x10)
 #define PORTA_FIXED		(((WR1 >> 4) & 2) == 2)
 #define PORTB_FIXED		(((WR2 >> 4) & 2) == 2)
-#define PORTA_MEMORY	(((WR1 >> 3) & 1) == 0)
-#define PORTB_MEMORY	(((WR2 >> 3) & 1) == 0)
+#define PORTA_MEMORY		(((WR1 >> 3) & 1) == 0)
+#define PORTB_MEMORY		(((WR2 >> 3) & 1) == 0)
 
 #define PORTA_CYCLE_LEN		(4 - (PORTA_TIMING & 3))
 #define PORTB_CYCLE_LEN		(4 - (PORTB_TIMING & 3))
@@ -89,6 +94,8 @@
 #define MATCH_F_CLEAR		(status |= 0x10)
 #define EOB_F_SET		(status &= ~0x20)
 #define EOB_F_CLEAR		(status |= 0x20)
+
+#define OPERATING_MODE		((WR4 >> 5) & 3)
 
 #define READY_ACTIVE_HIGH	((WR5 >> 3) & 1)
 #define AUTO_RESTART		((WR5 >> 5) & 1)
@@ -173,6 +180,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			if(data & 0x10) {
 				wr_tmp[wr_num++] = GET_REGNUM(MATCH_BYTE);
 			}
+			enabled = ((data & 0x40) != 0);
 		}
 		else if((data & 0x83) == 0x81) {
 #ifdef DMA_DEBUG
@@ -202,7 +210,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			WR6 = data;
 			enabled = false;
 			
-			// check dma stop
+			// check dma stop (from Xmil106RS)
 			switch (data) {
 			case CMD_CONTINUE:
 			case CMD_READ_STATUS_BYTE:
@@ -221,7 +229,9 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			case CMD_ENABLE_AFTER_RETI:
 				break;
 			case CMD_READ_STATUS_BYTE:
-				READ_MASK = 0;
+				// force to read status (from Xmillenium)
+				READ_MASK = 1;
+				update_read_buffer();
 				break;
 			case CMD_RESET_AND_DISABLE_INTERRUPTS:
 				WR3 &= ~0x20;
@@ -230,29 +240,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				force_ready = false;
 				break;
 			case CMD_INITIATE_READ_SEQUENCE:
-				rr_ptr = rr_num = 0;
-				if(READ_MASK & 0x01) {
-					rr_tmp[rr_num++] = status | (now_ready() ? 0 : 2) | (req_intr ? 0 : 8);
-				}
-				// note: return current count and address (thanks Y.S.)
-				if(READ_MASK & 0x02) {
-					rr_tmp[rr_num++] = upcount & 0xff;//BLOCKLEN_L;
-				}
-				if(READ_MASK & 0x04) {
-					rr_tmp[rr_num++] = upcount >> 8;//BLOCKLEN_H;
-				}
-				if(READ_MASK & 0x08) {
-					rr_tmp[rr_num++] = addr_a & 0xff;//PORTA_ADDRESS_L;
-				}
-				if(READ_MASK & 0x10) {
-					rr_tmp[rr_num++] = addr_a >> 8;//PORTA_ADDRESS_H;
-				}
-				if(READ_MASK & 0x20) {
-					rr_tmp[rr_num++] = addr_b & 0xff;//PORTB_ADDRESS_L;
-				}
-				if(READ_MASK & 0x40) {
-					rr_tmp[rr_num++] = addr_b >> 8;//PORTB_ADDRESS_H;
-				}
+				update_read_buffer();
 				break;
 			case CMD_RESET:
 				enabled = false;
@@ -268,6 +256,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				}
 				status = 0x30;
 				// reset upcount
+				WR3 &= ~0x20;
 				upcount = 0;
 				break;
 			case CMD_LOAD:
@@ -282,7 +271,9 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				break;
 			case CMD_ENABLE_DMA:
 				enabled = true;
+#ifndef SINGLE_MODE_DMA
 				do_dma();
+#endif
 				break;
 			case CMD_READ_MASK_FOLLOWS:
 				wr_tmp[wr_num++] = GET_REGNUM(READ_MASK);
@@ -291,7 +282,9 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				upcount = 0;
 				enabled = true;
 				status |= 0x30;
+#ifndef SINGLE_MODE_DMA
 				do_dma();
+#endif
 				break;
 			case CMD_RESET_PORT_A_TIMING:
 				PORTA_TIMING = 0;
@@ -301,7 +294,9 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				break;
 			case CMD_FORCE_READY:
 				force_ready = true;
+#ifndef SINGLE_MODE_DMA
 				do_dma();
+#endif
 				break;
 			case CMD_ENABLE_INTERRUPTS:
 				WR3 |= 0x20;
@@ -338,6 +333,10 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			}
 			wr_ptr = 0;
 		}
+		else if(wr_tmp[wr_num] == GET_REGNUM(READ_MASK)) {
+			// from Xmillenium
+			update_read_buffer();
+		}
 		if(++reset_ptr >= 6) {
 			reset_ptr = 0;
 		}
@@ -346,6 +345,10 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 
 uint32 Z80DMA::read_io8(uint32 addr)
 {
+	// return status if read buffer is empty (from Xmillenium)
+	if(rr_num == 0) {
+		return status | (now_ready() ? 0 : 2) | (req_intr ? 0 : 8);
+	}
 	uint32 data = rr_tmp[rr_ptr];
 	
 #ifdef DMA_DEBUG
@@ -368,7 +371,9 @@ void Z80DMA::write_signal(int id, uint32 data, uint32 mask)
 				request_intr(INT_RDY);
 			}
 			ready |= bit;
+#ifndef SINGLE_MODE_DMA
 			do_dma();
+#endif
 		}
 	}
 	else {
@@ -389,8 +394,40 @@ bool Z80DMA::now_ready()
 	}
 }
 
+void Z80DMA::update_read_buffer()
+{
+	// note: return current count and address (from Xmillenium)
+	rr_ptr = rr_num = 0;
+	if(READ_MASK & 0x01) {
+		rr_tmp[rr_num++] = status | (now_ready() ? 0 : 2) | (req_intr ? 0 : 8);
+	}
+	if(READ_MASK & 0x02) {
+		rr_tmp[rr_num++] = upcount & 0xff;//BLOCKLEN_L;
+	}
+	if(READ_MASK & 0x04) {
+		rr_tmp[rr_num++] = upcount >> 8;//BLOCKLEN_H;
+	}
+	if(READ_MASK & 0x08) {
+		rr_tmp[rr_num++] = addr_a & 0xff;//PORTA_ADDRESS_L;
+	}
+	if(READ_MASK & 0x10) {
+		rr_tmp[rr_num++] = addr_a >> 8;//PORTA_ADDRESS_H;
+	}
+	if(READ_MASK & 0x20) {
+		rr_tmp[rr_num++] = addr_b & 0xff;//PORTB_ADDRESS_L;
+	}
+	if(READ_MASK & 0x40) {
+		rr_tmp[rr_num++] = addr_b >> 8;//PORTB_ADDRESS_H;
+	}
+}
+
+// note: if SINGLE_MODE_DMA is defined, do_dma() is called in every machine cycle
+
 void Z80DMA::do_dma()
 {
+	if(!enabled) {
+		return;
+	}
 	bool occured = false;
 	bool found = false;
 	
@@ -404,26 +441,15 @@ void Z80DMA::do_dma()
 	else {
 		blocklen = BLOCKLEN + 1;
 	}
+	
+#ifndef SINGLE_MODE_DMA
 restart:
+#endif
 	while(enabled && now_ready() && !(upcount == blocklen || found)) {
 		if(dma_stop) {
-			if(PORTA_IS_SOURCE) {
-				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
-			}
-			else {
-				addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
-			}
-			if(TRANSFER_MODE == TM_TRANSFER || TRANSFER_MODE == TM_SEARCH_TRANSFER) {
-				if(PORTA_IS_SOURCE) {
-					addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
-				}
-				else {
-					addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
-				}
-			}
+			dma_stop = false;
+			goto inc_ports;
 		}
-		dma_stop = false;
-		
 		uint32 data = 0;
 		
 		// read
@@ -497,14 +523,11 @@ restart:
 		upcount++;
 		occured = true;
 		
-		if(found) {
+		if(found || !now_ready()) {
 			dma_stop = true;
 			break;
 		}
-		if(!now_ready()) {
-			dma_stop = true;
-			break;
-		}
+inc_ports:
 		if(PORTA_IS_SOURCE) {
 			addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
 		}
@@ -519,6 +542,11 @@ restart:
 				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
 			}
 		}
+#ifdef SINGLE_MODE_DMA
+		if(OPERATING_MODE == OM_BYTE) {
+			break;
+		}
+#endif
 	}
 	
 #ifdef DMA_DEBUG
@@ -533,7 +561,9 @@ restart:
 			emu->out_debug(_T("Z80DMA: AUTO RESTART !!!\n"));
 #endif
 			upcount = 0;
+#ifndef SINGLE_MODE_DMA
 			goto restart;
+#endif
 		}
 		
 		// update status

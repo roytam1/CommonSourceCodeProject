@@ -41,10 +41,11 @@
 #define HAS_I86
 #endif
 #define I8259_MAX_CHIPS		2
-#define UPD765A_DMA_MODE
+//#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
 #define Z80CTC_CLOCKS		2457600
+#define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x400
 #define HAS_AY_3_8912
 

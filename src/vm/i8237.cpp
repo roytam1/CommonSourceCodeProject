@@ -52,7 +52,9 @@ void I8237::write_io8(uint32 addr, uint32 data)
 		if(data & 4) {
 			if(!(req & bit)) {
 				req |= bit;
+#ifndef SINGLE_MODE_DMA
 				do_dma();
+#endif
 			}
 		}
 		else {
@@ -133,7 +135,9 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 		if(data & mask) {
 			if(!(req & bit)) {
 				req |= bit;
+#ifndef SINGLE_MODE_DMA
 				do_dma();
+#endif
 			}
 		}
 		else {
@@ -149,6 +153,8 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 		dma[id & 3].incmask = data & mask;
 	}
 }
+
+// note: if SINGLE_MODE_DMA is defined, do_dma() is called in every machine cycle
 
 void I8237::do_dma()
 {
@@ -197,8 +203,19 @@ void I8237::do_dma()
 					req &= ~bit;
 					tc |= bit;
 				}
+#ifdef SINGLE_MODE_DMA
+				else if((dma[ch].mode & 0xc0) == 0x40) {
+					// single mode
+					break;
+				}
+#endif
 			}
 		}
 	}
+#ifdef SINGLE_MODE_DMA
+	if(d_dma) {
+		d_dma->do_dma();
+	}
+#endif
 }
 

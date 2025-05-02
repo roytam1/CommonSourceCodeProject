@@ -53,7 +53,7 @@ private:
 	uint8 vector;
 	
 	bool now_ready();
-	void do_dma();
+	void update_read_buffer();
 	void request_intr(int level);
 	void update_intr();
 	
@@ -71,6 +71,7 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void do_dma();
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit) {

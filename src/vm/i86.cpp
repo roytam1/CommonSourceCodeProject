@@ -701,6 +701,11 @@ void I86::run(int clock)
 			}
 			interrupt(-1);
 		}
+#ifdef SINGLE_MODE_DMA
+		if(d_dma) {
+			d_dma->do_dma();
+		}
+#endif
 	}
 	/* adjust for any interrupts that came in */
 	icount -= extra_cycles;

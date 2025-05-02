@@ -71,6 +71,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma0->set_context_memory(memory);
 	dma0->set_context_ch0(fdc);
 	dma0->set_context_ch1(gdc);
+#ifdef SINGLE_MODE_DMA
+	dma0->set_context_child_dma(dma1);
+#endif
 	dma1->set_context_memory(memory);
 	pit0->set_context_ch0(memory, SIG_MEMORY_BEEP, 1);
 	pit0->set_context_ch1(pic, SIG_I8259_IR5 | SIG_I8259_CHIP1, 1);
@@ -112,6 +115,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef SINGLE_MODE_DMA
+	cpu->set_context_dma(dma0);
+#endif
 	
 	// i/o bus
 	io->set_iomap_range_rw(0x00, 0x03, pit0);

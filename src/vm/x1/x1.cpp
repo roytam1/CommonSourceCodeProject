@@ -153,6 +153,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
+#if defined(_X1TURBO) && defined(SINGLE_MODE_DMA)
+	cpu->set_context_dma(dma);
+#endif
 	
 	// z80 family daisy chain
 	DEVICE* parent_dev = NULL;

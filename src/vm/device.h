@@ -361,6 +361,9 @@ public:
 	}
 	virtual void intr_reti() {}
 	
+	// dma
+	virtual void do_dma() {}
+	
 	// cpu
 	virtual void run(int clock) {}
 	virtual int passed_clock() {

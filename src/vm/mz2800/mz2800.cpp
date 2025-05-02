@@ -125,6 +125,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef SINGLE_MODE_DMA
+	cpu->set_context_dma(dma);
+#endif
 	
 	// i/o bus
 	io->set_iomap_range_rw(0x70, 0x7f, dma);

@@ -1,9 +1,21 @@
-5/19/2011-2
+5/20/2011
 
 [EMU/WIN32] support sound latency 50msec
 
-[VM/*] Remove unused CHARS_PER_LINE definition (only used for HD46505)
-[VM/*] Adjust scanline numbers and frame rate number
+[VM/DEVICE] add virtual function do_dma() for single mode dma
+[VM/I8237] support single mode
+[VM/UPD71071] support single mode
+[VM/Z80DMA] fix issues for X1/X1turbo games (thanks Y.S.)
+[VM/Z80DMA] support single mode
+[VM/I86] call do_dma() in every machine cycle for single mode dma
+[VM/I386] call do_dma() in every machine cycle for single mode dma
+[VM/Z80] call do_dma() in every machine cycle for single mode dma
+
+[MZ2800] support single mode dma
+[MZ5500] support single mode dma
+[PC9801] support single mode dma
+[PC9801E] support single mode dma
+[X1TURBO] support single mode dma
 
 
 5/19/2011

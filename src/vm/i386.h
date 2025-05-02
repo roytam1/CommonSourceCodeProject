@@ -25,6 +25,9 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	DEVICE *d_mem, *d_io, *d_pic, *d_bios;
+#ifdef SINGLE_MODE_DMA
+	DEVICE *d_dma;
+#endif
 	
 	/* ---------------------------------------------------------------------------
 	structs
@@ -820,6 +823,9 @@ private:
 public:
 	I386(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		d_bios = NULL;
+#ifdef SINGLE_MODE_DMA
+		d_dma = NULL;
+#endif
 		cycles = base_cycles = 0;	// passed_clock must be zero at initialize
 		busreq = 0;
 	}
@@ -851,6 +857,11 @@ public:
 	void set_context_bios(DEVICE* device) {
 		d_bios = device;
 	}
+#ifdef SINGLE_MODE_DMA
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
+	}
+#endif
 };
 
 #endif
