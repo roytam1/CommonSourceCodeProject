@@ -25,6 +25,9 @@ private:
 	uint8* regs;
 	uint8 vram_t[0x800];
 	uint8 vram_a[0x800];
+#ifdef _X1TURBO
+	uint8 vram_k[0x800];
+#endif
 	uint8* vram_b;
 	uint8* vram_r;
 	uint8* vram_g;

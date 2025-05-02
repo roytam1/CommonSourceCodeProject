@@ -34,6 +34,8 @@
 #define MODE_SYNC1	3
 #define MODE_SYNC2	4
 
+#define RECV_BREAK	-1
+
 void I8251::initialize()
 {
 	recv_buffer = new FIFO(BUFFER_SIZE);
@@ -93,7 +95,7 @@ void I8251::write_io8(uint32 addr, uint32 data)
 			}
 			// dtr
 			write_signals(&outputs_dtr, (data & 2) ? 0xffffffff : 0);
-			// rst
+			// rst/sbrk
 			write_signals(&outputs_rst, (data & 8) ? 0xffffffff : 0);
 			// rxen
 			rxen = ((data & 4) != 0);
@@ -151,6 +153,15 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 			vm->regist_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 		}
 	}
+	else if(id == SIG_I8251_BREAK) {
+		if(data & mask) {
+			recv_buffer->write(RECV_BREAK);
+			// register event
+			if(rxen && !recv_buffer->empty() && recv_id == -1) {
+				vm->regist_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+			}
+		}
+	}
 	else if(id == SIG_I8251_DSR) {
 		if(data & mask) {
 			status |= DSR;
@@ -172,10 +183,18 @@ void I8251::event_callback(int event_id, int err)
 	if(event_id == EVENT_RECV) {
 		if(rxen && !(status & RXRDY)) {
 			if(!recv_buffer->empty()) {
-				recv = recv_buffer->read();
+				int val = recv_buffer->read();
+				if(val == RECV_BREAK) {
+					// break
+					status |= SYNDET;
+					write_signals(&outputs_syndet, 0xffffffff);
+				}
+				else {
+					recv = (uint8)val;
+					status |= RXRDY;
+					write_signals(&outputs_rxrdy, 0xffffffff);
+				}
 			}
-			status |= RXRDY;
-			write_signals(&outputs_rxrdy, 0xffffffff);
 		}
 		// if data is still left in buffer, register event for next data
 		if(rxen && !recv_buffer->empty()) {

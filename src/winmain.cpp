@@ -456,6 +456,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CLOSE:
 		// release emulation core
 		if(emu) {
+#ifdef USE_POWER_OFF
+			// notify power off
+			static int notified = 0;
+			if(!notified) {
+				emu->notify_power_off();
+				notified = 1;
+				return 0;
+			}
+#endif
 			delete emu;
 		}
 		emu = NULL;
@@ -1433,10 +1442,10 @@ void open_cart(HWND hWnd)
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 #ifdef _X1TWIN
-		_T("HuCARD Files (*.pce)\0*.pce\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.pce)\0*.pce\0All Files (*.*)\0*.*\0\0"),
 		_T("HuCARD"),
 #else
-		_T("Game Cartridge Files (*.rom)\0*.rom\0All Files (*.*)\0*.*\0\0"), 
+		_T("Supported Files (*.rom)\0*.rom\0All Files (*.*)\0*.*\0\0"), 
 		_T("Game Cartridge"),
 #endif
 		config.initial_cart_path
@@ -1453,7 +1462,7 @@ void open_disk(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("D88 Floppy Disk Files (*.d88)\0*.d88\0TeleDisk Floppy Disk Files (*.td0)\0*.td0\0ImageDisk Floppy Disk Files (*.imd)\0*.imd\0SF7 Floppy Disk Files (*.sf7)\0*.sf7\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.d88;*.td0;*.imd)\0*.d88;*.td0;*.imd;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_path
 	);
@@ -1469,10 +1478,12 @@ void open_datarec(HWND hWnd, BOOL play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#ifdef DATAREC_BINARY_ONLY
-		_T("Cassette Tape Files (*.cas)\0*.cas\0All Files (*.*)\0*.*\0\0"),
+#if defined(DATAREC_BINARY_ONLY)
+		_T("Supported Files (*.cas)\0*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(DATAREC_MZT)
+		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0") : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
-		_T("Wave Files (*.wav)\0*.wav\0Cassette Files (*.cas)\0*.cas\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif
 		_T("Data Recorder Tape"),
 		config.initial_datarec_path
@@ -1494,7 +1505,7 @@ void open_media(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Playlist Files (*.m3u)\0*.m3u\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.m3u)\0*.m3u\0All Files (*.*)\0*.*\0\0"),
 		_T("Sound Cassette Tape"),
 		config.initial_media_path
 	);
@@ -1510,7 +1521,7 @@ void open_ram(HWND hWnd, BOOL load)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Memory Dump Files (*.ram)\0*.ram\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.ram)\0*.ram\0All Files (*.*)\0*.*\0\0"),
 		_T("Memory Dump"),
 		config.initial_ram_path
 	);
@@ -1531,7 +1542,7 @@ void open_mzt(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("MZ Tape Files (*.mzt)\0*.mzt\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.mzt;*.m12)\0*.mzt;*.m12\0All Files (*.*)\0*.*\0\0"),
 		_T("MZ Tape"),
 		config.initial_mzt_path
 	);

@@ -10,13 +10,12 @@
 
 #include "io.h"
 
-#define VRAM_OFFSET_B	0x0000
-#define VRAM_OFFSET_R	0x4000
-#define VRAM_OFFSET_G	0x8000
-
 void IO::reset()
 {
 	_memset(vram, 0, sizeof(vram));
+	vram_b = vram + 0x0000;
+	vram_r = vram + 0x4000;
+	vram_g = vram + 0x8000;
 	vram_mode = signal = false;
 }
 
@@ -36,37 +35,37 @@ void IO::write_io8(uint32 addr, uint32 data)
 	switch(addr & 0xc000) {
 	case 0x0000:
 		if(vram_mode) {
-			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
-			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
-			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
+			vram_b[addr & 0x3fff] = data;
+			vram_r[addr & 0x3fff] = data;
+			vram_g[addr & 0x3fff] = data;
 			return;
 		}
 		break;
 	case 0x4000:
 		if(vram_mode) {
-			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
-			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
+			vram_r[addr & 0x3fff] = data;
+			vram_g[addr & 0x3fff] = data;
 		}
 		else {
-			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
+			vram_b[addr & 0x3fff] = data;
 		}
 		return;
 	case 0x8000:
 		if(vram_mode) {
-			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
-			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
+			vram_b[addr & 0x3fff] = data;
+			vram_g[addr & 0x3fff] = data;
 		}
 		else {
-			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
+			vram_r[addr & 0x3fff] = data;
 		}
 		return;
 	case 0xc000:
 		if(vram_mode) {
-			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
-			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
+			vram_b[addr & 0x3fff] = data;
+			vram_r[addr & 0x3fff] = data;
 		}
 		else {
-			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
+			vram_g[addr & 0x3fff] = data;
 		}
 		return;
 	}
@@ -92,11 +91,11 @@ uint32 IO::read_io8(uint32 addr)
 	vram_mode = false;
 	switch(addr & 0xc000) {
 	case 0x4000:
-		return vram[VRAM_OFFSET_B | (addr & 0x3fff)];
+		return vram_b[addr & 0x3fff];
 	case 0x8000:
-		return vram[VRAM_OFFSET_R | (addr & 0x3fff)];
+		return vram_r[addr & 0x3fff];
 	case 0xc000:
-		return vram[VRAM_OFFSET_G | (addr & 0x3fff)];
+		return vram_g[addr & 0x3fff];
 	}
 	// i/o
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;

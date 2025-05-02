@@ -476,7 +476,7 @@ void MB8877::event_callback(int event_id, int err)
 			set_irq(true);
 		}
 		else {
-			REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
+			REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3] + err);
 		}
 		break;
 	case EVENT_SEEKEND:
@@ -534,6 +534,7 @@ void MB8877::event_callback(int event_id, int err)
 void MB8877::process_cmd()
 {
 	CANCEL_EVENT(EVENT_TYPE4);
+	set_irq(false);
 	
 	switch(cmdreg & 0xf0) {
 	// type-1
@@ -755,9 +756,6 @@ void MB8877::cmd_forceint()
 	// force interrupt if bit0-bit3 is high
 	if(cmdreg & 0x0f) {
 		set_irq(true);
-	}
-	else {
-		set_irq(false);
 	}
 	CANCEL_EVENT(EVENT_SEEK);
 	CANCEL_EVENT(EVENT_SEEKEND);

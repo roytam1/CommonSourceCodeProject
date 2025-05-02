@@ -125,6 +125,13 @@ void EMU::special_reset()
 }
 #endif
 
+#ifdef USE_POWER_OFF
+void EMU::notify_power_off()
+{
+	vm->notify_power_off();
+}
+#endif
+
 void EMU::application_path(_TCHAR* path)
 {
 	_tcscpy(path, app_path);

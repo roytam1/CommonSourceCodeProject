@@ -39,8 +39,15 @@ private:
 	uint32 prv_raddr, prv_rdata;
 	
 	// vram
+#ifdef _X1TURBO
+	uint8 vram[0x18000];
+#else
 	uint8 vram[0xc000];
+#endif
 	bool vram_mode, signal;
+	uint8* vram_b;
+	uint8* vram_r;
+	uint8* vram_g;
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {

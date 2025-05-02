@@ -1,3 +1,17 @@
+12/28/2010
+
+[EMU/WIN32] support power off notification
+[VM/DATAREC] support to load MZT/M12 tape images
+[VM/I8251] support break signal
+[VM/MB8877] change irq signal to low when new command is processed
+[VM/MSM5832] support address write signal
+[VM/Z80SIO] support cts/dcd signals
+
+[FM16PI] support FUJITSU FM16pi
+[SC3000/KEYBOARD] fix the issue that multiple keys in the same column cannot be pressed at the same time
+[MZ1500] support z80sio for quick disk and rs-232c (not work)
+
+
 9/29/2010
 
 [VM/UPD765A] fix not to retry read id command
@@ -71,7 +85,7 @@
 [VM/UPD765A] support index hole signal
 [VM/Z80] revirt reimplemented Z80 core (temporary)
 
-[FM16PI] remove FUJITSU FM-16Pi skelton
+[FM16PI] remove FUJITSU FM16pi skelton
 [PC3200] remove SHARP PC-3200 skelton
 [FP1100/MAIN] raise sub cpu's int2 at both L->H edge and H->L edge
 [FP1100/SUB] add ugly patch to raise int2 when sub cpu recieve the command

@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/29/2010
+								12/28/2010
 
 --- What's this ?
 
@@ -22,6 +22,7 @@ This archive includes the all source codes of emulators listed below:
 	EmuZ-6550	SHARP MZ-6550
 	eBabbage-2nd	Gijutsu Hyoron Sha Babbage-2nd
 	eFamilyBASIC	Nintendo Family BASIC
+	eFM16pi		FUJITSU FM16pi
 	eFMR-30		FUJITSU FMR-30
 	eFMR-50		FUJITSU FMR-50
 	eFMR-60		FUJITSU FMR-60

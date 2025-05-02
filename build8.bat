@@ -13,6 +13,10 @@ copy Release\familybasic.exe build\familybasic_v2\.
 mkdir build\familybasic_v3
 copy Release\familybasic.exe build\familybasic_v3\.
 
+devenv.com fm16pi.vcproj /Rebuild Release
+mkdir build\fm16pi
+copy Release\fm16pi.exe build\fm16pi\.
+
 devenv.com fmr30.vcproj /Rebuild Release
 mkdir build\fmr30
 copy Release\fmr30.exe build\fmr30\.

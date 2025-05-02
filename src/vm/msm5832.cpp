@@ -32,7 +32,7 @@ void MSM5832::initialize()
 	regs[15] = 0x0f;
 	wreg = regnum = 0;
 	cs = true;
-	hold = rd = wr = false;
+	hold = rd = wr = addr_wr = false;
 	cnt1 = cnt2 = 0;
 	
 	// regist event
@@ -79,6 +79,7 @@ void MSM5832::event_callback(int event_id, int err)
 			// 1Hz
 			if(!cnt2) {
 				regs[15] &= ~BIT_1HZ;
+				write_signals(&outputs_busy, 0xffffffff);
 				
 				// update clock
 				emu->get_timer(time);
@@ -111,6 +112,7 @@ void MSM5832::event_callback(int event_id, int err)
 		}
 		if(++cnt2 == 3600) {
 			cnt2 = 0;
+			write_signals(&outputs_busy, 0);
 		}
 	}
 	else if(event_id == EVENT_PULSE_OFF) {
@@ -147,7 +149,7 @@ void MSM5832::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_MSM5832_WRITE) {
 		bool next = ((data & mask) != 0);
-		if(!wr && next && cs) {
+		if(wr && !next && cs) {
 			if(regnum == 5) {
 				regs[5] = (regs[5] & 7) | (wreg & 8);
 			}
@@ -156,6 +158,14 @@ void MSM5832::write_signal(int id, uint32 data, uint32 mask)
 			}
 		}
 		wr = next;
+	}
+	else if(id == SIG_MSM5832_ADDR_WRITE) {
+		bool next = ((data & mask) != 0);
+		if(addr_wr && !next && cs) {
+			regnum = wreg;
+			output();
+		}
+		addr_wr = next;
 	}
 }
 

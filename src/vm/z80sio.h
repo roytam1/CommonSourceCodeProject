@@ -18,6 +18,10 @@
 #define SIG_Z80SIO_RECV_CH1	1
 #define SIG_Z80SIO_CLEAR_CH0	2
 #define SIG_Z80SIO_CLEAR_CH1	3
+#define SIG_Z80SIO_DCD_CH0	4
+#define SIG_Z80SIO_DCD_CH1	5
+#define SIG_Z80SIO_CTS_CH0	6
+#define SIG_Z80SIO_CTS_CH1	7
 
 class FIFO;
 
@@ -49,6 +53,9 @@ private:
 		bool send_intr;
 		bool req_intr;
 		bool in_service;
+		// input signals
+		bool dcd;
+		bool cts;
 		// output signals
 		outputs_t outputs_rts;
 		outputs_t outputs_dtr;

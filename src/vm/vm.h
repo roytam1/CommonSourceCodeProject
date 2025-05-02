@@ -20,6 +20,11 @@
 #include "familybasic/familybasic.h"
 #endif
 
+// FUJITSU FM16pi
+#ifdef _FM16PI
+#include "fm16pi/fm16pi.h"
+#endif
+
 // FUJITSU FMR-30
 #ifdef _FMR30
 #include "fmr30/fmr30.h"

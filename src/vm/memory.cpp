@@ -177,6 +177,24 @@ bool MEMORY::read_bios(_TCHAR *file_name, uint8 *buffer, int size)
 	return result;
 }
 
+bool MEMORY::write_bios(_TCHAR *file_name, uint8 *buffer, int size)
+{
+	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+	emu->application_path(app_path);
+	_stprintf(file_path, _T("%s%s"), app_path, file_name);
+	
+	FILEIO* fio = new FILEIO();
+	bool result = false;
+	
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		fio->Fwrite(buffer, size, 1);
+		fio->Fclose();
+		result = true;
+	}
+	delete fio;
+	return result;
+}
+
 bool MEMORY::read_image(_TCHAR *file_path, uint8 *buffer, int size)
 {
 	FILEIO* fio = new FILEIO();

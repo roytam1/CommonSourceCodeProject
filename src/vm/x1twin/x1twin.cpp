@@ -123,8 +123,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_alias_w(i, psg, 0);
 	}
 	io->set_iomap_range_w(0x1d00, 0x1eff, memory);
-	io->set_iomap_range_w(0x2000, 0x27ff, display);	// attr vram 
-	io->set_iomap_range_w(0x3000, 0x37ff, display);	// text vram
+	io->set_iomap_range_w(0x2000, 0x2fff, display);	// attr vram 
+	io->set_iomap_range_w(0x3000, 0x3fff, display);	// text/kanji vram
 	
 #ifdef _X1TURBO
 	io->set_iomap_range_r(0x704, 0x707, ctc);

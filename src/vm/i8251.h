@@ -15,9 +15,10 @@
 #include "device.h"
 
 #define SIG_I8251_RECV		0
-#define SIG_I8251_DSR		1
-#define SIG_I8251_CLEAR		2
-#define SIG_I8251_LOOPBACK	3
+#define SIG_I8251_BREAK		1
+#define SIG_I8251_DSR		2
+#define SIG_I8251_CLEAR		3
+#define SIG_I8251_LOOPBACK	4
 
 class FIFO;
 
@@ -31,6 +32,7 @@ private:
 	// output signals
 	outputs_t outputs_out;
 	outputs_t outputs_rxrdy;
+	outputs_t outputs_syndet;
 	outputs_t outputs_txrdy;
 	outputs_t outputs_txe;
 	outputs_t outputs_dtr;
@@ -45,6 +47,7 @@ public:
 	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_out);
 		init_output_signals(&outputs_rxrdy);
+		init_output_signals(&outputs_syndet);
 		init_output_signals(&outputs_txrdy);
 		init_output_signals(&outputs_txe);
 		init_output_signals(&outputs_dtr);
@@ -67,6 +70,9 @@ public:
 	}
 	void set_context_rxrdy(DEVICE* device, int id, uint32 mask) {
 		regist_output_signal(&outputs_rxrdy, device, id, mask);
+	}
+	void set_context_syndet(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs_syndet, device, id, mask);
 	}
 	void set_context_txrdy(DEVICE* device, int id, uint32 mask) {
 		regist_output_signal(&outputs_txrdy, device, id, mask);

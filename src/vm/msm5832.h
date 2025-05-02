@@ -20,22 +20,25 @@
 #define SIG_MSM5832_HOLD	3
 #define SIG_MSM5832_READ	4
 #define SIG_MSM5832_WRITE	5
+#define SIG_MSM5832_ADDR_WRITE	6
 
 class MSM5832 : public DEVICE
 {
 private:
 	// output signals
 	outputs_t outputs_data;
+	outputs_t outputs_busy;
 	
 	void output();
 	uint8 regs[16];
 	uint8 wreg, regnum;
-	bool cs, hold, rd, wr;
+	bool cs, hold, rd, wr, addr_wr;
 	int time[8], cnt1, cnt2;
 	
 public:
 	MSM5832(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_data);
+		init_output_signals(&outputs_busy);
 	}
 	~MSM5832() {}
 	
@@ -49,6 +52,9 @@ public:
 	// unique functions
 	void set_context_data(DEVICE* device, int id, uint32 mask, int shift) {
 		regist_output_signal(&outputs_data, device, id, mask, shift);
+	}
+	void set_context_busy(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs_busy, device, id, mask);
 	}
 };
 

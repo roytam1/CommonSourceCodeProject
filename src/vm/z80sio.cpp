@@ -54,6 +54,9 @@ void Z80SIO::reset()
 		port[ch].send_intr = false;
 		port[ch].req_intr = false;
 		port[ch].in_service = false;
+		// input signals
+		port[ch].dcd = true;
+		port[ch].cts = true;
 	}
 	iei = oei = true;
 	intr = false;
@@ -222,7 +225,13 @@ uint32 Z80SIO::read_io8(uint32 addr)
 				val |= 2;
 			}
 			if(!port[ch].send->full()) {
-				val |= 4; // ???
+				val |= 4;	// ???
+			}
+			if(!port[ch].dcd) {
+				val |= 8;
+			}
+			if(!port[ch].cts) {
+				val |= 0x20;
 			}
 			if(port[ch].under_run) {
 				val |= 0x40;
@@ -258,8 +267,11 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 {
 	// recv data
 	int ch = id & 1;
+	bool signal = ((data & mask) != 0);
 	
-	if(id == SIG_Z80SIO_RECV_CH0 || id == SIG_Z80SIO_RECV_CH1) {
+	switch(id) {
+	case SIG_Z80SIO_RECV_CH0:
+	case SIG_Z80SIO_RECV_CH1:
 		// recv data
 		if(!(port[ch].wr[3] & 1)) {
 			return;
@@ -271,8 +283,9 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 			port[ch].first_data = true;
 		}
 		port[ch].rtmp->write(data & mask);
-	}
-	else {
+		break;
+	case SIG_Z80SIO_CLEAR_CH0:
+	case SIG_Z80SIO_CLEAR_CH1:
 		// clear recv buffer
 		if(data & mask) {
 			if(port[ch].recv_id != -1) {
@@ -285,6 +298,23 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 			port[ch].recv->clear();
 			update_intr();
 		}
+		break;
+	case SIG_Z80SIO_DCD_CH0:
+	case SIG_Z80SIO_DCD_CH1:
+		if(port[ch].dcd != signal) {
+			port[ch].dcd = signal;
+			port[ch].stat_intr = true;
+			update_intr();
+		}
+		break;
+	case SIG_Z80SIO_CTS_CH0:
+	case SIG_Z80SIO_CTS_CH1:
+		if(port[ch].cts != signal) {
+			port[ch].cts = signal;
+			port[ch].stat_intr = true;
+			update_intr();
+		}
+		break;
 	}
 }
 
@@ -361,8 +391,9 @@ void Z80SIO::set_intr_iei(bool val)
 #define set_intr_oei(val) { \
 	if(oei != val) { \
 		oei = val; \
-		if(d_child) \
+		if(d_child) { \
 			d_child->set_intr_iei(oei); \
+		} \
 	} \
 }
 

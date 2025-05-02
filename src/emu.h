@@ -257,6 +257,9 @@ public:
 #ifdef USE_SPECIAL_RESET
 	void special_reset();
 #endif
+#ifdef USE_POWER_OFF
+	void notify_power_off();
+#endif
 	
 	// user interface
 #ifdef USE_CART

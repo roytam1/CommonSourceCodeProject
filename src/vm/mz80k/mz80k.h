@@ -36,6 +36,7 @@
 // device informations for win32
 #define USE_DATAREC
 #define USE_DATAREC_BUTTON
+#define DATAREC_MZT
 #define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5

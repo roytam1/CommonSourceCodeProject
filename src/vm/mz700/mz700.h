@@ -38,6 +38,7 @@
 // device informations for win32
 #define USE_DATAREC
 #define USE_DATAREC_BUTTON
+#define DATAREC_MZT
 #define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -68,7 +69,7 @@ class RAMFILE;
 #ifdef _MZ1500
 class SN76489AN;
 class Z80PIO;
-//class Z80SIO;
+class Z80SIO;
 class PSG;
 #endif
 
@@ -100,8 +101,8 @@ protected:
 	SN76489AN* psg_l;
 	SN76489AN* psg_r;
 	Z80PIO* pio_int;
-//	Z80SIO* sio_rs;	// RS-232C
-//	Z80SIO* sio_qd;	// QD
+	Z80SIO* sio_rs;	// RS-232C
+	Z80SIO* sio_qd;	// QD
 	
 	PSG* psg;
 #endif

@@ -61,16 +61,17 @@ void KEYBOARD::update_keyboard()
 		// keyboard
 		for(int i = 0; i < 12; i++) {
 			if(key_stat[key_map[column][i]]) {
-				data = (1 << i);
+				data |= (1 << i);
 			}
 		}
 	}
 	else {
+		// joystick
 		for(int i = 0; i < 12; i++) {
 			uint8 map = key_map[7][i];
 			uint8 stat = (map & 0x80) ? joy_stat[1] : joy_stat[0];
 			if(stat & (map & 0x3f)) {
-				data = (1 << i);
+				data |= (1 << i);
 			}
 		}
 	}

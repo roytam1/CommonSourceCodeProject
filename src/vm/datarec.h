@@ -16,11 +16,12 @@
 
 #define SIG_DATAREC_OUT		0
 #define SIG_DATAREC_REMOTE	1
-#define SIG_DATAREC_TRIG	2
+#define SIG_DATAREC_REMOTE_NEG	2
+#define SIG_DATAREC_TRIG	3
 
 class FILEIO;
 
-#define DATAREC_BUFFER_SIZE 0x20000
+#define DATAREC_BUFFER_SIZE 0x400000
 
 class DATAREC : public DEVICE
 {
@@ -36,11 +37,12 @@ private:
 	bool in, out, change, remote, trig;
 	
 	int bufcnt, samples;
-	uint32 remain;
+	int remain;
 	uint8 buffer[DATAREC_BUFFER_SIZE];
 	
 	void update_event();
-	bool check_extension(_TCHAR* filename);
+	bool check_extension_wav(_TCHAR* filename);
+	bool check_extension_mzt(_TCHAR* filename);
 	
 public:
 	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {

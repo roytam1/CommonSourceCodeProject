@@ -23,7 +23,7 @@
 #ifdef _MZ1500
 #include "../sn76489an.h"
 #include "../z80pio.h"
-//#include "../z80sio.h"
+#include "../z80sio.h"
 #endif
 #include "../z80.h"
 
@@ -69,8 +69,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	psg_l = new SN76489AN(this, emu);
 	psg_r = new SN76489AN(this, emu);
 	pio_int = new Z80PIO(this, emu);
-//	sio_rs = new Z80SIO(this, emu);
-//	sio_qd = new Z80SIO(this, emu);
+	sio_rs = new Z80SIO(this, emu);
+	sio_qd = new Z80SIO(this, emu);
 	
 	psg = new PSG(this, emu);
 #endif
@@ -139,10 +139,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// z80 family daisy chain
 	// 0=8253 ch.2
 	pio_int->set_context_intr(cpu, 1);
-//	pio_int->set_context_child(sio_rs);
-//	sio_rs->set_context_intr(cpu, 2);
-//	sio_rs->set_context_child(sio_qd);
-//	sio_qd->set_context_intr(cpu, 3);
+	pio_int->set_context_child(sio_rs);
+	sio_rs->set_context_intr(cpu, 2);
+	sio_rs->set_context_child(sio_qd);
+	sio_qd->set_context_intr(cpu, 3);
 #endif
 	
 	// emm
@@ -165,17 +165,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// display
 	io->set_iomap_range_w(0xf0, 0xf1, display);
 	// z80pio and z80sio*2
-//	static int z80_sio_addr[4] = {0, 2, 1, 3};
+	static int z80_sio_addr[4] = {0, 2, 1, 3};
 	static int z80_pio_addr[4] = {1, 3, 0, 2};
 	for(int i = 0; i < 4; i++) {
-//		io->set_iomap_alias_w(0xb0 + i, sio_rs, z80_sio_addr[i]);
-//		io->set_iomap_alias_r(0xb0 + i, sio_rs, z80_sio_addr[i]);
-//		io->set_iomap_alias_w(0xf4 + i, sio_qd, z80_sio_addr[i]);
-//		io->set_iomap_alias_r(0xf4 + i, sio_qd, z80_sio_addr[i]);
-		io->set_iomap_alias_w(0xfc + i, pio_int, z80_pio_addr[i]);
-		io->set_iomap_alias_r(0xfc + i, pio_int, z80_pio_addr[i]);
+		io->set_iomap_alias_rw(0xb0 + i, sio_rs, z80_sio_addr[i]);
+		io->set_iomap_alias_rw(0xf4 + i, sio_qd, z80_sio_addr[i]);
+		io->set_iomap_alias_rw(0xfc + i, pio_int, z80_pio_addr[i]);
 	}
-	io->set_iovalue_single_r(0xf7, 0x80);	// NOTE: sio status for quick disk
+//	io->set_iovalue_single_r(0xf7, 0x80);	// NOTE: sio status for quick disk
 #else
 	// memory mapper
 	io->set_iomap_range_w(0xe0, 0xe4, memory);

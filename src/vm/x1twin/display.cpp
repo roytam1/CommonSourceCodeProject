@@ -102,6 +102,14 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x2500:
 	case 0x2600:
 	case 0x2700:
+	case 0x2800:
+	case 0x2900:
+	case 0x2a00:
+	case 0x2b00:
+	case 0x2c00:
+	case 0x2d00:
+	case 0x2e00:
+	case 0x2f00:
 		vram_a[addr & 0x7ff] = data;
 		break;
 	case 0x3000:
@@ -113,6 +121,20 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x3600:
 	case 0x3700:
 		vram_t[addr & 0x7ff] = data;
+		break;
+	case 0x3800:
+	case 0x3900:
+	case 0x3a00:
+	case 0x3b00:
+	case 0x3c00:
+	case 0x3d00:
+	case 0x3e00:
+	case 0x3f00:
+#ifdef _X1TURBO
+		vram_k[addr & 0x7ff] = data;
+#else
+		vram_t[addr & 0x7ff] = data;
+#endif
 		break;
 	}
 }
@@ -148,6 +170,14 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	case 0x2500:
 	case 0x2600:
 	case 0x2700:
+	case 0x2800:
+	case 0x2900:
+	case 0x2a00:
+	case 0x2b00:
+	case 0x2c00:
+	case 0x2d00:
+	case 0x2e00:
+	case 0x2f00:
 		return vram_a[addr & 0x7ff];
 	case 0x3000:
 	case 0x3100:
@@ -158,6 +188,19 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	case 0x3600:
 	case 0x3700:
 		return vram_t[addr & 0x7ff];
+	case 0x3800:
+	case 0x3900:
+	case 0x3a00:
+	case 0x3b00:
+	case 0x3c00:
+	case 0x3d00:
+	case 0x3e00:
+	case 0x3f00:
+#ifdef _X1TURBO
+		retuan vram_k[addr & 0x7ff];
+#else
+		return vram_t[addr & 0x7ff];
+#endif
 	}
 	return 0xff;
 }
