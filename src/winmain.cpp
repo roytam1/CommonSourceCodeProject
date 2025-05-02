@@ -94,13 +94,10 @@ void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
 _TCHAR* get_parent_dir(_TCHAR* file)
 {
 	static _TCHAR path[_MAX_PATH];
+	_TCHAR *ptr;
 	
-	_tcscpy(path, file);
-	int pt = _tcslen(path);
-	while(pt >= 0 && path[pt] != _T('\\')) {
-		pt--;
-	}
-	path[pt + 1] = _T('\0');
+	GetFullPathName(file, _MAX_PATH, path, &ptr);
+	*ptr = _T('\0');
 	return path;
 }
 

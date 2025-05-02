@@ -991,10 +991,16 @@ int MB8877::get_cur_position()
 
 double MB8877::get_usec_to_start_trans()
 {
-	// FIXME: this image may be a standard image or coverted from a standard image and skew may be incorrect,
-	// so use the constant period to search the target sector
-	if(disk[drvreg]->no_skew && !disk[drvreg]->is_arcus) {
-		return 200;
+#if defined(_X1TURBO) || defined(_X1TURBOZ)
+	// FIXME: ugly patch for X1turbo ALPHA
+	if(disk[drvreg]->is_alpha) {
+		return 100;
+	} else
+#endif
+	if(disk[drvreg]->no_skew) {
+		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
+		// so use the constant period to search the target sector
+		return 50000;
 	}
 	
 	// get time from current position

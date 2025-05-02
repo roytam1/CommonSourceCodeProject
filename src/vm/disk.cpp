@@ -266,13 +266,12 @@ file_loaded:
 			}
 		}
 		// FIXME: ugly patch for X1turbo ALPHA and ARCUS
-		is_alpha = is_arcus = false;
+		is_alpha = false;
 #if defined(_X1TURBO) || defined(_X1TURBOZ)
 		if(media_type == MEDIA_TYPE_2D) {
 			uint32 offset = buffer[0x20] | (buffer[0x21] << 8) | (buffer[0x22] << 16) | (buffer[0x23] << 24);
 			uint8 *t = buffer + offset;
 			is_alpha = (strncmp((char *)(t + 0x11), "turbo ALPHA", 11) == 0);
-			is_arcus = (strncmp((char *)(t + 0x11), "ARCUS X1",    8 ) == 0);
 		}
 #endif
 	}

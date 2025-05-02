@@ -75,13 +75,10 @@ void load_config()
 	init_config();
 	
 	// get config path
-	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
-	GetModuleFileName(NULL, app_path, _MAX_PATH);
-	int pt = _tcslen(app_path);
-	while(pt >= 0 && app_path[pt] != _T('\\')) {
-		pt--;
-	}
-	app_path[pt + 1] = _T('\0');
+	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH], *ptr;
+	GetModuleFileName(NULL, config_path, _MAX_PATH);
+	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
+	*ptr = _T('\0');
 	_stprintf(config_path, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
@@ -182,13 +179,10 @@ void load_config()
 void save_config()
 {
 	// get config path
-	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
-	GetModuleFileName(NULL, app_path, _MAX_PATH);
-	int pt = _tcslen(app_path);
-	while(pt >= 0 && app_path[pt] != _T('\\')) {
-		pt--;
-	}
-	app_path[pt + 1] = _T('\0');
+	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH], *ptr;
+	GetModuleFileName(NULL, config_path, _MAX_PATH);
+	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
+	*ptr = _T('\0');
 	_stprintf(config_path, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control

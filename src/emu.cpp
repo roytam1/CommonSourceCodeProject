@@ -34,12 +34,10 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	instance_handle = hinst;
 	
 	// get module path
-	GetModuleFileName(NULL, app_path, _MAX_PATH);
-	int pt = _tcslen(app_path);
-	while(pt >= 0 && app_path[pt] != _T('\\')) {
-		pt--;
-	}
-	app_path[pt + 1] = _T('\0');
+	_TCHAR tmp_path[_MAX_PATH], *ptr;
+	GetModuleFileName(NULL, tmp_path, _MAX_PATH);
+	GetFullPathName(tmp_path, _MAX_PATH, app_path, &ptr);
+	*ptr = _T('\0');
 	
 	// load sound config
 	static int freq_table[8] = {

@@ -157,7 +157,7 @@ public:
 	uint8 media_type;
 	bool is_standard_image;
 	bool is_fdi_image;
-	bool is_alpha, is_arcus;
+	bool is_alpha;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];

@@ -1,3 +1,10 @@
+8/21/2013
+
+[WINMAIN] fix to use GetFullPathName() to get the parent directory
+
+[VM/MB8877] modify contant period for searching sector
+
+
 8/16/2013
 
 [VM/DISK] add ugly patch for X1turbo ARCUS
