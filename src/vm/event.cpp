@@ -24,31 +24,18 @@ void EVENT::initialize()
 	}
 	power = config.cpu_power;
 	
-	// generate clocks per line and char
-	int sum = (int)((float)cpu_clocks / frames_per_sec + 0.5);
-	int remain = sum;
-	
-	for(int i = 0; i < lines_per_frame; i++) {
-		vclocks[i] = (int)(sum / lines_per_frame);
-		remain -= vclocks[i];
-	}
-	for(int i = 0; i < remain; i++) {
-		int index = (int)((float)lines_per_frame * (float)i / (float)remain);
-		vclocks[index]++;
-	}
-	accum = 0;
-	
 	// initialize event
 	for(int i = 0; i < MAX_EVENT; i++) {
 		event[i].enable = false;
 	}
 	next_id = NO_EVENT;
-	next = past = 0;
+	next_clock = past_clock = 0;
 	
 	// initialize sound buffer
 	sound_buffer = NULL;
 	sound_tmp = NULL;
 	
+	accum_clocks = 0;
 	first_reset = true;
 }
 
@@ -90,20 +77,14 @@ void EVENT::reset()
 	}
 	
 	// clear events (except loop event)
-	for(int i = 0; i < event_cnt; i++) {
+	for(int i = 0; i < event_count; i++) {
 		if(!(event[i].enable && event[i].loop)) {
 			event[i].enable = false;
 		}
 	}
 	
 	// get next event clock
-	next_id = NO_EVENT;
-	for(int i = 0; i < event_cnt; i++) {
-		if(event[i].enable && (event[i].clock < next || next_id == NO_EVENT)) {
-			next = event[i].clock;
-			next_id = i;
-		}
-	}
+	get_next_event();
 	
 	// reset sound
 	if(sound_buffer) {
@@ -117,13 +98,29 @@ void EVENT::reset()
 
 void EVENT::drive()
 {
+	// generate clocks per line
+	if(update_timing) {
+		int sum = (int)((float)event_base_clocks / frames_per_sec + 0.5);
+		int remain = sum;
+		
+		for(int i = 0; i < lines_per_frame; i++) {
+			vclocks[i] = (int)(sum / lines_per_frame);
+			remain -= vclocks[i];
+		}
+		for(int i = 0; i < remain; i++) {
+			int index = (int)((float)lines_per_frame * (float)i / (float)remain);
+			vclocks[index]++;
+		}
+		update_timing = false;
+	}
+	
 	// run virtual machine for 1 frame period
-	for(int i = 0; i < frame_event_cnt; i++) {
+	for(int i = 0; i < frame_event_count; i++) {
 		frame_event[i]->event_frame();
 	}
 	for(int v = 0; v < lines_per_frame; v++) {
 		// run virtual machine per line
-		for(int i = 0; i < vline_event_cnt; i++) {
+		for(int i = 0; i < vline_event_count; i++) {
 			vline_event[i]->event_vline(v, vclocks[v]);
 		}
 		update_event(vclocks[v]);
@@ -134,46 +131,52 @@ void EVENT::drive()
 void EVENT::update_event(int clock)
 {
 	while(clock) {
-		past = 0;
-		while(clock && (next > past || next_id == NO_EVENT)) {
+		past_clock = 0;
+		while(clock && (next_id == NO_EVENT || next_clock > past_clock)) {
 			// run cpu
 #ifdef EVENT_PRECISE
-			int remain = next - past;
-			int tmp = (clock < remain || next_id == NO_EVENT) ? clock : remain;
+			int remain = next_clock - past_clock;
+			int tmp = (next_id == NO_EVENT || clock < remain) ? clock : remain;
 			int eventclock = tmp > EVENT_PRECISE ? EVENT_PRECISE : tmp;
 #else
-			int remain = next - past;
-			int eventclock = (clock < remain || next_id == NO_EVENT) ? clock : remain;
+			int remain = next_clock - past_clock;
+			int eventclock = (next_id == NO_EVENT || clock < remain) ? clock : remain;
 #endif
 			if(dcount_cpu > 1) {
 				// sync cpus
 				for(int c = 0; c < eventclock; c++) {
 					for(int p = 0; p < (1 << power); p++) {
-						for(int i = 0; i < dcount_cpu; i++) {
-							d_cpu[i]->run(1);
+						d_cpu[0].device->run(1);
+						for(int i = 1; i < dcount_cpu; i++) {
+							d_cpu[i].accum_clocks += d_cpu[i].update_clocks;
+							int clocks = d_cpu[i].accum_clocks >> 10;
+							if(clocks) {
+								d_cpu[i].accum_clocks -= clocks << 10;
+								d_cpu[i].device->run(clocks);
+							}
 						}
 					}
-					accum += 1;
+					accum_clocks += 1;
 				}
 			}
 			else {
-				d_cpu[0]->run(eventclock << power);
-				accum += eventclock;
+				d_cpu[0].device->run(eventclock << power);
+				accum_clocks += eventclock;
 			}
 			clock -= eventclock;
-			past += eventclock;
+			past_clock += eventclock;
 		}
 		// update event_clock
-		if(past) {
-			for(int i = 0; i < event_cnt; i++) {
-				event[i].clock -= past;
+		if(past_clock) {
+			for(int i = 0; i < event_count; i++) {
+				event[i].clock -= past_clock;
 			}
-			next -= past;
-			past = 0;
+			next_clock -= past_clock;
+			past_clock = 0;
 		}
 		// run event
 		get_nextevent = false;
-		while(!(next > 0 || next_id == NO_EVENT)) {
+		while(!(next_id == NO_EVENT || next_clock > 0)) {
 			// run event
 			int err = event[next_id].clock;
 			if(event[next_id].loop) {
@@ -185,68 +188,43 @@ void EVENT::update_event(int clock)
 			event[next_id].device->event_callback(event[next_id].event_id, err);
 			
 			// get next event clock
-			next_id = NO_EVENT;
-			for(int i = 0; i < event_cnt; i++) {
-				if(event[i].enable && (event[i].clock < next || next_id == NO_EVENT)) {
-					next = event[i].clock;
-					next_id = i;
-				}
-			}
+			get_next_event();
 		}
 		get_nextevent = true;
 	}
 }
 
+void EVENT::get_next_event()
+{
+	next_id = NO_EVENT;
+	for(int i = 0; i < event_count; i++) {
+		if(event[i].enable && (next_id == NO_EVENT || event[i].clock < next_clock)) {
+			next_clock = event[i].clock;
+			next_id = i;
+		}
+	}
+}
+
 uint32 EVENT::current_clock()
 {
-	return accum + (d_cpu[0]->passed_clock() >> power);
+	return accum_clocks + (d_cpu[0].device->passed_clock() >> power);
+}
+
+uint32 EVENT::passed_clock(uint32 prev)
+{
+	uint32 current = current_clock();
+	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
 }
 
 void EVENT::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
 {
-	// register event
-#ifdef _DEBUG_LOG
-	bool registered = false;
-#endif
-	if(register_id != NULL) {
-		*register_id = -1;
-	}
-	for(int i = 0; i < MAX_EVENT; i++) {
-		if(!event[i].enable) {
-			if(event_cnt < i + 1) {
-				event_cnt = i + 1;
-			}
-			int clock = (int)(cpu_clocks / 1000000. * usec + 0.5);
-			event[i].enable = true;
-			event[i].device = dev;
-			event[i].event_id = event_id;
-			event[i].clock = clock + past + (d_cpu[0]->passed_clock() >> power);
-			event[i].loop = loop ? clock : 0;
-			if(register_id != NULL) {
-				*register_id = i;
-			}
-#ifdef _DEBUG_LOG
-			registered = true;
-#endif
-			break;
-		}
-	}
-#ifdef _DEBUG_LOG
-	if(!registered) {
-		emu->out_debug(_T("EVENT: too many events !!!\n"));
-	}
-#endif
-	
-	// get next event clock
-	if(get_nextevent) {
-		next_id = NO_EVENT;
-		for(int i = 0; i < event_cnt; i++) {
-			if(event[i].enable && (event[i].clock < next || next_id == NO_EVENT)) {
-				next = event[i].clock;
-				next_id = i;
-			}
-		}
-	}
+	int clock = (int)(event_base_clocks / 1000000. * usec + 0.5);
+	register_event_by_clock(dev, event_id, clock, loop, register_id);
+}
+
+uint32 EVENT::get_prv_pc(int index)
+{
+	return d_cpu[index].device->get_prv_pc();
 }
 
 void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
@@ -260,13 +238,13 @@ void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool l
 	}
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
-			if(event_cnt < i + 1) {
-				event_cnt = i + 1;
+			if(event_count < i + 1) {
+				event_count = i + 1;
 			}
 			event[i].enable = true;
 			event[i].device = dev;
 			event[i].event_id = event_id;
-			event[i].clock = clock + past + (d_cpu[0]->passed_clock() >> power);
+			event[i].clock = clock + past_clock + (d_cpu[0].device->passed_clock() >> power);
 			event[i].loop = loop ? clock : 0;
 			if(register_id != NULL) {
 				*register_id = i;
@@ -285,13 +263,7 @@ void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool l
 	
 	// get next event clock
 	if(get_nextevent) {
-		next_id = NO_EVENT;
-		for(int i = 0; i < event_cnt; i++) {
-			if(event[i].enable && (event[i].clock < next || next_id == NO_EVENT)) {
-				next = event[i].clock;
-				next_id = i;
-			}
-		}
+		get_next_event();
 	}
 }
 
@@ -300,22 +272,19 @@ void EVENT::cancel_event(int register_id)
 	// cancel registered event
 	if(0 <= register_id && register_id < MAX_EVENT) {
 		event[register_id].enable = false;
-	}
-	
-	// get next event clock
-	next_id = NO_EVENT;
-	for(int i = 0; i < event_cnt; i++) {
-		if(event[i].enable && (event[i].clock < next || next_id == NO_EVENT)) {
-			next = event[i].clock;
-			next_id = i;
+		
+		// get next event clock
+		if(next_id == register_id) {
+			get_next_event();
 		}
 	}
+	
 }
 
 void EVENT::register_frame_event(DEVICE* dev)
 {
-	if(frame_event_cnt < MAX_EVENT) {
-		frame_event[frame_event_cnt++] = dev;
+	if(frame_event_count < MAX_EVENT) {
+		frame_event[frame_event_count++] = dev;
 	}
 #ifdef _DEBUG_LOG
 	else {
@@ -326,8 +295,8 @@ void EVENT::register_frame_event(DEVICE* dev)
 
 void EVENT::register_vline_event(DEVICE* dev)
 {
-	if(vline_event_cnt < MAX_EVENT) {
-		vline_event[vline_event_cnt++] = dev;
+	if(vline_event_count < MAX_EVENT) {
+		vline_event[vline_event_count++] = dev;
 	}
 #ifdef _DEBUG_LOG
 	else {

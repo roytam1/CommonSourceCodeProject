@@ -1,6 +1,7 @@
 /*
 	NEC PC-9801 Emulator 'ePC-9801'
 	NEC PC-9801E/F/M Emulator 'ePC-9801E'
+	NEC PC-98DO Emulator 'ePC-98DO'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya

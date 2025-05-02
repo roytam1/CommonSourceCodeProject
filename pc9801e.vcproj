@@ -641,6 +641,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\pc80s31k.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\upd1990a.cpp"
 					>
 					<FileConfiguration
@@ -708,6 +730,28 @@
 				</File>
 				<File
 					RelativePath="src\vm\ym2203.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\z80.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -959,6 +1003,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\pc9801\mouse.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\pc9801\pc9801.cpp"
 					>
 					<FileConfiguration
@@ -1072,6 +1138,10 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\pc80s31k.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\upd1990a.h"
 					>
 				</File>
@@ -1089,6 +1159,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\ym2203.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\z80.h"
 					>
 				</File>
 				<Filter
@@ -1158,6 +1232,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc9801\keyboard.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\pc9801\mouse.h"
 					>
 				</File>
 				<File

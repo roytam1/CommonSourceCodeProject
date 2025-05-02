@@ -11,44 +11,67 @@
 #include "sasi.h"
 #include "../../fileio.h"
 
+#define PHASE_FREE	0
+#define PHASE_SELECT	1
+#define PHASE_COMMAND	2
+#define PHASE_C2	3
+#define PHASE_SENSE	4
+#define PHASE_READ	5
+#define PHASE_WRITE	6
+#define PHASE_STATUS	7
+#define PHASE_MESSAGE	8
+
+#define STATUS_IXD	0x04
+#define STATUS_CXD	0x08
+#define STATUS_MSG	0x10
+#define STATUS_BSY	0x20
+#define STATUS_REQ	0x80
+
+#define STATUS_IRQ	0
+#define STATUS_DRQ	0
+
 void SASI::initialize()
 {
-	// hdd image file path
-	_TCHAR app_path[_MAX_PATH];
+	// open hard drive images
+	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
-	FILEIO* fio = new FILEIO();
 	
-	// check file existance
-	file_exist[0] = file_exist[1] = false;
-	_stprintf(file_path[0], _T("%sHDD1.DAT"), app_path);
-	if(fio->Fopen(file_path[0], FILEIO_READ_BINARY)) {
-		file_exist[0] = true;
-		fio->Fclose();
+	for(int i = 0; i < 2; i++) {
+		_stprintf(file_path, _T("%sHDD%d.DAT"), app_path, i + 1);
+		drive[i].fio = new FILEIO();
+		if(!drive[i].fio->Fopen(file_path, FILEIO_READ_WRITE_BINARY)) {
+			delete drive[i].fio;
+			drive[i].fio = NULL;
+		}
+		drive[i].access = false;
 	}
-	_stprintf(file_path[1], _T("%sHDD2.DAT"), app_path);
-	if(fio->Fopen(file_path[1], FILEIO_READ_BINARY)) {
-		file_exist[1] = true;
-		fio->Fclose();
-	}
-	delete fio;
 	
 	// initialize sasi interface
 	memset(buffer, 0, sizeof(buffer));
 	memset(cmd, 0, sizeof(cmd));
-	memset(state_buf, 0, sizeof(state_buf));
+	memset(status_buf, 0, sizeof(status_buf));
 	
-	phase = 0;
+	phase = PHASE_FREE;
 	sector = 0;
 	blocks = 0;
 	cmd_ptr = 0;
-	device = 0;
 	unit = 0;
 	buffer_ptr = 0;
-	rw_mode = 0;
-	state = 0;
+	status = 0;
+	status_irq_drq = 0;
 	error = 0;
-	state_ptr = 0;
-	access[0] = access[1] = false;
+	status_ptr = 0;
+}
+
+void SASI::release()
+{
+	for(int i = 0; i < 2; i++) {
+		if(drive[i].fio != NULL) {
+			drive[i].fio->Fclose();
+			delete drive[i].fio;
+			drive[i].fio = NULL;
+		}
+	}
 }
 
 void SASI::write_io8(uint32 addr, uint32 data)
@@ -56,13 +79,18 @@ void SASI::write_io8(uint32 addr, uint32 data)
 	switch(addr & 0xff) {
 	case 0xa4:
 		// data
-		if(phase == 2) {
+		if(phase == PHASE_COMMAND) {
 			cmd[cmd_ptr++] = data;
 			if(cmd_ptr == 6) {
 				check_cmd();
 			}
 		}
-		else if(phase == 3 && !rw_mode) {
+		else if(phase == PHASE_C2) {
+			if(++status_ptr == 10) {
+				set_status(0);
+			}
+		}
+		else if(phase == PHASE_WRITE) {
 			buffer[buffer_ptr++] = data;
 			if(buffer_ptr == 256) {
 				flush(unit);
@@ -70,18 +98,14 @@ void SASI::write_io8(uint32 addr, uint32 data)
 					sector++;
 					buffer_ptr = 0;
 					if(!seek(unit)) {
-						error = 0x0f;
-						phase++;
+						set_status(0x0f);
+						set_drq(false);
 					}
 				}
 				else {
-					phase++;
+					set_status(0);
+					set_drq(false);
 				}
-			}
-		}
-		else if(phase == 10) {
-			if(++state_ptr == 10) {
-				phase = 4;
 			}
 		}
 		datareg = data;
@@ -89,18 +113,17 @@ void SASI::write_io8(uint32 addr, uint32 data)
 	case 0xa5:
 		// cmd
 		if(data == 0x00) {
-			if(phase == 1) {
-				phase = (device == 0) ? 2 : 0;
+			if(phase == PHASE_SELECT) {
+				phase = PHASE_COMMAND;
+				cmd_ptr = 0;
 			}
 		}
 		else if(data == 0x20) {
-			device = (datareg & 1) ? 0 : 0x7f;
-			if(device == 0) {
-				phase = 1;
-				cmd_ptr = 0;
+			if(datareg & 1) {
+				phase = PHASE_SELECT;
 			}
 			else {
-				phase = 0;
+				phase = PHASE_FREE;
 			}
 		}
 		break;
@@ -114,224 +137,158 @@ uint32 SASI::read_io8(uint32 addr)
 	switch(addr & 0xff) {
 	case 0xa4:
 		// data
-		if(phase == 3 && rw_mode) {
+		if(phase == PHASE_READ) {
 			val = buffer[buffer_ptr++];
 			if(buffer_ptr == 256) {
 				if(--blocks) {
 					sector++;
 					buffer_ptr = 0;
 					if(!seek(unit)) {
-						error = 0x0f;
-						phase++;
+						set_status(0x0f);
+						set_drq(false);
 					}
 				}
 				else {
-					phase++;
+					set_status(0);
+					set_drq(false);
 				}
 			}
 		}
-		else if(phase == 4) {
-			val = error ? 0x02 : state;
-			phase++;
-		}
-		else if(phase == 5) {
-			phase = 0;
-		}
-		else if(phase == 9) {
-			val = state_buf[state_ptr++];
-			if(state_ptr == 4) {
-				error = 0;
-				phase = 4;
+		else if(phase == PHASE_SENSE) {
+			val = status_buf[status_ptr++];
+			if(status_ptr == 4) {
+				set_status(0);
 			}
+		}
+		else if(phase == PHASE_STATUS) {
+			val = error ? 0x02 : status;
+			phase = PHASE_MESSAGE;
+		}
+		else if(phase == PHASE_MESSAGE) {
+			phase = PHASE_FREE;
 		}
 		return val;
 	case 0xa5:
 		// status
-		if(phase) {
-			val |= 0x20;	// busy
+		val = status_irq_drq;
+		status_irq_drq &= ~STATUS_IRQ;
+		if(phase != PHASE_FREE) {
+			val |= STATUS_BSY;
 		}
-		if(phase > 1) {
-			val |= 0x80;	// req
+		if(phase > PHASE_SELECT) {
+			val |= STATUS_REQ;
 		}
-		if(phase == 2) {
-			val |= 0x08;	// c/d
+		if(phase == PHASE_COMMAND) {
+			val |= STATUS_CXD;
 		}
-		if(phase == 3 && rw_mode) {
-			val |= 0x04;	// i/o
+		if(phase == PHASE_SENSE) {
+			val |= STATUS_IXD;
 		}
-		if(phase == 9) {
-			val |= 0x04;	// i/o
+		if(phase == PHASE_READ) {
+			val |= STATUS_IXD;
 		}
-		if(phase == 4 || phase == 5) {
-			val |= 0x0c;	// i/o & c/d
+		if(phase == PHASE_STATUS) {
+			val |= STATUS_IXD | STATUS_CXD;
 		}
-		if(phase == 5) {
-			val |= 0x10;	// msg
+		if(phase == PHASE_MESSAGE) {
+			val |= STATUS_IXD | STATUS_CXD | STATUS_MSG;
 		}
 		return val;
 	}
 	return 0xff;
 }
 
+void SASI::write_dma_io8(uint32 addr, uint32 data)
+{
+	write_io8(0xa4, data);
+}
+
+uint32 SASI::read_dma_io8(uint32 addr)
+{
+	return read_io8(0xa4);
+}
+
 uint32 SASI::read_signal(int ch)
 {
 	// get access status
-	uint32 stat = (access[0] ? 0x10 : 0) | (access[1] ? 0x20 : 0);
-	access[0] = access[1] = false;
+	uint32 stat = (drive[0].access ? 0x10 : 0) | (drive[1].access ? 0x20 : 0);
+	drive[0].access = drive[1].access = false;
 	return stat;
-}
-
-int SASI::seek(int drv)
-{
-	memset(buffer, 0, sizeof(buffer));
-	
-	if(!file_exist[drv & 1]) {
-		return -1;
-	}
-	FILEIO* fio = new FILEIO();
-	if(!fio->Fopen(file_path[drv & 1], FILEIO_READ_BINARY)) {
-		delete fio;
-		return -1;
-	}
-	if(fio->Fseek(sector * 256, FILEIO_SEEK_SET) != 0) {
-		fio->Fclose();
-		delete fio;
-		return 0;
-	}
-	if(fio->Fread(buffer, 256, 1) != 1) {
-		fio->Fclose();
-		delete fio;
-		return 0;
-	}
-	fio->Fclose();
-	delete fio;
-	access[drv & 1] = true;
-	return 1;
-}
-
-int SASI::flush(int drv)
-{
-	if(!file_exist[drv & 1]) {
-		return -1;
-	}
-	FILEIO* fio = new FILEIO();
-	if(!fio->Fopen(file_path[drv & 1], FILEIO_READ_WRITE_BINARY)) {
-		delete fio;
-		return -1;
-	}
-	if(fio->Fseek(sector * 256, FILEIO_SEEK_SET) != 0) {
-		fio->Fclose();
-		delete fio;
-		return 0;
-	}
-	if(fio->Fwrite(buffer, 256, 1) != 1) {
-		fio->Fclose();
-		delete fio;
-		return 0;
-	}
-	fio->Fclose();
-	delete fio;
-	access[drv & 1] = true;
-	return 1;
-}
-
-int SASI::format(int drv)
-{
-	if(!file_exist[drv & 1]) {
-		return -1;
-	}
-	FILEIO* fio = new FILEIO();
-	if(!fio->Fopen(file_path[drv & 1], FILEIO_READ_WRITE_BINARY)) {
-		delete fio;
-		return -1;
-	}
-	if(fio->Fseek(sector * 256, FILEIO_SEEK_SET) != 0) {
-		fio->Fclose();
-		delete fio;
-		return 0;
-	}
-	// format 33 blocks
-	memset(buffer, 0, sizeof(buffer));
-	for(int i = 0; i < 33; i++) {
-		if(fio->Fwrite(buffer, 256, 1) != 1) {
-			fio->Fclose();
-			delete fio;
-			return 0;
-		}
-	}
-	fio->Fclose();
-	delete fio;
-	access[drv & 1] = true;
-	return 1;
 }
 
 void SASI::check_cmd()
 {
-	int result;
 	unit = (cmd[1] >> 5) & 1;
 	
 	switch(cmd[0]) {
 	case 0x00:
-		if(device == 0) {
-			state = 0;
-			error = 0;
+		// test drive ready
+		if(drive[unit].fio != NULL) {
+			status = 0x00;
+			set_status(0x00);
 		}
 		else {
-			state = 0x02;
-			error = 0x7f;
+			status = 0x02;
+			set_status(0x7f);
 		}
-		phase = 4;
 		break;
 	case 0x01:
-		if(device == 0) {
+		// recalib
+		if(drive[unit].fio != NULL) {
 			sector = 0;
-			state = 0;
+			status = 0x00;
+			set_status(0x00);
 		}
 		else {
-			state = 0x02;
-			error = 0x7f;
+			status = 0x02;
+			set_status(0x7f);
 		}
-		phase = 4;
 		break;
 	case 0x03:
-		state_buf[0] = error;
-		state_buf[1] = (uint8)((unit << 5) | ((sector >> 16) & 0x1f));
-		state_buf[2] = (uint8)(sector >> 8);
-		state_buf[3] = (uint8)sector;
+		// request sense status
+		phase = PHASE_SENSE;
+		status_buf[0] = error;
+		status_buf[1] = (uint8)((unit << 5) | ((sector >> 16) & 0x1f));
+		status_buf[2] = (uint8)(sector >> 8);
+		status_buf[3] = (uint8)sector;
 		error = 0;
-		phase = 9;
-		state = 0;
-		state_ptr = 0;
+		status = 0x00;
+		status_ptr = 0;
 		break;
 	case 0x04:
-		phase = 4;
-		state = 0;
+		// format drive
+		sector = 0;
+		status = 0x00;
+		set_status(0x0f);
 		break;
 	case 0x06:
-		error = 0;
-		state = 0;
-		phase = 4;
-		sector = cmd[1] & 0x1f;
-		sector = (sector << 8) | cmd[2];
-		sector = (sector << 8) | cmd[3];
-		result = format(unit);
-		if((result == 0) || (result == -1)) {
-			state = 0x02;
-			error = 0x7f;
-		}
-		break;
-	case 0x08:
+		// format track
 		sector = cmd[1] & 0x1f;
 		sector = (sector << 8) | cmd[2];
 		sector = (sector << 8) | cmd[3];
 		blocks = cmd[4];
-		phase = 3;
-		rw_mode = 1;
-		buffer_ptr = 0;
-		state = 0;
-		result = seek(unit);
-		if((result == 0) || (result == -1)) {
-			error = 0x0f;
+		status = 0;
+		if(format(unit)) {
+			set_status(0);
+		}
+		else {
+			set_status(0x0f);
+		}
+		break;
+	case 0x08:
+		// read data
+		sector = cmd[1] & 0x1f;
+		sector = (sector << 8) | cmd[2];
+		sector = (sector << 8) | cmd[3];
+		blocks = cmd[4];
+		status = 0;
+		if(blocks != 0 && seek(unit)) {
+			phase = PHASE_READ;
+			buffer_ptr = 0;
+			set_drq(true);
+		}
+		else {
+			set_status(0x0f);
 		}
 		break;
 	case 0x0a:
@@ -339,41 +296,117 @@ void SASI::check_cmd()
 		sector = (sector << 8) | cmd[2];
 		sector = (sector << 8) | cmd[3];
 		blocks = cmd[4];
-		phase = 3;
-		rw_mode = 0;
-		buffer_ptr = 0;
-		state = 0;
-		memset(buffer, 0, sizeof(buffer));
-		result = seek(unit);
-		if((result == 0) || (result == -1)) {
-			error = 0x0f;
+		status = 0;
+		if(blocks != 0 && seek(unit)) {
+			phase = PHASE_WRITE;
+			buffer_ptr = 0;
+			memset(buffer, 0, sizeof(buffer));
+			set_drq(true);
+		}
+		else {
+			set_status(0x0f);
 		}
 		break;
 	case 0x0b:
-		if(device == 0) {
-			state = 0;
-			error = 0;
-		}
-		else {
-			state = 0x02;
-			error = 0x7f;
-		}
-		phase = 4;
+		sector = cmd[1] & 0x1f;
+		sector = (sector << 8) | cmd[2];
+		sector = (sector << 8) | cmd[3];
+		blocks = cmd[4];
+		status = 0;
+		set_status(0);
 		break;
 	case 0xc2:
-		phase = 10;
-		state_ptr = 0;
-		if(device == 0) {
-			state = 0;
-			error = 0;
-		}
-		else {
-			state = 0x02;
-			error = 0x7f;
-		}
+		phase = PHASE_C2;
+		status_ptr = 0;
+		status = 0;
+//		error = 0;
 		break;
 	default:
-		phase = 4;
+		// unknown
+		set_status(0);
+		break;
 	}
+}
+
+void SASI::set_status(uint8 err)
+{
+	error = err;
+#if 1
+	phase = PHASE_STATUS;
+	// raise irq
+	status_irq_drq |= STATUS_IRQ;
+#else
+	vm->register_event(this, 0, 10, false, NULL);
+#endif
+}
+
+void SASI::event_callback(int event_id, int err)
+{
+#if 0
+	phase = PHASE_STATUS;
+	// raise irq
+	status_irq_drq |= STATUS_IRQ;
+#endif
+}
+
+void SASI::set_drq(bool flag)
+{
+	if(flag) {
+		status_irq_drq |= STATUS_DRQ;
+	}
+	else {
+		status_irq_drq &= ~STATUS_DRQ;
+	}
+}
+
+bool SASI::seek(int drv)
+{
+	memset(buffer, 0, sizeof(buffer));
+	
+	if(drive[drv & 1].fio == NULL) {
+		return false;
+	}
+	if(drive[drv & 1].fio->Fseek(sector * 256, FILEIO_SEEK_SET) != 0) {
+		return false;
+	}
+	if(drive[drv & 1].fio->Fread(buffer, 256, 1) != 1) {
+		return false;
+	}
+	drive[drv & 1].access = true;
+	return true;
+}
+
+bool SASI::flush(int drv)
+{
+	if(drive[drv & 1].fio == NULL) {
+		return false;
+	}
+	if(drive[drv & 1].fio->Fseek(sector * 256, FILEIO_SEEK_SET) != 0) {
+		return false;
+	}
+	if(drive[drv & 1].fio->Fwrite(buffer, 256, 1) != 1) {
+		return false;
+	}
+	drive[drv & 1].access = true;
+	return true;
+}
+
+bool SASI::format(int drv)
+{
+	if(drive[drv & 1].fio == NULL) {
+		return false;
+	}
+	if(drive[drv & 1].fio->Fseek(sector * 256, FILEIO_SEEK_SET) != 0) {
+		return false;
+	}
+	// format 33 blocks
+	memset(buffer, 0, sizeof(buffer));
+	for(int i = 0; i < 33; i++) {
+		if(drive[drv & 1].fio->Fwrite(buffer, 256, 1) != 1) {
+			return false;
+		}
+		drive[drv & 1].access = true;
+	}
+	return true;
 }
 

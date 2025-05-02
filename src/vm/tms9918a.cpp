@@ -23,7 +23,7 @@ static const scrntype palette_pc[16] = {
 void TMS9918A::initialize()
 {
 	// register event
-	vm->register_vline_event(this);
+	register_vline_event(this);
 }
 
 void TMS9918A::reset()

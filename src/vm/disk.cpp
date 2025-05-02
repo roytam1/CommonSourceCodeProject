@@ -75,7 +75,7 @@ static uint8 tmp_buffer[DISK_BUFFER_SIZE];
 
 DISK::DISK()
 {
-	insert = protect = change = false;
+	inserted = ejected = write_protected = changed = false;
 	file_size = 0;
 	track_size = 0x1800;
 	sector_size = sector_num = 0;
@@ -85,7 +85,7 @@ DISK::DISK()
 
 DISK::~DISK()
 {
-	if(insert) {
+	if(inserted) {
 		close();
 	}
 }
@@ -98,7 +98,7 @@ typedef struct fd_format {
 static const fd_format fd_formats[] = {
 	{ MEDIA_TYPE_2D,  40, 1, 16,  256 },	// 1D   160KB
 	{ MEDIA_TYPE_2D , 40, 2, 16,  256 },	// 2D   320KB
-//	{ MEDIA_TYPE_2DD, 80, 2, 16,  256 },	// 2DD  640KB
+//	{ MEDIA_TYPE_2DD, 80, 2, 16,  256 },	// 2DD  640KB (MZ-2500)
 	{ MEDIA_TYPE_2DD, 80, 2,  8,  512 },	// 2DD  640KB
 	{ MEDIA_TYPE_2DD, 80, 2,  9,  512 },	// 2DD  720KB
 	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024 },	// 2HD 1.25MB
@@ -130,7 +130,7 @@ static uint32 getcrc32(uint8 data[], int size)
 void DISK::open(_TCHAR path[])
 {
 	// check current disk image
-	if(insert) {
+	if(inserted) {
 		if(_tcsicmp(file_path, path) == 0) {
 			return;
 		}
@@ -147,7 +147,7 @@ void DISK::open(_TCHAR path[])
 		fi->Fseek(0, FILEIO_SEEK_END);
 		file_size = fi->Ftell();
 		fi->Fseek(0, FILEIO_SEEK_SET);
-		protect = fi->IsProtected(path);
+		write_protected = fi->IsProtected(path);
 		
 		// check image file format
 		for(int i = 0;; i++) {
@@ -159,38 +159,38 @@ void DISK::open(_TCHAR path[])
 			// 4096 bytes: FDI header ???
 			if(file_size == len || (file_size == (len + 4096) && (len == 655360 || len == 1261568))) {
 				fi->Fseek(file_size - len, FILEIO_SEEK_SET);
-				insert = standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size);
+				inserted = standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size);
 				_stprintf(file_path, _T("%s.D88"), path);
 				break;
 			}
 		}
-		if(!insert && 0 < file_size && file_size <= DISK_BUFFER_SIZE) {
+		if(!inserted && 0 < file_size && file_size <= DISK_BUFFER_SIZE) {
 			fi->Fread(buffer, file_size, 1);
-			insert = change = true;
+			inserted = changed = true;
 			
 			// check file header
 			if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
 				// teledisk image file
-				insert = teledisk_to_d88();
+				inserted = teledisk_to_d88();
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 			else if(memcmp(buffer, "IMD", 3) == 0) {
 				// imagedisk image file
-				insert = imagedisk_to_d88();
+				inserted = imagedisk_to_d88();
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 			else if(memcmp(buffer, "MV - CPC", 8) == 0) {
 				// standard cpdread image file
-				insert = cpdread_to_d88(0);
+				inserted = cpdread_to_d88(0);
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 			else if(memcmp(buffer, "EXTENDED", 8) == 0) {
 				// extended cpdread image file
-				insert = cpdread_to_d88(1);
+				inserted = cpdread_to_d88(1);
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 		}
-		if(insert) {
+		if(inserted) {
 			crc32 = getcrc32(buffer, file_size);
 		}
 		fi->Fclose();
@@ -205,16 +205,19 @@ void DISK::open(_TCHAR path[])
 void DISK::close()
 {
 	// write disk image
-	if(insert && !protect && file_size && getcrc32(buffer, file_size) != crc32) {
-		// write image
-		FILEIO* fio = new FILEIO();
-		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-			fio->Fwrite(buffer, file_size, 1);
-			fio->Fclose();
+	if(inserted) {
+		if(!write_protected && file_size && getcrc32(buffer, file_size) != crc32) {
+			// write image
+			FILEIO* fio = new FILEIO();
+			if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+				fio->Fwrite(buffer, file_size, 1);
+				fio->Fclose();
+			}
+			delete fio;
 		}
-		delete fio;
+		ejected = true;
 	}
-	insert = protect = false;
+	inserted = write_protected = false;
 	file_size = 0;
 	sector_size = sector_num = 0;
 	sector = NULL;
@@ -225,7 +228,7 @@ bool DISK::get_track(int trk, int side)
 	sector_size = sector_num = 0;
 	
 	// disk not inserted or invalid media type
-	if(!(insert && check_media_type())) {
+	if(!(inserted && check_media_type())) {
 		return false;
 	}
 	
@@ -265,7 +268,7 @@ bool DISK::make_track(int trk, int side)
 	track_size = 0x1800;
 	
 	// disk not inserted or invalid media type
-	if(!(insert && check_media_type())) {
+	if(!(inserted && check_media_type())) {
 		return false;
 	}
 	
@@ -373,7 +376,7 @@ bool DISK::get_sector(int trk, int side, int index)
 	sector = NULL;
 	
 	// disk not inserted or invalid media type
-	if(!(insert && check_media_type())) {
+	if(!(inserted && check_media_type())) {
 		return false;
 	}
 	

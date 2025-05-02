@@ -16,13 +16,11 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	300
 #define FRAMES_PER_SEC		30
 #define LINES_PER_FRAME 	256
 #define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		357
-//#define USE_PCM1BIT
 #define MEMORY_ADDR_MAX		0x10000
 #define MEMORY_BANK_SIZE	0x2000
 

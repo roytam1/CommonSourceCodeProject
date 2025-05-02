@@ -18,10 +18,8 @@
 // device informations for virtual machine
 
 // TODO: check refresh rate
-#define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME 	220
-
 #define CPU_CLOCKS		4915200
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		200

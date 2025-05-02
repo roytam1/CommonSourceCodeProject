@@ -29,9 +29,9 @@ void RP5C15::initialize()
 	alarm = pulse_1hz = pulse_16hz = false;
 	
 	int register_id;
-	vm->register_event(this, EVENT_1HZ, 500000, true, &register_id);
-	vm->register_event(this, EVENT_16HZ, 31250, true, &register_id);
-	vm->register_frame_event(this);
+	register_event(this, EVENT_1HZ, 500000, true, &register_id);
+	register_event(this, EVENT_16HZ, 31250, true, &register_id);
+	register_frame_event(this);
 }
 
 void RP5C15::write_io8(uint32 addr, uint32 data)

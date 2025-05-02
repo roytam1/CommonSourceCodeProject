@@ -32,8 +32,13 @@
 #define ID_HC80_RAMDISK0                40031
 #define ID_HC80_RAMDISK1                40032
 #define ID_HC80_RAMDISK2                40033
-#define ID_MZ800_BOOT_MODE0             40031
-#define ID_MZ800_BOOT_MODE1             40032
+#define ID_MZ800_BOOT_MODE_MZ800        40031
+#define ID_MZ800_BOOT_MODE_MZ700        40032
+#define ID_PC98DO_BOOT_MODE_PC98        40031
+#define ID_PC98DO_BOOT_MODE_PC88_V1S    40032
+#define ID_PC98DO_BOOT_MODE_PC88_V1H    40033
+#define ID_PC98DO_BOOT_MODE_PC88_V2     40034
+#define ID_PC98DO_BOOT_MODE_PC88_N      40035
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102
@@ -46,49 +51,71 @@
 #define ID_RECENT_FD17                  40117
 #define ID_RECENT_FD18                  40118
 
-#define ID_OPEN_FD2                     40201
-#define ID_CLOSE_FD2                    40202
-#define ID_RECENT_FD21                  40211
-#define ID_RECENT_FD22                  40212
-#define ID_RECENT_FD23                  40213
-#define ID_RECENT_FD24                  40214
-#define ID_RECENT_FD25                  40215
-#define ID_RECENT_FD26                  40216
-#define ID_RECENT_FD27                  40217
-#define ID_RECENT_FD28                  40218
+#define ID_OPEN_FD2                     40121
+#define ID_CLOSE_FD2                    40122
+#define ID_RECENT_FD21                  40131
+#define ID_RECENT_FD22                  40132
+#define ID_RECENT_FD23                  40133
+#define ID_RECENT_FD24                  40134
+#define ID_RECENT_FD25                  40135
+#define ID_RECENT_FD26                  40136
+#define ID_RECENT_FD27                  40137
+#define ID_RECENT_FD28                  40138
 
-#define ID_OPEN_FD3                     40301
-#define ID_CLOSE_FD3                    40302
-#define ID_RECENT_FD31                  40311
-#define ID_RECENT_FD32                  40312
-#define ID_RECENT_FD33                  40313
-#define ID_RECENT_FD34                  40314
-#define ID_RECENT_FD35                  40315
-#define ID_RECENT_FD36                  40316
-#define ID_RECENT_FD37                  40317
-#define ID_RECENT_FD38                  40318
+#define ID_OPEN_FD3                     40141
+#define ID_CLOSE_FD3                    40142
+#define ID_RECENT_FD31                  40151
+#define ID_RECENT_FD32                  40152
+#define ID_RECENT_FD33                  40153
+#define ID_RECENT_FD34                  40154
+#define ID_RECENT_FD35                  40155
+#define ID_RECENT_FD36                  40156
+#define ID_RECENT_FD37                  40157
+#define ID_RECENT_FD38                  40158
 
-#define ID_OPEN_FD4                     40401
-#define ID_CLOSE_FD4                    40402
-#define ID_RECENT_FD41                  40411
-#define ID_RECENT_FD42                  40412
-#define ID_RECENT_FD43                  40413
-#define ID_RECENT_FD44                  40414
-#define ID_RECENT_FD45                  40415
-#define ID_RECENT_FD46                  40416
-#define ID_RECENT_FD47                  40417
-#define ID_RECENT_FD48                  40418
+#define ID_OPEN_FD4                     40161
+#define ID_CLOSE_FD4                    40162
+#define ID_RECENT_FD41                  40171
+#define ID_RECENT_FD42                  40172
+#define ID_RECENT_FD43                  40173
+#define ID_RECENT_FD44                  40174
+#define ID_RECENT_FD45                  40175
+#define ID_RECENT_FD46                  40176
+#define ID_RECENT_FD47                  40177
+#define ID_RECENT_FD48                  40178
 
-#define ID_OPEN_CART                    40501
-#define ID_CLOSE_CART                   40502
-#define ID_RECENT_CART1                 40511
-#define ID_RECENT_CART2                 40512
-#define ID_RECENT_CART3                 40513
-#define ID_RECENT_CART4                 40514
-#define ID_RECENT_CART5                 40515
-#define ID_RECENT_CART6                 40516
-#define ID_RECENT_CART7                 40517
-#define ID_RECENT_CART8                 40518
+#define ID_OPEN_FD5                     40181
+#define ID_CLOSE_FD5                    40182
+#define ID_RECENT_FD51                  40191
+#define ID_RECENT_FD52                  40192
+#define ID_RECENT_FD53                  40193
+#define ID_RECENT_FD54                  40194
+#define ID_RECENT_FD55                  40195
+#define ID_RECENT_FD56                  40196
+#define ID_RECENT_FD57                  40197
+#define ID_RECENT_FD58                  40198
+
+#define ID_OPEN_FD6                     40201
+#define ID_CLOSE_FD6                    40202
+#define ID_RECENT_FD61                  40211
+#define ID_RECENT_FD62                  40212
+#define ID_RECENT_FD63                  40213
+#define ID_RECENT_FD64                  40214
+#define ID_RECENT_FD65                  40215
+#define ID_RECENT_FD66                  40216
+#define ID_RECENT_FD67                  40217
+#define ID_RECENT_FD68                  40218
+
+#define ID_OPEN_CART                    40221
+#define ID_CLOSE_CART                   40222
+#define ID_RECENT_CART1                 40231
+#define ID_RECENT_CART2                 40232
+#define ID_RECENT_CART3                 40233
+#define ID_RECENT_CART4                 40234
+#define ID_RECENT_CART5                 40235
+#define ID_RECENT_CART6                 40236
+#define ID_RECENT_CART7                 40237
+#define ID_RECENT_CART8                 40238
 
 #define ID_PLAY_DATAREC                 40601
 #define ID_REC_DATAREC                  40602
@@ -310,6 +337,24 @@
 #define MENU_POS_SOUND                  6
 #endif
 
+// TOSHIBA J-3100GT
+#ifdef _J3100GT
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// TOSHIBA J-3100SL
+#ifdef _J3100SL
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
 // IBM Japan Ltd PC/JX
 #ifdef _JX
 #define MENU_POS_CONTROL                0
@@ -517,9 +562,11 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
-#define MENU_POS_SCREEN                 6
-#define MENU_POS_SOUND                  7
+#define MENU_POS_FD5                    5
+#define MENU_POS_FD6                    6
+#define MENU_POS_DATAREC                7
+#define MENU_POS_SCREEN                 8
+#define MENU_POS_SOUND                  9
 #endif
 
 // NEC PC-9801E/F/M
@@ -529,9 +576,31 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
-#define MENU_POS_SCREEN                 6
-#define MENU_POS_SOUND                  7
+#define MENU_POS_FD5                    5
+#define MENU_POS_FD6                    6
+#define MENU_POS_DATAREC                7
+#define MENU_POS_SCREEN                 8
+#define MENU_POS_SOUND                  9
+#endif
+
+// NEC PC-9801VM
+#ifdef _PC9801VM
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// NEC PC-98DO
+#ifdef _PC98DO
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // NEC PC-98HA

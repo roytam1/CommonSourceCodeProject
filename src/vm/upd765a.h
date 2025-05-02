@@ -19,7 +19,9 @@
 #define SIG_UPD765A_TC		1
 #define SIG_UPD765A_MOTOR	2
 #define SIG_UPD765A_DRVSEL	3
-#define SIG_UPD765A_FREADY	4
+#define SIG_UPD765A_IRQ_MASK	4
+#define SIG_UPD765A_DRQ_MASK	5
+#define SIG_UPD765A_FREADY	6
 
 class DISK;
 
@@ -41,30 +43,32 @@ private:
 	outputs_t outputs_hdu;
 	outputs_t outputs_acctc;
 	outputs_t outputs_index;
+#ifdef _FDC_DEBUG_LOG
+	DEVICE *d_cpu;
+#endif
 	
 	uint8 hdu, hdue, id[4], eot, gpl, dtl;
 	
 	int phase, prevphase;
 	uint8 status, seekstat, command;
 	uint32 result;
-	bool acctc, irq, drq, motor;
+	bool acctc, no_dma_mode, motor;
+#ifdef UPD765A_DMA_MODE
+	bool dma_data_lost;
+#endif
+	bool irq_masked, drq_masked;
 	
 	uint8* bufptr;
 	uint8 buffer[0x4000];
 	int count;
 	int event_phase, event_drv;
 	int phase_id, seek_id, drq_id, lost_id, result7_id;
-#ifdef UPD765A_DMA_MODE
-	bool dma_data_lost;
-#endif
 	bool force_ready;
 	bool reset_signal;
 	int index_count;
 	
 	// update status
 	void set_irq(bool val);
-	void req_irq(bool val);
-	void req_irq_ndma(bool val);
 	void set_drq(bool val);
 	void set_hdu(uint8 val);
 	void set_acctc(bool val);
@@ -116,6 +120,9 @@ public:
 		init_output_signals(&outputs_hdu);
 		init_output_signals(&outputs_acctc);
 		init_output_signals(&outputs_index);
+#ifdef _FDC_DEBUG_LOG
+		d_cpu = NULL;
+#endif
 	}
 	~UPD765A() {}
 	
@@ -147,10 +154,20 @@ public:
 	void set_context_index(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_index, device, id, mask);
 	}
+#ifdef _FDC_DEBUG_LOG
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+#endif
+	DISK* get_disk_handler(int drv) {
+		return disk[drv];
+	}
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 	bool disk_inserted();	// current hdu
+	bool disk_ejected(int drv);
+	bool disk_ejected();	// current hdu
 	uint8 media_type(int drv);
 	void set_drive_type(int drv, uint8 type);
 	uint8 get_drive_type(int drv);

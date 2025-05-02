@@ -27,7 +27,6 @@
 
 // device informations for virtual machine
 #if defined(_MZ800)
-#define FRAMES_PER_10SECS	500
 #define FRAMES_PER_SEC		50
 #define LINES_PER_FRAME		312
 //#define CPU_CLOCKS		3546900
@@ -36,7 +35,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #else
-#define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
 //#define CPU_CLOCKS		3579545
@@ -46,7 +44,6 @@
 #define SCREEN_HEIGHT		200
 #endif
 #define IO_ADDR_MAX		0x100
-#define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
 //#define LOW_PASS_FILTER
 #define CPU_MEMORY_WAIT
@@ -154,6 +151,10 @@ protected:
 	PSG* psg;
 #endif
 	QUICKDISK* qd;
+#endif
+	
+#if defined(_MZ800)
+	int boot_mode;
 #endif
 	
 public:

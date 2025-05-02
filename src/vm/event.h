@@ -26,21 +26,20 @@
 class EVENT : public DEVICE
 {
 private:
-	DEVICE* d_cpu[MAX_CPU];
-	DEVICE* d_sound[MAX_SOUND];
-	int dcount_cpu, dcount_sound;
+	// event manager
+	typedef struct {
+		DEVICE* device;
+		int cpu_clocks;
+		int update_clocks;
+		int accum_clocks;
+	} cpu_t;
+	cpu_t d_cpu[MAX_CPU];
+	int dcount_cpu;
 	
-	// machine setting
-	int cpu_clocks;
-	double frames_per_sec;
-	int lines_per_frame;
-	
-	// cpu clock
 	int vclocks[MAX_LINES];
 	int power;
-	uint32 accum;
+	uint32 accum_clocks;
 	
-	// event manager
 	typedef struct {
 		bool enable;
 		DEVICE* device;
@@ -51,12 +50,22 @@ private:
 	event_t event[MAX_EVENT];
 	DEVICE* frame_event[MAX_EVENT];
 	DEVICE* vline_event[MAX_EVENT];
-	int next, past, next_id;
-	int event_cnt, frame_event_cnt, vline_event_cnt;
+	
+	int event_base_clocks;	// this must be cpu clocks of first cpu !!!
+	double frames_per_sec;
+	int lines_per_frame;
+	bool update_timing;
+	
+	int next_clock, past_clock, next_id;
+	int event_count, frame_event_count, vline_event_count;
 	bool get_nextevent;
 	void update_event(int clock);
+	void get_next_event();
 	
 	// sound manager
+	DEVICE* d_sound[MAX_SOUND];
+	int dcount_sound;
+	
 	uint16* sound_buffer;
 	int32* sound_tmp;
 	int buffer_ptr;
@@ -71,11 +80,12 @@ private:
 public:
 	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_cpu = dcount_sound = 0;
-		event_cnt = frame_event_cnt = vline_event_cnt = 0;
+		event_count = frame_event_count = vline_event_count = 0;
 		get_nextevent = true;
-		cpu_clocks = CPU_CLOCKS;
+		event_base_clocks = CPU_CLOCKS;
 		frames_per_sec = FRAMES_PER_SEC;
 		lines_per_frame = LINES_PER_FRAME;
+		update_timing = true;
 	}
 	~EVENT() {}
 	
@@ -85,32 +95,52 @@ public:
 	void reset();
 	void update_config();
 	
-	// unique functions
-	void drive();
-	uint32 current_clock();
+	// common event functions
 	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
 	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
 	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
+	void register_frame_event(DEVICE* device);
+	void register_vline_event(DEVICE* device);
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc(int index);
+	
+	// unique functions
+	void drive();
 	
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	
+	void set_context_cpu(DEVICE* device, int clocks) {
+		int index = dcount_cpu++;
+		d_cpu[index].device = device;
+		d_cpu[index].cpu_clocks = clocks;
+		d_cpu[index].update_clocks = (clocks == event_base_clocks) ? 1024 : (int)(1024. * clocks / event_base_clocks + 0.5);
+		d_cpu[index].accum_clocks = 0;
+	}
 	void set_context_cpu(DEVICE* device) {
-		d_cpu[dcount_cpu++] = device;
+		set_context_cpu(device, event_base_clocks);
 	}
 	void set_context_sound(DEVICE* device) {
 		d_sound[dcount_sound++] = device;
 	}
-	void set_cpu_clocks(int clocks) {
-		cpu_clocks = clocks;
+	void set_event_base_clocks(int clocks) {
+		if(event_base_clocks != clocks) {
+			event_base_clocks = clocks;
+			update_timing = true;
+		}
 	}
-	void set_frames_per_sec(int frames) {
-		frames_per_sec = frames;
+	void set_frames_per_sec(double frames) {
+		if(frames_per_sec != frames) {
+			frames_per_sec = frames;
+			update_timing = true;
+		}
 	}
 	void set_lines_per_frame(int lines) {
-		lines_per_frame = lines;
+		if(lines_per_frame != lines) {
+			lines_per_frame = lines;
+			update_timing = true;
+		}
 	}
 };
 

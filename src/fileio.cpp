@@ -21,7 +21,7 @@ FILEIO::~FILEIO(void)
 
 bool FILEIO::IsProtected(_TCHAR *filename)
 {
-	return (GetFileAttributes(filename) & FILE_ATTRIBUTE_READONLY) ? true : false;
+	return ((GetFileAttributes(filename) & FILE_ATTRIBUTE_READONLY) != 0);
 }
 
 bool FILEIO::Fopen(_TCHAR *filename, int mode)
@@ -30,17 +30,17 @@ bool FILEIO::Fopen(_TCHAR *filename, int mode)
 	
 	switch(mode) {
 	case FILEIO_READ_BINARY:
-		return ((fp = _tfopen(filename, _T("rb"))) == NULL) ? false : true;
+		return ((fp = _tfopen(filename, _T("rb"))) != NULL);
 	case FILEIO_WRITE_BINARY:
-		return ((fp = _tfopen(filename, _T("wb"))) == NULL) ? false : true;
+		return ((fp = _tfopen(filename, _T("wb"))) != NULL);
 	case FILEIO_READ_WRITE_BINARY:
-		return ((fp = _tfopen(filename, _T("r+b"))) == NULL) ? false : true;
+		return ((fp = _tfopen(filename, _T("r+b"))) != NULL);
 	case FILEIO_READ_ASCII:
-		return ((fp = _tfopen(filename, _T("r"))) == NULL) ? false : true;
+		return ((fp = _tfopen(filename, _T("r"))) != NULL);
 	case FILEIO_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("w"))) == NULL) ? false : true;
+		return ((fp = _tfopen(filename, _T("w"))) != NULL);
 	case FILEIO_READ_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("r+w"))) == NULL) ? false : true;
+		return ((fp = _tfopen(filename, _T("r+w"))) != NULL);
 	}
 	return false;
 }

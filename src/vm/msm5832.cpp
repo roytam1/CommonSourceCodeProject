@@ -36,8 +36,8 @@ void MSM5832::initialize()
 	cnt1 = cnt2 = 0;
 	
 	// register event
-	vm->register_event_by_clock(this, EVENT_1024HZ, CPU_CLOCKS / 2048, true, NULL);
-	vm->register_event_by_clock(this, EVENT_3600HZ, CPU_CLOCKS / 3600, true, NULL);
+	register_event_by_clock(this, EVENT_1024HZ, CPU_CLOCKS / 2048, true, NULL);
+	register_event_by_clock(this, EVENT_3600HZ, CPU_CLOCKS / 3600, true, NULL);
 }
 
 void MSM5832::write_io8(uint32 addr, uint32 data)
@@ -103,7 +103,7 @@ void MSM5832::event_callback(int event_id, int err)
 				output();
 			}
 			// register event
-			vm->register_event_by_clock(this, EVENT_PULSE_OFF, CPU_CLOCKS / 8192, false, NULL);
+			register_event_by_clock(this, EVENT_PULSE_OFF, CPU_CLOCKS / 8192, false, NULL);
 		}
 		if(++cnt1 == 60) {
 			cnt1 = 0;

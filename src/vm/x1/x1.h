@@ -30,7 +30,6 @@
 // device informations for virtual machine (x1)
 //#ifdef _X1TURBO
 //24KHz
-//#define FRAMES_PER_10SECS	554
 //#define FRAMES_PER_SEC	55.4
 //#define LINES_PER_FRAME	448
 //#define CHARS_PER_LINE	56
@@ -38,7 +37,6 @@
 //#define CPU_CLOCKS		3995891
 //#else
 // 15KHz
-#define FRAMES_PER_10SECS	620
 #define FRAMES_PER_SEC		62
 #define LINES_PER_FRAME 	258
 #define CHARS_PER_LINE		56
@@ -215,23 +213,11 @@ public:
 	void register_frame_event(DEVICE* dev);
 	void register_vline_event(DEVICE* dev);
 	void register_crtc_vline_event(DEVICE* dev);
-#ifdef _X1TWIN
-	void pce_register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void pce_register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void pce_cancel_event(int register_id);
-	void pce_register_frame_event(DEVICE* dev);
-	void pce_register_vline_event(DEVICE* dev);
-#endif
 	
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
 	uint32 get_prv_pc();
-#ifdef _X1TWIN
-	uint32 pce_current_clock();
-	uint32 pce_passed_clock(uint32 prev);
-	uint32 pce_get_prv_pc();
-#endif
 	
 	// devices
 	DEVICE* get_device(int id);

@@ -100,12 +100,12 @@ void I8251::write_io8(uint32 addr, uint32 data)
 			// rxen
 			rxen = ((data & 4) != 0);
 			if(rxen && !recv_buffer->empty() && recv_id == -1) {
-				vm->register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+				register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 			}
 			// txen
 			txen = ((data & 1) != 0);
 			if(txen && !send_buffer->empty() && send_id == -1) {
-				vm->register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
+				register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
 			}
 			// note: when txen=false, txrdy signal must be low
 			break;
@@ -124,7 +124,7 @@ void I8251::write_io8(uint32 addr, uint32 data)
 			write_signals(&outputs_txe, 0);
 			// register event
 			if(txen && send_id == -1) {
-				vm->register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
+				register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
 			}
 		}
 	}
@@ -150,7 +150,7 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 		recv_buffer->write(data & mask);
 		// register event
 		if(rxen && !recv_buffer->empty() && recv_id == -1) {
-			vm->register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+			register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 		}
 	}
 	else if(id == SIG_I8251_BREAK) {
@@ -158,7 +158,7 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 			recv_buffer->write(RECV_BREAK);
 			// register event
 			if(rxen && !recv_buffer->empty() && recv_id == -1) {
-				vm->register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+				register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 			}
 		}
 	}
@@ -198,7 +198,7 @@ void I8251::event_callback(int event_id, int err)
 		}
 		// if data is still left in buffer, register event for next data
 		if(rxen && !recv_buffer->empty()) {
-			vm->register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+			register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 		}
 		else {
 			recv_id = -1;
@@ -226,7 +226,7 @@ void I8251::event_callback(int event_id, int err)
 		}
 		// if data is still left in buffer, register event for next data
 		if(txen && !send_buffer->empty()) {
-			vm->register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
+			register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
 		}
 		else {
 			send_id = -1;

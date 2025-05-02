@@ -107,7 +107,7 @@ BEGIN
         MENUITEM "Recent 7",                    ID_RECENT_FD17
         MENUITEM "Recent 8",                    ID_RECENT_FD18
     END
-    POPUP "FDD-1MB #2"
+    POPUP "#2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2
@@ -135,7 +135,7 @@ BEGIN
         MENUITEM "Recent 7",                    ID_RECENT_FD37
         MENUITEM "Recent 8",                    ID_RECENT_FD38
     END
-    POPUP "FDD-640KB #2"
+    POPUP "#2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD4
         MENUITEM "Close",                       ID_CLOSE_FD4
@@ -148,6 +148,34 @@ BEGIN
         MENUITEM "Recent 6",                    ID_RECENT_FD46
         MENUITEM "Recent 7",                    ID_RECENT_FD47
         MENUITEM "Recent 8",                    ID_RECENT_FD48
+    END
+    POPUP "FDD-320KB #1"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD5
+        MENUITEM "Close",                       ID_CLOSE_FD5
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD51
+        MENUITEM "Recent 2",                    ID_RECENT_FD52
+        MENUITEM "Recent 3",                    ID_RECENT_FD53
+        MENUITEM "Recent 4",                    ID_RECENT_FD54
+        MENUITEM "Recent 5",                    ID_RECENT_FD55
+        MENUITEM "Recent 6",                    ID_RECENT_FD56
+        MENUITEM "Recent 7",                    ID_RECENT_FD57
+        MENUITEM "Recent 8",                    ID_RECENT_FD58
+    END
+    POPUP "#2"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD6
+        MENUITEM "Close",                       ID_CLOSE_FD6
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD61
+        MENUITEM "Recent 2",                    ID_RECENT_FD62
+        MENUITEM "Recent 3",                    ID_RECENT_FD63
+        MENUITEM "Recent 4",                    ID_RECENT_FD64
+        MENUITEM "Recent 5",                    ID_RECENT_FD65
+        MENUITEM "Recent 6",                    ID_RECENT_FD66
+        MENUITEM "Recent 7",                    ID_RECENT_FD67
+        MENUITEM "Recent 8",                    ID_RECENT_FD68
     END
     POPUP "CMT"
     BEGIN
@@ -206,8 +234,6 @@ BEGIN
         MENUITEM "400 Lines, Digital",          ID_SCREEN_MONITOR_TYPE1
         MENUITEM "200 Lines, Analog",           ID_SCREEN_MONITOR_TYPE2
         MENUITEM "200 Lines, Digital",          ID_SCREEN_MONITOR_TYPE3
-        MENUITEM SEPARATOR
-        MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"
     BEGIN

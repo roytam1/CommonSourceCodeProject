@@ -22,7 +22,6 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	564
 #define FRAMES_PER_SEC		56.4
 #define LINES_PER_FRAME 	440
 #ifdef _PC98HA
@@ -38,7 +37,6 @@
 #define I8259_MAX_CHIPS		1
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
-#define UPD765A_STRICT_ID
 #define UPD765A_MEDIA_CHANGE
 //#define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x10000

@@ -15,13 +15,17 @@
 #include "../../emu.h"
 #include "../device.h"
 
+class FILEIO;
+
 class SASI : public DEVICE
 {
 private:
-	int seek(int drv);
-	int flush(int drv);
-	int format(int drv);
 	void check_cmd();
+	void set_status(uint8 err);
+	void set_drq(bool val);
+	bool seek(int drv);
+	bool flush(int drv);
+	bool format(int drv);
 	
 	uint8 buffer[256];
 	int phase;
@@ -29,19 +33,20 @@ private:
 	int blocks;
 	uint8 cmd[6];
 	int cmd_ptr;
-	int device;
 	int unit;
 	int buffer_ptr;
-	int rw_mode;
-	uint8 state;
+	uint8 status;
+	uint8 status_irq_drq;
 	uint8 error;
-	uint8 state_buf[4];
-	int state_ptr;
+	uint8 status_buf[4];
+	int status_ptr;
 	uint8 datareg;
 	
-	_TCHAR file_path[2][_MAX_PATH];
-	bool file_exist[2];
-	bool access[2];
+	typedef struct {
+		FILEIO *fio;
+		bool access;
+	} drive_t;
+	drive_t drive[2];
 	
 public:
 	SASI(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -49,9 +54,13 @@ public:
 	
 	// common functions
 	void initialize();
+	void release();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_dma_io8(uint32 addr, uint32 data);
+	uint32 read_dma_io8(uint32 addr);
 	uint32 read_signal(int ch);
+	void event_callback(int event_id, int err);
 };
 
 #endif

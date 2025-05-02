@@ -1,6 +1,7 @@
 /*
 	NEC PC-9801 Emulator 'ePC-9801'
 	NEC PC-9801E/F/M Emulator 'ePC-9801E'
+	NEC PC-98DO Emulator 'ePC-98DO'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -21,14 +22,24 @@
 #define SCROLL_SUR	4
 #define SCROLL_SDR	5
 
-#define MODE_ATRSEL	0
-#define MODE_GRAPHIC	1
-#define MODE_COLUMN	2
-#define MODE_FONTSEL	3
-#define MODE_200LINE	4
-#define MODE_KAC	5
-#define MODE_MEMSW	6
-#define MODE_DISP	7
+#define MODE1_ATRSEL	0
+#define MODE1_GRAPHIC	1
+#define MODE1_COLUMN	2
+#define MODE1_FONTSEL	3
+#define MODE1_200LINE	4
+#define MODE1_KAC	5
+#define MODE1_MEMSW	6
+#define MODE1_DISP	7
+
+#define MODE2_16COLOR	0x00
+#define MDOE2_TXTSHIFT	0x20
+
+#define GRCG_PLANE_0	0x01
+#define GRCG_PLANE_1	0x02
+#define GRCG_PLANE_2	0x04
+#define GRCG_PLANE_3	0x08
+#define GRCG_RW_MODE	0x40
+#define GRCG_CG_MODE	0x80
 
 #define ATTR_ST		0x01
 #define ATTR_BL		0x02
@@ -105,13 +116,16 @@ void DISPLAY::initialize()
 	// init palette
 	for(int i = 0; i < 8; i++) {
 		palette_chr[i] = RGB_COLOR((i & 2) ? 0xff : 0, (i & 4) ? 0xff : 0, (i & 1) ? 0xff : 0);
-		palette_gfx[i] = 0;//RGB_COLOR((i & 2) ? 0xff : 0, (i & 4) ? 0xff : 0, (i & 1) ? 0xff : 0);
 	}
 	
-	digipal[0] = 0;//(3 << 4) | 7;
-	digipal[1] = 0;//(1 << 4) | 5;
-	digipal[2] = 0;//(2 << 4) | 6;
-	digipal[3] = 0;//(0 << 4) | 4;
+	memset(palette_gfx8, 0, sizeof(palette_gfx8));
+	memset(digipal, 0, sizeof(digipal));
+	
+#if defined(SUPPORT_16_COLORS)
+	memset(palette_gfx16, 0, sizeof(palette_gfx16));
+	memset(anapal, 0, sizeof(anapal));
+	anapal_sel = 0;
+#endif
 	
 	memset(tvram, 0, sizeof(tvram));
 	memset(vram, 0, sizeof(vram));
@@ -145,7 +159,10 @@ void DISPLAY::reset()
 	vram_disp_b = vram + 0x08000;
 	vram_disp_r = vram + 0x10000;
 	vram_disp_g = vram + 0x18000;
-	vram_draw   = vram + 0x08000;
+#if defined(SUPPORT_16_COLORS)
+	vram_disp_e = vram + 0x00000;
+#endif
+	vram_draw   = vram + 0x00000;
 	
 	d_gdc_chr->set_vram_ptr(tvram, 0x2000);
 	d_gdc_gfx->set_vram_ptr(vram, 0x20000);
@@ -159,7 +176,11 @@ void DISPLAY::reset()
 	scroll[SCROLL_SUR] = 0;
 	scroll[SCROLL_SDR] = 24;
 	
-	memset(mode_flipflop, 0, sizeof(mode_flipflop));
+	memset(modereg1, 0, sizeof(modereg1));
+#if defined(SUPPORT_16_COLORS)
+	memset(modereg2, 0, sizeof(modereg2));
+	grcg_mode = grcg_tile_ptr = 0;
+#endif
 	
 	font_code = 0;
 	font_line = 0;
@@ -185,8 +206,13 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		crtv = 1;
 		break;
 	case 0x68:
-		mode_flipflop[(data >> 1) & 7] = data & 1;
+		modereg1[(data >> 1) & 7] = data & 1;
 		break;
+#if defined(SUPPORT_16_COLORS)
+	case 0x6a:
+		modereg2[(data >> 1) & 127] = data & 1;
+		break;
+#endif
 	case 0x6c:
 //		border = (data >> 3) & 7;
 		break;
@@ -204,55 +230,98 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x7a:
 		scroll[(addr >> 1) & 7] = data;
 		break;
-#ifndef _PC9801
+#if defined(SUPPORT_16_COLORS)
+	case 0x7c:
+		grcg_mode = data;
+		grcg_tile_ptr = 0;
+		break;
+	case 0x7e:
+		grcg_tile[grcg_tile_ptr] = data;
+		grcg_tile_ptr = (grcg_tile_ptr + 1) & 3;
+		break;
+#endif
+#if defined(SUPPORT_2ND_VRAM)
 	// vram select
 	case 0xa4:
 		if(data & 1) {
 			vram_disp_b = vram + 0x28000;
 			vram_disp_r = vram + 0x30000;
 			vram_disp_g = vram + 0x38000;
+#if defined(SUPPORT_16_COLORS)
+			vram_disp_e = vram + 0x20000;
+#endif
 		}
 		else {
 			vram_disp_b = vram + 0x08000;
 			vram_disp_r = vram + 0x10000;
 			vram_disp_g = vram + 0x18000;
+#if defined(SUPPORT_16_COLORS)
+			vram_disp_e = vram + 0x00000;
+#endif
 		}
 		break;
 	case 0xa6:
 		if(data & 1) {
-			vram_draw = vram + 0x28000;
+			vram_draw = vram + 0x20000;
 			d_gdc_gfx->set_vram_ptr(vram + 0x20000, 0x20000);
 		}
 		else {
-			vram_draw = vram + 0x08000;
+			vram_draw = vram + 0x00000;
 			d_gdc_gfx->set_vram_ptr(vram, 0x20000);
 		}
 		break;
 #endif
 	// palette
 	case 0xa8:
+#if defined(SUPPORT_16_COLORS)
+		if(modereg2[MODE2_16COLOR]) {
+			anapal_sel = data & 0x0f;
+			break;
+		}
+#endif
 		digipal[0] = data;
-		palette_gfx[7] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[7] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[3] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[3] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	case 0xaa:
+#if defined(SUPPORT_16_COLORS)
+		if(modereg2[MODE2_16COLOR]) {
+			anapal[anapal_sel][0] = (data & 0x0f) << 4;
+			palette_gfx16[anapal_sel] = RGB_COLOR(anapal[anapal_sel][1], anapal[anapal_sel][0], anapal[anapal_sel][2]);
+			break;
+		}
+#endif
 		digipal[1] = data;
-		palette_gfx[5] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[5] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[1] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[1] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	case 0xac:
+#if defined(SUPPORT_16_COLORS)
+		if(modereg2[MODE2_16COLOR]) {
+			anapal[anapal_sel][1] = (data & 0x0f) << 4;
+			palette_gfx16[anapal_sel] = RGB_COLOR(anapal[anapal_sel][1], anapal[anapal_sel][0], anapal[anapal_sel][2]);
+			break;
+		}
+#endif
 		digipal[2] = data;
-		palette_gfx[6] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[6] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[2] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[2] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	case 0xae:
+#if defined(SUPPORT_16_COLORS)
+		if(modereg2[MODE2_16COLOR]) {
+			anapal[anapal_sel][2] = (data & 0x0f) << 4;
+			palette_gfx16[anapal_sel] = RGB_COLOR(anapal[anapal_sel][1], anapal[anapal_sel][0], anapal[anapal_sel][2]);
+			break;
+		}
+#endif
 		digipal[3] = data;
-		palette_gfx[4] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[4] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		data >>= 4;
-		palette_gfx[0] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
+		palette_gfx8[0] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	// cg window
 	case 0xa1:
@@ -310,14 +379,70 @@ void DISPLAY::write_memory_mapped_io8(uint32 addr, uint32 data)
 	}
 	else if(0xa3fe2 <= addr && addr < 0xa4000) {
 		// memory switch
-		if(mode_flipflop[MODE_MEMSW]) {
+		if(modereg1[MODE1_MEMSW]) {
 			tvram[addr - 0xa0000] = data;
 		}
 	}
 	else if(0xa8000 <= addr && addr < 0xc0000) {
-		vram_draw[addr - 0xa8000] = data;
+#if defined(SUPPORT_16_COLORS)
+		if(grcg_mode & GRCG_CG_MODE) {
+			write_grcg(addr, data);
+		}
+		else
+#endif
+		vram_draw[addr - 0xa0000] = data;
+	}
+#if defined(SUPPORT_16_COLORS)
+	else if(0xe0000 <= addr && addr < 0xe8000) {
+		if(grcg_mode & GRCG_CG_MODE) {
+			write_grcg(addr, data);
+		}
+		else {
+			vram_draw[addr - 0xe0000] = data;
+		}
+	}
+#endif
+}
+
+#if defined(SUPPORT_16_COLORS)
+void DISPLAY::write_grcg(uint32 addr, uint32 data)
+{
+	addr &= 0x7fff;
+	if(grcg_mode & GRCG_RW_MODE) {
+		/* RMW */
+		if(!(grcg_mode & GRCG_PLANE_0)) {
+			vram_draw[addr | 0x08000] &= ~data;
+			vram_draw[addr | 0x08000] |= grcg_tile[0] & data;
+		}
+		if(!(grcg_mode & GRCG_PLANE_1)) {
+			vram_draw[addr | 0x10000] &= ~data;
+			vram_draw[addr | 0x10000] |= grcg_tile[1] & data;
+		}
+		if(!(grcg_mode & GRCG_PLANE_2)) {
+			vram_draw[addr | 0x18000] &= ~data;
+			vram_draw[addr | 0x18000] |= grcg_tile[2] & data;
+		}
+		if(!(grcg_mode & GRCG_PLANE_3)) {
+			vram_draw[addr | 0x00000] &= ~data;
+			vram_draw[addr | 0x00000] |= grcg_tile[3] & data;
+		}
+	} else {
+		/* TDW */
+		if(!(grcg_mode & GRCG_PLANE_0)) {
+			vram_draw[addr | 0x08000] = grcg_tile[0];
+		}
+		if(!(grcg_mode & GRCG_PLANE_1)) {
+			vram_draw[addr | 0x10000] = grcg_tile[1];
+		}
+		if(!(grcg_mode & GRCG_PLANE_2)) {
+			vram_draw[addr | 0x18000] = grcg_tile[2];
+		}
+		if(!(grcg_mode & GRCG_PLANE_3)) {
+			vram_draw[addr | 0x00000] = grcg_tile[3];
+		}
 	}
 }
+#endif
 
 uint32 DISPLAY::read_memory_mapped_io8(uint32 addr)
 {
@@ -331,27 +456,90 @@ uint32 DISPLAY::read_memory_mapped_io8(uint32 addr)
 		return tvram[addr - 0xa0000];
 	}
 	else if(0xa8000 <= addr && addr < 0xc0000) {
-		return vram_draw[addr - 0xa8000];
+#if defined(SUPPORT_16_COLORS)
+		if(grcg_mode & GRCG_CG_MODE) {
+			return read_grcg(addr);
+		}
+#endif
+		return vram_draw[addr - 0xa0000];
 	}
+#if defined(SUPPORT_16_COLORS)
+	else if(0xe0000 <= addr && addr < 0xe8000) {
+		if(grcg_mode & GRCG_CG_MODE) {
+			return read_grcg(addr);
+		}
+		return vram_draw[addr - 0xe0000];
+	}
+#endif
 	return 0xff;
 }
+
+#if defined(SUPPORT_16_COLORS)
+uint32 DISPLAY::read_grcg(uint32 addr)
+{
+	if(grcg_mode & GRCG_RW_MODE) {
+		/* invalid */
+		if(0xe0000 <= addr && addr < 0xe8000) {
+			return vram_draw[addr - 0xe0000];
+		}
+		else {
+			return vram_draw[addr - 0xa0000];
+		}
+	}
+	else {
+		/* TCR */
+		uint8 data = 0;
+		addr &= 0x7fff;
+		if(!(grcg_mode & GRCG_PLANE_0)) {
+			data |= vram_draw[addr | 0x08000] ^ grcg_tile[0];
+		}
+		if(!(grcg_mode & GRCG_PLANE_1)) {
+			data |= vram_draw[addr | 0x10000] ^ grcg_tile[1];
+		}
+		if(!(grcg_mode & GRCG_PLANE_2)) {
+			data |= vram_draw[addr | 0x18000] ^ grcg_tile[2];
+		}
+		if(!(grcg_mode & GRCG_PLANE_3)) {
+			data |= vram_draw[addr | 0x00000] ^ grcg_tile[3];
+		}
+		return data ^ 0xff;
+	}
+}
+#endif
 
 void DISPLAY::draw_screen()
 {
 	// render screen
-	if(mode_flipflop[MODE_DISP]) {
+	if(modereg1[MODE1_DISP]) {
 		draw_chr_screen();
 		draw_gfx_screen();
 		
 		for(int y = 0; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_chr = screen_chr[y];
+#if defined(SUPPORT_16_COLORS)
+			if(!modereg2[MDOE2_TXTSHIFT]) {
+				src_chr++;
+			}
+#endif
 			uint8 *src_gfx = screen_gfx[y];
 			
-			for(int x = 0; x < 640; x++) {
-				uint8 chr = src_chr[x];
-				dest[x] = chr ? palette_chr[chr & 7] : palette_gfx[src_gfx[x]];
+#if defined(SUPPORT_16_COLORS)
+			if(!modereg2[MODE2_16COLOR]) {
+#endif
+				for(int x = 0; x < 640; x++) {
+					uint8 chr = src_chr[x];
+					dest[x] = chr ? palette_chr[chr & 7] : palette_gfx8[src_gfx[x] & 7];
+				}
+#if defined(SUPPORT_16_COLORS)
 			}
+			else {
+				for(int x = 0; x < 640; x++) {
+					uint8 chr = src_chr[x];
+					dest[x] = chr ? palette_chr[chr & 7] : palette_gfx16[src_gfx[x]];
+				}
+			}
+#endif
 		}
 	}
 	else {
@@ -407,8 +595,8 @@ void DISPLAY::draw_chr_screen()
 	// render
 	int ysur = bl * sur;
 	int ysdr = bl * (sur + sdr);
-	int xofs = mode_flipflop[MODE_COLUMN] ? 16 : 8;
-	int addrofs = mode_flipflop[MODE_COLUMN] ? 2 : 1;
+	int xofs = modereg1[MODE1_COLUMN] ? 16 : 8;
+	int addrofs = modereg1[MODE1_COLUMN] ? 2 : 1;
 	
 	memset(screen_chr, 0, sizeof(screen_chr));
 	
@@ -426,7 +614,6 @@ void DISPLAY::draw_chr_screen()
 			ysdr = 400;
 		}
 		for(int x = 0; x < 640; x += xofs) {
-			uint32 ofs = *addr;
 			uint16 code = *(uint16 *)(tvram + *addr);
 			uint8 attr = tvram[*addr | 0x2000];
 			uint8 color = (attr & ATTR_COL) ? (attr >> 5) : 8;
@@ -454,7 +641,7 @@ void DISPLAY::draw_chr_screen()
 			}
 			else {
 				uint16 lo = code & 0xff;
-				if(mode_flipflop[MODE_FONTSEL]) {
+				if(modereg1[MODE1_FONTSEL]) {
 					offset = 0x80000 | (lo << 4);
 				}
 				else {
@@ -478,13 +665,13 @@ void DISPLAY::draw_chr_screen()
 					if((attr & ATTR_UL) && l == 15) {
 						pattern = 0xff;
 					}
-					if(attr & ATTR_VL) {
+					if((attr & ATTR_VL) && !modereg1[MODE1_ATRSEL]) {
 						pattern |= 0x08;
 					}
 					if(cursor && l >= cursor_top && l < cursor_bottom) {
 						pattern = ~pattern;
 					}
-					if(mode_flipflop[MODE_COLUMN]) {
+					if(modereg1[MODE1_COLUMN]) {
 						if(pattern & 0x80) dest[ 0] = dest[ 1] = color;
 						if(pattern & 0x40) dest[ 2] = dest[ 3] = color;
 						if(pattern & 0x20) dest[ 4] = dest[ 5] = color;
@@ -538,20 +725,25 @@ void DISPLAY::draw_gfx_screen()
 			uint8 b = vram_disp_b[*addr];
 			uint8 r = vram_disp_r[*addr];
 			uint8 g = vram_disp_g[*addr];
+#if defined(SUPPORT_16_COLORS)
+			uint8 e = vram_disp_e[*addr];
+#else
+			uint8 e = 0;
+#endif
 			addr++;
 			
-			*dest++ = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-			*dest++ = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-			*dest++ = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-			*dest++ = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-			*dest++ = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-			*dest++ = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
-			*dest++ = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
-			*dest++ = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+			*dest++ = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5) | ((e & 0x80) >> 4);
+			*dest++ = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4) | ((e & 0x40) >> 3);
+			*dest++ = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3) | ((e & 0x20) >> 2);
+			*dest++ = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2) | ((e & 0x10) >> 1);
+			*dest++ = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1) | ((e & 0x08)     );
+			*dest++ = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04)     ) | ((e & 0x04) << 1);
+			*dest++ = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1) | ((e & 0x02) << 2);
+			*dest++ = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2) | ((e & 0x01) << 3);
 		}
 		if((cs_gfx[0] & 0x1f) == 1) {
 			// 200 line
-			if(mode_flipflop[MODE_200LINE]) {
+			if(modereg1[MODE1_200LINE]) {
 				memset(dest, 0, 640);
 			}
 			else {

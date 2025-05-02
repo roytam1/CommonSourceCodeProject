@@ -1,6 +1,7 @@
 /*
 	NEC PC-9801 Emulator 'ePC-9801'
 	NEC PC-9801E/F/M Emulator 'ePC-9801E'
+	NEC PC-98DO Emulator 'ePC-98DO'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -27,34 +28,49 @@ private:
 	uint8 *ra_gfx, *cs_gfx;
 	
 	uint8 tvram[0x4000];
-#ifdef _PC9801
-	uint8 vram[0x20000];
-#else
+#if defined(SUPPORT_2ND_VRAM)
 	uint8 vram[0x40000];
+#else
+	uint8 vram[0x20000];
 #endif
 	uint8 *vram_disp_b;
 	uint8 *vram_disp_r;
 	uint8 *vram_disp_g;
+#if defined(SUPPORT_16_COLORS)
+	uint8 *vram_disp_e;
+#endif
 	uint8 *vram_draw;
 	
 	scrntype palette_chr[8];
-	scrntype palette_gfx[8];
+	scrntype palette_gfx8[8];
 	uint8 digipal[4];
+#if defined(SUPPORT_16_COLORS)
+	scrntype palette_gfx16[8];
+	uint8 anapal[16][3], anapal_sel;
+#endif
 	
 	uint8 crtv;
 	uint8 scroll[6];
-	uint8 mode_flipflop[8];
+	uint8 modereg1[8];
+#if defined(SUPPORT_16_COLORS)
+	uint8 modereg2[128];
+	uint8 grcg_mode, grcg_tile_ptr, grcg_tile[4];
+#endif
 	
 	uint8 font[0x84000];
 	uint16 font_code;
 	uint8 font_line;
 	uint16 font_lr;
 	
-	uint8 screen_chr[400][640];
+	uint8 screen_chr[400][641];
 	uint8 screen_gfx[400][640];
 	uint32 gdc_addr[480][80];
 	
 	void kanji_copy(uint8 *dst, uint8 *src, int from, int to);
+#if defined(SUPPORT_16_COLORS)
+	void write_grcg(uint32 addr, uint32 data);
+	uint32 read_grcg(uint32 addr);
+#endif
 	void draw_chr_screen();
 	void draw_gfx_screen();
 	

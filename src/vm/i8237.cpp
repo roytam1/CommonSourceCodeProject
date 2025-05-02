@@ -87,7 +87,7 @@ void I8237::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x0f:
 		// all mask register
-		mask = data & 0xf;
+		mask = data & 0x0f;
 		break;
 	}
 }
@@ -123,7 +123,7 @@ uint32 I8237::read_io8(uint32 addr)
 		return val;
 	case 0x0d:
 		// temporary register
-		return tmp;
+		return tmp & 0xff;
 	}
 	return 0xff;
 }
@@ -163,18 +163,18 @@ void I8237::do_dma()
 		if((req & bit) && !(mask & bit)) {
 			// execute dma
 			while(req & bit) {
-				if((dma[ch].mode & 0xc) == 0) {
+				if((dma[ch].mode & 0x0c) == 0) {
 					// verify
 				}
-				else if((dma[ch].mode & 0xc) == 4) {
+				else if((dma[ch].mode & 0x0c) == 4) {
 					// io -> memory
-					tmp = dma[ch].dev->read_dma_io8(0);
-					d_mem->write_dma_data8(dma[ch].areg | (dma[ch].bankreg << 16), tmp);
+					tmp = read_io(ch);
+					write_mem(dma[ch].areg | (dma[ch].bankreg << 16), tmp);
 				}
-				else if((dma[ch].mode & 0xc) == 8) {
+				else if((dma[ch].mode & 0x0c) == 8) {
 					// memory -> io
-					tmp = d_mem->read_dma_data8(dma[ch].areg | (dma[ch].bankreg << 16));
-					dma[ch].dev->write_dma_io8(0, tmp);
+					tmp = read_mem(dma[ch].areg | (dma[ch].bankreg << 16));
+					write_io(ch, tmp);
 				}
 				if(dma[ch].mode & 0x20) {
 					dma[ch].areg--;
@@ -217,5 +217,45 @@ void I8237::do_dma()
 		d_dma->do_dma();
 	}
 #endif
+}
+
+void I8237::write_mem(uint32 addr, uint32 data)
+{
+	if(mode_word) {
+		d_mem->write_dma_data16(addr << 1, data);
+	}
+	else {
+		d_mem->write_dma_data8(addr, data);
+	}
+}
+
+uint32 I8237::read_mem(uint32 addr)
+{
+	if(mode_word) {
+		return d_mem->read_dma_data16(addr << 1);
+	}
+	else {
+		return d_mem->read_dma_data8(addr);
+	}
+}
+
+void I8237::write_io(int ch, uint32 data)
+{
+	if(mode_word) {
+		dma[ch].dev->write_dma_io16(0, data);
+	}
+	else {
+		dma[ch].dev->write_dma_io8(0, data);
+	}
+}
+
+uint32 I8237::read_io(int ch)
+{
+	if(mode_word) {
+		return dma[ch].dev->read_dma_io16(0);
+	}
+	else {
+		return dma[ch].dev->read_dma_io8(0);
+	}
 }
 

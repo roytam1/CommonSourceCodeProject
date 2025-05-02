@@ -23,7 +23,7 @@
 #define FDC_ST_HEADENG		0x20	// head engage
 #define FDC_ST_RECTYPE		0x20	// record type
 #define FDC_ST_WRITEFAULT	0x20	// write fault
-#define FDC_ST_WRITEP		0x40	// write protect
+#define FDC_ST_WRITEP		0x40	// write protectdc
 #define FDC_ST_NOTREADY		0x80	// media not inserted
 
 #define FDC_CMD_TYPE1		1
@@ -51,7 +51,7 @@ static const int seek_wait[4] = {6000, 12000, 20000, 30000};
 
 #define CANCEL_EVENT(event) { \
 	if(register_id[event] != -1) { \
-		vm->cancel_event(register_id[event]); \
+		cancel_event(register_id[event]); \
 		register_id[event] = -1; \
 	} \
 	if(event == EVENT_SEEK) { \
@@ -63,10 +63,10 @@ static const int seek_wait[4] = {6000, 12000, 20000, 30000};
 }
 #define REGISTER_EVENT(event, wait) { \
 	if(register_id[event] != -1) { \
-		vm->cancel_event(register_id[event]); \
+		cancel_event(register_id[event]); \
 		register_id[event] = -1; \
 	} \
-	vm->register_event(this, (event << 8) | cmdtype, wait, false, &register_id[event]); \
+	register_event(this, (event << 8) | cmdtype, wait, false, &register_id[event]); \
 	if(event == EVENT_SEEK) { \
 		now_seek = after_seek = true; \
 	} \
@@ -171,7 +171,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 			if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
 				// write or multisector write
 				if(fdc[drvreg].index < disk[drvreg]->sector_size) {
-					if(!disk[drvreg]->protect) {
+					if(!disk[drvreg]->write_protected) {
 						disk[drvreg]->sector[fdc[drvreg].index] = datareg;
 						// dm, ddm
 						disk[drvreg]->deleted = (cmdreg & 1) ? 0x10 : 0;
@@ -204,7 +204,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 			else if(cmdtype == FDC_CMD_WR_TRK) {
 				// read track
 				if(fdc[drvreg].index < disk[drvreg]->track_size) {
-					if(!disk[drvreg]->protect) {
+					if(!disk[drvreg]->write_protected) {
 						disk[drvreg]->track[fdc[drvreg].index] = datareg;
 					}
 					else {
@@ -241,7 +241,7 @@ uint32 MB8877::read_io8(uint32 addr)
 		// status reg
 		if(cmdtype == FDC_CMD_TYPE4) {
 			// now force interrupt
-			if(!disk[drvreg]->insert || !motor) {
+			if(!disk[drvreg]->inserted || !motor) {
 				status = FDC_ST_NOTREADY;
 			}
 			else {
@@ -256,15 +256,15 @@ uint32 MB8877::read_io8(uint32 addr)
 		}
 		else {
 			// disk not inserted, motor stop
-			if(!disk[drvreg]->insert || !motor) {
+			if(!disk[drvreg]->inserted || !motor) {
 				status |= FDC_ST_NOTREADY;
 			}
 			else {
 				status &= ~FDC_ST_NOTREADY;
 			}
-			// write protect
+			// write protected
 			if(cmdtype == FDC_CMD_TYPE1 || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC || cmdtype == FDC_CMD_WR_TRK) {
-				if(disk[drvreg]->insert && disk[drvreg]->protect) {
+				if(disk[drvreg]->inserted && disk[drvreg]->write_protected) {
 					status |= FDC_ST_WRITEP;
 				}
 				else {
@@ -779,7 +779,7 @@ void MB8877::cmd_forceint()
 {
 	// type-4 force interrupt
 #if 0
-	if(!disk[drvreg]->insert || !motor) {
+	if(!disk[drvreg]->inserted || !motor) {
 		status = FDC_ST_NOTREADY | FDC_ST_HEADENG;
 	}
 	else {
@@ -950,7 +950,7 @@ void MB8877::close_disk(int drv)
 bool MB8877::disk_inserted(int drv)
 {
 	if(drv < MAX_DRIVE) {
-		return disk[drv]->insert;
+		return disk[drv]->inserted;
 	}
 	return false;
 }
@@ -974,7 +974,7 @@ uint8 MB8877::fdc_status()
 {
 	// for each virtual machines
 #if defined(_FMR50) || defined(_FMR60)
-	return disk[drvreg]->insert ? 2 : 0;
+	return disk[drvreg]->inserted ? 2 : 0;
 #else
 	return 0;
 #endif

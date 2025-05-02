@@ -45,6 +45,9 @@ public:
 			this_device_id = vm->last_device->this_device_id + 1;
 		}
 		vm->last_device = this;
+		
+		// refer event functions in the parent vm class
+		event_manager = NULL;
 	}
 	~DEVICE(void) {}
 	
@@ -383,14 +386,86 @@ public:
 		return false;
 	}
 	
-	// sound
-	virtual void mix(int32* buffer, int cnt) {}
+	// event manager
+	DEVICE* event_manager;
+	
+	virtual void set_context_event_manager(DEVICE* device) {
+		event_manager = device;
+	}
+	virtual void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id) {
+		if(event_manager != NULL) {
+			event_manager->register_event(device, event_id, usec, loop, register_id);
+		}
+		else {
+			vm->register_event(device, event_id, usec, loop, register_id);
+		}
+	}
+	virtual void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id) {
+		if(event_manager != NULL) {
+			event_manager->register_event_by_clock(device, event_id, clock, loop, register_id);
+		}
+		else {
+			vm->register_event_by_clock(device, event_id, clock, loop, register_id);
+		}
+	}
+	virtual void cancel_event(int register_id) {
+		if(event_manager != NULL) {
+			event_manager->cancel_event(register_id);
+		}
+		else {
+			vm->cancel_event(register_id);
+		}
+	}
+	virtual void register_frame_event(DEVICE* device) {
+		if(event_manager != NULL) {
+			event_manager->register_frame_event(device);
+		}
+		else {
+			vm->register_frame_event(device);
+		}
+	}
+	virtual void register_vline_event(DEVICE* device) {
+		if(event_manager != NULL) {
+			event_manager->register_vline_event(device);
+		}
+		else {
+			vm->register_vline_event(device);
+		}
+	}
+	virtual uint32 current_clock() {
+		if(event_manager != NULL) {
+			return event_manager->current_clock();
+		}
+		else {
+			return vm->current_clock();
+		}
+	}
+	virtual uint32 passed_clock(uint32 prev) {
+		if(event_manager != NULL) {
+			return event_manager->passed_clock(prev);
+		}
+		else {
+			return vm->passed_clock(prev);
+		}
+	}
+	virtual uint32 get_prv_pc(int index) {
+		if(event_manager != NULL) {
+			return event_manager->get_prv_pc(index);
+		}
+		else {
+			// always first cpu
+			return vm->get_prv_pc();
+		}
+	}
 	
 	// event callback
 	virtual void event_callback(int event_id, int err) {}
 	virtual void event_frame() {}
 	virtual void event_vline(int v, int clock) {}
 	virtual void event_hsync(int v, int h, int clock) {}
+	
+	// sound
+	virtual void mix(int32* buffer, int cnt) {}
 	
 	DEVICE* prev_device;
 	DEVICE* next_device;

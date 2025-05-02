@@ -360,7 +360,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// drive status
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
@@ -368,7 +368,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				}
 				AH = 0;
 				DL = 4;
-				if(disk[drv]->protect) {
+				if(disk[drv]->write_protected) {
 					DL |= 2;
 				}
 				CX = 0;
@@ -414,7 +414,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// resture/seek
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
@@ -446,7 +446,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// read sectors
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
@@ -598,13 +598,13 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// write sectors
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
-				if(disk[drv]->protect) {
+				if(disk[drv]->write_protected) {
 					AH = 0x80;
 					CX = ERR_FDD_PROTECTED;
 					*CarryFlag = 1;
@@ -752,7 +752,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// verify sectors
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
@@ -836,7 +836,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// read id
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
@@ -874,7 +874,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// format track
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0x80;
 					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
@@ -912,7 +912,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// disk change ???
 			if((AL & 0xf0) == 0x20) {
 				// floppy
-				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
+				if(!(drv < MAX_DRIVE && disk[drv]->inserted)) {
 					AH = 0;
 					CX = 0;
 					DL = 1;
@@ -921,8 +921,8 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				}
 				AH = 0;
 				CX = 0;
-				DL = disk[drv]->change ? 1 : 0;
-				disk[drv]->change = false;
+				DL = disk[drv]->changed ? 1 : 0;
+				disk[drv]->changed = false;
 				*CarryFlag = 0;
 				return true;
 			}
@@ -1034,7 +1034,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 		else if(AH == 0x81) {
 			// pseudo bios: boot from fdd #0
 			*ZeroFlag = (timeout > (int)(FRAMES_PER_SEC * 4));
-			if(!disk[0]->insert) {
+			if(!disk[0]->inserted) {
 				*CarryFlag = 1;
 				return true;
 			}

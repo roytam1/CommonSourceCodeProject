@@ -31,7 +31,6 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
 #if defined(_FMR60)
 #define LINES_PER_FRAME 	784

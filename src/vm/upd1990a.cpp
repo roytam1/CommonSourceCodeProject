@@ -21,7 +21,7 @@ void UPD1990A::initialize()
 {
 	cmd = mode = 0;
 	tpmode = 5;
-	vm->register_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
+	register_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
 //	event_id = -1;
 	srl = srh = 0;
 	clk = din = tp = true;
@@ -56,18 +56,18 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 				// group 1
 				if(cmd != tpmode) {
 					if(event_id != -1) {
-						vm->cancel_event(event_id);
+						cancel_event(event_id);
 						event_id = -1;
 					}
 					switch(cmd) {
 					case 4:	// 64Hz
-						vm->register_event_by_clock(this, 0, CPU_CLOCKS / 128, true, &event_id);
+						register_event_by_clock(this, 0, CPU_CLOCKS / 128, true, &event_id);
 						break;
 					case 5:	// 256Hz
-						vm->register_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
+						register_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
 						break;
 					case 6:	// 2048Hz
-						vm->register_event_by_clock(this, 0, CPU_CLOCKS / 4096, true, &event_id);
+						register_event_by_clock(this, 0, CPU_CLOCKS / 4096, true, &event_id);
 						break;
 					}
 				}

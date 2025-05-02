@@ -15,6 +15,7 @@
 
 #include "../and.h"
 #include "../beep.h"
+#include "../disk.h"
 #include "../i8251.h"
 #include "../i8255.h"
 #include "../i8259.h"
@@ -140,6 +141,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
 		}
+	}
+	for(int i = 0; i < 4; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 	}
 }
 

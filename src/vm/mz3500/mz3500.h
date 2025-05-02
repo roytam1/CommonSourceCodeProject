@@ -16,7 +16,6 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	473
 #define FRAMES_PER_SEC		47.3
 #define LINES_PER_FRAME 	441
 #define CPU_CLOCKS		4000000
@@ -25,8 +24,6 @@
 #define MAX_DRIVE		4
 #define UPD765A_WAIT_SEEK
 #define UPD765A_WAIT_RESULT7
-//#define UPD765A_DRQ_DELAY
-#define UPD765A_STRICT_ID
 #define UPD765A_EXT_DRVSEL
 #define IO_ADDR_MAX		0x100
 

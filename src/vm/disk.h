@@ -143,9 +143,10 @@ public:
 	bool make_track(int trk, int side);
 	bool get_sector(int trk, int side, int index);
 	
-	bool insert;
-	bool protect;
-	bool change;
+	bool inserted;
+	bool ejected;
+	bool write_protected;
+	bool changed;
 	uint8 media_type;
 	uint8 drive_type;
 	

@@ -16,7 +16,6 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	550
 #define CPU_CLOCKS		16000000
@@ -25,9 +24,7 @@
 #define MAX_DRIVE		4
 #define HAS_I386
 #define I8259_MAX_CHIPS		2
-#define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
-#define UPD765A_STRICT_ID
 #define IO_ADDR_MAX		0x10000
 
 // device informations for win32

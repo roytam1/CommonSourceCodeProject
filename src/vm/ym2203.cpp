@@ -13,7 +13,7 @@ void YM2203::initialize()
 {
 	opn = new FM::OPN;
 	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
-	vm->register_vline_event(this);
+	register_vline_event(this);
 	mute = false;
 #ifndef HAS_AY_3_8912
 	irq = false;

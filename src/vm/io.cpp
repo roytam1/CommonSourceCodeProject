@@ -114,7 +114,7 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 		if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
 			emu->out_debug(_T("UNKNOWN:\t"));
 		}
-		emu->out_debug(_T("%6x\tOUT8\t%4x,%2x\n"), vm->get_prv_pc(), addr, data);
+		emu->out_debug(_T("%6x\tOUT8\t%4x,%2x\n"), get_prv_pc(), addr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -141,7 +141,7 @@ uint32 IO::read_port8(uint32 addr, bool is_dma)
 		if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
 			emu->out_debug(_T("UNKNOWN:\t"));
 		}
-		emu->out_debug(_T("%6x\tIN8\t%4x = %2x\n"), vm->get_prv_pc(), addr, val);
+		emu->out_debug(_T("%6x\tIN8\t%4x = %2x\n"), get_prv_pc(), addr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}
@@ -159,7 +159,7 @@ void IO::write_port16(uint32 addr, uint32 data, bool is_dma)
 		if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
 			emu->out_debug(_T("UNKNOWN:\t"));
 		}
-		emu->out_debug(_T("%6x\tOUT16\t%4x,%4x\n"), vm->get_prv_pc(), addr, data);
+		emu->out_debug(_T("%6x\tOUT16\t%4x,%4x\n"), get_prv_pc(), addr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -186,7 +186,7 @@ uint32 IO::read_port16(uint32 addr, bool is_dma)
 		if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
 			emu->out_debug(_T("UNKNOWN:\t"));
 		}
-		emu->out_debug(_T("%6x\tIN16\t%4x = %4x\n"), vm->get_prv_pc(), addr, val);
+		emu->out_debug(_T("%6x\tIN16\t%4x = %4x\n"), get_prv_pc(), addr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}
@@ -204,7 +204,7 @@ void IO::write_port32(uint32 addr, uint32 data, bool is_dma)
 		if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
 			emu->out_debug(_T("UNKNOWN:\t"));
 		}
-		emu->out_debug(_T("%6x\tOUT32\t%4x,%8x\n"), vm->get_prv_pc(), addr, data);
+		emu->out_debug(_T("%6x\tOUT32\t%4x,%8x\n"), get_prv_pc(), addr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -231,7 +231,7 @@ uint32 IO::read_port32(uint32 addr, bool is_dma)
 		if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
 			emu->out_debug(_T("UNKNOWN:\t"));
 		}
-		emu->out_debug(_T("%6x\tIN32\t%4x = %8x\n"), vm->get_prv_pc(), laddr | haddr, val);
+		emu->out_debug(_T("%6x\tIN32\t%4x = %8x\n"), get_prv_pc(), laddr | haddr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}

@@ -16,7 +16,6 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	599
 #define FRAMES_PER_SEC		59.9
 #define LINES_PER_FRAME 	260
 #define CHARS_PER_LINE		112
@@ -25,7 +24,6 @@
 #define SCREEN_HEIGHT		400
 #define I8259_MAX_CHIPS		1
 #define MAX_DRIVE		4
-//#define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
 #define HAS_AY_3_8912
 

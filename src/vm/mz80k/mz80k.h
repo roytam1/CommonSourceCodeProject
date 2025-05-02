@@ -22,13 +22,11 @@
 #define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
 #define CPU_CLOCKS		2000000
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
-#define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
 //#define LOW_PASS_FILTER
 

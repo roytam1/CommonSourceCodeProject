@@ -300,12 +300,12 @@ void DATAREC::update_event()
 	if(remote && ((play && remain > 0) || rec)) {
 		if(register_id == -1) {
 			int period = (int)((float)CPU_CLOCKS / (float)sample_rate + 0.5f);
-			vm->register_event_by_clock(this, 0, period, true, &register_id);
+			register_event_by_clock(this, 0, period, true, &register_id);
 		}
 	}
 	else {
 		if(register_id != -1) {
-			vm->cancel_event(register_id);
+			cancel_event(register_id);
 		}
 		register_id = -1;
 	}

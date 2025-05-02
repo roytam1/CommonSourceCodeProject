@@ -734,7 +734,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\jx\keyboard.cpp"
+					RelativePath="src\vm\jx\jx.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -756,7 +756,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\jx\jx.cpp"
+					RelativePath="src\vm\jx\keyboard.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -912,11 +912,11 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\jx\keyboard.h"
+					RelativePath="src\vm\jx\jx.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\jx\jx.h"
+					RelativePath="src\vm\jx\keyboard.h"
 					>
 				</File>
 				<File

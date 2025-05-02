@@ -63,8 +63,8 @@ void PCE::initialize()
 	key_stat = emu->key_buffer();
 	
 	// register event
-	vm->pce_register_vline_event(this);
-	vm->pce_register_event_by_clock(this, 0, 1024, true, NULL);
+	register_vline_event(this);
+	register_event_by_clock(this, 0, 1024, true, NULL);
 }
 
 void PCE::reset()

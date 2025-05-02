@@ -55,6 +55,12 @@ private:
 	uint8 mask;
 	uint8 tc;
 	uint32 tmp;
+	bool mode_word;
+	
+	void write_mem(uint32 addr, uint32 data);
+	uint32 read_mem(uint32 addr);
+	void write_io(int ch, uint32 data);
+	uint32 read_io(int ch);
 	
 public:
 	I8237(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -65,6 +71,7 @@ public:
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
 #endif
+		mode_word = false;
 	}
 	~I8237() {}
 	
@@ -96,6 +103,9 @@ public:
 		d_dma = device;
 	}
 #endif
+	void set_mode_word(bool val) {
+		mode_word = val;
+	}
 };
 
 #endif

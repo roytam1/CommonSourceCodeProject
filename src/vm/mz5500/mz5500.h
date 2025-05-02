@@ -24,7 +24,6 @@
 #define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	448
 #if defined(_MZ5500)
@@ -41,9 +40,7 @@
 #define HAS_I86
 #endif
 #define I8259_MAX_CHIPS		2
-//#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
-#define UPD765A_STRICT_ID
 #define Z80CTC_CLOCKS		2457600
 #define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x400

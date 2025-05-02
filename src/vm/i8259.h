@@ -42,9 +42,10 @@ private:
 	DEVICE* d_cpu;
 	
 	typedef struct {
-		uint8 imr, isr, irr, prio;
+		uint8 imr, isr, irr, irr_tmp, prio;
 		uint8 icw1, icw2, icw3, icw4, ocw3;
 		uint8 icw2_r, icw3_r, icw4_r;
+		int irr_tmp_id;
 	} pic_t;
 	pic_t pic[I8259_MAX_CHIPS];
 	int req_chip, req_level;
@@ -60,10 +61,12 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int id);
+	void event_callback(int event_id, int err);
 	
 	// interrupt common functions
 	void set_intr_line(bool line, bool pending, uint32 bit) {

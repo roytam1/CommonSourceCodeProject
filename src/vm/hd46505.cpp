@@ -28,7 +28,7 @@ void HD46505::initialize()
 #ifdef CHARS_PER_LINE
 	hz_total = (CHARS_PER_LINE > 54) ? CHARS_PER_LINE : 54;
 #else
-	ht_total = 54;
+	hz_total = 54;
 #endif
 	hz_disp = (hz_total > 80) ? 80 : 40;
 	hs_start = hz_disp + 4;
@@ -46,8 +46,8 @@ void HD46505::initialize()
 	hz_clock = (int)(CPU_CLOCKS / FRAMES_PER_SEC / vt_total);
 	
 	// register events
-	vm->register_frame_event(this);
-	vm->register_vline_event(this);
+	register_frame_event(this);
+	register_vline_event(this);
 }
 
 void HD46505::write_io8(uint32 addr, uint32 data)
@@ -108,7 +108,7 @@ void HD46505::event_vline(int v, int clock)
 	if(v == 0 && vt_total != 0) {
 		update_vline(0, hz_clock);
 		vline = 1;
-		vm->register_event_by_clock(this, EVENT_VLINE, hz_clock, false, NULL);
+		register_event_by_clock(this, EVENT_VLINE, hz_clock, false, NULL);
 	}
 }
 
@@ -121,7 +121,7 @@ void HD46505::update_vline(int v, int clock)
 	if(outputs_disp.count) {
 		set_display(new_vblank);
 		if(new_vblank && hz_disp < hz_total) {
-			vm->register_event_by_clock(this, EVENT_DISPLAY, disp_end_clock, false, NULL);
+			register_event_by_clock(this, EVENT_DISPLAY, disp_end_clock, false, NULL);
 		}
 	}
 	
@@ -134,8 +134,8 @@ void HD46505::update_vline(int v, int clock)
 	// hsync
 	if(outputs_hsync.count && hs_start < hs_end && hs_end < hz_total) {
 		set_hsync(false);
-		vm->register_event_by_clock(this, EVENT_HSYNC_S, hs_start_clock, false, NULL);
-		vm->register_event_by_clock(this, EVENT_HSYNC_E, hs_end_clock, false, NULL);
+		register_event_by_clock(this, EVENT_HSYNC_S, hs_start_clock, false, NULL);
+		register_event_by_clock(this, EVENT_HSYNC_E, hs_end_clock, false, NULL);
 	}
 	
 	// run registered vline events
@@ -158,7 +158,7 @@ void HD46505::event_callback(int event_id, int err)
 	else if(event_id == EVENT_VLINE) {
 		update_vline(vline, hz_clock);
 		if(++vline < vt_total) {
-			vm->register_event_by_clock(this, EVENT_VLINE, hz_clock + err, false, NULL);
+			register_event_by_clock(this, EVENT_VLINE, hz_clock + err, false, NULL);
 		}
 	}
 }

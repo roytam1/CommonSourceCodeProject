@@ -16,16 +16,15 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	261
 #define CHARS_PER_LINE		128
 #define CPU_CLOCKS		3993600
+#define SUB_CPU_CLOCKS		1996800
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-#define UPD765A_DMA_MODE
-#define UPD765A_WAIT_SEEK
+//#define UPD765A_WAIT_SEEK
 
 // device informations for win32
 #define USE_DATAREC

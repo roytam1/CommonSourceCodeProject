@@ -1,3 +1,30 @@
+12/31/2011
+
+[EMU] support to change the frame timing by virtual machine
+
+[VM/DEVICE] support multiple event manager
+[VM/DISK] support to detect the disk ejection
+[VM/EVENT] support multiple cpus with different clocks
+[VM/HD46505] fix typo
+[VM/I8237] support word transfer
+[VM/I8259] fix to wait a few time to raise irq that imr is cleared
+[VM/PC80S31K] support PC-80S31K floppy drives
+[VM/UPD765A] support non dma mode
+[VM/UPD765A] fix to clear irq signal when result pahse is finished
+[VM/UPD765A] support irq/drq mask signals
+[VM/UPD765A] support to detect the disk ejection
+[VM/Z80] support NOP in IM0 interrupt
+
+[FP1100] set correct sub cpu clock
+[J3100] support TOSHIBA J-3100GT/SL (not work)
+[MZ800] reset virtual machine when boot mode is changed
+[PC9801] support 320KB floppy drives
+[PC9801VM] support NEC PC-9801VM
+[PC98DO] support NEC PC-98DO
+[QC10] fix the issue that CP/M Plus does not boot correctly
+[MZ2500/SASI] refine code
+
+
 8/6/2011
 
 [EMU/WIN32] render access lamp in emu class

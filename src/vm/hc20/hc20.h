@@ -16,7 +16,6 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	720
 #define FRAMES_PER_SEC		72
 #define LINES_PER_FRAME		64
 #define CPU_CLOCKS		614400

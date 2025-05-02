@@ -973,34 +973,44 @@ void Z80::run(int clock)
 				}
 #endif
 				if(IM == 0) {
-					// mode 0 (support CALL/RST only)
-					PUSH16(PC);
+					// mode 0 (support NOP/CALL/RST only)
 					switch(v0) {
+					case 0x00:		// NOP
+						break;
 					case 0xcd:		// CALL
+						PUSH16(PC);
 						PC = v12;
 						break;
 					case 0xc7:		// RST 00H
+						PUSH16(PC);
 						PC = 0x0000;
 						break;
 					case 0xcf:		// RST 08H
+						PUSH16(PC);
 						PC = 0x0008;
 						break;
 					case 0xd7:		// RST 10H
+						PUSH16(PC);
 						PC = 0x0010;
 						break;
 					case 0xdf:		// RST 18H
+						PUSH16(PC);
 						PC = 0x0018;
 						break;
 					case 0xe7:		// RST 20H
+						PUSH16(PC);
 						PC = 0x0020;
 						break;
 					case 0xef:		// RST 28H
+						PUSH16(PC);
 						PC = 0x0028;
 						break;
 					case 0xf7:		// RST 30H
+						PUSH16(PC);
 						PC = 0x0030;
 						break;
 					case 0xff:		// RST 38H
+						PUSH16(PC);
 						PC = 0x0038;
 						break;
 					}

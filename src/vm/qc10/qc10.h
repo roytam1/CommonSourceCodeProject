@@ -22,10 +22,8 @@
 
 // device informations for virtual machine
 #ifdef _COLOR_MONITOR
-#define FRAMES_PER_10SECS	569
 #define FRAMES_PER_SEC		56.9
 #else
-#define FRAMES_PER_10SECS	458
 #define FRAMES_PER_SEC		45.8
 #endif
 #define LINES_PER_FRAME 	421
@@ -38,8 +36,6 @@
 #define UPD7220_FIXED_PITCH
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
-//#define UPD765A_STRICT_ID
-#define UPD765A_NO_IRQ_FOR_RESULT7
 //#define SINGLE_MODE_DMA
 
 // device informations for win32

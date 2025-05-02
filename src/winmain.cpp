@@ -157,7 +157,6 @@ int screen_mode_height[20];
 void set_window(HWND hWnd, int mode);
 
 // timing control
-int intervals[FRAMES_PER_10SECS];
 #define MIN_SKIP_FRAMES 0
 #define MAX_SKIP_FRAMES 10
 DWORD rec_next_time, rec_accum_time;
@@ -165,13 +164,10 @@ int rec_delay[3];
 
 int get_interval()
 {
-	static int cnt = 0;
-	int interval = 0;
-	
-	for(int i = 0; i < 10; i++) {
-		interval += intervals[cnt];
-		cnt = (cnt + 1 < FRAMES_PER_10SECS) ? cnt + 1 : 0;
-	}
+	static int accum = 0;
+	accum += emu->frame_interval();
+	int interval = accum >> 10;
+	accum -= interval << 10;
 	return interval;
 }
 
@@ -311,17 +307,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		emu->open_quickdisk(path);
 		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
 #endif
-	}
-	
-	// timing control
-	int remain = 1000;
-	
-	for(int i = 0; i < FRAMES_PER_10SECS; i++) {
-		intervals[i] = (int)(1000 / FRAMES_PER_10SECS);
-		remain -= intervals[i];
-	}
-	for(int i = 0; i < remain; i++) {
-		intervals[(int)(FRAMES_PER_10SECS * i / remain)]++;
 	}
 	
 	// main loop
@@ -648,9 +633,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 #endif
 #ifdef _MZ800
-		case ID_MZ800_BOOT_MODE0:
-		case ID_MZ800_BOOT_MODE1:
-			config.boot_mode = LOWORD(wParam) - ID_MZ800_BOOT_MODE0;
+		case ID_MZ800_BOOT_MODE_MZ800:
+		case ID_MZ800_BOOT_MODE_MZ700:
+			config.boot_mode = LOWORD(wParam) - ID_MZ800_BOOT_MODE_MZ800;
+			if(emu) {
+				emu->update_config();
+			}
+			break;
+#endif
+#ifdef _PC98DO
+		case ID_PC98DO_BOOT_MODE_PC98:
+		case ID_PC98DO_BOOT_MODE_PC88_V1S:
+		case ID_PC98DO_BOOT_MODE_PC88_V1H:
+		case ID_PC98DO_BOOT_MODE_PC88_V2:
+		case ID_PC98DO_BOOT_MODE_PC88_N:
+			config.boot_mode = LOWORD(wParam) - ID_PC98DO_BOOT_MODE_PC98;
+			if(emu) {
+				emu->update_config();
+			}
 			break;
 #endif
 		case ID_CPU_POWER0:
@@ -825,6 +825,66 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			_tcscpy(config.recent_disk_path[3][0], path);
 			if(emu) {
 				emu->open_disk(path, 3);
+			}
+			break;
+#endif
+#ifdef USE_FD5
+		case ID_OPEN_FD5:
+			if(emu) {
+				open_disk(hWnd, 4);
+			}
+			break;
+		case ID_CLOSE_FD5:
+			if(emu) {
+				emu->close_disk(4);
+			}
+			break;
+		case ID_RECENT_FD51:
+		case ID_RECENT_FD52:
+		case ID_RECENT_FD53:
+		case ID_RECENT_FD54:
+		case ID_RECENT_FD55:
+		case ID_RECENT_FD56:
+		case ID_RECENT_FD57:
+		case ID_RECENT_FD58:
+			no = LOWORD(wParam) - ID_RECENT_FD51;
+			_tcscpy(path, config.recent_disk_path[4][no]);
+			for(int i = no; i > 0; i--) {
+				_tcscpy(config.recent_disk_path[4][i], config.recent_disk_path[4][i - 1]);
+			}
+			_tcscpy(config.recent_disk_path[4][0], path);
+			if(emu) {
+				emu->open_disk(path, 4);
+			}
+			break;
+#endif
+#ifdef USE_FD6
+		case ID_OPEN_FD6:
+			if(emu) {
+				open_disk(hWnd, 5);
+			}
+			break;
+		case ID_CLOSE_FD6:
+			if(emu) {
+				emu->close_disk(5);
+			}
+			break;
+		case ID_RECENT_FD61:
+		case ID_RECENT_FD62:
+		case ID_RECENT_FD63:
+		case ID_RECENT_FD64:
+		case ID_RECENT_FD65:
+		case ID_RECENT_FD66:
+		case ID_RECENT_FD67:
+		case ID_RECENT_FD68:
+			no = LOWORD(wParam) - ID_RECENT_FD61;
+			_tcscpy(path, config.recent_disk_path[5][no]);
+			for(int i = no; i > 0; i--) {
+				_tcscpy(config.recent_disk_path[5][i], config.recent_disk_path[5][i - 1]);
+			}
+			_tcscpy(config.recent_disk_path[5][0], path);
+			if(emu) {
+				emu->open_disk(path, 5);
 			}
 			break;
 #endif
@@ -1203,7 +1263,12 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #endif
 #ifdef _MZ800
 		if(config.boot_mode >= 0 && config.boot_mode < 2) {
-			CheckMenuRadioItem(hMenu, ID_MZ800_BOOT_MODE0, ID_MZ800_BOOT_MODE1, ID_MZ800_BOOT_MODE0 + config.boot_mode, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_MZ800_BOOT_MODE_MZ800, ID_MZ800_BOOT_MODE_MZ700, ID_MZ800_BOOT_MODE_MZ800 + config.boot_mode, MF_BYCOMMAND);
+		}
+#endif
+#ifdef _PC98DO
+		if(config.boot_mode >= 0 && config.boot_mode < 5) {
+			CheckMenuRadioItem(hMenu, ID_PC98DO_BOOT_MODE_PC98, ID_PC98DO_BOOT_MODE_PC88_N, ID_PC98DO_BOOT_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
 		}
 #endif
 		if(config.cpu_power >= 0 && config.cpu_power < 5) {
@@ -1308,6 +1373,42 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 		if(!flag) {
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD41, _T("None"));
+		}
+	}
+#endif
+#ifdef MENU_POS_FD5
+	else if(pos == MENU_POS_FD5) {
+		// floppy drive #5
+		BOOL flag = FALSE;
+		for(int i = 0; i < 8; i++) {
+			DeleteMenu(hMenu, ID_RECENT_FD51 + i, MF_BYCOMMAND);
+		}
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_disk_path[4][i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD51 + i, config.recent_disk_path[4][i]);
+				flag = TRUE;
+			}
+		}
+		if(!flag) {
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD51, _T("None"));
+		}
+	}
+#endif
+#ifdef MENU_POS_FD6
+	else if(pos == MENU_POS_FD6) {
+		// floppy drive #6
+		BOOL flag = FALSE;
+		for(int i = 0; i < 8; i++) {
+			DeleteMenu(hMenu, ID_RECENT_FD61 + i, MF_BYCOMMAND);
+		}
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_disk_path[5][i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD61 + i, config.recent_disk_path[5][i]);
+				flag = TRUE;
+			}
+		}
+		if(!flag) {
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD61, _T("None"));
 		}
 	}
 #endif
@@ -1487,7 +1588,7 @@ void open_cart(HWND hWnd)
 		_T("Supported Files (*.pce)\0*.pce\0All Files (*.*)\0*.*\0\0"),
 		_T("HuCARD"),
 #else
-		_T("Supported Files (*.rom)\0*.rom\0All Files (*.*)\0*.*\0\0"), 
+		_T("Supported Files (*.rom;*.bin)\0*.rom;*.bin\0All Files (*.*)\0*.*\0\0"), 
 		_T("Game Cartridge"),
 #endif
 		config.initial_cart_path
@@ -1545,7 +1646,7 @@ void open_datarec(HWND hWnd, BOOL play)
 #else
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif
-		_T("Data Recorder Tape"),
+		play ? _T("Data Recorder Tape [Play]") : _T("Data Recorder Tape [Rec]"),
 		config.initial_datarec_path
 	);
 	if(path) {

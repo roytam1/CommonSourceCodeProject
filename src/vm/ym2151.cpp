@@ -13,7 +13,7 @@ void YM2151::initialize()
 {
 	opm = new FM::OPM;
 	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
-	vm->register_vline_event(this);
+	register_vline_event(this);
 	irq = mute = false;
 }
 

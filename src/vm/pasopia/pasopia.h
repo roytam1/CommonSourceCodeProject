@@ -23,12 +23,10 @@
 
 // device informations for virtual machine
 #ifdef _LCD
-#define FRAMES_PER_10SECS	744
 #define FRAMES_PER_SEC		74.4
 #define LINES_PER_FRAME 	32
 #define CHARS_PER_LINE		94
 #else
-#define FRAMES_PER_10SECS	599
 #define FRAMES_PER_SEC		59.9
 #define LINES_PER_FRAME 	262
 #define CHARS_PER_LINE		57

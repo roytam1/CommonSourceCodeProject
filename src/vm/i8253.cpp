@@ -194,8 +194,8 @@ void I8253::event_callback(int event_id, int err)
 	if(counter[ch].freq && counter[ch].start) {
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk + err;
-		counter[ch].prev_clk = vm->current_clock() + err;
-		vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
+		counter[ch].prev_clk = current_clock() + err;
+		register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 	}
 }
 
@@ -324,8 +324,8 @@ void I8253::start_count(int ch)
 	if(counter[ch].freq) {
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
-		counter[ch].prev_clk = vm->current_clock();
-		vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
+		counter[ch].prev_clk = current_clock();
+		register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 	}
 }
 
@@ -335,7 +335,7 @@ void I8253::stop_count(int ch)
 	
 	// cancel event
 	if(counter[ch].register_id != -1) {
-		vm->cancel_event(counter[ch].register_id);
+		cancel_event(counter[ch].register_id);
 	}
 	counter[ch].register_id = -1;
 }
@@ -344,27 +344,27 @@ void I8253::latch_count(int ch)
 {
 	if(counter[ch].register_id != -1) {
 		// update counter
-		int passed = vm->passed_clock(counter[ch].prev_clk);
+		int passed = passed_clock(counter[ch].prev_clk);
 		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
 		if(input > 0) {
 			bool expired = (counter[ch].input_clk <= input);
 			input_clock(ch, input);
 			// cancel and re-register event
 			if(expired) {
-				vm->cancel_event(counter[ch].register_id);
+				cancel_event(counter[ch].register_id);
 				if(counter[ch].freq && counter[ch].start) {
 					counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 					counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
-					counter[ch].prev_clk = vm->current_clock();
-					vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
+					counter[ch].prev_clk = current_clock();
+					register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 				}
 			}
 			else {
-				vm->cancel_event(counter[ch].register_id);
+				cancel_event(counter[ch].register_id);
 				counter[ch].input_clk -= input;
 				counter[ch].period -= passed;
-				counter[ch].prev_clk = vm->current_clock();
-				vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
+				counter[ch].prev_clk = current_clock();
+				register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 			}
 		}
 	}

@@ -242,7 +242,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _X1TWIN
 	// init PC Engine
 	pceevent = new EVENT(this, emu);
-	pceevent->set_cpu_clocks(PCE_CPU_CLOCKS);
+	pceevent->set_event_base_clocks(PCE_CPU_CLOCKS);
 	pceevent->set_frames_per_sec(PCE_FRAMES_PER_SEC);
 	pceevent->set_lines_per_frame(PCE_LINES_PER_FRAME);
 	pceevent->initialize();
@@ -253,6 +253,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pceevent->set_context_cpu(pcecpu);
 	pceevent->set_context_sound(pce);
 	pce->set_context_cpu(pcecpu);
+	pce->set_context_event_manager(pceevent);
 	pcecpu->set_context_mem(pce);
 #endif
 	
@@ -376,49 +377,6 @@ uint32 VM::get_prv_pc()
 {
 	return cpu->get_prv_pc();
 }
-
-#ifdef _X1TWIN
-void VM::pce_register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
-{
-	pceevent->register_event(dev, event_id, usec, loop, register_id);
-}
-
-void VM::pce_register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
-{
-	pceevent->register_event_by_clock(dev, event_id, clock, loop, register_id);
-}
-
-void VM::pce_cancel_event(int register_id)
-{
-	pceevent->cancel_event(register_id);
-}
-
-void VM::pce_register_frame_event(DEVICE* dev)
-{
-	pceevent->register_frame_event(dev);
-}
-
-void VM::pce_register_vline_event(DEVICE* dev)
-{
-	pceevent->register_vline_event(dev);
-}
-
-uint32 VM::pce_current_clock()
-{
-	return pceevent->current_clock();
-}
-
-uint32 VM::pce_passed_clock(uint32 prev)
-{
-	uint32 current = pceevent->current_clock();
-	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
-}
-
-uint32 VM::pce_get_prv_pc()
-{
-	return pcecpu->get_prv_pc();
-}
-#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

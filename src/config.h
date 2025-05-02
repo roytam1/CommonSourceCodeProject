@@ -30,7 +30,11 @@ typedef struct {
 #endif
 #ifdef USE_FD1
 	_TCHAR initial_disk_path[_MAX_PATH];
+#if defined(USE_FD6) || defined(USE_FD5)
+	_TCHAR recent_disk_path[6][8][_MAX_PATH];
+#else
 	_TCHAR recent_disk_path[4][8][_MAX_PATH];
+#endif
 #endif
 #ifdef USE_QUICKDISK
 	_TCHAR initial_quickdisk_path[_MAX_PATH];
@@ -68,7 +72,7 @@ typedef struct {
 #ifdef _HC80
 	int ramdisk_type;
 #endif
-#ifdef _MZ800
+#if defined(_MZ800) || defined(_PC98DO)
 	int boot_mode;
 #endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)

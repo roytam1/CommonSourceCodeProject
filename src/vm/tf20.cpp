@@ -389,7 +389,7 @@ bool TF20::process_cmd()
 bool TF20::disk_protected(int drv)
 {
 	if(drv < MAX_DRIVE) {
-		return disk[drv]->protect;
+		return disk[drv]->write_protected;
 	}
 	return false;
 }
@@ -435,7 +435,7 @@ void TF20::close_disk(int drv)
 bool TF20::disk_inserted(int drv)
 {
 	if(drv < MAX_DRIVE) {
-		return disk[drv]->insert;
+		return disk[drv]->inserted;
 	}
 	return false;
 }

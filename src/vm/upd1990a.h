@@ -44,6 +44,9 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
+	uint32 read_signal(int ch) {
+		return srl & 1;
+	}
 	void event_callback(int event_id, int err);
 	
 	// unique functions

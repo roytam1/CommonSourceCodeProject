@@ -85,6 +85,16 @@ EMU::~EMU()
 // drive machine
 // ----------------------------------------------------------------------------
 
+int EMU::frame_interval()
+{
+#ifdef SUPPORT_VARIABLE_TIMING
+	return (int)(1024. * 1000. / vm->frame_rate() + 0.5);
+
+#else
+	return (int)(1024. * 1000. / FRAMES_PER_SEC + 0.5);
+#endif
+}
+
 void EMU::run()
 {
 	// run real machine

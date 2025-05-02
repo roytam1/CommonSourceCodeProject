@@ -22,6 +22,14 @@ void I8259::initialize()
 	}
 }
 
+void I8259::reset()
+{
+	for(int c = 0; c < I8259_MAX_CHIPS; c++) {
+		pic[c].irr_tmp = 0;
+		pic[c].irr_tmp_id = -1;
+	}
+}
+
 void I8259::write_io8(uint32 addr, uint32 data)
 {
 	int c = (addr >> 1) & CHIP_MASK;
@@ -44,6 +52,20 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		}
 		else {
 			// ocw1
+			uint8 irr = pic[c].irr;
+			for(int i = 0; i < 8; i++) {
+				uint8 bit = 1 << i;
+				if((pic[c].irr & bit) && (pic[c].imr & bit) && !(data & bit)) {
+					pic[c].irr &= ~bit;
+					pic[c].irr_tmp |= bit;
+				}
+			}
+			if(irr != pic[c].irr) {
+				if(pic[c].irr_tmp_id != -1) {
+					cancel_event(pic[c].irr_tmp_id);
+				}
+				register_event(this, c, 10, false, &pic[c].irr_tmp_id);
+			}
 			pic[c].imr = data;
 		}
 	}
@@ -56,6 +78,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 			pic[c].icw4_r = data & 1;
 			
 			pic[c].irr = 0;
+			pic[c].irr_tmp = 0;
 			pic[c].isr = 0;
 			pic[c].imr = 0;
 			pic[c].prio = 0;
@@ -111,6 +134,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 				if(pic[c].isr & mask) {
 					pic[c].isr &= ~mask;
 					pic[c].irr &= ~mask;
+					pic[c].irr_tmp &= ~mask;
 					pic[c].prio = (pic[c].prio + 1) & 7;
 				}
 				break;
@@ -157,6 +181,20 @@ void I8259::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else {
 		pic[id >> 3].irr &= ~(1 << (id & 7));
+		update_intr();
+	}
+}
+
+void I8259::event_callback(int event_id, int err)
+{
+	int c = event_id & CHIP_MASK;
+	uint8 irr = pic[c].irr;
+	
+	pic[c].irr |= pic[c].irr_tmp;
+	pic[c].irr_tmp = 0;
+	pic[c].irr_tmp_id = -1;
+	
+	if(irr != pic[c].irr) {
 		update_intr();
 	}
 }

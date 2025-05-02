@@ -265,6 +265,7 @@ public:
 	// ----------------------------------------
 	
 	// drive virtual machine
+	int frame_interval();
 	void run();
 	void reset();
 #ifdef USE_SPECIAL_RESET

@@ -81,8 +81,8 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "MZ-800"                       ID_MZ800_BOOT_MODE0
-        MENUITEM "MZ-700"                       ID_MZ800_BOOT_MODE1
+        MENUITEM "MZ-800"                       ID_MZ800_BOOT_MODE_MZ800
+        MENUITEM "MZ-700"                       ID_MZ800_BOOT_MODE_MZ700
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1

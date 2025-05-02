@@ -44,12 +44,20 @@
 #include "quickdisk.h"
 #endif
 
+#if defined(_MZ800)
+#include "../../config.h"
+#endif
+
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+#if defined(_MZ800)
+	boot_mode = config.boot_mode;
+#endif
+	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -507,8 +515,19 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->update_config();
+#if defined(_MZ800)
+	if(boot_mode != config.boot_mode) {
+		// boot mode is changed !!!
+		boot_mode = config.boot_mode;
+		reset();
 	}
+	else {
+#endif
+		for(DEVICE* device = first_device; device; device = device->next_device) {
+			device->update_config();
+		}
+#if defined(_MZ800)
+	}
+#endif
 }
 

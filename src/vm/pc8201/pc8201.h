@@ -21,13 +21,11 @@
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		64
 #define CPU_CLOCKS		2400000
 #define SCREEN_WIDTH		240
 #define SCREEN_HEIGHT		64
-#define USE_PCM1BIT
 #define HAS_I8085
 
 // device informations for win32

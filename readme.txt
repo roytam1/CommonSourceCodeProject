@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								5/28/2011
+								12/31/2011
 
 --- What's this ?
 
@@ -32,6 +32,8 @@ This archive includes the all source codes of emulators listed below:
 	eHC-20		EPSON HC-20/HX-20
 	eHC-40		EPSON HC-40/PX-4
 	eHC-80		EPSON HC-80/PX-8/Geneva
+	eJ-3100GT	TOSHIBA J-3100GT
+	eJ-3100SL	TOSHIBA J-3100SL
 	eJX		IBM Japan Ltd PC/JX
 	eMAP-1010	SEIKO MAP-1010
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A
@@ -39,6 +41,8 @@ This archive includes the all source codes of emulators listed below:
 	ePC-8201	NEC PC-8201/PC-8201A
 	ePC-9801	NEC PC-9801
 	ePC-9801E	NEC PC-9801E/F/M
+	ePC-9801VM	NEC PC-9801VM
+	ePC-98DO	NEC PC-98DO
 	ePC-98LT	NEC PC-98LT
 	ePC-100		NEC PC-100
 	ePHC-20		SANYO PHC-20
@@ -132,6 +136,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Based on MON80 by Mr.Tesuya Suzuki
 - vm/mz2500/sasi.*
 	X millenium
+- vm/pc9801/pc8801.*
+	M88 and MESS PC-8801 driver
 - vm/phc25/*
 	PHC-25 emulator by Mr.Tago
 - vm/pv1000/*

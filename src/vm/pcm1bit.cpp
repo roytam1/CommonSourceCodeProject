@@ -22,7 +22,7 @@ void PCM1BIT::initialize()
 #endif
 	update = 0;
 	
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
@@ -34,7 +34,7 @@ void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 			if(sample_count < 1024) {
 				samples_signal[sample_count] = signal;
 				samples_out[sample_count] = (on && !mute);
-				samples_clock[sample_count] = vm->current_clock();
+				samples_clock[sample_count] = current_clock();
 				sample_count++;
 			}
 #endif
@@ -63,7 +63,7 @@ void PCM1BIT::event_frame()
 void PCM1BIT::mix(int32* buffer, int cnt)
 {
 #ifdef PCM1BIT_HIGH_QUALITY
-	uint32 cur_clock = vm->current_clock();
+	uint32 cur_clock = current_clock();
 	if(update) {
 		if(sample_count < 1024) {
 			samples_signal[sample_count] = signal;

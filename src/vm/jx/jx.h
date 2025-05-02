@@ -18,7 +18,6 @@
 // device informations for virtual machine
 
 // TODO: check refresh rate
-#define FRAMES_PER_10SECS	599
 #define FRAMES_PER_SEC		59.9
 #define LINES_PER_FRAME 	262
 #define CHARS_PER_LINE		57
@@ -27,9 +26,8 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
-//#define UPD765A_DRQ_DELAY
 //#define UPD765A_WAIT_SEEK
-#define UPD765A_STRICT_ID
+//#define UPD765A_WAIT_RESULT7
 #define UPD765A_SENCE_INTSTAT_RESULT
 #define HAS_I86
 #define I8259_MAX_CHIPS		1

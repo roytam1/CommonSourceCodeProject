@@ -65,6 +65,16 @@
 #include "hc80/hc80.h"
 #endif
 
+// TOSHIBA J-3100GT
+#ifdef _J3100SL
+#include "j3100/j3100.h"
+#endif
+
+// TOSHIBA J-3100SL
+#ifdef _J3100SL
+#include "j3100/j3100.h"
+#endif
+
 // IBM Japan Ltd PC/JX
 #ifdef _JX
 #include "jx/jx.h"
@@ -177,6 +187,16 @@
 
 // NEC PC-9801E/F/M
 #ifdef _PC9801E
+#include "pc9801/pc9801.h"
+#endif
+
+// NEC PC-9801VM
+#ifdef _PC9801VM
+#include "pc9801/pc9801.h"
+#endif
+
+// NEC PC-98DO
+#ifdef _PC98DO
 #include "pc9801/pc9801.h"
 #endif
 

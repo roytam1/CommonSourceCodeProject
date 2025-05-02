@@ -25,7 +25,7 @@ void UPD4991A::initialize()
 	ctrl1 = ctrl2 = mode = 0;
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void UPD4991A::write_io8(uint32 addr, uint32 data)

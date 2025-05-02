@@ -32,7 +32,7 @@ void RTC58321::initialize()
 	busy = false;
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void RTC58321::write_io8(uint32 addr, uint32 data)

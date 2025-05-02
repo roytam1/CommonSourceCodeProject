@@ -16,7 +16,6 @@
 #define CONFIG_VERSION		0x03
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		108

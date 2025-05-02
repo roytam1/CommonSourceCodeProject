@@ -13,6 +13,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../disk.h"
 #include "../hd146818p.h"
 #include "../i8237.h"
 #include "../i8253.h"
@@ -93,6 +94,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(pic, SIG_I8259_IR6 | SIG_I8259_CHIP0, 1);
 	fdc->set_context_irq(memory, SIG_MEMORY_FDC_IRQ, 1);
 	fdc->set_context_drq(dma0, SIG_I8237_CH0, 1);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 	sio->set_context_intr(pic, SIG_I8259_IR4 | SIG_I8259_CHIP0);
 	sio->set_context_send0(keyboard, SIG_KEYBOARD_RECV);
 	
@@ -147,6 +151,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
 		}
+	}
+	for(int i = 0; i < 4; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 	}
 }
 

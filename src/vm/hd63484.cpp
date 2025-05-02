@@ -36,7 +36,7 @@ static const int instruction_length[64] =
 
 void HD63484::initialize()
 {
-	vm->register_vline_event(this);
+	register_vline_event(this);
 }
 
 void HD63484::reset()
