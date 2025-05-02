@@ -573,7 +573,7 @@ void I8080::OP(uint8 code)
 	uint8 tmp8;
 	uint16 tmp16;
 	
-	prvPC = PC - 1;
+	prevPC = PC - 1;
 	count -= cc_op[code];
 	
 	switch(code) {

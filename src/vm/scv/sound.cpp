@@ -45,7 +45,7 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		case 0x1f: param_cnt = MAX_PARAM; break; // pcm
 		}
 		param_ptr = 0;
-		cmd_addr  = vm->get_prv_pc(); // for patch
+		cmd_addr  = get_cpu_pc(0); // for patch
 #ifdef SOUND_DEBUG
 		emu->out_debug(_T("PC=%4x\tSOUND\t"), cmd_addr);
 #endif
@@ -74,9 +74,9 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		}
 		if(--param_cnt) {
 			if(register_id != -1) {
-				vm->cancel_event(register_id);
+				cancel_event(register_id);
 			}
-			vm->register_event(this, 0, ACK_WAIT, false, &register_id);
+			register_event(this, 0, ACK_WAIT, false, &register_id);
 		}
 	}
 	if(!param_cnt) {
@@ -101,11 +101,11 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 		
 		if(cmd_addr == 0x8402) {
 			// y2 monster land
-			bool pause = (vm->get_prv_pc() == 0x96c) ? true : false;
+			bool pause = (get_cpu_pc(0) == 0x96c) ? true : false;
 			if(pause || !(params[0] == 0x1f && param_ptr > 5)) {
 				// terminate command
 				if(register_id != -1) {
-					vm->cancel_event(register_id);
+					cancel_event(register_id);
 				}
 				memset(params, 0, sizeof(params));
 				param_cnt = param_ptr = 0;
@@ -140,7 +140,7 @@ void SOUND::event_callback(int event_id, int err)
 {
 	if(pcm.count && param_ptr == 5 && params[0] == 0x1f && params[1] == 0x04 && params[2] == 0x64) {
 		// wait previous pcm
-		vm->register_event(this, 0, ACK_WAIT, false, &register_id);
+		register_event(this, 0, ACK_WAIT, false, &register_id);
 		return;
 	}
 	d_cpu->write_signal(SIG_UPD7801_INTF1, 1, 1);

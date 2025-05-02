@@ -8,16 +8,18 @@
 	[ MC6809 ]
 */
 
+// Fixed IRQ/FIRQ by Mr.Sasaji at 2011.06.17
+
 #include "mc6809.h"
 
-#define MC6809_IRQ_BIT	0	/* IRQ line number  */
-#define MC6809_FIRQ_BIT	1	/* FIRQ line number */
-#define MC6809_NMI_BIT	2	/* NMI line number  */
+#define MC6809_IRQ_BIT	1	/* IRQ line number  */
+#define MC6809_FIRQ_BIT	2	/* FIRQ line number */
+#define MC6809_NMI_BIT	4	/* NMI line number  */
 
 /* flag bits in the cc register */
-#define MC6809_CWAI	8	/* set when CWAI is waiting for an interrupt */
-#define MC6809_SYNC	16	/* set when SYNC is waiting for an interrupt */
-#define MC6809_LDS	32	/* set when LDS occured at least once */
+#define MC6809_CWAI	0x08	/* set when CWAI is waiting for an interrupt */
+#define MC6809_SYNC	0x10	/* set when SYNC is waiting for an interrupt */
+#define MC6809_LDS	0x20	/* set when LDS occured at least once */
 
 #define CC_C	0x01		/* Carry */
 #define CC_V	0x02		/* Overflow */
@@ -324,7 +326,7 @@ void MC6809::run(int clock)
 			CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
 			PCD = RM16(0xfffc);
 		}
-		else if(int_state & (MC6809_FIRQ_BIT || MC6809_IRQ_BIT)) {
+		else if(int_state & (MC6809_FIRQ_BIT | MC6809_IRQ_BIT)) {
 			int_state &= ~MC6809_SYNC; /* clear SYNC flag */
 			if((int_state & MC6809_FIRQ_BIT) && !(CC & CC_IF)) {
 				/* fast IRQ */
@@ -342,7 +344,7 @@ void MC6809::run(int clock)
 				CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
 				PCD = RM16(0xfff6);
 			}
-			else if((int_state & MC6809_FIRQ_BIT) && !(CC & CC_II)) {
+			else if((int_state & MC6809_IRQ_BIT) && !(CC & CC_II)) {
 				/* standard IRQ */
 				int_state &= ~MC6809_IRQ_BIT;
 				if(int_state & MC6809_CWAI) {

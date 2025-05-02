@@ -12,6 +12,9 @@
 */
 
 #include "display.h"
+#ifdef _X1TURBO
+#include "../hd46505.h"
+#endif
 #include "../i8255.h"
 #include "../../fileio.h"
 #include "../../config.h"
@@ -186,14 +189,14 @@ void DISPLAY::initialize()
 #endif
 	
 	// register event
-	vm->register_frame_event(this);
-	vm->register_crtc_vline_event(this);
+	register_frame_event(this);
+	register_vline_event(this);
 }
 
 void DISPLAY::reset()
 {
 #ifdef _X1TURBO
-	mode1 = 3;
+	mode1 = 0;//3;
 	mode2 = 0;
 	hires = true;
 #endif
@@ -256,6 +259,9 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x1f00:
 		switch(addr) {
 		case 0x1fd0:
+			if((mode1 & 1) != (data & 1)) {
+				d_crtc->set_horiz_freq((data & 1) ? 24860 : 15980);
+			}
 			mode1 = data;
 //			hires = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
 			break;
@@ -396,7 +402,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_VBLANK) {
 		if(!(data & mask)) {
 			// enter vblank
-			vblank_clock = vm->current_clock();
+			vblank_clock = current_clock();
 		}
 	}
 	else if(id == SIG_DISPLAY_COLUMN) {
@@ -404,7 +410,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_DISPLAY_DETECT_VBLANK) {
 		// hack: cpu detects vblank
-		vblank_clock = vm->current_clock();
+		vblank_clock = current_clock();
 	}
 }
 
@@ -420,7 +426,8 @@ void DISPLAY::event_frame()
 	st_addr = (regs[12] << 8) | regs[13];
 	
 #ifdef _X1TURBO
-	hires = ((regs[4] + 1) * ch_height + regs[5] > 400);
+	int vt_total = ((regs[4] & 0x7f) + 1) * ch_height + (regs[5] & 0x1f);
+	hires = (vt_total > 400);
 #endif
 }
 
@@ -565,7 +572,7 @@ void DISPLAY::get_cur_code_line()
 #else
 	#define ht_clock 250
 #endif
-	int clock = vm->passed_clock(vblank_clock);
+	int clock = passed_clock(vblank_clock);
 	int vt_line = vt_disp * ch_height + (int)(clock / ht_clock);
 	
 	int addr = (hz_total * (clock % ht_clock)) / ht_clock;

@@ -28,7 +28,7 @@ void KEYBOARD::initialize()
 	joy_stat = emu->joy_buffer();
 	
 	// register event to update the key status
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::write_io8(uint32 addr, uint32 data)

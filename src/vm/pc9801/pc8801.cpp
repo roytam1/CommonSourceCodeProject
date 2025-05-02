@@ -189,8 +189,8 @@ void PC8801::reset()
 	disp_ctrl = 0;
 	
 	if(!line200) {
-		((EVENT*)event_manager)->set_frames_per_sec(60);
-		((EVENT*)event_manager)->set_lines_per_frame(260);
+		set_frames_per_sec(60);
+		set_lines_per_frame(260);
 		line200 = 1;
 	}
 	cursor_on = blink_on = false;
@@ -324,12 +324,12 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 	case 0x31:
 		if(line200 != (data & 1)) {
 			if(data & 1) {
-				((EVENT*)event_manager)->set_frames_per_sec(60);
-				((EVENT*)event_manager)->set_lines_per_frame(260);
+				set_frames_per_sec(60);
+				set_lines_per_frame(260);
 			}
 			else {
-				((EVENT*)event_manager)->set_frames_per_sec(55.4);
-				((EVENT*)event_manager)->set_lines_per_frame(448);
+				set_frames_per_sec(55.4);
+				set_lines_per_frame(448);
 			}
 			line200 = data & 1;
 		}
@@ -1038,10 +1038,5 @@ uint32 PC8801::intr_ack()
 		}
 	}
 	return 0;
-}
-
-double PC8801::frame_rate()
-{
-	return FRAMES_PER_SEC;
 }
 

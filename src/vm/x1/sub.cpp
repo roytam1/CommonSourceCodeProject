@@ -163,8 +163,8 @@ void SUB::initialize()
 	key_stat = emu->key_buffer();
 	
 	// register event
-	vm->register_frame_event(this);
-	vm->register_event(this, 0, 400, true, NULL);
+	register_frame_event(this);
+	register_event(this, 0, 400, true, NULL);
 }
 
 void SUB::reset()

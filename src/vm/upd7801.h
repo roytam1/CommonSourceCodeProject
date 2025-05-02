@@ -44,7 +44,7 @@ private:
 	bool wait;
 	
 	pair regs[4];
-	uint16 SP, PC, prvPC, altVA, altBC, altDE, altHL;
+	uint16 SP, PC, prevPC, altVA, altBC, altDE, altHL;
 	uint8 PSW, IRR, IFF, SIRQ, HALT, MK, MB, MC, TM0, TM1, SR;
 	// for port c
 	uint8 SAK, TO, PORTC;
@@ -97,8 +97,8 @@ public:
 	int passed_clock() {
 		return first - count;
 	}
-	uint32 get_prv_pc() {
-		return prvPC;
+	uint32 get_pc() {
+		return prevPC;
 	}
 	
 	// unique function

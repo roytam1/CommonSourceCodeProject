@@ -90,8 +90,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 				}
 				if(next) {
 					// raise event twice per one period
-					int clock = (int)(CPU_CLOCKS / 65536.0 * next + 0.5);
-					register_event_by_clock(this, 0, clock, true, &event_id);
+					register_event(this, 0, 1000000.0 / 65536.0 * next, true, &event_id);
 				}
 				period = next;
 			}

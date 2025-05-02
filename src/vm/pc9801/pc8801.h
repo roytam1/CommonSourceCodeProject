@@ -140,7 +140,6 @@ public:
 		d_sio = device;
 	}
 	void draw_screen();
-	double frame_rate();
 };
 
 #endif

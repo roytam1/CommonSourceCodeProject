@@ -24,7 +24,7 @@
 #define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
-#define FRAMES_PER_SEC		55.4
+#define FRAMES_PER_SEC		55.49
 #define LINES_PER_FRAME 	448
 #if defined(_MZ5500)
 #define CPU_CLOCKS		4915200
@@ -41,6 +41,7 @@
 #endif
 #define I8259_MAX_CHIPS		2
 #define UPD765A_WAIT_SEEK
+#define UPD7220_HORIZ_FREQ	24860
 #define Z80CTC_CLOCKS		2457600
 #define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x400
@@ -151,18 +152,6 @@ public:
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	
-	// event callbacks
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
-	
-	// clock
-	uint32 current_clock();
-	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

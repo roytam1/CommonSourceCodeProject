@@ -193,7 +193,7 @@ void I8253::event_callback(int event_id, int err)
 	// register next event
 	if(counter[ch].freq && counter[ch].start) {
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
-		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk + err;
+		counter[ch].period = cpu_clocks / counter[ch].freq * counter[ch].input_clk + err;
 		counter[ch].prev_clk = current_clock() + err;
 		register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 	}
@@ -323,7 +323,7 @@ void I8253::start_count(int ch)
 	// register event
 	if(counter[ch].freq) {
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
-		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
+		counter[ch].period = cpu_clocks / counter[ch].freq * counter[ch].input_clk;
 		counter[ch].prev_clk = current_clock();
 		register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 	}
@@ -345,7 +345,7 @@ void I8253::latch_count(int ch)
 	if(counter[ch].register_id != -1) {
 		// update counter
 		int passed = passed_clock(counter[ch].prev_clk);
-		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
+		uint32 input = counter[ch].freq * passed / cpu_clocks;
 		if(input > 0) {
 			bool expired = (counter[ch].input_clk <= input);
 			input_clock(ch, input);
@@ -354,7 +354,7 @@ void I8253::latch_count(int ch)
 				cancel_event(counter[ch].register_id);
 				if(counter[ch].freq && counter[ch].start) {
 					counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
-					counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
+					counter[ch].period = cpu_clocks / counter[ch].freq * counter[ch].input_clk;
 					counter[ch].prev_clk = current_clock();
 					register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 				}

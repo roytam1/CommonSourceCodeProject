@@ -62,10 +62,10 @@ void IOCTRL::initialize()
 	ts = 0;
 	
 	// register event
-	vm->register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, NULL);
-	vm->register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, NULL);
-	vm->register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, NULL);
-	vm->register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, NULL);
+	register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, NULL);
+	register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, NULL);
+	register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, NULL);
+	register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, NULL);
 }
 
 void IOCTRL::write_io8(uint32 addr, uint32 data)
@@ -202,7 +202,7 @@ void IOCTRL::update_key()
 {
 	if(key_done && !key_buf->empty()) {
 		if(register_id == -1) {
-			vm->register_event(this, EVENT_KEY, 1000, false, &register_id);
+			register_event(this, EVENT_KEY, 1000, false, &register_id);
 		}
 	}
 }

@@ -23,13 +23,15 @@
 
 // device informations for virtual machine
 #ifdef _LCD
-#define FRAMES_PER_SEC		74.4
+#define FRAMES_PER_SEC		74.38
 #define LINES_PER_FRAME 	32
 #define CHARS_PER_LINE		94
+#define HD46505_HORIZ_FREQ	2380
 #else
-#define FRAMES_PER_SEC		59.9
+#define FRAMES_PER_SEC		59.92
 #define LINES_PER_FRAME 	262
 #define CHARS_PER_LINE		57
+#define HD46505_HORIZ_FREQ	15700
 #endif
 #define CPU_CLOCKS		3993600
 #ifdef _LCD
@@ -42,6 +44,7 @@
 #define MAX_DRIVE		4
 #define UPD765A_WAIT_SEEK
 #define IO_ADDR_MAX		0x100
+#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_DATAREC
@@ -127,6 +130,7 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	double frame_rate();
 	
 	// draw screen
 	void draw_screen();
@@ -149,18 +153,6 @@ public:
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	
-	// event callbacks
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
-	
-	// clock
-	uint32 current_clock();
-	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

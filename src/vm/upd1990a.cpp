@@ -21,7 +21,7 @@ void UPD1990A::initialize()
 {
 	cmd = mode = 0;
 	tpmode = 5;
-	register_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
+	register_event(this, 0, 1000000.0 / 512.0, true, &event_id);
 //	event_id = -1;
 	srl = srh = 0;
 	clk = din = tp = true;
@@ -61,13 +61,13 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 					}
 					switch(cmd) {
 					case 4:	// 64Hz
-						register_event_by_clock(this, 0, CPU_CLOCKS / 128, true, &event_id);
+						register_event(this, 0, 1000000.0 / 128.0, true, &event_id);
 						break;
 					case 5:	// 256Hz
-						register_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
+						register_event(this, 0, 1000000.0 / 512.0, true, &event_id);
 						break;
 					case 6:	// 2048Hz
-						register_event_by_clock(this, 0, CPU_CLOCKS / 4096, true, &event_id);
+						register_event(this, 0, 1000000.0 / 4096.0, true, &event_id);
 						break;
 					}
 				}

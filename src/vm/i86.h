@@ -377,7 +377,7 @@ public:
 	int passed_clock() {
 		return first_icount - icount;
 	}
-	uint32 get_prv_pc() {
+	uint32 get_pc() {
 		return prevpc;
 	}
 	

@@ -338,7 +338,7 @@ void TMS9995::run(int clock)
 		}
 		else {
 			int_enabled = true;
-			prvPC = PC;
+			prevPC = PC;
 			uint16 op = FETCH16();
 			execute(op);
 			if((ST & ST_OVIE) && (ST & ST_OV) && (irq_level > 2)) {

@@ -65,9 +65,9 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		}
 		if(data & 1) {
 			if(timer_id != -1) {
-				vm->cancel_event(timer_id);
+				cancel_event(timer_id);
 			}
-			vm->register_event(this, EVENT_TIMER, 100000, false, &timer_id);
+			register_event(this, EVENT_TIMER, 100000, false, &timer_id);
 		}
 		d_fdc_2dd->write_signal(SIG_UPD765A_MOTOR, data, 0x08);
 		ctrlreg_2dd = data;
@@ -96,9 +96,9 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 			}
 			if(data & 1) {
 				if(timer_id != -1) {
-					vm->cancel_event(timer_id);
+					cancel_event(timer_id);
 				}
-				vm->register_event(this, EVENT_TIMER, 100000, false, &timer_id);
+				register_event(this, EVENT_TIMER, 100000, false, &timer_id);
 			}
 //			if(modereg & 4) {
 //				d_fdc->write_signal(SIG_UPD765A_MOTOR, data, 0x08);

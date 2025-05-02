@@ -53,6 +53,7 @@ private:
 		outputs_t outputs;
 	} counter_t;
 	counter_t counter[3];
+	int cpu_clocks;
 	
 	void input_clock(int ch, int clock);
 	void input_gate(int ch, bool signal);
@@ -77,6 +78,9 @@ public:
 	uint32 read_io8(uint32 addr);
 	void event_callback(int event_id, int err);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {
+		cpu_clocks = new_clocks;
+	}
 	
 	// unique functions
 	void set_context_ch0(DEVICE* device, int id, uint32 mask) {

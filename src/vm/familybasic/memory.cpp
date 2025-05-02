@@ -44,7 +44,7 @@ void MEMORY::initialize()
 	joy_stat = emu->joy_buffer();
 	
 	// register event
-	vm->register_vline_event(this);
+	register_vline_event(this);
 }
 
 void MEMORY::release()
@@ -87,7 +87,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		// stop cpu
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		int id;
-		vm->register_event_by_clock(this, EVENT_DMA_DONE, 514, false, &id);
+		register_event_by_clock(this, EVENT_DMA_DONE, 514, false, &id);
 		// start dma
 		dma_addr = data << 8;
 		for(int i = 0; i < 256; i++) {

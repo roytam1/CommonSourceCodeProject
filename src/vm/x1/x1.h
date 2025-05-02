@@ -30,19 +30,18 @@
 // device informations for virtual machine (x1)
 //#ifdef _X1TURBO
 //24KHz
-//#define FRAMES_PER_SEC	55.4
+//#define FRAMES_PER_SEC	55.49
 //#define LINES_PER_FRAME	448
 //#define CHARS_PER_LINE	56
-// 161*448*55.4
-//#define CPU_CLOCKS		3995891
+//#define HD46505_HORIZ_FREQ	24860
 //#else
 // 15KHz
-#define FRAMES_PER_SEC		62
+#define FRAMES_PER_SEC		61.94
 #define LINES_PER_FRAME 	258
 #define CHARS_PER_LINE		56
-// 250*258*62
-#define CPU_CLOCKS		3999000
+#define HD46505_HORIZ_FREQ	15980
 //#endif
+#define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
@@ -53,11 +52,12 @@
 #else
 #define Z80_M1_CYCLE_WAIT	1
 #endif
+#define SUPPORT_VARIABLE_TIMING
 
 #ifdef _X1TWIN
 // device informations for virtual machine (pce)
 #define PCE_FRAMES_PER_SEC	60
-#define PCE_LINES_PER_FRAME 	263
+#define PCE_LINES_PER_FRAME	263
 #define PCE_CPU_CLOCKS		7159090
 #endif
 
@@ -170,6 +170,7 @@ public:
 	void reset();
 	void special_reset();
 	void run();
+	double frame_rate();
 	
 	// draw screen
 	void draw_screen();
@@ -205,19 +206,6 @@ public:
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	
-	// event callbacks
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
-	void register_crtc_vline_event(DEVICE* dev);
-	
-	// clock
-	uint32 current_clock();
-	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

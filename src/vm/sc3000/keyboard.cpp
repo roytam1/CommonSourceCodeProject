@@ -31,7 +31,7 @@ void KEYBOARD::initialize()
 	break_pressed = false;
 	
 	// register event to update the key status
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::event_frame()

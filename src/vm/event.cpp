@@ -42,14 +42,13 @@ void EVENT::initialize()
 void EVENT::initialize_sound(int rate, int samples)
 {
 	// initialize sound
+	sound_rate = rate;
 	sound_samples = samples;
 #ifdef EVENT_CONTINUOUS_SOUND
-	sound_tmp_samples = samples + (int)(rate / frames_per_sec * 2);
+	sound_tmp_samples = samples * 2;
 #else
 	sound_tmp_samples = samples;
 #endif
-	update_samples = (int)(1024. * (double)rate / (double)frames_per_sec / (double)lines_per_frame + 0.5);
-	
 	sound_buffer = (uint16*)malloc(sound_samples * sizeof(uint16) * 2);
 	memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
 	sound_tmp = (int32*)malloc(sound_tmp_samples * sizeof(int32) * 2);
@@ -98,9 +97,17 @@ void EVENT::reset()
 
 void EVENT::drive()
 {
+	// raise pre frame events to update timing settings
+	for(int i = 0; i < frame_event_count; i++) {
+		frame_event[i]->event_pre_frame();
+	}
+	
 	// generate clocks per line
-	if(update_timing) {
-		int sum = (int)((double)d_cpu[0].cpu_clocks / (double)frames_per_sec + 0.5);
+	if(frames_per_sec != next_frames_per_sec || lines_per_frame != next_lines_per_frame) {
+		frames_per_sec = next_frames_per_sec;
+		lines_per_frame = next_lines_per_frame;
+		
+		int sum = (int)((double)d_cpu[0].cpu_clocks / frames_per_sec + 0.5);
 		int remain = sum;
 		
 		for(int i = 0; i < lines_per_frame; i++) {
@@ -112,14 +119,14 @@ void EVENT::drive()
 			vclocks[index]++;
 		}
 		for(int i = 1; i < dcount_cpu; i++) {
-			d_cpu[i].update_clocks = (int)(1024. * (double)d_cpu[i].cpu_clocks / (double)d_cpu[0].cpu_clocks + 0.5);
+			d_cpu[i].update_clocks = (int)(1024.0 * (double)d_cpu[i].cpu_clocks / (double)d_cpu[0].cpu_clocks + 0.5);
 		}
 		for(DEVICE* device = vm->first_device; device; device = device->next_device) {
 			if(device->event_manager_id() == this_device_id) {
 				device->update_timing(d_cpu[0].cpu_clocks, frames_per_sec, lines_per_frame);
 			}
 		}
-		update_timing = false;
+		update_samples = (int)(1024.0 * (double)sound_rate / frames_per_sec / (double)lines_per_frame + 0.5);
 	}
 	
 	// run virtual machine for 1 frame period
@@ -224,15 +231,15 @@ uint32 EVENT::passed_clock(uint32 prev)
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
 }
 
-void EVENT::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
+uint32 EVENT::get_cpu_pc(int index)
 {
-	int clock = (int)((double)d_cpu[0].cpu_clocks / 1000000. * (double)usec + 0.5);
-	register_event_by_clock(dev, event_id, clock, loop, register_id);
+	return d_cpu[index].device->get_pc();
 }
 
-uint32 EVENT::get_prv_pc(int index)
+void EVENT::register_event(DEVICE* dev, int event_id, double usec, bool loop, int* register_id)
 {
-	return d_cpu[index].device->get_prv_pc();
+	int clock = (int)((double)d_cpu[0].cpu_clocks / 1000000.0 * usec + 0.5);
+	register_event_by_clock(dev, event_id, clock, loop, register_id);
 }
 
 void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)

@@ -146,9 +146,6 @@ void MC6847::initialize()
 	palette_pc[BEIGE     ] = RGB_COLOR(255,198,170);
 	palette_pc[GRAY      ] = RGB_COLOR( 32, 32, 32);
 	
-	// LINES_PER_FRAME must be 262
-	tWHS = (int)(CPU_CLOCKS / FRAMES_PER_SEC / LINES_PER_FRAME * 16.5 / 227.5 + 0.5);
-	
 	// register event
 	register_vline_event(this);
 }
@@ -180,6 +177,12 @@ void MC6847::write_signal(int id, uint32 data, uint32 mask)
 		inv = ((data & mask) != 0);
 		break;
 	}
+}
+
+void MC6847::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
+{
+	// this should be called before vline event
+	tWHS = (int)((double)new_clocks / new_frames_per_sec / (double)new_lines_per_frame * 16.5 / 227.5 + 0.5);
 }
 
 void MC6847::event_vline(int v, int clock)

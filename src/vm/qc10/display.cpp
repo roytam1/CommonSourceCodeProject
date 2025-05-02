@@ -49,7 +49,7 @@ void DISPLAY::initialize()
 #endif
 	
 	// cursor blinking
-	vm->register_frame_event(this);
+	register_frame_event(this);
 	blink = 0;
 }
 

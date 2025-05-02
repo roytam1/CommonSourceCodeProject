@@ -42,7 +42,10 @@ private:
 	
 	// params
 	uint8 sync[16];
-	int vs, hc;
+	int vtotal, vs, v1, v2;
+	int hc, h1, h2;
+	bool sync_changed;
+	bool master;
 	uint8 zoom, zr, zw;
 	uint8 ra[16];
 	uint8 cs[3];
@@ -58,6 +61,13 @@ private:
 	int blink_rate;
 	bool low_high;
 	bool cmd_write_done;
+	
+	int cpu_clocks;
+#ifdef UPD7220_HORIZ_FREQ
+	int horiz_freq, next_horiz_freq;
+#endif
+	double frames_per_sec;
+	int lines_per_frame;
 	
 	// fifo buffers
 	uint8 params[16];
@@ -127,9 +137,11 @@ public:
 	uint32 read_dma_io8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void event_pre_frame();
 	void event_frame();
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
@@ -141,6 +153,11 @@ public:
 	void set_vram_ptr(uint8* ptr, uint32 size) {
 		vram = ptr; vram_size = size;
 	}
+#ifdef UPD7220_HORIZ_FREQ
+	void set_horiz_freq(int freq) {
+		next_horiz_freq = freq;
+	}
+#endif
 	uint8* get_sync() {
 		return sync;
 	}

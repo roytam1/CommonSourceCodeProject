@@ -123,8 +123,8 @@ void MEMORY::initialize()
 	memset(lcd, 0, sizeof(lcd));
 	
 	// register events
-	vm->register_frame_event(this);
-	vm->register_event_by_clock(this, EVENT_SOUND, 256, true, NULL);
+	register_frame_event(this);
+	register_event_by_clock(this, EVENT_SOUND, 256, true, NULL);
 }
 
 void MEMORY::release()

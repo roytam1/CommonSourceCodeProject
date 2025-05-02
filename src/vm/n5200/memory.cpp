@@ -88,7 +88,6 @@ void MEMORY::reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffffff;
-//emu->out_debug("PC=%6x: WM %6x,%2x\n",vm->get_prv_pc(),addr,data);
 	if(0xe7800 <= addr && addr < 0xf0000 && protect) {
 		return;
 	}
@@ -98,7 +97,6 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffffff;
-//if(addr<0xf0000)emu->out_debug("PC=%6x: RM %6x\n",vm->get_prv_pc(),addr);
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 

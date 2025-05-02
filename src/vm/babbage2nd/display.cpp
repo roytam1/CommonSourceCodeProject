@@ -99,7 +99,7 @@ void DISPLAY::initialize()
 	pio_7seg = pio_8bit = 0;
 	
 	// register event
-	vm->register_vline_event(this);
+	register_vline_event(this);
 }
 
 void DISPLAY::event_vline(int v, int clock)

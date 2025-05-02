@@ -73,7 +73,6 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 #ifdef _MAP1010
 	if(0x7800 <= addr && addr < 0x8000) {
 		// memory mapped i/o
-//		emu->out_debug("UNKNOWN:\t%6x\tWM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
 		return;
 	}
 #endif
@@ -85,15 +84,11 @@ uint32 MEMORY::read_data8(uint32 addr)
 	addr &= 0xffff;
 #ifdef _MAP1010
 	if(0x7800 <= addr && addr < 0x7860) {
-		uint32 data = d_kbd->read_io8(addr);
-//		emu->out_debug("%6x\tRM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
-		return data;
+		return d_kbd->read_io8(addr);
 	}
 	else if(0x7860 <= addr && addr < 0x8000) {
 		// memory mapped i/o
-		uint32 data = 0xff;
-//		emu->out_debug("UNKNOWN:\t%6x\tRM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
-		return data;
+		return 0xff;
 	}
 #endif
 	return rbank[addr >> 11][addr & 0x7ff];

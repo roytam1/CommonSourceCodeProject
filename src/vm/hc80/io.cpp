@@ -154,10 +154,10 @@ void IO::initialize()
 	key_buf = new FIFO(7);
 	
 	// register events
-	vm->register_frame_event(this);
-	vm->register_event_by_clock(this, EVENT_FRC, 0x40000, true, NULL);
-	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
-	vm->register_event_by_clock(this, EVENT_6303, 100, true, NULL);
+	register_frame_event(this);
+	register_event_by_clock(this, EVENT_FRC, 0x40000, true, NULL);
+	register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
+	register_event_by_clock(this, EVENT_6303, 100, true, NULL);
 	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);
@@ -248,7 +248,7 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 		if(!slbcr) {
 			bool next = ((data & mask) != 0);
 			if((bcr == 2 && ear && !next) || (bcr == 4 && !ear && next) || (bcr == 6 && ear != next)) {
-				icrb = vm->passed_clock(cur_clock) / 4;
+				icrb = passed_clock(cur_clock) / 4;
 				isr |= BIT_ICF;
 				update_intr();
 			}
@@ -272,7 +272,7 @@ void IO::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_FRC) {
 		// FRC overflow event
-		cur_clock = vm->current_clock();
+		cur_clock = current_clock();
 		isr |= BIT_OVF;
 		update_intr();
 	}
@@ -342,7 +342,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		cmd6303_buf->write(data);
 		psr |= BIT_OBF;
 #ifdef OUT_CMD_LOG
-		emu->out_debug(_T("%4x\tDAT %2x\n"), vm->get_prv_pc(), data);
+		emu->out_debug(_T("%4x\tDAT %2x\n"), get_cpu_pc(0), data);
 #endif
 		break;
 	case 0x0f:
@@ -350,7 +350,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		cmd6303 = data;
 		psr |= BIT_OBF;
 #ifdef OUT_CMD_LOG
-		emu->out_debug(_T("\n%4x\tCMD %2x\n"), vm->get_prv_pc(), data);
+		emu->out_debug(_T("\n%4x\tCMD %2x\n"), vm->get_cpu_pc(), data);
 #endif
 		break;
 	case 0x80:
@@ -407,7 +407,7 @@ uint32 IO::read_io8(uint32 addr)
 	switch(addr & 0xff) {
 	case 0x00:
 		// ICRL.C (latch FRC value)
-		icrc = vm->passed_clock(cur_clock) / 4;
+		icrc = passed_clock(cur_clock) / 4;
 		return icrc & 0xff;
 	case 0x01:
 		// ICRH.C
@@ -448,7 +448,7 @@ uint32 IO::read_io8(uint32 addr)
 			psr &= ~BIT_F1;
 		}
 #ifdef OUT_CMD_LOG
-		emu->out_debug(_T("%4x\tRCV %2x\n"), vm->get_prv_pc(), val);
+		emu->out_debug(_T("%4x\tRCV %2x\n"), vm->get_cpu_pc(), val);
 #endif
 		return val;
 	case 0x80:

@@ -29,7 +29,7 @@ void MOUSE::reset()
 	freq = 0;
 	dx = dy = 0;
 	lx = ly = -1;
-	vm->register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq], false, NULL);
+	register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq], false, NULL);
 }
 
 void MOUSE::write_io8(uint32 addr, uint32 data)
@@ -46,7 +46,7 @@ void MOUSE::event_callback(int event_id, int err)
 	if(!(ctrlreg & 0x10)) {
 		d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR5, 1, 1);
 	}
-	vm->register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq] + err, false, NULL);
+	register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq] + err, false, NULL);
 }
 
 void MOUSE::event_frame()

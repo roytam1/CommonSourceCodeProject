@@ -124,7 +124,7 @@ void SASI::write_io8(uint32 addr, uint32 data)
 	case 0x1f2:
 		// select
 		phase = PHASE_SELECT;
-		vm->register_event(this, EVENT_COMMAND, 10, false, NULL);
+		register_event(this, EVENT_COMMAND, 10, false, NULL);
 		break;
 	case 0x1f3:
 		// mask
@@ -356,7 +356,7 @@ void SASI::check_cmd()
 void SASI::set_status(uint8 err)
 {
 	error = err;
-	vm->register_event(this, EVENT_STATUS, 10, false, NULL);
+	register_event(this, EVENT_STATUS, 10, false, NULL);
 }
 
 void SASI::set_drq(bool flag)

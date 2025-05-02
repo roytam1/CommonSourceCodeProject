@@ -14,15 +14,9 @@
 #include "../emu.h"
 #include "device.h"
 
-#define HD46505_MAX_EVENT	64
-
 class HD46505 : public DEVICE
 {
 private:
-	// vline events
-	DEVICE* vline_event[HD46505_MAX_EVENT];
-	int vline_event_cnt;
-	
 	// output signals
 	outputs_t outputs_disp;
 	outputs_t outputs_vblank;
@@ -31,7 +25,13 @@ private:
 	
 	uint8 regs[18];
 	int ch;
-	bool updated;
+	bool timing_changed;
+	
+	int cpu_clocks;
+#ifdef HD46505_HORIZ_FREQ
+	int horiz_freq, next_horiz_freq;
+#endif
+	double frames_per_sec;
 	
 	int hz_total, hz_disp;
 	int hs_start, hs_end;
@@ -41,13 +41,9 @@ private:
 	
 	int disp_end_clock;
 	int hs_start_clock, hs_end_clock;
-	int hz_clock;
-	
-	int vline;
 	
 	bool display, vblank, vsync, hsync;
 	
-	void update_vline(int v, int clock);
 	void set_display(bool val);
 	void set_vblank(bool val);
 	void set_vsync(bool val);
@@ -59,7 +55,6 @@ public:
 		init_output_signals(&outputs_vblank);
 		init_output_signals(&outputs_vsync);
 		init_output_signals(&outputs_hsync);
-		vline_event_cnt = 0;
 	}
 	~HD46505() {}
 	
@@ -67,9 +62,11 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void event_pre_frame();
 	void event_frame();
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique function
 	void set_context_disp(DEVICE* device, int id, uint32 mask) {
@@ -84,10 +81,14 @@ public:
 	void set_context_hsync(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_hsync, device, id, mask);
 	}
+#ifdef HD46505_HORIZ_FREQ
+	void set_horiz_freq(int freq) {
+		next_horiz_freq = freq;
+	}
+#endif
 	uint8* get_regs() {
 		return regs;
 	}
-	void register_crtc_vline_event(DEVICE* dev);
 };
 
 #endif

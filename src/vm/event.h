@@ -51,9 +51,8 @@ private:
 	DEVICE* frame_event[MAX_EVENT];
 	DEVICE* vline_event[MAX_EVENT];
 	
-	double frames_per_sec;
-	int lines_per_frame;
-	bool update_timing;
+	double frames_per_sec, next_frames_per_sec;
+	int lines_per_frame, next_lines_per_frame;
 	
 	int next_clock, past_clock, next_id;
 	int event_count, frame_event_count, vline_event_count;
@@ -68,6 +67,7 @@ private:
 	uint16* sound_buffer;
 	int32* sound_tmp;
 	int buffer_ptr;
+	int sound_rate;
 	int sound_samples;
 	int sound_tmp_samples;
 	int accum_samples, update_samples;
@@ -81,9 +81,12 @@ public:
 		dcount_cpu = dcount_sound = 0;
 		event_count = frame_event_count = vline_event_count = 0;
 		get_nextevent = true;
-		frames_per_sec = FRAMES_PER_SEC;
-		lines_per_frame = LINES_PER_FRAME;
-		update_timing = true;
+		
+		// force update timing in the first frame
+		frames_per_sec = 0.0;
+		lines_per_frame = 0;
+		next_frames_per_sec = FRAMES_PER_SEC;
+		next_lines_per_frame = LINES_PER_FRAME;
 	}
 	~EVENT() {}
 	
@@ -97,16 +100,25 @@ public:
 	int event_manager_id() {
 		return this_device_id;
 	}
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
+	void set_frames_per_sec(double new_frames_per_sec) {
+		next_frames_per_sec = new_frames_per_sec;
+	}
+	void set_lines_per_frame(int new_lines_per_frame) {
+		next_lines_per_frame = new_lines_per_frame;
+	}
+	void register_event(DEVICE* device, int event_id, double usec, bool loop, int* register_id);
 	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
 	void cancel_event(int register_id);
 	void register_frame_event(DEVICE* device);
 	void register_vline_event(DEVICE* device);
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc(int index);
+	uint32 get_cpu_pc(int index);
 	
 	// unique functions
+	double frame_rate() {
+		return next_frames_per_sec;
+	}
 	void drive();
 	
 	void initialize_sound(int rate, int samples);
@@ -123,27 +135,6 @@ public:
 	}
 	void set_context_sound(DEVICE* device) {
 		d_sound[dcount_sound++] = device;
-	}
-	void set_cpu_clocks(int index, int clocks) {
-		if(d_cpu[index].cpu_clocks != clocks) {
-			d_cpu[index].cpu_clocks = clocks;
-			update_timing = true;
-		}
-	}
-	void set_cpu_clocks(int clocks) {
-		set_cpu_clocks(0, clocks);
-	}
-	void set_frames_per_sec(double frames) {
-		if(frames_per_sec != frames) {
-			frames_per_sec = frames;
-			update_timing = true;
-		}
-	}
-	void set_lines_per_frame(int lines) {
-		if(lines_per_frame != lines) {
-			lines_per_frame = lines;
-			update_timing = true;
-		}
 	}
 };
 

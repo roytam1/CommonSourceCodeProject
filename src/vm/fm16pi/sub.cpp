@@ -43,8 +43,7 @@ void SUB::initialize()
 	key_buffer = new FIFO(16);
 	
 	// key scan (15ms)
-	int id;
-	vm->register_event(this, EVENT_KEYSCAN, 15000, true, &id);
+	register_event(this, EVENT_KEYSCAN, 15000, true, NULL);
 }
 
 void SUB::release()

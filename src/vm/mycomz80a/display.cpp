@@ -42,7 +42,7 @@ void DISPLAY::initialize()
 	cblink = 0;
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void DISPLAY::update_config()

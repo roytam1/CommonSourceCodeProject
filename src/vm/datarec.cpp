@@ -299,8 +299,7 @@ void DATAREC::update_event()
 {
 	if(remote && ((play && remain > 0) || rec)) {
 		if(register_id == -1) {
-			int period = (int)((float)CPU_CLOCKS / (float)sample_rate + 0.5f);
-			register_event_by_clock(this, 0, period, true, &register_id);
+			register_event(this, 0, 1000000. / (double)sample_rate, true, &register_id);
 		}
 	}
 	else {

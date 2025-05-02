@@ -19,7 +19,7 @@ void VDP::initialize()
 	create_bg();
 	
 	// register event to interrupt
-	vm->register_vline_event(this);
+	register_vline_event(this);
 }
 
 void VDP::write_io8(uint32 addr, uint32 data)

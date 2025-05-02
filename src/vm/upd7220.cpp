@@ -63,13 +63,32 @@ void UPD7220::initialize()
 		rt[i] = (int)((double)(1 << RT_MULBIT) * (1 - sqrt(1 - pow((0.70710678118654 * i) / RT_TABLEMAX, 2))));
 	}
 	fo = new FIFO(0x10000);
-	pitch = 40;	// 640dot
-	
-	// default (QC-10)
-	vs = LINES_PER_FRAME * 16 / 421;
-	hc = (int)(CPU_CLOCKS * 29 / FRAMES_PER_SEC / LINES_PER_FRAME / 109 + 0.5);
 	
 	vsync = hblank = false;
+	master = false;
+	pitch = 40;	// 640dot
+	
+	// initial settings for 1st frame
+	vtotal = LINES_PER_FRAME;
+	v1 = 16;
+	v2 = vtotal - v1;
+#ifdef CHARS_PER_LINE
+	h1 = (CHARS_PER_LINE > 80) ? 80 : 40;	// CHARS_PER_LINE > 40 ???
+	h2 = CHARS_PER_LINE - h1;
+#else
+	h1 = 80;
+	h2 = 29;
+#endif
+	
+	sync_changed = false;
+	vs = hc = 0;
+	
+#ifdef UPD7220_HORIZ_FREQ
+	horiz_freq = 0;
+	next_horiz_freq = UPD7220_HORIZ_FREQ;
+#endif
+	
+	// register events
 	register_frame_event(this);
 	register_vline_event(this);
 }
@@ -195,8 +214,58 @@ uint32 UPD7220::read_io8(uint32 addr)
 	return 0xff;
 }
 
+void UPD7220::event_pre_frame()
+{
+	if(sync_changed) {
+		// calc vsync/hblank timing
+		v1 = sync[2] >> 5;		// VS
+		v1 += (sync[3] & 3) << 3;
+		v2 = sync[5] & 0x3f;		// VFP
+		v2 += sync[6];			// AL
+		v2 += (sync[7] & 3) << 8;
+		v2 += sync[7] >> 2;		// VBP
+		
+		h1 = sync[1] + 2;		// AW
+		h2 = (sync[2] & 0x1f) + 1;	// HS
+		h2 += (sync[3] >> 2) + 1;	// HFP
+		h2 += (sync[4] & 0x3f) + 1;	// HBP
+		
+		sync_changed = false;
+		vs = hc = 0;
+#ifdef UPD7220_HORIZ_FREQ
+		horiz_freq = 0;
+#endif
+	}
+	if(master) {
+		if(vtotal != v1 + v2) {
+			vtotal = v1 + v2;
+			set_lines_per_frame(vtotal);
+		}
+#ifdef UPD7220_HORIZ_FREQ
+		if(horiz_freq != next_horiz_freq) {
+			horiz_freq = next_horiz_freq;
+			set_frames_per_sec((double)horiz_freq / (double)vtotal);
+		}
+#endif
+	}
+}
+
+void UPD7220::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
+{
+	cpu_clocks = new_clocks;
+	frames_per_sec = new_frames_per_sec;	// note: refer these params given from the event manager
+	lines_per_frame = new_lines_per_frame;	// because this device may be slave gdc
+	
+	// update event clocks
+	vs = hc = 0;
+}
+
 void UPD7220::event_frame()
 {
+	if(vs == 0) {
+		vs = (int)((double)lines_per_frame * (double)v1 / (double)(v1 + v2) + 0.5);
+		hc = (int)((double)cpu_clocks * (double)h2 / frames_per_sec / (double)lines_per_frame / (double)(h1 + h2) + 0.5);
+	}
 	if(++blink_cursor >= blink_rate * 4) {
 		blink_cursor = 0;
 	}
@@ -213,8 +282,7 @@ void UPD7220::event_vline(int v, int clock)
 		vsync = next;
 	}
 	hblank = true;
-	int id;
-	register_event_by_clock(this, 0, hc, false, &id);
+	register_event_by_clock(this, 0, hc, false, NULL);
 }
 
 void UPD7220::event_callback(int event_id, int err)
@@ -488,33 +556,23 @@ void UPD7220::cmd_sync()
 {
 	start = ((cmdreg & 1) != 0);
 	for(int i = 0; i < 8 && i < params_count; i++) {
-		sync[i] = params[i];
+		if(sync[i] != params[i]) {
+			sync[i] = params[i];
+			sync_changed = true;
+		}
 	}
 	cmdreg = -1;
-	
-	// calc vsync/hblank timing
-	int v1 = sync[2] >> 5;		// VS
-	v1 += (sync[3] & 3) << 3;
-	int v2 = sync[5] & 0x3f;	// VFP
-	v2 += sync[6];			// AL
-	v2 += (sync[7] & 3) << 8;
-	v2 += sync[7] >> 2;		// VBP
-	vs = (int)(LINES_PER_FRAME * v1 / (v1 + v2) + 0.5);
-	
-	int h1 = sync[1] + 2;		// AW
-	int h2 = (sync[2] & 0x1f) + 1;	// HS
-	h2 += (sync[3] >> 2) + 1;	// HFP
-	h2 += (sync[4] & 0x3f) + 1;	// HBP
-	hc = (int)(CPU_CLOCKS * h2 / FRAMES_PER_SEC / LINES_PER_FRAME / (h1 + h2) + 0.5);
 }
 
 void UPD7220::cmd_master()
 {
+	master = true;
 	cmdreg = -1;
 }
 
 void UPD7220::cmd_slave()
 {
+	master = false;
 	cmdreg = -1;
 }
 

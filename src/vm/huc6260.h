@@ -39,7 +39,7 @@ private:
 	
 	uint8 _A, _X, _Y, _S, _P;
 	uint8 _CF, _ZF, _IF, _DF, _BF, _TF, _VF, _NF, prvIF;
-	uint16 PC, prvPC;
+	uint16 PC, prevPC;
 	uint8 IntStat, prvIntStat;
 	uint8 IntMask, prvIntMask;
 	uint32 MPR[8];
@@ -159,8 +159,8 @@ public:
 	int passed_clock() {
 		return first - count;
 	}
-	uint32 get_prv_pc() {
-		return prvPC;
+	uint32 get_pc() {
+		return prevPC;
 	}
 	
 	// unique function

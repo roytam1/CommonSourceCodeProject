@@ -12,7 +12,6 @@
 #define EVENT_DISPLAY	0
 #define EVENT_HSYNC_S	1
 #define EVENT_HSYNC_E	2
-#define EVENT_VLINE	3
 
 void HD46505::initialize()
 {
@@ -22,9 +21,8 @@ void HD46505::initialize()
 	
 	memset(regs, 0, sizeof(regs));
 	ch = 0;
-	updated = false;
 	
-	// temporary for 1st frame
+	// initial settings for 1st frame
 #ifdef CHARS_PER_LINE
 	hz_total = (CHARS_PER_LINE > 54) ? CHARS_PER_LINE : 54;
 #else
@@ -39,11 +37,13 @@ void HD46505::initialize()
 	vs_start = vt_disp + 16;
 	vs_end = vs_start + 16;
 	
-	disp_end_clock = (int)(CPU_CLOCKS * hz_disp / FRAMES_PER_SEC / vt_total / hz_total);
-	hs_start_clock = (int)(CPU_CLOCKS * hs_start / FRAMES_PER_SEC / vt_total / hz_total);
-	hs_end_clock = (int)(CPU_CLOCKS * hs_end / FRAMES_PER_SEC / vt_total / hz_total);
+	timing_changed = false;
+	disp_end_clock = 0;
 	
-	hz_clock = (int)(CPU_CLOCKS / FRAMES_PER_SEC / vt_total);
+#ifdef HD46505_HORIZ_FREQ
+	horiz_freq = 0;
+	next_horiz_freq = HD46505_HORIZ_FREQ;
+#endif
 	
 	// register events
 	register_frame_event(this);
@@ -55,7 +55,7 @@ void HD46505::write_io8(uint32 addr, uint32 data)
 	if(addr & 1) {
 		if(ch < 18) {
 			if(ch < 10 && regs[ch] != data) {
-				updated = true;
+				timing_changed = true;
 			}
 			regs[ch] = data;
 		}
@@ -75,9 +75,9 @@ uint32 HD46505::read_io8(uint32 addr)
 	}
 }
 
-void HD46505::event_frame()
+void HD46505::event_pre_frame()
 {
-	if(updated) {
+	if(timing_changed) {
 		int ch_height = (regs[9] & 0x1f) + 1;
 		
 		hz_total = regs[0] + 1;
@@ -85,34 +85,56 @@ void HD46505::event_frame()
 		hs_start = regs[2];
 		hs_end = hs_start + (regs[3] & 0x0f);
 		
-		vt_total = ((regs[4] & 0x7f) + 1) * ch_height + (regs[5] & 0x1f);
+		int new_vt_total = ((regs[4] & 0x7f) + 1) * ch_height + (regs[5] & 0x1f);
 		vt_disp = (regs[6] & 0x7f) * ch_height;
 		vs_start = ((regs[7] & 0x7f) + 1) * ch_height;
 		vs_end = vs_start + ((regs[3] & 0xf0) ? (regs[3] >> 4) : 16);
 		
-		if(vt_total != 0 && hz_total != 0) {
-			disp_end_clock = (int)(CPU_CLOCKS * hz_disp / FRAMES_PER_SEC / vt_total / hz_total);
-			hs_start_clock = (int)(CPU_CLOCKS * hs_start / FRAMES_PER_SEC / vt_total / hz_total);
-			hs_end_clock = (int)(CPU_CLOCKS * hs_end / FRAMES_PER_SEC / vt_total / hz_total);
+		if(vt_total != new_vt_total) {
+			vt_total = new_vt_total;
+			set_lines_per_frame(vt_total);
 		}
-		if(vt_total != 0) {
-			hz_clock = (int)(CPU_CLOCKS / FRAMES_PER_SEC / vt_total);
+		timing_changed = false;
+		disp_end_clock = 0;
+#ifdef HD46505_HORIZ_FREQ
+		horiz_freq = 0;
+#endif
+	}
+#ifdef HD46505_HORIZ_FREQ
+	if(horiz_freq != next_horiz_freq) {
+		uint8 r8=regs[8]&3;
+		horiz_freq = next_horiz_freq;
+		frames_per_sec = (double)horiz_freq / (double)vt_total;
+		if(regs[8] & 1) {
+			frames_per_sec *= 2; // interlace mode
 		}
-		updated = false;
+		set_frames_per_sec(frames_per_sec);
+	}
+#endif
+}
+
+void HD46505::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
+{
+	cpu_clocks = new_clocks;
+#ifndef HD46505_HORIZ_FREQ
+	frames_per_sec = new_frames_per_sec;
+#endif
+	
+	// update event clocks
+	disp_end_clock = 0;
+}
+
+void HD46505::event_frame()
+{
+	// update envet clocks after update_timing() is called
+	if(disp_end_clock == 0 && vt_total != 0) {
+		disp_end_clock = (int)((double)cpu_clocks * (double)hz_disp / frames_per_sec / (double)vt_total / (double)hz_total);
+		hs_start_clock = (int)((double)cpu_clocks * (double)hs_start / frames_per_sec / (double)vt_total / (double)hz_total);
+		hs_end_clock = (int)((double)cpu_clocks * (double)hs_end / frames_per_sec / (double)vt_total / (double)hz_total);
 	}
 }
 
 void HD46505::event_vline(int v, int clock)
-{
-	// note: event_vline() is called after every event_frame() was called in all devices
-	if(v == 0 && vt_total != 0) {
-		update_vline(0, hz_clock);
-		vline = 1;
-		register_event_by_clock(this, EVENT_VLINE, hz_clock, false, NULL);
-	}
-}
-
-void HD46505::update_vline(int v, int clock)
 {
 	// if vt_disp == 0, raise vblank for one line
 	bool new_vblank = ((v < vt_disp) || (v == 0 && vt_disp == 0));
@@ -137,11 +159,6 @@ void HD46505::update_vline(int v, int clock)
 		register_event_by_clock(this, EVENT_HSYNC_S, hs_start_clock, false, NULL);
 		register_event_by_clock(this, EVENT_HSYNC_E, hs_end_clock, false, NULL);
 	}
-	
-	// run registered vline events
-	for(int i = 0; i < vline_event_cnt; i++) {
-		vline_event[i]->event_vline(v, clock);
-	}
 }
 
 void HD46505::event_callback(int event_id, int err)
@@ -154,12 +171,6 @@ void HD46505::event_callback(int event_id, int err)
 	}
 	else if(event_id == EVENT_HSYNC_E) {
 		set_hsync(false);
-	}
-	else if(event_id == EVENT_VLINE) {
-		update_vline(vline, hz_clock);
-		if(++vline < vt_total) {
-			register_event_by_clock(this, EVENT_VLINE, hz_clock + err, false, NULL);
-		}
 	}
 }
 
@@ -193,17 +204,5 @@ void HD46505::set_hsync(bool val)
 		write_signals(&outputs_hsync, val ? 0xffffffff : 0);
 		hsync = val;
 	}
-}
-
-void HD46505::register_crtc_vline_event(DEVICE* dev)
-{
-	if(vline_event_cnt < HD46505_MAX_EVENT) {
-		vline_event[vline_event_cnt++] = dev;
-	}
-#ifdef _DEBUG_LOG
-	else {
-		emu->out_debug(_T("EVENT: too many vline events !!!\n"));
-	}
-#endif
 }
 

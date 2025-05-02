@@ -42,7 +42,7 @@ private:
 	
 	int count, first;
 	pair regs[4];
-	uint16 SP, PC, prvPC;
+	uint16 SP, PC, prevPC;
 	uint16 IM, RIM_IEN;
 	bool HALT, BUSREQ, SID;
 	
@@ -185,8 +185,8 @@ public:
 	int passed_clock() {
 		return first - count;
 	}
-	uint32 get_prv_pc() {
-		return prvPC;
+	uint32 get_pc() {
+		return prevPC;
 	}
 	void set_pc(uint32 pc) {
 		PC = pc;

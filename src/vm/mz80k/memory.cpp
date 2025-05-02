@@ -87,9 +87,9 @@ void MEMORY::initialize()
 #endif
 	
 	// register event
-	vm->register_vline_event(this);
-	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
-	vm->register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, NULL);	// 1.5hz * 2
+	register_vline_event(this);
+	register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
+	register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, NULL);	// 1.5hz * 2
 }
 
 void MEMORY::reset()
@@ -122,8 +122,7 @@ void MEMORY::event_vline(int v, int clock)
 #ifdef _MZ1200
 	// hblank
 	hblank = true;
-	int id;
-	vm->register_event_by_clock(this, EVENT_HBLANK, 92, false, &id);
+	register_event_by_clock(this, EVENT_HBLANK, 92, false, NULL);
 #endif
 }
 

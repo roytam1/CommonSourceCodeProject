@@ -69,7 +69,7 @@ void MEMORY::initialize()
 	key_stat = emu->key_buffer();
 	
 	// register event to update the key status
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void MEMORY::reset()
@@ -98,11 +98,11 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			}
 			else {
 				// unknown ???
-				emu->out_debug("%6x\tWM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
+				emu->out_debug("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 			}
 			break;
 		default:
-			emu->out_debug("%6x\tWM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
+			emu->out_debug("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 			break;
 		}
 		return;
@@ -132,7 +132,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 			// bit1: vsync or hsync ???
 			return sysport;
 		}
-		emu->out_debug("%6x\tRM8\t%4x\n", vm->get_prv_pc(), addr);
+		emu->out_debug("%6x\tRM8\t%4x\n", get_cpu_pc(0), addr);
 		return 0xff;
 	}
 	return rbank[addr >> 10][addr & 0x3ff];

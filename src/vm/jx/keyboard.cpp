@@ -40,12 +40,12 @@ void KEYBOARD::initialize()
 	key_buf = new FIFO(8);
 	
 #ifdef KEYBOARD_HACK
-	vm->register_event(this, EVENT_SEND, 440 * 21, true, NULL);
+	register_event(this, EVENT_SEND, 440 * 21, true, NULL);
 #else
-	vm->register_event(this, EVENT_SEND, 220, true, NULL);
+	register_event(this, EVENT_SEND, 220, true, NULL);
 #endif
 #ifndef TIMER_HACK
-	vm->register_event_by_clock(this, EVENT_TIMER, 4, true, NULL);
+	register_event_by_clock(this, EVENT_TIMER, 4, true, NULL);
 #endif
 }
 

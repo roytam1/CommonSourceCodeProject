@@ -53,7 +53,6 @@
 #endif
 
 #if defined(_PC98DO)
-#define SUPPORT_VARIABLE_TIMING
 #define MODE_PC98	0
 #define MODE_PC88_V1S	1
 #define MODE_PC88_V1H	2
@@ -81,6 +80,7 @@
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
 //#define UPD765A_MEDIA_CHANGE
 #define UPD7220_MSB_FIRST
+#define UPD7220_HORIZ_FREQ	24830
 #if defined(_PC9801) || defined(_PC9801E)
 #define HAS_I86
 #else
@@ -123,6 +123,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_ACCESS_LAMP
 #if defined(_PC98DO)
+#define SUPPORT_VARIABLE_TIMING
 #define USE_SCANLINE
 #endif
 
@@ -287,6 +288,9 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+#if defined(_PC98DO)
+	double frame_rate();
+#endif
 	
 	// draw screen
 	void draw_screen();
@@ -310,26 +314,11 @@ public:
 #endif
 	bool now_skip();
 	
-#if defined(_PC98DO)
-	double frame_rate();
-#endif
 	void update_config();
 	
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	
-	// event callbacks
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
-	
-	// clock
-	uint32 current_clock();
-	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

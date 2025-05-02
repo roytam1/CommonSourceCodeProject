@@ -298,7 +298,7 @@ void BIOS::initialize()
 		wait_pc = 0xfffd3;
 		
 		// register event
-		vm->register_frame_event(this);
+		register_frame_event(this);
 	}
 	
 	// init scsi
@@ -350,7 +350,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 	if(PC == 0xfffc4 || PC == disk_pc1 || PC == disk_pc2) {
 		// disk bios
 #ifdef _DEBUG_LOG
-		emu->out_debug(_T("%6x\tDISK BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), vm->get_prv_pc(), AH,AL,CX,DX,BX,DS,DI);
+		emu->out_debug(_T("%6x\tDISK BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), get_cpu_pc(0), AH,AL,CX,DX,BX,DS,DI);
 #endif
 //		if(!((AL & 0xf0) == 0x20 || (AL & 0xf0) == 0x50 || (AL & 0xf0) == 0xb0)) {
 			// target drive is not floppy, memcard and scsi hard drive
@@ -1120,7 +1120,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 	else if(PC == cmos_pc) {
 		// cmos
 #ifdef _DEBUG_LOG
-		emu->out_debug(_T("%6x\tCMOS BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), vm->get_prv_pc(), AH,AL,CX,DX,BX,DS,DI);
+		emu->out_debug(_T("%6x\tCMOS BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), get_cpu_pc(0), AH,AL,CX,DX,BX,DS,DI);
 #endif
 		if(AH == 0) {
 			// init cmos
@@ -1162,7 +1162,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 	else if(PC == wait_pc) {
 		// wait
 #ifdef _DEBUG_LOG
-		emu->out_debug(_T("%6x\tWAIT BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), vm->get_prv_pc(), AH,AL,CX,DX,BX,DS,DI);
+		emu->out_debug(_T("%6x\tWAIT BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), get_cpu_pc(0), AH,AL,CX,DX,BX,DS,DI);
 #endif
 		*CarryFlag = 0;
 		return true;

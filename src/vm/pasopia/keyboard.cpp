@@ -29,7 +29,7 @@ static const int key_map[12][8] = {
 void KEYBOARD::initialize()
 {
 	key_stat = emu->key_buffer();
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)

@@ -13,7 +13,7 @@
 void SYSPORT::initialize()
 {
 	rst = 0;
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void SYSPORT::write_io8(uint32 addr, uint32 data)

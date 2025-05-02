@@ -192,7 +192,7 @@ void KEYBOARD::initialize()
 	rsp_buf = new FIFO(16);
 	caps = kana = graph = false;
 	
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::reset()

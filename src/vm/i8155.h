@@ -25,11 +25,13 @@ private:
 	uint16 count, countreg;
 	bool now_count, stop_tc, half;
 	bool prev_out, prev_in;
+	
 	// constant clock
 	uint32 freq;
 	int register_id;
 	uint32 input_clk, prev_clk;
 	int period;
+	int cpu_clocks;
 	
 	typedef struct {
 		uint8 wreg;
@@ -74,6 +76,9 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {
+		cpu_clocks = new_clocks;
+	}
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {

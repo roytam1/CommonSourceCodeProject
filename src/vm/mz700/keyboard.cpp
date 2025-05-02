@@ -36,7 +36,7 @@ void KEYBOARD::initialize()
 	column = 0;
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)

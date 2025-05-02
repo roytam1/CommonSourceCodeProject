@@ -135,7 +135,7 @@ void DISPLAY::initialize()
 	}
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void DISPLAY::kanji_copy(uint8 *dst, uint8 *src, int from, int to)
@@ -218,8 +218,15 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x6e:
 //		border = (data >> 3) & 7;
-#ifndef _PC9801
-//		horiz_freq = data & 1;
+#if !defined(_PC9801)
+		if(data & 1) {
+			d_gdc_chr->set_horiz_freq(24830);
+			d_gdc_gfx->set_horiz_freq(24830);
+		}
+		else {
+			d_gdc_chr->set_horiz_freq(15750);
+			d_gdc_gfx->set_horiz_freq(15750);
+		}
 #endif
 		break;
 	case 0x70:

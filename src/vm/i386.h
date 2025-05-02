@@ -840,7 +840,7 @@ public:
 	int passed_clock() {
 		return base_cycles - cycles;
 	}
-	uint32 get_prv_pc() {
+	uint32 get_pc() {
 		return prev_pc;
 	}
 	

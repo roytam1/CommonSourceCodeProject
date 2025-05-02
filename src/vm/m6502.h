@@ -52,7 +52,7 @@ public:
 		return first - icount;
 		busreq = false;
 	}
-	uint32 get_prv_pc() {
+	uint32 get_pc() {
 		return prev_pc;
 	}
 	

@@ -28,7 +28,7 @@ private:
 	// clocks
 	int count, first, period;
 	// register
-	uint16 WP, PC, prvPC, ST;
+	uint16 WP, PC, prevPC, ST;
 	uint8 RAM[256];
 	// interrupt
 	uint8 irq_level, int_state, int_latch;
@@ -124,8 +124,8 @@ public:
 	int passed_clock() {
 		return first - count;
 	}
-	uint32 get_prv_pc() {
-		return prvPC;
+	uint32 get_pc() {
+		return prevPC;
 	}
 	
 	// unique function

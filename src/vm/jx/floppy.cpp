@@ -27,14 +27,14 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 			// WatchDog Timer is enabled
 			if((prev & 0x40) && !(data & 0x40)) {
 				if(register_id != -1) {
-					vm->cancel_event(register_id);
+					cancel_event(register_id);
 				}
-				vm->register_event_by_clock(this, 0, 3 * CPU_CLOCKS, false, &register_id);
+				register_event_by_clock(this, 0, 3 * CPU_CLOCKS, false, &register_id);
 			}
 		}
 		else {
 			if(register_id != -1) {
-				vm->cancel_event(register_id);
+				cancel_event(register_id);
 				register_id = -1;
 			}
 		}

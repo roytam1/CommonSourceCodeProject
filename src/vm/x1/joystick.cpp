@@ -17,7 +17,7 @@ void JOYSTICK::initialize()
 	joy_stat = emu->joy_buffer();
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void JOYSTICK::event_frame()

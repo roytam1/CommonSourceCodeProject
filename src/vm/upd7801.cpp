@@ -1116,7 +1116,7 @@ void UPD7801::run(int clock)
 			
 			// run 1 opecode
 			period = 0;
-			prvPC = PC;
+			prevPC = PC;
 			OP();
 		}
 		count -= period;
@@ -1502,7 +1502,7 @@ void UPD7801::OP()
 	case 0xf8: case 0xf9: case 0xfa: case 0xfb: case 0xfc: case 0xfd: case 0xfe: case 0xff:	// jr
 		PC -= 0x20 - (ope & 0x1f); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : %2x\n"), prvPC, ope);
+		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : %2x\n"), prevPC, ope);
 	}
 	PSW &= ~(F_L0 | F_L1);
 }
@@ -1592,7 +1592,7 @@ void UPD7801::OP48()
 	case 0x3f:	// pop h
 		HL = POP16(); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 48 %2x\n"), prvPC, ope);
+		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 48 %2x\n"), prevPC, ope);
 	}
 }
 
@@ -1631,7 +1631,7 @@ void UPD7801::OP4C()
 			UPDATE_PORTC(0);
 		}
 		else {
-			emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 4c %2x\n"), prvPC, ope);
+			emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 4c %2x\n"), prevPC, ope);
 		}
 	}
 }
@@ -1674,7 +1674,7 @@ void UPD7801::OP4D()
 			UPDATE_PORTC(0);
 		}
 		else {
-			emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 4d %2x\n"), prvPC, ope);
+			emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 4d %2x\n"), prevPC, ope);
 		}
 	}
 }
@@ -2134,7 +2134,7 @@ void UPD7801::OP60()
 	case 0xff:	// eqa a,l
 		EQA(_A, _L); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 60 %2x\n"), prvPC, ope);
+		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 60 %2x\n"), prevPC, ope);
 	}
 }
 
@@ -2505,7 +2505,7 @@ void UPD7801::OP64()
 	case 0xfb:	// eqi mk,byte
 		EQI(MK); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 64 %2x\n"), prvPC, ope);
+		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 64 %2x\n"), prevPC, ope);
 	}
 }
 
@@ -2775,7 +2775,7 @@ void UPD7801::OP70()
 	case 0xff:	// eqax h-
 		EQAX(HL--); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 70 %2x\n"), prvPC, ope);
+		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 70 %2x\n"), prevPC, ope);
 	}
 }
 
@@ -2816,7 +2816,7 @@ void UPD7801::OP74()
 	case 0xf8:	// eqaw wa
 		EQAW(); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 74 %2x\n"), prvPC, ope);
+		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 74 %2x\n"), prevPC, ope);
 	}
 }
 

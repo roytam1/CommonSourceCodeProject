@@ -38,7 +38,7 @@ void DISPLAY::initialize()
 #endif
 	
 	cblink = 0;
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void DISPLAY::reset()

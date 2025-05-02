@@ -25,6 +25,7 @@
 #define UPD765A_WAIT_SEEK
 #define UPD765A_WAIT_RESULT7
 #define UPD765A_EXT_DRVSEL
+#define UPD7220_HORIZ_FREQ	20860
 #define IO_ADDR_MAX		0x100
 
 // device informations for win32
@@ -121,19 +122,6 @@ public:
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	
-	// event callbacks
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
-	
-	// clock
-	uint32 current_clock();
-	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc();
-	uint32 get_sub_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

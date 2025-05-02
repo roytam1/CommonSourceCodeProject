@@ -24,7 +24,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		if(!write_table[laddr].dev->this_device_id) {
 			emu->out_debug("UNKNOWN:\t");
 		}
-		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", vm->get_prv_pc(), laddr | haddr, data);
+		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), laddr | haddr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -47,7 +47,7 @@ uint32 IO::read_io8(uint32 addr)
 		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
 			emu->out_debug("UNKNOWN:\t");
 		}
-		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), laddr | haddr, val);
+		emu->out_debug("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), laddr | haddr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}

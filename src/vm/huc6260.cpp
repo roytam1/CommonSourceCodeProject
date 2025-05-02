@@ -484,7 +484,7 @@ void HUC6260::run(int clock)
 				}
 			}
 			RefreshPrvIF();
-			prvPC = PC;
+			prevPC = PC;
 			code = FETCH8();
 			count -= cycles[code];
 			OP(code);

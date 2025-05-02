@@ -111,7 +111,7 @@ void MEMORY::initialize()
 	SET_BANK(0xff0000, 0xffffff, wdmy, ipl);
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void MEMORY::reset()

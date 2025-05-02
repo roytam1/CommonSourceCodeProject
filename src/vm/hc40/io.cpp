@@ -88,9 +88,9 @@ void IO::initialize()
 	art_buf = new FIFO(BUFFER_SIZE);
 	
 	// register events
-	vm->register_frame_event(this);
-	vm->register_event_by_clock(this, EVENT_FRC, 0x60000, true, NULL);
-	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
+	register_frame_event(this);
+	register_event_by_clock(this, EVENT_FRC, 0x60000, true, NULL);
+	register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
 	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);
@@ -148,7 +148,7 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 		if(!slbcr) {
 			bool next = ((data & mask) != 0);
 			if((bcr == 2 && ear && !next) || (bcr == 4 && !ear && next) || (bcr == 6 && ear != next)) {
-				icrb = vm->passed_clock(cur_clock) / 6;
+				icrb = passed_clock(cur_clock) / 6;
 				isr |= BIT_ICF;
 				update_intr();
 			}
@@ -159,7 +159,7 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 		// data from art
 		art_buf->write(data & mask);
 		if(rxen && !art_buf->empty() && register_id == -1) {
-			vm->register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
+			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
 		}
 	}
 }
@@ -174,7 +174,7 @@ void IO::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_FRC) {
 		// FRC overflow event
-		cur_clock = vm->current_clock();
+		cur_clock = current_clock();
 		isr |= BIT_OVF;
 		update_intr();
 	}
@@ -202,7 +202,7 @@ void IO::event_callback(int event_id, int err)
 		}
 		// if data is still left in buffer, register event for next data
 		if(rxen && !art_buf->empty()) {
-			vm->register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
+			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
 		}
 		else {
 			register_id = -1;
@@ -281,7 +281,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		txen = ((data & 1) != 0);
 		rxen = ((data & 4) != 0);
 		if(rxen && !art_buf->empty() && register_id == -1) {
-			vm->register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
+			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
 		}
 		break;
 	case 0x19:
@@ -324,7 +324,7 @@ uint32 IO::read_io8(uint32 addr)
 	switch(addr & 0xff) {
 	case 0x00:
 		// ICRL.C (latch FRC value)
-		icrc = vm->passed_clock(cur_clock) / 6;
+		icrc = passed_clock(cur_clock) / 6;
 		return icrc & 0xff;
 	case 0x01:
 		// ICRH.C

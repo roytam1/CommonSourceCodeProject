@@ -65,6 +65,7 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
 	void set_context_vsync(DEVICE* device, int id, uint32 mask) {

@@ -22,11 +22,14 @@
 
 // device informations for virtual machine
 #ifdef _COLOR_MONITOR
-#define FRAMES_PER_SEC		56.9
+#define FRAMES_PER_SEC		56.92
+#define LINES_PER_FRAME 	441
+#define UPD7220_HORIZ_FREQ	25100
 #else
-#define FRAMES_PER_SEC		45.8
-#endif
+#define FRAMES_PER_SEC		45.84
 #define LINES_PER_FRAME 	421
+#define UPD7220_HORIZ_FREQ	19300
+#endif
 #define CPU_CLOCKS		3993600
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
@@ -137,18 +140,6 @@ public:
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	
-	// event callbacks
-	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
-	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
-	void register_frame_event(DEVICE* dev);
-	void register_vline_event(DEVICE* dev);
-	
-	// clock
-	uint32 current_clock();
-	uint32 passed_clock(uint32 prev);
-	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

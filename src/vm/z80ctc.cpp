@@ -77,7 +77,7 @@ uint32 Z80CTC::read_io8(uint32 addr)
 	// update counter
 	if(counter[ch].clock_id != -1) {
 		int passed = passed_clock(counter[ch].prev);
-		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
+		uint32 input = counter[ch].freq * passed / cpu_clocks;
 		if(counter[ch].input <= input) {
 			input = counter[ch].input - 1;
 		}
@@ -94,7 +94,7 @@ uint32 Z80CTC::read_io8(uint32 addr)
 	else if(counter[ch].sysclock_id != -1) {
 		int passed = passed_clock(counter[ch].prev);
 #ifdef Z80CTC_CLOCKS
-		uint32 input = passed * Z80CTC_CLOCKS / CPU_CLOCKS;
+		uint32 input = passed * Z80CTC_CLOCKS / cpu_clocks;
 #else
 		uint32 input = passed;
 #endif
@@ -217,7 +217,7 @@ void Z80CTC::update_event(int ch, int err)
 		}
 		if(counter[ch].clock_id == -1 && counter[ch].freq) {
 			counter[ch].input = counter[ch].count;
-			counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input + err;
+			counter[ch].period = cpu_clocks / counter[ch].freq * counter[ch].input + err;
 			counter[ch].prev = current_clock() + err;
 			register_event_by_clock(this, EVENT_COUNTER + ch, counter[ch].period, false, &counter[ch].clock_id);
 		}
@@ -239,7 +239,7 @@ void Z80CTC::update_event(int ch, int err)
 		if(counter[ch].sysclock_id == -1) {
 			counter[ch].input = counter[ch].count * counter[ch].prescaler - counter[ch].clocks;
 #ifdef Z80CTC_CLOCKS
-			counter[ch].period = counter[ch].input * CPU_CLOCKS / Z80CTC_CLOCKS + err;
+			counter[ch].period = counter[ch].input * cpu_clocks / Z80CTC_CLOCKS + err;
 #else
 			counter[ch].period = counter[ch].input + err;
 #endif

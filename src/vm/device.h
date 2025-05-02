@@ -46,7 +46,7 @@ public:
 		}
 		vm->last_device = this;
 		
-		// refer event functions in the parent vm class
+		// primary event manager
 		event_manager = NULL;
 	}
 	~DEVICE(void) {}
@@ -372,7 +372,7 @@ public:
 	virtual int passed_clock() {
 		return 0;
 	}
-	virtual uint32 get_prv_pc() {
+	virtual uint32 get_pc() {
 		return 0;
 	}
 	virtual void set_pc(uint32 pc) {
@@ -393,82 +393,76 @@ public:
 		event_manager = device;
 	}
 	virtual int event_manager_id() {
-		if(event_manager != NULL) {
-			return event_manager->this_device_id;
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			return 1; // primary event manager should be 2nd device
-		}
+		return event_manager->this_device_id;
 	}
-	virtual void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id) {
-		if(event_manager != NULL) {
-			event_manager->register_event(device, event_id, usec, loop, register_id);
+	virtual void register_event(DEVICE* device, int event_id, double usec, bool loop, int* register_id) {
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			vm->register_event(device, event_id, usec, loop, register_id);
-		}
+		event_manager->register_event(device, event_id, usec, loop, register_id);
 	}
 	virtual void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id) {
-		if(event_manager != NULL) {
-			event_manager->register_event_by_clock(device, event_id, clock, loop, register_id);
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			vm->register_event_by_clock(device, event_id, clock, loop, register_id);
-		}
+		event_manager->register_event_by_clock(device, event_id, clock, loop, register_id);
 	}
 	virtual void cancel_event(int register_id) {
-		if(event_manager != NULL) {
-			event_manager->cancel_event(register_id);
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			vm->cancel_event(register_id);
-		}
+		event_manager->cancel_event(register_id);
 	}
 	virtual void register_frame_event(DEVICE* device) {
-		if(event_manager != NULL) {
-			event_manager->register_frame_event(device);
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			vm->register_frame_event(device);
-		}
+		event_manager->register_frame_event(device);
 	}
 	virtual void register_vline_event(DEVICE* device) {
-		if(event_manager != NULL) {
-			event_manager->register_vline_event(device);
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			vm->register_vline_event(device);
-		}
+		event_manager->register_vline_event(device);
 	}
 	virtual uint32 current_clock() {
-		if(event_manager != NULL) {
-			return event_manager->current_clock();
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			return vm->current_clock();
-		}
+		return event_manager->current_clock();
 	}
 	virtual uint32 passed_clock(uint32 prev) {
-		if(event_manager != NULL) {
-			return event_manager->passed_clock(prev);
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			return vm->passed_clock(prev);
-		}
+		return event_manager->passed_clock(prev);
 	}
-	virtual uint32 get_prv_pc(int index) {
-		if(event_manager != NULL) {
-			return event_manager->get_prv_pc(index);
+	virtual uint32 get_cpu_pc(int index) {
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
 		}
-		else {
-			// always first cpu
-			return vm->get_prv_pc();
-		}
+		return event_manager->get_cpu_pc(index);
 	}
-	virtual void update_timing(int clocks, double frames_per_sec, double lines_per_frame) {}
+	virtual void set_frames_per_sec(double frames) {
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
+		}
+		event_manager->set_frames_per_sec(frames);
+	}
+	virtual void set_lines_per_frame(int lines) {
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
+		}
+		event_manager->set_lines_per_frame(lines);
+	}
+	virtual void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {}
 	
 	// event callback
 	virtual void event_callback(int event_id, int err) {}
+	virtual void event_pre_frame() {}	// this event is to update timing settings
 	virtual void event_frame() {}
 	virtual void event_vline(int v, int clock) {}
 	virtual void event_hsync(int v, int h, int clock) {}

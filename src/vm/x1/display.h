@@ -20,11 +20,16 @@
 #define SIG_DISPLAY_COLUMN		1
 #define SIG_DISPLAY_DETECT_VBLANK	2
 
+#ifdef _X1TURBO
+class HD46505;
+#endif
+
 class DISPLAY : public DEVICE
 {
 private:
 #ifdef _X1TURBO
 	DEVICE *d_cpu;
+	HD46505 *d_crtc;
 #endif
 	
 	uint8* regs;
@@ -118,6 +123,9 @@ public:
 #ifdef _X1TURBO
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
+	}
+	void set_context_crtc(HD46505* device) {
+		d_crtc = device;
 	}
 #endif
 	void set_vram_ptr(uint8* ptr) {

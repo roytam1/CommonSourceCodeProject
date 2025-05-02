@@ -641,50 +641,17 @@ void VM::run()
 #endif
 }
 
-// ----------------------------------------------------------------------------
-// event manager
-// ----------------------------------------------------------------------------
-
-void VM::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
+#if defined(_PC98DO)
+double VM::frame_rate()
 {
-	event->register_event(dev, event_id, usec, loop, register_id);
+	if(config.boot_mode == 0) {
+		return event->frame_rate();
+	}
+	else {
+		return pc88event->frame_rate();
+	}
 }
-
-void VM::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
-{
-	event->register_event_by_clock(dev, event_id, clock, loop, register_id);
-}
-
-void VM::cancel_event(int register_id)
-{
-	event->cancel_event(register_id);
-}
-
-void VM::register_frame_event(DEVICE* dev)
-{
-	event->register_frame_event(dev);
-}
-
-void VM::register_vline_event(DEVICE* dev)
-{
-	event->register_vline_event(dev);
-}
-
-uint32 VM::current_clock()
-{
-	return event->current_clock();
-}
-
-uint32 VM::passed_clock(uint32 prev)
-{
-	uint32 current = event->current_clock();
-	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
-}
-
-uint32 VM::get_prv_pc()
-{
-	return cpu->get_prv_pc();
-}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen
@@ -864,18 +831,6 @@ bool VM::now_skip()
 {
 	return false;
 }
-
-#if defined(_PC98DO)
-double VM::frame_rate()
-{
-	if(config.boot_mode == 0) {
-		return FRAMES_PER_SEC;
-	}
-	else {
-		return pc88->frame_rate();
-	}
-}
-#endif
 
 void VM::update_config()
 {

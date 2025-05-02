@@ -128,9 +128,9 @@ void MEMORY::initialize()
 #endif
 	
 	// register event
-	vm->register_vline_event(this);
-	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
-	vm->register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, NULL);	// 1.5hz * 2
+	register_vline_event(this);
+	register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
+	register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, NULL);	// 1.5hz * 2
 }
 
 
@@ -204,13 +204,13 @@ void MEMORY::event_vline(int v, int clock)
 	// hblank / hsync
 	set_hblank(false);
 #if defined(_MZ800)
-	vm->register_event_by_clock(this, EVENT_HBLANK, 128, false, NULL);	// PAL 50Hz
-	vm->register_event_by_clock(this, EVENT_HSYNC_S, 161, false, NULL);
-	vm->register_event_by_clock(this, EVENT_HSYNC_E, 177, false, NULL);
+	register_event_by_clock(this, EVENT_HBLANK, 128, false, NULL);	// PAL 50Hz
+	register_event_by_clock(this, EVENT_HSYNC_S, 161, false, NULL);
+	register_event_by_clock(this, EVENT_HSYNC_E, 177, false, NULL);
 #else
-	vm->register_event_by_clock(this, EVENT_HBLANK, 165, false, NULL);	// NTSC 60Hz
-//	vm->register_event_by_clock(this, EVENT_HSYNC_S, 180, false, NULL);
-//	vm->register_event_by_clock(this, EVENT_HSYNC_E, 194, false, NULL);
+	register_event_by_clock(this, EVENT_HBLANK, 165, false, NULL);	// NTSC 60Hz
+//	register_event_by_clock(this, EVENT_HSYNC_S, 180, false, NULL);
+//	register_event_by_clock(this, EVENT_HSYNC_E, 194, false, NULL);
 #endif
 	
 #if defined(_MZ700) || defined(_MZ1500)
@@ -218,7 +218,7 @@ void MEMORY::event_vline(int v, int clock)
 	hblank_vram = false;
 #if defined(_MZ1500)
 	// memory wait for pcg
-	vm->register_event_by_clock(this, EVENT_HBLANK_PCG, 170, false, NULL);
+	register_event_by_clock(this, EVENT_HBLANK_PCG, 170, false, NULL);
 	hblank_pcg = false;
 #endif
 #endif

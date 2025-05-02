@@ -131,8 +131,8 @@ void CRTC::initialize()
 	map_init = trans_init = true;
 	
 	// register events
-	vm->register_vline_event(this);
-	vm->register_event(this, EVENT_BLINK, 500000, true, NULL);
+	register_vline_event(this);
+	register_event(this, EVENT_BLINK, 500000, true, NULL);
 }
 
 void CRTC::write_data8(uint32 addr, uint32 data)
@@ -434,7 +434,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 			textreg[textreg_num] = data;
 			
 			// kugyokuden 400line patch
-			if(vm->get_prv_pc() == 0xc27e && !monitor_200line) {
+			if(get_cpu_pc(0) == 0xc27e && !monitor_200line) {
 				if(textreg[3] == 0x26 && textreg[5] == 0xee) {
 					textreg[3] = 0x11;
 					textreg[5] = 0xd9;
@@ -582,13 +582,13 @@ void CRTC::event_vline(int v, int clock)
 		set_hsync(0);
 	}
 	else if(GDEHS < CHARS_PER_LINE) {
-		vm->register_event_by_clock(this, GDEHS, GDEHSC, false, NULL);
+		register_event_by_clock(this, GDEHS, GDEHSC, false, NULL);
 	}
 	if(!GDEHE) {
 		set_hsync(0);
 	}
 	else if(GDEHE < CHARS_PER_LINE) {
-		vm->register_event_by_clock(this, GDEHE, GDEHEC, false, NULL);
+		register_event_by_clock(this, GDEHE, GDEHEC, false, NULL);
 	}
 }
 

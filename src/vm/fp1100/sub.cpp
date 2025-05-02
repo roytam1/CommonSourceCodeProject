@@ -80,7 +80,7 @@ void SUB::initialize()
 	}
 	
 	key_stat = emu->key_buffer();
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void SUB::reset()
@@ -210,7 +210,7 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 		// from main pcb
 		comm_data = data & 0xff;
 		// ugly patch for command
-		if(vm->get_sub_prv_pc() == 0x10e || vm->get_sub_prv_pc() == 0x110) {
+		if(get_cpu_pc(1) == 0x10e || get_cpu_pc(1) == 0x110) {
 			d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);
 		}
 		break;

@@ -201,49 +201,9 @@ void VM::run()
 	event->drive();
 }
 
-// ----------------------------------------------------------------------------
-// event manager
-// ----------------------------------------------------------------------------
-
-void VM::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
+double VM::frame_rate()
 {
-	event->register_event(dev, event_id, usec, loop, register_id);
-}
-
-void VM::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
-{
-	event->register_event_by_clock(dev, event_id, clock, loop, register_id);
-}
-
-void VM::cancel_event(int register_id)
-{
-	event->cancel_event(register_id);
-}
-
-void VM::register_frame_event(DEVICE* dev)
-{
-	event->register_frame_event(dev);
-}
-
-void VM::register_vline_event(DEVICE* dev)
-{
-	event->register_vline_event(dev);
-}
-
-uint32 VM::current_clock()
-{
-	return event->current_clock();
-}
-
-uint32 VM::passed_clock(uint32 prev)
-{
-	uint32 current = event->current_clock();
-	return (current > prev) ? current - prev : current + (uint32)~prev + 1;
-}
-
-uint32 VM::get_prv_pc()
-{
-	return cpu->get_prv_pc();
+	return event->frame_rate();
 }
 
 // ----------------------------------------------------------------------------

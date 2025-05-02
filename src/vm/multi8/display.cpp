@@ -45,7 +45,7 @@ void DISPLAY::initialize()
 	blink = false;
 	
 	// register event
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void DISPLAY::update_config()

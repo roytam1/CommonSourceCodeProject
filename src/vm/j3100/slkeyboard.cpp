@@ -16,7 +16,7 @@
 void KEYBOARD::initialize()
 {
 	key_buf = new FIFO(8);
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::release()
@@ -41,7 +41,7 @@ void KEYBOARD::write_io8(uint32 addr, uint32 data)
 			// reset keyboard ???
 			key_buf->clear();
 			key_read = true;
-			vm->register_event(this, 0, 2000000, false, NULL);
+			register_event(this, 0, 2000000, false, NULL);
 		}
 		key_ctrl = data;
 		break;

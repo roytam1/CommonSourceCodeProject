@@ -50,7 +50,7 @@ private:
 	bool busreq, halt;
 	pair regs[6];
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
-	uint16 SP, PC, prvPC, exAF, exBC, exDE, exHL, EA;
+	uint16 SP, PC, prevPC, exAF, exBC, exDE, exHL, EA;
 	uint32 intr_req_bit, intr_pend_bit;
 	
 	/* ---------------------------------------------------------------------------
@@ -238,7 +238,7 @@ private:
 	}
 	inline uint16 DEBUG_FETCH8_RELPC() {
 		int res = debug_ops[debug_ptr++];
-		return prvPC + debug_ptr + ((res < 128) ? res : (res - 256));
+		return prevPC + debug_ptr + ((res < 128) ? res : (res - 256));
 	}
 	void DASM();
 	void DASM_CB();
@@ -275,8 +275,8 @@ public:
 	int passed_clock() {
 		return first - count;
 	}
-	uint32 get_prv_pc() {
-		return prvPC;
+	uint32 get_pc() {
+		return prevPC;
 	}
 	void set_pc(uint32 pc) {
 		PC = pc;

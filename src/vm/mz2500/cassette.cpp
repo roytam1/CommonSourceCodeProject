@@ -14,27 +14,27 @@
 // pre-silent (0.2sec)
 #define REGISTER_PRE() { \
 	set_signal(false); \
-	vm->register_event(this, EVENT_PRE, 200000, false, &id_pre); \
+	register_event(this, EVENT_PRE, 200000, false, &id_pre); \
 }
 // signal (0.5sec)
 #define REGISTER_SIGNAL() { \
 	set_signal(true); \
-	vm->register_event(this, EVENT_SIGNAL, 500000, false, &id_signal); \
+	register_event(this, EVENT_SIGNAL, 500000, false, &id_signal); \
 }
 // after-silent (0.3sec)
 #define REGISTER_AFTER() { \
 	set_signal(false); \
-	vm->register_event(this, EVENT_AFTER, 300000, false, &id_after); \
+	register_event(this, EVENT_AFTER, 300000, false, &id_after); \
 }
 #define CANCEL_EVENT() { \
 	if(id_pre != -1) { \
-		vm->cancel_event(id_pre); \
+		cancel_event(id_pre); \
 	} \
 	if(id_signal != -1) { \
-		vm->cancel_event(id_signal); \
+		cancel_event(id_signal); \
 	} \
 	if(id_after != -1) { \
-		vm->cancel_event(id_after); \
+		cancel_event(id_after); \
 	} \
 	id_pre = id_signal = id_after = -1; \
 }

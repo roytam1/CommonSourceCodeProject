@@ -572,8 +572,8 @@ void APU::write_data_cur(uint32 addr, uint32 data)
 
 void APU::initialize()
 {
-	vm->register_frame_event(this);
-	vm->register_vline_event(this);
+	register_frame_event(this);
+	register_vline_event(this);
 }
 
 void APU::reset()
@@ -624,7 +624,7 @@ void APU::write_data8(uint32 addr, uint32 data)
 	case 0x400c: case 0x400d: case 0x400e: case 0x400f:
 	case 0x4010: case 0x4011: case 0x4012: case 0x4013:
 	case 0x4017:
-		d.timestamp = vm->current_clock();
+		d.timestamp = current_clock();
 		d.addr = addr;
 		d.data = data;
 #ifdef APU_USE_QUEUE
@@ -769,6 +769,6 @@ void APU::mix(int32* buffer, int num_samples)
 	}
 	
 	// resync cycle counter
-	elapsed_cycles = vm->current_clock();
+	elapsed_cycles = current_clock();
 }
 

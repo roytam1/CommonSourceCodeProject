@@ -126,7 +126,7 @@ static const uint8 matrix_shiftkana[256] = {
 void KEYBOARD::initialize()
 {
 	key_stat = emu->key_buffer();
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void KEYBOARD::reset()

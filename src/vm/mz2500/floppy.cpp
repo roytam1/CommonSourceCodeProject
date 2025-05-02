@@ -21,7 +21,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	switch(addr & 0xff) {
 	case 0xdc:
 		// drive reg
-		if(vm->get_prv_pc() == 0x5698 && data == 0x86) {
+		if(get_cpu_pc(0) == 0x5698 && data == 0x86) {
 			laydock = true;
 		}
 		if(laydock) {

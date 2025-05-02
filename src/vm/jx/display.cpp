@@ -29,7 +29,7 @@ void DISPLAY::initialize()
 	prev_height = 400;
 	
 	cblink = 0;
-	vm->register_frame_event(this);
+	register_frame_event(this);
 }
 
 void DISPLAY::reset()

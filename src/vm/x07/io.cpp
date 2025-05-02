@@ -266,8 +266,8 @@ void IO::initialize()
 	cmt_play = cmt_rec = false;
 	
 	// video
-	vm->register_frame_event(this);
-	vm->register_vline_event(this);
+	register_frame_event(this);
+	register_vline_event(this);
 }
 
 void IO::release()
@@ -362,9 +362,9 @@ void IO::write_io8(uint32 addr, uint32 data)
 			// temporary patch: register the event to stop
 			int intv = ram[0x450] * 50000;
 			if(register_id != -1) {
-				vm->cancel_event(register_id);
+				cancel_event(register_id);
 			}
-			vm->register_event(this, EVENT_BEEP, intv, false, &register_id);
+			register_event(this, EVENT_BEEP, intv, false, &register_id);
 		}
 		else {
 			d_beep->write_signal(SIG_BEEP_ON, 0, 1);
@@ -874,7 +874,7 @@ void IO::recv_from_cmt()
 		rregs[6] |= 2;
 		rregs[7] = cmt_buf[cmt_ptr++];
 		// register event for rstb
-		vm->register_event(this, EVENT_CMT, 2000, false, NULL);
+		register_event(this, EVENT_CMT, 2000, false, NULL);
 		// update buffer
 		cmt_ptr &= CMT_BUF_SIZE - 1;
 		if(!cmt_ptr) {
