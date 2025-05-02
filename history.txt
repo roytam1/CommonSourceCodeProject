@@ -1,3 +1,8 @@
+10/4/2014
+
+[PC8001SR/PC88] fix color/monochrome and 320x200/640x200 bits in port31
+
+
 9/29/2014
 
 [WIN32/SCREEN] support crt filter

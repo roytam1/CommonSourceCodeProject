@@ -47,8 +47,8 @@
 #define Port31_400LINE	false
 #endif
 
-#define Port31_COLOR	(port[0x31] & 0x04)	// PC-8001
-#define Port31_320x200	(port[0x31] & 0x10)	// PC-8001
+#define Port31_COLOR	(port[0x31] & 0x10)	// PC-8001
+#define Port31_320x200	(port[0x31] & 0x04)	// PC-8001
 
 #define Port32_EROMSL	(port[0x32] & 0x03)
 #define Port32_TMODE	(port[0x32] & 0x10)
