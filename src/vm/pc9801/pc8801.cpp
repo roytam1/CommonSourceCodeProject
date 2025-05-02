@@ -13,9 +13,11 @@
 #include "../event.h"
 #include "../pcm1bit.h"
 #include "../upd1990a.h"
+#include "../ym2203.h"
 #include "../../config.h"
 
 #define EVENT_TIMER	0
+#define EVENT_BUSREQ	1
 
 #define IRQ_SERIAL	0
 #define IRQ_VRTC	1
@@ -156,9 +158,14 @@ void PC8801::initialize()
 	}
 	palette_text_pc[8] = 0;
 	
-	key_status = emu->key_buffer();
-	line200 = 1;
+	line200 = 0;
 	cpu_clock_low = config.cpu_clock_low;
+#ifdef Z80_MEMORY_WAIT
+	vram_wait_clocks = cpu_clock_low ? 2 : 4;
+#endif
+	
+	key_status = emu->key_buffer();
+	joy_status = emu->joy_buffer();
 	
 	register_frame_event(this);
 	register_vline_event(this);
@@ -191,6 +198,7 @@ void PC8801::reset()
 	if(!line200) {
 		set_frames_per_sec(60);
 		set_lines_per_frame(260);
+		busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
 		line200 = 1;
 	}
 	cursor_on = blink_on = false;
@@ -219,9 +227,16 @@ void PC8801::reset()
 	d_pio->write_io8(2, 0);
 }
 
+#ifdef Z80_MEMORY_WAIT
+void PC8801::write_data8w(uint32 addr, uint32 data, int* wait)
+#else
 void PC8801::write_data8(uint32 addr, uint32 data)
+#endif
 {
 	if((addr & 0xc000) == 0xc000) {
+#ifdef Z80_MEMORY_WAIT
+		*wait = vram_wait_clocks;
+#endif
 		if((port32 & 0x40) && (alu_ctrl2 & 0x80)) {
 			// alu
 			addr &= 0x3fff;
@@ -262,12 +277,22 @@ void PC8801::write_data8(uint32 addr, uint32 data)
 		}
 	}
 	addr &= 0xffff;
+#ifdef Z80_MEMORY_WAIT
+	*wait = 1;
+#endif
 	wbank[addr >> 10][addr & 0x3ff] = data;
 }
 
+#ifdef Z80_MEMORY_WAIT
+uint32 PC8801::read_data8w(uint32 addr, int* wait)
+#else
 uint32 PC8801::read_data8(uint32 addr)
+#endif
 {
 	if((addr & 0xc000) == 0xc000) {
+#ifdef Z80_MEMORY_WAIT
+		*wait = vram_wait_clocks;
+#endif
 		if((port32 & 0x40) && (alu_ctrl2 & 0x80)) {
 			// alu
 			addr &= 0x3fff;
@@ -286,6 +311,9 @@ uint32 PC8801::read_data8(uint32 addr)
 		}
 	}
 	addr &= 0xffff;
+#ifdef Z80_MEMORY_WAIT
+	*wait = 1;
+#endif
 	return rbank[addr >> 10][addr & 0x3ff];
 }
 
@@ -326,10 +354,12 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 			if(data & 1) {
 				set_frames_per_sec(60);
 				set_lines_per_frame(260);
+				busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
 			}
 			else {
 				set_frames_per_sec(55.4);
 				set_lines_per_frame(448);
+				busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 55.4 / 448.0 * 0.558 + 0.5);
 			}
 			line200 = data & 1;
 		}
@@ -579,7 +609,8 @@ uint32 PC8801::read_io8(uint32 addr)
 	case 0x32:
 		return port32;
 	case 0x40:
-		return (vdisp ? 0 : 0x20) | (d_rtc->read_signal(0) ? 0x10 : 0) | (line200 ? 2 : 0);
+//		return (vdisp ? 0 : 0x20) | (d_rtc->read_signal(0) ? 0x10 : 0) | (line200 ? 2 : 0);
+		return (vdisp ? 0 : 0x20) | (d_rtc->read_signal(0) ? 0x10 : 0);
 	case 0x44:
 	case 0x45:
 		return d_opn->read_io8(addr);
@@ -598,7 +629,7 @@ uint32 PC8801::read_io8(uint32 addr)
 	case 0x71:
 		return erom_bank;
 	case 0xe2:
-		return eram_sel;
+		return eram_sel ^ 0x11;
 	case 0xe3:
 		return eram_bank;
 		break;
@@ -692,35 +723,55 @@ void PC8801::write_signal(int id, uint32 data, uint32 mask)
 
 void PC8801::event_callback(int event_id, int err)
 {
-	request_intr(IRQ_TIMER, true);
+	if(event_id == EVENT_TIMER) {
+		request_intr(IRQ_TIMER, true);
+	}
+	else if(event_id == EVENT_BUSREQ) {
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
+	}
 }
 
 void PC8801::event_frame()
 {
+	if((crtc_status & 0x10) && (dma_mode & 4) && dma_reg[2].length.sd != 0) {
+		// start dma transfer to crtc
+		dma_status &= ~4;
+	}
+	memset(crtc_buffer, 0, sizeof(crtc_buffer));
+	crtc_buffer_ptr = 0;
+//	request_intr(IRQ_VRTC, false);
+	vdisp = true;
+	
+	// update blink counter
 	int blink_rate = 8 * ((crtc_reg[0][1] >> 6) + 1);
 	if(!(blink_counter++ < blink_rate)) {
 		blink_on = !blink_on;
 		blink_counter = 0;
 	}
+	
+	// update joystick status
+	// note: PC-98DO does not support joystick :-(
+	d_opn->write_signal(SIG_YM2203_PORT_A, ~(joy_status[0] >> 0), 0x0f);	// direction
+	d_opn->write_signal(SIG_YM2203_PORT_B, ~(joy_status[0] >> 4), 0x03);	// button
 }
 
 void PC8801::event_vline(int v, int clock)
 {
-	if(v == 0) {
-		if(crtc_status & 0x10) {
-			// start dma
-			if(dma_reg[2].length.sd != 0) {
-				dma_status &= ~4;
+	int disp_line = line200 ? 200 : 400;
+		
+	if(v < disp_line) {
+		if((crtc_status & 0x10) && (dma_mode & 4) && !(dma_status & 4)) {
+			// bus request
+			if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
+				d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+				register_event_by_clock(this, EVENT_BUSREQ, busreq_clocks, false, NULL);
 			}
 		}
-		memset(crtc_buffer, 0, sizeof(crtc_buffer));
-		crtc_buffer_ptr = 0;
-		vdisp = true;
 	}
-	else if(v == (line200 ? 200 : 400)) {
+	else if(v == disp_line) {
 		if(crtc_status & 0x10) {
-			// run dma
 			if((dma_mode & 4) && !(dma_status & 4)) {
+				// run dma transfer to crtc
 				uint16 addr = dma_reg[2].start.w.l;
 				for(int i = 0; i < dma_reg[2].length.sd; i++) {
 					write_dma_io8(0, read_dma_data8(addr++));
@@ -925,7 +976,6 @@ void PC8801::draw_color_graph()
 {
 	int addr = 0;
 	for(int y = 0; y < 200; y++) {
-		uint8 *dest = graph[y];
 		for(int x = 0; x < 640; x += 8) {
 			uint8 b = gvram[addr | 0x0000];
 			uint8 r = gvram[addr | 0x4000];
@@ -948,7 +998,6 @@ void PC8801::draw_mono_graph()
 {
 	int addr = 0;
 	for(int y = 0; y < 200; y++) {
-		uint8 *dest = graph[y];
 		for(int x = 0; x < 640; x += 8) {
 			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
 			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
@@ -971,14 +1020,12 @@ void PC8801::draw_mono_hires_graph()
 {
 	int addr = 0;
 	for(int y = 0; y < 200; y++) {
-		uint8 *dest0 = graph[y * 2];
-		uint8 *dest1 = graph[y * 2 + 1];
 		for(int x = 0; x < 640; x += 8) {
-			uint8 b = (disp_ctrl & 2) ? gvram[addr | 0x0000] : 0;
-			uint8 r = (disp_ctrl & 4) ? gvram[addr | 0x4000] : 0;
+			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
+			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
 			addr++;
-			uint8 *dest0 = &graph[y * 2    ][x];
-			uint8 *dest1 = &graph[y * 2 + 1][x];
+			uint8 *dest0 = &graph[y      ][x];
+			uint8 *dest1 = &graph[y + 200][x];
 			dest0[0] = (b & 0x80) >> 7;
 			dest0[1] = (b & 0x40) >> 6;
 			dest0[2] = (b & 0x20) >> 5;
@@ -1033,7 +1080,7 @@ uint32 PC8801::intr_ack()
 		uint8 bit = 1 << i;
 		if(intr_req & intr_mask1 & intr_mask2 & bit) {
 			intr_req &= ~bit;
-//			intr_mask1 = 0;
+			intr_mask1 = 0;
 			return i * 2;
 		}
 	}

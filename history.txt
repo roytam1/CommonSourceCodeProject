@@ -1,3 +1,22 @@
+1/18/2012
+
+[EMU/INPUT] support to detect the shift and numpad keys are pressed
+
+[VM/I8080] fix to refer read_data8w() to fetch opcode if memory wait is active
+[VM/UPD765A] fix to accept seek command before other seek is not finished
+[VM/UPD765A] fix to accept tc in result phase after read/write commands
+[VM/YM2203] fix to read the input port value though the port mode is output
+[VM/Z80] fix to refer read_data8w() to fetch opcode if memory wait is active
+
+[PC98DO/PC8801] support joystick (though PC-98DO does not support joystick...)
+[PC98DO/PC8801] fix i/o port to read expanded ram selection in $e2
+[PC98DO/PC8801] fix i/o port to read 15KHz/24KHz monitor type in $40
+[PC98DO/PC8801] fix hireso/mono graphic screen renderer
+[PC98DO/PC8801] support memory access wait (temporary)
+[PC98DO/PC8801] fix to raise busreq while dma is running in V1(S)/N mode
+[VM/X1TWIN] remove the routine to detect the shift and numpad keys are pressed
+
+
 1/11/2012
 
 [VM/HD46505] support to update the timing settings in the event manager

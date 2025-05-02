@@ -28,8 +28,8 @@
 
 // memory wait
 #define Z80_M1_CYCLE_WAIT	1
-#define CPU_MEMORY_WAIT
-#define CPU_IO_WAIT
+#define Z80_MEMORY_WAIT
+#define Z80_IO_WAIT
 #define VRAM_WAIT
 
 // irq priority
@@ -48,6 +48,7 @@
 #define USE_FD4
 #define USE_MEDIA
 #define USE_SOCKET
+#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

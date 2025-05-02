@@ -33,6 +33,7 @@
 #define USE_FD2
 #define USE_FD3
 #define USE_FD4
+#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

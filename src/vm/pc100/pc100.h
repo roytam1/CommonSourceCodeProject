@@ -25,7 +25,6 @@
 #define MAX_DRIVE		4
 #define HAS_I86
 #define I8259_MAX_CHIPS		1
-#define UPD765A_WAIT_SEEK
 #define UPD765A_NO_ST0_AT_FOR_SEEK
 #define MEMORY_ADDR_MAX		0x100000
 #define MEMORY_BANK_SIZE	0x8000
@@ -35,6 +34,7 @@
 #define USE_FD1
 #define USE_FD2
 #define NOTIFY_KEY_DOWN
+#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

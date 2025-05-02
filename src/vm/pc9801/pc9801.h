@@ -76,7 +76,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
-//#define UPD765A_WAIT_SEEK
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
 //#define UPD765A_MEDIA_CHANGE
 #define UPD7220_MSB_FIRST
@@ -85,6 +84,9 @@
 #define HAS_I86
 #else
 #define HAS_V30
+#endif
+#if defined(_PC98DO)
+#define Z80_MEMORY_WAIT
 #endif
 #define I8259_MAX_CHIPS		2
 #define SINGLE_MODE_DMA
@@ -118,6 +120,7 @@
 #define DATAREC_BINARY_ONLY
 #endif
 #define NOTIFY_KEY_DOWN
+#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

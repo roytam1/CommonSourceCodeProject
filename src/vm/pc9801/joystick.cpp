@@ -15,7 +15,7 @@
 
 void JOYSTICK::initialize()
 {
-	joy_stat = emu->joy_buffer();
+	joy_status = emu->joy_buffer();
 	select = 0xff;
 	
 	register_frame_event(this);
@@ -30,7 +30,7 @@ void JOYSTICK::write_signal(int id, uint32 data, uint32 mask)
 void JOYSTICK::event_frame()
 {
 	if(select & 0x80) {
-		d_opn->write_signal(SIG_YM2203_PORT_A, ~joy_stat[(select & 0x40) >> 6], 0x3f);
+		d_opn->write_signal(SIG_YM2203_PORT_A, ~joy_status[(select & 0x40) >> 6], 0x3f);
 	}
 }
 

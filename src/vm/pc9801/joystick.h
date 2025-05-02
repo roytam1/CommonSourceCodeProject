@@ -24,7 +24,7 @@ class JOYSTICK : public DEVICE
 private:
 	DEVICE *d_opn;
 	
-	uint8 *joy_stat;
+	uint8 *joy_status;
 	uint8 select;
 	
 public:

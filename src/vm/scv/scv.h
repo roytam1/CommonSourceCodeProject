@@ -24,7 +24,7 @@
 #define SCREEN_HEIGHT		222
 
 // memory wait
-//#define CPU_MEMORY_WAIT
+//#define UPD7801_MEMORY_WAIT
 
 // device informations for win32
 #define USE_CART

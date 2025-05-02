@@ -40,7 +40,6 @@
 #define HAS_I86
 #endif
 #define I8259_MAX_CHIPS		2
-#define UPD765A_WAIT_SEEK
 #define UPD7220_HORIZ_FREQ	24860
 #define Z80CTC_CLOCKS		2457600
 #define SINGLE_MODE_DMA
@@ -54,6 +53,7 @@
 #define USE_FD3
 #define USE_FD4
 #define NOTIFY_KEY_DOWN
+#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

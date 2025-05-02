@@ -35,11 +35,8 @@ private:
 	FIFO* key_buf;
 	uint8* key_stat;
 	int key_prev, key_break, key_repeat;
-	bool key_converted[256];
 	bool key_shift, key_ctrl, key_graph;
-	bool key_caps, key_caps_locked;
-	bool key_shift_released;
-	bool key_kana, key_kana_locked;
+	bool key_caps_locked, key_kana_locked;
 	
 	bool play, rec, eot;
 	

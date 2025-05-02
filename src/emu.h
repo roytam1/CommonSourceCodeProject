@@ -90,6 +90,10 @@ private:
 	void update_input();
 	
 	uint8 key_status[256];	// windows key code mapping
+#ifdef USE_SHIFT_NUMPAD_KEY
+	uint8 key_converted[256];
+	BOOL key_shift_pressed, key_shift_released;
+#endif
 	uint8 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4-b7 = trigger #1-#4
 	int joy_num;
 	uint32 joy_xmin[2], joy_xmax[2];

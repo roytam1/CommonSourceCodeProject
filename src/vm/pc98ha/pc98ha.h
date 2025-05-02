@@ -35,8 +35,7 @@
 #define HAS_V30
 #define I86_BIOS_CALL
 #define I8259_MAX_CHIPS		1
-#define UPD765A_DMA_MODE
-//#define UPD765A_WAIT_SEEK
+//#define UPD765A_DMA_MODE
 #define UPD765A_MEDIA_CHANGE
 //#define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x10000

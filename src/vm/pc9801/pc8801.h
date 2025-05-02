@@ -52,11 +52,16 @@ private:
 	uint8 port32;
 	uint8 alu_ctrl1, alu_ctrl2, alu_reg[3];
 	bool cpu_clock_low;
+#ifdef Z80_MEMORY_WAIT
+	int vram_wait_clocks;
+#endif
+	int busreq_clocks;
 	
 	// crtc
 	uint8 crtc_reg[8][5], crtc_cmd, crtc_ptr;
 	uint8 crtc_status;
 	uint8 disp_ctrl, text_mode, graph_mode, line200;
+	
 	bool cursor_on, blink_on, vdisp;
 	int blink_counter;
 	uint8 crtc_buffer[120 * 200];
@@ -88,6 +93,7 @@ private:
 	
 	// keyboard
 	uint8 *key_status;
+	uint8 *joy_status;
 	
 	// kanji rom
 	pair kanji1_addr, kanji2_addr;
@@ -105,8 +111,13 @@ public:
 	// common functions
 	void initialize();
 	void reset();
+#ifdef Z80_MEMORY_WAIT
+	void write_data8w(uint32 addr, uint32 data, int* wait);
+	uint32 read_data8w(uint32 addr, int* wait);
+#else
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+#endif
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_dma_io8(uint32 addr, uint32 data);

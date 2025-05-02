@@ -41,7 +41,6 @@ private:
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
 	outputs_t outputs_hdu;
-	outputs_t outputs_acctc;
 	outputs_t outputs_index;
 #ifdef _FDC_DEBUG_LOG
 	DEVICE *d_cpu;
@@ -52,7 +51,7 @@ private:
 	int phase, prevphase;
 	uint8 status, seekstat, command;
 	uint32 result;
-	bool acctc, no_dma_mode, motor;
+	bool no_dma_mode, motor;
 #ifdef UPD765A_DMA_MODE
 	bool dma_data_lost;
 #endif
@@ -61,8 +60,8 @@ private:
 	uint8* bufptr;
 	uint8 buffer[0x4000];
 	int count;
-	int event_phase, event_drv;
-	int phase_id, seek_id, drq_id, lost_id, result7_id;
+	int event_phase;
+	int phase_id, drq_id, lost_id, result7_id, seek_id[4];
 	bool force_ready;
 	bool reset_signal;
 	int index_count;
@@ -71,7 +70,6 @@ private:
 	void set_irq(bool val);
 	void set_drq(bool val);
 	void set_hdu(uint8 val);
-	void set_acctc(bool val);
 	
 	// phase shift
 	void shift_to_idle();
@@ -118,7 +116,6 @@ public:
 		init_output_signals(&outputs_irq);
 		init_output_signals(&outputs_drq);
 		init_output_signals(&outputs_hdu);
-		init_output_signals(&outputs_acctc);
 		init_output_signals(&outputs_index);
 #ifdef _FDC_DEBUG_LOG
 		d_cpu = NULL;
@@ -147,9 +144,6 @@ public:
 	}
 	void set_context_hdu(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_hdu, device, id, mask);
-	}
-	void set_context_acctc(DEVICE* device, int id, uint32 mask) {
-		register_output_signal(&outputs_acctc, device, id, mask);
 	}
 	void set_context_index(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_index, device, id, mask);

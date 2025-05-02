@@ -73,10 +73,12 @@ uint32 YM2203::read_io8(uint32 addr)
 {
 	if(addr & 1) {
 		if(ch == 14) {
-			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
+//			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
+			return port[0].rreg;
 		}
 		else if(ch == 15) {
-			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
+//			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
+			return port[1].rreg;
 		}
 		else {
 			return opn->GetReg(ch);

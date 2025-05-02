@@ -488,8 +488,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu_sub = new Z80(this, emu);
 	pc88cpu_sub->set_context_event_manager(pc88event);
 	
-	pc88event->set_context_cpu(pc88cpu, config.cpu_clock_low ? 4000000 : 8000000);
-	pc88event->set_context_cpu(pc88cpu_sub, 4000000);
+	pc88event->set_context_cpu(pc88cpu, config.cpu_clock_low ? 3993600 : 7987200);
+	pc88event->set_context_cpu(pc88cpu_sub, 3993600);
 	pc88event->set_context_sound(pc88beep);
 	pc88event->set_context_sound(pc88opn);
 	pc88event->set_context_sound(pc88pcm);
@@ -518,6 +518,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0x0f, 4);
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0xf0, -4);
 	pc88fdc_sub->set_context_irq(pc88cpu_sub, SIG_CPU_IRQ, 1);
+#ifdef _FDC_DEBUG_LOG
+	pc88fdc_sub->set_context_cpu(pc88cpu_sub);
+#endif
 	pc88cpu_sub->set_context_mem(pc88sub);
 	pc88cpu_sub->set_context_io(pc88sub);
 	pc88cpu_sub->set_context_intr(pc88sub);
@@ -701,7 +704,7 @@ void VM::initialize_sound(int rate, int samples)
 #else
 	beep->init(rate, 8000);
 #endif
-	opn->init(rate, 3993552, samples, 0, 0);
+	opn->init(rate, 3993600, samples, 0, 0);
 	
 #if defined(_PC98DO)
 	// init sound manager
@@ -709,7 +712,7 @@ void VM::initialize_sound(int rate, int samples)
 	
 	// init sound gen
 	pc88beep->init(rate, 2400, 8000);
-	pc88opn->init(rate, 3993552, samples, 0, 0);
+	pc88opn->init(rate, 3993600, samples, 0, 0);
 	pc88pcm->init(rate, 8000);
 #endif
 }

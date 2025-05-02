@@ -38,7 +38,6 @@
 #define UPD7201
 #define UPD7220_FIXED_PITCH
 #define UPD765A_DMA_MODE
-//#define UPD765A_WAIT_SEEK
 //#define SINGLE_MODE_DMA
 
 // device informations for win32
@@ -47,6 +46,7 @@
 #define USE_FD1
 #define USE_FD2
 #define NOTIFY_KEY_DOWN
+#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_ACCESS_LAMP
 

@@ -103,8 +103,14 @@ void main(int argc, char *argv[])
 					int size2 = tmp[0xe] | (tmp[0xf] << 8);
 					if(t1[0] == tmp[0] && t1[1] == tmp[1] && t1[2] == tmp[2] && t1[3] == tmp[3]) {
 						if(t1[8] != 0 && tmp[8] == 0 && size1 == size2) {
-							memcpy(t1 + 6, tmp + 6, size1 + 10);
-							cnt1++;
+							int eq = 0;
+							for(int i = 0; i < size1; i++) {
+								if(t1[16+i] == tmp[16+i]) eq++;
+							}
+							if(size1 - eq < 4) {
+								memcpy(t1 + 6, tmp + 6, size1 + 10);
+								cnt1++;
+							}
 						}
 						break;
 					}
@@ -127,8 +133,14 @@ void main(int argc, char *argv[])
 					int size1 = tmp[0xe] | (tmp[0xf] << 8);
 					if(t2[0] == tmp[0] && t2[1] == tmp[1] && t2[2] == tmp[2] && t2[3] == tmp[3]) {
 						if(t2[8] != 0 && tmp[8] == 0 && size2 == size1) {
-							memcpy(t2 + 6, tmp + 6, size2 + 10);
-							cnt1++;
+							int eq = 0;
+							for(int i = 0; i < size2; i++) {
+								if(t2[16+i] == tmp[16+i]) eq++;
+							}
+							if(size2 - eq < 4) {
+								memcpy(t2 + 6, tmp + 6, size2 + 10);
+								cnt1++;
+							}
 						}
 						break;
 					}

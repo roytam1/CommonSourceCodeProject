@@ -279,7 +279,7 @@ static const op_t op74[256] = {
 
 inline uint8 UPD7801::RM8(uint16 addr)
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint8 val = d_mem->read_data8w(addr, &wait);
 	period += wait;
@@ -291,7 +291,7 @@ inline uint8 UPD7801::RM8(uint16 addr)
 
 inline void UPD7801::WM8(uint16 addr, uint8 val)
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	d_mem->write_data8w(addr, val, &wait);
 	period += wait;
@@ -302,7 +302,7 @@ inline void UPD7801::WM8(uint16 addr, uint8 val)
 
 inline uint16 UPD7801::RM16(uint16 addr)
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint16 val = d_mem->read_data16w(addr, &wait);
 	period += wait;
@@ -314,7 +314,7 @@ inline uint16 UPD7801::RM16(uint16 addr)
 
 inline void UPD7801::WM16(uint16 addr, uint16 val)
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	d_mem->write_data16w(addr, val, &wait);
 	period += wait;
@@ -325,7 +325,7 @@ inline void UPD7801::WM16(uint16 addr, uint16 val)
 
 inline uint8 UPD7801::FETCH8()
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint8 val = d_mem->read_data8w(PC++, &wait);
 	period += wait;
@@ -337,7 +337,7 @@ inline uint8 UPD7801::FETCH8()
 
 inline uint16 UPD7801::FETCH16()
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint16 val = d_mem->read_data16w(PC, &wait);
 	period += wait;
@@ -350,7 +350,7 @@ inline uint16 UPD7801::FETCH16()
 
 inline uint16 UPD7801::FETCHWA()
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint16 val = (_V << 8) | d_mem->read_data8w(PC++, &wait);
 	period += wait;
@@ -362,7 +362,7 @@ inline uint16 UPD7801::FETCHWA()
 
 inline uint8 UPD7801::POP8()
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint8 val = d_mem->read_data8w(SP++, &wait);
 	period += wait;
@@ -374,7 +374,7 @@ inline uint8 UPD7801::POP8()
 
 inline void UPD7801::PUSH8(uint8 val)
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	d_mem->write_data8w(--SP, val, &wait);
 	period += wait;
@@ -385,7 +385,7 @@ inline void UPD7801::PUSH8(uint8 val)
 
 inline uint16 UPD7801::POP16()
 {
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	uint16 val = d_mem->read_data16w(SP, &wait);
 	period += wait;
@@ -399,7 +399,7 @@ inline uint16 UPD7801::POP16()
 inline void UPD7801::PUSH16(uint16 val)
 {
 	SP -= 2;
-#ifdef CPU_MEMORY_WAIT
+#ifdef UPD7801_MEMORY_WAIT
 	int wait;
 	d_mem->write_data16w(SP, val, &wait);
 	period += wait;
