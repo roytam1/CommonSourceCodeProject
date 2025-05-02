@@ -25,6 +25,7 @@ void YM2151::release()
 void YM2151::reset()
 {
 	opm->Reset();
+	irq_prev = false;
 }
 
 void YM2151::write_io8(uint32 addr, uint32 data)
@@ -75,10 +76,14 @@ void YM2151::update_count()
 
 void YM2151::update_interrupt()
 {
-	if(opm->ReadIRQ()) {
-		write_signals(&outputs_irq, 0);
+	bool irq = opm->ReadIRQ();
+	if(!irq_prev && irq) {
 		write_signals(&outputs_irq, 0xffffffff);
 	}
+	else if(irq_prev && !irq) {
+		write_signals(&outputs_irq, 0);
+	}
+	irq_prev = irq;
 }
 
 void YM2151::mix(int32* buffer, int cnt)

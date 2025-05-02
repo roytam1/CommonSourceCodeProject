@@ -94,10 +94,7 @@ void OPM::Reset()
 //
 bool OPM::ReadIRQ()
 {
-	bool tmp = interrupt;
-	interrupt = false;
-	return tmp;
-//	return interrupt;
+	return interrupt;
 }
 
 // ---------------------------------------------------------------------------

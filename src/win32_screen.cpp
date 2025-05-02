@@ -498,7 +498,7 @@ void EMU::draw_screen()
 #ifdef USE_D3D9
 	// copy bitmap to d3d9 offscreen surface
 	if(lpd3d9Buffer != NULL) {
-		if(!render_to_d3d9Buffer) {
+		if(!(render_to_d3d9Buffer && !now_rec_vid)) {
 			scrntype *src = stretch_screen ? lpBmpStretch1 : lpBmpSource;
 			src += source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
 			scrntype *out = lpd3d9Buffer;
@@ -534,7 +534,7 @@ void EMU::draw_screen()
 scrntype* EMU::screen_buffer(int y)
 {
 #ifdef USE_D3D9
-	if(lpd3d9Buffer != NULL && render_to_d3d9Buffer) {
+	if(lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
 		return lpd3d9Buffer + screen_width * y;
 	}
 #endif
@@ -625,7 +625,7 @@ void EMU::capture_screen()
 {
 #ifdef USE_D3D9
 	// virtual machine may render screen to d3d9 buffer directly...
-	if(render_to_d3d9Buffer) {
+	if(render_to_d3d9Buffer && !now_rec_vid) {
 		vm->draw_screen();
 	}
 #endif

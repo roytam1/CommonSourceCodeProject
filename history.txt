@@ -1,3 +1,15 @@
+3/20/2012
+
+[EMU/WIN32] fix not to render screen to Direct3D9 buffer while recording video
+
+[VM/DEVICE] add new virtual function to nitify ei opecode is done on cpu
+[VM/YM2151] fix to raise/clear irq line when it is changed as level signal
+[VM/YM2203] fix to raise/clear irq line when it is changed as level signal
+[VM/Z80] fix to notify ei opecode is done on z80 core
+
+[PC8801MA/PC88] fix sound irq based on m88 for Lipstick Adv and Re-Fight
+
+
 3/15/2012
 
 [EMU/WIN32] fix to renew vm class instance to change cpu clock in reset()

@@ -27,7 +27,7 @@ private:
 	
 	int chip_clock;
 	uint8 ch;
-	bool mute;
+	bool irq_prev, mute;
 	
 	uint32 clock_prev;
 	uint32 clock_accum;

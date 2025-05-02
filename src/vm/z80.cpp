@@ -2156,6 +2156,7 @@ void Z80::run_one_opecode()
 #if HAS_LDAIR_QUIRK
 		if(after_ldair) F &= ~PF;	// reset parity flag after LD A,I or LD A,R
 #endif
+		d_pic->intr_ei();
 	}
 	if(intr_req_bit) {
 		if(intr_req_bit & NMI_REQ_BIT) {

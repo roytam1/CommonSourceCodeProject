@@ -314,8 +314,9 @@ void PC88::reset()
 	kanji1_addr.d = kanji2_addr.d = 0;
 	
 	// interrupt
-	intr_req = intr_mask1 = 0;
-	intr_mask2 = 0xff;
+	intr_req = intr_mask1 = intr_mask2 = 0;
+	intr_req_sound = false;
+	intr_mask_sound = 0x80;
 	
 	// fdd i/f
 	d_pio->write_io8(1, 0);
@@ -452,6 +453,8 @@ uint32 PC88::read_data8(uint32 addr)
 	return rbank[addr >> 12][addr & 0xfff];
 }
 
+static const uint8 intr_mask2_table[8] = { ~7, ~3, ~5, ~1, ~6, ~2, ~4, ~0 };
+
 void PC88::write_io8(uint32 addr, uint32 data)
 {
 	addr &= 0xff;
@@ -550,12 +553,11 @@ void PC88::write_io8(uint32 addr, uint32 data)
 				update_tvram_memmap();
 			}
 		}
-//		if((port32 & 0x20) != (data & 0x20)) {
-//			update_palette = true;
-//		}
-		if((port32 & 0x80) != (data & 0x80)) {
-			intr_mask2 = (intr_mask2 & ~0x10) | ((data & 0x80) ? 0 : 0x10);
-			update_intr();
+		if(intr_mask_sound != (data & 0x80)) {
+			intr_mask_sound = data & 0x80;
+			if(intr_req_sound && !intr_mask_sound) {
+				request_intr(IRQ_SOUND, true);
+			}
 		}
 		port32 = data;
 		update_gvram_sel();
@@ -776,11 +778,12 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 	case 0xe4:
-		intr_mask1 = (data < 8) ? ~(0xff << data) : 0xff;
+		intr_mask1 = ~(0xff << (data < 8 ? data : 8));
 		update_intr();
 		break;
 	case 0xe6:
-		intr_mask2 = (intr_mask2 & ~7) | ((data & 1) << 2) | (data & 2) | ((data & 4) >> 2);
+		intr_mask2 = intr_mask2_table[data & 7];
+		intr_req &= intr_mask2;
 		update_intr();
 		break;
 	case 0xe8:
@@ -1064,7 +1067,10 @@ void PC88::write_signal(int id, uint32 data, uint32 mask)
 		request_intr(IRQ_USART, ((data & mask) != 0));
 	}
 	else if(id == SIG_PC88_SOUND_IRQ) {
-		request_intr(IRQ_SOUND, ((data & mask) != 0));
+		intr_req_sound = ((data & mask) != 0);
+		if(intr_req_sound && !intr_mask_sound) {
+			request_intr(IRQ_SOUND, true);
+		}
 	}
 	else if(id == SIG_PC88_USART_OUT) {
 		if(cmt_rec && (text_mode & 8)) {
@@ -1629,39 +1635,41 @@ void PC88::request_intr(int level, bool status)
 	uint8 bit = 1 << level;
 	
 	if(status) {
-//		if(!(intr_req & bit)) {
+		bit &= intr_mask2;
+		if(!(intr_req & bit)) {
 			intr_req |= bit;
 			update_intr();
-//		}
+		}
 	}
 	else {
-//		if(intr_req & bit) {
+		if(intr_req & bit) {
 			intr_req &= ~bit;
 			update_intr();
-//		}
+		}
 	}
 }
 
 void PC88::update_intr()
 {
-	if(intr_req & intr_mask1 & intr_mask2) {
-		d_cpu->set_intr_line(true, true, 0);
-	}
-	else {
-		d_cpu->set_intr_line(false, true, 0);
-	}
+	d_cpu->set_intr_line(((intr_req & intr_mask1 & intr_mask2) != 0), true, 0);
 }
 
 uint32 PC88::intr_ack()
 {
-	for(int i = 0; i < 8; i++) {
-		uint8 bit = 1 << i;
-		if(intr_req & intr_mask1 & intr_mask2 & bit) {
-			intr_req &= ~bit;
+	uint8 ai = intr_req & intr_mask1 & intr_mask2;
+	
+	for(int i = 0; i < 8; i++, ai >>= 1) {
+		if(ai & 1) {
+			intr_req &= ~(1 << i);
 			intr_mask1 = 0;
 			return i * 2;
 		}
 	}
 	return 0;
+}
+
+void PC88::intr_ei()
+{
+	update_intr();
 }
 

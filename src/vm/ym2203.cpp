@@ -17,7 +17,6 @@ void YM2203::initialize()
 	chip = new FM::OPN;
 #endif
 	register_vline_event(this);
-	timer_prescaler = 1;
 	mute = false;
 	clock_prev = clock_accum = 0;
 }
@@ -29,14 +28,11 @@ void YM2203::release()
 
 void YM2203::reset()
 {
-	if(timer_prescaler != 1) {
-		timer_prescaler = 1;
-		update_clock_const();
-	}
 	chip->Reset();
 	chip->SetReg(0x27, 0); // stop timer
 	
 	port[0].first = port[1].first = true;
+	irq_prev = false;
 }
 
 #ifdef HAS_YM2608
@@ -73,13 +69,6 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 				write_signals(&port[p].outputs, data);
 				port[p].wreg = data;
 				port[p].first = false;
-			}
-		}
-		else if(ch == 0xa3) {
-			// ??? PC-8801 Lipstick Adv
-			if(timer_prescaler != data) {
-				timer_prescaler = data ? data : 1;
-				update_clock_const();
 			}
 		}
 		// don't write again for prescaler
@@ -177,10 +166,14 @@ void YM2203::update_count()
 #ifndef HAS_AY_3_8912
 void YM2203::update_interrupt()
 {
-	if(chip->ReadIRQ()) {
-		write_signals(&outputs_irq, 0);
+	bool irq = chip->ReadIRQ();
+	if(!irq_prev && irq) {
 		write_signals(&outputs_irq, 0xffffffff);
 	}
+	else if(irq_prev && !irq) {
+		write_signals(&outputs_irq, 0);
+	}
+	irq_prev = irq;
 }
 #endif
 
@@ -213,17 +206,10 @@ void YM2203::SetReg(uint addr, uint data)
 
 void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
 {
-	// this routine should be called in event class at the first frame
-	cpu_clock = new_clocks;
-	update_clock_const();
-}
-
-void YM2203::update_clock_const()
-{
 #ifdef HAS_YM2608
-	clock_const = (uint32)((double)chip_clock * (double)timer_prescaler * 1024.0 * 1024.0 / (double)cpu_clock / 2.0 + 0.5);
+	clock_const = (uint32)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks / 2.0 + 0.5);
 #else
-	clock_const = (uint32)((double)chip_clock * (double)timer_prescaler * 1024.0 * 1024.0 / (double)cpu_clock + 0.5);
+	clock_const = (uint32)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks + 0.5);
 #endif
 }
 

@@ -42,10 +42,8 @@ private:
 	} port_t;
 	port_t port[2];
 	
-	int chip_clock, cpu_clock;
-	int timer_prescaler;
-	
-	bool mute;
+	int chip_clock;
+	bool irq_prev, mute;
 	
 	uint32 clock_prev;
 	uint32 clock_accum;
@@ -57,7 +55,6 @@ private:
 	outputs_t outputs_irq;
 	void update_interrupt();
 #endif
-	void update_clock_const();
 	
 public:
 	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {

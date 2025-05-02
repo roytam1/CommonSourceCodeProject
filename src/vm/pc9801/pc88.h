@@ -148,7 +148,8 @@ private:
 	
 	// intterrupt
 	uint8 intr_req;
-	uint8 intr_mask1, intr_mask2;
+	bool intr_req_sound;
+	uint8 intr_mask1, intr_mask2, intr_mask_sound;
 	void request_intr(int level, bool status);
 	void update_intr();
 	
@@ -190,6 +191,7 @@ public:
 	void event_frame();
 	void event_vline(int v, int clock);
 	uint32 intr_ack();
+	void intr_ei();
 	
 	// unique functions
 	void set_context_beep(DEVICE* device) {

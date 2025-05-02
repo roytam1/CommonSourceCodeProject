@@ -265,7 +265,7 @@ private:
 	void release_media();
 	
 	_TCHAR media_path[MEDIA_MAX][_MAX_PATH];
-	int media_count;
+	int media_cnt;
 	bool media_playing;
 #endif
 	

@@ -366,6 +366,7 @@ public:
 		return 0xff;
 	}
 	virtual void intr_reti() {}
+	virtual void intr_ei() {}
 	
 	// dma
 	virtual void do_dma() {}
