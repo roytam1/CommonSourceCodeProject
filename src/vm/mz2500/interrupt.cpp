@@ -26,8 +26,7 @@ void INTERRUPT::reset()
 
 void INTERRUPT::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xc6:
 		irq[0].enb_intr = ((data & 8) != 0);
 		irq[1].enb_intr = ((data & 4) != 0);
@@ -37,14 +36,18 @@ void INTERRUPT::write_io8(uint32 addr, uint32 data)
 		update_intr();
 		break;
 	case 0xc7:
-		if(select & 0x80)
+		if(select & 0x80) {
 			irq[0].vector = data;	// crtc
-		if(select & 0x40)
+		}
+		if(select & 0x40) {
 			irq[1].vector = data;	// i8253
-		if(select & 0x20)
+		}
+		if(select & 0x20) {
 			irq[2].vector = data;	// printer
-		if(select & 0x10)
+		}
+		if(select & 0x10) {
 			irq[3].vector = data;	// rp5c15
+		}
 		break;
 	}
 }
@@ -117,18 +120,21 @@ void INTERRUPT::update_intr()
 	req_intr_ch = -1;
 	if(iei) {
 		for(int ch = 0; ch < 4; ch++) {
-			if(irq[ch].in_service)
+			if(irq[ch].in_service) {
 				break;
+			}
 			if(irq[ch].enb_intr && irq[ch].req_intr) {
 				req_intr_ch = ch;
 				break;
 			}
 		}
 	}
-	if(req_intr_ch != -1)
+	if(req_intr_ch != -1) {
 		d_cpu->set_intr_line(true, true, intr_bit);
-	else
+	}
+	else {
 		d_cpu->set_intr_line(false, true, intr_bit);
+	}
 }
 
 uint32 INTERRUPT::intr_ack()
@@ -144,8 +150,9 @@ uint32 INTERRUPT::intr_ack()
 		return irq[ch].vector;
 	}
 #ifdef SUPPURT_CHILD_DEVICE
-	if(d_child)
+	if(d_child) {
 		return d_child->intr_ack();
+	}
 #endif
 	return 0xff;
 }
@@ -161,8 +168,9 @@ void INTERRUPT::intr_reti()
 		}
 	}
 #ifdef SUPPURT_CHILD_DEVICE
-	if(d_child)
+	if(d_child) {
 		d_child->intr_reti();
+	}
 #endif
 }
 

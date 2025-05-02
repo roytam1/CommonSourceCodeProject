@@ -319,9 +319,11 @@ uint32 UPD765A::read_io8(uint32 addr)
 void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_UPD765A_DACK) {
+#ifdef UPD765A_DMA_MODE
 		if(data & mask) {
 			dma_data_lost = false;
 		}
+#endif
 	}
 	else if(id == SIG_UPD765A_TC) {
 		if((data & mask) && acctc) {

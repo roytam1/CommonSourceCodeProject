@@ -30,17 +30,20 @@ void DISPLAY::initialize()
 	
 	// create pc palette
 #ifdef _LCD
-	for(int i = 1; i < 8; i++)
+	for(int i = 1; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR(48, 56, 16);
+	}
 	palette_pc[0] = RGB_COLOR(160, 168, 160);
 #else
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+	}
 #endif
 	
 	// initialize
-	for(int i = 0; i < 16; i++)
+	for(int i = 0; i < 16; i++) {
 		pal[i] = i & 7;
+	}
 	mode = text_page = 0;
 	cblink = flash_cnt = 0;
 	blink = pal_dis = false;
@@ -56,10 +59,12 @@ void DISPLAY::update_config()
 
 void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_DISPLAY_I8255_0_A)
+	if(id == SIG_DISPLAY_I8255_0_A) {
 		mode = data;
-	else if(id == SIG_DISPLAY_I8255_1_B)
+	}
+	else if(id == SIG_DISPLAY_I8255_1_B) {
 		text_page = (data >> 4) & 7;
+	}
 	else if(id == SIG_DISPLAY_I8255_1_C) {
 		blink = (data & 0x20) ? true : false;
 		pal_dis = (data & 8) ? true : false;
@@ -80,13 +85,14 @@ void DISPLAY::draw_screen()
 	if((regs[8] & 0x30) != 0x30) {
 		// render screen
 		uint16 src = ((regs[12] << 11) | (regs[13] << 3)) & 0x3ff8;
-		if((regs[8] & 0xc0) == 0xc0)
+		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		else
+		}
+		else {
 			cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
+		}
 		
-		switch(mode & 0xa0)
-		{
+		switch(mode & 0xa0) {
 		case 0x00:	// text, wide
 		case 0x20:	// text, normal
 			draw_text_lcd(src);
@@ -104,14 +110,17 @@ void DISPLAY::draw_screen()
 		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 320; x++)
+		for(int x = 0; x < 320; x++) {
 			dest0[x] = palette_pc[src[x] & 7];
-		if(scanline) {
-			for(int x = 0; x < 320; x++)
-				dest1[x] = palette_pc[0];
 		}
-		else
+		if(scanline) {
+			for(int x = 0; x < 320; x++) {
+				dest1[x] = palette_pc[0];
+			}
+		}
+		else {
 			_memcpy(dest1, dest0, 320 * sizeof(scrntype));
+		}
 	}
 	
 	// access lamp
@@ -121,8 +130,9 @@ void DISPLAY::draw_screen()
 		              (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 128 - 8; y < 128; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 320 - 8; x < 320; x++)
+			for(int x = 320 - 8; x < 320; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 #else
@@ -130,29 +140,34 @@ void DISPLAY::draw_screen()
 		// sync check
 		uint16 flash = 0;
 		if(mode & 0x20) {
-			if(regs[0] < 106 || 118 < regs[0] || 113 < regs[2])
+			if(regs[0] < 106 || 118 < regs[0] || 113 < regs[2]) {
 				flash = 0xffff;
+			}
 			flash_cnt -= 320;
 		}
 		else {
-			if(regs[0] < 53 || 58 < regs[0] || 56 < regs[2])
+			if(regs[0] < 53 || 58 < regs[0] || 56 < regs[2]) {
 				flash = 0xffff;
+			}
 			flash_cnt -= 160;
 		}
-		if(regs[4] < 27 || 32 < regs[4] || 16 < regs[5] || 32 < regs[7])
+		if(regs[4] < 27 || 32 < regs[4] || 16 < regs[5] || 32 < regs[7]) {
 			flash = 0xffff;
-		if((regs[8] & 3) == 3 || (regs[9] != 7 && regs[9] != 6))
+		}
+		if((regs[8] & 3) == 3 || (regs[9] != 7 && regs[9] != 6)) {
 			flash = 0xffff;
+		}
 		uint16 src = (((regs[12] << 11) | (regs[13] << 3)) + (flash_cnt & flash)) & 0x3ff8;
-		if((regs[8] & 0xc0) == 0xc0)
+		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		else
+		}
+		else {
 			cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
+		}
 		
 		// render screen
 		if((flash != 0) || (regs[8] & 0x30) != 0x30) {
-			switch(mode & 0xa0)
-			{
+			switch(mode & 0xa0) {
 			case 0x00:
 				// text, wide
 				draw_text_wide(src);
@@ -180,15 +195,18 @@ void DISPLAY::draw_screen()
 		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 640; x++)
+		for(int x = 0; x < 640; x++) {
 			dest0[x] = palette_pc[src[x] & 7];
+		}
 		if(scanline) {
-//			for(int x = 0; x < 640; x++)
+//			for(int x = 0; x < 640; x++) {
 //				dest1[x] = palette_pc[0];
+//			}
 			_memset(dest1, 0, 640 * sizeof(scrntype));
 		}
-		else
+		else {
 			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+		}
 	}
 	
 	// access lamp
@@ -198,8 +216,9 @@ void DISPLAY::draw_screen()
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 #endif
@@ -226,25 +245,32 @@ void DISPLAY::draw_text_normal(uint16 src)
 				y = 200;
 				break;
 			}
-			if((dsty < 0)||(dsty > maxy))
+			if((dsty < 0)||(dsty > maxy)) {
 				continue;
+			}
 			_dstx = dstx;
 			if((regs[8] & 0x30) == 0x10) {
-				if(dstx == 0)
+				if(dstx == 0) {
 					_dstx = 1;
-				if(dstx == 1)
+				}
+				if(dstx == 1) {
 					continue;
+				}
 			}
 			if((regs[8] & 0x30) == 0x20) {
-				if((dstx == 0) || (dstx == 1))
+				if((dstx == 0) || (dstx == 1)) {
 					continue;
+				}
 			}
-			if(dstx <= _minx)
+			if(dstx <= _minx) {
 				_dstx = maxx - (dstx - _minx);
-			if(dstx >= _maxx)
+			}
+			if(dstx >= _maxx) {
 				_dstx = dstx - _maxx;
-			if((_dstx < 0)||(_dstx > maxx))
+			}
+			if((_dstx < 0)||(_dstx > maxx)) {
 				continue;
+			}
 			uint8 code = vram_g[src_t];
 			uint8 attr = vram_a[src_t];
 			uint8 c, c_t = (mode & 8) ? (mode & 7) : (attr & 7);
@@ -256,10 +282,12 @@ void DISPLAY::draw_text_normal(uint16 src)
 				uint8 p2 = vram_r[src + l] & p;
 				uint8 p3 = font_base[l];
 				// negative, blink
-				if(attr & 8)
+				if(attr & 8) {
 					p3 = ~p3;
-				if((mode & 8) && !(attr & 4) && blink)
+				}
+				if((mode & 8) && !(attr & 4) && blink) {
 					p3 = 0;
+				}
 				uint8* d = &screen[(dsty << 3) + l][_dstx << 3];
 				
 				c = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | 0;
@@ -282,8 +310,9 @@ void DISPLAY::draw_text_normal(uint16 src)
 			if(src == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[(dsty << 3) + i][_dstx << 3], 7, 8);
+					}
 				}
 			}
 		}
@@ -311,25 +340,32 @@ void DISPLAY::draw_text_wide(uint16 src)
 				y = 200;
 				break;
 			}
-			if((dsty < 0)||(dsty > maxy))
+			if((dsty < 0)||(dsty > maxy)) {
 				continue;
+			}
 			_dstx = dstx;
 			if((regs[8] & 0x30) == 0x10) {
-				if(dstx == 0)
+				if(dstx == 0) {
 					_dstx = 1;
-				if(dstx == 1)
+				}
+				if(dstx == 1) {
 					continue;
+				}
 			}
 			if((regs[8] & 0x30) == 0x20) {
-				if((dstx == 0) || (dstx == 1))
+				if((dstx == 0) || (dstx == 1)) {
 					continue;
+				}
 			}
-			if(dstx <= _minx)
+			if(dstx <= _minx) {
 				_dstx = maxx - (dstx - _minx);
-			if(dstx >= _maxx)
+			}
+			if(dstx >= _maxx) {
 				_dstx = dstx - _maxx;
-			if((_dstx < 0)||(_dstx > maxx))
+			}
+			if((_dstx < 0)||(_dstx > maxx)) {
 				continue;
+			}
 			
 			uint8 code = vram_g[src_t];
 			uint8 attr = vram_a[src_t];
@@ -342,10 +378,12 @@ void DISPLAY::draw_text_wide(uint16 src)
 				uint8 p2 = vram_r[src + l] & p;
 				uint8 p3 = font_base[l];
 				// negative, blink
-				if(attr & 8)
+				if(attr & 8) {
 					p3 = ~p3;
-				if((mode & 8) && !(attr & 4) && blink)
+				}
+				if((mode & 8) && !(attr & 4) && blink) {
 					p3 = 0;
+				}
 				uint8* d = &screen[(dsty << 3) + l][_dstx << 4];
 				
 				c = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6);
@@ -376,8 +414,9 @@ void DISPLAY::draw_text_wide(uint16 src)
 			if(src == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[(dsty << 3) + i][_dstx << 4], 7, 16);
+					}
 				}
 			}
 		}
@@ -404,25 +443,32 @@ void DISPLAY::draw_fine_normal(uint16 src)
 				y = 200;
 				break;
 			}
-			if((dsty < 0)||(dsty > maxy))
+			if((dsty < 0)||(dsty > maxy)) {
 				continue;
+			}
 			_dstx = dstx;
 			if((regs[8] & 0x30) == 0x10) {
-				if(dstx == 0)
+				if(dstx == 0) {
 					_dstx = 1;
-				if(dstx == 1)
+				}
+				if(dstx == 1) {
 					continue;
+				}
 			}
 			if((regs[8] & 0x30) == 0x20) {
-				if((dstx == 0) || (dstx == 1))
+				if((dstx == 0) || (dstx == 1)) {
 					continue;
+				}
 			}
-			if(dstx <= _minx)
+			if(dstx <= _minx) {
 				_dstx = maxx - (dstx - _minx);
-			if(dstx >= _maxx)
+			}
+			if(dstx >= _maxx) {
 				_dstx = dstx - _maxx;
-			if((_dstx < 0)||(_dstx > maxx))
+			}
+			if((_dstx < 0)||(_dstx > maxx)) {
 				continue;
+			}
 			
 			for(int l = 0; l < 8; l++) {
 				uint8 code = vram_g[src + l];
@@ -454,10 +500,12 @@ void DISPLAY::draw_fine_normal(uint16 src)
 					uint8 p3 = font_base[l];
 					if(mode & 8) {
 						// negative, blink
-						if(attr & 8)
+						if(attr & 8) {
 							p3 = ~p3;
-						if(!(attr & 4) && blink)
+						}
+						if(!(attr & 4) && blink) {
 							p3 = 0;
+						}
 					}
 					c = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | 0;
 					d[0] = (pal[c] & 8) ? (pal[c] & 7) : (p3 & 0x80) ? c_t : (pal[c] & 7);
@@ -480,8 +528,9 @@ void DISPLAY::draw_fine_normal(uint16 src)
 			if(src == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[(dsty << 3) + i][_dstx << 3], 7, 8);
+					}
 				}
 			}
 		}
@@ -508,25 +557,32 @@ void DISPLAY::draw_fine_wide(uint16 src)
 				y = 200;
 				break;
 			}
-			if((dsty < 0)||(dsty > maxy))
+			if((dsty < 0)||(dsty > maxy)) {
 				continue;
+			}
 			_dstx = dstx;
 			if((regs[8] & 0x30) == 0x10) {
-				if(dstx == 0)
+				if(dstx == 0) {
 					_dstx = 1;
-				if(dstx == 1)
+				}
+				if(dstx == 1) {
 					continue;
+				}
 			}
 			if((regs[8] & 0x30) == 0x20) {
-				if((dstx == 0) || (dstx == 1))
+				if((dstx == 0) || (dstx == 1)) {
 					continue;
+				}
 			}
-			if(dstx <= _minx)
+			if(dstx <= _minx) {
 				_dstx = maxx - (dstx - _minx);
-			if(dstx >= _maxx)
+			}
+			if(dstx >= _maxx) {
 				_dstx = dstx - _maxx;
-			if((_dstx < 0)||(_dstx > maxx))
+			}
+			if((_dstx < 0)||(_dstx > maxx)) {
 				continue;
+			}
 			
 			for(int l = 0; l < 8; l++) {
 				uint8 code = vram_g[src + l];
@@ -566,10 +622,12 @@ void DISPLAY::draw_fine_wide(uint16 src)
 					uint8 p3 = font_base[l];
 					if(mode & 8) {
 						// negative, blink
-						if(attr & 8)
+						if(attr & 8) {
 							p3 = ~p3;
-						if(!(attr & 4) && blink)
+						}
+						if(!(attr & 4) && blink) {
 							p3 = 0;
+						}
 					}
 					c = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6);
 					d[ 0] = (pal[c | 0] & 8) ? (pal[c | 0] & 7) : (p3 & 0x80) ? c_t : (pal[c | 0] & 7);
@@ -600,8 +658,9 @@ void DISPLAY::draw_fine_wide(uint16 src)
 			if(src == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[(dsty << 3) + i][_dstx << 4], 7, 16);
+					}
 				}
 			}
 		}
@@ -626,10 +685,12 @@ void DISPLAY::draw_text_lcd(uint16 src)
 				uint8 p2 = vram_r[src_g + l];
 				uint8 p3 = font_base[l];
 				// negative, blink
-				if(attr & 8)
+				if(attr & 8) {
 					p3 = ~p3;
-				if((mode & 8) && !(attr & 4) && blink)
+				}
+				if((mode & 8) && !(attr & 4) && blink) {
 					p3 = 0;
+				}
 				uint8* d = &screen[y + l][x << 3];
 				
 				c = ((p1 & 0x80) >> 7) | ((p2 & 0x80) >> 6) | 0;
@@ -652,8 +713,9 @@ void DISPLAY::draw_text_lcd(uint16 src)
 			if(src_g == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 3], 7, 8);
+					}
 				}
 			}
 			src_g = (src_g + 16) & 0x3ff8;
@@ -700,10 +762,12 @@ void DISPLAY::draw_fine_lcd(uint16 src)
 					uint8 p3 = font_base[l];
 					if(mode & 8) {
 						// negative, blink
-						if(attr & 8)
+						if(attr & 8) {
 							p3 = ~p3;
-						if(!(attr & 4) && blink)
+						}
+						if(!(attr & 4) && blink) {
 							p3 = 0;
+						}
 					}
 					uint8* d = &screen[y + l][x << 3];
 					
@@ -728,8 +792,9 @@ void DISPLAY::draw_fine_lcd(uint16 src)
 			if(src_g == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 3], 7, 8);
+					}
 				}
 			}
 			src_g = (src_g + 16) & 0x3ff8;

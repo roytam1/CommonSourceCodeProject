@@ -11,6 +11,10 @@
 #include "rampac2.h"
 #include "../../fileio.h"
 
+static const uint8 header[16] = {
+	0xaa, 0x1f, 0x04, 0x00, 0x04, 0x80, 0x00, 0x01, 0x04, 0x04, 0x01, 0x03, 0x08, 0x00, 0x00, 0x00
+};
+
 void RAMPAC2::initialize(int id)
 {
 	// initialize rampac2
@@ -45,8 +49,7 @@ void RAMPAC2::release()
 
 void RAMPAC2::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x18:
 		ptr = (ptr & 0x7f00) | data;
 		break;

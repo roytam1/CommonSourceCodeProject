@@ -17,8 +17,7 @@ void PRINTER::initialize()
 
 void PRINTER::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x80:
 		// data
 		out = data;

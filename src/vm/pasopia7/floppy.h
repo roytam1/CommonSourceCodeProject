@@ -20,8 +20,7 @@
 class FLOPPY : public DEVICE
 {
 private:
-	DEVICE *dev;
-	int did0, did1;
+	DEVICE *d_fdc;
 	bool intr;
 	
 public:
@@ -34,8 +33,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id0, int id1) {
-		dev = device; did0 = id0; did1 = id1;
+	void set_context_fdc(DEVICE* device) {
+		d_fdc = device;
 	}
 };
 

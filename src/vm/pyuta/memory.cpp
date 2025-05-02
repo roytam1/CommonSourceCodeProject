@@ -9,13 +9,25 @@
 */
 
 #include "memory.h"
+#include "../datarec.h"
+#include "../tms9995.h"
 #include "../../fileio.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x1000 * (i - sb); \
-		rbank[i] = (r) + 0x1000 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x1000 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -81,12 +93,15 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	if(addr < 0xe000)
+	if(addr < 0xe000) {
 		wbank[addr >> 12][addr & 0xfff] = data;
-	else if(addr == 0xe000)
+	}
+	else if(addr == 0xe000) {
 		d_vdp->write_io8(0, data);
-	else if(addr == 0xe002)
+	}
+	else if(addr == 0xe002) {
 		d_vdp->write_io8(1, data);
+	}
 	else if(addr == 0xe108 && has_extrom) {
 		DISABLE_CART();
 	}
@@ -99,26 +114,27 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	else if(addr == 0xe840) {
 		// printer strobe
 	}
-	else if(addr == 0xe200)
+	else if(addr == 0xe200) {
 		d_psg->write_io8(0, data);
+	}
 	else if(0xee00 <= addr && addr <= 0xeeff) {
 		// cmt
 		if(!(addr & 0x1f)) {
 			bool signal = ((addr & 0x20) != 0);
 			bool remote = (data == 0);
-			switch((addr >> 6) & 3)
-			{
+			switch((addr >> 6) & 3) {
 			case 0:
 				if(cmt_signal != signal) {
-					d_cmt->write_signal(did_out, signal ? 1 : 0, 1);
+					d_cmt->write_signal(SIG_DATAREC_OUT, signal ? 1 : 0, 1);
 					cmt_signal = signal;
 				}
 				break;
 			case 1:
 				if(cmt_remote != remote) {
-					if(!remote)
-						d_cpu->write_signal(did_int, 0, 1);
-					d_cmt->write_signal(did_remote, remote ? 1 : 0, 1);
+					if(!remote) {
+						d_cpu->write_signal(SIG_TMS9995_INT4, 0, 1);
+					}
+					d_cmt->write_signal(SIG_DATAREC_REMOTE, remote ? 1 : 0, 1);
 					cmt_remote = remote;
 				}
 				break;
@@ -131,14 +147,18 @@ uint32 MEMORY::read_data8(uint32 addr)
 {
 	uint32 val = 0;
 	
-	if(addr < 0xe000)
+	if(addr < 0xe000) {
 		return rbank[addr >> 12][addr & 0xfff];
-	else if(addr == 0xe000)
+	}
+	else if(addr == 0xe000) {
 		return d_vdp->read_io8(0);
-	else if(addr == 0xe002)
+	}
+	else if(addr == 0xe002) {
 		return d_vdp->read_io8(1);
-	else if(addr == 0xe110)
+	}
+	else if(addr == 0xe110) {
 		return 0;	// tutor 0x42 ???
+	}
 	else if(addr == 0xe800) {
 		// PyuTa Jr. JOY1
 		if(joy[0] & 0x10) val |= 0x04;	// JOY1 B1
@@ -183,8 +203,9 @@ uint32 MEMORY::read_data8(uint32 addr)
 		if(joy[1] & 0x08) val |= 0x80;	// JOY2 RIGHT
 		return val;
 	}
-	else
+	else {
 		return 0xff;	// pull up ?
+	}
 }
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
@@ -197,8 +218,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 	// CRU IN
 	uint32 val = 0;
 	
-	switch(addr)
-	{
+	switch(addr) {
 	case 0xec0:
 		if(key[0x31] || key[0x61]) val |= 0x01;	// 1
 		if(key[0x32] || key[0x62]) val |= 0x02;	// 2
@@ -283,8 +303,9 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 	// from cmt
 	bool signal = ((data & mask) != 0);
 	if(cmt_signal != signal) {
-		if(cmt_remote)
-			d_cpu->write_signal(did_int, signal ? 1 : 0, 1);
+		if(cmt_remote) {
+			d_cpu->write_signal(SIG_TMS9995_INT4, signal ? 1 : 0, 1);
+		}
 		cmt_signal = signal;
 	}
 }

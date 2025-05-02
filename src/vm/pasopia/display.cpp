@@ -30,12 +30,14 @@ void DISPLAY::initialize()
 	
 	// create pc palette
 #ifdef _LCD
-	for(int i = 1; i < 8; i++)
+	for(int i = 1; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR(48, 56, 16);
+	}
 	palette_pc[0] = RGB_COLOR(160, 168, 160);
 #else
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+	}
 #endif
 	
 	// init pasopia own
@@ -53,16 +55,15 @@ void DISPLAY::update_config()
 
 void DISPLAY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x10:
-		dev->write_io8(addr, data);
+		d_crtc->write_io8(addr, data);
 		ch = data;
 		break;
 	case 0x11:
-		dev->write_io8(addr, data);
+		d_crtc->write_io8(addr, data);
 		if(ch == 0) {
-			// Žb’è
+			// XXX: Fixed Me !
 			_memset(vram, 0, 0x8000);
 			_memset(attr, 0, 0x8000);
 		}
@@ -85,16 +86,17 @@ void DISPLAY::draw_screen()
 {
 	if((regs[8] & 0x30) != 0x30) {
 		uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
-		if((regs[8] & 0xc0) == 0xc0)
+		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		else
+		}
+		else {
 			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
+		}
 		
 		// render screen
 		_memset(screen, mode & 7, sizeof(screen));
 		
-		switch(mode & 0xe0)
-		{
+		switch(mode & 0xe0) {
 		case 0x00:	// screen 0, wide
 			draw_screen0_wide(src);
 			break;
@@ -127,12 +129,15 @@ void DISPLAY::draw_screen()
 		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 640; x++)
+		for(int x = 0; x < 640; x++) {
 			dest0[x] = palette_pc[src[x] & 7];
-		if(scanline)
+		}
+		if(scanline) {
 			_memset(dest1, 0, 640 * sizeof(scrntype));
-		else
+		}
+		else {
 			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+		}
 	}
 }
 
@@ -167,8 +172,9 @@ void DISPLAY::draw_screen0_normal(uint16 src)
 			if(src_t == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 3], 7, 8);
+					}
 				}
 			}
 			src_t = (src_t & 0x3800) | ((src_t + 1) & 0x7ff);
@@ -207,8 +213,9 @@ void DISPLAY::draw_screen0_wide(uint16 src)
 			if(src_t == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 4], 7, 16);
+					}
 				}
 			}
 			src_t = (src_t & 0x3800) | ((src_t + 1) & 0x7ff);
@@ -244,7 +251,7 @@ void DISPLAY::draw_screen1_normal(uint16 src)
 						p = vram[src_g & 0x37ff];
 						c_l = (p >> 4) & 7;
 						c_r = p & 7;
-						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0xf ? 0xf : 0);
+						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
 					}
 					else
 						p = 0;
@@ -264,8 +271,9 @@ void DISPLAY::draw_screen1_normal(uint16 src)
 			if(src_t == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 3], 7, 8);
+					}
 				}
 			}
 			src_t = (src_t & 0x3800) | ((src_t + 1) & 0x7ff);
@@ -301,7 +309,7 @@ void DISPLAY::draw_screen1_wide(uint16 src)
 						p = vram[src_g & 0x37ff];
 						c_l = (p >> 4) & 7;
 						c_r = p & 7;
-						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0xf ? 0xf : 0);
+						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
 					}
 					else
 						p = 0;
@@ -321,8 +329,9 @@ void DISPLAY::draw_screen1_wide(uint16 src)
 			if(src_t == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 4], 7, 16);
+					}
 				}
 			}
 			src_t = (src_t & 0x3800) | ((src_t + 1) & 0x7ff);
@@ -369,8 +378,9 @@ void DISPLAY::draw_screen2_normal(uint16 src)
 			if(src_t == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 3], 7, 8);
+					}
 				}
 			}
 			src_t = (src_t & 0x3800) | ((src_t + 1) & 0x7ff);
@@ -417,8 +427,9 @@ void DISPLAY::draw_screen2_wide(uint16 src)
 			if(src_t == cursor) {
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int i = (regs[10] & 7); i < 8; i++)
+					for(int i = (regs[10] & 7); i < 8; i++) {
 						_memset(&screen[y + i][x << 4], 7, 16);
+					}
 				}
 			}
 			src_t = (src_t & 0x3800) | ((src_t + 1) & 0x7ff);

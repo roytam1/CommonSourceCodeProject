@@ -158,7 +158,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	pceevent->set_context_cpu(pcecpu);
 	pceevent->set_context_sound(pce);
-	pce->set_context_cpu(pcecpu, SIG_HUC6260_IRQ2, SIG_HUC6260_IRQ1, SIG_HUC6260_TIRQ, SIG_HUC6260_INTMASK, SIG_HUC6260_INTSTAT);
+	pce->set_context_cpu(pcecpu);
 	pcecpu->set_context_mem(pce);
 #endif
 	

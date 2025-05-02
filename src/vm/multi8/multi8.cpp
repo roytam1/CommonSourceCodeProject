@@ -83,7 +83,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_vram_ptr(memory->get_vram());
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
-//	floppy->set_context_pic(pic);
 	kanji->set_context_pio(pio);
 	memory->set_context_pio(pio);
 	

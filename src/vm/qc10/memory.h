@@ -24,7 +24,6 @@ class MEMORY : public DEVICE
 private:
 	DEVICE *d_pit, *d_beep;
 	UPD765A *d_fdc;
-	int did_gate0, did_gate2, did_beep;
 	
 	uint8* rbank[32];
 	uint8* wbank[32];
@@ -55,14 +54,11 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pit(DEVICE* device, int id0, int id1) {
+	void set_context_pit(DEVICE* device) {
 		d_pit = device;
-		did_gate0 = id0;
-		did_gate2 = id1;
 	}
-	void set_context_beep(DEVICE* device, int id) {
+	void set_context_beep(DEVICE* device) {
 		d_beep = device;
-		did_beep = id;
 	}
 	void set_context_fdc(UPD765A* device) {
 		d_fdc = device;

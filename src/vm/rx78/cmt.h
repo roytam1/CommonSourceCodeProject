@@ -20,8 +20,7 @@
 class CMT : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did_out, did_rmt;
+	DEVICE* d_drec;
 	
 	// data recorder
 	bool in, out, remote, now_acc;
@@ -39,8 +38,8 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context(DEVICE* device, int out, int remote) {
-		dev = device; did_out = out; did_rmt = remote;
+	void set_context_drec(DEVICE* device) {
+		d_drec = device;
 	}
 };
 

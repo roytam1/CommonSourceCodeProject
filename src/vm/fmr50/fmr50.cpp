@@ -1,7 +1,6 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
 	FUJITSU FMR-60 Emulator 'eFMR-60'
-	FUJITSU FMR-CARD Emulator 'eFMR-CARD'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -185,24 +184,24 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #else
 	bios->set_kvram_ptr(memory->get_kvram());
 #endif
-	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
-	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
-	keyboard->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
+	floppy->set_context_fdc(fdc);
+	floppy->set_context_pic(pic);
+	keyboard->set_context_pic(pic);
 	if(is_i286) {
-		memory->set_context_cpu(i286, SIG_I86_A20);
+		memory->set_context_cpu(i286);
 	}
 	else {
-		memory->set_context_cpu(i386, SIG_I386_A20);
+		memory->set_context_cpu(i386);
 	}
 	memory->set_machine_id(machine_id);
 	memory->set_context_fdc(fdc);
 	memory->set_context_bios(bios);
 	memory->set_context_crtc(crtc);
 	memory->set_chregs_ptr(crtc->get_regs());
-//	scsi->set_context_dma(dma, SIG_UPD71071_CH1);
-//	scsi->set_context_pic(pic, SIG_I8259_CHIP1 | SIG_I8259_IR0);
-	timer->set_context_beep(beep, SIG_BEEP_ON);
-	timer->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0);
+//	scsi->set_context_dma(dma);
+//	scsi->set_context_pic(pic);
+	timer->set_context_beep(beep);
+	timer->set_context_pic(pic);
 	
 	// cpu bus
 	if(is_i286) {

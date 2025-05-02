@@ -40,8 +40,8 @@ private:
 	uint8 wreg[0x80];
 	uint8 cart[0x8000*4];
 	uint8 sram[0x2000];
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x80];
+	uint8 rdmy[0x80];
 	
 	void set_bank(uint8 bank);
 	

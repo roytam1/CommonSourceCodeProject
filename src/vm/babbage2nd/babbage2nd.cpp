@@ -48,7 +48,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	
 	pio2->set_context_port_b(display, SIG_DISPLAY_7SEG_LED, 0xff, 0);
-	keyboard->set_context_pio(pio2, SIG_Z80PIO_PORT_A);
+	keyboard->set_context_pio(pio2);
 	// p.145, fig.3-4
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_1, 1);
 	ctc->set_context_zc1(ctc, SIG_Z80CTC_TRIG_0, 1);

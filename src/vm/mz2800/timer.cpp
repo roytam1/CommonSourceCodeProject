@@ -9,11 +9,12 @@
 */
 
 #include "timer.h"
+#include "../i8253.h"
 
 void TIMER::write_io8(uint32 addr, uint32 data)
 {
 	// input gate signal to i8253 ch0 and ch1
-	dev->write_signal(did0, 1, 0xffffffff);
-	dev->write_signal(did1, 1, 0xffffffff);
+	d_pit->write_signal(SIG_I8253_GATE_0, 1, 1);
+	d_pit->write_signal(SIG_I8253_GATE_1, 1, 1);
 }
 

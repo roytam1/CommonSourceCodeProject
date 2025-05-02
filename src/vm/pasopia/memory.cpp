@@ -9,13 +9,24 @@
 */
 
 #include "memory.h"
+#include "../i8255.h"
 #include "../../fileio.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x1000 * (i - sb); \
-		rbank[i] = (r) + 0x1000 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x1000 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -67,8 +78,9 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	memmap = data;
 	
-	if(memmap & 4)
+	if(memmap & 4) {
 		vm->reset();
+	}
 	if(memmap & 2) {
 		SET_BANK(0x0000, 0x7fff, ram, ram);
 	}
@@ -76,7 +88,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		SET_BANK(0x0000, 0x7fff, ram, rom);
 	}
 	// to 8255-2 port-c, bit2
-	d_pio2->write_signal(did_pio2, (memmap & 2) ? 0xffffffff : 0, 4);
+	d_pio2->write_signal(SIG_I8255_PORT_C, (memmap & 2) ? 4 : 0, 4);
 }
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
@@ -85,12 +97,13 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_MEMORY_I8255_0_A) {
 		vram_ptr = (vram_ptr & 0xff00) | (data & 0xff);
 		// to 8255-0 port-c
-		d_pio0->write_signal(did_pio0, vram[vram_ptr & 0x3fff], 0xff);
+		d_pio0->write_signal(SIG_I8255_PORT_C, vram[vram_ptr & 0x3fff], 0xff);
 		// to 8255-1 port-b, bit7
-		d_pio1->write_signal(did_pio1, attr[vram_ptr & 0x3fff] ? 0xffffffff : 0, 0x80);
+		d_pio1->write_signal(SIG_I8255_PORT_B, attr[vram_ptr & 0x3fff] ? 0x80 : 0, 0x80);
 	}
-	else if(id == SIG_MEMORY_I8255_0_B)
+	else if(id == SIG_MEMORY_I8255_0_B) {
 		vram_data = data & 0xff;
+	}
 	else if(id == SIG_MEMORY_I8255_1_C) {
 		if((data & 0x40) && !(vram_ptr & 0x4000)) {
 			vram[vram_ptr & 0x3fff] = vram_data;
@@ -98,9 +111,9 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 		}
 		vram_ptr = (vram_ptr & 0xff) | ((data & 0xff) << 8);
 		// to 8255-0 port-c
-		d_pio0->write_signal(did_pio0, vram[vram_ptr & 0x3fff], 0xff);
+		d_pio0->write_signal(SIG_I8255_PORT_C, vram[vram_ptr & 0x3fff], 0xff);
 		// to 8255-1 port-b, bit7
-		d_pio1->write_signal(did_pio1, attr[vram_ptr & 0x3fff] ? 0xffffffff : 0, 0x80);
+		d_pio1->write_signal(SIG_I8255_PORT_B, attr[vram_ptr & 0x3fff] ? 0x80 : 0, 0x80);
 	}
 }
 

@@ -25,12 +25,14 @@ void LCD::write_io8(uint32 addr, uint32 data)
 				seg[b].vram[seg[b].page][seg[b].ofs] = data;
 //				seg[b].ofs2 = seg[b].ofs;
 				if(!seg[b].updown) {
-					if(++seg[b].ofs > 49)
+					if(++seg[b].ofs > 49) {
 						seg[b].ofs = 0;
+					}
 				}
 				else {
-					if(--seg[b].ofs < 0)
+					if(--seg[b].ofs < 0) {
 						seg[b].ofs = 49;
+					}
 				}
 			}
 		}
@@ -39,8 +41,7 @@ void LCD::write_io8(uint32 addr, uint32 data)
 		for(int b = 0; b < 10; b++) {
 			if(sel & (1 << b)) {
 				// command
-				switch(data)
-				{
+				switch(data) {
 				case 0x32:
 				case 0x33:
 					seg[b].updown = data & 1;
@@ -66,8 +67,9 @@ void LCD::write_io8(uint32 addr, uint32 data)
 				default:
 					seg[b].page = data >> 6;
 					seg[b].ofs = data & 0x3f;
-					if(seg[b].ofs > 49)
+					if(seg[b].ofs > 49) {
 						seg[b].ofs = 49;
+					}
 					break;
 				}
 			}
@@ -86,12 +88,14 @@ uint32 LCD::read_io8(uint32 addr)
 				val &= seg[b].vram[seg[b].page][seg[b].ofs2];
 				seg[b].ofs2 = seg[b].ofs;
 				if(!seg[b].updown) {
-					if(++seg[b].ofs > 49)
+					if(++seg[b].ofs > 49) {
 						seg[b].ofs = 0;
+					}
 				}
 				else {
-					if(--seg[b].ofs < 0)
+					if(--seg[b].ofs < 0) {
 						seg[b].ofs = 49;
+					}
 				}
 			}
 		}
@@ -99,8 +103,9 @@ uint32 LCD::read_io8(uint32 addr)
 	else {
 		// status
 		for(int b = 0; b < 10; b++) {
-			if(sel & (1 << b))
+			if(sel & (1 << b)) {
 				val &= (seg[b].updown ? 0x40 : 0) | (seg[b].disp ? 0x20 : 0) | 0xf;
+			}
 		}
 	}
 	return val;
@@ -108,10 +113,12 @@ uint32 LCD::read_io8(uint32 addr)
 
 void LCD::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_LCD_CHIPSEL_L)
+	if(id == SIG_LCD_CHIPSEL_L) {
 		sel = (sel & 0x300) | (data);
-	else if(id == SIG_LCD_CHIPSEL_H)
+	}
+	else if(id == SIG_LCD_CHIPSEL_H) {
 		sel = (sel & 0xff) | ((data & 3) << 8);
+	}
 }
 
 void LCD::draw_screen()
@@ -154,8 +161,9 @@ void LCD::draw_screen()
 		scrntype* dst = emu->screen_buffer(y);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 240; x++)
+		for(int x = 0; x < 240; x++) {
 			dst[x] = src[x] ? cd : cb;
+		}
 	}
 }
 

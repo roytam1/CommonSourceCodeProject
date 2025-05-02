@@ -24,8 +24,7 @@ uint32 JOYPAC2::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x19:
 		if(joy[1] & 0x01) val &= ~0x01;
 		if(joy[1] & 0x02) val &= ~0x02;

@@ -24,7 +24,6 @@ class CMT : public DEVICE
 {
 private:
 	DEVICE* d_sio;
-	int did_recv, did_clear;
 	
 	FILEIO* fio;
 	int bufcnt;
@@ -45,8 +44,8 @@ public:
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
-	void set_context_sio(DEVICE* device, int id_recv, int id_clear) {
-		d_sio = device; did_recv = id_recv; did_clear = id_clear;
+	void set_context_sio(DEVICE* device) {
+		d_sio = device;
 	}
 };
 

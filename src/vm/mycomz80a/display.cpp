@@ -64,10 +64,12 @@ uint32 DISPLAY::read_io8(uint32 addr)
 
 void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_DISPLAY_ADDR_L)
+	if(id == SIG_DISPLAY_ADDR_L) {
 		vram_addr = (vram_addr & 0x700) | (data & 0xff);
-	else if(id == SIG_DISPLAY_ADDR_H)
+	}
+	else if(id == SIG_DISPLAY_ADDR_H) {
 		vram_addr = (vram_addr & 0xff) | ((data & 7) << 8);
+	}
 	else if(id == SIG_DISPLAY_MODE) {
 		chr = ((data & 0x40) == 0);
 		wide = ((data & 0x80) != 0);
@@ -83,16 +85,20 @@ void DISPLAY::draw_screen()
 {
 	_memset(screen, 0, sizeof(screen));
 	if((regs[8] & 0x30) != 0x30) {
-		if((regs[8] & 0xc0) == 0xc0)
+		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		else
+		}
+		else {
 			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
+		}
 		
 		// render screen
-		if(wide)
+		if(wide) {
 			draw_40column();
-		else
+		}
+		else {
 			draw_80column();
+		}
 	}
 	
 	// copy to real screen
@@ -102,12 +108,15 @@ void DISPLAY::draw_screen()
 		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 640; x++)
+		for(int x = 0; x < 640; x++) {
 			dest0[x] = src[x] ? col : 0;
-		if(scanline)
+		}
+		if(scanline) {
 			_memset(dest1, 0, 640 * sizeof(scrntype));
-		else
+		}
+		else {
 			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+		}
 	}
 }
 
@@ -127,8 +136,9 @@ void DISPLAY::draw_40column()
 			for(int l = 0; l < 8; l++) {
 				uint8 pat = pattern[(code << 3) + l];
 				int yy = y * ht + l;
-				if(yy >= 200)
+				if(yy >= 200) {
 					break;
+				}
 				uint8* d = &screen[yy][x << 4];
 				
 				d[ 0] = d[ 1] = pat & 0x80;
@@ -147,8 +157,9 @@ void DISPLAY::draw_40column()
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
-						if(yy < 200)
+						if(yy < 200) {
 							_memset(&screen[yy][x << 4], 1, 16);
+						}
 					}
 				}
 			}
@@ -173,8 +184,9 @@ void DISPLAY::draw_80column()
 			for(int l = 0; l < 8; l++) {
 				uint8 pat = pattern[(code << 3) + l];
 				int yy = y * ht + l;
-				if(yy >= 200)
+				if(yy >= 200) {
 					break;
+				}
 				uint8* d = &screen[yy][x << 3];
 				
 				d[0] = pat & 0x80;
@@ -193,8 +205,9 @@ void DISPLAY::draw_80column()
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
-						if(yy < 200)
+						if(yy < 200) {
 							_memset(&screen[yy][x << 3], 1, 8);
+						}
 					}
 				}
 			}

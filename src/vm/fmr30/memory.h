@@ -18,40 +18,10 @@
 #define SIG_MEMORY_DISP		0
 #define SIG_MEMORY_VSYNC	1
 
-static uint8 bios1[] = {
-	0xFA,				// cli
-	0xDB,0xE3,			// fninit
-	0xB8,0x00,0x7F,			// mov	ax,7F00
-	0x8E,0xD0,			// mov	ss,ax
-	0xBC,0x64,0x0F,			// mov	sp,0F64
-	// init i/o
-	0xB4,0x80,			// mov	ah,80
-	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
-	// boot from fdd
-	0xB4,0x81,			// mov	ah,81
-	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
-	0x73,0x0B,			// jnb	$+11
-	0x74,0xF5,			// jz	$-11
-	// boot from scsi-hdd
-	0xB4,0x82,			// mov	ah,82
-	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
-	0x72,0xEC,			// jb	$-20
-	// goto ipl
-	0x9A,0x04,0x00,0x00,0xB0,	// call	far B000:0004
-	0xEB,0xE7			// jmp $-25
-};
-
-static uint8 bios2[] = {
-	0xEA,0x00,0x00,0x00,0xFC,	// jmp	FC00:0000
-	0x00,0x00,0x00,
-	0xcf				// iret
-};
-
 class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_cpu, *d_fdc, *d_bios, *d_dma;
-	int did_a20, did_dma;
 	
 	uint8* rbank[4096];	// 16MB / 4KB
 	uint8* wbank[4096];
@@ -96,8 +66,8 @@ public:
 	void event_frame();
 	
 	// unitque function
-	void set_context_cpu(DEVICE* device, int id) {
-		d_cpu = device; did_a20 = id;
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
 	}
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
@@ -105,8 +75,8 @@ public:
 	void set_context_bios(DEVICE* device) {
 		d_bios = device;
 	}
-	void set_context_dma(DEVICE* device, int id) {
-		d_dma = device; did_dma = id;
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
 	}
 	uint8* get_vram() {
 		return vram;

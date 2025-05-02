@@ -9,7 +9,15 @@
 */
 
 #include "crtc.h"
+#include "../i8255.h"
+#include "../i8259.h"
 #include "../../config.h"
+
+#define EVENT_HSYNC	0
+#define EVENT_BLINK	256
+
+#define SCRN_640x400	1
+#define SCRN_640x200	2
 
 void CRTC::initialize()
 {
@@ -18,20 +26,22 @@ void CRTC::initialize()
 	
 	// set 16/4096 palette
 	for(int i = 0; i < 16; i++) {
-		uint8 r = ((i & 0xf) == 8) ? 152 : ((i & 0xa) == 0xa) ? 255 : ((i & 0xa) == 2) ? 127 : 0;
-		uint8 g = ((i & 0xf) == 8) ? 152 : ((i & 0xc) == 0xc) ? 255 : ((i & 0xc) == 4) ? 127 : 0;
-		uint8 b = ((i & 0xf) == 8) ? 152 : ((i & 0x9) == 0x9) ? 255 : ((i & 0x9) == 1) ? 127 : 0;
+		uint8 r = ((i & 0x0f) == 8) ? 152 : ((i & 0x0a) == 0x0a) ? 255 : ((i & 0x0a) == 2) ? 127 : 0;
+		uint8 g = ((i & 0x0f) == 8) ? 152 : ((i & 0x0c) == 0x0c) ? 255 : ((i & 0x0c) == 4) ? 127 : 0;
+		uint8 b = ((i & 0x0f) == 8) ? 152 : ((i & 0x09) == 0x09) ? 255 : ((i & 0x09) == 1) ? 127 : 0;
 		palette16[i] = RGB_COLOR(r, g, b);
 		palette4096r[i] = r;
 		palette4096g[i] = g;
 		palette4096b[i] = b;
 		palette4096[i] = RGB_COLOR(r, g, b);
 	}
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8; i++) {
 		palette16[i + 16] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+	}
 	for(int i = 0; i < 16; i++) {
-		for(int j = 1; j < 8; j++)
+		for(int j = 1; j < 8; j++) {
 			priority16[i][j] = j + 16;
+		}
 		priority16[i][0] = i; // transparent black
 		priority16[i][8] = 0 + 16; // non transparent black
 	}
@@ -60,9 +70,10 @@ void CRTC::initialize()
 	}
 	
 	// initialize crtc
-	for(int i = 0; i < 16; i++)
+	for(int i = 0; i < 16; i++) {
 		palette_reg[i] = i;
-	cg_mask = 0xf;
+	}
+	cg_mask = 0x0f;
 	clear_flag = 0;
 	pal_select = false;
 	blink = false;
@@ -153,7 +164,7 @@ uint32 CRTC::read_data8(uint32 addr)
 	uint8 pl = rmwreg[lh][7] & 3;
 	
 	if(rmwreg[lh][7] & 0x10) {
-		uint8 compare = rmwreg[lh][7] & 0xf;
+		uint8 compare = rmwreg[lh][7] & 0x0f;
 		uint8 val = (compare == (((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5) | ((i & 0x80) >> 4))) ? 0x80 : 0;
 		val |= (compare == (((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4) | ((i & 0x40) >> 3))) ? 0x40 : 0;
 		val |= (compare == (((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3) | ((i & 0x20) >> 2))) ? 0x20 : 0;
@@ -164,8 +175,9 @@ uint32 CRTC::read_data8(uint32 addr)
 		val |= (compare == (((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2) | ((i & 0x01) << 3))) ? 0x01 : 0;
 		return val;
 	}
-	else
+	else {
 		return latch[lh][pl];
+	}
 }
 
 void CRTC::write_io8(uint32 addr, uint32 data)
@@ -173,8 +185,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 	uint8 num, r, g, b;
 	int lh = addr & 1;
 	
-	switch(addr & 0x7fff)
-	{
+	switch(addr & 0x7fff) {
 	case 0x00ae: case 0x01ae: case 0x02ae: case 0x03ae: case 0x04ae: case 0x05ae: case 0x06ae: case 0x07ae:
 	case 0x08ae: case 0x09ae: case 0x0aae: case 0x0bae: case 0x0cae: case 0x0dae: case 0x0eae: case 0x0fae:
 	case 0x10ae: case 0x11ae: case 0x12ae: case 0x13ae: case 0x14ae: case 0x15ae: case 0x16ae: case 0x17ae:
@@ -184,11 +195,12 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 		r = palette4096r[num];
 		g = palette4096g[num];
 		b = palette4096b[num];
-		if(addr & 0x100)
-			g = (data & 0xf) << 4;
+		if(addr & 0x100) {
+			g = (data & 0x0f) << 4;
+		}
 		else {
 			r = data & 0xf0;
-			b = (data & 0xf) << 4;
+			b = (data & 0x0f) << 4;
 		}
 		palette4096r[num] = r;
 		palette4096g[num] = g;
@@ -204,23 +216,27 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x172:
 		// text reg
-		if(textreg_num == 0 && (textreg[0] & 2) != (uint8)(data & 2))
+		if(textreg_num == 0 && (textreg[0] & 2) != (uint8)(data & 2)) {
 			trans_init = true;
-		if(textreg_num < 0x10)
+		}
+		if(textreg_num < 0x10) {
 			textreg[textreg_num] = data;
-		else if(0x80 <= textreg_num && textreg_num < 0x90)
+		}
+		else if(0x80 <= textreg_num && textreg_num < 0x90) {
 			textreg[textreg_num - 0x70] = data;
+		}
 		if(0x80 <= textreg_num && textreg_num < 0x90) {
-			int c = textreg_num & 0xf;
+			int c = textreg_num & 0x0f;
 			int c16 = c << 4;
-			int col = data & 0xf;
+			int col = data & 0x0f;
 			int col16 = col << 4;
 			int p = data & 0x10;
-			palette_reg[c] = data & 0xf;
+			palette_reg[c] = data & 0x0f;
 			
 			// update priority
-			for(int i = 1; i < 8; i++)
+			for(int i = 1; i < 8; i++) {
 				priority16[c][i] = p ? c : (i + 16);
+			}
 			priority16[c][0] = c; // transparent black
 			priority16[c][8] = p ? c : (0 + 16); // non transparent black
 			update16 = true;
@@ -247,8 +263,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 		// clear screen
 		if((rmwreg_num[lh] & 0x1f) == 5 && (data & 0xc0) == 0x80) {
 			uint16 st, sz;
-			switch(rmwreg[lh][0xe])
-			{
+			switch(rmwreg[lh][0x0e]) {
 			case 0x03: case 0x14: case 0x15: case 0x17: case 0x1d:
 				// clear 0x0000 - 0x4000
 				st = 0x0000;
@@ -264,19 +279,24 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 				st = 0x0000;
 				sz = 0x8000;
 			}
-			if(rmwreg[lh][5] & 1)
+			if(rmwreg[lh][5] & 1) {
 				_memset(vram_b + st, 0, sz);
-			if(rmwreg[lh][5] & 2)
+			}
+			if(rmwreg[lh][5] & 2) {
 				_memset(vram_r + st, 0, sz);
-			if(rmwreg[lh][5] & 4)
+			}
+			if(rmwreg[lh][5] & 4) {
 				_memset(vram_g + st, 0, sz);
-			if(rmwreg[lh][5] & 8)
+			}
+			if(rmwreg[lh][5] & 8) {
 				_memset(vram_i + st, 0, sz);
+			}
 			clear_flag = 1;
 		}
 		// inc num
-		if(rmwreg_num[lh] & 0x80)
+		if(rmwreg_num[lh] & 0x80) {
 			rmwreg_num[lh] = (rmwreg_num[lh] & 0xfc) | ((rmwreg_num[lh] + 1) & 3);
+		}
 		break;
 	case 0x270:
 		// cg reg num
@@ -287,8 +307,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 		cgreg[cgreg_num & 0x1f] = data;
 		// screen size
 		if((cgreg_num & 0x1f) == 6) {
-			switch(data)
-			{
+			switch(data) {
 			case 0x17: case 0x1f:
 				scrn_size = SCRN_640x200;
 				break;
@@ -298,10 +317,12 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 			}
 		}
 		// view range
-		if((cgreg_num & 0x1f) == 0)
+		if((cgreg_num & 0x1f) == 0) {
 			cgreg[1] = 0;
-		if((cgreg_num & 0x1f) == 2)
+		}
+		if((cgreg_num & 0x1f) == 2) {
 			cgreg[3] = 0;
+		}
 		if(0 <= (cgreg_num & 0x1f) && (cgreg_num & 0x1f) <= 5) {
 			GDEVS = (cgreg[0] | ((cgreg[1] & 1) << 8)); //* ((scrn_size == SCRN_640x400) ? 1 : 2);
 			GDEVE = (cgreg[2] | ((cgreg[3] & 1) << 8)); //* ((scrn_size == SCRN_640x400) ? 1 : 2);
@@ -311,29 +332,35 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 			GDEHEC = (int)(CPU_CLOCKS * GDEHE / FRAMES_PER_SEC / LINES_PER_FRAME / CHARS_PER_LINE + 0.5);
 		}
 		// refresh scroll
-		if(6 <= (cgreg_num & 0x1f) && (cgreg_num & 0x1f) <= 0xf)
+		if(6 <= (cgreg_num & 0x1f) && (cgreg_num & 0x1f) <= 0x0f) {
 			map_init = true;
+		}
 		// inc num
-		if(cgreg_num & 0x80)
+		if(cgreg_num & 0x80) {
 			cgreg_num = (cgreg_num & 0xfc) | ((cgreg_num + 1) & 3);
+		}
 		break;
 	}
 }
 
 void CRTC::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_CRTC_COLUMN_SIZE)
-		column_size = (data & mask) ? true : false;	// from z80pio port a
-	else if(id == SIG_CRTC_PALLETE)
-		pal_select = (data & mask) ? false : true;	// from ym2203 port a
+	if(id == SIG_CRTC_COLUMN_SIZE) {
+		column_size = ((data & mask) != 0);	// from z80pio port a
+	}
+	else if(id == SIG_CRTC_PALLETE) {
+		pal_select = ((data & mask) == 0);	// from ym2203 port a
+	}
 }
 
 void CRTC::event_callback(int event_id, int err)
 {
-	if(event_id & 512)
+	if(event_id & 512) {
 		blink = !blink;
-	else
+	}
+	else {
 		set_hsync(event_id);
+	}
 }
 
 void CRTC::event_vline(int v, int clock)
@@ -342,36 +369,41 @@ void CRTC::event_vline(int v, int clock)
 	bool next = (GDEVS <= v && v < GDEVE) ? false : true;
 	if(vblank != next) {
 		// vblank on / off
-//		d_pic->write_signal(did_pic, next ? 2 : 0, 2);
-//		d_pio->write_signal(did_pio, next ? 2 : 0, 2);
+//		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, next ? 2 : 0, 2);
+//		d_pio->write_signal(SIG_I8255_PORT_B, next ? 2 : 0, 2);
 		vblank = next;
 	}
 #if 1
 	// force vblank
 	if(v == 0) {
-		d_pic->write_signal(did_pic, 0, 2);
-		d_pio->write_signal(did_pio, 0, 2);
+		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, 0, 2);
+		d_pio->write_signal(SIG_I8255_PORT_B, 0, 2);
 	}
 	else if(v == 400) {
-		d_pic->write_signal(did_pic, 2, 2);
-		d_pio->write_signal(did_pio, 2, 2);
+		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, 2, 2);
+		d_pio->write_signal(SIG_I8255_PORT_B, 2, 2);
 	}
 #endif
 	
 	// complete clear screen
-	if(v == 400)
+	if(v == 400) {
 		clear_flag = 0;
+	}
 	
 	// regist hsync event
 	int id;
-	if(!GDEHS)
+	if(!GDEHS) {
 		set_hsync(0);
-	else if(GDEHS < CHARS_PER_LINE)
+	}
+	else if(GDEHS < CHARS_PER_LINE) {
 		vm->regist_event_by_clock(this, GDEHS, GDEHSC, false, &id);
-	if(!GDEHE)
+	}
+	if(!GDEHE) {
 		set_hsync(0);
-	else if(GDEHE < CHARS_PER_LINE)
+	}
+	else if(GDEHE < CHARS_PER_LINE) {
 		vm->regist_event_by_clock(this, GDEHE, GDEHEC, false, &id);
+	}
 }
 
 void CRTC::set_hsync(int h)
@@ -379,7 +411,7 @@ void CRTC::set_hsync(int h)
 	hblank = (GDEHS <= h && h < GDEHE) ? false : true;
 	bool next = (hblank || vblank);
 	if(blank != next) {
-		d_pio->write_signal(did_pio, next ? 1 : 0, 1);
+		d_pio->write_signal(SIG_I8255_PORT_B, next ? 1 : 0, 1);
 		blank = next;
 	}
 }
@@ -409,7 +441,7 @@ void CRTC::draw_screen()
 		scrntype palette16tmp[16 + 8], palette4096tmp[16 + 8];
 		for(int i = 0; i < 16 + 8; i++) {
 			palette16tmp[i] = palette16[(i & 16) ? i : (palette_reg[i]) ? (palette_reg[i] & cg_mask) : (back16 & cg_mask)];
-			uint8 col = (i == 16) ? 0 : (i & 16) ? (i & 0xf) + 8 : i;
+			uint8 col = (i == 16) ? 0 : (i & 16) ? (i & 0x0f) + 8 : i;
 			palette4096tmp[i] = palette4096[(palette_reg[col]) ? (palette_reg[col] & cg_mask) : (back16 & cg_mask)];
 		}
 		for(int i = 0; i < 16; i++) {
@@ -447,25 +479,30 @@ void CRTC::draw_screen()
 		for(int y = 0; y < vs && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
+			}
 		}
 		for(int y = vs; y < ve && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint16 *src_cg = &cg[640 * y];
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < hs && x < 640; x++)
+			for(int x = 0; x < hs && x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
-			for(int x = hs; x < he && x < 640; x++)
+			}
+			for(int x = hs; x < he && x < 640; x++) {
 				dest[x] = src_text[x] ? palette16txt[src_text[x]] : palette65536[src_cg[x]];
-			for(int x = he; x < 640; x++)
+			}
+			for(int x = he; x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
+			}
 		}
 		for(int y = ve; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
+			}
 		}
 	}
 	else if(!pal_select) {
@@ -473,25 +510,30 @@ void CRTC::draw_screen()
 		for(int y = 0; y < vs && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
+			}
 		}
 		for(int y = vs; y < ve && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint16 *src_cg = &cg[640 * y];
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < hs && x < 640; x++)
+			for(int x = 0; x < hs && x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
-			for(int x = hs; x < he && x < 640; x++)
+			}
+			for(int x = hs; x < he && x < 640; x++) {
 				dest[x] = palette16pri[src_cg[x]][src_text[x]];
-			for(int x = he; x < 640; x++)
+			}
+			for(int x = he; x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
+			}
 		}
 		for(int y = ve; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette16txt[src_text[x]];
+			}
 		}
 	}
 	else {
@@ -499,25 +541,30 @@ void CRTC::draw_screen()
 		for(int y = 0; y < vs && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette4096txt[src_text[x]];
+			}
 		}
 		for(int y = vs; y < ve && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint16 *src_cg = &cg[640 * y];
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < hs && x < 640; x++)
+			for(int x = 0; x < hs && x < 640; x++) {
 				dest[x] = palette4096txt[src_text[x]];
-			for(int x = hs; x < he && x < 640; x++)
+			}
+			for(int x = hs; x < he && x < 640; x++) {
 				dest[x] = palette4096pri[src_cg[x]][src_text[x]];
-			for(int x = he; x < 640; x++)
+			}
+			for(int x = he; x < 640; x++) {
 				dest[x] = palette4096txt[src_text[x]];
+			}
 		}
 		for(int y = ve; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette4096txt[src_text[x]];
+			}
 		}
 	}
 	
@@ -528,8 +575,9 @@ void CRTC::draw_screen()
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 }
@@ -559,10 +607,12 @@ void CRTC::draw_text()
 	}
 	
 	// draw text
-	if(column_size)
+	if(column_size) {
 		draw_80column_screen();
-	else
+	}
+	else {
 		draw_40column_screen();
+	}
 	
 	// display period
 	int SL = (textreg[3] - 17) << 1, SC;
@@ -583,14 +633,17 @@ void CRTC::draw_text()
 	EC = (EC < 0) ? 0 : (EC > 80) ? 80 : EC;
 	
 	if(EL >= SL) {
-		for(int y = 0; y < SL; y++)
+		for(int y = 0; y < SL; y++) {
 			_memset(text + 640 * y, 0, 640);
-		for(int y = EL; y < 400; y++)
+		}
+		for(int y = EL; y < 400; y++) {
 			_memset(text + 640 * y, 0, 640);
+		}
 	}
 	else {
-		for(int y = EL; y < SL; y++)
+		for(int y = EL; y < SL; y++) {
 			_memset(text + 640 * y, 0, 640);
+		}
 	}
 	if(EC >= SC) {
 		for(int y = 0; y < 400; y++) {
@@ -599,8 +652,9 @@ void CRTC::draw_text()
 		}
 	}
 	else {
-		for(int y = 0; y < 400; y++)
+		for(int y = 0; y < 400; y++) {
 			_memset(text + 640 * y + (EC << 3), 0, (SC - EC) << 3);
+		}
 	}
 }
 
@@ -609,7 +663,7 @@ void CRTC::draw_80column_screen()
 	uint16 src = (textreg[1] << 2) | ((textreg[2] & 7) << 10);
 	uint8 line = (textreg[0] & 0x10) ? 2 : 0;
 	uint8 height = (textreg[0] & 0x10) ? 20 : 16;
-	uint8 vd = (textreg[9] & 0xf) << 1;
+	uint8 vd = (textreg[9] & 0x0f) << 1;
 	
 	// 80x20(25)
 	for(int y = line; y < 416; y += height) {
@@ -628,7 +682,7 @@ void CRTC::draw_40column_screen()
 	uint16 src2 = src1 + 0x1000;
 	uint8 line = (textreg[0] & 0x10) ? 2 : 0;
 	uint8 height = (textreg[0] & 0x10) ? 20 : 16;
-	uint8 vd = (textreg[9] & 0xf) << 1;
+	uint8 vd = (textreg[9] & 0x0f) << 1;
 	
 	if((textreg[0] & 0xc) == 0) {
 		// 40x20(25), 64colors
@@ -651,11 +705,13 @@ void CRTC::draw_40column_screen()
 			uint8 col;
 			for(int x = 0; x < 640; x++) {
 				//if((text[src1] & 8) | (text[src2] & 8))
-				if((text[src1] & 8) && (text[src2] & 8))
+				if((text[src1] & 8) && (text[src2] & 8)) {
 					// non transparent black
 					col = 8;
-				else
+				}
+				else {
 					col = (((text[src1] & 7) << 3) | (text[src2] & 7)) + 16;
+				}
 				text[dest++] = col;
 				src1++;
 				src2++;
@@ -707,8 +763,9 @@ void CRTC::draw_40column_screen()
 			uint8* tsrc1 = &text[dest];
 			uint8* tsrc2 = &text[dest + 640 * 480];
 			uint8* tdest = &text[dest];
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				tdest[x] = (tsrc1[x] & 7) ? tsrc1[x] : (tsrc2[x] & 7) ? tsrc2[x] : ((tsrc1[x] & 8) | (tsrc2[x] & 8));
+			}
 		}
 	}
 }
@@ -726,8 +783,7 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 	
 	// select char type
 	sel = (t2 & 0xc0) | (attr & 0x38);
-	switch(sel)
-	{
+	switch(sel) {
 	case 0x00: case 0x40:
 		pattern1 = pcg0;
 		break;
@@ -762,8 +818,9 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 		if(font_size) {
 			for(int i = 0; i < 8; i++) {
 				// check end line of screen
-				if(!(y < 639))
+				if(!(y < 639)) {
 					break;
+				}
 				y += 2;
 				
 				// reverse, blink
@@ -771,8 +828,9 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 					if((attr & 0x80) && blink) {
 						uint8 val = (attr & 0x40) ? 7 : 0;
 						_memset(text + dest, val, 8);
-						if(!scan_line)
+						if(!scan_line) {
 							_memset(text + dest + 640, val, 8);
+						}
 					}
 					else {
 						if(attr & 0x40) {
@@ -793,8 +851,9 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 						text[dest + 5] = ((pat1 & 0x04) >> 2) | ((pat2 & 0x04) >> 1) | ((pat3 & 0x04)     );
 						text[dest + 6] = ((pat1 & 0x02) >> 1) | ((pat2 & 0x02)     ) | ((pat3 & 0x02) << 1);
 						text[dest + 7] = ((pat1 & 0x01)     ) | ((pat2 & 0x01) << 1) | ((pat3 & 0x01) << 2);
-						if(!scan_line)
+						if(!scan_line) {
 							_memcpy(&text[dest + 640], &text[dest], 8);
+						}
 					}
 				}
 				dest += 1280;
@@ -803,16 +862,19 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 		else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
-				if(!(y++ < 640))
+				if(!(y++ < 640)) {
 					break;
+				}
 				
 				// reverse, blink
 				if(dest >= 0) {
 					if((attr & 0x80) && blink) {
-						if(attr & 0x40)
+						if(attr & 0x40) {
 							_memset(text + dest, 7, 8);
-						else
+						}
+						else {
 							_memset(text + dest, trans_color, 8);
+						}
 					}
 					else {
 						if(attr & 0x40) {
@@ -844,55 +906,68 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 		
 		// generate addr
 		if(font_size) {
-			if(sel == 0x80 || sel == 0xc0)
+			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | (t1 << 3);
-			else
+			}
+			else {
 				code = t1 << 3;
+			}
 		}
 		else {
-			if(sel == 0x80 || sel == 0xc0)
+			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | ((t1 & 0xfe) << 3);
-			else
+			}
+			else {
 				code = (t1 & 0xfe) << 3;
+			}
 		}
 		// color
-		col = (attr & 7) ? attr & 7 : 8;
+		col = (attr & 7) ? (attr & 7) : 8;
 		// draw
 		if(font_size) {
 			uint32 dest1 = dest;
 			uint32 dest2 = (dest >= 640 * 399) ? dest - 640 * 399 : dest + 640;
 			for(int i = 0; i < 8; i++) {
 				// check end line of screen
-				if(!(y < 639))
+				if(!(y < 639)) {
 					break;
+				}
 				y = y + 2;
 				
 				// reverse, blink
-				if(attr & 0x40)
+				if(attr & 0x40) {
 					pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-				else
+				}
+				else {
 					pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
-				if(dest >= 0)
+				}
+				if(dest >= 0) {
 					_memcpy(&text[dest], text_matrix[pat1][col], 8);
+				}
 				dest += 640;
-				if(dest >= 0 && !scan_line)
+				if(dest >= 0 && !scan_line) {
 					_memcpy(&text[dest], text_matrix[pat1][col], 8);
+				}
 				dest += 640;
 			}
 		}
 		else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
-				if(!(y++ < 640))
+				if(!(y++ < 640)) {
 					break;
+				}
 				
 				// reverse, blink
-				if(attr & 0x40)
+				if(attr & 0x40) {
 					pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-				else
+				}
+				else {
 					pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
-				if(dest >= 0)
+				}
+				if(dest >= 0) {
 					_memcpy(&text[dest], text_matrix[pat1][col], 8);
+				}
 				dest += 640;
 			}
 		}
@@ -912,8 +987,7 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 	
 	// select char type
 	sel = (t2 & 0xc0) | (attr & 0x38);
-	switch(sel)
-	{
+	switch(sel) {
 	case 0x00: case 0x40:
 		pattern1 = pcg0;
 		break;
@@ -947,8 +1021,9 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 		if(font_size) {
 			for(int i = 0; i < 8; i++) {
 				// check end line of screen
-				if(!(y < 639))
+				if(!(y < 639)) {
 					break;
+				}
 				y = y + 2;
 				
 				// reverse, blink
@@ -956,8 +1031,9 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 					if((attr & 0x80) && blink) {
 						uint8 val = (attr & 0x40) ? 7 : 0;
 						_memset(text + dest, val, 16);
-						if(!scan_line)
+						if(!scan_line) {
 							_memset(text + dest + 640, val, 16);
+						}
 					}
 					else {
 						if(attr & 0x40) {
@@ -978,8 +1054,9 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 						text[dest + 10] = text[dest + 11] = ((pat1 & 0x04) >> 2) | ((pat2 & 0x04) >> 1) | ((pat3 & 0x04)     );
 						text[dest + 12] = text[dest + 13] = ((pat1 & 0x02) >> 1) | ((pat2 & 0x02)     ) | ((pat3 & 0x02) << 1);
 						text[dest + 14] = text[dest + 15] = ((pat1 & 0x01)     ) | ((pat2 & 0x01) << 1) | ((pat3 & 0x01) << 2);
-						if(!scan_line)
+						if(!scan_line) {
 							_memcpy(&text[dest + 640], &text[dest], 16);
+						}
 					}
 				}
 				dest += 1280;
@@ -988,16 +1065,19 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 		else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
-				if(!(y++ < 640))
+				if(!(y++ < 640)) {
 					break;
+				}
 				
 				// reverse, blink
 				if(dest >= 0) {
 					if((attr & 0x80) && blink) {
-						if(attr & 0x40)
+						if(attr & 0x40) {
 							_memset(text + dest, 7, 16);
-						else
+						}
+						else {
 							_memset(text + dest, trans_color, 16);
+						}
 					}
 					else {
 						if(attr & 0x40) {
@@ -1029,16 +1109,20 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 		
 		// generate addr
 		if(font_size) {
-			if(sel == 0x80 || sel == 0xc0)
+			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | (t1 << 3);
-			else
+			}
+			else {
 				code = t1 << 3;
+			}
 		}
 		else {
-			if(sel == 0x80 || sel == 0xc0)
+			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | ((t1 & 0xfe) << 3);
-			else
+			}
+			else {
 				code = (t1 & 0xfe) << 3;
+			}
 		}
 		// color
 		col = (attr & 7) ? attr & 7 : 8;
@@ -1046,36 +1130,45 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 		if(font_size) {
 			for(int i = 0; i < 8; i++) {
 				// check end line of screen
-				if(!(y < 639))
+				if(!(y < 639)) {
 					break;
+				}
 				y = y + 2;
 				
 				// reverse, blink
-				if(attr & 0x40)
+				if(attr & 0x40) {
 					pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-				else
+				}
+				else {
 					pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
-				if(dest >= 0)
+				}
+				if(dest >= 0) {
 					_memcpy(&text[dest], text_matrixw[pat1][col], 16);
+				}
 				dest += 640;
-				if(dest >= 0 && !scan_line)
+				if(dest >= 0 && !scan_line) {
 					_memcpy(&text[dest], text_matrixw[pat1][col], 16);
+				}
 				dest += 640;
 			}
 		}
 		else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
-				if(!(y++ < 640))
+				if(!(y++ < 640)) {
 					break;
+				}
 				
 				// reverse, blink
-				if(attr & 0x40)
+				if(attr & 0x40) {
 					pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-				else
+				}
+				else {
 					pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
-				if(dest >= 0)
+				}
+				if(dest >= 0) {
 					_memcpy(&text[dest], text_matrixw[pat1][col], 16);
+				}
 				dest += 640;
 			}
 		}
@@ -1091,8 +1184,7 @@ void CRTC::draw_cg()
 	// draw cg screen
 	int is_400l, is_16col, ymax, ofs;
 	
-	switch(cgreg[6])
-	{
+	switch(cgreg[6]) {
 	case 0x13: is_400l = 1; is_16col = 1; ymax = 400; ofs = 1; break; // 640x400x16
 	case 0x17: is_400l = 0; is_16col = 1; ymax = 200; ofs = 1; break; // 640x200x16
 	case 0x1b: is_400l = 1; is_16col = 0; ymax = 400; ofs = 4; break; // 640x400x65536
@@ -1108,8 +1200,9 @@ void CRTC::draw_cg()
 		uint32 SAD1 = (cgreg[0xa] << 1) | (cgreg[0xb] << 9);
 		uint16 SLN1 = cgreg[0xc] | ((cgreg[0xd] & 1) << 8);
 		
-		if(SLN1 > ymax)
+		if(SLN1 > ymax) {
 			SLN1 = ymax;
+		}
 		for(int y = 0; y < SLN1; y++) {
 			for(int x = 0; x < 80; x++) {
 				map_hdsc[y][x] = HDSC;
@@ -1148,8 +1241,9 @@ void CRTC::draw_cg()
 				cg[dest2 + 6] = cg_matrix0[B][R][6] | cg_matrix1[G][I][6];
 				cg[dest2 + 7] = cg_matrix0[B][R][7] | cg_matrix1[G][I][7];
 			}
-			if(!is_400l)
+			if(!is_400l) {
 				dest += 640;
+			}
 		}
 	}
 	else {
@@ -1177,14 +1271,16 @@ void CRTC::draw_cg()
 				cg[dest2 + 6] = ((B3 & 0xf0) <<  8) | ((R3 & 0xf0) << 4) | ((G3 & 0xf0)     ) | ((I3 & 0xf0) >> 4);
 				cg[dest2 + 7] = ((B3 & 0x0f) << 12) | ((R3 & 0x0f) << 8) | ((G3 & 0x0f) << 4) | ((I3 & 0x0f)     );
 			}
-			if(!is_400l)
+			if(!is_400l) {
 				dest += 640;
+			}
 		}
 	}
 	// fill scan line
 	if(!is_400l && !scan_line) {
-		for(int y = 0; y < 400; y += 2)
+		for(int y = 0; y < 400; y += 2) {
 			_memcpy(cg + (y + 1) * 640, cg + y * 640, 1280);
+		}
 	}
 }
 

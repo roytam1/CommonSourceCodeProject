@@ -11,6 +11,48 @@
 #include "vdp.h"
 #include "../upd7801.h"
 
+static const scrntype palette_pc[16] = {
+#if 1
+	RGB_COLOR(  0, 90,156), RGB_COLOR(  0,  0,  0), RGB_COLOR( 58,148,255), RGB_COLOR(  0,  0,255),
+	RGB_COLOR( 16,214,  0), RGB_COLOR( 66,255, 16), RGB_COLOR(123,230,197), RGB_COLOR(  0,173,  0),
+	RGB_COLOR(255, 41,148), RGB_COLOR(255, 49, 16), RGB_COLOR(255, 58,255), RGB_COLOR(239,156,255),
+	RGB_COLOR(255,206, 33), RGB_COLOR( 74,123, 16), RGB_COLOR(165,148,165), RGB_COLOR(255,255,255)
+#else
+	RGB_COLOR(  0, 90,156), RGB_COLOR(  0,  0,  0), RGB_COLOR(  0, 58,255), RGB_COLOR(  0,  0,255),
+	RGB_COLOR(  0,255,  0), RGB_COLOR( 58,255, 90), RGB_COLOR(  0,255,255), RGB_COLOR(  0,255,  0),
+	RGB_COLOR(255, 58,156), RGB_COLOR(255,156,156), RGB_COLOR(255, 58,255), RGB_COLOR(255,156,255),
+	RGB_COLOR(255,255, 90), RGB_COLOR(123,156,  0), RGB_COLOR(189,189,189), RGB_COLOR(255,255,255)
+#endif
+};
+
+#if 1
+// table analyzed by Enri
+static uint8 color_pair0[16] = {0x0, 0xf, 0xc, 0xd, 0xa, 0xb, 0x8, 0x9, 0x6, 0x7, 0x4, 0x5, 0x2, 0x3, 0x1, 0x1};
+static uint8 color_pair1[16] = {0x0, 0x1, 0x8, 0xb, 0x2, 0x3, 0xa, 0x9, 0x4, 0x5, 0xc, 0xd, 0x6, 0x7, 0xe, 0xf};
+#else
+static uint8 color_pair0[16] = {0xe, 0xf, 0xc, 0xd, 0xa, 0xb, 0x8, 0x9, 0x6, 0x7, 0x4, 0x5, 0x2, 0x3, 0x0, 0x1};
+static uint8 color_pair1[16] = {0x0, 0x1, 0x8, 0x9, 0x2, 0x3, 0xa, 0xb, 0x4, 0x5, 0xc, 0xd, 0x6, 0x7, 0xe, 0xf};
+#endif
+
+static const uint8 symbol[32][8] = {
+	{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},{0x00,0x02,0x7a,0x84,0x84,0x7a,0x00,0x00},
+	{0x00,0x3c,0x42,0x7c,0x42,0x7c,0x40,0x40},{0x00,0x62,0x94,0x08,0x08,0x08,0x00,0x00},
+	{0x00,0xfc,0x50,0x50,0x52,0x8c,0x00,0x00},{0xfe,0x82,0x60,0x10,0x60,0x82,0xfe,0x00},
+	{0x38,0x44,0x82,0x82,0x82,0x44,0xc6,0x00},{0x10,0x7c,0xfe,0xfe,0xfe,0x10,0x38,0x00},
+	{0x6c,0xfe,0xfe,0xfe,0xfe,0x7c,0x10,0x00},{0x10,0x10,0x38,0xfe,0x38,0x10,0x10,0x00},
+	{0x10,0x7c,0x92,0xfe,0x92,0x10,0x38,0x00},{0x38,0x44,0xba,0xa2,0xba,0x44,0x38,0x00},
+	{0x80,0x80,0x88,0x44,0x3e,0x04,0x08,0x00},{0x02,0x02,0x22,0x44,0xf8,0x40,0x20,0x00},
+	{0x10,0x00,0x00,0xfe,0x00,0x00,0x10,0x00},{0x00,0x80,0x40,0x20,0x10,0x08,0x04,0x00},
+	{0x7c,0x82,0x82,0x82,0x82,0x82,0x7c,0x00},{0x7c,0xfe,0xfe,0xfe,0xfe,0xfe,0x7c,0x00},
+	{0x7c,0x82,0xba,0xba,0xba,0x82,0x7c,0x00},{0xfe,0x82,0x82,0x82,0x82,0x82,0xfe,0x00},
+	{0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55},{0xff,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+	{0xff,0x01,0x01,0x01,0x01,0x01,0x01,0x01},{0x80,0x80,0x80,0x80,0x80,0x80,0x80,0xff},
+	{0x01,0x01,0x01,0x01,0x01,0x01,0x01,0xff},{0xfe,0x00,0xfe,0x10,0x10,0x10,0x10,0x00},
+	{0x18,0x14,0x12,0x12,0x72,0xf0,0x60,0x00},{0x18,0x14,0x12,0x12,0x72,0x90,0x60,0x00},
+	{0x10,0x08,0x04,0xfe,0x04,0x08,0x10,0x00},{0x10,0x20,0x40,0xfe,0x40,0x20,0x10,0x00},
+	{0x10,0x38,0x54,0x92,0x10,0x10,0x10,0x00},{0x10,0x10,0x10,0x92,0x54,0x38,0x10,0x00}
+};
+
 void VDP::initialize()
 {
 	// copy font in bios
@@ -38,10 +80,12 @@ void VDP::initialize()
 
 void VDP::event_vline(int v, int clock)
 {
-	if(v == 239)
+	if(v == 239) {
 		d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);
-	else if(v == 261)
+	}
+	else if(v == 261) {
 		d_cpu->write_signal(SIG_UPD7801_INTF2, 0, 1);
+	}
 }
 
 void VDP::draw_screen()
@@ -58,8 +102,9 @@ void VDP::draw_screen()
 	
 	// draw sprite screen
 	_memset(sprite, 0, sizeof(sprite));
-	if(vdc0 & 0x10)
+	if(vdc0 & 0x10) {
 		draw_sprite_screen();
+	}
 	
 	// mix screens
 	int ty = ((vdc0 & 0xf7) == 0x17 && (vdc2 & 0xef) == 0x4f) ? 32 : 0;
@@ -70,16 +115,18 @@ void VDP::draw_screen()
 		scrntype* d = emu->screen_buffer(y);
 		uint8* t = &text[y + 23][24];
 		
-		for(int x = 0; x < SCREEN_WIDTH; x++)
+		for(int x = 0; x < SCREEN_WIDTH; x++) {
 			d[x] = palette_pc[t[x]];
+		}
 	}
 	for(int y = ty; y < SCREEN_HEIGHT; y++) {
 		scrntype* d = emu->screen_buffer(y);
 		uint8* s = &sprite[y + 21][28];
 		uint8* t = &text[y + 23][24];
 		
-		for(int x = 0; x < SCREEN_WIDTH; x++)
+		for(int x = 0; x < SCREEN_WIDTH; x++) {
 			d[x] = palette_pc[s[x] ? s[x] : t[x]];
+		}
 	}
 }
 
@@ -138,8 +185,9 @@ void VDP::draw_text(int dx, int dy, uint8 data, uint8 tcol, uint8 bcol)
 		dest[6] = (pat & 0x02) ? tcol : bcol;
 		dest[7] = (pat & 0x01) ? tcol : bcol;
 	}
-	for(int l = (data ? 8 : 0); l < 16; l++)
+	for(int l = (data ? 8 : 0); l < 16; l++) {
 		_memset(&text[dy16 + l][dx8], bcol, 8);
+	}
 }
 
 void VDP::draw_block(int dx, int dy, uint8 data)
@@ -148,12 +196,14 @@ void VDP::draw_block(int dx, int dy, uint8 data)
 	uint8 cu = data >> 4, cl = data & 0xf;
 	
 	if(cu) {
-		for(int l = 0; l < 8; l++)
+		for(int l = 0; l < 8; l++) {
 			_memset(&text[dy16 + l][dx8], cu, 8);
+		}
 	}
 	if(cl) {
-		for(int l = 8; l < 16; l++)
+		for(int l = 8; l < 16; l++) {
 			_memset(&text[dy16 + l][dx8], cl, 8);
+		}
 	}
 }
 
@@ -162,36 +212,44 @@ void VDP::draw_graph(int dx, int dy, uint8 data, uint8 col)
 	int dx8l = dx << 3, dx8r = (dx << 3) + 4, dy16 = dy << 4;
 	
 	if(data & 0x80) {
-		for(int l = 0; l < 4; l++)
+		for(int l = 0; l < 4; l++) {
 			_memset(&text[dy16 + l][dx8l], col, 4);
+		}
 	}
 	if(data & 0x40) {
-		for(int l = 0; l < 4; l++)
+		for(int l = 0; l < 4; l++) {
 			_memset(&text[dy16 + l][dx8r], col, 4);
+		}
 	}
 	if(data & 0x20) {
-		for(int l = 4; l < 8; l++)
+		for(int l = 4; l < 8; l++) {
 			_memset(&text[dy16 + l][dx8l], col, 4);
+		}
 	}
 	if(data & 0x10) {
-		for(int l = 4; l < 8; l++)
+		for(int l = 4; l < 8; l++) {
 			_memset(&text[dy16 + l][dx8r], col, 4);
+		}
 	}
 	if(data & 0x08) {
-		for(int l = 8; l < 12; l++)
+		for(int l = 8; l < 12; l++) {
 			_memset(&text[dy16 + l][dx8l], col, 4);
+		}
 	}
 	if(data & 0x04) {
-		for(int l = 8; l < 12; l++)
+		for(int l = 8; l < 12; l++) {
 			_memset(&text[dy16 + l][dx8r], col, 4);
+		}
 	}
 	if(data & 0x02) {
-		for(int l = 12; l < 16; l++)
+		for(int l = 12; l < 16; l++) {
 			_memset(&text[dy16 + l][dx8l], col, 4);
+		}
 	}
 	if(data & 0x01) {
-		for(int l = 12; l < 16; l++)
+		for(int l = 12; l < 16; l++) {
 			_memset(&text[dy16 + l][dx8r], col, 4);
+		}
 	}
 }
 
@@ -233,20 +291,24 @@ void VDP::draw_sprite_screen()
 			int no1 = atb3, no2 = atb3 ^ ((conx ? 8 : 0) | (cony ? 1 : 0));
 			
 			draw_sprite(dx, dy, sx, ex, sy, ey, no1, col0);
-			if(conx || cony)
+			if(conx || cony) {
 				draw_sprite(dx, dy, sx, ex, sy, ey, no2, col1);
+			}
 		}
 		else {
 			// mono color sprite
 			int no1 = atb3, no2 = atb3 | 1, no3 = atb3 | 8, no4 = atb3 | 9;
 			
 			draw_sprite(dx, dy, sx, ex, sy, ey, no1, col0);
-			if(cony)
+			if(cony) {
 				draw_sprite(dx, dy + 16, sx, ex, sy - 8, 8, no2, col0);
-			if(conx)
+			}
+			if(conx) {
 				draw_sprite(dx + 16, dy, 0, 4, sy, ey, no3, col0);
-			if(conx && cony)
+			}
+			if(conx && cony) {
 				draw_sprite(dx + 16, dy + 16, 0, 4, sy - 8, 8, no4, col0);
+			}
 		}
 	}
 }
@@ -254,9 +316,9 @@ void VDP::draw_sprite_screen()
 void VDP::draw_sprite(int dx, int dy, int sx, int ex, int sy, int ey, int no, uint8 col)
 {
 	// color #0 is transparent
-	if(!col)
+	if(!col) {
 		return;
-	
+	}
 	for(int y = (sy < 0 ? 0 : sy), no32 = no << 5; y < ey; y++) {
 		int y2u = (y << 1) + dy, y2l = (y << 1) + dy + 1, y4 = (y << 2) + no32;
 		

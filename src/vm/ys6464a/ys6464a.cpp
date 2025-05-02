@@ -51,7 +51,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_b(display, SIG_DISPLAY_PORT_B, 0xf0, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_PORT_C, 0xf0, 0);
 	pio->set_context_port_c(keyboard, SIG_KEYBOARD_PORT_C, 0xf0, 0);
-	keyboard->set_context_pio(pio, SIG_I8255_PORT_C);
+	keyboard->set_context_pio(pio);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

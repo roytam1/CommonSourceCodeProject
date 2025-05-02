@@ -20,7 +20,6 @@ class NOTE : public DEVICE
 {
 private:
 	DEVICE *d_pic;
-	int did_pic;
 	
 	uint8 ch, regs[16];
 	
@@ -34,8 +33,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 };
 

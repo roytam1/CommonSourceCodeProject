@@ -29,8 +29,7 @@ void KANJIPAC2::initialize(int id)
 
 void KANJIPAC2::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x18:
 		ptr = (ptr & 0x1ff00) | data;
 		break;
@@ -38,7 +37,7 @@ void KANJIPAC2::write_io8(uint32 addr, uint32 data)
 		ptr = (ptr & 0x100ff) | (data << 8);
 		break;
 	case 0x1a:
-		ptr = (ptr & 0x0ffff) | ((data & 0x1) << 16);
+		ptr = (ptr & 0x0ffff) | ((data & 0x01) << 16);
 		break;
 	}
 }

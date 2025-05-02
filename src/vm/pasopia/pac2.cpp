@@ -26,8 +26,7 @@ void PAC2::release()
 
 void PAC2::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x18:
 	case 0x19:
 	case 0x1a:

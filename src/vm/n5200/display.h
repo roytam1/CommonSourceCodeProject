@@ -1,6 +1,5 @@
 /*
-	NEC PC-98LT Emulator 'ePC-98LT'
-	NEC PC-98HA Emulator 'eHANDY98'
+	NEC N5200 Emulator 'eN5200'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -20,7 +19,6 @@ class DISPLAY : public DEVICE
 {
 private:
 	DEVICE *d_fdc, *d_pic;
-	int did_pic;
 	uint8 *vram, *tvram;
 	
 	bool vsync_enb;
@@ -39,8 +37,8 @@ public:
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
 	}
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
 		vram = ptr;

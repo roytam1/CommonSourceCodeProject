@@ -9,6 +9,8 @@
 */
 
 #include "memory.h"
+#include "../beep.h"
+#include "../i8253.h"
 #include "../upd765a.h"
 #include "../../fileio.h"
 #include "../../config.h"
@@ -86,13 +88,12 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x18: case 0x19: case 0x1a: case 0x1b:
 		bank = data;
 		// timer gate signal
-		d_pit->write_signal(did_gate0, data, 1);
-		d_pit->write_signal(did_gate2, data, 2);
+		d_pit->write_signal(SIG_I8253_GATE_0, data, 1);
+		d_pit->write_signal(SIG_I8253_GATE_2, data, 2);
 		// beep on
 		beep_cont = ((data & 4) != 0);
 		update_beep();
@@ -109,8 +110,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_io8(uint32 addr)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x18: case 0x19: case 0x1a: case 0x1b:
 		return config.dipswitch;
 	case 0x30: case 0x31: case 0x32: case 0x33:
@@ -181,11 +181,11 @@ void MEMORY::update_map()
 void MEMORY::update_beep()
 {
 	if(!beep_on && (beep_cont || beep_pit)) {
-		d_beep->write_signal(did_beep, 1, 1);
+		d_beep->write_signal(SIG_BEEP_ON, 1, 1);
 		beep_on = true;
 	}
 	else if(beep_on && !(beep_cont || beep_pit)) {
-		d_beep->write_signal(did_beep, 0, 1);
+		d_beep->write_signal(SIG_BEEP_ON, 0, 1);
 		beep_on = false;
 	}
 }

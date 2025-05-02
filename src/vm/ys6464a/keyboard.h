@@ -21,7 +21,6 @@ class KEYBOARD : public DEVICE
 {
 private:
 	DEVICE *d_pio;
-	int did_pio;
 	uint8* key_stat;
 	
 public:
@@ -33,8 +32,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pio(DEVICE* device, int id) {
-		d_pio = device; did_pio = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 };
 

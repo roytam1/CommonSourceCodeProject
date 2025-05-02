@@ -131,8 +131,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _MZ1500
 	io->set_iomap_single_w(0xe9, memory);	// PSG L+R
 	io->set_iomap_range_w(0xf0, 0xf1, display);
-	io->set_iomap_single_r(0xf2, psg_l);
-	io->set_iomap_single_r(0xf3, psg_r);
+	io->set_iomap_single_w(0xf2, psg_l);
+	io->set_iomap_single_w(0xf3, psg_r);
 	io->set_iomap_single_r(0xf7, memory);	// SIO
 //	static int z80_sio_addr[4] = {0, 2, 1, 3};
 	static int z80_pio_addr[4] = {1, 3, 0, 2};

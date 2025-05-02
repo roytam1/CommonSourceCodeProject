@@ -81,9 +81,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio1->set_context_port_b(memory, SIG_MEMORY_I8255_1_B, 0xff, 0);
 	pio1->set_context_port_c(display, SIG_DISPLAY_I8255_1_C, 0xff, 0);
 	pio1->set_context_port_c(memory, SIG_MEMORY_I8255_1_C, 0xff, 0);
-	pio2->set_context_port_a(beep, SIG_BEEP_MUTE, 0x2, 0);
-	pio2->set_context_port_a(psg0, SIG_SN76489AN_MUTE, 0x2, 0);
-	pio2->set_context_port_a(psg1, SIG_SN76489AN_MUTE, 0x2, 0);
+	pio2->set_context_port_a(beep, SIG_BEEP_MUTE, 0x02, 0);
+	pio2->set_context_port_a(psg0, SIG_SN76489AN_MUTE, 0x02, 0);
+	pio2->set_context_port_a(psg1, SIG_SN76489AN_MUTE, 0x02, 0);
 	pio2->set_context_port_a(drec, SIG_DATAREC_OUT, 0x10, 0);
 	pio2->set_context_port_a(not, SIG_NOT_INPUT, 0x20, 0);
 	pio2->set_context_port_a(iotrap, SIG_IOTRAP_I8255_2_A, 0xff, 0);
@@ -102,14 +102,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_vram_ptr(memory->get_vram());
 	display->set_pal_ptr(memory->get_pal());
 	display->set_regs_ptr(crtc->get_regs());
-	floppy->set_context(fdc, SIG_UPD765A_TC, SIG_UPD765A_MOTOR);
+	floppy->set_context_fdc(fdc);
 	io->set_ram_ptr(memory->get_ram());
 	iotrap->set_context_cpu(cpu);
-	iotrap->set_context_pio2(pio2, SIG_I8255_PORT_B);
-	key->set_context(pio, SIG_Z80PIO_PORT_B);
-	memory->set_context_io(io, SIG_IO_MIO);
-	memory->set_context_pio0(pio0, SIG_I8255_PORT_B);
-	memory->set_context_pio2(pio2, SIG_I8255_PORT_C);
+	iotrap->set_context_pio2(pio2);
+	key->set_context_pio(pio);
+	memory->set_context_io(io);
+	memory->set_context_pio0(pio0);
+	memory->set_context_pio2(pio2);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

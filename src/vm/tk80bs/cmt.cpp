@@ -9,6 +9,7 @@
 */
 
 #include "cmt.h"
+#include "../i8251.h"
 #include "../../fileio.h"
 
 void CMT::initialize()
@@ -54,8 +55,9 @@ void CMT::play_datarec(_TCHAR* filename)
 		
 		// send data to sio
 		// this implement does not care the sio buffer size... :-(
-		for(int i = 0; i < size; i++)
-			d_sio->write_signal(did_recv, buffer[i], 0xff);
+		for(int i = 0; i < size; i++) {
+			d_sio->write_signal(SIG_I8251_RECV, buffer[i], 0xff);
+		}
 		play = true;
 	}
 }
@@ -73,13 +75,15 @@ void CMT::rec_datarec(_TCHAR* filename)
 void CMT::close_datarec()
 {
 	// close file
-	if(rec && bufcnt)
+	if(rec && bufcnt) {
 		fio->Fwrite(buffer, bufcnt, 1);
-	if(play || rec)
+	}
+	if(play || rec) {
 		fio->Fclose();
+	}
 	play = rec = false;
 	
 	// clear sio buffer
-	d_sio->write_signal(did_clear, 0, 0);
+	d_sio->write_signal(SIG_I8251_CLEAR, 0, 0);
 }
 

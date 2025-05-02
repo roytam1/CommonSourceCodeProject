@@ -27,8 +27,6 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	case 0x74:
 		// tc on
 		d_fdc->write_signal(SIG_UPD765A_TC, 1, 1);
-//		// interrupt
-//		d_pic->write_signal(did_pic, 1, 1);
 		break;
 	}
 }

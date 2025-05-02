@@ -10,6 +10,7 @@
 */
 
 #include "floppy.h"
+#include "../i8259.h"
 #include "../mb8877.h"
 
 void FLOPPY::initialize()
@@ -23,27 +24,31 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
 	int nextdrv = drvsel;
 	
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x208:
 		// drive control register
 		irqmsk = ((data & 1) != 0);
 		update_intr();
-		d_fdc->write_signal(did_motor, data, 0x10);
-		d_fdc->write_signal(did_side, data, 4);
+		d_fdc->write_signal(SIG_MB8877_MOTOR, data, 0x10);
+		d_fdc->write_signal(SIG_MB8877_SIDEREG, data, 4);
 		break;
 	case 0x20c:
 		// drive select register
-		if(data & 1)
+		if(data & 1) {
 			nextdrv = 0;
-		else if(data & 2)
+		}
+		else if(data & 2) {
 			nextdrv = 1;
-		else if(data & 4)
+		}
+		else if(data & 4) {
 			nextdrv = 2;
-		else if(data & 8)
+		}
+		else if(data & 8) {
 			nextdrv = 3;
-		if(drvsel != nextdrv)
-			d_fdc->write_signal(did_drv, drvsel = nextdrv, 3);
+		}
+		if(drvsel != nextdrv) {
+			d_fdc->write_signal(SIG_MB8877_DRIVEREG, drvsel = nextdrv, 3);
+		}
 		drvreg = data;
 		break;
 	}
@@ -51,8 +56,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 
 uint32 FLOPPY::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x208:
 		if(changed[drvsel]) {
 			changed[drvsel] = false;
@@ -76,6 +80,6 @@ void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 
 void FLOPPY::update_intr()
 {
-	d_pic->write_signal(did_pic, irq && irqmsk ? 1 : 0, 1);
+	d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR6, irq && irqmsk ? 1 : 0, 1);
 }
 

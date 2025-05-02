@@ -1,4 +1,5 @@
 /*
+	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
 	Origin : Ootake (joypad, timer)
@@ -23,7 +24,6 @@ class PCE : public DEVICE
 {
 private:
 	DEVICE* d_cpu;
-	int did_irq2, did_irq1, did_tirq, did_intmask, did_intstat;
 	
 	// memory
 	uint8 ram[0x2000];	// ram 8kb
@@ -128,10 +128,8 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device, int id_irq2, int id_irq1, int id_tirq, int id_intmask, int id_intstat) {
+	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
-		did_irq2 = id_irq2; did_irq1 = id_irq1; did_tirq = id_tirq;
-		did_intmask = id_intmask; did_intstat = id_intstat;
 	}
 	void initialize_sound(int rate) {
 		sample_rate = rate;

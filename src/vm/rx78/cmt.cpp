@@ -9,6 +9,7 @@
 */
 
 #include "cmt.h"
+#include "../datarec.h"
 
 void CMT::initialize()
 {
@@ -25,12 +26,12 @@ void CMT::write_io8(uint32 addr, uint32 data)
 	// data recorder
 	if(!remote) {
 		// motor on
-		dev->write_signal(did_rmt, 1, 1);
+		d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 		remote = true;
 	}
-	bool signal = (data & 1) ? true : false;
+	bool signal = ((data & 1) != 0);
 	if(signal != out) {
-		dev->write_signal(did_out, signal ? 1 : 0, 1);
+		d_drec->write_signal(SIG_DATAREC_OUT, signal ? 1 : 0, 1);
 		out = signal;
 	}
 	now_acc = true;
@@ -40,7 +41,7 @@ uint32 CMT::read_io8(uint32 addr)
 {
 	if(!remote) {
 		// motor on
-		dev->write_signal(did_rmt, 1, 1);
+		d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 		remote = true;
 	}
 	now_acc = true;
@@ -49,18 +50,20 @@ uint32 CMT::read_io8(uint32 addr)
 
 void CMT::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_CMT_IN)
-		in = (data & mask) ? true : false;
+	if(id == SIG_CMT_IN) {
+		in = ((data & mask) != 0);
+	}
 }
 
 void CMT::event_frame()
 {
 	if(remote) {
-		if(now_acc)
+		if(now_acc) {
 			framecnt = 0;
+		}
 		else if(++framecnt >= FRAMES_PER_SEC) {
 			// motor off if not accessed for past 1 sec
-			dev->write_signal(did_rmt, 0, 1);
+			d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 1);
 			remote = false;
 		}
 		now_acc = false;

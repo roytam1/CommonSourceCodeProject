@@ -31,30 +31,30 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 	
 	// trigger mask
 	if(num) {
-		if(!(mode & 0x04)) val &= 0xdf;
-		if(!(mode & 0x08)) val &= 0xef;
+		if(!(mode & 0x04)) val &= ~0x20;
+		if(!(mode & 0x08)) val &= ~0x10;
 		dir = (mode & 0x20) ? false : true;
 	}
 	else {
-		if(!(mode & 0x01)) val &= 0xdf;
-		if(!(mode & 0x02)) val &= 0xef;
+		if(!(mode & 0x01)) val &= ~0x20;
+		if(!(mode & 0x02)) val &= ~0x10;
 		dir = (mode & 0x10) ? false : true;
 	}
 	
 	// direction
 	if(dir) {
-		if(joy_stat[num] & 0x8) val &= 0xf7;
-		if(joy_stat[num] & 0x4) val &= 0xfb;
-		if(joy_stat[num] & 0x2) val &= 0xfd;
-		if(joy_stat[num] & 0x1) val &= 0xfe;
+		if(joy_stat[num] & 0x8) val &= ~0x08;
+		if(joy_stat[num] & 0x4) val &= ~0x08;
+		if(joy_stat[num] & 0x2) val &= ~0x02;
+		if(joy_stat[num] & 0x1) val &= ~0x01;
 	}
 	
 	// trigger
-	if(joy_stat[num] & 0x10) val &= 0xdf;
-	if(joy_stat[num] & 0x20) val &= 0xef;
+	if(joy_stat[num] & 0x10) val &= ~0x20;
+	if(joy_stat[num] & 0x20) val &= ~0x10;
 	if(full_auto & 2) {
-		if(joy_stat[num] & 0x40) val &= 0xdf;
-		if(joy_stat[num] & 0x80) val &= 0xef;
+		if(joy_stat[num] & 0x40) val &= ~0x20;
+		if(joy_stat[num] & 0x80) val &= ~0x10;
 	}
 	return val;
 }

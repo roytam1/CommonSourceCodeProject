@@ -9,19 +9,54 @@
 */
 
 #include "memory.h"
+#include "../i8237.h"
+#include "../i86.h"
 #include "../../fileio.h"
+
+static const uint8 bios1[] = {
+	0xFA,				// cli
+	0xDB,0xE3,			// fninit
+	0xB8,0x00,0x7F,			// mov	ax,7F00
+	0x8E,0xD0,			// mov	ss,ax
+	0xBC,0x64,0x0F,			// mov	sp,0F64
+	// init i/o
+	0xB4,0x80,			// mov	ah,80
+	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
+	// boot from fdd
+	0xB4,0x81,			// mov	ah,81
+	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
+	0x73,0x0B,			// jnb	$+11
+	0x74,0xF5,			// jz	$-11
+	// boot from scsi-hdd
+	0xB4,0x82,			// mov	ah,82
+	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
+	0x72,0xEC,			// jb	$-20
+	// goto ipl
+	0x9A,0x04,0x00,0x00,0xB0,	// call	far B000:0004
+	0xEB,0xE7			// jmp $-25
+};
+
+static const uint8 bios2[] = {
+	0xEA,0x00,0x00,0x00,0xFC,	// jmp	FC00:0000
+	0x00,0x00,0x00,
+	0xcf				// iret
+};
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -118,14 +153,13 @@ uint32 MEMORY::read_dma8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	// memory controller
 	case 0x1d:
 		mcr1 = data;
 		update_bank();
 		// protect mode ???
-//		d_cpu->write_signal(did_a20, data, 0x10);
+//		d_cpu->write_signal(SIG_I86_A20, data, 0x10);
 		break;
 	case 0x1e:
 		mcr2 = data;
@@ -134,14 +168,14 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0x26:
 		a20 = data;
 		// protect mode ???
-		d_cpu->write_signal(did_a20, data, 0x80);
+		d_cpu->write_signal(SIG_I86_A20, data, 0x80);
 		break;
 	// dma bank
 	case 0x120:
 	case 0x121:
 	case 0x122:
 	case 0x123:
-		d_dma->write_signal(did_dma + (addr & 3), data, 0xf);
+		d_dma->write_signal(SIG_I8237_BANK0 + (addr & 3), data, 0xf);
 		break;
 	// lcd controller
 	case 0x300:
@@ -171,12 +205,15 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0x30d:
 		kj_l = data & 0x7f;
 		kj_row = 0;
-		if(kj_h < 0x30)
+		if(kj_h < 0x30) {
 			kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10);
-		else if(kj_h < 0x70)
+		}
+		else if(kj_h < 0x70) {
 			kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) + (((kj_l - 0x20) & 0x60) <<  9) + (((kj_h - 0x00) & 0x0f) << 10) + (((kj_h - 0x30) & 0x70) * 0xc00) + 0x08000;
-		else
+		}
+		else {
 			kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10) | 0x38000;
+		}
 		break;
 	case 0x30e:
 		kanji16[(kj_ofs | ((kj_row & 0xf) << 1)) & 0x3ffff] = data;
@@ -191,8 +228,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x1d:
 		return mcr1;
 	case 0x1e:
@@ -258,13 +294,16 @@ void MEMORY::draw_screen()
 	_memset(screen_txt, 0, sizeof(screen_txt));
 	_memset(screen_cg, 0, sizeof(screen_cg));
 	if(dcr1 & 2) {
-		if(dcr1 & 8)
+		if(dcr1 & 8) {
 			draw_text40();
-		else
+		}
+		else {
 			draw_text80();
+		}
 	}
-	if(dcr1 & 1)
+	if(dcr1 & 1) {
 		draw_cg();
+	}
 	
 	scrntype cd = RGB_COLOR(48, 56, 16);
 	scrntype cb = RGB_COLOR(160, 168, 160);
@@ -273,8 +312,9 @@ void MEMORY::draw_screen()
 		uint8* txt = screen_txt[y];
 		uint8* cg = screen_cg[y];
 		
-		for(int x = 0; x < 640; x++)
+		for(int x = 0; x < 640; x++) {
 			dest[x] = (txt[x] || cg[x]) ? cd : cb;
+		}
 	}
 	
 	// access lamp
@@ -285,8 +325,9 @@ void MEMORY::draw_screen()
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 }
@@ -320,12 +361,15 @@ void MEMORY::draw_text40()
 			if(attr & 0x40) {
 				// kanji
 				int ofs;
-				if(h < 0x30)
+				if(h < 0x30) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10);
-				else if(h < 0x70)
+				}
+				else if(h < 0x70) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) + (((l - 0x20) & 0x60) <<  9) + (((h - 0x00) & 0x0f) << 10) + (((h - 0x30) & 0x70) * 0xc00) + 0x08000;
-				else
+				}
+				else {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
+				}
 				
 				for(int l = 0; l < 16 && l < yofs; l++) {
 					uint8 pat0 = kanji16[ofs + (l << 1) + 0];
@@ -333,8 +377,9 @@ void MEMORY::draw_text40()
 					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
 					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
 					int yy = y * yofs + l;
-					if(yy >= 400)
+					if(yy >= 400) {
 						break;
+					}
 					uint8* d = &screen_txt[yy][x << 4];
 					
 					d[ 0] = d[ 1] = (pat0 & 0x80) ? col : 0;
@@ -362,8 +407,9 @@ void MEMORY::draw_text40()
 					uint8 pat = ank16[(code << 4) + l];
 					pat = blnk ? 0 : rev ? ~pat : pat;
 					int yy = y * yofs + l;
-					if(yy >= 400)
+					if(yy >= 400) {
 						break;
+					}
 					uint8* d = &screen_txt[yy][x << 4];
 					
 					d[ 0] = d[ 1] = (pat & 0x80) ? col : 0;
@@ -379,8 +425,9 @@ void MEMORY::draw_text40()
 			if(cursor && !blink) {
 				int st = lcdreg[10] & 0x1f;
 				int ed = lcdreg[11] & 0x1f;
-				for(int i = st; i <= ed && i < yofs; i++)
+				for(int i = st; i <= ed && i < yofs; i++) {
 					_memset(&screen_txt[y * yofs + i][cx << 4], 7, 8);
+				}
 			}
 		}
 	}
@@ -415,12 +462,15 @@ void MEMORY::draw_text80()
 			if(attr & 0x40) {
 				// kanji
 				int ofs;
-				if(h < 0x30)
+				if(h < 0x30) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10);
-				else if(h < 0x70)
+				}
+				else if(h < 0x70) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) + (((l - 0x20) & 0x60) <<  9) + (((h - 0x00) & 0x0f) << 10) + (((h - 0x30) & 0x70) * 0xc00) + 0x08000;
-				else
+				}
+				else {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
+				}
 				
 				for(int l = 0; l < 16 && l < yofs; l++) {
 					uint8 pat0 = kanji16[ofs + (l << 1) + 0];
@@ -428,8 +478,9 @@ void MEMORY::draw_text80()
 					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
 					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
 					int yy = y * yofs + l;
-					if(yy >= 400)
+					if(yy >= 400) {
 						break;
+					}
 					uint8* d = &screen_txt[yy][x << 3];
 					
 					d[ 0] = (pat0 & 0x80) ? col : 0;
@@ -457,8 +508,9 @@ void MEMORY::draw_text80()
 					uint8 pat = ank16[(code << 4) + l];
 					pat = blnk ? 0 : rev ? ~pat : pat;
 					int yy = y * yofs + l;
-					if(yy >= 400)
+					if(yy >= 400) {
 						break;
+					}
 					uint8* d = &screen_txt[yy][x << 3];
 					
 					d[0] = (pat & 0x80) ? col : 0;
@@ -474,8 +526,9 @@ void MEMORY::draw_text80()
 			if(cursor && !blink) {
 				int st = lcdreg[10] & 0x1f;
 				int ed = lcdreg[11] & 0x1f;
-				for(int i = st; i <= ed && i < yofs; i++)
+				for(int i = st; i <= ed && i < yofs; i++) {
 					_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+				}
 			}
 		}
 	}

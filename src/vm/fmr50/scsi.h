@@ -20,7 +20,6 @@ class SCSI : public DEVICE
 {
 private:
 	DEVICE *d_dma, *d_pic;
-	int did_dma, did_pic;
 	
 	int phase;
 	uint8 ctrlreg, datareg, statreg;
@@ -37,11 +36,11 @@ public:
 	uint32 read_dma8(uint32 addr);
 	
 	// unique function
-	void set_context_dma(DEVICE* device, int id) {
-		d_dma = device; did_dma = id;
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
 	}
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 };
 

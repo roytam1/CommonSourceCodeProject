@@ -27,8 +27,8 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		if(!(ctrlreg & 0x80) && (data & 0x80)) {
 			d_fdc->reset();
 		}
-		d_fdc->write_signal(did_fready, data, 0x40);
-		d_fdc->write_signal(did_motor, data, 0x08);
+		d_fdc->write_signal(SIG_UPD765A_FREADY, data, 0x40);
+		d_fdc->write_signal(SIG_UPD765A_MOTOR, data, 0x08);
 		ctrlreg = data;
 		break;
 	case 0xbe:

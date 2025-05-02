@@ -19,14 +19,13 @@ class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_cmt, *d_cpu, *d_psg, *d_vdp;
-	int did_out, did_remote, did_int;
 	
 	uint8 ipl[0x8000];	// ipl rom (32k)
 	uint8 basic[0x4000];	// basic rom (16k)
 	uint8 cart[0x8000];	// cartridge (32k)
 	
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x1000];
+	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
 	
@@ -49,14 +48,11 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_cmt(DEVICE* device, int id0, int id1) {
+	void set_context_cmt(DEVICE* device) {
 		d_cmt = device;
-		did_out = id0;
-		did_remote = id1;
 	}
-	void set_context_cpu(DEVICE* device, int id) {
+	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
-		did_int = id;
 	}
 	void set_context_psg(DEVICE* device) {
 		d_psg = device;

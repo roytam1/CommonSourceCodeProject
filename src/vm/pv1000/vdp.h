@@ -15,12 +15,6 @@
 #include "../../emu.h"
 #include "../device.h"
 
-static const scrntype palette_pc[8] = {
-	RGB_COLOR(  0,  0,  0), RGB_COLOR(255,  0,  0), RGB_COLOR(  0,255,  0), RGB_COLOR(255,255,  0),
-	RGB_COLOR(  0,  0,255), RGB_COLOR(255,  0,255), RGB_COLOR(  0,255,255), RGB_COLOR(255,255,255)
-};
-static const uint8 plane[4] = {0, 1, 2, 4};
-
 class VDP : public DEVICE
 {
 private:

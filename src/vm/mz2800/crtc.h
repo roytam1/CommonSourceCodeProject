@@ -18,17 +18,10 @@
 #define SIG_CRTC_COLUMN_SIZE	0
 #define SIG_CRTC_PALLETE	1
 
-#define EVENT_HSYNC	0
-#define EVENT_BLINK	256
-
-#define SCRN_640x400	1
-#define SCRN_640x200	2
-
 class CRTC : public DEVICE
 {
 private:
 	DEVICE *d_pic, *d_pio, *d_fdc;
-	int did_pic, did_pio;
 	
 	// config
 	bool scan_line, scan_tmp;
@@ -106,11 +99,11 @@ public:
 	void update_config();
 	
 	// unique function
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
-	void set_context_pio(DEVICE* device, int id) {
-		d_pio = device; did_pio = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;

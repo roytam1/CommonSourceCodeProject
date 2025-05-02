@@ -18,8 +18,7 @@ void SYSTEM::initialize()
 
 void SYSTEM::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x46:
 		nmistat &= ~data;
 		break;
@@ -34,8 +33,7 @@ void SYSTEM::write_io8(uint32 addr, uint32 data)
 
 uint32 SYSTEM::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x18:
 		// modem:	no
 		// scsi:	yes

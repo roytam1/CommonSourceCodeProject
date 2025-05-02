@@ -56,18 +56,19 @@ void PAC2::release()
 
 void PAC2::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x18:
 	case 0x19:
 	case 0x1a:
 		dev[sel]->write_io8(addr, data);
 		break;
 	case 0x1b:
-		if(data & 0x80)
+		if(data & 0x80) {
 			dev[sel]->write_io8(addr, data);
-		else
+		}
+		else {
 			sel = data & 0x7;
+		}
 		break;
 	}
 }

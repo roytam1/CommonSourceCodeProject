@@ -113,9 +113,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	display->set_context_fdc(fdc);
 	display->set_vram_ptr(memory->get_vram());
-	floppy->set_context_fdc(fdc, SIG_UPD765A_FREADY, SIG_UPD765A_MOTOR);
-	keyboard->set_context_sio(sio_k, SIG_I8251_RECV);
-	note->set_context_pic(pic, SIG_I8259_IR5);
+	floppy->set_context_fdc(fdc);
+	keyboard->set_context_sio(sio_k);
+	note->set_context_pic(pic);
 	
 	// cpu bus
 	cpu->set_context_bios(bios);

@@ -9,6 +9,9 @@
 */
 
 #include "io.h"
+#include "../beep.h"
+#include "../datarec.h"
+#include "../tf20.h"
 #include "../../fifo.h"
 
 // interrupt bits
@@ -29,6 +32,29 @@
 #define FE		0x20
 #define SYNDET		0x40
 #define DSR		0x80
+
+#define EVENT_FRC	0
+#define EVENT_ONESEC	1
+#define EVENT_ART	2
+
+static const int key_tbl[256] = {
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x56,0x57,0xff,0xff,0xff,0x71,0xff,0xff,
+	0xb3,0xb2,0xff,0x10,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00,0xff,0xff,0xff,0xff,
+	0x73,0xff,0xff,0xff,0xff,0x63,0x55,0x65,0x64,0xff,0xff,0xff,0xff,0x80,0x81,0xff,
+	0x52,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x50,0x51,0xff,0xff,0xff,0xff,0xff,0xff,
+	0xff,0x66,0x40,0x76,0x30,0x22,0x31,0x32,0x33,0x27,0x34,0x35,0x36,0x42,0x41,0x60,
+	0x61,0x20,0x23,0x67,0x24,0x26,0x77,0x21,0x75,0x25,0x74,0xff,0xff,0xff,0xff,0xff,
+	0x52,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x50,0x51,0xff,0xff,0xff,0xff,0xff,0xff,
+	0x03,0x04,0x05,0x06,0x07,0xff,0xff,0xff,0xff,0xff,0x01,0x02,0xff,0xff,0xff,0xff,
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x70,0x37,0x43,0x53,0x44,0x45,
+	0x62,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x46,0x72,0x47,0x54,0xff,
+	0xff,0xff,0x72,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+	0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
+};
 
 void IO::initialize()
 {
@@ -133,14 +159,15 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_IO_ART) {
 		// data from art
 		art_buf->write(data & mask);
-		if(rxen && !art_buf->empty() && regist_id == -1)
+		if(rxen && !art_buf->empty() && regist_id == -1) {
 			vm->regist_event(this, EVENT_ART, RECV_DELAY, false, &regist_id);
+		}
 	}
 }
 
 void IO::event_frame()
 {
-	d_beep->write_signal(did_beep, beep ? 1 : 0, 1);
+	d_beep->write_signal(SIG_BEEP_ON, beep ? 1 : 0, 1);
 	beep = false;
 }
 
@@ -163,27 +190,30 @@ void IO::event_callback(int event_id, int err)
 	else if(event_id == EVENT_ART) {
 		// recv from art event
 		if(rxen && !(artsr & RXRDY)) {
-			if(!art_buf->empty())
+			if(!art_buf->empty()) {
 				artdir = art_buf->read();
-			if(art_buf->empty())
+			}
+			if(art_buf->empty()) {
 				artsr |= PE;
+			}
 			artsr |= RXRDY;
 			// interrupt
 			isr |= BIT_ART;
 			update_intr();
 		}
 		// if data is still left in buffer, register event for next data
-		if(rxen && !art_buf->empty())
+		if(rxen && !art_buf->empty()) {
 			vm->regist_event(this, EVENT_ART, RECV_DELAY, false, &regist_id);
-		else
+		}
+		else {
 			regist_id = -1;
+		}
 	}
 }
 
 void IO::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x00:
 		// CTLR1
 		bcr = data & 6;
@@ -195,15 +225,17 @@ void IO::write_io8(uint32 addr, uint32 data)
 			isr &= ~BIT_OVF;
 			update_intr();
 		}
-		//if(data & 2)
+		//if(data & 2) {
 		//	rdysio = false;
-		//if(data & 1)
+		//}
+		//if(data & 1) {
 		//	rdysio = true;
+		//}
 		break;
 	case 0x02:
 		// CTLR2
-		d_drec->write_signal(did_mic, data, 1);
-		d_drec->write_signal(did_rmt, data, 2);
+		d_drec->write_signal(SIG_DATAREC_OUT, data, 1);
+		d_drec->write_signal(SIG_DATAREC_REMOTE, data, 2);
 		break;
 	case 0x04:
 		// IER
@@ -235,25 +267,29 @@ void IO::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x14:
 		// ARTDOR
-		if(txen)
-			d_art->write_signal(did_art, data, 0xff);
+		if(txen) {
+			d_tf20->write_signal(SIGNAL_TF20_SIO, data, 0xff);
+		}
 		break;
 	case 0x15:
 		// ARTMR
 		break;
 	case 0x16:
 		// ARTCR
-		if(data & 0x10)
+		if(data & 0x10) {
 			artsr &= ~(PE | OE | FE);
+		}
 		txen = ((data & 1) != 0);
 		rxen = ((data & 4) != 0);
-		if(rxen && !art_buf->empty() && regist_id == -1)
+		if(rxen && !art_buf->empty() && regist_id == -1) {
 			vm->regist_event(this, EVENT_ART, RECV_DELAY, false, &regist_id);
+		}
 		break;
 	case 0x19:
 		// IOCTLR
-		if((ioctlr & 0x80) != (data & 0x80))
+		if((ioctlr & 0x80) != (data & 0x80)) {
 			beep = true;
+		}
 		ioctlr = data;
 		break;
 	case 0x90:
@@ -270,8 +306,9 @@ void IO::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x93:
 		// EXTOR
-		if(extar < 0x20000)
+		if(extar < 0x20000) {
 			ext[extar] = data;
+		}
 		extar = (extar & 0xffff00) | ((extar + 1) & 0xff);
 		break;
 	case 0x94:
@@ -285,8 +322,7 @@ uint32 IO::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x00:
 		// ICRL.C (latch FRC value)
 		icrc = vm->passed_clock(cur_clock) / 6;
@@ -325,8 +361,9 @@ uint32 IO::read_io8(uint32 addr)
 		return 0x40 | (artsr & RXRDY ? 8 : 0);	// not hand shake mode
 	case 0x93:
 		// EXTIR
-		if(extar < 0x40000)
+		if(extar < 0x40000) {
 			val = ext[extar];
+		}
 		extar = (extar & 0xffff00) | ((extar + 1) & 0xff);
 		return val;
 	case 0x94:
@@ -342,14 +379,18 @@ uint32 IO::intr_ack()
 		isr &= ~BIT_7508;
 		return 0xf0;
 	}
-	else if(isr & BIT_ART)
+	else if(isr & BIT_ART) {
 		return 0xf2;
-	else if(isr & BIT_ICF)
+	}
+	else if(isr & BIT_ICF) {
 		return 0xf4;
-	else if(isr & BIT_OVF)
+	}
+	else if(isr & BIT_OVF) {
 		return 0xf6;
-	else if(isr & BIT_EXT)
+	}
+	else if(isr & BIT_EXT) {
 		return 0xf8;
+	}
 	// unknown
 	return 0xff;
 }
@@ -383,8 +424,7 @@ void IO::send_to_7508(uint8 val)
 	cmd_buf->write(val);
 	uint8 cmd = cmd_buf->read_not_remove(0);
 	
-	switch(cmd)
-	{
+	switch(cmd) {
 	case 0x01:
 		// power off
 		cmd_buf->read();
@@ -400,10 +440,12 @@ void IO::send_to_7508(uint8 val)
 			// clear interrupt
 			onesec_intr = alarm_intr = res_z80 = res_7508 = false;
 		}
-		else if(key_buf->count())
+		else if(key_buf->count()) {
 			res = key_buf->read();
-		else
+		}
+		else {
 			res = 0xbf;
+		}
 		rsp_buf->write(res);
 		// request next interrupt
 		if(key_buf->count() && kb_intr_enb) {
@@ -586,16 +628,19 @@ void IO::key_down(int code)
 		update_key(kb_caps ? 0xb4 : 0xa4);
 		update_key(kb_caps ? 0xa4 : 0xb4);
 	}
-	else
+	else {
 		update_key(key_tbl[code & 0xff]);
+	}
 }
 
 void IO::key_up(int code)
 {
-	if(code == 0x10)
+	if(code == 0x10) {
 		update_key(0xa3);	// break shift
-	else if(code == 0x11)
+	}
+	else if(code == 0x11) {
 		update_key(0xa2);	// break ctrl
+	}
 }
 
 void IO::update_key(int code)
@@ -607,8 +652,9 @@ void IO::update_key(int code)
 			key_buf->clear();
 			key_buf->write(code);
 		}
-		else
+		else {
 			key_buf->write(code);
+		}
 		
 		// key interrupt
 		if(kb_intr_enb || (!kb_intr_enb && code == 0x10)) {
@@ -646,8 +692,9 @@ void IO::draw_screen()
 	else {
 		for(int y = 0; y < 64; y++) {
 			scrntype* dest = emu->screen_buffer(y);
-			for(int x = 0; x < 240; x++)
+			for(int x = 0; x < 240; x++) {
 				dest[x] = pb;
+			}
 		}
 	}
 }

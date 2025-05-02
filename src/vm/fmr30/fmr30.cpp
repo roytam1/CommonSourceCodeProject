@@ -99,20 +99,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	bios->set_vram_ptr(memory->get_vram());
 	bios->set_cvram_ptr(memory->get_cvram());
 	bios->set_kvram_ptr(memory->get_kvram());
-	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
-	floppy->set_context_pic(pic, SIG_I8259_CHIP1 | SIG_I8259_IR1);
-	keyboard->set_context_sio(sio_kb, SIG_I8251_RECV);
-	memory->set_context_cpu(cpu, SIG_I86_A20);
+	floppy->set_context_fdc(fdc);
+	floppy->set_context_pic(pic);
+	keyboard->set_context_sio(sio_kb);
+	memory->set_context_cpu(cpu);
 	memory->set_context_fdc(fdc);
 	memory->set_context_bios(bios);
-	memory->set_context_dma(dma, SIG_I8237_BANK0);
-	rtc->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
+	memory->set_context_dma(dma);
+	rtc->set_context_pic(pic);
 //	scsi->set_context_dma(dma, SIG_I8237_CH1);
 //	scsi->set_context_pic(pic, SIG_I8259_CHIP1 | SIG_I8259_IR2);
-	serial->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR2, SIG_I8259_CHIP0 | SIG_I8259_IR3, SIG_I8259_CHIP0 | SIG_I8259_IR4, SIG_I8259_CHIP1 | SIG_I8259_IR4);
-	serial->set_context_sio(sio_kb, sio_sub, sio_ch1, sio_ch2, SIG_I8251_LOOPBACK);
-	system->set_context_cpu(cpu);
-	timer->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0);
+	serial->set_context_pic(pic);
+	serial->set_context_sio(sio_kb, sio_sub, sio_ch1, sio_ch2);
+	timer->set_context_pic(pic);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

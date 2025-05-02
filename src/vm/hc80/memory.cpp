@@ -14,8 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 13, eb = (e) >> 13; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x2000 * (i - sb); \
-		rbank[i] = (r) + 0x2000 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x2000 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x2000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -24,6 +34,7 @@ void MEMORY::initialize()
 	// initialize memory
 	_memset(ram, 0, sizeof(ram));
 	_memset(sys, 0xff, sizeof(sys));
+	_memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// buttery backuped dram
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

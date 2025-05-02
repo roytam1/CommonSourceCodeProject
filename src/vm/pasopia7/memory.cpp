@@ -9,13 +9,25 @@
 */
 
 #include "memory.h"
+#include "io.h"
+#include "../i8255.h"
 #include "../../fileio.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x1000 * (i - sb); \
-		rbank[i] = (r) + 0x1000 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x1000 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -60,20 +72,22 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	if(vram_sel && (addr & 0xc000) == 0x8000) {
 		if(pal_sel && !(plane & 0x70)) {
-			pal[addr & 0xf] = data & 0xf;
+			pal[addr & 0x0f] = data & 0x0f;
 			return;
 		}
 		uint32 laddr = addr & 0x3fff;
-		if(plane & 0x10)
+		if(plane & 0x10) {
 			vram[0x0000 | laddr] = (plane & 0x1) ? data : 0xff;
-		if(plane & 0x20)
+		}
+		if(plane & 0x20) {
 			vram[0x4000 | laddr] = (plane & 0x2) ? data : 0xff;
+		}
 		if(plane & 0x40) {
 			vram[0x8000 | laddr] = (plane & 0x4) ? data : 0xff;
 			attr_latch = attr_wrap ? attr_latch : attr_data;
 			vram[0xc000 | laddr] = attr_latch;
 			// 8255-0, Port B
-			d_pio0->write_signal(did_pio0, (attr_latch << 4) | (attr_latch & 7), 0x87);
+			d_pio0->write_signal(SIG_I8255_PORT_B, (attr_latch << 4) | (attr_latch & 7), 0x87);
 		}
 		return;
 	}
@@ -83,18 +97,21 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	if(vram_sel && (addr & 0xc000) == 0x8000) {
-		if(pal_sel && !(plane & 0x70))
-			return pal[addr & 0xf];
+		if(pal_sel && !(plane & 0x70)) {
+			return pal[addr & 0x0f];
+		}
 		uint32 laddr = addr & 0x3fff, val = 0xff;
-		if((plane & 0x11) == 0x11)
+		if((plane & 0x11) == 0x11) {
 			val &= vram[0x0000 | laddr];
-		if((plane & 0x22) == 0x22)
+		}
+		if((plane & 0x22) == 0x22) {
 			val &= vram[0x4000 | laddr];
+		}
 		if((plane & 0x44) == 0x44) {
 			attr_latch = vram[0xc000 | laddr];
 			val &= vram[0x8000 | laddr];
 			// 8255-0, Port B
-			d_pio0->write_signal(did_pio0, (attr_latch << 4) | (attr_latch & 7), 0x87);
+			d_pio0->write_signal(SIG_I8255_PORT_B, (attr_latch << 4) | (attr_latch & 7), 0x87);
 		}
 		return val;
 	}
@@ -125,21 +142,22 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	
 	vram_sel = ((data & 4) != 0);
 	// I/O memory access
-	if(data & 8)
-		d_io->write_signal(did_io, 0xffffffff, 1);
+	d_io->write_signal(SIG_IO_MIO, data, 8);
 	// 8255-2, Port C
-	d_pio2->write_signal(did_pio2, data, 3);
+	d_pio2->write_signal(SIG_I8255_PORT_C, data, 3);
 }
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_MEMORY_I8255_1_A)
+	if(id == SIG_MEMORY_I8255_1_A) {
 		plane = data;
-	else if(id == SIG_MEMORY_I8255_1_B)
-		attr_data = data & 0xf;
+	}
+	else if(id == SIG_MEMORY_I8255_1_B) {
+		attr_data = data & 0x0f;
+	}
 	else if(id == SIG_MEMORY_I8255_1_C) {
-		attr_wrap = (data & 0x10) ? true : false;
-		pal_sel = (data & 0xc) ? true : false;
+		attr_wrap = ((data & 0x10) != 0);
+		pal_sel = ((data & 0x0c) != 0);
 	}
 }
 

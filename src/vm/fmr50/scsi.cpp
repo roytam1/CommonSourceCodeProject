@@ -42,6 +42,9 @@
 #define STAT_INT	0x02
 #define STAT_PERR	0x01
 
+// DMA:	SIG_UPD71071_CH1
+// IRQ:	SIG_I8259_CHIP1 | SIG_I8259_IR0
+
 void SCSI::initialize()
 {
 	phase = PHASE_BUSFREE;
@@ -50,8 +53,7 @@ void SCSI::initialize()
 
 void SCSI::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0xc30:
 		// data register
 		datareg = data;
@@ -76,8 +78,7 @@ uint32 SCSI::read_io8(uint32 addr)
 {
 //	uint32 val;
 	
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0xc30:
 		// data register
 		return 0;

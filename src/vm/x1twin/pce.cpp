@@ -1,4 +1,5 @@
 /*
+	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
 	Origin : Ootake (joypad, timer)
@@ -11,6 +12,7 @@
 
 #include <math.h>
 #include "pce.h"
+#include "../huc6260.h"
 
 #define INT_IRQ2	0x01
 #define INT_IRQ1	0x02
@@ -1222,27 +1224,27 @@ uint8 PCE::joy_read(uint16 addr)
 void PCE::int_request(uint8 val)
 {
 	if(val & INT_IRQ2) {
-		d_cpu->write_signal(did_irq2, 1, 1);
+		d_cpu->write_signal(SIG_HUC6260_IRQ2, 1, 1);
 	}
 	if(val & INT_IRQ1) {
-		d_cpu->write_signal(did_irq1, 1, 1);
+		d_cpu->write_signal(SIG_HUC6260_IRQ1, 1, 1);
 		
 	}
 	if(val & INT_TIRQ) {
-		d_cpu->write_signal(did_tirq, 1, 1);
+		d_cpu->write_signal(SIG_HUC6260_TIRQ, 1, 1);
 	}
 }
 
 void PCE::int_cancel(uint8 val)
 {
 	if(val & INT_IRQ2) {
-		d_cpu->write_signal(did_irq2, 0, 0);
+		d_cpu->write_signal(SIG_HUC6260_IRQ2, 0, 0);
 	}
 	if(val & INT_IRQ1) {
-		d_cpu->write_signal(did_irq1, 0, 0);
+		d_cpu->write_signal(SIG_HUC6260_IRQ1, 0, 0);
 	}
 	if(val & INT_TIRQ) {
-		d_cpu->write_signal(did_tirq, 0, 0);
+		d_cpu->write_signal(SIG_HUC6260_TIRQ, 0, 0);
 	}
 }
 
@@ -1250,7 +1252,7 @@ void PCE::int_write(uint16 addr, uint8 data)
 {
 	switch(addr & 3) {
 	case 2:
-		d_cpu->write_signal(did_intmask, data, 7);
+		d_cpu->write_signal(SIG_HUC6260_INTMASK, data, 7);
 		break;
 	case 3:
 		int_cancel(INT_TIRQ);
@@ -1262,9 +1264,9 @@ uint8 PCE::int_read(uint16 addr)
 {
 	switch(addr & 3) {
 	case 2:
-		return d_cpu->read_signal(did_intmask);
+		return d_cpu->read_signal(SIG_HUC6260_INTMASK);
 	case 3:
-		return d_cpu->read_signal(did_intstat);
+		return d_cpu->read_signal(SIG_HUC6260_INTSTAT);
 	}
 	return 0;
 }

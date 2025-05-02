@@ -9,6 +9,7 @@
 */
 
 #include "keyboard.h"
+#include "../i8255.h"
 
 void KEYBOARD::initialize()
 {
@@ -17,10 +18,9 @@ void KEYBOARD::initialize()
 
 void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 {
-	uint8 val = 0xf;
+	uint8 val = 0x0f;
 	
-	switch(data & 0xf0)
-	{
+	switch(data & 0xf0) {
 	case 0x80:
 		if(key_stat[0x30]) val &= ~1;	// 0
 		if(key_stat[0x34]) val &= ~2;	// 4
@@ -52,6 +52,6 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 		if(key_stat[0x73]) val &= ~8;	// ad run
 		break;
 	}
-	d_pio->write_signal(did_pio, val, 0xf);
+	d_pio->write_signal(SIG_I8255_PORT_C, val, 0xf);
 }
 

@@ -26,8 +26,8 @@ private:
 	uint8 tv[0x1000];
 	uint8 bas[0x5000];
 	
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x800];
+	uint8 rdmy[0x800];
 	uint8* wbank[32];
 	uint8* rbank[32];
 	

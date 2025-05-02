@@ -15,12 +15,6 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define PAGE_TYPE_NORMAL	0
-#define PAGE_TYPE_VRAM		1
-#define PAGE_TYPE_KANJI		2
-#define PAGE_TYPE_DIC		3
-#define PAGE_TYPE_MODIFY	4
-
 #define SIG_MEMORY_HBLANK	0
 #define SIG_MEMORY_VBLANK	1
 
@@ -31,8 +25,8 @@ private:
 	
 	uint8* rbank[32];
 	uint8* wbank[32];
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x800];
+	uint8 rdmy[0x800];
 	uint8 ram[0x40000];	// Main RAM 256KB
 	uint8 vram[0x20000];	// VRAM 128KB
 	uint8 tvram[0x1800];	// Text VRAM 6KB
@@ -52,7 +46,7 @@ private:
 	bool blank, hblank, vblank, busreq;
 	
 	void set_map(uint8 data);
-
+	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~MEMORY() {}

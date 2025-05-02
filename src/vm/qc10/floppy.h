@@ -19,8 +19,6 @@ class FLOPPY : public DEVICE
 {
 private:
 	DEVICE *d_fdc;
-	int did_motor;
-	bool motor;
 	
 public:
 	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -30,9 +28,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique function
-	void set_context(DEVICE* device, int id) {
+	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
-		did_motor = id;
 	}
 };
 

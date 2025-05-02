@@ -50,8 +50,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	vdp->set_context_irq(cpu, SIG_CPU_NMI, 1);
-	key->set_context(cpu);
-	memory->set_context(vdp);
+	key->set_context_cpu(cpu);
+	memory->set_context_vdp(vdp);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

@@ -11,6 +11,13 @@
 #include "display.h"
 #include "../../config.h"
 
+static const int plane_priority[8][8] = {
+	{0, 1, 2, 3, 0, 1, 2, 3}, {0, 1, 2, 3, 4, 1, 2, 3},
+	{0, 1, 2, 3, 4, 4, 2, 3}, {0, 1, 2, 3, 4, 4, 4, 3},
+	{0, 1, 2, 3, 4, 4, 4, 4}, {0, 1, 2, 3, 4, 4, 4, 4},
+	{0, 1, 2, 3, 4, 4, 4, 4}, {0, 1, 2, 3, 4, 4, 4, 4}
+};
+
 void DISPLAY::initialize()
 {
 	scanline = config.scan_line;
@@ -40,13 +47,12 @@ void DISPLAY::update_config()
 
 void DISPLAY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0x3ff)
-	{
+	switch(addr & 0x3ff) {
 	case 0x110:
 	case 0x114:
 	case 0x118:
 	case 0x11c:
-		rno = data & 0xf;
+		rno = data & 0x0f;
 		break;
 	case 0x112:
 	case 0x116:
@@ -83,23 +89,31 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 				vds[0] = 7;
 			}
 		}
-		else if(rno == 1 || rno == 2)
+		else if(rno == 1 || rno == 2) {
 			vma[1] = wregs[1] | (wregs[2] << 8);
-		else if(rno == 3)
+		}
+		else if(rno == 3) {
 			vds[1] = wregs[3] & 7;
-		else if(rno == 4 || rno == 5)
+		}
+		else if(rno == 4 || rno == 5) {
 			vma[2] = wregs[4] | (wregs[5] << 8);
-		else if(rno == 6)
+		}
+		else if(rno == 6) {
 			vds[2] = wregs[6] & 7;
-		else if(rno == 7 || rno == 8)
+		}
+		else if(rno == 7 || rno == 8) {
 			vma[3] = wregs[7] | (wregs[8] << 8);
-		else if(rno == 9)
+		}
+		else if(rno == 9) {
 			vds[3] = wregs[9] & 7;
-		else if(rno == 10 || rno == 11)
+		}
+		else if(rno == 10 || rno == 11) {
 			vma[4] = wregs[10] | (wregs[11] << 8);
-		else if(rno == 12)
+		}
+		else if(rno == 12) {
 			vds[4] = wregs[12] & 7;
-		rno = (++rno) & 0xf;
+		}
+		rno = (++rno) & 0x0f;
 		break;
 	case 0x120:
 		mode_c = data & 7;
@@ -184,8 +198,7 @@ uint32 DISPLAY::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr & 0x3ff)
-	{
+	switch(addr & 0x3ff) {
 	case 0x110:
 	case 0x114:
 	case 0x118:
@@ -196,7 +209,7 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	case 0x11a:
 	case 0x11e:
 		val = wregs[rno];
-		rno = (++rno) & 0xf;
+		rno = (++rno) & 0x0f;
 		return val;
 	case 0x141:
 	case 0x149:
@@ -230,10 +243,12 @@ void DISPLAY::draw_screen()
 {
 	// render screen
 	int ymax = (cs[0] & 1) ? 200 : 400;
-	if(mode_r & 4)
+	if(mode_r & 4) {
 		draw_320dot_screen(ymax);
-	else
+	}
+	else {
 		draw_640dot_screen(ymax);
+	}
 	
 	// copy to pc screen
 	if(ymax == 400) {
@@ -242,8 +257,9 @@ void DISPLAY::draw_screen()
 			scrntype* dest = emu->screen_buffer(y);
 			uint8* src = screen[y];
 			
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest[x] = palette_pc[src[x]];
+			}
 		}
 	}
 	else {
@@ -253,12 +269,15 @@ void DISPLAY::draw_screen()
 			scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 			uint8* src = screen[y];
 			
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest0[x] = palette_pc[src[x]];
-			if(scanline)
+			}
+			if(scanline) {
 				_memset(dest1, 0, 640 * sizeof(scrntype));
-			else
+			}
+			else {
 				_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			}
 		}
 	}
 	
@@ -269,8 +288,9 @@ void DISPLAY::draw_screen()
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 }
@@ -495,18 +515,21 @@ void DISPLAY::update_palette()
 {
 	if(mode_c & 1) {
 		// mono
-		for(int i = 1; i < 8; i++)
+		for(int i = 1; i < 8; i++) {
 			palette_pc[i] = palette_pc_base[7];
+		}
 		palette_pc[0] = palette_pc_base[0];
 	}
 	else if(mode_c & 4) {
 		// plane priority
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 8; i++) {
 			palette_pc[i] = palette_pc_base[plane_priority[mode_p][palette[i]]];
+		}
 	}
 	else {
 		// color
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 8; i++) {
 			palette_pc[i] = palette_pc_base[palette[i]];
+		}
 	}
 }

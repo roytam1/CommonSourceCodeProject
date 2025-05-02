@@ -20,9 +20,9 @@ class MEMORY : public DEVICE
 private:
 	uint8* wbank[32];
 	uint8* rbank[32];
+	uint8 wdmy[0x800];
+	uint8 rdmy[0x800];
 	uint8 mem[0x10000];
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

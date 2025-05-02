@@ -23,7 +23,6 @@ class TIMER : public DEVICE
 {
 private:
 	DEVICE *d_beep, *d_pic;
-	int did_beep, did_pic;
 	
 	uint8 ctrl;
 	bool tmout0, tmout1;
@@ -40,11 +39,11 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_beep(DEVICE* device, int id) {
-		d_beep = device; did_beep = id;
+	void set_context_beep(DEVICE* device) {
+		d_beep = device;
 	}
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 };
 

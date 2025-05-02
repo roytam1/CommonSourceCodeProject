@@ -22,7 +22,6 @@ class TIMER : public DEVICE
 {
 private:
 	DEVICE *d_pic;
-	int did_pic;
 	
 	uint8 ctrl, status;
 	void update_intr();
@@ -38,8 +37,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 };
 

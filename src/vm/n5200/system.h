@@ -19,7 +19,6 @@ class SYSTEM : public DEVICE
 {
 private:
 	DEVICE *d_dma;
-	int did_bank, did_mask;
 	
 	uint8 mode;
 	bool nmi_enb;
@@ -34,8 +33,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_dma(DEVICE* device, int id_bank, int id_mask) {
-		d_dma = device; did_bank = id_bank; did_mask = id_mask;
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
 	}
 };
 

@@ -5,7 +5,8 @@
 [FP1100/SUB] support logic to clear vram
 [FP1100/SUB] fix vram write access
 [FP1100/SUB] fix screen renderer
-[MZ1500/DISPLAY] fix color palette
+[MZ1500] fix psg i/o addr
+[MZ1500/DISPLAY] fix color palette and priority register
 
 
 8/27/2010

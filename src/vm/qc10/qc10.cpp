@@ -99,12 +99,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_ra_ptr(gdc->get_ra());
 	display->set_cs_ptr(gdc->get_cs());
 	display->set_ead_ptr(gdc->get_ead());
-	floppy->set_context(fdc, SIG_UPD765A_MOTOR);
-	keyboard->set_context(sio, SIG_Z80SIO_RECV_CH0, SIG_Z80SIO_CLEAR_CH0);
-	memory->set_context_pit(pit0, SIG_I8253_GATE_0, SIG_I8253_GATE_2);
-	memory->set_context_beep(beep, SIG_BEEP_ON);
+	floppy->set_context_fdc(fdc);
+	keyboard->set_context_sio(sio);
+	memory->set_context_pit(pit0);
+	memory->set_context_beep(beep);
 	memory->set_context_fdc(fdc);
-	mfont->set_context(pic, SIG_I8259_IR7 | SIG_I8259_CHIP1);
+	mfont->set_context_pic(pic);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

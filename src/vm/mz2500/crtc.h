@@ -28,8 +28,7 @@
 class CRTC : public DEVICE
 {
 private:
-	DEVICE *d_mem, *d_vblank, *d_pio, *d_fdc;
-	int did0_mem, did1_mem, did_vblank, did_pio;
+	DEVICE *d_mem, *d_int, *d_pio, *d_fdc;
 	
 	// config
 	bool scan_line, scan_tmp;
@@ -123,14 +122,14 @@ public:
 	void update_config();
 	
 	// unique function
-	void set_context_mem(DEVICE* device, int id0, int id1) {
-		d_mem = device; did0_mem = id0; did1_mem = id1;
+	void set_context_mem(DEVICE* device) {
+		d_mem = device;
 	}
-	void set_context_vblank(DEVICE* device, int id) {
-		d_vblank = device; did_vblank = id;
+	void set_context_int(DEVICE* device) {
+		d_int = device;
 	}
-	void set_context_pio(DEVICE* device, int id) {
-		d_pio = device; did_pio = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;

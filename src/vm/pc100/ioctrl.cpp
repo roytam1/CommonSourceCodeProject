@@ -9,8 +9,31 @@
 */
 
 #include "ioctrl.h"
+#include "../beep.h"
+#include "../i8259.h"
+#include "../pcm1bit.h"
+#include "../upd765a.h"
 #include "../../fifo.h"
 #include "../../config.h"
+
+static const int key_table[256] = {
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,0x18,0x12,  -1,  -1,  -1,0x38,  -1,  -1,
+	  -1,0x04,0x05,0x09,  -1,  -1,  -1,  -1,  -1,0x10,  -1,0x11,  -1,  -1,  -1,  -1,
+	0x4A,  -1,  -1,0x5B,0x5A,0x15,0x13,0x16,0x14,  -1,  -1,  -1,  -1,0x17,  -1,  -1,
+	0x27,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x20,0x26,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,0x31,0x45,0x43,0x33,0x23,0x34,0x35,0x36,0x30,0x3F,0x40,0x3B,0x47,0x46,0x2B,
+	0x29,0x21,0x2C,0x32,0x2D,0x2F,0x44,0x22,0x3A,0x2E,0x39,  -1,  -1,  -1,  -1,  -1,
+	0x4B,0x4F,0x50,0x51,0x52,0x53,0x54,0x56,0x57,0x58,0x59,0x55,  -1,0x5C,0x4D,0x5D,
+	0x0B,0x0C,0x0D,0x0E,0x0F,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,0x3D,0x3C,0x48,0x28,0x41,0x42,
+	0x2A,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,0x37,0x25,0x3E,0x24,  -1,
+	  -1,  -1,0x49,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1
+};
 
 #define EVENT_KEY	0
 #define EVENT_600HZ	1
@@ -48,34 +71,34 @@ void IOCTRL::initialize()
 
 void IOCTRL::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0x3f0)
-	{
+	switch(addr & 0x3f0) {
 	case 0x22:
 		ts = (data >> 3) & 3;
-		d_beep->write_signal(did_beep, ~data, 0x40);	// tone (2400hz)
-		d_pcm->write_signal(did_pcm_on, data, 0x40);	// direct
-		d_pcm->write_signal(did_pcm_sig, data, 0x80);	// signal
+		d_beep->write_signal(SIG_BEEP_ON, ~data, 0x40);	// tone (2400hz)
+		d_pcm->write_signal(SIG_PCM1BIT_ON, data, 0x40);	// direct
+		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, data, 0x80);	// signal
 		break;
 	case 0x24:
 		// tc/vfo
-		d_fdc->write_signal(did_fdc, data, 0x40);
+		d_fdc->write_signal(SIG_UPD765A_TC, data, 0x40);
 		break;
 	}
 }
 
 uint32 IOCTRL::read_io8(uint32 addr)
 {
-	switch(addr & 0x3ff)
-	{
+	switch(addr & 0x3ff) {
 	case 0x20:
 		key_done = true;
 		update_key();
 		return key_val;
 	case 0x22:
-		if(config.monitor_type)
+		if(config.monitor_type) {
 			return key_mouse | 0xd;		// virt monitor
-		else
+		}
+		else {
 			return key_mouse | 0x2d;	// horiz monitor
+		}
 	}
 	return 0xff;
 }
@@ -88,21 +111,24 @@ void IOCTRL::event_callback(int event_id, int err)
 			key_mouse = (key_val & 0x100) ? 0x10 : 0;
 			key_val &= 0xff;
 			key_done = false;
-			d_pic->write_signal(did_pic_ir3, 1, 1);
+			d_pic->write_signal(SIG_I8259_IR3, 1, 1);
 		}
 		regist_id = -1;
 	}
 	else if(event_id == EVENT_600HZ) {
-		if(ts == 0)
-			d_pic->write_signal(did_pic_ir2, 1, 1);
+		if(ts == 0) {
+			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
+		}
 	}
 	else if(event_id == EVENT_100HZ) {
-		if(ts == 1)
-			d_pic->write_signal(did_pic_ir2, 1, 1);
+		if(ts == 1) {
+			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
+		}
 	}
 	else if(event_id == EVENT_50HZ) {
-		if(ts == 2)
-			d_pic->write_signal(did_pic_ir2, 1, 1);
+		if(ts == 2) {
+			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
+		}
 		// mouse
 		if(key_buf->empty()) {
 			uint8 val = 0;
@@ -127,8 +153,9 @@ void IOCTRL::event_callback(int event_id, int err)
 		}
 	}
 	else if(event_id == EVENT_10HZ) {
-		if(ts == 3)
-			d_pic->write_signal(did_pic_ir2, 1, 1);
+		if(ts == 3) {
+			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
+		}
 	}
 }
 
@@ -150,10 +177,12 @@ void IOCTRL::write_signal(int id, uint32 data, uint32 mask)
 
 void IOCTRL::key_down(int code)
 {
-	if(code == 0x14)
+	if(code == 0x14) {
 		caps = !caps;
-	else if(code == 0x15)
+	}
+	else if(code == 0x15) {
 		kana = !kana;
+	}
 	else if((code = key_table[code & 0xff]) != -1) {
 		code |= 0x80;
 		key_buf->write(code | 0x100);
@@ -173,8 +202,9 @@ void IOCTRL::key_up(int code)
 void IOCTRL::update_key()
 {
 	if(key_done && !key_buf->empty()) {
-		if(regist_id == -1)
+		if(regist_id == -1) {
 			vm->regist_event(this, EVENT_KEY, 1000, false, &regist_id);
+		}
 	}
 }
 

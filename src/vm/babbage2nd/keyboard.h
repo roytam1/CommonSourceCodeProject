@@ -19,7 +19,6 @@ class KEYBOARD : public DEVICE
 {
 private:
 	DEVICE *d_pio;
-	int did_pio;
 	
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -28,8 +27,8 @@ public:
 	// common functions
 	
 	// unique functions
-	void set_context_pio(DEVICE* device, int id) {
-		d_pio = device; did_pio = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 	void key_down(int code);
 };

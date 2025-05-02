@@ -14,14 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 11, eb = (e) >> 11; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
+		} \
 	} \
 }
 
@@ -54,8 +58,9 @@ void MEMORY::initialize()
 		fio->Fclose();
 		
 		// kanji rom is on even addr
-		for(int i = 0; i < 0x40000; i++)
+		for(int i = 0; i < 0x40000; i++) {
 			kanji[i << 1] = dic[i];
+		}
 		_memset(dic, 0xff, sizeof(dic));
 	}
 	_stprintf(file_path, _T("%sDICT.ROM"), app_path);
@@ -86,22 +91,28 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	if((addr & 0xfc0000) == 0x80000)
+	if((addr & 0xfc0000) == 0x80000) {
 		write_dma8((addr & 0x3ffff) | mem_window, data);
-	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank)
-		dev->write_data8(addr, data);
-	else
+	}
+	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
+		d_crtc->write_data8(addr, data);
+	}
+	else {
 		write_dma8(addr, data);
+	}
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-	if((addr & 0xfc0000) == 0x80000)
+	if((addr & 0xfc0000) == 0x80000) {
 		return read_dma8((addr & 0x3ffff) | mem_window);
-	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank)
-		return dev->read_data8(addr);
-	else
+	}
+	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
+		return d_crtc->read_data8(addr);
+	}
+	else {
 		return read_dma8(addr);
+	}
 }
 
 void MEMORY::write_dma8(uint32 addr, uint32 data)
@@ -116,8 +127,7 @@ uint32 MEMORY::read_dma8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0x7fff)
-	{
+	switch(addr & 0x7fff) {
 	case 0x8c:
 		// memory window register
 		mem_window = (data & 0x3f) << 18;
@@ -172,8 +182,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_io8(uint32 addr)
 {
-	switch(addr & 0x7fff)
-	{
+	switch(addr & 0x7fff) {
 	case 0x8c:
 		return mem_window >> 18;
 	case 0x8d:

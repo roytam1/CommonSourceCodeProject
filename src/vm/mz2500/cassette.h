@@ -24,8 +24,7 @@
 class CASSETTE : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int dev_id;
+	DEVICE* d_pio;
 	
 	// play sound tape
 	uint8 prev;
@@ -51,9 +50,8 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context(DEVICE* device, int id) {
-		dev = device;
-		dev_id = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 };
 

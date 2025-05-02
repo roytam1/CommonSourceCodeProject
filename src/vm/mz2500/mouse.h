@@ -1,6 +1,6 @@
 /*
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
-	(Skelton for Z-80 PC Emulator)
+	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2004.09.05 -
@@ -21,8 +21,7 @@
 class MOUSE : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did_send, did_clear;
+	DEVICE* d_sio;
 	
 	// mouse
 	int* stat;
@@ -37,8 +36,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context(DEVICE* device, int id0, int id1) {
-		dev = device; did_send = id0; did_clear = id1;
+	void set_context_sio(DEVICE* device) {
+		d_sio = device;
 	}
 };
 

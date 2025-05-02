@@ -20,7 +20,7 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_crtc;
 	
 	uint8* regs;
 	uint8 mode;
@@ -53,8 +53,8 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_crtc(DEVICE* device) {
+		d_crtc = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
 		vram = ptr;

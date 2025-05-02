@@ -19,14 +19,14 @@ void EMM::initialize()
 
 void EMM::release()
 {
-	if(buf)
+	if(buf) {
 		free(buf);
+	}
 }
 
 void EMM::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xac:
 		// addr
 		ptr = ((addr & 0xff00) << 8) | (data << 8) | (ptr & 0x0000ff);
@@ -34,8 +34,9 @@ void EMM::write_io8(uint32 addr, uint32 data)
 	case 0xad:
 		// data
 		ptr = (ptr & 0xffff00) | (addr >> 8);
-		if(ptr < EMM_SIZE)
+		if(ptr < EMM_SIZE) {
 			buf[ptr] = data;
+		}
 		break;
 	}
 }

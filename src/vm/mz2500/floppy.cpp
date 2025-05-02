@@ -9,6 +9,7 @@
 */
 
 #include "floppy.h"
+#include "../mb8877.h"
 
 void FLOPPY::reset()
 {
@@ -17,27 +18,29 @@ void FLOPPY::reset()
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xdc:
 		// drive reg
-		if(vm->get_prv_pc() == 0x5698 && data == 0x86)
+		if(vm->get_prv_pc() == 0x5698 && data == 0x86) {
 			laydock = true;
-		if(laydock)
+		}
+		if(laydock) {
 			data &= 0xfc;
-		d_fdc->write_signal(did_drv, data, 3);
-		d_fdc->write_signal(did_motor, data, 0x80);
+		}
+		d_fdc->write_signal(SIG_MB8877_DRIVEREG, data, 3);
+		d_fdc->write_signal(SIG_MB8877_MOTOR, data, 0x80);
 		break;
 	case 0xdd:
 		// side reg
-		d_fdc->write_signal(did_side, data, 1);
+		d_fdc->write_signal(SIG_MB8877_SIDEREG, data, 1);
 		break;
 	}
 }
 
 void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_FLOPPY_REVERSE)
+	if(id == SIG_FLOPPY_REVERSE) {
 		reverse = ((data & mask) != 0);
+	}
 }
 

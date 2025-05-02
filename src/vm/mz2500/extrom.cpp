@@ -33,8 +33,7 @@ void EXTROM::initialize()
 
 void EXTROM::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xf8:
 		// high addr
 		ptr = (ptr & 0x00ff) | (data << 8);

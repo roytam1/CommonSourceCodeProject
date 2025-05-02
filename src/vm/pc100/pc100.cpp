@@ -81,13 +81,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(cpu, SIG_CPU_NMI, 1);
 	fdc->set_context_drq(and, SIG_AND_BIT_1, 1);
 	
-	crtc->set_context_pic(pic, SIG_I8259_IR4);
+	crtc->set_context_pic(pic);
 	crtc->set_context_fdc(fdc);
 	crtc->set_vram_ptr(memory->get_vram());
-	ioctrl->set_context_pic(pic, SIG_I8259_IR2, SIG_I8259_IR3);
-	ioctrl->set_context_fdc(fdc, SIG_UPD765A_TC);
-	ioctrl->set_context_beep(beep, SIG_BEEP_ON);
-	ioctrl->set_context_pcm(pcm, SIG_PCM1BIT_ON, SIG_PCM1BIT_SIGNAL);
+	ioctrl->set_context_pic(pic);
+	ioctrl->set_context_fdc(fdc);
+	ioctrl->set_context_beep(beep);
+	ioctrl->set_context_pcm(pcm);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

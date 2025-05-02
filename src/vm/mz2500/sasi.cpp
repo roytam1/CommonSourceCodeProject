@@ -52,14 +52,14 @@ void SASI::initialize()
 
 void SASI::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xa4:
 		// data
 		if(phase == 2) {
 			cmd[cmd_ptr++] = data;
-			if(cmd_ptr == 6)
+			if(cmd_ptr == 6) {
 				check_cmd();
+			}
 		}
 		else if(phase == 3 && !rw_mode) {
 			buffer[buffer_ptr++] = data;
@@ -73,21 +73,24 @@ void SASI::write_io8(uint32 addr, uint32 data)
 						phase++;
 					}
 				}
-				else
+				else {
 					phase++;
+				}
 			}
 		}
 		else if(phase == 10) {
-			if(++state_ptr == 10)
+			if(++state_ptr == 10) {
 				phase = 4;
+			}
 		}
 		datareg = data;
 		break;
 	case 0xa5:
 		// cmd
 		if(data == 0x00) {
-			if(phase == 1)
+			if(phase == 1) {
 				phase = (device == 0) ? 2 : 0;
+			}
 		}
 		else if(data == 0x20) {
 			device = (datareg & 1) ? 0 : 0x7f;
@@ -95,8 +98,9 @@ void SASI::write_io8(uint32 addr, uint32 data)
 				phase = 1;
 				cmd_ptr = 0;
 			}
-			else
+			else {
 				phase = 0;
+			}
 		}
 		break;
 	}
@@ -106,8 +110,7 @@ uint32 SASI::read_io8(uint32 addr)
 {
 	uint32 val = 0;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xa4:
 		// data
 		if(phase == 3 && rw_mode) {
@@ -121,16 +124,18 @@ uint32 SASI::read_io8(uint32 addr)
 						phase++;
 					}
 				}
-				else
+				else {
 					phase++;
+				}
 			}
 		}
 		else if(phase == 4) {
 			val = error ? 0x02 : state;
 			phase++;
 		}
-		else if(phase == 5)
+		else if(phase == 5) {
 			phase = 0;
+		}
 		else if(phase == 9) {
 			val = state_buf[state_ptr++];
 			if(state_ptr == 4) {
@@ -141,20 +146,27 @@ uint32 SASI::read_io8(uint32 addr)
 		return val;
 	case 0xa5:
 		// status
-		if(phase)
+		if(phase) {
 			val |= 0x20;	// busy
-		if(phase > 1)
+		}
+		if(phase > 1) {
 			val |= 0x80;	// req
-		if(phase == 2)
+		}
+		if(phase == 2) {
 			val |= 0x08;	// c/d
-		if(phase == 3 && rw_mode)
+		}
+		if(phase == 3 && rw_mode) {
 			val |= 0x04;	// i/o
-		if(phase == 9)
+		}
+		if(phase == 9) {
 			val |= 0x04;	// i/o
-		if(phase == 4 || phase == 5)
+		}
+		if(phase == 4 || phase == 5) {
 			val |= 0x0c;	// i/o & c/d
-		if(phase == 5)
+		}
+		if(phase == 5) {
 			val |= 0x10;	// msg
+		}
 		return val;
 	}
 	return 0xff;
@@ -164,8 +176,9 @@ int SASI::seek(int drv)
 {
 	_memset(buffer, 0, sizeof(buffer));
 	
-	if(!file_exist[drv & 1])
+	if(!file_exist[drv & 1]) {
 		return -1;
+	}
 	FILEIO* fio = new FILEIO();
 	if(!fio->Fopen(file_path[drv & 1], FILEIO_READ_BINARY)) {
 		delete fio;
@@ -188,8 +201,9 @@ int SASI::seek(int drv)
 
 int SASI::flush(int drv)
 {
-	if(!file_exist[drv & 1])
+	if(!file_exist[drv & 1]) {
 		return -1;
+	}
 	FILEIO* fio = new FILEIO();
 	if(!fio->Fopen(file_path[drv & 1], FILEIO_READ_WRITE_BINARY)) {
 		delete fio;
@@ -212,8 +226,9 @@ int SASI::flush(int drv)
 
 int SASI::format(int drv)
 {
-	if(!file_exist[drv & 1])
+	if(!file_exist[drv & 1]) {
 		return -1;
+	}
 	FILEIO* fio = new FILEIO();
 	if(!fio->Fopen(file_path[drv & 1], FILEIO_READ_WRITE_BINARY)) {
 		delete fio;
@@ -243,8 +258,7 @@ void SASI::check_cmd()
 	int result;
 	unit = (cmd[1] >> 5) & 1;
 	
-	switch(cmd[0])
-	{
+	switch(cmd[0]) {
 	case 0x00:
 		if(device == 0) {
 			state = 0;
@@ -304,8 +318,9 @@ void SASI::check_cmd()
 		buffer_ptr = 0;
 		state = 0;
 		result = seek(unit);
-		if((result == 0) || (result == -1))
+		if((result == 0) || (result == -1)) {
 			error = 0x0f;
+		}
 		break;
 	case 0x0a:
 		sector = cmd[1] & 0x1f;
@@ -318,8 +333,9 @@ void SASI::check_cmd()
 		state = 0;
 		_memset(buffer, 0, sizeof(buffer));
 		result = seek(unit);
-		if((result == 0) || (result == -1))
+		if((result == 0) || (result == -1)) {
 			error = 0x0f;
+		}
 		break;
 	case 0x0b:
 		if(device == 0) {

@@ -246,7 +246,6 @@ class IO : public DEVICE
 {
 private:
 	DEVICE *d_beep, *d_cpu, *d_mem;
-	int did_beep_on, did_beep_freq, did_rsta, did_rstb;
 	uint8* ram;
 	
 	// registers
@@ -316,15 +315,11 @@ public:
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
-	void set_context_beep(DEVICE* device, int id0, int id1) {
+	void set_context_beep(DEVICE* device) {
 		d_beep = device;
-		did_beep_on = id0;
-		did_beep_freq = id1;
 	}
-	void set_context_cpu(DEVICE* device, int id0, int id1) {
+	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
-		did_rsta = id0;
-		did_rstb = id1;
 	}
 	void set_context_mem(DEVICE* device, uint8* ptr) {
 		d_mem = device;

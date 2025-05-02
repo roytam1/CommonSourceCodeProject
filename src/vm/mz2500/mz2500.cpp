@@ -110,23 +110,23 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio1->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0xff, 0);
 	sio->set_context_dtr1(mouse, SIG_MOUSE_DTR, 1);
 	
-	calendar->set_context(rtc);
-	cassette->set_context(pio0, SIG_I8255_PORT_B);
-	crtc->set_context_mem(memory, SIG_MEMORY_HBLANK, SIG_MEMORY_VBLANK);
-	crtc->set_context_vblank(interrupt, SIG_INTERRUPT_CRTC);
-	crtc->set_context_pio(pio0, SIG_I8255_PORT_B);
+	calendar->set_context_rtc(rtc);
+	cassette->set_context_pio(pio0);
+	crtc->set_context_mem(memory);
+	crtc->set_context_int(interrupt);
+	crtc->set_context_pio(pio0);
 	crtc->set_context_fdc(fdc);
 	crtc->set_vram_ptr(memory->get_vram());
 	crtc->set_tvram_ptr(memory->get_tvram());
 	crtc->set_kanji_ptr(memory->get_kanji());
 	crtc->set_pcg_ptr(memory->get_pcg());
-	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
-	keyboard->set_context_pio0(pio0, SIG_I8255_PORT_B);
-	keyboard->set_context_pio1(pio1, SIG_Z80PIO_PORT_B);
+	floppy->set_context_fdc(fdc);
+	keyboard->set_context_pio0(pio0);
+	keyboard->set_context_pio1(pio1);
 	memory->set_context_cpu(cpu);
 	memory->set_context_crtc(crtc);
-	mouse->set_context(sio, SIG_Z80SIO_RECV_CH1, SIG_Z80SIO_CLEAR_CH1);
-	timer->set_context(pit, SIG_I8253_GATE_0, SIG_I8253_GATE_1, SIG_I8253_CLOCK_0);
+	mouse->set_context_sio(sio);
+	timer->set_context_pit(pit);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

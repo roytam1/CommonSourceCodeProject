@@ -36,7 +36,8 @@ uint32 IO::read_io8(uint32 addr)
 
 void IO::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_IO_MIO)
-		mio = (data & mask) ? true : false;
+	if(id == SIG_IO_MIO) {
+		mio = ((data & mask) != 0);
+	}
 }
 

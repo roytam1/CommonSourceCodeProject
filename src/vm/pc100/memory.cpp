@@ -14,14 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 14, eb = (e) >> 14; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x4000 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x4000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -63,10 +67,12 @@ void MEMORY::initialize()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xfffff;
-	if(addr & 1)
+	if(addr & 1) {
 		bush = data;
-	else
+	}
+	else {
 		busl = data;
+	}
 	if(0xc0000 <= addr && addr < 0xe0000) {
 		uint32 bus = busl | (bush << 8) | (busl << 16) | (bush << 24);
 		bus >>= shift;
@@ -96,8 +102,9 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xfffff;
-	if(0xc0000 <= addr && addr < 0xe0000)
+	if(0xc0000 <= addr && addr < 0xe0000) {
 		return vram[(addr & 0x1ffff) | (0x20000 * read_plane)];
+	}
 	return rbank[addr >> 14][addr & 0x3fff];
 }
 

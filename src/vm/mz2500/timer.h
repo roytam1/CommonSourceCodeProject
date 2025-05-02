@@ -18,8 +18,7 @@
 class TIMER : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did0, did1, did2;
+	DEVICE* d_pit;
 	
 public:
 	TIMER(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -31,8 +30,8 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id0, int id1, int id2) {
-		dev = device; did0 = id0; did1 = id1; did2 = id2;
+	void set_context_pit(DEVICE* device) {
+		d_pit = device;
 	}
 };
 

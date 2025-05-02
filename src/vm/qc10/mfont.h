@@ -21,7 +21,6 @@ class MFONT : public DEVICE
 {
 private:
 	DEVICE *d_pic;
-	int did_pic;
 	
 	uint8 mfont[36 * 0x60 * 2 * 17];
 	uint8 status;
@@ -38,9 +37,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique function
-	void set_context(DEVICE* device, int id) {
+	void set_context_pic(DEVICE* device) {
 		d_pic = device;
-		did_pic = id;
 	}
 };
 

@@ -17,23 +17,21 @@ void CALENDAR::initialize()
 
 void CALENDAR::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x22:
-		ch = data & 0xf;
+		ch = data & 0x0f;
 		break;
 	case 0x23:
-		d_rtc->write_io8(ch, data & 0xf);
+		d_rtc->write_io8(ch, data & 0x0f);
 		break;
 	}
 }
 
 uint32 CALENDAR::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x23:
-		return d_rtc->read_io8(ch) & 0xf;
+		return d_rtc->read_io8(ch) & 0x0f;
 	}
 	return 0xff;
 }

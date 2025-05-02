@@ -24,7 +24,6 @@ class FLOPPY : public DEVICE
 {
 private:
 	UPD765A *d_fdc;
-	int did_fready, did_motor;
 	
 	uint8 chgreg, ctrlreg;
 	
@@ -38,8 +37,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_fdc(UPD765A* device, int id_fready, int id_motor) {
-		d_fdc = device; did_fready = id_fready; did_motor = id_motor;
+	void set_context_fdc(UPD765A* device) {
+		d_fdc = device;
 	}
 };
 

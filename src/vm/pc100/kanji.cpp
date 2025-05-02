@@ -34,8 +34,7 @@ void KANJI::initialize()
 
 void KANJI::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x80:
 		ptr = (ptr & 0xff00) | data;
 		break;
@@ -53,8 +52,7 @@ void KANJI::write_io8(uint32 addr, uint32 data)
 
 uint32 KANJI::read_io8(uint32 addr)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x80:
 		return kanji[(ptr << 1) | 0];
 	case 0x81:

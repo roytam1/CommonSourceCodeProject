@@ -10,6 +10,8 @@
 */
 
 #include "timer.h"
+#include "../beep.h"
+#include "../i8259.h"
 
 void TIMER::initialize()
 {
@@ -20,11 +22,12 @@ void TIMER::initialize()
 void TIMER::write_io8(uint32 addr, uint32 data)
 {
 	// $60: interrupt ctrl register
-	if(data & 0x80)
+	if(data & 0x80) {
 		tmout0 = false;
+	}
 	ctrl = data;
 	update_intr();
-	d_beep->write_signal(did_beep, data, 4);
+	d_beep->write_signal(SIG_BEEP_ON, data, 4);
 }
 
 uint32 TIMER::read_io8(uint32 addr)
@@ -36,8 +39,9 @@ uint32 TIMER::read_io8(uint32 addr)
 void TIMER::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_TIMER_CH0) {
-		if(data & mask)
+		if(data & mask) {
 			tmout0 = true;
+		}
 		update_intr();
 	}
 	else if(id == SIG_TIMER_CH1) {
@@ -48,6 +52,6 @@ void TIMER::write_signal(int id, uint32 data, uint32 mask)
 
 void TIMER::update_intr()
 {
-	d_pic->write_signal(did_pic, (tmout0 && (ctrl & 1)) || (tmout1 && (ctrl & 2)) ? 1 : 0, 1);
+	d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR0, (tmout0 && (ctrl & 1)) || (tmout1 && (ctrl & 2)) ? 1 : 0, 1);
 }
 

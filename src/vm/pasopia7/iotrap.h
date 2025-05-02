@@ -22,7 +22,6 @@ class IOTRAP : public DEVICE
 {
 private:
 	DEVICE *d_cpu, *d_pio2;
-	int did_pio2;
 	bool nmi_mask, pasopia;
 	
 public:
@@ -39,8 +38,8 @@ public:
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
-	void set_context_pio2(DEVICE* device, int id) {
-		d_pio2 = device; did_pio2 = id;
+	void set_context_pio2(DEVICE* device) {
+		d_pio2 = device;
 	}
 	void do_reset();
 };

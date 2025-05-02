@@ -52,8 +52,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	drec->set_context_out(cmt, SIG_CMT_IN, 1);
-	cmt->set_context(drec, SIG_DATAREC_OUT, SIG_DATAREC_REMOTE);
-	vdp->set_context(cpu);
+	cmt->set_context_drec(drec);
+	vdp->set_context_cpu(cpu);
 	vdp->set_vram_ptr(memory->get_vram());
 	
 	// cpu bus

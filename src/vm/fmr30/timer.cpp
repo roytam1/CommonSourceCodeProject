@@ -9,6 +9,7 @@
 */
 
 #include "timer.h"
+#include "../i8259.h"
 
 void TIMER::initialize()
 {
@@ -24,8 +25,7 @@ void TIMER::write_io8(uint32 addr, uint32 data)
 
 uint32 TIMER::read_io8(uint32 addr)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x42:
 		return ctrl;
 	case 0x43:
@@ -37,23 +37,27 @@ uint32 TIMER::read_io8(uint32 addr)
 void TIMER::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_TIMER_CH0) {
-		if(data & mask)
+		if(data & mask) {
 			status |= 1;
-		else
+		}
+		else {
 			status &= ~1;
+		}
 		update_intr();
 	}
 	else if(id == SIG_TIMER_CH1) {
-		if(data & mask)
+		if(data & mask) {
 			status |= 2;
-		else
+		}
+		else {
 			status &= ~2;
+		}
 		update_intr();
 	}
 }
 
 void TIMER::update_intr()
 {
-	d_pic->write_signal(did_pic, (ctrl & status & 3) ? 1 : 0, 1);
+	d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR0, (ctrl & status & 3) ? 1 : 0, 1);
 }
 

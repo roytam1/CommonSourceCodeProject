@@ -9,6 +9,7 @@
 */
 
 #include "rtc.h"
+#include "../i8259.h"
 #include "../../fileio.h"
 
 #define EVENT_1HZ	0
@@ -95,8 +96,7 @@ void RTC::release()
 
 void RTC::write_io16(uint32 addr, uint32 data)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0:
 		rtcmr = data;
 		break;
@@ -122,8 +122,7 @@ void RTC::write_io16(uint32 addr, uint32 data)
 
 uint32 RTC::read_io16(uint32 addr)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 2:
 		return rtdsr;
 	case 6:
@@ -173,8 +172,9 @@ void RTC::event_callback(int event_id, int err)
 		}
 		else {
 			// read
-			if(ch < 40)
+			if(ch < 40) {
 				rtibr = regs[ch];
+			}
 		}
 		// update flags
 		rtdsr &= ~1;
@@ -212,5 +212,5 @@ void RTC::update_checksum()
 
 void RTC::update_intr()
 {
-	d_pic->write_signal(did_pic, (rtcmr & rtdsr & 0xe) ? 1 : 0, 1);
+	d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, (rtcmr & rtdsr & 0xe) ? 1 : 0, 1);
 }

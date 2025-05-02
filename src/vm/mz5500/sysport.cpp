@@ -18,28 +18,28 @@ void SYSPORT::initialize()
 
 void SYSPORT::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0x3f0)
-	{
+	switch(addr & 0x3f0) {
 	case 0x70:
 		// port-c
-		if(data & 8)
+		if(data & 8) {
 			d_fdc->reset();
+		}
 #if defined(_MZ6500) || defined(_MZ6550)
 		highden = data & 4;
 #endif
 		break;
 	case 0x260:
 		// z80ctc reti
-		if(data == 0x4d)
+		if(data == 0x4d) {
 			d_ctc->intr_reti();
+		}
 		break;
 	}
 }
 
 uint32 SYSPORT::read_io8(uint32 addr)
 {
-	switch(addr & 0x3ff)
-	{
+	switch(addr & 0x3ff) {
 	case 0x60:
 		// port-a
 #if defined(_MZ6500) || defined(_MZ6550)

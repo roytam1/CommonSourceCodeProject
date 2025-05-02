@@ -14,14 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 14, eb = (e) >> 14; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x4000 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x4000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -132,8 +136,7 @@ uint32 MEMORY::read_dma8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x50:
 		haddr = (data & 0xf0) << 12;
 		break;
@@ -162,8 +165,7 @@ void MEMORY::update_bank()
 {
 	int ofs;
 	
-	switch(bank1 & 0xe0)
-	{
+	switch(bank1 & 0xe0) {
 	case 0xe0:
 		SET_BANK(0x0a0000, 0x0bffff, wdmy, kanji);
 		break;

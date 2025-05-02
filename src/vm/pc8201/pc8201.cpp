@@ -68,8 +68,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc->set_context_dout(pio, SIG_I8155_PORT_C, 1);
 	rtc->set_context_tp(cpu, SIG_I8085_RST7, 1);
 	
-//	memory->set_context_cmt(cmt, SIG_DATAREC_REMOTE);
-	memory->set_context_rtc(rtc, SIG_UPD1990A_STB);
+//	memory->set_context_cmt(cmt);
+	memory->set_context_rtc(rtc);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

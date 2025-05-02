@@ -60,8 +60,9 @@ void ROMFILE::initialize()
 
 void ROMFILE::release()
 {
-	if(buf)
+	if(buf) {
 		free(buf);
+	}
 }
 
 void ROMFILE::write_io8(uint32 addr, uint32 data)

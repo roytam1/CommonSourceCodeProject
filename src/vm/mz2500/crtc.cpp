@@ -9,28 +9,31 @@
 */
 
 #include "crtc.h"
+#include "interrupt.h"
+#include "memory.h"
+#include "../i8255.h"
 #include "../../config.h"
 
 void CRTC::initialize()
 {
 	// config
-	monitor_200line = (config.monitor_type & 2) ? true : false;;
+	monitor_200line = ((config.monitor_type & 2) != 0);
 	scan_line = scan_tmp = config.scan_line;
-	monitor_digital = monitor_tmp = (config.monitor_type & 1) ? true : false;
+	monitor_digital = monitor_tmp = ((config.monitor_type & 1) != 0);
 	
 	// set 16/4096 palette
 	for(int i = 0; i < 16; i++) {
 		uint8 r, g, b, r8, g8, b8;
-		if((i & 0xf) == 8) {
+		if((i & 0x0f) == 8) {
 			// gray
 			r = r8 = 152;
 			g = g8 = 152;
 			b = b8 = 152;
 		}
 		else {
-			r = ((i & 0xa) == 0xa) ? 255 : ((i & 0xa) == 2) ? 127 : 0;
-			g = ((i & 0xc) == 0xc) ? 255 : ((i & 0xc) == 4) ? 127 : 0;
-			b = ((i & 0x9) == 0x9) ? 255 : ((i & 0x9) == 1) ? 127 : 0;
+			r = ((i & 0x0a) == 0x0a) ? 255 : ((i & 0x0a) == 2) ? 127 : 0;
+			g = ((i & 0x0c) == 0x0c) ? 255 : ((i & 0x0c) == 4) ? 127 : 0;
+			b = ((i & 0x09) == 0x09) ? 255 : ((i & 0x09) == 1) ? 127 : 0;
 			r8 = (i & 2) ? 255 : 0;
 			g8 = (i & 4) ? 255 : 0;
 			b8 = (i & 1) ? 255 : 0;
@@ -116,7 +119,7 @@ void CRTC::initialize()
 	scrn_size = SCRN_320x200;
 	font_size = true;
 	column_size = false;
-	cg_mask = 0xf;
+	cg_mask = 0x0f;
 	clear_flag = 0;
 	pal_select = false;
 	blink = false;
@@ -264,7 +267,7 @@ uint32 CRTC::read_data8(uint32 addr)
 	}
 	
 	if(cgreg[7] & 0x10) {
-		uint8 compare = cgreg[7] & 0xf;
+		uint8 compare = cgreg[7] & 0x0f;
 		uint8 val = (compare == (((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5) | ((i & 0x80) >> 4))) ? 0x80 : 0;
 		val |= (compare == (((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4) | ((i & 0x40) >> 3))) ? 0x40 : 0;
 		val |= (compare == (((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3) | ((i & 0x20) >> 2))) ? 0x20 : 0;
@@ -414,12 +417,12 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 			update256 = true;
 		}
 		if(0x80 <= textreg_num && textreg_num < 0x90) {
-			int c = textreg_num & 0xf;
+			int c = textreg_num & 0x0f;
 			int c16 = c << 4;
-			int col = data & 0xf;
+			int col = data & 0x0f;
 			int col16 = col << 4;
 			int p = data & 0x10;
-			palette_reg[c] = data & 0xf;
+			palette_reg[c] = data & 0x0f;
 			
 			// update priority
 			for(int i = 1; i < 8; i++) {
@@ -470,7 +473,7 @@ uint32 CRTC::read_io8(uint32 addr)
 			uint8 r = latch[1];
 			uint8 g = latch[2];
 			uint8 i = latch[3];
-			uint8 compare = cgreg[7] & 0xf;
+			uint8 compare = cgreg[7] & 0x0f;
 			
 			uint8 val = (compare == (((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5) | ((i & 0x80) >> 4))) ? 0x80 : 0;
 			val |= (compare == (((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4) | ((i & 0x40) >> 3))) ? 0x40 : 0;
@@ -531,10 +534,10 @@ void CRTC::event_vline(int v, int clock)
 	bool next = (GDEVS <= v && v < GDEVE) ? false : true;	// vblank = true
 	if(vblank != next) {
 #ifdef VRAM_WAIT
-		d_mem->write_signal(did1_mem, next ? 1 : 0, 1);
+		d_mem->write_signal(SIG_MEMORY_VBLANK, next ? 1 : 0, 1);
 #endif
-		d_pio->write_signal(did_pio, next ? 0 : 1, 1);
-		d_vblank->write_signal(did_vblank, next ? 1 : 0, 1);
+		d_pio->write_signal(SIG_I8255_PORT_B, next ? 0 : 1, 1);
+		d_int->write_signal(SIG_INTERRUPT_CRTC, next ? 1 : 0, 1);
 		vblank = next;
 	}
 	// complete clear screen
@@ -562,7 +565,7 @@ void CRTC::set_hsync(int h)
 	bool next = (GDEHS <= h && h < GDEHE) ? false : true;	// hblank = true
 	if(hblank != next) {
 #ifdef VRAM_WAIT
-		d_mem->write_signal(did0_mem, next ? 1 : 0, 1);
+		d_mem->write_signal(SIG_MEMORY_HBLANK, next ? 1 : 0, 1);
 #endif
 		hblank = next;
 	}
@@ -625,7 +628,7 @@ void CRTC::draw_screen()
 		scrntype palette16tmp[16 + 8], palette4096tmp[16 + 8];
 		for(int i = 0; i < 16 + 8; i++) {
 			palette16tmp[i] = palette16[(i & 16) ? i : (palette_reg[i]) ? (palette_reg[i] & cg_mask) : (back16 & cg_mask)];
-			uint8 col = (i == 16) ? 0 : (i & 16) ? (i & 0xf) + 8 : i;
+			uint8 col = (i == 16) ? 0 : (i & 16) ? (i & 0x0f) + 8 : i;
 			palette4096tmp[i] = palette4096[(palette_reg[col]) ? (palette_reg[col] & cg_mask) : (back16 & cg_mask)];
 		}
 		for(int i = 0; i < 16; i++) {

@@ -109,22 +109,22 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio->set_context_intr(pic, SIG_I8259_CHIP0 | SIG_I8259_IR2);
 	sio->set_context_dtr1(mouse, SIG_MOUSE_DTR, 1);
 	
-	calendar->set_context(rtc);
-	crtc->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
-	crtc->set_context_pio(pio0, SIG_I8255_PORT_B);
+	calendar->set_context_rtc(rtc);
+	crtc->set_context_pic(pic);
+	crtc->set_context_pio(pio0);
 	crtc->set_context_fdc(fdc);
 	crtc->set_vram_ptr(memory->get_vram());
 	crtc->set_tvram_ptr(memory->get_tvram());
 	crtc->set_kanji_ptr(memory->get_kanji());
 	crtc->set_pcg_ptr(memory->get_pcg());
-	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
-	keyboard->set_context_pio0(pio0, SIG_I8255_PORT_B);
-	keyboard->set_context_pio1(pio1, SIG_Z80PIO_PORT_B);
-	memory->set_context(crtc);
-	mouse->set_context(sio, SIG_Z80SIO_RECV_CH1, SIG_Z80SIO_CLEAR_CH1);
-	sysport->set_context_dma(dma, SIG_UPD71071_CH2);
+	floppy->set_context_fdc(fdc);
+	keyboard->set_context_pio0(pio0);
+	keyboard->set_context_pio1(pio1);
+	memory->set_context_crtc(crtc);
+	mouse->set_context_sio(sio);
+	sysport->set_context_dma(dma);
 	sysport->set_context_sio(sio);
-	timer->set_context(pit, SIG_I8253_GATE_0, SIG_I8253_GATE_1);
+	timer->set_context_pit(pit);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

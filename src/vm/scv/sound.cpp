@@ -61,15 +61,18 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 			}
 			else if(param_ptr >= 7) {
 				// 0xfe,0x00 : end of pcm, intf1 must not be done except star speeder
-				if(params[param_ptr - 2] == 0xfe && data == 0x00 && cmd_addr != 0xa765)
+				if(params[param_ptr - 2] == 0xfe && data == 0x00 && cmd_addr != 0xa765) {
 					param_cnt = 1;
-				else
+				}
+				else {
 					process_pcm(params[param_ptr - 2]);
+				}
 			}
 		}
 		if(--param_cnt) {
-			if(regist_id == -1)
+			if(regist_id == -1) {
 				vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
+			}
 		}
 	}
 	if(!param_cnt) {
@@ -95,17 +98,20 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 			bool pause = (vm->get_prv_pc() == 0x96c) ? true : false;
 			if(pause || !(params[0] == 0x1f && param_ptr > 5)) {
 				// terminate command
-				if(regist_id != -1)
+				if(regist_id != -1) {
 					vm->cancel_event(regist_id);
+				}
 				_memset(params, 0, sizeof(params));
 				param_cnt = param_ptr = 0;
 				
 				// terminate pcm when pause
-				if(pause)
+				if(pause) {
 					clear_channel(&pcm);
+				}
 			}
-//			else if(regist_id == -1)
+//			else if(regist_id == -1) {
 //				vm->regist_callback(this, 0, 100, false, &regist_id);
+//			}
 		}
 		else {
 			if(params[0]) {
@@ -114,8 +120,9 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 				param_cnt = param_ptr = 0;
 //				clear_channel(&pcm);
 			}
-//			if(regist_id == -1)
+//			if(regist_id == -1) {
 //				vm->regist_callback(this, 0, 100, false, &regist_id);
+//			}
 		}
 #ifdef SOUND_DEBUG
 		emu->out_debug("PC3\n");
@@ -150,19 +157,23 @@ void SOUND::init(int rate)
 	volume_table[0] = 0;
 	
 	// create detune table
-	for(int i = 0; i < 32; i++)
+	for(int i = 0; i < 32; i++) {
 		detune_table[i] = (int)(detune_rate[i] * 256 / 100 + 0.5);
+	}
 	
 	// create noise #1 table
 	for(int i = 0; i < 0x80; i++) {
-		for(int j = 0; j < 128; j++)
+		for(int j = 0; j < 128; j++) {
 			noise1_table[i][j] = (int)(128.0 - (1.0 - i / 128.0) * j + 0.5);
-		for(int j = 0; j < 128; j++)
+		}
+		for(int j = 0; j < 128; j++) {
 			noise1_table[i][j + 128] = (int)((1.0 - i / 128.0) * j - 128.0 + 0.5);
+		}
 	}
 	// for lupin3
-	for(int i = 0; i < 256; i++)
+	for(int i = 0; i < 256; i++) {
 		noise1_table[128][i] = lupin3_table[i];
+	}
 	
 	// reset device
 //	reset();
@@ -254,8 +265,9 @@ void SOUND::mix(int32* buffer, int cnt)
 			while(pcm.count <= 0) {
 				pcm.count += PCM_PERIOD;
 				// low-pass filter for the next sample
-				if(++pcm.ptr < pcm_len)
+				if(++pcm.ptr < pcm_len) {
 					pcm.output =  (pcm_table[pcm.ptr] + pcm_table[pcm.ptr + 1] + pcm_table[pcm.ptr + 2] + pcm_table[pcm.ptr + 3]) >> 2;
+				}
 				else {
 					pcm.count = 0;
 					break;

@@ -22,7 +22,8 @@ private:
 	uint8 ram[0x10000];
 	uint8 sys[0x8000];
 	
-	uint8 wdmy[0x10000];
+	uint8 wdmy[0x2000];
+	uint8 rdmy[0x2000];
 	uint8* wbank[8];
 	uint8* rbank[8];
 	

@@ -9,6 +9,7 @@
 */
 
 #include "cassette.h"
+#include "../i8255.h"
 
 // pre-silent (0.2sec)
 #define REGIST_PRE() { \
@@ -26,12 +27,15 @@
 	vm->regist_event(this, EVENT_AFTER, 300000, false, &id_after); \
 }
 #define CANCEL_EVENT() { \
-	if(id_pre != -1) \
+	if(id_pre != -1) { \
 		vm->cancel_event(id_pre); \
-	if(id_signal != -1) \
+	} \
+	if(id_signal != -1) { \
 		vm->cancel_event(id_signal); \
-	if(id_after != -1) \
+	} \
+	if(id_after != -1) { \
 		vm->cancel_event(id_after); \
+	} \
 	id_pre = id_signal = id_after = -1; \
 }
 
@@ -104,8 +108,9 @@ void CASSETTE::event_callback(int event_id, int err)
 			track = (float)((int)track + 1) + 0.1F;
 			if((int)(track + 0.5) > emu->media_count()) {
 				// reach last
-				if(prev & 0x20)
+				if(prev & 0x20) {
 					set_fw_rw(0); // stop now
+				}
 				else {
 					set_fw_rw(-1); // auto rewind
 					REGIST_PRE();
@@ -113,8 +118,9 @@ void CASSETTE::event_callback(int event_id, int err)
 				playing = false;
 			}
 			else {
-				if(playing)
+				if(playing) {
 					play_media(); // play next track
+				}
 				else {
 					REGIST_PRE();
 				}
@@ -124,8 +130,9 @@ void CASSETTE::event_callback(int event_id, int err)
 			track = (float)((int)track - 1) + 0.9F;
 			if(track < 1.0) {
 				// reach top
-				if(prev & 0x40)
+				if(prev & 0x40) {
 					set_fw_rw(0); // stop now
+				}
 				else {
 					set_fw_rw(1); // auto play
 					play_media();
@@ -161,7 +168,7 @@ void CASSETTE::stop_media()
 void CASSETTE::set_fw_rw(int val)
 {
 	if(fw_rw != val) {
-		dev->write_signal(dev_id, val ? 0 : 0xffffffff, 8);	// to i8255 port b
+		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0 : 8, 8);
 		fw_rw = val;
 	}
 }
@@ -169,7 +176,7 @@ void CASSETTE::set_fw_rw(int val)
 void CASSETTE::set_signal(bool val)
 {
 	if(signal != val) {
-		dev->write_signal(dev_id, val ? 0xffffffff : 0, 0x40);	// to i8255 port b
+		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0x40 : 0, 0x40);
 		signal = val;
 	}
 }

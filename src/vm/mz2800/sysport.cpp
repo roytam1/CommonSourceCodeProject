@@ -9,6 +9,7 @@
 */
 
 #include "sysport.h"
+#include "../upd71071.h"
 
 void SYSPORT::initialize()
 {
@@ -19,8 +20,7 @@ void SYSPORT::initialize()
 
 void SYSPORT::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0x7fff)
-	{
+	switch(addr & 0x7fff) {
 	case 0x8f:
 		// shut
 		shut = data;
@@ -30,8 +30,7 @@ void SYSPORT::write_io8(uint32 addr, uint32 data)
 
 uint32 SYSPORT::read_io8(uint32 addr)
 {
-	switch(addr & 0x7fff)
-	{
+	switch(addr & 0x7fff) {
 	case 0x8e:
 		// dipswitch
 		return 0xff;
@@ -51,5 +50,5 @@ uint32 SYSPORT::read_io8(uint32 addr)
 void SYSPORT::event_callback(int event_id, int err)
 {
 	// memory reshresh
-	d_dma->write_signal(did_dma, 1, 1);
+	d_dma->write_signal(SIG_UPD71071_CH2, 1, 1);
 }

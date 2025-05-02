@@ -9,6 +9,8 @@
 */
 
 #include "serial.h"
+#include "../i8251.h"
+#include "../i8259.h"
 
 void SERIAL::initialize()
 {
@@ -24,14 +26,13 @@ void SERIAL::initialize()
 
 void SERIAL::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x0a:
 		sioctrl[0].baud = data;
 		break;
 	case 0x0b:
 		sioctrl[0].ctrl = data;
-		d_kb->write_signal(did_loop, data, 8);
+		d_kb->write_signal(SIG_I8251_LOOPBACK, data, 8);
 		update_intr(0);
 		break;
 	case 0x12:
@@ -39,7 +40,7 @@ void SERIAL::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x13:
 		sioctrl[1].ctrl = data;
-		d_sub->write_signal(did_loop, data, 8);
+		d_sub->write_signal(SIG_I8251_LOOPBACK, data, 8);
 		update_intr(1);
 		break;
 	case 0x62:
@@ -47,7 +48,7 @@ void SERIAL::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x63:
 		sioctrl[2].ctrl = data;
-		d_ch1->write_signal(did_loop, data, 8);
+		d_ch1->write_signal(SIG_I8251_LOOPBACK, data, 8);
 		update_intr(2);
 		break;
 	case 0x64:
@@ -61,7 +62,7 @@ void SERIAL::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x73:
 		sioctrl[3].ctrl = data;
-		d_ch2->write_signal(did_loop, data, 8);
+		d_ch2->write_signal(SIG_I8251_LOOPBACK, data, 8);
 		update_intr(3);
 		break;
 	case 0x74:
@@ -75,8 +76,7 @@ void SERIAL::write_io8(uint32 addr, uint32 data)
 
 uint32 SERIAL::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x0a:
 		return sioctrl[0].baud;
 	case 0x0b:
@@ -111,8 +111,7 @@ uint32 SERIAL::read_io8(uint32 addr)
 
 void SERIAL::write_signal(int id, uint32 data, uint32 mask)
 {
-	switch(id)
-	{
+	switch(id) {
 	case SIG_SERIAL_RXRDY_KB:
 	case SIG_SERIAL_RXRDY_SUB:
 	case SIG_SERIAL_RXRDY_CH1:
@@ -132,12 +131,19 @@ void SERIAL::write_signal(int id, uint32 data, uint32 mask)
 
 void SERIAL::update_intr(int ch)
 {
+	static const int pic_ids[4] = {
+		SIG_I8259_CHIP0 | SIG_I8259_IR2,	// keyboard
+		SIG_I8259_CHIP0 | SIG_I8259_IR3,	// sub
+		SIG_I8259_CHIP0 | SIG_I8259_IR4,	// rs-232c ch.1
+		SIG_I8259_CHIP1 | SIG_I8259_IR4		// rs-232c ch.2
+	};
+	
 	if((sioctrl[ch].rxrdy && (sioctrl[ch].ctrl & 0x40)) || (sioctrl[ch].txrdy && (sioctrl[ch].ctrl & 0x20))) {
-		d_pic->write_signal(did_pic[ch], 1, 1);
+		d_pic->write_signal(pic_ids[ch], 1, 1);
 		sioctrl[ch].intstat |=  4;
 	}
 	else {
-		d_pic->write_signal(did_pic[ch], 0, 1);
+		d_pic->write_signal(pic_ids[ch], 0, 1);
 		sioctrl[ch].intstat &=  ~4;
 	}
 }

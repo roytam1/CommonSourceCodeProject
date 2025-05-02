@@ -28,7 +28,6 @@ class SERIAL : public DEVICE
 {
 private:
 	DEVICE *d_pic, *d_kb, *d_sub, *d_ch1, *d_ch2;
-	int did_pic[4], did_loop;
 	
 	typedef struct {
 		uint8 baud;
@@ -53,13 +52,11 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pic(DEVICE* device, int id_kb, int id_sub, int id_ch1, int id_ch2) {
+	void set_context_pic(DEVICE* device) {
 		d_pic = device;
-		did_pic[0] = id_kb; did_pic[1] = id_sub; did_pic[2] = id_ch1; did_pic[3] = id_ch2;
 	}
-	void set_context_sio(DEVICE* device_kb, DEVICE* device_sub, DEVICE* device_ch1, DEVICE* device_ch2, int id) {
+	void set_context_sio(DEVICE* device_kb, DEVICE* device_sub, DEVICE* device_ch1, DEVICE* device_ch2) {
 		d_kb = device_kb; d_sub = device_sub; d_ch1 = device_ch1; d_ch2 = device_ch2;
-		did_loop = id;
 	}
 };
 

@@ -14,14 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 11, eb = (e) >> 11; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
+		} \
 	} \
 }
 
@@ -85,8 +89,9 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffffff;
 //emu->out_debug("PC=%6x: WM %6x,%2x\n",vm->get_prv_pc(),addr,data);
-	if(0xe7800 <= addr && addr < 0xf0000 && protect)
+	if(0xe7800 <= addr && addr < 0xf0000 && protect) {
 		return;
+	}
 	wbank[addr >> 11][addr & 0x7ff] = data;
 }
 
@@ -109,8 +114,7 @@ uint32 MEMORY::read_dma8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x74:
 		protect = ((data & 1) != 0);
 		break;

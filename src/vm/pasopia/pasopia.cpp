@@ -71,7 +71,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0->set_context_port_b(memory, SIG_MEMORY_I8255_0_B, 0xff, 0);
 	pio1->set_context_port_a(display, SIG_DISPLAY_I8255_1_A, 0xff, 0);
 	pio1->set_context_port_c(memory, SIG_MEMORY_I8255_1_C, 0xff, 0);
-	pio2->set_context_port_a(pcm, SIG_PCM1BIT_MUTE, 0x2, 0);
+	pio2->set_context_port_a(pcm, SIG_PCM1BIT_MUTE, 0x02, 0);
 	pio2->set_context_port_a(drec, SIG_DATAREC_OUT, 0x10, 0);
 	pio2->set_context_port_a(not, SIG_NOT_INPUT, 0x20, 0);
 	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
@@ -81,17 +81,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ctc->set_constant_clock(0, CPU_CLOCKS);
 	ctc->set_constant_clock(1, CPU_CLOCKS);
 	ctc->set_constant_clock(2, CPU_CLOCKS);
-
 	pio->set_context_port_a(pcm, SIG_PCM1BIT_ON, 0x80, 0);
 	pio->set_context_port_a(key, SIG_KEYBOARD_Z80PIO_A, 0xff, 0);
-	display->set_context(crtc);
+	
+	display->set_context_crtc(crtc);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_attr_ptr(memory->get_attr());
 	display->set_regs_ptr(crtc->get_regs());
-	key->set_context(pio, SIG_Z80PIO_PORT_B);
-	memory->set_context_pio0(pio0, SIG_I8255_PORT_C);
-	memory->set_context_pio1(pio1, SIG_I8255_PORT_B);
-	memory->set_context_pio2(pio2, SIG_I8255_PORT_C);
+	key->set_context_pio(pio);
+	memory->set_context_pio0(pio0);
+	memory->set_context_pio1(pio1);
+	memory->set_context_pio2(pio2);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

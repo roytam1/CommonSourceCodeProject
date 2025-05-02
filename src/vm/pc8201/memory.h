@@ -19,7 +19,6 @@ class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_cmt, *d_rtc;
-	int did_cmt, did_rtc;
 	
 	uint8 ipl[0x8000];	// rom #0
 	uint8 ext[0x8000];	// rom #1
@@ -54,13 +53,11 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_cmt(DEVICE* device, int id) {
+	void set_context_cmt(DEVICE* device) {
 		d_cmt = device;
-		did_cmt = id;
 	}
-	void set_context_rtc(DEVICE* device, int id) {
+	void set_context_rtc(DEVICE* device) {
 		d_rtc = device;
-		did_rtc = id;
 	}
 };
 

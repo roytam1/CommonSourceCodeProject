@@ -19,7 +19,6 @@ class SYSPORT : public DEVICE
 {
 private:
 	DEVICE *d_dma, *d_sio;
-	int did_dma;
 	uint8 shut;
 	
 public:
@@ -33,8 +32,8 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_dma(DEVICE* device, int id) {
-		d_dma = device; did_dma = id;
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
 	}
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;

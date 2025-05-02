@@ -14,14 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 8, eb = (e) >> 8; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x100 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x100 * (i - sb); \
+		} \
 	} \
 }
 
@@ -91,8 +95,7 @@ void MEMORY::initialize()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffff;
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x7df8:
 	case 0x7df9:
 		d_sio->write_io8(addr & 1, data);
@@ -110,8 +113,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffff;
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x7df8:
 	case 0x7df9:
 		return d_sio->read_io8(addr & 1);

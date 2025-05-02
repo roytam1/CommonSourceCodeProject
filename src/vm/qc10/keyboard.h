@@ -56,8 +56,7 @@ static const int key_map[256] = {
 class KEYBOARD : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did_send, did_clear;
+	DEVICE* d_sio;
 	
 	void process_cmd(uint8 val);
 	bool led[8];
@@ -73,10 +72,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context(DEVICE* device, int id0, int id1) {
-		dev = device;
-		did_send = id0;
-		did_clear = id1;
+	void set_context_sio(DEVICE* device) {
+		d_sio = device;
 	}
 	void key_down(int code);
 	void key_up(int code);

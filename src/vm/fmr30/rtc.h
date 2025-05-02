@@ -19,7 +19,6 @@ class RTC : public DEVICE
 {
 private:
 	DEVICE* d_pic;
-	int did_pic;
 	
 	uint16 rtcmr, rtdsr, rtadr, rtobr, rtibr;
 	uint8 regs[40];
@@ -45,9 +44,9 @@ public:
 	uint32 read_io16(uint32 addr);
 	void event_callback(int event_id, int err);
 	
-	// unique functions
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	// unique function
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 };
 

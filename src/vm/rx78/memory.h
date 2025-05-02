@@ -25,8 +25,8 @@ private:
 	uint8 ext[0x5000];
 	uint8 vram[0x2000 * 6];
 	
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x1000];
+	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
 	uint8* vbank[6];

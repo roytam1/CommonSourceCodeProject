@@ -55,7 +55,6 @@ class KEYBOARD : public DEVICE
 {
 private:
 	DEVICE* d_pic;
-	int did_pic;
 	
 	FIFO *key_buf;
 	uint8 kbstat, kbdata, kbint, kbmsk;
@@ -73,8 +72,8 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_pic(DEVICE* device, int id) {
-		d_pic = device; did_pic = id;
+	void set_context_pic(DEVICE* device) {
+		d_pic = device;
 	}
 	void key_down(int code);
 	void key_up(int code);

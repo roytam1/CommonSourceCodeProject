@@ -37,8 +37,9 @@ void DISPLAY::initialize()
 	
 	// create pc palette
 #ifdef _COLOR_MONITOR
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR(i & 1 ? 255 : 0, i & 2 ? 255 : 0, (i & 4) ? 255 : 0);
+	}
 #else
 	for(int i = 1; i < 8; i++) {
 		palette_pc[i + 0] = RGB_COLOR(0, 160, 0);
@@ -63,20 +64,22 @@ void DISPLAY::reset()
 void DISPLAY::write_io8(uint32 addr, uint32 data)
 {
 #ifdef _COLOR_MONITOR
-	if(data & 1)
+	if(data & 1) {
 		d_gdc->set_vram_ptr(vram_b, VRAM_SIZE);
-	else if(data & 2)
+	}
+	else if(data & 2) {
 		d_gdc->set_vram_ptr(vram_g, VRAM_SIZE);
-	else
+	}
+	else {
 		d_gdc->set_vram_ptr(vram_r, VRAM_SIZE);
+	}
 #endif
 	bank = data;
 }
 
 uint32 DISPLAY::read_io8(uint32 addr)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x2c:
 #ifdef _COLOR_MONITOR
 		return 0xfd;
@@ -199,10 +202,12 @@ void DISPLAY::draw_screen()
 						for(int l = y % 16; l < 16 && (y + l) < 400; l++) {
 							uint8 pat = pattern[l];
 							// attribute
-							if((attrib & 0x40) || ((attrib & 0x80) && (blink & 0x10)))
+							if((attrib & 0x40) || ((attrib & 0x80) && (blink & 0x10))) {
 								pat = 0;
-							if(attrib & 8)
+							}
+							if(attrib & 8) {
 								pat = ~pat;
+							}
 							uint8 col = (attrib & 4) ? 9 : 1;
 							
 							screen[y + l][x +  0] = screen[y + l][x +  1] = (pat & 0x01) ? col : 0;
@@ -216,8 +221,9 @@ void DISPLAY::draw_screen()
 						}
 						if(cursor) {
 							int top = cs[1] & 0x1f, bottom = cs[2] >> 3;
-							for(int l = top; l < bottom && l < 16; l++)
+							for(int l = top; l < bottom && l < 16; l++) {
 								_memset(&screen[y + l][x], 1, 16);
+							}
 						}
 					}
 				}
@@ -233,10 +239,12 @@ void DISPLAY::draw_screen()
 						for(int l = y % 16; l < 16 && (y + l) < 400; l++) {
 							uint8 pat = pattern[l];
 							// attribute
-							if((attrib & 0x40) || ((attrib & 0x80) && (blink & 0x10)))
+							if((attrib & 0x40) || ((attrib & 0x80) && (blink & 0x10))) {
 								pat = 0;
-							if(attrib & 8)
+							}
+							if(attrib & 8) {
 								pat = ~pat;
+							}
 							uint8 col = (attrib & 4) ? 9 : 1;
 							
 							screen[y + l][x + 0] = (pat & 0x01) ? col : 0;
@@ -250,8 +258,9 @@ void DISPLAY::draw_screen()
 						}
 						if(cursor) {
 							int top = cs[1] & 0x1f, bottom = cs[2] >> 3;
-							for(int l = top; l < bottom && l < 16; l++)
+							for(int l = top; l < bottom && l < 16; l++) {
 								_memset(&screen[y + l][x], 1, 8);
+							}
 						}
 					}
 				}
@@ -270,15 +279,17 @@ void DISPLAY::draw_screen()
 			for(int x = 0, dx = 0; x < 640 && dx < 640; x++) {
 				scrntype col = palette_pc[src[x] & 0xf];
 				for(int zx = 0; zx < *zoom + 1; zx++) {
-					if(dx >= 640)
+					if(dx >= 640) {
 						break;
+					}
 					tmp[dx++] = col;
 				}
 			}
 			// copy line
 			for(int zy = 1; zy < *zoom + 1; zy++) {
-				if(dy >= 400)
+				if(dy >= 400) {
 					break;
+				}
 				scrntype *dest = emu->screen_buffer(dy++);
 				_memcpy(dest, tmp, sizeof(scrntype) * 640);
 			}
@@ -289,12 +300,13 @@ void DISPLAY::draw_screen()
 			scrntype* dest = emu->screen_buffer(y);
 			uint8* src = screen[y];
 			
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 #ifdef _COLOR_MONITOR
 				dest[x] = palette_pc[src[x] & 7];
 #else
-				dest[x] = palette_pc[src[x] & 0xf];
+				dest[x] = palette_pc[src[x] & 0x0f];
 #endif
+			}
 		}
 	}
 	
@@ -305,8 +317,9 @@ void DISPLAY::draw_screen()
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 }

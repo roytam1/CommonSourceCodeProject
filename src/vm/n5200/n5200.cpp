@@ -87,13 +87,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
 	
 	display->set_context_fdc(fdc);
-	display->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR2);
+	display->set_context_pic(pic);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_tvram_ptr(memory->get_tvram());
 	floppy->set_context_fdc(fdc);
-	floppy->set_context_dma(dma, SIG_I8237_CH2, SIG_I8237_CH3);
-	keyboard->set_context_sio(sio_k, SIG_I8251_RECV);
-	system->set_context_dma(dma, SIG_I8237_BANK0, SIG_I8237_MASK0);
+	floppy->set_context_dma(dma);
+	keyboard->set_context_sio(sio_k);
+	system->set_context_dma(dma);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -115,12 +115,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_w(0x0f, dma, 7);
 	io->set_iomap_alias_w(0x11, dma, 8);
 	io->set_iomap_alias_w(0x13, dma, 9);
-	io->set_iomap_alias_w(0x15, dma, 0xa);
-	io->set_iomap_alias_w(0x17, dma, 0xb);
-	io->set_iomap_alias_w(0x19, dma, 0xc);
-	io->set_iomap_alias_w(0x1b, dma, 0xd);
-	io->set_iomap_alias_w(0x1d, dma, 0xe);
-	io->set_iomap_alias_w(0x1f, dma, 0xf);
+	io->set_iomap_alias_w(0x15, dma, 0x0a);
+	io->set_iomap_alias_w(0x17, dma, 0x0b);
+	io->set_iomap_alias_w(0x19, dma, 0x0c);
+	io->set_iomap_alias_w(0x1b, dma, 0x0d);
+	io->set_iomap_alias_w(0x1d, dma, 0x0e);
+	io->set_iomap_alias_w(0x1f, dma, 0x0f);
 	io->set_iomap_single_w(0x20, rtc);
 	io->set_iomap_single_w(0x21, system);
 	io->set_iomap_single_w(0x23, system);
@@ -186,12 +186,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x0f, dma, 7);
 	io->set_iomap_alias_r(0x11, dma, 8);
 	io->set_iomap_alias_r(0x13, dma, 9);
-	io->set_iomap_alias_r(0x15, dma, 0xa);
-	io->set_iomap_alias_r(0x17, dma, 0xb);
-	io->set_iomap_alias_r(0x19, dma, 0xc);
-	io->set_iomap_alias_r(0x1b, dma, 0xd);
-	io->set_iomap_alias_r(0x1d, dma, 0xe);
-	io->set_iomap_alias_r(0x1f, dma, 0xf);
+	io->set_iomap_alias_r(0x15, dma, 0x0a);
+	io->set_iomap_alias_r(0x17, dma, 0x0b);
+	io->set_iomap_alias_r(0x19, dma, 0x0c);
+	io->set_iomap_alias_r(0x1b, dma, 0x0d);
+	io->set_iomap_alias_r(0x1d, dma, 0x0e);
+	io->set_iomap_alias_r(0x1f, dma, 0x0f);
 	io->set_iomap_alias_r(0x30, sio_r, 0);
 	io->set_iomap_alias_r(0x32, sio_r, 1);
 	io->set_iomap_alias_r(0x31, pio_s, 0);

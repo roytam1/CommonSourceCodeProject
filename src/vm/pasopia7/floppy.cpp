@@ -9,25 +9,26 @@
 */
 
 #include "floppy.h"
+#include "../upd765a.h"
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xe0:
 		// tc off
-		dev->write_signal(did0, 0, 1);
+		d_fdc->write_signal(SIG_UPD765A_TC, 0, 1);
 		break;
 	case 0xe2:
 		// tc on
-		dev->write_signal(did0, 0xffffffff, 1);
+		d_fdc->write_signal(SIG_UPD765A_TC, 1, 1);
 		break;
 	case 0xe6:
 		// fdc reset
-		if(data & 0x80)
-			dev->reset();
+		if(data & 0x80) {
+			d_fdc->reset();
+		}
 		// motor on/off
-		dev->write_signal(did1, (data & 0x40) ? 0xffffffff : 0, 1);
+		d_fdc->write_signal(SIG_UPD765A_MOTOR, data, 0x40);
 		break;
 	}
 }
@@ -40,7 +41,8 @@ uint32 FLOPPY::read_io8(uint32 addr)
 
 void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_FLOPPY_INTR)
-		intr = (data & mask) ? true : false;
+	if(id == SIG_FLOPPY_INTR) {
+		intr = ((data & mask) != 0);
+	}
 }
 

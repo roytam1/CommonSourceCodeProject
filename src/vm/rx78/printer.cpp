@@ -17,8 +17,7 @@ void PRINTER::initialize()
 
 void PRINTER::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xe2:
 		strobe = (data & 0x80) ? true : false;
 		break;
@@ -35,7 +34,8 @@ uint32 PRINTER::read_io8(uint32 addr)
 
 void PRINTER::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_PRINTER_BUSY)
-		busy = (data & mask) ? true : false;
+	if(id == SIG_PRINTER_BUSY) {
+		busy = ((data & mask) != 0);
+	}
 }
 

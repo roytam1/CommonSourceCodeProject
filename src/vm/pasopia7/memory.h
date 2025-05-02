@@ -23,15 +23,14 @@ class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_io, *d_pio0, *d_pio2;
-	int did_io, did_pio0, did_pio2;
 	
 	uint8 bios[0x4000];
 	uint8 basic[0x8000];
 	uint8 ram[0x10000];
 	uint8 vram[0x10000];	// blue, red, green + text, attribute
 	uint8 pal[0x10];
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x1000];
+	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
 	
@@ -57,14 +56,14 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_io(DEVICE* device, int id) {
-		d_io = device; did_io = id;
+	void set_context_io(DEVICE* device) {
+		d_io = device;
 	}
-	void set_context_pio0(DEVICE* device, int id) {
-		d_pio0 = device; did_pio0 = id;
+	void set_context_pio0(DEVICE* device) {
+		d_pio0 = device;
 	}
-	void set_context_pio2(DEVICE* device, int id) {
-		d_pio2 = device; did_pio2 = id;
+	void set_context_pio2(DEVICE* device) {
+		d_pio2 = device;
 	}
 	uint8* get_ram() {
 		return ram;

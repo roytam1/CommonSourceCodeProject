@@ -15,14 +15,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 14, eb = (e) >> 14; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x4000 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy + 0x4000 * (i & 3); \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x4000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -38,11 +42,13 @@ void MEMORY::initialize()
 	_memset(romdrv, 0xff, sizeof(romdrv));
 #ifdef _PC98HA
 	_memset(ramdrv, 0, sizeof(ramdrv));
-	for(int i = 0; i < sizeof(memcard); i++)
+	for(int i = 0; i < sizeof(memcard); i++) {
 		memcard[i] = ((i & 1) ? (i >> 8) : i) & 0xff;
+	}
 #endif
-	for(int i = 0; i < sizeof(rdmy); i++)
+	for(int i = 0; i < sizeof(rdmy); i++) {
 		rdmy[i] = ((i & 1) ? (i >> 8) : i) & 0xff;
+	}
 	
 	// load rom/ram image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -134,8 +140,9 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	wbank[addr >> 14][addr & 0x3fff] = data;
 #ifdef _PC98HA
 	// patch for pcmcia
-	if(ram[0x59e] == 0x3e)
+	if(ram[0x59e] == 0x3e) {
 		ram[0x59e] &= ~0x20;
+	}
 #endif
 }
 
@@ -157,8 +164,7 @@ uint32 MEMORY::read_dma8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 #ifdef _PC98HA
 	case 0x8e1:
 		ems_bank[0] = data & 0x7f;
@@ -219,8 +225,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x0c10:
 		return learn_bank | 0x40;
 	case 0x4c10:

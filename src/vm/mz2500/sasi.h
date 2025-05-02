@@ -1,6 +1,6 @@
 /*
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
-	(Skelton for Z-80 PC Emulator)
+	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2004.09.10 -

@@ -24,7 +24,8 @@ private:
 	uint8 basic[0x8000];
 	uint8 util[0x8000];
 	
-	uint8 wdmy[0x10000];
+	uint8 wdmy[0x2000];
+	uint8 rdmy[0x2000];
 	uint8* wbank[8];
 	uint8* rbank[8];
 	

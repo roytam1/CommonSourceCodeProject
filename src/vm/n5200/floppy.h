@@ -1,6 +1,5 @@
 /*
-	NEC PC-98LT Emulator 'ePC-98LT'
-	NEC PC-98HA Emulator 'eHANDY98'
+	NEC N5200 Emulator 'eN5200'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -22,7 +21,6 @@ class FLOPPY : public DEVICE
 {
 private:
 	DEVICE *d_fdc, *d_dma;
-	int did_dma[2];
 	
 	uint8 chgreg, ctrlreg;
 	
@@ -40,8 +38,8 @@ public:
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
 	}
-	void set_context_dma(DEVICE* device, int id2, int id3) {
-		d_dma = device; did_dma[1] = id2; did_dma[0] = id3;
+	void set_context_dma(DEVICE* device) {
+		d_dma = device;
 	}
 };
 

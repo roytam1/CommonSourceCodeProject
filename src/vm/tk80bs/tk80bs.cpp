@@ -69,12 +69,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_t->set_context_port_c(keyboard, SIG_KEYBOARD_COLUMN, 0x70, 0);
 	pio_t->set_context_port_c(display, SIG_DISPLAY_DMA, 0x80, 0);
 	
-	cmt->set_context_sio(sio_b, SIG_I8251_RECV, SIG_I8251_CLEAR);
+	cmt->set_context_sio(sio_b);
 	display->set_context_key(keyboard);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_led_ptr(memory->get_led());
-	keyboard->set_context_pio_b(pio_b, SIG_I8255_PORT_A);
-	keyboard->set_context_pio_t(pio_t, SIG_I8255_PORT_A);
+	keyboard->set_context_pio_b(pio_b);
+	keyboard->set_context_pio_t(pio_t);
 	keyboard->set_context_cpu(cpu);
 	memory->set_context_sio(sio_b);
 	memory->set_context_pio(pio_b);

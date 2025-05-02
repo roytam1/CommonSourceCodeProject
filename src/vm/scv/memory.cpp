@@ -17,8 +17,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 7, eb = (e) >> 7; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x80 * (i - sb); \
-		rbank[i] = (r) + 0x80 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x80 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x80 * (i - sb); \
+		} \
 	} \
 }
 
@@ -70,12 +80,15 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	if(addr == 0x3600)
+	if(addr == 0x3600) {
 		d_sound->write_data8(addr, data);
-	if((addr & 0xfe00) == 0x3400)
+	}
+	if((addr & 0xfe00) == 0x3400) {
 		wbank[0x68][addr & 3] = data;
-	else
+	}
+	else {
 		wbank[addr >> 7][addr & 0x7f] = data;
+	}
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
@@ -175,15 +188,18 @@ void MEMORY::open_cart(_TCHAR* filename)
 		_memcpy(cart + 0x8000, cart, 0x8000);
 		
 		// load rom image, PC5=1, PC6=0
-		if(header.ctype == 0)
+		if(header.ctype == 0) {
 			fio->Fread(cart + 0xe000, 0x2000, 1);
-		else if(header.ctype == 2)
+		}
+		else if(header.ctype == 2) {
 			fio->Fread(cart + 0x8000, 0x8000, 1);
+		}
 		_memcpy(cart + 0x10000, cart, 0x10000);
 		
 		// load rom image, PC5=0/1, PC6=1
-		if(header.ctype == 2)
+		if(header.ctype == 2) {
 			fio->Fread(cart + 0x10000, 0x10000, 1);
+		}
 		else if(header.ctype == 3) {
 			fio->Fread(cart + 0x10000, 0x8000, 1);
 			_memcpy(cart + 0x18000, cart + 0x10000, 0x8000);

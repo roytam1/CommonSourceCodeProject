@@ -9,6 +9,7 @@
 */
 
 #include "mfont.h"
+#include "../i8259.h"
 #include "../../fifo.h"
 
 #define BIT_IBF	0x80
@@ -39,8 +40,7 @@ void MFONT::initialize()
 
 void MFONT::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xfc:
 		cmd->write(data);
 		if(cmd->count() == 3) {
@@ -52,10 +52,11 @@ void MFONT::write_io8(uint32 addr, uint32 data)
 				int ofs = (code - 0x200) * 36;
 				res->clear();
 				res->write(0x40);
-				for(int i = 0; i < 36; i++)
+				for(int i = 0; i < 36; i++) {
 					res->write(mfont[ofs + i]);
+				}
 				status = BIT_IBF | BIT_OBF;
-				d_pic->write_signal(did_pic, 1, 1);
+				d_pic->write_signal(SIG_I8259_IR7 | SIG_I8259_CHIP1, 1, 1);
 			}
 			else {
 				// error
@@ -65,7 +66,7 @@ void MFONT::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0xfd:
 		// set irq
-		d_pic->write_signal(did_pic, 1, 1);
+		d_pic->write_signal(SIG_I8259_IR7 | SIG_I8259_CHIP1, 1, 1);
 		break;
 	}
 }
@@ -74,16 +75,16 @@ uint32 MFONT::read_io8(uint32 addr)
 {
 	uint32 val;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0xfc:
 		val = res->read();
-		if(res->empty())
+		if(res->empty()) {
 			status = 0;
+		}
 		return val;
 	case 0xfd:
 		// reset irq
-		d_pic->write_signal(did_pic, 0, 1);
+		d_pic->write_signal(SIG_I8259_IR7 | SIG_I8259_CHIP1, 0, 1);
 		return status;
 	}
 	return 0xff;

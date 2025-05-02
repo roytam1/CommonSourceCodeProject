@@ -41,8 +41,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
 	
-	io->set_context_beep(beep, SIG_BEEP_ON, SIG_BEEP_FREQ);
-	io->set_context_cpu(cpu, SIG_NSC800_RSTA, SIG_NSC800_RSTB);
+	io->set_context_beep(beep);
+	io->set_context_cpu(cpu);
 	io->set_context_mem(memory, memory->get_ram());
 	
 	// cpu bus

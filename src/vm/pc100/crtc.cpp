@@ -9,6 +9,7 @@
 */
 
 #include "crtc.h"
+#include "../i8259.h"
 #include "../../config.h"
 
 void CRTC::initialize()
@@ -28,7 +29,7 @@ void CRTC::initialize()
 void CRTC::event_vline(int v, int clock)
 {
 	if(v == 512) {
-		d_pic->write_signal(did_pic, 1, 1);
+		d_pic->write_signal(SIG_I8259_IR4, 1, 1);
 	}
 }
 

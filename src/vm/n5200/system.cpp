@@ -9,6 +9,7 @@
 */
 
 #include "system.h"
+#include "../i8237.h"
 
 void SYSTEM::reset()
 {
@@ -18,27 +19,29 @@ void SYSTEM::reset()
 
 void SYSTEM::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x21:
-		d_dma->write_signal(did_bank + 1, data, 0xff);
+		d_dma->write_signal(SIG_I8237_BANK0 + 1, data, 0xff);
 		break;
 	case 0x23:
-		d_dma->write_signal(did_bank + 2, data, 0xff);
+		d_dma->write_signal(SIG_I8237_BANK0 + 2, data, 0xff);
 		break;
 	case 0x25:
-		d_dma->write_signal(did_bank + 3, data, 0xff);
+		d_dma->write_signal(SIG_I8237_BANK0 + 3, data, 0xff);
 		break;
 	case 0x27:
-		d_dma->write_signal(did_bank + 0, data, 0xff);
+		d_dma->write_signal(SIG_I8237_BANK0 + 0, data, 0xff);
 		break;
 	case 0x29:
-		if((data & 0xc) == 0)
-			d_dma->write_signal(did_mask + (data & 3), 0, 0xff);
-		else if((data & 0xc) == 4)
-			d_dma->write_signal(did_mask + (data & 3), 0xf, 0xff);
-		else if((data & 0xc) == 0xc)
-			d_dma->write_signal(did_mask + (data & 3), 0xff, 0xff);
+		if((data & 0x0c) == 0) {
+			d_dma->write_signal(SIG_I8237_MASK0 + (data & 3), 0, 0xff);
+		}
+		else if((data & 0x0c) == 4) {
+			d_dma->write_signal(SIG_I8237_MASK0 + (data & 3), 0x0f, 0xff);
+		}
+		else if((data & 0x0c) == 0x0c) {
+			d_dma->write_signal(SIG_I8237_MASK0 + (data & 3), 0xff, 0xff);
+		}
 	case 0x3b:
 		mode = data;
 		break;
@@ -53,8 +56,7 @@ void SYSTEM::write_io8(uint32 addr, uint32 data)
 
 uint32 SYSTEM::read_io8(uint32 addr)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x39:
 		return mode;
 	}

@@ -18,7 +18,7 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_crtc;
 	
 	uint8* rbank[8192];	// 16MB / 2KB
 	uint8* wbank[8192];
@@ -53,8 +53,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unitque function
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_crtc(DEVICE* device) {
+		d_crtc = device;
 	}
 	uint8* get_vram() {
 		return vram;

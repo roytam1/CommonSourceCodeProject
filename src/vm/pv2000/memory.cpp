@@ -14,8 +14,18 @@
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x1000 * (i - sb); \
-		rbank[i] = (r) + 0x1000 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x1000 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -49,18 +59,22 @@ void MEMORY::initialize()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	if((addr & 0xf000) == 0x4000)
-		dev->write_io8(addr, data);
-	else
+	if((addr & 0xf000) == 0x4000) {
+		d_vdp->write_io8(addr, data);
+	}
+	else {
 		wbank[addr >> 12][addr & 0xfff] = data;
+	}
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-	if((addr & 0xf000) == 0x4000)
-		return dev->read_io8(addr);
-	else
+	if((addr & 0xf000) == 0x4000) {
+		return d_vdp->read_io8(addr);
+	}
+	else {
 		return rbank[addr >> 12][addr & 0xfff];
+	}
 }
 
 void MEMORY::open_cart(_TCHAR* filename)

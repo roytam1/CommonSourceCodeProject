@@ -110,9 +110,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc->set_context_data(pio3, SIG_I8255_PORT_B, 0xf, 0);
 	
 	display->set_regs_ptr(crtc->get_regs());
-	keyboard->set_context_cpu(cpu, SIG_CPU_NMI);
-	keyboard->set_context_pio1(pio1, SIG_I8255_PORT_B, SIG_I8255_PORT_C);
-	keyboard->set_context_pio2(pio2, SIG_I8255_PORT_A);
+	keyboard->set_context_cpu(cpu);
+	keyboard->set_context_pio1(pio1);
+	keyboard->set_context_pio2(pio2);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);

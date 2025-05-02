@@ -44,8 +44,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	drec->set_context_out(memory, 0, 1);
-	memory->set_context_cmt(drec, SIG_DATAREC_OUT, SIG_DATAREC_REMOTE);
-	memory->set_context_cpu(cpu, SIG_TMS9995_INT4);
+	memory->set_context_cmt(drec);
+	memory->set_context_cpu(cpu);
 	memory->set_context_psg(psg);
 	memory->set_context_vdp(vdp);
 	

@@ -10,6 +10,7 @@
 */
 
 #include "note.h"
+#include "../i8259.h"
 
 void NOTE::initialize()
 {
@@ -19,10 +20,9 @@ void NOTE::initialize()
 
 void NOTE::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x810:
-		regs[ch & 0xf] = data;
+		regs[ch & 0x0f] = data;
 		break;
 	case 0x812:
 		ch = data;
@@ -41,7 +41,7 @@ void NOTE::write_io8(uint32 addr, uint32 data)
 		// bit5 = 1: unknown
 		// bit2 = 1: stanby
 		// bit0 = 1: power off
-//		d_pic->write_signal(did_pic, data, 2);
+//		d_pic->write_signal(SIG_I8259_IR5, data, 2);
 		break;
 	case 0xc810:
 		// unknown
@@ -51,10 +51,9 @@ void NOTE::write_io8(uint32 addr, uint32 data)
 
 uint32 NOTE::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
+	switch(addr & 0xffff) {
 	case 0x810:
-		return regs[ch & 0xf];
+		return regs[ch & 0x0f];
 	case 0x812:
 		return ch;
 	case 0xf8e:

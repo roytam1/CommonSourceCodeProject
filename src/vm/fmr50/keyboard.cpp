@@ -10,6 +10,7 @@
 */
 
 #include "keyboard.h"
+#include "../i8259.h"
 #include "../../fifo.h"
 
 void KEYBOARD::initialize()
@@ -27,8 +28,7 @@ void KEYBOARD::reset()
 
 void KEYBOARD::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x600:
 		// data
 //		kbstat |= 2;
@@ -44,11 +44,10 @@ void KEYBOARD::write_io8(uint32 addr, uint32 data)
 
 uint32 KEYBOARD::read_io8(uint32 addr)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case 0x600:
 		kbint &= ~1;
-		d_pic->write_signal(did_pic, 0, 0);
+		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, 0, 0);
 		kbstat &= ~1;
 		return kbdata;
 	case 0x602:
@@ -67,7 +66,7 @@ void KEYBOARD::event_frame()
 	}
 	if((kbstat & 1) && (kbmsk & 1) && !(kbint & 1)) {
 		kbint |= 1;
-		d_pic->write_signal(did_pic, 1, 1);
+		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, 1, 1);
 	}
 //	kbstat &= ~2;
 }

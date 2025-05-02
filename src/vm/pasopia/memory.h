@@ -23,14 +23,13 @@ class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_pio0, *d_pio1, *d_pio2;
-	int did_pio0, did_pio1, did_pio2;
 	
 	uint8 rom[0x8000];
 	uint8 ram[0x10000];
 	uint8 vram[0x8000];
 	uint8 attr[0x8000];
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x1000];
+	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
 	uint16 vram_ptr;
@@ -55,14 +54,14 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_pio0(DEVICE* device, int id) {
-		d_pio0 = device; did_pio0 = id;
+	void set_context_pio0(DEVICE* device) {
+		d_pio0 = device;
 	}
-	void set_context_pio1(DEVICE* device, int id) {
-		d_pio1 = device; did_pio1 = id;
+	void set_context_pio1(DEVICE* device) {
+		d_pio1 = device;
 	}
-	void set_context_pio2(DEVICE* device, int id) {
-		d_pio2 = device; did_pio2 = id;
+	void set_context_pio2(DEVICE* device) {
+		d_pio2 = device;
 	}
 	uint8* get_vram() {
 		return vram;

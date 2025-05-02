@@ -101,8 +101,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_ra_ptr(gdc->get_ra());
 	display->set_cs_ptr(gdc->get_cs());
 	display->set_ead_ptr(gdc->get_ead());
-	keyboard->set_context_pio(pio, SIG_I8255_PORT_B);
-	keyboard->set_context_pic(pic, SIG_I8259_IR3 | SIG_I8259_CHIP0);
+	keyboard->set_context_pio(pio);
+	keyboard->set_context_pic(pic);
 	memory->set_context_cpu(cpu);
 	sysport->set_context_fdc(fdc);
 	sysport->set_context_ctc(ctc0);

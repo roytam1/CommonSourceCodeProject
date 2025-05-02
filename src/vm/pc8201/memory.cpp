@@ -9,19 +9,25 @@
 */
 
 #include "memory.h"
+//#include "../datarec.h"
+#include "../upd1990a.h"
 #include "../../fileio.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) \
+		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		else \
+		} \
+		else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
-		if((r) == rdmy) \
+		} \
+		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		else \
+		} \
+		else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -89,14 +95,15 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xf0)
-	{
+	switch(addr & 0xf0) {
 	case 0x90:
 		// system control
-//		if((sio & 8) != (data & 8))
-//			d_cmt->write_signal(did_cmt, data, 8);
-		if((sio & 0x10) != (data & 0x10))
-			d_rtc->write_signal(did_rtc, data, 0x10);
+//		if((sio & 8) != (data & 8)) {
+//			d_cmt->write_signal(SIG_DATAREC_REMOTE, data, 8);
+//		}
+		if((sio & 0x10) != (data & 0x10)) {
+			d_rtc->write_signal(SIG_UPD1990A_STB, data, 0x10);
+		}
 		sio = data;
 		break;
 	case 0xa0:
@@ -115,8 +122,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 
 void MEMORY::update_bank()
 {
-	switch(bank & 3)
-	{
+	switch(bank & 3) {
 	case 0:
 		SET_BANK(0x0000, 0x7fff, wdmy, ipl);
 		break;
@@ -130,8 +136,7 @@ void MEMORY::update_bank()
 		SET_BANK(0x0000, 0x7fff, ram + 0x10000, ram + 0x10000);
 		break;
 	}
-	switch((bank >> 2) & 3)
-	{
+	switch((bank >> 2) & 3) {
 	case 0:
 		SET_BANK(0x8000, 0xffff, ram + 0x00000, ram + 0x00000);
 		break;

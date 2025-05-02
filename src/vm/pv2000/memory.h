@@ -18,15 +18,15 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_vdp;
 	
 	uint8 ipl[0x4000];	// ipl (16k)
 	uint8 ram[0x1000];	// ram (4k)
 	uint8 ext[0x4000];	// ext ram/rom (16k)
 	uint8 cart[0x4000];	// cartridge (16k)
 	
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x1000];
+	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
 public:
@@ -45,8 +45,8 @@ public:
 	}
 	
 	// unique functions
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_vdp(DEVICE* device) {
+		d_vdp = device;
 	}
 	void open_cart(_TCHAR* filename);
 	void close_cart();

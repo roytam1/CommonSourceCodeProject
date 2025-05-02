@@ -25,8 +25,7 @@ void IO::reset()
 
 void IO::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr)
-	{
+	switch(addr) {
 	case P_A:
 		pa = data;
 		break;
@@ -34,10 +33,12 @@ void IO::write_io8(uint32 addr, uint32 data)
 		pb = data;
 		break;
 	case P_C:
-		if((uint8)(data & 0x60) != (pc & 0x60))
+		if((uint8)(data & 0x60) != (pc & 0x60)) {
 			d_mem->write_io8(addr, data);
-		if((uint8)(data & 0x8) != (pc & 0x8))
+		}
+		if((uint8)(data & 0x8) != (pc & 0x8)) {
 			d_sound->write_io8(addr, data);
+		}
 		pc = data;
 		break;
 	case P_SI:
@@ -53,8 +54,7 @@ uint32 IO::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
-	switch(addr)
-	{
+	switch(addr) {
 	case P_A:
 		return pa;
 	case P_B:
