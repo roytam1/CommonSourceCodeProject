@@ -1,3 +1,12 @@
+3/15/2012
+
+[EMU/WIN32] fix to renew vm class instance to change cpu clock in reset()
+
+[PC8801MA/PC88] support data recorder
+[PC8801MA/PC88] fix not to show pallete#0 color when graph screen is disabled
+[PC8801MA/PC88] fix to recognize ctrl + comma/period as numpad comma/period
+
+
 3/6/2012
 
 [WINMAIN] fix to reset timing controls when run any extra frames to fill sound buffer

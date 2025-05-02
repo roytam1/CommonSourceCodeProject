@@ -66,6 +66,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
+#define USE_BOOT_MODE
 
 #include "../../common.h"
 

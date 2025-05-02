@@ -19,12 +19,12 @@ void EMU::initialize_screen()
 	screen_height_aspect = SCREEN_HEIGHT_ASPECT;
 	window_width = WINDOW_WIDTH;
 	window_height = WINDOW_HEIGHT;
-	screen_size_changed = TRUE;
+	screen_size_changed = true;
 	
 	source_width = source_height = -1;
 	source_width_aspect = source_height_aspect = -1;
 	stretch_pow_x = stretch_pow_y = -1;
-	stretch_screen = FALSE;
+	stretch_screen = false;
 	
 	// create dib sections
 	HDC hdc = GetDC(main_window_handle);
@@ -45,19 +45,19 @@ void EMU::initialize_screen()
 	lpd3d9Surface = NULL;
 	lpd3d9OffscreenSurface = NULL;
 	lpd3d9Buffer = NULL;
-	render_to_d3d9Buffer = FALSE;
+	render_to_d3d9Buffer = false;
 #endif
-	wait_vsync = (BOOL)config.wait_vsync;
+	wait_vsync = config.wait_vsync;
 	
 	// initialize video recording
-	now_rec_vid = FALSE;
+	now_rec_vid = false;
 	pAVIStream = NULL;
 	pAVICompressed = NULL;
 	pAVIFile = NULL;
 	
 	// initialize update flags
-	first_draw_screen = FALSE;
-	first_invalidate = self_invalidate = FALSE;
+	first_draw_screen = false;
+	first_invalidate = self_invalidate = false;
 }
 
 #define release_dib_section(hdcdib, hbmp, holdbmp, lpbuf) { \
@@ -183,24 +183,24 @@ int EMU::get_window_height(int mode) {
 	return window_height + screen_height_aspect * mode;
 }
 
-void EMU::set_display_size(int width, int height, BOOL window_mode)
+void EMU::set_display_size(int width, int height, bool window_mode)
 {
-	BOOL display_size_changed = FALSE;
-	BOOL stretch_changed = FALSE;
+	bool display_size_changed = false;
+	bool stretch_changed = false;
 	
 	if(width != -1 && (display_width != width || display_height != height)) {
 		display_width = width;
 		display_height = height;
-		display_size_changed = stretch_changed = TRUE;
+		display_size_changed = stretch_changed = true;
 	}
-	if(wait_vsync != (BOOL)config.wait_vsync) {
-		wait_vsync = (BOOL)config.wait_vsync;
-		display_size_changed = stretch_changed = TRUE;
+	if(wait_vsync != config.wait_vsync) {
+		wait_vsync = config.wait_vsync;
+		display_size_changed = stretch_changed = true;
 	}
 	
 #ifdef USE_D3D9
 	// virtual machine renders to d3d9 buffer directly???
-	render_to_d3d9Buffer = TRUE;
+	render_to_d3d9Buffer = true;
 #endif
 	
 #ifdef USE_SCREEN_ROTATE
@@ -220,7 +220,7 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 		source_width_aspect = screen_height_aspect;
 		source_height_aspect = screen_width_aspect;
 #ifdef USE_D3D9
-		render_to_d3d9Buffer = FALSE;
+		render_to_d3d9Buffer = false;
 #endif
 	}
 	else {
@@ -287,18 +287,18 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 	if(stretch_pow_x != new_pow_x || stretch_pow_y != new_pow_y) {
 		stretch_pow_x = new_pow_x;
 		stretch_pow_y = new_pow_y;
-		stretch_changed = TRUE;
+		stretch_changed = true;
 	}
 #ifdef USE_D3D9
 	if(stretch_pow_x != 1 || stretch_pow_y != 1) {
-		render_to_d3d9Buffer = FALSE;
+		render_to_d3d9Buffer = false;
 	}
 #endif
 	
 	if(stretch_changed) {
 		release_dib_section(hdcDibStretch1, hBmpStretch1, hOldBmpStretch1, lpBufStretch1);
 		release_dib_section(hdcDibStretch2, hBmpStretch2, hOldBmpStretch2, lpBufStretch2);
-		stretch_screen = FALSE;
+		stretch_screen = false;
 		
 		if(stretch_pow_x != 1 || stretch_pow_y != 1) {
 			HDC hdc = GetDC(main_window_handle);
@@ -309,7 +309,7 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 			SetStretchBltMode(hdcDibStretch2, HALFTONE);
 #endif
 			ReleaseDC(main_window_handle, hdc);
-			stretch_screen = TRUE;
+			stretch_screen = true;
 		}
 		
 #ifdef USE_D3D9
@@ -358,14 +358,14 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 			}
 		}
 		if(stretch_screen) {
-			render_to_d3d9Buffer = FALSE;
+			render_to_d3d9Buffer = false;
 		}
 #endif
 	}
 	
-	first_draw_screen = FALSE;
-	first_invalidate = TRUE;
-	screen_size_changed = FALSE;
+	first_draw_screen = false;
+	first_invalidate = true;
+	screen_size_changed = false;
 }
 
 void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
@@ -378,7 +378,7 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 		screen_height_aspect = (sha != -1) ? sha : sh;
 		window_width = ww;
 		window_height = wh;
-		screen_size_changed = TRUE;
+		screen_size_changed = true;
 		
 		// re-create dib sections
 		HDC hdc = GetDC(main_window_handle);
@@ -493,7 +493,7 @@ void EMU::draw_screen()
 		StretchBlt(hdcDibStretch2, 0, 0, stretched_width, stretched_height, hdcDibStretch1, 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y, SRCCOPY);
 #endif
 	}
-	first_draw_screen = TRUE;
+	first_draw_screen = true;
 	
 #ifdef USE_D3D9
 	// copy bitmap to d3d9 offscreen surface
@@ -521,7 +521,7 @@ void EMU::draw_screen()
 	// invalidate window
 	InvalidateRect(main_window_handle, NULL, first_invalidate);
 	UpdateWindow(main_window_handle);
-	self_invalidate = TRUE;
+	self_invalidate = true;
 	
 	// record picture
 	if(now_rec_vid) {
@@ -598,8 +598,8 @@ void EMU::update_screen(HDC hdc)
 		// draw access lamps of drives
 		int status = vm->access_lamp() & 7;
 		static int prev_status = 0;
-		BOOL render_in = (status != 0);
-		BOOL render_out = (prev_status != status);
+		bool render_in = (status != 0);
+		bool render_out = (prev_status != status);
 		prev_status = status;
 		
 		if(render_in || render_out) {
@@ -617,7 +617,7 @@ void EMU::update_screen(HDC hdc)
 		}
 #endif
 #endif
-		first_invalidate = self_invalidate = FALSE;
+		first_invalidate = self_invalidate = false;
 	}
 }
 
@@ -646,7 +646,7 @@ void EMU::capture_screen()
 	CloseHandle(hFile);
 }
 
-void EMU::start_rec_video(int fps, BOOL show_dialog)
+void EMU::start_rec_video(int fps, bool show_dialog)
 {
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	application_path(app_path);
@@ -690,7 +690,7 @@ void EMU::start_rec_video(int fps, BOOL show_dialog)
 	}
 	rec_frames = 0;
 	rec_fps = fps;
-	now_rec_vid = TRUE;
+	now_rec_vid = true;
 }
 
 void EMU::stop_rec_video()
@@ -729,7 +729,7 @@ void EMU::stop_rec_video()
 			fclose(fp);
 		}
 	}
-	now_rec_vid = FALSE;
+	now_rec_vid = false;
 }
 
 void EMU::restart_rec_video()
@@ -750,7 +750,7 @@ void EMU::restart_rec_video()
 		pAVICompressed = NULL;
 		pAVIFile = NULL;
 		
-		start_rec_video(rec_fps, FALSE);
+		start_rec_video(rec_fps, false);
 	}
 }
 

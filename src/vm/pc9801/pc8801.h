@@ -52,6 +52,8 @@
 // device informations for win32
 #define USE_FD1
 #define USE_FD2
+#define USE_DATAREC
+#define DATAREC_PC8801
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
@@ -59,6 +61,8 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_ACCESS_LAMP
 #define USE_SCANLINE
+#define USE_BOOT_MODE
+#define USE_CPU_CLOCK_LOW
 
 #include "../../common.h"
 
@@ -137,6 +141,9 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
+	void close_datarec();
 	bool now_skip();
 	
 	void update_config();

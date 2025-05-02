@@ -33,7 +33,7 @@
 #define CONFIG_NAME		"pc98do"
 #else
 #endif
-#define CONFIG_VERSION		0x03
+#define CONFIG_VERSION		0x04
 
 #if defined(_PC9801) || defined(_PC9801E)
 #define SUPPORT_CMT_IF
@@ -124,6 +124,9 @@
 #if defined(SUPPORT_CMT_IF)
 #define USE_DATAREC
 #define DATAREC_BINARY_ONLY
+#elif defined(_PC98DO)
+#define USE_DATAREC
+#define DATAREC_PC8801
 #endif
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
@@ -133,6 +136,10 @@
 #define USE_ACCESS_LAMP
 #if defined(_PC98DO)
 #define USE_SCANLINE
+#define USE_BOOT_MODE
+#endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+#define USE_CPU_CLOCK_LOW
 #endif
 
 #include "../../common.h"
@@ -316,7 +323,7 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-#if defined(SUPPORT_CMT_IF)
+#if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
 	void play_datarec(_TCHAR* file_path);
 	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();

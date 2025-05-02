@@ -71,6 +71,7 @@
 #define USE_AUTO_KEY_CAPS
 #if defined(_MZ800)
 #define USE_SCANLINE
+#define USE_BOOT_MODE
 #endif
 #if defined(_MZ800) || defined(_MZ1500)
 #define USE_ACCESS_LAMP

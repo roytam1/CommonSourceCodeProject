@@ -1,5 +1,6 @@
 /*
 	NEC PC-98DO Emulator 'ePC-98DO'
+	NEC PC-8801MA Emulator 'ePC-8801MA'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -11,10 +12,12 @@
 #include "pc88.h"
 #include "../beep.h"
 #include "../event.h"
+#include "../i8251.h"
 #include "../pcm1bit.h"
 #include "../upd1990a.h"
 #include "../ym2203.h"
 #include "../../config.h"
+#include "../../fileio.h"
 
 #define DEVICE_JOYSTICK	0
 #define DEVICE_MOUSE	1
@@ -22,8 +25,10 @@
 
 #define EVENT_TIMER	0
 #define EVENT_BUSREQ	1
+#define EVENT_CMT_SEND	2
+#define EVENT_CMT_DCD	3
 
-#define IRQ_SERIAL	0
+#define IRQ_USART	0
 #define IRQ_VRTC	1
 #define IRQ_TIMER	2
 #define IRQ_SOUND	4
@@ -72,7 +77,7 @@
 
 static const int key_table[15][8] = {
 	{ 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67 },
-	{ 0x68, 0x69, 0x6a, 0x6b, 0x00, 0x00, 0x6e, 0x0d },
+	{ 0x68, 0x69, 0x6a, 0x6b, 0x00, 0x6c, 0x6e, 0x0d },
 	{ 0xc0, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47 },
 	{ 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f },
 	{ 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57 },
@@ -206,16 +211,25 @@ void PC88::initialize()
 		mem_wait_clocks = cpu_clock_low ? 0 : 1;
 	}
 	
-	key_status = emu->key_buffer();
 #ifdef SUPPORT_PC88_JOYSTICK
 	joystick_status = emu->joy_buffer();
 	mouse_status = emu->mouse_buffer();
 	mouse_strobe_clock_lim = (int)((cpu_clock_low ? 720 : 1440) * 1.25);
 #endif
 	
+	// initialize cmt
+	cmt_fio = new FILEIO();
+	cmt_play = cmt_rec = false;
+	
 	register_frame_event(this);
 	register_vline_event(this);
 	register_event(this, EVENT_TIMER, 1000000 / 600, true, NULL);
+}
+
+void PC88::release()
+{
+	release_datarec();
+	delete cmt_fio;
 }
 
 void PC88::reset()
@@ -239,6 +253,8 @@ void PC88::reset()
 	portE2 = 0xff;	// ???
 	alu_ctrl1 = alu_ctrl2 = 0;
 	ghs_mode = 0;
+	
+	usart_dcd = false;
 	opn_busy = true;
 	
 	// crtc
@@ -304,6 +320,11 @@ void PC88::reset()
 	// fdd i/f
 	d_pio->write_io8(1, 0);
 	d_pio->write_io8(2, 0);
+	
+	// data recorder
+	close_datarec();
+	cmt_play = cmt_rec = false;
+	cmt_register_id = -1;
 }
 
 #ifdef Z80_MEMORY_WAIT
@@ -435,6 +456,35 @@ void PC88::write_io8(uint32 addr, uint32 data)
 {
 	addr &= 0xff;
 	switch(addr) {
+	case 0x00:
+		// load tape image ??? (from QUASI88)
+		if(cmt_play) {
+			while(cmt_buffer[cmt_bufptr++] != 0x3a) {
+				if(!(cmt_bufptr <= cmt_bufcnt)) return;
+			}
+			int val, sum, ptr, len, wait;
+			sum = (val = cmt_buffer[cmt_bufptr++]);
+			ptr = val << 8;
+			sum += (val = cmt_buffer[cmt_bufptr++]);
+			ptr |= val;
+			sum += (val = cmt_buffer[cmt_bufptr++]);
+			if((sum & 0xff) != 0) return;
+			
+			while(1) {
+				while(cmt_buffer[cmt_bufptr++] != 0x3a) {
+					if(!(cmt_bufptr <= cmt_bufcnt)) return;
+				}
+				sum = (len = cmt_buffer[cmt_bufptr++]);
+				if(len == 0) break;
+				for(; len; len--) {
+					sum += (val = cmt_buffer[cmt_bufptr++]);
+					write_data8w(ptr++, val, &wait);
+				}
+				sum += cmt_buffer[cmt_bufptr++];
+				if((sum & 0xff) != 0) return;
+			}
+		}
+		break;
 	case 0x10:
 		d_rtc->write_signal(SIG_UPD1990A_C0, data, 1);
 		d_rtc->write_signal(SIG_UPD1990A_C1, data, 2);
@@ -446,6 +496,25 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		d_sio->write_io8(addr, data);
 		break;
 	case 0x30:
+		if(!(text_mode & 8) && (data & 8)) {
+			// start motor
+			if(cmt_play) {
+				// detect the data carrier at the top of tape
+				usart_dcd = true;
+				if(cmt_register_id != -1) {
+					cancel_event(cmt_register_id);
+				}
+				register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
+			}
+		}
+		else if((text_mode & 8) && !(data & 8)) {
+			// stop motor
+			if(cmt_register_id != -1) {
+				cancel_event(cmt_register_id);
+				cmt_register_id = -1;
+			}
+			usart_dcd = false;
+		}
 		text_mode = data;
 		break;
 	case 0x31:
@@ -745,7 +814,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-uint32 PC88::read_io8tmp(uint32 addr)
+uint32 PC88::read_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
@@ -766,39 +835,12 @@ uint32 PC88::read_io8tmp(uint32 addr)
 	case 0x0c:
 	case 0x0d:
 	case 0x0e:
-		if(addr == 8 || addr == 9) {
-			// INS or F6-F10 -> SHIFT + DEL or F1-F5
-			key_status_bak[6] = key_status[0x10];
-			key_status_bak[7] = key_status[0x15];
-			for(int i = 0; i < 6; i++) {
-				key_status_bak[i] = key_status[key_conv_table[i][1]];
-				if(key_status[key_conv_table[i][0]]) {
-					key_status[key_conv_table[i][1]] = 1;
-					key_status[0x10] = 1;
-				}
-			}
-			key_status[0x15] = key_kana;
-		}
-		else if(addr == 0x0a) {
-			key_status_bak[6] = key_status[0x14];
-			key_status[0x14] = key_caps;
-		}
 		for(int i = 0; i < 8; i++) {
 			if(key_status[key_table[addr & 0x0f][i]]) {
 				val &= ~(1 << i);
 			}
 		}
-		if(addr == 8 || addr == 9) {
-			for(int i = 0; i < 6; i++) {
-				key_status[key_conv_table[i][1]] = key_status_bak[i];
-			}
-			key_status[0x10] = key_status_bak[6];
-			key_status[0x15] = key_status_bak[7];
-		}
-		else if(addr == 0x0a) {
-			key_status[0x14] = key_status_bak[6];
-		}
-		else if(addr == 0x0e) {
+		if(addr == 0x0e) {
 			val &= ~0x80; // http://www.maroon.dti.ne.jp/youkan/pc88/iomap.html
 		}
 		return val;
@@ -813,7 +855,7 @@ uint32 PC88::read_io8tmp(uint32 addr)
 	case 0x32:
 		return port32;
 	case 0x40:
-		return (vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0) | 0xc0;
+		return (vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0) | (usart_dcd ? 4 : 0) | 0xc0;
 	case 0x44:
 		val = d_opn->read_io8(addr);
 		if(opn_busy) {
@@ -1018,23 +1060,77 @@ void PC88::update_tvram_memmap()
 
 void PC88::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_PC88_SOUND_IRQ) {
+	if(id == SIG_PC88_USART_IRQ) {
+		request_intr(IRQ_USART, ((data & mask) != 0));
+	}
+	else if(id == SIG_PC88_SOUND_IRQ) {
 		request_intr(IRQ_SOUND, ((data & mask) != 0));
+	}
+	else if(id == SIG_PC88_USART_OUT) {
+		if(cmt_rec && (text_mode & 8)) {
+			// recv from sio
+			cmt_buffer[cmt_bufptr++] = data & mask;
+			if(cmt_bufptr >= DATAREC_BUFFER_SIZE) {
+				cmt_fio->Fwrite(cmt_buffer, cmt_bufptr, 1);
+				cmt_bufptr = 0;
+			}
+		}
 	}
 }
 
 void PC88::event_callback(int event_id, int err)
 {
-	if(event_id == EVENT_TIMER) {
+	switch(event_id) {
+	case EVENT_TIMER:
 		request_intr(IRQ_TIMER, true);
-	}
-	else if(event_id == EVENT_BUSREQ) {
+		break;
+	case EVENT_BUSREQ:
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
+		break;
+	case EVENT_CMT_SEND:
+		// check data carrier
+		if(cmt_play && (text_mode & 8) && cmt_bufptr < cmt_bufcnt) {
+			// detect the data carrier at the top of next block
+			if(check_data_carrier(&cmt_buffer[cmt_bufptr])) {
+//				usart_dcd = true;
+				register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
+				break;
+			}
+		}
+	case EVENT_CMT_DCD:
+		// send data to sio
+//		usart_dcd = false;
+		d_sio->write_signal(SIG_I8251_RECV, cmt_buffer[cmt_bufptr++], 0xff);
+		if(cmt_bufptr < cmt_bufcnt) {
+			register_event(this, EVENT_CMT_SEND, 5000, false, &cmt_register_id);
+			break;
+		}
+		cmt_register_id = -1;
+		break;
 	}
 }
 
 void PC88::event_frame()
 {
+	// update key status
+	memcpy(key_status, emu->key_buffer(), sizeof(key_status));
+	
+	for(int i = 0; i < 6; i++) {
+		// INS or F6-F10 -> SHIFT + DEL or F1-F5
+		if(key_status[key_conv_table[i][0]]) {
+			key_status[key_conv_table[i][1]] = 1;
+			key_status[0x10] = 1;
+		}
+	}
+	if(key_status[0x11] && (key_status[0xbc] || key_status[0xbe])) {
+		// CTRL + "," or "." -> NumPad "," or "."
+		key_status[0x6c] = key_status[0xbc];
+		key_status[0x6e] = key_status[0xbe];
+		key_status[0x11] = key_status[0xbc] = key_status[0xbe] = 0;
+	}
+	key_status[0x14] = key_caps;
+	key_status[0x15] = key_kana;
+	
 	// update blink counter
 	if(!(blink_counter++ < blink_rate)) {
 		blink_on = !blink_on;
@@ -1101,10 +1197,113 @@ void PC88::key_down(int code, bool repeat)
 	}
 }
 
+void PC88::play_datarec(_TCHAR* file_path)
+{
+	close_datarec();
+	
+	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		cmt_fio->Fseek(0, FILEIO_SEEK_END);
+		cmt_bufcnt = cmt_fio->Ftell();
+		cmt_bufptr = 0;
+		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
+		memset(cmt_buffer, 0, sizeof(cmt_buffer));
+		cmt_fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
+		
+		if(strncmp((char *)cmt_buffer, "PC-8801 Tape Image(T88)", 23) == 0) {
+			// this is t88 format
+			int ptr = 24, tag = -1, len = 0;
+			while(!(tag == 0 && len == 0)) {
+				tag = cmt_buffer[ptr + 0] | (cmt_buffer[ptr + 1] << 8);
+				len = cmt_buffer[ptr + 2] | (cmt_buffer[ptr + 3] << 8);
+				ptr += 4;
+				
+				if(tag == 0x0101) {
+					// data tag
+					for(int i = 12; i < len; i++) {
+						cmt_buffer[cmt_bufptr++] = cmt_buffer[ptr + i];
+					}
+				}
+				else if(tag == 0x0102 || tag == 0x0103) {
+					// data carrier
+				}
+				ptr += len;
+			}
+			cmt_bufcnt = cmt_bufptr;
+			cmt_bufptr = 0;
+		}
+		cmt_play = (cmt_bufcnt != 0);
+		
+		if(cmt_play && (text_mode & 8)) {
+			// start motor and detect the data carrier at the top of tape
+			usart_dcd = true;
+			if(cmt_register_id != -1) {
+				cancel_event(cmt_register_id);
+			}
+			register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
+		}
+	}
+}
+
+void PC88::rec_datarec(_TCHAR* file_path)
+{
+	close_datarec();
+	
+	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		cmt_bufptr = 0;
+		cmt_rec = true;
+	}
+}
+
+void PC88::close_datarec()
+{
+	// close file
+	release_datarec();
+	
+	// clear sio buffer
+	d_sio->write_signal(SIG_I8251_CLEAR, 0, 0);
+}
+
+void PC88::release_datarec()
+{
+	// close file
+	if(cmt_rec && cmt_bufptr) {
+		cmt_fio->Fwrite(cmt_buffer, cmt_bufptr, 1);
+	}
+	if(cmt_play || cmt_rec) {
+		cmt_fio->Fclose();
+	}
+	cmt_play = cmt_rec = false;
+}
+
+bool PC88::now_skip()
+{
+	return (cmt_play && (text_mode & 8) && cmt_bufptr < cmt_bufcnt);
+}
+
+bool PC88::check_data_carrier(uint8 *p)
+{
+	if(p[0] == 0xd3) {
+		for(int i = 1; i < 10; i++) {
+			if(p[i] != p[0]) {
+				return false;
+			}
+		}
+		return true;
+	}
+	else if(p[0] == 0x9c) {
+		for(int i = 1; i < 6; i++) {
+			if(p[i] != p[0]) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 void PC88::draw_screen()
 {
 	memset(text, 0, sizeof(text));
-	memset(graph, 0, sizeof(graph));
 	bool attribs_expanded = false;
 	
 	// render text screen
@@ -1132,6 +1331,9 @@ void PC88::draw_screen()
 			draw_mono_graph();
 		}
 	}
+	else {
+		memset(graph, 8, sizeof(graph));
+	}
 	
 	// update palette
 	if(update_palette) {
@@ -1144,7 +1346,6 @@ void PC88::draw_screen()
 //				palette_graph_pc[i] = RGB_COLOR(palette[i].r << 5, palette[i].g << 5, palette[i].b << 5);
 				palette_graph_pc[i] = RGB_COLOR(pex[palette[i].r], pex[palette[i].g], pex[palette[i].b]);
 			}
-			palette_graph_pc[8] = 0; // non dot in hireso screen
 		}
 		else {
 			// mono
@@ -1152,6 +1353,7 @@ void PC88::draw_screen()
 			palette_graph_pc[0] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			palette_graph_pc[1] = RGB_COLOR(255, 255, 255);
 		}
+		palette_graph_pc[8] = 0; // black
 		update_palette = false;
 	}
 	

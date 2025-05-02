@@ -118,6 +118,14 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
+    POPUP "CMT"
+    BEGIN
+        MENUITEM "Play",                        ID_PLAY_DATAREC
+        MENUITEM "Rec",                         ID_REC_DATAREC
+        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_DATAREC
+    END
     POPUP "Screen"
     BEGIN
         MENUITEM "Rec 60fps",                   ID_SCREEN_REC60

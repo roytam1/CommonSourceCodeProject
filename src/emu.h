@@ -110,15 +110,15 @@ private:
 	uint8 key_status[256];	// windows key code mapping
 #ifdef USE_SHIFT_NUMPAD_KEY
 	uint8 key_converted[256];
-	BOOL key_shift_pressed, key_shift_released;
+	bool key_shift_pressed, key_shift_released;
 #endif
-	BOOL lost_focus;
+	bool lost_focus;
 	
 	uint8 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4-b7 = trigger #1-#4
 	int joy_num;
 	
 	int mouse_status[3];	// x, y, button (b0 = left, b1 = right)
-	BOOL mouse_enabled;
+	bool mouse_enabled;
 	
 #ifdef USE_AUTO_KEY
 	FIFO* autokey_buffer;
@@ -140,7 +140,7 @@ private:
 	int screen_width_aspect, screen_height_aspect;
 	int window_width, window_height;
 	int display_width, display_height;
-	BOOL screen_size_changed;
+	bool screen_size_changed;
 	
 	HDC hdcDibSource;
 	scrntype* lpBmpSource;
@@ -152,12 +152,12 @@ private:
 	int stretched_width, stretched_height;
 	int stretch_pow_x, stretch_pow_y;
 	int screen_dest_x, screen_dest_y;
-	BOOL stretch_screen;
+	bool stretch_screen;
 	
 	// update flags
-	BOOL first_draw_screen;
-	BOOL first_invalidate;
-	BOOL self_invalidate;
+	bool first_draw_screen;
+	bool first_invalidate;
+	bool self_invalidate;
 	
 	// screen buffer
 	HDC hdcDib;
@@ -195,12 +195,12 @@ private:
 	LPDIRECT3DSURFACE9 lpd3d9Surface;
 	LPDIRECT3DSURFACE9 lpd3d9OffscreenSurface;
 	scrntype *lpd3d9Buffer;
-	BOOL render_to_d3d9Buffer;
+	bool render_to_d3d9Buffer;
 #endif
-	BOOL wait_vsync;
+	bool wait_vsync;
 	
 	// record video
-	BOOL now_rec_vid;
+	bool now_rec_vid;
 	int rec_frames, rec_fps;
 	PAVIFILE pAVIFile;
 	PAVISTREAM pAVIStream;
@@ -210,17 +210,17 @@ private:
 	// ----------------------------------------
 	// sound
 	// ----------------------------------------
-	void initialize_sound(int rate, int samples);
+	void initialize_sound();
 	void release_sound();
 	void update_sound(int* extra_frames);
 	
 	int sound_rate, sound_samples;
-	BOOL sound_ok, sound_started, now_mute;
+	bool sound_ok, sound_started, now_mute;
 	
 	// direct sound
 	LPDIRECTSOUND lpds;
 	LPDIRECTSOUNDBUFFER lpdsb, lpdsp;
-	BOOL first_half;
+	bool first_half;
 	
 	// record sound
 	typedef struct {
@@ -240,21 +240,21 @@ private:
 	} wavheader_t;
 	FILEIO* rec;
 	int rec_bytes;
-	BOOL now_rec_snd;
+	bool now_rec_snd;
 	
 	// ----------------------------------------
-	// disk
+	// floppy disk
 	// ----------------------------------------
 #ifdef USE_FD1
+	void initialize_disk_insert();
+	void update_disk_insert();
+	
 	typedef struct {
 		_TCHAR path[_MAX_PATH];
 		int offset;
 		int wait_count;
 	} disk_insert_t;
 	disk_insert_t disk_insert[8];
-	
-	void initialize_disk_insert();
-	void update_disk_insert();
 #endif
 	
 	// ----------------------------------------
@@ -265,7 +265,8 @@ private:
 	void release_media();
 	
 	_TCHAR media_path[MEDIA_MAX][_MAX_PATH];
-	int media_cnt;
+	int media_count;
+	bool media_playing;
 #endif
 	
 	// ----------------------------------------
@@ -283,7 +284,7 @@ private:
 	void update_socket();
 	
 	int soc[SOCKET_MAX];
-	BOOL is_tcp[SOCKET_MAX];
+	bool is_tcp[SOCKET_MAX];
 	struct sockaddr_in udpaddr[SOCKET_MAX];
 	int socket_delay[SOCKET_MAX];
 	char recv_buffer[SOCKET_MAX][SOCKET_BUFFER_MAX];
@@ -300,6 +301,9 @@ private:
 #endif
 #ifdef _DEBUG_FILE
 	FILE* debug;
+#endif
+#ifdef USE_CPU_CLOCK_LOW
+	bool cpu_clock_low;
 #endif
 	_TCHAR app_path[_MAX_PATH];
 	
@@ -357,20 +361,20 @@ public:
 	void load_binary(int drv, _TCHAR* file_path);
 	void save_binary(int drv, _TCHAR* file_path);
 #endif
-	BOOL now_skip();
+	bool now_skip();
 	
 	void start_rec_sound();
 	void stop_rec_sound();
 	void restart_rec_sound();
-	BOOL now_rec_sound() {
+	bool now_rec_sound() {
 		return now_rec_snd;
 	}
 	
 	void capture_screen();
-	void start_rec_video(int fps, BOOL show_dialog);
+	void start_rec_video(int fps, bool show_dialog);
 	void stop_rec_video();
 	void restart_rec_video();
-	BOOL now_rec_video() {
+	bool now_rec_video() {
 		return now_rec_vid;
 	}
 	
@@ -380,7 +384,7 @@ public:
 	void key_down(int code, bool repeat);
 	void key_up(int code);
 	void key_lost_focus() {
-		lost_focus = TRUE;
+		lost_focus = true;
 	}
 #ifdef USE_BUTTON
 	void press_button(int num);
@@ -389,14 +393,14 @@ public:
 	void enable_mouse();
 	void disenable_mouse();
 	void toggle_mouse();
-	BOOL get_mouse_enabled() {
+	bool get_mouse_enabled() {
 		return mouse_enabled;
 	}
 	
 #ifdef USE_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
-	BOOL now_auto_key() {
+	bool now_auto_key() {
 		return (autokey_phase != 0);
 	}
 #endif
@@ -404,12 +408,12 @@ public:
 	// screen
 	int get_window_width(int mode);
 	int get_window_height(int mode);
-	void set_display_size(int width, int height, BOOL window_mode);
+	void set_display_size(int width, int height, bool window_mode);
 	void draw_screen();
 	void update_screen(HDC hdc);
 #ifdef USE_BITMAP
 	void reload_bitmap() {
-		first_invalidate = TRUE;
+		first_invalidate = true;
 	}
 #endif
 	

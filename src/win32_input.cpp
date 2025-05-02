@@ -25,7 +25,7 @@ void EMU::initialize_input()
 	joy_num = joyGetNumDevs();
 	
 	// mouse emulation is disenabled
-	mouse_enabled = FALSE;
+	mouse_enabled = false;
 	
 	// initialize keycode convert table
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -47,7 +47,7 @@ void EMU::initialize_input()
 #ifdef USE_SHIFT_NUMPAD_KEY
 	// initialize shift+numpad conversion
 	memset(key_converted, 0, sizeof(key_converted));
-	key_shift_pressed = key_shift_released = FALSE;
+	key_shift_pressed = key_shift_released = false;
 #endif
 #ifdef USE_AUTO_KEY
 	// initialize autokey
@@ -55,7 +55,7 @@ void EMU::initialize_input()
 	autokey_buffer->clear();
 	autokey_phase = autokey_shift = 0;
 #endif
-	lost_focus = FALSE;
+	lost_focus = false;
 }
 
 void EMU::release_input()
@@ -99,7 +99,7 @@ void EMU::update_input()
 			if(!(GetAsyncKeyState(VK_RSHIFT) & 0x8000)) key_status[VK_RSHIFT] &= 0x7f;
 		}
 	}
-	key_shift_pressed = key_shift_released = FALSE;
+	key_shift_pressed = key_shift_released = false;
 #endif
 	
 	// release keys
@@ -132,7 +132,7 @@ void EMU::update_input()
 			}
 		}
 	}
-	lost_focus = FALSE;
+	lost_focus = false;
 	
 	// update joystick status
 	memset(joy_status, 0, sizeof(joy_status));
@@ -236,7 +236,7 @@ static const int numpad_table[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 //	0x00, 0x69, 0x63, 0x61, 0x67, 0x64, 0x68, 0x66, 0x62, 0x00, 0x00, 0x00, 0x00, 0x60, 0x6e, 0x00,
-	0x00, 0x69, 0x63, 0x61, 0x67, 0x64, 0x68, 0x66, 0x62, 0x00, 0x00, 0x00, 0x00, 0x60, 0x00, 0x00,	// remove shift + comma
+	0x00, 0x69, 0x63, 0x61, 0x67, 0x64, 0x68, 0x66, 0x62, 0x00, 0x00, 0x00, 0x00, 0x60, 0x00, 0x00,	// remove shift + period
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -255,7 +255,7 @@ static const int numpad_table[256] = {
 
 void EMU::key_down(int code, bool repeat)
 {
-	BOOL keep_frames = FALSE;
+	bool keep_frames = false;
 	
 	if(code == VK_SHIFT) {
 		if(GetAsyncKeyState(VK_LSHIFT) & 0x8000) key_status[VK_LSHIFT] = 0x80;
@@ -274,25 +274,25 @@ void EMU::key_down(int code, bool repeat)
 	}
 	else if(code == 0xf0) {
 		code = VK_CAPITAL;
-		keep_frames = TRUE;
+		keep_frames = true;
 	}
 	else if(code == 0xf2) {
 		code = VK_KANA;
-		keep_frames = TRUE;
+		keep_frames = true;
 	}
 	else if(code == 0xf3 || code == 0xf4) {
 		code = VK_KANJI;
-		keep_frames = TRUE;
+		keep_frames = true;
 	}
 #ifdef USE_SHIFT_NUMPAD_KEY
 	if(code == VK_SHIFT) {
-		key_shift_pressed = TRUE;
+		key_shift_pressed = true;
 		return;
 	}
 	else if(numpad_table[code] != 0) {
 		if(key_shift_pressed || key_shift_released) {
 			key_converted[code] = 1;
-			key_shift_pressed = TRUE;
+			key_shift_pressed = true;
 			code = numpad_table[code];
 		}
 	}
@@ -334,8 +334,8 @@ void EMU::key_up(int code)
 	}
 #ifdef USE_SHIFT_NUMPAD_KEY
 	if(code == VK_SHIFT) {
-		key_shift_pressed = FALSE;
-		key_shift_released = TRUE;
+		key_shift_pressed = false;
+		key_shift_released = true;
 		return;
 	}
 	else if(key_converted[code] != 0) {
@@ -385,7 +385,7 @@ void EMU::enable_mouse()
 		ClientToScreen(main_window_handle, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
-	mouse_enabled = TRUE;
+	mouse_enabled = true;
 }
 
 void EMU::disenable_mouse()
@@ -394,7 +394,7 @@ void EMU::disenable_mouse()
 	if(mouse_enabled) {
 		ShowCursor(TRUE);
 	}
-	mouse_enabled = FALSE;
+	mouse_enabled = false;
 }
 
 void EMU::toggle_mouse()

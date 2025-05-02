@@ -87,7 +87,7 @@ void EMU::update_socket()
 
 bool EMU::init_socket_tcp(int ch)
 {
-	is_tcp[ch] = TRUE;
+	is_tcp[ch] = true;
 	
 	if(soc[ch] != INVALID_SOCKET) {
 		disconnect_socket(ch);
@@ -106,7 +106,7 @@ bool EMU::init_socket_tcp(int ch)
 
 bool EMU::init_socket_udp(int ch)
 {
-	is_tcp[ch] = FALSE;
+	is_tcp[ch] = false;
 	
 	disconnect_socket(ch);
 	if((soc[ch] = socket(PF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {

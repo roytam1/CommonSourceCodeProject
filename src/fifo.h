@@ -50,7 +50,7 @@ public:
 		return val;
 	}
 	int read_not_remove(int pt) {
-		if(pt < cnt) {
+		if(pt >= 0 && pt < cnt) {
 			pt += rpt;
 			if(pt >= size) {
 				pt -= size;
@@ -63,10 +63,10 @@ public:
 		return cnt;
 	}
 	bool full() {
-		return (cnt < size) ? false : true;
+		return (cnt == size);
 	}
 	bool empty() {
-		return cnt ? false : true;
+		return (cnt == 0);
 	}
 };
 

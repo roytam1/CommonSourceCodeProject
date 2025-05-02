@@ -30,8 +30,8 @@ WNDPROC buttonWndProc[MAX_BUTTONS];
 #endif
 
 // menu
-BOOL now_menu = FALSE;
-BOOL now_menuloop = FALSE;
+bool now_menu = false;
+bool now_menuloop = false;
 
 void update_menu(HWND hWnd, HMENU hMenu, int pos);
 
@@ -40,7 +40,7 @@ void show_menu_bar(HWND hWnd)
 	if(!now_menu) {
 		HMENU hMenu = LoadMenu((HINSTANCE)GetModuleHandle(0), MAKEINTRESOURCE(IDR_MENU1));
 		SetMenu(hWnd, hMenu);
-		now_menu = TRUE;
+		now_menu = true;
 	}
 }
 
@@ -50,7 +50,7 @@ void hide_menu_bar(HWND hWnd)
 		HMENU hMenu = GetMenu(hWnd);
 		SetMenu(hWnd, NULL);
 		DestroyMenu(hMenu);
-		now_menu = FALSE;
+		now_menu = false;
 	}
 }
 
@@ -67,13 +67,13 @@ void close_disk(int drv);
 void open_quickdisk_dialog(HWND hWnd);
 #endif
 #ifdef USE_DATAREC
-void open_datarec_dialog(HWND hWnd, BOOL play);
+void open_datarec_dialog(HWND hWnd, bool play);
 #endif
 #ifdef USE_MEDIA
 void open_media_dialog(HWND hWnd);
 #endif
 #ifdef USE_BINARY_FILE1
-void open_binary_dialog(HWND hWnd, int drv, BOOL load);
+void open_binary_dialog(HWND hWnd, int drv, bool load);
 #endif
 
 void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
@@ -130,15 +130,15 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	return NULL;
 }
 
-BOOL check_file_extension(_TCHAR* filename, _TCHAR* ext)
+bool check_file_extension(_TCHAR* filename, _TCHAR* ext)
 {
 	int nam_len = _tcslen(filename);
 	int ext_len = _tcslen(ext);
 	
 	if(nam_len >= ext_len && _tcsncicmp(&filename[nam_len - ext_len], ext, ext_len) == 0) {
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 #define UPDATE_HISTORY(path, recent) { \
@@ -176,7 +176,7 @@ int desktop_width;
 int desktop_height;
 int desktop_bpp;
 int prev_window_mode = 0;
-BOOL now_fullscreen = FALSE;
+bool now_fullscreen = false;
 
 int window_mode_count;
 int screen_mode_count;
@@ -265,10 +265,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			break;
 		}
 		if(dev.dmPelsWidth >= WINDOW_WIDTH && dev.dmPelsHeight >= WINDOW_HEIGHT && dev.dmPelsWidth >= 640 && dev.dmPelsHeight >= 480) {
-			BOOL found = FALSE;
+			bool found = false;
 			for(int j = 0; j < screen_mode_count; j++) {
 				if(screen_mode_width[j] == dev.dmPelsWidth && screen_mode_height[j] == dev.dmPelsHeight) {
-					found = TRUE;
+					found = true;
 					break;
 				}
 			}
@@ -320,9 +320,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	// initialize emulation core
 	emu = new EMU(hWnd, hInstance);
 #ifdef MIN_WINDOW_WIDTH
-	emu->set_display_size(WINDOW_WIDTH < MIN_WINDOW_WIDTH ? MIN_WINDOW_WIDTH : WINDOW_WIDTH, WINDOW_HEIGHT, TRUE);
+	emu->set_display_size(WINDOW_WIDTH < MIN_WINDOW_WIDTH ? MIN_WINDOW_WIDTH : WINDOW_WIDTH, WINDOW_HEIGHT, true);
 #else
-	emu->set_display_size(WINDOW_WIDTH, WINDOW_HEIGHT, TRUE);
+	emu->set_display_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
 #endif
 	
 	// open command line path
@@ -514,7 +514,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		if(now_fullscreen) {
 			ChangeDisplaySettings(NULL, 0);
 		}
-		now_fullscreen = FALSE;
+		now_fullscreen = false;
 #ifdef USE_BUTTON
 		for(int i = 0; i < MAX_FONT_SIZE; i++) {
 			if(hFont[i]) {
@@ -592,13 +592,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		update_menu(hWnd, (HMENU)wParam, LOWORD(lParam));
 		break;
 	case WM_ENTERMENULOOP:
-		now_menuloop = TRUE;
+		now_menuloop = true;
 		break;
 	case WM_EXITMENULOOP:
 		if(now_fullscreen && now_menuloop) {
 			hide_menu_bar(hWnd);
 		}
-		now_menuloop = FALSE;
+		now_menuloop = false;
 		break;
 	case WM_MOUSEMOVE:
 		if(now_fullscreen && !now_menuloop) {
@@ -614,7 +614,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_RESIZE:
 		if(emu) {
 			if(now_fullscreen) {
-				emu->set_display_size(-1, -1, FALSE);
+				emu->set_display_size(-1, -1, false);
 			}
 			else {
 				set_window(hWnd, config.window_mode);
@@ -942,12 +942,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_DATAREC
 		case ID_PLAY_DATAREC:
 			if(emu) {
-				open_datarec_dialog(hWnd, TRUE);
+				open_datarec_dialog(hWnd, true);
 			}
 			break;
 		case ID_REC_DATAREC:
 			if(emu) {
-				open_datarec_dialog(hWnd, FALSE);
+				open_datarec_dialog(hWnd, false);
 			}
 			break;
 		case ID_CLOSE_DATAREC:
@@ -1020,12 +1020,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		#define BINARY_MENU_ITEMS(drv, ID_LOAD_BINARY, ID_SAVE_BINARY, ID_RECENT_BINARY) \
 		case ID_LOAD_BINARY: \
 			if(emu) { \
-				open_binary_dialog(hWnd, drv, TRUE); \
+				open_binary_dialog(hWnd, drv, true); \
 			} \
 			break; \
 		case ID_SAVE_BINARY: \
 			if(emu) { \
-				open_binary_dialog(hWnd, drv, FALSE); \
+				open_binary_dialog(hWnd, drv, false); \
 			} \
 			break; \
 		case ID_RECENT_BINARY + 0: \
@@ -1058,7 +1058,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				static int fps[3] = {60, 30, 15};
 				static int delay[3][3] = {{16, 17, 17}, {33, 33, 34}, {66, 67, 67}};
 				no = LOWORD(wParam) - ID_SCREEN_REC60;
-				emu->start_rec_video(fps[no], TRUE);
+				emu->start_rec_video(fps[no], true);
 				emu->start_rec_sound();
 				memcpy(rec_delay, delay[no], sizeof(rec_delay));
 				rec_next_time = rec_accum_time = 0;
@@ -1145,7 +1145,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->update_config();
 #ifdef USE_SCREEN_ROTATE
 				if(now_fullscreen) {
-					emu->set_display_size(-1, -1, FALSE);
+					emu->set_display_size(-1, -1, false);
 				}
 				else {
 					set_window(hWnd, prev_window_mode);
@@ -1332,7 +1332,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 #ifdef USE_AUTO_KEY
 		// auto key
-		BOOL now_paste = TRUE, now_stop = TRUE;
+		bool now_paste = true, now_stop = true;
 		if(emu) {
 			now_paste = emu->now_auto_key();
 			now_stop = !now_paste;
@@ -1345,14 +1345,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_CART
 	else if(pos == MENU_POS_CART) {
 		// cartridge
-		BOOL flag = FALSE;
+		bool flag = false;
 		for(int i = 0; i < 8; i++) {
 			DeleteMenu(hMenu, ID_RECENT_CART + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_cart_path[i], _T(""))) {
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_CART + i, config.recent_cart_path[i]);
-				flag = TRUE;
+				flag = true;
 			}
 		}
 		if(!flag) {
@@ -1363,7 +1363,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_FD1
 	else if(pos == MENU_POS_FD1) {
 		#define UPDATE_MENU_FD(drv, ID_RECENT_FD, ID_D88_FILE_PATH, ID_SELECT_D88_BANK) \
-		BOOL flag = FALSE; \
+		bool flag = false; \
 		while(DeleteMenu(hMenu, 3, MF_BYPOSITION) != 0) {} \
 		if(d88_file[drv].bank_num > 1) { \
 			AppendMenu(hMenu, MF_STRING | MF_DISABLED, ID_D88_FILE_PATH, d88_file[drv].path); \
@@ -1377,7 +1377,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		for(int i = 0; i < 8; i++) { \
 			if(_tcscmp(config.recent_disk_path[drv][i], _T(""))) { \
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD + i, config.recent_disk_path[drv][i]); \
-				flag = TRUE; \
+				flag = true; \
 			} \
 		} \
 		if(!flag) { \
@@ -1420,14 +1420,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_QUICKDISK
 	else if(pos == MENU_POS_QUICKDISK) {
 		// quick disk drive
-		BOOL flag = FALSE;
+		bool flag = false;
 		for(int i = 0; i < 8; i++) {
 			DeleteMenu(hMenu, ID_RECENT_QUICKDISK + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_quickdisk_path[i], _T(""))) {
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_QUICKDISK + i, config.recent_quickdisk_path[i]);
-				flag = TRUE;
+				flag = true;
 			}
 		}
 		if(!flag) {
@@ -1438,14 +1438,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_DATAREC
 	else if(pos == MENU_POS_DATAREC) {
 		// data recorder
-		BOOL flag = FALSE;
+		bool flag = false;
 		for(int i = 0; i < 8; i++) {
 			DeleteMenu(hMenu, ID_RECENT_DATAREC + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_datarec_path[i], _T(""))) {
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC + i, config.recent_datarec_path[i]);
-				flag = TRUE;
+				flag = true;
 			}
 		}
 		if(!flag) {
@@ -1456,14 +1456,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_MEDIA
 	else if(pos == MENU_POS_MEDIA) {
 		// media
-		BOOL flag = FALSE;
+		bool flag = false;
 		for(int i = 0; i < 8; i++) {
 			DeleteMenu(hMenu, ID_RECENT_MEDIA + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_media_path[i], _T(""))) {
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA + i, config.recent_media_path[i]);
-				flag = TRUE;
+				flag = true;
 			}
 		}
 		if(!flag) {
@@ -1475,14 +1475,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 	else if(pos == MENU_POS_BINARY1) {
 		// binary #1
 		#define UPDATE_MENU_BINARY(drv, ID_RECENT_BINARY) \
-		BOOL flag = FALSE; \
+		bool flag = false; \
 		for(int i = 0; i < 8; i++) { \
 			DeleteMenu(hMenu, ID_RECENT_BINARY + i, MF_BYCOMMAND); \
 		} \
 		for(int i = 0; i < 8; i++) { \
 			if(_tcscmp(config.recent_binary_path[drv][i], _T(""))) { \
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_BINARY + i, config.recent_binary_path[drv][i]); \
-				flag = TRUE; \
+				flag = true; \
 			} \
 		} \
 		if(!flag) { \
@@ -1500,7 +1500,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_SCREEN
 	else if(pos == MENU_POS_SCREEN) {
 		// recording
-		BOOL now_rec = TRUE, now_stop = TRUE;
+		bool now_rec = true, now_stop = true;
 		if(emu) {
 			now_rec = emu->now_rec_video();
 			now_stop = !now_rec;
@@ -1568,7 +1568,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_SOUND
 	else if(pos == MENU_POS_SOUND) {
 		// sound menu
-		BOOL now_rec = FALSE, now_stop = FALSE;
+		bool now_rec = false, now_stop = false;
 		if(emu) {
 			now_rec = emu->now_rec_sound();
 			now_stop = !now_rec;
@@ -1640,7 +1640,7 @@ void open_disk(int drv, _TCHAR* path, int bank)
 			try {
 				fseek(fp, 0, SEEK_END);
 				int file_size = ftell(fp), file_offset = 0;
-				while(file_offset < file_size && d88_file[drv].bank_num < MAX_D88_BANKS) {
+				while(file_offset + 0x2b0 <= file_size && d88_file[drv].bank_num < MAX_D88_BANKS) {
 					d88_file[drv].bank[d88_file[drv].bank_num].offset = file_offset;
 					fseek(fp, file_offset, SEEK_SET);
 #ifdef _UNICODE
@@ -1710,16 +1710,21 @@ void open_quickdisk_dialog(HWND hWnd)
 #endif
 
 #ifdef USE_DATAREC
-void open_datarec_dialog(HWND hWnd, BOOL play)
+void open_datarec_dialog(HWND hWnd, bool play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#if defined(DATAREC_BINARY_ONLY)
-		_T("Supported Files (*.cas)\0*.cas\0All Files (*.*)\0*.*\0\0"),
+#if defined(DATAREC_PC8801)
+		play ? _T("Supported Files (*.cas;*.cmt;*.t88)\0*.cas;*.cmt;*.t88\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
+#elif defined(DATAREC_BINARY_ONLY)
+		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #elif defined(DATAREC_TAP)
-		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0") : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(DATAREC_MZT)
-		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0") : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif
@@ -1755,7 +1760,7 @@ void open_media_dialog(HWND hWnd)
 #endif
 
 #ifdef USE_BINARY_FILE1
-void open_binary_dialog(HWND hWnd, int drv, BOOL load)
+void open_binary_dialog(HWND hWnd, int drv, bool load)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
@@ -1805,7 +1810,7 @@ void set_window(HWND hWnd, int mode)
 			ChangeDisplaySettings(NULL, 0);
 			SetWindowLong(hWnd, GWL_STYLE, style);
 			SetWindowPos(hWnd, HWND_TOP, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_SHOWWINDOW);
-			now_fullscreen = FALSE;
+			now_fullscreen = false;
 			
 			// show menu
 			show_menu_bar(hWnd);
@@ -1816,7 +1821,7 @@ void set_window(HWND hWnd, int mode)
 		config.window_mode = prev_window_mode = mode;
 		
 		// set screen size to emu class
-		emu->set_display_size(width, height, TRUE);
+		emu->set_display_size(width, height, true);
 	}
 	else if(!now_fullscreen) {
 		// fullscreen
@@ -1838,7 +1843,7 @@ void set_window(HWND hWnd, int mode)
 			SetWindowLong(hWnd, GWL_STYLE, WS_VISIBLE);
 			SetWindowPos(hWnd, HWND_TOP, 0, 0, width, height, SWP_SHOWWINDOW);
 			SetCursorPos(width / 2, height / 2);
-			now_fullscreen = TRUE;
+			now_fullscreen = true;
 			if(mode == -1) {
 				for(int i = 0; i < screen_mode_count; i++) {
 					if(screen_mode_width[i] == desktop_width && screen_mode_height[i] == desktop_height) {
@@ -1853,7 +1858,7 @@ void set_window(HWND hWnd, int mode)
 			hide_menu_bar(hWnd);
 			
 			// set screen size to emu class
-			emu->set_display_size(width, height, FALSE);
+			emu->set_display_size(width, height, false);
 		}
 	}
 }

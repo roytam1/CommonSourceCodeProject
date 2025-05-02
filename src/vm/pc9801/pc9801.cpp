@@ -518,6 +518,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
 	pc88opn->set_context_irq(pc88, SIG_PC88_SOUND_IRQ, 1);
+	pc88sio->set_context_rxrdy(pc88, SIG_PC88_USART_IRQ, 1);
+	pc88sio->set_context_out(pc88, SIG_PC88_USART_OUT);
 	
 	pc88sub->set_context_cpu(pc88cpu_sub);
 	pc88sub->set_context_fdc(pc88fdc_sub);
@@ -795,7 +797,7 @@ void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 	if(drv == 0 || drv == 1) {
 		fdc->open_disk(drv, file_path, offset);
 	}
-	else {
+	else if(drv == 2 || drv == 3) {
 		pc88fdc_sub->open_disk(drv - 2, file_path, offset);
 	}
 #elif defined(SUPPORT_OLD_FDD_IF)
@@ -821,7 +823,7 @@ void VM::close_disk(int drv)
 	if(drv == 0 || drv == 1) {
 		fdc->close_disk(drv);
 	}
-	else {
+	else if(drv == 2 || drv == 3) {
 		pc88fdc_sub->close_disk(drv - 2);
 	}
 #elif defined(SUPPORT_OLD_FDD_IF)
@@ -847,7 +849,7 @@ bool VM::disk_inserted(int drv)
 	if(drv == 0 || drv == 1) {
 		return fdc->disk_inserted(drv);
 	}
-	else {
+	else if(drv == 2 || drv == 3) {
 		return pc88fdc_sub->disk_inserted(drv - 2);
 	}
 #elif defined(SUPPORT_OLD_FDD_IF)
@@ -868,26 +870,47 @@ bool VM::disk_inserted(int drv)
 	return false;
 }
 
-#if defined(SUPPORT_CMT_IF)
+#if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
 void VM::play_datarec(_TCHAR* file_path)
 {
+#if defined(_PC98DO)
+	pc88->play_datarec(file_path);
+#else
 	cmt->play_datarec(file_path);
+#endif
 }
 
 void VM::rec_datarec(_TCHAR* file_path)
 {
+#if defined(_PC98DO)
+	pc88->rec_datarec(file_path);
+#else
 	cmt->rec_datarec(file_path);
+#endif
 }
 
 void VM::close_datarec()
 {
+#if defined(_PC98DO)
+	pc88->close_datarec();
+#else
 	cmt->close_datarec();
+#endif
 }
 #endif
 
 bool VM::now_skip()
 {
-	return false;
+#if defined(_PC98DO)
+	if(boot_mode == 0) {
+#endif
+		return false;
+#if defined(_PC98DO)
+	}
+	else {
+		return pc88->now_skip();
+	}
+#endif
 }
 
 void VM::update_config()

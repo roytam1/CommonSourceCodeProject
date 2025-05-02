@@ -108,10 +108,8 @@ mkdir build\mz6500
 copy Release\mz6500.exe build\mz6500\.
 
 devenv.com pasopia.vcproj /Rebuild Release
-mkdir build\pasopia_t
-copy Release\pasopia.exe build\pasopia_t\.
-mkdir build\pasopia_oa
-copy Release\pasopia.exe build\pasopia_oa\.
+mkdir build\pasopia
+copy Release\pasopia.exe build\pasopia\.
 
 devenv.com pasopia7.vcproj /Rebuild Release
 devenv.com pasopia7lcd.vcproj /Rebuild Release

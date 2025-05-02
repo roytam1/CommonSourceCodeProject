@@ -50,14 +50,18 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	if(!(0 <= config.sound_latency && config.sound_latency < 5)) {
 		config.sound_latency = 1;	// default: 100msec
 	}
-	int frequency = freq_table[config.sound_frequency];
-	int samples = (int)(frequency * late_table[config.sound_latency] + 0.5);
+	sound_rate = freq_table[config.sound_frequency];
+	sound_samples = (int)(sound_rate * late_table[config.sound_latency] + 0.5);
+	
+#ifdef USE_CPU_CLOCK_LOW
+	cpu_clock_low = config.cpu_clock_low;
+#endif
 	
 	// initialize
 	vm = new VM(this);
 	initialize_input();
 	initialize_screen();
-	initialize_sound(frequency, samples);
+	initialize_sound();
 #ifdef USE_FD1
 	initialize_disk_insert();
 #endif
@@ -67,6 +71,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
+	vm->initialize_sound(sound_rate, sound_samples);
 	vm->reset();
 }
 
@@ -81,9 +86,7 @@ EMU::~EMU()
 #ifdef USE_SOCKET
 	release_socket();
 #endif
-	if(vm) {
-		delete vm;
-	}
+	delete vm;
 #ifdef _DEBUG_LOG
 	close_debug();
 #endif
@@ -128,8 +131,37 @@ int EMU::run()
 
 void EMU::reset()
 {
-	// reset virtual machine
-	vm->reset();
+#ifdef USE_CPU_CLOCK_LOW
+	if(cpu_clock_low != config.cpu_clock_low) {
+		// stop sound
+		if(sound_ok && sound_started) {
+			lpdsb->Stop();
+			sound_started = false;
+		}
+		// reinitialize virtual machine
+		delete vm;
+		vm = new VM(this);
+		vm->initialize_sound(sound_rate, sound_samples);
+		vm->reset();
+		
+		// restore inserted floppy disks
+#ifdef USE_FD1
+		for(int drv = 0; drv < 8; drv++) {
+			if(disk_insert[drv].path[0] != _T('\0')) {
+				vm->open_disk(drv, disk_insert[drv].path, disk_insert[drv].offset);
+			}
+		}
+#endif
+		cpu_clock_low = config.cpu_clock_low;
+	}
+	else {
+#endif
+		// reset virtual machine
+		vm->reset();
+#ifdef USE_CPU_CLOCK_LOW
+	}
+#endif
+	
 #ifdef USE_MEDIA
 	stop_media();
 #endif
@@ -249,16 +281,17 @@ void EMU::open_disk(int drv, _TCHAR* file_path, int offset)
 			disk_insert[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
 		}
-		_tcscpy(disk_insert[drv].path, file_path);
-		disk_insert[drv].offset = offset;
 	}
 	else {
 		vm->open_disk(drv, file_path, offset);
 	}
+	_tcscpy(disk_insert[drv].path, file_path);
+	disk_insert[drv].offset = offset;
 }
 void EMU::close_disk(int drv)
 {
 	vm->close_disk(drv);
+	disk_insert[drv].path[0] = _T('\0');
 }
 void EMU::initialize_disk_insert()
 {
@@ -311,16 +344,6 @@ void EMU::push_stop()
 }
 #endif
 
-BOOL EMU::now_skip()
-{
-	return (BOOL)vm->now_skip();
-}
-
-void EMU::update_config()
-{
-	vm->update_config();
-}
-
 #ifdef USE_BINARY_FILE1
 void EMU::load_binary(int drv, _TCHAR* file_path)
 {
@@ -331,3 +354,13 @@ void EMU::save_binary(int drv, _TCHAR* file_path)
 	vm->save_binary(drv, file_path);
 }
 #endif
+
+bool EMU::now_skip()
+{
+	return vm->now_skip();
+}
+
+void EMU::update_config()
+{
+	vm->update_config();
+}

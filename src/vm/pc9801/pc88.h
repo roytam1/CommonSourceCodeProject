@@ -1,5 +1,6 @@
 /*
 	NEC PC-98DO Emulator 'ePC-98DO'
+	NEC PC-8801MA Emulator 'ePC-8801MA'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -15,7 +16,11 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_PC88_SOUND_IRQ	0
+#define SIG_PC88_USART_IRQ	0
+#define SIG_PC88_SOUND_IRQ	1
+#define SIG_PC88_USART_OUT	2
+
+#define DATAREC_BUFFER_SIZE	0x40000
 
 class PC88 : public DEVICE
 {
@@ -67,6 +72,8 @@ private:
 	int mem_wait_clocks;
 	int gvram_wait_clocks;
 	int busreq_clocks;
+	
+	bool usart_dcd;
 	bool opn_busy;
 	
 	// crtc
@@ -120,8 +127,7 @@ private:
 	bool dma_hl;
 	
 	// keyboard
-	uint8 *key_status;
-	uint8 key_status_bak[8];
+	uint8 key_status[256];
 	uint8 key_caps, key_kana;
 	
 	// joystick & mouse
@@ -146,13 +152,25 @@ private:
 	void request_intr(int level, bool status);
 	void update_intr();
 	
+	// data recorder
+	FILEIO *cmt_fio;
+	int cmt_bufptr, cmt_bufcnt;
+	uint8 cmt_buffer[DATAREC_BUFFER_SIZE];
+	bool cmt_play, cmt_rec;
+	int cmt_register_id;
+	
+	void release_datarec();
+	bool check_data_carrier(uint8* p);
+	
 public:
 	PC88(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~PC88() {}
 	
 	// common functions
 	void initialize();
+	void release();
 	void reset();
+	
 #ifdef Z80_MEMORY_WAIT
 	void write_data8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_data8w(uint32 addr, int* wait);
@@ -196,6 +214,12 @@ public:
 		d_sio = device;
 	}
 	void key_down(int code, bool repeat);
+	
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
+	void close_datarec();
+	bool now_skip();
+	
 	void draw_screen();
 };
 

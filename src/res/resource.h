@@ -529,8 +529,9 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
+#define MENU_POS_DATAREC                3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
 #endif
 
 // NEC PC-9801
@@ -577,8 +578,9 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_SCREEN                 5
-#define MENU_POS_SOUND                  6
+#define MENU_POS_DATAREC                5
+#define MENU_POS_SCREEN                 6
+#define MENU_POS_SOUND                  7
 #endif
 
 // NEC PC-98HA

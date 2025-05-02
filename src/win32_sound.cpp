@@ -14,12 +14,9 @@
 #define DSOUND_BUFFER_SIZE (DWORD)(sound_samples * 8)
 #define DSOUND_BUFFER_HALF (DWORD)(sound_samples * 4)
 
-void EMU::initialize_sound(int rate, int samples)
+void EMU::initialize_sound()
 {
-	sound_rate = rate;
-	sound_samples = samples;
-	vm->initialize_sound(sound_rate, sound_samples);
-	sound_ok = sound_started = now_mute = now_rec_snd = FALSE;
+	sound_ok = sound_started = now_mute = now_rec_snd = false;
 	
 	// initialize direct sound
 	PCMWAVEFORMAT pcmwf;
@@ -68,7 +65,7 @@ void EMU::initialize_sound(int rate, int samples)
 		return;
 	}
 	
-	sound_ok = first_half = TRUE;
+	sound_ok = first_half = true;
 }
 
 void EMU::release_sound()
@@ -94,7 +91,7 @@ void EMU::release_sound()
 void EMU::update_sound(int* extra_frames)
 {
 	*extra_frames = 0;
-	now_mute = FALSE;
+	now_mute = false;
 	
 	if(sound_ok) {
 		DWORD play_c, write_c, offset, size1, size2;
@@ -103,7 +100,7 @@ void EMU::update_sound(int* extra_frames)
 		// start play
 		if(!sound_started) {
 			lpdsb->Play(0, 0, DSBPLAY_LOOPING);
-			sound_started = TRUE;
+			sound_started = true;
 			return;
 		}
 		
@@ -166,7 +163,7 @@ void EMU::mute_sound()
 		}
 		lpdsb->Unlock(ptr1, size1, ptr2, size2);
 	}
-	now_mute = TRUE;
+	now_mute = true;
 }
 
 void EMU::start_rec_sound()
@@ -183,7 +180,7 @@ void EMU::start_rec_sound()
 			memset(&header, 0, sizeof(wavheader_t));
 			rec->Fwrite(&header, sizeof(wavheader_t), 1);
 			rec_bytes = 0;
-			now_rec_snd = TRUE;
+			now_rec_snd = true;
 		}
 		else {
 			// failed to open the wave file
@@ -216,7 +213,7 @@ void EMU::stop_rec_sound()
 		rec->Fclose();
 		
 		delete rec;
-		now_rec_snd = FALSE;
+		now_rec_snd = false;
 	}
 }
 
@@ -225,7 +222,7 @@ void EMU::restart_rec_sound()
 	if(now_rec_snd) {
 		rec->Fclose();
 		delete rec;
-		now_rec_snd = FALSE;
+		now_rec_snd = false;
 		
 		start_rec_sound();
 	}

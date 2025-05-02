@@ -72,11 +72,11 @@ typedef struct {
 #ifdef USE_DIPSWITCH
 	uint8 dipswitch;
 #endif
-#if defined(_MZ800) || defined(_PASOPIA) || defined(_PC98DO) || defined(_PC8801MA)
-	int boot_mode;
+#ifdef USE_BOOT_MODE
+	int boot_mode;		// MZ-800, PASOPIA, PC-8801MA, PC-98DO
 #endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
-	bool cpu_clock_low;	// 10MHz <-> 8MHz
+#ifdef USE_CPU_CLOCK_LOW
+	bool cpu_clock_low;	// PC-8801MA, PC-9801E, PC-9801VM, PC-98DO
 #endif
 #if defined(_HC80) || defined(_PASOPIA) || defined(_PC8801MA)
 	int device_type;

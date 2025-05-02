@@ -12,17 +12,18 @@
 
 void EMU::initialize_media()
 {
-	media_cnt = 0;
+	media_count = 0;
+	media_playing = false;
 }
 
 void EMU::release_media()
 {
-	stop_media();
+	close_media();
 }
 
 void EMU::open_media(_TCHAR* filename)
 {
-	media_cnt = 0;
+	close_media();
 	
 	// get media root path
 	_TCHAR root[_MAX_PATH], path[_MAX_PATH], tmp[_MAX_PATH];
@@ -41,9 +42,9 @@ void EMU::open_media(_TCHAR* filename)
 			if(l > 0) {
 				tmp[l] = (tmp[l] == '\n') ? '\0' : tmp[l];
 				_stprintf(path, "%s%s", root, tmp);
-				_tcscpy(media_path[media_cnt++], path);
+				_tcscpy(media_path[media_count++], path);
 			}
-			if(media_cnt >= MEDIA_MAX) {
+			if(media_count >= MEDIA_MAX) {
 				break;
 			}
 		}
@@ -54,28 +55,33 @@ void EMU::open_media(_TCHAR* filename)
 void EMU::close_media()
 {
 	stop_media();
-	media_cnt = 0;
+	media_count = 0;
 }
 
 int EMU::media_count()
 {
-	return media_cnt;
+	return media_count;
 }
 
 void EMU::play_media(int trk)
 {
-	if(trk < 1 || media_cnt < trk) {
-		return;
+	stop_media();
+	
+	if(1 <= trk && trk <= media_count) {
+		_TCHAR cmd[_MAX_PATH];
+		_stprintf(cmd, _T("open \"%s\" alias tape"), media_path[trk - 1]);
+		mciSendString(cmd, NULL, 0, NULL);
+		mciSendString(_T("play tape notify"), NULL, 0, main_window_handle);
+		media_playing = true;
 	}
-	_TCHAR cmd[_MAX_PATH];
-	_stprintf(cmd, _T("open \"%s\" alias tape"), media_path[trk - 1]);
-	mciSendString(cmd, NULL, 0, NULL);
-	mciSendString(_T("play tape notify"), NULL, 0, main_window_handle);
 }
 
 void EMU::stop_media()
 {
-	mciSendString(_T("stop tape"), NULL, 0, NULL);
-	mciSendString(_T("close tape"), NULL, 0, NULL);
+	if(media_playing) {
+		mciSendString(_T("stop tape"), NULL, 0, NULL);
+		mciSendString(_T("close tape"), NULL, 0, NULL);
+		media_playing = false;
+	}
 }
 

@@ -93,6 +93,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
 	pc88opn->set_context_irq(pc88, SIG_PC88_SOUND_IRQ, 1);
+	pc88sio->set_context_rxrdy(pc88, SIG_PC88_USART_IRQ, 1);
+	pc88sio->set_context_out(pc88, SIG_PC88_USART_OUT);
 	
 	pc88sub->set_context_cpu(pc88cpu_sub);
 	pc88sub->set_context_fdc(pc88fdc_sub);
@@ -242,9 +244,24 @@ bool VM::disk_inserted(int drv)
 	return pc88fdc_sub->disk_inserted(drv);
 }
 
+void VM::play_datarec(_TCHAR* file_path)
+{
+	pc88->play_datarec(file_path);
+}
+
+void VM::rec_datarec(_TCHAR* file_path)
+{
+	pc88->rec_datarec(file_path);
+}
+
+void VM::close_datarec()
+{
+	pc88->close_datarec();
+}
+
 bool VM::now_skip()
 {
-	return false;
+	return pc88->now_skip();
 }
 
 void VM::update_config()
