@@ -62,7 +62,7 @@ private:
 	uint8 crtc_status;
 	uint8 disp_ctrl, text_mode, text_attrib, graph_mode, line200;
 	
-	bool cursor_on, blink_on, vdisp;
+	bool cursor_on, blink_on, vblank;
 	int blink_counter;
 	uint8 crtc_buffer[120 * 200];
 	int crtc_buffer_ptr;

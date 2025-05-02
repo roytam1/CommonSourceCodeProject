@@ -47,7 +47,7 @@ private:
 #ifdef Z80_M1_CYCLE_WAIT
 	int m1_cycle_wait;
 #endif
-	bool busreq, halt;
+	bool busreq, halt, ei_done;
 	pair regs[6];
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
 	uint16 SP, PC, prevPC, exAF, exBC, exDE, exHL, EA;
@@ -225,6 +225,7 @@ private:
 	
 #ifdef _CPU_DEBUG_LOG
 	int debug_count, debug_ptr;
+	bool dasm_done;
 	uint8 debug_ops[4];
 	_TCHAR debug_dasm[32];
 	

@@ -665,8 +665,7 @@ uint32 PC8801::read_io8(uint32 addr)
 	case 0x32:
 		return port32;
 	case 0x40:
-//		return (vdisp ? 0 : 0x20) | (d_rtc->read_signal(0) ? 0x10 : 0) | (line200 ? 2 : 0);
-		return (vdisp ? 0 : 0x20) | (d_rtc->read_signal(0) ? 0x10 : 0);
+		return (vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0);
 	case 0x44:
 	case 0x45:
 		return d_opn->read_io8(addr);
@@ -787,14 +786,6 @@ void PC8801::event_callback(int event_id, int err)
 
 void PC8801::event_frame()
 {
-	if((crtc_status & 0x10) && (dma_mode & 4) && dma_reg[2].length.sd != 0) {
-		// start dma transfer to crtc
-		dma_status &= ~4;
-	}
-	memset(crtc_buffer, 0, sizeof(crtc_buffer));
-	crtc_buffer_ptr = 0;
-//	request_intr(IRQ_VRTC, false);
-	vdisp = true;
 	
 	// update blink counter
 	int blink_rate = 8 * ((crtc_reg[0][1] >> 6) + 1);
@@ -812,7 +803,18 @@ void PC8801::event_frame()
 void PC8801::event_vline(int v, int clock)
 {
 	int disp_line = line200 ? 200 : 400;
+	
+	if(v == 0) {
+		if((crtc_status & 0x10) && (dma_mode & 4) && dma_reg[2].length.sd != 0) {
+			// start dma transfer to crtc
+			dma_status &= ~4;
+		}
+		memset(crtc_buffer, 0, sizeof(crtc_buffer));
+		crtc_buffer_ptr = 0;
 		
+		vblank = false;
+		request_intr(IRQ_VRTC, false);
+	}
 	if(v < disp_line) {
 		if((crtc_status & 0x10) && (dma_mode & 4) && !(dma_status & 4)) {
 			// bus request
@@ -823,18 +825,16 @@ void PC8801::event_vline(int v, int clock)
 		}
 	}
 	else if(v == disp_line) {
-		if(crtc_status & 0x10) {
-			if((dma_mode & 4) && !(dma_status & 4)) {
-				// run dma transfer to crtc
-				uint16 addr = dma_reg[2].start.w.l;
-				for(int i = 0; i < dma_reg[2].length.sd; i++) {
-					write_dma_io8(0, read_dma_data8(addr++));
-				}
-				dma_status |= 4;
+		if((crtc_status & 0x10) && (dma_mode & 4) && !(dma_status & 4)) {
+			// run dma transfer to crtc
+			uint16 addr = dma_reg[2].start.w.l;
+			for(int i = 0; i < dma_reg[2].length.sd; i++) {
+				write_dma_io8(0, read_dma_data8(addr++));
 			}
-			request_intr(IRQ_VRTC, true);
+			dma_status |= 4;
 		}
-		vdisp = false;
+		vblank = true;
+		request_intr(IRQ_VRTC, true);
 	}
 }
 

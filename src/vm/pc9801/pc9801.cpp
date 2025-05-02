@@ -456,7 +456,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_rw(0x7fdb, pio_mouse, 1);
 	io->set_iomap_alias_rw(0x7fdd, pio_mouse, 2);
 	io->set_iomap_alias_w(0x7fdf, pio_mouse, 3);
+#if !(defined(_PC9801) || defined(_PC9801E))
 	io->set_iomap_single_w(0xbfdb, mouse);
+#endif
 	
 #if defined(_PC98DO)
 	pc88event = new EVENT(this, emu);

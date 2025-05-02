@@ -39,6 +39,7 @@ void MOUSE::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xffff) {
 	case 0xbfdb:
+		// this port is not available on PC-9801/E/F/M
 		freq = data & 3;
 		break;
 	}

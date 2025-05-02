@@ -423,6 +423,7 @@ static const uint8 SZHV_dec[256] = {
 
 #define EI() { \
 	IFF1 = IFF2 = 1; \
+	ei_done = true; \
 }
 
 #define RST(addr) { \
@@ -930,10 +931,16 @@ int Z80::run(int clock)
 
 void Z80::run_one_opecode()
 {
-	uint8 code = FETCHOP();
-	OP(code);
-	if(code == 0xfb) {
+	ei_done = false;
+#ifdef _CPU_DEBUG_LOG
+	dasm_done = false;
+#endif
+	OP(FETCHOP());
+	if(ei_done) {
 		// ei: run next opecode
+#ifdef _CPU_DEBUG_LOG
+		dasm_done = false;
+#endif
 		OP(FETCHOP());
 	}
 	if(intr_req_bit) {
@@ -1852,7 +1859,7 @@ void Z80::OP(uint8 code)
 		break;
 	}
 #ifdef _CPU_DEBUG_LOG
-	if(debug_count) {
+	if(debug_count && !dasm_done) {
 		emu->out_debug(_T("%4x\tAF=%4x BC=%4x DE=%4x HL=%4x IX=%4x IY=%4x SP=%4x [%c%c%c%c%c%c%c%c]\n"),
 			prevPC, _AF, _BC, _DE, _HL, _IX, _IY, _SP,
 			(_AF & CF) ? 'C' : ' ', (_AF & NF) ? 'N' : ' ', (_AF & PF) ? 'P' : ' ', (_AF & XF) ? 'X' : ' ',
@@ -1862,6 +1869,7 @@ void Z80::OP(uint8 code)
 		if(--debug_count == 0) {
 			emu->out_debug(_T("<---------------------------------------------------------------- Z80 DASM ----\n"));
 		}
+		dasm_done = true;
 	}
 #endif
 }
@@ -2933,6 +2941,14 @@ void Z80::OP_DD()
 	case 0xf9: // LD SP, IX
 		SP = IX;
 		break;
+	default:
+#ifdef _CPU_DEBUG_LOG
+		if(debug_count) {
+			emu->out_debug(_T("%4x\tDD\n"), prevPC);
+		}
+#endif
+		OP(code);
+		break;
 	}
 }
 
@@ -3193,6 +3209,14 @@ void Z80::OP_ED()
 		break;
 	case 0xbb: // OTDR
 		OTDR();
+		break;
+	default:
+#ifdef _CPU_DEBUG_LOG
+		if(debug_count) {
+			emu->out_debug(_T("%4x\tED\n"), prevPC);
+		}
+#endif
+		OP(code);
 		break;
 	}
 }
@@ -3489,6 +3513,14 @@ void Z80::OP_FD()
 		break;
 	case 0xf9: // LD SP, IY
 		SP = IY;
+		break;
+	default:
+#ifdef _CPU_DEBUG_LOG
+		if(debug_count) {
+			emu->out_debug(_T("%4x\tFD\n"), prevPC);
+		}
+#endif
+		OP(code);
 		break;
 	}
 }

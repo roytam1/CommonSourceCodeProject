@@ -1,3 +1,12 @@
+2/2/2012
+
+[VM/Z80] fix to consider meaningless $dd/$ed/$fd
+
+[PC9801] disable i/o port to change mouse irq frequency
+[PC9801E] disable i/o port to change mouse irq frequency
+[PC98DO/PC8801] fix to raise vrtc irq when crtc is not started
+
+
 1/31/2012
 
 [VM/UPD1990A] support uPD4990A
