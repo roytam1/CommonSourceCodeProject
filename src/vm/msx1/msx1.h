@@ -1,21 +1,24 @@
 /*
+	ASCII MSX1 Emulator 'yaMSX1'
 	Pioneer PX-7 Emulator 'ePX-7'
 
-	Author : Takeda.Toshiya
-	Date   : 2014.01.09-
+	Author : tanam
+	Date   : 2013.06.29-
+
+	modified by Takeda.Toshiya, umaiboux
 
 	[ virtual machine ]
 */
 
-#ifndef _MSX_H_
-#define _MSX_H_
+#ifndef _MSX1_H_
+#define _MSX1_H_
 
 #ifdef _PX7
 #define DEVICE_NAME		"PIONEER PX-7"
 #define CONFIG_NAME		"px7"
 #else
-#define DEVICE_NAME		"ASCII MSX"
-#define CONFIG_NAME		"msx"
+#define DEVICE_NAME		"ASCII MSX1"
+#define CONFIG_NAME		"msx1"
 #endif
 
 // device informations for virtual machine
@@ -27,17 +30,21 @@
 #define SCREEN_WIDTH		512
 #define SCREEN_HEIGHT		384
 #define TMS9918A_VRAM_SIZE	0x4000
-//#define TMS9918A_LIMIT_SPRITES
+#define TMS9918A_LIMIT_SPRITES
 #define TMS9918A_SUPER_IMPOSE
 #define HAS_AY_3_8910
+// for Flappy Limited '85
+#define YM2203_PORT_MODE	0x80
+#define Z80_MEMORY_WAIT
 
 // device informations for win32
 #define USE_CART1
+#define USE_CART2
 #define USE_TAPE
 #define USE_LASER_DISC
 #define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	8
+#define USE_AUTO_KEY		6
+#define USE_AUTO_KEY_RELEASE	10
 
 #include "../../common.h"
 
@@ -50,7 +57,6 @@ class I8255;
 class IO;
 class LD700;
 class NOT;
-class OR;
 class YM2203;
 class PCM1BIT;
 class TMS9918A;
@@ -76,7 +82,6 @@ protected:
 	IO* io;
 	LD700* ldp;
 	NOT* not;
-	OR* or;
 	YM2203* psg;
 	PCM1BIT* pcm;
 	TMS9918A* vdp;
@@ -113,6 +118,7 @@ public:
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
+	void movie_sound_callback(uint8 *buffer, long size);
 	
 	// user interface
 	void open_cart(int drv, _TCHAR* file_path);

@@ -16,6 +16,8 @@
 #include "../emu.h"
 #include "device.h"
 
+#define SIG_TMS9918A_SUPER_IMPOSE	0
+
 class TMS9918A : public DEVICE
 {
 private:
@@ -30,6 +32,9 @@ private:
 	uint16 color_table, pattern_table, name_table;
 	uint16 sprite_pattern, sprite_attrib;
 	uint16 color_mask, pattern_mask;
+#ifdef TMS9918A_SUPER_IMPOSE
+	bool now_super_impose;
+#endif
 	
 	void set_intstat(bool val);
 	void draw_mode0();
@@ -44,6 +49,9 @@ private:
 public:
 	TMS9918A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_irq);
+#ifdef TMS9918A_SUPER_IMPOSE
+		now_super_impose = false;
+#endif
 	}
 	~TMS9918A() {}
 	
@@ -52,6 +60,9 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+#ifdef TMS9918A_SUPER_IMPOSE
+	void write_signal(int id, uint32 data, uint32 mask);
+#endif
 	void event_vline(int v, int clock);
 	
 	// unique function
@@ -59,9 +70,6 @@ public:
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void draw_screen();
-#ifdef TMS9918A_SUPER_IMPOSE
-	bool now_super_impose;
-#endif
 };
 
 #endif

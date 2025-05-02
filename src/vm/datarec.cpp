@@ -505,6 +505,15 @@ int DATAREC::load_cas_image()
 {
 	sample_rate = 48000;
 	
+	// sord m5 cas image ?
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	char m5_header[16];
+	fio->Fread(m5_header, sizeof(m5_header), 1);
+	if(memcmp(m5_header, "SORDM5", 6) == 0) {
+		return load_m5_cas_image();
+	}
+	
+	// this is the standard cas image for my emulator
 	fio->Fseek(0, FILEIO_SEEK_SET);
 	int ptr = 0, data;
 	while((data = fio->Fgetc()) != EOF) {
@@ -778,6 +787,64 @@ void DATAREC::save_wav_image()
 	fio->Fwrite(&wav_chunk, sizeof(wav_chunk), 1);
 }
 
+// SORD M5 tape image
+
+#define M5_PUT_BIT(val, len) { \
+	int remain = len; \
+	while(remain > 0) { \
+		if(buffer != NULL) { \
+			buffer[ptr] = val ? 0 : 0xff; \
+		} \
+		ptr++; \
+		remain--; \
+	} \
+}
+
+#define M5_PUT_BYTE(data) { \
+	for(int j = 0; j < 10; j++) { \
+		int bit = (j == 0) ? 1 : (j == 1) ? 0 : ((data >> (j - 2)) & 1); \
+		if(bit) { \
+			M5_PUT_BIT(0xff, 8); \
+			M5_PUT_BIT(0x00, 7); \
+		} else { \
+			M5_PUT_BIT(0xff, 16); \
+			M5_PUT_BIT(0x00, 14); \
+		} \
+	} \
+}
+
+int DATAREC::load_m5_cas_image()
+{
+	fio->Fseek(16, FILEIO_SEEK_SET);
+	int ptr = 0, block_type;
+	
+	while((block_type = fio->Fgetc()) != EOF) {
+		if(block_type != 'H' && block_type != 'D') {
+			return 0;
+		}
+		int block_size = fio->Fgetc();
+		
+		if(block_type == 'H') {
+			M5_PUT_BIT(0x00, 1);
+		}
+		for(int i = 0; i < (block_type == 'H' ? 945 : 59); i++) {
+			M5_PUT_BIT(0xff, 8);
+			M5_PUT_BIT(0x00, 7);
+		}
+		M5_PUT_BYTE(block_type);
+		M5_PUT_BYTE(block_size);
+		
+		for(int i = 0; i < ((block_size == 0) ? 0x101 : (block_size + 1)); i++) {
+			uint8 data = fio->Fgetc();
+			M5_PUT_BYTE(data);
+		}
+		M5_PUT_BIT(0xff, 8);
+		M5_PUT_BIT(0x00, 7);
+	}
+	M5_PUT_BIT(0x00, 1);
+	return ptr;
+}
+
 // SHARP X1 series tape image
 
 /*
@@ -988,8 +1055,8 @@ int DATAREC::load_mzt_image()
 #ifdef DATAREC_SOUND
 void DATAREC::initialize_sound(int rate, int samples)
 {
-	mix_buffer = (int16 *)malloc(samples * sizeof(int16));
-	mix_buffer_length = samples;
+	mix_buffer = (int16 *)malloc(samples * 2 * sizeof(int16));
+	mix_buffer_length = samples * 2;
 	register_event(this, EVENT_SOUND, 1000000. / (double)rate, true, NULL);
 }
 

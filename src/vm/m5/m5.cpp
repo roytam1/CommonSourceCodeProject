@@ -50,6 +50,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	drec->set_context_out(cmt, SIG_CMT_IN, 1);
+	drec->set_context_end(cmt, SIG_CMT_EOT, 1);
 	vdp->set_context_irq(ctc, SIG_Z80CTC_TRIG_3, 1);
 	cmt->set_context_drec(drec);
 	

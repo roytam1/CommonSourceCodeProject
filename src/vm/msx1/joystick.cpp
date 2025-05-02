@@ -1,9 +1,11 @@
 /*
 	ASCII MSX1 Emulator 'yaMSX1'
-	Skelton for retropc emulator
+	Pioneer PX-7 Emulator 'ePX-7'
 
 	Author : tanam
 	Date   : 2013.06.29-
+
+	modified by Takeda.Toshiya, umaiboux
 
 	[ joystick ]
 */
@@ -28,6 +30,9 @@ void JOYSTICK::event_frame()
 void JOYSTICK::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_JOYSTICK_SEL) {
-		select = ((data & mask) != 0);
+		if (select != ((data & mask) != 0)) {
+			select = ((data & mask) != 0);
+			d_psg->write_signal(SIG_YM2203_PORT_A, ~(joy_stat[select] & 0x3f), 0x7f);
+		}
 	}
 }

@@ -142,8 +142,22 @@ uint32 TMS9918A::read_io8(uint32 addr)
 	}
 }
 
+#ifdef TMS9918A_SUPER_IMPOSE
+void TMS9918A::write_signal(int id, uint32 data, uint32 mask)
+{
+	if(id == SIG_TMS9918A_SUPER_IMPOSE) {
+		now_super_impose = ((data & mask) != 0);
+	}
+}
+#endif
+
 void TMS9918A::draw_screen()
 {
+#ifdef TMS9918A_SUPER_IMPOSE
+	if(now_super_impose) {
+		emu->get_direct_show_buffer();
+	}
+#endif
 	// update screen buffer
 #if SCREEN_WIDTH == 512
 	for(int y = 0, y2 = 0; y < 192; y++, y2 += 2) {

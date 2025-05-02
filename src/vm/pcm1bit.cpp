@@ -115,11 +115,10 @@ void PCM1BIT::mix(int32* buffer, int cnt)
 	prev_clock = cur_clock;
 	sample_count = 0;
 #else
-	if(on && !mute && update) {
-		int cur_vol = signal ? max_vol : -max_vol;
+	if(on && !mute && signal) {
 		for(int i = 0; i < cnt; i++) {
-			*buffer++ += cur_vol; // L
-			*buffer++ += cur_vol; // R
+			*buffer++ += max_vol; // L
+			*buffer++ += max_vol; // R
 		}
 	}
 #endif

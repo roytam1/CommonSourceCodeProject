@@ -292,7 +292,7 @@
 
 // PIONEER PX-7
 #ifdef _PX7
-#include "msx/msx.h"
+#include "msx1/msx1.h"
 #endif
 
 // TOMY PYUTA

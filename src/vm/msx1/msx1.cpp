@@ -1,13 +1,16 @@
 /*
+	ASCII MSX1 Emulator 'yaMSX1'
 	Pioneer PX-7 Emulator 'ePX-7'
 
-	Author : Takeda.Toshiya
-	Date   : 2014.01.09-
+	Author : tanam
+	Date   : 2013.06.29-
+
+	modified by Takeda.Toshiya, umaiboux
 
 	[ virtual machine ]
 */
 
-#include "msx.h"
+#include "msx1.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
@@ -17,7 +20,6 @@
 #include "../io.h"
 #include "../ld700.h"
 #include "../not.h"
-#include "../or.h"
 #include "../ym2203.h"
 #include "../pcm1bit.h"
 #include "../tms9918a.h"
@@ -43,7 +45,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	ldp = new LD700(this, emu);
 	not = new NOT(this, emu);
-	or = new OR(this, emu);
 	psg = new YM2203(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	vdp = new TMS9918A(this, emu);
@@ -61,17 +62,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	event->set_context_sound(pcm);
+	event->set_context_sound(ldp);
 	
 	drec->set_context_out(psg, SIG_YM2203_PORT_A, 0x80);
 	pio->set_context_port_a(memory, SIG_MEMORY_SEL, 0xff, 0);
 	pio->set_context_port_c(keyboard, SIG_KEYBOARD_COLUMN, 0x0f, 0);
 	pio->set_context_port_c(slot2, SIG_SLOT2_MUTE, 0x10, 0);
 	pio->set_context_port_c(not, SIG_NOT_INPUT, 0x10, 0);
-	not->set_context_out(or, SIG_OR_BIT_0, 1);
-	ldp->set_context_drec_remote(or, SIG_OR_BIT_1, 1);
+	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
 	ldp->set_context_exv(slot2, SIG_SLOT2_EXV, 1);
 	ldp->set_context_ack(slot2, SIG_SLOT2_ACK, 1);
-	or->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
+	ldp->set_context_sound(psg, SIG_YM2203_PORT_A, 0x80);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x20, 0);
 	pio->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x80, 0);
 	psg->set_context_port_b(joystick, SIG_JOYSTICK_SEL, 0x40, 0);
@@ -138,7 +139,6 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-	vdp->now_super_impose = false;
 }
 
 void VM::run()
@@ -152,9 +152,6 @@ void VM::run()
 
 void VM::draw_screen()
 {
-	if(vdp->now_super_impose) {
-		emu->get_direct_show_buffer();
-	}
 	vdp->draw_screen();
 }
 
@@ -168,8 +165,9 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	psg->init(rate, 1789772, samples, 0, 0);
-	pcm->init(rate, 4096);
+	psg->init(rate, 3579545, samples, 0, 0);
+	pcm->init(rate, 8000);
+	ldp->initialize_sound(rate, samples);
 }
 
 uint16* VM::create_sound(int* extra_frames)
@@ -180,6 +178,11 @@ uint16* VM::create_sound(int* extra_frames)
 int VM::sound_buffer_ptr()
 {
 	return event->sound_buffer_ptr();
+}
+
+void VM::movie_sound_callback(uint8 *buffer, long size)
+{
+	ldp->movie_sound_callback(buffer, size);
 }
 
 // ----------------------------------------------------------------------------

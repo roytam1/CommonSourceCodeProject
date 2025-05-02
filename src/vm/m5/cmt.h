@@ -15,7 +15,8 @@
 #include "../device.h"
 
 #define SIG_CMT_IN		0
-#define SIG_PRINTER_BUSY	1
+#define SIG_CMT_EOT		1
+#define SIG_PRINTER_BUSY	2
 
 class CMT : public DEVICE
 {
@@ -23,7 +24,7 @@ private:
 	DEVICE* d_drec;
 	
 	// data recorder
-	bool in, out, remote;
+	bool in, out, remote, eot;
 	
 	// printer
 	uint8 pout;

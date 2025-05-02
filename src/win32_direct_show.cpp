@@ -12,18 +12,20 @@
 
 void EMU::initialize_direct_show()
 {
-	pDShowMS = NULL;
-	pDShowMP = NULL;
-	pDShowMC = NULL;
-	pDShowBA = NULL;
-	pDShowBV = NULL;
-	pDShowVW = NULL;
-	pDShowFS = NULL;
-	pDShowCGB = NULL;
-	pDShowBF = NULL;
-	pDShowCapBF = NULL;
-	pDShowSG = NULL;
-	pDShowGB = NULL;
+	pBasicAudio = NULL;
+	pBasicVideo = NULL;
+	pVideoWindow = NULL;
+	pMediaPosition = NULL;
+	pMediaSeeking = NULL;
+	pMediaControl = NULL;
+	pSoundCallBack = NULL;
+	pSoundSampleGrabber = NULL;
+	pSoundBaseFilter = NULL;
+	pVideoSampleGrabber = NULL;
+	pCaptureGraphBuilder2 = NULL;
+	pCaptureBaseFilter = NULL;
+	pVideoBaseFilter = NULL;
+	pGraphBuilder = NULL;
 	
 	hdcDibDShow = NULL;
 	hBmpDShow = NULL;
@@ -48,21 +50,23 @@ void EMU::initialize_direct_show()
 
 void EMU::release_direct_show()
 {
-	if(pDShowMC != NULL) {
-		pDShowMC->Stop();
+	if(pMediaControl != NULL) {
+		pMediaControl->Stop();
 	}
-	SAFE_RELEASE(pDShowMS);
-	SAFE_RELEASE(pDShowMP);
-	SAFE_RELEASE(pDShowMC);
-	SAFE_RELEASE(pDShowBA);
-	SAFE_RELEASE(pDShowBV);
-	SAFE_RELEASE(pDShowVW);
-	SAFE_RELEASE(pDShowFS);
-	SAFE_RELEASE(pDShowCGB);
-	SAFE_RELEASE(pDShowBF);
-	SAFE_RELEASE(pDShowCapBF);
-	SAFE_RELEASE(pDShowSG);
-	SAFE_RELEASE(pDShowGB);
+	SAFE_RELEASE(pBasicAudio);
+	SAFE_RELEASE(pBasicVideo);
+	SAFE_RELEASE(pVideoWindow);
+	SAFE_RELEASE(pMediaPosition);
+	SAFE_RELEASE(pMediaSeeking);
+	SAFE_RELEASE(pMediaControl);
+	SAFE_RELEASE(pSoundCallBack);
+	SAFE_RELEASE(pSoundSampleGrabber);
+	SAFE_RELEASE(pSoundBaseFilter);
+	SAFE_RELEASE(pVideoSampleGrabber);
+	SAFE_RELEASE(pCaptureGraphBuilder2);
+	SAFE_RELEASE(pCaptureBaseFilter);
+	SAFE_RELEASE(pVideoBaseFilter);
+	SAFE_RELEASE(pGraphBuilder);
 	
 	release_direct_show_dib_section();
 }
@@ -126,17 +130,25 @@ void EMU::release_direct_show_dib_section()
 
 void EMU::get_direct_show_buffer()
 {
-	if(pDShowSG != NULL) {
+	if(pVideoSampleGrabber != NULL) {
 #if defined(_RGB555) || defined(_RGB565)
 		long buffer_size = direct_show_width * direct_show_height * 2;
 #elif defined(_RGB888)
 		long buffer_size = direct_show_width * direct_show_height * 4;
 #endif
-		pDShowSG->GetCurrentBuffer(&buffer_size, (long *)lpBmpDShow);
+		pVideoSampleGrabber->GetCurrentBuffer(&buffer_size, (long *)lpBmpDShow);
 		if(screen_width == direct_show_width && screen_height == direct_show_height) {
-			BitBlt(hdcDib, 0, 0, screen_width, screen_height, hdcDibDShow, 0, 0, SRCCOPY);
+			if(bVirticalReversed) {
+				BitBlt(hdcDib, 0, screen_height, screen_width, -screen_height, hdcDibDShow, 0, 0, SRCCOPY);
+			} else {
+				BitBlt(hdcDib, 0, 0, screen_width, screen_height, hdcDibDShow, 0, 0, SRCCOPY);
+			}
 		} else {
-			StretchBlt(hdcDib, 0, 0, screen_width, screen_height, hdcDibDShow, 0, 0, direct_show_width, direct_show_height, SRCCOPY);
+			if(bVirticalReversed) {
+				StretchBlt(hdcDib, 0, screen_height, screen_width, -screen_height, hdcDibDShow, 0, 0, direct_show_width, direct_show_height, SRCCOPY);
+			} else {
+				StretchBlt(hdcDib, 0, 0, screen_width, screen_height, hdcDibDShow, 0, 0, direct_show_width, direct_show_height, SRCCOPY);
+			}
 		}
 		if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
 			for(int y = 0; y < screen_height; y++) {
@@ -156,36 +168,22 @@ void EMU::get_direct_show_buffer()
 
 void EMU::mute_direct_show_dev(bool l, bool r)
 {
-	if(pDShowBA != NULL) {
+	if(pBasicAudio != NULL) {
 		if(l && r) {
-			pDShowBA->put_Volume(-10000L);
+			pBasicAudio->put_Volume(-10000L);
 		} else {
-			pDShowBA->put_Volume(0L);
+			pBasicAudio->put_Volume(0L);
 		}
 		if(l && !r) {
-			pDShowBA->put_Balance(1000L);
+			pBasicAudio->put_Balance(1000L);
 		} else if(!l && r) {
-			pDShowBA->put_Balance(-1000L);
+			pBasicAudio->put_Balance(-1000L);
 		} else {
-			pDShowBA->put_Balance(0L);
+			pBasicAudio->put_Balance(0L);
 		}
 		direct_show_mute[0] = l;
 		direct_show_mute[1] = r;
 	}
-}
-
-static void initialize_media_type(AM_MEDIA_TYPE *mt)
-{
-	ZeroMemory(mt, sizeof(AM_MEDIA_TYPE));
-	mt->majortype = MEDIATYPE_Video;
-#if defined(_RGB555)
-	mt->subtype = MEDIASUBTYPE_RGB555;
-#elif defined(_RGB565)
-	mt->subtype = MEDIASUBTYPE_RGB565;
-#elif defined(_RGB888)
-	mt->subtype = MEDIASUBTYPE_RGB32;
-#endif
-	mt->formattype = FORMAT_VideoInfo;
 }
 
 #ifdef USE_LASER_DISC
@@ -194,73 +192,135 @@ bool EMU::open_movie_file(_TCHAR* file_path)
 	WCHAR	wFile[MAX_PATH];
 	MultiByteToWideChar(CP_ACP, 0, file_path, -1, wFile, MAX_PATH);
 	
-	AM_MEDIA_TYPE mt;
-	initialize_media_type(&mt);
+	AM_MEDIA_TYPE video_mt;
+	ZeroMemory(&video_mt, sizeof(AM_MEDIA_TYPE));
+	video_mt.majortype = MEDIATYPE_Video;
+#if defined(_RGB555)
+	video_mt.subtype = MEDIASUBTYPE_RGB555;
+#elif defined(_RGB565)
+	video_mt.subtype = MEDIASUBTYPE_RGB565;
+#elif defined(_RGB888)
+	video_mt.subtype = MEDIASUBTYPE_RGB32;
+#endif
+	video_mt.formattype = FORMAT_VideoInfo;
 	
-	if(FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC, IID_IGraphBuilder, (void **)&pDShowGB))) {
-		return false;
-	}
-	if(FAILED(CoCreateInstance(CLSID_SampleGrabber, NULL, CLSCTX_INPROC, IID_IBaseFilter, (void **)&pDShowBF))) {
-		return false;
-	}
-	if(FAILED(pDShowBF->QueryInterface(IID_ISampleGrabber, (void **)&pDShowSG))) {
-		return false;
-	}
-	if(FAILED(pDShowSG->SetMediaType(&mt))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->AddFilter(pDShowBF, L"Sample Grabber"))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->RenderFile(wFile, NULL))) {
-		return false;
-	}
-	if(FAILED(pDShowSG->SetBufferSamples(TRUE))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IMediaControl, (void **)&pDShowMC))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IMediaSeeking, (void **)&pDShowMS))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IMediaPosition, (void **)&pDShowMP))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IVideoWindow, (void **)&pDShowVW))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IBasicVideo, (void **)&pDShowBV))) {
-		return false;
-	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IBasicAudio, (void **)&pDShowBA))) {
-		return false;
-	}
-	if(FAILED(pDShowVW->put_Owner((OAHWND)main_window_handle))) {
-		return false;
-	}
-	if(FAILED(pDShowVW->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN))) {
-		return false;
-	}
-	if(FAILED(pDShowVW->SetWindowPosition(0, 0, 0, 0))) {
-		return false;
-	}
-	if(FAILED(pDShowVW->SetWindowForeground(FALSE))) {
-		return false;
-	}
-	if(FAILED(pDShowMS->SetTimeFormat(&TIME_FORMAT_FRAME))) {
-		return false;
-	}
-	if(FAILED(pDShowBV->get_AvgTimePerFrame(&movie_fps))) {
-		return false;
-	}
-	movie_fps = 1 / movie_fps;
+	AM_MEDIA_TYPE sound_mt;
+	ZeroMemory(&sound_mt, sizeof(AM_MEDIA_TYPE));
+	sound_mt.majortype = MEDIATYPE_Audio;
+	sound_mt.subtype = MEDIASUBTYPE_PCM;
 	
-	// get the movie size
-	pDShowSG->GetConnectedMediaType(&mt);
-	VIDEOINFOHEADER *pVideoHeader = (VIDEOINFOHEADER*)mt.pbFormat;
+	if(FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC, IID_IGraphBuilder, (void **)&pGraphBuilder))) {
+		return false;
+	}
+	if(FAILED(CoCreateInstance(CLSID_SampleGrabber, NULL, CLSCTX_INPROC, IID_IBaseFilter, (void **)&pVideoBaseFilter))) {
+		return false;
+	}
+	if(FAILED(pVideoBaseFilter->QueryInterface(IID_ISampleGrabber, (void **)&pVideoSampleGrabber))) {
+		return false;
+	}
+	if(FAILED(pVideoSampleGrabber->SetMediaType(&video_mt))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->AddFilter(pVideoBaseFilter, L"Video Sample Grabber"))) {
+		return false;
+	}
+	if(FAILED(CoCreateInstance(CLSID_SampleGrabber, NULL, CLSCTX_INPROC, IID_IBaseFilter, (void **)&pSoundBaseFilter))) {
+		return false;
+	}
+	if(FAILED(pSoundBaseFilter->QueryInterface(IID_ISampleGrabber, (void **)&pSoundSampleGrabber))) {
+		return false;
+	}
+	if(FAILED(pSoundSampleGrabber->SetMediaType(&sound_mt))) {
+		return false;
+	}
+	if((pSoundCallBack = new CMySampleGrabberCB(vm)) == NULL) {
+		return false;
+	}
+	if(FAILED(pSoundSampleGrabber->SetCallback(pSoundCallBack, 1))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->AddFilter(pSoundBaseFilter, L"Sound Sample Grabber"))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->RenderFile(wFile, NULL))) {
+		return false;
+	}
+	if(FAILED(pVideoSampleGrabber->SetBufferSamples(TRUE))) {
+		return false;
+	}
+	if(FAILED(pVideoSampleGrabber->SetOneShot(FALSE))) {
+		return false;
+	}
+	if(FAILED(pSoundSampleGrabber->SetBufferSamples(FALSE))) {
+		return false;
+	}
+	if(FAILED(pSoundSampleGrabber->SetOneShot(FALSE))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IMediaControl, (void **)&pMediaControl))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IMediaSeeking, (void **)&pMediaSeeking))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IMediaPosition, (void **)&pMediaPosition))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IVideoWindow, (void **)&pVideoWindow))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IBasicVideo, (void **)&pBasicVideo))) {
+		return false;
+	}
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IBasicAudio, (void **)&pBasicAudio))) {
+		return false;
+	}
+	if(FAILED(pVideoWindow->put_Owner((OAHWND)main_window_handle))) {
+		return false;
+	}
+	if(FAILED(pVideoWindow->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN))) {
+		return false;
+	}
+	if(FAILED(pVideoWindow->SetWindowPosition(0, 0, 0, 0))) {
+		return false;
+	}
+	if(FAILED(pVideoWindow->SetWindowForeground(FALSE))) {
+		return false;
+	}
+	if(pMediaSeeking->IsFormatSupported(&TIME_FORMAT_FRAME) == S_OK) {
+		if(FAILED(pMediaSeeking->SetTimeFormat(&TIME_FORMAT_FRAME))) {
+			return false;
+		}
+		bTimeFormatFrame = true;
+	} else {
+		if(FAILED(pMediaSeeking->SetTimeFormat(&TIME_FORMAT_MEDIA_TIME))) {
+			return false;
+		}
+		bTimeFormatFrame = false;
+	}
+	
+	// get the movie frame rate
+	if(FAILED(pBasicVideo->get_AvgTimePerFrame(&movie_frame_rate))) {
+		return false;
+	}
+	movie_frame_rate = 1 / movie_frame_rate;
+	
+	// get the movie sound rate
+	pSoundSampleGrabber->GetConnectedMediaType(&sound_mt);
+	WAVEFORMATEX *wf = (WAVEFORMATEX *)sound_mt.pbFormat;
+	WAVEFORMATEXTENSIBLE *wfe = (WAVEFORMATEXTENSIBLE *)sound_mt.pbFormat;
+	if(!((wf->wFormatTag == WAVE_FORMAT_PCM || (wf->wFormatTag == WAVE_FORMAT_EXTENSIBLE && wfe->SubFormat == MEDIASUBTYPE_PCM)) && wf->nChannels == 2 && wf->wBitsPerSample == 16)) {
+		return false;
+	}
+	movie_sound_rate = wf->nSamplesPerSec;
+	
+	// get the movie picture size
+	pVideoSampleGrabber->GetConnectedMediaType(&video_mt);
+	VIDEOINFOHEADER *pVideoHeader = (VIDEOINFOHEADER*)video_mt.pbFormat;
 	direct_show_width = pVideoHeader->bmiHeader.biWidth;
 	direct_show_height = pVideoHeader->bmiHeader.biHeight;
+	
+	bVirticalReversed = check_file_extension(file_path, _T(".ogv"));
 	
 	// create DIBSection
 	create_direct_show_dib_section();
@@ -277,8 +337,8 @@ void EMU::close_movie_file()
 
 void EMU::play_movie()
 {
-	if(pDShowMC != NULL) {
-		pDShowMC->Run();
+	if(pMediaControl != NULL) {
+		pMediaControl->Run();
 		mute_direct_show_dev(direct_show_mute[0], direct_show_mute[1]);
 		now_movie_play = true;
 		now_movie_pause = false;
@@ -287,8 +347,8 @@ void EMU::play_movie()
 
 void EMU::stop_movie()
 {
-	if(pDShowMC != NULL) {
-		pDShowMC->Stop();
+	if(pMediaControl != NULL) {
+		pMediaControl->Stop();
 	}
 	now_movie_play = false;
 	now_movie_pause = false;
@@ -296,26 +356,30 @@ void EMU::stop_movie()
 
 void EMU::pause_movie()
 {
-	if(pDShowMC != NULL) {
-		pDShowMC->Pause();
+	if(pMediaControl != NULL) {
+		pMediaControl->Pause();
 		now_movie_pause = true;
 	}
 }
 
 void EMU::set_cur_movie_frame(int frame, bool relative)
 {
-	if(pDShowMS != NULL) {
-		LONGLONG now = frame;
-		pDShowMS->SetPositions(&now, AM_SEEKING_AbsolutePositioning, NULL, AM_SEEKING_NoPositioning);
+	if(pMediaSeeking != NULL) {
+		LONGLONG now = bTimeFormatFrame ? frame : (LONGLONG)(frame / movie_frame_rate * 10000000.0 + 0.5);
+		pMediaSeeking->SetPositions(&now, AM_SEEKING_AbsolutePositioning, NULL, AM_SEEKING_NoPositioning);
 	}
 }
 
 uint32 EMU::get_cur_movie_frame()
 {
-	if(pDShowMS != NULL) {
+	if(pMediaSeeking != NULL) {
 		LONGLONG now, stop;
-		if(SUCCEEDED(pDShowMS->GetPositions(&now, &stop))) {
-			return (uint32)(now & 0xffffffff);
+		if(SUCCEEDED(pMediaSeeking->GetPositions(&now, &stop))) {
+			if(bTimeFormatFrame) {
+				return (uint32)(now & 0xffffffff);
+			} else {
+				return (uint32)(now * movie_frame_rate / 10000000.0 + 0.5);
+			}
 		}
 	}
 	return 0;
@@ -400,9 +464,18 @@ bool EMU::connect_capture_dev(int index, bool pin)
 	}
 	
 	AM_MEDIA_TYPE mt;
-	initialize_media_type(&mt);
+	ZeroMemory(&mt, sizeof(AM_MEDIA_TYPE));
+	mt.majortype = MEDIATYPE_Video;
+#if defined(_RGB555)
+	mt.subtype = MEDIASUBTYPE_RGB555;
+#elif defined(_RGB565)
+	mt.subtype = MEDIASUBTYPE_RGB565;
+#elif defined(_RGB888)
+	mt.subtype = MEDIASUBTYPE_RGB32;
+#endif
+	mt.formattype = FORMAT_VideoInfo;
 	
-	if(FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC, IID_IGraphBuilder, (void **)&pDShowGB))) {
+	if(FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC, IID_IGraphBuilder, (void **)&pGraphBuilder))) {
 		return false;
 	}
 	
@@ -417,7 +490,7 @@ bool EMU::connect_capture_dev(int index, bool pin)
 				
 				if(SUCCEEDED(pClassEnum->Next(1, &pMoniker, &cFetched)) && pMoniker != NULL) {
 					if(i == index) {
-						pMoniker->BindToObject(0, 0, IID_IBaseFilter, (void **)&pDShowCapBF);
+						pMoniker->BindToObject(0, 0, IID_IBaseFilter, (void **)&pCaptureBaseFilter);
 					}
 					SAFE_RELEASE(pMoniker);
 				} else {
@@ -429,24 +502,24 @@ bool EMU::connect_capture_dev(int index, bool pin)
 	SAFE_RELEASE(pClassEnum);
 	SAFE_RELEASE(pDevEnum);
 	
-	if(&pDShowCapBF == NULL) {
+	if(&pCaptureBaseFilter == NULL) {
 		return false;
 	}
-	if(FAILED(pDShowGB->AddFilter(pDShowCapBF, L"Video Capture"))) {
+	if(FAILED(pGraphBuilder->AddFilter(pCaptureBaseFilter, L"Video Capture"))) {
 		return false;
 	}
-	if(FAILED(CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL, CLSCTX_INPROC, IID_ICaptureGraphBuilder2, (void **)&pDShowCGB))) {
+	if(FAILED(CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL, CLSCTX_INPROC, IID_ICaptureGraphBuilder2, (void **)&pCaptureGraphBuilder2))) {
 		return false;
 	}
-	if(FAILED(pDShowCGB->SetFiltergraph(pDShowGB))) {
+	if(FAILED(pCaptureGraphBuilder2->SetFiltergraph(pGraphBuilder))) {
 		return false;
 	}
 	
 	IAMStreamConfig *pSC = NULL;
 	ISpecifyPropertyPages *pSpec = NULL;
 	
-	if(FAILED(pDShowCGB->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Interleaved, pDShowCapBF, IID_IAMStreamConfig, (void **)&pSC))) {
-		if(FAILED(pDShowCGB->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, pDShowCapBF, IID_IAMStreamConfig, (void **)&pSC))) {
+	if(FAILED(pCaptureGraphBuilder2->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Interleaved, pCaptureBaseFilter, IID_IAMStreamConfig, (void **)&pSC))) {
+		if(FAILED(pCaptureGraphBuilder2->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, pCaptureBaseFilter, IID_IAMStreamConfig, (void **)&pSC))) {
 			return false;
 		}
 	}
@@ -461,39 +534,39 @@ bool EMU::connect_capture_dev(int index, bool pin)
 	}
 	SAFE_RELEASE(pSC);
 	
-	if(FAILED(CoCreateInstance(CLSID_SampleGrabber, NULL, CLSCTX_INPROC, IID_IBaseFilter, (void **)&pDShowBF))) {
+	if(FAILED(CoCreateInstance(CLSID_SampleGrabber, NULL, CLSCTX_INPROC, IID_IBaseFilter, (void **)&pVideoBaseFilter))) {
 		return false;
 	}
-	if(FAILED(pDShowBF->QueryInterface(IID_ISampleGrabber, (void **)&pDShowSG))) {
+	if(FAILED(pVideoBaseFilter->QueryInterface(IID_ISampleGrabber, (void **)&pVideoSampleGrabber))) {
 		return false;
 	}
-	if(FAILED(pDShowSG->SetMediaType(&mt))) {
+	if(FAILED(pVideoSampleGrabber->SetMediaType(&mt))) {
 		return false;
 	}
-	if(FAILED(pDShowGB->AddFilter(pDShowBF, L"Sample Grabber"))) {
+	if(FAILED(pGraphBuilder->AddFilter(pVideoBaseFilter, L"Video Sample Grabber"))) {
 		return false;
 	}
-	if(FAILED(pDShowGB->Connect(get_pin(pDShowCapBF, PINDIR_OUTPUT), get_pin(pDShowBF, PINDIR_INPUT)))) {
+	if(FAILED(pGraphBuilder->Connect(get_pin(pCaptureBaseFilter, PINDIR_OUTPUT), get_pin(pVideoBaseFilter, PINDIR_INPUT)))) {
 		return false;
 	}
-	if(FAILED(pDShowSG->SetBufferSamples(TRUE))) {
+	if(FAILED(pVideoSampleGrabber->SetBufferSamples(TRUE))) {
 		return false;
 	}
-	if(FAILED(pDShowSG->SetOneShot(FALSE))) {
+	if(FAILED(pVideoSampleGrabber->SetOneShot(FALSE))) {
 		return false;
 	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IMediaControl, (void **)&pDShowMC))) {
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IMediaControl, (void **)&pMediaControl))) {
 		return false;
 	}
-	if(FAILED(pDShowGB->QueryInterface(IID_IBasicAudio, (void **)&pDShowBA))) {
+	if(FAILED(pGraphBuilder->QueryInterface(IID_IBasicAudio, (void **)&pBasicAudio))) {
 		//return false;
 	}
-	if(FAILED(pDShowMC->Run())) {
+	if(FAILED(pMediaControl->Run())) {
 		return false;
 	}
 	
 	// get the capture size
-	pDShowSG->GetConnectedMediaType(&mt);
+	pVideoSampleGrabber->GetConnectedMediaType(&mt);
 	VIDEOINFOHEADER *pVideoHeader = (VIDEOINFOHEADER*)mt.pbFormat;
 	direct_show_width = pVideoHeader->bmiHeader.biWidth;
 	direct_show_height = pVideoHeader->bmiHeader.biHeight;
@@ -520,12 +593,12 @@ void EMU::close_capture_dev()
 
 void EMU::show_capture_dev_filter()
 {
-	if(pDShowCapBF != NULL) {
+	if(pCaptureBaseFilter != NULL) {
 		ISpecifyPropertyPages *pSpec = NULL;
 		CAUUID cauuid;
-		if(SUCCEEDED(pDShowCapBF->QueryInterface(IID_ISpecifyPropertyPages, (void **)&pSpec))) {
+		if(SUCCEEDED(pCaptureBaseFilter->QueryInterface(IID_ISpecifyPropertyPages, (void **)&pSpec))) {
 			pSpec->GetPages(&cauuid);
-			OleCreatePropertyFrame(NULL, 30, 30, NULL, 1, (IUnknown **)&pDShowCapBF, cauuid.cElems, (GUID *)cauuid.pElems, 0, 0, NULL);
+			OleCreatePropertyFrame(NULL, 30, 30, NULL, 1, (IUnknown **)&pCaptureBaseFilter, cauuid.cElems, (GUID *)cauuid.pElems, 0, 0, NULL);
 			CoTaskMemFree(cauuid.pElems);
 			SAFE_RELEASE(pSpec);
 		}
@@ -543,13 +616,13 @@ void EMU::show_capture_dev_pin()
 
 void EMU::show_capture_dev_source()
 {
-	if(pDShowCGB != NULL) {
+	if(pCaptureGraphBuilder2 != NULL) {
 		IAMCrossbar *pCrs = NULL;
 		ISpecifyPropertyPages *pSpec = NULL;
 		CAUUID cauuid;
 		
-		if(FAILED(pDShowCGB->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Interleaved, pDShowCapBF, IID_IAMCrossbar, (void **)&pCrs))) {
-			if(FAILED(pDShowCGB->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, pDShowCapBF, IID_IAMCrossbar, (void **)&pCrs))) {
+		if(FAILED(pCaptureGraphBuilder2->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Interleaved, pCaptureBaseFilter, IID_IAMCrossbar, (void **)&pCrs))) {
+			if(FAILED(pCaptureGraphBuilder2->FindInterface(&PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, pCaptureBaseFilter, IID_IAMCrossbar, (void **)&pCrs))) {
 				return;
 			}
 		}
@@ -560,7 +633,7 @@ void EMU::show_capture_dev_source()
 			SAFE_RELEASE(pSpec);
 			
 			AM_MEDIA_TYPE mt;
-			pDShowSG->GetConnectedMediaType(&mt);
+			pVideoSampleGrabber->GetConnectedMediaType(&mt);
 			VIDEOINFOHEADER *pVideoHeader = (VIDEOINFOHEADER*)mt.pbFormat;
 			direct_show_width = pVideoHeader->bmiHeader.biWidth;
 			direct_show_height = pVideoHeader->bmiHeader.biHeight;
@@ -576,8 +649,8 @@ void EMU::set_capture_dev_channel(int ch)
 {
 	IAMTVTuner *pTuner = NULL;
 	
-	if(pDShowCGB != NULL) {
-		if(SUCCEEDED(pDShowCGB->FindInterface(&LOOK_UPSTREAM_ONLY, NULL, pDShowCapBF, IID_IAMTVTuner, (void **)&pTuner))) {
+	if(pCaptureGraphBuilder2 != NULL) {
+		if(SUCCEEDED(pCaptureGraphBuilder2->FindInterface(&LOOK_UPSTREAM_ONLY, NULL, pCaptureBaseFilter, IID_IAMTVTuner, (void **)&pTuner))) {
 			pTuner->put_Channel(ch, AMTUNER_SUBCHAN_DEFAULT, AMTUNER_SUBCHAN_DEFAULT);
 			SAFE_RELEASE(pTuner);
 		}

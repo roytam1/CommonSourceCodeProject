@@ -1,9 +1,11 @@
 /*
 	ASCII MSX1 Emulator 'yaMSX1'
-	Skelton for retropc emulator
+	Pioneer PX-7 Emulator 'ePX-7'
 
 	Author : tanam
 	Date   : 2013.06.29-
+
+	modified by Takeda.Toshiya
 
 	[ keyboard ]
 */

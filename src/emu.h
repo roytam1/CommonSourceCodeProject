@@ -99,6 +99,36 @@ public:
 	virtual HRESULT STDMETHODCALLTYPE GetCurrentSample( /* [retval][out] */ IMediaSample **ppSample) = 0;
 	virtual HRESULT STDMETHODCALLTYPE SetCallback( ISampleGrabberCB *pCallback,long WhichMethodToCallback) = 0;
 };
+#ifdef USE_LASER_DISC
+class CMySampleGrabberCB : public ISampleGrabberCB {
+private:
+	VM *vm;
+public:
+	CMySampleGrabberCB(VM *vm_ptr) {
+		vm = vm_ptr;
+	}
+	STDMETHODIMP_(ULONG) AddRef() {
+		return 2;
+	}
+	STDMETHODIMP_(ULONG) Release() {
+		return 1;
+	}
+	STDMETHODIMP QueryInterface(REFIID riid, void **ppv) {
+		if(riid == IID_ISampleGrabberCB || riid == IID_IUnknown) {
+			*ppv = (void *) static_cast<ISampleGrabberCB*>(this);
+			return NOERROR;
+		}
+		return E_NOINTERFACE;
+	}
+	STDMETHODIMP SampleCB(double SampleTime, IMediaSample *pSample) {
+		return S_OK;
+	}
+	STDMETHODIMP BufferCB(double dblSampleTime, BYTE *pBuffer, long lBufferSize) {
+		vm->movie_sound_callback(pBuffer, lBufferSize);
+		return S_OK;
+	}
+};
+#endif
 #endif
 
 #ifdef USE_SOCKET
@@ -307,18 +337,22 @@ private:
 	void create_direct_show_dib_section();
 	void release_direct_show_dib_section();
 	
-	IGraphBuilder *pDShowGB;
-	IBaseFilter *pDShowBF;
-	IBaseFilter *pDShowCapBF;
-	ICaptureGraphBuilder2 *pDShowCGB;
-	ISampleGrabber *pDShowSG;
-	IMediaControl *pDShowMC;
-	IVideoWindow *pDShowVW;
-	IBasicAudio *pDShowBA;
-	IBasicVideo *pDShowBV;
-	IMediaSeeking *pDShowMS;
-	IMediaPosition *pDShowMP;
-	IVideoFrameStep *pDShowFS;
+	IGraphBuilder *pGraphBuilder;
+	IBaseFilter *pVideoBaseFilter;
+	IBaseFilter *pCaptureBaseFilter;
+	ICaptureGraphBuilder2 *pCaptureGraphBuilder2;
+	ISampleGrabber *pVideoSampleGrabber;
+	IBaseFilter *pSoundBaseFilter;
+	ISampleGrabber *pSoundSampleGrabber;
+	CMySampleGrabberCB *pSoundCallBack;
+	IMediaControl *pMediaControl;
+	IMediaSeeking *pMediaSeeking;
+	IMediaPosition *pMediaPosition;
+	IVideoWindow *pVideoWindow;
+	IBasicVideo *pBasicVideo;
+	IBasicAudio *pBasicAudio;
+	bool bTimeFormatFrame;
+	bool bVirticalReversed;
 	
 	HDC hdcDibDShow;
 	HBITMAP hBmpDShow, hOldBmpDShow;
@@ -329,7 +363,8 @@ private:
 	int direct_show_width, direct_show_height;
 	bool direct_show_mute[2];
 #ifdef USE_LASER_DISC
-	double movie_fps;
+	double movie_frame_rate;
+	int movie_sound_rate;
 	bool now_movie_play, now_movie_pause;
 #endif
 #ifdef USE_VIDEO_CAPTURE
@@ -616,8 +651,11 @@ public:
 	void stop_movie();
 	void pause_movie();
 	
-	double get_movie_fps() {
-		return movie_fps;
+	double get_movie_frame_rate() {
+		return movie_frame_rate;
+	}
+	int get_movie_sound_rate() {
+		return movie_sound_rate;
 	}
 	void set_cur_movie_frame(int frame, bool relative);
 	uint32 get_cur_movie_frame();

@@ -76,7 +76,11 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		break;
 	case 1:
 		if(ch == 7) {
+#ifdef YM2203_PORT_MODE
+			mode = (data & 0x3f) | YM2203_PORT_MODE;
+#else
 			mode = data;
+#endif
 		}
 #ifdef SUPPORT_YM2203_PORT_A
 		else if(ch == 14) {

@@ -4,6 +4,8 @@
 	Author : Takeda.Toshiya
 	Date   : 2014.01.09-
 
+	modified by umaiboux
+
 	[ memory ]
 */
 
@@ -90,22 +92,24 @@ void SLOT_SUB::reset()
 	pc4 = false;
 	mute_l = mute_r = true;
 	
-	emu->mute_direct_show_dev(true, true);
-	d_vdp->now_super_impose = false;
+	d_ldp->write_signal(SIG_LD700_MUTE_L, 1, 1);
+	d_ldp->write_signal(SIG_LD700_MUTE_R, 1, 1);
+	d_vdp->write_signal(SIG_TMS9918A_SUPER_IMPOSE, 0, 0);
 }
 
 void SLOT_SUB::write_data8(uint32 addr, uint32 data)
 {
 	if(addr == 0x7ffe) {
-		d_ldp->write_signal(SIG_LD700_LREMO, data, 1);
+		d_ldp->write_signal(SIG_LD700_REMOTE, data, 1);
 	} else if(addr == 0x7fff) {
 		bool prev = mute_l;
 		mute_l = ((data & 0x80) == 0);
 		if(!prev && mute_l) {
 			mute_r = !pc4;
 		}
-		emu->mute_direct_show_dev(mute_l, mute_r);
-		d_vdp->now_super_impose = ((data & 1) == 0);
+		d_ldp->write_signal(SIG_LD700_MUTE_L, mute_l ? 1 : 0, 1);
+		d_ldp->write_signal(SIG_LD700_MUTE_R, mute_r ? 1 : 0, 1);
+//		d_vdp->write_signal(SIG_TMS9918A_SUPER_IMPOSE, data, 1);
 	} else {
 		wbank[addr >> 13][addr & 0x1fff] = data;
 	}
@@ -126,13 +130,14 @@ uint32 SLOT_SUB::read_data8(uint32 addr)
 
 void SLOT_SUB::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(SIG_SLOT2_EXV) {
+	if(id == SIG_SLOT2_EXV) {
 		bool prev = exv;
 		exv = ((data & mask) != 0);
 		if(prev && !exv) {
 			req_intr = true;
 			d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
 		}
+		d_vdp->write_signal(SIG_TMS9918A_SUPER_IMPOSE, exv ? 1 : 0, 1);
 	} else if(id == SIG_SLOT2_ACK) {
 		ack = ((data & mask) != 0);
 	} else if(id == SIG_SLOT2_MUTE) {
@@ -224,6 +229,12 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffff;
 	d_map[addr >> 14]->write_data8(addr, data);
+}
+
+uint32 MEMORY::read_data8w(uint32 addr, int* wait)
+{
+	*wait = 1;
+	return this->read_data8(addr);
 }
 
 uint32 MEMORY::read_data8(uint32 addr)

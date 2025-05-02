@@ -4,6 +4,8 @@
 	Author : Takeda.Toshiya
 	Date   : 2014.01.09-
 
+	modified by umaiboux
+
 	[ memory ]
 */
 
@@ -19,8 +21,6 @@
 #define SIG_SLOT2_MUTE	2
 
 #define SIG_MEMORY_SEL	0
-
-class TMS9918A;
 
 class SLOT_MAIN : public DEVICE
 {
@@ -47,9 +47,7 @@ public:
 class SLOT_SUB : public DEVICE
 {
 private:
-	DEVICE *d_cpu;
-	DEVICE *d_ldp;
-	TMS9918A *d_vdp;
+	DEVICE *d_cpu, *d_ldp, *d_vdp;
 	
 	uint8 wdmy[0x2000];
 	uint8 rdmy[0x2000];
@@ -81,7 +79,7 @@ public:
 	void set_context_ldp(DEVICE* device) {
 		d_ldp = device;
 	}
-	void set_context_vdp(TMS9918A* device) {
+	void set_context_vdp(DEVICE* device) {
 		d_vdp = device;
 	}
 };
@@ -128,6 +126,7 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	uint32 read_data8w(uint32 addr, int* wait);
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function

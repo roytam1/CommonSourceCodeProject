@@ -1,3 +1,17 @@
+4/8/2014
+
+[EMU/WIN32] support to capture the movie sounds in DirectShow codes
+
+[VM/DATAREC] support SORD M5 cas format tape image
+[VM/LD700] support PIONEER LD-700 laser-disc player
+[VM/PCM1BIT] fix noise occurs when input signals top
+[VM/YM2203] support to overwrite i/o mode to fixed value
+
+[M5/CMT] stop loading cmt when tape image reaches the end of tape
+[PX7] support PIONEER PX-7 (MSX1 + laser-disc player)
+[PX7] fix MSX1 implements (thanks Mr.umaiboux)
+
+
 4/7/2014
 
 [WINMAIN] fix issue in the case that menu bar becomes multi line
@@ -30,7 +44,7 @@
 [PC6001] update yaPC-6001 codes (thanks Mr.tanam)
 [PC6001mk2] add yaPC-6201 codes (thanks Mr.tanam)
 [PC6601] add yaPC-6601 codes (thanks Mr.tanam)
-[PX7] support Pioneer PX-7 (MSX1 + LaserDisc) (partial)
+[PX7] support PIONEER PX-7 (MSX1 + laser-disc player) (partial)
 
 
 1/8/2014

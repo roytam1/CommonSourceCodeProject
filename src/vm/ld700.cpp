@@ -8,6 +8,8 @@
 */
 
 #define EVENT_ACK		0
+#define EVENT_SOUND		1
+#define EVENT_MIX		2
 
 #define PHASE_IDLE		0
 #define PHASE_HEADER_PULSE	1
@@ -25,6 +27,7 @@
 #define SEEK_WAIT		0x5f
 
 #include "ld700.h"
+#include "../fifo.h"
 #include "../fileio.h"
 
 void LD700::initialize()
@@ -37,14 +40,42 @@ void LD700::initialize()
 	phase = PHASE_IDLE;
 	seek_mode = seek_num = 0;
 	accepted = false;
-	cur_frame_raw = cur_track = 0;
+	cur_frame_raw = 0;
+	wait_frame_raw = 0;
+	
+	sound_buffer_l = new FIFO(48000 * 4);
+	sound_buffer_r = new FIFO(48000 * 4);
+	signal_buffer = new FIFO(48000 * 4);
+	signal_buffer_ok = false;
+	sound_event_id = -1;
+	sound_sample_l = sound_sample_r = 0;
+	
+	mix_buffer_l = mix_buffer_r = NULL;
+	mix_buffer_ptr = mix_buffer_length = 0;
+	mix_buffer_ptr = mix_buffer_length = 0;
 	
 	register_frame_event(this);
 }
 
+void LD700::release()
+{
+	if(mix_buffer_l != NULL) {
+		free(mix_buffer_l);
+	}
+	if(mix_buffer_r != NULL) {
+		free(mix_buffer_r);
+	}
+	sound_buffer_l->release();
+	delete sound_buffer_l;
+	sound_buffer_r->release();
+	delete sound_buffer_r;
+	signal_buffer->release();
+	delete signal_buffer;
+}
+
 void LD700::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_LD700_LREMO) {
+	if(id == SIG_LD700_REMOTE) {
 		bool signal = ((data & mask) != 0);
 		if(prev_signal != signal) {
 			int usec = (int)passed_usec(prev_time);
@@ -105,20 +136,24 @@ void LD700::write_signal(int id, uint32 data, uint32 mask)
 				break;
 			}
 		}
+	} else if(id == SIG_LD700_MUTE_L) {
+		sound_mute_l = ((data & mask) != 0);
+	} else if(id == SIG_LD700_MUTE_R) {
+		sound_mute_r = ((data & mask) != 0);
 	}
 }
 
 void LD700::event_frame()
 {
 	int prev_frame_raw = cur_frame_raw;
-	int prev_track = cur_track;
 	bool seek_done = false;
 	
 	cur_frame_raw = get_cur_frame_raw();
-	cur_track = get_cur_track();
 	
 	if(accepted) {
 		command = (command >> 16) & 0xff;
+		emu->out_debug("---\n",command);
+		emu->out_debug("LD700: COMMAND=%02x\n",command);
 		switch(command) {
 		case 0x00:
 		case 0x01:
@@ -131,7 +166,8 @@ void LD700::event_frame()
 		case 0x08:
 		case 0x09:
 			if(status != STATUS_EJECT /*&& status != STATUS_STOP*/) {
-				seek_num = (seek_num * 10 + command) % 100000;
+				seek_num = seek_num * 10 + command;
+				emu->out_debug("LD700: SEEK NUMBER=%d\n", seek_num);
 			}
 			break;
 		case 0x16:
@@ -142,24 +178,28 @@ void LD700::event_frame()
 					emu->stop_movie();
 					emu->set_cur_movie_frame(0, false);
 					set_status(STATUS_STOP);
+					emu->out_debug("LD700: STOP\n");
 				}
 			}
 			break;
 		case 0x17:
-			if(status != STATUS_EJECT) {
+			if(status != STATUS_EJECT && status != STATUS_PLAY) {
+				emu->mute_direct_show_dev(true, true);
 				emu->play_movie();
 				set_status(STATUS_PLAY);
+				emu->out_debug("LD700: PLAY\n");
 			}
 			break;
 		case 0x18:
 			if(status != STATUS_EJECT /*&& status != STATUS_STOP*/) {
 				emu->pause_movie();
 				set_status(STATUS_PAUSE);
+				emu->out_debug("LD700: PAUSE\n");
 			}
 			break;
-		case 0x40:
-		case 0x41:
-		case 0x5f:
+		case 0x40:	// SEEK_CHAPTER
+		case 0x41:	// SEEK_FRAME
+		case 0x5f:	// SEEK_WAIT
 			if(status != STATUS_EJECT /*&& status != STATUS_STOP*/) {
 				seek_mode = command;
 				seek_num = 0;
@@ -167,18 +207,51 @@ void LD700::event_frame()
 			break;
 		case 0x42:
 			if(status != STATUS_EJECT /*&& status != STATUS_STOP*/) {
-				if(seek_mode == SEEK_CHAPTER) {
-					set_cur_track(seek_num);
-					cur_track = seek_num;
-				} else if(seek_mode == SEEK_FRAME) {
-					set_cur_frame(seek_num, false);
+				int tmp = seek_num, num[3];
+				bool flag = true;
+				memset(num, 0, sizeof(num));
+				
+				for(int i = 0; i < 3; i++) {
+					int n0 = tmp % 10;
+					tmp /= 10;
+					int n1 = tmp % 10;
+					tmp /= 10;
+					int n2 = tmp % 10;
+					tmp /= 10;
+					if(n0 == n1 && n0 == n2) {
+						num[i] = n0;
+					} else {
+						flag = false;
+						break;
+					}
 				}
-				if(status == STATUS_PAUSE) {
-					emu->play_movie();
-					set_status(STATUS_PLAY);
+				if(flag && (num[1] != 0 || num[2] != 0)) {
+					seek_num = num[0] + num[1] * 10 + num[2] * 100;
+				}
+				if(seek_mode == SEEK_WAIT) {
+					if(seek_num >= 101 && seek_num < 200) {
+						wait_frame_raw = track_frame_raw[seek_num - 100];
+					} else {
+						wait_frame_raw = (int)((double)seek_num / 29.97 * emu->get_movie_frame_rate() + 0.5);
+					}
+					emu->out_debug("LD700: WAIT FRAME=%d\n", seek_num);
+				} else {
+					if(seek_mode == SEEK_CHAPTER) {
+						emu->out_debug("LD700: SEEK TRACK=%d\n", seek_num);
+						set_cur_track(seek_num);
+					} else if(seek_mode == SEEK_FRAME) {
+						emu->out_debug("LD700: SEEK FRAME=%d\n", seek_num);
+						set_cur_frame(seek_num, false);
+					}
+					if(status == STATUS_PAUSE) {
+						emu->mute_direct_show_dev(true, true);
+						emu->play_movie();
+						set_status(STATUS_PLAY);
+						emu->out_debug("LD700: PLAY\n");
+					}
+					seek_done = true;
 				}
 				seek_mode = 0;
-				seek_done = true;
 			}
 			break;
 		case 0x45:
@@ -194,34 +267,63 @@ void LD700::event_frame()
 	}
 	
 	if(!seek_done && status == STATUS_PLAY) {
+		if(wait_frame_raw != 0 && prev_frame_raw < wait_frame_raw && cur_frame_raw >= wait_frame_raw) {
+			emu->out_debug("LD700: WAIT RAW FRAME=%d (%d)\n", wait_frame_raw, cur_frame_raw);
+			set_ack(true);
+			wait_frame_raw = 0;
+		}
 		for(int i = 0; i < num_pauses; i++) {
 			if(prev_frame_raw < pause_frame_raw[i] && cur_frame_raw >= pause_frame_raw[i]) {
 				emu->pause_movie();
 				set_status(STATUS_PAUSE);
+				emu->out_debug("LD700: PAUSE RAW FRAME=%d (%d->%d)\n", pause_frame_raw[i], prev_frame_raw, cur_frame_raw);
 				break;
 			}
 		}
 	}
-#ifdef USE_TAPE
-	if(prev_track != cur_track) {
-		_TCHAR wav_path[MAX_PATH];
-		_stprintf(wav_path, _T("%s_TRK%d.WAV"), get_file_path_without_extensiton(disc_path), cur_track);
-		vm->play_tape(wav_path);
-	}
-#endif
 }
 
 void LD700::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_ACK) {
 		set_ack(false);
+	} else if(event_id == EVENT_SOUND) {
+		if(signal_buffer_ok) {
+			static bool prev = false;
+			int sample = signal_buffer->read();
+			bool signal = sample > 100 ? true : sample < -100 ? false : prev;
+			prev = signal;
+			write_signals(&outputs_sound, signal ? 0xffffffff : 0);
+		}
+		sound_sample_l = sound_buffer_l->read();
+		sound_sample_r = sound_buffer_r->read();
+	} else if(event_id == EVENT_MIX) {
+		if(mix_buffer_ptr < mix_buffer_length) {
+			mix_buffer_l[mix_buffer_ptr] = sound_mute_l ? 0 : sound_sample_l;
+			mix_buffer_r[mix_buffer_ptr] = sound_mute_r ? 0 : sound_sample_r;
+			mix_buffer_ptr++;
+		}
 	}
 }
 
 void LD700::set_status(int value)
 {
 	if(status != value) {
-		write_signals(&outputs_drec_remote, (value == STATUS_PLAY) ? 0xffffffff : 0);
+		if(value == STATUS_PLAY) {
+			if(sound_event_id == -1) {
+				register_event(this, EVENT_SOUND, 1000000.0 / emu->get_movie_sound_rate(), true, &sound_event_id);
+			}
+			sound_buffer_l->clear();
+			sound_buffer_r->clear();
+			signal_buffer->clear();
+			signal_buffer_ok = false;
+		} else {
+			if(sound_event_id != -1) {
+				cancel_event(sound_event_id);
+				sound_event_id = -1;
+				sound_sample_l = sound_sample_r = 0;
+			}
+		}
 		write_signals(&outputs_exv, !(value == STATUS_EJECT || value == STATUS_STOP) ? 0xffffffff : 0);
 		status = value;
 	}
@@ -246,21 +348,13 @@ void LD700::set_cur_frame(int frame, bool relative)
 			return;
 		}
 	}
-	
 	bool sign = (frame >= 0);
-	frame = (int)((double)abs(frame) / 59.94 * emu->get_movie_fps() + 0.5);
-	if(!sign) {
-		frame = -frame;
-	}
+	frame = (int)((double)abs(frame) / 29.97 * emu->get_movie_frame_rate() + 0.5);
 	if(relative && frame == 0) {
-		frame = sign ? 1 : -1;
+		frame = 1;
 	}
-	emu->set_cur_movie_frame(frame, relative);
-}
-
-int LD700::get_cur_frame()
-{
-	return (int)(emu->get_cur_movie_frame() * 59.94 / emu->get_movie_fps() + 0.5);
+	emu->set_cur_movie_frame(sign ? frame : -frame, relative);
+	emu->out_debug("LD700: SEEK RAW FRAME=%d RELATIVE=%d\n", sign ? frame : -frame, relative);
 }
 
 int LD700::get_cur_frame_raw()
@@ -270,80 +364,114 @@ int LD700::get_cur_frame_raw()
 
 void LD700::set_cur_track(int track)
 {
-	if(track >= 1 && track <= num_tracks) {
-		emu->set_cur_movie_frame(track_frame_raw[track - 1], false);
+	if(track >= 0 && track <= num_tracks) {
+		emu->set_cur_movie_frame(track_frame_raw[track], false);
 	}
-}
-
-int LD700::get_cur_track()
-{
-	if(num_tracks != 0) {
-		int frame = emu->get_cur_movie_frame();
-		for(int t = num_tracks; t > 0; t--) {
-			if(track_frame_raw[t - 1] <= frame) {
-				return t;
-			}
-		}
-	}
-	return 0;
 }
 
 void LD700::open_disc(_TCHAR* file_path)
 {
 	if(emu->open_movie_file(file_path)) {
-		_tcscpy(disc_path, file_path);
+		emu->out_debug("LD700: OPEN MOVIE PATH=%s\n", file_path);
 		
-		// read cue sheet
-		_TCHAR cue_path[MAX_PATH], tmp[1024], p1[1024], p2[1024], p3[1024], *str1, *str2;
-		_stprintf(cue_path, _T("%s.CUE"), get_file_path_without_extensiton(file_path));
-		
-		num_tracks = 1;
+		// read LOCATION information
+		num_tracks = -1;
 		memset(track_frame_raw, 0, sizeof(track_frame_raw));
+		num_pauses = 0;
+		memset(pause_frame_raw, 0, sizeof(pause_frame_raw));
 		
-		FILEIO* fio = new FILEIO();
-		if(fio->Fopen(cue_path, FILEIO_READ_ASCII)) {
-			int track = 0;
-			while(fio->Fgets(tmp, 1024) != NULL) {
-				p1[0] = p2[0] = p3[0] = _T('\0');
-				_stscanf(tmp, _T("%s %s %s"), p1, p2, p3);
-				if(_tcsicmp(p1, _T("TRACK")) == 0) {
-					track = _tstoi(p2);
-					if(track > num_tracks && track <= MAX_TRACKS) {
-						num_tracks = track;
-					}
-				} else if(_tcsicmp(p1, _T("INDEX")) == 0) {
-					int number = _tstoi(p2);
-					int frame_raw = -1;
-					if((str1 = _tcsstr(p3, _T(":"))) != NULL) {
-						*str1 = _T('\0');
-						if((str2 = _tcsstr(str1 + 1, _T(":"))) != NULL) {
-							*str2 = _T('\0');
-							double m = (double)_tstoi(p3);
-							double s = (double)_tstoi(str1 + 1);
-							double f = (double)_tstoi(str2 + 1);
-							
-							frame_raw = (int)((m * 60 + s) * emu->get_movie_fps() + f + 0.5);
+		if(check_file_extension(file_path, _T(".ogv"))) {
+			FILEIO* fio = new FILEIO();
+			if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+				uint8 buffer[0x1000+1];
+				fio->Fread(buffer, sizeof(buffer), 1);
+				fio->Fclose();
+				buffer[0x1000] = 0;
+				
+				for(int i = 0; i < 0x1000; i++) {
+					char *top = (char *)(buffer + i), tmp[128];
+					if(_strnicmp(top, "chapter:", 8) == 0) {
+						top += 8;
+						for(int j = 0;;) {
+							char c = *top++;
+							if(c >= '0' && c <= '9') {
+								tmp[j++] = c;
+							} else if(c != ' ') {
+								tmp[j] = '\0';
+								break;
+							}
 						}
-					}
-					if(frame_raw != -1 && number > 0) {
-						if(number == 1 && track >= 1 && track <= MAX_TRACKS) {
-							track_frame_raw[track - 1] = frame_raw;
+						int track = atoi(tmp);
+						for(int j = 0;;) {
+							char c = *top++;
+							if(c >= '0' && c <= '9') {
+								tmp[j++] = c;
+							} else if(c != ' ') {
+								tmp[j] = '\0';
+								break;
+							}
+						}
+						if(track >= 0 && track <= MAX_TRACKS) {
+							if(track > num_tracks) {
+								num_tracks = track;
+							}
+							track_frame_raw[track] = atoi(tmp);
+							emu->out_debug("LD700: TRACK %d: %d\n", track, track_frame_raw[track]);
+						}
+					} else if(_strnicmp(top, "stop:", 5) == 0) {
+						top += 5;
+						for(int j = 0;;) {
+							char c = *top++;
+							if(c >= '0' && c <= '9') {
+								tmp[j++] = c;
+							} else if(c != ' ') {
+								tmp[j] = '\0';
+								break;
+							}
 						}
 						if(num_pauses < MAX_PAUSES) {
-							pause_frame_raw[num_pauses++] = frame_raw;
+							pause_frame_raw[num_pauses] = atoi(tmp) > 300 ? atoi(tmp) : 285;
+							emu->out_debug("LD700: PAUSE %d\n", pause_frame_raw[num_pauses]);
+							num_pauses++;
 						}
+					} else if(_strnicmp(top, "ENCODER=", 8) == 0) {
+						break;
 					}
 				}
 			}
-			for(int i = 1; i < num_tracks; i++) {
-				if(track_frame_raw[i] == 0) {
-					track_frame_raw[i] = track_frame_raw[i - 1];
+			delete fio;
+		} else {
+			_TCHAR ini_path[MAX_PATH];
+			_stprintf(ini_path, _T("%s.ini"), get_file_path_without_extensiton(file_path));
+			emu->out_debug("LD700: OPEN INI PATH=%s\n", ini_path);
+			
+			for(int i = 0; i <= MAX_TRACKS; i++) {
+				_TCHAR name[64];
+				_stprintf(name, _T("chapter%d"), i);
+				int value = GetPrivateProfileInt(_T("Location"), name, -1, ini_path);
+				if(value < 0) {
+					break;
+				} else {
+					track_frame_raw[i] = value;
+					num_tracks = i;
 				}
 			}
-			fio->Fclose();
+			for(int i = 0; i < MAX_PAUSES; i++) {
+				_TCHAR name[64];
+				_stprintf(name, _T("stop%d"), i);
+				int value = GetPrivateProfileInt(_T("Location"), name, -1, ini_path);
+				if(value < 0) {
+					break;
+				} else {
+					pause_frame_raw[num_pauses++] = value;
+				}
+			}
 		}
-		delete fio;
-		
+		for(int i = 1; i < num_tracks; i++) {
+			if(track_frame_raw[i] == 0) {
+				track_frame_raw[i] = track_frame_raw[i - 1];
+			}
+		}
 		set_status(STATUS_STOP);
 	} else {
 		close_disc();
@@ -353,11 +481,55 @@ void LD700::open_disc(_TCHAR* file_path)
 void LD700::close_disc()
 {
 	emu->close_movie_file();
-	num_tracks = 0;
+	num_tracks = -1;
 	set_status(STATUS_EJECT);
 }
 
 bool LD700::disc_inserted()
 {
 	return (status != STATUS_EJECT);
+}
+
+void LD700::initialize_sound(int rate, int samples)
+{
+	mix_buffer_l = (int16 *)malloc(samples * 2 * sizeof(int16));
+	mix_buffer_r = (int16 *)malloc(samples * 2 * sizeof(int16));
+	mix_buffer_length = samples * 2;
+	register_event(this, EVENT_MIX, 1000000. / (double)rate, true, NULL);
+}
+
+void LD700::mix(int32* buffer, int cnt)
+{
+	int16 sample_l = 0, sample_r = 0;
+	for(int i = 0; i < cnt; i++) {
+		if(i < mix_buffer_ptr) {
+			sample_l = mix_buffer_l[i];
+			sample_r = mix_buffer_r[i];
+		}
+		*buffer += sample_l;
+		*buffer += sample_r;
+	}
+	if(cnt < mix_buffer_ptr) {
+		memmove(mix_buffer_l, mix_buffer_l + cnt, (mix_buffer_ptr - cnt) * sizeof(int16));
+		memmove(mix_buffer_r, mix_buffer_r + cnt, (mix_buffer_ptr - cnt) * sizeof(int16));
+		mix_buffer_ptr -= cnt;
+	} else {
+		mix_buffer_ptr = 0;
+	}
+}
+
+void LD700::movie_sound_callback(uint8 *buffer, long size)
+{
+	if(status == STATUS_PLAY) {
+		int16 *buffer16 = (int16 *)buffer;
+		size /= 2;
+		for(int i = 0; i < size; i += 2) {
+			sound_buffer_l->write(buffer16[i]);
+			sound_buffer_r->write(buffer16[i + 1]);
+			signal_buffer->write(buffer16[i + 1]);
+		}
+		if(signal_buffer->count() >= emu->get_movie_sound_rate() / 2) {
+			signal_buffer_ok = true;
+		}
+	}
 }

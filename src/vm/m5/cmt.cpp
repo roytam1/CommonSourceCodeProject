@@ -50,15 +50,20 @@ void CMT::write_io8(uint32 addr, uint32 data)
 uint32 CMT::read_io8(uint32 addr)
 {
 	// back-space (0x08): reset/halt key
-	return (in ? 1 : 0) | (busy ? 2 : 0) | (key_stat[0x08] ? 0x80 : 0);
+	uint32 status = (in ? 1 : 0) | (busy ? 2 : 0) | ((key_stat[0x08] || eot) ? 0x80 : 0);
+	eot = false;
+	return status;
 }
 
 void CMT::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CMT_IN) {
 		in = ((data & mask) != 0);
-	}
-	else if(id == SIG_PRINTER_BUSY) {
+	} else if(id == SIG_CMT_EOT) {
+		if((data & mask) != 0 && vm->tape_inserted()) {
+			eot = true;
+		}
+	} else if(id == SIG_PRINTER_BUSY) {
 		busy = ((data & mask) != 0);
 	}
 }
