@@ -81,6 +81,9 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
+        MENUITEM "MZ-800"                       ID_MZ800_BOOT_MODE0
+        MENUITEM "MZ-700"                       ID_MZ800_BOOT_MODE1
+        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
@@ -189,6 +192,8 @@ BEGIN
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM SEPARATOR
+        MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"
     BEGIN
@@ -219,7 +224,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "mz1500.ico"
+IDI_ICON1               ICON    DISCARDABLE     "mz800.ico"
 #endif    // âpåÍ (±“ÿ∂) resources
 /////////////////////////////////////////////////////////////////////////////
 

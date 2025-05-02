@@ -95,6 +95,11 @@
 #include "mz700/mz700.h"
 #endif
 
+// SHARP MZ-800
+#ifdef _MZ800
+#include "mz700/mz700.h"
+#endif
+
 // SHARP MZ-1200
 #ifdef _MZ1200
 #include "mz80k/mz80k.h"

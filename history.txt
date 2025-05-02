@@ -1,3 +1,11 @@
+5/18/2011
+
+[VM/DISK] fix dsk floppy disk image converter
+
+[MZ800] support SHARP MZ-800
+[MZ1500] support floppy disk drives
+
+
 5/16/2011
 
 [JX] fix memory map for kanji rom

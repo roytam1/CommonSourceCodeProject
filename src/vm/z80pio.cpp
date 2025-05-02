@@ -74,12 +74,12 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 		else if(!(data & 1)) {
 			port[ch].vector = data;
 		}
-		else if((data & 0xf) == 3) {
+		else if((data & 0x0f) == 3) {
 			port[ch].enb_intr = ((data & 0x80) != 0);
 			port[ch].ctrl2 = data;
 			update_intr();
 		}
-		else if((data & 0xf) == 7) {
+		else if((data & 0x0f) == 7) {
 			if(data & 0x10) {
 				if((port[ch].mode & 0xc0) == 0xc0) {
 					port[ch].set_mask = true;
@@ -91,7 +91,7 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].ctrl1 = data;
 			update_intr();
 		}
-		else if((data & 0xf) == 0xf) {
+		else if((data & 0x0f) == 0x0f) {
 			// port[].dir 0=output, 1=input
 			if((data & 0xc0) == 0) {
 				port[ch].dir = 0;
@@ -123,7 +123,7 @@ uint32 Z80PIO::read_io8(uint32 addr)
 	case 1:
 	case 3:
 		// status (sharp z-80pio special function)
-		return (port[0].mode & 0xc0) | ((port[1].mode >> 4) & 0xc);
+		return (port[0].mode & 0xc0) | ((port[1].mode >> 4) & 0x0c);
 	}
 	return 0xff;
 }

@@ -647,6 +647,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			config.ramdisk_type = LOWORD(wParam) - ID_HC80_RAMDISK0;
 			break;
 #endif
+#ifdef _MZ800
+		case ID_MZ800_BOOT_MODE0:
+		case ID_MZ800_BOOT_MODE1:
+			config.boot_mode = LOWORD(wParam) - ID_MZ800_BOOT_MODE0;
+			break;
+#endif
 		case ID_CPU_POWER0:
 		case ID_CPU_POWER1:
 		case ID_CPU_POWER2:
@@ -1192,6 +1198,11 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef _HC80
 		if(config.ramdisk_type >= 0 && config.ramdisk_type < 3) {
 			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0 + config.ramdisk_type, MF_BYCOMMAND);
+		}
+#endif
+#ifdef _MZ800
+		if(config.boot_mode >= 0 && config.boot_mode < 2) {
+			CheckMenuRadioItem(hMenu, ID_MZ800_BOOT_MODE0, ID_MZ800_BOOT_MODE1, ID_MZ800_BOOT_MODE0 + config.boot_mode, MF_BYCOMMAND);
 		}
 #endif
 		if(config.cpu_power >= 0 && config.cpu_power < 5) {

@@ -1,5 +1,6 @@
 /*
 	SHARP MZ-700 Emulator 'EmuZ-700'
+	SHARP MZ-800 Emulator 'EmuZ-800'
 	SHARP MZ-1500 Emulator 'EmuZ-1500'
 	Skelton for retropc emulator
 
@@ -20,11 +21,6 @@
 #include "../i8255.h"
 #include "../io.h"
 #include "../pcm1bit.h"
-#ifdef _MZ1500
-#include "../sn76489an.h"
-#include "../z80pio.h"
-#include "../z80sio.h"
-#endif
 #include "../z80.h"
 
 //#include "cmos.h"
@@ -32,11 +28,22 @@
 #include "emm.h"
 #include "keyboard.h"
 #include "memory.h"
-#ifdef _MZ1500
+#include "ramfile.h"
+
+#if defined(_MZ800) || defined(_MZ1500)
+#include "../mb8877.h"
+#if defined(_MZ800)
+#include "../not.h"
+#endif
+#include "../sn76489an.h"
+#include "../z80pio.h"
+#include "../z80sio.h"
+#include "floppy.h"
+#if defined(_MZ1500)
 #include "psg.h"
+#endif
 #include "quickdisk.h"
 #endif
-#include "ramfile.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -65,96 +72,190 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory = new MEMORY(this, emu);
 	ramfile = new RAMFILE(this, emu);
 	
-#ifdef _MZ1500
+#if defined(_MZ800) || defined(_MZ1500)
 	and_snd = new AND(this, emu);
+	fdc = new MB8877(this, emu);	// mb8876
+#if defined(_MZ800)
+	not_pit = new NOT(this, emu);
+	psg = new SN76489AN(this, emu);
+#elif defined(_MZ1500)
 	psg_l = new SN76489AN(this, emu);
 	psg_r = new SN76489AN(this, emu);
+#endif
 	pio_int = new Z80PIO(this, emu);
 	sio_rs = new Z80SIO(this, emu);
 	sio_qd = new Z80SIO(this, emu);
 	
+	floppy = new FLOPPY(this, emu);
+#if defined(_MZ1500)
 	psg = new PSG(this, emu);
+#endif
 	qd = new QUICKDISK(this, emu);
 #endif
 	
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(pcm);
-#ifdef _MZ1500
+#if defined(_MZ800)
+	event->set_context_sound(psg);
+#elif defined(_MZ1500)
 	event->set_context_sound(psg_l);
 	event->set_context_sound(psg_r);
 #endif
 	
-	and_int->set_context_out(cpu, SIG_CPU_IRQ, 1);
-	and_int->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
-#ifdef _MZ1500
+	// VRAM/PCG wait
+	memory->set_context_cpu(cpu);
+	
+	// memory mapped I/O
+	memory->set_context_pio(pio);
+	memory->set_context_pit(pit);
+	
+#if defined(_MZ1500)
+	// psg mixer
+	psg->set_context_psg_l(psg_l);
+	psg->set_context_psg_r(psg_r);
+#endif
+	
+#if defined(_MZ800)
+	// 8253:CLK#0 <- 1.10MHz
+	pit->set_constant_clock(0, 1100000);
+#else
+	// 8253:CLK#0 <- 895KHz
+	pit->set_constant_clock(0, CPU_CLOCKS / 4);
+#endif
+	
+#if defined(_MZ800) || defined(_MZ1500)
+	// 8253:OUT#0 AND 8255:PC0 -> SPEAKER
+	pit->set_context_ch0(and_snd, SIG_AND_BIT_0, 1);
+	pio->set_context_port_c(and_snd, SIG_AND_BIT_1, 1, 0);
 	and_snd->set_context_out(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	and_snd->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
-#endif
-	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
-	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
-#ifdef _MZ1500
-	pit->set_context_ch0(and_snd, SIG_AND_BIT_0, 1);
 #else
+	// 8253:OUT#0 -> SPEAKER
 	pit->set_context_ch0(pcm, SIG_PCM1BIT_SIGNAL, 1);
 #endif
-	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
-	pit->set_context_ch2(and_int, SIG_AND_BIT_0, 1);
-#ifdef _MZ1500
+#if defined(_MZ800)
+	// 8253:OUT#0 -> NOT -> Z80PIO:PA4
+	pit->set_context_ch0(not_pit, SIG_NOT_INPUT, 1);
+	not_pit->set_context_out(pio_int, SIG_Z80PIO_PORT_A, 0x10);
+#elif defined(_MZ1500)
+	// 8253:OUT#0 -> Z80PIO:PA4
 	pit->set_context_ch0(pio_int, SIG_Z80PIO_PORT_A, 0x10);
+#endif
+	
+	// 8253:CLK#1 <- 15.7KHz
+	pit->set_constant_clock(1, CPU_CLOCKS / 228);
+	
+	// 8253:OUT#1 -> 8253:CLK#2
+	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
+	
+	// 8253:OUT#2 (N)AND 8255:PC2 -> Z80:INT
+	pit->set_context_ch2(and_int, SIG_AND_BIT_0, 1);
+	pio->set_context_port_c(and_int, SIG_AND_BIT_1, 4, 0);
+	and_int->set_context_out(cpu, SIG_CPU_IRQ, 1);
+	and_int->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
+	
+#if defined(_MZ1500)
+	// 8253:OUT#2 -> Z80PIO:PA5
 	pit->set_context_ch2(pio_int, SIG_Z80PIO_PORT_A, 0x20);
 #endif
-	pit->set_constant_clock(0, CPU_CLOCKS >> 2);
-	pit->set_constant_clock(1, 15700);
+	
+	// 8255:PA0-3 -> KEYBOARD:STROBE
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x0f, 0);
-#ifdef _MZ1500
-	pio->set_context_port_c(and_snd, SIG_AND_BIT_1, 1, 0);
+#if defined(_MZ800)
+	// 8255:PA4 -> JOYSTICK #1
+	// 8255:PA5 -> JOYSTICK #2
 #endif
-	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
-	pio->set_context_port_c(and_int, SIG_AND_BIT_1, 4, 0);
-	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 8, 0);
-#ifdef _MZ1500
+	// 8255:PA7 -> 556 RESET
+	
+	// 8255:PB0-7 <- KEYBOARD:DATA
+	keyboard->set_context_pio(pio);
+	
+	// 8255:PC0 -> AND -> SPEAKER
+	// 8255:PC1 -> DATA RECORDER:WRITE DATA
+	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x02, 0);
+	// 8255:PC2 -> (N)AND -> Z80:INT
+	// 8255:PC3 -> DATA RECORDER:MOTOR ON/OFF
+	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 0x08, 0);
+	// 8255:PC4 <- DATA RECORDER:MOTOR REMOTE
+	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
+	// 8255:PC5 <- DATA RECORDER:READ DATA
+	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
+	// 8255:PC6 <- MEMORY:556 OUT (1.5KHz)
+	// 8255:PC7 <- MEMORY:VBLANK
+	
+#if defined(_MZ800) || defined(_MZ1500)
+	// Z80PIO:PA0 <- PRINTER:RDA
+	// Z80PIO:PA1 <- PRINTER:STA
+	// Z80PIO:PA2 <- GND
+	// Z80PIO:PA3 <- GND
+#if defined(_MZ800)
+	// Z80PIO:PA4 <- NOT <- 8253:OUT#0
+	// Z80PIO:PA5 <- HBLANK
+	memory->set_context_pio_int(pio_int);
+#elif defined(_MZ1500)
+	// Z80PIO:PA4 <- 8253:OUT#0
+	// Z80PIO:PA5 <- 8253:OUT#2
+#endif
+	// Z80PIO:PA6 -> PRINTER:IRT
+	// Z80PIO:PA7 -> PRINTER:RDP
+#endif
+	
+#if defined(_MZ800) || defined(_MZ1500)
+	// Z80SIO:RTSA -> QD:WRGA
 	sio_qd->set_context_rts0(qd, QUICKDISK_SIO_RTSA, 1);
+	// Z80SIO:DTRB -> QD:MTON
 	sio_qd->set_context_dtr1(qd, QUICKDISK_SIO_DTRB, 1);
+	// Z80SIO:SENDA -> QD:RECV
 	sio_qd->set_context_sync0(qd, QUICKDISK_SIO_SYNC, 1);
 	sio_qd->set_context_rxdone0(qd, QUICKDISK_SIO_RXDONE, 1);
 	sio_qd->set_context_send0(qd, QUICKDISK_SIO_DATA);
 	sio_qd->set_context_break0(qd, QUICKDISK_SIO_BREAK, 1);
+	// Z80SIO:CTSA <- QD:PROTECT
+	// Z80SIO:DCDA <- QD:INSERT
+	// Z80SIO:DCDB <- QD:HOE
+	qd->set_context_sio(sio_qd);
+	
+	// floppy drives
+	floppy->set_context_fdc(fdc);
 #endif
 	
+#if defined(_MZ800)
+	// MZ-800
+	display->set_vram_mz800_ptr(memory->get_vram());
+	// MZ-700 mode
+	display->set_vram_ptr(memory->get_vram() + 0x3000);
+	display->set_font_ptr(memory->get_vram() + 0x2000);
+	memory->set_context_display(display);
+#else
+	// MZ-700/1500
 	display->set_vram_ptr(memory->get_vram());
 	display->set_font_ptr(memory->get_font());
-#ifdef _MZ1500
+#if defined(_MZ1500)
 	display->set_pcg_ptr(memory->get_pcg());
-	display->set_context_qd(qd);
 #endif
-	keyboard->set_context_pio(pio);
-	memory->set_context_cpu(cpu);
-	memory->set_context_pit(pit);
-	memory->set_context_pio(pio);
-#ifdef _MZ1500
-	psg->set_context_psg_l(psg_l);
-	psg->set_context_psg_r(psg_r);
-	qd->set_context_sio(sio_qd);
+#endif
+	
+#if defined(_MZ800) || defined(_MZ1500)
+	// access lamp
+	display->set_context_fdc(fdc);
+	display->set_context_qd(qd);
 #endif
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-#ifdef _MZ1500
+#if defined(_MZ800) || defined(_MZ1500)
 	cpu->set_context_intr(pio_int);
-#else
-	cpu->set_context_intr(dummy);
-#endif
-	
-#ifdef _MZ1500
 	// z80 family daisy chain
-	// 0=8253 ch.2
+	// 0=8253:OUT2
 	pio_int->set_context_intr(cpu, 1);
 	pio_int->set_context_child(sio_rs);
 	sio_rs->set_context_intr(cpu, 2);
 	sio_rs->set_context_child(sio_qd);
 	sio_qd->set_context_intr(cpu, 3);
+#else
+	cpu->set_context_intr(dummy);
 #endif
 	
 	// emm
@@ -164,15 +265,56 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// cmos
 //	io->set_iomap_range_rw(0xf8, 0xfa, cmos);
 	
-#ifdef _MZ1500
+#if defined(_MZ800)
+	// 8255/8253
+	io->set_iomap_range_rw(0xd0, 0xd3, pio);
+	io->set_iomap_range_rw(0xd4, 0xd7, pit);
+#endif
+	
+#if defined(_MZ800) || defined(_MZ1500)
+	// floppy drives
+	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
+	io->set_iomap_range_w(0xdc, 0xdd, floppy);
+#endif
+	
 	// memory mapper
-	io->set_iomap_range_w(0xe0, 0xe6, memory);	// E5h-E6h: PCG
+#if defined(_MZ800) || defined(_MZ1500)
+#if defined(_MZ800)
+	io->set_iomap_range_r(0xe0, 0xe1, memory);
+#endif
+	io->set_iomap_range_w(0xe0, 0xe6, memory);
+#else
+	io->set_iomap_range_w(0xe0, 0xe4, memory);
+#endif
+	
+#if defined(_MZ800)
+	// crtc
+	io->set_iomap_range_w(0xcc, 0xce, memory);
+	io->set_iomap_single_r(0xce, memory);
+	io->set_iomap_single_w(0xcf, display);
+	// palette
+	io->set_iomap_single_w(0xf0, display);
+#elif defined(_MZ1500)
+	// palette
+	io->set_iomap_range_w(0xf0, 0xf1, display);
+#endif
+	
+#if defined(_MZ800)
+	// joystick
+//	io->set_iomap_range_r(0xf0, 0xf1, joystick);
+#endif
+	
 	// psg
+#if defined(_MZ800)
+	io->set_iomap_single_w(0xf2, psg);
+#elif defined(_MZ1500)
 	io->set_iomap_single_w(0xe9, psg);
 	io->set_iomap_single_w(0xf2, psg_l);
 	io->set_iomap_single_w(0xf3, psg_r);
-	// display
-	io->set_iomap_range_w(0xf0, 0xf1, display);
+#endif
+	
+#if defined(_MZ800) || defined(_MZ1500)
+	// z80pio/sio
 	// z80pio and z80sio*2
 	static int z80_sio_addr[4] = {0, 2, 1, 3};
 	static int z80_pio_addr[4] = {1, 3, 0, 2};
@@ -181,14 +323,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_alias_rw(0xf4 + i, sio_qd, z80_sio_addr[i]);
 		io->set_iomap_alias_rw(0xfc + i, pio_int, z80_pio_addr[i]);
 	}
-//	io->set_iovalue_single_r(0xf7, 0x80);	// NOTE: sio status for quick disk
 #else
-	// memory mapper
-	io->set_iomap_range_w(0xe0, 0xe4, memory);
 	// printer
 	io->set_iovalue_single_r(0xfe, 0xc0);
 #endif
-	
+
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(device->this_device_id != event->this_device_id) {
@@ -227,7 +366,7 @@ void VM::reset()
 	}
 	and_int->write_signal(SIG_AND_BIT_0, 0, 1);	// CLOCK = L
 	and_int->write_signal(SIG_AND_BIT_1, 1, 1);	// INTMASK = H
-#ifdef _MZ1500
+#if defined(_MZ800) || defined(_MZ1500)
 	and_snd->write_signal(SIG_AND_BIT_1, 1, 1);	// SNDMASK = H
 #endif
 }
@@ -307,7 +446,9 @@ void VM::initialize_sound(int rate, int samples)
 	
 	// init sound gen
 	pcm->init(rate, 8000);
-#ifdef _MZ1500
+#if defined(_MZ800)
+	psg->init(rate, 3579545, 8000);
+#elif defined(_MZ1500)
 	psg_l->init(rate, 3579545, 8000);
 	psg_r->init(rate, 3579545, 8000);
 #endif
@@ -321,18 +462,6 @@ uint16* VM::create_sound(int* extra_frames)
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
-
-#ifdef _MZ1500
-void VM::open_quickdisk(_TCHAR* filename)
-{
-	qd->open_disk(filename);
-}
-
-void VM::close_quickdisk()
-{
-	qd->close_disk();
-}
-#endif
 
 void VM::play_datarec(_TCHAR* filename)
 {
@@ -361,6 +490,28 @@ void VM::push_stop()
 {
 	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
 }
+
+#if defined(_MZ800) || defined(_MZ1500)
+void VM::open_quickdisk(_TCHAR* filename)
+{
+	qd->open_disk(filename);
+}
+
+void VM::close_quickdisk()
+{
+	qd->close_disk();
+}
+
+void VM::open_disk(_TCHAR* filename, int drv)
+{
+	fdc->open_disk(filename, drv);
+}
+
+void VM::close_disk(int drv)
+{
+	fdc->close_disk(drv);
+}
+#endif
 
 bool VM::now_skip()
 {

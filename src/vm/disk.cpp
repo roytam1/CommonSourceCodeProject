@@ -946,7 +946,7 @@ bool DISK::cpdread_to_d88(int extended)
 	// get cylinder number and side number
 	_memcpy(tmp_buffer, buffer, file_size);
 	int ncyl = tmp_buffer[0x30];
-	int nside = (tmp_buffer[0x31] == 1) ? 2 : 1;
+	int nside = tmp_buffer[0x31];
 	
 	// create d88 image
 	file_size = 0;

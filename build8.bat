@@ -69,6 +69,10 @@ devenv.com mz700.vcproj /Rebuild Release
 mkdir build\mz700
 copy Release\mz700.exe build\mz700\.
 
+devenv.com mz800.vcproj /Rebuild Release
+mkdir build\mz800
+copy Release\mz800.exe build\mz800\.
+
 devenv.com mz1200.vcproj /Rebuild Release
 mkdir build\mz1200
 copy Release\mz1200.exe build\mz1200\.

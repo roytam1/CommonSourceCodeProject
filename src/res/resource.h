@@ -32,6 +32,8 @@
 #define ID_HC80_RAMDISK0                40031
 #define ID_HC80_RAMDISK1                40032
 #define ID_HC80_RAMDISK2                40033
+#define ID_MZ800_BOOT_MODE0             40031
+#define ID_MZ800_BOOT_MODE1             40032
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102
@@ -357,6 +359,17 @@
 #define MENU_POS_SOUND                  3
 #endif
 
+// SHARP MZ-800
+#ifdef _MZ800
+#define MENU_POS_CONTROL                0
+#define MENU_POS_QUICKDISK              1
+#define MENU_POS_DATAREC                2
+#define MENU_POS_FD1                    3
+#define MENU_POS_FD2                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
 // SHARP MZ-1200
 #ifdef _MZ1200
 #define MENU_POS_CONTROL                0
@@ -370,8 +383,10 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_QUICKDISK              1
 #define MENU_POS_DATAREC                2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
+#define MENU_POS_FD1                    3
+#define MENU_POS_FD2                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // SHARP MZ-2500

@@ -68,6 +68,9 @@ typedef struct {
 #ifdef _HC80
 	int ramdisk_type;
 #endif
+#ifdef _MZ800
+	int boot_mode;
+#endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
 	int monitor_type;
 #endif;
