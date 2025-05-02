@@ -1,3 +1,11 @@
+12/5/2013
+
+[VM/MC6840] support MC6840 (partial)
+
+[PC8801/PC88] fix to show opn busy flag at the first access only for ALPHA
+[PC8801/PC88] support crtc reverse flag
+
+
 8/24/2013
 
 [EMU/WIN32] fix access lamp renderer for Direct3D9

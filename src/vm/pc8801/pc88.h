@@ -51,7 +51,7 @@ typedef struct pc88_crtc_t {
 	int buffer_ptr;
 	uint8 cmd;
 	int cmd_ptr;
-	uint8 mode, status;
+	uint8 mode, reverse, status;
 	bool vblank;
 	
 	void reset(bool hireso);

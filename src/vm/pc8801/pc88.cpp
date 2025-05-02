@@ -896,7 +896,9 @@ uint32 PC88::read_io8(uint32 addr)
 		val = d_opn->read_io8(addr);
 		if(opn_busy) {
 			// show busy flag for first access (for ALPHA)
-			val |= 0x80;
+			if(d_cpu->get_pc() == 0xe615) {
+				val |= 0x80;
+			}
 			opn_busy = false;
 		}
 		return val;
@@ -1951,6 +1953,7 @@ void pc88_crtc_t::reset(bool hireso)
 	skip_line = false;
 	vretrace = hireso ? 3 : 7;
 	timing_changed = false;
+	reverse = 0;
 }
 
 void pc88_crtc_t::write_cmd(uint8 data)
@@ -1963,6 +1966,7 @@ void pc88_crtc_t::write_cmd(uint8 data)
 		cursor.x = cursor.y = -1;
 		break;
 	case 1:	// start display
+		reverse = data & 1;
 		status |= 0x10;
 		status &= ~8;
 		break;
@@ -2105,11 +2109,13 @@ void pc88_crtc_t::expand_attribs(bool hireso, bool line400)
 						attrib.mask = 0xf0;
 					} else {
 						attrib.data = (attrib.data & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
+						attrib.data ^= reverse;
 						attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
 						attrib.mask = 0xff;
 					}
 				} else {
 					attrib.data = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
+					attrib.data ^= reverse;
 					attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
 					attrib.mask = 0xff;
 				}
