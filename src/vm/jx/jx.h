@@ -101,7 +101,7 @@ protected:
 	
 	// memory
 	uint8 font[0x800];
-	uint8 kanji[0x20000];
+	uint8 kanji[0x38000];
 	uint8 ram[0x80000];
 	uint8 ipl[0x30000];
 	

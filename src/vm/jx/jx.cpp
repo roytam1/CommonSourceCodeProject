@@ -114,8 +114,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// memory bus
 	//	00000-7FFFF	RAM
-	//	80000-9FFFF	KANJI ROM ???
-	//	B0000-BFFFF	VRAM
+	//	80000-B7FFF	KANJI ROM ???
+	//	B8000-BFFFF	VRAM
 	//	D0000-FFFFF	CART+IPL
 	
 	memset(font, 0xff, sizeof(font));
@@ -131,7 +131,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memset(ipl, 0xff, offset);
 	
 	mem->set_memory_rw(0x00000, 0x7ffff, ram);
-	mem->set_memory_r(0x80000, 0x9ffff, kanji);
+	mem->set_memory_r(0x80000, 0xb7fff, kanji);
 	mem->set_memory_r(0xd0000, 0xfffff, ipl);
 	
 	display->set_font_ptr(font);

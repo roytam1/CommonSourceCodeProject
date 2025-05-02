@@ -241,16 +241,15 @@ void DISPLAY::draw_alpha(int width)
 					lo = vram_ptr[src & 0x3fff];
 					prev_code = code;
 				}
-				code = 0;
 				
 				// shift-jis -> addr
-				if(lo >= 0x40) {
-					if(hi >= 0x81 && hi <= 0x83) {
-						code = 256 + (hi - 0x81) * 0xc0 + (lo - 0x40);
-					}
-					else if(hi >= 0x88 && hi <= 0x98) {
-						code = 256 + (hi - 0x85) * 0xc0 + (lo - 0x40);
-					}
+				code = (hi << 8) | lo;
+				if(code < 0x9900) {
+					code &= 0x1fff;
+				}
+				else {
+					code &= 0x1ff;
+					code |= 0x400;
 				}
 			}
 			

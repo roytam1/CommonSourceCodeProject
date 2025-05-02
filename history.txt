@@ -1,3 +1,9 @@
+5/16/2011
+
+[JX] fix memory map for kanji rom
+[JX/DISPLAY] fix text screen renderer
+
+
 5/14/2011
 
 [VM/DISK] support dsk floppy disk image based on MESS formats/dsk_dsk.c
