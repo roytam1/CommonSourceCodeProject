@@ -56,7 +56,7 @@ private:
 	uint8 cmdtype;
 	
 	// event
-	int regist_id[7];
+	int register_id[7];
 	
 	// status
 	bool now_search;
@@ -116,10 +116,10 @@ public:
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_irq, device, id, mask);
+		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_drq, device, id, mask);
+		register_output_signal(&outputs_drq, device, id, mask);
 	}
 #ifdef _FDC_DEBUG_LOG
 	void set_context_cpu(DEVICE* device) {

@@ -34,7 +34,7 @@ private:
 	
 	// data recorder
 	FILEIO* fio;
-	int regist_id;
+	int register_id;
 	bool play, rec;
 	bool in, out, change, remote, trig;
 	bool is_wav, is_tap, is_mzt;
@@ -76,13 +76,13 @@ public:
 	
 	// unique functions
 	void set_context_out(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_out, device, id, mask);
+		register_output_signal(&outputs_out, device, id, mask);
 	}
 	void set_context_remote(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_remote, device, id, mask);
+		register_output_signal(&outputs_remote, device, id, mask);
 	}
 	void set_context_end(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_end, device, id, mask);
+		register_output_signal(&outputs_end, device, id, mask);
 	}
 	bool play_datarec(_TCHAR* filename);
 	bool rec_datarec(_TCHAR* filename);

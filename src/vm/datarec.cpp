@@ -46,7 +46,7 @@ void DATAREC::initialize()
 	_memset(buffer, 0, sizeof(buffer));
 	bufcnt = samples = 0;
 	
-	regist_id = -1;
+	register_id = -1;
 	play = rec = false;
 	in = out = change = remote = trig = false;
 	is_wav = is_tap = is_mzt = false;
@@ -298,16 +298,16 @@ bool DATAREC::skip()
 void DATAREC::update_event()
 {
 	if(remote && ((play && remain > 0) || rec)) {
-		if(regist_id == -1) {
+		if(register_id == -1) {
 			int period = (int)((float)CPU_CLOCKS / (float)sample_rate + 0.5f);
-			vm->regist_event_by_clock(this, 0, period, true, &regist_id);
+			vm->register_event_by_clock(this, 0, period, true, &register_id);
 		}
 	}
 	else {
-		if(regist_id != -1) {
-			vm->cancel_event(regist_id);
+		if(register_id != -1) {
+			vm->cancel_event(register_id);
 		}
-		regist_id = -1;
+		register_id = -1;
 	}
 	
 	// end of tape ?

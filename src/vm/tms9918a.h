@@ -56,7 +56,7 @@ public:
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_irq, device, id, mask);
+		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void draw_screen();
 };

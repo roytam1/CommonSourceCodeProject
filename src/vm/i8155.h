@@ -27,7 +27,7 @@ private:
 	bool prev_out, prev_in;
 	// constant clock
 	uint32 freq;
-	int regist_id;
+	int register_id;
 	uint32 input_clk, prev_clk;
 	int period;
 	
@@ -77,16 +77,16 @@ public:
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&pio[0].outputs, device, id, mask, shift);
+		register_output_signal(&pio[0].outputs, device, id, mask, shift);
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&pio[1].outputs, device, id, mask, shift);
+		register_output_signal(&pio[1].outputs, device, id, mask, shift);
 	}
 	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&pio[2].outputs, device, id, mask, shift);
+		register_output_signal(&pio[2].outputs, device, id, mask, shift);
 	}
 	void set_context_timer(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_timer, device, id, mask);
+		register_output_signal(&outputs_timer, device, id, mask);
 	}
 	void set_constant_clock(uint32 hz) {
 		freq = hz;

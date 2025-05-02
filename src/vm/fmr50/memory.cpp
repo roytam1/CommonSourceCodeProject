@@ -162,7 +162,7 @@ void MEMORY::initialize()
 	}
 	
 	// regist event
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void MEMORY::reset()

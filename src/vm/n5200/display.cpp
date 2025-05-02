@@ -13,7 +13,7 @@
 
 void DISPLAY::initialize()
 {
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 void DISPLAY::reset()

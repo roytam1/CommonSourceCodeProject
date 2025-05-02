@@ -55,8 +55,8 @@ void IO::initialize()
 	cmt_play = cmt_rec = false;
 	
 	// video
-	vm->regist_frame_event(this);
-	vm->regist_vline_event(this);
+	vm->register_frame_event(this);
+	vm->register_vline_event(this);
 }
 
 void IO::release()
@@ -94,13 +94,13 @@ void IO::reset()
 	scroll_max = 4;
 	
 	// beep
-	regist_id = -1;
+	register_id = -1;
 }
 
 void IO::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_BEEP) {
-		regist_id = -1;
+		register_id = -1;
 		d_beep->write_signal(SIG_BEEP_ON, 0, 0);
 		rregs[4] = (wregs[4] &= ~2);
 	}
@@ -150,10 +150,10 @@ void IO::write_io8(uint32 addr, uint32 data)
 			d_beep->write_signal(SIG_BEEP_ON, 1, 1);
 			// temporary patch: regist the event to stop
 			int intv = ram[0x450] * 50000;
-			if(regist_id != -1) {
-				vm->cancel_event(regist_id);
+			if(register_id != -1) {
+				vm->cancel_event(register_id);
 			}
-			vm->regist_event(this, EVENT_BEEP, intv, false, &regist_id);
+			vm->register_event(this, EVENT_BEEP, intv, false, &register_id);
 		}
 		else {
 			d_beep->write_signal(SIG_BEEP_ON, 0, 1);
@@ -620,7 +620,7 @@ void IO::play_datarec(_TCHAR* filename)
 		cmt_fio->Fread(cmt_buf, sizeof(cmt_buf), 1);
 		cmt_ptr = 0;
 		cmt_play = true;
-		// recieve first byte
+		// receive first byte
 		if(cmt_mode && (wregs[5] & 4)) {
 			recv_from_cmt();
 		}
@@ -664,7 +664,7 @@ void IO::recv_from_cmt()
 		rregs[7] = cmt_buf[cmt_ptr++];
 		// regist event for rstb
 		int id;
-		vm->regist_event(this, EVENT_CMT, 2000, false, &id);
+		vm->register_event(this, EVENT_CMT, 2000, false, &id);
 		// update buffer
 		cmt_ptr &= CMT_BUF_SIZE - 1;
 		if(!cmt_ptr) {

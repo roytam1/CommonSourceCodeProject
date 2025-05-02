@@ -206,14 +206,14 @@ uint32 EVENT::current_clock()
 	return accum + (d_cpu[0]->passed_clock() >> power);
 }
 
-void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* regist_id)
+void EVENT::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
 {
 	// regist event
 #ifdef _DEBUG_LOG
 	bool registered = false;
 #endif
-	if(regist_id != NULL) {
-		*regist_id = -1;
+	if(register_id != NULL) {
+		*register_id = -1;
 	}
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
@@ -226,8 +226,8 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 			event[i].event_id = event_id;
 			event[i].clock = clock + past + (d_cpu[0]->passed_clock() >> power);
 			event[i].loop = loop ? clock : 0;
-			if(regist_id != NULL) {
-				*regist_id = i;
+			if(register_id != NULL) {
+				*register_id = i;
 			}
 #ifdef _DEBUG_LOG
 			registered = true;
@@ -253,14 +253,14 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 	}
 }
 
-void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* regist_id)
+void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
 {
 	// regist event
 #ifdef _DEBUG_LOG
 	bool registered = false;
 #endif
-	if(regist_id != NULL) {
-		*regist_id = -1;
+	if(register_id != NULL) {
+		*register_id = -1;
 	}
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
@@ -272,8 +272,8 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 			event[i].event_id = event_id;
 			event[i].clock = clock + past + (d_cpu[0]->passed_clock() >> power);
 			event[i].loop = loop ? clock : 0;
-			if(regist_id != NULL) {
-				*regist_id = i;
+			if(register_id != NULL) {
+				*register_id = i;
 			}
 #ifdef _DEBUG_LOG
 			registered = true;
@@ -299,11 +299,11 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 	}
 }
 
-void EVENT::cancel_event(int regist_id)
+void EVENT::cancel_event(int register_id)
 {
 	// cancel registered event
-	if(0 <= regist_id && regist_id < MAX_EVENT) {
-		event[regist_id].enable = false;
+	if(0 <= register_id && register_id < MAX_EVENT) {
+		event[register_id].enable = false;
 	}
 	
 	// get next event clock
@@ -316,12 +316,12 @@ void EVENT::cancel_event(int regist_id)
 	}
 }
 
-void EVENT::regist_frame_event(DEVICE* dev)
+void EVENT::register_frame_event(DEVICE* dev)
 {
 	frame_event[frame_event_cnt++] = dev;
 }
 
-void EVENT::regist_vline_event(DEVICE* dev)
+void EVENT::register_vline_event(DEVICE* dev)
 {
 	vline_event[vline_event_cnt++] = dev;
 }

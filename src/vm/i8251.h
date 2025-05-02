@@ -66,25 +66,25 @@ public:
 	
 	// unique functions
 	void set_context_out(DEVICE* device, int id) {
-		regist_output_signal(&outputs_out, device, id, 0xff);
+		register_output_signal(&outputs_out, device, id, 0xff);
 	}
 	void set_context_rxrdy(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_rxrdy, device, id, mask);
+		register_output_signal(&outputs_rxrdy, device, id, mask);
 	}
 	void set_context_syndet(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_syndet, device, id, mask);
+		register_output_signal(&outputs_syndet, device, id, mask);
 	}
 	void set_context_txrdy(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_txrdy, device, id, mask);
+		register_output_signal(&outputs_txrdy, device, id, mask);
 	}
 	void set_context_txe(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_txe, device, id, mask);
+		register_output_signal(&outputs_txe, device, id, mask);
 	}
 	void set_context_dtr(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_dtr, device, id, mask);
+		register_output_signal(&outputs_dtr, device, id, mask);
 	}
 	void set_context_rst(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_rst, device, id, mask);
+		register_output_signal(&outputs_rst, device, id, mask);
 	}
 };
 

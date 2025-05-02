@@ -15,7 +15,7 @@ void TIMER::initialize()
 {
 #ifndef TIMER_FREQ
 	int id;
-	vm->regist_event(this, 0, 32, true, &id);
+	vm->register_event(this, 0, 32, true, &id);
 #endif
 }
 

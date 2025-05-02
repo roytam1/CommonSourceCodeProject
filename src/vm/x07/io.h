@@ -295,7 +295,7 @@ private:
 	int scroll_min, scroll_max;
 	
 	// beep
-	int regist_id;
+	int register_id;
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

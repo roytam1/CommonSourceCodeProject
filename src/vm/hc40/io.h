@@ -56,7 +56,7 @@ private:
 	FIFO *art_buf;
 	uint8 artsr, artdir;
 	bool txen, rxen, dsr;
-	int regist_id;
+	int register_id;
 	// beep
 	bool beep;
 	// reset

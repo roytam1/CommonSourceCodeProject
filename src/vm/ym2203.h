@@ -63,13 +63,13 @@ public:
 	
 	// unique functions
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_irq, device, id, mask);
+		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&port[0].outputs, device, id, mask, shift);
+		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&port[1].outputs, device, id, mask, shift);
+		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
 	void init(int rate, int clock, int samples, int volf, int volp);
 };

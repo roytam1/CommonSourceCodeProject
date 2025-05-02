@@ -14,7 +14,7 @@
 void SYSPORT::initialize()
 {
 //	int id;
-//	vm->regist_event(this, 0, 2000, true, &id);
+//	vm->register_event(this, 0, 2000, true, &id);
 	shut = 0;
 }
 

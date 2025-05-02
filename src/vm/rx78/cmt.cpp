@@ -18,7 +18,7 @@ void CMT::initialize()
 	framecnt = 0;
 	
 	// regist event to detect the end of access
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void CMT::write_io8(uint32 addr, uint32 data)

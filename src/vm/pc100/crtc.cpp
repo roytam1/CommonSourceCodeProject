@@ -34,7 +34,7 @@ void CRTC::initialize()
 	update_palette(0);
 	
 	// regist events
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 void CRTC::event_vline(int v, int clock)

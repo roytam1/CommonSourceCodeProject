@@ -91,8 +91,8 @@ void DISPLAY::initialize()
 	_memset(pcg_g, 0, sizeof(pcg_g));
 	
 	// regist event
-	vm->regist_frame_event(this);
-	vm->regist_vline_event(this);
+	vm->register_frame_event(this);
+	vm->register_vline_event(this);
 }
 
 void DISPLAY::reset()

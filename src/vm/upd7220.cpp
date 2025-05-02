@@ -70,8 +70,8 @@ void UPD7220::initialize()
 	hc = (int)(CPU_CLOCKS * 29 / FRAMES_PER_SEC / LINES_PER_FRAME / 109 + 0.5);
 	
 	vsync = hblank = false;
-	vm->regist_frame_event(this);
-	vm->regist_vline_event(this);
+	vm->register_frame_event(this);
+	vm->register_vline_event(this);
 }
 
 void UPD7220::release()
@@ -214,7 +214,7 @@ void UPD7220::event_vline(int v, int clock)
 	}
 	hblank = true;
 	int id;
-	vm->regist_event_by_clock(this, 0, hc, false, &id);
+	vm->register_event_by_clock(this, 0, hc, false, &id);
 }
 
 void UPD7220::event_callback(int event_id, int err)

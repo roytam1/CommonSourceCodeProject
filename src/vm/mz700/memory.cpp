@@ -87,10 +87,10 @@ void MEMORY::initialize()
 	SET_BANK(0x0000, 0xffff, ram, ram);
 	
 	// regist event
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 	int id;
-	vm->regist_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, &id);	// 32hz * 2
-	vm->regist_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, &id);	// 1.5hz * 2
+	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, &id);	// 32hz * 2
+	vm->register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, &id);	// 1.5hz * 2
 }
 
 void MEMORY::reset()
@@ -126,10 +126,10 @@ void MEMORY::event_vline(int v, int clock)
 	// hblank
 	hblank_vram = false;
 	int id;
-	vm->regist_event_by_clock(this, EVENT_HBLANK_VRAM, 165, false, &id);
+	vm->register_event_by_clock(this, EVENT_HBLANK_VRAM, 165, false, &id);
 #ifdef _MZ1500
 	hblank_pcg = false;
-	vm->regist_event_by_clock(this, EVENT_HBLANK_PCG, 170, false, &id);
+	vm->register_event_by_clock(this, EVENT_HBLANK_PCG, 170, false, &id);
 #endif
 }
 

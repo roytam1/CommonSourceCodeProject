@@ -44,7 +44,7 @@ void SUB::initialize()
 	
 	// key scan (15ms)
 	int id;
-	vm->regist_event(this, EVENT_KEYSCAN, 15000, true, &id);
+	vm->register_event(this, EVENT_KEYSCAN, 15000, true, &id);
 }
 
 void SUB::release()

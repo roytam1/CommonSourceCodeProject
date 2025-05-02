@@ -32,7 +32,7 @@ private:
 	uint32 key_val, key_mouse;
 	int key_prev;
 	bool key_res, key_done;
-	int regist_id;
+	int register_id;
 	uint8 ts;
 	
 public:

@@ -68,12 +68,12 @@
 
 #define DRIVE_MASK	3
 
-#define REGIST_EVENT(phs, usec) { \
+#define REGISTER_EVENT(phs, usec) { \
 	if(phase_id != -1) { \
 		vm->cancel_event(phase_id); \
 	} \
 	event_phase = phs; \
-	vm->regist_event(this, EVENT_PHASE, 100, false, &phase_id); \
+	vm->register_event(this, EVENT_PHASE, 100, false, &phase_id); \
 }
 
 #define CANCEL_EVENT() { \
@@ -146,7 +146,7 @@ void UPD765A::initialize()
 	if(outputs_index.count) {
 		index_count = 0;
 		int id;
-		vm->regist_event(this, EVENT_INDEX, 1000000 / 360 / 16, true, &id);
+		vm->register_event(this, EVENT_INDEX, 1000000 / 360 / 16, true, &id);
 	}
 }
 
@@ -259,12 +259,12 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 #ifdef UPD765A_DRQ_DELAY
 				set_drq(false);
 				CANCEL_DRQ();
-				vm->regist_event(this, EVENT_DRQ, 50, false, &drq_id);
+				vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
 				status |= S_RQM;
 				// update data lost event
 				CANCEL_LOST();
-				vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+				vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
 #endif
 			}
 			else {
@@ -292,12 +292,12 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 #ifdef UPD765A_DRQ_DELAY
 				set_drq(false);
 				CANCEL_DRQ();
-				vm->regist_event(this, EVENT_DRQ, 50, false, &drq_id);
+				vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
 				status |= S_RQM;
 				// update data lost event
 				CANCEL_LOST();
-				vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+				vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
 #endif
 			}
 			else {
@@ -344,12 +344,12 @@ uint32 UPD765A::read_io8(uint32 addr)
 #ifdef UPD765A_DRQ_DELAY
 					set_drq(false);
 					CANCEL_DRQ();
-					vm->regist_event(this, EVENT_DRQ, 50, false, &drq_id);
+					vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
 					status |= S_RQM;
 					// update data lost event
 					CANCEL_LOST();
-					vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+					vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
 #endif
 				}
 				else {
@@ -497,7 +497,7 @@ emu->out_debug("FDC: DRQ=%d\n",val?1:0);
 #else
 	CANCEL_LOST();
 	if(val) {
-		vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
+		vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
 	}
 	drq = val;
 	write_signals(&outputs_drq, val ? 0xffffffff : 0);
@@ -669,7 +669,7 @@ void UPD765A::seek(int drv, int trk)
 		if(seek_id != -1) {
 			vm->cancel_event(seek_id);
 		}
-		vm->regist_event(this, EVENT_SEEK, seektime, false, &seek_id);
+		vm->register_event(this, EVENT_SEEK, seektime, false, &seek_id);
 		seekstat |= 1 << drv;
 #else
 		seek_event(drv);
@@ -707,7 +707,7 @@ void UPD765A::cmd_read_data()
 		break;
 	case PHASE_CMD:
 		get_sector_params();
-		REGIST_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
+		REGISTER_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
 		break;
 	case PHASE_EXEC:
 		read_data((command & 0x1f) == 12, false);
@@ -718,10 +718,10 @@ void UPD765A::cmd_read_data()
 			break;
 		}
 		if(!id_incr()) {
-			REGIST_EVENT(PHASE_TIMER, 2000);
+			REGISTER_EVENT(PHASE_TIMER, 2000);
 			break;
 		}
-		REGIST_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
+		REGISTER_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
 		break;
 	case PHASE_TC:
 		CANCEL_EVENT();
@@ -743,12 +743,12 @@ void UPD765A::cmd_write_data()
 		break;
 	case PHASE_CMD:
 		get_sector_params();
-		REGIST_EVENT(PHASE_EXEC, 20000);
+		REGISTER_EVENT(PHASE_EXEC, 20000);
 		break;
 	case PHASE_EXEC:
 		result = check_cond(true);
 		if(result & ST1_MA) {
-			REGIST_EVENT(PHASE_EXEC, 1000000);	// retry
+			REGISTER_EVENT(PHASE_EXEC, 1000000);	// retry
 			break;
 		}
 		if(!result) {
@@ -774,10 +774,10 @@ void UPD765A::cmd_write_data()
 		}
 		phase = PHASE_EXEC;
 		if(!id_incr()) {
-			REGIST_EVENT(PHASE_TIMER, 2000);
+			REGISTER_EVENT(PHASE_TIMER, 2000);
 			break;
 		}
-		REGIST_EVENT(PHASE_EXEC, 10000);
+		REGISTER_EVENT(PHASE_EXEC, 10000);
 		break;
 	case PHASE_TIMER:
 //		result = ST0_AT | ST1_EN;
@@ -805,7 +805,7 @@ void UPD765A::cmd_scan()
 	case PHASE_CMD:
 		get_sector_params();
 		dtl = dtl | 0x100;
-		REGIST_EVENT(PHASE_EXEC, 20000);
+		REGISTER_EVENT(PHASE_EXEC, 20000);
 		break;
 	case PHASE_EXEC:
 		read_data(false, true);
@@ -817,10 +817,10 @@ void UPD765A::cmd_scan()
 		}
 		phase = PHASE_EXEC;
 		if(!id_incr()) {
-			REGIST_EVENT(PHASE_TIMER, 2000);
+			REGISTER_EVENT(PHASE_TIMER, 2000);
 			break;
 		}
-		REGIST_EVENT(PHASE_EXEC, 10000);
+		REGISTER_EVENT(PHASE_EXEC, 10000);
 		break;
 	case PHASE_TC:
 		CANCEL_EVENT();
@@ -842,7 +842,7 @@ void UPD765A::cmd_read_diagnostic()
 		break;
 	case PHASE_CMD:
 		get_sector_params();
-		REGIST_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
+		REGISTER_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
 		break;
 	case PHASE_EXEC:
 		read_diagnostic();
@@ -853,10 +853,10 @@ void UPD765A::cmd_read_diagnostic()
 			break;
 		}
 		if(!id_incr()) {
-			REGIST_EVENT(PHASE_TIMER, 2000);
+			REGISTER_EVENT(PHASE_TIMER, 2000);
 			break;
 		}
-		REGIST_EVENT(PHASE_EXEC, 10000);
+		REGISTER_EVENT(PHASE_EXEC, 10000);
 		break;
 	case PHASE_TC:
 		CANCEL_EVENT();
@@ -874,7 +874,7 @@ void UPD765A::read_data(bool deleted, bool scan)
 {
 	result = check_cond(false);
 	if(result & ST1_MA) {
-		REGIST_EVENT(PHASE_EXEC, 10000);
+		REGISTER_EVENT(PHASE_EXEC, 10000);
 		return;
 	}
 	if(result) {
@@ -890,7 +890,7 @@ void UPD765A::read_data(bool deleted, bool scan)
 		return;
 	}
 	if((result & ST2_CM) && (command & 0x20)) {
-		REGIST_EVENT(PHASE_TIMER, 100000);
+		REGISTER_EVENT(PHASE_TIMER, 100000);
 		return;
 	}
 	int length = id[3] ? (0x80 << __min(8, id[3])) : (__min(dtl, 0x80));
@@ -921,7 +921,7 @@ void UPD765A::read_diagnostic()
 	
 	result = check_cond(false);
 	if(result & ST1_MA) {
-		REGIST_EVENT(PHASE_EXEC, 10000);
+		REGISTER_EVENT(PHASE_EXEC, 10000);
 		return;
 	}
 	if(result) {
@@ -1146,10 +1146,10 @@ void UPD765A::cmd_read_id()
 //		break;
 	case PHASE_EXEC:
 		if(check_cond(false) & ST1_MA) {
-//			REGIST_EVENT(PHASE_EXEC, 1000000);
+//			REGISTER_EVENT(PHASE_EXEC, 1000000);
 //			break;
 		}
-		REGIST_EVENT(PHASE_TIMER, 5000);
+		REGISTER_EVENT(PHASE_TIMER, 5000);
 		break;
 	case PHASE_TIMER:
 		result = read_id();
@@ -1169,7 +1169,7 @@ void UPD765A::cmd_write_id()
 		id[3] = buffer[1];
 		eot = buffer[2];
 		if(!eot) {
-			REGIST_EVENT(PHASE_TIMER, 1000000);
+			REGISTER_EVENT(PHASE_TIMER, 1000000);
 			break;
 		}
 		shift_to_write(4 * eot);
@@ -1177,7 +1177,7 @@ void UPD765A::cmd_write_id()
 	case PHASE_TC:
 	case PHASE_WRITE:
 		set_acctc(false);
-		REGIST_EVENT(PHASE_TIMER, 4000000);
+		REGISTER_EVENT(PHASE_TIMER, 4000000);
 		break;
 	case PHASE_TIMER:
 		result =  write_id();
@@ -1308,7 +1308,7 @@ void UPD765A::shift_to_result7()
 	if(result7_id != -1) {
 		vm->cancel_event(result7_id);
 	}
-	vm->regist_event(this, EVENT_RESULT7, 100, false, &result7_id);
+	vm->register_event(this, EVENT_RESULT7, 100, false, &result7_id);
 #else
 	shift_to_result7_event();
 #endif

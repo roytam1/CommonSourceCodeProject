@@ -130,11 +130,11 @@ public:
 	// ----------------------------------------
 	
 	// event callbacks
-	void regist_event(DEVICE* device, int event_id, int usec, bool loop, int* regist_id);
-	void regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
-	void cancel_event(int regist_id);
-	void regist_frame_event(DEVICE* dev);
-	void regist_vline_event(DEVICE* dev);
+	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
+	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
+	void cancel_event(int register_id);
+	void register_frame_event(DEVICE* dev);
+	void register_vline_event(DEVICE* dev);
 	
 	// clock
 	uint32 current_clock();

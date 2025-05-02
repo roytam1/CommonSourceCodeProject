@@ -65,7 +65,7 @@ public:
 		dev[3] = device;
 	}
 	void set_context_tc(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_tc, device, id, mask);
+		register_output_signal(&outputs_tc, device, id, mask);
 	}
 };
 

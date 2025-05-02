@@ -51,16 +51,16 @@ public:
 	
 	// unique function
 	void set_context_disp(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_disp, device, id, mask);
+		register_output_signal(&outputs_disp, device, id, mask);
 	}
 	void set_context_vblank(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_vblank, device, id, mask);
+		register_output_signal(&outputs_vblank, device, id, mask);
 	}
 	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_vsync, device, id, mask);
+		register_output_signal(&outputs_vsync, device, id, mask);
 	}
 	void set_context_hsync(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_hsync, device, id, mask);
+		register_output_signal(&outputs_hsync, device, id, mask);
 	}
 	uint8* get_regs() {
 		return regs;

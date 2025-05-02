@@ -144,7 +144,7 @@ void PPU::initialize()
 	banks[15] = banks[11];
 	
 	// regist event
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 void PPU::reset()

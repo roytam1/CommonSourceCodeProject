@@ -30,7 +30,7 @@ void HD46505::initialize()
 	dhec = (int)(CPU_CLOCKS * dhe / FRAMES_PER_SEC / LINES_PER_FRAME / CHARS_PER_LINE + 0.5);
 	
 	// regist event
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 void HD46505::write_io8(uint32 addr, uint32 data)
@@ -76,7 +76,7 @@ void HD46505::event_vline(int v, int clock)
 		set_display(v < dve);
 		if(v < dve && dhe < CHARS_PER_LINE) {
 			int id;
-			vm->regist_event_by_clock(this, EVENT_DISPLAY, dhec, false, &id);
+			vm->register_event_by_clock(this, EVENT_DISPLAY, dhec, false, &id);
 		}
 	}
 	
@@ -91,11 +91,11 @@ void HD46505::event_vline(int v, int clock)
 		set_hsync(false);
 		if(hs < CHARS_PER_LINE) {
 			int id;
-			vm->regist_event_by_clock(this, EVENT_HSYNC_S, hsc, false, &id);
+			vm->register_event_by_clock(this, EVENT_HSYNC_S, hsc, false, &id);
 		}
 		if(he < CHARS_PER_LINE) {
 			int id;
-			vm->regist_event_by_clock(this, EVENT_HSYNC_E, hec, false, &id);
+			vm->register_event_by_clock(this, EVENT_HSYNC_E, hec, false, &id);
 		}
 	}
 }

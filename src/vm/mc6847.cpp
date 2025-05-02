@@ -150,7 +150,7 @@ void MC6847::initialize()
 	tWHS = (int)(CPU_CLOCKS / FRAMES_PER_SEC / LINES_PER_FRAME * 16.5 / 227.5 + 0.5);
 	
 	// regist event
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 void MC6847::reset()
@@ -191,7 +191,7 @@ void MC6847::event_vline(int v, int clock)
 	if(outputs_hsync.count) {
 		set_hsync(false);
 		int id;
-		vm->regist_event_by_clock(this, 0, tWHS, false, &id);
+		vm->register_event_by_clock(this, 0, tWHS, false, &id);
 	}
 }
 

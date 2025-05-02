@@ -22,7 +22,7 @@ void PCM1BIT::initialize()
 #endif
 	update = 0;
 	
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)

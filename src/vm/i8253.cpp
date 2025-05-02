@@ -29,7 +29,7 @@ void I8253::initialize()
 		counter[ch].null_count = true;
 		counter[ch].status_latched = false;
 #endif
-		counter[ch].regist_id = -1;
+		counter[ch].register_id = -1;
 	}
 }
 
@@ -187,7 +187,7 @@ uint32 I8253::read_io8(uint32 addr)
 void I8253::event_callback(int event_id, int err)
 {
 	int ch = event_id;
-	counter[ch].regist_id = -1;
+	counter[ch].register_id = -1;
 	input_clock(ch, counter[ch].input_clk);
 	
 	// regist next event
@@ -195,7 +195,7 @@ void I8253::event_callback(int event_id, int err)
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk + err;
 		counter[ch].prev_clk = vm->current_clock() + err;
-		vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+		vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 	}
 }
 
@@ -325,7 +325,7 @@ void I8253::start_count(int ch)
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
 		counter[ch].prev_clk = vm->current_clock();
-		vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+		vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 	}
 }
 
@@ -334,15 +334,15 @@ void I8253::stop_count(int ch)
 	counter[ch].start = false;
 	
 	// cancel event
-	if(counter[ch].regist_id != -1) {
-		vm->cancel_event(counter[ch].regist_id);
+	if(counter[ch].register_id != -1) {
+		vm->cancel_event(counter[ch].register_id);
 	}
-	counter[ch].regist_id = -1;
+	counter[ch].register_id = -1;
 }
 
 void I8253::latch_count(int ch)
 {
-	if(counter[ch].regist_id != -1) {
+	if(counter[ch].register_id != -1) {
 		// update counter
 		int passed = vm->passed_clock(counter[ch].prev_clk);
 		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
@@ -351,20 +351,20 @@ void I8253::latch_count(int ch)
 			input_clock(ch, input);
 			// cancel and re-regist event
 			if(expired) {
-				vm->cancel_event(counter[ch].regist_id);
+				vm->cancel_event(counter[ch].register_id);
 				if(counter[ch].freq && counter[ch].start) {
 					counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 					counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
 					counter[ch].prev_clk = vm->current_clock();
-					vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+					vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 				}
 			}
 			else {
-				vm->cancel_event(counter[ch].regist_id);
+				vm->cancel_event(counter[ch].register_id);
 				counter[ch].input_clk -= input;
 				counter[ch].period -= passed;
 				counter[ch].prev_clk = vm->current_clock();
-				vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+				vm->register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 			}
 		}
 	}

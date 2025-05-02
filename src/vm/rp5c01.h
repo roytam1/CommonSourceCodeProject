@@ -43,10 +43,10 @@ public:
 	
 	// unique functions
 	void set_context_alarm(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_alarm, device, id, mask);
+		register_output_signal(&outputs_alarm, device, id, mask);
 	}
 	void set_context_pulse(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_pulse, device, id, mask);
+		register_output_signal(&outputs_pulse, device, id, mask);
 	}
 };
 

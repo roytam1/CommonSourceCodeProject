@@ -45,7 +45,7 @@ private:
 #endif
 		// constant clock
 		uint32 freq;
-		int regist_id;
+		int register_id;
 		uint32 input_clk;
 		int period;
 		uint32 prev_clk;
@@ -80,13 +80,13 @@ public:
 	
 	// unique functions
 	void set_context_ch0(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&counter[0].outputs, device, id, mask);
+		register_output_signal(&counter[0].outputs, device, id, mask);
 	}
 	void set_context_ch1(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&counter[1].outputs, device, id, mask);
+		register_output_signal(&counter[1].outputs, device, id, mask);
 	}
 	void set_context_ch2(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&counter[2].outputs, device, id, mask);
+		register_output_signal(&counter[2].outputs, device, id, mask);
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

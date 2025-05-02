@@ -286,14 +286,14 @@ public:
 	virtual void init_output_signals(outputs_t *items) {
 		items->count = 0;
 	}
-	virtual void regist_output_signal(outputs_t *items, DEVICE *device, int id, uint32 mask, int shift) {
+	virtual void register_output_signal(outputs_t *items, DEVICE *device, int id, uint32 mask, int shift) {
 		int c = items->count++;
 		items->item[c].device = device;
 		items->item[c].id = id;
 		items->item[c].mask = mask;
 		items->item[c].shift = shift;
 	}
-	virtual void regist_output_signal(outputs_t *items, DEVICE *device, int id, uint32 mask) {
+	virtual void register_output_signal(outputs_t *items, DEVICE *device, int id, uint32 mask) {
 		int c = items->count++;
 		items->item[c].device = device;
 		items->item[c].id = id;

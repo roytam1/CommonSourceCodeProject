@@ -56,7 +56,7 @@ public:
 	
 	// unique functions
 	void set_context_out(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs, device, id, mask);
+		register_output_signal(&outputs, device, id, mask);
 	}
 	void set_mask(uint32 mask) {
 		bits_mask |= mask;

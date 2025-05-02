@@ -55,28 +55,28 @@ public:
 	
 	// unique functions
 	void set_context_1qa(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[0], device, id, mask);
+		register_output_signal(&outputs[0], device, id, mask);
 	}
 	void set_context_1qb(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[1], device, id, mask);
+		register_output_signal(&outputs[1], device, id, mask);
 	}
 	void set_context_1qc(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[2], device, id, mask);
+		register_output_signal(&outputs[2], device, id, mask);
 	}
 	void set_context_1qd(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[3], device, id, mask);
+		register_output_signal(&outputs[3], device, id, mask);
 	}
 	void set_context_2qa(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[4], device, id, mask);
+		register_output_signal(&outputs[4], device, id, mask);
 	}
 	void set_context_2qb(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[5], device, id, mask);
+		register_output_signal(&outputs[5], device, id, mask);
 	}
 	void set_context_2qc(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[6], device, id, mask);
+		register_output_signal(&outputs[6], device, id, mask);
 	}
 	void set_context_2qd(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs[7], device, id, mask);
+		register_output_signal(&outputs[7], device, id, mask);
 	}
 };
 

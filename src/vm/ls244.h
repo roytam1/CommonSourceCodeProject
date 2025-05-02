@@ -46,7 +46,7 @@ public:
 	
 	// unique functions
 	void set_context_output(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&outputs, device, id, mask, shift);
+		register_output_signal(&outputs, device, id, mask, shift);
 	}
 };
 

@@ -259,7 +259,7 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 			}
 			if(data & 8) {
 				if(port[ch].send_id == -1) {
-					vm->regist_event(this, EVENT_SEND + ch, Z80SIO_DELAY_SEND, true, &port[ch].send_id);
+					vm->register_event(this, EVENT_SEND + ch, Z80SIO_DELAY_SEND, true, &port[ch].send_id);
 				}
 			}
 			else {
@@ -364,7 +364,7 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 	case SIG_Z80SIO_RECV_CH1:
 		// recv data
 		if(port[ch].recv_id == -1) {
-			vm->regist_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV, false, &port[ch].recv_id);
+			vm->register_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV, false, &port[ch].recv_id);
 		}
 		if(port[ch].rtmp->empty()) {
 			port[ch].first_data = true;
@@ -403,7 +403,7 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 			if(!signal && (port[ch].wr[3] & 0x20)) {
 				// auto enables
 				if(port[ch].send_id == -1) {
-					vm->regist_event(this, EVENT_SEND + ch, Z80SIO_DELAY_SEND, true, &port[ch].send_id);
+					vm->register_event(this, EVENT_SEND + ch, Z80SIO_DELAY_SEND, true, &port[ch].send_id);
 				}
 				port[ch].wr[5] |= 8;
 			}
@@ -473,7 +473,7 @@ void Z80SIO::event_callback(int event_id, int err)
 	else if(event_id & EVENT_RECV) {
 		// recv
 		if(!(port[ch].wr[3] & 1)) {
-			vm->regist_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV + err, false, &port[ch].recv_id);
+			vm->register_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV + err, false, &port[ch].recv_id);
 			return;
 		}
 		bool update_intr_required = false;
@@ -566,14 +566,14 @@ request_next_data:
 			write_signals(&port[ch].outputs_rxdone, 0xffffffff);
 		}
 		if(port[ch].rtmp->empty()) {
-			// no data recieved
+			// no data received
 #ifdef SIO_DEBUG
 			emu->out_debug(_T("Z80SIO: ch=%d end of block\n"), ch);
 #endif
 			port[ch].recv_id = -1;
 		}
 		else {
-			vm->regist_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV + err, false, &port[ch].recv_id);
+			vm->register_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV + err, false, &port[ch].recv_id);
 			port[ch].first_data = first_data;
 		}
 		if(update_intr_required) {

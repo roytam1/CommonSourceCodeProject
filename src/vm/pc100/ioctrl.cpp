@@ -55,7 +55,7 @@ void IOCTRL::initialize()
 	key_buf->clear();
 	key_buf->write(0x1f0);
 	key_buf->write(0x100);
-	regist_id = -1;
+	register_id = -1;
 	update_key();
 	
 	// timer
@@ -63,10 +63,10 @@ void IOCTRL::initialize()
 	
 	// regist event
 	int id;
-	vm->regist_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, &id);
-	vm->regist_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, &id);
-	vm->regist_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, &id);
-	vm->regist_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, &id);
+	vm->register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, &id);
+	vm->register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, &id);
+	vm->register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, &id);
+	vm->register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, &id);
 }
 
 void IOCTRL::write_io8(uint32 addr, uint32 data)
@@ -113,7 +113,7 @@ void IOCTRL::event_callback(int event_id, int err)
 			key_done = false;
 			d_pic->write_signal(SIG_I8259_IR3, 1, 1);
 		}
-		regist_id = -1;
+		register_id = -1;
 	}
 	else if(event_id == EVENT_600HZ) {
 		if(ts == 0) {
@@ -202,8 +202,8 @@ void IOCTRL::key_up(int code)
 void IOCTRL::update_key()
 {
 	if(key_done && !key_buf->empty()) {
-		if(regist_id == -1) {
-			vm->regist_event(this, EVENT_KEY, 1000, false, &regist_id);
+		if(register_id == -1) {
+			vm->register_event(this, EVENT_KEY, 1000, false, &register_id);
 		}
 	}
 }

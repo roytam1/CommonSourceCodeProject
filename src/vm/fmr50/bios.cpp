@@ -298,7 +298,7 @@ void BIOS::initialize()
 		wait_pc = 0xfffd3;
 		
 		// regist event
-		vm->regist_frame_event(this);
+		vm->register_frame_event(this);
 	}
 	
 	// init scsi

@@ -50,9 +50,9 @@
 static const int seek_wait[4] = {6000, 12000, 20000, 30000};
 
 #define CANCEL_EVENT(event) { \
-	if(regist_id[event] != -1) { \
-		vm->cancel_event(regist_id[event]); \
-		regist_id[event] = -1; \
+	if(register_id[event] != -1) { \
+		vm->cancel_event(register_id[event]); \
+		register_id[event] = -1; \
 	} \
 	if(event == EVENT_SEEK) { \
 		now_seek = false; \
@@ -61,12 +61,12 @@ static const int seek_wait[4] = {6000, 12000, 20000, 30000};
 		now_search = false; \
 	} \
 }
-#define REGIST_EVENT(event, wait) { \
-	if(regist_id[event] != -1) { \
-		vm->cancel_event(regist_id[event]); \
-		regist_id[event] = -1; \
+#define REGISTER_EVENT(event, wait) { \
+	if(register_id[event] != -1) { \
+		vm->cancel_event(register_id[event]); \
+		register_id[event] = -1; \
 	} \
-	vm->regist_event(this, (event << 8) | cmdtype, wait, false, &regist_id[event]); \
+	vm->register_event(this, (event << 8) | cmdtype, wait, false, &register_id[event]); \
 	if(event == EVENT_SEEK) { \
 		now_seek = true; \
 	} \
@@ -111,7 +111,7 @@ void MB8877::release()
 void MB8877::reset()
 {
 	for(int i = 0; i < 7; i++) {
-		regist_id[i] = -1;
+		register_id[i] = -1;
 	}
 	now_seek = now_search = false;
 }
@@ -205,8 +205,8 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 					}
 					else {
 						// multisector
-						REGIST_EVENT(EVENT_MULTI1, 30);
-						REGIST_EVENT(EVENT_MULTI2, 60);
+						REGISTER_EVENT(EVENT_MULTI1, 30);
+						REGISTER_EVENT(EVENT_MULTI2, 60);
 					}
 					status &= ~FDC_ST_DRQ;
 				}
@@ -361,8 +361,8 @@ uint32 MB8877::read_io8(uint32 addr)
 #ifdef _FDC_DEBUG_LOG
 						emu->out_debug(_T("FDC\tEND OF SECTOR (SEARCH NEXT)\n"));
 #endif
-						REGIST_EVENT(EVENT_MULTI1, 30);
-						REGIST_EVENT(EVENT_MULTI2, 60);
+						REGISTER_EVENT(EVENT_MULTI1, 30);
+						REGISTER_EVENT(EVENT_MULTI2, 60);
 					}
 					status &= ~FDC_ST_DRQ;
 				}
@@ -446,7 +446,7 @@ void MB8877::event_callback(int event_id, int err)
 {
 	int event = event_id >> 8;
 	int cmd = event_id & 0xff;
-	regist_id[event] = -1;
+	register_id[event] = -1;
 	
 	// cancel event if the command is finished or other command is executed
 	if(cmd != cmdtype) {
@@ -486,7 +486,7 @@ void MB8877::event_callback(int event_id, int err)
 			set_irq(true);
 		}
 		else {
-			REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3] + err);
+			REGISTER_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3] + err);
 		}
 		break;
 	case EVENT_SEEKEND:
@@ -614,8 +614,8 @@ void MB8877::cmd_restore()
 	seektrk = 0;
 	seekvct = true;
 	
-	REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
-	REGIST_EVENT(EVENT_SEEKEND, 300);
+	REGISTER_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
+	REGISTER_EVENT(EVENT_SEEKEND, 300);
 }
 
 void MB8877::cmd_seek()
@@ -632,8 +632,8 @@ void MB8877::cmd_seek()
 	seektrk = (seektrk > 83) ? 83 : (seektrk < 0) ? 0 : seektrk;
 	seekvct = (datareg > trkreg) ? false : true;
 	
-	REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
-	REGIST_EVENT(EVENT_SEEKEND, 300);
+	REGISTER_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
+	REGISTER_EVENT(EVENT_SEEKEND, 300);
 }
 
 void MB8877::cmd_step()
@@ -656,8 +656,8 @@ void MB8877::cmd_stepin()
 	seektrk = (fdc[drvreg].track < 83) ? fdc[drvreg].track + 1 : 83;
 	seekvct = false;
 	
-	REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
-	REGIST_EVENT(EVENT_SEEKEND, 300);
+	REGISTER_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
+	REGISTER_EVENT(EVENT_SEEKEND, 300);
 }
 
 void MB8877::cmd_stepout()
@@ -669,8 +669,8 @@ void MB8877::cmd_stepout()
 	seektrk = (fdc[drvreg].track > 0) ? fdc[drvreg].track - 1 : 0;
 	seekvct = true;
 	
-	REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
-	REGIST_EVENT(EVENT_SEEKEND, 300);
+	REGISTER_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
+	REGISTER_EVENT(EVENT_SEEKEND, 300);
 }
 
 void MB8877::cmd_readdata()
@@ -686,10 +686,10 @@ void MB8877::cmd_readdata()
 	if(!(status & FDC_ST_RECNFND)) {
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	}
-	REGIST_EVENT(EVENT_SEARCH, 200);
+	REGISTER_EVENT(EVENT_SEARCH, 200);
 	CANCEL_EVENT(EVENT_LOST);
 	if(!(status & FDC_ST_RECNFND)) {
-		REGIST_EVENT(EVENT_LOST, 30000);
+		REGISTER_EVENT(EVENT_LOST, 30000);
 	}
 }
 
@@ -707,10 +707,10 @@ void MB8877::cmd_writedata()
 	if(!(status & FDC_ST_RECNFND)) {
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	}
-	REGIST_EVENT(EVENT_SEARCH, 200);
+	REGISTER_EVENT(EVENT_SEARCH, 200);
 	CANCEL_EVENT(EVENT_LOST);
 	if(!(status & FDC_ST_RECNFND)) {
-		REGIST_EVENT(EVENT_LOST, 30000);
+		REGISTER_EVENT(EVENT_LOST, 30000);
 	}
 }
 
@@ -722,10 +722,10 @@ void MB8877::cmd_readaddr()
 	if(!(status & FDC_ST_RECNFND)) {
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	}
-	REGIST_EVENT(EVENT_SEARCH, 200);
+	REGISTER_EVENT(EVENT_SEARCH, 200);
 	CANCEL_EVENT(EVENT_LOST);
 	if(!(status & FDC_ST_RECNFND)) {
-		REGIST_EVENT(EVENT_LOST, 10000);
+		REGISTER_EVENT(EVENT_LOST, 10000);
 	}
 }
 
@@ -737,8 +737,8 @@ void MB8877::cmd_readtrack()
 	
 	make_track();
 	
-	REGIST_EVENT(EVENT_SEARCH, 200);
-	REGIST_EVENT(EVENT_LOST, 150000);
+	REGISTER_EVENT(EVENT_SEARCH, 200);
+	REGISTER_EVENT(EVENT_LOST, 150000);
 }
 
 void MB8877::cmd_writetrack()
@@ -750,8 +750,8 @@ void MB8877::cmd_writetrack()
 	disk[drvreg]->track_size = 0x1800;
 	fdc[drvreg].index = 0;
 	
-	REGIST_EVENT(EVENT_SEARCH, 200);
-	REGIST_EVENT(EVENT_LOST, 150000);
+	REGISTER_EVENT(EVENT_SEARCH, 200);
+	REGISTER_EVENT(EVENT_LOST, 150000);
 }
 
 void MB8877::cmd_forceint()
@@ -784,7 +784,7 @@ void MB8877::cmd_forceint()
 	CANCEL_EVENT(EVENT_MULTI1);
 	CANCEL_EVENT(EVENT_MULTI2);
 	CANCEL_EVENT(EVENT_LOST);
-	REGIST_EVENT(EVENT_TYPE4, 100);
+	REGISTER_EVENT(EVENT_TYPE4, 100);
 }
 
 // ----------------------------------------------------------------------------

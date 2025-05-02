@@ -43,7 +43,7 @@ void HD146818P::initialize()
 	
 	// regist event
 	event_id = -1;
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void HD146818P::release()
@@ -91,7 +91,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 				if(next) {
 					// raise event twice per one period
 					int clock = (int)(CPU_CLOCKS / 65536.0 * next + 0.5);
-					vm->regist_event_by_clock(this, 0, clock, true, &event_id);
+					vm->register_event_by_clock(this, 0, clock, true, &event_id);
 				}
 				period = next;
 			}

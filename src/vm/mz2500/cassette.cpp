@@ -12,19 +12,19 @@
 #include "../i8255.h"
 
 // pre-silent (0.2sec)
-#define REGIST_PRE() { \
+#define REGISTER_PRE() { \
 	set_signal(false); \
-	vm->regist_event(this, EVENT_PRE, 200000, false, &id_pre); \
+	vm->register_event(this, EVENT_PRE, 200000, false, &id_pre); \
 }
 // signal (0.5sec)
-#define REGIST_SIGNAL() { \
+#define REGISTER_SIGNAL() { \
 	set_signal(true); \
-	vm->regist_event(this, EVENT_SIGNAL, 500000, false, &id_signal); \
+	vm->register_event(this, EVENT_SIGNAL, 500000, false, &id_signal); \
 }
 // after-silent (0.3sec)
-#define REGIST_AFTER() { \
+#define REGISTER_AFTER() { \
 	set_signal(false); \
-	vm->regist_event(this, EVENT_AFTER, 300000, false, &id_after); \
+	vm->register_event(this, EVENT_AFTER, 300000, false, &id_after); \
 }
 #define CANCEL_EVENT() { \
 	if(id_pre != -1) { \
@@ -68,14 +68,14 @@ void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 		stop_media();
 		set_fw_rw(-1);
 		CANCEL_EVENT();
-		REGIST_PRE();
+		REGISTER_PRE();
 	}
 	if((prev & 2) && !(data & 2)) {
 		// forward
 		stop_media();
 		set_fw_rw(1);
 		CANCEL_EVENT();
-		REGIST_PRE();
+		REGISTER_PRE();
 	}
 	if((prev & 4) && !(data & 4)) {
 		// start play
@@ -96,11 +96,11 @@ void CASSETTE::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_PRE) {
 		id_pre = -1;
-		REGIST_SIGNAL();
+		REGISTER_SIGNAL();
 	}
 	else if(event_id == EVENT_SIGNAL) {
 		id_signal = -1;
-		REGIST_AFTER();
+		REGISTER_AFTER();
 	}
 	else if(event_id == EVENT_AFTER) {
 		id_after = -1;
@@ -113,7 +113,7 @@ void CASSETTE::event_callback(int event_id, int err)
 				}
 				else {
 					set_fw_rw(-1); // auto rewind
-					REGIST_PRE();
+					REGISTER_PRE();
 				}
 				playing = false;
 			}
@@ -122,7 +122,7 @@ void CASSETTE::event_callback(int event_id, int err)
 					play_media(); // play next track
 				}
 				else {
-					REGIST_PRE();
+					REGISTER_PRE();
 				}
 			}
 		}
@@ -139,7 +139,7 @@ void CASSETTE::event_callback(int event_id, int err)
 				}
 			}
 			else {
-				REGIST_PRE();
+				REGISTER_PRE();
 			}
 		}
 	}
@@ -154,7 +154,7 @@ void CASSETTE::play_media()
 	}
 	else {
 		// current position is pre signal
-		REGIST_PRE();
+		REGISTER_PRE();
 	}
 	playing = true;
 }

@@ -78,7 +78,7 @@ void QUICKDISK::reset()
 
 #define REGISTER_RESTORE_EVENT() { \
 	if(restore_id == -1) { \
-		vm->regist_event(this, EVENT_RESTORE, PERIOD_RESTORE, false, &restore_id); \
+		vm->register_event(this, EVENT_RESTORE, PERIOD_RESTORE, false, &restore_id); \
 	} \
 }
 
@@ -93,7 +93,7 @@ void QUICKDISK::reset()
 	if(end_id != -1) { \
 		vm->cancel_event(end_id); \
 	} \
-	vm->regist_event(this, EVENT_END, PERIOD_END, false, &end_id); \
+	vm->register_event(this, EVENT_END, PERIOD_END, false, &end_id); \
 }
 
 #define CANCEL_END_EVENT() { \

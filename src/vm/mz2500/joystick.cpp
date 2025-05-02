@@ -15,7 +15,7 @@ void JOYSTICK::initialize()
 	mode = 0xf;
 	full_auto = 0;
 	joy_stat = emu->joy_buffer();
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void JOYSTICK::write_io8(uint32 addr, uint32 data)

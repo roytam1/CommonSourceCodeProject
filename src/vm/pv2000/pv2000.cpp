@@ -133,29 +133,29 @@ void VM::run()
 // event manager
 // ----------------------------------------------------------------------------
 
-void VM::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* regist_id)
+void VM::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
 {
-	event->regist_event(dev, event_id, usec, loop, regist_id);
+	event->register_event(dev, event_id, usec, loop, register_id);
 }
 
-void VM::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* regist_id)
+void VM::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
 {
-	event->regist_event_by_clock(dev, event_id, clock, loop, regist_id);
+	event->register_event_by_clock(dev, event_id, clock, loop, register_id);
 }
 
-void VM::cancel_event(int regist_id)
+void VM::cancel_event(int register_id)
 {
-	event->cancel_event(regist_id);
+	event->cancel_event(register_id);
 }
 
-void VM::regist_frame_event(DEVICE* dev)
+void VM::register_frame_event(DEVICE* dev)
 {
-	event->regist_frame_event(dev);
+	event->register_frame_event(dev);
 }
 
-void VM::regist_vline_event(DEVICE* dev)
+void VM::register_vline_event(DEVICE* dev)
 {
-	event->regist_vline_event(dev);
+	event->register_vline_event(dev);
 }
 
 uint32 VM::current_clock()

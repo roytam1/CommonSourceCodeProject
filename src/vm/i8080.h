@@ -203,10 +203,10 @@ public:
 		d_pic = device;
 	}
 	void set_context_busack(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_busack, device, id, mask);
+		register_output_signal(&outputs_busack, device, id, mask);
 	}
 	void set_context_sod(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_sod, device, id, mask);
+		register_output_signal(&outputs_sod, device, id, mask);
 	}
 };
 

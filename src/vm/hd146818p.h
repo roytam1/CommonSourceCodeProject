@@ -47,10 +47,10 @@ public:
 	
 	// unique functions
 	void set_context_intr(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_intr, device, id, mask);
+		register_output_signal(&outputs_intr, device, id, mask);
 	}
 	void set_context_sqw(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_sqw, device, id, mask);
+		register_output_signal(&outputs_sqw, device, id, mask);
 	}
 };
 

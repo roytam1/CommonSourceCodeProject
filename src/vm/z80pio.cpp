@@ -53,7 +53,7 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].first = false;
 		}
 		if((port[ch].mode & 0xc0) == 0 || (port[ch].mode & 0xc0) == 0x80) {
-			// mode0/2 data is recieved by other chip
+			// mode0/2 data is received by other chip
 			port[ch].req_intr = true;
 			update_intr();
 		}
@@ -136,7 +136,7 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
 		// note: we need to check astb is changed l->h
 		if((port[0].mode & 0xc0) == 0x40 || (port[0].mode & 0xc0) == 0x80) {
-			// mode1/2 z80pio recieved the data sent by other chip
+			// mode1/2 z80pio received the data sent by other chip
 			port[0].req_intr = true;
 			update_intr();
 		}
@@ -148,7 +148,7 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
 		// note: we need to check bstb is changed l->h
 		if((port[1].mode & 0xc0) == 0x40 || (port[1].mode & 0xc0) == 0x80) {
-			// mode1/2 z80pio recieved the data sent by other chip
+			// mode1/2 z80pio received the data sent by other chip
 			port[1].req_intr = true;
 			update_intr();
 		}

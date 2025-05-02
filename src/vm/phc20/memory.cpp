@@ -69,7 +69,7 @@ void MEMORY::initialize()
 	key_stat = emu->key_buffer();
 	
 	// regist event to update the key status
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void MEMORY::reset()

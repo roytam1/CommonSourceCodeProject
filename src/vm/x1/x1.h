@@ -197,17 +197,17 @@ public:
 	// ----------------------------------------
 	
 	// event callbacks
-	void regist_event(DEVICE* device, int event_id, int usec, bool loop, int* regist_id);
-	void regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
-	void cancel_event(int regist_id);
-	void regist_frame_event(DEVICE* dev);
-	void regist_vline_event(DEVICE* dev);
+	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
+	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
+	void cancel_event(int register_id);
+	void register_frame_event(DEVICE* dev);
+	void register_vline_event(DEVICE* dev);
 #ifdef _X1TWIN
-	void pce_regist_event(DEVICE* device, int event_id, int usec, bool loop, int* regist_id);
-	void pce_regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
-	void pce_cancel_event(int regist_id);
-	void pce_regist_frame_event(DEVICE* dev);
-	void pce_regist_vline_event(DEVICE* dev);
+	void pce_register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
+	void pce_register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
+	void pce_cancel_event(int register_id);
+	void pce_register_frame_event(DEVICE* dev);
+	void pce_register_vline_event(DEVICE* dev);
 #endif
 	
 	// clock

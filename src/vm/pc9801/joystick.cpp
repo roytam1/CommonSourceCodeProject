@@ -17,7 +17,7 @@ void JOYSTICK::initialize()
 	joy_stat = emu->joy_buffer();
 	select = 0xff;
 	
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void JOYSTICK::write_signal(int id, uint32 data, uint32 mask)

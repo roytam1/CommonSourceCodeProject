@@ -88,10 +88,10 @@ void IO::initialize()
 	art_buf = new FIFO(BUFFER_SIZE);
 	
 	// regist events
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 	int id;
-	vm->regist_event_by_clock(this, EVENT_FRC, 0x60000, true, &id);
-	vm->regist_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
+	vm->register_event_by_clock(this, EVENT_FRC, 0x60000, true, &id);
+	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
 	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);
@@ -131,7 +131,7 @@ void IO::reset()
 	artsr = TXRDY | TXE;
 	txen = rxen = false;
 	art_buf->clear();
-	regist_id = -1;
+	register_id = -1;
 }
 
 void IO::sysreset()
@@ -159,8 +159,8 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_IO_ART) {
 		// data from art
 		art_buf->write(data & mask);
-		if(rxen && !art_buf->empty() && regist_id == -1) {
-			vm->regist_event(this, EVENT_ART, RECV_DELAY, false, &regist_id);
+		if(rxen && !art_buf->empty() && register_id == -1) {
+			vm->register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
 		}
 	}
 }
@@ -203,10 +203,10 @@ void IO::event_callback(int event_id, int err)
 		}
 		// if data is still left in buffer, register event for next data
 		if(rxen && !art_buf->empty()) {
-			vm->regist_event(this, EVENT_ART, RECV_DELAY, false, &regist_id);
+			vm->register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
 		}
 		else {
-			regist_id = -1;
+			register_id = -1;
 		}
 	}
 }
@@ -281,8 +281,8 @@ void IO::write_io8(uint32 addr, uint32 data)
 		}
 		txen = ((data & 1) != 0);
 		rxen = ((data & 4) != 0);
-		if(rxen && !art_buf->empty() && regist_id == -1) {
-			vm->regist_event(this, EVENT_ART, RECV_DELAY, false, &regist_id);
+		if(rxen && !art_buf->empty() && register_id == -1) {
+			vm->register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
 		}
 		break;
 	case 0x19:

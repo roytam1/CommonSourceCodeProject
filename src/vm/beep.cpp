@@ -101,7 +101,7 @@ void BEEP::init(int rate, int frequency, int divide, int volume)
 		constant = 16 * rate / FRAMES_PER_SEC * DELAY_FRAMES
 */
 		constant = (long)((256.0 * 16.0 * DELAY_FRAMES * rate * divide) / FRAMES_PER_SEC + 0.5);
-		vm->regist_vline_event(this);
+		vm->register_vline_event(this);
 	}
 	gen_rate = rate;
 	gen_vol = volume;

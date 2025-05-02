@@ -45,10 +45,10 @@ void RP5C01::initialize()
 	alarm = pulse_1hz = pulse_16hz = false;
 	
 	// regist event
-	int regist_id;
-	vm->regist_event(this, EVENT_1HZ, 500000, true, &regist_id);
-	vm->regist_event(this, EVENT_16HZ, 31250, true, &regist_id);
-	vm->regist_frame_event(this);
+	int register_id;
+	vm->register_event(this, EVENT_1HZ, 500000, true, &register_id);
+	vm->register_event(this, EVENT_16HZ, 31250, true, &register_id);
+	vm->register_frame_event(this);
 }
 
 void RP5C01::release()

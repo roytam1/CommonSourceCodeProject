@@ -49,7 +49,7 @@ void DISPLAY::initialize()
 	blink = pal_dis = false;
 	
 	// regist event
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void DISPLAY::update_config()

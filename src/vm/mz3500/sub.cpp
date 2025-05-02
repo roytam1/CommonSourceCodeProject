@@ -51,7 +51,7 @@
 #define WAIT_USEC(us) { \
 	int clock = (int)(CPU_CLOCKS * (us) / 1000000. + 0.5); \
 	int id; \
-	vm->regist_event_by_clock(this, EVENT_KEY, clock, false, &id); \
+	vm->register_event_by_clock(this, EVENT_KEY, clock, false, &id); \
 }
 
 #define SET_BANK(s, e, w, r) { \
@@ -102,7 +102,7 @@ void SUB::initialize()
 	SET_BANK(0x4000, 0x5fff, ram, ram);
 	SET_BANK(0x6000, 0xffff, wdmy, rdmy);
 	
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void SUB::reset()

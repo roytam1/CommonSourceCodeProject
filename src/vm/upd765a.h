@@ -133,19 +133,19 @@ public:
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_irq, device, id, mask);
+		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_drq, device, id, mask);
+		register_output_signal(&outputs_drq, device, id, mask);
 	}
 	void set_context_hdu(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_hdu, device, id, mask);
+		register_output_signal(&outputs_hdu, device, id, mask);
 	}
 	void set_context_acctc(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_acctc, device, id, mask);
+		register_output_signal(&outputs_acctc, device, id, mask);
 	}
 	void set_context_index(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_index, device, id, mask);
+		register_output_signal(&outputs_index, device, id, mask);
 	}
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);

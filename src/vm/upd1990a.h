@@ -48,10 +48,10 @@ public:
 	
 	// unique functions
 	void set_context_dout(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_dout, device, id, mask);
+		register_output_signal(&outputs_dout, device, id, mask);
 	}
 	void set_context_tp(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_tp, device, id, mask);
+		register_output_signal(&outputs_tp, device, id, mask);
 	}
 };
 

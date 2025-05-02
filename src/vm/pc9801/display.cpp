@@ -121,7 +121,7 @@ void DISPLAY::initialize()
 	}
 	
 	// regist event
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void DISPLAY::kanji_copy(uint8 *dst, uint8 *src, int from, int to)

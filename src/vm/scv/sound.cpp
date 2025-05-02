@@ -27,13 +27,13 @@ void SOUND::reset()
 	
 	_memset(params, 0, sizeof(params));
 	param_cnt = param_ptr = 0;
-	regist_id = -1;
+	register_id = -1;
 	cmd_addr = 0;
 }
 
 void SOUND::write_data8(uint32 addr, uint32 data)
 {
-	if(regist_id != -1) {
+	if(register_id != -1) {
 		return; // ignore new commands before return ack
 	}
 	if(!param_cnt) {
@@ -73,10 +73,10 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 			}
 		}
 		if(--param_cnt) {
-			if(regist_id != -1) {
-				vm->cancel_event(regist_id);
+			if(register_id != -1) {
+				vm->cancel_event(register_id);
 			}
-			vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
+			vm->register_event(this, 0, ACK_WAIT, false, &register_id);
 		}
 	}
 	if(!param_cnt) {
@@ -104,8 +104,8 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 			bool pause = (vm->get_prv_pc() == 0x96c) ? true : false;
 			if(pause || !(params[0] == 0x1f && param_ptr > 5)) {
 				// terminate command
-				if(regist_id != -1) {
-					vm->cancel_event(regist_id);
+				if(register_id != -1) {
+					vm->cancel_event(register_id);
 				}
 				_memset(params, 0, sizeof(params));
 				param_cnt = param_ptr = 0;
@@ -115,8 +115,8 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 					clear_channel(&pcm);
 				}
 			}
-//			else if(regist_id == -1) {
-//				vm->regist_callback(this, 0, 100, false, &regist_id);
+//			else if(register_id == -1) {
+//				vm->register_callback(this, 0, 100, false, &register_id);
 //			}
 		}
 		else {
@@ -126,8 +126,8 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 				param_cnt = param_ptr = 0;
 //				clear_channel(&pcm);
 			}
-//			if(regist_id == -1) {
-//				vm->regist_callback(this, 0, 100, false, &regist_id);
+//			if(register_id == -1) {
+//				vm->register_callback(this, 0, 100, false, &register_id);
 //			}
 		}
 #ifdef SOUND_DEBUG
@@ -140,11 +140,11 @@ void SOUND::event_callback(int event_id, int err)
 {
 	if(pcm.count && param_ptr == 5 && params[0] == 0x1f && params[1] == 0x04 && params[2] == 0x64) {
 		// wait previous pcm
-		vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
+		vm->register_event(this, 0, ACK_WAIT, false, &register_id);
 		return;
 	}
 	d_cpu->write_signal(SIG_UPD7801_INTF1, 1, 1);
-	regist_id = -1;
+	register_id = -1;
 }
 
 void SOUND::init(int rate)

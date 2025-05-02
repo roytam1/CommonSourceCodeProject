@@ -154,11 +154,11 @@ void IO::initialize()
 	key_buf = new FIFO(7);
 	
 	// regist events
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 	int id;
-	vm->regist_event_by_clock(this, EVENT_FRC, 0x40000, true, &id);
-	vm->regist_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
-	vm->regist_event_by_clock(this, EVENT_6303, 100, true, &id);
+	vm->register_event_by_clock(this, EVENT_FRC, 0x40000, true, &id);
+	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
+	vm->register_event_by_clock(this, EVENT_6303, 100, true, &id);
 	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);

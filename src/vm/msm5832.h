@@ -51,10 +51,10 @@ public:
 	
 	// unique functions
 	void set_context_data(DEVICE* device, int id, uint32 mask, int shift) {
-		regist_output_signal(&outputs_data, device, id, mask, shift);
+		register_output_signal(&outputs_data, device, id, mask, shift);
 	}
 	void set_context_busy(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_busy, device, id, mask);
+		register_output_signal(&outputs_busy, device, id, mask);
 	}
 };
 

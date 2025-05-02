@@ -94,9 +94,9 @@ void CRTC::initialize()
 	map_init = trans_init = true;
 	
 	// regist events
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 	int id;
-	vm->regist_event(this, EVENT_BLINK, 500000, true, &id);
+	vm->register_event(this, EVENT_BLINK, 500000, true, &id);
 }
 
 void CRTC::write_data8(uint32 addr, uint32 data)
@@ -415,13 +415,13 @@ void CRTC::event_vline(int v, int clock)
 		set_hsync(0);
 	}
 	else if(GDEHS < CHARS_PER_LINE) {
-		vm->regist_event_by_clock(this, GDEHS, GDEHSC, false, &id);
+		vm->register_event_by_clock(this, GDEHS, GDEHSC, false, &id);
 	}
 	if(!GDEHE) {
 		set_hsync(0);
 	}
 	else if(GDEHE < CHARS_PER_LINE) {
-		vm->regist_event_by_clock(this, GDEHE, GDEHEC, false, &id);
+		vm->register_event_by_clock(this, GDEHE, GDEHEC, false, &id);
 	}
 }
 

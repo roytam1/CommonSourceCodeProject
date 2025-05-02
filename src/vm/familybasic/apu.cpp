@@ -572,8 +572,8 @@ void APU::write_data_cur(uint32 addr, uint32 data)
 
 void APU::initialize()
 {
-	vm->regist_frame_event(this);
-	vm->regist_vline_event(this);
+	vm->register_frame_event(this);
+	vm->register_vline_event(this);
 }
 
 void APU::reset()

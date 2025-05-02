@@ -93,13 +93,13 @@ public:
 		d_child = device;
 	}
 	void set_context_zc0(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&counter[0].outputs, device, id, mask);
+		register_output_signal(&counter[0].outputs, device, id, mask);
 	}
 	void set_context_zc1(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&counter[1].outputs, device, id, mask);
+		register_output_signal(&counter[1].outputs, device, id, mask);
 	}
 	void set_context_zc2(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&counter[2].outputs, device, id, mask);
+		register_output_signal(&counter[2].outputs, device, id, mask);
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

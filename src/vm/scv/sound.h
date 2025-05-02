@@ -59,7 +59,7 @@ private:
 	int detune_table[32];
 	
 	// command buffer
-	int param_cnt, param_ptr, regist_id;
+	int param_cnt, param_ptr, register_id;
 	uint8 params[MAX_PARAM];
 	
 	void process_pcm(uint8 data);

@@ -19,7 +19,7 @@ static const uint8 plane[4] = {0, 1, 2, 4};
 void VDP::initialize()
 {
 	// regist event to interrupt
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 void VDP::reset()
@@ -51,7 +51,7 @@ void VDP::event_vline(int v, int clock)
 	if(v < LINES_PER_HBLANK) {
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		int id;
-		vm->regist_event_by_clock(this, 0, 800, false, &id);
+		vm->register_event_by_clock(this, 0, 800, false, &id);
 	}
 	else {
 		// hsync interrupt (not pending ???)

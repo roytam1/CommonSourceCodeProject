@@ -26,7 +26,7 @@ void DISPLAY::initialize()
 	}
 	
 	// regist event
-	vm->regist_vline_event(this);
+	vm->register_vline_event(this);
 }
 
 #ifdef _MZ1500

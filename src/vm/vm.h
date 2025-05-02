@@ -235,9 +235,14 @@
 #include "x07/x07.h"
 #endif
 
+// SHARP X1turbo
+#ifdef _X1TURBO
+#include "x1/x1.h"
+#endif
+
 // SHARP X1twin
 #ifdef _X1TWIN
-#include "x1twin/x1twin.h"
+#include "x1/x1.h"
 #endif
 
 // SHINKO SANGYO YS-6464A

@@ -160,9 +160,9 @@ void SUB::initialize()
 	key_stat = emu->key_buffer();
 	
 	// regist event
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 	int id;
-	vm->regist_event(this, 0, 400, true, &id);
+	vm->register_event(this, 0, 400, true, &id);
 }
 
 void SUB::reset()
@@ -270,7 +270,7 @@ void SUB::event_callback(int event_id, int err)
 	}
 #endif
 	if(ibf) {
-		// sub cpu recieved data from main cpu
+		// sub cpu received data from main cpu
 		if(cmdlen) {
 			// this is command parameter
 			*datap++ = inbuf;
@@ -287,15 +287,15 @@ void SUB::event_callback(int event_id, int err)
 #endif
 			if(0xd0 <= mode && mode <= 0xd7) {
 				cmdlen = 6;
-				datap = &databuf[mode - 0xd0][0]; // recieve buffer
+				datap = &databuf[mode - 0xd0][0]; // receive buffer
 			}
 			else if(0xe3 <= mode && mode <= 0xef) {
 				cmdlen = cmdlen_tbl[mode - 0xe3];
-				datap = &databuf[mode - 0xd0][0]; // recieve buffer
+				datap = &databuf[mode - 0xd0][0]; // receive buffer
 			}
 		}
 		if(cmdlen == 0) {
-			// this command has no parameters or all parameters are recieved,
+			// this command has no parameters or all parameters are received,
 			// so cpu processes the command
 #ifdef DEBUG_COMMAND
 			emu->out_debug(_T("\n"));
@@ -470,7 +470,7 @@ void SUB::process_cmd()
 	// process command
 	switch(mode) {
 	case 0x00:
-		// reset recieve/send buffer
+		// reset receive/send buffer
 		break;
 	case 0xd0:
 	case 0xd1:

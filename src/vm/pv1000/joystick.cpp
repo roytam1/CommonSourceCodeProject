@@ -16,7 +16,7 @@ void JOYSTICK::initialize()
 	joy = emu->joy_buffer();
 	
 	// regist event to interrupt
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void JOYSTICK::reset()

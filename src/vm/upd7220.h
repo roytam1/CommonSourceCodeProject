@@ -133,10 +133,10 @@ public:
 	
 	// unique functions
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_drq, device, id, mask);
+		register_output_signal(&outputs_drq, device, id, mask);
 	}
 	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
-		regist_output_signal(&outputs_vsync, device, id, mask);
+		register_output_signal(&outputs_vsync, device, id, mask);
 	}
 	void set_vram_ptr(uint8* ptr, uint32 size) {
 		vram = ptr; vram_size = size;

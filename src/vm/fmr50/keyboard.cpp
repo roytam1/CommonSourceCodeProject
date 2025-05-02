@@ -16,7 +16,7 @@
 void KEYBOARD::initialize()
 {
 	key_buf = new FIFO(64);
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void KEYBOARD::reset()

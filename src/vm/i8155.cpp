@@ -36,7 +36,7 @@ void I8155::initialize()
 	prev_in = false;
 	now_count = stop_tc = false;
 	half = true;
-	regist_id = -1;
+	register_id = -1;
 	
 	// clear ram
 	_memset(ram, 0, sizeof(ram));
@@ -196,7 +196,7 @@ void I8155::write_signal(int id, uint32 data, uint32 mask)
 
 void I8155::event_callback(int event_id, int err)
 {
-	regist_id = -1;
+	register_id = -1;
 	input_clock(input_clk);
 	
 	// regist next event
@@ -204,7 +204,7 @@ void I8155::event_callback(int event_id, int err)
 		input_clk = get_next_clock();
 		period = CPU_CLOCKS / freq * input_clk + err;
 		prev_clk = vm->current_clock() + err;
-		vm->regist_event_by_clock(this, 0, period, false, &regist_id);
+		vm->register_event_by_clock(this, 0, period, false, &register_id);
 	}
 }
 
@@ -248,27 +248,27 @@ void I8155::start_count()
 		now_count = true;
 		
 		// regist event
-		if(freq && regist_id == -1) {
+		if(freq && register_id == -1) {
 			input_clk = get_next_clock();
 			period = CPU_CLOCKS / freq * input_clk;
 			prev_clk = vm->current_clock();
-			vm->regist_event_by_clock(this, 0, period, false, &regist_id);
+			vm->register_event_by_clock(this, 0, period, false, &register_id);
 		}
 	}
 }
 
 void I8155::stop_count()
 {
-	if(regist_id != -1) {
-		vm->cancel_event(regist_id);
+	if(register_id != -1) {
+		vm->cancel_event(register_id);
 	}
-	regist_id = -1;
+	register_id = -1;
 	now_count = false;
 }
 
 void I8155::update_count()
 {
-	if(regist_id != -1) {
+	if(register_id != -1) {
 		// update counter
 		int passed = vm->passed_clock(prev_clk);
 		uint32 input = freq * passed / CPU_CLOCKS;
@@ -278,11 +278,11 @@ void I8155::update_count()
 		if(input > 0) {
 			input_clock(input);
 			// cancel and re-regist event
-			vm->cancel_event(regist_id);
+			vm->cancel_event(register_id);
 			input_clk -= input;
 			period -= passed;
 			prev_clk = vm->current_clock();
-			vm->regist_event_by_clock(this, 0, period, false, &regist_id);
+			vm->register_event_by_clock(this, 0, period, false, &register_id);
 		}
 	}
 }

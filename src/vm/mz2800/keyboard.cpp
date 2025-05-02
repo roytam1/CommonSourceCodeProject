@@ -33,7 +33,7 @@ void KEYBOARD::initialize()
 {
 	key_stat = emu->key_buffer();
 	column = 0;
-	vm->regist_frame_event(this);
+	vm->register_frame_event(this);
 }
 
 void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)

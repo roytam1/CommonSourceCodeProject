@@ -39,7 +39,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 			if(timer_id != -1) {
 				vm->cancel_event(timer_id);
 			}
-			vm->regist_event(this, EVENT_TIMER, 100000, false, &timer_id);
+			vm->register_event(this, EVENT_TIMER, 100000, false, &timer_id);
 		}
 		// FDC RDY is pulluped
 		d_fdc_2dd->write_signal(SIG_UPD765A_MOTOR, data, 0x08);
