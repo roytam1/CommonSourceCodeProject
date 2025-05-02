@@ -1,4 +1,6 @@
 /*
+	SHARP MZ-80B Emulator 'EmuZ-80B'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
 	Skelton for retropc emulator
 
@@ -20,8 +22,8 @@
 class KEYBOARD : public DEVICE
 {
 private:
-	DEVICE* d_pio0;	// i8255
-	DEVICE* d_pio1;	// z80pio
+	DEVICE* d_pio_i;	// i8255
+	DEVICE* d_pio_z;	// z80pio
 	
 	// keyboard
 	uint8* key_stat;
@@ -39,11 +41,11 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_pio0(DEVICE* device) {
-		d_pio0 = device;
+	void set_context_pio_i(DEVICE* device) {
+		d_pio_i = device;
 	}
-	void set_context_pio1(DEVICE* device) {
-		d_pio1 = device;
+	void set_context_pio_z(DEVICE* device) {
+		d_pio_z = device;
 	}
 };
 

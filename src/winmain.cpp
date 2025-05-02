@@ -1713,6 +1713,9 @@ void open_datarec_dialog(HWND hWnd, bool play)
 #elif defined(DATAREC_MZT)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(DATAREC_MZT_2000)
+		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mtw;*.dat)\0*.wav;*.cas;*.mzt;*.mtw;*.dat\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif

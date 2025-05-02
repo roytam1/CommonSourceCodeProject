@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/29/2012
+								3/21/2013
 
 --- What's this ?
 
@@ -10,11 +10,13 @@ This archive includes the all source codes of emulators listed below:
 	EmuLTI8		MITSUBISHI Electric MULTI8
 	EmuPIA		TOSHIBA PASOPIA
 	EmuPIA7		TOSHIBA PASOPIA7
+	EmuZ-80B	SHARP MZ-80B
 	EmuZ-80K	SHARP MZ-80K
 	EmuZ-700	SHARP MZ-700
 	EmuZ-800	SHARP MZ-800
 	EmuZ-1200	SHARP MZ-1200
 	EmuZ-1500	SHARP MZ-1500
+	EmuZ-2200	SHARP MZ-2200
 	EmuZ-2500	SHARP MZ-2500
 	EmuZ-2800	SHARP MZ-2800
 	EmuZ-3500	SHARP MZ-3500

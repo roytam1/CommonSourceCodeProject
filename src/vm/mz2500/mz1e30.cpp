@@ -5,10 +5,10 @@
 	Author : Takeda.Toshiya
 	Date   : 2004.09.10 -
 
-	[ sasi hdd ]
+	[ MZ-1E30 (SASI) ]
 */
 
-#include "sasi.h"
+#include "mz1e30.h"
 #include "../../fileio.h"
 
 #define PHASE_FREE	0
@@ -30,8 +30,29 @@
 #define STATUS_IRQ	0
 #define STATUS_DRQ	0
 
-void SASI::initialize()
+void MZ1E30::initialize()
 {
+	// rom file
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(emu->bios_path(_T("MZ-1E30.ROM")), FILEIO_READ_BINARY) ||
+	   fio->Fopen(emu->bios_path(_T("SASI.ROM")), FILEIO_READ_BINARY) ||
+	   fio->Fopen(emu->bios_path(_T("FILE.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fseek(0, FILEIO_SEEK_END);
+		if((rom_size = fio->Ftell()) > 0x1000000) {
+			rom_size = 0x1000000;
+		}
+		rom_buffer = (uint8*)malloc(rom_size);
+		
+		fio->Fseek(0, FILEIO_SEEK_SET);
+		fio->Fread(rom_buffer, rom_size, 1);
+		fio->Fclose();
+	} else {
+		rom_size = 0;
+		rom_buffer = (uint8*)malloc(1);
+	}
+	delete fio;
+	rom_address = 0;
+	
 	// open hard drive images
 	for(int i = 0; i < 2; i++) {
 		_TCHAR file_name[_MAX_PATH];
@@ -62,18 +83,20 @@ void SASI::initialize()
 	status_ptr = 0;
 }
 
-void SASI::release()
+void MZ1E30::release()
 {
 	for(int i = 0; i < 2; i++) {
 		if(drive[i].fio != NULL) {
 			drive[i].fio->Fclose();
 			delete drive[i].fio;
-			drive[i].fio = NULL;
 		}
+	}
+	if(rom_buffer != NULL) {
+		free(rom_buffer);
 	}
 }
 
-void SASI::write_io8(uint32 addr, uint32 data)
+void MZ1E30::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {
 	case 0xa4:
@@ -110,7 +133,7 @@ void SASI::write_io8(uint32 addr, uint32 data)
 		datareg = data;
 		break;
 	case 0xa5:
-		// cmd
+		// command
 		if(data == 0x00) {
 			if(phase == PHASE_SELECT) {
 				phase = PHASE_COMMAND;
@@ -126,10 +149,14 @@ void SASI::write_io8(uint32 addr, uint32 data)
 			}
 		}
 		break;
+	case 0xa8:
+		// rom file
+		rom_address = ((addr & 0xff00) << 8) | (data << 8) | (rom_address & 0x0000ff);
+		break;
 	}
 }
 
-uint32 SASI::read_io8(uint32 addr)
+uint32 MZ1E30::read_io8(uint32 addr)
 {
 	uint32 val = 0;
 	
@@ -193,21 +220,28 @@ uint32 SASI::read_io8(uint32 addr)
 			val |= STATUS_IXD | STATUS_CXD | STATUS_MSG;
 		}
 		return val;
+	case 0xa9:
+		// rom file
+		rom_address = (rom_address & 0xffff00) | ((addr & 0xff00) >> 8);
+		if(rom_address < rom_size) {
+			return rom_buffer[rom_address];
+		}
+		break;
 	}
 	return 0xff;
 }
 
-void SASI::write_dma_io8(uint32 addr, uint32 data)
+void MZ1E30::write_dma_io8(uint32 addr, uint32 data)
 {
 	write_io8(0xa4, data);
 }
 
-uint32 SASI::read_dma_io8(uint32 addr)
+uint32 MZ1E30::read_dma_io8(uint32 addr)
 {
 	return read_io8(0xa4);
 }
 
-uint32 SASI::read_signal(int ch)
+uint32 MZ1E30::read_signal(int ch)
 {
 	// get access status
 	uint32 stat = (drive[0].access ? 0x10 : 0) | (drive[1].access ? 0x20 : 0);
@@ -215,7 +249,7 @@ uint32 SASI::read_signal(int ch)
 	return stat;
 }
 
-void SASI::check_cmd()
+void MZ1E30::check_cmd()
 {
 	unit = (cmd[1] >> 5) & 1;
 	
@@ -327,7 +361,7 @@ void SASI::check_cmd()
 	}
 }
 
-void SASI::set_status(uint8 err)
+void MZ1E30::set_status(uint8 err)
 {
 	error = err;
 #if 1
@@ -339,7 +373,7 @@ void SASI::set_status(uint8 err)
 #endif
 }
 
-void SASI::event_callback(int event_id, int err)
+void MZ1E30::event_callback(int event_id, int err)
 {
 #if 0
 	phase = PHASE_STATUS;
@@ -348,7 +382,7 @@ void SASI::event_callback(int event_id, int err)
 #endif
 }
 
-void SASI::set_drq(bool flag)
+void MZ1E30::set_drq(bool flag)
 {
 	if(flag) {
 		status_irq_drq |= STATUS_DRQ;
@@ -358,7 +392,7 @@ void SASI::set_drq(bool flag)
 	}
 }
 
-bool SASI::seek(int drv)
+bool MZ1E30::seek(int drv)
 {
 	memset(buffer, 0, sizeof(buffer));
 	
@@ -375,7 +409,7 @@ bool SASI::seek(int drv)
 	return true;
 }
 
-bool SASI::flush(int drv)
+bool MZ1E30::flush(int drv)
 {
 	if(drive[drv & 1].fio == NULL) {
 		return false;
@@ -390,7 +424,7 @@ bool SASI::flush(int drv)
 	return true;
 }
 
-bool SASI::format(int drv)
+bool MZ1E30::format(int drv)
 {
 	if(drive[drv & 1].fio == NULL) {
 		return false;

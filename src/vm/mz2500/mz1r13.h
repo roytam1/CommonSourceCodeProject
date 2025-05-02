@@ -1,33 +1,34 @@
 /*
+	SHARP MZ-80B Emulator 'EmuZ-80B'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.12.05 -
+	Date   : 2006.12.01 -
 
-	[ rom file ]
+	[ MZ-1R13 (Kanji ROM) ]
 */
 
-#ifndef _ROMFILE_H_
-#define _ROMFILE_H_
+#ifndef _MZ1R13_H_
+#define _MZ1R13_H_
 
 #include "../vm.h"
 #include "../../emu.h"
 #include "../device.h"
 
-class ROMFILE : public DEVICE
+class MZ1R13 : public DEVICE
 {
 private:
-	uint8* buf;
-	uint32 ptr, size;
+	uint8 rom[0x20000];
+	uint16 address;
 	
 public:
-	ROMFILE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
-	~ROMFILE() {}
+	MZ1R13(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~MZ1R13() {}
 	
 	// common functions
 	void initialize();
-	void release();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 };

@@ -1,4 +1,6 @@
 /*
+	SHARP MZ-80B Emulator 'EmuZ-80B'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
 	Skelton for retropc emulator
 
@@ -11,6 +13,12 @@
 #include "keyboard.h"
 #include "../i8255.h"
 #include "../z80pio.h"
+
+#ifdef _MZ2500
+#define MAX_COLUMN 14
+#else
+#define MAX_COLUMN 12
+#endif
 
 static const int key_map[14][8] = {
 	{0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77},
@@ -47,24 +55,23 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 void KEYBOARD::event_frame()
 {
 	// update key status
+	memset(keys, 0xff, sizeof(keys));
 	key_stat[0] = 0;
-	
-	keys[0xf] = 0xff;
-	for(int i = 0; i <= 0xd; i++) {
+	for(int i = 0; i < MAX_COLUMN; i++) {
 		uint8 tmp = 0;
 		for(int j = 0; j < 8; j++) {
 			tmp |= (key_stat[key_map[i][j]]) ? 0 : (1 << j);
 		}
 		keys[i] = tmp;
-		keys[0xf] &= tmp;
+		keys[0x0f] &= tmp;
 	}
 	create_keystat();
 }
 
 void KEYBOARD::create_keystat()
 {
-	uint8 val = (!(column & 0x10)) ? keys[0xf] : ((column & 0xf) > 0xd) ? 0xff : keys[column & 0xf];
-	d_pio0->write_signal(SIG_I8255_PORT_B, val, 0x80);	// to i8255 port b
-	d_pio1->write_signal(SIG_Z80PIO_PORT_B, val, 0xff);	// to z80pio port b
+	uint8 val = keys[(column & 0x10) ? (column & 0x0f) : 0x0f];
+	d_pio_i->write_signal(SIG_I8255_PORT_B, val, 0x80);	// to i8255 port b
+	d_pio_z->write_signal(SIG_Z80PIO_PORT_B, val, 0xff);	// to z80pio port b
 }
 

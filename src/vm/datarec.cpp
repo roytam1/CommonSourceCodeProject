@@ -36,9 +36,9 @@ typedef struct {
 
 #pragma pack(1)
 typedef struct {
-	char data[4];
-	uint32 data_len;
-} wav_data_t;
+	char id[4];
+	uint32 size;
+} wav_chunk_t;
 #pragma pack()
 
 static uint8 wavheader[44] = {
@@ -56,7 +56,7 @@ void DATAREC::initialize()
 	in_signal = out_signal = changed = false;
 	register_id = -1;
 	
-	buffer = NULL;
+	buffer = buffer_bak = NULL;
 #ifdef DATAREC_SOUND
 	wav_buffer = NULL;
 #endif
@@ -134,17 +134,25 @@ void DATAREC::event_callback(int event_id, int err)
 				}
 				update_event();
 			} else {
-				while(buffer_ptr < buffer_length) {
-					if((buffer[buffer_ptr] & 0x7f) == 0) {
-						if(++buffer_ptr == buffer_length) {
-							set_remote(false);	// end of tape
+				if(ff_rew < 0) {
+					if(buffer_bak != NULL) {
+						memcpy(buffer, buffer_bak, buffer_length);
+					}
+					buffer_ptr = 0;
+					set_remote(false);	// top of tape
+				} else {
+					while(buffer_ptr < buffer_length) {
+						if((buffer[buffer_ptr] & 0x7f) == 0) {
+							if(++buffer_ptr == buffer_length) {
+								set_remote(false);	// end of tape
+								break;
+							}
+						} else {
+							signal = ((buffer[buffer_ptr] & 0x80) != 0);
+							uint8 tmp = buffer[buffer_ptr];
+							buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
 							break;
 						}
-					} else {
-						signal = ((buffer[buffer_ptr] & 0x80) != 0);
-						uint8 tmp = buffer[buffer_ptr];
-						buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
-						break;
 					}
 				}
 			}
@@ -239,7 +247,7 @@ bool DATAREC::play_datarec(_TCHAR* file_path)
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		if(check_file_extension(file_path, _T(".wav"))) {
 			// standard PCM wave file
-			if((buffer_length = load_wav_image()) == 0) {
+			if((buffer_length = load_wav_image(0)) == 0) {
 				return false;
 			}
 			is_wav = true;
@@ -257,11 +265,25 @@ bool DATAREC::play_datarec(_TCHAR* file_path)
 			}
 			buffer = (uint8 *)malloc(buffer_length);
 			load_mzt_image();
+		} else if(check_file_extension(file_path, _T(".mtw"))) {
+			// skip mzt image
+			uint8 header[128];
+			fio->Fread(header, sizeof(header), 1);
+			uint16 size = header[0x12] | (header[0x13] << 8);
+			// load standard PCM wave file
+			if((buffer_length = load_wav_image(sizeof(header) + size)) == 0) {
+				return false;
+			}
+			is_wav = true;
 		} else {
 			// standard cas image for my emulator
 			if((buffer_length = load_cas_image()) == 0) {
 				return false;
 			}
+		}
+		if(!is_wav && buffer_length != 0) {
+			buffer_bak = (uint8 *)malloc(buffer_length);
+			memcpy(buffer_bak, buffer, buffer_length);
 		}
 		
 		// get the first signal
@@ -328,6 +350,10 @@ void DATAREC::close_file()
 		free(buffer);
 		buffer = NULL;
 	}
+	if(buffer_bak != NULL) {
+		free(buffer_bak);
+		buffer_bak = NULL;
+	}
 #ifdef DATAREC_SOUND
 	if(wav_buffer != NULL) {
 		free(wav_buffer);
@@ -357,17 +383,13 @@ int DATAREC::load_cas_image()
 
 // standard PCM wave file
 
-int DATAREC::load_wav_image()
+int DATAREC::load_wav_image(int offset)
 {
-	// get file size
-	fio->Fseek(0, FILEIO_SEEK_END);
-	int file_size = fio->Ftell();
-	fio->Fseek(0, FILEIO_SEEK_SET);
-	
 	// check wave header
 	wav_header_t header;
-	wav_data_t data;
+	wav_chunk_t chunk;
 	
+	fio->Fseek(offset, FILEIO_SEEK_SET);
 	fio->Fread(&header, sizeof(header), 1);
 	if(header.format_id != 1 || !(header.sample_bits == 8 || header.sample_bits == 16)) {
 		// this is not pcm format !!!
@@ -375,9 +397,15 @@ int DATAREC::load_wav_image()
 		return 0;
 	}
 	fio->Fseek(header.fmt_size - 0x10, FILEIO_SEEK_CUR);
-	fio->Fread(&data, sizeof(data), 1);
+	while(1) {
+		fio->Fread(&chunk, sizeof(chunk), 1);
+		if(strncmp(chunk.id, "data", 4) == 0) {
+			break;
+		}
+		fio->Fseek(chunk.size, FILEIO_SEEK_CUR);
+	}
 	
-	int samples = data.data_len / header.channels;
+	int samples = chunk.size / header.channels;
 	int tmp_length = header.channels * TMP_SAMPLES;
 	if(header.sample_bits == 16) {
 		samples /= 2;
@@ -387,6 +415,7 @@ int DATAREC::load_wav_image()
 	
 	// load samples
 	if(samples > 0) {
+		bool prev_signal = false, signal;
 		buffer = (uint8 *)malloc(samples);
 #ifdef DATAREC_SOUND
 		if(header.channels > 1) {
@@ -408,10 +437,12 @@ int DATAREC::load_wav_image()
 			data.b.l = tmp_buffer[tmp_ptr++];
 			if(header.sample_bits == 16) {
 				data.b.h = tmp_buffer[tmp_ptr++];
-				buffer[i] = (data.s16 > 4096) ? 0xff : 0;
+				signal = (data.s16 > (prev_signal ? -4096 : 4096));
 			} else {
-				buffer[i] = (data.b.l > 128 + 16) ? 0xff : 0;
+				signal = (data.b.l > 128 + (prev_signal ? -16 : 16));
 			}
+			buffer[i] = signal ? 0xff : 0;
+			prev_signal = signal;
 #ifdef DATAREC_SOUND
 			if(header.channels > 1) {
 				data.b.l = tmp_buffer[tmp_ptr++];

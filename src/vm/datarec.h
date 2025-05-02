@@ -41,7 +41,7 @@ private:
 	int register_id;
 	
 	int sample_rate;
-	uint8* buffer;
+	uint8 *buffer, *buffer_bak;
 #ifdef DATAREC_SOUND
 	int16 *wav_buffer, wav_sample;
 #endif
@@ -56,7 +56,7 @@ private:
 	void close_file();
 	
 	int load_cas_image();
-	int load_wav_image();
+	int load_wav_image(int offset);
 	void save_wav_image();
 	int load_tap_image();
 	int load_mzt_image();

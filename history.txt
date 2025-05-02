@@ -1,6 +1,14 @@
+3/21/2013
+
+[VM/DATAREC] fix to skip the fact chunk in wave file header
+
+[MZ80B] support SHARP MZ-80B
+[MZ2200] support SHARP MZ-2200
+
+
 2/26/2013
 
-[WINMAIN] destroy window before emulation core is released
+[WINMAIN] destry window before emulation core is released
 
 [PC8801MA/PC88] fix text attributes
 

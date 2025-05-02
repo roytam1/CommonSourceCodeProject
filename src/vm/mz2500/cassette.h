@@ -1,4 +1,6 @@
 /*
+	SHARP MZ-80B Emulator 'EmuZ-80B'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
 	Skelton for retropc emulator
 
@@ -36,8 +38,16 @@ private:
 	
 	uint8 pa, pb, pc;
 	bool play, rec;
-	bool now_play, now_rewind, now_apss;
+	bool now_play, now_rewind;
+#ifndef _MZ80B
+	bool now_apss;
 	int register_id;
+#endif
+	
+	void fast_forwad();
+	void fast_rewind();
+	void forward();
+	void stop();
 	
 public:
 	CASSETTE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -48,7 +58,9 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
+#ifndef _MZ80B
 	void event_callback(int event_id, int err);
+#endif
 	
 	// unique function
 	void set_context_pio(DEVICE* device) {

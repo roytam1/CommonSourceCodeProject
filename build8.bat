@@ -67,6 +67,10 @@ devenv.com mycomz80a.vcproj /Rebuild Release
 mkdir build\mycomz80a
 copy Release\mycomz80a.exe build\mycomz80a\.
 
+devenv.com mz80b.vcproj /Rebuild Release
+mkdir build\mz80b
+copy Release\mz80b.exe build\mz80b\.
+
 devenv.com mz80k.vcproj /Rebuild Release
 mkdir build\mz80k
 copy Release\mz80k.exe build\mz80k\.
@@ -86,6 +90,10 @@ copy Release\mz1200.exe build\mz1200\.
 devenv.com mz1500.vcproj /Rebuild Release
 mkdir build\mz1500
 copy Release\mz1500.exe build\mz1500\.
+
+devenv.com mz2200.vcproj /Rebuild Release
+mkdir build\mz2200
+copy Release\mz2200.exe build\mz2200\.
 
 devenv.com mz2500.vcproj /Rebuild Release
 mkdir build\mz2500

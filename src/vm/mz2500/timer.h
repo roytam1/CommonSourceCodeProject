@@ -1,4 +1,5 @@
 /*
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
 	Skelton for retropc emulator
 
@@ -25,9 +26,7 @@ public:
 	~TIMER() {}
 	
 	// common functions
-	void initialize();
 	void write_io8(uint32 addr, uint32 data);
-	void event_callback(int event_id, int err);
 	
 	// unique functions
 	void set_context_pit(DEVICE* device) {

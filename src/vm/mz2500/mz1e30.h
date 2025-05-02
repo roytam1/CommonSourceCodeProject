@@ -5,11 +5,11 @@
 	Author : Takeda.Toshiya
 	Date   : 2004.09.10 -
 
-	[ sasi hdd ]
+	[ MZ-1E30 (SASI) ]
 */
 
-#ifndef _SASI_H_
-#define _SASI_H_
+#ifndef _MZ1E30_H_
+#define _MZ1E30_H_
 
 #include "../vm.h"
 #include "../../emu.h"
@@ -17,16 +17,14 @@
 
 class FILEIO;
 
-class SASI : public DEVICE
+class MZ1E30 : public DEVICE
 {
 private:
-	void check_cmd();
-	void set_status(uint8 err);
-	void set_drq(bool val);
-	bool seek(int drv);
-	bool flush(int drv);
-	bool format(int drv);
+	// rom file
+	uint8 *rom_buffer;
+	uint32 rom_address, rom_size;
 	
+	// sasi
 	uint8 buffer[256];
 	int phase;
 	int sector;
@@ -48,9 +46,16 @@ private:
 	} drive_t;
 	drive_t drive[2];
 	
+	void check_cmd();
+	void set_status(uint8 err);
+	void set_drq(bool val);
+	bool seek(int drv);
+	bool flush(int drv);
+	bool format(int drv);
+	
 public:
-	SASI(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
-	~SASI() {}
+	MZ1E30(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~MZ1E30() {}
 	
 	// common functions
 	void initialize();

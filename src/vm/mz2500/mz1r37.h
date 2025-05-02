@@ -5,26 +5,24 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.12.01 -
 
-	[ emm ]
+	[ MZ-1R37 (640KB EMM) ]
 */
 
-#ifndef _EMM_H_
-#define _EMM_H_
+#ifndef _MZ1R37_H_
+#define _MZ1R37_H_
 
 #include "../vm.h"
 #include "../../emu.h"
 #include "../device.h"
 
-#define EMM_SIZE	(1024 * 1024)
-
-class EMM : public DEVICE
+class MZ1R37 : public DEVICE
 {
 private:
-	uint8* buf;
-	uint32 ptr;
+	uint8* buffer;
+	uint32 address;
 public:
-	EMM(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
-	~EMM() {}
+	MZ1R37(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~MZ1R37() {}
 	
 	// common functions
 	void initialize();

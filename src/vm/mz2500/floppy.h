@@ -1,4 +1,6 @@
 /*
+	SHARP MZ-80B Emulator 'EmuZ-80B'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	SHARP MZ-2500 Emulator 'EmuZ-2500'
 	Skelton for retropc emulator
 
@@ -21,9 +23,10 @@ class FLOPPY : public DEVICE
 {
 private:
 	DEVICE* d_fdc;
-	
+#ifdef _MZ2500
 	bool reverse;
 	bool laydock;
+#endif
 	
 public:
 	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

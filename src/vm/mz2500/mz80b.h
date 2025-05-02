@@ -1,31 +1,34 @@
 /*
-	SHARP MZ-2500 Emulator 'EmuZ-2500'
+	SHARP MZ-80B Emulator 'EmuZ-80B'
+	SHARP MZ-2200 Emulator 'EmuZ-2200'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.11.24 -
+	Date   : 2013.03.14-
 
 	[ virtual machine ]
 */
 
-#ifndef _MZ2500_H_
-#define _MZ2500_H_
+#ifndef _MZ80B_H_
+#define _MZ80B_H_
 
-#define DEVICE_NAME		"SHARP MZ-2500"
-#define CONFIG_NAME		"mz2500"
-#define CONFIG_VERSION		0x02
+#ifdef _MZ80B
+#define DEVICE_NAME		"SHARP MZ-80B"
+#define CONFIG_NAME		"mz80b"
+#else
+#define DEVICE_NAME		"SHARP MZ-2200"
+#define CONFIG_NAME		"mz2200"
+#endif
+#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_SEC		55.4
-#define LINES_PER_FRAME 	440
-#define CHARS_PER_LINE		108
-#define CPU_CLOCKS		6000000
+#define FRAMES_PER_SEC		60
+#define LINES_PER_FRAME		262
+#define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define HAS_MB8876
-#define HAS_RP5C15
-#define DATAREC_SOUND
 #define PCM1BIT_HIGH_QUALITY
 
 // memory wait
@@ -40,13 +43,16 @@
 #define USE_FD3
 #define USE_FD4
 #define USE_DATAREC
-#define USE_SOCKET
+#define USE_DATAREC_BUTTON
+#define DATAREC_MZT_2000
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
-#define USE_MONITOR_TYPE	4
+#ifndef _MZ80B
+#define USE_MONITOR_TYPE	2
+#endif
 #define USE_ACCESS_LAMP
 
 #include "../../common.h"
@@ -61,26 +67,15 @@ class I8255;
 class IO;
 class MB8877;
 class PCM1BIT;
-class RP5C01;
-class W3100A;
-class YM2203;
 class Z80;
 class Z80PIO;
-class Z80SIO;
 
-class CALENDAR;
 class CASSETTE;
-class CRTC;
 class FLOPPY;
-class INTERRUPT;
-class JOYSTICK;
 class KEYBOARD;
 class MEMORY;
-class MOUSE;
-class MZ1E26;
-class MZ1E30;
+class MZ1R12;
 class MZ1R13;
-class MZ1R37;
 class TIMER;
 
 class VM
@@ -97,30 +92,16 @@ protected:
 	IO* io;
 	MB8877* fdc;
 	PCM1BIT* pcm;
-	RP5C01* rtc;
-	W3100A* w3100a;
-	YM2203* opn;
 	Z80* cpu;
 	Z80PIO* pio_z;
-	Z80SIO* sio;
 	
-	CALENDAR* calendar;
 	CASSETTE* cassette;
-	CRTC* crtc;
 	FLOPPY* floppy;
-	INTERRUPT* interrupt;
-	JOYSTICK* joystick;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
-	MOUSE* mouse;
-	MZ1E26* mz1e26;
-	MZ1E30* mz1e30;
+	MZ1R12* mz1r12;
 	MZ1R13* mz1r13;
-	MZ1R37* mz1r37;
 	TIMER* timer;
-	
-	// monitor type cache
-	int monitor_type;
 	
 public:
 	// ----------------------------------------
@@ -147,15 +128,6 @@ public:
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	
-	// socket
-	void network_connected(int ch);
-	void network_disconnected(int ch);
-	uint8* get_sendbuffer(int ch, int* size);
-	void inc_sendbuffer_ptr(int ch, int size);
-	uint8* get_recvbuffer0(int ch, int* size0, int* size1);
-	uint8* get_recvbuffer1(int ch);
-	void inc_recvbuffer_ptr(int ch, int size);
-	
 	// user interface
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
@@ -163,6 +135,8 @@ public:
 	void play_datarec(_TCHAR* file_path);
 	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
+	void push_play();
+	void push_stop();
 	bool now_skip();
 	
 	void update_config();

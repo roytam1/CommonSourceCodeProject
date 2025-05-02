@@ -91,10 +91,11 @@ void PSG::SetVolume(int volume)
 	double base = 0x4000 / 3.0 * pow(10.0, volume / 40.0);
 #ifdef HAS_AY_3_8912
 	// AY-3-8190/8192 (PSG): 16step
-	for (int i=31; i>=2; i-=2)
+	for (int i=31; i>=3; i-=2)
 	{
 		EmitTable[i] = EmitTable[i-1] = int(base);
-		base /= 1.414213562;
+		base /= 1.189207115;
+		base /= 1.189207115;
 	}
 #else
 	// YM2203 (SSG): 32step
@@ -138,22 +139,11 @@ void PSG::MakeEnvelopTable()
 	{
 		uint8 v = table2[table1[i]];
 		
-#ifdef HAS_AY_3_8912
-		// AY-3-8190/8192 (PSG): 16step
-		for (int j=0; j<32; j+=2)
-		{
-			*ptr++ = EmitTable[v];
-			*ptr++ = EmitTable[v];
-			v += table3[table1[i]] * 2;
-		}
-#else
-		// YM2203 (SSG): 32step
 		for (int j=0; j<32; j++)
 		{
 			*ptr++ = EmitTable[v];
 			v += table3[table1[i]];
 		}
-#endif
 	}
 }
 
