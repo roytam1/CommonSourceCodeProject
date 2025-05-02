@@ -562,8 +562,14 @@ void DISPLAY::draw_gfx_screen()
 			*dest++ = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
 			*dest++ = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 		}
-		if(mode_flipflop[MODE_200LINE]) {
-			memset(dest, 0, 640);
+		if((cs_gfx[0] & 0x1f) == 1) {
+			// 200 line
+			if(mode_flipflop[MODE_200LINE]) {
+				memset(dest, 0, 640);
+			}
+			else {
+				memcpy(dest, dest - 640, 640);
+			}
 			dest += 640;
 			y++;
 		}

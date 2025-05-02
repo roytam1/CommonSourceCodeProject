@@ -227,11 +227,6 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_mzt(_TCHAR* filename)
-{
-	memory->open_mzt(filename);
-}
-
 void VM::play_datarec(_TCHAR* filename)
 {
 	drec->play_datarec(filename);

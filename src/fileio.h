@@ -37,6 +37,7 @@ public:
 	void Fclose();
 	bool IsOpened() { return (fp != NULL); }
 	int Fgetc();
+	int Fputc(int c);
 	uint32 Fread(void* buffer, uint32 size, uint32 count);
 	uint32 Fwrite(void* buffer, uint32 size, uint32 count);
 	uint32 Fseek(long offset, int origin);

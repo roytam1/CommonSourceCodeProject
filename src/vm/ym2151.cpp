@@ -20,7 +20,6 @@ void YM2151::initialize()
 void YM2151::release()
 {
 	delete opm;
-	free(sound_tmp);
 }
 
 void YM2151::reset()
@@ -32,6 +31,7 @@ void YM2151::write_io8(uint32 addr, uint32 data)
 {
 	if(addr & 1) {
 		opm->SetReg(ch, data);
+		update_interrupt();
 	}
 	else {
 		ch = data;
@@ -55,7 +55,13 @@ void YM2151::write_signal(int id, uint32 data, uint32 mask)
 
 void YM2151::event_vline(int v, int clock)
 {
-	bool next = opm->Count(usec);
+	opm->Count(usec);
+	update_interrupt();
+}
+
+void YM2151::update_interrupt()
+{
+	bool next = opm->ReadIRQ();
 	if(irq != next) {
 		write_signals(&outputs_irq, next ? 0xffffffff : 0);
 		irq = next;
@@ -65,11 +71,7 @@ void YM2151::event_vline(int v, int clock)
 void YM2151::mix(int32* buffer, int cnt)
 {
 	if(cnt > 0 && !mute) {
-		_memset(sound_tmp, 0, cnt * 2 * sizeof(int32));
-		opm->Mix(sound_tmp, cnt);
-		for(int i = 0, j = 0; i < cnt; i++, j += 2) {
-			buffer[i] += sound_tmp[j];
-		}
+		opm->Mix(buffer, cnt);
 	}
 }
 
@@ -77,6 +79,5 @@ void YM2151::init(int rate, int clock, int samples, int vol)
 {
 	opm->Init(clock, rate, false);
 	opm->SetVolume(vol);
-	sound_tmp = (int32*)malloc(samples * 2 * sizeof(int32));
 }
 

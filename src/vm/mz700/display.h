@@ -30,6 +30,7 @@ private:
 	uint8 *vram_pcg_attr;
 	uint8 *pcg_b, *pcg_r, *pcg_g;
 	uint8 priority, palette[8];
+	DEVICE *d_qd;
 #endif
 	
 public:
@@ -44,6 +45,16 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
+#ifdef _MZ1500
+	void set_context_qd(DEVICE* device) {
+		d_qd = device;
+	}
+	void set_pcg_ptr(uint8* ptr) {
+		pcg_b = ptr + 0x0000;
+		pcg_r = ptr + 0x2000;
+		pcg_g = ptr + 0x4000;
+	}
+#endif
 	void set_vram_ptr(uint8* ptr) {
 		vram_char = ptr;
 		vram_attr = ptr + 0x800;
@@ -52,13 +63,6 @@ public:
 		vram_pcg_attr = ptr + 0xc00;
 #endif
 	}
-#ifdef _MZ1500
-	void set_pcg_ptr(uint8* ptr) {
-		pcg_b = ptr + 0x0000;
-		pcg_r = ptr + 0x2000;
-		pcg_g = ptr + 0x4000;
-	}
-#endif
 	void set_font_ptr(uint8* ptr) {
 		font = ptr;
 	}

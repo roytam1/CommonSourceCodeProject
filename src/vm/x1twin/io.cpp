@@ -107,7 +107,7 @@ uint32 IO::read_io8(uint32 addr)
 #endif
 	// i/o
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	uint32 val = read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
 #ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
 		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
@@ -122,3 +122,75 @@ uint32 IO::read_io8(uint32 addr)
 	return val & 0xff;
 }
 
+// register
+
+void IO::set_iomap_single_r(uint32 addr, DEVICE* device)
+{
+	read_table[addr & IO_ADDR_MASK].dev = device;
+	read_table[addr & IO_ADDR_MASK].addr = addr & IO_ADDR_MASK;
+}
+
+void IO::set_iomap_single_w(uint32 addr, DEVICE* device)
+{
+	write_table[addr & IO_ADDR_MASK].dev = device;
+	write_table[addr & IO_ADDR_MASK].addr = addr & IO_ADDR_MASK;
+}
+
+void IO::set_iomap_single_rw(uint32 addr, DEVICE* device)
+{
+	set_iomap_single_r(addr, device);
+	set_iomap_single_w(addr, device);
+}
+
+void IO::set_iomap_alias_r(uint32 addr, DEVICE* device, uint32 alias)
+{
+	read_table[addr & IO_ADDR_MASK].dev = device;
+	read_table[addr & IO_ADDR_MASK].addr = alias & IO_ADDR_MASK;
+}
+
+void IO::set_iomap_alias_w(uint32 addr, DEVICE* device, uint32 alias)
+{
+	write_table[addr & IO_ADDR_MASK].dev = device;
+	write_table[addr & IO_ADDR_MASK].addr = alias & IO_ADDR_MASK;
+}
+
+void IO::set_iomap_alias_rw(uint32 addr, DEVICE* device, uint32 alias)
+{
+	set_iomap_alias_r(addr, device, alias);
+	set_iomap_alias_w(addr, device, alias);
+}
+
+void IO::set_iomap_range_r(uint32 s, uint32 e, DEVICE* device)
+{
+	for(uint32 i = s; i <= e; i++) {
+		read_table[i & IO_ADDR_MASK].dev = device;
+		read_table[i & IO_ADDR_MASK].addr = i & IO_ADDR_MASK;
+	}
+}
+
+void IO::set_iomap_range_w(uint32 s, uint32 e, DEVICE* device)
+{
+	for(uint32 i = s; i <= e; i++) {
+		write_table[i & IO_ADDR_MASK].dev = device;
+		write_table[i & IO_ADDR_MASK].addr = i & IO_ADDR_MASK;
+	}
+}
+
+void IO::set_iomap_range_rw(uint32 s, uint32 e, DEVICE* device)
+{
+	set_iomap_range_r(s, e, device);
+	set_iomap_range_w(s, e, device);
+}
+
+void IO::set_iovalue_single_r(uint32 addr, uint32 value) {
+	read_table[addr & IO_ADDR_MASK].value = value;
+	read_table[addr & IO_ADDR_MASK].value_registered = true;
+}
+
+void IO::set_iovalue_range_r(uint32 s, uint32 e, uint32 value)
+{
+	for(uint32 i = s; i <= e; i++) {
+		read_table[i & IO_ADDR_MASK].value = value;
+		read_table[i & IO_ADDR_MASK].value_registered = true;
+	}
+}

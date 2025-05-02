@@ -32,6 +32,10 @@ typedef struct {
 	_TCHAR initial_disk_path[_MAX_PATH];
 	_TCHAR recent_disk_path[4][8][_MAX_PATH];
 #endif
+#ifdef USE_QUICKDISK
+	_TCHAR initial_quickdisk_path[_MAX_PATH];
+	_TCHAR recent_quickdisk_path[8][_MAX_PATH];
+#endif
 #ifdef USE_DATAREC
 	_TCHAR initial_datarec_path[_MAX_PATH];
 	_TCHAR recent_datarec_path[8][_MAX_PATH];
@@ -43,10 +47,6 @@ typedef struct {
 #ifdef USE_RAM
 	_TCHAR initial_ram_path[_MAX_PATH];
 	_TCHAR recent_ram_path[8][_MAX_PATH];
-#endif
-#ifdef USE_MZT
-	_TCHAR initial_mzt_path[_MAX_PATH];
-	_TCHAR recent_mzt_path[8][_MAX_PATH];
 #endif
 	
 	// screen

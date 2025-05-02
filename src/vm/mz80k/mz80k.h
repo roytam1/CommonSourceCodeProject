@@ -19,7 +19,7 @@
 #define DEVICE_NAME		"SHARP MZ-80K"
 #define CONFIG_NAME		"mz80k"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -37,7 +37,6 @@
 #define USE_DATAREC
 #define USE_DATAREC_BUTTON
 #define DATAREC_MZT
-#define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -111,7 +110,6 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void open_mzt(_TCHAR* filename);
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();

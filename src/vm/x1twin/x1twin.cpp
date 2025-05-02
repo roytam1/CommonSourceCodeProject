@@ -13,6 +13,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../datarec.h"
 #include "../hd46505.h"
 #include "../i8255.h"
 #include "../mb8877.h"
@@ -26,6 +27,7 @@
 #endif
 
 #include "display.h"
+#include "emm.h"
 #include "floppy.h"
 #include "io.h"
 #include "joystick.h"
@@ -50,6 +52,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
+	drec = new DATAREC(this, emu);
 	crtc = new HD46505(this, emu);
 	pio = new I8255(this, emu);
 	fdc = new MB8877(this, emu);
@@ -63,6 +66,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 	display = new DISPLAY(this, emu);
+	emm = new EMM(this, emu);
 	floppy = new FLOPPY(this, emu);
 	io = new IO(this, emu);
 	joy = new JOYSTICK(this, emu);
@@ -75,8 +79,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(opm);
 	event->set_context_sound(psg);
 	
+	drec->set_context_out(pio, SIG_I8255_PORT_B, 0x02);
+	drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
+	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x01, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
 #ifdef _FDC_DEBUG_LOG
@@ -95,6 +102,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_context_cpu(cpu);	// m1 wait
 #endif
 	sub->set_context_pio(pio);
+	sub->set_context_datarec(drec);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -118,10 +126,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// i/o bus
 	io->set_iomap_single_w(0x700, opm);
+	io->set_iovalue_single_r(0x700, 0x00);
 	io->set_iomap_single_rw(0x701, opm);
 #ifndef _X1TURBO
 	io->set_iomap_range_rw(0x704, 0x707, ctc);
 #endif
+	io->set_iomap_range_rw(0xd00, 0xd03, emm);
 	io->set_iomap_range_r(0xe80, 0xe81, kanji);
 	io->set_iomap_range_w(0xe80, 0xe82, kanji);
 	io->set_iomap_range_rw(0xff8, 0xffb, fdc);
@@ -406,6 +416,44 @@ void VM::close_disk(int drv)
 	fdc->close_disk(drv);
 }
 
+void VM::play_datarec(_TCHAR* filename)
+{
+	bool value = drec->play_datarec(filename);
+	
+	sub->close_datarec();
+	sub->play_datarec(value);
+}
+
+void VM::rec_datarec(_TCHAR* filename)
+{
+	bool value = drec->rec_datarec(filename);
+	
+	sub->close_datarec();
+	sub->rec_datarec(value);
+}
+
+void VM::close_datarec()
+{
+	drec->close_datarec();
+	
+	sub->close_datarec();
+}
+
+void VM::push_play()
+{
+	sub->push_play();
+}
+
+void VM::push_stop()
+{
+	sub->push_stop();
+}
+
+bool VM::now_skip()
+{
+	return drec->skip();
+}
+
 #ifdef _X1TWIN
 void VM::open_cart(_TCHAR* filename)
 {
@@ -421,11 +469,6 @@ void VM::close_cart()
 	pcecpu->reset();
 }
 #endif
-
-bool VM::now_skip()
-{
-	return false;
-}
 
 void VM::update_config()
 {

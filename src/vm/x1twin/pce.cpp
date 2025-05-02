@@ -1067,8 +1067,9 @@ void PCE::mix(int32* buffer, int cnt)
 			int32 vol = max((psg_vol >> 3) & 0x1e, (psg_vol << 1) & 0x1e) + (psg[ch].regs[4] & 0x1f) + max((psg[ch].regs[5] >> 3) & 0x1e, (psg[ch].regs[5] << 1) & 0x1e) - 60;
 			vol = (vol < 0) ? 0 : (vol > 31) ? 31 : vol;
 			vol = wav * vol_tbl[vol] / 16384;
-			for(int i = 0; i < cnt; i++) {
-				buffer[i] += vol;
+			for(int i = 0, j = 0; i < cnt; i++, j += 2) {
+				buffer[j    ] += vol; // L
+				buffer[j + 1] += vol; // R
 			}
 		}
 		else if(ch >= 4 && (psg[ch].regs[7] & 0x80)) {
@@ -1077,7 +1078,7 @@ void PCE::mix(int32* buffer, int cnt)
 			int32 vol = max((psg_vol >> 3) & 0x1e, (psg_vol << 1) & 0x1e) + (psg[ch].regs[4] & 0x1f) + max((psg[ch].regs[5] >> 3) & 0x1e, (psg[ch].regs[5] << 1) & 0x1e) - 60;
 			vol = (vol < 0) ? 0 : (vol > 31) ? 31 : vol;
 			vol = vol_tbl[vol];
-			for(int i = 0; i < cnt; i++) {
+			for(int i = 0, j = 0; i < cnt; i++, j += 2) {
 				psg[ch].remain += 3000 + freq * 512;
 				uint32 t = psg[ch].remain / sample_rate;
 				if(t >= 1) {
@@ -1091,7 +1092,9 @@ void PCE::mix(int32* buffer, int cnt)
 					}
 					psg[ch].remain -= sample_rate * t;
 				}
-				buffer[i] += (int32)((psg[ch].noise ? 10 * 702 : -10 * 702) * vol / 16384);
+				int32 outvol = (int32)((psg[ch].noise ? 10 * 702 : -10 * 702) * vol / 16384);
+				buffer[j    ] += outvol; // L
+				buffer[j + 1] += outvol; // R
 			}
 		}
 		else {
@@ -1104,8 +1107,10 @@ void PCE::mix(int32* buffer, int cnt)
 				int32 vol = max((psg_vol >> 3) & 0x1e, (psg_vol << 1) & 0x1e) + (psg[ch].regs[4] & 0x1f) + max((psg[ch].regs[5] >> 3) & 0x1e, (psg[ch].regs[5] << 1) & 0x1e) - 60;
 				vol = (vol < 0) ? 0 : (vol > 31) ? 31 : vol;
 				vol = vol_tbl[vol];
-				for(int i = 0; i < cnt; i++) {
-					buffer[i] += wav[psg[ch].genptr] * vol / 16384;
+				for(int i = 0, j = 0; i < cnt; i++, j += 2) {
+					int32 outvol = wav[psg[ch].genptr] * vol / 16384;
+					buffer[j    ] += outvol; // L
+					buffer[j + 1] += outvol; // R
 					psg[ch].remain += 32 * 1118608 / freq;
 					uint32 t = psg[ch].remain / (10 * sample_rate);
 					psg[ch].genptr = (psg[ch].genptr + t) & 0x1f;

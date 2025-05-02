@@ -18,10 +18,11 @@
 #define SIG_DATAREC_REMOTE	1
 #define SIG_DATAREC_REMOTE_NEG	2
 #define SIG_DATAREC_TRIG	3
+#define SIG_DATAREC_REWIND	4
 
 class FILEIO;
 
-#define DATAREC_BUFFER_SIZE 0x400000
+#define DATAREC_BUFFER_SIZE 0x800000
 
 class DATAREC : public DEVICE
 {
@@ -29,25 +30,37 @@ private:
 	// output signals
 	outputs_t outputs_out;
 	outputs_t outputs_remote;
+	outputs_t outputs_end;
 	
 	// data recorder
 	FILEIO* fio;
 	int regist_id;
-	bool play, rec, is_wave;
+	bool play, rec;
 	bool in, out, change, remote, trig;
+	bool is_wav, is_tap, is_mzt;
 	
 	int bufcnt, samples;
+	int ch, sample_rate, sample_bits;
 	int remain;
 	uint8 buffer[DATAREC_BUFFER_SIZE];
 	
 	void update_event();
-	bool check_extension_wav(_TCHAR* filename);
-	bool check_extension_mzt(_TCHAR* filename);
+	bool check_extension(_TCHAR* filename, _TCHAR* ext);
+	
+	void load_image();
+	
+	int load_wav_image();
+	void save_wav_image();
+	uint8 get_wav_sample();
+	
+	int load_tap_image();
+	int load_mzt_image();
 	
 public:
 	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_out);
 		init_output_signals(&outputs_remote);
+		init_output_signals(&outputs_end);
 	}
 	~DATAREC() {}
 	
@@ -68,8 +81,11 @@ public:
 	void set_context_remote(DEVICE* device, int id, uint32 mask) {
 		regist_output_signal(&outputs_remote, device, id, mask);
 	}
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void set_context_end(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs_end, device, id, mask);
+	}
+	bool play_datarec(_TCHAR* filename);
+	bool rec_datarec(_TCHAR* filename);
 	void close_datarec();
 	bool skip();
 };

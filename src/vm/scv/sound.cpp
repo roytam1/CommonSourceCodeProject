@@ -319,6 +319,7 @@ void SOUND::mix(int32* buffer, int cnt)
 				vol += square3.output;
 			}
 		}
-		buffer[i] = vol;
+		*buffer++ += vol; // L
+		*buffer++ += vol; // R
 	}
 }

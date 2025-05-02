@@ -61,6 +61,9 @@ void open_cart(HWND hWnd);
 #ifdef USE_FD1
 void open_disk(HWND hWnd, int drv);
 #endif
+#ifdef USE_QUICKDISK
+void open_quickdisk(HWND hWnd);
+#endif
 #ifdef USE_DATAREC
 void open_datarec(HWND hWnd, BOOL play);
 #endif
@@ -69,9 +72,6 @@ void open_media(HWND hWnd);
 #endif
 #ifdef USE_RAM
 void open_ram(HWND hWnd, BOOL load);
-#endif
-#ifdef USE_MZT
-void open_mzt(HWND hWnd);
 #endif
 
 void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
@@ -306,6 +306,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		UPDATE_HISTORY(path, config.recent_disk_path[0]);
 		emu->open_disk(path, 0);
 		_tcscpy(config.initial_disk_path, get_parent_dir(path));
+#elif defined(USE_QUICKDISK)
+		UPDATE_HISTORY(path, config.recent_quickdisk_path);
+		emu->open_quickdisk(path);
+		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
 #endif
 	}
 	
@@ -818,6 +822,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
+#ifdef USE_QUICKDISK
+		case ID_OPEN_QUICKDISK:
+			if(emu) {
+				open_quickdisk(hWnd);
+			}
+			break;
+		case ID_CLOSE_QUICKDISK:
+			if(emu) {
+				emu->close_quickdisk();
+			}
+			break;
+		case ID_RECENT_QUICKDISK1:
+		case ID_RECENT_QUICKDISK2:
+		case ID_RECENT_QUICKDISK3:
+		case ID_RECENT_QUICKDISK4:
+		case ID_RECENT_QUICKDISK5:
+		case ID_RECENT_QUICKDISK6:
+		case ID_RECENT_QUICKDISK7:
+		case ID_RECENT_QUICKDISK8:
+			no = LOWORD(wParam) - ID_RECENT_QUICKDISK1;
+			_tcscpy(path, config.recent_quickdisk_path[no]);
+			for(int i = no; i > 0; i--) {
+				_tcscpy(config.recent_quickdisk_path[i], config.recent_quickdisk_path[i - 1]);
+			}
+			_tcscpy(config.recent_quickdisk_path[0], path);
+			if(emu) {
+				emu->open_quickdisk(path);
+			}
+			break;
+#endif
 #ifdef USE_DATAREC
 		case ID_PLAY_DATAREC:
 			if(emu) {
@@ -922,31 +956,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			_tcscpy(config.recent_ram_path[0], path);
 			if(emu) {
 				emu->load_ram(path);
-			}
-			break;
-#endif
-#ifdef USE_MZT
-		case ID_OPEN_MZT:
-			if(emu) {
-				open_mzt(hWnd);
-			}
-			break;
-		case ID_RECENT_MZT1:
-		case ID_RECENT_MZT2:
-		case ID_RECENT_MZT3:
-		case ID_RECENT_MZT4:
-		case ID_RECENT_MZT5:
-		case ID_RECENT_MZT6:
-		case ID_RECENT_MZT7:
-		case ID_RECENT_MZT8:
-			no = LOWORD(wParam) - ID_RECENT_MZT1;
-			_tcscpy(path, config.recent_mzt_path[no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_mzt_path[i], config.recent_mzt_path[i - 1]);
-			}
-			_tcscpy(config.recent_mzt_path[0], path);
-			if(emu) {
-				emu->open_mzt(path);
 			}
 			break;
 #endif
@@ -1279,6 +1288,24 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 	}
 #endif
+#ifdef MENU_POS_QUICKDISK
+	else if(pos == MENU_POS_QUICKDISK) {
+		// quick disk drive
+		BOOL flag = FALSE;
+		for(int i = 0; i < 8; i++) {
+			DeleteMenu(hMenu, ID_RECENT_QUICKDISK1 + i, MF_BYCOMMAND);
+		}
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_quickdisk_path[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_QUICKDISK1 + i, config.recent_quickdisk_path[i]);
+				flag = TRUE;
+			}
+		}
+		if(!flag) {
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_QUICKDISK1, _T("None"));
+		}
+	}
+#endif
 #ifdef MENU_POS_DATAREC
 	else if(pos == MENU_POS_DATAREC) {
 		// data recorder
@@ -1330,24 +1357,6 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 		if(!flag) {
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_RAM1, _T("None"));
-		}
-	}
-#endif
-#ifdef MENU_POS_MZT
-	else if(pos == MENU_POS_MZT) {
-		// ram
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_MZT1 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_mzt_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_MZT1 + i, config.recent_mzt_path[i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MZT1, _T("None"));
 		}
 	}
 #endif
@@ -1469,13 +1478,29 @@ void open_disk(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.d88;*.td0;*.imd)\0*.d88;*.td0;*.imd;*.sf7\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.d88;*.td0;*.imd;*.sf7)\0*.d88;*.td0;*.imd;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_path
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_disk_path[drv]);
 		emu->open_disk(path, drv);
+	}
+}
+#endif
+
+#ifdef USE_QUICKDISK
+void open_quickdisk(HWND hWnd)
+{
+	_TCHAR* path = get_open_file_name(
+		hWnd,
+		_T("Supported Files (*.mzt)\0*.mzt\0All Files (*.*)\0*.*\0\0"),
+		_T("Quick Disk"),
+		config.initial_quickdisk_path
+	);
+	if(path) {
+		UPDATE_HISTORY(path, config.recent_quickdisk_path);
+		emu->open_quickdisk(path);
 	}
 }
 #endif
@@ -1487,6 +1512,8 @@ void open_datarec(HWND hWnd, BOOL play)
 		hWnd,
 #if defined(DATAREC_BINARY_ONLY)
 		_T("Supported Files (*.cas)\0*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(DATAREC_TAP)
+		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0") : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(DATAREC_MZT)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0") : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
@@ -1540,22 +1567,6 @@ void open_ram(HWND hWnd, BOOL load)
 		else {
 			emu->save_ram(path);
 		}
-	}
-}
-#endif
-
-#ifdef USE_MZT
-void open_mzt(HWND hWnd)
-{
-	_TCHAR* path = get_open_file_name(
-		hWnd,
-		_T("Supported Files (*.mzt;*.m12)\0*.mzt;*.m12\0All Files (*.*)\0*.*\0\0"),
-		_T("MZ Tape"),
-		config.initial_mzt_path
-	);
-	if(path) {
-		UPDATE_HISTORY(path, config.recent_mzt_path);
-		emu->open_mzt(path);
 	}
 }
 #endif

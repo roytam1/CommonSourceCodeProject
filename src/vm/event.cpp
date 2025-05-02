@@ -64,10 +64,10 @@ void EVENT::initialize_sound(int rate, int samples)
 #endif
 	update_samples = (int)(1024. * rate / frames_per_sec / lines_per_frame + 0.5);
 	
-	sound_buffer = (uint16*)malloc(sound_samples * sizeof(uint16));
-	_memset(sound_buffer, 0, sound_samples * sizeof(uint16));
-	sound_tmp = (int32*)malloc(sound_tmp_samples * sizeof(int32));
-	_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32));
+	sound_buffer = (uint16*)malloc(sound_samples * sizeof(uint16) * 2);
+	_memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
+	sound_tmp = (int32*)malloc(sound_tmp_samples * sizeof(int32) * 2);
+	_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	buffer_ptr = accum_samples = 0;
 }
 
@@ -108,10 +108,10 @@ void EVENT::reset()
 	
 	// reset sound
 	if(sound_buffer) {
-		_memset(sound_buffer, 0, sound_samples * sizeof(uint16));
+		_memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
 	}
 	if(sound_tmp) {
-		_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32));
+		_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	}
 	buffer_ptr = 0;
 }
@@ -209,7 +209,12 @@ uint32 EVENT::current_clock()
 void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* regist_id)
 {
 	// regist event
-	*regist_id = -1;
+#ifdef _DEBUG_LOG
+	bool registered = false;
+#endif
+	if(regist_id != NULL) {
+		*regist_id = -1;
+	}
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
 			if(event_cnt < i + 1) {
@@ -221,12 +226,17 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 			event[i].event_id = event_id;
 			event[i].clock = clock + past + (d_cpu[0]->passed_clock() >> power);
 			event[i].loop = loop ? clock : 0;
-			*regist_id = i;
+			if(regist_id != NULL) {
+				*regist_id = i;
+			}
+#ifdef _DEBUG_LOG
+			registered = true;
+#endif
 			break;
 		}
 	}
 #ifdef _DEBUG_LOG
-	if(*regist_id == -1) {
+	if(!registered) {
 		emu->out_debug(_T("EVENT: too many events !!!\n"));
 	}
 #endif
@@ -246,7 +256,12 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* regist_id)
 {
 	// regist event
-	*regist_id = -1;
+#ifdef _DEBUG_LOG
+	bool registered = false;
+#endif
+	if(regist_id != NULL) {
+		*regist_id = -1;
+	}
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(!event[i].enable) {
 			if(event_cnt < i + 1) {
@@ -257,12 +272,17 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 			event[i].event_id = event_id;
 			event[i].clock = clock + past + (d_cpu[0]->passed_clock() >> power);
 			event[i].loop = loop ? clock : 0;
-			*regist_id = i;
+			if(regist_id != NULL) {
+				*regist_id = i;
+			}
+#ifdef _DEBUG_LOG
+			registered = true;
+#endif
 			break;
 		}
 	}
 #ifdef _DEBUG_LOG
-	if(*regist_id == -1) {
+	if(!registered) {
 		emu->out_debug(_T("EVENT: too many events !!!\n"));
 	}
 #endif
@@ -309,16 +329,16 @@ void EVENT::regist_vline_event(DEVICE* dev)
 void EVENT::mix_sound(int samples)
 {
 	if(samples > 0) {
-		_memset(sound_tmp + buffer_ptr, 0, samples * sizeof(int32));
+		_memset(sound_tmp + buffer_ptr * 2, 0, samples * sizeof(int32) * 2);
 		for(int i = 0; i < dcount_sound; i++) {
-			d_sound[i]->mix(sound_tmp + buffer_ptr, samples);
+			d_sound[i]->mix(sound_tmp + buffer_ptr * 2, samples);
 		}
 		buffer_ptr += samples;
 	}
 	else {
 		// notify to sound devices
 		for(int i = 0; i < dcount_sound; i++) {
-			d_sound[i]->mix(sound_tmp + buffer_ptr, 0);
+			d_sound[i]->mix(sound_tmp + buffer_ptr * 2, 0);
 		}
 	}
 }
@@ -354,11 +374,12 @@ uint16* EVENT::create_sound(int* extra_frames)
 #ifdef LOW_PASS_FILTER
 	// low-pass filter
 	for(int i = 0; i < sound_samples - 1; i++) {
-		sound_tmp[i] = (sound_tmp[i] + sound_tmp[i + 1]) / 2;
+		sound_tmp[i * 2    ] = (sound_tmp[i * 2    ] + sound_tmp[i * 2 + 2]) / 2; // L
+		sound_tmp[i * 2 + 1] = (sound_tmp[i * 2 + 1] + sound_tmp[i * 2 + 3]) / 2; // R
 	}
 #endif
 	// copy to buffer
-	for(int i = 0; i < sound_samples; i++) {
+	for(int i = 0; i < sound_samples * 2; i++) {
 		int dat = sound_tmp[i];
 		uint16 highlow = (uint16)(dat & 0x0000ffff);
 		
@@ -374,7 +395,7 @@ uint16* EVENT::create_sound(int* extra_frames)
 	}
 	if(buffer_ptr > sound_samples) {
 		buffer_ptr -= sound_samples;
-		_memcpy(sound_tmp, sound_tmp + sound_samples, buffer_ptr * sizeof(int32));
+		_memcpy(sound_tmp, sound_tmp + sound_samples * 2, buffer_ptr * sizeof(int32) * 2);
 	}
 	else {
 		buffer_ptr = 0;

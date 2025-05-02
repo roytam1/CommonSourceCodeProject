@@ -20,7 +20,6 @@ void YM2203::initialize()
 void YM2203::release()
 {
 	delete opn;
-	free(sound_tmp);
 }
 
 void YM2203::reset()
@@ -50,6 +49,9 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		// don't write again for prescaler
 		if(!(0x2d <= ch && ch <= 0x2f)) {
 			opn->SetReg(ch, data);
+#ifndef HAS_AY_3_8912
+			update_interrupt();
+#endif
 		}
 	}
 	else {
@@ -98,7 +100,15 @@ void YM2203::write_signal(int id, uint32 data, uint32 mask)
 
 void YM2203::event_vline(int v, int clock)
 {
-	bool next = opn->Count(usec);
+	opn->Count(usec);
+#ifndef HAS_AY_3_8912
+	update_interrupt();
+#endif
+}
+
+void YM2203::update_interrupt()
+{
+	bool next = opn->ReadIRQ();
 	if(irq != next) {
 		write_signals(&outputs_irq, next ? 0xffffffff : 0);
 		irq = next;
@@ -108,11 +118,7 @@ void YM2203::event_vline(int v, int clock)
 void YM2203::mix(int32* buffer, int cnt)
 {
 	if(cnt > 0 && !mute) {
-		_memset(sound_tmp, 0, cnt * 2 * sizeof(int32));
-		opn->Mix(sound_tmp, cnt);
-		for(int i = 0, j = 0; i < cnt; i++, j += 2) {
-			buffer[i] += sound_tmp[j];
-		}
+		opn->Mix(buffer, cnt);
 	}
 }
 
@@ -121,6 +127,5 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 	opn->Init(clock, rate, false, NULL);
 	opn->SetVolumeFM(volf);
 	opn->SetVolumePSG(volp);
-	sound_tmp = (int32*)malloc(samples * 2 * sizeof(int32));
 }
 

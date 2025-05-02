@@ -34,6 +34,7 @@
 #include "memory.h"
 #ifdef _MZ1500
 #include "psg.h"
+#include "quickdisk.h"
 #endif
 #include "ramfile.h"
 
@@ -73,6 +74,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio_qd = new Z80SIO(this, emu);
 	
 	psg = new PSG(this, emu);
+	qd = new QUICKDISK(this, emu);
 #endif
 	
 	// set contexts
@@ -111,11 +113,21 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
 	pio->set_context_port_c(and_int, SIG_AND_BIT_1, 4, 0);
 	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 8, 0);
+#ifdef _MZ1500
+	sio_qd->set_context_rts0(qd, QUICKDISK_SIO_RTSA, 1);
+	sio_qd->set_context_dtr1(qd, QUICKDISK_SIO_DTRB, 1);
+	sio_qd->set_context_sync0(qd, QUICKDISK_SIO_SYNC, 1);
+	sio_qd->set_context_rxdone0(qd, QUICKDISK_SIO_RXDONE, 1);
+	sio_qd->set_context_send0(qd, QUICKDISK_SIO_DATA);
+	sio_qd->set_context_break0(qd, QUICKDISK_SIO_BREAK, 1);
+	sio_qd->set_context_txdone0(qd, QUICKDISK_SIO_TXDONE, 1);
+#endif
 	
 	display->set_vram_ptr(memory->get_vram());
 	display->set_font_ptr(memory->get_font());
 #ifdef _MZ1500
 	display->set_pcg_ptr(memory->get_pcg());
+	display->set_context_qd(qd);
 #endif
 	keyboard->set_context_pio(pio);
 	memory->set_context_cpu(cpu);
@@ -124,6 +136,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _MZ1500
 	psg->set_context_psg_l(psg_l);
 	psg->set_context_psg_r(psg_r);
+	qd->set_context_sio(sio_qd);
 #endif
 	
 	// cpu bus
@@ -313,10 +326,17 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_mzt(_TCHAR* filename)
+#ifdef _MZ1500
+void VM::open_quickdisk(_TCHAR* filename)
 {
-	memory->open_mzt(filename);
+	qd->open_disk(filename);
 }
+
+void VM::close_quickdisk()
+{
+	qd->close_disk();
+}
+#endif
 
 void VM::play_datarec(_TCHAR* filename)
 {

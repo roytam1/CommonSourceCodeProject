@@ -1,3 +1,41 @@
+4/2/2011
+
+[EMU/WIN32] fix joystick manager
+
+[X1TWIN/SUB] fix irq handling
+
+
+4/1/2011
+
+[EMU/WIN32] support stereo sound
+[EMU/WIN32] fix joystick initialization
+
+[VM/DATAREC] support to load wave file with 16bit/stereo and any frequency
+[VM/DATAREC] support to load TAP tape images (used for SHARP X1 series)
+[VM/DATAREC] support to rewind tape image
+[VM/EVENT] support stereo sound
+[VM/FMGEN] fix timer not to cause overflow
+[VM/FMGEN] support interface to read int signal
+[VM/SN76489AN] fix mixer issue that volume mixed by other device is doubled
+[VM/YM2151] fix irq handling to refer int signal from fmgen
+[VM/YM2203] fix irq handling to refer int signal from fmgen
+[VM/Z80SIO] support monosync/bisync mode
+[VM/Z80SIO] support auto enables bit in wr3
+[VM/Z80SIO] support send break bit in wr5
+[VM/Z80SIO] support sync/abort bit in rr0
+[VM/Z80SIO] support signals to notify transmitt/recieve is done
+[VM/Z80SIO] support sync signal (input/output)
+[VM/Z80SIO] fix not to reset external signals
+
+[MZ1500] support quick disk drive
+[PC9801] support irq connection from PC-9801-26
+[PC9801/DISPLAY] support 200 lines screen mode
+[PC9801/JOYSTICK] support joystick
+[X1TWIN] support CMT device
+[X1TWIN/EMM] support 512kb emm board
+[X1TWIN/MEMORY] fix memory mapping for ipl rom
+
+
 2/16/2011
 
 [EMU/WIN32] notify key repeat
@@ -80,7 +118,7 @@
 
 [EMU/WIN32] support power off notification
 
-[VM/DATAREC] support to load MZT/M12 tape images
+[VM/DATAREC] support to load MZT/M12 tape images (used for SHARP MZ series)
 [VM/I8251] support break signal
 [VM/MB8877] change irq signal to low when new command is processed
 [VM/MSM5832] support address write signal
@@ -155,7 +193,7 @@
 [VM/NOR] fix output signal when it is changed
 [VM/NOT] fix output signal when it is changed
 [VM/DEVICE] refine signal connections
-[VM/DISK] support SF7 floppy disk image
+[VM/DISK] support SF7 floppy disk image (used for SEGA SC-3000)
 [VM/EVENT] sync 2 or more cpus precisely
 [VM/I8253] fix read both low and high counter
 [VM/PCM1BIT] update to check on/off signal width in one sample

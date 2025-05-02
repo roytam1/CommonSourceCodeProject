@@ -24,7 +24,8 @@ private:
 	DEVICE *d_fdc_2hd, *d_fdc_2dd;
 	DEVICE *d_pic;
 	UPD7220 *d_gdc_chr, *d_gdc_gfx;
-	uint8 *ra_chr, *ra_gfx;
+	uint8 *ra_chr;
+	uint8 *ra_gfx, *cs_gfx;
 	
 	uint8 tvram[0x4000];
 #ifdef _PC9801
@@ -85,9 +86,9 @@ public:
 		d_gdc_chr = device;
 		ra_chr = ra;
 	}
-	void set_context_gdc_gfx(UPD7220 *device, uint8 *ra) {
+	void set_context_gdc_gfx(UPD7220 *device, uint8 *ra, uint8 *cs) {
 		d_gdc_gfx = device;
-		ra_gfx = ra;
+		ra_gfx = ra; cs_gfx = cs;
 	}
 	void draw_screen();
 	

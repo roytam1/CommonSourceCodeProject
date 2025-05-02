@@ -726,6 +726,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\mz700\quickdisk.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\mz700\ramfile.cpp"
 					>
 					<FileConfiguration
@@ -863,6 +883,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\mz700\psg.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\mz700\quickdisk.h"
 					>
 				</File>
 				<File

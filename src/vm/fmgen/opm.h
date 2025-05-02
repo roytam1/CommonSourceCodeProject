@@ -51,6 +51,9 @@
 //		音源のステータスレジスタを読み出す
 //		busy フラグは常に 0
 //	
+//	bool ReadIRQ()
+//		IRQ 出力を読み出す
+//	
 //	bool Count(uint32 t)
 //		音源のタイマーを t [10^(-6) 秒] 進める．
 //		音源の内部状態に変化があった時(timer オーバーフロー)
@@ -65,12 +68,6 @@
 //		各音源の音量を＋－方向に調節する．標準値は 0.
 //		単位は約 1/2 dB，有効範囲の上限は 20 (10dB)
 //
-//	仮想関数:
-//	virtual void Intr(bool irq)
-//		IRQ 出力に変化があった場合呼ばれる．
-//		irq = true:  IRQ 要求が発生
-//		irq = false: IRQ 要求が消える
-//
 namespace FM
 {
 	//	YM2151(OPM) ----------------------------------------------------
@@ -84,6 +81,7 @@ namespace FM
 		bool	SetRate(uint c, uint r, bool);
 		void	SetLPFCutoff(uint freq);
 		void	Reset();
+		bool	ReadIRQ();
 		
 		void 	SetReg(uint addr, uint data);
 		uint	GetReg(uint addr);
@@ -95,7 +93,7 @@ namespace FM
 		void	SetChannelMask(uint mask);
 		
 	private:
-		virtual void Intr(bool) {}
+		void	Intr(bool value);
 	
 	private:
 		enum
@@ -138,6 +136,7 @@ namespace FM
 		bool	interpolation;
 		uint8	lfofreq;
 		uint8	status;
+		bool	interrupt;
 		uint8	reg01;
 
 		uint8	kc[8];

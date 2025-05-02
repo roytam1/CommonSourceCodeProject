@@ -17,7 +17,7 @@
 //	OPN/OPNA に良く似た音を生成する音源ユニット
 //	
 //	interface:
-//	bool Init(uint clock, uint rate, bool, const char* path);
+//	bool Init(uint clock, uint rate, bool, const _TCHAR* path);
 //		初期化．このクラスを使用する前にかならず呼んでおくこと．
 //		OPNA の場合はこの関数でリズムサンプルを読み込む
 //
@@ -31,7 +31,7 @@
 //
 //		返り値	初期化に成功すれば true
 //
-//	bool LoadRhythmSample(const char* path)
+//	bool LoadRhythmSample(const _TCHAR* path)
 //		(OPNA ONLY)
 //		Rhythm サンプルを読み直す．
 //		path は Init の path と同じ．
@@ -65,6 +65,9 @@
 //		ReadStatusEx は拡張ステータスレジスタの読み出し(OPNA)
 //		busy フラグは常に 0
 //	
+//	bool ReadIRQ()
+//		IRQ 出力を読み出す
+//	
 //	bool Count(uint32 t)
 //		音源のタイマーを t [μ秒] 進める．
 //		音源の内部状態に変化があった時(timer オーバーフロー)
@@ -86,9 +89,11 @@ namespace FM
 	{
 	public:
 		OPNBase();
+		virtual ~OPNBase() {}
 		
 		bool	Init(uint c, uint r);
 		virtual void Reset();
+		bool	ReadIRQ();
 		
 		void	SetVolumeFM(int db);
 		void	SetVolumePSG(int db);
@@ -98,6 +103,7 @@ namespace FM
 		void	SetParameter(Channel4* ch, uint addr, uint data);
 		void	SetPrescaler(uint p);
 		void	RebuildTimeTable();
+		void	Intr(bool value);
 		
 		int		fmvolume;
 		
@@ -105,6 +111,7 @@ namespace FM
 		uint	rate;				// FM 音源合成レート
 		uint	psgrate;			// FMGen  出力レート
 		uint	status;
+		bool	interrupt;
 		Channel4* csmch;
 		
 
@@ -131,8 +138,6 @@ namespace FM
 		void	SetChannelMask(uint mask);
 	
 	private:
-		virtual void Intr(bool) {}
-
 		void	MakeTable2();
 	
 	protected:
@@ -245,8 +250,6 @@ namespace FM
 		Channel4* dbgGetCh(int c) { return &ch[c]; }
 	
 	private:
-		virtual void Intr(bool) {}
-		
 		void	SetStatus(uint bit);
 		void	ResetStatus(uint bit);
 		
@@ -387,8 +390,6 @@ namespace FM
 		void	SetChannelMask(uint mask);
 		
 	private:
-		virtual void Intr(bool) {}
-		
 		void	SetStatus(uint bit);
 		void	ResetStatus(uint bit);
 		

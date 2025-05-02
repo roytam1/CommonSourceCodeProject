@@ -32,6 +32,7 @@
 
 #include "display.h"
 #include "floppy.h"
+#include "joystick.h"
 #include "keyboard.h"
 
 // ----------------------------------------------------------------------------
@@ -72,8 +73,27 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
+	joystick = new JOYSTICK(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	
+	/* IRQ	0  PIT
+		1  KEYBOARD
+		2  CRTV
+		3  
+		4  RS-232C
+		5  
+		6  
+		7  SLAVE PIC
+		8  PRINTER
+		9  
+		10 FDC (640KB I/F)
+		11 FDC (1MB I/F)
+		12 PC-9801-26(K)
+		13 MOUSE
+		14 
+		15 (RESERVED)
+	*/
+
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
@@ -115,15 +135,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc_2hd->set_context_drq(dma, SIG_I8237_CH2, 1);
 	fdc_2dd->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR2, 1);
 	fdc_2dd->set_context_drq(dma, SIG_I8237_CH3, 1);
+	opn->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR4, 1);
+	opn->set_context_port_b(joystick, SIG_JOYSTICK_SELECT, 0xc0, 0);
 	
 	display->set_context_fdc_2hd(fdc_2hd);
 	display->set_context_fdc_2dd(fdc_2dd);
 	display->set_context_pic(pic);
 	display->set_context_gdc_chr(gdc_chr, gdc_chr->get_ra());
-	display->set_context_gdc_gfx(gdc_gfx, gdc_gfx->get_ra());
+	display->set_context_gdc_gfx(gdc_gfx, gdc_gfx->get_ra(), gdc_gfx->get_cs());
 	floppy->set_context_fdc_2hd(fdc_2hd);
 	floppy->set_context_fdc_2dd(fdc_2dd);
 	floppy->set_context_pic(pic);
+	joystick->set_context_opn(opn);
 	keyboard->set_context_sio(sio_kbd);
 	
 	// cpu bus
@@ -315,6 +338,7 @@ void VM::reset()
 	pio_fdd->write_signal(SIG_I8255_PORT_B, 0xff, 0xff);
 	pio_fdd->write_signal(SIG_I8255_PORT_C, 0xff, 0xff);
 	fdc_2dd->write_signal(SIG_UPD765A_FREADY, 1, 1);	// 2DD FDC RDY is pulluped
+	opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// PC-9801-26(K) IRQ=12
 	beep->write_signal(SIG_BEEP_ON, 1, 1);
 	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
 }

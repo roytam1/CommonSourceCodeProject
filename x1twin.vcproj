@@ -381,6 +381,26 @@
 				Filter="cpp"
 				>
 				<File
+					RelativePath="src\vm\datarec.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\disk.cpp"
 					>
 					<FileConfiguration
@@ -731,6 +751,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\x1twin\emm.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\x1twin\floppy.cpp"
 					>
 					<FileConfiguration
@@ -926,6 +966,10 @@
 				Filter="h"
 				>
 				<File
+					RelativePath="src\vm\datarec.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\device.h"
 					>
 				</File>
@@ -1028,6 +1072,10 @@
 				>
 				<File
 					RelativePath="src\vm\x1twin\display.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\x1twin\emm.h"
 					>
 				</File>
 				<File

@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"SHARP X1twin"
 #define CONFIG_NAME		"x1twin"
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine (x1)
 #define FRAMES_PER_10SECS	600
@@ -42,6 +42,9 @@
 #define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
+#define USE_DATAREC
+#define USE_DATAREC_BUTTON
+#define DATAREC_TAP
 #ifdef _X1TWIN
 #define USE_CART
 #endif
@@ -57,6 +60,7 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+class DATAREC;
 class HD46505;
 class I8255;
 class MB8877;
@@ -70,6 +74,7 @@ class Z80SIO;
 #endif
 
 class DISPLAY;
+class EMM;
 class FLOPPY;
 class IO;
 class JOYSTICK;
@@ -90,6 +95,7 @@ protected:
 	// devices for x1
 	EVENT* event;
 	
+	DATAREC* drec;
 	HD46505* crtc;
 	I8255* pio;
 	MB8877* fdc;
@@ -103,6 +109,7 @@ protected:
 #endif
 	
 	DISPLAY* display;
+	EMM* emm;
 	FLOPPY* floppy;
 	IO* io;
 	JOYSTICK* joy;
@@ -149,11 +156,16 @@ public:
 	// user interface
 	void open_disk(_TCHAR* filename, int drv);
 	void close_disk(int drv);
+	void play_datarec(_TCHAR* filename);
+	void rec_datarec(_TCHAR* filename);
+	void close_datarec();
+	void push_play();
+	void push_stop();
+	bool now_skip();
 #ifdef _X1TWIN
 	void open_cart(_TCHAR* filename);
 	void close_cart();
 #endif
-	bool now_skip();
 	
 	void update_config();
 	

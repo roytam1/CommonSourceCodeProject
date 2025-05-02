@@ -9,9 +9,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#ifndef _WIN32_WCE
 #include <assert.h>
-#endif
 
 #ifdef _MSC_VER
 	#undef max

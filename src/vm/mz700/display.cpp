@@ -132,5 +132,18 @@ void DISPLAY::draw_screen()
 #endif
 		}
 	}
+	
+#ifdef _MZ1500
+	// access lamp
+	if(d_qd->read_signal(0)) {
+		scrntype col = RGB_COLOR(255, 0, 0);
+		for(int y = 200 - 8; y < 200; y++) {
+			scrntype *dest = emu->screen_buffer(y);
+			for(int x = 320 - 8; x < 320; x++) {
+				dest[x] = col;
+			}
+		}
+	}
+#endif
 }
 

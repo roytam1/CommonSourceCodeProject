@@ -45,6 +45,7 @@ void PSG::mix(int32* buffer, int cnt)
 			}
 			vol += ch[j].signal ? PSG_VOLUME : -PSG_VOLUME;
 		}
-		buffer[i] = vol;
+		*buffer++ += vol; // L
+		*buffer++ += vol; // R
 	}
 }

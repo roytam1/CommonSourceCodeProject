@@ -100,9 +100,16 @@ void OPNBase::SetParameter(Channel4* ch, uint addr, uint data)
 void OPNBase::Reset()
 {
 	status = 0;
+	interrupt = false;
 	SetPrescaler(0);
 	Timer::Reset();
 	psg.Reset();
+}
+
+//	割り込み信号の取得
+bool OPNBase::ReadIRQ()
+{
+	return interrupt;
 }
 
 //	プリスケーラ設定
@@ -114,17 +121,14 @@ void OPNBase::SetPrescaler(uint p)
 	if (prescale != p)
 	{
 		prescale = p;
-#ifndef _WIN32_WCE
 		assert(0 <= prescale && prescale < 3);
-#endif
+		
 		uint fmclock = clock / table[p][0] / 12;
 		
 		rate = psgrate;
 		
 		// 合成周波数と出力周波数の比
-#ifndef _WIN32_WCE
 		assert(fmclock < (0x80000000 >> FM_RATIOBITS));
-#endif
 		uint ratio = ((fmclock << FM_RATIOBITS) + rate/2) / rate;
 
 		SetTimerBase(fmclock);
@@ -166,6 +170,12 @@ void OPNBase::TimerA()
 		csmch->KeyControl(0x00);
 		csmch->KeyControl(0x0f);
 	}
+}
+
+//	割り込み信号の設定
+void OPNBase::Intr(bool value)
+{
+	interrupt = value;
 }
 
 #endif // defined(BUILD_OPN) || defined(BUILD_OPNA) || defined (BUILD_OPNB)
@@ -1860,7 +1870,7 @@ void OPNB::SetVolumeADPCMB(int db)
 {
 	db = Min(db, 20);
 	if (db > -192)
-		adpcmvol = int(65536.0 * pow(10.0, db / 40.0));
+		adpcmvol = int(65536.0 * pow(10, db / 40.0));
 	else
 		adpcmvol = 0;
 }

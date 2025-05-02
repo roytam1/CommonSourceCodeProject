@@ -83,7 +83,6 @@ public:
 		return pcg;
 	}
 #endif
-	void open_mzt(_TCHAR* filename);
 };
 
 #endif

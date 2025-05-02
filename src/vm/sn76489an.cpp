@@ -133,7 +133,7 @@ void SN76489AN::mix(int32* buffer, int cnt)
 		return;
 	}
 	for(int i = 0; i < cnt; i++) {
-		int32 vol = buffer[i];
+		int32 vol = 0;
 		for(int j = 0; j < 4; j++) {
 			if(!ch[j].volume) {
 				continue;
@@ -157,7 +157,8 @@ void SN76489AN::mix(int32* buffer, int cnt)
 			}
 			vol += ch[j].signal ? ch[j].volume : -ch[j].volume;
 		}
-		buffer[i] += vol;
+		*buffer++ += vol; // L
+		*buffer++ += vol; // R
 	}
 }
 

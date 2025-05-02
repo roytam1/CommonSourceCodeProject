@@ -15,12 +15,16 @@
 #include "../../emu.h"
 #include "../device.h"
 
+#define SIG_SUB_TAPE_END	0
+
+class DATAREC;
 class FIFO;
 
 class SUB : public DEVICE
 {
 private:
 	DEVICE *d_cpu, *d_pio;
+	DATAREC *d_drec;
 	
 	uint8 databuf[32][8], *datap;
 	uint8 mode, inbuf, outbuf;
@@ -34,6 +38,8 @@ private:
 	bool key_converted[256];
 	bool key_shift, key_ctrl, key_graph;
 	bool key_caps, key_kana;
+	
+	bool play, rec, eot;
 	
 	bool iei, intr;
 	uint32 intr_bit;
@@ -53,6 +59,7 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_iei(bool val);
 	uint32 intr_ack();
 	void intr_reti();
@@ -67,8 +74,16 @@ public:
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
+	void set_context_datarec(DATAREC* device) {
+		d_drec = device;
+	}
 	void key_down(int code, bool repeat);
 	void key_up(int code);
+	void play_datarec(bool value);
+	void rec_datarec(bool value);
+	void close_datarec();
+	void push_play();
+	void push_stop();
 };
 
 #endif

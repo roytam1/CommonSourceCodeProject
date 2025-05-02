@@ -11,8 +11,8 @@
 #include "vm/vm.h"
 #include "fileio.h"
 
-#define DSOUND_BUFFER_SIZE (DWORD)(sound_samples * 4)
-#define DSOUND_BUFFER_HALF (DWORD)(sound_samples * 2)
+#define DSOUND_BUFFER_SIZE (DWORD)(sound_samples * 8)
+#define DSOUND_BUFFER_HALF (DWORD)(sound_samples * 4)
 
 void EMU::initialize_sound(int rate, int samples)
 {
@@ -42,11 +42,11 @@ void EMU::initialize_sound(int rate, int samples)
 	}
 	ZeroMemory(&wfex, sizeof(wfex));
 	wfex.wFormatTag = WAVE_FORMAT_PCM;
-	wfex.nChannels = 1;
-	wfex.nSamplesPerSec = sound_rate;
-	wfex.nBlockAlign = 2;
-	wfex.nAvgBytesPerSec = wfex.nSamplesPerSec * wfex.nBlockAlign;
+	wfex.nChannels = 2;
 	wfex.wBitsPerSample = 16;
+	wfex.nSamplesPerSec = sound_rate;
+	wfex.nBlockAlign = wfex.nChannels * wfex.wBitsPerSample / 8;
+	wfex.nAvgBytesPerSec = wfex.nSamplesPerSec * wfex.nBlockAlign;
 	if(FAILED(lpdsp->SetFormat(&wfex))) {
 		return;
 	}
@@ -54,11 +54,11 @@ void EMU::initialize_sound(int rate, int samples)
 	// secondary buffer
 	ZeroMemory(&pcmwf, sizeof(pcmwf));
 	pcmwf.wf.wFormatTag = WAVE_FORMAT_PCM;
-	pcmwf.wf.nChannels = 1;
-	pcmwf.wf.nSamplesPerSec = sound_rate;
-	pcmwf.wf.nBlockAlign = 2;
-	pcmwf.wf.nAvgBytesPerSec = pcmwf.wf.nSamplesPerSec * pcmwf.wf.nBlockAlign;
+	pcmwf.wf.nChannels = 2;
 	pcmwf.wBitsPerSample = 16;
+	pcmwf.wf.nSamplesPerSec = sound_rate;
+	pcmwf.wf.nBlockAlign = pcmwf.wf.nChannels * pcmwf.wBitsPerSample / 8;
+	pcmwf.wf.nAvgBytesPerSec = pcmwf.wf.nSamplesPerSec * pcmwf.wf.nBlockAlign;
 	ZeroMemory(&dsbd, sizeof(dsbd));
 	dsbd.dwSize = sizeof(dsbd);
 	dsbd.dwFlags = DSBCAPS_STICKYFOCUS | DSBCAPS_GETCURRENTPOSITION2;
@@ -123,8 +123,9 @@ void EMU::update_sound(int* extra_frames)
 		uint16* sound_buffer = vm->create_sound(extra_frames);
 		if(now_recs) {
 			// record sound
-			rec->Fwrite(sound_buffer, sound_samples * 2, 1);
-			rec_bufs++;
+			int length = sound_samples * sizeof(uint16) * 2; // stereo
+			rec->Fwrite(sound_buffer, length, 1);
+			rec_bytes += length;
 		}
 		if(lpdsb->Lock(offset, DSOUND_BUFFER_HALF, (void **)&ptr1, &size1, (void**)&ptr2, &size2, 0) == DSERR_BUFFERLOST) {
 			lpdsb->Restore();
@@ -168,12 +169,15 @@ void EMU::start_rec_sound()
 	if(!now_recs) {
 		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 		application_path(app_path);
-		_stprintf(file_path, _T("%ssound.tmp"), app_path);
+		_stprintf(file_path, _T("%ssound.wav"), app_path);
 		
 		rec = new FILEIO();
 		if(rec->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-			// write wave header
-			rec_bufs = 0;
+			// write dummy wave header
+			struct wavheader_t header;
+			memset(&header, 0, sizeof(wavheader_t));
+			rec->Fwrite(&header, sizeof(wavheader_t), 1);
+			rec_bytes = 0;
 			now_recs = TRUE;
 		}
 		else {
@@ -186,59 +190,28 @@ void EMU::start_rec_sound()
 void EMU::stop_rec_sound()
 {
 	if(now_recs) {
-		rec->Fclose();
-		delete rec;
-		now_recs = FALSE;
-		
-		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH], tmp_path[_MAX_PATH];
-		application_path(app_path);
-		_stprintf(file_path, _T("%ssound.wav"), app_path);
-		_stprintf(tmp_path, _T("%ssound.tmp"), app_path);
-		
-		FILEIO* out = new FILEIO();
-		if(!rec->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-			delete out;
-			return;
-		}
-		FILEIO* tmp = new FILEIO();
-		tmp->Fopen(tmp_path, FILEIO_READ_BINARY);
-		
-		// write header
-		uint32 length = rec_bufs * sound_samples * 4;
+		// update wave header
 		struct wavheader_t header;
 		header.dwRIFF = 0x46464952;
-		header.dwFileSize = length + sizeof(wavheader_t) - 8;
+		header.dwFileSize = rec_bytes + sizeof(wavheader_t) - 8;
 		header.dwWAVE = 0x45564157;
 		header.dwfmt_ = 0x20746d66;
 		header.dwFormatSize = 16;
 		header.wFormatTag = 1;
 		header.wChannels = 2;
-		header.dwSamplesPerSec = sound_rate;
-		header.dwAvgBytesPerSec = sound_rate * 4;
-		header.wBlockAlign = 4;
 		header.wBitsPerSample = 16;
+		header.dwSamplesPerSec = sound_rate;
+		header.wBlockAlign = header.wChannels * header.wBitsPerSample / 8;
+		header.dwAvgBytesPerSec = header.dwSamplesPerSec * header.wBlockAlign;
 		header.dwdata = 0x61746164;
-		header.dwDataLength = length;
-		out->Fwrite(&header, sizeof(wavheader_t), 1);
+		header.dwDataLength = rec_bytes;
 		
-		// convert mono to stereo
-		uint16* buf_t = (uint16*)malloc(sound_samples * 2);
-		uint16* buf_o = (uint16*)malloc(sound_samples * 4);
-		for(int i = 0; i < rec_bufs; i++) {
-			tmp->Fread(buf_t, sound_samples * 2, 1);
-			for(int j = 0; j < sound_samples; j++) {
-				buf_o[j * 2] = buf_o[j * 2 + 1] = buf_t[j];
-			}
-			out->Fwrite(buf_o, sound_samples * 4, 1);
-		}
-		free(buf_t);
-		free(buf_o);
+		rec->Fseek(0, FILEIO_SEEK_SET);
+		rec->Fwrite(&header, sizeof(wavheader_t), 1);
+		rec->Fclose();
 		
-		out->Fclose();
-		delete out;
-		tmp->Fclose();
-		tmp->Remove(tmp_path);
-		delete tmp;
+		delete rec;
+		now_recs = FALSE;
 	}
 }
 

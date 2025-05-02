@@ -60,7 +60,7 @@ bool Timer::Count(int32 us)
 
 	if (timera_count)
 	{
-		timera_count -= us << 16;
+		timera_count -= us << 12;
 		if (timera_count <= 0)
 		{
 			event = true;
@@ -75,7 +75,7 @@ bool Timer::Count(int32 us)
 	}
 	if (timerb_count)
 	{
-		timerb_count -= us << 12;
+		timerb_count -= us << 8;
 		if (timerb_count <= 0)
 		{
 			event = true;
@@ -94,8 +94,8 @@ bool Timer::Count(int32 us)
 //
 int32 Timer::GetNextEvent()
 {
-	uint32 ta = ((timera_count + 0xffff) >> 16) - 1;
-	uint32 tb = ((timerb_count + 0xfff) >> 12) - 1;
+	uint32 ta = ((timera_count + 0xfff) >> 12) - 1;
+	uint32 tb = ((timerb_count + 0xff) >> 8) - 1;
 	return (ta < tb ? ta : tb) + 1;
 }
 
@@ -104,7 +104,7 @@ int32 Timer::GetNextEvent()
 //
 void Timer::SetTimerBase(uint clock)
 {
-	timer_step = int32(1000000. * 65536 / clock);
+	timer_step = int32(1000000. * 4096 / clock);
 }
 
 #else

@@ -9,8 +9,11 @@
 */
 
 #include "sub.h"
+#include "../datarec.h"
 #include "../i8255.h"
 #include "../../fifo.h"
+
+//#define DEBUG_COMMAND
 
 #define YEAR		time[0]
 #define MONTH		time[1]
@@ -169,6 +172,8 @@ void SUB::reset()
 	mode = 0;
 	cmdlen = datalen = 0;
 	
+	play = rec = eot = false;
+	
 	ibf = true;
 	set_ibf(false);
 	obf = false;
@@ -202,6 +207,18 @@ uint32 SUB::read_io8(uint32 addr)
 	return outbuf;
 }
 
+void SUB::write_signal(int id, uint32 data, uint32 mask)
+{
+	if(id == SIG_SUB_TAPE_END) {
+		bool signal = ((data & mask) != 0);
+		if(!eot && signal) {
+			// reached to end of tape
+			databuf[0x1a][0] = 0x01; // stop
+		}
+		eot = signal;
+	}
+}
+
 void SUB::set_intr_iei(bool val)
 {
 	if(iei != val) {
@@ -212,20 +229,22 @@ void SUB::set_intr_iei(bool val)
 
 uint32 SUB::intr_ack()
 {
+	intr = false;
 	return read_io8(0x1900);
 }
 
 void SUB::intr_reti()
 {
 	// NOTE: some software uses RET, not RETI ???
-//	intr = false;
 }
 
 void SUB::update_intr()
 {
 	if(intr && iei) {
 		d_cpu->set_intr_line(true, true, intr_bit);
-		intr = false;
+	}
+	else {
+		d_cpu->set_intr_line(false, true, intr_bit);
 	}
 }
 
@@ -255,11 +274,17 @@ void SUB::event_callback(int event_id, int err)
 		if(cmdlen) {
 			// this is command parameter
 			*datap++ = inbuf;
+#ifdef DEBUG_COMMAND
+			emu->out_debug(_T(" %2x"), inbuf);
+#endif
 			cmdlen--;
 		}
 		else {
 			// this is new command
 			mode = inbuf;
+#ifdef DEBUG_COMMAND
+			emu->out_debug(_T("X1SUB: cmd %2x"), inbuf);
+#endif
 			if(0xd0 <= mode && mode <= 0xd7) {
 				cmdlen = 6;
 				datap = &databuf[mode - 0xd0][0]; // recieve buffer
@@ -272,6 +297,9 @@ void SUB::event_callback(int event_id, int err)
 		if(cmdlen == 0) {
 			// this command has no parameters or all parameters are recieved,
 			// so cpu processes the command
+#ifdef DEBUG_COMMAND
+			emu->out_debug(_T("\n"));
+#endif
 			process_cmd();
 		}
 		// sub cpu can accept new command or parameter
@@ -379,6 +407,55 @@ void SUB::key_up(int code)
 	}
 }
 
+void SUB::play_datarec(bool value)
+{
+	if(value) {
+		databuf[0x1a][0] = 0x01; // stop
+	}
+	play = value;
+	rec = false;
+	
+	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+}
+
+void SUB::rec_datarec(bool value)
+{
+	if(value) {
+		databuf[0x1a][0] = 0x01; // stop
+	}
+	play = false;
+	rec = value;
+	
+	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+}
+
+void SUB::close_datarec()
+{
+	databuf[0x1a][0] = 0x00; // eject
+	play = rec = false;
+	
+	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+}
+
+void SUB::push_play()
+{
+	if(play) {
+		databuf[0x1a][0] = 0x02; // play
+	}
+	else if(rec) {
+		databuf[0x1a][0] = 0x0a; // rec
+	}
+	d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+}
+
+void SUB::push_stop()
+{
+	if(play || rec) {
+		databuf[0x1a][0] = 0x01; // stop
+	}
+	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+}
+
 void SUB::process_cmd()
 {
 	int time[8];
@@ -421,38 +498,32 @@ void SUB::process_cmd()
 	case 0xe3:
 		// game key read (for turbo)
 		databuf[0x13][0] = 0;
+		databuf[0x13][0] |= key_stat[0x51] ? 0x80 : 0;	// q
+		databuf[0x13][0] |= key_stat[0x57] ? 0x40 : 0;	// w
+		databuf[0x13][0] |= key_stat[0x45] ? 0x20 : 0;	// e
+		databuf[0x13][0] |= key_stat[0x41] ? 0x10 : 0;	// a
+		databuf[0x13][0] |= key_stat[0x44] ? 0x08 : 0;	// d
+		databuf[0x13][0] |= key_stat[0x5a] ? 0x04 : 0;	// z
+		databuf[0x13][0] |= key_stat[0x58] ? 0x02 : 0;	// x
+		databuf[0x13][0] |= key_stat[0x43] ? 0x01 : 0;	// c
 		databuf[0x13][1] = 0;
+		databuf[0x13][1] |= key_stat[0x67] ? 0x80 : 0;	// 7
+		databuf[0x13][1] |= key_stat[0x64] ? 0x40 : 0;	// 4
+		databuf[0x13][1] |= key_stat[0x61] ? 0x20 : 0;	// 1
+		databuf[0x13][1] |= key_stat[0x68] ? 0x10 : 0;	// 8
+		databuf[0x13][1] |= key_stat[0x62] ? 0x08 : 0;	// 2
+		databuf[0x13][1] |= key_stat[0x69] ? 0x04 : 0;	// 9
+		databuf[0x13][1] |= key_stat[0x66] ? 0x02 : 0;	// 6
+		databuf[0x13][1] |= key_stat[0x63] ? 0x01 : 0;	// 3
 		databuf[0x13][2] = 0;
-#ifdef _X1TWIN
-		if(!vm->pce_running) {
-#endif
-			databuf[0x13][0] |= key_stat[0x51] ? 0x80 : 0;	// q
-			databuf[0x13][0] |= key_stat[0x57] ? 0x40 : 0;	// w
-			databuf[0x13][0] |= key_stat[0x45] ? 0x20 : 0;	// e
-			databuf[0x13][0] |= key_stat[0x41] ? 0x10 : 0;	// a
-			databuf[0x13][0] |= key_stat[0x44] ? 0x08 : 0;	// d
-			databuf[0x13][0] |= key_stat[0x5a] ? 0x04 : 0;	// z
-			databuf[0x13][0] |= key_stat[0x58] ? 0x02 : 0;	// x
-			databuf[0x13][0] |= key_stat[0x43] ? 0x01 : 0;	// c
-			databuf[0x13][1] |= key_stat[0x67] ? 0x80 : 0;	// 7
-			databuf[0x13][1] |= key_stat[0x64] ? 0x40 : 0;	// 4
-			databuf[0x13][1] |= key_stat[0x61] ? 0x20 : 0;	// 1
-			databuf[0x13][1] |= key_stat[0x68] ? 0x10 : 0;	// 8
-			databuf[0x13][1] |= key_stat[0x62] ? 0x08 : 0;	// 2
-			databuf[0x13][1] |= key_stat[0x69] ? 0x04 : 0;	// 9
-			databuf[0x13][1] |= key_stat[0x66] ? 0x02 : 0;	// 6
-			databuf[0x13][1] |= key_stat[0x63] ? 0x01 : 0;	// 3
-			databuf[0x13][2] |= key_stat[0x1b] ? 0x80 : 0;	// esc
-			databuf[0x13][2] |= key_stat[0x61] ? 0x40 : 0;	// 1
-			databuf[0x13][2] |= key_stat[0x6d] ? 0x20 : 0;	// -
-			databuf[0x13][2] |= key_stat[0x6b] ? 0x10 : 0;	// +
-			databuf[0x13][2] |= key_stat[0x6a] ? 0x08 : 0;	// *
-			databuf[0x13][2] |= key_stat[0x09] ? 0x04 : 0;	// tab
-			databuf[0x13][2] |= key_stat[0x20] ? 0x02 : 0;	// sp
-			databuf[0x13][2] |= key_stat[0x0d] ? 0x01 : 0;	// ret
-#ifdef _X1TWIN
-		}
-#endif
+		databuf[0x13][2] |= key_stat[0x1b] ? 0x80 : 0;	// esc
+		databuf[0x13][2] |= key_stat[0x61] ? 0x40 : 0;	// 1
+		databuf[0x13][2] |= key_stat[0x6d] ? 0x20 : 0;	// -
+		databuf[0x13][2] |= key_stat[0x6b] ? 0x10 : 0;	// +
+		databuf[0x13][2] |= key_stat[0x6a] ? 0x08 : 0;	// *
+		databuf[0x13][2] |= key_stat[0x09] ? 0x04 : 0;	// tab
+		databuf[0x13][2] |= key_stat[0x20] ? 0x02 : 0;	// sp
+		databuf[0x13][2] |= key_stat[0x0d] ? 0x01 : 0;	// ret
 		datalen = 3;
 		break;
 #endif
@@ -466,8 +537,8 @@ void SUB::process_cmd()
 				databuf[0x16][1] = lh >> 8;
 			}
 //		}
-		d_cpu->set_intr_line(false, false, intr_bit);
 		intr = false;
+		update_intr();
 		break;
 	case 0xe6:
 		// keydata read
@@ -487,6 +558,9 @@ void SUB::process_cmd()
 				databuf[0x16][1] = lh >> 8;
 			}
 		}
+#ifdef DEBUG_COMMAND
+		emu->out_debug(_T("X1SUB: keycode %2x %2x\n"), databuf[0x16][0], databuf[0x16][1]);
+#endif
 		datalen = 2;
 		break;
 	case 0xe7:
@@ -502,14 +576,47 @@ void SUB::process_cmd()
 		if(databuf[0x19][0] <= 0x0a) {
 			databuf[0x1a][0] = databuf[0x19][0];
 		}
+		switch(databuf[0x19][0]) {
+		case 0x00: // eject
+			d_drec->close_datarec();
+			d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+			play = rec = false;
+			break;
+		case 0x01: // stop
+			d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+			break;
+		case 0x02: // play
+			d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+			break;
+		case 0x03: // fast- foward
+			d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1); // not fast :-(
+			break;
+		case 0x04: // fast-rewind
+			d_drec->write_signal(SIG_DATAREC_REWIND, 1, 1);
+			databuf[0x1a][0] = 0x01; // stop
+			eot = false;
+			break;
+		case 0x05: // apss +1
+			break;
+		case 0x06: // apss -1
+			break;
+		case 0x0a: // rec
+			d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+			break;
+#ifdef DEBUG_COMMAND
+		default:
+			emu->out_debug(_T("X1SUB: unknown CMT control %2x\n"), databuf[0x19][0]);
+			break;
+#endif
+		}
 		break;
 	case 0xea:
 		// CMT status
 		datalen = 1;
 		break;
 	case 0xeb:
-		// CMT sencer
-		databuf[0x1b][0] = 0;
+		// CMT sensor (bit2=WP, bit1=SET, bit0=END)
+		databuf[0x1b][0] = (play ? 6 : rec ? 2 : 0) | (play && eot ? 1 : 0);
 		datalen = 1;
 		break;
 	case 0xec:
@@ -534,6 +641,10 @@ void SUB::process_cmd()
 		databuf[0x1f][2] = ((int)(SECOND / 10) << 4) | (SECOND % 10);
 		datalen = 3;
 		break;
+#ifdef DEBUG_COMMAND
+	default:
+		emu->out_debug(_T("X1SUB: unknown cmd %2x\n"), mode);
+#endif
 	}
 }
 

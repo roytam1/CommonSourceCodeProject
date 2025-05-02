@@ -46,8 +46,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 		config.sound_latency = 0;	// default: 0.1sec
 	}
 	int frequency = freq_table[config.sound_frequency];
-	int frames = (int)(FRAMES_PER_SEC * late_table[config.sound_latency] + 0.5);
-	int samples = (int)((frequency * frames) / FRAMES_PER_SEC);
+	int samples = (int)(frequency * late_table[config.sound_latency] + 0.5);
 	
 	// initialize
 	vm = new VM(this);
@@ -224,6 +223,17 @@ void EMU::close_disk(int drv)
 }
 #endif
 
+#ifdef USE_QUICKDISK
+void EMU::open_quickdisk(_TCHAR* filename)
+{
+	vm->open_quickdisk(filename);
+}
+void EMU::close_quickdisk()
+{
+	vm->close_quickdisk();
+}
+#endif
+
 #ifdef USE_DATAREC
 void EMU::play_datarec(_TCHAR* filename)
 {
@@ -268,12 +278,5 @@ void EMU::load_ram(_TCHAR* filename)
 void EMU::save_ram(_TCHAR* filename)
 {
 	vm->save_ram(filename);
-}
-#endif
-
-#ifdef USE_MZT
-void EMU::open_mzt(_TCHAR* filename)
-{
-	vm->open_mzt(filename);
 }
 #endif

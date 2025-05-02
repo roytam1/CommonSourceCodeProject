@@ -25,10 +25,11 @@ private:
 	
 	FM::OPM* opm;
 	int usec;
-	int32* sound_tmp;
 	
 	uint8 ch;
 	bool irq, mute;
+	
+	void update_interrupt();
 	
 public:
 	YM2151(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {

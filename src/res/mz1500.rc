@@ -92,6 +92,20 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
+    POPUP "QD"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_QUICKDISK
+        MENUITEM "Close",                       ID_CLOSE_QUICKDISK
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_QUICKDISK1
+        MENUITEM "Recent 2",                    ID_RECENT_QUICKDISK2
+        MENUITEM "Recent 3",                    ID_RECENT_QUICKDISK3
+        MENUITEM "Recent 4",                    ID_RECENT_QUICKDISK4
+        MENUITEM "Recent 5",                    ID_RECENT_QUICKDISK5
+        MENUITEM "Recent 6",                    ID_RECENT_QUICKDISK6
+        MENUITEM "Recent 7",                    ID_RECENT_QUICKDISK7
+        MENUITEM "Recent 8",                    ID_RECENT_QUICKDISK8
+    END
     POPUP "Tape"
     BEGIN
         MENUITEM "Play",                        ID_PLAY_DATAREC
@@ -109,19 +123,6 @@ BEGIN
         MENUITEM "Recent 6",                    ID_RECENT_DATAREC6
         MENUITEM "Recent 7",                    ID_RECENT_DATAREC7
         MENUITEM "Recent 8",                    ID_RECENT_DATAREC8
-    END
-    POPUP "MZT"
-    BEGIN
-        MENUITEM "Open",                        ID_OPEN_MZT
-        MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_MZT1
-        MENUITEM "Recent 2",                    ID_RECENT_MZT2
-        MENUITEM "Recent 3",                    ID_RECENT_MZT3
-        MENUITEM "Recent 4",                    ID_RECENT_MZT4
-        MENUITEM "Recent 5",                    ID_RECENT_MZT5
-        MENUITEM "Recent 6",                    ID_RECENT_MZT6
-        MENUITEM "Recent 7",                    ID_RECENT_MZT7
-        MENUITEM "Recent 8",                    ID_RECENT_MZT8
     END
     POPUP "Screen"
     BEGIN

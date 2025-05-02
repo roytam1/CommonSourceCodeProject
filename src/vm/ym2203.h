@@ -24,7 +24,6 @@ class YM2203 : public DEVICE
 private:
 	FM::OPN* opn;
 	int usec;
-	int32* sound_tmp;
 	
 	// output signals
 	outputs_t outputs_irq;
@@ -39,6 +38,8 @@ private:
 	} port_t;
 	port_t port[2];
 	bool irq, mute;
+	
+	void update_interrupt();
 	
 public:
 	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {

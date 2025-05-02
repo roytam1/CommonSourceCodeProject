@@ -22,23 +22,15 @@ void EMU::initialize_input()
 	
 	// initialize joysticks
 	joy_num = joyGetNumDevs();
-	if(joy_num > 0) {
-		joyGetDevCaps(JOYSTICKID1, &joycaps[0], sizeof(JOYCAPS));
-		uint32 x = (joycaps[0].wXmin + joycaps[0].wXmax) / 2;
-		joy_xmin[0] = (joycaps[0].wXmin + x) / 2;
-		joy_xmax[0] = (joycaps[0].wXmax + x) / 2;
-		uint32 y = (joycaps[0].wYmin + joycaps[0].wYmax) / 2;
-		joy_ymin[0] = (joycaps[0].wYmin + x) / 2;
-		joy_ymax[0] = (joycaps[0].wYmax + x) / 2;
-	}
-	if(joy_num > 1) {
-		joyGetDevCaps(JOYSTICKID2, &joycaps[1], sizeof(JOYCAPS));
-		uint32 x = (joycaps[1].wXmin + joycaps[1].wXmax) / 2;
-		joy_xmin[1] = (joycaps[1].wXmin + x) / 2;
-		joy_xmax[1] = (joycaps[1].wXmax + x) / 2;
-		uint32 y = (joycaps[1].wYmin + joycaps[1].wYmax) / 2;
-		joy_ymin[1] = (joycaps[1].wYmin + x) / 2;
-		joy_ymax[1] = (joycaps[1].wYmax + x) / 2;
+	for(int i = 0; i < joy_num && i < 2; i++) {
+		JOYCAPS joycaps;
+		joyGetDevCaps(i, &joycaps, sizeof(JOYCAPS));
+		uint32 x = (joycaps.wXmin + joycaps.wXmax) / 2;
+		joy_xmin[i] = (joycaps.wXmin + x) / 2;
+		joy_xmax[i] = (joycaps.wXmax + x) / 2;
+		uint32 y = (joycaps.wYmin + joycaps.wYmax) / 2;
+		joy_ymin[i] = (joycaps.wYmin + y) / 2;
+		joy_ymax[i] = (joycaps.wYmax + y) / 2;
 	}
 	
 	// mouse emulation is disenabled
@@ -83,32 +75,17 @@ void EMU::update_input()
 	
 	// update joystick status
 	_memset(joy_status, 0, sizeof(joy_status));
-	if(joy_num > 0) {
-		// joystick #1
+	for(int i = 0; i < joy_num && i < 2; i++) {
 		JOYINFO joyinfo;
-		if(joyGetPos(JOYSTICKID1, &joyinfo) == JOYERR_NOERROR) {
-			if(joyinfo.wYpos < joy_ymin[0]) joy_status[0] |= 0x01;
-			if(joyinfo.wYpos > joy_ymax[0]) joy_status[0] |= 0x02;
-			if(joyinfo.wXpos < joy_xmin[0]) joy_status[0] |= 0x04;
-			if(joyinfo.wXpos > joy_xmax[0]) joy_status[0] |= 0x08;
-			if(joyinfo.wButtons & JOY_BUTTON1) joy_status[0] |= 0x10;
-			if(joyinfo.wButtons & JOY_BUTTON2) joy_status[0] |= 0x20;
-			if(joyinfo.wButtons & JOY_BUTTON3) joy_status[0] |= 0x40;
-			if(joyinfo.wButtons & JOY_BUTTON4) joy_status[0] |= 0x80;
-		}
-	}
-	if(joy_num > 1) {
-		// joystick #2
-		JOYINFO joyinfo;
-		if(joyGetPos(JOYSTICKID2, &joyinfo) == JOYERR_NOERROR) {
-			if(joyinfo.wYpos < joy_ymin[1]) joy_status[1] |= 0x01;
-			if(joyinfo.wYpos > joy_ymax[1]) joy_status[1] |= 0x02;
-			if(joyinfo.wXpos < joy_xmin[1]) joy_status[1] |= 0x04;
-			if(joyinfo.wXpos > joy_xmax[1]) joy_status[1] |= 0x08;
-			if(joyinfo.wButtons & JOY_BUTTON1) joy_status[1] |= 0x10;
-			if(joyinfo.wButtons & JOY_BUTTON2) joy_status[1] |= 0x20;
-			if(joyinfo.wButtons & JOY_BUTTON3) joy_status[1] |= 0x40;
-			if(joyinfo.wButtons & JOY_BUTTON4) joy_status[1] |= 0x80;
+		if(joyGetPos(i, &joyinfo) == JOYERR_NOERROR) {
+			if(joyinfo.wYpos < joy_ymin[i]) joy_status[i] |= 0x01;
+			if(joyinfo.wYpos > joy_ymax[i]) joy_status[i] |= 0x02;
+			if(joyinfo.wXpos < joy_xmin[i]) joy_status[i] |= 0x04;
+			if(joyinfo.wXpos > joy_xmax[i]) joy_status[i] |= 0x08;
+			if(joyinfo.wButtons & JOY_BUTTON1) joy_status[i] |= 0x10;
+			if(joyinfo.wButtons & JOY_BUTTON2) joy_status[i] |= 0x20;
+			if(joyinfo.wButtons & JOY_BUTTON3) joy_status[i] |= 0x40;
+			if(joyinfo.wButtons & JOY_BUTTON4) joy_status[i] |= 0x80;
 		}
 	}
 #ifdef USE_KEY_TO_JOY

@@ -122,6 +122,24 @@ BEGIN
         MENUITEM "Recent 7",                    ID_RECENT_FD27
         MENUITEM "Recent 8",                    ID_RECENT_FD28
     END
+    POPUP "Tape"
+    BEGIN
+        MENUITEM "Play",                        ID_PLAY_DATAREC
+        MENUITEM "Rec",                         ID_REC_DATAREC
+        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM SEPARATOR
+        MENUITEM "Play Button",                 ID_PLAY_BUTTON
+        MENUITEM "Stop Button",                 ID_STOP_BUTTON
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_DATAREC1
+        MENUITEM "Recent 2",                    ID_RECENT_DATAREC2
+        MENUITEM "Recent 3",                    ID_RECENT_DATAREC3
+        MENUITEM "Recent 4",                    ID_RECENT_DATAREC4
+        MENUITEM "Recent 5",                    ID_RECENT_DATAREC5
+        MENUITEM "Recent 6",                    ID_RECENT_DATAREC6
+        MENUITEM "Recent 7",                    ID_RECENT_DATAREC7
+        MENUITEM "Recent 8",                    ID_RECENT_DATAREC8
+    END
     POPUP "HuCARD"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_CART

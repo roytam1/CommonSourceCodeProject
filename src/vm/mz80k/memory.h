@@ -75,7 +75,6 @@ public:
 	uint8* get_vram() {
 		return vram;
 	}
-	void open_mzt(_TCHAR* filename);
 };
 
 #endif

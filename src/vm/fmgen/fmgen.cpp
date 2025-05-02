@@ -212,7 +212,7 @@ void MakeLFOTable()
 			double pmb = pms[type][i];
 			for (int j=0; j<FM_LFOENTS; j++)
 			{
-				double v = pow(2.0, pmb * (2 * j - FM_LFOENTS+1) / (FM_LFOENTS-1));
+//				double v = pow(2.0, pmb * (2 * j - FM_LFOENTS+1) / (FM_LFOENTS-1));
 				double w = 0.6 * pmb * sin(2 * j * 3.14159265358979323846 / FM_LFOENTS) + 1;
 //				pmtable[type][i][j] = int(0x10000 * (v - 1));
 //				if (type == 0)
@@ -260,9 +260,7 @@ void Chip::MakeTable()
 	static const float dt2lv[4] = { 1.f, 1.414f, 1.581f, 1.732f };
 	for (h=0; h<4; h++)
 	{
-#ifndef _WIN32_WCE
 		assert(2 + FM_RATIOBITS - FM_PGBITS >= 0);
-#endif
 		double rr = dt2lv[h] * double(ratio_) / (1 << (2 + FM_RATIOBITS - FM_PGBITS));
 		for (l=0; l<16; l++)
 		{
@@ -329,9 +327,8 @@ void FM::Operator::Reset()
 void Operator::MakeTable()
 {
 	// ‘Î”ƒe[ƒuƒ‹‚Ìì¬
-#ifndef _WIN32_WCE
 	assert(FM_CLENTS >= 256);
-#endif
+
 	int* p = cltable;
 	int i;
 	for (i=0; i<256; i++)
@@ -410,9 +407,8 @@ void Operator::Prepare()
 		if (ssg_type_ && (eg_phase_ != release))
 		{
 			int m = ar_ >= (uint)((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60);
-#ifndef _WIN32_WCE
+
 			assert(0 <= ssg_phase_ && ssg_phase_ <= 2);
-#endif
 			const int* table = ssgenvtable[ssg_type_ & 7][m][ssg_phase_];
 
 			ssg_offset_ = table[0] * 0x200;
@@ -439,9 +435,8 @@ void Operator::ShiftPhase(EGPhase nextphase)
 				ssg_phase_ = 1;
 			
 			int m = ar_ >= (uint)((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60);
-#ifndef _WIN32_WCE
+
 			assert(0 <= ssg_phase_ && ssg_phase_ <= 2);
-#endif
 			const int* table = ssgenvtable[ssg_type_ & 7][m][ssg_phase_];
 
 			ssg_offset_ = table[0] * 0x200;
@@ -819,7 +814,7 @@ void Channel4::SetAlgorithm(uint algo)
 //  ‡¬
 ISample Channel4::Calc()
 {
-	int r;
+	int r = 0;
 	switch (algo_)
 	{
 	case 0:
@@ -879,7 +874,7 @@ ISample Channel4::CalcL()
 {
 	chip_->SetPMV(pms[chip_->GetPML()]);
 
-	int r;
+	int r = 0;
 	switch (algo_)
 	{
 	case 0:

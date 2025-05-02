@@ -79,7 +79,8 @@ void BEEP::mix(int32* buffer, int cnt)
 				count += diff;
 				signal = !signal;
 			}
-			buffer[i] += signal ? gen_vol : -gen_vol;
+			*buffer++ += signal ? gen_vol : -gen_vol; // L
+			*buffer++ += signal ? gen_vol : -gen_vol; // R
 		}
 	}
 }

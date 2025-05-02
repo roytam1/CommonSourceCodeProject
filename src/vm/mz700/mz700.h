@@ -19,7 +19,7 @@
 #define DEVICE_NAME		"SHARP MZ-700"
 #define CONFIG_NAME		"mz700"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x03
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -34,12 +34,19 @@
 #define PCM1BIT_HIGH_QUALITY
 //#define LOW_PASS_FILTER
 #define CPU_MEMORY_WAIT
+#ifdef _MZ1500
+// 1byte=32clock/3.25MHz*8=79usec
+#define Z80SIO_DELAY_SEND	100
+#define Z80SIO_DELAY_RECV	100
+#endif
 
 // device informations for win32
+#ifdef _MZ1500
+#define USE_QUICKDISK
+#endif
 #define USE_DATAREC
 #define USE_DATAREC_BUTTON
 #define DATAREC_MZT
-#define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -71,6 +78,7 @@ class SN76489AN;
 class Z80PIO;
 class Z80SIO;
 class PSG;
+class QUICKDISK;
 #endif
 
 class VM
@@ -105,6 +113,7 @@ protected:
 	Z80SIO* sio_qd;	// QD
 	
 	PSG* psg;
+	QUICKDISK* qd;
 #endif
 	
 public:
@@ -131,7 +140,10 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void open_mzt(_TCHAR* filename);
+#ifdef _MZ1500
+	void open_quickdisk(_TCHAR* filename);
+	void close_quickdisk();
+#endif
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();

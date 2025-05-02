@@ -113,26 +113,27 @@
 #define ID_RECENT_MEDIA7                40717
 #define ID_RECENT_MEDIA8                40718
 
-#define ID_LOAD_RAM                     40801
-#define ID_SAVE_RAM                     40802
-#define ID_RECENT_RAM1                  40811
-#define ID_RECENT_RAM2                  40812
-#define ID_RECENT_RAM3                  40813
-#define ID_RECENT_RAM4                  40814
-#define ID_RECENT_RAM5                  40815
-#define ID_RECENT_RAM6                  40816
-#define ID_RECENT_RAM7                  40817
-#define ID_RECENT_RAM8                  40818
+#define ID_OPEN_QUICKDISK               40801
+#define ID_CLOSE_QUICKDISK              40802
+#define ID_RECENT_QUICKDISK1            40811
+#define ID_RECENT_QUICKDISK2            40812
+#define ID_RECENT_QUICKDISK3            40813
+#define ID_RECENT_QUICKDISK4            40814
+#define ID_RECENT_QUICKDISK5            40815
+#define ID_RECENT_QUICKDISK6            40816
+#define ID_RECENT_QUICKDISK7            40817
+#define ID_RECENT_QUICKDISK8            40818
 
-#define ID_OPEN_MZT                     40901
-#define ID_RECENT_MZT1                  40911
-#define ID_RECENT_MZT2                  40912
-#define ID_RECENT_MZT3                  40913
-#define ID_RECENT_MZT4                  40914
-#define ID_RECENT_MZT5                  40915
-#define ID_RECENT_MZT6                  40916
-#define ID_RECENT_MZT7                  40917
-#define ID_RECENT_MZT8                  40918
+#define ID_LOAD_RAM                     40901
+#define ID_SAVE_RAM                     40902
+#define ID_RECENT_RAM1                  40911
+#define ID_RECENT_RAM2                  40912
+#define ID_RECENT_RAM3                  40913
+#define ID_RECENT_RAM4                  40914
+#define ID_RECENT_RAM5                  40915
+#define ID_RECENT_RAM6                  40916
+#define ID_RECENT_RAM7                  40917
+#define ID_RECENT_RAM8                  40918
 
 #define ID_SCREEN_REC60                 41001
 #define ID_SCREEN_REC30                 41002
@@ -330,34 +331,31 @@
 #ifdef _MZ80K
 #define MENU_POS_CONTROL                0
 #define MENU_POS_DATAREC                1
-#define MENU_POS_MZT                    2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // SHARP MZ-700
 #ifdef _MZ700
 #define MENU_POS_CONTROL                0
 #define MENU_POS_DATAREC                1
-#define MENU_POS_MZT                    2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // SHARP MZ-1200
 #ifdef _MZ1200
 #define MENU_POS_CONTROL                0
 #define MENU_POS_DATAREC                1
-#define MENU_POS_MZT                    2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // SHARP MZ-1500
 #ifdef _MZ1500
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
-#define MENU_POS_MZT                    2
+#define MENU_POS_QUICKDISK              1
+#define MENU_POS_DATAREC                2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
 #endif
@@ -618,9 +616,10 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_CART                   3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
+#define MENU_POS_DATAREC                3
+#define MENU_POS_CART                   4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // SHINKO SANGYO YS-6464A

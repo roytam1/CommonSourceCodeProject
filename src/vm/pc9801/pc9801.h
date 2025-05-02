@@ -82,6 +82,7 @@ class YM2203;
 
 class DISPLAY;
 class FLOPPY;
+class JOYSTICK;
 class KEYBOARD;
 
 class VM
@@ -118,6 +119,7 @@ protected:
 	
 	DISPLAY* display;
 	FLOPPY* floppy;
+	JOYSTICK* joystick;
 	KEYBOARD* keyboard;
 	
 	// memory

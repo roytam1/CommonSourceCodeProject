@@ -764,7 +764,8 @@ void APU::mix(int32* buffer, int num_samples)
 		ave += (max + min) / 2048.0;
 		accum -= (int32)ave;
 		
-		*buffer++ += accum;
+		*buffer++ += accum; // L
+		*buffer++ += accum; // R
 	}
 	
 	// resync cycle counter

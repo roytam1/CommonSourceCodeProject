@@ -49,8 +49,10 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
-	SET_BANK(0x0000, 0x0fff, ram, rom);
-	SET_BANK(0x1000, 0xffff, ram + 0x1000, ram + 0x1000);
+	for(int ofs = 0; ofs < 0x8000; ofs += 0x1000) {
+		SET_BANK(ofs, ofs + 0x0fff, ram + ofs, rom);
+	}
+	SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
 #ifndef _X1TURBO
 	d_cpu->write_signal(SIG_Z80_M1_CYCLE_WAIT, 1, 1);
 #endif
@@ -70,13 +72,15 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff00) {
 	case 0x1d00:
-		SET_BANK(0x0000, 0x0fff, ram, rom);
+		for(int ofs = 0; ofs < 0x8000; ofs += 0x1000) {
+			SET_BANK(ofs, ofs + 0x0fff, ram + ofs, rom);
+		}
 #ifndef _X1TURBO
 		d_cpu->write_signal(SIG_Z80_M1_CYCLE_WAIT, 1, 1);
 #endif
 		break;
 	case 0x1e00:
-		SET_BANK(0x0000, 0x0fff, ram, ram);
+		SET_BANK(0x0000, 0x7fff, ram, ram);
 #ifndef _X1TURBO
 		d_cpu->write_signal(SIG_Z80_M1_CYCLE_WAIT, 0, 0);
 #endif

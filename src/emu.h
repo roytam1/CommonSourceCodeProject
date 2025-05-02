@@ -94,7 +94,6 @@ private:
 	int joy_num;
 	uint32 joy_xmin[2], joy_xmax[2];
 	uint32 joy_ymin[2], joy_ymax[2];
-	JOYCAPS joycaps[2];
 	
 	int mouse_status[3];	// x, y, button (b0 = left, b1 = right)
 	BOOL mouse_enabled;
@@ -203,7 +202,7 @@ private:
 		DWORD dwDataLength;
 	} wavheader_t;
 	FILEIO* rec;
-	int rec_bufs;
+	int rec_bytes;
 	BOOL now_recs;
 	
 	// ----------------------------------------
@@ -284,6 +283,10 @@ public:
 	void open_disk(_TCHAR* filename, int drv);
 	void close_disk(int drv);
 #endif
+#ifdef USE_QUICKDISK
+	void open_quickdisk(_TCHAR* filename);
+	void close_quickdisk();
+#endif
 #ifdef USE_DATAREC
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
@@ -300,9 +303,6 @@ public:
 #ifdef USE_RAM
 	void load_ram(_TCHAR* filename);
 	void save_ram(_TCHAR* filename);
-#endif
-#ifdef USE_MZT
-	void open_mzt(_TCHAR* filename);
 #endif
 	BOOL now_skip();
 	
