@@ -16,6 +16,8 @@
 
 #define SIG_Z80PIO_PORT_A	0
 #define SIG_Z80PIO_PORT_B	1
+#define SIG_Z80PIO_STROBE_A	2
+#define SIG_Z80PIO_STROBE_B	3
 
 class Z80PIO : public DEVICE
 {
@@ -37,7 +39,8 @@ private:
 		bool req_intr;
 		bool in_service;
 		// output signals
-		outputs_t outputs;
+		outputs_t outputs_data;
+		outputs_t outputs_ready;
 	} port_t;
 	port_t port[2];
 	
@@ -52,7 +55,8 @@ public:
 	Z80PIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		memset(port, 0, sizeof(port));
 		for(int i = 0; i < 2; i++) {
-			init_output_signals(&port[i].outputs);
+			init_output_signals(&port[i].outputs_data);
+			init_output_signals(&port[i].outputs_ready);
 			port[i].wreg = port[i].rreg = 0;//0xff;
 		}
 		d_cpu = d_child = NULL;
@@ -79,10 +83,16 @@ public:
 	
 	// unique function
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		register_output_signal(&port[0].outputs, device, id, mask, shift);
+		register_output_signal(&port[0].outputs_data, device, id, mask, shift);
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		register_output_signal(&port[1].outputs, device, id, mask, shift);
+		register_output_signal(&port[1].outputs_data, device, id, mask, shift);
+	}
+	void set_context_ready_a(DEVICE* device, int id, uint32 mask) {
+		register_output_signal(&port[0].outputs_ready, device, id, mask);
+	}
+	void set_context_ready_b(DEVICE* device, int id, uint32 mask) {
+		register_output_signal(&port[1].outputs_ready, device, id, mask);
 	}
 };
 

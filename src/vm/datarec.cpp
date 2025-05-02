@@ -90,6 +90,14 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 			if(rec && remote) {
 				changed++;
 			}
+			if(prev_clock != 0) {
+				if(out_signal) {
+					positive_clocks += passed_clock(prev_clock);
+				} else {
+					negative_clocks += passed_clock(prev_clock);
+				}
+				prev_clock = current_clock();
+			}
 			out_signal = signal;
 		}
 	} else if(id == SIG_DATAREC_REMOTE) {
@@ -165,23 +173,35 @@ void DATAREC::event_callback(int event_id, int err)
 				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
 			}
 		} else if(rec) {
+			if(out_signal) {
+				positive_clocks += passed_clock(prev_clock);
+			} else {
+				negative_clocks += passed_clock(prev_clock);
+			}
 			if(is_wav) {
-				buffer[buffer_ptr] = out_signal ? 0xff : 0;
+				if(positive_clocks != 0 || negative_clocks != 0) {
+					buffer[buffer_ptr] = (255 * positive_clocks) / (positive_clocks + negative_clocks);
+				} else {
+					buffer[buffer_ptr] = 0;
+				}
 				if(++buffer_ptr >= buffer_length) {
 					fio->Fwrite(buffer, buffer_length, 1);
 					buffer_ptr = 0;
 				}
 			} else {
 				bool prev_signal = ((buffer[buffer_ptr] & 0x80) != 0);
-				if(prev_signal != out_signal || (buffer[buffer_ptr] & 0x7f) == 0x7f) {
+				bool cur_signal = (positive_clocks > negative_clocks);
+				if(prev_signal != cur_signal || (buffer[buffer_ptr] & 0x7f) == 0x7f) {
 					if(++buffer_ptr >= buffer_length) {
 						fio->Fwrite(buffer, buffer_length, 1);
 						buffer_ptr = 0;
 					}
-					buffer[buffer_ptr] = out_signal ? 0x80 : 0;
+					buffer[buffer_ptr] = cur_signal ? 0x80 : 0;
 				}
 				buffer[buffer_ptr]++;
 			}
+			prev_clock = current_clock();
+			positive_clocks = negative_clocks = 0;
 		}
 	}
 #ifdef DATAREC_SOUND
@@ -222,12 +242,15 @@ void DATAREC::update_event()
 			} else {
 				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate, true, &register_id);
 			}
+			prev_clock = current_clock();
+			positive_clocks = negative_clocks = 0;
 		}
 	} else {
 		if(register_id != -1) {
 			cancel_event(register_id);
 			register_id = -1;
 		}
+		prev_clock = 0;
 	}
 	
 	// update signals
@@ -486,7 +509,11 @@ int DATAREC::load_wav_image(int offset)
 					if(max_sample < wav_buffer[i + j]) max_sample = wav_buffer[i + j];
 					if(min_sample > wav_buffer[i + j]) min_sample = wav_buffer[i + j];
 				}
-				zero_buffer[i] = (max_sample + min_sample) / 2;
+				if(max_sample - min_sample> 4096) {
+					zero_buffer[i] = (max_sample + min_sample) / 2;
+				} else {
+					zero_buffer[i] = wav_buffer[i];
+				}
 			}
 			for(int i = 0; i < samples; i++) {
 				wav_buffer[i] -= zero_buffer[(i < width) ?  width : (i < samples - width) ? i : (samples - width - 1)];
@@ -496,7 +523,7 @@ int DATAREC::load_wav_image(int offset)
 			// t=0 : get thresholds
 			// t=1 : get number of samples
 			// t=2 : load samples
-			#define FREQ_SCALE 8
+			#define FREQ_SCALE 16
 			int min_threshold = (int)(header.sample_rate * FREQ_SCALE / 2400.0 / 2.0 / 3.0 + 0.5);
 			int max_threshold = (int)(header.sample_rate * FREQ_SCALE / 1200.0 / 2.0 * 3.0 + 0.5);
 			int half_threshold, hi_count, lo_count;
@@ -511,7 +538,7 @@ int DATAREC::load_wav_image(int offset)
 					double diff = (double)(next - prev) / FREQ_SCALE;
 					for(int j = 0; j < FREQ_SCALE; j++) {
 						int sample = prev + (int)(diff * j + 0.5);
-						bool signal = (sample > (prev_signal ? -1024 : 1024));
+						bool signal = (sample > 0);
 						
 						if(!prev_signal && signal) {
 							if(t == 0) {
@@ -530,11 +557,12 @@ int DATAREC::load_wav_image(int offset)
 										loaded_samples += count * 2;
 									}
 								} else {
-									int count = (count_positive + count_negative) / FREQ_SCALE;
 									if(buffer != NULL) {
-										for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;//0x80;
+										for(int j = 0; j < count_positive / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0xff;
+										for(int j = 0; j < count_negative / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0x00;
 									} else {
-										loaded_samples += count;
+										loaded_samples += count_positive / FREQ_SCALE;
+										loaded_samples += count_negative / FREQ_SCALE;
 									}
 								}
 							}
@@ -549,12 +577,17 @@ int DATAREC::load_wav_image(int offset)
 					}
 				}
 				if(t == 0) {
-					long sum_value = 0, sum_count = 0;
+					long sum_value = 0, sum_count = 0, half_tmp;
 					for(int i = 0; i < max_threshold; i++) {
 						sum_value += i * counts[i];
 						sum_count += counts[i];
 					}
-					int half_tmp = (int)((double)sum_value / (double)sum_count + 0.5);
+					// 1920 = 2400 * 0.6 + 1200 * 0.4
+					if(sum_count > 60 * 1920) {
+						half_tmp = (int)((double)sum_value / (double)sum_count + 0.5);
+					} else {
+						half_tmp = (int)(header.sample_rate * FREQ_SCALE / 1920.0 / 2.0 + 0.5);
+					}
 					
 					sum_value = sum_count = 0;
 					for(int i = 0; i < half_tmp; i++) {
@@ -584,11 +617,12 @@ int DATAREC::load_wav_image(int offset)
 							loaded_samples += count * 2;
 						}
 					} else {
-						int count = (count_positive + count_negative) / FREQ_SCALE;
 						if(buffer != NULL) {
-							for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;//0x80;
+							for(int j = 0; j < count_positive / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0xff;
+							for(int j = 0; j < count_negative / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0x00;
 						} else {
-							loaded_samples += count;
+							loaded_samples += count_positive / FREQ_SCALE;
+							loaded_samples += count_negative / FREQ_SCALE;
 						}
 					}
 				}
@@ -616,7 +650,7 @@ void DATAREC::save_wav_image()
 	if(buffer_ptr > 0) {
 		fio->Fwrite(buffer, buffer_ptr, 1);
 	}
-	uint8 length = fio->Ftell();
+	uint32 length = fio->Ftell();
 	
 	wav_header_t wav_header;
 	wav_chunk_t wav_chunk;

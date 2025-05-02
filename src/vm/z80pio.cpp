@@ -47,14 +47,21 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 	case 2:
 		// data
 		if(port[ch].wreg != data || port[ch].first) {
-			write_signals(&port[ch].outputs, data);
+			write_signals(&port[ch].outputs_data, data);
 			port[ch].wreg = data;
 			port[ch].first = false;
 		}
 		if((port[ch].mode & 0xc0) == 0 || (port[ch].mode & 0xc0) == 0x80) {
-			// mode0/2 data is received by other chip
+			write_signals(&port[ch].outputs_ready, 0);
+			write_signals(&port[ch].outputs_ready, 0xffffffff);
+#ifdef Z80PIO_SUPPORT_HANDSHAKE
+			// mode0/2 wait until data is read by other chip
+#else
+			// mode0/2 data is read by other chip
 			port[ch].req_intr = true;
 			update_intr();
+			write_signals(&port[ch].outputs_ready, 0);
+#endif
 		}
 		else if((port[ch].mode & 0xc0) == 0xc0) {
 			check_mode3_intr(ch);
@@ -114,12 +121,18 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 uint32 Z80PIO::read_io8(uint32 addr)
 {
 	int ch = (addr >> 1) & 1;
+	uint32 data;
 	
 	switch(addr & 3) {
 	case 0:
 	case 2:
 		// data
-		return (port[ch].rreg & port[ch].dir) | (port[ch].wreg & ~port[ch].dir);
+		data = (port[ch].rreg & port[ch].dir) | (port[ch].wreg & ~port[ch].dir);
+		if((port[ch].mode & 0xc0) == 0x40 || (port[ch].mode & 0xc0) == 0x80) {
+			// mode1/2 cpu reads the data sent by other chip
+			write_signals(&port[ch].outputs_ready, 0xffffffff);
+		}
+		return data;
 	case 1:
 	case 3:
 		// status (sharp z-80pio special function)
@@ -131,29 +144,38 @@ uint32 Z80PIO::read_io8(uint32 addr)
 void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 {
 	// port[].dir 0=output, 1=input
-	if(id == SIG_Z80PIO_PORT_A) {
-		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
+	int ch = 1;
+	
+	switch(id) {
+	case SIG_Z80PIO_PORT_A:
+		ch = 0;
+	case SIG_Z80PIO_PORT_B:
+		port[ch].rreg = (port[ch].rreg & ~mask) | (data & mask);
 		// note: we need to check astb is changed l->h
-		if((port[0].mode & 0xc0) == 0x40 || (port[0].mode & 0xc0) == 0x80) {
+		if((port[ch].mode & 0xc0) == 0x40 || (port[ch].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio received the data sent by other chip
-			port[0].req_intr = true;
+			port[ch].req_intr = true;
 			update_intr();
+			write_signals(&port[ch].outputs_ready, 0);
 		}
-		else if((port[0].mode & 0xc0) == 0xc0) {
-			check_mode3_intr(0);
+		else if((port[ch].mode & 0xc0) == 0xc0) {
+			check_mode3_intr(ch);
 		}
-	}
-	else if(id == SIG_Z80PIO_PORT_B) {
-		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
-		// note: we need to check bstb is changed l->h
-		if((port[1].mode & 0xc0) == 0x40 || (port[1].mode & 0xc0) == 0x80) {
-			// mode1/2 z80pio received the data sent by other chip
-			port[1].req_intr = true;
-			update_intr();
+		break;
+	case SIG_Z80PIO_STROBE_A:
+		ch = 0;
+	case SIG_Z80PIO_STROBE_B:
+		if((port[ch].mode & 0xc0) == 0 || (port[ch].mode & 0xc0) == 0x80) {
+			if(data & mask) {
+				// mode0/2 data is read by other chip
+#ifdef Z80PIO_SUPPORT_HANDSHAKE
+				port[ch].req_intr = true;
+				update_intr();
+#endif
+				write_signals(&port[ch].outputs_ready, 0);
+			}
 		}
-		else if((port[1].mode & 0xc0) == 0xc0) {
-			check_mode3_intr(1);
-		}
+		break;
 	}
 }
 

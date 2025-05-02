@@ -1,3 +1,16 @@
+3/30/2013
+
+[VM/DATAREC] fix issue that sample number in recorded wav file header is 0
+[VM/DATAREC] improve recording wav file
+[VM/DATAREC] improve wave shaper function to support dB-BASIC
+[VM/EVENT] fix issue that continuous event causes invalid event clock
+[VM/Z80PIO] support handshake mode
+
+[MZ2200/MEMORY] support m1 wait when ipl rom is selected
+[MZ2200/MEMORY] support vram access wait
+[MZ2200/MZ1R13] fix address increment
+
+
 3/29/2013
 
 [MZ2200] support quick disk drive (MZ-1E18 and MZ-1F11)

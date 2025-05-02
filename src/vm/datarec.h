@@ -38,6 +38,8 @@ private:
 	bool play, rec, remote, trigger;
 	int ff_rew;
 	bool in_signal, out_signal;
+	uint32 prev_clock;
+	int positive_clocks, negative_clocks;
 	int changed;
 	int register_id;
 	

@@ -14,10 +14,12 @@
 #include "../z80.h"
 #include "../../config.h"
 
+#define EVENT_HBLANK		0
+
 #define MONITOR_TYPE_COLOR	0
 #define MONITOR_TYPE_GREEN	1
 
-#define SET_BANK(s, e, w, r) { \
+#define SET_BANK(s, e, w, r, v) { \
 	int sb = (s) >> 11, eb = (e) >> 11; \
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
@@ -30,6 +32,7 @@
 		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
+		is_vram[i] = v; \
 	} \
 }
 
@@ -66,9 +69,9 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
-	SET_BANK(0x0000, 0x07ff, wdmy, ipl);
-	SET_BANK(0x0800, 0x7fff, wdmy, rdmy);
-	SET_BANK(0x8000, 0xffff, ram, ram);
+	SET_BANK(0x0000, 0x07ff, wdmy, ipl, false);
+	SET_BANK(0x0800, 0x7fff, wdmy, rdmy, false);
+	SET_BANK(0x8000, 0xffff, ram, ram, false);
 	
 	ipl_selected = true;
 	update_vram_map();
@@ -76,7 +79,7 @@ void MEMORY::reset()
 
 void MEMORY::special_reset()
 {
-	SET_BANK(0x0000, 0xffff, ram, ram);
+	SET_BANK(0x0000, 0xffff, ram, ram, false);
 	
 	ipl_selected = false;
 	update_vram_map();
@@ -85,12 +88,25 @@ void MEMORY::special_reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffff;
+	if(!hblank && is_vram[addr >> 11]) {
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+	}
 	wbank[addr >> 11][addr & 0x7ff] = data;
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffff;
+	if(!hblank && is_vram[addr >> 11]) {
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+	}
+	return rbank[addr >> 11][addr & 0x7ff];
+}
+
+uint32 MEMORY::fetch_op(uint32 addr, int *wait)
+{
+	addr &= 0xffff;
+	*wait = (ipl_selected && addr < 0x800);
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 
@@ -142,6 +158,18 @@ void MEMORY::event_vline(int v, int clock)
 	} else if(v == 200) {
 		d_pio->write_signal(SIG_I8255_PORT_B, 0, 1);
 	}
+//	if(v < 200) {
+		hblank = false;
+		register_event_by_clock(this, EVENT_HBLANK, 184, false, NULL);
+//	}
+}
+
+void MEMORY::event_callback(int event_id, int err)
+{
+	if(event_id == EVENT_HBLANK) {
+		hblank = true;
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
+	}
 }
 
 #ifndef _MZ80B
@@ -176,34 +204,34 @@ void MEMORY::update_vram_map()
 #ifndef _MZ80B
 	if(vram_sel == 0x80) {
 		if(vram_page) {
-			SET_BANK(0xc000, 0xffff, vram + 0x4000 * vram_page, vram + 0x4000 * vram_page);
+			SET_BANK(0xc000, 0xffff, vram + 0x4000 * vram_page, vram + 0x4000 * vram_page, true);
 		} else {
-			SET_BANK(0xc000, 0xffff, wdmy, rdmy);
+			SET_BANK(0xc000, 0xffff, wdmy, rdmy, false);
 		}
 	} else {
 		if(ipl_selected) {
-			SET_BANK(0xc000, 0xffff, ram + 0x4000, ram + 0x4000);
+			SET_BANK(0xc000, 0xffff, ram + 0x4000, ram + 0x4000, false);
 		} else {
-			SET_BANK(0xc000, 0xffff, ram + 0xc000, ram + 0xc000);
+			SET_BANK(0xc000, 0xffff, ram + 0xc000, ram + 0xc000, false);
 		}
 		if(vram_sel == 0xc0) {
-			SET_BANK(0xd000, 0xdfff, tvram, tvram);
+			SET_BANK(0xd000, 0xdfff, tvram, tvram, true);
 		}
 	}
 #else
 	if(ipl_selected) {
-		SET_BANK(0x5000, 0x7fff, wdmy, rdmy);
-		SET_BANK(0xd000, 0xffff, ram + 0x5000, ram + 0x5000);
+		SET_BANK(0x5000, 0x7fff, wdmy, rdmy, false);
+		SET_BANK(0xd000, 0xffff, ram + 0x5000, ram + 0x5000, false);
 	} else {
-		SET_BANK(0x5000, 0x7fff, ram + 0x5000, ram + 0x5000);
-		SET_BANK(0xd000, 0xffff, ram + 0xd000, ram + 0xd000);
+		SET_BANK(0x5000, 0x7fff, ram + 0x5000, ram + 0x5000, false);
+		SET_BANK(0xd000, 0xffff, ram + 0xd000, ram + 0xd000, false);
 	}
 	if(vram_sel == 0x80) {
-		SET_BANK(0xd000, 0xdfff, tvram, tvram);
-		SET_BANK(0xe000, 0xffff, vram, vram);
+		SET_BANK(0xd000, 0xdfff, tvram, tvram, true);
+		SET_BANK(0xe000, 0xffff, vram, vram, true);
 	} else if(vram_sel == 0xc0) {
-		SET_BANK(0x5000, 0x5fff, tvram, tvram);
-		SET_BANK(0x6000, 0x7fff, vram, vram);
+		SET_BANK(0x5000, 0x5fff, tvram, tvram, true);
+		SET_BANK(0x6000, 0x7fff, vram, vram, true);
 	}
 #endif
 }

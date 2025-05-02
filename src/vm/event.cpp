@@ -193,6 +193,7 @@ void EVENT::update_event(int clock)
 	
 	while(first_fire_event != NULL && first_fire_event->expired_clock <= event_clocks_tmp) {
 		event_t *event_handle = first_fire_event;
+		uint64 expired_clock = event_handle->expired_clock;
 		
 		first_fire_event = event_handle->next;
 		if(first_fire_event != NULL) {
@@ -207,7 +208,7 @@ void EVENT::update_event(int clock)
 			event_handle->next = first_free_event;
 			first_free_event = event_handle;
 		}
-		event_clocks = event_handle->expired_clock;
+		event_clocks = expired_clock;
 		event_handle->device->event_callback(event_handle->event_id, 0);
 	}
 	event_clocks = event_clocks_tmp;

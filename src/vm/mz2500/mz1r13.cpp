@@ -47,6 +47,9 @@ void MZ1R13::write_io8(uint32 addr, uint32 data)
 	case 0xba:
 		select_kanji = ((data & 1) != 0);
 		break;
+	case 0xbb:
+		address++;
+		break;
 	}
 }
 
@@ -56,11 +59,13 @@ uint32 MZ1R13::read_io8(uint32 addr)
 	uint8 value = select_kanji ? kanji[offset & 0x1ffff] : dic[offset & 0x3fff];
 	
 	switch(addr & 0xff) {
-	case 0xb8:
 	case 0xb9:
+		address++;
+	case 0xb8:
 		return value;
-	case 0xba:
 	case 0xbb:
+		address++;
+	case 0xba:
 		return ((value >> 7) & 0x01) | ((value >> 5) & 0x02) | ((value >> 3) & 0x04) | ((value >> 1) & 0x08) |
 		       ((value << 1) & 0x10) | ((value << 3) & 0x20) | ((value << 5) & 0x40) | ((value << 7) & 0x80);
 	}
