@@ -47,11 +47,11 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-void CMT::play_datarec(_TCHAR* filename)
+void CMT::play_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fseek(0, FILEIO_SEEK_END);
 		int size = (fio->Ftell() + 9) & (BUFFER_SIZE - 1);
 		fio->Fseek(0, FILEIO_SEEK_SET);
@@ -67,11 +67,11 @@ void CMT::play_datarec(_TCHAR* filename)
 	}
 }
 
-void CMT::rec_datarec(_TCHAR* filename)
+void CMT::rec_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		bufcnt = 0;
 		rec = true;
 	}

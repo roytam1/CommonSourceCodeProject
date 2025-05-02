@@ -53,6 +53,7 @@ private:
 	uint8 dicrom_sel, dicrom_bank;
 #endif
 	
+	void update_gvram_wait();
 	void update_gvram_sel();
 	void update_low_memmap();
 	void update_tvram_memmap();
@@ -60,9 +61,11 @@ private:
 	// misc
 	uint8 port32, portE2;
 	uint8 alu_ctrl1, alu_ctrl2, alu_reg[3];
+	uint8 ghs_mode;
 	
 	bool cpu_clock_low;
-	int vram_wait_clocks;
+	int mem_wait_clocks;
+	int gvram_wait_clocks, alu_wait_clocks;
 	int busreq_clocks;
 	bool opn_busy;
 	
@@ -96,15 +99,17 @@ private:
 	
 	uint8 sg_pattern[0x800];
 	uint8 text[200][640];
+	uint8 attribs[200][80];
 	uint8 graph[400][640];
 	scrntype palette_text_pc[9];	// 8=non transparent black
 	scrntype palette_graph_pc[9];	// 8=back color
 	
 	uint8 get_crtc_buffer(int ofs);
+	void expand_attribs();
 	void draw_text();
-	void draw_color_graph(int y);
-	void draw_mono_graph(int y);
-	void draw_mono_hires_graph(int y);
+	void draw_color_graph();
+	void draw_mono_graph();
+	void draw_mono_hires_graph();
 	
 	// dma (temporary)
 	typedef struct {

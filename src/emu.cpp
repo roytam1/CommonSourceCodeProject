@@ -36,7 +36,12 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	app_path[pt + 1] = _T('\0');
 	
 	// load sound config
+#ifdef SUPPORT_SOUND_FREQ_55467HZ
+	// PC-8801/9801 series
+	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 55467, 96000};
+#else
 	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
+#endif
 	static double late_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
 	
 	if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
@@ -53,6 +58,9 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	initialize_input();
 	initialize_screen();
 	initialize_sound(frequency, samples);
+#ifdef USE_FD1
+	update_disk_insert();
+#endif
 #ifdef USE_MEDIA
 	initialize_media();
 #endif
@@ -100,6 +108,9 @@ void EMU::run()
 	// run real machine
 	update_input();
 	update_timer();
+#ifdef USE_FD1
+	update_disk_insert();
+#endif
 #ifdef USE_SOCKET
 	update_socket();
 #endif
@@ -204,9 +215,9 @@ void EMU::out_debug(const _TCHAR* format, ...)
 // ----------------------------------------------------------------------------
 
 #ifdef USE_CART
-void EMU::open_cart(_TCHAR* filename)
+void EMU::open_cart(_TCHAR* file_path)
 {
-	vm->open_cart(filename);
+	vm->open_cart(file_path);
 	
 	// restart recording
 	restart_rec_video();
@@ -223,20 +234,47 @@ void EMU::close_cart()
 #endif
 
 #ifdef USE_FD1
-void EMU::open_disk(_TCHAR* filename, int drv)
+void EMU::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	vm->open_disk(filename, drv);
+	if(vm->disk_inserted(drv) || disk_insert[drv].wait_count != 0) {
+		if(vm->disk_inserted(drv)) {
+			vm->close_disk(drv);
+			// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+			disk_insert[drv].wait_count = (int)(vm->frame_rate() / 2);
+#else
+			disk_insert[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+		}
+		_tcscpy(disk_insert[drv].path, file_path);
+		disk_insert[drv].offset = offset;
+	}
+	else {
+		vm->open_disk(drv, file_path, offset);
+	}
 }
 void EMU::close_disk(int drv)
 {
 	vm->close_disk(drv);
 }
+void EMU::initialize_disk_insert()
+{
+	memset(disk_insert, 0, sizeof(disk_insert));
+}
+void EMU::update_disk_insert()
+{
+	for(int drv = 0; drv < 8; drv++) {
+		if(disk_insert[drv].wait_count != 0 && --disk_insert[drv].wait_count == 0) {
+			vm->open_disk(drv, disk_insert[drv].path, disk_insert[drv].offset);
+		}
+	}
+}
 #endif
 
 #ifdef USE_QUICKDISK
-void EMU::open_quickdisk(_TCHAR* filename)
+void EMU::open_quickdisk(_TCHAR* file_path)
 {
-	vm->open_quickdisk(filename);
+	vm->open_quickdisk(file_path);
 }
 void EMU::close_quickdisk()
 {
@@ -245,13 +283,13 @@ void EMU::close_quickdisk()
 #endif
 
 #ifdef USE_DATAREC
-void EMU::play_datarec(_TCHAR* filename)
+void EMU::play_datarec(_TCHAR* file_path)
 {
-	vm->play_datarec(filename);
+	vm->play_datarec(file_path);
 }
-void EMU::rec_datarec(_TCHAR* filename)
+void EMU::rec_datarec(_TCHAR* file_path)
 {
-	vm->rec_datarec(filename);
+	vm->rec_datarec(file_path);
 }
 void EMU::close_datarec()
 {
@@ -281,12 +319,12 @@ void EMU::update_config()
 }
 
 #ifdef USE_RAM
-void EMU::load_ram(_TCHAR* filename)
+void EMU::load_ram(_TCHAR* file_path)
 {
-	vm->load_ram(filename);
+	vm->load_ram(file_path);
 }
-void EMU::save_ram(_TCHAR* filename)
+void EMU::save_ram(_TCHAR* file_path)
 {
-	vm->save_ram(filename);
+	vm->save_ram(file_path);
 }
 #endif

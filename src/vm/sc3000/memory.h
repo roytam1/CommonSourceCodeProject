@@ -47,7 +47,7 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 };
 

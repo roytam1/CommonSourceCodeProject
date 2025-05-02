@@ -175,15 +175,15 @@ void DATAREC::event_callback(int event_id, int err)
 	}
 }
 
-bool DATAREC::play_datarec(_TCHAR* filename)
+bool DATAREC::play_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// check file extension
-		is_wav = check_extension(filename, _T(".wav"));
-		is_tap = check_extension(filename, _T(".tap"));
-		is_mzt = check_extension(filename, _T(".mzt")) || check_extension(filename, _T(".m12"));
+		is_wav = check_file_extension(file_path, _T(".wav"));
+		is_tap = check_file_extension(file_path, _T(".tap"));
+		is_mzt = check_file_extension(file_path, _T(".mzt")) || check_file_extension(file_path, _T(".m12"));
 		
 		// load image file
 		load_image();
@@ -191,18 +191,18 @@ bool DATAREC::play_datarec(_TCHAR* filename)
 	return play;
 }
 
-bool DATAREC::rec_datarec(_TCHAR* filename)
+bool DATAREC::rec_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		// default sample info
 		ch = 1;
 		sample_rate = 48000;
 		sample_bits = 8;
 		
 		// check file extension
-		is_wav = check_extension(filename, _T(".wav"));
+		is_wav = check_file_extension(file_path, _T(".wav"));
 		is_tap = is_mzt = false; // not supported for record
 		
 		// open for rec
@@ -314,15 +314,13 @@ void DATAREC::update_event()
 	write_signals(&outputs_end, signal ? 0xffffffff : 0);
 }
 
-bool DATAREC::check_extension(_TCHAR* filename, _TCHAR* ext)
+bool DATAREC::check_file_extension(_TCHAR* file_path, _TCHAR* ext)
 {
-	int nam_len = _tcslen(filename);
+	int nam_len = _tcslen(file_path);
 	int ext_len = _tcslen(ext);
 	
-	if(nam_len >= ext_len) {
-		if(_tcsncicmp(&filename[nam_len - ext_len], ext, ext_len) == 0) {
-			return true;
-		}
+	if(nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0) {
+		return true;
 	}
 	return false;
 }

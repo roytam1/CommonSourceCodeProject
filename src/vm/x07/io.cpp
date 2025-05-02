@@ -823,10 +823,10 @@ void IO::key_up(int code)
 // cmt
 // ----------------------------------------------------------------------------
 
-void IO::play_datarec(_TCHAR* filename)
+void IO::play_datarec(_TCHAR* file_path)
 {
 	close_datarec();
-	if(cmt_fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		memset(cmt_buf, 0, sizeof(cmt_buf));
 		cmt_fio->Fread(cmt_buf, sizeof(cmt_buf), 1);
 		cmt_ptr = 0;
@@ -838,10 +838,10 @@ void IO::play_datarec(_TCHAR* filename)
 	}
 }
 
-void IO::rec_datarec(_TCHAR* filename)
+void IO::rec_datarec(_TCHAR* file_path)
 {
 	close_datarec();
-	if(cmt_fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		cmt_ptr = 0;
 		cmt_rec = true;
 	}

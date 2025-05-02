@@ -27,9 +27,11 @@
 #define SUPPORT_PC88_HIGH_CLOCK
 #define SUPPORT_PC88_OPNA
 #define PC88_EXRAM_BANKS	4
-#define Z80_MEMORY_WAIT
 #endif
 #define SUPPORT_PC88_JOYSTICK
+
+//#define Z80_M1_CYCLE_WAIT	1
+#define Z80_MEMORY_WAIT
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -44,6 +46,7 @@
 #define HAS_YM2608
 #endif
 #define PCM1BIT_HIGH_QUALITY
+#define SUPPORT_SOUND_FREQ_55467HZ
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
@@ -131,8 +134,9 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* file_path, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
+	bool disk_inserted(int drv);
 	bool now_skip();
 	
 	void update_config();

@@ -195,7 +195,7 @@ void PC88::initialize()
 #else
 	cpu_clock_low = true;
 #endif
-	vram_wait_clocks = cpu_clock_low ? 2 : 4;
+	mem_wait_clocks = ((config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) && cpu_clock_low) ? 0 : 1;
 	
 	key_status = emu->key_buffer();
 #ifdef SUPPORT_PC88_JOYSTICK
@@ -227,6 +227,7 @@ void PC88::reset()
 	port32 = 0;	// ???
 	portE2 = 0xff;	// ???
 	alu_ctrl1 = alu_ctrl2 = 0;
+	ghs_mode = 0;
 	opn_busy = true;
 	
 	// crtc
@@ -254,7 +255,6 @@ void PC88::reset()
 	if(!line200) {
 		set_frames_per_sec(60);
 		set_lines_per_frame(260);
-		busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
 		line200 = true;
 	}
 	
@@ -294,7 +294,7 @@ void PC88::write_data8(uint32 addr, uint32 data)
 	int wait_tmp;
 	int *wait = &wait_tmp;
 #endif
-	*wait = 1;
+	*wait = mem_wait_clocks;
 	
 	if((addr & 0xfc00) == 0x8000) {
 		// text window
@@ -307,19 +307,19 @@ void PC88::write_data8(uint32 addr, uint32 data)
 	else if((addr & 0xc000) == 0xc000) {
 		switch(gvram_sel) {
 		case 1:
-			*wait = vram_wait_clocks;
+			*wait = gvram_wait_clocks;
 			gvram[(addr & 0x3fff) | 0x0000] = data;
 			return;
 		case 2:
-			*wait = vram_wait_clocks;
+			*wait = gvram_wait_clocks;
 			gvram[(addr & 0x3fff) | 0x4000] = data;
 			return;
 		case 4:
-			*wait = vram_wait_clocks;
+			*wait = gvram_wait_clocks;
 			gvram[(addr & 0x3fff) | 0x8000] = data;
 			return;
 		case 8:
-			*wait = vram_wait_clocks;
+			*wait = alu_wait_clocks;
 			addr &= 0x3fff;
 			switch(alu_ctrl2 & 0x30) {
 			case 0x00:
@@ -365,7 +365,7 @@ uint32 PC88::read_data8(uint32 addr)
 	int wait_tmp;
 	int *wait = &wait_tmp;
 #endif
-	*wait = 1;
+	*wait = mem_wait_clocks;
 	
 	if((addr & 0xfc00) == 0x8000) {
 		// text window
@@ -378,16 +378,16 @@ uint32 PC88::read_data8(uint32 addr)
 		uint8 b, r, g;
 		switch(gvram_sel) {
 		case 1:
-			*wait = vram_wait_clocks;
+			*wait = gvram_wait_clocks;
 			return gvram[(addr & 0x3fff) | 0x0000];
 		case 2:
-			*wait = vram_wait_clocks;
+			*wait = gvram_wait_clocks;
 			return gvram[(addr & 0x3fff) | 0x4000];
 		case 4:
-			*wait = vram_wait_clocks;
+			*wait = gvram_wait_clocks;
 			return gvram[(addr & 0x3fff) | 0x8000];
 		case 8:
-			*wait = vram_wait_clocks;
+			*wait = alu_wait_clocks;
 			addr &= 0x3fff;
 			alu_reg[0] = gvram[addr | 0x0000];
 			alu_reg[1] = gvram[addr | 0x4000];
@@ -428,13 +428,11 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		if(line200 && !(data & 0x11)) {
 			set_frames_per_sec(55.4);
 			set_lines_per_frame(448);
-			busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 55.4 / 448.0 * 0.558 + 0.5);
 			line200 = false;
 		}
 		else if(!line200 && (data & 0x11)) {
 			set_frames_per_sec(60);
 			set_lines_per_frame(260);
-			busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
 			line200 = true;
 		}
 		if(rm_mode != (data & 6)) {
@@ -481,7 +479,10 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		d_rtc->write_signal(SIG_UPD1990A_STB, ~data, 2);
 		d_rtc->write_signal(SIG_UPD1990A_CLK, data, 4);
 		// bit3: crtc i/f sync mode
-		// bit4: graph high speed mode
+		if(ghs_mode != (data & 0x10)) {
+			ghs_mode = data & 0x10;
+			update_gvram_wait();
+		}
 		d_beep->write_signal(SIG_BEEP_ON, data, 0x20);
 		// bit6: joystick port pin#8
 		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, data, 0x80);
@@ -845,6 +846,35 @@ void PC88::write_dma_io8(uint32 addr, uint32 data)
 	crtc_buffer[(crtc_buffer_ptr++) & 0x3fff] = data;
 }
 
+void PC88::update_gvram_wait()
+{
+	// from M88 memory wait table
+	if(config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2) {
+		if(vblank) {
+			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 1 : 3;
+		}
+		else {
+			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 2 : 5;
+		}
+	}
+	else if(ghs_mode) {
+		if(vblank) {
+			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 3 : 4;
+		}
+		else {
+			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 4 : 8;
+		}
+	}
+	else {
+		if(vblank) {
+			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 3 : 7;
+		}
+		else {
+			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 30 : 72;
+		}
+	}
+}
+
 void PC88::update_gvram_sel()
 {
 	if(port32 & 0x40) {
@@ -963,18 +993,19 @@ void PC88::event_vline(int v, int clock)
 	int disp_line = line200 ? 200 : 400;
 	
 	if(v == 0) {
-		if((crtc_status & 0x10) && (dma_mode & 4) && dma_reg[2].length.sd != 0) {
+		if((crtc_status & 0x10) && (dma_mode & 4)) {
 			// start dma transfer to crtc
 			dma_status &= ~4;
+			
+			// dma wait cycles: 9clocks/byte from quasi88
+			busreq_clocks = (int)((double)(dma_reg[2].length.sd + 1) * 9.0 / (double)disp_line + 0.5);
 		}
 		memset(crtc_buffer, 0, sizeof(crtc_buffer));
 		crtc_buffer_ptr = 0;
 		
 		vblank = false;
 		request_intr(IRQ_VRTC, false);
-		
-		// clear graph buffer
-		memset(graph, 0, sizeof(graph));
+		update_gvram_wait();
 	}
 	if(v < disp_line) {
 		if((crtc_status & 0x10) && (dma_mode & 4) && !(dma_status & 4)) {
@@ -982,19 +1013,6 @@ void PC88::event_vline(int v, int clock)
 			if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
 				d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 				register_event_by_clock(this, EVENT_BUSREQ, busreq_clocks, false, NULL);
-			}
-		}
-		
-		// draw graph screen
-		if(graph_mode & 8) {
-			if(graph_mode & 0x10) {
-				draw_color_graph(v);
-			}
-			else if(line200) {
-				draw_mono_graph(v);
-			}
-			else {
-				draw_mono_hires_graph(v);
 			}
 		}
 	}
@@ -1009,6 +1027,7 @@ void PC88::event_vline(int v, int clock)
 		}
 		vblank = true;
 		request_intr(IRQ_VRTC, true);
+		update_gvram_wait();
 	}
 }
 
@@ -1027,22 +1046,50 @@ void PC88::key_down(int code, bool repeat)
 void PC88::draw_screen()
 {
 	memset(text, 0, sizeof(text));
+	memset(graph, 0, sizeof(graph));
+	bool attribs_expanded = false;
 	
+	// render text screen
 	if(!(disp_ctrl & 1) && (crtc_status & 0x10)) {
+		expand_attribs();
 		draw_text();
+		attribs_expanded = true;
 	}
+	
+	// render graph screen
+	if(graph_mode & 8) {
+		if(graph_mode & 0x10) {
+			draw_color_graph();
+		}
+		else if(line200) {
+			draw_mono_graph();
+		}
+		else {
+			if(text_mode & 2) {
+				memset(attribs, 0xe0, sizeof(attribs));
+			}
+			else if(!attribs_expanded) {
+				expand_attribs();
+			}
+			draw_mono_hires_graph();
+		}
+	}
+	
+	// update palette
 	if(update_palette) {
 		if(graph_mode & 0x10) {
-			for(int i = 0; i < 9; i++) {
+			for(int i = 0; i < 8; i++) {
 				palette_graph_pc[i] = RGB_COLOR(palette[i].r << 5, palette[i].g << 5, palette[i].b << 5);
 			}
 		}
 		else {
-			palette_graph_pc[0] = 0;
+			palette_graph_pc[0] = RGB_COLOR(palette[8].r << 5, palette[8].g << 5, palette[8].b << 5);
 			palette_graph_pc[1] = RGB_COLOR(255, 255, 255);
 		}
 		update_palette = false;
 	}
+	
+	// copy to screen buffer
 	if(line200) {
 		for(int y = 0; y < 200; y++) {
 			scrntype* dest0 = emu->screen_buffer(y * 2);
@@ -1058,7 +1105,10 @@ void PC88::draw_screen()
 				memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 			else {
-				memcpy(dest1, dest0, 640 * sizeof(scrntype));
+				for(int x = 0; x < 640; x++) {
+					dest1[x] = dest0[x];
+				}
+//				memcpy(dest1, dest0, 640 * sizeof(scrntype));
 			}
 		}
 	}
@@ -1070,7 +1120,7 @@ void PC88::draw_screen()
 			
 			for(int x = 0; x < 640; x++) {
 				uint8 t = src_t[x];
-				dest[x] = t ? palette_text_pc[t] : palette_graph_pc[src_g[x]];
+				dest[x] = palette_text_pc[t ? t : src_g[x]];
 			}
 		}
 	}
@@ -1087,16 +1137,8 @@ uint8 PC88::get_crtc_buffer(int ofs)
 	return 0;
 }
 
-
-void PC88::draw_text()
+void PC88::expand_attribs()
 {
-	int char_height_tmp = char_height;
-	
-	if(!line200 || !skip_line) {
-		char_height_tmp >>= 1;
-	}
-	
-	uint8 attribs[80], flags[128];
 	if(attrib_num == 0) {
 		if(text_mode & 2) {
 			memset(attribs, 0, sizeof(attribs));
@@ -1104,38 +1146,57 @@ void PC88::draw_text()
 		else {
 			memset(attribs, 0xe0, sizeof(attribs));
 		}
+		return;
 	}
-	bool cursor_draw = cursor_on && !(cursor_blink && !blink_on);
 	
-	crtc_status &= ~8; // clear dma underrun
+	int char_height_tmp = char_height;
 	
+	if(!line200 || !skip_line) {
+		char_height_tmp >>= 1;
+	}
 	for(int cy = 0, ytop = 0, ofs = 0; cy < text_height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib_num * 2) {
 		if(attrib_num != 0) {
-			if(attrib_num == 20 && get_crtc_buffer(ofs + 80) == 0 && get_crtc_buffer(ofs + 81) == 120 && get_crtc_buffer(ofs + 82) == 1 && get_crtc_buffer(ofs + 83) == 2) {
+			if(attrib_num == 20 && crtc_buffer[ofs + 80] == 0 && crtc_buffer[ofs + 81] == 120 && crtc_buffer[ofs + 82] == 1 && crtc_buffer[ofs + 83] == 2) {
 				// XXX: ugly patch for alpha :-(
-				memset(attribs, 0, sizeof(attribs));
+				memset(attribs[cy], 0, 80);
 			}
 			else {
+				uint8 flags[128];
 				memset(flags, 0, sizeof(flags));
 				for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
-					flags[get_crtc_buffer(ofs + i + 80) & 0x7f] = 1;
+					flags[crtc_buffer[ofs + i + 80] & 0x7f] = 1;
 				}
 				for(int cx = 0, pos = 0; cx < text_width && cx < 80; cx++) {
 					if(flags[cx]) {
-						text_attrib = get_crtc_buffer(ofs + pos + 81);
+						text_attrib = crtc_buffer[ofs + pos + 81];
 						pos += 2;
 					}
-					attribs[cx] = text_attrib;
+					attribs[cy][cx] = text_attrib;
 				}
 			}
 		}
 		
+	}
+}
+
+void PC88::draw_text()
+{
+	bool cursor_draw = cursor_on && !(cursor_blink && !blink_on);
+	int char_height_tmp = char_height;
+	
+	if(!line200 || !skip_line) {
+		char_height_tmp >>= 1;
+	}
+	
+	crtc_status &= ~8; // clear dma underrun
+	
+	for(int cy = 0, ytop = 0, ofs = 0; cy < text_height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib_num * 2) {
 		for(int x = 0, cx = 0; cx < text_width && cx < 80; x += 8, cx++) {
 			if(!(text_mode & 1) && (cx & 1)) {
 				continue;
 			}
 			uint8 code = get_crtc_buffer(ofs + cx);
-			uint8 attrib = attribs[cx];
+			uint8 attrib = attribs[cy][cx];
 			
 			bool under_line = false, upper_line = false, reverse = false, blink = false, secret = false;
 			uint8 color = 7;
@@ -1202,70 +1263,86 @@ void PC88::draw_text()
 	}
 }
 
-void PC88::draw_color_graph(int y)
+void PC88::draw_color_graph()
 {
-	int addr = y * 80;
-	
-	for(int x = 0; x < 640; x += 8) {
-		uint8 b = gvram[addr | 0x0000];
-		uint8 r = gvram[addr | 0x4000];
-		uint8 g = gvram[addr | 0x8000];
-		addr++;
-		uint8 *dest = &graph[y][x];
-		dest[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-		dest[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-		dest[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-		dest[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-		dest[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-		dest[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04)     );
-		dest[6] = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1);
-		dest[7] = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+	for(int y = 0, addr = 0; y < 200; y++) {
+		for(int x = 0; x < 640; x += 8) {
+			uint8 b = gvram[addr | 0x0000];
+			uint8 r = gvram[addr | 0x4000];
+			uint8 g = gvram[addr | 0x8000];
+			addr++;
+			uint8 *dest = &graph[y][x];
+			dest[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+			dest[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+			dest[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+			dest[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+			dest[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+			dest[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04)     );
+			dest[6] = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1);
+			dest[7] = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+		}
 	}
 }
 
-void PC88::draw_mono_graph(int y)
+void PC88::draw_mono_graph()
 {
-	int addr = y * 80;
-	
-	for(int x = 0; x < 640; x += 8) {
-		uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
-		uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
-		uint8 g = (disp_ctrl & 8) ? 0 : gvram[addr | 0x8000];
-		addr++;
-		uint8 *dest = &graph[y][x];
-		dest[0] = ((b | r | g) & 0x80) >> 7;
-		dest[1] = ((b | r | g) & 0x40) >> 6;
-		dest[2] = ((b | r | g) & 0x20) >> 5;
-		dest[3] = ((b | r | g) & 0x10) >> 4;
-		dest[4] = ((b | r | g) & 0x08) >> 3;
-		dest[5] = ((b | r | g) & 0x04) >> 2;
-		dest[6] = ((b | r | g) & 0x02) >> 1;
-		dest[7] = ((b | r | g) & 0x01)     ;
+	for(int y = 0, addr = 0; y < 200; y++) {
+		for(int x = 0; x < 640; x += 8) {
+			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
+			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
+			uint8 g = (disp_ctrl & 8) ? 0 : gvram[addr | 0x8000];
+			addr++;
+			uint8 *dest = &graph[y][x];
+			dest[0] = ((b | r | g) & 0x80) >> 7;
+			dest[1] = ((b | r | g) & 0x40) >> 6;
+			dest[2] = ((b | r | g) & 0x20) >> 5;
+			dest[3] = ((b | r | g) & 0x10) >> 4;
+			dest[4] = ((b | r | g) & 0x08) >> 3;
+			dest[5] = ((b | r | g) & 0x04) >> 2;
+			dest[6] = ((b | r | g) & 0x02) >> 1;
+			dest[7] = ((b | r | g) & 0x01)     ;
+		}
 	}
 }
 
-void PC88::draw_mono_hires_graph(int y)
+void PC88::draw_mono_hires_graph()
 {
-	int addr = (y % 200) * 80;
+	int char_height_tmp = char_height ? char_height : 16;
+	int shift = (text_mode & 1) ? 0 : 1;
 	
-	for(int x = 0; x < 640; x += 8) {
-		uint8 br;
-		if(y < 200) {
-			br = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
+	for(int y = 0, addr = 0; y < 200; y++) {
+		int cy = y / char_height_tmp;
+		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
+			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
+			uint8 c = attribs[cy][cx >> shift] >> 5;
+			addr++;
+			uint8 *dest = &graph[y][x];
+			dest[0] = (b & 0x80) ? c : 0;
+			dest[1] = (b & 0x40) ? c : 0;
+			dest[2] = (b & 0x20) ? c : 0;
+			dest[3] = (b & 0x10) ? c : 0;
+			dest[4] = (b & 0x08) ? c : 0;
+			dest[5] = (b & 0x04) ? c : 0;
+			dest[6] = (b & 0x02) ? c : 0;
+			dest[7] = (b & 0x01) ? c : 0;
 		}
-		else {
-			br = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
+	}
+	for(int y = 200, addr = 0; y < 400; y++) {
+		int cy = y / char_height_tmp;
+		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
+			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
+			uint8 c = attribs[cy][cx >> shift] >> 5;
+			addr++;
+			uint8 *dest = &graph[y][x];
+			dest[0] = (r & 0x80) ? c : 0;
+			dest[1] = (r & 0x40) ? c : 0;
+			dest[2] = (r & 0x20) ? c : 0;
+			dest[3] = (r & 0x10) ? c : 0;
+			dest[4] = (r & 0x08) ? c : 0;
+			dest[5] = (r & 0x04) ? c : 0;
+			dest[6] = (r & 0x02) ? c : 0;
+			dest[7] = (r & 0x01) ? c : 0;
 		}
-		addr++;
-		uint8 *dest = &graph[y][x];
-		dest[0] = (br & 0x80) >> 7;
-		dest[1] = (br & 0x40) >> 6;
-		dest[2] = (br & 0x20) >> 5;
-		dest[3] = (br & 0x10) >> 4;
-		dest[4] = (br & 0x08) >> 3;
-		dest[5] = (br & 0x04) >> 2;
-		dest[6] = (br & 0x02) >> 1;
-		dest[7] = (br & 0x01)     ;
 	}
 }
 

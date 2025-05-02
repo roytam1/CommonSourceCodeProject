@@ -1,3 +1,15 @@
+2/20/2012
+
+[WINMAIN] support d88 disk image with multi voluemes
+[EMU/WIN32] update screen manager with Direct3D9
+
+[VM/DISK] support d88 disk image with multi voluemes
+
+[JX/DISPLAY] fix not to render screen just after screen size is changed
+[PC8801MA/PC88] fix to render 640x400 graph screen refering text attributes
+[PC8801MA/PC88] update memory wait cycles based on m88 and QUASI88
+
+
 2/16/2012
 
 [WINMAIN] simplify timing controls
@@ -11,6 +23,7 @@
 [PC8801MA/PC88] fix text window
 [PC8801MA/PC88] fix to clear vram bank when alu is active
 [PC98DO] remove dictionary rom, joystick and opna sound
+
 
 2/13/2012
 

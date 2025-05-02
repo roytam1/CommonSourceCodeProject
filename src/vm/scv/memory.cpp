@@ -158,13 +158,13 @@ void MEMORY::set_bank(uint8 bank)
 	SET_BANK(0xff80, 0xffff, wreg, wreg);
 }
 
-void MEMORY::open_cart(_TCHAR* filename)
+void MEMORY::open_cart(_TCHAR* file_path)
 {
 	// close cart and initialize memory
 	close_cart();
 	
 	// get save file path
-	_tcscpy(save_path, filename);
+	_tcscpy(save_path, file_path);
 	int len = _tcslen(save_path);
 	if(save_path[len - 4] == _T('.')) {
 		save_path[len - 3] = _T('S');
@@ -172,12 +172,12 @@ void MEMORY::open_cart(_TCHAR* filename)
 		save_path[len - 1] = _T('V');
 	}
 	else {
-		_stprintf(save_path, _T("%s.SAV"), filename);
+		_stprintf(save_path, _T("%s.SAV"), file_path);
 	}
 	
 	// open cart and backuped sram
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// load header
 		fio->Fread(&header, sizeof(header_t), 1);
 		if(!(header.id[0] == 'S' && header.id[1] == 'C' && header.id[2] == 'V' && header.id[3] == 0x1a)) {

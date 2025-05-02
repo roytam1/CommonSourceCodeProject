@@ -377,11 +377,11 @@ void PCE::draw_screen()
 	}
 }
 
-void PCE::open_cart(_TCHAR* filename)
+void PCE::open_cart(_TCHAR* file_path)
 {
 	FILEIO* fio = new FILEIO();
 	
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		memset(cart, 0xff, sizeof(cart));
 		fio->Fseek(0, FILEIO_SEEK_END);
 		int head = fio->Ftell() % 1024;

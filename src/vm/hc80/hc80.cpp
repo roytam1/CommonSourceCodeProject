@@ -158,14 +158,19 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(_TCHAR* filename, int drv)
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	tf20->open_disk(filename, drv);
+	tf20->open_disk(drv, file_path, offset);
 }
 
 void VM::close_disk(int drv)
 {
 	tf20->close_disk(drv);
+}
+
+bool VM::disk_inserted(int drv)
+{
+	return tf20->disk_inserted(drv);
 }
 
 bool VM::now_skip()

@@ -67,7 +67,7 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique functions
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	void set_context_sound(DEVICE* device) {
 		d_sound = device;

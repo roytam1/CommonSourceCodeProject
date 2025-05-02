@@ -401,15 +401,15 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::play_datarec(_TCHAR* filename)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	drec->play_datarec(filename);
+	drec->play_datarec(file_path);
 	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	drec->rec_datarec(filename);
+	drec->rec_datarec(file_path);
 	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
@@ -430,9 +430,9 @@ void VM::push_stop()
 }
 
 #if defined(_MZ800) || defined(_MZ1500)
-void VM::open_quickdisk(_TCHAR* filename)
+void VM::open_quickdisk(_TCHAR* file_path)
 {
-	qd->open_disk(filename);
+	qd->open_disk(file_path);
 }
 
 void VM::close_quickdisk()
@@ -440,15 +440,21 @@ void VM::close_quickdisk()
 	qd->close_disk();
 }
 
-void VM::open_disk(_TCHAR* filename, int drv)
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	fdc->open_disk(filename, drv);
+	fdc->open_disk(drv, file_path, offset);
 }
 
 void VM::close_disk(int drv)
 {
 	fdc->close_disk(drv);
 }
+
+bool VM::disk_inserted(int drv)
+{
+	return fdc->disk_inserted(drv);
+}
+
 #endif
 
 bool VM::now_skip()

@@ -134,7 +134,7 @@ public:
 	void initialize_sound(int rate) {
 		sample_rate = rate;
 	}
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	void draw_screen();
 };

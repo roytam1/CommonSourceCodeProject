@@ -424,12 +424,12 @@ void SUB::draw_screen()
 	}
 }
 
-void SUB::play_datarec(_TCHAR* filename)
+void SUB::play_datarec(_TCHAR* file_path)
 {
 	
 }
 
-void SUB::rec_datarec(_TCHAR* filename)
+void SUB::rec_datarec(_TCHAR* file_path)
 {
 	
 }

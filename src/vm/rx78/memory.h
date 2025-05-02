@@ -51,7 +51,7 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique functions
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	uint8* get_vram() { return vram; }
 };

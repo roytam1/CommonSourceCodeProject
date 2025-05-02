@@ -82,7 +82,7 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	bool now_skip();
 	

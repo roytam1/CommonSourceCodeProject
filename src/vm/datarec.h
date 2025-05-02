@@ -45,7 +45,7 @@ private:
 	uint8 buffer[DATAREC_BUFFER_SIZE];
 	
 	void update_event();
-	bool check_extension(_TCHAR* filename, _TCHAR* ext);
+	bool check_file_extension(_TCHAR* file_path, _TCHAR* ext);
 	
 	void load_image();
 	
@@ -84,8 +84,8 @@ public:
 	void set_context_end(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_end, device, id, mask);
 	}
-	bool play_datarec(_TCHAR* filename);
-	bool rec_datarec(_TCHAR* filename);
+	bool play_datarec(_TCHAR* file_path);
+	bool rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	bool skip();
 };

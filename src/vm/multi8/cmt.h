@@ -42,8 +42,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;

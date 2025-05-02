@@ -81,8 +81,8 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	bool now_skip();
 	

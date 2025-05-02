@@ -97,28 +97,14 @@ BEGIN
         MENUITEM "Open",                        ID_OPEN_CART
         MENUITEM "Close",                       ID_CLOSE_CART
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_CART1
-        MENUITEM "Recent 2",                    ID_RECENT_CART2
-        MENUITEM "Recent 3",                    ID_RECENT_CART3
-        MENUITEM "Recent 4",                    ID_RECENT_CART4
-        MENUITEM "Recent 5",                    ID_RECENT_CART5
-        MENUITEM "Recent 6",                    ID_RECENT_CART6
-        MENUITEM "Recent 7",                    ID_RECENT_CART7
-        MENUITEM "Recent 8",                    ID_RECENT_CART8
+        MENUITEM "Recent",                      ID_RECENT_CART
     END
     POPUP "FDD"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD11
-        MENUITEM "Recent 2",                    ID_RECENT_FD12
-        MENUITEM "Recent 3",                    ID_RECENT_FD13
-        MENUITEM "Recent 4",                    ID_RECENT_FD14
-        MENUITEM "Recent 5",                    ID_RECENT_FD15
-        MENUITEM "Recent 6",                    ID_RECENT_FD16
-        MENUITEM "Recent 7",                    ID_RECENT_FD17
-        MENUITEM "Recent 8",                    ID_RECENT_FD18
+        MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "Tape"
     BEGIN
@@ -126,14 +112,7 @@ BEGIN
         MENUITEM "Rec",                         ID_REC_DATAREC
         MENUITEM "Close",                       ID_CLOSE_DATAREC
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_DATAREC1
-        MENUITEM "Recent 2",                    ID_RECENT_DATAREC2
-        MENUITEM "Recent 3",                    ID_RECENT_DATAREC3
-        MENUITEM "Recent 4",                    ID_RECENT_DATAREC4
-        MENUITEM "Recent 5",                    ID_RECENT_DATAREC5
-        MENUITEM "Recent 6",                    ID_RECENT_DATAREC6
-        MENUITEM "Recent 7",                    ID_RECENT_DATAREC7
-        MENUITEM "Recent 8",                    ID_RECENT_DATAREC8
+        MENUITEM "Recent",                      ID_RECENT_DATAREC
     END
     POPUP "Screen"
     BEGIN
@@ -172,6 +151,7 @@ BEGIN
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
     END
     POPUP "Sound"
     BEGIN

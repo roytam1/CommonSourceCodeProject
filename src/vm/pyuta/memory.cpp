@@ -313,12 +313,12 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-void MEMORY::open_cart(_TCHAR* filename)
+void MEMORY::open_cart(_TCHAR* file_path)
 {
 	// open cart
 	FILEIO* fio = new FILEIO();
 	
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// 8kb
 		ctype = fio->Fread(cart, 0x2000, 1);
 		memcpy(cart + 0x2000, cart, 0x2000);

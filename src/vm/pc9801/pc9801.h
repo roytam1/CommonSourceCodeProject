@@ -91,6 +91,7 @@
 #if defined(_PC98DO)
 #define HAS_UPD4990A
 //#define HAS_YM2608
+//#define Z80_M1_CYCLE_WAIT	1
 #define Z80_MEMORY_WAIT
 #endif
 #define I8259_MAX_CHIPS		2
@@ -101,6 +102,7 @@
 #if !defined(SUPPORT_OLD_BUZZER)
 #define PCM1BIT_HIGH_QUALITY
 #endif
+#define SUPPORT_SOUND_FREQ_55467HZ
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
@@ -312,11 +314,12 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* file_path, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
+	bool disk_inserted(int drv);
 #if defined(SUPPORT_CMT_IF)
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 #endif
 	bool now_skip();

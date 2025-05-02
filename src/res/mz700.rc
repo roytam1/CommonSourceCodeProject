@@ -101,14 +101,7 @@ BEGIN
         MENUITEM "Play Button",                 ID_PLAY_BUTTON
         MENUITEM "Stop Button",                 ID_STOP_BUTTON
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_DATAREC1
-        MENUITEM "Recent 2",                    ID_RECENT_DATAREC2
-        MENUITEM "Recent 3",                    ID_RECENT_DATAREC3
-        MENUITEM "Recent 4",                    ID_RECENT_DATAREC4
-        MENUITEM "Recent 5",                    ID_RECENT_DATAREC5
-        MENUITEM "Recent 6",                    ID_RECENT_DATAREC6
-        MENUITEM "Recent 7",                    ID_RECENT_DATAREC7
-        MENUITEM "Recent 8",                    ID_RECENT_DATAREC8
+        MENUITEM "Recent",                      ID_RECENT_DATAREC
     END
     POPUP "Screen"
     BEGIN
@@ -147,6 +140,7 @@ BEGIN
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
     END
     POPUP "Sound"
     BEGIN

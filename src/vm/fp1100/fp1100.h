@@ -116,10 +116,11 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* filename, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	bool disk_inserted(int drv);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	bool now_skip();
 	

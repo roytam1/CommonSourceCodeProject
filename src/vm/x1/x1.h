@@ -186,16 +186,17 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* filename, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	bool disk_inserted(int drv);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	void push_play();
 	void push_stop();
 	bool now_skip();
 #ifdef _X1TWIN
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 #endif
 	

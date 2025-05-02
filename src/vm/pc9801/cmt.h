@@ -49,8 +49,8 @@ public:
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;
 	}
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 };
 

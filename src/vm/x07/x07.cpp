@@ -153,14 +153,14 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::play_datarec(_TCHAR* filename)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	io->play_datarec(filename);
+	io->play_datarec(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	io->rec_datarec(filename);
+	io->rec_datarec(file_path);
 }
 
 void VM::close_datarec()

@@ -49,127 +49,62 @@
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102
-#define ID_RECENT_FD11                  40111
-#define ID_RECENT_FD12                  40112
-#define ID_RECENT_FD13                  40113
-#define ID_RECENT_FD14                  40114
-#define ID_RECENT_FD15                  40115
-#define ID_RECENT_FD16                  40116
-#define ID_RECENT_FD17                  40117
-#define ID_RECENT_FD18                  40118
+#define ID_RECENT_FD1                   40111 // 40111-40118
+#define ID_D88_FILE_PATH1               40120
+#define ID_SELECT_D88_BANK1             40121 // 40121-40200
 
-#define ID_OPEN_FD2                     40121
-#define ID_CLOSE_FD2                    40122
-#define ID_RECENT_FD21                  40131
-#define ID_RECENT_FD22                  40132
-#define ID_RECENT_FD23                  40133
-#define ID_RECENT_FD24                  40134
-#define ID_RECENT_FD25                  40135
-#define ID_RECENT_FD26                  40136
-#define ID_RECENT_FD27                  40137
-#define ID_RECENT_FD28                  40138
+#define ID_OPEN_FD2                     40201
+#define ID_CLOSE_FD2                    40202
+#define ID_RECENT_FD2                   40211 // 40211-40218
+#define ID_D88_FILE_PATH2               40220
+#define ID_SELECT_D88_BANK2             40221 // 40121-40200
 
-#define ID_OPEN_FD3                     40141
-#define ID_CLOSE_FD3                    40142
-#define ID_RECENT_FD31                  40151
-#define ID_RECENT_FD32                  40152
-#define ID_RECENT_FD33                  40153
-#define ID_RECENT_FD34                  40154
-#define ID_RECENT_FD35                  40155
-#define ID_RECENT_FD36                  40156
-#define ID_RECENT_FD37                  40157
-#define ID_RECENT_FD38                  40158
+#define ID_OPEN_FD3                     40301
+#define ID_CLOSE_FD3                    40302
+#define ID_RECENT_FD3                   40311 // 40311-40318
+#define ID_D88_FILE_PATH3               40320
+#define ID_SELECT_D88_BANK3             40321 // 40121-40200
 
-#define ID_OPEN_FD4                     40161
-#define ID_CLOSE_FD4                    40162
-#define ID_RECENT_FD41                  40171
-#define ID_RECENT_FD42                  40172
-#define ID_RECENT_FD43                  40173
-#define ID_RECENT_FD44                  40174
-#define ID_RECENT_FD45                  40175
-#define ID_RECENT_FD46                  40176
-#define ID_RECENT_FD47                  40177
-#define ID_RECENT_FD48                  40178
+#define ID_OPEN_FD4                     40401
+#define ID_CLOSE_FD4                    40402
+#define ID_RECENT_FD4                   40411 // 40411-40418
+#define ID_D88_FILE_PATH4               40420
+#define ID_SELECT_D88_BANK4             40421 // 40121-40200
 
-#define ID_OPEN_FD5                     40181
-#define ID_CLOSE_FD5                    40182
-#define ID_RECENT_FD51                  40191
-#define ID_RECENT_FD52                  40192
-#define ID_RECENT_FD53                  40193
-#define ID_RECENT_FD54                  40194
-#define ID_RECENT_FD55                  40195
-#define ID_RECENT_FD56                  40196
-#define ID_RECENT_FD57                  40197
-#define ID_RECENT_FD58                  40198
+#define ID_OPEN_FD5                     40501
+#define ID_CLOSE_FD5                    40502
+#define ID_RECENT_FD5                   40511 // 40511-40518
+#define ID_D88_FILE_PATH5               40520
+#define ID_SELECT_D88_BANK5             40521 // 40121-40200
 
-#define ID_OPEN_FD6                     40201
-#define ID_CLOSE_FD6                    40202
-#define ID_RECENT_FD61                  40211
-#define ID_RECENT_FD62                  40212
-#define ID_RECENT_FD63                  40213
-#define ID_RECENT_FD64                  40214
-#define ID_RECENT_FD65                  40215
-#define ID_RECENT_FD66                  40216
-#define ID_RECENT_FD67                  40217
-#define ID_RECENT_FD68                  40218
+#define ID_OPEN_FD6                     40601
+#define ID_CLOSE_FD6                    40602
+#define ID_RECENT_FD6                   40611 // 40611-40618
+#define ID_D88_FILE_PATH6               40620
+#define ID_SELECT_D88_BANK6             40621 // 40121-40200
 
-#define ID_OPEN_CART                    40221
-#define ID_CLOSE_CART                   40222
-#define ID_RECENT_CART1                 40231
-#define ID_RECENT_CART2                 40232
-#define ID_RECENT_CART3                 40233
-#define ID_RECENT_CART4                 40234
-#define ID_RECENT_CART5                 40235
-#define ID_RECENT_CART6                 40236
-#define ID_RECENT_CART7                 40237
-#define ID_RECENT_CART8                 40238
+#define ID_OPEN_CART                    40901
+#define ID_CLOSE_CART                   40902
+#define ID_RECENT_CART                  40911 // 40911-40918
 
-#define ID_PLAY_DATAREC                 40601
-#define ID_REC_DATAREC                  40602
-#define ID_CLOSE_DATAREC                40603
-#define ID_PLAY_BUTTON                  40604
-#define ID_STOP_BUTTON                  40605
-#define ID_RECENT_DATAREC1              40611
-#define ID_RECENT_DATAREC2              40612
-#define ID_RECENT_DATAREC3              40613
-#define ID_RECENT_DATAREC4              40614
-#define ID_RECENT_DATAREC5              40615
-#define ID_RECENT_DATAREC6              40616
-#define ID_RECENT_DATAREC7              40617
-#define ID_RECENT_DATAREC8              40618
+#define ID_PLAY_DATAREC                 40921
+#define ID_REC_DATAREC                  40922
+#define ID_CLOSE_DATAREC                40923
+#define ID_PLAY_BUTTON                  40924
+#define ID_STOP_BUTTON                  40925
+#define ID_RECENT_DATAREC               40931 // 40931-40938
 
-#define ID_OPEN_MEDIA                   40701
-#define ID_CLOSE_MEDIA                  40702
-#define ID_RECENT_MEDIA1                40711
-#define ID_RECENT_MEDIA2                40712
-#define ID_RECENT_MEDIA3                40713
-#define ID_RECENT_MEDIA4                40714
-#define ID_RECENT_MEDIA5                40715
-#define ID_RECENT_MEDIA6                40716
-#define ID_RECENT_MEDIA7                40717
-#define ID_RECENT_MEDIA8                40718
+#define ID_OPEN_QUICKDISK               40941
+#define ID_CLOSE_QUICKDISK              40942
+#define ID_RECENT_QUICKDISK             40951 // 40951-40958
 
-#define ID_OPEN_QUICKDISK               40801
-#define ID_CLOSE_QUICKDISK              40802
-#define ID_RECENT_QUICKDISK1            40811
-#define ID_RECENT_QUICKDISK2            40812
-#define ID_RECENT_QUICKDISK3            40813
-#define ID_RECENT_QUICKDISK4            40814
-#define ID_RECENT_QUICKDISK5            40815
-#define ID_RECENT_QUICKDISK6            40816
-#define ID_RECENT_QUICKDISK7            40817
-#define ID_RECENT_QUICKDISK8            40818
+#define ID_OPEN_MEDIA                   40961
+#define ID_CLOSE_MEDIA                  40962
+#define ID_RECENT_MEDIA                 40971 // 40971-40978
 
-#define ID_LOAD_RAM                     40901
-#define ID_SAVE_RAM                     40902
-#define ID_RECENT_RAM1                  40911
-#define ID_RECENT_RAM2                  40912
-#define ID_RECENT_RAM3                  40913
-#define ID_RECENT_RAM4                  40914
-#define ID_RECENT_RAM5                  40915
-#define ID_RECENT_RAM6                  40916
-#define ID_RECENT_RAM7                  40917
-#define ID_RECENT_RAM8                  40918
+#define ID_LOAD_RAM                     40981
+#define ID_SAVE_RAM                     40982
+#define ID_RECENT_RAM                   40991 // 40991-40998
 
 #define ID_SCREEN_REC60                 41001
 #define ID_SCREEN_REC30                 41002
@@ -205,6 +140,7 @@
 #define ID_SCREEN_FULLSCREEN19          41039
 #define ID_SCREEN_FULLSCREEN20          41040
 #define ID_SCREEN_STRETCH               41041
+#define ID_SCREEN_WAIT_VSYNC            41042
 
 #define ID_SCREEN_MONITOR_TYPE0         41051
 #define ID_SCREEN_MONITOR_TYPE1         41052

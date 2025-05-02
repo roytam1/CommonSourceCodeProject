@@ -117,8 +117,9 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* file_path, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
+	bool disk_inserted(int drv);
 	bool now_skip();
 	
 	void update_config();

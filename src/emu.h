@@ -11,7 +11,7 @@
 #define _EMU_H_
 
 // DirectX
-#define DIRECTDRAW_VERSION 0x300
+//#define DIRECTDRAW_VERSION 0x300
 #define DIRECTSOUND_VERSION 0x500
 //#define DIRECT3D_VERSION 0x900
 
@@ -57,11 +57,24 @@
 #define WINDOW_HEIGHT SCREEN_HEIGHT_ASPECT
 #endif
 
+#if !(defined(USE_BITMAP) || defined(USE_LED))
+#define USE_D3D9
+#endif
+
+#ifdef USE_D3D9
+#pragma comment(lib, "d3d9.lib")
+#pragma comment(lib, "d3dx9.lib")
+#include <d3d9.h>
+#include <d3dx9.h>
+#include <d3d9types.h>
+#endif
+
 #include <dsound.h>
+#include <vfw.h>
+
 #ifdef USE_SOCKET
 #include <winsock.h>
 #endif
-#include <vfw.h>
 
 #ifdef USE_MEDIA
 #define MEDIA_MAX 64
@@ -121,6 +134,7 @@ private:
 	int screen_width_aspect, screen_height_aspect;
 	int window_width, window_height;
 	int display_width, display_height;
+	BOOL screen_size_changed;
 	
 	HDC hdcDibSource;
 	scrntype* lpBmpSource;
@@ -128,6 +142,7 @@ private:
 	LPBITMAPINFOHEADER pbmInfoHeader;
 	
 	int source_width, source_height;
+	int source_width_aspect, source_height_aspect;
 	int stretched_width, stretched_height;
 	int stretch_pow_x, stretch_pow_y;
 	int screen_dest_x, screen_dest_y;
@@ -166,6 +181,17 @@ private:
 	LPBYTE lpBufStretch2;
 	scrntype* lpBmpStretch2;
 	LPBITMAPINFO lpDibStretch2;
+	
+#ifdef USE_D3D9
+	// for direct3d9
+	LPDIRECT3D9 lpd3d9;
+	LPDIRECT3DDEVICE9 lpd3d9Device;
+	LPDIRECT3DSURFACE9 lpd3d9Surface;
+	LPDIRECT3DSURFACE9 lpd3d9OffscreenSurface;
+	scrntype *lpd3d9Buffer;
+	BOOL render_to_d3d9Buffer;
+#endif
+	BOOL wait_vsync;
 	
 	// record video
 	BOOL now_rec_vid;
@@ -209,6 +235,21 @@ private:
 	FILEIO* rec;
 	int rec_bytes;
 	BOOL now_rec_snd;
+	
+	// ----------------------------------------
+	// disk
+	// ----------------------------------------
+#ifdef USE_FD1
+	typedef struct {
+		_TCHAR path[_MAX_PATH];
+		int offset;
+		int wait_count;
+	} disk_insert_t;
+	disk_insert_t disk_insert[8];
+	
+	void initialize_disk_insert();
+	void update_disk_insert();
+#endif
 	
 	// ----------------------------------------
 	// media
@@ -282,20 +323,20 @@ public:
 	
 	// user interface
 #ifdef USE_CART
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 #endif
 #ifdef USE_FD1
-	void open_disk(_TCHAR* filename, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 #endif
 #ifdef USE_QUICKDISK
-	void open_quickdisk(_TCHAR* filename);
+	void open_quickdisk(_TCHAR* file_path);
 	void close_quickdisk();
 #endif
 #ifdef USE_DATAREC
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 #endif
 #ifdef USE_DATAREC_BUTTON
@@ -303,12 +344,12 @@ public:
 	void push_stop();
 #endif
 #ifdef USE_MEDIA
-	void open_media(_TCHAR* filename);
+	void open_media(_TCHAR* file_path);
 	void close_media();
 #endif
 #ifdef USE_RAM
-	void load_ram(_TCHAR* filename);
-	void save_ram(_TCHAR* filename);
+	void load_ram(_TCHAR* file_path);
+	void save_ram(_TCHAR* file_path);
 #endif
 	BOOL now_skip();
 	

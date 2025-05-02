@@ -56,22 +56,24 @@ void hide_menu_bar(HWND hWnd)
 
 // dialog
 #ifdef USE_CART
-void open_cart(HWND hWnd);
+void open_cart_dialog(HWND hWnd);
 #endif
 #ifdef USE_FD1
-void open_disk(HWND hWnd, int drv);
+void open_disk_dialog(HWND hWnd, int drv);
+void open_disk(int drv, _TCHAR* filename, int bank);
+void close_disk(int drv);
 #endif
 #ifdef USE_QUICKDISK
-void open_quickdisk(HWND hWnd);
+void open_quickdisk_dialog(HWND hWnd);
 #endif
 #ifdef USE_DATAREC
-void open_datarec(HWND hWnd, BOOL play);
+void open_datarec_dialog(HWND hWnd, BOOL play);
 #endif
 #ifdef USE_MEDIA
-void open_media(HWND hWnd);
+void open_media_dialog(HWND hWnd);
 #endif
 #ifdef USE_RAM
-void open_ram(HWND hWnd, BOOL load);
+void open_ram_dialog(HWND hWnd, BOOL load);
 #endif
 
 void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
@@ -128,6 +130,17 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	return NULL;
 }
 
+BOOL check_file_extension(_TCHAR* filename, _TCHAR* ext)
+{
+	int nam_len = _tcslen(filename);
+	int ext_len = _tcslen(ext);
+	
+	if(nam_len >= ext_len && _tcsncicmp(&filename[nam_len - ext_len], ext, ext_len) == 0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
 #define UPDATE_HISTORY(path, recent) { \
 	int no = 7; \
 	for(int i = 0; i < 8; i++) { \
@@ -141,6 +154,22 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	} \
 	_tcscpy(recent[0], path); \
 }
+
+// d88 bank switch
+
+#define MAX_D88_BANKS 32
+
+typedef struct {
+	_TCHAR name[18];
+	int offset;
+} d88_bank_t;
+typedef struct {
+	_TCHAR path[MAX_PATH];
+	d88_bank_t bank[MAX_D88_BANKS];
+	int bank_num;
+	int cur_bank;
+} d88_file_t;
+d88_file_t d88_file[8];
 
 // screen
 int desktop_width;
@@ -180,6 +209,9 @@ LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow)
 {
+	// initialize d88 file info
+	memset(d88_file, 0, sizeof(d88_file));
+	
 	// load config
 	load_config();
 	
@@ -308,7 +340,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		_tcscpy(config.initial_cart_path, get_parent_dir(path));
 #elif defined(USE_FD1)
 		UPDATE_HISTORY(path, config.recent_disk_path[0]);
-		emu->open_disk(path, 0);
+		open_disk(0, path, 0);
 		_tcscpy(config.initial_disk_path, get_parent_dir(path));
 #elif defined(USE_QUICKDISK)
 		UPDATE_HISTORY(path, config.recent_quickdisk_path);
@@ -713,7 +745,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_CART
 		case ID_OPEN_CART:
 			if(emu) {
-				open_cart(hWnd);
+				open_cart_dialog(hWnd);
 			}
 			break;
 		case ID_CLOSE_CART:
@@ -721,15 +753,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->close_cart();
 			}
 			break;
-		case ID_RECENT_CART1:
-		case ID_RECENT_CART2:
-		case ID_RECENT_CART3:
-		case ID_RECENT_CART4:
-		case ID_RECENT_CART5:
-		case ID_RECENT_CART6:
-		case ID_RECENT_CART7:
-		case ID_RECENT_CART8:
-			no = LOWORD(wParam) - ID_RECENT_CART1;
+		case ID_RECENT_CART + 0:
+		case ID_RECENT_CART + 1:
+		case ID_RECENT_CART + 2:
+		case ID_RECENT_CART + 3:
+		case ID_RECENT_CART + 4:
+		case ID_RECENT_CART + 5:
+		case ID_RECENT_CART + 6:
+		case ID_RECENT_CART + 7:
+			no = LOWORD(wParam) - ID_RECENT_CART;
 			_tcscpy(path, config.recent_cart_path[no]);
 			for(int i = no; i > 0; i--) {
 				_tcscpy(config.recent_cart_path[i], config.recent_cart_path[i - 1]);
@@ -741,189 +773,94 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 #endif
 #ifdef USE_FD1
-		case ID_OPEN_FD1:
-			if(emu) {
-				open_disk(hWnd, 0);
-			}
+		#define FD_MENU_ITEMS(drv, ID_OPEN_FD, ID_CLOSE_FD, ID_RECENT_FD, ID_SELECT_D88_BANK) \
+		case ID_OPEN_FD: \
+			if(emu) { \
+				open_disk_dialog(hWnd, drv); \
+			} \
+			break; \
+		case ID_CLOSE_FD: \
+			if(emu) { \
+				close_disk(drv); \
+			} \
+			break; \
+		case ID_RECENT_FD + 0: \
+		case ID_RECENT_FD + 1: \
+		case ID_RECENT_FD + 2: \
+		case ID_RECENT_FD + 3: \
+		case ID_RECENT_FD + 4: \
+		case ID_RECENT_FD + 5: \
+		case ID_RECENT_FD + 6: \
+		case ID_RECENT_FD + 7: \
+			no = LOWORD(wParam) - ID_RECENT_FD; \
+			_tcscpy(path, config.recent_disk_path[drv][no]); \
+			for(int i = no; i > 0; i--) { \
+				_tcscpy(config.recent_disk_path[drv][i], config.recent_disk_path[drv][i - 1]); \
+			} \
+			_tcscpy(config.recent_disk_path[drv][0], path); \
+			if(emu) { \
+				open_disk(drv, path, 0); \
+			} \
+			break; \
+		case ID_SELECT_D88_BANK +  0: \
+		case ID_SELECT_D88_BANK +  1: \
+		case ID_SELECT_D88_BANK +  2: \
+		case ID_SELECT_D88_BANK +  3: \
+		case ID_SELECT_D88_BANK +  4: \
+		case ID_SELECT_D88_BANK +  5: \
+		case ID_SELECT_D88_BANK +  6: \
+		case ID_SELECT_D88_BANK +  7: \
+		case ID_SELECT_D88_BANK +  8: \
+		case ID_SELECT_D88_BANK +  9: \
+		case ID_SELECT_D88_BANK + 10: \
+		case ID_SELECT_D88_BANK + 11: \
+		case ID_SELECT_D88_BANK + 12: \
+		case ID_SELECT_D88_BANK + 13: \
+		case ID_SELECT_D88_BANK + 14: \
+		case ID_SELECT_D88_BANK + 15: \
+		case ID_SELECT_D88_BANK + 16: \
+		case ID_SELECT_D88_BANK + 17: \
+		case ID_SELECT_D88_BANK + 18: \
+		case ID_SELECT_D88_BANK + 19: \
+		case ID_SELECT_D88_BANK + 20: \
+		case ID_SELECT_D88_BANK + 21: \
+		case ID_SELECT_D88_BANK + 22: \
+		case ID_SELECT_D88_BANK + 23: \
+		case ID_SELECT_D88_BANK + 24: \
+		case ID_SELECT_D88_BANK + 25: \
+		case ID_SELECT_D88_BANK + 26: \
+		case ID_SELECT_D88_BANK + 27: \
+		case ID_SELECT_D88_BANK + 28: \
+		case ID_SELECT_D88_BANK + 29: \
+		case ID_SELECT_D88_BANK + 30: \
+		case ID_SELECT_D88_BANK + 31: \
+			no = LOWORD(wParam) - ID_SELECT_D88_BANK; \
+			if(emu && d88_file[drv].cur_bank != no) { \
+				emu->open_disk(drv, d88_file[drv].path, d88_file[drv].bank[no].offset); \
+				d88_file[drv].cur_bank = no; \
+			} \
 			break;
-		case ID_CLOSE_FD1:
-			if(emu) {
-				emu->close_disk(0);
-			}
-			break;
-		case ID_RECENT_FD11:
-		case ID_RECENT_FD12:
-		case ID_RECENT_FD13:
-		case ID_RECENT_FD14:
-		case ID_RECENT_FD15:
-		case ID_RECENT_FD16:
-		case ID_RECENT_FD17:
-		case ID_RECENT_FD18:
-			no = LOWORD(wParam) - ID_RECENT_FD11;
-			_tcscpy(path, config.recent_disk_path[0][no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_disk_path[0][i], config.recent_disk_path[0][i - 1]);
-			}
-			_tcscpy(config.recent_disk_path[0][0], path);
-			if(emu) {
-				emu->open_disk(path, 0);
-			}
-			break;
+		FD_MENU_ITEMS(0, ID_OPEN_FD1, ID_CLOSE_FD1, ID_RECENT_FD1, ID_SELECT_D88_BANK1)
 #endif
 #ifdef USE_FD2
-		case ID_OPEN_FD2:
-			if(emu) {
-				open_disk(hWnd, 1);
-			}
-			break;
-		case ID_CLOSE_FD2:
-			if(emu) {
-				emu->close_disk(1);
-			}
-			break;
-		case ID_RECENT_FD21:
-		case ID_RECENT_FD22:
-		case ID_RECENT_FD23:
-		case ID_RECENT_FD24:
-		case ID_RECENT_FD25:
-		case ID_RECENT_FD26:
-		case ID_RECENT_FD27:
-		case ID_RECENT_FD28:
-			no = LOWORD(wParam) - ID_RECENT_FD21;
-			_tcscpy(path, config.recent_disk_path[1][no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_disk_path[1][i], config.recent_disk_path[1][i - 1]);
-			}
-			_tcscpy(config.recent_disk_path[1][0], path);
-			if(emu) {
-				emu->open_disk(path, 1);
-			}
-			break;
+		FD_MENU_ITEMS(1, ID_OPEN_FD2, ID_CLOSE_FD2, ID_RECENT_FD2, ID_SELECT_D88_BANK2)
 #endif
 #ifdef USE_FD3
-		case ID_OPEN_FD3:
-			if(emu) {
-				open_disk(hWnd, 2);
-			}
-			break;
-		case ID_CLOSE_FD3:
-			if(emu) {
-				emu->close_disk(2);
-			}
-			break;
-		case ID_RECENT_FD31:
-		case ID_RECENT_FD32:
-		case ID_RECENT_FD33:
-		case ID_RECENT_FD34:
-		case ID_RECENT_FD35:
-		case ID_RECENT_FD36:
-		case ID_RECENT_FD37:
-		case ID_RECENT_FD38:
-			no = LOWORD(wParam) - ID_RECENT_FD31;
-			_tcscpy(path, config.recent_disk_path[2][no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_disk_path[2][i], config.recent_disk_path[2][i - 1]);
-			}
-			_tcscpy(config.recent_disk_path[2][0], path);
-			if(emu) {
-				emu->open_disk(path, 2);
-			}
-			break;
+		FD_MENU_ITEMS(2, ID_OPEN_FD3, ID_CLOSE_FD3, ID_RECENT_FD3, ID_SELECT_D88_BANK3)
 #endif
 #ifdef USE_FD4
-		case ID_OPEN_FD4:
-			if(emu) {
-				open_disk(hWnd, 3);
-			}
-			break;
-		case ID_CLOSE_FD4:
-			if(emu) {
-				emu->close_disk(3);
-			}
-			break;
-		case ID_RECENT_FD41:
-		case ID_RECENT_FD42:
-		case ID_RECENT_FD43:
-		case ID_RECENT_FD44:
-		case ID_RECENT_FD45:
-		case ID_RECENT_FD46:
-		case ID_RECENT_FD47:
-		case ID_RECENT_FD48:
-			no = LOWORD(wParam) - ID_RECENT_FD41;
-			_tcscpy(path, config.recent_disk_path[3][no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_disk_path[3][i], config.recent_disk_path[3][i - 1]);
-			}
-			_tcscpy(config.recent_disk_path[3][0], path);
-			if(emu) {
-				emu->open_disk(path, 3);
-			}
-			break;
+		FD_MENU_ITEMS(3, ID_OPEN_FD4, ID_CLOSE_FD4, ID_RECENT_FD4, ID_SELECT_D88_BANK4)
 #endif
 #ifdef USE_FD5
-		case ID_OPEN_FD5:
-			if(emu) {
-				open_disk(hWnd, 4);
-			}
-			break;
-		case ID_CLOSE_FD5:
-			if(emu) {
-				emu->close_disk(4);
-			}
-			break;
-		case ID_RECENT_FD51:
-		case ID_RECENT_FD52:
-		case ID_RECENT_FD53:
-		case ID_RECENT_FD54:
-		case ID_RECENT_FD55:
-		case ID_RECENT_FD56:
-		case ID_RECENT_FD57:
-		case ID_RECENT_FD58:
-			no = LOWORD(wParam) - ID_RECENT_FD51;
-			_tcscpy(path, config.recent_disk_path[4][no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_disk_path[4][i], config.recent_disk_path[4][i - 1]);
-			}
-			_tcscpy(config.recent_disk_path[4][0], path);
-			if(emu) {
-				emu->open_disk(path, 4);
-			}
-			break;
+		FD_MENU_ITEMS(4, ID_OPEN_FD5, ID_CLOSE_FD5, ID_RECENT_FD5, ID_SELECT_D88_BANK5)
 #endif
 #ifdef USE_FD6
-		case ID_OPEN_FD6:
-			if(emu) {
-				open_disk(hWnd, 5);
-			}
-			break;
-		case ID_CLOSE_FD6:
-			if(emu) {
-				emu->close_disk(5);
-			}
-			break;
-		case ID_RECENT_FD61:
-		case ID_RECENT_FD62:
-		case ID_RECENT_FD63:
-		case ID_RECENT_FD64:
-		case ID_RECENT_FD65:
-		case ID_RECENT_FD66:
-		case ID_RECENT_FD67:
-		case ID_RECENT_FD68:
-			no = LOWORD(wParam) - ID_RECENT_FD61;
-			_tcscpy(path, config.recent_disk_path[5][no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_disk_path[5][i], config.recent_disk_path[5][i - 1]);
-			}
-			_tcscpy(config.recent_disk_path[5][0], path);
-			if(emu) {
-				emu->open_disk(path, 5);
-			}
-			break;
+		FD_MENU_ITEMS(5, ID_OPEN_FD6, ID_CLOSE_FD6, ID_RECENT_FD6, ID_SELECT_D88_BANK6)
 #endif
 #ifdef USE_QUICKDISK
 		case ID_OPEN_QUICKDISK:
 			if(emu) {
-				open_quickdisk(hWnd);
+				open_quickdisk_dialog(hWnd);
 			}
 			break;
 		case ID_CLOSE_QUICKDISK:
@@ -931,15 +868,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->close_quickdisk();
 			}
 			break;
-		case ID_RECENT_QUICKDISK1:
-		case ID_RECENT_QUICKDISK2:
-		case ID_RECENT_QUICKDISK3:
-		case ID_RECENT_QUICKDISK4:
-		case ID_RECENT_QUICKDISK5:
-		case ID_RECENT_QUICKDISK6:
-		case ID_RECENT_QUICKDISK7:
-		case ID_RECENT_QUICKDISK8:
-			no = LOWORD(wParam) - ID_RECENT_QUICKDISK1;
+		case ID_RECENT_QUICKDISK + 0:
+		case ID_RECENT_QUICKDISK + 1:
+		case ID_RECENT_QUICKDISK + 2:
+		case ID_RECENT_QUICKDISK + 3:
+		case ID_RECENT_QUICKDISK + 4:
+		case ID_RECENT_QUICKDISK + 5:
+		case ID_RECENT_QUICKDISK + 6:
+		case ID_RECENT_QUICKDISK + 7:
+			no = LOWORD(wParam) - ID_RECENT_QUICKDISK;
 			_tcscpy(path, config.recent_quickdisk_path[no]);
 			for(int i = no; i > 0; i--) {
 				_tcscpy(config.recent_quickdisk_path[i], config.recent_quickdisk_path[i - 1]);
@@ -953,12 +890,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_DATAREC
 		case ID_PLAY_DATAREC:
 			if(emu) {
-				open_datarec(hWnd, TRUE);
+				open_datarec_dialog(hWnd, TRUE);
 			}
 			break;
 		case ID_REC_DATAREC:
 			if(emu) {
-				open_datarec(hWnd, FALSE);
+				open_datarec_dialog(hWnd, FALSE);
 			}
 			break;
 		case ID_CLOSE_DATAREC:
@@ -966,15 +903,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->close_datarec();
 			}
 			break;
-		case ID_RECENT_DATAREC1:
-		case ID_RECENT_DATAREC2:
-		case ID_RECENT_DATAREC3:
-		case ID_RECENT_DATAREC4:
-		case ID_RECENT_DATAREC5:
-		case ID_RECENT_DATAREC6:
-		case ID_RECENT_DATAREC7:
-		case ID_RECENT_DATAREC8:
-			no = LOWORD(wParam) - ID_RECENT_DATAREC1;
+		case ID_RECENT_DATAREC + 0:
+		case ID_RECENT_DATAREC + 1:
+		case ID_RECENT_DATAREC + 2:
+		case ID_RECENT_DATAREC + 3:
+		case ID_RECENT_DATAREC + 4:
+		case ID_RECENT_DATAREC + 5:
+		case ID_RECENT_DATAREC + 6:
+		case ID_RECENT_DATAREC + 7:
+			no = LOWORD(wParam) - ID_RECENT_DATAREC;
 			_tcscpy(path, config.recent_datarec_path[no]);
 			for(int i = no; i > 0; i--) {
 				_tcscpy(config.recent_datarec_path[i], config.recent_datarec_path[i - 1]);
@@ -1000,7 +937,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_MEDIA
 		case ID_OPEN_MEDIA:
 			if(emu) {
-				open_media(hWnd);
+				open_media_dialog(hWnd);
 			}
 			break;
 		case ID_CLOSE_MEDIA:
@@ -1008,15 +945,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->close_media();
 			}
 			break;
-		case ID_RECENT_MEDIA1:
-		case ID_RECENT_MEDIA2:
-		case ID_RECENT_MEDIA3:
-		case ID_RECENT_MEDIA4:
-		case ID_RECENT_MEDIA5:
-		case ID_RECENT_MEDIA6:
-		case ID_RECENT_MEDIA7:
-		case ID_RECENT_MEDIA8:
-			no = LOWORD(wParam) - ID_RECENT_MEDIA1;
+		case ID_RECENT_MEDIA + 0:
+		case ID_RECENT_MEDIA + 1:
+		case ID_RECENT_MEDIA + 2:
+		case ID_RECENT_MEDIA + 3:
+		case ID_RECENT_MEDIA + 4:
+		case ID_RECENT_MEDIA + 5:
+		case ID_RECENT_MEDIA + 6:
+		case ID_RECENT_MEDIA + 7:
+			no = LOWORD(wParam) - ID_RECENT_MEDIA;
 			_tcscpy(path, config.recent_media_path[no]);
 			for(int i = no; i > 0; i--) {
 				_tcscpy(config.recent_media_path[i], config.recent_media_path[i - 1]);
@@ -1030,23 +967,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_RAM
 		case ID_LOAD_RAM:
 			if(emu) {
-				open_ram(hWnd, TRUE);
+				open_ram_dialog(hWnd, TRUE);
 			}
 			break;
 		case ID_SAVE_RAM:
 			if(emu) {
-				open_ram(hWnd, FALSE);
+				open_ram_dialog(hWnd, FALSE);
 			}
 			break;
-		case ID_RECENT_RAM1:
-		case ID_RECENT_RAM2:
-		case ID_RECENT_RAM3:
-		case ID_RECENT_RAM4:
-		case ID_RECENT_RAM5:
-		case ID_RECENT_RAM6:
-		case ID_RECENT_RAM7:
-		case ID_RECENT_RAM8:
-			no = LOWORD(wParam) - ID_RECENT_RAM1;
+		case ID_RECENT_RAM + 0:
+		case ID_RECENT_RAM + 1:
+		case ID_RECENT_RAM + 2:
+		case ID_RECENT_RAM + 3:
+		case ID_RECENT_RAM + 4:
+		case ID_RECENT_RAM + 5:
+		case ID_RECENT_RAM + 6:
+		case ID_RECENT_RAM + 7:
+			no = LOWORD(wParam) - ID_RECENT_RAM;
 			_tcscpy(path, config.recent_ram_path[no]);
 			for(int i = no; i > 0; i--) {
 				_tcscpy(config.recent_ram_path[i], config.recent_ram_path[i - 1]);
@@ -1119,6 +1056,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case ID_SCREEN_STRETCH:
 			config.stretch_screen = !config.stretch_screen;
+			if(emu) {
+				emu->set_display_size(-1, -1, !now_fullscreen);
+			}
+			break;
+		case ID_SCREEN_WAIT_VSYNC:
+			config.wait_vsync = !config.wait_vsync;
 			if(emu) {
 				emu->set_display_size(-1, -1, !now_fullscreen);
 			}
@@ -1334,125 +1277,74 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// cartridge
 		BOOL flag = FALSE;
 		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_CART1 + i, MF_BYCOMMAND);
+			DeleteMenu(hMenu, ID_RECENT_CART + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_cart_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_CART1 + i, config.recent_cart_path[i]);
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_CART + i, config.recent_cart_path[i]);
 				flag = TRUE;
 			}
 		}
 		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_CART1, _T("None"));
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_CART, _T("None"));
 		}
 	}
 #endif
 #ifdef MENU_POS_FD1
 	else if(pos == MENU_POS_FD1) {
+		#define UPDATE_MENU_FD(drv, ID_RECENT_FD, ID_D88_FILE_PATH, ID_SELECT_D88_BANK) \
+		BOOL flag = FALSE; \
+		while(DeleteMenu(hMenu, 3, MF_BYPOSITION) != 0) {} \
+		if(d88_file[drv].bank_num > 1) { \
+			AppendMenu(hMenu, MF_STRING | MF_GRAYED, ID_D88_FILE_PATH, d88_file[drv].path); \
+			for(int i = 0; i < d88_file[drv].bank_num; i++) { \
+				_TCHAR tmp[32]; \
+				_stprintf(tmp, _T("%d: %s"), i + 1, d88_file[drv].bank[i].name); \
+				AppendMenu(hMenu, MF_STRING | (i == d88_file[drv].cur_bank ? MF_CHECKED : 0), ID_SELECT_D88_BANK + i, tmp); \
+			} \
+			AppendMenu(hMenu, MF_SEPARATOR, 0, NULL); \
+		} \
+		for(int i = 0; i < 8; i++) { \
+			if(_tcscmp(config.recent_disk_path[drv][i], _T(""))) { \
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD + i, config.recent_disk_path[drv][i]); \
+				flag = TRUE; \
+			} \
+		} \
+		if(!flag) { \
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD, _T("None")); \
+		}
 		// floppy drive #1
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_FD11 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk_path[0][i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD11 + i, config.recent_disk_path[0][i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD11, _T("None"));
-		}
+		UPDATE_MENU_FD(0, ID_RECENT_FD1, ID_D88_FILE_PATH1, ID_SELECT_D88_BANK1)
 	}
 #endif
 #ifdef MENU_POS_FD2
 	else if(pos == MENU_POS_FD2) {
 		// floppy drive #2
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_FD21 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk_path[1][i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD21 + i, config.recent_disk_path[1][i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD21, _T("None"));
-		}
+		UPDATE_MENU_FD(1, ID_RECENT_FD2, ID_D88_FILE_PATH2, ID_SELECT_D88_BANK2)
 	}
 #endif
 #ifdef MENU_POS_FD3
 	else if(pos == MENU_POS_FD3) {
 		// floppy drive #3
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_FD31 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk_path[2][i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD31 + i, config.recent_disk_path[2][i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD31, _T("None"));
-		}
+		UPDATE_MENU_FD(2, ID_RECENT_FD3, ID_D88_FILE_PATH3, ID_SELECT_D88_BANK3)
 	}
 #endif
 #ifdef MENU_POS_FD4
 	else if(pos == MENU_POS_FD4) {
 		// floppy drive #4
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_FD41 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk_path[3][i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD41 + i, config.recent_disk_path[3][i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD41, _T("None"));
-		}
+		UPDATE_MENU_FD(3, ID_RECENT_FD4, ID_D88_FILE_PATH4, ID_SELECT_D88_BANK4)
 	}
 #endif
 #ifdef MENU_POS_FD5
 	else if(pos == MENU_POS_FD5) {
 		// floppy drive #5
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_FD51 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk_path[4][i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD51 + i, config.recent_disk_path[4][i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD51, _T("None"));
-		}
+		UPDATE_MENU_FD(4, ID_RECENT_FD5, ID_D88_FILE_PATH5, ID_SELECT_D88_BANK5)
 	}
 #endif
 #ifdef MENU_POS_FD6
 	else if(pos == MENU_POS_FD6) {
 		// floppy drive #6
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_FD61 + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk_path[5][i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD61 + i, config.recent_disk_path[5][i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD61, _T("None"));
-		}
+		UPDATE_MENU_FD(5, ID_RECENT_FD6, ID_D88_FILE_PATH6, ID_SELECT_D88_BANK6)
 	}
 #endif
 #ifdef MENU_POS_QUICKDISK
@@ -1460,16 +1352,16 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// quick disk drive
 		BOOL flag = FALSE;
 		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_QUICKDISK1 + i, MF_BYCOMMAND);
+			DeleteMenu(hMenu, ID_RECENT_QUICKDISK + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_quickdisk_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_QUICKDISK1 + i, config.recent_quickdisk_path[i]);
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_QUICKDISK + i, config.recent_quickdisk_path[i]);
 				flag = TRUE;
 			}
 		}
 		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_QUICKDISK1, _T("None"));
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_QUICKDISK, _T("None"));
 		}
 	}
 #endif
@@ -1478,16 +1370,16 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// data recorder
 		BOOL flag = FALSE;
 		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_DATAREC1 + i, MF_BYCOMMAND);
+			DeleteMenu(hMenu, ID_RECENT_DATAREC + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_datarec_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC1 + i, config.recent_datarec_path[i]);
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC + i, config.recent_datarec_path[i]);
 				flag = TRUE;
 			}
 		}
 		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_DATAREC1, _T("None"));
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_DATAREC, _T("None"));
 		}
 	}
 #endif
@@ -1496,16 +1388,16 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// media
 		BOOL flag = FALSE;
 		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_MEDIA1 + i, MF_BYCOMMAND);
+			DeleteMenu(hMenu, ID_RECENT_MEDIA + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_media_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA1 + i, config.recent_media_path[i]);
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA + i, config.recent_media_path[i]);
 				flag = TRUE;
 			}
 		}
 		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MEDIA1, _T("None"));
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MEDIA, _T("None"));
 		}
 	}
 #endif
@@ -1514,16 +1406,16 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// ram
 		BOOL flag = FALSE;
 		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_RAM1 + i, MF_BYCOMMAND);
+			DeleteMenu(hMenu, ID_RECENT_RAM + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
 			if(_tcscmp(config.recent_ram_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_RAM1 + i, config.recent_ram_path[i]);
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_RAM + i, config.recent_ram_path[i]);
 				flag = TRUE;
 			}
 		}
 		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_RAM1, _T("None"));
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_RAM, _T("None"));
 		}
 	}
 #endif
@@ -1577,8 +1469,8 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		else if(config.window_mode >= 8 && config.window_mode < screen_mode_count + 8) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_FULLSCREEN1 + config.window_mode - 8, MF_BYCOMMAND);
 		}
-		// stretch screen
 		CheckMenuItem(hMenu, ID_SCREEN_STRETCH, config.stretch_screen ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_SCREEN_WAIT_VSYNC, config.wait_vsync ? MF_CHECKED : MF_UNCHECKED);
 		
 #ifdef USE_MONITOR_TYPE
 		if(config.monitor_type >= 0 && config.monitor_type < USE_MONITOR_TYPE) {
@@ -1623,7 +1515,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 }
 
 #ifdef USE_CART
-void open_cart(HWND hWnd)
+void open_cart_dialog(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
@@ -1644,23 +1536,87 @@ void open_cart(HWND hWnd)
 #endif
 
 #ifdef USE_FD1
-void open_disk(HWND hWnd, int drv)
+void open_disk_dialog(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.d88;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7)\0*.d88;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.d88;*.d77;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7)\0*.d88;*.d77;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_path
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_disk_path[drv]);
-		emu->open_disk(path, drv);
+		open_disk(drv, path, 0);
 	}
+}
+
+void open_disk(int drv, _TCHAR* path, int bank)
+{
+	d88_file[drv].bank_num = 0;
+	d88_file[drv].cur_bank = -1;
+	d88_file[drv].bank[0].offset = 0;
+	
+	if(check_file_extension(path, ".d88") || check_file_extension(path, ".d77")) {
+		FILE *fp = _tfopen(path, _T("rb"));
+		if(fp != NULL) {
+			try {
+				fseek(fp, 0, SEEK_END);
+				int file_size = ftell(fp), file_offset = 0;
+				while(file_offset < file_size && d88_file[drv].bank_num < MAX_D88_BANKS) {
+					d88_file[drv].bank[d88_file[drv].bank_num].offset = file_offset;
+					fseek(fp, file_offset, SEEK_SET);
+#ifdef _UNICODE
+					char tmp[18];
+					fread(tmp, 17, 1, fp);
+					tmp[17] = 0;
+					MultiByteToWideChar(CP_ACP, 0, tmp, -1, d88_file[drv].bank[d88_file[drv].bank_num].name, 18);
+#else
+					fread(d88_file[drv].bank[d88_file[drv].bank_num].name, 17, 1, fp);
+					d88_file[drv].bank[d88_file[drv].bank_num].name[17] = 0;
+#endif
+					fseek(fp, file_offset + 0x1c, SEEK_SET);
+					file_offset += fgetc(fp);
+					file_offset += fgetc(fp) << 8;
+					file_offset += fgetc(fp) << 16;
+					file_offset += fgetc(fp) << 24;
+					d88_file[drv].bank_num++;
+				}
+				_tcscpy(d88_file[drv].path, path);
+				d88_file[drv].cur_bank = bank;
+			}
+			catch(...) {
+				d88_file[drv].bank_num = 0;
+			}
+		}
+	}
+	emu->open_disk(drv, path, d88_file[drv].bank[bank].offset);
+#ifdef USE_FD2
+	if(drv == 0 && bank + 1 < d88_file[drv].bank_num) {
+		open_disk(drv + 1, path, bank + 1);
+	}
+#endif
+#ifdef USE_FD4
+	if(drv == 2 && bank + 1 < d88_file[drv].bank_num) {
+		open_disk(drv + 1, path, bank + 1);
+	}
+#endif
+#ifdef USE_FD6
+	if(drv == 4 && bank + 1 < d88_file[drv].bank_num) {
+		open_disk(drv + 1, path, bank + 1);
+	}
+#endif
+}
+
+void close_disk(int drv)
+{
+	emu->close_disk(drv);
+	d88_file[drv].cur_bank = -1;
+
 }
 #endif
 
 #ifdef USE_QUICKDISK
-void open_quickdisk(HWND hWnd)
+void open_quickdisk_dialog(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
@@ -1676,7 +1632,7 @@ void open_quickdisk(HWND hWnd)
 #endif
 
 #ifdef USE_DATAREC
-void open_datarec(HWND hWnd, BOOL play)
+void open_datarec_dialog(HWND hWnd, BOOL play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
@@ -1705,7 +1661,7 @@ void open_datarec(HWND hWnd, BOOL play)
 #endif
 
 #ifdef USE_MEDIA
-void open_media(HWND hWnd)
+void open_media_dialog(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
@@ -1721,7 +1677,7 @@ void open_media(HWND hWnd)
 #endif
 
 #ifdef USE_RAM
-void open_ram(HWND hWnd, BOOL load)
+void open_ram_dialog(HWND hWnd, BOOL load)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,

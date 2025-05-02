@@ -932,10 +932,10 @@ void MB8877::set_drq(bool val)
 // user interface
 // ----------------------------------------------------------------------------
 
-void MB8877::open_disk(_TCHAR path[], int drv)
+void MB8877::open_disk(int drv, _TCHAR path[], int offset)
 {
 	if(drv < MAX_DRIVE) {
-		disk[drv]->open(path);
+		disk[drv]->open(path, offset);
 	}
 }
 

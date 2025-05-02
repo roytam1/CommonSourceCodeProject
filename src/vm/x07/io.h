@@ -103,8 +103,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	void set_context_beep(BEEP* device) {
 		d_beep = device;

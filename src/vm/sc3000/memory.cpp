@@ -79,11 +79,11 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-void MEMORY::open_cart(_TCHAR* filename)
+void MEMORY::open_cart(_TCHAR* file_path)
 {
 	FILEIO* fio = new FILEIO();
 	
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		memset(cart, 0xff, sizeof(cart));
 		fio->Fread(cart, sizeof(cart), 1);
 		fio->Fclose();

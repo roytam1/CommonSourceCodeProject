@@ -196,9 +196,9 @@ void VM::initialize_sound(int rate, int samples)
 	// init sound gen
 	pc88beep->init(rate, 2400, 8000);
 #ifdef HAS_YM2608
-	pc88opn->init(rate, 7987200, samples, 0, 0);
+	pc88opn->init(rate, 7987248, samples, 0, 0);
 #else
-	pc88opn->init(rate, 3993600, samples, 0, 0);
+	pc88opn->init(rate, 3993624, samples, 0, 0);
 #endif
 	pc88pcm->init(rate, 8000);
 }
@@ -225,14 +225,19 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(_TCHAR* file_path, int drv)
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	pc88fdc_sub->open_disk(file_path, drv);
+	pc88fdc_sub->open_disk(drv, file_path, offset);
 }
 
 void VM::close_disk(int drv)
 {
 	pc88fdc_sub->close_disk(drv);
+}
+
+bool VM::disk_inserted(int drv)
+{
+	return pc88fdc_sub->disk_inserted(drv);
 }
 
 bool VM::now_skip()

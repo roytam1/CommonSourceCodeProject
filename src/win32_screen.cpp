@@ -19,7 +19,10 @@ void EMU::initialize_screen()
 	screen_height_aspect = SCREEN_HEIGHT_ASPECT;
 	window_width = WINDOW_WIDTH;
 	window_height = WINDOW_HEIGHT;
+	screen_size_changed = TRUE;
 	
+	source_width = source_height = -1;
+	source_width_aspect = source_height_aspect = -1;
 	stretch_pow_x = stretch_pow_y = -1;
 	stretch_screen = FALSE;
 	
@@ -34,6 +37,17 @@ void EMU::initialize_screen()
 	hdcDibStretch1 = hdcDibStretch2 = NULL;
 	hBmpStretch1 = hBmpStretch2 = NULL;
 	lpBufStretch1 = lpBufStretch2 = NULL;
+	
+#ifdef USE_D3D9
+	// initialize d3d9
+	lpd3d9 = NULL;
+	lpd3d9Device = NULL;
+	lpd3d9Surface = NULL;
+	lpd3d9OffscreenSurface = NULL;
+	lpd3d9Buffer = NULL;
+	render_to_d3d9Buffer = FALSE;
+#endif
+	wait_vsync = (BOOL)config.wait_vsync;
 	
 	// initialize video recording
 	now_rec_vid = FALSE;
@@ -61,6 +75,38 @@ void EMU::initialize_screen()
 	} \
 }
 
+#ifdef USE_D3D9
+#define release_d3d9() { \
+	if(lpd3d9OffscreenSurface) { \
+		lpd3d9OffscreenSurface->Release(); \
+		lpd3d9OffscreenSurface = NULL; \
+	} \
+	if(lpd3d9Surface) { \
+		lpd3d9Surface->Release(); \
+		lpd3d9Surface = NULL; \
+	} \
+	if(lpd3d9Device) { \
+		lpd3d9Device->Release(); \
+		lpd3d9Device = NULL; \
+	} \
+	if(lpd3d9) { \
+		lpd3d9->Release(); \
+		lpd3d9 = NULL; \
+	} \
+}
+
+#define release_d3d9_surface() { \
+	if(lpd3d9OffscreenSurface) { \
+		lpd3d9OffscreenSurface->Release(); \
+		lpd3d9OffscreenSurface = NULL; \
+	} \
+	if(lpd3d9Surface) { \
+		lpd3d9Surface->Release(); \
+		lpd3d9Surface = NULL; \
+	} \
+}
+#endif
+
 void EMU::release_screen()
 {
 	// stop video recording
@@ -73,6 +119,11 @@ void EMU::release_screen()
 #endif
 	release_dib_section(hdcDibStretch1, hBmpStretch1, lpBufStretch1);
 	release_dib_section(hdcDibStretch2, hBmpStretch2, lpBufStretch2);
+	
+#ifdef USE_D3D9
+	// release d3d9
+	release_d3d9();
+#endif
 }
 
 void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib)
@@ -131,15 +182,24 @@ int EMU::get_window_height(int mode) {
 
 void EMU::set_display_size(int width, int height, BOOL window_mode)
 {
+	BOOL display_size_changed = FALSE;
 	BOOL stretch_changed = FALSE;
 	
 	if(width != -1 && (display_width != width || display_height != height)) {
 		display_width = width;
 		display_height = height;
-		stretch_changed = true;
+		display_size_changed = stretch_changed = TRUE;
+	}
+	if(wait_vsync != (BOOL)config.wait_vsync) {
+		wait_vsync = (BOOL)config.wait_vsync;
+		display_size_changed = stretch_changed = TRUE;
 	}
 	
-	int source_width_aspect, source_height_aspect;
+#ifdef USE_D3D9
+	// virtual machine renders to d3d9 buffer directly???
+	render_to_d3d9Buffer = TRUE;
+#endif
+	
 #ifdef USE_SCREEN_ROTATE
 	if(config.monitor_type) {
 		hdcDibSource = hdcDibRotate;
@@ -147,10 +207,18 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 		lpDibSource = lpDibRotate;
 		pbmInfoHeader = &lpDibRotate->bmiHeader;
 		
+		stretch_changed |= (source_width != screen_height);
+		stretch_changed |= (source_height != screen_width);
+		stretch_changed |= (source_width_aspect != screen_height_aspect);
+		stretch_changed |= (source_height_aspect != screen_width_aspect);
+		
 		source_width = screen_height;
 		source_height = screen_width;
 		source_width_aspect = screen_height_aspect;
 		source_height_aspect = screen_width_aspect;
+#ifdef USE_D3D9
+		render_to_d3d9Buffer = FALSE;
+#endif
 	}
 	else {
 #endif
@@ -158,6 +226,11 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 		lpBmpSource = lpBmp;
 		lpDibSource = lpDib;
 		pbmInfoHeader = &lpDib->bmiHeader;
+		
+		stretch_changed |= (source_width != screen_width);
+		stretch_changed |= (source_height != screen_height);
+		stretch_changed |= (source_width_aspect != screen_width_aspect);
+		stretch_changed |= (source_height_aspect != screen_height_aspect);
 		
 		source_width = screen_width;
 		source_height = screen_height;
@@ -168,7 +241,7 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 #endif
 	
 	int new_pow_x = 1, new_pow_y = 1;
-	if(!window_mode && config.stretch_screen) {
+	if(config.stretch_screen && !window_mode) {
 		// fit to full screen
 		stretched_width = (display_height * source_width_aspect) / source_height_aspect;
 		stretched_height = display_height;
@@ -176,16 +249,13 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 			stretched_width = display_width;
 			stretched_height = (display_width * source_height_aspect) / source_width_aspect;
 		}
-#if 0
-		// NOTE: high quality but too slow
+#ifdef USE_D3D9
+		// support high quality stretch in d3d9 mode
 		while(stretched_width > source_width * new_pow_x) {
 			new_pow_x++;
 		}
 		while(stretched_height > source_height * new_pow_y) {
 			new_pow_y++;
-		}
-		if(stretched_width == source_width * new_pow_x && stretched_height == source_height * new_pow_y) {
-			new_pow_x = new_pow_y = 1;
 		}
 #endif
 	}
@@ -203,20 +273,27 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 		stretched_height = source_height_aspect * tmp_pow;
 		
 #if !(SCREEN_WIDTH_ASPECT == SCREEN_WIDTH && SCREEN_HEIGHT_ASPECT == SCREEN_HEIGHT)
+		// dot aspect is not 1:1, so we need to stretch screen
 		while(stretched_width > source_width * new_pow_x) {
 			new_pow_x++;
 		}
 		while(stretched_height > source_height * new_pow_y) {
 			new_pow_y++;
 		}
+#ifndef USE_D3D9
+		// support high quality stretch only for x1 window size in gdi mode
 		if(new_pow_x > 1 && new_pow_y > 1) {
 			new_pow_x = new_pow_y = 1;
 		}
+#endif
 #endif
 	}
 	screen_dest_x = (display_width - stretched_width) / 2;
 	screen_dest_y = (display_height - stretched_height) / 2;
 	
+	if(stretched_width == source_width * new_pow_x && stretched_height == source_height * new_pow_y) {
+		new_pow_x = new_pow_y = 1;
+	}
 	if(stretch_pow_x != new_pow_x || stretch_pow_y != new_pow_y) {
 		stretch_pow_x = new_pow_x;
 		stretch_pow_y = new_pow_y;
@@ -232,14 +309,64 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 			HDC hdc = GetDC(main_window_handle);
 			create_dib_section(hdc, source_width * stretch_pow_x, source_height * stretch_pow_y, &hdcDibStretch1, &hBmpStretch1, &lpBufStretch1, &lpBmpStretch1, &lpDibStretch1);
 			SetStretchBltMode(hdcDibStretch1, COLORONCOLOR);
+#ifndef USE_D3D9
 			create_dib_section(hdc, stretched_width, stretched_height, &hdcDibStretch2, &hBmpStretch2, &lpBufStretch2, &lpBmpStretch2, &lpDibStretch2);
 			SetStretchBltMode(hdcDibStretch2, HALFTONE);
+#endif
 			stretch_screen = TRUE;
 		}
+		
+#ifdef USE_D3D9
+		if(display_size_changed) {
+			// release and initialize d3d9
+			release_d3d9();
+			
+			if((lpd3d9 = Direct3DCreate9(D3D_SDK_VERSION)) != NULL) {
+				// initialize present params
+				D3DPRESENT_PARAMETERS d3dpp;
+				ZeroMemory(&d3dpp, sizeof(d3dpp));
+				d3dpp.Windowed = TRUE;
+				d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+				d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+				d3dpp.PresentationInterval = config.wait_vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+				
+				// create d3d9 device
+				HRESULT hr = lpd3d9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, main_window_handle, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9Device);
+				if(hr != D3D_OK) {
+					hr = lpd3d9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9Device);
+					if(hr != D3D_OK) {
+						hr = lpd3d9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9Device);
+					}
+				}
+				if(hr != D3D_OK) {
+					release_d3d9();
+				}
+			}
+		}
+		if(lpd3d9Device != NULL) {
+			// release and create d3d9 surfaces
+			release_d3d9_surface();
+			
+			HRESULT hr = lpd3d9Device->CreateOffscreenPlainSurface(source_width * stretch_pow_x, source_height * stretch_pow_y, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &lpd3d9Surface, NULL);
+			if(hr == D3D_OK) {
+				hr = lpd3d9Device->CreateOffscreenPlainSurface(source_width * stretch_pow_x, source_height * stretch_pow_y, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, &lpd3d9OffscreenSurface, NULL);
+			}
+			if(hr == D3D_OK) {
+				lpd3d9Device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 0.0, 0);
+			}
+			else {
+				release_d3d9();
+			}
+		}
+		if(stretch_screen) {
+			render_to_d3d9Buffer = FALSE;
+		}
+#endif
 	}
 	
 	first_draw_screen = FALSE;
 	first_invalidate = TRUE;
+	screen_size_changed = FALSE;
 }
 
 void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
@@ -252,6 +379,7 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 		screen_height_aspect = (sha != -1) ? sha : sh;
 		window_width = ww;
 		window_height = wh;
+		screen_size_changed = TRUE;
 		
 		// re-create dib sections
 		HDC hdc = GetDC(main_window_handle);
@@ -276,8 +404,36 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 
 void EMU::draw_screen()
 {
+	// don't draw screen before new screen size is applied to buffers
+	if(screen_size_changed) {
+		return;
+	}
+
+#ifdef USE_D3D9
+	// lock offscreen surface
+	D3DLOCKED_RECT pLockedRect;
+	if(lpd3d9OffscreenSurface != NULL && lpd3d9OffscreenSurface->LockRect(&pLockedRect, NULL, 0) == D3D_OK) {
+		lpd3d9Buffer = (scrntype *)pLockedRect.pBits;
+	}
+	else {
+		lpd3d9Buffer = NULL;
+	}
+#endif
+	
 	// draw screen
 	vm->draw_screen();
+	
+	// screen size was changed in vm->draw_screen()
+	if(screen_size_changed) {
+#ifdef USE_D3D9
+		// unlock offscreen surface
+		if(lpd3d9Buffer != NULL) {
+			lpd3d9Buffer = NULL;
+			lpd3d9OffscreenSurface->UnlockRect();
+		}
+#endif
+		return;
+	}
 	
 #ifdef USE_SCREEN_ROTATE
 	// rotate screen
@@ -297,40 +453,72 @@ void EMU::draw_screen()
 	if(stretch_screen) {
 #if 0
 		StretchBlt(hdcDibStretch1, 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y, hdcDibSource, 0, 0, source_width, source_height, SRCCOPY);
-#else		
+#else
+		// about 50% faster than StretchBlt()
 		scrntype* src = lpBmpSource + source_width * (source_height - 1);
 		scrntype* out = lpBmpStretch1 + source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
 		
 		int data_len = source_width * stretch_pow_x;
-		int data_size = sizeof(scrntype) * data_len;
 		
 		for(int y = 0; y < source_height; y++) {
 			if(stretch_pow_x != 1) {
-				for(int x = 0, dx = 0; x < source_width; x++) {
+				scrntype* out_tmp = out;
+				for(int x = 0; x < source_width; x++) {
 					scrntype c = src[x];
 					for(int px = 0; px < stretch_pow_x; px++) {
-						out[dx + px] = c;
+						out_tmp[px] = c;
 					}
-					dx += stretch_pow_x;
+					out_tmp += stretch_pow_x;
 				}
 			}
 			else {
-				memcpy(out, src, data_size);
+				// faster than memcpy()
+				for(int x = 0; x < source_width; x++) {
+					out[x] = src[x];
+				}
 			}
 			if(stretch_pow_y != 1) {
 				scrntype* src_tmp = out;
 				for(int py = 1; py < stretch_pow_y; py++) {
 					out -= data_len;
-					memcpy(out, src_tmp, data_size);
+					// about 10% faster than memcpy()
+					for(int x = 0; x < data_len; x++) {
+						out[x] = src_tmp[x];
+					}
 				}
 			}
 			src -= source_width;
 			out -= data_len;
 		}
 #endif
+#ifndef USE_D3D9
 		StretchBlt(hdcDibStretch2, 0, 0, stretched_width, stretched_height, hdcDibStretch1, 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y, SRCCOPY);
+#endif
 	}
 	first_draw_screen = TRUE;
+	
+#ifdef USE_D3D9
+	// copy bitmap to d3d9 offscreen surface
+	if(lpd3d9Buffer != NULL) {
+		if(!render_to_d3d9Buffer) {
+			scrntype *src = stretch_screen ? lpBmpStretch1 : lpBmpSource;
+			src += source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
+			scrntype *out = lpd3d9Buffer;
+			
+			int data_len = source_width * stretch_pow_x;
+			int data_size = sizeof(scrntype) * data_len;
+			
+			for(int y = 0; y < source_height * stretch_pow_y; y++) {
+				memcpy(out, src, data_size);
+				src -= data_len;
+				out += data_len;
+			}
+		}
+		// unlock offscreen surface
+		lpd3d9Buffer = NULL;
+		lpd3d9OffscreenSurface->UnlockRect();
+	}
+#endif
 	
 	// invalidate window
 	InvalidateRect(main_window_handle, NULL, first_invalidate);
@@ -343,6 +531,16 @@ void EMU::draw_screen()
 			stop_rec_video();
 		}
 	}
+}
+
+scrntype* EMU::screen_buffer(int y)
+{
+#ifdef USE_D3D9
+	if(lpd3d9Buffer != NULL && render_to_d3d9Buffer) {
+		return lpd3d9Buffer + screen_width * y;
+	}
+#endif
+	return lpBmp + screen_width * (screen_height - y - 1);
 }
 
 void EMU::update_screen(HDC hdc)
@@ -363,12 +561,26 @@ void EMU::update_screen(HDC hdc)
 #endif
 	if(first_draw_screen) {
 #ifdef USE_LED
+		// 7-seg LEDs
 		for(int i = 0; i < MAX_LEDS; i++) {
 			int x = leds[i].x;
 			int y = leds[i].y;
 			int w = leds[i].width;
 			int h = leds[i].height;
 			BitBlt(hdc, x, y, w, h, hdcDib, x, y, SRCCOPY);
+		}
+#else
+		// standard screen
+#ifdef USE_D3D9
+		LPDIRECT3DSURFACE9 lpd3d9BackSurface = NULL;
+		if(lpd3d9Device != NULL && lpd3d9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &lpd3d9BackSurface) == D3D_OK && lpd3d9BackSurface != NULL) {
+			RECT rectSrc = { 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y };
+			RECT rectDst = { screen_dest_x, screen_dest_y, screen_dest_x + stretched_width, screen_dest_y + stretched_height };
+			
+			lpd3d9Device->UpdateSurface(lpd3d9OffscreenSurface, NULL, lpd3d9Surface, NULL);
+			lpd3d9Device->StretchRect(lpd3d9Surface, &rectSrc, lpd3d9BackSurface, &rectDst, stretch_screen ? D3DTEXF_LINEAR : D3DTEXF_POINT);
+			lpd3d9BackSurface->Release();
+			lpd3d9Device->Present(NULL, NULL, NULL, NULL);
 		}
 #else
 		if(stretch_screen) {
@@ -384,6 +596,7 @@ void EMU::update_screen(HDC hdc)
 		}
 #endif
 #ifdef USE_ACCESS_LAMP
+		// draw access lamps of drives
 		int status = vm->access_lamp() & 7;
 		static int prev_status = 0;
 		BOOL render_in = (status != 0);
@@ -404,17 +617,20 @@ void EMU::update_screen(HDC hdc)
 			}
 		}
 #endif
+#endif
 		first_invalidate = self_invalidate = FALSE;
 	}
 }
 
-scrntype* EMU::screen_buffer(int y)
-{
-	return lpBmp + screen_width * (screen_height - y - 1);
-}
-
 void EMU::capture_screen()
 {
+#ifdef USE_D3D9
+	// virtual machine may render screen to d3d9 buffer directly...
+	if(render_to_d3d9Buffer) {
+		vm->draw_screen();
+	}
+#endif
+	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	application_path(app_path);
 	_stprintf(file_path, _T("%s%d-%d-%d_%d-%d-%d.bmp"), app_path, sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);

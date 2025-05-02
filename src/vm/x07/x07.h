@@ -104,8 +104,8 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	bool now_skip();
 	

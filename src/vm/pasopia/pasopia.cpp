@@ -230,14 +230,14 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::play_datarec(_TCHAR* filename)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	drec->play_datarec(filename);
+	drec->play_datarec(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	drec->rec_datarec(filename);
+	drec->rec_datarec(file_path);
 }
 
 void VM::close_datarec()

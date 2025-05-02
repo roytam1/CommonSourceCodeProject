@@ -126,9 +126,9 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* filename)
+void VM::open_cart(_TCHAR* file_path)
 {
-	memory->open_cart(filename);
+	memory->open_cart(file_path);
 	reset();
 }
 

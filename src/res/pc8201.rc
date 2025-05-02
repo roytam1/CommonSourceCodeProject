@@ -129,6 +129,7 @@ BEGIN
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
     END
     POPUP "Sound"
     BEGIN

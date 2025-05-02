@@ -94,14 +94,7 @@ BEGIN
         MENUITEM "Load",                        ID_LOAD_RAM
         MENUITEM "Save",                        ID_SAVE_RAM
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_RAM1
-        MENUITEM "Recent 2",                    ID_RECENT_RAM2
-        MENUITEM "Recent 3",                    ID_RECENT_RAM3
-        MENUITEM "Recent 4",                    ID_RECENT_RAM4
-        MENUITEM "Recent 5",                    ID_RECENT_RAM5
-        MENUITEM "Recent 6",                    ID_RECENT_RAM6
-        MENUITEM "Recent 7",                    ID_RECENT_RAM7
-        MENUITEM "Recent 8",                    ID_RECENT_RAM8
+        MENUITEM "Recent",                      ID_RECENT_RAM
     END
 END
 

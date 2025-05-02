@@ -248,14 +248,19 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(_TCHAR* filename, int drv)
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	fdc->open_disk(filename, drv);
+	fdc->open_disk(drv, file_path, offset);
 }
 
 void VM::close_disk(int drv)
 {
 	fdc->close_disk(drv);
+}
+
+bool VM::disk_inserted(int drv)
+{
+	return fdc->disk_inserted(drv);
 }
 
 bool VM::now_skip()

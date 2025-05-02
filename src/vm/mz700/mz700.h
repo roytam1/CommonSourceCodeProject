@@ -185,16 +185,17 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 	void push_play();
 	void push_stop();
 #if defined(_MZ800) || defined(_MZ1500)
-	void open_quickdisk(_TCHAR* filename);
+	void open_quickdisk(_TCHAR* file_path);
 	void close_quickdisk();
-	void open_disk(_TCHAR* filename, int drv);
+	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
+	bool disk_inserted(int drv);
 #endif
 	bool now_skip();
 	

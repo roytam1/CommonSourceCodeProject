@@ -141,9 +141,9 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* filename)
+void VM::open_cart(_TCHAR* file_path)
 {
-	memory->open_cart(filename);
+	memory->open_cart(file_path);
 	reset();
 }
 
@@ -153,14 +153,14 @@ void VM::close_cart()
 	reset();
 }
 
-void VM::play_datarec(_TCHAR* filename)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	drec->play_datarec(filename);
+	drec->play_datarec(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	drec->rec_datarec(filename);
+	drec->rec_datarec(file_path);
 }
 
 void VM::close_datarec()

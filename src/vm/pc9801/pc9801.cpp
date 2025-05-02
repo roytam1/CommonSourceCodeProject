@@ -720,7 +720,7 @@ void VM::initialize_sound(int rate, int samples)
 	beep->init(rate, 8000);
 #endif
 #ifdef HAS_YM2608
-	opn->init(rate, 7987200, samples, 0, 0);
+	opn->init(rate, 7987248, samples, 0, 0);
 #else
 	opn->init(rate, 3993600, samples, 0, 0);
 #endif
@@ -732,9 +732,9 @@ void VM::initialize_sound(int rate, int samples)
 	// init sound gen
 	pc88beep->init(rate, 2400, 8000);
 #ifdef HAS_YM2608
-	pc88opn->init(rate, 7987200, samples, 0, 0);
+	pc88opn->init(rate, 7987248, samples, 0, 0);
 #else
-	pc88opn->init(rate, 3993600, samples, 0, 0);
+	pc88opn->init(rate, 3993624, samples, 0, 0);
 #endif
 	pc88pcm->init(rate, 8000);
 #endif
@@ -787,29 +787,29 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(_TCHAR* file_path, int drv)
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
 #if defined(_PC98DO)
 	if(drv == 0 || drv == 1) {
-		fdc->open_disk(file_path, drv);
+		fdc->open_disk(drv, file_path, offset);
 	}
 	else {
-		pc88fdc_sub->open_disk(file_path, drv - 2);
+		pc88fdc_sub->open_disk(drv - 2, file_path, offset);
 	}
 #elif defined(SUPPORT_OLD_FDD_IF)
 	if(drv == 0 || drv == 1) {
-		fdc_2hd->open_disk(file_path, drv);
+		fdc_2hd->open_disk(drv, file_path, offset);
 	}
 	else if(drv == 2 || drv == 3) {
-		fdc_2dd->open_disk(file_path, drv - 2);
+		fdc_2dd->open_disk(drv - 2, file_path, offset);
 	}
 #if defined(SUPPORT_320KB_FDD_IF)
 	else if(drv == 4 || drv == 5) {
-		fdc_sub->open_disk(file_path, drv - 4);
+		fdc_sub->open_disk(drv - 4, file_path, offset);
 	}
 #endif
 #else
-	fdc->open_disk(file_path, drv);
+	fdc->open_disk(drv, file_path, offset);
 #endif
 }
 
@@ -839,15 +839,41 @@ void VM::close_disk(int drv)
 #endif
 }
 
-#if defined(SUPPORT_CMT_IF)
-void VM::play_datarec(_TCHAR* filename)
+bool VM::disk_inserted(int drv)
 {
-	cmt->play_datarec(filename);
+#if defined(_PC98DO)
+	if(drv == 0 || drv == 1) {
+		return fdc->disk_inserted(drv);
+	}
+	else {
+		return pc88fdc_sub->disk_inserted(drv - 2);
+	}
+#elif defined(SUPPORT_OLD_FDD_IF)
+	if(drv == 0 || drv == 1) {
+		return fdc_2hd->disk_inserted(drv);
+	}
+	else if(drv == 2 || drv == 3) {
+		return fdc_2dd->disk_inserted(drv - 2);
+	}
+#if defined(SUPPORT_320KB_FDD_IF)
+	else if(drv == 4 || drv == 5) {
+		return fdc_sub->disk_inserted(drv - 4);
+	}
+#endif
+#else
+	return fdc->disk_inserted(drv);
+#endif
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+#if defined(SUPPORT_CMT_IF)
+void VM::play_datarec(_TCHAR* file_path)
 {
-	cmt->rec_datarec(filename);
+	cmt->play_datarec(file_path);
+}
+
+void VM::rec_datarec(_TCHAR* file_path)
+{
+	cmt->rec_datarec(file_path);
 }
 
 void VM::close_datarec()

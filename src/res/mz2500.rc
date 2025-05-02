@@ -99,70 +99,35 @@ BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD11
-        MENUITEM "Recent 2",                    ID_RECENT_FD12
-        MENUITEM "Recent 3",                    ID_RECENT_FD13
-        MENUITEM "Recent 4",                    ID_RECENT_FD14
-        MENUITEM "Recent 5",                    ID_RECENT_FD15
-        MENUITEM "Recent 6",                    ID_RECENT_FD16
-        MENUITEM "Recent 7",                    ID_RECENT_FD17
-        MENUITEM "Recent 8",                    ID_RECENT_FD18
+        MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FDD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD21
-        MENUITEM "Recent 2",                    ID_RECENT_FD22
-        MENUITEM "Recent 3",                    ID_RECENT_FD23
-        MENUITEM "Recent 4",                    ID_RECENT_FD24
-        MENUITEM "Recent 5",                    ID_RECENT_FD25
-        MENUITEM "Recent 6",                    ID_RECENT_FD26
-        MENUITEM "Recent 7",                    ID_RECENT_FD27
-        MENUITEM "Recent 8",                    ID_RECENT_FD28
+        MENUITEM "Recent",                      ID_RECENT_FD2
     END
     POPUP "FDD3"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD3
         MENUITEM "Close",                       ID_CLOSE_FD3
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD31
-        MENUITEM "Recent 2",                    ID_RECENT_FD32
-        MENUITEM "Recent 3",                    ID_RECENT_FD33
-        MENUITEM "Recent 4",                    ID_RECENT_FD34
-        MENUITEM "Recent 5",                    ID_RECENT_FD35
-        MENUITEM "Recent 6",                    ID_RECENT_FD36
-        MENUITEM "Recent 7",                    ID_RECENT_FD37
-        MENUITEM "Recent 8",                    ID_RECENT_FD38
+        MENUITEM "Recent",                      ID_RECENT_FD3
     END
     POPUP "FDD4"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD4
         MENUITEM "Close",                       ID_CLOSE_FD4
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD41
-        MENUITEM "Recent 2",                    ID_RECENT_FD42
-        MENUITEM "Recent 3",                    ID_RECENT_FD43
-        MENUITEM "Recent 4",                    ID_RECENT_FD44
-        MENUITEM "Recent 5",                    ID_RECENT_FD45
-        MENUITEM "Recent 6",                    ID_RECENT_FD46
-        MENUITEM "Recent 7",                    ID_RECENT_FD47
-        MENUITEM "Recent 8",                    ID_RECENT_FD48
+        MENUITEM "Recent",                      ID_RECENT_FD4
     END
     POPUP "Cassette"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_MEDIA
         MENUITEM "Close",                       ID_CLOSE_MEDIA
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_MEDIA1
-        MENUITEM "Recent 2",                    ID_RECENT_MEDIA2
-        MENUITEM "Recent 3",                    ID_RECENT_MEDIA3
-        MENUITEM "Recent 4",                    ID_RECENT_MEDIA4
-        MENUITEM "Recent 5",                    ID_RECENT_MEDIA5
-        MENUITEM "Recent 6",                    ID_RECENT_MEDIA6
-        MENUITEM "Recent 7",                    ID_RECENT_MEDIA7
-        MENUITEM "Recent 8",                    ID_RECENT_MEDIA8
+        MENUITEM "Recent",                      ID_RECENT_MEDIA
     END
     POPUP "Screen"
     BEGIN
@@ -201,6 +166,7 @@ BEGIN
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
         MENUITEM SEPARATOR
         MENUITEM "400 Lines, Analog",           ID_SCREEN_MONITOR_TYPE0
         MENUITEM "400 Lines, Digital",          ID_SCREEN_MONITOR_TYPE1

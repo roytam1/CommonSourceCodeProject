@@ -47,7 +47,7 @@ public:
 		d_sio = device;
 		did_sio = id;
 	}
-	void open_disk(_TCHAR path[], int drv);
+	void open_disk(int drv, _TCHAR path[], int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 };

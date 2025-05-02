@@ -96,11 +96,11 @@ uint32 CMT::read_io8(uint32 addr)
 	return val;
 }
 
-void CMT::play_datarec(_TCHAR* filename)
+void CMT::play_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// open for play
 		fio->Fread(buffer, sizeof(buffer), 1);
 		bufcnt = 0;
@@ -109,11 +109,11 @@ void CMT::play_datarec(_TCHAR* filename)
 	}
 }
 
-void CMT::rec_datarec(_TCHAR* filename)
+void CMT::rec_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		// open for rec
 		memset(buffer, 0, sizeof(buffer));
 		bufcnt = 0;

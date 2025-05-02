@@ -421,9 +421,9 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(_TCHAR* filename, int drv)
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	fdc->open_disk(filename, drv);
+	fdc->open_disk(drv, file_path, offset);
 }
 
 void VM::close_disk(int drv)
@@ -431,17 +431,22 @@ void VM::close_disk(int drv)
 	fdc->close_disk(drv);
 }
 
-void VM::play_datarec(_TCHAR* filename)
+bool VM::disk_inserted(int drv)
 {
-	bool value = drec->play_datarec(filename);
+	return fdc->disk_inserted(drv);
+}
+
+void VM::play_datarec(_TCHAR* file_path)
+{
+	bool value = drec->play_datarec(file_path);
 	
 	sub->close_datarec();
 	sub->play_datarec(value);
 }
 
-void VM::rec_datarec(_TCHAR* filename)
+void VM::rec_datarec(_TCHAR* file_path)
 {
-	bool value = drec->rec_datarec(filename);
+	bool value = drec->rec_datarec(file_path);
 	
 	sub->close_datarec();
 	sub->rec_datarec(value);
@@ -470,9 +475,9 @@ bool VM::now_skip()
 }
 
 #ifdef _X1TWIN
-void VM::open_cart(_TCHAR* filename)
+void VM::open_cart(_TCHAR* file_path)
 {
-	pce->open_cart(filename);
+	pce->open_cart(file_path);
 	pce->reset();
 	pcecpu->reset();
 }

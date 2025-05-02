@@ -60,7 +60,7 @@ public:
 	void set_context_vdp(DEVICE* device) {
 		d_vdp = device;
 	}
-	void open_cart(_TCHAR* filename);
+	void open_cart(_TCHAR* file_path);
 	void close_cart();
 };
 

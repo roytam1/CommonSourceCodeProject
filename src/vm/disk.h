@@ -48,10 +48,12 @@ private:
 	_TCHAR file_path[_MAX_PATH];
 	_TCHAR tmp_path[_MAX_PATH];
 	int file_size;
+	int file_offset;
 	uint32 crc32;
 	bool temporary;
 	
 	bool check_media_type();
+	bool check_file_extension(_TCHAR* file_path, _TCHAR* ext);
 	
 	// teledisk image decoder (td0)
 	bool teledisk_to_d88();
@@ -137,7 +139,7 @@ public:
 	DISK();
 	~DISK();
 	
-	void open(_TCHAR path[]);
+	void open(_TCHAR path[], int offset);
 	void close();
 	bool get_track(int trk, int side);
 	bool make_track(int trk, int side);

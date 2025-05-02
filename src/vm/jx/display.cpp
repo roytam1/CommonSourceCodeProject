@@ -163,11 +163,26 @@ void DISPLAY::draw_screen()
 	
 	memset(screen, 0, sizeof(screen));
 	
-	// render screen
+	// change screen size
 	if((hires_mode & 3) == 1) {
 		screen_width = width = 640;
 		screen_height = 400;
+	}
+	else {
+		screen_width = width = 720;
+		screen_height = 512;
+	}
+	if(!(prev_width == screen_width && prev_height == screen_height)) {
+		emu->change_screen_size(screen_width, screen_height, -1, -1, screen_width, screen_height);
+		prev_width = screen_width;
+		prev_height = screen_height;
 		
+		// we need to wait until screen manager updates buffer size
+		return;
+	}
+	
+	// render screen
+	if((hires_mode & 3) == 1) {
 		switch(mode1 & 0x1a) {
 		case 0x08:
 			if(!(mode1 & 1)) {
@@ -200,9 +215,6 @@ void DISPLAY::draw_screen()
 		}
 	}
 	else {
-		screen_width = width = 720;
-		screen_height = 512;
-		
 		switch(hires_mode & 3) {
 		case 0:
 			if(!(mode1 & 1)) {
@@ -219,13 +231,6 @@ void DISPLAY::draw_screen()
 			draw_graph_720x512_2col();
 			break;
 		}
-	}
-	
-	// change window size
-	if(!(prev_width == screen_width && prev_height == screen_height)) {
-		emu->change_screen_size(screen_width, screen_height, -1, -1, screen_width, screen_height);
-		prev_width = screen_width;
-		prev_height = screen_height;
 	}
 	
 	// copy to real screen

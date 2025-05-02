@@ -94,8 +94,8 @@ public:
 	void key_down(int code);
 	void key_up(int code);
 	void draw_screen();
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
 };
 

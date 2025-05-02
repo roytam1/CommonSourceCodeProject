@@ -745,11 +745,11 @@ void MEMORY::send_to_main(uint8 val)
 	d_cpu->write_signal(SIG_MC6801_SIO_RECV, val, 0xff);
 }
 
-void MEMORY::play_datarec(_TCHAR* filename)
+void MEMORY::play_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(datarec_fio->Fopen(filename, FILEIO_READ_BINARY)) {
+	if(datarec_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		memset(datarec_buffer, 0, sizeof(datarec_buffer));
 		datarec_fio->Fread(datarec_buffer, sizeof(datarec_buffer), 1);
 		datarec_count = 0;
@@ -757,11 +757,11 @@ void MEMORY::play_datarec(_TCHAR* filename)
 	}
 }
 
-void MEMORY::rec_datarec(_TCHAR* filename)
+void MEMORY::rec_datarec(_TCHAR* file_path)
 {
 	close_datarec();
 	
-	if(datarec_fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+	if(datarec_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		datarec_count = 0;
 		datarec_rec = true;
 	}

@@ -127,11 +127,11 @@ static uint32 getcrc32(uint8 data[], int size)
 	return ~c;
 }
 
-void DISK::open(_TCHAR path[])
+void DISK::open(_TCHAR path[], int offset)
 {
 	// check current disk image
 	if(inserted) {
-		if(_tcsicmp(file_path, path) == 0) {
+		if(_tcsicmp(file_path, path) == 0 && file_offset == offset) {
 			return;
 		}
 		close();
@@ -144,10 +144,27 @@ void DISK::open(_TCHAR path[])
 		_stprintf(tmp_path, _T("%s.$$$"), path);
 		temporary = false;
 		
+		// check if file protected
+		write_protected = fi->IsProtected(path);
+		
+		// is this d88 format ?
+		if(check_file_extension(path, ".d88") || check_file_extension(path, ".d77")) {
+			fi->Fseek(offset + 0x1c, FILEIO_SEEK_SET);
+			file_size = fi->Fgetc();
+			file_size |= fi->Fgetc() << 8;
+			file_size |= fi->Fgetc() << 16;
+			file_size |= fi->Fgetc() << 24;
+			fi->Fseek(offset, FILEIO_SEEK_SET);
+			fi->Fread(buffer, file_size, 1);
+			file_offset = offset;
+			inserted = changed = true;
+			goto file_loaded;
+		}
+		
 		fi->Fseek(0, FILEIO_SEEK_END);
 		file_size = fi->Ftell();
 		fi->Fseek(0, FILEIO_SEEK_SET);
-		write_protected = fi->IsProtected(path);
+		file_offset = 0;
 		
 		// check image file format
 		for(int i = 0;; i++) {
@@ -208,6 +225,9 @@ file_loaded:
 		if(temporary) {
 			fi->Remove(tmp_path);
 		}
+		if(buffer[0x1a] != 0) {
+			write_protected = true;
+		}
 		media_type = buffer[0x1b];
 	}
 	delete fi;
@@ -220,7 +240,8 @@ void DISK::close()
 		if(!write_protected && file_size && getcrc32(buffer, file_size) != crc32) {
 			// write image
 			FILEIO* fio = new FILEIO();
-			if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+			if(fio->Fopen(file_path, FILEIO_READ_WRITE_BINARY)) {
+				fio->Fseek(file_offset, FILEIO_SEEK_SET);
 				fio->Fwrite(buffer, file_size, 1);
 				fio->Fclose();
 			}
@@ -450,6 +471,17 @@ bool DISK::check_media_type()
 		return (media_type == MEDIA_TYPE_2HD);
 	case DRIVE_TYPE_UNK:
 		return true; // always okay
+	}
+	return false;
+}
+
+bool DISK::check_file_extension(_TCHAR* file_path, _TCHAR* ext)
+{
+	int nam_len = _tcslen(file_path);
+	int ext_len = _tcslen(ext);
+	
+	if(nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0) {
+		return true;
 	}
 	return false;
 }

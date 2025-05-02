@@ -1313,10 +1313,10 @@ void UPD765A::shift_to_result7_event()
 // user interface
 // ----------------------------------------------------------------------------
 
-void UPD765A::open_disk(_TCHAR path[], int drv)
+void UPD765A::open_disk(int drv, _TCHAR path[], int offset)
 {
 	if(drv < MAX_DRIVE) {
-		disk[drv]->open(path);
+		disk[drv]->open(path, offset);
 		if(disk[drv]->changed) {
 #ifdef _FDC_DEBUG_LOG
 			emu->out_debug("FDC: Disk Changed (Drive=%d)\n", drv);
