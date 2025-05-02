@@ -16,7 +16,7 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../io.h"
 #include "../mb8877.h"
 #include "../pcm1bit.h"
@@ -49,10 +49,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
+	cpu = new I286(this, emu);
 	pit = new I8253(this, emu);
 	pio0 = new I8255(this, emu);
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	pcm = new PCM1BIT(this, emu);

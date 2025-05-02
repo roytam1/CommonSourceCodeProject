@@ -1250,7 +1250,8 @@ void UPD7801::OP()
 		SP = FETCH16(); break;
 	case 0x05:	// aniw wa,byte
 		ANIW(); break;
-//	case 0x06:
+	case 0x06:
+		break;
 	case 0x07:	// ani a,byte
 		ANI(_A); break;
 	case 0x08:	// ret
@@ -1374,7 +1375,8 @@ void UPD7801::OP()
 		WM8(DE--, _A); break;
 	case 0x3f:	// stax h-
 		WM8(HL--, _A); break;
-//	case 0x40:
+	case 0x40:
+		break;
 	case 0x41:	// inr a
 		INR(_A); break;
 	case 0x42:	// inr b
@@ -1404,7 +1406,8 @@ void UPD7801::OP()
 	case 0x4e:	// jre
 	case 0x4f:	// jre
 		JRE(ope); break;
-//	case 0x50:
+	case 0x50:
+		break;
 	case 0x51:	// dcr a
 		DCR(_A); break;
 	case 0x52:	// dcr b
@@ -1518,7 +1521,7 @@ void UPD7801::OP()
 	case 0xf8: case 0xf9: case 0xfa: case 0xfb: case 0xfc: case 0xfd: case 0xfe: case 0xff:	// jr
 		PC -= 0x20 - (ope & 0x1f); break;
 	default:
-		emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : %2x\n"), prevPC, ope);
+		__assume(0);
 	}
 	PSW &= ~(F_L0 | F_L1);
 }

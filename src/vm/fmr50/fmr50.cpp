@@ -21,7 +21,7 @@
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../i386.h"
 #include "../io.h"
 #include "../mb8877.h"
@@ -113,6 +113,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
+	if(is_i286) {
+		i286 = new I286(this, emu);
+	}
+	else {
+		i386 = new I386(this, emu);
+	}
 	crtc = new HD46505(this, emu);
 #ifdef _FMR60
 	acrtc = new HD63484(this, emu);
@@ -121,12 +127,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0 = new I8253(this, emu);
 	pit1 = new I8253(this, emu);
 	pic = new I8259(this, emu);
-	if(is_i286) {
-		i286 = new I86(this, emu);
-	}
-	else {
-		i386 = new I386(this, emu);
-	}
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	pcm = new PCM1BIT(this, emu);

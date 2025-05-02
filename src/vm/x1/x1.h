@@ -55,7 +55,7 @@
 #ifdef _X1TWIN
 // device informations for virtual machine (pce)
 #define PCE_FRAMES_PER_SEC	60
-#define PCE_LINES_PER_FRAME	263
+#define PCE_LINES_PER_FRAME	262
 #define PCE_CPU_CLOCKS		7159090
 #endif
 
@@ -107,7 +107,7 @@ class MEMORY;
 class SUB;
 
 #ifdef _X1TWIN
-class HUC6260;
+class HUC6280;
 class PCE;
 #endif
 
@@ -149,7 +149,7 @@ protected:
 	// device for pce
 	EVENT* pceevent;
 	
-	HUC6260* pcecpu;
+	HUC6280* pcecpu;
 	PCE* pce;
 #endif
 	

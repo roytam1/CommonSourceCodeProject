@@ -100,23 +100,23 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		else if(pad_strobe) {
 			pad_strobe = false;
 			// joypad #1
-			pad1_bits = 0xff;
-			if(joy_stat[0] & 0x10) pad1_bits &= ~0x01;	// A
-			if(joy_stat[0] & 0x20) pad1_bits &= ~0x02;	// B
-			if(joy_stat[0] & 0x40) pad1_bits &= ~0x04;	// SEL
-			if(joy_stat[0] & 0x80) pad1_bits &= ~0x08;	// START
-			if(joy_stat[0] & 0x02) pad1_bits &= ~0x10;	// DOWN
-			if(joy_stat[0] & 0x01) pad1_bits &= ~0x20;	// UP
-			if(joy_stat[0] & 0x04) pad1_bits &= ~0x40;	// LEFT
-			if(joy_stat[0] & 0x08) pad1_bits &= ~0x80;	// RIGHT
+			pad1_bits = 0;
+			if(joy_stat[0] & 0x10) pad1_bits |= 0x01;	// A
+			if(joy_stat[0] & 0x20) pad1_bits |= 0x02;	// B
+			if(joy_stat[0] & 0x40) pad1_bits |= 0x04;	// SEL
+			if(joy_stat[0] & 0x80) pad1_bits |= 0x08;	// START
+			if(joy_stat[0] & 0x01) pad1_bits |= 0x10;	// UP
+			if(joy_stat[0] & 0x02) pad1_bits |= 0x20;	// DOWN
+			if(joy_stat[0] & 0x04) pad1_bits |= 0x40;	// LEFT
+			if(joy_stat[0] & 0x08) pad1_bits |= 0x80;	// RIGHT
 			// joypad #2
-			pad2_bits = 0xff;
-			if(joy_stat[1] & 0x10) pad2_bits &= ~0x01;	// A
-			if(joy_stat[1] & 0x20) pad2_bits &= ~0x02;	// B
-			if(joy_stat[1] & 0x02) pad2_bits &= ~0x10;	// DOWN
-			if(joy_stat[1] & 0x01) pad2_bits &= ~0x20;	// UP
-			if(joy_stat[1] & 0x04) pad2_bits &= ~0x40;	// LEFT
-			if(joy_stat[1] & 0x08) pad2_bits &= ~0x80;	// RIGHT
+			pad2_bits = 0;
+			if(joy_stat[1] & 0x10) pad2_bits |= 0x01;	// A
+			if(joy_stat[1] & 0x20) pad2_bits |= 0x02;	// B
+			if(joy_stat[1] & 0x01) pad2_bits |= 0x10;	// UP
+			if(joy_stat[1] & 0x02) pad2_bits |= 0x20;	// DOWN
+			if(joy_stat[1] & 0x04) pad2_bits |= 0x40;	// LEFT
+			if(joy_stat[1] & 0x08) pad2_bits |= 0x80;	// RIGHT
 		}
 		// keyboard
 		if((data & 0x07) == 0x04) {

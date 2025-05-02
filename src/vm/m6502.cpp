@@ -966,6 +966,7 @@ void M6502::OP(uint8 code)
 	case 0xfd: { CYCLES(4); RD_ABX_P;          SBC;            } break; /* 4 SBC ABX page penalty */
 	case 0xfe: { CYCLES(7); RD_ABX_NP; RD_EA;  INC; WB_EA;     } break; /* 7 INC ABX */
 	case 0xff: { CYCLES(7); RD_ABX_NP; RD_EA;  ISB; WB_EA;     } break; /* 7 ISB ABX */
+	default: __assume(0);
 	}
 }
 

@@ -461,7 +461,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\huc6260.cpp"
+					RelativePath="src\vm\huc6280.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -966,7 +966,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\huc6260.h"
+					RelativePath="src\vm\huc6280.h"
 					>
 				</File>
 				<File

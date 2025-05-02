@@ -2,8 +2,9 @@
 	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
-	Origin : Ootake (joypad, timer)
-	       : xpce (psg, vdc)
+	Origin : Ootake (joypad)
+	       : xpce (psg)
+	       : MESS (vdc)
 	Author : Takeda.Toshiya
 	Date   : 2009.03.11-
 
@@ -17,64 +18,67 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define	PCE_WIDTH	(360+64)
-#define	PCE_HEIGHT	256
+#define VDC_WPF		684	/* width of a line in frame including blanking areas */
+#define VDC_LPF		262	/* number of lines in a single frame */
+
+class HUC6280;
 
 class PCE : public DEVICE
 {
 private:
-	DEVICE* d_cpu;
+	HUC6280* d_cpu;
 	
 	// memory
 	uint8 ram[0x2000];	// ram 8kb
 	uint8 cart[0x400000];	// max 4mb
+//	uint8 backup[0x800];
 	uint32 bank;
 	uint8 buffer;
 	
 	// vdc
-	typedef struct {
-		int16 y, x, no, atr;
-	} sprtype;
-	pair vdc[32];
-	pair vce[0x200];
-	pair vce_reg;
-	uint16 vdc_inc, vdc_raster_count;
-	uint8 vdc_ch, vdc_status, vdc_ratch, vce_ratch;
-	bool vdc_satb;
-	bool vdc_pendvsync;
-	int vdc_bg_h, vdc_bg_w;
-	int vdc_screen_w, vdc_screen_h;
-	int vdc_minline, vdc_maxline;
-	int vdc_dispwidth, vdc_dispmin, vdc_dispmax;
-	int vdc_scanline;
-	int prv_scanline;
-	bool vdc_scroll;
-	int vdc_scroll_ydiff;
-	int prv_scroll_x, prv_scroll_y, prv_scroll_ydiff;
-	uint8 mask_spr[PCE_HEIGHT][PCE_WIDTH];
-	uint32 pixel_bg[0x20000], pixel_spr[0x20000];
-	uint8 vchange[0x1000], vchanges[0x400];
-	bool vdc_spbg;
-	scrntype screen[PCE_HEIGHT][PCE_WIDTH + 8];	// 8 for xofs
-	scrntype palette_bg[256], palette_spr[256];
-	uint8 vram[0x20000];
-	uint16 spram[256];
+	struct {
+		int dvssr_write;		/* Set when the DVSSR register has been written to */
+		int physical_width;		/* Width of the display */
+		int physical_height;		/* Height of the display */
+		uint16 sprite_ram[64*4];	/* Sprite RAM */
+		int curline;			/* the current scanline we're on */
+		int current_segment;		/* current segment of display */
+		int current_segment_line;	/* current line inside a segment of display */
+		int vblank_triggered;		/* to indicate whether vblank has been triggered */
+		int raster_count;		/* counter to compare RCR against */
+		int satb_countdown;		/* scanlines to wait to trigger the SATB irq */
+		uint8 vram[0x10000];
+		uint8 inc;
+		uint8 vdc_register;
+		uint8 vdc_latch;
+		pair vdc_data[32];
+		int status;
+		int y_scroll;
+	} vdc;
+	struct {
+		uint8 vce_control;		/* VCE control register */
+		pair vce_address;		/* Current address in the palette */
+		pair vce_data[512];		/* Palette data */
+		int current_bitmap_line;	/* The current line in the display we are on */
+		//bitmap_ind16 *bmp;
+		scrntype bmp[VDC_LPF][VDC_WPF];
+		scrntype palette[1024];
+	} vce;
+	void pce_interrupt();
 	void vdc_reset();
-	void vdc_write(uint16 addr, uint8 data);
-	uint8 vdc_read(uint16 addr);
-	void vce_write(uint16 addr, uint8 data);
-	uint8 vce_read(uint16 addr);
-	void vce_update_pal(int num);
-	void vdc_refresh_line(int sy, int ey);
-	void vdc_refresh_sprite(int sy, int ey, int bg);
-	void vdc_put_sprite(scrntype *dst, uint8 *src, uint32 *pixel, scrntype *pal, int h, int inc);
-	void vdc_put_sprite_hflip(scrntype *dst, uint8 *src, uint32 *pixel, scrntype *pal, int h, int inc);
-	void vdc_put_sprite_mask(scrntype *dst, uint8 *src, uint32 *pixel, scrntype *pal, int h, int inc, uint8 *mask, uint8 pr);
-	void vdc_put_sprite_hflip_mask(scrntype *dst, uint8 *src, uint32 *pixel, scrntype *pal, int h, int inc, uint8 *mask, uint8 pr);
-	void vdc_put_sprite_makemask(scrntype *dst, uint8 *src, uint32 *pixel, scrntype *pal, int h, int inc, uint8 *mask, uint8 pr);
-	void vdc_put_sprite_hflip_makemask(scrntype *dst,uint8 *src,uint32 *pixel,scrntype *pal,int h,int inc,uint8 *mask,uint8 pr);
-	void vdc_plane2pixel(int no);
-	void vdc_sp2pixel(int no);
+	void vdc_advance_line();
+	void draw_black_line(int line);
+	void draw_overscan_line(int line);
+	void vram_write(uint32 offset, uint8 data);
+	uint8 vram_read(uint32 offset);
+	void vdc_w(uint16 offset, uint8 data);
+	uint8 vdc_r(uint16 offset);
+	void vce_w(uint16 offset, uint8 data);
+	uint8 vce_r(uint16 offset);
+	void pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer);
+	void conv_obj(int i, int l, int hf, int vf, char *buf);
+	void pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer);
+	void vdc_do_dma();
 	
 	// psg
 	typedef struct {
@@ -95,24 +99,12 @@ private:
 	void psg_write(uint16 addr, uint8 data);
 	uint8 psg_read(uint16 addr);
 	
-	// timer
-	int timer_const, timer_count, timer_run;
-	void timer_reset();
-	void timer_write(uint16 addr, uint8 data);
-	uint8 timer_read(uint16 addr);
-	
 	// joypad
 	uint8 *joy_stat, *key_stat;
 	uint8 joy_count, joy_nibble, joy_second;
 	void joy_reset();
 	void joy_write(uint16 addr, uint8 data);
 	uint8 joy_read(uint16 addr);
-	
-	// interrupt control
-	void int_request(uint8 val);
-	void int_cancel(uint8 val);
-	void int_write(uint16 addr, uint8 data);
-	uint8 int_read(uint16 addr);
 	
 public:
 	PCE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -121,14 +113,15 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void event_callback(int event_id, int err);
 	void event_vline(int v, int clock);
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_io8(uint32 addr, uint32 data);
+	uint32 read_io8(uint32 addr);
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(HUC6280* device) {
 		d_cpu = device;
 	}
 	void initialize_sound(int rate) {

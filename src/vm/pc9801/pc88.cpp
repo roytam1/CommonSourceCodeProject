@@ -973,13 +973,13 @@ void PC88::write_dma_io8(uint32 addr, uint32 data)
 
 void PC88::update_gvram_wait()
 {
-	gvram_wait_clocks  = cpu_clock_low ? 1 : 2;
-	if(!vblank) {
-		gvram_wait_clocks *= 2;
-	}
 	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
-		gvram_wait_clocks *= 2;
-		if(!vblank && !ghs_mode) {
+		static const int wait[8] = {30, 3, 4, 3, 72, 7, 8, 4};
+		gvram_wait_clocks = wait[(vblank ? 1 : 0) | (ghs_mode ? 2 : 0) | (cpu_clock_low ? 0 : 4)];
+	}
+	else {
+		gvram_wait_clocks  = cpu_clock_low ? 1 : 2;
+		if(!vblank) {
 			gvram_wait_clocks *= 2;
 		}
 	}

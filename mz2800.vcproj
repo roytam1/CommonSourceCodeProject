@@ -443,6 +443,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\i286.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\i8253.cpp"
 					>
 					<FileConfiguration
@@ -488,28 +510,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\i8259.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\i86.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1072,6 +1072,10 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\i286.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\i8253.h"
 					>
 				</File>
@@ -1081,10 +1085,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\i8259.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\i86.h"
 					>
 				</File>
 				<File

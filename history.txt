@@ -1,3 +1,14 @@
+10/23/2012
+
+[VM/HUC6280] reimplement based on MAME 0.147
+[VM/I286] reimplement based on MAME 0.147
+[VM/I386] reimplement based on MAME 0.147
+
+[FAMILYBASIC/MEMORY] fix joypad status
+[PC8801MA/PC88] fix video memory wait on V1S mode
+[X1TWIN/PCE] reimplement vdc based on MESS 0.147
+
+
 8/18/2012
 
 [EMU/WIN32] support to switch GDI/Direct3D9

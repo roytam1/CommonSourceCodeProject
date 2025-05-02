@@ -37,7 +37,7 @@
 #include "sub.h"
 
 #ifdef _X1TWIN
-#include "../huc6260.h"
+#include "../huc6280.h"
 #include "pce.h"
 #endif
 
@@ -243,7 +243,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pceevent->set_frames_per_sec(PCE_FRAMES_PER_SEC);
 	pceevent->set_lines_per_frame(PCE_LINES_PER_FRAME);
 	
-	pcecpu = new HUC6260(this, emu);
+	pcecpu = new HUC6280(this, emu);
 	pce = new PCE(this, emu);
 	
 	pceevent->set_context_cpu(pcecpu, PCE_CPU_CLOCKS);
@@ -251,6 +251,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pce->set_context_cpu(pcecpu);
 	pce->set_context_event_manager(pceevent);
 	pcecpu->set_context_mem(pce);
+	pcecpu->set_context_io(pce);
 #endif
 	
 	// initialize all devices

@@ -670,19 +670,19 @@ uint8 SUB::get_key_low()
 	uint8 l = 0xff;
 	
 	if(key_ctrl) {
-		l ^= 0x01;	// ctrl
+		l &= ~0x01;	// ctrl
 	}
 	if(key_shift) {
-		l ^= 0x02;	// shift
+		l &= ~0x02;	// shift
 	}
 	if(key_kana_locked) {
-		l ^= 0x04;	// kana
+		l &= ~0x04;	// kana
 	}
 	if(key_caps_locked) {
-		l ^= 0x08;	// caps
+		l &= ~0x08;	// caps
 	}
 	if(key_graph) {
-		l ^= 0x10;	// graph (alt)
+		l &= ~0x10;	// graph (alt)
 	}
 	return l;
 }
@@ -693,10 +693,10 @@ uint16 SUB::get_key(int code, bool repeat)
 	uint8 h = 0;
 	
 	if(repeat) {
-		l ^= 0x20;	// repeat
+		l &= ~0x20;	// repeat
 	}
 	if(0x60 <= code && code <= 0x74) {
-		l ^= 0x80;	// function or numpad
+		l &= ~0x80;	// function or numpad
 	}
 	if(key_kana_locked) {
 		if(!(l & 0x02)) {

@@ -1114,6 +1114,7 @@ void Z80::OP_CB(uint8 code)
 	case 0xfd: L = SET(7, L); break;		/* SET  7,L         */
 	case 0xfe: WM8(HL, SET(7, RM8(HL))); break;	/* SET  7,(HL)      */
 	case 0xff: A = SET(7, A); break;		/* SET  7,A         */
+	default: __assume(0);
 	}
 }
 
@@ -1378,6 +1379,7 @@ void Z80::OP_XY(uint8 code)
 	case 0xfd: L = SET(7, RM8(ea)); WM8(ea, L); break;	/* SET  7,L=(XY+o)  */
 	case 0xfe: WM8(ea, SET(7, RM8(ea))); break;		/* SET  7,(XY+o)    */
 	case 0xff: A = SET(7, RM8(ea)); WM8(ea, A); break;	/* SET  7,A=(XY+o)  */
+	default: __assume(0);
 	}
 }
 
@@ -1950,6 +1952,7 @@ void Z80::OP(uint8 code)
 	case 0xfd: OP_FD(FETCHOP()); break;										/* **** FD xx       */
 	case 0xfe: CP(FETCH8()); break;											/* CP   n           */
 	case 0xff: RST(0x38); break;											/* RST  7           */
+	default: __assume(0);
 	}
 #ifdef _CPU_DEBUG_LOG
 	if(debug_count && !dasm_done) {
@@ -2537,6 +2540,7 @@ void Z80::DASM()
 	case 0xfd: DASM_FD();
 	case 0xfe: _stprintf(debug_dasm, _T("CP %2x"), DEBUG_FETCH8()); break;
 	case 0xff: _stprintf(debug_dasm, _T("RST 7")); break;
+	default: __assume(0);
 	}
 }
 
@@ -2801,6 +2805,7 @@ void Z80::DASM_CB()
 	case 0xfd: _stprintf(debug_dasm, _T("SET 7, L")); break;
 	case 0xfe: _stprintf(debug_dasm, _T("SET 7, (HL)")); break;
 	case 0xff: _stprintf(debug_dasm, _T("SET 7, A")); break;
+	default: __assume(0);
 	}
 }
 
@@ -3342,6 +3347,7 @@ void Z80::DASM_DDCB()
 	case 0xfd: _stprintf(debug_dasm, _T("SET 7, L=(IX+(%d))"), ofs); break;
 	case 0xfe: _stprintf(debug_dasm, _T("SET 7, (IX+(%d))"), ofs); break;
 	case 0xff: _stprintf(debug_dasm, _T("SET 7, A=(IX+(%d))"), ofs); break;
+	default: __assume(0);
 	}
 }
 
@@ -3607,6 +3613,7 @@ void Z80::DASM_FDCB()
 	case 0xfd: _stprintf(debug_dasm, _T("SET 7, L=(IY+(%d))"), ofs); break;
 	case 0xfe: _stprintf(debug_dasm, _T("SET 7, (IY+(%d))"), ofs); break;
 	case 0xff: _stprintf(debug_dasm, _T("SET 7, A=(IY+(%d))"), ofs); break;
+	default: __assume(0);
 	}
 }
 #endif

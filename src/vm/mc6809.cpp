@@ -655,6 +655,7 @@ void MC6809::op(uint8 ireg)
 	case 0xfd: std_ex(); break;
 	case 0xfe: ldu_ex(); break;
 	case 0xff: stu_ex(); break;
+	default: __assume(0);
 	}
 };
 
@@ -680,7 +681,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x0d: EA = X + 13; break;
 	case 0x0e: EA = X + 14; break;
 	case 0x0f: EA = X + 15; break;
-	
 	case 0x10: EA = X - 16; break;
 	case 0x11: EA = X - 15; break;
 	case 0x12: EA = X - 14; break;
@@ -697,7 +697,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x1d: EA = X - 3; break;
 	case 0x1e: EA = X - 2; break;
 	case 0x1f: EA = X - 1; break;
-	
 	case 0x20: EA = Y; break;
 	case 0x21: EA = Y + 1; break;
 	case 0x22: EA = Y + 2; break;
@@ -714,7 +713,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x2d: EA = Y + 13; break;
 	case 0x2e: EA = Y + 14; break;
 	case 0x2f: EA = Y + 15; break;
-	
 	case 0x30: EA = Y - 16; break;
 	case 0x31: EA = Y - 15; break;
 	case 0x32: EA = Y - 14; break;
@@ -731,7 +729,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x3d: EA = Y - 3; break;
 	case 0x3e: EA = Y - 2; break;
 	case 0x3f: EA = Y - 1; break;
-	
 	case 0x40: EA = U; break;
 	case 0x41: EA = U + 1; break;
 	case 0x42: EA = U + 2; break;
@@ -748,7 +745,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x4d: EA = U + 13; break;
 	case 0x4e: EA = U + 14; break;
 	case 0x4f: EA = U + 15; break;
-	
 	case 0x50: EA = U - 16; break;
 	case 0x51: EA = U - 15; break;
 	case 0x52: EA = U - 14; break;
@@ -765,7 +761,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x5d: EA = U - 3; break;
 	case 0x5e: EA = U - 2; break;
 	case 0x5f: EA = U - 1; break;
-	
 	case 0x60: EA = S; break;
 	case 0x61: EA = S + 1; break;
 	case 0x62: EA = S + 2; break;
@@ -782,7 +777,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x6d: EA = S + 13; break;
 	case 0x6e: EA = S + 14; break;
 	case 0x6f: EA = S + 15; break;
-	
 	case 0x70: EA = S - 16; break;
 	case 0x71: EA = S - 15; break;
 	case 0x72: EA = S - 14; break;
@@ -799,7 +793,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x7d: EA = S - 3; break;
 	case 0x7e: EA = S - 2; break;
 	case 0x7f: EA = S - 1; break;
-	
 	case 0x80: EA = X; X++; break;
 	case 0x81: EA = X; X += 2; break;
 	case 0x82: X--; EA = X; break;
@@ -816,7 +809,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x8d: IMMWORD(EAP); EA += PC; break;
 	case 0x8e: EA = 0; break; /* ILLEGAL*/
 	case 0x8f: IMMWORD(EAP); break;
-	
 	case 0x90: EA = X; X++; EAD = RM16(EAD); break; /* Indirect ,R+ not in my specs */
 	case 0x91: EA = X; X += 2; EAD = RM16(EAD); break;
 	case 0x92: X--; EA = X; EAD = RM16(EAD); break;
@@ -833,7 +825,6 @@ inline void MC6809::fetch_effective_address()
 	case 0x9d: IMMWORD(EAP); EA += PC; EAD = RM16(EAD); break;
 	case 0x9e: EA = 0; break; /* ILLEGAL*/
 	case 0x9f: IMMWORD(EAP); EAD = RM16(EAD); break;
-	
 	case 0xa0: EA = Y; Y++; break;
 	case 0xa1: EA = Y; Y += 2; break;
 	case 0xa2: Y--; EA = Y; break;
@@ -850,7 +841,6 @@ inline void MC6809::fetch_effective_address()
 	case 0xad: IMMWORD(EAP); EA += PC; break;
 	case 0xae: EA = 0; break; /* ILLEGAL*/
 	case 0xaf: IMMWORD(EAP); break;
-	
 	case 0xb0: EA = Y; Y++; EAD = RM16(EAD); break;
 	case 0xb1: EA = Y; Y += 2; EAD = RM16(EAD); break;
 	case 0xb2: Y--; EA = Y; EAD = RM16(EAD); break;
@@ -867,7 +857,6 @@ inline void MC6809::fetch_effective_address()
 	case 0xbd: IMMWORD(EAP); EA += PC; EAD = RM16(EAD); break;
 	case 0xbe: EA = 0; break; /* ILLEGAL*/
 	case 0xbf: IMMWORD(EAP); EAD = RM16(EAD); break;
-	
 	case 0xc0: EA = U; U++; break;
 	case 0xc1: EA = U; U += 2; break;
 	case 0xc2: U--; EA = U; break;
@@ -884,7 +873,6 @@ inline void MC6809::fetch_effective_address()
 	case 0xcd: IMMWORD(EAP); EA += PC; break;
 	case 0xce: EA = 0; break; /*ILLEGAL*/
 	case 0xcf: IMMWORD(EAP); break;
-	
 	case 0xd0: EA = U; U++; EAD = RM16(EAD); break;
 	case 0xd1: EA = U; U += 2; EAD = RM16(EAD); break;
 	case 0xd2: U--; EA = U; EAD = RM16(EAD); break;
@@ -901,7 +889,6 @@ inline void MC6809::fetch_effective_address()
 	case 0xdd: IMMWORD(EAP); EA += PC; EAD = RM16(EAD); break;
 	case 0xde: EA = 0; break; /*ILLEGAL*/
 	case 0xdf: IMMWORD(EAP); EAD = RM16(EAD); break;
-	
 	case 0xe0: EA = S; S++; break;
 	case 0xe1: EA = S; S += 2; break;
 	case 0xe2: S--; EA = S; break;
@@ -918,7 +905,6 @@ inline void MC6809::fetch_effective_address()
 	case 0xed: IMMWORD(EAP); EA += PC; break;
 	case 0xee: EA = 0; break; /*ILLEGAL*/
 	case 0xef: IMMWORD(EAP); break;
-	
 	case 0xf0: EA = S; S++; EAD = RM16(EAD); break;
 	case 0xf1: EA = S; S += 2; EAD = RM16(EAD); break;
 	case 0xf2: S--; EA = S; EAD = RM16(EAD); break;
@@ -935,6 +921,7 @@ inline void MC6809::fetch_effective_address()
 	case 0xfd: IMMWORD(EAP); EA += PC; EAD = RM16(EAD); break;
 	case 0xfe: EA = 0; break; /*ILLEGAL*/
 	case 0xff: IMMWORD(EAP); EAD = RM16(EAD); break;
+	default: __assume(0);
 	}
 	icount -= index_cycle_em[postbyte];
 }

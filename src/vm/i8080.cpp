@@ -539,6 +539,8 @@ void I8080::run_one_opecode()
 				// support JMP/CALL/RST only
 				count -= cc_op[v0];
 				switch(v0) {
+				case 0x00:	// NOP
+					break;
 				case 0xc3:	// JMP
 					PC = v12;
 					break;
@@ -1460,6 +1462,8 @@ void I8080::OP(uint8 code)
 	case 0xff: // RST 7
 		RST(7);
 		break;
+	default:
+		__assume(0);
 	}
 }
 

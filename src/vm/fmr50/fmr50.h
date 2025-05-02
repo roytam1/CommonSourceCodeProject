@@ -106,7 +106,7 @@ class HD63484;
 class I8251;
 class I8253;
 class I8259;
-class I86;
+class I286;
 class I386;
 class IO;
 class MB8877;
@@ -139,7 +139,7 @@ protected:
 	I8253* pit0;
 	I8253* pit1;
 	I8259* pic;
-	I86* i286;
+	I286* i286;
 	I386* i386;
 	IO* io;
 	MB8877* fdc;
