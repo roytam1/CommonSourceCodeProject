@@ -243,8 +243,10 @@ void VM::special_reset()
 	memory->special_reset();
 	cpu->reset();
 #ifdef SUPPORT_16BIT_BOARD
+	pio_to16->reset();
 	cpu_16->reset();
 	pic_16->reset();
+	mz1m01->reset();
 #endif
 }
 

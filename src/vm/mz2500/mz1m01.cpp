@@ -52,7 +52,10 @@ void MZ1M01::initialize()
 	SET_BANK(0x40000, 0x5ffff, wdmy, kanji);
 	SET_BANK(0x60000, 0xfdfff, wdmy, rdmy);
 	SET_BANK(0xfe000, 0xfffff, wdmy, ipl);
-	
+}
+
+void MZ1M01::reset()
+{
 	port[0] = port[1] = 0xff;
 }
 

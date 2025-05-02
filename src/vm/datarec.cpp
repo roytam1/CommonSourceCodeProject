@@ -113,7 +113,12 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 
 void DATAREC::event_frame()
 {
-	set_skip_frames(changed > 10);
+	static bool prev = false;
+	bool next = (changed > 10);
+	if(prev != next) {
+		set_skip_frames(next);
+		prev = next;
+	}
 	changed = 0;
 }
 
@@ -121,6 +126,9 @@ void DATAREC::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_SIGNAL) {
 		if(play) {
+			if(buffer_ptr < buffer_length && ff_rew == 0) {
+				emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
+			}
 			bool signal = in_signal;
 			if(is_wav) {
 				if(buffer_ptr >= 0 && buffer_ptr < buffer_length) {
@@ -247,7 +255,11 @@ void DATAREC::update_event()
 			} else {
 				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate, true, &register_id);
 				if(play) {
-					emu->out_message(_T("CMT: Play"));
+					if(buffer_ptr < buffer_length) {
+						emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
+					} else {
+						emu->out_message(_T("CMT: Play"));
+					}
 				} else {
 					emu->out_message(_T("CMT: Record"));
 				}
@@ -559,28 +571,23 @@ int DATAREC::load_wav_image(int offset)
 						
 						if(!prev_signal && signal) {
 							if(t == 0) {
-								if(count_positive < max_threshold && count_positive > min_threshold &&
-								   count_negative < max_threshold && count_negative > min_threshold) {
+								if(count_positive < max_threshold && count_positive > min_threshold && count_negative > min_threshold) {
 									counts[count_positive]++;
 								}
 							} else {
-								if(count_positive < max_threshold && count_positive > min_threshold &&
-								   count_negative < max_threshold && count_negative > min_threshold) {
-									int count = (count_positive > half_threshold) ? hi_count : lo_count;
-									if(buffer != NULL) {
-										for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0xff;
-										for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;
-									} else {
-										loaded_samples += count * 2;
+								int count_p = count_positive / FREQ_SCALE;
+								int count_n = count_negative / FREQ_SCALE;
+								if(count_positive < max_threshold && count_positive > min_threshold && count_negative > min_threshold) {
+									count_p = (count_positive > half_threshold) ? hi_count : lo_count;
+									if(count_negative < max_threshold) {
+										count_n = count_p;
 									}
+								}
+								if(buffer != NULL) {
+									for(int j = 0; j < count_p; j++) buffer[loaded_samples++] = 0xff;
+									for(int j = 0; j < count_n; j++) buffer[loaded_samples++] = 0x00;
 								} else {
-									if(buffer != NULL) {
-										for(int j = 0; j < count_positive / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0xff;
-										for(int j = 0; j < count_negative / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0x00;
-									} else {
-										loaded_samples += count_positive / FREQ_SCALE;
-										loaded_samples += count_negative / FREQ_SCALE;
-									}
+									loaded_samples += count_p + count_n;
 								}
 							}
 							count_positive = count_negative = 0;
@@ -621,26 +628,24 @@ int DATAREC::load_wav_image(int offset)
 					double hi_tmp = (double)sum_value / (double)sum_count;
 					
 					half_threshold = (int)((lo_tmp + hi_tmp) / 2 + 0.5);
+					min_threshold = (int)(2 * lo_tmp - half_threshold + 0.5);
+					max_threshold = (int)(2 * hi_tmp - half_threshold + 0.5);
 					lo_count = (int)(lo_tmp / FREQ_SCALE + 0.5);
 					hi_count = (int)(hi_tmp / FREQ_SCALE + 0.5);
 				} else {
-					if(count_positive < max_threshold && count_positive > min_threshold &&
-					   count_negative < max_threshold && count_negative > min_threshold) {
-						int count = (count_positive > half_threshold) ? hi_count : lo_count;
-						if(buffer != NULL) {
-							for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0xff;
-							for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;
-						} else {
-							loaded_samples += count * 2;
+					int count_p = count_positive / FREQ_SCALE;
+					int count_n = count_negative / FREQ_SCALE;
+					if(count_positive < max_threshold && count_positive > min_threshold && count_negative > min_threshold) {
+						count_p = (count_positive > half_threshold) ? hi_count : lo_count;
+						if(count_negative < max_threshold) {
+							count_n = count_p;
 						}
+					}
+					if(buffer != NULL) {
+						for(int j = 0; j < count_p; j++) buffer[loaded_samples++] = 0xff;
+						for(int j = 0; j < count_n; j++) buffer[loaded_samples++] = 0x00;
 					} else {
-						if(buffer != NULL) {
-							for(int j = 0; j < count_positive / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0xff;
-							for(int j = 0; j < count_negative / FREQ_SCALE; j++)  buffer[loaded_samples++] = 0x00;
-						} else {
-							loaded_samples += count_positive / FREQ_SCALE;
-							loaded_samples += count_negative / FREQ_SCALE;
-						}
+						loaded_samples += count_p + count_n;
 					}
 				}
 				if(t == 1) {
@@ -780,6 +785,19 @@ int DATAREC::load_tap_image()
 	} \
 }
 
+#if defined(_MZ80B) || defined(_MZ2200)
+#define MZT_PUT_BIT(bit, len) { \
+	for(int l = 0; l < (len); l++) { \
+		if(bit) { \
+			MZT_PUT_SIGNAL(1, (int)(120.0 / 16.0 * sample_rate / 22050.0 + 0.5)); \
+			MZT_PUT_SIGNAL(0, (int)(120.0 / 16.0 * sample_rate / 22050.0 + 0.5)); \
+		} else { \
+			MZT_PUT_SIGNAL(1, (int)(60.0 / 16.0 * sample_rate / 22050.0 + 0.5)); \
+			MZT_PUT_SIGNAL(0, (int)(60.0 / 16.0 * sample_rate / 22050.0 + 0.5)); \
+		} \
+	} \
+}
+#else
 #define MZT_PUT_BIT(bit, len) { \
 	for(int l = 0; l < (len); l++) { \
 		if(bit) { \
@@ -791,6 +809,7 @@ int DATAREC::load_tap_image()
 		} \
 	} \
 }
+#endif
 
 #define MZT_PUT_BYTE(byte) { \
 	MZT_PUT_BIT(1, 1); \
@@ -859,6 +878,24 @@ int DATAREC::load_mzt_image()
 		}
 #endif
 		// output to buffer
+		MZT_PUT_SIGNAL(0, sample_rate);
+#if defined(_MZ80B) || defined(_MZ2200)
+		// Bin2Wav Ver 0.03
+		MZT_PUT_BIT(0, 22000);
+		MZT_PUT_BIT(1, 40);
+		MZT_PUT_BIT(0, 41);
+		MZT_PUT_BLOCK(header, 128);
+		MZT_PUT_BIT(1, 1);
+		MZT_PUT_SIGNAL(1, (int)(22.0 * sample_rate / 22050.0 + 0.5));
+		MZT_PUT_SIGNAL(0, (int)(22.0 * sample_rate / 22050.0 + 0.5));
+		MZT_PUT_SIGNAL(0, sample_rate);
+		MZT_PUT_BIT(0, 11000);
+		MZT_PUT_BIT(1, 20);
+		MZT_PUT_BIT(0, 21);
+		MZT_PUT_BLOCK(ram + offs, size);
+		MZT_PUT_BIT(1, 1);
+#else
+		// format info written in ŽŽŒ±‚Éo‚éX1
 		MZT_PUT_BIT(0, 10000);
 		MZT_PUT_BIT(1, 40);
 		MZT_PUT_BIT(0, 40);
@@ -875,6 +912,7 @@ int DATAREC::load_mzt_image()
 		MZT_PUT_BIT(1, 1);
 		MZT_PUT_BLOCK(ram + offs, size);
 		MZT_PUT_BIT(1, 1);
+#endif
 	}
 	return ptr;
 }

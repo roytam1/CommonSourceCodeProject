@@ -18,12 +18,12 @@
 #define DEVICE_NAME		"NEC PC-8201"
 #define CONFIG_NAME		"pc8201"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		64
-#define CPU_CLOCKS		2400000
+#define CPU_CLOCKS		2457600
 #define SCREEN_WIDTH		240
 #define SCREEN_HEIGHT		64
 #define HAS_I8085
@@ -49,6 +49,7 @@ class IO;
 class PCM1BIT;
 class UPD1990A;
 
+class CMT;
 class KEYBOARD;
 class LCD;
 class MEMORY;
@@ -68,6 +69,7 @@ protected:
 	PCM1BIT* buzzer;
 	UPD1990A* rtc;
 	
+	CMT* cmt;
 	KEYBOARD* keyboard;
 	LCD* lcd;
 	MEMORY* memory;

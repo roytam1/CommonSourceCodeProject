@@ -1,3 +1,16 @@
+4/25/2013
+
+[VM/DATAREC] fix mzt image converter based on Bin2Wav
+
+[MZ2200] fix to reset Z80PIO in special_reset()
+[MZ2200/MEMORYB80] fix to load mzt image to memory only when offset is 0
+[MZ2200/MZ1M01] fix to reset inport value from Z80PIO in reset()
+
+[PC8201] fix cpu clock from 2.4MHz to 2.4576MHz
+[PC8201] support cmt
+[PC8201] fix to reset rtc strobe signal at boot
+
+
 4/14/2013
 
 [WINMAIN] support to show a message on title bar post from vm or emu class

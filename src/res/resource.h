@@ -569,17 +569,17 @@
 // NEC PC-8201
 #ifdef _PC8201
 #define MENU_POS_CONTROL                0
-//#define MENU_POS_TAPE                   1
-#define MENU_POS_SCREEN                 1
-#define MENU_POS_SOUND                  2
+#define MENU_POS_TAPE                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // NEC PC-8201A
 #ifdef _PC8201A
 #define MENU_POS_CONTROL                0
-//#define MENU_POS_TAPE                   1
-#define MENU_POS_SCREEN                 1
-#define MENU_POS_SOUND                  2
+#define MENU_POS_TAPE                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // NEC PC-8801MA

@@ -818,7 +818,7 @@ void I8080::OP(uint8 code)
 	case 0x30: // SIM (NOP)
 #ifdef HAS_I8085
 		if(_A & 0x40) {
-			write_signals(&outputs_sod, (_A & 0x80) ? 0 : 0xffffffff);
+			write_signals(&outputs_sod, (_A & 0x80) ? 0xffffffff : 0);
 		}
 		if(_A & 0x10) {
 			IM &= ~IM_I7;

@@ -20,6 +20,7 @@
 #include "../pcm1bit.h"
 #include "../upd1990a.h"
 
+#include "cmt.h"
 #include "keyboard.h"
 #include "lcd.h"
 #include "memory.h"
@@ -35,13 +36,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
-//	drec = new DATAREC(this, emu);
+	drec = new DATAREC(this, emu);
 	cpu = new I8080(this, emu);
 	pio = new I8155(this, emu);
 	io = new IO(this, emu);
 	buzzer = new PCM1BIT(this, emu);
 	rtc = new UPD1990A(this, emu);
 	
+	cmt = new CMT(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	lcd = new LCD(this, emu);
 	memory = new MEMORY(this, emu);
@@ -50,8 +52,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(buzzer);
 	
-//	drec->set_context_out(cpu, SIG_I8085_SID, 1);
-//	cpu->set_context_sod(drec, SIG_DATAREC_OUT, 1);
+	drec->set_context_out(cpu, SIG_I8085_SID, 1);
+	cpu->set_context_sod(cmt, SIG_CMT_SOD, 1);
 	pio->set_context_port_a(rtc, SIG_UPD1990A_C0, 1, 0);
 	pio->set_context_port_a(rtc, SIG_UPD1990A_C1, 2, 0);
 	pio->set_context_port_a(rtc, SIG_UPD1990A_C2, 4, 0);
@@ -67,7 +69,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc->set_context_dout(pio, SIG_I8155_PORT_C, 1);
 	rtc->set_context_tp(cpu, SIG_I8085_RST7, 1);
 	
-//	memory->set_context_drec(drec);
+	memory->set_context_cmt(cmt);
+	memory->set_context_drec(drec);
 	memory->set_context_rtc(rtc);
 	
 	// cpu bus
@@ -86,6 +89,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
+	rtc->write_signal(SIG_UPD1990A_STB, 0, 0);
 }
 
 VM::~VM()
@@ -172,23 +176,25 @@ void VM::key_up(int code)
 
 void VM::play_tape(_TCHAR* file_path)
 {
-//	drec->play_tape(file_path);
+	cmt->close_tape();
+	drec->play_tape(file_path);
 }
 
 void VM::rec_tape(_TCHAR* file_path)
 {
-//	drec->rec_tape(file_path);
+	drec->close_tape();
+	cmt->rec_tape(file_path);
 }
 
 void VM::close_tape()
 {
-//	drec->close_tape();
+	drec->close_tape();
+	cmt->close_tape();
 }
 
 bool VM::tape_inserted()
 {
-//	return drec->tape_inserted();
-	return false;
+	return drec->tape_inserted() || cmt->tape_inserted();
 }
 
 bool VM::now_skip()

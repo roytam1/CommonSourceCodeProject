@@ -269,25 +269,30 @@ void MEMORY::load_dat_image(_TCHAR* file_path)
 bool MEMORY::load_mzt_image(_TCHAR* file_path)
 {
 	bool result = false;
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		uint8 header[128];
-		fio->Fread(header, sizeof(header), 1);
-		if(header[0] == 0x01) {
+	bool is_mtw = check_file_extension(file_path, _T(".mtw"));
+	
+	if(is_mtw || ipl_selected) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+			uint8 header[128];
+			fio->Fread(header, sizeof(header), 1);
 			uint16 size = header[0x12] | (header[0x13] << 8);
-			uint16 offs = 0;//header[0x14] | (header[0x15] << 8);
+			uint16 offs = header[0x14] | (header[0x15] << 8);
 			
-			memset(ram, 0, sizeof(ram));
-			memset(vram, 0, sizeof(vram));
-			memset(tvram, 0, sizeof(tvram));
-			
-			fio->Fread(ram + offs, size, 1);
-			vm->special_reset();
-			result = true;
+//			if(header[0] == 0x01 && (is_mtw || size > 0x7e00)) {
+			if(header[0] == 0x01 && offs == 0) {
+				memset(ram, 0, sizeof(ram));
+				memset(vram, 0, sizeof(vram));
+				memset(tvram, 0, sizeof(tvram));
+				
+				fio->Fread(ram, size, 1);
+				vm->special_reset();
+				result = true;
+			}
+			fio->Fclose();
 		}
-		fio->Fclose();
+		delete fio;
 	}
-	delete fio;
 	return result;
 }
 

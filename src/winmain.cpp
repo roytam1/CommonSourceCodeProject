@@ -428,7 +428,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 				_TCHAR buf[256];
 				int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
 				if(emu->message_count > 0) {
-					_stprintf(buf, _T("%s - [%s]"), _T(DEVICE_NAME), emu->message);
+					_stprintf(buf, _T("%s - %s"), _T(DEVICE_NAME), emu->message);
 					emu->message_count--;
 				} else {
 					_stprintf(buf, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
