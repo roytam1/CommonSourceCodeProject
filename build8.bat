@@ -187,6 +187,10 @@ devenv.com x07.vcproj /Rebuild Release
 mkdir build\x07
 copy Release\x07.exe build\x07\.
 
+devenv.com x1turbo.vcproj /Rebuild Release
+mkdir build\x1turbo
+copy Release\x1turbo.exe build\x1turbo\.
+
 devenv.com x1twin.vcproj /Rebuild Release
 mkdir build\x1twin
 copy Release\x1twin.exe build\x1twin\.

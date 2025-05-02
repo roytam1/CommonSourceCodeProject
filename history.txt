@@ -1,3 +1,23 @@
+4/13/2011
+
+[VM/Z80DMA] fix address step count (thanks Kale)
+
+
+4/12/2011
+
+[EMU/WIN32] fix repeat flag for caps/kana/kanji keys
+
+[VM/DISK] fix not to write disk image when data is not modified
+[VM/IO] support read/write interface for dma
+[VM/Z80] fix disassembler
+[VM/Z80DMA] support Z80DMA (based on MAME Z80DMA core)
+
+[PC9801/CMT] support cmt interface
+[X1TURBO] support SHARP X1turbo
+[X1TURBO/DISPLAY] generate HD46505 vblank/vsync signals in display class
+[X1TURBO/IO] support read/write interface with dma
+
+
 4/7/2011
 
 Fix typo (regist -> register, recieve -> receive)

@@ -71,6 +71,8 @@ public:
 	uint32 read_io16w(uint32 addr, int* wait);
 	void write_io32w(uint32 addr, uint32 data, int* wait);
 	uint32 read_io32w(uint32 addr, int* wait);
+	void write_dma8(uint32 addr, uint32 data);
+	uint32 read_dma8(uint32 addr);
 	
 	// unique functions
 	void set_iomap_single_r(uint32 addr, DEVICE* device);

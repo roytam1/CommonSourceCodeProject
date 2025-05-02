@@ -1,5 +1,6 @@
 /*
 	SHARP X1twin Emulator 'eX1twin'
+	SHARP X1turbo Emulator 'eX1turbo'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -20,7 +21,7 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE* d_fdc;
+	DEVICE *d_fdc, *d_pio;
 	
 	uint8* regs;
 	uint8 vram_t[0x800];
@@ -32,6 +33,11 @@ private:
 	uint8 pcg_b[256][8];
 	uint8 pcg_r[256][8];
 	uint8 pcg_g[256][8];
+#ifdef _X1TURBO
+	uint8 gaiji_b[128][16];
+	uint8 gaiji_r[128][16];
+	uint8 gaiji_g[128][16];
+#endif
 	uint8 font[0x800];
 	uint8 kanji[0x4bc00];
 	
@@ -47,6 +53,7 @@ private:
 	uint8 column;
 #ifdef _X1TURBO
 	uint8 mode1, mode2;
+	bool hires;
 #endif
 	
 #ifdef _X1TURBO
@@ -61,8 +68,11 @@ private:
 	scrntype palette_pc[8];
 	uint8 prev_top[80];
 	int cblink;
+	bool vblank, vsync;
 	bool scanline;
 	
+	void set_vblank(bool val);
+	void set_vsync(bool val);
 	void update_pal();
 	
 	uint8 get_cur_font(uint32 addr);
@@ -103,6 +113,9 @@ public:
 	// unique function
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
+	}
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
 		vram_ptr = ptr;

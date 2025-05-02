@@ -102,6 +102,28 @@ static const fd_format fd_formats[] = {
 	{   -1,  0, 0,  0,    0 },
 };
 
+static uint32 getcrc32(uint8 data[], int size)
+{
+	uint32 c, table[256];
+	for(int i = 0; i < 256; i++) {
+		uint32 c = i;
+		for(int j = 0; j < 8; j++) {
+			if(c & 1) {
+				c = (c >> 1) ^ 0xedb88320;
+			}
+			else {
+				c >>= 1;
+			}
+		}
+		table[i] = c;
+	}
+	c = ~0;
+	for(int i = 0; i < size; i++) {
+		c = table[(c ^ data[i]) & 0xff] ^ (c >> 8);
+	}
+	return ~c;
+}
+
 void DISK::open(_TCHAR path[])
 {
 	// check current disk image
@@ -155,6 +177,9 @@ void DISK::open(_TCHAR path[])
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 		}
+		if(insert) {
+			crc32 = getcrc32(buffer, file_size);
+		}
 		fi->Fclose();
 		if(temporary) {
 			fi->Remove(tmp_path);
@@ -167,7 +192,7 @@ void DISK::open(_TCHAR path[])
 void DISK::close()
 {
 	// write disk image
-	if(insert && !protect && file_size) {
+	if(insert && !protect && file_size && getcrc32(buffer, file_size) != crc32) {
 		// write image
 		FILEIO* fio = new FILEIO();
 		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {

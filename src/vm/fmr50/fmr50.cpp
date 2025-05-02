@@ -45,6 +45,28 @@
 // initialize
 // ----------------------------------------------------------------------------
 
+static uint32 getcrc32(uint8 data[], int size)
+{
+	uint32 c, table[256];
+	for(int i = 0; i < 256; i++) {
+		uint32 c = i;
+		for(int j = 0; j < 8; j++) {
+			if(c & 1) {
+				c = (c >> 1) ^ 0xedb88320;
+			}
+			else {
+				c >>= 1;
+			}
+		}
+		table[i] = c;
+	}
+	c = ~0;
+	for(int i = 0; i < size; i++) {
+		c = table[(c ^ data[i]) & 0xff] ^ (c >> 8);
+	}
+	return ~c;
+}
+
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
 	// check ipl
@@ -58,7 +80,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		uint8 ipl[0x4000];
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
-		uint32 crc32 = emu->getcrc32(ipl, sizeof(ipl));
+		uint32 crc32 = getcrc32(ipl, sizeof(ipl));
 		for(int i = 0;; i++) {
 			if(machine_ids[i][0] == -1) {
 				break;

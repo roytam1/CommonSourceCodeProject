@@ -1,5 +1,6 @@
 /*
 	SHARP X1twin Emulator 'eX1twin'
+	SHARP X1turbo Emulator 'eX1turbo'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -69,6 +70,14 @@ void IO::write_io8(uint32 addr, uint32 data)
 		}
 		return;
 	}
+#ifdef _X1TURBO
+	if(addr == 0x1fd0) {
+		int ofs = (data & 0x10) ? 0xc000 : 0;
+		vram_b = vram + 0x0000 + ofs;
+		vram_r = vram + 0x4000 + ofs;
+		vram_g = vram + 0x8000 + ofs;
+	}
+#endif
 	// i/o
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 #ifdef _IO_DEBUG_LOG
@@ -88,7 +97,10 @@ void IO::write_io8(uint32 addr, uint32 data)
 uint32 IO::read_io8(uint32 addr)
 {
 	// vram access
-	vram_mode = false;
+	if(vram_mode) {
+		vram_mode = false;
+//		return 0xff;	// TODO
+	}
 	switch(addr & 0xc000) {
 	case 0x4000:
 		return vram_b[addr & 0x3fff];
@@ -97,14 +109,6 @@ uint32 IO::read_io8(uint32 addr)
 	case 0xc000:
 		return vram_g[addr & 0x3fff];
 	}
-#ifdef _X1TURBO
-	if(addr == 0x1fd0) {
-		int ofs = (data & 0x10) ? 0xc000 : 0;
-		vram_b = vram + 0x0000 + ofs;
-		vram_r = vram + 0x4000 + ofs;
-		vram_g = vram + 0x8000 + ofs;
-	}
-#endif
 	// i/o
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
@@ -120,6 +124,16 @@ uint32 IO::read_io8(uint32 addr)
 	prv_waddr = -1;
 #endif
 	return val & 0xff;
+}
+
+void IO::write_dma8(uint32 addr, uint32 data)
+{
+	write_io8(addr, data);
+}
+
+uint32 IO::read_dma8(uint32 addr)
+{
+	return read_io8(addr);
 }
 
 // register

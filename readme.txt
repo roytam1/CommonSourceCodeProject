@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/28/2010
+								4/12/2011
 
 --- What's this ?
 
@@ -49,6 +49,7 @@ This archive includes the all source codes of emulators listed below:
 	eTK-80BS	NEC TK-80BS (COMPO BS/80)
 	eX-07		CANON X-07
 	eX1twin		SHARP X1twin
+	eX1turbo	SHARP X1turbo
 	eYS-6464A	Shinko Sangyo YS-6464A
 
 You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
@@ -102,6 +103,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Oh!Ishi for the chip specification info
 - vm/z80.*
 	MAME Z80 core
+- vm/z80dma.*
+	MAME Z80DMA core
 - vm/familybasic
 	nester
 - vm/fmr50/bios.*

@@ -1045,6 +1045,13 @@ void Z80::run(int clock)
 					PC = RM16((_I << 8) | v0);
 					count -= 7;
 				}
+#ifdef _X1TURBO
+				// hack for X1turbo2 demonstration :-(
+				if(IM == 2 && RM8(PC) == 0xed && RM8(PC + 1) == 0x4d) {
+					IFF1 = 0;
+				}
+				else
+#endif
 				IFF1 = IFF2 = 0;
 				intr_req_bit = 0;
 			}
@@ -3114,7 +3121,7 @@ void Z80::OP_ED()
 		_A = IN8(_C, _B);
 		_F = (_F & CF) | SZP[_A];
 		break;
-	case 0x79: // OUT (C), E
+	case 0x79: // OUT (C), A
 		OUT8(_C, _B, _A);
 		break;
 	case 0x7a: // ADC HL, SP
@@ -5001,7 +5008,7 @@ void Z80::DASM_ED()
 	case 0x75: _stprintf(debug_dasm, _T("RETN")); break;
 	case 0x76: _stprintf(debug_dasm, _T("IM 1")); break;
 	case 0x78: _stprintf(debug_dasm, _T("IN A, (C)")); break;
-	case 0x79: _stprintf(debug_dasm, _T("OUT (C), E")); break;
+	case 0x79: _stprintf(debug_dasm, _T("OUT (C), A")); break;
 	case 0x7a: _stprintf(debug_dasm, _T("ADC HL, SP")); break;
 	case 0x7b: _stprintf(debug_dasm, _T("LD SP, (%4x)"), DEBUG_FETCH16()); break;
 	case 0x7c: _stprintf(debug_dasm, _T("NEG")); break;

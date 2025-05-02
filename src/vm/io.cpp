@@ -225,6 +225,16 @@ uint32 IO::read_io32w(uint32 addr, int* wait)
 	return val;
 }
 
+void IO::write_dma8(uint32 addr, uint32 data)
+{
+	write_io8(addr, data);
+}
+
+uint32 IO::read_dma8(uint32 addr)
+{
+	return read_io8(addr);
+}
+
 // register
 
 void IO::set_iomap_single_r(uint32 addr, DEVICE* device)

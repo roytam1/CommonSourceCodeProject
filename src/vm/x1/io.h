@@ -1,5 +1,6 @@
 /*
 	SHARP X1twin Emulator 'eX1twin'
+	SHARP X1turbo Emulator 'eX1turbo'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -72,6 +73,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_dma8(uint32 addr, uint32 data);
+	uint32 read_dma8(uint32 addr);
 	
 	// unique functions
 	uint8* get_vram() {

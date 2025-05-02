@@ -30,6 +30,7 @@
 #include "../upd765a.h"
 #include "../ym2203.h"
 
+#include "cmt.h"
 #include "display.h"
 #include "floppy.h"
 #include "joystick.h"
@@ -49,6 +50,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	beep = new BEEP(this, emu);
 	dma = new I8237(this, emu);
+	sio_cmt = new I8251(this, emu);	// for cmt
 	sio_rs = new I8251(this, emu);	// for rs232c
 	sio_kbd = new I8251(this, emu);	// for keyboard
 	pit = new I8253(this, emu);
@@ -71,6 +73,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc_2dd = new UPD765A(this, emu);
 	opn = new YM2203(this, emu);
 	
+	cmt = new CMT(this, emu);
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
 	joystick = new JOYSTICK(this, emu);
@@ -104,6 +107,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// dma ch.1: memory refresh
 	dma->set_context_ch2(fdc_2hd);	// 1MB
 	dma->set_context_ch3(fdc_2dd);	// 640KB
+	sio_cmt->set_context_out(cmt, SIG_CMT_OUT);
+//	sio_cmt->set_context_txrdy(cmt, SIG_CMT_TXRDY, 1);
+//	sio_cmt->set_context_rxrdy(cmt, SIG_CMT_RXRDY, 1);
+//	sio_cmt->set_context_txe(cmt, SIG_CMT_TXEMP, 1);
 //	sio_rs->set_context_rxrdy(pic, SIG_I8259_CHIP0 | SIG_I8259_IR4, 1);
 	sio_kbd->set_context_rxrdy(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1, 1);
 	pit->set_context_ch0(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0, 1);
@@ -138,6 +145,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	opn->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR4, 1);
 	opn->set_context_port_b(joystick, SIG_JOYSTICK_SELECT, 0xc0, 0);
 	
+	cmt->set_context_sio(sio_cmt);
 	display->set_context_fdc_2hd(fdc_2hd);
 	display->set_context_fdc_2dd(fdc_2dd);
 	display->set_context_pic(pic);
@@ -263,7 +271,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_rw(0x94, floppy);
 #endif
 	
-	// 91h, 93h, 95h, 97h: CMT I/F
+	io->set_iomap_alias_rw(0x91, sio_cmt, 0);
+	io->set_iomap_alias_rw(0x93, sio_cmt, 1);
+	io->set_iomap_single_w(0x95, cmt);
+	io->set_iomap_single_w(0x97, cmt);
 	
 	io->set_iomap_alias_rw(0xa0, gdc_gfx, 0);
 	io->set_iomap_alias_rw(0xa2, gdc_gfx, 1);
@@ -457,6 +468,21 @@ void VM::close_disk(int drv)
 	else if(drv == 2 || drv == 3) {
 		fdc_2dd->close_disk(drv - 2);
 	}
+}
+
+void VM::play_datarec(_TCHAR* filename)
+{
+	cmt->play_datarec(filename);
+}
+
+void VM::rec_datarec(_TCHAR* filename)
+{
+	cmt->rec_datarec(filename);
+}
+
+void VM::close_datarec()
+{
+	cmt->close_datarec();
 }
 
 bool VM::now_skip()

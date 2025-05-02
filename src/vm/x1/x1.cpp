@@ -1,5 +1,6 @@
 /*
 	SHARP X1twin Emulator 'eX1twin'
+	SHARP X1turbo Emulator 'eX1turbo'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -65,9 +66,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
 	if(sound_device_type) {
-		ctc = new Z80CTC(this, emu);
+		ctc_f = new Z80CTC(this, emu);
 	}
 #ifdef _X1TURBO
+	ctc = new Z80CTC(this, emu);
 	dma = new Z80DMA(this, emu);
 	sio = new Z80SIO(this, emu);
 #endif
@@ -89,21 +91,33 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	drec->set_context_out(pio, SIG_I8255_PORT_B, 0x02);
 	drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
-	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
-	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
+	// generate vblank/vsync signals in display class
+//	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
+//	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x01, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
+#ifdef _X1TURBO
+	fdc->set_context_drq(dma, SIG_Z80DMA_READY, 1);
+#endif
 #ifdef _FDC_DEBUG_LOG
 	fdc->set_context_cpu(cpu);
 #endif
 	if(sound_device_type) {
-		ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
-		ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
-		ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
+		ctc_f->set_context_zc0(ctc_f, SIG_Z80CTC_TRIG_3, 1);
+		ctc_f->set_constant_clock(1, CPU_CLOCKS >> 1);
+		ctc_f->set_constant_clock(2, CPU_CLOCKS >> 1);
 	}
+#ifdef _X1TURBO
+	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
+	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
+	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
+	dma->set_context_memory(memory);
+	dma->set_context_io(io);
+#endif
 	
 	display->set_context_fdc(fdc);
+	display->set_context_pio(pio);
 	display->set_vram_ptr(io->get_vram());
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
@@ -119,35 +133,32 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-#ifdef _X1TURBO
-	cpu->set_context_intr(sio);
-#else
-	if(sound_device_type) {
-		cpu->set_context_intr(ctc);
-	}
-	else {
-		cpu->set_context_intr(sub);
-	}
-#endif
 	
 	// z80 family daisy chain
 #ifdef _X1TURBO
-	sio->set_context_intr(cpu, 0);
-	sio->set_context_child(dma);
-	dma->set_context_intr(cpu, 1);
 	if(sound_device_type) {
-		dma->set_context_child(ctc);
-		ctc->set_context_intr(cpu, 2);
-		ctc->set_context_child(sub);
+		cpu->set_context_intr(ctc_f);
+		ctc_f->set_context_intr(cpu, 0);
+		ctc_f->set_context_child(sio);
 	}
 	else {
-		dma->set_context_child(sub);
+		cpu->set_context_intr(sio);
 	}
-	sub->set_context_intr(cpu, 3);
+	sio->set_context_intr(cpu, 1);
+	sio->set_context_child(dma);
+	dma->set_context_intr(cpu, 2);
+	dma->set_context_child(ctc);
+	ctc->set_context_intr(cpu, 3);
+	ctc->set_context_child(sub);
+	sub->set_context_intr(cpu, 4);
 #else
 	if(sound_device_type) {
-		ctc->set_context_intr(cpu, 0);
-		ctc->set_context_child(sub);
+		cpu->set_context_intr(ctc_f);
+		ctc_f->set_context_intr(cpu, 0);
+		ctc_f->set_context_child(sub);
+	}
+	else {
+		cpu->set_context_intr(sub);
 	}
 	sub->set_context_intr(cpu, 1);
 #endif
@@ -157,12 +168,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_single_w(0x700, opm);
 		io->set_iovalue_single_r(0x700, 0x00);
 		io->set_iomap_single_rw(0x701, opm);
+		io->set_iomap_range_rw(0x704, 0x707, ctc_f);
 	}
-#ifndef _X1TURBO
-	if(sound_device_type) {
-		io->set_iomap_range_rw(0x704, 0x707, ctc);
-	}
-#else
+#ifdef _X1TURBO
 	io->set_iomap_single_rw(0xb00, memory);
 #endif
 	io->set_iomap_range_rw(0xd00, 0xd03, emm);
@@ -170,6 +178,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0xe80, 0xe82, display);
 	io->set_iomap_range_rw(0xff8, 0xffb, fdc);
 	io->set_iomap_single_w(0xffc, floppy);
+#ifdef _X1TURBO
+	io->set_iomap_range_r(0xffc, 0xfff, floppy);
+#endif
 	io->set_iomap_range_rw(0x1000, 0x17ff, display);
 	for(int i = 0x1800; i <= 0x18f0; i += 0x10) {
 		io->set_iomap_range_rw(i, i + 1, crtc);
@@ -189,9 +200,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _X1TURBO
 	io->set_iomap_range_rw(0x1f80, 0x1f8f, dma);
 	io->set_iomap_range_rw(0x1f90, 0x1f93, sio);
-	if(sound_device_type) {
-		io->set_iomap_range_rw(0x1fa0, 0x1fa3, ctc);
-	}
+	io->set_iomap_range_rw(0x1fa0, 0x1fa3, ctc);
 #ifdef _X1TURBOZ
 	io->set_iomap_single_rw(0x1fd0, display);
 	io->set_iomap_single_rw(0x1fe0, display);
@@ -199,8 +208,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x1fd0, display);
 	io->set_iomap_single_w(0x1fe0, display);
 #endif
+	io->set_iovalue_single_r(0x1ff0, 0x00); // dipswitch: 0x00=2D, 0x04=2HD
 #endif
-	io->set_iomap_range_rw(0x2000, 0x3fff, display);	// tvram 
+	io->set_iomap_range_rw(0x2000, 0x3fff, display);	// tvram
 	
 #ifdef _X1TWIN
 	// init PC Engine
@@ -221,7 +231,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
+#ifdef _X1TWIN
 		if(device->this_device_id != event->this_device_id && device->this_device_id != pceevent->this_device_id) {
+#else
+		if(device->this_device_id != event->this_device_id) {
+#endif
 			device->initialize();
 		}
 	}

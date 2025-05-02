@@ -19,7 +19,7 @@
 #define DEVICE_NAME		"NEC PC-9801E/F/M"
 #define CONFIG_NAME		"pc9801e"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -49,6 +49,8 @@
 //#define EVENT_PRECISE		10
 
 // device informations for win32
+#define USE_DATAREC
+#define DATAREC_BINARY_ONLY
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -80,6 +82,7 @@ class UPD7220;
 class UPD765A;
 class YM2203;
 
+class CMT;
 class DISPLAY;
 class FLOPPY;
 class JOYSTICK;
@@ -95,6 +98,7 @@ protected:
 	
 	BEEP* beep;
 	I8237* dma;
+	I8251* sio_cmt;
 	I8251* sio_rs;
 	I8251* sio_kbd;
 	I8253* pit;
@@ -117,6 +121,7 @@ protected:
 	UPD765A* fdc_2dd;
 	YM2203* opn;
 	
+	CMT* cmt;
 	DISPLAY* display;
 	FLOPPY* floppy;
 	JOYSTICK* joystick;
@@ -159,6 +164,9 @@ public:
 	// user interface
 	void open_disk(_TCHAR* file_path, int drv);
 	void close_disk(int drv);
+	void play_datarec(_TCHAR* filename);
+	void rec_datarec(_TCHAR* filename);
+	void close_datarec();
 	bool now_skip();
 	
 	void update_config();

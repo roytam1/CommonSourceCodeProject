@@ -1,5 +1,6 @@
 /*
 	SHARP X1twin Emulator 'eX1twin'
+	SHARP X1turbo Emulator 'eX1turbo'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -30,19 +31,19 @@
 //#ifdef _X1TURBO
 //24KHz
 //#define FRAMES_PER_10SECS	554
-//#define FRAMES_PER_SEC	55.4
-//#define LINES_PER_FRAME 	440
-//#define CHARS_PER_LINE	108
-// 161*440*55.4
-//#define CPU_CLOCKS		3924536
+//#define FRAMES_PER_SEC		55.4
+//#define LINES_PER_FRAME 	448
+//#define CHARS_PER_LINE		108
+// 161*448*55.4
+//#define CPU_CLOCKS		3995891
 //#else
 // 15KHz
-#define FRAMES_PER_10SECS	600
-#define FRAMES_PER_SEC		60
-#define LINES_PER_FRAME 	266
-#define CHARS_PER_LINE		114
-// 250*266*60
-#define CPU_CLOCKS		3990000
+#define FRAMES_PER_10SECS	620
+#define FRAMES_PER_SEC		62
+#define LINES_PER_FRAME 	258
+#define CHARS_PER_LINE		112
+// 250*258*62
+#define CPU_CLOCKS		3999000
 //#endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
@@ -124,10 +125,11 @@ protected:
 	YM2151* opm;
 	YM2203* psg;
 	Z80* cpu;
-	Z80CTC* ctc;
+	Z80CTC* ctc_f;
 #ifdef _X1TURBO
 	Z80DMA* dma;
 	Z80SIO* sio;
+	Z80CTC* ctc;
 #endif
 	
 	DISPLAY* display;
@@ -140,10 +142,10 @@ protected:
 	
 	int sound_device_type;
 	
+#ifdef _X1TWIN
 	// device for pce
 	EVENT* pceevent;
 	
-#ifdef _X1TWIN
 	HUC6260* pcecpu;
 	PCE* pce;
 #endif

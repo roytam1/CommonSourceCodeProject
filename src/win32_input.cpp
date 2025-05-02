@@ -197,12 +197,15 @@ void EMU::key_down(int code, bool repeat)
 	}
 	if(code == 0xf0) {
 		key_status[code = VK_CAPITAL] = KEY_KEEP_FRAMES;
+		repeat = false;
 	}
 	else if(code == 0xf2) {
 		key_status[code = VK_KANA] = KEY_KEEP_FRAMES;
+		repeat = false;
 	}
 	else if(code == 0xf3 || code == 0xf4) {
 		key_status[code = VK_KANJI] = KEY_KEEP_FRAMES;
+		repeat = false;
 	}
 	else {
 		key_status[code] = 0x80;

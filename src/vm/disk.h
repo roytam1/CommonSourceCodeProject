@@ -36,6 +36,7 @@ private:
 	_TCHAR file_path[_MAX_PATH];
 	_TCHAR tmp_path[_MAX_PATH];
 	int file_size;
+	uint32 crc32;
 	bool temporary;
 	
 	// teledisk decoder
