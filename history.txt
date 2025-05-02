@@ -1,3 +1,9 @@
+1/5/2012
+
+[VM/HD46505] fix the issue that vline event is not correctly registered
+[VM/UPD765A] fix the issue that CP/M Plus does not boot correctly on QC-10
+
+
 12/31/2011
 
 [EMU] support to change the frame timing by virtual machine

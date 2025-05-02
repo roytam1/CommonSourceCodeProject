@@ -87,7 +87,7 @@ public:
 	uint8* get_regs() {
 		return regs;
 	}
-	void register_vline_event(DEVICE* dev);
+	void register_crtc_vline_event(DEVICE* dev);
 };
 
 #endif

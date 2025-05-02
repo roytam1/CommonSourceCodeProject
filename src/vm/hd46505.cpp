@@ -195,7 +195,7 @@ void HD46505::set_hsync(bool val)
 	}
 }
 
-void HD46505::register_vline_event(DEVICE* dev)
+void HD46505::register_crtc_vline_event(DEVICE* dev)
 {
 	if(vline_event_cnt < HD46505_MAX_EVENT) {
 		vline_event[vline_event_cnt++] = dev;

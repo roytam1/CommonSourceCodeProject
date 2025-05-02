@@ -677,9 +677,6 @@ void UPD765A::seek_event(int drv)
 	else if(force_ready || disk[drv]->get_track(trk, 0) || disk[drv]->get_track(trk, 1)) {
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE;
 	}
-//	else if(force_ready) {
-//		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_EC;
-//	}
 	else {
 #ifdef UPD765A_NO_ST0_AT_FOR_SEEK
 		// for NEC PC-100
@@ -1312,10 +1309,6 @@ void UPD765A::shift_to_result7_event()
 	buffer[4] = id[1];
 	buffer[5] = id[2];
 	buffer[6] = id[3];
-	
-	// for sence interrupt status
-	int drv = hdu & DRIVE_MASK;
-	fdc[drv].result = buffer[0];
 	set_irq(true);
 	shift_to_result(7);
 }

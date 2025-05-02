@@ -359,7 +359,7 @@ void VM::register_vline_event(DEVICE* dev)
 
 void VM::register_crtc_vline_event(DEVICE* dev)
 {
-	crtc->register_vline_event(dev);
+	crtc->register_crtc_vline_event(dev);
 }
 
 uint32 VM::current_clock()
