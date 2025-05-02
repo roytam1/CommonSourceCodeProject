@@ -1163,7 +1163,7 @@ void PC88::event_vline(int v, int clock)
 			dma_status &= ~4;
 			
 			// dma wait cycles: 9clocks/byte from quasi88
-			busreq_clocks = (int)((double)(dma_reg[2].length.sd + 1) * 9.0 / (double)disp_line + 0.5);
+			busreq_clocks = (int)((double)(dma_reg[2].length.sd + 1) * (cpu_clock_low ? 7.0 : 16.0) / (double)disp_line + 0.5);
 		}
 		memset(crtc_buffer, 0, sizeof(crtc_buffer));
 		crtc_buffer_ptr = 0;

@@ -1,3 +1,8 @@
+10/25/2012
+
+[PC8801MA/PC88] fix dma wait cycles on V1S mode
+
+
 10/23/2012
 
 [VM/HUC6280] reimplement based on MAME 0.147
