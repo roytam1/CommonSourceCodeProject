@@ -49,8 +49,8 @@ void MEMORY::initialize()
 	delete fio;
 	
 	// set memory map
-	SET_BANK(0x0000, 0x1fff, wdmy, ipl);
-	SET_BANK(0x2000, 0x3fff, wdmy, rdmy);
+	SET_BANK(0x0000, 0x1fff, ram + 0x0000, ipl);
+	SET_BANK(0x2000, 0x3fff, ram + 0x2000, rdmy);
 	SET_BANK(0x4000, 0xffff, ram + 0x4000, ram + 0x4000);
 }
 
@@ -68,13 +68,14 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
+	// from PIO-P6
 	if(data & mask) {
 		SET_BANK(0x0000, 0x3fff, ram, ram);
 	}
 	else {
 		// ROM
-		SET_BANK(0x0000, 0x1fff, wdmy, ipl);
-		SET_BANK(0x2000, 0x3fff, wdmy, rdmy);
+		SET_BANK(0x0000, 0x1fff, ram + 0x0000, ipl);
+		SET_BANK(0x2000, 0x3fff, ram + 0x2000, rdmy);
 	}
 }
 
@@ -99,7 +100,7 @@ void MEMORY::close_cart()
 	memset(cart, 0xff, sizeof(cart));
 	
 	// set memory map
-	SET_BANK(0x0000, 0x1fff, wdmy, ipl);
-	SET_BANK(0x2000, 0x3fff, wdmy, rdmy);
+	SET_BANK(0x0000, 0x1fff, ram + 0x0000, ipl);
+	SET_BANK(0x2000, 0x3fff, ram + 0x2000, rdmy);
 	SET_BANK(0x4000, 0xffff, ram + 0x4000, ram + 0x4000);
 }

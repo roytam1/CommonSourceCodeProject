@@ -1095,75 +1095,91 @@ void UPD7801::reset()
 	altVA = VA;
 	MK = 0x1f;
 	PORTC = TO = SAK = 0;
+	count = 0;
 	scount = tcount = 0;
 	wait = false;
 }
 
-void UPD7801::run(int clock)
+int UPD7801::run(int clock)
 {
-	count += clock;
-	first = count;
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		count = 0;
+		run_one_opecode();
+		return -count;
+	}
+	else {
+		// run cpu while given clocks
+		count += clock;
+		int first_count = count;
+		
+		while(count > 0) {
+			run_one_opecode();
+		}
+		return first_count - count;
+	}
+}
+
+void UPD7801::run_one_opecode()
+{
+	if(wait) {
+		period = 1;
+	}
+	else {
+		// interrupt is enabled after next opecode of ei
+		if(IFF & 2) {
+			IFF--;
+		}
+		
+		// run 1 opecode
+		period = 0;
+		prevPC = PC;
+		OP();
+	}
+	count -= period;
 	
-	while(count > 0) {
-		if(wait) {
-			period = 1;
+	// update serial count
+	if(scount && (scount -= period) <= 0) {
+		scount = 0;
+		IRR |= INTFS;
+		OUT8(P_SO, SR);
+		SR = IN8(P_SI);
+		if(SAK) {
+			SAK = 0;
+			UPDATE_PORTC(0);
 		}
-		else {
-			// interrupt is enabled after next opecode of ei
-			if(IFF & 2) {
-				IFF--;
-			}
-			
-			// run 1 opecode
-			period = 0;
-			prevPC = PC;
-			OP();
+	}
+	// update timer
+	if(tcount && (tcount -= period) <= 0) {
+		tcount += (((TM0 | (TM1 << 8)) & 0xfff) + 1) * PRESCALER;
+		IRR |= INTFT;
+		if(TO) {
+			TO = 0;
+			UPDATE_PORTC(0);
 		}
-		count -= period;
-		
-		// update serial count
-		if(scount && (scount -= period) <= 0) {
-			scount = 0;
-			IRR |= INTFS;
-			OUT8(P_SO, SR);
-			SR = IN8(P_SI);
-			if(SAK) {
-				SAK = 0;
-				UPDATE_PORTC(0);
-			}
-		}
-		// update timer
-		if(tcount && (tcount -= period) <= 0) {
-			tcount += (((TM0 | (TM1 << 8)) & 0xfff) + 1) * PRESCALER;
-			IRR |= INTFT;
-			if(TO) {
-				TO = 0;
-				UPDATE_PORTC(0);
-			}
-		}
-		
-		// check interrupt
-		if(IFF == 1 && !SIRQ) {
-			for(int i = 0; i < 5; i++) {
-				uint8 bit = irq_bits[i];
-				if((IRR & bit) && !(MK & bit)) {
-					if(HALT) {
-						HALT = 0;
-						PC++;
-					}
-					PUSH8(PSW);
-					PUSH16(PC);
-					
-					PC = irq_addr[i];
-					PSW &= ~(F_SK | F_L0 | F_L1);
-					IFF = 0;
-					IRR &= ~bit;
-					break;
+	}
+	
+	// check interrupt
+	if(IFF == 1 && !SIRQ) {
+		for(int i = 0; i < 5; i++) {
+			uint8 bit = irq_bits[i];
+			if((IRR & bit) && !(MK & bit)) {
+				if(HALT) {
+					HALT = 0;
+					PC++;
 				}
+				PUSH8(PSW);
+				PUSH16(PC);
+				
+				PC = irq_addr[i];
+				PSW &= ~(F_SK | F_L0 | F_L1);
+				IFF = 0;
+				IRR &= ~bit;
+				break;
 			}
 		}
 	}
-	first = count;
 }
 
 void UPD7801::write_signal(int id, uint32 data, uint32 mask)

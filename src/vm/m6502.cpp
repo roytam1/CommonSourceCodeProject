@@ -1000,56 +1000,75 @@ void M6502::reset()
 	PCL = RDMEM(RST_VEC);
 	PCH = RDMEM(RST_VEC + 1);
 	SPD = 0x01ff;
-	
 	P = F_T | F_I | F_Z | F_B | (P & F_D);
+	
+	icount = 0;
 	pending_irq = after_cli = false;
 	irq_state = nmi_state = so_state = false;
 }
 
-void M6502::run(int clock)
+int M6502::run(int clock)
 {
 	// return now if BUSREQ
 	if(busreq) {
-		icount = first = 0;
-		return;
+		icount = 0;
+		return 1;
 	}
 	
-	// run cpu while given clocks
-	icount += clock;
-	first = icount;
-	
-	while(icount > 0) {
-		// if an irq is pending, take it now
-		if(nmi_state) {
-			EAD = NMI_VEC;
-			CYCLES(2);
-			PUSH(PCH);
-			PUSH(PCL);
-			PUSH(P & ~F_B);
-			P |= F_I;	// set I flag
-			PCL = RDMEM(EAD);
-			PCH = RDMEM(EAD + 1);
-			nmi_state = false;
-		}
-		else if(pending_irq) {
-			update_irq();
-		}
-		prev_pc = pc.w.l;
-		uint8 code = RDOP();
-		OP(code);
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		icount = 0;
+		run_one_opecode();
+		return -icount;
+	}
+	else {
+		// run cpu while given clocks
+		icount += clock;
+		int first_icount = icount;
 		
-		// check if the I flag was just reset (interrupts enabled)
-		if(after_cli) {
-			after_cli = false;
-			if(irq_state) {
-				pending_irq = true;
-			}
+		while(icount > 0 && !busreq) {
+			run_one_opecode();
 		}
-		else if(pending_irq) {
-			update_irq();
+		int passed_icount = first_icount - icount;
+		if(busreq && icount > 0) {
+			icount = 0;
+		}
+		return passed_icount;
+	}
+}
+
+void M6502::run_one_opecode()
+{
+	// if an irq is pending, take it now
+	if(nmi_state) {
+		EAD = NMI_VEC;
+		CYCLES(2);
+		PUSH(PCH);
+		PUSH(PCL);
+		PUSH(P & ~F_B);
+		P |= F_I;	// set I flag
+		PCL = RDMEM(EAD);
+		PCH = RDMEM(EAD + 1);
+		nmi_state = false;
+	}
+	else if(pending_irq) {
+		update_irq();
+	}
+	prev_pc = pc.w.l;
+	uint8 code = RDOP();
+	OP(code);
+	
+	// check if the I flag was just reset (interrupts enabled)
+	if(after_cli) {
+		after_cli = false;
+		if(irq_state) {
+			pending_irq = true;
 		}
 	}
-	first = icount;
+	else if(pending_irq) {
+		update_irq();
+	}
 }
 
 void M6502::write_signal(int id, uint32 data, uint32 mask)
@@ -1073,9 +1092,6 @@ void M6502::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
-		if(busreq) {
-			icount = first = 0;
-		}
 	}
 }
 

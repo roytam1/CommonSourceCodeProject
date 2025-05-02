@@ -147,9 +147,9 @@ void UPD765A::initialize()
 	
 	// index hole event
 	if(outputs_index.count) {
+		// TODO: change rpm for each media type
 		index_count = 0;
-		int id;
-		register_event(this, EVENT_INDEX, 1000000 / 360 / 16, true, &id);
+		register_event(this, EVENT_INDEX, 1000000.0 / (300.0 / 60.0) / 256.0, true, NULL); // 300rpm
 	}
 }
 
@@ -384,9 +384,12 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_UPD765A_MOTOR) {
 		motor = ((data & mask) != 0);
 	}
+	else if(id == SIG_UPD765A_MOTOR_NEG) {
+		motor = ((data & mask) == 0);
+	}
 #ifdef UPD765A_EXT_DRVSEL
 	else if(id == SIG_UPD765A_DRVSEL) {
-		hdu = data & DRIVE_MASK;
+		hdu = (hdu & 4) | (data & DRIVE_MASK);
 		write_signals(&outputs_hdu, hdu);
 	}
 #endif
@@ -447,11 +450,11 @@ void UPD765A::event_callback(int event_id, int err)
 	else if(event_id == EVENT_INDEX) {
 		int drv = hdu & DRIVE_MASK;
 		if(disk[drv]->inserted) {
-			write_signals(&outputs_index, (index_count == 0) ? 0 : 0xffffffff);
-			index_count = (index_count + 1) & 15;
+			index_count++;
+			write_signals(&outputs_index, (index_count == 0) ? 0xffffffff : 0);
 		}
 		else {
-			write_signals(&outputs_index, 0xffffffff);
+			write_signals(&outputs_index, 0);
 		}
 	}
 	else if(event_id >= EVENT_SEEK && event_id < EVENT_SEEK + 4) {
@@ -512,10 +515,12 @@ void UPD765A::set_drq(bool val)
 
 void UPD765A::set_hdu(uint8 val)
 {
-#ifndef UPD765A_EXT_DRVSEL
+#ifdef UPD765A_EXT_DRVSEL
+	hdu = (hdu & 3) | (val & 4);
+#else
 	hdu = val;
-	write_signals(&outputs_hdu, hdu);
 #endif
+	write_signals(&outputs_hdu, hdu);
 }
 
 // ----------------------------------------------------------------------------

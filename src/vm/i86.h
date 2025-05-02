@@ -68,8 +68,7 @@ private:
 	bool test_state;
 	bool busreq, halted;
 	
-	int icount, first_icount;
-	int extra_cycles;	/* extra cycles for interrupts */
+	int icount;
 	
 	bool seg_prefix;	/* prefix segment indicator */
 	uint8 prefix_seg;	/* The prefixed segment */
@@ -108,6 +107,7 @@ private:
 	void rotate_shift_word(unsigned ModRM, unsigned cnt);
 	
 	// opecode
+	void run_one_opecode();
 	void instruction(uint8 code);
 	inline void _add_br8();
 	inline void _add_wr16();
@@ -363,7 +363,6 @@ public:
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
 #endif
-		icount = extra_cycles = first_icount = 0;	// passed_clock must be zero at initialize
 		busreq = false;
 	}
 	~I86() {}
@@ -371,12 +370,9 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
-	int passed_clock() {
-		return first_icount - icount;
-	}
 	uint32 get_pc() {
 		return prevpc;
 	}

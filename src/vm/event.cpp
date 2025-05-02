@@ -24,19 +24,11 @@ void EVENT::initialize()
 	}
 	power = config.cpu_power;
 	
-	// initialize event
-	for(int i = 0; i < MAX_EVENT; i++) {
-		event[i].enable = false;
-	}
-	next_id = NO_EVENT;
-	next_clock = past_clock = 0;
-	
 	// initialize sound buffer
 	sound_buffer = NULL;
 	sound_tmp = NULL;
 	
-	accum_clocks = 0;
-	first_reset = true;
+	event_clocks = 0;
 }
 
 void EVENT::initialize_sound(int rate, int samples)
@@ -69,21 +61,15 @@ void EVENT::release()
 
 void EVENT::reset()
 {
-	// skip the first reset request after the device is initialized
-	if(first_reset) {
-		first_reset = false;
-		return;
-	}
-	
-	// clear events (except loop event)
-	for(int i = 0; i < event_count; i++) {
-		if(!(event[i].enable && event[i].loop)) {
-			event[i].enable = false;
+	// clear events except loop event
+	for(int i = 0; i < MAX_EVENT; i++) {
+		if(event[i].active && event[i].loop_clock == 0) {
+			cancel_event(i);
 		}
 	}
 	
-	// get next event clock
-	get_next_event();
+	event_remain = 0;
+	cpu_remain = cpu_accum = 0;
 	
 	// reset sound
 	if(sound_buffer) {
@@ -93,6 +79,10 @@ void EVENT::reset()
 		memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	}
 	buffer_ptr = 0;
+	
+#ifdef _DEBUG_LOG
+	initialize_done = true;
+#endif
 }
 
 void EVENT::drive()
@@ -138,91 +128,80 @@ void EVENT::drive()
 		for(int i = 0; i < vline_event_count; i++) {
 			vline_event[i]->event_vline(v, vclocks[v]);
 		}
-		update_event(vclocks[v]);
+		
+		if(event_remain < 0) {
+			if(-event_remain > vclocks[v]) {
+				update_event(vclocks[v]);
+			}
+			else {
+				update_event(-event_remain);
+			}
+		}
+		event_remain += vclocks[v];
+		cpu_remain += vclocks[v] << power;
+		
+		while(event_remain > 0) {
+			int event_done = event_remain;
+			if(cpu_remain > 0) {
+				// run one opecode on primary cpu
+				int cpu_done = d_cpu[0].device->run(-1);
+				for(int i = 1; i < dcount_cpu; i++) {
+					// run sub cpus
+					d_cpu[i].accum_clocks += d_cpu[i].update_clocks * cpu_done;
+					int sub_clock = d_cpu[i].accum_clocks >> 10;
+					if(sub_clock) {
+						d_cpu[i].accum_clocks -= sub_clock << 10;
+						d_cpu[i].device->run(sub_clock);
+					}
+				}
+				cpu_remain -= cpu_done;
+				cpu_accum += cpu_done;
+				event_done = cpu_accum >> power;
+				cpu_accum -= event_done << power;
+			}
+			if(event_done > 0) {
+				if(event_done > event_remain) {
+					update_event(event_remain);
+				}
+				else {
+					update_event(event_done);
+				}
+				event_remain -= event_done;
+			}
+		}
 		update_sound();
 	}
 }
 
 void EVENT::update_event(int clock)
 {
-	while(clock) {
-		past_clock = 0;
-		while(clock && (next_id == NO_EVENT || next_clock > past_clock)) {
-			// run cpu
-#ifdef EVENT_PRECISE
-			int remain = next_clock - past_clock;
-			int tmp = (next_id == NO_EVENT || clock < remain) ? clock : remain;
-			int eventclock = tmp > EVENT_PRECISE ? EVENT_PRECISE : tmp;
-#else
-			int remain = next_clock - past_clock;
-			int eventclock = (next_id == NO_EVENT || clock < remain) ? clock : remain;
-#endif
-			if(dcount_cpu > 1) {
-				// sync cpus
-				for(int c = 0; c < eventclock; c++) {
-					for(int p = 0; p < (1 << power); p++) {
-						d_cpu[0].device->run(1);
-						for(int i = 1; i < dcount_cpu; i++) {
-							d_cpu[i].accum_clocks += d_cpu[i].update_clocks;
-							int clocks = d_cpu[i].accum_clocks >> 10;
-							if(clocks) {
-								d_cpu[i].accum_clocks -= clocks << 10;
-								d_cpu[i].device->run(clocks);
-							}
-						}
-					}
-					accum_clocks += 1;
-				}
-			}
-			else {
-				d_cpu[0].device->run(eventclock << power);
-				accum_clocks += eventclock;
-			}
-			clock -= eventclock;
-			past_clock += eventclock;
+	uint64 event_clocks_tmp = event_clocks + clock;
+	
+	while(first_fire_event != NULL && first_fire_event->expired_clock <= event_clocks_tmp) {
+		event_t *event_handle = first_fire_event;
+		
+		first_fire_event = event_handle->next;
+		if(first_fire_event != NULL) {
+			first_fire_event->prev = NULL;
 		}
-		// update event_clock
-		if(past_clock) {
-			for(int i = 0; i < event_count; i++) {
-				event[i].clock -= past_clock;
-			}
-			next_clock -= past_clock;
-			past_clock = 0;
+		if(event_handle->loop_clock != 0) {
+			event_handle->expired_clock += event_handle->loop_clock;
+			insert_event(event_handle);
 		}
-		// run event
-		get_nextevent = false;
-		while(!(next_id == NO_EVENT || next_clock > 0)) {
-			// run event
-			int err = event[next_id].clock;
-			if(event[next_id].loop) {
-				event[next_id].clock += event[next_id].loop;
-			}
-			else {
-				event[next_id].enable = false;
-			}
-			event[next_id].device->event_callback(event[next_id].event_id, err);
-			
-			// get next event clock
-			get_next_event();
+		else {
+			event_handle->active = false;
+			event_handle->next = first_free_event;
+			first_free_event = event_handle;
 		}
-		get_nextevent = true;
+		event_clocks = event_handle->expired_clock;
+		event_handle->device->event_callback(event_handle->event_id, 0);
 	}
-}
-
-void EVENT::get_next_event()
-{
-	next_id = NO_EVENT;
-	for(int i = 0; i < event_count; i++) {
-		if(event[i].enable && (next_id == NO_EVENT || event[i].clock < next_clock)) {
-			next_clock = event[i].clock;
-			next_id = i;
-		}
-	}
+	event_clocks = event_clocks_tmp;
 }
 
 uint32 EVENT::current_clock()
 {
-	return accum_clocks + (d_cpu[0].device->passed_clock() >> power);
+	return (uint32)(event_clocks & 0xffffffff);
 }
 
 uint32 EVENT::passed_clock(uint32 prev)
@@ -236,49 +215,79 @@ uint32 EVENT::get_cpu_pc(int index)
 	return d_cpu[index].device->get_pc();
 }
 
-void EVENT::register_event(DEVICE* dev, int event_id, double usec, bool loop, int* register_id)
+void EVENT::register_event(DEVICE* device, int event_id, double usec, bool loop, int* register_id)
 {
 	int clock = (int)((double)d_cpu[0].cpu_clocks / 1000000.0 * usec + 0.5);
-	register_event_by_clock(dev, event_id, clock, loop, register_id);
+	register_event_by_clock(device, event_id, clock, loop, register_id);
 }
 
-void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
+void EVENT::register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id)
 {
-	// register event
 #ifdef _DEBUG_LOG
-	bool registered = false;
-#endif
-	if(register_id != NULL) {
-		*register_id = -1;
-	}
-	for(int i = 0; i < MAX_EVENT; i++) {
-		if(!event[i].enable) {
-			if(event_count < i + 1) {
-				event_count = i + 1;
-			}
-			event[i].enable = true;
-			event[i].device = dev;
-			event[i].event_id = event_id;
-			event[i].clock = clock + past_clock + (d_cpu[0].device->passed_clock() >> power);
-			event[i].loop = loop ? clock : 0;
-			if(register_id != NULL) {
-				*register_id = i;
-			}
-#ifdef _DEBUG_LOG
-			registered = true;
-#endif
-			break;
-		}
-	}
-#ifdef _DEBUG_LOG
-	if(!registered) {
-		emu->out_debug(_T("EVENT: too many events !!!\n"));
+	if(!initialize_done && !loop) {
+		emu->out_debug(_T("EVENT: non-loop event is registered before initialize is done\n"));
 	}
 #endif
 	
-	// get next event clock
-	if(get_nextevent) {
-		get_next_event();
+	// register event
+	if(first_free_event == NULL) {
+#ifdef _DEBUG_LOG
+		emu->out_debug(_T("EVENT: too many events !!!\n"));
+#endif
+		if(register_id != NULL) {
+			*register_id = -1;
+		}
+		return;
+	}
+	event_t *event_handle = first_free_event;
+	first_free_event = first_free_event->next;
+	
+	if(register_id != NULL) {
+		*register_id = event_handle->index;
+	}
+	event_handle->active = true;
+	event_handle->device = device;
+	event_handle->event_id = event_id;
+	event_handle->expired_clock = event_clocks + clock;
+	event_handle->loop_clock = loop ? clock : 0;
+	
+	insert_event(event_handle);
+}
+
+void EVENT::insert_event(event_t *event_handle)
+{
+	if(first_fire_event == NULL) {
+		first_fire_event = event_handle;
+		event_handle->prev = event_handle->next = NULL;
+	}
+	else {
+		for(event_t *insert_pos = first_fire_event; insert_pos != NULL; insert_pos = insert_pos->next) {
+			if(insert_pos->expired_clock > event_handle->expired_clock) {
+				if(insert_pos->prev != NULL) {
+					// insert
+					insert_pos->prev->next = event_handle;
+					event_handle->prev = insert_pos->prev;
+					event_handle->next = insert_pos;
+					insert_pos->prev = event_handle;
+					break;
+				}
+				else {
+					// add to head
+					first_fire_event = event_handle;
+					event_handle->prev = NULL;
+					event_handle->next = insert_pos;
+					insert_pos->prev = event_handle;
+					break;
+				}
+			}
+			else if(insert_pos->next == NULL) {
+				// add to tail
+				insert_pos->next = event_handle;
+				event_handle->prev = insert_pos;
+				event_handle->next = NULL;
+				break;
+			}
+		}
 	}
 }
 
@@ -286,14 +295,22 @@ void EVENT::cancel_event(int register_id)
 {
 	// cancel registered event
 	if(0 <= register_id && register_id < MAX_EVENT) {
-		event[register_id].enable = false;
-		
-		// get next event clock
-		if(next_id == register_id) {
-			get_next_event();
+		event_t *event_handle = &event[register_id];
+		if(event_handle->active) {
+			if(event_handle->prev != NULL) {
+				event_handle->prev->next = event_handle->next;
+			}
+			else {
+				first_fire_event = event_handle->next;
+			}
+			if(event_handle->next != NULL) {
+				event_handle->next->prev = event_handle->prev;
+			}
+			event_handle->active = false;
+			event_handle->next = first_free_event;
+			first_free_event = event_handle;
 		}
 	}
-	
 }
 
 void EVENT::register_frame_event(DEVICE* dev)
@@ -400,5 +417,8 @@ uint16* EVENT::create_sound(int* extra_frames)
 
 void EVENT::update_config()
 {
-	power = config.cpu_power;
+	if(power != config.cpu_power) {
+		power = config.cpu_power;
+		cpu_accum = 0;
+	}
 }

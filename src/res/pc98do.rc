@@ -196,11 +196,6 @@ BEGIN
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
         MENUITEM SEPARATOR
-        MENUITEM "400 Lines, Analog",           ID_SCREEN_MONITOR_TYPE0
-        MENUITEM "400 Lines, Digital",          ID_SCREEN_MONITOR_TYPE1
-        MENUITEM "200 Lines, Analog",           ID_SCREEN_MONITOR_TYPE2
-        MENUITEM "200 Lines, Digital",          ID_SCREEN_MONITOR_TYPE3
-        MENUITEM SEPARATOR
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"

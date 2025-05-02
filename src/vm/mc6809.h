@@ -33,12 +33,12 @@ private:
 	
 	uint8 int_state;
 	int icount;
-	int first_icount;
 	
 	inline uint32 RM16(uint32 Addr);
 	inline void WM16(uint32 Addr, pair *p);
 	
 	// opcodes
+	void run_one_opecode();
 	void op(uint8 ireg);
 	inline void fetch_effective_address();
 	inline void abx();
@@ -321,18 +321,13 @@ private:
 	inline void tst_ix();
 	
 public:
-	MC6809(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		icount = first_icount = 0;	// passed_clock must be zero at initialize
-	}
+	MC6809(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~MC6809() {}
 	
 	// common functions
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	int passed_clock() {
-		return first_icount - icount;
-	}
 	uint32 get_pc() {
 		return ppc.w.l;
 	}

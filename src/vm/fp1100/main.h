@@ -15,11 +15,11 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_MAIN_INTA	0
-#define SIG_MAIN_INTB	1
-#define SIG_MAIN_INTC	2
-#define SIG_MAIN_INTD	3
-#define SIG_MAIN_INTS	4
+#define SIG_MAIN_INTS	0
+#define SIG_MAIN_INTA	1
+#define SIG_MAIN_INTB	2
+#define SIG_MAIN_INTC	3
+#define SIG_MAIN_INTD	4
 #define SIG_MAIN_COMM	5
 
 class MAIN : public DEVICE

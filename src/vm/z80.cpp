@@ -844,8 +844,11 @@ void Z80::reset()
 	SP = 0;
 	_F = _I = _R = 0;
 	IM = IFF1 = IFF2 = ICR = 0;
+	
+	count = 0;
 	halt = false;
 	intr_req_bit = intr_pend_bit = 0;
+	
 #ifdef _CPU_DEBUG_LOG
 	debug_count = 0;
 #endif
@@ -863,10 +866,6 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
-		if(busreq) {
-			count = first = 0;
-		}
-		// busack
 		write_signals(&outputs_busack, busreq ? 0xffffffff : 0);
 	}
 #ifdef Z80_M1_CYCLE_WAIT
@@ -898,158 +897,176 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 #endif
 }
 
-void Z80::run(int clock)
+int Z80::run(int clock)
 {
 	// return now if BUSREQ
 	if(busreq) {
-		count = first = 0;
-		return;
+		count = 0;
+		return 1;
 	}
 	
-	// run cpu while given clocks
-	count += clock;
-	first = count;
-	
-	while(count > 0) {
-		uint8 code = FETCHOP();
-		OP(code);
-		if(code == 0xfb) {
-			// ei: run next opecode
-			OP(FETCHOP());
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		count = 0;
+		run_one_opecode();
+		return -count;
+	}
+	else {
+		// run cpu while given clocks
+		count += clock;
+		int first_count = count;
+		
+		while(count > 0 && !busreq) {
+			run_one_opecode();
 		}
-		if(intr_req_bit) {
-			if(intr_req_bit & NMI_REQ_BIT) {
-				// nmi
+		int passed_count = first_count - count;
+		if(busreq && count > 0) {
+			count = 0;
+		}
+		return passed_count;
+	}
+}
+
+void Z80::run_one_opecode()
+{
+	uint8 code = FETCHOP();
+	OP(code);
+	if(code == 0xfb) {
+		// ei: run next opecode
+		OP(FETCHOP());
+	}
+	if(intr_req_bit) {
+		if(intr_req_bit & NMI_REQ_BIT) {
+			// nmi
 #ifdef _CPU_DEBUG_LOG
-				if(debug_count) {
-					emu->out_debug(_T("%4x\tNMI\n"), PC);
-				}
-#endif
-				if(halt) {
-					PC++;
-					halt = false;
-				}
-				PUSH16(PC);
-				PC = 0x0066;
-				count -= 5;
-				IFF1 = 0;
-				intr_req_bit &= ~NMI_REQ_BIT;
+			if(debug_count) {
+				emu->out_debug(_T("%4x\tNMI\n"), PC);
 			}
+#endif
+			if(halt) {
+				PC++;
+				halt = false;
+			}
+			PUSH16(PC);
+			PC = 0x0066;
+			count -= 5;
+			IFF1 = 0;
+			intr_req_bit &= ~NMI_REQ_BIT;
+		}
 #ifdef HAS_NSC800
-			else if((intr_req_bit & 1) && (ICR & 1)) {
-				// INTR
-				uint8 vector = ACK_INTR();
-				NSC800_INT(vector);
-				intr_req_bit &= ~1;
-			}
-			else if((intr_req_bit & 8) && (ICR & 8)) {
-				// RSTA
-				NSC800_INT(0x3c);
-				intr_req_bit &= ~8;
-			}
-			else if((intr_req_bit & 4) && (ICR & 4)) {
-				// RSTB
-				NSC800_INT(0x34);
-				intr_req_bit &= ~4;
-			}
-			else if((intr_req_bit & 2) && (ICR & 2)) {
-				// RSTC
-				NSC800_INT(0x2c);
-				intr_req_bit &= ~2;
-			}
+		else if((intr_req_bit & 1) && (ICR & 1)) {
+			// INTR
+			uint8 vector = ACK_INTR();
+			NSC800_INT(vector);
+			intr_req_bit &= ~1;
+		}
+		else if((intr_req_bit & 8) && (ICR & 8)) {
+			// RSTA
+			NSC800_INT(0x3c);
+			intr_req_bit &= ~8;
+		}
+		else if((intr_req_bit & 4) && (ICR & 4)) {
+			// RSTB
+			NSC800_INT(0x34);
+			intr_req_bit &= ~4;
+		}
+		else if((intr_req_bit & 2) && (ICR & 2)) {
+			// RSTC
+			NSC800_INT(0x2c);
+			intr_req_bit &= ~2;
+		}
 #else
-			else if(IFF1) {
-				// interrupt
-				if(halt) {
-					PC++;
-					halt = false;
-				}
-				uint32 vector = ACK_INTR();
-				uint8 v0 = vector;
-				uint16 v12 = vector >> 8;
+		else if(IFF1) {
+			// interrupt
+			if(halt) {
+				PC++;
+				halt = false;
+			}
+			uint32 vector = ACK_INTR();
+			uint8 v0 = vector;
+			uint16 v12 = vector >> 8;
 #ifdef _CPU_DEBUG_LOG
-				if(debug_count) {
-					emu->out_debug(_T("%4x\tIRQ VECTOR=%2x\n"), PC, v0);
-				}
+			if(debug_count) {
+				emu->out_debug(_T("%4x\tIRQ VECTOR=%2x\n"), PC, v0);
+			}
 #endif
-				if(IM == 0) {
-					// mode 0 (support NOP/CALL/RST only)
-					switch(v0) {
-					case 0x00:		// NOP
-						break;
-					case 0xcd:		// CALL
-						PUSH16(PC);
-						PC = v12;
-						break;
-					case 0xc7:		// RST 00H
-						PUSH16(PC);
-						PC = 0x0000;
-						break;
-					case 0xcf:		// RST 08H
-						PUSH16(PC);
-						PC = 0x0008;
-						break;
-					case 0xd7:		// RST 10H
-						PUSH16(PC);
-						PC = 0x0010;
-						break;
-					case 0xdf:		// RST 18H
-						PUSH16(PC);
-						PC = 0x0018;
-						break;
-					case 0xe7:		// RST 20H
-						PUSH16(PC);
-						PC = 0x0020;
-						break;
-					case 0xef:		// RST 28H
-						PUSH16(PC);
-						PC = 0x0028;
-						break;
-					case 0xf7:		// RST 30H
-						PUSH16(PC);
-						PC = 0x0030;
-						break;
-					case 0xff:		// RST 38H
-						PUSH16(PC);
-						PC = 0x0038;
-						break;
-					}
-					count -= 7;
-				}
-				else if(IM == 1) {
-					// mode 1
+			if(IM == 0) {
+				// mode 0 (support NOP/CALL/RST only)
+				switch(v0) {
+				case 0x00:		// NOP
+					break;
+				case 0xcd:		// CALL
+					PUSH16(PC);
+					PC = v12;
+					break;
+				case 0xc7:		// RST 00H
+					PUSH16(PC);
+					PC = 0x0000;
+					break;
+				case 0xcf:		// RST 08H
+					PUSH16(PC);
+					PC = 0x0008;
+					break;
+				case 0xd7:		// RST 10H
+					PUSH16(PC);
+					PC = 0x0010;
+					break;
+				case 0xdf:		// RST 18H
+					PUSH16(PC);
+					PC = 0x0018;
+					break;
+				case 0xe7:		// RST 20H
+					PUSH16(PC);
+					PC = 0x0020;
+					break;
+				case 0xef:		// RST 28H
+					PUSH16(PC);
+					PC = 0x0028;
+					break;
+				case 0xf7:		// RST 30H
+					PUSH16(PC);
+					PC = 0x0030;
+					break;
+				case 0xff:		// RST 38H
 					PUSH16(PC);
 					PC = 0x0038;
-					count -= 7;
+					break;
 				}
-				else {
-					// mode 2
-					PUSH16(PC);
-					PC = RM16((_I << 8) | v0);
-					count -= 7;
-				}
-#ifdef _X1TURBO
-				// hack for X1turbo2 demonstration :-(
-				if(IM == 2 && RM8(PC) == 0xed && RM8(PC + 1) == 0x4d) {
-					IFF1 = 0;
-				}
-				else
-#endif
-				IFF1 = IFF2 = 0;
-				intr_req_bit = 0;
+				count -= 7;
+			}
+			else if(IM == 1) {
+				// mode 1
+				PUSH16(PC);
+				PC = 0x0038;
+				count -= 7;
 			}
 			else {
-				intr_req_bit &= intr_pend_bit;
+				// mode 2
+				PUSH16(PC);
+				PC = RM16((_I << 8) | v0);
+				count -= 7;
 			}
+#ifdef _X1TURBO
+			// hack for X1turbo2 demonstration :-(
+			if(IM == 2 && RM8(PC) == 0xed && RM8(PC + 1) == 0x4d) {
+				IFF1 = 0;
+			}
+			else
 #endif
+			IFF1 = IFF2 = 0;
+			intr_req_bit = 0;
 		}
-#ifdef SINGLE_MODE_DMA
-		if(d_dma) {
-			d_dma->do_dma();
+		else {
+			intr_req_bit &= intr_pend_bit;
 		}
 #endif
 	}
-	first = count;
+#ifdef SINGLE_MODE_DMA
+	if(d_dma) {
+		d_dma->do_dma();
+	}
+#endif
 }
 
 void Z80::OP(uint8 code)

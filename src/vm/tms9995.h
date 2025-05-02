@@ -26,7 +26,7 @@ private:
 	DEVICE *d_mem, *d_io;
 	
 	// clocks
-	int count, first, period;
+	int count, period;
 	// register
 	uint16 WP, PC, prevPC, ST;
 	uint8 RAM[256];
@@ -63,6 +63,7 @@ private:
 	void contextswitch(uint16 addr);
 	
 	// opecode functions
+	void run_one_opecode();
 	void execute(uint16 op);
 	void h0040(uint16 op);
 	void h0100(uint16 op);
@@ -100,8 +101,6 @@ private:
 	
 public:
 	TMS9995(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		count = first = 0;	// passed_clock must be zero at initialize
-		
 		// init registers
 		WP = PC = ST = 0;
 		memset(RAM, 0, sizeof(RAM));
@@ -119,11 +118,8 @@ public:
 	
 	// common function
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	int passed_clock() {
-		return first - count;
-	}
 	uint32 get_pc() {
 		return prevPC;
 	}

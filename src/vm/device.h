@@ -368,14 +368,12 @@ public:
 	virtual void do_dma() {}
 	
 	// cpu
-	virtual void run(int clock) {}
-	virtual int passed_clock() {
+	virtual int run(int clock) {
+		// when clock == -1, run one opecode
 		return 0;
 	}
 	virtual uint32 get_pc() {
 		return 0;
-	}
-	virtual void set_pc(uint32 pc) {
 	}
 	
 	// bios

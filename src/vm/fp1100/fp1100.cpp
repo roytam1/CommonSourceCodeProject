@@ -21,9 +21,9 @@
 
 #include "main.h"
 #include "sub.h"
+#include "fdcpack.h"
 #include "rampack.h"
 #include "rompack.h"
-#include "fdcpack.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -45,6 +45,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	main = new MAIN(this, emu);
 	sub = new SUB(this, emu);
+	fdcpack = new FDCPACK(this, emu);
 	rampack1 = new RAMPACK(this, emu);
 	rampack1->index = 1;
 	rampack2 = new RAMPACK(this, emu);
@@ -58,7 +59,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rampack6 = new RAMPACK(this, emu);
 	rampack6->index = 6;
 	rompack = new ROMPACK(this, emu);
-	fdcpack = new FDCPACK(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -66,8 +66,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(beep);
 	
 	crtc->set_context_hsync(sub, SIG_SUB_HSYNC, 1);
-	fdc->set_context_irq(fdcpack, SIG_FDCPACK_IRQ, 1);
-	fdc->set_context_drq(fdcpack, SIG_FDCPACK_DRQ, 1);
+	fdc->set_context_drq(main, SIG_MAIN_INTA, 1);
+	fdc->set_context_irq(main, SIG_MAIN_INTB, 1);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 	
 	main->set_context_cpu(cpu);
 	main->set_context_sub(sub);
@@ -86,7 +89,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sub->set_context_crtc(crtc, crtc->get_regs());
 	
 	fdcpack->set_context_fdc(fdc);
-	fdcpack->set_context_main(main);
 	
 	// cpu bus
 	cpu->set_context_mem(main);

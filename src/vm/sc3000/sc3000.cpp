@@ -58,13 +58,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_k->set_context_port_c(key, SIG_KEYBOARD_COLUMN, 0x07, 0);
 	pio_k->set_context_port_c(drec, SIG_DATAREC_REMOTE, 0x08, 0);
 	pio_k->set_context_port_c(drec, SIG_DATAREC_OUT, 0x10, 0);
-	pio_f->set_context_port_c(fdc, SIG_UPD765A_MOTOR, 2, 0);
+	pio_f->set_context_port_c(fdc, SIG_UPD765A_MOTOR_NEG, 2, 0);
 	pio_f->set_context_port_c(fdc, SIG_UPD765A_TC, 4, 0);
 	pio_f->set_context_port_c(fdc, SIG_UPD765A_RESET, 8, 0);
 	pio_f->set_context_port_c(memory, SIG_MEMORY_SEL, 0x40, 0);
 	vdp->set_context_irq(cpu, SIG_CPU_IRQ, 1);
 	fdc->set_context_irq(pio_f, SIG_I8255_PORT_A, 1);
 	fdc->set_context_index(pio_f, SIG_I8255_PORT_A, 4);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 	
 	key->set_context_cpu(cpu);
 	key->set_context_pio(pio_k);
@@ -132,6 +135,12 @@ void VM::run()
 void VM::draw_screen()
 {
 	vdp->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

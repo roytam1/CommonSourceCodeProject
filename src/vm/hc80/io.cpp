@@ -1831,8 +1831,10 @@ void IO::draw_screen()
 					int px = curs_x * 6;
 					int py = curs_y * 8;
 					int st = (curs_mode & 4) ? 0 : 7;
-					for(int l = st; l < 8; l++) {
-						memset(&lcd[py + l][px], 0xff, 6);
+					if(px + 6 - 1 < SCREEN_WIDTH) {
+						for(int l = st; l < 8 && py + l < SCREEN_HEIGHT; l++) {
+							memset(&lcd[py + l][px], 0xff, 6);
+						}
 					}
 				}
 			}

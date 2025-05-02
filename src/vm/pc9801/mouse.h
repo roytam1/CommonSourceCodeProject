@@ -26,7 +26,10 @@ private:
 	
 	// mouse
 	int* status;
-	int ctrlreg, freq, dx, dy, lx, ly;
+	int ctrlreg, freq, cur_freq, dx, dy, lx, ly;
+	int register_id;
+	
+	void update_mouse();
 	
 public:
 	MOUSE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

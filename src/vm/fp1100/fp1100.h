@@ -25,7 +25,7 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-//#define UPD765A_WAIT_SEEK
+//#define UPD765A_DONT_WAIT_SEEK
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
@@ -57,9 +57,9 @@ class Z80;
 
 class MAIN;
 class SUB;
+class FDCPACK;
 class RAMPACK;
 class ROMPACK;
-class FDCPACK;
 
 class VM
 {
@@ -77,6 +77,7 @@ protected:
 	
 	MAIN* main;
 	SUB* sub;
+	FDCPACK* fdcpack;
 	RAMPACK* rampack1;
 	RAMPACK* rampack2;
 	RAMPACK* rampack3;
@@ -84,7 +85,6 @@ protected:
 	RAMPACK* rampack5;
 	RAMPACK* rampack6;
 	ROMPACK* rompack;
-	FDCPACK* fdcpack;
 	
 public:
 	// ----------------------------------------

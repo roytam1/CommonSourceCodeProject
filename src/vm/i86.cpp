@@ -620,6 +620,7 @@ void I86::reset()
 	DirVal = 1;
 	ParityVal = TF = IF = MF = 0;
 	
+	icount = 0;
 	int_state = 0;
 	test_state = false;
 	halted = false;
@@ -647,70 +648,81 @@ void I86::reset()
 #endif
 }
 
-void I86::run(int clock)
+int I86::run(int clock)
 {
 	/* return now if BUSREQ */
 	if(busreq) {
-		icount = extra_cycles = first_icount = 0;
-		return;
+		icount = 0;
+		return 1;
 	}
 	
-	/* run cpu while given clocks */
-	icount += clock;
-	first_icount = icount;
-	
-	/* adjust for any interrupts that came in */
-	icount -= extra_cycles;
-	extra_cycles = 0;
-	
-	while(icount > 0) {
-		seg_prefix = false;
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		icount = 0;
+		run_one_opecode();
+		return -icount;
+	}
+	else {
+		/* run cpu while given clocks */
+		icount += clock;
+		int first_icount = icount;
+		
+		while(icount > 0 && !busreq) {
+			run_one_opecode();
+		}
+		int passed_icount = first_icount - icount;
+		if(busreq && icount > 0) {
+			icount = 0;
+		}
+		return passed_icount;
+	}
+}
+
+void I86::run_one_opecode()
+{
+	seg_prefix = false;
 #ifdef _JX
-		// ugly patch for PC/JX hardware diagnostics :-(
+	// ugly patch for PC/JX hardware diagnostics :-(
 #ifdef TIMER_HACK
-		if(pc == 0xff040) pc = 0xff04a;
-		if(pc == 0xff17d) pc = 0xff18f;
+	if(pc == 0xff040) pc = 0xff04a;
+	if(pc == 0xff17d) pc = 0xff18f;
 #endif
 #ifdef KEYBOARD_HACK
-		if(pc == 0xfa909) { regs.b[BH] = read_port_byte(0xa1); pc = 0xfa97c; }
-		if(pc == 0xff6e1) { regs.b[AL] = 0x0d; pc += 2; }
+	if(pc == 0xfa909) { regs.b[BH] = read_port_byte(0xa1); pc = 0xfa97c; }
+	if(pc == 0xff6e1) { regs.b[AL] = 0x0d; pc += 2; }
 #endif
 #endif
 #ifdef HAS_I286
-		try {
-			instruction(FETCHOP);
-		}
-		catch(int e) {
-			interrupt(e);
-		}
-#else
+	try {
 		instruction(FETCHOP);
-#endif
-		if(int_state & NMI_REQ_BIT) {
-			if(halted) {
-				pc++;
-				halted = false;
-			}
-			int_state &= ~NMI_REQ_BIT;
-			interrupt(NMI_INT_VECTOR);
-		}
-		else if((int_state & INT_REQ_BIT) && IF) {
-			if(halted) {
-				pc++;
-				halted = false;
-			}
-			interrupt(-1);
-		}
-#ifdef SINGLE_MODE_DMA
-		if(d_dma) {
-			d_dma->do_dma();
-		}
-#endif
 	}
-	/* adjust for any interrupts that came in */
-	icount -= extra_cycles;
-	extra_cycles = 0;
-	first_icount = icount;
+	catch(int e) {
+		interrupt(e);
+	}
+#else
+	instruction(FETCHOP);
+#endif
+	if(int_state & NMI_REQ_BIT) {
+		if(halted) {
+			pc++;
+			halted = false;
+		}
+		int_state &= ~NMI_REQ_BIT;
+		interrupt(NMI_INT_VECTOR);
+	}
+	else if((int_state & INT_REQ_BIT) && IF) {
+		if(halted) {
+			pc++;
+			halted = false;
+		}
+		interrupt(-1);
+	}
+#ifdef SINGLE_MODE_DMA
+	if(d_dma) {
+		d_dma->do_dma();
+	}
+#endif
 }
 
 void I86::write_signal(int id, uint32 data, uint32 mask)
@@ -725,9 +737,6 @@ void I86::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
-		if(busreq) {
-			icount = extra_cycles = first_icount = 0;
-		}
 	}
 	else if(id == SIG_I86_TEST) {
 		test_state = ((data & mask) != 0);
@@ -777,7 +786,7 @@ void I86::interrupt(int int_num)
 #ifdef HAS_I286
 	}
 #endif
-	extra_cycles += timing.exception;
+	icount -= timing.exception;
 }
 
 void I86::trap()

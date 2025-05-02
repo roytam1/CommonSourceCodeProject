@@ -21,15 +21,18 @@ static const int freq_table[4] = {120, 60, 30, 15};
 void MOUSE::initialize()
 {
 	status = emu->mouse_buffer();
+	
+	ctrlreg = 0xff;
+	freq = cur_freq = 0;
+	
+	register_frame_event(this);
+	register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq], true, &register_id);
 }
 
 void MOUSE::reset()
 {
-	ctrlreg = 0xff;
-	freq = 0;
 	dx = dy = 0;
 	lx = ly = -1;
-	register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq], false, NULL);
 }
 
 void MOUSE::write_io8(uint32 addr, uint32 data)
@@ -46,7 +49,11 @@ void MOUSE::event_callback(int event_id, int err)
 	if(!(ctrlreg & 0x10)) {
 		d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR5, 1, 1);
 	}
-	register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq] + err, false, NULL);
+	if(cur_freq != freq) {
+		cancel_event(register_id);
+		register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq] + err, true, &register_id);
+		cur_freq = freq;
+	}
 }
 
 void MOUSE::event_frame()
@@ -55,61 +62,48 @@ void MOUSE::event_frame()
 	if(dx > 64) {
 		dx = 64;
 	}
-	else if(dx < 64) {
+	else if(dx < -64) {
 		dx = -64;
 	}
 	dy += status[1];
 	if(dy > 64) {
 		dy = 64;
 	}
-	else if(dy < 64) {
+	else if(dy < -64) {
 		dy = -64;
 	}
-	
-	int val = 0x50;
-	if(!(status[2] & 1)) val |= 0x80;
-	if(!(status[2] & 2)) val |= 0x40;
-	
-	if(ctrlreg & 0x80) {
-		d_pio->write_signal(SIG_I8255_PORT_A, val, 0xf0);
-	}
-	else {
-		switch(ctrlreg & 0x60) {
-		case 0x00: val |= (dx >> 0) & 0x0f; break;
-		case 0x20: val |= (dx >> 4) & 0x0f; break;
-		case 0x40: val |= (dy >> 0) & 0x0f; break;
-		case 0x60: val |= (dy >> 4) & 0x0f; break;
-		}
-		d_pio->write_signal(SIG_I8255_PORT_A, val, 0xff);
-	}
+	update_mouse();
 }
 
 void MOUSE::write_signal(int id, uint32 data, uint32 mask)
 {
-	int val = 0;
-	if(data & 0x80) {
-		if(!(ctrlreg & 0x80)) {
-			// latch position
-			lx = dx;
-			ly = dy;
-			dx = dy = 0;
-		}
-		switch(data & 0x60) {
-		case 0x00: val = (lx >> 0) & 0x0f; break;
-		case 0x20: val = (lx >> 4) & 0x0f; break;
-		case 0x40: val = (ly >> 0) & 0x0f; break;
-		case 0x60: val = (ly >> 4) & 0x0f; break;
-		}
+	if(!(ctrlreg & 0x80) && (data & 0x80)) {
+		lx = dx;
+		ly = dy;
+		dx = dy = 0;
 	}
-	else {
-		switch(data & 0x60) {
-		case 0x00: val = (dx >> 0) & 0x0f; break;
-		case 0x20: val = (dx >> 4) & 0x0f; break;
-		case 0x40: val = (dy >> 0) & 0x0f; break;
-		case 0x60: val = (dy >> 4) & 0x0f; break;
-		}
-	}
-	d_pio->write_signal(SIG_I8255_PORT_A, val, 0x0f);
 	ctrlreg = data & mask;
+	update_mouse();
+}
+
+void MOUSE::update_mouse()
+{
+	int val = 0;
+	
+	if(!(status[2] & 1)) val |= 0x80;	// left
+	if(!(status[2] & 2)) val |= 0x20;	// right
+	if(!(status[2] & 4)) val |= 0x40;	// center
+	
+	switch(ctrlreg & 0xe0) {
+	case 0x00: val |= (dx >> 0) & 0x0f; break;
+	case 0x20: val |= (dx >> 4) & 0x0f; break;
+	case 0x40: val |= (dy >> 0) & 0x0f; break;
+	case 0x60: val |= (dy >> 4) & 0x0f; break;
+	case 0x80: val |= (lx >> 0) & 0x0f; break;
+	case 0xa0: val |= (lx >> 4) & 0x0f; break;
+	case 0xc0: val |= (ly >> 0) & 0x0f; break;
+	case 0xe0: val |= (ly >> 4) & 0x0f; break;
+	}
+	d_pio->write_signal(SIG_I8255_PORT_A, val, 0xff);
 }
 

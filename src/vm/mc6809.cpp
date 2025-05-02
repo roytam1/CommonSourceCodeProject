@@ -259,13 +259,14 @@ static const uint8 cycles1[] =
 
 void MC6809::reset()
 {
+	icount = 0;
 	int_state = 0;
-
+	
 	DPD = 0;	/* Reset direct page register */
-
+	
 	CC |= CC_II;	/* IRQ disabled */
 	CC |= CC_IF;	/* FIRQ disabled */
-
+	
 	PCD = RM16(0xfffe);
 }
 
@@ -297,19 +298,75 @@ void MC6809::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-void MC6809::run(int clock)
+int MC6809::run(int clock)
 {
-	// run cpu while given clocks
-	icount += clock;
-	first_icount = icount;
-	
-	while(icount > 0) {
-		if(int_state & MC6809_NMI_BIT) {
-			int_state &= ~MC6809_NMI_BIT;
-			int_state &= ~MC6809_SYNC; /* clear SYNC flag */
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		icount = 0;
+		run_one_opecode();
+		return -icount;
+	}
+	else {
+		// run cpu while given clocks
+		icount += clock;
+		int first_icount = icount;
+		
+		while(icount > 0) {
+			run_one_opecode();
+		}
+		return first_icount - icount;
+	}
+}
+
+void MC6809::run_one_opecode()
+{
+	if(int_state & MC6809_NMI_BIT) {
+		int_state &= ~MC6809_NMI_BIT;
+		int_state &= ~MC6809_SYNC; /* clear SYNC flag */
+		if(int_state & MC6809_CWAI) {
+			int_state &= ~MC6809_CWAI;
+			icount -= 7; /* subtract +7 cycles next time */
+		}
+		else {
+			CC |= CC_E; /* save entire state */
+			PUSHWORD(pPC);
+			PUSHWORD(pU);
+			PUSHWORD(pY);
+			PUSHWORD(pX);
+			PUSHBYTE(DP);
+			PUSHBYTE(B);
+			PUSHBYTE(A);
+			PUSHBYTE(CC);
+			icount -= 19; /* subtract +19 cycles next time */
+		}
+		CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
+		PCD = RM16(0xfffc);
+	}
+	else if(int_state & (MC6809_FIRQ_BIT | MC6809_IRQ_BIT)) {
+		int_state &= ~MC6809_SYNC; /* clear SYNC flag */
+		if((int_state & MC6809_FIRQ_BIT) && !(CC & CC_IF)) {
+			/* fast IRQ */
+			int_state &= ~MC6809_FIRQ_BIT;
 			if(int_state & MC6809_CWAI) {
-				int_state &= ~MC6809_CWAI;
-				icount -= 7; /* subtract +7 cycles next time */
+				int_state &= ~MC6809_CWAI; /* clear CWAI */
+				icount -= 7; /* subtract +7 cycles */
+			}
+			else {
+				CC &= ~CC_E; /* save 'short' state */
+				PUSHWORD(pPC);
+				PUSHBYTE(CC);
+				icount -= 10; /* subtract +10 cycles */
+			}
+			CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
+			PCD = RM16(0xfff6);
+		}
+		else if((int_state & MC6809_IRQ_BIT) && !(CC & CC_II)) {
+			/* standard IRQ */
+			int_state &= ~MC6809_IRQ_BIT;
+			if(int_state & MC6809_CWAI) {
+				int_state &= ~MC6809_CWAI; /* clear CWAI flag */
+				icount -= 7; /* subtract +7 cycles */
 			}
 			else {
 				CC |= CC_E; /* save entire state */
@@ -321,64 +378,22 @@ void MC6809::run(int clock)
 				PUSHBYTE(B);
 				PUSHBYTE(A);
 				PUSHBYTE(CC);
-				icount -= 19; /* subtract +19 cycles next time */
+				icount -= 19; /* subtract +19 cycles */
 			}
-			CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
-			PCD = RM16(0xfffc);
-		}
-		else if(int_state & (MC6809_FIRQ_BIT | MC6809_IRQ_BIT)) {
-			int_state &= ~MC6809_SYNC; /* clear SYNC flag */
-			if((int_state & MC6809_FIRQ_BIT) && !(CC & CC_IF)) {
-				/* fast IRQ */
-				int_state &= ~MC6809_FIRQ_BIT;
-				if(int_state & MC6809_CWAI) {
-					int_state &= ~MC6809_CWAI; /* clear CWAI */
-					icount -= 7; /* subtract +7 cycles */
-				}
-				else {
-					CC &= ~CC_E; /* save 'short' state */
-					PUSHWORD(pPC);
-					PUSHBYTE(CC);
-					icount -= 10; /* subtract +10 cycles */
-				}
-				CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
-				PCD = RM16(0xfff6);
-			}
-			else if((int_state & MC6809_IRQ_BIT) && !(CC & CC_II)) {
-				/* standard IRQ */
-				int_state &= ~MC6809_IRQ_BIT;
-				if(int_state & MC6809_CWAI) {
-					int_state &= ~MC6809_CWAI; /* clear CWAI flag */
-					icount -= 7; /* subtract +7 cycles */
-				}
-				else {
-					CC |= CC_E; /* save entire state */
-					PUSHWORD(pPC);
-					PUSHWORD(pU);
-					PUSHWORD(pY);
-					PUSHWORD(pX);
-					PUSHBYTE(DP);
-					PUSHBYTE(B);
-					PUSHBYTE(A);
-					PUSHBYTE(CC);
-					icount -= 19; /* subtract +19 cycles */
-				}
-				CC |= CC_II; /* inhibit IRQ */
-				PCD = RM16(0xfff8);
-			}
-		}
-		if (int_state & (MC6809_CWAI | MC6809_SYNC)) {
-			icount = 0;
-		}
-		else {
-			pPPC = pPC;
-			uint8 ireg = ROP(PCD);
-			PC++;
-			op(ireg);
-			icount -= cycles1[ireg];
+			CC |= CC_II; /* inhibit IRQ */
+			PCD = RM16(0xfff8);
 		}
 	}
-	first_icount = icount;
+	if (int_state & (MC6809_CWAI | MC6809_SYNC)) {
+		icount = 0;
+	}
+	else {
+		pPPC = pPC;
+		uint8 ireg = ROP(PCD);
+		PC++;
+		op(ireg);
+		icount -= cycles1[ireg];
+	}
 }
 
 void MC6809::op(uint8 ireg)

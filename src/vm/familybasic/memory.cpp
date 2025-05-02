@@ -86,8 +86,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	else if(addr == 0x4014) {
 		// stop cpu
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
-		int id;
-		register_event_by_clock(this, EVENT_DMA_DONE, 514, false, &id);
+		register_event_by_clock(this, EVENT_DMA_DONE, 514, false, NULL);
 		// start dma
 		dma_addr = data << 8;
 		for(int i = 0; i < 256; i++) {

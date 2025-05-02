@@ -288,79 +288,96 @@ void TMS9995::reset()
 	update_int();
 	contextswitch(0x0000);
 //	period += 56;
+	count = 0;
 }
 
-void TMS9995::run(int clock)
+int TMS9995::run(int clock)
 {
-	count += clock;
-	first = count;
-	while(count > 0) {
-		period = 0;
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		count = 0;
+		run_one_opecode();
+		return -count;
+	}
+	else {
+		// run cpu while given clocks
+		count += clock;
+		int first_count = count;
 		
-		// update interrupt
-		if(int_pending && int_enabled) {
-			int level = irq_level;
-			if(nmi) {
-				contextswitch(0xfffc);
-				ST &= ~ST_IM;
-				idle = false;
-				period += 56;
-			}
-			else if(level <= (ST & ST_IM)) {
-				contextswitch(level*4);
-				if(level) {
-					ST = (ST & ~ST_IM) | (level -1);
-					int_pending = false;
-				}
-				else {
-					ST &= ~ST_IM;
-				}
-				ST &= 0xfe00;
-				idle = false;
-				
-				if(level != 2) {
-					int int_mask = 1 << level;
-					int mode_mask = (level == 1) ? 4 : int_mask;
-					int_latch &= ~int_mask;
-					mode &= ~mode_mask;
-				}
-				period += 56;
-			}
-			else {
+		while(count > 0) {
+			run_one_opecode();
+		}
+		return first_count - count;
+	}
+}
+
+void TMS9995::run_one_opecode()
+{
+	period = 0;
+	
+	// update interrupt
+	if(int_pending && int_enabled) {
+		int level = irq_level;
+		if(nmi) {
+			contextswitch(0xfffc);
+			ST &= ~ST_IM;
+			idle = false;
+			period += 56;
+		}
+		else if(level <= (ST & ST_IM)) {
+			contextswitch(level*4);
+			if(level) {
+				ST = (ST & ~ST_IM) | (level -1);
 				int_pending = false;
 			}
-		}
-		
-		// execute opecode
-		if(idle) {
-			EXTOUT8(2);
-			period += 8;
+			else {
+				ST &= ~ST_IM;
+			}
+			ST &= 0xfe00;
+			idle = false;
+			
+			if(level != 2) {
+				int int_mask = 1 << level;
+				int mode_mask = (level == 1) ? 4 : int_mask;
+				int_latch &= ~int_mask;
+				mode &= ~mode_mask;
+			}
+			period += 56;
 		}
 		else {
-			int_enabled = true;
-			prevPC = PC;
-			uint16 op = FETCH16();
-			execute(op);
-			if((ST & ST_OVIE) && (ST & ST_OV) && (irq_level > 2)) {
-				irq_level = 2;
-			}
-		}
-		count -= period;
-		
-		// update timer
-		if(dec_enabled && !(mode & 1)) {
-			dec_timer -= period;
-			if(dec_timer <= 0) {
-				int_latch |= 8;
-				mode |= 8;
-				update_int();
-				
-				// restart ???
-				dec_timer += dec_interval << 4;
-			}
+			int_pending = false;
 		}
 	}
-	first = count;
+	
+	// execute opecode
+	if(idle) {
+		EXTOUT8(2);
+		period += 8;
+	}
+	else {
+		int_enabled = true;
+		prevPC = PC;
+		uint16 op = FETCH16();
+		execute(op);
+		if((ST & ST_OVIE) && (ST & ST_OV) && (irq_level > 2)) {
+			irq_level = 2;
+		}
+	}
+	count -= period;
+	
+	// update timer
+	if(dec_enabled && !(mode & 1)) {
+		dec_timer -= period;
+		if(dec_timer <= 0) {
+			int_latch |= 8;
+			mode |= 8;
+			update_int();
+			
+			// restart ???
+			dec_timer += dec_interval << 4;
+		}
+	}
 }
 
 void TMS9995::write_signal(int id, uint32 data, uint32 mask)

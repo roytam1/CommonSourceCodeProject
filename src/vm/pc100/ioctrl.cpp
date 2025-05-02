@@ -47,6 +47,19 @@ void IOCTRL::initialize()
 	key_stat = emu->key_buffer();
 	mouse_stat = emu->mouse_buffer();
 	caps = kana = false;
+	
+	// timer
+	ts = 0;
+	
+	// register event
+	register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, NULL);
+	register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, NULL);
+	register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, NULL);
+	register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, NULL);
+}
+
+void IOCTRL::reset()
+{
 	key_val = key_mouse = 0;
 	key_prev = -1;
 	key_res = false;
@@ -57,15 +70,6 @@ void IOCTRL::initialize()
 	key_buf->write(0x100);
 	register_id = -1;
 	update_key();
-	
-	// timer
-	ts = 0;
-	
-	// register event
-	register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, NULL);
-	register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, NULL);
-	register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, NULL);
-	register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, NULL);
 }
 
 void IOCTRL::write_io8(uint32 addr, uint32 data)

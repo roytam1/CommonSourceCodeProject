@@ -68,20 +68,29 @@
 
 static const int key_table[15][8] = {
 	{ 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67 },
-	{ 0x68, 0x69, 0x6a, 0x6b, 0x00, 0x6e, 0x00, 0x0d },
+	{ 0x68, 0x69, 0x6a, 0x6b, 0x00, 0x00, 0x6e, 0x0d },
 	{ 0xc0, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47 },
 	{ 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f },
 	{ 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57 },
 	{ 0x58, 0x59, 0x5a, 0xdb, 0xdc, 0xdd, 0xde, 0xbd },
 	{ 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37 },
 	{ 0x38, 0x39, 0xba, 0xbb, 0xbc, 0xbe, 0xbf, 0xe2 },
-	{ 0x24, 0x26, 0x27, 0x00, 0x12, 0x15, 0x10, 0x11 },
+	{ 0x24, 0x26, 0x27, 0x2e, 0x12, 0x15, 0x10, 0x11 },
 	{ 0x13, 0x70, 0x71, 0x72, 0x73, 0x74, 0x20, 0x1b },
 	{ 0x09, 0x28, 0x25, 0x23, 0x7b, 0x6d, 0x6f, 0x14 },
 	{ 0x21, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 	{ 0x75, 0x76, 0x77, 0x78, 0x79, 0x08, 0x2d, 0x2e },
 	{ 0x1c, 0x1d, 0x00, 0x19, 0x00, 0x00, 0x00, 0x00 },
 	{ 0x0d, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }
+};
+
+static const int key_conv_table[6][2] = {
+	{0x2d, 0x2e}, // INS	-> SHIFT + DEL
+	{0x75, 0x70}, // F6	-> SHIFT + F1
+	{0x76, 0x71}, // F7	-> SHIFT + F2
+	{0x77, 0x72}, // F8	-> SHIFT + F3
+	{0x78, 0x73}, // F9	-> SHIFT + F4
+	{0x79, 0x74}, // F10	-> SHIFT + F5
 };
 
 void PC8801::initialize()
@@ -237,43 +246,47 @@ void PC8801::write_data8(uint32 addr, uint32 data)
 #ifdef Z80_MEMORY_WAIT
 		*wait = vram_wait_clocks;
 #endif
-		if((port32 & 0x40) && (alu_ctrl2 & 0x80)) {
-			// alu
-			addr &= 0x3fff;
-			switch(alu_ctrl2 & 0x30) {
-			case 0x00:
-				for(int i = 0; i < 3; i++) {
-					switch((alu_ctrl1 >> i) & 0x11) {
-					case 0x00:	// reset
-						gvram[addr | (0x4000 * i)] &= ~data;
-						break;
-					case 0x01:	// set
-						gvram[addr | (0x4000 * i)] |= data;
-						break;
-					case 0x10:	// reverse
-						gvram[addr | (0x4000 * i)] ^= data;
-						break;
+		if(port32 & 0x40) {
+			if(alu_ctrl2 & 0x80) {
+				// alu
+				addr &= 0x3fff;
+				switch(alu_ctrl2 & 0x30) {
+				case 0x00:
+					for(int i = 0; i < 3; i++) {
+						switch((alu_ctrl1 >> i) & 0x11) {
+						case 0x00:	// reset
+							gvram[addr | (0x4000 * i)] &= ~data;
+							break;
+						case 0x01:	// set
+							gvram[addr | (0x4000 * i)] |= data;
+							break;
+						case 0x10:	// reverse
+							gvram[addr | (0x4000 * i)] ^= data;
+							break;
+						}
 					}
+					break;
+				case 0x10:
+					gvram[addr | 0x0000] = alu_reg[0];
+					gvram[addr | 0x4000] = alu_reg[1];
+					gvram[addr | 0x8000] = alu_reg[2];
+					break;
+				case 0x20:
+					gvram[addr | 0x0000] = alu_reg[1];
+					break;
+				case 0x30:
+					gvram[addr | 0x4000] = alu_reg[0];
+					break;
 				}
-				break;
-			case 0x10:
-				gvram[addr | 0x0000] = alu_reg[0];
-				gvram[addr | 0x4000] = alu_reg[1];
-				gvram[addr | 0x8000] = alu_reg[2];
-				break;
-			case 0x20:
-				gvram[addr | 0x0000] = alu_reg[1];
-				break;
-			case 0x30:
-				gvram[addr | 0x4000] = alu_reg[0];
-				break;
+				return;
 			}
-			return;
 		}
-		switch(gvram_sel) {
-		case 1: gvram[(addr & 0x3fff) | 0x0000] = data; return;
-		case 2: gvram[(addr & 0x3fff) | 0x4000] = data; return;
-		case 4: gvram[(addr & 0x3fff) | 0x8000] = data; return;
+		else {
+			switch(gvram_sel) {
+			case 1: gvram[(addr & 0x3fff) | 0x0000] = data; return;
+			case 2: gvram[(addr & 0x3fff) | 0x4000] = data; return;
+			case 4: gvram[(addr & 0x3fff) | 0x8000] = data; return;
+			}
 		}
 	}
 	addr &= 0xffff;
@@ -293,21 +306,25 @@ uint32 PC8801::read_data8(uint32 addr)
 #ifdef Z80_MEMORY_WAIT
 		*wait = vram_wait_clocks;
 #endif
-		if((port32 & 0x40) && (alu_ctrl2 & 0x80)) {
-			// alu
-			addr &= 0x3fff;
-			alu_reg[0] = gvram[addr | 0x0000];
-			alu_reg[1] = gvram[addr | 0x4000];
-			alu_reg[2] = gvram[addr | 0x8000];
-			uint8 b = alu_reg[0]; if(!(alu_ctrl2 & 1)) b ^= 0xff;
-			uint8 r = alu_reg[1]; if(!(alu_ctrl2 & 2)) r ^= 0xff;
-			uint8 g = alu_reg[2]; if(!(alu_ctrl2 & 4)) g ^= 0xff;
-			return b & r & g;
+		if(port32 & 0x40) {
+			if(alu_ctrl2 & 0x80) {
+				// alu
+				addr &= 0x3fff;
+				alu_reg[0] = gvram[addr | 0x0000];
+				alu_reg[1] = gvram[addr | 0x4000];
+				alu_reg[2] = gvram[addr | 0x8000];
+				uint8 b = alu_reg[0]; if(!(alu_ctrl2 & 1)) b ^= 0xff;
+				uint8 r = alu_reg[1]; if(!(alu_ctrl2 & 2)) r ^= 0xff;
+				uint8 g = alu_reg[2]; if(!(alu_ctrl2 & 4)) g ^= 0xff;
+				return b & r & g;
+			}
 		}
-		switch(gvram_sel) {
-		case 1: return gvram[(addr & 0x3fff) | 0x0000];
-		case 2: return gvram[(addr & 0x3fff) | 0x4000];
-		case 4: return gvram[(addr & 0x3fff) | 0x8000];
+		else {
+			switch(gvram_sel) {
+			case 1: return gvram[(addr & 0x3fff) | 0x0000];
+			case 2: return gvram[(addr & 0x3fff) | 0x4000];
+			case 4: return gvram[(addr & 0x3fff) | 0x8000];
+			}
 		}
 	}
 	addr &= 0xffff;
@@ -593,10 +610,30 @@ uint32 PC8801::read_io8(uint32 addr)
 	case 0x0c:
 	case 0x0d:
 	case 0x0e:
+		if(addr == 8 || addr == 9) {
+			// INS or F6-F10 -> SHIFT + DEL or F1-F5
+			key_status_bak[6] = key_status[0x10];
+			for(int i = 0; i < 6; i++) {
+				key_status_bak[i] = key_status[key_conv_table[i][1]];
+				if(key_status[key_conv_table[i][0]]) {
+					key_status[key_conv_table[i][1]] = 1;
+					key_status[0x10] = 1;
+				}
+			}
+		}
 		for(int i = 0; i < 8; i++) {
 			if(key_status[key_table[addr & 0x0f][i]]) {
 				val &= ~(1 << i);
 			}
+		}
+		if(addr == 8 || addr == 9) {
+			key_status[0x10] = key_status_bak[6];
+			for(int i = 0; i < 6; i++) {
+				key_status[key_conv_table[i][1]] = key_status_bak[i];
+			}
+		}
+		else if(addr == 0x0e) {
+			val &= ~0x80; // http://www.maroon.dti.ne.jp/youkan/pc88/iomap.html
 		}
 		return val;
 	case 0x20:
@@ -1051,16 +1088,16 @@ void PC8801::request_intr(int level, bool status)
 	uint8 bit = 1 << level;
 	
 	if(status) {
-		if(!(intr_req & bit)) {
+//		if(!(intr_req & bit)) {
 			intr_req |= bit;
 			update_intr();
-		}
+//		}
 	}
 	else {
-		if(intr_req & bit) {
+//		if(intr_req & bit) {
 			intr_req &= ~bit;
 			update_intr();
-		}
+//		}
 	}
 }
 

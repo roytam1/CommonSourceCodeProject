@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"SEGA SC-3000"
 #define CONFIG_NAME		"sc3000"
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -23,17 +23,17 @@
 #define SCREEN_HEIGHT		192
 #define TMS9918A_VRAM_SIZE	0x4000
 #define TMS9918A_LIMIT_SPRITES
-//720
 #define MAX_DRIVE		4
-#define UPD765A_WAIT_SEEK
 
 // device informations for win32
+#define MIN_WINDOW_WIDTH	320
 #define USE_CART
 #define USE_FD1
 #define USE_DATAREC
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	8
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -92,6 +92,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

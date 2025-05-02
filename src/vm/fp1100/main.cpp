@@ -75,14 +75,17 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 	case 0xff20:
 	case 0xff40:
 	case 0xff60:
-		slot_sel = (slot_sel & 4) | (data & 3);
+		slot_sel = (slot_sel & 1) | ((data << 1) & 6);
 		break;
 	case 0xff80:
 		if((intr_mask & 0x80) != (data & 0x80)) {
+			intr_mask = (intr_mask & (~0x80)) | (data & 0x80);
 			d_sub->write_signal(SIG_SUB_INT2, data, 0x80);
 		}
-		intr_mask = data;
-		update_intr();
+		if((intr_mask & 0x1f) != (data & 0x1f)) {
+			intr_mask = (intr_mask & (~0x1f)) | (data & 0x1f);
+			update_intr();
+		}
 		break;
 	case 0xffa0:
 		if(data & 2) {
@@ -91,7 +94,7 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 		else {
 			SET_BANK(0x0000, 0x8fff, ram, rom);
 		}
-		slot_sel = (slot_sel & 3) | ((data & 1) << 2);
+		slot_sel = (slot_sel & 6) | (data & 1);
 		break;
 	case 0xffc0:
 		d_sub->write_signal(SIG_SUB_COMM, data, 0xff);
@@ -117,28 +120,6 @@ uint32 MAIN::read_io8(uint32 addr)
 	}
 }
 
-void MAIN::write_signal(int id, uint32 data, uint32 mask)
-{
-	switch(id) {
-	case SIG_MAIN_INTA:	// 0
-	case SIG_MAIN_INTB:	// 1
-	case SIG_MAIN_INTC:	// 2
-	case SIG_MAIN_INTD:	// 3
-	case SIG_MAIN_INTS:	// 4
-		if(data & mask) {
-			intr_req |= (1 << id);
-		}
-		else {
-			intr_req &= ~(1 << id);
-		}
-		update_intr();
-		break;
-	case SIG_MAIN_COMM:
-		comm_data = data & 0xff;
-		break;
-	}
-}
-
 static const uint8 priority[5] = {
 	0x10, 0x01, 0x02, 0x04, 0x08
 };
@@ -146,11 +127,37 @@ static const uint32 vector[5] = {
 	0xf0, 0xf2, 0xf4, 0xf6, 0xf8
 };
 
+void MAIN::write_signal(int id, uint32 data, uint32 mask)
+{
+	switch(id) {
+	case SIG_MAIN_INTS:
+	case SIG_MAIN_INTA:
+	case SIG_MAIN_INTB:
+	case SIG_MAIN_INTC:
+	case SIG_MAIN_INTD:
+		if(data & mask) {
+			if(!(intr_req & priority[id])) {
+				intr_req |= priority[id];
+				update_intr();
+			}
+		}
+		else {
+			if(intr_req & priority[id]) {
+				intr_req &= ~priority[id];
+				update_intr();
+			}
+		}
+		break;
+	case SIG_MAIN_COMM:
+		comm_data = data & 0xff;
+		break;
+	}
+}
+
 void MAIN::update_intr()
 {
 	for(int i = 0; i < 5; i++) {
-		uint8 bit = priority[i];
-		if((intr_req & bit) && (intr_mask & bit)) {
+		if((intr_req & priority[i]) && (intr_mask & priority[i])) {
 			d_cpu->set_intr_line(true, true, 0);
 			return;
 		}
@@ -161,9 +168,8 @@ void MAIN::update_intr()
 uint32 MAIN::intr_ack()
 {
 	for(int i = 0; i < 5; i++) {
-		uint8 bit = priority[i];
-		if((intr_req & bit) && (intr_mask & bit)) {
-			intr_req &= ~bit;
+		if((intr_req & priority[i]) && (intr_mask & priority[i])) {
+			intr_req &= ~priority[i];
 			return vector[i];
 		}
 	}

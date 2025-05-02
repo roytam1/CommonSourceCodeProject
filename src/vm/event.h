@@ -38,27 +38,33 @@ private:
 	
 	int vclocks[MAX_LINES];
 	int power;
-	uint32 accum_clocks;
+	int event_remain;
+	int cpu_remain, cpu_accum;
+	uint64 event_clocks;
 	
-	typedef struct {
-		bool enable;
+	typedef struct event_t {
 		DEVICE* device;
 		int event_id;
-		int clock;
-		int loop;
+		uint64 expired_clock;
+		uint32 loop_clock;
+		bool active;
+		int index;
+		event_t *next;
+		event_t *prev;
 	} event_t;
 	event_t event[MAX_EVENT];
+	event_t *first_free_event;
+	event_t *first_fire_event;
+	
 	DEVICE* frame_event[MAX_EVENT];
 	DEVICE* vline_event[MAX_EVENT];
+	int frame_event_count, vline_event_count;
 	
 	double frames_per_sec, next_frames_per_sec;
 	int lines_per_frame, next_lines_per_frame;
 	
-	int next_clock, past_clock, next_id;
-	int event_count, frame_event_count, vline_event_count;
-	bool get_nextevent;
 	void update_event(int clock);
-	void get_next_event();
+	void insert_event(event_t *event_handle);
 	
 	// sound manager
 	DEVICE* d_sound[MAX_SOUND];
@@ -74,19 +80,33 @@ private:
 	void mix_sound(int samples);
 	void update_sound();
 	
-	bool first_reset;
+#ifdef _DEBUG_LOG
+	bool initialize_done;
+#endif
 	
 public:
 	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_cpu = dcount_sound = 0;
-		event_count = frame_event_count = vline_event_count = 0;
-		get_nextevent = true;
+		frame_event_count = vline_event_count = 0;
+		
+		// initialize event
+		for(int i = 0; i < MAX_EVENT; i++) {
+			event[i].active = false;
+			event[i].index = i;
+			event[i].next = (i + 1 < MAX_EVENT) ? &event[i + 1] : NULL;
+		}
+		first_free_event = &event[0];
+		first_fire_event = NULL;
 		
 		// force update timing in the first frame
 		frames_per_sec = 0.0;
 		lines_per_frame = 0;
 		next_frames_per_sec = FRAMES_PER_SEC;
 		next_lines_per_frame = LINES_PER_FRAME;
+		
+#ifdef _DEBUG_LOG
+		initialize_done = false;
+#endif
 	}
 	~EVENT() {}
 	

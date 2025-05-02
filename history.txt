@@ -1,3 +1,34 @@
+1/25/2012
+
+[WINMAIN] support to specify the minimum window width
+
+[EMU/INPUT] fix the routine to detect the shift and numpad keys are pressed
+
+[VM/DISK] fix to check if the inserted disk image is really d88 format
+[VM/EVENT] update event manager to check events in every cpu opecode
+[VM/HUC6260] update cpu to run only one opecode and return clocks
+[VM/I86] update cpu to run only one opecode and return clocks
+[VM/I386] update cpu to run only one opecode and return clocks
+[VM/M6502] update cpu to run only one opecode and return clocks
+[VM/MC6800] update cpu to run only one opecode and return clocks
+[VM/MC6809] update cpu to run only one opecode and return clocks
+[VM/TMS9995] update cpu to run only one opecode and return clocks
+[VM/UPD765A] fix to get the side number from hdu param in SHARP MZ-3500 case
+[VM/UPD765A] fix index hole signal width and frequency
+[VM/UPD7801] update cpu to run only one opecode and return clocks
+[VM/Z80] update cpu to run only one opecode and return clocks
+
+[HC80/IO] fix the memory access violation issue when run without rom images
+[PC100/IOCTRL] move keyborad initialization from intialize() to reset()
+[PC98DO] raise irq when disk is inserted or ejected
+[PC98DO/MOUSE] fix not to clear the registered event when machine is reset
+[PC98DO/PC8801] fix extended vram selection mode
+[PC98DO/PC8801] fix the key code table for ins/del
+[PC98DO/PC8801] fix to convert the pressed ins/f6-10 keys to shift + del/f1-f5
+[SC3000] support SF-7000
+[SC3000] fix to negate the motor on/off signal from pio pc1
+
+
 1/18/2012
 
 [EMU/INPUT] support to detect the shift and numpad keys are pressed

@@ -19,6 +19,7 @@ class RAMPACK : public DEVICE
 {
 private:
 	uint8 ram[0x4000];
+	bool modified;
 	
 public:
 	RAMPACK(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

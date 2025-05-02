@@ -44,7 +44,6 @@ private:
 	int int_state;
 	
 	int icount;
-	int first_icount;
 	
 	uint32 RM(uint32 Addr);
 	void WM(uint32 Addr, uint32 Value);
@@ -99,9 +98,10 @@ private:
 	void increment_counter(int amount);
 #endif
 	
+	void run_one_opecode();
 	void enter_interrupt(uint16 irq_vector);
 	void insn(uint8 code);
-
+	
 	void aba();
 	void abx();
 	void adca_di();
@@ -360,7 +360,6 @@ public:
 		}
 		init_output_signals(&outputs_sio);
 #endif
-		icount = first_icount = 0;	// passed_clock must be zero at initialize
 	}
 	~MC6800() {}
 	
@@ -370,11 +369,8 @@ public:
 	void release();
 #endif
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	int passed_clock() {
-		return first_icount - icount;
-	}
 	uint32 get_pc() {
 		return prevpc;
 	}

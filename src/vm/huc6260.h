@@ -35,7 +35,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int cycles_high[256], cycles_slow[256], *cycles;
-	int count, first, speed_low;
+	int count, speed_low;
 	
 	uint8 _A, _X, _Y, _S, _P;
 	uint8 _CF, _ZF, _IF, _DF, _BF, _TF, _VF, _NF, prvIF;
@@ -143,22 +143,18 @@ private:
 	void RMBi(uint8 zp, uint8 bit);
 	void SMBi(uint8 zp, uint8 bit);
 	void OP(uint8 code);
+	void run_one_opecode();
 	
 public:
-	HUC6260(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		count = first = 0;	// passed_clock must be zero at initialize
-	}
+	HUC6260(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~HUC6260() {}
 	
 	// common functions
 	void initialize();
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int id);
-	int passed_clock() {
-		return first - count;
-	}
 	uint32 get_pc() {
 		return prevPC;
 	}

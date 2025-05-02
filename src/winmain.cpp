@@ -198,7 +198,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	RegisterClass(&wndclass);
 	
 	// get window position
+#ifdef MIN_WINDOW_WIDTH
+	RECT rect = {0, 0, WINDOW_WIDTH < MIN_WINDOW_WIDTH ? MIN_WINDOW_WIDTH : WINDOW_WIDTH, WINDOW_HEIGHT};
+#else
 	RECT rect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+#endif
 	AdjustWindowRectEx(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_VISIBLE, TRUE, 0);
 	HDC hdcScr = GetDC(NULL);
 	desktop_width = GetDeviceCaps(hdcScr, HORZRES);
@@ -283,7 +287,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// initialize emulation core
 	emu = new EMU(hWnd, hInstance);
+#ifdef MIN_WINDOW_WIDTH
+	emu->set_display_size(WINDOW_WIDTH < MIN_WINDOW_WIDTH ? MIN_WINDOW_WIDTH : WINDOW_WIDTH, WINDOW_HEIGHT, TRUE);
+#else
 	emu->set_display_size(WINDOW_WIDTH, WINDOW_HEIGHT, TRUE);
+#endif
 	
 	// open command line path
 	if(szCmdLine[0]) {
@@ -1723,6 +1731,11 @@ void set_window(HWND hWnd, int mode)
 	if(mode >= 0 && mode < 8) {
 		// window
 		int width = emu->get_window_width(mode);
+#ifdef MIN_WINDOW_WIDTH
+		if(width < MIN_WINDOW_WIDTH) {
+			width = MIN_WINDOW_WIDTH;
+		}
+#endif
 		int height = emu->get_window_height(mode);
 		RECT rect = {0, 0, width, height};
 		AdjustWindowRectEx(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_VISIBLE, TRUE, 0);

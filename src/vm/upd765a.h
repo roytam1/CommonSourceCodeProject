@@ -18,10 +18,11 @@
 #define SIG_UPD765A_RESET	0
 #define SIG_UPD765A_TC		1
 #define SIG_UPD765A_MOTOR	2
-#define SIG_UPD765A_DRVSEL	3
-#define SIG_UPD765A_IRQ_MASK	4
-#define SIG_UPD765A_DRQ_MASK	5
-#define SIG_UPD765A_FREADY	6
+#define SIG_UPD765A_MOTOR_NEG	3
+#define SIG_UPD765A_DRVSEL	4
+#define SIG_UPD765A_IRQ_MASK	5
+#define SIG_UPD765A_DRQ_MASK	6
+#define SIG_UPD765A_FREADY	7
 
 class DISK;
 
@@ -64,7 +65,7 @@ private:
 	int phase_id, drq_id, lost_id, result7_id, seek_id[4];
 	bool force_ready;
 	bool reset_signal;
-	int index_count;
+	uint8 index_count;
 	
 	// update status
 	void set_irq(bool val);

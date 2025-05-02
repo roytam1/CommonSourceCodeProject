@@ -27,15 +27,15 @@ private:
 	uint8 a, x, y, p;
 	bool pending_irq, after_cli;
 	bool nmi_state, irq_state, so_state;
-	int icount, first;
+	int icount;
 	bool busreq;
 	
+	void run_one_opecode();
 	void OP(uint8 code);
 	void update_irq();
 	
 public:
 	M6502(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		icount = first = 0;	// passed_clock must be zero at initialize
 		busreq = false;
 	}
 	~M6502() {}
@@ -43,14 +43,10 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit) {
 		write_signal(SIG_CPU_IRQ, line ? 1 : 0, 1);
-	}
-	int passed_clock() {
-		return first - icount;
-		busreq = false;
 	}
 	uint32 get_pc() {
 		return prev_pc;

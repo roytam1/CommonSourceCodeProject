@@ -13,6 +13,7 @@
 void RAMPACK::initialize()
 {
 	memset(ram, 0, sizeof(ram));
+	modified = false;
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -28,22 +29,27 @@ void RAMPACK::initialize()
 
 void RAMPACK::release()
 {
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
-	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sRAMPACK%d.BIN"), app_path, index);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(ram, sizeof(ram), 1);
-		fio->Fclose();
+	if(modified) {
+		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+		emu->application_path(app_path);
+		FILEIO* fio = new FILEIO();
+		
+		_stprintf(file_path, _T("%sRAMPACK%d.BIN"), app_path, index);
+		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(ram, sizeof(ram), 1);
+			fio->Fclose();
+		}
+		delete fio;
 	}
-	delete fio;
 }
 
 void RAMPACK::write_io8(uint32 addr, uint32 data)
 {
 	if(addr < 0x4000) {
-		ram[addr] = data;
+		if(ram[addr] != data) {
+			ram[addr] = data;
+			modified = true;
+		}
 	}
 }
 

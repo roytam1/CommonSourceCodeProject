@@ -640,7 +640,7 @@ void MC6800::reset()
 	wai_state = 0;
 	int_state = 0;
 	
-	icount = first_icount = 0;
+	icount = 0;
 	
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	for(int i = 0; i < 4; i++) {
@@ -726,71 +726,87 @@ void MC6800::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-void MC6800::run(int clock)
+int MC6800::run(int clock)
 {
-	/* run cpu while given clocks */
-	icount += clock;
-	first_icount = icount;
-	
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
-	CLEANUP_COUNTERS();
+		CLEANUP_COUNTERS();
 #endif
-	
-	while(icount > 0) {
-		if(wai_state & (MC6800_WAI | HD6301_SLP)) {
-			increment_counter(1);
-		}
-		else {
-			uint8 ireg = M_RDOP(PCD);
-			prevpc = PC;
-			PC++;
-			insn(ireg);
-			increment_counter(cycles[ireg]);
-		}
-		
-		// check interrupt
-		if(int_state & NMI_REQ_BIT) {
-			wai_state &= ~HD6301_SLP;
-			int_state &= ~NMI_REQ_BIT;
-			enter_interrupt(0xfffc);
-		}
-		else if(int_state & INT_REQ_BIT) {
-			wai_state &= ~HD6301_SLP;
-			if(!(CC & 0x10)) {
-				int_state &= ~INT_REQ_BIT;
-				enter_interrupt(0xfff8);
-			}
-		}
-#if defined(HAS_MC6801) || defined(HAS_HD6301)
-		else if((tcsr & (TCSR_EICI | TCSR_ICF)) == (TCSR_EICI | TCSR_ICF)) {
-			wai_state &= ~HD6301_SLP;
-			if(!(CC & 0x10)) {
-				TAKE_ICI;
-			}
-		}
-		else if((tcsr & (TCSR_EOCI | TCSR_OCF)) == (TCSR_EOCI | TCSR_OCF)) {
-			wai_state &= ~HD6301_SLP;
-			if(!(CC & 0x10)) {
-				TAKE_OCI;
-			}
-		}
-		else if((tcsr & (TCSR_ETOI | TCSR_TOF)) == (TCSR_ETOI | TCSR_TOF)) {
-			wai_state &= ~HD6301_SLP;
-			if(!(CC & 0x10)) {
-				TAKE_TOI;
-			}
-		}
-		else if(((trcsr & (TRCSR_RIE | TRCSR_RDRF)) == (TRCSR_RIE | TRCSR_RDRF)) ||
-		        ((trcsr & (TRCSR_RIE | TRCSR_ORFE)) == (TRCSR_RIE | TRCSR_ORFE)) ||
-		        ((trcsr & (TRCSR_TIE | TRCSR_TDRE)) == (TRCSR_TIE | TRCSR_TDRE))) {
-			wai_state &= ~HD6301_SLP;
-			if(!(CC & 0x10)) {
-				TAKE_SCI;
-			}
-		}
-#endif
+		icount = 0;
+		run_one_opecode();
+		return -icount;
 	}
-	first_icount = icount;
+	else {
+		/* run cpu while given clocks */
+#if defined(HAS_MC6801) || defined(HAS_HD6301)
+		CLEANUP_COUNTERS();
+#endif
+		icount += clock;
+		int first_icount = icount;
+		
+		while(icount > 0) {
+			run_one_opecode();
+		}
+		return first_icount - icount;
+	}
+}
+
+void MC6800::run_one_opecode()
+{
+	if(wai_state & (MC6800_WAI | HD6301_SLP)) {
+		increment_counter(1);
+	}
+	else {
+		uint8 ireg = M_RDOP(PCD);
+		prevpc = PC;
+		PC++;
+		insn(ireg);
+		increment_counter(cycles[ireg]);
+	}
+	
+	// check interrupt
+	if(int_state & NMI_REQ_BIT) {
+		wai_state &= ~HD6301_SLP;
+		int_state &= ~NMI_REQ_BIT;
+		enter_interrupt(0xfffc);
+	}
+	else if(int_state & INT_REQ_BIT) {
+		wai_state &= ~HD6301_SLP;
+		if(!(CC & 0x10)) {
+			int_state &= ~INT_REQ_BIT;
+			enter_interrupt(0xfff8);
+		}
+	}
+#if defined(HAS_MC6801) || defined(HAS_HD6301)
+	else if((tcsr & (TCSR_EICI | TCSR_ICF)) == (TCSR_EICI | TCSR_ICF)) {
+		wai_state &= ~HD6301_SLP;
+		if(!(CC & 0x10)) {
+			TAKE_ICI;
+		}
+	}
+	else if((tcsr & (TCSR_EOCI | TCSR_OCF)) == (TCSR_EOCI | TCSR_OCF)) {
+		wai_state &= ~HD6301_SLP;
+		if(!(CC & 0x10)) {
+			TAKE_OCI;
+		}
+	}
+	else if((tcsr & (TCSR_ETOI | TCSR_TOF)) == (TCSR_ETOI | TCSR_TOF)) {
+		wai_state &= ~HD6301_SLP;
+		if(!(CC & 0x10)) {
+			TAKE_TOI;
+		}
+	}
+	else if(((trcsr & (TRCSR_RIE | TRCSR_RDRF)) == (TRCSR_RIE | TRCSR_RDRF)) ||
+	        ((trcsr & (TRCSR_RIE | TRCSR_ORFE)) == (TRCSR_RIE | TRCSR_ORFE)) ||
+	        ((trcsr & (TRCSR_TIE | TRCSR_TDRE)) == (TRCSR_TIE | TRCSR_TDRE))) {
+		wai_state &= ~HD6301_SLP;
+		if(!(CC & 0x10)) {
+			TAKE_SCI;
+		}
+	}
+#endif
 }
 
 void MC6800::enter_interrupt(uint16 irq_vector)

@@ -43,7 +43,7 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
-	int count, first;
+	int count;
 #ifdef Z80_M1_CYCLE_WAIT
 	int m1_cycle_wait;
 #endif
@@ -195,7 +195,8 @@ private:
 	opecodes
 	--------------------------------------------------------------------------- */
 	
-	// CB,DD,ED,FD
+	// opecode
+	void run_one_opecode();
 	void OP(uint8 code);
 	void OP_CB();
 	void OP_DD();
@@ -203,7 +204,6 @@ private:
 	void OP_FD();
 	void OP_XY();
 	
-	// opecode
 	inline uint16 EXSP(uint16 reg);
 	inline uint8 INC(uint8 value);
 	inline uint8 DEC(uint8 value);
@@ -258,7 +258,6 @@ private:
 	
 public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		count = first = 0;	// passed_clock must be zero at initialize
 #ifdef Z80_M1_CYCLE_WAIT
 		m1_cycle_wait = Z80_M1_CYCLE_WAIT;
 #endif
@@ -272,21 +271,15 @@ public:
 	
 	// common functions
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit) {
 		uint32 mask = 1 << bit;
 		intr_req_bit = line ? (intr_req_bit | mask) : (intr_req_bit & ~mask);
 		intr_pend_bit = pending ? (intr_pend_bit | mask) : (intr_pend_bit & ~mask);
 	}
-	int passed_clock() {
-		return first - count;
-	}
 	uint32 get_pc() {
 		return prevPC;
-	}
-	void set_pc(uint32 pc) {
-		PC = pc;
 	}
 	
 	// unique function

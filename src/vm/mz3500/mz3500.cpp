@@ -65,6 +65,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(main, SIG_MAIN_INTFD, 1);
 	fdc->set_context_drq(main, SIG_MAIN_DRQ, 1);
 	fdc->set_context_index(main, SIG_MAIN_INDEX, 1);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 	
 	// mz3500sm p.72,77
 	sio->set_context_rxrdy(subcpu, SIG_CPU_NMI, 1);

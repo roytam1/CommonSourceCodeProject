@@ -40,7 +40,7 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
-	int count, first, period, scount, tcount;
+	int count, period, scount, tcount;
 	bool wait;
 	
 	pair regs[4];
@@ -75,6 +75,7 @@ private:
 	opecode
 	--------------------------------------------------------------------------- */
 	
+	void run_one_opecode();
 	void OP();
 	void OP48();
 	void OP4C();
@@ -85,18 +86,13 @@ private:
 	void OP74();
 	
 public:
-	UPD7801(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		count = first = 0;	// passed_clock must be zero at initialize
-	}
+	UPD7801(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~UPD7801() {}
 	
 	// common function
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	int passed_clock() {
-		return first - count;
-	}
 	uint32 get_pc() {
 		return prevPC;
 	}

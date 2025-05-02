@@ -9,7 +9,6 @@
 */
 
 #include "fdcpack.h"
-#include "main.h"
 #include "../upd765a.h"
 
 void FDCPACK::write_io8(uint32 addr, uint32 data)
@@ -55,14 +54,4 @@ uint32 FDCPACK::read_io8(uint32 addr)
 		return 0x04; // device id
 	}
 	return 0xff;
-}
-
-void FDCPACK::write_signal(int id, uint32 data, uint32 mask)
-{
-	if(id == SIG_FDCPACK_DRQ) {
-		d_main->write_signal(SIG_MAIN_INTA, data, mask);
-	}
-	else if(id == SIG_FDCPACK_IRQ) {
-		d_main->write_signal(SIG_MAIN_INTB, data, mask);
-	}
 }

@@ -699,9 +699,10 @@
 #ifdef _SC3000
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
-#define MENU_POS_DATAREC                2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
+#define MENU_POS_FD1                    2
+#define MENU_POS_DATAREC                3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
 #endif
 
 // EPOCH Super Cassette Vision

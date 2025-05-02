@@ -40,7 +40,7 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
-	int count, first;
+	int count;
 	pair regs[4];
 	uint16 SP, PC, prevPC;
 	uint16 IM, RIM_IEN;
@@ -173,11 +173,11 @@ private:
 	opecodes
 	--------------------------------------------------------------------------- */
 	
+	void run_one_opecode();
 	void OP(uint8 code);
 	
 public:
 	I8080(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		count = first = 0;	// passed_clock must be zero at initialize
 		BUSREQ = SID = false;
 		init_output_signals(&outputs_busack);
 		init_output_signals(&outputs_sod);
@@ -186,17 +186,11 @@ public:
 	
 	// common functions
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
-	int passed_clock() {
-		return first - count;
-	}
 	uint32 get_pc() {
 		return prevPC;
-	}
-	void set_pc(uint32 pc) {
-		PC = pc;
 	}
 	
 	// unique function

@@ -500,51 +500,73 @@ void I386::reset()
 	CHANGE_PC(eip);
 }
 
-void I386::run(int clock)
+int I386::run(int clock)
 {
 	// return now if halted or busreq
 	if(busreq || halted) {
 		cycles = base_cycles = 0;
 #if defined(HAS_PENTIUM) || defined(HAS_MEDIAGX)
-		tsc += cycles;
+		tsc += 1;
 #endif
-		return;
+		return 1;
 	}
 	
-	// run cpu whille given clocks
-	cycles += clock;
-	base_cycles = cycles;
-	CHANGE_PC(eip);
-	
-	while(cycles > 0) {
-//		prev_eip = eip;
-//		prev_cs = sreg[CS].selector;
-//		prev_cpl = sreg[CS].flags;
-		operand_size = sreg[CS].d;
-		address_size = sreg[CS].d;
-		segment_prefix = 0;
-		if(irq_state & NMI_REQ_BIT) {
-			halted = 0;
-			irq_state &= ~NMI_REQ_BIT;
-			trap(NMI_INT_VECTOR, 1);
-		}
-		else if((irq_state & INT_REQ_BIT) && IF) {
-			halted = 0;
-			irq_state &= ~INT_REQ_BIT;
-			int interrupt = ACK_INTR() & 0xff;
-			trap(interrupt, 1);
-		}
-		decode_opcode();
-#ifdef SINGLE_MODE_DMA
-		if(d_dma) {
-			d_dma->do_dma();
-		}
-#endif
-	}
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		cycles = base_cycles = 0;
+		CHANGE_PC(eip);
+		run_one_opecode();
 #if defined(HAS_PENTIUM) || defined(HAS_MEDIAGX)
-	tsc += (base_cycles - cycles);
+		tsc += -cycles;
 #endif
-	base_cycles = cycles;
+		return -cycles;
+	}
+	else {
+		// run cpu whille given clocks
+		cycles += clock;
+		base_cycles = cycles;
+		CHANGE_PC(eip);
+		
+		while(cycles > 0 && !(busreq || halted)) {
+			run_one_opecode();
+		}
+		int passed_cycles = base_cycles - cycles;
+		if((busreq || halted) && cycles > 0) {
+			cycles = base_cycles = 0;
+		}
+#if defined(HAS_PENTIUM) || defined(HAS_MEDIAGX)
+		tsc += passed_cycles;
+#endif
+		return passed_cycles;
+	}
+}
+
+void I386::run_one_opecode()
+{
+//	prev_eip = eip;
+//	prev_cs = sreg[CS].selector;
+//	prev_cpl = sreg[CS].flags;
+	operand_size = sreg[CS].d;
+	address_size = sreg[CS].d;
+	segment_prefix = 0;
+	if(irq_state & NMI_REQ_BIT) {
+		halted = 0;
+		irq_state &= ~NMI_REQ_BIT;
+		trap(NMI_INT_VECTOR, 1);
+	}
+	else if((irq_state & INT_REQ_BIT) && IF) {
+		halted = 0;
+		irq_state &= ~INT_REQ_BIT;
+		int interrupt = ACK_INTR() & 0xff;
+		trap(interrupt, 1);
+	}
+	decode_opcode();
+#ifdef SINGLE_MODE_DMA
+	if(d_dma) {
+		d_dma->do_dma();
+	}
+#endif
 }
 
 void I386::write_signal(int id, uint32 data, uint32 mask)
@@ -559,9 +581,6 @@ void I386::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
-		if(busreq) {
-			cycles = base_cycles = 0;
-		}
 	}
 	else if(id == SIG_I386_A20) {
 		a20_mask = (data & mask) ? ~0 : ~(1 << 20);
@@ -4157,9 +4176,6 @@ void I386::hlt()	// Opcode 0xf4
 	// the current privilege level is not zero
 	halted = 1;
 	CYCLES(CYCLES_HLT);
-	if(cycles > 0) {
-		cycles = 0;
-	}
 }
 
 void I386::decimal_adjust(int direction)

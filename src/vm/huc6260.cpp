@@ -435,129 +435,143 @@ uint32 HUC6260::read_signal(int id)
 	return 0;
 }
 
-void HUC6260::run(int clock)
+int HUC6260::run(int clock)
+{
+	if(clock == -1) {
+		// run only one opcode
+		count = 0;
+		run_one_opecode();
+		return -count;
+	}
+	else {
+		// run cpu while given clocks
+		count += clock;
+		int first_count = count;
+		
+		while(count > 0) {
+			run_one_opecode();
+		}
+		return first_count - count;
+	}
+}
+
+void HUC6260::run_one_opecode()
 {
 	uint8 code, ureg8;
 	
-	// run cpu while given clocks
-	count += clock;
-	first = count;
-	while(count > 0) {
-		switch(TransOpe) {
-		case 0:
-			if(!prvIF && (prvIntStat & ~prvIntMask)) {
-				if((prvIntStat & INT_IRQ2) && !(prvIntMask & INT_IRQ2)) {
-					IntStat &= ~INT_IRQ2;
-					PUSH8(PC >> 8);
-					PUSH8(PC & 0xFF);
-					_BF = 0;
-					PUSH8(CompressFlags());
-					_IF = IF;
-					RefreshPrvIF();
-					_TF = _DF = 0;
-					PC = RM16(0xFFF6);
-					count -= 8;
-				}
-				else if((prvIntStat & INT_IRQ1) && !(prvIntMask & INT_IRQ1)) {
-					IntStat &= ~INT_IRQ1;
-					PUSH8(PC >> 8);
-					PUSH8(PC & 0xFF);
-					_BF = 0;
-					PUSH8(CompressFlags());
-					_IF = IF;
-					RefreshPrvIF();
-					_TF = _DF = 0;
-					PC = RM16(0xFFF8);
-					count -= 8;
-				}
-				else if((prvIntStat & INT_TIRQ) && !(prvIntMask & INT_TIRQ)) {
-					IntStat &= ~INT_TIRQ;
-					PUSH8(PC >> 8);
-					PUSH8(PC & 0xFF);
-					_BF = 0;
-					PUSH8(CompressFlags());
-					_IF = IF;
-					RefreshPrvIF();
-					_TF = _DF = 0;
-					PC = RM16(0xFFFA);
-					count -= 8;
-				}
-			}
-			RefreshPrvIF();
-			prevPC = PC;
-			code = FETCH8();
-			count -= cycles[code];
-			OP(code);
-			break;
-		case 1:	// TII
-			count -= 5;
-			ureg8 = RM8(TransSrc++);
-			WM8(TransDst++, ureg8);
-			if(--TransLen <= 0) {
-				TransOpe = 0;
-				_TF = 0;
+	switch(TransOpe) {
+	case 0:
+		if(!prvIF && (prvIntStat & ~prvIntMask)) {
+			if((prvIntStat & INT_IRQ2) && !(prvIntMask & INT_IRQ2)) {
+				IntStat &= ~INT_IRQ2;
+				PUSH8(PC >> 8);
+				PUSH8(PC & 0xFF);
+				_BF = 0;
+				PUSH8(CompressFlags());
+				_IF = IF;
 				RefreshPrvIF();
+				_TF = _DF = 0;
+				PC = RM16(0xFFF6);
+				count -= 8;
 			}
-			break;
-		case 2:	// TDD
-			count -= 5;
-			ureg8 = RM8(TransSrc--);
-			WM8(TransDst--, ureg8);
-			if(--TransLen <= 0) {
-				TransOpe = 0;
-				_TF = 0;
+			else if((prvIntStat & INT_IRQ1) && !(prvIntMask & INT_IRQ1)) {
+				IntStat &= ~INT_IRQ1;
+				PUSH8(PC >> 8);
+				PUSH8(PC & 0xFF);
+				_BF = 0;
+				PUSH8(CompressFlags());
+				_IF = IF;
 				RefreshPrvIF();
+				_TF = _DF = 0;
+				PC = RM16(0xFFF8);
+				count -= 8;
 			}
-			break;
-		case 3:	// TIN
-			count -= 5;
-			ureg8 = RM8(TransSrc++);
-			WM8(TransDst, ureg8);
-			if(--TransLen <= 0) {
-				TransOpe = 0;
-				_TF = 0;
+			else if((prvIntStat & INT_TIRQ) && !(prvIntMask & INT_TIRQ)) {
+				IntStat &= ~INT_TIRQ;
+				PUSH8(PC >> 8);
+				PUSH8(PC & 0xFF);
+				_BF = 0;
+				PUSH8(CompressFlags());
+				_IF = IF;
 				RefreshPrvIF();
+				_TF = _DF = 0;
+				PC = RM16(0xFFFA);
+				count -= 8;
 			}
-			break;
-		case 4:	// TIA
-			ureg8 = RM8(TransSrc++);
-			if(TransDir) {
-				count -= 5;
-				WM8(TransDst++, ureg8);
-				TransDir = 0;
-			}
-			else {
-				count -= 6;
-				WM8(TransDst--, ureg8);
-				TransDir = 1;
-			}
-			if(--TransLen <= 0) {
-				TransOpe = 0;
-				_TF = 0;
-				RefreshPrvIF();
-			}
-			break;
-		case 5:	// TAI
-			if(TransDir) {
-				count -= 5;
-				TransDir = 0;
-				ureg8 = RM8(TransSrc++);
-			}
-			else {
-				count -= 6;
-				TransDir = 1;
-				ureg8 = RM8(TransSrc--);
-			}
-			WM8(TransDst++, ureg8);
-			if(--TransLen <= 0) {
-				TransOpe = 0;
-				_TF = 0;
-				RefreshPrvIF();
-			}
-			break;
 		}
+		RefreshPrvIF();
+		prevPC = PC;
+		code = FETCH8();
+		count -= cycles[code];
+		OP(code);
+		break;
+	case 1:	// TII
+		count -= 5;
+		ureg8 = RM8(TransSrc++);
+		WM8(TransDst++, ureg8);
+		if(--TransLen <= 0) {
+			TransOpe = 0;
+			_TF = 0;
+			RefreshPrvIF();
+		}
+		break;
+	case 2:	// TDD
+		count -= 5;
+		ureg8 = RM8(TransSrc--);
+		WM8(TransDst--, ureg8);
+		if(--TransLen <= 0) {
+			TransOpe = 0;
+			_TF = 0;
+			RefreshPrvIF();
+		}
+		break;
+	case 3:	// TIN
+		count -= 5;
+		ureg8 = RM8(TransSrc++);
+		WM8(TransDst, ureg8);
+		if(--TransLen <= 0) {
+			TransOpe = 0;
+			_TF = 0;
+			RefreshPrvIF();
+		}
+		break;
+	case 4:	// TIA
+		ureg8 = RM8(TransSrc++);
+		if(TransDir) {
+			count -= 5;
+			WM8(TransDst++, ureg8);
+			TransDir = 0;
+		}
+		else {
+			count -= 6;
+			WM8(TransDst--, ureg8);
+			TransDir = 1;
+		}
+		if(--TransLen <= 0) {
+			TransOpe = 0;
+			_TF = 0;
+			RefreshPrvIF();
+		}
+		break;
+	case 5:	// TAI
+		if(TransDir) {
+			count -= 5;
+			TransDir = 0;
+			ureg8 = RM8(TransSrc++);
+		}
+		else {
+			count -= 6;
+			TransDir = 1;
+			ureg8 = RM8(TransSrc--);
+		}
+		WM8(TransDst++, ureg8);
+		if(--TransLen <= 0) {
+			TransOpe = 0;
+			_TF = 0;
+			RefreshPrvIF();
+		}
+		break;
 	}
-	first = count;
 }
 
 void HUC6260::OP(uint8 code)

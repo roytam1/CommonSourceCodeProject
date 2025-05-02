@@ -142,8 +142,9 @@ private:
 	void trap(int irq, int irq_gate);
 	void CYCLES(int x);
 	void CYCLES_RM(int modrm, int r, int m);
-
+	
 	// opecodes
+	void run_one_opecode();
 	void decode_opcode();
 	uint8 OR8(uint8 dst, uint8 src);
 	uint16 OR16(uint16 dst, uint16 src);
@@ -826,7 +827,6 @@ public:
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
 #endif
-		cycles = base_cycles = 0;	// passed_clock must be zero at initialize
 		busreq = 0;
 	}
 	~I386() {}
@@ -834,12 +834,9 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void run(int clock);
+	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
-	int passed_clock() {
-		return base_cycles - cycles;
-	}
 	uint32 get_pc() {
 		return prev_pc;
 	}

@@ -159,37 +159,49 @@ void DISK::open(_TCHAR path[])
 			// 4096 bytes: FDI header ???
 			if(file_size == len || (file_size == (len + 4096) && (len == 655360 || len == 1261568))) {
 				fi->Fseek(file_size - len, FILEIO_SEEK_SET);
-				inserted = standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size);
-				_stprintf(file_path, _T("%s.D88"), path);
-				break;
+				if(standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size)) {
+					_stprintf(file_path, _T("%s.D88"), path);
+					inserted = changed = true;
+					goto file_loaded;
+				}
 			}
 		}
-		if(!inserted && 0 < file_size && file_size <= DISK_BUFFER_SIZE) {
+		if(0 < file_size && file_size <= DISK_BUFFER_SIZE) {
 			fi->Fread(buffer, file_size, 1);
-			inserted = changed = true;
+			
+			// check d88 format (temporary)
+			for(int ofs = 0x20; ofs < 0x2b0; ofs += 4) {
+				if(*(uint32 *)(buffer + ofs) == 0x2b0) {
+					inserted = changed = true;
+					goto file_loaded;
+				}
+			}
+			_stprintf(file_path, _T("%s.D88"), path);
 			
 			// check file header
-			if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
-				// teledisk image file
-				inserted = teledisk_to_d88();
-				_stprintf(file_path, _T("%s.D88"), path);
+			try {
+				if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
+					// teledisk image file
+					inserted = changed = teledisk_to_d88();
+				}
+				else if(memcmp(buffer, "IMD", 3) == 0) {
+					// imagedisk image file
+					inserted = changed = imagedisk_to_d88();
+				}
+				else if(memcmp(buffer, "MV - CPC", 8) == 0) {
+					// standard cpdread image file
+					inserted = changed = cpdread_to_d88(0);
+				}
+				else if(memcmp(buffer, "EXTENDED", 8) == 0) {
+					// extended cpdread image file
+					inserted = changed = cpdread_to_d88(1);
+				}
 			}
-			else if(memcmp(buffer, "IMD", 3) == 0) {
-				// imagedisk image file
-				inserted = imagedisk_to_d88();
-				_stprintf(file_path, _T("%s.D88"), path);
-			}
-			else if(memcmp(buffer, "MV - CPC", 8) == 0) {
-				// standard cpdread image file
-				inserted = cpdread_to_d88(0);
-				_stprintf(file_path, _T("%s.D88"), path);
-			}
-			else if(memcmp(buffer, "EXTENDED", 8) == 0) {
-				// extended cpdread image file
-				inserted = cpdread_to_d88(1);
-				_stprintf(file_path, _T("%s.D88"), path);
+			catch(...) {
+				// failed to convert the disk image
 			}
 		}
+file_loaded:
 		if(inserted) {
 			crc32 = getcrc32(buffer, file_size);
 		}

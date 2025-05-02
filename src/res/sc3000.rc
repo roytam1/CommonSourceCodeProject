@@ -106,6 +106,20 @@ BEGIN
         MENUITEM "Recent 7",                    ID_RECENT_CART7
         MENUITEM "Recent 8",                    ID_RECENT_CART8
     END
+    POPUP "FDD"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD1
+        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD11
+        MENUITEM "Recent 2",                    ID_RECENT_FD12
+        MENUITEM "Recent 3",                    ID_RECENT_FD13
+        MENUITEM "Recent 4",                    ID_RECENT_FD14
+        MENUITEM "Recent 5",                    ID_RECENT_FD15
+        MENUITEM "Recent 6",                    ID_RECENT_FD16
+        MENUITEM "Recent 7",                    ID_RECENT_FD17
+        MENUITEM "Recent 8",                    ID_RECENT_FD18
+    END
     POPUP "Tape"
     BEGIN
         MENUITEM "Play",                        ID_PLAY_DATAREC

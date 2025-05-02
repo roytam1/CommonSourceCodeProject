@@ -34,7 +34,7 @@ void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 			if(sample_count < 1024) {
 				samples_signal[sample_count] = signal;
 				samples_out[sample_count] = (on && !mute);
-				samples_clock[sample_count] = current_clock();
+				samples_clock[sample_count] = passed_clock(prev_clock);
 				sample_count++;
 			}
 #endif
@@ -68,13 +68,13 @@ void PCM1BIT::mix(int32* buffer, int cnt)
 		if(sample_count < 1024) {
 			samples_signal[sample_count] = signal;
 			samples_out[sample_count] = (on && !mute);
-			samples_clock[sample_count] = cur_clock;
+			samples_clock[sample_count] = passed_clock(prev_clock);
 			sample_count++;
 		}
-		uint32 start_clock = prev_clock;
+		uint32 start_clock = 0;
 		int start_index = 0;
 		for(int i = 0; i < cnt; i++) {
-			uint32 end_clock = prev_clock + ((cur_clock - prev_clock) * (i + 1)) / cnt;
+			uint32 end_clock = ((cur_clock - prev_clock) * (i + 1)) / cnt;
 			int on_clocks = 0, off_clocks = 0;
 			for(int s = start_index; s < sample_count; s++) {
 				uint32 clock = samples_clock[s];

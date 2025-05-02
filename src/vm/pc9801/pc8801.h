@@ -94,6 +94,7 @@ private:
 	// keyboard
 	uint8 *key_status;
 	uint8 *joy_status;
+	uint8 key_status_bak[7];
 	
 	// kanji rom
 	pair kanji1_addr, kanji2_addr;

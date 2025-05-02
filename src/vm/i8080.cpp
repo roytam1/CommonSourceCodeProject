@@ -400,6 +400,7 @@ static const uint16 DAA[2048] = {
 void I8080::reset()
 {
 	// reset
+	count = 0;
 	PC = CPU_START_ADDR;
 	IM = IM_M5 | IM_M6 | IM_M7;
 	HALT = BUSREQ = false;
@@ -417,10 +418,6 @@ void I8080::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_CPU_BUSREQ) {
 		BUSREQ = ((data & mask) != 0);
-		if(BUSREQ) {
-			count = first = 0;
-		}
-		// busack
 		write_signals(&outputs_busack, BUSREQ ? 0xffffffff : 0);
 	}
 	else if(id == SIG_I8080_INTR) {
@@ -472,100 +469,118 @@ void I8080::set_intr_line(bool line, bool pending, uint32 bit)
 	}
 }
 
-void I8080::run(int clock)
+int I8080::run(int clock)
 {
 	// return now if BUSREQ
 	if(BUSREQ) {
-		count = first = 0;
-		return;
+		count = 0;
+		return 1;
 	}
 	
-	// run cpu while given clocks
-	count += clock;
-	first = count;
-	
-	while(count > 0) {
-		OP(FETCHOP());
-		if(IM & IM_REQ) {
-			if(IM & IM_NMI) {
-				INT(0x24);
-				count -= 5;	// unknown
-				RIM_IEN = IM & IM_IEN;
-				IM &= ~(IM_IEN | IM_NMI);
+	// run cpu
+	if(clock == -1) {
+		// run only one opcode
+		count = 0;
+		run_one_opecode();
+		return -count;
+	}
+	else {
+		// run cpu while given clocks
+		count += clock;
+		int first_count = count;
+		
+		while(count > 0 && !BUSREQ) {
+			run_one_opecode();
+		}
+		int passed_count = first_count - count;
+		if(BUSREQ && count > 0) {
+			count = 0;
+		}
+		return passed_count;
+	}
+}
+
+void I8080::run_one_opecode()
+{
+	OP(FETCHOP());
+	if(IM & IM_REQ) {
+		if(IM & IM_NMI) {
+			INT(0x24);
+			count -= 5;	// unknown
+			RIM_IEN = IM & IM_IEN;
+			IM &= ~(IM_IEN | IM_NMI);
+		}
+		else if(IM & IM_IEN) {
+#ifdef HAS_I8085
+			if(!(IM & IM_M7) && (IM & IM_I7)) {
+				INT(0x3c);
+				count -= 7;	// unknown
+				RIM_IEN = 0;
+				IM &= ~(IM_IEN | IM_I7);
 			}
-			else if(IM & IM_IEN) {
-#ifdef HAS_I8085
-				if(!(IM & IM_M7) && (IM & IM_I7)) {
-					INT(0x3c);
-					count -= 7;	// unknown
-					RIM_IEN = 0;
-					IM &= ~(IM_IEN | IM_I7);
-				}
-				else if(!(IM & IM_M6) && (IM & IM_I6)) {
-					INT(0x34);
-					count -= 7;	// unknown
-					RIM_IEN = 0;
-					IM &= ~(IM_IEN | IM_I6);
-				}
-				else if(!(IM & IM_M5) && (IM & IM_I5)) {
-					INT(0x2c);
-					count -= 7;	// unknown
-					RIM_IEN = 0;
-					IM &= ~(IM_IEN | IM_I5);
-				}
-				else
+			else if(!(IM & IM_M6) && (IM & IM_I6)) {
+				INT(0x34);
+				count -= 7;	// unknown
+				RIM_IEN = 0;
+				IM &= ~(IM_IEN | IM_I6);
+			}
+			else if(!(IM & IM_M5) && (IM & IM_I5)) {
+				INT(0x2c);
+				count -= 7;	// unknown
+				RIM_IEN = 0;
+				IM &= ~(IM_IEN | IM_I5);
+			}
+			else
 #endif
-				if(IM & IM_INT) {
-					uint32 vector = ACK_INTR();
-					uint8 v0 = vector;
-					uint16 v12 = vector >> 8;
-					// support JMP/CALL/RST only
-					count -= cc_op[v0];
-					switch(v0) {
-					case 0xc3:	// JMP
-						PC = v12;
-						break;
-					case 0xcd:	// CALL
-						PUSH16(PC);
-						PC = v12;
+			if(IM & IM_INT) {
+				uint32 vector = ACK_INTR();
+				uint8 v0 = vector;
+				uint16 v12 = vector >> 8;
+				// support JMP/CALL/RST only
+				count -= cc_op[v0];
+				switch(v0) {
+				case 0xc3:	// JMP
+					PC = v12;
+					break;
+				case 0xcd:	// CALL
+					PUSH16(PC);
+					PC = v12;
 #ifdef HAS_I8085
-						count -= 7;
+					count -= 7;
 #else
-						count -= 6;
+					count -= 6;
 #endif
-						break;
-					case 0xc7:	// RST 0
-						RST(0);
-						break;
-					case 0xcf:	// RST 1
-						RST(1);
-						break;
-					case 0xd7:	// RST 2
-						RST(2);
-						break;
-					case 0xdf:	// RST 3
-						RST(3);
-						break;
-					case 0xe7:	// RST 4
-						RST(4);
-						break;
-					case 0xef:	// RST 5
-						RST(5);
-						break;
-					case 0xf7:	// RST 6
-						RST(6);
-						break;
-					case 0xff:	// RST 7
-						RST(7);
-						break;
-					}
-					RIM_IEN = 0;
-					IM &= ~(IM_IEN | IM_INT);
+					break;
+				case 0xc7:	// RST 0
+					RST(0);
+					break;
+				case 0xcf:	// RST 1
+					RST(1);
+					break;
+				case 0xd7:	// RST 2
+					RST(2);
+					break;
+				case 0xdf:	// RST 3
+					RST(3);
+					break;
+				case 0xe7:	// RST 4
+					RST(4);
+					break;
+				case 0xef:	// RST 5
+					RST(5);
+					break;
+				case 0xf7:	// RST 6
+					RST(6);
+					break;
+				case 0xff:	// RST 7
+					RST(7);
+					break;
 				}
+				RIM_IEN = 0;
+				IM &= ~(IM_IEN | IM_INT);
 			}
 		}
 	}
-	first = count;
 }
 
 void I8080::OP(uint8 code)
