@@ -97,14 +97,14 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "FDD1"
+    POPUP "FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
-    POPUP "FDD2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2
@@ -113,11 +113,11 @@ BEGIN
     END
     POPUP "CMT"
     BEGIN
-        MENUITEM "Play",                        ID_PLAY_DATAREC
-        MENUITEM "Rec",                         ID_REC_DATAREC
-        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM "Play",                        ID_PLAY_TAPE
+        MENUITEM "Rec",                         ID_REC_TAPE
+        MENUITEM "Close",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_DATAREC
+        MENUITEM "Recent",                      ID_RECENT_TAPE
     END
     POPUP "Screen"
     BEGIN

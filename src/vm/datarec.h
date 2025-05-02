@@ -20,8 +20,6 @@
 
 class FILEIO;
 
-#define DATAREC_BUFFER_SIZE 0x800000
-
 class DATAREC : public DEVICE
 {
 private:
@@ -105,9 +103,12 @@ public:
 	void set_context_top(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_top, device, id, mask);
 	}
-	bool play_datarec(_TCHAR* file_path);
-	bool rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	bool play_tape(_TCHAR* file_path);
+	bool rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted() {
+		return (play || rec);
+	}
 	void set_remote(bool value);
 	void set_ff_rew(int value);
 #ifdef DATAREC_SOUND

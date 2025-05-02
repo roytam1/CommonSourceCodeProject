@@ -48,6 +48,8 @@ void MEMORY::initialize()
 	SET_BANK(0x0000, 0x1fff, ram + 0x0000, ipl);
 	SET_BANK(0x2000, 0x3fff, ram + 0x2000, rdmy);
 	SET_BANK(0x4000, 0xffff, ram + 0x4000, ram + 0x4000);
+	
+	inserted = false;
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -83,6 +85,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		memset(cart, 0xff, sizeof(cart));
 		fio->Fread(cart, sizeof(cart), 1);
 		fio->Fclose();
+		inserted = true;
 	}
 	delete fio;
 	
@@ -94,6 +97,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 void MEMORY::close_cart()
 {
 	memset(cart, 0xff, sizeof(cart));
+	inserted = false;
 	
 	// set memory map
 	SET_BANK(0x0000, 0x1fff, ram + 0x0000, ipl);

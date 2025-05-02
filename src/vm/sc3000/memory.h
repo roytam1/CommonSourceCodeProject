@@ -30,6 +30,8 @@ private:
 	uint8* wbank[16];
 	uint8* rbank[16];
 	
+	bool inserted;
+	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~MEMORY() {}
@@ -49,6 +51,9 @@ public:
 	// unique functions
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted() {
+		return inserted;
+	}
 };
 
 #endif

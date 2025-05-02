@@ -122,11 +122,11 @@
 #endif
 #endif
 #if defined(SUPPORT_CMT_IF)
-#define USE_DATAREC
-#define DATAREC_BINARY_ONLY
+#define USE_TAPE
+#define TAPE_BINARY_ONLY
 #elif defined(_PC98DO)
-#define USE_DATAREC
-#define DATAREC_PC8801
+#define USE_TAPE
+#define TAPE_PC8801
 #endif
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
@@ -325,9 +325,10 @@ public:
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 #if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 #endif
 	bool now_skip();
 	

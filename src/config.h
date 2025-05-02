@@ -42,9 +42,9 @@ typedef struct {
 	_TCHAR initial_quickdisk_path[_MAX_PATH];
 	_TCHAR recent_quickdisk_path[8][_MAX_PATH];
 #endif
-#ifdef USE_DATAREC
-	_TCHAR initial_datarec_path[_MAX_PATH];
-	_TCHAR recent_datarec_path[8][_MAX_PATH];
+#ifdef USE_TAPE
+	_TCHAR initial_tape_path[_MAX_PATH];
+	_TCHAR recent_tape_path[8][_MAX_PATH];
 #endif
 #ifdef USE_BINARY_FILE1
 	_TCHAR initial_binary_path[_MAX_PATH];
@@ -66,7 +66,7 @@ typedef struct {
 #ifdef USE_FD1
 	bool ignore_crc;
 #endif
-#ifdef USE_DATAREC
+#ifdef USE_TAPE
 	bool wave_shaper;
 #endif
 #ifdef USE_DIPSWITCH

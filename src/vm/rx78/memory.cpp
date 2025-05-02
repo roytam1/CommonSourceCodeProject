@@ -57,6 +57,7 @@ void MEMORY::initialize()
 		vbank[i] = vram + 0x2000 * i;
 	}
 	rpage = wpage = 0;
+	inserted = false;
 }
 
 void MEMORY::reset()
@@ -127,6 +128,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		memset(cart, 0xff, sizeof(cart));
 		fio->Fread(cart, sizeof(cart), 1);
 		fio->Fclose();
+		inserted = true;
 	}
 	delete fio;
 }
@@ -134,4 +136,5 @@ void MEMORY::open_cart(_TCHAR* file_path)
 void MEMORY::close_cart()
 {
 	memset(cart, 0xff, sizeof(cart));
+	inserted = false;
 }

@@ -102,28 +102,28 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "PC98-FDD #1"
+    POPUP "PC98-FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
-    POPUP "FDD #2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
-    POPUP "PC88-FDD #1"
+    POPUP "PC88-FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD3
         MENUITEM "Close",                       ID_CLOSE_FD3
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD3
     END
-    POPUP "FDD #2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD4
         MENUITEM "Close",                       ID_CLOSE_FD4
@@ -132,11 +132,11 @@ BEGIN
     END
     POPUP "PC88-CMT"
     BEGIN
-        MENUITEM "Play",                        ID_PLAY_DATAREC
-        MENUITEM "Rec",                         ID_REC_DATAREC
-        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM "Play",                        ID_PLAY_TAPE
+        MENUITEM "Rec",                         ID_REC_TAPE
+        MENUITEM "Close",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_DATAREC
+        MENUITEM "Recent",                      ID_RECENT_TAPE
     END
     POPUP "Screen"
     BEGIN

@@ -32,6 +32,7 @@ private:
 	bool cmt_signal, cmt_remote;
 	bool has_extrom;
 	int ctype;
+	
 	uint8 *key;
 	uint32 *joy;
 	
@@ -63,6 +64,9 @@ public:
 	}
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted() {
+		return (ctype != 0);
+	}
 };
 
 #endif

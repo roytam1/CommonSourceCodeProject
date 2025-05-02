@@ -29,7 +29,7 @@ void init_config()
 	config.sound_frequency = 6;	// 48KHz
 	config.sound_latency = 1;	// 100msec
 	
-#ifdef USE_DATAREC
+#ifdef USE_TAPE
 	config.wave_shaper = true;
 #endif
 #ifdef USE_DIPSWITCH

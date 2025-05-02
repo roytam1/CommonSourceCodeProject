@@ -61,8 +61,8 @@
 // device informations for win32
 #define USE_FD1
 #define USE_FD2
-#define USE_DATAREC
-#define DATAREC_PC8801
+#define USE_TAPE
+#define TAPE_PC8801
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
@@ -150,9 +150,10 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	bool now_skip();
 	
 	void update_config();

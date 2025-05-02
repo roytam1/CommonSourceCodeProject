@@ -34,7 +34,7 @@ private:
 	uint8 buffer[BUFFER_SIZE];
 	bool play, rec, remote;
 	
-	void release_datarec();
+	void release_tape();
 	
 public:
 	CMT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -51,9 +51,12 @@ public:
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;
 	}
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted() {
+		return (play || rec);
+	}
 };
 
 #endif

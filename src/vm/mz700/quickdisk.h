@@ -71,6 +71,9 @@ public:
 	}
 	void open_disk(_TCHAR path[]);
 	void close_disk();
+	bool disk_inserted() {
+		return insert;
+	}
 };
 
 #endif

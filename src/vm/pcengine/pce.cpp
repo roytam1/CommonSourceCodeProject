@@ -90,7 +90,7 @@ void PCE::initialize()
 	
 	backup_crc32 = getcrc32(backup, sizeof(backup));
 #endif
-	running = false;
+	inserted = false;
 }
 
 void PCE::release()
@@ -147,9 +147,9 @@ void PCE::write_data8(uint32 addr, uint32 data)
 		return;
 #ifdef SUPPORT_BACKUP_RAM
 	case 0xf7:
-		if(running) {
+//		if(inserted) {
 			backup[ofs] = data;
-		}
+//		}
 		return;
 #endif
 	case 0xf8:
@@ -373,7 +373,7 @@ void PCE::open_cart(_TCHAR* file_path)
 		            || (size == 0x100000 && cart_crc32 == 0x1e1d0319)	// Darius Plus (1024K)
 		            || (size == 0x080000 && cart_crc32 == 0x1f041166);	// Grandzort
 		support_6btn = (size == 0x280000 && cart_crc32 == 0xd15cb6bb);	// Street Fighter II
-		running = true;
+		inserted = true;
 	}
 	delete fio;
 }
@@ -381,7 +381,7 @@ void PCE::open_cart(_TCHAR* file_path)
 void PCE::close_cart()
 {
 	memset(cart, 0xff, sizeof(cart));
-	running = false;
+	inserted = false;
 }
 
 // vdc
@@ -1564,7 +1564,7 @@ void PCE::mix(int32* buffer, int cnt)
 		2718,3064,3454,3893,4388,4947,5576,6285,7085,7986,9002,10148,11439,12894,14535,16384
 	};
 	
-	if(!running) {
+	if(!inserted) {
 		return;
 	}
 	for(int ch = 0; ch < 6; ch++) {

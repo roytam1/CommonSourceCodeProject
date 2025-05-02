@@ -127,22 +127,27 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	drec->play_datarec(file_path);
+	drec->play_tape(file_path);
 	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	drec->rec_datarec(file_path);
+	drec->rec_tape(file_path);
 	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	drec->close_datarec();
+	drec->close_tape();
 	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+}
+
+bool VM::tape_inserted()
+{
+	return drec->tape_inserted();
 }
 
 bool VM::now_skip()

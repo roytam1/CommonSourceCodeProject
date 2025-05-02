@@ -96,16 +96,16 @@ BEGIN
     END
     POPUP "CMT"
     BEGIN
-        MENUITEM "Play",                        ID_PLAY_DATAREC
-        MENUITEM "Rec",                         ID_REC_DATAREC
-        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM "Play",                        ID_PLAY_TAPE
+        MENUITEM "Rec",                         ID_REC_TAPE
+        MENUITEM "Close",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Play Button",                 ID_PLAY_BUTTON
         MENUITEM "Stop Button",                 ID_STOP_BUTTON
         MENUITEM SEPARATOR
         MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_DATAREC
+        MENUITEM "Recent",                      ID_RECENT_TAPE
     END
     POPUP "QD"
     BEGIN
@@ -114,28 +114,28 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_QUICKDISK
     END
-    POPUP "FDD1"
+    POPUP "FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
-    POPUP "FDD2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
-    POPUP "FDD3"
+    POPUP "FD3"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD3
         MENUITEM "Close",                       ID_CLOSE_FD3
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD3
     END
-    POPUP "FDD4"
+    POPUP "FD4"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD4
         MENUITEM "Close",                       ID_CLOSE_FD4

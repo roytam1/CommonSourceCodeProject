@@ -245,19 +245,24 @@ bool VM::disk_inserted(int drv)
 	return pc88fdc_sub->disk_inserted(drv);
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	pc88->play_datarec(file_path);
+	pc88->play_tape(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	pc88->rec_datarec(file_path);
+	pc88->rec_tape(file_path);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	pc88->close_datarec();
+	pc88->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return pc88->tape_inserted();
 }
 
 bool VM::now_skip()

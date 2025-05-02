@@ -276,7 +276,7 @@ void IO::initialize()
 
 void IO::release()
 {
-	close_datarec();
+	close_tape();
 	delete cmt_fio;
 	
 	key_buf->release();
@@ -305,7 +305,7 @@ void IO::reset()
 	strig = strig1 = 0xff;
 	
 	// data recorder
-	close_datarec();
+	close_tape();
 	cmt_mode = false;
 	
 	// video
@@ -842,9 +842,9 @@ void IO::key_up(int code)
 // cmt
 // ----------------------------------------------------------------------------
 
-void IO::play_datarec(_TCHAR* file_path)
+void IO::play_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		memset(cmt_buf, 0, sizeof(cmt_buf));
 		cmt_fio->Fread(cmt_buf, sizeof(cmt_buf), 1);
@@ -857,16 +857,16 @@ void IO::play_datarec(_TCHAR* file_path)
 	}
 }
 
-void IO::rec_datarec(_TCHAR* file_path)
+void IO::rec_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		cmt_ptr = 0;
 		cmt_rec = true;
 	}
 }
 
-void IO::close_datarec()
+void IO::close_tape()
 {
 	if(cmt_rec) {
 		cmt_fio->Fwrite(cmt_buf, cmt_ptr, 1);

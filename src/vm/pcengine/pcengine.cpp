@@ -138,6 +138,11 @@ void VM::close_cart()
 	pcecpu->reset();
 }
 
+bool VM::cart_inserted()
+{
+	return pce->cart_inserted();
+}
+
 void VM::update_config()
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {

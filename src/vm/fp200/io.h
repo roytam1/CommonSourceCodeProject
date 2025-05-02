@@ -76,9 +76,12 @@ public:
 	}
 	void key_down(int code);
 	void key_up();
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted() {
+		return (cmt_play || cmt_rec);
+	}
 	void draw_screen();
 };
 

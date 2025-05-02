@@ -146,7 +146,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_context_pio(pio);
 #endif
 	sub->set_context_pio(pio);
-	sub->set_context_datarec(drec);
+	sub->set_context_drec(drec);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -317,7 +317,7 @@ void VM::run()
 {
 	event->drive();
 #ifdef _X1TWIN
-	if(pce->running) {
+	if(pce->cart_inserted()) {
 		pceevent->drive();
 	}
 #endif
@@ -326,7 +326,7 @@ void VM::run()
 double VM::frame_rate()
 {
 #ifdef _X1TWIN
-	if(pce->running) {
+	if(pce->cart_inserted()) {
 		return pceevent->frame_rate();
 	}
 #endif
@@ -341,7 +341,7 @@ void VM::draw_screen()
 {
 	display->draw_screen();
 #ifdef _X1TWIN
-	if(pce->running) {
+	if(pce->cart_inserted()) {
 		pce->draw_screen();
 	}
 #endif
@@ -381,7 +381,7 @@ void VM::initialize_sound(int rate, int samples)
 uint16* VM::create_sound(int* extra_frames)
 {
 #ifdef _X1TWIN
-	if(pce->running) {
+	if(pce->cart_inserted()) {
 		uint16* buffer = pceevent->create_sound(extra_frames);
 		for(int i = 0; i < *extra_frames; i++) {
 			event->drive();
@@ -399,7 +399,7 @@ uint16* VM::create_sound(int* extra_frames)
 void VM::key_down(int code, bool repeat)
 {
 #ifdef _X1TWIN
-	if(!pce->running && !repeat) {
+	if(!pce->cart_inserted() && !repeat) {
 		sub->key_down(code, false);
 	}
 #else
@@ -412,7 +412,7 @@ void VM::key_down(int code, bool repeat)
 void VM::key_up(int code)
 {
 #ifdef _X1TWIN
-	if(!pce->running) {
+	if(!pce->cart_inserted()) {
 		sub->key_up(code);
 	}
 #else
@@ -439,24 +439,29 @@ bool VM::disk_inserted(int drv)
 	return fdc->disk_inserted(drv);
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	bool value = drec->play_datarec(file_path);
-	sub->close_datarec();
-	sub->play_datarec(value);
+	bool value = drec->play_tape(file_path);
+	sub->close_tape();
+	sub->play_tape(value);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	bool value = drec->rec_datarec(file_path);
-	sub->close_datarec();
-	sub->rec_datarec(value);
+	bool value = drec->rec_tape(file_path);
+	sub->close_tape();
+	sub->rec_tape(value);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	drec->close_datarec();
-	sub->close_datarec();
+	drec->close_tape();
+	sub->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return drec->tape_inserted();
 }
 
 void VM::push_play()
@@ -472,7 +477,7 @@ void VM::push_stop()
 bool VM::now_skip()
 {
 #ifdef _X1TWIN
-	if(pce->running) {
+	if(pce->cart_inserted()) {
 		return pceevent->now_skip();
 	}
 #endif
@@ -493,6 +498,11 @@ void VM::close_cart()
 	pce->reset();
 	pcecpu->reset();
 }
+
+bool VM::cart_inserted()
+{
+	return pce->cart_inserted();
+}
 #endif
 
 void VM::update_config()
@@ -511,13 +521,6 @@ void VM::update_dipswitch()
 	// bit0		0=High 1=Standard
 	// bit1-3	0=5"2D 4=5"2HD
 	io->set_iovalue_single_r(0x1ff0, config.monitor_type & 1);
-}
-#endif
-
-#ifdef _X1TWIN
-bool VM::pce_running()
-{
-	return pce->running;
 }
 #endif
 

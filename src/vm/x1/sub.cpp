@@ -264,7 +264,7 @@ void SUB::event_callback(int event_id, int err)
 		
 #ifdef _X1TWIN
 		// clear key buffer
-		if(vm->pce_running()) {
+		if(vm->cart_inserted()) {
 			// clear key
 			key_buf->clear();
 		}
@@ -421,7 +421,7 @@ void SUB::key_up(int code)
 	}
 }
 
-void SUB::play_datarec(bool value)
+void SUB::play_tape(bool value)
 {
 	if(value) {
 		databuf[0x1a][0] = CMT_STOP;
@@ -433,7 +433,7 @@ void SUB::play_datarec(bool value)
 	d_drec->set_remote(false);
 }
 
-void SUB::rec_datarec(bool value)
+void SUB::rec_tape(bool value)
 {
 	if(value) {
 		databuf[0x1a][0] = CMT_STOP;
@@ -445,7 +445,7 @@ void SUB::rec_datarec(bool value)
 	d_drec->set_remote(false);
 }
 
-void SUB::close_datarec()
+void SUB::close_tape()
 {
 	if(play || rec) {
 		databuf[0x1a][0] = CMT_EJECT;
@@ -599,9 +599,7 @@ void SUB::process_cmd()
 			uint8 new_status = databuf[0x19][0];
 			switch(databuf[0x19][0]) {
 			case CMT_EJECT:
-				play = rec = false;
-				d_drec->set_remote(false);
-				d_drec->close_datarec();
+				emu->close_tape();
 				break;
 			case CMT_STOP:
 				d_drec->set_remote(false);

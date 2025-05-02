@@ -418,17 +418,17 @@ void SUB::draw_screen()
 	}
 }
 
-void SUB::play_datarec(_TCHAR* file_path)
+void SUB::play_tape(_TCHAR* file_path)
 {
 	
 }
 
-void SUB::rec_datarec(_TCHAR* file_path)
+void SUB::rec_tape(_TCHAR* file_path)
 {
 	
 }
 
-void SUB::close_datarec()
+void SUB::close_tape()
 {
 	
 }

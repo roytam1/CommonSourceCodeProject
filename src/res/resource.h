@@ -115,13 +115,13 @@
 #define ID_CLOSE_CART                   40912
 #define ID_RECENT_CART                  40913 // 40913-40920
 
-#define ID_PLAY_DATAREC                 40921
-#define ID_REC_DATAREC                  40922
-#define ID_CLOSE_DATAREC                40923
+#define ID_PLAY_TAPE                    40921
+#define ID_REC_TAPE                     40922
+#define ID_CLOSE_TAPE                   40923
 #define ID_PLAY_BUTTON                  40924
 #define ID_STOP_BUTTON                  40925
 #define ID_USE_WAVE_SHAPER              40926
-#define ID_RECENT_DATAREC               40931 // 40931-40938
+#define ID_RECENT_TAPE                  40931 // 40931-40938
 
 #define ID_LOAD_BINARY1                 40941
 #define ID_SAVE_BINARY1                 40942
@@ -227,7 +227,7 @@
 // Nintendo Family BASIC
 #ifdef _FAMILYBASIC
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -276,7 +276,7 @@
 // CASIO FP-200
 #ifdef _FP200
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -286,7 +286,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif
@@ -296,7 +296,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif
@@ -308,7 +308,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
+#define MENU_POS_TAPE                   5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
 #endif
@@ -355,7 +355,7 @@
 #ifdef _M5
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
 #endif
@@ -363,7 +363,7 @@
 // SEIKO MAP-1010
 #ifdef _MAP1010
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -373,7 +373,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif
@@ -381,7 +381,7 @@
 // Japan Electronics College MYCOMZ-80A
 #ifdef _MYCOMZ80A
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -389,7 +389,7 @@
 // SHARP MZ-80B
 #ifdef _MZ80B
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_FD1                    2
 #define MENU_POS_FD2                    3
 #define MENU_POS_FD3                    4
@@ -401,7 +401,7 @@
 // SHARP MZ-80K
 #ifdef _MZ80K
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -409,7 +409,7 @@
 // SHARP MZ-700
 #ifdef _MZ700
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -417,7 +417,7 @@
 // SHARP MZ-800
 #ifdef _MZ800
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_QUICKDISK              2
 #define MENU_POS_FD1                    3
 #define MENU_POS_FD2                    4
@@ -428,7 +428,7 @@
 // SHARP MZ-1200
 #ifdef _MZ1200
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -436,7 +436,7 @@
 // SHARP MZ-1500
 #ifdef _MZ1500
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_QUICKDISK              2
 #define MENU_POS_FD1                    3
 #define MENU_POS_FD2                    4
@@ -447,7 +447,7 @@
 // SHARP MZ-2200
 #ifdef _MZ2200
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_QUICKDISK              2
 #define MENU_POS_FD1                    3
 #define MENU_POS_FD2                    4
@@ -464,7 +464,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
+#define MENU_POS_TAPE                   5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
 #endif
@@ -538,7 +538,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_BINARY1                4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
@@ -549,7 +549,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_BINARY1                4
 #define MENU_POS_BINARY2                5
 #define MENU_POS_SCREEN                 6
@@ -561,7 +561,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif
@@ -569,7 +569,7 @@
 // NEC PC-8201
 #ifdef _PC8201
 #define MENU_POS_CONTROL                0
-//#define MENU_POS_DATAREC                1
+//#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 1
 #define MENU_POS_SOUND                  2
 #endif
@@ -577,7 +577,7 @@
 // NEC PC-8201A
 #ifdef _PC8201A
 #define MENU_POS_CONTROL                0
-//#define MENU_POS_DATAREC                1
+//#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 1
 #define MENU_POS_SOUND                  2
 #endif
@@ -587,7 +587,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif
@@ -601,7 +601,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_FD5                    5
 #define MENU_POS_FD6                    6
-#define MENU_POS_DATAREC                7
+#define MENU_POS_TAPE                   7
 #define MENU_POS_SCREEN                 8
 #define MENU_POS_SOUND                  9
 #endif
@@ -615,7 +615,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_FD5                    5
 #define MENU_POS_FD6                    6
-#define MENU_POS_DATAREC                7
+#define MENU_POS_TAPE                   7
 #define MENU_POS_SCREEN                 8
 #define MENU_POS_SOUND                  9
 #endif
@@ -636,7 +636,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_DATAREC                5
+#define MENU_POS_TAPE                   5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
 #endif
@@ -677,7 +677,7 @@
 // SANYO PHC-20
 #ifdef _PHC20
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -685,7 +685,7 @@
 // SANYO PHC-25
 #ifdef _PHC25
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -702,7 +702,7 @@
 #ifdef _PV2000
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
 #endif
@@ -711,7 +711,7 @@
 #ifdef _PYUTA
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
 #endif
@@ -729,7 +729,7 @@
 #ifdef _RX78
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
 #endif
@@ -739,7 +739,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
 #define MENU_POS_FD1                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif
@@ -756,7 +756,7 @@
 #ifdef _TK80BS
 #define MENU_POS_CONTROL                0
 #define MENU_POS_BINARY1                1
-#define MENU_POS_DATAREC                2
+#define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
 #endif
@@ -764,7 +764,7 @@
 // CANON X-07
 #ifdef _X07
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
+#define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -774,7 +774,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_CART                   4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
@@ -785,7 +785,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
+#define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
 #endif

@@ -227,19 +227,24 @@ void VM::save_binary(int drv, _TCHAR* file_path)
 	memory->write_image(file_path, ram, sizeof(ram));
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	cmt->play_datarec(file_path);
+	cmt->play_tape(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	cmt->rec_datarec(file_path);
+	cmt->rec_tape(file_path);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	cmt->close_datarec();
+	cmt->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return cmt->tape_inserted();
 }
 
 bool VM::now_skip()

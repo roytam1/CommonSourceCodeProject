@@ -68,6 +68,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
+	inserted = false;
 }
 
 VM::~VM()
@@ -142,13 +143,14 @@ uint16* VM::create_sound(int* extra_frames)
 void VM::open_cart(_TCHAR* file_path)
 {
 	memset(mem, 0xff, 0x8000);
-	memory->read_image(file_path, mem, 0x8000);
+	inserted = memory->read_image(file_path, mem, 0x8000);
 	reset();
 }
 
 void VM::close_cart()
 {
 	memset(mem, 0xff, 0x8000);
+	inserted = false;
 	reset();
 }
 

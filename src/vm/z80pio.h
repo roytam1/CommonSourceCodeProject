@@ -23,7 +23,7 @@ class Z80PIO : public DEVICE
 {
 private:
 	typedef struct {
-		uint8 wreg;
+		uint32 wreg;
 		uint8 rreg;
 		uint8 mode;
 		uint8 ctrl1;
@@ -33,9 +33,14 @@ private:
 		uint8 vector;
 		bool set_dir;
 		bool set_mask;
-		bool first;
+		// ready signal
+		bool hand_shake;
+		int ready_signal;
+		bool input_empty;
+		bool output_ready;
 		// interrupt
 		bool enb_intr;
+		bool enb_intr_tmp;
 		bool req_intr;
 		bool in_service;
 		// output signals
@@ -48,6 +53,7 @@ private:
 	DEVICE *d_cpu, *d_child;
 	bool iei, oei;
 	uint32 intr_bit;
+	void update_ready();
 	void check_mode3_intr(int ch);
 	void update_intr();
 	
@@ -57,7 +63,8 @@ public:
 		for(int i = 0; i < 2; i++) {
 			init_output_signals(&port[i].outputs_data);
 			init_output_signals(&port[i].outputs_ready);
-			port[i].wreg = port[i].rreg = 0;//0xff;
+			port[i].wreg = 0xffffff00;
+			port[i].rreg = 0;
 		}
 		d_cpu = d_child = NULL;
 	}
@@ -81,7 +88,7 @@ public:
 	uint32 intr_ack();
 	void intr_reti();
 	
-	// unique function
+	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&port[0].outputs_data, device, id, mask, shift);
 	}
@@ -93,6 +100,9 @@ public:
 	}
 	void set_context_ready_b(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&port[1].outputs_ready, device, id, mask);
+	}
+	void set_hand_shake(int ch, bool value) {
+		port[ch].hand_shake = value;
 	}
 };
 

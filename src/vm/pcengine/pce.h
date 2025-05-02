@@ -45,6 +45,7 @@ private:
 	uint32 bank;
 	uint8 buffer;
 	int prev_width;
+	bool inserted;
 	
 	// vdc
 	struct {
@@ -165,9 +166,10 @@ public:
 	}
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted() {
+		return inserted;
+	}
 	void draw_screen();
-	
-	bool running;
 };
 
 #endif

@@ -7,41 +7,32 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.12.04 -
 
-	[ cassette ]
+	[ cmt ]
 */
 
-#include "cassette.h"
+#include "cmt.h"
 #include "../datarec.h"
 #include "../i8255.h"
 
 #define EVENT_APSS	0
 
-void CASSETTE::initialize()
+void CMT::initialize()
 {
-	pa = pb = pc = 0xff;
+	pa = pc = 0xff;
 	play = rec = false;
 	now_play = now_rewind = false;
 }
 
-void CASSETTE::reset()
+void CMT::reset()
 {
 #ifndef _MZ80B
 	now_apss = false;
 	register_id = -1;
 #endif
-	close_datarec();
+	close_tape();
 }
 
-void CASSETTE::write_io8(uint32 addr, uint32 data)
-{
-	switch(addr & 0xff) {
-	case 0xe1:
-		pb = data;
-		break;
-	}
-}
-
-void CASSETTE::fast_forwad()
+void CMT::fast_forwad()
 {
 	if(play) {
 		d_drec->set_ff_rew(1);
@@ -50,7 +41,7 @@ void CASSETTE::fast_forwad()
 	now_play = now_rewind = false;
 }
 
-void CASSETTE::fast_rewind()
+void CMT::fast_rewind()
 {
 	if(play) {
 		d_drec->set_ff_rew(-1);
@@ -60,7 +51,7 @@ void CASSETTE::fast_rewind()
 	now_play = false;
 }
 
-void CASSETTE::forward()
+void CMT::forward()
 {
 	if(play || rec) {
 		d_drec->set_ff_rew(0);
@@ -70,7 +61,7 @@ void CASSETTE::forward()
 	now_rewind = false;
 }
 
-void CASSETTE::stop()
+void CMT::stop()
 {
 	if(play || rec) {
 		d_drec->set_remote(false);
@@ -79,9 +70,9 @@ void CASSETTE::stop()
 	d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
 }
 
-void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
+void CMT::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_CASSETTE_PIO_PA) {
+	if(id == SIG_CMT_PIO_PA) {
 #ifdef _MZ80B
 		if(!(pa & 1) && (data & 1)) {
 			if(data & 2) {
@@ -120,7 +111,7 @@ void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 		}
 #endif
 		pa = data;
-	} else if(id == SIG_CASSETTE_PIO_PC) {
+	} else if(id == SIG_CMT_PIO_PC) {
 		if(!(pc & 2) && (data & 2)) {
 			vm->special_reset();
 		}
@@ -128,11 +119,11 @@ void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 			vm->reset();
 		}
 		if((pc & 0x10) && !(data & 0x10)) {
-			// eject
+			emu->close_tape();
 		}
 		d_drec->write_signal(SIG_DATAREC_OUT, data, 0x80);
 		pc = data;
-	} else if(id == SIG_CASSETTE_OUT) {
+	} else if(id == SIG_CMT_OUT) {
 #ifndef _MZ80B
 		if(now_apss) {
 			if((data & mask) && register_id == -1) {
@@ -144,9 +135,9 @@ void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 		if(now_play) {
 			d_pio->write_signal(SIG_I8255_PORT_B, (data & mask) ? 0x40 : 0, 0x40);
 		}
-	} else if(id == SIG_CASSETTE_REMOTE) {
+	} else if(id == SIG_CMT_REMOTE) {
 		d_pio->write_signal(SIG_I8255_PORT_B, (data & mask) ? 0 : 8, 8);
-	} else if(id == SIG_CASSETTE_END) {
+	} else if(id == SIG_CMT_END) {
 		if((data & mask) && now_play) {
 #ifndef _MZ80B
 			if(!(pa & 0x20)) {
@@ -155,7 +146,7 @@ void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 #endif
 			now_play = false;
 		}
-	} else if(id == SIG_CASSETTE_TOP) {
+	} else if(id == SIG_CMT_TOP) {
 		if((data & mask) && now_rewind) {
 #ifndef _MZ80B
 			if(!(pa & 0x40)) {
@@ -168,7 +159,7 @@ void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 }
 
 #ifndef _MZ80B
-void CASSETTE::event_callback(int event_id, int err)
+void CMT::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_APSS) {
 		register_id = -1;
@@ -177,21 +168,21 @@ void CASSETTE::event_callback(int event_id, int err)
 }
 #endif
 
-void CASSETTE::play_datarec(bool value)
+void CMT::play_tape(bool value)
 {
 	play = value;
 	rec = false;
 	d_pio->write_signal(SIG_I8255_PORT_B, play ? 0x10 : 0x30, 0x30);
 }
 
-void CASSETTE::rec_datarec(bool value)
+void CMT::rec_tape(bool value)
 {
 	play = false;
 	rec = value;
 	d_pio->write_signal(SIG_I8255_PORT_B, rec ? 0 : 0x30, 0x30);
 }
 
-void CASSETTE::close_datarec()
+void CMT::close_tape()
 {
 	play = rec = false;
 	now_play = now_rewind = false;

@@ -9,8 +9,11 @@
 
 #include "emu.h"
 #include "vm/vm.h"
-
 #include "config.h"
+
+#ifndef FD_BASE_NUMBER
+#define FD_BASE_NUMBER 1
+#endif
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -22,6 +25,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	// open debug logfile
 	open_debug();
 #endif
+	message_count = 0;
 	
 	// store main window handle
 	main_window_handle = hwnd;
@@ -62,9 +66,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	initialize_input();
 	initialize_screen();
 	initialize_sound();
-#ifdef USE_FD1
-	initialize_disk_insert();
-#endif
+	initialize_media();
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
@@ -94,7 +96,6 @@ int EMU::frame_interval()
 {
 #ifdef SUPPORT_VARIABLE_TIMING
 	return (int)(1024. * 1000. / vm->frame_rate() + 0.5);
-
 #else
 	return (int)(1024. * 1000. / FRAMES_PER_SEC + 0.5);
 #endif
@@ -103,9 +104,7 @@ int EMU::frame_interval()
 int EMU::run()
 {
 	update_input();
-#ifdef USE_FD1
-	update_disk_insert();
-#endif
+	update_media();
 #ifdef USE_SOCKET
 	update_socket();
 #endif
@@ -136,18 +135,11 @@ void EMU::reset()
 		vm = new VM(this);
 		vm->initialize_sound(sound_rate, sound_samples);
 		vm->reset();
+		// restore inserted medias
+		restore_media();
 		
-		// restore inserted floppy disks
-#ifdef USE_FD1
-		for(int drv = 0; drv < 8; drv++) {
-			if(disk_insert[drv].path[0] != _T('\0')) {
-				vm->open_disk(drv, disk_insert[drv].path, disk_insert[drv].offset);
-			}
-		}
-#endif
 		cpu_clock_low = config.cpu_clock_low;
-	}
-	else {
+	} else {
 #endif
 		// reset virtual machine
 		vm->reset();
@@ -253,99 +245,245 @@ void EMU::out_debug(const _TCHAR* format, ...)
 #endif
 }
 
+void EMU::out_message(const _TCHAR* format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	_vstprintf(message, format, ap);
+	va_end(ap);
+	message_count = 4; // 4sec
+}
+
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
+
+void EMU::initialize_media()
+{
+#ifdef USE_CART
+	memset(&cart_status, 0, sizeof(cart_status));
+#endif
+#ifdef USE_FD1
+	memset(disk_status, 0, sizeof(disk_status));
+#endif
+#ifdef USE_QUICKDISK
+	memset(&quickdisk_status, 0, sizeof(quickdisk_status));
+#endif
+#ifdef USE_TAPE
+	memset(&tape_status, 0, sizeof(tape_status));
+#endif
+}
+
+void EMU::update_media()
+{
+#ifdef USE_FD1
+	for(int drv = 0; drv < 8; drv++) {
+		if(disk_status[drv].wait_count != 0 && --disk_status[drv].wait_count == 0) {
+			vm->open_disk(drv, disk_status[drv].path, disk_status[drv].offset);
+			out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, disk_status[drv].path);
+		}
+	}
+#endif
+#ifdef USE_QUICKDISK
+	if(quickdisk_status.wait_count != 0 && --quickdisk_status.wait_count == 0) {
+		vm->open_quickdisk(quickdisk_status.path);
+		out_message(_T("QD: %s"), quickdisk_status.path);
+	}
+#endif
+#ifdef USE_TAPE
+	if(tape_status.wait_count != 0 && --tape_status.wait_count == 0) {
+		if(tape_status.play) {
+			vm->play_tape(tape_status.path);
+		} else {
+			vm->rec_tape(tape_status.path);
+		}
+		out_message(_T("CMT: %s"), tape_status.path);
+	}
+#endif
+}
+
+void EMU::restore_media()
+{
+#ifdef USE_CART
+	if(cart_status.path[0] != _T('\0')) {
+		vm->open_cart(cart_status.path);
+	}
+#endif
+#ifdef USE_FD1
+	for(int drv = 0; drv < 8; drv++) {
+		if(disk_status[drv].path[0] != _T('\0')) {
+			vm->open_disk(drv, disk_status[drv].path, disk_status[drv].offset);
+		}
+	}
+#endif
+#ifdef USE_QUICKDISK
+	if(quickdisk_status.path[0] != _T('\0')) {
+		vm->open_quickdisk(quickdisk_status.path);
+	}
+#endif
+#ifdef USE_TAPE
+	if(tape_status.path[0] != _T('\0')) {
+		if(tape_status.play) {
+			vm->play_tape(tape_status.path);
+		} else {
+			tape_status.path[0] = _T('\0');
+		}
+	}
+#endif
+}
 
 #ifdef USE_CART
 void EMU::open_cart(_TCHAR* file_path)
 {
 	vm->open_cart(file_path);
+	_tcscpy(cart_status.path, file_path);
+	out_message(_T("Cart: %s"), file_path);
 	
 	// restart recording
 	restart_rec_video();
 	restart_rec_sound();
 }
+
 void EMU::close_cart()
 {
 	vm->close_cart();
+	clear_media_status(&cart_status);
+	out_message(_T("Cart: Ejected"));
 	
 	// stop recording
 	stop_rec_video();
 	stop_rec_sound();
+}
+
+bool EMU::cart_inserted()
+{
+	return vm->cart_inserted();
 }
 #endif
 
 #ifdef USE_FD1
 void EMU::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	if(vm->disk_inserted(drv) || disk_insert[drv].wait_count != 0) {
-		if(vm->disk_inserted(drv)) {
-			vm->close_disk(drv);
-			// wait 0.5sec
+	if(vm->disk_inserted(drv)) {
+		vm->close_disk(drv);
+		// wait 0.5sec
 #ifdef SUPPORT_VARIABLE_TIMING
-			disk_insert[drv].wait_count = (int)(vm->frame_rate() / 2);
+		disk_status[drv].wait_count = (int)(vm->frame_rate() / 2);
 #else
-			disk_insert[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
+		disk_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
-		}
-	}
-	else {
+		out_message(_T("FD%d: Ejected"), drv + FD_BASE_NUMBER);
+	} else if(disk_status[drv].wait_count == 0) {
 		vm->open_disk(drv, file_path, offset);
+		out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, file_path);
 	}
-	_tcscpy(disk_insert[drv].path, file_path);
-	disk_insert[drv].offset = offset;
+	_tcscpy(disk_status[drv].path, file_path);
+	disk_status[drv].offset = offset;
 }
+
 void EMU::close_disk(int drv)
 {
 	vm->close_disk(drv);
-	disk_insert[drv].path[0] = _T('\0');
+	clear_media_status(&disk_status[drv]);
+	out_message(_T("FD%d: Ejected"), drv + FD_BASE_NUMBER);
 }
-void EMU::initialize_disk_insert()
+
+bool EMU::disk_inserted(int drv)
 {
-	memset(disk_insert, 0, sizeof(disk_insert));
-}
-void EMU::update_disk_insert()
-{
-	for(int drv = 0; drv < 8; drv++) {
-		if(disk_insert[drv].wait_count != 0 && --disk_insert[drv].wait_count == 0) {
-			vm->open_disk(drv, disk_insert[drv].path, disk_insert[drv].offset);
-		}
-	}
+	return vm->disk_inserted(drv);
 }
 #endif
 
 #ifdef USE_QUICKDISK
 void EMU::open_quickdisk(_TCHAR* file_path)
 {
-	vm->open_quickdisk(file_path);
+	if(vm->quickdisk_inserted()) {
+		vm->close_quickdisk();
+		// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+		quickdisk_status.wait_count = (int)(vm->frame_rate() / 2);
+#else
+		quickdisk_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+		out_message(_T("QD: Ejected"));
+	} else if(quickdisk_status.wait_count == 0) {
+		vm->open_quickdisk(file_path);
+		out_message(_T("QD: %s"), file_path);
+	}
+	_tcscpy(quickdisk_status.path, file_path);
 }
+
 void EMU::close_quickdisk()
 {
 	vm->close_quickdisk();
+	clear_media_status(&quickdisk_status);
+	out_message(_T("QD: Ejected"));
+}
+
+bool EMU::quickdisk_inserted()
+{
+	return vm->quickdisk_inserted();
 }
 #endif
 
-#ifdef USE_DATAREC
-void EMU::play_datarec(_TCHAR* file_path)
+#ifdef USE_TAPE
+void EMU::play_tape(_TCHAR* file_path)
 {
-	vm->play_datarec(file_path);
+	if(vm->tape_inserted()) {
+		vm->close_tape();
+		// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+		tape_status.wait_count = (int)(vm->frame_rate() / 2);
+#else
+		tape_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+		out_message(_T("CMT: Ejected"));
+	} else if(tape_status.wait_count == 0) {
+		vm->play_tape(file_path);
+		out_message(_T("CMT: %s"), file_path);
+	}
+	_tcscpy(tape_status.path, file_path);
+	tape_status.play = true;
 }
-void EMU::rec_datarec(_TCHAR* file_path)
+
+void EMU::rec_tape(_TCHAR* file_path)
 {
-	vm->rec_datarec(file_path);
+	if(vm->tape_inserted()) {
+		vm->close_tape();
+		// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+		tape_status.wait_count = (int)(vm->frame_rate() / 2);
+#else
+		tape_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+		out_message(_T("CMT: Ejected"));
+	} else if(tape_status.wait_count == 0) {
+		vm->rec_tape(file_path);
+		out_message(_T("CMT: %s"), file_path);
+	}
+	_tcscpy(tape_status.path, file_path);
+	tape_status.play = false;
 }
-void EMU::close_datarec()
+
+void EMU::close_tape()
 {
-	vm->close_datarec();
+	vm->close_tape();
+	clear_media_status(&tape_status);
+	out_message(_T("CMT: Ejected"));
+}
+
+bool EMU::tape_inserted()
+{
+	return vm->tape_inserted();
 }
 #endif
 
-#ifdef USE_DATAREC_BUTTON
+#ifdef USE_TAPE_BUTTON
 void EMU::push_play()
 {
 	vm->push_play();
 }
+
 void EMU::push_stop()
 {
 	vm->push_stop();
@@ -356,10 +494,13 @@ void EMU::push_stop()
 void EMU::load_binary(int drv, _TCHAR* file_path)
 {
 	vm->load_binary(drv, file_path);
+	out_message(_T("Load: %s"), file_path);
 }
+
 void EMU::save_binary(int drv, _TCHAR* file_path)
 {
 	vm->save_binary(drv, file_path);
+	out_message(_T("Save: %s"), file_path);
 }
 #endif
 

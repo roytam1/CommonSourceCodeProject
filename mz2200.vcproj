@@ -463,6 +463,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\i86.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\i8253.cpp"
 					>
 					<FileConfiguration
@@ -486,6 +508,28 @@
 				</File>
 				<File
 					RelativePath="src\vm\i8255.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\i8259.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -666,7 +710,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\mz2500\cassette.cpp"
+					RelativePath="src\vm\mz2500\cmt.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -733,6 +777,28 @@
 				</File>
 				<File
 					RelativePath="src\vm\mz2500\memory80b.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\mz2500\mz1m01.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -893,11 +959,19 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\i86.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\i8253.h"
 					>
 				</File>
 				<File
 					RelativePath="src\vm\i8255.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\i8259.h"
 					>
 				</File>
 				<File
@@ -938,7 +1012,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\mz2500\cassette.h"
+					RelativePath="src\vm\mz2500\cmt.h"
 					>
 				</File>
 				<File
@@ -951,6 +1025,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\mz2500\memory80b.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\mz2500\mz1m01.h"
 					>
 				</File>
 				<File

@@ -879,30 +879,39 @@ bool VM::disk_inserted(int drv)
 }
 
 #if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
 #if defined(_PC98DO)
-	pc88->play_datarec(file_path);
+	pc88->play_tape(file_path);
 #else
-	cmt->play_datarec(file_path);
+	cmt->play_tape(file_path);
 #endif
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
 #if defined(_PC98DO)
-	pc88->rec_datarec(file_path);
+	pc88->rec_tape(file_path);
 #else
-	cmt->rec_datarec(file_path);
+	cmt->rec_tape(file_path);
 #endif
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
 #if defined(_PC98DO)
-	pc88->close_datarec();
+	pc88->close_tape();
 #else
-	cmt->close_datarec();
+	cmt->close_tape();
+#endif
+}
+
+bool VM::tape_inserted()
+{
+#if defined(_PC98DO)
+	return pc88->tape_inserted();
+#else
+	return cmt->tape_inserted();
 #endif
 }
 #endif

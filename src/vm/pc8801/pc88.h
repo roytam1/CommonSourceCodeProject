@@ -21,7 +21,7 @@
 #define SIG_PC88_SOUND_IRQ	1
 #define SIG_PC88_USART_OUT	2
 
-#define DATAREC_BUFFER_SIZE	0x40000
+#define CMT_BUFFER_SIZE		0x40000
 
 #if defined(_PC8001SR) && !defined(PC88_EXRAM_BANKS)
 #define PC88_EXRAM_BANKS	1
@@ -188,11 +188,11 @@ private:
 	// data recorder
 	FILEIO *cmt_fio;
 	int cmt_bufptr, cmt_bufcnt;
-	uint8 cmt_buffer[DATAREC_BUFFER_SIZE];
+	uint8 cmt_buffer[CMT_BUFFER_SIZE];
 	bool cmt_play, cmt_rec;
 	int cmt_register_id;
 	
-	void release_datarec();
+	void release_tape();
 	bool check_data_carrier(uint8* p);
 	
 public:
@@ -248,9 +248,12 @@ public:
 	}
 	void key_down(int code, bool repeat);
 	
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted() {
+		return (cmt_play || cmt_rec);
+	}
 	bool now_skip();
 	
 	void draw_screen();

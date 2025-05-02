@@ -93,7 +93,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "FDD1"
+    POPUP "FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1

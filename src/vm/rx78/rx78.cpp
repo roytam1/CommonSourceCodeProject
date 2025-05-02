@@ -156,19 +156,29 @@ void VM::close_cart()
 	reset();
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+bool VM::cart_inserted()
 {
-	drec->play_datarec(file_path);
+	return memory->cart_inserted();
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	drec->rec_datarec(file_path);
+	drec->play_tape(file_path);
 }
 
-void VM::close_datarec()
+void VM::rec_tape(_TCHAR* file_path)
 {
-	drec->close_datarec();
+	drec->rec_tape(file_path);
+}
+
+void VM::close_tape()
+{
+	drec->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return drec->tape_inserted();
 }
 
 bool VM::now_skip()

@@ -31,9 +31,9 @@
 //#define LOW_PASS_FILTER
 
 // device informations for win32
-#define USE_DATAREC
-#define USE_DATAREC_BUTTON
-#define DATAREC_MZT
+#define USE_TAPE
+#define USE_TAPE_BUTTON
+#define TAPE_MZT
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -106,9 +106,10 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	void push_play();
 	void push_stop();
 	bool now_skip();

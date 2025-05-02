@@ -67,7 +67,7 @@ void DATAREC::initialize()
 
 void DATAREC::reset()
 {
-	close_datarec();
+	close_tape();
 }
 
 void DATAREC::release()
@@ -239,8 +239,18 @@ void DATAREC::update_event()
 		if(register_id == -1) {
 			if(ff_rew != 0) {
 				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate / DATAREC_FF_REW_SPEED, true, &register_id);
+				if(ff_rew > 0) {
+					emu->out_message(_T("CMT: Fast Forward"));
+				} else {
+					emu->out_message(_T("CMT: Fast Rewind"));
+				}
 			} else {
 				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate, true, &register_id);
+				if(play) {
+					emu->out_message(_T("CMT: Play"));
+				} else {
+					emu->out_message(_T("CMT: Record"));
+				}
 			}
 			prev_clock = current_clock();
 			positive_clocks = negative_clocks = 0;
@@ -249,6 +259,13 @@ void DATAREC::update_event()
 		if(register_id != -1) {
 			cancel_event(register_id);
 			register_id = -1;
+			if(buffer_ptr == buffer_length) {
+				emu->out_message(_T("CMT: Stop (End-of-Tape)"));
+			} else if(buffer_ptr == 0) {
+				emu->out_message(_T("CMT: Stop (Beginning-of-Tape)"));
+			} else {
+				emu->out_message(_T("CMT: Stop"));
+			}
 		}
 		prev_clock = 0;
 	}
@@ -265,9 +282,9 @@ void DATAREC::update_event()
 	write_signals(&outputs_top, (buffer_ptr == 0) ? 0xffffffff : 0);
 }
 
-bool DATAREC::play_datarec(_TCHAR* file_path)
+bool DATAREC::play_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		if(check_file_extension(file_path, _T(".wav")) || check_file_extension(file_path, _T(".mti"))) {
@@ -323,9 +340,9 @@ bool DATAREC::play_datarec(_TCHAR* file_path)
 	return play;
 }
 
-bool DATAREC::rec_datarec(_TCHAR* file_path)
+bool DATAREC::rec_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		sample_rate = 48000;
@@ -348,7 +365,7 @@ bool DATAREC::rec_datarec(_TCHAR* file_path)
 	return rec;
 }
 
-void DATAREC::close_datarec()
+void DATAREC::close_tape()
 {
 	close_file();
 	
@@ -751,13 +768,26 @@ int DATAREC::load_tap_image()
 
 // SHARP MZ series tape image
 
+#define MZT_PUT_SIGNAL(signal, len) { \
+	int remain = len; \
+	while(remain > 0) { \
+		if(buffer != NULL) { \
+			buffer[ptr++] = ((signal != 0) ? 0x80 : 0) | min(remain, 0x7f); \
+		} else { \
+			ptr++; \
+		} \
+		remain -= min(remain, 0x7f); \
+	} \
+}
+
 #define MZT_PUT_BIT(bit, len) { \
 	for(int l = 0; l < (len); l++) { \
-		if(buffer != NULL) { \
-			buffer[ptr++] = (bit) ? 0x98 : 0x8b; \
-			buffer[ptr++] = (bit) ? 0x1d : 0x0f; \
+		if(bit) { \
+			MZT_PUT_SIGNAL(1, (int)(24.0 * sample_rate / 48000.0 + 0.5)); \
+			MZT_PUT_SIGNAL(0, (int)(29.0 * sample_rate / 48000.0 + 0.5)); \
 		} else { \
-			ptr += 2; \
+			MZT_PUT_SIGNAL(1, (int)(11.0 * sample_rate / 48000.0 + 0.5)); \
+			MZT_PUT_SIGNAL(0, (int)(15.0 * sample_rate / 48000.0 + 0.5)); \
 		} \
 	} \
 }
@@ -807,6 +837,7 @@ int DATAREC::load_mzt_image()
 		memset(ram, 0, sizeof(ram));
 		fio->Fread(ram + offs, size, 1);
 		file_size -= size;
+//#if defined(_MZ80K) || defined(_MZ700) || defined(_MZ1200) || defined(_MZ1500)
 #if 0
 		// apply mz700win patch
 		if(header[0x40] == 'P' && header[0x41] == 'A' && header[0x42] == 'T' && header[0x43] == ':') {
@@ -837,6 +868,7 @@ int DATAREC::load_mzt_image()
 		MZT_PUT_BIT(0, 256);
 		MZT_PUT_BLOCK(header, 128);
 		MZT_PUT_BIT(1, 1);
+		MZT_PUT_SIGNAL(0, sample_rate);
 		MZT_PUT_BIT(0, 10000);
 		MZT_PUT_BIT(1, 20);
 		MZT_PUT_BIT(0, 20);

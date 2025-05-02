@@ -154,19 +154,24 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	io->play_datarec(file_path);
+	io->play_tape(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	io->rec_datarec(file_path);
+	io->rec_tape(file_path);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	io->close_datarec();
+	io->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return io->tape_inserted();
 }
 
 bool VM::now_skip()

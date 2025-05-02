@@ -295,7 +295,7 @@ void PC88::initialize()
 
 void PC88::release()
 {
-	release_datarec();
+	release_tape();
 	delete cmt_fio;
 }
 
@@ -370,7 +370,7 @@ void PC88::reset()
 	d_pio->write_io8(2, 0);
 	
 	// data recorder
-	close_datarec();
+	close_tape();
 	cmt_play = cmt_rec = false;
 	cmt_register_id = -1;
 }
@@ -1120,7 +1120,7 @@ void PC88::write_signal(int id, uint32 data, uint32 mask)
 		if(cmt_rec && Port30_MTON) {
 			// recv from sio
 			cmt_buffer[cmt_bufptr++] = data & mask;
-			if(cmt_bufptr >= DATAREC_BUFFER_SIZE) {
+			if(cmt_bufptr >= CMT_BUFFER_SIZE) {
 				cmt_fio->Fwrite(cmt_buffer, cmt_bufptr, 1);
 				cmt_bufptr = 0;
 			}
@@ -1244,9 +1244,9 @@ void PC88::key_down(int code, bool repeat)
 	}
 }
 
-void PC88::play_datarec(_TCHAR* file_path)
+void PC88::play_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		if(check_file_extension(file_path, _T(".n80"))) {
@@ -1298,9 +1298,9 @@ void PC88::play_datarec(_TCHAR* file_path)
 	}
 }
 
-void PC88::rec_datarec(_TCHAR* file_path)
+void PC88::rec_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		cmt_bufptr = 0;
@@ -1308,16 +1308,16 @@ void PC88::rec_datarec(_TCHAR* file_path)
 	}
 }
 
-void PC88::close_datarec()
+void PC88::close_tape()
 {
 	// close file
-	release_datarec();
+	release_tape();
 	
 	// clear sio buffer
 	d_sio->write_signal(SIG_I8251_CLEAR, 0, 0);
 }
 
-void PC88::release_datarec()
+void PC88::release_tape()
 {
 	// close file
 	if(cmt_rec && cmt_bufptr) {

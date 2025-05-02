@@ -211,19 +211,24 @@ bool VM::disk_inserted(int drv)
 	return fdc->disk_inserted(drv);
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	sub->play_datarec(file_path);
+	sub->play_tape(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	sub->rec_datarec(file_path);
+	sub->rec_tape(file_path);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	sub->close_datarec();
+	sub->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return sub->tape_inserted();
 }
 
 bool VM::now_skip()

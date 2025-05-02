@@ -66,8 +66,8 @@ void close_disk(int drv);
 #ifdef USE_QUICKDISK
 void open_quickdisk_dialog(HWND hWnd);
 #endif
-#ifdef USE_DATAREC
-void open_datarec_dialog(HWND hWnd, bool play);
+#ifdef USE_TAPE
+void open_tape_dialog(HWND hWnd, bool play);
 #endif
 #ifdef USE_BINARY_FILE1
 void open_binary_dialog(HWND hWnd, int drv, bool load);
@@ -427,7 +427,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			if(update_fps_time <= current_time) {
 				_TCHAR buf[256];
 				int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
-				_stprintf(buf, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
+				if(emu->message_count > 0) {
+					_stprintf(buf, _T("%s - [%s]"), _T(DEVICE_NAME), emu->message);
+					emu->message_count--;
+				} else {
+					_stprintf(buf, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
+				}
 				SetWindowText(hWnd, buf);
 				
 				update_fps_time += 1000;
@@ -970,45 +975,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
-#ifdef USE_DATAREC
-		case ID_PLAY_DATAREC:
+#ifdef USE_TAPE
+		case ID_PLAY_TAPE:
 			if(emu) {
-				open_datarec_dialog(hWnd, true);
+				open_tape_dialog(hWnd, true);
 			}
 			break;
-		case ID_REC_DATAREC:
+		case ID_REC_TAPE:
 			if(emu) {
-				open_datarec_dialog(hWnd, false);
+				open_tape_dialog(hWnd, false);
 			}
 			break;
-		case ID_CLOSE_DATAREC:
+		case ID_CLOSE_TAPE:
 			if(emu) {
-				emu->close_datarec();
+				emu->close_tape();
 			}
 			break;
 		case ID_USE_WAVE_SHAPER:
 			config.wave_shaper = !config.wave_shaper;
 			break;
-		case ID_RECENT_DATAREC + 0:
-		case ID_RECENT_DATAREC + 1:
-		case ID_RECENT_DATAREC + 2:
-		case ID_RECENT_DATAREC + 3:
-		case ID_RECENT_DATAREC + 4:
-		case ID_RECENT_DATAREC + 5:
-		case ID_RECENT_DATAREC + 6:
-		case ID_RECENT_DATAREC + 7:
-			no = LOWORD(wParam) - ID_RECENT_DATAREC;
-			_tcscpy(path, config.recent_datarec_path[no]);
+		case ID_RECENT_TAPE + 0:
+		case ID_RECENT_TAPE + 1:
+		case ID_RECENT_TAPE + 2:
+		case ID_RECENT_TAPE + 3:
+		case ID_RECENT_TAPE + 4:
+		case ID_RECENT_TAPE + 5:
+		case ID_RECENT_TAPE + 6:
+		case ID_RECENT_TAPE + 7:
+			no = LOWORD(wParam) - ID_RECENT_TAPE;
+			_tcscpy(path, config.recent_tape_path[no]);
 			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_datarec_path[i], config.recent_datarec_path[i - 1]);
+				_tcscpy(config.recent_tape_path[i], config.recent_tape_path[i - 1]);
 			}
-			_tcscpy(config.recent_datarec_path[0], path);
+			_tcscpy(config.recent_tape_path[0], path);
 			if(emu) {
-				emu->play_datarec(path);
+				emu->play_tape(path);
 			}
 			break;
 #endif
-#ifdef USE_DATAREC_BUTTON
+#ifdef USE_TAPE_BUTTON
 		case ID_PLAY_BUTTON:
 			if(emu) {
 				emu->push_play();
@@ -1393,11 +1398,12 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		if(!flag) {
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_CART, _T("None"));
 		}
+		EnableMenuItem(hMenu, ID_CLOSE_CART, emu->cart_inserted() ? MF_ENABLED : MF_GRAYED);
 	}
 #endif
 #ifdef MENU_POS_FD1
 	else if(pos == MENU_POS_FD1) {
-		#define UPDATE_MENU_FD(drv, ID_RECENT_FD, ID_D88_FILE_PATH, ID_SELECT_D88_BANK) \
+		#define UPDATE_MENU_FD(drv, ID_RECENT_FD, ID_D88_FILE_PATH, ID_SELECT_D88_BANK, ID_CLOSE_FD) \
 		bool flag = false; \
 		while(DeleteMenu(hMenu, 3, MF_BYPOSITION) != 0) {} \
 		if(d88_file[drv].bank_num > 1) { \
@@ -1417,39 +1423,40 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		} \
 		if(!flag) { \
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD, _T("None")); \
-		}
+		} \
+		EnableMenuItem(hMenu, ID_CLOSE_FD, emu->disk_inserted(drv) ? MF_ENABLED : MF_GRAYED);
 		// floppy drive #1
-		UPDATE_MENU_FD(0, ID_RECENT_FD1, ID_D88_FILE_PATH1, ID_SELECT_D88_BANK1)
+		UPDATE_MENU_FD(0, ID_RECENT_FD1, ID_D88_FILE_PATH1, ID_SELECT_D88_BANK1, ID_CLOSE_FD1)
 	}
 #endif
 #ifdef MENU_POS_FD2
 	else if(pos == MENU_POS_FD2) {
 		// floppy drive #2
-		UPDATE_MENU_FD(1, ID_RECENT_FD2, ID_D88_FILE_PATH2, ID_SELECT_D88_BANK2)
+		UPDATE_MENU_FD(1, ID_RECENT_FD2, ID_D88_FILE_PATH2, ID_SELECT_D88_BANK2, ID_CLOSE_FD2)
 	}
 #endif
 #ifdef MENU_POS_FD3
 	else if(pos == MENU_POS_FD3) {
 		// floppy drive #3
-		UPDATE_MENU_FD(2, ID_RECENT_FD3, ID_D88_FILE_PATH3, ID_SELECT_D88_BANK3)
+		UPDATE_MENU_FD(2, ID_RECENT_FD3, ID_D88_FILE_PATH3, ID_SELECT_D88_BANK3, ID_CLOSE_FD3)
 	}
 #endif
 #ifdef MENU_POS_FD4
 	else if(pos == MENU_POS_FD4) {
 		// floppy drive #4
-		UPDATE_MENU_FD(3, ID_RECENT_FD4, ID_D88_FILE_PATH4, ID_SELECT_D88_BANK4)
+		UPDATE_MENU_FD(3, ID_RECENT_FD4, ID_D88_FILE_PATH4, ID_SELECT_D88_BANK4, ID_CLOSE_FD4)
 	}
 #endif
 #ifdef MENU_POS_FD5
 	else if(pos == MENU_POS_FD5) {
 		// floppy drive #5
-		UPDATE_MENU_FD(4, ID_RECENT_FD5, ID_D88_FILE_PATH5, ID_SELECT_D88_BANK5)
+		UPDATE_MENU_FD(4, ID_RECENT_FD5, ID_D88_FILE_PATH5, ID_SELECT_D88_BANK5, ID_CLOSE_FD5)
 	}
 #endif
 #ifdef MENU_POS_FD6
 	else if(pos == MENU_POS_FD6) {
 		// floppy drive #6
-		UPDATE_MENU_FD(5, ID_RECENT_FD6, ID_D88_FILE_PATH6, ID_SELECT_D88_BANK6)
+		UPDATE_MENU_FD(5, ID_RECENT_FD6, ID_D88_FILE_PATH6, ID_SELECT_D88_BANK6, ID_CLOSE_FD6)
 	}
 #endif
 #ifdef MENU_POS_QUICKDISK
@@ -1468,24 +1475,30 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		if(!flag) {
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_QUICKDISK, _T("None"));
 		}
+		EnableMenuItem(hMenu, ID_CLOSE_QUICKDISK, emu->quickdisk_inserted() ? MF_ENABLED : MF_GRAYED);
 	}
 #endif
-#ifdef MENU_POS_DATAREC
-	else if(pos == MENU_POS_DATAREC) {
+#ifdef MENU_POS_TAPE
+	else if(pos == MENU_POS_TAPE) {
 		// data recorder
 		bool flag = false;
 		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_DATAREC + i, MF_BYCOMMAND);
+			DeleteMenu(hMenu, ID_RECENT_TAPE + i, MF_BYCOMMAND);
 		}
 		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_datarec_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC + i, config.recent_datarec_path[i]);
+			if(_tcscmp(config.recent_tape_path[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_TAPE + i, config.recent_tape_path[i]);
 				flag = true;
 			}
 		}
 		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_DATAREC, _T("None"));
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_TAPE, _T("None"));
 		}
+		EnableMenuItem(hMenu, ID_CLOSE_TAPE, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+#ifdef USE_TAPE_BUTTON
+		EnableMenuItem(hMenu, ID_PLAY_BUTTON, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_STOP_BUTTON, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+#endif
 		CheckMenuItem(hMenu, ID_USE_WAVE_SHAPER, config.wave_shaper ? MF_CHECKED : MF_UNCHECKED);
 	}
 #endif
@@ -1731,39 +1744,39 @@ void open_quickdisk_dialog(HWND hWnd)
 }
 #endif
 
-#ifdef USE_DATAREC
-void open_datarec_dialog(HWND hWnd, bool play)
+#ifdef USE_TAPE
+void open_tape_dialog(HWND hWnd, bool play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#if defined(DATAREC_PC8801)
+#if defined(TAPE_PC8801)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
-#elif defined(DATAREC_BINARY_ONLY)
+#elif defined(TAPE_BINARY_ONLY)
 		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
-#elif defined(DATAREC_TAP)
+#elif defined(TAPE_TAP)
 		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
-#elif defined(DATAREC_MZT)
+#elif defined(TAPE_MZT)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
-#elif defined(DATAREC_MZT_2000)
+#elif defined(TAPE_MZT_2000)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mti;*.mtw;*.dat)\0*.wav;*.cas;*.mzt;*.mti;*.mtw;*.dat\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif
 		play ? _T("Data Recorder Tape [Play]") : _T("Data Recorder Tape [Rec]"),
-		config.initial_datarec_path
+		config.initial_tape_path
 	);
 	if(path) {
-		UPDATE_HISTORY(path, config.recent_datarec_path);
-		_tcscpy(config.initial_datarec_path, get_parent_dir(path));
+		UPDATE_HISTORY(path, config.recent_tape_path);
+		_tcscpy(config.initial_tape_path, get_parent_dir(path));
 		if(play) {
-			emu->play_datarec(path);
+			emu->play_tape(path);
 		}
 		else {
-			emu->rec_datarec(path);
+			emu->rec_tape(path);
 		}
 	}
 }
@@ -1798,7 +1811,7 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 #ifdef SUPPORT_DRAG_DROP
 void open_any_file(_TCHAR* path)
 {
-#if defined(USE_CART)
+#ifdef USE_CART
 	if(check_file_extension(path, _T(".rom")) || 
 	   check_file_extension(path, _T(".bin")) || 
 	   check_file_extension(path, _T(".pce"))) {
@@ -1808,7 +1821,7 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#if defined(USE_FD1)
+#ifdef USE_FD1
 	if(check_file_extension(path, _T(".d88")) || 
 	   check_file_extension(path, _T(".d77")) || 
 	   check_file_extension(path, _T(".td0")) || 
@@ -1826,22 +1839,16 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#if defined(USE_DATAREC) && defined(DATAREC_MZT_2000)
-	if(check_file_extension(path, _T(".mzt")) || check_file_extension(path, _T(".mtw")) || check_file_extension(path, _T(".dat"))) {
-		UPDATE_HISTORY(path, config.recent_datarec_path);
-		_tcscpy(config.initial_datarec_path, get_parent_dir(path));
-		emu->play_datarec(path);
-		return;
-	}
-#elif defined(USE_QUICKDISK)
-	if(check_file_extension(path, _T(".mzt"))) {
+#ifdef USE_QUICKDISK
+	if(check_file_extension(path, _T(".mzt")) || 
+	   check_file_extension(path, _T(".q20"))) {
 		UPDATE_HISTORY(path, config.recent_quickdisk_path);
 		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
 		emu->open_quickdisk(path);
 		return;
 	}
 #endif
-#if defined(USE_BINARY_FILE1)
+#ifdef USE_BINARY_FILE1
 	if(check_file_extension(path, _T(".ram")) || 
 	   check_file_extension(path, _T(".bin"))) {
 		UPDATE_HISTORY(path, config.recent_binary_path[0]);

@@ -25,7 +25,7 @@
 #define MC6847_VRAM_INV		0x40
 
 // device informations for win32
-#define USE_DATAREC
+#define USE_TAPE
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
@@ -81,9 +81,10 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	bool now_skip();
 	
 	void update_config();

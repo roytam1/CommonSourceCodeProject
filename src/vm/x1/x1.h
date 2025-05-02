@@ -63,9 +63,10 @@
 #define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
-#define USE_DATAREC
-#define USE_DATAREC_BUTTON
-#define DATAREC_TAP
+#define FD_BASE_NUMBER		0
+#define USE_TAPE
+#define USE_TAPE_BUTTON
+#define TAPE_TAP
 #ifdef _X1TWIN
 #define USE_CART
 #endif
@@ -187,15 +188,17 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	void push_play();
 	void push_stop();
 	bool now_skip();
 #ifdef _X1TWIN
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted();
 #endif
 	
 	void update_config();
@@ -212,10 +215,6 @@ public:
 	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
-	
-#ifdef _X1TWIN
-	bool pce_running();
-#endif
 };
 
 #endif

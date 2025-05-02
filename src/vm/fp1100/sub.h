@@ -94,9 +94,12 @@ public:
 	void key_down(int code);
 	void key_up(int code);
 	void draw_screen();
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	bool tape_inserted() {
+		return false;
+	}
+	void close_tape();
 };
 
 #endif

@@ -87,6 +87,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
+	inserted = false;
 }
 
 VM::~VM()
@@ -161,29 +162,35 @@ uint16* VM::create_sound(int* extra_frames)
 void VM::open_cart(_TCHAR* file_path)
 {
 	memset(cart, 0xff, sizeof(cart));
-	memory->read_image(file_path, cart, sizeof(cart));
+	inserted = memory->read_image(file_path, cart, sizeof(cart));
 	reset();
 }
 
 void VM::close_cart()
 {
 	memset(cart, 0xff, sizeof(cart));
+	inserted = false;
 	reset();
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	drec->play_datarec(file_path);
+	drec->play_tape(file_path);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	drec->rec_datarec(file_path);
+	drec->rec_tape(file_path);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	drec->close_datarec();
+	drec->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return drec->tape_inserted();
 }
 
 bool VM::now_skip()

@@ -28,8 +28,8 @@
 
 // device informations for win32
 #define USE_CART
-#define USE_DATAREC
-#define DATAREC_BINARY_ONLY
+#define USE_TAPE
+#define TAPE_BINARY_ONLY
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -75,6 +75,7 @@ protected:
 	uint8 ram[0x1000];	// ram (4k)
 	uint8 ext[0x4000];	// ext ram/rom (16k)
 	uint8 cart[0x4000];	// cartridge (16k)
+	bool inserted;
 	
 public:
 	// ----------------------------------------
@@ -106,9 +107,13 @@ public:
 	// user interface
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	bool cart_inserted() {
+		return inserted;
+	}
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	bool now_skip();
 	
 	void update_config();

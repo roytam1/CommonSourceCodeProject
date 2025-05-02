@@ -106,10 +106,10 @@ void MEMORY::initialize()
 	// init keyboard
 	key_stat = emu->key_buffer();
 	
-	// init datarec
-	datarec_count = 0;
-	datarec_play = datarec_rec = false;
-	datarec_fio = new FILEIO();
+	// init cmt
+	cmt_count = 0;
+	cmt_play = cmt_rec = false;
+	cmt_fio = new FILEIO();
 	
 	// init lcd
 	pd = RGB_COLOR(48, 56, 16);
@@ -131,9 +131,9 @@ void MEMORY::release()
 	}
 	delete fio;
 	
-	// release datarec
-	close_datarec();
-	delete datarec_fio;
+	// release cmt
+	close_tape();
+	delete cmt_fio;
 	
 	// release command buffer
 	cmd_buf->release();
@@ -157,7 +157,7 @@ void MEMORY::reset()
 	key_data = 0x3ff;
 	key_intmask = 0;
 	
-	close_datarec();
+	close_tape();
 	
 	lcd_select = 0;
 	lcd_clock = 0;
@@ -548,15 +548,15 @@ void MEMORY::send_to_slave(uint8 val)
 			break;
 		}
 		if(cmd_buf->count() >= 5 && cmd_buf->count() == cmd_buf->read_not_remove(3) * 256 + cmd_buf->read_not_remove(4) + 5) {
-			if(datarec_rec) {
+			if(cmt_rec) {
 				for(int i = 0; i < 5; i++) {
 					cmd_buf->read();
 				}
 				while(!cmd_buf->empty()) {
-					datarec_buffer[datarec_count++] = cmd_buf->read();
-					if(datarec_count >= DATAREC_BUFFER_SIZE) {
-						datarec_fio->Fwrite(datarec_buffer, datarec_count, 1);
-						datarec_count = 0;
+					cmt_buffer[cmt_count++] = cmd_buf->read();
+					if(cmt_count >= CMT_BUFFER_SIZE) {
+						cmt_fio->Fwrite(cmt_buffer, cmt_count, 1);
+						cmt_count = 0;
 					}
 				}
 			}
@@ -588,7 +588,7 @@ void MEMORY::send_to_slave(uint8 val)
 			cmd_buf->clear();
 			send_to_main(0x21);
 			for(int i = 0; i < len; i++) {
-				send_to_main(datarec_buffer[datarec_count++]);
+				send_to_main(cmt_buffer[cmt_count++]);
 			}
 			// ???
 			send_to_main(0x01);
@@ -737,38 +737,38 @@ void MEMORY::send_to_main(uint8 val)
 	d_cpu->write_signal(SIG_MC6801_SIO_RECV, val, 0xff);
 }
 
-void MEMORY::play_datarec(_TCHAR* file_path)
+void MEMORY::play_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
-	if(datarec_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		memset(datarec_buffer, 0, sizeof(datarec_buffer));
-		datarec_fio->Fread(datarec_buffer, sizeof(datarec_buffer), 1);
-		datarec_count = 0;
-		datarec_play = true;
+	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		memset(cmt_buffer, 0, sizeof(cmt_buffer));
+		cmt_fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
+		cmt_count = 0;
+		cmt_play = true;
 	}
 }
 
-void MEMORY::rec_datarec(_TCHAR* file_path)
+void MEMORY::rec_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
-	if(datarec_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-		datarec_count = 0;
-		datarec_rec = true;
+	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		cmt_count = 0;
+		cmt_rec = true;
 	}
 }
 
-void MEMORY::close_datarec()
+void MEMORY::close_tape()
 {
-	if(datarec_rec && datarec_count) {
-		datarec_fio->Fwrite(datarec_buffer, datarec_count, 1);
+	if(cmt_rec && cmt_count) {
+		cmt_fio->Fwrite(cmt_buffer, cmt_count, 1);
 	}
-	if(datarec_play || datarec_rec) {
-		datarec_fio->Fclose();
+	if(cmt_play || cmt_rec) {
+		cmt_fio->Fclose();
 	}
-	datarec_count = 0;
-	datarec_play = datarec_rec = false;
+	cmt_count = 0;
+	cmt_play = cmt_rec = false;
 }
 
 void MEMORY::draw_screen()

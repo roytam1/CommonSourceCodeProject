@@ -56,9 +56,9 @@
 #endif
 
 // device informations for win32
-#define USE_DATAREC
-#define USE_DATAREC_BUTTON
-#define DATAREC_MZT
+#define USE_TAPE
+#define USE_TAPE_BUTTON
+#define TAPE_MZT
 #if defined(_MZ800) || defined(_MZ1500)
 #define USE_QUICKDISK
 #define USE_FD1
@@ -186,14 +186,16 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	void push_play();
 	void push_stop();
 #if defined(_MZ800) || defined(_MZ1500)
 	void open_quickdisk(_TCHAR* file_path);
 	void close_quickdisk();
+	bool quickdisk_inserted();
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);

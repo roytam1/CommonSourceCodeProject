@@ -1,6 +1,9 @@
 echo off
-rem set path=%path%;"C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE"
-set path=%path%;"C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE"
+if exist "%ProgramFiles(x86)%" (
+set path="%ProgramFiles(x86)%\Microsoft Visual Studio 9.0\Common7\IDE";%PATH%
+) else (
+set path="%ProgramFiles%\Microsoft Visual Studio 9.0\Common7\IDE";%PATH%
+)
 mkdir build
 
 devenv.com babbage2nd.vcproj /Rebuild Release

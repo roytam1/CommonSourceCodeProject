@@ -32,6 +32,7 @@ private:
 		uint8 dummy[11];
 	} header_t;
 	header_t header;
+	bool inserted;
 	
 	uint8* wbank[0x200];
 	uint8* rbank[0x200];
@@ -69,6 +70,9 @@ public:
 	// unique functions
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted() {
+		return inserted;
+	}
 	void set_context_sound(DEVICE* device) {
 		d_sound = device;
 	}

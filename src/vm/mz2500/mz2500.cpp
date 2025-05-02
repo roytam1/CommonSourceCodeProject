@@ -27,7 +27,7 @@
 #include "../z80sio.h"
 
 #include "calendar.h"
-#include "cassette.h"
+#include "cmt.h"
 #include "crtc.h"
 #include "floppy.h"
 #include "interrupt.h"
@@ -68,7 +68,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio = new Z80SIO(this, emu);
 	
 	calendar = new CALENDAR(this, emu);
-	cassette = new CASSETTE(this, emu);
+	cmt = new CMT(this, emu);
 	crtc = new CRTC(this, emu);
 	floppy = new FLOPPY(this, emu);
 	interrupt = new INTERRUPT(this, emu);
@@ -88,17 +88,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(pcm);
 	event->set_context_sound(drec);
 	
-	drec->set_context_out(cassette, SIG_CASSETTE_OUT, 1);
-	drec->set_context_remote(cassette, SIG_CASSETTE_REMOTE, 1);
-	drec->set_context_end(cassette, SIG_CASSETTE_END, 1);
-	drec->set_context_top(cassette, SIG_CASSETTE_TOP, 1);
+	drec->set_context_out(cmt, SIG_CMT_OUT, 1);
+	drec->set_context_remote(cmt, SIG_CMT_REMOTE, 1);
+	drec->set_context_end(cmt, SIG_CMT_END, 1);
+	drec->set_context_top(cmt, SIG_CMT_TOP, 1);
 	
 	pit->set_context_ch0(interrupt, SIG_INTERRUPT_I8253, 1);
 	pit->set_context_ch0(pit, SIG_I8253_CLOCK_1, 1);
 	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
 	pit->set_constant_clock(0, 31250);
-	pio_i->set_context_port_a(cassette, SIG_CASSETTE_PIO_PA, 0xff, 0);
-	pio_i->set_context_port_c(cassette, SIG_CASSETTE_PIO_PC, 0xff, 0);
+	pio_i->set_context_port_a(cmt, SIG_CMT_PIO_PA, 0xff, 0);
+	pio_i->set_context_port_c(cmt, SIG_CMT_PIO_PC, 0xff, 0);
 	pio_i->set_context_port_c(crtc, SIG_CRTC_MASK, 0x01, 0);
 	pio_i->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
 #ifdef _FDC_DEBUG_LOG
@@ -114,8 +114,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio->set_context_dtr1(mouse, SIG_MOUSE_DTR, 1);
 	
 	calendar->set_context_rtc(rtc);
-	cassette->set_context_pio(pio_i);
-	cassette->set_context_datarec(drec);
+	cmt->set_context_pio(pio_i);
+	cmt->set_context_drec(drec);
 	crtc->set_context_mem(memory);
 	crtc->set_context_int(interrupt);
 	crtc->set_context_pio(pio_i);
@@ -161,11 +161,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0xce, 0xcf, memory);
 	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
 	io->set_iomap_range_w(0xdc, 0xdd, floppy);
-	io->set_iomap_single_rw(0xe0, pio_i);
-	io->set_iomap_single_r(0xe1, pio_i);
-	io->set_iomap_single_w(0xe1, cassette);	// this is not i8255 port-b
-	io->set_iomap_single_rw(0xe2, pio_i);
-	io->set_iomap_single_w(0xe3, pio_i);
+	io->set_iomap_range_rw(0xe0, 0xe3, pio_i);
 	io->set_iomap_range_rw(0xe4, 0xe7, pit);
 	io->set_iomap_range_rw(0xe8, 0xeb, pio);
 	io->set_iomap_single_rw(0xef, joystick);
@@ -329,24 +325,29 @@ bool VM::disk_inserted(int drv)
 	return fdc->disk_inserted(drv);
 }
 
-void VM::play_datarec(_TCHAR* file_path)
+void VM::play_tape(_TCHAR* file_path)
 {
-	bool value = drec->play_datarec(file_path);
-	cassette->close_datarec();
-	cassette->play_datarec(value);
+	bool value = drec->play_tape(file_path);
+	cmt->close_tape();
+	cmt->play_tape(value);
 }
 
-void VM::rec_datarec(_TCHAR* file_path)
+void VM::rec_tape(_TCHAR* file_path)
 {
-	bool value = drec->rec_datarec(file_path);
-	cassette->close_datarec();
-	cassette->rec_datarec(value);
+	bool value = drec->rec_tape(file_path);
+	cmt->close_tape();
+	cmt->rec_tape(value);
 }
 
-void VM::close_datarec()
+void VM::close_tape()
 {
-	drec->close_datarec();
-	cassette->close_datarec();
+	drec->close_tape();
+	cmt->close_tape();
+}
+
+bool VM::tape_inserted()
+{
+	return drec->tape_inserted();
 }
 
 bool VM::now_skip()

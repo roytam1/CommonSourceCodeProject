@@ -23,13 +23,13 @@ void CMT::initialize()
 
 void CMT::release()
 {
-	close_datarec();
+	close_tape();
 	delete fio;
 }
 
 void CMT::reset()
 {
-	close_datarec();
+	close_tape();
 }
 
 void CMT::write_io8(uint32 addr, uint32 data)
@@ -96,9 +96,9 @@ uint32 CMT::read_io8(uint32 addr)
 	return val;
 }
 
-void CMT::play_datarec(_TCHAR* file_path)
+void CMT::play_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// open for play
@@ -109,9 +109,9 @@ void CMT::play_datarec(_TCHAR* file_path)
 	}
 }
 
-void CMT::rec_datarec(_TCHAR* file_path)
+void CMT::rec_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		// open for rec
@@ -122,7 +122,7 @@ void CMT::rec_datarec(_TCHAR* file_path)
 	}
 }
 
-void CMT::close_datarec()
+void CMT::close_tape()
 {
 	// close file
 	if(rec && bufcnt) {

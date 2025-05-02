@@ -21,6 +21,11 @@
 #endif
 #define CONFIG_VERSION		0x02
 
+#ifndef _MZ80B
+#define SUPPORT_QUICK_DISK
+#define SUPPORT_16BIT_BOARD
+#endif
+
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
@@ -29,10 +34,16 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define HAS_MB8876
+#define PCM1BIT_HIGH_QUALITY
+#ifdef SUPPORT_QUICK_DISK
 // 1byte=32clock/3.25MHz*8=79usec
 #define Z80SIO_DELAY_SEND	100
 #define Z80SIO_DELAY_RECV	100
-#define PCM1BIT_HIGH_QUALITY
+#endif
+#ifdef SUPPORT_16BIT_BOARD
+#define HAS_I86
+#define I8259_MAX_CHIPS		1
+#endif
 
 // memory wait
 #define Z80_MEMORY_WAIT
@@ -45,12 +56,12 @@
 #define USE_FD2
 #define USE_FD3
 #define USE_FD4
-#ifndef _MZ80B
+#ifdef SUPPORT_QUICK_DISK
 #define USE_QUICKDISK
 #endif
-#define USE_DATAREC
-#define USE_DATAREC_BUTTON
-#define DATAREC_MZT_2000
+#define USE_TAPE
+#define USE_TAPE_BUTTON
+#define TAPE_MZT_2000
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -76,7 +87,7 @@ class PCM1BIT;
 class Z80;
 class Z80PIO;
 
-class CASSETTE;
+class CMT;
 class FLOPPY;
 class KEYBOARD;
 class MEMORY;
@@ -84,9 +95,15 @@ class MZ1R12;
 class MZ1R13;
 class TIMER;
 
-#ifndef _MZ80B
+#ifdef SUPPORT_QUICK_DISK
 class Z80SIO;
 class QUICKDISK;
+#endif
+
+#ifdef SUPPORT_16BIT_BOARD
+class I86;
+class I8259;
+class MZ1M01;
 #endif
 
 class VM
@@ -106,7 +123,7 @@ protected:
 	Z80* cpu;
 	Z80PIO* pio;
 	
-	CASSETTE* cassette;
+	CMT* cmt;
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
@@ -114,9 +131,16 @@ protected:
 	MZ1R13* mz1r13;
 	TIMER* timer;
 	
-#ifndef _MZ80B
+#ifdef SUPPORT_QUICK_DISK
 	Z80SIO* sio;
 	QUICKDISK* qd;
+#endif
+	
+#ifdef SUPPORT_16BIT_BOARD
+	Z80PIO* pio_to16;
+	I86* cpu_16;
+	I8259* pic_16;
+	MZ1M01* mz1m01;
 #endif
 	
 public:
@@ -148,13 +172,15 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-#ifndef _MZ80B
+#ifdef SUPPORT_QUICK_DISK
 	void open_quickdisk(_TCHAR* file_path);
 	void close_quickdisk();
+	bool quickdisk_inserted();
 #endif
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	void push_play();
 	void push_stop();
 	bool now_skip();

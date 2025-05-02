@@ -81,14 +81,14 @@ public:
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
-	void set_context_datarec(DATAREC* device) {
+	void set_context_drec(DATAREC* device) {
 		d_drec = device;
 	}
 	void key_down(int code, bool repeat);
 	void key_up(int code);
-	void play_datarec(bool value);
-	void rec_datarec(bool value);
-	void close_datarec();
+	void play_tape(bool value);
+	void rec_tape(bool value);
+	void close_tape();
 	void push_play();
 	void push_stop();
 };

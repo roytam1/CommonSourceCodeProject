@@ -1,3 +1,20 @@
+4/14/2013
+
+[WINMAIN] support to show a message on title bar post from vm or emu class
+[WINMAIN] disable close media menu when media file is not opened
+[EMU/WIN32] add function to post a message onto title bar
+
+[VM/DATAREC] fix mzt image converter to add 1sec space after header block
+[VM/DATAREC] support to post the tape status message onto title bar
+[VM/Z80PIO] fix handshake signals in bidirectional mode
+[VM/Z80PIO] fix masks follows bit in control register
+[VM/Z80PIO] fix to disable interrupt until the mask register is written
+
+[MZ80B/MEMORY] support optional 2nd vram
+[MZ2200/MEMORY] fix not to load mzt image to memory when attribute is not $01
+[MZ2200/MZ1M01] support 16bit cpu board (MZ-1M01)
+
+
 3/30/2013
 
 [VM/DATAREC] fix issue that sample number in recorded wav file header is 0

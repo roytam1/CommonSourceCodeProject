@@ -180,7 +180,7 @@ void IO::initialize()
 void IO::release()
 {
 	if(cmt_play || cmt_rec) {
-		close_datarec();
+		close_tape();
 	}
 }
 
@@ -194,7 +194,7 @@ void IO::reset()
 	lcd_text = true;
 	
 	if(cmt_play || cmt_rec) {
-		close_datarec();
+		close_tape();
 	}
 	cmt_selected = false;
 	
@@ -307,7 +307,7 @@ uint32 IO::read_io8(uint32 addr)
 #if 0
 				if(cmt_count == 0) {
 					if((cmt_data = cmt_fio->Fgetc()) == EOF) {
-						close_datarec();
+						close_tape();
 						return 0;
 					}
 				}
@@ -318,7 +318,7 @@ uint32 IO::read_io8(uint32 addr)
 				return bit ? 8 : 0;
 #else
 				if((cmt_data = cmt_fio->Fgetc()) == EOF) {
-					close_datarec();
+					close_tape();
 					return 0;
 				}
 				return (cmt_data & 1) << 3;
@@ -387,10 +387,10 @@ void IO::update_sid()
 	}
 }
 
-void IO::play_datarec(_TCHAR* file_path)
+void IO::play_tape(_TCHAR* file_path)
 {
 	if(cmt_play || cmt_rec) {
-		close_datarec();
+		close_tape();
 	}
 	cmt_fio = new FILEIO();
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_BINARY)) {
@@ -401,10 +401,10 @@ void IO::play_datarec(_TCHAR* file_path)
 	}
 }
 
-void IO::rec_datarec(_TCHAR* file_path)
+void IO::rec_tape(_TCHAR* file_path)
 {
 	if(cmt_play || cmt_rec) {
-		close_datarec();
+		close_tape();
 	}
 	cmt_fio = new FILEIO();
 	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
@@ -415,7 +415,7 @@ void IO::rec_datarec(_TCHAR* file_path)
 	}
 }
 
-void IO::close_datarec()
+void IO::close_tape()
 {
 	if(cmt_fio != NULL) {
 		cmt_fio->Fclose();

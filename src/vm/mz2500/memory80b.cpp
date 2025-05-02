@@ -110,10 +110,10 @@ uint32 MEMORY::fetch_op(uint32 addr, int *wait)
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 
-#ifndef _MZ80B
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {
+#ifndef _MZ80B
 	case 0xf4:
 		back_color = data & 7;
 		break;
@@ -126,12 +126,27 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0xf7:
 		if(vram_page != (data & 3)) {
 			vram_page = data & 3;
-			update_vram_map();
+			if(vram_sel == 0x80) {
+				update_vram_map();
+			}
 		}
 		break;
+#else
+	case 0xf4:
+	case 0xf5:
+	case 0xf6:
+	case 0xf7:
+		if(vram_page != (data & 7)) {
+			uint8 prev_page = vram_page;
+			vram_page = data & 7;
+			if((prev_page & 1) != (vram_page & 1) && (vram_sel == 0x80 || vram_sel == 0xc0)) {
+				update_vram_map();
+			}
+		}
+		break;
+#endif
 	}
 }
-#endif
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
@@ -228,10 +243,10 @@ void MEMORY::update_vram_map()
 	}
 	if(vram_sel == 0x80) {
 		SET_BANK(0xd000, 0xdfff, tvram, tvram, true);
-		SET_BANK(0xe000, 0xffff, vram, vram, true);
+		SET_BANK(0xe000, 0xffff, vram + 0x4000 * (vram_page & 1), vram + 0x4000 * (vram_page & 1), true);
 	} else if(vram_sel == 0xc0) {
 		SET_BANK(0x5000, 0x5fff, tvram, tvram, true);
-		SET_BANK(0x6000, 0x7fff, vram, vram, true);
+		SET_BANK(0x6000, 0x7fff, vram + 0x4000 * (vram_page & 1), vram + 0x4000 * (vram_page & 1), true);
 	}
 #endif
 }
@@ -251,26 +266,29 @@ void MEMORY::load_dat_image(_TCHAR* file_path)
 	delete fio;
 }
 
-void MEMORY::load_mzt_image(_TCHAR* file_path)
+bool MEMORY::load_mzt_image(_TCHAR* file_path)
 {
+	bool result = false;
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		memset(ram, 0, sizeof(ram));
-		memset(vram, 0, sizeof(vram));
-		memset(tvram, 0, sizeof(tvram));
-		
 		uint8 header[128];
 		fio->Fread(header, sizeof(header), 1);
-		uint16 size = header[0x12] | (header[0x13] << 8);
-		uint16 offs = 0;//header[0x14] | (header[0x15] << 8);
-		uint16 start = 0;//header[0x14] | (header[0x15] << 8);
-		
-		fio->Fread(ram + offs, size, 1);
+		if(header[0] == 0x01) {
+			uint16 size = header[0x12] | (header[0x13] << 8);
+			uint16 offs = 0;//header[0x14] | (header[0x15] << 8);
+			
+			memset(ram, 0, sizeof(ram));
+			memset(vram, 0, sizeof(vram));
+			memset(tvram, 0, sizeof(tvram));
+			
+			fio->Fread(ram + offs, size, 1);
+			vm->special_reset();
+			result = true;
+		}
 		fio->Fclose();
-		vm->special_reset();
-		d_cpu->set_pc(start);
 	}
 	delete fio;
+	return result;
 }
 
 void MEMORY::draw_screen()
@@ -305,11 +323,15 @@ void MEMORY::draw_screen()
 	if(config.monitor_type != MONITOR_TYPE_COLOR && (vram_mask & 8)) {
 		memset(screen_gra, 0, sizeof(screen_gra));
 	} else {
+		// vram[0x0000-0x3fff] should be always blank
+		uint8 *vram_b = vram + ((vram_mask & 1) ? 0x4000 : 0);
+		uint8 *vram_r = vram + ((vram_mask & 2) ? 0x8000 : 0);
+		uint8 *vram_g = vram + ((vram_mask & 4) ? 0xc000 : 0);
 		for(int y = 0, addr = 0; y < 200; y++) {
 			for(int x = 0; x < 80; x++) {
-				uint8 b = (vram_mask & 1) ? vram[addr | 0x4000] : 0;
-				uint8 r = (vram_mask & 2) ? vram[addr | 0x8000] : 0;
-				uint8 g = (vram_mask & 4) ? vram[addr | 0xc000] : 0;
+				uint8 b = vram_b[addr];
+				uint8 r = vram_r[addr];
+				uint8 g = vram_g[addr];
 				addr++;
 				uint8* d = &screen_gra[y][x << 3];
 				
@@ -325,19 +347,27 @@ void MEMORY::draw_screen()
 		}
 	}
 #else
-	for(int y = 0, addr = 0; y < 200; y++) {
-		for(int x = 0; x < 40; x++) {
-			uint8 pat = vram[addr++];
-			uint8* d = &screen_gra[y][x << 3];
-			
-			d[0] = (pat & 0x01) >> 0;
-			d[1] = (pat & 0x02) >> 1;
-			d[2] = (pat & 0x04) >> 2;
-			d[3] = (pat & 0x08) >> 3;
-			d[4] = (pat & 0x10) >> 4;
-			d[5] = (pat & 0x20) >> 5;
-			d[6] = (pat & 0x40) >> 6;
-			d[7] = (pat & 0x80) >> 7;
+	if(!(vram_page & 6)) {
+		memset(screen_gra, 0, sizeof(screen_gra));
+	} else {
+		// vram[0x8000-0xbfff] should be always blank
+		uint8 *vram_1 = vram + ((vram_page & 2) ? 0x0000 : 0x8000);
+		uint8 *vram_2 = vram + ((vram_page & 4) ? 0x4000 : 0x8000);
+		for(int y = 0, addr = 0; y < 200; y++) {
+			for(int x = 0; x < 40; x++) {
+				uint8 pat = vram_1[addr] | vram_2[addr];
+				addr++;
+				uint8* d = &screen_gra[y][x << 3];
+				
+				d[0] = (pat & 0x01) >> 0;
+				d[1] = (pat & 0x02) >> 1;
+				d[2] = (pat & 0x04) >> 2;
+				d[3] = (pat & 0x08) >> 3;
+				d[4] = (pat & 0x10) >> 4;
+				d[5] = (pat & 0x20) >> 5;
+				d[6] = (pat & 0x40) >> 6;
+				d[7] = (pat & 0x80) >> 7;
+			}
 		}
 	}
 #endif

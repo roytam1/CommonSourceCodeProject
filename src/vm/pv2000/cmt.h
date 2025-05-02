@@ -40,9 +40,12 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted() {
+		return (play || rec);
+	}
 	bool skip() { return (start & 1) && (play || rec); }
 };
 

@@ -54,7 +54,7 @@
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
-#define USE_DATAREC
+#define USE_TAPE
 #define USE_FD1
 #define USE_FD2
 //#define USE_FD3
@@ -151,9 +151,10 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	void load_binary(int drv, _TCHAR* file_path);
 	void save_binary(int drv, _TCHAR* file_path) {}
 	bool now_skip();

@@ -141,6 +141,11 @@ void VM::close_cart()
 	reset();
 }
 
+bool VM::cart_inserted()
+{
+	return memory->cart_inserted();
+}
+
 bool VM::now_skip()
 {
 	return event->now_skip();

@@ -20,13 +20,13 @@ void CMT::initialize()
 
 void CMT::release()
 {
-	release_datarec();
+	release_tape();
 	delete fio;
 }
 
 void CMT::reset()
 {
-	close_datarec();
+	close_tape();
 	play = rec = remote = false;
 }
 
@@ -47,9 +47,9 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-void CMT::play_datarec(_TCHAR* file_path)
+void CMT::play_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fseek(0, FILEIO_SEEK_END);
@@ -67,9 +67,9 @@ void CMT::play_datarec(_TCHAR* file_path)
 	}
 }
 
-void CMT::rec_datarec(_TCHAR* file_path)
+void CMT::rec_tape(_TCHAR* file_path)
 {
-	close_datarec();
+	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		bufcnt = 0;
@@ -77,16 +77,16 @@ void CMT::rec_datarec(_TCHAR* file_path)
 	}
 }
 
-void CMT::close_datarec()
+void CMT::close_tape()
 {
 	// close file
-	release_datarec();
+	release_tape();
 	
 	// clear sio buffer
 	d_sio->write_signal(SIG_I8251_CLEAR, 0, 0);
 }
 
-void CMT::release_datarec()
+void CMT::release_tape()
 {
 	// close file
 	if(rec && bufcnt) {

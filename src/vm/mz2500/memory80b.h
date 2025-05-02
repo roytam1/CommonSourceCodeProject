@@ -35,7 +35,11 @@ private:
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	uint8 ram[0x10000];
-	uint8 vram[0x10000];
+#ifndef _MZ80B
+	uint8 vram[0x10000];	// 0x4000 * (3 pages + dummy)
+#else
+	uint8 vram[0xc000];	// 0x4000 * (2 pages + dummy)
+#endif
 	uint8 tvram[0x1000];
 	uint8 ipl[0x800];
 	
@@ -64,9 +68,7 @@ public:
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	uint32 fetch_op(uint32 addr, int *wait);
-#ifndef _MZ80B
 	void write_io8(uint32 addr, uint32 data);
-#endif
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
@@ -82,7 +84,7 @@ public:
 		d_pio = device;
 	}
 	void load_dat_image(_TCHAR* file_path);
-	void load_mzt_image(_TCHAR* file_path);
+	bool load_mzt_image(_TCHAR* file_path);
 	void draw_screen();
 };
 

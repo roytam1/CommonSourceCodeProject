@@ -50,6 +50,7 @@ void MEMORY::initialize()
 	
 	// cart is not opened
 	memset(&header, 0, sizeof(header_t));
+	inserted = false;
 }
 
 void MEMORY::release()
@@ -211,6 +212,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 			fio->Fread(sram, 0x2000, 1);
 			fio->Fclose();
 		}
+		inserted = true;
 	}
 	delete fio;
 }
@@ -219,7 +221,7 @@ void MEMORY::close_cart()
 {
 	// save backuped sram
 	// note: shogi nyumon has sram but it is not battery-backuped
-	if(header.ctype == 1 && cart[1] != 0x48) {
+	if(inserted && header.ctype == 1 && cart[1] != 0x48) {
 		FILEIO* fio = new FILEIO();
 		if(fio->Fopen(save_path, FILEIO_WRITE_BINARY)) {
 			fio->Fwrite(sram, 0x2000, 1);
@@ -227,6 +229,7 @@ void MEMORY::close_cart()
 		}
 		delete fio;
 	}
+	inserted = false;
 	
 	// initialize memory
 	memset(&header, 0, sizeof(header_t));

@@ -22,7 +22,7 @@
 #define SIG_MEMORY_SIO_TF20	4
 #define SIG_MEMORY_RTC_IRQ	5
 
-#define DATAREC_BUFFER_SIZE	0x10000
+#define CMT_BUFFER_SIZE		0x10000
 
 class BEEP;
 class FIFO;
@@ -63,10 +63,10 @@ private:
 	uint8 *key_stat;
 	int key_data, key_strobe, key_intmask;
 	
-	uint8 datarec_buffer[DATAREC_BUFFER_SIZE];
-	int datarec_count;
-	bool datarec_play, datarec_rec;
-	FILEIO* datarec_fio;
+	uint8 cmt_buffer[CMT_BUFFER_SIZE];
+	int cmt_count;
+	bool cmt_play, cmt_rec;
+	FILEIO* cmt_fio;
 	
 	typedef struct {
 		uint8 buffer[80];
@@ -117,9 +117,12 @@ public:
 		d_tf20 = device;
 	}
 	void notify_power_off();
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted() {
+		return (cmt_play || cmt_rec);
+	}
 	void draw_screen();
 };
 

@@ -84,6 +84,7 @@ public:
 	// user interface
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted();
 	bool now_skip();
 	
 	void update_config();

@@ -29,7 +29,7 @@
 #define MIN_WINDOW_WIDTH	320
 #define USE_CART
 #define USE_FD1
-#define USE_DATAREC
+#define USE_TAPE
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	8
@@ -101,12 +101,14 @@ public:
 	// user interface
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted();
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 	bool now_skip();
 	
 	void update_config();

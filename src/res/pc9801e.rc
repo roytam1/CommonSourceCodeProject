@@ -96,42 +96,42 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "FDD-1MB #1"
+    POPUP "1MB-FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
-    POPUP "#2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
-    POPUP "FDD-640KB #1"
+    POPUP "640KB-FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD3
         MENUITEM "Close",                       ID_CLOSE_FD3
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD3
     END
-    POPUP "#2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD4
         MENUITEM "Close",                       ID_CLOSE_FD4
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD4
     END
-    POPUP "FDD-320KB #1"
+    POPUP "320KB-FD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD5
         MENUITEM "Close",                       ID_CLOSE_FD5
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD5
     END
-    POPUP "#2"
+    POPUP "FD2"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD6
         MENUITEM "Close",                       ID_CLOSE_FD6
@@ -140,11 +140,11 @@ BEGIN
     END
     POPUP "CMT"
     BEGIN
-        MENUITEM "Play",                        ID_PLAY_DATAREC
-        MENUITEM "Rec",                         ID_REC_DATAREC
-        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM "Play",                        ID_PLAY_TAPE
+        MENUITEM "Rec",                         ID_REC_TAPE
+        MENUITEM "Close",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_DATAREC
+        MENUITEM "Recent",                      ID_RECENT_TAPE
     END
     POPUP "Screen"
     BEGIN

@@ -234,19 +234,36 @@ private:
 	bool now_rec_snd;
 	
 	// ----------------------------------------
-	// floppy disk
+	// media
 	// ----------------------------------------
-#ifdef USE_FD1
-	void initialize_disk_insert();
-	void update_disk_insert();
-	
 	typedef struct {
 		_TCHAR path[_MAX_PATH];
+		bool play;
 		int offset;
 		int wait_count;
-	} disk_insert_t;
-	disk_insert_t disk_insert[8];
+	} media_status_t;
+	
+#ifdef USE_CART
+	media_status_t cart_status;
 #endif
+#ifdef USE_FD1
+	media_status_t disk_status[8];
+#endif
+#ifdef USE_QUICKDISK
+	media_status_t quickdisk_status;
+#endif
+#ifdef USE_TAPE
+	media_status_t tape_status;
+#endif
+	
+	void initialize_media();
+	void update_media();
+	void restore_media();
+	
+	void clear_media_status(media_status_t *status) {
+		status->path[0] = _T('\0');
+		status->wait_count = 0;
+	}
 	
 	// ----------------------------------------
 	// socket
@@ -311,21 +328,25 @@ public:
 #ifdef USE_CART
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
+	bool cart_inserted();
 #endif
 #ifdef USE_FD1
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
+	bool disk_inserted(int drv);
 #endif
 #ifdef USE_QUICKDISK
 	void open_quickdisk(_TCHAR* file_path);
 	void close_quickdisk();
+	bool quickdisk_inserted();
 #endif
-#ifdef USE_DATAREC
-	void play_datarec(_TCHAR* file_path);
-	void rec_datarec(_TCHAR* file_path);
-	void close_datarec();
+#ifdef USE_TAPE
+	void play_tape(_TCHAR* file_path);
+	void rec_tape(_TCHAR* file_path);
+	void close_tape();
+	bool tape_inserted();
 #endif
-#ifdef USE_DATAREC_BUTTON
+#ifdef USE_TAPE_BUTTON
 	void push_play();
 	void push_stop();
 #endif
@@ -442,6 +463,10 @@ public:
 #endif
 	// debug log
 	void out_debug(const _TCHAR* format, ...);
+	
+	void out_message(const _TCHAR* format, ...);
+	int message_count;
+	_TCHAR message[1024];
 };
 
 #endif
