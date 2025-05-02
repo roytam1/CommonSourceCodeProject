@@ -54,6 +54,10 @@
 #define ID_PC8801_MODE_V2               40034
 #define ID_PC8801_MODE_N                40035
 
+#define ID_PC8001_MODE_V1               40031
+#define ID_PC8001_MODE_V2               40032
+#define ID_PC8001_MODE_N                40033
+
 #define ID_PC9801_CPU_CLOCK_HIGH        40041
 #define ID_PC9801_CPU_CLOCK_LOW         40042
 
@@ -509,6 +513,16 @@
 #define MENU_POS_SOUND                  7
 #endif
 
+// NEC PC-8001mkIISR
+#ifdef _PC8001SR
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_DATAREC                3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
 // NEC PC-8201
 #ifdef _PC8201
 #define MENU_POS_CONTROL                0
@@ -607,6 +621,14 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#endif
+
+// NEC-HE PC-ENGINE
+#ifdef _PCENGINE
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // SANYO PHC-20

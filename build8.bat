@@ -117,6 +117,10 @@ mkdir build\pasopia7
 copy Release\pasopia7.exe build\pasopia7\.
 copy Release\pasopia7lcd.exe build\pasopia7\.
 
+devenv.com pc8001mk2sr.vcproj /Rebuild Release
+mkdir build\pc8001mk2sr
+copy Release\pc8001mk2sr.exe build\pc8001mk2sr\.
+
 devenv.com pc8201.vcproj /Rebuild Release
 mkdir build\pc8201
 copy Release\pc8201.exe build\pc8201\.
@@ -160,6 +164,10 @@ copy Release\pc98lt.exe build\pc98lt\.
 devenv.com pc100.vcproj /Rebuild Release
 mkdir build\pc100
 copy Release\pc100.exe build\pc100\.
+
+devenv.com pcengine.vcproj /Rebuild Release
+mkdir build\pcengine
+copy Release\pcengine.exe build\pcengine\.
 
 devenv.com phc20.vcproj /Rebuild Release
 mkdir build\phc20

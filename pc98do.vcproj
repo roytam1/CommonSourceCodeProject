@@ -915,6 +915,28 @@
 				Filter="cpp"
 				>
 				<File
+					RelativePath="src\vm\pc8801\pc88.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\pc9801\display.cpp"
 					>
 					<FileConfiguration
@@ -1026,28 +1048,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc9801\mouse.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\pc88.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1263,6 +1263,10 @@
 				Filter="h"
 				>
 				<File
+					RelativePath="src\vm\pc8801\pc88.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\pc9801\display.h"
 					>
 				</File>
@@ -1284,10 +1288,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc9801\mouse.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc9801\pc88.h"
 					>
 				</File>
 				<File

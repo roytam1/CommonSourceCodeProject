@@ -928,8 +928,14 @@ void UPD765A::read_diagnostic()
 		shift_to_result7();
 		return;
 	}
-	int length = __min(0x2000, disk[drv]->track_size);
-	memcpy(buffer, disk[drv]->track, length);
+	int length = 0x80 << __min(8, id[3]);
+	memcpy(buffer, disk[drv]->track + disk[drv]->track_offset, disk[drv]->track_size - disk[drv]->track_offset);
+	int offset = disk[drv]->track_size - disk[drv]->track_offset;
+	while(length > offset) {
+		int size = __min(disk[drv]->track_size, length - offset);
+		memcpy(buffer + offset, disk[drv]->track, size);
+		offset += size;
+	}
 	shift_to_read(length);
 	return;
 }

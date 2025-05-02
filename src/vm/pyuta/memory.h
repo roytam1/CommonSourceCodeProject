@@ -32,7 +32,8 @@ private:
 	bool cmt_signal, cmt_remote;
 	bool has_extrom;
 	int ctype;
-	uint8 *key, *joy;
+	uint8 *key;
+	uint32 *joy;
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

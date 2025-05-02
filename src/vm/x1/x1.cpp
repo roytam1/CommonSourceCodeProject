@@ -38,7 +38,7 @@
 
 #ifdef _X1TWIN
 #include "../huc6280.h"
-#include "pce.h"
+#include "../pcengine/pce.h"
 #endif
 
 #include "../../config.h"
@@ -244,14 +244,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pceevent->set_lines_per_frame(PCE_LINES_PER_FRAME);
 	
 	pcecpu = new HUC6280(this, emu);
+	pcecpu->set_context_event_manager(pceevent);
 	pce = new PCE(this, emu);
+	pce->set_context_event_manager(pceevent);
 	
 	pceevent->set_context_cpu(pcecpu, PCE_CPU_CLOCKS);
 	pceevent->set_context_sound(pce);
-	pce->set_context_cpu(pcecpu);
-	pce->set_context_event_manager(pceevent);
+	
 	pcecpu->set_context_mem(pce);
 	pcecpu->set_context_io(pce);
+	pce->set_context_cpu(pcecpu);
 #endif
 	
 	// initialize all devices
@@ -268,9 +270,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 #endif
 	}
-#ifdef _X1TWIN
-	pce_running = false;
-#endif
 }
 
 VM::~VM()
@@ -317,7 +316,7 @@ void VM::run()
 {
 	event->drive();
 #ifdef _X1TWIN
-	if(pce_running) {
+	if(pce->running) {
 		pceevent->drive();
 	}
 #endif
@@ -326,7 +325,7 @@ void VM::run()
 double VM::frame_rate()
 {
 #ifdef _X1TWIN
-	if(pce_running) {
+	if(pce->running) {
 		return pceevent->frame_rate();
 	}
 #endif
@@ -341,7 +340,7 @@ void VM::draw_screen()
 {
 	display->draw_screen();
 #ifdef _X1TWIN
-	if(pce_running) {
+	if(pce->running) {
 		pce->draw_screen();
 	}
 #endif
@@ -381,7 +380,7 @@ void VM::initialize_sound(int rate, int samples)
 uint16* VM::create_sound(int* extra_frames)
 {
 #ifdef _X1TWIN
-	if(pce_running) {
+	if(pce->running) {
 		uint16* buffer = pceevent->create_sound(extra_frames);
 		for(int i = 0; i < *extra_frames; i++) {
 			event->drive();
@@ -399,7 +398,7 @@ uint16* VM::create_sound(int* extra_frames)
 void VM::key_down(int code, bool repeat)
 {
 #ifdef _X1TWIN
-	if(!pce_running && !repeat) {
+	if(!pce->running && !repeat) {
 		sub->key_down(code, false);
 	}
 #else
@@ -412,7 +411,7 @@ void VM::key_down(int code, bool repeat)
 void VM::key_up(int code)
 {
 #ifdef _X1TWIN
-	if(!pce_running) {
+	if(!pce->running) {
 		sub->key_up(code);
 	}
 #else
@@ -509,6 +508,13 @@ void VM::update_dipswitch()
 	// bit0		0=High 1=Standard
 	// bit1-3	0=5"2D 4=5"2HD
 	io->set_iovalue_single_r(0x1ff0, config.monitor_type & 1);
+}
+#endif
+
+#ifdef _X1TWIN
+bool VM::pce_running()
+{
+	return pce->running;
 }
 #endif
 

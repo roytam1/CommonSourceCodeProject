@@ -23,7 +23,7 @@ private:
 	
 	scrntype palette_pc[64];
 	uint8 screen[240][256 + 16];	// 2*8 = side margin
-	uint8 solid_buf[256 + 16];
+	uint8 solid_buf[512];
 	
 	uint8* banks[16];
 	uint8 chr_rom[0x2000];

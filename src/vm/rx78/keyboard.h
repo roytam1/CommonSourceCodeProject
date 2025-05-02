@@ -19,7 +19,7 @@ class KEYBOARD : public DEVICE
 {
 private:
 	uint8* key_stat;
-	uint8* joy_stat;
+	uint32* joy_stat;
 	uint8 status[16];
 	uint8 column;
 public:

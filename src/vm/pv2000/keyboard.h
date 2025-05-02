@@ -21,7 +21,7 @@ private:
 	DEVICE* d_cpu;
 	
 	uint8 key_stat[256];
-	uint8* joy_stat;
+	uint32* joy_stat;
 	int key_no;
 	bool intr_enb;
 	

@@ -1,3 +1,17 @@
+12/29/2012
+
+[EMU/WIN32] support joysticks with more than 4 buttons
+[EMU/WIN32] support new function to get crc32 value
+
+[VM/DISK] fix make_track() to consider the media type
+[VM/DISK] fix teledisk/imagedisk converter to get the correct media type
+[VM/UPD765A] fix read diagnotics to start reading at the top of 1st sector data
+
+[FAMILYBASIC/PPU] fix crash issue in ppu
+[PC8001MK2SR] support NEC PC-8001mkIISR
+[PCENGINE] support NEC Home Electronics PC-Engine / SuperGrafx
+
+
 10/25/2012
 
 [PC8801MA/PC88] fix dma wait cycles on V1S mode

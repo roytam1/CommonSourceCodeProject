@@ -67,8 +67,8 @@ static const uint8 d_len[256] = {
 	0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
 };
-static const int secsize[7] = {
-	128, 256, 512, 1024, 2048, 4096, 8192
+static const int secsize[8] = {
+	128, 256, 512, 1024, 2048, 4096, 8192, 16384
 };
 
 static uint8 tmp_buffer[DISK_BUFFER_SIZE];
@@ -293,12 +293,6 @@ bool DISK::make_track(int trk, int side)
 {
 	sector_size = sector_num = 0;
 	
-	// create dummy track
-	for(int i = 0; i < 0x1800; i++) {
-		track[i] = rand();
-	}
-	track_size = 0x1800;
-	
 	// disk not inserted or invalid media type
 	if(!(inserted && check_media_type())) {
 		return false;
@@ -321,38 +315,46 @@ bool DISK::make_track(int trk, int side)
 	// get verify info
 	uint8* t = buffer + offset;
 	sector_num = t[4] | (t[5] << 8);
+	bool mfm = (t[6] == 0);
+	
+	track_size = (media_type == MEDIA_TYPE_2HD) ? 12500 : mfm ? 6250 : 3100;
+	int gap0_size = mfm ? 80 : 40;
+	int sync_size  = mfm ? 12 : 6;
+	int am_size = mfm ? 3 : 0;
+	int gap1_size = mfm ? 50 : 26;
+	int gap2_size = mfm ? 22 : 11;
+	uint8 gap_data = mfm ? 0x4e : 0xff;
 	
 	// make track image
-	int gap3 = (sector_num <= 5) ? 0x74 : (sector_num <= 10) ? 0x54 : (sector_num <= 16) ? 0x33 : 0x10;
 	int p = 0;
 	
 	// gap0
-	for(int i = 0; i < 80; i++) {
-		track[p++] = 0x4e;
+	for(int i = 0; i < gap0_size; i++) {
+		track[p++] = gap_data;
 	}
 	// sync
-	for(int i = 0; i < 12; i++) {
+	for(int i = 0; i < sync_size; i++) {
 		track[p++] = 0;
 	}
 	// index mark
-	track[p++] = 0xc2;
-	track[p++] = 0xc2;
-	track[p++] = 0xc2;
+	for(int i = 0; i < am_size; i++) {
+		track[p++] = 0xc2;
+	}
 	track[p++] = 0xfc;
 	// gap1
-	for(int i = 0; i < 50; i++) {
-		track[p++] = 0x4e;
+	for(int i = 0; i < gap1_size; i++) {
+		track[p++] = gap_data;
 	}
 	// sectors
 	for(int i = 0; i < sector_num; i ++) {
 		// sync
-		for(int j = 0; j < 12; j++) {
+		for(int j = 0; j < sync_size; j++) {
 			track[p++] = 0;
 		}
 		// id address mark
-		track[p++] = 0xa1;
-		track[p++] = 0xa1;
-		track[p++] = 0xa1;
+		for(int j = 0; j < am_size; j++) {
+			track[p++] = 0xa1;
+		}
 		track[p++] = 0xfe;
 		track[p++] = t[0];
 		track[p++] = t[1];
@@ -366,19 +368,22 @@ bool DISK::make_track(int trk, int side)
 		track[p++] = crc >> 8;
 		track[p++] = crc & 0xff;
 		// gap2
-		for(int j = 0; j < 22; j++) {
-			track[p++] = 0x4e;
+		for(int j = 0; j < gap2_size; j++) {
+			track[p++] = gap_data;
 		}
 		// sync
-		for(int j = 0; j < 12; j++) {
+		for(int j = 0; j < sync_size; j++) {
 			track[p++] = 0;
 		}
 		// data mark, deleted mark
-		track[p++] = 0xa1;
-		track[p++] = 0xa1;
-		track[p++] = 0xa1;
+		for(int j = 0; j < am_size; j++) {
+			track[p++] = 0xa1;
+		}
 		track[p++] = (t[7]) ? 0xf8 : 0xfb;
 		// data
+		if(i == 0) {
+			track_offset = p;
+		}
 		int size = t[0xe] | (t[0xf] << 8);
 		crc = 0;
 		for(int j = 0; j < size; j++) {
@@ -389,13 +394,14 @@ bool DISK::make_track(int trk, int side)
 		track[p++] = crc & 0xff;
 		t += size + 0x10;
 		// gap3
-		for(int j = 0; j < gap3; j++) {
-			track[p++] = 0x4e;
+		int gap3_size = (t[3] == 1) ? 27 : (t[3] == 2) ? 42 : 58;
+		for(int j = 0; j < gap3_size; j++) {
+			track[p++] = gap_data;
 		}
 	}
 	// gap4
-	while(p < 0x1800) {
-		track[p++] = 0x4e;
+	while(p < track_size) {
+		track[p++] = gap_data;
 	}
 	track_size = p;
 	
@@ -554,13 +560,9 @@ bool DISK::teledisk_to_d88()
 	file_size = 0;
 	
 	// create d88 header
-	static const int media_types[4] = {
-		MEDIA_TYPE_2D, MEDIA_TYPE_2HD, MEDIA_TYPE_2DD, MEDIA_TYPE_2HD
-	};
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "TELEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = (hdr.type >= 1 && hdr.type <= 4) ? media_types[hdr.type - 1] : MEDIA_TYPE_UNK;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
@@ -568,6 +570,9 @@ bool DISK::teledisk_to_d88()
 	fi->Fread(&trk, sizeof(td_trk_t), 1);
 	while(trk.nsec != 0xff) {
 		d88_hdr.trkptr[trkcnt++] = trkptr;
+		if(hdr.sides == 1) {
+			d88_hdr.trkptr[trkcnt++] = trkptr;
+		}
 		
 		// read sectors in this track
 		for(int i = 0; i < trk.nsec; i++) {
@@ -585,7 +590,7 @@ bool DISK::teledisk_to_d88()
 			d88_sct.r = sct.r;
 			d88_sct.n = sct.n;
 			d88_sct.nsec = trk.nsec;
-			d88_sct.dens = 0; // ”{–§“x
+			d88_sct.dens = (hdr.dens & 0x80) ? 0x40 : 0;
 			d88_sct.del = (sct.ctrl & 4) ? 0x10 : 0;
 			d88_sct.stat = (sct.ctrl & 2) ? 0x10 : 0; // crc?
 			d88_sct.size = secsize[sct.n & 3];
@@ -654,6 +659,7 @@ bool DISK::teledisk_to_d88()
 		// read next track
 		fi->Fread(&trk, sizeof(td_trk_t), 1);
 	}
+	d88_hdr.type = ((hdr.dens & 3) == 2) ? MEDIA_TYPE_2HD : ((trkcnt >> 1) > 60) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
 	d88_hdr.size = trkptr;
 	memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
 	return true;
@@ -900,19 +906,22 @@ bool DISK::imagedisk_to_d88()
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "IMAGEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = MEDIA_TYPE_UNK; // TODO
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
 	int trkptr = sizeof(d88_hdr_t);
+	int trkcnt = 0, mode;
+	
 	for(int t = 0; t < 164; t++) {
 		// check end of file
 		if(fi->Fread(&trk, sizeof(imd_trk_t), 1) != 1) {
 			break;
 		}
+		trkcnt = t;
+		
 		// check track header
-		if(trk.mode > 5 || trk.size > 6) {
-			return false;
+		if(t == 0) {
+			mode = trk.mode % 3; // 0=500kbps, 1=300kbps, 2=250kbps
 		}
 		if(!trk.nsec) {
 			continue;
@@ -953,7 +962,7 @@ bool DISK::imagedisk_to_d88()
 			d88_sct.dens = (trk.mode < 3) ? 0x40 : 0;
 			d88_sct.del = del[sectype];
 			d88_sct.stat = err[sectype];
-			d88_sct.size = secsize[trk.size];
+			d88_sct.size = secsize[trk.size & 7];
 			
 			// create sector image
 			uint8 dst[8192];
@@ -976,6 +985,7 @@ bool DISK::imagedisk_to_d88()
 			trkptr += sizeof(d88_sct_t) + d88_sct.size;
 		}
 	}
+	d88_hdr.type = (mode == 0) ? MEDIA_TYPE_2HD : (trkcnt > 120) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
 	d88_hdr.size = trkptr;
 	memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
 	return true;

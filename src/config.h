@@ -79,7 +79,7 @@ typedef struct {
 #ifdef USE_CPU_CLOCK_LOW
 	bool cpu_clock_low;	// PC-8801MA, PC-9801E, PC-9801VM, PC-98DO
 #endif
-#if defined(_HC80) || defined(_PASOPIA) || defined(_PC8801MA)
+#if defined(_HC80) || defined(_PASOPIA) || defined(_PC8001SR) || defined(_PC8801MA)
 	int device_type;
 #endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)

@@ -19,7 +19,7 @@ class JOYSTICK : public DEVICE
 {
 private:
 	uint8* key;
-	uint8* joy;
+	uint32* joy;
 	uint8 column;
 	uint8 status;
 	

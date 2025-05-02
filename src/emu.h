@@ -108,8 +108,9 @@ private:
 #endif
 	bool lost_focus;
 	
-	uint8 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4-b7 = trigger #1-#4
+	uint32 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4- = buttons
 	int joy_num;
+	uint32 joy_mask[2];
 	
 	int mouse_status[3];	// x, y, button (b0 = left, b1 = right)
 	bool mouse_enabled;
@@ -437,7 +438,7 @@ public:
 	uint8* key_buffer() {
 		return key_status;
 	}
-	uint8* joy_buffer() {
+	uint32* joy_buffer() {
 		return joy_status;
 	}
 	int* mouse_buffer() {
@@ -469,6 +470,11 @@ public:
 #endif
 	// debug log
 	void out_debug(const _TCHAR* format, ...);
+	
+	// ----------------------------------------
+	// misc
+	// ----------------------------------------
+	uint32 getcrc32(uint8 data[], int size);
 };
 
 #endif

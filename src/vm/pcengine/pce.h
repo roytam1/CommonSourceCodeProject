@@ -1,10 +1,11 @@
 /*
+	NEC Home Electronics PC-Engine Emulator 'ePC-Engine'
 	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
 	Origin : Ootake (joypad)
 	       : xpce (psg)
-	       : MESS (vdc)
+	       : MESS (vdc/vce/vpc)
 	Author : Takeda.Toshiya
 	Date   : 2009.03.11-
 
@@ -29,11 +30,19 @@ private:
 	HUC6280* d_cpu;
 	
 	// memory
+#ifdef SUPPORT_SUPER_GFX
+	uint8 ram[0x8000];	// ram 32kb
+#else
 	uint8 ram[0x2000];	// ram 8kb
+#endif
 	uint8 cart[0x400000];	// max 4mb
-//	uint8 backup[0x800];
+#ifdef SUPPORT_BACKUP_RAM
+	uint8 backup[0x2000];
+	uint32 crc32;
+#endif
 	uint32 bank;
 	uint8 buffer;
+	int prev_width;
 	
 	// vdc
 	struct {
@@ -54,7 +63,7 @@ private:
 		pair vdc_data[32];
 		int status;
 		int y_scroll;
-	} vdc;
+	} vdc[2];
 	struct {
 		uint8 vce_control;		/* VCE control register */
 		pair vce_address;		/* Current address in the palette */
@@ -64,21 +73,42 @@ private:
 		scrntype bmp[VDC_LPF][VDC_WPF];
 		scrntype palette[1024];
 	} vce;
+
+	struct {
+		struct {
+			UINT8 prio;
+			UINT8 vdc0_enabled;
+			UINT8 vdc1_enabled;
+		} vpc_prio[4];
+		UINT8	prio_map[512];		/* Pre-calculated priority map */
+		pair	priority;			/* Priority settings registers */
+		pair	window1;			/* Window 1 setting */
+		pair	window2;			/* Window 2 setting */
+		UINT8	vdc_select;			/* Which VDC do the ST0, ST1, and ST2 instructions write to */
+	} vpc;
+	
 	void pce_interrupt();
+	void sgx_interrupt();
 	void vdc_reset();
-	void vdc_advance_line();
+	void vdc_advance_line(int which);
 	void draw_black_line(int line);
 	void draw_overscan_line(int line);
-	void vram_write(uint32 offset, uint8 data);
-	uint8 vram_read(uint32 offset);
-	void vdc_w(uint16 offset, uint8 data);
-	uint8 vdc_r(uint16 offset);
+	void draw_sgx_overscan_line(int line);
+	void vram_write(int which, uint32 offset, uint8 data);
+	uint8 vram_read(int which, uint32 offset);
+	void vdc_w(int which, uint16 offset, uint8 data);
+	uint8 vdc_r(int which, uint16 offset);
 	void vce_w(uint16 offset, uint8 data);
 	uint8 vce_r(uint16 offset);
-	void pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer);
-	void conv_obj(int i, int l, int hf, int vf, char *buf);
-	void pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer);
-	void vdc_do_dma();
+	void pce_refresh_line(int which, int line, int external_input, uint8 *drawn, scrntype *line_buffer);
+	void conv_obj(int which, int i, int l, int hf, int vf, char *buf);
+	void pce_refresh_sprites(int which, int line, uint8 *drawn, scrntype *line_buffer);
+	void vdc_do_dma(int which);
+	void vpc_update_prio_map();
+	void vpc_w(uint16 offset, uint8 data);
+	uint8 vpc_r(uint16 offset);
+	void sgx_vdc_w(uint16 offset, uint8 data);
+	uint8 sgx_vdc_r(uint16 offset);
 	
 	// psg
 	typedef struct {
@@ -100,8 +130,11 @@ private:
 	uint8 psg_read(uint16 addr);
 	
 	// joypad
-	uint8 *joy_stat, *key_stat;
-	uint8 joy_count, joy_nibble, joy_second;
+	uint32 *joy_stat;
+	uint8 *key_stat;
+	uint8 joy_sel, joy_clr, joy_count, joy_bank;
+	bool joy_6btn;
+	
 	void joy_reset();
 	void joy_write(uint16 addr, uint8 data);
 	uint8 joy_read(uint16 addr);
@@ -112,6 +145,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void release();
 	void reset();
 	void event_vline(int v, int clock);
 	void write_data8(uint32 addr, uint32 data);
@@ -130,6 +164,8 @@ public:
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	void draw_screen();
+	
+	bool running;
 };
 
 #endif

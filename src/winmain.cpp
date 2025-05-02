@@ -744,6 +744,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			config.device_type = LOWORD(wParam) - ID_PC8801_DEVICE_JOYSTICK;
 			break;
 #endif
+#ifdef _PC8001SR
+		case ID_PC8001_MODE_V1:
+		case ID_PC8001_MODE_V2:
+		case ID_PC8001_MODE_N:
+			config.boot_mode = LOWORD(wParam) - ID_PC8001_MODE_V1;
+			if(emu) {
+				emu->update_config();
+			}
+			break;
+		case ID_PC8801_DEVICE_JOYSTICK:
+		case ID_PC8801_DEVICE_MOUSE:
+		case ID_PC8801_DEVICE_JOYMOUSE:
+			config.device_type = LOWORD(wParam) - ID_PC8801_DEVICE_JOYSTICK;
+			break;
+#endif
 #if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
 		case ID_PC9801_CPU_CLOCK_HIGH:
 			config.cpu_clock_low = false;
@@ -1320,7 +1335,17 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		if(config.boot_mode >= 0 && config.boot_mode < 4) {
 			CheckMenuRadioItem(hMenu, ID_PC8801_MODE_V1S, ID_PC8801_MODE_N, ID_PC8801_MODE_V1S + config.boot_mode, MF_BYCOMMAND);
 		}
-		if(config.device_type >= 0 && config.boot_mode < 3) {
+		if(config.device_type >= 0 && config.device_type < 3) {
+//			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_JOYMOUSE, ID_PC8801_DEVICE_JOYSTICK + config.boot_mode, MF_BYCOMMAND);
+			// joymouse is not supported yet...
+			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_MOUSE, ID_PC8801_DEVICE_JOYSTICK + config.device_type, MF_BYCOMMAND);
+		}
+#endif
+#ifdef _PC8001SR
+		if(config.boot_mode >= 0 && config.boot_mode < 3) {
+			CheckMenuRadioItem(hMenu, ID_PC8001_MODE_V1, ID_PC8001_MODE_N, ID_PC8001_MODE_V1 + config.boot_mode, MF_BYCOMMAND);
+		}
+		if(config.device_type >= 0 && config.device_type < 3) {
 //			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_JOYMOUSE, ID_PC8801_DEVICE_JOYSTICK + config.boot_mode, MF_BYCOMMAND);
 			// joymouse is not supported yet...
 			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_MOUSE, ID_PC8801_DEVICE_JOYSTICK + config.device_type, MF_BYCOMMAND);
@@ -1605,7 +1630,7 @@ void open_cart_dialog(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#ifdef _X1TWIN
+#if defined(_PCENGINE) || defined(_X1TWIN)
 		_T("Supported Files (*.pce)\0*.pce\0All Files (*.*)\0*.*\0\0"),
 		_T("HuCARD"),
 #else

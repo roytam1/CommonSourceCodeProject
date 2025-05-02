@@ -59,7 +59,7 @@ private:
 	bool irq_masked, drq_masked;
 	
 	uint8* bufptr;
-	uint8 buffer[0x4000];
+	uint8 buffer[0x8000];
 	int count;
 	int event_phase;
 	int phase_id, drq_id, lost_id, result7_id, seek_id[4];

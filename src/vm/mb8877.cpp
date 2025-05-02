@@ -753,7 +753,14 @@ void MB8877::cmd_readtrack()
 //	status = FDC_ST_DRQ | FDC_ST_BUSY;
 	status = FDC_ST_BUSY;
 	
-	make_track();
+	if(!make_track()) {
+		// create dummy track
+		for(int i = 0; i < 0x1800; i++) {
+			disk[drvreg]->track[i] = rand();
+		}
+		disk[drvreg]->track_size = 0x1800;
+	}
+	fdc[drvreg].index = 0;
 	
 	int time = GET_SEARCH_TIME;
 	REGISTER_EVENT(EVENT_SEARCH, time);

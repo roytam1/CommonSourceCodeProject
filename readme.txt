@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								2/16/2012
+								12/29/2012
 
 --- What's this ?
 
@@ -38,6 +38,7 @@ This archive includes the all source codes of emulators listed below:
 	eMAP-1010	SEIKO MAP-1010
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A
 	eN5200		NEC N5200
+	ePC-8001mkIISR	NEC PC-8001mkIISR
 	ePC-8201	NEC PC-8201/PC-8201A
 	ePC-8801MA	NEC PC-8801MA
 	ePC-9801	NEC PC-9801
@@ -46,6 +47,7 @@ This archive includes the all source codes of emulators listed below:
 	ePC-98DO	NEC PC-98DO
 	ePC-98LT	NEC PC-98LT
 	ePC-100		NEC PC-100
+	ePC-ENGINE	NEC PC-ENGINE / SuperGrafx
 	ePHC-20		SANYO PHC-20
 	ePHC-25		SANYO PHC-25
 	ePV-1000	CASIO PV-1000
@@ -79,10 +81,12 @@ under the GNU GENERAL PUBLIC LICENSE.
 	MESS formats/dsk_dsk.c for CPDRead floppy disk image decorder
 - vm/hd63484.*
 	MAME HD63484 core
-- vm/huc6260.*
-	Ootake CPU core
+- vm/huc6280.*
+	MESS huc6280 core
 - vm/i86.*
 	MAME i86 core
+- vm/i286.*
+	MAME i286 core
 - vm/i386.*
 	MAME i386 core
 - vm/i8259.*
@@ -139,6 +143,10 @@ under the GNU GENERAL PUBLIC LICENSE.
 	X millenium
 - vm/pc9801/pc88.*
 	M88 and MESS PC-8801 driver
+- vm/x1/pce.*
+	Ootake (joypad)
+	xpce (psg)
+	MESS (vdc/vce/vpc)
 - vm/phc25/*
 	PHC-25 emulator by Mr.Tago
 - vm/pv1000/*
@@ -156,9 +164,6 @@ under the GNU GENERAL PUBLIC LICENSE.
 	x07_emul by Mr.Jacques Brigaud
 - vm/x1/*
 	Many advices by Mr Y.S.
-- vm/x1/pce.*
-	Ootake (Joypad and Timer)
-	xpce (PSG and VDC)
 - vm/x1/sub.*
 	X millenium T-tune
 - vm/x1/display.*

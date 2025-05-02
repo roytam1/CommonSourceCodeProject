@@ -20,7 +20,7 @@ class JOYSTICK : public DEVICE
 private:
 	uint32 mode;
 	int full_auto;
-	uint8* joy_stat;
+	uint32* joy_stat;
 public:
 	JOYSTICK(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~JOYSTICK() {}

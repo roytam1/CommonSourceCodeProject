@@ -27,7 +27,7 @@
 
 // d88 constant
 #define DISK_BUFFER_SIZE	0x180000	// 1.5MB
-#define TRACK_BUFFER_SIZE	0x40000		// 256KB
+#define TRACK_BUFFER_SIZE	0x8000		// 32KB
 
 // teledisk decoder constant
 #define STRING_BUFFER_SIZE	4096
@@ -155,6 +155,7 @@ public:
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];
 	int track_size;
+	int track_offset;
 	int sector_num;
 	
 	// sector

@@ -23,6 +23,14 @@ void EMU::initialize_input()
 	
 	// initialize joysticks
 	joy_num = joyGetNumDevs();
+	for(int i = 0; i < joy_num && i < 2; i++) {
+		JOYCAPS joycaps;
+		if(joyGetDevCaps(i, &joycaps, sizeof(joycaps)) == JOYERR_NOERROR) {
+			joy_mask[i] = (1 << joycaps.wNumButtons) - 1;
+		} else {
+			joy_mask[i] = 0x0f; // 4buttons
+		}
+	}
 	
 	// mouse emulation is disenabled
 	mouse_enabled = false;
@@ -137,16 +145,15 @@ void EMU::update_input()
 	// update joystick status
 	memset(joy_status, 0, sizeof(joy_status));
 	for(int i = 0; i < joy_num && i < 2; i++) {
-		JOYINFO joyinfo;
-		if(joyGetPos(i, &joyinfo) == JOYERR_NOERROR) {
-			if(joyinfo.wYpos < 0x3fff) joy_status[i] |= 0x01;	// up
-			if(joyinfo.wYpos > 0xbfff) joy_status[i] |= 0x02;	// down
-			if(joyinfo.wXpos < 0x3fff) joy_status[i] |= 0x04;	// left
-			if(joyinfo.wXpos > 0xbfff) joy_status[i] |= 0x08;	// right
-			if(joyinfo.wButtons & JOY_BUTTON1) joy_status[i] |= 0x10;
-			if(joyinfo.wButtons & JOY_BUTTON2) joy_status[i] |= 0x20;
-			if(joyinfo.wButtons & JOY_BUTTON3) joy_status[i] |= 0x40;
-			if(joyinfo.wButtons & JOY_BUTTON4) joy_status[i] |= 0x80;
+		JOYINFOEX joyinfo;
+		joyinfo.dwSize = sizeof(JOYINFOEX);
+		joyinfo.dwFlags = JOY_RETURNALL;
+		if(joyGetPosEx(i, &joyinfo) == JOYERR_NOERROR) {
+			if(joyinfo.dwYpos < 0x3fff) joy_status[i] |= 0x01;	// up
+			if(joyinfo.dwYpos > 0xbfff) joy_status[i] |= 0x02;	// down
+			if(joyinfo.dwXpos < 0x3fff) joy_status[i] |= 0x04;	// left
+			if(joyinfo.dwXpos > 0xbfff) joy_status[i] |= 0x08;	// right
+			joy_status[i] |= ((joyinfo.dwButtons & joy_mask[i]) << 4);
 		}
 	}
 #ifdef USE_KEY_TO_JOY

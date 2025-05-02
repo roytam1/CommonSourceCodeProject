@@ -19,7 +19,7 @@ class KEYBOARD : public DEVICE
 {
 private:
 	uint8* key_stat;
-	uint8* joy_stat;
+	uint32* joy_stat;
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~KEYBOARD() {}

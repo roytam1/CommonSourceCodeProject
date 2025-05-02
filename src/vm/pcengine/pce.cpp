@@ -1,10 +1,11 @@
 /*
+	NEC Home Electronics PC-Engine Emulator 'ePC-Engine'
 	SHARP X1twin Emulator 'eX1twin'
 	Skelton for retropc emulator
 
 	Origin : Ootake (joypad)
 	       : xpce (psg)
-	       : MESS (vdc)
+	       : MESS (vdc/vce/vpc)
 	Author : Takeda.Toshiya
 	Date   : 2009.03.11-
 
@@ -74,6 +75,44 @@ void PCE::initialize()
 	
 	// register event
 	register_vline_event(this);
+	
+#ifdef SUPPORT_BACKUP_RAM
+	static const uint8 image[8] = {0x48, 0x55, 0x42, 0x4d, 0x00, 0x88, 0x10, 0x80};
+	memset(backup, 0, sizeof(backup));
+	memcpy(backup, image, sizeof(image));
+	
+	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+	emu->application_path(app_path);
+	FILEIO* fio = new FILEIO();
+	
+	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(backup, sizeof(backup), 1);
+		fio->Fclose();
+	}
+	delete fio;
+	
+	crc32 = emu->getcrc32(backup, sizeof(backup));
+#endif
+	running = false;
+}
+
+void PCE::release()
+{
+#ifdef SUPPORT_BACKUP_RAM
+	if(crc32 != emu->getcrc32(backup, sizeof(backup))) {
+		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+		emu->application_path(app_path);
+		FILEIO* fio = new FILEIO();
+		
+		_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
+		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(backup, sizeof(backup), 1);
+			fio->Fclose();
+		}
+		delete fio;
+	}
+#endif
 }
 
 void PCE::reset()
@@ -87,11 +126,17 @@ void PCE::reset()
 	vdc_reset();
 	psg_reset();
 	joy_reset();
+	
+	prev_width = -1;
 }
 
 void PCE::event_vline(int v, int clock)
 {
+#ifdef SUPPORT_SUPER_GFX
+	sgx_interrupt();
+#else
 	pce_interrupt();
+#endif
 }
 
 void PCE::write_data8(uint32 addr, uint32 data)
@@ -107,21 +152,64 @@ void PCE::write_data8(uint32 addr, uint32 data)
 		// populous
 		cart[addr & 0xfffff] = data;
 		return;
+#ifdef SUPPORT_BACKUP_RAM
 	case 0xf7:
-//		if(ofs < 0x800) {
-//			backup[ofs] = data;
-//		}
+		if(running) {
+			backup[ofs] = data;
+		}
 		return;
+#endif
+#ifdef SUPPORT_SUPER_GFX
 	case 0xf8:
-		ram[ofs] = data;
-		return;
 	case 0xf9:
 	case 0xfa:
 	case 0xfb:
-//		ram[addr & 0x7fff] = data;
+		ram[addr & 0x7fff] = data;
 		return;
+#else
+	case 0xf8:
+		ram[ofs] = data;
+		return;
+#endif
 	case 0xff:
-		write_io8(addr, data);
+		switch(addr & 0x1c00) {
+		case 0x0000:	// vdc
+#ifdef SUPPORT_SUPER_GFX
+			switch(addr & 0x18) {
+			case 0x00:
+				vdc_w(0, addr, data);
+				break;
+			case 0x08:
+				vpc_w(addr, data);
+				break;
+			case 0x10:
+				vdc_w(1, addr, data);
+				break;
+			}
+#else
+			vdc_w(0, addr, data);
+#endif
+			break;
+		case 0x0400:	// vce
+			vce_w(addr, data);
+			break;
+		case 0x0800:	// psg
+			buffer = data;
+			psg_write(addr, data);
+			break;
+		case 0x0c00:	// timer
+			buffer = data;
+			d_cpu->timer_w(addr, data);
+			break;
+		case 0x1000:	// joypad
+			buffer = data;
+			joy_write(addr, data);
+			break;
+		case 0x1400:	// interrupt control
+			buffer = data;
+			d_cpu->irq_status_w(addr, data);
+			break;
+		}
 		return;
 	}
 	// bank switch for sf2d
@@ -142,89 +230,98 @@ uint32 PCE::read_data8(uint32 addr)
 		return cart[bank | (addr & 0x7ffff)];
 	}
 	switch(mpr) {
-//	case 0xf7:
-//		if(ofs < 0x800) {
-//			return backup[ofs];
-//		}
-//		return 0xff;
+#ifdef SUPPORT_BACKUP_RAM
+	case 0xf7:
+		return backup[ofs];
+#endif
+#ifdef SUPPORT_SUPER_GFX
+	case 0xf8:
+	case 0xf9:
+	case 0xfa:
+	case 0xfb:
+		return ram[addr & 0x7fff];
+#else
 	case 0xf8:
 		return ram[ofs];
-//	case 0xf9:
-//	case 0xfa:
-//	case 0xfb:
-//		return ram[addr & 0x7fff];
+#endif
 	case 0xff:
-		return read_io8(addr);
+		switch (addr & 0x1c00) {
+		case 0x0000: // vdc
+#ifdef SUPPORT_SUPER_GFX
+			switch(addr & 0x18) {
+			case 0x00:
+				return vdc_r(0, addr);
+			case 0x08:
+				return vpc_r(addr);
+			case 0x10:
+				return vdc_r(1, addr);
+			}
+			return 0xff;
+#else
+			return vdc_r(0, addr);
+#endif
+		case 0x0400: // vce
+			return vce_r(addr);
+		case 0x0800: // psg
+//			return psg_read(addr);
+			return buffer;
+		case 0x0c00: // timer
+			buffer = (buffer & 0x80) | (d_cpu->timer_r(addr) & 0x7f);
+			return buffer;
+		case 0x1000: // joypad
+			buffer = (buffer & 0xb0) | (joy_read(addr) & 0x0f);
+			return buffer;
+		case 0x1400: // interrupt control
+			if(addr & 2) {
+				buffer = (buffer & 0xf8) | (d_cpu->irq_status_r(addr) & 0x07);
+			}
+			return buffer;
+		}
+		break;
 	}
 	return 0xff;
 }
 
 void PCE::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0x1c00) {
-	case 0x0000:	// vdc
-		vdc_w(addr, data);
-		break;
-	case 0x0400:	// vce
-		vce_w(addr, data);
-		break;
-	case 0x0800:	// psg
-		buffer = data;
-		psg_write(addr, data);
-		break;
-	case 0x0c00:	// timer
-		buffer = data;
-		d_cpu->timer_w(addr, data);
-		break;
-	case 0x1000:	// joypad
-		buffer = data;
-		joy_write(addr, data);
-		break;
-	case 0x1400:	// interrupt control
-		buffer = data;
-		d_cpu->irq_status_w(addr, data);
-		break;
-	}
+#ifdef SUPPORT_SUPER_GFX
+	sgx_vdc_w(addr, data);
+#else
+	vdc_w(0, addr, data);
+#endif
 }
 
 uint32 PCE::read_io8(uint32 addr)
 {
-	switch (addr & 0x1c00) {
-	case 0x0000: // vdc
-		return vdc_r(addr);
-	case 0x0400: // vce
-		return vce_r(addr);
-	case 0x0800: // psg
-//		return psg_read(addr);
-		return buffer;
-	case 0x0c00: // timer
-		buffer = (buffer & 0x80) | (d_cpu->timer_r(addr) & 0x7f);
-		return buffer;
-	case 0x1000: // joypad
-		if(joy_nibble) {
-			joy_count = (joy_count + 1) & 15;
-		}
-		buffer = (buffer & 0xb0) | (joy_read(addr) & 0x0f);
-		return buffer;
-	case 0x1400: // interrupt control
-		if(addr & 2) {
-			buffer = (buffer & 0xf8) | (d_cpu->irq_status_r(addr) & 0x07);
-		}
-		return buffer;
-	}
-	return 0xff;
+#ifdef SUPPORT_SUPER_GFX
+	return sgx_vdc_r(addr);
+#else
+	return vdc_r(0, addr);
+#endif
 }
 
 void PCE::draw_screen()
 {
-	int dx = (SCREEN_WIDTH - vdc.physical_width) / 2;
-	int dy = (SCREEN_HEIGHT - VDC_LPF) / 2;
+	int dx = (SCREEN_WIDTH - vdc[0].physical_width) / 2, sx = 0;
+	int dy = (SCREEN_HEIGHT - 238) / 2;
 	
-	for(int y = 0; y < VDC_LPF; y++, dy++) {
-		scrntype* src = &vce.bmp[y][86];
-		scrntype* dst = emu->screen_buffer(dy) + dx;
-		for(int x = 0; x < vdc.physical_width; x++) {
-			dst[x] = src[x];
+	if(dx < 0) {
+		sx = -dx;
+		dx = 0;
+	}
+#ifndef _X1TWIN
+	if(prev_width != vdc[0].physical_width) {
+		for(int y = 0; y < SCREEN_HEIGHT; y++) {
+			memset(emu->screen_buffer(y), 0, sizeof(scrntype) * SCREEN_WIDTH);
+		}
+		prev_width = vdc[0].physical_width;
+	}
+#endif
+	for(int y = 0; y < 238; y++, dy++) {
+		scrntype* src = &vce.bmp[y + 17][86];
+		scrntype* dst = emu->screen_buffer(dy);
+		for(int x = sx, x2 = dx; x < vdc[0].physical_width && x2 < SCREEN_WIDTH; x++, x2++) {
+			dst[x2] = src[x];
 		}
 	}
 }
@@ -243,6 +340,18 @@ void PCE::open_cart(_TCHAR* file_path)
 		fio->Fread(cart, size, 1);
 		fio->Fclose();
 		
+		if(size == 512 * 1024) {
+			bool overdump = true;
+			for(int i = 0x40000; i < 0x60000; i++) {
+				if(cart[i] != cart[i + 0x20000]) {
+					overdump = false;
+					break;
+				}
+			}
+			if(overdump) {
+				size = 384 * 1024;
+			}
+		}
 		if(size == 384 * 1024) {
 			memcpy(cart + 0x060000, cart + 0x040000, 0x020000);	/* Set up 060000 - 07FFFF mirror */
 			memcpy(cart + 0x080000, cart + 0x040000, 0x040000);	/* Set up 080000 - 0BFFFF region */
@@ -257,7 +366,8 @@ void PCE::open_cart(_TCHAR* file_path)
 			if (size <= 0x080000)
 				memcpy(cart + 0x080000, cart, 0x080000);
 		}
-		vm->pce_running = true;
+		joy_6btn  = (size == 0x280000 && emu->getcrc32(cart, size) == 0xd15cb6bb) | (size == 0x100000 && emu->getcrc32(cart, size) == 0xd6fc51ce);
+		running = true;
 	}
 	delete fio;
 }
@@ -265,7 +375,7 @@ void PCE::open_cart(_TCHAR* file_path)
 void PCE::close_cart()
 {
 	memset(cart, 0xff, sizeof(cart));
-	vm->pce_running = false;
+	running = false;
 }
 
 // vdc
@@ -280,7 +390,7 @@ void PCE::pce_interrupt()
 		draw_overscan_line(vce.current_bitmap_line );
 
 		/* Check if we need to draw more just the overscan color */
-		if ( vdc.current_segment == STATE_VDW )
+		if ( vdc[0].current_segment == STATE_VDW )
 		{
 			/* 0 - no sprite and background pixels drawn
 			   1 - background pixel drawn
@@ -292,15 +402,15 @@ void PCE::pce_interrupt()
 			/* clear our priority/sprite collision detection buffer. */
 			memset(drawn, 0, VDC_WPF);
 
-			vdc.y_scroll = ( vdc.current_segment_line == 0 ) ? vdc.vdc_data[BYR].w.l : ( vdc.y_scroll + 1 );
+			vdc[0].y_scroll = ( vdc[0].current_segment_line == 0 ) ? vdc[0].vdc_data[BYR].w.l : ( vdc[0].y_scroll + 1 );
 
 			/* Draw VDC #0 background layer */
-			pce_refresh_line(vdc.current_segment_line, drawn, line_buffer);
+			pce_refresh_line(0, vdc[0].current_segment_line, 0, drawn, line_buffer);
 
 			/* Draw VDC #0 sprite layer */
-			if(vdc.vdc_data[CR].w.l & CR_SB)
+			if(vdc[0].vdc_data[CR].w.l & CR_SB)
 			{
-				pce_refresh_sprites(vdc.current_segment_line, drawn, line_buffer);
+				pce_refresh_sprites(0, vdc[0].current_segment_line, drawn, line_buffer);
 			}
 		}
 	}
@@ -312,25 +422,179 @@ void PCE::pce_interrupt()
 
 	/* bump current scanline */
 	vce.current_bitmap_line = ( vce.current_bitmap_line + 1 ) % VDC_LPF;
-	vdc_advance_line();
+	vdc_advance_line(0);
 }
 
-void PCE::vdc_advance_line()
+void PCE::sgx_interrupt()
+{
+	/* Draw the last scanline */
+	if ( vce.current_bitmap_line >= 14 && vce.current_bitmap_line < 14 + 242 )
+	{
+		/* We are in the active display area */
+		/* First fill the line with the overscan color */
+		draw_sgx_overscan_line(vce.current_bitmap_line );
+
+		/* Check if we need to draw more just the overscan color */
+		if ( vdc[0].current_segment == STATE_VDW )
+		{
+			/* 0 - no sprite and background pixels drawn
+			   1 - background pixel drawn
+			   otherwise is 2 + sprite# */
+			uint8 drawn[2][512];
+			scrntype *line_buffer;
+			scrntype temp_buffer[2][512];
+			int i;
+
+			/* clear our priority/sprite collision detection buffer. */
+			memset( drawn, 0, sizeof(drawn) );
+
+			vdc[0].y_scroll = ( vdc[0].current_segment_line == 0 ) ? vdc[0].vdc_data[BYR].w.l : ( vdc[0].y_scroll + 1 );
+			vdc[1].y_scroll = ( vdc[1].current_segment_line == 0 ) ? vdc[1].vdc_data[BYR].w.l : ( vdc[1].y_scroll + 1 );
+
+			/* Draw VDC #0 background layer */
+			pce_refresh_line( 0, vdc[0].current_segment_line, 0, drawn[0], temp_buffer[0]);
+
+			/* Draw VDC #0 sprite layer */
+			if(vdc[0].vdc_data[CR].w.l & CR_SB)
+			{
+				pce_refresh_sprites(0, vdc[0].current_segment_line, drawn[0], temp_buffer[0]);
+			}
+
+			/* Draw VDC #1 background layer */
+			pce_refresh_line( 1, vdc[1].current_segment_line, 1, drawn[1], temp_buffer[1]);
+
+			/* Draw VDC #1 sprite layer */
+			if ( vdc[1].vdc_data[CR].w.l & CR_SB )
+			{
+				pce_refresh_sprites(1, vdc[1].current_segment_line, drawn[1], temp_buffer[1]);
+			}
+
+			line_buffer = &vce.bmp[vce.current_bitmap_line][86];
+			/* Combine the output of both VDCs */
+			for( i = 0; i < 512; i++ )
+			{
+				int cur_prio = vpc.prio_map[i];
+
+				if ( vpc.vpc_prio[cur_prio].vdc0_enabled )
+				{
+					if ( vpc.vpc_prio[cur_prio].vdc1_enabled )
+					{
+						switch( vpc.vpc_prio[cur_prio].prio )
+						{
+						case 0:	/* BG1 SP1 BG0 SP0 */
+							if ( drawn[0][i] )
+							{
+								line_buffer[i] = temp_buffer[0][i];
+							}
+							else if ( drawn[1][i] )
+							{
+								line_buffer[i] = temp_buffer[1][i];
+							}
+							break;
+						case 1:	/* BG1 BG0 SP1 SP0 */
+							if ( drawn[0][i] )
+							{
+								if ( drawn[0][i] > 1 )
+								{
+									line_buffer[i] = temp_buffer[0][i];
+								}
+								else
+								{
+									if ( drawn[1][i] > 1 )
+									{
+										line_buffer[i] = temp_buffer[1][i];
+									}
+									else
+									{
+										line_buffer[i] = temp_buffer[0][i];
+									}
+								}
+							}
+							else if ( drawn[1][i] )
+							{
+								line_buffer[i] = temp_buffer[1][i];
+							}
+							break;
+						case 2:	/* BG1 + SP1 => SP1
+							   BG0 + SP1 => BG0
+							   BG0 + BG1 => BG0
+							   BG0 + SP0 => SP0
+							   BG1 + SP0 => BG1
+							   SP0 + SP1 => SP0 */
+							if ( drawn[0][i] )
+							{
+								if ( drawn[0][i] > 1 )
+								{
+									if ( drawn[1][i] == 1 )
+									{
+										line_buffer[i] = temp_buffer[1][i];
+									}
+									else
+									{
+										line_buffer[i] = temp_buffer[0][i];
+									}
+								}
+								else
+								{
+									line_buffer[i] = temp_buffer[0][i];
+								}
+							}
+							else if ( drawn[1][i] )
+							{
+								line_buffer[i] = temp_buffer[1][i];
+							}
+							break;
+						}
+					}
+					else
+					{
+						if ( drawn[0][i] )
+						{
+							line_buffer[i] = temp_buffer[0][i];
+						}
+					}
+				}
+				else
+				{
+					if ( vpc.vpc_prio[cur_prio].vdc1_enabled )
+					{
+						if ( drawn[1][i] )
+						{
+							line_buffer[i] = temp_buffer[1][i];
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		/* We are in one of the blanking areas */
+		draw_black_line(vce.current_bitmap_line );
+	}
+
+	/* bump current scanline */
+	vce.current_bitmap_line = ( vce.current_bitmap_line + 1 ) % VDC_LPF;
+	vdc_advance_line(0);
+	vdc_advance_line(1);
+}
+
+void PCE::vdc_advance_line(int which)
 {
 	int ret = 0;
 
-	vdc.curline += 1;
-	vdc.current_segment_line += 1;
-	vdc.raster_count += 1;
+	vdc[which].curline += 1;
+	vdc[which].current_segment_line += 1;
+	vdc[which].raster_count += 1;
 
-	if ( vdc.satb_countdown )
+	if ( vdc[which].satb_countdown )
 	{
-		vdc.satb_countdown -= 1;
-		if ( vdc.satb_countdown == 0 )
+		vdc[which].satb_countdown -= 1;
+		if ( vdc[which].satb_countdown == 0 )
 		{
-			if ( vdc.vdc_data[DCR].w.l & DCR_DSC )
+			if ( vdc[which].vdc_data[DCR].w.l & DCR_DSC )
 			{
-				vdc.status |= VDC_DS;	/* set satb done flag */
+				vdc[which].status |= VDC_DS;	/* set satb done flag */
 				ret = 1;
 			}
 		}
@@ -338,101 +602,101 @@ void PCE::vdc_advance_line()
 
 	if ( vce.current_bitmap_line == 0 )
 	{
-		vdc.current_segment = STATE_VSW;
-		vdc.current_segment_line = 0;
-		vdc.vblank_triggered = 0;
-		vdc.curline = 0;
+		vdc[which].current_segment = STATE_VSW;
+		vdc[which].current_segment_line = 0;
+		vdc[which].vblank_triggered = 0;
+		vdc[which].curline = 0;
 	}
 
-	if ( STATE_VSW == vdc.current_segment && vdc.current_segment_line >= ( vdc.vdc_data[VPR].b.l & 0x1F ) )
+	if ( STATE_VSW == vdc[which].current_segment && vdc[which].current_segment_line >= ( vdc[which].vdc_data[VPR].b.l & 0x1F ) )
 	{
-		vdc.current_segment = STATE_VDS;
-		vdc.current_segment_line = 0;
+		vdc[which].current_segment = STATE_VDS;
+		vdc[which].current_segment_line = 0;
 	}
 
-	if ( STATE_VDS == vdc.current_segment && vdc.current_segment_line >= vdc.vdc_data[VPR].b.h )
+	if ( STATE_VDS == vdc[which].current_segment && vdc[which].current_segment_line >= vdc[which].vdc_data[VPR].b.h )
 	{
-		vdc.current_segment = STATE_VDW;
-		vdc.current_segment_line = 0;
-		vdc.raster_count = 0x40;
+		vdc[which].current_segment = STATE_VDW;
+		vdc[which].current_segment_line = 0;
+		vdc[which].raster_count = 0x40;
 	}
 
-	if ( STATE_VDW == vdc.current_segment && vdc.current_segment_line > ( vdc.vdc_data[VDW].w.l & 0x01FF ) )
+	if ( STATE_VDW == vdc[which].current_segment && vdc[which].current_segment_line > ( vdc[which].vdc_data[VDW].w.l & 0x01FF ) )
 	{
-		vdc.current_segment = STATE_VCR;
-		vdc.current_segment_line = 0;
+		vdc[which].current_segment = STATE_VCR;
+		vdc[which].current_segment_line = 0;
 
 		/* Generate VBlank interrupt, sprite DMA */
-		vdc.vblank_triggered = 1;
-		if ( vdc.vdc_data[CR].w.l & CR_VR )
+		vdc[which].vblank_triggered = 1;
+		if ( vdc[which].vdc_data[CR].w.l & CR_VR )
 		{
-			vdc.status |= VDC_VD;
+			vdc[which].status |= VDC_VD;
 			ret = 1;
 		}
 
 		/* do VRAM > SATB DMA if the enable bit is set or the DVSSR reg. was written to */
-		if( ( vdc.vdc_data[DCR].w.l & DCR_DSR ) || vdc.dvssr_write )
+		if( ( vdc[which].vdc_data[DCR].w.l & DCR_DSR ) || vdc[which].dvssr_write )
 		{
 			int i;
 
-			vdc.dvssr_write = 0;
+			vdc[which].dvssr_write = 0;
 
 			for( i = 0; i < 256; i++ )
 			{
-				vdc.sprite_ram[i] = ( vdc.vram[ ( vdc.vdc_data[DVSSR].w.l << 1 ) + i * 2 + 1 ] << 8 ) | vdc.vram[ ( vdc.vdc_data[DVSSR].w.l << 1 ) + i * 2 ];
+				vdc[which].sprite_ram[i] = ( vdc[which].vram[ ( vdc[which].vdc_data[DVSSR].w.l << 1 ) + i * 2 + 1 ] << 8 ) | vdc[which].vram[ ( vdc[which].vdc_data[DVSSR].w.l << 1 ) + i * 2 ];
 			}
 
 			/* generate interrupt if needed */
-			if ( vdc.vdc_data[DCR].w.l & DCR_DSC )
+			if ( vdc[which].vdc_data[DCR].w.l & DCR_DSC )
 			{
-				vdc.satb_countdown = 4;
+				vdc[which].satb_countdown = 4;
 			}
 		}
 	}
 
-	if ( STATE_VCR == vdc.current_segment )
+	if ( STATE_VCR == vdc[which].current_segment )
 	{
-		if ( vdc.current_segment_line >= 3 && vdc.current_segment_line >= vdc.vdc_data[VCR].b.l )
+		if ( vdc[which].current_segment_line >= 3 && vdc[which].current_segment_line >= vdc[which].vdc_data[VCR].b.l )
 		{
-			vdc.current_segment = STATE_VSW;
-			vdc.current_segment_line = 0;
-			vdc.curline = 0;
+			vdc[which].current_segment = STATE_VSW;
+			vdc[which].current_segment_line = 0;
+			vdc[which].curline = 0;
 		}
 	}
 
 	/* generate interrupt on line compare if necessary */
-	if ( vdc.raster_count == vdc.vdc_data[RCR].w.l && vdc.vdc_data[CR].w.l & CR_RC )
+	if ( vdc[which].raster_count == vdc[which].vdc_data[RCR].w.l && vdc[which].vdc_data[CR].w.l & CR_RC )
 	{
-		vdc.status |= VDC_RR;
+		vdc[which].status |= VDC_RR;
 		ret = 1;
 	}
 
 	/* handle frame events */
-	if(vdc.curline == 261 && ! vdc.vblank_triggered )
+	if(vdc[which].curline == 261 && ! vdc[which].vblank_triggered )
 	{
 
-		vdc.vblank_triggered = 1;
-		if(vdc.vdc_data[CR].w.l & CR_VR)
+		vdc[which].vblank_triggered = 1;
+		if(vdc[which].vdc_data[CR].w.l & CR_VR)
 		{	/* generate IRQ1 if enabled */
-			vdc.status |= VDC_VD;	/* set vblank flag */
+			vdc[which].status |= VDC_VD;	/* set vblank flag */
 			ret = 1;
 		}
 
 		/* do VRAM > SATB DMA if the enable bit is set or the DVSSR reg. was written to */
-		if ( ( vdc.vdc_data[DCR].w.l & DCR_DSR ) || vdc.dvssr_write )
+		if ( ( vdc[which].vdc_data[DCR].w.l & DCR_DSR ) || vdc[which].dvssr_write )
 		{
 			int i;
 
-			vdc.dvssr_write = 0;
+			vdc[which].dvssr_write = 0;
 			for( i = 0; i < 256; i++ )
 			{
-				vdc.sprite_ram[i] = ( vdc.vram[ ( vdc.vdc_data[DVSSR].w.l << 1 ) + i * 2 + 1 ] << 8 ) | vdc.vram[ ( vdc.vdc_data[DVSSR].w.l << 1 ) + i * 2 ];
+				vdc[which].sprite_ram[i] = ( vdc[which].vram[ ( vdc[which].vdc_data[DVSSR].w.l << 1 ) + i * 2 + 1 ] << 8 ) | vdc[which].vram[ ( vdc[which].vdc_data[DVSSR].w.l << 1 ) + i * 2 ];
 			}
 
 			/* generate interrupt if needed */
-			if(vdc.vdc_data[DCR].w.l & DCR_DSC)
+			if(vdc[which].vdc_data[DCR].w.l & DCR_DSC)
 			{
-				vdc.satb_countdown = 4;
+				vdc[which].satb_countdown = 4;
 			}
 		}
 	}
@@ -446,8 +710,10 @@ void PCE::vdc_reset()
 	/* clear context */
 	memset(&vdc, 0, sizeof(vdc));
 	memset(&vce, 0, sizeof(vce));
+	memset(&vpc, 0, sizeof(vpc));
 
-	vdc.inc = 1;
+	vdc[0].inc = 1;
+	vdc[1].inc = 1;
 
 	/* initialize palette */
 	int i;
@@ -461,6 +727,12 @@ void PCE::vdc_reset()
 		vce.palette[i] = RGB_COLOR(r, g, b);
 		vce.palette[512+i] = RGB_COLOR(y, y, y);
 	}
+
+	vpc_w( 0, 0x11 );
+	vpc_w( 1, 0x11 );
+	vpc.window1.w.l = 0;
+	vpc.window2.w.l = 0;
+	vpc.vdc_select = 0;
 }
 
 void PCE::draw_black_line(int line)
@@ -488,7 +760,21 @@ void PCE::draw_overscan_line(int line)
 		line_buffer[i] = color_base[vce.vce_data[0x100].w.l];
 }
 
-void PCE::vram_write(uint32 offset, uint8 data)
+void PCE::draw_sgx_overscan_line(int line)
+{
+	int i;
+
+	/* Are we in greyscale mode or in color mode? */
+	scrntype *color_base = vce.palette + (vce.vce_control & 0x80 ? 512 : 0);
+
+	/* our line buffer */
+	scrntype *line_buffer = vce.bmp[line];
+
+	for ( i = 0; i < VDC_WPF; i++ )
+		line_buffer[i] = color_base[vce.vce_data[0].w.l];
+}
+
+void PCE::vram_write(int which, uint32 offset, uint8 data)
 {
 	if(offset & 0x10000)
 	{
@@ -496,54 +782,54 @@ void PCE::vram_write(uint32 offset, uint8 data)
 	}
 	else
 	{
-		vdc.vram[offset] = data;
+		vdc[which].vram[offset] = data;
 	}
 }
 
-uint8 PCE::vram_read(uint32 offset)
+uint8 PCE::vram_read(int which, uint32 offset)
 {
 	uint8 temp;
 
 	if(offset & 0x10000)
 	{
-		temp = vdc.vram[offset & 0xFFFF];
+		temp = vdc[which].vram[offset & 0xFFFF];
 	}
 	else
 	{
-		temp = vdc.vram[offset];
+		temp = vdc[which].vram[offset];
 	}
 
 	return temp;
 }
 
-void PCE::vdc_w(uint16 offset, uint8 data)
+void PCE::vdc_w(int which, uint16 offset, uint8 data)
 {
 	switch(offset&3)
 	{
 		case 0x00:	/* VDC register select */
-			vdc.vdc_register = (data & 0x1F);
+			vdc[which].vdc_register = (data & 0x1F);
 			break;
 
 		case 0x02:	/* VDC data (LSB) */
-			vdc.vdc_data[vdc.vdc_register].b.l = data;
-			switch(vdc.vdc_register)
+			vdc[which].vdc_data[vdc[which].vdc_register].b.l = data;
+			switch(vdc[which].vdc_register)
 			{
 				case VxR:	/* LSB of data to write to VRAM */
-					vdc.vdc_latch = data;
+					vdc[which].vdc_latch = data;
 					break;
 
 				case BYR:
-					vdc.y_scroll=vdc.vdc_data[BYR].w.l;
+					vdc[which].y_scroll=vdc[which].vdc_data[BYR].w.l;
 					break;
 
 				case HDR:
-					vdc.physical_width = ((data & 0x003F) + 1) << 3;
+					vdc[which].physical_width = ((data & 0x003F) + 1) << 3;
 					break;
 
 				case VDW:
-					vdc.physical_height &= 0xFF00;
-					vdc.physical_height |= (data & 0xFF);
-					vdc.physical_height &= 0x01FF;
+					vdc[which].physical_height &= 0xFF00;
+					vdc[which].physical_height |= (data & 0xFF);
+					vdc[which].physical_height &= 0x01FF;
 					break;
 
 				case LENR:
@@ -556,39 +842,39 @@ void PCE::vdc_w(uint16 offset, uint8 data)
 			break;
 
 		case 0x03:	/* VDC data (MSB) */
-			vdc.vdc_data[vdc.vdc_register].b.h = data;
-			switch(vdc.vdc_register)
+			vdc[which].vdc_data[vdc[which].vdc_register].b.h = data;
+			switch(vdc[which].vdc_register)
 			{
 				case VxR:	/* MSB of data to write to VRAM */
-					vram_write(vdc.vdc_data[MAWR].w.l*2+0, vdc.vdc_latch);
-					vram_write(vdc.vdc_data[MAWR].w.l*2+1, data);
-					vdc.vdc_data[MAWR].w.l += vdc.inc;
+					vram_write(which, vdc[which].vdc_data[MAWR].w.l*2+0, vdc[which].vdc_latch);
+					vram_write(which, vdc[which].vdc_data[MAWR].w.l*2+1, data);
+					vdc[which].vdc_data[MAWR].w.l += vdc[which].inc;
 					break;
 
 				case CR:
 					{
 						static const unsigned char inctab[] = {1, 32, 64, 128};
-						vdc.inc = inctab[(data >> 3) & 3];
+						vdc[which].inc = inctab[(data >> 3) & 3];
 					}
 					break;
 
 				case VDW:
-					vdc.physical_height &= 0x00FF;
-					vdc.physical_height |= (data << 8);
-					vdc.physical_height &= 0x01FF;
+					vdc[which].physical_height &= 0x00FF;
+					vdc[which].physical_height |= (data << 8);
+					vdc[which].physical_height &= 0x01FF;
 					break;
 
 				case DVSSR:
 					/* Force VRAM <> SATB DMA for this frame */
-					vdc.dvssr_write = 1;
+					vdc[which].dvssr_write = 1;
 					break;
 
 				case BYR:
-					vdc.y_scroll=vdc.vdc_data[BYR].w.l;
+					vdc[which].y_scroll=vdc[which].vdc_data[BYR].w.l;
 					break;
 
 				case LENR:
-					vdc_do_dma();
+					vdc_do_dma(which);
 					break;
 				case SOUR:
 					break;
@@ -599,27 +885,45 @@ void PCE::vdc_w(uint16 offset, uint8 data)
 	}
 }
 
-uint8 PCE::vdc_r(uint16 offset)
+uint8 PCE::vdc_r(int which, uint16 offset)
 {
 	int temp = 0;
 	switch(offset & 3)
 	{
 		case 0x00:
-			temp = vdc.status;
-			vdc.status &= ~(VDC_VD | VDC_DV | VDC_DS | VDC_RR | VDC_OR | VDC_CR);
+			temp = vdc[which].status;
+			vdc[which].status &= ~(VDC_VD | VDC_DV | VDC_DS | VDC_RR | VDC_OR | VDC_CR);
 			d_cpu->write_signal(INPUT_LINE_IRQ1, CLEAR_LINE, 0);
 			break;
 
 		case 0x02:
-			temp = vram_read(vdc.vdc_data[MARR].w.l * 2 + 0);
+			temp = vram_read(which, vdc[which].vdc_data[MARR].w.l * 2 + 0);
 			break;
 
 		case 0x03:
-			temp = vram_read(vdc.vdc_data[MARR].w.l * 2 + 1);
-			if ( vdc.vdc_register == VxR )
+			temp = vram_read(which, vdc[which].vdc_data[MARR].w.l * 2 + 1);
+			if ( vdc[which].vdc_register == VxR )
 			{
-				vdc.vdc_data[MARR].w.l += vdc.inc;
+				vdc[which].vdc_data[MARR].w.l += vdc[which].inc;
 			}
+			break;
+	}
+	return (temp);
+}
+
+uint8 PCE::vce_r(uint16 offset)
+{
+	int temp = 0xFF;
+	switch(offset & 7)
+	{
+		case 0x04:	/* color table data (LSB) */
+			temp = vce.vce_data[vce.vce_address.w.l].b.l;
+			break;
+
+		case 0x05:	/* color table data (MSB) */
+			temp = vce.vce_data[vce.vce_address.w.l].b.h;
+			temp |= 0xFE;
+			vce.vce_address.w.l = (vce.vce_address.w.l + 1) & 0x01FF;
 			break;
 	}
 	return (temp);
@@ -656,35 +960,16 @@ void PCE::vce_w(uint16 offset, uint8 data)
 	}
 }
 
-uint8 PCE::vce_r(uint16 offset)
-{
-	int temp = 0xFF;
-	switch(offset & 7)
-	{
-		case 0x04:	/* color table data (LSB) */
-			temp = vce.vce_data[vce.vce_address.w.l].b.l;
-			break;
-
-		case 0x05:	/* color table data (MSB) */
-			temp = vce.vce_data[vce.vce_address.w.l].b.h;
-			temp |= 0xFE;
-			vce.vce_address.w.l = (vce.vce_address.w.l + 1) & 0x01FF;
-			break;
-	}
-	return (temp);
-}
-
-
-void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
+void PCE::pce_refresh_line(int which, int line, int external_input, uint8 *drawn, scrntype *line_buffer)
 {
 	static const int width_table[4] = {5, 6, 7, 7};
 
-	int scroll_y = ( vdc.y_scroll & 0x01FF);
-	int scroll_x = (vdc.vdc_data[BXR].w.l & 0x03FF);
+	int scroll_y = ( vdc[which].y_scroll & 0x01FF);
+	int scroll_x = (vdc[which].vdc_data[BXR].w.l & 0x03FF);
 	int nt_index;
 
 	/* is virtual map 32 or 64 characters tall ? (256 or 512 pixels) */
-	int v_line = (scroll_y) & (vdc.vdc_data[MWR].w.l & 0x0040 ? 0x1FF : 0x0FF);
+	int v_line = (scroll_y) & (vdc[which].vdc_data[MWR].w.l & 0x0040 ? 0x1FF : 0x0FF);
 
 	/* row within character */
 	int v_row = (v_line & 7);
@@ -693,10 +978,10 @@ void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
 	int nt_row = (v_line >> 3);
 
 	/* virtual X size (# bits to shift) */
-	int v_width =		width_table[(vdc.vdc_data[MWR].w.l >> 4) & 3];
+	int v_width =		width_table[(vdc[which].vdc_data[MWR].w.l >> 4) & 3];
 
 	/* pointer to the name table (Background Attribute Table) in VRAM */
-	uint8 *bat = &(vdc.vram[nt_row << (v_width+1)]);
+	uint8 *bat = &(vdc[which].vram[nt_row << (v_width+1)]);
 
 	/* Are we in greyscale mode or in color mode? */
 	scrntype *color_base = vce.palette + (vce.vce_control & 0x80 ? 512 : 0);
@@ -708,7 +993,7 @@ void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
 	int x, c, i;
 
 	/* character blanking bit */
-	if(!(vdc.vdc_data[CR].w.l & CR_BB))
+	if(!(vdc[which].vdc_data[CR].w.l & CR_BB))
 	{
 		return;
 	}
@@ -717,7 +1002,7 @@ void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
 		int	pixel = 0;
 		int phys_x = - ( scroll_x & 0x07 );
 
-		for(i=0;i<(vdc.physical_width >> 3) + 1;i++)
+		for(i=0;i<(vdc[which].physical_width >> 3) + 1;i++)
 		{
 			nt_index = (i + (scroll_x >> 3)) & ((2 << (v_width-1))-1);
 			nt_index *= 2;
@@ -733,10 +1018,10 @@ void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
 			/* byte-offset within the VRAM space                     */
 			cell_pattern_index = ( ( ( bat[nt_index + 1] << 8 ) | bat[nt_index] ) & 0x0FFF) << 5;
 
-			b0 = vram_read((cell_pattern_index) + (v_row << 1) + 0x00);
-			b1 = vram_read((cell_pattern_index) + (v_row << 1) + 0x01);
-			b2 = vram_read((cell_pattern_index) + (v_row << 1) + 0x10);
-			b3 = vram_read((cell_pattern_index) + (v_row << 1) + 0x11);
+			b0 = vram_read(which, (cell_pattern_index) + (v_row << 1) + 0x00);
+			b1 = vram_read(which, (cell_pattern_index) + (v_row << 1) + 0x01);
+			b2 = vram_read(which, (cell_pattern_index) + (v_row << 1) + 0x10);
+			b3 = vram_read(which, (cell_pattern_index) + (v_row << 1) + 0x11);
 
 			for(x=0;x<8;x++)
 			{
@@ -750,16 +1035,18 @@ void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
 				if ( ! ( c & 0x0F ) )
 					c &= 0x0F;
 
-				if ( phys_x >= 0 && phys_x < vdc.physical_width )
+				if ( phys_x >= 0 && phys_x < vdc[which].physical_width )
 				{
 					drawn[ pixel ] = c ? 1 : 0;
-					line_buffer[ pixel ] = color_base[vce.vce_data[c].w.l];
+					if ( c || ! external_input )
+						line_buffer[ pixel ] = color_base[vce.vce_data[c].w.l];
 					pixel++;
-//					if ( vdc.physical_width != 512 )
+//					if ( vdc[which].physical_width != 512 )
 //					{
-//						while ( pixel < ( ( ( phys_x + 1 ) * 512 ) / vdc.physical_width ) )
+//						while ( pixel < ( ( ( phys_x + 1 ) * 512 ) / vdc[which].physical_width ) )
 //						{
 //							drawn[ pixel ] = c ? 1 : 0;
+//							if ( c || ! external_input )
 //							line_buffer[ pixel ] = color_base[vce.vce_data[c].w.l];
 //							pixel++;
 //						}
@@ -771,7 +1058,7 @@ void PCE::pce_refresh_line(int line, uint8 *drawn, scrntype *line_buffer)
 	}
 }
 
-void PCE::conv_obj(int i, int l, int hf, int vf, char *buf)
+void PCE::conv_obj(int which, int i, int l, int hf, int vf, char *buf)
 {
 	int b0, b1, b2, b3, i0, i1, i2, i3, x;
 	int xi;
@@ -782,14 +1069,14 @@ void PCE::conv_obj(int i, int l, int hf, int vf, char *buf)
 
 	tmp = l + ( i << 5);
 
-	b0 = vram_read((tmp + 0x00)<<1);
-	b0 |= vram_read(((tmp + 0x00)<<1)+1)<<8;
-	b1 = vram_read((tmp + 0x10)<<1);
-	b1 |= vram_read(((tmp + 0x10)<<1)+1)<<8;
-	b2 = vram_read((tmp + 0x20)<<1);
-	b2 |= vram_read(((tmp + 0x20)<<1)+1)<<8;
-	b3 = vram_read((tmp + 0x30)<<1);
-	b3 |= vram_read(((tmp + 0x30)<<1)+1)<<8;
+	b0 = vram_read(which, (tmp + 0x00)<<1);
+	b0 |= vram_read(which, ((tmp + 0x00)<<1)+1)<<8;
+	b1 = vram_read(which, (tmp + 0x10)<<1);
+	b1 |= vram_read(which, ((tmp + 0x10)<<1)+1)<<8;
+	b2 = vram_read(which, (tmp + 0x20)<<1);
+	b2 |= vram_read(which, ((tmp + 0x20)<<1)+1)<<8;
+	b3 = vram_read(which, (tmp + 0x30)<<1);
+	b3 |= vram_read(which, ((tmp + 0x30)<<1)+1)<<8;
 
 	for(x=0;x<16;x++)
 	{
@@ -802,7 +1089,7 @@ void PCE::conv_obj(int i, int l, int hf, int vf, char *buf)
 	}
 }
 
-void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
+void PCE::pce_refresh_sprites(int which, int line, uint8 *drawn, scrntype *line_buffer)
 {
 	int i;
 	uint8 sprites_drawn = 0;
@@ -815,10 +1102,10 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 	{
 		static const int cgy_table[] = {16, 32, 64, 64};
 
-		int obj_y = (vdc.sprite_ram[(i << 2) + 0] & 0x03FF) - 64;
-		int obj_x = (vdc.sprite_ram[(i << 2) + 1] & 0x03FF) - 32;
-		int obj_i = (vdc.sprite_ram[(i << 2) + 2] & 0x07FE);
-		int obj_a = (vdc.sprite_ram[(i << 2) + 3]);
+		int obj_y = (vdc[which].sprite_ram[(i << 2) + 0] & 0x03FF) - 64;
+		int obj_x = (vdc[which].sprite_ram[(i << 2) + 1] & 0x03FF) - 32;
+		int obj_i = (vdc[which].sprite_ram[(i << 2) + 2] & 0x07FE);
+		int obj_a = (vdc[which].sprite_ram[(i << 2) + 3]);
 		int cgx   = (obj_a >> 8) & 1;   /* sprite width */
 		int cgy   = (obj_a >> 12) & 3;  /* sprite height */
 		int hf    = (obj_a >> 11) & 1;  /* horizontal flip */
@@ -831,7 +1118,7 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 		char buf[16];
 
 		if ((obj_y == -64) || (obj_y > line)) continue;
-		if ((obj_x == -32) || (obj_x >= vdc.physical_width)) continue;
+		if ((obj_x == -32) || (obj_x >= vdc[which].physical_width)) continue;
 
 		/* no need to draw an object that's ABOVE where we are. */
 		if((obj_y + obj_h) < line) continue;
@@ -854,10 +1141,10 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 			sprites_drawn++;
 			if(sprites_drawn > 16)
 			{
-				if(vdc.vdc_data[CR].w.l & CR_OV)
+				if(vdc[which].vdc_data[CR].w.l & CR_OV)
 				{
 					/* note: flag is set only if irq is taken, Mizubaku Daibouken relies on this behaviour */
-					vdc.status |= VDC_OR;
+					vdc[which].status |= VDC_OR;
 					d_cpu->write_signal(INPUT_LINE_IRQ1, ASSERT_LINE, 0);
 				}
 				continue;  /* Should cause an interrupt */
@@ -869,13 +1156,13 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 			if(cgx == 0)
 			{
 				int x;
-				int pixel_x = obj_x;//( ( obj_x * 512 ) / vdc.physical_width );
+				int pixel_x = obj_x;//( ( obj_x * 512 ) / vdc[which].physical_width );
 
-				conv_obj(obj_i + (cgypos << 2), obj_l, hf, vf, buf);
+				conv_obj(which, obj_i + (cgypos << 2), obj_l, hf, vf, buf);
 
 				for(x = 0; x < 16; x++)
 				{
-					if(((obj_x + x) < (vdc.physical_width)) && ((obj_x + x) >= 0))
+					if(((obj_x + x) < (vdc[which].physical_width)) && ((obj_x + x) >= 0))
 					{
 						if ( buf[x] )
 						{
@@ -884,10 +1171,10 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 								if( priority || drawn[pixel_x] == 0 )
 								{
 									line_buffer[pixel_x] = color_base[vce.vce_data[0x100 + (palette << 4) + buf[x]].w.l];
-//									if ( vdc.physical_width != 512 )
+//									if ( vdc[which].physical_width != 512 )
 //									{
 //										int dp = 1;
-//										while ( pixel_x + dp < ( ( ( obj_x + x + 1 ) * 512 ) / vdc.physical_width ) )
+//										while ( pixel_x + dp < ( ( ( obj_x + x + 1 ) * 512 ) / vdc[which].physical_width ) )
 //										{
 //											drawn[pixel_x + dp] = i + 2;
 //											line_buffer[pixel_x + dp] = color_base[vce.vce_data[0x100 + (palette << 4) + buf[x]].w.l];
@@ -900,15 +1187,15 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 							/* Check for sprite #0 collision */
 							else if (drawn[pixel_x] == 2)
 							{
-								if(vdc.vdc_data[CR].w.l & CR_CC)
+								if(vdc[which].vdc_data[CR].w.l & CR_CC)
 									d_cpu->write_signal(INPUT_LINE_IRQ1, ASSERT_LINE, 0);
-								vdc.status |= VDC_CR;
+								vdc[which].status |= VDC_CR;
 							}
 						}
 					}
-//					if ( vdc.physical_width != 512 )
+//					if ( vdc[which].physical_width != 512 )
 //					{
-//						pixel_x = ( ( obj_x + x + 1 ) * 512 ) / vdc.physical_width;
+//						pixel_x = ( ( obj_x + x + 1 ) * 512 ) / vdc[which].physical_width;
 //					}
 //					else
 //					{
@@ -919,13 +1206,13 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 			else
 			{
 				int x;
-				int pixel_x = obj_x;//( ( obj_x * 512 ) / vdc.physical_width );
+				int pixel_x = obj_x;//( ( obj_x * 512 ) / vdc[which].physical_width );
 
-				conv_obj(obj_i + (cgypos << 2) + (hf ? 2 : 0), obj_l, hf, vf, buf);
+				conv_obj(which, obj_i + (cgypos << 2) + (hf ? 2 : 0), obj_l, hf, vf, buf);
 
 				for(x = 0; x < 16; x++)
 				{
-					if(((obj_x + x) < (vdc.physical_width)) && ((obj_x + x) >= 0))
+					if(((obj_x + x) < (vdc[which].physical_width)) && ((obj_x + x) >= 0))
 					{
 						if ( buf[x] )
 						{
@@ -934,10 +1221,10 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 								if ( priority || drawn[pixel_x] == 0 )
 								{
 									line_buffer[pixel_x] = color_base[vce.vce_data[0x100 + (palette << 4) + buf[x]].w.l];
-//									if ( vdc.physical_width != 512 )
+//									if ( vdc[which].physical_width != 512 )
 //									{
 //										int dp = 1;
-//										while ( pixel_x + dp < ( ( ( obj_x + x + 1 ) * 512 ) / vdc.physical_width ) )
+//										while ( pixel_x + dp < ( ( ( obj_x + x + 1 ) * 512 ) / vdc[which].physical_width ) )
 //										{
 //											drawn[pixel_x + dp] = i + 2;
 //											line_buffer[pixel_x + dp] = color_base[vce.vce_data[0x100 + (palette << 4) + buf[x]].w.l];
@@ -950,15 +1237,15 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 							/* Check for sprite #0 collision */
 							else if ( drawn[pixel_x] == 2 )
 							{
-								if(vdc.vdc_data[CR].w.l & CR_CC)
+								if(vdc[which].vdc_data[CR].w.l & CR_CC)
 									d_cpu->write_signal(INPUT_LINE_IRQ1, ASSERT_LINE, 0);
-								vdc.status |= VDC_CR;
+								vdc[which].status |= VDC_CR;
 							}
 						}
 					}
-//					if ( vdc.physical_width != 512 )
+//					if ( vdc[which].physical_width != 512 )
 //					{
-//						pixel_x = ( ( obj_x + x + 1 ) * 512 ) / vdc.physical_width;
+//						pixel_x = ( ( obj_x + x + 1 ) * 512 ) / vdc[which].physical_width;
 //					}
 //					else
 //					{
@@ -972,19 +1259,19 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 				sprites_drawn++;
 				if( sprites_drawn > 16 )
 				{
-					if(vdc.vdc_data[CR].w.l&CR_OV)
+					if(vdc[which].vdc_data[CR].w.l&CR_OV)
 					{
 						/* note: flag is set only if irq is taken, Mizubaku Daibouken relies on this behaviour */
-						vdc.status |= VDC_OR;
+						vdc[which].status |= VDC_OR;
 						d_cpu->write_signal(INPUT_LINE_IRQ1, ASSERT_LINE, 0);
 					}
 				}
 				else
 				{
-					conv_obj(obj_i + (cgypos << 2) + (hf ? 0 : 2), obj_l, hf, vf, buf);
+					conv_obj(which, obj_i + (cgypos << 2) + (hf ? 0 : 2), obj_l, hf, vf, buf);
 					for(x = 0; x < 16; x++)
 					{
-						if(((obj_x + 0x10 + x) < (vdc.physical_width)) && ((obj_x + 0x10 + x) >= 0))
+						if(((obj_x + 0x10 + x) < (vdc[which].physical_width)) && ((obj_x + 0x10 + x) >= 0))
 						{
 							if ( buf[x] )
 							{
@@ -993,10 +1280,10 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 									if( priority || drawn[pixel_x] == 0 )
 									{
 										line_buffer[pixel_x] = color_base[vce.vce_data[0x100 + (palette << 4) + buf[x]].w.l];
-//										if ( vdc.physical_width != 512 )
+//										if ( vdc[which].physical_width != 512 )
 //										{
 //											int dp = 1;
-//											while ( pixel_x + dp < ( ( ( obj_x + x + 17 ) * 512 ) / vdc.physical_width ) )
+//											while ( pixel_x + dp < ( ( ( obj_x + x + 17 ) * 512 ) / vdc[which].physical_width ) )
 //											{
 //												drawn[pixel_x + dp] = i + 2;
 //												line_buffer[pixel_x + dp] = color_base[vce.vce_data[0x100 + (palette << 4) + buf[x]].w.l];
@@ -1009,15 +1296,15 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 								/* Check for sprite #0 collision */
 								else if ( drawn[pixel_x] == 2 )
 								{
-									if(vdc.vdc_data[CR].w.l & CR_CC)
+									if(vdc[which].vdc_data[CR].w.l & CR_CC)
 										d_cpu->write_signal(INPUT_LINE_IRQ1, ASSERT_LINE, 0);
-									vdc.status |= VDC_CR;
+									vdc[which].status |= VDC_CR;
 								}
 							}
 						}
-//						if ( vdc.physical_width != 512 )
+//						if ( vdc[which].physical_width != 512 )
 //						{
-//							pixel_x = ( ( obj_x + x + 17 ) * 512 ) / vdc.physical_width;
+//							pixel_x = ( ( obj_x + x + 17 ) * 512 ) / vdc[which].physical_width;
 //						}
 //						else
 //						{
@@ -1030,24 +1317,24 @@ void PCE::pce_refresh_sprites(int line, uint8 *drawn, scrntype *line_buffer)
 	}
 }
 
-void PCE::vdc_do_dma()
+void PCE::vdc_do_dma(int which)
 {
-	int src = vdc.vdc_data[SOUR].w.l;
-	int dst = vdc.vdc_data[DESR].w.l;
-	int len = vdc.vdc_data[LENR].w.l;
+	int src = vdc[which].vdc_data[SOUR].w.l;
+	int dst = vdc[which].vdc_data[DESR].w.l;
+	int len = vdc[which].vdc_data[LENR].w.l;
 
-	int did = (vdc.vdc_data[DCR].w.l >> 3) & 1;
-	int sid = (vdc.vdc_data[DCR].w.l >> 2) & 1;
-	int dvc = (vdc.vdc_data[DCR].w.l >> 1) & 1;
+	int did = (vdc[which].vdc_data[DCR].w.l >> 3) & 1;
+	int sid = (vdc[which].vdc_data[DCR].w.l >> 2) & 1;
+	int dvc = (vdc[which].vdc_data[DCR].w.l >> 1) & 1;
 
 	do {
 		uint8 l, h;
 
-		l = vram_read(src<<1);
-		h = vram_read((src<<1) + 1);
+		l = vram_read(which, src<<1);
+		h = vram_read(which, (src<<1) + 1);
 
-		vram_write(dst<<1,l);
-		vram_write(1+(dst<<1),h);
+		vram_write(which, dst<<1,l);
+		vram_write(which, 1+(dst<<1),h);
 
 		if(sid) src = (src - 1) & 0xFFFF;
 		else	src = (src + 1) & 0xFFFF;
@@ -1059,15 +1346,121 @@ void PCE::vdc_do_dma()
 
 	} while (len != 0xFFFF);
 
-	vdc.status |= VDC_DV;
-	vdc.vdc_data[SOUR].w.l = src;
-	vdc.vdc_data[DESR].w.l = dst;
-	vdc.vdc_data[LENR].w.l = len;
+	vdc[which].status |= VDC_DV;
+	vdc[which].vdc_data[SOUR].w.l = src;
+	vdc[which].vdc_data[DESR].w.l = dst;
+	vdc[which].vdc_data[LENR].w.l = len;
 	if(dvc)
 	{
 		d_cpu->write_signal(INPUT_LINE_IRQ1, ASSERT_LINE, 0);
 	}
 
+}
+
+void PCE::vpc_update_prio_map()
+{
+	int i;
+
+	for( i = 0; i < 512; i++ )
+	{
+		vpc.prio_map[i] = 0;
+		if ( vpc.window1.w.l < 0x40 || i > vpc.window1.w.l )
+		{
+			vpc.prio_map[i] |= 1;
+		}
+		if ( vpc.window2.w.l < 0x40 || i > vpc.window2.w.l )
+		{
+			vpc.prio_map[i] |= 2;
+		}
+	}
+}
+
+void PCE::vpc_w(uint16 offset, uint8 data)
+{
+	switch( offset & 0x07 )
+	{
+	case 0x00:	/* Priority register #0 */
+		vpc.priority.b.l = data;
+		vpc.vpc_prio[0].prio = ( data >> 2 ) & 3;
+		vpc.vpc_prio[0].vdc0_enabled = data & 1;
+		vpc.vpc_prio[0].vdc1_enabled = data & 2;
+		vpc.vpc_prio[1].prio = ( data >> 6 ) & 3;
+		vpc.vpc_prio[1].vdc0_enabled = data & 0x10;
+		vpc.vpc_prio[1].vdc1_enabled = data & 0x20;
+		break;
+	case 0x01:	/* Priority register #1 */
+		vpc.priority.b.h = data;
+		vpc.vpc_prio[2].prio = ( data >> 2 ) & 3;
+		vpc.vpc_prio[2].vdc0_enabled = data & 1;
+		vpc.vpc_prio[2].vdc1_enabled = data & 2;
+		vpc.vpc_prio[3].prio = ( data >> 6 ) & 3;
+		vpc.vpc_prio[3].vdc0_enabled = data & 0x10;
+		vpc.vpc_prio[3].vdc1_enabled = data & 0x20;
+		break;
+	case 0x02:	/* Window 1 LSB */
+		vpc.window1.b.l = data;
+		vpc_update_prio_map();
+		break;
+	case 0x03:	/* Window 1 MSB */
+		vpc.window1.b.h = data & 3;
+		vpc_update_prio_map();
+		break;
+	case 0x04:	/* Window 2 LSB */
+		vpc.window2.b.l = data;
+		vpc_update_prio_map();
+		break;
+	case 0x05:	/* Window 2 MSB */
+		vpc.window2.b.h = data & 3;
+		vpc_update_prio_map();
+		break;
+	case 0x06:	/* VDC I/O select */
+		vpc.vdc_select = data & 1;
+		break;
+	}
+}
+
+uint8 PCE::vpc_r(uint16 offset)
+{
+	uint8 data = 0;
+	switch( offset & 0x07 )
+	{
+	case 0x00:  /* Priority register #0 */
+		data = vpc.priority.b.l;
+		break;
+	case 0x01:  /* Priority register #1 */
+		data = vpc.priority.b.h;
+		break;
+	case 0x02:  /* Window 1 LSB */
+		data = vpc.window1.b.l;
+		break;
+	case 0x03:  /* Window 1 MSB; high bits are 0 or 1? */
+		data = vpc.window1.b.h;
+		break;
+	case 0x04:  /* Window 2 LSB */
+		data = vpc.window2.b.l;
+		break;
+	case 0x05:  /* Window 2 MSB; high bits are 0 or 1? */
+		data = vpc.window2.b.h;
+		break;
+	}
+	return data;
+}
+
+void PCE::sgx_vdc_w(uint16 offset, uint8 data)
+{
+	if ( vpc.vdc_select )
+	{
+		vdc_w( 1, offset, data );
+	}
+	else
+	{
+		vdc_w( 0, offset, data );
+	}
+}
+
+uint8 PCE::sgx_vdc_r(uint16 offset)
+{
+	return ( vpc.vdc_select ) ? vdc_r( 1, offset ) : vdc_r( 0, offset );
 }
 
 // psg
@@ -1165,6 +1558,9 @@ void PCE::mix(int32* buffer, int cnt)
 		2718,3064,3454,3893,4388,4947,5576,6285,7085,7986,9002,10148,11439,12894,14535,16384
 	};
 	
+	if(!running) {
+		return;
+	}
 	for(int ch = 0; ch < 6; ch++) {
 		if(!(psg[ch].regs[4] & 0x80)) {
 			// mute
@@ -1234,32 +1630,34 @@ void PCE::mix(int32* buffer, int cnt)
 
 void PCE::joy_reset()
 {
-	joy_count = joy_nibble = joy_second = 0;
+	joy_sel = joy_bank = 1;
+	joy_clr = joy_count = 0;
 }
 
 void PCE::joy_write(uint16 addr, uint8 data)
 {
-	joy_nibble = data & 1;
-	if(data & 2) {
-		// clear flag
-		joy_count = 0;
-		joy_nibble = 0;
-		joy_second ^= 1;
+	uint8 new_sel = data & 1;
+	uint8 new_clr = data & 2;
+	
+	if(joy_sel && new_sel) {
+		if(joy_clr && !new_clr) {
+			joy_count = 0;
+			joy_bank ^= 1;
+		}
 	}
+	else if(!joy_sel && new_sel) {
+		joy_count = (joy_count + 1) & 15;
+	}
+	joy_sel = new_sel;
+	joy_clr = new_clr;
 }
 
 uint8 PCE::joy_read(uint16 addr)
 {
 	uint8 val = 0xf;
-	uint16 stat = 0;
+	uint32 stat = 0;
 	
-	if(!joy_count) {
-		return 0;
-	}
-	if(joy_count > 5) {
-		return 0xf;
-	}
-	if(joy_count == 1) {
+	if(joy_count == 0) {
 		stat = joy_stat[0];
 		if(key_stat[0x26]) stat |= 0x001;	// up
 		if(key_stat[0x28]) stat |= 0x002;	// down
@@ -1273,37 +1671,33 @@ uint8 PCE::joy_read(uint16 addr)
 		if(key_stat[0x51]) stat |= 0x200;	// q (4)
 		if(key_stat[0x57]) stat |= 0x400;	// w (5)
 		if(key_stat[0x45]) stat |= 0x800;	// e (6)
-	}
-	else if(joy_count == 2) {
+	} else if(joy_count == 1) {
 		stat = joy_stat[1];
 	}
-	if(joy_second) {
-		if(joy_nibble) {
+	if(joy_6btn && joy_bank) {
+		if(joy_sel) {
+			val = 0;
+		} else {
+			if(stat & 0x100) val &= ~1;	// b3
+			if(stat & 0x200) val &= ~2;	// b4
+			if(stat & 0x400) val &= ~4;	// b5
+			if(stat & 0x800) val &= ~8;	// b6
+		}
+	} else {
+		if(joy_sel) {
 			if(stat & 0x001) val &= ~1;	// up
 			if(stat & 0x008) val &= ~2;	// right
 			if(stat & 0x002) val &= ~4;	// down
 			if(stat & 0x004) val &= ~8;	// left
-		}
-		else {
+		} else {
 			if(stat & 0x010) val &= ~1;	// b1
 			if(stat & 0x020) val &= ~2;	// b2
 			if(stat & 0x040) val &= ~4;	// sel
 			if(stat & 0x080) val &= ~8;	// run
 		}
 	}
-	else {
-		if(joy_nibble) {
-			val = 0;
-		}
-		else {
-			if(stat & 0x100) val &= ~1;	// b3
-			if(stat & 0x200) val &= ~2;	// b4
-			if(stat & 0x400) val &= ~4;	// b5
-			if(stat & 0x800) val &= ~8;	// b6
-		}
-	}
-	if(joy_count == 5) {
-		joy_second = 0;
+	if(joy_count == 4) {
+		joy_bank = 1;
 	}
 	return val;
 }

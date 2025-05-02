@@ -1,5 +1,6 @@
 /*
 	NEC PC-8801MA Emulator 'ePC-8801MA'
+	NEC PC-8001mkIISR Emulator 'ePC-8001mkIISR'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -14,13 +15,22 @@
 #if defined(_PC8801MA)
 #define DEVICE_NAME		"NEC PC-8801MA"
 #define CONFIG_NAME		"pc8801ma"
+#elif defined(_PC8001SR)
+#define DEVICE_NAME		"NEC PC-8001mkIISR"
+#define CONFIG_NAME		"pc8801mk2sr"
 #endif
 #define CONFIG_VERSION		0x02
 
+#if defined(_PC8001SR)
+#define MODE_PC80_V1	0
+#define MODE_PC80_V2	1
+#define MODE_PC80_N	2
+#else
 #define MODE_PC88_V1S	0
 #define MODE_PC88_V1H	1
 #define MODE_PC88_V2	2
 #define MODE_PC88_N	3
+#endif
 
 #if defined(_PC8801MA)
 #define SUPPORT_PC88_DICTIONARY
@@ -41,7 +51,6 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
-//#define HAS_UPD4990A
 #ifdef SUPPORT_PC88_OPNA
 #define HAS_YM2608
 #endif

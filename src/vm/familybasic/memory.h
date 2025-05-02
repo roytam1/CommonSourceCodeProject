@@ -22,7 +22,7 @@ private:
 	DEVICE *d_cpu, *d_apu, *d_ppu, *d_drec;
 	
 	uint8* key_stat;
-	uint8* joy_stat;
+	uint32* joy_stat;
 	
 	uint8 ram[0x800];
 	uint8 save_ram[0x2000];

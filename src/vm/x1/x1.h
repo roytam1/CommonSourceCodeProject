@@ -214,7 +214,7 @@ public:
 	DEVICE* last_device;
 	
 #ifdef _X1TWIN
-	bool pce_running;
+	bool pce_running();
 #endif
 };
 

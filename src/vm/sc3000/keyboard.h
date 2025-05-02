@@ -23,7 +23,7 @@ private:
 	DEVICE *d_cpu, *d_pio;
 	
 	uint8* key_stat;
-	uint8* joy_stat;
+	uint32* joy_stat;
 	uint8 column;
 	bool break_pressed;
 	

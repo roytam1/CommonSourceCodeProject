@@ -1,5 +1,6 @@
 /*
 	NEC PC-8801MA Emulator 'ePC-8801MA'
+	NEC PC-8001mkIISR Emulator 'ePC-8001mkIISR'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya

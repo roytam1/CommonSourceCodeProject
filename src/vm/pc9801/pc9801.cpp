@@ -58,7 +58,7 @@
 #include "../beep.h"
 #include "../pc80s31k.h"
 #include "../z80.h"
-#include "pc88.h"
+#include "../pc8801/pc88.h"
 #endif
 
 #include "../../config.h"

@@ -22,7 +22,7 @@ private:
 	DEVICE* d_sound;
 	
 	uint8* key;
-	uint8* joy;
+	uint32* joy;
 	uint8 pa, pb, pc, si, so;
 	
 public:

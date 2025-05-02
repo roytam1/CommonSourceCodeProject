@@ -34,8 +34,7 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 		if(!(mode & 0x04)) val &= ~0x20;
 		if(!(mode & 0x08)) val &= ~0x10;
 		dir = ((mode & 0x20) == 0);
-	}
-	else {
+	} else {
 		if(!(mode & 0x01)) val &= ~0x20;
 		if(!(mode & 0x02)) val &= ~0x10;
 		dir = ((mode & 0x10) == 0);
@@ -43,10 +42,10 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 	
 	// direction
 	if(dir) {
-		if(joy_stat[num] & 0x8) val &= ~0x08;
-		if(joy_stat[num] & 0x4) val &= ~0x04;
-		if(joy_stat[num] & 0x2) val &= ~0x02;
-		if(joy_stat[num] & 0x1) val &= ~0x01;
+		if(joy_stat[num] & 0x08) val &= ~0x08;
+		if(joy_stat[num] & 0x04) val &= ~0x04;
+		if(joy_stat[num] & 0x02) val &= ~0x02;
+		if(joy_stat[num] & 0x01) val &= ~0x01;
 	}
 	
 	// trigger

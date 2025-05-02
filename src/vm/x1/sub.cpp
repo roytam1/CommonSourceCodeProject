@@ -248,7 +248,7 @@ void SUB::event_callback(int event_id, int err)
 	
 #ifdef _X1TWIN
 	// clear key buffer
-	if(vm->pce_running) {
+	if(vm->pce_running()) {
 		// clear key
 		key_buf->clear();
 	}

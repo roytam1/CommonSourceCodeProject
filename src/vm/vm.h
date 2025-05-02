@@ -170,6 +170,11 @@
 #include "pasopia7/pasopia7.h"
 #endif
 
+// NEC PC-8001mkIISR
+#ifdef _PC8001SR
+#include "pc8801/pc8801.h"
+#endif
+
 // NEC PC-8201
 #ifdef _PC8201
 #include "pc8201/pc8201.h"
@@ -182,7 +187,7 @@
 
 // NEC PC-8801MA
 #ifdef _PC8801MA
-#include "pc9801/pc8801.h"
+#include "pc8801/pc8801.h"
 #endif
 
 // NEC PC-9801
@@ -218,6 +223,11 @@
 // NEC PC-100
 #ifdef _PC100
 #include "pc100/pc100.h"
+#endif
+
+// NEC-HE PC-ENGINE
+#ifdef _PCENGINE
+#include "pcengine/pcengine.h"
 #endif
 
 // SANYO PHC-20
