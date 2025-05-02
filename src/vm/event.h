@@ -51,7 +51,6 @@ private:
 	DEVICE* frame_event[MAX_EVENT];
 	DEVICE* vline_event[MAX_EVENT];
 	
-	int event_base_clocks;	// this must be cpu clocks of first cpu !!!
 	double frames_per_sec;
 	int lines_per_frame;
 	bool update_timing;
@@ -82,7 +81,6 @@ public:
 		dcount_cpu = dcount_sound = 0;
 		event_count = frame_event_count = vline_event_count = 0;
 		get_nextevent = true;
-		event_base_clocks = CPU_CLOCKS;
 		frames_per_sec = FRAMES_PER_SEC;
 		lines_per_frame = LINES_PER_FRAME;
 		update_timing = true;
@@ -96,6 +94,9 @@ public:
 	void update_config();
 	
 	// common event functions
+	int event_manager_id() {
+		return this_device_id;
+	}
 	void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id);
 	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
 	void cancel_event(int register_id);
@@ -115,20 +116,22 @@ public:
 		int index = dcount_cpu++;
 		d_cpu[index].device = device;
 		d_cpu[index].cpu_clocks = clocks;
-		d_cpu[index].update_clocks = (clocks == event_base_clocks) ? 1024 : (int)(1024. * clocks / event_base_clocks + 0.5);
 		d_cpu[index].accum_clocks = 0;
 	}
 	void set_context_cpu(DEVICE* device) {
-		set_context_cpu(device, event_base_clocks);
+		set_context_cpu(device, CPU_CLOCKS);
 	}
 	void set_context_sound(DEVICE* device) {
 		d_sound[dcount_sound++] = device;
 	}
-	void set_event_base_clocks(int clocks) {
-		if(event_base_clocks != clocks) {
-			event_base_clocks = clocks;
+	void set_cpu_clocks(int index, int clocks) {
+		if(d_cpu[index].cpu_clocks != clocks) {
+			d_cpu[index].cpu_clocks = clocks;
 			update_timing = true;
 		}
+	}
+	void set_cpu_clocks(int clocks) {
+		set_cpu_clocks(0, clocks);
 	}
 	void set_frames_per_sec(double frames) {
 		if(frames_per_sec != frames) {

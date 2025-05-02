@@ -21,6 +21,7 @@
 
 #define ID_AUTOKEY_START                40011
 #define ID_AUTOKEY_STOP                 40012
+
 #define ID_DIPSWITCH1                   40021
 #define ID_DIPSWITCH2                   40022
 #define ID_DIPSWITCH3                   40023
@@ -29,16 +30,22 @@
 #define ID_DIPSWITCH6                   40026
 #define ID_DIPSWITCH7                   40027
 #define ID_DIPSWITCH8                   40028
+
 #define ID_HC80_RAMDISK0                40031
 #define ID_HC80_RAMDISK1                40032
 #define ID_HC80_RAMDISK2                40033
+
 #define ID_MZ800_BOOT_MODE_MZ800        40031
 #define ID_MZ800_BOOT_MODE_MZ700        40032
+
 #define ID_PC98DO_BOOT_MODE_PC98        40031
 #define ID_PC98DO_BOOT_MODE_PC88_V1S    40032
 #define ID_PC98DO_BOOT_MODE_PC88_V1H    40033
 #define ID_PC98DO_BOOT_MODE_PC88_V2     40034
 #define ID_PC98DO_BOOT_MODE_PC88_N      40035
+
+#define ID_PC9801_CPU_CLOCK_HIGH        40041
+#define ID_PC9801_CPU_CLOCK_LOW         40042
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102

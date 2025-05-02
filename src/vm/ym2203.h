@@ -64,7 +64,7 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_vline(int v, int clock);
 	void mix(int32* buffer, int cnt);
-	void update_timing(double frames_per_sec, double lines_per_frame);
+	void update_timing(int clocks, double frames_per_sec, double lines_per_frame);
 	
 	// unique functions
 #ifndef HAS_AY_3_8912

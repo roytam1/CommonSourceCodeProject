@@ -75,6 +75,9 @@ typedef struct {
 #if defined(_MZ800) || defined(_PC98DO)
 	int boot_mode;
 #endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+	bool cpu_clock_low;	// 10MHz <-> 8MHz
+#endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
 	int monitor_type;
 #endif

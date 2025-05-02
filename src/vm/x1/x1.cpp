@@ -242,7 +242,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _X1TWIN
 	// init PC Engine
 	pceevent = new EVENT(this, emu);
-	pceevent->set_event_base_clocks(PCE_CPU_CLOCKS);
 	pceevent->set_frames_per_sec(PCE_FRAMES_PER_SEC);
 	pceevent->set_lines_per_frame(PCE_LINES_PER_FRAME);
 	pceevent->initialize();
@@ -250,7 +249,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pcecpu = new HUC6260(this, emu);
 	pce = new PCE(this, emu);
 	
-	pceevent->set_context_cpu(pcecpu);
+	pceevent->set_context_cpu(pcecpu, PCE_CPU_CLOCKS);
 	pceevent->set_context_sound(pce);
 	pce->set_context_cpu(pcecpu);
 	pce->set_context_event_manager(pceevent);

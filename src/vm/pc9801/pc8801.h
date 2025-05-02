@@ -51,6 +51,7 @@ private:
 	// misc
 	uint8 port32;
 	uint8 alu_ctrl1, alu_ctrl2, alu_reg[3];
+	bool cpu_clock_low;
 	
 	// crtc
 	uint8 crtc_reg[8][5], crtc_cmd, crtc_ptr;

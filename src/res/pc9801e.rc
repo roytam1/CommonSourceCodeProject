@@ -82,6 +82,9 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
+        MENUITEM "CPU 8MHz",                    ID_PC9801_CPU_CLOCK_HIGH
+        MENUITEM "CPU 5MHz",                    ID_PC9801_CPU_CLOCK_LOW
+        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2

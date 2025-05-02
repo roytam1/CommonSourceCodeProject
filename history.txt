@@ -1,3 +1,13 @@
+1/9/2012
+
+[VM/DEVICE] add virtual function to get the id of parent event manager
+[VM/EVENT] fix to notify the timing changes only to child devices
+
+[PC9801E] support to switch cpu clocks
+[PC9801VM] support to switch cpu clocks
+[PC98DO] support to switch cpu clocks
+
+
 1/7/2012
 
 [VM/DEVICE] add virtual function to notify that timing settings are changed

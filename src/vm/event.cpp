@@ -48,7 +48,7 @@ void EVENT::initialize_sound(int rate, int samples)
 #else
 	sound_tmp_samples = samples;
 #endif
-	update_samples = (int)(1024. * rate / frames_per_sec / lines_per_frame + 0.5);
+	update_samples = (int)(1024. * (double)rate / (double)frames_per_sec / (double)lines_per_frame + 0.5);
 	
 	sound_buffer = (uint16*)malloc(sound_samples * sizeof(uint16) * 2);
 	memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
@@ -100,7 +100,7 @@ void EVENT::drive()
 {
 	// generate clocks per line
 	if(update_timing) {
-		int sum = (int)((float)event_base_clocks / frames_per_sec + 0.5);
+		int sum = (int)((double)d_cpu[0].cpu_clocks / (double)frames_per_sec + 0.5);
 		int remain = sum;
 		
 		for(int i = 0; i < lines_per_frame; i++) {
@@ -108,11 +108,16 @@ void EVENT::drive()
 			remain -= vclocks[i];
 		}
 		for(int i = 0; i < remain; i++) {
-			int index = (int)((float)lines_per_frame * (float)i / (float)remain);
+			int index = (int)((double)lines_per_frame * (double)i / (double)remain);
 			vclocks[index]++;
 		}
+		for(int i = 1; i < dcount_cpu; i++) {
+			d_cpu[i].update_clocks = (int)(1024. * (double)d_cpu[i].cpu_clocks / (double)d_cpu[0].cpu_clocks + 0.5);
+		}
 		for(DEVICE* device = vm->first_device; device; device = device->next_device) {
-			device->update_timing(frames_per_sec, lines_per_frame);
+			if(device->event_manager_id() == this_device_id) {
+				device->update_timing(d_cpu[0].cpu_clocks, frames_per_sec, lines_per_frame);
+			}
 		}
 		update_timing = false;
 	}
@@ -221,7 +226,7 @@ uint32 EVENT::passed_clock(uint32 prev)
 
 void EVENT::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
 {
-	int clock = (int)(event_base_clocks / 1000000. * usec + 0.5);
+	int clock = (int)((double)d_cpu[0].cpu_clocks / 1000000. * (double)usec + 0.5);
 	register_event_by_clock(dev, event_id, clock, loop, register_id);
 }
 

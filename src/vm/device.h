@@ -34,7 +34,7 @@ public:
 	{
 		prev_device = vm->last_device;
 		next_device = NULL;
-		if(!vm->first_device) {
+		if(vm->first_device == NULL) {
 			// this is the first device
 			vm->first_device = this;
 			this_device_id = 0;
@@ -392,6 +392,14 @@ public:
 	virtual void set_context_event_manager(DEVICE* device) {
 		event_manager = device;
 	}
+	virtual int event_manager_id() {
+		if(event_manager != NULL) {
+			return event_manager->this_device_id;
+		}
+		else {
+			return 1; // primary event manager should be 2nd device
+		}
+	}
 	virtual void register_event(DEVICE* device, int event_id, int usec, bool loop, int* register_id) {
 		if(event_manager != NULL) {
 			event_manager->register_event(device, event_id, usec, loop, register_id);
@@ -457,7 +465,7 @@ public:
 			return vm->get_prv_pc();
 		}
 	}
-	virtual void update_timing(double frames_per_sec, double lines_per_frame) {}
+	virtual void update_timing(int clocks, double frames_per_sec, double lines_per_frame) {}
 	
 	// event callback
 	virtual void event_callback(int event_id, int err) {}

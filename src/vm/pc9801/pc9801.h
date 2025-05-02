@@ -22,6 +22,9 @@
 #elif defined(_PC9801U)
 #define DEVICE_NAME		"NEC PC-9801U"
 #define CONFIG_NAME		"pc9801u"
+#elif defined(_PC9801VF)
+#define DEVICE_NAME		"NEC PC-9801VF"
+#define CONFIG_NAME		"pc9801vf"
 #elif defined(_PC9801VM)
 #define DEVICE_NAME		"NEC PC-9801VM"
 #define CONFIG_NAME		"pc9801vm"
@@ -30,12 +33,16 @@
 #define CONFIG_NAME		"pc98do"
 #else
 #endif
-#define CONFIG_VERSION		0x02
+#define CONFIG_VERSION		0x03
 
 #if defined(_PC9801) || defined(_PC9801E)
 #define SUPPORT_CMT_IF
 #define SUPPORT_OLD_FDD_IF
+#define SUPPORT_320KB_FDD_IF
 #define SUPPORT_OLD_BUZZER
+#endif
+#if defined(_PC9801VF) || defined(_PC9801U)
+#define SUPPORT_OLD_FDD_IF
 #endif
 
 #if !(defined(_PC9801) || defined(_PC9801U))
@@ -60,7 +67,7 @@
 #if defined(_PC9801)
 #define CPU_CLOCKS		5000000
 #define PIT_CLOCK_5MHZ
-#elif defined(_PC9801E)
+#elif defined(_PC9801E) || defined(_PC9801U) || defined(_PC9801VF)
 #define CPU_CLOCKS		8000000
 #define PIT_CLOCK_8MHZ
 #else
@@ -97,11 +104,14 @@
 #define USE_FD3
 #define USE_FD4
 #elif defined(SUPPORT_OLD_FDD_IF)
-// for 2DD drives and inteligent 2D drives
+// for 640KB drives
 #define USE_FD3
 #define USE_FD4
+#if defined(SUPPORT_320KB_FDD_IF)
+// for 320KB drives
 #define USE_FD5
 #define USE_FD6
+#endif
 #endif
 #if defined(SUPPORT_CMT_IF)
 #define USE_DATAREC
@@ -154,7 +164,7 @@ class JOYSTICK;
 class KEYBOARD;
 class MOUSE;
 
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 // 320kb fdd drives
 class PC80S31K;
 class Z80;
@@ -187,7 +197,7 @@ protected:
 	I8251* sio_rs;
 	I8251* sio_kbd;
 	I8253* pit;
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	I8255* pio_fdd;
 #endif
 	I8255* pio_mouse;
@@ -224,7 +234,7 @@ protected:
 	KEYBOARD* keyboard;
 	MOUSE* mouse;
 	
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives
 	I8255* pio_sub;
 	PC80S31K *pc80s31k;
@@ -240,6 +250,7 @@ protected:
 	uint8 fd_bios_2hd[0x1000];
 	uint8 fd_bios_2dd[0x1000];
 #endif
+	bool pit_clock_8mhz;
 	
 #if defined(_PC98DO)
 	EVENT* pc88event;

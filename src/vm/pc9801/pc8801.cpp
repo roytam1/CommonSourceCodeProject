@@ -158,6 +158,7 @@ void PC8801::initialize()
 	
 	key_status = emu->key_buffer();
 	line200 = 1;
+	cpu_clock_low = config.cpu_clock_low;
 	
 	register_frame_event(this);
 	register_vline_event(this);
@@ -591,7 +592,7 @@ uint32 PC8801::read_io8(uint32 addr)
 	case 0x68:
 		return dma_status;
 	case 0x6e:
-		return 0;
+		return cpu_clock_low ? 0xff : 0;
 	case 0x70:
 		return tw_ofs;
 	case 0x71:

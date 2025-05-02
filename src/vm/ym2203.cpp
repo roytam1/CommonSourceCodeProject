@@ -137,7 +137,7 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 	opn->SetVolumePSG(volp);
 }
 
-void YM2203::update_timing(double frames_per_sec, double lines_per_frame)
+void YM2203::update_timing(int clocks, double frames_per_sec, double lines_per_frame)
 {
 	usec = (int)(1000000. / frames_per_sec / lines_per_frame + 0.5);
 }

@@ -653,6 +653,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+		case ID_PC9801_CPU_CLOCK_HIGH:
+			config.cpu_clock_low = false;
+			break;
+		case ID_PC9801_CPU_CLOCK_LOW:
+			config.cpu_clock_low = true;
+			break;
+#endif
 		case ID_CPU_POWER0:
 		case ID_CPU_POWER1:
 		case ID_CPU_POWER2:
@@ -1269,6 +1277,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef _PC98DO
 		if(config.boot_mode >= 0 && config.boot_mode < 5) {
 			CheckMenuRadioItem(hMenu, ID_PC98DO_BOOT_MODE_PC98, ID_PC98DO_BOOT_MODE_PC88_N, ID_PC98DO_BOOT_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
+		}
+#endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+		if(config.cpu_clock_low) {
+			CheckMenuRadioItem(hMenu, ID_PC9801_CPU_CLOCK_HIGH, ID_PC9801_CPU_CLOCK_LOW, ID_PC9801_CPU_CLOCK_LOW, MF_BYCOMMAND);
+		}
+		else {
+			CheckMenuRadioItem(hMenu, ID_PC9801_CPU_CLOCK_HIGH, ID_PC9801_CPU_CLOCK_LOW, ID_PC9801_CPU_CLOCK_HIGH, MF_BYCOMMAND);
 		}
 #endif
 		if(config.cpu_power >= 0 && config.cpu_power < 5) {

@@ -45,7 +45,7 @@
 #include "keyboard.h"
 #include "mouse.h"
 
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 #include "../pc80s31k.h"
 #include "../z80.h"
 #endif
@@ -58,8 +58,9 @@
 #include "../pc80s31k.h"
 #include "../z80.h"
 #include "pc8801.h"
-#include "../../config.h"
 #endif
+
+#include "../../config.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -67,6 +68,28 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+	// check configs
+	int cpu_clocks = CPU_CLOCKS;
+#if defined(PIT_CLOCK_8MHZ)
+	pit_clock_8mhz = true;
+#else
+	pit_clock_8mhz = false;
+#endif
+#if defined(_PC9801E)
+	if(config.cpu_clock_low) {
+		// 8MHz <-> 5MHz
+		cpu_clocks = 5000000;
+		pit_clock_8mhz = false;
+	}
+#elif defined(_PC9801VM) || defined(_PC98DO)
+	if(config.cpu_clock_low) {
+		// 10MHz <-> 8MHz
+		cpu_clocks = 8000000;
+		pit_clock_8mhz = true;
+	}
+#endif
+	int pit_clocks = pit_clock_8mhz ? 1996800 : 2457600;
+	
 #if defined(_PC98DO)
 	boot_mode = config.boot_mode;
 #endif
@@ -89,7 +112,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio_rs = new I8251(this, emu);		// for rs232c
 	sio_kbd = new I8251(this, emu);		// for keyboard
 	pit = new I8253(this, emu);
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	pio_fdd = new I8255(this, emu);		// for 320kb fdd i/f
 #endif
 	pio_mouse = new I8255(this, emu);	// for mouse
@@ -126,7 +149,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	keyboard = new KEYBOARD(this, emu);
 	mouse = new MOUSE(this, emu);
 	
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives
 	pio_sub = new I8255(this, emu);
 	pc80s31k = new PC80S31K(this, emu);
@@ -153,8 +176,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	*/
 
 	// set contexts
-	event->set_context_cpu(cpu);
-#if defined(SUPPORT_OLD_FDD_IF)
+	event->set_context_cpu(cpu, cpu_clocks);
+#if defined(SUPPORT_320KB_FDD_IF)
 	event->set_context_cpu(cpu_sub, 4000000);
 #endif
 	event->set_context_sound(beep);
@@ -180,15 +203,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit->set_context_ch1(beep, SIG_PCM1BIT_SIGNAL, 1);
 #endif
 	// pit ch.2: rs-232c
-#if defined(PIT_CLOCK_5MHZ)
-	pit->set_constant_clock(0, 2457600);
-	pit->set_constant_clock(1, 2457600);
-	pit->set_constant_clock(2, 2457600);
-#else
-	pit->set_constant_clock(0, 1996800);
-	pit->set_constant_clock(1, 1996800);
-	pit->set_constant_clock(2, 1996800);
-#endif
+	pit->set_constant_clock(0, pit_clocks);
+	pit->set_constant_clock(1, pit_clocks);
+	pit->set_constant_clock(2, pit_clocks);
 	pio_mouse->set_context_port_c(mouse, SIG_MOUSE_PORT_C, 0xf0, 0);
 	// sysport port.c bit6: printer strobe
 #if defined(SUPPORT_OLD_BUZZER)
@@ -251,7 +268,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_dma(dma);
 #endif
 	
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives
 	pc80s31k->set_context_cpu(cpu_sub);
 	pc80s31k->set_context_fdc(fdc_sub);
@@ -352,7 +369,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// 50h, 52h: NMI Flip Flop
 	
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	io->set_iomap_alias_rw(0x51, pio_fdd, 0);
 	io->set_iomap_alias_rw(0x53, pio_fdd, 1);
 	io->set_iomap_alias_rw(0x55, pio_fdd, 2);
@@ -441,7 +458,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 #if defined(_PC98DO)
 	pc88event = new EVENT(this, emu);
-	pc88event->set_event_base_clocks(8000000);
 	pc88event->set_frames_per_sec(60);
 	pc88event->set_lines_per_frame(260);
 	pc88event->initialize();
@@ -472,7 +488,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu_sub = new Z80(this, emu);
 	pc88cpu_sub->set_context_event_manager(pc88event);
 	
-	pc88event->set_context_cpu(pc88cpu);
+	pc88event->set_context_cpu(pc88cpu, config.cpu_clock_low ? 4000000 : 8000000);
 	pc88event->set_context_cpu(pc88cpu_sub, 4000000);
 	pc88event->set_context_sound(pc88beep);
 	pc88event->set_context_sound(pc88opn);
@@ -548,7 +564,7 @@ void VM::reset()
 		device->reset();
 	}
 #endif
-
+	
 	// initial device settings
 	pio_mouse->write_signal(SIG_I8255_PORT_A, 0xf0, 0xff);	// clear mouse status
 	pio_mouse->write_signal(SIG_I8255_PORT_B, 0x40, 0xff);	// cpu high & sw3-6
@@ -568,9 +584,9 @@ void VM::reset()
 #else
 	uint8 prn_b = 0x80;	// system type = others
 #endif
-#if defined(PIT_CLOCK_8MHZ)
-	prn_b |= 0x20;		// system clock is 8MHz
-#endif
+	if(pit_clock_8mhz) {
+		prn_b |= 0x20;		// system clock is 8MHz
+	}
 	prn_b |= 0x10;		// don't use LCD display
 #if !defined(SUPPORT_16_COLORS)
 	prn_b |= 0x08;		// standard graphics
@@ -584,13 +600,17 @@ void VM::reset()
 #endif
 	pio_prn->write_signal(SIG_I8255_PORT_B, prn_b, 0xff);
 	
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_320KB_FDD_IF)
 	pio_fdd->write_signal(SIG_I8255_PORT_A, 0xff, 0xff);
 	pio_fdd->write_signal(SIG_I8255_PORT_B, 0xff, 0xff);
 	pio_fdd->write_signal(SIG_I8255_PORT_C, 0xff, 0xff);
+#endif
+#if defined(SUPPORT_OLD_FDD_IF)
 	fdc_2dd->write_signal(SIG_UPD765A_FREADY, 1, 1);	// 2DD FDC RDY is pulluped
 #endif
+	
 	opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// PC-9801-26(K) IRQ=12
+	
 #if defined(SUPPORT_OLD_BUZZER)
 	beep->write_signal(SIG_BEEP_ON, 1, 1);
 	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
@@ -689,7 +709,10 @@ int VM::access_lamp()
 #if defined(_PC98DO)
 	return (boot_mode != 0) ? pc88fdc_sub->read_signal(0) : fdc->read_signal(0);
 #elif defined(SUPPORT_OLD_FDD_IF)
-	uint32 status = (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2) | ((fdc_sub->read_signal(0) & 3) << 4);
+	uint32 status = (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2);
+#if defined(SUPPORT_320KB_FDD_IF)
+	status |= ((fdc_sub->read_signal(0) & 3) << 4);
+#endif
 	return (status & (1 | 4 | 16)) ? 1 : (status & (2 | 8 | 32)) ? 2 : 0;
 #else
 	return fdc->read_signal(0);
@@ -784,9 +807,11 @@ void VM::open_disk(_TCHAR* file_path, int drv)
 	else if(drv == 2 || drv == 3) {
 		fdc_2dd->open_disk(file_path, drv - 2);
 	}
+#if defined(SUPPORT_320KB_FDD_IF)
 	else if(drv == 4 || drv == 5) {
 		fdc_sub->open_disk(file_path, drv - 4);
 	}
+#endif
 #else
 	fdc->open_disk(file_path, drv);
 #endif
@@ -808,9 +833,11 @@ void VM::close_disk(int drv)
 	else if(drv == 2 || drv == 3) {
 		fdc_2dd->close_disk(drv - 2);
 	}
+#if defined(SUPPORT_320KB_FDD_IF)
 	else if(drv == 4 || drv == 5) {
 		fdc_sub->close_disk(drv - 4);
 	}
+#endif
 #else
 	fdc->close_disk(drv);
 #endif
