@@ -1,3 +1,9 @@
+8/29/2014
+
+[PC8801/PC88] fix crtc to support non transparent mode
+[PC8801/PC88] fix crtc issue that cursor is not displayed in non attibutes mode
+
+
 8/28/2014
 
 [COMMON] fix all vcproj files to set WholeProgramOptimization option
@@ -6,13 +12,13 @@
 [VM/FMGEN] update fmgen.cpp from v1.49 to v1.50 (thanks Mr.Rururu-Tan)
 [VM/FMGEN] update opna.cpp from v1.68 to v1.70 (thanks Mr.Rururu-Tan)
 [VM/DATAREC] support NEC PC-6001 cas/p6 format tape image
-[VM/I386] fix memory leak
+[VM/I386] fix memory leak issue
 [VM/I386] fix x87 opcodes FPREM and FPREM1 based on MAME 0.154
 [VM/MC6847] support enable/disable signal
 [VM/PC6031] support NEC PC-6031 and PC-6032 (thanks Mr.Nishida)
 [VM/UPD765A] fix to compare all of C/H/R/N to search sector (thanks Mr.Haserin)
 
-[GAMEGEAR/MEMORY] fix memory leak
+[GAMEGEAR/MEMORY] fix memory leak issue
 
 [MZ2500] fix to reset only cpu and memory map in standard (non-ipl) reset
 [MZ2500/CMT] fix to check the pulse width of ipl reset and cmt eject signals

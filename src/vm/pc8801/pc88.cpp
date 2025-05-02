@@ -1413,7 +1413,6 @@ bool PC88::check_data_carrier(uint8 *p)
 void PC88::draw_screen()
 {
 	// render text screen
-	crtc.expand_attribs(hireso, Port31_400LINE);
 	draw_text();
 	
 	// render graph screen
@@ -1569,6 +1568,8 @@ void PC88::draw_text()
 	}
 	crtc.status &= ~8; // clear dma underrun
 	
+	crtc.expand_buffer(hireso, Port31_400LINE);
+	
 	int char_height = crtc.char_height;
 	uint8 color_mask = Port30_COLOR ? 0 : 7;
 	
@@ -1578,8 +1579,8 @@ void PC88::draw_text()
 	if(Port31_400LINE || !crtc.skip_line) {
 		char_height >>= 1;
 	}
-	for(int cy = 0, ytop = 0, ofs = 0; cy < crtc.height && ytop < 200; cy++, ytop += char_height, ofs += 80 + crtc.attrib.num * 2) {
-		for(int x = 0, cx = 0; cx < crtc.width && cx < 80; x += 8, cx++) {
+	for(int cy = 0, ytop = 0; cy < crtc.height && ytop < 200; cy++, ytop += char_height) {
+		for(int x = 0, cx = 0; cx < crtc.width; x += 8, cx++) {
 			if(Port30_40 && (cx & 1)) {
 				continue;
 			}
@@ -1590,7 +1591,7 @@ void PC88::draw_text()
 			bool secret = ((attrib & 2) != 0);
 			bool reverse = ((attrib & 1) != 0);
 			
-			uint8 code = secret ? 0 : crtc.read_buffer(ofs + cx);
+			uint8 code = secret ? 0 : crtc.text.expand[cy][cx];
 			uint8 *pattern = ((attrib & 0x10) ? sg_pattern : kanji1 + 0x1000) + code * 8;
 			
 			for(int l = 0, y = ytop; l < char_height && y < 200; l++, y++) {
@@ -1996,7 +1997,7 @@ void pc88_crtc_t::write_param(uint8 data)
 	case 0:
 		switch(cmd_ptr) {
 		case 0:
-			width = (data & 0x7f) + 2;
+			width = min((data & 0x7f) + 2, 80);
 			break;
 		case 1:
 			if(height != (data & 0x3f) + 1) {
@@ -2021,7 +2022,7 @@ void pc88_crtc_t::write_param(uint8 data)
 			break;
 		case 4:
 			mode = (data >> 5) & 7;
-			attrib.num = (mode == 0 || mode == 2) ? (data & 0x1f) + 1 : 0;
+			attrib.num = (mode & 1) ? 0 : min((data & 0x1f) + 1, 20);
 			break;
 		}
 		break;
@@ -2080,12 +2081,8 @@ void pc88_crtc_t::update_blink()
 	blink.cursor = (blink.counter <= blink.rate / 4) || (blink.rate / 2 <= blink.counter && blink.counter <= 3 * blink.rate / 4);
 }
 
-void pc88_crtc_t::expand_attribs(bool hireso, bool line400)
+void pc88_crtc_t::expand_buffer(bool hireso, bool line400)
 {
-	if(!(status & 0x10) || attrib.num == 0) {
-		memset(attrib.expand, 0xe0, sizeof(attrib.expand));
-		return;
-	}
 	int char_height_tmp = char_height;
 	
 	if(!hireso) {
@@ -2095,44 +2092,64 @@ void pc88_crtc_t::expand_attribs(bool hireso, bool line400)
 		char_height_tmp >>= 1;
 	}
 	for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
-		uint8 flags[128];
-		memset(flags, 0, sizeof(flags));
-		for(int i = 2 * (attrib.num - 1); i >= 0; i -= 2) {
-			flags[buffer[ofs + i + 80] & 0x7f] = 1;
+		for(int cx = 0; cx < width; cx++) {
+			text.expand[cy][cx] = buffer[ofs + cx];
 		}
-		for(int cx = 0, pos = 0; cx < width && cx < 80; cx++) {
-			if(flags[cx]) {
-				uint8 code = buffer[ofs + pos + 81];
-				if(mode == 2) {
-					// color
-					if(code & 8) {
-						attrib.data = (attrib.data & 0x0f) | (code & 0xf0);
-//						attrib.mask = 0xf0;
-					} else {
-						attrib.data = (attrib.data & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
-						attrib.data ^= reverse;
-						attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
-//						attrib.mask = 0xff;
+	}
+	if(mode & 4) {
+		// non transparent
+		for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
+			for(int cx = 0; cx < width; cx += 2) {
+				set_attrib(buffer[ofs + cx + 1]);
+				attrib.expand[cy][cx] = attrib.expand[cy][cx + 1] = attrib.data;
+			}
+		}
+	} else {
+		// transparent
+		if(mode & 1) {
+			memset(attrib.expand, 0xe0, sizeof(attrib.expand));
+		} else {
+			for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
+				uint8 flags[128];
+				memset(flags, 0, sizeof(flags));
+				for(int i = 2 * (attrib.num - 1); i >= 0; i -= 2) {
+					flags[buffer[ofs + i + 80] & 0x7f] = 1;
+				}
+				for(int cx = 0, pos = 0; cx < width; cx++) {
+					if(flags[cx]) {
+						set_attrib(buffer[ofs + pos + 81]);
+						pos += 2;
 					}
-				} else {
-					attrib.data = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
-					attrib.data ^= reverse;
-					attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
-//					attrib.mask = 0xff;
-				}
-				pos += 2;
-			}
-			attrib.expand[cy][cx] = attrib.data;// & attrib.mask;
-			
-			if(cx == cursor.x && cy == cursor.y) {
-				if((cursor.type & 1) && blink.cursor) {
-					// no cursor
-				} else {
-					static const uint8 ctype[5] = {0, 8, 8, 1, 1};
-					attrib.expand[cy][cx] ^= ctype[cursor.type + 1];
+					attrib.expand[cy][cx] = attrib.data;
 				}
 			}
 		}
+	}
+	if(cursor.x < 80 && cursor.y < 200) {
+		if((cursor.type & 1) && blink.cursor) {
+			// no cursor
+		} else {
+			static const uint8 ctype[5] = {0, 8, 8, 1, 1};
+			attrib.expand[cursor.y][cursor.x] ^= ctype[cursor.type + 1];
+		}
+	}
+}
+
+void pc88_crtc_t::set_attrib(uint8 code)
+{
+	if(mode & 2) {
+		// color
+		if(code & 8) {
+			attrib.data = (attrib.data & 0x0f) | (code & 0xf0);
+		} else {
+			attrib.data = (attrib.data & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
+			attrib.data ^= reverse;
+			attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
+		}
+	} else {
+		attrib.data = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
+		attrib.data ^= reverse;
+		attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
 	}
 }
 

@@ -42,6 +42,9 @@ typedef struct pc88_crtc_t {
 		int num;
 		uint8 expand[200][80];
 	} attrib;
+	struct {
+		uint8 expand[200][80];
+	} text;
 	int width, height;
 	int char_height;
 	bool skip_line;
@@ -62,7 +65,8 @@ typedef struct pc88_crtc_t {
 	uint8 read_buffer(int ofs);
 	void clear_buffer();
 	void update_blink();
-	void expand_attribs(bool hireso, bool line400);
+	void expand_buffer(bool hireso, bool line400);
+	void set_attrib(uint8 code);
 } pc88_crtc_t;
 
 typedef struct pc88_dmac_t {
