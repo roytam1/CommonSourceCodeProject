@@ -106,7 +106,15 @@ void MEMORY::initialize()
 	tone_table[0] = 0;
 	
 	// init keyboard
-	key_stat = emu->key_buffer();
+	memset(key_stat, 0, sizeof(key_stat));
+	memset(key_flag, 0, sizeof(key_flag));
+	
+	for(int i = 0; i < 8; i++) {
+		for(int j = 0; j < 10; j++) {
+			key_flag[key_table[i][j]] = 1;
+		}
+	}
+	key_flag[0] = key_flag[0x10] = key_flag[0x11] = key_flag[0x12] = 0;
 	
 	// init cmt
 	cmt_count = 0;
@@ -118,8 +126,7 @@ void MEMORY::initialize()
 	pb = RGB_COLOR(160, 168, 160);
 	memset(lcd, 0, sizeof(lcd));
 	
-	// register events
-	register_frame_event(this);
+	// register event
 	register_event_by_clock(this, EVENT_SOUND, 256, true, NULL);
 }
 
@@ -228,11 +235,6 @@ uint32 MEMORY::read_data8(uint32 addr)
 		case 0x20:
 			return key_strobe;
 		case 0x22:
-			// reset key interrupt when key data is read ???
-			if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
-				update_intr();
-			}
-			d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
 			return key_data & 0xff;
 		case 0x26:
 			// interrupt mask reset in sleep mode
@@ -244,10 +246,6 @@ uint32 MEMORY::read_data8(uint32 addr)
 		case 0x28:
 			// bit6: power switch interrupt flag (0=active)
 			// bit7: busy signal of lcd controller (0=busy)
-//			if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
-//				update_intr();
-//			}
-//			d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
 			return ((key_data >> 8) & 3) | ((int_status & INT_POWER) ? 0 : 0x40) | 0xa8;
 		case 0x2a:
 		case 0x2b:
@@ -333,11 +331,6 @@ void MEMORY::event_callback(int event_id, int err)
 	}
 }
 
-void MEMORY::event_frame()
-{
-	update_keyboard();
-}
-
 void MEMORY::update_sound()
 {
 	if(sound_ptr < sound_count) {
@@ -366,6 +359,22 @@ void MEMORY::update_keyboard()
 {
 	key_data = 0x3ff;
 	
+	if(key_strobe == 0) {
+		// clear key interrupt
+		if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
+			update_intr();
+		}
+		d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
+		
+		// clear key buffer except shift/ctrl/alt keys
+		uint8 key_stat_10 = key_stat[0x10];
+		uint8 key_stat_11 = key_stat[0x11];
+		uint8 key_stat_12 = key_stat[0x12];
+		memset(key_stat, 0, sizeof(key_stat));
+		key_stat[0x10] = key_stat_10;
+		key_stat[0x11] = key_stat_11;
+		key_stat[0x12] = key_stat_12;
+	}
 	for(int i = 0; i < 8; i++) {
 		if(key_strobe & (1 << i)) {
 			continue;
@@ -380,27 +389,31 @@ void MEMORY::update_keyboard()
 			key_data &= ~0x200;
 		}
 	}
-	
-	// update interrupt
-	if((key_data & 0x1ff) != 0x1ff && key_intmask) {
-		if(!(int_status & INT_KEYBOARD)) {
-			int_status |= INT_KEYBOARD;
-			update_intr();
-			d_cpu->write_signal(SIG_MC6801_PORT_1, 0, 0x20);
-		}
-	}
-	else {
-		if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
-			update_intr();
-		}
-		d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
-	}
 }
 
 void MEMORY::notify_power_off()
 {
 	int_status |= INT_POWER;
 	update_intr();
+}
+
+void MEMORY::key_down(int code)
+{
+	key_stat[code] = 1;
+	
+	if(key_flag[code]) {
+		// raise key interrupt
+		if(!(int_status & INT_KEYBOARD)) {
+			int_status |= INT_KEYBOARD;
+			update_intr();
+		}
+		d_cpu->write_signal(SIG_MC6801_PORT_1, 0, 0x20);
+	}
+}
+
+void MEMORY::key_up(int code)
+{
+	key_stat[code] = 0;
 }
 
 void MEMORY::update_intr()

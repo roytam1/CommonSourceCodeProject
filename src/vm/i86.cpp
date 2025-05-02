@@ -780,7 +780,9 @@ uint32 I86::debug_read_io16(uint32 addr) {
 
 bool I86::debug_write_reg(_TCHAR *reg, uint32 data)
 {
-	if(_tcsicmp(reg, _T("AX")) == 0) {
+	if(_tcsicmp(reg, _T("IP")) == 0) {
+		pc = ((data & 0xffff) + base[CS]) & AMASK;
+	} else if(_tcsicmp(reg, _T("AX")) == 0) {
 		regs.w[AX] = data;
 	} else if(_tcsicmp(reg, _T("BX")) == 0) {
 		regs.w[BX] = data;

@@ -1,3 +1,15 @@
+9/13/2014
+
+[WIN32/DEBUGGER] support search command
+
+[VM/I86] support to change IP register value from debugger console
+[VM/I286] support to change IP register value from debugger console
+[VM/I386] support to change IP register value from debugger console
+[VM/MC6800] support debugger
+
+[HC20/MEMORY] fix keyboard chattering
+
+
 9/7/2014
 
 [WIN32/DEBUGGER] support debugger console

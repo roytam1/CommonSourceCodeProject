@@ -66,14 +66,6 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data)
-	{
-		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
-	}
-	uint32 read_data16(uint32 addr)
-	{
-		return read_data8(addr) | (read_data8(addr + 1) << 8);
-	}
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);

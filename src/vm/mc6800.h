@@ -24,6 +24,10 @@
 #define SIG_MC6801_PORT_3_SC2	5
 #define SIG_MC6801_SIO_RECV	6
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class FIFO;
 #endif
 
@@ -31,6 +35,10 @@ class MC6800 : public DEVICE
 {
 private:
 	DEVICE *d_mem;
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+	DEVICE *d_mem_stored;
+#endif
 	
 	pair pc;
 	uint16 prevpc;
@@ -376,12 +384,46 @@ public:
 	{
 		return prevpc;
 	}
+	uint32 get_next_pc()
+	{
+		return pc.w.l;
+	}
+#ifdef USE_DEBUGGER
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	uint32 debug_prog_addr_mask()
+	{
+		return 0xffff;
+	}
+	uint32 debug_data_addr_mask()
+	{
+		return 0xffff;
+	}
+	void debug_write_data8(uint32 addr, uint32 data);
+	uint32 debug_read_data8(uint32 addr);
+	// implement 16bit/32bit functions because this cpu is big endian
+	void debug_write_data16(uint32 addr, uint32 data);
+	uint32 debug_read_data16(uint32 addr);
+	void debug_write_data32(uint32 addr, uint32 data);
+	uint32 debug_read_data32(uint32 addr);
+	bool debug_write_reg(_TCHAR *reg, uint32 data);
+	void debug_regs_info(_TCHAR *buffer);
+	int debug_dasm(uint32 pc, _TCHAR *buffer);
+#endif
 	
 	// unique function
 	void set_context_mem(DEVICE* device)
 	{
 		d_mem = device;
 	}
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	void set_context_port1(DEVICE* device, int id, uint32 mask, int shift)
 	{

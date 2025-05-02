@@ -57,13 +57,8 @@ public:
 	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data);
-	uint32 read_data16(uint32 addr);
-	
 	void write_data8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_data8w(uint32 addr, int* wait);
-	void write_data16w(uint32 addr, uint32 data, int* wait);
-	uint32 read_data16w(uint32 addr, int* wait);
 	
 	void write_io8(uint32 addr, uint32 data);
 	

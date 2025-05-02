@@ -240,7 +240,7 @@ unsigned __stdcall debugger_thread(void *lpx)
 					dump_addr = (end_addr + 1) & data_addr_mask;
 					prev_command[1] = _T('\0'); // remove parameters to dump continuously
 				} else {
-					my_printf(hStdOut, _T("D [<address> [<range>]] - dump memory\n"));
+					my_printf(hStdOut, _T("invalid parameter number\n"));
 				}
 			} else if(_tcsicmp(params[0], _T("E")) == 0 || _tcsicmp(params[0], _T("EB")) == 0) {
 				if(num >= 3) {
@@ -331,6 +331,29 @@ unsigned __stdcall debugger_thread(void *lpx)
 				} else if(num == 3) {
 					if(!cpu->debug_write_reg(params[1], my_hexatoi(params[2]))) {
 						my_printf(hStdOut, _T("unknown register %s\n"), params[1]);
+					}
+				} else {
+					my_printf(hStdOut, _T("invalid parameter number\n"));
+				}
+			} else if(_tcsicmp(params[0], _T("S")) == 0) {
+				if(num >= 4) {
+					uint32 start_addr = my_hexatoi(params[1]) & data_addr_mask;
+					uint32 end_addr = my_hexatoi(params[2]) & data_addr_mask;
+					uint8 list[32];
+					for(int i = 3, j = 0; i < num; i++, j++) {
+						list[j] = my_hexatoi(params[i]);
+					}
+					for(uint64 addr = start_addr; addr <= end_addr; addr++) {
+						bool found = true;
+						for(int i = 3, j = 0; i < num; i++, j++) {
+							if(cpu->debug_read_data8((addr + j) & data_addr_mask) != list[j]) {
+								found = false;
+								break;
+							}
+						}
+						if(found) {
+							my_printf(hStdOut, _T("%08X\n"), addr);
+						}
 					}
 				} else {
 					my_printf(hStdOut, _T("invalid parameter number\n"));
@@ -674,6 +697,7 @@ unsigned __stdcall debugger_thread(void *lpx)
 				my_printf(hStdOut, _T("O[{B,W,D}] <port> <value> - output port (byte,word,dword)\n"));
 				my_printf(hStdOut, _T("R - show register(s)\n"));
 				my_printf(hStdOut, _T("R <reg> <value> - edit register\n"));
+				my_printf(hStdOut, _T("S <range> <list> - search\n"));
 				my_printf(hStdOut, _T("U [<range>] - unassemble\n"));
 				
 				my_printf(hStdOut, _T("H <value> <value> - hexadd\n"));

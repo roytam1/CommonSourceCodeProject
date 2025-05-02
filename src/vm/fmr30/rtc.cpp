@@ -105,7 +105,7 @@ uint32 RTC::read_io16(uint32 addr)
 	case 6:
 		return rtibr;
 	}
-	return 0xff;
+	return 0xffff;
 }
 
 void RTC::event_callback(int event_id, int err)

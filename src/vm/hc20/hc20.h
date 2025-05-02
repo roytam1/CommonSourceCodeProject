@@ -32,6 +32,7 @@
 #define USE_FD2
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
+#define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	12
@@ -39,6 +40,7 @@
 #define DONT_KEEEP_KEY_PRESSED
 #define USE_POWER_OFF
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -85,6 +87,11 @@ public:
 	void notify_power_off();
 	void run();
 	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
+	
 	// draw screen
 	void draw_screen();
 	int access_lamp();
@@ -93,6 +100,10 @@ public:
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
+	
+	// notify key
+	void key_down(int code, bool repeat);
+	void key_up(int code);
 	
 	// user interface
 	void open_disk(int drv, _TCHAR* file_path, int offset);

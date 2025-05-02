@@ -59,7 +59,7 @@ private:
 	double sound_freq;
 	double tone_table[57];
 	
-	uint8 *key_stat;
+	uint8 key_stat[256], key_flag[256];
 	int key_data, key_strobe, key_intmask;
 	
 	uint8 cmt_buffer[CMT_BUFFER_SIZE];
@@ -100,7 +100,6 @@ public:
 	uint32 read_data8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
-	void event_frame();
 	
 	// unitque function
 	void set_context_beep(BEEP* device)
@@ -120,6 +119,8 @@ public:
 		d_tf20 = device;
 	}
 	void notify_power_off();
+	void key_down(int code);
+	void key_up(int code);
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();

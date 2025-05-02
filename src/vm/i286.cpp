@@ -280,7 +280,10 @@ uint32 I286::debug_read_io16(uint32 addr) {
 bool I286::debug_write_reg(_TCHAR *reg, uint32 data)
 {
 	cpu_state *cpustate = (cpu_state *)opaque;
-	if(_tcsicmp(reg, _T("AX")) == 0) {
+	if(_tcsicmp(reg, _T("IP")) == 0) {
+		cpustate->pc = ((data & 0xffff) + cpustate->base[CS]) & AMASK;
+		CHANGE_PC(cpustate->pc);
+	} else if(_tcsicmp(reg, _T("AX")) == 0) {
 		cpustate->regs.w[AX] = data;
 	} else if(_tcsicmp(reg, _T("BX")) == 0) {
 		cpustate->regs.w[BX] = data;

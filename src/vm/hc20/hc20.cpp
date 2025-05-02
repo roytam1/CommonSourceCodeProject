@@ -17,6 +17,10 @@
 #include "../mc6800.h"
 #include "../tf20.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "memory.h"
 
 // ----------------------------------------------------------------------------
@@ -96,6 +100,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -150,6 +157,20 @@ void VM::run()
 }
 
 // ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
+
+// ----------------------------------------------------------------------------
 // draw screen
 // ----------------------------------------------------------------------------
 
@@ -185,6 +206,20 @@ uint16* VM::create_sound(int* extra_frames)
 int VM::sound_buffer_ptr()
 {
 	return event->sound_buffer_ptr();
+}
+
+// ----------------------------------------------------------------------------
+// notify key
+// ----------------------------------------------------------------------------
+
+void VM::key_down(int code, bool repeat)
+{
+	memory->key_down(code);
+}
+
+void VM::key_up(int code)
+{
+	memory->key_up(code);
 }
 
 // ----------------------------------------------------------------------------

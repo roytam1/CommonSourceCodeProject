@@ -321,7 +321,10 @@ uint32 I386::debug_read_io32(uint32 addr) {
 bool I386::debug_write_reg(_TCHAR *reg, uint32 data)
 {
 	i386_state *cpustate = (i386_state *)opaque;
-	if(_tcsicmp(reg, _T("AX")) == 0) {
+	if(_tcsicmp(reg, _T("IP")) == 0) {
+		cpustate->eip = data & 0xffff;
+		CHANGE_PC(cpustate, cpustate->eip);
+	} else if(_tcsicmp(reg, _T("AX")) == 0) {
 		REG16(AX) = data;
 	} else if(_tcsicmp(reg, _T("BX")) == 0) {
 		REG16(BX) = data;
