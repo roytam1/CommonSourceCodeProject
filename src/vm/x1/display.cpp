@@ -185,6 +185,7 @@ void DISPLAY::initialize()
 	_memset(gaiji_g, 0, sizeof(gaiji_g));
 #endif
 	
+	vblank_clock = 0;
 	vblank = vsync = true;
 	
 	// regist event
@@ -197,7 +198,7 @@ void DISPLAY::reset()
 #ifdef _X1TURBO
 	mode1 = 3;
 	mode2 = 0;
-	hires = false;
+	hires = true;
 #endif
 	cur_line = cur_code = 0;
 	
@@ -258,6 +259,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		switch(addr) {
 		case 0x1fd0:
 			mode1 = data;
+			hires = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
 			break;
 		case 0x1fe0:
 			mode2 = data;
@@ -393,62 +395,80 @@ uint32 DISPLAY::read_io8(uint32 addr)
 
 void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
-	column = data & mask;
+	if(id == SIG_DISPLAY_COLUMN) {
+		column = data & mask;
+	}
+	else if(id == SIG_DISPLAY_VBLANK) {
+		// hack: cpu detects vblank
+		vblank_clock = vm->current_clock();
+	}
 }
 
 void DISPLAY::event_frame()
 {
 	cblink = (cblink + 1) & 0x3f;
+	
+	// update crtc parameters
+	ch_height = (regs[9] & 0x1f) + 1;
+	hz_total = regs[0] + 1;
+	hz_disp = regs[1];
+	vt_disp = regs[6] & 0x7f;
+	st_addr = (regs[12] << 8) | regs[13];
+	
+	int vsync_width = (regs[3] & 0xf0) >> 4;
+	vsync_pos = regs[7] * ch_height;
+	vsync_end = vsync_pos + (vsync_width ? vsync_width : 8); // ???
+	vsync_pos = vt_disp * ch_height;
+	
 #ifdef _X1TURBO
-	hires = ((regs[4] + 1) * ((regs[9] & 0x1f) + 1) + regs[5] > 400);
+//	hires = ((regs[4] + 1) * ((regs[9] & 0x1f) + 1) + regs[5] > 400);
 #endif
 }
 
 void DISPLAY::event_vline(int v, int clock)
 {
-	vline = v;
-	vclock = vm->current_clock();
-	prev_clock = 0;
-	
-	int wd = (regs[3] & 0xf0) >> 4;
-	int vs = regs[7] * (regs[9] + 1);
-	int ve = vs + (wd ? wd : 8);
-	int dve = regs[6] * (regs[9] + 1);
-	
 #ifdef _X1TURBO
-	int vv = hires ? (v * 2) : v;
-	set_vblank(vv < dve);
-	set_vsync(vs <= vv && vv <= ve);
-	
-	if(v < 200) {
-		if(hires) {
-			draw_line(vv);	// ugly patch !!!
-			draw_line(vv + 1);
-		}
-		else {
-			draw_line(v);
+	if(hires) {
+		// ugly patch !!!
+		set_vblank(v * 2);
+		set_vsync(v * 2);
+		
+		if(v < 200) {
+			draw_line(v * 2);
+			draw_line(v * 2 + 1);
 		}
 	}
-#else
-	set_vblank(v < dve);
-	set_vsync(vs <= v && v <= ve);
-	
-	if(v < 200) {
-		draw_line(v);
+	else {
+#endif
+		set_vblank(v);
+		set_vsync(v);
+		
+		if(v < 200) {
+			draw_line(v);
+		}
+#ifdef _X1TURBO
 	}
 #endif
 }
 
-void DISPLAY::set_vblank(bool val)
+void DISPLAY::set_vblank(int v)
 {
+	bool val = (v <= vsync_pos);
+	
+	if(vblank && !val) {
+		// enter vblank
+		vblank_clock = vm->current_clock();
+	}
 	if(vblank != val) {
 		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0x80 : 0, 0x80);
 		vblank = val;
 	}
 }
 
-void DISPLAY::set_vsync(bool val)
+void DISPLAY::set_vsync(int v)
 {
+	bool val = (vsync_pos <= v && v <= vsync_end);
+	
 	if(vsync != val) {
 		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0x04 : 0, 0x04);
 		vsync = val;
@@ -557,8 +577,6 @@ void DISPLAY::get_cur_pcg(uint32 addr)
 			cur_code &= 0xfe;
 			cur_code += addr & 1;
 		}
-		// force update in next get_cur_code_line()
-		prev_clock = 0;
 	}
 	else
 #endif
@@ -567,26 +585,23 @@ void DISPLAY::get_cur_pcg(uint32 addr)
 
 void DISPLAY::get_cur_code_line()
 {
-	/*
-		NOTE: don't update pcg addr frequently to write r/g/b patterns to one pcg (wibarm)
+#ifdef _X1TURBO
+	int ht_clock = hires ? 161 : 250;
+#else
+	#define ht_clock 250
+#endif
+	int clock = vm->passed_clock(vblank_clock);
+	int vt_line = vsync_pos + (int)(clock / ht_clock);
 	
-		CLOCKS_PER_LINE = 250
-		CLOCKS_PER_LINE / CHARS_PER_LINE * 40 = 87.8
-		
-		XXX: Need to run X1turbo virtual machine with 15KHz mode :-(
-	*/
-	if(vm->passed_clock(prev_clock) > 87) {
-		int ofs = (regs[0] + 1) * vm->passed_clock(vclock) / 250;
-		if(ofs >= regs[1]) {
-			ofs = regs[1] - 1;
-		}
-		int ht = (regs[9] & 0x1f) + 1;
-		ofs += regs[1] * (int)(vline / ht);
-		ofs += (regs[12] << 8) | regs[13];
-		cur_code = vram_t[ofs & 0x7ff];
-		cur_line = (vline % ht) & 7;
-		prev_clock = vm->current_clock();
+	int addr = (hz_total * (clock % ht_clock)) / ht_clock;
+	addr += hz_disp * (int)(vt_line / ch_height);
+	if(addr > 0x7ff) {
+		addr = 0x7ff;
 	}
+	addr += st_addr;
+	
+	cur_code = vram_t[addr & 0x7ff];
+	cur_line = (vt_line % ch_height) & 7;
 }
 
 void DISPLAY::draw_line(int v)
@@ -597,9 +612,8 @@ void DISPLAY::draw_line(int v)
 		_memset(prev_top, 0, sizeof(prev_top));
 	}
 	if((regs[8] & 0x30) != 0x30) {
-		int ht = (regs[9] & 0x1f) + 1;
-		if((v % ht) == 0) {
-			draw_text(v / ht);
+		if((v % ch_height) == 0) {
+			draw_text(v / ch_height);
 		}
 		draw_cg(v);
 		_memcpy(&pri_line[v][0][0], &pri[0][0], sizeof(pri));
@@ -702,12 +716,9 @@ void DISPLAY::draw_screen()
 void DISPLAY::draw_text(int y)
 {
 	int width = (column & 0x40) ? 40 : 80;
-	int hz = regs[1];
-	int vt = regs[6] & 0x7f;
-	int ht = (regs[9] & 0x1f) + 1;
-	uint16 src = ((regs[12] << 8) | regs[13]) + hz * y;
+	uint16 src = st_addr + hz_disp * y;
 	
-	for(int x = 0; x < hz && x < width; x++) {
+	for(int x = 0; x < hz_disp && x < width; x++) {
 		src &= 0x7ff;
 		uint8 code = vram_t[src];
 #ifdef _X1TURBO
@@ -777,8 +788,8 @@ void DISPLAY::draw_text(int y)
 			else {
 				// check next line
 				uint8 next_code = 0, next_attr = 0;
-				if(y < vt - 1) {
-					uint16 addr = (src + hz) & 0x7ff;
+				if(y < vt_disp - 1) {
+					uint16 addr = (src + hz_disp) & 0x7ff;
 					next_code = vram_t[addr];
 					next_attr = vram_a[addr];
 				}
@@ -795,7 +806,7 @@ void DISPLAY::draw_text(int y)
 		prev_top[x] = is_top;
 		
 		// render character
-		for(int l = 0; l < ht; l++) {
+		for(int l = 0; l < ch_height; l++) {
 			int line = (attr & 0x40) ? (l >> 1) : l;
 #ifdef _X1TURBO
 			line >>= shift;
@@ -803,7 +814,7 @@ void DISPLAY::draw_text(int y)
 			uint8 b = (!(col & 1)) ? 0 : reverse ? ~pattern_b[line] : pattern_b[line];
 			uint8 r = (!(col & 2)) ? 0 : reverse ? ~pattern_r[line] : pattern_r[line];
 			uint8 g = (!(col & 4)) ? 0 : reverse ? ~pattern_g[line] : pattern_g[line];
-			int yy = y * ht + l;
+			int yy = y * ch_height + l;
 #ifdef _X1TURBO
 			if(yy >= 400) {
 #else
@@ -847,16 +858,13 @@ void DISPLAY::draw_text(int y)
 void DISPLAY::draw_cg(int line)
 {
 	int width = (column & 0x40) ? 40 : 80;
-	int hz = regs[1];
-	int vt = regs[6] & 0x7f;
-	int ht = (regs[9] & 0x1f) + 1;
 	
-	int y = line / ht;
-	int l = line % ht;
-	if(y >= vt) {
+	int y = line / ch_height;
+	int l = line % ch_height;
+	if(y >= vt_disp) {
 		return;
 	}
-	int ofs, src = ((regs[12] << 8) | regs[13]) + hz * y;
+	int ofs, src = st_addr + hz_disp * y;
 #ifdef _X1TURBO
 	int page = (hires && !(mode1 & 2)) ? (l & 1) : (mode1 & 8);
 	int ll = hires ? (l >> 1) : l;
@@ -874,7 +882,7 @@ void DISPLAY::draw_cg(int line)
 	int ofs_r = ofs + 0x4000;
 	int ofs_g = ofs + 0x8000;
 	
-	for(int x = 0; x < hz && x < width; x++) {
+	for(int x = 0; x < hz_disp && x < width; x++) {
 		src &= 0x7ff;
 		uint8 b = vram_ptr[ofs_b | src];
 		uint8 r = vram_ptr[ofs_r | src];

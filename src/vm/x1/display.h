@@ -17,6 +17,7 @@
 #include "../device.h"
 
 #define SIG_DISPLAY_COLUMN	0
+#define SIG_DISPLAY_VBLANK	1
 
 class DISPLAY : public DEVICE
 {
@@ -41,7 +42,6 @@ private:
 	uint8 font[0x800];
 	uint8 kanji[0x4bc00];
 	
-	int vline, vclock, prev_clock;
 	uint8 cur_code, cur_line;
 	
 	int kaddr, kofs, kflag;
@@ -68,13 +68,19 @@ private:
 	scrntype palette_pc[8];
 	uint8 prev_top[80];
 	int cblink;
-	bool vblank, vsync;
 	bool scanline;
 	
-	void set_vblank(bool val);
-	void set_vsync(bool val);
-	void update_pal();
+	int ch_height; // HD46505
+	int hz_total, hz_disp, vt_disp;
+	int st_addr;
+	int vblank_pos, vsync_pos, vsync_end;
+	bool vblank, vsync;
+	uint32 vblank_clock;
 	
+	void set_vblank(int v);
+	void set_vsync(int v);
+	
+	void update_pal();
 	uint8 get_cur_font(uint32 addr);
 	void get_cur_pcg(uint32 addr);
 	void get_cur_code_line();

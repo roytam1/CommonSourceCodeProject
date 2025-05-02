@@ -10,6 +10,7 @@
 */
 
 #include "io.h"
+#include "display.h"
 
 void IO::reset()
 {
@@ -18,9 +19,7 @@ void IO::reset()
 	vram_r = vram + 0x4000;
 	vram_g = vram + 0x8000;
 	vram_mode = signal = false;
-#ifdef _X1TURBO
-	is_arcus = ctc_latch = false;
-#endif
+	vdisp = 0;
 }
 
 void IO::write_signal(int id, uint32 data, uint32 mask)
@@ -94,26 +93,6 @@ void IO::write_port(uint32 addr, uint32 data, bool is_dma)
 		return;
 	}
 #ifdef _X1TURBO
-	if(addr == 0x1fa1) {
-		// ARCUS patch :-(
-//		if(vm->get_prv_pc() == 0x6d2 && data == 0xa7) {
-		if(vm->get_prv_pc() == 0x21d && data == 0xa7) {
-			is_arcus = true;
-		}
-		else if(vm->get_prv_pc() == 0x2f0 && data == 0xa7) {
-			is_arcus = false;
-		}
-		if(ctc_latch) {
-			ctc_latch = false;
-		}
-		else if(data & 1) {
-			// Disable Z80CTC Ch.1 IRQ
-			if(is_arcus) {
-				data &= ~0x80;
-			}
-			ctc_latch = ((data & 4) != 0);
-		}
-	}
 	if(addr == 0x1fd0) {
 		int ofs = (data & 0x10) ? 0xc000 : 0;
 		vram_b = vram + 0x0000 + ofs;
@@ -161,6 +140,13 @@ uint32 IO::read_port(uint32 addr, bool is_dma)
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32 addr2 = haddr | read_table[laddr].addr;
 	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : is_dma ? read_table[laddr].dev->read_dma_io8(addr2) : read_table[laddr].dev->read_io8(addr2);
+	if((addr2 & 0xff0f) == 0x1a01) {
+		// hack: cpu detects vblank
+		if((vdisp & 0x80) && !(val & 0x80)) {
+			read_table[0x1000].dev->write_signal(SIG_DISPLAY_VBLANK, 1, 1);
+		}
+		vdisp = val;
+	}
 #ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
 		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {

@@ -293,7 +293,8 @@ void TMS9995::reset()
 void TMS9995::run(int clock)
 {
 	count += clock;
-	first = count;
+	first = clock;
+	
 	while(count > 0) {
 		period = 0;
 		

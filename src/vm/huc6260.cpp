@@ -441,7 +441,8 @@ void HUC6260::run(int clock)
 	
 	// run cpu while given clocks
 	count += clock;
-	first = count;
+	first = clock;
+	
 	while(count > 0) {
 		switch(TransOpe) {
 		case 0:

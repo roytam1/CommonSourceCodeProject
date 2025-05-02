@@ -396,9 +396,9 @@ uint8 DATAREC::get_wav_sample()
 		struct {
 			uint8 l, h;
 		} b;
-	} pair;
+	} sample_pair;
 	
-	pair data;
+	sample_pair data;
 	data.b.l = fio->Fgetc();
 	if(sample_bits == 16) {
 		data.b.h = fio->Fgetc();

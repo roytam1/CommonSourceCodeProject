@@ -31,7 +31,7 @@
 #define Y	y
 #define P	p
 #define S	sp.b.l
-#define SPD	sp.l
+#define SPD	sp.d
 
 #define SET_NZ(n) \
 	if((n) == 0) \
@@ -47,18 +47,18 @@
 
 #define EAL ea.b.l
 #define EAH ea.b.h
-#define EAW ea.w
-#define EAD ea.l
+#define EAW ea.w.l
+#define EAD ea.d
 
 #define ZPL zp.b.l
 #define ZPH zp.b.h
-#define ZPW zp.w
-#define ZPD zp.l
+#define ZPW zp.w.l
+#define ZPD zp.d
 
 #define PCL pc.b.l
 #define PCH pc.b.h
-#define PCW pc.w
-#define PCD pc.l
+#define PCW pc.w.l
+#define PCD pc.d
 
 // virtual machine interface
 
@@ -1016,7 +1016,8 @@ void M6502::run(int clock)
 	
 	// run cpu while given clocks
 	icount += clock;
-	first = icount;
+	first = clock;
+	
 	while(icount > 0) {
 		// if an irq is pending, take it now
 		if(nmi_state) {
@@ -1033,7 +1034,7 @@ void M6502::run(int clock)
 		else if(pending_irq) {
 			update_irq();
 		}
-		prev_pc = pc.w;
+		prev_pc = pc.w.l;
 		uint8 code = RDOP();
 		OP(code);
 		

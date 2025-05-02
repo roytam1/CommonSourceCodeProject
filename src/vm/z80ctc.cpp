@@ -25,9 +25,9 @@ void Z80CTC::reset()
 		// interrupt
 		counter[ch].req_intr = false;
 		counter[ch].in_service = false;
+		counter[ch].vector = ch << 1;
 	}
 	iei = oei = true;
-	intr = false;
 }
 
 void Z80CTC::write_io8(uint32 addr, uint32 data)
@@ -37,7 +37,7 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 		// time constant
 		counter[ch].constant = data ? data : 256;
 		counter[ch].latch = false;
-		if(counter[ch].freeze) {
+		if(counter[ch].freeze || counter[ch].count == 256) {
 			counter[ch].count = counter[ch].constant;
 			counter[ch].clocks = 0;
 			counter[ch].freeze = false;
@@ -53,13 +53,19 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 			counter[ch].start = (counter[ch].freq || !(data & 8));
 			counter[ch].control = data;
 			counter[ch].slope = ((data & 0x10) != 0);
-			if(counter[ch].req_intr) {
+			if(data & 2) {
+				// a new time constant should be written to this channel
+				// and it will be copied to counter soon
+				counter[ch].count = 256;
+				counter[ch].clocks = 0;
+			}
+			if(!(data & 0x80) && counter[ch].req_intr) {
 				counter[ch].req_intr = false;
 				update_intr();
 			}
 			update_event(ch, 0);
 		}
-		else {
+		else if(ch == 0) {
 			// vector
 			counter[0].vector = (data & 0xf8) | 0;
 			counter[1].vector = (data & 0xf8) | 2;
@@ -72,6 +78,7 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 uint32 Z80CTC::read_io8(uint32 addr)
 {
 	int ch = addr & 3;
+	// update counter
 	if(counter[ch].clock_id != -1) {
 		int passed = vm->passed_clock(counter[ch].prev);
 		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
@@ -149,6 +156,7 @@ void Z80CTC::write_signal(int id, uint32 data, uint32 mask)
 void Z80CTC::input_clock(int ch, int clock)
 {
 	if(!(counter[ch].control & 0x40)) {
+		// now timer mode, start timer and quit !!!
 		counter[ch].start = true;
 		return;
 	}
@@ -172,6 +180,7 @@ void Z80CTC::input_clock(int ch, int clock)
 void Z80CTC::input_sysclock(int ch, int clock)
 {
 	if(counter[ch].control & 0x40) {
+		// now counter mode, quit !!!
 		return;
 	}
 	if(!counter[ch].start || counter[ch].freeze) {
@@ -255,8 +264,9 @@ void Z80CTC::set_intr_iei(bool val)
 #define set_intr_oei(val) { \
 	if(oei != val) { \
 		oei = val; \
-		if(d_child) \
+		if(d_child) { \
 			d_child->set_intr_iei(oei); \
+		} \
 	} \
 }
 
@@ -264,7 +274,7 @@ void Z80CTC::update_intr()
 {
 	bool next;
 	
-	// set oei
+	// set oei signal
 	if((next = iei) == true) {
 		for(int ch = 0; ch < 4; ch++) {
 			if(counter[ch].in_service) {
@@ -275,7 +285,7 @@ void Z80CTC::update_intr()
 	}
 	set_intr_oei(next);
 	
-	// set intr
+	// set int signal
 	if((next = iei) == true) {
 		next = false;
 		for(int ch = 0; ch < 4; ch++) {
@@ -288,31 +298,25 @@ void Z80CTC::update_intr()
 			}
 		}
 	}
-	if(next != intr) {
-		intr = next;
-		if(d_cpu) {
-			d_cpu->set_intr_line(intr, true, intr_bit);
-		}
+	if(d_cpu) {
+		d_cpu->set_intr_line(next, true, intr_bit);
 	}
 }
 
 uint32 Z80CTC::intr_ack()
 {
 	// ack (M1=IORQ=L)
-	if(intr) {
-		for(int ch = 0; ch < 4; ch++) {
-			if(counter[ch].in_service) {
-				break;
-			}
-			if(counter[ch].req_intr) {
-				counter[ch].req_intr = false;
-				counter[ch].in_service = true;
-				update_intr();
-				return counter[ch].vector;
-			}
+	for(int ch = 0; ch < 4; ch++) {
+		if(counter[ch].in_service) {
+			// invalid interrupt status
+			return 0xff;
 		}
-		// invalid interrupt status
-		return 0xff;
+		else if(counter[ch].req_intr) {
+			counter[ch].req_intr = false;
+			counter[ch].in_service = true;
+			update_intr();
+			return counter[ch].vector;
+		}
 	}
 	if(d_child) {
 		return d_child->intr_ack();
@@ -326,6 +330,7 @@ void Z80CTC::intr_reti()
 	for(int ch = 0; ch < 4; ch++) {
 		if(counter[ch].in_service) {
 			counter[ch].in_service = false;
+			counter[ch].req_intr = false; // ???
 			update_intr();
 			return;
 		}

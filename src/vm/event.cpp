@@ -134,7 +134,6 @@ void EVENT::drive()
 
 void EVENT::update_event(int clock)
 {
-	int cpu_power = 1 << power;
 	while(clock) {
 		past = 0;
 		while(clock && (next > past || next_id == NO_EVENT)) {
@@ -147,24 +146,22 @@ void EVENT::update_event(int clock)
 			int remain = next - past;
 			int eventclock = (clock < remain || next_id == NO_EVENT) ? clock : remain;
 #endif
-			int cpuclock = eventclock * cpu_power;
-			
-//			for(int i = 0; i < dcount_cpu; i++) {
-//				d_cpu[i]->run(cpuclock);
-//			}
 			if(dcount_cpu > 1) {
 				// sync cpus
-				for(int c = 0; c < cpuclock; c++) {
-					for(int i = 0; i < dcount_cpu; i++) {
-						d_cpu[i]->run(1);
+				for(int c = 0; c < eventclock; c++) {
+					for(int p = 0; p < (1 << power); p++) {
+						for(int i = 0; i < dcount_cpu; i++) {
+							d_cpu[i]->run(1);
+						}
 					}
+					accum += 1;
 				}
 			}
 			else {
-				d_cpu[0]->run(cpuclock);
+				d_cpu[0]->run(eventclock << power);
+				accum += eventclock;
 			}
 			clock -= eventclock;
-			accum += eventclock;
 			past += eventclock;
 		}
 		// update event_clock

@@ -506,14 +506,14 @@ void I386::run(int clock)
 	if(busreq || halted) {
 		cycles = base_cycles = 0;
 #if defined(HAS_PENTIUM) || defined(HAS_MEDIAGX)
-		tsc += cycles;
+		tsc += clock;
 #endif
 		return;
 	}
 	
 	// run cpu whille given clocks
 	cycles += clock;
-	base_cycles = cycles;
+	base_cycles = clock;
 	CHANGE_PC(eip);
 	
 	while(cycles > 0) {
@@ -537,7 +537,7 @@ void I386::run(int clock)
 		decode_opcode();
 	}
 #if defined(HAS_PENTIUM) || defined(HAS_MEDIAGX)
-	tsc += (base_cycles - cycles);
+	tsc += clock;
 #endif
 	base_cycles = cycles;
 }

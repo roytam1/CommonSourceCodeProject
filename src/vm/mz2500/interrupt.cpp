@@ -95,15 +95,16 @@ void INTERRUPT::set_intr_iei(bool val)
 #define set_intr_oei(val) { \
 	if(oei != val) { \
 		oei = val; \
-		if(d_child) \
+		if(d_child) { \
 			d_child->set_intr_iei(oei); \
+		} \
 	} \
 }
 
 void INTERRUPT::update_intr()
 {
 #ifdef SUPPURT_CHILD_DEVICE
-	// set oei
+	// set oei signal
 	bool next = false;
 	if(iei) {
 		next = true;
@@ -116,7 +117,7 @@ void INTERRUPT::update_intr()
 	}
 	set_intr_oei(next);
 #endif
-	// set intr
+	// set int signal
 	req_intr_ch = -1;
 	if(iei) {
 		for(int ch = 0; ch < 4; ch++) {

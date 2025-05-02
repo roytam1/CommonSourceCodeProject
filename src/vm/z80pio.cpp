@@ -27,7 +27,6 @@ void Z80PIO::reset()
 		port[ch].in_service = false;
 	}
 	iei = oei = true;
-	intr = false;
 }
 
 /*
@@ -194,8 +193,9 @@ void Z80PIO::set_intr_iei(bool val)
 #define set_intr_oei(val) { \
 	if(oei != val) { \
 		oei = val; \
-		if(d_child) \
+		if(d_child) { \
 			d_child->set_intr_iei(oei); \
+		} \
 	} \
 }
 
@@ -203,7 +203,7 @@ void Z80PIO::update_intr()
 {
 	bool next;
 	
-	// set oei
+	// set oei signal
 	if((next = iei) == true) {
 		for(int ch = 0; ch < 2; ch++) {
 			if(port[ch].in_service) {
@@ -214,7 +214,7 @@ void Z80PIO::update_intr()
 	}
 	set_intr_oei(next);
 	
-	// set intr
+	// set int signal
 	if((next = iei) == true) {
 		next = false;
 		for(int ch = 0; ch < 2; ch++) {
@@ -227,31 +227,25 @@ void Z80PIO::update_intr()
 			}
 		}
 	}
-	if(next != intr) {
-		intr = next;
-		if(d_cpu) {
-			d_cpu->set_intr_line(intr, true, intr_bit);
-		}
+	if(d_cpu) {
+		d_cpu->set_intr_line(next, true, intr_bit);
 	}
 }
 
 uint32 Z80PIO::intr_ack()
 {
 	// ack (M1=IORQ=L)
-	if(intr) {
-		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service) {
-				break;
-			}
-			if(port[ch].enb_intr && port[ch].req_intr) {
-				port[ch].req_intr = false;
-				port[ch].in_service = true;
-				update_intr();
-				return port[ch].vector;
-			}
+	for(int ch = 0; ch < 2; ch++) {
+		if(port[ch].in_service) {
+			// invalid interrupt status
+			return 0xff;
 		}
-		// invalid interrupt status
-		return 0xff;
+		if(port[ch].enb_intr && port[ch].req_intr) {
+			port[ch].req_intr = false;
+			port[ch].in_service = true;
+			update_intr();
+			return port[ch].vector;
+		}
 	}
 	if(d_child) {
 		return d_child->intr_ack();

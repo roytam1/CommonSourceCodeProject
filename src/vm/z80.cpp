@@ -10,12 +10,12 @@
 
 #include "z80.h"
 
-#define AF	regs[0].w
-#define BC	regs[1].w
-#define DE 	regs[2].w
-#define HL	regs[3].w
-#define IX	regs[4].w
-#define IY	regs[5].w
+#define AF	regs[0].w.l
+#define BC	regs[1].w.l
+#define DE 	regs[2].w.l
+#define HL	regs[3].w.l
+#define IX	regs[4].w.l
+#define IY	regs[5].w.l
 
 #define _F	regs[0].b.l
 #define _A	regs[0].b.h
@@ -771,86 +771,58 @@ inline uint8 Z80::SET(uint8 bit, uint8 value) {
 }
 
 #define CPIR() { \
-	for(;;) { \
-		CPI(); \
-		if(BC && !(_F & ZF)) { \
-			count -= cc_ex[0xb1]; \
-		} \
-		else { \
-			break; \
-		} \
+	CPI(); \
+	if(BC && !(_F & ZF)) { \
+		PC -= 2; \
+		count -= cc_ex[0xb1]; \
 	} \
 }
 
 #define INIR() { \
-	for(;;) { \
-		INI(); \
-		if(_B) { \
-			count -= cc_ex[0xb2]; \
-		} \
-		else { \
-			break; \
-		} \
+	INI(); \
+	if(_B) { \
+		PC -= 2; \
+		count -= cc_ex[0xb2]; \
 	} \
 }
 
 #define OTIR() { \
-	for(;;) { \
-		OUTI(); \
-		if(_B) { \
-			count -= cc_ex[0xb3]; \
-		} \
-		else { \
-			break; \
-		} \
+	OUTI(); \
+	if(_B) { \
+		PC -= 2; \
+		count -= cc_ex[0xb3]; \
 	} \
 }
 
 #define LDDR() { \
-	for(;;) { \
-		LDD(); \
-		if(BC) { \
-			count -= cc_ex[0xb8]; \
-		} \
-		else { \
-			break; \
-		} \
+	LDD(); \
+	if(BC) { \
+		PC -= 2; \
+		count -= cc_ex[0xb8]; \
 	} \
 }
 
 #define CPDR() { \
-	for(;;) { \
-		CPD(); \
-		if(BC && !(_F & ZF)) { \
-			count -= cc_ex[0xb9]; \
-		} \
-		else { \
-			break; \
-		} \
+	CPD(); \
+	if(BC && !(_F & ZF)) { \
+		PC -= 2; \
+		count -= cc_ex[0xb9]; \
 	} \
 }
 
 #define INDR() { \
-	for(;;) { \
-		IND(); \
-		if(_B) { \
-			count -= cc_ex[0xba]; \
-		} \
-		else { \
-			break; \
-		} \
+	IND(); \
+	if(_B) { \
+		PC -= 2; \
+		count -= cc_ex[0xba]; \
 	} \
 }
 
 #define OTDR() { \
-	for(;;) { \
-		OUTD(); \
-		if(_B) { \
-			count -= cc_ex[0xbb]; \
-		} \
-		else { \
-			break; \
-		} \
+	OUTD(); \
+	if(_B) { \
+		PC -= 2; \
+		count -= cc_ex[0xbb]; \
 	} \
 }
 
@@ -936,7 +908,8 @@ void Z80::run(int clock)
 	
 	// run cpu while given clocks
 	count += clock;
-	first = count;
+	first = clock;
+	
 	while(count > 0) {
 		uint8 code = FETCHOP();
 		OP(code);

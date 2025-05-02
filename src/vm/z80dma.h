@@ -45,7 +45,7 @@ private:
 	uint16 count;
 	int null_blocklen;
 	
-	bool iei, oei, intr;
+	bool iei, oei;
 	uint32 intr_bit;
 	bool req_intr;
 	bool in_service;

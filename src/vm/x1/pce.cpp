@@ -47,14 +47,14 @@
 #define VDC_STAT_VD	0x20
 #define VDC_STAT_BSY	0x40
 
-//#define VDC_SpHitON	(vdc[VDC_CR].w & 0x01)
-//#define VDC_OverON	(vdc[VDC_CR].w & 0x02)
-#define VDC_RasHitON	(vdc[VDC_CR].w & 0x04)
-#define VDC_VBlankON	(vdc[VDC_CR].w & 0x08)
-#define VDC_SpriteON	(vdc[VDC_CR].w & 0x40)
-#define VDC_ScreenON	(vdc[VDC_CR].w & 0x80)
-#define VDC_SATBIntON	(vdc[VDC_DCR].w & 1)
-//#define VDC_DMAIntON	(vdc[VDC_DCR].w & 2)
+//#define VDC_SpHitON	(vdc[VDC_CR].w.l & 0x01)
+//#define VDC_OverON	(vdc[VDC_CR].w.l & 0x02)
+#define VDC_RasHitON	(vdc[VDC_CR].w.l & 0x04)
+#define VDC_VBlankON	(vdc[VDC_CR].w.l & 0x08)
+#define VDC_SpriteON	(vdc[VDC_CR].w.l & 0x40)
+#define VDC_ScreenON	(vdc[VDC_CR].w.l & 0x80)
+#define VDC_SATBIntON	(vdc[VDC_DCR].w.l & 1)
+//#define VDC_DMAIntON	(vdc[VDC_DCR].w.l & 2)
 
 void PCE::initialize()
 {
@@ -168,7 +168,7 @@ void PCE::event_vline(int v, int clock)
 //		_memset(mask_spr, 0, sizeof(mask_spr));
 	}
 	if(vdc_minline <= vdc_scanline && vdc_scanline <= vdc_maxline) {
-		if(vdc_scanline == (vdc[VDC_RCR].w & 0x3ff) - 64) {
+		if(vdc_scanline == (vdc[VDC_RCR].w.l & 0x3ff) - 64) {
 			if(VDC_RasHitON && dispmin <= vdc_scanline && vdc_scanline <= dispmax) {
 				if(prv_scanline < dispmax) {
 					if(VDC_SpriteON) {
@@ -188,11 +188,11 @@ void PCE::event_vline(int v, int clock)
 		}
 		else if(vdc_scroll) {
 			if(vdc_scanline - 1 > prv_scanline) {
-				int tmpx = vdc[VDC_BXR].w;
-				int tmpy = vdc[VDC_BYR].w;
+				int tmpx = vdc[VDC_BXR].w.l;
+				int tmpy = vdc[VDC_BYR].w.l;
 				int tmpd = vdc_scroll_ydiff;
-				vdc[VDC_BXR].w = prv_scroll_x;
-				vdc[VDC_BYR].w = prv_scroll_y;
+				vdc[VDC_BXR].w.l = prv_scroll_x;
+				vdc[VDC_BYR].w.l = prv_scroll_y;
 				vdc_scroll_ydiff = prv_scroll_ydiff;
 				if(VDC_SpriteON) {
 					vdc_refresh_sprite(prv_scanline, vdc_scanline - 1, 0);
@@ -202,14 +202,14 @@ void PCE::event_vline(int v, int clock)
 					vdc_refresh_sprite(prv_scanline, vdc_scanline - 1, 1);
 				}
 				prv_scanline = vdc_scanline - 1;
-				vdc[VDC_BXR].w = tmpx;
-				vdc[VDC_BYR].w = tmpy;
+				vdc[VDC_BXR].w.l = tmpx;
+				vdc[VDC_BYR].w.l = tmpy;
 				vdc_scroll_ydiff = tmpd;
 			}
 		}
 	}
 	else {
-		int rcr = (vdc[VDC_RCR].w & 0x3ff) - 64;
+		int rcr = (vdc[VDC_RCR].w.l & 0x3ff) - 64;
 		if(vdc_scanline == rcr) {
 			if(VDC_RasHitON) {
 				vdc_status |= VDC_STAT_RR;
@@ -220,8 +220,8 @@ void PCE::event_vline(int v, int clock)
 	vdc_scroll = false;
 	if(vdc_scanline == vdc_maxline + 1) {
 		// VRAM to SATB DMA
-		if(vdc_satb || (vdc[VDC_DCR].w & 0x10)) {
-			_memcpy(spram, &vram[vdc[VDC_SATB].w * 2], 512);
+		if(vdc_satb || (vdc[VDC_DCR].w.l & 0x10)) {
+			_memcpy(spram, &vram[vdc[VDC_SATB].w.l * 2], 512);
 			vdc_satb = true;
 			vdc_status &= ~VDC_STAT_DS;
 		}
@@ -448,8 +448,8 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 			break;
 		case VDC_BYR:
 			if(!vdc_scroll) {
-				prv_scroll_x = vdc[VDC_BXR].w;
-				prv_scroll_y = vdc[VDC_BYR].w;
+				prv_scroll_x = vdc[VDC_BXR].w.l;
+				prv_scroll_y = vdc[VDC_BYR].w.l;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
 			vdc[VDC_BYR].b.l = data;
@@ -458,8 +458,8 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 			return;
 		case VDC_BXR:
 			if(!vdc_scroll) {
-				prv_scroll_x = vdc[VDC_BXR].w;
-				prv_scroll_y = vdc[VDC_BYR].w;
+				prv_scroll_x = vdc[VDC_BXR].w.l;
+				prv_scroll_y = vdc[VDC_BYR].w.l;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
 			vdc[VDC_BXR].b.l = data;
@@ -471,26 +471,26 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 	case 3:
 		switch(vdc_ch) {
 		case VDC_VWR:
-			vram[vdc[VDC_MAWR].w * 2 + 0] = vdc_ratch;
-			vram[vdc[VDC_MAWR].w * 2 + 1] = data;
-			vchange[vdc[VDC_MAWR].w >> 4] = 1;
-			vchanges[vdc[VDC_MAWR].w >> 6] = 1;
-			vdc[VDC_MAWR].w += vdc_inc;
+			vram[vdc[VDC_MAWR].w.l * 2 + 0] = vdc_ratch;
+			vram[vdc[VDC_MAWR].w.l * 2 + 1] = data;
+			vchange[vdc[VDC_MAWR].w.l >> 4] = 1;
+			vchanges[vdc[VDC_MAWR].w.l >> 6] = 1;
+			vdc[VDC_MAWR].w.l += vdc_inc;
 			vdc_ratch = 0;
 			return;
 		case VDC_VDW:
 			vdc[VDC_VDW].b.h = data;
-			vdc_screen_h = (vdc[VDC_VDW].w & 0x1ff) + 1;
+			vdc_screen_h = (vdc[VDC_VDW].w.l & 0x1ff) + 1;
 			vdc_maxline = vdc_screen_h - 1;
 			return;
 		case VDC_LENR:
 			vdc[VDC_LENR].b.h = data;
 			// vram to vram
-			_memcpy(&vram[vdc[VDC_DISTR].w * 2], &vram[vdc[VDC_SOUR].w * 2], (vdc[VDC_LENR].w + 1) * 2);
-			_memset(&vchange[vdc[VDC_DISTR].w >> 4], 1, (vdc[VDC_LENR].w + 1) >> 4);
-			_memset(&vchange[vdc[VDC_DISTR].w >> 6], 1, (vdc[VDC_LENR].w + 1) >> 6);
-			vdc[VDC_DISTR].w += vdc[VDC_LENR].w + 1;
-			vdc[VDC_SOUR].w += vdc[VDC_LENR].w + 1;
+			_memcpy(&vram[vdc[VDC_DISTR].w.l * 2], &vram[vdc[VDC_SOUR].w.l * 2], (vdc[VDC_LENR].w.l + 1) * 2);
+			_memset(&vchange[vdc[VDC_DISTR].w.l >> 4], 1, (vdc[VDC_LENR].w.l + 1) >> 4);
+			_memset(&vchange[vdc[VDC_DISTR].w.l >> 6], 1, (vdc[VDC_LENR].w.l + 1) >> 6);
+			vdc[VDC_DISTR].w.l += vdc[VDC_LENR].w.l + 1;
+			vdc[VDC_SOUR].w.l += vdc[VDC_LENR].w.l + 1;
 			vdc_status |= VDC_STAT_DV;
 			return;
 		case VDC_CR :
@@ -500,8 +500,8 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 			break;
 		case VDC_BYR:
 			if(!vdc_scroll) {
-				prv_scroll_x = vdc[VDC_BXR].w;
-				prv_scroll_y = vdc[VDC_BYR].w;
+				prv_scroll_x = vdc[VDC_BXR].w.l;
+				prv_scroll_y = vdc[VDC_BYR].w.l;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
 			vdc[VDC_BYR].b.h = data & 1;
@@ -515,8 +515,8 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 			return;
 		case VDC_BXR:
 			if(!vdc_scroll) {
-				prv_scroll_x = vdc[VDC_BXR].w;
-				prv_scroll_y = vdc[VDC_BYR].w;
+				prv_scroll_x = vdc[VDC_BXR].w.l;
+				prv_scroll_y = vdc[VDC_BYR].w.l;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
 			vdc[VDC_BXR].b.h = data & 3;
@@ -541,15 +541,15 @@ uint8 PCE::vdc_read(uint16 addr)
 		return 0;
 	case 2:
 		if(vdc_ch == VDC_VRR) {
-			return vram[vdc[VDC_MARR].w * 2];
+			return vram[vdc[VDC_MARR].w.l * 2];
 		}
 		else {
 			return vdc[vdc_ch].b.l;
 		}
 	case 3:
 		if(vdc_ch == VDC_VRR) {
-			val = vram[vdc[VDC_MARR].w * 2 + 1];
-			vdc[VDC_MARR].w += vdc_inc;
+			val = vram[vdc[VDC_MARR].w.l * 2 + 1];
+			vdc[VDC_MARR].w.l += vdc_inc;
 			return val;
 		}
 		else {
@@ -569,13 +569,13 @@ void PCE::vce_write(uint16 addr, uint8 data)
 		vce_reg.b.h = data & 1;
 		break;
 	case 4:
-		vce[vce_reg.w].b.l = data;
-		vce_update_pal(vce_reg.w);
+		vce[vce_reg.w.l].b.l = data;
+		vce_update_pal(vce_reg.w.l);
 		break;
 	case 5:
-		vce[vce_reg.w].b.h = data;
-		vce_update_pal(vce_reg.w);
-		vce_reg.w = (vce_reg.w + 1) & 0x1ff;
+		vce[vce_reg.w.l].b.h = data;
+		vce_update_pal(vce_reg.w.l);
+		vce_reg.w.l = (vce_reg.w.l + 1) & 0x1ff;
 		break;
 	}
 }
@@ -586,10 +586,10 @@ uint8 PCE::vce_read(uint16 addr)
 	
 	switch(addr & 7) {
 	case 4:
-		return vce[vce_reg.w & 0x1ff].b.l;
+		return vce[vce_reg.w.l & 0x1ff].b.l;
 	case 5:
-		val = vce[vce_reg.w].b.h;
-		vce_reg.w = (vce_reg.w + 1) & 0x1ff;
+		val = vce[vce_reg.w.l].b.h;
+		vce_reg.w.l = (vce_reg.w.l + 1) & 0x1ff;
 		return val;
 	}
 	return 0xff;
@@ -598,9 +598,9 @@ uint8 PCE::vce_read(uint16 addr)
 void PCE::vce_update_pal(int num)
 {
 	scrntype* pal = (num & 0x100) ? palette_spr : palette_bg;
-	uint16 g = (vce[num].w >> 6) & 7;
-	uint16 r = (vce[num].w >> 3) & 7;
-	uint16 b = (vce[num].w >> 0) & 7;
+	uint16 g = (vce[num].w.l >> 6) & 7;
+	uint16 r = (vce[num].w.l >> 3) & 7;
+	uint16 b = (vce[num].w.l >> 0) & 7;
 	scrntype col = RGB_COLOR(r << 5, g << 5, b << 5);
 	
 	if(!num) {
@@ -616,14 +616,14 @@ void PCE::vce_update_pal(int num)
 void PCE::vdc_refresh_line(int sy, int ey)
 {
 	if(VDC_ScreenON) {
-		int xofs = 8 - (vdc[VDC_BXR].w & 7);
-		int yy = sy + vdc[VDC_BYR].w - vdc_scroll_ydiff;
+		int xofs = 8 - (vdc[VDC_BXR].w.l & 7);
+		int yy = sy + vdc[VDC_BYR].w.l - vdc_scroll_ydiff;
 		int yofs = yy & 7;
 		int h = min(ey - sy, 8 - yofs);
 		yy >>= 3;
 		int xw = (vdc_screen_w >> 3) + 1;
 		for(int y = sy; y < ey; yy++) {
-			int xx = vdc[VDC_BXR].w >> 3;
+			int xx = vdc[VDC_BXR].w.l >> 3;
 			yy &= vdc_bg_h - 1;
 			for(int x = 0; x < xw; x++, xx++) {
 				xx &= vdc_bg_w - 1;

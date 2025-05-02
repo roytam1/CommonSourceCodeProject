@@ -1,3 +1,33 @@
+4/27/2011
+
+[COMMON] modify struct union 'pair'
+[VM/EVENT] fix to get more precise cpu clocks
+[VM/HUC6260] fix to get more precise cpu clocks
+[VM/I8080] fix to get more precise cpu clocks
+[VM/I86] fix i286 protected mode boundary check (from MESS)
+[VM/I86] fix POP SP and POP ESP (from MESS)
+[VM/I86] fix to get more precise cpu clocks
+[VM/I386] fix to get more precise cpu clocks
+[VM/M6502] fix to get more precise cpu clocks
+[VM/TMS9995] fix to get more precise cpu clocks
+[VM/UPD7801] fix to get more precise cpu clocks
+[VM/Z80] fix to get more precise cpu clocks
+
+[X1TURBO/DISPLAY] fix to get correct pcg address in hires screen mode
+
+
+4/25/2011
+
+[VM/MB8877] fix to wait 40msec to read/write just after seek command
+[VM/Z80CTC] fix to initialize vector when reset device
+[VM/Z80CTC] fix to copy time constant to counter just after reset command
+[VM/Z80CTC] fix to clear pending irq when RETI opcode is detected
+[VM/Z80CTC] fix to update int signal without checking the current signal
+[VM/Z80DMA] fix to update int signal without checking the current signal
+[VM/Z80PIO] fix to update int signal without checking the current signal
+[VM/Z80SIO] fix to update int signal without checking the current signal
+
+
 4/23/2011
 
 [VM/DISK] fix to check disk type in teledisk converter

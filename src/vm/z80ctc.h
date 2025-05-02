@@ -57,7 +57,7 @@ private:
 	
 	// interrupt
 	DEVICE *d_cpu, *d_child;
-	bool iei, oei, intr;
+	bool iei, oei;
 	uint32 intr_bit;
 	void update_intr();
 	

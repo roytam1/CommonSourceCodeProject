@@ -78,7 +78,6 @@ void Z80SIO::reset()
 		port[ch].in_service = false;
 	}
 	iei = oei = true;
-	intr = false;
 }
 
 void Z80SIO::release()
@@ -603,7 +602,7 @@ void Z80SIO::update_intr()
 {
 	bool next;
 	
-	// set oei
+	// set oei signal
 	if((next = iei) == true) {
 		for(int ch = 0; ch < 2; ch++) {
 			if(port[ch].in_service) {
@@ -614,7 +613,7 @@ void Z80SIO::update_intr()
 	}
 	set_intr_oei(next);
 	
-	// check intr status
+	// check interrupt status
 	for(int ch = 0; ch < 2; ch++) {
 		if(port[ch].err_intr) {
 			port[ch].req_intr = true;
@@ -675,7 +674,7 @@ void Z80SIO::update_intr()
 		port[1].vector = port[1].wr[2];
 	}
 	
-	// set intr
+	// set int signal
 	if((next = iei) == true) {
 		next = false;
 		for(int ch = 0; ch < 2; ch++) {
@@ -688,50 +687,41 @@ void Z80SIO::update_intr()
 			}
 		}
 	}
-	if(next != intr) {
-		intr = next;
-		if(d_cpu) {
-			d_cpu->set_intr_line(intr, true, intr_bit);
-		}
+	if(d_cpu) {
+		d_cpu->set_intr_line(next, true, intr_bit);
 	}
 }
 
 uint32 Z80SIO::intr_ack()
 {
 	// ack (M1=IORQ=L)
-	if(intr) {
-		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service) {
-				break;
-			}
-			// priority is error > receive > status > send ???
-			if(port[ch].err_intr) {
-				port[ch].err_intr = false;
-				port[ch].in_service = true;
-			}
-			else if(port[ch].recv_intr && (port[ch].wr[1] & 0x18)) {
-				port[ch].recv_intr = 0;
-				port[ch].in_service = true;
-			}
-			else if(port[ch].stat_intr && (port[ch].wr[1] & 1)) {
-				port[ch].stat_intr = false;
-				port[ch].in_service = true;
-			}
-			else if(port[ch].send_intr && (port[ch].wr[1] & 2)) {
-				port[ch].send_intr = false;
-				port[ch].in_service = true;
-			}
-			if(port[ch].in_service) {
-				uint8 vector = port[1].vector;
-				update_intr();
-				return vector;
-			}
+	for(int ch = 0; ch < 2; ch++) {
+		if(port[ch].in_service) {
+			// invalid interrupt status
+			return 0xff;
 		}
-		// invalid interrupt status
-#ifdef SIO_DEBUG
-//		emu->out_debug(_T("Z80SIO : intr_ack()\n"));
-#endif
-		return 0xff;
+		// priority is error > receive > status > send ???
+		if(port[ch].err_intr) {
+			port[ch].err_intr = false;
+			port[ch].in_service = true;
+		}
+		else if(port[ch].recv_intr && (port[ch].wr[1] & 0x18)) {
+			port[ch].recv_intr = 0;
+			port[ch].in_service = true;
+		}
+		else if(port[ch].stat_intr && (port[ch].wr[1] & 1)) {
+			port[ch].stat_intr = false;
+			port[ch].in_service = true;
+		}
+		else if(port[ch].send_intr && (port[ch].wr[1] & 2)) {
+			port[ch].send_intr = false;
+			port[ch].in_service = true;
+		}
+		if(port[ch].in_service) {
+			uint8 vector = port[1].vector;
+			update_intr();
+			return vector;
+		}
 	}
 	if(d_child) {
 		return d_child->intr_ack();

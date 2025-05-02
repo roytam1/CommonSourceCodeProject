@@ -60,7 +60,7 @@ private:
 	
 	// status
 	bool now_search;
-	bool now_seek;
+	bool now_seek, after_seek;
 	int seektrk;
 	bool seekvct;
 	int indexcnt;

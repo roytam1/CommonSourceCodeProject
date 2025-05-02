@@ -68,7 +68,7 @@ static const int seek_wait[4] = {6000, 12000, 20000, 30000};
 	} \
 	vm->register_event(this, (event << 8) | cmdtype, wait, false, &register_id[event]); \
 	if(event == EVENT_SEEK) { \
-		now_seek = true; \
+		now_seek = after_seek = true; \
 	} \
 	if(event == EVENT_SEARCH) { \
 		now_search = true; \
@@ -113,7 +113,7 @@ void MB8877::reset()
 	for(int i = 0; i < 7; i++) {
 		register_id[i] = -1;
 	}
-	now_seek = now_search = false;
+	now_search = now_seek = after_seek = false;
 }
 
 void MB8877::update_config()
@@ -678,6 +678,9 @@ void MB8877::cmd_stepout()
 	REGISTER_EVENT(EVENT_SEEKEND, 300);
 }
 
+// wait 100msec to read/write data just after seek command is done
+#define GET_SEARCH_TIME (after_seek ? (after_seek = false, 100000) : 200)
+
 void MB8877::cmd_readdata()
 {
 	// type-2 read data
@@ -691,10 +694,12 @@ void MB8877::cmd_readdata()
 	if(!(status & FDC_ST_RECNFND)) {
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	}
-	REGISTER_EVENT(EVENT_SEARCH, 200);
+	
+	int time = GET_SEARCH_TIME;
+	REGISTER_EVENT(EVENT_SEARCH, time);
 	CANCEL_EVENT(EVENT_LOST);
 	if(!(status & FDC_ST_RECNFND)) {
-		REGISTER_EVENT(EVENT_LOST, 30000);
+		REGISTER_EVENT(EVENT_LOST, time + 30000);
 	}
 }
 
@@ -712,10 +717,12 @@ void MB8877::cmd_writedata()
 	if(!(status & FDC_ST_RECNFND)) {
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	}
-	REGISTER_EVENT(EVENT_SEARCH, 200);
+	
+	int time = GET_SEARCH_TIME;
+	REGISTER_EVENT(EVENT_SEARCH, time);
 	CANCEL_EVENT(EVENT_LOST);
 	if(!(status & FDC_ST_RECNFND)) {
-		REGISTER_EVENT(EVENT_LOST, 30000);
+		REGISTER_EVENT(EVENT_LOST, time + 30000);
 	}
 }
 
@@ -727,10 +734,12 @@ void MB8877::cmd_readaddr()
 	if(!(status & FDC_ST_RECNFND)) {
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	}
-	REGISTER_EVENT(EVENT_SEARCH, 200);
+	
+	int time = GET_SEARCH_TIME;
+	REGISTER_EVENT(EVENT_SEARCH, time);
 	CANCEL_EVENT(EVENT_LOST);
 	if(!(status & FDC_ST_RECNFND)) {
-		REGISTER_EVENT(EVENT_LOST, 10000);
+		REGISTER_EVENT(EVENT_LOST, time + 10000);
 	}
 }
 
@@ -742,8 +751,9 @@ void MB8877::cmd_readtrack()
 	
 	make_track();
 	
-	REGISTER_EVENT(EVENT_SEARCH, 200);
-	REGISTER_EVENT(EVENT_LOST, 150000);
+	int time = GET_SEARCH_TIME;
+	REGISTER_EVENT(EVENT_SEARCH, time);
+	REGISTER_EVENT(EVENT_LOST, time + 150000);
 }
 
 void MB8877::cmd_writetrack()
@@ -755,8 +765,9 @@ void MB8877::cmd_writetrack()
 	disk[drvreg]->track_size = 0x1800;
 	fdc[drvreg].index = 0;
 	
-	REGISTER_EVENT(EVENT_SEARCH, 200);
-	REGISTER_EVENT(EVENT_LOST, 150000);
+	int time = GET_SEARCH_TIME;
+	REGISTER_EVENT(EVENT_SEARCH, time);
+	REGISTER_EVENT(EVENT_LOST, time + 150000);
 }
 
 void MB8877::cmd_forceint()

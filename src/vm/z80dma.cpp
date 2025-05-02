@@ -113,7 +113,6 @@ void Z80DMA::reset()
 	force_ready = false;
 	
 	iei = oei = true;
-	intr = false;
 	req_intr = in_service = false;
 	vector = 0;
 }
@@ -534,7 +533,7 @@ void Z80DMA::update_intr()
 {
 	bool next;
 	
-	// set oei
+	// set oei signal
 	if((next = iei) == true) {
 		if(in_service) {
 			next = false;
@@ -542,31 +541,28 @@ void Z80DMA::update_intr()
 	}
 	set_intr_oei(next);
 	
-	// set intr
+	// set int signal
 	if((next = iei) == true) {
 		next = (!in_service && req_intr);
 	}
-	if(next != intr) {
-		intr = next;
-		if(d_cpu) {
-			d_cpu->set_intr_line(intr, true, intr_bit);
-		}
+	if(d_cpu) {
+		d_cpu->set_intr_line(next, true, intr_bit);
 	}
 }
 
 uint32 Z80DMA::intr_ack()
 {
 	// ack (M1=IORQ=L)
-	if(intr) {
-		if(!in_service && req_intr) {
-			req_intr = false;
-			in_service = true;
-			enabled = false;
-			update_intr();
-			return vector;
-		}
+	if(in_service) {
 		// invalid interrupt status
 		return 0xff;
+	}
+	else if(req_intr) {
+		req_intr = false;
+		in_service = true;
+		enabled = false;
+		update_intr();
+		return vector;
 	}
 	if(d_child) {
 		return d_child->intr_ack();

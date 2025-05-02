@@ -434,7 +434,7 @@ static const struct i80x86_timing timing = {
 #define FETCHOP			read_mem_byte(pc++)
 #define FETCHWORD(var)		{ var = read_mem_word(pc); pc += 2; }
 #define PUSH(val)		{ regs.w[SP] -= 2; WriteWord(((base[SS] + regs.w[SP]) & AMASK), val); }
-#define POP(var)		{ var = ReadWord(((base[SS] + regs.w[SP]) & AMASK)); regs.w[SP] += 2; }
+#define POP(var)		{ regs.w[SP] += 2; var = ReadWord(((base[SS] + ((regs.w[SP]-2) & 0xffff)) & AMASK)); }
 
 /************************************************************************/
 
@@ -657,7 +657,7 @@ void I86::run(int clock)
 	
 	/* run cpu while given clocks */
 	icount += clock;
-	first_icount = icount;
+	first_icount = clock;
 	
 	/* adjust for any interrupts that came in */
 	icount -= extra_cycles;
@@ -1238,7 +1238,7 @@ void I86::i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, 
 		}
 
 		/* Would we go past the segment boundary? */
-		if(offset + size > limit[check_seg]) {
+		if((offset + (size - 1)) > limit[check_seg]) {
 			throw GENERAL_PROTECTION_FAULT;
 		}
 

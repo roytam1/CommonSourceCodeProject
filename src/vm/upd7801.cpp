@@ -12,10 +12,10 @@
 
 #define PRESCALER	16
 
-#define VA	regs[0].w
-#define BC	regs[1].w
-#define DE 	regs[2].w
-#define HL	regs[3].w
+#define VA	regs[0].w.l
+#define BC	regs[1].w.l
+#define DE 	regs[2].w.l
+#define HL	regs[3].w.l
 
 #define _V	regs[0].b.h
 #define _A	regs[0].b.l
@@ -1102,7 +1102,8 @@ void UPD7801::reset()
 void UPD7801::run(int clock)
 {
 	count += clock;
-	first = count;
+	first = clock;
+	
 	while(count > 0) {
 		if(wait) {
 			period = 1;

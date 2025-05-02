@@ -60,15 +60,35 @@ typedef signed long long int64;
 #endif
 
 typedef union {
-	uint32 l;
-	uint16 w;
-	struct {
 #ifdef _BIG_ENDIAN
-		uint8 h, l;
-#else
-		uint8 l, h;
-#endif
+	struct {
+		uint8 h3, h2, h, l;
 	} b;
+	struct {
+		int8 h3, h2, h, l;
+	} sb;
+	struct {
+		uint16 h, l;
+	} w;
+	struct {
+		int16 h, l;
+	} sw;
+#else
+	struct {
+		uint8 l, h, h2, h3;
+	} b;
+	struct {
+		uint16 l, h;
+	} w;
+	struct {
+		int8 l, h, h2, h3;
+	} sb;
+	struct {
+		int16 l, h;
+	} sw;
+#endif
+	uint32 d;
+	int32 sd;
 } pair;
 
 // memory functions

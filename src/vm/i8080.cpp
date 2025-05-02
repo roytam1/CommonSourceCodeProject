@@ -10,10 +10,10 @@
 
 #include "i8080.h"
 
-#define AF	regs[0].w
-#define BC	regs[1].w
-#define DE 	regs[2].w
-#define HL	regs[3].w
+#define AF	regs[0].w.l
+#define BC	regs[1].w.l
+#define DE	regs[2].w.l
+#define HL	regs[3].w.l
 
 #define _F	regs[0].b.l
 #define _A	regs[0].b.h
@@ -482,7 +482,8 @@ void I8080::run(int clock)
 	
 	// run cpu while given clocks
 	count += clock;
-	first = count;
+	first = clock;
+	
 	while(count > 0) {
 		OP(FETCHOP());
 		if(IM & IM_REQ) {
