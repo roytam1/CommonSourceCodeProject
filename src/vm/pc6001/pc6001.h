@@ -2,6 +2,7 @@
 	NEC PC-6001 Emulator 'yaPC-6001'
 	NEC PC-6001mk2 Emulator 'yaPC-6201'
 	NEC PC-6601 Emulator 'yaPC-6601'
+	PC-6801 Emulator 'PC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-
@@ -12,31 +13,43 @@
 #ifndef _PC6001_H_
 #define _PC6001_H_
 
-#if defined(_PC6601)
+#ifdef _PC6801
+#define DEVICE_NAME		"PC-6801"
+#define CONFIG_NAME		"pc6801"
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
+#define CPU_CLOCKS			3580000
+#define HAS_YM2608
+#endif
+#ifdef _PC6601
 #define DEVICE_NAME		"NEC PC-6601"
 #define CONFIG_NAME		"pc6601"
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define CPU_CLOCKS			4000000
-#elif defined(_PC6001MK2)
+#define HAS_AY_3_8910
+#endif
+#ifdef _PC6001MK2
 #define DEVICE_NAME		"NEC PC-6001mk2"
 #define CONFIG_NAME		"pc6001mk2"
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define CPU_CLOCKS			4000000
-#elif defined(_PC6001)
+#define HAS_AY_3_8910
+#endif
+#ifdef _PC6001
 #define DEVICE_NAME		"NEC PC-6001"
 #define CONFIG_NAME		"pc6001"
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		192
 #define CPU_CLOCKS			3993600
+#define HAS_AY_3_8910
 #endif
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
 #define MAX_DRIVE			4
-#define HAS_AY_3_8910
 #define MC6847_ATTR_OFS		0
 #define MC6847_VRAM_OFS		0x200
 #define MC6847_ATTR_AG		0x80
@@ -49,6 +62,7 @@
 #define MC6847_ATTR_INV		0x01
 
 // device informations for win32
+#define MIN_WINDOW_WIDTH	320
 #define USE_CART1
 #define USE_FD1
 ///#define USE_FD2

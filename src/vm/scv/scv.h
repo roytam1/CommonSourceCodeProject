@@ -27,6 +27,8 @@
 // device informations for win32
 #define USE_CART1
 #define USE_KEY_TO_JOY
+#define KEY_TO_JOY_BUTTON_1	0x5a
+#define KEY_TO_JOY_BUTTON_2	0x58
 
 #include "../../common.h"
 

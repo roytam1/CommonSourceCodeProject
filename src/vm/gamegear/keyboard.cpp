@@ -83,7 +83,8 @@ void KEYBOARD::update_keyboard()
 				data |= (1 << i);
 			}
 		}
-		if (joy_stat[0] == 0x1000) {
+//		if (joy_stat[0] & 0x40) {
+		if (joy_stat[0] == 0x40) {
 			start_pressed=true;
 		} else {
 			start_pressed=false;

@@ -6,7 +6,10 @@
 //
 
 /*
+	NEC PC-6001 Emulator 'yaPC-6001'
+	NEC PC-6001mk2 Emulator 'yaPC-6201'
 	NEC PC-6601 Emulator 'yaPC-6601'
+	PC-6801 Emulator 'PC-6801'
 
 	Author : tanam
 	Date   : 2013.12.04-
@@ -569,7 +572,7 @@ void OutDAH_66(unsigned char data) { SendSectors = ~(data - 0x10); }	// set tran
 void OutDDH_66(unsigned char data) { OutFDC(data); }					// FDC data register
 void OutDEH_66(unsigned char data) {}									// ?
 	
-unsigned char InB2H_66() { return 1; };									// FDC INT
+unsigned char InB2H_66() { return 3; }									// FDC INT
 unsigned char InD0H_66() { return Pop(0); }								// Buffer
 unsigned char InD1H_66() { return Pop(1); }								// Buffer
 unsigned char InD2H_66() { return Pop(2); }								// Buffer
@@ -582,7 +585,7 @@ void SYSTEM::initialize()
 {
 	isMount[0] = isMount[1] = 0;
 	Init88();
-#ifdef _PC6601
+#if defined(_PC6601) || defined(_PC6801)
 	DiskInit66();
 #else
 	DiskInit60();
@@ -597,7 +600,7 @@ void SYSTEM::write_io8(uint32 addr, uint32 data)
 	
 	switch(port)
 	{
-#ifdef _PC6601
+#if defined(_PC6601) || defined(_PC6801)
 	// disk I/O
 	case 0xB1:
 		OutB1H_66(Value); break;
@@ -658,7 +661,7 @@ uint32 SYSTEM::read_io8(uint32 addr)
 	
 	switch(port)
 	{
-#ifdef _PC6601
+#if defined(_PC6601) || defined(_PC6801)
 	case 0xB2:
 		Value=InB2H_66();
 		break;
@@ -684,6 +687,9 @@ uint32 SYSTEM::read_io8(uint32 addr)
 		Value=InDDH_66();
 		break;
 #else
+	case 0xB2:
+		Value=1;
+		break;
 	case 0xD0:
 		Value=InD0H_60(); break;
 		break;

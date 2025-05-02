@@ -49,28 +49,28 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 	case 0xfd:
 		val = 0;
 		if(column & 1) {
-			if((joy[0] & 0x40) || key[0x41]) val |= 1;	// #1 select
-			if((joy[0] & 0x80) || key[0x53]) val |= 2;	// #1 start
-			if( joy[1] & 0x40              ) val |= 4;	// #2 select
-			if( joy[1] & 0x80              ) val |= 8;	// #2 start
+			if(joy[0] & 0x40) val |= 1;	// #1 select
+			if(joy[0] & 0x80) val |= 2;	// #1 start
+			if(joy[1] & 0x40) val |= 4;	// #2 select
+			if(joy[1] & 0x80) val |= 8;	// #2 start
 		}
 		if(column & 2) {
-			if((joy[0] & 0x02) || key[0x28]) val |= 1;	// #1 down
-			if((joy[0] & 0x08) || key[0x27]) val |= 2;	// #1 right
-			if( joy[1] & 0x02              ) val |= 4;	// #2 down
-			if( joy[1] & 0x08              ) val |= 8;	// #2 right
+			if(joy[0] & 0x02) val |= 1;	// #1 down
+			if(joy[0] & 0x08) val |= 2;	// #1 right
+			if(joy[1] & 0x02) val |= 4;	// #2 down
+			if(joy[1] & 0x08) val |= 8;	// #2 right
 		}
 		if(column & 4) {
-			if((joy[0] & 0x04) || key[0x25]) val |= 1;	// #1 left
-			if((joy[0] & 0x01) || key[0x26]) val |= 2;	// #1 up
-			if( joy[1] & 0x04              ) val |= 4;	// #2 left
-			if( joy[1] & 0x01              ) val |= 8;	// #2 up
+			if(joy[0] & 0x04) val |= 1;	// #1 left
+			if(joy[0] & 0x01) val |= 2;	// #1 up
+			if(joy[1] & 0x04) val |= 4;	// #2 left
+			if(joy[1] & 0x01) val |= 8;	// #2 up
 		}
 		if(column & 8) {
-			if((joy[0] & 0x10) || key[0x5a]) val |= 1;	// #1 trig1
-			if((joy[0] & 0x20) || key[0x58]) val |= 2;	// #1 trig2
-			if( joy[1] & 0x10              ) val |= 4;	// #2 trig1
-			if( joy[1] & 0x20              ) val |= 8;	// #2 trig2
+			if(joy[0] & 0x10) val |= 1;	// #1 trig1
+			if(joy[0] & 0x20) val |= 2;	// #1 trig2
+			if(joy[1] & 0x10) val |= 4;	// #2 trig1
+			if(joy[1] & 0x20) val |= 8;	// #2 trig2
 		}
 //		status &= ~2;
 		break;

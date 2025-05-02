@@ -25,7 +25,8 @@
 class _315_5124 : public DEVICE
 {
 private:
-	DEVICE *d_key, *d_psg;
+	KEYBOARD *d_key;
+	DEVICE *d_psg;
 	// output signals
 	outputs_t outputs_irq;
 	
@@ -101,7 +102,7 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_key(DEVICE* device) {
+	void set_context_key(KEYBOARD* device) {
 		d_key = device;
 	}
 	void set_context_psg(DEVICE* device) {

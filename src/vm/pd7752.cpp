@@ -249,7 +249,7 @@ void PD7752::UpConvert(void)
 		memset(voicebuf, 0, samples * 10000);
 	}
 	for(i=0; i<samples; i++) {
-		int dat = (int)(double)(Fbuf[i*GetFrameSize()/samples]/10.0);
+		int dat = (double)(Fbuf[i*GetFrameSize()/samples]/10.0);
 		if (dat > 127) dat = 127;
 		if (dat < -128) dat = -128;
 		voicebuf[fin++] = dat+128;

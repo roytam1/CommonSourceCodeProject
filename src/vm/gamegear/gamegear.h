@@ -27,6 +27,11 @@
 #define USE_CART1
 #define USE_FD1
 #define USE_TAPE
+#define USE_KEY_TO_JOY
+#define KEY_TO_JOY_BUTTON_D	0x5a
+#define KEY_TO_JOY_BUTTON_1	0x58
+#define KEY_TO_JOY_BUTTON_2	0x43
+#define KEY_TO_JOY_BUTTON_3	0x0d
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY			5
 #define USE_AUTO_KEY_RELEASE	8

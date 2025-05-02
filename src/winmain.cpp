@@ -1722,7 +1722,7 @@ void open_cart_dialog(HWND hWnd, int drv)
 #elif defined(_MASTERSYSTEM)
 		_T("Supported Files (*.rom;*.bin;*.sms)\0*.rom;*.bin;*.sms\0All Files (*.*)\0*.*\0\0"),
 		_T("Game Cartridge"),
-#elif defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601)
+#elif defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601) || defined(_PC6801)
 		_T("Supported Files (*.rom;*.bin;*.60)\0*.rom;*.bin;*.60\0All Files (*.*)\0*.*\0\0"),
 		_T("Game Cartridge"),
 #elif defined(_PCENGINE) || defined(_X1TWIN)
@@ -1836,7 +1836,7 @@ void open_tape_dialog(HWND hWnd, bool play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601)
+#if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601) || defined(_PC6801)
 		_T("Supported Files (*.p6;*.cas)\0*.p6;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_PC8001SR) || defined(_PC8801MA) || defined(_PC98DO)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")

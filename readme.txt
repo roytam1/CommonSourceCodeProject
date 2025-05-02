@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/26/2014
+								4/9/2014
 
 --- What's this ?
 
@@ -67,11 +67,12 @@ This archive includes the all source codes of emulators listed below:
 	eX1turbo	SHARP X1turbo
 	eYS-6464A	Shinko Sangyo YS-6464A
 
-	yaGAMEGEAR	SEGA GAME GEAR (by Mr.tanam)
-	yaMASTERSYSTEM	SEGA MASTER SYSTEM (by Mr.tanam)
+	yaGAME GEAR	SEGA GAME GEAR (by Mr.tanam)
+	yaMASTER SYSTEM	SEGA MASTER SYSTEM (by Mr.tanam)
 	yaPC-6001	NEC PC-6001 (by Mr.tanam)
 	yaPC-6201	NEC PC-6001mkII (by Mr.tanam)
 	yaPC-6601	NEC PC-6601 (by Mr.tanam)
+	PC-6801		CP/M PC-6801 (by Mr.tanam)
 
 You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
 

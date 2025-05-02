@@ -210,6 +210,11 @@
 #include "pc6001/pc6001.h"
 #endif
 
+// PC-6801
+#ifdef _PC6801
+#include "pc6001/pc6001.h"
+#endif
+
 // NEC PC-8001mkIISR
 #ifdef _PC8001SR
 #include "pc8801/pc8801.h"

@@ -158,6 +158,30 @@ void EMU::update_input()
 	if(key_status[0x28]) joy_status[0] |= 0x02;	// down
 	if(key_status[0x25]) joy_status[0] |= 0x04;	// left
 	if(key_status[0x27]) joy_status[0] |= 0x08;	// right
+#ifdef KEY_TO_JOY_BUTTON_U
+	if(key_status[KEY_TO_JOY_BUTTON_U]) joy_status[0] |= 0x01;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_D
+	if(key_status[KEY_TO_JOY_BUTTON_D]) joy_status[0] |= 0x02;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_L
+	if(key_status[KEY_TO_JOY_BUTTON_L]) joy_status[0] |= 0x04;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_R
+	if(key_status[KEY_TO_JOY_BUTTON_R]) joy_status[0] |= 0x08;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_1
+	if(key_status[KEY_TO_JOY_BUTTON_1]) joy_status[0] |= 0x10;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_2
+	if(key_status[KEY_TO_JOY_BUTTON_2]) joy_status[0] |= 0x20;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_3
+	if(key_status[KEY_TO_JOY_BUTTON_3]) joy_status[0] |= 0x40;
+#endif
+#ifdef KEY_TO_JOY_BUTTON_4
+	if(key_status[KEY_TO_JOY_BUTTON_4]) joy_status[0] |= 0x80;
+#endif
 #endif
 	
 	// update mouse status

@@ -653,28 +653,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\pc6001\display.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\pc6001\joystick.cpp"
 					>
 					<FileConfiguration
@@ -902,10 +880,6 @@
 				>
 				<File
 					RelativePath="src\vm\pc6001\d88.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\pc6001\display.h"
 					>
 				</File>
 				<File

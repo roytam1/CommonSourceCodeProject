@@ -2,6 +2,7 @@
 	NEC PC-6001 Emulator 'yaPC-6001'
 	NEC PC-6001mk2 Emulator 'yaPC-6201'
 	NEC PC-6601 Emulator 'yaPC-6601'
+	PC-6801 Emulator 'PC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-
@@ -21,13 +22,13 @@
 #include "system.h"
 #ifdef _PC6001
 #include "../mc6847.h"
+#include "display.h"
 #else
 #include "../pd7752.h"
 #endif
-#include "display.h"
 #include "joystick.h"
-#include "keyboard.h"
 #include "memory.h"
+#include "keyboard.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -48,27 +49,27 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	joystick = new JOYSTICK(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
-	display = new DISPLAY(this, emu);
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	system = new SYSTEM(this, emu);
 	system->set_context_pio(pio_f);
 #ifdef _PC6001
+	display = new DISPLAY(this, emu);
 	vdp = new MC6847(this, emu);
 	display->set_context_vdp(vdp);
 	display->set_vram_ptr(memory->get_vram());
+	display->set_context_cpu(cpu);
+	display->set_context_key(keyboard);
 #else
 	voice = new PD7752(this, emu);
 	event->set_context_sound(voice);
 #endif
 	joystick->set_context_psg(psg);
 	memory->set_context_cpu(cpu);
-	display->set_context_cpu(cpu);
-	display->set_context_mem(memory);
 	keyboard->set_context_cpu(cpu);
 	keyboard->set_context_pio(pio_k);
-	keyboard->set_context_memory(memory);
+	keyboard->set_context_mem(memory);
 	pio_k->set_context_port_a(keyboard, SIG_DATAREC_REMOTE, 0x08, 0);
 	pio_k->set_context_port_a(keyboard, SIG_DATAREC_OUT, 0x10, 0);
 	// cpu bus
@@ -76,24 +77,29 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_io(io);
 	cpu->set_context_intr(keyboard);
 	// i/o bus
-	io->set_iomap_single_rw(0x90, keyboard);
-	io->set_iomap_range_rw(0x92, 0x93, memory);		// CGSW93
+	io->set_iomap_range_rw(0x90, 0x92, keyboard);
+	io->set_iomap_single_rw(0x93, memory);			// CGSW93
 	io->set_iomap_alias_w(0xa0, psg, 0);			// PSG ch
 	io->set_iomap_alias_w(0xa1, psg, 1);			// PSG data
 	io->set_iomap_alias_r(0xa2, psg, 1);			// PSG data
+#ifdef _PC6801
+	io->set_iomap_alias_r(0xa3, psg, 1);			// FM status
+	io->set_iomap_range_rw(0x40, 0x6f, memory);		// VRAM addr
+	io->set_iomap_single_rw(0xbc, keyboard);		// VRTC
+#endif
 #ifdef _PC6001
 	vdp->load_font_image(emu->bios_path(_T("CGROM60.60")));
 	vdp->set_context_cpu(cpu);
 	io->set_iomap_single_w(0xb0, display);			// VRAM addr
 #else
 	io->set_iomap_single_w(0xb0, memory);			// VRAM addr
-	io->set_iomap_range_rw(0xc0, 0xc3, memory);		// VRAM addr
+	io->set_iomap_range_rw(0xc0, 0xcf, memory);		// VRAM addr
 	io->set_iomap_range_rw(0xe0, 0xe3, voice);		// VOICE
 #endif
 	io->set_iomap_range_rw(0xb1, 0xb3, system);		// DISK DRIVE
 	io->set_iomap_range_rw(0xd0, 0xde, system);		// DISK DRIVE
 	io->set_iomap_range_rw(0xf0, 0xf2, memory);		// MEMORY MAP
-	io->set_iomap_range_rw(0xf3, 0xf8, display);	// VRAM addr
+	io->set_iomap_range_rw(0xf3, 0xfb, keyboard);	// VRAM addr
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
@@ -143,7 +149,11 @@ void VM::run()
 
 void VM::draw_screen()
 {
+#ifdef _PC6001
 	display->draw_screen();
+#else
+	memory->draw_screen();
+#endif
 }
 // ----------------------------------------------------------------------------
 // soud manager
@@ -155,7 +165,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	psg->init(rate, CPU_CLOCKS, samples, 0, 0);
+	psg->init(rate, 4000000, samples, 0, 0);
 }
 
 uint16* VM::create_sound(int* extra_frames)

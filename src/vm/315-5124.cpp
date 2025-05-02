@@ -201,7 +201,7 @@ void _315_5124::reset()
 	sprite_pattern = sprite_attrib = 0;
 	color_mask = pattern_mask = 0;
 	
-#ifdef _GAMEGEAR // TMS9918 palette
+	// TMS9918 palette
 	palette_pc[0]=RGB_COLOR(0,   0,   0);
 	palette_pc[1]=RGB_COLOR(0,   0,   0);
 	palette_pc[2]=RGB_COLOR(33, 200,  66);
@@ -234,15 +234,17 @@ void _315_5124::reset()
 	palette_pc[29]=RGB_COLOR(0,   0,   0);
 	palette_pc[30]=RGB_COLOR(0,   0,   0);
 	palette_pc[31]=RGB_COLOR(0,   0,   0);
-#else // 315-5124 palette
-	for (i = 0; i < 32; i++) {
-		int r = (tms_crom[i & 0x0F] >> 0) & 3;
-		int g = (tms_crom[i & 0x0F] >> 2) & 3;
-		int b = (tms_crom[i & 0x0F] >> 4) & 3;
-		r = sms_cram_expand_table[r];
-		g = sms_cram_expand_table[g];
-		b = sms_cram_expand_table[b];
-		palette_pc[i]=RGB_COLOR(r,   g,   b);
+#ifdef _MASTERSYSTEM // 315-5124 palette
+	if (console) {   // without COLECO
+		for (i = 0; i < 32; i++) {
+			int r = (tms_crom[i & 0x0F] >> 0) & 3;
+			int g = (tms_crom[i & 0x0F] >> 2) & 3;
+			int b = (tms_crom[i & 0x0F] >> 4) & 3;
+			r = sms_cram_expand_table[r];
+			g = sms_cram_expand_table[g];
+			b = sms_cram_expand_table[b];
+			palette_pc[i]=RGB_COLOR(r, g, b);
+		}
 	}
 #endif
 	vp_x = (console == 0x40) ? 48 : 0;
@@ -268,7 +270,7 @@ void _315_5124::viewport_check(void)
 			}
 		} else {
 			// SC-3000
-			if (vdp_mode) ((KEYBOARD *)d_key)->sk1100=true;
+			d_key->sk1100=true;
 			console = 0x10;
 			vdp_mode = 0; 
 		}

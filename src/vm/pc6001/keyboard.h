@@ -14,24 +14,46 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define STICK0_SPACE 0x80
-#define STICK0_LEFT  0x20
-#define STICK0_RIGHT 0x10
-#define STICK0_DOWN  0x08
-#define STICK0_UP    0x04
-#define STICK0_STOP  0x02
-#define STICK0_SHIFT 0x01
+#define STICK0_SPACE	0x80
+#define STICK0_LEFT		0x20
+#define STICK0_RIGHT	0x10
+#define STICK0_DOWN		0x08
+#define STICK0_UP		0x04
+#define STICK0_STOP		0x02
+#define STICK0_SHIFT	0x01
 
 #define SIG_DATAREC_OUT		0
 #define SIG_DATAREC_REMOTE	1
 #define SIG_DATAREC_TRIG	2
+
+#define INTADDR_KEY1	0x02
+#define INTADDR_RS232C	0x04
+#define INTADDR_TIMER	portF7	// 0x06
+#define INTADDR_CMTREAD	0x08
+#define INTADDR_CMTSTOP	0x0E
+#define INTADDR_CMTERR	0x12
+#define INTADDR_KEY2	0x14
+#define INTADDR_STRIG	0x16
+#define INTADDR_TVR		0x18	// TV RESERVE-DATA   Read Interrupt
+#define INTADDR_DATE	0x1A	// DATE-DATA         Read Interrupt
+#define INTADDR_VRTC	portBC	// 0x22 VRTC Interrupt
+
+///#define KeyIntFlag p6key
+///#define keyGFlag kbFlagGraph
+#define CmtIntFlag (play || rec)
+#define VrtcIntFlag !(portFA & 0x10)
+#ifndef _PC6001
+#define TimerSW d_mem->get_TimerSW()
+#endif
+#define sr_mode d_mem->get_sr_mode()
 
 class FILEIO;
 
 class KEYBOARD : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_pio, *d_mem;
+	DEVICE *d_cpu, *d_pio;
+	MEMORY *d_mem;
 	// output signals
 	outputs_t outputs_out;
 	outputs_t outputs_remote;
@@ -67,17 +89,33 @@ private:
 	int CasMode;
 	int CasIndex;
 	uint8 CasData[0x10000];
-
 	uint8* key_stat;
-   	byte stick0;
+	byte stick0;
 	int kbFlagFunc;
 	int kbFlagGraph;
 	int kbFlagCtrl;
 	int kanaMode;
 	int katakana;
 	void update_keyboard();
+	uint8 vcounter;
 	uint8 counter;
+	uint8 tape;
 	int p6key;
+	int TimerIntFlag;
+///	int CmtIntFlag;
+	int StrigIntFlag;
+/// int TimerSWFlag;
+/// int WaitFlag;
+	int TvrIntFlag;
+	int DateIntFlag;
+	byte portBC;
+	byte portF3;
+	byte portF6;
+	byte portF7;
+	byte portFA;
+	byte portFB;
+	byte TimerSW_F3;
+	byte IntSW_F3;
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_out);
@@ -107,7 +145,7 @@ public:
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
-	void set_context_memory(DEVICE* device) {
+	void set_context_mem(MEMORY* device) {
 		d_mem = device;
 	}
 
@@ -142,6 +180,12 @@ public:
 	// interrupt cpu to device
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	int get_StrigIntFlag() {
+		return StrigIntFlag;
+	}
+#ifndef _PC6001
+	void event_vline(int v, int clock);
+#endif
 	uint32 intr_ack();
 };
 #endif

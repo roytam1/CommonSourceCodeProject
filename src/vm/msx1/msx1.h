@@ -35,7 +35,6 @@
 #define HAS_AY_3_8910
 // for Flappy Limited '85
 #define YM2203_PORT_MODE	0x80
-#define Z80_MEMORY_WAIT
 
 // device informations for win32
 #define USE_CART1

@@ -1,3 +1,13 @@
+4/10/2014
+
+[EMU/WIN32] support to map keys to joystick buttons
+
+[GAMEGEAR] fix to map keys to joystick buttons
+[MASTERSYSTEM] fix to map keys to joystick buttons
+[PX7/MEMORY] fix to add one clock wait for each m1 cycle
+[PC6001] update yaPC-6001/6201/6601/6801 codes (thanks Mr.tanam)
+
+
 4/8/2014
 
 [EMU/WIN32] support to capture the movie sounds in DirectShow codes

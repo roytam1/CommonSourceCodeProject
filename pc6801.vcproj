@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="pc6001mk2"
+	Name="pc6801"
 	ProjectGUID="{699AB843-1860-4ABF-B52C-D6A84D0F81E8}"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,18 +42,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/pc6001mk2.tlb"
+				TypeLibraryName=".\Debug/pc6801.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_PC6001MK2"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_PC6801"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/pc6001mk2.pch"
+				PrecompiledHeaderFile=".\Debug/pc6801.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -76,11 +76,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib shlwapi.lib"
-				OutputFile=".\Debug/pc6001mk2.exe"
+				OutputFile=".\Debug/pc6801.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/pc6001mk2.pdb"
+				ProgramDatabaseFile=".\Debug/pc6801.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -98,7 +98,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/pc6001mk2.bsc"
+				OutputFile=".\Debug/pc6801.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -138,7 +138,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/pc6001mk2.tlb"
+				TypeLibraryName=".\Release/pc6801.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -146,11 +146,11 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_PC6001MK2"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_PC6801"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/pc6001mk2.pch"
+				PrecompiledHeaderFile=".\Release/pc6801.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -172,10 +172,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib shlwapi.lib"
-				OutputFile=".\Release/pc6001mk2.exe"
+				OutputFile=".\Release/pc6801.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/pc6001mk2.pdb"
+				ProgramDatabaseFile=".\Release/pc6801.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/pc6001mk2.bsc"
+				OutputFile=".\Release/pc6801.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -909,11 +909,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath=".\src\res\pc6001mk2.ico"
+				RelativePath=".\src\res\pc6601.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\src\res\pc6001mk2.rc"
+				RelativePath=".\src\res\pc6601.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

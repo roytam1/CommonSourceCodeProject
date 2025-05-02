@@ -231,16 +231,16 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	d_map[addr >> 14]->write_data8(addr, data);
 }
 
-uint32 MEMORY::read_data8w(uint32 addr, int* wait)
-{
-	*wait = 1;
-	return this->read_data8(addr);
-}
-
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffff;
 	return d_map[addr >> 14]->read_data8(addr);
+}
+
+uint32 MEMORY::fetch_op(uint32 addr, int* wait)
+{
+	*wait = 1;
+	return read_data8(addr);
 }
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
