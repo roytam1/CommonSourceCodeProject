@@ -3,7 +3,7 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.04.17 -
+	Date   : 2010.08.31-
 
 	[ virtual machine ]
 */

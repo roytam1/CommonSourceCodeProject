@@ -133,26 +133,17 @@ pio2	20	8255	out cmt, sound
 	3c	memory	out memory map
 */
 	// i/o bus
-	io->set_iomap_range_w(0x00, 0x03, pio0);
-	io->set_iomap_range_w(0x08, 0x0b, pio1);
-	io->set_iomap_range_w(0x10, 0x11, display);
-	io->set_iomap_range_w(0x18, 0x1b, pac2);
-	io->set_iomap_range_w(0x20, 0x23, pio2);
-	io->set_iomap_range_w(0x28, 0x2b, ctc);
-	io->set_iomap_alias_w(0x30, pio, 0);
-	io->set_iomap_alias_w(0x31, pio, 2);
+	io->set_iomap_range_rw(0x00, 0x03, pio0);
+	io->set_iomap_range_rw(0x08, 0x0b, pio1);
+	io->set_iomap_range_rw(0x10, 0x11, display);
+	io->set_iomap_range_rw(0x18, 0x1b, pac2);
+	io->set_iomap_range_rw(0x20, 0x23, pio2);
+	io->set_iomap_range_rw(0x28, 0x2b, ctc);
+	io->set_iomap_alias_rw(0x30, pio, 0);
+	io->set_iomap_alias_rw(0x31, pio, 2);
 	io->set_iomap_alias_w(0x32, pio, 1);
 	io->set_iomap_alias_w(0x33, pio, 3);
 	io->set_iomap_single_w(0x3c, memory);
-	
-	io->set_iomap_range_r(0x00, 0x02, pio0);
-	io->set_iomap_range_r(0x08, 0x0a, pio1);
-	io->set_iomap_range_r(0x10, 0x11, crtc);
-	io->set_iomap_range_r(0x18, 0x1b, pac2);
-	io->set_iomap_range_r(0x20, 0x22, pio2);
-	io->set_iomap_range_r(0x28, 0x2b, ctc);
-	io->set_iomap_alias_r(0x30, pio, 0);
-	io->set_iomap_alias_r(0x31, pio, 2);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

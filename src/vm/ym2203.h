@@ -25,9 +25,6 @@ private:
 	FM::OPN* opn;
 	int usec;
 	
-	// output signals
-	outputs_t outputs_irq;
-	
 	uint8 ch, mode;
 	typedef struct {
 		uint8 wreg;
@@ -37,9 +34,14 @@ private:
 		outputs_t outputs;
 	} port_t;
 	port_t port[2];
-	bool irq, mute;
+	bool mute;
 	
+#ifndef HAS_AY_3_8912
+	// output signals
+	outputs_t outputs_irq;
+	bool irq;
 	void update_interrupt();
+#endif
 	
 public:
 	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -47,7 +49,9 @@ public:
 			init_output_signals(&port[i].outputs);
 			port[i].wreg = port[i].rreg = 0;//0xff;
 		}
+#ifndef HAS_AY_3_8912
 		init_output_signals(&outputs_irq);
+#endif
 	}
 	~YM2203() {}
 	
@@ -62,9 +66,11 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
+#ifndef HAS_AY_3_8912
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
+#endif
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}

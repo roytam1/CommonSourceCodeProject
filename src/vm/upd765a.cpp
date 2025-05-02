@@ -170,130 +170,137 @@ void UPD765A::reset()
 
 void UPD765A::write_io8(uint32 addr, uint32 data)
 {
-	// fdc data
-	if((status & (S_RQM | S_DIO)) == S_RQM) {
-		status &= ~S_RQM;
-//		req_irq_ndma(false);
-		
-		switch(phase) {
-		case PHASE_IDLE:
-//			emu->out_debug("FDC: CMD=%2x\n", data);
-			switch(data & 0x1f) {
-			case 0x02:
-				emu->out_debug("FDC: CMD=%2x READ DIAGNOSTIC\n", data);
-				break;
-			case 0x03:
-				emu->out_debug("FDC: CMD=%2x SPECIFY\n", data);
-				break;
-			case 0x04:
-				emu->out_debug("FDC: CMD=%2x SENCE DEVSTAT\n", data);
-				break;
-			case 0x05:
-			case 0x09:
-				emu->out_debug("FDC: CMD=%2x WRITE DATA\n", data);
-				break;
-			case 0x06:
-			case 0x0c:
-				emu->out_debug("FDC: CMD=%2x READ DATA\n", data);
-				break;
-			case 0x07:
-				emu->out_debug("FDC: CMD=%2x RECALIB\n", data);
-				break;
-			case 0x08:
-				emu->out_debug("FDC: CMD=%2x SENCE INTSTAT\n", data);
-				break;
-			case 0x0a:
-				emu->out_debug("FDC: CMD=%2x READ ID\n", data);
-				break;
-			case 0x0d:
-				emu->out_debug("FDC: CMD=%2x WRITE ID\n", data);
-				break;
-			case 0x0f:
-				emu->out_debug("FDC: CMD=%2x SEEK\n", data);
-				break;
-			case 0x11:
-			case 0x19:
-			case 0x1d:
-				emu->out_debug("FDC: CMD=%2x SCAN\n", data);
-				break;
-			default:
-				emu->out_debug("FDC: CMD=%2x INVALID\n", data);
-				break;
-			}
-			command = data;
-			process_cmd(command & 0x1f);
-			break;
+	if(addr & 1) {
+		// fdc data
+		if((status & (S_RQM | S_DIO)) == S_RQM) {
+			status &= ~S_RQM;
+//			req_irq_ndma(false);
 			
-		case PHASE_CMD:
-			emu->out_debug("FDC: PARAM=%2x\n", data);
-			*bufptr++ = data;
-			if(--count) {
-				status |= S_RQM;
-			}
-			else {
-				process_cmd(command & 0x1f);
-			}
-			break;
-			
-		case PHASE_WRITE:
-			emu->out_debug("FDC: WRITE=%2x\n", data);
-			*bufptr++ = data;
-			if(--count) {
-//				req_irq_ndma(true);
-#ifdef UPD765A_DRQ_DELAY
-				set_drq(false);
-				CANCEL_DRQ();
-				vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
-#else
-				status |= S_RQM;
-				// update data lost event
-				CANCEL_LOST();
-				vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
-#endif
-			}
-			else {
-#ifdef UPD765A_DRQ_DELAY
-				CANCEL_DRQ();
-#endif
-				status &= ~S_NDM;
-				set_drq(false);
-				process_cmd(command & 0x1f);
-			}
-			fdc[hdu & DRIVE_MASK].access = true;
-			break;
-			
-		case PHASE_SCAN:
-			if(data != 0xff) {
-				if(((command & 0x1f) == 0x11 && *bufptr != data) ||
-				   ((command & 0x1f) == 0x19 && *bufptr >  data) ||
-				   ((command & 0x1f) == 0x1d && *bufptr <  data)) {
-					result &= ~ST2_SH;
+			switch(phase) {
+			case PHASE_IDLE:
+#ifdef _FDC_DEBUG_LOG
+				switch(data & 0x1f) {
+				case 0x02:
+					emu->out_debug("FDC: CMD=%2x READ DIAGNOSTIC\n", data);
+					break;
+				case 0x03:
+					emu->out_debug("FDC: CMD=%2x SPECIFY\n", data);
+					break;
+				case 0x04:
+					emu->out_debug("FDC: CMD=%2x SENCE DEVSTAT\n", data);
+					break;
+				case 0x05:
+				case 0x09:
+					emu->out_debug("FDC: CMD=%2x WRITE DATA\n", data);
+					break;
+				case 0x06:
+				case 0x0c:
+					emu->out_debug("FDC: CMD=%2x READ DATA\n", data);
+					break;
+				case 0x07:
+					emu->out_debug("FDC: CMD=%2x RECALIB\n", data);
+					break;
+				case 0x08:
+					emu->out_debug("FDC: CMD=%2x SENCE INTSTAT\n", data);
+					break;
+				case 0x0a:
+					emu->out_debug("FDC: CMD=%2x READ ID\n", data);
+					break;
+				case 0x0d:
+					emu->out_debug("FDC: CMD=%2x WRITE ID\n", data);
+					break;
+				case 0x0f:
+					emu->out_debug("FDC: CMD=%2x SEEK\n", data);
+					break;
+				case 0x11:
+				case 0x19:
+				case 0x1d:
+					emu->out_debug("FDC: CMD=%2x SCAN\n", data);
+					break;
+				default:
+					emu->out_debug("FDC: CMD=%2x INVALID\n", data);
+					break;
 				}
-			}
-			bufptr++;
-			if(--count) {
-//				req_irq_ndma(true);
+#endif
+				command = data;
+				process_cmd(command & 0x1f);
+				break;
+				
+			case PHASE_CMD:
+#ifdef _FDC_DEBUG_LOG
+				emu->out_debug("FDC: PARAM=%2x\n", data);
+#endif
+				*bufptr++ = data;
+				if(--count) {
+					status |= S_RQM;
+				}
+				else {
+					process_cmd(command & 0x1f);
+				}
+				break;
+				
+			case PHASE_WRITE:
+#ifdef _FDC_DEBUG_LOG
+				emu->out_debug("FDC: WRITE=%2x\n", data);
+#endif
+				*bufptr++ = data;
+				if(--count) {
+//					req_irq_ndma(true);
 #ifdef UPD765A_DRQ_DELAY
-				set_drq(false);
-				CANCEL_DRQ();
-				vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
+					set_drq(false);
+					CANCEL_DRQ();
+					vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
 #else
-				status |= S_RQM;
-				// update data lost event
-				CANCEL_LOST();
-				vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
+					status |= S_RQM;
+					// update data lost event
+					CANCEL_LOST();
+					vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
 #endif
-			}
-			else {
+				}
+				else {
 #ifdef UPD765A_DRQ_DELAY
-				CANCEL_DRQ();
+					CANCEL_DRQ();
 #endif
-				status &= ~S_NDM;
-				set_drq(false);
-				cmd_scan();
+					status &= ~S_NDM;
+					set_drq(false);
+					process_cmd(command & 0x1f);
+				}
+				fdc[hdu & DRIVE_MASK].access = true;
+				break;
+				
+			case PHASE_SCAN:
+				if(data != 0xff) {
+					if(((command & 0x1f) == 0x11 && *bufptr != data) ||
+					   ((command & 0x1f) == 0x19 && *bufptr >  data) ||
+					   ((command & 0x1f) == 0x1d && *bufptr <  data)) {
+						result &= ~ST2_SH;
+					}
+				}
+				bufptr++;
+				if(--count) {
+//					req_irq_ndma(true);
+#ifdef UPD765A_DRQ_DELAY
+					set_drq(false);
+					CANCEL_DRQ();
+					vm->register_event(this, EVENT_DRQ, 50, false, &drq_id);
+#else
+					status |= S_RQM;
+					// update data lost event
+					CANCEL_LOST();
+					vm->register_event(this, EVENT_LOST, 30000, false, &lost_id);
+#endif
+				}
+				else {
+#ifdef UPD765A_DRQ_DELAY
+					CANCEL_DRQ();
+#endif
+					status &= ~S_NDM;
+					set_drq(false);
+					cmd_scan();
+				}
+				fdc[hdu & DRIVE_MASK].access = true;
+				break;
 			}
-			fdc[hdu & DRIVE_MASK].access = true;
-			break;
 		}
 	}
 }
@@ -310,7 +317,9 @@ uint32 UPD765A::read_io8(uint32 addr)
 			switch(phase) {
 			case PHASE_RESULT:
 				data = *bufptr++;
+#ifdef _FDC_DEBUG_LOG
 				emu->out_debug("FDC: RESULT=%2x\n", data);
+#endif
 				if(--count) {
 					status |= S_RQM;
 				}
@@ -322,7 +331,9 @@ uint32 UPD765A::read_io8(uint32 addr)
 				
 			case PHASE_READ:
 				data = *bufptr++;
+#ifdef _FDC_DEBUG_LOG
 				emu->out_debug("FDC: READ=%2x\n", data);
+#endif
 				if(--count) {
 //					req_irq_ndma(true);
 #ifdef UPD765A_DRQ_DELAY
@@ -438,7 +449,9 @@ void UPD765A::event_callback(int event_id, int err)
 		drq_id = -1;
 	}
 	else if(event_id == EVENT_LOST) {
-emu->out_debug("FDC: DATA LOST\n");
+#ifdef _FDC_DEBUG_LOG
+		emu->out_debug("FDC: DATA LOST\n");
+#endif
 		result = ST1_OR;
 		shift_to_result7();
 		set_drq(false);
@@ -480,7 +493,9 @@ void UPD765A::req_irq_ndma(bool val)
 
 void UPD765A::set_drq(bool val)
 {
-emu->out_debug("FDC: DRQ=%d\n",val?1:0);
+#ifdef _FDC_DEBUG_LOG
+	emu->out_debug("FDC: DRQ=%d\n",val?1:0);
+#endif
 #ifdef UPD765A_DMA_MODE
 	if(val) {
 		drq = dma_data_lost = true;
@@ -947,12 +962,16 @@ uint32 UPD765A::read_sector()
 	
 	// get sector counts in the current track
 	if(!disk[drv]->get_track(trk, side)) {
+#ifdef _FDC_DEBUG_LOG
 		emu->out_debug("FDC: TRACK NOT FOUND (TRK=%d SIDE=%d)\n", trk, side);
+#endif
 		return ST0_AT | ST1_MA;
 	}
 	int secnum = disk[drv]->sector_num;
 	if(!secnum) {
+#ifdef _FDC_DEBUG_LOG
 		emu->out_debug("FDC: NO SECTORS IN TRACK (TRK=%d SIDE=%d)\n", trk, side);
+#endif
 		return ST0_AT | ST1_MA;
 	}
 	int cy = -1;
@@ -979,7 +998,9 @@ uint32 UPD765A::read_sector()
 		}
 		return 0;
 	}
+#ifdef _FDC_DEBUG_LOG
 	emu->out_debug("FDC: SECTOR NOT FOUND (TRK=%d SIDE=%d ID=%2x,%2x,%2x,%2x)\n", trk, side, id[0], id[1], id[2], id[3]);
+#endif
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
 			return ST0_AT | ST1_ND | ST2_BC;

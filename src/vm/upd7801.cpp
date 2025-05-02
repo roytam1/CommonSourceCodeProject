@@ -1102,7 +1102,7 @@ void UPD7801::reset()
 void UPD7801::run(int clock)
 {
 	count += clock;
-	first = clock;
+	first = count;
 	
 	while(count > 0) {
 		if(wait) {

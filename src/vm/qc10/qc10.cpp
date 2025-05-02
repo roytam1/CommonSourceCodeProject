@@ -114,47 +114,28 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 	
 	// i/o bus
-	io->set_iomap_range_w(0x00, 0x03, pit0);
-	io->set_iomap_range_w(0x04, 0x07, pit1);
-	io->set_iomap_alias_w(0x08, pic, 0);
-	io->set_iomap_alias_w(0x09, pic, 1);
-	io->set_iomap_alias_w(0x0c, pic, 2);
-	io->set_iomap_alias_w(0x0d, pic, 3);
-	io->set_iomap_alias_w(0x10, sio, 0);
-	io->set_iomap_alias_w(0x11, sio, 2);
-	io->set_iomap_alias_w(0x12, sio, 1);
-	io->set_iomap_alias_w(0x13, sio, 3);
-	io->set_iomap_range_w(0x14, 0x17, pio);
-	io->set_iomap_range_w(0x18, 0x23, memory);
-	io->set_iomap_single_w(0x2d, display);
-	io->set_iomap_range_w(0x30, 0x33, floppy);
-	io->set_iomap_single_w(0x35, fdc);
-	io->set_iomap_range_w(0x38, 0x3b, gdc);
-	io->set_iomap_range_w(0x3c, 0x3d, rtc);
-	io->set_iomap_range_w(0x40, 0x4f, dma0);
-	io->set_iomap_range_w(0x50, 0x5f, dma1);
-	io->set_iomap_range_w(0xfc, 0xfd, mfont);
-	
-	io->set_iomap_range_r(0x00, 0x02, pit0);
-	io->set_iomap_range_r(0x04, 0x06, pit1);
-	io->set_iomap_alias_r(0x08, pic, 0);
-	io->set_iomap_alias_r(0x09, pic, 1);
-	io->set_iomap_alias_r(0x0c, pic, 2);
-	io->set_iomap_alias_r(0x0d, pic, 3);
-	io->set_iomap_alias_r(0x10, sio, 0);
-	io->set_iomap_alias_r(0x11, sio, 2);
-	io->set_iomap_alias_r(0x12, sio, 1);
-	io->set_iomap_alias_r(0x13, sio, 3);
-	io->set_iomap_range_r(0x14, 0x16, pio);
-	io->set_iomap_range_r(0x18, 0x1b, memory);
-	io->set_iomap_range_r(0x2c, 0x2d, display);
+	io->set_iomap_range_rw(0x00, 0x03, pit0);
+	io->set_iomap_range_rw(0x04, 0x07, pit1);
+	io->set_iomap_alias_rw(0x08, pic, I8259_ADDR_CHIP0 | 0);
+	io->set_iomap_alias_rw(0x09, pic, I8259_ADDR_CHIP0 | 1);
+	io->set_iomap_alias_rw(0x0c, pic, I8259_ADDR_CHIP1 | 0);
+	io->set_iomap_alias_rw(0x0d, pic, I8259_ADDR_CHIP1 | 1);
+	io->set_iomap_alias_rw(0x10, sio, 0);
+	io->set_iomap_alias_rw(0x11, sio, 2);
+	io->set_iomap_alias_rw(0x12, sio, 1);
+	io->set_iomap_alias_rw(0x13, sio, 3);
+	io->set_iomap_range_rw(0x14, 0x17, pio);
+	io->set_iomap_range_rw(0x18, 0x1b, memory);
+	io->set_iomap_range_w(0x1c, 0x23, memory);
+	io->set_iomap_range_rw(0x2c, 0x2d, display);
 	io->set_iomap_range_r(0x30, 0x33, memory);
-	io->set_iomap_range_r(0x34, 0x35, fdc);
-	io->set_iomap_range_r(0x38, 0x39, gdc);
-	io->set_iomap_single_r(0x3c, rtc);
-	io->set_iomap_range_r(0x40, 0x4f, dma0);
-	io->set_iomap_range_r(0x50, 0x5f, dma1);
-	io->set_iomap_range_r(0xfc, 0xfd, mfont);
+	io->set_iomap_range_w(0x30, 0x33, floppy);
+	io->set_iomap_range_rw(0x34, 0x35, fdc);
+	io->set_iomap_range_rw(0x38, 0x3b, gdc);
+	io->set_iomap_range_rw(0x3c, 0x3d, rtc);
+	io->set_iomap_range_rw(0x40, 0x4f, dma0);
+	io->set_iomap_range_rw(0x50, 0x5f, dma1);
+	io->set_iomap_range_rw(0xfc, 0xfd, mfont);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

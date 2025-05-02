@@ -30,6 +30,7 @@ private:
 	typedef struct {
 		DEVICE* dev;
 		uint32 addr;
+		bool is_flipflop;
 	} write_t;
 	
 	typedef struct {
@@ -39,8 +40,8 @@ private:
 		uint32 value;
 	} read_t;
 	
-	write_t write_table[IO_ADDR_MAX];
-	read_t read_table[IO_ADDR_MAX];
+	write_t wr_table[IO_ADDR_MAX];
+	read_t rd_table[IO_ADDR_MAX];
 	
 	// for debug
 	uint32 prv_waddr, prv_wdata;
@@ -59,15 +60,15 @@ private:
 	
 	uint8 vdisp;
 	
-	void write_port(uint32 addr, uint32 data, bool is_dma);
-	uint32 read_port(uint32 addr, bool is_dma);
+	void write_port8(uint32 addr, uint32 data, bool is_dma);
+	uint32 read_port8(uint32 addr, bool is_dma);
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		// vm->dummy must be generated first !
 		for(int i = 0; i < IO_ADDR_MAX; i++) {
-			write_table[i].dev = read_table[i].dev = vm->dummy;
-			write_table[i].addr = read_table[i].addr = i;
+			wr_table[i].dev = rd_table[i].dev = vm->dummy;
+			wr_table[i].addr = rd_table[i].addr = i;
 		}
 		prv_waddr = prv_raddr = -1;
 	}
@@ -94,8 +95,11 @@ public:
 	void set_iomap_range_r(uint32 s, uint32 e, DEVICE* device);
 	void set_iomap_range_w(uint32 s, uint32 e, DEVICE* device);
 	void set_iomap_range_rw(uint32 s, uint32 e, DEVICE* device);
+	
 	void set_iovalue_single_r(uint32 addr, uint32 value);
 	void set_iovalue_range_r(uint32 s, uint32 e, uint32 value);
+	void set_flipflop_single_r(uint32 addr, uint32 value);
+	void set_flipflop_range_r(uint32 s, uint32 e, uint32 value);
 };
 
 #endif

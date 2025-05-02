@@ -3,7 +3,7 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.08.17-
+	Date   : 2010.08.17-
 
 	[ memory ]
 */

@@ -9,6 +9,8 @@
 
 #include "i8259.h"
 
+#define CHIP_MASK	(I8259_MAX_CHIPS - 1)
+
 void I8259::initialize()
 {
 	for(int c = 0; c < I8259_MAX_CHIPS; c++) {
@@ -21,7 +23,7 @@ void I8259::initialize()
 
 void I8259::write_io8(uint32 addr, uint32 data)
 {
-	int c = (addr >> 1) & 7;
+	int c = (addr >> 1) & CHIP_MASK;
 	
 	if(addr & 1) {
 		if(pic[c].icw2_r) {
@@ -99,7 +101,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 
 uint32 I8259::read_io8(uint32 addr)
 {
-	int c = (addr >> 1) & 7;
+	int c = (addr >> 1) & CHIP_MASK;
 	
 	if(addr & 1) {
 		return pic[c].imr;

@@ -114,57 +114,33 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 	
 	// i/o bus
-	io->set_iomap_range_w(0x00, 0x0f, dma);
-	io->set_iomap_range_w(0x10, 0x1f, pio);
-	io->set_iomap_range_w(0x20, 0x2f, fdc);
+	io->set_iomap_range_rw(0x00, 0x0f, dma);
+	io->set_iomap_range_rw(0x10, 0x1f, pio);
+	io->set_iomap_range_rw(0x20, 0x2f, fdc);
 	for(int i = 0x30; i < 0x40; i += 2) {
-		io->set_iomap_alias_w(i, pic, (i >> 1) & 1);
+		io->set_iomap_alias_rw(i, pic, I8259_ADDR_CHIP0 | ((i >> 1) & 1));
 	}
 	for(int i = 0x40; i < 0x50; i += 2) {
-		io->set_iomap_alias_w(i, pic, 2 | ((i >> 1) & 1));
+		io->set_iomap_alias_rw(i, pic, I8259_ADDR_CHIP1 | ((i >> 1) & 1));
 	}
 	io->set_iomap_range_w(0x50, 0x5f, memory);
+	io->set_iomap_range_r(0x60, 0x6f, sysport);
 	io->set_iomap_range_w(0x70, 0x7f, sysport);
 #if defined(_MZ6500) || defined(_MZ6550)
-	io->set_iomap_single_w(0xcd, memory);
+	io->set_iomap_single_rw(0xcd, memory);
 #endif
 	for(int i = 0x100; i < 0x110; i += 2) {
-		io->set_iomap_alias_w(i, gdc, (i >> 1) & 1);
+		io->set_iomap_alias_rw(i, gdc, (i >> 1) & 1);
 	}
-	io->set_iomap_range_w(0x110, 0x17f, display);
-	io->set_iomap_range_w(0x200, 0x20f, sio);
-	io->set_iomap_range_w(0x210, 0x21f, ctc0);
-	io->set_iomap_range_w(0x220, 0x22f, rtc);
+	io->set_iomap_range_rw(0x110, 0x17f, display);
+	io->set_iomap_range_rw(0x200, 0x20f, sio);
+	io->set_iomap_range_rw(0x210, 0x21f, ctc0);
+	io->set_iomap_range_rw(0x220, 0x22f, rtc);
 	for(int i = 0x230; i < 0x240; i++) {
-		io->set_iomap_alias_w(i, psg, ~i & 1);
+		io->set_iomap_alias_rw(i, psg, ~i & 1);
 	}
+	io->set_iomap_range_r(0x240, 0x25f, sysport);
 	io->set_iomap_range_w(0x260, 0x26f, sysport);
-	
-	io->set_iomap_range_r(0x00, 0x0f, dma);
-	io->set_iomap_range_r(0x10, 0x1f, pio);
-	io->set_iomap_range_r(0x20, 0x2f, fdc);
-	for(int i = 0x30; i < 0x40; i += 2) {
-		io->set_iomap_alias_r(i, pic, (i >> 1) & 1);
-	}
-	for(int i = 0x40; i < 0x50; i += 2) {
-		io->set_iomap_alias_r(i, pic, 2 | ((i >> 1) & 1));
-	}
-	io->set_iomap_range_r(0x60, 0x6f, sysport);
-#if defined(_MZ6500) || defined(_MZ6550)
-	io->set_iomap_single_r(0xcd, memory);
-#endif
-	for(int i = 0x100; i < 0x110; i += 2) {
-		io->set_iomap_alias_r(i, gdc, (i >> 1) & 1);
-	}
-	io->set_iomap_range_r(0x110, 0x17f, display);
-	io->set_iomap_range_r(0x200, 0x20f, sio);
-	io->set_iomap_range_r(0x210, 0x21f, ctc0);
-	io->set_iomap_range_r(0x220, 0x22f, rtc);
-	for(int i = 0x230; i < 0x240; i++) {
-		io->set_iomap_alias_r(i, psg, ~i & 1);
-	}
-	io->set_iomap_range_r(0x240, 0x24f, sysport);
-	io->set_iomap_range_r(0x250, 0x25f, sysport);
 	io->set_iomap_range_r(0x270, 0x27f, sysport);
 	
 	// initialize all devices

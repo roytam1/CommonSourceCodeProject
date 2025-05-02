@@ -43,7 +43,12 @@ void EMM::write_io8(uint32 addr, uint32 data)
 
 uint32 EMM::read_io8(uint32 addr)
 {
-	ptr = (ptr & 0xffff00) | (addr >> 8);
-	return (ptr < EMM_SIZE) ? buf[ptr] : 0xff;
+	switch(addr & 0xff) {
+	case 0xad:
+		// data
+		ptr = (ptr & 0xffff00) | (addr >> 8);
+		return (ptr < EMM_SIZE) ? buf[ptr] : 0xff;
+	}
+	return 0xff;
 }
 

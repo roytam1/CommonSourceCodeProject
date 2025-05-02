@@ -40,7 +40,7 @@ void Z80PIO::reset()
 
 void Z80PIO::write_io8(uint32 addr, uint32 data)
 {
-	int ch = (addr & 2) ? 1 : 0;
+	int ch = (addr >> 1) & 1;
 	
 	switch(addr & 3) {
 	case 0:
@@ -113,7 +113,7 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 
 uint32 Z80PIO::read_io8(uint32 addr)
 {
-	int ch = (addr & 2) ? 1 : 0;
+	int ch = (addr >> 1) & 1;
 	
 	switch(addr & 3) {
 	case 0:

@@ -29,7 +29,11 @@ void PRINTER::write_io8(uint32 addr, uint32 data)
 
 uint32 PRINTER::read_io8(uint32 addr)
 {
-	return busy ? 1 : 0;
+	switch(addr & 0xff) {
+	case 0xe2:
+		return busy ? 1 : 0;
+	}
+	return 0xff;
 }
 
 void PRINTER::write_signal(int id, uint32 data, uint32 mask)

@@ -25,7 +25,7 @@
 #define DEVICE_NAME		"SHARP X1"
 #define CONFIG_NAME		"x1"
 #endif
-#define CONFIG_VERSION		0x02
+#define CONFIG_VERSION		0x03
 
 // device informations for virtual machine (x1)
 //#ifdef _X1TURBO
@@ -76,6 +76,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
+#define USE_MONITOR_TYPE	2
 #define USE_SOUND_DEVICE_TYPE	3
 
 #include "../../common.h"
@@ -195,6 +196,9 @@ public:
 #endif
 	
 	void update_config();
+#ifdef _X1TURBO
+	void update_dipswitch();
+#endif
 	
 	// ----------------------------------------
 	// for each device

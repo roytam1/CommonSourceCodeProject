@@ -512,7 +512,8 @@ void MB8877::event_callback(int event_id, int err)
 	case EVENT_SEARCH:
 		now_search = false;
 		// start dma
-		if(status & FDC_ST_DRQ) {
+		if(!(status & FDC_ST_RECNFND)) {
+			status |= FDC_ST_DRQ;
 			set_drq(true);
 		}
 		break;
@@ -678,8 +679,8 @@ void MB8877::cmd_stepout()
 	REGISTER_EVENT(EVENT_SEEKEND, 300);
 }
 
-// wait 100msec to read/write data just after seek command is done
-#define GET_SEARCH_TIME (after_seek ? (after_seek = false, 100000) : 200)
+// wait 70msec to read/write data just after seek command is done
+#define GET_SEARCH_TIME (after_seek ? (after_seek = false, 70000) : 200)
 
 void MB8877::cmd_readdata()
 {
@@ -692,7 +693,8 @@ void MB8877::cmd_readdata()
 		status = search_sector(fdc[drvreg].track, sidereg, secreg, false);
 	}
 	if(!(status & FDC_ST_RECNFND)) {
-		status |= FDC_ST_DRQ | FDC_ST_BUSY;
+//		status |= FDC_ST_DRQ | FDC_ST_BUSY;
+		status |= FDC_ST_BUSY;
 	}
 	
 	int time = GET_SEARCH_TIME;
@@ -715,7 +717,8 @@ void MB8877::cmd_writedata()
 	}
 	status &= ~FDC_ST_RECTYPE;
 	if(!(status & FDC_ST_RECNFND)) {
-		status |= FDC_ST_DRQ | FDC_ST_BUSY;
+//		status |= FDC_ST_DRQ | FDC_ST_BUSY;
+		status |= FDC_ST_BUSY;
 	}
 	
 	int time = GET_SEARCH_TIME;
@@ -732,7 +735,8 @@ void MB8877::cmd_readaddr()
 	cmdtype = FDC_CMD_RD_ADDR;
 	status = search_addr();
 	if(!(status & FDC_ST_RECNFND)) {
-		status |= FDC_ST_DRQ | FDC_ST_BUSY;
+//		status |= FDC_ST_DRQ | FDC_ST_BUSY;
+		status |= FDC_ST_BUSY;
 	}
 	
 	int time = GET_SEARCH_TIME;
@@ -747,7 +751,8 @@ void MB8877::cmd_readtrack()
 {
 	// type-3 read track
 	cmdtype = FDC_CMD_RD_TRK;
-	status = FDC_ST_BUSY | FDC_ST_DRQ;
+//	status = FDC_ST_DRQ | FDC_ST_BUSY;
+	status = FDC_ST_BUSY;
 	
 	make_track();
 	
@@ -760,7 +765,8 @@ void MB8877::cmd_writetrack()
 {
 	// type-3 write track
 	cmdtype = FDC_CMD_WR_TRK;
-	status = FDC_ST_BUSY | FDC_ST_DRQ;
+//	status = FDC_ST_DRQ | FDC_ST_BUSY;
+	status = FDC_ST_BUSY;
 	
 	disk[drvreg]->track_size = 0x1800;
 	fdc[drvreg].index = 0;

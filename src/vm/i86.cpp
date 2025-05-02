@@ -657,7 +657,7 @@ void I86::run(int clock)
 	
 	/* run cpu while given clocks */
 	icount += clock;
-	first_icount = clock;
+	first_icount = icount;
 	
 	/* adjust for any interrupts that came in */
 	icount -= extra_cycles;

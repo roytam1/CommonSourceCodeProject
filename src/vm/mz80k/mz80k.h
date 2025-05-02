@@ -54,7 +54,6 @@ class AND;
 class DATAREC;
 class I8253;
 class I8255;
-class IO;
 class LS393;
 class PCM1BIT;
 class Z80;
@@ -77,7 +76,6 @@ protected:
 	DATAREC* drec;
 	I8253* ctc;
 	I8255* pio;
-	IO* io;
 	LS393* counter;
 	PCM1BIT* pcm;
 	Z80* cpu;

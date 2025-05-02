@@ -114,12 +114,17 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 
 uint32 HD146818P::read_io8(uint32 addr)
 {
-	uint8 val = ram[ch];
-	if(ch == 0x0c) {
-		ram[0x0c] = 0;
-		update_intr();
+	if(addr & 1) {
+		return 0xff;
 	}
-	return val;
+	else {
+		uint8 val = ram[ch];
+		if(ch == 0x0c) {
+			ram[0x0c] = 0;
+			update_intr();
+		}
+		return val;
+	}
 }
 
 #define bcd_bin(p) ((ram[0x0b] & 4) ? p : 0x10 * (int)((p) / 10) + ((p) % 10))

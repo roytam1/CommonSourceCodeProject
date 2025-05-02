@@ -23,6 +23,9 @@ class DISPLAY : public DEVICE
 {
 private:
 	DEVICE *d_fdc, *d_pio;
+#ifdef _X1TURBO
+	DEVICE *d_cpu;
+#endif
 	
 	uint8* regs;
 	uint8 vram_t[0x800];
@@ -123,6 +126,11 @@ public:
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
+#ifdef _X1TURBO
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+#endif
 	void set_vram_ptr(uint8* ptr) {
 		vram_ptr = ptr;
 	}

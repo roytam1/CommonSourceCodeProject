@@ -53,7 +53,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
-#define USE_MONITOR_TYPE
+#define USE_MONITOR_TYPE	4
 
 #include "../../common.h"
 

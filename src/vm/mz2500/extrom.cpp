@@ -47,6 +47,10 @@ void EXTROM::write_io8(uint32 addr, uint32 data)
 
 uint32 EXTROM::read_io8(uint32 addr)
 {
-	return rom[ptr];
+	switch(addr & 0xff) {
+	case 0xf8:
+		return rom[ptr];
+	}
+	return 0xff;
 }
 

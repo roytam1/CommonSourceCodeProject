@@ -18,9 +18,12 @@ void TIMER::initialize()
 
 void TIMER::write_io8(uint32 addr, uint32 data)
 {
-	// $42: interrupt ctrl register
-	ctrl = data;
-	update_intr();
+	switch(addr) {
+	case 0x42:
+		ctrl = data;
+		update_intr();
+		break;
+	}
 }
 
 uint32 TIMER::read_io8(uint32 addr)

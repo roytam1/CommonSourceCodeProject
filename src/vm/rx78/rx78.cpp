@@ -62,17 +62,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(dummy);
 	
 	// i/o bus
-	io->set_iomap_range_w(0xe2, 0xe3, prt);
-	io->set_iomap_single_w(0xf0, cmt);
+	io->set_iomap_range_rw(0xe2, 0xe3, prt);
+	io->set_iomap_single_rw(0xf0, cmt);
 	io->set_iomap_range_w(0xf1, 0xf2, memory);
-	io->set_iomap_single_w(0xf4, key);
+	io->set_iomap_single_rw(0xf4, key);
 	io->set_iomap_range_w(0xf5, 0xfc, vdp);
 	io->set_iomap_single_w(0xfe, vdp);
 	io->set_iomap_single_w(0xff, psg);
-	
-	io->set_iomap_single_r(0xe2, prt);
-	io->set_iomap_single_r(0xf0, cmt);
-	io->set_iomap_single_r(0xf4, key);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

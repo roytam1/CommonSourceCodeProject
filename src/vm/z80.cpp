@@ -908,7 +908,7 @@ void Z80::run(int clock)
 	
 	// run cpu while given clocks
 	count += clock;
-	first = clock;
+	first = count;
 	
 	while(count > 0) {
 		uint8 code = FETCHOP();

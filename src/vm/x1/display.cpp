@@ -259,7 +259,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		switch(addr) {
 		case 0x1fd0:
 			mode1 = data;
-			hires = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
+//			hires = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
 			break;
 		case 0x1fe0:
 			mode2 = data;
@@ -418,10 +418,10 @@ void DISPLAY::event_frame()
 	int vsync_width = (regs[3] & 0xf0) >> 4;
 	vsync_pos = regs[7] * ch_height;
 	vsync_end = vsync_pos + (vsync_width ? vsync_width : 8); // ???
-	vsync_pos = vt_disp * ch_height;
+	vblank_pos = vt_disp * ch_height;
 	
 #ifdef _X1TURBO
-//	hires = ((regs[4] + 1) * ((regs[9] & 0x1f) + 1) + regs[5] > 400);
+	hires = ((regs[4] + 1) * ch_height + regs[5] > 400);
 #endif
 }
 
@@ -453,14 +453,17 @@ void DISPLAY::event_vline(int v, int clock)
 
 void DISPLAY::set_vblank(int v)
 {
-	bool val = (v <= vsync_pos);
+	bool val = !(v <= vblank_pos);
 	
-	if(vblank && !val) {
+	if(!vblank && val) {
 		// enter vblank
 		vblank_clock = vm->current_clock();
+#ifdef _X1TURBO
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
+#endif
 	}
 	if(vblank != val) {
-		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0x80 : 0, 0x80);
+		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0 : 0x80, 0x80);
 		vblank = val;
 	}
 }
@@ -510,6 +513,11 @@ uint8 DISPLAY::get_cur_font(uint32 addr)
 {
 #ifdef _X1TURBO
 	if(mode1 & 0x20) {
+		// wait next vblank
+		if(!vblank) {
+			d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+		}
+		
 		// from X1EMU
 		uint16 vaddr;
 		if(!(vram_a[0x7ff] & 0x20)) {
@@ -591,7 +599,7 @@ void DISPLAY::get_cur_code_line()
 	#define ht_clock 250
 #endif
 	int clock = vm->passed_clock(vblank_clock);
-	int vt_line = vsync_pos + (int)(clock / ht_clock);
+	int vt_line = vblank_pos + (int)(clock / ht_clock);
 	
 	int addr = (hz_total * (clock % ht_clock)) / ht_clock;
 	addr += hz_disp * (int)(vt_line / ch_height);

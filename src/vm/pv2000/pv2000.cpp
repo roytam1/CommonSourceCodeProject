@@ -73,18 +73,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// i/o bus
 	io->set_iomap_single_w(0x00, cmt);
-	io->set_iomap_single_w(0x20, key);
+	io->set_iomap_single_r(0x10, key);
+	io->set_iomap_single_rw(0x20, key);
+	io->set_iomap_single_r(0x40, key);
 	io->set_iomap_single_w(0x40, psg);
-	io->set_iomap_single_w(0x60, cmt);
+	io->set_iomap_single_rw(0x60, cmt);
 	io->set_iomap_single_w(0x80, prt);
+	io->set_iomap_single_r(0x90, prt);
 	io->set_iomap_single_w(0xa0, prt);
 	io->set_iomap_single_w(0xb0, prt);
-	
-	io->set_iomap_single_r(0x10, key);
-	io->set_iomap_single_r(0x20, key);
-	io->set_iomap_single_r(0x40, key);
-	io->set_iomap_single_r(0x60, cmt);
-	io->set_iomap_single_r(0x90, prt);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -207,9 +204,12 @@ uint16* VM::create_sound(int* extra_frames)
 
 void VM::key_down(int code, bool repeat)
 {
-	if(!(code == 0x9 || code == 0x10 || code == 0x11)) {
-		key->key_down();
-	}
+	key->key_down(code);
+}
+
+void VM::key_up(int code)
+{
+	key->key_up(code);
 }
 
 // ----------------------------------------------------------------------------

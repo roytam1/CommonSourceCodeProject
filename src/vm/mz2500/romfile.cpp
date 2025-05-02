@@ -67,12 +67,20 @@ void ROMFILE::release()
 
 void ROMFILE::write_io8(uint32 addr, uint32 data)
 {
-	ptr = ((addr & 0xff00) << 8) | (data << 8) | (ptr & 0x0000ff);
+	switch(addr & 0xff) {
+	case 0xa8:
+		ptr = ((addr & 0xff00) << 8) | (data << 8) | (ptr & 0x0000ff);
+		break;
+	}
 }
 
 uint32 ROMFILE::read_io8(uint32 addr)
 {
-	ptr = (ptr & 0xffff00) | ((addr & 0xff00) >> 8);
-	return (ptr < size) ? buf[ptr] : 0xff;
+	switch(addr & 0xff) {
+	case 0xa9:
+		ptr = (ptr & 0xffff00) | ((addr & 0xff00) >> 8);
+		return (ptr < size) ? buf[ptr] : 0xff;
+	}
+	return 0xff;
 }
 

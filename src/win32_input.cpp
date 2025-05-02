@@ -170,16 +170,6 @@ void EMU::update_input()
 
 void EMU::key_down(int code, bool repeat)
 {
-#ifdef _PV2000
-	// CASIO PV-2000 patch
-	if((0x30 <= code && code <= 0x5a) || (0xba <= code && code <= 0xe2)) {
-		_memset(key_status + 0x30, 0, 0x5a - 0x30 + 1);
-		_memset(key_status + 0xba, 0, 0xe2 - 0xba + 1);
-	}
-	else if(code == 0x8) {
-		code = 0x25;
-	}
-#endif
 	if(code == VK_SHIFT) {
 		if(GetAsyncKeyState(VK_LSHIFT) & 0x8000) key_status[VK_LSHIFT] = 0x80;
 		if(GetAsyncKeyState(VK_RSHIFT) & 0x8000) key_status[VK_RSHIFT] = 0x80;
@@ -217,11 +207,6 @@ void EMU::key_down(int code, bool repeat)
 
 void EMU::key_up(int code)
 {
-#ifdef _PV2000
-	if(code == 0x8) {
-		code = 0x25;
-	}
-#endif
 	if(code == VK_SHIFT) {
 		if(!(GetAsyncKeyState(VK_LSHIFT) & 0x8000)) key_status[VK_LSHIFT] &= 0x7f;
 		if(!(GetAsyncKeyState(VK_RSHIFT) & 0x8000)) key_status[VK_RSHIFT] &= 0x7f;

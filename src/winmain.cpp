@@ -1425,12 +1425,10 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		CheckMenuItem(hMenu, ID_SCREEN_STRETCH, config.stretch_screen ? MF_CHECKED : MF_UNCHECKED);
 		
 #ifdef USE_MONITOR_TYPE
-		// mz2500 monitor type
-		if(config.monitor_type >= 0 && config.monitor_type < 4) {
-			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE3, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
+		if(config.monitor_type >= 0 && config.monitor_type < USE_MONITOR_TYPE) {
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE0 + USE_MONITOR_TYPE - 1, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
 		}
 #elif defined(USE_SCREEN_ROTATE)
-		// pc100 monitor type
 		if(config.monitor_type >= 0 && config.monitor_type < 2) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE1, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
 		}

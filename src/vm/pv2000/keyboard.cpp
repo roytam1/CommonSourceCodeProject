@@ -31,8 +31,12 @@ static const int key_map[16][8] = {
 
 void KEYBOARD::initialize()
 {
-	key_stat = emu->key_buffer();
 	joy_stat = emu->joy_buffer();
+}
+
+void KEYBOARD::reset()
+{
+	_memset(key_stat, 0, sizeof(key_stat));
 	key_no = 0;
 	intr_enb = false;
 }
@@ -87,11 +91,23 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void KEYBOARD::key_down()
+void KEYBOARD::key_down(int code)
 {
-	if(intr_enb) {
-		d_cpu->set_intr_line(true, true, 0);
-		intr_enb = false;
+	if(!(code == 0x09 || code == 0x10 || code == 0x11)) {
+		if(intr_enb) {
+			d_cpu->set_intr_line(true, true, 0);
+			intr_enb = false;
+		}
 	}
+	if((0x30 <= code && code <= 0x5a) || (0xba <= code && code <= 0xe2)) {
+		_memset(key_stat + 0x30, 0, 0x5a - 0x30 + 1);
+		_memset(key_stat + 0xba, 0, 0xe2 - 0xba + 1);
+	}
+	key_stat[code] = 1;
+}
+
+void KEYBOARD::key_up(int code)
+{
+	key_stat[code] = 0;
 }
 

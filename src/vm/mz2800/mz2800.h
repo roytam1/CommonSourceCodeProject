@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"SHARP MZ-2800"
 #define CONFIG_NAME		"mz2800"
-#define CONFIG_VERSION		0x02
+#define CONFIG_VERSION		0x03
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -36,7 +36,6 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
-#define USE_MONITOR_TYPE
 
 #include "../../common.h"
 
@@ -58,7 +57,6 @@ class YM2203;
 class Z80PIO;
 class Z80SIO;
 
-class CALENDAR;
 class CRTC;
 class FLOPPY;
 class JOYSTICK;
@@ -67,7 +65,6 @@ class MEMORY;
 class MOUSE;
 class RESET;
 class SYSPORT;
-class TIMER;
 
 class VM
 {
@@ -91,7 +88,6 @@ protected:
 	Z80PIO* pio1;
 	Z80SIO* sio;
 	
-	CALENDAR* calendar;
 	CRTC* crtc;
 	FLOPPY* floppy;
 	JOYSTICK* joystick;
@@ -100,7 +96,6 @@ protected:
 	MOUSE* mouse;
 	RESET* rst;
 	SYSPORT* sysport;
-	TIMER* timer;
 	
 public:
 	// ----------------------------------------

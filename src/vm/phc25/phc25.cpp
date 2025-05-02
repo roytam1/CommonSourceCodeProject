@@ -76,16 +76,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(dummy);
 	
 	// i/o bus
-	io->set_iomap_single_w(0x40, system);
-	io->set_iomap_alias_w(0xc0, psg, 1);
-	io->set_iomap_alias_w(0xc1, psg, 0);
-	
-	io->set_iomap_single_r(0x40, system);
+	io->set_iomap_single_rw(0x40, system);
 #ifndef _MAP1010
 	io->set_iomap_range_r(0x80, 0x88, keyboard);
 #endif
-	io->set_iomap_alias_r(0xc0, psg, 1);
-	io->set_iomap_alias_r(0xc1, psg, 1);
+	io->set_iomap_alias_w(0xc0, psg, 1);	// PSG data
+	io->set_iomap_alias_w(0xc1, psg, 0);	// PSG ch
+//	io->set_iomap_alias_r(0xc0, psg, 1);
+	io->set_iomap_alias_r(0xc1, psg, 1);	// PSG data
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

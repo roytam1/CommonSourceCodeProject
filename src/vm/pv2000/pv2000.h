@@ -105,7 +105,7 @@ public:
 	
 	// notify key
 	void key_down(int code, bool repeat);
-	void key_up(int code) {}
+	void key_up(int code);
 	
 	// user interface
 	void open_cart(_TCHAR* file_path);

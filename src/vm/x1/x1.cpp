@@ -133,6 +133,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	display->set_context_fdc(fdc);
 	display->set_context_pio(pio);
+#ifdef _X1TURBO
+	display->set_context_cpu(cpu);
+#endif
 	display->set_vram_ptr(io->get_vram());
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
@@ -230,7 +233,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x1fd0, display);
 	io->set_iomap_single_w(0x1fe0, display);
 #endif
-	io->set_iovalue_single_r(0x1ff0, 0x00); // dipswitch: 0x00=2D, 0x04=2HD
+	// 0x1ff0: dipswitch
+//	io->set_iovalue_single_r(0x1ff0, 0x00);
+	update_dipswitch();
 #endif
 	io->set_iomap_range_rw(0x2000, 0x3fff, display);	// tvram
 	
@@ -564,5 +569,17 @@ void VM::update_config()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
 	}
+#ifdef _X1TURBO
+	update_dipswitch();
+#endif
 }
+
+#ifdef _X1TURBO
+void VM::update_dipswitch()
+{
+	// bit0		0=High 1=Standard
+	// bit1-3	0=5"2D 4=5"2HD
+	io->set_iovalue_single_r(0x1ff0, config.monitor_type & 1);
+}
+#endif
 

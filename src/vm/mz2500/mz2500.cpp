@@ -145,61 +145,35 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	interrupt->set_context_intr(cpu, 2);
 	
 	// i/o bus
-	io->set_iomap_range_w(0x60, 0x63, w3100a);
-	io->set_iomap_range_w(0xa0, 0xa3, sio);
-	io->set_iomap_range_w(0xa4, 0xa5, sasi);
-	io->set_iomap_single_w(0xa8, romfile);
-	io->set_iomap_range_w(0xac, 0xad, emm);
+	io->set_iomap_range_rw(0x60, 0x63, w3100a);
+	io->set_iomap_range_rw(0xa0, 0xa3, sio);
+	io->set_iomap_range_rw(0xa4, 0xa5, sasi);
+	io->set_iomap_range_rw(0xa8, 0xa9, romfile);
+	io->set_iomap_range_rw(0xac, 0xad, emm);
 	io->set_iomap_single_w(0xae, crtc);
-	io->set_iomap_range_w(0xb0, 0xb3, sio);
-	io->set_iomap_range_w(0xb4, 0xb5, memory);
-	io->set_iomap_range_w(0xb8, 0xb9, kanji);
-	io->set_iomap_range_w(0xbc, 0xbd, crtc);
+	io->set_iomap_range_rw(0xb0, 0xb3, sio);
+	io->set_iomap_range_rw(0xb4, 0xb5, memory);
+	io->set_iomap_range_rw(0xb8, 0xb9, kanji);
+	io->set_iomap_range_rw(0xbc, 0xbf, crtc);
 	io->set_iomap_range_w(0xc6, 0xc7, interrupt);
-	io->set_iomap_range_w(0xc8, 0xc9, opn);
-	io->set_iomap_single_w(0xca, voice);
-	io->set_iomap_single_w(0xcc, calendar);
+	io->set_iomap_range_rw(0xc8, 0xc9, opn);
+	io->set_iomap_single_rw(0xca, voice);
+	io->set_iomap_single_rw(0xcc, calendar);
 	io->set_iomap_range_w(0xce, 0xcf, memory);
-	io->set_iomap_range_w(0xd8, 0xdb, fdc);
+	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
 	io->set_iomap_range_w(0xdc, 0xdd, floppy);
-	io->set_iomap_range_w(0xe0, 0xe3, pio0);
-	io->set_iomap_range_w(0xe4, 0xe7, pit);
-	io->set_iomap_range_w(0xe8, 0xeb, pio1);
-	io->set_iomap_single_w(0xef, joystick);
+	io->set_iomap_range_rw(0xe0, 0xe3, pio0);
+	io->set_iomap_range_rw(0xe4, 0xe7, pit);
+	io->set_iomap_range_rw(0xe8, 0xeb, pio1);
+	io->set_iomap_single_rw(0xef, joystick);
 	io->set_iomap_range_w(0xf0, 0xf3, timer);
-	io->set_iomap_range_w(0xf4, 0xf7, crtc);
-	io->set_iomap_range_w(0xf8, 0xf9, extrom);
+	io->set_iomap_range_rw(0xf4, 0xf7, crtc);
+	io->set_iomap_range_rw(0xf8, 0xf9, extrom);
 	
-	io->set_iomap_single_r(0x63, w3100a);
-	io->set_iomap_range_r(0xa0, 0xa3, sio);
-	io->set_iomap_range_r(0xa4, 0xa5, sasi);
-	io->set_iomap_single_r(0xa9, romfile);
-	io->set_iomap_single_r(0xad, emm);
-	io->set_iomap_range_r(0xb0, 0xb3, sio);
-	io->set_iomap_range_r(0xb4, 0xb5, memory);
-	io->set_iomap_range_r(0xb8, 0xb9, kanji);
-	io->set_iomap_range_r(0xbc, 0xbf, crtc);
-	io->set_iomap_range_r(0xc8, 0xc9, opn);
-	io->set_iomap_single_r(0xca, voice);
-	io->set_iomap_single_r(0xcc, calendar);
-	io->set_iomap_range_r(0xd8, 0xdb, fdc);
-	io->set_iomap_range_r(0xe0, 0xe2, pio0);
-	io->set_iomap_range_r(0xe4, 0xe6, pit);
-	io->set_iomap_single_r(0xe8, pio1);
-	io->set_iomap_single_r(0xea, pio1);
-	io->set_iomap_single_r(0xef, joystick);
-	io->set_iomap_range_r(0xf4, 0xf7, crtc);
-	io->set_iomap_single_r(0xf8, extrom);
-	
-	io->set_iowait_range_r(0xc8, 0xc9, 1);
-	io->set_iowait_single_r(0xcc, 3);
-	io->set_iowait_range_r(0xd8, 0xdf, 1);
-	io->set_iowait_range_r(0xe8, 0xeb, 1);
-	
-	io->set_iowait_range_w(0xc8, 0xc9, 1);
-	io->set_iowait_single_w(0xcc, 3);
-	io->set_iowait_range_w(0xd8, 0xdf, 1);
-	io->set_iowait_range_w(0xe8, 0xeb, 1);
+	io->set_iowait_range_rw(0xc8, 0xc9, 1);
+	io->set_iowait_single_rw(0xcc, 3);
+	io->set_iowait_range_rw(0xd8, 0xdf, 1);
+	io->set_iowait_range_rw(0xe8, 0xeb, 1);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

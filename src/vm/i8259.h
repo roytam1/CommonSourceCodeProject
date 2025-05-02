@@ -14,6 +14,10 @@
 #include "../emu.h"
 #include "device.h"
 
+/*
+	NOTE: I8259_MAX_CHIPS shoud be 1 or 2
+*/
+
 #define SIG_I8259_IR0	0
 #define SIG_I8259_IR1	1
 #define SIG_I8259_IR2	2
@@ -26,6 +30,11 @@
 #define SIG_I8259_CHIP1	8
 //#define SIG_I8259_CHIP2	16
 //#define SIG_I8259_CHIP3	24
+
+#define I8259_ADDR_CHIP0	0
+#define I8259_ADDR_CHIP1	2
+//#define I8259_ADDR_CHIP2	4
+//#define I8259_ADDR_CHIP3	6
 
 class I8259 : public DEVICE
 {

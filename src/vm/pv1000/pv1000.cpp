@@ -62,10 +62,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// i/o bus
 	io->set_iomap_range_w(0xf8, 0xfa, psg);
-	io->set_iomap_range_w(0xfc, 0xfd, joystick);
+	io->set_iomap_range_rw(0xfc, 0xfd, joystick);
 	io->set_iomap_range_w(0xfe, 0xff, vdp);
-	
-	io->set_iomap_range_r(0xfc, 0xfd, joystick);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

@@ -14,7 +14,10 @@ void YM2203::initialize()
 	opn = new FM::OPN;
 	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
 	vm->register_vline_event(this);
-	irq = mute = false;
+	mute = false;
+#ifndef HAS_AY_3_8912
+	irq = false;
+#endif
 }
 
 void YM2203::release()
@@ -26,7 +29,7 @@ void YM2203::reset()
 {
 	opn->Reset();
 	opn->SetReg(0x27, 0);
-#ifdef HAS_AY_3_8912
+#if defined(_X1TWIN) || defined(_X1TURBO)
 	opn->SetReg(0x2e, 0);
 #endif
 	port[0].first = port[1].first = true;
@@ -81,7 +84,11 @@ uint32 YM2203::read_io8(uint32 addr)
 		}
 	}
 	else {
+#ifndef HAS_AY_3_8912
 		return opn->ReadStatus();
+#else
+		return 0xff;
+#endif
 	}
 }
 
@@ -106,6 +113,7 @@ void YM2203::event_vline(int v, int clock)
 #endif
 }
 
+#ifndef HAS_AY_3_8912
 void YM2203::update_interrupt()
 {
 	bool next = opn->ReadIRQ();
@@ -114,6 +122,7 @@ void YM2203::update_interrupt()
 		irq = next;
 	}
 }
+#endif
 
 void YM2203::mix(int32* buffer, int cnt)
 {

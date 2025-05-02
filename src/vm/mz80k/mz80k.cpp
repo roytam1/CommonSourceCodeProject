@@ -20,7 +20,6 @@
 #include "../datarec.h"
 #include "../i8253.h"
 #include "../i8255.h"
-#include "../io.h"
 #include "../ls393.h"
 #include "../pcm1bit.h"
 #include "../z80.h"
@@ -47,7 +46,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	drec = new DATAREC(this, emu);
 	ctc = new I8253(this, emu);
 	pio = new I8255(this, emu);
-	io = new IO(this, emu);
 	counter = new LS393(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	cpu = new Z80(this, emu);
@@ -94,7 +92,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
+	cpu->set_context_io(dummy);
 	cpu->set_context_intr(dummy);
 	
 	// i/o bus
@@ -257,11 +255,7 @@ void VM::push_stop()
 
 bool VM::now_skip()
 {
-#ifdef _TINYIMAS
-	return false;
-#else
 	return drec->skip();
-#endif
 }
 
 void VM::update_config()

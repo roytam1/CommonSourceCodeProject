@@ -63,12 +63,17 @@ void W3100A::write_io8(uint32 addr, uint32 data)
 uint32 W3100A::read_io8(uint32 addr)
 {
 	uint16 raddr;
+	uint32 val;
 	
-	GET_ADDR();
-	uint32 val = regs[raddr];
-	process_status(raddr);
-	INC_ADDR();
-	return val;
+	switch(addr & 3) {
+	case 3:
+		GET_ADDR();
+		val = regs[raddr];
+		process_status(raddr);
+		INC_ADDR();
+		return val;
+	}
+	return 0xff;
 }
 
 void W3100A::process_cmd(uint16 raddr, uint8 data)

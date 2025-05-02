@@ -1,3 +1,24 @@
+5/4/2011
+
+[EMU/WIN32] remove patch code for PV-2000 in input manager
+
+[VM/DEVICE] add virtual functions for 16bit/32bit dma
+[VM/I8259] refine code
+[VM/IO] support standard d-ff register
+[VM/IO] support 16bit/32bit dma functions
+[VM/MB8877] change wait period for read/write from 100msec to 70msec
+[VM/HD146818P] check address line in write access
+[VM/UPD765A] check address line in write access
+[VM/W3100A] check address line in write access
+[VM/YM2203] disable status register for AY-3-8912
+
+[MZ80K] refine driver and remove unused io class
+[MZ2800] refine driver and remove unused calendar/timer classes
+[X1TURBO] support dip-switch for monitor type selection
+[X1TURBO/DISPLAY] fix vblank/vsync signals
+[X1TURBO/IO] support standard d-ff register
+
+
 4/27/2011
 
 [COMMON] modify struct union 'pair'
@@ -18,7 +39,7 @@
 
 4/25/2011
 
-[VM/MB8877] fix to wait 40msec to read/write just after seek command
+[VM/MB8877] fix to wait 100msec to read/write just after seek command
 [VM/Z80CTC] fix to initialize vector when reset device
 [VM/Z80CTC] fix to copy time constant to counter just after reset command
 [VM/Z80CTC] fix to clear pending irq when RETI opcode is detected

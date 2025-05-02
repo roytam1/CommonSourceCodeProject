@@ -3,7 +3,7 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.08.17-
+	Date   : 2010.08.17-
 
 	[ virtual machine ]
 */
@@ -75,30 +75,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(dummy);
 	
 	// i/o bus
-	for(int i = 0x40; i <= 0x7f; i++) {
-		io->set_iomap_single_w(i, psg);
-		io->set_iomap_single_r(i, psg);
-	}
-	for(int i = 0x80; i <= 0xbf; i++) {
-		io->set_iomap_single_w(i, vdp);
-		io->set_iomap_single_r(i, vdp);
-	}
-	for(int i = 0xc0; i <= 0xdf; i++) {
-		io->set_iomap_single_w(i, pio_k);
-		io->set_iomap_single_r(i, pio_k);
-	}
-	for(int i = 0xe0; i <= 0xe3; i++) {
-		io->set_iomap_single_w(i, fdc);
-		io->set_iomap_single_r(i, fdc);
-	}
-	for(int i = 0xe4; i <= 0xe7; i++) {
-		io->set_iomap_single_w(i, pio_f);
-		io->set_iomap_single_r(i, pio_f);
-	}
-	for(int i = 0xe8; i <= 0xeb; i++) {
-		io->set_iomap_single_w(i, sio);
-		io->set_iomap_single_r(i, sio);
-	}
+	io->set_iomap_range_rw(0x40, 0x7f, psg);
+	io->set_iomap_range_rw(0x80, 0xbf, vdp);
+	io->set_iomap_range_rw(0xc0, 0xdf, pio_k);
+	io->set_iomap_range_rw(0xe0, 0xe3, fdc);
+	io->set_iomap_range_rw(0xe4, 0xe7, pio_f);
+	io->set_iomap_range_rw(0xe8, 0xeb, sio);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

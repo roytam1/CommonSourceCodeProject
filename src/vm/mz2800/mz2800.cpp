@@ -27,7 +27,6 @@
 #include "../z80pio.h"
 #include "../z80sio.h"
 
-#include "calendar.h"
 #include "crtc.h"
 #include "floppy.h"
 #include "joystick.h"
@@ -36,7 +35,6 @@
 #include "mouse.h"
 #include "reset.h"
 #include "sysport.h"
-#include "timer.h"
 
 #include "../../config.h"
 
@@ -66,7 +64,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio1 = new Z80PIO(this, emu);
 	sio = new Z80SIO(this, emu);
 	
-	calendar = new CALENDAR(this, emu);
 	crtc = new CRTC(this, emu);
 	floppy = new FLOPPY(this, emu);
 	joystick = new JOYSTICK(this, emu);
@@ -75,7 +72,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	mouse = new MOUSE(this, emu);
 	rst = new RESET(this, emu);
 	sysport = new SYSPORT(this, emu);
-	timer = new TIMER(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -110,7 +106,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio->set_context_intr(pic, SIG_I8259_CHIP0 | SIG_I8259_IR2);
 	sio->set_context_dtr1(mouse, SIG_MOUSE_DTR, 1);
 	
-	calendar->set_context_rtc(rtc);
 	crtc->set_context_pic(pic);
 	crtc->set_context_pio(pio0);
 	crtc->set_context_fdc(fdc);
@@ -123,9 +118,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	keyboard->set_context_pio1(pio1);
 	memory->set_context_crtc(crtc);
 	mouse->set_context_sio(sio);
-	sysport->set_context_dma(dma);
+	sysport->set_context_pit(pit);
 	sysport->set_context_sio(sio);
-	timer->set_context_pit(pit);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -133,30 +127,33 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 	
 	// i/o bus
-	io->set_iomap_range_w(0x70, 0x7f, dma);
-	io->set_iomap_alias_w(0x80, pic, 0);
-	io->set_iomap_alias_w(0x81, pic, 1);
-	io->set_iomap_alias_w(0x82, pic, 2);
-	io->set_iomap_alias_w(0x83, pic, 3);
-	io->set_iomap_range_w(0x8c, 0x8d, memory);
-	io->set_iomap_single_w(0x8f, sysport);
-	io->set_iomap_range_w(0xa0, 0xa3, sio);
+	io->set_iomap_range_rw(0x70, 0x7f, dma);
+	io->set_iomap_alias_rw(0x80, pic, I8259_ADDR_CHIP0 | 0);
+	io->set_iomap_alias_rw(0x81, pic, I8259_ADDR_CHIP0 | 1);
+	io->set_iomap_alias_rw(0x82, pic, I8259_ADDR_CHIP1 | 0);
+	io->set_iomap_alias_rw(0x83, pic, I8259_ADDR_CHIP1 | 1);
+	io->set_iomap_range_rw(0x8c, 0x8d, memory);
+	io->set_iovalue_single_r(0x8e, 0xff);	// dipswitch
+	io->set_flipflop_single_r(0x8f, 0x00);	// shut
+	io->set_iomap_range_rw(0xa0, 0xa3, sio);
 	for(uint32 p = 0xae; p <= 0x1fae; p += 0x100) {
 		io->set_iomap_single_w(p, crtc);
 	}
-//	io->set_iomap_single_w(0xaf, sasi);
-	io->set_iomap_range_w(0xc8, 0xc9, opn);
+//	io->set_iomap_single_rw(0xaf, sasi);
+	io->set_iomap_single_r(0xbe, sysport);
+	io->set_iomap_range_rw(0xc8, 0xc9, opn);
+	io->set_iovalue_single_r(0xca, 0x7f);	// voice communication ???
 	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100) {
-		io->set_iomap_single_w(p, calendar);
+		io->set_iomap_alias_rw(p, rtc, p >> 8);
 	}
-	io->set_iomap_single_w(0xce, memory);
-	io->set_iomap_range_w(0xd8, 0xdb, fdc);
+	io->set_iomap_single_rw(0xce, memory);
+	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
 	io->set_iomap_range_w(0xdc, 0xdf, floppy);
-	io->set_iomap_range_w(0xe0, 0xe3, pio0);
-	io->set_iomap_range_w(0xe4, 0xe7, pit);
-	io->set_iomap_range_w(0xe8, 0xeb, pio1);
-	io->set_iomap_single_w(0xef, joystick);
-//	io->set_iomap_range_w(0xf0, 0xf3, timer);
+	io->set_iomap_range_rw(0xe0, 0xe3, pio0);
+	io->set_iomap_range_rw(0xe4, 0xe7, pit);
+	io->set_iomap_range_rw(0xe8, 0xeb, pio1);
+	io->set_iomap_single_rw(0xef, joystick);
+//	io->set_iomap_range_w(0xf0, 0xf3, sysport);
 	io->set_iomap_single_w(0x170, crtc);
 	io->set_iomap_single_w(0x172, crtc);
 	io->set_iomap_single_w(0x174, crtc);
@@ -164,31 +161,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x178, 0x17b, crtc);
 	io->set_iomap_single_w(0x270, crtc);
 	io->set_iomap_single_w(0x272, crtc);
-	io->set_iomap_single_w(0x274, memory);
-	
-	io->set_iomap_range_r(0x70, 0x7f, dma);
-	io->set_iomap_alias_r(0x80, pic, 0);
-	io->set_iomap_alias_r(0x81, pic, 1);
-	io->set_iomap_alias_r(0x82, pic, 2);
-	io->set_iomap_alias_r(0x83, pic, 3);
-	io->set_iomap_range_r(0x8c, 0x8d, memory);
-	io->set_iomap_range_r(0x8e, 0x8f, sysport);
-	io->set_iomap_range_r(0xc8, 0xc9, opn);
-	io->set_iomap_range_r(0xa0, 0xa3, sio);
-//	io->set_iomap_single_r(0xaf, sasi);
-	io->set_iomap_single_r(0xbe, sysport);
-	io->set_iomap_single_r(0xca, sysport);
-	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100) {
-		io->set_iomap_single_r(p, calendar);
-	}
-	io->set_iomap_single_r(0xce, memory);
-	io->set_iomap_range_r(0xd8, 0xdb, fdc);
-	io->set_iomap_range_r(0xe0, 0xe2, pio0);
-	io->set_iomap_range_r(0xe4, 0xe6, pit);
-	io->set_iomap_single_r(0xe8, pio1);
-	io->set_iomap_single_r(0xea, pio1);
-	io->set_iomap_single_r(0xef, joystick);
-	io->set_iomap_single_r(0x274, memory);
+	io->set_iomap_single_rw(0x274, memory);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

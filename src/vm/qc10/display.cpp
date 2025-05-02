@@ -63,18 +63,22 @@ void DISPLAY::reset()
 
 void DISPLAY::write_io8(uint32 addr, uint32 data)
 {
+	switch(addr & 0xff) {
+	case 0x2d:
 #ifdef _COLOR_MONITOR
-	if(data & 1) {
-		d_gdc->set_vram_ptr(vram_b, VRAM_SIZE);
-	}
-	else if(data & 2) {
-		d_gdc->set_vram_ptr(vram_g, VRAM_SIZE);
-	}
-	else {
-		d_gdc->set_vram_ptr(vram_r, VRAM_SIZE);
-	}
+		if(data & 1) {
+			d_gdc->set_vram_ptr(vram_b, VRAM_SIZE);
+		}
+		else if(data & 2) {
+			d_gdc->set_vram_ptr(vram_g, VRAM_SIZE);
+		}
+		else {
+			d_gdc->set_vram_ptr(vram_r, VRAM_SIZE);
+		}
 #endif
-	bank = data;
+		bank = data;
+		break;
+	}
 }
 
 uint32 DISPLAY::read_io8(uint32 addr)

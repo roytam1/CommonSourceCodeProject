@@ -131,6 +131,18 @@ public:
 	virtual uint32 read_dma_data8(uint32 addr) {
 		return read_data8(addr);
 	}
+	virtual void write_dma_data16(uint32 addr, uint32 data) {
+		write_data16(addr, data);
+	}
+	virtual uint32 read_dma_data16(uint32 addr) {
+		return read_data16(addr);
+	}
+	virtual void write_dma_data32(uint32 addr, uint32 data) {
+		write_data32(addr, data);
+	}
+	virtual uint32 read_dma_data32(uint32 addr) {
+		return read_data32(addr);
+	}
 	
 	// i/o bus
 	virtual void write_io8(uint32 addr, uint32 data) {}
@@ -206,6 +218,18 @@ public:
 	}
 	virtual uint32 read_dma_io8(uint32 addr) {
 		return read_io8(addr);
+	}
+	virtual void write_dma_io16(uint32 addr, uint32 data) {
+		write_io16(addr, data);
+	}
+	virtual uint32 read_dma_io16(uint32 addr) {
+		return read_io16(addr);
+	}
+	virtual void write_dma_io32(uint32 addr, uint32 data) {
+		write_io32(addr, data);
+	}
+	virtual uint32 read_dma_io32(uint32 addr) {
+		return read_io32(addr);
 	}
 	
 	// memory mapped i/o

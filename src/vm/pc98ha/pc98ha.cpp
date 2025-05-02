@@ -124,86 +124,52 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 	
 	// i/o bus
-	io->set_iomap_alias_w(0x00, pic, 0);
-	io->set_iomap_alias_w(0x02, pic, 1);
+	io->set_iomap_alias_rw(0x00, pic, 0);
+	io->set_iomap_alias_rw(0x02, pic, 1);
 #ifdef _PC98HA
-	io->set_iomap_range_w(0x22, 0x23, calendar);
+	io->set_iomap_range_rw(0x22, 0x23, calendar);
 #else
 	io->set_iomap_single_w(0x20, rtc);
 #endif
-	io->set_iomap_alias_w(0x30, sio_r, 0);
-	io->set_iomap_alias_w(0x32, sio_r, 1);
-	io->set_iomap_alias_w(0x31, pio_s, 0);
-	io->set_iomap_alias_w(0x33, pio_s, 1);
-	io->set_iomap_alias_w(0x35, pio_s, 2);
-	io->set_iomap_alias_w(0x37, pio_s, 3);
-	io->set_iomap_alias_w(0x40, pio_p, 0);
-	io->set_iomap_alias_w(0x42, pio_p, 1);
-	io->set_iomap_alias_w(0x44, pio_p, 2);
-	io->set_iomap_alias_w(0x46, pio_p, 3);
-	io->set_iomap_alias_w(0x41, sio_k, 0);
-	io->set_iomap_alias_w(0x43, sio_k, 1);
-	io->set_iomap_alias_w(0x71, pit, 0);
-	io->set_iomap_alias_w(0x73, pit, 1);
-	io->set_iomap_alias_w(0x75, pit, 2);
-	io->set_iomap_alias_w(0x77, pit, 3);
+	io->set_iomap_alias_rw(0x30, sio_r, 0);
+	io->set_iomap_alias_rw(0x32, sio_r, 1);
+	io->set_iomap_alias_rw(0x31, pio_s, 0);
+	io->set_iomap_alias_rw(0x33, pio_s, 1);
+	io->set_iomap_alias_rw(0x35, pio_s, 2);
+	io->set_iomap_alias_rw(0x37, pio_s, 3);
+	io->set_iomap_alias_rw(0x40, pio_p, 0);
+	io->set_iomap_alias_rw(0x42, pio_p, 1);
+	io->set_iomap_alias_rw(0x44, pio_p, 2);
+	io->set_iomap_alias_rw(0x46, pio_p, 3);
+	io->set_iomap_alias_rw(0x41, sio_k, 0);
+	io->set_iomap_alias_rw(0x43, sio_k, 1);
+	io->set_iomap_alias_rw(0x71, pit, 0);
+	io->set_iomap_alias_rw(0x73, pit, 1);
+	io->set_iomap_alias_rw(0x75, pit, 2);
+	io->set_iomap_alias_rw(0x77, pit, 3);
 #if defined(_PC98LT) || defined(DOCKING_STATION)
-	io->set_iomap_single_w(0xca, floppy);
-	io->set_iomap_single_w(0xcc, floppy);
-	io->set_iomap_single_w(0xbe, floppy);
+	io->set_iomap_single_r(0xc8, floppy);
+	io->set_iomap_single_rw(0xca, floppy);
+	io->set_iomap_single_rw(0xcc, floppy);
+	io->set_iomap_single_rw(0xbe, floppy);
 #endif
-	io->set_iomap_range_w(0xe0, 0xef, dma);
-	io->set_iomap_single_w(0x0810, note);
-	io->set_iomap_single_w(0x0812, note);
+	io->set_iomap_range_rw(0xe0, 0xef, dma);
 	io->set_iomap_single_w(0x8e1, memory);
 	io->set_iomap_single_w(0x8e3, memory);
 	io->set_iomap_single_w(0x8e5, memory);
 	io->set_iomap_single_w(0x8e7, memory);
-	io->set_iomap_single_w(0x0c10, memory);
+	io->set_iomap_single_rw(0x0c10, memory);
 	io->set_iomap_single_w(0x0e8e, memory);
 	io->set_iomap_single_w(0x1e8e, memory);
-	io->set_iomap_single_w(0x4c10, memory);
-	io->set_iomap_single_w(0x8810, note);
-	io->set_iomap_single_w(0x8c10, memory);
-	io->set_iomap_single_w(0xc810, note);
-	io->set_iomap_single_w(0xcc10, memory);
-	
-	io->set_iomap_alias_r(0x00, pic, 0);
-	io->set_iomap_alias_r(0x02, pic, 1);
-#ifdef _PC98HA
-	io->set_iomap_single_r(0x23, calendar);
-#endif
-	io->set_iomap_alias_r(0x30, sio_r, 0);
-	io->set_iomap_alias_r(0x32, sio_r, 1);
-	io->set_iomap_alias_r(0x31, pio_s, 0);
-	io->set_iomap_alias_r(0x33, pio_s, 1);
-	io->set_iomap_alias_r(0x35, pio_s, 2);
-	io->set_iomap_alias_r(0x37, pio_s, 3);
-	io->set_iomap_alias_r(0x40, pio_p, 0);
-	io->set_iomap_alias_r(0x42, pio_p, 1);
-	io->set_iomap_alias_r(0x44, pio_p, 2);
-	io->set_iomap_alias_r(0x46, pio_p, 3);
-	io->set_iomap_alias_r(0x41, sio_k, 0);
-	io->set_iomap_alias_r(0x43, sio_k, 1);
-	io->set_iomap_alias_r(0x71, pit, 0);
-	io->set_iomap_alias_r(0x73, pit, 1);
-	io->set_iomap_alias_r(0x75, pit, 2);
-#if defined(_PC98LT) || defined(DOCKING_STATION)
-	io->set_iomap_single_r(0xc8, floppy);
-	io->set_iomap_single_r(0xca, floppy);
-	io->set_iomap_single_r(0xcc, floppy);
-	io->set_iomap_single_r(0xbe, floppy);
-#endif
-	io->set_iomap_range_r(0xe0, 0xef, dma);
-	io->set_iomap_single_r(0x0810, note);
-	io->set_iomap_single_r(0x0812, note);
-	io->set_iomap_single_r(0x0c10, memory);
+	io->set_iomap_single_rw(0x4c10, memory);
+	io->set_iomap_single_rw(0x8c10, memory);
+	io->set_iomap_single_rw(0xcc10, memory);
+	io->set_iomap_single_rw(0x0810, note);
+	io->set_iomap_single_rw(0x0812, note);
 	io->set_iomap_single_r(0x0f8e, note);
-	io->set_iomap_single_r(0x4c10, memory);
 	io->set_iomap_single_r(0x5e8e, note);
-	io->set_iomap_single_r(0x8810, note);
-	io->set_iomap_single_r(0x8c10, memory);
-	io->set_iomap_single_r(0xcc10, memory);
+	io->set_iomap_single_rw(0x8810, note);
+	io->set_iomap_single_w(0xc810, note);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

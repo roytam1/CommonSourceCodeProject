@@ -827,28 +827,6 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\mz2800\calendar.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\mz2800\crtc.cpp"
 					>
 					<FileConfiguration
@@ -1046,28 +1024,6 @@
 						/>
 					</FileConfiguration>
 				</File>
-				<File
-					RelativePath="src\vm\mz2800\timer.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -1217,10 +1173,6 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\mz2800\calendar.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\mz2800\crtc.h"
 					>
 				</File>
@@ -1254,10 +1206,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\mz2800\sysport.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mz2800\timer.h"
 					>
 				</File>
 			</Filter>

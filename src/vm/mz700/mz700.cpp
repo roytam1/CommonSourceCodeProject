@@ -158,14 +158,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 	// emm
-	io->set_iomap_range_w(0x00, 0x03, emm);
-	io->set_iomap_range_r(0x00, 0x03, emm);
+	io->set_iomap_range_rw(0x00, 0x03, emm);
 	// ramfile
-	io->set_iomap_range_w(0xea, 0xeb, ramfile);
-	io->set_iomap_single_r(0xea, ramfile);
+	io->set_iomap_range_rw(0xea, 0xeb, ramfile);
 	// cmos
-//	io->set_iomap_range_w(0xf8, 0xfa, cmos);
-//	io->set_iomap_range_r(0xf8, 0xf9, cmos);
+//	io->set_iomap_range_rw(0xf8, 0xfa, cmos);
 	
 #ifdef _MZ1500
 	// memory mapper

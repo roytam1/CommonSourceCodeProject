@@ -1016,7 +1016,7 @@ void M6502::run(int clock)
 	
 	// run cpu while given clocks
 	icount += clock;
-	first = clock;
+	first = icount;
 	
 	while(icount > 0) {
 		// if an irq is pending, take it now

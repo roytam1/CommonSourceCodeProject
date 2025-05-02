@@ -20,7 +20,7 @@ class KEYBOARD : public DEVICE
 private:
 	DEVICE* d_cpu;
 	
-	uint8* key_stat;
+	uint8 key_stat[256];
 	uint8* joy_stat;
 	int key_no;
 	bool intr_enb;
@@ -31,6 +31,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	
@@ -38,7 +39,8 @@ public:
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
-	void key_down();
+	void key_down(int code);
+	void key_up(int code);
 };
 
 #endif

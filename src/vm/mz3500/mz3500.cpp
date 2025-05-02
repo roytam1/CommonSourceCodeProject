@@ -124,35 +124,20 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sub->set_common(main->get_common());
 	
 	// mz3500sm p.17
-	io->set_iomap_range_w(0xec, 0xef, main);	// reset int0
-	io->set_iomap_single_w(0xf5, fdc);		// fdc: f5h,f7h = data
-	io->set_iomap_single_w(0xf7, fdc);
-	io->set_iomap_range_w(0xf8, 0xfb, main);	// mfd interface
-	io->set_iomap_range_w(0xfc, 0xff, main);	// memory mpaper
-	
-	io->set_iomap_range_r(0xec, 0xef, main);	// reset int0
-	io->set_iomap_range_r(0xf4, 0xf7, fdc);		// fdc: f4h,f6h = status, f5h,f7h = data
-	io->set_iomap_range_r(0xf8, 0xfb, main);	// mfd interface
-	io->set_iomap_range_r(0xfd, 0xff, main);	// memory mpaper
+	io->set_iomap_range_rw(0xec, 0xef, main);	// reset int0
+	io->set_iomap_range_rw(0xf4, 0xf7, fdc);	// fdc: f4h,f6h = status, f5h,f7h = data
+	io->set_iomap_range_rw(0xf8, 0xfb, main);	// mfd interface
+	io->set_iomap_range_rw(0xfc, 0xff, main);	// memory mpaper
 	
 	// mz3500sm p.18
-	subio->set_iomap_range_w(0x00, 0x0f, sub);	// int0 to main (set flipflop)
-	subio->set_iomap_range_w(0x10, 0x1f, sio);
-	subio->set_iomap_range_w(0x20, 0x2f, pit);
-	subio->set_iomap_range_w(0x30, 0x3f, pio);
-	// 40h-4fh: input port
-	subio->set_iomap_range_w(0x50, 0x5f, sub);	// crt
-	subio->set_iomap_range_w(0x60, 0x6f, gdc_gfx);
-	subio->set_iomap_range_w(0x70, 0x7f, gdc_chr);
-	
-	subio->set_iomap_range_r(0x00, 0x0f, sub);	// int0 to main (set flipflop)
-	subio->set_iomap_range_r(0x10, 0x1f, sio);
-	subio->set_iomap_range_r(0x20, 0x2f, pit);
-	subio->set_iomap_range_r(0x30, 0x3f, pio);
-	subio->set_iomap_range_r(0x40, 0x4f, sub);
-	// 50h-5fh: crt control i/o
-	subio->set_iomap_range_r(0x60, 0x6f, gdc_gfx);
-	subio->set_iomap_range_r(0x70, 0x7f, gdc_chr);
+	subio->set_iomap_range_rw(0x00, 0x0f, sub);	// int0 to main (set flipflop)
+	subio->set_iomap_range_rw(0x10, 0x1f, sio);
+	subio->set_iomap_range_rw(0x20, 0x2f, pit);
+	subio->set_iomap_range_rw(0x30, 0x3f, pio);
+	subio->set_iomap_range_r(0x40, 0x4f, sub);	// input port
+	subio->set_iomap_range_w(0x50, 0x5f, sub);	// crt control i/o
+	subio->set_iomap_range_rw(0x60, 0x6f, gdc_gfx);
+	subio->set_iomap_range_rw(0x70, 0x7f, gdc_chr);
 	
 	// cpu bus
 	cpu->set_context_mem(main);
