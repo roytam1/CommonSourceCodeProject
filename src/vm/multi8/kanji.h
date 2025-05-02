@@ -1,5 +1,5 @@
 /*
-	MITSUBISHI Elec. MULTI8 Emulator 'EmuLTI8'
+	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -18,8 +18,7 @@
 class KANJI : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did;
+	DEVICE* d_pio;
 	
 	uint8 rom[0x20000];
 	uint32 ptr;
@@ -35,8 +34,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id) {
-		dev = device; did = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
 };
 

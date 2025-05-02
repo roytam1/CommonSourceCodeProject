@@ -1,5 +1,5 @@
 /*
-	MITSUBISHI Elec. MULTI8 Emulator 'EmuLTI8'
+	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -29,12 +29,14 @@ void DISPLAY::initialize()
 	delete fio;
 	
 	// create pc palette
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+	}
 	
 	// initialize
-	for(int i = 0; i < 7; i++)
+	for(int i = 0; i < 7; i++) {
 		pal[i] = i;
+	}
 	text_wide = true;
 	text_color = false;
 	graph_color = 0xfe;
@@ -55,8 +57,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 {
 	uint8 mask;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x30:
 	case 0x31:
 	case 0x32:
@@ -67,18 +68,19 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x37:
 		pal[addr & 7] = data & 7;
 		mask = 1 << (addr & 7);
-		if(data & 7)
+		if(data & 7) {
 			graph_color |= mask;
-		else
+		}
+		else {
 			graph_color &= ~mask;
+		}
 		break;
 	}
 }
 
 uint32 DISPLAY::read_io8(uint32 addr)
 {
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x30:
 	case 0x31:
 	case 0x32:
@@ -110,23 +112,30 @@ void DISPLAY::event_frame()
 void DISPLAY::draw_screen()
 {
 	if((regs[8] & 0x30) != 0x30) {
-		if((regs[8] & 0xc0) == 0xc0)
+		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		else
+		}
+		else {
 			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
+		}
 		
 		// render screen
-		if(graph_color)
+		if(graph_color) {
 			draw_graph_color();
-		else
+		}
+		else {
 			draw_graph_mono();
-		if(text_wide)
+		}
+		if(text_wide) {
 			draw_text_wide();
-		else
+		}
+		else {
 			draw_text_normal();
+		}
 	}
-	else
+	else {
 		_memset(screen, 0, sizeof(screen));
+	}
 	
 	// copy to real screen
 	for(int y = 0; y < 200; y++) {
@@ -134,26 +143,30 @@ void DISPLAY::draw_screen()
 		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 640; x++)
+		for(int x = 0; x < 640; x++) {
 			dest0[x] = palette_pc[src[x] & 7];
+		}
 		if(scanline) {
-//			for(int x = 0; x < 640; x++)
+//			for(int x = 0; x < 640; x++) {
 //				dest1[x] = palette_pc[0];
+//			}
 			_memset(dest1, 0, 640 * sizeof(scrntype));
 		}
-		else
+		else {
 			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+		}
 	}
 	
 	// access lamp
-	uint32 stat_f = dev->read_signal(0);
+	uint32 stat_f = d_fdc->read_signal(0);
 	if(stat_f) {
 		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 }
@@ -232,8 +245,9 @@ void DISPLAY::draw_text_wide()
 				uint8 pat = font[(code << 3) + l];
 				pat = secret ? 0 : reverse ? ~pat : pat;
 				int yy = y * ht + l;
-				if(yy >= 200)
+				if(yy >= 200) {
 					break;
+				}
 				uint8* d = &screen[yy][x << 3];
 				
 				d[ 0] = (pat & 0x80) ? col : d[ 0];
@@ -260,8 +274,9 @@ void DISPLAY::draw_text_wide()
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
-						if(yy < 200)
+						if(yy < 200) {
 							_memset(&screen[yy][x << 3], 7, 16);
+						}
 					}
 				}
 			}
@@ -293,8 +308,9 @@ void DISPLAY::draw_text_normal()
 				uint8 pat = font[(code << 3) + l];
 				pat = secret ? 0 : reverse ? ~pat : pat;
 				int yy = y * ht + l;
-				if(yy >= 200)
+				if(yy >= 200) {
 					break;
+				}
 				uint8* d = &screen[yy][x << 3];
 				
 				d[0] = (pat & 0x80) ? col : d[0];
@@ -313,8 +329,9 @@ void DISPLAY::draw_text_normal()
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
-						if(yy < 200)
+						if(yy < 200) {
 							_memset(&screen[yy][x << 3], 7, 8);
+						}
 					}
 				}
 			}

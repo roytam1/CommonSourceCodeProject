@@ -40,6 +40,10 @@
 #define ZF	0x40
 #define SF	0x80
 
+#ifndef CPU_START_ADDR
+#define CPU_START_ADDR	0
+#endif
+
 // opecode definitions
 
 #define EAX() { \
@@ -545,8 +549,8 @@ void Z80::reset()
 {
 	// reset
 	PC = CPU_START_ADDR;
-//	AF = SP = 0xffff;
-	_I = _R = 0;
+	SP = 0;
+	_F = _I = _R = 0;
 	IM = IFF1 = IFF2 = ICR = 0;
 	halt = false;
 	intr_req_bit = intr_pend_bit = 0;
@@ -554,25 +558,37 @@ void Z80::reset()
 
 void Z80::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_CPU_NMI)
+	if(id == SIG_CPU_IRQ) {
+		intr_req_bit = (intr_req_bit & ~mask) | (data & mask);
+		// always pending (temporary)
+		intr_pend_bit = (intr_pend_bit & ~mask) | (data & mask);
+	}
+	else if(id == SIG_CPU_NMI) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | NMI_REQ_BIT) : (intr_req_bit & ~NMI_REQ_BIT);
+	}
 	else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
-		if(busreq)
+		if(busreq) {
 			count = first = 0;
+		}
 		// busack
-		for(int i = 0; i < dcount; i++)
+		for(int i = 0; i < dcount; i++) {
 			d_busack[i]->write_signal(did[i], busreq ? 0xffffffff : 0, dmask[i]);
+		}
 	}
 #ifdef NSC800
-	else if(id == SIG_NSC800_INT)
+	else if(id == SIG_NSC800_INT) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 1) : (intr_req_bit & ~1);
-	else if(id == SIG_NSC800_RSTA)
+	}
+	else if(id == SIG_NSC800_RSTA) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 8) : (intr_req_bit & ~8);
-	else if(id == SIG_NSC800_RSTB)
+	}
+	else if(id == SIG_NSC800_RSTB) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 4) : (intr_req_bit & ~4);
-	else if(id == SIG_NSC800_RSTC)
+	}
+	else if(id == SIG_NSC800_RSTC) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 2) : (intr_req_bit & ~2);
+	}
 #endif
 }
 

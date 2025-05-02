@@ -1,34 +1,28 @@
 /*
-	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
+	SANYO PHC-25 Emulator 'ePHC-25'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.09.15 -
+	Date   : 2010.08.03-
 
 	[ virtual machine ]
 */
 
-#include "multi8.h"
+#include "phc25.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
-#include "../hd46505.h"
-#include "../i8251.h"
-#include "../i8253.h"
-#include "../i8255.h"
-#include "../i8259.h"
+#include "../datarec.h"
 #include "../io.h"
-#include "../upd765a.h"
+#include "../mc6847.h"
 #include "../ym2203.h"
 #include "../z80.h"
 
-#include "cmt.h"
-#include "display.h"
-#include "floppy.h"
-#include "kanji.h"
+//#include "joystick.h"
 #include "keyboard.h"
 #include "memory.h"
+#include "system.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -42,83 +36,43 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	crtc = new HD46505(this, emu);
-	sio = new I8251(this, emu);
-	pit = new I8253(this, emu);
-	pio = new I8255(this, emu);
-	pic = new I8259(this, emu);
+	drec = new DATAREC(this, emu);
 	io = new IO(this, emu);
-	fdc = new UPD765A(this, emu);
-	opn = new YM2203(this, emu);
+	vdp = new MC6847(this, emu);
+	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
 	
-	cmt = new CMT(this, emu);
-	display = new DISPLAY(this, emu);
-	floppy = new FLOPPY(this, emu);
-	kanji = new KANJI(this, emu);
-	key = new KEYBOARD(this, emu);
+//	joystick = new JOYSTICK(this, emu);
+	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
+	system = new SYSTEM(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(opn);
+	event->set_context_sound(psg);
 	
-	crtc->set_context_vsync(pio, SIG_I8255_PORT_A, 0x20);
-	sio->set_context_out(cmt, SIG_CMT_OUT);
-	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
-	pit->set_context_ch1(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5, 1);
-	pit->set_context_ch2(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6, 1);
-	pit->set_constant_clock(0, CPU_CLOCKS >> 1);
-	pit->set_constant_clock(1, CPU_CLOCKS >> 1);
-	pio->set_context_port_b(display, SIG_DISPLAY_I8255_B, 0xff, 0);
-	pio->set_context_port_c(memory, SIG_MEMORY_I8255_C, 0xff, 0);
-	pic->set_context(cpu);
-	fdc->set_context_intr(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0, 1);
-	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
-	opn->set_context_port_a(cmt, SIG_CMT_REMOTE, 0x2, 0);
-	opn->set_context_port_a(pio, SIG_I8255_PORT_A, 0x2, 1);
+	drec->set_context_out(system, SIG_SYSTEM_PORT, 0x20);
+	vdp->set_context_vsync(cpu, SIG_CPU_IRQ, 1);
+//	vdp->set_context_vsync(system, SIG_SYSTEM_PORT, 0x10);
+//	vdp->set_context_hsync(system, SIG_SYSTEM_PORT, 0x40);
+	vdp->set_vram_ptr(memory->get_vram());
 	
-	cmt->set_context_sio(sio);
-	display->set_context_fdc(fdc);
-	display->set_vram_ptr(memory->get_vram());
-	display->set_regs_ptr(crtc->get_regs());
-	floppy->set_context_fdc(fdc);
-//	floppy->set_context_pic(pic);
-	kanji->set_context_pio(pio);
-	memory->set_context_pio(pio);
+//	joystick->set_context_psg(psg);
+	system->set_context_drec(drec);
+	system->set_context_vdp(vdp);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_intr(pic);
+	cpu->set_context_intr(dummy);
 	
 	// i/o bus
-	io->set_iomap_range_w(0x00, 0x01, key);
-	io->set_iomap_alias_w(0x18, opn, 0);
-	io->set_iomap_alias_w(0x19, opn, 1);
-	io->set_iomap_range_w(0x1c, 0x1d, crtc);
-	io->set_iomap_range_w(0x20, 0x21, sio);
-	io->set_iomap_range_w(0x24, 0x27, pit);
-	io->set_iomap_range_w(0x28, 0x2b, pio);
-	io->set_iomap_alias_w(0x2c, pic, 0);
-	io->set_iomap_alias_w(0x2d, pic, 1);
-	io->set_iomap_range_w(0x30, 0x37, display);
-	io->set_iomap_range_w(0x40, 0x41, kanji);
-	io->set_iomap_range_w(0x71, 0x74, floppy);
-	io->set_iomap_single_w(0x78, memory);
+	io->set_iomap_single_w(0x40, system);
+	io->set_iomap_single_w(0xc0, psg);
 	
-	io->set_iomap_range_r(0x00, 0x01, key);
-	io->set_iomap_range_r(0x1c, 0x1d, crtc);
-	io->set_iomap_alias_r(0x18, opn, 0);
-	io->set_iomap_alias_r(0x1a, opn, 1);
-	io->set_iomap_range_r(0x20, 0x21, sio);
-	io->set_iomap_range_r(0x24, 0x27, pit);
-	io->set_iomap_range_r(0x28, 0x2a, pio);
-	io->set_iomap_alias_r(0x2c, pic, 0);
-	io->set_iomap_alias_r(0x2d, pic, 1);
-	io->set_iomap_range_r(0x30, 0x37, display);
-	io->set_iomap_range_r(0x40, 0x41, kanji);
-	io->set_iomap_range_r(0x70, 0x73, floppy);
+	io->set_iomap_single_r(0x40, system);
+	io->set_iomap_range_r(0x80, 0x88, keyboard);
+	io->set_iomap_range_r(0xc0, 0xc1, psg);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -219,7 +173,7 @@ uint32 VM::get_prv_pc()
 
 void VM::draw_screen()
 {
-	display->draw_screen();
+	vdp->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -232,7 +186,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	opn->init(rate, 3579545, samples, 0, 0);
+	psg->init(rate, 1996750, samples, 0, 0);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -244,34 +198,24 @@ uint16* VM::create_sound(int samples, bool fill)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(_TCHAR* filename, int drv)
-{
-	fdc->open_disk(filename, drv);
-}
-
-void VM::close_disk(int drv)
-{
-	fdc->close_disk(drv);
-}
-
 void VM::play_datarec(_TCHAR* filename)
 {
-	cmt->play_datarec(filename);
+	drec->play_datarec(filename);
 }
 
 void VM::rec_datarec(_TCHAR* filename)
 {
-	cmt->rec_datarec(filename);
+	drec->rec_datarec(filename);
 }
 
 void VM::close_datarec()
 {
-	cmt->close_datarec();
+	drec->close_datarec();
 }
 
 bool VM::now_skip()
 {
-	return false;
+	return drec->skip();
 }
 
 void VM::update_config()

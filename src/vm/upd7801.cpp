@@ -13,58 +13,78 @@
 // flag control
 
 #define ZHC_ADD(a, b, c) { \
-	if(a) \
+	if(a) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
-	if(a == b) \
+	} \
+	if(a == b) { \
 		PSW = (PSW & ~F_CY) | (c); \
-	else if(a < b) \
+	} \
+	else if(a < b) { \
 		PSW |= F_CY; \
-	else \
+	} \
+	else { \
 		PSW &= ~F_CY; \
-	if((a & 15) < (b & 15)) \
+	} \
+	if((a & 15) < (b & 15)) { \
 		PSW |= F_HC; \
-	else \
+	} \
+	else { \
 		PSW &= ~F_HC; \
+	} \
 }
 #define ZHC_SUB(a, b, c) { \
-	if(a) \
+	if(a) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
-	if(a == b) \
+	} \
+	if(a == b) { \
 		PSW = (PSW & ~F_CY) | (c); \
-	else if(a > b) \
+	} \
+	else if(a > b) { \
 		PSW |= F_CY; \
-	else \
+	} \
+	else { \
 		PSW &= ~F_CY; \
-	if((a & 15) > (b & 15)) \
+	} \
+	if((a & 15) > (b & 15)) { \
 		PSW |= F_HC; \
-	else \
+	} \
+	else { \
 		PSW &= ~F_HC; \
+	} \
 }
 #define SET_Z(n) { \
-	if(n) \
+	if(n) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define SKIP_CY { \
-	if(PSW & F_CY) \
+	if(PSW & F_CY) { \
 		PSW |= F_SK; \
+	} \
 }
 #define SKIP_NC { \
-	if(!(PSW & F_CY)) \
+	if(!(PSW & F_CY)) { \
 		PSW |= F_SK; \
+	} \
 }
 #define SKIP_Z { \
-	if(PSW & F_Z) \
+	if(PSW & F_Z) { \
 		PSW |= F_SK; \
+	} \
 }
 #define SKIP_NZ { \
-	if(!(PSW & F_Z)) \
+	if(!(PSW & F_Z)) { \
 		PSW |= F_SK; \
+	} \
 }
 
 // opecode
@@ -180,8 +200,9 @@
 	SET_Z(tmp); \
 }
 #define BIT(b) { \
-	if(RM8(FETCHWA()) & (1 << b)) \
+	if(RM8(FETCHWA()) & (1 << b)) { \
 		PSW |= F_SK; \
+	} \
 }
 #define BLOCK() { \
 	WM8(DE++, RM8(HL++)); \
@@ -189,8 +210,9 @@
 		PSW &= ~F_CY; \
 		PC--; \
 	} \
-	else \
+	else { \
 		PSW |= F_CY; \
+	} \
 }
 #define CALF(o) { \
 	uint16 dst = 0x800 + ((o & 7) << 8) + FETCH8(); \
@@ -209,25 +231,34 @@
 }
 #define DAA() { \
 	uint8 lo = _A & 0xf, hi = _A >> 4, diff = 0; \
-	if(lo <= 9 && !(PSW & F_HC)) \
+	if(lo <= 9 && !(PSW & F_HC)) { \
 		diff = (hi >= 10 || (PSW & F_CY)) ? 0x60 : 0x00; \
-	else if(lo >= 10 && !(PSW & F_HC)) \
+	} \
+	else if(lo >= 10 && !(PSW & F_HC)) { \
 		diff = (hi >= 9 || (PSW & F_CY)) ? 0x66 : 0x06; \
-	else if(lo <= 2 && (PSW & F_HC)) \
+	} \
+	else if(lo <= 2 && (PSW & F_HC)) { \
 		diff = (hi >= 10 || (PSW & F_CY)) ? 0x66 : 0x06; \
+	} \
 	_A += diff; \
-	if(_A) \
+	if(_A) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
-	if((PSW & F_CY) || (lo <= 9 ? hi >= 10 : hi >= 9)) \
+	} \
+	if((PSW & F_CY) || (lo <= 9 ? hi >= 10 : hi >= 9)) { \
 		PSW |= F_CY; \
-	else \
+	} \
+	else { \
 		PSW &= ~F_CY; \
-	if(lo >= 10) \
+	} \
+	if(lo >= 10) { \
 		PSW |= F_HC; \
-	else \
+	} \
+	else { \
 		PSW &= ~F_HC; \
+	} \
 }
 #define DCR(r) { \
 	uint8 carry = PSW & F_CY; \
@@ -341,10 +372,12 @@
 }
 #define JRE(o) { \
 	uint8 tmp = FETCH8(); \
-	if(o & 1) \
+	if(o & 1) { \
 		PC -= 256 - tmp; \
-	else \
+	} \
+	else { \
 		PC += tmp; \
+	} \
 }
 #define LTA(r, n) { \
 	uint8 tmp = r - n; \
@@ -415,78 +448,102 @@
 	SKIP_NZ; \
 }
 #define OFFA(r, n) { \
-	if(r & n) \
+	if(r & n) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z | F_SK; \
+	} \
 }
 #define OFFAW() { \
-	if(_A & RM8(FETCHWA())) \
+	if(_A & RM8(FETCHWA())) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z | F_SK; \
+	} \
 }
 #define OFFAX(r) { \
-	if(_A & RM8(r)) \
+	if(_A & RM8(r)) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z | F_SK; \
+	} \
 }
 #define OFFI(r) { \
-	if(r & FETCH8()) \
+	if(r & FETCH8()) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z | F_SK; \
+	} \
 }
 #define OFFI_IO(p) { \
-	if(IN8(p) & FETCH8()) \
+	if(IN8(p) & FETCH8()) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z | F_SK; \
+	} \
 }
 #define OFFIW() { \
 	uint8 tmp = RM8(FETCHWA()); \
-	if(tmp & FETCH8()) \
+	if(tmp & FETCH8()) { \
 		PSW &= ~F_Z; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z | F_SK; \
+	} \
 }
 #define ONA(r, n) { \
-	if(r & n) \
+	if(r & n) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define ONAW() { \
-	if(_A & RM8(FETCHWA())) \
+	if(_A & RM8(FETCHWA())) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define ONAX(r) { \
-	if(_A & RM8(r)) \
+	if(_A & RM8(r)) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define ONI(r) { \
-	if(r & FETCH8()) \
+	if(r & FETCH8()) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define ONI_IO(p) { \
-	if(IN8(p) & FETCH8()) \
+	if(IN8(p) & FETCH8()) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define ONIW() { \
 	uint8 tmp = RM8(FETCHWA()); \
-	if(tmp & FETCH8()) \
+	if(tmp & FETCH8()) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	else \
+	} \
+	else { \
 		PSW |= F_Z; \
+	} \
 }
 #define ORA(r, n) { \
 	r |= n; \
@@ -573,21 +630,25 @@
 	scount = 32 + 4; \
 }
 #define SK(f) { \
-	if(PSW & f) \
+	if(PSW & f) { \
 		PSW |= F_SK; \
+	} \
 }
 #define SKIT(f) { \
-	if(IRR & f) \
+	if(IRR & f) { \
 		PSW |= F_SK; \
+	} \
 	IRR &= ~f; \
 }
 #define SKN(f) { \
-	if(!(PSW & f)) \
+	if(!(PSW & f)) { \
 		PSW |= F_SK; \
+	} \
 }
 #define SKNIT(f) { \
-	if(!(IRR & f)) \
+	if(!(IRR & f)) { \
 		PSW |= F_SK; \
+	} \
 	IRR &= ~f; \
 }
 #define SLL(r) { \
@@ -686,9 +747,11 @@ void UPD7801::reset()
 //	VA = BC = DE = HL = altVA = altBC = altDE = altHL = 0;
 	PSW = IRR = IFF = SIRQ = HALT = 0;
 	_V = MB = MC = TM0 = TM1 = SR = 0xff;
+	altVA = VA;
 	MK = 0x1f;
 	PORTC = TO = SAK = 0;
 	scount = tcount = 0;
+	wait = false;
 }
 
 void UPD7801::run(int clock)
@@ -696,14 +759,20 @@ void UPD7801::run(int clock)
 	count += clock;
 	first = count;
 	while(count > 0) {
-		// interrupt is enabled after next opecode of ei
-		if(IFF & 2) // if(IFF > 1)
-			IFF--;
-		
-		// run 1 opecode
-		period = 0;
-		prvPC = PC;
-		OP();
+		if(wait) {
+			period = 1;
+		}
+		else {
+			// interrupt is enabled after next opecode of ei
+			if(IFF & 2) {
+				IFF--;
+			}
+			
+			// run 1 opecode
+			period = 0;
+			prvPC = PC;
+			OP();
+		}
 		count -= period;
 		
 		// update serial count
@@ -754,22 +823,32 @@ void UPD7801::run(int clock)
 void UPD7801::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_UPD7801_INTF0) {
-		if(data & mask)
+		if(data & mask) {
 			IRR |= INTF0;
-		else
+		}
+		else {
 			IRR &= ~INTF0;
+		}
 	}
 	else if(id == SIG_UPD7801_INTF1) {
-		if(data & mask)
+		if(data & mask) {
 			IRR |= INTF1;
-		else
+		}
+		else {
 			IRR &= ~INTF1;
+		}
 	}
 	else if(id == SIG_UPD7801_INTF2) {
-		if((data & mask) && (MK & 0x20))
+		static uint32 prev = 0;
+		if((data & mask) && (MK & 0x20)) {
 			IRR |= INTF2;
-		else if(!(data & mask) && !(MK & 0x20))
+		}
+		else if(!(data & mask) && !(MK & 0x20)) {
 			IRR |= INTF2;
+		}
+	}
+	else if(id == SIG_UPD7801_WAIT) {
+		wait = ((data & mask) != 0);
 	}
 }
 
@@ -779,8 +858,7 @@ void UPD7801::OP()
 	
 	if((PSW & F_SK) && ope != 0x72) {
 		// skip this mnemonic
-		switch(ope)
-		{
+		switch(ope) {
 		case 0x48: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op48[ope].oplen - 2; period += op48[ope].clock; break;
 		case 0x4c: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op4c[ope].oplen - 2; period += op4c[ope].clock; break;
 		case 0x4d: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op4d[ope].oplen - 2; period += op4d[ope].clock; break;
@@ -797,8 +875,7 @@ void UPD7801::OP()
 	}
 	period += op[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0x00:	// nop
 		break;
 	case 0x01:	// hlt
@@ -906,10 +983,12 @@ void UPD7801::OP()
 	case 0x33:	// dcx h
 		HL--; break;
 	case 0x34:	// lxi h,word
-		if(PSW & F_L0)
+		if(PSW & F_L0) {
 			PC += 2;
-		else
+		}
+		else {
 			HL = FETCH16();
+		}
 		PSW = (PSW & ~F_L1) | F_L0; return;
 	case 0x35:	// ltiw wa,byte
 		LTIW(); break;
@@ -1011,12 +1090,15 @@ void UPD7801::OP()
 	case 0x67:	// nei a,byte
 		NEI(_A); break;
 	case 0x68:	// mvi v,byte
-		_V = FETCH8(); break;
+		_V = FETCH8(); 
+		break;
 	case 0x69:	// mvi a,byte
-		if(PSW & F_L1)
+		if(PSW & F_L1) {
 			PC++;
-		else
+		}
+		else {
 			_A = FETCH8();
+		}
 		PSW = (PSW & ~F_L0) | F_L1; return;
 	case 0x6a:	// mvi b,byte
 		_B = FETCH8(); break;
@@ -1029,10 +1111,12 @@ void UPD7801::OP()
 	case 0x6e:	// mvi h,byte
 		_H = FETCH8(); break;
 	case 0x6f:	// mvi l,byte
-		if(PSW & F_L0)
+		if(PSW & F_L0) {
 			PC++;
-		else
+		}
+		else {
 			_L = FETCH8();
+		}
 		PSW = (PSW & ~F_L1) | F_L0; return;
 	case 0x70:	// 70 xx
 		OP70(); break;
@@ -1082,8 +1166,7 @@ void UPD7801::OP48()
 	uint8 ope = FETCH8();
 	period += op48[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0x00:	// skit intf0
 		SKIT(INTF0); break;
 	case 0x01:	// skit intft
@@ -1172,8 +1255,7 @@ void UPD7801::OP4C()
 	uint8 ope = FETCH8();
 	period += op4c[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0xc0:	// mov a,pa
 		_A = IN8(P_A); break;
 	case 0xc1:	// mov a,pb
@@ -1202,8 +1284,9 @@ void UPD7801::OP4C()
 			_A = RM8((_B << 8) | ope);
 			UPDATE_PORTC(0);
 		}
-		else
+		else {
 			emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 4c %2x\n"), prvPC, ope);
+		}
 	}
 }
 
@@ -1212,8 +1295,7 @@ void UPD7801::OP4D()
 	uint8 ope = FETCH8();
 	period += op4d[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0xc0:	// mov pa,a
 		OUT8(P_A, _A); break;
 	case 0xc1:	// mov pb,a
@@ -1245,8 +1327,9 @@ void UPD7801::OP4D()
 			WM8((_B << 8) | ope, _A);
 			UPDATE_PORTC(0);
 		}
-		else
+		else {
 			emu->out_debug(_T("PC=%4x\tCPU\tUNKNOWN OP : 4d %2x\n"), prvPC, ope);
+		}
 	}
 }
 
@@ -1255,8 +1338,7 @@ void UPD7801::OP60()
 	uint8 ope = FETCH8();
 	period += op60[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0x08:	// ana v,a
 		ANA(_V, _A); break;
 	case 0x09:	// ana a,a
@@ -1715,8 +1797,7 @@ void UPD7801::OP64()
 	uint8 ope = FETCH8();
 	period += op64[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0x08:	// ani v,byte
 		ANI(_V); break;
 	case 0x09:	// ani a,byte
@@ -2087,8 +2168,7 @@ void UPD7801::OP70()
 	uint8 ope = FETCH8();
 	period += op70[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0x0e:	// sspd word
 		WM16(FETCH16(), SP); break;
 	case 0x0f:	// lspd word
@@ -2106,7 +2186,8 @@ void UPD7801::OP70()
 	case 0x3f:	// lhld word
 		HL = RM16(FETCH16()); break;
 	case 0x68:	// mov v,word
-		_V = RM8(FETCH16()); break;
+		_V = RM8(FETCH16()); 
+		break;
 	case 0x69:	// mov a,word
 		_A = RM8(FETCH16()); break;
 	case 0x6a:	// mov b,word
@@ -2357,8 +2438,7 @@ void UPD7801::OP74()
 	uint8 ope = FETCH8();
 	period += op74[ope].clock;
 	
-	switch(ope)
-	{
+	switch(ope) {
 	case 0x88:	// anaw wa
 		ANAW(); break;
 	case 0x90:	// xraw wa

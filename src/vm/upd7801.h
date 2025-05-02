@@ -18,6 +18,7 @@
 #define SIG_UPD7801_INTF0	0
 #define SIG_UPD7801_INTF1	1
 #define SIG_UPD7801_INTF2	2
+#define SIG_UPD7801_WAIT	3
 
 #define PRESCALER	16
 
@@ -228,6 +229,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int count, first, period, scount, tcount;
+	bool wait;
 	
 	pair regs[4];
 	uint16 SP, PC, prvPC, altVA, altBC, altDE, altHL;

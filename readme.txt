@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/31/2009
+								8/4/2010
 
 --- What's this ?
 
@@ -7,7 +7,7 @@ This archive includes the all source codes of:
 
 	Emu5		SORD m5 emulator
 	EmuGaki		CASIO PV-2000 emulator
-	EmuLTI8		MITSUBISHI Elec. MULTI8 emulator
+	EmuLTI8		MITSUBISHI Electric MULTI8 emulator
 	EmuPIA		TOSHIBA PASOPIA emulator
 	EmuPIA7		TOSHIBA PASOPIA7 emulator
 	EmuZ-700	SHARP MZ-700 emulator
@@ -20,6 +20,7 @@ This archive includes the all source codes of:
 	eFMR-30		FUJITSU FMR-30 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
 	eFMR-60		FUJITSU FMR-60 emulator
+	eFP-1100	CASIO FP-1100 emulator
 	eHANDY98	NEC PC-98HA emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
@@ -28,6 +29,7 @@ This archive includes the all source codes of:
 	ePC-8201	NEC PC-8201/PC-8201A emulator
 	ePC-98LT	NEC PC-98LT emulator
 	ePC-100		NEC PC-100 emulator
+	ePHC-25		SANYO PHC-25 emulator
 	ePV-1000	CASIO PV-1000 emulator
 	ePyuTa		TOMY PyuTa and PyuTa Jr. emulator
 	eQC-10		EPSON QC-10/QX-10 emulator
@@ -38,10 +40,7 @@ This archive includes the all source codes of:
 	eX1twin		SHARP X1twin emulator
 	eYS-6464A	Shinko Sangyo YS-6464A
 
-You can compile them with:
-
-	Windows PC	Microsoft Visual C++ 2008 width SP1
-	CE.NET 4.x	Microsoft eMbedded Visual C++ 4.0 width SP4
+You can compile them with Microsoft Visual C++ 2008 width SP1.
 
 
 --- License
@@ -104,6 +103,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Based on MON80 by Mr.Tesuya Suzuki
 - vm/mz2500/sasi.*
 	X millenium
+- vm/phc25/*
+	PHC-25 emulator by Mr.Tago
 - vm/pv1000/*
 	Mr.Enri for CASIO PV-1000 hardware design info
 - vm/pv2000/*

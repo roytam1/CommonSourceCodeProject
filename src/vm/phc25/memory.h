@@ -1,9 +1,9 @@
 /*
-	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
+	SANYO PHC-25 Emulator 'ePHC-25'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.09.15 -
+	Date   : 2010.08.03-
 
 	[ memory ]
 */
@@ -15,26 +15,19 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_MEMORY_I8255_C	0
-
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE* d_pio;
+	DEVICE *d_drec, *d_vdp;
 	
-	// memory
-	uint8 rom[0x8000];
-	uint8 fdc[0x1000];
-	uint8 ram0[0x8000];
-	uint8 ram1[0x8000];
-	uint8 vram[0x10000];
-	uint8 wdmy[0x1000];
-	uint8 rdmy[0x1000];
-	uint8* wbank[16];
-	uint8* rbank[16];
+	uint8 rom[0x6000];
+	uint8 ram[0x4000];
+	uint8 vram[0x1800];
 	
-	void update_map();
-	uint8 map1, map2;
+	uint8 wdmy[0x800];
+	uint8 rdmy[0x800];
+	uint8* wbank[32];
+	uint8* rbank[32];
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -51,13 +44,8 @@ public:
 	uint32 read_data16(uint32 addr) {
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
-	void write_io8(uint32 addr, uint32 data);
-	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
-		d_pio = device;
-	}
 	uint8* get_vram() {
 		return vram;
 	}

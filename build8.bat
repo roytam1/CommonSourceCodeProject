@@ -19,6 +19,10 @@ devenv.com fmr60.vcproj /Rebuild Release
 mkdir build\fmr60
 copy Release\fmr60.exe build\fmr60\.
 
+devenv.com fp1100.vcproj /Rebuild Release
+mkdir build\fp1100
+copy Release\fp1100.exe build\fp1100\.
+
 devenv.com hc40.vcproj /Rebuild Release
 mkdir build\hc40
 copy Release\hc40.exe build\hc40\.
@@ -90,6 +94,10 @@ copy Release\pc8201.exe build\pc8201\.
 devenv.com pc8201a.vcproj /Rebuild Release
 mkdir build\pc8201a
 copy Release\pc8201a.exe build\pc8201a\.
+
+devenv.com phc25.vcproj /Rebuild Release
+mkdir build\phc25
+copy Release\phc25.exe build\phc25\.
 
 devenv.com pv1000.vcproj /Rebuild Release
 mkdir build\pv1000

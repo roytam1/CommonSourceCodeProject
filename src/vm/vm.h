@@ -40,6 +40,11 @@
 #include "fmr50/fmr50.h"
 #endif
 
+// CASIO FP-1100
+#ifdef _FP1100
+#include "fp1100/fp1100.h"
+#endif
+
 // EPSON HC-40
 #ifdef _HC40
 #include "hc40/hc40.h"
@@ -143,6 +148,11 @@
 // NEC PC-100
 #ifdef _PC100
 #include "pc100/pc100.h"
+#endif
+
+// SANYO PHC-25
+#ifdef _PHC25
+#include "phc25/phc25.h"
 #endif
 
 // CASIO PV-1000

@@ -26,7 +26,7 @@ void PSG::write_io8(uint32 addr, uint32 data)
 
 void PSG::init(int rate)
 {
-	diff = CPU_CLOCKS / rate;
+	diff = (int)(1.3 * CPU_CLOCKS / rate);
 }
 
 void PSG::mix(int32* buffer, int cnt)

@@ -1,45 +1,39 @@
 /*
-	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
+	SANYO PHC-25 Emulator 'ePHC-25'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.09.15 -
+	Date   : 2010.08.03-
 
 	[ virtual machine ]
 */
 
-#ifndef _MULTI8_H_
-#define _MULTI8_H_
+#ifndef _PHC25_H_
+#define _PHC25_H_
 
-#define DEVICE_NAME		"MITSUBISHI Electric MULTI 8"
-#define CONFIG_NAME		"multi8"
+#define DEVICE_NAME		"SANYO PHC-25"
+#define CONFIG_NAME		"phc25"
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	599
-#define FRAMES_PER_SEC		59.9
-#define LINES_PER_FRAME 	256
-#define CHARS_PER_LINE		112
-#define CPU_CLOCKS		3993600
-#define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		400
-#define I8259_MAX_CHIPS		1
-#define MAX_DRIVE		4
-//#define UPD765A_DMA_MODE
-//#define UPD765A_WAIT_SEEK
+#define FRAMES_PER_10SECS	600
+#define FRAMES_PER_SEC		60
+#define LINES_PER_FRAME		262
+#define CHARS_PER_LINE		1
+#define CPU_CLOCKS		4000000
+#define SCREEN_WIDTH		256
+#define SCREEN_HEIGHT		192
+
+#define MC6847_ATTR_INV		0x01
+#define MC6847_ATTR_AS		0x02
+#define MC6847_ATTR_CSS		0x04
 
 // device informations for win32
 #define USE_DATAREC
-#define DATAREC_BINARY_ONLY
-#define USE_FD1
-#define USE_FD2
-//#define USE_FD3
-//#define USE_FD4
 #define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY		6
+#define USE_AUTO_KEY_RELEASE	10
 #define USE_AUTO_KEY_CAPS
-#define USE_SCANLINE
 
 #include "../../common.h"
 
@@ -47,22 +41,16 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class HD46505;
-class I8251;
-class I8253;
-class I8255;
-class I8259;
+class DATAREC;
 class IO;
-class UPD765A;
+class MC6847;
 class YM2203;
 class Z80;
 
-class CMT;
-class DISPLAY;
-class FLOPPY;
-class KANJI;
+//class JOYSTICK;
 class KEYBOARD;
 class MEMORY;
+class SYSTEM;
 
 class VM
 {
@@ -72,22 +60,16 @@ protected:
 	// devices
 	EVENT* event;
 	
-	HD46505* crtc;
-	I8251* sio;
-	I8253* pit;
-	I8255* pio;
-	I8259* pic;
+	DATAREC* drec;
 	IO* io;
-	UPD765A* fdc;
-	YM2203* opn;
+	MC6847* vdp;
+	YM2203* psg;
 	Z80* cpu;
 	
-	CMT* cmt;
-	DISPLAY* display;
-	FLOPPY* floppy;
-	KANJI* kanji;
-	KEYBOARD* key;
+//	JOYSTICK* joystick;
+	KEYBOARD* keyboard;
 	MEMORY* memory;
+	SYSTEM* system;
 	
 public:
 	// ----------------------------------------
@@ -113,8 +95,6 @@ public:
 	uint16* create_sound(int samples, bool fill);
 	
 	// user interface
-	void open_disk(_TCHAR* filename, int drv);
-	void close_disk(int drv);
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();

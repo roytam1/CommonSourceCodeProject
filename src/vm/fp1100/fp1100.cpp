@@ -1,34 +1,29 @@
 /*
-	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
+	CASIO FP-1100 Emulator 'eFP-1100'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.09.15 -
+	Date   : 2010.06.18-
 
 	[ virtual machine ]
 */
 
-#include "multi8.h"
+#include "fp1100.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
+#include "../beep.h"
 #include "../hd46505.h"
-#include "../i8251.h"
-#include "../i8253.h"
-#include "../i8255.h"
-#include "../i8259.h"
-#include "../io.h"
 #include "../upd765a.h"
-#include "../ym2203.h"
+#include "../upd7801.h"
 #include "../z80.h"
 
-#include "cmt.h"
-#include "display.h"
-#include "floppy.h"
-#include "kanji.h"
-#include "keyboard.h"
-#include "memory.h"
+#include "main.h"
+#include "sub.h"
+#include "rampack.h"
+#include "rompack.h"
+#include "fdcpack.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -42,83 +37,63 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
+	beep = new BEEP(this, emu);
 	crtc = new HD46505(this, emu);
-	sio = new I8251(this, emu);
-	pit = new I8253(this, emu);
-	pio = new I8255(this, emu);
-	pic = new I8259(this, emu);
-	io = new IO(this, emu);
 	fdc = new UPD765A(this, emu);
-	opn = new YM2203(this, emu);
+	subcpu = new UPD7801(this, emu);
 	cpu = new Z80(this, emu);
 	
-	cmt = new CMT(this, emu);
-	display = new DISPLAY(this, emu);
-	floppy = new FLOPPY(this, emu);
-	kanji = new KANJI(this, emu);
-	key = new KEYBOARD(this, emu);
-	memory = new MEMORY(this, emu);
+	main = new MAIN(this, emu);
+	sub = new SUB(this, emu);
+	rampack1 = new RAMPACK(this, emu);
+	rampack1->index = 1;
+	rampack2 = new RAMPACK(this, emu);
+	rampack2->index = 2;
+	rampack3 = new RAMPACK(this, emu);
+	rampack3->index = 3;
+	rampack4 = new RAMPACK(this, emu);
+	rampack4->index = 4;
+	rampack5 = new RAMPACK(this, emu);
+	rampack5->index = 5;
+	rampack6 = new RAMPACK(this, emu);
+	rampack6->index = 6;
+	rompack = new ROMPACK(this, emu);
+	fdcpack = new FDCPACK(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(opn);
+	event->set_context_cpu(subcpu);
+	event->set_context_sound(beep);
 	
-	crtc->set_context_vsync(pio, SIG_I8255_PORT_A, 0x20);
-	sio->set_context_out(cmt, SIG_CMT_OUT);
-	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
-	pit->set_context_ch1(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5, 1);
-	pit->set_context_ch2(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6, 1);
-	pit->set_constant_clock(0, CPU_CLOCKS >> 1);
-	pit->set_constant_clock(1, CPU_CLOCKS >> 1);
-	pio->set_context_port_b(display, SIG_DISPLAY_I8255_B, 0xff, 0);
-	pio->set_context_port_c(memory, SIG_MEMORY_I8255_C, 0xff, 0);
-	pic->set_context(cpu);
-	fdc->set_context_intr(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0, 1);
-	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
-	opn->set_context_port_a(cmt, SIG_CMT_REMOTE, 0x2, 0);
-	opn->set_context_port_a(pio, SIG_I8255_PORT_A, 0x2, 1);
+	crtc->set_context_hsync(sub, SIG_SUB_HSYNC, 1);
+	fdc->set_context_intr(fdcpack, SIG_FDCPACK_IRQ, 1);
+	fdc->set_context_drq(fdcpack, SIG_FDCPACK_DRQ, 1);
 	
-	cmt->set_context_sio(sio);
-	display->set_context_fdc(fdc);
-	display->set_vram_ptr(memory->get_vram());
-	display->set_regs_ptr(crtc->get_regs());
-	floppy->set_context_fdc(fdc);
-//	floppy->set_context_pic(pic);
-	kanji->set_context_pio(pio);
-	memory->set_context_pio(pio);
+	main->set_context_cpu(cpu);
+	main->set_context_sub(sub, SIG_SUB_INT2, SIG_SUB_COMM);
+	main->set_context_slot(0, rampack1);
+	main->set_context_slot(1, rampack2);
+	main->set_context_slot(2, rampack3);
+	main->set_context_slot(3, rampack4);
+	main->set_context_slot(4, rampack5);
+	main->set_context_slot(5, rampack6);
+	main->set_context_slot(6, rompack);
+	main->set_context_slot(7, fdcpack);
+	
+	sub->set_context_cpu(subcpu, SIG_UPD7801_INTF0, SIG_UPD7801_INTF2, SIG_UPD7801_WAIT);
+	sub->set_context_main(main, SIG_MAIN_INTS, SIG_MAIN_COMM);
+	sub->set_context_beep(beep, SIG_BEEP_ON);
+	sub->set_context_crtc(crtc, crtc->get_regs());
+	
+	fdcpack->set_context_fdc(fdc, SIG_UPD765A_MOTOR, SIG_UPD765A_TC);
+	fdcpack->set_context_main(main, SIG_MAIN_INTA, SIG_MAIN_INTB);
 	
 	// cpu bus
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_intr(pic);
-	
-	// i/o bus
-	io->set_iomap_range_w(0x00, 0x01, key);
-	io->set_iomap_alias_w(0x18, opn, 0);
-	io->set_iomap_alias_w(0x19, opn, 1);
-	io->set_iomap_range_w(0x1c, 0x1d, crtc);
-	io->set_iomap_range_w(0x20, 0x21, sio);
-	io->set_iomap_range_w(0x24, 0x27, pit);
-	io->set_iomap_range_w(0x28, 0x2b, pio);
-	io->set_iomap_alias_w(0x2c, pic, 0);
-	io->set_iomap_alias_w(0x2d, pic, 1);
-	io->set_iomap_range_w(0x30, 0x37, display);
-	io->set_iomap_range_w(0x40, 0x41, kanji);
-	io->set_iomap_range_w(0x71, 0x74, floppy);
-	io->set_iomap_single_w(0x78, memory);
-	
-	io->set_iomap_range_r(0x00, 0x01, key);
-	io->set_iomap_range_r(0x1c, 0x1d, crtc);
-	io->set_iomap_alias_r(0x18, opn, 0);
-	io->set_iomap_alias_r(0x1a, opn, 1);
-	io->set_iomap_range_r(0x20, 0x21, sio);
-	io->set_iomap_range_r(0x24, 0x27, pit);
-	io->set_iomap_range_r(0x28, 0x2a, pio);
-	io->set_iomap_alias_r(0x2c, pic, 0);
-	io->set_iomap_alias_r(0x2d, pic, 1);
-	io->set_iomap_range_r(0x30, 0x37, display);
-	io->set_iomap_range_r(0x40, 0x41, kanji);
-	io->set_iomap_range_r(0x70, 0x73, floppy);
+	cpu->set_context_mem(main);
+	cpu->set_context_io(main);
+	cpu->set_context_intr(main);
+	subcpu->set_context_mem(sub);
+	subcpu->set_context_io(sub);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -219,7 +194,7 @@ uint32 VM::get_prv_pc()
 
 void VM::draw_screen()
 {
-	display->draw_screen();
+	sub->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -232,12 +207,26 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	opn->init(rate, 3579545, samples, 0, 0);
+	beep->init(rate, 2400, 2, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
 {
 	return event->create_sound(samples, fill);
+}
+
+// ----------------------------------------------------------------------------
+// notify key
+// ----------------------------------------------------------------------------
+
+void VM::key_down(int code)
+{
+	sub->key_down(code);
+}
+
+void VM::key_up(int code)
+{
+	sub->key_up(code);
 }
 
 // ----------------------------------------------------------------------------
@@ -256,17 +245,17 @@ void VM::close_disk(int drv)
 
 void VM::play_datarec(_TCHAR* filename)
 {
-	cmt->play_datarec(filename);
+	sub->play_datarec(filename);
 }
 
 void VM::rec_datarec(_TCHAR* filename)
 {
-	cmt->rec_datarec(filename);
+	sub->rec_datarec(filename);
 }
 
 void VM::close_datarec()
 {
-	cmt->close_datarec();
+	sub->close_datarec();
 }
 
 bool VM::now_skip()

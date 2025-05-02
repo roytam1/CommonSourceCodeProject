@@ -1,32 +1,31 @@
 /*
-	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
+	CASIO FP-1100 Emulator 'eFP-1100'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.09.15 -
+	Date   : 2010.06.18-
 
 	[ virtual machine ]
 */
 
-#ifndef _MULTI8_H_
-#define _MULTI8_H_
+#ifndef _FP1100_H_
+#define _FP1100_H_
 
-#define DEVICE_NAME		"MITSUBISHI Electric MULTI 8"
-#define CONFIG_NAME		"multi8"
+#define DEVICE_NAME		"CASIO FP-1100"
+#define CONFIG_NAME		"fp1100"
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	599
-#define FRAMES_PER_SEC		59.9
-#define LINES_PER_FRAME 	256
-#define CHARS_PER_LINE		112
+#define FRAMES_PER_10SECS	554
+#define FRAMES_PER_SEC		55.4
+#define LINES_PER_FRAME 	440
+#define CHARS_PER_LINE		108
 #define CPU_CLOCKS		3993600
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
-#define I8259_MAX_CHIPS		1
 #define MAX_DRIVE		4
-//#define UPD765A_DMA_MODE
-//#define UPD765A_WAIT_SEEK
+#define UPD765A_DMA_MODE
+#define UPD765A_WAIT_SEEK
 
 // device informations for win32
 #define USE_DATAREC
@@ -35,6 +34,7 @@
 #define USE_FD2
 //#define USE_FD3
 //#define USE_FD4
+#define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -47,22 +47,17 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+class BEEP;
 class HD46505;
-class I8251;
-class I8253;
-class I8255;
-class I8259;
-class IO;
 class UPD765A;
-class YM2203;
+class UPD7801;
 class Z80;
 
-class CMT;
-class DISPLAY;
-class FLOPPY;
-class KANJI;
-class KEYBOARD;
-class MEMORY;
+class MAIN;
+class SUB;
+class RAMPACK;
+class ROMPACK;
+class FDCPACK;
 
 class VM
 {
@@ -72,22 +67,22 @@ protected:
 	// devices
 	EVENT* event;
 	
+	BEEP* beep;
 	HD46505* crtc;
-	I8251* sio;
-	I8253* pit;
-	I8255* pio;
-	I8259* pic;
-	IO* io;
 	UPD765A* fdc;
-	YM2203* opn;
+	UPD7801* subcpu;
 	Z80* cpu;
 	
-	CMT* cmt;
-	DISPLAY* display;
-	FLOPPY* floppy;
-	KANJI* kanji;
-	KEYBOARD* key;
-	MEMORY* memory;
+	MAIN* main;
+	SUB* sub;
+	RAMPACK* rampack1;
+	RAMPACK* rampack2;
+	RAMPACK* rampack3;
+	RAMPACK* rampack4;
+	RAMPACK* rampack5;
+	RAMPACK* rampack6;
+	ROMPACK* rompack;
+	FDCPACK* fdcpack;
 	
 public:
 	// ----------------------------------------
@@ -111,6 +106,10 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int samples, bool fill);
+	
+	// notify key
+	void key_down(int code);
+	void key_up(int code);
 	
 	// user interface
 	void open_disk(_TCHAR* filename, int drv);

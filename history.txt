@@ -1,3 +1,15 @@
+8/4/2010
+
+[VM/MC6847] support MC6847
+[VM/UPD7801] add wait signal
+[VM/Z80] support raise irq by write_signal()
+
+[FP1100] support CASIO FP-1100 (not work)
+[PHC25] support SANYO PHC-25
+[MULTI8/FLOPPY] fix floppy drive
+[PV1000/PSG] fix psg frequency
+
+
 6/4/2010
 
 [EMU/WIN32] update screen stretch/rotation

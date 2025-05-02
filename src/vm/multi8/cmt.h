@@ -1,5 +1,5 @@
 /*
-	MITSUBISHI Elec. MULTI8 Emulator 'EmuLTI8'
+	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -24,8 +24,7 @@
 class CMT : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did0, did1;
+	DEVICE* d_sio;
 	
 	FILEIO* fio;
 	int bufcnt;
@@ -46,8 +45,8 @@ public:
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
-	void set_context(DEVICE* device, int id0, int id1) {
-		dev = device; did0 = id0; did1 = id1;
+	void set_context_sio(DEVICE* device) {
+		d_sio = device;
 	}
 };
 

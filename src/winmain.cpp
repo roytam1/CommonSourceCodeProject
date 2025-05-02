@@ -1390,7 +1390,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 #elif defined(USE_SCREEN_ROTATE)
 		// pc100 monitor type
-		if(config.monitor_type >= 0 && config.monitor_type < 1) {
+		if(config.monitor_type >= 0 && config.monitor_type < 2) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE1, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
 		}
 #endif

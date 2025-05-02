@@ -248,6 +248,16 @@
 #define MENU_POS_SOUND                  6
 #endif
 
+// CASIO FP-1100
+#ifdef _FP1100
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_DATAREC                3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
 // EPSON HC-40
 #ifdef _HC40
 #define MENU_POS_CONTROL                0
@@ -450,6 +460,14 @@
 //#define MENU_POS_DATAREC                1
 #define MENU_POS_SCREEN                 1
 #define MENU_POS_SOUND                  2
+#endif
+
+// SANYO PHC-25
+#ifdef _PHC25
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // CASIO PV-1000

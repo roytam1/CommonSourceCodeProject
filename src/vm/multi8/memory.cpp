@@ -1,5 +1,5 @@
 /*
-	MITSUBISHI Elec. MULTI8 Emulator 'EmuLTI8'
+	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -9,13 +9,24 @@
 */
 
 #include "memory.h"
+#include "../i8255.h"
 #include "../../fileio.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
-		wbank[i] = (w) + 0x1000 * (i - sb); \
-		rbank[i] = (r) + 0x1000 * (i - sb); \
+		if((w) == wdmy) { \
+			wbank[i] = wdmy; \
+		} \
+		else { \
+			wbank[i] = (w) + 0x1000 * (i - sb); \
+		} \
+		if((r) == rdmy) { \
+			rbank[i] = rdmy; \
+		} \
+		else { \
+			rbank[i] = (r) + 0x1000 * (i - sb); \
+		} \
 	} \
 }
 
@@ -44,12 +55,13 @@ void MEMORY::initialize()
 		fio->Fread(fdc, sizeof(fdc), 1);
 		fio->Fclose();
 		
-		// 8255 Port A, bit1 = 0 (fdc rom status)
-		dev->write_signal(did, 0, 2);
+		// 8255 Port A, bit1 = 0 (fdc rom exists)
+		d_pio->write_signal(SIG_I8255_PORT_A, 0, 2);
 	}
-	else
-		// 8255 Port A, bit1 = 1 (fdc rom not status)
-		dev->write_signal(did, 2, 2);
+	else {
+		// 8255 Port A, bit1 = 1 (fdc rom does not exist)
+		d_pio->write_signal(SIG_I8255_PORT_A, 2, 2);
+	}
 	delete fio;
 }
 
@@ -65,14 +77,18 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	if((addr & 0xc000) == 0x8000 && (map1 & 0x10)) {
 		uint32 ptr = addr & 0x3fff;
 		// select vram
-		if(!(map1 & 0x1))
+		if(!(map1 & 1)) {
 			vram[0x0000 | ptr] = data;
-		if(!(map1 & 0x2))
+		}
+		if(!(map1 & 2)) {
 			vram[0x4000 | ptr] = data;
-		if(!(map1 & 0x4))
+		}
+		if(!(map1 & 4)) {
 			vram[0x8000 | ptr] = data;
-		if(!(map1 & 0x8))
+		}
+		if(!(map1 & 8)) {
 			vram[0xc000 | ptr] = data;
+		}
 		return;
 	}
 	wbank[addr >> 12][addr & 0xfff] = data;
@@ -84,14 +100,18 @@ uint32 MEMORY::read_data8(uint32 addr)
 		uint32 ptr = addr & 0x3fff;
 		// select vram
 		uint32 val = 0xff;
-		if(!(map1 & 0x1))
+		if(!(map1 & 1)) {
 			val &= vram[0x0000 | ptr];
-		if(!(map1 & 0x2))
+		}
+		if(!(map1 & 2)) {
 			val &= vram[0x4000 | ptr];
-		if(!(map1 & 0x4))
+		}
+		if(!(map1 & 4)) {
 			val &= vram[0x8000 | ptr];
-		if(!(map1 & 0x8))
+		}
+		if(!(map1 & 8)) {
 			val &= vram[0xc000 | ptr];
+		}
 		return val;
 	}
 	return rbank[addr >> 12][addr & 0xfff];
@@ -120,7 +140,7 @@ void MEMORY::update_map()
 	else {
 		SET_BANK(0x0000, 0x7fff, wdmy, rom);
 		if(map2 & 1) {
-			SET_BANK(0x6000, 0x6fff, wdmy, fdc + 0x6000);
+			SET_BANK(0x6000, 0x6fff, wdmy, fdc);
 		}
 		SET_BANK(0x8000, 0xffff, ram1, ram1);
 	}

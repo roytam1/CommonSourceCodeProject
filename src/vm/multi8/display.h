@@ -1,5 +1,5 @@
 /*
-	MITSUBISHI Elec. MULTI8 Emulator 'EmuLTI8'
+	MITSUBISHI Electric MULTI8 Emulator 'EmuLTI8'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -20,7 +20,7 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_fdc;
 	
 	uint8* regs;
 	uint8 pal[8];
@@ -58,8 +58,8 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_fdc(DEVICE* device) {
+		d_fdc = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
 		vram_b = ptr + 0x0000;
