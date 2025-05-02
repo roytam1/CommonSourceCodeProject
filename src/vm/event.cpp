@@ -44,7 +44,6 @@ void EVENT::initialize()
 	}
 	next_id = NO_EVENT;
 	next = past = 0;
-	event_cnt = frame_event_cnt = vline_event_cnt = 0;
 	
 	// initialize sound buffer
 	sound_buffer = NULL;
@@ -315,12 +314,26 @@ void EVENT::cancel_event(int register_id)
 
 void EVENT::register_frame_event(DEVICE* dev)
 {
-	frame_event[frame_event_cnt++] = dev;
+	if(frame_event_cnt < MAX_EVENT) {
+		frame_event[frame_event_cnt++] = dev;
+	}
+#ifdef _DEBUG_LOG
+	else {
+		emu->out_debug(_T("EVENT: too many frame events !!!\n"));
+	}
+#endif
 }
 
 void EVENT::register_vline_event(DEVICE* dev)
 {
-	vline_event[vline_event_cnt++] = dev;
+	if(vline_event_cnt < MAX_EVENT) {
+		vline_event[vline_event_cnt++] = dev;
+	}
+#ifdef _DEBUG_LOG
+	else {
+		emu->out_debug(_T("EVENT: too many vline events !!!\n"));
+	}
+#endif
 }
 
 void EVENT::mix_sound(int samples)

@@ -24,7 +24,6 @@
 #include "../z80.h"
 
 //#include "cmos.h"
-#include "display.h"
 #include "emm.h"
 #include "keyboard.h"
 #include "memory.h"
@@ -66,7 +65,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu = new Z80(this, emu);
 	
 //	cmos = new CMOS(this, emu);
-	display = new DISPLAY(this, emu);
 	emm = new EMM(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
@@ -220,26 +218,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc);
 #endif
 	
-#if defined(_MZ800)
-	// MZ-800
-	display->set_vram_mz800_ptr(memory->get_vram());
-	// MZ-700 mode
-	display->set_vram_ptr(memory->get_vram() + 0x3000);
-	display->set_font_ptr(memory->get_vram() + 0x2000);
-	memory->set_context_display(display);
-#else
-	// MZ-700/1500
-	display->set_vram_ptr(memory->get_vram());
-	display->set_font_ptr(memory->get_font());
-#if defined(_MZ1500)
-	display->set_pcg_ptr(memory->get_pcg());
-#endif
-#endif
-	
 #if defined(_MZ800) || defined(_MZ1500)
 	// access lamp
-	display->set_context_fdc(fdc);
-	display->set_context_qd(qd);
+	memory->set_context_fdc(fdc);
+	memory->set_context_qd(qd);
 #endif
 	
 	// cpu bus
@@ -289,14 +271,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 #if defined(_MZ800)
 	// crtc
-	io->set_iomap_range_w(0xcc, 0xce, memory);
+	io->set_iomap_range_w(0xcc, 0xcf, memory);
 	io->set_iomap_single_r(0xce, memory);
-	io->set_iomap_single_w(0xcf, display);
 	// palette
-	io->set_iomap_single_w(0xf0, display);
+	io->set_iomap_single_w(0xf0, memory);
 #elif defined(_MZ1500)
 	// palette
-	io->set_iomap_range_w(0xf0, 0xf1, display);
+	io->set_iomap_range_w(0xf0, 0xf1, memory);
 #endif
 	
 #if defined(_MZ800)
@@ -432,7 +413,7 @@ void VM::set_pc(uint32 pc)
 
 void VM::draw_screen()
 {
-	display->draw_screen();
+	memory->draw_screen();
 }
 
 // ----------------------------------------------------------------------------

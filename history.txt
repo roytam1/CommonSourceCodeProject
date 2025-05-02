@@ -1,3 +1,20 @@
+5/19/2011
+
+[VM/EVENT] fix to check registered count for frame/vline events
+[VM/EVENT] clear event counts before other devices are initialized
+[VM/HD46505] fix to update sync signals in more precise timing
+[VM/HD46505] support notifying vline event to other devices
+[VM/Z80DMA] fix issues for X1/X1turbo games (thanks Y.S.)
+[VM/Z80DMA] fix to return current count/address for init read sequence command
+[VM/Z80DMA] fix do_dma() routine
+
+[JX/DISPLAY] support high resolution screen (partial)
+[JX/DISPLAY] support bankswitch for kanji rom and extended vram
+[MZ800/DISPLAY] remove display class and combine to memory class
+[MZ800/MEMORY] fix scroll registers
+[X1TURBO/DISPLAY] remove crtc vblank/vsync signal generator
+
+
 5/18/2011
 
 [VM/DISK] fix dsk floppy disk image converter

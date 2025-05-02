@@ -1,7 +1,7 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MAME Z80DMA
+	Origin : MAME Z80DMA / Xmillenium
 	Author : Takeda.Toshiya
 	Date   : 2011.04.96-
 
@@ -70,15 +70,13 @@
 #define PORTA_ADDRESS		((PORTA_ADDRESS_H << 8) | PORTA_ADDRESS_L)
 #define PORTB_ADDRESS		((PORTB_ADDRESS_H << 8) | PORTB_ADDRESS_L)
 #define BLOCKLEN		((BLOCKLEN_H << 8) | BLOCKLEN_L)
-// hack for X1turbo Kage no Densetsu
-#define NULL_BLOCKLEN		((PORTA_IS_SOURCE) ? 255 : 216)
 
 #define PORTA_INC		(WR1 & 0x10)
 #define PORTB_INC		(WR2 & 0x10)
 #define PORTA_FIXED		(((WR1 >> 4) & 2) == 2)
 #define PORTB_FIXED		(((WR2 >> 4) & 2) == 2)
-#define PORTA_MEMORY		(((WR1 >> 3) & 1) == 0)
-#define PORTB_MEMORY		(((WR2 >> 3) & 1) == 0)
+#define PORTA_MEMORY	(((WR1 >> 3) & 1) == 0)
+#define PORTB_MEMORY	(((WR2 >> 3) & 1) == 0)
 
 #define PORTA_CYCLE_LEN		(4 - (PORTA_TIMING & 3))
 #define PORTB_CYCLE_LEN		(4 - (PORTB_TIMING & 3))
@@ -117,6 +115,10 @@ void Z80DMA::reset()
 	iei = oei = true;
 	req_intr = in_service = false;
 	vector = 0;
+	
+	upcount = 0;
+	blocklen = 0;
+	dma_stop = false;
 }
 
 void Z80DMA::write_io8(uint32 addr, uint32 data)
@@ -200,6 +202,21 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			WR6 = data;
 			enabled = false;
 			
+			// check dma stop
+			switch (data) {
+			case CMD_CONTINUE:
+			case CMD_READ_STATUS_BYTE:
+			case CMD_INITIATE_READ_SEQUENCE:
+			case CMD_ENABLE_DMA:
+			case CMD_DISABLE_DMA:
+			case CMD_READ_MASK_FOLLOWS:
+				break;
+			default:
+				dma_stop = false;
+				break;
+			}
+			
+			// run command
 			switch (data) {
 			case CMD_ENABLE_AFTER_RETI:
 				break;
@@ -217,23 +234,24 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				if(READ_MASK & 0x01) {
 					rr_tmp[rr_num++] = status | (now_ready() ? 0 : 2) | (req_intr ? 0 : 8);
 				}
+				// note: return current count and address (thanks Y.S.)
 				if(READ_MASK & 0x02) {
-					rr_tmp[rr_num++] = BLOCKLEN_L;
+					rr_tmp[rr_num++] = upcount & 0xff;//BLOCKLEN_L;
 				}
 				if(READ_MASK & 0x04) {
-					rr_tmp[rr_num++] = BLOCKLEN_H;
+					rr_tmp[rr_num++] = upcount >> 8;//BLOCKLEN_H;
 				}
 				if(READ_MASK & 0x08) {
-					rr_tmp[rr_num++] = PORTA_ADDRESS_L;
+					rr_tmp[rr_num++] = addr_a & 0xff;//PORTA_ADDRESS_L;
 				}
 				if(READ_MASK & 0x10) {
-					rr_tmp[rr_num++] = PORTA_ADDRESS_H;
+					rr_tmp[rr_num++] = addr_a >> 8;//PORTA_ADDRESS_H;
 				}
 				if(READ_MASK & 0x20) {
-					rr_tmp[rr_num++] = PORTB_ADDRESS_L;
+					rr_tmp[rr_num++] = addr_b & 0xff;//PORTB_ADDRESS_L;
 				}
 				if(READ_MASK & 0x40) {
-					rr_tmp[rr_num++] = PORTB_ADDRESS_H;
+					rr_tmp[rr_num++] = addr_b >> 8;//PORTB_ADDRESS_H;
 				}
 				break;
 			case CMD_RESET:
@@ -249,12 +267,14 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 					reset_ptr = 0;
 				}
 				status = 0x30;
+				// reset upcount
+				upcount = 0;
 				break;
 			case CMD_LOAD:
 				force_ready = false;
 				addr_a = PORTA_ADDRESS;
 				addr_b = PORTB_ADDRESS;
-				count = BLOCKLEN ? BLOCKLEN : NULL_BLOCKLEN;
+				upcount = 0;//BLOCKLEN;
 				status |= 0x30;
 				break;
 			case CMD_DISABLE_DMA:
@@ -268,7 +288,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				wr_tmp[wr_num++] = GET_REGNUM(READ_MASK);
 				break;
 			case CMD_CONTINUE:
-				count = BLOCKLEN ? BLOCKLEN : NULL_BLOCKLEN;
+				upcount = 0;
 				enabled = true;
 				status |= 0x30;
 				do_dma();
@@ -374,8 +394,36 @@ void Z80DMA::do_dma()
 	bool occured = false;
 	bool found = false;
 	
+	// from Xmillenium (thanks Y.S.)
+	if(BLOCKLEN == 0) {
+		blocklen = 65537;
+	}
+	else if(BLOCKLEN == 0xffff) {
+		blocklen = (int)65536;
+	}
+	else {
+		blocklen = BLOCKLEN + 1;
+	}
 restart:
-	while(enabled && now_ready() && !(count == 0xffff || found)) {
+	while(enabled && now_ready() && !(upcount == blocklen || found)) {
+		if(dma_stop) {
+			if(PORTA_IS_SOURCE) {
+				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
+			}
+			else {
+				addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
+			}
+			if(TRANSFER_MODE == TM_TRANSFER || TRANSFER_MODE == TM_SEARCH_TRANSFER) {
+				if(PORTA_IS_SOURCE) {
+					addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
+				}
+				else {
+					addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
+				}
+			}
+		}
+		dma_stop = false;
+		
 		uint32 data = 0;
 		
 		// read
@@ -383,31 +431,29 @@ restart:
 			if(PORTA_MEMORY) {
 				data = d_mem->read_dma_data8(addr_a);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: A->B RAM[%4x]=%2x -> "), addr_a, data);
+				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_a, data);
 #endif
 			}
 			else {
 				data = d_io->read_dma_io8(addr_a);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: A->B INP(%4x)=%2x -> "), addr_a, data);
+				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_a, data);
 #endif
 			}
-			addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
 		}
 		else {
 			if(PORTB_MEMORY) {
 				data = d_mem->read_dma_data8(addr_b);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: B->A RAM[%4x]=%2x -> "), addr_b, data);
+				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_b, data);
 #endif
 			}
 			else {
 				data = d_io->read_dma_io8(addr_b);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: B->A INP(%4x)=%2x -> "), addr_b, data);
+				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_b, data);
 #endif
 			}
-			addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
 		}
 		
 		// write
@@ -425,7 +471,6 @@ restart:
 #endif
 					d_io->write_dma_io8(addr_b, data);
 				}
-				addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
 			}
 			else {
 				if(PORTA_MEMORY) {
@@ -440,7 +485,6 @@ restart:
 #endif
 					d_io->write_dma_io8(addr_a, data);
 				}
-				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
 			}
 		}
 		
@@ -450,8 +494,31 @@ restart:
 				found = true;
 			}
 		}
-		count--;
+		upcount++;
 		occured = true;
+		
+		if(found) {
+			dma_stop = true;
+			break;
+		}
+		if(!now_ready()) {
+			dma_stop = true;
+			break;
+		}
+		if(PORTA_IS_SOURCE) {
+			addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
+		}
+		else {
+			addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
+		}
+		if(TRANSFER_MODE == TM_TRANSFER || TRANSFER_MODE == TM_SEARCH_TRANSFER) {
+			if(PORTA_IS_SOURCE) {
+				addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
+			}
+			else {
+				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
+			}
+		}
 	}
 	
 #ifdef DMA_DEBUG
@@ -459,13 +526,13 @@ restart:
 		emu->out_debug(_T("Z80DMA: COUNT=%4x FOUND=%d\n"), count, found ? 1 : 0);
 	}
 #endif
-	if(occured && (count == 0xffff || found)) {
+	if(occured && (upcount == blocklen || found)) {
 		// auto restart
-		if(AUTO_RESTART && count == 0xffff && !force_ready) {
+		if(AUTO_RESTART && upcount == blocklen && !force_ready) {
 #ifdef DMA_DEBUG
 			emu->out_debug(_T("Z80DMA: AUTO RESTART !!!\n"));
 #endif
-			count = BLOCKLEN ? BLOCKLEN : NULL_BLOCKLEN;
+			upcount = 0;
 			goto restart;
 		}
 		
@@ -474,14 +541,14 @@ restart:
 		if(!found) {
 			status |= 0x10;
 		}
-		if(count != 0xffff) {
+		if(upcount != blocklen) {
 			status |= 0x20;
 		}
 		enabled = false;
 		
 		// request interrupt
 		int level = 0;
-		if(count == 0xffff) {
+		if(upcount == blocklen) {
 			// transfer/search done
 			if(INT_ON_END_OF_BLOCK) {
 				level |= INT_END_OF_BLOCK;

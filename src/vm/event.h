@@ -71,6 +71,7 @@ private:
 public:
 	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_cpu = dcount_sound = 0;
+		event_cnt = frame_event_cnt = vline_event_cnt = 0;
 		get_nextevent = true;
 		cpu_clocks = CPU_CLOCKS;
 		frames_per_sec = FRAMES_PER_SEC;

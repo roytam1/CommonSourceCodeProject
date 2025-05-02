@@ -92,7 +92,6 @@ class PCM1BIT;
 class Z80;
 
 //class CMOS;
-class DISPLAY;
 class EMM;
 class KEYBOARD;
 class MEMORY;
@@ -130,7 +129,6 @@ protected:
 	Z80* cpu;
 	
 //	CMOS* cmos;
-	DISPLAY* display;
 	EMM* emm;
 	KEYBOARD* keyboard;
 	MEMORY* memory;

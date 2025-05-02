@@ -185,12 +185,9 @@ void DISPLAY::initialize()
 	_memset(gaiji_g, 0, sizeof(gaiji_g));
 #endif
 	
-	vblank_clock = 0;
-	vblank = vsync = true;
-	
 	// regist event
 	vm->register_frame_event(this);
-	vm->register_vline_event(this);
+	vm->register_crtc_vline_event(this);
 }
 
 void DISPLAY::reset()
@@ -201,6 +198,7 @@ void DISPLAY::reset()
 	hires = true;
 #endif
 	cur_line = cur_code = 0;
+	vblank_clock = 0;
 	
 	kaddr = kofs = kflag = 0;
 	kanji_ptr = &kanji[0];
@@ -395,10 +393,16 @@ uint32 DISPLAY::read_io8(uint32 addr)
 
 void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_DISPLAY_COLUMN) {
+	if(id == SIG_DISPLAY_VBLANK) {
+		if(!(data & mask)) {
+			// enter vblank
+			vblank_clock = vm->current_clock();
+		}
+	}
+	else if(id == SIG_DISPLAY_COLUMN) {
 		column = data & mask;
 	}
-	else if(id == SIG_DISPLAY_VBLANK) {
+	else if(id == SIG_DISPLAY_DETECT_VBLANK) {
 		// hack: cpu detects vblank
 		vblank_clock = vm->current_clock();
 	}
@@ -415,11 +419,6 @@ void DISPLAY::event_frame()
 	vt_disp = regs[6] & 0x7f;
 	st_addr = (regs[12] << 8) | regs[13];
 	
-	int vsync_width = (regs[3] & 0xf0) >> 4;
-	vsync_pos = regs[7] * ch_height;
-	vsync_end = vsync_pos + (vsync_width ? vsync_width : 8); // ???
-	vblank_pos = vt_disp * ch_height;
-	
 #ifdef _X1TURBO
 	hires = ((regs[4] + 1) * ch_height + regs[5] > 400);
 #endif
@@ -429,20 +428,12 @@ void DISPLAY::event_vline(int v, int clock)
 {
 #ifdef _X1TURBO
 	if(hires) {
-		// ugly patch !!!
-		set_vblank(v * 2);
-		set_vsync(v * 2);
-		
-		if(v < 200) {
-			draw_line(v * 2);
-			draw_line(v * 2 + 1);
+		if(v < 400) {
+			draw_line(v);
 		}
 	}
 	else {
 #endif
-		set_vblank(v);
-		set_vsync(v);
-		
 		if(v < 200) {
 			draw_line(v);
 		}
@@ -451,30 +442,6 @@ void DISPLAY::event_vline(int v, int clock)
 	// restart cpu after pcg/cgrom is accessed
 	d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
 #endif
-}
-
-void DISPLAY::set_vblank(int v)
-{
-	bool val = !(v <= vblank_pos);
-	
-	if(!vblank && val) {
-		// enter vblank
-		vblank_clock = vm->current_clock();
-	}
-	if(vblank != val) {
-		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0 : 0x80, 0x80);
-		vblank = val;
-	}
-}
-
-void DISPLAY::set_vsync(int v)
-{
-	bool val = (vsync_pos <= v && v <= vsync_end);
-	
-	if(vsync != val) {
-		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0x04 : 0, 0x04);
-		vsync = val;
-	}
 }
 
 void DISPLAY::update_pal()
@@ -599,7 +566,7 @@ void DISPLAY::get_cur_code_line()
 	#define ht_clock 250
 #endif
 	int clock = vm->passed_clock(vblank_clock);
-	int vt_line = vblank_pos + (int)(clock / ht_clock);
+	int vt_line = vt_disp * ch_height + (int)(clock / ht_clock);
 	
 	int addr = (hz_total * (clock % ht_clock)) / ht_clock;
 	addr += hz_disp * (int)(vt_line / ch_height);

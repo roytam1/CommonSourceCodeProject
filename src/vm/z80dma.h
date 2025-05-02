@@ -1,7 +1,7 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MAME Z80DMA
+	Origin : MAME Z80DMA / Xmillenium
 	Author : Takeda.Toshiya
 	Date   : 2011.04.96-
 
@@ -42,7 +42,9 @@ private:
 	
 	uint16 addr_a;
 	uint16 addr_b;
-	uint16 count;
+	int upcount;
+	int blocklen;
+	bool dma_stop;
 	
 	bool iei, oei;
 	uint32 intr_bit;

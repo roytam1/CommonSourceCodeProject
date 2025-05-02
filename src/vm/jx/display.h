@@ -28,26 +28,36 @@ private:
 	MEMORY *d_mem;
 	
 	uint8 vram[0x20000];
+	uint8 extvram[0x10000];
+	
 	uint8 vgarray[0x10];
 	uint8 palette[0x10];
 	int vgarray_num;
+	
+	uint8 bankreg[16];
+	int bankreg_num;
+	
+	uint8 hires_mode;
+	int prev_width, prev_height;
 	uint8 page;
 	uint8 status;
 	uint8* regs;
 	
-	uint8 screen[200][640];
+	uint8 screen[512][720];
 	uint8 *font;
 	uint8 *kanji;
 	scrntype palette_pc[32];
 	int cblink;
 	bool scanline;
 	
-	void draw_alpha(int width);
+	void draw_alpha();
 	void draw_graph_160x200_16col();
 	void draw_graph_320x200_4col();
 	void draw_graph_320x200_16col();
 	void draw_graph_640x200_2col();
 	void draw_graph_640x200_4col();
+	void draw_graph_720x512_2col();
+	void draw_graph_360x512_4col();
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

@@ -14,9 +14,15 @@
 #include "../emu.h"
 #include "device.h"
 
+#define HD46505_MAX_EVENT	64
+
 class HD46505 : public DEVICE
 {
 private:
+	// vline events
+	DEVICE* vline_event[HD46505_MAX_EVENT];
+	int vline_event_cnt;
+	
 	// output signals
 	outputs_t outputs_disp;
 	outputs_t outputs_vblank;
@@ -24,10 +30,24 @@ private:
 	outputs_t outputs_hsync;
 	
 	uint8 regs[18];
-	int ch, hs, he, vs, ve, dhe, dve;
-	int hsc, hec, dhec;
+	int ch;
+	bool updated;
+	
+	int hz_total, hz_disp;
+	int hs_start, hs_end;
+	
+	int vt_total, vt_disp;
+	int vs_start, vs_end;
+	
+	int disp_end_clock;
+	int hs_start_clock, hs_end_clock;
+	int hz_clock;
+	
+	int vline;
+	
 	bool display, vblank, vsync, hsync;
 	
+	void update_vline(int v, int clock);
 	void set_display(bool val);
 	void set_vblank(bool val);
 	void set_vsync(bool val);
@@ -39,6 +59,7 @@ public:
 		init_output_signals(&outputs_vblank);
 		init_output_signals(&outputs_vsync);
 		init_output_signals(&outputs_hsync);
+		vline_event_cnt = 0;
 	}
 	~HD46505() {}
 	
@@ -46,6 +67,7 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void event_frame();
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	
@@ -65,6 +87,7 @@ public:
 	uint8* get_regs() {
 		return regs;
 	}
+	void register_vline_event(DEVICE* dev);
 };
 
 #endif

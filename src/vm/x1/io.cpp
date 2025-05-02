@@ -147,7 +147,7 @@ uint32 IO::read_port8(uint32 addr, bool is_dma)
 	if((addr2 & 0xff0f) == 0x1a01) {
 		// hack: cpu detects vblank
 		if((vdisp & 0x80) && !(val & 0x80)) {
-			rd_table[0x1000].dev->write_signal(SIG_DISPLAY_VBLANK, 1, 1);
+			rd_table[0x1000].dev->write_signal(SIG_DISPLAY_DETECT_VBLANK, 1, 1);
 		}
 		vdisp = val;
 	}

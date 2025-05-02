@@ -101,9 +101,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	drec->set_context_out(pio, SIG_I8255_PORT_B, 0x02);
 	drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
-	// generate vblank/vsync signals in display class
-//	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
-//	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
+	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
+	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
+	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 0x04);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x01, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
@@ -132,7 +132,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 	display->set_context_fdc(fdc);
-	display->set_context_pio(pio);
 #ifdef _X1TURBO
 	display->set_context_cpu(cpu);
 #endif
@@ -354,6 +353,11 @@ void VM::register_frame_event(DEVICE* dev)
 void VM::register_vline_event(DEVICE* dev)
 {
 	event->register_vline_event(dev);
+}
+
+void VM::register_crtc_vline_event(DEVICE* dev)
+{
+	crtc->register_vline_event(dev);
 }
 
 uint32 VM::current_clock()

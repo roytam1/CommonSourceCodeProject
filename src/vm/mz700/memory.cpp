@@ -11,9 +11,6 @@
 */
 
 #include "memory.h"
-#if defined(_MZ800)
-#include "display.h"
-#endif
 #include "../i8253.h"
 #include "../i8255.h"
 #if defined(_MZ800)
@@ -118,6 +115,18 @@ void MEMORY::initialize()
 	// init memory map
 	SET_BANK(0x0000, 0xffff, ram, ram);
 	
+	// create pc palette
+	for(int i = 0; i < 8; i++) {
+		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+	}
+#if defined(_MZ800)
+	for(int i = 0; i < 16; i++) {
+		int val = (i & 8) ? 255 : 127;
+		palette_mz800_pc[i] = RGB_COLOR((i & 2) ? val : 0, (i & 4) ? val : 0, (i & 1) ? val : 0);
+	}
+	palette_mz800_pc[8] = palette_mz800_pc[7];
+#endif
+	
 	// regist event
 	vm->register_vline_event(this);
 	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
@@ -146,15 +155,36 @@ void MEMORY::reset()
 	update_map_middle();
 	update_map_high();
 	
+	// reset crtc
+#if defined(_MZ800)
+	sof = 0;
+	sw = 125;
+	ssa = 0;
+	sea = 125;
+#endif
 	blink = tempo = false;
 	vblank = vsync = true;
 	hblank = hsync = true;
-	
 #if defined(_MZ700) || defined(_MZ1500)
 	hblank_vram = true;
 #if defined(_MZ1500)
 	hblank_pcg = true;
 #endif
+#endif
+	
+	// reset palette
+#if defined(_MZ800)
+	palette_sw = 0;
+	for(int i = 0; i < 4; i++) {
+		palette[i] = i;
+	}
+	for(int i = 0; i < 16; i++) {
+		palette16[i] = i;
+	}
+#elif defined(_MZ1500)
+	for(int i = 0; i < 8; i++) {
+		palette[i] = i;
+	}
 #endif
 	
 	// motor is always rotating...
@@ -192,9 +222,33 @@ void MEMORY::event_vline(int v, int clock)
 	hblank_pcg = false;
 #endif
 #endif
-
-#if defined(_MZ700) || defined(_MZ1500)
+	
+	// draw one line
+	if(v < 200) {
+#if defined(_MZ800)
+		switch(dmd & 0x0f) {
+		case 0x00:	// 320x200,4col
+		case 0x01:
+			draw_line_320x200_2bpp(v);
+			break;
+		case 0x02:	// 320x200,16col
+			draw_line_320x200_4bpp(v);
+			break;
+		case 0x04:	// 640x200,2col
+		case 0x05:
+			draw_line_640x200_1bpp(v);
+			break;
+		case 0x06:	// 640x200,4col
+			draw_line_640x200_2bpp(v);
+			break;
+		case 0x08:	// MZ-700
+			draw_line_mz700(v);
+			break;
+		}
+#else
+		draw_line(v);
 #endif
+	}
 }
 
 void MEMORY::event_callback(int event_id, int err)
@@ -258,7 +312,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		}
 	} else {
 		if(0x8000 <= addr && addr <= vram_addr_top && (mem_bank & MEM_BANK_VRAM)) {
-			addr &= 0x3fff;
+			addr = vram_addr(addr & 0x3fff);
 			int page;
 			switch(wf & 0xe0) {
 			case 0x00:	// single write
@@ -391,7 +445,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 		}
 	} else {
 		if(0x8000 <= addr && addr <= vram_addr_top && (mem_bank & MEM_BANK_VRAM)) {
-			addr &= 0x3fff;
+			addr = vram_addr(addr & 0x3fff);
 			if(rf & 0x80) {
 				int page = vram_page_mask(rf);
 				uint32 result = 0xff;
@@ -484,8 +538,26 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0xce:
 		vram_addr_top = (data & 4) ? 0xbfff : 0x9fff;
 		dmd = data;
-		d_display->write_dmd(dmd);
 		update_map_middle();
+		break;
+	case 0xcf:
+		switch(addr & 0x7ff) {
+		case 0x1cf:
+			sof = (sof & 0xf00) | data;
+			break;
+		case 0x2cf:
+			sof = (sof & 0x0ff) | ((data & 3) << 8);
+			break;
+		case 0x3cf:
+			sw = data & 0x7f;
+			break;
+		case 0x4cf:
+			ssa = data & 0x7f;
+			break;
+		case 0x5cf:
+			sea = data & 0x7f;
+			break;
+		}
 		break;
 #endif
 	case 0xe0:
@@ -531,6 +603,26 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0xe6:
 		mem_bank &= ~MEM_BANK_PCG;
 		update_map_high();
+		break;
+#endif
+#if defined(_MZ800)
+	case 0xf0:
+		if(data & 0x40) {
+			palette_sw = (data & 3) << 2;
+		}
+		else {
+			palette[(data >> 4) & 3] = data & 0x0f;
+		}
+		for(int i = 0; i < 16; i++) {
+			palette16[i] = ((i & 0x0c) == palette_sw) ? palette[i & 3] : i;
+		}
+		break;
+#elif defined(_MZ1500)
+	case 0xf0:
+		priority = data;
+		break;
+	case 0xf1:
+		palette[(data >> 4) & 7] = data & 7;
 		break;
 #endif
 	}
@@ -688,6 +780,295 @@ int MEMORY::vram_page_mask(uint8 f)
 		return (1 + 4);
 	}
 	return 0;
+}
+
+int MEMORY::vram_addr(int addr)
+{
+	if(dmd & 4) {
+		// 640x200
+		if(ssa * 128 <= addr && addr < sea * 128) {
+			addr += sof * 16;
+			if(addr >= sea * 128) {
+				addr -= sw * 128;
+			}
+		}
+	}
+	else {
+		// 320x200
+		if(ssa * 64 <= addr && addr < sea * 64) {
+			addr += sof * 8;
+			if(addr >= sea * 64) {
+				addr -= sw * 64;
+			}
+		}
+	}
+	return addr;
+}
+#endif
+
+#if defined(_MZ700) || defined(_MZ1500)
+void MEMORY::draw_line(int v)
+{
+	int ptr = 40 * (v >> 3);
+	
+	for(int x = 0; x < 320; x += 8) {
+		uint8 attr = vram[ptr | 0x800];
+#if defined(_MZ1500)
+		uint8 pcg_attr = vram[ptr | 0xc00];
+#endif
+		uint16 code = (vram[ptr] << 3) | ((attr & 0x80) << 4);
+		uint8 col_b = attr & 7;
+		uint8 col_f = (attr >> 4) & 7;
+		uint8 pat_t = font[code | (v & 7)];
+		uint8* dest = &screen[v][x];
+		
+#if defined(_MZ1500)
+		if((priority & 1) && (pcg_attr & 8)) {
+			uint16 pcg_code = (vram[ptr | 0x400] << 3) | ((pcg_attr & 0xc0) << 5);
+			uint8 pcg_dot[8];
+			uint8 pat_b = pcg[pcg_code | (v & 7) | 0x0000];
+			uint8 pat_r = pcg[pcg_code | (v & 7) | 0x2000];
+			uint8 pat_g = pcg[pcg_code | (v & 7) | 0x4000];
+			pcg_dot[0] = ((pat_b & 0x80) >> 7) | ((pat_r & 0x80) >> 6) | ((pat_g & 0x80) >> 5);
+			pcg_dot[1] = ((pat_b & 0x40) >> 6) | ((pat_r & 0x40) >> 5) | ((pat_g & 0x40) >> 4);
+			pcg_dot[2] = ((pat_b & 0x20) >> 5) | ((pat_r & 0x20) >> 4) | ((pat_g & 0x20) >> 3);
+			pcg_dot[3] = ((pat_b & 0x10) >> 4) | ((pat_r & 0x10) >> 3) | ((pat_g & 0x10) >> 2);
+			pcg_dot[4] = ((pat_b & 0x08) >> 3) | ((pat_r & 0x08) >> 2) | ((pat_g & 0x08) >> 1);
+			pcg_dot[5] = ((pat_b & 0x04) >> 2) | ((pat_r & 0x04) >> 1) | ((pat_g & 0x04) >> 0);
+			pcg_dot[6] = ((pat_b & 0x02) >> 1) | ((pat_r & 0x02) >> 0) | ((pat_g & 0x02) << 1);
+			pcg_dot[7] = ((pat_b & 0x01) >> 0) | ((pat_r & 0x01) << 1) | ((pat_g & 0x01) << 2);
+			
+			if(priority & 2) {
+				// pcg > text
+				dest[0] = pcg_dot[0] ? pcg_dot[0] : (pat_t & 0x80) ? col_f : col_b;
+				dest[1] = pcg_dot[1] ? pcg_dot[1] : (pat_t & 0x40) ? col_f : col_b;
+				dest[2] = pcg_dot[2] ? pcg_dot[2] : (pat_t & 0x20) ? col_f : col_b;
+				dest[3] = pcg_dot[3] ? pcg_dot[3] : (pat_t & 0x10) ? col_f : col_b;
+				dest[4] = pcg_dot[4] ? pcg_dot[4] : (pat_t & 0x08) ? col_f : col_b;
+				dest[5] = pcg_dot[5] ? pcg_dot[5] : (pat_t & 0x04) ? col_f : col_b;
+				dest[6] = pcg_dot[6] ? pcg_dot[6] : (pat_t & 0x02) ? col_f : col_b;
+				dest[7] = pcg_dot[7] ? pcg_dot[7] : (pat_t & 0x01) ? col_f : col_b;
+			}
+			else {
+				// text_fore > pcg > text_back
+				dest[0] = (pat_t & 0x80) ? col_f : pcg_dot[0] ? pcg_dot[0] : col_b;
+				dest[1] = (pat_t & 0x40) ? col_f : pcg_dot[1] ? pcg_dot[1] : col_b;
+				dest[2] = (pat_t & 0x20) ? col_f : pcg_dot[2] ? pcg_dot[2] : col_b;
+				dest[3] = (pat_t & 0x10) ? col_f : pcg_dot[3] ? pcg_dot[3] : col_b;
+				dest[4] = (pat_t & 0x08) ? col_f : pcg_dot[4] ? pcg_dot[4] : col_b;
+				dest[5] = (pat_t & 0x04) ? col_f : pcg_dot[5] ? pcg_dot[5] : col_b;
+				dest[6] = (pat_t & 0x02) ? col_f : pcg_dot[6] ? pcg_dot[6] : col_b;
+				dest[7] = (pat_t & 0x01) ? col_f : pcg_dot[7] ? pcg_dot[7] : col_b;
+			}
+		}
+		else {
+#endif
+			// text only
+			dest[0] = (pat_t & 0x80) ? col_f : col_b;
+			dest[1] = (pat_t & 0x40) ? col_f : col_b;
+			dest[2] = (pat_t & 0x20) ? col_f : col_b;
+			dest[3] = (pat_t & 0x10) ? col_f : col_b;
+			dest[4] = (pat_t & 0x08) ? col_f : col_b;
+			dest[5] = (pat_t & 0x04) ? col_f : col_b;
+			dest[6] = (pat_t & 0x02) ? col_f : col_b;
+			dest[7] = (pat_t & 0x01) ? col_f : col_b;
+#if defined(_MZ1500)
+		}
+#endif
+		ptr++;
+	}
+}
+
+void MEMORY::draw_screen()
+{
+	// copy to real screen
+	for(int y = 0; y < 200; y++) {
+		scrntype* dest = emu->screen_buffer(y);
+		uint8* src = screen[y];
+		
+		for(int x = 0; x < 320; x++) {
+#if defined(_MZ1500)
+			dest[x] = palette_pc[palette[src[x] & 7]];
+#else
+			dest[x] = palette_pc[src[x] & 7];
+#endif
+		}
+	}
+#if defined(_MZ1500)
+	// access lamp
+	uint32 stat_f = d_fdc->read_signal(0) | d_qd->read_signal(0);
+	if(stat_f) {
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
+		for(int y = SCREEN_HEIGHT - 8; y < SCREEN_HEIGHT; y++) {
+			scrntype *dest = emu->screen_buffer(y);
+			for(int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
+				dest[x] = col;
+			}
+		}
+	}
+#endif
+}
+#else
+void MEMORY::draw_line_320x200_2bpp(int v)
+{
+	int ofs1 = (dmd & 1) ? 0x4000 : 0;
+	int ofs2 = ofs1 | 0x2000;
+	int ptr = 40 * v;
+	
+	for(int x = 0; x < 320; x += 8) {
+		int addr = vram_addr(ptr++);
+		uint8 pat1 = vram[addr | ofs1];
+		uint8 pat2 = vram[addr | ofs2];
+		uint8* dest = &screen[v][x];
+		
+		dest[0] = palette[((pat1 & 0x01)     ) | ((pat2 & 0x01) << 1)];
+		dest[1] = palette[((pat1 & 0x02) >> 1) | ((pat2 & 0x02)     )];
+		dest[2] = palette[((pat1 & 0x04) >> 2) | ((pat2 & 0x04) >> 1)];
+		dest[3] = palette[((pat1 & 0x08) >> 3) | ((pat2 & 0x08) >> 2)];
+		dest[4] = palette[((pat1 & 0x10) >> 4) | ((pat2 & 0x10) >> 3)];
+		dest[5] = palette[((pat1 & 0x20) >> 5) | ((pat2 & 0x20) >> 4)];
+		dest[6] = palette[((pat1 & 0x40) >> 6) | ((pat2 & 0x40) >> 5)];
+		dest[7] = palette[((pat1 & 0x80) >> 7) | ((pat2 & 0x80) >> 6)];
+	}
+}
+
+void MEMORY::draw_line_320x200_4bpp(int v)
+{
+	int ptr = 40 * v;
+	
+	for(int x = 0; x < 320; x += 8) {
+		int addr = vram_addr(ptr++);
+		uint8 pat1 = vram[addr         ];
+		uint8 pat2 = vram[addr | 0x2000];
+		uint8 pat3 = vram[addr | 0x4000];
+		uint8 pat4 = vram[addr | 0x6000];
+		uint8* dest = &screen[v][x];
+		
+		dest[0] = palette16[((pat1 & 0x01)     ) | ((pat2 & 0x01) << 1) | ((pat3 & 0x01) << 2) | ((pat4 & 0x01) << 3)];
+		dest[1] = palette16[((pat1 & 0x02) >> 1) | ((pat2 & 0x02)     ) | ((pat3 & 0x02) << 1) | ((pat4 & 0x02) << 2)];
+		dest[2] = palette16[((pat1 & 0x04) >> 2) | ((pat2 & 0x04) >> 1) | ((pat3 & 0x04)     ) | ((pat4 & 0x04) << 1)];
+		dest[3] = palette16[((pat1 & 0x08) >> 3) | ((pat2 & 0x08) >> 2) | ((pat3 & 0x08) >> 1) | ((pat4 & 0x08)     )];
+		dest[4] = palette16[((pat1 & 0x10) >> 4) | ((pat2 & 0x10) >> 3) | ((pat3 & 0x10) >> 2) | ((pat4 & 0x10) >> 1)];
+		dest[5] = palette16[((pat1 & 0x20) >> 5) | ((pat2 & 0x20) >> 4) | ((pat3 & 0x20) >> 3) | ((pat4 & 0x20) >> 2)];
+		dest[6] = palette16[((pat1 & 0x40) >> 6) | ((pat2 & 0x40) >> 5) | ((pat3 & 0x40) >> 4) | ((pat4 & 0x40) >> 3)];
+		dest[7] = palette16[((pat1 & 0x80) >> 7) | ((pat2 & 0x80) >> 6) | ((pat3 & 0x80) >> 5) | ((pat4 & 0x80) >> 4)];
+	}
+}
+
+void MEMORY::draw_line_640x200_1bpp(int v)
+{
+	int ofs = (dmd & 1) ? 0x4000 : 0;
+	int ptr = 80 * v;
+	
+	for(int x = 0; x < 640; x += 8) {
+		int addr = vram_addr(ptr++);
+		uint8 pat = vram[addr | ofs];
+		uint8* dest = &screen[v][x];
+		
+		dest[0] = palette[(pat & 0x01)     ];
+		dest[1] = palette[(pat & 0x02) >> 1];
+		dest[2] = palette[(pat & 0x04) >> 2];
+		dest[3] = palette[(pat & 0x08) >> 3];
+		dest[4] = palette[(pat & 0x10) >> 4];
+		dest[5] = palette[(pat & 0x20) >> 5];
+		dest[6] = palette[(pat & 0x40) >> 6];
+		dest[7] = palette[(pat & 0x80) >> 7];
+	}
+}
+
+void MEMORY::draw_line_640x200_2bpp(int v)
+{
+	int ptr = 80 * v;
+	
+	for(int x = 0; x < 640; x += 8) {
+		int addr = vram_addr(ptr++);
+		uint8 pat1 = vram[addr         ];
+		uint8 pat2 = vram[addr | 0x4000];
+		uint8* dest = &screen[v][x];
+		
+		dest[0] = palette[((pat1 & 0x01)     ) | ((pat2 & 0x01) << 1)];
+		dest[1] = palette[((pat1 & 0x02) >> 1) | ((pat2 & 0x02)     )];
+		dest[2] = palette[((pat1 & 0x04) >> 2) | ((pat2 & 0x04) >> 1)];
+		dest[3] = palette[((pat1 & 0x08) >> 3) | ((pat2 & 0x08) >> 2)];
+		dest[4] = palette[((pat1 & 0x10) >> 4) | ((pat2 & 0x10) >> 3)];
+		dest[5] = palette[((pat1 & 0x20) >> 5) | ((pat2 & 0x20) >> 4)];
+		dest[6] = palette[((pat1 & 0x40) >> 6) | ((pat2 & 0x40) >> 5)];
+		dest[7] = palette[((pat1 & 0x80) >> 7) | ((pat2 & 0x80) >> 6)];
+	}
+}
+
+void MEMORY::draw_line_mz700(int v)
+{
+	int ptr = (40 * (v >> 3)) | 0x3000;
+	
+	for(int x = 0; x < 320; x += 8) {
+		uint8 attr = vram[ptr | 0x800];
+		uint16 code = (vram[ptr] << 3) | ((attr & 0x80) << 4);
+		uint8 col_b = attr & 7;
+		uint8 col_f = (attr >> 4) & 7;
+		uint8 pat_t = vram[code | (v & 7) | 0x2000];
+		uint8* dest = &screen[v][x];
+		
+		// text only
+		dest[0] = (pat_t & 0x01) ? col_f : col_b;
+		dest[1] = (pat_t & 0x02) ? col_f : col_b;
+		dest[2] = (pat_t & 0x04) ? col_f : col_b;
+		dest[3] = (pat_t & 0x08) ? col_f : col_b;
+		dest[4] = (pat_t & 0x10) ? col_f : col_b;
+		dest[5] = (pat_t & 0x20) ? col_f : col_b;
+		dest[6] = (pat_t & 0x40) ? col_f : col_b;
+		dest[7] = (pat_t & 0x80) ? col_f : col_b;
+		ptr++;
+	}
+}
+
+void MEMORY::draw_screen()
+{
+	// copy to real screen
+	for(int y = 0; y < 200; y++) {
+		scrntype* dest0 = emu->screen_buffer(2 * y);
+		scrntype* dest1 = emu->screen_buffer(2 * y + 1);
+		uint8* src = screen[y];
+		
+		if(dmd & 8) {
+			// MZ-700 mode
+			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
+				dest0[x2] = dest0[x2 + 1] = palette_pc[src[x] & 7];
+			}
+		}
+		else if(dmd & 4) {
+			// 640x200
+			for(int x = 0; x < 640; x++) {
+				dest0[x] = palette_mz800_pc[src[x] & 15];
+			}
+		}
+		else {
+			// 320x200
+			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
+				dest0[x2] = dest0[x2 + 1] = palette_mz800_pc[src[x] & 15];
+			}
+		}
+		if(!config.scan_line) {
+			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+		}
+		else {
+			_memset(dest1, 0, 640 * sizeof(scrntype));
+		}
+	}
+	
+	// access lamp
+	uint32 stat_f = d_fdc->read_signal(0) | d_qd->read_signal(0);
+	if(stat_f) {
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
+		for(int y = SCREEN_HEIGHT - 8; y < SCREEN_HEIGHT; y++) {
+			scrntype *dest = emu->screen_buffer(y);
+			for(int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
+				dest[x] = col;
+			}
+		}
+	}
 }
 #endif
 

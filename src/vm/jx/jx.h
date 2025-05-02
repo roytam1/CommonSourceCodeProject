@@ -20,10 +20,10 @@
 // TODO: check refresh rate
 #define FRAMES_PER_10SECS	599
 #define FRAMES_PER_SEC		59.9
-#define LINES_PER_FRAME 	256
-#define CHARS_PER_LINE		112
-//#define CPU_CLOCKS		4772727
-#define CPU_CLOCKS		4770000
+#define LINES_PER_FRAME 	262
+#define CHARS_PER_LINE		114
+#define CPU_CLOCKS		4772727
+//#define CPU_CLOCKS		4770000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2

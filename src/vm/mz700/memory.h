@@ -27,34 +27,59 @@ private:
 	DEVICE *d_cpu, *d_pit, *d_pio;
 #if defined(_MZ800)
 	DEVICE *d_pio_int;
-	DISPLAY *d_display;
+#endif
+#if defined(_MZ800) || defined(_MZ1500)
+	DEVICE *d_fdc, *d_qd;
 #endif
 	
+	// memory
 	uint8* rbank[32];
 	uint8* wbank[32];
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	
 	uint8 ipl[0x1000];	// IPL 4KB
+#if defined(_MZ800)
+	uint8 ext[0x2000];	// MZ-800 IPL 8KB
+#elif defined(_MZ1500)
+	uint8 ext[0x1800];	// MZ-1500 EXT 6KB
+#endif
 	uint8 font[0x1000];	// CGROM 4KB
+#if defined(_MZ1500)
+	uint8 pcg[0x6000];	// MZ-1500 PCG 8KB * 3
+#endif
 	uint8 ram[0x10000];	// Main RAM 64KB
 #if defined(_MZ800)
-	uint8 vram[0x8000];	// VRAM 32KB
+	uint8 vram[0x8000];	// MZ-800 VRAM 32KB
 #else
-	uint8 vram[0x1000];	// VRAM 4KB
+	uint8 vram[0x1000];	// MZ-700/1500 VRAM 4KB
 #endif
 	uint8 mem_bank;
 #if defined(_MZ800)
-	uint8 ext[0x2000];	// MZ-800 IPL 8KB
-	uint8 wf, rf, dmd;
+	uint8 wf, rf;
+	uint8 dmd;
 	uint32 vram_addr_top;
 	bool is_mz800;
 #elif defined(_MZ1500)
-	uint8 ext[0x1800];	// EXT 6KB
-	uint8 pcg[0x6000];	// PCG 8KB * 3
 	uint8 pcg_bank;
 #endif
 	
+	void update_map_low();
+	void update_map_middle();
+	void update_map_high();
+#if defined(_MZ800)
+	int vram_page_mask(uint8 f);
+	int vram_addr(int addr);
+#endif
+	
+	// crtc
+#if defined(_MZ800)
+	uint16 sof;
+	uint8 sw, ssa, sea;
+	uint8 palette_sw, palette[4], palette16[16];
+#elif defined(_MZ1500)
+	uint8 priority, palette[8];
+#endif
 	bool blink, tempo;
 	bool hblank, hsync;
 	bool vblank, vsync;
@@ -64,14 +89,26 @@ private:
 	bool hblank_pcg;
 #endif
 #endif
-	
 	void set_vblank(bool val);
 	void set_hblank(bool val);
-	void update_map_low();
-	void update_map_middle();
-	void update_map_high();
+	
+	// renderer
 #if defined(_MZ800)
-	int vram_page_mask(uint8 f);
+	uint8 screen[200][640];
+	scrntype palette_mz800_pc[16];
+#else
+	uint8 screen[200][320];
+#endif
+	scrntype palette_pc[8];
+	
+#if defined(_MZ800)
+	void draw_line_320x200_2bpp(int v);
+	void draw_line_320x200_4bpp(int v);
+	void draw_line_640x200_1bpp(int v);
+	void draw_line_640x200_2bpp(int v);
+	void draw_line_mz700(int v);
+#else
+	void draw_line(int v);
 #endif
 	
 public:
@@ -108,21 +145,16 @@ public:
 	void set_context_pio_int(DEVICE* device) {
 		d_pio_int = device;
 	}
-	void set_context_display(DISPLAY* device) {
-		d_display = device;
+#endif
+#if defined(_MZ800) || defined(_MZ1500)
+	void set_context_fdc(DEVICE* device) {
+		d_fdc = device;
+	}
+	void set_context_qd(DEVICE* device) {
+		d_qd = device;
 	}
 #endif
-	uint8* get_vram() {
-		return vram;
-	}
-	uint8* get_font() {
-		return font;
-	}
-#if defined(_MZ1500)
-	uint8* get_pcg() {
-		return pcg;
-	}
-#endif
+	void draw_screen();
 };
 
 #endif

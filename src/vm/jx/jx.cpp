@@ -115,6 +115,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// memory bus
 	//	00000-7FFFF	RAM
 	//	80000-B7FFF	KANJI ROM ???
+	//	A0000-A7FFF	EXT-VRAM
 	//	B8000-BFFFF	VRAM
 	//	D0000-FFFFF	CART+IPL
 	
@@ -131,7 +132,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memset(ipl, 0xff, offset);
 	
 	mem->set_memory_rw(0x00000, 0x7ffff, ram);
-	mem->set_memory_r(0x80000, 0xb7fff, kanji);
+//	mem->set_memory_r(0x80000, 0xb7fff, kanji);
 	mem->set_memory_r(0xd0000, 0xfffff, ipl);
 	
 	display->set_font_ptr(font);
@@ -145,16 +146,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_rw(0x60, 0x67, pio);
 	io->set_iomap_range_rw(0xa0, 0xa7, keyboard);
 	io->set_iomap_range_w(0xc0, 0xc7, psg);
-
+	
 	io->set_iomap_single_w(0xf2, floppy);
 	io->set_iomap_range_rw(0xf4, 0xf5, fdc);
-
+	
+	io->set_iomap_single_rw(0x1ff, display);
+	
 ///	io->set_iovalue_range_r(0x200, 0x207, 0);
-
+	
 	io->set_iomap_range_rw(0x3d0, 0x3d1, crtc);
 	io->set_iomap_range_rw(0x3d4, 0x3d5, crtc);
 	io->set_iomap_range_rw(0x3d8, 0x3df, display);
-
+	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(device->this_device_id != event->this_device_id) {

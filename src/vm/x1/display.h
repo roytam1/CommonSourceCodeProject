@@ -16,13 +16,14 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_DISPLAY_COLUMN	0
-#define SIG_DISPLAY_VBLANK	1
+#define SIG_DISPLAY_VBLANK		0
+#define SIG_DISPLAY_COLUMN		1
+#define SIG_DISPLAY_DETECT_VBLANK	2
 
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_fdc, *d_pio;
+	DEVICE *d_fdc;
 #ifdef _X1TURBO
 	DEVICE *d_cpu;
 #endif
@@ -76,12 +77,7 @@ private:
 	int ch_height; // HD46505
 	int hz_total, hz_disp, vt_disp;
 	int st_addr;
-	int vblank_pos, vsync_pos, vsync_end;
-	bool vblank, vsync;
 	uint32 vblank_clock;
-	
-	void set_vblank(int v);
-	void set_vsync(int v);
 	
 	void update_pal();
 	uint8 get_cur_font(uint32 addr);
@@ -122,9 +118,6 @@ public:
 	// unique function
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
-	}
-	void set_context_pio(DEVICE* device) {
-		d_pio = device;
 	}
 #ifdef _X1TURBO
 	void set_context_cpu(DEVICE* device) {

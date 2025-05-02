@@ -546,26 +546,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\mz700\display.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\mz700\emm.cpp"
 					>
 					<FileConfiguration
@@ -747,10 +727,6 @@
 				>
 				<File
 					RelativePath="src\vm\mz700\cmos.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mz700\display.h"
 					>
 				</File>
 				<File
