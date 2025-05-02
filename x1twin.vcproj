@@ -640,6 +640,26 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="src\vm\z80sio.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
 				<Filter
 					Name="fmgen Source Files"
 					Filter="cpp"
@@ -931,6 +951,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\x1\mouse.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\x1\psub.cpp"
 					>
 					<FileConfiguration
@@ -1085,6 +1125,10 @@
 					RelativePath="src\vm\z80ctc.h"
 					>
 				</File>
+				<File
+					RelativePath="src\vm\z80sio.h"
+					>
+				</File>
 				<Filter
 					Name="fmgen Header Files"
 					>
@@ -1172,6 +1216,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\x1\memory.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\x1\mouse.h"
 					>
 				</File>
 				<File

@@ -999,7 +999,7 @@ int MB8877::get_cur_position()
 double MB8877::get_usec_to_start_trans()
 {
 	// XXX: this is a standard image and skew may be incorrect
-	if(disk[drvreg]->is_standard_image) {
+	if(disk[drvreg]->is_standard_image || disk[drvreg]->is_alpha) {
 		return 100;
 	}
 	

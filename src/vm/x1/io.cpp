@@ -129,15 +129,10 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32 addr2 = haddr | wr_table[laddr].addr;
 #ifdef _IO_DEBUG_LOG
-	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
-			emu->out_debug("UNKNOWN:\t");
-		}
-		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
-		prv_waddr = addr;
-		prv_wdata = data;
+	if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
+		emu->out_debug("UNKNOWN:\t");
 	}
-	prv_raddr = -1;
+	emu->out_debug("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xff;
@@ -185,15 +180,10 @@ uint32 IO::read_port8(uint32 addr, bool is_dma, int* wait)
 		vdisp = val;
 	}
 #ifdef _IO_DEBUG_LOG
-	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
-			emu->out_debug("UNKNOWN:\t");
-		}
-		emu->out_debug("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), addr, val);
-		prv_raddr = addr;
-		prv_rdata = val;
+	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
+		emu->out_debug("UNKNOWN:\t");
 	}
-	prv_waddr = -1;
+	emu->out_debug("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), addr, val);
 #endif
 	switch(addr & 0xff00) {
 	case 0x1900:	// sub cpu

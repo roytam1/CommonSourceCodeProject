@@ -22,7 +22,7 @@ void MOUSE::write_signal(int id, uint32 data, uint32 mask)
 		select = ((data & mask) != 0);
 	}
 	else if(id == SIG_MOUSE_DTR) {
-		if(!select || data) {
+		if(!select || (data & mask)) {
 			return;
 		}
 		// Z80SIO Ch.B DTR H->L

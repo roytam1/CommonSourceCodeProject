@@ -1,3 +1,13 @@
+8/9/2013
+
+[EMU/WIN32] improve debug log function
+
+[VM/Z80DMA] fix not to reset all registers in reset command
+
+[X1] support CZ-8BM2
+[X1/MOUSE] support serial mouse
+
+
 8/8/2013
 
 [VM/DISK] fix not to convert standard disk images to d88 format images

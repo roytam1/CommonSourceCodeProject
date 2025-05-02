@@ -34,7 +34,6 @@ private:
 	int wr_num, wr_ptr;
 	uint16 rr_tmp[7];
 	int rr_num, rr_ptr;
-	int reset_ptr;
 	
 	bool enabled;
 	uint32 ready;

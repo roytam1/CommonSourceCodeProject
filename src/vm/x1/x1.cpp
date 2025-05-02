@@ -23,9 +23,9 @@
 #include "../ym2203.h"
 #include "../z80.h"
 #include "../z80ctc.h"
+#include "../z80sio.h"
 #ifdef _X1TURBO_FEATURE
 #include "../z80dma.h"
-#include "../z80sio.h"
 #endif
 
 #include "display.h"
@@ -34,6 +34,7 @@
 #include "io.h"
 #include "joystick.h"
 #include "memory.h"
+#include "mouse.h"
 #include "psub.h"
 
 #include "../mcs48.h"
@@ -71,6 +72,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc = new MB8877(this, emu);
 	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
+	ctc = new Z80CTC(this, emu);
+	sio = new Z80SIO(this, emu);
 	if(sound_device_type >= 1) {
 		opm1 = new YM2151(this, emu);
 		ctc1 = new Z80CTC(this, emu);
@@ -80,9 +83,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		ctc2 = new Z80CTC(this, emu);
 	}
 #ifdef _X1TURBO_FEATURE
-	ctc = new Z80CTC(this, emu);
 	dma = new Z80DMA(this, emu);
-	sio = new Z80SIO(this, emu);
 #endif
 	
 	display = new DISPLAY(this, emu);
@@ -91,6 +92,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	joy = new JOYSTICK(this, emu);
 	memory = new MEMORY(this, emu);
+	mouse = new MOUSE(this, emu);
 	
 	if(pseudo_sub_cpu) {
 		psub = new PSUB(this, emu);
@@ -133,6 +135,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _FDC_DEBUG_LOG
 	fdc->set_context_cpu(cpu);
 #endif
+	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
+	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
+	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
+	sio->set_context_rts1(mouse, SIG_MOUSE_RTS, 1);
 	if(sound_device_type >= 1) {
 		ctc1->set_context_zc0(ctc1, SIG_Z80CTC_TRIG_3, 1);
 //		ctc1->set_constant_clock(1, CPU_CLOCKS >> 1);
@@ -144,9 +150,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //		ctc2->set_constant_clock(2, CPU_CLOCKS >> 1);
 	}
 #ifdef _X1TURBO_FEATURE
-	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
-	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
-	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
 	dma->set_context_memory(memory);
 	dma->set_context_io(io);
 #endif
@@ -163,6 +166,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _X1TURBO_FEATURE
 	memory->set_context_pio(pio);
 #endif
+	mouse->set_context_sio(sio);
 	
 	if(pseudo_sub_cpu) {
 		drec->set_context_remote(psub, SIG_PSUB_TAPE_REMOTE, 1);
@@ -212,6 +216,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		dev->set_context_intr(cpu, level++); \
 		parent_dev = dev; \
 	}
+#ifndef _X1TURBO_FEATURE
+	Z80_DAISY_CHAIN(sio);	// CZ-8BM2
+	Z80_DAISY_CHAIN(ctc);
+#endif
 	if(sound_device_type >= 1) {
 		Z80_DAISY_CHAIN(ctc1);
 	}
@@ -272,7 +280,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_alias_w(i, psg, 0);
 	}
 	io->set_iomap_range_w(0x1d00, 0x1eff, memory);
-#ifdef _X1TURBO_FEATURE
+#ifndef _X1TURBO_FEATURE
+	io->set_iomap_range_rw(0x1f98, 0x1f9b, sio);	// CZ-8BM2
+	io->set_iomap_range_rw(0x1fa8, 0x1fab, ctc);
+#else
 	io->set_iomap_range_rw(0x1f80, 0x1f8f, dma);
 	io->set_iomap_range_rw(0x1f90, 0x1f93, sio);
 	io->set_iomap_range_rw(0x1fa0, 0x1fa3, ctc);

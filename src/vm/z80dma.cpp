@@ -119,7 +119,6 @@ void Z80DMA::reset()
 	
 	wr_num = wr_ptr = 0;
 	rr_num = rr_ptr = 0;
-	reset_ptr = 0;
 	
 	enabled = false;
 	ready = 0;
@@ -138,8 +137,6 @@ void Z80DMA::reset()
 void Z80DMA::write_io8(uint32 addr, uint32 data)
 {
 	if(wr_num == 0) {
-		reset_ptr = 0;
-		
 		if((data & 0x87) == 0) {
 #ifdef DMA_DEBUG
 			emu->out_debug(_T("Z80DMA: WR2=%2x\n"), data);
@@ -254,20 +251,15 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				force_ready = false;
 				req_intr = false;
 				update_intr();
-				// needs six reset commands to reset the DMA
-				for(int i = 0; i < 7; i++) {
-					regs.m[i][reset_ptr] = 0;
-				}
-				if(++reset_ptr >= 6) {
-					reset_ptr = 0;
-				}
 				status = 0x30;
-				// reset upcount
-				WR3 &= ~0x20;
-				upcount = 0;
 				// reset timing
 				PORTA_TIMING |= 3;
 				PORTB_TIMING |= 3;
+				// reset upcount
+				WR3 &= ~0x20;
+				upcount = 0;
+				// reset auto repeat and wait functions
+				WR5 &= ~0x30;
 				break;
 			case CMD_LOAD:
 				force_ready = false;
@@ -346,9 +338,6 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 		else if(wr_tmp[wr_num] == GET_REGNUM(READ_MASK)) {
 			// from Xmillenium
 			update_read_buffer();
-		}
-		if(++reset_ptr >= 6) {
-			reset_ptr = 0;
 		}
 	}
 }

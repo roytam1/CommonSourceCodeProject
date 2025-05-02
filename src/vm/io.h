@@ -41,10 +41,6 @@ private:
 	write_t wr_table[IO_ADDR_MAX];
 	read_t rd_table[IO_ADDR_MAX];
 	
-	// for debug
-	uint32 prv_waddr, prv_wdata;
-	uint32 prv_raddr, prv_rdata;
-	
 	void write_port8(uint32 addr, uint32 data, bool is_dma);
 	uint32 read_port8(uint32 addr, bool is_dma);
 	void write_port16(uint32 addr, uint32 data, bool is_dma);
@@ -62,7 +58,6 @@ public:
 			wr_table[i].dev = rd_table[i].dev = vm->dummy;
 			wr_table[i].addr = rd_table[i].addr = i;
 		}
-		prv_waddr = prv_raddr = -1;
 	}
 	~IO() {}
 	

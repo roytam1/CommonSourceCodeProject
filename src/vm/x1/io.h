@@ -45,10 +45,6 @@ private:
 	write_t wr_table[IO_ADDR_MAX];
 	read_t rd_table[IO_ADDR_MAX];
 	
-	// for debug
-	uint32 prv_waddr, prv_wdata;
-	uint32 prv_raddr, prv_rdata;
-	
 	// vram
 #ifdef _X1TURBO_FEATURE
 	uint8 vram[0x18000];
@@ -84,7 +80,6 @@ public:
 			wr_table[i].dev = rd_table[i].dev = vm->dummy;
 			wr_table[i].addr = rd_table[i].addr = i;
 		}
-		prv_waddr = prv_raddr = -1;
 	}
 	~IO() {}
 	

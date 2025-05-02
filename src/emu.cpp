@@ -220,7 +220,7 @@ void EMU::open_debug()
 	SetConsoleTitle("Debug Log");
 #endif
 #ifdef _DEBUG_FILE
-	debug = fopen("d:\\debug.log", "w");
+	debug = _tfopen(_T("d:\\debug.log"), _T("w"));
 #endif
 }
 
@@ -241,9 +241,17 @@ void EMU::out_debug(const _TCHAR* format, ...)
 #ifdef _DEBUG_LOG
 	va_list ap;
 	_TCHAR buffer[1024];
+	static _TCHAR prev_buffer[1024] = {0};
 	
 	va_start(ap, format);
 	_vstprintf(buffer, format, ap);
+	va_end(ap);
+	
+	if(_tcscmp(prev_buffer, buffer) == 0) {
+		return;
+	}
+	_tcscpy(prev_buffer, buffer);
+	
 #ifdef _DEBUG_CONSOLE
 	DWORD dwWritten;
 	WriteConsole(hConsole, buffer, _tcslen(buffer), &dwWritten, NULL);
@@ -251,9 +259,17 @@ void EMU::out_debug(const _TCHAR* format, ...)
 #ifdef _DEBUG_FILE
 	if(debug) {
 		_ftprintf(debug, _T("%s"), buffer);
+		static int size = 0;
+		if((size += _tcslen(buffer)) > 0x8000000) { // 128MB
+			static int index = 1;
+			TCHAR path[_MAX_PATH];
+			_stprintf(path, _T("d:\\debug_#%d.log"), ++index);
+			fclose(debug);
+			debug = _tfopen(path, _T("w"));
+			size = 0;
+		}
 	}
 #endif
-	va_end(ap);
 #endif
 }
 

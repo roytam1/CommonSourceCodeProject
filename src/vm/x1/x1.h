@@ -114,9 +114,9 @@ class YM2151;
 class YM2203;
 class Z80;
 class Z80CTC;
+class Z80SIO;
 #ifdef _X1TURBO_FEATURE
 class Z80DMA;
-class Z80SIO;
 #endif
 
 class DISPLAY;
@@ -125,6 +125,7 @@ class FLOPPY;
 class IO;
 class JOYSTICK;
 class MEMORY;
+class MOUSE;
 class PSUB;
 
 class MCS48;
@@ -153,12 +154,12 @@ protected:
 	YM2151* opm2;
 	YM2203* psg;
 	Z80* cpu;
+	Z80CTC* ctc;
+	Z80SIO* sio;
 	Z80CTC* ctc1;
 	Z80CTC* ctc2;
 #ifdef _X1TURBO_FEATURE
 	Z80DMA* dma;
-	Z80SIO* sio;
-	Z80CTC* ctc;
 #endif
 	
 	DISPLAY* display;
@@ -167,6 +168,7 @@ protected:
 	IO* io;
 	JOYSTICK* joy;
 	MEMORY* memory;
+	MOUSE* mouse;
 	PSUB* psub;
 	
 	MCS48* cpu_sub;

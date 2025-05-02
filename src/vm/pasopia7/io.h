@@ -33,10 +33,6 @@ private:
 	iomap_t write_table[IO_ADDR_MAX];
 	iomap_t read_table[IO_ADDR_MAX];
 	
-	// for debug
-	uint32 prv_waddr, prv_wdata;
-	uint32 prv_raddr, prv_rdata;
-	
 	// i/o mapped memory
 	uint8* ram;
 	bool mio;
@@ -48,7 +44,6 @@ public:
 			write_table[i].dev = read_table[i].dev = vm->dummy;
 			write_table[i].addr = read_table[i].addr = i;
 		}
-		prv_waddr = prv_raddr = -1;
 	}
 	~IO() {}
 	
