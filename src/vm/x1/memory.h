@@ -45,11 +45,11 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+#ifndef _X1TURBO
 	uint32 fetch_op(uint32 addr, int *wait);
-	void write_io8(uint32 addr, uint32 data);
-#ifdef _X1TURBO
-	uint32 read_io8(uint32 addr);
 #endif
+	void write_io8(uint32 addr, uint32 data);
+	uint32 read_io8(uint32 addr);
 	
 	// unique function
 #ifdef _X1TURBO

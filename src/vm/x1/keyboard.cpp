@@ -85,11 +85,11 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 	switch(addr) {
 	case MCS48_PORT_T0:
 #ifdef _X1TURBO
-		if(config.dipswitch & 1) {
+		if(config.device_type == 0) {
 			return 1;	// mode A
 		} else
 #endif
-		return 0;		// mode B
+		return 0;		// mode B or GND
 	case MCS48_PORT_T1:
 		return 1;
 	default:

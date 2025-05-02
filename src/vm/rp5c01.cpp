@@ -18,6 +18,7 @@ void RP5C01::initialize()
 #ifndef HAS_RP5C15
 	// load ram image
 	memset(ram, 0, sizeof(ram));
+	modified = false;
 	
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(emu->bios_path(_T("RP5C01.BIN")), FILEIO_READ_BINARY)) {
@@ -47,12 +48,14 @@ void RP5C01::release()
 {
 #ifndef HAS_RP5C15
 	// save ram image
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("RP5C01.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(ram, sizeof(ram), 1);
-		fio->Fclose();
+	if(modified) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(emu->bios_path(_T("RP5C01.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(ram, sizeof(ram), 1);
+			fio->Fclose();
+		}
+		delete fio;
 	}
-	delete fio;
 #endif
 }
 
@@ -73,10 +76,16 @@ void RP5C01::write_io8(uint32 addr, uint32 data)
 			return;
 #ifndef HAS_RP5C15
 		case 2:
-			ram[addr] = data;
+			if(ram[addr] != data) {
+				ram[addr] = data;
+				modified = true;
+			}
 			return;
 		case 3:
-			ram[addr + 13] = data;
+			if(ram[addr + 13] != data) {
+				ram[addr + 13] = data;
+				modified = true;
+			}
 			return;
 #endif
 		}

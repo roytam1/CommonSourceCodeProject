@@ -18,6 +18,7 @@
 
 #define SIG_SUB_PIO_PORT_C	0
 #define SIG_SUB_TAPE_END	1
+#define SIG_SUB_TAPE_APSS	2
 
 class DATAREC;
 
@@ -29,7 +30,7 @@ private:
 	
 	uint8 p1_out, p1_in, p2_out, p2_in;
 	uint8 portc;
-	bool tape_play, tape_rec, tape_eot;
+	bool tape_play, tape_rec, tape_eot, tape_apss;
 	void update_tape();
 	
 	// z80 daisy chain
@@ -70,6 +71,7 @@ public:
 	void play_tape(bool value);
 	void rec_tape(bool value);
 	void close_tape();
+	uint32 rom_crc32;
 };
 
 #endif

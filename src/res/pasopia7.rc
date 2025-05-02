@@ -94,15 +94,15 @@ BEGIN
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD2"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
@@ -110,7 +110,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
@@ -118,13 +118,13 @@ BEGIN
     END
     POPUP "RAMPAC1"
     BEGIN
-        MENUITEM "Open",                        ID_LOAD_BINARY1
+        MENUITEM "Insert",                      ID_LOAD_BINARY1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_BINARY1
     END
     POPUP "RAMPAC2"
     BEGIN
-        MENUITEM "Open",                        ID_LOAD_BINARY2
+        MENUITEM "Insert",                      ID_LOAD_BINARY2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_BINARY2
     END

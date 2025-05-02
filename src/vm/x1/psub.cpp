@@ -374,9 +374,9 @@ void PSUB::key_down(int code, bool repeat)
 		}
 		if(!(0x70 <= code && code <= 0x87)) {
 			if(repeat) {
-				register_event(this, EVENT_REPEAT, 37530, false, &key_register_id);	// 37.53 msec
+				register_event(this, EVENT_REPEAT, 61165, false, &key_register_id);	// 61.165 msec
 			} else {
-				register_event(this, EVENT_REPEAT, 399670, false, &key_register_id);	// 399.67 msec
+				register_event(this, EVENT_REPEAT, 557085, false, &key_register_id);	// 557.085 msec
 			}
 		}
 		
@@ -504,7 +504,7 @@ void PSUB::process_cmd()
 	case 0xe3:
 		// game key read (for turbo)
 		databuf[0x13][0] = databuf[0x13][1] = databuf[0x13][2] = 0;
-		if(!(config.dipswitch & 1)) {
+		if(config.device_type != 0) {
 			databuf[0x13][0] |= key_stat[0x51] ? 0x80 : 0;	// q
 			databuf[0x13][0] |= key_stat[0x57] ? 0x40 : 0;	// w
 			databuf[0x13][0] |= key_stat[0x45] ? 0x20 : 0;	// e

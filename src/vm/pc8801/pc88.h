@@ -44,6 +44,7 @@ typedef struct pc88_crtc_t {
 		uint8 expand[200][80];
 	} attrib;
 	int width, height;
+	bool height_changed;
 	int char_height;
 	bool skip_line;
 	uint8 buffer[120 * 200];
@@ -121,6 +122,7 @@ private:
 	uint8 alu_reg[3];
 	uint8 gvram_plane, gvram_sel;
 	
+	void update_frames_per_sec();
 	void update_mem_wait();
 	void update_gvram_wait();
 	void update_gvram_sel();
@@ -134,6 +136,8 @@ private:
 	
 	// cpu
 	bool cpu_clock_low;
+	bool mem_wait_on;
+	int m1_wait_clocks;
 	int mem_wait_clocks;
 	int gvram_wait_clocks;
 	int busreq_clocks;
@@ -204,13 +208,9 @@ public:
 	void release();
 	void reset();
 	
-#ifdef Z80_MEMORY_WAIT
 	void write_data8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_data8w(uint32 addr, int* wait);
-#else
-	void write_data8(uint32 addr, uint32 data);
-	uint32 read_data8(uint32 addr);
-#endif
+	uint32 fetch_op(uint32 addr, int *wait);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	

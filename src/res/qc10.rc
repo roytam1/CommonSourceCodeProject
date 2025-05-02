@@ -81,14 +81,14 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "Dip Switch #1",               ID_DIPSWITCH1
-        MENUITEM "Dip Switch #2",               ID_DIPSWITCH2
-        MENUITEM "Dip Switch #3",               ID_DIPSWITCH3
-        MENUITEM "Dip Switch #4",               ID_DIPSWITCH4
-        MENUITEM "Dip Switch #5",               ID_DIPSWITCH5
-        MENUITEM "Dip Switch #6",               ID_DIPSWITCH6
-        MENUITEM "Dip Switch #7",               ID_DIPSWITCH7
-        MENUITEM "Dip Switch #8",               ID_DIPSWITCH8
+        MENUITEM "Dip Switch #1",               ID_DIPSWITCH0
+        MENUITEM "Dip Switch #2",               ID_DIPSWITCH1
+        MENUITEM "Dip Switch #3",               ID_DIPSWITCH2
+        MENUITEM "Dip Switch #4",               ID_DIPSWITCH3
+        MENUITEM "Dip Switch #5",               ID_DIPSWITCH4
+        MENUITEM "Dip Switch #6",               ID_DIPSWITCH5
+        MENUITEM "Dip Switch #7",               ID_DIPSWITCH6
+        MENUITEM "Dip Switch #8",               ID_DIPSWITCH7
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -103,15 +103,15 @@ BEGIN
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD2"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END

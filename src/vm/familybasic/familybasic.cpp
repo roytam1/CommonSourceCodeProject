@@ -21,12 +21,18 @@
 #include "apu.h"
 #include "ppu.h"
 
+#include "../../config.h"
+
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+	// check configs
+//	boot_mode = config.boot_mode;
+	boot_mode = -1;
+	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -89,6 +95,24 @@ DEVICE* VM::get_device(int id)
 
 void VM::reset()
 {
+	// load basic rom
+	if(boot_mode != config.boot_mode) {
+		if(boot_mode != -1) {
+			memory->save_backup();
+		}
+		if(config.boot_mode == 0) {
+			memory->load_rom_image(_T("BASIC_V2.NES"));
+			ppu->load_rom_image(_T("BASIC_V2.NES"));
+		} else if(config.boot_mode == 1) {
+			memory->load_rom_image(_T("BASIC_V3.NES"));
+			ppu->load_rom_image(_T("BASIC_V3.NES"));
+		} else {
+			memory->load_rom_image(_T("PLAYBOX_BASIC.NES"));
+			ppu->load_rom_image(_T("PLAYBOX_BASIC.NES"));
+		}
+		boot_mode = config.boot_mode;
+	}
+	
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
@@ -127,6 +151,11 @@ uint16* VM::create_sound(int* extra_frames)
 	return event->create_sound(extra_frames);
 }
 
+int VM::sound_buffer_ptr()
+{
+	return event->sound_buffer_ptr();
+}
+
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
@@ -161,8 +190,14 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->update_config();
+	if(boot_mode != config.boot_mode) {
+		// boot mode is changed !!!
+//		boot_mode = config.boot_mode;
+		reset();
+	} else {
+		for(DEVICE* device = first_device; device; device = device->next_device) {
+			device->update_config();
+		}
 	}
 }
 

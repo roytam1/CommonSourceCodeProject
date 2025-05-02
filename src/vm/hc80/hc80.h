@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"EPSON HC-80"
 #define CONFIG_NAME		"hc80"
-#define CONFIG_VERSION		0x03
+#define CONFIG_VERSION		0x04
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		64
@@ -25,8 +25,7 @@
 
 // device informations for win32
 #define USE_SPECIAL_RESET
-#define USE_DIPSWITCH
-#define DIPSWITCH_DEFAULT	0x6f
+#define USE_DEVICE_TYPE		3
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -91,6 +90,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

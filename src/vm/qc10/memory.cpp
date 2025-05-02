@@ -42,16 +42,20 @@ void MEMORY::initialize()
 		fio->Fclose();
 	}
 	delete fio;
+	
+	cmos_crc32 = getcrc32(cmos, sizeof(cmos));
 }
 
 void MEMORY::release()
 {
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(cmos, sizeof(cmos), 1);
-		fio->Fclose();
+	if(cmos_crc32 != getcrc32(cmos, sizeof(cmos))) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(cmos, sizeof(cmos), 1);
+			fio->Fclose();
+		}
+		delete fio;
 	}
-	delete fio;
 }
 
 void MEMORY::reset()
@@ -106,7 +110,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 {
 	switch(addr & 0xff) {
 	case 0x18: case 0x19: case 0x1a: case 0x1b:
-		return config.dipswitch;
+		return ~config.dipswitch & 0xff;
 	case 0x30: case 0x31: case 0x32: case 0x33:
 		return (bank & 0xf0) | (d_fdc->disk_inserted() ? 8 : 0) | (motor ? 0 : 2) | (fdc_irq ? 1 : 0);
 	}

@@ -83,13 +83,14 @@ BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM "NMI",                         ID_SPECIAL_RESET
         MENUITEM SEPARATOR
-        MENUITEM "Keyboard Mode B",             ID_DIPSWITCH1
-        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
+        MENUITEM SEPARATOR
+        MENUITEM "Keyboard Mode A",             ID_DEVICE_TYPE0
+        MENUITEM "Keyboard Mode B",             ID_DEVICE_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -98,15 +99,15 @@ BEGIN
     END
     POPUP "FD0"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
@@ -114,7 +115,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR

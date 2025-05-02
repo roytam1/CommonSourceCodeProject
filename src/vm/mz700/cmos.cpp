@@ -21,6 +21,7 @@ void CMOS::initialize()
 	// init memory
 	data_buffer = (uint8 *)malloc(DATA_SIZE);
 	memset(data_buffer, 0, DATA_SIZE);
+	modified = false;
 	
 	// load cmos image
 	FILEIO* fio = new FILEIO();
@@ -34,12 +35,14 @@ void CMOS::initialize()
 void CMOS::release()
 {
 	// save cmos image
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(data_buffer, DATA_SIZE, 1);
-		fio->Fclose();
+	if(modified) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(data_buffer, DATA_SIZE, 1);
+			fio->Fclose();
+		}
+		delete fio;
 	}
-	delete fio;
 	
 	// release memory
 	free(data_buffer);
@@ -60,7 +63,11 @@ void CMOS::write_io8(uint32 addr, uint32 data)
 		data_addr = (data_addr & 0xff00) | data;
 		break;
 	case 0xfa:
-		data_buffer[(data_addr++) & ADDR_MASK] = data;
+		if(data_buffer[data_addr & ADDR_MASK] != data) {
+			data_buffer[data_addr & ADDR_MASK] = data;
+			modified = true;
+		}
+		data_addr++;
 		break;
 	}
 }

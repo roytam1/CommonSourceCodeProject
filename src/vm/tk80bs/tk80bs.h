@@ -29,6 +29,7 @@
 #define IO_ADDR_MAX		0x10000
 
 // device informations for win32
+#define USE_BOOT_MODE		2
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
 #define USE_BINARY_FILE1
@@ -84,6 +85,8 @@ protected:
 	uint8 ram[0x5000];	// with TK-M20K
 	uint8 vram[0x200];
 	
+	int boot_mode;
+	
 public:
 	// ----------------------------------------
 	// initialize
@@ -106,6 +109,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

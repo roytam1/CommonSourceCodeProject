@@ -33,6 +33,7 @@ private:
 	} header_t;
 	header_t header;
 	bool inserted;
+	uint32 sram_crc32;
 	
 	uint8* wbank[0x200];
 	uint8* rbank[0x200];

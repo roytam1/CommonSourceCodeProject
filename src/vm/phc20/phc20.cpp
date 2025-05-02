@@ -123,6 +123,11 @@ uint16* VM::create_sound(int* extra_frames)
 	return event->create_sound(extra_frames);
 }
 
+int VM::sound_buffer_ptr()
+{
+	return event->sound_buffer_ptr();
+}
+
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------

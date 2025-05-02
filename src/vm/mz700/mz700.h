@@ -56,6 +56,9 @@
 #endif
 
 // device informations for win32
+#if defined(_MZ800)
+#define USE_BOOT_MODE		2
+#endif
 #define USE_TAPE
 #define USE_TAPE_BUTTON
 #define TAPE_MZT
@@ -71,7 +74,6 @@
 #define USE_AUTO_KEY_CAPS
 #if defined(_MZ800)
 #define USE_SCANLINE
-#define USE_BOOT_MODE
 #endif
 #if defined(_MZ800) || defined(_MZ1500)
 #define USE_ACCESS_LAMP
@@ -184,6 +186,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void play_tape(_TCHAR* file_path);

@@ -26,7 +26,7 @@ private:
 	
 	uint8 regs[0x40];
 	int ch, period, register_id_sqw;
-	bool intr, sqw;
+	bool intr, sqw, modified;
 	
 	void read_from_cur_time();
 	void write_to_cur_time();

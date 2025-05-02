@@ -34,6 +34,7 @@ private:
 	uint8 ipl[0x2000];
 	uint8 ram[0x40000];
 	uint8 cmos[0x800];
+	uint32 cmos_crc32;
 	uint8 bank, psel, csel;
 	void update_map();
 	

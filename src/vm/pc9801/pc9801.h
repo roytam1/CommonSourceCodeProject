@@ -33,7 +33,7 @@
 #define CONFIG_NAME		"pc98do"
 #else
 #endif
-#define CONFIG_VERSION		0x04
+#define CONFIG_VERSION		0x05
 
 #if defined(_PC9801) || defined(_PC9801E)
 #define SUPPORT_CMT_IF
@@ -68,13 +68,13 @@
 #define FRAMES_PER_SEC		56.4
 #define LINES_PER_FRAME 	440
 #if defined(_PC9801)
-#define CPU_CLOCKS		5000000
+#define CPU_CLOCKS		4992030
 #define PIT_CLOCK_5MHZ
 #elif defined(_PC9801E) || defined(_PC9801U) || defined(_PC9801VF)
-#define CPU_CLOCKS		8000000
+#define CPU_CLOCKS		7987248
 #define PIT_CLOCK_8MHZ
 #else
-#define CPU_CLOCKS		10000000
+#define CPU_CLOCKS		9984060
 #define PIT_CLOCK_5MHZ
 #endif
 #define SCREEN_WIDTH		640
@@ -105,6 +105,13 @@
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
+#if defined(_PC98DO)
+#define USE_BOOT_MODE		5
+#define USE_DIPSWITCH
+#endif
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+#define USE_CPU_TYPE		2
+#endif
 #define USE_FD1
 #define USE_FD2
 #if defined(_PC98DO)
@@ -131,16 +138,16 @@
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
+#if defined(_PC98DO)
+// slow enough for N88-“ú–{ŒêBASIC
+#define USE_AUTO_KEY		8
+#define USE_AUTO_KEY_RELEASE	10
+#define USE_SCANLINE
+#else
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#endif
 #define USE_ACCESS_LAMP
-#if defined(_PC98DO)
-#define USE_SCANLINE
-#define USE_BOOT_MODE
-#endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
-#define USE_CPU_CLOCK_LOW
-#endif
 
 #include "../../common.h"
 
@@ -315,6 +322,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

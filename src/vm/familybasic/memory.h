@@ -21,12 +21,16 @@ class MEMORY : public DEVICE
 private:
 	DEVICE *d_cpu, *d_apu, *d_ppu, *d_drec;
 	
+	_TCHAR save_file_name[_MAX_PATH];
+	
 	uint8* key_stat;
 	uint32* joy_stat;
 	
+	uint8 header[16];
+	uint8 rom[0x8000];
 	uint8 ram[0x800];
 	uint8 save_ram[0x2000];
-	uint8 rom[0x8000];
+	uint32 save_ram_crc32;
 	
 	uint8 *spr_ram;
 	uint16 dma_addr;
@@ -67,6 +71,8 @@ public:
 	void set_spr_ram_ptr(uint8* ptr) {
 		spr_ram = ptr;
 	}
+	void load_rom_image(_TCHAR *file_name);
+	void save_backup();
 };
 
 #endif

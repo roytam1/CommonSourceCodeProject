@@ -81,21 +81,21 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "T-BASIC Ver 1.0"              ID_PASOPIA_MODE_TBASIC_V1_0
-        MENUITEM "T-BASIC Ver 1.1"              ID_PASOPIA_MODE_TBASIC_V1_1
-        MENUITEM "OA-BASIC (Disk)"              ID_PASOPIA_MODE_OABASIC
-        MENUITEM "OA-BASIC"                     ID_PASOPIA_MODE_OABASIC_NO_DISK
-        MENUITEM "MINI PASCAL"                  ID_PASOPIA_MODE_MINI_PASCAL
-        MENUITEM SEPARATOR
-        MENUITEM "RAMPAC",                      ID_PASOPIA_DEVICE_RAM_PAC
-        MENUITEM "Kanji ROM",                   ID_PASOPIA_DEVICE_KANJI_ROM
-        MENUITEM "Joystick",                    ID_PASOPIA_DEVICE_JOYSTICK
+        MENUITEM "T-BASIC Ver 1.0"              ID_BOOT_MODE0
+        MENUITEM "T-BASIC Ver 1.1"              ID_BOOT_MODE1
+        MENUITEM "OA-BASIC (Disk)"              ID_BOOT_MODE2
+        MENUITEM "OA-BASIC"                     ID_BOOT_MODE3
+        MENUITEM "MINI PASCAL"                  ID_BOOT_MODE4
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
+        MENUITEM SEPARATOR
+        MENUITEM "RAMPAC",                      ID_DEVICE_TYPE0
+        MENUITEM "Kanji ROM",                   ID_DEVICE_TYPE1
+        MENUITEM "Joystick",                    ID_DEVICE_TYPE2
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -104,15 +104,15 @@ BEGIN
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD2"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
@@ -120,7 +120,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
@@ -128,7 +128,7 @@ BEGIN
     END
     POPUP "RAMPAC"
     BEGIN
-        MENUITEM "Open",                        ID_LOAD_BINARY1
+        MENUITEM "Insert",                      ID_LOAD_BINARY1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_BINARY1
     END

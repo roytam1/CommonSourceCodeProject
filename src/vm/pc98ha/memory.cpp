@@ -83,24 +83,36 @@ void MEMORY::initialize()
 	}
 #endif
 	delete fio;
+	
+	learn_crc32 = getcrc32(learn, sizeof(learn));
+#ifdef _PC98HA
+	ramdrv_crc32 = getcrc32(ramdrv, sizeof(ramdrv));
+	memcard_crc32 = getcrc32(memcard, sizeof(memcard));
+#endif
 }
 
 void MEMORY::release()
 {
 	// save ram images
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(learn, sizeof(learn), 1);
-		fio->Fclose();
+	if(learn_crc32 != getcrc32(learn, sizeof(learn))) {
+		if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(learn, sizeof(learn), 1);
+			fio->Fclose();
+		}
 	}
 #ifdef _PC98HA
-	if(fio->Fopen(emu->bios_path(_T("RAMDRV.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(ramdrv, sizeof(ramdrv), 1);
-		fio->Fclose();
+	if(ramdrv_crc32 != getcrc32(ramdrv, sizeof(ramdrv))) {
+		if(fio->Fopen(emu->bios_path(_T("RAMDRV.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(ramdrv, sizeof(ramdrv), 1);
+			fio->Fclose();
+		}
 	}
-	if(fio->Fopen(emu->bios_path(_T("MEMCARD.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(memcard, sizeof(memcard), 1);
-		fio->Fclose();
+	if(memcard_crc32 != getcrc32(memcard, sizeof(memcard))) {
+		if(fio->Fopen(emu->bios_path(_T("MEMCARD.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(memcard, sizeof(memcard), 1);
+			fio->Fclose();
+		}
 	}
 #endif
 	delete fio;

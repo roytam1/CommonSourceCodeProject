@@ -40,6 +40,7 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_MONITOR_TYPE	2
 #define USE_SCREEN_ROTATE
 #define USE_ACCESS_LAMP
 
@@ -117,6 +118,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

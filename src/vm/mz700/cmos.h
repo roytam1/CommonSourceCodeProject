@@ -22,6 +22,7 @@ class CMOS : public DEVICE
 private:
 	uint8 *data_buffer;
 	uint32 data_addr;
+	bool modified;
 	
 public:
 	CMOS(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

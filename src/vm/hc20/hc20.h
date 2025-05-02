@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"EPSON HC-20"
 #define CONFIG_NAME		"hc20"
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		72
@@ -29,14 +29,15 @@
 #define WINDOW_HEIGHT		(SCREEN_HEIGHT * 3)
 
 #define USE_DIPSWITCH
-#define DIPSWITCH_DEFAULT	0x08
+#define DIPSWITCH_DEFAULT	0x07
 #define USE_FD1
 #define USE_FD2
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
-#define USE_AUTO_KEY_RELEASE	10
+#define USE_AUTO_KEY_RELEASE	12
+#define USE_AUTO_KEY_CAPS
 #define DONT_KEEEP_KEY_PRESSED
 #define USE_POWER_OFF
 #define USE_ACCESS_LAMP
@@ -93,6 +94,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void open_disk(int drv, _TCHAR* file_path, int offset);

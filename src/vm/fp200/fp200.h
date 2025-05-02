@@ -29,6 +29,7 @@
 #define WINDOW_WIDTH		(SCREEN_WIDTH * 2)
 #define WINDOW_HEIGHT		(SCREEN_HEIGHT * 2)
 
+#define USE_BOOT_MODE		2
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
 #define NOTIFY_KEY_DOWN
@@ -36,7 +37,6 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_CAPS
-#define USE_BOOT_MODE
 
 #include "../../common.h"
 
@@ -90,6 +90,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

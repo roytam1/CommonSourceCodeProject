@@ -208,9 +208,12 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		
 		// load backuped sram
 		// note: shogi nyumon has sram but it is not battery-backuped
-		if(header.ctype == 1 && cart[1] != 0x48 && fio->Fopen(save_path, FILEIO_READ_BINARY)) {
-			fio->Fread(sram, 0x2000, 1);
-			fio->Fclose();
+		if(header.ctype == 1 && cart[1] != 0x48) {
+			if(fio->Fopen(save_path, FILEIO_READ_BINARY)) {
+				fio->Fread(sram, sizeof(sram), 1);
+				fio->Fclose();
+			}
+			sram_crc32 = getcrc32(sram, sizeof(sram));
 		}
 		inserted = true;
 	}
@@ -222,12 +225,14 @@ void MEMORY::close_cart()
 	// save backuped sram
 	// note: shogi nyumon has sram but it is not battery-backuped
 	if(inserted && header.ctype == 1 && cart[1] != 0x48) {
-		FILEIO* fio = new FILEIO();
-		if(fio->Fopen(save_path, FILEIO_WRITE_BINARY)) {
-			fio->Fwrite(sram, 0x2000, 1);
-			fio->Fclose();
+		if(sram_crc32 = getcrc32(sram, sizeof(sram))) {
+			FILEIO* fio = new FILEIO();
+			if(fio->Fopen(save_path, FILEIO_WRITE_BINARY)) {
+				fio->Fwrite(sram, 0x2000, 1);
+				fio->Fclose();
+			}
+			delete fio;
 		}
-		delete fio;
 	}
 	inserted = false;
 	

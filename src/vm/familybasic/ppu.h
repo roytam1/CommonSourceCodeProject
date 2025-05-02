@@ -26,6 +26,7 @@ private:
 	uint8 solid_buf[512];
 	
 	uint8* banks[16];
+	uint8 header[16];
 	uint8 chr_rom[0x2000];
 	uint8 name_tables[0x1000];
 	uint8 spr_ram[0x100];
@@ -68,6 +69,7 @@ public:
 	uint8 *get_spr_ram() {
 		return spr_ram;
 	}
+	void load_rom_image(_TCHAR *file_name);
 	void draw_screen();
 };
 

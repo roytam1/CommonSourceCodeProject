@@ -81,8 +81,8 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "BASIC"                        ID_FP200_MODE_BASIC
-        MENUITEM "CETL"                         ID_FP200_MODE_CETL
+        MENUITEM "BASIC"                        ID_BOOT_MODE0
+        MENUITEM "CETL"                         ID_BOOT_MODE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -99,7 +99,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE
     END

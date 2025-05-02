@@ -17,6 +17,7 @@
 void EMU::initialize_sound()
 {
 	sound_ok = sound_started = now_mute = now_rec_snd = false;
+	rec_buffer_ptr = 0;
 	
 	// initialize direct sound
 	PCMWAVEFORMAT pcmwf;
@@ -125,9 +126,12 @@ void EMU::update_sound(int* extra_frames)
 		uint16* sound_buffer = vm->create_sound(extra_frames);
 		if(now_rec_snd) {
 			// record sound
-			int length = sound_samples * sizeof(uint16) * 2; // stereo
-			rec->Fwrite(sound_buffer, length, 1);
-			rec_bytes += length;
+			if(sound_samples > rec_buffer_ptr) {
+				int length = (sound_samples - rec_buffer_ptr) * sizeof(uint16) * 2; // stereo
+				rec->Fwrite(sound_buffer + rec_buffer_ptr * 2, length, 1);
+				rec_bytes += length;
+			}
+			rec_buffer_ptr = 0;
 		}
 		if(lpdsb->Lock(offset, DSOUND_BUFFER_HALF, (void **)&ptr1, &size1, (void**)&ptr2, &size2, 0) == DSERR_BUFFERLOST) {
 			lpdsb->Restore();
@@ -176,6 +180,7 @@ void EMU::start_rec_sound()
 			memset(&header, 0, sizeof(wavheader_t));
 			rec->Fwrite(&header, sizeof(wavheader_t), 1);
 			rec_bytes = 0;
+			rec_buffer_ptr = vm->sound_buffer_ptr();
 			now_rec_snd = true;
 		}
 		else {

@@ -24,6 +24,7 @@ private:
 #else
 	uint8 cmos[1][0x800];
 #endif
+	bool modified;
 	uint8 bank;
 	
 public:

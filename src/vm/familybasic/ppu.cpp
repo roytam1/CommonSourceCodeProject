@@ -53,17 +53,14 @@ static const uint8 palette[64][3] = {
 		if((v & 0x3e0) == 0x3a0) { \
 			v ^= 0x0800; \
 			v &= 0xfc1f; \
-		} \
-		else { \
+		} else { \
 			if((v & 0x3e0) == 0x3e0) { \
 				v &= 0xfc1f; \
-			} \
-			else { \
+			} else { \
 				v += 0x20; \
 			} \
 		} \
-	} \
-	else { \
+	} else { \
 		v += 0x1000; \
 	} \
 }
@@ -72,8 +69,7 @@ static const uint8 palette[64][3] = {
 	if((v & 0x1f) == 0x1f) { \
 		v ^= 0x0400; \
 		v &= 0xffe0; \
-	} \
-	else { \
+	} else { \
 		v++; \
 	} \
 }
@@ -82,21 +78,29 @@ static const uint8 palette[64][3] = {
 	if(x == 7) { \
 		LOOPY_NEXT_TILE(v); \
 		x = 0; \
-	} \
-	else { \
+	} else { \
 		x++; \
 	} \
 }
 
 void PPU::initialize()
 {
-	uint8 header[16];
-	
-	memset(chr_rom, 0xff, sizeof(chr_rom));
-	memset(header, 0, sizeof(header));
-	
+	// register event
+	register_vline_event(this);
+}
+
+void PPU::load_rom_image(_TCHAR *file_name)
+{
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("BASIC.NES")), FILEIO_READ_BINARY)) {
+	bool file_open = false;
+	
+	if(fio->Fopen(emu->bios_path(file_name), FILEIO_READ_BINARY)) {
+		file_open = true;
+	} else if(fio->Fopen(emu->bios_path(_T("BASIC.NES")), FILEIO_READ_BINARY)) {
+		// for compatibility
+		file_open = true;
+	}
+	if(file_open) {
 		// read header
 		fio->Fread(header, sizeof(header), 1);
 		// skip program rom
@@ -104,47 +108,41 @@ void PPU::initialize()
 		// read chr rom (max 8kb)
 		fio->Fread(chr_rom, sizeof(chr_rom), 1);
 		fio->Fclose();
+	} else {
+		memset(header, 0, sizeof(header));
+		memset(chr_rom, 0xff, sizeof(chr_rom));
 	}
 	delete fio;
-	
-	// set up PPU memory space table
-	for(int i = 0; i < 8; i++) {
-		banks[i] = chr_rom + 0x400 * i;
-	}
-#if 0
-	if(header[6] & 8) {
-		// 4 screen mirroring
-		banks[ 8] = name_tables;
-		banks[ 9] = name_tables + 0x400;
-		banks[10] = name_tables + 0x800;
-		banks[11] = name_tables + 0xc00;
-	}
-	else if(header[6] & 1) {
-		// vertical mirroring
-		banks[ 8] = banks[10] = name_tables;
-		banks[ 9] = banks[11] = name_tables + 0x400;
-	}
-	else {
-		// horizontal mirroring
-		banks[ 8] = banks[ 9] = name_tables;
-		banks[10] = banks[11] = name_tables + 0x400;
-	}
-#else
-	// family basic must be vertical mirroring
-	banks[ 8] = banks[10] = name_tables;
-	banks[ 9] = banks[11] = name_tables + 0x400;
-#endif
-	banks[12] = banks[ 8];
-	banks[13] = banks[ 9];
-	banks[14] = banks[10];
-	banks[15] = banks[11];
-	
-	// register event
-	register_vline_event(this);
 }
 
 void PPU::reset()
 {
+	// set up PPU memory space table
+	for(int i = 0; i < 8; i++) {
+		banks[i] = chr_rom + 0x400 * i;
+	}
+	
+	// set mirroring
+#if 0
+	if(header[6] & 8) {
+		// 4 screen mirroring
+		banks[ 8] = banks[12] = name_tables;
+		banks[ 9] = banks[13] = name_tables + 0x400;
+		banks[10] = banks[14] = name_tables + 0x800;
+		banks[11] = banks[15] = name_tables + 0xc00;
+	} else if(header[6] & 1) {
+#endif
+		// vertical mirroring
+		banks[ 8] = banks[10] = banks[12] = banks[14] = name_tables;
+		banks[ 9] = banks[11] = banks[13] = banks[15] = name_tables + 0x400;
+#if 0
+	} else {
+		// horizontal mirroring
+		banks[ 8] = banks[ 9] = banks[12] = banks[13] = name_tables;
+		banks[10] = banks[11] = banks[14] = banks[15] = name_tables + 0x400;
+	}
+#endif
+	
 	memset(bg_pal, 0, sizeof(bg_pal));
 	memset(spr_pal, 0, sizeof(spr_pal));
 	memset(solid_buf, 0, sizeof(solid_buf));
@@ -200,8 +198,7 @@ void PPU::write_data8(uint32 addr, uint32 data)
 			// first write
 			loopy_t = (loopy_t & 0xffe0) | (((uint16)(data & 0xf8)) >> 3);
 			loopy_x = data & 0x07;
-		}
-		else {
+		} else {
 			// second write
 			loopy_t = (loopy_t & 0xfc1f) | (((uint16)(data & 0xf8)) << 2);
 			loopy_t = (loopy_t & 0x8fff) | (((uint16)(data & 0x07)) << 12);
@@ -212,8 +209,7 @@ void PPU::write_data8(uint32 addr, uint32 data)
 		if(toggle_2005_2006) {
 			// first write
 			loopy_t = (loopy_t & 0x00ff) | (((uint16)(data & 0x3f)) << 8);
-		}
-		else {
+		} else {
 			// second write
 			loopy_t = (loopy_t & 0xff00) | ((uint16)data);
 			loopy_v = loopy_t;
@@ -228,11 +224,9 @@ void PPU::write_data8(uint32 addr, uint32 data)
 				data &= 0x3f;
 				if(!(ofs & 0x000f)) {
 					bg_pal[0] = spr_pal[0] = data;
-				}
-				else if(!(ofs & 0x10)) {
+				} else if(!(ofs & 0x10)) {
 					bg_pal[ofs & 0x000f] = data;
-				}
-				else {
+				} else {
 					spr_pal[ofs & 0x000f] = data;
 				}
 				break;
@@ -268,8 +262,7 @@ uint32 PPU::read_data8(uint32 addr)
 			if(ofs >= 0x3f00) {
 				if(!(ofs & 0x0010)) {
 					return bg_pal[ofs & 0x000f];
-				}
-				else {
+				} else {
 					return spr_pal[ofs & 0x000f];
 				}
 			}
@@ -378,8 +371,7 @@ void PPU::render_scanline(int v)
 		LOOPY_SCANLINE_START(loopy_v, loopy_t);
 		if(bg_enabled()) {
 			render_bg(v);
-		}
-		else {
+		} else {
 			memset(solid_buf, 0, sizeof(solid_buf));
 		}
 		if(spr_enabled()) {
@@ -415,16 +407,13 @@ void PPU::render_bg(int v)
 	if(!(tile_y & 2)) {
 		if(!(tile_x & 2)) {
 			attrib_bits = (VRAM(attrib_addr) & 0x03) << 2;
-		}
-		else {
+		} else {
 			attrib_bits = (VRAM(attrib_addr) & 0x0C);
 		}
-	}
-	else {
+	} else {
 		if(!(tile_x & 2)) {
 			attrib_bits = (VRAM(attrib_addr) & 0x30) >> 2;
-		}
-		else {
+		} else {
 			attrib_bits = (VRAM(attrib_addr) & 0xC0) >> 4;
 		}
 	}
@@ -471,16 +460,13 @@ void PPU::render_bg(int v)
 			if(!(tile_y & 2)) {
 				if(!(tile_x & 2)) {
 					attrib_bits = (VRAM(attrib_addr) & 0x03) << 2;
-				}
-				else {
+				} else {
 					attrib_bits = (VRAM(attrib_addr) & 0x0c);
 				}
-			}
-			else {
+			} else {
 				if(!(tile_x & 2)) {
 					attrib_bits = (VRAM(attrib_addr) & 0x30) >> 2;
-				}
-				else {
+				} else {
 					attrib_bits = (VRAM(attrib_addr) & 0xc0) >> 4;
 				}
 			}
@@ -550,16 +536,14 @@ void PPU::render_spr(int v)
 						if(y < 8) {
 							tile_addr -= 16;
 						}
-					}
-					else {
+					} else {
 						if(y >= 8) {
 							tile_addr += 16;
 						}
 					}
 					tile_addr += y & 0x07;
 					tile_mask = (0x80 >> (x & 0x07));
-				}
-				else {
+				} else {
 					tile_addr = spr[1] << 4;
 					tile_addr += y & 0x07;
 					tile_addr += spr_pattern_table_addr;
@@ -587,8 +571,7 @@ void PPU::render_spr(int v)
 						if(!(*solid & BG_WRITTEN_FLAG)) {
 							*p = monochrome() ? (spr_pal[col] & 0xf0) : spr_pal[col];
 						}
-					}
-					else {
+					} else {
 						if(!(*solid & SPR_WRITTEN_FLAG)) {
 							*p = monochrome() ? (spr_pal[col] & 0xf0) : spr_pal[col];
 							*solid |= SPR_WRITTEN_FLAG;
@@ -602,8 +585,7 @@ void PPU::render_spr(int v)
 	}
 	if(num_sprites >= 8) {
 		regs[2] |= 0x20;
-	}
-	else {
+	} else {
 		regs[2] &= ~0x20;
 	}
 }

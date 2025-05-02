@@ -12,61 +12,75 @@
 
 #define ID_RESET                        40001
 #define ID_SPECIAL_RESET                40002
-#define ID_CPU_POWER0                   40003
-#define ID_CPU_POWER1                   40004
-#define ID_CPU_POWER2                   40005
-#define ID_CPU_POWER3                   40006
-#define ID_CPU_POWER4                   40007
-#define ID_EXIT                         40008
+#define ID_AUTOKEY_START                40003
+#define ID_AUTOKEY_STOP                 40004
+#define ID_EXIT                         40005
 
-#define ID_AUTOKEY_START                40011
-#define ID_AUTOKEY_STOP                 40012
+#define ID_BOOT_MODE0                   40011
+#define ID_BOOT_MODE1                   40012
+#define ID_BOOT_MODE2                   40013
+#define ID_BOOT_MODE3                   40014
+#define ID_BOOT_MODE4                   40015
+#define ID_BOOT_MODE5                   40016
+#define ID_BOOT_MODE6                   40017
+#define ID_BOOT_MODE7                   40018
 
-#define ID_DIPSWITCH1                   40021
-#define ID_DIPSWITCH2                   40022
-#define ID_DIPSWITCH3                   40023
-#define ID_DIPSWITCH4                   40024
-#define ID_DIPSWITCH5                   40025
-#define ID_DIPSWITCH6                   40026
-#define ID_DIPSWITCH7                   40027
-#define ID_DIPSWITCH8                   40028
+#define ID_CPU_TYPE0                    40021
+#define ID_CPU_TYPE1                    40022
+#define ID_CPU_TYPE2                    40023
+#define ID_CPU_TYPE3                    40024
+#define ID_CPU_TYPE4                    40025
+#define ID_CPU_TYPE5                    40026
+#define ID_CPU_TYPE6                    40027
+#define ID_CPU_TYPE7                    40028
 
-#define ID_FP200_MODE_BASIC             40031
-#define ID_FP200_MODE_CETL              40032
+#define ID_CPU_POWER0                   40031
+#define ID_CPU_POWER1                   40032
+#define ID_CPU_POWER2                   40033
+#define ID_CPU_POWER3                   40034
+#define ID_CPU_POWER4                   40035
 
-#define ID_HC80_RAMDISK0                40031
-#define ID_HC80_RAMDISK1                40032
-#define ID_HC80_RAMDISK2                40033
+#define ID_DIPSWITCH0                   40041
+#define ID_DIPSWITCH1                   40042
+#define ID_DIPSWITCH2                   40043
+#define ID_DIPSWITCH3                   40044
+#define ID_DIPSWITCH4                   40045
+#define ID_DIPSWITCH5                   40046
+#define ID_DIPSWITCH6                   40047
+#define ID_DIPSWITCH7                   40048
+#define ID_DIPSWITCH8                   40049
+#define ID_DIPSWITCH9                   40050
+#define ID_DIPSWITCH10                  40051
+#define ID_DIPSWITCH11                  40052
+#define ID_DIPSWITCH12                  40053
+#define ID_DIPSWITCH13                  40054
+#define ID_DIPSWITCH14                  40055
+#define ID_DIPSWITCH15                  40056
+#define ID_DIPSWITCH16                  40057
+#define ID_DIPSWITCH17                  40058
+#define ID_DIPSWITCH18                  40059
+#define ID_DIPSWITCH19                  40060
+#define ID_DIPSWITCH20                  40061
+#define ID_DIPSWITCH21                  40062
+#define ID_DIPSWITCH22                  40063
+#define ID_DIPSWITCH23                  40064
+#define ID_DIPSWITCH24                  40065
+#define ID_DIPSWITCH25                  40066
+#define ID_DIPSWITCH26                  40067
+#define ID_DIPSWITCH27                  40068
+#define ID_DIPSWITCH28                  40069
+#define ID_DIPSWITCH29                  40070
+#define ID_DIPSWITCH30                  40071
+#define ID_DIPSWITCH31                  40072
 
-#define ID_MZ800_MODE_MZ800             40031
-#define ID_MZ800_MODE_MZ700             40032
-
-#define ID_PASOPIA_MODE_TBASIC_V1_0     40031
-#define ID_PASOPIA_MODE_TBASIC_V1_1     40032
-#define ID_PASOPIA_MODE_OABASIC         40033
-#define ID_PASOPIA_MODE_OABASIC_NO_DISK 40034
-#define ID_PASOPIA_MODE_MINI_PASCAL     40035
-
-#define ID_PASOPIA_DEVICE_RAM_PAC       40041
-#define ID_PASOPIA_DEVICE_KANJI_ROM     40042
-#define ID_PASOPIA_DEVICE_JOYSTICK      40043
-
-#define ID_PC98DO_MODE_PC98             40031
-#define ID_PC8801_MODE_V1S              40032
-#define ID_PC8801_MODE_V1H              40033
-#define ID_PC8801_MODE_V2               40034
-#define ID_PC8801_MODE_N                40035
-
-#define ID_PC8001_MODE_V1               40031
-#define ID_PC8001_MODE_V2               40032
-#define ID_PC8001_MODE_N                40033
-
-#define ID_PC9801_CPU_CLOCK_HIGH        40041
-#define ID_PC9801_CPU_CLOCK_LOW         40042
-
-#define ID_PC8801_DEVICE_JOYSTICK       40051
-#define ID_PC8801_DEVICE_MOUSE          40052
-#define ID_PC8801_DEVICE_JOYMOUSE       40053
+#define ID_DEVICE_TYPE0                 40081
+#define ID_DEVICE_TYPE1                 40082
+#define ID_DEVICE_TYPE2                 40083
+#define ID_DEVICE_TYPE3                 40084
+#define ID_DEVICE_TYPE4                 40085
+#define ID_DEVICE_TYPE5                 40086
+#define ID_DEVICE_TYPE6                 40087
+#define ID_DEVICE_TYPE7                 40088
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102
@@ -182,7 +196,12 @@
 #define ID_SCREEN_MONITOR_TYPE1         41062
 #define ID_SCREEN_MONITOR_TYPE2         41063
 #define ID_SCREEN_MONITOR_TYPE3         41064
-#define ID_SCREEN_SCANLINE              41065
+#define ID_SCREEN_MONITOR_TYPE4         41065
+#define ID_SCREEN_MONITOR_TYPE5         41066
+#define ID_SCREEN_MONITOR_TYPE6         41067
+#define ID_SCREEN_MONITOR_TYPE7         41068
+
+#define ID_SCREEN_SCANLINE              41071
 
 #define ID_SOUND_REC                    41101
 #define ID_SOUND_STOP                   41102
@@ -204,6 +223,10 @@
 #define ID_SOUND_DEVICE_TYPE1           41132
 #define ID_SOUND_DEVICE_TYPE2           41133
 #define ID_SOUND_DEVICE_TYPE3           41134
+#define ID_SOUND_DEVICE_TYPE4           41135
+#define ID_SOUND_DEVICE_TYPE5           41136
+#define ID_SOUND_DEVICE_TYPE6           41137
+#define ID_SOUND_DEVICE_TYPE7           41138
 
 // Next default values for new objects
 // 

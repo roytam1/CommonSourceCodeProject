@@ -94,8 +94,8 @@ BEGIN
     END
     POPUP "Cart"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_CART
-        MENUITEM "Close",                       ID_CLOSE_CART
+        MENUITEM "Insert",                      ID_OPEN_CART
+        MENUITEM "Eject",                       ID_CLOSE_CART
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_CART
     END
@@ -103,7 +103,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE
     END

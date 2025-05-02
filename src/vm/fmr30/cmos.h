@@ -19,6 +19,7 @@ class CMOS : public DEVICE
 {
 private:
 	uint8 cmos[0x2000];
+	bool modified;
 	
 public:
 	CMOS(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

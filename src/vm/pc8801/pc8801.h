@@ -19,7 +19,7 @@
 #define DEVICE_NAME		"NEC PC-8001mkIISR"
 #define CONFIG_NAME		"pc8801mk2sr"
 #endif
-#define CONFIG_VERSION		0x02
+#define CONFIG_VERSION		0x03
 
 #if defined(_PC8001SR)
 #define MODE_PC80_V1	0
@@ -41,12 +41,10 @@
 #endif
 #define SUPPORT_PC88_JOYSTICK
 
-#define Z80_MEMORY_WAIT
-
 // device informations for virtual machine
-#define FRAMES_PER_SEC		60
+#define FRAMES_PER_SEC		62.422
 #define LINES_PER_FRAME 	260
-#define CPU_CLOCKS		3993600
+#define CPU_CLOCKS		3993624
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
@@ -54,11 +52,20 @@
 #ifdef SUPPORT_PC88_OPNA
 #define HAS_YM2608
 #endif
+#define Z80_MEMORY_WAIT
 #define PCM1BIT_HIGH_QUALITY
 #define SUPPORT_SOUND_FREQ_55467HZ
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
+#if defined(_PC8001SR)
+#define USE_BOOT_MODE		3
+#else
+#define USE_BOOT_MODE		4
+#endif
+#define USE_CPU_TYPE		2
+#define USE_DIPSWITCH
+#define USE_DEVICE_TYPE		2
 #define USE_FD1
 #define USE_FD2
 #define USE_TAPE
@@ -66,12 +73,11 @@
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_ACCESS_LAMP
+// slow enough for N88-“ú–{ŒêBASIC
+#define USE_AUTO_KEY		8
+#define USE_AUTO_KEY_RELEASE	10
 #define USE_SCANLINE
-#define USE_BOOT_MODE
-#define USE_CPU_CLOCK_LOW
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -141,6 +147,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

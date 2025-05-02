@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x34
+#define FILE_VERSION	0x35
 
 void init_config();
 void load_config();
@@ -62,26 +62,26 @@ typedef struct {
 	int sound_latency;
 	
 	// virtual machine
+#ifdef USE_BOOT_MODE
+	int boot_mode;
+#endif
+#ifdef USE_CPU_TYPE
+	int cpu_type;
+#endif
 	int cpu_power;
+#ifdef USE_DIPSWITCH
+	uint32 dipswitch;
+#endif
+#ifdef USE_DEVICE_TYPE
+	int device_type;
+#endif
 #ifdef USE_FD1
 	bool ignore_crc;
 #endif
 #ifdef USE_TAPE
 	bool wave_shaper;
 #endif
-#ifdef USE_DIPSWITCH
-	uint8 dipswitch;
-#endif
-#ifdef USE_BOOT_MODE
-	int boot_mode;		// FP-200, MZ-800, PASOPIA, PC-8801MA, PC-98DO
-#endif
-#ifdef USE_CPU_CLOCK_LOW
-	bool cpu_clock_low;	// PC-8801MA, PC-9801E, PC-9801VM, PC-98DO
-#endif
-#if defined(_HC80) || defined(_PASOPIA) || defined(_PC8001SR) || defined(_PC8801MA)
-	int device_type;
-#endif
-#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
+#ifdef USE_MONITOR_TYPE
 	int monitor_type;
 #endif
 #ifdef USE_SCANLINE

@@ -74,15 +74,13 @@ uint32 MEMORY::read_data8(uint32 addr)
 	return rbank[addr >> 12][addr & 0xfff];
 }
 
+#ifndef _X1TURBO
 uint32 MEMORY::fetch_op(uint32 addr, int *wait)
 {
-#ifdef _X1TURBO
-	*wait = 0;
-#else
 	*wait = m1_cycle;
-#endif
 	return read_data8(addr);
 }
+#endif
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
@@ -137,14 +135,14 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-#ifdef _X1TURBO
 uint32 MEMORY::read_io8(uint32 addr)
 {
+#ifdef _X1TURBO
 	switch(addr & 0xff00) {
 	case 0xb00:
 		return bank;
 	}
+#endif
 	return 0xff;
 }
-#endif
 

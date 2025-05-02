@@ -70,6 +70,9 @@
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
 	// check configs
+#if defined(_PC98DO)
+	boot_mode = config.boot_mode;
+#endif
 	int cpu_clocks = CPU_CLOCKS;
 #if defined(PIT_CLOCK_8MHZ)
 	pit_clock_8mhz = true;
@@ -77,23 +80,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit_clock_8mhz = false;
 #endif
 #if defined(_PC9801E)
-	if(config.cpu_clock_low) {
-		// 8MHz <-> 5MHz
-		cpu_clocks = 5000000;
+	if(config.cpu_type != 0) {
+		// 8MHz -> 5MHz
+		cpu_clocks = 4992030;
 		pit_clock_8mhz = false;
 	}
 #elif defined(_PC9801VM) || defined(_PC98DO)
-	if(config.cpu_clock_low) {
-		// 10MHz <-> 8MHz
-		cpu_clocks = 8000000;
+	if(config.cpu_type != 0) {
+		// 10MHz -> 8MHz
+		cpu_clocks = 7987248;
 		pit_clock_8mhz = true;
 	}
 #endif
-	int pit_clocks = pit_clock_8mhz ? 1996800 : 2457600;
-	
-#if defined(_PC98DO)
-	boot_mode = config.boot_mode;
-#endif
+	int pit_clocks = pit_clock_8mhz ? 1996812 : 2457600;
 	
 	// create devices
 	first_device = last_device = NULL;
@@ -506,8 +505,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu_sub = new Z80(this, emu);
 	pc88cpu_sub->set_context_event_manager(pc88event);
 	
-	pc88event->set_context_cpu(pc88cpu, config.cpu_clock_low ? 3993600 : 7987200);
-	pc88event->set_context_cpu(pc88cpu_sub, 3993600);
+	pc88event->set_context_cpu(pc88cpu, (config.cpu_type != 0) ? 3993624 : 7987248);
+	pc88event->set_context_cpu(pc88cpu_sub, 3993624);
 	pc88event->set_context_sound(pc88beep);
 	pc88event->set_context_sound(pc88opn);
 	pc88event->set_context_sound(pc88pcm);
@@ -657,13 +656,9 @@ void VM::run()
 #if defined(_PC98DO)
 	if(boot_mode != 0) {
 		pc88event->drive();
-	}
-	else {
+	} else
 #endif
-		event->drive();
-#if defined(_PC98DO)
-	}
-#endif
+	event->drive();
 }
 
 double VM::frame_rate()
@@ -671,13 +666,9 @@ double VM::frame_rate()
 #if defined(_PC98DO)
 	if(config.boot_mode != 0) {
 		return pc88event->frame_rate();
-	}
-	else {
+	} else
 #endif
-		return event->frame_rate();
-#if defined(_PC98DO)
-	}
-#endif
+	return event->frame_rate();
 }
 
 // ----------------------------------------------------------------------------
@@ -689,26 +680,25 @@ void VM::draw_screen()
 #if defined(_PC98DO)
 	if(boot_mode != 0) {
 		pc88->draw_screen();
-	}
-	else {
+	} else
 #endif
-		display->draw_screen();
-#if defined(_PC98DO)
-	}
-#endif
+	display->draw_screen();
 }
 
 int VM::access_lamp()
 {
-#if defined(_PC98DO)
-	return (boot_mode != 0) ? pc88fdc_sub->read_signal(0) : fdc->read_signal(0);
-#elif defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_OLD_FDD_IF)
 	uint32 status = (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2);
 #if defined(SUPPORT_320KB_FDD_IF)
 	status |= ((fdc_sub->read_signal(0) & 3) << 4);
 #endif
 	return (status & (1 | 4 | 16)) ? 1 : (status & (2 | 8 | 32)) ? 2 : 0;
 #else
+#if defined(_PC98DO)
+	if(boot_mode != 0) {
+		return pc88fdc_sub->read_signal(0);
+	} else
+#endif
 	return fdc->read_signal(0);
 #endif
 }
@@ -731,7 +721,7 @@ void VM::initialize_sound(int rate, int samples)
 #ifdef HAS_YM2608
 	opn->init(rate, 7987248, samples, 0, 0);
 #else
-	opn->init(rate, 3993600, samples, 0, 0);
+	opn->init(rate, 3993624, samples, 0, 0);
 #endif
 	
 #if defined(_PC98DO)
@@ -754,13 +744,19 @@ uint16* VM::create_sound(int* extra_frames)
 #if defined(_PC98DO)
 	if(boot_mode != 0) {
 		return pc88event->create_sound(extra_frames);
-	}
-	else {
+	} else
 #endif
-		return event->create_sound(extra_frames);
+	return event->create_sound(extra_frames);
+}
+
+int VM::sound_buffer_ptr()
+{
 #if defined(_PC98DO)
-	}
+	if(boot_mode != 0) {
+		return pc88event->sound_buffer_ptr();
+	} else
 #endif
+	return event->sound_buffer_ptr();
 }
 
 // ----------------------------------------------------------------------------
@@ -772,13 +768,9 @@ void VM::key_down(int code, bool repeat)
 #if defined(_PC98DO)
 	if(boot_mode != 0) {
 		pc88->key_down(code, repeat);
-	}
-	else {
+	} else
 #endif
-		keyboard->key_down(code, repeat);
-#if defined(_PC98DO)
-	}
-#endif
+	keyboard->key_down(code, repeat);
 }
 
 void VM::key_up(int code)
@@ -786,13 +778,9 @@ void VM::key_up(int code)
 #if defined(_PC98DO)
 	if(boot_mode != 0) {
 //		pc88->key_up(code);
-	}
-	else {
+	} else
 #endif
-		keyboard->key_up(code);
-#if defined(_PC98DO)
-	}
-#endif
+	keyboard->key_up(code);
 }
 
 // ----------------------------------------------------------------------------
@@ -922,13 +910,9 @@ bool VM::now_skip()
 	if(boot_mode != 0) {
 //		return pc88event->now_skip();
 		return pc88->now_skip();
-	}
-	else {
+	} else
 #endif
-		return event->now_skip();
-#if defined(_PC98DO)
-	}
-#endif
+	return event->now_skip();
 }
 
 void VM::update_config()
@@ -938,14 +922,10 @@ void VM::update_config()
 		// boot mode is changed !!!
 		boot_mode = config.boot_mode;
 		reset();
-	}
-	else {
+	} else
 #endif
-		for(DEVICE* device = first_device; device; device = device->next_device) {
-			device->update_config();
-		}
-#if defined(_PC98DO)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->update_config();
 	}
-#endif
 }
 

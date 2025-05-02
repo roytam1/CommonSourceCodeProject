@@ -81,8 +81,8 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "MZ-800"                       ID_MZ800_MODE_MZ800
-        MENUITEM "MZ-700"                       ID_MZ800_MODE_MZ700
+        MENUITEM "MZ-800"                       ID_BOOT_MODE0
+        MENUITEM "MZ-700"                       ID_BOOT_MODE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -99,7 +99,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Play Button",                 ID_PLAY_BUTTON
         MENUITEM "Stop Button",                 ID_STOP_BUTTON
@@ -110,22 +110,22 @@ BEGIN
     END
     POPUP "QD"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_QUICKDISK
-        MENUITEM "Close",                       ID_CLOSE_QUICKDISK
+        MENUITEM "Insert",                      ID_OPEN_QUICKDISK
+        MENUITEM "Eject",                       ID_CLOSE_QUICKDISK
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_QUICKDISK
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD2"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END

@@ -16,6 +16,7 @@ void CMOS::initialize()
 {
 	// load cmos image
 	memset(cmos, 0, sizeof(cmos));
+	modified = false;
 	
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_READ_BINARY)) {
@@ -27,12 +28,14 @@ void CMOS::initialize()
 
 void CMOS::release()
 {
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(cmos, sizeof(cmos), 1);
-		fio->Fclose();
+	if(modified) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(cmos, sizeof(cmos), 1);
+			fio->Fclose();
+		}
+		delete fio;
 	}
-	delete fio;
 }
 
 void CMOS::reset()
@@ -48,7 +51,10 @@ void CMOS::write_io8(uint32 addr, uint32 data)
 		break;
 	default:
 		if(!(addr & 1)) {
-			cmos[bank][(addr >> 1) & 0x7ff] = data;
+			if(cmos[bank][(addr >> 1) & 0x7ff] != data) {
+				cmos[bank][(addr >> 1) & 0x7ff] = data;
+				modified = true;
+			}
 		}
 		break;
 	}

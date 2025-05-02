@@ -28,6 +28,7 @@ private:
 	uint8 time[13];
 #ifndef HAS_RP5C15
 	uint8 ram[26];
+	bool modified;
 #endif
 	bool alarm, pulse_1hz, pulse_16hz;
 	int count_16hz;

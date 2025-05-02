@@ -24,6 +24,7 @@ void HD146818P::initialize()
 {
 	// load ram image
 	memset(regs, 0, sizeof(regs));
+	modified = false;
 	
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(emu->bios_path(_T("HD146818P.BIN")), FILEIO_READ_BINARY)) {
@@ -46,12 +47,14 @@ void HD146818P::initialize()
 
 void HD146818P::release()
 {
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("HD146818P.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(regs + 14, 50, 1);
-		fio->Fclose();
+	if(modified) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(emu->bios_path(_T("HD146818P.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(regs + 14, 50, 1);
+			fio->Fclose();
+		}
+		delete fio;
 	}
-	delete fio;
 }
 
 void HD146818P::reset()
@@ -109,7 +112,11 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 			update_intr();
 		}
 		else if(ch > 0x0d) {
-			regs[ch] = data;	// internal ram
+			// internal ram
+			if(regs[ch] != data) {
+				regs[ch] = data;
+				modified = true;
+			}
 		}
 	}
 }

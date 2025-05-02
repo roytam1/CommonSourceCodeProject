@@ -96,6 +96,7 @@ void SUB::write_io8(uint32 addr, uint32 data)
 		SET_STB(false);
 		SET_STB(true);
 	} else {
+		// for 80c48
 		switch(addr) {
 		case MCS48_PORT_P1:
 			d_rtc->write_signal(SIG_UPD1990A_C0,  data, 0x01);
@@ -178,42 +179,57 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 		update_intr();
 	} else if(id == SIG_SUB_TAPE_END) {
 		tape_eot = ((data & mask) != 0);
+		update_tape();
+	} else if(id == SIG_SUB_TAPE_APSS) {
+		tape_apss = ((data & mask) != 0);
+		update_tape();
 	}
 }
 
 void SUB::play_tape(bool value)
 {
 	tape_play = value;
-	tape_rec = tape_eot = false;
+	tape_rec = tape_eot = tape_apss = false;
 	update_tape();
 }
 
 void SUB::rec_tape(bool value)
 {
 	tape_rec = value;
-	tape_play = tape_eot = false;
+	tape_play = tape_eot = tape_apss = false;
 	update_tape();
 }
 
 void SUB::close_tape()
 {
-	tape_play = tape_rec = false;
+	tape_play = tape_rec = tape_eot = tape_apss = false;
 	update_tape();
 }
 
 void SUB::update_tape()
 {
-	uint32 value = 0x10;
-	if(!(tape_play && tape_eot)) {
-		value |= 0x01;	// tape end
+	if(rom_crc32 != CRC32_MSM80C49_277) {
+		uint32 value = 0x10;
+		if(!(tape_play && tape_eot)) {
+			value |= 0x01;	// tape end
+		}
+		if(tape_play || tape_rec) {
+			value |= 0x02;	// cassette inserted
+		}
+		if(rom_crc32 == CRC32_MSM80C49_262) {
+			value ^= 0x02;	// X1F/G or X1turbo
+		}
+		if(tape_play) {
+			value |= 0x04;	// rec protected
+		}
+		if(tape_play && tape_apss) {
+			value |= 0x20;
+		}
+		d_pio->write_signal(SIG_I8255_PORT_B, value, 0x3f);
+	} else {
+		// X1turbo without CMT
+		d_pio->write_signal(SIG_I8255_PORT_B, 0x3f, 0x3f);
 	}
-	if(!(tape_play || tape_rec)) {
-		value |= 0x02;	// cassette inserted
-	}
-	if(tape_play) {
-		value |= 0x04;	// rec protected
-	}
-	d_pio->write_signal(SIG_I8255_PORT_B, value, 0x3f);
 }
 
 // z80 daisy cahin

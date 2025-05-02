@@ -57,8 +57,8 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	sound_rate = freq_table[config.sound_frequency];
 	sound_samples = (int)(sound_rate * late_table[config.sound_latency] + 0.5);
 	
-#ifdef USE_CPU_CLOCK_LOW
-	cpu_clock_low = config.cpu_clock_low;
+#ifdef USE_CPU_TYPE
+	cpu_type = config.cpu_type;
 #endif
 	
 	// initialize
@@ -123,8 +123,8 @@ int EMU::run()
 
 void EMU::reset()
 {
-#ifdef USE_CPU_CLOCK_LOW
-	if(cpu_clock_low != config.cpu_clock_low) {
+#ifdef USE_CPU_TYPE
+	if(cpu_type != config.cpu_type) {
 		// stop sound
 		if(sound_ok && sound_started) {
 			lpdsb->Stop();
@@ -137,13 +137,12 @@ void EMU::reset()
 		vm->reset();
 		// restore inserted medias
 		restore_media();
-		
-		cpu_clock_low = config.cpu_clock_low;
+		cpu_type = config.cpu_type;
 	} else {
 #endif
 		// reset virtual machine
 		vm->reset();
-#ifdef USE_CPU_CLOCK_LOW
+#ifdef USE_CPU_TYPE
 	}
 #endif
 	

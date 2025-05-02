@@ -74,11 +74,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	pc88cpu_sub->set_context_event_manager(pc88event);
 	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
-	pc88event->set_context_cpu(pc88cpu, config.cpu_clock_low ? 3993600 : 7987200);
+	pc88event->set_context_cpu(pc88cpu, (config.cpu_type != 0) ? 3993624 : 7987248);
 #else
-	pc88event->set_context_cpu(pc88cpu, 3993600);
+	pc88event->set_context_cpu(pc88cpu, 3993624);
 #endif
-	pc88event->set_context_cpu(pc88cpu_sub, 3993600);
+	pc88event->set_context_cpu(pc88cpu_sub, 3993624);
 	pc88event->set_context_sound(pc88beep);
 	pc88event->set_context_sound(pc88opn);
 	pc88event->set_context_sound(pc88pcm);
@@ -213,6 +213,11 @@ uint16* VM::create_sound(int* extra_frames)
 	return pc88event->create_sound(extra_frames);
 }
 
+int VM::sound_buffer_ptr()
+{
+	return pc88event->sound_buffer_ptr();
+}
+
 // ----------------------------------------------------------------------------
 // notify key
 // ----------------------------------------------------------------------------
@@ -277,8 +282,7 @@ void VM::update_config()
 		// boot mode is changed !!!
 		boot_mode = config.boot_mode;
 		reset();
-	}
-	else {
+	} else {
 		for(DEVICE* device = first_device; device; device = device->next_device) {
 			device->update_config();
 		}

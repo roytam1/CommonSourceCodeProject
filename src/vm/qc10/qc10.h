@@ -18,7 +18,7 @@
 #define DEVICE_NAME		"EPSON QC-10"
 #define CONFIG_NAME		"qc10"
 #endif
-#define CONFIG_VERSION		0x02
+#define CONFIG_VERSION		0x03
 
 // device informations for virtual machine
 #ifdef _COLOR_MONITOR
@@ -43,7 +43,7 @@
 
 // device informations for win32
 #define USE_DIPSWITCH
-#define DIPSWITCH_DEFAULT	0xe0
+#define DIPSWITCH_DEFAULT	0x1f
 #define USE_FD1
 #define USE_FD2
 #define NOTIFY_KEY_DOWN
@@ -127,6 +127,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

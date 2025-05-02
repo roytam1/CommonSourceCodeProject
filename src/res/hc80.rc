@@ -82,15 +82,15 @@ BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM "System Reset",                ID_SPECIAL_RESET
         MENUITEM SEPARATOR
-        MENUITEM "None",                        ID_HC80_RAMDISK0
-        MENUITEM "Intelligent RAM Disk",        ID_HC80_RAMDISK1
-        MENUITEM "Nonintelligent RAM Disk",     ID_HC80_RAMDISK2
-        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
+        MENUITEM SEPARATOR
+        MENUITEM "None",                        ID_DEVICE_TYPE0
+        MENUITEM "Intelligent RAM Disk",        ID_DEVICE_TYPE1
+        MENUITEM "Nonintelligent RAM Disk",     ID_DEVICE_TYPE2
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -99,29 +99,29 @@ BEGIN
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD2"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
     POPUP "FD3"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD3
-        MENUITEM "Close",                       ID_CLOSE_FD3
+        MENUITEM "Insert",                      ID_OPEN_FD3
+        MENUITEM "Eject",                       ID_CLOSE_FD3
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD3
     END
     POPUP "FD4"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD4
-        MENUITEM "Close",                       ID_CLOSE_FD4
+        MENUITEM "Insert",                      ID_OPEN_FD4
+        MENUITEM "Eject",                       ID_CLOSE_FD4
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD4
     END

@@ -618,7 +618,7 @@ void EMU::capture_screen()
 	GetLocalTime(&sTime);
 	
 	_TCHAR file_name[_MAX_PATH];
-	_stprintf(file_name, _T("%d-%d-%d_%d-%d-%d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+	_stprintf(file_name, _T("%4d-%2d-%2d_%2d-%2d-%2d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 	
 	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
 	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);

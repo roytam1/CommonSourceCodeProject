@@ -150,7 +150,7 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 
 // d88 bank switch
 
-#define MAX_D88_BANKS 50
+#define MAX_D88_BANKS 64
 
 typedef struct {
 	_TCHAR name[18];
@@ -682,109 +682,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			rec_next_time = rec_accum_time = 0;
 			break;
 #endif
-#ifdef USE_DIPSWITCH
-		case ID_DIPSWITCH1:
-		case ID_DIPSWITCH2:
-		case ID_DIPSWITCH3:
-		case ID_DIPSWITCH4:
-		case ID_DIPSWITCH5:
-		case ID_DIPSWITCH6:
-		case ID_DIPSWITCH7:
-		case ID_DIPSWITCH8:
-			config.dipswitch ^= (1 << (LOWORD(wParam) - ID_DIPSWITCH1));
-			break;
-#endif
-#ifdef _FP200
-		case ID_FP200_MODE_BASIC:
-		case ID_FP200_MODE_CETL:
-			config.boot_mode = LOWORD(wParam) - ID_FP200_MODE_BASIC;
+#ifdef USE_BOOT_MODE
+		case ID_BOOT_MODE0:
+		case ID_BOOT_MODE1:
+		case ID_BOOT_MODE2:
+		case ID_BOOT_MODE3:
+		case ID_BOOT_MODE4:
+		case ID_BOOT_MODE5:
+		case ID_BOOT_MODE6:
+		case ID_BOOT_MODE7:
+			config.boot_mode = LOWORD(wParam) - ID_BOOT_MODE0;
 			if(emu) {
 				emu->update_config();
 			}
 			break;
 #endif
-#ifdef _HC80
-		case ID_HC80_RAMDISK0:
-		case ID_HC80_RAMDISK1:
-		case ID_HC80_RAMDISK2:
-			config.device_type = LOWORD(wParam) - ID_HC80_RAMDISK0;
-			break;
-#endif
-#ifdef _MZ800
-		case ID_MZ800_MODE_MZ800:
-		case ID_MZ800_MODE_MZ700:
-			config.boot_mode = LOWORD(wParam) - ID_MZ800_MODE_MZ800;
-			if(emu) {
-				emu->update_config();
-			}
-			break;
-#endif
-#ifdef _PASOPIA
-		case ID_PASOPIA_MODE_TBASIC_V1_0:
-		case ID_PASOPIA_MODE_TBASIC_V1_1:
-		case ID_PASOPIA_MODE_OABASIC:
-		case ID_PASOPIA_MODE_OABASIC_NO_DISK:
-		case ID_PASOPIA_MODE_MINI_PASCAL:
-			config.boot_mode = LOWORD(wParam) - ID_PASOPIA_MODE_TBASIC_V1_0;
-			if(emu) {
-				emu->update_config();
-			}
-			break;
-		case ID_PASOPIA_DEVICE_RAM_PAC:
-		case ID_PASOPIA_DEVICE_KANJI_ROM:
-		case ID_PASOPIA_DEVICE_JOYSTICK:
-			config.device_type = LOWORD(wParam) - ID_PASOPIA_DEVICE_RAM_PAC;
-			break;
-#endif
-#ifdef _PC98DO
-		case ID_PC98DO_MODE_PC98:
-		case ID_PC8801_MODE_V1S:
-		case ID_PC8801_MODE_V1H:
-		case ID_PC8801_MODE_V2:
-		case ID_PC8801_MODE_N:
-			config.boot_mode = LOWORD(wParam) - ID_PC98DO_MODE_PC98;
-			if(emu) {
-				emu->update_config();
-			}
-			break;
-#endif
-#ifdef _PC8801MA
-		case ID_PC8801_MODE_V1S:
-		case ID_PC8801_MODE_V1H:
-		case ID_PC8801_MODE_V2:
-		case ID_PC8801_MODE_N:
-			config.boot_mode = LOWORD(wParam) - ID_PC8801_MODE_V1S;
-			if(emu) {
-				emu->update_config();
-			}
-			break;
-		case ID_PC8801_DEVICE_JOYSTICK:
-		case ID_PC8801_DEVICE_MOUSE:
-		case ID_PC8801_DEVICE_JOYMOUSE:
-			config.device_type = LOWORD(wParam) - ID_PC8801_DEVICE_JOYSTICK;
-			break;
-#endif
-#ifdef _PC8001SR
-		case ID_PC8001_MODE_V1:
-		case ID_PC8001_MODE_V2:
-		case ID_PC8001_MODE_N:
-			config.boot_mode = LOWORD(wParam) - ID_PC8001_MODE_V1;
-			if(emu) {
-				emu->update_config();
-			}
-			break;
-		case ID_PC8801_DEVICE_JOYSTICK:
-		case ID_PC8801_DEVICE_MOUSE:
-		case ID_PC8801_DEVICE_JOYMOUSE:
-			config.device_type = LOWORD(wParam) - ID_PC8801_DEVICE_JOYSTICK;
-			break;
-#endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
-		case ID_PC9801_CPU_CLOCK_HIGH:
-			config.cpu_clock_low = false;
-			break;
-		case ID_PC9801_CPU_CLOCK_LOW:
-			config.cpu_clock_low = true;
+#ifdef USE_CPU_TYPE
+		case ID_CPU_TYPE0:
+		case ID_CPU_TYPE1:
+		case ID_CPU_TYPE2:
+		case ID_CPU_TYPE3:
+		case ID_CPU_TYPE4:
+		case ID_CPU_TYPE5:
+		case ID_CPU_TYPE6:
+		case ID_CPU_TYPE7:
+			config.cpu_type = LOWORD(wParam) - ID_CPU_TYPE0;
+			// need to recreate vm class instance
+//			if(emu) {
+//				emu->update_config();
+//			}
 			break;
 #endif
 		case ID_CPU_POWER0:
@@ -797,6 +723,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->update_config();
 			}
 			break;
+#ifdef USE_DIPSWITCH
+		case ID_DIPSWITCH0:
+		case ID_DIPSWITCH1:
+		case ID_DIPSWITCH2:
+		case ID_DIPSWITCH3:
+		case ID_DIPSWITCH4:
+		case ID_DIPSWITCH5:
+		case ID_DIPSWITCH6:
+		case ID_DIPSWITCH7:
+		case ID_DIPSWITCH8:
+		case ID_DIPSWITCH9:
+		case ID_DIPSWITCH10:
+		case ID_DIPSWITCH11:
+		case ID_DIPSWITCH12:
+		case ID_DIPSWITCH13:
+		case ID_DIPSWITCH14:
+		case ID_DIPSWITCH15:
+		case ID_DIPSWITCH16:
+		case ID_DIPSWITCH17:
+		case ID_DIPSWITCH18:
+		case ID_DIPSWITCH19:
+		case ID_DIPSWITCH20:
+		case ID_DIPSWITCH21:
+		case ID_DIPSWITCH22:
+		case ID_DIPSWITCH23:
+		case ID_DIPSWITCH24:
+		case ID_DIPSWITCH25:
+		case ID_DIPSWITCH26:
+		case ID_DIPSWITCH27:
+		case ID_DIPSWITCH28:
+		case ID_DIPSWITCH29:
+		case ID_DIPSWITCH30:
+		case ID_DIPSWITCH31:
+			config.dipswitch ^= (1 << (LOWORD(wParam) - ID_DIPSWITCH0));
+			break;
+#endif
+#ifdef USE_DEVICE_TYPE
+		case ID_DEVICE_TYPE0:
+		case ID_DEVICE_TYPE1:
+		case ID_DEVICE_TYPE2:
+		case ID_DEVICE_TYPE3:
+		case ID_DEVICE_TYPE4:
+		case ID_DEVICE_TYPE5:
+		case ID_DEVICE_TYPE6:
+		case ID_DEVICE_TYPE7:
+			config.device_type = LOWORD(wParam) - ID_DEVICE_TYPE0;
+			break;
+#endif
 #ifdef USE_AUTO_KEY
 		case ID_AUTOKEY_START:
 			if(emu) {
@@ -922,6 +896,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SELECT_D88_BANK + 47: \
 		case ID_SELECT_D88_BANK + 48: \
 		case ID_SELECT_D88_BANK + 49: \
+		case ID_SELECT_D88_BANK + 50: \
+		case ID_SELECT_D88_BANK + 51: \
+		case ID_SELECT_D88_BANK + 52: \
+		case ID_SELECT_D88_BANK + 53: \
+		case ID_SELECT_D88_BANK + 54: \
+		case ID_SELECT_D88_BANK + 55: \
+		case ID_SELECT_D88_BANK + 56: \
+		case ID_SELECT_D88_BANK + 57: \
+		case ID_SELECT_D88_BANK + 58: \
+		case ID_SELECT_D88_BANK + 59: \
+		case ID_SELECT_D88_BANK + 60: \
+		case ID_SELECT_D88_BANK + 61: \
+		case ID_SELECT_D88_BANK + 62: \
+		case ID_SELECT_D88_BANK + 63: \
 			no = LOWORD(wParam) - ID_SELECT_D88_BANK; \
 			if(emu && d88_file[drv].cur_bank != no) { \
 				emu->open_disk(drv, d88_file[drv].path, d88_file[drv].bank[no].offset); \
@@ -1160,11 +1148,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->toggle_mouse();
 			}
 			break;
-#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
+#ifdef USE_MONITOR_TYPE
 		case ID_SCREEN_MONITOR_TYPE0:
 		case ID_SCREEN_MONITOR_TYPE1:
 		case ID_SCREEN_MONITOR_TYPE2:
 		case ID_SCREEN_MONITOR_TYPE3:
+		case ID_SCREEN_MONITOR_TYPE4:
+		case ID_SCREEN_MONITOR_TYPE5:
+		case ID_SCREEN_MONITOR_TYPE6:
+		case ID_SCREEN_MONITOR_TYPE7:
 			config.monitor_type = LOWORD(wParam) - ID_SCREEN_MONITOR_TYPE0;
 			if(emu) {
 				emu->update_config();
@@ -1225,6 +1217,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SOUND_DEVICE_TYPE1:
 		case ID_SOUND_DEVICE_TYPE2:
 		case ID_SOUND_DEVICE_TYPE3:
+		case ID_SOUND_DEVICE_TYPE4:
+		case ID_SOUND_DEVICE_TYPE5:
+		case ID_SOUND_DEVICE_TYPE6:
+		case ID_SOUND_DEVICE_TYPE7:
 			config.sound_device_type = LOWORD(wParam) - ID_SOUND_DEVICE_TYPE0;
 			//if(emu) {
 			//	emu->update_config();
@@ -1306,70 +1302,29 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef MENU_POS_CONTROL
 	if(pos == MENU_POS_CONTROL) {
 		// control menu
-#ifdef USE_DIPSWITCH
-		for(int i = 0; i < 8; i++) {
-			CheckMenuItem(hMenu, ID_DIPSWITCH1 + i, !(config.dipswitch & (1 << i)) ? MF_CHECKED : MF_UNCHECKED);
+#ifdef USE_BOOT_MODE
+		if(config.boot_mode >= 0 && config.boot_mode < USE_BOOT_MODE) {
+			CheckMenuRadioItem(hMenu, ID_BOOT_MODE0, ID_BOOT_MODE0 + USE_BOOT_MODE - 1, ID_BOOT_MODE0 + config.boot_mode, MF_BYCOMMAND);
 		}
 #endif
-#ifdef _HC80
-		if(config.device_type >= 0 && config.device_type < 3) {
-			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0 + config.device_type, MF_BYCOMMAND);
-		}
-#endif
-#ifdef _FP200
-		if(config.boot_mode >= 0 && config.boot_mode < 2) {
-			CheckMenuRadioItem(hMenu, ID_FP200_MODE_BASIC, ID_FP200_MODE_CETL, ID_FP200_MODE_BASIC + config.boot_mode, MF_BYCOMMAND);
-		}
-#endif
-#ifdef _MZ800
-		if(config.boot_mode >= 0 && config.boot_mode < 2) {
-			CheckMenuRadioItem(hMenu, ID_MZ800_MODE_MZ800, ID_MZ800_MODE_MZ700, ID_MZ800_MODE_MZ800 + config.boot_mode, MF_BYCOMMAND);
-		}
-#endif
-#ifdef _PASOPIA
-		if(config.boot_mode >= 0 && config.boot_mode < 5) {
-			CheckMenuRadioItem(hMenu, ID_PASOPIA_MODE_TBASIC_V1_0, ID_PASOPIA_MODE_MINI_PASCAL, ID_PASOPIA_MODE_TBASIC_V1_0 + config.boot_mode, MF_BYCOMMAND);
-		}
-		if(config.device_type >= 0 && config.boot_mode < 3) {
-			CheckMenuRadioItem(hMenu, ID_PASOPIA_DEVICE_RAM_PAC, ID_PASOPIA_DEVICE_JOYSTICK, ID_PASOPIA_DEVICE_RAM_PAC + config.device_type, MF_BYCOMMAND);
-		}
-#endif
-#ifdef _PC98DO
-		if(config.boot_mode >= 0 && config.boot_mode < 5) {
-			CheckMenuRadioItem(hMenu, ID_PC98DO_MODE_PC98, ID_PC8801_MODE_N, ID_PC98DO_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
-		}
-#endif
-#ifdef _PC8801MA
-		if(config.boot_mode >= 0 && config.boot_mode < 4) {
-			CheckMenuRadioItem(hMenu, ID_PC8801_MODE_V1S, ID_PC8801_MODE_N, ID_PC8801_MODE_V1S + config.boot_mode, MF_BYCOMMAND);
-		}
-		if(config.device_type >= 0 && config.device_type < 3) {
-//			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_JOYMOUSE, ID_PC8801_DEVICE_JOYSTICK + config.boot_mode, MF_BYCOMMAND);
-			// joymouse is not supported yet...
-			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_MOUSE, ID_PC8801_DEVICE_JOYSTICK + config.device_type, MF_BYCOMMAND);
-		}
-#endif
-#ifdef _PC8001SR
-		if(config.boot_mode >= 0 && config.boot_mode < 3) {
-			CheckMenuRadioItem(hMenu, ID_PC8001_MODE_V1, ID_PC8001_MODE_N, ID_PC8001_MODE_V1 + config.boot_mode, MF_BYCOMMAND);
-		}
-		if(config.device_type >= 0 && config.device_type < 3) {
-//			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_JOYMOUSE, ID_PC8801_DEVICE_JOYSTICK + config.boot_mode, MF_BYCOMMAND);
-			// joymouse is not supported yet...
-			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_MOUSE, ID_PC8801_DEVICE_JOYSTICK + config.device_type, MF_BYCOMMAND);
-		}
-#endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
-		if(config.cpu_clock_low) {
-			CheckMenuRadioItem(hMenu, ID_PC9801_CPU_CLOCK_HIGH, ID_PC9801_CPU_CLOCK_LOW, ID_PC9801_CPU_CLOCK_LOW, MF_BYCOMMAND);
-		}
-		else {
-			CheckMenuRadioItem(hMenu, ID_PC9801_CPU_CLOCK_HIGH, ID_PC9801_CPU_CLOCK_LOW, ID_PC9801_CPU_CLOCK_HIGH, MF_BYCOMMAND);
+#ifdef USE_CPU_TYPE
+		if(config.cpu_type >= 0 && config.cpu_type < USE_CPU_TYPE) {
+			CheckMenuRadioItem(hMenu, ID_CPU_TYPE0, ID_CPU_TYPE0 + USE_CPU_TYPE - 1, ID_CPU_TYPE0 + config.cpu_type, MF_BYCOMMAND);
 		}
 #endif
 		if(config.cpu_power >= 0 && config.cpu_power < 5) {
 			CheckMenuRadioItem(hMenu, ID_CPU_POWER0, ID_CPU_POWER4, ID_CPU_POWER0 + config.cpu_power, MF_BYCOMMAND);
 		}
+#ifdef USE_DIPSWITCH
+		for(int i = 0; i < 32; i++) {
+			CheckMenuItem(hMenu, ID_DIPSWITCH0 + i, (config.dipswitch & (1 << i)) ? MF_CHECKED : MF_UNCHECKED);
+		}
+#endif
+#ifdef USE_DEVICE_TYPE
+		if(config.device_type >= 0 && config.device_type < USE_DEVICE_TYPE) {
+			CheckMenuRadioItem(hMenu, ID_DEVICE_TYPE0, ID_DEVICE_TYPE0 + USE_DEVICE_TYPE - 1, ID_DEVICE_TYPE0 + config.device_type, MF_BYCOMMAND);
+		}
+#endif
 #ifdef USE_AUTO_KEY
 		// auto key
 		bool now_paste = true, now_stop = true;
@@ -1585,10 +1540,6 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef USE_MONITOR_TYPE
 		if(config.monitor_type >= 0 && config.monitor_type < USE_MONITOR_TYPE) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE0 + USE_MONITOR_TYPE - 1, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
-		}
-#elif defined(USE_SCREEN_ROTATE)
-		if(config.monitor_type >= 0 && config.monitor_type < 2) {
-			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE1, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
 		}
 #endif
 #ifdef USE_SCANLINE

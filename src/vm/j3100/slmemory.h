@@ -41,6 +41,9 @@ private:
 	int ems_page[4];
 	int ems_bsl;
 	
+	uint32 ems_crc32;
+	uint32 backup_crc32;
+	
 	void update_ems(int page);
 	
 public:

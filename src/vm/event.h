@@ -148,6 +148,7 @@ public:
 	
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	void set_context_cpu(DEVICE* device, int clocks) {
 		int index = dcount_cpu++;

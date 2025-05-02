@@ -25,22 +25,21 @@ void init_config()
 	config.use_d3d9 = true;
 	config.stretch_screen = true;
 #endif
-	
 	config.sound_frequency = 6;	// 48KHz
 	config.sound_latency = 1;	// 100msec
 	
-#ifdef USE_TAPE
+#if defined(USE_TAPE)
 	config.wave_shaper = true;
 #endif
-#ifdef USE_DIPSWITCH
+#if defined(USE_DIPSWITCH) && defined(DIPSWITCH_DEFAULT)
 	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
-#ifdef _HC80
+#if defined(_HC80)
 	config.device_type = 2;	// Nonintelligent ram disk
 #endif
-#ifdef _PC8801MA
+#if defined(_PC8801MA)
 	config.boot_mode = 2;	// V2 mode, 4MHz
-	config.cpu_clock_low = true;
+	config.cpu_type = 1;
 #endif
 }
 
@@ -74,6 +73,7 @@ void load_config()
 		config.use_d3d9 = false;
 		config.stretch_screen = false;
 #endif
+		// reset cpu clock power
 		config.cpu_power = 0;
 	}
 	delete fio;

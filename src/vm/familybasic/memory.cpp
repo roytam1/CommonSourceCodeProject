@@ -17,28 +17,7 @@
 
 void MEMORY::initialize()
 {
-	uint8 header[16];
-	
 	memset(ram, 0, sizeof(ram));
-	memset(save_ram, 0, sizeof(save_ram));
-	memset(rom, 0xff, sizeof(rom));
-	memset(header, 0, sizeof(header));
-	
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("BASIC.NES")), FILEIO_READ_BINARY)) {
-		// read header
-		fio->Fread(header, sizeof(header), 1);
-		// read program rom (max 32kb)
-		fio->Fread(rom, 0x4000, 1);
-		memcpy(rom + 0x4000, rom, 0x4000);
-		fio->Fread(rom + 0x4000, 0x4000, 1);
-		fio->Fclose();
-	}
-	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
-		fio->Fread(save_ram, sizeof(save_ram), 1);
-		fio->Fclose();
-	}
-	delete fio;
 	
 	key_stat = emu->key_buffer();
 	joy_stat = emu->joy_buffer();
@@ -47,14 +26,64 @@ void MEMORY::initialize()
 	register_vline_event(this);
 }
 
-void MEMORY::release()
+void MEMORY::load_rom_image(_TCHAR *file_name)
 {
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(save_ram, sizeof(save_ram), 1);
+	bool file_open = false;
+	
+	if(fio->Fopen(emu->bios_path(file_name), FILEIO_READ_BINARY)) {
+		file_open = true;
+		// create save file name
+		_TCHAR tmp_file_name[_MAX_PATH];
+		_tcscpy(tmp_file_name, file_name);
+		_TCHAR *dot = _tcsstr(tmp_file_name, _T("."));
+		if(dot != NULL) dot[0] = _T('\0');
+		_stprintf(save_file_name, _T("%s.SAV"), tmp_file_name);
+	} else {
+		// for compatibility
+		if(fio->Fopen(emu->bios_path(_T("BASIC.NES")), FILEIO_READ_BINARY)) {
+			file_open = true;
+		}
+		_tcscpy(save_file_name, _T("BACKUP.BIN"));
+	}
+	if(file_open) {
+		// read header
+		fio->Fread(header, sizeof(header), 1);
+		// read program rom (max 32kb)
+		fio->Fread(rom, 0x4000, 1);
+		memcpy(rom + 0x4000, rom, 0x4000);
+		fio->Fread(rom + 0x4000, 0x4000, 1);
 		fio->Fclose();
+	} else {
+		memset(header, 0, sizeof(header));
+		memset(rom, 0xff, sizeof(rom));
+	}
+	if(fio->Fopen(emu->bios_path(save_file_name), FILEIO_READ_BINARY)) {
+		fio->Fread(save_ram, sizeof(save_ram), 1);
+		fio->Fclose();
+	} else {
+		memset(save_ram, 0, sizeof(save_ram));
 	}
 	delete fio;
+	
+	save_ram_crc32 = getcrc32(save_ram, sizeof(save_ram));
+}
+
+void MEMORY::save_backup()
+{
+	if(save_ram_crc32 != getcrc32(save_ram, sizeof(save_ram))) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(emu->bios_path(save_file_name), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(save_ram, sizeof(save_ram), 1);
+			fio->Fclose();
+		}
+		delete fio;
+	}
+}
+
+void MEMORY::release()
+{
+	save_backup();
 }
 
 void MEMORY::reset()
@@ -75,11 +104,9 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 	if(addr < 0x2000) {
 		ram[addr & 0x7ff] = data;
-	}
-	else if(addr < 0x4000) {
+	} else if(addr < 0x4000) {
 		d_ppu->write_data8(addr, data);
-	}
-	else if(addr == 0x4014) {
+	} else if(addr == 0x4014) {
 		// stop cpu
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		register_event_by_clock(this, EVENT_DMA_DONE, 514, false, NULL);
@@ -88,12 +115,10 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		for(int i = 0; i < 256; i++) {
 			spr_ram[i] = read_data8(dma_addr | i);
 		}
-	}
-	else if(addr == 0x4016) {
+	} else if(addr == 0x4016) {
 		if(data & 1) {
 			pad_strobe = true;
-		}
-		else if(pad_strobe) {
+		} else if(pad_strobe) {
 			pad_strobe = false;
 			// joypad #1
 			pad1_bits = 0;
@@ -120,30 +145,24 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 				kb_scan = 0;
 			}
 			kb_out = !kb_out;
-		}
-		else if((data & 0x07) == 0x05) {
+		} else if((data & 0x07) == 0x05) {
 			kb_out = false;
 			kb_scan = 0;
-		}
-		else if((data & 0x07) == 0x06) {
+		} else if((data & 0x07) == 0x06) {
 			kb_out = !kb_out;
 		}
 		// data recorder
 		d_drec->write_signal(SIG_DATAREC_OUT, data, 2);
-	}
-	else if(addr < 0x4018) {
+	} else if(addr < 0x4018) {
 		if(addr == 0x4017) {
 			frame_irq_enabled = data;
 		}
 		d_apu->write_data8(addr, data);
-	}
-	else if(addr < 0x6000) {
+	} else if(addr < 0x6000) {
 		// mapper independent
-	}
-	else if(addr < 0x8000) {
+	} else if(addr < 0x8000) {
 		save_ram[addr & 0x1fff] = data;
-	}
-	else {
+	} else {
 		// mapper independent
 	}
 }
@@ -154,21 +173,17 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 	if(addr < 0x2000) {
 		return ram[addr & 0x7ff];
-	}
-	else if(addr < 0x4000) {
+	} else if(addr < 0x4000) {
 		return d_ppu->read_data8(addr);
-	}
-	else if(addr == 0x4014) {
+	} else if(addr == 0x4014) {
 		return dma_addr >> 8;
-	}
-	else if(addr < 0x4016) {
+	} else if(addr < 0x4016) {
 		uint32 val = d_apu->read_data8(addr);
 		if(addr == 0x4015 && !(frame_irq_enabled & 0xc0)) {
 			val |= 0x40;
 		}
 		return val;
-	}
-	else if(addr == 0x4016) {
+	} else if(addr == 0x4016) {
 		// joypad #1
 		uint32 val = pad1_bits & 1;
 		pad1_bits >>= 1;
@@ -177,8 +192,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 		// mic
 		val |= key_stat[0x7b] ? 4 : 0;	// F12
 		return val;
-	}
-	else if(addr == 0x4017) {
+	} else if(addr == 0x4017) {
 		// joypad #2
 		uint32 val = 0xfe | (pad2_bits & 1);
 		pad2_bits >>= 1;
@@ -240,8 +254,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 				if(key_stat[0x25]) val &= ~0x10;	// LEFT
 				break;
 			}
-		}
-		else {
+		} else {
 			switch(kb_scan) {
 			case 1:
 				if(key_stat[0x15]) val &= ~0x02;	// KANA
@@ -300,15 +313,12 @@ uint32 MEMORY::read_data8(uint32 addr)
 			}
 		}
 		return val;
-	}
-	else if(addr < 0x6000) {
+	} else if(addr < 0x6000) {
 		// mapper independent
 		return 0xff;
-	}
-	else if(addr < 0x8000) {
+	} else if(addr < 0x8000) {
 		return save_ram[addr & 0x1fff];
-	}
-	else {
+	} else {
 		return rom[addr & 0x7fff];
 	}
 }

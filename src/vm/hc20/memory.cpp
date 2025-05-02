@@ -62,7 +62,11 @@ void MEMORY::initialize()
 	
 	// load backuped ram / rom images
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("DRAM.BIN")), FILEIO_READ_BINARY)) {
+		fio->Fread(ram, sizeof(ram), 1);
+		fio->Fclose();
+	} else if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
+		// for compatibility
 		fio->Fread(ram, sizeof(ram), 1);
 		fio->Fclose();
 	}
@@ -125,7 +129,7 @@ void MEMORY::release()
 {
 	// save battery backuped ram
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("DRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(ram, sizeof(ram), 1);
 		fio->Fclose();
 	}
@@ -374,7 +378,7 @@ void MEMORY::update_keyboard()
 			}
 		}
 		// dip-switch
-		if(i < 4 && !(config.dipswitch & (1 << i))) {
+		if(i < 4 && (config.dipswitch & (1 << i))) {
 			key_data &= ~0x200;
 		}
 	}

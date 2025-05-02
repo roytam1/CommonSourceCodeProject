@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"EPSON HC-40"
 #define CONFIG_NAME		"hc40"
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		72
@@ -28,8 +28,6 @@
 #define WINDOW_HEIGHT		(SCREEN_HEIGHT * 2)
 
 #define USE_SPECIAL_RESET
-#define USE_DIPSWITCH
-#define DIPSWITCH_DEFAULT	0x6f
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -95,6 +93,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

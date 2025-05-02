@@ -14,7 +14,7 @@
 
 #define DEVICE_NAME		"Nintendo Family BASIC"
 #define CONFIG_NAME		"familybasic"
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -25,10 +25,12 @@
 #define HAS_N2A03
 
 // device informations for win32
+#define USE_BOOT_MODE		3
 #define USE_TAPE
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_NO_CAPS
 
 #include "../../common.h"
 
@@ -58,6 +60,8 @@ protected:
 	APU* apu;
 	PPU* ppu;
 	
+	int boot_mode;
+	
 public:
 	// ----------------------------------------
 	// initialize
@@ -80,6 +84,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void play_tape(_TCHAR* file_path);

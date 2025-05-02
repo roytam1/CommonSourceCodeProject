@@ -827,14 +827,18 @@ int MCS48::run(int icount)
 		cpustate->icount = 1;
 	} else {
 		cpustate->icount += icount;
+		if (cpustate->icount < 0) {
+			return 0;
+		}
 	}
+	
 	int base_icount = cpustate->icount;
 	
 	update_regptr(cpustate);
 	
 	/* external interrupts may have been set since we last checked */
 	curcycles = check_irqs(cpustate);
-	cpustate->icount -= curcycles;
+	cpustate->icount -= curcycles * 15;
 	if (cpustate->timecount_enabled != 0)
 		burn_cycles(cpustate, curcycles);
 
@@ -851,7 +855,7 @@ int MCS48::run(int icount)
 		curcycles = (*opcode_table[opcode])(cpustate);
 
 		/* burn the cycles */
-		cpustate->icount -= curcycles;
+		cpustate->icount -= curcycles * 15;
 		if (cpustate->timecount_enabled != 0)
 			burn_cycles(cpustate, curcycles);
 

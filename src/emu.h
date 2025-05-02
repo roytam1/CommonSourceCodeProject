@@ -231,6 +231,7 @@ private:
 	} wavheader_t;
 	FILEIO* rec;
 	int rec_bytes;
+	int rec_buffer_ptr;
 	bool now_rec_snd;
 	
 	// ----------------------------------------
@@ -292,8 +293,8 @@ private:
 #ifdef _DEBUG_FILE
 	FILE* debug;
 #endif
-#ifdef USE_CPU_CLOCK_LOW
-	bool cpu_clock_low;
+#ifdef USE_CPU_TYPE
+	int cpu_type;
 #endif
 	_TCHAR app_path[_MAX_PATH];
 	

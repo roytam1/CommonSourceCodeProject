@@ -54,6 +54,8 @@
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
+#define USE_BOOT_MODE		5
+#define USE_DEVICE_TYPE		3
 #define USE_TAPE
 #define USE_FD1
 #define USE_FD2
@@ -66,7 +68,6 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
-#define USE_BOOT_MODE
 
 #include "../../common.h"
 
@@ -146,6 +147,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void open_disk(int drv, _TCHAR* file_path, int offset);

@@ -120,6 +120,11 @@ uint16* VM::create_sound(int* extra_frames)
 	return pceevent->create_sound(extra_frames);
 }
 
+int VM::sound_buffer_ptr()
+{
+	return pceevent->sound_buffer_ptr();
+}
+
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------

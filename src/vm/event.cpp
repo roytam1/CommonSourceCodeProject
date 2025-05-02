@@ -447,6 +447,11 @@ uint16* EVENT::create_sound(int* extra_frames)
 	return sound_buffer;
 }
 
+int EVENT::sound_buffer_ptr()
+{
+	return buffer_ptr;
+}
+
 void EVENT::set_skip_frames(bool value)
 {
 	skip = value;

@@ -80,19 +80,26 @@ void MEMORY::initialize()
 	ems_regs[1] = 2;
 	memset(ems_page, 0, sizeof(ems_page));
 	ems_bsl = 3;
+	
+	ems_crc32 = getcrc32(ems, sizeof(ems));
+	backup_crc32 = getcrc32(backup, sizeof(backup));
 }
 
 void MEMORY::release()
 {
 	// save images
 	FILEIO* fio = new FILEIO();
-//	if(fio->Fopen(emu->bios_path(_T("EMS.BIN")), FILEIO_WRITE_BINARY)) {
-//		fio->Fwrite(ems, sizeof(ems), 1);
-//		fio->Fclose();
+//	if(ems_crc32 != getcrc32(ems, sizeof(ems)))
+//		if(fio->Fopen(emu->bios_path(_T("EMS.BIN")), FILEIO_WRITE_BINARY)) {
+//			fio->Fwrite(ems, sizeof(ems), 1);
+//			fio->Fclose();
+//		}
 //	}
-	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
-		fio->Fwrite(backup, sizeof(backup), 1);
-		fio->Fclose();
+	if(backup_crc32 != getcrc32(backup, sizeof(backup))) {
+		if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
+			fio->Fwrite(backup, sizeof(backup), 1);
+			fio->Fclose();
+		}
 	}
 	delete fio;
 }

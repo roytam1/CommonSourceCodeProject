@@ -24,12 +24,18 @@
 #include "display.h"
 #include "keyboard.h"
 
+#include "../../config.h"
+
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+	// check configs
+//	boot_mode = config.boot_mode;
+	boot_mode = -1;
+	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -85,27 +91,22 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// memory bus
 	memset(mon, 0xff, sizeof(mon));
-	memset(ext, 0xff, sizeof(ext));
-	memset(basic, 0xff, sizeof(basic));
 	memset(bsmon, 0xff, sizeof(bsmon));
-	memset(ram, 0, sizeof(ram));
-	memset(vram, 0x20, sizeof(vram));
+	memset(ext, 0xff, sizeof(ext));
 	
 	static const uint8 top[3] = {0xc3, 0x00, 0xf0};
 	static const uint8 rst[3] = {0xc3, 0xdd, 0x83};
 	
 	if(!memory->read_bios(_T("TK80.ROM"), mon, sizeof(mon))) {
 		// default
-		memcpy(mon, top, 3);
-		memcpy(mon + 0x38, rst, 3);
+		memcpy(mon, top, sizeof(top));
+		memcpy(mon + 0x38, rst, sizeof(rst));
 	}
-	memory->read_bios(_T("EXT.ROM"), ext, sizeof(ext));
-	memory->read_bios(_T("LV1BASIC.ROM"), basic + 0x1000, 0x1000);
-	memory->read_bios(_T("LV2BASIC.ROM"), basic, sizeof(basic));
 	if(memory->read_bios(_T("BSMON.ROM"), bsmon, sizeof(bsmon))) {
 		// patch
-		memcpy(mon + 0x38, rst, 3);
+		memcpy(mon + 0x38, rst, sizeof(rst));
 	}
+	memory->read_bios(_T("EXT.ROM"), ext, sizeof(ext));
 	
 	memory->set_memory_r(0x0000, 0x07ff, mon);
 	memory->set_memory_r(0x0c00, 0x7bff, ext);
@@ -156,6 +157,20 @@ DEVICE* VM::get_device(int id)
 
 void VM::reset()
 {
+	// load basic rom
+	if(boot_mode != config.boot_mode) {
+		memset(basic, 0xff, sizeof(basic));
+		if(config.boot_mode == 0) {
+			memory->read_bios(_T("LV1BASIC.ROM"), basic + 0x1000, 0x1000);
+		} else {
+			memory->read_bios(_T("LV2BASIC.ROM"), basic, sizeof(basic));
+		}
+		boot_mode = config.boot_mode;
+		
+		memset(ram, 0, sizeof(ram));
+		memset(vram, 0x20, sizeof(vram));
+	}
+	
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
@@ -197,6 +212,11 @@ void VM::initialize_sound(int rate, int samples)
 uint16* VM::create_sound(int* extra_frames)
 {
 	return event->create_sound(extra_frames);
+}
+
+int VM::sound_buffer_ptr()
+{
+	return event->sound_buffer_ptr();
 }
 
 // ----------------------------------------------------------------------------
@@ -254,8 +274,14 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->update_config();
+	if(boot_mode != config.boot_mode) {
+		// boot mode is changed !!!
+//		boot_mode = config.boot_mode;
+		reset();
+	} else {
+		for(DEVICE* device = first_device; device; device = device->next_device) {
+			device->update_config();
+		}
 	}
 }
 

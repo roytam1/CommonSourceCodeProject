@@ -141,6 +141,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void open_disk(int drv, _TCHAR* file_path, int offset);

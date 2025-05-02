@@ -11,10 +11,8 @@ mkdir build\babbage2nd
 copy Release\babbage2nd.exe build\babbage2nd\.
 
 devenv.com familybasic.vcproj /Rebuild Release
-mkdir build\familybasic_v2
-copy Release\familybasic.exe build\familybasic_v2\.
-mkdir build\familybasic_v3
-copy Release\familybasic.exe build\familybasic_v3\.
+mkdir build\familybasic
+copy Release\familybasic.exe build\familybasic\.
 
 devenv.com fm16pi.vcproj /Rebuild Release
 mkdir build\fm16pi
@@ -225,22 +223,18 @@ mkdir build\scv
 copy Release\scv.exe build\scv\.
 
 devenv.com tk80bs.vcproj /Rebuild Release
-mkdir build\tk80bs_lv1
-copy Release\tk80bs.exe build\tk80bs_lv1\.
-mkdir build\tk80bs_lv2
-copy Release\tk80bs.exe build\tk80bs_lv2\.
+mkdir build\tk80bs
+copy Release\tk80bs.exe build\tk80bs\.
 
 devenv.com x07.vcproj /Rebuild Release
 mkdir build\x07
 copy Release\x07.exe build\x07\.
 
 devenv.com x1turbo.vcproj /Rebuild Release
-mkdir build\x1turbo
-copy Release\x1turbo.exe build\x1turbo\.
-
 devenv.com x1twin.vcproj /Rebuild Release
-mkdir build\x1twin
-copy Release\x1twin.exe build\x1twin\.
+mkdir build\x1
+copy Release\x1turbo.exe build\x1\.
+copy Release\x1twin.exe build\x1\.
 
 devenv.com ys6464a.vcproj /Rebuild Release
 mkdir build\ys6464a

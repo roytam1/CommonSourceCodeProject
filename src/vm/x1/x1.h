@@ -25,7 +25,7 @@
 #define DEVICE_NAME		"SHARP X1"
 #define CONFIG_NAME		"x1"
 #endif
-#define CONFIG_VERSION		0x04
+#define CONFIG_VERSION		0x05
 
 // device informations for virtual machine (x1)
 //#ifdef _X1TURBO
@@ -63,6 +63,8 @@
 #define SUB_ROM_FILE_NAME	_T("SUBROM.X1")
 #define KBD_ROM_FILE_NAME	_T("KBDROM.X1")
 #endif
+#define CRC32_MSM80C49_262	0x43EE7D6F	// X1turbo with CMT
+#define CRC32_MSM80C49_277	0x75904EFB	// X1turbo (not supported yet)
 
 #ifdef _X1TWIN
 // device informations for virtual machine (pce)
@@ -74,8 +76,7 @@
 // device informations for win32
 #define USE_SPECIAL_RESET
 #ifdef _X1TURBO
-#define USE_DIPSWITCH
-#define DIPSWITCH_DEFAULT	0
+#define USE_DEVICE_TYPE		2
 #endif
 #define USE_FD1
 #define USE_FD2
@@ -88,10 +89,10 @@
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
-#define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
+#define USE_AUTO_KEY		8
+#define USE_AUTO_KEY_RELEASE	10
 #define USE_MONITOR_TYPE	2
+#define USE_SCANLINE
 #define USE_SOUND_DEVICE_TYPE	3
 #define USE_ACCESS_LAMP
 
@@ -208,6 +209,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// notify key
 	void key_down(int code, bool repeat);

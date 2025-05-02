@@ -1,3 +1,30 @@
+7/23/2013
+
+[WINMAIN] simplify codes for boot mode and device type menus
+[EMU/WIN32] fix sound recorder not to output the old samples
+
+[VM/HD146818P] fix not to save backuped ram if it is not modified
+[VM/MCS48] fix to divide the given clocks in MCS48 class
+[VM/MCS48] fix not to run cpu if enough clocks are not given
+[VM/RP5C15] fix not to save backuped ram if it is not modified
+
+[FAMILYBASIC] support to select basic rom
+[FAMILYBASIC/MEMORY] fix not to save backuped ram if it is not modified
+[FMR30/CMOS] fix not to save backuped ram if it is not modified
+[FMR50/CMOS] fix not to save backuped ram if it is not modified
+[J3100SL/SLMEMORY] fix not to save backuped ram if it is not modified
+[PC8801MA] support dipswitch to select memory wait on/off
+[PC8801MA/PC88] fix display vertical frequency
+[PC8801MA/PC88] fix m1 wait and ram/vram wait clocks
+[PC98HA/MEMORY] fix not to learn ram/ram drive/memcard if they are not modified
+[QC10/MEMORY] fix not to save backuped ram if it is not modified
+[TK80BS] support to select basic rom
+[MZ700/CMOS] fix not to save backuped ram if it is not modified
+[SCV/MEMORY] fix not to save backuped ram if it is not modified
+[X1TURBO/PSUB] fix key repeat timing
+[X1TURBO/SUB] fix signal to detect cassette tape
+
+
 5/11/2013
 
 [VM/I286] reimplement based on MAME 0.148

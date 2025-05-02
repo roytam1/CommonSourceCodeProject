@@ -44,6 +44,12 @@ private:
 	uint8 romdrv[0x80000];		// ROM Drive 512KB
 #endif
 	
+	uint32 learn_crc32;
+#ifdef _PC98HA
+	uint32 ramdrv_crc32;
+	uint32 memcard_crc32;
+#endif
+	
 	void update_bank();
 	uint8 learn_bank, dic_bank, kanji_bank, romdrv_bank;
 #ifdef _PC98HA

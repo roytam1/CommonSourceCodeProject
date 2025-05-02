@@ -273,7 +273,7 @@ void PC88::initialize()
 	}
 	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
-	cpu_clock_low = config.cpu_clock_low;
+	cpu_clock_low = (config.cpu_type != 0);
 #else
 	cpu_clock_low = true;
 #endif
@@ -331,14 +331,13 @@ void PC88::reset()
 	opn_busy = true;
 	
 	// memory wait
+	mem_wait_on = ((config.dipswitch & 1) != 0);
 	update_mem_wait();
 	
 	// crtc
 	memset(&crtc, 0, sizeof(crtc));
 	crtc.reset();
-	
-	set_frames_per_sec(60);
-	set_lines_per_frame(260);
+	update_frames_per_sec();
 	
 	for(int i = 0; i < 9; i++) {
 		palette[i].b = (i & 1) ? 7 : 0;
@@ -375,15 +374,8 @@ void PC88::reset()
 	cmt_register_id = -1;
 }
 
-#ifdef Z80_MEMORY_WAIT
 void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
 {
-#else
-void PC88::write_data8(uint32 addr, uint32 data)
-{
-	int wait_tmp;
-	int *wait = &wait_tmp;
-#endif
 	addr &= 0xffff;
 	*wait = mem_wait_clocks;
 	
@@ -406,10 +398,10 @@ void PC88::write_data8(uint32 addr, uint32 data)
 			gvram[(addr & 0x3fff) | 0x8000] = data;
 			return;
 		case 8:
+			*wait = gvram_wait_clocks;
 			addr &= 0x3fff;
 			switch(Port35_GDM) {
 			case 0x00:
-				*wait = gvram_wait_clocks + 1; // read modify write ???
 				for(int i = 0; i < 3; i++) {
 					switch((Port34_ALU >> i) & 0x11) {
 					case 0x00:	// reset
@@ -425,17 +417,14 @@ void PC88::write_data8(uint32 addr, uint32 data)
 				}
 				break;
 			case 0x10:
-				*wait = gvram_wait_clocks;
 				gvram[addr | 0x0000] = alu_reg[0];
 				gvram[addr | 0x4000] = alu_reg[1];
 				gvram[addr | 0x8000] = alu_reg[2];
 				break;
 			case 0x20:
-				*wait = gvram_wait_clocks;
 				gvram[addr | 0x0000] = alu_reg[1];
 				break;
 			case 0x30:
-				*wait = gvram_wait_clocks;
 				gvram[addr | 0x4000] = alu_reg[0];
 				break;
 			}
@@ -455,15 +444,8 @@ void PC88::write_data8(uint32 addr, uint32 data)
 	wbank[addr >> 12][addr & 0xfff] = data;
 }
 
-#ifdef Z80_MEMORY_WAIT
 uint32 PC88::read_data8w(uint32 addr, int* wait)
 {
-#else
-uint32 PC88::read_data8(uint32 addr)
-{
-	int wait_tmp;
-	int *wait = &wait_tmp;
-#endif
 	addr &= 0xffff;
 	*wait = mem_wait_clocks;
 	
@@ -510,6 +492,14 @@ uint32 PC88::read_data8(uint32 addr)
 	}
 #endif
 	return rbank[addr >> 12][addr & 0xfff];
+}
+
+uint32 PC88::fetch_op(uint32 addr, int *wait)
+{
+	int wait_tmp;
+	uint32 data = read_data8w(addr, &wait_tmp);
+	*wait = wait_tmp + m1_wait_clocks;
+	return data;
 }
 
 void PC88::write_io8(uint32 addr, uint32 data)
@@ -615,13 +605,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 			update_low_memmap();
 		}
 		if(mod & 0x11) {
-			if(Port31_400LINE) {
-				set_frames_per_sec(55.4);
-				set_lines_per_frame(448);
-			} else {
-				set_frames_per_sec(60);
-				set_lines_per_frame(260);
-			}
+			update_frames_per_sec();
 			update_palette = true;
 		}
 		break;
@@ -688,6 +672,10 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x50:
 		crtc.write_param(data);
+		if(crtc.height_changed) {
+			update_frames_per_sec();
+			crtc.height_changed = false;
+		}
 		break;
 	case 0x51:
 		crtc.write_cmd(data);
@@ -959,33 +947,57 @@ void PC88::write_dma_io8(uint32 addr, uint32 data)
 	crtc.write_buffer(data);
 }
 
+void PC88::update_frames_per_sec()
+{
+	if(Port31_400LINE) {
+		if(crtc.height < 25) {
+			set_frames_per_sec(56.424);
+		} else {
+			set_frames_per_sec(55.416);
+		}
+		set_lines_per_frame(448);
+	} else {
+		if(crtc.height < 25) {
+			set_frames_per_sec(61.462);
+		} else {
+			set_frames_per_sec(62.422);
+		}
+		set_lines_per_frame(260);
+	}
+}
+
 void PC88::update_mem_wait()
 {
-#if defined(_PC8001SR)
-	if(config.boot_mode == MODE_PC80_V1 || config.boot_mode == MODE_PC80_N) {
-#else
-	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
-#endif
-		mem_wait_clocks = 1;
+	if(mem_wait_on) {
+		m1_wait_clocks = 0;
+		mem_wait_clocks = cpu_clock_low ? 1 : 2;
 	} else {
+#if defined(_PC8001SR)
+		if(config.boot_mode == MODE_PC80_V1 || config.boot_mode == MODE_PC80_N) {
+#else
+		if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
+#endif
+			m1_wait_clocks = cpu_clock_low ? 1 : 0;
+		} else {
+			m1_wait_clocks = 0;
+		}
 		mem_wait_clocks = cpu_clock_low ? 0 : 1;
 	}
 }
 
 void PC88::update_gvram_wait()
 {
+	// from M88
 #if defined(_PC8001SR)
 	if(config.boot_mode == MODE_PC80_V1 || config.boot_mode == MODE_PC80_N) {
 #else
 	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
 #endif
-		static const int wait[8] = {30, 3, 4, 3, 72, 7, 8, 4};
-		gvram_wait_clocks = wait[(crtc.vblank ? 1 : 0) | (Port40_GHSM ? 2 : 0) | (cpu_clock_low ? 0 : 4)];
+		static const int wait[8] = {30, 3, 72, 7, 4, 3, 8, 4};
+		gvram_wait_clocks = wait[(crtc.vblank ? 1 : 0) | (cpu_clock_low ? 0 : 2) | (Port40_GHSM ? 4 : 0)];
 	} else {
-		gvram_wait_clocks  = cpu_clock_low ? 1 : 2;
-		if(!crtc.vblank) {
-			gvram_wait_clocks *= 2;
-		}
+		static const int wait[4] = {2, 1, 5, 3};
+		gvram_wait_clocks = wait[(crtc.vblank ? 1 : 0) | (cpu_clock_low ? 0 : 2)];
 	}
 }
 
@@ -1898,6 +1910,7 @@ void pc88_crtc_t::reset()
 	attrib.num = 20;
 	width = 80;
 	height = 25;
+	height_changed = false;
 	char_height = 16;
 	skip_line = true;
 }
@@ -1943,7 +1956,10 @@ void pc88_crtc_t::write_param(uint8 data)
 			width = (data & 0x7f) + 2;
 			break;
 		case 1:
-			height = (data & 0x3f) + 1;
+			if(height != (data & 0x3f) + 1) {
+				height = (data & 0x3f) + 1;
+				height_changed = true;
+			}
 			blink.rate = 32 * ((data >> 6) + 1);
 			break;
 		case 2:

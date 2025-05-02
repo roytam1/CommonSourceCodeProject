@@ -29,7 +29,7 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
-#define USE_AUTO_KEY_CAPS
+#define USE_AUTO_KEY_NO_CAPS
 
 #include "../../common.h"
 
@@ -79,6 +79,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void play_tape(_TCHAR* file_path);

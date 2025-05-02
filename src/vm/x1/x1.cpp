@@ -114,8 +114,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	if(!pseudo_sub_cpu) {
-		event->set_context_cpu(cpu_sub, 6000000 / 15);
-		event->set_context_cpu(cpu_kbd, 6000000 / 15);
+		event->set_context_cpu(cpu_sub, 6000000);
+		event->set_context_cpu(cpu_kbd, 6000000);
 	}
 	if(sound_device_type >= 1) {
 		event->set_context_sound(opm1);
@@ -327,6 +327,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		
 		// patch to set the current year
 		uint8 *rom = cpu_sub->get_rom_ptr();
+		sub->rom_crc32 = getcrc32(rom, 0x800);	// 2KB
 		if(rom[0x23] == 0xb9 && rom[0x24] == 0x35 && rom[0x25] == 0xb1) {
 			cur_time_t cur_time;
 			emu->get_host_time(&cur_time);
@@ -462,6 +463,16 @@ uint16* VM::create_sound(int* extra_frames)
 	}
 #endif
 	return event->create_sound(extra_frames);
+}
+
+int VM::sound_buffer_ptr()
+{
+#ifdef _X1TWIN
+	if(pce->cart_inserted()) {
+		return pceevent->sound_buffer_ptr();
+	}
+#endif
+	return event->sound_buffer_ptr();
 }
 
 // ----------------------------------------------------------------------------

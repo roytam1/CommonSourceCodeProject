@@ -66,10 +66,11 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
+#define USE_AUTO_KEY_CAPS
 #ifndef _MZ80B
 #define USE_MONITOR_TYPE	2
 #endif
+#define USE_SCANLINE
 #define USE_ACCESS_LAMP
 
 #include "../../common.h"
@@ -167,6 +168,7 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
+	int sound_buffer_ptr();
 	
 	// user interface
 	void open_disk(int drv, _TCHAR* file_path, int offset);

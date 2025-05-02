@@ -82,13 +82,13 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "N88-V1(S) mode"               ID_PC8801_MODE_V1S
-        MENUITEM "N88-V1(H) mode"               ID_PC8801_MODE_V1H
-        MENUITEM "N88-V2 mode"                  ID_PC8801_MODE_V2
-        MENUITEM "N mode"                       ID_PC8801_MODE_N
+        MENUITEM "N88-V1(S) mode"               ID_BOOT_MODE0
+        MENUITEM "N88-V1(H) mode"               ID_BOOT_MODE1
+        MENUITEM "N88-V2 mode"                  ID_BOOT_MODE2
+        MENUITEM "N mode"                       ID_BOOT_MODE3
         MENUITEM SEPARATOR
-        MENUITEM "CPU 8MHz",                    ID_PC9801_CPU_CLOCK_HIGH
-        MENUITEM "CPU 4MHz",                    ID_PC9801_CPU_CLOCK_LOW
+        MENUITEM "CPU 8MHz",                    ID_CPU_TYPE0
+        MENUITEM "CPU 4MHz",                    ID_CPU_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -96,8 +96,10 @@ BEGIN
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
         MENUITEM SEPARATOR
-        MENUITEM "Joystick"                     ID_PC8801_DEVICE_JOYSTICK
-        MENUITEM "Bus Mouse"                    ID_PC8801_DEVICE_MOUSE
+        MENUITEM "Memory Wait",                 ID_DIPSWITCH0
+        MENUITEM SEPARATOR
+        MENUITEM "Joystick"                     ID_DEVICE_TYPE0
+        MENUITEM "Bus Mouse"                    ID_DEVICE_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -106,15 +108,15 @@ BEGIN
     END
     POPUP "FD1"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Insert",                      ID_OPEN_FD1
+        MENUITEM "Eject",                       ID_CLOSE_FD1
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
     POPUP "FD2"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD2
-        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM "Insert",                      ID_OPEN_FD2
+        MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
@@ -122,7 +124,7 @@ BEGIN
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
-        MENUITEM "Close",                       ID_CLOSE_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE
     END
