@@ -24,7 +24,6 @@
 ///#define MAX_DRIVE			1
 
 // device informations for win32
-#define MIN_WINDOW_WIDTH		320
 #define USE_CART1
 ///#define USE_FD1
 ///#define USE_TAPE

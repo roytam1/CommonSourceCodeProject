@@ -131,7 +131,6 @@
 #define TAPE_BINARY_ONLY
 #elif defined(_PC98DO)
 #define USE_TAPE
-#define TAPE_PC8801
 #endif
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY

@@ -12,21 +12,19 @@
 #ifndef _PC6001_H_
 #define _PC6001_H_
 
-#ifdef _PC6601
+#if defined(_PC6601)
 #define DEVICE_NAME		"NEC PC-6601"
 #define CONFIG_NAME		"pc6601"
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define CPU_CLOCKS			4000000
-#endif
-#ifdef _PC6001MK2
+#elif defined(_PC6001MK2)
 #define DEVICE_NAME		"NEC PC-6001mk2"
 #define CONFIG_NAME		"pc6001mk2"
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define CPU_CLOCKS			4000000
-#endif
-#ifdef _PC6001
+#elif defined(_PC6001)
 #define DEVICE_NAME		"NEC PC-6001"
 #define CONFIG_NAME		"pc6001"
 #define SCREEN_WIDTH		256
@@ -51,7 +49,6 @@
 #define MC6847_ATTR_INV		0x01
 
 // device informations for win32
-#define MIN_WINDOW_WIDTH	320
 #define USE_CART1
 #define USE_FD1
 ///#define USE_FD2

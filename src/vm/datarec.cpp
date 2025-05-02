@@ -144,10 +144,12 @@ void DATAREC::event_callback(int event_id, int err)
 				if(ff_rew < 0) {
 					if((buffer_ptr = max(buffer_ptr - 1, 0)) == 0) {
 						set_remote(false);	// top of tape
+						signal = false;
 					}
 				} else {
 					if((buffer_ptr = min(buffer_ptr + 1, buffer_length)) == buffer_length) {
 						set_remote(false);	// end of tape
+						signal = false;
 					}
 				}
 				update_event();
@@ -163,6 +165,7 @@ void DATAREC::event_callback(int event_id, int err)
 						if((buffer[buffer_ptr] & 0x7f) == 0) {
 							if(++buffer_ptr == buffer_length) {
 								set_remote(false);	// end of tape
+								signal = false;
 								break;
 							}
 						} else {
@@ -850,7 +853,7 @@ int DATAREC::load_tap_image()
 	} \
 }
 
-#if defined(_MZ80B) || defined(_MZ2200)
+#if defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200)
 #define MZT_PUT_BIT(bit, len) { \
 	for(int l = 0; l < (len); l++) { \
 		if(bit) { \
@@ -944,7 +947,7 @@ int DATAREC::load_mzt_image()
 #endif
 		// output to buffer
 		MZT_PUT_SIGNAL(0, sample_rate);
-#if defined(_MZ80B) || defined(_MZ2200)
+#if defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200)
 		// Bin2Wav Ver 0.03
 		MZT_PUT_BIT(0, 22000);
 		MZT_PUT_BIT(1, 40);

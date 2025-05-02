@@ -59,7 +59,6 @@
 #endif
 #define USE_TAPE
 #define USE_TAPE_BUTTON
-#define TAPE_MZT
 #if defined(_MZ800) || defined(_MZ1500)
 #define USE_QD1
 #define USE_FD1

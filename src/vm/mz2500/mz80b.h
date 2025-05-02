@@ -11,9 +11,12 @@
 #ifndef _MZ80B_H_
 #define _MZ80B_H_
 
-#ifdef _MZ80B
+#if defined(_MZ80B)
 #define DEVICE_NAME		"SHARP MZ-80B"
 #define CONFIG_NAME		"mz80b"
+#elif defined(_MZ2000)
+#define DEVICE_NAME		"SHARP MZ-2000"
+#define CONFIG_NAME		"mz2000"
 #else
 #define DEVICE_NAME		"SHARP MZ-2200"
 #define CONFIG_NAME		"mz2200"
@@ -58,7 +61,6 @@
 #endif
 #define USE_TAPE
 #define USE_TAPE_BUTTON
-#define TAPE_MZT_2000
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5

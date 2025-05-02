@@ -75,7 +75,7 @@ void open_laser_disc_dialog(HWND hWnd);
 void open_binary_dialog(HWND hWnd, int drv, bool load);
 #endif
 
-#if defined(USE_CART1) || defined(USE_FD1) || defined(USE_QD1) || defined(USE_BINARY_FILE1)
+#if defined(USE_CART1) || defined(USE_FD1) || defined(USE_TAPE) || defined(USE_BINARY_FILE1)
 #define SUPPORT_DRAG_DROP
 #endif
 #ifdef SUPPORT_DRAG_DROP
@@ -225,11 +225,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	RegisterClass(&wndclass);
 	
 	// get window position
-#ifdef MIN_WINDOW_WIDTH
-	RECT rect = {0, 0, WINDOW_WIDTH < MIN_WINDOW_WIDTH ? MIN_WINDOW_WIDTH : WINDOW_WIDTH, WINDOW_HEIGHT};
-#else
 	RECT rect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
-#endif
 	AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, TRUE);
 	HDC hdcScr = GetDC(NULL);
 	desktop_width = GetDeviceCaps(hdcScr, HORZRES);
@@ -249,6 +245,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// show menu
 	show_menu_bar(hWnd);
+	
+	RECT rect_tmp;
+	GetClientRect(hWnd, &rect_tmp);
+	if(rect_tmp.bottom != WINDOW_HEIGHT) {
+		rect.bottom += WINDOW_HEIGHT - rect_tmp.bottom;
+		dest_y = (int)((desktop_height - (rect.bottom - rect.top)) / 2);
+		dest_y = (dest_y < 0) ? 0 : dest_y;
+		SetWindowPos(hWnd, NULL, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
+	}
 	
 	// enumerate screen mode
 	screen_mode_count = 0;
@@ -316,11 +321,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// initialize emulation core
 	emu = new EMU(hWnd, hInstance);
-#ifdef MIN_WINDOW_WIDTH
-	emu->set_display_size(WINDOW_WIDTH < MIN_WINDOW_WIDTH ? MIN_WINDOW_WIDTH : WINDOW_WIDTH, WINDOW_HEIGHT, true);
-#else
 	emu->set_display_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
-#endif
 	
 #ifdef SUPPORT_DRAG_DROP
 	// open command line path
@@ -974,11 +975,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_USE_WAVE_SHAPER:
 			config.wave_shaper = !config.wave_shaper;
 			break;
-#ifdef TAPE_MZT_2000
 		case ID_DIRECT_LOAD_MZT:
 			config.direct_load_mzt = !config.direct_load_mzt;
 			break;
-#endif
 		case ID_RECENT_TAPE + 0:
 		case ID_RECENT_TAPE + 1:
 		case ID_RECENT_TAPE + 2:
@@ -1546,9 +1545,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		EnableMenuItem(hMenu, ID_STOP_BUTTON, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
 #endif
 		CheckMenuItem(hMenu, ID_USE_WAVE_SHAPER, config.wave_shaper ? MF_CHECKED : MF_UNCHECKED);
-#ifdef TAPE_MZT_2000
 		CheckMenuItem(hMenu, ID_DIRECT_LOAD_MZT, config.direct_load_mzt ? MF_CHECKED : MF_UNCHECKED);
-#endif
 	}
 #endif
 #ifdef MENU_POS_LASER_DISC
@@ -1719,7 +1716,16 @@ void open_cart_dialog(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#if defined(_PCENGINE) || defined(_X1TWIN)
+#if defined(_GAMEGEAR)
+		_T("Supported Files (*.rom;*.bin;*.gg;*.col)\0*.rom;*.bin;*.gg;*.col\0All Files (*.*)\0*.*\0\0"),
+		_T("Game Cartridge"),
+#elif defined(_MASTERSYSTEM)
+		_T("Supported Files (*.rom;*.bin;*.sms)\0*.rom;*.bin;*.sms\0All Files (*.*)\0*.*\0\0"),
+		_T("Game Cartridge"),
+#elif defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601)
+		_T("Supported Files (*.rom;*.bin;*.60)\0*.rom;*.bin;*.60\0All Files (*.*)\0*.*\0\0"),
+		_T("Game Cartridge"),
+#elif defined(_PCENGINE) || defined(_X1TWIN)
 		_T("Supported Files (*.rom;*.bin;*.pce)\0*.rom;*.bin;*.pce\0All Files (*.*)\0*.*\0\0"),
 		_T("HuCARD"),
 #else
@@ -1830,20 +1836,22 @@ void open_tape_dialog(HWND hWnd, bool play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#if defined(TAPE_PC8801)
+#if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601)
+		_T("Supported Files (*.p6;*.cas)\0*.p6;*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(_PC8001SR) || defined(_PC8801MA) || defined(_PC98DO)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
-#elif defined(TAPE_BINARY_ONLY)
-		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
-#elif defined(TAPE_TAP)
-		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0")
-		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
-#elif defined(TAPE_MZT)
+#elif defined(_MZ80K) || defined(_MZ1200) || defined(_MZ700) || defined(_MZ800) || defined(_MZ1500)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
-#elif defined(TAPE_MZT_2000)
+#elif defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mti;*.mtw;*.dat)\0*.wav;*.cas;*.mzt;*.mti;*.mtw;*.dat\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
+		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(TAPE_BINARY_ONLY)
+		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #else
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif
@@ -1868,7 +1876,7 @@ void open_laser_disc_dialog(HWND hWnd)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.avi;*.mpg;*.mpeg;*.wmv)\0*.avi;*.mpg;*.mpeg;*.wmv\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.avi;*.mpg;*.mpeg;*.wmv;*.ogv)\0*.avi;*.mpg;*.mpeg;*.wmv;*.ogv\0All Files (*.*)\0*.*\0\0"),
 		_T("Laser Disc"),
 		config.initial_laser_disc_dir
 	);
@@ -1909,9 +1917,13 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 #ifdef SUPPORT_DRAG_DROP
 void open_any_file(_TCHAR* path)
 {
-#ifdef USE_CART1
+#if defined(USE_CART1)
 	if(check_file_extension(path, _T(".rom")) || 
 	   check_file_extension(path, _T(".bin")) || 
+	   check_file_extension(path, _T(".gg" )) || 
+	   check_file_extension(path, _T(".col")) || 
+	   check_file_extension(path, _T(".sms")) || 
+	   check_file_extension(path, _T(".60" )) || 
 	   check_file_extension(path, _T(".pce"))) {
 		UPDATE_HISTORY(path, config.recent_cart_path[0]);
 		_tcscpy(config.initial_cart_dir, get_parent_dir(path));
@@ -1919,7 +1931,7 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#ifdef USE_FD1
+#if defined(USE_FD1)
 	if(check_file_extension(path, _T(".d88")) || 
 	   check_file_extension(path, _T(".d77")) || 
 	   check_file_extension(path, _T(".td0")) || 
@@ -1937,16 +1949,25 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#ifdef USE_QD1
-	if(check_file_extension(path, _T(".mzt")) || 
-	   check_file_extension(path, _T(".q20"))) {
-		UPDATE_HISTORY(path, config.recent_quickdisk_path[0]);
-		_tcscpy(config.initial_quickdisk_dir, get_parent_dir(path));
-		emu->open_quickdisk(0, path);
+#if defined(USE_TAPE)
+	if(check_file_extension(path, _T(".wav")) || 
+	   check_file_extension(path, _T(".cas")) || 
+	   check_file_extension(path, _T(".p6" )) || 
+	   check_file_extension(path, _T(".cmt")) || 
+	   check_file_extension(path, _T(".n80")) || 
+	   check_file_extension(path, _T(".t88")) || 
+	   check_file_extension(path, _T(".mzt")) || 
+	   check_file_extension(path, _T(".m12")) || 
+	   check_file_extension(path, _T(".mti")) || 
+	   check_file_extension(path, _T(".mtw")) || 
+	   check_file_extension(path, _T(".tap"))) {
+		UPDATE_HISTORY(path, config.recent_tape_path);
+		_tcscpy(config.initial_tape_dir, get_parent_dir(path));
+		emu->play_tape(path);
 		return;
 	}
 #endif
-#ifdef USE_BINARY_FILE1
+#if defined(USE_BINARY_FILE1)
 	if(check_file_extension(path, _T(".ram")) || 
 	   check_file_extension(path, _T(".bin"))) {
 		UPDATE_HISTORY(path, config.recent_binary_path[0]);
@@ -1967,11 +1988,6 @@ void set_window(HWND hWnd, int mode)
 	if(mode >= 0 && mode < MAX_WINDOW) {
 		// window
 		int width = emu->get_window_width(mode);
-#ifdef MIN_WINDOW_WIDTH
-		if(width < MIN_WINDOW_WIDTH) {
-			width = MIN_WINDOW_WIDTH;
-		}
-#endif
 		int height = emu->get_window_height(mode);
 		RECT rect = {0, 0, width, height};
 		AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, TRUE);
@@ -1990,6 +2006,15 @@ void set_window(HWND hWnd, int mode)
 			show_menu_bar(hWnd);
 		}
 		else {
+			SetWindowPos(hWnd, NULL, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
+		}
+		
+		RECT rect_tmp;
+		GetClientRect(hWnd, &rect_tmp);
+		if(rect_tmp.bottom != height) {
+			rect.bottom += height - rect_tmp.bottom;
+			dest_y = (int)((desktop_height - (rect.bottom - rect.top)) / 2);
+			dest_y = (dest_y < 0) ? 0 : dest_y;
 			SetWindowPos(hWnd, NULL, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
 		}
 		config.window_mode = prev_window_mode = mode;

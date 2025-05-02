@@ -75,8 +75,6 @@ typedef struct {
 #endif
 #ifdef USE_TAPE
 	bool wave_shaper;
-#endif
-#ifdef TAPE_MZT_2000
 	bool direct_load_mzt;
 #endif
 	

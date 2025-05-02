@@ -1,3 +1,11 @@
+4/7/2014
+
+[WINMAIN] fix issue in the case that menu bar becomes multi line
+
+[VM/DATAREC] fix to output no sound signal when tape image reaches end of tape
+[VM/YM2203] fix build error in YM2608 case
+
+
 4/1/2014
 
 [VM/TMS9918A] fix mode1 and mode1+2 to fill out of screen with back color

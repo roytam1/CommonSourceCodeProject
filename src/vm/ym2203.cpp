@@ -155,18 +155,20 @@ uint32 YM2203::read_io8(uint32 addr)
 		return chip->GetReg(ch);
 #ifdef HAS_YM2608
 	case 2:
-		/* BUSY : x : PCMBUSY : ZERO : BRDY : EOS : FLAGB : FLAGA */
-		update_count();
-		update_interrupt();
-		status = chip->ReadStatusEx() & ~0x80;
-		if(busy) {
-			// FIXME: we need to investigate the correct busy period
-			if(passed_usec(clock_busy) < 8) {
-				status |= 0x80;
+		{
+			/* BUSY : x : PCMBUSY : ZERO : BRDY : EOS : FLAGB : FLAGA */
+			update_count();
+			update_interrupt();
+			uint32 status = chip->ReadStatusEx() & ~0x80;
+			if(busy) {
+				// FIXME: we need to investigate the correct busy period
+				if(passed_usec(clock_busy) < 8) {
+					status |= 0x80;
+				}
+				busy = false;
 			}
-			busy = false;
+			return status;
 		}
-		return status;
 	case 3:
 		if(ch1 == 8) {
 			return chip->GetReg(0x100 | ch1);

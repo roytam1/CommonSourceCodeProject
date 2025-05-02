@@ -31,7 +31,6 @@
 // device informations for win32
 #define USE_TAPE
 #define USE_TAPE_BUTTON
-#define TAPE_MZT
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
