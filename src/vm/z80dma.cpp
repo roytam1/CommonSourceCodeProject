@@ -569,7 +569,7 @@ restart:
 		upcount++;
 		occured = true;
 		
-		if(found/* || !now_ready()*/) {
+		if(found || (BLOCKLEN == 0 && !now_ready())) {
 			if(upcount < blocklen) {
 				upcount--;
 			}

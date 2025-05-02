@@ -157,13 +157,14 @@ public:
 	uint8 media_type;
 	bool is_standard_image;
 	bool is_fdi_image;
-	bool is_alpha;
+	bool is_alpha, is_arcus;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];
 	int sector_num;
 	int data_size_shift;
 	bool too_many_sectors;
+	bool no_skew;
 	
 	int sync_position[256];
 	int id_position[256];

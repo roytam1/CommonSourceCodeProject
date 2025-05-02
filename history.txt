@@ -1,3 +1,11 @@
+8/16/2013
+
+[VM/DISK] add ugly patch for X1turbo ARCUS
+[VM/MB8877] fix to use contant period for searching sector if disk has no skew
+[VM/MB8877] fix to show busy status while searching sector if sector not found
+[VM/Z80DMA] fix dma stop condition
+
+
 8/10/2013
 
 [VM/DATAREC] fix not to skip frames while doint ff/rew

@@ -46,7 +46,7 @@ private:
 	fdc_t fdc[MAX_DRIVE];
 	
 	// registor
-	uint8 status;
+	uint8 status, status_tmp;
 	uint8 cmdreg;
 	uint8 trkreg;
 	uint8 secreg;

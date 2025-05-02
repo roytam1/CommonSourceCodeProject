@@ -265,13 +265,14 @@ file_loaded:
 				}
 			}
 		}
-		// FIXME: ugly patch for X1turbo ALPHA
-		is_alpha = false;
+		// FIXME: ugly patch for X1turbo ALPHA and ARCUS
+		is_alpha = is_arcus = false;
 #if defined(_X1TURBO) || defined(_X1TURBOZ)
 		if(media_type == MEDIA_TYPE_2D) {
 			uint32 offset = buffer[0x20] | (buffer[0x21] << 8) | (buffer[0x22] << 16) | (buffer[0x23] << 24);
 			uint8 *t = buffer + offset;
-			is_alpha = (strcmp((char *)(t + 0x11), "turbo ALPHA") == 0);
+			is_alpha = (strncmp((char *)(t + 0x11), "turbo ALPHA", 11) == 0);
+			is_arcus = (strncmp((char *)(t + 0x11), "ARCUS X1",    8 ) == 0);
 		}
 #endif
 	}
@@ -327,6 +328,7 @@ void DISK::close()
 bool DISK::get_track(int trk, int side)
 {
 	sector_size = sector_num = 0;
+	no_skew = true;
 	
 	// disk not inserted or invalid media type
 	if(!(inserted && check_media_type())) {
@@ -400,6 +402,9 @@ retry:
 		data_position[i] = total;
 		total += (data_size >> data_size_shift) + 2 + gap3_size;
 		
+		if(t[2] != i + 1) {
+			no_skew = false;
+		}
 		t += data_size + 0x10;
 	}
 	return true;

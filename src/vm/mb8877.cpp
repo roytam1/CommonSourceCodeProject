@@ -542,12 +542,15 @@ void MB8877::event_callback(int event_id, int err)
 		break;
 	case EVENT_SEARCH:
 		now_search = false;
-		if(!(status & FDC_ST_RECNFND)) {
-			status |= FDC_ST_DRQ;
+		if(!(status_tmp & FDC_ST_RECNFND)) {
+			status = status_tmp | (FDC_ST_BUSY | FDC_ST_DRQ);
 			REGISTER_LOST_EVENT();
 			cur_position[drvreg] = next_trans_position[drvreg];
 			prev_clock[drvreg] = prev_drq_clock = current_clock();
 			set_drq(true);
+		}
+		else {
+			status = status_tmp & ~(FDC_ST_BUSY | FDC_ST_DRQ);
 		}
 		break;
 	case EVENT_TYPE4:
@@ -729,15 +732,12 @@ void MB8877::cmd_readdata()
 	// type-2 read data
 	cmdtype = (cmdreg & 0x10) ? FDC_CMD_RD_MSEC : FDC_CMD_RD_SEC;
 	int side = (cmdreg & 2) ? ((cmdreg & 8) ? 1 : 0) : sidereg;
-	status = search_sector(fdc[drvreg].track, side, secreg, ((cmdreg & 2) != 0));
-	if(!(status & FDC_ST_RECNFND)) {
-//		status |= FDC_ST_DRQ | FDC_ST_BUSY;
-		status |= FDC_ST_BUSY;
-	}
+	status = FDC_ST_BUSY;
+	status_tmp = search_sector(fdc[drvreg].track, side, secreg, ((cmdreg & 2) != 0));
 	now_search = true;
 	
 	double time;
-	if(!(status & FDC_ST_RECNFND)) {
+	if(!(status_tmp & FDC_ST_RECNFND)) {
 		time = get_usec_to_start_trans();
 	}
 	else {
@@ -752,16 +752,12 @@ void MB8877::cmd_writedata()
 	// type-2 write data
 	cmdtype = (cmdreg & 0x10) ? FDC_CMD_WR_MSEC : FDC_CMD_WR_SEC;
 	int side = (cmdreg & 2) ? ((cmdreg & 8) ? 1 : 0) : sidereg;
-	status = search_sector(fdc[drvreg].track, side, secreg, ((cmdreg & 2) != 0));
-	status &= ~FDC_ST_RECTYPE;
-	if(!(status & FDC_ST_RECNFND)) {
-//		status |= FDC_ST_DRQ | FDC_ST_BUSY;
-		status |= FDC_ST_BUSY;
-	}
+	status = FDC_ST_BUSY;
+	status_tmp = search_sector(fdc[drvreg].track, side, secreg, ((cmdreg & 2) != 0)) & ~FDC_ST_RECTYPE;
 	now_search = true;
 	
 	double time;
-	if(!(status & FDC_ST_RECNFND)) {
+	if(!(status_tmp & FDC_ST_RECNFND)) {
 		time = get_usec_to_start_trans();
 	}
 	else {
@@ -775,15 +771,12 @@ void MB8877::cmd_readaddr()
 {
 	// type-3 read address
 	cmdtype = FDC_CMD_RD_ADDR;
-	status = search_addr();
-	if(!(status & FDC_ST_RECNFND)) {
-//		status |= FDC_ST_DRQ | FDC_ST_BUSY;
-		status |= FDC_ST_BUSY;
-	}
+	status = FDC_ST_BUSY;
+	status_tmp = search_addr();
 	now_search = true;
 	
 	double time;
-	if(!(status & FDC_ST_RECNFND)) {
+	if(!(status_tmp & FDC_ST_RECNFND)) {
 		time = get_usec_to_start_trans();
 	}
 	else {
@@ -797,8 +790,8 @@ void MB8877::cmd_readtrack()
 {
 	// type-3 read track
 	cmdtype = FDC_CMD_RD_TRK;
-//	status = FDC_ST_DRQ | FDC_ST_BUSY;
 	status = FDC_ST_BUSY;
+	status_tmp = 0;
 	
 	disk[drvreg]->make_track(fdc[drvreg].track, sidereg);
 	fdc[drvreg].index = 0;
@@ -817,8 +810,8 @@ void MB8877::cmd_writetrack()
 {
 	// type-3 write track
 	cmdtype = FDC_CMD_WR_TRK;
-//	status = FDC_ST_DRQ | FDC_ST_BUSY;
 	status = FDC_ST_BUSY;
+	status_tmp = 0;
 	
 	fdc[drvreg].index = 0;
 	now_search = true;
@@ -998,12 +991,13 @@ int MB8877::get_cur_position()
 
 double MB8877::get_usec_to_start_trans()
 {
-	// XXX: this is a standard image and skew may be incorrect
-	if(disk[drvreg]->is_standard_image || disk[drvreg]->is_alpha) {
-		return 100;
+	// FIXME: this image may be a standard image or coverted from a standard image and skew may be incorrect,
+	// so use the constant period to search the target sector
+	if(disk[drvreg]->no_skew && !disk[drvreg]->is_arcus) {
+		return 200;
 	}
 	
-	// get current position
+	// get time from current position
 	int position = get_cur_position();
 	int bytes = next_trans_position[drvreg] - position;
 	if(next_sync_position[drvreg] < position) {
