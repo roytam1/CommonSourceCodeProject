@@ -74,7 +74,7 @@ void VDP::initialize()
 	_memcpy(font, symbol, sizeof(symbol));
 	_memcpy(font[0xb], font[0x60], 8);	// copyright mark
 	
-	// regist event to interrupt
+	// register event to interrupt
 	vm->register_vline_event(this);
 }
 

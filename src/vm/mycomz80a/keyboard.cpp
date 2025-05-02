@@ -90,7 +90,7 @@ void KEYBOARD::initialize()
 	key_buf = new FIFO(8);
 	key_stat = emu->key_buffer();
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

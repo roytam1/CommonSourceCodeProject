@@ -24,8 +24,8 @@ void init_config()
 	config.window_mode = 0;
 	config.stretch_screen = false;
 	
-	config.sound_frequency = 5;	// 44100Hz
-	config.sound_latency = 0;
+	config.sound_frequency = 6;	// 48KHz
+	config.sound_latency = 1;	// 100msec
 	
 	config.cpu_power = 0;
 	

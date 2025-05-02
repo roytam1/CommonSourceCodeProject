@@ -55,7 +55,7 @@ void KEYBOARD::initialize()
 {
 	key_stat = emu->key_buffer();
 	
-	// regist event to update the key status
+	// register event to update the key status
 	vm->register_frame_event(this);
 }
 

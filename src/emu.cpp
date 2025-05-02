@@ -37,13 +37,13 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	
 	// load sound config
 	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
-	static double late_table[4] = {0.1, 0.2, 0.3, 0.4};
+	static double late_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
 	
 	if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
-		config.sound_frequency = 5;	// default: 44.1KHz
+		config.sound_frequency = 6;	// default: 48KHz
 	}
-	if(!(0 <= config.sound_latency && config.sound_latency < 4)) {
-		config.sound_latency = 0;	// default: 0.1sec
+	if(!(0 <= config.sound_latency && config.sound_latency < 5)) {
+		config.sound_latency = 1;	// default: 100msec
 	}
 	int frequency = freq_table[config.sound_frequency];
 	int samples = (int)(frequency * late_table[config.sound_latency] + 0.5);

@@ -161,7 +161,7 @@ void MEMORY::initialize()
 		palette_txt[i] = palette_cg[i];
 	}
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

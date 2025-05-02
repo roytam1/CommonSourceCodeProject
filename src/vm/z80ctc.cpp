@@ -83,7 +83,7 @@ uint32 Z80CTC::read_io8(uint32 addr)
 		}
 		if(input > 0) {
 			input_clock(ch, input);
-			// cancel and re-regist event
+			// cancel and re-register event
 			vm->cancel_event(counter[ch].clock_id);
 			counter[ch].input -= input;
 			counter[ch].period -= passed;
@@ -103,7 +103,7 @@ uint32 Z80CTC::read_io8(uint32 addr)
 		}
 		if(input > 0) {
 			input_sysclock(ch, input);
-			// cancel and re-regist event
+			// cancel and re-register event
 			vm->cancel_event(counter[ch].sysclock_id);
 			counter[ch].input -= passed;
 			counter[ch].period -= passed;

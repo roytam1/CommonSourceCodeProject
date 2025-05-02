@@ -199,7 +199,7 @@ void I8155::event_callback(int event_id, int err)
 	register_id = -1;
 	input_clock(input_clk);
 	
-	// regist next event
+	// register next event
 	if(freq && now_count) {
 		input_clk = get_next_clock();
 		period = CPU_CLOCKS / freq * input_clk + err;
@@ -247,7 +247,7 @@ void I8155::start_count()
 		count = COUNT_VALUE;
 		now_count = true;
 		
-		// regist event
+		// register event
 		if(freq && register_id == -1) {
 			input_clk = get_next_clock();
 			period = CPU_CLOCKS / freq * input_clk;
@@ -277,7 +277,7 @@ void I8155::update_count()
 		}
 		if(input > 0) {
 			input_clock(input);
-			// cancel and re-regist event
+			// cancel and re-register event
 			vm->cancel_event(register_id);
 			input_clk -= input;
 			period -= passed;

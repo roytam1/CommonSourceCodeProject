@@ -189,10 +189,11 @@ BEGIN
         MENUITEM "48000Hz",                     ID_SOUND_FREQ6
         MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
-        MENUITEM "100msec",                     ID_SOUND_LATE0
-        MENUITEM "200msec",                     ID_SOUND_LATE1
-        MENUITEM "300msec",                     ID_SOUND_LATE2
-        MENUITEM "400msec",                     ID_SOUND_LATE3
+        MENUITEM "50msec",                      ID_SOUND_LATE0
+        MENUITEM "100msec",                     ID_SOUND_LATE1
+        MENUITEM "200msec",                     ID_SOUND_LATE2
+        MENUITEM "300msec",                     ID_SOUND_LATE3
+        MENUITEM "400msec",                     ID_SOUND_LATE4
     END
 END
 

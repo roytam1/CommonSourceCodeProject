@@ -190,7 +190,7 @@ void I8253::event_callback(int event_id, int err)
 	counter[ch].register_id = -1;
 	input_clock(ch, counter[ch].input_clk);
 	
-	// regist next event
+	// register next event
 	if(counter[ch].freq && counter[ch].start) {
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk + err;
@@ -320,7 +320,7 @@ void I8253::start_count(int ch)
 	}
 	counter[ch].start = true;
 	
-	// regist event
+	// register event
 	if(counter[ch].freq) {
 		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
@@ -349,7 +349,7 @@ void I8253::latch_count(int ch)
 		if(input > 0) {
 			bool expired = (counter[ch].input_clk <= input);
 			input_clock(ch, input);
-			// cancel and re-regist event
+			// cancel and re-register event
 			if(expired) {
 				vm->cancel_event(counter[ch].register_id);
 				if(counter[ch].freq && counter[ch].start) {

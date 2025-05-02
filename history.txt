@@ -1,3 +1,11 @@
+5/19/2011-2
+
+[EMU/WIN32] support sound latency 50msec
+
+[VM/*] Remove unused CHARS_PER_LINE definition (only used for HD46505)
+[VM/*] Adjust scanline numbers and frame rate number
+
+
 5/19/2011
 
 [VM/EVENT] fix to check registered count for frame/vline events

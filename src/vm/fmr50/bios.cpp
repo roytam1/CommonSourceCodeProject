@@ -297,7 +297,7 @@ void BIOS::initialize()
 		cmos_pc = 0xfffc9;
 		wait_pc = 0xfffd3;
 		
-		// regist event
+		// register event
 		vm->register_frame_event(this);
 	}
 	

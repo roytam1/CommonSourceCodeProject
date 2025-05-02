@@ -87,11 +87,10 @@ void IO::initialize()
 	key_buf = new FIFO(7);
 	art_buf = new FIFO(BUFFER_SIZE);
 	
-	// regist events
+	// register events
 	vm->register_frame_event(this);
-	int id;
-	vm->register_event_by_clock(this, EVENT_FRC, 0x60000, true, &id);
-	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
+	vm->register_event_by_clock(this, EVENT_FRC, 0x60000, true, NULL);
+	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
 	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);

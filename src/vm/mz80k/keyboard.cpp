@@ -38,7 +38,7 @@ void KEYBOARD::initialize()
 	key_stat = emu->key_buffer();
 	column = 0;
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

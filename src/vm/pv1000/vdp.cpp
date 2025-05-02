@@ -18,7 +18,7 @@ static const uint8 plane[4] = {0, 1, 2, 4};
 
 void VDP::initialize()
 {
-	// regist event to interrupt
+	// register event to interrupt
 	vm->register_vline_event(this);
 }
 

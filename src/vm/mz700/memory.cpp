@@ -127,7 +127,7 @@ void MEMORY::initialize()
 	palette_mz800_pc[8] = palette_mz800_pc[7];
 #endif
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
 	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
 	vm->register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, NULL);	// 1.5hz * 2

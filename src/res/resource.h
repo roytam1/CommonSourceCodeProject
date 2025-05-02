@@ -192,6 +192,7 @@
 #define ID_SOUND_LATE1                  41122
 #define ID_SOUND_LATE2                  41123
 #define ID_SOUND_LATE3                  41124
+#define ID_SOUND_LATE4                  41125
 
 #define ID_SOUND_DEVICE_TYPE0           41131
 #define ID_SOUND_DEVICE_TYPE1           41132

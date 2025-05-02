@@ -22,10 +22,9 @@
 #define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
-#define FRAMES_PER_SEC		55.4
+#define FRAMES_PER_10SECS	564
+#define FRAMES_PER_SEC		56.4
 #define LINES_PER_FRAME 	440
-#define CHARS_PER_LINE		108
 #ifdef _PC9801
 #define CPU_CLOCKS		5000000
 #else

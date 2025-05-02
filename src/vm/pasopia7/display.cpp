@@ -48,7 +48,7 @@ void DISPLAY::initialize()
 	cblink = flash_cnt = 0;
 	blink = pal_dis = false;
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

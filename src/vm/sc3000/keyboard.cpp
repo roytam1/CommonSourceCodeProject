@@ -30,7 +30,7 @@ void KEYBOARD::initialize()
 	column = 0;
 	break_pressed = false;
 	
-	// regist event to update the key status
+	// register event to update the key status
 	vm->register_frame_event(this);
 }
 

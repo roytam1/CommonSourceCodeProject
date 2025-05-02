@@ -26,8 +26,7 @@
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
-#define LINES_PER_FRAME 	440
-#define CHARS_PER_LINE		108
+#define LINES_PER_FRAME 	448
 #if defined(_MZ5500)
 #define CPU_CLOCKS		4915200
 #elif defined(_MZ6500) || defined(_MZ6550)

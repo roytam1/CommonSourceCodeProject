@@ -31,7 +31,7 @@
 #define FRAMES_PER_10SECS	599
 #define FRAMES_PER_SEC		59.9
 #define LINES_PER_FRAME 	262
-#define CHARS_PER_LINE		114
+#define CHARS_PER_LINE		57
 #endif
 #define CPU_CLOCKS		3993600
 #ifdef _LCD

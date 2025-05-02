@@ -68,10 +68,9 @@ void RTC::initialize()
 	// update calendar
 	update_calendar();
 	
-	// regist event
-	int id;
-	vm->register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, &id);
-	vm->register_event_by_clock(this, EVENT_32HZ, CPU_CLOCKS >> 5, true, &id);
+	// register event
+	vm->register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, NULL);
+	vm->register_event_by_clock(this, EVENT_32HZ, CPU_CLOCKS >> 5, true, NULL);
 }
 
 void RTC::release()
@@ -109,9 +108,8 @@ void RTC::write_io16(uint32 addr, uint32 data)
 		if(!(rtdsr & 1)) {
 			rtadr = data;
 			rtdsr |= 1;
-			// regist event
-			int id;
-			vm->register_event(this, EVENT_DONE, 100, false, &id);
+			// register event
+			vm->register_event(this, EVENT_DONE, 100, false, NULL);
 		}
 		break;
 	case 6:

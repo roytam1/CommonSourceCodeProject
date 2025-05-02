@@ -162,10 +162,9 @@ void SUB::initialize()
 	key_buf = new FIFO(8);
 	key_stat = emu->key_buffer();
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
-	int id;
-	vm->register_event(this, 0, 400, true, &id);
+	vm->register_event(this, 0, 400, true, NULL);
 }
 
 void SUB::reset()

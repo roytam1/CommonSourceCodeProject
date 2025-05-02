@@ -16,7 +16,7 @@ void JOYSTICK::initialize()
 {
 	joy_stat = emu->joy_buffer();
 	
-	// regist event to update the key status
+	// register event to update the key status
 	vm->register_frame_event(this);
 }
 

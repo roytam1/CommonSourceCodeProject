@@ -62,10 +62,9 @@ void PCE::initialize()
 	joy_stat = emu->joy_buffer();
 	key_stat = emu->key_buffer();
 	
-	// regist event
+	// register event
 	vm->pce_register_vline_event(this);
-	int id;
-	vm->pce_register_event_by_clock(this, 0, 1024, true, &id);
+	vm->pce_register_event_by_clock(this, 0, 1024, true, NULL);
 }
 
 void PCE::reset()

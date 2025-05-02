@@ -19,7 +19,6 @@
 #define FRAMES_PER_10SECS	599
 #define FRAMES_PER_SEC		59.9
 #define LINES_PER_FRAME 	262
-#define CHARS_PER_LINE		1
 #define CPU_CLOCKS		2048000
 //#define CPU_START_ADDR		0xf000
 #define HAS_I8080

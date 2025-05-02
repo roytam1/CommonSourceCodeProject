@@ -31,7 +31,7 @@ void RTC58321::initialize()
 	wreg = rreg = cmdreg = regnum = 0;
 	busy = false;
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

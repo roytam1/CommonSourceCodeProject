@@ -61,12 +61,11 @@ void IOCTRL::initialize()
 	// timer
 	ts = 0;
 	
-	// regist event
-	int id;
-	vm->register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, &id);
-	vm->register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, &id);
-	vm->register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, &id);
-	vm->register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, &id);
+	// register event
+	vm->register_event_by_clock(this, EVENT_600HZ, CPU_CLOCKS / 600, true, NULL);
+	vm->register_event_by_clock(this, EVENT_100HZ, CPU_CLOCKS / 100, true, NULL);
+	vm->register_event_by_clock(this, EVENT_50HZ, CPU_CLOCKS / 50, true, NULL);
+	vm->register_event_by_clock(this, EVENT_10HZ, CPU_CLOCKS / 10, true, NULL);
 }
 
 void IOCTRL::write_io8(uint32 addr, uint32 data)

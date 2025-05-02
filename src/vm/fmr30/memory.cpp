@@ -110,7 +110,7 @@ void MEMORY::initialize()
 	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 	SET_BANK(0xff0000, 0xffffff, wdmy, ipl);
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

@@ -43,7 +43,7 @@ void MEMORY::initialize()
 	key_stat = emu->key_buffer();
 	joy_stat = emu->joy_buffer();
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
 }
 

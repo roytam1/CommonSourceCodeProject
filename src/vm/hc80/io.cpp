@@ -153,12 +153,11 @@ void IO::initialize()
 	rsp7508_buf = new FIFO(16);
 	key_buf = new FIFO(7);
 	
-	// regist events
+	// register events
 	vm->register_frame_event(this);
-	int id;
-	vm->register_event_by_clock(this, EVENT_FRC, 0x40000, true, &id);
-	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
-	vm->register_event_by_clock(this, EVENT_6303, 100, true, &id);
+	vm->register_event_by_clock(this, EVENT_FRC, 0x40000, true, NULL);
+	vm->register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
+	vm->register_event_by_clock(this, EVENT_6303, 100, true, NULL);
 	
 	// set pallete
 	pd = RGB_COLOR(48, 56, 16);

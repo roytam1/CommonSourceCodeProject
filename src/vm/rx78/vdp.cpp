@@ -18,7 +18,7 @@ void VDP::initialize()
 	create_pal();
 	create_bg();
 	
-	// regist event to interrupt
+	// register event to interrupt
 	vm->register_vline_event(this);
 }
 

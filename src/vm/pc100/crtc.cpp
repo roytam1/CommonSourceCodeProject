@@ -33,7 +33,7 @@ void CRTC::initialize()
 	palette[0] = 0;
 	update_palette(0);
 	
-	// regist events
+	// register event
 	vm->register_vline_event(this);
 }
 

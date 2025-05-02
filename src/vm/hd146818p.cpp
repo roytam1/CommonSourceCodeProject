@@ -41,7 +41,7 @@ void HD146818P::initialize()
 	sec = tm[6];
 	update_calendar();
 	
-	// regist event
+	// register event
 	event_id = -1;
 	vm->register_frame_event(this);
 }

@@ -34,11 +34,11 @@
 #define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
 #if defined(_FMR60)
-#define LINES_PER_FRAME 	812
-#define CHARS_PER_LINE		108
+#define LINES_PER_FRAME 	784
+#define CHARS_PER_LINE		98
 #else
 #define LINES_PER_FRAME 	440
-#define CHARS_PER_LINE		108
+#define CHARS_PER_LINE		54
 #endif
 //#if defined(_FMRCARD) || defined(_OASYS30) || defined(_OASYSPOCKET3)
 #define CPU_CLOCKS		8000000

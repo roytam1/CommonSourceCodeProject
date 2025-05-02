@@ -185,7 +185,7 @@ void DISPLAY::initialize()
 	_memset(gaiji_g, 0, sizeof(gaiji_g));
 #endif
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 	vm->register_crtc_vline_event(this);
 }

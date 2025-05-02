@@ -86,11 +86,10 @@ void MEMORY::initialize()
 	SET_BANK(0xe000, 0xffff, wdmy, rdmy);
 #endif
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
-	int id;
-	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, &id);	// 32hz * 2
-	vm->register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, &id);	// 1.5hz * 2
+	vm->register_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, NULL);	// 32hz * 2
+	vm->register_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, NULL);	// 1.5hz * 2
 }
 
 void MEMORY::reset()

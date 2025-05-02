@@ -24,7 +24,7 @@ void UPD4991A::initialize()
 	_memset(tp2, 0, sizeof(tp2));
 	ctrl1 = ctrl2 = mode = 0;
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

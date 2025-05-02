@@ -34,7 +34,7 @@ void DISPLAY::initialize()
 	palette_pc[1] = RGB_COLOR(255, 255, 255);
 #endif
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
 }
 

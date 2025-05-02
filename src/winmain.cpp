@@ -1099,6 +1099,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SOUND_LATE1:
 		case ID_SOUND_LATE2:
 		case ID_SOUND_LATE3:
+		case ID_SOUND_LATE4:
 			config.sound_latency = LOWORD(wParam) - ID_SOUND_LATE0;
 			if(emu) {
 				emu->update_config();
@@ -1464,8 +1465,8 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		if(config.sound_frequency >= 0 && config.sound_frequency < 8) {
 			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ0 + config.sound_frequency, MF_BYCOMMAND);
 		}
-		if(config.sound_latency >= 0 && config.sound_latency < 4) {
-			CheckMenuRadioItem(hMenu, ID_SOUND_LATE0, ID_SOUND_LATE3, ID_SOUND_LATE0 + config.sound_latency, MF_BYCOMMAND);
+		if(config.sound_latency >= 0 && config.sound_latency < 5) {
+			CheckMenuRadioItem(hMenu, ID_SOUND_LATE0, ID_SOUND_LATE4, ID_SOUND_LATE0 + config.sound_latency, MF_BYCOMMAND);
 		}
 #ifdef USE_SOUND_DEVICE_TYPE
 		if(config.sound_device_type >= 0 && config.sound_device_type < USE_SOUND_DEVICE_TYPE) {

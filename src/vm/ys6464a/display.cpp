@@ -59,7 +59,7 @@ void DISPLAY::initialize()
 	_memset(seg, 0, sizeof(seg));
 	pb = pc = 0;
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
 }
 

@@ -148,7 +148,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 			int freq = 192000 / (wregs[2] | (wregs[3] << 8));
 			d_beep->write_signal(SIG_BEEP_FREQ, freq, 0xffffffff);
 			d_beep->write_signal(SIG_BEEP_ON, 1, 1);
-			// temporary patch: regist the event to stop
+			// temporary patch: register the event to stop
 			int intv = ram[0x450] * 50000;
 			if(register_id != -1) {
 				vm->cancel_event(register_id);
@@ -662,9 +662,8 @@ void IO::recv_from_cmt()
 	if(cmt_play && cmt_mode) {
 		rregs[6] |= 2;
 		rregs[7] = cmt_buf[cmt_ptr++];
-		// regist event for rstb
-		int id;
-		vm->register_event(this, EVENT_CMT, 2000, false, &id);
+		// register event for rstb
+		vm->register_event(this, EVENT_CMT, 2000, false, NULL);
 		// update buffer
 		cmt_ptr &= CMT_BUF_SIZE - 1;
 		if(!cmt_ptr) {

@@ -29,7 +29,6 @@
 #define FRAMES_PER_SEC		45.8
 #endif
 #define LINES_PER_FRAME 	421
-#define CHARS_PER_LINE		108
 #define CPU_CLOCKS		3993600
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400

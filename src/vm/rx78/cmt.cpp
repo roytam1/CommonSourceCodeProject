@@ -17,7 +17,7 @@ void CMT::initialize()
 	in = out = remote = now_acc = false;
 	framecnt = 0;
 	
-	// regist event to detect the end of access
+	// register event to detect the end of access
 	vm->register_frame_event(this);
 }
 

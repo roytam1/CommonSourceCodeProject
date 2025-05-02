@@ -41,7 +41,7 @@ void DISPLAY::initialize()
 	chr = wide = true;
 	cblink = 0;
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 

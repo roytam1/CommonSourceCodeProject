@@ -149,7 +149,7 @@ void MC6847::initialize()
 	// LINES_PER_FRAME must be 262
 	tWHS = (int)(CPU_CLOCKS / FRAMES_PER_SEC / LINES_PER_FRAME * 16.5 / 227.5 + 0.5);
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
 }
 
@@ -190,8 +190,7 @@ void MC6847::event_vline(int v, int clock)
 	// hsync
 	if(outputs_hsync.count) {
 		set_hsync(false);
-		int id;
-		vm->register_event_by_clock(this, 0, tWHS, false, &id);
+		vm->register_event_by_clock(this, 0, tWHS, false, NULL);
 	}
 }
 

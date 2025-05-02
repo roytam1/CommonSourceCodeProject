@@ -204,7 +204,7 @@ uint32 EVENT::current_clock()
 
 void EVENT::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* register_id)
 {
-	// regist event
+	// register event
 #ifdef _DEBUG_LOG
 	bool registered = false;
 #endif
@@ -251,7 +251,7 @@ void EVENT::register_event(DEVICE* dev, int event_id, int usec, bool loop, int* 
 
 void EVENT::register_event_by_clock(DEVICE* dev, int event_id, int clock, bool loop, int* register_id)
 {
-	// regist event
+	// register event
 #ifdef _DEBUG_LOG
 	bool registered = false;
 #endif

@@ -98,7 +98,7 @@ void DISPLAY::initialize()
 	ls373 = 0;
 	pio_7seg = pio_8bit = 0;
 	
-	// regist event
+	// register event
 	vm->register_vline_event(this);
 }
 

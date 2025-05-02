@@ -18,8 +18,8 @@
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
-#define LINES_PER_FRAME 	262
-#define CHARS_PER_LINE		114
+#define LINES_PER_FRAME 	260
+#define CHARS_PER_LINE		64
 #define CPU_CLOCKS		2500000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400

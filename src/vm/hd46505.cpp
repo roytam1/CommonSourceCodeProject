@@ -25,10 +25,14 @@ void HD46505::initialize()
 	updated = false;
 	
 	// temporary for 1st frame
-	hz_total = CHARS_PER_LINE;
-	hz_disp = (CHARS_PER_LINE > 80) ? 80 : 40;
-	hs_start = hz_disp + 8;
-	hs_end = hs_start + 8;
+#ifdef CHARS_PER_LINE
+	hz_total = (CHARS_PER_LINE > 54) ? CHARS_PER_LINE : 54;
+#else
+	ht_total = 54;
+#endif
+	hz_disp = (hz_total > 80) ? 80 : 40;
+	hs_start = hz_disp + 4;
+	hs_end = hs_start + 4;
 	
 	vt_total = LINES_PER_FRAME;
 	vt_disp = (SCREEN_HEIGHT > LINES_PER_FRAME) ? (SCREEN_HEIGHT >> 1) : SCREEN_HEIGHT;
@@ -41,7 +45,7 @@ void HD46505::initialize()
 	
 	hz_clock = (int)(CPU_CLOCKS / FRAMES_PER_SEC / vt_total);
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 	vm->register_vline_event(this);
 }
@@ -100,6 +104,7 @@ void HD46505::event_frame()
 
 void HD46505::event_vline(int v, int clock)
 {
+	// note: event_vline() is called after every event_frame() was called in all devices
 	if(v == 0 && vt_total != 0) {
 		update_vline(0, hz_clock);
 		vline = 1;

@@ -31,9 +31,9 @@
 //#ifdef _X1TURBO
 //24KHz
 //#define FRAMES_PER_10SECS	554
-//#define FRAMES_PER_SEC		55.4
-//#define LINES_PER_FRAME 	448
-//#define CHARS_PER_LINE		108
+//#define FRAMES_PER_SEC	55.4
+//#define LINES_PER_FRAME	448
+//#define CHARS_PER_LINE	56
 // 161*448*55.4
 //#define CPU_CLOCKS		3995891
 //#else
@@ -41,7 +41,7 @@
 #define FRAMES_PER_10SECS	620
 #define FRAMES_PER_SEC		62
 #define LINES_PER_FRAME 	258
-#define CHARS_PER_LINE		112
+#define CHARS_PER_LINE		56
 // 250*258*62
 #define CPU_CLOCKS		3999000
 //#endif

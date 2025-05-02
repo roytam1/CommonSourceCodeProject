@@ -120,7 +120,7 @@ void DISPLAY::initialize()
 		tvram[0x3fe0 + (i << 1)] = (i == 7 && sound_bios_ok) ? 0x08 : memsw_default[i];
 	}
 	
-	// regist event
+	// register event
 	vm->register_frame_event(this);
 }
 
