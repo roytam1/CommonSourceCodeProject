@@ -35,10 +35,11 @@ private:
 	FIFO* key_buf;
 	uint8* key_stat;
 	int key_prev, key_break, key_repeat;
-	bool key_shift_released;
 	bool key_converted[256];
 	bool key_shift, key_ctrl, key_graph;
-	bool key_caps, key_kana;
+	bool key_caps, key_caps_locked;
+	bool key_shift_released;
+	bool key_kana, key_kana_locked;
 	
 	bool play, rec, eot;
 	
@@ -49,6 +50,7 @@ private:
 	void process_cmd();
 	void set_ibf(bool val);
 	void set_obf(bool val);
+	uint8 get_key_low();
 	uint16 get_key(int code, bool repeat);
 	
 public:
@@ -61,17 +63,19 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void set_intr_iei(bool val);
-	uint32 intr_ack();
-	void intr_reti();
 	void event_frame();
 	void event_callback(int event_id, int err);
 	
-	// unique functions
+	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit) {
 		d_cpu = device;
 		intr_bit = bit;
 	}
+	void set_intr_iei(bool val);
+	uint32 intr_ack();
+	void intr_reti();
+	
+	// unique functions
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}

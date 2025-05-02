@@ -80,11 +80,6 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// interrupt common functions
-	void set_intr_iei(bool val);
-	uint32 intr_ack();
-	void intr_reti();
-	
-	// unique functions
 	void set_context_intr(DEVICE* device, uint32 bit) {
 		d_cpu = device;
 		intr_bit = bit;
@@ -92,6 +87,11 @@ public:
 	void set_context_child(DEVICE* device) {
 		d_child = device;
 	}
+	void set_intr_iei(bool val);
+	uint32 intr_ack();
+	void intr_reti();
+	
+	// unique functions
 	void set_context_zc0(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&counter[0].outputs, device, id, mask);
 	}

@@ -60,13 +60,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc = new HD46505(this, emu);
 	pio = new I8255(this, emu);
 	fdc = new MB8877(this, emu);
-	if(sound_device_type) {
-		opm = new YM2151(this, emu);
+	if(sound_device_type >= 1) {
+		opm1 = new YM2151(this, emu);
+	}
+	if(sound_device_type == 2) {
+		opm2 = new YM2151(this, emu);
 	}
 	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
-	if(sound_device_type) {
-		ctc_f = new Z80CTC(this, emu);
+	if(sound_device_type >= 1) {
+		ctc1 = new Z80CTC(this, emu);
+	}
+	if(sound_device_type == 2) {
+		ctc2 = new Z80CTC(this, emu);
 	}
 #ifdef _X1TURBO
 	ctc = new Z80CTC(this, emu);
@@ -84,8 +90,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	if(sound_device_type) {
-		event->set_context_sound(opm);
+	if(sound_device_type >= 1) {
+		event->set_context_sound(opm1);
+	}
+	if(sound_device_type == 2) {
+		event->set_context_sound(opm2);
 	}
 	event->set_context_sound(psg);
 	
@@ -103,10 +112,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _FDC_DEBUG_LOG
 	fdc->set_context_cpu(cpu);
 #endif
-	if(sound_device_type) {
-		ctc_f->set_context_zc0(ctc_f, SIG_Z80CTC_TRIG_3, 1);
-		ctc_f->set_constant_clock(1, CPU_CLOCKS >> 1);
-		ctc_f->set_constant_clock(2, CPU_CLOCKS >> 1);
+	if(sound_device_type >= 1) {
+		ctc1->set_context_zc0(ctc1, SIG_Z80CTC_TRIG_3, 1);
+		ctc1->set_constant_clock(1, CPU_CLOCKS >> 1);
+		ctc1->set_constant_clock(2, CPU_CLOCKS >> 1);
+	}
+	if(sound_device_type == 2) {
+		ctc2->set_context_zc0(ctc2, SIG_Z80CTC_TRIG_3, 1);
+		ctc2->set_constant_clock(1, CPU_CLOCKS >> 1);
+		ctc2->set_constant_clock(2, CPU_CLOCKS >> 1);
 	}
 #ifdef _X1TURBO
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
@@ -135,40 +149,44 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_io(io);
 	
 	// z80 family daisy chain
+	DEVICE* parent_dev = NULL;
+	int level = 0;
+	
+	#define Z80_DAISY_CHAIN(dev) { \
+		if(parent_dev == NULL) { \
+			cpu->set_context_intr(dev); \
+		} \
+		else { \
+			parent_dev->set_context_child(dev); \
+		} \
+		dev->set_context_intr(cpu, level++); \
+		parent_dev = dev; \
+	}
+	if(sound_device_type >= 1) {
+		Z80_DAISY_CHAIN(ctc1);
+	}
+	if(sound_device_type == 2) {
+		Z80_DAISY_CHAIN(ctc2);
+	}
 #ifdef _X1TURBO
-	if(sound_device_type) {
-		cpu->set_context_intr(ctc_f);
-		ctc_f->set_context_intr(cpu, 0);
-		ctc_f->set_context_child(sio);
-	}
-	else {
-		cpu->set_context_intr(sio);
-	}
-	sio->set_context_intr(cpu, 1);
-	sio->set_context_child(dma);
-	dma->set_context_intr(cpu, 2);
-	dma->set_context_child(ctc);
-	ctc->set_context_intr(cpu, 3);
-	ctc->set_context_child(sub);
-	sub->set_context_intr(cpu, 4);
-#else
-	if(sound_device_type) {
-		cpu->set_context_intr(ctc_f);
-		ctc_f->set_context_intr(cpu, 0);
-		ctc_f->set_context_child(sub);
-	}
-	else {
-		cpu->set_context_intr(sub);
-	}
-	sub->set_context_intr(cpu, 1);
+	Z80_DAISY_CHAIN(sio);
+	Z80_DAISY_CHAIN(dma);
+	Z80_DAISY_CHAIN(ctc);
 #endif
+	Z80_DAISY_CHAIN(sub);
 	
 	// i/o bus
-	if(sound_device_type) {
-		io->set_iomap_single_w(0x700, opm);
+	if(sound_device_type >= 1) {
+		io->set_iomap_single_w(0x700, opm1);
 		io->set_iovalue_single_r(0x700, 0x00);
-		io->set_iomap_single_rw(0x701, opm);
-		io->set_iomap_range_rw(0x704, 0x707, ctc_f);
+		io->set_iomap_single_rw(0x701, opm1);
+		io->set_iomap_range_rw(0x704, 0x707, ctc1);
+	}
+	if(sound_device_type == 2) {
+		io->set_iomap_single_w(0x708, opm2);
+		io->set_iovalue_single_r(0x708, 0x00);
+		io->set_iomap_single_rw(0x709, opm2);
+		io->set_iomap_range_rw(0x70c, 0x70f, ctc2);
 	}
 #ifdef _X1TURBO
 	io->set_iomap_single_rw(0xb00, memory);
@@ -408,8 +426,11 @@ void VM::initialize_sound(int rate, int samples)
 #endif
 	
 	// init sound gen
-	if(sound_device_type) {
-		opm->init(rate, 4000000, samples, 0);
+	if(sound_device_type >= 1) {
+		opm1->init(rate, 4000000, samples, 0);
+	}
+	if(sound_device_type == 2) {
+		opm2->init(rate, 4000000, samples, 0);
 	}
 	psg->init(rate, 2000000, samples, 0, 0);
 #ifdef _X1TWIN

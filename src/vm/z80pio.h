@@ -65,11 +65,6 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// interrupt common functions
-	void set_intr_iei(bool val);
-	uint32 intr_ack();
-	void intr_reti();
-	
-	// unique function
 	void set_context_intr(DEVICE* device, uint32 bit) {
 		d_cpu = device;
 		intr_bit = bit;
@@ -77,6 +72,11 @@ public:
 	void set_context_child(DEVICE* device) {
 		d_child = device;
 	}
+	void set_intr_iei(bool val);
+	uint32 intr_ack();
+	void intr_reti();
+	
+	// unique function
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}

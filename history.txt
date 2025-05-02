@@ -1,3 +1,14 @@
+4/14/2011
+
+[VM/DEVICE] add virtual functions for Z80 daisy chain definitions
+
+[X1TURBO] support 2nd CZ-8BS1 for NRTDRV
+[X1TURBO/DISPLAY] support black/transparency register
+[X1TURBO/SUB] fix xfer key code
+[X1TURBO/SUB] fix ctrl/shift/kana/caps/graph bits in $e6 command
+[X1TURBO/SUB] fix write protected bit in $eb command
+
+
 4/13/2011
 
 [VM/Z80DMA] fix address step count (thanks Kale)

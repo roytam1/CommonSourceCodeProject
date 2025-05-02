@@ -196,7 +196,7 @@ void DISPLAY::reset()
 {
 #ifdef _X1TURBO
 	mode1 = 3;
-	mode2 = 0;
+	mode2 = mode2_txt = 0;
 	hires = false;
 #endif
 	cur_line = cur_code = 0;
@@ -261,6 +261,13 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 			break;
 		case 0x1fe0:
 			mode2 = data;
+			if(data & 8) {
+				mode2_txt |= (1 << (data & 7));
+			}
+			else {
+				mode2_txt &= ~(1 << (data & 7));
+			}
+			update_pal();
 			break;
 		}
 		break;
@@ -460,15 +467,23 @@ void DISPLAY::update_pal()
 	for(int i = 0; i < 8; i++) {
 		uint8 bit = 1 << i;
 		pal2[i] = ((pal[0] & bit) ? 1 : 0) | ((pal[1] & bit) ? 2 : 0) | ((pal[2] & bit) ? 4 : 0);
+#ifdef _X1TURBO
+		if(((mode2 & 0x10) && i == 0) || ((mode2 & 0x20) && i == 1)) {
+			pal2[i] = 0;
+		}
+#endif
 	}
 	for(int c = 0; c < 8; c++) {
-		uint8 bit = 1 << c;
 		for(int t = 0; t < 8; t++) {
-			if(priority & bit) {
+			if(priority & (1 << c)) {
 				pri[c][t] = pal2[c];
 			}
 			else if(t) {
+#ifdef _X1TURBO
+				pri[c][t] = (mode2_txt & (1 << t)) ? 0 : t;
+#else
 				pri[c][t] = t;
+#endif
 			}
 			else {
 				pri[c][t] = pal2[c];

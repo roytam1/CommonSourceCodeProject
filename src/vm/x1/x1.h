@@ -76,7 +76,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
-#define USE_SOUND_DEVICE_TYPE	2
+#define USE_SOUND_DEVICE_TYPE	3
 
 #include "../../common.h"
 
@@ -122,10 +122,12 @@ protected:
 	HD46505* crtc;
 	I8255* pio;
 	MB8877* fdc;
-	YM2151* opm;
+	YM2151* opm1;
+	YM2151* opm2;
 	YM2203* psg;
 	Z80* cpu;
-	Z80CTC* ctc_f;
+	Z80CTC* ctc1;
+	Z80CTC* ctc2;
 #ifdef _X1TURBO
 	Z80DMA* dma;
 	Z80SIO* sio;

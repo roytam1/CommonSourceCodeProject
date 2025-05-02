@@ -314,6 +314,10 @@ public:
 		return 0;
 	}
 	
+	// z80 daisy chain
+	virtual void set_context_intr(DEVICE* device, uint32 bit) {}
+	virtual void set_context_child(DEVICE* device) {}
+	
 	// interrupt device to device
 	virtual void set_intr_iei(bool val) {}
 	
