@@ -99,14 +99,6 @@ static const uint8 intfont[64 * 12] = {
 
 void MC6847::initialize()
 {
-	// external font
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(extfont, sizeof(extfont), 1);
-		fio->Fclose();
-	}
-	delete fio;
-	
 	// semigraphics pattern
 	for(int i = 0; i < 16; i++) {
 		for(int j = 0; j < 6; j++) {
@@ -144,11 +136,12 @@ void MC6847::initialize()
 	
 	// register event
 	register_vline_event(this);
+	update_timing(CPU_CLOCKS, FRAMES_PER_SEC, LINES_PER_FRAME);
 }
 
 void MC6847::reset()
 {
-	vsync = hsync = true;
+	vsync = hsync = disp = true;
 }
 
 void MC6847::write_signal(int id, uint32 data, uint32 mask)
@@ -187,10 +180,8 @@ void MC6847::event_vline(int v, int clock)
 	set_vsync(v > 32);	// 32/262
 	
 	// hsync
-	if(outputs_hsync.count) {
-		set_hsync(false);
-		register_event_by_clock(this, 0, tWHS, false, NULL);
-	}
+	set_hsync(false);
+	register_event_by_clock(this, 0, tWHS, false, NULL);
 }
 
 void MC6847::event_callback(int event_id, int err)
@@ -203,6 +194,7 @@ void MC6847::set_vsync(bool val)
 	if(vsync != val) {
 		write_signals(&outputs_vsync, val ? 0xffffffff : 0);
 		vsync = val;
+		set_disp(vsync && hsync);
 	}
 }
 
@@ -211,7 +203,29 @@ void MC6847::set_hsync(bool val)
 	if(hsync != val) {
 		write_signals(&outputs_hsync, val ? 0xffffffff : 0);
 		hsync = val;
+		set_disp(vsync && hsync);
 	}
+}
+
+void MC6847::set_disp(bool val)
+{
+	if(disp != val) {
+		if(d_cpu != NULL) {
+			d_cpu->write_signal(SIG_CPU_BUSREQ, val ? 1 : 0, 1);
+		}
+		disp = val;
+	}
+}
+
+void MC6847::load_font_image(_TCHAR *path)
+{
+	// external font
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(path, FILEIO_READ_BINARY)) {
+		fio->Fread(extfont, sizeof(extfont), 1);
+		fio->Fclose();
+	}
+	delete fio;
 }
 
 void MC6847::draw_screen()
@@ -282,6 +296,12 @@ void MC6847::draw_rg(int xofs, int yofs)
 	static const uint8 color_table[4] = {
 		GREEN, LIGHTGREEN, BLACK, WHITE
 	};
+	static const uint8 color_table2[4] = {
+		BLACK, BLACK, CYAN, WHITE
+	};
+	static const uint8 color_table3[4] = {
+		BLACK, ORANGE, BLACK, WHITE
+	};
 	uint8 color = css ? 2 : 0;
 	int ofs = 0;
 	
@@ -302,15 +322,25 @@ void MC6847::draw_rg(int xofs, int yofs)
 				dest[10] = dest[11] = color_table[color | ((data >> 2) & 1)];
 				dest[12] = dest[13] = color_table[color | ((data >> 1) & 1)];
 				dest[14] = dest[15] = color_table[color | ((data >> 0) & 1)];
+			} else if(css) {
+				// color bleed in black/white pattern
+				dest[0] = color_table2[(data >> 6) & 3];
+				dest[1] = color_table3[(data >> 6) & 3];
+				dest[2] = color_table2[(data >> 4) & 3];
+				dest[3] = color_table3[(data >> 4) & 3];
+				dest[4] = color_table2[(data >> 2) & 3];
+				dest[5] = color_table3[(data >> 2) & 3];
+				dest[6] = color_table2[(data >> 0) & 3];
+				dest[7] = color_table3[(data >> 0) & 3];
 			} else {
-				dest[0] = color_table[color | ((data >> 7) & 1)];
-				dest[1] = color_table[color | ((data >> 6) & 1)];
-				dest[2] = color_table[color | ((data >> 5) & 1)];
-				dest[3] = color_table[color | ((data >> 4) & 1)];
-				dest[4] = color_table[color | ((data >> 3) & 1)];
-				dest[5] = color_table[color | ((data >> 2) & 1)];
-				dest[6] = color_table[color | ((data >> 1) & 1)];
-				dest[7] = color_table[color | ((data >> 0) & 1)];
+				dest[0] = color_table[(data >> 7) & 1];
+				dest[1] = color_table[(data >> 6) & 1];
+				dest[2] = color_table[(data >> 5) & 1];
+				dest[3] = color_table[(data >> 4) & 1];
+				dest[4] = color_table[(data >> 3) & 1];
+				dest[5] = color_table[(data >> 2) & 1];
+				dest[6] = color_table[(data >> 1) & 1];
+				dest[7] = color_table[(data >> 0) & 1];
 			}
 		}
 		if(yofs >= 2) {

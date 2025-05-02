@@ -16,7 +16,7 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define EMM_BUFFER_SIZE	0x80000
+#define EMM_BUFFER_SIZE	0x50000
 
 class EMM : public DEVICE
 {

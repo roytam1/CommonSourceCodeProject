@@ -319,10 +319,11 @@ RETRY:
 				ZeroMemory(&d3dpp, sizeof(d3dpp));
 				d3dpp.BackBufferWidth = display_width;
 				d3dpp.BackBufferHeight = display_height;
-				d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+				d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;//D3DFMT_UNKNOWN;
 				d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
 				d3dpp.hDeviceWindow = main_window_handle;
 				d3dpp.Windowed = TRUE;
+				d3dpp.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
 				d3dpp.PresentationInterval = config.wait_vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
 				
 				// create d3d9 device
@@ -562,6 +563,18 @@ void EMU::update_screen(HDC hdc)
 			BitBlt(hdc, x, y, w, h, hdcDib, x, y, SRCCOPY);
 		}
 #else
+#ifdef USE_ACCESS_LAMP
+		// get access lamps status of drives
+		int status = vm->access_lamp() & 7;
+		static int prev_status = 0;
+		bool render_in = (status != 0);
+		bool render_out = (prev_status != status);
+		prev_status = status;
+		
+		COLORREF crColor = RGB((status & 1) ? 255 : 0, (status & 2) ? 255 : 0, (status & 4) ? 255 : 0);
+		int right_bottom_x = screen_dest_x + stretched_width;
+		int right_bottom_y = screen_dest_y + stretched_height;
+#endif
 		// standard screen
 		if(use_d3d9) {
 			LPDIRECT3DSURFACE9 lpd3d9BackSurface = NULL;
@@ -571,58 +584,53 @@ void EMU::update_screen(HDC hdc)
 				
 				lpd3d9Device->UpdateSurface(lpd3d9OffscreenSurface, NULL, lpd3d9Surface, NULL);
 				lpd3d9Device->StretchRect(lpd3d9Surface, &rectSrc, lpd3d9BackSurface, &rectDst, stretch_screen ? D3DTEXF_LINEAR : D3DTEXF_POINT);
+#ifdef USE_ACCESS_LAMP
+				// draw access lamps
+				if(render_in || render_out) {
+					HDC hDC = 0;
+					for(int y = display_height - 6; y < display_height; y++) {
+						for(int x = display_width - 6; x < display_width; x++) {
+							if((x < right_bottom_x && y < right_bottom_y) ? render_in : render_out) {
+								if(hDC == 0 && lpd3d9BackSurface->GetDC(&hDC) != D3D_OK) {
+									goto quit;
+								}
+								SetPixelV(hDC, x, y, crColor);
+							}
+						}
+					}
+quit:
+					if(hDC != 0) {
+						lpd3d9BackSurface->ReleaseDC(hDC);
+					}
+				}
+#endif
 				lpd3d9BackSurface->Release();
 				lpd3d9Device->Present(NULL, NULL, NULL, NULL);
 			}
 		}
-		else if(stretch_screen) {
-			BitBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibStretch2, 0, 0, SRCCOPY);
-		}
 		else {
-			if(stretched_width == source_width && stretched_height == source_height) {
+			if(stretch_screen) {
+				BitBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibStretch2, 0, 0, SRCCOPY);
+			}
+			else if(stretched_width == source_width && stretched_height == source_height) {
 				BitBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibSource, 0, 0, SRCCOPY);
 			}
 			else {
 				StretchBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibSource, 0, 0, source_width, source_height, SRCCOPY);
 			}
-		}
 #ifdef USE_ACCESS_LAMP
-		// draw access lamps of drives
-		int status = vm->access_lamp() & 7;
-		static int prev_status = 0, tmp_status = 0;
-		static int remain = 0;
-		
-		if(status == 0) {
-			if(remain > 0) {
-				status = prev_status = tmp_status;
-				remain--;
-			}
-		} else {
-#ifdef SUPPORT_VARIABLE_TIMING
-			remain = (int)(vm->frame_rate() / 4.0 + 0,5);
-#else
-			remain = (int)(FRAMES_PER_SEC / 4.0 + 0.5);
-#endif
-			tmp_status = status;
-		}
-		bool render_in = (status != 0);
-		bool render_out = (prev_status != status);
-		prev_status = status;
-		
-		if(render_in || render_out) {
-			COLORREF crColor = RGB((status & 1) ? 255 : 0, (status & 2) ? 255 : 0, (status & 4) ? 255 : 0);
-			int right_bottom_x = screen_dest_x + stretched_width;
-			int right_bottom_y = screen_dest_y + stretched_height;
-			
-			for(int y = display_height - 6; y < display_height; y++) {
-				for(int x = display_width - 6; x < display_width; x++) {
-					if((x < right_bottom_x && y < right_bottom_y) ? render_in : render_out) {
-						SetPixelV(hdc, x, y, crColor);
+			// draw access lamps
+			if(render_in || render_out) {
+				for(int y = display_height - 6; y < display_height; y++) {
+					for(int x = display_width - 6; x < display_width; x++) {
+						if((x < right_bottom_x && y < right_bottom_y) ? render_in : render_out) {
+							SetPixelV(hdc, x, y, crColor);
+						}
 					}
 				}
 			}
-		}
 #endif
+		}
 #endif
 		first_invalidate = self_invalidate = false;
 	}

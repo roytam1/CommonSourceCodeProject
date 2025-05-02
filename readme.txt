@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/23/2013
+								8/24/2013
 
 --- What's this ?
 
@@ -65,6 +65,8 @@ This archive includes the all source codes of emulators listed below:
 	eX1twin		SHARP X1twin
 	eX1turbo	SHARP X1turbo
 	eYS-6464A	Shinko Sangyo YS-6464A
+
+	yaPC-6001	NEC PC-6001 (by Mr.tanam)
 
 You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
 
@@ -147,6 +149,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Based on MON80 by Mr.Tesuya Suzuki
 - vm/mz2500/sasi.*
 	X millenium
+- vm/pc6001/*.*
+	yaPC-6001 by Mr.tanam
 - vm/pc9801/pc88.*
 	M88 and MESS PC-8801 driver
 - vm/x1/pce.*

@@ -242,9 +242,9 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	case 0x1f00:
 		switch(addr) {
 		case 0x1fd0:
-			if((mode1 & 1) != (data & 1)) {
+//			if((mode1 & 1) != (data & 1)) {
 				d_crtc->set_horiz_freq((data & 1) ? 24860 : 15980);
-			}
+//			}
 			mode1 = data;
 //			hireso = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
 			break;

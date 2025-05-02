@@ -41,7 +41,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	drec->set_context_out(memory, SIG_MEMORY_SYSPORT, 1);
 	vdp->set_context_vsync(memory, SIG_MEMORY_SYSPORT, 2);	// vsync / hsync?
 	
+	vdp->load_font_image(emu->bios_path(_T("FONT.ROM")));
 	vdp->set_vram_ptr(memory->get_vram(), 0x400);
+	vdp->set_context_cpu(cpu);
 	vdp->write_signal(SIG_MC6847_AG, 0, 0);		// force character mode
 	vdp->write_signal(SIG_MC6847_AS, 0, 0);
 	vdp->write_signal(SIG_MC6847_INTEXT, 0, 0);	// force internal character ???

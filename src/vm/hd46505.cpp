@@ -100,6 +100,10 @@ void HD46505::event_pre_frame()
 		timing_changed = false;
 		disp_end_clock = 0;
 #ifdef HD46505_HORIZ_FREQ
+		// for SHARP X1turbo
+		if(vt_total < 400) {
+			next_horiz_freq = HD46505_HORIZ_FREQ;
+		}
 		horiz_freq = 0;
 #endif
 	}

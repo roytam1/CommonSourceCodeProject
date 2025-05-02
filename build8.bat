@@ -130,6 +130,10 @@ mkdir build\pasopia7
 copy Release\pasopia7.exe build\pasopia7\.
 copy Release\pasopia7lcd.exe build\pasopia7\.
 
+devenv.com pc6001.vcproj /Rebuild Release
+mkdir build\pc6001
+copy Release\pc6001.exe build\pc6001\.
+
 devenv.com pc8001mk2sr.vcproj /Rebuild Release
 mkdir build\pc8001mk2sr
 copy Release\pc8001mk2sr.exe build\pc8001mk2sr\.

@@ -24,6 +24,8 @@
 class MC6847 : public DEVICE
 {
 private:
+	DEVICE *d_cpu;
+	
 	// output signals
 	outputs_t outputs_vsync;
 	outputs_t outputs_hsync;
@@ -41,17 +43,19 @@ private:
 	uint8 gm;
 	bool css, inv;
 	
-	bool vsync, hsync;
+	bool vsync, hsync, disp;
 	int tWHS;
 	
 	void set_vsync(bool val);
 	void set_hsync(bool val);
+	void set_disp(bool val);
 	void draw_cg(int xofs, int yofs);
 	void draw_rg(int xofs, int yofs);
 	void draw_alpha();
 	
 public:
 	MC6847(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		d_cpu = NULL;
 		ag = as = intext = css = inv = false;
 		gm = 0;
 		init_output_signals(&outputs_vsync);
@@ -68,6 +72,9 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
 	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_vsync, device, id, mask);
 	}
@@ -77,6 +84,7 @@ public:
 	void set_vram_ptr(uint8* ptr, int size) {
 		vram_ptr = ptr; vram_size = size;
 	}
+	void load_font_image(_TCHAR *path);
 	void draw_screen();
 };
 

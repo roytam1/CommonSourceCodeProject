@@ -1,3 +1,19 @@
+8/24/2013
+
+[EMU/WIN32] fix access lamp renderer for Direct3D9
+
+[VM/HD46505] fix to initialize frequency if vline is lesser than 400
+[VM/MB8877] fix not to show record not found status after drive is changed
+[VM/MB8877] fix to activate access lamp while searching target sector
+[VM/MC6847] add function to load external cgrom image
+[VM/MC6847] support to request bus to cpu in display timing
+[VM/MC6847] support color bleed in black/white pattern (thanks Mr.tanam)
+
+[PC6001] add yaPC-6001 codes (thanks Mr.tanam)
+[X1TURBO/EMM] change EMM memory size to 320KB
+[X1TURBO/PSUB] fix to clear irq flag when z80 reads data from sub cpu
+
+
 8/21/2013
 
 [WINMAIN] fix to use GetFullPathName() to get the parent directory

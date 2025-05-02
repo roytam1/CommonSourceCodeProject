@@ -64,6 +64,7 @@ private:
 	int seektrk;
 	bool seekvct;
 	bool motor_on;
+	bool drive_sel;
 	
 	// timing
 	int cur_position[MAX_DRIVE];

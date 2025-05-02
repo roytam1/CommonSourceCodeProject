@@ -35,16 +35,25 @@ void EMM::write_io8(uint32 addr, uint32 data)
 		data_addr = (data_addr & 0x00ffff) | (data << 16);
 		break;
 	case 3:
-		data_buffer[(data_addr++) & (EMM_BUFFER_SIZE - 1)] = data;
+		if(data_addr < EMM_BUFFER_SIZE) {
+			data_buffer[data_addr] = data;
+		}
+		data_addr = (data_addr + 1) & 0xffffff;
 		break;
 	}
 }
 
 uint32 EMM::read_io8(uint32 addr)
 {
+	uint32 data = 0xff;
+	
 	switch(addr & 3) {
 	case 3:
-		return data_buffer[(data_addr++) & (EMM_BUFFER_SIZE - 1)];
+		if(data_addr < EMM_BUFFER_SIZE) {
+			data = data_buffer[data_addr];
+		}
+		data_addr = (data_addr + 1) & 0xffffff;
+		return data;
 	}
 	return 0xff;
 }

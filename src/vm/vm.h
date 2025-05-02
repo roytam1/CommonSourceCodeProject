@@ -185,6 +185,11 @@
 #include "pasopia7/pasopia7.h"
 #endif
 
+// NEC PC-6001
+#ifdef _PC6001
+#include "pc6001/pc6001.h"
+#endif
+
 // NEC PC-8001mkIISR
 #ifdef _PC8001SR
 #include "pc8801/pc8801.h"

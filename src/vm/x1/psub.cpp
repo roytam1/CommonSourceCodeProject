@@ -196,6 +196,8 @@ void PSUB::write_io8(uint32 addr, uint32 data)
 uint32 PSUB::read_io8(uint32 addr)
 {
 	set_obf(true);
+	intr = false;
+	update_intr();
 	return outbuf;
 }
 
@@ -220,7 +222,6 @@ void PSUB::set_intr_iei(bool val)
 
 uint32 PSUB::intr_ack()
 {
-	intr = false;
 	return read_io8(0x1900);
 }
 

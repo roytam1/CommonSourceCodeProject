@@ -140,7 +140,7 @@ void MB8877::reset()
 	for(int i = 0; i < 7; i++) {
 		register_id[i] = -1;
 	}
-	now_search = now_seek = after_seek = false;
+	now_search = now_seek = after_seek = drive_sel = false;
 }
 
 void MB8877::update_config()
@@ -462,6 +462,7 @@ void MB8877::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MB8877_DRIVEREG) {
 		drvreg = data & DRIVE_MASK;
+		drive_sel = true;
 	}
 	else if(id == SIG_MB8877_SIDEREG) {
 		sidereg = (data & mask) ? 1 : 0;
@@ -480,6 +481,9 @@ uint32 MB8877::read_signal(int ch)
 			stat |= 1 << i;
 		}
 		fdc[i].access = false;
+	}
+	if(now_search) {
+		stat |= 1 << drvreg;
 	}
 	return stat;
 }
@@ -548,8 +552,15 @@ void MB8877::event_callback(int event_id, int err)
 			cur_position[drvreg] = next_trans_position[drvreg];
 			prev_clock[drvreg] = prev_drq_clock = current_clock();
 			set_drq(true);
+			drive_sel = false;
 		}
 		else {
+//#if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
+			// for SHARP X1 Batten Tanuki
+			if(drive_sel) {
+				status_tmp &= ~FDC_ST_RECNFND;
+			}
+//#endif
 			status = status_tmp & ~(FDC_ST_BUSY | FDC_ST_DRQ);
 		}
 		break;

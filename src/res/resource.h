@@ -599,6 +599,17 @@
 #define MENU_POS_SOUND                  7
 #endif
 
+// NEC PC-6001
+#ifdef _PC6001
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
 // NEC PC-8001mkIISR
 #ifdef _PC8001SR
 #define MENU_POS_CONTROL                0
