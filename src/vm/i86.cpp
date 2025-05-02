@@ -1,47 +1,48 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MAME
+	Origin : MAME 0.142
 	Author : Takeda.Toshiya
-	Date  : 2007.08.11 -
+	Date  : 2011.04.23-
 
 	[ 80x86 ]
 */
 
 #include "i86.h"
 
-// regs
-#define AX	0
-#define CX	1
-#define DX	2
-#define BX	3
-#define SP	4
-#define BP	5
-#define SI	6
-#define DI	7
+#define DIVIDE_FAULT			0
+#define NMI_INT_VECTOR			2
+#define OVERFLOW_TRAP			4
+#define BOUNDS_CHECK_FAULT		5
+#define ILLEGAL_INSTRUCTION		6
+#define GENERAL_PROTECTION_FAULT	13
 
-#define AL	0
-#define AH	1
-#define CL	2
-#define CH	3
-#define DL	4
-#define DH	5
-#define BL	6
-#define BH	7
-#define SPL	8
-#define SPH	9
-#define BPL	10
-#define BPH	11
-#define SIL	12
-#define SIH	13
-#define DIL	14
-#define DIH	15
+#define INT_REQ_BIT			1
+#define NMI_REQ_BIT			2
 
-// sregs
-#define ES	0
-#define CS	1
-#define SS	2
-#define DS	3
+typedef enum { ES, CS, SS, DS } SREGS;
+typedef enum { AX, CX, DX, BX, SP, BP, SI, DI } WREGS;
+
+typedef enum {
+#ifdef _BIG_ENDIAN
+	 AH,  AL,  CH,  CL,  DH,  DL,  BH,  BL,
+	SPH, SPL, BPH, BPL, SIH, SIL, DIH, DIL,
+#else
+	 AL,  AH,  CL,  CH,  DL,  DH,  BL,  BH,
+	SPL, SPH, BPL, BPH, SIL, SIH, DIL, DIH,
+#endif
+} BREGS;
+
+static struct {
+	struct {
+		WREGS w[256];
+		BREGS b[256];
+	} reg;
+	struct {
+		WREGS w[256];
+		BREGS b[256];
+	} RM;
+} Mod_RM;
 
 static const uint8 parity_table[256] = {
 	1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
@@ -61,313 +62,384 @@ static const uint8 parity_table[256] = {
 	0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
 	1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1
 };
-static const uint8 mod_reg8[256] = {
-	AL, AL, AL, AL, AL, AL, AL, AL, CL, CL, CL, CL, CL, CL, CL, CL,
-	DL, DL, DL, DL, DL, DL, DL, DL, BL, BL, BL, BL, BL, BL, BL, BL,
-	AH, AH, AH, AH, AH, AH, AH, AH, CH, CH, CH, CH, CH, CH, CH, CH,
-	DH, DH, DH, DH, DH, DH, DH, DH, BH, BH, BH, BH, BH, BH, BH, BH,
-	AL, AL, AL, AL, AL, AL, AL, AL, CL, CL, CL, CL, CL, CL, CL, CL,
-	DL, DL, DL, DL, DL, DL, DL, DL, BL, BL, BL, BL, BL, BL, BL, BL,
-	AH, AH, AH, AH, AH, AH, AH, AH, CH, CH, CH, CH, CH, CH, CH, CH,
-	DH, DH, DH, DH, DH, DH, DH, DH, BH, BH, BH, BH, BH, BH, BH, BH,
-	AL, AL, AL, AL, AL, AL, AL, AL, CL, CL, CL, CL, CL, CL, CL, CL,
-	DL, DL, DL, DL, DL, DL, DL, DL, BL, BL, BL, BL, BL, BL, BL, BL,
-	AH, AH, AH, AH, AH, AH, AH, AH, CH, CH, CH, CH, CH, CH, CH, CH,
-	DH, DH, DH, DH, DH, DH, DH, DH, BH, BH, BH, BH, BH, BH, BH, BH,
-	AL, AL, AL, AL, AL, AL, AL, AL, CL, CL, CL, CL, CL, CL, CL, CL,
-	DL, DL, DL, DL, DL, DL, DL, DL, BL, BL, BL, BL, BL, BL, BL, BL,
-	AH, AH, AH, AH, AH, AH, AH, AH, CH, CH, CH, CH, CH, CH, CH, CH,
-	DH, DH, DH, DH, DH, DH, DH, DH, BH, BH, BH, BH, BH, BH, BH, BH,
-};
-static const uint8 mod_reg16[256] = {
-	AX, AX, AX, AX, AX, AX, AX, AX, CX, CX, CX, CX, CX, CX, CX, CX,
-	DX, DX, DX, DX, DX, DX, DX, DX, BX, BX, BX, BX, BX, BX, BX, BX,
-	SP, SP, SP, SP, SP, SP, SP, SP, BP, BP, BP, BP, BP, BP, BP, BP,
-	SI, SI, SI, SI, SI, SI, SI, SI, DI, DI, DI, DI, DI, DI, DI, DI,
-	AX, AX, AX, AX, AX, AX, AX, AX, CX, CX, CX, CX, CX, CX, CX, CX,
-	DX, DX, DX, DX, DX, DX, DX, DX, BX, BX, BX, BX, BX, BX, BX, BX,
-	SP, SP, SP, SP, SP, SP, SP, SP, BP, BP, BP, BP, BP, BP, BP, BP,
-	SI, SI, SI, SI, SI, SI, SI, SI, DI, DI, DI, DI, DI, DI, DI, DI,
-	AX, AX, AX, AX, AX, AX, AX, AX, CX, CX, CX, CX, CX, CX, CX, CX,
-	DX, DX, DX, DX, DX, DX, DX, DX, BX, BX, BX, BX, BX, BX, BX, BX,
-	SP, SP, SP, SP, SP, SP, SP, SP, BP, BP, BP, BP, BP, BP, BP, BP,
-	SI, SI, SI, SI, SI, SI, SI, SI, DI, DI, DI, DI, DI, DI, DI, DI,
-	AX, AX, AX, AX, AX, AX, AX, AX, CX, CX, CX, CX, CX, CX, CX, CX,
-	DX, DX, DX, DX, DX, DX, DX, DX, BX, BX, BX, BX, BX, BX, BX, BX,
-	SP, SP, SP, SP, SP, SP, SP, SP, BP, BP, BP, BP, BP, BP, BP, BP,
-	SI, SI, SI, SI, SI, SI, SI, SI, DI, DI, DI, DI, DI, DI, DI, DI
-};
-static const uint8 mod_rm8[256] = {
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	AL, CL, DL, BL, AH, CH, DH, BH, AL, CL, DL, BL, AH, CH, DH, BH,
-	AL, CL, DL, BL, AH, CH, DH, BH, AL, CL, DL, BL, AH, CH, DH, BH,
-	AL, CL, DL, BL, AH, CH, DH, BH, AL, CL, DL, BL, AH, CH, DH, BH,
-	AL, CL, DL, BL, AH, CH, DH, BH, AL, CL, DL, BL, AH, CH, DH, BH
-};
-static const uint8 mod_rm16[256] = {
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	AX, CX, DX, BX, SP, BP, SI, DI, AX, CX, DX, BX, SP, BP, SI, DI,
-	AX, CX, DX, BX, SP, BP, SI, DI, AX, CX, DX, BX, SP, BP, SI, DI,
-	AX, CX, DX, BX, SP, BP, SI, DI, AX, CX, DX, BX, SP, BP, SI, DI,
-	AX, CX, DX, BX, SP, BP, SI, DI, AX, CX, DX, BX, SP, BP, SI, DI
+
+/************************************************************************/
+
+struct i80x86_timing {
+	uint8	exception, iret;				/* exception, IRET */
+	uint8	int3, int_imm, into_nt, into_t;			/* INTs */
+	uint8	override;					/* segment overrides */
+	uint8	flag_ops, lahf, sahf;				/* flag operations */
+	uint8	aaa, aas, aam, aad;				/* arithmetic adjusts */
+	uint8	daa, das;					/* decimal adjusts */
+	uint8	cbw, cwd;					/* sign extension */
+	uint8	hlt, load_ptr, lea, nop, wait, xlat;		/* misc */
+
+	uint8	jmp_short, jmp_near, jmp_far;			/* direct JMPs */
+	uint8	jmp_r16, jmp_m16, jmp_m32;			/* indirect JMPs */
+	uint8	call_near, call_far;				/* direct CALLs */
+	uint8	call_r16, call_m16, call_m32;			/* indirect CALLs */
+	uint8	ret_near, ret_far, ret_near_imm, ret_far_imm;	/* returns */
+	uint8	jcc_nt, jcc_t, jcxz_nt, jcxz_t;			/* conditional JMPs */
+	uint8	loop_nt, loop_t, loope_nt, loope_t;		/* loops */
+
+	uint8	in_imm8, in_imm16, in_dx8, in_dx16;		/* port reads */
+	uint8	out_imm8, out_imm16, out_dx8, out_dx16;		/* port writes */
+
+	uint8	mov_rr8, mov_rm8, mov_mr8;			/* move, 8-bit */
+	uint8	mov_ri8, mov_mi8;				/* move, 8-bit immediate */
+	uint8	mov_rr16, mov_rm16, mov_mr16;			/* move, 16-bit */
+	uint8	mov_ri16, mov_mi16;				/* move, 16-bit immediate */
+	uint8	mov_am8, mov_am16, mov_ma8, mov_ma16;		/* move, AL/AX memory */
+	uint8	mov_sr, mov_sm, mov_rs, mov_ms;			/* move, segment registers */
+	uint8	xchg_rr8, xchg_rm8;				/* exchange, 8-bit */
+	uint8	xchg_rr16, xchg_rm16, xchg_ar16;		/* exchange, 16-bit */
+
+	uint8	push_r16, push_m16, push_seg, pushf;		/* pushes */
+	uint8	pop_r16, pop_m16, pop_seg, popf;		/* pops */
+
+	uint8	alu_rr8, alu_rm8, alu_mr8;			/* ALU ops, 8-bit */
+	uint8	alu_ri8, alu_mi8, alu_mi8_ro;			/* ALU ops, 8-bit immediate */
+	uint8	alu_rr16, alu_rm16, alu_mr16;			/* ALU ops, 16-bit */
+	uint8	alu_ri16, alu_mi16, alu_mi16_ro;		/* ALU ops, 16-bit immediate */
+	uint8	alu_r16i8, alu_m16i8, alu_m16i8_ro;		/* ALU ops, 16-bit w/8-bit immediate */
+	uint8	mul_r8, mul_r16, mul_m8, mul_m16;		/* MUL */
+	uint8	imul_r8, imul_r16, imul_m8, imul_m16;		/* IMUL */
+	uint8	div_r8, div_r16, div_m8, div_m16;		/* DIV */
+	uint8	idiv_r8, idiv_r16, idiv_m8, idiv_m16;		/* IDIV */
+	uint8	incdec_r8, incdec_r16, incdec_m8, incdec_m16;	/* INC/DEC */
+	uint8	negnot_r8, negnot_r16, negnot_m8, negnot_m16;	/* NEG/NOT */
+
+	uint8	rot_reg_1, rot_reg_base, rot_reg_bit;		/* reg shift/rotate */
+	uint8	rot_m8_1, rot_m8_base, rot_m8_bit;		/* m8 shift/rotate */
+	uint8	rot_m16_1, rot_m16_base, rot_m16_bit;		/* m16 shift/rotate */
+
+	uint8	cmps8, rep_cmps8_base, rep_cmps8_count;		/* CMPS 8-bit */
+	uint8	cmps16, rep_cmps16_base, rep_cmps16_count;	/* CMPS 16-bit */
+	uint8	scas8, rep_scas8_base, rep_scas8_count;		/* SCAS 8-bit */
+	uint8	scas16, rep_scas16_base, rep_scas16_count;	/* SCAS 16-bit */
+	uint8	lods8, rep_lods8_base, rep_lods8_count;		/* LODS 8-bit */
+	uint8	lods16, rep_lods16_base, rep_lods16_count;	/* LODS 16-bit */
+	uint8	stos8, rep_stos8_base, rep_stos8_count;		/* STOS 8-bit */
+	uint8	stos16, rep_stos16_base, rep_stos16_count;	/* STOS 16-bit */
+	uint8	movs8, rep_movs8_base, rep_movs8_count;		/* MOVS 8-bit */
+	uint8	movs16, rep_movs16_base, rep_movs16_count;	/* MOVS 16-bit */
+
+	uint8	ins8, rep_ins8_base, rep_ins8_count;		/* (80186) INS 8-bit */
+	uint8	ins16, rep_ins16_base, rep_ins16_count;		/* (80186) INS 16-bit */
+	uint8	outs8, rep_outs8_base, rep_outs8_count;		/* (80186) OUTS 8-bit */
+	uint8	outs16, rep_outs16_base, rep_outs16_count;	/* (80186) OUTS 16-bit */
+	uint8	push_imm, pusha, popa;				/* (80186) PUSH immediate, PUSHA/POPA */
+	uint8	imul_rri8, imul_rmi8;				/* (80186) IMUL immediate 8-bit */
+	uint8	imul_rri16, imul_rmi16;				/* (80186) IMUL immediate 16-bit */
+	uint8	enter0, enter1, enter_base, enter_count, leave;	/* (80186) ENTER/LEAVE */
+	uint8	bound;						/* (80186) BOUND */
 };
 
-// v30
-#ifdef HAS_V30
-static const uint16 bytes[] = {
-	   1,    2,    4,    8,
-	  16,   32,   64,  128,
-	 256,  512, 1024, 2048,
-	4096, 8192,16384,32768
+#if defined(HAS_I86) || defined(HAS_V30)
+/* these come from the 8088 timings in OPCODE.LST, but with the
+   penalty for 16-bit memory accesses removed wherever possible */
+static const struct i80x86_timing timing = {
+	51, 32,			/* exception, IRET */
+	2, 0, 4, 2,		/* INTs */
+	2,			/* segment overrides */
+	2, 4, 4,		/* flag operations */
+	4, 4, 83, 60,		/* arithmetic adjusts */
+	4, 4,			/* decimal adjusts */
+	2, 5,			/* sign extension */
+	2, 24, 2, 2, 3, 11,	/* misc */
+
+	15, 15, 15,		/* direct JMPs */
+	11, 18, 24,		/* indirect JMPs */
+	19, 28,			/* direct CALLs */
+	16, 21, 37,		/* indirect CALLs */
+	20, 32, 24, 31,		/* returns */
+	4, 16, 6, 18,		/* conditional JMPs */
+	5, 17, 6, 18,		/* loops */
+
+	10, 14, 8, 12,		/* port reads */
+	10, 14, 8, 12,		/* port writes */
+
+	2, 8, 9,		/* move, 8-bit */
+	4, 10,			/* move, 8-bit immediate */
+	2, 8, 9,		/* move, 16-bit */
+	4, 10,			/* move, 16-bit immediate */
+	10, 10, 10, 10,		/* move, AL/AX memory */
+	2, 8, 2, 9,		/* move, segment registers */
+	4, 17,			/* exchange, 8-bit */
+	4, 17, 3,		/* exchange, 16-bit */
+
+	15, 24, 14, 14,		/* pushes */
+	12, 25, 12, 12,		/* pops */
+
+	3, 9, 16,		/* ALU ops, 8-bit */
+	4, 17, 10,		/* ALU ops, 8-bit immediate */
+	3, 9, 16,		/* ALU ops, 16-bit */
+	4, 17, 10,		/* ALU ops, 16-bit immediate */
+	4, 17, 10,		/* ALU ops, 16-bit w/8-bit immediate */
+	70, 118, 76, 128,	/* MUL */
+	80, 128, 86, 138,	/* IMUL */
+	80, 144, 86, 154,	/* DIV */
+	101, 165, 107, 175,	/* IDIV */
+	3, 2, 15, 15,		/* INC/DEC */
+	3, 3, 16, 16,		/* NEG/NOT */
+
+	2, 8, 4,		/* reg shift/rotate */
+	15, 20, 4,		/* m8 shift/rotate */
+	15, 20, 4,		/* m16 shift/rotate */
+
+	22, 9, 21,		/* CMPS 8-bit */
+	22, 9, 21,		/* CMPS 16-bit */
+	15, 9, 14,		/* SCAS 8-bit */
+	15, 9, 14,		/* SCAS 16-bit */
+	12, 9, 11,		/* LODS 8-bit */
+	12, 9, 11,		/* LODS 16-bit */
+	11, 9, 10,		/* STOS 8-bit */
+	11, 9, 10,		/* STOS 16-bit */
+	18, 9, 17,		/* MOVS 8-bit */
+	18, 9, 17,		/* MOVS 16-bit */
+};
+#elif defined(HAS_I86)
+/* these come from the Intel 80186 datasheet */
+static const struct i80x86_timing timing = {
+	45, 28,			/* exception, IRET */
+	0, 2, 4, 3,		/* INTs */
+	2,			/* segment overrides */
+	2, 2, 3,		/* flag operations */
+	8, 7, 19, 15,		/* arithmetic adjusts */
+	4, 4,			/* decimal adjusts */
+	2, 4,			/* sign extension */
+	2, 18, 6, 2, 6, 11,	/* misc */
+
+	14, 14, 14,		/* direct JMPs */
+	11, 17, 26,		/* indirect JMPs */
+	15, 23,			/* direct CALLs */
+	13, 19, 38,		/* indirect CALLs */
+	16, 22, 18, 25,		/* returns */
+	4, 13, 5, 15,		/* conditional JMPs */
+	6, 16, 6, 16,		/* loops */
+
+	10, 10, 8, 8,		/* port reads */
+	9, 9, 7, 7,		/* port writes */
+
+	2, 9, 12,		/* move, 8-bit */
+	3, 12,			/* move, 8-bit immediate */
+	2, 9, 12,		/* move, 16-bit */
+	4, 13,			/* move, 16-bit immediate */
+	8, 8, 9, 9,		/* move, AL/AX memory */
+	2, 11, 2, 11,		/* move, segment registers */
+	4, 17,			/* exchange, 8-bit */
+	4, 17, 3,		/* exchange, 16-bit */
+
+	10, 16, 9, 9,		/* pushes */
+	10, 20, 8, 8,		/* pops */
+
+	3, 10, 10,		/* ALU ops, 8-bit */
+	4, 16, 10,		/* ALU ops, 8-bit immediate */
+	3, 10, 10,		/* ALU ops, 16-bit */
+	4, 16, 10,		/* ALU ops, 16-bit immediate */
+	4, 16, 10,		/* ALU ops, 16-bit w/8-bit immediate */
+	26, 35, 32, 41,		/* MUL */
+	25, 34, 31, 40,		/* IMUL */
+	29, 38, 35, 44,		/* DIV */
+	44, 53, 50, 59,		/* IDIV */
+	3, 3, 15, 15,		/* INC/DEC */
+	3, 3, 10, 10,		/* NEG/NOT */
+
+	2, 5, 1,		/* reg shift/rotate */
+	15, 17, 1,		/* m8 shift/rotate */
+	15, 17, 1,		/* m16 shift/rotate */
+
+	22, 5, 22,		/* CMPS 8-bit */
+	22, 5, 22,		/* CMPS 16-bit */
+	15, 5, 15,		/* SCAS 8-bit */
+	15, 5, 15,		/* SCAS 16-bit */
+	12, 6, 11,		/* LODS 8-bit */
+	12, 6, 11,		/* LODS 16-bit */
+	10, 6, 9,		/* STOS 8-bit */
+	10, 6, 9,		/* STOS 16-bit */
+	14, 8, 8,		/* MOVS 8-bit */
+	14, 8, 8,		/* MOVS 16-bit */
+
+	14, 8, 8,		/* (80186) INS 8-bit */
+	14, 8, 8,		/* (80186) INS 16-bit */
+	14, 8, 8,		/* (80186) OUTS 8-bit */
+	14, 8, 8,		/* (80186) OUTS 16-bit */
+	14, 68, 83,		/* (80186) PUSH immediate, PUSHA/POPA */
+	22, 29,			/* (80186) IMUL immediate 8-bit */
+	25, 32,			/* (80186) IMUL immediate 16-bit */
+	15, 25, 4, 16, 8,	/* (80186) ENTER/LEAVE */
+	33,			/* (80186) BOUND */
+};
+#elif defined(HAS_I286)
+/* these come from the 80286 timings in OPCODE.LST */
+/* many of these numbers are suspect */
+static const struct i80x86_timing timing = {
+	23, 17,			/* exception, IRET */
+	0, 2, 3, 1,		/* INTs */
+	2,			/* segment overrides */
+	2, 2, 2,		/* flag operations */
+	3, 3, 16, 14,		/* arithmetic adjusts */
+	3, 3,			/* decimal adjusts */
+	2, 2,			/* sign extension */
+	2, 7, 3, 3, 3, 5,	/* misc */
+
+	7, 7, 11,		/* direct JMPs */
+	7, 11, 26,		/* indirect JMPs */
+	7, 13,			/* direct CALLs */
+	7, 11, 29,		/* indirect CALLs */
+	11, 15, 11, 15,		/* returns */
+	3, 7, 4, 8,		/* conditional JMPs */
+	4, 8, 4, 8,		/* loops */
+
+	5, 5, 5, 5,		/* port reads */
+	3, 3, 3, 3,		/* port writes */
+
+	2, 3, 3,		/* move, 8-bit */
+	2, 3,			/* move, 8-bit immediate */
+	2, 3, 3,		/* move, 16-bit */
+	2, 3,			/* move, 16-bit immediate */
+	5, 5, 3, 3,		/* move, AL/AX memory */
+	2, 5, 2, 3,		/* move, segment registers */
+	3, 5,			/* exchange, 8-bit */
+	3, 5, 3,		/* exchange, 16-bit */
+
+	5, 5, 3, 3,		/* pushes */
+	5, 5, 5, 5,		/* pops */
+
+	2, 7, 7,		/* ALU ops, 8-bit */
+	3, 7, 7,		/* ALU ops, 8-bit immediate */
+	2, 7, 7,		/* ALU ops, 16-bit */
+	3, 7, 7,		/* ALU ops, 16-bit immediate */
+	3, 7, 7,		/* ALU ops, 16-bit w/8-bit immediate */
+	13, 21, 16, 24,		/* MUL */
+	13, 21, 16, 24,		/* IMUL */
+	14, 22, 17, 25,		/* DIV */
+	17, 25, 20, 28,		/* IDIV */
+	2, 2, 7, 7,		/* INC/DEC */
+	2, 2, 7, 7,		/* NEG/NOT */
+
+	2, 5, 0,		/* reg shift/rotate */
+	7, 8, 1,		/* m8 shift/rotate */
+	7, 8, 1,		/* m16 shift/rotate */
+
+	13, 5, 12,		/* CMPS 8-bit */
+	13, 5, 12,		/* CMPS 16-bit */
+	9, 5, 8,		/* SCAS 8-bit */
+	9, 5, 8,		/* SCAS 16-bit */
+	5, 5, 4,		/* LODS 8-bit */
+	5, 5, 4,		/* LODS 16-bit */
+	4, 4, 3,		/* STOS 8-bit */
+	4, 4, 3,		/* STOS 16-bit */
+	5, 5, 4,		/* MOVS 8-bit */
+	5, 5, 4,		/* MOVS 16-bit */
+
+	5, 5, 4,		/* (80186) INS 8-bit */
+	5, 5, 4,		/* (80186) INS 16-bit */
+	5, 5, 4,		/* (80186) OUTS 8-bit */
+	5, 5, 4,		/* (80186) OUTS 16-bit */
+	3, 17, 19,		/* (80186) PUSH immediate, PUSHA/POPA */
+	21, 24,			/* (80186) IMUL immediate 8-bit */
+	21, 24,			/* (80186) IMUL immediate 16-bit */
+	11, 15, 12, 4, 5,	/* (80186) ENTER/LEAVE */
+	13,			/* (80186) BOUND */
 };
 #endif
 
-// cycles
-struct x86_cycles {
-	uint8 exception, iret;					// exception, IRET
-	uint8 int3, int_imm, into_nt, into_t;			// INTs
-	uint8 override;						// segment overrides
-	uint8 flag_ops, lahf, sahf;				// flag operations
-	uint8 aaa, aas, aam, aad;				// arithmetic adjusts
-	uint8 daa, das;						// decimal adjusts
-	uint8 cbw, cwd;						// sign extension
-	uint8 hlt, load_ptr, lea, nop, wait, xlat;		// misc
-	uint8 jmp_short, jmp_near, jmp_far;			// direct JMPs
-	uint8 jmp_r16, jmp_m16, jmp_m32;			// indirect JMPs
-	uint8 call_near, call_far;				// direct CALLs
-	uint8 call_r16, call_m16, call_m32;			// indirect CALLs
-	uint8 ret_near, ret_far, ret_near_imm, ret_far_imm;	// returns
-	uint8 jcc_nt, jcc_t, jcxz_nt, jcxz_t;			// conditional JMPs
-	uint8 loop_nt, loop_t, loope_nt, loope_t;		// loops
-	uint8 in_imm8, in_imm16, in_dx8, in_dx16;		// port reads
-	uint8 out_imm8, out_imm16, out_dx8, out_dx16;		// port writes
-	uint8 mov_rr8, mov_rm8, mov_mr8;			// move, 8-bit
-	uint8 mov_ri8, mov_mi8;					// move, 8-bit immediate
-	uint8 mov_rr16, mov_rm16, mov_mr16;			// move, 16-bit
-	uint8 mov_ri16, mov_mi16;				// move, 16-bit immediate
-	uint8 mov_am8, mov_am16, mov_ma8, mov_ma16;		// move, AL/AX memory
-	uint8 mov_sr, mov_sm, mov_rs, mov_ms;			// move, segment registers
-	uint8 xchg_rr8, xchg_rm8;				// exchange, 8-bit
-	uint8 xchg_rr16, xchg_rm16, xchg_ar16;			// exchange, 16-bit
-	uint8 push_r16, push_m16, push_seg, pushf;		// pushes
-	uint8 pop_r16, pop_m16, pop_seg, popf;			// pops
-	uint8 alu_rr8, alu_rm8, alu_mr8;			// ALU ops, 8-bit
-	uint8 alu_ri8, alu_mi8, alu_mi8_ro;			// ALU ops, 8-bit immediate
-	uint8 alu_rr16, alu_rm16, alu_mr16;			// ALU ops, 16-bit
-	uint8 alu_ri16, alu_mi16, alu_mi16_ro;			// ALU ops, 16-bit immediate
-	uint8 alu_r16i8, alu_m16i8, alu_m16i8_ro;		// ALU ops, 16-bit w/8-bit immediate
-	uint8 mul_r8, mul_r16, mul_m8, mul_m16;			// MUL
-	uint8 imul_r8, imul_r16, imul_m8, imul_m16;		// IMUL
-	uint8 div_r8, div_r16, div_m8, div_m16;			// DIV
-	uint8 idiv_r8, idiv_r16, idiv_m8, idiv_m16;		// IDIV
-	uint8 incdec_r8, incdec_r16, incdec_m8, incdec_m16;	// INC/DEC
-	uint8 negnot_r8, negnot_r16, negnot_m8, negnot_m16;	// NEG/NOT
-	uint8 rot_reg_1, rot_reg_base, rot_reg_bit;		// reg shift/rotate
-	uint8 rot_m8_1, rot_m8_base, rot_m8_bit;		// m8 shift/rotate
-	uint8 rot_m16_1, rot_m16_base, rot_m16_bit;		// m16 shift/rotate
-	uint8 cmps8, rep_cmps8_base, rep_cmps8_count;		// CMPS 8-bit
-	uint8 cmps16, rep_cmps16_base, rep_cmps16_count;	// CMPS 16-bit
-	uint8 scas8, rep_scas8_base, rep_scas8_count;		// SCAS 8-bit
-	uint8 scas16, rep_scas16_base, rep_scas16_count;	// SCAS 16-bit
-	uint8 lods8, rep_lods8_base, rep_lods8_count;		// LODS 8-bit
-	uint8 lods16, rep_lods16_base, rep_lods16_count;	// LODS 16-bit
-	uint8 stos8, rep_stos8_base, rep_stos8_count;		// STOS 8-bit
-	uint8 stos16, rep_stos16_base, rep_stos16_count;	// STOS 16-bit
-	uint8 movs8, rep_movs8_base, rep_movs8_count;		// MOVS 8-bit
-	uint8 movs16, rep_movs16_base, rep_movs16_count;	// MOVS 16-bit
-	uint8 ins8, rep_ins8_base, rep_ins8_count;		// (80186) INS 8-bit
-	uint8 ins16, rep_ins16_base, rep_ins16_count;		// (80186) INS 16-bit
-	uint8 outs8, rep_outs8_base, rep_outs8_count;		// (80186) OUTS 8-bit
-	uint8 outs16, rep_outs16_base, rep_outs16_count;	// (80186) OUTS 16-bit
-	uint8 push_imm, pusha, popa;				// (80186) PUSH immediate, PUSHA/POPA
-	uint8 imul_rri8, imul_rmi8;				// (80186) IMUL immediate 8-bit
-	uint8 imul_rri16, imul_rmi16;				// (80186) IMUL immediate 16-bit
-	uint8 enter0, enter1, enter_base, enter_count, leave;	// (80186) ENTER/LEAVE
-	uint8 bound;						// (80186) BOUND
-};
+/************************************************************************/
 
+#define SetTF(x)		(TF = (x))
+#define SetIF(x)		(IF = (x))
+#define SetDF(x)		(DirVal = (x) ? -1 : 1)
+#define SetMD(x)		(MF = (x))
+
+#define SetOFW_Add(x, y, z)	(OverVal = ((x) ^ (y)) & ((x) ^ (z)) & 0x8000)
+#define SetOFB_Add(x, y, z)	(OverVal = ((x) ^ (y)) & ((x) ^ (z)) & 0x80)
+#define SetOFW_Sub(x, y, z)	(OverVal = ((z) ^ (y)) & ((z) ^ (x)) & 0x8000)
+#define SetOFB_Sub(x, y, z)	(OverVal = ((z) ^ (y)) & ((z) ^ (x)) & 0x80)
+
+#define SetCFB(x)		(CarryVal = (x) & 0x100)
+#define SetCFW(x)		(CarryVal = (x) & 0x10000)
+#define SetAF(x, y, z)		(AuxVal = ((x) ^ ((y) ^ (z))) & 0x10)
+#define SetSF(x)		(SignVal = (x))
+#define SetZF(x)		(ZeroVal = (x))
+#define SetPF(x)		(ParityVal = (x))
+
+#define SetSZPF_Byte(x)		(ParityVal = SignVal = ZeroVal = (int8)(x))
+#define SetSZPF_Word(x)		(ParityVal = SignVal = ZeroVal = (int16)(x))
+
+#define ADDB(dst, src)		{ unsigned res = (dst) + (src); SetCFB(res); SetOFB_Add(res, src, dst); SetAF(res, src, dst); SetSZPF_Byte(res); dst = (uint8)res; }
+#define ADDW(dst, src)		{ unsigned res = (dst) + (src); SetCFW(res); SetOFW_Add(res, src, dst); SetAF(res, src, dst); SetSZPF_Word(res); dst = (uint16)res; }
+
+#define SUBB(dst, src)		{ unsigned res = (dst) - (src); SetCFB(res); SetOFB_Sub(res, src, dst); SetAF(res, src, dst); SetSZPF_Byte(res); dst = (uint8)res; }
+#define SUBW(dst, src)		{ unsigned res = (dst) - (src); SetCFW(res); SetOFW_Sub(res, src, dst); SetAF(res, src, dst); SetSZPF_Word(res); dst = (uint16)res; }
+
+#define ORB(dst, src)		dst |= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Byte(dst)
+#define ORW(dst, src)		dst |= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Word(dst)
+
+#define ANDB(dst, src)		dst &= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Byte(dst)
+#define ANDW(dst, src)		dst &= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Word(dst)
+
+#define XORB(dst, src)		dst ^= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Byte(dst)
+#define XORW(dst, src)		dst ^= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Word(dst)
+
+#define CF			(CarryVal != 0)
+#define SF			(SignVal < 0)
+#define ZF			(ZeroVal == 0)
+#define PF			parity_table[ParityVal]
+#define AF			(AuxVal != 0)
+#define OF			(OverVal != 0)
+#define DF			(DirVal < 0)
+#define MD			(MF != 0)
 #ifdef HAS_I286
-// for 80286
-static const struct x86_cycles cycles = {
-	23,17,			// exception, IRET
-	 0, 2, 3, 1,		// INTs
-	 2,			// segment overrides
-	 2, 2, 2,		// flag operations
-	 3, 3,16,14,		// arithmetic adjusts
-	 3, 3,			// decimal adjusts
-	 2, 2,			// sign extension
-	 2, 7, 3, 3, 3, 5,	// misc
-	 7, 7,11,		// direct JMPs
-	 7,11,26,		// indirect JMPs
-	 7,13,			// direct CALLs
-	 7,11,29,		// indirect CALLs
-	11,15,11,15,		// returns
-	 3, 7, 4, 8,		// conditional JMPs
-	 4, 8, 4, 8,		// loops
-	 5, 5, 5, 5,		// port reads
-	 3, 3, 3, 3,		// port writes
-	 2, 3, 3,		// move, 8-bit
-	 2, 3,			// move, 8-bit immediate
-	 2, 3, 3,		// move, 16-bit
-	 2, 3,			// move, 16-bit immediate
-	 5, 5, 3, 3,		// move, AL/AX memory
-	 2, 5, 2, 3,		// move, segment registers
-	 3, 5,			// exchange, 8-bit
-	 3, 5, 3,		// exchange, 16-bit
-	 5, 5, 3, 3,		// pushes
-	 5, 5, 5, 5,		// pops
-	 2, 7, 7,		// ALU ops, 8-bit
-	 3, 7, 7,		// ALU ops, 8-bit immediate
-	 2, 7, 7,		// ALU ops, 16-bit
-	 3, 7, 7,		// ALU ops, 16-bit immediate
-	 3, 7, 7,		// ALU ops, 16-bit w/8-bit immediate
-	13,21,16,24,		// MUL
-	13,21,16,24,		// IMUL
-	14,22,17,25,		// DIV
-	17,25,20,28,		// IDIV
-	 2, 2, 7, 7,		// INC/DEC
-	 2, 2, 7, 7,		// NEG/NOT
-	 2, 5, 0,		// reg shift/rotate
-	 7, 8, 1,		// m8 shift/rotate
-	 7, 8, 1,		// m16 shift/rotate
-	13, 5,12,		// CMPS 8-bit
-	13, 5,12,		// CMPS 16-bit
-	 9, 5, 8,		// SCAS 8-bit
-	 9, 5, 8,		// SCAS 16-bit
-	 5, 5, 4,		// LODS 8-bit
-	 5, 5, 4,		// LODS 16-bit
-	 4, 4, 3,		// STOS 8-bit
-	 4, 4, 3,		// STOS 16-bit
-	 5, 5, 4,		// MOVS 8-bit
-	 5, 5, 4,		// MOVS 16-bit
-	 5, 5, 4,		// (80186) INS 8-bit
-	 5, 5, 4,		// (80186) INS 16-bit
-	 5, 5, 4,		// (80186) OUTS 8-bit
-	 5, 5, 4,		// (80186) OUTS 16-bit
-	 3,17,19,		// (80186) PUSH immediate, PUSHA/POPA
-	21,24,			// (80186) IMUL immediate 8-bit
-	21,24,			// (80186) IMUL immediate 16-bit
-	11,15,12, 4, 5,		// (80186) ENTER/LEAVE
-	13,			// (80186) BOUND
-};
-#else
-// for 8086, v30
-static const struct x86_cycles cycles = {
-	51,32,			// exception, IRET
-	 2, 0, 4, 2,		// INTs
-	 2,			// segment overrides
-	 2, 4, 4,		// flag operations
-	 4, 4,83,60,		// arithmetic adjusts
-	 4, 4,			// decimal adjusts
-	 2, 5,			// sign extension
-	 2,24, 2, 2, 3,11,	// misc
-	15,15,15,		// direct JMPs
-	11,18,24,		// indirect JMPs
-	19,28,			// direct CALLs
-	16,21,37,		// indirect CALLs
-	20,32,24,31,		// returns
-	 4,16, 6,18,		// conditional JMPs
-	 5,17, 6,18,		// loops
-	10,14, 8,12,		// port reads
-	10,14, 8,12,		// port writes
-	 2, 8, 9,		// move, 8-bit
-	 4,10,			// move, 8-bit immediate
-	 2, 8, 9,		// move, 16-bit
-	 4,10,			// move, 16-bit immediate
-	10,10,10,10,		// move, AL/AX memory
-	 2, 8, 2, 9,		// move, segment registers
-	 4,17,			// exchange, 8-bit
-	 4,17, 3,		// exchange, 16-bit
-	15,24,14,14,		// pushes
-	12,25,12,12,		// pops
-	 3, 9,16,		// ALU ops, 8-bit
-	 4,17,10,		// ALU ops, 8-bit immediate
-	 3, 9,16,		// ALU ops, 16-bit
-	 4,17,10,		// ALU ops, 16-bit immediate
-	 4,17,10,		// ALU ops, 16-bit w/8-bit immediate
-	70,118,76,128,		// MUL
-	80,128,86,138,		// IMUL
-	80,144,86,154,		// DIV
-	101,165,107,175,	// IDIV
-	 3, 2,15,15,		// INC/DEC
-	 3, 3,16,16,		// NEG/NOT
-	 2, 8, 4,		// reg shift/rotate
-	15,20, 4,		// m8 shift/rotate
-	15,20, 4,		// m16 shift/rotate
-	22, 9,21,		// CMPS 8-bit
-	22, 9,21,		// CMPS 16-bit
-	15, 9,14,		// SCAS 8-bit
-	15, 9,14,		// SCAS 16-bit
-	12, 9,11,		// LODS 8-bit
-	12, 9,11,		// LODS 16-bit
-	11, 9,10,		// STOS 8-bit
-	11, 9,10,		// STOS 16-bit
-	18, 9,17,		// MOVS 8-bit
-	18, 9,17,		// MOVS 16-bit
-};
+#define PM			(msw & 1)
+#define CPL			(sregs[CS] & 3)
+#define IOPL			((flags & 0x3000) >> 12)
 #endif
 
-// interrupt vector
-#define NMI_INT_VECTOR			2
-#define ILLEGAL_INSTRUCTION		6
-#define GENERAL_PROTECTION_FAULT	0xd
+/************************************************************************/
 
-#define INT_REQ_BIT	1
-#define NMI_REQ_BIT	2
+#ifndef HAS_I286
+#define AMASK	0xfffff
+#endif
 
-// flags
-#define CF	(CarryVal != 0)
-#define SF	(SignVal < 0)
-#define ZF	(ZeroVal == 0)
-#define PF	parity_table[ParityVal]
-#define AF	(AuxVal != 0)
-#define OF	(OverVal != 0)
-#define DF	(DirVal < 0)
-#define MD	(MF != 0)
-#define PM	(msw & 1)
-#define CPL	(sregs[CS] & 3)
-#define IOPL	((flags & 0x3000) >> 12)
+#define read_mem_byte(a)	d_mem->read_data8((a) & AMASK)
+#define read_mem_word(a)	d_mem->read_data16((a) & AMASK)
+#define write_mem_byte(a, d)	d_mem->write_data8((a) & AMASK, (d))
+#define write_mem_word(a, d)	d_mem->write_data16((a) & AMASK, (d))
 
-#define SetTF(x) (TF = (x))
-#define SetIF(x) (IF = (x))
-#define SetDF(x) (DirVal = (x) ? -1 : 1)
-#define SetMD(x) (MF = (x))
-#define SetOFW_Add(x, y, z) (OverVal = ((x) ^ (y)) & ((x) ^ (z)) & 0x8000)
-#define SetOFB_Add(x, y, z) (OverVal = ((x) ^ (y)) & ((x) ^ (z)) & 0x80)
-#define SetOFW_Sub(x, y, z) (OverVal = ((z) ^ (y)) & ((z) ^ (x)) & 0x8000)
-#define SetOFB_Sub(x, y, z) (OverVal = ((z) ^ (y)) & ((z) ^ (x)) & 0x80)
-#define SetCFB(x) (CarryVal = (x) & 0x100)
-#define SetCFW(x) (CarryVal = (x) & 0x10000)
-#define SetAF(x, y, z) (AuxVal = ((x) ^ ((y) ^ (z))) & 0x10)
-#define SetSF(x) (SignVal = (x))
-#define SetZF(x) (ZeroVal = (x))
-#define SetPF(x) (ParityVal = (x))
-#define SetSZPF_Byte(x) (ParityVal = SignVal = ZeroVal = (int8)(x))
-#define SetSZPF_Word(x) (ParityVal = SignVal = ZeroVal = (int16)(x))
+#define read_port_byte(a)	d_io->read_io8(a)
+#define read_port_word(a)	d_io->read_io16(a)
+#define write_port_byte(a, d)	d_io->write_io8((a), (d))
+#define write_port_word(a, d)	d_io->write_io16((a), (d))
+
+/************************************************************************/
+
+#define SegBase(Seg)		(sregs[Seg] << 4)
+
+#define DefaultSeg(Seg)		((seg_prefix && (Seg == DS || Seg == SS)) ? prefix_seg : Seg)
+#define DefaultBase(Seg)	((seg_prefix && (Seg == DS || Seg == SS)) ? base[prefix_seg] : base[Seg])
+
+#define GetMemB(Seg, Off)	(read_mem_byte((DefaultBase(Seg) + (Off)) & AMASK))
+#define GetMemW(Seg, Off)	(read_mem_word((DefaultBase(Seg) + (Off)) & AMASK))
+#define PutMemB(Seg, Off, x)	write_mem_byte((DefaultBase(Seg) + (Off)) & AMASK, (x))
+#define PutMemW(Seg, Off, x)	write_mem_word((DefaultBase(Seg) + (Off)) & AMASK, (x))
+
+#define ReadByte(ea)		(read_mem_byte((ea) & AMASK))
+#define ReadWord(ea)		(read_mem_word((ea) & AMASK))
+#define WriteByte(ea, val)	write_mem_byte((ea) & AMASK, val);
+#define WriteWord(ea, val)	write_mem_word((ea) & AMASK, val);
+
+#define FETCH			read_mem_byte(pc++)
+#define FETCHOP			read_mem_byte(pc++)
+#define FETCHWORD(var)		{ var = read_mem_word(pc); pc += 2; }
+#define PUSH(val)		{ regs.w[SP] -= 2; WriteWord(((base[SS] + regs.w[SP]) & AMASK), val); }
+#define POP(var)		{ var = ReadWord(((base[SS] + regs.w[SP]) & AMASK)); regs.w[SP] += 2; }
+
+/************************************************************************/
 
 #define CompressFlags() (uint16)(CF | (PF << 2) | (AF << 4) | (ZF << 6) | (SF << 7) | (TF << 8) | (IF << 9) | (DF << 10) | (OF << 11) | (MD << 15))
+
 #define ExpandFlags(f) { \
 	CarryVal = (f) & 1; \
 	ParityVal = !((f) & 4); \
@@ -381,212 +453,153 @@ static const struct x86_cycles cycles = {
 	OverVal = (f) & 0x800; \
 }
 
-// address mask
-#ifndef HAS_I286
-#define AMASK	0xfffff
-#endif
+/************************************************************************/
 
-// segment base
-#define SegBase(seg) (sregs[seg] << 4)
-#define DefaultBase(seg) ((seg_prefix && (seg == DS || seg == SS)) ? prefix_base : base[seg])
+#define RegWord(ModRM) regs.w[Mod_RM.reg.w[ModRM]]
+#define RegByte(ModRM) regs.b[Mod_RM.reg.b[ModRM]]
 
-// memory
-inline uint8 I86::RM8(uint32 seg, uint32 ofs)
-{
-	return d_mem->read_data8((DefaultBase(seg) + ofs) & AMASK);
-}
+#define GetRMWord(ModRM) \
+	((ModRM) >= 0xc0 ? regs.w[Mod_RM.RM.w[ModRM]] : (GetEA(ModRM), i286_check_permission(ea_seg, eo, I286_WORD, I286_READ), ReadWord(ea)))
 
-inline uint16 I86::RM16(uint32 seg, uint32 ofs)
-{
-	return d_mem->read_data16((DefaultBase(seg) + ofs) & AMASK);
-}
-
-inline void I86::WM8(uint32 seg, uint32 ofs, uint8 val)
-{
-	d_mem->write_data8((DefaultBase(seg) + ofs) & AMASK, val);
-}
-
-inline void I86::WM16(uint32 seg, uint32 ofs, uint16 val)
-{
-	d_mem->write_data16((DefaultBase(seg) + ofs) & AMASK, val);
-}
-
-inline uint8 I86::RM8(uint32 addr)
-{
-	return d_mem->read_data8(addr & AMASK);
-}
-
-inline uint16 I86::RM16(uint32 addr)
-{
-	return d_mem->read_data16(addr & AMASK);
-}
-
-inline void I86::WM8(uint32 addr, uint8 val)
-{
-	d_mem->write_data8(addr & AMASK, val);
-}
-
-inline void I86::WM16(uint32 addr, uint16 val)
-{
-	d_mem->write_data16(addr & AMASK, val);
-}
-
-inline uint8 I86::FETCHOP()
-{
-	return d_mem->read_data8(PC++ & AMASK);
-}
-
-inline uint8 I86::FETCH8()
-{
-	return d_mem->read_data8(PC++ & AMASK);
-}
-
-inline uint16 I86::FETCH16()
-{
-	uint16 val = d_mem->read_data16(PC & AMASK);
-	PC += 2;
-	return val;
-}
-
-inline void I86::PUSH16(uint16 val)
-{
-	regs.w[SP] -= 2;
-	d_mem->write_data16((base[SS] + regs.w[SP]) & AMASK, val);
-}
-
-inline uint16 I86::POP16()
-{
-	uint16 var = d_mem->read_data16((base[SS] + regs.w[SP]) & AMASK);
-	regs.w[SP] += 2;
-	return var;
-}
-
-#define RegWord(ModRM) regs.w[mod_reg16[ModRM]]
-#define RegByte(ModRM) regs.b[mod_reg8[ModRM]]
-#define GetRMWord(ModRM) ((ModRM) >= 0xc0 ? regs.w[mod_rm16[ModRM]] : (GetEA(ModRM), RM16(EA)))
 #define PutbackRMWord(ModRM, val) { \
-	if(ModRM >= 0xc0) { \
-		regs.w[mod_rm16[ModRM]] = val; \
+	if (ModRM >= 0xc0) { \
+		regs.w[Mod_RM.RM.w[ModRM]] = val; \
 	} \
 	else { \
-		WM16(EA, val); \
+		i286_check_permission(ea_seg, eo, I286_WORD, I286_WRITE); \
+		WriteWord(ea, val); \
 	} \
 }
-#define GetNextRMWord() RM16(EA + 2)
-#define GetRMWordOfs(ofs) RM16(EA - EO + (uint16)(EO + (ofs)))
-#define GetRMByteOfs(ofs) RM8(EA - EO + (uint16)(EO + (ofs)))
+
+#define GetNextRMWord ( \
+	i286_check_permission(ea_seg, ea + 2 - base[ea_seg], I286_WORD, I286_READ), \
+	ReadWord(ea + 2) \
+)
+
+#define GetRMWordOffset(offs) ( \
+	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_WORD, I286_READ), \
+	ReadWord(ea - eo + (uint16)(eo + offs)) \
+)
+
+#define GetRMByteOffset(offs) ( \
+	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_BYTE, I286_READ), \
+	ReadByte(ea - eo + (uint16)(eo + offs)) \
+)
+
 #define PutRMWord(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
-		regs.w[mod_rm16[ModRM]] = val; \
+		regs.w[Mod_RM.RM.w[ModRM]] = val; \
 	} \
 	else { \
 		GetEA(ModRM); \
-		WM16(EA, val); \
+		i286_check_permission(ea_seg, eo, I286_WORD, I286_WRITE); \
+		WriteWord(ea, val); \
 	} \
 }
-#define PutRMWordOfs(ofs, val) WM16(EA - EO + (uint16)(EO + (ofs)), val)
-#define PutRMByteOfs(offs, val) WM8(EA - EO + (uint16)(EO + (offs)), val)
+
+#define PutRMWordOffset(offs, val) \
+	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_WORD, I286_WRITE); \
+	WriteWord(ea - eo + (uint16)(eo + offs), val)
+
+#define PutRMByteOffset(offs, val) \
+	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_BYTE, I286_WRITE); \
+	WriteByte(ea - eo + (uint16)(eo + offs), val)
+
 #define PutImmRMWord(ModRM) { \
+	uint16 val; \
 	if (ModRM >= 0xc0) { \
-		regs.w[mod_rm16[ModRM]] = FETCH16(); \
+		FETCHWORD(regs.w[Mod_RM.RM.w[ModRM]]) \
 	} \
 	else { \
 		GetEA(ModRM); \
-		uint16 val = FETCH16(); \
-		WM16(EA , val); \
+		i286_check_permission(ea_seg, eo, I286_WORD, I286_WRITE); \
+		FETCHWORD(val) \
+		WriteWord(ea, val); \
 	} \
 }
-#define GetRMByte(ModRM) ((ModRM) >= 0xc0 ? regs.b[mod_rm8[ModRM]] : RM8(GetEA(ModRM)))
+
+#define GetRMByte(ModRM) \
+	((ModRM) >= 0xc0 ? regs.b[Mod_RM.RM.b[ModRM]] : (GetEA(ModRM), i286_check_permission(ea_seg, eo, I286_BYTE, I286_READ), ReadByte(ea)))
+
 #define PutRMByte(ModRM, val) { \
-	if(ModRM >= 0xc0) { \
-		regs.b[mod_rm8[ModRM]] = val; \
+	if (ModRM >= 0xc0) { \
+		regs.b[Mod_RM.RM.b[ModRM]] = val; \
 	} \
 	else { \
-		WM8(GetEA(ModRM), val); \
+		GetEA(ModRM); \
+		i286_check_permission(ea_seg, eo, I286_BYTE, I286_WRITE); \
+		WriteByte(ea, val); \
 	} \
 }
+
 #define PutImmRMByte(ModRM) { \
 	if (ModRM >= 0xc0) { \
-		regs.b[mod_rm8[ModRM]] = FETCH8(); \
+		regs.b[Mod_RM.RM.b[ModRM]] = FETCH; \
 	} \
 	else { \
 		GetEA(ModRM); \
-		WM8(EA , FETCH8()); \
+		i286_check_permission(ea_seg, eo, I286_BYTE, I286_WRITE); \
+		WriteByte(ea, FETCH); \
 	} \
 }
+
 #define PutbackRMByte(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
-		regs.b[mod_rm8[ModRM]] = val; \
+		regs.b[Mod_RM.RM.b[ModRM]] = val; \
 	} \
 	else { \
-		WM8(EA, val); \
+		i286_check_permission(ea_seg, eo, I286_BYTE, I286_WRITE); \
+		WriteByte(ea, val); \
 	} \
 }
+
 #define DEF_br8(dst, src) \
-	unsigned ModRM = FETCHOP(); \
+	unsigned ModRM = FETCHOP; \
 	unsigned src = RegByte(ModRM); \
 	unsigned dst = GetRMByte(ModRM)
+
 #define DEF_wr16(dst, src) \
-	unsigned ModRM = FETCHOP(); \
+	unsigned ModRM = FETCHOP; \
 	unsigned src = RegWord(ModRM); \
 	unsigned dst = GetRMWord(ModRM)
+
 #define DEF_r8b(dst, src) \
-	unsigned ModRM = FETCHOP(); \
+	unsigned ModRM = FETCHOP; \
 	unsigned dst = RegByte(ModRM); \
 	unsigned src = GetRMByte(ModRM)
+
 #define DEF_r16w(dst, src) \
-	unsigned ModRM = FETCHOP(); \
+	unsigned ModRM = FETCHOP; \
 	unsigned dst = RegWord(ModRM); \
 	unsigned src = GetRMWord(ModRM)
+
 #define DEF_ald8(dst, src) \
-	unsigned src = FETCHOP(); \
+	unsigned src = FETCHOP; \
 	unsigned dst = regs.b[AL]
+
 #define DEF_axd16(dst, src) \
-	unsigned src = FETCHOP(); \
+	unsigned src = FETCHOP; \
 	unsigned dst = regs.w[AX]; \
-	src += (FETCH8() << 8)
+	src += (FETCH << 8)
 
-// i/o
-inline uint8 I86::IN8(uint32 addr)
-{
-	return d_io->read_io8(addr);
-}
-
-inline void I86::OUT8(uint32 addr, uint8 val)
-{
-	d_io->write_io8(addr, val);
-}
-
-inline uint16 I86::IN16(uint32 addr)
-{
-	return d_io->read_io16(addr);
-}
-
-inline void I86::OUT16(uint32 addr, uint16 val)
-{
-	d_io->write_io16(addr, val);
-}
-
-// opecodes
-#define ADDB(dst, src) { unsigned res = (dst) + (src); SetCFB(res); SetOFB_Add(res, src, dst); SetAF(res, src, dst); SetSZPF_Byte(res); dst = (uint8)res; }
-#define ADDW(dst, src) { unsigned res = (dst) + (src); SetCFW(res); SetOFW_Add(res, src, dst); SetAF(res, src, dst); SetSZPF_Word(res); dst = (uint16)res; }
-#define SUBB(dst, src) { unsigned res = (dst) - (src); SetCFB(res); SetOFB_Sub(res, src, dst); SetAF(res, src, dst); SetSZPF_Byte(res); dst = (uint8)res; }
-#define SUBW(dst, src) { unsigned res = (dst) - (src); SetCFW(res); SetOFW_Sub(res, src, dst); SetAF(res, src, dst); SetSZPF_Word(res); dst = (uint16)res; }
-#define ORB(dst, src) dst |= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Byte(dst)
-#define ORW(dst, src) dst |= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Word(dst)
-#define ANDB(dst, src) dst &= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Byte(dst)
-#define ANDW(dst, src) dst &= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Word(dst)
-#define XORB(dst, src) dst ^= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Byte(dst)
-#define XORW(dst, src) dst ^= (src); CarryVal = OverVal = AuxVal = 0; SetSZPF_Word(dst)
-
-// main
+/************************************************************************/
 
 void I86::initialize()
 {
+	static const BREGS reg_name[8] = {AL, CL, DL, BL, AH, CH, DH, BH};
+	
+	for(int i = 0; i < 256; i++) {
+		Mod_RM.reg.b[i] = reg_name[(i & 0x38) >> 3];
+		Mod_RM.reg.w[i] = (WREGS)((i & 0x38) >> 3);
+	}
+	for(int i = 0xc0; i < 0x100; i++) {
+		Mod_RM.RM.w[i] = (WREGS)(i & 7);
+		Mod_RM.RM.b[i] = (BREGS)reg_name[i & 7];
+	}
 #ifdef HAS_I286
 	AMASK = 0xfffff;
 #endif
-	prefix_base = 0;	// ???
+	prefix_seg = 0;	// ???
 	seg_prefix = false;
 }
 
@@ -595,31 +608,38 @@ void I86::reset()
 	for(int i = 0; i < 8; i++) {
 		regs.w[i] = 0;
 	}
-	_memset(sregs, 0, sizeof(sregs));
-	_memset(limit, 0, sizeof(limit));
-	_memset(base, 0, sizeof(base));
-	EA = 0;
-	EO = 0;
-	gdtr_base = idtr_base = ldtr_base = tr_base = 0;
-	gdtr_limit = idtr_limit = ldtr_limit = tr_limit = 0;
-	ldtr_sel = tr_sel = 0;
+	sregs[CS] = 0xf000;
+	sregs[SS] = sregs[DS] = sregs[ES] = 0;
+	
+	base[CS] = SegBase(CS);
+	base[SS] = base[DS] = base[ES] = 0;
+	
+	ea = 0;
+	eo = 0;
 	AuxVal = OverVal = SignVal = ZeroVal = CarryVal = 0;
 	DirVal = 1;
 	ParityVal = TF = IF = MF = 0;
-	halt = false;
-	intstat = busy = 0;
 	
-	sregs[CS] = 0xf000;
-	limit[CS] = limit[SS] = limit[DS] = limit[ES] = 0xffff;
-	base[CS] = SegBase(CS);
-	idtr_limit = 0x3ff;
+	int_state = 0;
+	test_state = false;
+	halted = false;
+	
 #ifdef HAS_I286
-	PC = 0xffff0;
 	msw = 0xfff0;
+	limit[CS] = limit[SS] = limit[DS] = limit[ES] = 0xffff;
+	_memset(rights, 0, sizeof(rights));
+	
+	gdtr.base = idtr.base = ldtr.base = tr.base = 0;
+	gdtr.limit = ldtr.limit = tr.limit = 0;
+	idtr.limit = 0x3ff;
+	ldtr.sel = tr.sel = 0;
+	ldtr.rights = tr.rights = 0;
+	
+	pc = 0xffff0;
 	flags = 2;
 #else
-	PC = 0xffff0 & AMASK;
-	msw = flags = 0;
+	pc = 0xffff0 & AMASK;
+	flags = 0;
 #endif
 	ExpandFlags(flags);
 #ifdef HAS_V30
@@ -629,65 +649,72 @@ void I86::reset()
 
 void I86::run(int clock)
 {
-	// return now if BUSREQ
+	/* return now if BUSREQ */
 	if(busreq) {
-		count = extra_count = first = 0;
+		icount = extra_cycles = first_icount = 0;
 		return;
 	}
 	
-	// run cpu while given clocks
-	count += clock;
-	first = count;
+	/* run cpu while given clocks */
+	icount += clock;
+	first_icount = icount;
 	
-	// adjust for any interrupts
-	count -= extra_count;
-	extra_count = 0;
+	/* adjust for any interrupts that came in */
+	icount -= extra_cycles;
+	extra_cycles = 0;
 	
-	while(count > 0) {
+	while(icount > 0) {
 		seg_prefix = false;
-		op(FETCHOP());
-		if(intstat & NMI_REQ_BIT) {
-			if(halt) {
-				PC++;
-				halt = false;
-			}
-			unsigned intnum = NMI_INT_VECTOR;
-			intstat &= ~NMI_REQ_BIT;
-			interrupt(intnum);
+#ifdef HAS_I286
+		try {
+			instruction(FETCHOP);
 		}
-		else if((intstat & INT_REQ_BIT) && IF) {
-			if(halt) {
-				PC++;
-				halt = false;
+		catch(int e) {
+			interrupt(e);
+		}
+#else
+		instruction(FETCHOP);
+#endif
+		if(int_state & NMI_REQ_BIT) {
+			if(halted) {
+				pc++;
+				halted = false;
 			}
-			unsigned intnum = ACK_INTR() & 0xff;
-			intstat &= ~INT_REQ_BIT;
-			interrupt(intnum);
+			int_state &= ~NMI_REQ_BIT;
+			interrupt(NMI_INT_VECTOR);
+		}
+		else if((int_state & INT_REQ_BIT) && IF) {
+			if(halted) {
+				pc++;
+				halted = false;
+			}
+			interrupt(-1);
 		}
 	}
-	count -= extra_count;
-	extra_count = 0;
-	first = count;
+	/* adjust for any interrupts that came in */
+	icount -= extra_cycles;
+	extra_cycles = 0;
+	first_icount = icount;
 }
 
 void I86::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CPU_NMI) {
 		if(data & mask) {
-			intstat |= NMI_REQ_BIT;
+			int_state |= NMI_REQ_BIT;
 		}
 		else {
-			intstat &= ~NMI_REQ_BIT;
+			int_state &= ~NMI_REQ_BIT;
 		}
 	}
 	else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
 		if(busreq) {
-			count = extra_count = first = 0;
+			icount = extra_cycles = first_icount = 0;
 		}
 	}
 	else if(id == SIG_I86_TEST) {
-		busy = (data & mask) ? 1 : 0;
+		test_state = ((data & mask) != 0);
 	}
 #ifdef HAS_I286
 	else if(id == SIG_I86_A20) {
@@ -699,156 +726,144 @@ void I86::write_signal(int id, uint32 data, uint32 mask)
 void I86::set_intr_line(bool line, bool pending, uint32 bit)
 {
 	if(line) {
-		intstat |= INT_REQ_BIT;
+		int_state |= INT_REQ_BIT;
 	}
 	else {
-		intstat &= ~INT_REQ_BIT;
+		int_state &= ~INT_REQ_BIT;
 	}
 }
 
-void I86::interrupt(unsigned num)
+void I86::interrupt(int int_num)
 {
+	unsigned dest_seg, dest_off;
+	uint16 ip = pc - base[CS];
+	
+	if(int_num == -1) {
+		int_num = d_pic->intr_ack() & 0xff;
+		int_state &= ~INT_REQ_BIT;
+	}
 #ifdef HAS_I286
 	if(PM) {
-		if((num << 3) >= idtr_limit) {
-			// go into shutdown mode
-			return;
-		}
-		_pushf();
-		PUSH16(sregs[CS]);
-		PUSH16(PC - base[CS]);
-		uint16 word1 = RM16(idtr_base + (num << 3));
-		uint16 word2 = RM16(idtr_base + (num << 3) + 2);
-		uint16 word3 = RM16(idtr_base + (num << 3) + 4);
-		switch(word3 & 0xf00) {
-		case 0x500: // task gate
-			i286_data_descriptor(CS, word2);
-			PC = base[CS] + word1;
-			break;
-		case 0x600: // interrupt gate
-			TF = IF = 0;
-			i286_data_descriptor(CS, word2);
-			PC = base[CS] + word1;
-			break;
-		case 0x700: // trap gate
-			i286_data_descriptor(CS, word2);
-			PC = base[CS] + word1;
-			break;
-		}
+		i286_interrupt_descriptor(int_num);
 	}
 	else {
 #endif
-		uint16 ip = PC - base[CS];
-		unsigned ofs = RM16(num * 4);
-		unsigned seg = RM16(num * 4 + 2);
+		dest_off = ReadWord(int_num * 4);
+		dest_seg = ReadWord(int_num * 4 + 2);
+		
 		_pushf();
 		TF = IF = 0;
-		PUSH16(sregs[CS]);
-		PUSH16(ip);
-		sregs[CS] = (uint16)seg;
+		PUSH(sregs[CS]);
+		PUSH(ip);
+		sregs[CS] = (uint16)dest_seg;
 		base[CS] = SegBase(CS);
-		PC = (base[CS] + ofs) & AMASK;
+		pc = (base[CS] + dest_off) & AMASK;
 #ifdef HAS_I286
 	}
 #endif
-	extra_count += cycles.exception;
+	extra_cycles += timing.exception;
+}
+
+void I86::trap()
+{
+	instruction(FETCHOP);
+	interrupt(1);
 }
 
 unsigned I86::GetEA(unsigned ModRM)
 {
 	switch(ModRM) {
 	case 0x00: case 0x08: case 0x10: case 0x18: case 0x20: case 0x28: case 0x30: case 0x38:
-		count -= 7; EO = (uint16)(regs.w[BX] + regs.w[SI]); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 7; eo = (uint16)(regs.w[BX] + regs.w[SI]); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x01: case 0x09: case 0x11: case 0x19: case 0x21: case 0x29: case 0x31: case 0x39:
-		count -= 8; EO = (uint16)(regs.w[BX] + regs.w[DI]); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 8; eo = (uint16)(regs.w[BX] + regs.w[DI]); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x02: case 0x0a: case 0x12: case 0x1a: case 0x22: case 0x2a: case 0x32: case 0x3a:
-		count -= 8; EO = (uint16)(regs.w[BP] + regs.w[SI]); EA = DefaultBase(SS) + EO; return EA;
+		icount -= 8; eo = (uint16)(regs.w[BP] + regs.w[SI]); ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + eo; return ea;
 	case 0x03: case 0x0b: case 0x13: case 0x1b: case 0x23: case 0x2b: case 0x33: case 0x3b:
-		count -= 7; EO = (uint16)(regs.w[BP] + regs.w[DI]); EA = DefaultBase(SS) + EO; return EA;
+		icount -= 7; eo = (uint16)(regs.w[BP] + regs.w[DI]); ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + eo; return ea;
 	case 0x04: case 0x0c: case 0x14: case 0x1c: case 0x24: case 0x2c: case 0x34: case 0x3c:
-		count -= 5; EO = regs.w[SI]; EA = DefaultBase(DS) + EO; return EA;
+		icount -= 5; eo = regs.w[SI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x05: case 0x0d: case 0x15: case 0x1d: case 0x25: case 0x2d: case 0x35: case 0x3d:
-		count -= 5; EO = regs.w[DI]; EA = DefaultBase(DS) + EO; return EA;
+		icount -= 5; eo = regs.w[DI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x06: case 0x0e: case 0x16: case 0x1e: case 0x26: case 0x2e: case 0x36: case 0x3e:
-		count -= 6; EO = FETCHOP(); EO += FETCHOP() << 8; EA = DefaultBase(DS) + EO; return EA;
+		icount -= 6; eo = FETCHOP; eo += FETCHOP << 8; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x07: case 0x0f: case 0x17: case 0x1f: case 0x27: case 0x2f: case 0x37: case 0x3f:
-		count -= 5; EO = regs.w[BX]; EA = DefaultBase(DS) + EO; return EA;
+		icount -= 5; eo = regs.w[BX]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
+
 	case 0x40: case 0x48: case 0x50: case 0x58: case 0x60: case 0x68: case 0x70: case 0x78:
-		count -= 11; EO = (uint16)(regs.w[BX] + regs.w[SI] + (int8)FETCHOP()); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 11; eo = (uint16)(regs.w[BX] + regs.w[SI] + (int8)FETCHOP); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x41: case 0x49: case 0x51: case 0x59: case 0x61: case 0x69: case 0x71: case 0x79:
-		count -= 12; EO = (uint16)(regs.w[BX] + regs.w[DI] + (int8)FETCHOP()); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 12; eo = (uint16)(regs.w[BX] + regs.w[DI] + (int8)FETCHOP); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x42: case 0x4a: case 0x52: case 0x5a: case 0x62: case 0x6a: case 0x72: case 0x7a:
-		count -= 12; EO = (uint16)(regs.w[BP] + regs.w[SI] + (int8)FETCHOP()); EA = DefaultBase(SS) + EO; return EA;
+		icount -= 12; eo = (uint16)(regs.w[BP] + regs.w[SI] + (int8)FETCHOP); ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + eo; return ea;
 	case 0x43: case 0x4b: case 0x53: case 0x5b: case 0x63: case 0x6b: case 0x73: case 0x7b:
-		count -= 11; EO = (uint16)(regs.w[BP] + regs.w[DI] + (int8)FETCHOP()); EA = DefaultBase(SS) + EO; return EA;
+		icount -= 11; eo = (uint16)(regs.w[BP] + regs.w[DI] + (int8)FETCHOP); ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + eo; return ea;
 	case 0x44: case 0x4c: case 0x54: case 0x5c: case 0x64: case 0x6c: case 0x74: case 0x7c:
-		count -= 9; EO = (uint16)(regs.w[SI] + (int8)FETCHOP()); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 9; eo = (uint16)(regs.w[SI] + (int8)FETCHOP); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x45: case 0x4d: case 0x55: case 0x5d: case 0x65: case 0x6d: case 0x75: case 0x7d:
-		count -= 9; EO = (uint16)(regs.w[DI] + (int8)FETCHOP()); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 9; eo = (uint16)(regs.w[DI] + (int8)FETCHOP); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
 	case 0x46: case 0x4e: case 0x56: case 0x5e: case 0x66: case 0x6e: case 0x76: case 0x7e:
-		count -= 9; EO = (uint16)(regs.w[BP] + (int8)FETCHOP()); EA = DefaultBase(SS) + EO; return EA;
+		icount -= 9; eo = (uint16)(regs.w[BP] + (int8)FETCHOP); ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + eo; return ea;
 	case 0x47: case 0x4f: case 0x57: case 0x5f: case 0x67: case 0x6f: case 0x77: case 0x7f:
-		count -= 9; EO = (uint16)(regs.w[BX] + (int8)FETCHOP()); EA = DefaultBase(DS) + EO; return EA;
+		icount -= 9; eo = (uint16)(regs.w[BX] + (int8)FETCHOP); ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + eo; return ea;
+
 	case 0x80: case 0x88: case 0x90: case 0x98: case 0xa0: case 0xa8: case 0xb0: case 0xb8:
-		count -= 11; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[BX] + regs.w[SI]; EA = DefaultBase(DS) + (uint16)EO; return EA;
+		icount -= 11; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[BX] + regs.w[SI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + (uint16)eo; return ea;
 	case 0x81: case 0x89: case 0x91: case 0x99: case 0xa1: case 0xa9: case 0xb1: case 0xb9:
-		count -= 12; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[BX] + regs.w[DI]; EA = DefaultBase(DS) + (uint16)EO; return EA;
+		icount -= 12; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[BX] + regs.w[DI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + (uint16)eo; return ea;
 	case 0x82: case 0x8a: case 0x92: case 0x9a: case 0xa2: case 0xaa: case 0xb2: case 0xba:
-		count -= 12; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[BP] + regs.w[SI]; EA = DefaultBase(SS) + (uint16)EO; return EA;
+		icount -= 12; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[BP] + regs.w[SI]; ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + (uint16)eo; return ea;
 	case 0x83: case 0x8b: case 0x93: case 0x9b: case 0xa3: case 0xab: case 0xb3: case 0xbb:
-		count -= 11; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[BP] + regs.w[DI]; EA = DefaultBase(SS) + (uint16)EO; return EA;
+		icount -= 11; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[BP] + regs.w[DI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(SS) + (uint16)eo; return ea;
 	case 0x84: case 0x8c: case 0x94: case 0x9c: case 0xa4: case 0xac: case 0xb4: case 0xbc:
-		count -= 9; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[SI]; EA = DefaultBase(DS) + (uint16)EO; return EA;
+		icount -= 9; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[SI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + (uint16)eo; return ea;
 	case 0x85: case 0x8d: case 0x95: case 0x9d: case 0xa5: case 0xad: case 0xb5: case 0xbd:
-		count -= 9; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[DI]; EA = DefaultBase(DS) + (uint16)EO; return EA;
+		icount -= 9; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[DI]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + (uint16)eo; return ea;
 	case 0x86: case 0x8e: case 0x96: case 0x9e: case 0xa6: case 0xae: case 0xb6: case 0xbe:
-		count -= 9; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[BP]; EA = DefaultBase(SS) + (uint16)EO; return EA;
+		icount -= 9; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[BP]; ea_seg = DefaultSeg(SS); ea = DefaultBase(SS) + (uint16)eo; return ea;
 	case 0x87: case 0x8f: case 0x97: case 0x9f: case 0xa7: case 0xaf: case 0xb7: case 0xbf:
-		count -= 9; EO = FETCHOP(); EO += FETCHOP() << 8; EO += regs.w[BX]; EA = DefaultBase(DS) + (uint16)EO; return EA;
+		icount -= 9; eo = FETCHOP; eo += FETCHOP << 8; eo += regs.w[BX]; ea_seg = DefaultSeg(DS); ea = DefaultBase(DS) + (uint16)eo; return ea;
 	}
 	return 0;
 }
 
-#define WRITEABLE(a) (((a) & 0xa) == 2)
-#define READABLE(a) ((((a) & 0xa) == 0xa) || (((a) & 8) == 0))
-
-void I86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
+void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 {
-	unsigned src = GetRMByte(ModRM);
+	unsigned src = (unsigned)GetRMByte(ModRM);
 	unsigned dst = src;
 	
-	if(cnt == 0) {
-		count -= (ModRM >= 0xc0) ? cycles.rot_reg_base : cycles.rot_m8_base;
+	if(count == 0) {
+		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base : timing.rot_m8_base;
 	}
-	else if(cnt == 1) {
-		count -= (ModRM >= 0xc0) ? cycles.rot_reg_1 : cycles.rot_m8_1;
+	else if(count == 1) {
+		icount -= (ModRM >= 0xc0) ? timing.rot_reg_1 : timing.rot_m8_1;
 		
 		switch(ModRM & 0x38) {
-		case 0x00:	// ROL eb, 1
+		case 0x00:	/* ROL eb, 1 */
 			CarryVal = src & 0x80;
 			dst = (src << 1) + CF;
 			PutbackRMByte(ModRM, dst);
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x08:	// ROR eb, 1
-			CarryVal = src & 1;
+		case 0x08:	/* ROR eb, 1 */
+			CarryVal = src & 0x01;
 			dst = ((CF << 8) + src) >> 1;
 			PutbackRMByte(ModRM, dst);
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x10:	// RCL eb, 1
+		case 0x10:	/* RCL eb, 1 */
 			dst = (src << 1) + CF;
 			PutbackRMByte(ModRM, dst);
 			SetCFB(dst);
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x18:	// RCR eb, 1
+		case 0x18:	/* RCR eb, 1 */
 			dst = ((CF << 8) + src) >> 1;
 			PutbackRMByte(ModRM, dst);
-			CarryVal = src & 1;
+			CarryVal = src & 0x01;
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x20:	// SHL eb, 1
+		case 0x20:	/* SHL eb, 1 */
 		case 0x30:
 			dst = src << 1;
 			PutbackRMByte(ModRM, dst);
@@ -857,18 +872,18 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			break;
-		case 0x28:	// SHR eb, 1
+		case 0x28:	/* SHR eb, 1 */
 			dst = src >> 1;
 			PutbackRMByte(ModRM, dst);
-			CarryVal = src & 1;
+			CarryVal = src & 0x01;
 			OverVal = src & 0x80;
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			break;
-		case 0x38:	// SAR eb, 1
+		case 0x38:	/* SAR eb, 1 */
 			dst = ((int8)src) >> 1;
 			PutbackRMByte(ModRM, dst);
-			CarryVal = src & 1;
+			CarryVal = src & 0x01;
 			OverVal = 0;
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
@@ -876,57 +891,57 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
 		}
 	}
 	else {
-		count -= (ModRM >= 0xc0) ? cycles.rot_reg_base + cycles.rot_reg_bit : cycles.rot_m8_base + cycles.rot_m8_bit;
+		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m8_bit;
 		
 		switch(ModRM & 0x38) {
-		case 0x00:	// ROL eb, cnt
-			for(; cnt > 0; cnt--) {
+		case 0x00:	/* ROL eb, count */
+			for(; count > 0; count--) {
 				CarryVal = dst & 0x80;
 				dst = (dst << 1) + CF;
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x08:	// ROR eb, cnt
-			for(; cnt > 0; cnt--) {
-				CarryVal = dst & 1;
+		case 0x08:	/* ROR eb, count */
+			for(; count > 0; count--) {
+				CarryVal = dst & 0x01;
 				dst = (dst >> 1) + (CF << 7);
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x10:	// RCL eb, cnt
-			for(; cnt > 0; cnt--) {
+		case 0x10:	/* RCL eb, count */
+			for(; count > 0; count--) {
 				dst = (dst << 1) + CF;
 				SetCFB(dst);
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x18:	// RCR eb, cnt
-			for(; cnt > 0; cnt--) {
+		case 0x18:	/* RCR eb, count */
+			for(; count > 0; count--) {
 				dst = (CF << 8) + dst;
-				CarryVal = dst & 1;
+				CarryVal = dst & 0x01;
 				dst >>= 1;
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
 		case 0x20:
-		case 0x30:	// SHL eb, cnt
-			dst <<= cnt;
+		case 0x30:	/* SHL eb, count */
+			dst <<= count;
 			SetCFB(dst);
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x28:	// SHR eb, cnt
-			dst >>= cnt - 1;
-			CarryVal = dst & 1;
+		case 0x28:	/* SHR eb, count */
+			dst >>= count - 1;
+			CarryVal = dst & 0x01;
 			dst >>= 1;
 			SetSZPF_Byte(dst);
 			AuxVal = 1;
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x38:	// SAR eb, cnt
-			dst = ((int8)dst) >> (cnt - 1);
-			CarryVal = dst & 1;
+		case 0x38:	/* SAR eb, count */
+			dst = ((int8)dst) >> (count - 1);
+			CarryVal = dst & 0x01;
 			dst = ((int8)((uint8)dst)) >> 1;
 			SetSZPF_Byte(dst);
 			AuxVal = 1;
@@ -936,43 +951,43 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
 	}
 }
 
-void I86::rotate_shift_word(unsigned ModRM, unsigned cnt)
+void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 {
 	unsigned src = GetRMWord(ModRM);
 	unsigned dst = src;
 	
-	if(cnt == 0) {
-		count -= (ModRM >= 0xc0) ? cycles.rot_reg_base : cycles.rot_m16_base;
+	if(count == 0) {
+		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base : timing.rot_m16_base;
 	}
-	else if(cnt == 1) {
-		count -= (ModRM >= 0xc0) ? cycles.rot_reg_1 : cycles.rot_m16_1;
+	else if(count == 1) {
+		icount -= (ModRM >= 0xc0) ? timing.rot_reg_1 : timing.rot_m16_1;
 		
 		switch(ModRM & 0x38) {
-		case 0x00:	// ROL ew, 1
+		case 0x00:	/* ROL ew, 1 */
 			CarryVal = src & 0x8000;
 			dst = (src << 1) + CF;
 			PutbackRMWord(ModRM, dst);
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x08:	// ROR ew, 1
-			CarryVal = src & 1;
+		case 0x08:	/* ROR ew, 1 */
+			CarryVal = src & 0x01;
 			dst = ((CF << 16) + src) >> 1;
 			PutbackRMWord(ModRM, dst);
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x10:	// RCL ew, 1
+		case 0x10:	/* RCL ew, 1 */
 			dst = (src << 1) + CF;
 			PutbackRMWord(ModRM, dst);
 			SetCFW(dst);
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x18:	// RCR ew, 1
+		case 0x18:	/* RCR ew, 1 */
 			dst = ((CF << 16) + src) >> 1;
 			PutbackRMWord(ModRM, dst);
-			CarryVal = src & 1;
+			CarryVal = src & 0x01;
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x20:	// SHL ew, 1
+		case 0x20:	/* SHL ew, 1 */
 		case 0x30:
 			dst = src << 1;
 			PutbackRMWord(ModRM, dst);
@@ -981,18 +996,18 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned cnt)
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			break;
-		case 0x28:	// SHR ew, 1
+		case 0x28:	/* SHR ew, 1 */
 			dst = src >> 1;
 			PutbackRMWord(ModRM, dst);
-			CarryVal = src & 1;
+			CarryVal = src & 0x01;
 			OverVal = src & 0x8000;
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			break;
-		case 0x38:	// SAR ew, 1
+		case 0x38:	/* SAR ew, 1 */
 			dst = ((int16)src) >> 1;
 			PutbackRMWord(ModRM, dst);
-			CarryVal = src & 1;
+			CarryVal = src & 0x01;
 			OverVal = 0;
 			AuxVal = 1;
 			SetSZPF_Word(dst);
@@ -1000,57 +1015,57 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned cnt)
 		}
 	}
 	else {
-		count -= (ModRM >= 0xc0) ? cycles.rot_reg_base + cycles.rot_reg_bit : cycles.rot_m8_base + cycles.rot_m16_bit;
+		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m16_bit;
 		
 		switch(ModRM & 0x38) {
-		case 0x00:	// ROL ew, cnt
-			for(; cnt > 0; cnt--) {
+		case 0x00:	/* ROL ew, count */
+			for(; count > 0; count--) {
 				CarryVal = dst & 0x8000;
 				dst = (dst << 1) + CF;
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x08:	// ROR ew, cnt
-			for(; cnt > 0; cnt--) {
-				CarryVal = dst & 1;
+		case 0x08:	/* ROR ew, count */
+			for(; count > 0; count--) {
+				CarryVal = dst & 0x01;
 				dst = (dst >> 1) + (CF << 15);
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x10:	// RCL ew, cnt
-			for(; cnt > 0; cnt--) {
+		case 0x10:	/* RCL ew, count */
+			for(; count > 0; count--) {
 				dst = (dst << 1) + CF;
 				SetCFW(dst);
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x18:	// RCR ew, cnt
-			for(; cnt > 0; cnt--) {
+		case 0x18:	/* RCR ew, count */
+			for(; count > 0; count--) {
 				dst = dst + (CF << 16);
-				CarryVal = dst & 1;
+				CarryVal = dst & 0x01;
 				dst >>= 1;
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
 		case 0x20:
-		case 0x30:	// SHL ew, cnt
-			dst <<= cnt;
+		case 0x30:	/* SHL ew, count */
+			dst <<= count;
 			SetCFW(dst);
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x28:	// SHR ew, cnt
-			dst >>= cnt - 1;
-			CarryVal = dst & 1;
+		case 0x28:	/* SHR ew, count */
+			dst >>= count - 1;
+			CarryVal = dst & 0x01;
 			dst >>= 1;
 			SetSZPF_Word(dst);
 			AuxVal = 1;
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x38:	// SAR ew, cnt
-			dst = ((int16)dst) >> (cnt - 1);
-			CarryVal = dst & 1;
+		case 0x38:	/* SAR ew, count */
+			dst = ((int16)dst) >> (count - 1);
+			CarryVal = dst & 0x01;
 			dst = ((int16)((uint16)dst)) >> 1;
 			SetSZPF_Word(dst);
 			AuxVal = 1;
@@ -1064,36 +1079,52 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned cnt)
 int I86::i286_selector_okay(uint16 selector)
 {
 	if(selector & 4) {
-		return (selector & ~7) < ldtr_limit;
+		return (selector & ~7) < ldtr.limit;
 	}
 	else {
-		return (selector & ~7) < gdtr_limit;
+		return (selector & ~7) < gdtr.limit;
+	}
+}
+
+uint32 I86::i286_selector_to_address(uint16 selector)
+{
+	if(selector & 4) {
+		return ldtr.base + (selector & ~7);
+	}
+	else {
+		return gdtr.base + (selector & ~7);
 	}
 }
 
 void I86::i286_data_descriptor(int reg, uint16 selector)
 {
 	if(PM) {
-		if(selector & 4) {
-			// local descriptor table
-			if(selector > ldtr_limit) {
+		uint16 help;
+		/* selector format
+		   15..3: number/address in descriptor table
+		   2    : 0 global, 1 local descriptor table
+		   1, 0 : requested privileg level
+		   must be higher or same as current privileg level in code selector */
+		if(selector & 4) { /* local descriptor table */
+			if(selector > ldtr.limit) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
 			sregs[reg] = selector;
-			limit[reg] = RM16(ldtr_base + (selector & ~7));
-			base[reg] = RM16(ldtr_base + (selector & ~7) + 2) | (RM16(ldtr_base + (selector & ~7) + 4) << 16);
+			limit[reg] = ReadWord(ldtr.base + (selector & ~7));
+			base[reg] = ReadWord(ldtr.base + (selector & ~7) + 2) | (ReadWord(ldtr.base + (selector & ~7) + 4) << 16);
+			rights[reg] = base[reg] >> 24;
 			base[reg] &= 0xffffff;
 		}
-		else {
-			// global descriptor table
-			if(!(selector & ~7) || (selector > gdtr_limit)) {
+		else { /* global descriptor table */
+			if(!(selector & ~7) || (selector > gdtr.limit)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
 			sregs[reg] = selector;
-			limit[reg] = RM16(gdtr_base + (selector & ~7));
-			base[reg] = RM16(gdtr_base + (selector & ~7) + 2);
-			uint16 tmp = RM16(gdtr_base + (selector & ~7) + 4);
-			base[reg] |= (tmp & 0xff) << 16;
+			limit[reg] = ReadWord(gdtr.base + (selector & ~7));
+			base[reg] = ReadWord(gdtr.base + (selector & ~7) + 2);
+			help = ReadWord(gdtr.base + (selector & ~7) + 4);
+			rights[reg] = help >> 8;
+			base[reg] |= (help & 0xff) << 16;
 		}
 	}
 	else {
@@ -1104,51 +1135,55 @@ void I86::i286_data_descriptor(int reg, uint16 selector)
 
 void I86::i286_code_descriptor(uint16 selector, uint16 offset)
 {
+	uint16 word1, word2, word3;
 	if(PM) {
-		uint16 word1, word2, word3;
-		if(selector & 4) {
-			// local descriptor table
-			if(selector > ldtr_limit) {
+		/* selector format
+		   15..3: number/address in descriptor table
+		   2    : 0 global, 1 local descriptor table
+		   1, 0 : requested privileg level
+		   must be higher or same as current privileg level in code selector */
+		if(selector & 4) { /* local descriptor table */
+			if(selector > ldtr.limit) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			word1 = RM16(ldtr_base + (selector & ~7));
-			word2 = RM16(ldtr_base + (selector & ~7) + 2);
-			word3 = RM16(ldtr_base + (selector & ~7) + 4);
+			word1 = ReadWord(ldtr.base + (selector & ~7));
+			word2 = ReadWord(ldtr.base + (selector & ~7) + 2);
+			word3 = ReadWord(ldtr.base + (selector & ~7) + 4);
 		}
-		else {
-			// global descriptor table
-			if(!(selector & ~7) || (selector > gdtr_limit)) {
+		else { /* global descriptor table */
+			if(!(selector & ~7) || (selector > gdtr.limit)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			word1 = RM16(gdtr_base + (selector & ~7));
-			word2 = RM16(gdtr_base + (selector & ~7) + 2);
-			word3 = RM16(gdtr_base + (selector & ~7) + 4);
+			word1 = ReadWord(gdtr.base + (selector & ~7));
+			word2 = ReadWord(gdtr.base + (selector & ~7) + 2);
+			word3 = ReadWord(gdtr.base + (selector & ~7) + 4);
 		}
 		if(word3 & 0x1000) {
 			sregs[CS] = selector;
 			limit[CS] = word1;
 			base[CS] = word2 | ((word3 & 0xff) << 16);
-			PC = base[CS] + offset;
+			rights[CS] = word3 >> 8;
+			pc = base[CS] + offset;
 		}
-		else {
-			// systemdescriptor
+		else { /* systemdescriptor */
 			switch(word3 & 0xf00) {
-			case 0x400: // call gate
+			case 0x400: /* call gate */
+				/* word3 & 0x1f words to be copied from stack to stack */
 				i286_data_descriptor(CS, word2);
-				PC = base[CS] + word1;
+				pc = base[CS] + word1;
 				break;
-			case 0x500: // task gate
+			case 0x500: /* task gate */
 				i286_data_descriptor(CS, word2);
-				PC = base[CS] + word1;
+				pc = base[CS] + word1;
 				break;
-			case 0x600: // interrupt gate
+			case 0x600: /* interrupt gate */
 				TF = IF = 0;
 				i286_data_descriptor(CS, word2);
-				PC = base[CS] + word1;
+				pc = base[CS] + word1;
 				break;
-			case 0x700: // trap gate
+			case 0x700: /* trap gate */
 				i286_data_descriptor(CS, word2);
-				PC = base[CS] + word1;
+				pc = base[CS] + word1;
 				break;
 			}
 		}
@@ -1156,14 +1191,84 @@ void I86::i286_code_descriptor(uint16 selector, uint16 offset)
 	else {
 		sregs[CS] = selector;
 		base[CS] = selector << 4;
-		PC = base[CS] + offset;
+		pc = base[CS] + offset;
+	}
+}
+
+void I86::i286_interrupt_descriptor(uint16 int_num)
+{
+	uint16 word1, word2, word3;
+	if((int_num << 3) >= idtr.limit) {
+		;/* go into shutdown mode */
+		return;
+	}
+	_pushf();
+	PUSH(sregs[CS]);
+	PUSH(pc - base[CS]);
+	word1 = ReadWord(idtr.base + (int_num << 3));
+	word2 = ReadWord(idtr.base + (int_num << 3) + 2);
+	word3 = ReadWord(idtr.base + (int_num << 3) + 4);
+	switch(word3 & 0xf00) {
+	case 0x500: /* task gate */
+		i286_data_descriptor(CS, word2);
+		pc = base[CS] + word1;
+		break;
+	case 0x600: /* interrupt gate */
+		TF = IF = 0;
+		i286_data_descriptor(CS, word2);
+		pc = base[CS] + word1;
+		break;
+	case 0x700: /* trap gate */
+		i286_data_descriptor(CS, word2);
+		pc = base[CS] + word1;
+		break;
+	}
+}
+
+#define IS_PRESENT(a)	(((a) & 0x80) == 0x80)
+#define IS_WRITEABLE(a)	(((a) & 0xa) == 2)
+#define IS_READABLE(a)	((((a) & 0xa) == 0xa) || (((a) & 8) == 0))
+
+void I86::i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, i286_operation operation)
+{
+	if(PM) {
+		/* Is the segment physically present? */
+		if(!IS_PRESENT(rights[check_seg])) {
+			throw GENERAL_PROTECTION_FAULT;
+		}
+
+		/* Would we go past the segment boundary? */
+		if(offset + size > limit[check_seg]) {
+			throw GENERAL_PROTECTION_FAULT;
+		}
+
+		switch(operation) {
+		case I286_READ:
+			/* Is the segment readable? */
+			if(!IS_READABLE(rights[check_seg])) {
+				throw GENERAL_PROTECTION_FAULT;
+			}
+			break;
+
+		case I286_WRITE:
+			/* Is the segment writeable? */
+			if(!IS_WRITEABLE(rights[check_seg])) {
+				throw GENERAL_PROTECTION_FAULT;
+			}
+			break;
+
+		case I286_EXECUTE:
+			/* TODO */
+			break;
+		}
+		/* TODO: Mark segment as accessed? */
 	}
 }
 #endif
 
-void I86::op(uint8 code)
+void I86::instruction(uint8 code)
 {
-	prvPC = PC - 1;
+	prevpc = pc - 1;
 	
 	switch(code) {
 	case 0x00: _add_br8(); break;
@@ -1181,7 +1286,11 @@ void I86::op(uint8 code)
 	case 0x0c: _or_ald8(); break;
 	case 0x0d: _or_axd16(); break;
 	case 0x0e: _push_cs(); break;
-	case 0x0f: _op0f(); break;
+#if defined(HAS_V30) || defined(HAS_I286)
+	case 0x0f: _0fpre(); break;
+#else
+	case 0x0f: _invalid(); break;
+#endif
 	case 0x10: _adc_br8(); break;
 	case 0x11: _adc_wr16(); break;
 	case 0x12: _adc_r8b(); break;
@@ -1262,14 +1371,30 @@ void I86::op(uint8 code)
 	case 0x5d: _pop_bp(); break;
 	case 0x5e: _pop_si(); break;
 	case 0x5f: _pop_di(); break;
+#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
 	case 0x60: _pusha(); break;
 	case 0x61: _popa(); break;
 	case 0x62: _bound(); break;
+#else
+	case 0x60: _invalid(); break;
+	case 0x61: _invalid(); break;
+	case 0x62: _invalid(); break;
+#endif
+#if defined(HAS_I286)
 	case 0x63: _arpl(); break;
+#else
+	case 0x63: _invalid(); break;
+#endif
+#if defined(HAS_V30)
 	case 0x64: _repc(0); break;
 	case 0x65: _repc(1); break;
+#else
+	case 0x64: _invalid(); break;
+	case 0x65: _invalid(); break;
+#endif
 	case 0x66: _invalid(); break;
 	case 0x67: _invalid(); break;
+#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
 	case 0x68: _push_d16(); break;
 	case 0x69: _imul_d16(); break;
 	case 0x6a: _push_d8(); break;
@@ -1278,6 +1403,16 @@ void I86::op(uint8 code)
 	case 0x6d: _insw(); break;
 	case 0x6e: _outsb(); break;
 	case 0x6f: _outsw(); break;
+#else
+	case 0x68: _invalid(); break;
+	case 0x69: _invalid(); break;
+	case 0x6a: _invalid(); break;
+	case 0x6b: _invalid(); break;
+	case 0x6c: _invalid(); break;
+	case 0x6d: _invalid(); break;
+	case 0x6e: _invalid(); break;
+	case 0x6f: _invalid(); break;
+#endif
 	case 0x70: _jo(); break;
 	case 0x71: _jno(); break;
 	case 0x72: _jb(); break;
@@ -1294,10 +1429,10 @@ void I86::op(uint8 code)
 	case 0x7d: _jnl(); break;
 	case 0x7e: _jle(); break;
 	case 0x7f: _jnle(); break;
-	case 0x80: _op80(); break;
-	case 0x81: _op81(); break;
-	case 0x82: _op82(); break;
-	case 0x83: _op83(); break;
+	case 0x80: _80pre(); break;
+	case 0x81: _81pre(); break;
+	case 0x82: _82pre(); break;
+	case 0x83: _83pre(); break;
 	case 0x84: _test_br8(); break;
 	case 0x85: _test_wr16(); break;
 	case 0x86: _xchg_br8(); break;
@@ -1358,16 +1493,26 @@ void I86::op(uint8 code)
 	case 0xbd: _mov_bpd16(); break;
 	case 0xbe: _mov_sid16(); break;
 	case 0xbf: _mov_did16(); break;
+#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
 	case 0xc0: _rotshft_bd8(); break;
 	case 0xc1: _rotshft_wd8(); break;
+#else
+	case 0xc0: _invalid(); break;
+	case 0xc1: _invalid(); break;
+#endif
 	case 0xc2: _ret_d16(); break;
 	case 0xc3: _ret(); break;
 	case 0xc4: _les_dw(); break;
 	case 0xc5: _lds_dw(); break;
 	case 0xc6: _mov_bd8(); break;
 	case 0xc7: _mov_wd16(); break;
+#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
 	case 0xc8: _enter(); break;
-	case 0xc9: _leav(); break;	// _leave()
+	case 0xc9: _leav(); break;	/* _leave() */
+#else
+	case 0xc8: _invalid(); break;
+	case 0xc9: _invalid(); break;
+#endif
 	case 0xca: _retf_d16(); break;
 	case 0xcb: _retf(); break;
 	case 0xcc: _int3(); break;
@@ -1380,7 +1525,11 @@ void I86::op(uint8 code)
 	case 0xd3: _rotshft_wcl(); break;
 	case 0xd4: _aam(); break;
 	case 0xd5: _aad(); break;
+#if defined(HAS_V30)
 	case 0xd6: _setalc(); break;
+#else
+	case 0xd6: _invalid(); break;
+#endif
 	case 0xd7: _xlat(); break;
 	case 0xd8: _escape(); break;
 	case 0xd9: _escape(); break;
@@ -1408,225 +1557,229 @@ void I86::op(uint8 code)
 	case 0xef: _outdxax(); break;
 	case 0xf0: _lock(); break;
 	case 0xf1: _invalid(); break;
-	case 0xf2: _rep(0); break;	// repne
-	case 0xf3: _rep(1); break;	// repe
+	case 0xf2: _repne(); break;
+	case 0xf3: _repe(); break;
 	case 0xf4: _hlt(); break;
 	case 0xf5: _cmc(); break;
-	case 0xf6: _opf6(); break;
-	case 0xf7: _opf7(); break;
+	case 0xf6: _f6pre(); break;
+	case 0xf7: _f7pre(); break;
 	case 0xf8: _clc(); break;
 	case 0xf9: _stc(); break;
 	case 0xfa: _cli(); break;
 	case 0xfb: _sti(); break;
 	case 0xfc: _cld(); break;
 	case 0xfd: _std(); break;
-	case 0xfe: _opfe(); break;
-	case 0xff: _opff(); break;
+	case 0xfe: _fepre(); break;
+	case 0xff: _ffpre(); break;
 	}
-};
+}
 
-inline void I86::_add_br8()	// Opcode 0x00
+inline void I86::_add_br8()    /* Opcode 0x00 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	ADDB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_add_wr16()	// Opcode 0x01
+inline void I86::_add_wr16()    /* Opcode 0x01 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	ADDW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_add_r8b()	// Opcode 0x02
+inline void I86::_add_r8b()    /* Opcode 0x02 */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	ADDB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_add_r16w()	// Opcode 0x03
+inline void I86::_add_r16w()    /* Opcode 0x03 */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	ADDW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_add_ald8()	// Opcode 0x04
+inline void I86::_add_ald8()    /* Opcode 0x04 */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	ADDB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_add_axd16()	// Opcode 0x05
+inline void I86::_add_axd16()    /* Opcode 0x05 */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	ADDW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_push_es()	// Opcode 0x06
+inline void I86::_push_es()    /* Opcode 0x06 */
 {
-	count -= cycles.push_seg;
-	PUSH16(sregs[ES]);
+	icount -= timing.push_seg;
+	PUSH(sregs[ES]);
 }
 
-inline void I86::_pop_es()	// Opcode 0x07
+inline void I86::_pop_es()    /* Opcode 0x07 */
 {
 #ifdef HAS_I286
-	uint16 tmp = POP16();
+	uint16 tmp;
+	POP(tmp);
 	i286_data_descriptor(ES, tmp);
 #else
-	sregs[ES] = POP16();
+	POP(sregs[ES]);
 	base[ES] = SegBase(ES);
 #endif
-	count -= cycles.pop_seg;
+	icount -= timing.pop_seg;
 }
 
-inline void I86::_or_br8()	// Opcode 0x08
+inline void I86::_or_br8()    /* Opcode 0x08 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	ORB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_or_wr16()	// Opcode 0x09
+inline void I86::_or_wr16()    /* Opcode 0x09 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	ORW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_or_r8b()	// Opcode 0x0a
+inline void I86::_or_r8b()    /* Opcode 0x0a */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	ORB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_or_r16w()	// Opcode 0x0b
+inline void I86::_or_r16w()    /* Opcode 0x0b */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	ORW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_or_ald8()	// Opcode 0x0c
+inline void I86::_or_ald8()    /* Opcode 0x0c */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	ORB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_or_axd16()	// Opcode 0x0d
+inline void I86::_or_axd16()    /* Opcode 0x0d */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	ORW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_push_cs()	// Opcode 0x0e
+inline void I86::_push_cs()    /* Opcode 0x0e */
 {
-	count -= cycles.push_seg;
-	PUSH16(sregs[CS]);
+	icount -= timing.push_seg;
+	PUSH(sregs[CS]);
 }
 
-inline void I86::_op0f()
+inline void I86::_0fpre()    /* Opcode 0x0f */
 {
 #ifdef HAS_I286
-	unsigned next = FETCHOP();
-	uint16 ModRM, tmp;
+	unsigned next = FETCHOP;
+	uint16 ModRM;
+	uint16 tmp;
 	uint32 addr;
 	
 	switch(next) {
 	case 0:
-		ModRM = FETCHOP();
+		ModRM = FETCHOP;
 		switch(ModRM & 0x38) {
-		case 0:	// sldt
+		case 0:  /* sldt */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
-			PutRMWord(ModRM, ldtr_sel);
-			count -= 2;
+			PutRMWord(ModRM, ldtr.sel);
+			icount -= 2;
 			break;
-		case 8:	// str
+		case 8:  /* str */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
-			PutRMWord(ModRM, tr_sel);
-			count -= 2;
+			PutRMWord(ModRM, tr.sel);
+			icount -= 2;
 			break;
-		case 0x10:	// lldt
+		case 0x10:  /* lldt */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
 			if(PM && (CPL != 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			ldtr_sel = GetRMWord(ModRM);
-			if((ldtr_sel & ~7) >= gdtr_limit) {
+			ldtr.sel = GetRMWord(ModRM);
+			if((ldtr.sel & ~7) >= gdtr.limit) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			ldtr_limit = RM16(gdtr_base + (ldtr_sel & ~7));
-			ldtr_base = RM16(gdtr_base + (ldtr_sel & ~7) + 2) | (RM16(gdtr_base + (ldtr_sel & ~7) + 4) << 16);
-			ldtr_base &= 0xffffff;
-			count -= 24;
+			ldtr.limit = ReadWord(gdtr.base + (ldtr.sel & ~7));
+			ldtr.base = ReadWord(gdtr.base + (ldtr.sel & ~7) + 2) | (ReadWord(gdtr.base + (ldtr.sel & ~7) + 4) << 16);
+			ldtr.rights = ldtr.base >> 24;
+			ldtr.base &= 0xffffff;
+			icount -= 24;
 			break;
-		case 0x18:	// ltr
+		case 0x18:  /* ltr */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
 			if(CPL!= 0) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			tr_sel = GetRMWord(ModRM);
-			if((tr_sel & ~7) >= gdtr_limit) {
+			tr.sel = GetRMWord(ModRM);
+			if((tr.sel & ~7) >= gdtr.limit) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			tr_limit = RM16(gdtr_base + (tr_sel & ~7));
-			tr_base = RM16(gdtr_base + (tr_sel & ~7) + 2) | (RM16(gdtr_base + (tr_sel & ~7) + 4) << 16);
-			tr_base &= 0xffffff;
-			count -= 27;
+			tr.limit = ReadWord(gdtr.base + (tr.sel & ~7));
+			tr.base = ReadWord(gdtr.base + (tr.sel & ~7) + 2) | (ReadWord(gdtr.base + (tr.sel & ~7) + 4) << 16);
+			tr.rights = tr.base >> 24;
+			tr.base &= 0xffffff;
+			icount -= 27;
 			break;
-		case 0x20:	// verr
+		case 0x20:  /* verr */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
 			tmp = GetRMWord(ModRM);
 			if(tmp & 4) {
-				ZeroVal = (((tmp & ~7) < ldtr_limit) && READABLE(RM8(ldtr_base + (tmp & ~7) + 5)));
+				ZeroVal = !(((tmp & ~7) < ldtr.limit) && IS_READABLE(ReadByte(ldtr.base + (tmp & ~7) + 5)));
 			}
 			else {
-				ZeroVal = (((tmp & ~7) < gdtr_limit) && READABLE(RM8(gdtr_base + (tmp & ~7) + 5)));
+				ZeroVal = !(((tmp & ~7) < gdtr.limit) && IS_READABLE(ReadByte(gdtr.base + (tmp & ~7) + 5)));
 			}
-			count -= 11;
+			icount -= 11;
 			break;
-		case 0x28: // verw
+		case 0x28:  /* verw */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
 			tmp = GetRMWord(ModRM);
 			if(tmp & 4) {
-				ZeroVal = (((tmp & ~7) < ldtr_limit) && WRITEABLE(RM8(ldtr_base + (tmp & ~7) + 5)));
+				ZeroVal = !(((tmp & ~7) < ldtr.limit) && IS_WRITEABLE(ReadByte(ldtr.base + (tmp & ~7) + 5)));
 			}
 			else {
-				ZeroVal = (((tmp & ~7) < gdtr_limit) && WRITEABLE(RM8(gdtr_base + (tmp & ~7) + 5)));
+				ZeroVal = !(((tmp & ~7) < gdtr.limit) && IS_WRITEABLE(ReadByte(gdtr.base + (tmp & ~7) + 5)));
 			}
-			count -= 16;
+			icount -= 16;
 			break;
 		default:
 			interrupt(ILLEGAL_INSTRUCTION);
@@ -1634,408 +1787,415 @@ inline void I86::_op0f()
 		}
 		break;
 	case 1:
-		ModRM = FETCHOP();
+		/* lgdt, lldt in protected mode privilege level 0 required else common protection
+		   failure 0xd */
+		ModRM = FETCHOP;
 		switch(ModRM & 0x38) {
-		case 0:	// sgdt
-			PutRMWord(ModRM, gdtr_limit);
-			PutRMWordOfs(2, gdtr_base & 0xffff);
-			PutRMByteOfs(4, gdtr_base >> 16);
-			count -= 9;
+		case 0:  /* sgdt */
+			PutRMWord(ModRM, gdtr.limit);
+			PutRMWordOffset(2, gdtr.base & 0xffff);
+			PutRMByteOffset(4, gdtr.base >> 16);
+			icount -= 9;
 			break;
-		case 8:	// sidt
-			PutRMWord(ModRM, idtr_limit);
-			PutRMWordOfs(2, idtr_base & 0xffff);
-			PutRMByteOfs(4, idtr_base >> 16);
-			count -= 9;
+		case 8:  /* sidt */
+			PutRMWord(ModRM, idtr.limit);
+			PutRMWordOffset(2, idtr.base & 0xffff);
+			PutRMByteOffset(4, idtr.base >> 16);
+			icount -= 9;
 			break;
-		case 0x10:	// lgdt
+		case 0x10:  /* lgdt */
 			if(PM && (CPL!= 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			gdtr_limit = GetRMWord(ModRM);
-			gdtr_base = GetRMWordOfs(2) | (GetRMByteOfs(4) << 16);
+			gdtr.limit = GetRMWord(ModRM);
+			gdtr.base = GetRMWordOffset(2) | (GetRMByteOffset(4) << 16);
 			break;
-		case 0x18:	// lidt
+		case 0x18:  /* lidt */
 			if(PM && (CPL!= 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
-			idtr_limit = GetRMWord(ModRM);
-			idtr_base = GetRMWordOfs(2) | (GetRMByteOfs(4) << 16);
-			count -= 11;
+			idtr.limit = GetRMWord(ModRM);
+			idtr.base = GetRMWordOffset(2) | (GetRMByteOffset(4) << 16);
+			icount -= 11;
 			break;
-		case 0x20:	// smsw
+		case 0x20:  /* smsw */
 			PutRMWord(ModRM, msw);
-			count -= 16;
+			icount -= 16;
 			break;
-		case 0x30:	// lmsw
+		case 0x30:  /* lmsw */
 			if(PM && (CPL!= 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
 			msw = (msw & 1) | GetRMWord(ModRM);
-			count -= 13;
+			icount -= 13;
 			break;
 		default:
 			interrupt(ILLEGAL_INSTRUCTION);
 			break;
 		}
 		break;
-	case 2:	// LAR
-		ModRM = FETCHOP();
+	case 2:  /* LAR */
+		ModRM = FETCHOP;
 		tmp = GetRMWord(ModRM);
-		ZeroVal = i286_selector_okay(tmp);
-		if(ZeroVal) {
-			RegWord(ModRM) = tmp;
+//		ZeroVal = i286_selector_okay(tmp);
+//		if(ZeroVal) {
+//			RegWord(ModRM) = tmp;
+//		}
+		if(i286_selector_okay(tmp)) {
+			ZeroVal = 0;
+			RegWord(ModRM) = ReadByte(i286_selector_to_address(tmp) + 5) << 8;
 		}
-		count -= 16;
+		else {
+			ZeroVal = 1;
+		}
+		icount -= 16;
 		break;
-	case 3:	// LSL
+	case 3:  /* LSL */
 		if(!PM) {
 			interrupt(ILLEGAL_INSTRUCTION);
 		}
-		ModRM = FETCHOP();
+		ModRM = FETCHOP;
 		tmp = GetRMWord(ModRM);
-		ZeroVal = i286_selector_okay(tmp);
-		if(ZeroVal) {
-			if(tmp & 4) {
-				addr = ldtr_base + (tmp & ~7);
-			}
-			else {
-				addr = gdtr_base + (tmp & ~7);
-			}
-			RegWord(ModRM) = RM16(addr);
+//		ZeroVal = i286_selector_okay(tmp);
+//		if(ZeroVal) {
+//			if(tmp & 4) {
+//				addr = ldtr.base + (tmp & ~7);
+//			}
+//			else {
+//				addr = gdtr.base + (tmp & ~7);
+//			}
+//			RegWord(ModRM) = ReadWord(addr);
+//		}
+		if(i286_selector_okay(tmp)) {
+			ZeroVal = 0;
+			addr = i286_selector_to_address(tmp);
+			RegWord(ModRM) = ReadWord(addr);
 		}
-		count -= 26;
+		else {
+			ZeroVal = 1;
+		}
+		icount -= 26;
 		break;
-	case 6:	// clts
+	case 6:  /* clts */
 		if(PM && (CPL!= 0)) {
 			interrupt(GENERAL_PROTECTION_FAULT);
 		}
 		msw = ~8;
-		count -= 5;
+		icount -= 5;
 		break;
 	default:
 		interrupt(ILLEGAL_INSTRUCTION);
 		break;
 	}
 #elif defined(HAS_V30)
-	unsigned code = FETCH8();
-	unsigned ModRM, tmp1, tmp2;
+	static const uint16 bytes[] = {
+		1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
+	};
+	unsigned code = FETCH;
+	unsigned ModRM;
+	unsigned tmp;
+	unsigned tmp2;
 	
 	switch(code) {
-	case 0x10:	// 0F 10 47 30 - TEST1 [bx+30h], cl
-		ModRM = FETCH8();
+	case 0x10:  /* 0F 10 47 30 - TEST1 [bx+30h], cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 3;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 3;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 12;
+			tmp = ReadByte(ea);
+			icount = old - 12;
 		}
 		tmp2 = regs.b[CL] & 7;
-		ZeroVal = tmp1 & bytes[tmp2] ? 1 : 0;
-		// SetZF(tmp1 & (1 << tmp2));
+		SetZF(tmp & bytes[tmp2]);
 		break;
-	case 0x11:	// 0F 11 47 30 - TEST1 [bx+30h], cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMWord(ModRM);
+	case 0x11:  /* 0F 11 47 30 - TEST1 [bx+30h], cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 3;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 3;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 12;
+			tmp = ReadWord(ea);
+			icount = old - 12;
 		}
 		tmp2 = regs.b[CL] & 0xf;
-		ZeroVal = tmp1 & bytes[tmp2] ? 1 : 0;
-		// SetZF(tmp1 & (1 << tmp2));
+		SetZF(tmp & bytes[tmp2]);
 		break;
-	case 0x12:	// 0F 12 [mod:000:r/m] - CLR1 reg/m8, cl
-		ModRM = FETCH8();
+	case 0x12:  /* 0F 12 [mod:000:r/m] - CLR1 reg/m8, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 5;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 5;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 14;
+			tmp = ReadByte(ea);
+			icount = old - 14;
 		}
 		tmp2 = regs.b[CL] & 7;
-		tmp1 &= ~(bytes[tmp2]);
-		PutbackRMByte(ModRM, tmp1);
+		tmp &= ~bytes[tmp2];
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x13:	// 0F 13 [mod:000:r/m] - CLR1 reg/m16, cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMWord(ModRM);
+	case 0x13:  /* 0F 13 [mod:000:r/m] - CLR1 reg/m16, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 5;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 5;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 14;
+			tmp = ReadWord(ea);
+			icount = old - 14;
 		}
 		tmp2 = regs.b[CL] & 0xf;
-		tmp1 &= ~(bytes[tmp2]);
-		PutbackRMWord(ModRM, tmp1);
+		tmp &= ~bytes[tmp2];
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x14:	// 0F 14 47 30 - SET1 [bx+30h], cl
-		ModRM = FETCH8();
+	case 0x14:  /* 0F 14 47 30 - SET1 [bx+30h], cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 4;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 4;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 13;
+			tmp = ReadByte(ea);
+			icount = old - 13;
 		}
 		tmp2 = regs.b[CL] & 7;
-		tmp1 |= (bytes[tmp2]);
-		PutbackRMByte(ModRM, tmp1);
+		tmp |= bytes[tmp2];
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x15:	// 0F 15 C6 - SET1 si, cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMWord(ModRM);
+	case 0x15:  /* 0F 15 C6 - SET1 si, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 4;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 4;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 13;
+			tmp = ReadWord(ea);
+			icount = old - 13;
 		}
 		tmp2 = regs.b[CL] & 0xf;
-		tmp1 |= (bytes[tmp2]);
-		PutbackRMWord(ModRM, tmp1);
+		tmp |= bytes[tmp2];
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x16:	// 0F 16 C6 - NOT1 si, cl
-		ModRM = FETCH8();
+	case 0x16:  /* 0F 16 C6 - NOT1 si, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 4;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 4;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 18;
+			tmp = ReadByte(ea);
+			icount = old - 18;
 		}
 		tmp2 = regs.b[CL] & 7;
-		if(tmp1 & bytes[tmp2]) {
-			tmp1 &= ~(bytes[tmp2]);
+		if(tmp & bytes[tmp2]) {
+			tmp &= ~bytes[tmp2];
 		}
 		else {
-			tmp1 |= (bytes[tmp2]);
+			tmp |= bytes[tmp2];
 		}
-		PutbackRMByte(ModRM, tmp1);
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x17:	// 0F 17 C6 - NOT1 si, cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMWord(ModRM);
+	case 0x17:  /* 0F 17 C6 - NOT1 si, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 4;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 4;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 18;
+			tmp = ReadWord(ea);
+			icount = old - 18;
 		}
 		tmp2 = regs.b[CL] & 0xf;
-		if(tmp1 & bytes[tmp2]) {
-			tmp1 &= ~(bytes[tmp2]);
+		if(tmp & bytes[tmp2]) {
+			tmp &= ~bytes[tmp2];
 		}
 		else {
-			tmp1 |= (bytes[tmp2]);
+			tmp |= bytes[tmp2];
 		}
-		PutbackRMWord(ModRM, tmp1);
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x18:	// 0F 18 XX - TEST1 [bx+30h], 07
-		ModRM = FETCH8();
-		// tmp1 = GetRMByte(ModRM);
+	case 0x18:  /* 0F 18 XX - TEST1 [bx+30h], 07 */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 4;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 4;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 13;
+			tmp = ReadByte(ea);
+			icount = old - 13;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 0xf;
-		ZeroVal = tmp1 & (bytes[tmp2]) ? 1 : 0;
-		// SetZF(tmp1 & (1 << tmp2));
+		SetZF(tmp & bytes[tmp2]);
 		break;
-	case 0x19:	// 0F 19 XX - TEST1 [bx+30h], 07
-		ModRM = FETCH8();
-		// tmp1 = GetRMWord(ModRM);
+	case 0x19:  /* 0F 19 XX - TEST1 [bx+30h], 07 */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 4;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 4;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 13;
+			tmp = ReadWord(ea);
+			icount = old - 13;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 0xf;
-		ZeroVal = tmp1 & (bytes[tmp2]) ? 1 : 0;
-		// SetZF(tmp1 & (1 << tmp2));
+		SetZF(tmp & bytes[tmp2]);
 		break;
-	case 0x1a:	// 0F 1A 06 - CLR1 si, cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMByte(ModRM);
+	case 0x1a:  /* 0F 1A 06 - CLR1 si, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 6;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 6;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 15;
+			tmp = ReadByte(ea);
+			icount = old - 15;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 7;
-		tmp1 &= ~(bytes[tmp2]);
-		PutbackRMByte(ModRM, tmp1);
+		tmp &= ~bytes[tmp2];
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x1B:	// 0F 1B 06 - CLR1 si, cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMWord(ModRM);
+	case 0x1B:  /* 0F 1B 06 - CLR1 si, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 6;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 6;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 15;
+			tmp = ReadWord(ea);
+			icount = old - 15;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 0xf;
-		tmp1 &= ~(bytes[tmp2]);
-		PutbackRMWord(ModRM, tmp1);
+		tmp &= ~bytes[tmp2];
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x1C:	// 0F 1C 47 30 - SET1 [bx+30h], cl
-		ModRM = FETCH8();
-		// tmp1 = GetRMByte(ModRM);
+	case 0x1C:  /* 0F 1C 47 30 - SET1 [bx+30h], cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 5;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 5;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 14;
+			tmp = ReadByte(ea);
+			icount = old - 14;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 7;
-		tmp1 |= (bytes[tmp2]);
-		PutbackRMByte(ModRM, tmp1);
+		tmp |= bytes[tmp2];
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x1D:	// 0F 1D C6 - SET1 si, cl
-		ModRM = FETCH8();
+	case 0x1D:  /* 0F 1D C6 - SET1 si, cl */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 5;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 5;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 14;
+			tmp = ReadWord(ea);
+			icount = old - 14;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 0xf;
-		tmp1 |= (bytes[tmp2]);
-		PutbackRMWord(ModRM, tmp1);
+		tmp |= bytes[tmp2];
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x1e:	// 0F 1e C6 - NOT1 si, 07
-		ModRM = FETCH8();
-		// tmp1 = GetRMByte(ModRM);
+	case 0x1e:  /* 0F 1e C6 - NOT1 si, 07 */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 5;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 5;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 19;
+			tmp = ReadByte(ea);
+			icount = old - 19;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 7;
-		if(tmp1 & bytes[tmp2]) {
-			tmp1 &= ~(bytes[tmp2]);
+		if(tmp & bytes[tmp2]) {
+			tmp &= ~bytes[tmp2];
 		}
 		else {
-			tmp1 |= (bytes[tmp2]);
+			tmp |= bytes[tmp2];
 		}
-		PutbackRMByte(ModRM, tmp1);
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x1f:	// 0F 1f C6 - NOT1 si, 07
-		ModRM = FETCH8();
-		//tmp1 = GetRMWord(ModRM);
+	case 0x1f:  /* 0F 1f C6 - NOT1 si, 07 */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.w[mod_rm16[ModRM]];
-			count -= 5;
+			tmp = regs.w[Mod_RM.RM.w[ModRM]];
+			icount -= 5;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM16(EA);
-			count = old - 19;
+			tmp = ReadWord(ea);
+			icount = old - 19;
 		}
-		tmp2 = FETCH8();
+		tmp2 = FETCH;
 		tmp2 &= 0xf;
-		if(tmp1 & bytes[tmp2]) {
-			tmp1 &= ~(bytes[tmp2]);
+		if(tmp & bytes[tmp2]) {
+			tmp &= ~bytes[tmp2];
 		}
 		else {
-			tmp1 |= (bytes[tmp2]);
+			tmp |= bytes[tmp2];
 		}
-		PutbackRMWord(ModRM, tmp1);
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x20:	// 0F 20 59 - add4s
+	case 0x20:  /* 0F 20 59 - add4s */
 		{
-			// length in words !
-			int cnt = (regs.b[CL] + 1) / 2;
+			/* length in words ! */
+			int count = (regs.b[CL] + 1) / 2;
 			unsigned di = regs.w[DI];
 			unsigned si = regs.w[SI];
 			
 			ZeroVal = 1;
-			CarryVal = 0;	// NOT ADC
-			for(int i = 0; i < cnt; i++) {
-				tmp1 = RM8(DS, si);
-				tmp2 = RM8(ES, di);
-				int v1 = (tmp1 >> 4) * 10 + (tmp1 & 0xf);
+			CarryVal = 0;	/* NOT ADC */
+			for(int i = 0; i < count; i++) {
+				tmp = GetMemB(DS, si);
+				tmp2 = GetMemB(ES, di);
+				int v1 = (tmp >> 4) * 10 + (tmp & 0xf);
 				int v2 = (tmp2 >> 4) * 10 + (tmp2 & 0xf);
 				int result = v1 + v2 + CarryVal;
 				CarryVal = result > 99 ? 1 : 0;
 				result = result % 100;
 				v1 = ((result / 10) << 4) | (result % 10);
-				WM8(ES, di, v1);
+				PutMemB(ES, di, v1);
 				if(v1) {
 					ZeroVal = 0;
 				}
@@ -2043,21 +2203,21 @@ inline void I86::_op0f()
 				di++;
 			}
 			OverVal = CarryVal;
-			count -= 7 + 19 * cnt;
+			icount -= 7 + 19 * count;
 		}
 		break;
-	case 0x22:	// 0F 22 59 - sub4s
+	case 0x22:  /* 0F 22 59 - sub4s */
 		{
-			int cnt = (regs.b[CL] + 1) / 2;
+			int count = (regs.b[CL] + 1) / 2;
 			unsigned di = regs.w[DI];
 			unsigned si = regs.w[SI];
 			
 			ZeroVal = 1;
-			CarryVal = 0;	// NOT ADC
-			for(int i = 0; i < cnt; i++) {
-				tmp1 = RM8(ES, di);
-				tmp2 = RM8(DS, si);
-				int v1 = (tmp1 >> 4) * 10 + (tmp1 & 0xf);
+			CarryVal = 0;  /* NOT ADC */
+			for(int i = 0; i < count; i++) {
+				tmp = GetMemB(ES, di);
+				tmp2 = GetMemB(DS, si);
+				int v1 = (tmp >> 4) * 10 + (tmp & 0xf);
 				int v2 = (tmp2 >> 4) * 10 + (tmp2 & 0xf), result;
 				if(v1 < (v2 + CarryVal)) {
 					v1 += 100;
@@ -2069,7 +2229,7 @@ inline void I86::_op0f()
 					CarryVal = 0;
 				}
 				v1 = ((result / 10) << 4) | (result % 10);
-				WM8(ES, di, v1);
+				PutMemB(ES, di, v1);
 				if(v1) {
 					ZeroVal = 0;
 				}
@@ -2077,24 +2237,24 @@ inline void I86::_op0f()
 				di++;
 			}
 			OverVal = CarryVal;
-			count -= 7 + 19 * cnt;
+			icount -= 7 + 19 * count;
 		}
 		break;
 	case 0x25:
-		count -= 16;
+		icount -= 16;
 		break;
-	case 0x26:	// 0F 22 59 - cmp4s
+	case 0x26:  /* 0F 22 59 - cmp4s */
 		{
-			int cnt = (regs.b[CL] + 1) / 2;
+			int count = (regs.b[CL] + 1) / 2;
 			unsigned di = regs.w[DI];
 			unsigned si = regs.w[SI];
 			
 			ZeroVal = 1;
-			CarryVal = 0;	// NOT ADC
-			for(int i = 0; i < cnt; i++) {
-				tmp1 = RM8(ES, di);
-				tmp2 = RM8(DS, si);
-				int v1 = (tmp1 >> 4) * 10 + (tmp1 & 0xf);
+			CarryVal = 0;	/* NOT ADC */
+			for(int i = 0; i < count; i++) {
+				tmp = GetMemB(ES, di);
+				tmp2 = GetMemB(DS, si);
+				int v1 = (tmp >> 4) * 10 + (tmp & 0xf);
 				int v2 = (tmp2 >> 4) * 10 + (tmp2 & 0xf), result;
 				if(v1 < (v2 + CarryVal)) {
 					v1 += 100;
@@ -2106,7 +2266,7 @@ inline void I86::_op0f()
 					CarryVal = 0;
 				}
 				v1 = ((result / 10) << 4) | (result % 10);
-				// WM8(ES, di, v1);	// no store, only compare
+				/* PutMemB(ES, di, v1);	/* no store, only compare */
 				if(v1) {
 					ZeroVal = 0;
 				}
@@ -2114,461 +2274,464 @@ inline void I86::_op0f()
 				di++;
 			}
 			OverVal = CarryVal;
-			count -= 7 + 19 * (regs.b[CL] + 1);
+			icount -= 7 + 19 * (regs.b[CL] + 1);
 		}
 		break;
-	case 0x28:	// 0F 28 C7 - ROL4 bh
-		ModRM = FETCH8();
-		// tmp1 = GetRMByte(ModRM);
+	case 0x28:  /* 0F 28 C7 - ROL4 bh */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 25;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 25;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 28;
+			tmp = ReadByte(ea);
+			icount = old - 28;
 		}
-		tmp1 <<= 4;
-		tmp1 |= regs.b[AL] & 0xf;
-		regs.b[AL] = (regs.b[AL] & 0xf0) | ((tmp1 >> 8) & 0xf);
-		tmp1 &= 0xff;
-		PutbackRMByte(ModRM, tmp1);
+		tmp <<= 4;
+		tmp |= regs.b[AL] & 0xf;
+		regs.b[AL] = (regs.b[AL] & 0xf0) | ((tmp >> 8) & 0xf);
+		tmp &= 0xff;
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x29:	// 0F 29 C7 - ROL4 bx
-		ModRM = FETCH8();
+	case 0x29:  /* 0F 29 C7 - ROL4 bx */
+		ModRM = FETCH;
 		break;
-	case 0x2A:	// 0F 2a c2 - ROR4 bh
-		ModRM = FETCH8();
+	case 0x2A:  /* 0F 2a c2 - ROR4 bh */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 29;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 29;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 33;
+			tmp = ReadByte(ea);
+			icount = old - 33;
 		}
 		tmp2 = (regs.b[AL] & 0xf) << 4;
-		regs.b[AL] = (regs.b[AL] & 0xf0) | (tmp1 & 0xf);
-		tmp1 = tmp2 | (tmp1 >> 4);
-		PutbackRMByte(ModRM, tmp1);
+		regs.b[AL] = (regs.b[AL] & 0xf0) | (tmp & 0xf);
+		tmp = tmp2 | (tmp >> 4);
+		PutbackRMByte(ModRM, tmp);
 		break;
-	case 0x2B:	// 0F 2b c2 - ROR4 bx
-		ModRM = FETCH8();
+	case 0x2B:  /* 0F 2b c2 - ROR4 bx */
+		ModRM = FETCH;
 		break;
-	case 0x2D:	// 0Fh 2Dh < 1111 1RRR>
-		ModRM = FETCH8();
-		count -= 15;
+	case 0x2D:  /* 0Fh 2Dh < 1111 1RRR> */
+		ModRM = FETCH;
+		icount -= 15;
 		break;
-	case 0x31:	// 0F 31 [mod:reg:r/m] - INS reg8, reg8 or INS reg8, imm4
-		ModRM = FETCH8();
+	case 0x31:  /* 0F 31 [mod:reg:r/m] - INS reg8, reg8 or INS reg8, imm4 */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 29;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 29;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 33;
+			tmp = ReadByte(ea);
+			icount = old - 33;
 		}
 		break;
-	case 0x33:	// 0F 33 [mod:reg:r/m] - EXT reg8, reg8 or EXT reg8, imm4
-		ModRM = FETCH8();
+	case 0x33:  /* 0F 33 [mod:reg:r/m] - EXT reg8, reg8 or EXT reg8, imm4 */
+		ModRM = FETCH;
 		if(ModRM >= 0xc0) {
-			tmp1 = regs.b[mod_rm8[ModRM]];
-			count -= 29;
+			tmp = regs.b[Mod_RM.RM.b[ModRM]];
+			icount -= 29;
 		}
 		else {
-			int old = count;
+			int old = icount;
 			GetEA(ModRM);
-			tmp1 = RM8(EA);
-			count = old - 33;
+			tmp = ReadByte(ea);
+			icount = old - 33;
 		}
 		break;
 	case 0x91:
-		count -= 12;
+		icount -= 12;
 		break;
 	case 0x94:
-		ModRM = FETCH8();
-		count -= 11;
+		ModRM = FETCH;
+		icount -= 11;
 		break;
 	case 0x95:
-		ModRM = FETCH8();
-		count -= 11;
+		ModRM = FETCH;
+		icount -= 11;
 		break;
 	case 0xbe:
-		count -= 2;
+		icount -= 2;
 		break;
 	case 0xe0:
-		ModRM = FETCH8();
-		count -= 12;
+		ModRM = FETCH;
+		icount -= 12;
 		break;
 	case 0xf0:
-		ModRM = FETCH8();
-		count -= 12;
+		ModRM = FETCH;
+		icount -= 12;
 		break;
-	case 0xff:	// 0F ff imm8 - BRKEM
-		ModRM = FETCH8();
-		count -= 38;
+	case 0xff:  /* 0F ff imm8 - BRKEM */
+		ModRM = FETCH;
+		icount -= 38;
 		interrupt(ModRM);
 		break;
 	}
-#else
-	_invalid();
 #endif
 }
 
-inline void I86::_adc_br8()	// Opcode 0x10
+inline void I86::_adc_br8()    /* Opcode 0x10 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	src += CF;
 	ADDB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_adc_wr16()	// Opcode 0x11
+inline void I86::_adc_wr16()    /* Opcode 0x11 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	src += CF;
 	ADDW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_adc_r8b()	// Opcode 0x12
+inline void I86::_adc_r8b()    /* Opcode 0x12 */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	src += CF;
 	ADDB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_adc_r16w()	// Opcode 0x13
+inline void I86::_adc_r16w()    /* Opcode 0x13 */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	src += CF;
 	ADDW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_adc_ald8()	// Opcode 0x14
+inline void I86::_adc_ald8()    /* Opcode 0x14 */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	src += CF;
 	ADDB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_adc_axd16()	// Opcode 0x15
+inline void I86::_adc_axd16()    /* Opcode 0x15 */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	src += CF;
 	ADDW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_push_ss()	// Opcode 0x16
+inline void I86::_push_ss()    /* Opcode 0x16 */
 {
-	PUSH16(sregs[SS]);
-	count -= cycles.push_seg;
+	PUSH(sregs[SS]);
+	icount -= timing.push_seg;
 }
 
-inline void I86::_pop_ss()	// Opcode 0x17
+inline void I86::_pop_ss()    /* Opcode 0x17 */
 {
 #ifdef HAS_I286
-	uint16 tmp = POP16();
+	uint16 tmp;
+	POP(tmp);
 	i286_data_descriptor(SS, tmp);
 #else
-	sregs[SS] = POP16();
+	POP(sregs[SS]);
 	base[SS] = SegBase(SS);
 #endif
-	count -= cycles.pop_seg;
-	op(FETCHOP());
+	icount -= timing.pop_seg;
+	instruction(FETCHOP); /* no interrupt before next instruction */
 }
 
-inline void I86::_sbb_br8()	// Opcode 0x18
+inline void I86::_sbb_br8()    /* Opcode 0x18 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	src += CF;
 	SUBB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_sbb_wr16()	// Opcode 0x19
+inline void I86::_sbb_wr16()    /* Opcode 0x19 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	src += CF;
 	SUBW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_sbb_r8b()	// Opcode 0x1a
+inline void I86::_sbb_r8b()    /* Opcode 0x1a */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	src += CF;
 	SUBB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_sbb_r16w()	// Opcode 0x1b
+inline void I86::_sbb_r16w()    /* Opcode 0x1b */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	src += CF;
 	SUBW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_sbb_ald8()	// Opcode 0x1c
+inline void I86::_sbb_ald8()    /* Opcode 0x1c */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	src += CF;
 	SUBB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_sbb_axd16()	// Opcode 0x1d
+inline void I86::_sbb_axd16()    /* Opcode 0x1d */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	src += CF;
 	SUBW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_push_ds()	// Opcode 0x1e
+inline void I86::_push_ds()    /* Opcode 0x1e */
 {
-	PUSH16(sregs[DS]);
-	count -= cycles.push_seg;
+	PUSH(sregs[DS]);
+	icount -= timing.push_seg;
 }
 
-inline void I86::_pop_ds()	// Opcode 0x1f
+inline void I86::_pop_ds()    /* Opcode 0x1f */
 {
 #ifdef HAS_I286
-	uint16 tmp = POP16();
+	uint16 tmp;
+	POP(tmp);
 	i286_data_descriptor(DS, tmp);
 #else
-	sregs[DS] = POP16();
+	POP(sregs[DS]);
 	base[DS] = SegBase(DS);
 #endif
-	count -= cycles.push_seg;
+	icount -= timing.push_seg;
 }
 
-inline void I86::_and_br8()	// Opcode 0x20
+inline void I86::_and_br8()    /* Opcode 0x20 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	ANDB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_and_wr16()	// Opcode 0x21
+inline void I86::_and_wr16()    /* Opcode 0x21 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	ANDW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_and_r8b()	// Opcode 0x22
+inline void I86::_and_r8b()    /* Opcode 0x22 */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	ANDB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_and_r16w()	// Opcode 0x23
+inline void I86::_and_r16w()    /* Opcode 0x23 */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	ANDW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_and_ald8()	// Opcode 0x24
+inline void I86::_and_ald8()    /* Opcode 0x24 */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	ANDB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_and_axd16()	// Opcode 0x25
+inline void I86::_and_axd16()    /* Opcode 0x25 */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	ANDW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_es()	// Opcode 0x26
+inline void I86::_es()    /* Opcode 0x26 */
 {
 	seg_prefix = true;
-	prefix_base = base[ES];
-	count -= cycles.override;
-	op(FETCHOP());
+	prefix_seg = ES;
+	icount -= timing.override;
+	instruction(FETCHOP);
 }
 
-inline void I86::_daa()	// Opcode 0x27
+inline void I86::_daa()    /* Opcode 0x27 */
 {
 	if(AF || ((regs.b[AL] & 0xf) > 9)) {
-		int tmp = regs.b[AL] + 6;
-		regs.b[AL] = tmp;
+		int tmp;
+		regs.b[AL] = tmp = regs.b[AL] + 6;
 		AuxVal = 1;
 		CarryVal |= tmp & 0x100;
 	}
+	
 	if(CF || (regs.b[AL] > 0x9f)) {
 		regs.b[AL] += 0x60;
 		CarryVal = 1;
 	}
+	
 	SetSZPF_Byte(regs.b[AL]);
-	count -= cycles.daa;
+	icount -= timing.daa;
 }
 
-inline void I86::_sub_br8()	// Opcode 0x28
+inline void I86::_sub_br8()    /* Opcode 0x28 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	SUBB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_sub_wr16()	// Opcode 0x29
+inline void I86::_sub_wr16()    /* Opcode 0x29 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	SUBW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_sub_r8b()	// Opcode 0x2a
+inline void I86::_sub_r8b()    /* Opcode 0x2a */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	SUBB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_sub_r16w()	// Opcode 0x2b
+inline void I86::_sub_r16w()    /* Opcode 0x2b */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	SUBW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_sub_ald8()	// Opcode 0x2c
+inline void I86::_sub_ald8()    /* Opcode 0x2c */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	SUBB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_sub_axd16()	// Opcode 0x2d
+inline void I86::_sub_axd16()    /* Opcode 0x2d */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	SUBW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_cs()	// Opcode 0x2e
+inline void I86::_cs()    /* Opcode 0x2e */
 {
 	seg_prefix = true;
-	prefix_base = base[CS];
-	count -= cycles.override;
-	op(FETCHOP());
+	prefix_seg = CS;
+	icount -= timing.override;
+	instruction(FETCHOP);
 }
 
-inline void I86::_das()	// Opcode 0x2f
+inline void I86::_das()    /* Opcode 0x2f */
 {
 	uint8 tmpAL = regs.b[AL];
 	if(AF || ((regs.b[AL] & 0xf) > 9)) {
-		int tmp = regs.b[AL] - 6;
-		regs.b[AL] = tmp;
+		int tmp;
+		regs.b[AL] = tmp = regs.b[AL] - 6;
 		AuxVal = 1;
 		CarryVal |= tmp & 0x100;
 	}
+	
 	if(CF || (tmpAL > 0x9f)) {
 		regs.b[AL] -= 0x60;
 		CarryVal = 1;
 	}
+	
 	SetSZPF_Byte(regs.b[AL]);
-	count -= cycles.das;
+	icount -= timing.das;
 }
 
-inline void I86::_xor_br8()	// Opcode 0x30
+inline void I86::_xor_br8()    /* Opcode 0x30 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_mr8;
 	XORB(dst, src);
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void I86::_xor_wr16()	// Opcode 0x31
+inline void I86::_xor_wr16()    /* Opcode 0x31 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_mr16;
 	XORW(dst, src);
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void I86::_xor_r8b()	// Opcode 0x32
+inline void I86::_xor_r8b()    /* Opcode 0x32 */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	XORB(dst, src);
 	RegByte(ModRM) = dst;
 }
 
-inline void I86::_xor_r16w()	// Opcode 0x33
+inline void I86::_xor_r16w()    /* Opcode 0x33 */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	XORW(dst, src);
 	RegWord(ModRM) = dst;
 }
 
-inline void I86::_xor_ald8()	// Opcode 0x34
+inline void I86::_xor_ald8()    /* Opcode 0x34 */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	XORB(dst, src);
 	regs.b[AL] = dst;
 }
 
-inline void I86::_xor_axd16()	// Opcode 0x35
+inline void I86::_xor_axd16()    /* Opcode 0x35 */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	XORW(dst, src);
 	regs.w[AX] = dst;
 }
 
-inline void I86::_ss()	// Opcode 0x36
+inline void I86::_ss()    /* Opcode 0x36 */
 {
 	seg_prefix = true;
-	prefix_base = base[SS];
-	count -= cycles.override;
-	op(FETCHOP());
+	prefix_seg = SS;
+	icount -= timing.override;
+	instruction(FETCHOP);
 }
 
-inline void I86::_aaa()	// Opcode 0x37
+inline void I86::_aaa()    /* Opcode 0x37 */
 {
 	uint8 ALcarry = 1;
 	if(regs.b[AL]>0xf9) {
@@ -2585,63 +2748,63 @@ inline void I86::_aaa()	// Opcode 0x37
 		CarryVal = 0;
 	}
 	regs.b[AL] &= 0x0F;
-	count -= cycles.aaa;
+	icount -= timing.aaa;
 }
 
-inline void I86::_cmp_br8()	// Opcode 0x38
+inline void I86::_cmp_br8()    /* Opcode 0x38 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	SUBB(dst, src);
 }
 
-inline void I86::_cmp_wr16()	// Opcode 0x39
+inline void I86::_cmp_wr16()    /* Opcode 0x39 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	SUBW(dst, src);
 }
 
-inline void I86::_cmp_r8b()	// Opcode 0x3a
+inline void I86::_cmp_r8b()    /* Opcode 0x3a */
 {
 	DEF_r8b(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	SUBB(dst, src);
 }
 
-inline void I86::_cmp_r16w()	// Opcode 0x3b
+inline void I86::_cmp_r16w()    /* Opcode 0x3b */
 {
 	DEF_r16w(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	SUBW(dst, src);
 }
 
-inline void I86::_cmp_ald8()	// Opcode 0x3c
+inline void I86::_cmp_ald8()    /* Opcode 0x3c */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	SUBB(dst, src);
 }
 
-inline void I86::_cmp_axd16()	// Opcode 0x3d
+inline void I86::_cmp_axd16()    /* Opcode 0x3d */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	SUBW(dst, src);
 }
 
-inline void I86::_ds()	// Opcode 0x3e
+inline void I86::_ds()    /* Opcode 0x3e */
 {
 	seg_prefix = true;
-	prefix_base = base[DS];
-	count -= cycles.override;
-	op(FETCHOP());
+	prefix_seg = DS;
+	icount -= timing.override;
+	instruction(FETCHOP);
 }
 
-inline void I86::_aas()	// Opcode 0x3f
+inline void I86::_aas()    /* Opcode 0x3f */
 {
 	uint8 ALcarry = 1;
-	if(regs.b[AL]>0xf9) {
+	if(regs.b[AL] > 0xf9) {
 		ALcarry = 2;
 	}
 	if(AF || ((regs.b[AL] & 0xf) > 9)) {
@@ -2655,1040 +2818,998 @@ inline void I86::_aas()	// Opcode 0x3f
 		CarryVal = 0;
 	}
 	regs.b[AL] &= 0x0F;
-	count -= cycles.aas;
+	icount -= timing.aas;
 }
 
-#define IncWordReg(reg) { \
-	unsigned tmp = (unsigned)regs.w[reg]; \
+#define IncWordReg(Reg) { \
+	unsigned tmp = (unsigned)regs.w[Reg]; \
 	unsigned tmp1 = tmp + 1; \
 	SetOFW_Add(tmp1, tmp, 1); \
 	SetAF(tmp1, tmp, 1); \
 	SetSZPF_Word(tmp1); \
-	regs.w[reg] = tmp1; \
-	count -= cycles.incdec_r16; \
+	regs.w[Reg] = tmp1; \
+	icount -= timing.incdec_r16; \
 }
 
-inline void I86::_inc_ax()	// Opcode 0x40
+inline void I86::_inc_ax()    /* Opcode 0x40 */
 {
 	IncWordReg(AX);
 }
 
-inline void I86::_inc_cx()	// Opcode 0x41
+inline void I86::_inc_cx()    /* Opcode 0x41 */
 {
 	IncWordReg(CX);
 }
 
-inline void I86::_inc_dx()	// Opcode 0x42
+inline void I86::_inc_dx()    /* Opcode 0x42 */
 {
 	IncWordReg(DX);
 }
 
-inline void I86::_inc_bx()	// Opcode 0x43
+inline void I86::_inc_bx()    /* Opcode 0x43 */
 {
 	IncWordReg(BX);
 }
 
-inline void I86::_inc_sp()	// Opcode 0x44
+inline void I86::_inc_sp()    /* Opcode 0x44 */
 {
 	IncWordReg(SP);
 }
 
-inline void I86::_inc_bp()	// Opcode 0x45
+inline void I86::_inc_bp()    /* Opcode 0x45 */
 {
 	IncWordReg(BP);
 }
 
-inline void I86::_inc_si()	// Opcode 0x46
+inline void I86::_inc_si()    /* Opcode 0x46 */
 {
 	IncWordReg(SI);
 }
 
-inline void I86::_inc_di()	// Opcode 0x47
+inline void I86::_inc_di()    /* Opcode 0x47 */
 {
 	IncWordReg(DI);
 }
 
-#define DecWordReg(reg) { \
-	unsigned tmp = (unsigned)regs.w[reg]; \
+#define DecWordReg(Reg) { \
+	unsigned tmp = (unsigned)regs.w[Reg]; \
 	unsigned tmp1 = tmp - 1; \
 	SetOFW_Sub(tmp1, 1, tmp); \
 	SetAF(tmp1, tmp, 1); \
 	SetSZPF_Word(tmp1); \
-	regs.w[reg] = tmp1; \
-	count -= cycles.incdec_r16; \
+	regs.w[Reg] = tmp1; \
+	icount -= timing.incdec_r16; \
 }
 
-inline void I86::_dec_ax()	// Opcode 0x48
+inline void I86::_dec_ax()    /* Opcode 0x48 */
 {
 	DecWordReg(AX);
 }
 
-inline void I86::_dec_cx()	// Opcode 0x49
+inline void I86::_dec_cx()    /* Opcode 0x49 */
 {
 	DecWordReg(CX);
 }
 
-inline void I86::_dec_dx()	// Opcode 0x4a
+inline void I86::_dec_dx()    /* Opcode 0x4a */
 {
 	DecWordReg(DX);
 }
 
-inline void I86::_dec_bx()	// Opcode 0x4b
+inline void I86::_dec_bx()    /* Opcode 0x4b */
 {
 	DecWordReg(BX);
 }
 
-inline void I86::_dec_sp()	// Opcode 0x4c
+inline void I86::_dec_sp()    /* Opcode 0x4c */
 {
 	DecWordReg(SP);
 }
 
-inline void I86::_dec_bp()	// Opcode 0x4d
+inline void I86::_dec_bp()    /* Opcode 0x4d */
 {
 	DecWordReg(BP);
 }
 
-inline void I86::_dec_si()	// Opcode 0x4e
+inline void I86::_dec_si()    /* Opcode 0x4e */
 {
 	DecWordReg(SI);
 }
 
-inline void I86::_dec_di()	// Opcode 0x4f
+inline void I86::_dec_di()    /* Opcode 0x4f */
 {
 	DecWordReg(DI);
 }
 
-inline void I86::_push_ax()	// Opcode 0x50
+inline void I86::_push_ax()    /* Opcode 0x50 */
 {
-	count -= cycles.push_r16;
-	PUSH16(regs.w[AX]);
+	icount -= timing.push_r16;
+	PUSH(regs.w[AX]);
 }
 
-inline void I86::_push_cx()	// Opcode 0x51
+inline void I86::_push_cx()    /* Opcode 0x51 */
 {
-	count -= cycles.push_r16;
-	PUSH16(regs.w[CX]);
+	icount -= timing.push_r16;
+	PUSH(regs.w[CX]);
 }
 
-inline void I86::_push_dx()	// Opcode 0x52
+inline void I86::_push_dx()    /* Opcode 0x52 */
 {
-	count -= cycles.push_r16;
-	PUSH16(regs.w[DX]);
+	icount -= timing.push_r16;
+	PUSH(regs.w[DX]);
 }
 
-inline void I86::_push_bx()	// Opcode 0x53
+inline void I86::_push_bx()    /* Opcode 0x53 */
 {
-	count -= cycles.push_r16;
-	PUSH16(regs.w[BX]);
+	icount -= timing.push_r16;
+	PUSH(regs.w[BX]);
 }
 
-inline void I86::_push_sp()	// Opcode 0x54
+inline void I86::_push_sp()    /* Opcode 0x54 */
 {
-	count -= cycles.push_r16;
-#ifdef HAS_I286
-	PUSH16(regs.w[SP]);
-#else
-	PUSH16(regs.w[SP] - 2);
-#endif
-}
-
-inline void I86::_push_bp()	// Opcode 0x55
-{
-	count -= cycles.push_r16;
-	PUSH16(regs.w[BP]);
-}
-
-inline void I86::_push_si()	// Opcode 0x56
-{
-	count -= cycles.push_r16;
-	PUSH16(regs.w[SI]);
-}
-
-inline void I86::_push_di()	// Opcode 0x57
-{
-	count -= cycles.push_r16;
-	PUSH16(regs.w[DI]);
-}
-
-inline void I86::_pop_ax()	// Opcode 0x58
-{
-	count -= cycles.pop_r16;
-	regs.w[AX] = POP16();
-}
-
-inline void I86::_pop_cx()	// Opcode 0x59
-{
-	count -= cycles.pop_r16;
-	regs.w[CX] = POP16();
-}
-
-inline void I86::_pop_dx()	// Opcode 0x5a
-{
-	count -= cycles.pop_r16;
-	regs.w[DX] = POP16();
-}
-
-inline void I86::_pop_bx()	// Opcode 0x5b
-{
-	count -= cycles.pop_r16;
-	regs.w[BX] = POP16();
-}
-
-inline void I86::_pop_sp()	// Opcode 0x5c
-{
-	count -= cycles.pop_r16;
-	regs.w[SP] = POP16();
-}
-
-inline void I86::_pop_bp()	// Opcode 0x5d
-{
-	count -= cycles.pop_r16;
-	regs.w[BP] = POP16();
-}
-
-inline void I86::_pop_si()	// Opcode 0x5e
-{
-	count -= cycles.pop_r16;
-	regs.w[SI] = POP16();
-}
-
-inline void I86::_pop_di()	// Opcode 0x5f
-{
-	count -= cycles.pop_r16;
-	regs.w[DI] = POP16();
-}
-
-inline void I86::_pusha()	// Opcode 0x60
-{
-#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned tmp = regs.w[SP];
-	count -= cycles.pusha;
-	PUSH16(regs.w[AX]);
-	PUSH16(regs.w[CX]);
-	PUSH16(regs.w[DX]);
-	PUSH16(regs.w[BX]);
-	PUSH16(tmp);
-	PUSH16(regs.w[BP]);
-	PUSH16(regs.w[SI]);
-	PUSH16(regs.w[DI]);
+	
+	icount -= timing.push_r16;
+#ifdef HAS_I286
+	PUSH(tmp);
 #else
-	_invalid();
+	PUSH(tmp - 2);
 #endif
 }
 
-inline void I86::_popa()	// Opcode 0x61
+inline void I86::_push_bp()    /* Opcode 0x55 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	count -= cycles.popa;
-	regs.w[DI] = POP16();
-	regs.w[SI] = POP16();
-	regs.w[BP] = POP16();
-	unsigned tmp = POP16();
-	regs.w[BX] = POP16();
-	regs.w[DX] = POP16();
-	regs.w[CX] = POP16();
-	regs.w[AX] = POP16();
-#else
-	_invalid();
-#endif
+	icount -= timing.push_r16;
+	PUSH(regs.w[BP]);
 }
 
-inline void I86::_bound()	// Opcode 0x62
+inline void I86::_push_si()    /* Opcode 0x56 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	unsigned ModRM = FETCHOP();
+	icount -= timing.push_r16;
+	PUSH(regs.w[SI]);
+}
+
+inline void I86::_push_di()    /* Opcode 0x57 */
+{
+	icount -= timing.push_r16;
+	PUSH(regs.w[DI]);
+}
+
+inline void I86::_pop_ax()    /* Opcode 0x58 */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[AX]);
+}
+
+inline void I86::_pop_cx()    /* Opcode 0x59 */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[CX]);
+}
+
+inline void I86::_pop_dx()    /* Opcode 0x5a */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[DX]);
+}
+
+inline void I86::_pop_bx()    /* Opcode 0x5b */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[BX]);
+}
+
+inline void I86::_pop_sp()    /* Opcode 0x5c */
+{
+	unsigned tmp;
+	
+	icount -= timing.pop_r16;
+	POP(tmp);
+	regs.w[SP] = tmp;
+}
+
+inline void I86::_pop_bp()    /* Opcode 0x5d */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[BP]);
+}
+
+inline void I86::_pop_si()    /* Opcode 0x5e */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[SI]);
+}
+
+inline void I86::_pop_di()    /* Opcode 0x5f */
+{
+	icount -= timing.pop_r16;
+	POP(regs.w[DI]);
+}
+
+inline void I86::_pusha()    /* Opcode 0x60 */
+{
+	unsigned tmp = regs.w[SP];
+	
+	icount -= timing.pusha;
+	PUSH(regs.w[AX]);
+	PUSH(regs.w[CX]);
+	PUSH(regs.w[DX]);
+	PUSH(regs.w[BX]);
+	PUSH(tmp);
+	PUSH(regs.w[BP]);
+	PUSH(regs.w[SI]);
+	PUSH(regs.w[DI]);
+}
+
+inline void I86::_popa()    /* Opcode 0x61 */
+{
+	unsigned tmp;
+	
+	icount -= timing.popa;
+	POP(regs.w[DI]);
+	POP(regs.w[SI]);
+	POP(regs.w[BP]);
+	POP(tmp);
+	POP(regs.w[BX]);
+	POP(regs.w[DX]);
+	POP(regs.w[CX]);
+	POP(regs.w[AX]);
+}
+
+inline void I86::_bound()    /* Opcode 0x62 */
+{
+	unsigned ModRM = FETCHOP;
 	int low = (int16)GetRMWord(ModRM);
-	int high = (int16)GetNextRMWord();
+	int high = (int16)GetNextRMWord;
 	int tmp = (int16)RegWord(ModRM);
 	if(tmp < low || tmp>high) {
-		PC-= 2;
-		interrupt(5);
+		pc -= (seg_prefix ? 3 : 2);
+		interrupt(BOUNDS_CHECK_FAULT);
 	}
-	count -= cycles.bound;
-#else
-	_invalid();
-#endif
+	icount -= timing.bound;
 }
 
-inline void I86::_arpl()	// Opcode 0x63
+inline void I86::_arpl()    /* Opcode 0x63 */
 {
 #ifdef HAS_I286
 	if(PM) {
-		uint16 ModRM = FETCHOP();
+		uint16 ModRM = FETCHOP;
 		uint16 tmp = GetRMWord(ModRM);
-		ZeroVal = i286_selector_okay(RegWord(ModRM)) && i286_selector_okay(RegWord(ModRM)) && ((tmp & 3) < (RegWord(ModRM) & 3));
-		if(ZeroVal) {
-			PutbackRMWord(ModRM, (tmp & ~3) | (RegWord(ModRM) & 3));
+		uint16 source = RegWord(ModRM);
+		
+		if(i286_selector_okay(tmp) && i286_selector_okay(source) && ((tmp & 3) < (source & 3))) {
+			ZeroVal = 0;
+			PutbackRMWord(ModRM, (tmp & ~3) | (source & 3));
 		}
-		count -= 21;
+		else {
+			ZeroVal = 1;
+		}
+		icount -= 21;
 	}
 	else {
 		interrupt(ILLEGAL_INSTRUCTION);
 	}
-#else
-	_invalid();
 #endif
 }
-
-#if 0
-inline void I86::_brkn()	// Opcode 0x63 BRKN - Break to Native Mode
-{
-	unsigned vector = FETCH8();
-}
-#endif
 
 inline void I86::_repc(int flagval)
 {
 #ifdef HAS_V30
-	unsigned next = FETCHOP();
-	unsigned cnt = regs.w[CX];
+	unsigned next = FETCHOP;
+	unsigned count = regs.w[CX];
 	
 	switch(next) {
-	case 0x26:	// ES:
+	case 0x26:	/* ES: */
 		seg_prefix = true;
-		prefix_base = base[ES];
-		count -= 2;
+		prefix_seg = ES;
+		icount -= 2;
 		_repc(flagval);
 		break;
-	case 0x2e:	// CS:
+	case 0x2e:	/* CS: */
 		seg_prefix = true;
-		prefix_base = base[CS];
-		count -= 2;
+		prefix_seg = CS;
+		icount -= 2;
 		_repc(flagval);
 		break;
-	case 0x36:	// SS:
+	case 0x36:	/* SS: */
 		seg_prefix = true;
-		prefix_base = base[SS];
-		count -= 2;
+		prefix_seg = SS;
+		icount -= 2;
 		_repc(flagval);
 		break;
-	case 0x3e:	// DS:
+	case 0x3e:	/* DS: */
 		seg_prefix = true;
-		prefix_base = base[DS];
-		count -= 2;
+		prefix_seg = DS;
+		icount -= 2;
 		_repc(flagval);
 		break;
-	case 0x6c:	// REP INSB
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0x6c:	/* REP INSB */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_insb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0x6d:	// REP INSW
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0x6d:	/* REP INSW */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_insw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0x6e:	// REP OUTSB
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0x6e:	/* REP OUTSB */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_outsb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0x6f:	// REP OUTSW
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0x6f:	/* REP OUTSW */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_outsw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa4:	// REP MOVSB
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xa4:	/* REP MOVSB */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_movsb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa5:	// REP MOVSW
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xa5:	/* REP MOVSW */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_movsw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa6:	// REP(N)E CMPSB
-		count -= 9;
-		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xa6:	/* REP(N)E CMPSB */
+		icount -= 9;
+		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (count > 0); count--) {
 			_cmpsb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa7:	// REP(N)E CMPSW
-		count -= 9;
-		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xa7:	/* REP(N)E CMPSW */
+		icount -= 9;
+		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (count > 0); count--) {
 			_cmpsw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xaa:	// REP STOSB
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xaa:	/* REP STOSB */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_stosb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xab:	// REP STOSW
-		count -= 9 - cnt;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xab:	/* REP STOSW */
+		icount -= 9 - count;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_stosw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xac:	// REP LODSB
-		count -= 9;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xac:	/* REP LODSB */
+		icount -= 9;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_lodsb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xad:	// REP LODSW
-		count -= 9;
-		for(; (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xad:	/* REP LODSW */
+		icount -= 9;
+		for(; (CF == flagval) && (count > 0); count--) {
 			_lodsw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xae:	// REP(N)E SCASB
-		count -= 9;
-		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xae:	/* REP(N)E SCASB */
+		icount -= 9;
+		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (count > 0); count--) {
 			_scasb();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xaf:	// REP(N)E SCASW
-		count -= 9;
-		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (cnt > 0); cnt--) {
+	case 0xaf:	/* REP(N)E SCASW */
+		icount -= 9;
+		for(ZeroVal = !flagval; (ZF == flagval) && (CF == flagval) && (count > 0); count--) {
 			_scasw();
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
 	default:
-		op(next);
+		instruction(next);
 	}
-#else
-	_invalid();
 #endif
 }
 
-inline void I86::_push_d16()	// Opcode 0x68
+inline void I86::_push_d16()    /* Opcode 0x68 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	unsigned tmp = FETCH8();
-	count -= cycles.push_imm;
-	tmp += FETCH8() << 8;
-	PUSH16(tmp);
-#else
-	_invalid();
-#endif
+	unsigned tmp = FETCH;
+	icount -= timing.push_imm;
+	tmp += FETCH << 8;
+	PUSH(tmp);
 }
 
-inline void I86::_imul_d16()	// Opcode 0x69
+inline void I86::_imul_d16()    /* Opcode 0x69 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
 	DEF_r16w(dst, src);
-	unsigned src2 = FETCH8();
-	src += (FETCH8() << 8);
-	count -= (ModRM >= 0xc0) ? cycles.imul_rri16 : cycles.imul_rmi16;
+	unsigned src2 = FETCH;
+	src += (FETCH << 8);
+	icount -= (ModRM >= 0xc0) ? timing.imul_rri16 : timing.imul_rmi16;
 	dst = (int32)((int16)src) * (int32)((int16)src2);
 	CarryVal = OverVal = (((int32)dst) >> 15 != 0) && (((int32)dst) >> 15 != -1);
 	RegWord(ModRM) = (uint16)dst;
-#else
-	_invalid();
-#endif
 }
 
-inline void I86::_push_d8()	// Opcode 0x6a
+inline void I86::_push_d8()    /* Opcode 0x6a */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	unsigned tmp = (uint16)((int16)((int8)FETCH8()));
-	count -= cycles.push_imm;
-	PUSH16(tmp);
-#else
-	_invalid();
-#endif
+	unsigned tmp = (uint16)((int16)((int8)FETCH));
+	icount -= timing.push_imm;
+	PUSH(tmp);
 }
 
-inline void I86::_imul_d8()	// Opcode 0x6b
+inline void I86::_imul_d8()    /* Opcode 0x6b */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
 	DEF_r16w(dst, src);
-	unsigned src2 = (uint16)((int16)((int8)FETCH8()));
-	count -= (ModRM >= 0xc0) ? cycles.imul_rri8 : cycles.imul_rmi8;
+	unsigned src2 = (uint16)((int16)((int8)FETCH));
+	icount -= (ModRM >= 0xc0) ? timing.imul_rri8 : timing.imul_rmi8;
 	dst = (int32)((int16)src) * (int32)((int16)src2);
 	CarryVal = OverVal = (((int32)dst) >> 15 != 0) && (((int32)dst) >> 15 != -1);
 	RegWord(ModRM) = (uint16)dst;
-#else
-	_invalid();
-#endif
 }
 
-inline void I86::_insb()	// Opcode 0x6c
+inline void I86::_insb()    /* Opcode 0x6c */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	count -= cycles.ins8;
-	WM8(ES, regs.w[DI], IN8(regs.w[DX]));
+	icount -= timing.ins8;
+	PutMemB(ES, regs.w[DI], read_port_byte(regs.w[DX]));
 	regs.w[DI] += DirVal;
-#else
-	_invalid();
-#endif
 }
 
-inline void I86::_insw()	// Opcode 0x6d
+inline void I86::_insw()    /* Opcode 0x6d */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	count -= cycles.ins16;
-	WM16(ES, regs.w[DI], IN16(regs.w[DX]));
+	icount -= timing.ins16;
+	PutMemW(ES, regs.w[DI], read_port_word(regs.w[DX]));
 	regs.w[DI] += 2 * DirVal;
-#else
-	_invalid();
-#endif
 }
 
-inline void I86::_outsb()	// Opcode 0x6e
+inline void I86::_outsb()    /* Opcode 0x6e */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	count -= cycles.outs8;
-	OUT8(regs.w[DX], RM8(DS, regs.w[SI]));
-	regs.w[SI] += DirVal; // GOL 11/27/01
-#else
-	_invalid();
-#endif
+	icount -= timing.outs8;
+	write_port_byte(regs.w[DX], GetMemB(DS, regs.w[SI]));
+	regs.w[SI] += DirVal; /* GOL 11/27/01 */
 }
 
-inline void I86::_outsw()	// Opcode 0x6f
+inline void I86::_outsw()    /* Opcode 0x6f */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	count -= cycles.outs16;
-	OUT16(regs.w[DX], RM16(DS, regs.w[SI]));
-	regs.w[SI] += 2 * DirVal;
-#else
-	_invalid();
-#endif
+	icount -= timing.outs16;
+	write_port_word(regs.w[DX], GetMemW(DS, regs.w[SI]));
+	regs.w[SI] += 2 * DirVal; /* GOL 11/27/01 */
 }
 
-inline void I86::_jo()	// Opcode 0x70
+inline void I86::_jo()    /* Opcode 0x70 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(OF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jno()	// Opcode 0x71
+inline void I86::_jno()    /* Opcode 0x71 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(!OF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jb()	// Opcode 0x72
+inline void I86::_jb()    /* Opcode 0x72 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(CF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jnb()	// Opcode 0x73
+inline void I86::_jnb()    /* Opcode 0x73 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(!CF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jz()	// Opcode 0x74
+inline void I86::_jz()    /* Opcode 0x74 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(ZF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jnz()	// Opcode 0x75
+inline void I86::_jnz()    /* Opcode 0x75 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(!ZF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jbe()	// Opcode 0x76
+inline void I86::_jbe()    /* Opcode 0x76 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(CF || ZF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jnbe()	// Opcode 0x77
+inline void I86::_jnbe()    /* Opcode 0x77 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(!(CF || ZF)) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_js()	// Opcode 0x78
+inline void I86::_js()    /* Opcode 0x78 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(SF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jns()	// Opcode 0x79
+inline void I86::_jns()    /* Opcode 0x79 */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(!SF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jp()	// Opcode 0x7a
+inline void I86::_jp()    /* Opcode 0x7a */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(PF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jnp()	// Opcode 0x7b
+inline void I86::_jnp()    /* Opcode 0x7b */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(!PF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jl()	// Opcode 0x7c
+inline void I86::_jl()    /* Opcode 0x7c */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if((SF!= OF) && !ZF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jnl()	// Opcode 0x7d
+inline void I86::_jnl()    /* Opcode 0x7d */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(ZF || (SF == OF)) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jle()	// Opcode 0x7e
+inline void I86::_jle()    /* Opcode 0x7e */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if(ZF || (SF!= OF)) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_jnle()	// Opcode 0x7f
+inline void I86::_jnle()    /* Opcode 0x7f */
 {
-	int tmp = (int)((int8)FETCH8());
+	int tmp = (int)((int8)FETCH);
 	if((SF == OF) && !ZF) {
-		PC += tmp;
-		count -= cycles.jcc_t;
+		pc += tmp;
+		icount -= timing.jcc_t;
 	}
 	else {
-		count -= cycles.jcc_nt;
+		icount -= timing.jcc_nt;
 	}
 }
 
-inline void I86::_op80()	// Opcode 0x80
+inline void I86::_80pre()    /* Opcode 0x80 */
 {
-	unsigned ModRM = FETCHOP();
+	unsigned ModRM = FETCHOP;
 	unsigned dst = GetRMByte(ModRM);
-	unsigned src = FETCH8();
+	unsigned src = FETCH;
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// ADD eb, d8
+	case 0x00:	/* ADD eb, d8 */
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x08:	// OR eb, d8
+	case 0x08:	/* OR eb, d8 */
 		ORB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x10:	// ADC eb, d8
+	case 0x10:	/* ADC eb, d8 */
 		src += CF;
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x18:	// SBB eb, b8
+	case 0x18:	/* SBB eb, b8 */
 		src += CF;
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x20:	// AND eb, d8
+	case 0x20:	/* AND eb, d8 */
 		ANDB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x28:	// SUB eb, d8
+	case 0x28:	/* SUB eb, d8 */
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x30:	// XOR eb, d8
+	case 0x30:	/* XOR eb, d8 */
 		XORB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x38:	// CMP eb, d8
+	case 0x38:	/* CMP eb, d8 */
 		SUBB(dst, src);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8_ro;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		break;
 	}
 }
 
-inline void I86::_op81()	// Opcode 0x81
+inline void I86::_81pre()    /* Opcode 0x81 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	unsigned dst = GetRMWord(ModRM);
-	unsigned src = FETCH8();
-	src += (FETCH8() << 8);
+	unsigned src = FETCH;
+	src += (FETCH << 8);
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// ADD ew, d16
+	case 0x00:	/* ADD ew, d16 */
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x08:	// OR ew, d16
+	case 0x08:	/* OR ew, d16 */
 		ORW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x10:	// ADC ew, d16
+	case 0x10:	/* ADC ew, d16 */
 		src += CF;
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x18:	// SBB ew, d16
+	case 0x18:	/* SBB ew, d16 */
 		src += CF;
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x20:	// AND ew, d16
+	case 0x20:	/* AND ew, d16 */
 		ANDW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x28:	// SUB ew, d16
+	case 0x28:	/* SUB ew, d16 */
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x30:	// XOR ew, d16
+	case 0x30:	/* XOR ew, d16 */
 		XORW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x38:	// CMP ew, d16
+	case 0x38:	/* CMP ew, d16 */
 		SUBW(dst, src);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16_ro;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16_ro;
 		break;
 	}
 }
 
-inline void I86::_op82()	// Opcode 0x82
+inline void I86::_82pre()    /* Opcode 0x82 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	unsigned dst = GetRMByte(ModRM);
-	unsigned src = FETCH8();
+	unsigned src = FETCH;
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// ADD eb, d8
+	case 0x00:	/* ADD eb, d8 */
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x08:	// OR eb, d8
+	case 0x08:	/* OR eb, d8 */
 		ORB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x10:	// ADC eb, d8
+	case 0x10:	/* ADC eb, d8 */
 		src += CF;
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x18:	// SBB eb, d8
+	case 0x18:	/* SBB eb, d8 */
 		src += CF;
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x20:	// AND eb, d8
+	case 0x20:	/* AND eb, d8 */
 		ANDB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x28:	// SUB eb, d8
+	case 0x28:	/* SUB eb, d8 */
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x30:	// XOR eb, d8
+	case 0x30:	/* XOR eb, d8 */
 		XORB(dst, src);
 		PutbackRMByte(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x38:	// CMP eb, d8
+	case 0x38:	/* CMP eb, d8 */
 		SUBB(dst, src);
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8_ro;
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		break;
 	}
 }
 
-inline void I86::_op83()	// Opcode 0x83
+inline void I86::_83pre()    /* Opcode 0x83 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	unsigned dst = GetRMWord(ModRM);
-	unsigned src = (uint16)((int16)((int8)FETCH8()));
+	unsigned src = (uint16)((int16)((int8)FETCH));
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// ADD ew, d16
+	case 0x00:	/* ADD ew, d16 */
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x08:	// OR ew, d16
+	case 0x08:	/* OR ew, d16 */
 		ORW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x10:	// ADC ew, d16
+	case 0x10:	/* ADC ew, d16 */
 		src += CF;
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x18:	// SBB ew, d16
+	case 0x18:	/* SBB ew, d16 */
 		src += CF;
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x20:	// AND ew, d16
+	case 0x20:	/* AND ew, d16 */
 		ANDW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x28:	// SUB ew, d16
+	case 0x28:	/* SUB ew, d16 */
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x30:	// XOR ew, d16
+	case 0x30:	/* XOR ew, d16 */
 		XORW(dst, src);
 		PutbackRMWord(ModRM, dst);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x38:	// CMP ew, d16
+	case 0x38:	/* CMP ew, d16 */
 		SUBW(dst, src);
-		count -= (ModRM >= 0xc0) ? cycles.alu_r16i8 : cycles.alu_m16i8_ro;
+		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8_ro;
 		break;
 	}
 }
 
-inline void I86::_test_br8()	// Opcode 0x84
+inline void I86::_test_br8()    /* Opcode 0x84 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr8 : timing.alu_rm8;
 	ANDB(dst, src);
 }
 
-inline void I86::_test_wr16()	// Opcode 0x85
+inline void I86::_test_wr16()    /* Opcode 0x85 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.alu_rr16 : timing.alu_rm16;
 	ANDW(dst, src);
 }
 
-inline void I86::_xchg_br8()	// Opcode 0x86
+inline void I86::_xchg_br8()    /* Opcode 0x86 */
 {
 	DEF_br8(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.xchg_rr8 : cycles.xchg_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.xchg_rr8 : timing.xchg_rm8;
 	RegByte(ModRM) = dst;
 	PutbackRMByte(ModRM, src);
 }
 
-inline void I86::_xchg_wr16()	// Opcode 0x87
+inline void I86::_xchg_wr16()    /* Opcode 0x87 */
 {
 	DEF_wr16(dst, src);
-	count -= (ModRM >= 0xc0) ? cycles.xchg_rr16 : cycles.xchg_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.xchg_rr16 : timing.xchg_rm16;
 	RegWord(ModRM) = dst;
 	PutbackRMWord(ModRM, src);
 }
 
-inline void I86::_mov_br8()	// Opcode 0x88
+inline void I86::_mov_br8()    /* Opcode 0x88 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint8 src = RegByte(ModRM);
-	count -= (ModRM >= 0xc0) ? cycles.mov_rr8 : cycles.mov_mr8;
+	icount -= (ModRM >= 0xc0) ? timing.mov_rr8 : timing.mov_mr8;
 	PutRMByte(ModRM, src);
 }
 
-inline void I86::_mov_wr16()	// Opcode 0x89
+inline void I86::_mov_wr16()    /* Opcode 0x89 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint16 src = RegWord(ModRM);
-	count -= (ModRM >= 0xc0) ? cycles.mov_rr16 : cycles.mov_mr16;
+	icount -= (ModRM >= 0xc0) ? timing.mov_rr16 : timing.mov_mr16;
 	PutRMWord(ModRM, src);
 }
 
-inline void I86::_mov_r8b()	// Opcode 0x8a
+inline void I86::_mov_r8b()    /* Opcode 0x8a */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint8 src = GetRMByte(ModRM);
-	count -= (ModRM >= 0xc0) ? cycles.mov_rr8 : cycles.mov_rm8;
+	icount -= (ModRM >= 0xc0) ? timing.mov_rr8 : timing.mov_rm8;
 	RegByte(ModRM) = src;
 }
 
-inline void I86::_mov_r16w()	// Opcode 0x8b
+inline void I86::_mov_r16w()    /* Opcode 0x8b */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint16 src = GetRMWord(ModRM);
-	count -= (ModRM >= 0xc0) ? cycles.mov_rr8 : cycles.mov_rm16;
+	icount -= (ModRM >= 0xc0) ? timing.mov_rr8 : timing.mov_rm16;
 	RegWord(ModRM) = src;
 }
 
-inline void I86::_mov_wsreg()	// Opcode 0x8c
+inline void I86::_mov_wsreg()    /* Opcode 0x8c */
 {
-	unsigned ModRM = FETCH8();
-	count -= (ModRM >= 0xc0) ? cycles.mov_rs : cycles.mov_ms;
+	unsigned ModRM = FETCH;
+	icount -= (ModRM >= 0xc0) ? timing.mov_rs : timing.mov_ms;
 #ifdef HAS_I286
-	if(ModRM & 0x20) {
+	if(ModRM & 0x20) {	/* 1xx is invalid */
 		interrupt(ILLEGAL_INSTRUCTION);
 		return;
 	}
 #else
 	if(ModRM & 0x20) {
-		return;
+		return;	/* 1xx is invalid */
 	}
 #endif
 	PutRMWord(ModRM, sregs[(ModRM & 0x38) >> 3]);
 }
 
-inline void I86::_lea()	// Opcode 0x8d
+inline void I86::_lea()    /* Opcode 0x8d */
 {
-	unsigned ModRM = FETCH8();
-	count -= cycles.lea;
+	unsigned ModRM = FETCH;
+	icount -= timing.lea;
 	GetEA(ModRM);
-	RegWord(ModRM) = EO;
+	RegWord(ModRM) = eo;	/* effective offset (no segment part) */
 }
 
-inline void I86::_mov_sregw()	// Opcode 0x8e
+inline void I86::_mov_sregw()    /* Opcode 0x8e */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint16 src = GetRMWord(ModRM);
 	
-	count -= (ModRM >= 0xc0) ? cycles.mov_sr : cycles.mov_sm;
+	icount -= (ModRM >= 0xc0) ? timing.mov_sr : timing.mov_sm;
 #ifdef HAS_I286
 	switch(ModRM & 0x38) {
-	case 0x00:	// mov es, ew
+	case 0x00:  /* mov es, ew */
 		i286_data_descriptor(ES, src);
 		break;
-	case 0x08:	// mov cs, ew
-		break;
-	case 0x10:	// mov ss, ew
+	case 0x08:  /* mov cs, ew */
+		break;  /* doesn't do a jump far */
+	case 0x10:  /* mov ss, ew */
 		i286_data_descriptor(SS, src);
-		op(FETCHOP());
+		instruction(FETCHOP);
 		break;
-	case 0x18:	// mov ds, ew
+	case 0x18:  /* mov ds, ew */
 		i286_data_descriptor(DS, src);
 		break;
 	}
 #else
 	switch(ModRM & 0x38) {
-	case 0x00:	// mov es, ew
+	case 0x00:  /* mov es, ew */
 		sregs[ES] = src;
 		base[ES] = SegBase(ES);
 		break;
-	case 0x08:	// mov cs, ew
-		break;
-	case 0x10:	// mov ss, ew
+	case 0x08:  /* mov cs, ew */
+		break;  /* doesn't do a jump far */
+	case 0x10:  /* mov ss, ew */
 		sregs[SS] = src;
-		base[SS] = SegBase(SS);
-		op(FETCHOP());
+		base[SS] = SegBase(SS); /* no interrupt allowed before next instr */
+		instruction(FETCHOP);
 		break;
-	case 0x18:	// mov ds, ew
+	case 0x18:  /* mov ds, ew */
 		sregs[DS] = src;
 		base[DS] = SegBase(DS);
 		break;
@@ -3696,607 +3817,626 @@ inline void I86::_mov_sregw()	// Opcode 0x8e
 #endif
 }
 
-inline void I86::_popw()	// Opcode 0x8f
+inline void I86::_popw()    /* Opcode 0x8f */
 {
-	unsigned ModRM = FETCH8();
-	uint16 tmp = POP16();
-	count -= (ModRM >= 0xc0) ? cycles.pop_r16 : cycles.pop_m16;
+	unsigned ModRM = FETCH;
+	uint16 tmp;
+	POP(tmp);
+	icount -= (ModRM >= 0xc0) ? timing.pop_r16 : timing.pop_m16;
 	PutRMWord(ModRM, tmp);
 }
 
-#define XchgAXReg(reg) { \
-	uint16 tmp = regs.w[reg]; \
-	regs.w[reg] = regs.w[AX]; \
+#define XchgAXReg(Reg) { \
+	uint16 tmp; \
+	tmp = regs.w[Reg]; \
+	regs.w[Reg] = regs.w[AX]; \
 	regs.w[AX] = tmp; \
-	count -= cycles.xchg_ar16; \
+	icount -= timing.xchg_ar16; \
 }
 
-inline void I86::_nop()	// Opcode 0x90
+inline void I86::_nop()    /* Opcode 0x90 */
 {
-	count -= cycles.nop;
+	/* this is XchgAXReg(AX); */
+	icount -= timing.nop;
 }
 
-inline void I86::_xchg_axcx()	// Opcode 0x91
+inline void I86::_xchg_axcx()    /* Opcode 0x91 */
 {
 	XchgAXReg(CX);
 }
 
-inline void I86::_xchg_axdx()	// Opcode 0x92
+inline void I86::_xchg_axdx()    /* Opcode 0x92 */
 {
 	XchgAXReg(DX);
 }
 
-inline void I86::_xchg_axbx()	// Opcode 0x93
+inline void I86::_xchg_axbx()    /* Opcode 0x93 */
 {
 	XchgAXReg(BX);
 }
 
-inline void I86::_xchg_axsp()	// Opcode 0x94
+inline void I86::_xchg_axsp()    /* Opcode 0x94 */
 {
 	XchgAXReg(SP);
 }
 
-inline void I86::_xchg_axbp()	// Opcode 0x95
+inline void I86::_xchg_axbp()    /* Opcode 0x95 */
 {
 	XchgAXReg(BP);
 }
 
-inline void I86::_xchg_axsi()	// Opcode 0x96
+inline void I86::_xchg_axsi()    /* Opcode 0x96 */
 {
 	XchgAXReg(SI);
 }
 
-inline void I86::_xchg_axdi()	// Opcode 0x97
+inline void I86::_xchg_axdi()    /* Opcode 0x97 */
 {
 	XchgAXReg(DI);
 }
 
-inline void I86::_cbw()	// Opcode 0x98
+inline void I86::_cbw()    /* Opcode 0x98 */
 {
-	count -= cycles.cbw;
+	icount -= timing.cbw;
 	regs.b[AH] = (regs.b[AL] & 0x80) ? 0xff : 0;
 }
 
-inline void I86::_cwd()	// Opcode 0x99
+inline void I86::_cwd()    /* Opcode 0x99 */
 {
-	count -= cycles.cwd;
+	icount -= timing.cwd;
 	regs.w[DX] = (regs.b[AH] & 0x80) ? 0xffff : 0;
 }
 
-inline void I86::_call_far()	// Opcode 0x9a
+inline void I86::_call_far()    /* Opcode 0x9a */
 {
-	unsigned tmp1 = FETCH8();
-	tmp1 += FETCH8() << 8;
-	unsigned tmp2 = FETCH8();
-	tmp2 += FETCH8() << 8;
-	uint16 ip = PC - base[CS];
-	PUSH16(sregs[CS]);
-	PUSH16(ip);
+	unsigned tmp, tmp2;
+	uint16 ip;
+	
+	tmp = FETCH;
+	tmp += FETCH << 8;
+	
+	tmp2 = FETCH;
+	tmp2 += FETCH << 8;
+	
+	ip = pc - base[CS];
+	PUSH(sregs[CS]);
+	PUSH(ip);
 #ifdef HAS_I286
-	i286_code_descriptor(tmp2, tmp1);
+	i286_code_descriptor(tmp2, tmp);
 #else
 	sregs[CS] = (uint16)tmp2;
 	base[CS] = SegBase(CS);
-	PC = (base[CS] + (uint16)tmp1) & AMASK;
+	pc = (base[CS] + (uint16)tmp) & AMASK;
 #endif
 #ifdef I86_BIOS_CALL
-	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
-		// bios call
+	if(d_bios && d_bios->bios_call(pc, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		/* bios call */
 		_retf();
 	}
 #endif
-	count -= cycles.call_far;
+	icount -= timing.call_far;
 }
 
-inline void I86::_wait()	// Opcode 0x9b
+inline void I86::_wait()    /* Opcode 0x9b */
 {
-	if(busy) {
-		PC--;
+	if(test_state) {
+		pc--;
 	}
-	count -= cycles.wait;
+	icount -= timing.wait;
 }
 
-inline void I86::_pushf()	// Opcode 0x9c
+inline void I86::_pushf()    /* Opcode 0x9c */
 {
-	unsigned tmp = CompressFlags();
-	count -= cycles.pushf;
+	unsigned tmp;
+	icount -= timing.pushf;
+	
+	tmp = CompressFlags();
 #ifdef HAS_I286
-	PUSH16(tmp & ~0xf000);
+	PUSH(tmp & ~0xf000);
 #else
-	PUSH16(tmp | 0xf000);
+	PUSH(tmp | 0xf000);
 #endif
 }
 
-inline void I86::_popf()	// Opcode 0x9d
+inline void I86::_popf()    /* Opcode 0x9d */
 {
-	unsigned tmp = POP16();
-	count -= cycles.popf;
+	unsigned tmp;
+	POP(tmp);
+	icount -= timing.popf;
 	ExpandFlags(tmp);
+	
 	if(TF) {
-		op(FETCHOP());
-		interrupt(1);
+		trap();
 	}
-	if(IF && (intstat & INT_REQ_BIT)) {
-		unsigned intnum = ACK_INTR() & 0xff;
-		intstat &= ~INT_REQ_BIT;
-		interrupt(intnum);
+	
+	/* if the IF is set, and an interrupt is pending, signal an interrupt */
+	if(IF && (int_state & INT_REQ_BIT)) {
+		interrupt(-1);
 	}
 }
 
-inline void I86::_sahf()	// Opcode 0x9e
+inline void I86::_sahf()    /* Opcode 0x9e */
 {
 	unsigned tmp = (CompressFlags() & 0xff00) | (regs.b[AH] & 0xd5);
-	count -= cycles.sahf;
+	icount -= timing.sahf;
 	ExpandFlags(tmp);
 }
 
-inline void I86::_lahf()	// Opcode 0x9f
+inline void I86::_lahf()    /* Opcode 0x9f */
 {
 	regs.b[AH] = CompressFlags() & 0xff;
-	count -= cycles.lahf;
+	icount -= timing.lahf;
 }
 
-inline void I86::_mov_aldisp()	// Opcode 0xa0
+inline void I86::_mov_aldisp()    /* Opcode 0xa0 */
 {
-	unsigned addr = FETCH8();
-	addr += FETCH8() << 8;
-	count -= cycles.mov_am8;
-	regs.b[AL] = RM8(DS, addr);
+	unsigned addr;
+	
+	addr = FETCH;
+	addr += FETCH << 8;
+	
+	icount -= timing.mov_am8;
+	regs.b[AL] = GetMemB(DS, addr);
 }
 
-inline void I86::_mov_axdisp()	// Opcode 0xa1
+inline void I86::_mov_axdisp()    /* Opcode 0xa1 */
 {
-	unsigned addr = FETCH8();
-	addr += FETCH8() << 8;
-	count -= cycles.mov_am16;
-	regs.b[AL] = RM8(DS, addr);
-	regs.b[AH] = RM8(DS, addr + 1);
+	unsigned addr;
+	
+	addr = FETCH;
+	addr += FETCH << 8;
+	
+	icount -= timing.mov_am16;
+	regs.w[AX] = GetMemW(DS, addr);
 }
 
-inline void I86::_mov_dispal()	// Opcode 0xa2
+inline void I86::_mov_dispal()    /* Opcode 0xa2 */
 {
-	unsigned addr = FETCH8();
-	addr += FETCH8() << 8;
-	count -= cycles.mov_ma8;
-	WM8(DS, addr, regs.b[AL]);
+	unsigned addr;
+	
+	addr = FETCH;
+	addr += FETCH << 8;
+	
+	icount -= timing.mov_ma8;
+	PutMemB(DS, addr, regs.b[AL]);
 }
 
-inline void I86::_mov_dispax()	// Opcode 0xa3
+inline void I86::_mov_dispax()    /* Opcode 0xa3 */
 {
-	unsigned addr = FETCH8();
-	addr += FETCH8() << 8;
-	count -= cycles.mov_ma16;
-	WM8(DS, addr, regs.b[AL]);
-	WM8(DS, addr + 1, regs.b[AH]);
+	unsigned addr;
+	
+	addr = FETCH;
+	addr += FETCH << 8;
+	
+	icount -= timing.mov_ma16;
+	PutMemW(DS, addr, regs.w[AX]);
 }
 
-inline void I86::_movsb()	// Opcode 0xa4
+inline void I86::_movsb()    /* Opcode 0xa4 */
 {
-	uint8 tmp = RM8(DS, regs.w[SI]);
-	WM8(ES, regs.w[DI], tmp);
+	uint8 tmp = GetMemB(DS, regs.w[SI]);
+	PutMemB(ES, regs.w[DI], tmp);
 	regs.w[DI] += DirVal;
 	regs.w[SI] += DirVal;
-	count -= cycles.movs8;
+	icount -= timing.movs8;
 }
 
-inline void I86::_movsw()	// Opcode 0xa5
+inline void I86::_movsw()    /* Opcode 0xa5 */
 {
-	uint16 tmp = RM16(DS, regs.w[SI]);
-	WM16(ES, regs.w[DI], tmp);
+	uint16 tmp = GetMemW(DS, regs.w[SI]);
+	PutMemW(ES, regs.w[DI], tmp);
 	regs.w[DI] += 2 * DirVal;
 	regs.w[SI] += 2 * DirVal;
-	count -= cycles.movs16;
+	icount -= timing.movs16;
 }
 
-inline void I86::_cmpsb()	// Opcode 0xa6
+inline void I86::_cmpsb()    /* Opcode 0xa6 */
 {
-	unsigned dst = RM8(ES, regs.w[DI]);
-	unsigned src = RM8(DS, regs.w[SI]);
-	SUBB(src, dst);
+	unsigned dst = GetMemB(ES, regs.w[DI]);
+	unsigned src = GetMemB(DS, regs.w[SI]);
+	SUBB(src, dst); /* opposite of the usual convention */
 	regs.w[DI] += DirVal;
 	regs.w[SI] += DirVal;
-	count -= cycles.cmps8;
+	icount -= timing.cmps8;
 }
 
-inline void I86::_cmpsw()	// Opcode 0xa7
+inline void I86::_cmpsw()    /* Opcode 0xa7 */
 {
-	unsigned dst = RM16(ES, regs.w[DI]);
-	unsigned src = RM16(DS, regs.w[SI]);
-	SUBW(src, dst);
+	unsigned dst = GetMemW(ES, regs.w[DI]);
+	unsigned src = GetMemW(DS, regs.w[SI]);
+	SUBW(src, dst); /* opposite of the usual convention */
 	regs.w[DI] += 2 * DirVal;
 	regs.w[SI] += 2 * DirVal;
-	count -= cycles.cmps16;
+	icount -= timing.cmps16;
 }
 
-inline void I86::_test_ald8()	// Opcode 0xa8
+inline void I86::_test_ald8()    /* Opcode 0xa8 */
 {
 	DEF_ald8(dst, src);
-	count -= cycles.alu_ri8;
+	icount -= timing.alu_ri8;
 	ANDB(dst, src);
 }
 
-inline void I86::_test_axd16()	// Opcode 0xa9
+inline void I86::_test_axd16()    /* Opcode 0xa9 */
 {
 	DEF_axd16(dst, src);
-	count -= cycles.alu_ri16;
+	icount -= timing.alu_ri16;
 	ANDW(dst, src);
 }
 
-inline void I86::_stosb()	// Opcode 0xaa
+inline void I86::_stosb()    /* Opcode 0xaa */
 {
-	WM8(ES, regs.w[DI], regs.b[AL]);
+	PutMemB(ES, regs.w[DI], regs.b[AL]);
 	regs.w[DI] += DirVal;
-	count -= cycles.stos8;
+	icount -= timing.stos8;
 }
 
-inline void I86::_stosw()	// Opcode 0xab
+inline void I86::_stosw()    /* Opcode 0xab */
 {
-	WM8(ES, regs.w[DI], regs.b[AL]);
-	WM8(ES, regs.w[DI] + 1, regs.b[AH]);
+	PutMemW(ES, regs.w[DI], regs.w[AX]);
 	regs.w[DI] += 2 * DirVal;
-	count -= cycles.stos16;
+	icount -= timing.stos16;
 }
 
-inline void I86::_lodsb()	// Opcode 0xac
+inline void I86::_lodsb()    /* Opcode 0xac */
 {
-	regs.b[AL] = RM8(DS, regs.w[SI]);
+	regs.b[AL] = GetMemB(DS, regs.w[SI]);
 	regs.w[SI] += DirVal;
-	count -= cycles.lods8;
+	icount -= timing.lods8;
 }
 
-inline void I86::_lodsw()	// Opcode 0xad
+inline void I86::_lodsw()    /* Opcode 0xad */
 {
-	regs.w[AX] = RM16(DS, regs.w[SI]);
+	regs.w[AX] = GetMemW(DS, regs.w[SI]);
 	regs.w[SI] += 2 * DirVal;
-	count -= cycles.lods16;
+	icount -= timing.lods16;
 }
 
-inline void I86::_scasb()	// Opcode 0xae
+inline void I86::_scasb()    /* Opcode 0xae */
 {
-	unsigned src = RM8(ES, regs.w[DI]);
+	unsigned src = GetMemB(ES, regs.w[DI]);
 	unsigned dst = regs.b[AL];
 	SUBB(dst, src);
 	regs.w[DI] += DirVal;
-	count -= cycles.scas8;
+	icount -= timing.scas8;
 }
 
-inline void I86::_scasw()	// Opcode 0xaf
+inline void I86::_scasw()    /* Opcode 0xaf */
 {
-	unsigned src = RM16(ES, regs.w[DI]);
+	unsigned src = GetMemW(ES, regs.w[DI]);
 	unsigned dst = regs.w[AX];
 	SUBW(dst, src);
 	regs.w[DI] += 2 * DirVal;
-	count -= cycles.scas16;
+	icount -= timing.scas16;
 }
 
-inline void I86::_mov_ald8()	// Opcode 0xb0
+inline void I86::_mov_ald8()    /* Opcode 0xb0 */
 {
-	regs.b[AL] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[AL] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_cld8()	// Opcode 0xb1
+inline void I86::_mov_cld8()    /* Opcode 0xb1 */
 {
-	regs.b[CL] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[CL] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_dld8()	// Opcode 0xb2
+inline void I86::_mov_dld8()    /* Opcode 0xb2 */
 {
-	regs.b[DL] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[DL] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_bld8()	// Opcode 0xb3
+inline void I86::_mov_bld8()    /* Opcode 0xb3 */
 {
-	regs.b[BL] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[BL] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_ahd8()	// Opcode 0xb4
+inline void I86::_mov_ahd8()    /* Opcode 0xb4 */
 {
-	regs.b[AH] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[AH] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_chd8()	// Opcode 0xb5
+inline void I86::_mov_chd8()    /* Opcode 0xb5 */
 {
-	regs.b[CH] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[CH] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_dhd8()	// Opcode 0xb6
+inline void I86::_mov_dhd8()    /* Opcode 0xb6 */
 {
-	regs.b[DH] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[DH] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_bhd8()	// Opcode 0xb7
+inline void I86::_mov_bhd8()    /* Opcode 0xb7 */
 {
-	regs.b[BH] = FETCH8();
-	count -= cycles.mov_ri8;
+	regs.b[BH] = FETCH;
+	icount -= timing.mov_ri8;
 }
 
-inline void I86::_mov_axd16()	// Opcode 0xb8
+inline void I86::_mov_axd16()    /* Opcode 0xb8 */
 {
-	regs.b[AL] = FETCH8();
-	regs.b[AH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[AL] = FETCH;
+	regs.b[AH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_cxd16()	// Opcode 0xb9
+inline void I86::_mov_cxd16()    /* Opcode 0xb9 */
 {
-	regs.b[CL] = FETCH8();
-	regs.b[CH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[CL] = FETCH;
+	regs.b[CH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_dxd16()	// Opcode 0xba
+inline void I86::_mov_dxd16()    /* Opcode 0xba */
 {
-	regs.b[DL] = FETCH8();
-	regs.b[DH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[DL] = FETCH;
+	regs.b[DH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_bxd16()	// Opcode 0xbb
+inline void I86::_mov_bxd16()    /* Opcode 0xbb */
 {
-	regs.b[BL] = FETCH8();
-	regs.b[BH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[BL] = FETCH;
+	regs.b[BH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_spd16()	// Opcode 0xbc
+inline void I86::_mov_spd16()    /* Opcode 0xbc */
 {
-	regs.b[SPL] = FETCH8();
-	regs.b[SPH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[SPL] = FETCH;
+	regs.b[SPH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_bpd16()	// Opcode 0xbd
+inline void I86::_mov_bpd16()    /* Opcode 0xbd */
 {
-	regs.b[BPL] = FETCH8();
-	regs.b[BPH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[BPL] = FETCH;
+	regs.b[BPH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_sid16()	// Opcode 0xbe
+inline void I86::_mov_sid16()    /* Opcode 0xbe */
 {
-	regs.b[SIL] = FETCH8();
-	regs.b[SIH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[SIL] = FETCH;
+	regs.b[SIH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_mov_did16()	// Opcode 0xbf
+inline void I86::_mov_did16()    /* Opcode 0xbf */
 {
-	regs.b[DIL] = FETCH8();
-	regs.b[DIH] = FETCH8();
-	count -= cycles.mov_ri16;
+	regs.b[DIL] = FETCH;
+	regs.b[DIH] = FETCH;
+	icount -= timing.mov_ri16;
 }
 
-inline void I86::_rotshft_bd8()	// Opcode 0xc0
+inline void I86::_rotshft_bd8()    /* Opcode 0xc0 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	unsigned ModRM = FETCH8();
-	unsigned cnt = FETCH8();
-	rotate_shift_byte(ModRM, cnt);
-#else
-	_invalid();
-#endif
+	unsigned ModRM = FETCH;
+	unsigned count = FETCH;
+	
+	rotate_shift_byte(ModRM, count);
 }
 
-inline void I86::_rotshft_wd8()	// Opcode 0xc1
+inline void I86::_rotshft_wd8()    /* Opcode 0xc1 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	unsigned ModRM = FETCH8();
-	unsigned cnt = FETCH8();
-	rotate_shift_word(ModRM, cnt);
-#else
-	_invalid();
-#endif
+	unsigned ModRM = FETCH;
+	unsigned count = FETCH;
+	
+	rotate_shift_word(ModRM, count);
 }
 
-inline void I86::_ret_d16()	// Opcode 0xc2
+inline void I86::_ret_d16()    /* Opcode 0xc2 */
 {
-	unsigned cnt = FETCH8();
-	cnt += FETCH8() << 8;
-	PC = POP16();
-	PC = (PC + base[CS]) & AMASK;
-	regs.w[SP] += cnt;
-	count -= cycles.ret_near_imm;
+	unsigned count = FETCH;
+	count += FETCH << 8;
+	POP(pc);
+	pc = (pc + base[CS]) & AMASK;
+	regs.w[SP] += count;
+	icount -= timing.ret_near_imm;
 }
 
-inline void I86::_ret()	// Opcode 0xc3
+inline void I86::_ret()    /* Opcode 0xc3 */
 {
-	PC = POP16();
-	PC = (PC + base[CS]) & AMASK;
-	count -= cycles.ret_near;
+	POP(pc);
+	pc = (pc + base[CS]) & AMASK;
+	icount -= timing.ret_near;
 }
 
-inline void I86::_les_dw()	// Opcode 0xc4
+inline void I86::_les_dw()    /* Opcode 0xc4 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint16 tmp = GetRMWord(ModRM);
 	RegWord(ModRM) = tmp;
 #ifdef HAS_I286
-	i286_data_descriptor(ES, GetNextRMWord());
+	i286_data_descriptor(ES, GetNextRMWord);
 #else
-	sregs[ES] = GetNextRMWord();
+	sregs[ES] = GetNextRMWord;
 	base[ES] = SegBase(ES);
 #endif
-	count -= cycles.load_ptr;
+	icount -= timing.load_ptr;
 }
 
-inline void I86::_lds_dw()	// Opcode 0xc5
+inline void I86::_lds_dw()    /* Opcode 0xc5 */
 {
-	unsigned ModRM = FETCH8();
+	unsigned ModRM = FETCH;
 	uint16 tmp = GetRMWord(ModRM);
 	RegWord(ModRM) = tmp;
 #ifdef HAS_I286
-	i286_data_descriptor(DS, GetNextRMWord());
+	i286_data_descriptor(DS, GetNextRMWord);
 #else
-	sregs[DS] = GetNextRMWord();
+	sregs[DS] = GetNextRMWord;
 	base[DS] = SegBase(DS);
 #endif
-	count -= cycles.load_ptr;
+	icount -= timing.load_ptr;
 }
 
-inline void I86::_mov_bd8()	// Opcode 0xc6
+inline void I86::_mov_bd8()    /* Opcode 0xc6 */
 {
-	unsigned ModRM = FETCH8();
-	count -= (ModRM >= 0xc0) ? cycles.mov_ri8 : cycles.mov_mi8;
+	unsigned ModRM = FETCH;
+	icount -= (ModRM >= 0xc0) ? timing.mov_ri8 : timing.mov_mi8;
 	PutImmRMByte(ModRM);
 }
 
-inline void I86::_mov_wd16()	// Opcode 0xc7
+inline void I86::_mov_wd16()    /* Opcode 0xc7 */
 {
-	unsigned ModRM = FETCH8();
-	count -= (ModRM >= 0xc0) ? cycles.mov_ri16 : cycles.mov_mi16;
+	unsigned ModRM = FETCH;
+	icount -= (ModRM >= 0xc0) ? timing.mov_ri16 : timing.mov_mi16;
 	PutImmRMWord(ModRM);
 }
 
-inline void I86::_enter()	// Opcode 0xc8
+inline void I86::_enter()    /* Opcode 0xc8 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	unsigned nb = FETCH8();
-	nb += FETCH8() << 8;
-	unsigned level = FETCH8();
-	count -= (level == 0) ? cycles.enter0 : (level == 1) ? cycles.enter1 : cycles.enter_base + level * cycles.enter_count;
-	PUSH16(regs.w[BP]);
+	unsigned nb = FETCH;
+	unsigned i, level;
+	
+	nb += FETCH << 8;
+	level = FETCH;
+	icount -= (level == 0) ? timing.enter0 : (level == 1) ? timing.enter1 : timing.enter_base + level * timing.enter_count;
+	PUSH(regs.w[BP]);
 	regs.w[BP] = regs.w[SP];
 	regs.w[SP] -= nb;
-	for(unsigned i = 1; i < level; i++) {
-		PUSH16(RM16(SS, regs.w[BP] - i * 2));
+	for(i = 1; i < level; i++) {
+		PUSH(GetMemW(SS, regs.w[BP] - i * 2));
 	}
 	if(level) {
-		PUSH16(regs.w[BP]);
+		PUSH(regs.w[BP]);
 	}
-#else
-	_invalid();
-#endif
 }
 
-inline void I86::_leav()	// Opcode 0xc9
+inline void I86::_leav()    /* Opcode 0xc9 */
 {
-#if defined(HAS_I286) || defined(HAS_V30)
-	count -= cycles.leave;
+	icount -= timing.leave;
 	regs.w[SP] = regs.w[BP];
-	regs.w[BP] = POP16();
-#else
-	_invalid();
-#endif
+	POP(regs.w[BP]);
 }
 
-inline void I86::_retf_d16()	// Opcode 0xca
+inline void I86::_retf_d16()    /* Opcode 0xca */
 {
-	unsigned cnt = FETCH8();
-	cnt += FETCH8() << 8;
+	unsigned count = FETCH;
+	count += FETCH << 8;
 #ifdef HAS_I286
 	{
-		int tmp1 = POP16();
-		int tmp2 = POP16();
-		i286_code_descriptor(tmp2, tmp1);
+		int tmp, tmp2;
+		POP(tmp2);
+		POP(tmp);
+		i286_code_descriptor(tmp, tmp2);
 	}
 #else
-	PC = POP16();
-	sregs[CS] = POP16();
+	POP(pc);
+	POP(sregs[CS]);
 	base[CS] = SegBase(CS);
-	PC = (PC + base[CS]) & AMASK;
+	pc = (pc + base[CS]) & AMASK;
 #endif
-	regs.w[SP] += cnt;
-	count -= cycles.ret_far_imm;
+	regs.w[SP] += count;
+	icount -= timing.ret_far_imm;
 }
 
-inline void I86::_retf()	// Opcode 0xcb
+inline void I86::_retf()    /* Opcode 0xcb */
 {
 #ifdef HAS_I286
 	{
-		int tmp1 = POP16();
-		int tmp2 = POP16();
-		i286_code_descriptor(tmp2, tmp1);
+		int tmp, tmp2;
+		POP(tmp2);
+		POP(tmp);
+		i286_code_descriptor(tmp, tmp2);
 	}
 #else
-	PC = POP16();
-	sregs[CS] = POP16();
+	POP(pc);
+	POP(sregs[CS]);
 	base[CS] = SegBase(CS);
-	PC = (PC + base[CS]) & AMASK;
+	pc = (pc + base[CS]) & AMASK;
 #endif
-	count -= cycles.ret_far;
+	icount -= timing.ret_far;
 }
 
-inline void I86::_int3()	// Opcode 0xcc
+inline void I86::_int3()    /* Opcode 0xcc */
 {
-	count -= cycles.int3;
+	icount -= timing.int3;
 	interrupt(3);
 }
 
-inline void I86::_int()	// Opcode 0xcd
+inline void I86::_int()    /* Opcode 0xcd */
 {
-	unsigned num = FETCH8();
-	count -= cycles.int_imm;
+	unsigned int_num = FETCH;
+	icount -= timing.int_imm;
 #ifdef I86_BIOS_CALL
-	if(d_bios && d_bios->bios_int(num, regs.w, sregs, &ZeroVal, &CarryVal)) {
-		// bios call
+	if(d_bios && d_bios->bios_int(int_num, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		/* bios call */
 		return;
 	}
 #endif
-	interrupt(num);
+	interrupt(int_num);
 }
 
-inline void I86::_into()	// Opcode 0xce
+inline void I86::_into()    /* Opcode 0xce */
 {
 	if(OF) {
-		count -= cycles.into_t;
-		interrupt(4);
+		icount -= timing.into_t;
+		interrupt(OVERFLOW_TRAP);
 	}
 	else {
-		count -= cycles.into_nt;
+		icount -= timing.into_nt;
 	}
 }
 
-inline void I86::_iret()	// Opcode 0xcf
+inline void I86::_iret()    /* Opcode 0xcf */
 {
-	count -= cycles.iret;
+	icount -= timing.iret;
 #ifdef HAS_I286
 	{
-		int tmp1 = POP16();
-		int tmp2 = POP16();
-		i286_code_descriptor(tmp2, tmp1);
+		int tmp, tmp2;
+		POP(tmp2);
+		POP(tmp);
+		i286_code_descriptor(tmp, tmp2);
 	}
 #else
-	PC = POP16();
-	sregs[CS] = POP16();
+	POP(pc);
+	POP(sregs[CS]);
 	base[CS] = SegBase(CS);
-	PC = (PC + base[CS]) & AMASK;
+	pc = (pc + base[CS]) & AMASK;
 #endif
 	_popf();
+	
+	/* if the IF is set, and an interrupt is pending, signal an interrupt */
+	if(IF && (int_state & INT_REQ_BIT)) {
+		interrupt(-1);
+	}
 }
 
-inline void I86::_rotshft_b()	// Opcode 0xd0
+inline void I86::_rotshft_b()    /* Opcode 0xd0 */
 {
-	rotate_shift_byte(FETCHOP(), 1);
+	rotate_shift_byte(FETCHOP, 1);
 }
 
-inline void I86::_rotshft_w()	// Opcode 0xd1
+inline void I86::_rotshft_w()    /* Opcode 0xd1 */
 {
-	rotate_shift_word(FETCHOP(), 1);
+	rotate_shift_word(FETCHOP, 1);
 }
 
-inline void I86::_rotshft_bcl()	// Opcode 0xd2
+inline void I86::_rotshft_bcl()    /* Opcode 0xd2 */
 {
-	rotate_shift_byte(FETCHOP(), regs.b[CL]);
+	rotate_shift_byte(FETCHOP, regs.b[CL]);
 }
 
-inline void I86::_rotshft_wcl()	// Opcode 0xd3
+inline void I86::_rotshft_wcl()    /* Opcode 0xd3 */
 {
-	rotate_shift_word(FETCHOP(), regs.b[CL]);
+	rotate_shift_word(FETCHOP, regs.b[CL]);
 }
 
-inline void I86::_aam()	// Opcode 0xd4
+/* OB: Opcode works on NEC V-Series but not the Variants        */
+/*     one could specify any byte value as operand but the NECs */
+/*     always substitute 0x0a.                                  */
+inline void I86::_aam()    /* Opcode 0xd4 */
 {
-	unsigned mult = FETCH8();
-	count -= cycles.aam;
+	unsigned mult = FETCH;
+	icount -= timing.aam;
 	if(mult == 0) {
-		interrupt(0);
+		interrupt(DIVIDE_FAULT);
 	}
 	else {
 		regs.b[AH] = regs.b[AL] / mult;
@@ -4305,10 +4445,10 @@ inline void I86::_aam()	// Opcode 0xd4
 	}
 }
 
-inline void I86::_aad()	// Opcode 0xd5
+inline void I86::_aad()    /* Opcode 0xd5 */
 {
-	unsigned mult = FETCH8();
-	count -= cycles.aad;
+	unsigned mult = FETCH;
+	icount -= timing.aad;
 	regs.b[AL] = regs.b[AH] * mult + regs.b[AL];
 	regs.b[AH] = 0;
 	SetZF(regs.b[AL]);
@@ -4316,701 +4456,794 @@ inline void I86::_aad()	// Opcode 0xd5
 	SignVal = 0;
 }
 
-inline void I86::_setalc()	// Opcode 0xd6
+inline void I86::_setalc()    /* Opcode 0xd6 */
 {
-#ifdef HAS_V30
 	regs.b[AL] = (CF) ? 0xff : 0x00;
-	count -= 3;
-#else
-	_invalid();
-#endif
+	icount -= 3;
 }
 
-inline void I86::_xlat()	// Opcode 0xd7
+inline void I86::_xlat()    /* Opcode 0xd7 */
 {
 	unsigned dest = regs.w[BX] + regs.b[AL];
-	count -= cycles.xlat;
-	regs.b[AL] = RM8(DS, dest);
+	icount -= timing.xlat;
+	regs.b[AL] = GetMemB(DS, dest);
 }
 
-inline void I86::_escape()	// Opcodes 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde and 0xdf
+inline void I86::_escape()    /* Opcodes 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde and 0xdf */
 {
-	unsigned ModRM = FETCH8();
-	count -= cycles.nop;
+	unsigned ModRM = FETCH;
+	icount -= timing.nop;
 	GetRMByte(ModRM);
 }
 
-inline void I86::_loopne()	// Opcode 0xe0
+inline void I86::_loopne()    /* Opcode 0xe0 */
 {
-	int disp = (int)((int8)FETCH8());
+	int disp = (int)((int8)FETCH);
 	unsigned tmp = regs.w[CX] - 1;
 	regs.w[CX] = tmp;
 	if(!ZF && tmp) {
-		count -= cycles.loop_t;
-		PC += disp;
+		icount -= timing.loop_t;
+		pc += disp;
 	}
 	else {
-		count -= cycles.loop_nt;
+		icount -= timing.loop_nt;
 	}
 }
 
-inline void I86::_loope()	// Opcode 0xe1
+inline void I86::_loope()    /* Opcode 0xe1 */
 {
-	int disp = (int)((int8)FETCH8());
+	int disp = (int)((int8)FETCH);
 	unsigned tmp = regs.w[CX] - 1;
 	regs.w[CX] = tmp;
 	if(ZF && tmp) {
-		count -= cycles.loope_t;
-		PC += disp;
+		icount -= timing.loope_t;
+		pc += disp;
 	}
 	else {
-		count -= cycles.loope_nt;
+		icount -= timing.loope_nt;
 	}
 }
 
-inline void I86::_loop()	// Opcode 0xe2
+inline void I86::_loop()    /* Opcode 0xe2 */
 {
-	int disp = (int)((int8)FETCH8());
+	int disp = (int)((int8)FETCH);
 	unsigned tmp = regs.w[CX] - 1;
 	regs.w[CX] = tmp;
 	if(tmp) {
-		count -= cycles.loop_t;
-		PC += disp;
+		icount -= timing.loop_t;
+		pc += disp;
 	}
 	else {
-		count -= cycles.loop_nt;
+		icount -= timing.loop_nt;
 	}
 }
 
-inline void I86::_jcxz()	// Opcode 0xe3
+inline void I86::_jcxz()    /* Opcode 0xe3 */
 {
-	int disp = (int)((int8)FETCH8());
+	int disp = (int)((int8)FETCH);
 	if(regs.w[CX] == 0) {
-		count -= cycles.jcxz_t;
-		PC += disp;
+		icount -= timing.jcxz_t;
+		pc += disp;
 	}
 	else {
-		count -= cycles.jcxz_nt;
+		icount -= timing.jcxz_nt;
 	}
 }
 
-inline void I86::_inal()	// Opcode 0xe4
+inline void I86::_inal()    /* Opcode 0xe4 */
 {
-	unsigned port = FETCH8();
-	count -= cycles.in_imm8;
-	regs.b[AL] = IN8(port);
+	unsigned port = FETCH;
+	icount -= timing.in_imm8;
+	regs.b[AL] = read_port_byte(port);
 }
 
-inline void I86::_inax()	// Opcode 0xe5
+inline void I86::_inax()    /* Opcode 0xe5 */
 {
-	unsigned port = FETCH8();
-	count -= cycles.in_imm16;
-	regs.w[AX] = IN16(port);
+	unsigned port = FETCH;
+	icount -= timing.in_imm16;
+	regs.w[AX] = read_port_word(port);
 }
 
-inline void I86::_outal()	// Opcode 0xe6
+inline void I86::_outal()    /* Opcode 0xe6 */
 {
-	unsigned port = FETCH8();
-	count -= cycles.out_imm8;
-	OUT8(port, regs.b[AL]);
+	unsigned port = FETCH;
+	icount -= timing.out_imm8;
+	write_port_byte(port, regs.b[AL]);
 }
 
-inline void I86::_outax()	// Opcode 0xe7
+inline void I86::_outax()    /* Opcode 0xe7 */
 {
-	unsigned port = FETCH8();
-	count -= cycles.out_imm16;
-	OUT16(port, regs.w[AX]);
+	unsigned port = FETCH;
+	icount -= timing.out_imm16;
+	write_port_word(port, regs.w[AX]);
 }
 
-inline void I86::_call_d16()	// Opcode 0xe8
+inline void I86::_call_d16()    /* Opcode 0xe8 */
 {
-	uint16 tmp = FETCH16();
-	uint16 ip = PC - base[CS];
-	PUSH16(ip);
+	uint16 ip, tmp;
+	
+	FETCHWORD(tmp);
+	ip = pc - base[CS];
+	PUSH(ip);
 	ip += tmp;
-	PC = (ip + base[CS]) & AMASK;
+	pc = (ip + base[CS]) & AMASK;
 #ifdef I86_BIOS_CALL
-	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
-		// bios call
+	if(d_bios && d_bios->bios_call(pc, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		/* bios call */
 		_ret();
 	}
 #endif
-	count -= cycles.call_near;
+	icount -= timing.call_near;
 }
 
-inline void I86::_jmp_d16()	// Opcode 0xe9
+inline void I86::_jmp_d16()    /* Opcode 0xe9 */
 {
-	uint16 tmp = FETCH16();
-	uint16 ip = PC - base[CS] + tmp;
-	PC = (ip + base[CS]) & AMASK;
-	count -= cycles.jmp_near;
+	uint16 ip, tmp;
+	
+	FETCHWORD(tmp);
+	ip = pc - base[CS] + tmp;
+	pc = (ip + base[CS]) & AMASK;
+	icount -= timing.jmp_near;
 }
 
-inline void I86::_jmp_far()	// Opcode 0xea
+inline void I86::_jmp_far()    /* Opcode 0xea */
 {
-	unsigned tmp1 = FETCH8();
-	tmp1 += FETCH8() << 8;
-	unsigned tmp2 = FETCH8();
-	tmp2 += FETCH8() << 8;
+	unsigned tmp, tmp1;
+	
+	tmp = FETCH;
+	tmp += FETCH << 8;
+	
+	tmp1 = FETCH;
+	tmp1 += FETCH << 8;
+	
 #ifdef HAS_I286
-	i286_code_descriptor(tmp2, tmp1);
+	i286_code_descriptor(tmp1, tmp);
 #else
-	sregs[CS] = (uint16)tmp2;
+	sregs[CS] = (uint16)tmp1;
 	base[CS] = SegBase(CS);
-	PC = (base[CS] + tmp1) & AMASK;
+	pc = (base[CS] + tmp) & AMASK;
 #endif
-	count -= cycles.jmp_far;
+	icount -= timing.jmp_far;
 }
 
-inline void I86::_jmp_d8()	// Opcode 0xeb
+inline void I86::_jmp_d8()    /* Opcode 0xeb */
 {
-	int tmp = (int)((int8)FETCH8());
-	PC += tmp;
-	count -= cycles.jmp_short;
+	int tmp = (int)((int8)FETCH);
+	pc += tmp;
+	icount -= timing.jmp_short;
 }
 
-inline void I86::_inaldx()	// Opcode 0xec
+inline void I86::_inaldx()    /* Opcode 0xec */
 {
-	count -= cycles.in_dx8;
-	regs.b[AL] = IN8(regs.w[DX]);
+	icount -= timing.in_dx8;
+	regs.b[AL] = read_port_byte(regs.w[DX]);
 }
 
-inline void I86::_inaxdx()	// Opcode 0xed
-{
-	unsigned port = regs.w[DX];
-	count -= cycles.in_dx16;
-	regs.w[AX] = IN16(port);
-}
-
-inline void I86::_outdxal()	// Opcode 0xee
-{
-	count -= cycles.out_dx8;
-	OUT8(regs.w[DX], regs.b[AL]);
-}
-
-inline void I86::_outdxax()	// Opcode 0xef
+inline void I86::_inaxdx()    /* Opcode 0xed */
 {
 	unsigned port = regs.w[DX];
-	count -= cycles.out_dx16;
-	OUT16(port, regs.w[AX]);
+	icount -= timing.in_dx16;
+	regs.w[AX] = read_port_word(port);
 }
 
-inline void I86::_lock()	// Opcode 0xf0
+inline void I86::_outdxal()    /* Opcode 0xee */
 {
-	count -= cycles.nop;
-	op(FETCHOP());
+	icount -= timing.out_dx8;
+	write_port_byte(regs.w[DX], regs.b[AL]);
+}
+
+inline void I86::_outdxax()    /* Opcode 0xef */
+{
+	unsigned port = regs.w[DX];
+	icount -= timing.out_dx16;
+	write_port_word(port, regs.w[AX]);
+}
+
+/* I think thats not a V20 instruction...*/
+inline void I86::_lock()    /* Opcode 0xf0 */
+{
+	icount -= timing.nop;
+	instruction(FETCHOP);  /* un-interruptible */
 }
 
 inline void I86::_rep(int flagval)
 {
-	unsigned next = FETCHOP();
-	unsigned cnt = regs.w[CX];
+	/* Handles rep- and repnz- prefixes. flagval is the value of ZF for the
+	   loop  to continue for CMPS and SCAS instructions. */
+	
+	unsigned next = FETCHOP;
+	unsigned count = regs.w[CX];
 	
 	switch(next) {
-	case 0x26:	// ES:
+	case 0x26:  /* ES: */
 		seg_prefix = true;
-		prefix_base = base[ES];
-		count -= cycles.override;
+		prefix_seg = ES;
+		icount -= timing.override;
 		_rep(flagval);
 		break;
-	case 0x2e:	// CS:
+	case 0x2e:  /* CS: */
 		seg_prefix = true;
-		prefix_base = base[CS];
-		count -= cycles.override;
+		prefix_seg = CS;
+		icount -= timing.override;
 		_rep(flagval);
 		break;
-	case 0x36:	// SS:
+	case 0x36:  /* SS: */
 		seg_prefix = true;
-		prefix_base = base[SS];
-		count -= cycles.override;
+		prefix_seg = SS;
+		icount -= timing.override;
 		_rep(flagval);
 		break;
-	case 0x3e:	// DS:
+	case 0x3e:  /* DS: */
 		seg_prefix = true;
-		prefix_base = base[DS];
-		count -= cycles.override;
+		prefix_seg = DS;
+		icount -= timing.override;
 		_rep(flagval);
 		break;
 #ifndef HAS_I86
-	case 0x6c:	// REP INSB
-		count -= cycles.rep_ins8_base;
-		for(; cnt > 0; cnt--) {
-			WM8(ES, regs.w[DI], IN8(regs.w[DX]));
+	case 0x6c:  /* REP INSB */
+		icount -= timing.rep_ins8_base;
+		for(; count > 0; count--) {
+			PutMemB(ES, regs.w[DI], read_port_byte(regs.w[DX]));
 			regs.w[DI] += DirVal;
-			count -= cycles.rep_ins8_count;
+			icount -= timing.rep_ins8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0x6d:	// REP INSW
-		count -= cycles.rep_ins16_base;
-		for(; cnt > 0; cnt--) {
-			WM16(ES, regs.w[DI], IN16(regs.w[DX]));
+	case 0x6d:  /* REP INSW */
+		icount -= timing.rep_ins16_base;
+		for(; count > 0; count--) {
+			PutMemW(ES, regs.w[DI], read_port_word(regs.w[DX]));
 			regs.w[DI] += 2 * DirVal;
-			count -= cycles.rep_ins16_count;
+			icount -= timing.rep_ins16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0x6e:	// REP OUTSB
-		count -= cycles.rep_outs8_base;
-		for(; cnt > 0; cnt--) {
-			OUT8(regs.w[DX], RM8(DS, regs.w[SI]));
-			regs.w[SI] += DirVal;
-			count -= cycles.rep_outs8_count;
+	case 0x6e:  /* REP OUTSB */
+		icount -= timing.rep_outs8_base;
+		for(; count > 0; count--) {
+			write_port_byte(regs.w[DX], GetMemB(DS, regs.w[SI]));
+			regs.w[SI] += DirVal; /* GOL 11/27/01 */
+			icount -= timing.rep_outs8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0x6f:	// REP OUTSW
-		count -= cycles.rep_outs16_base;
-		for(; cnt > 0; cnt--) {
-			OUT16(regs.w[DX], RM16(DS, regs.w[SI]));
-			regs.w[SI] += 2 * DirVal;
-			count -= cycles.rep_outs16_count;
+	case 0x6f:  /* REP OUTSW */
+		icount -= timing.rep_outs16_base;
+		for(; count > 0; count--) {
+			write_port_word(regs.w[DX], GetMemW(DS, regs.w[SI]));
+			regs.w[SI] += 2 * DirVal; /* GOL 11/27/01 */
+			icount -= timing.rep_outs16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
 #endif
-	case 0xa4:	// REP MOVSB
-		count -= cycles.rep_movs8_base;
-		for(; cnt > 0; cnt--) {
-			uint8 tmp = RM8(DS, regs.w[SI]);
-			WM8(ES, regs.w[DI], tmp);
+	case 0xa4:	/* REP MOVSB */
+		icount -= timing.rep_movs8_base;
+		for(; count > 0; count--) {
+			uint8 tmp;
+			tmp = GetMemB(DS, regs.w[SI]);
+			PutMemB(ES, regs.w[DI], tmp);
 			regs.w[DI] += DirVal;
 			regs.w[SI] += DirVal;
-			count -= cycles.rep_movs8_count;
+			icount -= timing.rep_movs8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa5:	// REP MOVSW
-		count -= cycles.rep_movs16_base;
-		for(; cnt > 0; cnt--) {
-			uint16 tmp = RM16(DS, regs.w[SI]);
-			WM16(ES, regs.w[DI], tmp);
+	case 0xa5:  /* REP MOVSW */
+		icount -= timing.rep_movs16_base;
+		for(; count > 0; count--) {
+			uint16 tmp;
+			tmp = GetMemW(DS, regs.w[SI]);
+			PutMemW(ES, regs.w[DI], tmp);
 			regs.w[DI] += 2 * DirVal;
 			regs.w[SI] += 2 * DirVal;
-			count -= cycles.rep_movs16_count;
+			icount -= timing.rep_movs16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa6:	// REP(N)E CMPSB
-		count -= cycles.rep_cmps8_base;
-		for(ZeroVal = !flagval; (ZF == flagval) && (cnt > 0); cnt--) {
-			unsigned dst = RM8(ES, regs.w[DI]);
-			unsigned src = RM8(DS, regs.w[SI]);
-			SUBB(src, dst);
+	case 0xa6:  /* REP(N)E CMPSB */
+		icount -= timing.rep_cmps8_base;
+		for(ZeroVal = !flagval; (ZF == flagval) && (count > 0); count--) {
+			unsigned dst, src;
+			dst = GetMemB(ES, regs.w[DI]);
+			src = GetMemB(DS, regs.w[SI]);
+			SUBB(src, dst); /* opposite of the usual convention */
 			regs.w[DI] += DirVal;
 			regs.w[SI] += DirVal;
-			count -= cycles.rep_cmps8_count;
+			icount -= timing.rep_cmps8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xa7:	// REP(N)E CMPSW
-		count -= cycles.rep_cmps16_base;
-		for(ZeroVal = !flagval; (ZF == flagval) && (cnt > 0); cnt--) {
-			unsigned dst = RM16(ES, regs.w[DI]);
-			unsigned src = RM16(DS, regs.w[SI]);
-			SUBW(src, dst);
+	case 0xa7:  /* REP(N)E CMPSW */
+		icount -= timing.rep_cmps16_base;
+		for(ZeroVal = !flagval; (ZF == flagval) && (count > 0); count--) {
+			unsigned dst, src;
+			dst = GetMemW(ES, regs.w[DI]);
+			src = GetMemW(DS, regs.w[SI]);
+			SUBW(src, dst); /* opposite of the usual convention */
 			regs.w[DI] += 2 * DirVal;
 			regs.w[SI] += 2 * DirVal;
-			count -= cycles.rep_cmps16_count;
+			icount -= timing.rep_cmps16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xaa:	// REP STOSB
-		count -= cycles.rep_stos8_base;
-		for(; cnt > 0; cnt--) {
-			WM8(ES, regs.w[DI], regs.b[AL]);
+	case 0xaa:  /* REP STOSB */
+		icount -= timing.rep_stos8_base;
+		for(; count > 0; count--) {
+			PutMemB(ES, regs.w[DI], regs.b[AL]);
 			regs.w[DI] += DirVal;
-			count -= cycles.rep_stos8_count;
+			icount -= timing.rep_stos8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xab:	// REP STOSW
-		count -= cycles.rep_stos16_base;
-		for(; cnt > 0; cnt--) {
-			WM16(ES, regs.w[DI], regs.w[AX]);
+	case 0xab:  /* REP STOSW */
+		icount -= timing.rep_stos16_base;
+		for(; count > 0; count--) {
+			PutMemW(ES, regs.w[DI], regs.w[AX]);
 			regs.w[DI] += 2 * DirVal;
-			count -= cycles.rep_stos16_count;
+			icount -= timing.rep_stos16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xac:	// REP LODSB
-		count -= cycles.rep_lods8_base;
-		for(; cnt > 0; cnt--) {
-			regs.b[AL] = RM8(DS, regs.w[SI]);
+	case 0xac:  /* REP LODSB */
+		icount -= timing.rep_lods8_base;
+		for(; count > 0; count--) {
+			regs.b[AL] = GetMemB(DS, regs.w[SI]);
 			regs.w[SI] += DirVal;
-			count -= cycles.rep_lods8_count;
+			icount -= timing.rep_lods8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xad:	// REP LODSW
-		count -= cycles.rep_lods16_base;
-		for(; cnt > 0; cnt--) {
-			regs.w[AX] = RM16(DS, regs.w[SI]);
+	case 0xad:  /* REP LODSW */
+		icount -= timing.rep_lods16_base;
+		for(; count > 0; count--) {
+			regs.w[AX] = GetMemW(DS, regs.w[SI]);
 			regs.w[SI] += 2 * DirVal;
-			count -= cycles.rep_lods16_count;
+			icount -= timing.rep_lods16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xae:	// REP(N)E SCASB
-		count -= cycles.rep_scas8_base;
-		for(ZeroVal = !flagval; (ZF == flagval) && (cnt > 0); cnt--) {
-			unsigned src = RM8(ES, regs.w[DI]);
-			unsigned dst = regs.b[AL];
+	case 0xae:  /* REP(N)E SCASB */
+		icount -= timing.rep_scas8_base;
+		for(ZeroVal = !flagval; (ZF == flagval) && (count > 0); count--) {
+			unsigned src, dst;
+			src = GetMemB(ES, regs.w[DI]);
+			dst = regs.b[AL];
 			SUBB(dst, src);
 			regs.w[DI] += DirVal;
-			count -= cycles.rep_scas8_count;
+			icount -= timing.rep_scas8_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
-	case 0xaf:	// REP(N)E SCASW
-		count -= cycles.rep_scas16_base;
-		for(ZeroVal = !flagval; (ZF == flagval) && (cnt > 0); cnt--) {
-			unsigned src = RM16(ES, regs.w[DI]);
-			unsigned dst = regs.w[AX];
+	case 0xaf:  /* REP(N)E SCASW */
+		icount -= timing.rep_scas16_base;
+		for(ZeroVal = !flagval; (ZF == flagval) && (count > 0); count--) {
+			unsigned src, dst;
+			src = GetMemW(ES, regs.w[DI]);
+			dst = regs.w[AX];
 			SUBW(dst, src);
 			regs.w[DI] += 2 * DirVal;
-			count -= cycles.rep_scas16_count;
+			icount -= timing.rep_scas16_count;
 		}
-		regs.w[CX] = cnt;
+		regs.w[CX] = count;
 		break;
 	default:
-		op(next);
+		instruction(next);
 	}
 }
 
-inline void I86::_hlt()	// Opcode 0xf4
+inline void I86::_repne()    /* Opcode 0xf2 */
 {
-	PC--;
-	halt = true;
-	count -= 2;
+	_rep(0);
 }
 
-inline void I86::_cmc()	// Opcode 0xf5
+inline void I86::_repe()    /* Opcode 0xf3 */
 {
-	count -= cycles.flag_ops;
+	_rep(1);
+}
+
+inline void I86::_hlt()    /* Opcode 0xf4 */
+{
+	pc--;
+	halted = true;
+	icount -= 2;
+}
+
+inline void I86::_cmc()    /* Opcode 0xf5 */
+{
+	icount -= timing.flag_ops;
 	CarryVal = !CF;
 }
 
-inline void I86::_opf6()	// Opecode 0xf6
+inline void I86::_f6pre()    /* Opcode 0xf6 */
 {
-	unsigned ModRM = FETCH8();
-	unsigned tmp1 = (unsigned)GetRMByte(ModRM), tmp2;
+	unsigned ModRM = FETCH;
+	unsigned tmp = (unsigned)GetRMByte(ModRM);
+	unsigned tmp2;
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// TEST Eb, data8
-	case 0x08:	// ???
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri8 : cycles.alu_mi8_ro;
-		tmp1 &= FETCH8();
+	case 0x00:  /* TEST Eb, data8 */
+	case 0x08:  /* ??? */
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
+		tmp &= FETCH;
+		
 		CarryVal = OverVal = AuxVal = 0;
-		SetSZPF_Byte(tmp1);
+		SetSZPF_Byte(tmp);
 		break;
-	case 0x10:	// NOT Eb
-		count -= (ModRM >= 0xc0) ? cycles.negnot_r8 : cycles.negnot_m8;
-		PutbackRMByte(ModRM, ~tmp1);
+		
+	case 0x10:  /* NOT Eb */
+		icount -= (ModRM >= 0xc0) ? timing.negnot_r8 : timing.negnot_m8;
+		PutbackRMByte(ModRM, ~tmp);
 		break;
-	case 0x18:	// NEG Eb
-		count -= (ModRM >= 0xc0) ? cycles.negnot_r8 : cycles.negnot_m8;
+		
+	case 0x18:  /* NEG Eb */
+		icount -= (ModRM >= 0xc0) ? timing.negnot_r8 : timing.negnot_m8;
 		tmp2 = 0;
-		SUBB(tmp2, tmp1);
+		SUBB(tmp2, tmp);
 		PutbackRMByte(ModRM, tmp2);
 		break;
-	case 0x20:	// MUL AL, Eb
-		count -= (ModRM >= 0xc0) ? cycles.mul_r8 : cycles.mul_m8;
+		
+	case 0x20:  /* MUL AL, Eb */
+		icount -= (ModRM >= 0xc0) ? timing.mul_r8 : timing.mul_m8;
 		{
+			uint16 result;
+			
 			tmp2 = regs.b[AL];
+			
 			SetSF((int8)tmp2);
 			SetPF(tmp2);
-			uint16 result = (uint16)tmp2 * tmp1;
+			
+			result = (uint16)tmp2 * tmp;
 			regs.w[AX] = (uint16)result;
+			
 			SetZF(regs.w[AX]);
 			CarryVal = OverVal = (regs.b[AH] != 0);
 		}
 		break;
-	case 0x28:	// IMUL AL, Eb
-		count -= (ModRM >= 0xc0) ? cycles.imul_r8 : cycles.imul_m8;
+		
+	case 0x28:  /* IMUL AL, Eb */
+		icount -= (ModRM >= 0xc0) ? timing.imul_r8 : timing.imul_m8;
 		{
+			int16 result;
+			
 			tmp2 = (unsigned)regs.b[AL];
+			
 			SetSF((int8)tmp2);
 			SetPF(tmp2);
-			int16 result = (int16)((int8)tmp2) * (int16)((int8)tmp1);
+			
+			result = (int16)((int8)tmp2) * (int16)((int8)tmp);
 			regs.w[AX] = (uint16)result;
+			
 			SetZF(regs.w[AX]);
 			CarryVal = OverVal = (result >> 7 != 0) && (result >> 7 != -1);
 		}
 		break;
-	case 0x30:	// DIV AL, Ew
-		count -= (ModRM >= 0xc0) ? cycles.div_r8 : cycles.div_m8;
-		if(tmp1) {
-			uint16 result = regs.w[AX];
-			if((result / tmp1) > 0xff) {
-				interrupt(0);
+		
+	case 0x30:  /* DIV AL, Ew */
+		icount -= (ModRM >= 0xc0) ? timing.div_r8 : timing.div_m8;
+		{
+			uint16 result;
+			
+			result = regs.w[AX];
+			
+			if(tmp) {
+				if((result / tmp) > 0xff) {
+					interrupt(DIVIDE_FAULT);
+					break;
+				}
+				else {
+					regs.b[AH] = result % tmp;
+					regs.b[AL] = result / tmp;
+				}
 			}
 			else {
-				regs.b[AH] = result % tmp1;
-				regs.b[AL] = result / tmp1;
+				interrupt(DIVIDE_FAULT);
+				break;
 			}
-		}
-		else {
-			interrupt(0);
 		}
 		break;
-	case 0x38:	// IDIV AL, Ew
-		count -= (ModRM >= 0xc0) ? cycles.idiv_r8 : cycles.idiv_m8;
-		if(tmp1) {
-			int16 result = regs.w[AX];
-			tmp2 = result % (int16)((int8)tmp1);
-			if((result /= (int16)((int8)tmp1)) > 0xff) {
-				interrupt(0);
+		
+	case 0x38:  /* IDIV AL, Ew */
+		icount -= (ModRM >= 0xc0) ? timing.idiv_r8 : timing.idiv_m8;
+		{
+			int16 result;
+			
+			result = regs.w[AX];
+			
+			if(tmp) {
+				tmp2 = result % (int16)((int8)tmp);
+				
+				if((result /= (int16)((int8)tmp)) > 0xff) {
+					interrupt(DIVIDE_FAULT);
+					break;
+				}
+				else {
+					regs.b[AL] = (uint8)result;
+					regs.b[AH] = tmp2;
+				}
 			}
 			else {
-				regs.b[AL] = (uint8)result;
-				regs.b[AH] = tmp2;
+				interrupt(DIVIDE_FAULT);
+				break;
 			}
-		}
-		else {
-			interrupt(0);
 		}
 		break;
 	}
 }
 
-inline void I86::_opf7()
+inline void I86::_f7pre()    /* Opcode 0xf7 */
 {
-	// Opcode 0xf7
-	unsigned ModRM = FETCH8();
-	unsigned tmp1 = GetRMWord(ModRM), tmp2;
+	unsigned ModRM = FETCH;
+	unsigned tmp = GetRMWord(ModRM);
+	unsigned tmp2;
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// TEST Ew, data16
-	case 0x08:	// ???
-		count -= (ModRM >= 0xc0) ? cycles.alu_ri16 : cycles.alu_mi16_ro;
-		tmp2 = FETCH8();
-		tmp2 += FETCH8() << 8;
-		tmp1 &= tmp2;
+	case 0x00:  /* TEST Ew, data16 */
+	case 0x08:  /* ??? */
+		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16_ro;
+		tmp2 = FETCH;
+		tmp2 += FETCH << 8;
+		
+		tmp &= tmp2;
+		
 		CarryVal = OverVal = AuxVal = 0;
-		SetSZPF_Word(tmp1);
+		SetSZPF_Word(tmp);
 		break;
-	case 0x10:	// NOT Ew
-		count -= (ModRM >= 0xc0) ? cycles.negnot_r16 : cycles.negnot_m16;
-		tmp1 = ~tmp1;
-		PutbackRMWord(ModRM, tmp1);
+		
+	case 0x10:  /* NOT Ew */
+		icount -= (ModRM >= 0xc0) ? timing.negnot_r16 : timing.negnot_m16;
+		tmp = ~tmp;
+		PutbackRMWord(ModRM, tmp);
 		break;
-	case 0x18:	// NEG Ew
-		count -= (ModRM >= 0xc0) ? cycles.negnot_r16 : cycles.negnot_m16;
+		
+	case 0x18:  /* NEG Ew */
+		icount -= (ModRM >= 0xc0) ? timing.negnot_r16 : timing.negnot_m16;
 		tmp2 = 0;
-		SUBW(tmp2, tmp1);
+		SUBW(tmp2, tmp);
 		PutbackRMWord(ModRM, tmp2);
 		break;
-	case 0x20:	// MUL AX, Ew
-		count -= (ModRM >= 0xc0) ? cycles.mul_r16 : cycles.mul_m16;
+		
+	case 0x20:  /* MUL AX, Ew */
+		icount -= (ModRM >= 0xc0) ? timing.mul_r16 : timing.mul_m16;
 		{
+			uint32 result;
 			tmp2 = regs.w[AX];
+			
 			SetSF((int16)tmp2);
 			SetPF(tmp2);
-			uint32 result = (uint32)tmp2 * tmp1;
+			
+			result = (uint32)tmp2 * tmp;
 			regs.w[AX] = (uint16)result;
 			result >>= 16;
 			regs.w[DX] = result;
+			
 			SetZF(regs.w[AX] | regs.w[DX]);
 			CarryVal = OverVal = (regs.w[DX] != 0);
 		}
 		break;
-	case 0x28:	// IMUL AX, Ew
-		count -= (ModRM >= 0xc0) ? cycles.imul_r16 : cycles.imul_m16;
+		
+	case 0x28:  /* IMUL AX, Ew */
+		icount -= (ModRM >= 0xc0) ? timing.imul_r16 : timing.imul_m16;
 		{
+			int32 result;
+			
 			tmp2 = regs.w[AX];
+			
 			SetSF((int16)tmp2);
 			SetPF(tmp2);
-			int32 result = (int32)((int16)tmp2) * (int32)((int16)tmp1);
+			
+			result = (int32)((int16)tmp2) * (int32)((int16)tmp);
 			CarryVal = OverVal = (result >> 15 != 0) && (result >> 15 != -1);
+			
 			regs.w[AX] = (uint16)result;
 			result = (uint16)(result >> 16);
 			regs.w[DX] = result;
+			
 			SetZF(regs.w[AX] | regs.w[DX]);
 		}
 		break;
-	case 0x30:	// DIV AX, Ew
-		count -= (ModRM >= 0xc0) ? cycles.div_r16 : cycles.div_m16;
-		if(tmp1) {
-			uint32 result = (regs.w[DX] << 16) + regs.w[AX];
-			tmp2 = result % tmp1;
-			if((result / tmp1) > 0xffff) {
-				interrupt(0);
+		
+	case 0x30:  /* DIV AX, Ew */
+		icount -= (ModRM >= 0xc0) ? timing.div_r16 : timing.div_m16;
+		{
+			uint32 result;
+			
+			result = (regs.w[DX] << 16) + regs.w[AX];
+			
+			if(tmp) {
+				tmp2 = result % tmp;
+				if((result / tmp) > 0xffff) {
+					interrupt(DIVIDE_FAULT);
+					break;
+				}
+				else {
+					regs.w[DX] = tmp2;
+					result /= tmp;
+					regs.w[AX] = result;
+				}
 			}
 			else {
-				regs.w[DX] = tmp2;
-				result /= tmp1;
-				regs.w[AX] = result;
+				interrupt(DIVIDE_FAULT);
+				break;
 			}
-		}
-		else {
-			interrupt(0);
 		}
 		break;
-	case 0x38:	// IDIV AX, Ew
-		count -= (ModRM >= 0xc0) ? cycles.idiv_r16 : cycles.idiv_m16;
-		if(tmp1) {
-			int32 result = (regs.w[DX] << 16) + regs.w[AX];
-			tmp2 = result % (int32)((int16)tmp1);
-			if((result /= (int32)((int16)tmp1)) > 0xffff) {
-				interrupt(0);
+		
+	case 0x38:  /* IDIV AX, Ew */
+		icount -= (ModRM >= 0xc0) ? timing.idiv_r16 : timing.idiv_m16;
+		{
+			int32 result;
+			
+			result = (regs.w[DX] << 16) + regs.w[AX];
+			
+			if(tmp) {
+				tmp2 = result % (int32)((int16)tmp);
+				if((result /= (int32)((int16)tmp)) > 0xffff) {
+					interrupt(DIVIDE_FAULT);
+					break;
+				}
+				else {
+					regs.w[AX] = result;
+					regs.w[DX] = tmp2;
+				}
 			}
 			else {
-				regs.w[AX] = result;
-				regs.w[DX] = tmp2;
+				interrupt(DIVIDE_FAULT);
+				break;
 			}
-		}
-		else {
-			interrupt(0);
 		}
 		break;
 	}
 }
 
-inline void I86::_clc()	// Opcode 0xf8
+inline void I86::_clc()    /* Opcode 0xf8 */
 {
-	count -= cycles.flag_ops;
+	icount -= timing.flag_ops;
 	CarryVal = 0;
 }
 
-inline void I86::_stc()	// Opcode 0xf9
+inline void I86::_stc()    /* Opcode 0xf9 */
 {
-	count -= cycles.flag_ops;
+	icount -= timing.flag_ops;
 	CarryVal = 1;
 }
 
-inline void I86::_cli()	// Opcode 0xfa
+inline void I86::_cli()    /* Opcode 0xfa */
 {
-	count -= cycles.flag_ops;
+	icount -= timing.flag_ops;
 	SetIF(0);
 }
 
-inline void I86::_sti()	// Opcode 0xfb
+inline void I86::_sti()    /* Opcode 0xfb */
 {
-	count -= cycles.flag_ops;
+	icount -= timing.flag_ops;
 	SetIF(1);
-	op(FETCHOP());
-	if(IF && (intstat & INT_REQ_BIT)) {
-		unsigned intnum = ACK_INTR() & 0xff;
-		intstat &= ~INT_REQ_BIT;
-		interrupt(intnum);
+	instruction(FETCHOP); /* no interrupt before next instruction */
+
+	/* if an interrupt is pending, signal an interrupt */
+	if(IF && (int_state & INT_REQ_BIT)) {
+		interrupt(-1);
 	}
 }
 
-inline void I86::_cld()	// Opcode 0xfc
+inline void I86::_cld()    /* Opcode 0xfc */
 {
-	count -= cycles.flag_ops;
+	icount -= timing.flag_ops;
 	SetDF(0);
 }
 
-inline void I86::_std()	// Opcode 0xfd
+inline void I86::_std()    /* Opcode 0xfd */
 {
-	count -= cycles.flag_ops;
+	icount -= timing.flag_ops;
 	SetDF(1);
 }
 
-inline void I86::_opfe()	// Opcode 0xfe
+inline void I86::_fepre()    /* Opcode 0xfe */
 {
-	unsigned ModRM = FETCH8();
-	unsigned tmp1 = GetRMByte(ModRM), tmp2;
-	count -= (ModRM >= 0xc0) ? cycles.incdec_r8 : cycles.incdec_m8;
+	unsigned ModRM = FETCH;
+	unsigned tmp = GetRMByte(ModRM);
+	unsigned tmp1;
+	
+	icount -= (ModRM >= 0xc0) ? timing.incdec_r8 : timing.incdec_m8;
 	if((ModRM & 0x38) == 0) {
-		// INC eb
-		tmp2 = tmp1 + 1;
-		SetOFB_Add(tmp2, tmp1, 1);
+		/* INC eb */
+		tmp1 = tmp + 1;
+		SetOFB_Add(tmp1, tmp, 1);
 	}
 	else {
-		// DEC eb
-		tmp2 = tmp1 - 1;
-		SetOFB_Sub(tmp2, 1, tmp1);
+		/* DEC eb */
+		tmp1 = tmp - 1;
+		SetOFB_Sub(tmp1, 1, tmp);
 	}
-	SetAF(tmp2, tmp1, 1);
-	SetSZPF_Byte(tmp2);
-	PutbackRMByte(ModRM, (uint8)tmp2);
+	SetAF(tmp1, tmp, 1);
+	SetSZPF_Byte(tmp1);
+	PutbackRMByte(ModRM, (uint8)tmp1);
 }
 
-inline void I86::_opff()	// Opcode 0xff
+inline void I86::_ffpre()    /* Opcode 0xff */
 {
-	unsigned ModRM = FETCHOP(), tmp1, tmp2;
+	unsigned ModRM = FETCHOP;
+	unsigned tmp;
+	unsigned tmp1;
 	uint16 ip;
 	
 	switch(ModRM & 0x38) {
-	case 0x00:	// INC ew
-		count -= (ModRM >= 0xc0) ? cycles.incdec_r16 : cycles.incdec_m16;
-		tmp1 = GetRMWord(ModRM);
-		tmp2 = tmp1 + 1;
-		SetOFW_Add(tmp2, tmp1, 1);
-		SetAF(tmp2, tmp1, 1);
-		SetSZPF_Word(tmp2);
-		PutbackRMWord(ModRM, (uint16)tmp2);
+	case 0x00:  /* INC ew */
+		icount -= (ModRM >= 0xc0) ? timing.incdec_r16 : timing.incdec_m16;
+		tmp = GetRMWord(ModRM);
+		tmp1 = tmp + 1;
+		SetOFW_Add(tmp1, tmp, 1);
+		SetAF(tmp1, tmp, 1);
+		SetSZPF_Word(tmp1);
+		PutbackRMWord(ModRM, (uint16)tmp1);
 		break;
-	case 0x08:	// DEC ew
-		count -= (ModRM >= 0xc0) ? cycles.incdec_r16 : cycles.incdec_m16;
-		tmp1 = GetRMWord(ModRM);
-		tmp2 = tmp1 - 1;
-		SetOFW_Sub(tmp2, 1, tmp1);
-		SetAF(tmp2, tmp1, 1);
-		SetSZPF_Word(tmp2);
-		PutbackRMWord(ModRM, (uint16)tmp2);
+	case 0x08:  /* DEC ew */
+		icount -= (ModRM >= 0xc0) ? timing.incdec_r16 : timing.incdec_m16;
+		tmp = GetRMWord(ModRM);
+		tmp1 = tmp - 1;
+		SetOFW_Sub(tmp1, 1, tmp);
+		SetAF(tmp1, tmp, 1);
+		SetSZPF_Word(tmp1);
+		PutbackRMWord(ModRM, (uint16)tmp1);
 		break;
-	case 0x10:	// CALL ew
-		count -= (ModRM >= 0xc0) ? cycles.call_r16 : cycles.call_m16;
-		tmp1 = GetRMWord(ModRM);
-		ip = PC - base[CS];
-		PUSH16(ip);
-		PC = (base[CS] + (uint16)tmp1) & AMASK;
+	case 0x10:  /* CALL ew */
+		icount -= (ModRM >= 0xc0) ? timing.call_r16 : timing.call_m16;
+		tmp = GetRMWord(ModRM);
+		ip = pc - base[CS];
+		PUSH(ip);
+		pc = (base[CS] + (uint16)tmp) & AMASK;
 #ifdef I86_BIOS_CALL
-		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
-			// bios call
+		if(d_bios && d_bios->bios_call(pc, regs.w, sregs, &ZeroVal, &CarryVal)) {
+			/* bios call */
 			_ret();
 		}
 #endif
 		break;
-	case 0x18:	// CALL FAR ea
-		count -= cycles.call_m32;
-		tmp1 = sregs[CS];
-		tmp2 = GetRMWord(ModRM);
-		ip = PC - base[CS];
-		PUSH16(tmp1);
-		PUSH16(ip);
+	case 0x18:  /* CALL FAR ea */
+		icount -= timing.call_m32;
+		tmp = sregs[CS];	/* need to skip displacements of ea */
+		tmp1 = GetRMWord(ModRM);
+		ip = pc - base[CS];
+		PUSH(tmp);
+		PUSH(ip);
 #ifdef HAS_I286
-		i286_code_descriptor(GetNextRMWord(), tmp2);
+		i286_code_descriptor(GetNextRMWord, tmp1);
 #else
-		sregs[CS] = GetNextRMWord();
+		sregs[CS] = GetNextRMWord;
 		base[CS] = SegBase(CS);
-		PC = (base[CS] + tmp2) & AMASK;
+		pc = (base[CS] + tmp1) & AMASK;
 #endif
 #ifdef I86_BIOS_CALL
-		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
-			// bios call
-			_retf();
+		if(d_bios && d_bios->bios_call(pc, regs.w, sregs, &ZeroVal, &CarryVal)) {
+			/* bios call */
+			_ret();
 		}
 #endif
 		break;
-	case 0x20:	// JMP ea
-		count -= (ModRM >= 0xc0) ? cycles.jmp_r16 : cycles.jmp_m16;
+	case 0x20:  /* JMP ea */
+		icount -= (ModRM >= 0xc0) ? timing.jmp_r16 : timing.jmp_m16;
 		ip = GetRMWord(ModRM);
-		PC = (base[CS] + ip) & AMASK;
+		pc = (base[CS] + ip) & AMASK;
 		break;
-	case 0x28:	// JMP FAR ea
-		count -= cycles.jmp_m32;
+	case 0x28:  /* JMP FAR ea */
+		icount -= timing.jmp_m32;
 #ifdef HAS_I286
-		tmp1 = GetRMWord(ModRM);
-		i286_code_descriptor(GetNextRMWord(), tmp1);
+		tmp = GetRMWord(ModRM);
+		i286_code_descriptor(GetNextRMWord, tmp);
 #else
-		PC = GetRMWord(ModRM);
-		sregs[CS] = GetNextRMWord();
+		pc = GetRMWord(ModRM);
+		sregs[CS] = GetNextRMWord;
 		base[CS] = SegBase(CS);
-		PC = (PC + base[CS]) & AMASK;
+		pc = (pc + base[CS]) & AMASK;
 #endif
 		break;
-	case 0x30:	// PUSH ea
-		count -= (ModRM >= 0xc0) ? cycles.push_r16 : cycles.push_m16;
-		tmp1 = GetRMWord(ModRM);
-		PUSH16(tmp1);
+	case 0x30:  /* PUSH ea */
+		icount -= (ModRM >= 0xc0) ? timing.push_r16 : timing.push_m16;
+		tmp = GetRMWord(ModRM);
+		PUSH(tmp);
 		break;
-	case 0x38:	// invalid ???
-		count -= 10;
+	case 0x38:  /* invalid ??? */
+		icount -= 10;
 		break;
 	}
 }
@@ -5020,7 +5253,8 @@ inline void I86::_invalid()
 #ifdef HAS_I286
 	interrupt(ILLEGAL_INSTRUCTION);
 #else
-	PC--;
-	count -= 10;
+	/* i8086/i8088 ignore an invalid opcode. */
+	/* i80186/i80188 probably also ignore an invalid opcode. */
+	icount -= 10;
 #endif
 }

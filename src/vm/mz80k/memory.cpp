@@ -147,6 +147,7 @@ void MEMORY::event_callback(int event_id, int err)
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 	if(0xe000 <= addr && addr <= 0xe7ff) {
 		// memory mapped i/o
 		switch(addr) {
@@ -193,6 +194,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 	if(0xe000 <= addr && addr <= 0xe7ff) {
 		// memory mapped i/o
 		switch(addr) {

@@ -52,7 +52,7 @@ private:
 	
 	uint8 column;
 #ifdef _X1TURBO
-	uint8 mode1, mode2, mode2_txt;
+	uint8 mode1, mode2;
 	bool hires;
 #endif
 	

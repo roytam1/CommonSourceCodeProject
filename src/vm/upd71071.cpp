@@ -157,8 +157,10 @@ void UPD71071::write_signal(int id, uint32 data, uint32 mask)
 	uint8 bit = 1 << (id & 3);
 	
 	if(data & mask) {
-		req |= bit;
-		do_dma();
+		if(!(req & bit)) {
+			req |= bit;
+			do_dma();
+		}
 	}
 	else {
 		req &= ~bit;

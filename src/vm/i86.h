@@ -1,9 +1,9 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MAME
+	Origin : MAME 0.142
 	Author : Takeda.Toshiya
-	Date   : 2007.08.11 -
+	Date  : 2011.04.23-
 
 	[ 80x86 ]
 */
@@ -31,86 +31,81 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
-	// clocks
-	int count, extra_count, first;
-	bool busreq, halt;
-	
-	// regs
 	union REGTYPE {
-		uint8 b[16];
-		uint16 w[8];
+		uint16 w[8]; /* viewed as 16 bits registers */
+		uint8 b[16]; /* or as 8 bit registers       */
 	} regs;
-	uint16 sregs[4], limit[4];
+	uint32 pc;
+	uint32 prevpc;
 	uint32 base[4];
-	unsigned EA;
-	uint16 EO;
-	uint32 gdtr_base, idtr_base, ldtr_base, tr_base;
-	uint16 gdtr_limit, idtr_limit, ldtr_limit, tr_limit;
-	uint16 ldtr_sel, tr_sel;
-	
-	// flags
-	uint16 flags, msw;
+	uint16 sregs[4];
+	uint16 flags;
 	int32 AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal;
-	uint8 ParityVal, TF, IF, MF;
-	int intstat, busy;
+	uint8 ParityVal;
+	uint8 TF, IF, MF;
 	
-	// addr
-	uint32 PC, prvPC;
 #ifdef HAS_I286
 	uint32 AMASK;
+	uint16 msw;
+	uint16 limit[4];
+	uint8 rights[4];
+	struct {
+		uint32 base;
+		uint16 limit;
+	} gdtr, idtr;
+	struct {
+		uint16 sel;
+		uint32 base;
+		uint16 limit;
+		uint8 rights;
+	} ldtr, tr;
 #endif
 	
-	// prefix
-	unsigned prefix_base;
-	bool seg_prefix;
+	int int_state;
+	bool test_state;
+	bool busreq, halted;
 	
-	/* ---------------------------------------------------------------------------
-	virtual machine interfaces
-	--------------------------------------------------------------------------- */
+	int icount, first_icount;
+	int extra_cycles;	/* extra cycles for interrupts */
 	
-	// memory
-	inline uint8 RM8(uint32 seg, uint32 ofs);
-	inline uint16 RM16(uint32 seg, uint32 ofs);
-	inline void WM8(uint32 seg, uint32 ofs, uint8 val);
-	inline void WM16(uint32 seg, uint32 ofs, uint16 val);
-	inline uint8 RM8(uint32 addr);
-	inline uint16 RM16(uint32 addr);
-	inline void WM8(uint32 addr, uint8 val);
-	inline void WM16(uint32 addr, uint16 val);
-	inline uint8 FETCHOP();
-	inline uint8 FETCH8();
-	inline uint16 FETCH16();
-	inline void PUSH16(uint16 val);
-	inline uint16 POP16();
-	
-	// i/o
-	inline uint8 IN8(uint32 addr);
-	inline void OUT8(uint32 addr, uint8 val);
-	inline uint16 IN16(uint32 addr);
-	inline void OUT16(uint32 addr, uint16 val);
-	
-	// interrupt
-	inline uint32 ACK_INTR() {
-		return d_pic->intr_ack();
-	}
+	bool seg_prefix;	/* prefix segment indicator */
+	uint8 prefix_seg;	/* The prefixed segment */
+	unsigned ea;
+	uint16 eo;		/* effective offset of the address (before segment is added) */
+	uint8 ea_seg;		/* effective segment of the address */
 	
 	/* ---------------------------------------------------------------------------
 	opecode
 	--------------------------------------------------------------------------- */
 	
 	// sub
-	void interrupt(unsigned num);
+	enum i286_size {
+		I286_BYTE = 1,
+		I286_WORD = 2
+	};
+	enum i286_operation {
+		I286_READ = 1,
+		I286_WRITE,
+		I286_EXECUTE
+	};
+#ifdef HAS_I286
+	int i286_selector_okay(uint16 selector);
+	uint32 i286_selector_to_address(uint16 selector);
+	void i286_data_descriptor(int reg, uint16 selector);
+	void i286_code_descriptor(uint16 selector, uint16 offset);
+	void i286_interrupt_descriptor(uint16 int_num);
+	void i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, i286_operation operation);
+#else
+	void i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, i286_operation operation) {}
+#endif
+	void interrupt(int num);
+	void trap();
 	unsigned GetEA(unsigned ModRM);
 	void rotate_shift_byte(unsigned ModRM, unsigned cnt);
 	void rotate_shift_word(unsigned ModRM, unsigned cnt);
-#ifdef HAS_I286
-	int i286_selector_okay(uint16 selector);
-	void i286_data_descriptor(int reg, uint16 selector);
-	void i286_code_descriptor(uint16 selector, uint16 offset);
-#endif
 	
 	// opecode
-	void op(uint8 code);
+	void instruction(uint8 code);
 	inline void _add_br8();
 	inline void _add_wr16();
 	inline void _add_r8b();
@@ -126,7 +121,7 @@ private:
 	inline void _or_ald8();
 	inline void _or_axd16();
 	inline void _push_cs();
-	inline void _op0f();
+	inline void _0fpre();
 	inline void _adc_br8();
 	inline void _adc_wr16();
 	inline void _adc_r8b();
@@ -236,10 +231,10 @@ private:
 	inline void _jnl();
 	inline void _jle();
 	inline void _jnle();
-	inline void _op80();
-	inline void _op81();
-	inline void _op82();
-	inline void _op83();
+	inline void _80pre();
+	inline void _81pre();
+	inline void _82pre();
+	inline void _83pre();
 	inline void _test_br8();
 	inline void _test_wr16();
 	inline void _xchg_br8();
@@ -343,24 +338,26 @@ private:
 	inline void _outdxax();
 	inline void _lock();
 	inline void _rep(int flagval);
+	inline void _repne();
+	inline void _repe();
 	inline void _hlt();
 	inline void _cmc();
-	inline void _opf6();
-	inline void _opf7();
+	inline void _f6pre();
+	inline void _f7pre();
 	inline void _clc();
 	inline void _stc();
 	inline void _cli();
 	inline void _sti();
 	inline void _cld();
 	inline void _std();
-	inline void _opfe();
-	inline void _opff();
+	inline void _fepre();
+	inline void _ffpre();
 	inline void _invalid();
 	
 public:
 	I86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		d_bios = NULL;
-		count = extra_count = first = 0;	// passed_clock must be zero at initialize
+		icount = extra_cycles = first_icount = 0;	// passed_clock must be zero at initialize
 		busreq = false;
 	}
 	~I86() {}
@@ -372,10 +369,10 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
 	int passed_clock() {
-		return first - count;
+		return first_icount - icount;
 	}
 	uint32 get_prv_pc() {
-		return prvPC;
+		return prevpc;
 	}
 	
 	// unique function

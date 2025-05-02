@@ -18,6 +18,9 @@ void IO::reset()
 	vram_r = vram + 0x4000;
 	vram_g = vram + 0x8000;
 	vram_mode = signal = false;
+#ifdef _X1TURBO
+	is_arcus = ctc_latch = false;
+#endif
 }
 
 void IO::write_signal(int id, uint32 data, uint32 mask)
@@ -91,6 +94,26 @@ void IO::write_port(uint32 addr, uint32 data, bool is_dma)
 		return;
 	}
 #ifdef _X1TURBO
+	if(addr == 0x1fa1) {
+		// ARCUS patch :-(
+//		if(vm->get_prv_pc() == 0x6d2 && data == 0xa7) {
+		if(vm->get_prv_pc() == 0x21d && data == 0xa7) {
+			is_arcus = true;
+		}
+		else if(vm->get_prv_pc() == 0x2f0 && data == 0xa7) {
+			is_arcus = false;
+		}
+		if(ctc_latch) {
+			ctc_latch = false;
+		}
+		else if(data & 1) {
+			// Disable Z80CTC Ch.1 IRQ
+			if(is_arcus) {
+				data &= ~0x80;
+			}
+			ctc_latch = ((data & 4) != 0);
+		}
+	}
 	if(addr == 0x1fd0) {
 		int ofs = (data & 0x10) ? 0xc000 : 0;
 		vram_b = vram + 0x0000 + ofs;

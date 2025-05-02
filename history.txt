@@ -1,3 +1,19 @@
+4/23/2011
+
+[VM/DISK] fix to check disk type in teledisk converter
+[VM/I86] reimplement based on MAME 0.142 80x86 core
+[VM/I86] support 80186
+[VM/MB8877] fix to clear drq/irq when status register is read
+[VM/UPD71071] fix not to restart dma while dma is running
+[VM/Z80CTC] fix to clear pending irq when control reg is updated
+[VM/Z80DMA] fix not to restart dma while dma is running
+[VM/Z80DMA] fix end of block condition
+[VM/Z80DMA] fix to support auto restart
+
+[X1TURBO/DISPLAY] fix vertical doubled character in hires mode
+[X1TURBO/DISPLAY] fix black character renderer
+
+
 4/15/2011
 
 [VM/DEVICE] add virtual functions for i/o port with dma

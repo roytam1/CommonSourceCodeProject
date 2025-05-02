@@ -77,11 +77,13 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 	wbank[(addr >> 13) & 7][addr & 0x1fff] = data;
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 	return rbank[(addr >> 13) & 7][addr & 0x1fff];
 }
 

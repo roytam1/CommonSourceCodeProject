@@ -496,10 +496,13 @@ bool DISK::teledisk_to_d88()
 	file_size = 0;
 	
 	// create d88 header
+	static const int media_types[4] = {
+		MEDIA_TYPE_2D, MEDIA_TYPE_2HD, MEDIA_TYPE_2DD, MEDIA_TYPE_2HD
+	};
 	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "TELEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = MEDIA_TYPE_2D; // TODO
+	d88_hdr.type = (hdr.type >= 1 && hdr.type <= 4) ? media_types[hdr.type - 1] : MEDIA_TYPE_2D;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks

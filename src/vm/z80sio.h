@@ -83,6 +83,7 @@ private:
 	
 public:
 	Z80SIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		_memset(port, 0, sizeof(port));
 		for(int i = 0; i < 2; i++) {
 			init_output_signals(&port[i].outputs_rts);
 			init_output_signals(&port[i].outputs_dtr);

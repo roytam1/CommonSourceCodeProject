@@ -73,6 +73,7 @@ void MEMORY::reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	// known bug : ram must not be mapped to $ec00-$eebf
+	addr &= 0xffff;
 	if(addr < 0xeec0) {
 		wbank[addr >> 12][addr & 0xfff] = data;
 		return;
@@ -100,6 +101,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	// known bug : ram must not be mapped to $ec00-$eebf
+	addr &= 0xffff;
 	if(addr < 0xeec0) {
 		return rbank[addr >> 12][addr & 0xfff];
 	}

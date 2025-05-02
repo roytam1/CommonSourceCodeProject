@@ -91,6 +91,7 @@
 #define EOB_F_CLEAR		(status |= 0x20)
 
 #define READY_ACTIVE_HIGH	((WR5 >> 3) & 1)
+#define AUTO_RESTART		((WR5 >> 5) & 1)
 
 #define INTERRUPT_ENABLE	(WR3 & 0x20)
 #define INT_ON_MATCH		(INTERRUPT_CTRL & 0x01)
@@ -111,6 +112,7 @@ void Z80DMA::reset()
 	ready = 0;
 	force_ready = false;
 	
+	iei = oei = true;
 	intr = false;
 	req_intr = in_service = false;
 	vector = 0;
@@ -340,11 +342,13 @@ void Z80DMA::write_signal(int id, uint32 data, uint32 mask)
 	uint8 bit = 1 << id;
 	
 	if(data & mask) {
-		if(!ready && INT_ON_READY) {
-			request_intr(INT_RDY);
+		if(!(ready & bit)) {
+			if(!ready && INT_ON_READY) {
+				request_intr(INT_RDY);
+			}
+			ready |= bit;
+			do_dma();
 		}
-		ready |= bit;
-		do_dma();
 	}
 	else {
 		ready &= ~bit;
@@ -369,7 +373,8 @@ void Z80DMA::do_dma()
 	bool occured = false;
 	bool found = false;
 	
-	while(enabled && (now_ready() || force_ready) && !(count == 0xffff || found)) {
+restart:
+	while(enabled && now_ready() && !(count == 0xffff || found)) {
 		uint32 data = 0;
 		
 		// read
@@ -453,14 +458,22 @@ void Z80DMA::do_dma()
 		emu->out_debug(_T("Z80DMA: COUNT=%4x FOUND=%d\n"), count, found ? 1 : 0);
 	}
 #endif
-
 	if(occured && (count == 0xffff || found)) {
+		// auto restart
+		if(AUTO_RESTART && count == 0xffff && !force_ready) {
+#ifdef DMA_DEBUG
+			emu->out_debug(_T("Z80DMA: AUTO RESTART !!!\n"));
+#endif
+			count = BLOCKLEN ? BLOCKLEN : null_blocklen; // hack
+			goto restart;
+		}
+		
 		// update status
 		status = 1;
 		if(!found) {
 			status |= 0x10;
 		}
-		if(count |= 0xffff) {
+		if(count != 0xffff) {
 			status |= 0x20;
 		}
 		enabled = false;
@@ -487,7 +500,7 @@ void Z80DMA::do_dma()
 
 void Z80DMA::request_intr(int level)
 {
-	if(/*!in_service &&*/ INTERRUPT_ENABLE) {
+	if(!in_service && INTERRUPT_ENABLE) {
 		req_intr = true;
 		
 		if(STATUS_AFFECTS_VECTOR) {

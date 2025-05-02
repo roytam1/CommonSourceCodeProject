@@ -57,6 +57,12 @@ private:
 	uint8* vram_r;
 	uint8* vram_g;
 	
+#ifdef _X1TURBO
+	// ARCUS patch :-(
+	bool is_arcus;
+	bool ctc_latch;
+#endif
+	
 	void write_port(uint32 addr, uint32 data, bool is_dma);
 	uint32 read_port(uint32 addr, bool is_dma);
 	

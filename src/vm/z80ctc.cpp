@@ -37,18 +37,10 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 		// time constant
 		counter[ch].constant = data ? data : 256;
 		counter[ch].latch = false;
-		if(counter[ch].control & 2) {
+		if(counter[ch].freeze) {
 			counter[ch].count = counter[ch].constant;
 			counter[ch].clocks = 0;
 			counter[ch].freeze = false;
-			
-			if(counter[ch].clock_id != -1) {
-				vm->cancel_event(counter[ch].clock_id);
-			}
-			if(counter[ch].sysclock_id != -1) {
-				vm->cancel_event(counter[ch].sysclock_id);
-			}
-			counter[ch].clock_id = counter[ch].sysclock_id = -1;
 			update_event(ch, 0);
 		}
 	}
@@ -61,6 +53,10 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 			counter[ch].start = (counter[ch].freq || !(data & 8));
 			counter[ch].control = data;
 			counter[ch].slope = ((data & 0x10) != 0);
+			if(counter[ch].req_intr) {
+				counter[ch].req_intr = false;
+				update_intr();
+			}
 			update_event(ch, 0);
 		}
 		else {

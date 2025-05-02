@@ -130,8 +130,8 @@ void DISPLAY::initialize()
 			fio->Fclose();
 		}
 	}
-	_memcpy(&kanji[0x7f * 16], ANKFONT7f_af, sizeof(ANKFONT7f_af));
-	_memcpy(&kanji[0xe0 * 16], ANKFONTe0_ff, sizeof(ANKFONTe0_ff));
+	_memcpy(kanji + 0x7f * 16, ANKFONT7f_af, sizeof(ANKFONT7f_af));
+	_memcpy(kanji + 0xe0 * 16, ANKFONTe0_ff, sizeof(ANKFONTe0_ff));
 	
 	// kanji (16x16)
 	_stprintf(file_path, _T("%sKANJI.ROM"), app_path);
@@ -196,7 +196,7 @@ void DISPLAY::reset()
 {
 #ifdef _X1TURBO
 	mode1 = 3;
-	mode2 = mode2_txt = 0;
+	mode2 = 0;
 	hires = false;
 #endif
 	cur_line = cur_code = 0;
@@ -261,12 +261,6 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 			break;
 		case 0x1fe0:
 			mode2 = data;
-			if(data & 8) {
-				mode2_txt |= (1 << (data & 7));
-			}
-			else {
-				mode2_txt &= ~(1 << (data & 7));
-			}
 			update_pal();
 			break;
 		}
@@ -480,7 +474,7 @@ void DISPLAY::update_pal()
 			}
 			else if(t) {
 #ifdef _X1TURBO
-				pri[c][t] = (mode2_txt & (1 << t)) ? 0 : t;
+				pri[c][t] = ((mode2 & 8) && (mode2 & 7) == t) ? 0 : t;
 #else
 				pri[c][t] = t;
 #endif
@@ -721,29 +715,28 @@ void DISPLAY::draw_text(int y)
 #endif
 		uint8 attr = vram_a[src];
 		uint8 col = attr & 7;
-		bool reverse = ((attr & 8) != 0) != ((attr & 0x10) && (cblink & 0x20));
+		bool reverse = ((attr & 8) != 0);
+		bool blink = ((attr & 0x10) && (cblink & 0x20));
+		reverse = (reverse != blink);
 #ifdef _X1TURBO
 		int shift = 0;
 #endif
 		
 		// select pcg or ank
-		static const uint8 null_pattern[16] = {
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-		};
 		const uint8 *pattern_b, *pattern_r, *pattern_g;
 		if(attr & 0x20) {
 			// pcg
 #ifdef _X1TURBO
 			if(knj & 0x90) {
-				pattern_b = (col & 1) ? gaiji_b[code >> 1] : null_pattern;
-				pattern_r = (col & 2) ? gaiji_r[code >> 1] : null_pattern;
-				pattern_g = (col & 4) ? gaiji_g[code >> 1] : null_pattern;
+				pattern_b = gaiji_b[code >> 1];
+				pattern_r = gaiji_r[code >> 1];
+				pattern_g = gaiji_g[code >> 1];
 			}
 			else {
 #endif
-				pattern_b = (col & 1) ? pcg_b[code] : null_pattern;
-				pattern_r = (col & 2) ? pcg_r[code] : null_pattern;
-				pattern_g = (col & 4) ? pcg_g[code] : null_pattern;
+				pattern_b = pcg_b[code];
+				pattern_r = pcg_r[code];
+				pattern_g = pcg_g[code];
 #ifdef _X1TURBO
 				shift = hires ? 1 : 0;
 			}
@@ -759,16 +752,12 @@ void DISPLAY::draw_text(int y)
 					ofs += 16; // right
 				}
 			}
-			pattern_b = (col & 1) ? &kanji[ofs] : null_pattern;
-			pattern_r = (col & 2) ? &kanji[ofs] : null_pattern;
-			pattern_g = (col & 4) ? &kanji[ofs] : null_pattern;
+			pattern_b = pattern_r = pattern_g = &kanji[ofs];
 		}
 #endif
 		else {
 			// ank 8x8
-			pattern_b = (col & 1) ? &font[code << 3] : null_pattern;
-			pattern_r = (col & 2) ? &font[code << 3] : null_pattern;
-			pattern_g = (col & 4) ? &font[code << 3] : null_pattern;
+			pattern_b = pattern_r = pattern_g = &font[code << 3];
 		}
 		
 		// check vertical doubled char
@@ -777,7 +766,7 @@ void DISPLAY::draw_text(int y)
 			if(is_bottom) {
 				// bottom 4 rasters of vertical doubled char
 #ifdef _X1TURBO
-				int half = hires ? 8 : 4;
+				int half = (hires && !shift) ? 8 : 4;
 #else
 				#define half 4
 #endif
@@ -811,9 +800,9 @@ void DISPLAY::draw_text(int y)
 #ifdef _X1TURBO
 			line >>= shift;
 #endif
-			uint8 b = reverse ? ~pattern_b[line] : pattern_b[line];
-			uint8 r = reverse ? ~pattern_r[line] : pattern_r[line];
-			uint8 g = reverse ? ~pattern_g[line] : pattern_g[line];
+			uint8 b = (!(col & 1)) ? 0 : reverse ? ~pattern_b[line] : pattern_b[line];
+			uint8 r = (!(col & 2)) ? 0 : reverse ? ~pattern_r[line] : pattern_r[line];
+			uint8 g = (!(col & 4)) ? 0 : reverse ? ~pattern_g[line] : pattern_g[line];
 			int yy = y * ht + l;
 #ifdef _X1TURBO
 			if(yy >= 400) {

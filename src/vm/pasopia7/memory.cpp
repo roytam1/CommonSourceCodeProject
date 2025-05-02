@@ -70,6 +70,7 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 	if(vram_sel && (addr & 0xc000) == 0x8000) {
 		if(pal_sel && !(plane & 0x70)) {
 			pal[addr & 0x0f] = data & 0x0f;
@@ -96,6 +97,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 	if(vram_sel && (addr & 0xc000) == 0x8000) {
 		if(pal_sel && !(plane & 0x70)) {
 			return pal[addr & 0x0f];

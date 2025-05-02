@@ -58,6 +58,9 @@ private:
 	
 public:
 	Z80DMA(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		for(int i = 0; i < 6 * 8 + 1 + 1; i++) {
+			regs.t[i] = 0;
+		}
 		d_cpu = d_child = NULL;
 		null_blocklen = 216;
 	}

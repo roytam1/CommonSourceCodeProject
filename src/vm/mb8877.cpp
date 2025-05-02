@@ -301,6 +301,11 @@ uint32 MB8877::read_io8(uint32 addr)
 				status &= ~FDC_ST_BUSY;
 			}
 		}
+		// reset irq/drq
+		if(!(status & FDC_ST_DRQ)) {
+			set_drq(false);
+		}
+		set_irq(false);
 #ifdef _FDC_DEBUG_LOG
 		// request cpu to output debug log
 		if(d_cpu) {

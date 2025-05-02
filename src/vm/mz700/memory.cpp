@@ -167,6 +167,7 @@ void MEMORY::event_callback(int event_id, int err)
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 #ifdef _MZ1500
 	if(mem_bank & MEM_BANK_PCG) {
 		if(0xd000 <= addr && addr <= 0xefff) {
@@ -212,6 +213,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 #ifdef _MZ1500
 	if(mem_bank & MEM_BANK_PCG) {
 		if(0xd000 <= addr && addr <= 0xefff) {

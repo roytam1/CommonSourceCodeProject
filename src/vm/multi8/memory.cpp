@@ -74,6 +74,7 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
 	if((addr & 0xc000) == 0x8000 && (map1 & 0x10)) {
 		uint32 ptr = addr & 0x3fff;
 		// select vram
@@ -96,6 +97,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
 	if((addr & 0xc000) == 0x8000 && (map1 & 0x10)) {
 		uint32 ptr = addr & 0x3fff;
 		// select vram
