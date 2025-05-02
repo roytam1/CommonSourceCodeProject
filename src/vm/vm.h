@@ -45,6 +45,11 @@
 #include "fmr50/fmr50.h"
 #endif
 
+// CASIO FP-200
+#ifdef _FP200
+#include "fp200/fp200.h"
+#endif
+
 // CASIO FP-1100
 #ifdef _FP1100
 #include "fp1100/fp1100.h"

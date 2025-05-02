@@ -1,28 +1,24 @@
 /*
-	NEC PC-8201 Emulator 'ePC-8201'
+	CASIO FP-200 Emulator 'eFP-200'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2009.03.31-
+	Date   : 2013.03.21-
 
 	[ virtual machine ]
 */
 
-#include "pc8201.h"
+#include "fp200.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
 #include "../datarec.h"
 #include "../i8080.h"
-#include "../i8155.h"
-#include "../io.h"
-#include "../pcm1bit.h"
-#include "../upd1990a.h"
+#include "../memory.h"
+#include "../rp5c01.h"
 
-#include "keyboard.h"
-#include "lcd.h"
-#include "memory.h"
+#include "io.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -35,52 +31,40 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
-//	cmt = new DATAREC(this, emu);
-	cpu = new I8080(this, emu);
-	pio = new I8155(this, emu);
-	io = new IO(this, emu);
-	buzzer = new PCM1BIT(this, emu);
-	rtc = new UPD1990A(this, emu);
-	
-	keyboard = new KEYBOARD(this, emu);
-	lcd = new LCD(this, emu);
+	cpu = new I8080(this, emu);	// i8085
 	memory = new MEMORY(this, emu);
+	rtc = new RP5C01(this, emu);
+	
+	io = new IO(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(buzzer);
 	
-//	cmt->set_context_out(cpu, SIG_I8085_SID, 1);
-//	cpu->set_context_sod(cmt, SIG_DATAREC_OUT, 1);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C0, 1, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C1, 2, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C2, 4, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_CLK, 8, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_DIN, 0x10, 0);
-	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN_L, 0xff, 0);
-	pio->set_context_port_a(lcd, SIG_LCD_CHIPSEL_L, 0xff, 0);
-	pio->set_context_port_b(keyboard, SIG_KEYBOARD_COLUMN_H, 1, 0);
-	pio->set_context_port_b(lcd, SIG_LCD_CHIPSEL_H, 3, 0);
-	pio->set_context_port_b(buzzer, SIG_PCM1BIT_MUTE, 0x20, 0);
-	pio->set_context_timer(buzzer, SIG_PCM1BIT_SIGNAL, 1);
-	pio->set_constant_clock(CPU_CLOCKS);
-	rtc->set_context_dout(pio, SIG_I8155_PORT_C, 1);
-	rtc->set_context_tp(cpu, SIG_I8085_RST7, 1);
+	cpu->set_context_sod(io, SIG_IO_SOD, 1);
 	
-//	memory->set_context_cmt(cmt);
-	memory->set_context_rtc(rtc);
+	io->set_context_cpu(cpu);
+	io->set_context_rtc(rtc);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(io);
 	
-	// i/o bus
-	io->set_iomap_range_w(0x90, 0x9f, memory);
-	io->set_iomap_range_rw(0xa0, 0xaf, memory);
-	io->set_iomap_range_rw(0xb0, 0xbf, pio);
-	io->set_iomap_range_r(0xe0, 0xef, keyboard);
-	io->set_iomap_range_rw(0xf0, 0xff, lcd);
+	// memory bus
+	memset(rom, 0xff, sizeof(rom));
+	memset(ram, 0, sizeof(ram));
+	
+	memory->read_bios(_T("BIOS.ROM"), rom, sizeof(rom));
+	
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(emu->bios_path(_T("RAM.BIN")), FILEIO_READ_BINARY)) {
+		fio->Fread(ram, sizeof(ram), 1);
+		fio->Fclose();
+	}
+	delete fio;
+	
+	memory->set_memory_r(0x0000, 0x7fff, rom);
+	memory->set_memory_rw(0x8000, 0xffff, ram);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -90,6 +74,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 
 VM::~VM()
 {
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(emu->bios_path(_T("RAM.BIN")), FILEIO_WRITE_BINARY)) {
+		fio->Fwrite(ram, sizeof(ram), 1);
+		fio->Fclose();
+	}
+	delete fio;
+	
 	// delete all devices
 	for(DEVICE* device = first_device; device;) {
 		DEVICE *next_device = device->next_device;
@@ -132,7 +123,7 @@ void VM::run()
 
 void VM::draw_screen()
 {
-	lcd->draw_screen();
+	io->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,9 +134,6 @@ void VM::initialize_sound(int rate, int samples)
 {
 	// init sound manager
 	event->initialize_sound(rate, samples);
-	
-	// init sound gen
-	buzzer->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int* extra_frames)
@@ -159,11 +147,14 @@ uint16* VM::create_sound(int* extra_frames)
 
 void VM::key_down(int code, bool repeat)
 {
-	keyboard->key_down(code);
+	if(!repeat) {
+		io->key_down(code);
+	}
 }
 
 void VM::key_up(int code)
 {
+	io->key_up();
 }
 
 // ----------------------------------------------------------------------------
@@ -172,22 +163,22 @@ void VM::key_up(int code)
 
 void VM::play_datarec(_TCHAR* file_path)
 {
-//	cmt->play_datarec(file_path);
+	io->play_datarec(file_path);
 }
 
 void VM::rec_datarec(_TCHAR* file_path)
 {
-//	cmt->rec_datarec(file_path);
+	io->rec_datarec(file_path);
 }
 
 void VM::close_datarec()
 {
-//	cmt->close_datarec();
+	io->close_datarec();
 }
 
 bool VM::now_skip()
 {
-	return false;//cmt->skip();
+	return false;
 }
 
 void VM::update_config()

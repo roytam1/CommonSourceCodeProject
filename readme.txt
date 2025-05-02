@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/21/2013
+								3/23/2013
 
 --- What's this ?
 
@@ -29,6 +29,7 @@ This archive includes the all source codes of emulators listed below:
 	eFMR-30		FUJITSU FMR-30
 	eFMR-50		FUJITSU FMR-50
 	eFMR-60		FUJITSU FMR-60
+	eFP-200		CASIO FP-200
 	eFP-1100	CASIO FP-1100
 	eHANDY98	NEC PC-98HA
 	eHC-20		EPSON HC-20/HX-20
@@ -130,6 +131,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/fmr50/bios.*
 	FM-TOWNS emulator on bochs
 	UNZ pseudo BIOS
+- vm/fp200/*
+	PockEmul gives much hints about LCD driver
 - vm/hc40/*
 	Mr.Fred Han Kraan for EPSON HC-40/PX-4 hardware design info
 - vm/hc80/*

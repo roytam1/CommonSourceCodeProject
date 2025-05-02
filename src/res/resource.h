@@ -31,6 +31,9 @@
 #define ID_DIPSWITCH7                   40027
 #define ID_DIPSWITCH8                   40028
 
+#define ID_FP200_MODE_BASIC             40031
+#define ID_FP200_MODE_CETL              40032
+
 #define ID_HC80_RAMDISK0                40031
 #define ID_HC80_RAMDISK1                40032
 #define ID_HC80_RAMDISK2                40033
@@ -257,6 +260,14 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#endif
+
+// CASIO FP-200
+#ifdef _FP200
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // CASIO FP-1100

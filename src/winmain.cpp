@@ -683,6 +683,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			config.dipswitch ^= (1 << (LOWORD(wParam) - ID_DIPSWITCH1));
 			break;
 #endif
+#ifdef _FP200
+		case ID_FP200_MODE_BASIC:
+		case ID_FP200_MODE_CETL:
+			config.boot_mode = LOWORD(wParam) - ID_FP200_MODE_BASIC;
+			if(emu) {
+				emu->update_config();
+			}
+			break;
+#endif
 #ifdef _HC80
 		case ID_HC80_RAMDISK0:
 		case ID_HC80_RAMDISK1:
@@ -1281,6 +1290,11 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef _HC80
 		if(config.device_type >= 0 && config.device_type < 3) {
 			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0 + config.device_type, MF_BYCOMMAND);
+		}
+#endif
+#ifdef _FP200
+		if(config.boot_mode >= 0 && config.boot_mode < 2) {
+			CheckMenuRadioItem(hMenu, ID_FP200_MODE_BASIC, ID_FP200_MODE_CETL, ID_FP200_MODE_BASIC + config.boot_mode, MF_BYCOMMAND);
 		}
 #endif
 #ifdef _MZ800

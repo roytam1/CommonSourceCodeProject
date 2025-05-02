@@ -29,6 +29,10 @@ devenv.com fmr60.vcproj /Rebuild Release
 mkdir build\fmr60
 copy Release\fmr60.exe build\fmr60\.
 
+devenv.com fp200.vcproj /Rebuild Release
+mkdir build\fp200
+copy Release\fp200.exe build\fp200\.
+
 devenv.com fp1100.vcproj /Rebuild Release
 mkdir build\fp1100
 copy Release\fp1100.exe build\fp1100\.

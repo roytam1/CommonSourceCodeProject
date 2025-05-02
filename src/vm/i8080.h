@@ -44,7 +44,7 @@ private:
 	pair regs[4];
 	uint16 SP, PC, prevPC;
 	uint16 IM, RIM_IEN;
-	bool HALT, BUSREQ, SID;
+	bool HALT, BUSREQ, SID, afterEI;
 	
 	/* ---------------------------------------------------------------------------
 	virtual machine interfaces
@@ -176,9 +176,18 @@ private:
 	void run_one_opecode();
 	void OP(uint8 code);
 	
+#ifdef _CPU_DEBUG_LOG
+	int debug_count, debug_ptr;
+	uint8 debug_ops[4];
+	_TCHAR debug_dasm[32];
+	
+	void DASM();
+#endif
+	
 public:
 	I8080(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		BUSREQ = SID = false;
+		BUSREQ = false;
+		SID = true;
 		init_output_signals(&outputs_busack);
 		init_output_signals(&outputs_sod);
 	}

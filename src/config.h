@@ -70,7 +70,7 @@ typedef struct {
 	uint8 dipswitch;
 #endif
 #ifdef USE_BOOT_MODE
-	int boot_mode;		// MZ-800, PASOPIA, PC-8801MA, PC-98DO
+	int boot_mode;		// FP-200, MZ-800, PASOPIA, PC-8801MA, PC-98DO
 #endif
 #ifdef USE_CPU_CLOCK_LOW
 	bool cpu_clock_low;	// PC-8801MA, PC-9801E, PC-9801VM, PC-98DO

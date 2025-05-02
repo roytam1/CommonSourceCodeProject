@@ -1,3 +1,10 @@
+3/23/2013
+
+[VM/I8080] support disassembler
+
+[FP200] support CASIO FP-200
+
+
 3/21/2013
 
 [VM/DATAREC] fix to skip the fact chunk in wave file header
