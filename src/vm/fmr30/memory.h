@@ -21,7 +21,7 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_fdc, *d_bios, *d_dma;
+	DEVICE *d_cpu, *d_dma;
 	
 	uint8* rbank[4096];	// 16MB / 4KB
 	uint8* wbank[4096];
@@ -66,12 +66,6 @@ public:
 	// unitque function
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
-	}
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
-	void set_context_bios(DEVICE* device) {
-		d_bios = device;
 	}
 	void set_context_dma(DEVICE* device) {
 		d_dma = device;

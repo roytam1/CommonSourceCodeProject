@@ -103,8 +103,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_pic(pic);
 	keyboard->set_context_sio(sio_kb);
 	memory->set_context_cpu(cpu);
-	memory->set_context_fdc(fdc);
-	memory->set_context_bios(bios);
 	memory->set_context_dma(dma);
 	rtc->set_context_pic(pic);
 //	scsi->set_context_dma(dma, SIG_I8237_CH1);
@@ -259,6 +257,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	memory->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0) | bios->read_signal(0);
+	return (status & 0x10) ? 4 : (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

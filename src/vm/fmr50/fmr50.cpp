@@ -217,8 +217,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		memory->set_context_cpu(i386);
 	}
 	memory->set_machine_id(machine_id);
-	memory->set_context_fdc(fdc);
-	memory->set_context_bios(bios);
 	memory->set_context_crtc(crtc);
 	memory->set_chregs_ptr(crtc->get_regs());
 //	scsi->set_context_dma(dma);
@@ -412,6 +410,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	memory->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0) | bios->read_signal(0);
+	return (status & 0x10) ? 4 : (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

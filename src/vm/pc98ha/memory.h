@@ -68,6 +68,7 @@ public:
 	uint8* get_vram() {
 		return vram;
 	}
+	void draw_screen();
 };
 
 #endif

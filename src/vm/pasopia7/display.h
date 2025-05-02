@@ -22,8 +22,6 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE* dev;
-	
 	uint8* regs;
 	uint8 mode, text_page;
 	uint16 cursor, cblink, flash_cnt;
@@ -57,9 +55,6 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context(DEVICE* device) {
-		dev = device;
-	}
 	void set_vram_ptr(uint8* ptr) {
 		vram_b = ptr + 0x0000;
 		vram_r = ptr + 0x4000;

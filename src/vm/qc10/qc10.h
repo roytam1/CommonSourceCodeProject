@@ -41,7 +41,6 @@
 //#define UPD765A_STRICT_ID
 #define UPD765A_NO_IRQ_FOR_RESULT7
 //#define SINGLE_MODE_DMA
-#define PCM1BIT_HIGH_QUALITY
 
 // device informations for win32
 #define USE_DIPSWITCH
@@ -50,6 +49,7 @@
 #define USE_FD2
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -121,6 +121,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

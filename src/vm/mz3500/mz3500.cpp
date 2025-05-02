@@ -119,7 +119,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	main->set_context_fdc(fdc);
 	
 	sub->set_context_main(main);
-	sub->set_context_fdc(fdc);
 	sub->set_ipl(main->get_ipl());
 	sub->set_common(main->get_common());
 	
@@ -251,6 +250,12 @@ uint32 VM::get_sub_prv_pc()
 void VM::draw_screen()
 {
 	sub->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

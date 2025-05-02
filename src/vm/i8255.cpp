@@ -39,7 +39,7 @@ void I8255::write_io8(uint32 addr, uint32 data)
 			port[ch].first = false;
 		}
 		break;
-	case 0x3:
+	case 3:
 		if(data & 0x80) {
 			port[0].rmask = (data & 0x10) ? 0xff : 0;
 			port[0].mode = (data >> 5) & 3;

@@ -101,7 +101,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_b(display, SIG_DISPLAY_PIO, 0x04, 0);	// PB2
 	pic->set_context_cpu(cpu);
 	
-	display->set_context_fdc(fdc);
 	display->set_context_mem(mem);
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
@@ -260,6 +259,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

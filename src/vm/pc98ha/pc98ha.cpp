@@ -33,7 +33,6 @@
 #ifdef _PC98HA
 #include "calendar.h"
 #endif
-#include "display.h"
 #include "floppy.h"
 #include "keyboard.h"
 #include "memory.h"
@@ -72,7 +71,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _PC98HA
 	calendar = new CALENDAR(this, emu);
 #endif
-	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
@@ -111,8 +109,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _PC98HA
 	calendar->set_context_rtc(rtc);
 #endif
-	display->set_context_fdc(fdc);
-	display->set_vram_ptr(memory->get_vram());
 	floppy->set_context_fdc(fdc);
 	keyboard->set_context_sio(sio_k);
 	note->set_context_pic(pic);
@@ -279,7 +275,13 @@ uint32 VM::get_prv_pc()
 
 void VM::draw_screen()
 {
-	display->draw_screen();
+	memory->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

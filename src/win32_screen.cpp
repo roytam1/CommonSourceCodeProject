@@ -306,6 +306,28 @@ void EMU::update_screen(HDC hdc)
 		}
 #endif
 #endif
+#ifdef USE_ACCESS_LAMP
+		int status = vm->access_lamp() & 7;
+		BOOL render_access_lamp = FALSE;
+		if(dest_x <= 0 && dest_y <= 0) {
+			render_access_lamp = (status != 0);
+		}
+		else {
+			// out of screen
+			static int prev_status = 0;
+			render_access_lamp = (prev_status != status);
+			prev_status = status;
+		}
+		if(render_access_lamp) {
+			// XXX: is it better to create a new brush and use PatBlt() ???
+			COLORREF crColor = RGB((status & 1) ? 255 : 0, (status & 2) ? 255 : 0, (status & 4) ? 255 : 0);
+			for(int y = display_height - 6; y < display_height; y++) {
+				for(int x = display_width - 6; x < display_width; x++) {
+					SetPixelV(hdc, x, y, crColor);
+				}
+			}
+		}
+#endif
 		first_invalidate = self_invalidate = FALSE;
 	}
 }

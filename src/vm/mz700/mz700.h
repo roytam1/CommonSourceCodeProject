@@ -74,6 +74,9 @@
 #if defined(_MZ800)
 #define USE_SCANLINE
 #endif
+#if defined(_MZ800) || defined(_MZ1500)
+#define USE_ACCESS_LAMP
+#endif
 
 #include "../../common.h"
 
@@ -171,6 +174,9 @@ public:
 	
 	// draw screen
 	void draw_screen();
+#if defined(_MZ800) || defined(_MZ1500)
+	int access_lamp();
+#endif
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

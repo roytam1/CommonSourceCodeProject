@@ -18,6 +18,9 @@ void CMT::initialize()
 	
 	// printer
 	strobe = busy = false;
+	
+	// reset/halt key
+	key_stat = emu->key_buffer();
 }
 
 void CMT::write_io8(uint32 addr, uint32 data)
@@ -47,7 +50,8 @@ void CMT::write_io8(uint32 addr, uint32 data)
 
 uint32 CMT::read_io8(uint32 addr)
 {
-	return (in ? 1 : 0) | (busy ? 2 : 0);
+	// back-space (0x08): reset/halt key
+	return (in ? 1 : 0) | (busy ? 2 : 0) | (key_stat[0x08] ? 0x80 : 0);
 }
 
 void CMT::write_signal(int id, uint32 data, uint32 mask)

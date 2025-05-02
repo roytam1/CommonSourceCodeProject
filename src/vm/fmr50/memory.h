@@ -22,7 +22,7 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_crtc, *d_fdc, *d_bios;
+	DEVICE *d_cpu, *d_crtc;
 	
 	uint8* rbank[8192];	// 16MB / 2KB
 	uint8* wbank[8192];
@@ -119,12 +119,6 @@ public:
 	}
 	void set_machine_id(uint8 id) {
 		machine_id = id; is_i286 = ((id & 7) == 0);
-	}
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
-	void set_context_bios(DEVICE* device) {
-		d_bios = device;
 	}
 	void set_context_crtc(DEVICE* device) {
 		d_crtc = device;

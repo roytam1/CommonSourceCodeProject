@@ -1,3 +1,14 @@
+8/6/2011
+
+[EMU/WIN32] render access lamp in emu class
+
+[VM/MC6820] support MC6820 (partial)
+
+[M5/CMT] support reset/halt key
+[X1TURBO] fix i/o map for i8255 at 01a**h
+[X1TURBO/IO] clear i/o tables to fix debug build issue
+
+
 6/1/2011
 
 [VM/BEEP] remove the routine to get frequency from the pulse count

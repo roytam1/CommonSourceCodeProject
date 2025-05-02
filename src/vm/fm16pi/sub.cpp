@@ -181,18 +181,5 @@ void SUB::draw_screen()
 			dest += 8;
 		}
 	}
-	
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 200 - 8; y < 200; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++) {
-				dest[x] = col;
-			}
-		}
-	}
 }
 

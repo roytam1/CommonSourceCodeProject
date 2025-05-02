@@ -54,6 +54,7 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -80,7 +81,6 @@ class BIOS;
 #ifdef _PC98HA
 class CALENDAR;
 #endif
-class DISPLAY;
 class FLOPPY;
 class KEYBOARD;
 class MEMORY;
@@ -115,7 +115,6 @@ protected:
 #ifdef _PC98HA
 	CALENDAR* calendar;
 #endif
-	DISPLAY* display;
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
@@ -139,6 +138,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

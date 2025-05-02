@@ -95,7 +95,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	sio->set_context_intr(pic, SIG_I8259_IR1 | SIG_I8259_CHIP0);
 	
-	display->set_context_fdc(fdc);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_sync_ptr(gdc->get_sync());
 	display->set_ra_ptr(gdc->get_ra());
@@ -248,6 +247,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

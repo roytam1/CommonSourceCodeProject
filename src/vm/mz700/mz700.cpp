@@ -218,12 +218,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc);
 #endif
 	
-#if defined(_MZ800) || defined(_MZ1500)
-	// access lamp
-	memory->set_context_fdc(fdc);
-	memory->set_context_qd(qd);
-#endif
-	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
@@ -415,6 +409,14 @@ void VM::draw_screen()
 {
 	memory->draw_screen();
 }
+
+#if defined(_MZ800) || defined(_MZ1500)
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0) | qd->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // soud manager

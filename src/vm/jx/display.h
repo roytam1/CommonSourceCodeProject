@@ -24,7 +24,6 @@ class MEMORY;
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_fdc;
 	MEMORY *d_mem;
 	
 	uint8 vram[0x20000];
@@ -73,9 +72,6 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
 	void set_context_mem(MEMORY* device) {
 		d_mem = device;
 	}

@@ -45,6 +45,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
+#define USE_ACCESS_LAMP
 
 #define KEYBOARD_HACK
 #define TIMER_HACK
@@ -124,6 +125,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

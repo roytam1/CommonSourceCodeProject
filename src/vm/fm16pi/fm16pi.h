@@ -41,6 +41,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_POWER_OFF
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -108,6 +109,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

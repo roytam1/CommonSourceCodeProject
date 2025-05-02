@@ -306,20 +306,6 @@ void MEMORY::draw_screen()
 			dest[x] = (txt[x] || cg[x]) ? cd : cb;
 		}
 	}
-	
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0) | d_bios->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 255) :
-		               (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 400 - 8; y < 400; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++) {
-				dest[x] = col;
-			}
-		}
-	}
 }
 
 void MEMORY::draw_text40()

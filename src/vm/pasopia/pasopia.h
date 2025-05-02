@@ -41,8 +41,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #endif
-#define PCM1BIT_HIGH_QUALITY
-//#define LOW_PASS_FILTER
 
 // irq priority
 #define IRQ_Z80PIO		0

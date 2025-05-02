@@ -894,20 +894,6 @@ void MEMORY::draw_screen()
 #endif
 		}
 	}
-#if defined(_MZ1500)
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0) | d_qd->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = SCREEN_HEIGHT - 8; y < SCREEN_HEIGHT; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
-				dest[x] = col;
-			}
-		}
-	}
-#endif
 }
 #else
 void MEMORY::draw_line_320x200_2bpp(int v)
@@ -1054,19 +1040,6 @@ void MEMORY::draw_screen()
 		}
 		else {
 			memset(dest1, 0, 640 * sizeof(scrntype));
-		}
-	}
-	
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0) | d_qd->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = SCREEN_HEIGHT - 8; y < SCREEN_HEIGHT; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
-				dest[x] = col;
-			}
 		}
 	}
 }

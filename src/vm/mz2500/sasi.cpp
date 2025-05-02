@@ -48,6 +48,7 @@ void SASI::initialize()
 	state = 0;
 	error = 0;
 	state_ptr = 0;
+	access[0] = access[1] = false;
 }
 
 void SASI::write_io8(uint32 addr, uint32 data)
@@ -172,6 +173,14 @@ uint32 SASI::read_io8(uint32 addr)
 	return 0xff;
 }
 
+uint32 SASI::read_signal(int ch)
+{
+	// get access status
+	uint32 stat = (access[0] ? 0x10 : 0) | (access[1] ? 0x20 : 0);
+	access[0] = access[1] = false;
+	return stat;
+}
+
 int SASI::seek(int drv)
 {
 	memset(buffer, 0, sizeof(buffer));
@@ -196,6 +205,7 @@ int SASI::seek(int drv)
 	}
 	fio->Fclose();
 	delete fio;
+	access[drv & 1] = true;
 	return 1;
 }
 
@@ -221,6 +231,7 @@ int SASI::flush(int drv)
 	}
 	fio->Fclose();
 	delete fio;
+	access[drv & 1] = true;
 	return 1;
 }
 
@@ -250,6 +261,7 @@ int SASI::format(int drv)
 	}
 	fio->Fclose();
 	delete fio;
+	access[drv & 1] = true;
 	return 1;
 }
 

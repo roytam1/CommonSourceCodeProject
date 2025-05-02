@@ -147,8 +147,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	opn->set_context_port_b(joystick, SIG_JOYSTICK_SELECT, 0xc0, 0);
 	
 	cmt->set_context_sio(sio_cmt);
-	display->set_context_fdc_2hd(fdc_2hd);
-	display->set_context_fdc_2dd(fdc_2dd);
 	display->set_context_pic(pic);
 	display->set_context_gdc_chr(gdc_chr, gdc_chr->get_ra());
 	display->set_context_gdc_gfx(gdc_gfx, gdc_gfx->get_ra(), gdc_gfx->get_cs());
@@ -417,6 +415,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

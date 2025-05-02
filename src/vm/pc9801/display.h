@@ -21,7 +21,6 @@ class UPD7220;
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_fdc_2hd, *d_fdc_2dd;
 	DEVICE *d_pic;
 	UPD7220 *d_gdc_chr, *d_gdc_gfx;
 	uint8 *ra_chr;
@@ -73,12 +72,6 @@ public:
 	uint32 read_memory_mapped_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_fdc_2hd(DEVICE *device) {
-		d_fdc_2hd = device;
-	}
-	void set_context_fdc_2dd(DEVICE *device) {
-		d_fdc_2dd = device;
-	}
 	void set_context_pic(DEVICE *device) {
 		d_pic = device;
 	}

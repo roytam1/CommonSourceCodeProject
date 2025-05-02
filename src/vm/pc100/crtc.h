@@ -22,7 +22,7 @@
 class CRTC : public DEVICE
 {
 private:
-	DEVICE *d_pic, *d_fdc;
+	DEVICE *d_pic;
 	
 	scrntype palette_pc[16];
 	uint16 palette[16];
@@ -54,9 +54,6 @@ public:
 	// unique functions
 	void set_context_pic(DEVICE* device) {
 		d_pic = device;
-	}
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
 	}
 	void draw_screen();
 };

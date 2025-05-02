@@ -97,7 +97,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio->set_context_send0(keyboard, SIG_KEYBOARD_RECV);
 	
 	display->set_context_gdc(gdc);
-	display->set_context_fdc(fdc);
 	display->set_sync_ptr(gdc->get_sync());
 	display->set_zoom_ptr(gdc->get_zoom());
 	display->set_ra_ptr(gdc->get_ra());
@@ -238,6 +237,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

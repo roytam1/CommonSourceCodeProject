@@ -41,7 +41,7 @@ private:
 	
 	_TCHAR file_path[2][_MAX_PATH];
 	bool file_exist[2];
-	bool access;
+	bool access[2];
 	
 public:
 	SASI(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -51,6 +51,7 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	uint32 read_signal(int ch);
 };
 
 #endif

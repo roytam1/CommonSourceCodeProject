@@ -78,7 +78,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 	case 0x5a:
 	case 0x5c:
 	case 0x5e:
-		palette[(addr >> 1) & 0xf] = (palette[(addr >> 1) & 0xf] & 0xff00) | data;
+		palette[(addr >> 1) & 0x0f] = (palette[(addr >> 1) & 0x0f] & 0xff00) | data;
 		update_palette((addr >> 1) & 0x0f);
 		break;
 	case 0x41:
@@ -97,7 +97,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 	case 0x5b:
 	case 0x5d:
 	case 0x5f:
-		palette[(addr >> 1) & 0xf] = (palette[(addr >> 1) & 0xf] & 0xff) | (data << 8);
+		palette[(addr >> 1) & 0x0f] = (palette[(addr >> 1) & 0x0f] & 0xff) | (data << 8);
 		update_palette((addr >> 1) & 0x0f);
 		break;
 	case 0x60:
@@ -140,7 +140,7 @@ uint32 CRTC::read_io8(uint32 addr)
 	case 0x5a:
 	case 0x5c:
 	case 0x5e:
-		return palette[(addr >> 1) & 0xf] & 0xff;
+		return palette[(addr >> 1) & 0x0f] & 0xff;
 	case 0x41:
 	case 0x43:
 	case 0x45:
@@ -157,7 +157,7 @@ uint32 CRTC::read_io8(uint32 addr)
 	case 0x5b:
 	case 0x5d:
 	case 0x5f:
-		return palette[(addr >> 1) & 0xf] >> 8;
+		return palette[(addr >> 1) & 0x0f] >> 8;
 	case 0x60:
 		return cmd & 0xff;
 	case 0x61:
@@ -240,7 +240,7 @@ void CRTC::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_CRTC_VRAM_PLANE) {
 		// $1C: 8255 PC
-		write_plane = data & 0xf;
+		write_plane = data & 0x0f;
 		read_plane = (data >> 4) & 3;
 	}
 }
@@ -301,29 +301,6 @@ void CRTC::draw_screen()
 				dest[x + 5] = palette_pc[((p0 & 0x20) >> 5) | ((p1 & 0x20) >> 4) | ((p2 & 0x20) >> 3) | ((p3 & 0x20) >> 2)];
 				dest[x + 6] = palette_pc[((p0 & 0x40) >> 6) | ((p1 & 0x40) >> 5) | ((p2 & 0x40) >> 4) | ((p3 & 0x40) >> 3)];
 				dest[x + 7] = palette_pc[((p0 & 0x80) >> 7) | ((p1 & 0x80) >> 6) | ((p2 & 0x80) >> 5) | ((p3 & 0x80) >> 4)];
-			}
-		}
-	}
-	
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		if(config.monitor_type) {
-			for(int y = 0; y < 8; y++) {
-				scrntype *dest = emu->screen_buffer(y);
-				for(int x = 720 - 8; x < 720; x++) {
-					dest[x] = col;
-				}
-			}
-		}
-		else {
-			for(int y = 512 - 8; y < 512; y++) {
-				scrntype *dest = emu->screen_buffer(y);
-				for(int x = 720 - 8; x < 720; x++) {
-					dest[x] = col;
-				}
 			}
 		}
 	}

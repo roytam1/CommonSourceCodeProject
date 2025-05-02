@@ -131,7 +131,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_io(io);
 #endif
 	
-	display->set_context_fdc(fdc);
 #ifdef _X1TURBO
 	display->set_context_cpu(cpu);
 #endif
@@ -209,13 +208,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0xffc, 0xfff, floppy);
 #endif
 	io->set_iomap_range_rw(0x1000, 0x17ff, display);
-	for(int i = 0x1800; i <= 0x18f0; i += 0x10) {
+	for(int i = 0x1800; i <= 0x18ff; i += 0x10) {
 		io->set_iomap_range_rw(i, i + 1, crtc);
 	}
 	io->set_iomap_range_rw(0x1900, 0x19ff, sub);
-	for(int i = 0x1a00; i <= 0x1af0; i += 0x10) {
-		io->set_iomap_range_r(i, i + 2, pio);
-		io->set_iomap_range_w(i, i + 3, pio);
+	for(int i = 0x1a00; i <= 0x1aff; i += 4) {
+		io->set_iomap_range_rw(i, i + 3, pio);
 	}
 	for(int i = 0x1b00; i <= 0x1bff; i++) {
 		io->set_iomap_alias_rw(i, psg, 1);
@@ -434,6 +432,12 @@ void VM::draw_screen()
 		pce->draw_screen();
 	}
 #endif
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

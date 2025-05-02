@@ -80,6 +80,7 @@
 #define USE_SCANLINE
 #define USE_MONITOR_TYPE	2
 #define USE_SOUND_DEVICE_TYPE	3
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -174,6 +175,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

@@ -25,7 +25,7 @@
 class SUB : public DEVICE
 {
 private:
-	DEVICE *d_main, *d_fdc;
+	DEVICE *d_main;
 	
 	// memory
 	uint8* rbank[32];	// 64KB / 2KB
@@ -92,9 +92,6 @@ public:
 	// unique functions
 	void set_context_main(DEVICE* device) {
 		d_main = device;
-	}
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
 	}
 	void set_ipl(uint8* ptr) {
 		ipl = ptr;

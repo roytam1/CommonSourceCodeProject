@@ -18,7 +18,7 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_fdc, *d_pic;
+	DEVICE *d_pic;
 	uint8 *vram, *tvram;
 	
 	bool vsync_enb;
@@ -34,9 +34,6 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique functions
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
 	void set_context_pic(DEVICE* device) {
 		d_pic = device;
 	}

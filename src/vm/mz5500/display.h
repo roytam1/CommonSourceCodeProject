@@ -22,8 +22,6 @@ class UPD7220;
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_fdc;
-	
 	uint8 screen[400][640];
 	uint16 tmp[640];
 	scrntype palette_pc_base[8];
@@ -58,9 +56,6 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
 	void set_vram_ptr(uint8* ptr) {
 		vram_b = ptr + 0x00000;
 		vram_r = ptr + 0x10000;

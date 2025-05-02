@@ -86,7 +86,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(pic, SIG_I8259_IR6, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
 	
-	display->set_context_fdc(fdc);
 	display->set_context_pic(pic);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_tvram_ptr(memory->get_tvram());
@@ -325,6 +324,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

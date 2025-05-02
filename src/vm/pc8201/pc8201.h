@@ -28,7 +28,6 @@
 #define SCREEN_WIDTH		240
 #define SCREEN_HEIGHT		64
 #define USE_PCM1BIT
-#define PCM1BIT_HIGH_QUALITY
 #define HAS_I8085
 
 // device informations for win32

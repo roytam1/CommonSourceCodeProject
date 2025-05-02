@@ -122,19 +122,6 @@ void DISPLAY::draw_screen()
 			memcpy(dest1, dest0, 320 * sizeof(scrntype));
 		}
 	}
-	
-	// access lamp
-	uint32 stat_f = dev->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		              (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 128 - 8; y < 128; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 320 - 8; x < 320; x++) {
-				dest[x] = col;
-			}
-		}
-	}
 #else
 	if((regs[8] & 0x30) != 0x30) {
 		// sync check
@@ -206,19 +193,6 @@ void DISPLAY::draw_screen()
 		}
 		else {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
-		}
-	}
-	
-	// access lamp
-	uint32 stat_f = dev->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 400 - 8; y < 400; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++) {
-				dest[x] = col;
-			}
 		}
 	}
 #endif

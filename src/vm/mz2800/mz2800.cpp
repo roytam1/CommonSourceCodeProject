@@ -108,7 +108,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	crtc->set_context_pic(pic);
 	crtc->set_context_pio(pio0);
-	crtc->set_context_fdc(fdc);
 	crtc->set_vram_ptr(memory->get_vram());
 	crtc->set_tvram_ptr(memory->get_tvram());
 	crtc->set_kanji_ptr(memory->get_kanji());
@@ -274,6 +273,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	crtc->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

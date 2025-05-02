@@ -23,7 +23,6 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_fdc;
 #ifdef _X1TURBO
 	DEVICE *d_cpu;
 #endif
@@ -116,9 +115,6 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
 #ifdef _X1TURBO
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;

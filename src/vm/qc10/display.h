@@ -23,7 +23,6 @@ class DISPLAY : public DEVICE
 {
 private:
 	UPD7220 *d_gdc;
-	DEVICE *d_fdc;
 	
 #ifdef _COLOR_MONITOR
 	uint8 vram_r[VRAM_SIZE];
@@ -57,9 +56,6 @@ public:
 	// unique functions
 	void set_context_gdc(UPD7220* device) {
 		d_gdc = device;
-	}
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
 	}
 	uint8* get_vram() {
 #ifdef _COLOR_MONITOR

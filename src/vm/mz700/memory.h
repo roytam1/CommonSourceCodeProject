@@ -28,9 +28,6 @@ private:
 #if defined(_MZ800)
 	DEVICE *d_pio_int;
 #endif
-#if defined(_MZ800) || defined(_MZ1500)
-	DEVICE *d_fdc, *d_qd;
-#endif
 	
 	// memory
 	uint8* rbank[32];
@@ -144,14 +141,6 @@ public:
 #if defined(_MZ800)
 	void set_context_pio_int(DEVICE* device) {
 		d_pio_int = device;
-	}
-#endif
-#if defined(_MZ800) || defined(_MZ1500)
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
-	void set_context_qd(DEVICE* device) {
-		d_qd = device;
 	}
 #endif
 	void draw_screen();

@@ -82,7 +82,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_drq(and, SIG_AND_BIT_1, 1);
 	
 	crtc->set_context_pic(pic);
-	crtc->set_context_fdc(fdc);
 	ioctrl->set_context_pic(pic);
 	ioctrl->set_context_fdc(fdc);
 	ioctrl->set_context_beep(beep);
@@ -231,6 +230,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	crtc->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------

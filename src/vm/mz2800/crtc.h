@@ -22,7 +22,7 @@
 class CRTC : public DEVICE
 {
 private:
-	DEVICE *d_pic, *d_pio, *d_fdc;
+	DEVICE *d_pic, *d_pio;
 	
 	// vram
 	uint8 *vram_b, *vram_r, *vram_g, *vram_i;
@@ -101,9 +101,6 @@ public:
 	}
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
-	}
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
 		vram_b = ptr + 0x00000;

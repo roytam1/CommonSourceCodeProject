@@ -20,8 +20,6 @@
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE* d_fdc;
-	
 	uint8* regs;
 	uint8 pal[8];
 	bool text_wide, text_color;
@@ -58,9 +56,6 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
 	void set_vram_ptr(uint8* ptr) {
 		vram_b = ptr + 0x0000;
 		vram_r = ptr + 0x4000;

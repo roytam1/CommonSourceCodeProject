@@ -343,19 +343,6 @@ void SUB::draw_screen()
 			dest[x] = palette_pc[(src_chr[x] ? src_chr[x] : src_gfx[x] ? src_gfx[x] : back)];
 		}
 	}
-	
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 400 - 8; y < 400; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++) {
-				dest[x] = col;
-			}
-		}
-	}
 }
 
 void SUB::draw_chr()

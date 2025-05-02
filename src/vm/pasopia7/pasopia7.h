@@ -45,7 +45,6 @@
 //#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 #define IO_ADDR_MAX		0x100
-#define PCM1BIT_HIGH_QUALITY
 
 // device informations for win32
 #define USE_DATAREC
@@ -57,6 +56,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -133,6 +133,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

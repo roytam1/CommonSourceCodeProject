@@ -829,20 +829,6 @@ void MEMORY::draw_screen()
 			dest[x] = txt[x] ? palette_txt[txt[x]] : palette_cg[cg[x]];
 		}
 	}
-	
-	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0) | d_bios->read_signal(0);
-	if(stat_f) {
-		scrntype col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 255) :
-		               (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
-		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = SCREEN_HEIGHT - 8; y < SCREEN_HEIGHT; y++) {
-			scrntype *dest = emu->screen_buffer(y);
-			for(int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
-				dest[x] = col;
-			}
-		}
-	}
 }
 
 #ifdef _FMR60

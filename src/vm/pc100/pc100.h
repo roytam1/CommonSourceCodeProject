@@ -26,7 +26,6 @@
 #define MAX_DRIVE		4
 #define HAS_I86
 #define I8259_MAX_CHIPS		1
-//#define PCM1BIT_HIGH_QUALITY
 #define UPD765A_DRQ_DELAY
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
@@ -43,6 +42,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCREEN_ROTATE
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -113,6 +113,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);

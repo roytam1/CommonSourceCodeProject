@@ -101,7 +101,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_a(pcm, SIG_PCM1BIT_ON, 0x80, 0);
 	pio->set_context_port_a(key, SIG_KEYBOARD_Z80PIO_A, 0xff, 0);
 	
-	display->set_context(fdc);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_pal_ptr(memory->get_pal());
 	display->set_regs_ptr(crtc->get_regs());
@@ -254,6 +253,12 @@ uint32 VM::get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
 // ----------------------------------------------------------------------------
