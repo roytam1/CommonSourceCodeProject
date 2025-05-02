@@ -1,0 +1,23 @@
+ALGO
+	by Mr.Marukun (MZ700WIN)
+
+FP1100
+M5
+MULTI8
+MZ2500 (SUPER_MZ)
+MZ3500
+PASOPIA5
+PASOPIA7
+PASOPIAIQ (HX10D)
+PCG850 (PC-E200)
+PV2000
+PYUTA
+RX78
+SCV
+X07
+	by Mr.Tenmaru
+	http://homepage2.nifty.com/tenpurako/
+
+PV1000
+QC10
+	by TAKEDA,toshiya

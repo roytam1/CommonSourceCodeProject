@@ -1,0 +1,182 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// “ú–{Œê resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+#ifdef _WIN32
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
+BEGIN
+    VK_RETURN,      ID_SCREEN_ACCEL,        VIRTKEY, ALT, NOINVERT
+END
+
+#endif    // “ú–{Œê resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// ‰pŒê (±ÒØ¶) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU DISCARDABLE 
+BEGIN
+    POPUP "Control"
+    BEGIN
+        MENUITEM "Reset",                       ID_RESET
+        MENUITEM SEPARATOR
+        MENUITEM "CPU x1"                       ID_CPU_POWER0
+        MENUITEM "CPU x2"                       ID_CPU_POWER1
+        MENUITEM "CPU x4"                       ID_CPU_POWER2
+        MENUITEM "CPU x8"                       ID_CPU_POWER3
+        MENUITEM "CPU x16"                      ID_CPU_POWER4
+        MENUITEM SEPARATOR
+        MENUITEM "Exit",                        ID_EXIT
+    END
+    POPUP "FDD1"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD1
+        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD11
+        MENUITEM "Recent 2",                    ID_RECENT_FD12
+        MENUITEM "Recent 3",                    ID_RECENT_FD13
+        MENUITEM "Recent 4",                    ID_RECENT_FD14
+        MENUITEM "Recent 5",                    ID_RECENT_FD15
+        MENUITEM "Recent 6",                    ID_RECENT_FD16
+        MENUITEM "Recent 7",                    ID_RECENT_FD17
+        MENUITEM "Recent 8",                    ID_RECENT_FD18
+    END
+    POPUP "FDD2"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD2
+        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD21
+        MENUITEM "Recent 2",                    ID_RECENT_FD22
+        MENUITEM "Recent 3",                    ID_RECENT_FD23
+        MENUITEM "Recent 4",                    ID_RECENT_FD24
+        MENUITEM "Recent 5",                    ID_RECENT_FD25
+        MENUITEM "Recent 6",                    ID_RECENT_FD26
+        MENUITEM "Recent 7",                    ID_RECENT_FD27
+        MENUITEM "Recent 8",                    ID_RECENT_FD28
+    END
+    POPUP "Tape"
+    BEGIN
+        MENUITEM "Play",                        ID_PLAY_DATAREC
+        MENUITEM "Rec",                         ID_REC_DATAREC
+        MENUITEM "Close",                       ID_CLOSE_DATAREC
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_DATAREC1
+        MENUITEM "Recent 2",                    ID_RECENT_DATAREC2
+        MENUITEM "Recent 3",                    ID_RECENT_DATAREC3
+        MENUITEM "Recent 4",                    ID_RECENT_DATAREC4
+        MENUITEM "Recent 5",                    ID_RECENT_DATAREC5
+        MENUITEM "Recent 6",                    ID_RECENT_DATAREC6
+        MENUITEM "Recent 7",                    ID_RECENT_DATAREC7
+        MENUITEM "Recent 8",                    ID_RECENT_DATAREC8
+    END
+    POPUP "Screen"
+    BEGIN
+        MENUITEM "Window",                      ID_SCREEN_WINDOW1
+        MENUITEM "Fullscreen",                  ID_SCREEN_640X480
+        MENUITEM SEPARATOR
+        MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
+    END
+    POPUP "Sound"
+    BEGIN
+        MENUITEM "Rec"                          ID_SOUND_REC
+        MENUITEM "Stop"                         ID_SOUND_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "11025Hz",                     ID_SOUND_FREQ0
+        MENUITEM "22050Hz",                     ID_SOUND_FREQ1
+        MENUITEM "44100Hz",                     ID_SOUND_FREQ2
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ3
+        MENUITEM SEPARATOR
+        MENUITEM "100msec",                     ID_SOUND_LATE0
+        MENUITEM "200msec",                     ID_SOUND_LATE1
+        MENUITEM "300msec",                     ID_SOUND_LATE2
+        MENUITEM "400msec",                     ID_SOUND_LATE3
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON    DISCARDABLE     "MULTI8.ico"
+#endif    // ‰pŒê (±ÒØ¶) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

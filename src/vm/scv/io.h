@@ -1,0 +1,43 @@
+/*
+	EPOCH Super Cassette Vision Emulator 'eSCV'
+	Skelton for retropc emulator
+
+	Author : Takeda.Toshiya
+	Date   : 2006.08.21 -
+
+	[ i/o ]
+*/
+
+#ifndef _IO_H_
+#define _IO_H_
+
+#include "../vm.h"
+#include "../../emu.h"
+#include "../device.h"
+
+class IO : public DEVICE
+{
+private:
+	DEVICE* memory;
+	DEVICE* sound;
+	
+	uint8* key;
+	uint8* joy;
+	uint8 pa, pb, pc, si, so;
+	
+public:
+	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~IO() {}
+	
+	// common functions
+	void initialize();
+	void reset();
+	void write_io8(uint32 addr, uint32 data);
+	uint32 read_io8(uint32 addr);
+	
+	// unique functions
+	void set_context_mem(DEVICE* device) { memory = device; }
+	void set_context_sound(DEVICE* device) { sound = device; }
+};
+
+#endif
