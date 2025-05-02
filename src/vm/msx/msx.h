@@ -29,7 +29,7 @@
 #define TMS9918A_VRAM_SIZE	0x4000
 //#define TMS9918A_LIMIT_SPRITES
 #define TMS9918A_SUPER_IMPOSE
-#define HAS_AY_3_8912
+#define HAS_AY_3_8910
 
 // device informations for win32
 #define USE_CART1

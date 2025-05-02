@@ -16,7 +16,7 @@
 #define CONFIG_NAME		"pc8801ma"
 #elif defined(_PC8001SR)
 #define DEVICE_NAME		"NEC PC-8001mkIISR"
-#define CONFIG_NAME		"pc8801mk2sr"
+#define CONFIG_NAME		"pc8001mk2sr"
 #endif
 
 #if defined(_PC8001SR)

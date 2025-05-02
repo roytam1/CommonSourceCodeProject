@@ -271,6 +271,7 @@ void TMS9918A::draw_mode1()
 {
 	uint8 fg = regs[7] >> 4;
 	uint8 bg = regs[7] & 0x0f;
+	memset(screen, bg, sizeof(screen));
 	for(int y = 0, name = 0; y < 24; y++) {
 		for(int x = 0; x < 40; x++) {
 			uint16 code = vram[name_table + (name++)];
@@ -319,6 +320,7 @@ void TMS9918A::draw_mode12()
 {
 	uint8 fg = regs[7] >> 4;
 	uint8 bg = regs[7] & 0x0f;
+	memset(screen, bg, sizeof(screen));
 	for(int y = 0, name = 0; y < 24; y++) {
 		for(int x = 0; x < 40; x++) {
 			uint16 code = vram[name_table + (name++)] + (y & 0xf8) * 32;

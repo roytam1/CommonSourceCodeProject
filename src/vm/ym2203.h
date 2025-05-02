@@ -4,22 +4,42 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.15-
 
-	[ AY-3-8912 / YM2203 / YM2608 ]
+	[ AY-3-8910 / YM2203 / YM2608 ]
 */
 
 #ifndef _YM2203_H_
 #define _YM2203_H_
 
+
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"
 #include "fmgen/opna.h"
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+
+#if !(defined(HAS_AY_3_8910) || defined(HAS_AY_3_8912) || defined(HAS_AY_3_8913))
+#define HAS_YM_SERIES
+#if defined(_WIN32)
+#define SUPPORT_MAME_FM_DLL
 #include "fmdll/fmdll.h"
 #endif
+#endif
 
+#if defined(HAS_AY_3_8913)
+// both port a and port b are not supported
+#elif defined(HAS_AY_3_8912)
+// port b is not supported
+#define SUPPORT_YM2203_PORT_A
+#else
+#define SUPPORT_YM2203_PORT_A
+#define SUPPORT_YM2203_PORT_B
+#endif
+
+#ifdef SUPPORT_YM2203_PORT_A
 #define SIG_YM2203_PORT_A	0
+#endif
+#ifdef SUPPORT_YM2203_PORT_B
 #define SIG_YM2203_PORT_B	1
+#endif
 #define SIG_YM2203_MUTE		2
 
 class YM2203 : public DEVICE
@@ -30,7 +50,7 @@ private:
 #else
 	FM::OPN* chip;
 #endif
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 	CFMDLL* fmdll;
 	LPVOID* dllchip;
 #endif
@@ -60,7 +80,7 @@ private:
 	bool busy;
 	
 	void update_count();
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 	// output signals
 	outputs_t outputs_irq;
 	void update_interrupt();
@@ -72,7 +92,7 @@ public:
 			init_output_signals(&port[i].outputs);
 			port[i].wreg = port[i].rreg = 0;//0xff;
 		}
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 		init_output_signals(&outputs_irq);
 #endif
 	}
@@ -90,17 +110,21 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 #endif
+#ifdef SUPPORT_YM2203_PORT_A
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
+#endif
+#ifdef SUPPORT_YM2203_PORT_B
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
+#endif
 	void init(int rate, int clock, int samples, int volf, int volp);
 	void SetReg(uint addr, uint data); // for patch
 };

@@ -30,7 +30,7 @@
 #define MC6847_ATTR_INV		0x01
 #define MC6847_ATTR_AS		0x02
 #define MC6847_ATTR_CSS		0x04
-#define HAS_AY_3_8912
+#define HAS_AY_3_8910
 
 // device informations for win32
 #define USE_TAPE

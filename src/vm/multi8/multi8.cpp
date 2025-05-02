@@ -48,7 +48,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pic = new I8259(this, emu);
 	io = new IO(this, emu);
 	fdc = new UPD765A(this, emu);
-	opn = new YM2203(this, emu);
+	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
 	
 	cmt = new CMT(this, emu);
@@ -60,7 +60,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(opn);
+	event->set_context_sound(psg);
 	
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_A, 0x20);
 	sio->set_context_out(cmt, SIG_CMT_OUT);
@@ -74,8 +74,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pic->set_context_cpu(cpu);
 	fdc->set_context_irq(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
-	opn->set_context_port_a(cmt, SIG_CMT_REMOTE, 2, 0);
-	opn->set_context_port_a(pio, SIG_I8255_PORT_A, 2, 1);
+	psg->set_context_port_a(cmt, SIG_CMT_REMOTE, 2, 0);
+	psg->set_context_port_a(pio, SIG_I8255_PORT_A, 2, 1);
 	
 	cmt->set_context_sio(sio);
 	display->set_vram_ptr(memory->get_vram());
@@ -91,7 +91,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// i/o bus
 	io->set_iomap_range_rw(0x00, 0x01, key);
-	io->set_iomap_range_rw(0x18, 0x19, opn);
+	io->set_iomap_range_rw(0x18, 0x19, psg);
 	io->set_iomap_range_rw(0x1c, 0x1d, crtc);
 	io->set_iomap_range_rw(0x20, 0x21, sio);
 	io->set_iomap_range_rw(0x24, 0x27, pit);
@@ -181,7 +181,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	opn->init(rate, 3579545, samples, 0, 0);
+	psg->init(rate, 3579545, samples, 0, 0);
 }
 
 uint16* VM::create_sound(int* extra_frames)

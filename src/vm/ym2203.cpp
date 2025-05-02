@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.15-
 
-	[ AY-3-8912 / YM2203 / YM2608 ]
+	[ AY-3-8910 / YM2203 / YM2608 ]
 */
 
 #include "ym2203.h"
@@ -16,7 +16,7 @@ void YM2203::initialize()
 #else
 	chip = new FM::OPN;
 #endif
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 	fmdll = new CFMDLL(_T("mamefm.dll"));
 	dllchip = NULL;
 #endif
@@ -28,7 +28,7 @@ void YM2203::initialize()
 void YM2203::release()
 {
 	delete chip;
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->Release(dllchip);
 	}
@@ -39,7 +39,7 @@ void YM2203::release()
 void YM2203::reset()
 {
 	chip->Reset();
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->Reset(dllchip);
 	}
@@ -60,39 +60,47 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & amask) {
 	case 0:
-#ifdef HAS_AY_3_8912
-		ch = data & 0x0f;
-#else
+#ifdef HAS_YM_SERIES
 		ch = data;
 		// write dummy data for prescaler
 		if(0x2d <= ch && ch <= 0x2f) {
 			update_count();
 			this->SetReg(ch, 0);
-#ifndef HAS_AY_3_8912
 			update_interrupt();
 			clock_busy = current_clock();
 			busy = true;
-#endif
 		}
+#else
+		ch = data & 0x0f;
 #endif
 		break;
 	case 1:
 		if(ch == 7) {
 			mode = data;
 		}
-		else if(ch == 14 || ch == 15) {
-			int p = ch - 14;
-			if(port[p].wreg != data || port[p].first) {
-				write_signals(&port[p].outputs, data);
-				port[p].wreg = data;
-				port[p].first = false;
+#ifdef SUPPORT_YM2203_PORT_A
+		else if(ch == 14) {
+			if(port[0].wreg != data || port[0].first) {
+				write_signals(&port[0].outputs, data);
+				port[0].wreg = data;
+				port[0].first = false;
 			}
 		}
+#endif
+#ifdef SUPPORT_YM2203_PORT_B
+		else if(ch == 15) {
+			if(port[1].wreg != data || port[1].first) {
+				write_signals(&port[1].outputs, data);
+				port[1].wreg = data;
+				port[1].first = false;
+			}
+		}
+#endif
 		// don't write again for prescaler
 		if(!(0x2d <= ch && ch <= 0x2f)) {
 			update_count();
 			this->SetReg(ch, data);
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 			update_interrupt();
 			clock_busy = current_clock();
 			busy = true;
@@ -115,33 +123,35 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 
 uint32 YM2203::read_io8(uint32 addr)
 {
-#ifndef HAS_AY_3_8912
-	uint32 status;
-#endif
-	
 	switch(addr & amask) {
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 	case 0:
-		/* BUSY : x : x : x : x : x : FLAGB : FLAGA */
-		update_count();
-		update_interrupt();
-		status = chip->ReadStatus() & ~0x80;
-		if(busy) {
-			// FIXME: we need to investigate the correct busy period
-			if(passed_usec(clock_busy) < 8) {
-				status |= 0x80;
+		{
+			/* BUSY : x : x : x : x : x : FLAGB : FLAGA */
+			update_count();
+			update_interrupt();
+			uint32 status = chip->ReadStatus() & ~0x80;
+			if(busy) {
+				// FIXME: we need to investigate the correct busy period
+				if(passed_usec(clock_busy) < 8) {
+					status |= 0x80;
+				}
+				busy = false;
 			}
-			busy = false;
+			return status;
 		}
-		return status;
 #endif
 	case 1:
+#ifdef SUPPORT_YM2203_PORT_A
 		if(ch == 14) {
 			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
 		}
+#endif
+#ifdef SUPPORT_YM2203_PORT_B
 		else if(ch == 15) {
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
 		}
+#endif
 		return chip->GetReg(ch);
 #ifdef HAS_YM2608
 	case 2:
@@ -172,21 +182,25 @@ uint32 YM2203::read_io8(uint32 addr)
 
 void YM2203::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_YM2203_PORT_A) {
+	if(id == SIG_YM2203_MUTE) {
+		mute = ((data & mask) != 0);
+	}
+#ifdef SUPPORT_YM2203_PORT_A
+	else if(id == SIG_YM2203_PORT_A) {
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
 	}
+#endif
+#ifdef SUPPORT_YM2203_PORT_B
 	else if(id == SIG_YM2203_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
 	}
-	else if(id == SIG_YM2203_MUTE) {
-		mute = ((data & mask) != 0);
-	}
+#endif
 }
 
 void YM2203::event_vline(int v, int clock)
 {
 	update_count();
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 	update_interrupt();
 #endif
 }
@@ -202,7 +216,7 @@ void YM2203::update_count()
 	clock_prev = current_clock();
 }
 
-#ifndef HAS_AY_3_8912
+#ifdef HAS_YM_SERIES
 void YM2203::update_interrupt()
 {
 	bool irq = chip->ReadIRQ();
@@ -220,7 +234,7 @@ void YM2203::mix(int32* buffer, int cnt)
 {
 	if(cnt > 0 && !mute) {
 		chip->Mix(buffer, cnt);
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 		if(dllchip) {
 			fmdll->Mix(dllchip, buffer, cnt);
 		}
@@ -238,7 +252,7 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 	chip->SetVolumeFM(volf);
 	chip->SetVolumePSG(volp);
 	
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 #ifdef HAS_YM2608
 	fmdll->Create((LPVOID*)&dllchip, clock, rate);
 #else
@@ -257,7 +271,7 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 void YM2203::SetReg(uint addr, uint data)
 {
 	chip->SetReg(addr, data);
-#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->SetReg(dllchip, addr, data);
 	}

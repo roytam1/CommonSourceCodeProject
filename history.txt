@@ -1,3 +1,12 @@
+4/1/2014
+
+[VM/TMS9918A] fix mode1 and mode1+2 to fill out of screen with back color
+[VM/YM2203] fix i/o port codes for AY-3-8910/8912/8913
+[VM/YM2203] fix assert issue in fmgen module (thanks Mr.Mamiya)
+
+[PC8001MK2SR] fix ini file name
+
+
 3/26/2014
 
 [EMU/WIN32] improve video recorder timing to sync to sound recorder

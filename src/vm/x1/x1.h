@@ -49,7 +49,7 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define IO_ADDR_MAX		0x10000
-#define HAS_AY_3_8912
+#define HAS_AY_3_8910
 #define Z80_IO_WAIT
 #ifdef _X1TURBO_FEATURE
 #define SINGLE_MODE_DMA

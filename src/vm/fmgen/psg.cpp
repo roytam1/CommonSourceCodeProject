@@ -89,7 +89,7 @@ void PSG::MakeNoiseTable()
 void PSG::SetVolume(int volume)
 {
 	double base = 0x4000 / 3.0 * pow(10.0, volume / 40.0);
-#ifdef HAS_AY_3_8912
+#if defined(HAS_AY_3_8910) || defined(HAS_AY_3_8912)
 	// AY-3-8190/8192 (PSG): 16step
 	for (int i=31; i>=3; i-=2)
 	{

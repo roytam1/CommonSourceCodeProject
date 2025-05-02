@@ -80,7 +80,7 @@ protected:
 	I8259* pic;
 	IO* io;
 	UPD765A* fdc;
-	YM2203* opn;
+	YM2203* psg;
 	Z80* cpu;
 	
 	CMT* cmt;

@@ -38,7 +38,7 @@
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
 #define MAX_DRIVE			4
-#define HAS_AY_3_8912
+#define HAS_AY_3_8910
 #define MC6847_ATTR_OFS		0
 #define MC6847_VRAM_OFS		0x200
 #define MC6847_ATTR_AG		0x80
