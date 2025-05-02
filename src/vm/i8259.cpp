@@ -16,7 +16,8 @@ void I8259::initialize()
 	for(int c = 0; c < I8259_MAX_CHIPS; c++) {
 		pic[c].imr = 0xff;
 		pic[c].irr = pic[c].isr = pic[c].prio = 0;
-		pic[c].icw1 = pic[c].icw2 = pic[c].icw3 = pic[c].icw4 = pic[c].ocw3 = 0;
+		pic[c].icw1 = pic[c].icw2 = pic[c].icw3 = pic[c].icw4 = 0;
+		pic[c].ocw3 = 2;
 		pic[c].icw2_r = pic[c].icw3_r = pic[c].icw4_r = 0;
 	}
 }
@@ -63,36 +64,56 @@ void I8259::write_io8(uint32 addr, uint32 data)
 			}
 			pic[c].ocw3 = 0;
 		}
-		else if(data & 8) {
+		else if((data & 0x98) == 0x08) {
 			// ocw3
-			if(!(data & 2)) {
-				data = (data & ~1) | (pic[c].ocw3 & 1);
-			}
-			if(!(data & 0x40)) {
-				data = (data & ~0x20) | (pic[c].ocw3 & 0x20);
-			}
 			pic[c].ocw3 = data;
 		}
-		else {
+		else if((data & 0x18) == 0x00) {
 			// ocw2
-			int level = 0;
-			if(data & 0x40) {
-				level = data & 7;
-			}
-			else {
-				if(!pic[c].isr) {
-					return;
+			int n = data & 7;
+			uint8 mask = 1 << n;
+			
+			switch(data & 0xe0) {
+			case 0x00:
+				pic[c].prio = 0;
+				break;
+			case 0x20:
+				for(n = 0, mask = (1 << pic[c].prio); n < 8; n++, mask = (mask << 1) | (mask >> 7)) {
+					if(pic[c].isr & mask) {
+						pic[c].isr &= ~mask;
+						break;
+					}
 				}
-				level = pic[c].prio;
-				while(!(pic[c].isr & (1 << level))) {
-					level = (level + 1) & 7;
+				break;
+			case 0x40:
+				break;
+			case 0x60:
+				if(pic[c].isr & mask) {
+					pic[c].isr &= ~mask;
 				}
-			}
-			if(data & 0x80) {
-				pic[c].prio = (level + 1) & 7;
-			}
-			if(data & 0x20) {
-				pic[c].isr &= ~(1 << level);
+				break;
+			case 0x80:
+				pic[c].prio = (pic[c].prio + 1) & 7;
+				break;
+			case 0xa0:
+				for(n = 0, mask = (1 << pic[c].prio); n < 8; n++, mask = (mask << 1) | (mask >> 7)) {
+					if(pic[c].isr & mask) {
+						pic[c].isr &= ~mask;
+						pic[c].prio = (pic[c].prio + 1) & 7;
+						break;
+					}
+				}
+				break;
+			case 0xc0:
+				pic[c].prio = n & 7;
+				break;
+			case 0xe0:
+				if(pic[c].isr & mask) {
+					pic[c].isr &= ~mask;
+					pic[c].irr &= ~mask;
+					pic[c].prio = (pic[c].prio + 1) & 7;
+				}
+				break;
 			}
 		}
 	}
@@ -107,15 +128,24 @@ uint32 I8259::read_io8(uint32 addr)
 		return pic[c].imr;
 	}
 	else {
-		// polling mode is not supported...
-		//if(pic[c].ocw3 & 4)
-		//	return ???;
-		if(pic[c].ocw3 & 1) {
-			return pic[c].isr;
+		if(pic[c].ocw3 & 4) {
+			// poling command
+			if(pic[c].isr & ~pic[c].imr) {
+				intr_ack();
+			}
+			for(int i = 0; i < 8; i++) {
+				if((1 << i) & pic[c].irr & ~pic[c].imr) {
+					return 0x80 | i;
+				}
+			}
 		}
-		else {
+		else if((pic[c].ocw3 & 3) == 2) {
 			return pic[c].irr;
 		}
+		else if((pic[c].ocw3 & 3) == 3) {
+			return pic[c].isr & ~pic[c].imr;
+		}
+		return 0;
 	}
 }
 

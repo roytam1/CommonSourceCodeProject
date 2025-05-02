@@ -22,6 +22,7 @@ void Z80CTC::reset()
 		counter[ch].prescaler = 256;
 		counter[ch].freeze = counter[ch].start = counter[ch].latch = false;
 		counter[ch].clock_id = counter[ch].sysclock_id = -1;
+		counter[ch].first_constant = true;
 		// interrupt
 		counter[ch].req_intr = false;
 		counter[ch].in_service = false;
@@ -37,10 +38,11 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 		// time constant
 		counter[ch].constant = data ? data : 256;
 		counter[ch].latch = false;
-		if(counter[ch].freeze || counter[ch].count == 256) {
+		if(counter[ch].freeze || counter[ch].first_constant) {
 			counter[ch].count = counter[ch].constant;
 			counter[ch].clocks = 0;
 			counter[ch].freeze = false;
+			counter[ch].first_constant = false;
 			update_event(ch, 0);
 		}
 	}
@@ -53,12 +55,6 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 			counter[ch].start = (counter[ch].freq || !(data & 8));
 			counter[ch].control = data;
 			counter[ch].slope = ((data & 0x10) != 0);
-			if(data & 2) {
-				// a new time constant should be written to this channel
-				// and it will be copied to counter soon
-				counter[ch].count = 256;
-				counter[ch].clocks = 0;
-			}
 			if(!(data & 0x80) && counter[ch].req_intr) {
 				counter[ch].req_intr = false;
 				update_intr();

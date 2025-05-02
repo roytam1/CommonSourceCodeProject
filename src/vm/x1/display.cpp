@@ -448,6 +448,8 @@ void DISPLAY::event_vline(int v, int clock)
 		}
 #ifdef _X1TURBO
 	}
+	// restart cpu after pcg/cgrom is accessed
+	d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
 #endif
 }
 
@@ -458,9 +460,6 @@ void DISPLAY::set_vblank(int v)
 	if(!vblank && val) {
 		// enter vblank
 		vblank_clock = vm->current_clock();
-#ifdef _X1TURBO
-		d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
-#endif
 	}
 	if(vblank != val) {
 		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0 : 0x80, 0x80);
@@ -513,10 +512,8 @@ uint8 DISPLAY::get_cur_font(uint32 addr)
 {
 #ifdef _X1TURBO
 	if(mode1 & 0x20) {
-		// wait next vblank
-		if(!vblank) {
-			d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
-		}
+		// wait next raster
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		
 		// from X1EMU
 		uint16 vaddr;
@@ -561,6 +558,9 @@ void DISPLAY::get_cur_pcg(uint32 addr)
 {
 #ifdef _X1TURBO
 	if(mode1 & 0x20) {
+		// wait next raster
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+		
 		// from X1EMU
 		uint16 vaddr;
 		if(vram_a[0x7ff] & 0x20) {

@@ -261,7 +261,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 #ifdef UPD765A_DRQ_DELAY
 					CANCEL_DRQ();
 #endif
-					status &= ~S_NDM;
+//					status &= ~S_NDM;
 					set_drq(false);
 					process_cmd(command & 0x1f);
 				}
@@ -294,7 +294,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 #ifdef UPD765A_DRQ_DELAY
 					CANCEL_DRQ();
 #endif
-					status &= ~S_NDM;
+//					status &= ~S_NDM;
 					set_drq(false);
 					cmd_scan();
 				}
@@ -351,7 +351,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 #ifdef UPD765A_DRQ_DELAY
 					CANCEL_DRQ();
 #endif
-					status &= ~S_NDM;
+//					status &= ~S_NDM;
 					set_drq(false);
 					process_cmd(command & 0x1f);
 				}
@@ -622,7 +622,11 @@ void UPD765A::cmd_sence_intstat()
 		shift_to_result(2);
 	}
 	else {
+#ifdef UPD765A_SENCE_INTSTAT_RESULT
+		buffer[0] = (uint8)ST0_AI;
+#else
 		buffer[0] = (uint8)ST0_IC;
+#endif
 		shift_to_result(1);
 //		buffer[1] = 0;
 //		shift_to_result(2);

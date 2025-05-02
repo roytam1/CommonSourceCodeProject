@@ -387,8 +387,8 @@ void SUB::key_down(int code, bool repeat)
 			key_repeat = 0;
 		}
 		else {
-			// 300msec(1st) / 50mse
-			key_repeat = repeat ? 3 : 18;
+			// 350msec(1st) / 160mse
+			key_repeat = repeat ? 10 : 22;
 		}
 		
 		// break key is pressed

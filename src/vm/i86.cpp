@@ -665,6 +665,17 @@ void I86::run(int clock)
 	
 	while(icount > 0) {
 		seg_prefix = false;
+#ifdef _JX
+		// ugly patch for PC/JX hardware diagnostics :-(
+#ifdef TIMER_HACK
+		if(pc == 0xff040) pc = 0xff04a;
+		if(pc == 0xff17d) pc = 0xff18f;
+#endif
+#ifdef KEYBOARD_HACK
+		if(pc == 0xfa909) { regs.b[BH] = read_port_byte(0xa1); pc = 0xfa97c; }
+		if(pc == 0xff6e1) { regs.b[AL] = 0x0d; pc += 2; }
+#endif
+#endif
 #ifdef HAS_I286
 		try {
 			instruction(FETCHOP);

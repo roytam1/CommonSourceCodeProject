@@ -297,6 +297,15 @@
 #define MENU_POS_SOUND                  6
 #endif
 
+// IBM Japan Ltd PC/JX
+#ifdef _JX
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
 // SORD m5
 #ifdef _M5
 #define MENU_POS_CONTROL                0

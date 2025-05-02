@@ -159,22 +159,22 @@ void MEMORY::unset_memory_w(uint32 start, uint32 end)
 
 // load/save image
 
-bool MEMORY::read_bios(_TCHAR *file_name, uint8 *buffer, int size)
+int MEMORY::read_bios(_TCHAR *file_name, uint8 *buffer, int size)
 {
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
 	_stprintf(file_path, _T("%s%s"), app_path, file_name);
 	
 	FILEIO* fio = new FILEIO();
-	bool result = false;
+	int length = 0;
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(buffer, size, 1);
+		length = fio->Ftell();
 		fio->Fclose();
-		result = true;
 	}
 	delete fio;
-	return result;
+	return length;
 }
 
 bool MEMORY::write_bios(_TCHAR *file_name, uint8 *buffer, int size)

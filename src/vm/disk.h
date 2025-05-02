@@ -53,7 +53,7 @@ private:
 	
 	bool check_media_type();
 	
-	// teledisk decoder
+	// teledisk image decoder (td0)
 	bool teledisk_to_d88();
 	int next_word();
 	int get_bit();
@@ -66,10 +66,13 @@ private:
 	void init_decode();
 	int decode(uint8 *buf, int len);
 	
-	// imagedisk decoder
+	// imagedisk image decoder (imd)
 	bool imagedisk_to_d88();
 	
-	// standard image decorder (fdi/2d/sf7)
+	// cpdread image decoder (dsk)
+	bool cpdread_to_d88(int extended);
+	
+	// standard image decoder (fdi/tfd/2d/sf7)
 	bool standard_to_d88(int type, int ncyl, int nside, int nsec, int size);
 	
 	uint8 text_buf[STRING_BUFFER_SIZE + LOOKAHEAD_BUFFER_SIZE - 1];

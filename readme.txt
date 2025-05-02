@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								4/12/2011
+								5/14/2011
 
 --- What's this ?
 
@@ -30,6 +30,7 @@ This archive includes the all source codes of emulators listed below:
 	eHANDY98	NEC PC-98HA
 	eHC-40		EPSON HC-40/PX-4
 	eHC-80		EPSON HC-80/PX-8/Geneva
+	eJX		IBM Japan Ltd PC/JX
 	eMAP-1010	SEIKO MAP-1010
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A
 	eN5200		NEC N5200
@@ -67,6 +68,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	XM6
 - vm/fmgen/*
 	M88/fmgen
+- vm/disk.*
+	MESS formats/dsk_dsk.c for CPDRead floppy disk image decorder
 - vm/hd63484.*
 	MAME HD63484 core
 - vm/huc6260.*
@@ -138,11 +141,15 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Enri and Mr.333 for Epoch Super Cassette Vision hardware info
 - vm/x07/io.*
 	x07_emul by Mr.Jacques Brigaud
-- vm/x1twin/pce.*
+- vm/x1/*
+	Many advices by Mr Y.S.
+- vm/x1/pce.*
 	Ootake (Joypad and Timer)
 	xpce (PSG and VDC)
-- vm/x1twin/sub.*
+- vm/x1/sub.*
 	X millenium T-tune
+- vm/x1/display.*
+	KANJI ROM support by X1EMU
 - win32_sound.cpp
 	XM7 for DirectSound implement
 	M88 for wavOut API implement

@@ -1,3 +1,20 @@
+5/14/2011
+
+[VM/DISK] support dsk floppy disk image based on MESS formats/dsk_dsk.c
+[VM/I8259] support poll command
+[VM/I8259] update eoi command
+[VM/MEMORY] return file size of loaded bios image
+[VM/UPD765A] fix sence interrupt status result
+[VM/UPD765A] fix not to clear exm bit in multi sector read/write
+[VM/Z80CTC] fix not to reset time constant when channel is freezed
+[VM/Z80DMA] fix transfer length when 0 is specified
+
+[JX] support IBM Japan Ltd PC/JX
+[PC9801] set media type for floppy drives
+[X1TURBO/DISPLAY] wait next raster when pcg/cgrom is accessed
+[X1TURBO/SUB] readjust the key repeat timing
+
+
 5/4/2011
 
 [EMU/WIN32] remove patch code for PV-2000 in input manager
@@ -322,7 +339,7 @@ Fix typo (regist -> register, recieve -> receive)
 [VM/NOR] fix output signal when it is changed
 [VM/NOT] fix output signal when it is changed
 [VM/DEVICE] refine signal connections
-[VM/DISK] support SF7 floppy disk image (used for SEGA SC-3000)
+[VM/DISK] support SEGA SF-7000 floppy disk image
 [VM/EVENT] sync 2 or more cpus precisely
 [VM/I8253] fix read both low and high counter
 [VM/PCM1BIT] update to check on/off signal width in one sample

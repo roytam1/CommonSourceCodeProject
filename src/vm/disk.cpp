@@ -71,6 +71,8 @@ static const int secsize[7] = {
 	128, 256, 512, 1024, 2048, 4096, 8192
 };
 
+static uint8 tmp_buffer[DISK_BUFFER_SIZE];
+
 DISK::DISK()
 {
 	insert = protect = change = false;
@@ -167,14 +169,24 @@ void DISK::open(_TCHAR path[])
 			insert = change = true;
 			
 			// check file header
-			if((buffer[0] == 'T' && buffer[1] == 'D') || (buffer[0] == 't' && buffer[1] == 'd')) {
+			if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
 				// teledisk image file
 				insert = teledisk_to_d88();
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
-			else if(buffer[0] == 'I' && buffer[1] == 'M' && buffer[2] == 'D') {
+			else if(memcmp(buffer, "IMD", 3) == 0) {
 				// imagedisk image file
 				insert = imagedisk_to_d88();
+				_stprintf(file_path, _T("%s.D88"), path);
+			}
+			else if(memcmp(buffer, "MV - CPC", 8) == 0) {
+				// standard cpdread image file
+				insert = cpdread_to_d88(0);
+				_stprintf(file_path, _T("%s.D88"), path);
+			}
+			else if(memcmp(buffer, "EXTENDED", 8) == 0) {
+				// extended cpdread image file
+				insert = cpdread_to_d88(1);
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 		}
@@ -502,7 +514,7 @@ bool DISK::teledisk_to_d88()
 	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "TELEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = (hdr.type >= 1 && hdr.type <= 4) ? media_types[hdr.type - 1] : MEDIA_TYPE_2D;
+	d88_hdr.type = (hdr.type >= 1 && hdr.type <= 4) ? media_types[hdr.type - 1] : MEDIA_TYPE_UNK;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
@@ -818,7 +830,7 @@ int DISK::decode(uint8 *buf, int len)
 	return count;
 }
 
-// imd image decoder
+// imagedisk image decoder
 
 bool DISK::imagedisk_to_d88()
 {
@@ -842,7 +854,7 @@ bool DISK::imagedisk_to_d88()
 	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "IMAGEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = MEDIA_TYPE_2HD; // TODO
+	d88_hdr.type = MEDIA_TYPE_UNK; // TODO
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
@@ -916,6 +928,86 @@ bool DISK::imagedisk_to_d88()
 			COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
 			COPYBUFFER(dst, d88_sct.size);
 			trkptr += sizeof(d88_sct_t) + d88_sct.size;
+		}
+	}
+	d88_hdr.size = trkptr;
+	_memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
+	return true;
+}
+
+// cpdread image decoder (from MESS formats/dsk_dsk.c)
+
+bool DISK::cpdread_to_d88(int extended)
+{
+	struct d88_hdr_t d88_hdr;
+	struct d88_sct_t d88_sct;
+	int t = 0;
+	
+	// get cylinder number and side number
+	_memcpy(tmp_buffer, buffer, file_size);
+	int ncyl = tmp_buffer[0x30];
+	int nside = (tmp_buffer[0x31] == 1) ? 2 : 1;
+	
+	// create d88 image
+	file_size = 0;
+	
+	// create d88 header
+	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
+	strcpy(d88_hdr.title, "CPDRead");
+	d88_hdr.protect = 0; // non-protected
+	d88_hdr.type = MEDIA_TYPE_UNK; // TODO
+	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
+	
+	// create tracks
+	int trkofs = 0x100, trkofs_ptr = 0x34;
+	int trkptr = sizeof(d88_hdr_t);
+	
+	for(int c = 0; c < ncyl; c++) {
+		for(int h = 0; h < nside; h++) {
+			d88_hdr.trkptr[t++] = trkptr;
+			if(nside == 1) {
+				// double side
+				d88_hdr.trkptr[t++] = trkptr;
+			}
+			
+			// read sectors in this track
+			uint8 *track_info = tmp_buffer + trkofs;
+			int nsec = track_info[0x15];
+			int size = 1 << (track_info[0x14] + 7); // standard
+			int sctofs = trkofs + 0x100;
+			
+			for(int s = 0; s < nsec; s++) {
+				// get sector size
+				uint8 *sector_info = tmp_buffer + trkofs + 0x18 + s * 8;
+				if(extended) {
+					size = sector_info[6] + sector_info[7] * 256;
+				}
+				
+				// create d88 sector header
+				_memset(&d88_sct, 0, sizeof(d88_sct_t));
+				d88_sct.c = sector_info[0];
+				d88_sct.h = sector_info[1];
+				d88_sct.r = sector_info[2];
+				d88_sct.n = sector_info[3];
+				d88_sct.nsec = nsec;
+				d88_sct.dens = 0;
+				d88_sct.del = 0;
+				d88_sct.stat = 0;
+				d88_sct.size = size;
+				
+				// copy to d88
+				COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
+				COPYBUFFER(tmp_buffer + sctofs, size);
+				trkptr += sizeof(d88_sct_t) + size;
+				sctofs += size;
+			}
+			
+			if(extended) {
+				trkofs += tmp_buffer[trkofs_ptr++] * 256;
+			}
+			else {
+				trkofs += tmp_buffer[0x32] + tmp_buffer[0x33] * 256;
+			}
 		}
 	}
 	d88_hdr.size = trkptr;

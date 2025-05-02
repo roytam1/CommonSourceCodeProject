@@ -1492,7 +1492,7 @@ void open_disk(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.d88;*.td0;*.imd;*.fdi;*.tfd;*.2d;*.sf7)\0*.d88;*.td0;*.imd;*.fdi;*.tfd;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.d88;*.td0;*.imd;*.dsk;*.fdi;*.tfd;*.2d;*.sf7)\0*.d88;*.td0;*.imd;*.dsk;*.fdi;*.tfd;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_path
 	);

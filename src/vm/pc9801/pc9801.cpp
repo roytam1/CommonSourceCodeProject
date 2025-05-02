@@ -15,6 +15,7 @@
 #include "../event.h"
 
 #include "../beep.h"
+#include "../disk.h"
 #include "../i8237.h"
 #include "../i8251.h"
 #include "../i8253.h"
@@ -170,7 +171,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	_memset(fd_bios_2dd, 0xff, sizeof(fd_bios_2dd));
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
-	bool sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
+	int sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
 	memory->read_bios(_T("2HDIF.ROM"), fd_bios_2hd, sizeof(fd_bios_2hd));
 	memory->read_bios(_T("2DDIF.ROM"), fd_bios_2dd, sizeof(fd_bios_2dd));
 	
@@ -180,14 +181,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_memory_mapped_io_rw(0xa0000, 0xa3fff, display);
 	// A8000h - BFFFFh: VRAM
 	memory->set_memory_mapped_io_rw(0xa8000, 0xbffff, display);
-	if(sound_bios_ok) {
-		memory->set_memory_r(0xcc000, 0xcdfff, sound_bios);
-	}
+	memory->set_memory_r(0xcc000, 0xcdfff, sound_bios);
 	memory->set_memory_r(0xd6000, 0xd6fff, fd_bios_2dd);
 	memory->set_memory_r(0xd7000, 0xd7fff, fd_bios_2hd);
 	memory->set_memory_r(0xe8000, 0xfffff, ipl);
 	
-	display->sound_bios_ok = sound_bios_ok;	// memory switch
+	display->sound_bios_ok = (sound_bios_ok != 0);	// memory switch
 	
 	// i/o bus
 	io->set_iomap_alias_rw(0x00, pic, 0);
@@ -305,6 +304,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
 		}
+	}
+	for(int i = 0; i < 4; i++) {
+		fdc_2hd->set_drive_type(i, DRIVE_TYPE_2HD);
+		fdc_2dd->set_drive_type(i, DRIVE_TYPE_2DD);
 	}
 }
 

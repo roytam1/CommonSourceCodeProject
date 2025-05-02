@@ -29,7 +29,6 @@ private:
 	Z80DMA *d_dma;
 	
 	int drive;
-	void update_dma_blocklen();
 #endif
 	
 public:

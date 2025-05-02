@@ -27,7 +27,6 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	
 #ifdef _X1TURBO
 	drive = data & 3;
-	update_dma_blocklen();
 #endif
 }
 
@@ -41,25 +40,12 @@ uint32 FLOPPY::read_io8(uint32 addr)
 		return 0xff;
 	case 0xffe:	// 2HD
 		d_fdc->set_drive_type(drive, DRIVE_TYPE_2HD);
-		update_dma_blocklen();
 		return 0xff;
 	case 0xfff:	// 2D/2DD
 		d_fdc->set_drive_type(drive, DRIVE_TYPE_2DD);
-		update_dma_blocklen();
 		return 0xff;
 	}
 	return 0xff;
-}
-
-void FLOPPY::update_dma_blocklen()
-{
-	// hack for booting 2hd disk
-	if(d_fdc->get_drive_type(drive) == DRIVE_TYPE_2HD) {
-		d_dma->set_null_blocklen(255);
-	}
-	else {
-		d_dma->set_null_blocklen(216);
-	}
 }
 #endif
 

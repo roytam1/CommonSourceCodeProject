@@ -36,6 +36,7 @@ private:
 		bool start;
 		bool latch;
 		bool prev_in;
+		bool first_constant;
 		// constant clock
 		uint32 freq;
 		int clock_id;

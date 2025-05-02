@@ -19,8 +19,9 @@
 
 // common signal id
 #define SIG_CPU_IRQ	101
-#define SIG_CPU_NMI	102
-#define SIG_CPU_BUSREQ	103
+#define SIG_CPU_FIRQ	102
+#define SIG_CPU_NMI	103
+#define SIG_CPU_BUSREQ	104
 #define SIG_CPU_DEBUG	201
 
 class DEVICE

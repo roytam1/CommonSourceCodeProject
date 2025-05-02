@@ -60,6 +60,11 @@
 #include "hc80/hc80.h"
 #endif
 
+// IBM Japan Ltd PC/JX
+#ifdef _JX
+#include "jx/jx.h"
+#endif
+
 // SORD m5
 #ifdef _M5
 #include "m5/m5.h"

@@ -70,6 +70,8 @@
 #define PORTA_ADDRESS		((PORTA_ADDRESS_H << 8) | PORTA_ADDRESS_L)
 #define PORTB_ADDRESS		((PORTB_ADDRESS_H << 8) | PORTB_ADDRESS_L)
 #define BLOCKLEN		((BLOCKLEN_H << 8) | BLOCKLEN_L)
+// hack for X1turbo Kage no Densetsu
+#define NULL_BLOCKLEN		((PORTA_IS_SOURCE) ? 255 : 216)
 
 #define PORTA_INC		(WR1 & 0x10)
 #define PORTB_INC		(WR2 & 0x10)
@@ -252,7 +254,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				force_ready = false;
 				addr_a = PORTA_ADDRESS;
 				addr_b = PORTB_ADDRESS;
-				count = BLOCKLEN ? BLOCKLEN : null_blocklen; // hack
+				count = BLOCKLEN ? BLOCKLEN : NULL_BLOCKLEN;
 				status |= 0x30;
 				break;
 			case CMD_DISABLE_DMA:
@@ -266,7 +268,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				wr_tmp[wr_num++] = GET_REGNUM(READ_MASK);
 				break;
 			case CMD_CONTINUE:
-				count = BLOCKLEN ? BLOCKLEN : null_blocklen; // hack
+				count = BLOCKLEN ? BLOCKLEN : NULL_BLOCKLEN;
 				enabled = true;
 				status |= 0x30;
 				do_dma();
@@ -381,13 +383,13 @@ restart:
 			if(PORTA_MEMORY) {
 				data = d_mem->read_dma_data8(addr_a);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_a, data);
+				emu->out_debug(_T("Z80DMA: A->B RAM[%4x]=%2x -> "), addr_a, data);
 #endif
 			}
 			else {
 				data = d_io->read_dma_io8(addr_a);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_a, data);
+				emu->out_debug(_T("Z80DMA: A->B INP(%4x)=%2x -> "), addr_a, data);
 #endif
 			}
 			addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
@@ -396,13 +398,13 @@ restart:
 			if(PORTB_MEMORY) {
 				data = d_mem->read_dma_data8(addr_b);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_b, data);
+				emu->out_debug(_T("Z80DMA: B->A RAM[%4x]=%2x -> "), addr_b, data);
 #endif
 			}
 			else {
 				data = d_io->read_dma_io8(addr_b);
 #ifdef DMA_DEBUG
-				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_b, data);
+				emu->out_debug(_T("Z80DMA: B->A INP(%4x)=%2x -> "), addr_b, data);
 #endif
 			}
 			addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
@@ -463,7 +465,7 @@ restart:
 #ifdef DMA_DEBUG
 			emu->out_debug(_T("Z80DMA: AUTO RESTART !!!\n"));
 #endif
-			count = BLOCKLEN ? BLOCKLEN : null_blocklen; // hack
+			count = BLOCKLEN ? BLOCKLEN : NULL_BLOCKLEN;
 			goto restart;
 		}
 		
