@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"EPSON HC-80"
 #define CONFIG_NAME		"hc80"
-#define CONFIG_VERSION		0x04
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		64

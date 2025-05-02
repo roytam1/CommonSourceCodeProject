@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"NEC PC-100"
 #define CONFIG_NAME		"pc100"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		55.4

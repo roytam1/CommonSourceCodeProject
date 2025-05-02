@@ -91,10 +91,10 @@ BEGIN
     END
     POPUP "HuCARD"
     BEGIN
-        MENUITEM "Insert",                      ID_OPEN_CART
-        MENUITEM "Eject",                       ID_CLOSE_CART
+        MENUITEM "Insert",                      ID_OPEN_CART1
+        MENUITEM "Eject",                       ID_CLOSE_CART1
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_CART
+        MENUITEM "Recent",                      ID_RECENT_CART1
     END
     POPUP "Screen"
     BEGIN
@@ -142,6 +142,8 @@ BEGIN
         MENUITEM "Fullscreen 28",               ID_SCREEN_FULLSCREEN28
         MENUITEM "Fullscreen 29",               ID_SCREEN_FULLSCREEN29
         MENUITEM "Fullscreen 30",               ID_SCREEN_FULLSCREEN30
+        MENUITEM "Fullscreen 31",               ID_SCREEN_FULLSCREEN31
+        MENUITEM "Fullscreen 32",               ID_SCREEN_FULLSCREEN32
         MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC

@@ -32,8 +32,6 @@
 #include "memory.h"
 #include "pac2.h"
 
-#include "../../config.h"
-
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
@@ -300,7 +298,9 @@ bool VM::tape_inserted()
 
 void VM::load_binary(int drv, _TCHAR* file_path)
 {
-	pac2->open_rampac2(file_path);
+	if(drv == 0) {
+		pac2->open_rampac2(file_path);
+	}
 }
 
 bool VM::now_skip()

@@ -10,6 +10,7 @@
 */
 
 #include "mz1r12.h"
+#include "../../fileio.h"
 
 void MZ1R12::initialize()
 {

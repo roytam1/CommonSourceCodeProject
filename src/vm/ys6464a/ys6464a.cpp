@@ -158,12 +158,16 @@ int VM::sound_buffer_ptr()
 
 void VM::load_binary(int drv, _TCHAR* file_path)
 {
-	memory->read_image(file_path, ram, sizeof(ram));
+	if(drv == 0) {
+		memory->read_image(file_path, ram, sizeof(ram));
+	}
 }
 
 void VM::save_binary(int drv, _TCHAR* file_path)
 {
-	memory->write_image(file_path, ram, sizeof(ram));
+	if(drv == 0) {
+		memory->write_image(file_path, ram, sizeof(ram));
+	}
 }
 
 bool VM::now_skip()

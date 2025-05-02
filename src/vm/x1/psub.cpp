@@ -13,9 +13,6 @@
 #include "../datarec.h"
 #include "../i8255.h"
 #include "../../fifo.h"
-#ifdef _X1TURBO
-#include "../../config.h"
-#endif
 
 //#define DEBUG_COMMAND
 
@@ -260,7 +257,7 @@ void PSUB::event_callback(int event_id, int err)
 		
 #ifdef _X1TWIN
 		// clear key buffer
-		if(vm->cart_inserted()) {
+		if(vm->cart_inserted(0)) {
 			// clear key
 			key_buf->clear();
 		}

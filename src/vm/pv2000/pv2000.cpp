@@ -177,18 +177,31 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* file_path)
+void VM::open_cart(int drv, _TCHAR* file_path)
 {
-	memset(cart, 0xff, sizeof(cart));
-	inserted = memory->read_image(file_path, cart, sizeof(cart));
-	reset();
+	if(drv == 0) {
+		memset(cart, 0xff, sizeof(cart));
+		inserted = memory->read_image(file_path, cart, sizeof(cart));
+		reset();
+	}
 }
 
-void VM::close_cart()
+void VM::close_cart(int drv)
 {
-	memset(cart, 0xff, sizeof(cart));
-	inserted = false;
-	reset();
+	if(drv == 0) {
+		memset(cart, 0xff, sizeof(cart));
+		inserted = false;
+		reset();
+	}
+}
+
+bool VM::cart_inserted(int drv)
+{
+	if(drv == 0) {
+		return inserted;
+	} else {
+		return false;
+	}
 }
 
 void VM::play_tape(_TCHAR* file_path)

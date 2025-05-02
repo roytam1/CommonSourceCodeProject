@@ -19,7 +19,6 @@
 #define DEVICE_NAME		"SHARP MZ-2200"
 #define CONFIG_NAME		"mz2200"
 #endif
-#define CONFIG_VERSION		0x02
 
 #ifndef _MZ80B
 #define SUPPORT_QUICK_DISK
@@ -57,7 +56,7 @@
 #define USE_FD3
 #define USE_FD4
 #ifdef SUPPORT_QUICK_DISK
-#define USE_QUICKDISK
+#define USE_QD1
 #endif
 #define USE_TAPE
 #define USE_TAPE_BUTTON
@@ -175,9 +174,9 @@ public:
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 #ifdef SUPPORT_QUICK_DISK
-	void open_quickdisk(_TCHAR* file_path);
-	void close_quickdisk();
-	bool quickdisk_inserted();
+	void open_quickdisk(int drv, _TCHAR* file_path);
+	void close_quickdisk(int drv);
+	bool quickdisk_inserted(int drv);
 #endif
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);

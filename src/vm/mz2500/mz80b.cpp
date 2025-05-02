@@ -42,8 +42,6 @@
 #include "mz1m01.h"
 #endif
 
-#include "../../config.h"
-
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
@@ -317,19 +315,27 @@ bool VM::disk_inserted(int drv)
 }
 
 #ifdef SUPPORT_QUICK_DISK
-void VM::open_quickdisk(_TCHAR* file_path)
+void VM::open_quickdisk(int drv, _TCHAR* file_path)
 {
-	qd->open_disk(file_path);
+	if(drv == 0) {
+		qd->open_disk(file_path);
+	}
 }
 
-void VM::close_quickdisk()
+void VM::close_quickdisk(int drv)
 {
-	qd->close_disk();
+	if(drv == 0) {
+		qd->close_disk();
+	}
 }
 
-bool VM::quickdisk_inserted()
+bool VM::quickdisk_inserted(int drv)
 {
-	return qd->disk_inserted();
+	if(drv == 0) {
+		return qd->disk_inserted();
+	} else {
+		return false;
+	}
 }
 #endif
 

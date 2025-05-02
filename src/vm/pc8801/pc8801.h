@@ -19,7 +19,6 @@
 #define DEVICE_NAME		"NEC PC-8001mkIISR"
 #define CONFIG_NAME		"pc8801mk2sr"
 #endif
-#define CONFIG_VERSION		0x03
 
 #if defined(_PC8001SR)
 #define MODE_PC80_V1	0
@@ -54,7 +53,7 @@
 #endif
 #define Z80_MEMORY_WAIT
 #define PCM1BIT_HIGH_QUALITY
-#define SUPPORT_SOUND_FREQ_55467HZ
+#define OVERRIDE_SOUND_FREQ_48000HZ	55467
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32

@@ -10,7 +10,6 @@
 
 #include "crtc.h"
 #include "../i8259.h"
-#include "../../config.h"
 
 void CRTC::initialize()
 {

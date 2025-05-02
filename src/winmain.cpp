@@ -15,7 +15,6 @@
 #include <mmsystem.h>
 #include <stdio.h>
 #include "res/resource.h"
-#include "config.h"
 #include "emu.h"
 
 // emulation core
@@ -55,16 +54,16 @@ void hide_menu_bar(HWND hWnd)
 }
 
 // dialog
-#ifdef USE_CART
-void open_cart_dialog(HWND hWnd);
+#ifdef USE_CART1
+void open_cart_dialog(HWND hWnd, int drv);
 #endif
 #ifdef USE_FD1
 void open_disk_dialog(HWND hWnd, int drv);
 void open_disk(int drv, _TCHAR* path, int bank);
 void close_disk(int drv);
 #endif
-#ifdef USE_QUICKDISK
-void open_quickdisk_dialog(HWND hWnd);
+#ifdef USE_QD1
+void open_quickdisk_dialog(HWND hWnd, int drv);
 #endif
 #ifdef USE_TAPE
 void open_tape_dialog(HWND hWnd, bool play);
@@ -73,7 +72,7 @@ void open_tape_dialog(HWND hWnd, bool play);
 void open_binary_dialog(HWND hWnd, int drv, bool load);
 #endif
 
-#if defined(USE_CART) || defined(USE_FD1) || defined(USE_QUICKDISK) || defined(USE_BINARY_FILE1)
+#if defined(USE_CART1) || defined(USE_FD1) || defined(USE_QD1) || defined(USE_BINARY_FILE1)
 #define SUPPORT_DRAG_DROP
 #endif
 #ifdef SUPPORT_DRAG_DROP
@@ -135,9 +134,9 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 }
 
 #define UPDATE_HISTORY(path, recent) { \
-	int no = 7; \
-	for(int i = 0; i < 8; i++) { \
-		if(_tcscmp(recent[i], path) == 0) { \
+	int no = MAX_HISTORY - 1; \
+	for(int i = 0; i < MAX_HISTORY; i++) { \
+		if(_tcsicmp(recent[i], path) == 0) { \
 			no = i; \
 			break; \
 		} \
@@ -150,19 +149,20 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 
 // d88 bank switch
 
+#ifdef USE_FD1
 #define MAX_D88_BANKS 64
-
 typedef struct {
 	_TCHAR name[18];
 	int offset;
 } d88_bank_t;
 typedef struct {
-	_TCHAR path[MAX_PATH];
+	_TCHAR path[_MAX_PATH];
 	d88_bank_t bank[MAX_D88_BANKS];
 	int bank_num;
 	int cur_bank;
 } d88_file_t;
-d88_file_t d88_file[8];
+d88_file_t d88_file[MAX_FD];
+#endif
 
 // screen
 int desktop_width;
@@ -171,7 +171,8 @@ int desktop_bpp;
 int prev_window_mode = 0;
 bool now_fullscreen = false;
 
-#define MAX_FULLSCREEN 30
+#define MAX_WINDOW	8
+#define MAX_FULLSCREEN	32
 
 int window_mode_count;
 int screen_mode_count;
@@ -204,8 +205,10 @@ LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow)
 {
+#ifdef USE_FD1
 	// initialize d88 file info
 	memset(d88_file, 0, sizeof(d88_file));
+#endif
 	
 	// load config
 	load_config();
@@ -259,19 +262,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		if(EnumDisplaySettings(NULL, i, &dev) == 0) {
 			break;
 		}
-		if(dev.dmPelsWidth >= WINDOW_WIDTH && dev.dmPelsHeight >= WINDOW_HEIGHT && dev.dmPelsWidth >= 640 && dev.dmPelsHeight >= 480) {
-			bool found = false;
-			for(int j = 0; j < screen_mode_count; j++) {
-				if(screen_mode_width[j] == dev.dmPelsWidth && screen_mode_height[j] == dev.dmPelsHeight) {
-					found = true;
-					break;
+		if(dev.dmPelsWidth >= WINDOW_WIDTH && dev.dmPelsHeight >= WINDOW_HEIGHT) {
+			if((dev.dmPelsWidth >= 640 && dev.dmPelsHeight >= 480) || (dev.dmPelsWidth == 320 && dev.dmPelsHeight == 240)) {
+				bool found = false;
+				for(int j = 0; j < screen_mode_count; j++) {
+					if(screen_mode_width[j] == dev.dmPelsWidth && screen_mode_height[j] == dev.dmPelsHeight) {
+						found = true;
+						break;
+					}
 				}
-			}
-			if(!found) {
-				screen_mode_width[screen_mode_count] = dev.dmPelsWidth;
-				screen_mode_height[screen_mode_count] = dev.dmPelsHeight;
-				if(++screen_mode_count == MAX_FULLSCREEN) {
-					break;
+				if(!found) {
+					screen_mode_width[screen_mode_count] = dev.dmPelsWidth;
+					screen_mode_height[screen_mode_count] = dev.dmPelsHeight;
+					if(++screen_mode_count == MAX_FULLSCREEN) {
+						break;
+					}
 				}
 			}
 		}
@@ -295,11 +300,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	}
 	
 	// restore screen mode
-	if(config.window_mode >= 0 && config.window_mode < 8) {
+	if(config.window_mode >= 0 && config.window_mode < MAX_WINDOW) {
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW1 + config.window_mode, 0L);
 	}
-	else if(config.window_mode >= 8 && config.window_mode < screen_mode_count + 8) {
-		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_FULLSCREEN1 + config.window_mode - 8, 0L);
+	else if(config.window_mode >= MAX_WINDOW && config.window_mode < screen_mode_count + MAX_WINDOW) {
+		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_FULLSCREEN1 + config.window_mode - MAX_WINDOW, 0L);
 	}
 	else {
 		config.window_mode = 0;
@@ -786,35 +791,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_EXIT:
 			SendMessage(hWnd, WM_CLOSE, 0, 0L);
 			break;
-#ifdef USE_CART
-		case ID_OPEN_CART:
-			if(emu) {
-				open_cart_dialog(hWnd);
-			}
+#ifdef USE_CART1
+		#define CART_MENU_ITEMS(drv, ID_OPEN_CART, ID_CLOSE_CART, ID_RECENT_CART) \
+		case ID_OPEN_CART: \
+			if(emu) { \
+				open_cart_dialog(hWnd, drv); \
+			} \
+			break; \
+		case ID_CLOSE_CART: \
+			if(emu) { \
+				emu->close_cart(drv); \
+			} \
+			break; \
+		case ID_RECENT_CART + 0: \
+		case ID_RECENT_CART + 1: \
+		case ID_RECENT_CART + 2: \
+		case ID_RECENT_CART + 3: \
+		case ID_RECENT_CART + 4: \
+		case ID_RECENT_CART + 5: \
+		case ID_RECENT_CART + 6: \
+		case ID_RECENT_CART + 7: \
+			no = LOWORD(wParam) - ID_RECENT_CART; \
+			_tcscpy(path, config.recent_cart_path[drv][no]); \
+			for(int i = no; i > 0; i--) { \
+				_tcscpy(config.recent_cart_path[drv][i], config.recent_cart_path[drv][i - 1]); \
+			} \
+			_tcscpy(config.recent_cart_path[drv][0], path); \
+			if(emu) { \
+				emu->open_cart(drv, path); \
+			} \
 			break;
-		case ID_CLOSE_CART:
-			if(emu) {
-				emu->close_cart();
-			}
-			break;
-		case ID_RECENT_CART + 0:
-		case ID_RECENT_CART + 1:
-		case ID_RECENT_CART + 2:
-		case ID_RECENT_CART + 3:
-		case ID_RECENT_CART + 4:
-		case ID_RECENT_CART + 5:
-		case ID_RECENT_CART + 6:
-		case ID_RECENT_CART + 7:
-			no = LOWORD(wParam) - ID_RECENT_CART;
-			_tcscpy(path, config.recent_cart_path[no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_cart_path[i], config.recent_cart_path[i - 1]);
-			}
-			_tcscpy(config.recent_cart_path[0], path);
-			if(emu) {
-				emu->open_cart(path);
-			}
-			break;
+		CART_MENU_ITEMS(0, ID_OPEN_CART1, ID_CLOSE_CART1, ID_RECENT_CART1)
+#endif
+#ifdef USE_CART2
+		CART_MENU_ITEMS(1, ID_OPEN_CART2, ID_CLOSE_CART2, ID_RECENT_CART2)
 #endif
 #ifdef USE_FD1
 		#define FD_MENU_ITEMS(drv, ID_OPEN_FD, ID_CLOSE_FD, ID_RECENT_FD, ID_SELECT_D88_BANK) \
@@ -933,35 +943,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_FD6
 		FD_MENU_ITEMS(5, ID_OPEN_FD6, ID_CLOSE_FD6, ID_RECENT_FD6, ID_SELECT_D88_BANK6)
 #endif
-#ifdef USE_QUICKDISK
-		case ID_OPEN_QUICKDISK:
-			if(emu) {
-				open_quickdisk_dialog(hWnd);
-			}
+#ifdef USE_FD7
+		FD_MENU_ITEMS(6, ID_OPEN_FD7, ID_CLOSE_FD7, ID_RECENT_FD7, ID_SELECT_D88_BANK7)
+#endif
+#ifdef USE_FD8
+		FD_MENU_ITEMS(7, ID_OPEN_FD8, ID_CLOSE_FD8, ID_RECENT_FD8, ID_SELECT_D88_BANK8)
+#endif
+#ifdef USE_QD1
+		#define QD_MENU_ITEMS(drv, ID_OPEN_QD, ID_CLOSE_QD, ID_RECENT_QD) \
+		case ID_OPEN_QD: \
+			if(emu) { \
+				open_quickdisk_dialog(hWnd, drv); \
+			} \
+			break; \
+		case ID_CLOSE_QD: \
+			if(emu) { \
+				emu->close_quickdisk(drv); \
+			} \
+			break; \
+		case ID_RECENT_QD + 0: \
+		case ID_RECENT_QD + 1: \
+		case ID_RECENT_QD + 2: \
+		case ID_RECENT_QD + 3: \
+		case ID_RECENT_QD + 4: \
+		case ID_RECENT_QD + 5: \
+		case ID_RECENT_QD + 6: \
+		case ID_RECENT_QD + 7: \
+			no = LOWORD(wParam) - ID_RECENT_QD; \
+			_tcscpy(path, config.recent_quickdisk_path[drv][no]); \
+			for(int i = no; i > 0; i--) { \
+				_tcscpy(config.recent_quickdisk_path[drv][i], config.recent_quickdisk_path[drv][i - 1]); \
+			} \
+			_tcscpy(config.recent_quickdisk_path[drv][0], path); \
+			if(emu) { \
+				emu->open_quickdisk(drv, path); \
+			} \
 			break;
-		case ID_CLOSE_QUICKDISK:
-			if(emu) {
-				emu->close_quickdisk();
-			}
-			break;
-		case ID_RECENT_QUICKDISK + 0:
-		case ID_RECENT_QUICKDISK + 1:
-		case ID_RECENT_QUICKDISK + 2:
-		case ID_RECENT_QUICKDISK + 3:
-		case ID_RECENT_QUICKDISK + 4:
-		case ID_RECENT_QUICKDISK + 5:
-		case ID_RECENT_QUICKDISK + 6:
-		case ID_RECENT_QUICKDISK + 7:
-			no = LOWORD(wParam) - ID_RECENT_QUICKDISK;
-			_tcscpy(path, config.recent_quickdisk_path[no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_quickdisk_path[i], config.recent_quickdisk_path[i - 1]);
-			}
-			_tcscpy(config.recent_quickdisk_path[0], path);
-			if(emu) {
-				emu->open_quickdisk(path);
-			}
-			break;
+		QD_MENU_ITEMS(0, ID_OPEN_QD1, ID_CLOSE_QD1, ID_RECENT_QD1)
+#endif
+#ifdef USE_QD2
+		QD_MENU_ITEMS(1, ID_OPEN_QD2, ID_CLOSE_QD2, ID_RECENT_QD2)
 #endif
 #ifdef USE_TAPE
 		case ID_PLAY_TAPE:
@@ -1114,8 +1135,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_FULLSCREEN28:
 		case ID_SCREEN_FULLSCREEN29:
 		case ID_SCREEN_FULLSCREEN30:
+		case ID_SCREEN_FULLSCREEN31:
+		case ID_SCREEN_FULLSCREEN32:
 			if(emu && !now_fullscreen) {
-				set_window(hWnd, LOWORD(wParam) - ID_SCREEN_FULLSCREEN1 + 8);
+				set_window(hWnd, LOWORD(wParam) - ID_SCREEN_FULLSCREEN1 + MAX_WINDOW);
 			}
 			break;
 		case ID_SCREEN_USE_D3D9:
@@ -1337,23 +1360,31 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #endif
 	}
 #endif
-#ifdef MENU_POS_CART
-	else if(pos == MENU_POS_CART) {
-		// cartridge
-		bool flag = false;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_CART + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_cart_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_CART + i, config.recent_cart_path[i]);
-				flag = true;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_CART, _T("None"));
-		}
-		EnableMenuItem(hMenu, ID_CLOSE_CART, emu->cart_inserted() ? MF_ENABLED : MF_GRAYED);
+#ifdef MENU_POS_CART1
+	else if(pos == MENU_POS_CART1) {
+		#define UPDATE_MENU_CART(drv, ID_RECENT_CART, ID_CLOSE_CART) \
+		bool flag = false; \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
+			DeleteMenu(hMenu, ID_RECENT_CART + i, MF_BYCOMMAND); \
+		} \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
+			if(_tcsicmp(config.recent_cart_path[drv][i], _T(""))) { \
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_CART + i, config.recent_cart_path[drv][i]); \
+				flag = true; \
+			} \
+		} \
+		if(!flag) { \
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_CART, _T("None")); \
+		} \
+		EnableMenuItem(hMenu, ID_CLOSE_CART, emu->cart_inserted(drv) ? MF_ENABLED : MF_GRAYED);
+		// cart slot #1
+		UPDATE_MENU_CART(0, ID_RECENT_CART1, ID_CLOSE_CART1)
+	}
+#endif
+#ifdef MENU_POS_CART2
+	else if(pos == MENU_POS_CART2) {
+		// cart slot #2
+		UPDATE_MENU_CART(1, ID_RECENT_CART2, ID_CLOSE_CART2)
 	}
 #endif
 #ifdef MENU_POS_FD1
@@ -1370,8 +1401,8 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 			} \
 			AppendMenu(hMenu, MF_SEPARATOR, 0, NULL); \
 		} \
-		for(int i = 0; i < 8; i++) { \
-			if(_tcscmp(config.recent_disk_path[drv][i], _T(""))) { \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
+			if(_tcsicmp(config.recent_disk_path[drv][i], _T(""))) { \
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_FD + i, config.recent_disk_path[drv][i]); \
 				flag = true; \
 			} \
@@ -1414,34 +1445,54 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		UPDATE_MENU_FD(5, ID_RECENT_FD6, ID_D88_FILE_PATH6, ID_SELECT_D88_BANK6, ID_CLOSE_FD6)
 	}
 #endif
-#ifdef MENU_POS_QUICKDISK
-	else if(pos == MENU_POS_QUICKDISK) {
-		// quick disk drive
-		bool flag = false;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_QUICKDISK + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_quickdisk_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_QUICKDISK + i, config.recent_quickdisk_path[i]);
-				flag = true;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_QUICKDISK, _T("None"));
-		}
-		EnableMenuItem(hMenu, ID_CLOSE_QUICKDISK, emu->quickdisk_inserted() ? MF_ENABLED : MF_GRAYED);
+#ifdef MENU_POS_FD7
+	else if(pos == MENU_POS_FD7) {
+		// floppy drive #7
+		UPDATE_MENU_FD(6, ID_RECENT_FD7, ID_D88_FILE_PATH7, ID_SELECT_D88_BANK7, ID_CLOSE_FD7)
+	}
+#endif
+#ifdef MENU_POS_FD8
+	else if(pos == MENU_POS_FD8) {
+		// floppy drive #8
+		UPDATE_MENU_FD(7, ID_RECENT_FD8, ID_D88_FILE_PATH8, ID_SELECT_D88_BANK8, ID_CLOSE_FD8)
+	}
+#endif
+#ifdef MENU_POS_QD1
+	else if(pos == MENU_POS_QD1) {
+		#define UPDATE_MENU_QD(drv, ID_RECENT_QD, ID_CLOSE_QD) \
+		bool flag = false; \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
+			DeleteMenu(hMenu, ID_RECENT_QD + i, MF_BYCOMMAND); \
+		} \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
+			if(_tcsicmp(config.recent_quickdisk_path[drv][i], _T(""))) { \
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_QD + i, config.recent_quickdisk_path[drv][i]); \
+				flag = true; \
+			} \
+		} \
+		if(!flag) { \
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_QD, _T("None")); \
+		} \
+		EnableMenuItem(hMenu, ID_CLOSE_QD, emu->quickdisk_inserted(drv) ? MF_ENABLED : MF_GRAYED);
+		// quick disk drive #1
+		UPDATE_MENU_QD(0, ID_RECENT_QD1, ID_CLOSE_QD1)
+	}
+#endif
+#ifdef MENU_POS_QD2
+	else if(pos == MENU_POS_QD2) {
+		// quick disk drive #2
+		UPDATE_MENU_QD(1, ID_RECENT_QD2, ID_CLOSE_QD2)
 	}
 #endif
 #ifdef MENU_POS_TAPE
 	else if(pos == MENU_POS_TAPE) {
 		// data recorder
 		bool flag = false;
-		for(int i = 0; i < 8; i++) {
+		for(int i = 0; i < MAX_HISTORY; i++) {
 			DeleteMenu(hMenu, ID_RECENT_TAPE + i, MF_BYCOMMAND);
 		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_tape_path[i], _T(""))) {
+		for(int i = 0; i < MAX_HISTORY; i++) {
+			if(_tcsicmp(config.recent_tape_path[i], _T(""))) {
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_TAPE + i, config.recent_tape_path[i]);
 				flag = true;
 			}
@@ -1462,11 +1513,11 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// binary #1
 		#define UPDATE_MENU_BINARY(drv, ID_RECENT_BINARY) \
 		bool flag = false; \
-		for(int i = 0; i < 8; i++) { \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
 			DeleteMenu(hMenu, ID_RECENT_BINARY + i, MF_BYCOMMAND); \
 		} \
-		for(int i = 0; i < 8; i++) { \
-			if(_tcscmp(config.recent_binary_path[drv][i], _T(""))) { \
+		for(int i = 0; i < MAX_HISTORY; i++) { \
+			if(_tcsicmp(config.recent_binary_path[drv][i], _T(""))) { \
 				AppendMenu(hMenu, MF_STRING, ID_RECENT_BINARY + i, config.recent_binary_path[drv][i]); \
 				flag = true; \
 			} \
@@ -1498,10 +1549,10 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		
 		// screen mode
 		UINT last = ID_SCREEN_WINDOW1;
-		for(int i = 1; i < 8; i++) {
+		for(int i = 1; i < MAX_WINDOW; i++) {
 			DeleteMenu(hMenu, ID_SCREEN_WINDOW1 + i, MF_BYCOMMAND);
 		}
-		for(int i = 1; i < 8; i++) {
+		for(int i = 1; i < MAX_WINDOW; i++) {
 			if(emu && emu->get_window_width(i) <= desktop_width && emu->get_window_height(i) <= desktop_height) {
 				_TCHAR buf[16];
 				_stprintf(buf, _T("Window x%d"), i + 1);
@@ -1527,11 +1578,11 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 				DeleteMenu(hMenu, ID_SCREEN_FULLSCREEN1 + i, MF_BYCOMMAND);
 			}
 		}
-		if(config.window_mode >= 0 && config.window_mode < 8) {
+		if(config.window_mode >= 0 && config.window_mode < MAX_WINDOW) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_WINDOW1 + config.window_mode, MF_BYCOMMAND);
 		}
-		else if(config.window_mode >= 8 && config.window_mode < screen_mode_count + 8) {
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_FULLSCREEN1 + config.window_mode - 8, MF_BYCOMMAND);
+		else if(config.window_mode >= MAX_WINDOW && config.window_mode < screen_mode_count + MAX_WINDOW) {
+			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_FULLSCREEN1 + config.window_mode - MAX_WINDOW, MF_BYCOMMAND);
 		}
 		CheckMenuItem(hMenu, ID_SCREEN_USE_D3D9, config.use_d3d9 ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_SCREEN_WAIT_VSYNC, config.wait_vsync ? MF_CHECKED : MF_UNCHECKED);
@@ -1575,8 +1626,8 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 	DrawMenuBar(hWnd);
 }
 
-#ifdef USE_CART
-void open_cart_dialog(HWND hWnd)
+#ifdef USE_CART1
+void open_cart_dialog(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
@@ -1587,12 +1638,12 @@ void open_cart_dialog(HWND hWnd)
 		_T("Supported Files (*.rom;*.bin)\0*.rom;*.bin\0All Files (*.*)\0*.*\0\0"), 
 		_T("Game Cartridge"),
 #endif
-		config.initial_cart_path
+		config.initial_cart_dir
 	);
 	if(path) {
-		UPDATE_HISTORY(path, config.recent_cart_path);
-		_tcscpy(config.initial_cart_path, get_parent_dir(path));
-		emu->open_cart(path);
+		UPDATE_HISTORY(path, config.recent_cart_path[drv]);
+		_tcscpy(config.initial_cart_dir, get_parent_dir(path));
+		emu->open_cart(drv, path);
 	}
 }
 #endif
@@ -1604,11 +1655,11 @@ void open_disk_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.d88;*.d77;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7)\0*.d88;*.d77;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
-		config.initial_disk_path
+		config.initial_disk_dir
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_disk_path[drv]);
-		_tcscpy(config.initial_disk_path, get_parent_dir(path));
+		_tcscpy(config.initial_disk_dir, get_parent_dir(path));
 		open_disk(drv, path, 0);
 	}
 }
@@ -1654,17 +1705,7 @@ void open_disk(int drv, _TCHAR* path, int bank)
 	}
 	emu->open_disk(drv, path, d88_file[drv].bank[bank].offset);
 #ifdef USE_FD2
-	if(drv == 0 && bank + 1 < d88_file[drv].bank_num) {
-		open_disk(drv + 1, path, bank + 1);
-	}
-#endif
-#ifdef USE_FD4
-	if(drv == 2 && bank + 1 < d88_file[drv].bank_num) {
-		open_disk(drv + 1, path, bank + 1);
-	}
-#endif
-#ifdef USE_FD6
-	if(drv == 4 && bank + 1 < d88_file[drv].bank_num) {
+	if((drv & 1) == 0 && drv + 1 < MAX_FD && bank + 1 < d88_file[drv].bank_num) {
 		open_disk(drv + 1, path, bank + 1);
 	}
 #endif
@@ -1678,19 +1719,19 @@ void close_disk(int drv)
 }
 #endif
 
-#ifdef USE_QUICKDISK
-void open_quickdisk_dialog(HWND hWnd)
+#ifdef USE_QD1
+void open_quickdisk_dialog(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 		_T("Supported Files (*.mzt;*.q20)\0*.mzt;*.q20\0All Files (*.*)\0*.*\0\0"),
 		_T("Quick Disk"),
-		config.initial_quickdisk_path
+		config.initial_quickdisk_dir
 	);
 	if(path) {
-		UPDATE_HISTORY(path, config.recent_quickdisk_path);
-		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
-		emu->open_quickdisk(path);
+		UPDATE_HISTORY(path, config.recent_quickdisk_path[drv]);
+		_tcscpy(config.initial_quickdisk_dir, get_parent_dir(path));
+		emu->open_quickdisk(drv, path);
 	}
 }
 #endif
@@ -1718,11 +1759,11 @@ void open_tape_dialog(HWND hWnd, bool play)
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #endif
 		play ? _T("Data Recorder Tape [Play]") : _T("Data Recorder Tape [Rec]"),
-		config.initial_tape_path
+		config.initial_tape_dir
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_tape_path);
-		_tcscpy(config.initial_tape_path, get_parent_dir(path));
+		_tcscpy(config.initial_tape_dir, get_parent_dir(path));
 		if(play) {
 			emu->play_tape(path);
 		}
@@ -1744,11 +1785,11 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 #else
 		_T("Memory Dump"),
 #endif
-		config.initial_binary_path
+		config.initial_binary_dir
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_binary_path[drv]);
-		_tcscpy(config.initial_binary_path, get_parent_dir(path));
+		_tcscpy(config.initial_binary_dir, get_parent_dir(path));
 		if(load) {
 			emu->load_binary(drv, path);
 		}
@@ -1762,13 +1803,13 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 #ifdef SUPPORT_DRAG_DROP
 void open_any_file(_TCHAR* path)
 {
-#ifdef USE_CART
+#ifdef USE_CART1
 	if(check_file_extension(path, _T(".rom")) || 
 	   check_file_extension(path, _T(".bin")) || 
 	   check_file_extension(path, _T(".pce"))) {
-		UPDATE_HISTORY(path, config.recent_cart_path);
-		_tcscpy(config.initial_cart_path, get_parent_dir(path));
-		emu->open_cart(path);
+		UPDATE_HISTORY(path, config.recent_cart_path[0]);
+		_tcscpy(config.initial_cart_dir, get_parent_dir(path));
+		emu->open_cart(0, path);
 		return;
 	}
 #endif
@@ -1785,17 +1826,17 @@ void open_any_file(_TCHAR* path)
 	   check_file_extension(path, _T(".2d" )) || 
 	   check_file_extension(path, _T(".sf7"))) {
 		UPDATE_HISTORY(path, config.recent_disk_path[0]);
-		_tcscpy(config.initial_disk_path, get_parent_dir(path));
+		_tcscpy(config.initial_disk_dir, get_parent_dir(path));
 		open_disk(0, path, 0);
 		return;
 	}
 #endif
-#ifdef USE_QUICKDISK
+#ifdef USE_QD1
 	if(check_file_extension(path, _T(".mzt")) || 
 	   check_file_extension(path, _T(".q20"))) {
-		UPDATE_HISTORY(path, config.recent_quickdisk_path);
-		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
-		emu->open_quickdisk(path);
+		UPDATE_HISTORY(path, config.recent_quickdisk_path[0]);
+		_tcscpy(config.initial_quickdisk_dir, get_parent_dir(path));
+		emu->open_quickdisk(0, path);
 		return;
 	}
 #endif
@@ -1803,7 +1844,7 @@ void open_any_file(_TCHAR* path)
 	if(check_file_extension(path, _T(".ram")) || 
 	   check_file_extension(path, _T(".bin"))) {
 		UPDATE_HISTORY(path, config.recent_binary_path[0]);
-		_tcscpy(config.initial_binary_path, get_parent_dir(path));
+		_tcscpy(config.initial_binary_dir, get_parent_dir(path));
 		emu->load_binary(0, path);
 		return;
 	}
@@ -1817,7 +1858,7 @@ void set_window(HWND hWnd, int mode)
 	WINDOWPLACEMENT place;
 	place.length = sizeof(WINDOWPLACEMENT);
 	
-	if(mode >= 0 && mode < 8) {
+	if(mode >= 0 && mode < MAX_WINDOW) {
 		// window
 		int width = emu->get_window_width(mode);
 #ifdef MIN_WINDOW_WIDTH
@@ -1852,8 +1893,8 @@ void set_window(HWND hWnd, int mode)
 	}
 	else if(!now_fullscreen) {
 		// fullscreen
-		int width = (mode == -1) ? desktop_width : screen_mode_width[mode - 8];
-		int height = (mode == -1) ? desktop_height : screen_mode_height[mode - 8];
+		int width = (mode == -1) ? desktop_width : screen_mode_width[mode - MAX_WINDOW];
+		int height = (mode == -1) ? desktop_height : screen_mode_height[mode - MAX_WINDOW];
 		
 		DEVMODE dev;
 		ZeroMemory(&dev, sizeof(dev));
@@ -1874,7 +1915,7 @@ void set_window(HWND hWnd, int mode)
 			if(mode == -1) {
 				for(int i = 0; i < screen_mode_count; i++) {
 					if(screen_mode_width[i] == desktop_width && screen_mode_height[i] == desktop_height) {
-						mode = i + 8;
+						mode = i + MAX_WINDOW;
 						break;
 					}
 				}

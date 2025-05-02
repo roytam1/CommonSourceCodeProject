@@ -18,7 +18,6 @@
 #include "../upd1990a.h"
 #include "../ym2203.h"
 #include "../z80.h"
-#include "../../config.h"
 #include "../../fileio.h"
 
 #define DEVICE_JOYSTICK	0

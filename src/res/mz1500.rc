@@ -107,10 +107,10 @@ BEGIN
     END
     POPUP "QD"
     BEGIN
-        MENUITEM "Insert",                      ID_OPEN_QUICKDISK
-        MENUITEM "Eject",                       ID_CLOSE_QUICKDISK
+        MENUITEM "Insert",                      ID_OPEN_QD1
+        MENUITEM "Eject",                       ID_CLOSE_QD1
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_QUICKDISK
+        MENUITEM "Recent",                      ID_RECENT_QD1
     END
     POPUP "FD1"
     BEGIN
@@ -172,6 +172,8 @@ BEGIN
         MENUITEM "Fullscreen 28",               ID_SCREEN_FULLSCREEN28
         MENUITEM "Fullscreen 29",               ID_SCREEN_FULLSCREEN29
         MENUITEM "Fullscreen 30",               ID_SCREEN_FULLSCREEN30
+        MENUITEM "Fullscreen 31",               ID_SCREEN_FULLSCREEN31
+        MENUITEM "Fullscreen 32",               ID_SCREEN_FULLSCREEN32
         MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC

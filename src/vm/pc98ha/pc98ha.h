@@ -19,7 +19,6 @@
 #define DEVICE_NAME		"NEC PC-98LT"
 #define CONFIG_NAME		"pc98lt"
 #endif
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		56.4

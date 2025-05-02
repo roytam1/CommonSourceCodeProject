@@ -1,3 +1,10 @@
+7/24/2013
+
+[WINMAIN] support 320x240 fullscreen mode
+[EMU/WIN32] support multiple quick disk drives and cart slots
+[CONFIG] support to read/write ini file
+
+
 7/23/2013
 
 [WINMAIN] simplify codes for boot mode and device type menus
@@ -507,7 +514,7 @@
 
 12/31/2011
 
-[EMU] support to change the frame timing by virtual machine
+[EMU/WIN32] support to change the frame timing by virtual machine
 
 [VM/DEVICE] support multiple event manager
 [VM/DISK] support to detect the disk ejection

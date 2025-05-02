@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"SHINKO SANGYO YS-6464A"
 #define CONFIG_NAME		"ys6464a"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		30

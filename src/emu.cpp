@@ -9,10 +9,12 @@
 
 #include "emu.h"
 #include "vm/vm.h"
-#include "config.h"
 
 #ifndef FD_BASE_NUMBER
 #define FD_BASE_NUMBER 1
+#endif
+#ifndef QD_BASE_NUMBER
+#define QD_BASE_NUMBER 1
 #endif
 
 // ----------------------------------------------------------------------------
@@ -40,12 +42,15 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	app_path[pt + 1] = _T('\0');
 	
 	// load sound config
-#ifdef SUPPORT_SOUND_FREQ_55467HZ
-	// PC-8801/9801 series
-	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 55467, 96000};
+	static int freq_table[8] = {
+		2000, 4000, 8000, 11025, 22050, 44100,
+#ifdef OVERRIDE_SOUND_FREQ_48000HZ
+		OVERRIDE_SOUND_FREQ_48000HZ,
 #else
-	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
+		48000,
 #endif
+		96000,
+	};
 	static double late_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
 	
 	if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
@@ -259,13 +264,13 @@ void EMU::out_message(const _TCHAR* format, ...)
 
 void EMU::initialize_media()
 {
-#ifdef USE_CART
+#ifdef USE_CART1
 	memset(&cart_status, 0, sizeof(cart_status));
 #endif
 #ifdef USE_FD1
 	memset(disk_status, 0, sizeof(disk_status));
 #endif
-#ifdef USE_QUICKDISK
+#ifdef USE_QD1
 	memset(&quickdisk_status, 0, sizeof(quickdisk_status));
 #endif
 #ifdef USE_TAPE
@@ -276,17 +281,19 @@ void EMU::initialize_media()
 void EMU::update_media()
 {
 #ifdef USE_FD1
-	for(int drv = 0; drv < 8; drv++) {
+	for(int drv = 0; drv < MAX_FD; drv++) {
 		if(disk_status[drv].wait_count != 0 && --disk_status[drv].wait_count == 0) {
 			vm->open_disk(drv, disk_status[drv].path, disk_status[drv].offset);
 			out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, disk_status[drv].path);
 		}
 	}
 #endif
-#ifdef USE_QUICKDISK
-	if(quickdisk_status.wait_count != 0 && --quickdisk_status.wait_count == 0) {
-		vm->open_quickdisk(quickdisk_status.path);
-		out_message(_T("QD: %s"), quickdisk_status.path);
+#ifdef USE_QD1
+	for(int drv = 0; drv < MAX_QD; drv++) {
+		if(quickdisk_status[drv].wait_count != 0 && --quickdisk_status[drv].wait_count == 0) {
+			vm->open_quickdisk(drv, quickdisk_status[drv].path);
+			out_message(_T("QD%d: %s"), drv + QD_BASE_NUMBER, quickdisk_status[drv].path);
+		}
 	}
 #endif
 #ifdef USE_TAPE
@@ -303,21 +310,25 @@ void EMU::update_media()
 
 void EMU::restore_media()
 {
-#ifdef USE_CART
-	if(cart_status.path[0] != _T('\0')) {
-		vm->open_cart(cart_status.path);
+#ifdef USE_CART1
+	for(int drv = 0; drv < MAX_CART; drv++) {
+		if(cart_status[drv].path[0] != _T('\0')) {
+			vm->open_cart(drv, cart_status[drv].path);
+		}
 	}
 #endif
 #ifdef USE_FD1
-	for(int drv = 0; drv < 8; drv++) {
+	for(int drv = 0; drv < MAX_FD; drv++) {
 		if(disk_status[drv].path[0] != _T('\0')) {
 			vm->open_disk(drv, disk_status[drv].path, disk_status[drv].offset);
 		}
 	}
 #endif
-#ifdef USE_QUICKDISK
-	if(quickdisk_status.path[0] != _T('\0')) {
-		vm->open_quickdisk(quickdisk_status.path);
+#ifdef USE_QD1
+	for(int drv = 0; drv < MAX_QD; drv++) {
+		if(quickdisk_status[drv].path[0] != _T('\0')) {
+			vm->open_quickdisk(drv, quickdisk_status[drv].path);
+		}
 	}
 #endif
 #ifdef USE_TAPE
@@ -331,97 +342,121 @@ void EMU::restore_media()
 #endif
 }
 
-#ifdef USE_CART
-void EMU::open_cart(_TCHAR* file_path)
+#ifdef USE_CART1
+void EMU::open_cart(int drv, _TCHAR* file_path)
 {
-	vm->open_cart(file_path);
-	_tcscpy(cart_status.path, file_path);
-	out_message(_T("Cart: %s"), file_path);
-	
-	// restart recording
-	restart_rec_video();
-	restart_rec_sound();
+	if(drv < MAX_CART) {
+		vm->open_cart(drv, file_path);
+		_tcscpy(cart_status[drv].path, file_path);
+		out_message(_T("Cart%d: %s"), drv + 1, file_path);
+		
+		// restart recording
+		restart_rec_video();
+		restart_rec_sound();
+	}
 }
 
-void EMU::close_cart()
+void EMU::close_cart(int drv)
 {
-	vm->close_cart();
-	clear_media_status(&cart_status);
-	out_message(_T("Cart: Ejected"));
-	
-	// stop recording
-	stop_rec_video();
-	stop_rec_sound();
+	if(drv < MAX_CART) {
+		vm->close_cart(drv);
+		clear_media_status(&cart_status[drv]);
+		out_message(_T("Cart%d: Ejected"), drv + 1);
+		
+		// stop recording
+		stop_rec_video();
+		stop_rec_sound();
+	}
 }
 
-bool EMU::cart_inserted()
+bool EMU::cart_inserted(int drv)
 {
-	return vm->cart_inserted();
+	if(drv < MAX_CART) {
+		return vm->cart_inserted(drv);
+	} else {
+		return false;
+	}
 }
 #endif
 
 #ifdef USE_FD1
 void EMU::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-	if(vm->disk_inserted(drv)) {
-		vm->close_disk(drv);
-		// wait 0.5sec
+	if(drv < MAX_FD) {
+		if(vm->disk_inserted(drv)) {
+			vm->close_disk(drv);
+			// wait 0.5sec
 #ifdef SUPPORT_VARIABLE_TIMING
-		disk_status[drv].wait_count = (int)(vm->frame_rate() / 2);
+			disk_status[drv].wait_count = (int)(vm->frame_rate() / 2);
 #else
-		disk_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
+			disk_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
-		out_message(_T("FD%d: Ejected"), drv + FD_BASE_NUMBER);
-	} else if(disk_status[drv].wait_count == 0) {
-		vm->open_disk(drv, file_path, offset);
-		out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, file_path);
+			out_message(_T("FD%d: Ejected"), drv + FD_BASE_NUMBER);
+		} else if(disk_status[drv].wait_count == 0) {
+			vm->open_disk(drv, file_path, offset);
+			out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, file_path);
+		}
+		_tcscpy(disk_status[drv].path, file_path);
+		disk_status[drv].offset = offset;
 	}
-	_tcscpy(disk_status[drv].path, file_path);
-	disk_status[drv].offset = offset;
 }
 
 void EMU::close_disk(int drv)
 {
-	vm->close_disk(drv);
-	clear_media_status(&disk_status[drv]);
-	out_message(_T("FD%d: Ejected"), drv + FD_BASE_NUMBER);
+	if(drv < MAX_FD) {
+		vm->close_disk(drv);
+		clear_media_status(&disk_status[drv]);
+		out_message(_T("FD%d: Ejected"), drv + FD_BASE_NUMBER);
+	}
 }
 
 bool EMU::disk_inserted(int drv)
 {
-	return vm->disk_inserted(drv);
-}
-#endif
-
-#ifdef USE_QUICKDISK
-void EMU::open_quickdisk(_TCHAR* file_path)
-{
-	if(vm->quickdisk_inserted()) {
-		vm->close_quickdisk();
-		// wait 0.5sec
-#ifdef SUPPORT_VARIABLE_TIMING
-		quickdisk_status.wait_count = (int)(vm->frame_rate() / 2);
-#else
-		quickdisk_status.wait_count = (int)(FRAMES_PER_SEC / 2);
-#endif
-		out_message(_T("QD: Ejected"));
-	} else if(quickdisk_status.wait_count == 0) {
-		vm->open_quickdisk(file_path);
-		out_message(_T("QD: %s"), file_path);
+	if(drv < MAX_FD) {
+		return vm->disk_inserted(drv);
+	} else {
+		return false;
 	}
-	_tcscpy(quickdisk_status.path, file_path);
+}
+#endif
+
+#ifdef USE_QD1
+void EMU::open_quickdisk(int drv, _TCHAR* file_path)
+{
+	if(drv < MAX_QD) {
+		if(vm->quickdisk_inserted(drv)) {
+			vm->close_quickdisk(drv);
+			// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+			quickdisk_status[drv].wait_count = (int)(vm->frame_rate() / 2);
+#else
+			quickdisk_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+			out_message(_T("QD%d: Ejected"), drv + QD_BASE_NUMBER);
+		} else if(quickdisk_status[drv].wait_count == 0) {
+			vm->open_quickdisk(drv, file_path);
+			out_message(_T("QD%d: %s"), drv + QD_BASE_NUMBER, file_path);
+		}
+		_tcscpy(quickdisk_status[drv].path, file_path);
+	}
 }
 
-void EMU::close_quickdisk()
+void EMU::close_quickdisk(int drv)
 {
-	vm->close_quickdisk();
-	clear_media_status(&quickdisk_status);
-	out_message(_T("QD: Ejected"));
+	if(drv < MAX_QD) {
+		vm->close_quickdisk(drv);
+		clear_media_status(&quickdisk_status[drv]);
+		out_message(_T("QD%d: Ejected"), drv + QD_BASE_NUMBER);
+	}
 }
 
-bool EMU::quickdisk_inserted()
+bool EMU::quickdisk_inserted(int drv)
 {
-	return vm->quickdisk_inserted();
+	if(drv < MAX_QD) {
+		return vm->quickdisk_inserted(drv);
+	} else {
+		return false;
+	}
 }
 #endif
 
@@ -492,14 +527,18 @@ void EMU::push_stop()
 #ifdef USE_BINARY_FILE1
 void EMU::load_binary(int drv, _TCHAR* file_path)
 {
-	vm->load_binary(drv, file_path);
-	out_message(_T("Load: %s"), file_path);
+	if(drv < MAX_BINARY) {
+		vm->load_binary(drv, file_path);
+		out_message(_T("Load: %s"), file_path);
+	}
 }
 
 void EMU::save_binary(int drv, _TCHAR* file_path)
 {
-	vm->save_binary(drv, file_path);
-	out_message(_T("Save: %s"), file_path);
+	if(drv < MAX_BINARY) {
+		vm->save_binary(drv, file_path);
+		out_message(_T("Save: %s"), file_path);
+	}
 }
 #endif
 

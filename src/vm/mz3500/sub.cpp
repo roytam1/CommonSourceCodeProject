@@ -11,7 +11,6 @@
 #include "sub.h"
 #include "main.h"
 #include "../../fileio.h"
-#include "../../config.h"
 
 #define EVENT_KEY		0
 

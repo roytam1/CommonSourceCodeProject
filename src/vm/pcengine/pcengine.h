@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"NEC-HE PC Engine"
 #define CONFIG_NAME		"pcengine"
-#define CONFIG_VERSION		0x01
 
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME 	262
@@ -25,7 +24,7 @@
 #define SUPPORT_BACKUP_RAM
 
 // device informations for win32
-#define USE_CART
+#define USE_CART1
 
 #include "../../common.h"
 
@@ -73,9 +72,9 @@ public:
 	int sound_buffer_ptr();
 	
 	// user interface
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted();
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 	bool now_skip() {
 		return false;
 	}

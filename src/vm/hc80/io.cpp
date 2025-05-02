@@ -12,7 +12,7 @@
 #include "../beep.h"
 #include "../tf20.h"
 #include "../../fifo.h"
-#include "../../config.h"
+#include "../../fileio.h"
 
 //#define OUT_CMD_LOG
 

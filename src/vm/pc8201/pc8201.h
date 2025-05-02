@@ -18,7 +18,6 @@
 #define DEVICE_NAME		"NEC PC-8201"
 #define CONFIG_NAME		"pc8201"
 #endif
-#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60

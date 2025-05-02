@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"Japan Electronics College MYCOMZ-80A"
 #define CONFIG_NAME		"mycomz80a"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60.58

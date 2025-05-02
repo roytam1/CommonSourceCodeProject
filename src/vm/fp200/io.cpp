@@ -11,7 +11,6 @@
 #include "io.h"
 #include "../datarec.h"
 #include "../i8080.h"
-#include "../../config.h"
 #include "../../fileio.h"
 
 // based on elisa font (http://hp.vector.co.jp/authors/VA002310/index.htm

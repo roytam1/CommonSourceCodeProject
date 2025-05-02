@@ -23,7 +23,6 @@
 #define DEVICE_NAME		"SHARP MZ-1500"
 #define CONFIG_NAME		"mz1500"
 #endif
-#define CONFIG_VERSION		0x04
 
 // device informations for virtual machine
 #if defined(_MZ800)
@@ -63,7 +62,7 @@
 #define USE_TAPE_BUTTON
 #define TAPE_MZT
 #if defined(_MZ800) || defined(_MZ1500)
-#define USE_QUICKDISK
+#define USE_QD1
 #define USE_FD1
 #define USE_FD2
 #endif
@@ -196,9 +195,9 @@ public:
 	void push_play();
 	void push_stop();
 #if defined(_MZ800) || defined(_MZ1500)
-	void open_quickdisk(_TCHAR* file_path);
-	void close_quickdisk();
-	bool quickdisk_inserted();
+	void open_quickdisk(int drv, _TCHAR* file_path);
+	void close_quickdisk(int drv);
+	bool quickdisk_inserted(int drv);
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);

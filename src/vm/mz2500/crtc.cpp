@@ -12,7 +12,6 @@
 #include "interrupt.h"
 #include "memory.h"
 #include "../i8255.h"
-#include "../../config.h"
 
 void CRTC::initialize()
 {

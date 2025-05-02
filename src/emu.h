@@ -35,6 +35,7 @@
 #include <mmsystem.h>
 #include <stdio.h>
 #include "common.h"
+#include "config.h"
 #include "vm/vm.h"
 
 #define WM_RESIZE  (WM_USER + 1)
@@ -244,14 +245,14 @@ private:
 		int wait_count;
 	} media_status_t;
 	
-#ifdef USE_CART
-	media_status_t cart_status;
+#ifdef USE_CART1
+	media_status_t cart_status[MAX_CART];
 #endif
 #ifdef USE_FD1
-	media_status_t disk_status[8];
+	media_status_t disk_status[MAX_FD];
 #endif
-#ifdef USE_QUICKDISK
-	media_status_t quickdisk_status;
+#ifdef USE_QD1
+	media_status_t quickdisk_status[MAX_QD];
 #endif
 #ifdef USE_TAPE
 	media_status_t tape_status;
@@ -326,20 +327,20 @@ public:
 #endif
 	
 	// user interface
-#ifdef USE_CART
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted();
+#ifdef USE_CART1
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 #endif
 #ifdef USE_FD1
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 #endif
-#ifdef USE_QUICKDISK
-	void open_quickdisk(_TCHAR* file_path);
-	void close_quickdisk();
-	bool quickdisk_inserted();
+#ifdef USE_QD1
+	void open_quickdisk(int drv, _TCHAR* file_path);
+	void close_quickdisk(int drv);
+	bool quickdisk_inserted(int drv);
 #endif
 #ifdef USE_TAPE
 	void play_tape(_TCHAR* file_path);

@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"EPOCH SCV"
 #define CONFIG_NAME		"scv"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -27,7 +26,7 @@
 //#define UPD7801_MEMORY_WAIT
 
 // device informations for win32
-#define USE_CART
+#define USE_CART1
 #define USE_KEY_TO_JOY
 
 #include "../../common.h"
@@ -83,9 +82,9 @@ public:
 	int sound_buffer_ptr();
 	
 	// user interface
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted();
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 	bool now_skip();
 	
 	void update_config();

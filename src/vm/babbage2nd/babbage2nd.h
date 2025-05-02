@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"GIJUTSU HYORON SHA Babbage-2nd"
 #define CONFIG_NAME		"babbage2nd"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		30

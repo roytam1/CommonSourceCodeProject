@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"FUJITSU FM16pi"
 #define CONFIG_NAME		"fm16pi"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 

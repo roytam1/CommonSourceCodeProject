@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"CANON X-07"
 #define CONFIG_NAME		"x07"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60

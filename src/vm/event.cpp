@@ -8,7 +8,6 @@
 */
 
 #include "event.h"
-#include "../config.h"
 
 #ifndef EVENT_CONTINUOUS_SOUND
 //#ifdef PCM1BIT_HIGH_QUALITY

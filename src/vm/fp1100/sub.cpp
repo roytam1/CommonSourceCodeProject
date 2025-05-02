@@ -12,7 +12,7 @@
 #include "main.h"
 #include "../beep.h"
 #include "../upd7801.h"
-#include "../../config.h"
+#include "../../fileio.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 7, eb = (e) >> 7; \

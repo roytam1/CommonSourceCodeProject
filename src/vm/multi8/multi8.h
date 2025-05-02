@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"MITSUBISHI Electric MULTI 8"
 #define CONFIG_NAME		"multi8"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60.58

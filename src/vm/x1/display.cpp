@@ -17,7 +17,6 @@
 #endif
 #include "../i8255.h"
 #include "../../fileio.h"
-#include "../../config.h"
 
 // from X-millenium
 

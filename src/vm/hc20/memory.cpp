@@ -12,7 +12,6 @@
 #include "../beep.h"
 #include "../mc6800.h"
 #include "../tf20.h"
-#include "../../config.h"
 #include "../../fifo.h"
 #include "../../fileio.h"
 

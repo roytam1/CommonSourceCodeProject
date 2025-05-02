@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"EPSON HC-40"
 #define CONFIG_NAME		"hc40"
-#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		72

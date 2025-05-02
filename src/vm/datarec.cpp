@@ -9,7 +9,6 @@
 
 #include "datarec.h"
 #include "event.h"
-#include "../config.h"
 #include "../fileio.h"
 
 #define EVENT_SIGNAL	0

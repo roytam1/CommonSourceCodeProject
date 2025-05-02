@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"SHARP MZ-3500"
 #define CONFIG_NAME		"mz3500"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		47.3

@@ -19,7 +19,6 @@
 #define DEVICE_NAME		"SHARP MZ-80K"
 #define CONFIG_NAME		"mz80k"
 #endif
-#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60

@@ -11,7 +11,6 @@
 
 #include "display.h"
 #include "../memory.h"
-#include "../../config.h"
 
 void DISPLAY::initialize()
 {

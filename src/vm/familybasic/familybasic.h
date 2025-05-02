@@ -14,7 +14,6 @@
 
 #define DEVICE_NAME		"Nintendo Family BASIC"
 #define CONFIG_NAME		"familybasic"
-#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60

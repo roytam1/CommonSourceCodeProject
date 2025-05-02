@@ -12,7 +12,7 @@
 #include "memory80b.h"
 #include "../i8255.h"
 #include "../z80.h"
-#include "../../config.h"
+#include "../../fileio.h"
 
 #define EVENT_HBLANK		0
 

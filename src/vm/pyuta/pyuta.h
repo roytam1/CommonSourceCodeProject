@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"TOMY PyuTa"
 #define CONFIG_NAME		"pyuta"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -25,7 +24,7 @@
 //#define TMS9918A_LIMIT_SPRITES
 
 // device informations for win32
-#define USE_CART
+#define USE_CART1
 #define USE_TAPE
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -85,9 +84,9 @@ public:
 	int sound_buffer_ptr();
 	
 	// user interface
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted();
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();

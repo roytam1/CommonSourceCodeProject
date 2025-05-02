@@ -10,7 +10,6 @@
 
 #include "display.h"
 #include "../../fileio.h"
-#include "../../config.h"
 
 void DISPLAY::initialize()
 {

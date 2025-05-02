@@ -16,8 +16,6 @@
 #include "../huc6280.h"
 #include "pce.h"
 
-#include "../../config.h"
-
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
@@ -129,23 +127,31 @@ int VM::sound_buffer_ptr()
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* file_path)
+void VM::open_cart(int drv, _TCHAR* file_path)
 {
-	pce->open_cart(file_path);
-	pce->reset();
-	pcecpu->reset();
+	if(drv == 0) {
+		pce->open_cart(file_path);
+		pce->reset();
+		pcecpu->reset();
+	}
 }
 
-void VM::close_cart()
+void VM::close_cart(int drv)
 {
-	pce->close_cart();
-	pce->reset();
-	pcecpu->reset();
+	if(drv == 0) {
+		pce->close_cart();
+		pce->reset();
+		pcecpu->reset();
+	}
 }
 
-bool VM::cart_inserted()
+bool VM::cart_inserted(int drv)
 {
-	return pce->cart_inserted();
+	if(drv == 0) {
+		return pce->cart_inserted();
+	} else {
+		return false;
+	}
 }
 
 void VM::update_config()

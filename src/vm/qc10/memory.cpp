@@ -13,7 +13,6 @@
 #include "../pcm1bit.h"
 #include "../upd765a.h"
 #include "../../fileio.h"
-#include "../../config.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 11, eb = (e) >> 11; \

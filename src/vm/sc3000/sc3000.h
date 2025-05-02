@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"SEGA SC-3000"
 #define CONFIG_NAME		"sc3000"
-#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -27,7 +26,7 @@
 
 // device informations for win32
 #define MIN_WINDOW_WIDTH	320
-#define USE_CART
+#define USE_CART1
 #define USE_FD1
 #define USE_TAPE
 #define USE_ALT_F10_KEY
@@ -101,9 +100,9 @@ public:
 	int sound_buffer_ptr();
 	
 	// user interface
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted();
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);

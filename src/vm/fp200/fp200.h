@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"CASIO FP-200"
 #define CONFIG_NAME		"fp200"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		64

@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"SHARP MZ-2800"
 #define CONFIG_NAME		"mz2800"
-#define CONFIG_VERSION		0x03
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		55.4

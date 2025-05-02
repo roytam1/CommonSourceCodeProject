@@ -12,7 +12,6 @@
 
 #include "vm.h"
 #include "../emu.h"
-#include "../fileio.h"
 
 // max devices connected to the output port
 #define MAX_OUTPUT	16

@@ -18,7 +18,6 @@
 #define DEVICE_NAME		"EPSON QC-10"
 #define CONFIG_NAME		"qc10"
 #endif
-#define CONFIG_VERSION		0x03
 
 // device informations for virtual machine
 #ifdef _COLOR_MONITOR

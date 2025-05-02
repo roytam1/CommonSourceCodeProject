@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"IBM Japan Ltd PC/JX"
 #define CONFIG_NAME		"jx"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 

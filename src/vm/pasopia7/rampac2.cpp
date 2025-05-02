@@ -10,7 +10,6 @@
 */
 
 #include "rampac2.h"
-#include "../../config.h"
 #include "../../fileio.h"
 
 static const uint8 header[16] = {

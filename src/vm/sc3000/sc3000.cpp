@@ -170,21 +170,29 @@ int VM::sound_buffer_ptr()
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(_TCHAR* file_path)
+void VM::open_cart(int drv, _TCHAR* file_path)
 {
-	memory->open_cart(file_path);
-	reset();
+	if(drv == 0) {
+		memory->open_cart(file_path);
+		reset();
+	}
 }
 
-void VM::close_cart()
+void VM::close_cart(int drv)
 {
-	memory->close_cart();
-	reset();
+	if(drv == 0) {
+		memory->close_cart();
+		reset();
+	}
 }
 
-bool VM::cart_inserted()
+bool VM::cart_inserted(int drv)
 {
-	return memory->cart_inserted();
+	if(drv == 0) {
+		return memory->cart_inserted();
+	} else {
+		return false;
+	}
 }
 
 void VM::open_disk(int drv, _TCHAR* file_path, int offset)

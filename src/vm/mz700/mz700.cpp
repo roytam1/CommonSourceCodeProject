@@ -44,10 +44,6 @@
 #include "quickdisk.h"
 #endif
 
-#if defined(_MZ800)
-#include "../../config.h"
-#endif
-
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
@@ -443,19 +439,27 @@ void VM::push_stop()
 }
 
 #if defined(_MZ800) || defined(_MZ1500)
-void VM::open_quickdisk(_TCHAR* file_path)
+void VM::open_quickdisk(int drv, _TCHAR* file_path)
 {
-	qd->open_disk(file_path);
+	if(drv == 0) {
+		qd->open_disk(file_path);
+	}
 }
 
-void VM::close_quickdisk()
+void VM::close_quickdisk(int drv)
 {
-	qd->close_disk();
+	if(drv == 0) {
+		qd->close_disk();
+	}
 }
 
-bool VM::quickdisk_inserted()
+bool VM::quickdisk_inserted(int drv)
 {
-	return qd->disk_inserted();
+	if(drv == 0) {
+		return qd->disk_inserted();
+	} else {
+		return false;
+	}
 }
 
 void VM::open_disk(int drv, _TCHAR* file_path, int offset)

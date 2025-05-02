@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"NEC TK-80BS"
 #define CONFIG_NAME		"tk80bs"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		59.9

@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"CASIO FP-1100"
 #define CONFIG_NAME		"fp1100"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60.34

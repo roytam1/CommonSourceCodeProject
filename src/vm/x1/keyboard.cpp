@@ -12,9 +12,6 @@
 #include "keyboard.h"
 #include "sub.h"
 #include "../mcs48.h"
-#ifdef _X1TURBO
-#include "../../config.h"
-#endif
 
 #define CAPS	0xfe
 #define KANA	0xff

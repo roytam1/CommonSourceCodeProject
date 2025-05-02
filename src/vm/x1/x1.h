@@ -25,7 +25,6 @@
 #define DEVICE_NAME		"SHARP X1"
 #define CONFIG_NAME		"x1"
 #endif
-#define CONFIG_VERSION		0x05
 
 // device informations for virtual machine (x1)
 //#ifdef _X1TURBO
@@ -84,7 +83,7 @@
 #define USE_TAPE
 #define TAPE_TAP
 #ifdef _X1TWIN
-#define USE_CART
+#define USE_CART1
 #endif
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
@@ -225,9 +224,9 @@ public:
 	bool tape_inserted();
 	bool now_skip();
 #ifdef _X1TWIN
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted();
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 #endif
 	
 	void update_config();

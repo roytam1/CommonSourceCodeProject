@@ -18,7 +18,6 @@
 #define DEVICE_NAME		"TOSHIBA PASOPIA"
 #define CONFIG_NAME		"pasopia"
 #endif
-#define CONFIG_VERSION		0x02
 
 #define MODE_TBASIC_V1_0	0
 #define MODE_TBASIC_V1_1	1

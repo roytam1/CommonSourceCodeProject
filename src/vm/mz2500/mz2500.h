@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"SHARP MZ-2500"
 #define CONFIG_NAME		"mz2500"
-#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		55.4

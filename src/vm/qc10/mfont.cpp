@@ -11,6 +11,7 @@
 #include "mfont.h"
 #include "../i8259.h"
 #include "../../fifo.h"
+#include "../../fileio.h"
 
 #define BIT_IBF	0x80
 #define BIT_ERR	2

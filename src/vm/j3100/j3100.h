@@ -19,7 +19,6 @@
 #define DEVICE_NAME		"TOSHIBA J-3100SL"
 #define CONFIG_NAME		"j3100sl"
 #endif
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 

@@ -15,7 +15,6 @@
 #include "../i8255.h"
 #if defined(_MZ800)
 #include "../z80pio.h"
-#include "../../config.h"
 #endif
 #include "../../fileio.h"
 

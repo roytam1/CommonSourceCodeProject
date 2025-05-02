@@ -9,7 +9,6 @@
 
 #include "emu.h"
 #include "vm/vm.h"
-#include "config.h"
 
 void EMU::initialize_screen()
 {

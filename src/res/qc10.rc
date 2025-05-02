@@ -161,6 +161,8 @@ BEGIN
         MENUITEM "Fullscreen 28",               ID_SCREEN_FULLSCREEN28
         MENUITEM "Fullscreen 29",               ID_SCREEN_FULLSCREEN29
         MENUITEM "Fullscreen 30",               ID_SCREEN_FULLSCREEN30
+        MENUITEM "Fullscreen 31",               ID_SCREEN_FULLSCREEN31
+        MENUITEM "Fullscreen 32",               ID_SCREEN_FULLSCREEN32
         MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC

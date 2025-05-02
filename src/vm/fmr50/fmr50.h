@@ -28,7 +28,6 @@
 #define DEVICE_NAME		"FUJITSU OASYS Pocket3"
 #define CONFIG_NAME		"oasyspocket3"
 #endif
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		55.4

@@ -33,7 +33,6 @@
 #define CONFIG_NAME		"pc98do"
 #else
 #endif
-#define CONFIG_VERSION		0x05
 
 #if defined(_PC9801) || defined(_PC9801E)
 #define SUPPORT_CMT_IF
@@ -101,7 +100,7 @@
 #if !defined(SUPPORT_OLD_BUZZER)
 #define PCM1BIT_HIGH_QUALITY
 #endif
-#define SUPPORT_SOUND_FREQ_55467HZ
+#define OVERRIDE_SOUND_FREQ_48000HZ	55467
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32

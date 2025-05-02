@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"NEC N5200"
 #define CONFIG_NAME		"n5200"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		55.4

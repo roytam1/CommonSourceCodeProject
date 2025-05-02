@@ -46,7 +46,6 @@
 #include "../pcengine/pce.h"
 #endif
 
-#include "../../config.h"
 #include "../../fileio.h"
 
 // ----------------------------------------------------------------------------
@@ -578,23 +577,31 @@ bool VM::now_skip()
 }
 
 #ifdef _X1TWIN
-void VM::open_cart(_TCHAR* file_path)
+void VM::open_cart(int drv, _TCHAR* file_path)
 {
-	pce->open_cart(file_path);
-	pce->reset();
-	pcecpu->reset();
+	if(drv == 0) {
+		pce->open_cart(file_path);
+		pce->reset();
+		pcecpu->reset();
+	}
 }
 
-void VM::close_cart()
+void VM::close_cart(int drv)
 {
-	pce->close_cart();
-	pce->reset();
-	pcecpu->reset();
+	if(drv == 0) {
+		pce->close_cart();
+		pce->reset();
+		pcecpu->reset();
+	}
 }
 
-bool VM::cart_inserted()
+bool VM::cart_inserted(int drv)
 {
-	return pce->cart_inserted();
+	if(drv == 0) {
+		return pce->cart_inserted();
+	} else {
+		return false;
+	}
 }
 #endif
 

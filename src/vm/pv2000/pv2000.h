@@ -13,7 +13,6 @@
 
 #define DEVICE_NAME		"CASIO PV-2000"
 #define CONFIG_NAME		"pv2000"
-#define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
@@ -27,7 +26,7 @@
 #define MEMORY_BANK_SIZE	0x1000
 
 // device informations for win32
-#define USE_CART
+#define USE_CART1
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
 #define NOTIFY_KEY_DOWN
@@ -106,11 +105,9 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_cart(_TCHAR* file_path);
-	void close_cart();
-	bool cart_inserted() {
-		return inserted;
-	}
+	void open_cart(int drv, _TCHAR* file_path);
+	void close_cart(int drv);
+	bool cart_inserted(int drv);
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
