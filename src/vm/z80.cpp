@@ -1082,6 +1082,7 @@ void Z80::OP(uint8 code)
 	count -= cc_op[code];
 	
 #ifdef _CPU_DEBUG_LOG
+	bool prev_halt = halt;
 	uint16 _AF = AF, _BC = BC, _DE = DE, _HL = HL, _IX = IX, _IY = IY, _SP = SP;
 	debug_ops[0] = code;
 	debug_ops[1] = RM8(prevPC + 1);
@@ -1860,14 +1861,16 @@ void Z80::OP(uint8 code)
 	}
 #ifdef _CPU_DEBUG_LOG
 	if(debug_count && !dasm_done) {
-		emu->out_debug(_T("%4x\tAF=%4x BC=%4x DE=%4x HL=%4x IX=%4x IY=%4x SP=%4x [%c%c%c%c%c%c%c%c]\n"),
-			prevPC, _AF, _BC, _DE, _HL, _IX, _IY, _SP,
-			(_AF & CF) ? 'C' : ' ', (_AF & NF) ? 'N' : ' ', (_AF & PF) ? 'P' : ' ', (_AF & XF) ? 'X' : ' ',
-			(_AF & HF) ? 'H' : ' ', (_AF & YF) ? 'Y' : ' ', (_AF & ZF) ? 'Z' : ' ', (_AF & SF) ? 'S' : ' ');
-		DASM();
-		emu->out_debug(_T("%4x\t%s\n"), prevPC, debug_dasm);
-		if(--debug_count == 0) {
-			emu->out_debug(_T("<---------------------------------------------------------------- Z80 DASM ----\n"));
+		if(!(prev_halt && halt)) {
+			emu->out_debug(_T("%4x\tAF=%4x BC=%4x DE=%4x HL=%4x IX=%4x IY=%4x SP=%4x [%c%c%c%c%c%c%c%c]\n"),
+				prevPC, _AF, _BC, _DE, _HL, _IX, _IY, _SP,
+				(_AF & CF) ? 'C' : ' ', (_AF & NF) ? 'N' : ' ', (_AF & PF) ? 'P' : ' ', (_AF & XF) ? 'X' : ' ',
+				(_AF & HF) ? 'H' : ' ', (_AF & YF) ? 'Y' : ' ', (_AF & ZF) ? 'Z' : ' ', (_AF & SF) ? 'S' : ' ');
+			DASM();
+			emu->out_debug(_T("%4x\t%s\n"), prevPC, debug_dasm);
+			if(--debug_count == 0) {
+				emu->out_debug(_T("<---------------------------------------------------------------- Z80 DASM ----\n"));
+			}
 		}
 		dasm_done = true;
 	}

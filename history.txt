@@ -1,3 +1,15 @@
+2/11/2012
+
+[PC98DO/PC8801] fix to select hireso screen only in monochrome mode
+[PC98DO/PC8801] fix crtc registers
+[PC98DO/PC8801] fix the character scan lines and screen height again
+[PC98DO/PC8801] fix to consider the number of attributes data
+[PC98DO/PC8801] add a ugly patch for attributes issue for alpha
+
+[VM/I8255] fix to clear output signals when control register is written
+[VM/Z80] fix not to output debug log for continuously executed halt command
+
+
 2/8/2012
 
 [EMU/WIN32] fix to release all pressed keys when the main window lost focus

@@ -61,14 +61,26 @@ private:
 	int busreq_clocks;
 	
 	// crtc
-	uint8 crtc_reg[8][5], crtc_cmd, crtc_ptr;
+	uint8 crtc_cmd, crtc_ptr;
 	uint8 crtc_status;
-	uint8 disp_ctrl, text_mode, text_attrib, graph_mode, line200;
 	
-	bool cursor_on, blink_on, vblank;
-	int blink_counter;
+	uint8 text_attrib;
+	int attrib_num;
+	
+	int text_width, text_height, char_height;
+	bool skip_line;
+	
+	bool cursor_on, cursor_blink;
+	int cursor_x, cursor_y, cursor_line;
+	
+	bool blink_on;
+	int blink_rate, blink_counter;
+	
 	uint8 crtc_buffer[120 * 200];
 	int crtc_buffer_ptr;
+	
+	uint8 disp_ctrl, text_mode, graph_mode;
+	bool line200, vblank;
 	
 	typedef struct {
 		uint8 b, r, g;

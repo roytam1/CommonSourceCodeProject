@@ -81,7 +81,7 @@ uint32 PC80S31K::read_data8(uint32 addr)
 void PC80S31K::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffff;
-	if(addr == 0x7f15 && data == 0x1f) {
+	if(addr == 0x7f15 && data == 0x1f && d_cpu->get_pc() < 0x2000) {
 		// ugly patch to enable both #1 and #2 drives
 		data = 0x3f;
 	}
@@ -100,13 +100,12 @@ uint32 PC80S31K::read_io8(uint32 addr)
 	case 0xfb:
 		return d_fdc->read_io8(addr & 1);
 	case 0xfc:
-		val = d_pio->read_io8(0);
-		emu->out_debug("SUB\tIN RECV=%2x\n", val);
-		return val;
 	case 0xfd:
-		return d_pio->read_io8(1);
+		val = d_pio->read_io8(addr & 3);
+		emu->out_debug("SUB\tIN RECV(%d)=%2x\n", addr & 3, val);
+		return val;
 	case 0xfe:
-		val = d_pio->read_io8(2);
+		val = d_pio->read_io8(addr & 3);
 		{
 			static uint32 prev = -1;
 			if(prev != val){
@@ -147,15 +146,13 @@ void PC80S31K::write_io8(uint32 addr, uint32 data)
 		d_fdc->write_io8(addr & 1, data);
 		break;
 	case 0xfc:
-		d_pio->write_io8(0, data);
-		break;
 	case 0xfd:
-		emu->out_debug("SUB\tOUT SEND=%2x\n", data);
-		d_pio->write_io8(1, data);
+		emu->out_debug("SUB\tOUT SEND(%d)=%2x\n", addr & 3, data);
+		d_pio->write_io8(addr & 3, data);
 		break;
 	case 0xfe:
 //		emu->out_debug("SUB\tOUT DAV=%d,RFD=%d,DAC=%d,ATN=%d\n", (data>>4)&1, (data>>5)&1, (data>>6)&1, (data>>7)&1);
-		d_pio->write_io8(2, data);
+		d_pio->write_io8(addr & 3, data);
 		break;
 	case 0xff:
 		if(!(data & 0x80)) {
@@ -173,7 +170,7 @@ void PC80S31K::write_io8(uint32 addr, uint32 data)
 //				emu->out_debug("SUB\tOUT ATN=%d\n", data & 1);
 			}
 		}
-		d_pio->write_io8(3, data);
+		d_pio->write_io8(addr & 3, data);
 		break;
 	}
 }

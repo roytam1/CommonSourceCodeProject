@@ -173,7 +173,7 @@ void PC8801::initialize()
 	}
 	palette_text_pc[8] = 0;
 	
-	line200 = 0;
+	line200 = false;
 	cpu_clock_low = config.cpu_clock_low;
 #ifdef Z80_MEMORY_WAIT
 	vram_wait_clocks = cpu_clock_low ? 2 : 4;
@@ -206,21 +206,33 @@ void PC8801::reset()
 	alu_ctrl1 = alu_ctrl2 = 0;
 	
 	// crtc
-	memset(crtc_reg, 0, sizeof(crtc_reg));
 	crtc_cmd = crtc_ptr = 0;
 	crtc_status = 0;
-	text_mode = graph_mode = 0;
+	
 	text_attrib = 0;
+	attrib_num = 20;
+	
+	text_width = 80;
+	text_height = 25;
+	char_height = 16;
+	skip_line = true;
+	
+	cursor_on = cursor_blink = false;
+	cursor_x = cursor_y = cursor_line = 0;
+	
+	blink_on = false;
+	blink_rate = 24;
+	blink_counter = 0;
+	
+	text_mode = graph_mode = 0;
 	disp_ctrl = 0;
 	
 	if(!line200) {
 		set_frames_per_sec(60);
 		set_lines_per_frame(260);
 		busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
-		line200 = 1;
+		line200 = true;
 	}
-	cursor_on = blink_on = false;
-	blink_counter = 0;
 	
 	for(int i = 0; i <= 8; i++) {
 		palette[i].b = (i & 1) ? 7 : 0;
@@ -380,18 +392,17 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		text_mode = data;
 		break;
 	case 0x31:
-		if(line200 != (data & 1)) {
-			if(data & 1) {
-				set_frames_per_sec(60);
-				set_lines_per_frame(260);
-				busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
-			}
-			else {
-				set_frames_per_sec(55.4);
-				set_lines_per_frame(448);
-				busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 55.4 / 448.0 * 0.558 + 0.5);
-			}
-			line200 = data & 1;
+		if(line200 && !(data & 0x11)) {
+			set_frames_per_sec(55.4);
+			set_lines_per_frame(448);
+			busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 55.4 / 448.0 * 0.558 + 0.5);
+			line200 = false;
+		}
+		else if(!line200 && (data & 0x11)) {
+			set_frames_per_sec(60);
+			set_lines_per_frame(260);
+			busreq_clocks = (int)((cpu_clock_low ? 3993600.0 : 7987200.0) / 60.0 / 262.0 * 0.558 + 0.5);
+			line200 = true;
 		}
 		if(rm_mode != (data & 6)) {
 			bool tw_update = (rm_mode == 0 || (data & 6) == 0);
@@ -452,11 +463,40 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 #endif
 		d_opn->write_io8(addr, data);
 		break;
-	// crtc (from MESS PC-8801 driver)
 	case 0x50:
-		if(crtc_ptr < 5) {
-			crtc_reg[crtc_cmd][crtc_ptr++] = data;
+		switch(crtc_cmd) {
+		case 0:
+			switch(crtc_ptr) {
+			case 0:
+				text_width = (data & 0x7f) + 2;
+				break;
+			case 1:
+				text_height = (data & 0x3f) + 1;
+				blink_rate = 8 * ((data >> 6) + 1);
+				break;
+			case 2:
+				char_height = (data & 0x1f) + 1;
+				cursor_blink = ((data & 0x20) != 0);
+				cursor_line = (data & 0x40) ? 0 : 7;
+				skip_line = ((data & 0x80) != 0);
+				break;
+			case 4:
+				attrib_num = (data & 0x20) ? 0 : (data & 0x1f) + 1;
+				break;
+			}
+			break;
+		case 4:
+			switch(crtc_ptr) {
+			case 0:
+				cursor_x = data;
+				break;
+			case 1:
+				cursor_y = data;
+				break;
+			}
+			break;
 		}
+		crtc_ptr++;
 		break;
 	case 0x51:
 		crtc_cmd = (data >> 5) & 7;
@@ -711,6 +751,10 @@ uint32 PC8801::read_io8(uint32 addr)
 #endif
 		return d_opn->read_io8(addr);
 	case 0x50:
+		if(crtc_status & 8) {
+			// dma underrun
+			return (crtc_status & ~0x10);
+		}
 		return crtc_status;
 	case 0x51:
 		return 0xff;
@@ -854,7 +898,6 @@ void PC8801::event_callback(int event_id, int err)
 void PC8801::event_frame()
 {
 	// update blink counter
-	int blink_rate = 8 * ((crtc_reg[0][1] >> 6) + 1);
 	if(!(blink_counter++ < blink_rate)) {
 		blink_on = !blink_on;
 		blink_counter = 0;
@@ -989,36 +1032,22 @@ uint8 PC8801::get_crtc_buffer(int ofs)
 	if(ofs < crtc_buffer_ptr) {
 		return crtc_buffer[ofs];
 	}
-	// DMA underrun
-//	crtc_status &= ~0x10;
+	// dma underrun occurs !!!
 	crtc_status |= 8;
+//	crtc_status &= ~0x10;
 	return 0;
 }
 
-#ifndef abs
-#define abs(v) ((v) < 0 ? -(v) : (v))
-#endif
 
 void PC8801::draw_text()
 {
-	int width = (crtc_reg[0][0] & 0x7f) + 2;
-//	int height = (crtc_reg[0][1] & 0x3f) + 1;
-	int height = (dma_reg[2].length.sd + 1) / 120;
-	int char_lines = (crtc_reg[0][2] & 0x1f) + 1;
-#if 1
-	// ugly patch :-(
-	int err_f = char_lines * height - 200;
-	int err_h = (char_lines >> 1) * height - 200;
-	if(abs(err_f) > abs(err_h)) {
-		char_lines >>= 1;
+	int char_height_tmp = char_height;
+	
+	if(!line200 || !skip_line) {
+		char_height_tmp >>= 1;
 	}
-#else
-	if(!line200 || (crtc_reg[0][1] & 0x80)) {
-		char_lines >>= 1;
-	}
-#endif
-	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : (crtc_reg[0][4] & 0x1f) + 1;
-	uint8 attribs[80], flags[256];
+	
+	uint8 attribs[80], flags[128];
 	if(attrib_num == 0) {
 		if(text_mode & 2) {
 			memset(attribs, 0, sizeof(attribs));
@@ -1027,28 +1056,32 @@ void PC8801::draw_text()
 			memset(attribs, 0xe0, sizeof(attribs));
 		}
 	}
-	bool cursor_draw = cursor_on && (blink_on || !(crtc_reg[0][2] & 0x20));
-	int cursor_line = (crtc_reg[0][2] & 0x40) ? 0 : 7;
+	bool cursor_draw = cursor_on && !(cursor_blink && !blink_on);
 	
 	crtc_status &= ~8; // clear dma underrun
 	
-	for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_lines, ofs += 120) {
+	for(int cy = 0, ytop = 0, ofs = 0; cy < text_height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib_num * 2) {
 		if(attrib_num != 0) {
-			memset(flags, 0, sizeof(flags));
-			for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
-				flags[get_crtc_buffer(ofs + i + 80) & 0x7f] = 1;
+			if(attrib_num == 20 && get_crtc_buffer(ofs + 80) == 0 && get_crtc_buffer(ofs + 81) == 120 && get_crtc_buffer(ofs + 82) == 1 && get_crtc_buffer(ofs + 83) == 2) {
+				// XXX: ugly patch for alpha :-(
+				memset(attribs, 0, sizeof(attribs));
 			}
-			for(int cx = 0, pos = 0; cx < width && cx < 80; cx++) {
-				if(flags[cx]) {
-					text_attrib = get_crtc_buffer(ofs + pos + 81);
-					pos += 2;
+			else {
+				memset(flags, 0, sizeof(flags));
+				for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
+					flags[get_crtc_buffer(ofs + i + 80) & 0x7f] = 1;
 				}
-				attribs[cx] = text_attrib;
+				for(int cx = 0, pos = 0; cx < text_width && cx < 80; cx++) {
+					if(flags[cx]) {
+						text_attrib = get_crtc_buffer(ofs + pos + 81);
+						pos += 2;
+					}
+					attribs[cx] = text_attrib;
+				}
 			}
 		}
-		bool cursor_now_y = (cursor_draw && cy == crtc_reg[4][1]);
 		
-		for(int x = 0, cx = 0; cx < width && cx < 80; x += 8, cx++) {
+		for(int x = 0, cx = 0; cx < text_width && cx < 80; x += 8, cx++) {
 			if(!(text_mode & 1) && (cx & 1)) {
 				continue;
 			}
@@ -1075,9 +1108,9 @@ void PC8801::draw_text()
 				blink = ((attrib & 2) != 0) && blink_on;
 				secret = ((attrib & 1) != 0);
 			}
-			bool cursor_now = (cursor_now_y && cx == crtc_reg[4][0]);
+			bool cursor_now = (cursor_draw && cx == cursor_x && cy == cursor_y);
 			
-			for(int l = 0, y = ytop; l < char_lines && y < 200; l++, y++) {
+			for(int l = 0, y = ytop; l < char_height_tmp && y < 200; l++, y++) {
 				uint8 pat = (l < 8) ? pattern[l] : 0;
 				if(secret) {
 					pat = 0;
@@ -1113,6 +1146,7 @@ void PC8801::draw_text()
 			}
 		}
 		if(crtc_status & 8) {
+			// dma underrun occurs !!!
 			memset(text, 0, sizeof(text));
 			break;
 		}
