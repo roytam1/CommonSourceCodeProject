@@ -226,6 +226,9 @@ void PC8801::reset()
 	dma_mode = dma_status = 0;
 	dma_hl = false;
 	
+	// keyboard
+	kana = caps = 0;
+	
 	// kanji rom
 	kanji1_addr.d = kanji2_addr.d = 0;
 	
@@ -425,7 +428,7 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x40:
 		// bit0: printer strobe
-		d_rtc->write_signal(SIG_UPD1990A_STB, data, 2);
+		d_rtc->write_signal(SIG_UPD1990A_STB, ~data, 2);
 		d_rtc->write_signal(SIG_UPD1990A_CLK, data, 4);
 		// bit3: crtc i/f sync mode
 		// bit4: graph high speed mode
@@ -619,6 +622,7 @@ uint32 PC8801::read_io8(uint32 addr)
 		if(addr == 8 || addr == 9) {
 			// INS or F6-F10 -> SHIFT + DEL or F1-F5
 			key_status_bak[6] = key_status[0x10];
+			key_status_bak[7] = key_status[0x15];
 			for(int i = 0; i < 6; i++) {
 				key_status_bak[i] = key_status[key_conv_table[i][1]];
 				if(key_status[key_conv_table[i][0]]) {
@@ -626,6 +630,11 @@ uint32 PC8801::read_io8(uint32 addr)
 					key_status[0x10] = 1;
 				}
 			}
+			key_status[0x15] = kana;
+		}
+		else if(addr == 0x0a) {
+			key_status_bak[6] = key_status[0x14];
+			key_status[0x14] = caps;
 		}
 		for(int i = 0; i < 8; i++) {
 			if(key_status[key_table[addr & 0x0f][i]]) {
@@ -633,10 +642,14 @@ uint32 PC8801::read_io8(uint32 addr)
 			}
 		}
 		if(addr == 8 || addr == 9) {
-			key_status[0x10] = key_status_bak[6];
 			for(int i = 0; i < 6; i++) {
 				key_status[key_conv_table[i][1]] = key_status_bak[i];
 			}
+			key_status[0x10] = key_status_bak[6];
+			key_status[0x15] = key_status_bak[7];
+		}
+		else if(addr == 0x0a) {
+			key_status[0x14] = key_status_bak[6];
 		}
 		else if(addr == 0x0e) {
 			val &= ~0x80; // http://www.maroon.dti.ne.jp/youkan/pc88/iomap.html
@@ -822,6 +835,18 @@ void PC8801::event_vline(int v, int clock)
 			request_intr(IRQ_VRTC, true);
 		}
 		vdisp = false;
+	}
+}
+
+void PC8801::key_down(int code, bool repeat)
+{
+	if(!repeat) {
+		if(code == 0x14) {
+			caps ^= 1;
+		}
+		else if(code == 0x15) {
+			kana ^= 1;
+		}
 	}
 }
 

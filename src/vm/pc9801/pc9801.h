@@ -85,6 +85,7 @@
 #define HAS_V30
 #endif
 #if defined(_PC98DO)
+#define HAS_UPD4990A
 #define Z80_MEMORY_WAIT
 #endif
 #define I8259_MAX_CHIPS		2

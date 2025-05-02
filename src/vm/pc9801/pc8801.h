@@ -94,7 +94,8 @@ private:
 	// keyboard
 	uint8 *key_status;
 	uint8 *joy_status;
-	uint8 key_status_bak[7];
+	uint8 key_status_bak[8];
+	uint8 caps, kana;
 	
 	// kanji rom
 	pair kanji1_addr, kanji2_addr;
@@ -151,6 +152,7 @@ public:
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;
 	}
+	void key_down(int code, bool repeat);
 	void draw_screen();
 };
 

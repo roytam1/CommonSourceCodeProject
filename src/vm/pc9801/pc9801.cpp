@@ -739,8 +739,11 @@ void VM::key_down(int code, bool repeat)
 #if defined(_PC98DO)
 	if(boot_mode == 0) {
 #endif
-		keyboard->key_down(code);
+		keyboard->key_down(code, repeat);
 #if defined(_PC98DO)
+	}
+	else {
+		pc88->key_down(code, repeat);
 	}
 #endif
 }

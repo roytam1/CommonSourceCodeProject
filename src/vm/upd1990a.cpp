@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2008.04.19-
 
-	[ uPD1990A ]
+	[ uPD1990A / uPD4990A ]
 */
 
 #include "upd1990a.h"
@@ -19,42 +19,70 @@
 
 void UPD1990A::initialize()
 {
-	cmd = mode = 0;
-	tpmode = 5;
-	register_event(this, 0, 1000000.0 / 512.0, true, &event_id);
-//	event_id = -1;
-	srl = srh = 0;
-	clk = din = tp = true;
-	stb = false;
+	shift_out = 0;
+#ifdef HAS_UPD4990A
+	shift_cmd = 0;
+#endif
+	
+	// register event
+	if(outputs_tp.count != 0) {
+		register_event(this, 0, 1000000.0 / 512.0, true, &event_id);
+	}
 }
 
 void UPD1990A::write_io8(uint32 addr, uint32 data)
 {
-	// for NEC PC-98x1 $20
-	write_signal(SIG_UPD1990A_STB, data, 8);
-	write_signal(SIG_UPD1990A_CLK, data, 0x10);
+	// XXX: NEC PC-98x1 $20
 	cmd = data & 7;
 	din = ((data & 0x20) != 0);
+	write_signal(SIG_UPD1990A_STB, data, 8);
+	write_signal(SIG_UPD1990A_CLK, data, 0x10);
 }
 
 void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_UPD1990A_CLK) {
 		bool next = ((data & mask) != 0);
-		if(!clk && next && mode == 1) {
-			srl = (srl >> 1) | ((srh & 1) << 19);
-			srh = (srh >> 1) | ((din ? 1 : 0) << 19);
-			// output LSB
-			write_signals(&outputs_dout, (srl & 1) ? 0xffffffff : 0);
+		if(!clk && next) {
+			if(mode == 1) {
+				shift_out >>= 1;
+				// output LSB
+				write_signals(&outputs_dout, (shift_out & 1) ? 0xffffffff : 0);
+			}
+#ifdef HAS_UPD4990A
+			shift_cmd = (shift_cmd >> 1) | (din ? 8 : 0);
+#endif
 		}
 		clk = next;
 	}
 	else if(id == SIG_UPD1990A_STB) {
 		bool next = ((data & mask) != 0);
-		if(stb && !next && !clk) {
-			if(cmd & 4) {
-				// group 1
-				if(cmd != tpmode) {
+		if(!stb && next && !clk) {
+#ifdef HAS_UPD4990A
+			if(cmd == 7) {
+				mode = shift_cmd & 0x0f;
+			}
+			else
+#endif
+			mode = cmd & 7;
+			
+			if(mode == 3) {
+				int time[8];
+				emu->get_timer(time);
+				shift_out  = to_bcd(SECOND);
+				shift_out |= to_bcd(MINUTE) << 8;
+				shift_out |= to_bcd(HOUR) << 16;
+				shift_out |= to_bcd(DAY) << 24;
+				shift_out |= (uint64)(DAY_OF_WEEK) << 32;
+				shift_out |= (uint64)(MONTH) << 36;
+#ifdef HAS_UPD4990A
+				shift_out |= to_bcd(YEAR % 100) << 40;
+#endif
+				// output LSB
+				write_signals(&outputs_dout, (shift_out & 1) ? 0xffffffff : 0);
+			}
+			else if(mode >= 4 && mode <= 6) {
+				if(tpmode != mode && outputs_tp.count != 0) {
 					if(event_id != -1) {
 						cancel_event(event_id);
 						event_id = -1;
@@ -71,27 +99,7 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 						break;
 					}
 				}
-				tpmode = cmd;
-			}
-			else {
-				// group 0
-				mode = cmd;
-				if(cmd == 3) {
-					int time[8];
-					emu->get_timer(time);
-					srl = SECOND % 10;
-					srl |= (int)(SECOND / 10) << 4;
-					srl |= (MINUTE % 10) << 8;
-					srl |= (int)(MINUTE / 10) << 12;
-					srl |= (HOUR % 10) << 16;
-					srh = (int)(HOUR / 10);
-					srh |= (DAY % 10) << 4;
-					srh |= (int)(DAY / 10) << 8;
-					srh |= DAY_OF_WEEK << 12;
-					srh |= MONTH << 16;
-					// output LSB
-					write_signals(&outputs_dout, (srl & 1) ? 0xffffffff : 0);
-				}
+				tpmode = mode;
 			}
 		}
 		stb = next;
@@ -114,5 +122,10 @@ void UPD1990A::event_callback(int event_id, int err)
 {
 	write_signals(&outputs_tp, tp ? 0xffffffff : 0);
 	tp = !tp;
+}
+
+uint64 UPD1990A::to_bcd(int data)
+{
+	return (uint64)(((int)(data / 10) << 4) | (data % 10));
 }
 

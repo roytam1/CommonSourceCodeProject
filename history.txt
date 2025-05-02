@@ -1,3 +1,11 @@
+1/31/2012
+
+[VM/UPD1990A] support uPD4990A
+
+[PC98DO/PC8801] support caps/kana lock
+[PC98DO/PC8801] fix to reverse strobe signal to rtc
+
+
 1/30/2012
 
 [PC98DO/PC8801] fix text attributes again

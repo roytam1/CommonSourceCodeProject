@@ -39,7 +39,7 @@ public:
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;
 	}
-	void key_down(int code);
+	void key_down(int code, bool repeat);
 	void key_up(int code);
 };
 
