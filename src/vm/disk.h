@@ -54,8 +54,8 @@ private:
 	// imagedisk decoder
 	bool imagedisk_to_d88();
 	
-	// sf7 decoder
-	bool sf7_to_d88();
+	// standard image decorder (fdi/2d/sf7)
+	bool standard_to_d88(int type, int ncyl, int nside, int nsec, int size);
 	
 	uint8 text_buf[STRING_BUFFER_SIZE + LOOKAHEAD_BUFFER_SIZE - 1];
 	uint16 ptr;

@@ -16,14 +16,17 @@
 
 #define SIG_Z80SIO_RECV_CH0	0
 #define SIG_Z80SIO_RECV_CH1	1
-#define SIG_Z80SIO_CLEAR_CH0	2
-#define SIG_Z80SIO_CLEAR_CH1	3
+#define SIG_Z80SIO_BREAK_CH0	2
+#define SIG_Z80SIO_BREAK_CH1	3
 #define SIG_Z80SIO_DCD_CH0	4
 #define SIG_Z80SIO_DCD_CH1	5
 #define SIG_Z80SIO_CTS_CH0	6
 #define SIG_Z80SIO_CTS_CH1	7
 #define SIG_Z80SIO_SYNC_CH0	8
 #define SIG_Z80SIO_SYNC_CH1	9
+// hack: clear recv buffer
+#define SIG_Z80SIO_CLEAR_CH0	10
+#define SIG_Z80SIO_CLEAR_CH1	11
 
 class FIFO;
 
@@ -37,7 +40,6 @@ private:
 		uint8 affect;
 		bool nextrecv_intr;
 		bool first_data;
-		bool out_of_message;
 		bool over_flow;
 		bool under_run;
 		bool abort;

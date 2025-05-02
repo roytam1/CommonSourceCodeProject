@@ -74,6 +74,9 @@ typedef struct {
 #ifdef USE_SCANLINE
 	bool scan_line;
 #endif
+#ifdef USE_SOUND_DEVICE_TYPE
+	int sound_device_type;
+#endif
 } config_t;
 
 extern config_t config;

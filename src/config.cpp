@@ -28,20 +28,12 @@ void init_config()
 	config.sound_latency = 0;
 	
 	config.cpu_power = 0;
-#ifdef USE_FD1
-	config.ignore_crc = false;
-#endif
+	
 #ifdef USE_DIPSWITCH
 	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
 #ifdef _HC80
 	config.ramdisk_type = 2;	// Nonintelligent ram disk
-#endif
-#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
-	config.monitor_type = 0;
-#endif
-#ifdef USE_SCANLINE
-	config.scan_line = false;
 #endif
 }
 

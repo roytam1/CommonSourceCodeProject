@@ -11,17 +11,39 @@
 #ifndef _X1TWIN_H_
 #define _X1TWIN_H_
 
+#if defined(_X1TURBOZ)
+#define DEVICE_NAME		"SHARP X1turboZ"
+#define CONFIG_NAME		"x1turboz"
+#elif defined(_X1TURBO)
+#define DEVICE_NAME		"SHARP X1turbo"
+#define CONFIG_NAME		"x1turbo"
+#elif defined(_X1TWIN)
 #define DEVICE_NAME		"SHARP X1twin"
 #define CONFIG_NAME		"x1twin"
+#else
+#define DEVICE_NAME		"SHARP X1"
+#define CONFIG_NAME		"x1"
+#endif
 #define CONFIG_VERSION		0x02
 
 // device informations for virtual machine (x1)
+//#ifdef _X1TURBO
+//24KHz
+//#define FRAMES_PER_10SECS	554
+//#define FRAMES_PER_SEC	55.4
+//#define LINES_PER_FRAME 	440
+//#define CHARS_PER_LINE	108
+// 161*440*55.4
+//#define CPU_CLOCKS		3924536
+//#else
+// 15KHz
 #define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME 	266
 #define CHARS_PER_LINE		114
 // 250*266*60
 #define CPU_CLOCKS		3990000
+//#endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
@@ -53,6 +75,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
+#define USE_SOUND_DEVICE_TYPE	2
 
 #include "../../common.h"
 
@@ -78,7 +101,6 @@ class EMM;
 class FLOPPY;
 class IO;
 class JOYSTICK;
-class KANJI;
 class MEMORY;
 class SUB;
 
@@ -113,9 +135,10 @@ protected:
 	FLOPPY* floppy;
 	IO* io;
 	JOYSTICK* joy;
-	KANJI* kanji;
 	MEMORY* memory;
 	SUB* sub;
+	
+	int sound_device_type;
 	
 	// device for pce
 	EVENT* pceevent;

@@ -204,7 +204,7 @@ void Z80PIO::update_intr()
 	bool next;
 	
 	// set oei
-	if(next = iei) {
+	if((next = iei) == true) {
 		for(int ch = 0; ch < 2; ch++) {
 			if(port[ch].in_service) {
 				next = false;
@@ -215,7 +215,7 @@ void Z80PIO::update_intr()
 	set_intr_oei(next);
 	
 	// set intr
-	if(next = iei) {
+	if((next = iei) == true) {
 		next = false;
 		for(int ch = 0; ch < 2; ch++) {
 			if(port[ch].in_service) {

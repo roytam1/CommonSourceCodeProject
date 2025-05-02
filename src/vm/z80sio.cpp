@@ -57,7 +57,6 @@ void Z80SIO::reset()
 		port[ch].pointer = 0;
 		port[ch].nextrecv_intr = false;
 		port[ch].first_data = false;
-		port[ch].out_of_message = true;
 		port[ch].over_flow = false;
 		port[ch].under_run = false;
 		port[ch].abort = false;
@@ -149,7 +148,6 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 				}
 				port[ch].nextrecv_intr = false;
 				port[ch].first_data = false;
-				port[ch].out_of_message = true;
 				port[ch].over_flow = false;
 #ifdef UPD7201
 				port[ch].tx_count = 0;	// is this correct ???
@@ -239,14 +237,12 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 					emu->out_debug(_T("Z80SIO: ch=%d enter hunt/sync phase (monosync)\n"), ch);
 #endif
 					port[ch].sync_bit = BIT_SYNC1;
-					port[ch].out_of_message = false;
 				}
 				else if(BISYNC(ch)) {
 #ifdef SIO_DEBUG
 					emu->out_debug(_T("Z80SIO: ch=%d enter hunt/sync phase (bisync)\n"), ch);
 #endif
 					port[ch].sync_bit = BIT_SYNC1 | BIT_SYNC2;
-					port[ch].out_of_message = false;
 				}
 				port[ch].sync = false;
 				write_signals(&port[ch].outputs_sync, 0xffffffff);
@@ -370,26 +366,18 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 		if(port[ch].recv_id == -1) {
 			vm->regist_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV, false, &port[ch].recv_id);
 		}
-		if(SYNC_MODE(ch) && port[ch].out_of_message) {
-			port[ch].rtmp->clear();
-		}
 		if(port[ch].rtmp->empty()) {
 			port[ch].first_data = true;
 		}
 		port[ch].rtmp->write(data & mask);
 		break;
-	case SIG_Z80SIO_CLEAR_CH0:
-	case SIG_Z80SIO_CLEAR_CH1:
-		// clear recv buffer
-		if(data & mask) {
-			if(port[ch].recv_id != -1) {
-				vm->cancel_event(port[ch].recv_id);
-				port[ch].recv_id = -1;
-			}
-			port[ch].rtmp->clear();
-			port[ch].recv->clear();
-			if(port[ch].recv_intr) {
-				port[ch].recv_intr = 0;
+	case SIG_Z80SIO_BREAK_CH0:
+	case SIG_Z80SIO_BREAK_CH1:
+		// recv break
+		if((data & mask) && !port[ch].abort) {
+			port[ch].abort = true;
+			if(!port[ch].stat_intr) {
+				port[ch].stat_intr = true;
 				update_intr();
 			}
 		}
@@ -434,6 +422,22 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 			}
 		}
 		break;
+	case SIG_Z80SIO_CLEAR_CH0:
+	case SIG_Z80SIO_CLEAR_CH1:
+		// hack: clear recv buffer
+		if(data & mask) {
+			if(port[ch].recv_id != -1) {
+				vm->cancel_event(port[ch].recv_id);
+				port[ch].recv_id = -1;
+			}
+			port[ch].rtmp->clear();
+			port[ch].recv->clear();
+			if(port[ch].recv_intr) {
+				port[ch].recv_intr = 0;
+				update_intr();
+			}
+		}
+		break;
 	}
 }
 
@@ -472,7 +476,6 @@ void Z80SIO::event_callback(int event_id, int err)
 			vm->regist_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV + err, false, &port[ch].recv_id);
 			return;
 		}
-		bool abort = port[ch].abort;
 		bool update_intr_required = false;
 		
 		if(port[ch].recv->full()) {
@@ -492,22 +495,23 @@ void Z80SIO::event_callback(int event_id, int err)
 			if(SYNC_MODE(ch) && port[ch].sync_bit != 0) {
 				// receive sync data in monosync/bisync mode ?
 				if(port[ch].sync_bit & BIT_SYNC1) {
-					if(data == port[ch].wr[6]) {
-#ifdef SIO_DEBUG
-						emu->out_debug(_T("Z80SIO: ch=%d recv sync1\n"), ch);
-#endif
-						port[ch].sync_bit &= ~BIT_SYNC1;
-						port[ch].abort = false;
+					if(data != port[ch].wr[6]) {
+						goto request_next_data;
 					}
+#ifdef SIO_DEBUG
+					emu->out_debug(_T("Z80SIO: ch=%d recv sync1\n"), ch);
+#endif
+					port[ch].sync_bit &= ~BIT_SYNC1;
 				}
 				else if(port[ch].sync_bit & BIT_SYNC2) {
-					if(data == port[ch].wr[7]) {
-#ifdef SIO_DEBUG
-						emu->out_debug(_T("Z80SIO: ch=%d recv sync2\n"), ch);
-#endif
-						port[ch].sync_bit &= ~BIT_SYNC2;
-						port[ch].abort = false;
+					if(data != port[ch].wr[7]) {
+						port[ch].sync_bit |= BIT_SYNC1;
+						goto request_next_data;
 					}
+#ifdef SIO_DEBUG
+					emu->out_debug(_T("Z80SIO: ch=%d recv sync2\n"), ch);
+#endif
+					port[ch].sync_bit &= ~BIT_SYNC2;
 				}
 				if(port[ch].sync_bit == 0) {
 #ifdef SIO_DEBUG
@@ -525,13 +529,22 @@ void Z80SIO::event_callback(int event_id, int err)
 					goto request_next_data;
 				}
 			}
-			// load recieved data into buffer
+			// load received data into buffer
 #ifdef SIO_DEBUG
 			emu->out_debug(_T("Z80SIO: ch=%d recv %2x\n"), ch, data);
 #endif
 			port[ch].recv->write(data);
-			port[ch].abort = false;
 			
+			// quit abort
+			if(port[ch].abort) {
+				port[ch].abort = false;
+				if(!port[ch].stat_intr) {
+					port[ch].stat_intr = true;
+					update_intr_required = true;
+				}
+			}
+			
+			// check receive interrupt
 			bool req = false;
 			if((port[ch].wr[1] & 0x18) == 8 && (port[ch].first_data || port[ch].nextrecv_intr)) {
 				req = true;
@@ -541,7 +554,7 @@ void Z80SIO::event_callback(int event_id, int err)
 			}
 			if(req) {
 				if(port[ch].recv_intr++ == 0) {
-					update_intr();
+					update_intr_required = true;
 				}
 			}
 			port[ch].first_data = port[ch].nextrecv_intr = false;
@@ -557,20 +570,11 @@ request_next_data:
 #ifdef SIO_DEBUG
 			emu->out_debug(_T("Z80SIO: ch=%d end of block\n"), ch);
 #endif
-			port[ch].out_of_message = true;
-			port[ch].abort = true;
 			port[ch].recv_id = -1;
 		}
 		else {
 			vm->regist_event(this, EVENT_RECV + ch, Z80SIO_DELAY_RECV + err, false, &port[ch].recv_id);
 			port[ch].first_data = first_data;
-		}
-		if(port[ch].abort != abort) {
-			if(!port[ch].stat_intr) {
-				port[ch].stat_intr = true;
-				update_intr_required = true;
-			}
-			port[ch].abort = abort;
 		}
 		if(update_intr_required) {
 			update_intr();
@@ -600,7 +604,7 @@ void Z80SIO::update_intr()
 	bool next;
 	
 	// set oei
-	if(next = iei) {
+	if((next = iei) == true) {
 		for(int ch = 0; ch < 2; ch++) {
 			if(port[ch].in_service) {
 				next = false;
@@ -672,7 +676,7 @@ void Z80SIO::update_intr()
 	}
 	
 	// set intr
-	if(next = iei) {
+	if((next = iei) == true) {
 		next = false;
 		for(int ch = 0; ch < 2; ch++) {
 			if(port[ch].in_service) {

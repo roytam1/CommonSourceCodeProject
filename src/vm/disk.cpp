@@ -87,6 +87,21 @@ DISK::~DISK()
 	}
 }
 
+typedef struct fd_format {
+	int type;
+	int ncyl, nside, nsec, size;
+} fd_format;
+
+static const fd_format fd_formats[] = {
+	{ 0x00, 40, 1, 16,  256 },	// 1D   160KB
+	{ 0x00, 40, 2, 16,  256 },	// 2D   320KB
+//	{ 0x10, 80, 2, 16,  256 },	// 2DD  640KB
+	{ 0x10, 80, 2,  8,  512 },	// 2DD  640KB
+	{ 0x10, 80, 2,  9,  512 },	// 2DD  720KB
+	{ 0x20, 77, 2,  8, 1024 },	// 2HD 1.25MB
+	{   -1,  0, 0,  0,    0 },
+};
+
 void DISK::open(_TCHAR path[])
 {
 	// check current disk image
@@ -109,24 +124,33 @@ void DISK::open(_TCHAR path[])
 		fi->Fseek(0, FILEIO_SEEK_SET);
 		protect = fi->IsProtected(path);
 		
-		// check file size
-		if(file_size == 163840) {
-			// this is sf7 image and must be converted to d88
-			insert = sf7_to_d88();
-			_stprintf(file_path, _T("%s.D88"), path);
+		// check image file format
+		for(int i = 0;; i++) {
+			const fd_format *p = &fd_formats[i];
+			if(p->type == -1) {
+				break;
+			}
+			int len = p->ncyl * p->nside * p->nsec * p->size;
+			// 4096 bytes: FDI header ???
+			if(file_size == len || (file_size == (len + 4096) && (len == 655360 || len == 1261568))) {
+				fi->Fseek(file_size - len, FILEIO_SEEK_SET);
+				insert = standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size);
+				_stprintf(file_path, _T("%s.D88"), path);
+				break;
+			}
 		}
-		else if(0 < file_size && file_size <= DISK_BUFFER_SIZE) {
+		if(!insert && 0 < file_size && file_size <= DISK_BUFFER_SIZE) {
 			fi->Fread(buffer, file_size, 1);
 			insert = change = true;
 			
-			// check file format
+			// check file header
 			if((buffer[0] == 'T' && buffer[1] == 'D') || (buffer[0] == 't' && buffer[1] == 'd')) {
-				// this is teledisk image and must be converted to d88
+				// teledisk image file
 				insert = teledisk_to_d88();
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 			else if(buffer[0] == 'I' && buffer[1] == 'M' && buffer[2] == 'D') {
-				// this is imagedisk image and must be converted to d88
+				// imagedisk image file
 				insert = imagedisk_to_d88();
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
@@ -855,50 +879,64 @@ bool DISK::imagedisk_to_d88()
 	return true;
 }
 
-// sf7 image decoder
+// standard image decoder
 
-bool DISK::sf7_to_d88()
+bool DISK::standard_to_d88(int type, int ncyl, int nside, int nsec, int size)
 {
 	struct d88_hdr_t d88_hdr;
 	struct d88_sct_t d88_sct;
+	int n = 0, t = 0;
 	
 	file_size = 0;
 	
 	// create d88 header
 	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	strcpy(d88_hdr.title, "SF7");
+	strcpy(d88_hdr.title, "STANDARD");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = 0x00; // 2d <- realy 1d
+	d88_hdr.type = type;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
+	
+	// sector length
+	for(int i = 0; i < 8; i++) {
+		if(size == (128 << i)) {
+			n = i;
+			break;
+		}
+	}
 	
 	// create tracks
 	int trkptr = sizeof(d88_hdr_t);
-	for(int t = 0; t < 40; t++) {
-		d88_hdr.trkptr[2 * t + 0] = trkptr;
-		d88_hdr.trkptr[2 * t + 1] = trkptr;
-		
-		// read sectors in this track
-		for(int s = 0; s < 16; s++) {
-			// create d88 sector header
-			_memset(&d88_sct, 0, sizeof(d88_sct_t));
-			d88_sct.c = t;
-			d88_sct.h = 0;
-			d88_sct.r = s + 1;
-			d88_sct.n = 1; // 256kb
-			d88_sct.nsec = 16;
-			d88_sct.dens = 0;
-			d88_sct.del = 0;
-			d88_sct.stat = 0;
-			d88_sct.size = 256;
+	for(int c = 0; c < ncyl; c++) {
+		for(int h = 0; h < nside; h++) {
+			d88_hdr.trkptr[t++] = trkptr;
+			if(nside == 1) {
+				// double side
+				d88_hdr.trkptr[t++] = trkptr;
+			}
 			
-			// create sector image
-			uint8 dst[256];
-			fi->Fread(dst, 256, 1);
-			
-			// copy to d88
-			COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
-			COPYBUFFER(dst, 256);
-			trkptr += sizeof(d88_sct_t) + 256;
+			// read sectors in this track
+			for(int s = 0; s < nsec; s++) {
+				// create d88 sector header
+				_memset(&d88_sct, 0, sizeof(d88_sct_t));
+				d88_sct.c = c;
+				d88_sct.h = h;
+				d88_sct.r = s + 1;
+				d88_sct.n = n;
+				d88_sct.nsec = nsec;
+				d88_sct.dens = 0;
+				d88_sct.del = 0;
+				d88_sct.stat = 0;
+				d88_sct.size = size;
+				
+				// create sector image
+				uint8 dst[16384];
+				fi->Fread(dst, size, 1);
+				
+				// copy to d88
+				COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
+				COPYBUFFER(dst, size);
+				trkptr += sizeof(d88_sct_t) + size;
+			}
 		}
 	}
 	d88_hdr.size = trkptr;

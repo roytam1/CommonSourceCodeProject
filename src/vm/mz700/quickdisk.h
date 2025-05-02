@@ -21,7 +21,6 @@
 #define QUICKDISK_SIO_RXDONE	3
 #define QUICKDISK_SIO_DATA	4
 #define QUICKDISK_SIO_BREAK	5
-#define QUICKDISK_SIO_TXDONE	6
 
 #define QUICKDISK_BUFFER_SIZE	65536
 
@@ -36,15 +35,16 @@ private:
 	bool accessed;
 	
 	uint16 buffer[QUICKDISK_BUFFER_SIZE];
-	int buffer_ptr;
-	int break_step;
+	int buffer_ptr, write_ptr;
 	bool first_data;
 	
 	bool wrga, mton, sync;
 	bool motor_on;
-	int restore_id, step_id, end_id;
+	int restore_id, end_id;
 	
 	void restore();
+	void send_data();
+	void write_crc();
 	void end_of_disk();
 	void set_insert(bool val);
 	void set_protect(bool val);

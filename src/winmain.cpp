@@ -1098,6 +1098,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->update_config();
 			}
 			break;
+#ifdef USE_SOUND_DEVICE_TYPE
+		case ID_SOUND_DEVICE_TYPE0:
+		case ID_SOUND_DEVICE_TYPE1:
+		case ID_SOUND_DEVICE_TYPE2:
+		case ID_SOUND_DEVICE_TYPE3:
+			config.sound_device_type = LOWORD(wParam) - ID_SOUND_DEVICE_TYPE0;
+			//if(emu) {
+			//	emu->update_config();
+			//}
+			break;
+#endif
 #ifdef USE_BUTTON
 		case ID_BUTTON +  0:
 		case ID_BUTTON +  1:
@@ -1447,6 +1458,11 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		if(config.sound_latency >= 0 && config.sound_latency < 4) {
 			CheckMenuRadioItem(hMenu, ID_SOUND_LATE0, ID_SOUND_LATE3, ID_SOUND_LATE0 + config.sound_latency, MF_BYCOMMAND);
 		}
+#ifdef USE_SOUND_DEVICE_TYPE
+		if(config.sound_device_type >= 0 && config.sound_device_type < USE_SOUND_DEVICE_TYPE) {
+			CheckMenuRadioItem(hMenu, ID_SOUND_DEVICE_TYPE0, ID_SOUND_DEVICE_TYPE0 + USE_SOUND_DEVICE_TYPE - 1, ID_SOUND_DEVICE_TYPE0 + config.sound_device_type, MF_BYCOMMAND);
+		}
+#endif
 	}
 #endif
 	DrawMenuBar(hWnd);
@@ -1478,7 +1494,7 @@ void open_disk(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.d88;*.td0;*.imd;*.sf7)\0*.d88;*.td0;*.imd;*.sf7\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.d88;*.td0;*.imd;*.fdi;*.tfd;*.2d;*.sf7)\0*.d88;*.td0;*.imd;*.fdi;*.tfd;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_path
 	);

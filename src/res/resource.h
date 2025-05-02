@@ -191,12 +191,17 @@
 #define ID_SOUND_LATE2                  41123
 #define ID_SOUND_LATE3                  41124
 
+#define ID_SOUND_DEVICE_TYPE0           41131
+#define ID_SOUND_DEVICE_TYPE1           41132
+#define ID_SOUND_DEVICE_TYPE2           41133
+#define ID_SOUND_DEVICE_TYPE3           41134
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        107
-#define _APS_NEXT_COMMAND_VALUE         41125
+#define _APS_NEXT_COMMAND_VALUE         41135
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

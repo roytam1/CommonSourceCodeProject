@@ -1,6 +1,20 @@
-4/2/2011
+4/6/2011
 
 [EMU/WIN32] fix joystick manager
+
+[VM/DISK] support standard disk image without format info
+[VM/Z80SIO] fix abort/break flag
+[VM/Z80SIO] fix not to load data before sync char is loaded
+
+[MZ1500/QUICKDISK] fix unformat error issue
+[X1TWIN] support to enable/disable CZ-8BS1
+[X1TWIN/DISPLAY] fix cursor blink
+[X1TWIN/DISPLAY] combine kanji class to refer the same font rom image
+[X1TWIN/DISPLAY] refine code to support X1turbo series
+[X1TWIN/MEMORY] refine code to support X1turbo series
+
+
+4/2/2011
 
 [X1TWIN/SUB] fix irq handling
 

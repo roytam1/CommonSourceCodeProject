@@ -16,12 +16,10 @@
 #define HEADER_SIZE	64
 
 #define EVENT_RESTORE	0
-#define EVENT_STEP	1
-#define EVENT_END	2
+#define EVENT_END	1
 
 // 100usec
 #define PERIOD_RESTORE	100
-#define PERIOD_STEP	10
 // 1sec
 #define PERIOD_END	1000000
 
@@ -54,7 +52,7 @@ void QUICKDISK::reset()
 	sync = false;
 	motor_on = false;
 	accessed = false;
-	restore_id = step_id = end_id = -1;
+	restore_id = end_id = -1;
 	
 	set_insert(insert);
 	set_protect(protect);
@@ -91,19 +89,6 @@ void QUICKDISK::reset()
 	} \
 }
 
-#define REGISTER_STEP_EVENT() { \
-	if(step_id == -1) { \
-		vm->regist_event(this, EVENT_STEP, PERIOD_STEP, false, &step_id); \
-	} \
-}
-
-#define CANCEL_STEP_EVENT() { \
-	if(step_id != -1) { \
-		vm->cancel_event(step_id); \
-		step_id = -1; \
-	} \
-}
-
 #define REGISTER_END_EVENT() { \
 	if(end_id != -1) { \
 		vm->cancel_event(end_id); \
@@ -125,7 +110,6 @@ void QUICKDISK::reset()
 			modified = true; \
 		} \
 		buffer_ptr++; \
-		accessed = true; \
 	} \
 }
 
@@ -137,16 +121,28 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 		if(wrga && !next) {
 			// start to write
 			first_data = true;
+			write_ptr = 0;
+		}
+		else if(!wrga && next) {
+			// end to write
+			write_crc();
 		}
 		wrga = next;
 	}
 	else if(id == QUICKDISK_SIO_DTRB) {
 		if(mton && !next) {
-			// motor on and restore to home position
-			motor_on = true;
-			REGISTER_RESTORE_EVENT();
-			CANCEL_STEP_EVENT();
-			CANCEL_END_EVENT();
+			// H->L: start motor
+			if(motor_on && wrga) {
+				// restart to send
+				send_data();
+				REGISTER_END_EVENT();
+			}
+			else {
+				// start motor and restore to home position
+				motor_on = true;
+				REGISTER_RESTORE_EVENT();
+				CANCEL_END_EVENT();
+			}
 		}
 		else if(!mton && next) {
 			// L->H: home signal is high
@@ -155,68 +151,27 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 		mton = next;
 	}
 	else if(id == QUICKDISK_SIO_SYNC) {
-		// enter hunt/sync mode
-		if(!wrga && next) {
-			// start to send for verify
-			wrga = true;
-			REGISTER_STEP_EVENT();
-		}
+		// enter hunt/sync phase
 		sync = next;
+		if(sync) {
+			// hack: start to send for verify
+			if(!wrga) {
+				write_crc();
+				wrga = true;
+			}
+			send_data();
+		}
 	}
 	else if(id == QUICKDISK_SIO_RXDONE) {
-		if(!motor_on) {
-			CANCEL_END_EVENT();
-		}
-		else if(!wrga || restore_id != -1) {
-			// now writing or restoring
-			REGISTER_STEP_EVENT();
-		}
-		else if(buffer_ptr < QUICKDISK_BUFFER_SIZE) {
-			if(buffer[buffer_ptr] == DATA_BREAK) {
-				if(break_step == 0) {
-					// end of message
-					break_step++;
-					REGISTER_STEP_EVENT();
-					REGISTER_END_EVENT();
-				}
-				else if(break_step == 1) {
-					// dummy data to quit crc check routine
-					d_sio->write_signal(SIG_Z80SIO_RECV_CH0, 0, 0xff);
-					break_step++;
-					REGISTER_END_EVENT();
-				}
-				else {
-					// wait sio enter hunt/sync phase
-					if(sync) {
-						buffer_ptr++;
-						break_step = 0;
-						REGISTER_END_EVENT();
-					}
-					REGISTER_STEP_EVENT();
-				}
-			}
-			else if(buffer[buffer_ptr] == DATA_EMPTY) {
-				// hack: skip to end of block
-				buffer_ptr = QUICKDISK_BUFFER_SIZE;
-//				buffer_ptr++;
-				REGISTER_STEP_EVENT();
-				REGISTER_END_EVENT();
-			}
-			else {
-				// send next data
-				d_sio->write_signal(SIG_Z80SIO_RECV_CH0, buffer[buffer_ptr++], 0xff);
-				REGISTER_END_EVENT();
-				accessed = true;
-			}
-		}
-		else {
-			// reached to end of disk
-			CANCEL_END_EVENT();
-			end_of_disk();
-		}
+		// send next data
+		send_data();
 	}
-	else if(id == QUICKDISK_SIO_DATA) {
-		if(motor_on && !wrga) {
+	else if(id == QUICKDISK_SIO_DATA || id == QUICKDISK_SIO_BREAK) {
+		// write data
+		if(!(motor_on && !wrga)) {
+			return;
+		}
+		if(id == QUICKDISK_SIO_DATA) {
 			if(first_data) {
 				// write sync chars at the top of message
 				WRITE_BUFFER(DATA_SYNC1);
@@ -224,25 +179,22 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 				first_data = false;
 			}
 			WRITE_BUFFER(data);
-			REGISTER_END_EVENT();
+			write_ptr = buffer_ptr;
 		}
-	}
-	else if(id == QUICKDISK_SIO_BREAK) {
-		if(motor_on && !wrga) {
+		else if(id == QUICKDISK_SIO_BREAK) {
+			write_crc();
 			WRITE_BUFFER(DATA_BREAK);
 			first_data = true;
+			write_ptr = 0;
+		}
+		accessed = true;
+		
+		if(buffer_ptr < QUICKDISK_BUFFER_SIZE) {
 			REGISTER_END_EVENT();
 		}
-	}
-	else if(id == QUICKDISK_SIO_TXDONE) {
-		if(motor_on && !wrga) {
-			WRITE_BUFFER(DATA_CRC1);
-			WRITE_BUFFER(DATA_CRC2);
-			WRITE_BUFFER(DATA_CRC3);
-			// don't increment pointer !!!
-			WRITE_BUFFER(DATA_BREAK);
-			buffer_ptr--;
-			REGISTER_END_EVENT();
+		else {
+			CANCEL_END_EVENT();
+			end_of_disk();
 		}
 	}
 }
@@ -264,11 +216,6 @@ void QUICKDISK::event_callback(int event_id, int err)
 		restore_id = -1;
 		restore();
 	}
-	else if(event_id == EVENT_STEP) {
-		// send data
-		step_id = -1;
-		this->write_signal(QUICKDISK_SIO_RXDONE, 1, 1);
-	}
 	else if(event_id == EVENT_END) {
 		// reached to end of disk
 		end_id = -1;
@@ -281,15 +228,59 @@ void QUICKDISK::restore()
 	// reached to home position
 	set_home(false);
 	buffer_ptr = 0;
-	break_step = 0;
 	
 	// start to send
-	REGISTER_STEP_EVENT();
-	REGISTER_END_EVENT();
+	send_data();
+}
+
+void QUICKDISK::send_data()
+{
+	if(!(motor_on && wrga) || restore_id != -1) {
+		return;
+	}
+retry:
+	if(buffer_ptr < QUICKDISK_BUFFER_SIZE && buffer[buffer_ptr] != DATA_EMPTY) {
+		if(buffer[buffer_ptr] == DATA_BREAK) {
+			// wait until sio enters hunt/sync phase
+			if(!sync) {
+				return;
+			}
+			buffer_ptr++;
+			goto retry;
+		}
+		// send data
+		d_sio->write_signal(SIG_Z80SIO_RECV_CH0, buffer[buffer_ptr++], 0xff);
+		accessed = true;
+		REGISTER_END_EVENT();
+	}
+	else {
+		// reached to end of disk
+		CANCEL_END_EVENT();
+		end_of_disk();
+	}
+}
+
+void QUICKDISK::write_crc()
+{
+	if(!wrga && write_ptr != 0) {
+		buffer_ptr = write_ptr;
+		
+		WRITE_BUFFER(DATA_CRC1);
+		WRITE_BUFFER(DATA_CRC2);
+		WRITE_BUFFER(DATA_CRC3);
+		WRITE_BUFFER(0);
+		// don't increment pointer !!!
+		WRITE_BUFFER(DATA_BREAK);
+		buffer_ptr--;
+	}
+	write_ptr = 0;
 }
 
 void QUICKDISK::end_of_disk()
 {
+	// write crc
+	write_crc();
+	
 	// reached to end of disk
 	if(mton || !wrga) {
 		motor_on = false;
@@ -361,6 +352,7 @@ void QUICKDISK::open_disk(_TCHAR path[])
 		buffer[buffer_ptr++] = DATA_CRC1;
 		buffer[buffer_ptr++] = DATA_CRC2;
 		buffer[buffer_ptr++] = DATA_CRC3;
+		buffer[buffer_ptr++] = 0; // dummy
 		buffer[buffer_ptr++] = DATA_BREAK;
 		
 		while(remain >= MZT_HEADER_SIZE) {
@@ -409,8 +401,8 @@ void QUICKDISK::open_disk(_TCHAR path[])
 			for(int i = 0; i < 17; i++) {
 				buffer[buffer_ptr++] = header[i + 1]; // file name
 			}
-			buffer[buffer_ptr++] = 0x00;		// lock
-			buffer[buffer_ptr++] = 0x00;		// sec ret
+			buffer[buffer_ptr++] = header[0x3e];	// lock
+			buffer[buffer_ptr++] = header[0x3f];	// secret
 			buffer[buffer_ptr++] = header[0x12];	// file size
 			buffer[buffer_ptr++] = header[0x13];
 			buffer[buffer_ptr++] = header[0x14];	// load addr
@@ -423,6 +415,7 @@ void QUICKDISK::open_disk(_TCHAR path[])
 			buffer[buffer_ptr++] = DATA_CRC1;
 			buffer[buffer_ptr++] = DATA_CRC2;
 			buffer[buffer_ptr++] = DATA_CRC3;
+			buffer[buffer_ptr++] = 0; // dummy
 			buffer[buffer_ptr++] = DATA_BREAK;
 			
 			// copy data
@@ -440,6 +433,7 @@ void QUICKDISK::open_disk(_TCHAR path[])
 			buffer[buffer_ptr++] = DATA_CRC1;
 			buffer[buffer_ptr++] = DATA_CRC2;
 			buffer[buffer_ptr++] = DATA_CRC3;
+			buffer[buffer_ptr++] = 0; // dummy
 			buffer[buffer_ptr++] = DATA_BREAK;
 		}
 		
@@ -459,7 +453,7 @@ void QUICKDISK::close_disk()
 		FILEIO* fio = new FILEIO();
 		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 			int block_num = buffer[4];
-			buffer_ptr = 9;
+			buffer_ptr = 10;
 			
 			for(int i = 0; i < block_num; i++) {
 				int id = buffer[buffer_ptr + 3] & 3;
@@ -475,6 +469,8 @@ void QUICKDISK::close_disk()
 					for(int i = 1; i <= 17; i++) {
 						header[i] = (uint8)buffer[buffer_ptr + i];	// file name
 					}
+					header[0x3e] = (uint8)buffer[buffer_ptr + 18];	// lock
+					header[0x3f] = (uint8)buffer[buffer_ptr + 19];	// lock
 					header[0x12] = (uint8)buffer[buffer_ptr + 20];	// file size
 					header[0x13] = (uint8)buffer[buffer_ptr + 21];
 					header[0x14] = (uint8)buffer[buffer_ptr + 22];	// load addr
@@ -489,7 +485,7 @@ void QUICKDISK::close_disk()
 						fio->Fputc(buffer[buffer_ptr + i]);
 					}
 				}
-				buffer_ptr += size + 4;
+				buffer_ptr += size + 5;
 			}
 			fio->Fclose();
 		}
@@ -498,5 +494,9 @@ void QUICKDISK::close_disk()
 	set_insert(false);
 	set_protect(false);
 	set_home(true);
+	
+	// cancel all events
+	CANCEL_RESTORE_EVENT();
+	CANCEL_END_EVENT();
 }
 

@@ -29,35 +29,61 @@ private:
 	uint8 vram_k[0x800];
 #endif
 	uint8* vram_ptr;
-	uint8* vram_b;
-	uint8* vram_r;
-	uint8* vram_g;
 	uint8 pcg_b[256][8];
 	uint8 pcg_r[256][8];
 	uint8 pcg_g[256][8];
+	uint8 font[0x800];
+	uint8 kanji[0x4bc00];
+	
+	int vline, vclock, prev_clock;
+	uint8 cur_code, cur_line;
+	
+	int kaddr, kofs, kflag;
+	uint8* kanji_ptr;
 	
 	uint8 pal[3];
 	uint8 priority, pri[8][8];	// pri[cg][txt]
-	uint8 pri_line[200][8][8];
-	int vline, vclock, prev_clock;
-	uint8 cur_code, cur_attr, cur_line;
+	
 	uint8 column;
 #ifdef _X1TURBO
 	uint8 mode1, mode2;
 #endif
 	
+#ifdef _X1TURBO
+	uint8 text[400][640+8];	// +8 for wide char
+	uint8 cg[400][640];
+	uint8 pri_line[400][8][8];
+#else
 	uint8 text[200][640+8];	// +8 for wide char
 	uint8 cg[200][640];
-	uint8 font[0x800];
+	uint8 pri_line[200][8][8];
+#endif
 	scrntype palette_pc[8];
 	uint8 prev_top[80];
 	int cblink;
 	bool scanline;
 	
 	void update_pal();
-	void get_cur_code();
+	
+	uint8 get_cur_font(uint32 addr);
+	void get_cur_pcg(uint32 addr);
+	void get_cur_code_line();
+	
+	void draw_line(int v);
 	void draw_text(int y);
 	void draw_cg(int line);
+	
+	// kanji rom (from X1EMU by KM)
+	void write_kanji(uint32 addr, uint32 data);
+	uint32 read_kanji(uint32 addr);
+	
+	uint16 jis2adr_x1(uint16 jis);
+	uint32 adr2knj_x1(uint16 adr);
+#ifdef _X1TURBO
+	uint32 adr2knj_x1t(uint16 adr);
+#endif
+	uint32 jis2knj(uint16 jis);
+	uint16 jis2sjis(uint16 jis);
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

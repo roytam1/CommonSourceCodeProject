@@ -831,26 +831,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\x1twin\kanji.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\x1twin\memory.cpp"
 					>
 					<FileConfiguration
@@ -1088,10 +1068,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\x1twin\joystick.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\x1twin\kanji.h"
 					>
 				</File>
 				<File

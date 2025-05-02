@@ -120,7 +120,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio_qd->set_context_rxdone0(qd, QUICKDISK_SIO_RXDONE, 1);
 	sio_qd->set_context_send0(qd, QUICKDISK_SIO_DATA);
 	sio_qd->set_context_break0(qd, QUICKDISK_SIO_BREAK, 1);
-	sio_qd->set_context_txdone0(qd, QUICKDISK_SIO_TXDONE, 1);
 #endif
 	
 	display->set_vram_ptr(memory->get_vram());
