@@ -86,6 +86,7 @@
 #endif
 #if defined(_PC98DO)
 #define HAS_UPD4990A
+#define HAS_YM2608
 #define Z80_MEMORY_WAIT
 #endif
 #define I8259_MAX_CHIPS		2
@@ -164,6 +165,7 @@ class CMT;
 #endif
 class DISPLAY;
 class FLOPPY;
+class FMSOUND;
 class JOYSTICK;
 class KEYBOARD;
 class MOUSE;
@@ -234,6 +236,7 @@ protected:
 #endif
 	DISPLAY* display;
 	FLOPPY* floppy;
+	FMSOUND* fmsound;
 	JOYSTICK* joystick;
 	KEYBOARD* keyboard;
 	MOUSE* mouse;

@@ -915,6 +915,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\pc9801\fmsound.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\pc9801\joystick.cpp"
 					>
 					<FileConfiguration
@@ -1172,6 +1194,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc9801\floppy.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\pc9801\fmsound.h"
 					>
 				</File>
 				<File

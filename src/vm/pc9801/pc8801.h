@@ -67,8 +67,10 @@ private:
 	uint8 crtc_buffer[120 * 200];
 	int crtc_buffer_ptr;
 	
-	uint8 anapal[9][2];		// 8=back color
-	uint8 digipal[9];
+	typedef struct {
+		uint8 b, r, g;
+	} palette_t;
+	palette_t palette[9];
 	bool update_palette;
 	
 	uint8 sg_pattern[0x800];
@@ -79,9 +81,9 @@ private:
 	
 	uint8 get_crtc_buffer(int ofs);
 	void draw_text();
-	void draw_color_graph();
-	void draw_mono_graph();
-	void draw_mono_hires_graph();
+	void draw_color_graph(int y);
+	void draw_mono_graph(int y);
+	void draw_mono_hires_graph(int y);
 	
 	// dma (temporary)
 	typedef struct {

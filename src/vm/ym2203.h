@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.15-
 
-	[ YM2203 ]
+	[ AY-3-8912 / YM2203 / YM2608 ]
 */
 
 #ifndef _YM2203_H_
@@ -22,10 +22,17 @@
 class YM2203 : public DEVICE
 {
 private:
-	FM::OPN* opn;
-	int usec;
+#ifdef HAS_YM2608
+	FM::OPNA* chip;
+#else
+	FM::OPN* chip;
+#endif
 	
 	uint8 ch, mode;
+#ifdef HAS_YM2608
+	uint8 ch1, data1;
+#endif
+	
 	typedef struct {
 		uint8 wreg;
 		uint8 rreg;
@@ -34,12 +41,13 @@ private:
 		outputs_t outputs;
 	} port_t;
 	port_t port[2];
+	
 	bool mute;
+	int usec_per_vline;
 	
 #ifndef HAS_AY_3_8912
 	// output signals
 	outputs_t outputs_irq;
-	bool irq;
 	void update_interrupt();
 #endif
 	

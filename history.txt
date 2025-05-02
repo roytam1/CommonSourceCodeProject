@@ -1,3 +1,15 @@
+2/6/2012
+
+[VM/YM2151] fix to raise irq when timer is expired before it is reset
+[VM/YM2203] support YM2608(OPNA)
+[VM/YM2203] fix to raise irq when timer is expired before it is reset
+
+[PC98DO/PC8801] fix to clear text screen when dma overrun occurs
+[PC98DO/PC8801] fix to refer same palettes in 8/512 color mode
+[PC98DO/PC8801] support OPNA sound (though PC-98DO does not support OPNA...)
+[PC98DO/PC9801] support OPNA sound (though PC-98DO does not support OPNA...)
+
+
 2/2/2012
 
 [VM/Z80] fix to consider meaningless $dd/$ed/$fd

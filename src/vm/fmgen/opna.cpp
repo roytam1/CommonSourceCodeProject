@@ -109,7 +109,10 @@ void OPNBase::Reset()
 //	割り込み信号の取得
 bool OPNBase::ReadIRQ()
 {
-	return interrupt;
+	bool tmp = interrupt;
+	interrupt = false;
+	return tmp;
+//	return interrupt;
 }
 
 //	プリスケーラ設定

@@ -13,7 +13,7 @@ void YM2151::initialize()
 {
 	opm = new FM::OPM;
 	register_vline_event(this);
-	irq = mute = false;
+	mute = false;
 }
 
 void YM2151::release()
@@ -60,10 +60,9 @@ void YM2151::event_vline(int v, int clock)
 
 void YM2151::update_interrupt()
 {
-	bool next = opm->ReadIRQ();
-	if(irq != next) {
-		write_signals(&outputs_irq, next ? 0xffffffff : 0);
-		irq = next;
+	if(opm->ReadIRQ()) {
+		write_signals(&outputs_irq, 0);
+		write_signals(&outputs_irq, 0xffffffff);
 	}
 }
 

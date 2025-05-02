@@ -26,7 +26,7 @@ void MOUSE::initialize()
 	freq = cur_freq = 0;
 	
 	register_frame_event(this);
-	register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq], true, &register_id);
+	register_event(this, EVENT_TIMER, 1000000.0 / freq_table[freq], true, &register_id);
 }
 
 void MOUSE::reset()
@@ -52,7 +52,7 @@ void MOUSE::event_callback(int event_id, int err)
 	}
 	if(cur_freq != freq) {
 		cancel_event(register_id);
-		register_event_by_clock(this, EVENT_TIMER, CPU_CLOCKS / freq_table[freq] + err, true, &register_id);
+		register_event(this, EVENT_TIMER, 1000000.0 / freq_table[freq] + err, true, &register_id);
 		cur_freq = freq;
 	}
 }

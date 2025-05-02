@@ -27,7 +27,7 @@ private:
 	int usec;
 	
 	uint8 ch;
-	bool irq, mute;
+	bool mute;
 	
 	void update_interrupt();
 	

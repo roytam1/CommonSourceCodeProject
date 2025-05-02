@@ -4,39 +4,58 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.15-
 
-	[ YM2203 ]
+	[ AY-3-8912 / YM2203 / YM2608 ]
 */
 
 #include "ym2203.h"
 
 void YM2203::initialize()
 {
-	opn = new FM::OPN;
+#ifdef HAS_YM2608
+	chip = new FM::OPNA;
+#else
+	chip = new FM::OPN;
+#endif
 	register_vline_event(this);
 	mute = false;
-#ifndef HAS_AY_3_8912
-	irq = false;
-#endif
 }
 
 void YM2203::release()
 {
-	delete opn;
+	delete chip;
 }
 
 void YM2203::reset()
 {
-	opn->Reset();
-	opn->SetReg(0x27, 0);
+	chip->Reset();
+	chip->SetReg(0x27, 0);
 #if defined(_X1TWIN) || defined(_X1TURBO)
-	opn->SetReg(0x2e, 0);
+	chip->SetReg(0x2e, 0);
 #endif
 	port[0].first = port[1].first = true;
 }
 
+#ifdef HAS_YM2608
+#define amask 3
+#else
+#define amask 1
+#endif
+
 void YM2203::write_io8(uint32 addr, uint32 data)
 {
-	if(addr & 1) {
+	switch(addr & amask) {
+	case 0:
+#ifdef HAS_AY_3_8912
+		ch = data & 0x0f;
+#else
+		ch = data;
+		// write dummy data for prescaler
+		if(0x2d <= ch && ch <= 0x2f) {
+			chip->SetReg(ch, 0);
+		}
+#endif
+		break;
+	case 1:
 		if(ch == 7) {
 			mode = data;
 		}
@@ -50,47 +69,59 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		}
 		// don't write again for prescaler
 		if(!(0x2d <= ch && ch <= 0x2f)) {
-			opn->SetReg(ch, data);
+			chip->SetReg(ch, data);
 #ifndef HAS_AY_3_8912
 			update_interrupt();
 #endif
 		}
-	}
-	else {
-#ifdef HAS_AY_3_8912
-		ch = data & 0x0f;
-#else
-		ch = data;
-		// write dummy data for prescaler
-		if(0x2d <= ch && ch <= 0x2f) {
-			opn->SetReg(ch, 0);
-		}
+		break;
+#ifdef HAS_YM2608
+	case 2:
+		ch1 = data1 = data;
+		break;
+	case 3:
+		chip->SetReg(0x100 | ch1, data);
+		data1 = data;
+		update_interrupt();
+		break;
 #endif
 	}
 }
 
 uint32 YM2203::read_io8(uint32 addr)
 {
-	if(addr & 1) {
+	switch(addr & amask) {
+#ifndef HAS_AY_3_8912
+	case 0:
+		return chip->ReadStatus();
+#endif
+	case 1:
 		if(ch == 14) {
-//			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
+#ifdef _PC98DO
 			return port[0].rreg;
+#else
+			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
+#endif
 		}
 		else if(ch == 15) {
-//			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
+#ifdef _PC98DO
 			return port[1].rreg;
-		}
-		else {
-			return opn->GetReg(ch);
-		}
-	}
-	else {
-#ifndef HAS_AY_3_8912
-		return opn->ReadStatus();
 #else
-		return 0xff;
+			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
+#endif
+		}
+		return chip->GetReg(ch);
+#ifdef HAS_YM2608
+	case 2:
+		return chip->ReadStatusEx();
+	case 3:
+		if(ch1 == 8) {
+			return chip->GetReg(0x100 | ch1);
+		}
+		return data1;
 #endif
 	}
+	return 0xff;
 }
 
 void YM2203::write_signal(int id, uint32 data, uint32 mask)
@@ -108,7 +139,7 @@ void YM2203::write_signal(int id, uint32 data, uint32 mask)
 
 void YM2203::event_vline(int v, int clock)
 {
-	opn->Count(usec);
+	chip->Count(usec_per_vline);
 #ifndef HAS_AY_3_8912
 	update_interrupt();
 #endif
@@ -117,10 +148,9 @@ void YM2203::event_vline(int v, int clock)
 #ifndef HAS_AY_3_8912
 void YM2203::update_interrupt()
 {
-	bool next = opn->ReadIRQ();
-	if(irq != next) {
-		write_signals(&outputs_irq, next ? 0xffffffff : 0);
-		irq = next;
+	if(chip->ReadIRQ()) {
+		write_signals(&outputs_irq, 0);
+		write_signals(&outputs_irq, 0xffffffff);
 	}
 }
 #endif
@@ -128,19 +158,25 @@ void YM2203::update_interrupt()
 void YM2203::mix(int32* buffer, int cnt)
 {
 	if(cnt > 0 && !mute) {
-		opn->Mix(buffer, cnt);
+		chip->Mix(buffer, cnt);
 	}
 }
 
 void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 {
-	opn->Init(clock, rate, false, NULL);
-	opn->SetVolumeFM(volf);
-	opn->SetVolumePSG(volp);
+#ifdef HAS_YM2608
+	_TCHAR app_path[_MAX_PATH];
+	emu->application_path(app_path);
+	chip->Init(clock, rate, false, app_path);
+#else
+	chip->Init(clock, rate, false, NULL);
+#endif
+	chip->SetVolumeFM(volf);
+	chip->SetVolumePSG(volp);
 }
 
 void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
 {
-	usec = (int)(1000000.0 / new_frames_per_sec / (double)new_lines_per_frame + 0.5);
+	usec_per_vline = (int)(1000000.0 / new_frames_per_sec / (double)new_lines_per_frame + 0.5);
 }
 

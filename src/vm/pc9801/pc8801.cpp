@@ -214,11 +214,11 @@ void PC8801::reset()
 	cursor_on = blink_on = false;
 	blink_counter = 0;
 	
-//	for(int i = 0; i < 8; i++) {
-//		digipal[i] = i;
-//	}
-	memset(anapal, 0, sizeof(anapal));
-	memset(digipal, 0, sizeof(digipal));
+	for(int i = 0; i <= 8; i++) {
+		palette[i].b = (i & 1) ? 7 : 0;
+		palette[i].r = (i & 2) ? 7 : 0;
+		palette[i].g = (i & 4) ? 7 : 0;
+	}
 	update_palette = true;
 	
 	// dma
@@ -347,10 +347,10 @@ void PC8801::write_dma_io8(uint32 addr, uint32 data)
 
 uint32 PC8801::read_dma_data8(uint32 addr)
 {
-	addr &= 0xffff;
 	if((addr & 0xf000) == 0xf000 && (config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2)) {
 		return tvram[addr & 0xfff];
 	}
+	addr &= 0xffff;
 	return ram[addr];
 }
 
@@ -411,9 +411,9 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 				update_tvram_memmap();
 			}
 		}
-		if((port32 & 0x20) != (data & 0x20)) {
-			update_palette = true;
-		}
+//		if((port32 & 0x20) != (data & 0x20)) {
+//			update_palette = true;
+//		}
 		if((port32 & 0x80) != (data & 0x80)) {
 			intr_mask2 = (intr_mask2 & ~0x10) | ((data & 0x80) ? 0 : 0x10);
 			update_intr();
@@ -438,6 +438,10 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x44:
 	case 0x45:
+#ifdef HAS_YM2608
+	case 0x46:
+	case 0x47:
+#endif
 		d_opn->write_io8(addr, data);
 		break;
 	// crtc (from MESS PC-8801 driver)
@@ -476,7 +480,9 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 	case 0x52:
-		digipal[8] = (data >> 4) & 7;
+		palette[8].b = (data & 0x10) ? 7 : 0;
+		palette[8].r = (data & 0x20) ? 7 : 0;
+		palette[8].g = (data & 0x40) ? 7 : 0;
 		update_palette = true;
 		break;
 	case 0x53:
@@ -490,13 +496,22 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 	case 0x59:
 	case 0x5a:
 	case 0x5b:
-		if(data & 0x80) {
-			anapal[8][(data >> 6) & 1] = data;
+		if(port32 & 0x20) {
+			int n = (data & 0x80) ? 8 : (addr - 0x54);
+			if(data & 0x40) {
+				palette[n].g = data & 7;
+			}
+			else {
+				palette[n].b = data & 7;
+				palette[n].r = (data >> 3) & 7;
+			}
 		}
 		else {
-			anapal[addr - 0x54][(data >> 6) & 1] = data;
+			int n = addr - 0x54;
+			palette[n].b = (data & 1) ? 7 : 0;
+			palette[n].r = (data & 2) ? 7 : 0;
+			palette[n].g = (data & 4) ? 7 : 0;
 		}
-		digipal[addr - 0x54] = data;
 		update_palette = true;
 		break;
 	case 0x5c:
@@ -668,6 +683,10 @@ uint32 PC8801::read_io8(uint32 addr)
 		return (vblank ? 0x20 : 0) | (d_rtc->read_signal(0) ? 0x10 : 0);
 	case 0x44:
 	case 0x45:
+#ifdef HAS_YM2608
+	case 0x46:
+	case 0x47:
+#endif
 		return d_opn->read_io8(addr);
 	case 0x50:
 		return crtc_status;
@@ -786,7 +805,6 @@ void PC8801::event_callback(int event_id, int err)
 
 void PC8801::event_frame()
 {
-	
 	// update blink counter
 	int blink_rate = 8 * ((crtc_reg[0][1] >> 6) + 1);
 	if(!(blink_counter++ < blink_rate)) {
@@ -814,6 +832,9 @@ void PC8801::event_vline(int v, int clock)
 		
 		vblank = false;
 		request_intr(IRQ_VRTC, false);
+		
+		// clear graph buffer
+		memset(graph, 0, sizeof(graph));
 	}
 	if(v < disp_line) {
 		if((crtc_status & 0x10) && (dma_mode & 4) && !(dma_status & 4)) {
@@ -823,12 +844,25 @@ void PC8801::event_vline(int v, int clock)
 				register_event_by_clock(this, EVENT_BUSREQ, busreq_clocks, false, NULL);
 			}
 		}
+		
+		// draw graph screen
+		if(graph_mode & 8) {
+			if(graph_mode & 0x10) {
+				draw_color_graph(v);
+			}
+			else if(line200) {
+				draw_mono_graph(v);
+			}
+			else {
+				draw_mono_hires_graph(v);
+			}
+		}
 	}
 	else if(v == disp_line) {
 		if((crtc_status & 0x10) && (dma_mode & 4) && !(dma_status & 4)) {
 			// run dma transfer to crtc
 			uint16 addr = dma_reg[2].start.w.l;
-			for(int i = 0; i < dma_reg[2].length.sd; i++) {
+			for(int i = 0; i <= dma_reg[2].length.sd; i++) {
 				write_dma_io8(0, read_dma_data8(addr++));
 			}
 			dma_status |= 4;
@@ -853,37 +887,26 @@ void PC8801::key_down(int code, bool repeat)
 void PC8801::draw_screen()
 {
 	memset(text, 0, sizeof(text));
-	memset(graph, 0, sizeof(graph));
+//	memset(graph, 0, sizeof(graph));
 	
 	if(!(disp_ctrl & 1) && (crtc_status & 0x10)) {
 		draw_text();
 	}
-	if(graph_mode & 8) {
-		if(graph_mode & 0x10) {
-			draw_color_graph();
-		}
-		else if(line200) {
-			draw_mono_graph();
-		}
-		else {
-			draw_mono_hires_graph();
-		}
-	}
+//	if(graph_mode & 8) {
+//		if(graph_mode & 0x10) {
+//			draw_color_graph();
+//		}
+//		else if(line200) {
+//			draw_mono_graph();
+//		}
+//		else {
+//			draw_mono_hires_graph();
+//		}
+//	}
 	if(update_palette) {
 		if(graph_mode & 0x10) {
-			if(port32 & 0x20) {
-				for(int i = 0; i < 9; i++) {
-					uint8 b = anapal[i][0] & 7;
-					uint8 r = (anapal[i][0] >> 3) & 7;
-					uint8 g = anapal[i][1] & 7;
-					palette_graph_pc[i] = RGB_COLOR(r << 5, g << 5, b << 5);
-				}
-			}
-			else {
-				for(int i = 0; i < 9; i++) {
-					uint8 pal = digipal[i];
-					palette_graph_pc[i] = RGB_COLOR((pal & 2) ? 255 : 0, (pal & 4) ? 255 : 0, (pal & 1) ? 255 : 0);
-				}
+			for(int i = 0; i < 9; i++) {
+				palette_graph_pc[i] = RGB_COLOR(palette[i].r << 5, palette[i].g << 5, palette[i].b << 5);
 			}
 		}
 		else {
@@ -932,7 +955,7 @@ uint8 PC8801::get_crtc_buffer(int ofs)
 	}
 	// DMA underrun
 //	crtc_status &= ~0x10;
-//	crtc_status |= 8;
+	crtc_status |= 8;
 	return 0;
 }
 
@@ -941,19 +964,26 @@ void PC8801::draw_text()
 	int width = (crtc_reg[0][0] & 0x7f) + 2;
 	int height = (crtc_reg[0][1] & 0x3f) + 1;
 	int char_lines = (crtc_reg[0][2] & 0x1f) + 1;
-	if(char_lines >= 16) {
-		char_lines >>= 1;
-	}
-//	if(!line200 || (crtc_reg[0][1] & 0x80)) {
+//	if(char_lines >= 16) {
 //		char_lines >>= 1;
 //	}
+	if(!line200 || (crtc_reg[0][1] & 0x80)) {
+		char_lines >>= 1;
+	}
 	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : (crtc_reg[0][4] & 0x1f) + 1;
 	uint8 attribs[80], flags[256];
 	if(attrib_num == 0) {
-		memset(attribs, 0xe0, sizeof(attribs));
+		if(text_mode & 2) {
+			memset(attribs, 0, sizeof(attribs));
+		}
+		else {
+			memset(attribs, 0xe0, sizeof(attribs));
+		}
 	}
 	bool cursor_draw = cursor_on && (blink_on || !(crtc_reg[0][2] & 0x20));
 	int cursor_line = (crtc_reg[0][2] & 0x40) ? 0 : 7;
+	
+	crtc_status &= ~8; // clear dma underrun
 	
 	for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_lines, ofs += 120) {
 		if(attrib_num != 0) {
@@ -1001,8 +1031,8 @@ void PC8801::draw_text()
 			bool cursor_now = (cursor_now_y && cx == crtc_reg[4][0]);
 			
 			for(int l = 0, y = ytop; l < char_lines && y < 200; l++, y++) {
-				uint8 pat = pattern[l];
-				if(secret || l >= 8) {
+				uint8 pat = (l < 8) ? pattern[l] : 0;
+				if(secret) {
 					pat = 0;
 				}
 				if((upper_line && l == 0) || (under_line && l >= 7)) {
@@ -1035,13 +1065,18 @@ void PC8801::draw_text()
 				}
 			}
 		}
+		if(crtc_status & 8) {
+			memset(text, 0, sizeof(text));
+			break;
+		}
 	}
 }
 
-void PC8801::draw_color_graph()
+void PC8801::draw_color_graph(int y)
 {
-	int addr = 0;
-	for(int y = 0; y < 200; y++) {
+//	int addr = 0;
+	int addr = y * 80;
+//	for(int y = 0; y < 200; y++) {
 		for(int x = 0; x < 640; x += 8) {
 			uint8 b = gvram[addr | 0x0000];
 			uint8 r = gvram[addr | 0x4000];
@@ -1057,13 +1092,14 @@ void PC8801::draw_color_graph()
 			dest[6] = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1);
 			dest[7] = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 		}
-	}
+//	}
 }
 
-void PC8801::draw_mono_graph()
+void PC8801::draw_mono_graph(int y)
 {
-	int addr = 0;
-	for(int y = 0; y < 200; y++) {
+//	int addr = 0;
+	int addr = y * 80;
+//	for(int y = 0; y < 200; y++) {
 		for(int x = 0; x < 640; x += 8) {
 			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
 			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
@@ -1079,13 +1115,14 @@ void PC8801::draw_mono_graph()
 			dest[6] = ((b | r | g) & 0x02) >> 1;
 			dest[7] = ((b | r | g) & 0x01)     ;
 		}
-	}
+//	}
 }
 
-void PC8801::draw_mono_hires_graph()
+void PC8801::draw_mono_hires_graph(int y)
 {
-	int addr = 0;
-	for(int y = 0; y < 200; y++) {
+//	int addr = 0;
+	int addr = y * 80;
+//	for(int y = 0; y < 200; y++) {
 		for(int x = 0; x < 640; x += 8) {
 			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
 			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
@@ -1109,7 +1146,7 @@ void PC8801::draw_mono_hires_graph()
 			dest1[6] = (r & 0x02) >> 1;
 			dest1[7] = (r & 0x01)     ;
 		}
-	}
+//	}
 }
 
 void PC8801::request_intr(int level, bool status)

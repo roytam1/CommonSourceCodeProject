@@ -41,6 +41,7 @@
 
 #include "display.h"
 #include "floppy.h"
+#include "fmsound.h"
 #include "joystick.h"
 #include "keyboard.h"
 #include "mouse.h"
@@ -144,6 +145,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
+	fmsound = new FMSOUND(this, emu);
 	joystick = new JOYSTICK(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	mouse = new MOUSE(this, emu);
@@ -231,6 +233,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_context_pic(pic);
 	display->set_context_gdc_chr(gdc_chr, gdc_chr->get_ra());
 	display->set_context_gdc_gfx(gdc_gfx, gdc_gfx->get_ra(), gdc_gfx->get_cs());
+	fmsound->set_context_opn(opn);
 	joystick->set_context_opn(opn);
 	keyboard->set_context_sio(sio_kbd);
 	mouse->set_context_pic(pic);
@@ -442,8 +445,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_rw(0xca, floppy);
 	io->set_iomap_single_rw(0xcc, floppy);
 	
-	io->set_iomap_alias_rw(0x188, opn, 0);
-	io->set_iomap_alias_rw(0x18a, opn, 1);
+	io->set_iomap_single_rw(0x188, fmsound);
+	io->set_iomap_single_rw(0x18a, fmsound);
+#ifdef HAS_YM2608
+	io->set_iomap_single_rw(0x18c, fmsound);
+	io->set_iomap_single_rw(0x18e, fmsound);
+	io->set_iomap_single_rw(0xa460, fmsound);
+#endif
 	
 #if !defined(SUPPORT_OLD_BUZZER)
 	io->set_iomap_alias_rw(0x3fd9, pit, 0);
@@ -705,7 +713,11 @@ void VM::initialize_sound(int rate, int samples)
 #else
 	beep->init(rate, 8000);
 #endif
+#ifdef HAS_YM2608
+	opn->init(rate, 7987200, samples, 0, 0);
+#else
 	opn->init(rate, 3993600, samples, 0, 0);
+#endif
 	
 #if defined(_PC98DO)
 	// init sound manager
@@ -713,7 +725,11 @@ void VM::initialize_sound(int rate, int samples)
 	
 	// init sound gen
 	pc88beep->init(rate, 2400, 8000);
+#ifdef HAS_YM2608
+	pc88opn->init(rate, 7987200, samples, 0, 0);
+#else
 	pc88opn->init(rate, 3993600, samples, 0, 0);
+#endif
 	pc88pcm->init(rate, 8000);
 #endif
 }
