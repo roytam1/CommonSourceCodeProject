@@ -179,7 +179,7 @@ void VM::save_binary(int drv, _TCHAR* file_path)
 
 bool VM::now_skip()
 {
-	return false;
+	return event->now_skip();
 }
 
 void VM::update_config()

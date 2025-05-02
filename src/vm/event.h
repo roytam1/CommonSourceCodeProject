@@ -74,6 +74,11 @@ private:
 	int sound_samples;
 	int sound_tmp_samples;
 	int accum_samples, update_samples;
+	
+	int dont_skip_frames;
+	bool prev_skip, skip;
+	bool sound_changed;
+	
 	void mix_sound(int samples);
 	void update_sound();
 	
@@ -133,6 +138,7 @@ public:
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
 	uint32 get_cpu_pc(int index);
+	void set_skip_frames(bool value);
 	
 	// unique functions
 	double frame_rate() {
@@ -155,6 +161,7 @@ public:
 	void set_context_sound(DEVICE* device) {
 		d_sound[dcount_sound++] = device;
 	}
+	bool now_skip();
 };
 
 #endif

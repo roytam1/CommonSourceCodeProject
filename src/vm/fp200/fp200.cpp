@@ -13,7 +13,6 @@
 #include "../device.h"
 #include "../event.h"
 
-#include "../datarec.h"
 #include "../i8080.h"
 #include "../memory.h"
 #include "../rp5c01.h"
@@ -178,7 +177,7 @@ void VM::close_datarec()
 
 bool VM::now_skip()
 {
-	return false;
+	return event->now_skip();
 }
 
 void VM::update_config()

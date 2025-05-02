@@ -128,6 +128,16 @@ BEGIN
         MENUITEM "Fullscreen 18",               ID_SCREEN_FULLSCREEN18
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
+        MENUITEM "Fullscreen 21",               ID_SCREEN_FULLSCREEN21
+        MENUITEM "Fullscreen 22",               ID_SCREEN_FULLSCREEN22
+        MENUITEM "Fullscreen 23",               ID_SCREEN_FULLSCREEN23
+        MENUITEM "Fullscreen 24",               ID_SCREEN_FULLSCREEN24
+        MENUITEM "Fullscreen 25",               ID_SCREEN_FULLSCREEN25
+        MENUITEM "Fullscreen 26",               ID_SCREEN_FULLSCREEN26
+        MENUITEM "Fullscreen 27",               ID_SCREEN_FULLSCREEN27
+        MENUITEM "Fullscreen 28",               ID_SCREEN_FULLSCREEN28
+        MENUITEM "Fullscreen 29",               ID_SCREEN_FULLSCREEN29
+        MENUITEM "Fullscreen 30",               ID_SCREEN_FULLSCREEN30
         MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC

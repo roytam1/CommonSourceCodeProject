@@ -171,10 +171,12 @@ int desktop_bpp;
 int prev_window_mode = 0;
 bool now_fullscreen = false;
 
+#define MAX_FULLSCREEN 30
+
 int window_mode_count;
 int screen_mode_count;
-int screen_mode_width[20];
-int screen_mode_height[20];
+int screen_mode_width[MAX_FULLSCREEN];
+int screen_mode_height[MAX_FULLSCREEN];
 
 void set_window(HWND hWnd, int mode);
 
@@ -268,7 +270,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			if(!found) {
 				screen_mode_width[screen_mode_count] = dev.dmPelsWidth;
 				screen_mode_height[screen_mode_count] = dev.dmPelsHeight;
-				if(++screen_mode_count == 20) {
+				if(++screen_mode_count == MAX_FULLSCREEN) {
 					break;
 				}
 			}
@@ -340,6 +342,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	int rec_delay_ptr = 0;
 	DWORD next_time = 0;
 	DWORD update_fps_time = next_time + 1000;
+	bool prev_skip = false;
 	MSG msg;
 	
 	while(1) {
@@ -364,10 +367,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			
 			// timing controls
 			int interval = get_interval(), sleep_period = 0;
-			if(run_frames > 1 || next_time == 0) {
+			bool now_skip = emu->now_skip();
+			
+			if((prev_skip && !now_skip) || run_frames > 1 || next_time == 0) {
 				next_time = timeGetTime();
 			}
-			next_time += emu->now_skip() ? 0 : interval;
+			next_time += now_skip ? 0 : interval;
+			prev_skip = now_skip;
 			
 			if(emu->now_rec_video()) {
 				rec_next_time += interval;
@@ -980,6 +986,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->close_datarec();
 			}
 			break;
+		case ID_USE_WAVE_SHAPER:
+			config.wave_shaper = !config.wave_shaper;
+			break;
 		case ID_RECENT_DATAREC + 0:
 		case ID_RECENT_DATAREC + 1:
 		case ID_RECENT_DATAREC + 2:
@@ -1102,6 +1111,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_FULLSCREEN18:
 		case ID_SCREEN_FULLSCREEN19:
 		case ID_SCREEN_FULLSCREEN20:
+		case ID_SCREEN_FULLSCREEN21:
+		case ID_SCREEN_FULLSCREEN22:
+		case ID_SCREEN_FULLSCREEN23:
+		case ID_SCREEN_FULLSCREEN24:
+		case ID_SCREEN_FULLSCREEN25:
+		case ID_SCREEN_FULLSCREEN26:
+		case ID_SCREEN_FULLSCREEN27:
+		case ID_SCREEN_FULLSCREEN28:
+		case ID_SCREEN_FULLSCREEN29:
+		case ID_SCREEN_FULLSCREEN30:
 			if(emu && !now_fullscreen) {
 				set_window(hWnd, LOWORD(wParam) - ID_SCREEN_FULLSCREEN1 + 8);
 			}
@@ -1467,6 +1486,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		if(!flag) {
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_DATAREC, _T("None"));
 		}
+		CheckMenuItem(hMenu, ID_USE_WAVE_SHAPER, config.wave_shaper ? MF_CHECKED : MF_UNCHECKED);
 	}
 #endif
 #ifdef MENU_POS_BINARY1
@@ -1521,7 +1541,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 				last = ID_SCREEN_WINDOW1 + i;
 			}
 		}
-		for(int i = 0; i < 20; i++) {
+		for(int i = 0; i < MAX_FULLSCREEN; i++) {
 			if(i < screen_mode_count) {
 				MENUITEMINFO info;
 				ZeroMemory(&info, sizeof(info));
@@ -1728,7 +1748,7 @@ void open_datarec_dialog(HWND hWnd, bool play)
 		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.m12)\0*.wav;*.cas;*.mzt;*.m12\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(DATAREC_MZT_2000)
-		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mtw;*.dat)\0*.wav;*.cas;*.mzt;*.mtw;*.dat\0All Files (*.*)\0*.*\0\0")
+		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mti;*.mtw;*.dat)\0*.wav;*.cas;*.mzt;*.mti;*.mtw;*.dat\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
 		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
@@ -1778,7 +1798,7 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 #ifdef SUPPORT_DRAG_DROP
 void open_any_file(_TCHAR* path)
 {
-#ifdef USE_CART
+#if defined(USE_CART)
 	if(check_file_extension(path, _T(".rom")) || 
 	   check_file_extension(path, _T(".bin")) || 
 	   check_file_extension(path, _T(".pce"))) {
@@ -1788,7 +1808,7 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#ifdef USE_FD1
+#if defined(USE_FD1)
 	if(check_file_extension(path, _T(".d88")) || 
 	   check_file_extension(path, _T(".d77")) || 
 	   check_file_extension(path, _T(".td0")) || 
@@ -1806,7 +1826,14 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#ifdef USE_QUICKDISK
+#if defined(USE_DATAREC) && defined(DATAREC_MZT_2000)
+	if(check_file_extension(path, _T(".mzt")) || check_file_extension(path, _T(".mtw")) || check_file_extension(path, _T(".dat"))) {
+		UPDATE_HISTORY(path, config.recent_datarec_path);
+		_tcscpy(config.initial_datarec_path, get_parent_dir(path));
+		emu->play_datarec(path);
+		return;
+	}
+#elif defined(USE_QUICKDISK)
 	if(check_file_extension(path, _T(".mzt"))) {
 		UPDATE_HISTORY(path, config.recent_quickdisk_path);
 		_tcscpy(config.initial_quickdisk_path, get_parent_dir(path));
@@ -1814,7 +1841,7 @@ void open_any_file(_TCHAR* path)
 		return;
 	}
 #endif
-#ifdef USE_BINARY_FILE1
+#if defined(USE_BINARY_FILE1)
 	if(check_file_extension(path, _T(".ram")) || 
 	   check_file_extension(path, _T(".bin"))) {
 		UPDATE_HISTORY(path, config.recent_binary_path[0]);

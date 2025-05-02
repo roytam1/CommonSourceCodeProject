@@ -42,7 +42,6 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class DATAREC;
 class IO;
 class MEMORY;
 class SN76489AN;
@@ -61,7 +60,6 @@ protected:
 	// devices
 	EVENT* event;
 	
-	DATAREC* drec;
 	IO* io;
 	MEMORY* memory;
 	SN76489AN* psg;

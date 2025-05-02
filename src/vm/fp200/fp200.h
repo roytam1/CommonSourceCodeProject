@@ -44,7 +44,6 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class DATAREC;
 class I8080;
 class MEMORY;
 class RP5C01;

@@ -154,7 +154,7 @@ void VM::close_cart()
 
 bool VM::now_skip()
 {
-	return false;
+	return event->now_skip();
 }
 
 void VM::update_config()

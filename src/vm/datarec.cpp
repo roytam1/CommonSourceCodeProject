@@ -8,6 +8,8 @@
 */
 
 #include "datarec.h"
+#include "event.h"
+#include "../config.h"
 #include "../fileio.h"
 
 #define EVENT_SIGNAL	0
@@ -16,15 +18,19 @@
 #ifndef DATAREC_FF_REW_SPEED
 #define DATAREC_FF_REW_SPEED	10
 #endif
-#define TMP_SAMPLES 0x10000
 
 #pragma pack(1)
 typedef struct {
-	char RIFF[4];
-	uint32 file_len;
-	char WAVE[4];
-	char fmt[4];
-	uint32 fmt_size;
+	char id[4];
+	uint32 size;
+} wav_chunk_t;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct {
+	wav_chunk_t riff_chunk;
+	char wave[4];
+	wav_chunk_t fmt_chunk;
 	uint16 format_id;
 	uint16 channels;
 	uint32 sample_rate;
@@ -34,31 +40,18 @@ typedef struct {
 } wav_header_t;
 #pragma pack()
 
-#pragma pack(1)
-typedef struct {
-	char id[4];
-	uint32 size;
-} wav_chunk_t;
-#pragma pack()
-
-static uint8 wavheader[44] = {
-	'R' , 'I' , 'F' , 'F' , 0x00, 0x00, 0x00, 0x00, 'W' , 'A' , 'V' , 'E' , 'f' , 'm' , 't' , ' ' ,
-	0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0xbb, 0x00, 0x00, 0x80, 0xbb, 0x00, 0x00,
-	0x01, 0x00, 0x08, 0x00, 'd' , 'a' , 't' , 'a' , 0x00, 0x00, 0x00, 0x00
-};
-
 void DATAREC::initialize()
 {
 	fio = new FILEIO();
 	
 	play = rec = remote = trigger = false;
 	ff_rew = 0;
-	in_signal = out_signal = changed = false;
+	in_signal = out_signal = false;
 	register_id = -1;
 	
 	buffer = buffer_bak = NULL;
 #ifdef DATAREC_SOUND
-	wav_buffer = NULL;
+	snd_buffer = NULL;
 #endif
 	buffer_ptr = buffer_length = 0;
 	is_wav = false;
@@ -67,6 +60,9 @@ void DATAREC::initialize()
 	mix_buffer = NULL;
 	mix_buffer_ptr = mix_buffer_length = 0;
 #endif
+	// skip frames
+	changed = 0;
+	register_frame_event(this);
 }
 
 void DATAREC::reset()
@@ -92,7 +88,7 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DATAREC_OUT) {
 		if(out_signal != signal) {
 			if(rec && remote) {
-				changed = true;
+				changed++;
 			}
 			out_signal = signal;
 		}
@@ -107,6 +103,12 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
+void DATAREC::event_frame()
+{
+	set_skip_frames(changed > 10);
+	changed = 0;
+}
+
 void DATAREC::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_SIGNAL) {
@@ -116,10 +118,10 @@ void DATAREC::event_callback(int event_id, int err)
 				if(buffer_ptr >= 0 && buffer_ptr < buffer_length) {
 					signal = ((buffer[buffer_ptr] & 0x80) != 0);
 #ifdef DATAREC_SOUND
-					if(wav_buffer != NULL && ff_rew == 0) {
-						wav_sample = wav_buffer[buffer_ptr];
+					if(snd_buffer != NULL && ff_rew == 0) {
+						snd_sample = snd_buffer[buffer_ptr];
 					} else {
-						wav_sample = 0;
+						snd_sample = 0;
 					}
 #endif
 				}
@@ -159,7 +161,7 @@ void DATAREC::event_callback(int event_id, int err)
 			// notify the signal is changed
 			if(signal != in_signal) {
 				in_signal = signal;
-				changed = true;
+				changed++;
 				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
 			}
 		} else if(rec) {
@@ -185,7 +187,7 @@ void DATAREC::event_callback(int event_id, int err)
 #ifdef DATAREC_SOUND
 	else if(event_id == EVENT_SOUND) {
 		if(mix_buffer_ptr < mix_buffer_length) {
-			mix_buffer[mix_buffer_ptr++] = wav_sample;
+			mix_buffer[mix_buffer_ptr++] = snd_sample;
 		}
 	}
 #endif
@@ -231,7 +233,7 @@ void DATAREC::update_event()
 	// update signals
 #ifdef DATAREC_SOUND
 	if(!(play && remote)) {
-		wav_sample = 0;
+		snd_sample = 0;
 	}
 #endif
 	write_signals(&outputs_remote, remote ? 0xffffffff : 0);
@@ -245,7 +247,7 @@ bool DATAREC::play_datarec(_TCHAR* file_path)
 	close_datarec();
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		if(check_file_extension(file_path, _T(".wav"))) {
+		if(check_file_extension(file_path, _T(".wav")) || check_file_extension(file_path, _T(".mti"))) {
 			// standard PCM wave file
 			if((buffer_length = load_wav_image(0)) == 0) {
 				return false;
@@ -309,7 +311,9 @@ bool DATAREC::rec_datarec(_TCHAR* file_path)
 		
 		if(check_file_extension(file_path, _T(".wav"))) {
 			// write wave header
-			fio->Fwrite(wavheader, sizeof(wavheader), 1);
+			uint8 dummy[sizeof(wav_header_t) + sizeof(wav_chunk_t)];
+			memset(dummy, 0, sizeof(dummy));
+			fio->Fwrite(dummy, sizeof(dummy), 1);
 			is_wav = true;
 		} else {
 			// initialize buffer
@@ -355,9 +359,9 @@ void DATAREC::close_file()
 		buffer_bak = NULL;
 	}
 #ifdef DATAREC_SOUND
-	if(wav_buffer != NULL) {
-		free(wav_buffer);
-		wav_buffer = NULL;
+	if(snd_buffer != NULL) {
+		free(snd_buffer);
+		snd_buffer = NULL;
 	}
 #endif
 }
@@ -392,11 +396,10 @@ int DATAREC::load_wav_image(int offset)
 	fio->Fseek(offset, FILEIO_SEEK_SET);
 	fio->Fread(&header, sizeof(header), 1);
 	if(header.format_id != 1 || !(header.sample_bits == 8 || header.sample_bits == 16)) {
-		// this is not pcm format !!!
 		fio->Fclose();
 		return 0;
 	}
-	fio->Fseek(header.fmt_size - 0x10, FILEIO_SEEK_CUR);
+	fio->Fseek(header.fmt_chunk.size - 16, FILEIO_SEEK_CUR);
 	while(1) {
 		fio->Fread(&chunk, sizeof(chunk), 1);
 		if(strncmp(chunk.id, "data", 4) == 0) {
@@ -405,71 +408,206 @@ int DATAREC::load_wav_image(int offset)
 		fio->Fseek(chunk.size, FILEIO_SEEK_CUR);
 	}
 	
-	int samples = chunk.size / header.channels;
-	int tmp_length = header.channels * TMP_SAMPLES;
+	int samples = chunk.size / header.channels, loaded_samples = 0;
 	if(header.sample_bits == 16) {
 		samples /= 2;
-		tmp_length *= 2;
 	}
 	sample_rate = header.sample_rate;
 	
 	// load samples
 	if(samples > 0) {
-		bool prev_signal = false, signal;
-		buffer = (uint8 *)malloc(samples);
-#ifdef DATAREC_SOUND
-		if(header.channels > 1) {
-			wav_buffer = (int16 *)malloc(samples * sizeof(int16));
-		}
-#endif
-		uint8 *tmp_buffer = (uint8 *)malloc(tmp_length);
-		fio->Fread(tmp_buffer, tmp_length, 1);
+		#define TMP_LENGTH (0x10000 * header.channels)
 		
-		for(int i = 0, tmp_ptr = 0; i < samples; i++) {
-			typedef union {
-				int16 s16;
-				struct {
-					uint8 l, h;
-				} b;
-			} sample_pair;
-			sample_pair data;
-			
-			data.b.l = tmp_buffer[tmp_ptr++];
-			if(header.sample_bits == 16) {
-				data.b.h = tmp_buffer[tmp_ptr++];
-				signal = (data.s16 > (prev_signal ? -4096 : 4096));
-			} else {
-				signal = (data.b.l > 128 + (prev_signal ? -16 : 16));
-			}
-			buffer[i] = signal ? 0xff : 0;
-			prev_signal = signal;
+		uint8 *tmp_buffer = (uint8 *)malloc(TMP_LENGTH);
+		fio->Fread(tmp_buffer, TMP_LENGTH, 1);
+		
+		#define GET_SAMPLE { \
+			for(int ch = 0; ch < header.channels; ch++) { \
+				if(header.sample_bits == 16) { \
+					union { \
+						int16 s16; \
+						struct { \
+							uint8 l, h; \
+						} b; \
+					} pair; \
+					pair.b.l = tmp_buffer[tmp_ptr++]; \
+					pair.b.h = tmp_buffer[tmp_ptr++]; \
+					sample[ch] = pair.s16; \
+				} else { \
+					sample[ch] = (tmp_buffer[tmp_ptr++] - 128) * 256; \
+				} \
+			} \
+			if(tmp_ptr == TMP_LENGTH) { \
+				fio->Fread(tmp_buffer, TMP_LENGTH, 1); \
+				tmp_ptr = 0; \
+			} \
+		}
+		
+#ifdef DATAREC_SOUND
+		if(!config.wave_shaper || header.channels > 1) {
+#else
+		if(!config.wave_shaper) {
+#endif
+			buffer = (uint8 *)malloc(samples);
 #ifdef DATAREC_SOUND
 			if(header.channels > 1) {
-				data.b.l = tmp_buffer[tmp_ptr++];
-				if(header.sample_bits == 16) {
-					data.b.h = tmp_buffer[tmp_ptr++];
-					wav_buffer[i] = data.s16;
-				} else {
-					wav_buffer[i] = ((int16)data.b.l - 128) * 256;
-				}
+				snd_buffer = (int16 *)malloc(samples * sizeof(int16));
 			}
-			for(int i = 3; i <= header.channels; i++) {
-#else
-			for(int i = 2; i <= header.channels; i++) {
 #endif
-				tmp_buffer[tmp_ptr++];
-				if(header.sample_bits == 16) {
-					tmp_buffer[tmp_ptr++];
+			bool prev_signal = false;
+			for(int i = 0, tmp_ptr = 0; i < samples; i++) {
+				int16 sample[16];
+				GET_SAMPLE
+				bool signal = (sample[0] > (prev_signal ? -1024 : 1024));
+				buffer[i] = (signal ? 0xff : 0);
+#ifdef DATAREC_SOUND
+				if(header.channels > 1) {
+					snd_buffer[i] = sample[1];
+				}
+#endif
+				prev_signal = signal;
+			}
+			loaded_samples = samples;
+		} else {
+			// load samples
+			int16 *wav_buffer = (int16 *)malloc(samples * sizeof(int16));
+			for(int i = 0, tmp_ptr = 0; i < samples; i++) {
+				int16 sample[16];
+				GET_SAMPLE
+				wav_buffer[i] = sample[0];
+			}
+			
+			// adjust zero position
+			int16 *zero_buffer = (int16 *)malloc(samples * sizeof(int16));
+			int width = (int)(header.sample_rate / 1000.0 + 0.5);
+			for(int i = width; i < samples - width; i++) {
+				int max_sample = -65536, min_sample = 65536;
+				for(int j = -width; j < width; j++) {
+					if(max_sample < wav_buffer[i + j]) max_sample = wav_buffer[i + j];
+					if(min_sample > wav_buffer[i + j]) min_sample = wav_buffer[i + j];
+				}
+				zero_buffer[i] = (max_sample + min_sample) / 2;
+			}
+			for(int i = 0; i < samples; i++) {
+				wav_buffer[i] -= zero_buffer[(i < width) ?  width : (i < samples - width) ? i : (samples - width - 1)];
+			}
+			free(zero_buffer);
+			
+			// t=0 : get thresholds
+			// t=1 : get number of samples
+			// t=2 : load samples
+			#define FREQ_SCALE 8
+			int min_threshold = (int)(header.sample_rate * FREQ_SCALE / 2400.0 / 2.0 / 3.0 + 0.5);
+			int max_threshold = (int)(header.sample_rate * FREQ_SCALE / 1200.0 / 2.0 * 3.0 + 0.5);
+			int half_threshold, hi_count, lo_count;
+			int *counts = (int *)calloc(max_threshold, sizeof(int));
+			
+			for(int t = 0; t < 3; t++) {
+				int count_positive = 0, count_negative = 0;
+				bool prev_signal = false;
+				
+				for(int i = 0; i < samples - 1; i++) {
+					int prev = wav_buffer[i], next = wav_buffer[i + 1];
+					double diff = (double)(next - prev) / FREQ_SCALE;
+					for(int j = 0; j < FREQ_SCALE; j++) {
+						int sample = prev + (int)(diff * j + 0.5);
+						bool signal = (sample > (prev_signal ? -1024 : 1024));
+						
+						if(!prev_signal && signal) {
+							if(t == 0) {
+								if(count_positive < max_threshold && count_positive > min_threshold &&
+								   count_negative < max_threshold && count_negative > min_threshold) {
+									counts[count_positive]++;
+								}
+							} else {
+								if(count_positive < max_threshold && count_positive > min_threshold &&
+								   count_negative < max_threshold && count_negative > min_threshold) {
+									int count = (count_positive > half_threshold) ? hi_count : lo_count;
+									if(buffer != NULL) {
+										for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0xff;
+										for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;
+									} else {
+										loaded_samples += count * 2;
+									}
+								} else {
+									int count = (count_positive + count_negative) / FREQ_SCALE;
+									if(buffer != NULL) {
+										for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;//0x80;
+									} else {
+										loaded_samples += count;
+									}
+								}
+							}
+							count_positive = count_negative = 0;
+						}
+						if(signal) {
+							count_positive++;
+						} else {
+							count_negative++;
+						}
+						prev_signal = signal;
+					}
+				}
+				if(t == 0) {
+					long sum_value = 0, sum_count = 0;
+					for(int i = 0; i < max_threshold; i++) {
+						sum_value += i * counts[i];
+						sum_count += counts[i];
+					}
+					int half_tmp = (int)((double)sum_value / (double)sum_count + 0.5);
+					
+					sum_value = sum_count = 0;
+					for(int i = 0; i < half_tmp; i++) {
+						sum_value += i * counts[i];
+						sum_count += counts[i];
+					}
+					double lo_tmp = (double)sum_value / (double)sum_count;
+					
+					sum_value = sum_count = 0;
+					for(int i = half_tmp; i < half_tmp * 2; i++) {
+						sum_value += i * counts[i];
+						sum_count += counts[i];
+					}
+					double hi_tmp = (double)sum_value / (double)sum_count;
+					
+					half_threshold = (int)((lo_tmp + hi_tmp) / 2 + 0.5);
+					lo_count = (int)(lo_tmp / FREQ_SCALE + 0.5);
+					hi_count = (int)(hi_tmp / FREQ_SCALE + 0.5);
+				} else {
+					if(count_positive < max_threshold && count_positive > min_threshold &&
+					   count_negative < max_threshold && count_negative > min_threshold) {
+						int count = (count_positive > half_threshold) ? hi_count : lo_count;
+						if(buffer != NULL) {
+							for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0xff;
+							for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;
+						} else {
+							loaded_samples += count * 2;
+						}
+					} else {
+						int count = (count_positive + count_negative) / FREQ_SCALE;
+						if(buffer != NULL) {
+							for(int j = 0; j < count; j++) buffer[loaded_samples++] = 0x00;//0x80;
+						} else {
+							loaded_samples += count;
+						}
+					}
+				}
+				if(t == 1) {
+					buffer = (uint8 *)malloc(loaded_samples);
+#ifdef DATAREC_SOUND
+					if(header.channels > 1) {
+						snd_buffer = (int16 *)malloc(loaded_samples * sizeof(int16));
+					}
+#endif
+					loaded_samples = 0;
 				}
 			}
-			if(tmp_ptr == tmp_length) {
-				fio->Fread(tmp_buffer, tmp_length, 1);
-				tmp_ptr = 0;
-			}
+			free(counts);
+			free(wav_buffer);
 		}
 		free(tmp_buffer);
 	}
-	return samples;
+	return loaded_samples;
 }
 
 void DATAREC::save_wav_image()
@@ -478,23 +616,29 @@ void DATAREC::save_wav_image()
 	if(buffer_ptr > 0) {
 		fio->Fwrite(buffer, buffer_ptr, 1);
 	}
-	int samples = fio->Ftell() - sizeof(wavheader);
-	int total = samples + 0x24;
+	uint8 length = fio->Ftell();
 	
-	// write header
-	uint8 wav[44];
-	memcpy(wav, wavheader, sizeof(wavheader));
-	wav[ 4] = (uint8)((total   >>  0) & 0xff);
-	wav[ 5] = (uint8)((total   >>  8) & 0xff);
-	wav[ 6] = (uint8)((total   >> 16) & 0xff);
-	wav[ 7] = (uint8)((total   >> 24) & 0xff);
-	wav[40] = (uint8)((samples >>  0) & 0xff);
-	wav[41] = (uint8)((samples >>  8) & 0xff);
-	wav[42] = (uint8)((samples >> 16) & 0xff);
-	wav[43] = (uint8)((samples >> 24) & 0xff);
+	wav_header_t wav_header;
+	wav_chunk_t wav_chunk;
+	
+	memcpy(wav_header.riff_chunk.id, "RIFF", 4);
+	wav_header.riff_chunk.size = length - 8;
+	memcpy(wav_header.wave, "WAVE", 4);
+	memcpy(wav_header.fmt_chunk.id, "fmt ", 4);
+	wav_header.fmt_chunk.size = 16;
+	wav_header.format_id = 1;
+	wav_header.channels = 1;
+	wav_header.sample_rate = sample_rate;
+	wav_header.data_speed = sample_rate;
+	wav_header.block_size = 1;
+	wav_header.sample_bits = 8;
+	
+	memcpy(wav_chunk.id, "data", 4);
+	wav_chunk.size = length - sizeof(wav_header) - sizeof(wav_chunk);
 	
 	fio->Fseek(0, FILEIO_SEEK_SET);
-	fio->Fwrite(wav, sizeof(wav), 1);
+	fio->Fwrite(&wav_header, sizeof(wav_header), 1);
+	fio->Fwrite(&wav_chunk, sizeof(wav_chunk), 1);
 }
 
 // SHARP X1 series tape image

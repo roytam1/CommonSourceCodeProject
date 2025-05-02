@@ -200,7 +200,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	pcm->init(rate, 4096);
+	pcm->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int* extra_frames)
@@ -268,7 +268,7 @@ void VM::push_stop()
 
 bool VM::now_skip()
 {
-	return drec->skip();
+	return event->now_skip();
 }
 
 void VM::update_config()

@@ -37,13 +37,14 @@ private:
 	
 	bool play, rec, remote, trigger;
 	int ff_rew;
-	bool in_signal, out_signal, changed;
+	bool in_signal, out_signal;
+	int changed;
 	int register_id;
 	
 	int sample_rate;
 	uint8 *buffer, *buffer_bak;
 #ifdef DATAREC_SOUND
-	int16 *wav_buffer, wav_sample;
+	int16 *snd_buffer, snd_sample;
 #endif
 	int buffer_ptr, buffer_length;
 	bool is_wav;
@@ -52,6 +53,7 @@ private:
 	int16 *mix_buffer;
 	int mix_buffer_ptr, mix_buffer_length;
 #endif
+	
 	void update_event();
 	void close_file();
 	
@@ -79,6 +81,7 @@ public:
 	uint32 read_signal(int ch) {
 		return in_signal ? 1 : 0;
 	}
+	void event_frame();
 	void event_callback(int event_id, int err);
 #ifdef DATAREC_SOUND
 	void mix(int32* buffer, int cnt);
@@ -103,11 +106,6 @@ public:
 	bool play_datarec(_TCHAR* file_path);
 	bool rec_datarec(_TCHAR* file_path);
 	void close_datarec();
-	bool skip() {
-		bool val = changed;
-		changed = false;
-		return val;
-	}
 	void set_remote(bool value);
 	void set_ff_rew(int value);
 #ifdef DATAREC_SOUND

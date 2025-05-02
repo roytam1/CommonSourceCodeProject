@@ -690,7 +690,7 @@ void VM::draw_screen()
 	if(boot_mode != 0) {
 		pc88->draw_screen();
 	}
-	else{
+	else {
 #endif
 		display->draw_screen();
 #if defined(_PC98DO)
@@ -757,7 +757,7 @@ uint16* VM::create_sound(int* extra_frames)
 	}
 	else {
 #endif
-	return event->create_sound(extra_frames);
+		return event->create_sound(extra_frames);
 #if defined(_PC98DO)
 	}
 #endif
@@ -770,13 +770,13 @@ uint16* VM::create_sound(int* extra_frames)
 void VM::key_down(int code, bool repeat)
 {
 #if defined(_PC98DO)
-	if(boot_mode == 0) {
+	if(boot_mode != 0) {
+		pc88->key_down(code, repeat);
+	}
+	else {
 #endif
 		keyboard->key_down(code, repeat);
 #if defined(_PC98DO)
-	}
-	else {
-		pc88->key_down(code, repeat);
 	}
 #endif
 }
@@ -784,7 +784,10 @@ void VM::key_down(int code, bool repeat)
 void VM::key_up(int code)
 {
 #if defined(_PC98DO)
-	if(boot_mode == 0) {
+	if(boot_mode != 0) {
+//		pc88->key_up(code);
+	}
+	else {
 #endif
 		keyboard->key_up(code);
 #if defined(_PC98DO)
@@ -907,13 +910,14 @@ void VM::close_datarec()
 bool VM::now_skip()
 {
 #if defined(_PC98DO)
-	if(boot_mode == 0) {
-#endif
-		return false;
-#if defined(_PC98DO)
+	if(boot_mode != 0) {
+//		return pc88event->now_skip();
+		return pc88->now_skip();
 	}
 	else {
-		return pc88->now_skip();
+#endif
+		return event->now_skip();
+#if defined(_PC98DO)
 	}
 #endif
 }

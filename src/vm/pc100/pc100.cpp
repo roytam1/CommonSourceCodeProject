@@ -251,7 +251,7 @@ bool VM::disk_inserted(int drv)
 
 bool VM::now_skip()
 {
-	return false;
+	return event->now_skip();
 }
 
 void VM::update_config()

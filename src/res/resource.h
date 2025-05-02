@@ -120,6 +120,7 @@
 #define ID_CLOSE_DATAREC                40923
 #define ID_PLAY_BUTTON                  40924
 #define ID_STOP_BUTTON                  40925
+#define ID_USE_WAVE_SHAPER              40926
 #define ID_RECENT_DATAREC               40931 // 40931-40938
 
 #define ID_LOAD_BINARY1                 40941
@@ -163,15 +164,25 @@
 #define ID_SCREEN_FULLSCREEN18          41038
 #define ID_SCREEN_FULLSCREEN19          41039
 #define ID_SCREEN_FULLSCREEN20          41040
-#define ID_SCREEN_USE_D3D9              41041
-#define ID_SCREEN_WAIT_VSYNC            41042
-#define ID_SCREEN_STRETCH               41043
+#define ID_SCREEN_FULLSCREEN21          41041
+#define ID_SCREEN_FULLSCREEN22          41042
+#define ID_SCREEN_FULLSCREEN23          41043
+#define ID_SCREEN_FULLSCREEN24          41044
+#define ID_SCREEN_FULLSCREEN25          41045
+#define ID_SCREEN_FULLSCREEN26          41046
+#define ID_SCREEN_FULLSCREEN27          41047
+#define ID_SCREEN_FULLSCREEN28          41048
+#define ID_SCREEN_FULLSCREEN29          41049
+#define ID_SCREEN_FULLSCREEN30          41050
+#define ID_SCREEN_USE_D3D9              41051
+#define ID_SCREEN_WAIT_VSYNC            41052
+#define ID_SCREEN_STRETCH               41053
 
-#define ID_SCREEN_MONITOR_TYPE0         41051
-#define ID_SCREEN_MONITOR_TYPE1         41052
-#define ID_SCREEN_MONITOR_TYPE2         41053
-#define ID_SCREEN_MONITOR_TYPE3         41054
-#define ID_SCREEN_SCANLINE              41055
+#define ID_SCREEN_MONITOR_TYPE0         41061
+#define ID_SCREEN_MONITOR_TYPE1         41062
+#define ID_SCREEN_MONITOR_TYPE2         41063
+#define ID_SCREEN_MONITOR_TYPE3         41064
+#define ID_SCREEN_SCANLINE              41065
 
 #define ID_SOUND_REC                    41101
 #define ID_SOUND_STOP                   41102

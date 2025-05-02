@@ -27,7 +27,6 @@
 // device informations for win32
 #define USE_CART
 #define USE_DATAREC
-#define DATAREC_BINARY_ONLY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

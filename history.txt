@@ -1,3 +1,11 @@
+3/28/2013
+
+[WINMAIN] fix to support max 30 screen resolutions
+
+[VM/DATAREC] support wave shaper function
+[VM/EVENT] fix not to skip frames when the sound is outputted
+
+
 3/23/2013
 
 [VM/I8080] support disassembler

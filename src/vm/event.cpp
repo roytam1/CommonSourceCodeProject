@@ -27,6 +27,10 @@ void EVENT::initialize()
 	// initialize sound buffer
 	sound_buffer = NULL;
 	sound_tmp = NULL;
+	
+	dont_skip_frames = 0;
+	prev_skip = skip = false;
+	sound_changed = false;
 }
 
 void EVENT::initialize_sound(int rate, int samples)
@@ -350,9 +354,18 @@ void EVENT::register_vline_event(DEVICE* dev)
 void EVENT::mix_sound(int samples)
 {
 	if(samples > 0) {
-		memset(sound_tmp + buffer_ptr * 2, 0, samples * sizeof(int32) * 2);
+		int32* buffer = sound_tmp + buffer_ptr * 2;
+		memset(buffer, 0, samples * sizeof(int32) * 2);
 		for(int i = 0; i < dcount_sound; i++) {
-			d_sound[i]->mix(sound_tmp + buffer_ptr * 2, samples);
+			d_sound[i]->mix(buffer, samples);
+		}
+		if(!sound_changed) {
+			for(int i = 0; i < samples * 2; i++) {
+				if(buffer[i] != 0) {
+					sound_changed = true;
+					break;
+				}
+			}
 		}
 		buffer_ptr += samples;
 	}
@@ -371,7 +384,10 @@ void EVENT::update_sound()
 	accum_samples -= samples << 10;
 	
 	// mix sound
-	if(sound_tmp_samples - buffer_ptr < samples) {
+	if(prev_skip && dont_skip_frames == 0 && !sound_changed) {
+		buffer_ptr = 0;
+	}
+	if(samples > sound_tmp_samples - buffer_ptr) {
 		samples = sound_tmp_samples - buffer_ptr;
 	}
 	mix_sound(samples);
@@ -379,6 +395,11 @@ void EVENT::update_sound()
 
 uint16* EVENT::create_sound(int* extra_frames)
 {
+	if(prev_skip && dont_skip_frames == 0 && !sound_changed) {
+		memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
+		*extra_frames = 0;
+		return sound_buffer;
+	}
 	int frames = 0;
 	
 #ifdef EVENT_CONTINUOUS_SOUND
@@ -423,6 +444,28 @@ uint16* EVENT::create_sound(int* extra_frames)
 	}
 	*extra_frames = frames;
 	return sound_buffer;
+}
+
+void EVENT::set_skip_frames(bool value)
+{
+	skip = value;
+}
+
+bool EVENT::now_skip()
+{
+	bool value = skip;
+	
+	if(sound_changed || (prev_skip && !skip)) {
+		dont_skip_frames = (int)frames_per_sec;
+	}
+	if(dont_skip_frames > 0) {
+		value = false;
+		dont_skip_frames--;
+	}
+	prev_skip = skip;
+	sound_changed = false;
+	
+	return value;
 }
 
 void EVENT::update_config()

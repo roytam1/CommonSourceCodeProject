@@ -471,7 +471,12 @@ void VM::push_stop()
 
 bool VM::now_skip()
 {
-	return drec->skip();
+#ifdef _X1TWIN
+	if(pce->running) {
+		return pceevent->now_skip();
+	}
+#endif
+	return event->now_skip();
 }
 
 #ifdef _X1TWIN

@@ -462,11 +462,7 @@ bool VM::disk_inserted(int drv)
 
 bool VM::now_skip()
 {
-#ifdef _TINYIMAS
-	return false;
-#else
-	return drec->skip();
-#endif
+	return event->now_skip();
 }
 
 void VM::update_config()

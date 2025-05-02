@@ -201,7 +201,7 @@ void VM::close_datarec()
 
 bool VM::now_skip()
 {
-	return cmt->skip();
+	return event->now_skip();
 }
 
 void VM::update_config()

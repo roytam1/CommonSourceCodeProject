@@ -205,7 +205,7 @@ void VM::push_stop()
 
 bool VM::now_skip()
 {
-	return drec->skip();
+	return event->now_skip();
 }
 
 void VM::update_config()

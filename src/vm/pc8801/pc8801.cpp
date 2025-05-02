@@ -262,6 +262,7 @@ void VM::close_datarec()
 
 bool VM::now_skip()
 {
+//	return event->now_skip();
 	return pc88->now_skip();
 }
 

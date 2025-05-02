@@ -147,7 +147,7 @@ void VM::close_datarec()
 
 bool VM::now_skip()
 {
-	return false;//drec->skip();
+	return event->now_skip();
 }
 
 void VM::update_config()

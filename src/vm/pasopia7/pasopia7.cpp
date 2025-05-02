@@ -286,7 +286,7 @@ void VM::load_binary(int drv, _TCHAR* file_path)
 
 bool VM::now_skip()
 {
-	return drec->skip();
+	return event->now_skip();
 }
 
 void VM::update_config()

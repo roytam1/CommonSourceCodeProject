@@ -91,7 +91,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0x90:
 		// system control
 //		if((sio & 8) != (data & 8)) {
-//			d_cmt->write_signal(SIG_DATAREC_REMOTE, data, 8);
+//			d_drec->write_signal(SIG_DATAREC_REMOTE, data, 8);
 //		}
 		if((sio & 0x10) != (data & 0x10)) {
 			d_rtc->write_signal(SIG_UPD1990A_STB, data, 0x10);

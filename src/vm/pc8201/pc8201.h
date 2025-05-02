@@ -29,7 +29,7 @@
 #define HAS_I8085
 
 // device informations for win32
-//#define USE_DATAREC
+#define USE_DATAREC
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -61,7 +61,7 @@ protected:
 	// devices
 	EVENT* event;
 	
-	DATAREC* cmt;
+	DATAREC* drec;
 	I8080* cpu;
 	I8155* pio;
 	IO* io;

@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x33
+#define FILE_VERSION	0x34
 
 void init_config();
 void load_config();
@@ -65,6 +65,9 @@ typedef struct {
 	int cpu_power;
 #ifdef USE_FD1
 	bool ignore_crc;
+#endif
+#ifdef USE_DATAREC
+	bool wave_shaper;
 #endif
 #ifdef USE_DIPSWITCH
 	uint8 dipswitch;
