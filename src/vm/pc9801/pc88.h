@@ -64,7 +64,7 @@ private:
 	uint8 ghs_mode;
 	
 	bool cpu_clock_low;
-	int mem_wait_clocks;
+	int mem_wait_clocks[16];
 	int gvram_wait_clocks, alu_wait_clocks;
 	int busreq_clocks;
 	bool opn_busy;

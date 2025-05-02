@@ -195,7 +195,12 @@ void PC88::initialize()
 #else
 	cpu_clock_low = true;
 #endif
-	mem_wait_clocks = ((config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) && cpu_clock_low) ? 0 : 1;
+	
+//	int mem_wait_clock = ((config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) && cpu_clock_low) ? 0 : 1;
+	int mem_wait_clock= (config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) ? 1 : cpu_clock_low ? 0 : 1;
+	for(int i = 0; i < 16; i++) {
+		mem_wait_clocks[i] = mem_wait_clock;
+	}
 	
 	key_status = emu->key_buffer();
 #ifdef SUPPORT_PC88_JOYSTICK
@@ -294,7 +299,8 @@ void PC88::write_data8(uint32 addr, uint32 data)
 	int wait_tmp;
 	int *wait = &wait_tmp;
 #endif
-	*wait = mem_wait_clocks;
+	addr &= 0xffff;
+	*wait = mem_wait_clocks[addr >> 12];
 	
 	if((addr & 0xfc00) == 0x8000) {
 		// text window
@@ -352,7 +358,6 @@ void PC88::write_data8(uint32 addr, uint32 data)
 			return;
 		}
 	}
-	addr &= 0xffff;
 	wbank[addr >> 12][addr & 0xfff] = data;
 }
 
@@ -365,7 +370,8 @@ uint32 PC88::read_data8(uint32 addr)
 	int wait_tmp;
 	int *wait = &wait_tmp;
 #endif
-	*wait = mem_wait_clocks;
+	addr &= 0xffff;
+	*wait = mem_wait_clocks[addr >> 12];
 	
 	if((addr & 0xfc00) == 0x8000) {
 		// text window
@@ -403,7 +409,6 @@ uint32 PC88::read_data8(uint32 addr)
 		}
 #endif
 	}
-	addr &= 0xffff;
 	return rbank[addr >> 12][addr & 0xfff];
 }
 
@@ -851,28 +856,31 @@ void PC88::update_gvram_wait()
 	// from M88 memory wait table
 	if(config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2) {
 		if(vblank) {
-			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 1 : 3;
+//			gvram_wait_clocks = cpu_clock_low ? 1 : 3;
+			gvram_wait_clocks = cpu_clock_low ? 2 : 3;
 		}
 		else {
-			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 2 : 5;
+//			gvram_wait_clocks = cpu_clock_low ? 2 : 5;
+			gvram_wait_clocks = cpu_clock_low ? 3 : 5;
 		}
 	}
 	else if(ghs_mode) {
 		if(vblank) {
-			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 3 : 4;
+			gvram_wait_clocks = cpu_clock_low ? 3 : 4;
 		}
 		else {
-			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 4 : 8;
+			gvram_wait_clocks = cpu_clock_low ? 4 : 8;
 		}
 	}
 	else {
 		if(vblank) {
-			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 3 : 7;
+			gvram_wait_clocks = cpu_clock_low ? 3 : 7;
 		}
 		else {
-			gvram_wait_clocks = alu_wait_clocks = cpu_clock_low ? 30 : 72;
+			gvram_wait_clocks = cpu_clock_low ? 30 : 72;
 		}
 	}
+	alu_wait_clocks = gvram_wait_clocks + 4; // ???
 }
 
 void PC88::update_gvram_sel()
@@ -950,9 +958,11 @@ void PC88::update_tvram_memmap()
 {
 	if(tvram_sel == 0) {
 		SET_BANK(0xf000, 0xffff, tvram, tvram);
+		mem_wait_clocks[15] = mem_wait_clocks[0] + 1;
 	}
 	else {
 		SET_BANK(0xf000, 0xffff, ram + 0xf000, ram + 0xf000);
+		mem_wait_clocks[15] = mem_wait_clocks[0] + 0;
 	}
 }
 

@@ -1,3 +1,8 @@
+2/21/2012
+
+[PC8801MA/PC88] update memory wait cycles
+
+
 2/20/2012
 
 [WINMAIN] support d88 disk image with multi voluemes
