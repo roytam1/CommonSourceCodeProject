@@ -45,6 +45,7 @@ void EMU::initialize_screen()
 #endif
 	HDC hdc = GetDC(main_window_handle);
 	create_dib_section(hdc, screen_width, screen_height, &hdcDib, &hBmp, &lpBuf, &lpBmp, &lpDib);
+	pbmInfoHeader = &lpDib->bmiHeader;
 #ifdef USE_SCREEN_ROTATE
 	create_dib_section(hdc, screen_height, screen_width, &hdcDibRotate, &hBmpRotate, &lpBufRotate, &lpBmpRotate, &lpDibRotate);
 #endif
@@ -85,6 +86,7 @@ void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMA
 {
 	*lpBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
 	*lpDib = (LPBITMAPINFO)(*lpBuf);
+	_memset(&(*lpDib)->bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 	(*lpDib)->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	(*lpDib)->bmiHeader.biWidth = width;
 	(*lpDib)->bmiHeader.biHeight = height;
@@ -92,6 +94,7 @@ void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMA
 #if defined(_RGB555)
 	(*lpDib)->bmiHeader.biBitCount = 16;
 	(*lpDib)->bmiHeader.biCompression = BI_RGB;
+	(*lpDib)->bmiHeader.biSizeImage = width * height * 2;
 #elif defined(_RGB565)
 	(*lpDib)->bmiHeader.biBitCount = 16;
 	(*lpDib)->bmiHeader.biCompression = BI_BITFIELDS;
@@ -99,11 +102,12 @@ void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMA
 	lpBf[0] = 0x1f << 11;
 	lpBf[1] = 0x3f << 5;
 	lpBf[2] = 0x1f << 0;
+	(*lpDib)->bmiHeader.biSizeImage = width * height * 2;
 #elif defined(_RGB888)
 	(*lpDib)->bmiHeader.biBitCount = 32;
 	(*lpDib)->bmiHeader.biCompression = BI_RGB;
+	(*lpDib)->bmiHeader.biSizeImage = width * height * 4;
 #endif
-	(*lpDib)->bmiHeader.biSizeImage = 0;
 	(*lpDib)->bmiHeader.biXPelsPerMeter = 0;
 	(*lpDib)->bmiHeader.biYPelsPerMeter = 0;
 	(*lpDib)->bmiHeader.biClrUsed = 0;
@@ -246,11 +250,7 @@ void EMU::draw_screen()
 	
 	// record picture
 	if(now_recv) {
-#ifdef _RGB888
-		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, screen_width * screen_height * 4, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK) {
-#else
-		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, screen_width * screen_height * 2, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK) {
-#endif
+		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK) {
 			stop_rec_video();
 		}
 	}
@@ -358,6 +358,7 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 		
 		HDC hdc = GetDC(main_window_handle);
 		create_dib_section(hdc, screen_width, screen_height, &hdcDib, &hBmp, &lpBuf, &lpBmp, &lpDib);
+		pbmInfoHeader = &lpDib->bmiHeader;
 #ifdef USE_SCREEN_ROTATE
 		create_dib_section(hdc, screen_height, screen_width, &hdcDibRotate, &hBmpRotate, &lpBufRotate, &lpBmpRotate, &lpDibRotate);
 #endif
@@ -376,6 +377,24 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 		// change the window size
 		PostMessage(main_window_handle, WM_RESIZE, 0L, 0L);
 	}
+}
+
+void EMU::capture_screen()
+{
+	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+	application_path(app_path);
+	_stprintf(file_path, _T("%s%d-%d-%d_%d-%d-%d.bmp"), app_path, sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+	
+	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
+	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+	bmFileHeader.bfSize = bmFileHeader.bfOffBits + pbmInfoHeader->biSizeImage;
+	
+	DWORD dwSize;
+	HANDLE hFile = CreateFile(file_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwSize, NULL);
+	WriteFile(hFile, lpDib, sizeof(BITMAPINFOHEADER), &dwSize, NULL);
+	WriteFile(hFile, lpBmp, pbmInfoHeader->biSizeImage, &dwSize, NULL);
+	CloseHandle(hFile);
 }
 
 void EMU::start_rec_video(int fps, BOOL show_dialog)
@@ -397,11 +416,7 @@ void EMU::start_rec_video(int fps, BOOL show_dialog)
 	strhdr.fccHandler = 0;
 	strhdr.dwScale = 1;
 	strhdr.dwRate = fps;
-#ifdef _RGB888
-	strhdr.dwSuggestedBufferSize = screen_width * screen_height * 4;
-#else
-	strhdr.dwSuggestedBufferSize = screen_width * screen_height * 2;
-#endif
+	strhdr.dwSuggestedBufferSize = pbmInfoHeader->biSizeImage;
 	SetRect(&strhdr.rcFrame, 0, 0, screen_width, screen_height);
 	if(AVIFileCreateStream(pAVIFile, &pAVIStream, &strhdr) != AVIERR_OK) {
 		stop_rec_video();

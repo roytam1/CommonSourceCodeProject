@@ -1,3 +1,16 @@
+1/26/2010
+
+[EMU/WIN32] support capture screen
+
+[VM/SN76489AN] support SN76489
+[VM/SN76489AN] fix noise period
+
+[X1TWIN/DISPLAY] fix not to update pcg addr frequently for Wibarm
+[X1TWIN/SUB] fix to raise irq just after command with no results was processed
+[X1TWIN/SUB] fix keycode read function
+[X1TWIN/SUB] fix command processing period
+
+
 1/21/2010
 
 [EMU/WIN32] support output debug log to console

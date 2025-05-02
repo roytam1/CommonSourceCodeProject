@@ -969,6 +969,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->stop_rec_sound();
 			}
 			break;
+		case ID_SCREEN_CAPTURE:
+			if(emu) {
+				emu->capture_screen();
+			}
+			break;
 		case ID_SCREEN_WINDOW1:
 		case ID_SCREEN_WINDOW2:
 		case ID_SCREEN_WINDOW3:

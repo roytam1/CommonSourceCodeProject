@@ -9,9 +9,17 @@
 
 #include "sn76489an.h"
 
+#ifdef HAS_SN76489
+// SN76489
+#define NOISE_FB	0x4000
+#define NOISE_DST_TAP	1
+#define NOISE_SRC_TAP	2
+#else
+// SN76489A, SN76496
 #define NOISE_FB	0x10000
 #define NOISE_DST_TAP	4
 #define NOISE_SRC_TAP	8
+#endif
 #define NOISE_MODE	((regs[6] & 4) ? 1 : 0)
 
 void SN76489AN::initialize()
@@ -46,7 +54,7 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 		case 0: case 2: case 4:
 			// tone : frequency
 			regs[index] = (regs[index] & 0x3f0) | (data & 0x0f);
-			ch[c].period = regs[index] ? regs[index] : 1;
+			ch[c].period = regs[index] ? regs[index] : 0x400;
 //			ch[c].count = 0;
 			break;
 		case 1: case 3: case 5: case 7:
@@ -58,7 +66,7 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 			// noise : frequency, mode
 			regs[6] = data;
 			data &= 3;
-			ch[3].period = (data == 3) ? (ch[2].period << 9) : (1 << (data + 5));
+			ch[3].period = (data == 3) ? (ch[2].period << 1) : (1 << (data + 5));
 //			ch[3].count = 0;
 			noise_gen = NOISE_FB;
 			ch[3].signal = false;
@@ -72,7 +80,7 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 		case 0: case 2: case 4:
 			// tone : frequency
 			regs[index] = (regs[index] & 0x0f) | (((uint16)data << 4) & 0x3f0);
-			ch[c].period = regs[index] ? regs[index] : 1;
+			ch[c].period = regs[index] ? regs[index] : 0x400;
 //			ch[c].count = 0;
 			// update noise shift frequency
 			if(index == 4 && (regs[6] & 3) == 3) {

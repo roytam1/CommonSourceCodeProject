@@ -138,6 +138,7 @@ private:
 	LPBYTE lpBuf;
 	scrntype* lpBmp;
 	LPBITMAPINFO lpDib;
+	LPBITMAPINFOHEADER pbmInfoHeader;
 	
 #ifdef USE_SCREEN_ROTATE
 	// rotate buffer
@@ -310,6 +311,7 @@ public:
 	void restart_rec_sound();
 	BOOL now_rec_sound() { return now_recs; }
 	
+	void capture_screen();
 	void start_rec_video(int fps, BOOL show_dialog);
 	void stop_rec_video();
 	void restart_rec_video();

@@ -38,7 +38,7 @@ private:
 	
 	uint8 pal[3];
 	uint8 priority, pri[8][8];	// pri[cg][txt]
-	int vline, vclock, vclocks;
+	int vline, vclock, prev_clock;
 	uint8 cur_code, cur_attr, cur_line;
 	uint8 column;
 #ifdef _X1TURBO

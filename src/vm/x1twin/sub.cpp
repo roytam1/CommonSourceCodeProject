@@ -136,14 +136,14 @@ void SUB::initialize()
 	
 	// regist event
 	int id;
-	vm->regist_event(this, 0, 1000, true, &id);
+	vm->regist_event(this, 0, 400, true, &id);
 }
 
 void SUB::reset()
 {
 	_memset(databuf, 0, sizeof(databuf));
-	databuf[0x16][0] = 0xff;
-	mode = cmdlen = datalen = 0;
+	mode = 0;
+	cmdlen = datalen = 0;
 	
 	ibf = true;
 	set_ibf(false);
@@ -198,14 +198,14 @@ void SUB::intr_reti()
 void SUB::update_intr()
 {
 	if(intr && iei) {
-		d_cpu->set_intr_line(true, true, 1);
+		d_cpu->set_intr_line(true, true, intr_bit);
 		intr = false;
 	}
 }
 
 void SUB::event_callback(int event_id, int err)
 {
-	static const uint8 cmdlen_tbl[] = {
+	static const int cmdlen_tbl[] = {
 		0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 3, 0
 	};
 	
@@ -214,8 +214,6 @@ void SUB::event_callback(int event_id, int err)
 	if(vm->pce_running) {
 		// clear key
 		key_buf->clear();
-		databuf[0x16][0] = 0xff;
-		databuf[0x16][1] = 0;
 	}
 #endif
 	if(ibf) {
@@ -228,12 +226,13 @@ void SUB::event_callback(int event_id, int err)
 		else {
 			// this is new command
 			mode = inbuf;
-			datap = &databuf[mode - 0xd0][0];
 			if(0xd0 <= mode && mode <= 0xd7) {
 				cmdlen = 6;
+				datap = &databuf[mode - 0xd0][0]; // recieve buffer
 			}
 			else if(0xe3 <= mode && mode <= 0xef) {
 				cmdlen = cmdlen_tbl[mode - 0xe3];
+				datap = &databuf[mode - 0xd0][0]; // recieve buffer
 			}
 		}
 		if(cmdlen == 0) {
@@ -244,8 +243,13 @@ void SUB::event_callback(int event_id, int err)
 		// sub cpu can accept new command or parameter
 		set_ibf(false);
 		set_obf(true);
+		
+		// if command is not finished, key irq is not raised
+		if(cmdlen || datalen) {
+			return;
+		}
 	}
-	else if(obf) {
+	if(obf) {
 		// sub cpu can send data to main cpu
 		if(datalen) {
 			// sub cpu sends result data
@@ -307,13 +311,19 @@ void SUB::key_up(int code)
 void SUB::process_cmd()
 {
 	int time[8];
+	uint16 lh = 0xff;
 	
 	// preset 
-	datap = &databuf[mode - 0xd0][0];
+	if(0xd0 <= mode && mode < 0xf0) {
+		datap = &databuf[mode - 0xd0][0]; // send buffer
+	}
 	datalen = 0;
 	
 	// process command
 	switch(mode) {
+	case 0x00:
+		// reset recieve/send buffer
+		break;
 	case 0xd0:
 	case 0xd1:
 	case 0xd2:
@@ -377,23 +387,37 @@ void SUB::process_cmd()
 #endif
 	case 0xe4:
 		// irq vector
-		d_cpu->set_intr_line(false, false, 0);
-		key_buf->clear();
-		databuf[0x16][0] = 0xff;
-		databuf[0x16][1] = 0;
+		if(!databuf[0x14][0]) {
+			// interrupt disabled
+			while(!key_buf->empty()) {
+				lh = key_buf->read();
+			}
+			if(lh != 0xff) {
+				key_buf->write(lh);
+			}
+		}
+		d_cpu->set_intr_line(false, false, intr_bit);
+		intr = false;
 		break;
 	case 0xe6:
 		// keydata read
-		if(!key_buf->empty()) {
-			uint16 code = key_buf->read();
-			databuf[0x16][0] = code & 0xff;
-			databuf[0x16][1] = code >> 8;
+		if(!databuf[0x14][0]) {
+			// interrupt disabled
+			while(!key_buf->empty()) {
+				lh = key_buf->read();
+			}
+			if(lh != 0xff) {
+				key_buf->write(lh);
+			}
 		}
-		else if(key_prev && !key_stat[key_prev]) {
-			// just to make sure key released
-			databuf[0x16][0] = 0xff;
-			databuf[0x16][1] = 0;
+		else {
+			// interrupt enabed
+			if(!key_buf->empty()) {
+				lh = key_buf->read();
+			}
 		}
+		databuf[0x16][0] = lh & 0xff;
+		databuf[0x16][1] = lh >> 8;
 		datalen = 2;
 		break;
 	case 0xe7:

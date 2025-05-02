@@ -23,9 +23,9 @@ private:
 	DEVICE *d_cpu, *d_pio;
 	
 	uint8 databuf[32][8], *datap;
-	uint8 mode, cmdlen, datalen;
-	uint8 inbuf, outbuf;
+	uint8 mode, inbuf, outbuf;
 	bool ibf, obf;
+	int cmdlen, datalen;
 	
 	FIFO* key_buf;
 	uint8* key_stat;

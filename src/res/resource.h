@@ -138,6 +138,7 @@
 #define ID_SCREEN_REC30                 41002
 #define ID_SCREEN_REC15                 41003
 #define ID_SCREEN_STOP                  41004
+#define ID_SCREEN_CAPTURE               41005
 #define ID_SCREEN_WINDOW1               41011
 #define ID_SCREEN_WINDOW2               41012
 #define ID_SCREEN_WINDOW3               41013

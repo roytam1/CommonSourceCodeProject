@@ -81,14 +81,14 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "CPU x1"                       ID_CPU_POWER0
-        MENUITEM "CPU x2"                       ID_CPU_POWER1
-        MENUITEM "CPU x4"                       ID_CPU_POWER2
-        MENUITEM "CPU x8"                       ID_CPU_POWER3
-        MENUITEM "CPU x16"                      ID_CPU_POWER4
+        MENUITEM "CPU x1",                      ID_CPU_POWER0
+        MENUITEM "CPU x2",                      ID_CPU_POWER1
+        MENUITEM "CPU x4",                      ID_CPU_POWER2
+        MENUITEM "CPU x8",                      ID_CPU_POWER3
+        MENUITEM "CPU x16",                     ID_CPU_POWER4
         MENUITEM SEPARATOR
-        MENUITEM "Paste"                        ID_AUTOKEY_START
-        MENUITEM "Stop"                         ID_AUTOKEY_STOP
+        MENUITEM "Paste",                       ID_AUTOKEY_START
+        MENUITEM "Stop",                        ID_AUTOKEY_STOP
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
@@ -123,10 +123,11 @@ BEGIN
     END
     POPUP "Screen"
     BEGIN
-        MENUITEM "Rec 60fps"                    ID_SCREEN_REC60
-        MENUITEM "Rec 30fps"                    ID_SCREEN_REC30
-        MENUITEM "Rec 15fps"                    ID_SCREEN_REC15
-        MENUITEM "Stop"                         ID_SCREEN_STOP
+        MENUITEM "Rec 60fps",                   ID_SCREEN_REC60
+        MENUITEM "Rec 30fps",                   ID_SCREEN_REC30
+        MENUITEM "Rec 15fps",                   ID_SCREEN_REC15
+        MENUITEM "Stop",                        ID_SCREEN_STOP
+        MENUITEM "Capture",                     ID_SCREEN_CAPTURE
         MENUITEM SEPARATOR
         MENUITEM "Window x1",                   ID_SCREEN_WINDOW1
         MENUITEM "Window x2",                   ID_SCREEN_WINDOW2
@@ -160,8 +161,8 @@ BEGIN
     END
     POPUP "Sound"
     BEGIN
-        MENUITEM "Rec"                          ID_SOUND_REC
-        MENUITEM "Stop"                         ID_SOUND_STOP
+        MENUITEM "Rec",                         ID_SOUND_REC
+        MENUITEM "Stop",                        ID_SOUND_STOP
         MENUITEM SEPARATOR
         MENUITEM "2000Hz",                      ID_SOUND_FREQ0
         MENUITEM "4000Hz",                      ID_SOUND_FREQ1

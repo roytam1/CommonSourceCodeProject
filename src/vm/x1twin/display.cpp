@@ -270,7 +270,7 @@ void DISPLAY::event_vline(int v, int clock)
 {
 	vline = v;
 	vclock = vm->current_clock();
-	vclocks = clock;
+	prev_clock = 0;
 }
 
 void DISPLAY::update_pal()
@@ -298,16 +298,25 @@ void DISPLAY::update_pal()
 
 void DISPLAY::get_cur_code()
 {
-	int ofs = (regs[0] + 1) * vm->passed_clock(vclock) / vclocks;
-	if(ofs >= regs[1]) {
-		ofs = regs[1] - 1;
+	/*
+		NOTE: don't update pcg addr frequently to write r/g/b patterns to one pcg (wibarm)
+	
+		CLOCKS_PER_LINE = 250
+		CLOCKS_PER_LINE / CHARS_PER_LINE * 40 = 87.8
+	*/
+	if(vm->passed_clock(prev_clock) > 87) {
+		int ofs = (regs[0] + 1) * vm->passed_clock(vclock) / 250;
+		if(ofs >= regs[1]) {
+			ofs = regs[1] - 1;
+		}
+		int ht = (regs[9] & 0x1f) + 1;
+		ofs += regs[1] * (int)(vline / ht);
+		ofs += (regs[12] << 8) | regs[13];
+		cur_code = vram_t[ofs & 0x7ff];
+		cur_attr = vram_a[ofs & 0x7ff];
+		cur_line = vline % ht;
+		prev_clock = vm->current_clock();
 	}
-	int ht = (regs[9] & 0x1f) + 1;
-	ofs += regs[1] * (int)(vline / ht);
-	ofs += (regs[12] << 8) | regs[13];
-	cur_code = vram_t[ofs & 0x7ff];
-	cur_attr = vram_a[ofs & 0x7ff];
-	cur_line = vline % ht;
 }
 
 void DISPLAY::draw_screen()
