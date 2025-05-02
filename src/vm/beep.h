@@ -16,8 +16,6 @@
 
 #define SIG_BEEP_ON	0
 #define SIG_BEEP_MUTE	1
-#define SIG_BEEP_PULSE	2
-#define SIG_BEEP_FREQ	3
 
 class BEEP : public DEVICE
 {
@@ -27,10 +25,6 @@ private:
 	bool signal;
 	int count;
 	int diff;
-	int lines;
-	int change;
-	int pulse, prv;
-	long constant;
 	
 	bool on;
 	bool mute;
@@ -42,11 +36,11 @@ public:
 	// common functions
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_vline(int v, int clock);
 	void mix(int32* buffer, int cnt);
 	
 	// unique function
-	void init(int rate, int frequency, int divide, int volume);
+	void init(int rate, double frequency, int volume);
+	void set_frequency(double frequency);
 };
 
 #endif

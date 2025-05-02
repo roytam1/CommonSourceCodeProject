@@ -134,7 +134,7 @@ void DISPLAY::draw_screen()
 		}
 	}
 	else {
-		_memset(screen, 0, sizeof(screen));
+		memset(screen, 0, sizeof(screen));
 	}
 	
 	// copy to real screen
@@ -150,10 +150,10 @@ void DISPLAY::draw_screen()
 //			for(int x = 0; x < 640; x++) {
 //				dest1[x] = palette_pc[0];
 //			}
-			_memset(dest1, 0, 640 * sizeof(scrntype));
+			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 		else {
-			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
 	
@@ -275,7 +275,7 @@ void DISPLAY::draw_text_wide()
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200) {
-							_memset(&screen[yy][x << 3], 7, 16);
+							memset(&screen[yy][x << 3], 7, 16);
 						}
 					}
 				}
@@ -330,7 +330,7 @@ void DISPLAY::draw_text_normal()
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200) {
-							_memset(&screen[yy][x << 3], 7, 8);
+							memset(&screen[yy][x << 3], 7, 8);
 						}
 					}
 				}

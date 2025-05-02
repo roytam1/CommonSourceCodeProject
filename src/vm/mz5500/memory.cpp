@@ -32,18 +32,18 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(kanji, 0xff, sizeof(kanji));
-	_memset(dic, 0xff, sizeof(dic));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(kanji, 0xff, sizeof(kanji));
+	memset(dic, 0xff, sizeof(dic));
 #ifdef _MZ6550
-	_memset(dic2, 0xff, sizeof(dic2));
+	memset(dic2, 0xff, sizeof(dic2));
 #endif
 #if defined(_MZ6500) || defined(_MZ6550)
-	_memset(mz1r32, 0, sizeof(mz1r32));
+	memset(mz1r32, 0, sizeof(mz1r32));
 #endif
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

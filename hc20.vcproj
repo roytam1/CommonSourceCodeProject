@@ -401,26 +401,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\datarec.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\disk.cpp"
 					>
 					<FileConfiguration
@@ -496,7 +476,9 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							Optimization="0"
 							PreprocessorDefinitions=""
+							BasicRuntimeChecks="3"
 						/>
 					</FileConfiguration>
 				</File>
@@ -602,10 +584,6 @@
 				>
 				<File
 					RelativePath="src\vm\beep.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\datarec.h"
 					>
 				</File>
 				<File

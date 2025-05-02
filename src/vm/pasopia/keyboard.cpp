@@ -50,7 +50,7 @@ void KEYBOARD::create_key()
 {
 	// update port-b
 	uint8 keys[256];
-	_memcpy(keys, key_stat, sizeof(keys));
+	memcpy(keys, key_stat, sizeof(keys));
 	
 	keys[0] = 0;
 	// backspace -> del

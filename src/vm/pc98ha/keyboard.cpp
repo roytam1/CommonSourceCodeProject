@@ -33,7 +33,7 @@ static const int key_table[256] = {
 
 void KEYBOARD::initialize()
 {
-	_memset(flag, 0, sizeof(flag));
+	memset(flag, 0, sizeof(flag));
 }
 
 void KEYBOARD::reset()

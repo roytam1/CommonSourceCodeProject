@@ -463,11 +463,11 @@ void I386::initialize()
 
 void I386::reset()
 {
-	_memset(&reg, 0, sizeof(reg));
+	memset(&reg, 0, sizeof(reg));
 	REG32(EAX) = 0x0308;	// Intel 386, stepping D1
 	REG32(EDX) = 0;
 	
-	_memset(&sreg, 0, sizeof(sreg));
+	memset(&sreg, 0, sizeof(sreg));
 	sreg[CS].selector = 0xf000;
 	sreg[CS].base = 0xffff0000;
 	sreg[CS].limit = 0xffff;
@@ -477,13 +477,13 @@ void I386::reset()
 	sreg[DS].limit = sreg[ES].limit = sreg[FS].limit = sreg[GS].limit = sreg[SS].limit = 0xffff;
 	sreg[DS].flags = sreg[ES].flags = sreg[FS].flags = sreg[GS].flags = sreg[SS].flags = 0x0092;
 	
-	_memset(&fpu, 0, sizeof(fpu));
+	memset(&fpu, 0, sizeof(fpu));
 	
-	_memset(cr, 0, sizeof(cr));
-	_memset(dr, 0, sizeof(dr));
-	_memset(tr, 0, sizeof(tr));
-	_memset(&gdtr, 0, sizeof(gdtr));
-	_memset(&idtr, 0, sizeof(idtr));
+	memset(cr, 0, sizeof(cr));
+	memset(dr, 0, sizeof(dr));
+	memset(tr, 0, sizeof(tr));
+	memset(&gdtr, 0, sizeof(gdtr));
+	memset(&idtr, 0, sizeof(idtr));
 	idtr.limit = 0x3ff;
 	
 	CF = DF = SF = OF = ZF = PF = AF = IF = TF = 0;

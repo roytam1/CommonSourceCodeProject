@@ -12,7 +12,7 @@
 
 void ROMPACK::initialize()
 {
-	_memset(rom, 0xff, sizeof(rom));
+	memset(rom, 0xff, sizeof(rom));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);

@@ -18,10 +18,10 @@ static const uint8 header[16] = {
 void RAMPAC2::initialize(int id)
 {
 	// initialize rampac2
-	_memset(ram, 0, sizeof(ram));
-	_memcpy(ram, header, sizeof(header));
-	_memset(ram + 0x20, 0xff, 0x200);
-	_memset(ram + 0x300, 0xff, 0x100);
+	memset(ram, 0, sizeof(ram));
+	memcpy(ram, header, sizeof(header));
+	memset(ram + 0x20, 0xff, 0x200);
+	memset(ram + 0x300, 0xff, 0x100);
 	
 	_TCHAR app_path[_MAX_PATH];
 	emu->application_path(app_path);

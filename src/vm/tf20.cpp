@@ -341,7 +341,7 @@ bool TF20::process_cmd()
 					SET_CODE(ERR_WRITE);
 					return true;
 				}
-				_memcpy(sctw, sctr, 128);
+				memcpy(sctw, sctr, 128);
 			}
 			SET_HEAD(2);
 			SET_DATA(trk == 39 ? 0xff : 0);		// high-order
@@ -373,7 +373,7 @@ bool TF20::process_cmd()
 					SET_CODE(ERR_WRITE);
 					return true;
 				}
-				_memset(sctw, 0xe5, 128);
+				memset(sctw, 0xe5, 128);
 			}
 			SET_HEAD(2);
 			SET_DATA(trk == 39 ? 0xff : 0);		// high-order

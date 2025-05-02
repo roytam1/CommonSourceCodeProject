@@ -69,8 +69,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_intr(cpu, 2);
 	
 	// memory bus
-	_memset(ram, 0, sizeof(ram));
-	_memset(rom, 0xff, sizeof(rom));
+	memset(ram, 0, sizeof(ram));
+	memset(rom, 0xff, sizeof(rom));
 	
 	memory->read_bios(_T("MON.ROM"), rom, sizeof(rom));
 	

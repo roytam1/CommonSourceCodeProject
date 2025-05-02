@@ -122,7 +122,7 @@ void UPD765A::initialize()
 		fdc[i].result = 0;
 		fdc[i].access = false;
 	}
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	
 	phase = prevphase = PHASE_IDLE;
 	status = S_RQM;
@@ -780,7 +780,7 @@ void UPD765A::cmd_write_data()
 			int length = 0x80 << __min(8, id[3]);
 			if(!id[3]) {
 				length = __min(dtl, 0x80);
-				_memset(buffer + length, 0, 0x80 - length);
+				memset(buffer + length, 0, 0x80 - length);
 			}
 			shift_to_write(length);
 		}
@@ -807,7 +807,7 @@ void UPD765A::cmd_write_data()
 		CANCEL_EVENT();
 		if(prevphase == PHASE_WRITE) {
 			// terminate while transfer ?
-			_memset(bufptr, 0, count);
+			memset(bufptr, 0, count);
 			write_data((command & 0x1f) == 9);
 		}
 		shift_to_result7();
@@ -953,7 +953,7 @@ void UPD765A::read_diagnostic()
 		return;
 	}
 	int length = __min(0x2000, disk[drv]->track_size);
-	_memcpy(buffer, disk[drv]->track, length);
+	memcpy(buffer, disk[drv]->track, length);
 	shift_to_read(length);
 	return;
 }
@@ -993,7 +993,7 @@ uint32 UPD765A::read_sector()
 			continue;
 		}
 		// sector number is matched
-		_memcpy(buffer, disk[drv]->sector, __min(0x2000, disk[drv]->sector_size));
+		memcpy(buffer, disk[drv]->sector, __min(0x2000, disk[drv]->sector_size));
 		if(disk[drv]->status) {
 			return ST0_AT | ST1_DE | ST2_DD;
 		}
@@ -1052,7 +1052,7 @@ uint32 UPD765A::write_sector(bool deleted)
 		}
 		// sector number is matched
 		int size = 0x80 << __min(8, id[3]);
-		_memcpy(disk[drv]->sector, buffer, __min(size, disk[drv]->sector_size));
+		memcpy(disk[drv]->sector, buffer, __min(size, disk[drv]->sector_size));
 //		if(deleted) {
 //			disk[drv]->deleted = ??;//
 //		}

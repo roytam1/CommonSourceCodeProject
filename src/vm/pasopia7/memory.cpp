@@ -34,9 +34,9 @@
 void MEMORY::initialize()
 {
 	// load ipl
-	_memset(bios, 0xff, sizeof(bios));
-	_memset(basic, 0xff, sizeof(basic));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(bios, 0xff, sizeof(bios));
+	memset(basic, 0xff, sizeof(basic));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -65,7 +65,7 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
-	_memset(vram, 0, sizeof(vram));
+	memset(vram, 0, sizeof(vram));
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)

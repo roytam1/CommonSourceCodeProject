@@ -74,8 +74,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_port_a(pcm, SIG_PCM1BIT_MUTE, 0x02, 0);
 	pio2->set_context_port_a(drec, SIG_DATAREC_OUT, 0x10, 0);
 	pio2->set_context_port_a(not, SIG_NOT_INPUT, 0x20, 0);
-	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
 	flipflop->set_context_1qa(pcm, SIG_PCM1BIT_SIGNAL, 1);
+	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
 	ctc->set_context_zc1(flipflop, SIG_LS393_CLK, 1);
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(0, CPU_CLOCKS);

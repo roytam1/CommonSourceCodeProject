@@ -63,13 +63,13 @@ static const uint8 bios2[] = {
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
-	_memset(cvram, 0, sizeof(cvram));
-	_memset(kvram, 0, sizeof(kvram));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(kanji16, 0xff, sizeof(kanji16));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
+	memset(cvram, 0, sizeof(cvram));
+	memset(kvram, 0, sizeof(kvram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(kanji16, 0xff, sizeof(kanji16));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -83,8 +83,8 @@ void MEMORY::initialize()
 	}
 	else {
 		// load pseudo ipl
-		_memcpy(ipl + 0xc000, bios1, sizeof(bios1));
-		_memcpy(ipl + 0xfff0, bios2, sizeof(bios2));
+		memcpy(ipl + 0xc000, bios1, sizeof(bios1));
+		memcpy(ipl + 0xfff0, bios2, sizeof(bios2));
 		
 		// ank8/16
 		_stprintf(file_path, _T("%sANK8.ROM"), app_path);
@@ -118,7 +118,7 @@ void MEMORY::reset()
 {
 	// reset crtc
 	lcdadr = 0;
-	_memset(lcdreg, 0, sizeof(lcdreg));
+	memset(lcdreg, 0, sizeof(lcdreg));
 	dcr1 = dcr2 = 0;
 	kj_l = kj_h = kj_ofs = kj_row = 0;
 	blinkcnt = 0;
@@ -281,8 +281,8 @@ void MEMORY::update_bank()
 void MEMORY::draw_screen()
 {
 	// render screen
-	_memset(screen_txt, 0, sizeof(screen_txt));
-	_memset(screen_cg, 0, sizeof(screen_cg));
+	memset(screen_txt, 0, sizeof(screen_txt));
+	memset(screen_cg, 0, sizeof(screen_cg));
 	if(dcr1 & 2) {
 		if(dcr1 & 8) {
 			draw_text40();
@@ -416,7 +416,7 @@ void MEMORY::draw_text40()
 				int st = lcdreg[10] & 0x1f;
 				int ed = lcdreg[11] & 0x1f;
 				for(int i = st; i <= ed && i < yofs; i++) {
-					_memset(&screen_txt[y * yofs + i][cx << 4], 7, 8);
+					memset(&screen_txt[y * yofs + i][cx << 4], 7, 8);
 				}
 			}
 		}
@@ -517,7 +517,7 @@ void MEMORY::draw_text80()
 				int st = lcdreg[10] & 0x1f;
 				int ed = lcdreg[11] & 0x1f;
 				for(int i = st; i <= ed && i < yofs; i++) {
-					_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+					memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
 				}
 			}
 		}

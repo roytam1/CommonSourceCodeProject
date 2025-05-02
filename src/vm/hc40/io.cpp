@@ -59,8 +59,8 @@ static const int key_tbl[256] = {
 void IO::initialize()
 {
 	// init external ram disk
-	_memset(ext, 0, 0x20000);
-	_memset(ext + 0x20000, 0xff, 0x20000);
+	memset(ext, 0, 0x20000);
+	memset(ext + 0x20000, 0xff, 0x20000);
 	extar = 0;
 	extcr = 0;
 	

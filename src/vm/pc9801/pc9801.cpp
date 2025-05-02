@@ -167,11 +167,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 	// memory bus
-	_memset(ram, 0, sizeof(ram));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(sound_bios, 0xff, sizeof(sound_bios));
-	_memset(fd_bios_2hd, 0xff, sizeof(fd_bios_2hd));
-	_memset(fd_bios_2dd, 0xff, sizeof(fd_bios_2dd));
+	memset(ram, 0, sizeof(ram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(sound_bios, 0xff, sizeof(sound_bios));
+	memset(fd_bios_2hd, 0xff, sizeof(fd_bios_2hd));
+	memset(fd_bios_2dd, 0xff, sizeof(fd_bios_2dd));
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
 	int sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
@@ -429,7 +429,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, 2400, 2, 8000);
+	beep->init(rate, 2400, 8000);
 	opn->init(rate, 3993552, samples, 0, 0);
 }
 

@@ -64,7 +64,7 @@ private:
 	
 public:
 	Z80CTC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		_memset(counter, 0, sizeof(counter));
+		memset(counter, 0, sizeof(counter));
 		for(int i = 0; i < 4; i++) {
 			init_output_signals(&counter[i].outputs);
 			counter[i].freq = 0;

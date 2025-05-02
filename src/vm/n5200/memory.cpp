@@ -32,13 +32,13 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(exram, 0, sizeof(exram));
-	_memset(vram, 0, sizeof(vram));
-	_memset(tvram, 0, sizeof(tvram));
-	_memset(backup, 0, sizeof(backup));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(exram, 0, sizeof(exram));
+	memset(vram, 0, sizeof(vram));
+	memset(tvram, 0, sizeof(tvram));
+	memset(backup, 0, sizeof(backup));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom/ram image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

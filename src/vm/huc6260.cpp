@@ -380,7 +380,7 @@ void HUC6260::reset()
 	RefreshPrvIF();
 	_DF = _BF = _TF = _VF = _NF = 0;
 	_A = _X = _Y = _S = _P = 0;
-	_memset(MPR, 0, sizeof(MPR));
+	memset(MPR, 0, sizeof(MPR));
 	
 	PC = RM16(0xFFFE);
 }

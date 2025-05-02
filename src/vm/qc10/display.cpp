@@ -16,11 +16,11 @@
 void DISPLAY::initialize()
 {
 #ifdef _COLOR_MONITOR
-	_memset(vram_r, 0, sizeof(vram_r));
-	_memset(vram_g, 0, sizeof(vram_g));
-	_memset(vram_b, 0, sizeof(vram_b));
+	memset(vram_r, 0, sizeof(vram_r));
+	memset(vram_g, 0, sizeof(vram_g));
+	memset(vram_b, 0, sizeof(vram_b));
 #else
-	_memset(vram, 0, sizeof(vram));
+	memset(vram, 0, sizeof(vram));
 	
 	// load rom images
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -226,7 +226,7 @@ void DISPLAY::draw_screen()
 						if(cursor) {
 							int top = cs[1] & 0x1f, bottom = cs[2] >> 3;
 							for(int l = top; l < bottom && l < 16; l++) {
-								_memset(&screen[y + l][x], 1, 16);
+								memset(&screen[y + l][x], 1, 16);
 							}
 						}
 					}
@@ -263,7 +263,7 @@ void DISPLAY::draw_screen()
 						if(cursor) {
 							int top = cs[1] & 0x1f, bottom = cs[2] >> 3;
 							for(int l = top; l < bottom && l < 16; l++) {
-								_memset(&screen[y + l][x], 1, 8);
+								memset(&screen[y + l][x], 1, 8);
 							}
 						}
 					}
@@ -295,7 +295,7 @@ void DISPLAY::draw_screen()
 					break;
 				}
 				scrntype *dest = emu->screen_buffer(dy++);
-				_memcpy(dest, tmp, sizeof(scrntype) * 640);
+				memcpy(dest, tmp, sizeof(scrntype) * 640);
 			}
 		}
 	}

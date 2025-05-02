@@ -20,7 +20,7 @@ static int periodic_intr_rate[3][16] = {
 void HD146818P::initialize()
 {
 	// load ram image
-	_memset(ram, 0, sizeof(ram));
+	memset(ram, 0, sizeof(ram));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);

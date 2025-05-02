@@ -385,7 +385,7 @@ void DISPLAY::draw_alpha()
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int l = s; l <= e && l < ch_height; l++) {
 						if(ytop + l < 512) {
-							_memset(&screen[ytop + l][x * 8], 7, 8);
+							memset(&screen[ytop + l][x * 8], 7, 8);
 						}
 					}
 				}

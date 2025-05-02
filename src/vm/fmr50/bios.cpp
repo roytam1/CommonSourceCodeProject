@@ -302,7 +302,7 @@ void BIOS::initialize()
 	}
 	
 	// init scsi
-	_memset(scsi_blocks, 0, sizeof(scsi_blocks));
+	memset(scsi_blocks, 0, sizeof(scsi_blocks));
 	for(int i = 0; i < MAX_SCSI; i++) {
 		_stprintf(scsi_path[i], _T("%sSCSI%d.DAT"), app_path, i);
 		if(fio->Fopen(scsi_path[i], FILEIO_READ_BINARY)) {
@@ -313,7 +313,7 @@ void BIOS::initialize()
 	}
 	
 	// init memcard
-	_memset(memcard_blocks, 0, sizeof(memcard_blocks));
+	memset(memcard_blocks, 0, sizeof(memcard_blocks));
 	for(int i = 0; i < MAX_MEMCARD; i++) {
 		_stprintf(memcard_path[i], _T("%sMEMCARD%d.DAT"), app_path, i);
 		if(fio->Fopen(memcard_path[i], FILEIO_READ_BINARY)) {
@@ -888,7 +888,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				access_fdd[drv] = true;
 				for(int i = 0; i < disk[drv]->sector_num; i++) {
 					disk[drv]->get_sector(trk, hed, i);
-					_memset(disk[drv]->sector, 0xe5, disk[drv]->sector_size);
+					memset(disk[drv]->sector, 0xe5, disk[drv]->sector_size);
 					disk[drv]->deleted = 0;
 					disk[drv]->status = 0;
 				}
@@ -1007,9 +1007,9 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				d_io->write_io8(iotable[i][0], iotable[i][1]);
 			}
 			// init cmos
-			_memset(cmos, 0, CMOS_SIZE);
-			_memcpy(cmos, cmos_t, sizeof(cmos_t));
-			_memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
+			memset(cmos, 0, CMOS_SIZE);
+			memcpy(cmos, cmos_t, sizeof(cmos_t));
+			memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
 			// init int vector
 			for(int i = 0, ofs = 0; i < 256; i++) {
 				// int vector = ffff:0008
@@ -1018,15 +1018,15 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				ofs += 4;
 			}
 			// init screen
-			_memset(vram, 0, VRAM_SIZE);
+			memset(vram, 0, VRAM_SIZE);
 #ifdef _FMR60
-			_memset(cvram, 0, 0x2000);
-			_memset(avram, 0, 0x2000);
+			memset(cvram, 0, 0x2000);
+			memset(avram, 0, 0x2000);
 #else
-			_memset(cvram, 0, 0x1000);
-			_memset(kvram, 0, 0x1000);
-			_memcpy(cvram + 0xf00, msg_c, sizeof(msg_c));
-			_memcpy(kvram + 0xf00, msg_k, sizeof(msg_k));
+			memset(cvram, 0, 0x1000);
+			memset(kvram, 0, 0x1000);
+			memcpy(cvram + 0xf00, msg_c, sizeof(msg_c));
+			memcpy(kvram + 0xf00, msg_k, sizeof(msg_k));
 #endif
 			*CarryFlag = 0;
 			return true;
@@ -1059,11 +1059,11 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			}
 			// clear screen
 #ifdef _FMR60
-			_memset(cvram, 0, 0x2000);
-			_memset(avram, 0, 0x2000);
+			memset(cvram, 0, 0x2000);
+			memset(avram, 0, 0x2000);
 #else
-			_memset(cvram, 0, 0x1000);
-			_memset(kvram, 0, 0x1000);
+			memset(cvram, 0, 0x1000);
+			memset(kvram, 0, 0x1000);
 #endif
 			// set result
 			AX = 0xff;
@@ -1102,11 +1102,11 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			}
 			// clear screen
 #ifdef _FMR60
-			_memset(cvram, 0, 0x2000);
-			_memset(avram, 0, 0x2000);
+			memset(cvram, 0, 0x2000);
+			memset(avram, 0, 0x2000);
 #else
-			_memset(cvram, 0, 0x1000);
-			_memset(kvram, 0, 0x1000);
+			memset(cvram, 0, 0x1000);
+			memset(kvram, 0, 0x1000);
 #endif
 			// set result
 			AX = 0xffff;
@@ -1124,8 +1124,8 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 #endif
 		if(AH == 0) {
 			// init cmos
-			_memcpy(cmos, cmos_t, sizeof(cmos_t));
-			_memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
+			memcpy(cmos, cmos_t, sizeof(cmos_t));
+			memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
 		}
 		else if(AH == 5) {
 			// get $a2

@@ -64,10 +64,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ctc->set_context_intr(cpu, 0);
 	
 	// memory bus
-	_memset(ram, 0, sizeof(ram));
-	_memset(ext, 0, sizeof(ext));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(cart, 0xff, sizeof(cart));
+	memset(ram, 0, sizeof(ram));
+	memset(ext, 0, sizeof(ext));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(cart, 0xff, sizeof(cart));
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
 	
@@ -205,14 +205,14 @@ uint16* VM::create_sound(int* extra_frames)
 
 void VM::open_cart(_TCHAR* file_path)
 {
-	_memset(cart, 0xff, sizeof(cart));
+	memset(cart, 0xff, sizeof(cart));
 	memory->read_image(file_path, cart, sizeof(cart));
 	reset();
 }
 
 void VM::close_cart()
 {
-	_memset(cart, 0xff, sizeof(cart));
+	memset(cart, 0xff, sizeof(cart));
 	reset();
 }
 

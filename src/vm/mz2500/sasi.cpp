@@ -33,9 +33,9 @@ void SASI::initialize()
 	delete fio;
 	
 	// initialize sasi interface
-	_memset(buffer, 0, sizeof(buffer));
-	_memset(cmd, 0, sizeof(cmd));
-	_memset(state_buf, 0, sizeof(state_buf));
+	memset(buffer, 0, sizeof(buffer));
+	memset(cmd, 0, sizeof(cmd));
+	memset(state_buf, 0, sizeof(state_buf));
 	
 	phase = 0;
 	sector = 0;
@@ -174,7 +174,7 @@ uint32 SASI::read_io8(uint32 addr)
 
 int SASI::seek(int drv)
 {
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	
 	if(!file_exist[drv & 1]) {
 		return -1;
@@ -240,7 +240,7 @@ int SASI::format(int drv)
 		return 0;
 	}
 	// format 33 blocks
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	for(int i = 0; i < 33; i++) {
 		if(fio->Fwrite(buffer, 256, 1) != 1) {
 			fio->Fclose();
@@ -331,7 +331,7 @@ void SASI::check_cmd()
 		rw_mode = 0;
 		buffer_ptr = 0;
 		state = 0;
-		_memset(buffer, 0, sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 		result = seek(unit);
 		if((result == 0) || (result == -1)) {
 			error = 0x0f;

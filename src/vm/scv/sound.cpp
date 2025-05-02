@@ -25,7 +25,7 @@ void SOUND::reset()
 	clear_channel(&square3);
 	clear_channel(&pcm);
 	
-	_memset(params, 0, sizeof(params));
+	memset(params, 0, sizeof(params));
 	param_cnt = param_ptr = 0;
 	register_id = -1;
 	cmd_addr = 0;
@@ -59,7 +59,7 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		if(params[0] == 0x1f) {
 			// pcm command
 			if(param_ptr == 6) {
-				_memset(pcm_table, 0, sizeof(pcm_table));
+				memset(pcm_table, 0, sizeof(pcm_table));
 				pcm_len = pcm.ptr = 0;
 			}
 			else if(param_ptr >= 7) {
@@ -107,7 +107,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 				if(register_id != -1) {
 					vm->cancel_event(register_id);
 				}
-				_memset(params, 0, sizeof(params));
+				memset(params, 0, sizeof(params));
 				param_cnt = param_ptr = 0;
 				
 				// terminate pcm when pause
@@ -122,7 +122,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 		else {
 			if(params[0]) {
 				// terminate command
-				_memset(params, 0, sizeof(params));
+				memset(params, 0, sizeof(params));
 				param_cnt = param_ptr = 0;
 //				clear_channel(&pcm);
 			}
@@ -219,7 +219,7 @@ void SOUND::process_cmd()
 	}
 	
 	// clear command buffer
-	_memset(params, 0, sizeof(params));
+	memset(params, 0, sizeof(params));
 	param_cnt = param_ptr = 0;
 }
 

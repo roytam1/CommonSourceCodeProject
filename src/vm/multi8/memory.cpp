@@ -33,12 +33,12 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(rom, 0xff, sizeof(rom));
-	_memset(fdc, 0xff, sizeof(fdc));
-	_memset(ram0, 0, sizeof(ram0));
-	_memset(ram1, 0, sizeof(ram1));
-	_memset(vram, 0, sizeof(vram));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(rom, 0xff, sizeof(rom));
+	memset(fdc, 0xff, sizeof(fdc));
+	memset(ram0, 0, sizeof(ram0));
+	memset(ram1, 0, sizeof(ram1));
+	memset(vram, 0, sizeof(vram));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load ipl
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

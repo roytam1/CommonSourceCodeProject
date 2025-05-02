@@ -34,10 +34,10 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(ext, 0xff, sizeof(ext));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(ext, 0xff, sizeof(ext));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

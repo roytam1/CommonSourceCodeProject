@@ -54,8 +54,8 @@ private:
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		_memset(wr_table, 0, sizeof(wr_table));
-		_memset(rd_table, 0, sizeof(rd_table));
+		memset(wr_table, 0, sizeof(wr_table));
+		memset(rd_table, 0, sizeof(rd_table));
 		
 		// vm->dummy must be generated first !
 		for(int i = 0; i < IO_ADDR_MAX; i++) {

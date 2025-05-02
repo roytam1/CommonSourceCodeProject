@@ -69,11 +69,11 @@ void EMU::update_socket()
 			recv_r_ptr[i] += size;
 			
 			if(size <= size0) {
-				_memcpy(buf0, src, size);
+				memcpy(buf0, src, size);
 			}
 			else {
-				_memcpy(buf0, src, size0);
-				_memcpy(buf1, src + size0, size - size0);
+				memcpy(buf0, src, size0);
+				memcpy(buf1, src + size0, size - size0);
 			}
 			vm->inc_recvbuffer_ptr(i, size);
 		}
@@ -127,7 +127,7 @@ bool EMU::connect_socket(int ch, uint32 ipaddr, int port)
 	tcpaddr.sin_family = AF_INET;
 	tcpaddr.sin_addr.s_addr = ipaddr;
 	tcpaddr.sin_port = htons((unsigned short)port);
-	_memset(tcpaddr.sin_zero, (int)0, sizeof(tcpaddr.sin_zero));
+	memset(tcpaddr.sin_zero, (int)0, sizeof(tcpaddr.sin_zero));
 	
 	if(connect(soc[ch], (struct sockaddr *)&tcpaddr, sizeof(tcpaddr)) == SOCKET_ERROR) {
 		if(WSAGetLastError() != WSAEWOULDBLOCK) {
@@ -165,7 +165,7 @@ void EMU::send_data_udp(int ch, uint32 ipaddr, int port)
 		udpaddr[ch].sin_family = AF_INET;
 		udpaddr[ch].sin_addr.s_addr = ipaddr;
 		udpaddr[ch].sin_port = htons((unsigned short)port);
-		_memset(udpaddr[ch].sin_zero, (int)0, sizeof(udpaddr[ch].sin_zero));
+		memset(udpaddr[ch].sin_zero, (int)0, sizeof(udpaddr[ch].sin_zero));
 		
 		send_data(ch);
 	}

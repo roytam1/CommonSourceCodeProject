@@ -19,10 +19,10 @@ void MEMORY::initialize()
 {
 	uint8 header[16];
 	
-	_memset(ram, 0, sizeof(ram));
-	_memset(save_ram, 0, sizeof(save_ram));
-	_memset(rom, 0xff, sizeof(rom));
-	_memset(header, 0, sizeof(header));
+	memset(ram, 0, sizeof(ram));
+	memset(save_ram, 0, sizeof(save_ram));
+	memset(rom, 0xff, sizeof(rom));
+	memset(header, 0, sizeof(header));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -34,7 +34,7 @@ void MEMORY::initialize()
 		fio->Fread(header, sizeof(header), 1);
 		// read program rom (max 32kb)
 		fio->Fread(rom, 0x4000, 1);
-		_memcpy(rom + 0x4000, rom, 0x4000);
+		memcpy(rom + 0x4000, rom, 0x4000);
 		fio->Fread(rom + 0x4000, 0x4000, 1);
 		fio->Fclose();
 	}

@@ -15,7 +15,7 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_MEMORY_BEEP		0
+#define SIG_MEMORY_PCM		0
 #define SIG_MEMORY_FDC_IRQ	1
 #define SIG_MEMORY_MOTOR	2
 
@@ -24,7 +24,7 @@ class UPD765A;
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_pit, *d_beep;
+	DEVICE *d_pit, *d_pcm;
 	UPD765A *d_fdc;
 	
 	uint8* rbank[32];
@@ -37,8 +37,8 @@ private:
 	uint8 bank, psel, csel;
 	void update_map();
 	
-	bool beep_on, beep_cont, beep_pit;
-	void update_beep();
+	bool pcm_on, pcm_cont, pcm_pit;
+	void update_pcm();
 	
 	bool fdc_irq, motor;
 	
@@ -61,8 +61,8 @@ public:
 	void set_context_pit(DEVICE* device) {
 		d_pit = device;
 	}
-	void set_context_beep(DEVICE* device) {
-		d_beep = device;
+	void set_context_pcm(DEVICE* device) {
+		d_pcm = device;
 	}
 	void set_context_fdc(UPD765A* device) {
 		d_fdc = device;

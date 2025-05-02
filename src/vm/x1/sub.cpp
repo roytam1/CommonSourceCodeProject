@@ -169,7 +169,7 @@ void SUB::initialize()
 
 void SUB::reset()
 {
-	_memset(databuf, 0, sizeof(databuf));
+	memset(databuf, 0, sizeof(databuf));
 	databuf[0x16][0] = 0xff;
 	mode = 0;
 	cmdlen = datalen = 0;
@@ -184,7 +184,7 @@ void SUB::reset()
 	// key buffer
 	key_buf->clear();
 	key_prev = key_break = key_repeat = 0;
-	_memset(key_converted, 0, sizeof(key_converted));
+	memset(key_converted, 0, sizeof(key_converted));
 	
 	key_shift = key_ctrl = key_graph = false;
 	key_caps = key_kana = false;

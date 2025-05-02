@@ -42,13 +42,13 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
-	_memset(ipl, 0xff, sizeof(ipl));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
+	memset(ipl, 0xff, sizeof(ipl));
 #ifdef _MZ1200
-	_memset(ext, 0xff, sizeof(ext));
+	memset(ext, 0xff, sizeof(ext));
 #endif
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

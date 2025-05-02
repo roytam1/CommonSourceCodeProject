@@ -31,8 +31,8 @@
 
 void MAIN::initialize()
 {
-	_memset(rom, 0xff, sizeof(rom));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(rom, 0xff, sizeof(rom));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);

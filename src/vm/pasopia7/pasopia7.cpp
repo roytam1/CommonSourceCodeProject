@@ -13,11 +13,12 @@
 #include "../device.h"
 #include "../event.h"
 
-#include "../beep.h"
 #include "../datarec.h"
 #include "../hd46505.h"
 #include "../i8255.h"
+#include "../ls393.h"
 #include "../not.h"
+#include "../pcm1bit.h"
 #include "../sn76489an.h"
 #include "../upd765a.h"
 #include "../z80.h"
@@ -44,13 +45,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	beep = new BEEP(this, emu);
 	drec = new DATAREC(this, emu);
 	crtc = new HD46505(this, emu);
 	pio0 = new I8255(this, emu);
 	pio1 = new I8255(this, emu);
 	pio2 = new I8255(this, emu);
+	flipflop = new LS393(this, emu); // LS74
 	not = new NOT(this, emu);
+	pcm = new PCM1BIT(this, emu);
 	psg0 = new SN76489AN(this, emu);
 	psg1 = new SN76489AN(this, emu);
 	fdc = new UPD765A(this, emu);
@@ -68,7 +70,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(beep);
+	event->set_context_sound(pcm);
 	event->set_context_sound(psg0);
 	event->set_context_sound(psg1);
 	
@@ -81,21 +83,22 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio1->set_context_port_b(memory, SIG_MEMORY_I8255_1_B, 0xff, 0);
 	pio1->set_context_port_c(display, SIG_DISPLAY_I8255_1_C, 0xff, 0);
 	pio1->set_context_port_c(memory, SIG_MEMORY_I8255_1_C, 0xff, 0);
-	pio2->set_context_port_a(beep, SIG_BEEP_MUTE, 0x02, 0);
+	pio2->set_context_port_a(pcm, SIG_PCM1BIT_MUTE, 0x02, 0);
 	pio2->set_context_port_a(psg0, SIG_SN76489AN_MUTE, 0x02, 0);
 	pio2->set_context_port_a(psg1, SIG_SN76489AN_MUTE, 0x02, 0);
 	pio2->set_context_port_a(drec, SIG_DATAREC_OUT, 0x10, 0);
 	pio2->set_context_port_a(not, SIG_NOT_INPUT, 0x20, 0);
 	pio2->set_context_port_a(iotrap, SIG_IOTRAP_I8255_2_A, 0xff, 0);
 	pio2->set_context_port_c(iotrap, SIG_IOTRAP_I8255_2_C, 0xff, 0);
+	flipflop->set_context_1qa(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_INTR, 1);
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_1, 1);
-	ctc->set_context_zc1(beep, SIG_BEEP_PULSE, 1);
+	ctc->set_context_zc1(flipflop, SIG_LS393_CLK, 1);
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(0, CPU_CLOCKS);
 	ctc->set_constant_clock(2, CPU_CLOCKS);
-	pio->set_context_port_a(beep, SIG_BEEP_ON, 0x80, 0);
+	pio->set_context_port_a(pcm, SIG_PCM1BIT_ON, 0x80, 0);
 	pio->set_context_port_a(key, SIG_KEYBOARD_Z80PIO_A, 0xff, 0);
 	
 	display->set_context(fdc);
@@ -151,13 +154,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			device->reset();
 		}
 	}
-	
-	// set initial port status
-#ifdef _LCD
-	pio0->write_signal(SIG_I8255_PORT_B, 0, (0x10 | 0x40));
-#else
-	pio0->write_signal(SIG_I8255_PORT_B, 0x10, (0x10 | 0x40));
-#endif
 }
 
 VM::~VM()
@@ -191,6 +187,14 @@ void VM::reset()
 	event->reset();
 	memory->reset();
 	iotrap->do_reset();
+	
+	// set initial port status
+#ifdef _LCD
+	pio0->write_signal(SIG_I8255_PORT_B, 0, (0x10 | 0x40));
+#else
+	pio0->write_signal(SIG_I8255_PORT_B, 0x10, (0x10 | 0x40));
+#endif
+	pcm->write_signal(SIG_PCM1BIT_ON, 0, 1);
 }
 
 void VM::run()
@@ -262,7 +266,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, -1, 2, 3600);
+	pcm->init(rate, 3600);
 	psg0->init(rate, 1996800, 3600);
 	psg1->init(rate, 1996800, 3600);
 }

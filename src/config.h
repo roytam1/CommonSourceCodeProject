@@ -73,7 +73,7 @@ typedef struct {
 #endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
 	int monitor_type;
-#endif;
+#endif
 #ifdef USE_SCANLINE
 	bool scan_line;
 #endif

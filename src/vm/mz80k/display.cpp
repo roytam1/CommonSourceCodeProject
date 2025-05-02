@@ -100,7 +100,7 @@ void DISPLAY::draw_screen()
 	} else {
 		for(int y = 0; y < 200; y++) {
 			scrntype* dest = emu->screen_buffer(y);
-			_memset(dest, 0, sizeof(scrntype) * 320);
+			memset(dest, 0, sizeof(scrntype) * 320);
 		}
 	}
 }

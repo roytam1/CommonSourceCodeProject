@@ -65,6 +65,7 @@
 #define I8259_MAX_CHIPS		2
 //#define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x10000
+#define PCM1BIT_HIGH_QUALITY
 
 // device informations for win32
 #define USE_FD1
@@ -98,7 +99,6 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
 class HD46505;
 #ifdef _FMR60
 class HD63484;
@@ -110,6 +110,7 @@ class I86;
 class I386;
 class IO;
 class MB8877;
+class PCM1BIT;
 class RTC58321;
 class UPD71071;
 
@@ -130,7 +131,6 @@ protected:
 	// devices
 	EVENT* event;
 	
-	BEEP* beep;
 	HD46505* crtc;
 #if defined(_FMR60)
 	HD63484* acrtc;
@@ -143,6 +143,7 @@ protected:
 	I386* i386;
 	IO* io;
 	MB8877* fdc;
+	PCM1BIT* pcm;
 	RTC58321* rtc;
 	UPD71071* dma;
 	

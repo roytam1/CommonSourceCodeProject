@@ -46,7 +46,7 @@ static const int key_table[256] = {
 
 void KEYBOARD::reset()
 {
-	_memset(table, 0, sizeof(table));
+	memset(table, 0, sizeof(table));
 }
 
 void KEYBOARD::key_down(int code)

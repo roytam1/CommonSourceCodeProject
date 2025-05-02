@@ -14,7 +14,7 @@
 void CMT::initialize()
 {
 	fio = new FILEIO();
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	bufcnt = 0;
 	bit = 1;
 	start = 0;
@@ -46,7 +46,7 @@ void CMT::write_io8(uint32 addr, uint32 data)
 				else {
 					if(++bufcnt == BUFFER_SIZE) {
 						fio->Fwrite(buffer, sizeof(buffer), 1);
-						_memset(buffer, 0, sizeof(buffer));
+						memset(buffer, 0, sizeof(buffer));
 						bufcnt = 0;
 					}
 					bit = 1;
@@ -65,7 +65,7 @@ void CMT::write_io8(uint32 addr, uint32 data)
 			else {
 				if(++bufcnt == BUFFER_SIZE) {
 					fio->Fwrite(buffer, sizeof(buffer), 1);
-					_memset(buffer, 0, sizeof(buffer));
+					memset(buffer, 0, sizeof(buffer));
 					bufcnt = 0;
 				}
 				bit = 1;
@@ -86,7 +86,7 @@ uint32 CMT::read_io8(uint32 addr)
 		}
 		else {
 			if(++bufcnt == BUFFER_SIZE) {
-				_memset(buffer, 0, sizeof(buffer));
+				memset(buffer, 0, sizeof(buffer));
 				fio->Fread(buffer, sizeof(buffer), 1);
 				bufcnt = 0;
 			}
@@ -115,7 +115,7 @@ void CMT::rec_datarec(_TCHAR* filename)
 	
 	if(fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
 		// open for rec
-		_memset(buffer, 0, sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 		bufcnt = 0;
 		bit = 1;
 		rec = true;

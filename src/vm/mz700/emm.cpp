@@ -20,7 +20,7 @@ void EMM::initialize()
 {
 	// init memory
 	data_buffer = (uint8 *)malloc(DATA_SIZE);
-	_memset(data_buffer, 0xff, DATA_SIZE);
+	memset(data_buffer, 0xff, DATA_SIZE);
 	
 	// load emm image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

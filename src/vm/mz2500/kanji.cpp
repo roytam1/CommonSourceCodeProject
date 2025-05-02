@@ -14,7 +14,7 @@
 void KANJI::initialize()
 {
 	// init image
-	_memset(rom, 0, sizeof(rom));
+	memset(rom, 0, sizeof(rom));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

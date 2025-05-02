@@ -174,7 +174,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, 1000, 2, 8000);
+	beep->init(rate, 1000, 8000);
 }
 
 uint16* VM::create_sound(int* extra_frames)

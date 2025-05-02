@@ -45,6 +45,7 @@
 //#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 #define IO_ADDR_MAX		0x100
+#define PCM1BIT_HIGH_QUALITY
 
 // device informations for win32
 #define USE_DATAREC
@@ -63,11 +64,12 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
 class DATAREC;
 class HD46505;
 class I8255;
+class LS393;
 class NOT;
+class PCM1BIT;
 class SN76489AN;
 class UPD765A;
 class Z80;
@@ -90,13 +92,14 @@ protected:
 	// devices
 	EVENT* event;
 	
-	BEEP* beep;
 	DATAREC* drec;
 	HD46505* crtc;
 	I8255* pio0;
 	I8255* pio1;
 	I8255* pio2;
+	LS393* flipflop;
 	NOT* not;
+	PCM1BIT* pcm;
 	SN76489AN* psg0;
 	SN76489AN* psg1;
 	UPD765A* fdc;

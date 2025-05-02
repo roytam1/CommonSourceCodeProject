@@ -18,15 +18,20 @@
 #define SIG_MEMORY_PORT_2	0
 #define SIG_MEMORY_PORT_3	1
 #define SIG_MEMORY_PORT_4	2
-#define SIG_MEMORY_SIO		3
-#define SIG_MEMORY_RTC_IRQ	4
+#define SIG_MEMORY_SIO_MAIN	3
+#define SIG_MEMORY_SIO_TF20	4
+#define SIG_MEMORY_RTC_IRQ	5
 
+#define DATAREC_BUFFER_SIZE	0x10000
+
+class BEEP;
 class FIFO;
 
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_beep, *d_cpu, *d_drec, *d_rtc, *d_tf20;
+	BEEP *d_beep;
+	DEVICE *d_cpu, *d_rtc, *d_tf20;
 	
 	uint8 wdmy[0x2000];
 	uint8 rdmy[0x2000];
@@ -35,14 +40,33 @@ private:
 	
 	// memory with expansion unit
 	uint8 ram[0x8000];	// 0000h-7fffh
-	uint8 ext[0x4000];	// 8000h-bfffh
 	uint8 rom[0x8000];	// 8000h-ffffh (internal)
+	uint8 ext[0x4000];	// 8000h-bfffh
 	
 	FIFO *cmd_buf;
-	uint8 sio_select;
+	bool sio_select;
+	bool special_cmd_masked;
+	uint8 slave_mem[0x10000];
+	
+	typedef struct {
+		double freq;
+		int period;
+		int remain;
+	} sound_t;
+	sound_t sound[256];
+	int sound_ptr;
+	int sound_count;
+	uint8 sound_reply;
+	double sound_freq;
+	double tone_table[57];
 	
 	uint8 *key_stat;
 	int key_data, key_strobe, key_intmask;
+	
+	uint8 datarec_buffer[DATAREC_BUFFER_SIZE];
+	int datarec_count;
+	bool datarec_play, datarec_rec;
+	FILEIO* datarec_fio;
 	
 	typedef struct {
 		uint8 buffer[80];
@@ -59,10 +83,11 @@ private:
 	int int_status;
 	int int_mask;
 	
+	void update_sound();
 	void update_keyboard();
 	void update_intr();
-	void send_to_subcpu(uint8 val);
-	void send_to_maincpu(uint8 val);
+	void send_to_slave(uint8 val);
+	void send_to_main(uint8 val);
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -75,17 +100,15 @@ public:
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void event_callback(int event_id, int err);
 	void event_frame();
 	
 	// unitque function
-	void set_context_beep(DEVICE* device) {
+	void set_context_beep(BEEP* device) {
 		d_beep = device;
 	}
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
-	}
-	void set_context_drec(DEVICE* device) {
-		d_drec = device;
 	}
 	void set_context_rtc(DEVICE* device) {
 		d_rtc = device;
@@ -94,6 +117,9 @@ public:
 		d_tf20 = device;
 	}
 	void notify_power_off();
+	void play_datarec(_TCHAR* filename);
+	void rec_datarec(_TCHAR* filename);
+	void close_datarec();
 	void draw_screen();
 };
 

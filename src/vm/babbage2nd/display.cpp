@@ -94,7 +94,7 @@ static const int pat_8bit_led[17][17] = {
 
 void DISPLAY::initialize()
 {
-	_memset(seg, 0, sizeof(seg));
+	memset(seg, 0, sizeof(seg));
 	ls373 = 0;
 	pio_7seg = pio_8bit = 0;
 	
@@ -105,7 +105,7 @@ void DISPLAY::initialize()
 void DISPLAY::event_vline(int v, int clock)
 {
 	if(!v) {
-		_memset(seg, 0, sizeof(seg));
+		memset(seg, 0, sizeof(seg));
 	}
 	for(int i = 0; i < 6; i++) {
 		if(pio_7seg & (1 << i)) {

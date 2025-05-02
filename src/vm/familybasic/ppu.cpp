@@ -92,8 +92,8 @@ void PPU::initialize()
 {
 	uint8 header[16];
 	
-	_memset(chr_rom, 0xff, sizeof(chr_rom));
-	_memset(header, 0, sizeof(header));
+	memset(chr_rom, 0xff, sizeof(chr_rom));
+	memset(header, 0, sizeof(header));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -149,15 +149,15 @@ void PPU::initialize()
 
 void PPU::reset()
 {
-	_memset(bg_pal, 0, sizeof(bg_pal));
-	_memset(spr_pal, 0, sizeof(spr_pal));
-	_memset(solid_buf, 0, sizeof(solid_buf));
-	_memset(name_tables, 0, sizeof(name_tables));
+	memset(bg_pal, 0, sizeof(bg_pal));
+	memset(spr_pal, 0, sizeof(spr_pal));
+	memset(solid_buf, 0, sizeof(solid_buf));
+	memset(name_tables, 0, sizeof(name_tables));
 	
-	_memset(spr_ram, 0, sizeof(spr_ram));
+	memset(spr_ram, 0, sizeof(spr_ram));
 	spr_ram_rw_ptr = 0;
 	
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	bg_pattern_table_addr = 0;
 	spr_pattern_table_addr = 0;
 	ppu_addr_inc = 0;
@@ -376,7 +376,7 @@ void PPU::render_scanline(int v)
 	
 	if(!bg_enabled()) {
 		// set to background color
-		_memset(screen[v], bg_pal[0], 256 + 16);
+		memset(screen[v], bg_pal[0], 256 + 16);
 	}
 	if(spr_enabled() || bg_enabled()) {
 		LOOPY_SCANLINE_START(loopy_v, loopy_t);
@@ -384,7 +384,7 @@ void PPU::render_scanline(int v)
 			render_bg(v);
 		}
 		else {
-			_memset(solid_buf, 0, sizeof(solid_buf));
+			memset(solid_buf, 0, sizeof(solid_buf));
 		}
 		if(spr_enabled()) {
 			// draw sprites
@@ -491,8 +491,8 @@ void PPU::render_bg(int v)
 		}
 	}
 	if(bg_clip()) {
-		_memset(&screen[v][8], bg_pal[0], 8);
-		_memset(solid + 8, 0, 8);
+		memset(&screen[v][8], bg_pal[0], 8);
+		memset(solid + 8, 0, 8);
 	}
 }
 

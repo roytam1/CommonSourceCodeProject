@@ -15,7 +15,7 @@
 void CRTC::initialize()
 {
 	// init vram
-	_memset(vram, 0, sizeof(vram));
+	memset(vram, 0, sizeof(vram));
 	
 	// init bit control
 	shift = 0;

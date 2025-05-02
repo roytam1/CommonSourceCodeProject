@@ -48,7 +48,7 @@ void KEYBOARD::event_frame()
 {
 	// update key status
 	uint8 buf[256];
-	_memcpy(buf, key_stat, sizeof(buf));
+	memcpy(buf, key_stat, sizeof(buf));
 	
 	if(!buf[0x10] && buf[0x21]) {
 		buf[0x7c] = 0x80;	// PAGE UP -> F13

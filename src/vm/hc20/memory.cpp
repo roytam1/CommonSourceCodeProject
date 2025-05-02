@@ -9,6 +9,7 @@
 */
 
 #include "memory.h"
+#include "../beep.h"
 #include "../mc6800.h"
 #include "../tf20.h"
 #include "../../config.h"
@@ -37,6 +38,8 @@
 #define INT_CLOCK	2
 #define INT_POWER	4
 
+#define EVENT_SOUND	0
+
 static int key_table[8][10] = {
 	// PAUSE=F6, MENU=F7, BREAK=F8 NUM=F9 CLR=F10 SCRN=F11 PRINT=PgUp PAPER=PgDn
 	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x70, 0x00,
@@ -52,10 +55,10 @@ static int key_table[8][10] = {
 void MEMORY::initialize()
 {
 	// initialize memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(rom, 0, sizeof(rom));
-	_memset(ext, 0, sizeof(ext));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(rom, 0, sizeof(rom));
+	memset(ext, 0, sizeof(ext));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load backuped ram / rom images
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -85,18 +88,43 @@ void MEMORY::initialize()
 	SET_BANK(0x8000, 0xffff, wdmy, rom);
 	
 	// init command buffer
-	cmd_buf = new FIFO(16);
+	cmd_buf = new FIFO(512);
+	memset(slave_mem, 0, sizeof(slave_mem));
+	
+	// init sound
+	double tone_tmp[13];
+	tone_tmp[9] = 110.0;
+	for(int i = 8; i >= 0; i--) {
+		tone_tmp[i] = tone_tmp[i + 1] / 1.05946;
+	}
+	for(int i = 10; i < 13; i++) {
+		tone_tmp[i] = tone_tmp[i - 1] * 1.05946;
+	}
+	static const int tone_index[7] = {0, 2, 4, 5, 7, 9, 11};
+	for(int i = 0; i < 4; i++) {
+		for(int j = 0; j < 7; j++) {
+			tone_table[i * 7 + j +  1] = tone_tmp[tone_index[j]    ] * (2 << i);
+			tone_table[i * 7 + j + 29] = tone_tmp[tone_index[j] + 1] * (2 << i);
+		}
+	}
+	tone_table[0] = 0;
 	
 	// init keyboard
 	key_stat = emu->key_buffer();
+	
+	// init datarec
+	datarec_count = 0;
+	datarec_play = datarec_rec = false;
+	datarec_fio = new FILEIO();
 	
 	// init lcd
 	pd = RGB_COLOR(48, 56, 16);
 	pb = RGB_COLOR(160, 168, 160);
 	memset(lcd, 0, sizeof(lcd));
 	
-	// register event
+	// register events
 	vm->register_frame_event(this);
+	vm->register_event_by_clock(this, EVENT_SOUND, 256, true, NULL);
 }
 
 void MEMORY::release()
@@ -112,6 +140,10 @@ void MEMORY::release()
 		fio->Fclose();
 	}
 	
+	// release datarec
+	close_datarec();
+	delete datarec_fio;
+	
 	// release command buffer
 	cmd_buf->release();
 }
@@ -122,9 +154,18 @@ void MEMORY::reset()
 //	SET_BANK(0x4000, 0x7fff, wdmy, rdmy);
 	SET_BANK(0x8000, 0xbfff, wdmy, rom);
 	
+	cmd_buf->clear();
+	sio_select = true;
+	special_cmd_masked = true;
+	
+	sound_ptr = sound_count = 0;
+	sound_freq = 0;
+	
 	key_strobe = 0xff;
 	key_data = 0x3ff;
 	key_intmask = 0;
+	
+	close_datarec();
 	
 	lcd_select = 0;
 	lcd_clock = 0;
@@ -139,8 +180,10 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	if(addr < 0x40) {
 		switch(addr) {
 		case 0x20:
-			key_strobe = data;
-			update_keyboard();
+			if(key_strobe != data) {
+				key_strobe = data;
+				update_keyboard();
+			}
 			break;
 		case 0x26:
 			lcd_select = data & 0x0f;
@@ -191,6 +234,11 @@ uint32 MEMORY::read_data8(uint32 addr)
 		case 0x20:
 			return key_strobe;
 		case 0x22:
+			// reset key interrupt when key data is read ???
+			if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
+				update_intr();
+			}
+			d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
 			return key_data & 0xff;
 		case 0x26:
 			// interrupt mask reset in sleep mode
@@ -202,6 +250,10 @@ uint32 MEMORY::read_data8(uint32 addr)
 		case 0x28:
 			// bit6: power switch interrupt flag (0=active)
 			// bit7: busy signal of lcd controller (0=busy)
+//			if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
+//				update_intr();
+//			}
+//			d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
 			return ((key_data >> 8) & 3) | ((int_status & INT_POWER) ? 0 : 0x40) | 0xa8;
 		case 0x2a:
 		case 0x2b:
@@ -250,35 +302,70 @@ uint32 MEMORY::read_data8(uint32 addr)
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MEMORY_PORT_2) {
-		sio_select = data & 0x04;
+		sio_select = ((data & 0x04) != 0);
 	}
-	else if(id == SIG_MEMORY_SIO) {
+	else if(id == SIG_MEMORY_SIO_MAIN) {
 		if(!sio_select) {
 			d_tf20->write_signal(SIGNAL_TF20_SIO, data, 0xff);
 		}
 		else {
-			send_to_subcpu(data & mask);
+			send_to_slave(data & mask);
+		}
+	}
+	else if(id == SIG_MEMORY_SIO_TF20) {
+		if(!sio_select) {
+			send_to_main(data & mask);
 		}
 	}
 	else if(id == SIG_MEMORY_RTC_IRQ) {
-		bool cur_int = ((int_status & INT_CLOCK) != 0);
-		bool next_int = ((data & mask) != 0);
-		
-		if(cur_int != next_int) {
-			if(next_int) {
+		if(data & mask) {
+			if(!(int_status & INT_CLOCK)) {
 				int_status |= INT_CLOCK;
+				update_intr();
 			}
-			else {
-				int_status &= ~INT_CLOCK;
-			}
-			update_intr();
 		}
+		else {
+			if((int_status & INT_CLOCK) && (int_status &= ~INT_CLOCK) == 0) {
+				update_intr();
+			}
+		}
+	}
+}
+
+void MEMORY::event_callback(int event_id, int err)
+{
+	if(event_id == EVENT_SOUND) {
+		update_sound();
 	}
 }
 
 void MEMORY::event_frame()
 {
 	update_keyboard();
+}
+
+void MEMORY::update_sound()
+{
+	if(sound_ptr < sound_count) {
+		if(sound[sound_ptr].remain-- == 0) {
+			if(++sound_ptr == sound_count) {
+				d_beep->write_signal(SIG_BEEP_ON, 0, 0);
+				send_to_main(sound_reply);
+				return;
+			}
+			sound[sound_ptr].remain = sound[sound_ptr].period;
+		}
+		if(sound_freq != sound[sound_ptr].freq) {
+			sound_freq = sound[sound_ptr].freq;
+			if(sound_freq != 0) {
+				d_beep->set_frequency(sound_freq);
+				d_beep->write_signal(SIG_BEEP_ON, 1, 1);
+			}
+			else {
+				d_beep->write_signal(SIG_BEEP_ON, 0, 0);
+			}
+		}
+	}
 }
 
 void MEMORY::update_keyboard()
@@ -301,18 +388,18 @@ void MEMORY::update_keyboard()
 	}
 	
 	// update interrupt
-	bool cur_int = ((int_status & INT_KEYBOARD) != 0);
-	bool next_int = ((key_data & 0x1ff) != 0x1ff && key_intmask);
-	
-	if(cur_int != next_int) {
-		if(next_int) {
+	if((key_data & 0x1ff) != 0x1ff && key_intmask) {
+		if(!(int_status & INT_KEYBOARD)) {
 			int_status |= INT_KEYBOARD;
+			update_intr();
+			d_cpu->write_signal(SIG_MC6801_PORT_1, 0, 0x20);
 		}
-		else {
-			int_status &= ~INT_KEYBOARD;
+	}
+	else {
+		if((int_status & INT_KEYBOARD) && (int_status &= ~INT_KEYBOARD) == 0) {
+			update_intr();
 		}
-		d_cpu->write_signal(SIG_MC6801_PORT_1, next_int ? 0 : 0x20, 0x20);
-		update_intr();
+		d_cpu->write_signal(SIG_MC6801_PORT_1, 0x20, 0x20);
 	}
 }
 
@@ -328,7 +415,7 @@ void MEMORY::update_intr()
 	d_cpu->write_signal(SIG_CPU_IRQ, int_status ? 1 : 0, 1);
 }
 
-void MEMORY::send_to_subcpu(uint8 val)
+void MEMORY::send_to_slave(uint8 val)
 {
 	cmd_buf->write(val);
 	uint8 cmd = cmd_buf->read_not_remove(0);
@@ -343,60 +430,353 @@ void MEMORY::send_to_subcpu(uint8 val)
 	case 0x00: // slave mcpu ready check
 	case 0x01: // sets the constants required by slave mcu
 	case 0x02: // initialization
+		cmd_buf->read();
+		send_to_main(0x01);
+		break;
+	case 0x03: // opens masks for special commands
+		if(cmd_buf->count() == 2) {
+			cmd_buf->read();
+			special_cmd_masked = (cmd_buf->read() != 0xaa);
+		}
+		send_to_main(0x01);
+		break;	
 	case 0x04: // closes masks for special commands
+		special_cmd_masked = true;
+		cmd_buf->read();
+		send_to_main(0x01);
+		break;
+	case 0x05: // reads slave mcu memory
+		if(special_cmd_masked) {
+			cmd_buf->read();
+			send_to_main(0x0f);
+			break;
+		}
+		if(cmd_buf->count() == 3) {
+			cmd_buf->read();
+			int ofs = cmd_buf->read() << 8;
+			ofs |= cmd_buf->read();
+			send_to_main(slave_mem[ofs]);
+			break;
+		}
+		send_to_main(0x01);
+		break;
+	case 0x06: // stores slave mcu memory
+	case 0x07: // logical or operation
+	case 0x08: // logical and operation
+		if(special_cmd_masked) {
+			cmd_buf->read();
+			send_to_main(0x0f);
+			break;
+		}
+		if(cmd_buf->count() == 4) {
+			cmd_buf->read();
+			int ofs = cmd_buf->read() << 8;
+			ofs |= cmd_buf->read();
+			if(cmd == 6) {
+				slave_mem[ofs] = cmd_buf->read();
+			}
+			else if(cmd == 7) {
+				slave_mem[ofs] |= cmd_buf->read();
+			}
+			else if(cmd == 8) {
+				slave_mem[ofs] &= cmd_buf->read();
+			}
+		}
+		send_to_main(0x01);
+		break;
 	case 0x09: // bar-code reader power on
 	case 0x0a: // bar-code reader power off
-	case 0x22: // turns the external cassette rem terminal on
-	case 0x23: // turns the external cassette rem terminal off
-	case 0x40: // turns the serial driver on
-	case 0x41: // turns the serial driver off
-	case 0x51: // turns power of plug-in rom cartridge on
-	case 0x52: // turns power of plug-in rom cartridge off
 		cmd_buf->read();
-		send_to_maincpu(0x01);
+		send_to_main(0x01);
+		break;
+	case 0x0b: // sets the program counter to a specified value
+		if(special_cmd_masked) {
+			cmd_buf->read();
+			send_to_main(0x0f);
+			break;
+		}
+		if(cmd_buf->count() == 3) {
+			cmd_buf->read();
+			int ofs = cmd_buf->read() << 8;
+			ofs |= cmd_buf->read();
+			// todo: implements known routines
+		}
+		send_to_main(0x01);
 		break;
 	case 0x0c: // terminate process
 		cmd_buf->read();
-		send_to_maincpu(0x02);
+		send_to_main(0x02);
+		// stop sound
+		d_beep->write_signal(SIG_BEEP_ON, 0, 0);
+		sound_ptr = sound_count;
 		break;
-	case 0x0d:
+	case 0x0d: // cuts off power supply
 		if(cmd_buf->count() == 2) {
 			cmd_buf->read();
 			if(cmd_buf->read() == 0xaa) {
 				emu->power_off();
+				break;
 			}
 		}
-		send_to_maincpu(0x01);
+		send_to_main(0x01);
 		break;
-	case 0x31:
-		if(cmd_buf->count() == 1) {
-			send_to_maincpu(0x01);
-		}
-		else {
-			send_to_maincpu(0x31);
-		}
-		if(cmd_buf->count() == 5) {
+	case 0x10: // prints out 6-dot data (bit0-5) to the built-in printer
+	case 0x11: // feeds the specified number of dot lines to the built-in printer
+		if(cmd_buf->count() == 2) {
 			cmd_buf->clear();
 		}
+		send_to_main(0x01);
+		break;	
+	case 0x12: // paper feed operation (1.2sec)
+		cmd_buf->read();
+		send_to_main(0x01);
+		break;
+	case 0x20: // executes external cassette ready check
+		send_to_main(0x21);
+		cmd_buf->read();
+		break;
+	case 0x21: // sets constants for the external cassette
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 9) {
+			cmd_buf->clear();
+		}
+		send_to_main(0x21);
+		break;
+	case 0x22: // turns the external cassette rem terminal on
+	case 0x23: // turns the external cassette rem terminal off
+		cmd_buf->read();
+		send_to_main(0x01);
+		break;
+	case 0x24: // writes 1 block of data in EPSON format
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() >= 5 && cmd_buf->count() == cmd_buf->read_not_remove(3) * 256 + cmd_buf->read_not_remove(4) + 5) {
+			if(datarec_rec) {
+				for(int i = 0; i < 5; i++) {
+					cmd_buf->read();
+				}
+				while(!cmd_buf->empty()) {
+					datarec_buffer[datarec_count++] = cmd_buf->read();
+					if(datarec_count >= DATAREC_BUFFER_SIZE) {
+						datarec_fio->Fwrite(datarec_buffer, datarec_count, 1);
+						datarec_count = 0;
+					}
+				}
+			}
+			else {
+				cmd_buf->clear();
+			}
+		}
+		send_to_main(0x21);
+		break;
+	case 0x25: // outputs number of ff patterns
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 3) {
+			cmd_buf->clear();
+		}
+		send_to_main(0x21);
+		break;
+	case 0x26: // inputs files from the external cassette
+	case 0x27: // inputs files from the external cassette
+	case 0x28: // inputs files from the external cassette
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 5) {
+			int len = cmd_buf->read_not_remove(3) * 256 + cmd_buf->read_not_remove(4);
+			cmd_buf->clear();
+			send_to_main(0x21);
+			for(int i = 0; i < len; i++) {
+				send_to_main(datarec_buffer[datarec_count++]);
+			}
+			// ???
+			send_to_main(0x01);
+			break;
+		}
+		send_to_main(0x21);
+		break;
+	case 0x2b: // specifies the input signal for the external cassette
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 2) {
+			cmd_buf->clear();
+		}
+		send_to_main(0x21);
+		break;
+	case 0x30: // specifies the tone and duration and sounds the piezo speaker
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 3) {
+			cmd_buf->read();
+			int tone = cmd_buf->read();
+			int period = cmd_buf->read();
+			if(tone >= 0 && tone <= 56 && period != 0) {
+				sound[0].freq = tone_table[tone];
+				sound[0].period = CPU_CLOCKS * period / 256 / 10;
+				sound[0].remain = sound[0].period;
+				sound_ptr = 0;
+				sound_count = 1;
+				sound_reply = 0x31;
+				break;
+			}
+		}
+		send_to_main(0x31);
+		break;
+	case 0x31: // specifies the frequency and duration and sounds the piezo speaker
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 5) {
+			cmd_buf->read();
+			int freq = cmd_buf->read() << 8;
+			freq |= cmd_buf->read();
+			int period = cmd_buf->read() << 8;
+			period |= cmd_buf->read();
+			if(freq != 0 && period != 0) {
+				sound[0].freq = CPU_CLOCKS / freq / 2.0;
+				sound[0].period = period;
+				sound[0].remain = sound[0].period;
+				sound_ptr = 0;
+				sound_count = 1;
+				sound_reply = 0x31;
+				break;
+			}
+		}
+		send_to_main(0x31);
+		break;
+	case 0x32: // sounds the speaker for 0.03 sec at tone 6
+	case 0x33: // sounds the speaker for 1 sec at tone 20
+		cmd_buf->read();
+		if(cmd == 0x32) {
+			sound[0].freq = tone_table[6];
+			sound[0].period = CPU_CLOCKS * 3 / 256 / 100;
+		}
+		else {
+			sound[0].freq = tone_table[20];
+			sound[0].period = CPU_CLOCKS / 256;
+		}
+		sound[0].remain = sound[0].period;
+		sound_ptr = 0;
+		sound_count = 1;
+		sound_reply = 0x01;
+		break;
+	case 0x34: // sets melody data in the slave mcu
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(val == 0xff) {
+			cmd_buf->read();
+			sound_count = 0;
+			while(!cmd_buf->empty()) {
+				int tone = cmd_buf->read();
+				int period = cmd_buf->read();
+				if(tone >= 0 && tone <= 56 && period != 0) {
+					sound[sound_count].freq = tone_table[tone];
+					sound[sound_count].period = CPU_CLOCKS * period / 256 / 10;
+					sound_count++;
+				}
+			}
+			sound_ptr = sound_count;
+		}
+		send_to_main(0x31);
+		break;
+	case 0x35: // sounds the melody data specified in command 34
+		if(sound_count) {
+			sound[0].remain = sound[0].period;
+			sound_ptr = 0;
+			sound_reply = 0x01;
+			break;
+		}
+		send_to_main(0x01);
+		break;
+	case 0x40: // turns the serial driver on
+	case 0x41: // turns the serial driver off
+		cmd_buf->read();
+		send_to_main(0x01);
+		break;
+	case 0x48: // sets the polynomial expression used for CRC check
+		if(cmd_buf->count() == 1) {
+			send_to_main(0x01);
+			break;
+		}
+		if(cmd_buf->count() == 3) {
+			cmd_buf->clear();
+		}
+		send_to_main(0x41);
 		break;
 	case 0x50: // identifies the plug-in option
-		// bit0 = P46	
-		// bit1 = P20	RXD (RS-232C)
 		cmd_buf->read();
-		send_to_maincpu(0x01);
+		send_to_main(0x02);
+		break;
+	case 0x51: // turns power of plug-in rom cartridge on
+	case 0x52: // turns power of plug-in rom cartridge off
+		cmd_buf->read();
+		send_to_main(0x01);
+		break;
+	case 0x60: // executes micro cassette ready check (no respose)
+		cmd_buf->read();
 		break;
 	default:
 		// unknown command
 		emu->out_debug("Unknown Command = %2x\n", cmd);
-		send_to_maincpu(0x0f);
+		send_to_main(0x0f);
 		break;
 	}
 }
 
-void MEMORY::send_to_maincpu(uint8 val)
+void MEMORY::send_to_main(uint8 val)
 {
 	// send to main cpu
 	d_cpu->write_signal(SIG_MC6801_SIO_RECV, val, 0xff);
+}
+
+void MEMORY::play_datarec(_TCHAR* filename)
+{
+	close_datarec();
+	
+	if(datarec_fio->Fopen(filename, FILEIO_READ_BINARY)) {
+		memset(datarec_buffer, 0, sizeof(datarec_buffer));
+		datarec_fio->Fread(datarec_buffer, sizeof(datarec_buffer), 1);
+		datarec_count = 0;
+		datarec_play = true;
+	}
+}
+
+void MEMORY::rec_datarec(_TCHAR* filename)
+{
+	close_datarec();
+	
+	if(datarec_fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+		datarec_count = 0;
+		datarec_rec = true;
+	}
+}
+
+void MEMORY::close_datarec()
+{
+	if(datarec_rec && datarec_count) {
+		datarec_fio->Fwrite(datarec_buffer, datarec_count, 1);
+	}
+	if(datarec_play || datarec_rec) {
+		datarec_fio->Fclose();
+	}
+	datarec_count = 0;
+	datarec_play = datarec_rec = false;
 }
 
 void MEMORY::draw_screen()

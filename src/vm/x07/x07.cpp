@@ -46,10 +46,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_context_mem(memory, ram);
 	
 	// memory bus
-	_memset(ram, 0, sizeof(ram));
-	_memset(app, 0xff, sizeof(app));
-	_memset(tv, 0xff, sizeof(tv));
-	_memset(bas, 0xff, sizeof(bas));
+	memset(ram, 0, sizeof(ram));
+	memset(app, 0xff, sizeof(app));
+	memset(tv, 0xff, sizeof(tv));
+	memset(bas, 0xff, sizeof(bas));
 	
 	memory->read_bios(_T("APP.ROM"), app, sizeof(app));
 	memory->read_bios(_T("TV.ROM"), tv, sizeof(tv));
@@ -173,7 +173,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, 1000, 2, 8000);
+	beep->init(rate, 1000, 8000);
 }
 
 uint16* VM::create_sound(int* extra_frames)

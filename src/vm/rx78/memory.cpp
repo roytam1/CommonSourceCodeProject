@@ -32,12 +32,12 @@
 void MEMORY::initialize()
 {
 	// load ipl
-	_memset(ram, 0, sizeof(ram));
-	_memset(ext, 0, sizeof(ext));
-	_memset(vram, 0, sizeof(vram));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(cart, 0xff, sizeof(cart));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(ext, 0, sizeof(ext));
+	memset(vram, 0, sizeof(vram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(cart, 0xff, sizeof(cart));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -65,9 +65,9 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
-	_memset(ram, 0, sizeof(ram));
-	_memset(ext, 0, sizeof(ext));
-	_memset(vram, 0, sizeof(vram));
+	memset(ram, 0, sizeof(ram));
+	memset(ext, 0, sizeof(ext));
+	memset(vram, 0, sizeof(vram));
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -128,7 +128,7 @@ void MEMORY::open_cart(_TCHAR* filename)
 	FILEIO* fio = new FILEIO();
 	
 	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
-		_memset(cart, 0xff, sizeof(cart));
+		memset(cart, 0xff, sizeof(cart));
 		fio->Fread(cart, sizeof(cart), 1);
 		fio->Fclose();
 	}
@@ -137,5 +137,5 @@ void MEMORY::open_cart(_TCHAR* filename)
 
 void MEMORY::close_cart()
 {
-	_memset(cart, 0xff, sizeof(cart));
+	memset(cart, 0xff, sizeof(cart));
 }

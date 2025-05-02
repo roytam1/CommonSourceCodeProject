@@ -73,7 +73,7 @@ void IOCTRL::write_io8(uint32 addr, uint32 data)
 	switch(addr & 0x3f0) {
 	case 0x22:
 		ts = (data >> 3) & 3;
-		d_beep->write_signal(SIG_BEEP_ON, ~data, 0x40);	// tone (2400hz)
+		d_beep->write_signal(SIG_BEEP_ON, ~data, 0x40);		// tone (2400hz)
 		d_pcm->write_signal(SIG_PCM1BIT_ON, data, 0x40);	// direct
 		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, data, 0x80);	// signal
 		break;
@@ -93,7 +93,7 @@ uint32 IOCTRL::read_io8(uint32 addr)
 		return key_val;
 	case 0x22:
 		if(config.monitor_type) {
-			return key_mouse | 0xd;		// virt monitor
+			return key_mouse | 0x0d;	// virt monitor
 		}
 		else {
 			return key_mouse | 0x2d;	// horiz monitor

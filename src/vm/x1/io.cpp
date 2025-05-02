@@ -14,7 +14,7 @@
 
 void IO::reset()
 {
-	_memset(vram, 0, sizeof(vram));
+	memset(vram, 0, sizeof(vram));
 	vram_b = vram + 0x0000;
 	vram_r = vram + 0x4000;
 	vram_g = vram + 0x8000;

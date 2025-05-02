@@ -4302,7 +4302,7 @@ void Z80::OP_XY()
 #ifdef _CPU_DEBUG_LOG
 void Z80::DASM()
 {
-	_memset(debug_dasm, 0, sizeof(debug_dasm));
+	memset(debug_dasm, 0, sizeof(debug_dasm));
 	debug_ptr = 0;
 	uint8 code = DEBUG_FETCHOP();
 	

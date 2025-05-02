@@ -92,9 +92,9 @@ void SUB::initialize()
 	}
 	
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram_chr, 0, sizeof(vram_chr));
-	_memset(vram_gfx, 0, sizeof(vram_gfx));
+	memset(ram, 0, sizeof(ram));
+	memset(vram_chr, 0, sizeof(vram_chr));
+	memset(vram_gfx, 0, sizeof(vram_gfx));
 	
 	SET_BANK(0x0000, 0x1fff, wdmy, ipl);
 	SET_BANK(0x2000, 0x27ff, common, common);
@@ -107,7 +107,7 @@ void SUB::initialize()
 
 void SUB::reset()
 {
-	_memset(disp, 0, sizeof(disp));
+	memset(disp, 0, sizeof(disp));
 	blink = 0;
 	
 	// keyboard
@@ -321,8 +321,8 @@ void SUB::key_drive()
 
 void SUB::draw_screen()
 {
-	_memset(screen_chr, 0, sizeof(screen_chr));
-	_memset(screen_gfx, 0, sizeof(screen_gfx));
+	memset(screen_chr, 0, sizeof(screen_chr));
+	memset(screen_gfx, 0, sizeof(screen_gfx));
 	
 	// mz3500sm p.28
 	if(disp[0] & 1) {
@@ -430,7 +430,7 @@ void SUB::draw_chr()
 						if(yy >= 400) {
 							break;
 						}
-						_memset(&screen_chr[yy][x << 3], 7, width * 8);	// always white ???
+						memset(&screen_chr[yy][x << 3], 7, width * 8);	// always white ???
 					}
 				}
 			}

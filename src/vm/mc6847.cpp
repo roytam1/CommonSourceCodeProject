@@ -270,9 +270,9 @@ void MC6847::draw_cg(int xofs, int yofs)
 			}
 		}
 		if(yofs >= 2) {
-			_memcpy(screen[y + 1], screen[y], 256);
+			memcpy(screen[y + 1], screen[y], 256);
 			if(yofs >= 3) {
-				_memcpy(screen[y + 2], screen[y], 256);
+				memcpy(screen[y + 2], screen[y], 256);
 			}
 		}
 	}
@@ -315,9 +315,9 @@ void MC6847::draw_rg(int xofs, int yofs)
 			}
 		}
 		if(yofs >= 2) {
-			_memcpy(screen[y + 1], screen[y], 256);
+			memcpy(screen[y + 1], screen[y], 256);
 			if(yofs >= 3) {
-				_memcpy(screen[y + 2], screen[y], 256);
+				memcpy(screen[y + 2], screen[y], 256);
 			}
 		}
 	}

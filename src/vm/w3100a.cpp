@@ -12,12 +12,12 @@
 void W3100A::initialize()
 {
 	idm_or = idm_ar0 = idm_ar1 = 0;
-	_memset(regs, 0, sizeof(regs));
-	_memset(cx_rw_pr, 0, sizeof(cx_rw_pr));
-	_memset(cx_rr_pr, 0, sizeof(cx_rr_pr));
-	_memset(cx_ta_pr, 0, sizeof(cx_ta_pr));
-	_memset(cx_tw_pr, 0, sizeof(cx_tw_pr));
-	_memset(cx_tr_pr, 0, sizeof(cx_tr_pr));
+	memset(regs, 0, sizeof(regs));
+	memset(cx_rw_pr, 0, sizeof(cx_rw_pr));
+	memset(cx_rr_pr, 0, sizeof(cx_rr_pr));
+	memset(cx_ta_pr, 0, sizeof(cx_ta_pr));
+	memset(cx_tw_pr, 0, sizeof(cx_tw_pr));
+	memset(cx_tr_pr, 0, sizeof(cx_tr_pr));
 }
 
 #define GET_ADDR() { \

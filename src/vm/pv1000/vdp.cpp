@@ -61,7 +61,7 @@ void VDP::event_vline(int v, int clock)
 
 void VDP::draw_screen()
 {
-	_memset(bg, 0, sizeof(bg));
+	memset(bg, 0, sizeof(bg));
 	
 	for(int y = 0; y < 24; y++) {
 		int y8 = y << 3, y32 = y << 5;

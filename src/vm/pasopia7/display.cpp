@@ -79,7 +79,7 @@ void DISPLAY::event_frame()
 void DISPLAY::draw_screen()
 {
 	// clear screen buffer
-	_memset(screen, 0, sizeof(screen));
+	memset(screen, 0, sizeof(screen));
 	
 #ifdef _LCD
 	if((regs[8] & 0x30) != 0x30) {
@@ -119,7 +119,7 @@ void DISPLAY::draw_screen()
 			}
 		}
 		else {
-			_memcpy(dest1, dest0, 320 * sizeof(scrntype));
+			memcpy(dest1, dest0, 320 * sizeof(scrntype));
 		}
 	}
 	
@@ -202,10 +202,10 @@ void DISPLAY::draw_screen()
 //			for(int x = 0; x < 640; x++) {
 //				dest1[x] = palette_pc[0];
 //			}
-			_memset(dest1, 0, 640 * sizeof(scrntype));
+			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 		else {
-			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
 	
@@ -311,7 +311,7 @@ void DISPLAY::draw_text_normal(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[(dsty << 3) + i][_dstx << 3], 7, 8);
+						memset(&screen[(dsty << 3) + i][_dstx << 3], 7, 8);
 					}
 				}
 			}
@@ -415,7 +415,7 @@ void DISPLAY::draw_text_wide(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[(dsty << 3) + i][_dstx << 4], 7, 16);
+						memset(&screen[(dsty << 3) + i][_dstx << 4], 7, 16);
 					}
 				}
 			}
@@ -529,7 +529,7 @@ void DISPLAY::draw_fine_normal(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[(dsty << 3) + i][_dstx << 3], 7, 8);
+						memset(&screen[(dsty << 3) + i][_dstx << 3], 7, 8);
 					}
 				}
 			}
@@ -659,7 +659,7 @@ void DISPLAY::draw_fine_wide(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[(dsty << 3) + i][_dstx << 4], 7, 16);
+						memset(&screen[(dsty << 3) + i][_dstx << 4], 7, 16);
 					}
 				}
 			}
@@ -714,7 +714,7 @@ void DISPLAY::draw_text_lcd(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 3], 7, 8);
+						memset(&screen[y + i][x << 3], 7, 8);
 					}
 				}
 			}
@@ -793,7 +793,7 @@ void DISPLAY::draw_fine_lcd(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 3], 7, 8);
+						memset(&screen[y + i][x << 3], 7, 8);
 					}
 				}
 			}

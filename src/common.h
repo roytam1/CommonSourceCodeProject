@@ -91,11 +91,6 @@ typedef union {
 	int32 sd;
 } pair;
 
-// memory functions
-#define _memcpy(dest, src, length) memcpy((dest), (src), (length))
-#define _memmove(dest, src, length) memmove((dest), (src), (length))
-#define _memset(dest, value, length) memset((dest), (value), (length))
-
 // rgb color
 #define _RGB888
 

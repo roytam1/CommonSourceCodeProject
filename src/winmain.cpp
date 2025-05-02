@@ -105,7 +105,7 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	_TCHAR tmp[_MAX_PATH] = _T("");
 	OPENFILENAME OpenFileName;
 	
-	_memset(&OpenFileName, 0, sizeof(OpenFileName));
+	memset(&OpenFileName, 0, sizeof(OpenFileName));
 	OpenFileName.lStructSize = sizeof(OPENFILENAME);
 	OpenFileName.hwndOwner = hWnd;
 	OpenFileName.lpstrFilter = filter;
@@ -425,7 +425,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	switch(iMsg) {
 	case WM_CREATE:
 #ifdef USE_BUTTON
-		_memset(hFont, 0, sizeof(hFont));
+		memset(hFont, 0, sizeof(hFont));
 		for(int i = 0; i < MAX_BUTTONS; i++) {
 			hButton[i] = CreateWindow(_T("BUTTON"), buttons[i].caption,
 			                          WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_MULTILINE,

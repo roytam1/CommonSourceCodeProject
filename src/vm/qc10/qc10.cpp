@@ -13,13 +13,13 @@
 #include "../device.h"
 #include "../event.h"
 
-#include "../beep.h"
 #include "../hd146818p.h"
 #include "../i8237.h"
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
 #include "../io.h"
+#include "../pcm1bit.h"
 #include "../upd7220.h"
 #include "../upd765a.h"
 #include "../z80.h"
@@ -43,7 +43,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	beep = new BEEP(this, emu);
 	rtc = new HD146818P(this, emu);
 	dma0 = new I8237(this, emu);
 	dma1 = new I8237(this, emu);
@@ -52,6 +51,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
 	io = new IO(this, emu);
+	pcm = new PCM1BIT(this, emu);
 	gdc = new UPD7220(this, emu);
 	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);
@@ -65,7 +65,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(beep);
+	event->set_context_sound(pcm);
 	
 	rtc->set_context_intr(pic, SIG_I8259_IR2 | SIG_I8259_CHIP1, 1);
 	dma0->set_context_memory(memory);
@@ -75,11 +75,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma0->set_context_child_dma(dma1);
 #endif
 	dma1->set_context_memory(memory);
-	pit0->set_context_ch0(memory, SIG_MEMORY_BEEP, 1);
+	pit0->set_context_ch0(memory, SIG_MEMORY_PCM, 1);
 	pit0->set_context_ch1(pic, SIG_I8259_IR5 | SIG_I8259_CHIP1, 1);
 	pit0->set_context_ch2(pic, SIG_I8259_IR1 | SIG_I8259_CHIP0, 1);
 	pit0->set_constant_clock(2, CPU_CLOCKS >> 1);	// 1.9968MHz
-	pit1->set_context_ch0(beep, SIG_BEEP_PULSE, 1);
+	pit1->set_context_ch0(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_0, 1);
 	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_1, 1);
 	pit1->set_constant_clock(0, CPU_CLOCKS >> 1);	// 1.9968MHz
@@ -107,7 +107,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_mem(memory);
 	keyboard->set_context_sio(sio);
 	memory->set_context_pit(pit0);
-	memory->set_context_beep(beep);
+	memory->set_context_pcm(pcm);
 	memory->set_context_fdc(fdc);
 	mfont->set_context_pic(pic);
 	
@@ -250,7 +250,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, -1, 2, 4000);
+	pcm->init(rate, 4000);
 }
 
 uint16* VM::create_sound(int* extra_frames)

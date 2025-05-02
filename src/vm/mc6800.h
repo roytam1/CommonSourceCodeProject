@@ -124,8 +124,11 @@ private:
 	void addd_ex();
 	void addd_im();
 	void addd_ix();
+	void adx_ex();
+	void adx_im();
 	void aim_di();
 	void aim_ix();
+	void nim_ix();
 	void anda_di();
 	void anda_ex();
 	void anda_im();
@@ -201,6 +204,7 @@ private:
 	void dex();
 	void eim_di();
 	void eim_ix();
+	void xim_ix();
 	void eora_di();
 	void eora_ex();
 	void eora_im();
@@ -254,6 +258,7 @@ private:
 	void nop();
 	void oim_di();
 	void oim_ix();
+	void oim_ix_mb8861();
 	void ora_di();
 	void ora_ex();
 	void ora_im();
@@ -329,6 +334,7 @@ private:
 	void tba();
 	void tim_di();
 	void tim_ix();
+	void tmm_ix();
 	void tpa();
 	void tst_ex();
 	void tst_ix();

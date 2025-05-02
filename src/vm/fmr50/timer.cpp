@@ -10,8 +10,8 @@
 */
 
 #include "timer.h"
-#include "../beep.h"
 #include "../i8259.h"
+#include "../pcm1bit.h"
 
 void TIMER::initialize()
 {
@@ -27,7 +27,7 @@ void TIMER::write_io8(uint32 addr, uint32 data)
 	}
 	ctrl = data;
 	update_intr();
-	d_beep->write_signal(SIG_BEEP_ON, data, 4);
+	d_pcm->write_signal(SIG_PCM1BIT_ON, data, 4);
 }
 
 uint32 TIMER::read_io8(uint32 addr)

@@ -15,7 +15,7 @@
 void NOTE::initialize()
 {
 	ch = 0;
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 }
 
 void NOTE::write_io8(uint32 addr, uint32 data)

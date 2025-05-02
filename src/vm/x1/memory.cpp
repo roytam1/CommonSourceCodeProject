@@ -36,8 +36,8 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(rom, 0xff, sizeof(rom));
-	_memset(ram, 0, sizeof(ram));
+	memset(rom, 0xff, sizeof(rom));
+	memset(ram, 0, sizeof(ram));
 	
 	// load ipl
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -60,7 +60,7 @@ void MEMORY::initialize()
 	delete fio;
 #ifndef _X1TURBO
 	for(int ofs = 0x1000; ofs < 0x8000; ofs += 0x1000) {
-		_memcpy(rom + ofs, rom, 0x1000);
+		memcpy(rom + ofs, rom, 0x1000);
 	}
 #endif
 }

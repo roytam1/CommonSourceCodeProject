@@ -34,10 +34,10 @@
 void MEMORY::initialize()
 {
 	// load ipl
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(basic, 0xff, sizeof(basic));
-	_memset(cart, 0xff, sizeof(cart));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(basic, 0xff, sizeof(basic));
+	memset(cart, 0xff, sizeof(cart));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -321,7 +321,7 @@ void MEMORY::open_cart(_TCHAR* filename)
 	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
 		// 8kb
 		ctype = fio->Fread(cart, 0x2000, 1);
-		_memcpy(cart + 0x2000, cart, 0x2000);
+		memcpy(cart + 0x2000, cart, 0x2000);
 		// 16kb
 		ctype += fio->Fread(cart + 0x2000, 0x2000, 1);
 		// 32kb

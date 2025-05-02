@@ -39,7 +39,7 @@ void I8155::initialize()
 	register_id = -1;
 	
 	// clear ram
-	_memset(ram, 0, sizeof(ram));
+	memset(ram, 0, sizeof(ram));
 }
 
 void I8155::reset()

@@ -32,15 +32,15 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(ext, 0, sizeof(ext));
-	_memset(vram, 0, sizeof(vram));
-	_memset(tvram, 0, sizeof(tvram));
-	_memset(pcg, 0, sizeof(pcg));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(kanji, 0xff, sizeof(kanji));
-	_memset(dic, 0xff, sizeof(dic));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(ext, 0, sizeof(ext));
+	memset(vram, 0, sizeof(vram));
+	memset(tvram, 0, sizeof(tvram));
+	memset(pcg, 0, sizeof(pcg));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(kanji, 0xff, sizeof(kanji));
+	memset(dic, 0xff, sizeof(dic));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -61,7 +61,7 @@ void MEMORY::initialize()
 		for(int i = 0; i < 0x40000; i++) {
 			kanji[i << 1] = dic[i];
 		}
-		_memset(dic, 0xff, sizeof(dic));
+		memset(dic, 0xff, sizeof(dic));
 	}
 	_stprintf(file_path, _T("%sDICT.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {

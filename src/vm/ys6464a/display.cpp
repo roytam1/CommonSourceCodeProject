@@ -56,7 +56,7 @@ static const int pat_7seg_led[40][28] = {
 
 void DISPLAY::initialize()
 {
-	_memset(seg, 0, sizeof(seg));
+	memset(seg, 0, sizeof(seg));
 	pb = pc = 0;
 	
 	// register event
@@ -66,7 +66,7 @@ void DISPLAY::initialize()
 void DISPLAY::event_vline(int v, int clock)
 {
 	if(!v) {
-		_memset(seg, 0, sizeof(seg));
+		memset(seg, 0, sizeof(seg));
 	}
 	switch(pc & 0xf0) {
 	case 0x80:

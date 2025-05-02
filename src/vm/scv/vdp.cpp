@@ -71,8 +71,8 @@ void VDP::initialize()
 			}
 		}
 	}
-	_memcpy(font, symbol, sizeof(symbol));
-	_memcpy(font[0xb], font[0x60], 8);	// copyright mark
+	memcpy(font, symbol, sizeof(symbol));
+	memcpy(font[0xb], font[0x60], 8);	// copyright mark
 	
 	// register event to interrupt
 	vm->register_vline_event(this);
@@ -97,11 +97,11 @@ void VDP::draw_screen()
 	vdc3 = vram1[0x403];
 	
 	// draw text screen
-	_memset(text, vdc1 & 0xf, sizeof(text));
+	memset(text, vdc1 & 0xf, sizeof(text));
 	draw_text_screen();
 	
 	// draw sprite screen
-	_memset(sprite, 0, sizeof(sprite));
+	memset(sprite, 0, sizeof(sprite));
 	if(vdc0 & 0x10) {
 		draw_sprite_screen();
 	}
@@ -186,7 +186,7 @@ void VDP::draw_text(int dx, int dy, uint8 data, uint8 tcol, uint8 bcol)
 		dest[7] = (pat & 0x01) ? tcol : bcol;
 	}
 	for(int l = (data ? 8 : 0); l < 16; l++) {
-		_memset(&text[dy16 + l][dx8], bcol, 8);
+		memset(&text[dy16 + l][dx8], bcol, 8);
 	}
 }
 
@@ -197,12 +197,12 @@ void VDP::draw_block(int dx, int dy, uint8 data)
 	
 	if(cu) {
 		for(int l = 0; l < 8; l++) {
-			_memset(&text[dy16 + l][dx8], cu, 8);
+			memset(&text[dy16 + l][dx8], cu, 8);
 		}
 	}
 	if(cl) {
 		for(int l = 8; l < 16; l++) {
-			_memset(&text[dy16 + l][dx8], cl, 8);
+			memset(&text[dy16 + l][dx8], cl, 8);
 		}
 	}
 }
@@ -213,42 +213,42 @@ void VDP::draw_graph(int dx, int dy, uint8 data, uint8 col)
 	
 	if(data & 0x80) {
 		for(int l = 0; l < 4; l++) {
-			_memset(&text[dy16 + l][dx8l], col, 4);
+			memset(&text[dy16 + l][dx8l], col, 4);
 		}
 	}
 	if(data & 0x40) {
 		for(int l = 0; l < 4; l++) {
-			_memset(&text[dy16 + l][dx8r], col, 4);
+			memset(&text[dy16 + l][dx8r], col, 4);
 		}
 	}
 	if(data & 0x20) {
 		for(int l = 4; l < 8; l++) {
-			_memset(&text[dy16 + l][dx8l], col, 4);
+			memset(&text[dy16 + l][dx8l], col, 4);
 		}
 	}
 	if(data & 0x10) {
 		for(int l = 4; l < 8; l++) {
-			_memset(&text[dy16 + l][dx8r], col, 4);
+			memset(&text[dy16 + l][dx8r], col, 4);
 		}
 	}
 	if(data & 0x08) {
 		for(int l = 8; l < 12; l++) {
-			_memset(&text[dy16 + l][dx8l], col, 4);
+			memset(&text[dy16 + l][dx8l], col, 4);
 		}
 	}
 	if(data & 0x04) {
 		for(int l = 8; l < 12; l++) {
-			_memset(&text[dy16 + l][dx8r], col, 4);
+			memset(&text[dy16 + l][dx8r], col, 4);
 		}
 	}
 	if(data & 0x02) {
 		for(int l = 12; l < 16; l++) {
-			_memset(&text[dy16 + l][dx8l], col, 4);
+			memset(&text[dy16 + l][dx8l], col, 4);
 		}
 	}
 	if(data & 0x01) {
 		for(int l = 12; l < 16; l++) {
-			_memset(&text[dy16 + l][dx8r], col, 4);
+			memset(&text[dy16 + l][dx8r], col, 4);
 		}
 	}
 }

@@ -16,7 +16,7 @@
 
 void PSG::reset()
 {
-	_memset(ch, 0, sizeof(ch));
+	memset(ch, 0, sizeof(ch));
 }
 
 void PSG::write_io8(uint32 addr, uint32 data)

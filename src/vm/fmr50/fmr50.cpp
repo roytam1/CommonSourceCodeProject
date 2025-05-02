@@ -14,7 +14,6 @@
 #include "../device.h"
 #include "../event.h"
 
-#include "../beep.h"
 #include "../hd46505.h"
 #ifdef _FMR60
 #include "../hd63484.h"
@@ -26,6 +25,7 @@
 #include "../i386.h"
 #include "../io.h"
 #include "../mb8877.h"
+#include "../pcm1bit.h"
 #include "../rtc58321.h"
 #include "../upd71071.h"
 
@@ -113,7 +113,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	beep = new BEEP(this, emu);
 	crtc = new HD46505(this, emu);
 #ifdef _FMR60
 	acrtc = new HD63484(this, emu);
@@ -130,6 +129,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
+	pcm = new PCM1BIT(this, emu);
 	rtc = new RTC58321(this, emu);
 	dma = new UPD71071(this, emu);
 	
@@ -149,7 +149,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	else {
 		event->set_context_cpu(i386);
 	}
-	event->set_context_sound(beep);
+	event->set_context_sound(pcm);
 	
 /*	pic	0	timer
 		1	keyboard
@@ -180,7 +180,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	pit0->set_context_ch0(timer, SIG_TIMER_CH0, 1);
 	pit0->set_context_ch1(timer, SIG_TIMER_CH1, 1);
-	pit0->set_context_ch2(beep, SIG_BEEP_PULSE, 1);
+	pit0->set_context_ch2(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	pit0->set_constant_clock(0, 307200);
 	pit0->set_constant_clock(1, 307200);
 	pit0->set_constant_clock(2, 307200);
@@ -223,7 +223,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_chregs_ptr(crtc->get_regs());
 //	scsi->set_context_dma(dma);
 //	scsi->set_context_pic(pic);
-	timer->set_context_beep(beep);
+	timer->set_context_pcm(pcm);
 	timer->set_context_pic(pic);
 	
 	// cpu bus
@@ -424,7 +424,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, -1, 2, 8000);
+	pcm->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int* extra_frames)

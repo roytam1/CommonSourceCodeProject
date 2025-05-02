@@ -435,6 +435,7 @@ void MC6800::increment_counter(int amount)
 #define CLR_NZV		CC &= 0xf1
 #define CLR_HNZC	CC &= 0xd2
 #define CLR_NZVC	CC &= 0xf0
+#define CLR_NZ		CC &= 0xf3
 #define CLR_Z		CC &= 0xfb
 #define CLR_NZC		CC &= 0xf2
 #define CLR_ZC		CC &= 0xfa
@@ -497,8 +498,8 @@ static const uint8 flags8d[256] = {
 /* combos */
 #define SET_NZ8(a)		{SET_N8(a);  SET_Z8(a);}
 #define SET_NZ16(a)		{SET_N16(a); SET_Z16(a);}
-#define SET_FLAGS8(a,b,r)	{SET_N8(r);  SET_Z8(r);  SET_V8(a, b, r);  SET_C8(r); }
-#define SET_FLAGS16(a,b,r)	{SET_N16(r); SET_Z16(r); SET_V16(a, b, r); SET_C16(r);}
+#define SET_FLAGS8(a,b,r)	{SET_N8(r);  SET_Z8(r);  SET_V8(a,b,r);  SET_C8(r); }
+#define SET_FLAGS16(a,b,r)	{SET_N16(r); SET_Z16(r); SET_V16(a,b,r); SET_C16(r);}
 
 /* for treating an uint8 as a signed int16 */
 #define SIGNED(b)	((int16)(b & 0x80 ? b | 0xff00 : b))
@@ -592,6 +593,23 @@ static const uint8 cycles[] = {
 	 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4,
 	 4, 4, 4, 5, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5,
 	 4, 4, 4, 5, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5
+#elif defined(HAS_MB8861)
+	XX, 2,XX,XX,XX,XX, 2, 2, 4, 4, 2, 2, 2, 2, 2, 2,
+	 2, 2,XX,XX,XX,XX, 2, 2,XX, 2,XX, 2,XX,XX,XX,XX,
+	 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	 4, 4, 4, 4, 4, 4, 4, 4,XX, 5,XX,10,XX,XX, 9,12,
+	 2,XX,XX, 2, 2,XX, 2, 2, 2, 2, 2,XX, 2, 2,XX, 2,
+	 2,XX,XX, 2, 2,XX, 2, 2, 2, 2, 2,XX, 2, 2,XX, 2,
+	 7,XX,XX, 7, 7,XX, 7, 7, 7, 7, 7,XX, 7, 7, 4, 7,
+	 6, 8, 8, 6, 6, 8, 6, 6, 6, 6, 6, 7, 6, 6, 3, 6,
+	 2, 2, 2,XX, 2, 2, 2, 3, 2, 2, 2, 2, 3, 8, 3, 4,
+	 3, 3, 3,XX, 3, 3, 3, 4, 3, 3, 3, 3, 4, 6, 4, 5,
+	 5, 5, 5,XX, 5, 5, 5, 6, 5, 5, 5, 5, 6, 8, 6, 7,
+	 4, 4, 4,XX, 4, 4, 4, 5, 4, 4, 4, 4, 5, 9, 5, 6,
+	 2, 2, 2,XX, 2, 2, 2, 3, 2, 2, 2, 2,XX,XX, 3, 4,
+	 3, 3, 3,XX, 3, 3, 3, 4, 3, 3, 3, 3,XX,XX, 4, 5,
+	 5, 5, 5,XX, 5, 5, 5, 6, 5, 5, 5, 5, 4,XX, 6, 7,
+	 4, 4, 4,XX, 4, 4, 4, 5, 4, 4, 4, 4, 7,XX, 5, 6
 #endif
 };
 #undef XX // invalid opcode unknown cc
@@ -600,7 +618,7 @@ static const uint8 cycles[] = {
 void MC6800::initialize()
 {
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
-	recv_buffer = new FIFO(256);
+	recv_buffer = new FIFO(0x10000);
 #endif
 	ram_ctrl = 0xc0;
 }
@@ -617,6 +635,7 @@ void MC6800::reset()
 	CC = 0xc0;
 	SEI; /* IRQ disabled */
 	PCD = RM16(0xfffe);
+	S = X = D = EA = 0;
 	
 	wai_state = 0;
 	int_state = 0;
@@ -957,6 +976,9 @@ void MC6800::insn(uint8 code)
 #if defined(HAS_HD6301)
 	case 0x71: aim_di(); break;
 	case 0x72: oim_di(); break;
+#elif defined(HAS_MB8861)
+	case 0x71: nim_ix(); break;
+	case 0x72: oim_ix_mb8861(); break;
 #else
 	case 0x71: illegal(); break;
 	case 0x72: illegal(); break;
@@ -965,6 +987,8 @@ void MC6800::insn(uint8 code)
 	case 0x74: lsr_ex(); break;
 #if defined(HAS_HD6301)
 	case 0x75: eim_di(); break;
+#elif defined(HAS_MB8861)
+	case 0x75: xim_ix(); break;
 #else
 	case 0x75: illegal(); break;
 #endif
@@ -975,6 +999,8 @@ void MC6800::insn(uint8 code)
 	case 0x7a: dec_ex(); break;
 #if defined(HAS_HD6301)
 	case 0x7b: tim_di(); break;
+#elif defined(HAS_MB8861)
+	case 0x7b: tmm_ix(); break;
 #else
 	case 0x7b: illegal(); break;
 #endif
@@ -1147,6 +1173,9 @@ void MC6800::insn(uint8 code)
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	case 0xec: ldd_ix(); break;
 	case 0xed: std_ix(); break;
+#elif defined(HAS_MB8861)
+	case 0xec: adx_im(); break;
+	case 0xed: illegal(); break;
 #else
 	case 0xec: illegal(); break;
 	case 0xed: illegal(); break;
@@ -1172,6 +1201,9 @@ void MC6800::insn(uint8 code)
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	case 0xfc: ldd_ex(); break;
 	case 0xfd: std_ex(); break;
+#elif defined(HAS_MB8861)
+	case 0xfc: adx_ex(); break;
+	case 0xfd: illegal(); break;
 #else
 	case 0xfc: illegal(); break;
 	case 0xfd: illegal(); break;
@@ -1330,7 +1362,6 @@ void MC6800::undoc2()
 	X += RM(S + 1);
 }
 
-
 /* $14 ILLEGAL */
 
 /* $15 ILLEGAL */
@@ -1351,7 +1382,7 @@ void MC6800::tba()
 	SET_NZ8(A);
 }
 
-/* $18 XGDX inherent ----- */ /* HD63701YO only */
+/* $18 XGDX inherent ----- */ /* HD6301 only */
 void MC6800::xgdx()
 {
 	uint16 t = X;
@@ -1384,7 +1415,7 @@ void MC6800::daa()
 
 /* $1a ILLEGAL */
 
-/* $1a SLP */ /* HD63701YO only */
+/* $1a SLP */ /* HD6301 only */
 void MC6800::slp()
 {
 	/* wait for next IRQ (same as waiting of wai) */
@@ -1796,7 +1827,7 @@ void MC6800::rorb()
 	r = (CC & 0x01) << 7;
 	CLR_NZC;
 	CC |= (B & 0x01);
-	r |= B>>1;
+	r |= B >> 1;
 	SET_NZ8(r);
 	B = r;
 }
@@ -1815,7 +1846,7 @@ void MC6800::asrb()
 void MC6800::aslb()
 {
 	uint16 r;
-	r = B<<1;
+	r = B << 1;
 	CLR_NZVC;
 	SET_FLAGS8(B, B, r);
 	B = (uint8)r;
@@ -1879,7 +1910,7 @@ void MC6800::neg_ix()
 	WM(EAD, r);
 }
 
-/* $61 AIM --**0- */ /* HD63701YO only */
+/* $61 AIM --**0- */ /* HD6301 only */
 void MC6800::aim_ix()
 {
 	uint8 t, r;
@@ -1891,7 +1922,7 @@ void MC6800::aim_ix()
 	WM(EAD, r);
 }
 
-/* $62 OIM --**0- */ /* HD63701YO only */
+/* $62 OIM --**0- */ /* HD6301 only */
 void MC6800::oim_ix()
 {
 	uint8 t, r;
@@ -1927,7 +1958,7 @@ void MC6800::lsr_ix()
 	WM(EAD, t);
 }
 
-/* $65 EIM --**0- */ /* HD63701YO only */
+/* $65 EIM --**0- */ /* HD6301 only */
 void MC6800::eim_ix()
 {
 	uint8 t, r;
@@ -1999,7 +2030,7 @@ void MC6800::dec_ix()
 	WM(EAD, t);
 }
 
-/* $6b TIM --**0- */ /* HD63701YO only */
+/* $6b TIM --**0- */ /* HD6301 only */
 void MC6800::tim_ix()
 {
 	uint8 t, r;
@@ -2057,7 +2088,7 @@ void MC6800::neg_ex()
 	WM(EAD, r);
 }
 
-/* $71 AIM --**0- */ /* HD63701YO only */
+/* $71 AIM --**0- */ /* HD6301 only */
 void MC6800::aim_di()
 {
 	uint8 t, r;
@@ -2069,7 +2100,24 @@ void MC6800::aim_di()
 	WM(EAD, r);
 }
 
-/* $72 OIM --**0- */ /* HD63701YO only */
+/* $71 NIM --**0- */ /* MB8861 only */
+void MC6800::nim_ix()
+{
+	uint8 t, r;
+	IMMBYTE(t);
+	IDXBYTE(r);
+	r &= t;
+	CLR_NZV;
+	if(!r) {
+		SEZ;
+	}
+	else {
+		SEN;
+	}
+	WM(EAD, r);
+}
+
+/* $72 OIM --**0- */ /* HD6301 only */
 void MC6800::oim_di()
 {
 	uint8 t, r;
@@ -2078,6 +2126,23 @@ void MC6800::oim_di()
 	r |= t;
 	CLR_NZV;
 	SET_NZ8(r);
+	WM(EAD, r);
+}
+
+/* $72 OIM --**0- */ /* MB8861 only */
+void MC6800::oim_ix_mb8861()
+{
+	uint8 t, r;
+	IMMBYTE(t);
+	IDXBYTE(r);
+	r |= t;
+	CLR_NZV;
+	if(!r) {
+		SEZ;
+	}
+	else {
+		SEN;
+	}
 	WM(EAD, r);
 }
 
@@ -2105,7 +2170,7 @@ void MC6800::lsr_ex()
 	WM(EAD, t);
 }
 
-/* $75 EIM --**0- */ /* HD63701YO only */
+/* $75 EIM --**0- */ /* HD6301 only */
 void MC6800::eim_di()
 {
 	uint8 t, r;
@@ -2114,6 +2179,23 @@ void MC6800::eim_di()
 	r ^= t;
 	CLR_NZV;
 	SET_NZ8(r);
+	WM(EAD, r);
+}
+
+/* $75 XIM --**-- */ /* MB8861 only */
+void MC6800::xim_ix()
+{
+	uint8 t, r;
+	IMMBYTE(t);
+	IDXBYTE(r);
+	r ^= t;
+	CLR_NZ;
+	if(!r) {
+		SEZ;
+	}
+	else {
+		SEN;
+	}
 	WM(EAD, r);
 }
 
@@ -2177,7 +2259,7 @@ void MC6800::dec_ex()
 	WM(EAD, t);
 }
 
-/* $7b TIM --**0- */ /* HD63701YO only */
+/* $7b TIM --**0- */ /* HD6301 only */
 void MC6800::tim_di()
 {
 	uint8 t, r;
@@ -2186,6 +2268,25 @@ void MC6800::tim_di()
 	r &= t;
 	CLR_NZV;
 	SET_NZ8(r);
+}
+
+/* $7b TMM --***- */ /* MB8861 only */
+void MC6800::tmm_ix()
+{
+	uint8 t, r;
+	IMMBYTE(t);
+	IDXBYTE(r);
+	r &= t;
+	CLR_NZV;
+	if(!t || !r) {
+		SEZ;
+	}
+	else if(r == t) {
+		SEV;
+	}
+	else {
+		SEN;
+	}
 }
 
 /* $7c INC extended -***- */
@@ -2284,7 +2385,7 @@ void MC6800::bita_im()
 {
 	uint8 t, r;
 	IMMBYTE(t);
-	r = A&t;
+	r = A & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -2463,7 +2564,7 @@ void MC6800::bita_di()
 {
 	uint8 t, r;
 	DIRBYTE(t);
-	r = A&t;
+	r = A & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -2639,7 +2740,7 @@ void MC6800::bita_ix()
 {
 	uint8 t, r;
 	IDXBYTE(t);
-	r = A&t;
+	r = A & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -2815,7 +2916,7 @@ void MC6800::bita_ex()
 {
 	uint8 t, r;
 	EXTBYTE(t);
-	r = A&t;
+	r = A & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -2991,7 +3092,7 @@ void MC6800::bitb_im()
 {
 	uint8 t, r;
 	IMMBYTE(t);
-	r = B&t;
+	r = B & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -3153,7 +3254,7 @@ void MC6800::bitb_di()
 {
 	uint8 t, r;
 	DIRBYTE(t);
-	r = B&t;
+	r = B & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -3313,7 +3414,7 @@ void MC6800::bitb_ix()
 {
 	uint8 t, r;
 	IDXBYTE(t);
-	r = B&t;
+	r = B & t;
 	CLR_NZV;
 	SET_NZ8(r);
 }
@@ -3385,6 +3486,18 @@ void MC6800::ldd_ix()
 	IDXWORD(pD);
 	CLR_NZV;
 	SET_NZ16(D);
+}
+
+/* $ec ADX immediate -**** */ /* MB8861 only */
+void MC6800::adx_im()
+{
+	uint32 r, d, t;
+	IMMBYTE(t);
+	d = X;
+	r = d + t;
+	CLR_NZVC;
+	SET_FLAGS16(d, t, r);
+	X = r;
 }
 
 /* $ed STD indexed -**0- */
@@ -3545,6 +3658,19 @@ void MC6800::ldd_ex()
 	EXTWORD(pD);
 	CLR_NZV;
 	SET_NZ16(D);
+}
+
+/* $fc ADX immediate -**** */ /* MB8861 only */
+void MC6800::adx_ex()
+{
+	uint32 r, d;
+	pair b;
+	EXTWORD(b);
+	d = X;
+	r = d + b.d;
+	CLR_NZVC;
+	SET_FLAGS16(d, b.d, r);
+	X = r;
 }
 
 /* $fd STD extended -**0- */

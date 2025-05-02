@@ -14,7 +14,7 @@
 
 void EMM::initialize()
 {
-	_memset(data_buffer, 0, sizeof(data_buffer));
+	memset(data_buffer, 0, sizeof(data_buffer));
 }
 
 void EMM::reset()

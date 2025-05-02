@@ -18,7 +18,7 @@
 
 void MFONT::initialize()
 {
-	_memset(mfont, 0xff, sizeof(mfont));
+	memset(mfont, 0xff, sizeof(mfont));
 	
 	// load multifont rom images
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

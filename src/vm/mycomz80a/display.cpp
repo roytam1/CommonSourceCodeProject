@@ -83,7 +83,7 @@ void DISPLAY::event_frame()
 
 void DISPLAY::draw_screen()
 {
-	_memset(screen, 0, sizeof(screen));
+	memset(screen, 0, sizeof(screen));
 	if((regs[8] & 0x30) != 0x30) {
 		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
@@ -112,10 +112,10 @@ void DISPLAY::draw_screen()
 			dest0[x] = src[x] ? col : 0;
 		}
 		if(scanline) {
-			_memset(dest1, 0, 640 * sizeof(scrntype));
+			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 		else {
-			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
 }
@@ -158,7 +158,7 @@ void DISPLAY::draw_40column()
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200) {
-							_memset(&screen[yy][x << 4], 1, 16);
+							memset(&screen[yy][x << 4], 1, 16);
 						}
 					}
 				}
@@ -206,7 +206,7 @@ void DISPLAY::draw_80column()
 					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200) {
-							_memset(&screen[yy][x << 3], 1, 8);
+							memset(&screen[yy][x << 3], 1, 8);
 						}
 					}
 				}

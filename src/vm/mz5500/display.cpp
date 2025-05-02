@@ -32,12 +32,12 @@ void DISPLAY::initialize()
 	
 	// init window controller
 	rno = 0;
-	_memset(wregs, 0, sizeof(wregs));
-	_memset(pri, 0, sizeof(pri));
-	_memset(vma, 0, sizeof(vma));
-	_memset(vds, 0, sizeof(vds));
-	_memset(back, 0, sizeof(back));
-	_memset(reverse, 0, sizeof(reverse));
+	memset(wregs, 0, sizeof(wregs));
+	memset(pri, 0, sizeof(pri));
+	memset(vma, 0, sizeof(vma));
+	memset(vds, 0, sizeof(vds));
+	memset(back, 0, sizeof(back));
+	memset(reverse, 0, sizeof(reverse));
 }
 
 void DISPLAY::update_config()
@@ -85,7 +85,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 				vds[0] = 0;
 			}
 			else {
-				_memset(pri, 0, sizeof(pri));
+				memset(pri, 0, sizeof(pri));
 				vds[0] = 7;
 			}
 		}
@@ -273,10 +273,10 @@ void DISPLAY::draw_screen()
 				dest0[x] = palette_pc[src[x]];
 			}
 			if(scanline) {
-				_memset(dest1, 0, 640 * sizeof(scrntype));
+				memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 			else {
-				_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+				memcpy(dest1, dest0, 640 * sizeof(scrntype));
 			}
 		}
 	}

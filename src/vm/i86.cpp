@@ -627,7 +627,7 @@ void I86::reset()
 #ifdef HAS_I286
 	msw = 0xfff0;
 	limit[CS] = limit[SS] = limit[DS] = limit[ES] = 0xffff;
-	_memset(rights, 0, sizeof(rights));
+	memset(rights, 0, sizeof(rights));
 	
 	gdtr.base = idtr.base = ldtr.base = tr.base = 0;
 	gdtr.limit = ldtr.limit = tr.limit = 0;

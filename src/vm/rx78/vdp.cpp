@@ -12,7 +12,7 @@
 
 void VDP::initialize()
 {
-	_memset(reg, 0, sizeof(reg));
+	memset(reg, 0, sizeof(reg));
 	cmask = pmask = 0xff;
 	bg = 0;
 	create_pal();

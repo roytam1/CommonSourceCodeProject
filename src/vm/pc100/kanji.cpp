@@ -14,7 +14,7 @@
 void KANJI::initialize()
 {
 	// init image
-	_memset(kanji, 0xff, sizeof(kanji));
+	memset(kanji, 0xff, sizeof(kanji));
 	
 	// load kanji image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

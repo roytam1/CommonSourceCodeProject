@@ -94,8 +94,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 	
 	// memory bus
-	_memset(ram, 0, sizeof(ram));
-	_memset(ipl, 0xff, sizeof(ipl));
+	memset(ram, 0, sizeof(ram));
+	memset(ipl, 0xff, sizeof(ipl));
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
 	
@@ -243,7 +243,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, 2400, 2, 8000);
+	beep->init(rate, 2400, 8000);
 	pcm->init(rate, 8000);
 }
 

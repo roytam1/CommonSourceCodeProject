@@ -35,14 +35,14 @@
 void SUB::initialize()
 {
 	// init memory
-	_memset(sub1, 0xff, sizeof(sub1));
-	_memset(sub2, 0xff, sizeof(sub2));
-	_memset(sub3, 0xff, sizeof(sub3));
-	_memset(rdmy, 0xff, sizeof(rdmy));
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram_b, 0, sizeof(vram_b));
-	_memset(vram_r, 0, sizeof(vram_r));
-	_memset(vram_g, 0, sizeof(vram_g));
+	memset(sub1, 0xff, sizeof(sub1));
+	memset(sub2, 0xff, sizeof(sub2));
+	memset(sub3, 0xff, sizeof(sub3));
+	memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(vram_b, 0, sizeof(vram_b));
+	memset(vram_r, 0, sizeof(vram_r));
+	memset(vram_g, 0, sizeof(vram_g));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -155,9 +155,9 @@ void SUB::write_io8(uint32 addr, uint32 data)
 	switch(addr) {
 	case P_A:
 		if((pa & 0x20) && !(data & 0x20)) {
-			_memset(vram_b, 0, sizeof(vram_b));
-			_memset(vram_r, 0, sizeof(vram_r));
-			_memset(vram_g, 0, sizeof(vram_g));
+			memset(vram_b, 0, sizeof(vram_b));
+			memset(vram_r, 0, sizeof(vram_r));
+			memset(vram_g, 0, sizeof(vram_g));
 		}
 		pa = data;
 		break;
@@ -289,7 +289,7 @@ void SUB::draw_screen()
 	uint16 src = ((regs[12] << 11) | (regs[13] << 3)) & 0x3fff;
 	uint16 cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3fff;
 	
-	_memset(screen, 0, sizeof(screen));
+	memset(screen, 0, sizeof(screen));
 	
 	if((regs[8] & 0x30) != 0x30) {
 		if(pa & 8) {
@@ -333,7 +333,7 @@ void SUB::draw_screen()
 						uint8 bp = regs[10] & 0x60;
 						if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 							for(int l = (regs[10] & 0x1f); l < lmax; l++) {
-								_memset(&screen[y + l][x], color, 16);
+								memset(&screen[y + l][x], color, 16);
 							}
 						}
 					}
@@ -382,7 +382,7 @@ void SUB::draw_screen()
 						uint8 bp = regs[10] & 0x60;
 						if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 							for(int l = (regs[10] & 0x1f); l < lmax; l++) {
-								_memset(&screen[y + l][x], color, 8);
+								memset(&screen[y + l][x], color, 8);
 							}
 						}
 					}
@@ -415,10 +415,10 @@ void SUB::draw_screen()
 				dest0[x] = palette_pc[src[x] & 7];
 			}
 			if(config.scan_line) {
-				_memset(dest1, 0, 640 * sizeof(scrntype));
+				memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 			else {
-				_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+				memcpy(dest1, dest0, 640 * sizeof(scrntype));
 			}
 		}
 	}

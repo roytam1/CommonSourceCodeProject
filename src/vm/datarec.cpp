@@ -43,7 +43,7 @@ void DATAREC::initialize()
 {
 	// data recorder
 	fio = new FILEIO();
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	bufcnt = samples = 0;
 	
 	register_id = -1;
@@ -111,7 +111,7 @@ void DATAREC::event_callback(int event_id, int err)
 				remain--;
 			}
 			if(++bufcnt >= DATAREC_BUFFER_SIZE) {
-				_memset(buffer, 0, sizeof(buffer));
+				memset(buffer, 0, sizeof(buffer));
 				int samples = remain;
 				for(int i = 0; i < DATAREC_BUFFER_SIZE; i++) {
 					if(samples-- <= 0) {
@@ -131,7 +131,7 @@ void DATAREC::event_callback(int event_id, int err)
 				}
 				if(++bufcnt >= DATAREC_BUFFER_SIZE) {
 					// NOTE: consider tap/mzt case !!!
-					_memset(buffer, 0x7f, sizeof(buffer));
+					memset(buffer, 0x7f, sizeof(buffer));
 					fio->Fread(buffer, sizeof(buffer), 1);
 					bufcnt = 0;
 				}
@@ -269,7 +269,7 @@ void DATAREC::load_image()
 		remain = load_mzt_image();
 	}
 	else {
-		_memset(buffer, 0x7f, sizeof(buffer));
+		memset(buffer, 0x7f, sizeof(buffer));
 		fio->Fread(buffer, sizeof(buffer), 1);
 	}
 	bufcnt = samples = 0;
@@ -354,7 +354,7 @@ int DATAREC::load_wav_image()
 	}
 	
 	// import samples
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	int samples = remain;
 	for(int i = 0; i < DATAREC_BUFFER_SIZE; i++) {
 		if(samples-- <= 0) {
@@ -374,7 +374,7 @@ void DATAREC::save_wav_image()
 	
 	// write header
 	uint8 wav[44];
-	_memcpy(wav, wavheader, sizeof(wavheader));
+	memcpy(wav, wavheader, sizeof(wavheader));
 	int total = samples + 0x24;
 	wav[ 4] = (uint8)((total >>  0) & 0xff);
 	wav[ 5] = (uint8)((total >>  8) & 0xff);
@@ -439,7 +439,7 @@ int DATAREC::load_tap_image()
 	uint8 tmp[4];
 	
 	// fill buffer with no signals
-	_memset(buffer, 0x7f, sizeof(buffer));
+	memset(buffer, 0x7f, sizeof(buffer));
 	
 	// check header
 	fio->Fread(tmp, 4, 1);
@@ -540,7 +540,7 @@ int DATAREC::load_mzt_image()
 	int ptr = 0, count;
 	
 	// fill buffer with no signals
-	_memset(buffer, 0x7f, sizeof(buffer));
+	memset(buffer, 0x7f, sizeof(buffer));
 	
 	while(remain > 128) {
 		// load header
@@ -550,7 +550,7 @@ int DATAREC::load_mzt_image()
 		
 		uint16 size = header[0x12] | (header[0x13] << 8);
 		uint16 offs = header[0x14] | (header[0x15] << 8);
-		_memset(ram, 0, sizeof(ram));
+		memset(ram, 0, sizeof(ram));
 		fio->Fread(ram + offs, size, 1);
 		remain -= size;
 #if 0

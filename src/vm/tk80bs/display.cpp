@@ -145,7 +145,7 @@ void DISPLAY::draw_screen()
 		for(int l = 0; l < 8; l++) {
 			scrntype* dest = emu->screen_buffer(y + l);
 			scrntype* src = screen[l];
-			_memcpy(dest, src, 256 * sizeof(scrntype));
+			memcpy(dest, src, 256 * sizeof(scrntype));
 		}
 	}
 	// draw leds
@@ -154,7 +154,7 @@ void DISPLAY::draw_screen()
 	scrntype col_off = RGB_COLOR(56, 0, 0);
 	scrntype col[10];
 	
-	_memset(screen, 0, sizeof(screen));
+	memset(screen, 0, sizeof(screen));
 	for(int i = 0; i < 8; i++) {
 		for(int i = 0; i < 8; i++) {
 			uint8 pat = dma ? led[i] : 0;
@@ -191,7 +191,7 @@ void DISPLAY::draw_screen()
 	for(int y = 0; y < 36; y++) {
 		scrntype* dest = emu->screen_buffer(y + 128);
 		scrntype* src = screen[y];
-		_memcpy(dest, src, 256 * sizeof(scrntype));
+		memcpy(dest, src, 256 * sizeof(scrntype));
 	}
 }
 

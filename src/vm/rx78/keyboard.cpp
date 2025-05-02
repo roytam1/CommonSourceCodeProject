@@ -43,7 +43,7 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 
 void KEYBOARD::event_frame()
 {
-	_memset(status, 0, sizeof(status));
+	memset(status, 0, sizeof(status));
 	
 	for(int i = 0; i < 9; i++) {
 		uint8 val = 0;

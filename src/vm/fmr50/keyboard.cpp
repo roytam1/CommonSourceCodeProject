@@ -21,7 +21,7 @@ void KEYBOARD::initialize()
 
 void KEYBOARD::reset()
 {
-	_memset(table, 0, sizeof(table));
+	memset(table, 0, sizeof(table));
 	key_buf->clear();
 	kbstat = kbdata = kbint = kbmsk = 0;
 }

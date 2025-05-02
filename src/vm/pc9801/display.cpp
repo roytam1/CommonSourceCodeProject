@@ -65,9 +65,9 @@ void DISPLAY::initialize()
 	}
 	for(int i = 0; i < 0x80; i++) {
 		q = font + (i << 12);
-		_memset(q + 0x000, 0, 0x0560 - 0x000);
-		_memset(q + 0x580, 0, 0x0d60 - 0x580);
-		_memset(q + 0xd80, 0, 0x1000 - 0xd80);
+		memset(q + 0x000, 0, 0x0560 - 0x000);
+		memset(q + 0x580, 0, 0x0d60 - 0x580);
+		memset(q + 0xd80, 0, 0x1000 - 0xd80);
 	}
 	
 	// load font data
@@ -86,13 +86,13 @@ void DISPLAY::initialize()
 		uint8 *src = buf;
 		int cnt = 256;
 		while(cnt--) {
-			_memcpy(dst, src, 8);
+			memcpy(dst, src, 8);
 			dst += 16;
 			src += 8;
 		}
 		// 8x16 font
-		_memcpy(font + 0x80000, buf + 0x0800, 16 * 128);
-		_memcpy(font + 0x80800, buf + 0x1000, 16 * 128);
+		memcpy(font + 0x80000, buf + 0x0800, 16 * 128);
+		memcpy(font + 0x80800, buf + 0x1000, 16 * 128);
 		// kanji font
 		kanji_copy(font, buf, 0x01, 0x30);
 		kanji_copy(font, buf, 0x30, 0x56);
@@ -113,8 +113,8 @@ void DISPLAY::initialize()
 	digipal[2] = 0;//(2 << 4) | 6;
 	digipal[3] = 0;//(0 << 4) | 4;
 	
-	_memset(tvram, 0, sizeof(tvram));
-	_memset(vram, 0, sizeof(vram));
+	memset(tvram, 0, sizeof(tvram));
+	memset(vram, 0, sizeof(vram));
 	
 	for(int i = 0; i < 16; i++) {
 		tvram[0x3fe0 + (i << 1)] = (i == 7 && sound_bios_ok) ? 0x08 : memsw_default[i];
@@ -159,7 +159,7 @@ void DISPLAY::reset()
 	scroll[SCROLL_SUR] = 0;
 	scroll[SCROLL_SDR] = 24;
 	
-	_memset(mode_flipflop, 0, sizeof(mode_flipflop));
+	memset(mode_flipflop, 0, sizeof(mode_flipflop));
 	
 	font_code = 0;
 	font_line = 0;
@@ -357,7 +357,7 @@ void DISPLAY::draw_screen()
 	else {
 		for(int y = 0; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			_memset(dest, 0, 640 * sizeof(scrntype));
+			memset(dest, 0, 640 * sizeof(scrntype));
 		}
 	}
 	
@@ -392,7 +392,7 @@ void DISPLAY::draw_chr_screen()
 	int sdr = scroll[SCROLL_SDR] + 1;
 	
 	// address from gdc
-	_memset(gdc_addr, 0, sizeof(gdc_addr));
+	memset(gdc_addr, 0, sizeof(gdc_addr));
 	for(int i = 0, ytop = 0; i < 4; i++) {
 		uint32 ra = ra_chr[i * 4];
 		ra |= ra_chr[i * 4 + 1] << 8;
@@ -423,7 +423,7 @@ void DISPLAY::draw_chr_screen()
 	int xofs = mode_flipflop[MODE_COLUMN] ? 16 : 8;
 	int addrofs = mode_flipflop[MODE_COLUMN] ? 2 : 1;
 	
-	_memset(screen_chr, 0, sizeof(screen_chr));
+	memset(screen_chr, 0, sizeof(screen_chr));
 	
 	for(int y = 0, ytop = 0; y < 400; y += bl) {
 		uint32 gaiji1st = 0, last = 0, offset;
@@ -526,7 +526,7 @@ void DISPLAY::draw_chr_screen()
 void DISPLAY::draw_gfx_screen()
 {
 	// address from gdc
-	_memset(gdc_addr, 0, sizeof(gdc_addr));
+	memset(gdc_addr, 0, sizeof(gdc_addr));
 	for(int i = 0, ytop = 0; i < 4; i++) {
 		uint32 ra = ra_gfx[i * 4];
 		ra |= ra_gfx[i * 4 + 1] << 8;

@@ -32,11 +32,11 @@
 void MEMORY::initialize()
 {
 	// initialize memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(sys, 0xff, sizeof(sys));
-	_memset(basic, 0xff, sizeof(basic));
-	_memset(util, 0xff, sizeof(util));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(sys, 0xff, sizeof(sys));
+	memset(basic, 0xff, sizeof(basic));
+	memset(util, 0xff, sizeof(util));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// buttery backuped dram
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

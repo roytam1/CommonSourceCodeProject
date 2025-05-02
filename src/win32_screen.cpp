@@ -86,7 +86,7 @@ void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMA
 {
 	*lpBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
 	*lpDib = (LPBITMAPINFO)(*lpBuf);
-	_memset(&(*lpDib)->bmiHeader, 0, sizeof(BITMAPINFOHEADER));
+	memset(&(*lpDib)->bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 	(*lpDib)->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	(*lpDib)->bmiHeader.biWidth = width;
 	(*lpDib)->bmiHeader.biHeight = height;
@@ -411,7 +411,7 @@ void EMU::start_rec_video(int fps, BOOL show_dialog)
 	
 	// stream header
 	AVISTREAMINFO strhdr;
-	_memset(&strhdr, 0, sizeof(strhdr));
+	memset(&strhdr, 0, sizeof(strhdr));
 	strhdr.fccType = streamtypeVIDEO;	// vids
 	strhdr.fccHandler = 0;
 	strhdr.dwScale = 1;

@@ -107,9 +107,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 	
 	// memory bus
-	_memset(ram, 0, sizeof(ram));
-	_memset(kanji, 0xff, sizeof(kanji));
-	_memset(cart, 0xff, sizeof(cart));
+	memset(ram, 0, sizeof(ram));
+	memset(kanji, 0xff, sizeof(kanji));
+	memset(cart, 0xff, sizeof(cart));
 	
 	memory->read_bios(_T("BACKUP.BIN"), ram, sizeof(ram));
 	memory->read_bios(_T("KANJI.ROM"), kanji, sizeof(kanji));

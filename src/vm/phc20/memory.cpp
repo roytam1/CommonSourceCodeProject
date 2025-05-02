@@ -45,8 +45,8 @@ static const uint8 key_map[9][8] = {
 void MEMORY::initialize()
 {
 	// load ipl
-	_memset(rom, 0xff, sizeof(rom));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(rom, 0xff, sizeof(rom));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -74,10 +74,10 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
 	
-	_memset(status, 0, sizeof(status));
+	memset(status, 0, sizeof(status));
 	sysport = 0;
 }
 
@@ -140,7 +140,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::event_frame()
 {
-	_memset(status, 0, sizeof(status));
+	memset(status, 0, sizeof(status));
 	
 	for(int i = 0; i < 9; i++) {
 		uint8 val = 0;

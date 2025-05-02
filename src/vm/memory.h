@@ -58,7 +58,7 @@ public:
 				break;
 			}
 		}
-		_memset(read_dummy, 0xff, MEMORY_BANK_SIZE);
+		memset(read_dummy, 0xff, MEMORY_BANK_SIZE);
 	}
 	~MEMORY() {
 		free(read_table);

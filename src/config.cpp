@@ -16,7 +16,7 @@ config_t config;
 void init_config()
 {
 	// initial settings
-	_memset(&config, 0, sizeof(config_t));
+	memset(&config, 0, sizeof(config_t));
 	
 	config.version1 = FILE_VERSION;
 	config.version2 = CONFIG_VERSION;

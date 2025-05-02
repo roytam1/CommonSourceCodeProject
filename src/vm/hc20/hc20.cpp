@@ -14,7 +14,6 @@
 #include "../event.h"
 
 #include "../beep.h"
-#include "../datarec.h"
 #include "../hd146818p.h"
 #include "../mc6800.h"
 #include "../tf20.h"
@@ -34,7 +33,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	beep = new BEEP(this, emu);
-	drec = new DATAREC(this, emu);
 	rtc = new HD146818P(this, emu);
 	cpu = new MC6800(this, emu);
 	tf20 = new TF20(this, emu);
@@ -89,13 +87,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_port2(memory, SIG_MEMORY_PORT_2, 0xff, 0);
 	cpu->set_context_port3(memory, SIG_MEMORY_PORT_3, 0xff, 0);
 	cpu->set_context_port4(memory, SIG_MEMORY_PORT_4, 0xff, 0);
-	cpu->set_context_sio(memory, SIG_MEMORY_SIO);
+	cpu->set_context_sio(memory, SIG_MEMORY_SIO_MAIN);
 	rtc->set_context_intr(memory, SIG_MEMORY_RTC_IRQ, 1);
-	tf20->set_context_sio(cpu, SIG_MC6801_SIO_RECV);
+	tf20->set_context_sio(memory, SIG_MEMORY_SIO_TF20);
 	
 	memory->set_context_beep(beep);
 	memory->set_context_cpu(cpu);
-	memory->set_context_drec(drec);
 	memory->set_context_rtc(rtc);
 	memory->set_context_tf20(tf20);
 	
@@ -217,7 +214,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, 1000, 2, 8000);
+	beep->init(rate, 1000, 8000);
 }
 
 uint16* VM::create_sound(int* extra_frames)
@@ -241,22 +238,22 @@ void VM::close_disk(int drv)
 
 void VM::play_datarec(_TCHAR* filename)
 {
-	drec->play_datarec(filename);
+	memory->play_datarec(filename);
 }
 
 void VM::rec_datarec(_TCHAR* filename)
 {
-	drec->rec_datarec(filename);
+	memory->rec_datarec(filename);
 }
 
 void VM::close_datarec()
 {
-	drec->close_datarec();
+	memory->close_datarec();
 }
 
 bool VM::now_skip()
 {
-	return drec->skip();
+	return false;
 }
 
 void VM::update_config()

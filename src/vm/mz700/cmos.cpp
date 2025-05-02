@@ -20,7 +20,7 @@ void CMOS::initialize()
 {
 	// init memory
 	data_buffer = (uint8 *)malloc(DATA_SIZE);
-	_memset(data_buffer, 0, DATA_SIZE);
+	memset(data_buffer, 0, DATA_SIZE);
 	
 	// load cmos image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

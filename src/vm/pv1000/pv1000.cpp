@@ -54,8 +54,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(dummy);
 	
 	// memory bus
-	_memset(mem, 0xff, 0x8000);
-	_memset(mem + 0x8000, 0, 0x8000);
+	memset(mem, 0xff, 0x8000);
+	memset(mem + 0x8000, 0, 0x8000);
 	
 	memory->set_memory_r(0x0000, 0x7fff, mem);
 	memory->set_memory_rw(0xb800, 0xbfff, mem + 0xb800);
@@ -186,14 +186,14 @@ uint16* VM::create_sound(int* extra_frames)
 
 void VM::open_cart(_TCHAR* file_path)
 {
-	_memset(mem, 0xff, 0x8000);
+	memset(mem, 0xff, 0x8000);
 	memory->read_image(file_path, mem, 0x8000);
 	reset();
 }
 
 void VM::close_cart()
 {
-	_memset(mem, 0xff, 0x8000);
+	memset(mem, 0xff, 0x8000);
 	reset();
 }
 

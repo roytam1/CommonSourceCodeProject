@@ -9,8 +9,8 @@
 */
 
 #include "memory.h"
-#include "../beep.h"
 #include "../i8253.h"
+#include "../pcm1bit.h"
 #include "../upd765a.h"
 #include "../../fileio.h"
 #include "../../config.h"
@@ -26,10 +26,10 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(cmos, 0, sizeof(cmos));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ram, 0, sizeof(ram));
+	memset(cmos, 0, sizeof(cmos));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom images
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -70,8 +70,8 @@ void MEMORY::reset()
 	psel = csel = 0;
 	update_map();
 	
-	// init beep
-	beep_on = beep_cont = beep_pit = false;
+	// init pcm
+	pcm_on = pcm_cont = pcm_pit = false;
 	
 	// init fdc/fdd status
 	fdc_irq = motor = false;
@@ -97,9 +97,9 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		// timer gate signal
 		d_pit->write_signal(SIG_I8253_GATE_0, data, 1);
 		d_pit->write_signal(SIG_I8253_GATE_2, data, 2);
-		// beep on
-		beep_cont = ((data & 4) != 0);
-		update_beep();
+		// pcm on
+		pcm_cont = ((data & 4) != 0);
+		update_pcm();
 		break;
 	case 0x1c: case 0x1d: case 0x1e: case 0x1f:
 		psel = data;
@@ -132,10 +132,10 @@ uint32 MEMORY::read_io8(uint32 addr)
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_MEMORY_BEEP) {
-		// beep on from pit
-		beep_pit = ((data & mask) != 0);
-		update_beep();
+	if(id == SIG_MEMORY_PCM) {
+		// pcm on from pit
+		pcm_pit = ((data & mask) != 0);
+		update_pcm();
 	}
 	else if(id == SIG_MEMORY_FDC_IRQ) {
 		fdc_irq = ((data & mask) != 0);
@@ -189,14 +189,14 @@ void MEMORY::update_map()
 	SET_BANK(0xe000, 0xffff, ram + 0xe000, ram + 0xe000);
 }
 
-void MEMORY::update_beep()
+void MEMORY::update_pcm()
 {
-	if(!beep_on && (beep_cont || beep_pit)) {
-		d_beep->write_signal(SIG_BEEP_ON, 1, 1);
-		beep_on = true;
+	if(!pcm_on && (pcm_cont || pcm_pit)) {
+		d_pcm->write_signal(SIG_PCM1BIT_ON, 1, 1);
+		pcm_on = true;
 	}
-	else if(beep_on && !(beep_cont || beep_pit)) {
-		d_beep->write_signal(SIG_BEEP_ON, 0, 1);
-		beep_on = false;
+	else if(pcm_on && !(pcm_cont || pcm_pit)) {
+		d_pcm->write_signal(SIG_PCM1BIT_ON, 0, 1);
+		pcm_on = false;
 	}
 }

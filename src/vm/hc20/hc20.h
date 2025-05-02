@@ -34,9 +34,11 @@
 #define USE_FD1
 #define USE_FD2
 #define USE_DATAREC
+#define DATAREC_BINARY_ONLY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
+#define DONT_KEEEP_KEY_PRESSED
 #define USE_POWER_OFF
 
 #include "../../common.h"
@@ -46,7 +48,6 @@ class DEVICE;
 class EVENT;
 
 class BEEP;
-class DATAREC;
 class HD146818P;
 class MC6800;
 class TF20;
@@ -62,7 +63,6 @@ protected:
 	EVENT* event;
 	
 	BEEP* beep;
-	DATAREC* drec;
 	HD146818P* rtc;
 	MC6800* cpu;
 	TF20* tf20;

@@ -14,7 +14,7 @@ void EMM::initialize()
 {
 	ptr = 0;
 	buf = (uint8*)malloc(EMM_SIZE);
-	_memset(buf, 0, EMM_SIZE);
+	memset(buf, 0, EMM_SIZE);
 }
 
 void EMM::release()

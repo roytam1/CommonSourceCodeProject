@@ -16,9 +16,9 @@
 void EMU::initialize_input()
 {
 	// initialize status
-	_memset(key_status, 0, sizeof(key_status));
-	_memset(joy_status, 0, sizeof(joy_status));
-	_memset(mouse_status, 0, sizeof(mouse_status));
+	memset(key_status, 0, sizeof(key_status));
+	memset(joy_status, 0, sizeof(joy_status));
+	memset(mouse_status, 0, sizeof(mouse_status));
 	
 	// initialize joysticks
 	joy_num = joyGetNumDevs();
@@ -74,7 +74,7 @@ void EMU::update_input()
 	}
 	
 	// update joystick status
-	_memset(joy_status, 0, sizeof(joy_status));
+	memset(joy_status, 0, sizeof(joy_status));
 	for(int i = 0; i < joy_num && i < 2; i++) {
 		JOYINFO joyinfo;
 		if(joyGetPos(i, &joyinfo) == JOYERR_NOERROR) {
@@ -97,7 +97,7 @@ void EMU::update_input()
 #endif
 	
 	// update mouse status
-	_memset(mouse_status, 0, sizeof(mouse_status));
+	memset(mouse_status, 0, sizeof(mouse_status));
 	if(mouse_enabled) {
 		// get current status
 		POINT pt;
@@ -198,6 +198,12 @@ void EMU::key_down(int code, bool repeat)
 		repeat = false;
 	}
 	else {
+#ifdef DONT_KEEEP_KEY_PRESSED
+		if(!(code == VK_SHIFT || code == VK_CONTROL || code == VK_MENU)) {
+			key_status[code] = KEY_KEEP_FRAMES;
+		}
+		else
+#endif
 		key_status[code] = 0x80;
 	}
 #ifdef NOTIFY_KEY_DOWN

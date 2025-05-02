@@ -64,7 +64,7 @@ void KEYBOARD::reset()
 #ifdef _MAP1010
 	kana_pressed = 0;
 #else
-	_memset(status, 0, sizeof(status));
+	memset(status, 0, sizeof(status));
 #endif
 }
 
@@ -112,7 +112,7 @@ void KEYBOARD::event_frame()
 		kana_pressed = 4;
 	}
 #else
-	_memset(status, 0, sizeof(status));
+	memset(status, 0, sizeof(status));
 	
 	for(int i = 0; i < 10; i++) {
 		uint8 val = 0;

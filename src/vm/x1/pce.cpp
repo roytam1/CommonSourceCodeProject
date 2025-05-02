@@ -70,7 +70,7 @@ void PCE::initialize()
 void PCE::reset()
 {
 	// reset memory bus
-	_memset(ram, 0, sizeof(ram));
+	memset(ram, 0, sizeof(ram));
 	bank = 0x80000;
 	buffer = 0xff;	// ???
 	
@@ -81,7 +81,7 @@ void PCE::reset()
 	joy_reset();
 	
 	// reset screen
-	_memset(screen, 0, sizeof(screen));
+	memset(screen, 0, sizeof(screen));
 }
 
 void PCE::event_callback(int event_id, int err)
@@ -110,7 +110,7 @@ void PCE::event_vline(int v, int clock)
 				screen[y][x] = palette_bg[0];
 			}
 		}
-		_memset(mask_spr[vdc_minline], 0, (vdc_maxline - vdc_minline) * PCE_WIDTH);
+		memset(mask_spr[vdc_minline], 0, (vdc_maxline - vdc_minline) * PCE_WIDTH);
 	}
 	
 	// update status
@@ -164,7 +164,7 @@ void PCE::event_vline(int v, int clock)
 		vdc_dispmin = dispmin;
 		vdc_dispmax = dispmax;
 		// refresh sprite mask
-//		_memset(mask_spr, 0, sizeof(mask_spr));
+//		memset(mask_spr, 0, sizeof(mask_spr));
 	}
 	if(vdc_minline <= vdc_scanline && vdc_scanline <= vdc_maxline) {
 		if(vdc_scanline == (vdc[VDC_RCR].w.l & 0x3ff) - 64) {
@@ -220,7 +220,7 @@ void PCE::event_vline(int v, int clock)
 	if(vdc_scanline == vdc_maxline + 1) {
 		// VRAM to SATB DMA
 		if(vdc_satb || (vdc[VDC_DCR].w.l & 0x10)) {
-			_memcpy(spram, &vram[vdc[VDC_SATB].w.l * 2], 512);
+			memcpy(spram, &vram[vdc[VDC_SATB].w.l * 2], 512);
 			vdc_satb = true;
 			vdc_status &= ~VDC_STAT_DS;
 		}
@@ -382,7 +382,7 @@ void PCE::open_cart(_TCHAR* filename)
 	FILEIO* fio = new FILEIO();
 	
 	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
-		_memset(cart, 0xff, sizeof(cart));
+		memset(cart, 0xff, sizeof(cart));
 		fio->Fseek(0, FILEIO_SEEK_END);
 		int head = fio->Ftell() % 1024;
 		fio->Fseek(head, FILEIO_SEEK_SET);
@@ -395,7 +395,7 @@ void PCE::open_cart(_TCHAR* filename)
 
 void PCE::close_cart()
 {
-	_memset(cart, 0xff, sizeof(cart));
+	memset(cart, 0xff, sizeof(cart));
 	vm->pce_running = false;
 }
 
@@ -403,11 +403,11 @@ void PCE::close_cart()
 
 void PCE::vdc_reset()
 {
-	_memset(&vdc, 0, sizeof(vdc));
-	_memset(&vce, 0, sizeof(vce));
-	_memset(&vce_reg, 0, sizeof(vce_reg));
-	_memset(vchange, 1, sizeof(vchange));
-	_memset(vchanges, 1, sizeof(vchanges));
+	memset(&vdc, 0, sizeof(vdc));
+	memset(&vce, 0, sizeof(vce));
+	memset(&vce_reg, 0, sizeof(vce_reg));
+	memset(vchange, 1, sizeof(vchange));
+	memset(vchanges, 1, sizeof(vchanges));
 	
 	vdc_inc = 1;
 	vdc_raster_count = 0;
@@ -485,9 +485,9 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 		case VDC_LENR:
 			vdc[VDC_LENR].b.h = data;
 			// vram to vram
-			_memcpy(&vram[vdc[VDC_DISTR].w.l * 2], &vram[vdc[VDC_SOUR].w.l * 2], (vdc[VDC_LENR].w.l + 1) * 2);
-			_memset(&vchange[vdc[VDC_DISTR].w.l >> 4], 1, (vdc[VDC_LENR].w.l + 1) >> 4);
-			_memset(&vchange[vdc[VDC_DISTR].w.l >> 6], 1, (vdc[VDC_LENR].w.l + 1) >> 6);
+			memcpy(&vram[vdc[VDC_DISTR].w.l * 2], &vram[vdc[VDC_SOUR].w.l * 2], (vdc[VDC_LENR].w.l + 1) * 2);
+			memset(&vchange[vdc[VDC_DISTR].w.l >> 4], 1, (vdc[VDC_LENR].w.l + 1) >> 4);
+			memset(&vchange[vdc[VDC_DISTR].w.l >> 6], 1, (vdc[VDC_LENR].w.l + 1) >> 6);
 			vdc[VDC_DISTR].w.l += vdc[VDC_LENR].w.l + 1;
 			vdc[VDC_SOUR].w.l += vdc[VDC_LENR].w.l + 1;
 			vdc_status |= VDC_STAT_DV;
@@ -964,7 +964,7 @@ void PCE::vdc_sp2pixel(int no)
 
 void PCE::psg_reset()
 {
-	_memset(psg, 0, sizeof(psg));
+	memset(psg, 0, sizeof(psg));
 	for (int i = 0; i < 6; i++) {
 		psg[i].regs[4] = 0x80;
 	}

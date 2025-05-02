@@ -64,9 +64,9 @@ void EVENT::initialize_sound(int rate, int samples)
 	update_samples = (int)(1024. * rate / frames_per_sec / lines_per_frame + 0.5);
 	
 	sound_buffer = (uint16*)malloc(sound_samples * sizeof(uint16) * 2);
-	_memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
+	memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
 	sound_tmp = (int32*)malloc(sound_tmp_samples * sizeof(int32) * 2);
-	_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
+	memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	buffer_ptr = accum_samples = 0;
 }
 
@@ -107,10 +107,10 @@ void EVENT::reset()
 	
 	// reset sound
 	if(sound_buffer) {
-		_memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
+		memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
 	}
 	if(sound_tmp) {
-		_memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
+		memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	}
 	buffer_ptr = 0;
 }
@@ -339,7 +339,7 @@ void EVENT::register_vline_event(DEVICE* dev)
 void EVENT::mix_sound(int samples)
 {
 	if(samples > 0) {
-		_memset(sound_tmp + buffer_ptr * 2, 0, samples * sizeof(int32) * 2);
+		memset(sound_tmp + buffer_ptr * 2, 0, samples * sizeof(int32) * 2);
 		for(int i = 0; i < dcount_sound; i++) {
 			d_sound[i]->mix(sound_tmp + buffer_ptr * 2, samples);
 		}
@@ -405,7 +405,7 @@ uint16* EVENT::create_sound(int* extra_frames)
 	}
 	if(buffer_ptr > sound_samples) {
 		buffer_ptr -= sound_samples;
-		_memcpy(sound_tmp, sound_tmp + sound_samples * 2, buffer_ptr * sizeof(int32) * 2);
+		memcpy(sound_tmp, sound_tmp + sound_samples * 2, buffer_ptr * sizeof(int32) * 2);
 	}
 	else {
 		buffer_ptr = 0;

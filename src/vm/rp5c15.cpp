@@ -22,7 +22,7 @@
 
 void RP5C15::initialize()
 {
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	regs[0x0a] = 1;
 	regs[0x0d] = 8;
 	regs[0x0f] = 0xc;

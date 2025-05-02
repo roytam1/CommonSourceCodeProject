@@ -73,20 +73,20 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
 #if defined(_MZ700) || defined(_MZ1500)
-	_memset(vram + 0x800, 0x71, 0x400);
+	memset(vram + 0x800, 0x71, 0x400);
 #endif
 #if defined(_MZ800) || defined(_MZ1500)
-	_memset(ext, 0xff, sizeof(ext));
+	memset(ext, 0xff, sizeof(ext));
 #endif
 #if defined(_MZ1500)
-	_memset(pcg, 0, sizeof(pcg));
+	memset(pcg, 0, sizeof(pcg));
 #endif
-	_memset(font, 0, sizeof(font));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(font, 0, sizeof(font));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -1050,10 +1050,10 @@ void MEMORY::draw_screen()
 			}
 		}
 		if(!config.scan_line) {
-			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 		else {
-			_memset(dest1, 0, 640 * sizeof(scrntype));
+			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 	}
 	

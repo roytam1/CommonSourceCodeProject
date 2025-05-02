@@ -14,7 +14,7 @@
 void CMOS::initialize()
 {
 	// load cmos image
-	_memset(cmos, 0xff, sizeof(cmos));
+	memset(cmos, 0xff, sizeof(cmos));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);

@@ -55,7 +55,7 @@ void CMT::play_datarec(_TCHAR* filename)
 		fio->Fseek(0, FILEIO_SEEK_END);
 		int size = (fio->Ftell() + 9) & (BUFFER_SIZE - 1);
 		fio->Fseek(0, FILEIO_SEEK_SET);
-		_memset(buffer, 0, sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 		fio->Fread(buffer, sizeof(buffer), 1);
 		
 		// send data to sio

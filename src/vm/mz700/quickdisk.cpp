@@ -324,7 +324,7 @@ void QUICKDISK::open_disk(_TCHAR path[])
 		// close current disk
 		close_disk();
 	}
-	_memset(buffer, 0, sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	
 	// load disk image
 	FILEIO* fio = new FILEIO();
@@ -340,7 +340,7 @@ void QUICKDISK::open_disk(_TCHAR path[])
 		int block_num_ptr = 0;
 		
 		// clear buffer
-		_memset(buffer, DATA_EMPTY, sizeof(buffer));
+		memset(buffer, DATA_EMPTY, sizeof(buffer));
 		buffer_ptr = 0;
 		
 		// create block file
@@ -365,7 +365,7 @@ void QUICKDISK::open_disk(_TCHAR path[])
 			// load data
 			int size = header[0x12] | (header[0x13] << 8);
 			int offs = header[0x14] | (header[0x15] << 8);
-			_memset(ram, 0, sizeof(ram));
+			memset(ram, 0, sizeof(ram));
 			fio->Fread(ram + offs, size, 1);
 			remain -= size;
 #if 0
@@ -464,7 +464,7 @@ void QUICKDISK::close_disk()
 				if(id == HEADER_BLOCK_ID) {
 					// create mzt header
 					uint8 header[MZT_HEADER_SIZE];
-					_memset(header, 0, sizeof(header));
+					memset(header, 0, sizeof(header));
 					
 					header[0x00] = (uint8)buffer[buffer_ptr + 0];	// attribute
 					for(int i = 1; i <= 17; i++) {

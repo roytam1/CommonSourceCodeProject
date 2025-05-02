@@ -20,7 +20,7 @@ void RAMFILE::initialize()
 {
 	// init memory
 	data_buffer = (uint8 *)malloc(DATA_SIZE);
-	_memset(data_buffer, 0, DATA_SIZE);
+	memset(data_buffer, 0, DATA_SIZE);
 }
 
 void RAMFILE::release()

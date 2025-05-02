@@ -27,7 +27,7 @@
 
 void RTC58321::initialize()
 {
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	wreg = rreg = cmdreg = regnum = 0;
 	busy = false;
 	

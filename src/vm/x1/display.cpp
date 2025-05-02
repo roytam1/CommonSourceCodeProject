@@ -130,8 +130,8 @@ void DISPLAY::initialize()
 			fio->Fclose();
 		}
 	}
-	_memcpy(kanji + 0x7f * 16, ANKFONT7f_af, sizeof(ANKFONT7f_af));
-	_memcpy(kanji + 0xe0 * 16, ANKFONTe0_ff, sizeof(ANKFONTe0_ff));
+	memcpy(kanji + 0x7f * 16, ANKFONT7f_af, sizeof(ANKFONT7f_af));
+	memcpy(kanji + 0xe0 * 16, ANKFONTe0_ff, sizeof(ANKFONTe0_ff));
 	
 	// kanji (16x16)
 	_stprintf(file_path, _T("%sKANJI.ROM"), app_path);
@@ -154,7 +154,7 @@ void DISPLAY::initialize()
 			buf[i     ] = kanji[ofs + i * 2    ];
 			buf[i + 16] = kanji[ofs + i * 2 + 1];
 		}
-		_memcpy(kanji + ofs, buf, 32);
+		memcpy(kanji + ofs, buf, 32);
 	}
 	delete fio;
 	
@@ -171,18 +171,18 @@ void DISPLAY::initialize()
 	update_pal();
 	column = 0x40;
 	
-	_memset(vram_t, 0, sizeof(vram_t));
-	_memset(vram_a, 0, sizeof(vram_a));
+	memset(vram_t, 0, sizeof(vram_t));
+	memset(vram_a, 0, sizeof(vram_a));
 #ifdef _X1TURBO
-	_memset(vram_k, 0, sizeof(vram_k));
+	memset(vram_k, 0, sizeof(vram_k));
 #endif
-	_memset(pcg_b, 0, sizeof(pcg_b));
-	_memset(pcg_r, 0, sizeof(pcg_r));
-	_memset(pcg_g, 0, sizeof(pcg_g));
+	memset(pcg_b, 0, sizeof(pcg_b));
+	memset(pcg_r, 0, sizeof(pcg_r));
+	memset(pcg_g, 0, sizeof(pcg_g));
 #ifdef _X1TURBO
-	_memset(gaiji_b, 0, sizeof(gaiji_b));
-	_memset(gaiji_r, 0, sizeof(gaiji_r));
-	_memset(gaiji_g, 0, sizeof(gaiji_g));
+	memset(gaiji_b, 0, sizeof(gaiji_b));
+	memset(gaiji_r, 0, sizeof(gaiji_r));
+	memset(gaiji_g, 0, sizeof(gaiji_g));
 #endif
 	
 	// register event
@@ -582,19 +582,19 @@ void DISPLAY::get_cur_code_line()
 void DISPLAY::draw_line(int v)
 {
 	if(v == 0) {
-		_memset(text, 0, sizeof(text));
-		_memset(cg, 0, sizeof(cg));
-		_memset(prev_top, 0, sizeof(prev_top));
+		memset(text, 0, sizeof(text));
+		memset(cg, 0, sizeof(cg));
+		memset(prev_top, 0, sizeof(prev_top));
 	}
 	if((regs[8] & 0x30) != 0x30) {
 		if((v % ch_height) == 0) {
 			draw_text(v / ch_height);
 		}
 		draw_cg(v);
-		_memcpy(&pri_line[v][0][0], &pri[0][0], sizeof(pri));
+		memcpy(&pri_line[v][0][0], &pri[0][0], sizeof(pri));
 	}
 	else {
-		_memset(&pri_line[v][0][0], 0, sizeof(pri));
+		memset(&pri_line[v][0][0], 0, sizeof(pri));
 	}
 }
 
@@ -644,10 +644,10 @@ void DISPLAY::draw_screen()
 					dest0[x2] = dest0[x2 + 1] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
 				}
 				if(!scanline) {
-					_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+					memcpy(dest1, dest0, 640 * sizeof(scrntype));
 				}
 				else {
-					_memset(dest1, 0, 640 * sizeof(scrntype));
+					memset(dest1, 0, 640 * sizeof(scrntype));
 				}
 			}
 		}
@@ -663,10 +663,10 @@ void DISPLAY::draw_screen()
 					dest0[x] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
 				}
 				if(!scanline) {
-					_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+					memcpy(dest1, dest0, 640 * sizeof(scrntype));
 				}
 				else {
-					_memset(dest1, 0, 640 * sizeof(scrntype));
+					memset(dest1, 0, 640 * sizeof(scrntype));
 				}
 			}
 		}

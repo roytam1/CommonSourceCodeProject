@@ -19,9 +19,9 @@
 
 void UPD4991A::initialize()
 {
-	_memset(cur, 0, sizeof(cur));
-	_memset(tp1, 0, sizeof(tp1));
-	_memset(tp2, 0, sizeof(tp2));
+	memset(cur, 0, sizeof(cur));
+	memset(tp1, 0, sizeof(tp1));
+	memset(tp2, 0, sizeof(tp2));
 	ctrl1 = ctrl2 = mode = 0;
 	
 	// register event

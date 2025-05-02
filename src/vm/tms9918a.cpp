@@ -28,8 +28,8 @@ void TMS9918A::initialize()
 
 void TMS9918A::reset()
 {
-	_memset(vram, 0, sizeof(vram));
-	_memset(regs, 0, sizeof(regs));
+	memset(vram, 0, sizeof(vram));
+	memset(regs, 0, sizeof(regs));
 	status_reg = read_ahead = first_byte = 0;
 	vram_addr = 0;
 	intstat = latch = false;
@@ -191,7 +191,7 @@ void TMS9918A::event_vline(int v, int clock)
 			}
 		}
 		else {
-			_memset(screen, 0, sizeof(screen));
+			memset(screen, 0, sizeof(screen));
 		}
 		
 		// do interrupt
@@ -374,8 +374,8 @@ void TMS9918A::draw_sprites()
 	bool large = ((regs[1] & 1) != 0);
 	uint8 limit[192], collision[192][256];
 	int illegal_sprite = 0, illegal_sprite_line = 255, p;
-	_memset(limit, 4, sizeof(limit));
-	_memset(collision, 0, sizeof(collision));
+	memset(limit, 4, sizeof(limit));
+	memset(collision, 0, sizeof(collision));
 	status_reg = 0x80;
 	
 	for(p = 0; p < 32; p++) {

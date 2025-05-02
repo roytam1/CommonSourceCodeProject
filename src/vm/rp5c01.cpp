@@ -24,7 +24,7 @@
 void RP5C01::initialize()
 {
 	// load ram image
-	_memset(ram, 0, sizeof(ram));
+	memset(ram, 0, sizeof(ram));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -38,7 +38,7 @@ void RP5C01::initialize()
 	delete fio;
 	
 	// initialize
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	regs[0x0a] = 1;
 	regs[0x0d] = 8;
 	regs[0x0f] = 0xc;

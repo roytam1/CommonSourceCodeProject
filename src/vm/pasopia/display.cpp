@@ -64,8 +64,8 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		d_crtc->write_io8(addr, data);
 		if(ch == 0) {
 			// XXX: Fixed Me !
-			_memset(vram, 0, 0x8000);
-			_memset(attr, 0, 0x8000);
+			memset(vram, 0, 0x8000);
+			memset(attr, 0, 0x8000);
 		}
 		break;
 	}
@@ -94,7 +94,7 @@ void DISPLAY::draw_screen()
 		}
 		
 		// render screen
-		_memset(screen, mode & 7, sizeof(screen));
+		memset(screen, mode & 7, sizeof(screen));
 		
 		switch(mode & 0xe0) {
 		case 0x00:	// screen 0, wide
@@ -120,7 +120,7 @@ void DISPLAY::draw_screen()
 		}
 	}
 	else {
-		_memset(screen, 0, sizeof(screen));
+		memset(screen, 0, sizeof(screen));
 	}
 	
 	// copy to real screen
@@ -134,10 +134,10 @@ void DISPLAY::draw_screen()
 			dest0[x] = palette_pc[src[x] & 7];
 		}
 		if(scanline) {
-			_memset(dest1, 0, 640 * sizeof(scrntype));
+			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 		else {
-			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
 }
@@ -174,7 +174,7 @@ void DISPLAY::draw_screen0_normal(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 3], 7, 8);
+						memset(&screen[y + i][x << 3], 7, 8);
 					}
 				}
 			}
@@ -215,7 +215,7 @@ void DISPLAY::draw_screen0_wide(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 4], 7, 16);
+						memset(&screen[y + i][x << 4], 7, 16);
 					}
 				}
 			}
@@ -274,7 +274,7 @@ void DISPLAY::draw_screen1_normal(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 3], 7, 8);
+						memset(&screen[y + i][x << 3], 7, 8);
 					}
 				}
 			}
@@ -333,7 +333,7 @@ void DISPLAY::draw_screen1_wide(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 4], 7, 16);
+						memset(&screen[y + i][x << 4], 7, 16);
 					}
 				}
 			}
@@ -382,7 +382,7 @@ void DISPLAY::draw_screen2_normal(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 3], 7, 8);
+						memset(&screen[y + i][x << 3], 7, 8);
 					}
 				}
 			}
@@ -431,7 +431,7 @@ void DISPLAY::draw_screen2_wide(uint16 src)
 				int bp = regs[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
 					for(int i = (regs[10] & 7); i < 8; i++) {
-						_memset(&screen[y + i][x << 4], 7, 16);
+						memset(&screen[y + i][x << 4], 7, 16);
 					}
 				}
 			}

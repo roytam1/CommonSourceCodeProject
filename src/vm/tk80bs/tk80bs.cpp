@@ -86,27 +86,27 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(keyboard);
 	
 	// memory bus
-	_memset(mon, 0xff, sizeof(mon));
-	_memset(ext, 0xff, sizeof(ext));
-	_memset(basic, 0xff, sizeof(basic));
-	_memset(bsmon, 0xff, sizeof(bsmon));
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0x20, sizeof(vram));
+	memset(mon, 0xff, sizeof(mon));
+	memset(ext, 0xff, sizeof(ext));
+	memset(basic, 0xff, sizeof(basic));
+	memset(bsmon, 0xff, sizeof(bsmon));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0x20, sizeof(vram));
 	
 	static const uint8 top[3] = {0xc3, 0x00, 0xf0};
 	static const uint8 rst[3] = {0xc3, 0xdd, 0x83};
 	
 	if(!memory->read_bios(_T("TK80.ROM"), mon, sizeof(mon))) {
 		// default
-		_memcpy(mon, top, 3);
-		_memcpy(mon + 0x38, rst, 3);
+		memcpy(mon, top, 3);
+		memcpy(mon + 0x38, rst, 3);
 	}
 	memory->read_bios(_T("EXT.ROM"), ext, sizeof(ext));
 	memory->read_bios(_T("LV1BASIC.ROM"), basic + 0x1000, 0x1000);
 	memory->read_bios(_T("LV2BASIC.ROM"), basic, sizeof(basic));
 	if(memory->read_bios(_T("BSMON.ROM"), bsmon, sizeof(bsmon))) {
 		// patch
-		_memcpy(mon + 0x38, rst, 3);
+		memcpy(mon + 0x38, rst, 3);
 	}
 	
 	memory->set_memory_r(0x0000, 0x07ff, mon);

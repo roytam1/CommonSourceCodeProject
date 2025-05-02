@@ -12,7 +12,7 @@
 
 void LCD::initialize()
 {
-	_memset(seg, 0, sizeof(seg));
+	memset(seg, 0, sizeof(seg));
 	sel = 0;
 }
 
@@ -124,7 +124,7 @@ void LCD::write_signal(int id, uint32 data, uint32 mask)
 void LCD::draw_screen()
 {
 	// render screen
-	_memset(screen, 0, sizeof(screen));
+	memset(screen, 0, sizeof(screen));
 	for(int b = 0; b < 10; b++) {
 		if(seg[b].disp) {
 			int xofs = (b % 5) * 50;

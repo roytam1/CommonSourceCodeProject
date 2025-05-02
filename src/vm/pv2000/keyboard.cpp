@@ -36,7 +36,7 @@ void KEYBOARD::initialize()
 
 void KEYBOARD::reset()
 {
-	_memset(key_stat, 0, sizeof(key_stat));
+	memset(key_stat, 0, sizeof(key_stat));
 	key_no = 0;
 	intr_enb = false;
 }
@@ -100,8 +100,8 @@ void KEYBOARD::key_down(int code)
 		}
 	}
 	if((0x30 <= code && code <= 0x5a) || (0xba <= code && code <= 0xe2)) {
-		_memset(key_stat + 0x30, 0, 0x5a - 0x30 + 1);
-		_memset(key_stat + 0xba, 0, 0xe2 - 0xba + 1);
+		memset(key_stat + 0x30, 0, 0x5a - 0x30 + 1);
+		memset(key_stat + 0xba, 0, 0xe2 - 0xba + 1);
 	}
 	key_stat[code] = 1;
 }

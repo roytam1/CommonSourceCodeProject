@@ -104,7 +104,7 @@ public:
 		
 		// init registers
 		WP = PC = ST = 0;
-		_memset(RAM, 0, sizeof(RAM));
+		memset(RAM, 0, sizeof(RAM));
 		irq_level = int_state = int_latch = 0;
 		int_pending = false;
 		int_enabled = true;

@@ -63,25 +63,25 @@ static const uint8 bios2[] = {
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
-	_memset(cvram, 0, sizeof(cvram));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
+	memset(cvram, 0, sizeof(cvram));
 #ifdef _FMR60
-	_memset(avram, 0, sizeof(avram));
+	memset(avram, 0, sizeof(avram));
 #else
-	_memset(kvram, 0, sizeof(kvram));
-	_memset(dummy, 0, sizeof(dummy));
+	memset(kvram, 0, sizeof(kvram));
+	memset(dummy, 0, sizeof(dummy));
 #endif
-	_memset(ipl, 0xff, sizeof(ipl));
+	memset(ipl, 0xff, sizeof(ipl));
 #ifdef _FMR60
-	_memset(ank24, 0xff, sizeof(ank24));
-	_memset(kanji24, 0xff, sizeof(kanji24));
+	memset(ank24, 0xff, sizeof(ank24));
+	memset(kanji24, 0xff, sizeof(kanji24));
 #else
-	_memset(ank8, 0xff, sizeof(ank8));
-	_memset(ank16, 0xff, sizeof(ank16));
-	_memset(kanji16, 0xff, sizeof(kanji16));
+	memset(ank8, 0xff, sizeof(ank8));
+	memset(ank16, 0xff, sizeof(ank16));
+	memset(kanji16, 0xff, sizeof(kanji16));
 #endif
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -96,17 +96,17 @@ void MEMORY::initialize()
 		// skip keyboard check...
 		char ver[] = "FMR-CARD        V3.2L31D92/02/10";
 		char tmp[33];
-		_memset(tmp, 0, sizeof(tmp));
-		_memcpy(tmp, ipl, 32);
+		memset(tmp, 0, sizeof(tmp));
+		memcpy(tmp, ipl, 32);
 		if(strcmp(tmp, ver) == 0) {
-			_memset(ipl + 0x214f, 0x90, 14);
+			memset(ipl + 0x214f, 0x90, 14);
 		}
 #endif
 	}
 	else {
 		// load pseudo ipl
-		_memcpy(ipl + 0x0000, bios1, sizeof(bios1));
-		_memcpy(ipl + 0x3ff0, bios2, sizeof(bios2));
+		memcpy(ipl + 0x0000, bios1, sizeof(bios1));
+		memcpy(ipl + 0x3ff0, bios2, sizeof(bios2));
 	}
 #ifdef _FMR60
 	_stprintf(file_path, _T("%sANK24.ROM"), app_path);
@@ -187,7 +187,7 @@ void MEMORY::reset()
 	
 	// reset logical operation
 	cmdreg = maskreg = compbit = bankdis = 0;
-	_memset(compreg, sizeof(compreg), 0xff);
+	memset(compreg, sizeof(compreg), 0xff);
 #endif
 }
 
@@ -802,8 +802,8 @@ void MEMORY::line()
 void MEMORY::draw_screen()
 {
 	// render screen
-	_memset(screen_txt, 0, sizeof(screen_txt));
-	_memset(screen_cg, 0, sizeof(screen_cg));
+	memset(screen_txt, 0, sizeof(screen_txt));
+	memset(screen_cg, 0, sizeof(screen_cg));
 	if(outctrl & 1) {
 #ifdef _FMR60
 		draw_text();
@@ -950,7 +950,7 @@ void MEMORY::draw_text()
 					int st = chreg[10] & 15;
 					int ed = chreg[11] & 15;
 					for(int i = st; i < ed && i < yofs; i++) {
-						_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+						memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
 					}
 				}
 			}
@@ -1050,7 +1050,7 @@ void MEMORY::draw_text40()
 					int st = chreg[10] & 15;
 					int ed = chreg[11] & 15;
 					for(int i = st; i < ed && i < yofs; i++) {
-						_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+						memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
 					}
 				}
 			}
@@ -1149,7 +1149,7 @@ void MEMORY::draw_text80()
 					int st = chreg[10] & 15;
 					int ed = chreg[11] & 15;
 					for(int i = st; i < ed && i < yofs; i++) {
-						_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+						memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
 					}
 				}
 			}
@@ -1243,7 +1243,7 @@ void MEMORY::draw_cg()
 				d[6] = ((r & 0x02) >> 1) | ((g & 0x02) >> 0) | ((b & 0x02) << 1) | ((i & 0x02) << 2);
 				d[7] = ((r & 0x01) >> 0) | ((g & 0x01) << 1) | ((b & 0x01) << 2) | ((i & 0x01) << 3);
 			}
-			_memcpy(screen_cg[y + 1], screen_cg[y], 640);
+			memcpy(screen_cg[y + 1], screen_cg[y], 640);
 		}
 	}
 #endif

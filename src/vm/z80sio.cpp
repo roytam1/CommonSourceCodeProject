@@ -68,7 +68,7 @@ void Z80SIO::reset()
 		port[ch].send->clear();
 		port[ch].recv->clear();
 		port[ch].rtmp->clear();
-		_memset(port[ch].wr, 0, sizeof(port[ch].wr));
+		memset(port[ch].wr, 0, sizeof(port[ch].wr));
 		// interrupt
 		port[ch].err_intr = false;
 		port[ch].recv_intr = 0;
@@ -154,7 +154,7 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 				port[ch].send->clear();
 				port[ch].recv->clear();
 				port[ch].rtmp->clear();
-				_memset(port[ch].wr, 0, sizeof(port[ch].wr));
+				memset(port[ch].wr, 0, sizeof(port[ch].wr));
 				// interrupt
 				if(port[ch].err_intr) {
 					port[ch].err_intr = false;

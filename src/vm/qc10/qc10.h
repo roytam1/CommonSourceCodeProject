@@ -41,6 +41,7 @@
 //#define UPD765A_STRICT_ID
 #define UPD765A_NO_IRQ_FOR_RESULT7
 //#define SINGLE_MODE_DMA
+#define PCM1BIT_HIGH_QUALITY
 
 // device informations for win32
 #define USE_DIPSWITCH
@@ -56,13 +57,13 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
 class HD146818P;
 class I8237;
 class I8253;
 class I8255;
 class I8259;
 class IO;
+class PCM1BIT;
 class UPD7220;
 class UPD765A;
 class Z80;
@@ -82,7 +83,6 @@ protected:
 	// devices
 	EVENT* event;
 	
-	BEEP* beep;
 	HD146818P* rtc;
 	I8237* dma0;
 	I8237* dma1;
@@ -91,6 +91,7 @@ protected:
 	I8255* pio;
 	I8259* pic;	// includes 2chips
 	IO* io;
+	PCM1BIT* pcm;
 	UPD7220* gdc;
 	UPD765A* fdc;
 	Z80* cpu;

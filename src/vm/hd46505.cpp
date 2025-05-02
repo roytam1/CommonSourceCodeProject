@@ -20,7 +20,7 @@ void HD46505::initialize()
 	display = false;
 	vblank = vsync = hsync = true;
 	
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	ch = 0;
 	updated = false;
 	

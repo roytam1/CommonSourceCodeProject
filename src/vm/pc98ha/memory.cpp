@@ -33,15 +33,15 @@
 void MEMORY::initialize()
 {
 	// init memory
-	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(learn, 0xff, sizeof(learn));
-	_memset(dic, 0xff, sizeof(dic));
-	_memset(kanji, 0xff, sizeof(kanji));
-	_memset(romdrv, 0xff, sizeof(romdrv));
+	memset(ram, 0, sizeof(ram));
+	memset(vram, 0, sizeof(vram));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(learn, 0xff, sizeof(learn));
+	memset(dic, 0xff, sizeof(dic));
+	memset(kanji, 0xff, sizeof(kanji));
+	memset(romdrv, 0xff, sizeof(romdrv));
 #ifdef _PC98HA
-	_memset(ramdrv, 0, sizeof(ramdrv));
+	memset(ramdrv, 0, sizeof(ramdrv));
 	for(int i = 0; i < sizeof(memcard); i++) {
 		memcard[i] = ((i & 1) ? (i >> 8) : i) & 0xff;
 	}

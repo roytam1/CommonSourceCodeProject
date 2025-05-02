@@ -28,7 +28,7 @@
 
 void MSM5832::initialize()
 {
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	regs[15] = 0x0f;
 	wreg = regnum = 0;
 	cs = true;

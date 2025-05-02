@@ -12,7 +12,7 @@
 
 void RAMPACK::initialize()
 {
-	_memset(ram, 0, sizeof(ram));
+	memset(ram, 0, sizeof(ram));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);

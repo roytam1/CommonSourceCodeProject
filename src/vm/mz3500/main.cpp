@@ -33,12 +33,12 @@
 void MAIN::initialize()
 {
 	// init memory
-	_memset(ipl, 0xff, sizeof(ipl));
-	_memset(ram, 0, sizeof(ram));
-	_memset(common, 0, sizeof(common));
-	_memset(basic, 0xff, sizeof(basic));
-	_memset(ext, 0xff, sizeof(ext));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(ipl, 0xff, sizeof(ipl));
+	memset(ram, 0, sizeof(ram));
+	memset(common, 0, sizeof(common));
+	memset(basic, 0xff, sizeof(basic));
+	memset(ext, 0xff, sizeof(ext));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

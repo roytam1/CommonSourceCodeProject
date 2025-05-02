@@ -92,9 +92,9 @@ void IO::initialize()
 	ramdisk_type = config.ramdisk_type;
 	
 	// init ram and external ram disk
-	_memset(ram, 0, sizeof(ram));
-	_memset(ext, 0, 0x20000);
-	_memset(ext + 0x20000, 0xff, 0x20000);
+	memset(ram, 0, sizeof(ram));
+	memset(ext, 0, 0x20000);
+	memset(ext + 0x20000, 0xff, 0x20000);
 	extar = 0;
 	extcr = 0;
 	
@@ -106,14 +106,14 @@ void IO::initialize()
 	_stprintf(file_path, _T("%sBASIC.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(basic, 0x4000, 1);
-		_memcpy(basic + 0x4000, basic, 0x4000);
+		memcpy(basic + 0x4000, basic, 0x4000);
 		fio->Fread(basic + 0x4000, 0x4000, 1);
 		fio->Fclose();
 	}
 	_stprintf(file_path, _T("%sUTIL.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(util, 0x4000, 1);
-		_memcpy(util + 0x4000, util, 0x4000);
+		memcpy(util + 0x4000, util, 0x4000);
 		fio->Fread(util + 0x4000, 0x4000, 1);
 		fio->Fclose();
 	}
@@ -212,9 +212,9 @@ void IO::reset()
 	num_lines = 0;
 	flash_block = 0;
 	cs_blocks = gs_blocks = 0;
-	_memset(cs_block, 0, sizeof(cs_block));
-	_memset(gs_block, 0, sizeof(gs_block));
-	_memset(udgc, 0, sizeof(udgc));
+	memset(cs_block, 0, sizeof(cs_block));
+	memset(gs_block, 0, sizeof(gs_block));
+	memset(udgc, 0, sizeof(udgc));
 	wnd_ptr_x = wnd_ptr_y = 0;
 	blink = 0;
 	
@@ -878,7 +878,7 @@ void IO::process_6303()
 			flash_block = 0;
 			cs_blocks = gs_blocks = 0;
 			// clear screen ???
-			_memset(&ram[cs_addr], 0, bottom - cs_addr);
+			memset(&ram[cs_addr], 0, bottom - cs_addr);
 		}
 		break;
 	case 0x11:
@@ -970,7 +970,7 @@ void IO::process_6303()
 				// char screen
 				for(int y = 0; y < num; y++) {
 					if(sy + y < 64) {
-						_memset(&ram[cs_addr + (sy + y) * 80], code, 80);
+						memset(&ram[cs_addr + (sy + y) * 80], code, 80);
 					}
 				}
 			}
@@ -978,7 +978,7 @@ void IO::process_6303()
 				// graph screen
 				for(int y = 0; y < num; y++) {
 					if(sy + y < 8) {
-						_memset(&ram[gs_addr + (sy + y) * 60 * 8], code, 60 * 8);
+						memset(&ram[gs_addr + (sy + y) * 60 * 8], code, 60 * 8);
 					}
 				}
 			}
@@ -1012,7 +1012,7 @@ void IO::process_6303()
 					}
 				}
 				if(!code) {
-					_memset(udgc, 0, sizeof(udgc));
+					memset(udgc, 0, sizeof(udgc));
 				}
 				rsp6303_buf->write(RCD00);
 				psr |= BIT_F1;
@@ -1785,7 +1785,7 @@ uint8 IO::iramdisk_read_stat()
 void IO::draw_screen()
 {
 	if(lcd_on) {
-		_memset(lcd, 0, sizeof(lcd));
+		memset(lcd, 0, sizeof(lcd));
 		if(scr_mode) {
 			// char screen
 			uint8* vram = &ram[scr_ptr];
@@ -1832,7 +1832,7 @@ void IO::draw_screen()
 					int py = curs_y * 8;
 					int st = (curs_mode & 4) ? 0 : 7;
 					for(int l = st; l < 8; l++) {
-						_memset(&lcd[py + l][px], 0xff, 6);
+						memset(&lcd[py + l][px], 0xff, 6);
 					}
 				}
 			}

@@ -38,7 +38,7 @@
 void RTC::initialize()
 {
 	// load rtc regs image
-	_memset(regs, 0, sizeof(regs));
+	memset(regs, 0, sizeof(regs));
 	regs[POWON] = 0x10;	// cleared
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];

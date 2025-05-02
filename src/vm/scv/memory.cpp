@@ -35,10 +35,10 @@
 void MEMORY::initialize()
 {
 	// load bios
-	_memset(bios, 0xff, sizeof(bios));
-	_memset(cart, 0xff, sizeof(cart));
-	_memset(sram, 0xff, sizeof(sram));
-	_memset(rdmy, 0xff, sizeof(rdmy));
+	memset(bios, 0xff, sizeof(bios));
+	memset(cart, 0xff, sizeof(cart));
+	memset(sram, 0xff, sizeof(sram));
+	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -53,7 +53,7 @@ void MEMORY::initialize()
 	set_bank(0);
 	
 	// cart is not opened
-	_memset(&header, 0, sizeof(header_t));
+	memset(&header, 0, sizeof(header_t));
 }
 
 void MEMORY::release()
@@ -64,15 +64,15 @@ void MEMORY::release()
 void MEMORY::reset()
 {
 	// clear memory
-	_memset(vram, 0, sizeof(vram));
+	memset(vram, 0, sizeof(vram));
 	for(int i = 0x1000; i < 0x1200; i += 32) {
 		static uint8 tmp[32] = {
 			0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 			0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff
 		};
-		_memcpy(vram + i, tmp, 32);
+		memcpy(vram + i, tmp, 32);
 	}
-	_memset(wreg, 0, sizeof(wreg));
+	memset(wreg, 0, sizeof(wreg));
 	
 	// initialize memory bank
 	set_bank(0);
@@ -182,13 +182,13 @@ void MEMORY::open_cart(_TCHAR* filename)
 		fio->Fread(&header, sizeof(header_t), 1);
 		if(!(header.id[0] == 'S' && header.id[1] == 'C' && header.id[2] == 'V' && header.id[3] == 0x1a)) {
 			// failed to load header
-			_memset(&header, 0, sizeof(header_t));
+			memset(&header, 0, sizeof(header_t));
 			fio->Fseek(0, FILEIO_SEEK_SET);
 		}
 		
 		// load rom image, PC5=0, PC6=0
 		fio->Fread(cart, 0x8000, 1);
-		_memcpy(cart + 0x8000, cart, 0x8000);
+		memcpy(cart + 0x8000, cart, 0x8000);
 		
 		// load rom image, PC5=1, PC6=0
 		if(header.ctype == 0) {
@@ -197,7 +197,7 @@ void MEMORY::open_cart(_TCHAR* filename)
 		else if(header.ctype == 2) {
 			fio->Fread(cart + 0x8000, 0x8000, 1);
 		}
-		_memcpy(cart + 0x10000, cart, 0x10000);
+		memcpy(cart + 0x10000, cart, 0x10000);
 		
 		// load rom image, PC5=0/1, PC6=1
 		if(header.ctype == 2) {
@@ -205,7 +205,7 @@ void MEMORY::open_cart(_TCHAR* filename)
 		}
 		else if(header.ctype == 3) {
 			fio->Fread(cart + 0x10000, 0x8000, 1);
-			_memcpy(cart + 0x18000, cart + 0x10000, 0x8000);
+			memcpy(cart + 0x18000, cart + 0x10000, 0x8000);
 		}
 		fio->Fclose();
 		
@@ -233,7 +233,7 @@ void MEMORY::close_cart()
 	}
 	
 	// initialize memory
-	_memset(&header, 0, sizeof(header_t));
-	_memset(cart, 0xff, sizeof(cart));
-	_memset(sram, 0xff, sizeof(sram));
+	memset(&header, 0, sizeof(header_t));
+	memset(cart, 0xff, sizeof(cart));
+	memset(sram, 0xff, sizeof(sram));
 }
