@@ -43,6 +43,7 @@ private:
 	FIFO *cmd_buf, *rsp_buf;
 	// rtc
 	cur_time_t cur_time;
+	int register_id_1sec;
 	bool onesec_intr, onesec_intr_enb;
 	bool alarm_intr, alarm_intr_enb;
 	uint8 alarm[6];
@@ -56,7 +57,7 @@ private:
 	FIFO *art_buf;
 	uint8 artsr, artdir;
 	bool txen, rxen, dsr;
-	int register_id;
+	int register_id_art;
 	// beep
 	bool beep;
 	// reset

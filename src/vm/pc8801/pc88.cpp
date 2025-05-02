@@ -199,6 +199,15 @@ void PC88::initialize()
 		fio->Fclose();
 	}
 #else
+	if(fio->Fopen(emu->bios_path(_T("PC88.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(n88rom, 0x8000, 1);
+		fio->Fread(n80rom + 0x6000, 0x2000, 1);
+		fio->Fseek(0x2000, FILEIO_SEEK_CUR);
+		fio->Fread(n88exrom, 0x8000, 1);
+		fio->Fseek(0x2000, FILEIO_SEEK_CUR);
+		fio->Fread(n80rom, 0x6000, 1);
+		fio->Fclose();
+	}
 	if(fio->Fopen(emu->bios_path(_T("N88.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(n88rom, 0x8000, 1);
 		fio->Fclose();

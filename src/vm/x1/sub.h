@@ -16,7 +16,8 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_SUB_TAPE_END	0
+#define SIG_SUB_TAPE_REMOTE	0
+#define SIG_SUB_TAPE_END	1
 
 class DATAREC;
 class FIFO;
@@ -28,6 +29,7 @@ private:
 	DATAREC *d_drec;
 	
 	cur_time_t cur_time;
+	int register_id;
 	
 	uint8 databuf[32][8], *datap;
 	uint8 mode, inbuf, outbuf;

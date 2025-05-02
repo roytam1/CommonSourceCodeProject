@@ -77,9 +77,6 @@
 #define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #endif
 
-#ifdef USE_MEDIA
-#define MEDIA_MAX 64
-#endif
 #ifdef USE_SOCKET
 #define SOCKET_MAX 4
 #define SOCKET_BUFFER_MAX 0x100000
@@ -252,18 +249,6 @@ private:
 #endif
 	
 	// ----------------------------------------
-	// media
-	// ----------------------------------------
-#ifdef USE_MEDIA
-	void initialize_media();
-	void release_media();
-	
-	_TCHAR media_path[MEDIA_MAX][_MAX_PATH];
-	int media_cnt;
-	bool media_playing;
-#endif
-	
-	// ----------------------------------------
 	// socket
 	// ----------------------------------------
 #ifdef USE_SOCKET
@@ -343,10 +328,6 @@ public:
 #ifdef USE_DATAREC_BUTTON
 	void push_play();
 	void push_stop();
-#endif
-#ifdef USE_MEDIA
-	void open_media(_TCHAR* file_path);
-	void close_media();
 #endif
 #ifdef USE_BINARY_FILE1
 	void load_binary(int drv, _TCHAR* file_path);
@@ -449,12 +430,6 @@ public:
 	// timer
 	void get_host_time(cur_time_t* time);
 	
-	// media
-#ifdef USE_MEDIA
-	int media_count();
-	void play_media(int trk);
-	void stop_media();
-#endif
 	// socket
 #ifdef USE_SOCKET
 	bool init_socket_tcp(int ch);

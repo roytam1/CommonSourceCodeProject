@@ -13,7 +13,7 @@
 
 #define DEVICE_NAME		"SHARP MZ-2500"
 #define CONFIG_NAME		"mz2500"
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		55.4
@@ -26,6 +26,7 @@
 #define HAS_MB8876
 #define HAS_RP5C15
 #define TIMER_FREQ
+#define DATAREC_SOUND
 
 // memory wait
 #define Z80_MEMORY_WAIT
@@ -46,7 +47,7 @@
 #define USE_FD2
 #define USE_FD3
 #define USE_FD4
-#define USE_MEDIA
+#define USE_DATAREC
 #define USE_SOCKET
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
@@ -62,6 +63,7 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+class DATAREC;
 class I8253;
 class I8255;
 class IO;
@@ -86,7 +88,6 @@ class KANJI;
 class KEYBOARD;
 class MEMORY;
 class MOUSE;
-class RESET;
 class ROMFILE;
 class SASI;
 class TIMER;
@@ -100,6 +101,7 @@ protected:
 	// devices
 	EVENT* event;
 	
+	DATAREC* drec;
 	I8253* pit;
 	I8255* pio0;
 	IO* io;
@@ -124,7 +126,6 @@ protected:
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	MOUSE* mouse;
-	RESET* rst;
 	ROMFILE* romfile;
 	SASI* sasi;
 	TIMER* timer;
@@ -171,6 +172,9 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	void play_datarec(_TCHAR* file_path);
+	void rec_datarec(_TCHAR* file_path);
+	void close_datarec();
 	bool now_skip();
 	
 	void update_config();

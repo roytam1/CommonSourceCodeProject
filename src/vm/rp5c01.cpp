@@ -11,8 +11,7 @@
 #include "../fileio.h"
 
 #define EVENT_1SEC	0
-#define EVENT_1HZ	1
-#define EVENT_16HZ	2
+#define EVENT_16HZ	1
 
 void RP5C01::initialize()
 {
@@ -34,14 +33,14 @@ void RP5C01::initialize()
 	regs[0x0d] = 8;
 	regs[0x0f] = 0xc;
 	alarm = pulse_1hz = pulse_16hz = false;
+	count_16hz = 0;
 	
 	emu->get_host_time(&cur_time);
 	read_from_cur_time();
 	
 	// register events
-	register_event(this, EVENT_1SEC, 1000000, true, NULL);
-	register_event(this, EVENT_1HZ, 500000, true, NULL);
-	register_event(this, EVENT_16HZ, 31250, true, NULL);
+	register_event(this, EVENT_1SEC, 1000000, true, &register_id);
+	register_event(this, EVENT_16HZ, 1000000 / 32, true, NULL);
 }
 
 void RP5C01::release()
@@ -91,16 +90,32 @@ void RP5C01::write_io8(uint32 addr, uint32 data)
 			// am/pm is changed
 			read_from_cur_time();
 		}
-	} else if(addr == 0x0d) {
-		if(data & 2) {
-			// timer reset
-		}
-		if(data & 1) {
-			// alarm reset
-			if(alarm) {
-				alarm = false;
-				update_pulse();
+	} else if(addr == 0x0f) {
+#ifndef HAS_RP5C15
+		switch(regs[0x0d] & 3) {
+#else
+		switch(regs[0x0d] & 1) {
+#endif
+		case 0:
+			if(data & 3) {
+				// timer reset
 			}
+			break;
+		case 1:
+#ifndef HAS_RP5C15
+		case 2:
+		case 3:
+#endif
+			if(data & 2) {
+				// timer reset
+			}
+			if(data & 1) {
+				if(alarm) {
+					alarm = false;
+					update_pulse();
+				}
+			}
+			break;
 		}
 	}
 }
@@ -150,14 +165,22 @@ void RP5C01::event_callback(int event_id, int err)
 				update_pulse();
 			}
 		}
-	} else if(event_id == EVENT_1HZ) {
-		pulse_1hz = !pulse_1hz;
-		if(!(regs[0x0f] & 8)) {
-			update_pulse();
-		}
 	} else if(event_id == EVENT_16HZ) {
+		bool update = false;
+		// 1Hz
+		if(++count_16hz == 16) {
+			pulse_1hz = !pulse_1hz;
+			if(!(regs[0x0f] & 8)) {
+				update = true;
+			}
+			count_16hz = 0;
+		}
+		// 16Hz
 		pulse_16hz = !pulse_16hz;
 		if(!(regs[0x0f] & 4)) {
+			update = true;
+		}
+		if(update) {
 			update_pulse();
 		}
 	}
@@ -232,4 +255,8 @@ void RP5C01::write_to_cur_time()
 	cur_time.year = time[11] + time[12] * 10;
 	cur_time.update_year();
 	cur_time.update_day_of_week();
+	
+	// restart events
+	cancel_event(register_id);
+	register_event(this, EVENT_1SEC, 1000000, true, &register_id);
 }

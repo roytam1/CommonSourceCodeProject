@@ -35,13 +35,13 @@ void HD146818P::initialize()
 	// initialize
 	ch = period = 0;
 	intr = sqw = false;
-	register_id = -1;
+	register_id_sqw = -1;
 	
 	emu->get_host_time(&cur_time);
 	read_from_cur_time();
 	
 	// register event
-	register_event(this, EVENT_1SEC, 1000000, true, NULL);
+	register_event(this, EVENT_1SEC, 1000000, true, &register_id_1sec);
 }
 
 void HD146818P::release()
@@ -83,13 +83,13 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 				next = periodic_intr_rate[dv][data & 0x0f];
 			}
 			if(next != period) {
-				if(register_id != -1) {
-					cancel_event(register_id);
-					register_id = -1;
+				if(register_id_sqw != -1) {
+					cancel_event(register_id_sqw);
+					register_id_sqw = -1;
 				}
 				if(next) {
 					// raise event twice per one period
-					register_event(this, 0, 1000000.0 / 65536.0 * next, true, &register_id);
+					register_event(this, EVENT_SQW, 1000000.0 / 65536.0 * next, true, &register_id_sqw);
 				}
 				period = next;
 			}
@@ -191,6 +191,10 @@ void HD146818P::write_to_cur_time()
 	cur_time.year = FROM_BCD_BIN(regs[9]);
 	cur_time.update_year();
 	cur_time.update_day_of_week();
+	
+	// restart event
+	cancel_event(register_id_1sec);
+	register_event(this, EVENT_1SEC, 1000000, true, &register_id_1sec);
 }
 
 void HD146818P::check_alarm()

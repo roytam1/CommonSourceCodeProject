@@ -46,6 +46,7 @@ private:
 	void ack_from_sub();
 	void process_sub();
 	cur_time_t cur_time;
+	int register_id_1sec;
 	FIFO* cmd_buf;
 	FIFO* rsp_buf;
 	uint8 sub_int;
@@ -84,7 +85,7 @@ private:
 	int scroll_min, scroll_max;
 	
 	// beep
-	int register_id;
+	int register_id_beep;
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

@@ -34,7 +34,7 @@
 #define DSR		0x80
 
 #define EVENT_FRC	0
-#define EVENT_ONESEC	1
+#define EVENT_1SEC	1
 #define EVENT_ART	2
 
 static const int key_tbl[256] = {
@@ -95,7 +95,7 @@ void IO::initialize()
 	// register events
 	register_frame_event(this);
 	register_event_by_clock(this, EVENT_FRC, 0x60000, true, NULL);
-	register_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, NULL);
+	register_event_by_clock(this, EVENT_1SEC, CPU_CLOCKS, true, &register_id_1sec);
 }
 
 void IO::release()
@@ -131,7 +131,7 @@ void IO::reset()
 	artsr = TXRDY | TXE;
 	txen = rxen = false;
 	art_buf->clear();
-	register_id = -1;
+	register_id_art = -1;
 }
 
 void IO::sysreset()
@@ -159,8 +159,8 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_IO_ART) {
 		// data from art
 		art_buf->write(data & mask);
-		if(rxen && !art_buf->empty() && register_id == -1) {
-			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
+		if(rxen && !art_buf->empty() && register_id_art == -1) {
+			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id_art);
 		}
 	}
 }
@@ -179,7 +179,7 @@ void IO::event_callback(int event_id, int err)
 		isr |= BIT_OVF;
 		update_intr();
 	}
-	else if(event_id == EVENT_ONESEC) {
+	else if(event_id == EVENT_1SEC) {
 		// update rtc
 		if(cur_time.initialized) {
 			cur_time.increment();
@@ -209,10 +209,10 @@ void IO::event_callback(int event_id, int err)
 		}
 		// if data is still left in buffer, register event for next data
 		if(rxen && !art_buf->empty()) {
-			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
+			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id_art);
 		}
 		else {
-			register_id = -1;
+			register_id_art = -1;
 		}
 	}
 }
@@ -287,8 +287,8 @@ void IO::write_io8(uint32 addr, uint32 data)
 		}
 		txen = ((data & 1) != 0);
 		rxen = ((data & 4) != 0);
-		if(rxen && !art_buf->empty() && register_id == -1) {
-			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id);
+		if(rxen && !art_buf->empty() && register_id_art == -1) {
+			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id_art);
 		}
 		break;
 	case 0x19:
@@ -564,29 +564,42 @@ void IO::send_to_7508(uint8 val)
 				// invalid date
 				emu->get_host_time(&cur_time);
 			} else {
+				bool changed = false;
 				if((year10 & 0x0f) != 0x0f && (year1 & 0x0f) != 0x0f) {
 					cur_time.year = (year10 & 0x0f) * 10 + (year1 & 0x0f);
 					cur_time.update_year();
+					changed = true;
 				}
 				if((month & 0x0f) != 0x0f) {
 					cur_time.month = FROM_BCD(month & 0x1f);
+					changed = true;
 				}
 				if((day & 0x0f) != 0x0f) {
 					cur_time.day = FROM_BCD(day & 0x3f);
+					changed = true;
 				}
 				if((hour & 0x0f) != 0x0f) {
 					cur_time.hour = FROM_BCD(hour & 0x3f);
+					changed = true;
 				}
 				if((minute & 0x0f) != 0x0f) {
 					cur_time.minute = FROM_BCD(minute & 0x7f);
+					changed = true;
 				}
 				if((second & 0x0f) != 0x0f) {
 					cur_time.second = FROM_BCD(second & 0x7f);
+					changed = true;
 				}
 //				if((day_of_week & 0x0f) != 0x0f) {
 //					cur_time.day_of_week = day_of_week & 0x07;
+//					changed = true;
 //				}
-				cur_time.update_day_of_week();
+				if(changed) {
+					cur_time.update_day_of_week();
+					// restart event
+					cancel_event(register_id_1sec);
+					register_event_by_clock(this, EVENT_1SEC, CPU_CLOCKS, true, &register_id_1sec);
+				}
 			}
 		}
 		break;

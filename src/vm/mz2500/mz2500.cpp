@@ -13,6 +13,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../datarec.h"
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../io.h"
@@ -37,7 +38,6 @@
 #include "keyboard.h"
 #include "memory.h"
 #include "mouse.h"
-#include "reset.h"
 #include "romfile.h"
 #include "sasi.h"
 #include "timer.h"
@@ -56,6 +56,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
+	drec = new DATAREC(this, emu);
 	pit = new I8253(this, emu);
 	pio0 = new I8255(this, emu);
 	io = new IO(this, emu);
@@ -80,7 +81,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
 	mouse = new MOUSE(this, emu);
-	rst = new RESET(this, emu);
 	romfile = new ROMFILE(this, emu);
 	sasi = new SASI(this, emu);
 	timer = new TIMER(this, emu);
@@ -90,6 +90,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(opn);
 	event->set_context_sound(pcm);
+	event->set_context_sound(drec);
+	
+	drec->set_context_out(cassette, SIG_CASSETTE_OUT, 1);
+	drec->set_context_remote(cassette, SIG_CASSETTE_REMOTE, 1);
+	drec->set_context_end(cassette, SIG_CASSETTE_END, 1);
+	drec->set_context_top(cassette, SIG_CASSETTE_TOP, 1);
 	
 	pit->set_context_ch0(interrupt, SIG_INTERRUPT_I8253, 1);
 	pit->set_context_ch0(pit, SIG_I8253_CLOCK_1, 1);
@@ -97,8 +103,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef TIMER_FREQ
 	pit->set_constant_clock(0, 31250);
 #endif
-	pio0->set_context_port_a(cassette, SIG_CASSETTE_CONTROL, 0xff, 0);
-	pio0->set_context_port_c(rst, SIG_RESET_CONTROL, 0xff, 0);
+	pio0->set_context_port_a(cassette, SIG_CASSETTE_PIO_PA, 0xff, 0);
+	pio0->set_context_port_c(cassette, SIG_CASSETTE_PIO_PC, 0xff, 0);
 	pio0->set_context_port_c(crtc, SIG_CRTC_MASK, 0x01, 0);
 	pio0->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
 #ifdef _FDC_DEBUG_LOG
@@ -115,6 +121,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	calendar->set_context_rtc(rtc);
 	cassette->set_context_pio(pio0);
+	cassette->set_context_datarec(drec);
 	crtc->set_context_mem(memory);
 	crtc->set_context_int(interrupt);
 	crtc->set_context_pio(pio0);
@@ -160,7 +167,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0xce, 0xcf, memory);
 	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
 	io->set_iomap_range_w(0xdc, 0xdd, floppy);
-	io->set_iomap_range_rw(0xe0, 0xe3, pio0);
+	io->set_iomap_single_rw(0xe0, pio0);
+	io->set_iomap_single_r(0xe1, pio0);
+	io->set_iomap_single_w(0xe1, cassette);	// this is not i8255 port-b
+	io->set_iomap_single_rw(0xe2, pio0);
+	io->set_iomap_single_w(0xe3, pio0);
 	io->set_iomap_range_rw(0xe4, 0xe7, pit);
 	io->set_iomap_range_rw(0xe8, 0xeb, pio1);
 	io->set_iomap_single_rw(0xef, joystick);
@@ -259,6 +270,7 @@ void VM::initialize_sound(int rate, int samples)
 	// init sound gen
 	opn->init(rate, 2000000, samples, 0, -8);
 	pcm->init(rate, 4096);
+	drec->initialize_sound(rate, samples);
 }
 
 uint16* VM::create_sound(int* extra_frames)
@@ -322,6 +334,26 @@ void VM::close_disk(int drv)
 bool VM::disk_inserted(int drv)
 {
 	return fdc->disk_inserted(drv);
+}
+
+void VM::play_datarec(_TCHAR* file_path)
+{
+	bool value = drec->play_datarec(file_path);
+	cassette->close_datarec();
+	cassette->play_datarec(value);
+}
+
+void VM::rec_datarec(_TCHAR* file_path)
+{
+	bool value = drec->rec_datarec(file_path);
+	cassette->close_datarec();
+	cassette->rec_datarec(value);
+}
+
+void VM::close_datarec()
+{
+	drec->close_datarec();
+	cassette->close_datarec();
 }
 
 bool VM::now_skip()

@@ -246,6 +246,7 @@ void IO::initialize()
 	
 	// init timer
 	emu->get_host_time(&cur_time);
+	register_event(this, EVENT_1SEC, 1000000, true, &register_id_1sec);
 	
 	// init fifo
 	key_buf = new FIFO(20);
@@ -269,7 +270,6 @@ void IO::initialize()
 	cmt_play = cmt_rec = false;
 	
 	// video
-	register_event(this, EVENT_1SEC, 1000000, true, NULL);
 	register_frame_event(this);
 	register_vline_event(this);
 }
@@ -316,13 +316,13 @@ void IO::reset()
 	scroll_max = 4;
 	
 	// beep
-	register_id = -1;
+	register_id_beep = -1;
 }
 
 void IO::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_BEEP) {
-		register_id = -1;
+		register_id_beep = -1;
 		d_beep->write_signal(SIG_BEEP_ON, 0, 0);
 		rregs[4] = (wregs[4] &= ~2);
 	}
@@ -380,10 +380,10 @@ void IO::write_io8(uint32 addr, uint32 data)
 			d_beep->write_signal(SIG_BEEP_ON, 1, 1);
 			// temporary patch: register the event to stop
 			int intv = ram[0x450] * 50000;
-			if(register_id != -1) {
-				cancel_event(register_id);
+			if(register_id_beep != -1) {
+				cancel_event(register_id_beep);
 			}
-			register_event(this, EVENT_BEEP, intv, false, &register_id);
+			register_event(this, EVENT_BEEP, intv, false, &register_id_beep);
 		}
 		else {
 			d_beep->write_signal(SIG_BEEP_ON, 0, 1);
@@ -1060,9 +1060,12 @@ void IO::process_sub()
 		cur_time.day = cmd_buf->read();
 		cur_time.month = cmd_buf->read();
 		cur_time.year = cmd_buf->read();
-		cur_time.year |= cmd_buf->read() << 8;		
+		cur_time.year |= cmd_buf->read() << 8;
 		cur_time.update_year();
 		cur_time.update_day_of_week();
+		// restart event
+		cancel_event(register_id_1sec);
+		register_event(this, EVENT_1SEC, 1000000, true, &register_id_1sec);
 		break;
 	case 0x0b:	// CalcDay
 		break;

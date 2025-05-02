@@ -53,7 +53,7 @@ void RTC::initialize()
 	read_from_cur_time();
 	
 	// register event
-	register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, NULL);
+	register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, &register_id);
 	register_event_by_clock(this, EVENT_32HZ, CPU_CLOCKS >> 5, true, NULL);
 }
 
@@ -193,6 +193,10 @@ void RTC::write_to_cur_time()
 	cur_time.year = FROM_BCD(regs[6]);
 	cur_time.update_year();
 	cur_time.update_day_of_week();
+	
+	// restart event
+	cancel_event(register_id);
+	register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, &register_id);
 }
 
 void RTC::update_checksum()

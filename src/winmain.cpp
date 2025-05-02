@@ -69,9 +69,6 @@ void open_quickdisk_dialog(HWND hWnd);
 #ifdef USE_DATAREC
 void open_datarec_dialog(HWND hWnd, bool play);
 #endif
-#ifdef USE_MEDIA
-void open_media_dialog(HWND hWnd);
-#endif
 #ifdef USE_BINARY_FILE1
 void open_binary_dialog(HWND hWnd, int drv, bool load);
 #endif
@@ -1003,36 +1000,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
-#ifdef USE_MEDIA
-		case ID_OPEN_MEDIA:
-			if(emu) {
-				open_media_dialog(hWnd);
-			}
-			break;
-		case ID_CLOSE_MEDIA:
-			if(emu) {
-				emu->close_media();
-			}
-			break;
-		case ID_RECENT_MEDIA + 0:
-		case ID_RECENT_MEDIA + 1:
-		case ID_RECENT_MEDIA + 2:
-		case ID_RECENT_MEDIA + 3:
-		case ID_RECENT_MEDIA + 4:
-		case ID_RECENT_MEDIA + 5:
-		case ID_RECENT_MEDIA + 6:
-		case ID_RECENT_MEDIA + 7:
-			no = LOWORD(wParam) - ID_RECENT_MEDIA;
-			_tcscpy(path, config.recent_media_path[no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_media_path[i], config.recent_media_path[i - 1]);
-			}
-			_tcscpy(config.recent_media_path[0], path);
-			if(emu) {
-				emu->open_media(path);
-			}
-			break;
-#endif
 #ifdef USE_BINARY_FILE1
 		#define BINARY_MENU_ITEMS(drv, ID_LOAD_BINARY, ID_SAVE_BINARY, ID_RECENT_BINARY) \
 		case ID_LOAD_BINARY: \
@@ -1486,24 +1453,6 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 	}
 #endif
-#ifdef MENU_POS_MEDIA
-	else if(pos == MENU_POS_MEDIA) {
-		// media
-		bool flag = false;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_MEDIA + i, MF_BYCOMMAND);
-		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_media_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA + i, config.recent_media_path[i]);
-				flag = true;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MEDIA, _T("None"));
-		}
-	}
-#endif
 #ifdef MENU_POS_BINARY1
 	else if(pos == MENU_POS_BINARY1) {
 		// binary #1
@@ -1777,23 +1726,6 @@ void open_datarec_dialog(HWND hWnd, bool play)
 		else {
 			emu->rec_datarec(path);
 		}
-	}
-}
-#endif
-
-#ifdef USE_MEDIA
-void open_media_dialog(HWND hWnd)
-{
-	_TCHAR* path = get_open_file_name(
-		hWnd,
-		_T("Supported Files (*.m3u)\0*.m3u\0All Files (*.*)\0*.*\0\0"),
-		_T("Sound Cassette Tape"),
-		config.initial_media_path
-	);
-	if(path) {
-		UPDATE_HISTORY(path, config.recent_media_path);
-		_tcscpy(config.initial_media_path, get_parent_dir(path));
-		emu->open_media(path);
 	}
 }
 #endif

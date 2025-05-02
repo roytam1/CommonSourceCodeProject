@@ -10,6 +10,14 @@
 #include "datarec.h"
 #include "../fileio.h"
 
+#define EVENT_SIGNAL	0
+#define EVENT_SOUND	1
+
+#ifndef DATAREC_FF_REW_SPEED
+#define DATAREC_FF_REW_SPEED	10
+#endif
+#define TMP_SAMPLES 0x10000
+
 #pragma pack(1)
 typedef struct {
 	char RIFF[4];
@@ -41,15 +49,24 @@ static uint8 wavheader[44] = {
 
 void DATAREC::initialize()
 {
-	// data recorder
 	fio = new FILEIO();
-	memset(buffer, 0, sizeof(buffer));
-	bufcnt = samples = 0;
 	
+	play = rec = remote = trigger = false;
+	ff_rew = 0;
+	in_signal = out_signal = changed = false;
 	register_id = -1;
-	play = rec = false;
-	in = out = change = remote = trig = false;
-	is_wav = is_tap = is_mzt = false;
+	
+	buffer = NULL;
+#ifdef DATAREC_SOUND
+	wav_buffer = NULL;
+#endif
+	buffer_ptr = buffer_length = 0;
+	is_wav = false;
+	
+#ifdef DATAREC_SOUND
+	mix_buffer = NULL;
+	mix_buffer_ptr = mix_buffer_length = 0;
+#endif
 }
 
 void DATAREC::reset()
@@ -59,7 +76,12 @@ void DATAREC::reset()
 
 void DATAREC::release()
 {
-	close_datarec();
+#ifdef DATAREC_SOUND
+	if(mix_buffer != NULL) {
+		free(mix_buffer);
+	}
+#endif
+	close_file();
 	delete fio;
 }
 
@@ -68,111 +90,146 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 	bool signal = ((data & mask) != 0);
 	
 	if(id == SIG_DATAREC_OUT) {
-		if(rec && remote && signal != out) {
-			change = true;
+		if(out_signal != signal) {
+			if(rec && remote) {
+				changed = true;
+			}
+			out_signal = signal;
 		}
-		out = signal;
-	}
-	else if(id == SIG_DATAREC_REMOTE) {
-		remote = signal;
-		write_signals(&outputs_remote, remote ? 0xffffffff : 0);
-		update_event();
-	}
-	else if(id == SIG_DATAREC_REMOTE_NEG) {
-		remote = !signal;
-		write_signals(&outputs_remote, remote ? 0xffffffff : 0);
-		update_event();
-	}
-	else if(id == SIG_DATAREC_TRIG) {
+	} else if(id == SIG_DATAREC_REMOTE) {
+		set_remote(signal);
+	} else if(id == SIG_DATAREC_TRIG) {
 		// L->H: remote signal is switched
-		if(signal && !trig) {
-			remote = !remote;
-			write_signals(&outputs_remote, remote ? 0xffffffff : 0);
-			update_event();
+		if(signal && !trigger) {
+			set_remote(!remote);
 		}
-		trig = signal;
-	}
-	else if(id == SIG_DATAREC_REWIND) {
-		// support rewind for play mode only !!!
-		if(signal && play) {
-			load_image();
-		}
+		trigger = signal;
 	}
 }
 
 void DATAREC::event_callback(int event_id, int err)
 {
-	if(play && remote) {
-		// get the next signal
-		bool signal = ((buffer[bufcnt] & 0x80) != 0);
-		if(is_wav) {
-			// inc pointer
-			if(remain) {
-				remain--;
-			}
-			if(++bufcnt >= DATAREC_BUFFER_SIZE) {
-				memset(buffer, 0, sizeof(buffer));
-				int samples = remain;
-				for(int i = 0; i < DATAREC_BUFFER_SIZE; i++) {
-					if(samples-- <= 0) {
+	if(event_id == EVENT_SIGNAL) {
+		if(play) {
+			bool signal = in_signal;
+			if(is_wav) {
+				if(buffer_ptr >= 0 && buffer_ptr < buffer_length) {
+					signal = ((buffer[buffer_ptr] & 0x80) != 0);
+#ifdef DATAREC_SOUND
+					if(wav_buffer != NULL && ff_rew == 0) {
+						wav_sample = wav_buffer[buffer_ptr];
+					} else {
+						wav_sample = 0;
+					}
+#endif
+				}
+				if(ff_rew < 0) {
+					if((buffer_ptr = max(buffer_ptr - 1, 0)) == 0) {
+						set_remote(false);	// top of tape
+					}
+				} else {
+					if((buffer_ptr = min(buffer_ptr + 1, buffer_length)) == buffer_length) {
+						set_remote(false);	// end of tape
+					}
+				}
+				update_event();
+			} else {
+				while(buffer_ptr < buffer_length) {
+					if((buffer[buffer_ptr] & 0x7f) == 0) {
+						if(++buffer_ptr == buffer_length) {
+							set_remote(false);	// end of tape
+							break;
+						}
+					} else {
+						signal = ((buffer[buffer_ptr] & 0x80) != 0);
+						uint8 tmp = buffer[buffer_ptr];
+						buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
 						break;
 					}
-					buffer[i] = get_wav_sample();
 				}
-				bufcnt = 0;
 			}
-			update_event();
-		}
-		else {
-			// inc pointer
-			while(!(buffer[bufcnt] & 0x7f)) {
-				if(remain) {
-					remain--;
-				}
-				if(++bufcnt >= DATAREC_BUFFER_SIZE) {
-					// NOTE: consider tap/mzt case !!!
-					memset(buffer, 0x7f, sizeof(buffer));
-					fio->Fread(buffer, sizeof(buffer), 1);
-					bufcnt = 0;
-				}
-				signal = ((buffer[bufcnt] & 0x80) != 0);
-				update_event();
+			// notify the signal is changed
+			if(signal != in_signal) {
+				in_signal = signal;
+				changed = true;
+				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
 			}
-			// dec pulse count
-			uint8 tmp = buffer[bufcnt];
-			buffer[bufcnt] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
-		}
-		// notify the signal is changed
-		if(signal != in) {
-			write_signals(&outputs_out, signal ? 0xffffffff : 0);
-			change = true;
-			in = signal;
+		} else if(rec) {
+			if(is_wav) {
+				buffer[buffer_ptr] = out_signal ? 0xff : 0;
+				if(++buffer_ptr >= buffer_length) {
+					fio->Fwrite(buffer, buffer_length, 1);
+					buffer_ptr = 0;
+				}
+			} else {
+				bool prev_signal = ((buffer[buffer_ptr] & 0x80) != 0);
+				if(prev_signal != out_signal || (buffer[buffer_ptr] & 0x7f) == 0x7f) {
+					if(++buffer_ptr >= buffer_length) {
+						fio->Fwrite(buffer, buffer_length, 1);
+						buffer_ptr = 0;
+					}
+					buffer[buffer_ptr] = out_signal ? 0x80 : 0;
+				}
+				buffer[buffer_ptr]++;
+			}
 		}
 	}
-	else if(rec && remote) {
-		if(is_wav) {
-			buffer[bufcnt] = out ? 0xf0 : 0x10;
-			samples++;
-			// inc pointer
-			if(++bufcnt >= DATAREC_BUFFER_SIZE) {
-				fio->Fwrite(buffer, sizeof(buffer), 1);
-				bufcnt = 0;
-			}
-		}
-		else {
-			// inc pointer
-			bool prv = ((buffer[bufcnt] & 0x80) != 0);
-			if(prv != out || (buffer[bufcnt] & 0x7f) == 0x7f) {
-				if(++bufcnt >= DATAREC_BUFFER_SIZE) {
-					fio->Fwrite(buffer, sizeof(buffer), 1);
-					bufcnt = 0;
-				}
-				buffer[bufcnt] = out ? 0x80 : 0;
-			}
-			// inc pulse count
-			buffer[bufcnt]++;
+#ifdef DATAREC_SOUND
+	else if(event_id == EVENT_SOUND) {
+		if(mix_buffer_ptr < mix_buffer_length) {
+			mix_buffer[mix_buffer_ptr++] = wav_sample;
 		}
 	}
+#endif
+}
+
+void DATAREC::set_remote(bool value)
+{
+	if(remote != value) {
+		remote = value;
+		update_event();
+	}
+}
+
+void DATAREC::set_ff_rew(int value)
+{
+	if(ff_rew != value) {
+		if(register_id != -1) {
+			cancel_event(register_id);
+			register_id = -1;
+		}
+		ff_rew = value;
+		update_event();
+	}
+}
+
+void DATAREC::update_event()
+{
+	if(remote && (play || rec)) {
+		if(register_id == -1) {
+			if(ff_rew != 0) {
+				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate / DATAREC_FF_REW_SPEED, true, &register_id);
+			} else {
+				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate, true, &register_id);
+			}
+		}
+	} else {
+		if(register_id != -1) {
+			cancel_event(register_id);
+			register_id = -1;
+		}
+	}
+	
+	// update signals
+#ifdef DATAREC_SOUND
+	if(!(play && remote)) {
+		wav_sample = 0;
+	}
+#endif
+	write_signals(&outputs_remote, remote ? 0xffffffff : 0);
+	write_signals(&outputs_rotate, (register_id != -1) ? 0xffffffff : 0);
+	write_signals(&outputs_end, (buffer_ptr == buffer_length) ? 0xffffffff : 0);
+	write_signals(&outputs_top, (buffer_ptr == 0) ? 0xffffffff : 0);
 }
 
 bool DATAREC::play_datarec(_TCHAR* file_path)
@@ -180,13 +237,41 @@ bool DATAREC::play_datarec(_TCHAR* file_path)
 	close_datarec();
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		// check file extension
-		is_wav = check_file_extension(file_path, _T(".wav"));
-		is_tap = check_file_extension(file_path, _T(".tap"));
-		is_mzt = check_file_extension(file_path, _T(".mzt")) || check_file_extension(file_path, _T(".m12"));
+		if(check_file_extension(file_path, _T(".wav"))) {
+			// standard PCM wave file
+			if((buffer_length = load_wav_image()) == 0) {
+				return false;
+			}
+			is_wav = true;
+		} else if(check_file_extension(file_path, _T(".tap"))) {
+			// SHARP X1 series tape image
+			if((buffer_length = load_tap_image()) == 0) {
+				return false;
+			}
+			buffer = (uint8 *)malloc(buffer_length);
+			load_tap_image();
+		} else if(check_file_extension(file_path, _T(".mzt")) || check_file_extension(file_path, _T(".m12"))) {
+			// SHARP MZ series tape image
+			if((buffer_length = load_mzt_image()) == 0) {
+				return false;
+			}
+			buffer = (uint8 *)malloc(buffer_length);
+			load_mzt_image();
+		} else {
+			// standard cas image for my emulator
+			if((buffer_length = load_cas_image()) == 0) {
+				return false;
+			}
+		}
 		
-		// load image file
-		load_image();
+		// get the first signal
+		bool signal = ((buffer[0] & 0x80) != 0);
+		if(signal != in_signal) {
+			write_signals(&outputs_out, signal ? 0xffffffff : 0);
+			in_signal = signal;
+		}
+		play = true;
+		update_event();
 	}
 	return play;
 }
@@ -196,25 +281,18 @@ bool DATAREC::rec_datarec(_TCHAR* file_path)
 	close_datarec();
 	
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-		// default sample info
-		ch = 1;
 		sample_rate = 48000;
-		sample_bits = 8;
+		buffer_length = 1024 * 1024;
+		buffer = (uint8 *)malloc(buffer_length);
 		
-		// check file extension
-		is_wav = check_file_extension(file_path, _T(".wav"));
-		is_tap = is_mzt = false; // not supported for record
-		
-		// open for rec
-		if(is_wav) {
+		if(check_file_extension(file_path, _T(".wav"))) {
 			// write wave header
 			fio->Fwrite(wavheader, sizeof(wavheader), 1);
-		}
-		else {
+			is_wav = true;
+		} else {
 			// initialize buffer
-			buffer[0] = out ? 0x80 : 0;
+			buffer[0] = out_signal ? 0x80 : 0;
 		}
-		bufcnt = samples = 0;
 		rec = true;
 		update_event();
 	}
@@ -223,149 +301,162 @@ bool DATAREC::rec_datarec(_TCHAR* file_path)
 
 void DATAREC::close_datarec()
 {
-	// close file
+	close_file();
+	
+	play = rec = is_wav = false;
+	buffer_ptr = buffer_length = 0;
+	update_event();
+	
+	// no sounds
+	write_signals(&outputs_out, 0);
+	in_signal = false;
+}
+
+void DATAREC::close_file()
+{
 	if(rec) {
 		if(is_wav) {
 			save_wav_image();
-		}
-		else {
-			fio->Fwrite(buffer, bufcnt + 1, 1);
+		} else {
+			fio->Fwrite(buffer, buffer_ptr + 1, 1);
 		}
 	}
 	if(play || rec) {
 		fio->Fclose();
 	}
-	play = rec = false;
-	update_event();
-	
-	// no sounds
-	write_signals(&outputs_out, 0);
-	in = false;
+	if(buffer != NULL) {
+		free(buffer);
+		buffer = NULL;
+	}
+#ifdef DATAREC_SOUND
+	if(wav_buffer != NULL) {
+		free(wav_buffer);
+		wav_buffer = NULL;
+	}
+#endif
 }
 
-void DATAREC::load_image()
+// standard cas image for my emulator
+
+int DATAREC::load_cas_image()
 {
+	sample_rate = 48000;
+	
 	// get file size
 	fio->Fseek(0, FILEIO_SEEK_END);
-	remain = fio->Ftell();
-	fio->Fseek(0, FILEIO_SEEK_SET);
+	int file_size = fio->Ftell();
 	
-	// default sample info
-	ch = 1;
-	sample_rate = 48000;
-	sample_bits = 8;
-	
-	// load image file for play
-	if(is_wav) {
-		// standard PCM wave file
-		remain = load_wav_image();
+	// load samples
+	if(file_size > 0) {
+		buffer = (uint8 *)malloc(file_size);
+		fio->Fseek(0, FILEIO_SEEK_SET);
+		fio->Fread(buffer, file_size, 1);
 	}
-	else if(is_tap) {
-		// SHARP X1 series tape image
-		remain = load_tap_image();
-	}
-	else if(is_mzt) {
-		// SHARP MZ series tape image
-		remain = load_mzt_image();
-	}
-	else {
-		memset(buffer, 0x7f, sizeof(buffer));
-		fio->Fread(buffer, sizeof(buffer), 1);
-	}
-	bufcnt = samples = 0;
-	
-	if(remain > 0) {
-		// get the first signal
-		bool signal = ((buffer[0] & 0x80) != 0);
-		
-		// notify the signal is changed
-		if(signal != in) {
-			write_signals(&outputs_out, signal ? 0xffffffff : 0);
-			in = signal;
-		}
-		play = true;
-		update_event();
-	}
-}
-
-bool DATAREC::skip()
-{
-	bool val = change;
-	change = false;
-	return val;
-}
-
-void DATAREC::update_event()
-{
-	if(remote && ((play && remain > 0) || rec)) {
-		if(register_id == -1) {
-			register_event(this, 0, 1000000. / (double)sample_rate, true, &register_id);
-		}
-	}
-	else {
-		if(register_id != -1) {
-			cancel_event(register_id);
-		}
-		register_id = -1;
-	}
-	
-	// end of tape ?
-	bool signal = (play && remain == 0);
-	write_signals(&outputs_end, signal ? 0xffffffff : 0);
+	return file_size;
 }
 
 // standard PCM wave file
 
 int DATAREC::load_wav_image()
 {
+	// get file size
+	fio->Fseek(0, FILEIO_SEEK_END);
+	int file_size = fio->Ftell();
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	
 	// check wave header
 	wav_header_t header;
 	wav_data_t data;
 	
 	fio->Fread(&header, sizeof(header), 1);
-	if(header.format_id != 1) {
+	if(header.format_id != 1 || !(header.sample_bits == 8 || header.sample_bits == 16)) {
 		// this is not pcm format !!!
 		fio->Fclose();
 		return 0;
 	}
 	fio->Fseek(header.fmt_size - 0x10, FILEIO_SEEK_CUR);
 	fio->Fread(&data, sizeof(data), 1);
-	ch = header.channels;
+	
+	int samples = data.data_len / header.channels;
+	int tmp_length = header.channels * TMP_SAMPLES;
+	if(header.sample_bits == 16) {
+		samples /= 2;
+		tmp_length *= 2;
+	}
 	sample_rate = header.sample_rate;
-	sample_bits = header.sample_bits;
 	
-	remain = data.data_len / ch;
-	if(sample_bits == 16) {
-		remain /= 2;
-	}
-	
-	// import samples
-	memset(buffer, 0, sizeof(buffer));
-	int samples = remain;
-	for(int i = 0; i < DATAREC_BUFFER_SIZE; i++) {
-		if(samples-- <= 0) {
-			break;
+	// load samples
+	if(samples > 0) {
+		buffer = (uint8 *)malloc(samples);
+#ifdef DATAREC_SOUND
+		if(header.channels > 1) {
+			wav_buffer = (int16 *)malloc(samples * sizeof(int16));
 		}
-		buffer[i] = get_wav_sample();
+#endif
+		uint8 *tmp_buffer = (uint8 *)malloc(tmp_length);
+		fio->Fread(tmp_buffer, tmp_length, 1);
+		
+		for(int i = 0, tmp_ptr = 0; i < samples; i++) {
+			typedef union {
+				int16 s16;
+				struct {
+					uint8 l, h;
+				} b;
+			} sample_pair;
+			sample_pair data;
+			
+			data.b.l = tmp_buffer[tmp_ptr++];
+			if(header.sample_bits == 16) {
+				data.b.h = tmp_buffer[tmp_ptr++];
+				buffer[i] = (data.s16 > 4096) ? 0xff : 0;
+			} else {
+				buffer[i] = (data.b.l > 128 + 16) ? 0xff : 0;
+			}
+#ifdef DATAREC_SOUND
+			if(header.channels > 1) {
+				data.b.l = tmp_buffer[tmp_ptr++];
+				if(header.sample_bits == 16) {
+					data.b.h = tmp_buffer[tmp_ptr++];
+					wav_buffer[i] = data.s16;
+				} else {
+					wav_buffer[i] = ((int16)data.b.l - 128) * 256;
+				}
+			}
+			for(int i = 3; i <= header.channels; i++) {
+#else
+			for(int i = 2; i <= header.channels; i++) {
+#endif
+				tmp_buffer[tmp_ptr++];
+				if(header.sample_bits == 16) {
+					tmp_buffer[tmp_ptr++];
+				}
+			}
+			if(tmp_ptr == tmp_length) {
+				fio->Fread(tmp_buffer, tmp_length, 1);
+				tmp_ptr = 0;
+			}
+		}
+		free(tmp_buffer);
 	}
-	return remain;
+	return samples;
 }
 
 void DATAREC::save_wav_image()
 {
 	// write samples remained in buffer
-	if(bufcnt) {
-		fio->Fwrite(buffer, bufcnt, 1);
+	if(buffer_ptr > 0) {
+		fio->Fwrite(buffer, buffer_ptr, 1);
 	}
+	int samples = fio->Ftell() - sizeof(wavheader);
+	int total = samples + 0x24;
 	
 	// write header
 	uint8 wav[44];
 	memcpy(wav, wavheader, sizeof(wavheader));
-	int total = samples + 0x24;
-	wav[ 4] = (uint8)((total >>  0) & 0xff);
-	wav[ 5] = (uint8)((total >>  8) & 0xff);
-	wav[ 6] = (uint8)((total >> 16) & 0xff);
-	wav[ 7] = (uint8)((total >> 24) & 0xff);
+	wav[ 4] = (uint8)((total   >>  0) & 0xff);
+	wav[ 5] = (uint8)((total   >>  8) & 0xff);
+	wav[ 6] = (uint8)((total   >> 16) & 0xff);
+	wav[ 7] = (uint8)((total   >> 24) & 0xff);
 	wav[40] = (uint8)((samples >>  0) & 0xff);
 	wav[41] = (uint8)((samples >>  8) & 0xff);
 	wav[42] = (uint8)((samples >> 16) & 0xff);
@@ -373,32 +464,6 @@ void DATAREC::save_wav_image()
 	
 	fio->Fseek(0, FILEIO_SEEK_SET);
 	fio->Fwrite(wav, sizeof(wav), 1);
-}
-
-uint8 DATAREC::get_wav_sample()
-{
-	typedef union {
-		int16 s16;
-		struct {
-			uint8 l, h;
-		} b;
-	} sample_pair;
-	
-	sample_pair data;
-	data.b.l = fio->Fgetc();
-	if(sample_bits == 16) {
-		data.b.h = fio->Fgetc();
-	}
-	for(int i = 2; i <= ch; i++) {
-		fio->Fgetc();
-		if(sample_bits == 16) {
-			fio->Fgetc();
-		}
-	}
-	if(sample_bits == 16) {
-		return (data.s16 > 0) ? 0xf0 : 0x10;
-	}
-	return data.b.l;
 }
 
 // SHARP X1 series tape image
@@ -420,67 +485,56 @@ uint8 DATAREC::get_wav_sample()
 
 int DATAREC::load_tap_image()
 {
-	int format = 0x01, skip = 0, length;
-	int ptr = 0, data;
-	uint8 tmp[4];
-	
-	// fill buffer with no signals
-	memset(buffer, 0x7f, sizeof(buffer));
+	// get file size
+	fio->Fseek(0, FILEIO_SEEK_END);
+	int file_size = fio->Ftell();
+	fio->Fseek(0, FILEIO_SEEK_SET);
 	
 	// check header
-	fio->Fread(tmp, 4, 1);
+	uint8 header[4];
+	fio->Fread(header, 4, 1);
 	
-	if(tmp[0] == 'T' && tmp[1] == 'A' && tmp[2] == 'P' && tmp[3] == 'E') {
-		// name, reserved, write protect notch
+	if(header[0] == 'T' && header[1] == 'A' && header[2] == 'P' && header[3] == 'E') {
+		// skip name, reserved, write protect notch
 		fio->Fseek(17 + 5 + 1, FILEIO_SEEK_CUR);
 		// format
-		format = fio->Fgetc();
+		if(fio->Fgetc() != 0x01) {
+			// unknown data format
+			return 0;
+		}
 		// sample rate
-		fio->Fread(tmp, 4, 1);
-		sample_rate = tmp[0] | (tmp[1] << 8) | (tmp[2] << 16) | (tmp[3] << 24);
+		fio->Fread(header, 4, 1);
+		sample_rate = header[0] | (header[1] << 8) | (header[2] << 16) | (header[3] << 24);
 		// data length
-		fio->Fread(tmp, 4, 1);
-		length = tmp[0] | (tmp[1] << 8) | (tmp[2] << 16) | (tmp[3] << 24);
+		fio->Fread(header, 4, 1);
 		// play position
-		fio->Fread(tmp, 4, 1);
-		skip = tmp[0] | (tmp[1] << 8) | (tmp[2] << 16) | (tmp[3] << 24);
-	}
-	else {
+		fio->Fread(header, 4, 1);
+	} else {
 		// sample rate
-		sample_rate = tmp[0] | (tmp[1] << 8) | (tmp[2] << 16) | (tmp[3] << 24);
-		length = (remain - 4) * 8;
-	}
-	if(format != 0x01) {
-		// unknow data format
-		return 0;
+		sample_rate = header[0] | (header[1] << 8) | (header[2] << 16) | (header[3] << 24);
 	}
 	
 	// load samples
-	buffer[0] = 0;
-	
-	while((data = fio->Fgetc()) != EOF /*&& length > 0*/) {
+	int ptr = 0, data;
+	uint8 prev_data = 0;
+	while((data = fio->Fgetc()) != EOF) {
 		for(int i = 0, bit = 0x80; i < 8; i++, bit >>= 1) {
-			// skip any samples
-			length--;
-			if(skip > 0) {
-				skip--;
-				//continue;
-			}
-			
 			// inc pointer
-			bool prv = ((buffer[ptr] & 0x80) != 0);
-			bool cur = ((data & bit) != 0);
-			if(prv != cur || (buffer[ptr] & 0x7f) == 0x7f) {
-				if((buffer[ptr] & 0x7f) == 0) {
+			bool prev_signal = ((prev_data & 0x80) != 0);
+			bool cur_signal = ((data & bit) != 0);
+			if(prev_signal != cur_signal || (prev_data & 0x7f) == 0x7f) {
+				if((prev_data & 0x7f) == 0) {
 					// don't inc pointer
+				} else {
+					ptr++;
 				}
-				else if(++ptr >= DATAREC_BUFFER_SIZE) {
-					return DATAREC_BUFFER_SIZE; // buffer overflow !!!
-				}
-				buffer[ptr] = cur ? 0x80 : 0;
+				prev_data = cur_signal ? 0x80 : 0;
 			}
 			// inc pulse count
-			buffer[ptr]++;
+			prev_data++;
+			if(buffer != NULL) {
+				buffer[ptr] = prev_data;
+			}
 		}
 	}
 	return (ptr + 1);
@@ -490,9 +544,11 @@ int DATAREC::load_tap_image()
 
 #define MZT_PUT_BIT(bit, len) { \
 	for(int l = 0; l < (len); l++) { \
-		if(ptr < DATAREC_BUFFER_SIZE) { \
+		if(buffer != NULL) { \
 			buffer[ptr++] = (bit) ? 0x98 : 0x8b; \
 			buffer[ptr++] = (bit) ? 0x1d : 0x0f; \
+		} else { \
+			ptr += 2; \
 		} \
 	} \
 }
@@ -503,15 +559,14 @@ int DATAREC::load_tap_image()
 		if((byte) & (0x80 >> j)) { \
 			MZT_PUT_BIT(1, 1); \
 			count++; \
-		} \
-		else { \
+		} else { \
 			MZT_PUT_BIT(0, 1); \
 		} \
 	} \
 }
 
 #define MZT_PUT_BLOCK(buf, len) { \
-	count = 0; \
+	int count = 0; \
 	for(int i = 0; i < (len); i++) { \
 		MZT_PUT_BYTE((buf)[i]); \
 	} \
@@ -523,22 +578,26 @@ int DATAREC::load_tap_image()
 
 int DATAREC::load_mzt_image()
 {
-	int ptr = 0, count;
+	sample_rate = 48000;
 	
-	// fill buffer with no signals
-	memset(buffer, 0x7f, sizeof(buffer));
+	// get file size
+	fio->Fseek(0, FILEIO_SEEK_END);
+	int file_size = fio->Ftell();
+	fio->Fseek(0, FILEIO_SEEK_SET);
 	
-	while(remain > 128) {
+	// load mzt file
+	int ptr = 0;
+	while(file_size > 128) {
 		// load header
 		uint8 header[128], ram[0x20000];
 		fio->Fread(header, sizeof(header), 1);
-		remain -= sizeof(header);
+		file_size -= sizeof(header);
 		
 		uint16 size = header[0x12] | (header[0x13] << 8);
 		uint16 offs = header[0x14] | (header[0x15] << 8);
 		memset(ram, 0, sizeof(ram));
 		fio->Fread(ram + offs, size, 1);
-		remain -= size;
+		file_size -= size;
 #if 0
 		// apply mz700win patch
 		if(header[0x40] == 'P' && header[0x41] == 'A' && header[0x42] == 'T' && header[0x43] == ':') {
@@ -559,7 +618,7 @@ int DATAREC::load_mzt_image()
 			}
 		}
 #endif
-		// output
+		// output to buffer
 		MZT_PUT_BIT(0, 10000);
 		MZT_PUT_BIT(1, 40);
 		MZT_PUT_BIT(0, 40);
@@ -579,3 +638,29 @@ int DATAREC::load_mzt_image()
 	return ptr;
 }
 
+#ifdef DATAREC_SOUND
+void DATAREC::initialize_sound(int rate, int samples)
+{
+	mix_buffer = (int16 *)malloc(samples * sizeof(int16));
+	mix_buffer_length = samples;
+	register_event(this, EVENT_SOUND, 1000000. / (double)rate, true, NULL);
+}
+
+void DATAREC::mix(int32* buffer, int cnt)
+{
+	int16 sample = 0;
+	for(int i = 0; i < cnt; i++) {
+		if(i < mix_buffer_ptr) {
+			sample = mix_buffer[i];
+		}
+		*buffer += sample;
+		*buffer += sample;
+	}
+	if(cnt < mix_buffer_ptr) {
+		memmove(mix_buffer, mix_buffer + cnt, (mix_buffer_ptr - cnt) * sizeof(int16));
+		mix_buffer_ptr -= cnt;
+	} else {
+		mix_buffer_ptr = 0;
+	}
+}
+#endif

@@ -65,9 +65,6 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #ifdef USE_FD1
 	initialize_disk_insert();
 #endif
-#ifdef USE_MEDIA
-	initialize_media();
-#endif
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
@@ -80,9 +77,6 @@ EMU::~EMU()
 	release_input();
 	release_screen();
 	release_sound();
-#ifdef USE_MEDIA
-	release_media();
-#endif
 #ifdef USE_SOCKET
 	release_socket();
 #endif
@@ -161,9 +155,6 @@ void EMU::reset()
 	}
 #endif
 	
-#ifdef USE_MEDIA
-	stop_media();
-#endif
 	// restart recording
 	restart_rec_video();
 	restart_rec_sound();
@@ -174,9 +165,7 @@ void EMU::special_reset()
 {
 	// reset virtual machine
 	vm->special_reset();
-#ifdef USE_MEDIA
-	stop_media();
-#endif
+	
 	// restart recording
 	restart_rec_video();
 	restart_rec_sound();

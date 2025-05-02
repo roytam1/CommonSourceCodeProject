@@ -19,6 +19,15 @@
 #define EVENT_1SEC	0
 #define EVENT_DRIVE	1
 
+#define CMT_EJECT	0x00
+#define CMT_STOP	0x01
+#define CMT_PLAY	0x02
+#define CMT_FAST_FWD	0x03
+#define CMT_FAST_REW	0x04
+#define CMT_APSS_PLUS	0x05
+#define CMT_APSS_MINUS	0x06
+#define CMT_REC		0x0a
+
 // TODO: XFER = 0xe8 ???
 
 static const uint8 keycode[256] = {	// normal
@@ -139,7 +148,7 @@ void SUB::initialize()
 	
 	// register events
 	register_frame_event(this);
-	register_event(this, EVENT_1SEC, 1000000, true, NULL);
+	register_event(this, EVENT_1SEC, 1000000, true, &register_id);
 	register_event(this, EVENT_DRIVE, 400, true, NULL);
 }
 
@@ -192,13 +201,12 @@ uint32 SUB::read_io8(uint32 addr)
 
 void SUB::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_SUB_TAPE_END) {
-		bool signal = ((data & mask) != 0);
-		if(!eot && signal) {
-			// reached to end of tape
-			databuf[0x1a][0] = 0x01; // stop
+	if(id == SIG_SUB_TAPE_REMOTE) {
+		if(!(data & mask) && (play || rec)) {
+			databuf[0x1a][0] = CMT_STOP;
 		}
-		eot = signal;
+	} else if(id == SIG_SUB_TAPE_END) {
+		eot = ((data & mask) != 0);
 	}
 }
 
@@ -416,50 +424,55 @@ void SUB::key_up(int code)
 void SUB::play_datarec(bool value)
 {
 	if(value) {
-		databuf[0x1a][0] = 0x01; // stop
+		databuf[0x1a][0] = CMT_STOP;
+	} else {
+		databuf[0x1a][0] = CMT_EJECT;
 	}
 	play = value;
 	rec = false;
-	
-	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+	d_drec->set_remote(false);
 }
 
 void SUB::rec_datarec(bool value)
 {
 	if(value) {
-		databuf[0x1a][0] = 0x01; // stop
+		databuf[0x1a][0] = CMT_STOP;
+	} else {
+		databuf[0x1a][0] = CMT_EJECT;
 	}
 	play = false;
 	rec = value;
-	
-	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+	d_drec->set_remote(false);
 }
 
 void SUB::close_datarec()
 {
-	databuf[0x1a][0] = 0x00; // eject
-	play = rec = false;
-	
-	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+	if(play || rec) {
+		databuf[0x1a][0] = CMT_EJECT;
+		play = rec = false;
+		d_drec->set_remote(false);
+	}
 }
 
 void SUB::push_play()
 {
 	if(play) {
-		databuf[0x1a][0] = 0x02; // play
+		databuf[0x1a][0] = CMT_PLAY;
+		d_drec->set_ff_rew(0);
+		d_drec->set_remote(true);
+	} else if(rec) {
+		databuf[0x1a][0] = CMT_REC;
+		d_drec->set_ff_rew(0);
+		d_drec->set_remote(true);
 	}
-	else if(rec) {
-		databuf[0x1a][0] = 0x0a; // rec
-	}
-	d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
 void SUB::push_stop()
 {
 	if(play || rec) {
-		databuf[0x1a][0] = 0x01; // stop
+		databuf[0x1a][0] = CMT_STOP;
 	}
-	d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+	d_drec->set_remote(false);
 }
 
 void SUB::process_cmd()
@@ -582,41 +595,66 @@ void SUB::process_cmd()
 		break;
 	case 0xe9:
 		// CMT controll
-		if(databuf[0x19][0] <= 0x0a) {
-			databuf[0x1a][0] = databuf[0x19][0];
-		}
-		switch(databuf[0x19][0]) {
-		case 0x00: // eject
-			d_drec->close_datarec();
-			d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
-			play = rec = false;
-			break;
-		case 0x01: // stop
-			d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
-			break;
-		case 0x02: // play
-			d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
-			break;
-		case 0x03: // fast- foward
-			d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1); // TODO: not fast :-(
-			break;
-		case 0x04: // fast-rewind
-			d_drec->write_signal(SIG_DATAREC_REWIND, 1, 1);
-			databuf[0x1a][0] = 0x01; // stop
-			eot = false;
-			break;
-		case 0x05: // TODO: apss +1
-			break;
-		case 0x06: // TODO: apss -1
-			break;
-		case 0x0a: // rec
-			d_drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
-			break;
+		if(databuf[0x1a][0] != databuf[0x19][0]) {
+			uint8 new_status = databuf[0x19][0];
+			switch(databuf[0x19][0]) {
+			case CMT_EJECT:
+				play = rec = false;
+				d_drec->set_remote(false);
+				d_drec->close_datarec();
+				break;
+			case CMT_STOP:
+				d_drec->set_remote(false);
+				break;
+			case CMT_PLAY:
+				if(play) {
+					d_drec->set_ff_rew(0);
+					d_drec->set_remote(true);
+				} else if(rec) {
+					new_status = CMT_STOP;
+				} else {
+					new_status = CMT_EJECT;
+				}
+				break;
+			case CMT_FAST_FWD:
+				if(play) {
+					d_drec->set_ff_rew(1);
+					d_drec->set_remote(true);
+				} else if(rec) {
+					new_status = CMT_STOP;
+				} else {
+					new_status = CMT_EJECT;
+				}
+				break;
+			case CMT_FAST_REW:
+				if(play) {
+					d_drec->set_ff_rew(-1);
+					d_drec->set_remote(true);
+				} else if(rec) {
+					new_status = CMT_STOP;
+				} else {
+					new_status = CMT_EJECT;
+				}
+				break;
+			case CMT_APSS_PLUS:
+			case CMT_APSS_MINUS:
+				break;
+			case CMT_REC:
+				if(play) {
+					new_status = CMT_STOP;
+				} else if(rec) {
+					d_drec->set_remote(true);
+				} else {
+					new_status = CMT_EJECT;
+				}
+				break;
 #ifdef DEBUG_COMMAND
-		default:
-			emu->out_debug(_T("X1SUB: unknown CMT control %2x\n"), databuf[0x19][0]);
-			break;
+			default:
+				emu->out_debug(_T("X1SUB: unknown CMT control %2x\n"), databuf[0x19][0]);
+				break;
 #endif
+			}
+			databuf[0x1a][0] = new_status;
 		}
 		break;
 	case 0xea:
@@ -653,6 +691,9 @@ void SUB::process_cmd()
 		cur_time.hour = FROM_BCD(databuf[0x1e][0]);
 		cur_time.minute = FROM_BCD(databuf[0x1e][1] & 0x7f);
 		cur_time.second = FROM_BCD(databuf[0x1e][2] & 0x7f);
+		// restart event
+		cancel_event(register_id);
+		register_event(this, EVENT_1SEC, 1000000, true, &register_id);
 		break;
 	case 0xef:
 		// get time

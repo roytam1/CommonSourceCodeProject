@@ -21,6 +21,8 @@ private:
 	DEVICE* d_pic;
 	
 	cur_time_t cur_time;
+	int register_id;
+	
 	uint16 rtcmr, rtdsr, rtadr, rtobr, rtibr;
 	uint8 regs[40];
 	

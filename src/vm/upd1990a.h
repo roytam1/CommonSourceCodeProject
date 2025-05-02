@@ -30,22 +30,28 @@ private:
 	outputs_t outputs_tp;
 	
 	cur_time_t cur_time;
+	int register_id_1sec;
+	
 	uint8 cmd, mode, tpmode;
 	uint64 shift_data;
+	bool clk, stb, din, hold, tp;
+	int register_id_tp;
+	
 #ifdef HAS_UPD4990A
-	uint32 shift_cmd;
+	uint8 shift_cmd;
 #endif
-	bool clk, stb, din, tp;
-	int register_id;
 	
 public:
 	UPD1990A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_dout);
 		init_output_signals(&outputs_tp);
-		
-		cmd = mode = 0;
-		tpmode = 5;
+		cmd = mode = tpmode = 0;
+		shift_data = 0;
 		clk = stb = din = tp = true;
+		hold = false;
+#ifdef HAS_UPD4990A
+		shift_cmd = 0;
+#endif
 	}
 	~UPD1990A() {}
 	

@@ -34,6 +34,8 @@ private:
 #endif
 	
 	cur_time_t cur_time;
+	int register_id;
+	
 	uint8 regs[16];
 	uint8 wreg, regnum;
 	bool cs, rd, wr, addr_wr, busy, hold;

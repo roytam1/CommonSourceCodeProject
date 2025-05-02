@@ -119,17 +119,13 @@
 #define ID_STOP_BUTTON                  40925
 #define ID_RECENT_DATAREC               40931 // 40931-40938
 
-#define ID_OPEN_MEDIA                   40941
-#define ID_CLOSE_MEDIA                  40942
-#define ID_RECENT_MEDIA                 40943 // 40943-40950
+#define ID_LOAD_BINARY1                 40941
+#define ID_SAVE_BINARY1                 40942
+#define ID_RECENT_BINARY1               40943 // 40943-40950
 
-#define ID_LOAD_BINARY1                 40951
-#define ID_SAVE_BINARY1                 40952
-#define ID_RECENT_BINARY1               40953 // 40951-40960
-
-#define ID_LOAD_BINARY2                 40961
-#define ID_SAVE_BINARY2                 40962
-#define ID_RECENT_BINARY2               40963 // 40961-40970
+#define ID_LOAD_BINARY2                 40951
+#define ID_SAVE_BINARY2                 40952
+#define ID_RECENT_BINARY2               40953 // 40953-40960
 
 #define ID_SCREEN_REC60                 41001
 #define ID_SCREEN_REC30                 41002
@@ -421,7 +417,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_FD3                    3
 #define MENU_POS_FD4                    4
-#define MENU_POS_MEDIA                  5
+#define MENU_POS_DATAREC                5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
 #endif

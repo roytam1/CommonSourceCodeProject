@@ -9,175 +9,163 @@
 */
 
 #include "cassette.h"
+#include "../datarec.h"
 #include "../i8255.h"
 
-// pre-silent (0.2sec)
-#define REGISTER_PRE() { \
-	set_signal(false); \
-	register_event(this, EVENT_PRE, 200000, false, &id_pre); \
-}
-// signal (0.5sec)
-#define REGISTER_SIGNAL() { \
-	set_signal(true); \
-	register_event(this, EVENT_SIGNAL, 500000, false, &id_signal); \
-}
-// after-silent (0.3sec)
-#define REGISTER_AFTER() { \
-	set_signal(false); \
-	register_event(this, EVENT_AFTER, 300000, false, &id_after); \
-}
-#define CANCEL_EVENT() { \
-	if(id_pre != -1) { \
-		cancel_event(id_pre); \
-	} \
-	if(id_signal != -1) { \
-		cancel_event(id_signal); \
-	} \
-	if(id_after != -1) { \
-		cancel_event(id_after); \
-	} \
-	id_pre = id_signal = id_after = -1; \
-}
+#define EVENT_APSS	0
 
 void CASSETTE::initialize()
 {
-	prev = 0xff;
-	signal = playing = true;
-	set_signal(false);
-	fw_rw = 1;
-	set_fw_rw(0);
-	track = 0.0;
-	id_pre = id_signal = id_after = -1;
-}
-
-void CASSETTE::release()
-{
-	stop_media();
+	pa = pb = pc = 0xff;
+	play = rec = false;
+	now_play = now_rewind = now_apss = false;
 }
 
 void CASSETTE::reset()
 {
-	id_pre = id_signal = id_after = -1;
+	register_id = -1;
+	close_datarec();
+}
+
+void CASSETTE::write_io8(uint32 addr, uint32 data)
+{
+	switch(addr & 0xff) {
+	case 0xe1:
+		pb = data;
+		break;
+	}
 }
 
 void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 {
-	// from i8255 port a
-	if((prev & 1) && !(data & 1)) {
-		// rewind
-		stop_media();
-		set_fw_rw(-1);
-		CANCEL_EVENT();
-		REGISTER_PRE();
+	if(id == SIG_CASSETTE_PIO_PA) {
+		if((pa & 1) && !(data & 1)) {
+			// fast rewind
+			if(play) {
+				d_drec->set_ff_rew(-1);
+				d_drec->set_remote(true);
+			}
+			now_rewind = play;
+			now_play = false;
+			now_apss = ((pa & 0x80) == 0);
+		}
+		if((pa & 2) && !(data & 2)) {
+			// fast forward
+			if(play) {
+				d_drec->set_ff_rew(1);
+				d_drec->set_remote(true);
+			}
+			now_play = now_rewind = false;
+			now_apss = ((pa & 0x80) == 0);
+		}
+		if((pa & 4) && !(data & 4)) {
+			// forward
+			if(play || rec) {
+				d_drec->set_ff_rew(0);
+				d_drec->set_remote(true);
+			}
+			now_play = (play || rec);
+			now_rewind = now_apss = false;
+		}
+		if((pa & 8) && !(data & 8)) {
+			// stop
+			if(play || rec) {
+				d_drec->set_remote(false);
+			}
+			now_play = now_rewind = now_apss = false;
+			// stop apss
+			if(register_id != -1) {
+				cancel_event(register_id);
+				register_id = -1;
+			}
+			d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
+		}
+		pa = data;
+	} else if(id == SIG_CASSETTE_PIO_PC) {
+		if(!(pc & 2) && (data & 2)) {
+			vm->special_reset();
+		}
+		if(!(pc & 8) && (data & 8)) {
+			vm->reset();
+		}
+		if((pc & 0x10) && !(data & 0x10)) {
+			// eject
+			//d_drec->set_remote(false);
+			//if(play || rec) {
+			//	d_drec->close_datarec();
+			//	close_datarec();
+			//}
+		}
+		d_drec->write_signal(SIG_DATAREC_OUT, data, 0x80);
+		pc = data;
+	} else if(id == SIG_CASSETTE_OUT) {
+		if(now_apss) {
+			if((data & mask) && register_id == -1) {
+				register_event(this, EVENT_APSS, 350000, false, &register_id);
+				d_pio->write_signal(SIG_I8255_PORT_B, 0x40, 0x40);
+			}
+		} else if(now_play) {
+			d_pio->write_signal(SIG_I8255_PORT_B, (data & mask) ? 0x40 : 0, 0x40);
+		}
+	} else if(id == SIG_CASSETTE_REMOTE) {
+		d_pio->write_signal(SIG_I8255_PORT_B, (data & mask) ? 0 : 8, 8);
+	} else if(id == SIG_CASSETTE_END) {
+		if((data & mask) && now_play) {
+			if(!(pa & 0x20)) {
+				if(play) {
+					d_drec->set_ff_rew(-1);
+					d_drec->set_remote(true);
+				}
+				now_rewind = play;
+			}
+			now_play = false;
+		}
+	} else if(id == SIG_CASSETTE_TOP) {
+		if((data & mask) && now_rewind) {
+			if(!(pa & 0x40)) {
+				if(play || rec) {
+					d_drec->set_ff_rew(0);
+					d_drec->set_remote(true);
+				}
+				now_play = (play || rec);
+			}
+			now_rewind = false;
+		}
 	}
-	if((prev & 2) && !(data & 2)) {
-		// forward
-		stop_media();
-		set_fw_rw(1);
-		CANCEL_EVENT();
-		REGISTER_PRE();
-	}
-	if((prev & 4) && !(data & 4)) {
-		// start play
-		play_media();
-		set_fw_rw(1);
-		CANCEL_EVENT();
-	}
-	if((prev & 8) && !(data & 8)) {
-		// stop
-		stop_media();
-		set_fw_rw(0);
-		CANCEL_EVENT();
-	}
-	prev = data & mask;
 }
 
 void CASSETTE::event_callback(int event_id, int err)
 {
-	if(event_id == EVENT_PRE) {
-		id_pre = -1;
-		REGISTER_SIGNAL();
-	}
-	else if(event_id == EVENT_SIGNAL) {
-		id_signal = -1;
-		REGISTER_AFTER();
-	}
-	else if(event_id == EVENT_AFTER) {
-		id_after = -1;
-		if(fw_rw == 1) {
-			track = (float)((int)track + 1) + 0.1F;
-			if((int)(track + 0.5) > emu->media_count()) {
-				// reach last
-				if(prev & 0x20) {
-					set_fw_rw(0); // stop now
-				}
-				else {
-					set_fw_rw(-1); // auto rewind
-					REGISTER_PRE();
-				}
-				playing = false;
-			}
-			else {
-				if(playing) {
-					play_media(); // play next track
-				}
-				else {
-					REGISTER_PRE();
-				}
-			}
-		}
-		else if(fw_rw == -1) {
-			track = (float)((int)track - 1) + 0.9F;
-			if(track < 1.0) {
-				// reach top
-				if(prev & 0x40) {
-					set_fw_rw(0); // stop now
-				}
-				else {
-					set_fw_rw(1); // auto play
-					play_media();
-				}
-			}
-			else {
-				REGISTER_PRE();
-			}
-		}
+	if(event_id == EVENT_APSS) {
+		register_id = -1;
+		d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
 	}
 }
 
-void CASSETTE::play_media()
+void CASSETTE::play_datarec(bool value)
 {
-	if((int)(track + 0.5) <= emu->media_count() && (int)(track + 0.5) <= track) {
-		// current position is after signal
-		track = (track < 1.0) ? 1.1F : (int)(track + 0.5) + 0.1F;
-		emu->play_media((int)track);
-	}
-	else {
-		// current position is pre signal
-		REGISTER_PRE();
-	}
-	playing = true;
+	play = value;
+	rec = false;
+	d_pio->write_signal(SIG_I8255_PORT_B, play ? 0x10 : 0x30, 0x30);
 }
 
-void CASSETTE::stop_media()
+void CASSETTE::rec_datarec(bool value)
 {
-	emu->stop_media();
-	playing = false;
+	play = false;
+	rec = value;
+	d_pio->write_signal(SIG_I8255_PORT_B, rec ? 0 : 0x30, 0x30);
 }
 
-void CASSETTE::set_fw_rw(int val)
+void CASSETTE::close_datarec()
 {
-	if(fw_rw != val) {
-		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0 : 8, 8);
-		fw_rw = val;
+	play = rec = false;
+	now_play = now_rewind = false;
+	d_pio->write_signal(SIG_I8255_PORT_B, 0x30, 0x30);
+	
+	if(register_id != -1) {
+		cancel_event(register_id);
+		register_id = -1;
 	}
-}
-
-void CASSETTE::set_signal(bool val)
-{
-	if(signal != val) {
-		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0x40 : 0, 0x40);
-		signal = val;
-	}
+	d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
 }
 

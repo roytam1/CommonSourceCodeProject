@@ -99,6 +99,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	drec->set_context_out(pio, SIG_I8255_PORT_B, 0x02);
+	drec->set_context_remote(sub, SIG_SUB_TAPE_REMOTE, 1);
 	drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
@@ -441,7 +442,6 @@ bool VM::disk_inserted(int drv)
 void VM::play_datarec(_TCHAR* file_path)
 {
 	bool value = drec->play_datarec(file_path);
-	
 	sub->close_datarec();
 	sub->play_datarec(value);
 }
@@ -449,7 +449,6 @@ void VM::play_datarec(_TCHAR* file_path)
 void VM::rec_datarec(_TCHAR* file_path)
 {
 	bool value = drec->rec_datarec(file_path);
-	
 	sub->close_datarec();
 	sub->rec_datarec(value);
 }
@@ -457,7 +456,6 @@ void VM::rec_datarec(_TCHAR* file_path)
 void VM::close_datarec()
 {
 	drec->close_datarec();
-	
 	sub->close_datarec();
 }
 

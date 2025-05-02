@@ -22,12 +22,15 @@ private:
 	outputs_t outputs_pulse;
 	
 	cur_time_t cur_time;
+	int register_id;
+	
 	uint8 regs[16];
 	uint8 time[13];
 #ifndef HAS_RP5C15
 	uint8 ram[26];
 #endif
 	bool alarm, pulse_1hz, pulse_16hz;
+	int count_16hz;
 	
 	void update_pulse();
 	void read_from_cur_time();

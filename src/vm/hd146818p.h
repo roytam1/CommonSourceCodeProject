@@ -22,8 +22,10 @@ private:
 	outputs_t outputs_sqw;
 	
 	cur_time_t cur_time;
+	int register_id_1sec;
+	
 	uint8 regs[0x40];
-	int ch, period, register_id;
+	int ch, period, register_id_sqw;
 	bool intr, sqw;
 	
 	void read_from_cur_time();

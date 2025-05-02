@@ -2251,10 +2251,15 @@ void Z80::run_one_opecode()
 				// mode 2
 				PUSH(pc);
 				RM16((vector & 0xff) | (I << 8), &pc);
-				icount -= 7; //cc_op[0xcd] + cc_ex[0xff];
+#if defined(_X1TWIN) || defined(_X1TURBO)
+				// FIXME: ugly hack for ARCUS :-(
+				icount -= 7;
+#else
+				icount -= cc_op[0xcd] + cc_ex[0xff];
+#endif
 			}
-#ifdef _X1TURBO
-			// ugly hack for X1turbo2 demonstration :-(
+#if defined(_X1TURBO)
+			// FIXME: ugly hack for X1turbo2 demonstration :-(
 			if(im == 2 && RM8(PC) == 0xed && RM8(PC + 1) == 0x4d) {
 				iff1 = 0;
 			}

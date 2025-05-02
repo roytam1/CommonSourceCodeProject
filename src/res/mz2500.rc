@@ -122,12 +122,13 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD4
     END
-    POPUP "Cassette"
+    POPUP "CMT"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_MEDIA
-        MENUITEM "Close",                       ID_CLOSE_MEDIA
+        MENUITEM "Play",                        ID_PLAY_DATAREC
+        MENUITEM "Rec",                         ID_REC_DATAREC
+        MENUITEM "Close",                       ID_CLOSE_DATAREC
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_MEDIA
+        MENUITEM "Recent",                      ID_RECENT_DATAREC
     END
     POPUP "Screen"
     BEGIN

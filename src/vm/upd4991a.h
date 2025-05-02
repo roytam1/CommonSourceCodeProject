@@ -18,6 +18,8 @@ class UPD4991A : public DEVICE
 {
 private:
 	cur_time_t cur_time;
+	int register_id;
+	
 	uint8 regs[3][13];
 	uint8 ctrl1, ctrl2, mode;
 	

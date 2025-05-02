@@ -15,28 +15,29 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_CASSETTE_CONTROL	0
+#define SIG_CASSETTE_PIO_PA	0
+#define SIG_CASSETTE_PIO_PC	1
+#define SIG_CASSETTE_OUT	2
+#define SIG_CASSETTE_REMOTE	3
+#define SIG_CASSETTE_END	4
+#define SIG_CASSETTE_TOP	5
 
 #define EVENT_PRE	0
 #define EVENT_SIGNAL	1
 #define EVENT_AFTER	2
 
+class DATAREC;
+
 class CASSETTE : public DEVICE
 {
 private:
 	DEVICE* d_pio;
+	DATAREC *d_drec;
 	
-	// play sound tape
-	uint8 prev;
-	int id_pre, id_signal, id_after;
-	int fw_rw;
-	bool signal, playing;
-	float track;
-	
-	void play_media();
-	void stop_media();
-	void set_fw_rw(int val);
-	void set_signal(bool val);
+	uint8 pa, pb, pc;
+	bool play, rec;
+	bool now_play, now_rewind, now_apss;
+	int register_id;
 	
 public:
 	CASSETTE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -44,8 +45,8 @@ public:
 	
 	// common functions
 	void initialize();
-	void release();
 	void reset();
+	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
 	
@@ -53,6 +54,12 @@ public:
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
+	void set_context_datarec(DATAREC* device) {
+		d_drec = device;
+	}
+	void play_datarec(bool value);
+	void rec_datarec(bool value);
+	void close_datarec();
 };
 
 #endif

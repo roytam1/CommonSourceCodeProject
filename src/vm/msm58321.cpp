@@ -34,11 +34,11 @@ void MSM58321::initialize()
 	emu->get_host_time(&cur_time);
 	read_from_cur_time();
 	
-	// register event
+	// register events
 #ifdef HAS_MSM5832
-	register_event(this, EVENT_INC, 1000000.0, true, NULL);
+	register_event(this, EVENT_INC, 1000000.0, true, &register_id);
 #else
-	register_event(this, EVENT_BUSY, 1000000.0, true, NULL);
+	register_event(this, EVENT_BUSY, 1000000.0, true, &register_id);
 #endif
 	register_event(this, EVENT_PULSE, 1000000.0 / 8192.0, true, NULL);	// 122.1 usec
 }
@@ -132,6 +132,14 @@ void MSM58321::write_to_cur_time()
 	cur_time.year += MSM58321_START_YEAR;
 	cur_time.update_year();
 	cur_time.update_day_of_week();
+	
+	// restart event
+	cancel_event(register_id);
+#ifdef HAS_MSM5832
+	register_event(this, EVENT_INC, 1000000.0, true, &register_id);
+#else
+	register_event(this, EVENT_BUSY, 1000000.0, true, &register_id);
+#endif
 }
 
 void MSM58321::write_signal(int id, uint32 data, uint32 mask)

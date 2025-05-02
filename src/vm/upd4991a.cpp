@@ -19,7 +19,7 @@ void UPD4991A::initialize()
 	read_from_cur_time();
 	
 	// register event
-	register_event(this, 0, 1000000.0, true, NULL);
+	register_event(this, 0, 1000000.0, true, &register_id);
 }
 
 void UPD4991A::write_io8(uint32 addr, uint32 data)
@@ -120,4 +120,8 @@ void UPD4991A::write_to_cur_time()
 	cur_time.year = regs[0][11] + regs[0][12] * 10;
 	cur_time.update_year();
 	cur_time.update_day_of_week();
+	
+	// restart event
+	cancel_event(register_id);
+	register_event(this, 0, 1000000.0, true, &register_id);
 }

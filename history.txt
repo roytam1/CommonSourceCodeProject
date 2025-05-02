@@ -1,3 +1,29 @@
+2/7/2013
+
+[EMU/WIN32] remove the function to play media files
+
+[VM/DATAREC] support fast forward and rewind
+[VM/DATAREC] support playing wav file
+[VM/HD146818P] fix to restart timer event when date/time is modified
+[VM/MSM58321] fix to restart timer event when date/time is modified
+[VM/RP5C01] fix to restart timer event when date/time is modified
+[VM/UPD1990A] fix to restart timer event when date/time is modified
+[VM/UPD4990A] fix uPD1990A compatible mode
+[VM/Z80] revert modifying clocks for interrupt in mode2
+
+[FMR30/RTC] fix to restart timer event when date/time is modified
+[HC40/IO] fix to restart timer event when date/time is modified
+[HC80/IO] fix to restart timer event when date/time is modified
+[MZ2500/CASSETTE] support playing a music cassette tape
+[MZ2500/CASSETTE] support load/save a data cassette tape
+[MZ2500/CASSETTE] support fast forward and rewind a cassette tape
+[X07/IO] fix to restart timer event when date/time is modified
+[X1TURBO/SUB] fix to restart timer event when date/time is modified
+[X1TURBO/SUB] support fast forward and rewind a cassette tape
+
+[TOOL/MZ2500] add new tool to cleanup the cassette tape for APSS
+
+
 1/23/2013
 
 [WINMAIN] support drag & drop a cart or disk image files
@@ -28,7 +54,6 @@
 [PCENGINE] fix to check the selected cart is for super grafx
 [X07/IO] support modifying the date and time
 [X1TURBO/SUB] support modifying the date and time
-[X1TWIN/SUB] support modifying the date and time
 
 
 1/18/2013

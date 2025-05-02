@@ -348,28 +348,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\win32_media.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\win32_screen.cpp"
 					>
 					<FileConfiguration
@@ -440,6 +418,28 @@
 				Name="VM Common Source Files"
 				Filter="cpp"
 				>
+				<File
+					RelativePath="src\vm\datarec.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
 				<File
 					RelativePath="src\vm\disk.cpp"
 					>
@@ -1133,28 +1133,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\mz2500\reset.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\mz2500\romfile.cpp"
 					>
 					<FileConfiguration
@@ -1255,6 +1233,10 @@
 				Name="VM Common Header Files"
 				Filter="h"
 				>
+				<File
+					RelativePath="src\vm\datarec.h"
+					>
+				</File>
 				<File
 					RelativePath="src\vm\device.h"
 					>
@@ -1414,10 +1396,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\mz2500\mz2500.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mz2500\reset.h"
 					>
 				</File>
 				<File

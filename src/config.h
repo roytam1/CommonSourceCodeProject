@@ -46,10 +46,6 @@ typedef struct {
 	_TCHAR initial_datarec_path[_MAX_PATH];
 	_TCHAR recent_datarec_path[8][_MAX_PATH];
 #endif
-#ifdef USE_MEDIA
-	_TCHAR initial_media_path[_MAX_PATH];
-	_TCHAR recent_media_path[8][_MAX_PATH];
-#endif
 #ifdef USE_BINARY_FILE1
 	_TCHAR initial_binary_path[_MAX_PATH];
 	_TCHAR recent_binary_path[2][8][_MAX_PATH];
