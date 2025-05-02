@@ -1,3 +1,15 @@
+4/15/2011
+
+[VM/DEVICE] add virtual functions for i/o port with dma
+[VM/DISK] support drive type
+[VM/MB8877] add functions to get/set drive type
+[VM/UPD765A] add functions to get/set drive type
+[VM/Z80DMA] change transfer length when block length equals to 0
+
+[X1TURBO] support 2HD floopy disk
+[X1TURBO/FLOPPY] support to change the drive type
+
+
 4/14/2011
 
 [VM/DEVICE] add virtual functions for Z80 daisy chain definitions

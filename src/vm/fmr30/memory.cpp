@@ -141,16 +141,6 @@ uint32 MEMORY::read_data8(uint32 addr)
 	return rbank[addr >> 12][addr & 0xfff];
 }
 
-void MEMORY::write_dma8(uint32 addr, uint32 data)
-{
-	write_data8(addr, data);
-}
-
-uint32 MEMORY::read_dma8(uint32 addr)
-{
-	return read_data8(addr);
-}
-
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xffff) {

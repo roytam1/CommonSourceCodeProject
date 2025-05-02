@@ -13,6 +13,18 @@
 #include <stdlib.h>
 #include "../common.h"
 
+// d88 media type
+#define MEDIA_TYPE_2D	0x00
+#define MEDIA_TYPE_2DD	0x10
+#define MEDIA_TYPE_2HD	0x20
+#define MEDIA_TYPE_UNK	0xff
+
+#define DRIVE_TYPE_2D	MEDIA_TYPE_2D
+#define DRIVE_TYPE_2DD	MEDIA_TYPE_2DD
+#define DRIVE_TYPE_2HD	MEDIA_TYPE_2HD
+#define DRIVE_TYPE_UNK	MEDIA_TYPE_UNK
+
+
 // d88 constant
 #define DISK_BUFFER_SIZE	0x180000	// 1.5MB
 #define TRACK_BUFFER_SIZE	0x40000		// 256KB
@@ -38,6 +50,8 @@ private:
 	int file_size;
 	uint32 crc32;
 	bool temporary;
+	
+	bool check_media_type();
 	
 	// teledisk decoder
 	bool teledisk_to_d88();
@@ -130,6 +144,7 @@ public:
 	bool protect;
 	bool change;
 	uint8 media_type;
+	uint8 drive_type;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];

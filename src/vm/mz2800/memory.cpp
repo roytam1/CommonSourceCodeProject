@@ -92,35 +92,35 @@ void MEMORY::reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	if((addr & 0xfc0000) == 0x80000) {
-		write_dma8((addr & 0x3ffff) | mem_window, data);
+		write_dma_data8((addr & 0x3ffff) | mem_window, data);
 	}
 	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
 		d_crtc->write_data8(addr, data);
 	}
 	else {
-		write_dma8(addr, data);
+		write_dma_data8(addr, data);
 	}
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	if((addr & 0xfc0000) == 0x80000) {
-		return read_dma8((addr & 0x3ffff) | mem_window);
+		return read_dma_data8((addr & 0x3ffff) | mem_window);
 	}
 	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
 		return d_crtc->read_data8(addr);
 	}
 	else {
-		return read_dma8(addr);
+		return read_dma_data8(addr);
 	}
 }
 
-void MEMORY::write_dma8(uint32 addr, uint32 data)
+void MEMORY::write_dma_data8(uint32 addr, uint32 data)
 {
 	wbank[addr >> 11][addr & 0x7ff] = data;
 }
 
-uint32 MEMORY::read_dma8(uint32 addr)
+uint32 MEMORY::read_dma_data8(uint32 addr)
 {
 	return rbank[addr >> 11][addr & 0x7ff];
 }

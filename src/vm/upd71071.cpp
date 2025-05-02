@@ -180,15 +180,15 @@ void UPD71071::do_dma()
 			while((req | sreq) & bit) {
 				if((mode[c] & 0x0c) == 4) {
 					// io -> memory
-					uint32 val = dev[c]->read_dma8(0);
-					d_mem->write_dma8(areg[c], val);
+					uint32 val = dev[c]->read_dma_io8(0);
+					d_mem->write_dma_data8(areg[c], val);
 					// update temporary register
 					tmp = (tmp >> 8) | (val << 8);
 				}
 				else if((mode[c] & 0x0c) == 8) {
 					// memory -> io
-					uint32 val = d_mem->read_dma8(areg[c]);
-					dev[c]->write_dma8(0, val);
+					uint32 val = d_mem->read_dma_data8(areg[c]);
+					dev[c]->write_dma_io8(0, val);
 					// update temporary register
 					tmp = (tmp >> 8) | (val << 8);
 				}

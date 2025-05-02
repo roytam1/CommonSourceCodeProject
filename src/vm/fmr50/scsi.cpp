@@ -92,12 +92,12 @@ uint32 SCSI::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void SCSI::write_dma8(uint32 addr, uint32 data)
+void SCSI::write_dma_io8(uint32 addr, uint32 data)
 {
 	write_io8(0xc30, data);
 }
 
-uint32 SCSI::read_dma8(uint32 addr)
+uint32 SCSI::read_dma_io8(uint32 addr)
 {
 	return read_io8(0xc30);
 }

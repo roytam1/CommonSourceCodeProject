@@ -78,6 +78,7 @@ DISK::DISK()
 	track_size = 0x1800;
 	sector_size = sector_num = 0;
 	sector = NULL;
+	drive_type = DRIVE_TYPE_UNK;
 }
 
 DISK::~DISK()
@@ -93,13 +94,13 @@ typedef struct fd_format {
 } fd_format;
 
 static const fd_format fd_formats[] = {
-	{ 0x00, 40, 1, 16,  256 },	// 1D   160KB
-	{ 0x00, 40, 2, 16,  256 },	// 2D   320KB
-//	{ 0x10, 80, 2, 16,  256 },	// 2DD  640KB
-	{ 0x10, 80, 2,  8,  512 },	// 2DD  640KB
-	{ 0x10, 80, 2,  9,  512 },	// 2DD  720KB
-	{ 0x20, 77, 2,  8, 1024 },	// 2HD 1.25MB
-	{   -1,  0, 0,  0,    0 },
+	{ MEDIA_TYPE_2D,  40, 1, 16,  256 },	// 1D   160KB
+	{ MEDIA_TYPE_2D , 40, 2, 16,  256 },	// 2D   320KB
+//	{ MEDIA_TYPE_2DD, 80, 2, 16,  256 },	// 2DD  640KB
+	{ MEDIA_TYPE_2DD, 80, 2,  8,  512 },	// 2DD  640KB
+	{ MEDIA_TYPE_2DD, 80, 2,  9,  512 },	// 2DD  720KB
+	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024 },	// 2HD 1.25MB
+	{ -1, 0, 0, 0, 0 },
 };
 
 static uint32 getcrc32(uint8 data[], int size)
@@ -211,8 +212,8 @@ bool DISK::get_track(int trk, int side)
 {
 	sector_size = sector_num = 0;
 	
-	// disk not inserted
-	if(!insert) {
+	// disk not inserted or invalid media type
+	if(!(insert && check_media_type())) {
 		return false;
 	}
 	
@@ -251,8 +252,8 @@ bool DISK::make_track(int trk, int side)
 	}
 	track_size = 0x1800;
 	
-	// disk not inserted
-	if(!insert) {
+	// disk not inserted or invalid media type
+	if(!(insert && check_media_type())) {
 		return false;
 	}
 	
@@ -359,8 +360,8 @@ bool DISK::get_sector(int trk, int side, int index)
 	sector_size = sector_num = 0;
 	sector = NULL;
 	
-	// disk not inserted
-	if(!insert) {
+	// disk not inserted or invalid media type
+	if(!(insert && check_media_type())) {
 		return false;
 	}
 	
@@ -410,6 +411,21 @@ bool DISK::get_sector(int trk, int side, int index)
 	sector_size = t[0xe] | (t[0xf] << 8);
 	
 	return true;
+}
+
+bool DISK::check_media_type()
+{
+	switch(drive_type) {
+	case DRIVE_TYPE_2D:
+		return (media_type == MEDIA_TYPE_2D);
+	case DRIVE_TYPE_2DD:
+		return (media_type == MEDIA_TYPE_2D || media_type == MEDIA_TYPE_2DD);
+	case DRIVE_TYPE_2HD:
+		return (media_type == MEDIA_TYPE_2HD);
+	case DRIVE_TYPE_UNK:
+		return true; // always okay
+	}
+	return false;
 }
 
 // teledisk image decoder
@@ -483,7 +499,7 @@ bool DISK::teledisk_to_d88()
 	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "TELEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = 0; // 2d
+	d88_hdr.type = MEDIA_TYPE_2D; // TODO
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
@@ -823,7 +839,7 @@ bool DISK::imagedisk_to_d88()
 	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	strcpy(d88_hdr.title, "IMAGEDISK");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = 0x20; // 2hd
+	d88_hdr.type = MEDIA_TYPE_2HD; // TODO
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks

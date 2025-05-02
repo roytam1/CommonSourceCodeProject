@@ -121,16 +121,6 @@ void MB8877::update_config()
 	ignore_crc = config.ignore_crc;
 }
 
-void MB8877::write_dma8(uint32 addr, uint32 data)
-{
-	write_io8(3, data);
-}
-
-uint32 MB8877::read_dma8(uint32 addr)
-{
-	return read_io8(3);
-}
-
 void MB8877::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 3) {
@@ -414,6 +404,16 @@ uint32 MB8877::read_io8(uint32 addr)
 #endif
 	}
 	return 0xff;
+}
+
+void MB8877::write_dma_io8(uint32 addr, uint32 data)
+{
+	write_io8(3, data);
+}
+
+uint32 MB8877::read_dma_io8(uint32 addr)
+{
+	return read_io8(3);
 }
 
 void MB8877::write_signal(int id, uint32 data, uint32 mask)
@@ -932,6 +932,21 @@ bool MB8877::disk_inserted(int drv)
 		return disk[drv]->insert;
 	}
 	return false;
+}
+
+void MB8877::set_drive_type(int drv, uint8 type)
+{
+	if(drv < MAX_DRIVE) {
+		disk[drv]->drive_type = type;
+	}
+}
+
+uint8 MB8877::get_drive_type(int drv)
+{
+	if(drv < MAX_DRIVE) {
+		return disk[drv]->drive_type;
+	}
+	return DRIVE_TYPE_UNK;
 }
 
 uint8 MB8877::fdc_status()

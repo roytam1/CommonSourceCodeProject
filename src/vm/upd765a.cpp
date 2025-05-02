@@ -168,22 +168,6 @@ void UPD765A::reset()
 	set_drq(false);
 }
 
-void UPD765A::write_dma8(uint32 addr, uint32 data)
-{
-#ifdef UPD765A_DMA_MODE
-	dma_data_lost = false;
-#endif
-	write_io8(1, data);
-}
-
-uint32 UPD765A::read_dma8(uint32 addr)
-{
-#ifdef UPD765A_DMA_MODE
-	dma_data_lost = false;
-#endif
-	return read_io8(1);
-}
-
 void UPD765A::write_io8(uint32 addr, uint32 data)
 {
 	// fdc data
@@ -370,6 +354,22 @@ uint32 UPD765A::read_io8(uint32 addr)
 		// fdc status
 		return seekstat | status;
 	}
+}
+
+void UPD765A::write_dma_io8(uint32 addr, uint32 data)
+{
+#ifdef UPD765A_DMA_MODE
+	dma_data_lost = false;
+#endif
+	write_io8(1, data);
+}
+
+uint32 UPD765A::read_dma_io8(uint32 addr)
+{
+#ifdef UPD765A_DMA_MODE
+	dma_data_lost = false;
+#endif
+	return read_io8(1);
 }
 
 void UPD765A::write_signal(int id, uint32 data, uint32 mask)
@@ -1391,6 +1391,21 @@ uint8 UPD765A::media_type(int drv)
 	if(drv < MAX_DRIVE && disk[drv]->insert) {
 		return disk[drv]->media_type;
 	}
-	return 0;
+	return MEDIA_TYPE_UNK;
+}
+
+void UPD765A::set_drive_type(int drv, uint8 type)
+{
+	if(drv < MAX_DRIVE) {
+		disk[drv]->drive_type = type;
+	}
+}
+
+uint8 UPD765A::get_drive_type(int drv)
+{
+	if(drv < MAX_DRIVE) {
+		return disk[drv]->drive_type;
+	}
+	return DRIVE_TYPE_UNK;
 }
 

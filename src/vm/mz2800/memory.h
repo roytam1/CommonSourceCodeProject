@@ -46,8 +46,8 @@ public:
 	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_dma8(uint32 addr, uint32 data);
-	uint32 read_dma8(uint32 addr);
+	void write_dma_data8(uint32 addr, uint32 data);
+	uint32 read_dma_data8(uint32 addr);
 	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);

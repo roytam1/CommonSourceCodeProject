@@ -121,7 +121,7 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0xf9:	// mz3500sm p.59
 	case 0xfb:
-		d_fdc->write_dma8(1, data);
+		d_fdc->write_dma_io8(1, data);
 		break;
 	case 0xfc:	// mz3500sm p.23
 		if((srqb & 2) != (data & 2)) {
@@ -171,7 +171,7 @@ uint32 MAIN::read_io8(uint32 addr)
 		return 0xf8 | (drq ? 1 : 0) | (index ? 2 : 0) | (motor ? 4 : 0);
 	case 0xf9:	// mz3500sm p.59
 	case 0xfb:
-		return d_fdc->read_dma8(1);
+		return d_fdc->read_dma_io8(1);
 	case 0xfd:	// mz3500sm p.23
 		return sres;
 	case 0xfe:	// mz3500sm p.23,85-86

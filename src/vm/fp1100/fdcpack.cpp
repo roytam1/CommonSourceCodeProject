@@ -30,7 +30,7 @@ void FDCPACK::write_io8(uint32 addr, uint32 data)
 			break;
 		case 6:
 			// data register + dack
-			d_fdc->write_dma8(1, data);
+			d_fdc->write_dma_io8(1, data);
 			break;
 		}
 	}
@@ -48,7 +48,7 @@ uint32 FDCPACK::read_io8(uint32 addr)
 			return d_fdc->read_io8(1);
 		case 6:
 			// data register + dack
-			return d_fdc->read_dma8(1);
+			return d_fdc->read_dma_io8(1);
 		}
 	}
 	else if(0xff00 <= addr && addr < 0xff80) {

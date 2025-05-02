@@ -251,7 +251,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				force_ready = false;
 				addr_a = PORTA_ADDRESS;
 				addr_b = PORTB_ADDRESS;
-				count = BLOCKLEN;
+				count = BLOCKLEN ? BLOCKLEN : null_blocklen; // hack
 				status |= 0x30;
 				break;
 			case CMD_DISABLE_DMA:
@@ -265,7 +265,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				wr_tmp[wr_num++] = GET_REGNUM(READ_MASK);
 				break;
 			case CMD_CONTINUE:
-				count = BLOCKLEN;
+				count = BLOCKLEN ? BLOCKLEN : null_blocklen; // hack
 				enabled = true;
 				status |= 0x30;
 				do_dma();
@@ -298,7 +298,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 	else {
 		int nreg = wr_tmp[wr_ptr];
 #ifdef DMA_DEBUG
-		emu->out_debug(_T("Z80DMA: WR[%d,%d]=%2x\n"), nreg >> 3, nreg & 7,data);
+		emu->out_debug(_T("Z80DMA: WR[%d,%d]=%2x\n"), nreg >> 3, nreg & 7, data);
 #endif
 		regs.t[nreg] = data;
 		
@@ -325,6 +325,9 @@ uint32 Z80DMA::read_io8(uint32 addr)
 {
 	uint32 data = rr_tmp[rr_ptr];
 	
+#ifdef DMA_DEBUG
+	emu->out_debug(_T("Z80DMA: RR[%d]=%2x\n"), rr_ptr, data);
+#endif
 	if(++rr_ptr >= rr_num) {
 		rr_ptr = 0;
 	}
@@ -372,13 +375,13 @@ void Z80DMA::do_dma()
 		// read
 		if(PORTA_IS_SOURCE) {
 			if(PORTA_MEMORY) {
-				data = d_mem->read_dma8(addr_a);
+				data = d_mem->read_dma_data8(addr_a);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_a, data);
 #endif
 			}
 			else {
-				data = d_io->read_dma8(addr_a);
+				data = d_io->read_dma_io8(addr_a);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_a, data);
 #endif
@@ -387,13 +390,13 @@ void Z80DMA::do_dma()
 		}
 		else {
 			if(PORTB_MEMORY) {
-				data = d_mem->read_dma8(addr_b);
+				data = d_mem->read_dma_data8(addr_b);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_b, data);
 #endif
 			}
 			else {
-				data = d_io->read_dma8(addr_b);
+				data = d_io->read_dma_io8(addr_b);
 #ifdef DMA_DEBUG
 				emu->out_debug(_T("Z80DMA: INP(%4x)=%2x -> "), addr_b, data);
 #endif
@@ -408,13 +411,13 @@ void Z80DMA::do_dma()
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("RAM[%4x]\n"), addr_b);
 #endif
-					d_mem->write_dma8(addr_b, data);
+					d_mem->write_dma_data8(addr_b, data);
 				}
 				else {
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("OUT(%4x)\n"), addr_b);
 #endif
-					d_io->write_dma8(addr_b, data);
+					d_io->write_dma_io8(addr_b, data);
 				}
 				addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
 			}
@@ -423,13 +426,13 @@ void Z80DMA::do_dma()
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("RAM[%4x]\n"), addr_a);
 #endif
-					d_mem->write_dma8(addr_a, data);
+					d_mem->write_dma_data8(addr_a, data);
 				}
 				else {
 #ifdef DMA_DEBUG
 					emu->out_debug(_T("OUT(%4x)\n"), addr_a);
 #endif
-					d_io->write_dma8(addr_a, data);
+					d_io->write_dma_io8(addr_a, data);
 				}
 				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
 			}

@@ -125,10 +125,10 @@ public:
 		*wait = wait0 + wait1 + wait2 + wait3;
 		return val;
 	}
-	virtual void write_dma8(uint32 addr, uint32 data) {
+	virtual void write_dma_data8(uint32 addr, uint32 data) {
 		write_data8(addr, data);
 	}
-	virtual uint32 read_dma8(uint32 addr) {
+	virtual uint32 read_dma_data8(uint32 addr) {
 		return read_data8(addr);
 	}
 	
@@ -200,6 +200,12 @@ public:
 		val |= read_io8w(addr + 3, &wait3) << 24;
 		*wait = wait0 + wait1 + wait2 + wait3;
 		return val;
+	}
+	virtual void write_dma_io8(uint32 addr, uint32 data) {
+		write_io8(addr, data);
+	}
+	virtual uint32 read_dma_io8(uint32 addr) {
+		return read_io8(addr);
 	}
 	
 	// memory mapped i/o

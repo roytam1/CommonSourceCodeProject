@@ -72,12 +72,6 @@ public:
 	void write_data16(uint32 addr, uint32 data);
 	uint32 read_data32(uint32 addr);
 	void write_data32(uint32 addr, uint32 data);
-	uint32 read_dma8(uint32 addr) {
-		return read_data8(addr);
-	}
-	void write_dma8(uint32 addr, uint32 data) {
-		write_data8(addr, data);
-	}
 	
 	// unique functions
 	void set_memory_r(uint32 start, uint32 end, uint8 *memory);

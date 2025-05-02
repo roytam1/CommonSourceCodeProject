@@ -15,6 +15,7 @@
 #include "../event.h"
 
 #include "../datarec.h"
+#include "../disk.h"
 #include "../hd46505.h"
 #include "../i8255.h"
 #include "../mb8877.h"
@@ -135,6 +136,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_vram_ptr(io->get_vram());
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
+#ifdef _X1TURBO
+	floppy->set_context_dma(dma);
+#endif
 	joy->set_context_psg(psg);
 #ifdef _X1TURBO
 	memory->set_context_pio(pio);
@@ -260,6 +264,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// NOTE: motor seems to be on automatically when fdc command is requested,
 	// so motor is always on temporary
 	fdc->write_signal(SIG_MB8877_MOTOR, 1, 1);
+	for(int i = 0; i < 4; i++) {
+#ifdef _X1TURBO
+		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
+#else
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
+#endif
+	}
 #ifdef _X1TWIN
 	pce_running = false;
 #endif

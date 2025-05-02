@@ -32,6 +32,26 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 
 void IO::write_io8(uint32 addr, uint32 data)
 {
+	write_port(addr, data, false);
+}
+
+uint32 IO::read_io8(uint32 addr)
+{
+	return read_port(addr, false);
+}
+
+void IO::write_dma_io8(uint32 addr, uint32 data)
+{
+	write_port(addr, data, true);
+}
+
+uint32 IO::read_dma_io8(uint32 addr)
+{
+	return read_port(addr, true);
+}
+
+void IO::write_port(uint32 addr, uint32 data, bool is_dma)
+{
 	// vram access
 	switch(addr & 0xc000) {
 	case 0x0000:
@@ -91,10 +111,15 @@ void IO::write_io8(uint32 addr, uint32 data)
 	}
 	prv_raddr = -1;
 #endif
-	write_table[laddr].dev->write_io8(haddr | write_table[laddr].addr, data & 0xff);
+	if(is_dma) {
+		write_table[laddr].dev->write_dma_io8(haddr | write_table[laddr].addr, data & 0xff);
+	}
+	else {
+		write_table[laddr].dev->write_io8(haddr | write_table[laddr].addr, data & 0xff);
+	}
 }
 
-uint32 IO::read_io8(uint32 addr)
+uint32 IO::read_port(uint32 addr, bool is_dma)
 {
 	// vram access
 	if(vram_mode) {
@@ -111,7 +136,8 @@ uint32 IO::read_io8(uint32 addr)
 	}
 	// i/o
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
-	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
+	uint32 addr2 = haddr | read_table[laddr].addr;
+	uint32 val = read_table[laddr].value_registered ? read_table[laddr].value : is_dma ? read_table[laddr].dev->read_dma_io8(addr2) : read_table[laddr].dev->read_io8(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
 		if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
@@ -124,16 +150,6 @@ uint32 IO::read_io8(uint32 addr)
 	prv_waddr = -1;
 #endif
 	return val & 0xff;
-}
-
-void IO::write_dma8(uint32 addr, uint32 data)
-{
-	write_io8(addr, data);
-}
-
-uint32 IO::read_dma8(uint32 addr)
-{
-	return read_io8(addr);
 }
 
 // register

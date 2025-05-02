@@ -11,6 +11,7 @@
 
 #include "bios.h"
 #include "../upd765a.h"
+#include "../disk.h"
 
 // regs
 #define AL	regs8[0]
@@ -26,7 +27,7 @@ bool BIOS::bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 		case 0x10:
 		case 0x70:
 			// 2DD
-			if(d_fdc->disk_inserted(AL & 0x03) && d_fdc->media_type(AL & 0x03) != 0x10) {
+			if(d_fdc->disk_inserted(AL & 0x03) && d_fdc->media_type(AL & 0x03) != MEDIA_TYPE_2DD) {
 				AH = 0xe0;
 				*CarryFlag = 1;
 				return true;
@@ -35,7 +36,7 @@ bool BIOS::bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 		case 0x90:
 		case 0xf0:
 			// 2HD
-			if(d_fdc->disk_inserted(AL & 0x03) && d_fdc->media_type(AL & 0x03) != 0x20) {
+			if(d_fdc->disk_inserted(AL & 0x03) && d_fdc->media_type(AL & 0x03) != MEDIA_TYPE_2HD) {
 				AH = 0xe0;
 				*CarryFlag = 1;
 				return true;

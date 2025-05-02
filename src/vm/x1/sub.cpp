@@ -605,9 +605,9 @@ void SUB::process_cmd()
 		databuf[0x16][0] &= ~0x1f;
 		databuf[0x16][0] |= get_key_low() & 0x1f;
 #endif
-//#ifdef DEBUG_COMMAND
+#ifdef DEBUG_COMMAND
 		emu->out_debug(_T("X1SUB: keycode %2x %2x\n"), databuf[0x16][0], databuf[0x16][1]);
-//#endif
+#endif
 		datalen = 2;
 		break;
 	case 0xe7:

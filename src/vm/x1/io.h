@@ -57,6 +57,9 @@ private:
 	uint8* vram_r;
 	uint8* vram_g;
 	
+	void write_port(uint32 addr, uint32 data, bool is_dma);
+	uint32 read_port(uint32 addr, bool is_dma);
+	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		// vm->dummy must be generated first !
@@ -73,8 +76,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void write_dma8(uint32 addr, uint32 data);
-	uint32 read_dma8(uint32 addr);
+	void write_dma_io8(uint32 addr, uint32 data);
+	uint32 read_dma_io8(uint32 addr);
 	
 	// unique functions
 	uint8* get_vram() {

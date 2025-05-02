@@ -15,10 +15,12 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {
 	case 0x71:
+		// data register
 		d_fdc->write_io8(addr, data);
 		break;
 	case 0x72:
-		d_fdc->write_dma8(addr, data);
+		// data register + dack
+		d_fdc->write_dma_io8(addr, data);
 		break;
 	case 0x73:
 		// motor on/off
@@ -36,9 +38,11 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	switch(addr & 0xff) {
 	case 0x70:
 	case 0x71:
+		// data register
 		return d_fdc->read_io8(addr);
 	case 0x72:
-		return d_fdc->read_dma8(addr);
+		// data register + dack
+		return d_fdc->read_dma_io8(addr);
 	case 0x73:
 		return drq ? 0xff : 0x7f;
 	}

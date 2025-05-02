@@ -105,10 +105,10 @@ public:
 	void initialize();
 	void release();
 	void reset();
-	void write_dma8(uint32 addr, uint32 data);
-	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_dma_io8(uint32 addr, uint32 data);
+	uint32 read_dma_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
@@ -132,6 +132,8 @@ public:
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	void set_drive_type(int drv, uint8 type);
+	uint8 get_drive_type(int drv);
 	uint8 fdc_status();
 };
 

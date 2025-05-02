@@ -84,7 +84,7 @@ void UPD7220::reset()
 	cmd_reset();
 }
 
-void UPD7220::write_dma8(uint32 addr, uint32 data)
+void UPD7220::write_dma_io8(uint32 addr, uint32 data)
 {
 	// for dma access
 	switch(cmdreg & 0x18) {
@@ -109,7 +109,7 @@ void UPD7220::write_dma8(uint32 addr, uint32 data)
 	}
 }
 
-uint32 UPD7220::read_dma8(uint32 addr)
+uint32 UPD7220::read_dma_io8(uint32 addr)
 {
 	uint32 val = 0xff;
 	

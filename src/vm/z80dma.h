@@ -43,6 +43,7 @@ private:
 	uint16 addr_a;
 	uint16 addr_b;
 	uint16 count;
+	int null_blocklen;
 	
 	bool iei, oei, intr;
 	uint32 intr_bit;
@@ -58,6 +59,7 @@ private:
 public:
 	Z80DMA(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		d_cpu = d_child = NULL;
+		null_blocklen = 216;
 	}
 	~Z80DMA() {}
 	
@@ -85,6 +87,9 @@ public:
 	}
 	void set_context_io(DEVICE* device) {
 		d_io = device;
+	}
+	void set_null_blocklen(int len) {
+		null_blocklen = len;
 	}
 };
 

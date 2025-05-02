@@ -11,6 +11,10 @@
 
 #include "floppy.h"
 #include "../mb8877.h"
+#ifdef _X1TURBO
+#include "../disk.h"
+#include "../z80dma.h"
+#endif
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
@@ -20,6 +24,11 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	// NOTE: motor seems to be on automatically when fdc command is requested,
 	// so motor is always on temporary
 //	d_fdc->write_signal(SIG_MB8877_MOTOR, data, 0x80);
+	
+#ifdef _X1TURBO
+	drive = data & 3;
+	update_dma_blocklen();
+#endif
 }
 
 #ifdef _X1TURBO
@@ -31,11 +40,26 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	case 0xffd:	// MFM
 		return 0xff;
 	case 0xffe:	// 2HD
+		d_fdc->set_drive_type(drive, DRIVE_TYPE_2HD);
+		update_dma_blocklen();
 		return 0xff;
 	case 0xfff:	// 2D/2DD
+		d_fdc->set_drive_type(drive, DRIVE_TYPE_2DD);
+		update_dma_blocklen();
 		return 0xff;
 	}
 	return 0xff;
+}
+
+void FLOPPY::update_dma_blocklen()
+{
+	// hack for booting 2hd disk
+	if(d_fdc->get_drive_type(drive) == DRIVE_TYPE_2HD) {
+		d_dma->set_null_blocklen(255);
+	}
+	else {
+		d_dma->set_null_blocklen(216);
+	}
 }
 #endif
 
