@@ -53,15 +53,23 @@ private:
 #else
 	uint8 vram[0xc000];
 #endif
-	bool vram_mode, signal;
+	bool vram_mode, signal, column, hires;
+	int vram_wait, tvram_wait;
+	
 	uint8* vram_b;
 	uint8* vram_r;
 	uint8* vram_g;
 	
 	uint8 vdisp;
 	
-	void write_port8(uint32 addr, uint32 data, bool is_dma);
-	uint32 read_port8(uint32 addr, bool is_dma);
+#ifdef _X1TURBO
+	uint8 crtc_regs[18];
+	int crtc_ch;
+#endif
+	
+	void write_port8(uint32 addr, uint32 data, bool is_dma, int* wait);
+	uint32 read_port8(uint32 addr, bool is_dma, int* wait);
+	void update_vram_wait();
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -78,10 +86,16 @@ public:
 	~IO() {}
 	
 	// common functions
+	void initialize();
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
+#ifdef Z80_IO_WAIT
+	void write_io8w(uint32 addr, uint32 data, int* wait);
+	uint32 read_io8w(uint32 addr, int* wait);
+#else
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+#endif
 	void write_dma_io8(uint32 addr, uint32 data);
 	uint32 read_dma_io8(uint32 addr);
 	

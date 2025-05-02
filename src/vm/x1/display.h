@@ -65,17 +65,17 @@ private:
 #endif
 	
 #ifdef _X1TURBO
-	uint8 text[400][640+8];	// +8 for wide char
+	uint8 text[400][640];
 	uint8 cg[400][640];
 	uint8 pri_line[400][8][8];
 #else
-	uint8 text[200][640+8];	// +8 for wide char
+	uint8 text[200][640+8];
 	uint8 cg[200][640];
 	uint8 pri_line[200][8][8];
 #endif
-	scrntype palette_pc[8];
-	uint8 prev_top[80];
-	int cblink;
+	scrntype palette_pc[16];	// 0-7:text, 8-15:cg
+	bool prev_vert_double;
+	int raster, cblink;
 	bool scanline;
 	
 	int ch_height; // HD46505

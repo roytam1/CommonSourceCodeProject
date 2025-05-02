@@ -12,6 +12,18 @@
 #include "io.h"
 #include "display.h"
 
+void IO::initialize()
+{
+	column = true;
+	hires = false;
+	update_vram_wait();
+	
+#ifdef _X1TURBO
+	memset(crtc_regs, 0, sizeof(crtc_regs));
+	crtc_ch = 0;
+#endif
+}
+
 void IO::reset()
 {
 	memset(vram, 0, sizeof(vram));
@@ -25,34 +37,53 @@ void IO::reset()
 void IO::write_signal(int id, uint32 data, uint32 mask)
 {
 	// H -> L
-	bool next = ((data & mask) != 0);
+	bool next = ((data & 0x20) != 0);
 	if(signal && !next) {
 		vram_mode = true;
 	}
 	signal = next;
+	
+	column = ((data & 0x40) != 0);
+	update_vram_wait();
 }
 
+#ifdef Z80_IO_WAIT
+void IO::write_io8w(uint32 addr, uint32 data, int* wait)
+{
+	write_port8(addr, data, false, wait);
+}
+
+uint32 IO::read_io8w(uint32 addr, int* wait)
+{
+	return read_port8(addr, false, wait);
+}
+#else
 void IO::write_io8(uint32 addr, uint32 data)
 {
-	write_port8(addr, data, false);
+	int wait;
+	write_port8(addr, data, false, &wait);
 }
 
 uint32 IO::read_io8(uint32 addr)
 {
-	return read_port8(addr, false);
+	int wait;
+	return read_port8(addr, false, &wait);
 }
+#endif
 
 void IO::write_dma_io8(uint32 addr, uint32 data)
 {
-	write_port8(addr, data, true);
+	int wait;
+	write_port8(addr, data, true, &wait);
 }
 
 uint32 IO::read_dma_io8(uint32 addr)
 {
-	return read_port8(addr, true);
+	int wait;
+	return read_port8(addr, true, &wait);
 }
 
-void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
+void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 {
 	// vram access
 	switch(addr & 0xc000) {
@@ -61,6 +92,7 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 			vram_b[addr & 0x3fff] = data;
 			vram_r[addr & 0x3fff] = data;
 			vram_g[addr & 0x3fff] = data;
+			*wait = vram_wait;
 			return;
 		}
 		break;
@@ -68,28 +100,28 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 		if(vram_mode) {
 			vram_r[addr & 0x3fff] = data;
 			vram_g[addr & 0x3fff] = data;
-		}
-		else {
+		} else {
 			vram_b[addr & 0x3fff] = data;
 		}
+		*wait = vram_wait;
 		return;
 	case 0x8000:
 		if(vram_mode) {
 			vram_b[addr & 0x3fff] = data;
 			vram_g[addr & 0x3fff] = data;
-		}
-		else {
+		} else {
 			vram_r[addr & 0x3fff] = data;
 		}
+		*wait = vram_wait;
 		return;
 	case 0xc000:
 		if(vram_mode) {
 			vram_b[addr & 0x3fff] = data;
 			vram_r[addr & 0x3fff] = data;
-		}
-		else {
+		} else {
 			vram_g[addr & 0x3fff] = data;
 		}
+		*wait = vram_wait;
 		return;
 	}
 #ifdef _X1TURBO
@@ -98,6 +130,15 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 		vram_b = vram + 0x0000 + ofs;
 		vram_r = vram + 0x4000 + ofs;
 		vram_g = vram + 0x8000 + ofs;
+	} else if((addr & 0xff0f) == 0x1800) {
+		crtc_ch = data;
+	} else if((addr & 0xff0f) == 0x1801 && crtc_ch < 18) {
+		crtc_regs[crtc_ch] = data;
+		// update vram wait
+		int ch_height = (crtc_regs[9] & 0x1f) + 1;
+		int vt_total = ((crtc_regs[4] & 0x7f) + 1) * ch_height + (crtc_regs[5] & 0x1f);
+		hires = (vt_total > 400);
+		update_vram_wait();
 	}
 #endif
 	// i/o
@@ -116,28 +157,31 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xff;
-	}
-	else if(is_dma) {
+	} else if(is_dma) {
 		wr_table[laddr].dev->write_dma_io8(addr2, data & 0xff);
-	}
-	else {
+	} else {
 		wr_table[laddr].dev->write_io8(addr2, data & 0xff);
+	}
+	if((addr & 0xe000) == 0x2000) {
+		*wait = tvram_wait;
+	} else {
+		*wait = 0;
 	}
 }
 
-uint32 IO::read_port8(uint32 addr, bool is_dma)
+uint32 IO::read_port8(uint32 addr, bool is_dma, int* wait)
 {
 	// vram access
-	if(vram_mode) {
-		vram_mode = false;
-//		return 0xff;	// TODO
-	}
+	vram_mode = false;
 	switch(addr & 0xc000) {
 	case 0x4000:
+		*wait = vram_wait;
 		return vram_b[addr & 0x3fff];
 	case 0x8000:
+		*wait = vram_wait;
 		return vram_r[addr & 0x3fff];
 	case 0xc000:
+		*wait = vram_wait;
 		return vram_g[addr & 0x3fff];
 	}
 	// i/o
@@ -162,7 +206,23 @@ uint32 IO::read_port8(uint32 addr, bool is_dma)
 	}
 	prv_waddr = -1;
 #endif
+	if((addr & 0xe000) == 0x2000) {
+		*wait = tvram_wait;
+	} else {
+		*wait = 0;
+	}
 	return val & 0xff;
+}
+
+void IO::update_vram_wait()
+{
+#ifdef _X1TURBO
+	if(hires) {
+		vram_wait = column ? 2 : 1;
+	} else
+#endif
+	vram_wait = column ? 4 : 2;
+	tvram_wait = vram_wait;	// temporary
 }
 
 // register

@@ -130,7 +130,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 0x04);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x01, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
-	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
+	pio->set_context_port_c(io, SIG_IO_MODE, 0x60, 0);
 #ifdef _X1TURBO
 	fdc->set_context_drq(dma, SIG_Z80DMA_READY, 1);
 #endif
@@ -212,8 +212,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	#define Z80_DAISY_CHAIN(dev) { \
 		if(parent_dev == NULL) { \
 			cpu->set_context_intr(dev); \
-		} \
-		else { \
+		} else { \
 			parent_dev->set_context_child(dev); \
 		} \
 		dev->set_context_intr(cpu, level++); \

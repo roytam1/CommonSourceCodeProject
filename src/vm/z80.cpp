@@ -2258,13 +2258,6 @@ void Z80::run_one_opecode()
 				icount -= cc_op[0xcd] + cc_ex[0xff];
 #endif
 			}
-#if defined(_X1TURBO)
-			// FIXME: ugly hack for X1turbo2 demonstration :-(
-			if(im == 2 && RM8(PC) == 0xed && RM8(PC + 1) == 0x4d) {
-				iff1 = 0;
-			}
-			else
-#endif
 			iff1 = iff2 = 0;
 			intr_req_bit = 0;
 			WZ = PCD;

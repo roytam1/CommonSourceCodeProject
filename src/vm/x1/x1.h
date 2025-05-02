@@ -46,6 +46,7 @@
 #define MAX_DRIVE		4
 #define IO_ADDR_MAX		0x10000
 #define HAS_AY_3_8912
+//#define Z80_IO_WAIT
 #ifdef _X1TURBO
 #define SINGLE_MODE_DMA
 #endif

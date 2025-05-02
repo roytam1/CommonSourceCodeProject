@@ -1,3 +1,8 @@
+7/25/2013
+
+[X1TURBO/DISPLAY] fix text renderer for vertical/horizontal doubled character
+
+
 7/24/2013
 
 [WINMAIN] support 320x240 fullscreen mode
