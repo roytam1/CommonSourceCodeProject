@@ -12,7 +12,6 @@
 void YM2151::initialize()
 {
 	opm = new FM::OPM;
-	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
 	register_vline_event(this);
 	irq = mute = false;
 }
@@ -79,5 +78,10 @@ void YM2151::init(int rate, int clock, int samples, int vol)
 {
 	opm->Init(clock, rate, false);
 	opm->SetVolume(vol);
+}
+
+void YM2151::update_timing(double frames_per_sec, double lines_per_frame)
+{
+	usec = (int)(1000000. / frames_per_sec / lines_per_frame + 0.5);
 }
 

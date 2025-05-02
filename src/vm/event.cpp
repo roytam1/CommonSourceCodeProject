@@ -111,6 +111,9 @@ void EVENT::drive()
 			int index = (int)((float)lines_per_frame * (float)i / (float)remain);
 			vclocks[index]++;
 		}
+		for(DEVICE* device = vm->first_device; device; device = device->next_device) {
+			device->update_timing(frames_per_sec, lines_per_frame);
+		}
 		update_timing = false;
 	}
 	

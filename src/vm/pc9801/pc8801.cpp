@@ -185,7 +185,7 @@ void PC8801::reset()
 	crtc_cmd = crtc_ptr = 0;
 	crtc_status = 0;
 	text_mode = graph_mode = 0;
-	back_color = disp_ctrl = 0;
+	disp_ctrl = 0;
 	
 	if(!line200) {
 		((EVENT*)event_manager)->set_frames_per_sec(60);
@@ -194,11 +194,13 @@ void PC8801::reset()
 	}
 	cursor_on = blink_on = false;
 	blink_counter = 0;
-
-	for(int i = 0; i < 8; i++) {
-		digipal[i] = i;
-	}
-	update_graph_palette = true;
+	
+//	for(int i = 0; i < 8; i++) {
+//		digipal[i] = i;
+//	}
+	memset(anapal, 0, sizeof(anapal));
+	memset(digipal, 0, sizeof(digipal));
+	update_palette = true;
 	
 	// dma
 	memset(dma_reg, 0, sizeof(dma_reg));
@@ -295,14 +297,10 @@ void PC8801::write_dma_io8(uint32 addr, uint32 data)
 uint32 PC8801::read_dma_data8(uint32 addr)
 {
 	addr &= 0xffff;
-	if((addr & 0xf000) == 0xf000 && tvram_sel == 0) {
-		// from tvram
+	if((addr & 0xf000) == 0xf000 && (config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2)) {
 		return tvram[addr & 0xfff];
 	}
-	else {
-		// from main ram
-		return ram[addr];
-	}
+	return ram[addr];
 }
 
 void PC8801::write_io8(uint32 addr, uint32 data)
@@ -343,7 +341,7 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 			}
 		}
 		if((graph_mode & 0x10) != (data & 0x10)) {
-			update_graph_palette = true;
+			update_palette = true;
 		}
 		graph_mode = data;
 		break;
@@ -356,10 +354,12 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		}
 		if(tvram_sel != (data & 0x10)) {
 			tvram_sel = data & 0x10;
-			update_tvram_memmap();
+			if(config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2) {
+				update_tvram_memmap();
+			}
 		}
 		if((port32 & 0x20) != (data & 0x20)) {
-			update_graph_palette = true;
+			update_palette = true;
 		}
 		port32 = data;
 		break;
@@ -419,7 +419,8 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 	case 0x52:
-		back_color = (data >> 4) & 7;
+		digipal[8] = (data >> 4) & 7;
+		update_palette = true;
 		break;
 	case 0x53:
 		disp_ctrl = data;
@@ -432,9 +433,14 @@ void PC8801::write_io8(uint32 addr, uint32 data)
 	case 0x59:
 	case 0x5a:
 	case 0x5b:
+		if(data & 0x80) {
+			anapal[8][(data >> 6) & 1] = data;
+		}
+		else {
+			anapal[addr - 0x54][(data >> 6) & 1] = data;
+		}
 		digipal[addr - 0x54] = data;
-		anapal[addr - 0x54][data >> 6] = data;
-		update_graph_palette = true;
+		update_palette = true;
 		break;
 	case 0x5c:
 		gvram_sel = 1;
@@ -676,7 +682,11 @@ void PC8801::update_tvram_memmap()
 
 void PC8801::write_signal(int id, uint32 data, uint32 mask)
 {
-	request_intr(IRQ_SOUND, ((data & mask) != 0));
+	if(id == SIG_PC8801_SOUND_IRQ) {
+		if(!(port32 & 0x80)) {
+			request_intr(IRQ_SOUND, ((data & mask) != 0));
+		}
+	}
 }
 
 void PC8801::event_callback(int event_id, int err)
@@ -696,28 +706,29 @@ void PC8801::event_frame()
 void PC8801::event_vline(int v, int clock)
 {
 	if(v == 0) {
-		vdisp = true;
-		
-		// start dma
-		if(dma_reg[2].length.sd != 0) {
-			dma_status &= ~4;
+		if(crtc_status & 0x10) {
+			// start dma
+			if(dma_reg[2].length.sd != 0) {
+				dma_status &= ~4;
+			}
 		}
 		memset(crtc_buffer, 0, sizeof(crtc_buffer));
 		crtc_buffer_ptr = 0;
+		vdisp = true;
 	}
-	else if(v == (line200 ? 200 : 400) && vdisp) {
-		// run dma
-		if((dma_mode & 4) && !(dma_status & 4)) {
-			uint16 addr = dma_reg[2].start.w.l;
-			for(int i = 0; i < dma_reg[2].length.sd; i++) {
-				write_dma_io8(0, read_dma_data8(addr++));
-			}
-			dma_status |= 4;
-		}
-		vdisp = false;
+	else if(v == (line200 ? 200 : 400)) {
 		if(crtc_status & 0x10) {
+			// run dma
+			if((dma_mode & 4) && !(dma_status & 4)) {
+				uint16 addr = dma_reg[2].start.w.l;
+				for(int i = 0; i < dma_reg[2].length.sd; i++) {
+					write_dma_io8(0, read_dma_data8(addr++));
+				}
+				dma_status |= 4;
+			}
 			request_intr(IRQ_VRTC, true);
 		}
+		vdisp = false;
 	}
 }
 
@@ -726,7 +737,7 @@ void PC8801::draw_screen()
 	memset(text, 0, sizeof(text));
 	memset(graph, 0, sizeof(graph));
 	
-	if(!(disp_ctrl & 1)) {
+	if(!(disp_ctrl & 1) && (crtc_status & 0x10)) {
 		draw_text();
 	}
 	if(graph_mode & 8) {
@@ -739,32 +750,29 @@ void PC8801::draw_screen()
 		else {
 			draw_mono_hires_graph();
 		}
-		if(update_graph_palette) {
-			if(graph_mode & 0x10) {
-				if(port32 & 0x20) {
-					for(int i = 0; i < 8; i++) {
-						uint8 pb = anapal[i][0] & 7;
-						uint8 pr = (anapal[i][0] >> 3) & 7;
-						uint8 pg = anapal[i][1] & 7;
-						uint8 bb = anapal[i][2] & 7;
-						uint8 br = (anapal[i][2] >> 3) & 7;
-						uint8 bg = anapal[i][3] & 7;
-						palette_graph_pc[i] = RGB_COLOR(pr << 5, pg << 5, pb << 5);
-					}
-				}
-				else {
-					for(int i = 0; i < 8; i++) {
-						uint8 pal = digipal[i];
-						palette_graph_pc[i] = RGB_COLOR((pal & 2) ? 255 : 0, (pal & 4) ? 255 : 0, (pal & 1) ? 255 : 0);
-					}
+	}
+	if(update_palette) {
+		if(graph_mode & 0x10) {
+			if(port32 & 0x20) {
+				for(int i = 0; i < 9; i++) {
+					uint8 b = anapal[i][0] & 7;
+					uint8 r = (anapal[i][0] >> 3) & 7;
+					uint8 g = anapal[i][1] & 7;
+					palette_graph_pc[i] = RGB_COLOR(r << 5, g << 5, b << 5);
 				}
 			}
 			else {
-				palette_graph_pc[0] = 0;
-				palette_graph_pc[1] = RGB_COLOR(255, 255, 255);
+				for(int i = 0; i < 9; i++) {
+					uint8 pal = digipal[i];
+					palette_graph_pc[i] = RGB_COLOR((pal & 2) ? 255 : 0, (pal & 4) ? 255 : 0, (pal & 1) ? 255 : 0);
+				}
 			}
-			update_graph_palette = false;
 		}
+		else {
+			palette_graph_pc[0] = 0;
+			palette_graph_pc[1] = RGB_COLOR(255, 255, 255);
+		}
+		update_palette = false;
 	}
 	if(line200) {
 		for(int y = 0; y < 200; y++) {
@@ -815,11 +823,14 @@ void PC8801::draw_text()
 	int width = (crtc_reg[0][0] & 0x7f) + 2;
 	int height = (crtc_reg[0][1] & 0x3f) + 1;
 	int char_lines = (crtc_reg[0][2] & 0x1f) + 1;
-	if(!line200 || (crtc_reg[0][1] & 0x80)) {
+	if(char_lines >= 16) {
 		char_lines >>= 1;
 	}
+//	if(!line200 || (crtc_reg[0][1] & 0x80)) {
+//		char_lines >>= 1;
+//	}
 	int attrib_num = (crtc_reg[0][4] & 0x20) ? 0 : ((crtc_reg[0][4] & 0x1f) + 1) * 2;
-	uint8 attribs[80], flags[128], cur_attrib = 0xe0;
+	uint8 attribs[80], flags[128], cur_attrib = 0;
 	if(attrib_num == 0) {
 		memset(attribs, 0xe0, sizeof(attribs));
 	}

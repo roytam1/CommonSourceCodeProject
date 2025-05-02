@@ -62,6 +62,7 @@ void PC80S31K::initialize()
 
 void PC80S31K::reset()
 {
+	// FIXME: ready will be pulluped but this causes PC-8801 keeps trying reading empty drive
 //	d_fdc->write_signal(SIG_UPD765A_FREADY, 1, 1);	// ???
 	d_fdc->set_drive_type(0, DRIVE_TYPE_2D);
 	d_fdc->set_drive_type(1, DRIVE_TYPE_2D);
@@ -80,6 +81,10 @@ uint32 PC80S31K::read_data8(uint32 addr)
 void PC80S31K::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffff;
+	if(addr == 0x7f15 && data == 0x1f) {
+		// ugly patch to enable both #1 and #2 drives
+		data = 0x3f;
+	}
 	wbank[addr >> 13][addr & 0x1fff] = data;
 }
 

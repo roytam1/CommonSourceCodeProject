@@ -15,6 +15,8 @@
 #include "../../emu.h"
 #include "../device.h"
 
+#define SIG_PC8801_SOUND_IRQ	0
+
 class PC8801 : public DEVICE
 {
 private:
@@ -53,22 +55,21 @@ private:
 	// crtc
 	uint8 crtc_reg[8][5], crtc_cmd, crtc_ptr;
 	uint8 crtc_status;
-	uint8 text_mode, graph_mode, line200;
-	uint8 back_color, disp_ctrl;
+	uint8 disp_ctrl, text_mode, graph_mode, line200;
 	bool cursor_on, blink_on, vdisp;
 	int blink_counter;
 	uint8 crtc_buffer[120 * 200];
 	int crtc_buffer_ptr;
 	
-	bool update_graph_palette;
-	uint8 digipal[8];
-	uint8 anapal[8][4];
-
+	uint8 anapal[9][2];		// 8=back color
+	uint8 digipal[9];
+	bool update_palette;
+	
 	uint8 sg_pattern[0x800];
 	uint8 text[200][640];
 	uint8 graph[400][640];
 	scrntype palette_text_pc[9];	// 8=non transparent black
-	scrntype palette_graph_pc[8];
+	scrntype palette_graph_pc[9];	// 8=back color
 	
 	uint8 get_crtc_buffer(int ofs);
 	void draw_text();

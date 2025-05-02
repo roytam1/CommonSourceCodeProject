@@ -1,3 +1,21 @@
+1/7/2012
+
+[VM/DEVICE] add virtual function to notify that timing settings are changed
+[VM/EVENT] fix to notify to all devices when timing settings are changed
+[VM/PC80S31K] add ugly patch to enable both #1 and #2 drives
+[VM/UPD765A] fix that recalib is successfully done though disk is unformatted
+[VM/YM2203] fix to update the period that fmgen is driven in vline
+[VM/YM2151] fix to update the period that fmgen is driven in vline
+
+[PC98DO/PC8801] fix to connect opn irq line to the interrupt controller
+[PC98DO/PC8801] fix to initialize opn input ports
+[PC98DO/PC8801] fix to access high speed tvram through dma in V1(H)/V2 mode
+[PC98DO/PC8801] fix to draw text screen when crtc is already started
+[PC98DO/PC8801] fix the initial attribute before it is changed
+[PC98DO/PC8801] fix the character scan lines (temporary)
+[PC98DO/PC8801] support 2HD disks
+
+
 1/5/2012
 
 [VM/HD46505] fix the issue that vline event is not correctly registered

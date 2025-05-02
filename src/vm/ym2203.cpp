@@ -12,7 +12,6 @@
 void YM2203::initialize()
 {
 	opn = new FM::OPN;
-	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
 	register_vline_event(this);
 	mute = false;
 #ifndef HAS_AY_3_8912
@@ -136,5 +135,10 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 	opn->Init(clock, rate, false, NULL);
 	opn->SetVolumeFM(volf);
 	opn->SetVolumePSG(volp);
+}
+
+void YM2203::update_timing(double frames_per_sec, double lines_per_frame)
+{
+	usec = (int)(1000000. / frames_per_sec / lines_per_frame + 0.5);
 }
 

@@ -457,6 +457,7 @@ public:
 			return vm->get_prv_pc();
 		}
 	}
+	virtual void update_timing(double frames_per_sec, double lines_per_frame) {}
 	
 	// event callback
 	virtual void event_callback(int event_id, int err) {}

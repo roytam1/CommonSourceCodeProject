@@ -488,6 +488,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu->set_context_mem(pc88);
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
+	pc88opn->set_context_irq(pc88, SIG_PC8801_SOUND_IRQ, 1);
 	
 	pc88sub->set_context_cpu(pc88cpu_sub);
 	pc88sub->set_context_fdc(pc88fdc_sub);
@@ -542,7 +543,12 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-	
+#if defined(_PC98DO)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->reset();
+	}
+#endif
+
 	// initial device settings
 	pio_mouse->write_signal(SIG_I8255_PORT_A, 0xf0, 0xff);	// clear mouse status
 	pio_mouse->write_signal(SIG_I8255_PORT_B, 0x40, 0xff);	// cpu high & sw3-6
@@ -592,9 +598,10 @@ void VM::reset()
 	beep->write_signal(SIG_PCM1BIT_ON, 1, 1);
 	beep->write_signal(SIG_PCM1BIT_MUTE, 1, 1);
 #endif
-
-
+	
 #if defined(_PC98DO)
+	pc88opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// joystick
+	pc88opn->write_signal(SIG_YM2203_PORT_B, 0xff, 0xff);	// joystick
 	pc88pio->write_signal(SIG_I8255_PORT_C, 0, 0xff);
 	pc88pio_sub->write_signal(SIG_I8255_PORT_C, 0, 0xff);
 #endif
