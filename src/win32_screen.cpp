@@ -16,6 +16,11 @@
 
 unsigned __stdcall rec_video_thread(void *lpx);
 
+#ifdef USE_CRT_FILTER
+static uint8 r0[2048], g0[2048], b0[2048], t0[2048];
+static uint8 r1[2048], g1[2048], b1[2048];
+#endif
+
 void EMU::initialize_screen()
 {
 	screen_width = SCREEN_WIDTH;
@@ -63,6 +68,13 @@ void EMU::initialize_screen()
 	// initialize update flags
 	first_draw_screen = false;
 	first_invalidate = self_invalidate = false;
+	
+#ifdef USE_CRT_FILTER
+	// initialize crtc filter
+	memset(r1, 0, sizeof(r1));
+	memset(g1, 0, sizeof(g1));
+	memset(b1, 0, sizeof(b1));
+#endif
 }
 
 #define release_dib_section(hdcdib, hbmp, holdbmp, lpbuf) { \
@@ -257,6 +269,12 @@ RETRY:
 			stretched_width = display_width;
 			stretched_height = (display_width * source_height_aspect) / source_width_aspect;
 		}
+		if(display_width == 1920 && display_height == 1080) {
+			if((source_width_aspect == 640 && source_height_aspect == 400) || (source_width_aspect == 320 && source_height_aspect == 200)) {
+				stretched_width = 1920;
+				stretched_height = 1080;
+			}
+		}
 	}
 	else {
 		int tmp_pow_x = display_width / source_width_aspect;
@@ -281,10 +299,10 @@ RETRY:
 	while(stretched_height > source_height * new_pow_y) {
 		new_pow_y++;
 	}
-	if(!use_d3d9 && new_pow_x > 1 && new_pow_y > 1) {
-		// support high quality stretch only for x1 window size in gdi mode
-		new_pow_x = new_pow_y = 1;
-	}
+//	if(!use_d3d9 && new_pow_x > 1 && new_pow_y > 1) {
+//		// support high quality stretch only for x1 window size in gdi mode
+//		new_pow_x = new_pow_y = 1;
+//	}
 	if(stretch_pow_x != new_pow_x || stretch_pow_y != new_pow_y) {
 		stretch_pow_x = new_pow_x;
 		stretch_pow_y = new_pow_y;
@@ -373,6 +391,12 @@ RETRY:
 	first_draw_screen = false;
 	first_invalidate = true;
 	screen_size_changed = false;
+	
+#ifdef USE_CRT_FILTER
+	memset(r1, 0, sizeof(r1));
+	memset(g1, 0, sizeof(g1));
+	memset(b1, 0, sizeof(b1));
+#endif
 }
 
 void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
@@ -461,7 +485,167 @@ int EMU::draw_screen()
 		scrntype* src = lpBmpSource + source_width * (source_height - 1);
 		scrntype* out = lpBmpStretch1 + source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
 		int data_len = source_width * stretch_pow_x;
+#ifdef USE_CRT_FILTER
+		#define _3_8(v) (((((v) * 3) >> 3) * 180) >> 8)
+		#define _5_8(v) (((((v) * 3) >> 3) * 180) >> 8)
+		#define _8_8(v) (((v) * 180) >> 8)
 		
+		if(config.crt_filter && stretch_pow_x == 3 && stretch_pow_y == 3) {
+			r1[0] = g1[0] = b1[0] = r1[source_width + 1] = g1[source_width + 1] = b1[source_width + 1] = 0;
+			
+			if(!screen_skip_line) {
+				for(int y = 0; y < source_height; y++) {
+					for(int x = 1; x <= source_width; x++) {
+						uint32 c = src[x - 1];
+						t0[x] = (c >> 24) & 0xff;
+						r0[x] = (c >> 16) & 0xff;
+						g0[x] = (c >>  8) & 0xff;
+						b0[x] = (c      ) & 0xff;
+						r1[x] = (c >> 19) & 0x1f;
+						g1[x] = (c >> 11) & 0x1f;
+						b1[x] = (c >>  3) & 0x1f;
+					}
+					scrntype* out1 = out;
+					out -= data_len;
+					scrntype* out2 = out;
+					out -= data_len;
+					scrntype* out3 = out;
+					out -= data_len;
+					for(int x = 1, xx = 0; x <= source_width; x++, xx += 3) {
+						uint32 r = r1[x - 1] + r0[x] + r1[x + 1];
+						uint32 g = g1[x - 1] + g0[x] + g1[x + 1];
+						uint32 b = b1[x - 1] + b0[x] + b1[x + 1];
+						out1[xx    ] = out2[xx    ] = (32 + _8_8(r)) << 16;
+						out1[xx + 1] = out2[xx + 1] = (32 + _8_8(g)) << 8;
+						out1[xx + 2] = out2[xx + 2] = (32 + _8_8(b));
+						if(t0[x]) {
+							out3[xx    ] = (32 + _8_8(r)) << 16;
+							out3[xx + 1] = (32 + _8_8(g)) << 8;
+							out3[xx + 2] = (32 + _8_8(b));
+						} else {
+							out3[xx    ] = (32 + _5_8(r)) << 16;
+							out3[xx + 1] = (32 + _5_8(g)) << 8;
+							out3[xx + 2] = (32 + _5_8(b));
+						}
+					}
+					src -= source_width;
+				}
+			} else {
+				for(int y = 0; y < source_height; y += 2) {
+					for(int x = 1; x <= source_width; x++) {
+						uint32 c = src[x - 1];
+						t0[x] = (c >> 24) & 0xff;
+						r0[x] = (c >> 16) & 0xff;
+						g0[x] = (c >>  8) & 0xff;
+						b0[x] = (c      ) & 0xff;
+						r1[x] = (c >> 20) & 0x0f;
+						g1[x] = (c >> 12) & 0x0f;
+						b1[x] = (c >>  4) & 0x0f;
+					}
+					scrntype* out1 = out;
+					out -= data_len;
+					scrntype* out2 = out;
+					out -= data_len;
+					scrntype* out3 = out;
+					out -= data_len;
+					scrntype* out4 = out;
+					out -= data_len;
+					scrntype* out5 = out;
+					out -= data_len;
+					scrntype* out6 = out;
+					out -= data_len;
+					for(int x = 1, xx = 0; x <= source_width; x++, xx += 3) {
+						uint32 r = r1[x - 1] + r0[x] + r1[x + 1];
+						uint32 g = g1[x - 1] + g0[x] + g1[x + 1];
+						uint32 b = b1[x - 1] + b0[x] + b1[x + 1];
+						out1[xx    ] = out2[xx    ] = out3[xx    ] = out4[xx    ] = (32 + _8_8(r)) << 16;
+						out1[xx + 1] = out2[xx + 1] = out3[xx + 1] = out4[xx + 1] = (32 + _8_8(g)) << 8;
+						out1[xx + 2] = out2[xx + 2] = out3[xx + 2] = out4[xx + 2] = (32 + _8_8(b));
+						if(t0[x]) {
+							out5[xx    ] = out6[xx    ] = (32 + _8_8(r)) << 16;
+							out5[xx + 1] = out6[xx + 1] = (32 + _8_8(g)) << 8;
+							out5[xx + 2] = out6[xx + 2] = (32 + _8_8(b));
+						} else {
+							out5[xx    ] = out6[xx    ] = (32 + _5_8(r)) << 16;
+							out5[xx + 1] = out6[xx + 1] = (32 + _5_8(g)) << 8;
+							out5[xx + 2] = out6[xx + 2] = (32 + _5_8(b));
+						}
+					}
+					src -= source_width * 2;
+				}
+			}
+		} else if(config.crt_filter && stretch_pow_x == 2 && stretch_pow_y == 2) {
+			if(!screen_skip_line) {
+				for(int y = 0; y < source_height; y++) {
+					for(int x = 1; x <= source_width; x++) {
+						uint32 c = src[x - 1];
+						t0[x] = (c >> 24) & 0xff;
+						r0[x] = (c >> 16) & 0xff;
+						g0[x] = (c >>  8) & 0xff;
+						b0[x] = (c      ) & 0xff;
+						r1[x] = (c >> 19) & 0x1f;
+						g1[x] = (c >> 11) & 0x1f;
+						b1[x] = (c >>  3) & 0x1f;
+					}
+					scrntype* out1 = out;
+					out -= data_len;
+					scrntype* out2 = out;
+					out -= data_len;
+					for(int x = 1, xx = 0; x <= source_width; x++, xx += 2) {
+						uint32 r = r1[x - 1] + r0[x] + r1[x + 1];
+						uint32 g = g1[x - 1] + g0[x] + g1[x + 1];
+						uint32 b = b1[x - 1] + b0[x] + b1[x + 1];
+						out1[xx    ] = RGB_COLOR(32 + _8_8(r), 32 + _8_8(g), 32 + _8_8(b));
+						out1[xx + 1] = RGB_COLOR(16 + _5_8(r), 16 + _5_8(g), 16 + _5_8(b));
+						if(t0[x]) {
+							out2[xx    ] = RGB_COLOR(32 + _8_8(r), 32 + _8_8(g), 32 + _8_8(b));
+							out2[xx + 1] = RGB_COLOR(16 + _5_8(r), 16 + _5_8(g), 16 + _5_8(b));
+						} else {
+							out2[xx    ] = RGB_COLOR(32 + _3_8(r), 32 + _3_8(g), 32 + _3_8(b));
+							out2[xx + 1] = RGB_COLOR(16 + _3_8(r), 16 + _3_8(g), 16 + _3_8(b));
+						}
+					}
+					src -= source_width;
+				}
+			} else {
+				for(int y = 0; y < source_height; y += 2) {
+					for(int x = 1; x <= source_width; x++) {
+						uint32 c = src[x - 1];
+						t0[x] = (c >> 24) & 0xff;
+						r0[x] = (c >> 16) & 0xff;
+						g0[x] = (c >>  8) & 0xff;
+						b0[x] = (c      ) & 0xff;
+						r1[x] = (c >> 19) & 0x1f;
+						g1[x] = (c >> 11) & 0x1f;
+						b1[x] = (c >>  3) & 0x1f;
+					}
+					scrntype* out1 = out;
+					out -= data_len;
+					scrntype* out2 = out;
+					out -= data_len;
+					scrntype* out3 = out;
+					out -= data_len;
+					scrntype* out4 = out;
+					out -= data_len;
+					for(int x = 1, xx = 0; x <= source_width; x++, xx += 2) {
+						uint32 r = r1[x - 1] + r0[x] + r1[x + 1];
+						uint32 g = g1[x - 1] + g0[x] + g1[x + 1];
+						uint32 b = b1[x - 1] + b0[x] + b1[x + 1];
+						out1[xx    ] = out2[xx    ] = out3[xx    ] = RGB_COLOR(32 + _8_8(r), 32 + _8_8(g), 32 + _8_8(b));
+						out1[xx + 1] = out2[xx + 1] = out3[xx + 1] = RGB_COLOR(16 + _5_8(r), 16 + _5_8(g), 16 + _5_8(b));
+						if(t0[x]) {
+							out4[xx    ] = RGB_COLOR(32 + _8_8(r), 32 + _8_8(g), 32 + _8_8(b));
+							out4[xx + 1] = RGB_COLOR(16 + _5_8(r), 16 + _5_8(g), 16 + _5_8(b));
+						} else {
+							out4[xx    ] = RGB_COLOR(32 + _3_8(r), 32 + _3_8(g), 32 + _3_8(b));
+							out4[xx + 1] = RGB_COLOR(16 + _3_8(r), 16 + _3_8(g), 16 + _3_8(b));
+						}
+					}
+					src -= source_width * 2;
+				}
+			}
+		} else
+#endif
 		for(int y = 0; y < source_height; y++) {
 			if(stretch_pow_x != 1) {
 				scrntype* out_tmp = out;

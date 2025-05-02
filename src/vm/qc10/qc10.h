@@ -47,6 +47,9 @@
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
+#ifdef _COLOR_MONITOR
+#define USE_CRT_FILTER
+#endif
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER
 

@@ -335,6 +335,7 @@ void SUB::draw_screen()
 			dest[x] = palette_pc[(src_chr[x] ? src_chr[x] : src_gfx[x] ? src_gfx[x] : back)];
 		}
 	}
+	emu->screen_skip_line = false;
 }
 
 void SUB::draw_chr()

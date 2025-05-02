@@ -308,5 +308,8 @@ void DISPLAY::draw_screen()
 			}
 		}
 	}
+#ifdef _COLOR_MONITOR
+	emu->screen_skip_line = false;
+#endif
 }
 

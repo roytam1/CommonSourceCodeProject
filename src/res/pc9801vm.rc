@@ -165,6 +165,8 @@ BEGIN
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM SEPARATOR
+        MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
     END
     POPUP "Sound"
     BEGIN

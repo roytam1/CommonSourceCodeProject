@@ -188,6 +188,7 @@ BEGIN
         MENUITEM "Color",                       ID_SCREEN_MONITOR_TYPE0
         MENUITEM "Monochrome",                  ID_SCREEN_MONITOR_TYPE1
         MENUITEM SEPARATOR
+        MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"

@@ -19,13 +19,19 @@
 
 void FLOPPY::reset()
 {
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		d_fdc_2hd->set_drive_type(i, DRIVE_TYPE_2HD);
+	}
+	ctrlreg_2hd = 0x80;
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
+	for(int i = 0; i < MAX_DRIVE; i++) {
 		d_fdc_2dd->set_drive_type(i, DRIVE_TYPE_2DD);
 	}
-	ctrlreg_2hd = ctrlreg_2dd = 0x80;
-#else
+	ctrlreg_2dd = 0x80;
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	for(int i = 0; i < 4; i++) {
 		d_fdc->set_drive_type(i, DRIVE_TYPE_2HD);
 	}
@@ -38,7 +44,7 @@ void FLOPPY::reset()
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xffff) {
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	case 0x90:
 		d_fdc_2hd->write_io8(0, data);
 		break;
@@ -52,6 +58,8 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		d_fdc_2hd->write_signal(SIG_UPD765A_FREADY, data, 0x40);
 		ctrlreg_2hd = data;
 		break;
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	case 0xc8:
 		d_fdc_2dd->write_io8(0, data);
 		break;
@@ -71,7 +79,8 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		d_fdc_2dd->write_signal(SIG_UPD765A_MOTOR, data, 0x08);
 		ctrlreg_2dd = data;
 		break;
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	case 0x90:
 	case 0xc8:
 		if(((addr >> 4) & 1) == (modereg & 1)) {
@@ -123,7 +132,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 uint32 FLOPPY::read_io8(uint32 addr)
 {
 	switch(addr & 0xffff) {
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	case 0x90:
 		return d_fdc_2hd->read_io8(0);
 	case 0x92:
@@ -132,13 +141,16 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	case 0x94:
 		return 0x5f;	// 0x40 ???
 #endif
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	case 0xc8:
 		return d_fdc_2dd->read_io8(0);
 	case 0xca:
 		return d_fdc_2dd->read_io8(1);
 	case 0xcc:
 		return (d_fdc_2dd->disk_inserted() ? 0x10 : 0) | 0x6f;	// 0x60 ???
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	case 0x90:
 	case 0xc8:
 		if(((addr >> 4) & 1) == (modereg & 1)) {
@@ -171,20 +183,23 @@ uint32 FLOPPY::read_io8(uint32 addr)
 void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 {
 	switch(id) {
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	case SIG_FLOPPY_2HD_IRQ:
 		d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR3, data, mask);
 		break;
 	case SIG_FLOPPY_2HD_DRQ:
 		d_dma->write_signal(SIG_I8237_CH2, data, mask);
 		break;
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	case SIG_FLOPPY_2DD_IRQ:
 		d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR2, data, mask);
 		break;
 	case SIG_FLOPPY_2DD_DRQ:
 		d_dma->write_signal(SIG_I8237_CH3, data, mask);
 		break;
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	case SIG_FLOPPY_IRQ:
 		if(modereg & 1) {
 			d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR3, data, mask);
@@ -207,12 +222,15 @@ void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 
 void FLOPPY::event_callback(int event_id, int err)
 {
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2DD_FDD_IF)
 	if(ctrlreg_2dd & 4) {
-#else
-	if(ctrlreg & 4) {
-#endif
 		d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR2, 1, 1);
 	}
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
+	if(ctrlreg & 4) {
+		d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR2, 1, 1);
+	}
+#endif
 	timer_id = -1;
 }

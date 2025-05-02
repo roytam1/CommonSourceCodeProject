@@ -140,10 +140,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	not = new NOT(this, emu);
 #endif
 	rtc = new UPD1990A(this, emu);
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	fdc_2hd = new UPD765A(this, emu);
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	fdc_2dd = new UPD765A(this, emu);
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	fdc = new UPD765A(this, emu);
 #endif
 	gdc_chr = new UPD7220(this, emu);
@@ -198,10 +201,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_memory(memory);
 	// dma ch.0: sasi
 	// dma ch.1: memory refresh
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	dma->set_context_ch2(fdc_2hd);
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	dma->set_context_ch3(fdc_2dd);
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	dma->set_context_ch2(fdc);
 	dma->set_context_ch3(fdc);
 #endif
@@ -256,16 +262,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	mouse->set_context_pic(pic);
 	mouse->set_context_pio(pio_mouse);
 	
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	fdc_2hd->set_context_irq(floppy, SIG_FLOPPY_2HD_IRQ, 1);
 	fdc_2hd->set_context_drq(floppy, SIG_FLOPPY_2HD_DRQ, 1);
 	fdc_2hd->raise_irq_when_media_changed = true;
+	floppy->set_context_fdc_2hd(fdc_2hd);
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	fdc_2dd->set_context_irq(floppy, SIG_FLOPPY_2DD_IRQ, 1);
 	fdc_2dd->set_context_drq(floppy, SIG_FLOPPY_2DD_DRQ, 1);
 	fdc_2dd->raise_irq_when_media_changed = true;
-	floppy->set_context_fdc_2hd(fdc_2hd);
 	floppy->set_context_fdc_2dd(fdc_2dd);
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
 	fdc->raise_irq_when_media_changed = true;
@@ -321,14 +330,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memset(ram, 0, sizeof(ram));
 	memset(ipl, 0xff, sizeof(ipl));
 	memset(sound_bios, 0xff, sizeof(sound_bios));
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(_PC9801) || defined(_PC9801E)
 	memset(fd_bios_2hd, 0xff, sizeof(fd_bios_2hd));
 	memset(fd_bios_2dd, 0xff, sizeof(fd_bios_2dd));
 #endif
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
 	int sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(_PC9801) || defined(_PC9801E)
 	memory->read_bios(_T("2HDIF.ROM"), fd_bios_2hd, sizeof(fd_bios_2hd));
 	memory->read_bios(_T("2DDIF.ROM"), fd_bios_2dd, sizeof(fd_bios_2dd));
 #endif
@@ -340,7 +349,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// A8000h - BFFFFh: VRAM
 	memory->set_memory_mapped_io_rw(0xa8000, 0xbffff, display);
 	memory->set_memory_r(0xcc000, 0xcdfff, sound_bios);
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(_PC9801) || defined(_PC9801E)
 	memory->set_memory_r(0xd6000, 0xd6fff, fd_bios_2dd);
 	memory->set_memory_r(0xd7000, 0xd7fff, fd_bios_2hd);
 #endif
@@ -463,7 +472,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0xa5, display);
 	io->set_iomap_single_rw(0xa9, display);
 	
-#if !defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	io->set_iomap_single_rw(0xbe, floppy);
 #endif
 	io->set_iomap_single_rw(0xc8, floppy);
@@ -652,7 +661,7 @@ void VM::reset()
 	pio_fdd->write_signal(SIG_I8255_PORT_B, 0xff, 0xff);
 	pio_fdd->write_signal(SIG_I8255_PORT_C, 0xff, 0xff);
 #endif
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2DD_FDD_IF)
 	fdc_2dd->write_signal(SIG_UPD765A_FREADY, 1, 1);	// 2DD FDC RDY is pulluped
 #endif
 	
@@ -737,18 +746,17 @@ void VM::draw_screen()
 
 int VM::access_lamp()
 {
-#if defined(SUPPORT_OLD_FDD_IF)
-	uint32 status = (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2);
-#if defined(SUPPORT_320KB_FDD_IF)
-	status |= ((fdc_sub->read_signal(0) & 3) << 4);
-#endif
-	return (status & (1 | 4 | 16)) ? 1 : (status & (2 | 8 | 32)) ? 2 : 0;
-#else
-#if defined(_PC98DO)
+#if defined(_PC9801) || defined(_PC9801E)
+	return (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2) | ((fdc_sub->read_signal(0) & 3) << 4);
+#elif defined(_PC9801VF) || defined(_PC9801U)
+	return fdc_2dd->read_signal(0);
+#elif defined(_PC98DO)
 	if(boot_mode != 0) {
 		return pc88fdc_sub->read_signal(0);
-	} else
-#endif
+	} else {
+		return fdc->read_signal(0);
+	}
+#else
 	return fdc->read_signal(0);
 #endif
 }
@@ -839,79 +847,82 @@ void VM::key_up(int code)
 
 void VM::open_disk(int drv, _TCHAR* file_path, int offset)
 {
-#if defined(_PC98DO)
+#if defined(_PC9801) || defined(_PC9801E)
+	if(drv == 0 || drv == 1) {
+		fdc_2hd->open_disk(drv, file_path, offset);
+	} else if(drv == 2 || drv == 3) {
+		fdc_2dd->open_disk(drv - 2, file_path, offset);
+	} else if(drv == 4 || drv == 5) {
+		fdc_sub->open_disk(drv - 4, file_path, offset);
+	}
+#elif defined(_PC9801VF) || defined(_PC9801U)
+	if(drv == 0 || drv == 1) {
+		fdc_2dd->open_disk(drv, file_path, offset);
+	}
+#elif defined(_PC98DO)
+	if(drv == 0 || drv == 1) {
+		fdc->open_disk(drv, file_path, offset);
+	} else if(drv == 2 || drv == 3) {
+		pc88fdc_sub->open_disk(drv - 2, file_path, offset);
+	}
+#else
 	if(drv == 0 || drv == 1) {
 		fdc->open_disk(drv, file_path, offset);
 	}
-	else if(drv == 2 || drv == 3) {
-		pc88fdc_sub->open_disk(drv - 2, file_path, offset);
-	}
-#elif defined(SUPPORT_OLD_FDD_IF)
-	if(drv == 0 || drv == 1) {
-		fdc_2hd->open_disk(drv, file_path, offset);
-	}
-	else if(drv == 2 || drv == 3) {
-		fdc_2dd->open_disk(drv - 2, file_path, offset);
-	}
-#if defined(SUPPORT_320KB_FDD_IF)
-	else if(drv == 4 || drv == 5) {
-		fdc_sub->open_disk(drv - 4, file_path, offset);
-	}
-#endif
-#else
-	fdc->open_disk(drv, file_path, offset);
 #endif
 }
 
 void VM::close_disk(int drv)
 {
-#if defined(_PC98DO)
+#if defined(_PC9801) || defined(_PC9801E)
+	if(drv == 0 || drv == 1) {
+		fdc_2hd->close_disk(drv);
+	} else if(drv == 2 || drv == 3) {
+		fdc_2dd->close_disk(drv - 2);
+	} else if(drv == 4 || drv == 5) {
+		fdc_sub->close_disk(drv - 4);
+	}
+#elif defined(_PC9801VF) || defined(_PC9801U)
+	if(drv == 0 || drv == 1) {
+		fdc_2dd->close_disk(drv);
+	}
+#elif defined(_PC98DO)
+	if(drv == 0 || drv == 1) {
+		fdc->close_disk(drv);
+	} else if(drv == 2 || drv == 3) {
+		pc88fdc_sub->close_disk(drv - 2);
+	}
+#else
 	if(drv == 0 || drv == 1) {
 		fdc->close_disk(drv);
 	}
-	else if(drv == 2 || drv == 3) {
-		pc88fdc_sub->close_disk(drv - 2);
-	}
-#elif defined(SUPPORT_OLD_FDD_IF)
-	if(drv == 0 || drv == 1) {
-		fdc_2hd->close_disk(drv);
-	}
-	else if(drv == 2 || drv == 3) {
-		fdc_2dd->close_disk(drv - 2);
-	}
-#if defined(SUPPORT_320KB_FDD_IF)
-	else if(drv == 4 || drv == 5) {
-		fdc_sub->close_disk(drv - 4);
-	}
-#endif
-#else
-	fdc->close_disk(drv);
 #endif
 }
 
 bool VM::disk_inserted(int drv)
 {
-#if defined(_PC98DO)
+#if defined(_PC9801) || defined(_PC9801E)
+	if(drv == 0 || drv == 1) {
+		return fdc_2hd->disk_inserted(drv);
+	} else if(drv == 2 || drv == 3) {
+		return fdc_2dd->disk_inserted(drv - 2);
+	} else if(drv == 4 || drv == 5) {
+		return fdc_sub->disk_inserted(drv - 4);
+	}
+#elif defined(_PC9801VF) || defined(_PC9801U)
+	if(drv == 0 || drv == 1) {
+		return fdc_2dd->disk_inserted(drv);
+	}
+#elif defined(_PC98DO)
+	if(drv == 0 || drv == 1) {
+		return fdc->disk_inserted(drv);
+	} else if(drv == 2 || drv == 3) {
+		return pc88fdc_sub->disk_inserted(drv - 2);
+	}
+#else
 	if(drv == 0 || drv == 1) {
 		return fdc->disk_inserted(drv);
 	}
-	else if(drv == 2 || drv == 3) {
-		return pc88fdc_sub->disk_inserted(drv - 2);
-	}
-#elif defined(SUPPORT_OLD_FDD_IF)
-	if(drv == 0 || drv == 1) {
-		return fdc_2hd->disk_inserted(drv);
-	}
-	else if(drv == 2 || drv == 3) {
-		return fdc_2dd->disk_inserted(drv - 2);
-	}
-#if defined(SUPPORT_320KB_FDD_IF)
-	else if(drv == 4 || drv == 5) {
-		return fdc_sub->disk_inserted(drv - 4);
-	}
-#endif
-#else
-	return fdc->disk_inserted(drv);
 #endif
 	return false;
 }

@@ -1,3 +1,12 @@
+9/29/2014
+
+[WIN32/SCREEN] support crt filter
+
+[BABBAGE2ND] update circuit board picture
+[PC9801U] support NEC PC-9801U
+[PC9801VF] support NEC PC-9801VF
+
+
 9/13/2014
 
 [WIN32/DEBUGGER] support search command

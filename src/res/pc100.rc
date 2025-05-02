@@ -165,6 +165,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Horizontal Monitor",          ID_SCREEN_MONITOR_TYPE0
         MENUITEM "Virtical Monitor",            ID_SCREEN_MONITOR_TYPE1
+        MENUITEM SEPARATOR
+        MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
     END
     POPUP "Sound"
     BEGIN

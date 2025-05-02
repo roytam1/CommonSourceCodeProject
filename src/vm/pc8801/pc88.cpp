@@ -291,7 +291,7 @@ void PC88::initialize()
 	
 	// initialize text palette
 	for(int i = 0; i < 9; i++) {
-		palette_text_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+		palette_text_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0) | 0xff000000; // 0xff000000 is a flag for crt filter
 	}
 	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
@@ -1542,6 +1542,7 @@ void PC88::draw_screen()
 				}
 			}
 		}
+		emu->screen_skip_line = true;
 #if !defined(_PC8001SR)
 	} else {
 		for(int y = 0; y < 400; y++) {
@@ -1554,6 +1555,7 @@ void PC88::draw_screen()
 				dest[x] = t ? palette_text_pc[t] : palette_pc[src_g[x]];
 			}
 		}
+		emu->screen_skip_line = false;
 	}
 #endif
 }
@@ -1958,7 +1960,7 @@ void pc88_crtc_t::reset(bool hireso)
 	cursor.type = cursor.mode = -1;
 	cursor.x = cursor.y = -1;
 	attrib.data = 0xe0;
-//	attrib.mask = 0xff;
+	attrib.mask = 0xff;
 	attrib.num = 20;
 	width = 80;
 	height = 25;
@@ -2112,7 +2114,7 @@ void pc88_crtc_t::expand_buffer(bool hireso, bool line400)
 		for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
 			for(int cx = 0; cx < width; cx += 2) {
 				set_attrib(buffer[ofs + cx + 1]);
-				attrib.expand[cy][cx] = attrib.expand[cy][cx + 1] = attrib.data;
+				attrib.expand[cy][cx] = attrib.expand[cy][cx + 1] = attrib.data & attrib.mask;
 			}
 		}
 	} else {
@@ -2131,7 +2133,7 @@ void pc88_crtc_t::expand_buffer(bool hireso, bool line400)
 						set_attrib(buffer[ofs + pos + 81]);
 						pos += 2;
 					}
-					attrib.expand[cy][cx] = attrib.data;
+					attrib.expand[cy][cx] = attrib.data & attrib.mask;
 				}
 			}
 		}
@@ -2152,15 +2154,18 @@ void pc88_crtc_t::set_attrib(uint8 code)
 		// color
 		if(code & 8) {
 			attrib.data = (attrib.data & 0x0f) | (code & 0xf0);
+			attrib.mask = 0xf3; //for PC-8801mkIIFR •t‘®ƒfƒ‚
 		} else {
 			attrib.data = (attrib.data & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
 			attrib.data ^= reverse;
 			attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
+			attrib.mask = 0xff;
 		}
 	} else {
 		attrib.data = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
 		attrib.data ^= reverse;
 		attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
+		attrib.mask = 0xff;
 	}
 }
 

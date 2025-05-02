@@ -419,5 +419,8 @@ void MEMORY::draw_screen()
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
+#ifndef _MZ80B
+	emu->screen_skip_line = true;
+#endif
 }
 

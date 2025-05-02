@@ -66,7 +66,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
     VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
@@ -82,8 +81,14 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "CPU 486SX 20MHz",             ID_CPU_TYPE0
-        MENUITEM "CPU 486SX 25MHz",             ID_CPU_TYPE1
+        MENUITEM "Dip Switch #1",               ID_DIPSWITCH0
+        MENUITEM "Dip Switch #2",               ID_DIPSWITCH1
+        MENUITEM "Dip Switch #3",               ID_DIPSWITCH2
+        MENUITEM "Dip Switch #4",               ID_DIPSWITCH3
+        MENUITEM "Dip Switch #5",               ID_DIPSWITCH4
+        MENUITEM "Dip Switch #6",               ID_DIPSWITCH5
+        MENUITEM "Dip Switch #7",               ID_DIPSWITCH6
+        MENUITEM "Dip Switch #8",               ID_DIPSWITCH7
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -112,20 +117,6 @@ BEGIN
         MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
-    END
-    POPUP "FD3"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD3
-        MENUITEM "Eject",                       ID_CLOSE_FD3
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD3
-    END
-    POPUP "FD4"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD4
-        MENUITEM "Eject",                       ID_CLOSE_FD4
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD4
     END
     POPUP "Screen"
     BEGIN
@@ -212,7 +203,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "fmr50.ico"
+IDI_ICON1               ICON    DISCARDABLE     "qc10.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

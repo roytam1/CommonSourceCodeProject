@@ -16,12 +16,15 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 #define SIG_FLOPPY_2HD_IRQ	0
 #define SIG_FLOPPY_2HD_DRQ	1
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 #define SIG_FLOPPY_2DD_IRQ	2
 #define SIG_FLOPPY_2DD_DRQ	3
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 #define SIG_FLOPPY_IRQ	0
 #define SIG_FLOPPY_DRQ	1
 #endif
@@ -31,10 +34,15 @@ class UPD765A;
 class FLOPPY : public DEVICE
 {
 private:
-#if defined(SUPPORT_OLD_FDD_IF)
-	UPD765A *d_fdc_2hd, *d_fdc_2dd;
-	uint8 ctrlreg_2hd, ctrlreg_2dd;
-#else
+#if defined(SUPPORT_2HD_FDD_IF)
+	UPD765A *d_fdc_2hd;
+	uint8 ctrlreg_2hd;
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
+	UPD765A *d_fdc_2dd;
+	uint8 ctrlreg_2dd;
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	UPD765A *d_fdc;
 	uint8 ctrlreg, modereg;
 #endif
@@ -54,16 +62,19 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	void set_context_fdc_2hd(UPD765A* device)
 	{
 		d_fdc_2hd = device;
 	}
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	void set_context_fdc_2dd(UPD765A* device)
 	{
 		d_fdc_2dd = device;
 	}
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	void set_context_fdc(UPD765A* device)
 	{
 		d_fdc = device;

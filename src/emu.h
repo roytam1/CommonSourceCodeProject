@@ -651,6 +651,9 @@ public:
 	// screen
 	void change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh);
 	scrntype* screen_buffer(int y);
+#ifdef USE_CRT_FILTER
+	bool screen_skip_line;
+#endif
 	
 	// timer
 	void get_host_time(cur_time_t* time);

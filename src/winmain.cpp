@@ -1221,6 +1221,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
+#ifdef USE_CRT_FILTER
+		case ID_SCREEN_CRT_FILTER:
+			config.crt_filter = !config.crt_filter;
+			break;
+#endif
 #ifdef USE_SCANLINE
 		case ID_SCREEN_SCANLINE:
 			config.scan_line = !config.scan_line;
@@ -1683,8 +1688,10 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE0 + USE_MONITOR_TYPE - 1, ID_SCREEN_MONITOR_TYPE0 + config.monitor_type, MF_BYCOMMAND);
 		}
 #endif
+#ifdef USE_CRT_FILTER
+		CheckMenuItem(hMenu, ID_SCREEN_CRT_FILTER, config.crt_filter ? MF_CHECKED : MF_UNCHECKED);
+#endif
 #ifdef USE_SCANLINE
-		// scanline
 		CheckMenuItem(hMenu, ID_SCREEN_SCANLINE, config.scan_line ? MF_CHECKED : MF_UNCHECKED);
 #endif
 	}

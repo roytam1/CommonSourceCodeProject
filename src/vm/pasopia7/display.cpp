@@ -190,6 +190,7 @@ void DISPLAY::draw_screen()
 		}
 	}
 #endif
+	emu->screen_skip_line = true;
 }
 
 void DISPLAY::draw_text_normal(uint16 src)

@@ -897,17 +897,25 @@ void MEMORY::draw_screen()
 {
 	// copy to real screen
 	for(int y = 0; y < 200; y++) {
-		scrntype* dest = emu->screen_buffer(y);
+		scrntype* dest0 = emu->screen_buffer(2 * y);
+		scrntype* dest1 = emu->screen_buffer(2 * y + 1);
 		uint8* src = screen[y];
 		
-		for(int x = 0; x < 320; x++) {
+		for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 #if defined(_MZ1500)
-			dest[x] = palette_pc[palette[src[x] & 7]];
+			dest0[x2] = dest0[x2 + 1] = palette_pc[palette[src[x] & 7]];
 #else
-			dest[x] = palette_pc[src[x] & 7];
+			dest0[x2] = dest0[x2 + 1] = palette_pc[src[x] & 7];
 #endif
 		}
+		if(!config.scan_line) {
+			memcpy(dest1, dest0, 640 * sizeof(scrntype));
+		}
+		else {
+			memset(dest1, 0, 640 * sizeof(scrntype));
+		}
 	}
+	emu->screen_skip_line = true;
 }
 #else
 void MEMORY::draw_line_320x200_2bpp(int v)
@@ -1056,6 +1064,7 @@ void MEMORY::draw_screen()
 			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 	}
+	emu->screen_skip_line = true;
 }
 #endif
 

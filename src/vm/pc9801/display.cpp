@@ -569,6 +569,7 @@ void DISPLAY::draw_screen()
 			memset(dest, 0, 640 * sizeof(scrntype));
 		}
 	}
+	emu->screen_skip_line = false;
 }
 
 void DISPLAY::draw_chr_screen()

@@ -245,6 +245,16 @@
 #include "pc9801/pc9801.h"
 #endif
 
+// NEC PC-9801U
+#ifdef _PC9801U
+#include "pc9801/pc9801.h"
+#endif
+
+// NEC PC-9801VF
+#ifdef _PC9801VF
+#include "pc9801/pc9801.h"
+#endif
+
 // NEC PC-9801VM
 #ifdef _PC9801VM
 #include "pc9801/pc9801.h"

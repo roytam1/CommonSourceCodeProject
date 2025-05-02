@@ -193,6 +193,7 @@ BEGIN
         MENUITEM "200 Lines, Analog",           ID_SCREEN_MONITOR_TYPE2
         MENUITEM "200 Lines, Digital",          ID_SCREEN_MONITOR_TYPE3
         MENUITEM SEPARATOR
+        MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"

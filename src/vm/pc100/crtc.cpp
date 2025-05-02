@@ -302,6 +302,7 @@ void CRTC::draw_screen()
 			}
 		}
 	}
+	emu->screen_skip_line = false;
 }
 
 void CRTC::update_palette(int num)

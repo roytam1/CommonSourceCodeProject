@@ -64,6 +64,7 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_CRT_FILTER
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER

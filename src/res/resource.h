@@ -231,7 +231,8 @@
 #define ID_SCREEN_MONITOR_TYPE6         41067
 #define ID_SCREEN_MONITOR_TYPE7         41068
 
-#define ID_SCREEN_SCANLINE              41071
+#define ID_SCREEN_CRT_FILTER            41071
+#define ID_SCREEN_SCANLINE              41072
 
 #define ID_SOUND_REC                    41101
 #define ID_SOUND_STOP                   41102
@@ -761,6 +762,24 @@
 #define MENU_POS_TAPE                   7
 #define MENU_POS_SCREEN                 8
 #define MENU_POS_SOUND                  9
+#endif
+
+// NEC PC-9801U
+#ifdef _PC9801U
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// NEC PC-9801VF
+#ifdef _PC9801VF
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
 #endif
 
 // NEC PC-9801VM

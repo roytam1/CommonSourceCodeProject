@@ -260,6 +260,7 @@ void DISPLAY::draw_screen()
 				memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 		}
+		emu->screen_skip_line = true;
 	}
 	else {
 		for(int y = 0; y < 512; y++) {
@@ -277,6 +278,7 @@ void DISPLAY::draw_screen()
 				}
 			}
 		}
+		emu->screen_skip_line = false;
 	}
 }
 

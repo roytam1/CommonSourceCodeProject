@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/28/2014
+								9/24/2014
 
 --- What's this ?
 
@@ -48,6 +48,8 @@ This archive includes the all source codes of emulators listed below:
 	ePC-8801MA	NEC PC-8801MA
 	ePC-9801	NEC PC-9801
 	ePC-9801E	NEC PC-9801E/F/M
+	ePC-9801U	NEC PC-9801U
+	ePC-9801VF	NEC PC-9801VF
 	ePC-9801VM	NEC PC-9801VM
 	ePC-98DO	NEC PC-98DO
 	ePC-98LT	NEC PC-98LT

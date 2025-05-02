@@ -43,6 +43,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_MONITOR_TYPE	4
+#define USE_CRT_FILTER
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER

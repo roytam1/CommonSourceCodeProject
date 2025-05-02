@@ -35,12 +35,14 @@
 
 #if defined(_PC9801) || defined(_PC9801E)
 #define SUPPORT_CMT_IF
-#define SUPPORT_OLD_FDD_IF
+#define SUPPORT_2HD_FDD_IF
+#define SUPPORT_2DD_FDD_IF
 #define SUPPORT_320KB_FDD_IF
 #define SUPPORT_OLD_BUZZER
-#endif
-#if defined(_PC9801VF) || defined(_PC9801U)
-#define SUPPORT_OLD_FDD_IF
+#elif defined(_PC9801VF) || defined(_PC9801U)
+#define SUPPORT_2DD_FDD_IF
+#else
+#define SUPPORT_2HD_2DD_FDD_IF
 #endif
 
 #if !(defined(_PC9801) || defined(_PC9801U))
@@ -112,19 +114,17 @@
 #endif
 #define USE_FD1
 #define USE_FD2
-#if defined(_PC98DO)
-// for PC-8801 drives
-#define USE_FD3
-#define USE_FD4
-#elif defined(SUPPORT_OLD_FDD_IF)
+#if defined(_PC9801) || defined(_PC9801E)
 // for 640KB drives
 #define USE_FD3
 #define USE_FD4
-#if defined(SUPPORT_320KB_FDD_IF)
 // for 320KB drives
 #define USE_FD5
 #define USE_FD6
-#endif
+#elif defined(_PC98DO)
+// for PC-8801 drives
+#define USE_FD3
+#define USE_FD4
 #endif
 #if defined(SUPPORT_CMT_IF)
 #define USE_TAPE
@@ -145,6 +145,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #endif
+#define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER
 
@@ -248,10 +249,13 @@ protected:
 	NOT* not;
 #endif
 	UPD1990A* rtc;
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(SUPPORT_2HD_FDD_IF)
 	UPD765A* fdc_2hd;
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
 	UPD765A* fdc_2dd;
-#else
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
 	UPD765A* fdc;
 #endif
 	UPD7220* gdc_chr;
@@ -281,7 +285,7 @@ protected:
 	uint8 ram[0xa0000];
 	uint8 ipl[0x18000];
 	uint8 sound_bios[0x2000];
-#if defined(SUPPORT_OLD_FDD_IF)
+#if defined(_PC9801) || defined(_PC9801E)
 	uint8 fd_bios_2hd[0x1000];
 	uint8 fd_bios_2dd[0x1000];
 #endif

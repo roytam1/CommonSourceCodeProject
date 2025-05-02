@@ -168,6 +168,9 @@ void load_config()
 #ifdef USE_MONITOR_TYPE
 	config.monitor_type = GetPrivateProfileInt(_T("Screen"), _T("MonitorType"), config.monitor_type, config_path);
 #endif
+#ifdef USE_CRT_FILTER
+	config.crt_filter = GetPrivateProfileBool(_T("Screen"), _T("CRTFilter"), config.crt_filter, config_path);
+#endif
 #ifdef USE_SCANLINE
 	config.scan_line = GetPrivateProfileBool(_T("Screen"), _T("ScanLine"), config.scan_line, config_path);
 #endif
@@ -278,6 +281,9 @@ void save_config()
 #endif
 #ifdef USE_MONITOR_TYPE
 	WritePrivateProfileInt(_T("Screen"), _T("MonitorType"), config.monitor_type, config_path);
+#endif
+#ifdef USE_CRT_FILTER
+	WritePrivateProfileBool(_T("Screen"), _T("CRTFilter"), config.crt_filter, config_path);
 #endif
 #ifdef USE_SCANLINE
 	WritePrivateProfileBool(_T("Screen"), _T("ScanLine"), config.scan_line, config_path);

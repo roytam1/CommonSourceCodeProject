@@ -26,8 +26,8 @@
 #define DEVICE_NAME		"NEC PC-6001mkII"
 #define CONFIG_NAME		"pc6001mk2"
 #define SUB_CPU_ROM_FILE_NAME	"SUBCPU.62"
-#define SCREEN_WIDTH		320
-#define SCREEN_HEIGHT		200
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
 #define CPU_CLOCKS		4000000
 #define HAS_AY_3_8910
 #elif defined(_PC6001MK2SR)
@@ -41,8 +41,8 @@
 #define DEVICE_NAME		"NEC PC-6601"
 #define CONFIG_NAME		"pc6601"
 #define SUB_CPU_ROM_FILE_NAME	"SUBCPU.66"
-#define SCREEN_WIDTH		320
-#define SCREEN_HEIGHT		200
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
 #define CPU_CLOCKS		4000000
 #define HAS_AY_3_8910
 #elif defined(_PC6601SR)
@@ -72,7 +72,6 @@
 #define MC6847_ATTR_INV		0x01
 
 // device informations for win32
-#define MIN_WINDOW_WIDTH	320
 #define USE_CART1
 #define USE_FD1
 #define USE_FD2
@@ -80,13 +79,17 @@
 #define USE_FD3
 #define USE_FD4
 #endif
-#define USE_ACCESS_LAMP
 #define USE_TAPE
 #define TAPE_PC6001
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
 #define USE_AUTO_KEY_CAPS
+#if !defined(_PC6001)
+#define USE_CRT_FILTER
+#define USE_SCANLINE
+#endif
+#define USE_ACCESS_LAMP
 #define USE_DEBUGGER
 
 #include "../../common.h"

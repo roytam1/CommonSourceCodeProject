@@ -577,10 +577,13 @@ void MEMORY::do_palet(int dest,int src)
 
 void MEMORY::draw_screen()
 {
-	if (vm->sr_mode) {
-		if (CRTKILL) {
-			memset(screen, 0, sizeof(screen));
-		} else if (CRTMode2) {
+	if (CRTKILL) {
+		for(int y = 0; y < 400; y++) {
+			scrntype* dest = emu->screen_buffer(y);
+			memset(dest, 0, 640 * sizeof(scrntype));
+		}
+	} else if (vm->sr_mode) {
+		if (CRTMode2) {
 			if (CRTMode3) RefreshScr63();
 			else RefreshScr62();
 		} else RefreshScr61();
@@ -590,10 +593,12 @@ void MEMORY::draw_screen()
 				scrntype* dest = emu->screen_buffer(y*2);
 				scrntype* dest1 = emu->screen_buffer(y*2+1);
 				for(int x = 0; x < 320; x++) {
-					dest[x*2] = palette[screen[y][x*2]];
-					dest1[x*2] = palette[screen[y][x*2]];
-					dest[x*2+1] = palette[screen[y][x*2]];
-					dest1[x*2+1] = palette[screen[y][x*2]];
+					dest[x*2] = dest[x*2+1] = palette[screen[y][x*2]];
+				}
+				if(config.scan_line) {
+					memset(dest1, 0, 640 * sizeof(scrntype));
+				} else {
+					memcpy(dest1, dest, 640 * sizeof(scrntype));
 				}
 			}
 		} else if (cols==40) {
@@ -601,10 +606,12 @@ void MEMORY::draw_screen()
 				scrntype* dest = emu->screen_buffer(y*2);
 				scrntype* dest1 = emu->screen_buffer(y*2+1);
 				for(int x = 0; x < 320; x++) {
-					dest[x*2] = palette[screen[y][x]];
-					dest1[x*2] = palette[screen[y][x]];
-					dest[x*2+1] = palette[screen[y][x]];
-					dest1[x*2+1] = palette[screen[y][x]];
+					dest[x*2] = dest[x*2+1] = palette[screen[y][x]];
+				}
+				if(config.scan_line) {
+					memset(dest1, 0, 640 * sizeof(scrntype));
+				} else {
+					memcpy(dest1, dest, 640 * sizeof(scrntype));
 				}
 			}
 		} else {
@@ -613,14 +620,16 @@ void MEMORY::draw_screen()
 				scrntype* dest1 = emu->screen_buffer(y*2+1);
 				for(int x = 0; x < 640; x++) {
 					dest[x] = palette[screen[y][x]];
-					dest1[x] = palette[screen[y][x]];
+				}
+				if(config.scan_line) {
+					memset(dest1, 0, 640 * sizeof(scrntype));
+				} else {
+					memcpy(dest1, dest, 640 * sizeof(scrntype));
 				}
 			}
 		}
 	} else {
-		if (CRTKILL) {
-			memset(screen, 0, sizeof(screen));
-		} else if (CRTMode1) {
+		if (CRTMode1) {
 			if (CRTMode2)
 				if (CRTMode3) RefreshScr54();
 				else RefreshScr53();
@@ -630,10 +639,12 @@ void MEMORY::draw_screen()
 				scrntype* dest = emu->screen_buffer(y*2);
 				scrntype* dest1 = emu->screen_buffer(y*2+1);
 				for(int x = 0; x < 320; x++) {
-					dest[x*2] = palette[screen[y][x]];
-					dest1[x*2] = palette[screen[y][x]];
-					dest[x*2+1] = palette[screen[y][x]];
-					dest1[x*2+1] = palette[screen[y][x]];
+					dest[x*2] = dest[x*2+1] = palette[screen[y][x]];
+				}
+				if(config.scan_line) {
+					memset(dest1, 0, 640 * sizeof(scrntype));
+				} else {
+					memcpy(dest1, dest, 640 * sizeof(scrntype));
 				}
 			}
 		} else {
@@ -644,26 +655,29 @@ void MEMORY::draw_screen()
 				scrntype* dest1 = emu->screen_buffer(y*2+1);
 				for(int x = 0; x < 320; x++) {
 					if (x >= 32 && x < 288 && y >=4 && y < 196) {
-						dest[x*2] = palette[screen[y-4][x-32]];
-						dest1[x*2] = palette[screen[y-4][x-32]];
-						dest[x*2+1] = palette[screen[y-4][x-32]];
-						dest1[x*2+1] = palette[screen[y-4][x-32]];
+						dest[x*2] = dest[x*2+1] = palette[screen[y-4][x-32]];
 					} else {
-						dest[x*2] = palette[8];
-						dest1[x*2] = palette[8];
-						dest[x*2+1] = palette[8];
-						dest1[x*2+1] = palette[8];
+						dest[x*2] = dest[x*2+1] = palette[8];
+					}
+					if(config.scan_line) {
+						memset(dest1, 0, 640 * sizeof(scrntype));
+					} else {
+						memcpy(dest1, dest, 640 * sizeof(scrntype));
 					}
 				}
 			}
 		}
 	}
+	emu->screen_skip_line = true;
 }
 #else
 void MEMORY::draw_screen()
 {
 	if (CRTKILL) {
-		memset(screen, 0, sizeof(screen));
+		for(int y = 0; y < 400; y++) {
+			scrntype* dest = emu->screen_buffer(y);
+			memset(dest, 0, 640 * sizeof(scrntype));
+		}
 	} else if (CRTMode1) {
 		if (CRTMode2)
 			if (CRTMode3) RefreshScr54();
@@ -671,22 +685,35 @@ void MEMORY::draw_screen()
 		else RefreshScr51();
 		// copy to screen
 		for(int y = 0; y < 200; y++) {
-			scrntype* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->screen_buffer(y*2);
+			scrntype* dest1 = emu->screen_buffer(y*2+1);
 			for(int x = 0; x < 320; x++) {
-				dest[x] = palette[screen[y][x]];
+				dest[x*2] = dest[x*2+1] = palette[screen[y][x]];
+			}
+			if(config.scan_line) {
+				memset(dest1, 0, 640 * sizeof(scrntype));
+			} else {
+				memcpy(dest1, dest, 640 * sizeof(scrntype));
 			}
 		}
 	} else {
 		RefreshScr10();
 		// copy to screen
 		for(int y = 0; y < 200; y++) {
-			scrntype* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->screen_buffer(y*2);
+			scrntype* dest1 = emu->screen_buffer(y*2+1);
 			for(int x = 0; x < 320; x++) {
-				if (x >= 32 && x < 288 && y >=4 && y < 196) dest[x] = palette[screen[y-4][x-32]];
-				else dest[x] = palette[8];
+				if (x >= 32 && x < 288 && y >=4 && y < 196) dest[x*2] = dest[x*2+1] = palette[screen[y-4][x-32]];
+				else dest[x*2] = dest[x*2+1] = palette[8];
+			}
+			if(config.scan_line) {
+				memset(dest1, 0, 640 * sizeof(scrntype));
+			} else {
+				memcpy(dest1, dest, 640 * sizeof(scrntype));
 			}
 		}
 	}
+	emu->screen_skip_line = true;
 }
 #endif
 #endif

@@ -38,7 +38,7 @@ typedef struct pc88_crtc_t {
 		int x, y;
 	} cursor;
 	struct {
-		uint8 data;//, mask;
+		uint8 data, mask;
 		int num;
 		uint8 expand[200][80];
 	} attrib;

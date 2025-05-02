@@ -82,8 +82,8 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "CPU 486SX 20MHz",             ID_CPU_TYPE0
-        MENUITEM "CPU 486SX 25MHz",             ID_CPU_TYPE1
+        MENUITEM "CPU 10MHz",                   ID_CPU_TYPE0
+        MENUITEM "CPU 8MHz",                    ID_CPU_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -112,20 +112,6 @@ BEGIN
         MENUITEM "Eject",                       ID_CLOSE_FD2
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
-    END
-    POPUP "FD3"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD3
-        MENUITEM "Eject",                       ID_CLOSE_FD3
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD3
-    END
-    POPUP "FD4"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD4
-        MENUITEM "Eject",                       ID_CLOSE_FD4
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD4
     END
     POPUP "Screen"
     BEGIN
@@ -193,7 +179,7 @@ BEGIN
         MENUITEM "11025Hz",                     ID_SOUND_FREQ3
         MENUITEM "22050Hz",                     ID_SOUND_FREQ4
         MENUITEM "44100Hz",                     ID_SOUND_FREQ5
-        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
+        MENUITEM "55467Hz",                     ID_SOUND_FREQ6
         MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
         MENUITEM "50msec",                      ID_SOUND_LATE0
@@ -212,7 +198,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "fmr50.ico"
+IDI_ICON1               ICON    DISCARDABLE     "pc9801u.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

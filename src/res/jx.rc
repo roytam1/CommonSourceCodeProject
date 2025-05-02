@@ -162,6 +162,7 @@ BEGIN
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
         MENUITEM SEPARATOR
+        MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"

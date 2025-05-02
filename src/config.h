@@ -112,6 +112,9 @@ typedef struct {
 #ifdef USE_MONITOR_TYPE
 	int monitor_type;
 #endif
+#ifdef USE_CRT_FILTER
+	bool crt_filter;
+#endif
 #ifdef USE_SCANLINE
 	bool scan_line;
 #endif
