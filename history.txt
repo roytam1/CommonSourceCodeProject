@@ -1,3 +1,46 @@
+8/28/2014
+
+[COMMON] fix all vcproj files to set WholeProgramOptimization option
+[WINMAIN] support 320x240 full screen mode
+
+[VM/FMGEN] update fmgen.cpp from v1.49 to v1.50 (thanks Mr.Rururu-Tan)
+[VM/FMGEN] update opna.cpp from v1.68 to v1.70 (thanks Mr.Rururu-Tan)
+[VM/DATAREC] support NEC PC-6001 cas/p6 format tape image
+[VM/I386] fix memory leak
+[VM/I386] fix x87 opcodes FPREM and FPREM1 based on MAME 0.154
+[VM/MC6847] support enable/disable signal
+[VM/PC6031] support NEC PC-6031 and PC-6032 (thanks Mr.Nishida)
+[VM/UPD765A] fix to compare all of C/H/R/N to search sector (thanks Mr.Haserin)
+
+[GAMEGEAR/MEMORY] fix memory leak
+
+[MZ2500] fix to reset only cpu and memory map in standard (non-ipl) reset
+[MZ2500/CMT] fix to check the pulse width of ipl reset and cmt eject signals
+[MZ2500/CRTC] fix 640x400, 4 colors mode for Yukara K2 (temporary)
+[MZ2500/FLOPPY] support i/o signal to swtich internal/external floppy drives
+[MZ2500/FLOPPY] remove dirty patch for Laydock
+
+[PC6601] support real sub cpu emulation (thanks Mr.Moriya)
+[PC6601/FLOPPY] rename system to floppy
+[PC6601/FLOPPY] split to PC-6601 internal floppy drive class and PC-6031 class
+[PC6601/FLOPPY] support to switch internal/external floppy drives
+[PC6601/MEMORY] split to memory class and timer/irq class
+[PC6601/MEMORY] support CRTKILL/BUSRQ signals
+[PC6601/PSUB] rename keyboard to psub (pesudo sub cpu)
+[PC6601/PSUB] simplify cmt codes
+
+[PC8801/PC88] fix text attributes
+
+
+5/15/2014
+
+[PC6001] update yaPC-6001/6201/6601 codes (thanks Mr.tanam)
+[PC6001] support PC-80S31K floppy drives
+[PC6001MK2] support PC-80S31K floppy drives
+[PC6001MK2SR] add yaPC-6401 codes (thanks Mr.tanam)
+[PC6601SR] add yaPC-6801 codes (thanks Mr.tanam)
+
+
 5/1/2014
 
 [VM/I286] reimplement based on MAME 0.149
@@ -17,8 +60,8 @@
 
 4/17/2014
 
-[WINMAIN] fix resource reak issue (thanks Mr.Redart)
-[EMU/WIN32] fix resource reak issue (thanks Mr.Redart)
+[WINMAIN] fix resource leak issue (thanks Mr.Redart)
+[EMU/WIN32] fix resource leak issue (thanks Mr.Redart)
 
 [VM/FMGEN] fix compiler dependent issue
 [VM/YM2203] support full sound generator dll features (thanks Mr.Redart)
@@ -81,7 +124,7 @@
 [GAMEGEAR] add yaGEMEGEAR codes (thanks Mr.tanam)
 [MASTERSYSTEM] add yaMASTERSYSTEM codes (thanks Mr.tanam)
 [PC6001] update yaPC-6001 codes (thanks Mr.tanam)
-[PC6001mk2] add yaPC-6201 codes (thanks Mr.tanam)
+[PC6001MK2] add yaPC-6201 codes (thanks Mr.tanam)
 [PC6601] add yaPC-6601 codes (thanks Mr.tanam)
 [PX7] support PIONEER PX-7 (MSX1 + laser-disc player) (partial)
 

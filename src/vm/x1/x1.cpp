@@ -247,7 +247,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_single_w(0x700, opm1);
 		io->set_iovalue_single_r(0x700, 0x00);
 		io->set_iomap_single_rw(0x701, opm1);
+#ifdef _X1TURBOZ
+		io->set_flipflop_single_rw(0x704, 0x00);
+#else
 		io->set_iomap_range_rw(0x704, 0x707, ctc1);
+#endif
 	}
 	if(sound_device_type == 2) {
 		io->set_iomap_single_w(0x708, opm2);

@@ -137,18 +137,22 @@ void CRTC::write_data8(uint32 addr, uint32 data)
 {
 	// read modify write
 	if(cgreg[0x0e] == 0x03) {
+		// for Yukara K2
+		uint8 *vram_b1 = ((cgreg[0x18] & 3) == 1) ? vram_b + 0x4000 : vram_g;
+		uint8 *vram_r1 = ((cgreg[0x18] & 3) == 1) ? vram_r + 0x4000 : vram_i;
+		
 		// 4 colors
 		if((cgreg[5] & 0xc0) == 0x00) {
 			// REPLACE
 			if(addr & 0x4000) {
 				addr &= 0x3fff;
 				if(cgreg[5] & 1) {
-					vram_g[addr] &= ~cgreg[6];
-					vram_g[addr] |= (cgreg[4] & 1) ? (data & cgreg[0] & cgreg[6]) : 0;
+					vram_b1[addr] &= ~cgreg[6];
+					vram_b1[addr] |= (cgreg[4] & 1) ? (data & cgreg[0] & cgreg[6]) : 0;
 				}
 				if(cgreg[5] & 2) {
-					vram_i[addr] &= ~cgreg[6];
-					vram_i[addr] |= (cgreg[4] & 2) ? (data & cgreg[1] & cgreg[6]) : 0;
+					vram_r1[addr] &= ~cgreg[6];
+					vram_r1[addr] |= (cgreg[4] & 2) ? (data & cgreg[1] & cgreg[6]) : 0;
 				}
 			}
 			else {
@@ -168,12 +172,12 @@ void CRTC::write_data8(uint32 addr, uint32 data)
 			if(addr & 0x4000) {
 				addr &= 0x3fff;
 				if(cgreg[5] & 1) {
-					vram_g[addr] &= ~data;
-					vram_g[addr] |= (cgreg[4] & 1) ? (data & cgreg[0]) : 0;
+					vram_b1[addr] &= ~data;
+					vram_b1[addr] |= (cgreg[4] & 1) ? (data & cgreg[0]) : 0;
 				}
 				if(cgreg[5] & 2) {
-					vram_i[addr] &= ~data;
-					vram_i[addr] |= (cgreg[4] & 2) ? (data & cgreg[1]) : 0;
+					vram_r1[addr] &= ~data;
+					vram_r1[addr] |= (cgreg[4] & 2) ? (data & cgreg[1]) : 0;
 				}
 			}
 			else {
@@ -1638,6 +1642,9 @@ void CRTC::draw_640x400x4screen()
 {
 	uint8 B, R;
 	uint32 dest = 0;
+	// for Yukara K2
+	uint8 *vram_b1 = ((cgreg[0x18] & 3) == 1) ? vram_b + 0x4000 : vram_g;
+	uint8 *vram_r1 = ((cgreg[0x18] & 3) == 1) ? vram_r + 0x4000 : vram_i;
 	
 	if(map_init) {
 		create_addr_map(80, 400);
@@ -1648,8 +1655,8 @@ void CRTC::draw_640x400x4screen()
 			uint32 dest2 = dest + map_hdsc[y][x];
 			dest += 8;
 			
-			B = (cgreg[0x18] & 0x01) ? ((src & 0x4000) ? vram_g[src & 0x3fff] : vram_b[src]) : 0;
-			R = (cgreg[0x18] & 0x02) ? ((src & 0x4000) ? vram_i[src & 0x3fff] : vram_r[src]) : 0;
+			B = (cgreg[0x18] & 0x01) ? ((src & 0x4000) ? vram_b1[src & 0x3fff] : vram_b[src]) : 0;
+			R = (cgreg[0x18] & 0x02) ? ((src & 0x4000) ? vram_r1[src & 0x3fff] : vram_r[src]) : 0;
 			
 			cg[dest2    ] = cg_matrix0[B][R][0];
 			cg[dest2 + 1] = cg_matrix0[B][R][1];

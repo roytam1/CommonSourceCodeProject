@@ -48,7 +48,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_MASTERSYSTEM"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,6 +118,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -145,7 +145,6 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_MASTERSYSTEM"
 				StringPooling="true"
 				RuntimeLibrary="0"

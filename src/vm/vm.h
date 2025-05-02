@@ -195,8 +195,13 @@
 #include "pc6001/pc6001.h"
 #endif
 
-// NEC PC-6001mk2
+// NEC PC-6001mkII
 #ifdef _PC6001MK2
+#include "pc6001/pc6001.h"
+#endif
+
+// NEC PC-6001mkIISR
+#ifdef _PC6001MK2SR
 #include "pc6001/pc6001.h"
 #endif
 
@@ -205,8 +210,8 @@
 #include "pc6001/pc6001.h"
 #endif
 
-// PC-6801
-#ifdef _PC6801
+// NEC PC-6601SR
+#ifdef _PC6601SR
 #include "pc6001/pc6001.h"
 #endif
 
@@ -342,6 +347,11 @@
 
 // SHARP X1turbo
 #ifdef _X1TURBO
+#include "x1/x1.h"
+#endif
+
+// SHARP X1turboZ
+#ifdef _X1TURBOZ
 #include "x1/x1.h"
 #endif
 

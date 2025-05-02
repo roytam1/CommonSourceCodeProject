@@ -31,11 +31,11 @@
 	Author : Takeo.Namiki
 	Date   : 2013.12.08-
 
-	[ PD7752 ]
+	[ uPD7752 ]
 */
 
-#ifndef _PD7752_H_
-#define _PD7752_H_
+#ifndef _UPD7752_H_
+#define _UPD7752_H_
 
 #include "vm.h"
 #include "../emu.h"
@@ -62,7 +62,7 @@ typedef	int	D7752_FIXED;
 /// #define SOUND_RATE 44100
 #define SOUND_RATE 48000
 
-class PD7752 : public DEVICE
+class UPD7752 : public DEVICE
 {
 private:
 	bool mute;
@@ -96,8 +96,8 @@ private:
 	void VSetData(byte data);
 	int VGetStatus(void);
 public:
-	PD7752(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
-	~PD7752() {}
+	UPD7752(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~UPD7752() {}
 	
 	// common functions
 	void initialize();

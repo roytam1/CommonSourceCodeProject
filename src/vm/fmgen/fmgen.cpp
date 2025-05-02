@@ -2,7 +2,7 @@
 //	FM Sound Generator - Core Unit
 //	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
-//	$Id: fmgen.cpp,v 1.49 2003/09/02 14:51:04 cisc Exp $
+//	$Id: fmgen.cpp,v 1.50 2003/09/10 13:19:34 cisc Exp $
 // ---------------------------------------------------------------------------
 //	éQçl:
 //		FM sound generator for M.A.M.E., written by Tatsuyuki Satoh.
@@ -261,7 +261,7 @@ void Chip::MakeTable()
 	for (h=0; h<4; h++)
 	{
 		assert(2 + FM_RATIOBITS - FM_PGBITS >= 0);
-		double rr = dt2lv[h] * double(ratio_) / (1 << (2 + FM_RATIOBITS - FM_PGBITS));
+		double rr = dt2lv[h] * double(ratio_);
 		for (l=0; l<16; l++)
 		{
 			int mul = l ? l * 2 : 1;
@@ -381,6 +381,7 @@ void Operator::Prepare()
 		param_changed_ = false;
 		//	PG Part
 		pg_diff_ = (dp_ + dttable[detune_ + bn_]) * chip_->GetMulValue(detune2_, multiple_);
+		pg_diff_ >>= (2 + FM_RATIOBITS - FM_PGBITS);
 		pg_diff_lfo_ = pg_diff_ >> 11;
 
 		// EG Part
@@ -409,6 +410,8 @@ void Operator::Prepare()
 		{
 			int m = ar_ >= (uint)((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60);
 
+			if (ssg_phase_ == -1)		// XXX quick fix
+				ssg_phase_ = 0;
 			assert(0 <= ssg_phase_ && ssg_phase_ <= 2);
 			const int* table = ssgenvtable[ssg_type_ & 7][m][ssg_phase_];
 
@@ -568,7 +571,6 @@ void FM::Operator::EGCalc()
 			eg_level_ += 4 * decaytable1[eg_rate_][eg_curve_count_ & 7];
 			if (eg_level_ >= eg_level_on_next_phase_)
 			{
-				EGUpdate();
 				switch (eg_phase_)
 				{
 				case decay:
@@ -582,6 +584,7 @@ void FM::Operator::EGCalc()
 					break;
 				}
 			}
+			EGUpdate();
 		}
 	}
 	eg_curve_count_++;

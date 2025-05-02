@@ -981,7 +981,11 @@ uint32 UPD765A::read_sector()
 			continue;
 		}
 		cy = disk[drv]->id[0];
+#if 0
 		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[2] != id[2] /*|| disk[drv]->id[3] != id[3]*/) {
+#else
+		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[2] != id[2] || disk[drv]->id[3] != id[3]) {
+#endif
 			continue;
 		}
 		// sector number is matched

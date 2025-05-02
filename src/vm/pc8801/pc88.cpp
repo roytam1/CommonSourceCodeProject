@@ -1946,7 +1946,7 @@ void pc88_crtc_t::reset(bool hireso)
 	cursor.type = cursor.mode = -1;
 	cursor.x = cursor.y = -1;
 	attrib.data = 0xe0;
-	attrib.mask = 0xff;
+//	attrib.mask = 0xff;
 	attrib.num = 20;
 	width = 80;
 	height = 25;
@@ -2021,7 +2021,7 @@ void pc88_crtc_t::write_param(uint8 data)
 			break;
 		case 4:
 			mode = (data >> 5) & 7;
-			attrib.num = (mode == 1) ? 0 : (data & 0x1f) + 1;
+			attrib.num = (mode == 0 || mode == 2) ? (data & 0x1f) + 1 : 0;
 			break;
 		}
 		break;
@@ -2107,22 +2107,22 @@ void pc88_crtc_t::expand_attribs(bool hireso, bool line400)
 					// color
 					if(code & 8) {
 						attrib.data = (attrib.data & 0x0f) | (code & 0xf0);
-						attrib.mask = 0xf0;
+//						attrib.mask = 0xf0;
 					} else {
 						attrib.data = (attrib.data & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
 						attrib.data ^= reverse;
 						attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
-						attrib.mask = 0xff;
+//						attrib.mask = 0xff;
 					}
 				} else {
 					attrib.data = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
 					attrib.data ^= reverse;
 					attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
-					attrib.mask = 0xff;
+//					attrib.mask = 0xff;
 				}
 				pos += 2;
 			}
-			attrib.expand[cy][cx] = attrib.data & attrib.mask;
+			attrib.expand[cy][cx] = attrib.data;// & attrib.mask;
 			
 			if(cx == cursor.x && cy == cursor.y) {
 				if((cursor.type & 1) && blink.cursor) {

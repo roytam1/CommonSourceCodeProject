@@ -15,40 +15,34 @@
 #include "../device.h"
 
 class MC6847;
+class TIMER;
 
 class DISPLAY : public DEVICE
 {
 private:
-	DEVICE *d_cpu;
 	MC6847 *d_vdp;
-	KEYBOARD *d_key;
+	TIMER *d_timer;
+	
 	uint8 *ram_ptr;
 	uint8 *vram_ptr;
-	byte TimerSW;
-	byte OldTimerSW;
-	uint8 counter;
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~DISPLAY() {}
 	
 	// common functions
-	void initialize();
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
+	
+	// unique functions
 	void set_context_vdp(MC6847* device) {
 		d_vdp = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
 		ram_ptr = vram_ptr = ptr;
 	}
-	void event_vline(int v, int clock);
-	// unique function
-	void set_context_cpu(DEVICE* device) {
-		d_cpu = device;
-	}
-	void set_context_key(KEYBOARD* device) {
-		d_key = device;
+	void set_context_timer(TIMER* device) {
+		d_timer = device;
 	}
 	void draw_screen();
 };

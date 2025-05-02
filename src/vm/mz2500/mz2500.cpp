@@ -220,12 +220,11 @@ void VM::reset()
 void VM::special_reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->special_reset();
-	}
-	
-	// set initial port status
-	opn->write_signal(SIG_YM2203_PORT_B, (monitor_type & 2) ? 0x77 : 0x37, 0xff);
+//	for(DEVICE* device = first_device; device; device = device->next_device) {
+//		device->special_reset();
+//	}
+	memory->special_reset();
+	cpu->reset();
 }
 
 void VM::run()

@@ -165,9 +165,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc);
 	
 	// printer
-	io->set_flipflop_single_r(0x378, 0x00);
+	io->set_flipflop_single_rw(0x378, 0x00);
 	io->set_iovalue_single_r(0x379, 0x78);
-	io->set_flipflop_single_r(0x37a, 0x00);
+	io->set_flipflop_single_rw(0x37a, 0x00);
 	
 	// keyboard
 #ifdef TYPE_SL
@@ -211,7 +211,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	62	bit0
 //		bit1	1=8087‚ ‚è
 	io->set_iovalue_single_r(0x62, 0x26);	// unknown
-//	io->set_flipflop_single_r(0x63, 0x00);	// unknown
+//	io->set_flipflop_single_rw(0x63, 0x00);	// unknown
 	static const int iovalues[0x20] = {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x14, 0xff, 0xff, 0x00, 0xff, 0xe0, 0xff, 0x00, 0xff, 0xff,
 		0xff, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
@@ -220,7 +220,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(i == 0xee && i == 0xef) {
 			continue;
 		}
-		io->set_flipflop_single_r(i, iovalues[i & 0x1f]);
+		io->set_flipflop_single_rw(i, iovalues[i & 0x1f]);
 	}
 #endif
 

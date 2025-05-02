@@ -13,25 +13,40 @@
 #include "../datarec.h"
 #include "../i8255.h"
 
-#define EVENT_APSS	0
+#define EVENT_FREW	0
+#define EVENT_FFWD	1
+#define EVENT_FWD	2
+#define EVENT_STOP	3
+#define EVENT_EJECT	4
+#define EVENT_APSS	5
+
+#define PERIOD_IPL_SIGNAL	100
+//#define PERIOD_CMT_SIGNAL	300000
+#define PERIOD_CMT_SIGNAL	1000
 
 void CMT::initialize()
 {
 	pa = pc = 0xff;
 	play = rec = false;
 	now_play = now_rewind = false;
+	prev_clock_ipl = 0;
 }
 
 void CMT::reset()
 {
+	register_id_frew = -1;
+	register_id_ffwd = -1;
+	register_id_fwd = -1;
+	register_id_stop = -1;
+	register_id_eject = -1;
 #ifndef _MZ80B
+	register_id_apss = -1;
 	now_apss = false;
-	register_id = -1;
 #endif
 	close_tape();
 }
 
-void CMT::fast_forwad()
+void CMT::fast_forward()
 {
 	if(play) {
 		d_drec->set_ff_rew(1);
@@ -72,41 +87,90 @@ void CMT::stop()
 void CMT::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CMT_PIO_PA) {
-#ifdef _MZ80B
-		if(!(pa & 1) && (data & 1)) {
-			if(data & 2) {
-				fast_forwad();
-			} else {
-				fast_rewind();
-			}
-		}
-		if(!(pa & 4) && (data & 4)) {
-			forward();
-		}
-		if(!(pa & 8) && (data & 8)) {
-			stop();
-		}
-#else
+#ifndef _MZ80B
 		if((pa & 1) && !(data & 1)) {
 			fast_rewind();
 			now_apss = ((pa & 0x80) == 0);
+//			register_event(this, EVENT_FREW, PERIOD_CMT_SIGNAL, false, &register_id_frew);
+//			now_apss_tmp = ((pa & 0x80) == 0);
+//		} else if(!(pa & 1) && (data & 1)) {
+//			if(register_id_frew != -1) {
+//				cancel_event(register_id_frew);
+//				register_id_frew = -1;
+//			}
 		}
 		if((pa & 2) && !(data & 2)) {
-			fast_forwad();
+			fast_forward();
 			now_apss = ((pa & 0x80) == 0);
+//			register_event(this, EVENT_FFWD, PERIOD_CMT_SIGNAL, false, &register_id_ffwd);
+//			now_apss_tmp = ((pa & 0x80) == 0);
+//		} else if(!(pa & 2) && (data & 2)) {
+//			if(register_id_ffwd != -1) {
+//				cancel_event(register_id_ffwd);
+//				register_id_ffwd = -1;
+//			}
 		}
 		if((pa & 4) && !(data & 4)) {
 			forward();
 			now_apss = false;
+//			register_event(this, EVENT_FWD, PERIOD_CMT_SIGNAL, false, &register_id_fwd);
+//		} else if(!(pa & 4) && (data & 4)) {
+//			if(register_id_fwd != -1) {
+//				cancel_event(register_id_fwd);
+//				register_id_fwd = -1;
+//			}
 		}
 		if((pa & 8) && !(data & 8)) {
 			stop();
 			// stop apss
-			if(register_id != -1) {
-				cancel_event(register_id);
-				register_id = -1;
+			if(register_id_apss != -1) {
+				cancel_event(register_id_apss);
+				register_id_apss = -1;
 			}
 			now_apss = false;
+//			register_event(this, EVENT_STOP, PERIOD_CMT_SIGNAL, false, &register_id_stop);
+//		} else if(!(pa & 8) && (data & 8)) {
+//			if(register_id_stop != -1) {
+//				cancel_event(register_id_stop);
+//				register_id_stop = -1;
+//			}
+		}
+#else
+		if(!(pa & 1) && (data & 1)) {
+			if(data & 2) {
+				fast_forward();
+//				register_event(this, EVENT_FFWD, PERIOD_CMT_SIGNAL, false, &register_id_ffwd);
+			} else {
+				fast_rewind();
+//				register_event(this, EVENT_FREW, PERIOD_CMT_SIGNAL, false, &register_id_frew);
+			}
+//		} else if((pa & 1) && !(data & 1)) {
+//			if(register_id_ffwd != -1) {
+//				cancel_event(register_id_ffwd);
+//				register_id_ffwd = -1;
+//			}
+//			if(register_id_frew != -1) {
+//				cancel_event(register_id_frew);
+//				register_id_frew = -1;
+//			}
+		}
+		if(!(pa & 4) && (data & 4)) {
+			forward();
+//			register_event(this, EVENT_FWD, PERIOD_CMT_SIGNAL, false, &register_id_fwd);
+//		} else if((pa & 4) && !(data & 4)) {
+//			if(register_id_fwd != -1) {
+//				cancel_event(register_id_fwd);
+//				register_id_fwd = -1;
+//			}
+		}
+		if(!(pa & 8) && (data & 8)) {
+			stop();
+//			register_event(this, EVENT_STOP, PERIOD_CMT_SIGNAL, false, &register_id_stop);
+//		} else if((pa & 8) && !(data & 8)) {
+//			if(register_id_stop != -1) {
+//				cancel_event(register_id_stop);
+//				register_id_stop = -1;
+//			}
 		}
 #endif
 		pa = data;
@@ -114,19 +178,28 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 		if(!(pc & 2) && (data & 2)) {
 			vm->special_reset();
 		}
-		if(!(pc & 8) && (data & 8)) {
-			vm->reset();
+		if((pc & 8) && !(data & 8)) {
+			prev_clock_ipl = current_clock();
+		} else if(!(pc & 8) && (data & 8)) {
+			if(passed_usec(prev_clock_ipl) > PERIOD_IPL_SIGNAL) {
+				vm->reset();
+			}
 		}
 		if((pc & 0x10) && !(data & 0x10)) {
-			//emu->close_tape();
+			register_event(this, EVENT_EJECT, PERIOD_CMT_SIGNAL, false, &register_id_eject);
+		} else if(!(pc & 0x10) && (data & 0x10)) {
+			if(register_id_eject != -1) {
+				cancel_event(register_id_eject);
+				register_id_eject = -1;
+			}
 		}
 		d_drec->write_signal(SIG_DATAREC_OUT, data, 0x80);
 		pc = data;
 	} else if(id == SIG_CMT_OUT) {
 #ifndef _MZ80B
 		if(now_apss) {
-			if((data & mask) && register_id == -1) {
-				register_event(this, EVENT_APSS, 350000, false, &register_id);
+			if((data & mask) && register_id_apss == -1) {
+				register_event(this, EVENT_APSS, 350000, false, &register_id_apss);
 				d_pio->write_signal(SIG_I8255_PORT_B, 0x40, 0x40);
 			}
 		} else
@@ -157,15 +230,50 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-#ifndef _MZ80B
 void CMT::event_callback(int event_id, int err)
 {
-	if(event_id == EVENT_APSS) {
-		register_id = -1;
+	if(event_id == EVENT_FREW) {
+		fast_rewind();
+#ifndef _MZ80B
+		now_apss = now_apss_tmp;
+#endif
+		register_id_frew = -1;
+	} else if(event_id == EVENT_FFWD) {
+		fast_forward();
+#ifndef _MZ80B
+		now_apss = now_apss_tmp;
+#endif
+		register_id_ffwd = -1;
+	} else if(event_id == EVENT_FWD) {
+		forward();
+#ifndef _MZ80B
+//		if(register_id_apss != -1) {
+//			cancel_event(register_id_apss);
+//			register_id_apss = -1;
+//		}
+		now_apss = false;
+#endif
+		register_id_fwd = -1;
+	} else if(event_id == EVENT_STOP) {
+		stop();
+#ifndef _MZ80B
+		if(register_id_apss != -1) {
+			cancel_event(register_id_apss);
+			register_id_apss = -1;
+		}
+		now_apss = false;
+#endif
+		register_id_stop = -1;
+	} else if(event_id == EVENT_EJECT) {
+		emu->close_tape();
+		register_id_eject = -1;
+#ifndef _MZ80B
+	} else if(event_id == EVENT_APSS) {
 		d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
+		register_id_apss = -1;
+#endif
 	}
 }
-#endif
 
 void CMT::play_tape(bool value)
 {
@@ -189,9 +297,9 @@ void CMT::close_tape()
 	d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
 	
 #ifndef _MZ80B
-	if(register_id != -1) {
-		cancel_event(register_id);
-		register_id = -1;
+	if(register_id_apss != -1) {
+		cancel_event(register_id_apss);
+		register_id_apss = -1;
 	}
 #endif
 }

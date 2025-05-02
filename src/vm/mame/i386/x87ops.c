@@ -1976,7 +1976,7 @@ void x87_fprem(i386_state *cpustate, UINT8 modrm)
 		floatx80 a = ST(0);
 		floatx80 b = ST(1);
 
-		cpustate->x87_sw &= ~X87_SW_C0;
+		cpustate->x87_sw &= ~X87_SW_C2;
 
 		// TODO: Implement Cx bits
 		result = floatx80_rem(a, b);
@@ -2002,7 +2002,7 @@ void x87_fprem1(i386_state *cpustate, UINT8 modrm)
 		floatx80 a = ST(0);
 		floatx80 b = ST(1);
 
-		cpustate->x87_sw &= ~X87_SW_C0;
+		cpustate->x87_sw &= ~X87_SW_C2;
 
 		// TODO: Implement Cx bits
 		result = floatx80_rem(a, b);

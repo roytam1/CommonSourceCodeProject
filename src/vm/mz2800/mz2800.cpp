@@ -132,7 +132,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_rw(0x83, pic, I8259_ADDR_CHIP1 | 1);
 	io->set_iomap_range_rw(0x8c, 0x8d, memory);
 	io->set_iovalue_single_r(0x8e, 0xff);	// dipswitch
-	io->set_flipflop_single_r(0x8f, 0x00);	// shut
+	io->set_flipflop_single_rw(0x8f, 0x00);	// shut
 	io->set_iomap_range_rw(0xa0, 0xa3, sio);
 	for(uint32 p = 0xae; p <= 0x1fae; p += 0x100) {
 		io->set_iomap_single_w(p, crtc);

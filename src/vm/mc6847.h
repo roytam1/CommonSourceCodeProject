@@ -20,6 +20,8 @@
 #define SIG_MC6847_GM		3
 #define SIG_MC6847_CSS		4
 #define SIG_MC6847_INV		5
+#define SIG_MC6847_ENABLE	6
+#define SIG_MC6847_DISABLE	7
 
 class MC6847 : public DEVICE
 {
@@ -45,6 +47,7 @@ private:
 	
 	bool vsync, hsync, disp;
 	int tWHS;
+	bool disabled;
 	
 	void set_vsync(bool val);
 	void set_hsync(bool val);

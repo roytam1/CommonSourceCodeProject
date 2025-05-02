@@ -34,12 +34,19 @@ private:
 	uint8 pa, pc;
 	bool play, rec;
 	bool now_play, now_rewind;
+	int register_id_frew;
+	int register_id_ffwd;
+	int register_id_fwd;
+	int register_id_stop;
+	int register_id_eject;
 #ifndef _MZ80B
+	int register_id_apss;
 	bool now_apss;
-	int register_id;
+	bool now_apss_tmp;
 #endif
+	uint32 prev_clock_ipl;
 	
-	void fast_forwad();
+	void fast_forward();
 	void fast_rewind();
 	void forward();
 	void stop();
@@ -52,9 +59,7 @@ public:
 	void initialize();
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
-#ifndef _MZ80B
 	void event_callback(int event_id, int err);
-#endif
 	
 	// unique function
 	void set_context_pio(DEVICE* device) {

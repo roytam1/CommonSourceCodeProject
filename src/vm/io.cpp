@@ -284,14 +284,14 @@ void IO::set_iovalue_range_r(uint32 s, uint32 e, uint32 value)
 	}
 }
 
-void IO::set_flipflop_single_r(uint32 addr, uint32 value)
+void IO::set_flipflop_single_rw(uint32 addr, uint32 value)
 {
 	wr_table[addr & IO_ADDR_MASK].is_flipflop = true;
 	rd_table[addr & IO_ADDR_MASK].value = value;
 	rd_table[addr & IO_ADDR_MASK].value_registered = true;
 }
 
-void IO::set_flipflop_range_r(uint32 s, uint32 e, uint32 value)
+void IO::set_flipflop_range_rw(uint32 s, uint32 e, uint32 value)
 {
 	for(uint32 i = s; i <= e; i++) {
 		wr_table[i & IO_ADDR_MASK].is_flipflop = true;

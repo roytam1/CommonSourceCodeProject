@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pd7752.h"
+#include "upd7752.h"
 
 // internal	macros
 #define	I2F(a) (((D7752_FIXED) a) << 16)
@@ -91,7 +91,7 @@ static const int iir2[64]	= {
 //       S=01: SLOW SPEED
 //       S=10: FAST SPEED
 // return: error code
-int	PD7752_Start(int mode)
+int	UPD7752_Start(int mode)
 {
 	const static int frame_size[8] = {
 		100,		 //	10ms, NORMAL
@@ -234,12 +234,12 @@ int	Synth(byte *param, D7752_SAMPLE *frame)
 	Author : Takeo.Namiki
 	Date   : 2013.12.08-
 
-	[ PD7752 ]
+	[ uPD7752 ]
 */
 
 
 // write to CoreAudio after converting sampling rate and bit width
-void PD7752::UpConvert(void)
+void UPD7752::UpConvert(void)
 {
 	int i;
 	// 10kHz -> actual sampling rate
@@ -249,7 +249,7 @@ void PD7752::UpConvert(void)
 		memset(voicebuf, 0, samples * 10000);
 	}
 	for(i=0; i<samples; i++) {
-		int dat = (double)(Fbuf[i*GetFrameSize()/samples]/10.0);
+		int dat = (int)((double)Fbuf[i*GetFrameSize()/samples]/10.0);
 		if (dat > 127) dat = 127;
 		if (dat < -128) dat = -128;
 		voicebuf[fin++] = dat+128;
@@ -258,7 +258,7 @@ void PD7752::UpConvert(void)
 }
 
 // abort voice
-void PD7752::AbortVoice(void)
+void UPD7752::AbortVoice(void)
 {
 	// stop thread loop
 	ThreadLoopStop = 1;
@@ -273,7 +273,7 @@ void PD7752::AbortVoice(void)
 }
 
 // cancel voice
-void PD7752::CancelVoice(void)
+void UPD7752::CancelVoice(void)
 {
 	if (!mute) {
 		AbortVoice();
@@ -282,22 +282,22 @@ void PD7752::CancelVoice(void)
 }
 
 // become 1 when synthesising voice
-int PD7752::VoiceOn(void)
+int UPD7752::VoiceOn(void)
 {
 	return (mute ? 1:0);
 }
 
 // set mode
-void PD7752::VSetMode(byte mode)
+void UPD7752::VSetMode(byte mode)
 {
 	// start synthesising
-	PD7752_Start(mode);
+	UPD7752_Start(mode);
 	// clear status
 	VStat = D7752E_IDL;
 }
 
 // set command
-void PD7752::VSetCommand(byte comm)
+void UPD7752::VSetCommand(byte comm)
 {
 	// if synthesising voice, abort
 	AbortVoice();
@@ -326,7 +326,7 @@ void PD7752::VSetCommand(byte comm)
 }
 
 // transfer voice parameter
-void PD7752::VSetData(byte data)
+void UPD7752::VSetData(byte data)
 {
 	// accept data only when busy
 	if ((VStat & D7752E_BSY)&&(VStat & D7752E_REQ)) {
@@ -360,14 +360,14 @@ void PD7752::VSetData(byte data)
 }
 
 // get status register
-int PD7752::VGetStatus(void)
+int UPD7752::VGetStatus(void)
 {
 	int ret;
 	ret = VStat;
 	return ret;
 }
 
-void PD7752::initialize()
+void UPD7752::initialize()
 {
 	mute=true;
 	voicebuf=NULL;
@@ -377,7 +377,7 @@ void PD7752::initialize()
 	return;
 }
 
-void PD7752::release()
+void UPD7752::release()
 {
 	CancelVoice();
 	if (voicebuf) free(voicebuf);
@@ -386,7 +386,7 @@ void PD7752::release()
 	return;
 }
 
-void PD7752::reset()
+void UPD7752::reset()
 {
 	io_E0H = io_E2H = io_E3H = 0;
 	Pnum    = 0;
@@ -399,7 +399,7 @@ void PD7752::reset()
 	return;
 }
 
-void PD7752::write_io8(uint32 addr, uint32 data)
+void UPD7752::write_io8(uint32 addr, uint32 data)
 {
 	// disk I/O
 	uint16 port=(addr & 0x00ff);
@@ -420,7 +420,7 @@ void PD7752::write_io8(uint32 addr, uint32 data)
 	return;
 }
 
-uint32 PD7752::read_io8(uint32 addr)
+uint32 UPD7752::read_io8(uint32 addr)
 {
 	uint16 port=(addr & 0x00ff);
 	byte Value=0xff;
@@ -441,7 +441,7 @@ uint32 PD7752::read_io8(uint32 addr)
 }
 
 // voice thread
-void PD7752::event_frame()
+void UPD7752::event_frame()
 {
 	if (ThreadLoopStop) return;
 	if (VStat & D7752E_EXT) {	// external voice
@@ -467,7 +467,7 @@ void PD7752::event_frame()
 	}
 }
 
-void PD7752::mix(int32* buffer, int cnt)
+void UPD7752::mix(int32* buffer, int cnt)
 {
 	if (mute && fout == fin) {
 		fin = fout =0;

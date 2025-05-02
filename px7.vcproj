@@ -118,6 +118,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -508,7 +509,6 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>
@@ -517,7 +517,6 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>

@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								5/1/2014
+								8/28/2014
 
 --- What's this ?
 
@@ -73,8 +73,9 @@ This archive includes the all source codes of emulators listed below:
 	yaMASTER SYSTEM	SEGA MASTER SYSTEM (by Mr.tanam)
 	yaPC-6001	NEC PC-6001 (by Mr.tanam)
 	yaPC-6201	NEC PC-6001mkII (by Mr.tanam)
+	yaPC-6401	NEC PC-6001mkIISR (by Mr.tanam)
 	yaPC-6601	NEC PC-6601 (by Mr.tanam)
-	PC-6801		CP/M PC-6801 (by Mr.tanam)
+	yaPC-6801	NEC PC-6601SR (by Mr.tanam)
 
 You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
 
@@ -115,6 +116,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	MAME mc6809 core
 - vm/mc6847.*
 	MAME mc6847 core
+- vm/pc6031.*
+	iP6 by Mr.Nishida
 - vm/sn76489an.*
 	MAME SN76496 core
 - vm/tf20.*
@@ -129,6 +132,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Neko Project 2
 - vm/upd765a.*
 	M88 fdc/fdu core
+- vm/upd7752.*
+	iP6 by Mr.Nishida
 - vm/upd7801.*
 	MAME uPD7810 core
 - vm/w3100a.*

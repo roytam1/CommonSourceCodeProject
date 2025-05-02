@@ -111,8 +111,8 @@ public:
 	
 	void set_iovalue_single_r(uint32 addr, uint32 value);
 	void set_iovalue_range_r(uint32 s, uint32 e, uint32 value);
-	void set_flipflop_single_r(uint32 addr, uint32 value);
-	void set_flipflop_range_r(uint32 s, uint32 e, uint32 value);
+	void set_flipflop_single_rw(uint32 addr, uint32 value);
+	void set_flipflop_range_rw(uint32 s, uint32 e, uint32 value);
 };
 
 #endif

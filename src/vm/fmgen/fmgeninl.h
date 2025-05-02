@@ -2,7 +2,7 @@
 //	FM Sound Generator
 //	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
-//	$Id: fmgeninl.h,v 1.26 2003/06/12 13:14:36 cisc Exp $
+//	$Id: fmgeninl.h,v 1.27 2003/09/10 13:22:50 cisc Exp $
 
 #ifndef FM_GEN_INL_H
 #define FM_GEN_INL_H
@@ -181,6 +181,7 @@ inline void Operator::SetSSGEC(uint ssgec)
 	}
 	else
 		ssg_type_ = 0;
+	param_changed_ = true; 
 }
 
 inline void Operator::SetAMON(bool amon)		

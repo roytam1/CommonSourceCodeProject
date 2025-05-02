@@ -2,7 +2,7 @@
 //	OPN/A/B interface with ADPCM support
 //	Copyright (C) cisc 1998, 2001.
 // ---------------------------------------------------------------------------
-//	$Id: opna.cpp,v 1.68 2003/06/12 14:03:44 cisc Exp $
+//	$Id: opna.cpp,v 1.70 2004/02/06 13:13:39 cisc Exp $
 
 #include "headers.h"
 #include "misc.h"
@@ -67,7 +67,7 @@ void OPNBase::SetParameter(Channel4* ch, uint addr, uint data)
 			break;
 			
 		case 4: // 40-4E TL
-			op->SetTL(data & 0x7f, (regtc & 0x80) && (csmch == ch));
+			op->SetTL(data & 0x7f, ((regtc & 0xc0) == 0x80) && (csmch == ch));
 			break;
 			
 		case 5: // 50-5E KS/AR
@@ -165,7 +165,7 @@ void OPNBase::SetVolumeFM(int db)
 //	タイマー時間処理
 void OPNBase::TimerA()
 {
-	if (regtc & 0x80)
+	if ((regtc & 0xc0) == 0x80)
 	{
 		csmch->KeyControl(0x00);
 		csmch->KeyControl(0x0f);
@@ -468,8 +468,11 @@ void OPNABase::Reset()
 	stmask = ~0x1c;
 	statusnext = 0;
 	memaddr = 0;
+	adpcmlevel = 0;
 	adpcmd = 127;
 	adpcmx = 0;
+	adpcmreadbuf = 0;
+	apout0 = apout1 = adpcmout = 0;
 	lfocount = 0;
 	adpcmplay = false;
 	adplc = 0;
@@ -1123,7 +1126,7 @@ void OPNABase::BuildLFOTable()
 			if (c < 0x40)		v = c * 2 + 0x80;
 			else if (c < 0xc0)	v = 0x7f - (c - 0x40) * 2 + 0x80;
 			else				v = (c - 0xc0) * 2;
-			pmtable[c] = c;
+			pmtable[c] = v;
 
 			if (c < 0x80)		v = 0xff - c * 2;
 			else				v = (c - 0x80) * 2;
@@ -1194,6 +1197,8 @@ OPNA::OPNA()
 		rhythm[i].pos = 0;
 		rhythm[i].size = 0;
 		rhythm[i].volume = 0;
+		rhythm[i].level = 0;
+		rhythm[i].pan = 0;
 	}
 	rhythmtvol = 0;
 	adpcmmask = 0x3ffff;
@@ -1235,7 +1240,7 @@ bool OPNA::Init(uint c, uint r, bool ipflag, const _TCHAR* path)
 	SetVolumeADPCM(0);
 	SetVolumeRhythmTotal(0);
 	for (int i=0; i<6; i++)
-		SetVolumeRhythm(0, 0);
+		SetVolumeRhythm(i, 0);
 	return true;
 }
 
@@ -1246,6 +1251,7 @@ void OPNA::Reset()
 {
 	reg29 = 0x1f;
 	rhythmkey = 0;
+	rhythmtl = 0;
 	limitaddr = 0x3ffff;
 	OPNABase::Reset();
 }
@@ -1572,7 +1578,7 @@ bool OPNB::Init(uint c, uint r, bool ipflag,
 	SetVolumeADPCMB(0);
 	SetVolumeADPCMATotal(0);
 	for (i=0; i<6; i++)
-		SetVolumeADPCMA(0, 0);
+		SetVolumeADPCMA(i, 0);
 	SetChannelMask(0);
 	return true;
 }
@@ -1870,7 +1876,7 @@ void OPNB::SetVolumeADPCMB(int db)
 {
 	db = Min(db, 20);
 	if (db > -192)
-		adpcmvol = int(65536.0 * pow(10, db / 40.0));
+		adpcmvol = int(65536.0 * pow(10.0, db / 40.0));
 	else
 		adpcmvol = 0;
 }

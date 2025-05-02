@@ -6,7 +6,10 @@
 
 /*
 	NEC PC-6001 Emulator 'yaPC-6001'
+	NEC PC-6001mkII Emulator 'yaPC-6201'
+	NEC PC-6001mkIISR Emulator 'yaPC-6401'
 	NEC PC-6601 Emulator 'yaPC-6601'
+	NEC PC-6601SR Emulator 'yaPC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-
@@ -21,10 +24,19 @@
 #include "../../emu.h"
 #include "../device.h"
 
+#define SIG_MEMORY_PIO_PORT_C	0
+
+#ifndef _PC6001
+class TIMER;
+#endif
+
 class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_cpu;
+#ifndef _PC6001
+	TIMER *d_timer;
+#endif
 	uint8 RAM[0x10000];
 	uint8 EXTROM[0x4000];		// CURRENT EXTEND ROM
 	uint8 BASICROM[0x8000];		// BASICROM
@@ -38,13 +50,9 @@ private:
 	uint8 EmptyRAM[0x2000];
 	uint8 EnWrite[4];			// MEMORY MAPPING WRITE ENABLE [N60/N66]
 	byte CGSW93;
-	byte TimerSW;
 	bool inserted;
-#ifdef _PC6001
-public:
-	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) { inserted = false; }
-	~MEMORY() {}
-#else
+#ifndef _PC6001
+	byte CRTKILL;
 	uint8 VOICEROM[0x4000];
 	uint8 KANJIROM[0x8000];
 	uint8 *CurKANJIROM;
@@ -54,11 +62,10 @@ public:
 	byte portF0;
 	byte portF1;
 	uint8* dest;
-	int sr_mode;
 	int palette[16];
 	int BPal[16],BPal11[4],BPal12[8],BPal13[8],BPal14[4],BPal15[8],BPal53[32],BPal61[16],BPal62[32];
 	uint8 W;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	int bitmap;
 	int cols;					// text cols
 	int rows;					// text rows
@@ -82,11 +89,25 @@ public:
 #else
 	uint8 screen[200][320];
 #endif
+#endif
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {inserted=false;}
 	~MEMORY() {}
+	
 	// common functions
+#ifndef _PC6001
 	void initialize();
+	void event_vline(int v, int clock);
+	void event_callback(int event_id, int err);
+#endif
+	void reset();
+	void write_data8(uint32 addr, uint32 data);
+	uint32 read_data8(uint32 addr);
+	void write_io8(uint32 addr, uint32 data);
+	void write_signal(int id, uint32 data, uint32 mask);
+	
+	// unique functions
+#ifndef _PC6001
 	void RefreshScr10();
 	void RefreshScr11();
 	void RefreshScr13();
@@ -101,7 +122,7 @@ public:
 	void draw_screen();
 	uint32 read_io8(uint32 addr);
 #endif
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	void RefreshScr61();
 	void RefreshScr62();
 	void RefreshScr63();
@@ -111,15 +132,14 @@ public:
 	byte gvram_read(uint32 A);
 	void gvram_write(uint32 A, uint32 V);
 #endif
-	// common functions
-	void reset();
-	void write_data8(uint32 addr, uint32 data);
-	uint32 read_data8(uint32 addr);
-	void write_io8(uint32 addr, uint32 data);
-	// unique functions
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
+#ifndef _PC6001
+	void set_context_timer(TIMER* device) {
+		d_timer = device;
+	}
+#endif
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
 	bool cart_inserted() {
@@ -128,13 +148,7 @@ public:
 	uint8* get_vram() {
 		return RAM;
 	}
-	byte get_TimerSW() {
-		return TimerSW;
-	}
 #ifndef _PC6001
-	int get_sr_mode() {
-		return sr_mode;
-	}
 	int get_CRTMode2() {
 		return CRTMode2;
 	}

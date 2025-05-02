@@ -18,6 +18,12 @@
 #include "../i8255.h"
 #include "../../fileio.h"
 
+#ifdef _X1TURBOZ
+#define AEN	((zmode1 & 0x80) != 0)
+#define APEN	((zmode2 & 0x80) != 0)
+#define APRD	((zmode2 & 0x08) != 0)
+#endif
+
 // from X-millenium
 
 static const uint16 ANKFONT7f_af[0x21 * 8] = {
@@ -183,6 +189,25 @@ void DISPLAY::reset()
 	mode2 = 0;
 	hireso = true;
 #endif
+#ifdef _X1TURBOZ
+	for(int i = 0; i < 8; i++) {
+		palette_pc[i    ] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);	// text
+		ztpal[i] = ((i & 1) ? 0x03 : 0) | ((i & 2) ? 3 : 0x0c) | ((i & 4) ? 0x30 : 0);
+	}
+	for(int g = 0; g < 16; g++) {
+		for(int r = 0; r < 16; r++) {
+			for(int b = 0; b < 16; b++) {
+				int num = b + r * 16 + g * 256;
+				zpal[num].b = b;
+				zpal[num].r = r;
+				zpal[num].g = g;
+				palette_pc[num + 16] = RGB_COLOR((r * 255) / 15, (g * 255) / 15, (b * 255) / 15);
+			}
+		}
+	}
+	zmode1 = zmode2 = 0;
+	zpal_num = 0;
+#endif
 	cur_line = cur_code = 0;
 	vblank_clock = 0;
 	
@@ -202,16 +227,52 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		write_kanji(addr, data);
 		break;
 	case 0x1000:
-		pal[0] = data;
-		update_pal();
+#ifdef _X1TURBOZ
+		if(AEN && APEN && !APRD) {
+			int num = ((data >> 4) & 0x0f) | ((addr << 4) & 0xff0);
+			zpal[num].b = data & 0x0f;
+			palette_pc[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+		} else if(AEN && APEN && APRD) {
+			zpal_num = ((data >> 4) & 0x0f) | ((addr << 4) & 0xff0);
+		} else if(!AEN) {
+#endif
+			pal[0] = data;
+			update_pal();
+#ifdef _X1TURBOZ
+		}
+#endif
 		break;
 	case 0x1100:
-		pal[1] = data;
-		update_pal();
+#ifdef _X1TURBOZ
+		if(AEN && APEN && !APRD) {
+			int num = ((data >> 4) & 0x0f) | ((addr << 4) & 0xff0);
+			zpal[num].r = data & 0x0f;
+			palette_pc[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+//		} else if(AEN && APEN && APRD) {
+//			zpal_num = ((data >> 4) & 0x0f) | ((addr << 4) & 0xff0);
+		} else if(!AEN) {
+#endif
+			pal[1] = data;
+			update_pal();
+#ifdef _X1TURBOZ
+		}
+#endif
 		break;
 	case 0x1200:
-		pal[2] = data;
-		update_pal();
+#ifdef _X1TURBOZ
+		if(AEN && APEN && !APRD) {
+			int num = ((data >> 4) & 0x0f) | ((addr << 4) & 0xff0);
+			zpal[num].g = data & 0x0f;
+			palette_pc[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+//		} else if(AEN && APEN && APRD) {
+//			zpal_num = ((data >> 4) & 0x0f) | ((addr << 4) & 0xff0);
+		} else if(!AEN) {
+#endif
+			pal[2] = data;
+			update_pal();
+#ifdef _X1TURBOZ
+		}
+#endif
 		break;
 	case 0x1300:
 		priority = data;
@@ -241,6 +302,24 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 #ifdef _X1TURBO_FEATURE
 	case 0x1f00:
 		switch(addr) {
+#ifdef _X1TURBOZ
+		case 0x1fb0:
+			zmode1 = data;
+			break;
+		case 0x1fb1:
+		case 0x1fb2:
+		case 0x1fb3:
+		case 0x1fb4:
+		case 0x1fb5:
+		case 0x1fb6:
+		case 0x1fb7:
+			ztpal[addr & 7] = data;
+			palette_pc[addr & 7] = RGB_COLOR((((data >> 2) & 3) * 255) / 3, (((data >> 4) & 3) * 255) / 3, (((data >> 0) & 3) * 255) / 3);
+			break;
+		case 0x1fc5:
+			zmode2 = data;
+			break;
+#endif
 		case 0x1fd0:
 //			if((mode1 & 1) != (data & 1)) {
 				d_crtc->set_horiz_freq((data & 1) ? 24860 : 15980);
@@ -307,12 +386,23 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	switch(addr & 0xff00) {
 	case 0x0e00:
 		return read_kanji(addr);
-//	case 0x1000:
-//		return pal[0];
-//	case 0x1100:
-//		return pal[1];
-//	case 0x1200:
-//		return pal[2];
+#ifdef _X1TURBOZ
+	case 0x1000:
+		if(AEN && APEN && APRD) {
+			return zpal[zpal_num].b;
+		}
+		break;
+	case 0x1100:
+		if(AEN && APEN && APRD) {
+			return zpal[zpal_num].r;
+		}
+		break;
+	case 0x1200:
+		if(AEN && APEN && APRD) {
+			return zpal[zpal_num].g;
+		}
+		break;
+#endif
 //	case 0x1300:
 //		return priority;
 	case 0x1400:
@@ -329,6 +419,18 @@ uint32 DISPLAY::read_io8(uint32 addr)
 #ifdef _X1TURBOZ
 	case 0x1f00:
 		switch(addr) {
+		case 0x1fb0:
+			return zmode1;
+		case 0x1fb1:
+		case 0x1fb2:
+		case 0x1fb3:
+		case 0x1fb4:
+		case 0x1fb5:
+		case 0x1fb6:
+		case 0x1fb7:
+			return ztpal[addr & 7];
+		case 0x1fc5:
+			return zmode2;
 		case 0x1fd0:
 			return mode1;
 		case 0x1fe0:

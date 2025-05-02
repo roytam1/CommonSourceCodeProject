@@ -12,12 +12,12 @@
 #include "floppy.h"
 #include "../mb8877.h"
 
-void FLOPPY::reset()
-{
 #ifdef _MZ2500
-	reverse = laydock = false;
-#endif
+void FLOPPY::initialize()
+{
+	reversed = false;
 }
+#endif
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
@@ -25,12 +25,8 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	case 0xdc:
 		// drive reg
 #ifdef _MZ2500
-		// FIXME: dirty patch for Laydock
-		if(get_cpu_pc(0) == 0x5698 && data == 0x86) {
-			laydock = true;
-		}
-		if(laydock) {
-			data &= 0xfc;
+		if(reversed) {
+			data ^= 2;
 		}
 #endif
 		d_fdc->write_signal(SIG_MB8877_DRIVEREG, data, 3);
@@ -43,12 +39,12 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	}
 }
 
+#ifdef _MZ2500
 void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 {
-#ifdef _MZ2500
 	if(id == SIG_FLOPPY_REVERSE) {
-		reverse = ((data & mask) != 0);
+		reversed = ((data & mask) != 0);
 	}
-#endif
 }
+#endif
 

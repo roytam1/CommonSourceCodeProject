@@ -1,5 +1,9 @@
 /*
 	NEC PC-6001 Emulator 'yaPC-6001'
+	NEC PC-6001mkII Emulator 'yaPC-6201'
+	NEC PC-6001mkIISR Emulator 'yaPC-6401'
+	NEC PC-6601 Emulator 'yaPC-6601'
+	NEC PC-6601SR Emulator 'yaPC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-

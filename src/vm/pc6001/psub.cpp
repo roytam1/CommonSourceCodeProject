@@ -1,25 +1,47 @@
 /*
 	NEC PC-6001 Emulator 'yaPC-6001'
+	NEC PC-6001mkII Emulator 'yaPC-6201'
+	NEC PC-6001mkIISR Emulator 'yaPC-6401'
+	NEC PC-6601 Emulator 'yaPC-6601'
+	NEC PC-6601SR Emulator 'yaPC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-
 
-	[ keyboard ]
+	[ pseudo sub cpu ]
 */
 
-#include "memory.h"
-#include "keyboard.h"
+#include "psub.h"
+#include "timer.h"
 #include "../event.h"
 #include "../../fileio.h"
 #include "../i8255.h"
 
-#define EVENT_SIGNAL			0
-#define DATAREC_FF_REW_SPEED	10
+#define STICK0_SPACE	0x80
+#define STICK0_LEFT		0x20
+#define STICK0_RIGHT	0x10
+#define STICK0_DOWN		0x08
+#define STICK0_UP		0x04
+#define STICK0_STOP		0x02
+#define STICK0_SHIFT	0x01
+
+#define INTADDR_KEY1	0x02
+#define INTADDR_TIMER	0x06
+#define INTADDR_CMTREAD	0x08
+#define INTADDR_CMTSTOP	0x0E
+#define INTADDR_CMTERR	0x12
+#define INTADDR_KEY2	0x14
+#define INTADDR_STRIG	0x16
+#define INTADDR_TVR		0x18	// TV RESERVE-DATA   Read Interrupt
+#define INTADDR_DATE	0x1A	// DATE-DATA         Read Interrupt
 
 #define CAS_NONE				0
 #define CAS_SAVEBYTE			1
 #define CAS_LOADING				2
 #define CAS_LOADBYTE			3
+
+#define EVENT_CASSETTE	0
+#define EVENT_STRIG	1
 
 /* normal (small alphabet) */
 byte Keys1[256][2] =
@@ -610,7 +632,7 @@ byte Keys7[256][2] =
   {0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x7f},
 };
 
-void KEYBOARD::update_keyboard()
+void PSUB::update_keyboard()
 {
 	for (int code=0; code < 256; code++) {
 		if (key_stat[code] & 0x80) {
@@ -648,284 +670,36 @@ void KEYBOARD::update_keyboard()
 	}
 }
 
-void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
-{
-	bool signal = ((data & mask) != 0);
-	
-	if(id == SIG_DATAREC_OUT) {
-		if(out_signal != signal) {
-			if(rec && remote) {
-				changed++;
-			}
-			if(prev_clock != 0) {
-				if(out_signal) {
-					positive_clocks += passed_clock(prev_clock);
-				} else {
-					negative_clocks += passed_clock(prev_clock);
-				}
-				prev_clock = current_clock();
-			}
-			out_signal = signal;
-		}
-	} else if(id == SIG_DATAREC_REMOTE) {
-		set_remote(signal);
-	} else if(id == SIG_DATAREC_TRIG) {
-		// L->H: remote signal is switched
-		if(signal && !trigger) {
-			set_remote(!remote);
-		}
-		trigger = signal;
-	}
-}
-
-void KEYBOARD::event_callback(int event_id, int err)
-{
-	if(event_id == EVENT_SIGNAL) {
-		if(play) {
-			if(buffer_ptr < buffer_length && ff_rew == 0) {
-				emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
-			}
-			bool signal = in_signal;
-			if(is_wav) {
-				if(buffer_ptr >= 0 && buffer_ptr < buffer_length) {
-					signal = ((buffer[buffer_ptr] & 0x80) != 0);
-					CasData[buffer_ptr]=buffer[buffer_ptr];
-				}
-				if(ff_rew < 0) {
-					if((buffer_ptr = max(buffer_ptr - 1, 0)) == 0) {
-						set_remote(false);	// top of tape
-					}
-				} else {
-					if((buffer_ptr = min(buffer_ptr + 1, buffer_length)) == buffer_length) {
-						set_remote(false);	// end of tape
-					}
-				}
-				update_event();
-			} else {
-				if(ff_rew < 0) {
-					if(buffer_bak != NULL) {
-						memcpy(buffer, buffer_bak, buffer_length);
-					}
-					buffer_ptr = 0;
-					set_remote(false);	// top of tape
-				} else {
-					while(buffer_ptr < buffer_length) {
-						if((buffer[buffer_ptr] & 0x7f) == 0) {
-							if(++buffer_ptr == buffer_length) {
-								set_remote(false);	// end of tape
-								break;
-							}
-						} else {
-							signal = ((buffer[buffer_ptr] & 0x80) != 0);
-							uint8 tmp = buffer[buffer_ptr];
-							buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
-							break;
-						}
-					}
-				}
-			}
-			// notify the signal is changed
-			if(signal != in_signal) {
-				in_signal = signal;
-				changed++;
-				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
-			}
-		} else if(rec) {
-			if(out_signal) {
-				positive_clocks += passed_clock(prev_clock);
-			} else {
-				negative_clocks += passed_clock(prev_clock);
-			}
-			if(is_wav) {
-				if(positive_clocks != 0 || negative_clocks != 0) {
-					buffer[buffer_ptr] = (255 * positive_clocks) / (positive_clocks + negative_clocks);
-				} else {
-					buffer[buffer_ptr] = 0;
-				}
-				if(++buffer_ptr >= buffer_length) {
-					buffer_ptr = 0;
-				}
-			} else {
-				bool prev_signal = ((buffer[buffer_ptr] & 0x80) != 0);
-				bool cur_signal = (positive_clocks > negative_clocks);
-				if(prev_signal != cur_signal || (buffer[buffer_ptr] & 0x7f) == 0x7f) {
-					if(++buffer_ptr >= buffer_length) {
-						buffer_ptr = 0;
-					}
-					buffer[buffer_ptr] = cur_signal ? 0x80 : 0;
-				}
-				buffer[buffer_ptr]++;
-			}
-			prev_clock = current_clock();
-			positive_clocks = negative_clocks = 0;
-		}
-	}
-}
-
-void KEYBOARD::set_remote(bool value)
-{
-	if(remote != value) {
-		remote = value;
-		update_event();
-	}
-}
-
-void KEYBOARD::set_ff_rew(int value)
-{
-	if(ff_rew != value) {
-		if(register_id != -1) {
-			cancel_event(register_id);
-			register_id = -1;
-		}
-		ff_rew = value;
-		apss_signals = false;
-		update_event();
-	}
-}
-
-bool KEYBOARD::do_apss(int value)
-{
-	bool result = false;
-	
-	if(play) {
-		set_ff_rew(0);
-		set_remote(true);
-		set_ff_rew(value > 0 ? 1 : -1);
-		apss_remain = value;
-		
-		while(apss_remain != 0 && remote) {
-			event_callback(EVENT_SIGNAL, 0);
-		}
-		result = (apss_remain == 0);
-	}
-	
-	// stop cmt
-	set_remote(false);
-	set_ff_rew(0);
-	
-	if(value > 0) {
-		emu->out_message(_T("CMT: APSS (+%d)"), value);
-	} else {
-		emu->out_message(_T("CMT: APSS (%d)"), value);
-	}
-	return result;
-}
-
-void KEYBOARD::update_event()
-{
-	if(remote && (play || rec)) {
-		if(register_id == -1) {
-			if(ff_rew != 0) {
-				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate / DATAREC_FF_REW_SPEED, true, &register_id);
-				if(ff_rew > 0) {
-					emu->out_message(_T("CMT: Fast Forward"));
-				} else {
-					emu->out_message(_T("CMT: Fast Rewind"));
-				}
-			} else {
-				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate, true, &register_id);
-				if(play) {
-					if(buffer_ptr < buffer_length) {
-						emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
-					} else {
-						emu->out_message(_T("CMT: Play"));
-					}
-				} else {
-					emu->out_message(_T("CMT: Record"));
-				}
-			}
-			prev_clock = current_clock();
-			positive_clocks = negative_clocks = 0;
-		}
-	} else {
-		if(register_id != -1) {
-			cancel_event(register_id);
-			register_id = -1;
-			if(buffer_ptr == buffer_length) {
-				emu->out_message(_T("CMT: Stop (End-of-Tape)"));
-			} else if(buffer_ptr == 0) {
-				emu->out_message(_T("CMT: Stop (Beginning-of-Tape)"));
-			} else {
-				emu->out_message(_T("CMT: Stop"));
-			}
-		}
-		prev_clock = 0;
-	}
-	
-	// update signals
-	write_signals(&outputs_remote, remote ? 0xffffffff : 0);
-	write_signals(&outputs_rotate, (register_id != -1) ? 0xffffffff : 0);
-	write_signals(&outputs_end, (buffer_ptr == buffer_length) ? 0xffffffff : 0);
-	write_signals(&outputs_top, (buffer_ptr == 0) ? 0xffffffff : 0);
-}
-
-bool KEYBOARD::play_tape(_TCHAR* file_path)
+bool PSUB::play_tape(_TCHAR* file_path)
 {
 	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		if(check_file_extension(file_path, _T(".cas"))) {
-			buffer = (uint8 *)malloc(0x10000);
-			buffer_length=load_cas_image();
-			CasIndex=0;
-			is_wav = true;
-		} else if(check_file_extension(file_path, _T(".p6"))) {
-			buffer = (uint8 *)malloc(0x10000);
-			buffer_length=load_cas_image();
-			CasIndex=0;
-			is_wav = true;
-		} else {
-			// unknown image
-			return false;
+		fio->Fseek(0, FILEIO_SEEK_SET);
+		int ptr = 0, data;
+		while((data = fio->Fgetc()) != EOF) {
+			if(ptr < 0x10000) {
+				CasData[ptr++] = data;
+			}
 		}
-		if(!is_wav && buffer_length != 0) {
-			buffer_bak = (uint8 *)malloc(buffer_length);
-			memcpy(buffer_bak, buffer, buffer_length);
-		}
-		
-		// get the first signal
-		bool signal = ((buffer[0] & 0x80) != 0);
-		if(signal != in_signal) {
-			write_signals(&outputs_out, signal ? 0xffffffff : 0);
-			in_signal = signal;
-		}
-		
+		CasIndex=0;
 		play = true;
-		update_event();
 	}
 	return play;
 }
 
-bool KEYBOARD::rec_tape(_TCHAR* file_path)
+bool PSUB::rec_tape(_TCHAR* file_path)
 {
 	close_tape();
 	
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-		sample_rate = 48000;
-		buffer_length = 1024 * 1024;
-		buffer = (uint8 *)malloc(buffer_length);		
-		// initialize buffer
 		CasIndex=0;
 		rec = true;
-		update_event();
 	}
 	return rec;
 }
 
-void KEYBOARD::close_tape()
-{
-	close_file();
-	
-	play = rec = is_wav = false;
-	buffer_ptr = buffer_length = 0;
-	update_event();
-	
-	// no sounds
-	write_signals(&outputs_out, 0);
-	in_signal = false;
-}
-
-void KEYBOARD::close_file()
+void PSUB::close_tape()
 {
 	if(rec) {
 		fio->Fwrite(CasData, CasIndex + 1, 1);
@@ -933,105 +707,51 @@ void KEYBOARD::close_file()
 	if(play || rec) {
 		fio->Fclose();
 	}
-	if(buffer != NULL) {
-		free(buffer);
-		buffer = NULL;
-	}
-	if(buffer_bak != NULL) {
-		free(buffer_bak);
-		buffer_bak = NULL;
-	}
-	if(apss_buffer != NULL) {
-		free(apss_buffer);
-		apss_buffer = NULL;
-	}
+	play = rec = false;
 }
 
-int KEYBOARD::load_cas_image()
-{	
-	sample_rate = 48000;
-
-	fio->Fseek(0, FILEIO_SEEK_SET);
-	int ptr = 0, data;
-	while((data = fio->Fgetc()) != EOF) {
-		buffer[ptr] = data;
-		ptr++;
-	}
-	return ptr;
-}
-
-
-void KEYBOARD::initialize()
+void PSUB::initialize()
 {
-	fio = new FILEIO();	
-	play = rec = remote = trigger = false;
-	ff_rew = 0;
-	in_signal = out_signal = false;
-	register_id = -1;
+	fio = new FILEIO();
+	play = rec = false;
 	
-	buffer = buffer_bak = NULL;
-	apss_buffer = NULL;
-	buffer_ptr = buffer_length = 0;
-	is_wav = false;
-	changed = 0;
-
 	key_stat = emu->key_buffer();
 	kbFlagCtrl=0;
 	kbFlagGraph=0;
 	kbFlagFunc=0;
 	kanaMode=0;
 	katakana=0;
-	stick0=0;
-	p6key=0;
-	counter=0;
-	vcounter=0;
-	tape=0;
+	
 	// register event to update the key status
 	register_frame_event(this);
-#ifndef _PC6001
-	// register event
-	register_vline_event(this);
-#endif
 }
 
-void KEYBOARD::reset()
+void PSUB::release()
 {
-	p6key=0;
-	CasMode=CAS_NONE;
-	CasIndex=0;
-	memset(CasData, 0, 0x10000);
 	close_tape();
-	portF3 = 0;
-	portF7 = 0x06;
-	portFA = 0;
-	portFB = 0;
-	TimerIntFlag=1;
-	TimerSW_F3=1;
-	IntSW_F3=1;
-#ifdef _PC6801	
-///	CmtIntFlag=0;
-	StrigIntFlag=0;
-///	KeyIntFlag=0;
-///	keyGFlag=0;
-/// TimerSWFlag=0;
-/// WaitFlag=0;
-	TvrIntFlag=0;
-	DateIntFlag=0;
-/// VrtcIntFlag=0;
-	portBC=0x22;
-	portF6 = 0x7f;
-#else
-	portF6 = 3;
-#endif
-}
-
-void KEYBOARD::release()
-{
-	close_file();
 	delete fio;
 }
 
-void KEYBOARD::event_frame()
+void PSUB::reset()
+{
+	close_tape();
+	CasIntFlag=0;
+	CasIndex=0;
+	CasMode=CAS_NONE;
+	CasBaud=1200;
+	CasEventID=-1;
+	memset(CasData, 0, 0x10000);
+	
+	p6key=0;
+	stick0=0;
+	StrigIntFlag=0;
+	StrigEventID=-1;
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
+//	DateIntFlag=0;
+#endif
+}
+
+void PSUB::event_frame()
 {
 	if (key_stat[VK_CONTROL] & 0x80) kbFlagCtrl=1;
 	else kbFlagCtrl=0;
@@ -1043,43 +763,39 @@ void KEYBOARD::event_frame()
 	if (key_stat[VK_UP]) stick0 |= STICK0_UP;
 	if (key_stat[VK_F9]) stick0 |= STICK0_STOP;
 	if (key_stat[VK_SHIFT]) stick0 |= STICK0_SHIFT;
-///#ifdef _PC6001
-///	d_mem->write_data8(0xfeca, stick0);
-///#endif
 	update_keyboard();
-	if (p6key) d_cpu->write_signal(SIG_CPU_IRQ, 0x16, 0xff);
+	if (p6key) d_timer->write_signal(SIG_TIMER_IRQ_SUB_CPU, 1, 1);
 }
-#ifndef _PC6001
-void KEYBOARD::event_vline(int v, int clock)
+
+void PSUB::event_callback(int event_id, int err)
 {
-	if (!sr_mode) {
-		if(vcounter++ >= portF6 * 10) {
-			vcounter = 0;
-			if (TimerSW && TimerSW_F3) {
-				d_cpu->write_signal(SIG_CPU_IRQ, 0x06, 0xff);
+	if(event_id == EVENT_CASSETTE) {
+		if(CasMode == CAS_LOADING) {
+			if(play) {
+				CasIntFlag = 1;
+				d_timer->write_signal(SIG_TIMER_IRQ_SUB_CPU, 1, 1);
+			}
+		} else {
+			if(CasEventID != -1) {
+				cancel_event(CasEventID);
+				CasEventID = -1;
 			}
 		}
-		return;
-	}
-	if (vcounter++ >= portF6 / 3) {
-		vcounter=0;
-		TimerIntFlag=1;
-		if (IntSW_F3 && TimerSW_F3)
-			d_cpu->write_signal(SIG_CPU_IRQ, 0x06, 0xff);
-	}
-	if (counter++ >= 200) {
-		counter=0;
-		TimerIntFlag=0;
-		if (VrtcIntFlag)
-			d_cpu->write_signal(SIG_CPU_IRQ, 0x06, 0xff);
+	} else if(event_id == EVENT_STRIG) {
+		StrigIntFlag = 1;
+		StrigEventID = -1;
+		d_timer->write_signal(SIG_TIMER_IRQ_SUB_CPU, 1, 1);
 	}
 }
-#endif
-uint32 KEYBOARD::intr_ack() {
-	/* interrupt priority (PC-6601SR) */
-	/* 1.Timer     , 2.subCPU    , 3.Voice     , 4.VRTC      */
-	/* 5.RS-232C   , 6.Joy Stick , 7.EXT INT   , 8.Printer   */
-	if (p6key && IntSW_F3) { /* if any key pressed */
+
+uint32 PSUB::intr_ack()
+{
+	if (CasMode != CAS_NONE && p6key == 0xFA && kbFlagGraph) {
+		return(INTADDR_CMTSTOP); /* Press STOP while CMT Load or Save */
+	} else if (StrigIntFlag) { /* if command 6 */
+		StrigIntFlag=-1;
+		return(INTADDR_STRIG);
+	} else if (p6key) { /* if any key pressed */
 		p6key = 0;
 		if (kbFlagGraph || kbFlagFunc) {
 			kbFlagFunc=0;
@@ -1087,100 +803,63 @@ uint32 KEYBOARD::intr_ack() {
 		} else {
 			return(INTADDR_KEY1); /* normal key */
 		}
-	} else if (StrigIntFlag && IntSW_F3) { /* if command 6 */
-		StrigIntFlag=-1;
-		return(INTADDR_STRIG);
-	} else if (TimerIntFlag && IntSW_F3 && TimerSW_F3) {
-		TimerIntFlag=0;
-		return(INTADDR_TIMER); /* timer interrupt */
-	} else if (CmtIntFlag && (p6key == 0xFA) && kbFlagGraph) {
-		return(INTADDR_CMTSTOP); /* Press STOP while CMT Load or Save */
-	} else if (tape++ > 20) {
-		tape = 0;
-		if (CmtIntFlag) return(INTADDR_CMTREAD);
-#ifdef _PC6801
-	} else if (sr_mode && DateIntFlag) { /// == INTFLAG_REQ && DateMode ==DATE_READ) //date interrupt
-		return( INTADDR_DATE);
-	} else if (sr_mode && TvrIntFlag) { /// == INTFLAG_REQ && TvrMode ==TVR_READ) 
-		return( INTADDR_TVR);
-	} else if(sr_mode && VrtcIntFlag ) {	// VRTC interrupt 2002/4/21
-		return( INTADDR_VRTC);
-#endif
+	} else if (CasIntFlag) {
+		CasIntFlag = 0;
+		return(INTADDR_CMTREAD);
 	}
 	return(INTADDR_TIMER);
 }
 
-void KEYBOARD::write_io8(uint32 addr, uint32 data)
+void PSUB::write_io8(uint32 addr, uint32 data)
 {
 	uint16 port=(addr & 0x00ff);
-	byte Value=data;
-	switch(port)
-	{
-	case 0xBC:
-		portBC= Value;
-	case 0xF3:
-		portF3=Value;
-		TimerSW_F3=(Value&0x04)?0:1;
-		IntSW_F3=(Value&0x01)?0:1;
-		break;
-	case 0xF4: break;
-	case 0xF5: break;
-	case 0xF6:
-		portF6 = Value;
-///		SetTimerIntClock(Value);
-		break;
-	case 0xF7:
-		portF7 = Value;
-		break;
-	case 0xFA:
-		portFA = Value;
-		break;
-	case 0xFB:
-		portFB = Value;
-		break;
-	}
-	if (addr==0x0690) {	// STRIG Interrupt REQUEST
-		StrigIntFlag = 1;
-	} else if (port == 0x90) {
+	if (port == 0x90) {
 		if (CasMode == CAS_SAVEBYTE) {  /* CMT SAVE */
 			if (CasIndex<0x10000) CasData[CasIndex++]=data;
 			CasMode=CAS_NONE; 
 		}
-		if (data==0x3e || data==0x3d) { //	１－１）0x3E 受信(1200baud）　または　0x3D 受信(600baud）
+		else if(data==0x06) {
+			if(StrigEventID != -1) {
+				cancel_event(StrigEventID);
+				StrigEventID = -1;
+			}
+//			register_event(this, EVENT_STRIG, 3000, false, &StrigEventID); // 3msec
+			register_event(this, EVENT_STRIG, 100, false, &StrigEventID); // 0.1nsec
+		}
+		else if (data==0x3e || data==0x3d) { //	１－１）0x3E 受信(1200baud）　または　0x3D 受信(600baud）
+			CasMode=CAS_NONE;
+			CasBaud=(data==0x3e)?1200:600;
+		}
+		else if (data==0x39) { ///
 			CasMode=CAS_NONE;
 		}
-		if (data==0x39) { ///
+		else if (data==0x38) { /* CMT SAVE DATA */
+			CasMode=CAS_SAVEBYTE;
+		}
+		else if (data==0x1e || data==0x1d) { //	１－１）0x1E 受信(1200baud）　または　0x1D 受信(600baud）
 			CasMode=CAS_NONE;
+			CasBaud=(data==0x1e)?1200:600;
 		}
-		if (data==0x38) { /* CMT SAVE DATA */
-			CasMode=CAS_SAVEBYTE; 
-		}
-		if (data==0x1e || data==0x1d) { //	１－１）0x1E 受信(1200baud）　または　0x1D 受信(600baud）
-			CasMode=CAS_NONE;
-		}
-		if (data==0x1a && CasMode!=CAS_NONE) { /* CMT LOAD STOP */
+		else if (data==0x1a && CasMode!=CAS_NONE) { /* CMT LOAD STOP */
 			CasMode=CAS_NONE;
 		}
 		/* CMT LOAD OPEN(0x1E,0x19(1200baud)/0x1D,0x19(600baud)) */
-		if (data==0x19) {
+		else if (data==0x19) {
+			if(CasEventID != -1) {
+				cancel_event(CasEventID);
+				CasEventID = -1;
+			}
+			register_event(this, EVENT_CASSETTE, 1000000.0 / (CasBaud / 12), true, &CasEventID);
 			CasMode=CAS_LOADING;
 		}
 	}
 	d_pio->write_io8(addr, data);
 }
 
-uint32 KEYBOARD::read_io8(uint32 addr)
+uint32 PSUB::read_io8(uint32 addr)
 {
 	uint16 port=(addr & 0x00ff);
 	byte Value=0xff;
-	switch(port)
-	{
-	case 0xF3: Value=portF3;break;
-	case 0xF6: Value=portF6;break;
-	case 0xF7: Value=portF7;break;
-	case 0xFA: Value=portFA;break;
-	case 0xFB: Value=portFB;break;
-	}
 	if (port == 0x90) {
 		if (CasMode == CAS_LOADING && CasIndex < 0x10000) {
 			Value=CasData[CasIndex++];

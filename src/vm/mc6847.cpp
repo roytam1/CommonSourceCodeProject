@@ -134,6 +134,8 @@ void MC6847::initialize()
 	palette_pc[BEIGE     ] = RGB_COLOR(255,198,170);
 	palette_pc[GRAY      ] = RGB_COLOR( 32, 32, 32);
 	
+	disabled = false;
+	
 	// register event
 	register_vline_event(this);
 	update_timing(CPU_CLOCKS, FRAMES_PER_SEC, LINES_PER_FRAME);
@@ -164,6 +166,12 @@ void MC6847::write_signal(int id, uint32 data, uint32 mask)
 		break;
 	case SIG_MC6847_INV:
 		inv = ((data & mask) != 0);
+		break;
+	case SIG_MC6847_ENABLE:
+		disabled = ((data & mask) == 0);
+		break;
+	case SIG_MC6847_DISABLE:
+		disabled = ((data & mask) != 0);
 		break;
 	}
 }
@@ -210,7 +218,7 @@ void MC6847::set_hsync(bool val)
 void MC6847::set_disp(bool val)
 {
 	if(disp != val) {
-		if(d_cpu != NULL) {
+		if(d_cpu != NULL && !disabled) {
 			d_cpu->write_signal(SIG_CPU_BUSREQ, val ? 1 : 0, 1);
 		}
 		disp = val;
@@ -231,7 +239,9 @@ void MC6847::load_font_image(_TCHAR *path)
 void MC6847::draw_screen()
 {
 	// render screen
-	if(ag) {
+	if(disabled) {
+		memset(screen, 0, sizeof(screen));
+	} else if(ag) {
 		// graphics mode
 		switch(gm) {
 		case 0: draw_cg(4, 3); break;	//  64x 64

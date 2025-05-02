@@ -393,6 +393,14 @@ bool DATAREC::play_tape(_TCHAR* file_path)
 				return false;
 			}
 			is_wav = true;
+		} else if(check_file_extension(file_path, _T(".p6"))) {
+			// NEC PC-6001 series tape image
+			if((buffer_length = load_p6_image()) == 0) {
+				return false;
+			}
+			buffer = (uint8 *)malloc(buffer_length);
+			load_p6_image();
+			is_wav = true;
 		} else if(check_file_extension(file_path, _T(".cas"))) {
 			// standard cas image for my emulator
 			if((buffer_length = load_cas_image()) == 0) {
@@ -505,12 +513,16 @@ int DATAREC::load_cas_image()
 {
 	sample_rate = 48000;
 	
-	// sord m5 cas image ?
+	// SORD m5 or NEC PC-6001 series cas image ?
+	static const uint8 momomomomomo[6] = {0xd3, 0xd3, 0xd3, 0xd3, 0xd3, 0xd3};
+	uint8 tmp_header[16];
 	fio->Fseek(0, FILEIO_SEEK_SET);
-	char m5_header[16];
-	fio->Fread(m5_header, sizeof(m5_header), 1);
-	if(memcmp(m5_header, "SORDM5", 6) == 0) {
+	fio->Fread(tmp_header, sizeof(tmp_header), 1);
+	
+	if(memcmp(tmp_header, "SORDM5", 6) == 0) {
 		return load_m5_cas_image();
+	} else if(memcmp(tmp_header, momomomomomo, 6) == 0) {
+		return load_p6_image();
 	}
 	
 	// this is the standard cas image for my emulator
@@ -674,6 +686,7 @@ int DATAREC::load_wav_image(int offset)
 									}
 								}
 								if(buffer != NULL) {
+
 									for(int j = 0; j < count_p; j++) buffer[loaded_samples++] = 0xff;
 									for(int j = 0; j < count_n; j++) buffer[loaded_samples++] = 0x00;
 								} else {
@@ -842,6 +855,78 @@ int DATAREC::load_m5_cas_image()
 		M5_PUT_BIT(0x00, 7);
 	}
 	M5_PUT_BIT(0x00, 1);
+	return ptr;
+}
+
+#define P6_PUT_1200HZ() { \
+	if(buffer != NULL) { \
+		for(int p = 0; p < 20; p++) buffer[ptr++] = 0xff; \
+		for(int p = 0; p < 20; p++) buffer[ptr++] = 0x00; \
+	} else { \
+		ptr += 40; \
+	} \
+}
+
+#define P6_PUT_2400HZ() { \
+	if(buffer != NULL) { \
+		for(int p = 0; p < 10; p++) buffer[ptr++] = 0xff; \
+		for(int p = 0; p < 10; p++) buffer[ptr++] = 0x00; \
+	} else { \
+		ptr += 20; \
+	} \
+}
+
+#define P6_PUT_2400HZ_X2() { \
+	if(buffer != NULL) { \
+		for(int p = 0; p < 10; p++) buffer[ptr++] = 0xff; \
+		for(int p = 0; p < 10; p++) buffer[ptr++] = 0x00; \
+		for(int p = 0; p < 10; p++) buffer[ptr++] = 0xff; \
+		for(int p = 0; p < 10; p++) buffer[ptr++] = 0x00; \
+	} else { \
+		ptr += 40; \
+	} \
+}
+
+int DATAREC::load_p6_image()
+{
+	sample_rate = 48000;
+	
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	int ptr = 0, data;
+	
+	for(int i = 0; i < 9600; i++) {
+		P6_PUT_2400HZ();
+	}
+	for(int i = 0; i < 16; i++) {
+		data = fio->Fgetc();
+		P6_PUT_1200HZ();
+		for(int j = 0; j < 8; j++) {
+			if(data & (1 << j)) {
+				P6_PUT_2400HZ_X2();
+			} else {
+				P6_PUT_1200HZ();
+			}
+		}
+		P6_PUT_2400HZ_X2();
+		P6_PUT_2400HZ_X2();
+		P6_PUT_2400HZ_X2();
+	}
+	for(int i = 0; i < 1280; i++) {
+		P6_PUT_2400HZ();
+	}
+	while((data = fio->Fgetc()) != EOF) {
+		P6_PUT_1200HZ();
+		for(int j = 0; j < 8; j++) {
+			if(data & (1 << j)) {
+				P6_PUT_2400HZ_X2();
+			} else {
+				P6_PUT_1200HZ();
+			}
+		}
+		P6_PUT_2400HZ_X2();
+		P6_PUT_2400HZ_X2();
+		P6_PUT_2400HZ_X2();
+	}
 	return ptr;
 }
 

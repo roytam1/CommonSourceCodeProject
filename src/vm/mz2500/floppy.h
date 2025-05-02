@@ -23,8 +23,7 @@ class FLOPPY : public DEVICE
 private:
 	DEVICE* d_fdc;
 #ifdef _MZ2500
-	bool reverse;
-	bool laydock;
+	bool reversed;
 #endif
 	
 public:
@@ -32,9 +31,13 @@ public:
 	~FLOPPY() {}
 	
 	// common functions
-	void reset();
+#ifdef _MZ2500
+	void initialize();
+#endif
 	void write_io8(uint32 addr, uint32 data);
+#ifdef _MZ2500
 	void write_signal(int id, uint32 data, uint32 mask);
+#endif
 	
 	// unique functions
 	void set_context_fdc(DEVICE* device) {

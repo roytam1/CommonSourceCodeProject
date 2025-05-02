@@ -10,9 +10,10 @@
 
 /*
 	NEC PC-6001 Emulator 'yaPC-6001'
-	NEC PC-6001mk2 Emulator 'yaPC-6201'
+	NEC PC-6001mkII Emulator 'yaPC-6201'
+	NEC PC-6001mkIISR Emulator 'yaPC-6401'
 	NEC PC-6601 Emulator 'yaPC-6601'
-	PC-6801 Emulator 'PC-6801'
+	NEC PC-6601SR Emulator 'yaPC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-
@@ -21,8 +22,90 @@
 */
 
 #include "memory.h"
+#include "timer.h"
 #include "../../fileio.h"
-#include "../z80.h"
+
+#ifndef _PC6001
+void MEMORY::initialize()
+{
+	int i;
+	// for mkII/66
+	int Pal11[ 4] = { 15, 8,10, 8 };
+	int Pal12[ 8] = { 10,11,12, 9,15,14,13, 1 };
+	int Pal13[ 8] = { 10,11,12, 9,15,14,13, 1 };
+	int Pal14[ 4] = {  8,10, 8,15 };
+	int Pal15[ 8] = {  8,9,11,14, 8,9,14,15 };
+	int Pal53[32] = {  0, 4, 1, 5, 2, 6, 3, 7, 8,12, 9,13,10,14,11,15,
+		10,11,12, 9,15,14,13, 1,10,11,12, 9,15,14,13, 1 };
+	
+	for(i=0;i<32;i++) {
+		BPal53[i]=Pal53[i];
+		if (i>15) continue;
+		BPal[i]=i;
+		if (i>7) continue;
+		BPal12[i]=Pal12[i];
+		BPal13[i]=Pal13[i];
+		BPal15[i]=Pal15[i];
+		if (i>3) continue;
+		BPal11[i]=Pal11[i];
+		BPal14[i]=Pal14[i];
+	}
+	for (i=0;i<32;i++) BPal62[i] = BPal53[i];	// for RefreshScr62/63
+	for (i=0;i<16;i++) BPal61[i] = BPal[i];		// for RefreshScr61
+
+	// mk2Å` palette
+	palette[ 0] = RGB_COLOR(0x14,0x14,0x14); // COL065			= 141414			;mk2Å` ìßñæ(çï)
+	palette[ 1] = RGB_COLOR(0xFF,0xAC,0x00); // COL066			= FFAC00			;mk2Å` ûÚ
+	palette[ 2] = RGB_COLOR(0x00,0xFF,0xAC); // COL067			= 00FFAC			;mk2Å` ê¬óŒ
+	palette[ 3] = RGB_COLOR(0xAC,0xFF,0x00); // COL068			= ACFF00			;mk2Å` â©óŒ
+	palette[ 4] = RGB_COLOR(0xAC,0x00,0xFF); // COL069			= AC00FF			;mk2Å` ê¬éá
+	palette[ 5] = RGB_COLOR(0xFF,0x00,0xAC); // COL070			= FF00AC			;mk2Å` ê‘éá
+	palette[ 6] = RGB_COLOR(0x00,0xAC,0xFF); // COL071			= 00ACFF			;mk2Å` ãÛêF
+	palette[ 7] = RGB_COLOR(0xAC,0xAC,0xAC); // COL072			= ACACAC			;mk2Å` äDêF
+	palette[ 8] = RGB_COLOR(0x14,0x14,0x14); // COL073			= 141414			;mk2Å` çï
+	palette[ 9] = RGB_COLOR(0xFF,0x00,0x00); // COL074			= FF0000			;mk2Å` ê‘
+	palette[10] = RGB_COLOR(0x00,0xFF,0x00); // COL075			= 00FF00			;mk2Å` óŒ
+	palette[11] = RGB_COLOR(0xFF,0xFF,0x00); // COL076			= FFFF00			;mk2Å` â©
+	palette[12] = RGB_COLOR(0x00,0x00,0xFF); // COL077			= 0000FF			;mk2Å` ê¬
+	palette[13] = RGB_COLOR(0xFF,0x00,0xFF); // COL078			= FF00FF			;mk2Å` É}É[ÉìÉ^
+	palette[14] = RGB_COLOR(0x00,0xFF,0xFF); // COL079			= 00FFFF			;mk2Å` ÉVÉAÉì
+	palette[15] = RGB_COLOR(0xFF,0xFF,0xFF); // COL080			= FFFFFF			;mk2Å` îí
+	
+	// register event
+	register_vline_event(this);
+}
+
+#define EVENT_HBLANK	1
+
+void MEMORY::event_vline(int v, int clock)
+{
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
+	if(vm->sr_mode) {
+		if(v == (CRTMode1 ? 200 : 192)) {
+			d_timer->write_signal(SIG_TIMER_IRQ_VRTC, 1, 1);
+		}
+		if(!CRTKILL) {
+			// SRÉÇÅ[ÉhÇÃBUSRQÇ…Ç¬Ç¢ÇƒÇÕÅAÇ¶Ç—Ç∑ólÇÃèÓïÒë“Çø
+		}
+	} else
+#endif
+	{
+		if(!CRTKILL) {
+			if(v < (CRTMode1 ? 200 : 192)) {
+				d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+				register_event_by_clock(this, EVENT_HBLANK, CPU_CLOCKS /  FRAMES_PER_SEC / LINES_PER_FRAME * 368 / 456, false, NULL);
+			}
+		}
+	}
+}
+
+void MEMORY::event_callback(int event_id, int err)
+{
+	if(event_id == EVENT_HBLANK) {
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
+	}
+}
+#endif
 
 #ifndef _PC6001
 #define SETSCRVARM1(y1)	dest = &screen[y1][0];W=0;
@@ -350,7 +433,7 @@ W=0;
 		}
 	}
 }
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 // RefreshScr61: N66-SR BASIC screen 1
 void MEMORY::RefreshScr61()
 {
@@ -494,11 +577,13 @@ void MEMORY::do_palet(int dest,int src)
 
 void MEMORY::draw_screen()
 {
-	if (sr_mode) {
-		if (CRTMode2)
+	if (vm->sr_mode) {
+		if (CRTKILL) {
+			memset(screen, 0, sizeof(screen));
+		} else if (CRTMode2) {
 			if (CRTMode3) RefreshScr63();
 			else RefreshScr62();
-		else RefreshScr61();
+		} else RefreshScr61();
 		// copy to screen
 		if (bitmap) {
 			for(int y = 0; y < 200; y++) {
@@ -533,7 +618,9 @@ void MEMORY::draw_screen()
 			}
 		}
 	} else {
-		if (CRTMode1) {
+		if (CRTKILL) {
+			memset(screen, 0, sizeof(screen));
+		} else if (CRTMode1) {
 			if (CRTMode2)
 				if (CRTMode3) RefreshScr54();
 				else RefreshScr53();
@@ -575,7 +662,9 @@ void MEMORY::draw_screen()
 #else
 void MEMORY::draw_screen()
 {
-	if (CRTMode1) {
+	if (CRTKILL) {
+		memset(screen, 0, sizeof(screen));
+	} else if (CRTMode1) {
 		if (CRTMode2)
 			if (CRTMode3) RefreshScr54();
 			else RefreshScr53();
@@ -600,52 +689,6 @@ void MEMORY::draw_screen()
 	}
 }
 #endif
-
-void MEMORY::initialize()
-{
-	int i;
-	// for mkII/66
-	int Pal11[ 4] = { 15, 8,10, 8 };
-	int Pal12[ 8] = { 10,11,12, 9,15,14,13, 1 };
-	int Pal13[ 8] = { 10,11,12, 9,15,14,13, 1 };
-	int Pal14[ 4] = {  8,10, 8,15 };
-	int Pal15[ 8] = {  8,9,11,14, 8,9,14,15 };
-	int Pal53[32] = {  0, 4, 1, 5, 2, 6, 3, 7, 8,12, 9,13,10,14,11,15,
-		10,11,12, 9,15,14,13, 1,10,11,12, 9,15,14,13, 1 };
-	
-	for(i=0;i<32;i++) {
-		BPal53[i]=Pal53[i];
-		if (i>15) continue;
-		BPal[i]=i;
-		if (i>7) continue;
-		BPal12[i]=Pal12[i];
-		BPal13[i]=Pal13[i];
-		BPal15[i]=Pal15[i];
-		if (i>3) continue;
-		BPal11[i]=Pal11[i];
-		BPal14[i]=Pal14[i];
-	}
-	for (i=0;i<32;i++) BPal62[i] = BPal53[i];	// for RefreshScr62/63
-	for (i=0;i<16;i++) BPal61[i] = BPal[i];		// for RefreshScr61
-
-	// mk2Å` palette
-	palette[ 0] = RGB_COLOR(0x14,0x14,0x14); // COL065			= 141414			;mk2Å` ìßñæ(çï)
-	palette[ 1] = RGB_COLOR(0xFF,0xAC,0x00); // COL066			= FFAC00			;mk2Å` ûÚ
-	palette[ 2] = RGB_COLOR(0x00,0xFF,0xAC); // COL067			= 00FFAC			;mk2Å` ê¬óŒ
-	palette[ 3] = RGB_COLOR(0xAC,0xFF,0x00); // COL068			= ACFF00			;mk2Å` â©óŒ
-	palette[ 4] = RGB_COLOR(0xAC,0x00,0xFF); // COL069			= AC00FF			;mk2Å` ê¬éá
-	palette[ 5] = RGB_COLOR(0xFF,0x00,0xAC); // COL070			= FF00AC			;mk2Å` ê‘éá
-	palette[ 6] = RGB_COLOR(0x00,0xAC,0xFF); // COL071			= 00ACFF			;mk2Å` ãÛêF
-	palette[ 7] = RGB_COLOR(0xAC,0xAC,0xAC); // COL072			= ACACAC			;mk2Å` äDêF
-	palette[ 8] = RGB_COLOR(0x14,0x14,0x14); // COL073			= 141414			;mk2Å` çï
-	palette[ 9] = RGB_COLOR(0xFF,0x00,0x00); // COL074			= FF0000			;mk2Å` ê‘
-	palette[10] = RGB_COLOR(0x00,0xFF,0x00); // COL075			= 00FF00			;mk2Å` óŒ
-	palette[11] = RGB_COLOR(0xFF,0xFF,0x00); // COL076			= FFFF00			;mk2Å` â©
-	palette[12] = RGB_COLOR(0x00,0x00,0xFF); // COL077			= 0000FF			;mk2Å` ê¬
-	palette[13] = RGB_COLOR(0xFF,0x00,0xFF); // COL078			= FF00FF			;mk2Å` É}É[ÉìÉ^
-	palette[14] = RGB_COLOR(0x00,0xFF,0xFF); // COL079			= 00FFFF			;mk2Å` ÉVÉAÉì
-	palette[15] = RGB_COLOR(0xFF,0xFF,0xFF); // COL080			= FFFFFF			;mk2Å` îí
-}
 #endif
 
 #ifdef _PC6001
@@ -662,7 +705,9 @@ void MEMORY::reset()
 		fio->Fclose();
 	}
 	if (!inserted) {
-		EXTROM1 = EXTROM2 = EmptyRAM;
+///		EXTROM1 = EXTROM2 = EmptyRAM;
+		EXTROM1 = RAM + 0x4000;
+		EXTROM2 = RAM + 0x6000;
 		if (fio->Fopen(emu->bios_path(_T("EXTROM.60")), FILEIO_READ_BINARY)) {
 			fio->Fread(EXTROM, 0x4000, 1);
 			fio->Fclose();
@@ -679,7 +724,7 @@ void MEMORY::reset()
 	for(J=0;J<4;J++) {RdMem[J]=BASICROM+0x2000*J;WrMem[J]=RAM+0x2000*J;};
 	RdMem[2] = EXTROM1; RdMem[3] = EXTROM2;
 	for(J=4;J<8;J++) {RdMem[J]=RAM+0x2000*J;WrMem[J]=RAM+0x2000*J;};
-	EnWrite[0]=EnWrite[1]=0; EnWrite[2]=EnWrite[3]=1;
+	EnWrite[0]=0; EnWrite[1]=EnWrite[2]=EnWrite[3]=1;
 #else
 void MEMORY::reset()
 {
@@ -702,8 +747,12 @@ void MEMORY::reset()
 	}
 	FILEIO* fio = new FILEIO();
 #ifdef _PC6001MK2
-	sr_mode=0;
+	vm->sr_mode=0;
 	if (fio->Fopen(emu->bios_path(_T("CGROM62.62")), FILEIO_READ_BINARY)) {
+		fio->Fread(CGROM5, 0x2000, 1);
+		fio->Fclose();
+	}
+	else if (fio->Fopen(emu->bios_path(_T("CGROM60m.62")), FILEIO_READ_BINARY)) {
 		fio->Fread(CGROM5, 0x2000, 1);
 		fio->Fclose();
 	}
@@ -731,7 +780,7 @@ void MEMORY::reset()
 	EnWrite[0]=EnWrite[1]=0; EnWrite[2]=EnWrite[3]=1;
 #endif
 #ifdef _PC6601
-	sr_mode=0;
+	vm->sr_mode=0;
 	if (fio->Fopen(emu->bios_path(_T("CGROM66.66")), FILEIO_READ_BINARY)) {
 		fio->Fread(CGROM5, 0x2000, 1);
 		fio->Fclose();
@@ -759,8 +808,8 @@ void MEMORY::reset()
 	for(J=4;J<8;J++) {RdMem[J]=RAM+0x2000*J;WrMem[J]=RAM+0x2000*J;};
 	EnWrite[0]=EnWrite[1]=0; EnWrite[2]=EnWrite[3]=1;
 #endif
-#ifdef _PC6801
-	sr_mode=1;
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
+	vm->sr_mode=1;
 	bitmap=1;
 	cols=40;
 	rows=20;
@@ -804,18 +853,17 @@ void MEMORY::reset()
 	TEXTVRAM=RAM;
 	SYSROM2=EmptyRAM;
 #endif
-	TimerSW=0;
 	portF0 = 0x11;
 	portF1 = 0xdd;
 	CRTMode1 = CRTMode2 = CRTMode3 = 0;
 	CSS3=CSS2=CSS1=0;
-	CGSW93 = 0;
+	CGSW93 = CRTKILL = 0;
 	CurKANJIROM = NULL;
 #endif
 	delete fio;
 }
 
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 void MEMORY::make_semigraph(void)
 {
 	byte *P;
@@ -915,9 +963,9 @@ void MEMORY::gvram_write(uint32 A, uint32 V)
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	/* Graphics Vram Write (SR basic) */
-	if(sr_mode && chk_gvram(addr ,8)) 
+	if(vm->sr_mode && chk_gvram(addr ,8)) 
 		gvram_write(addr, data);
 	else
 #endif
@@ -928,9 +976,9 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	/* Graphics Vram Read (SR basic) */
-	if(sr_mode && chk_gvram(addr, 0))
+	if(vm->sr_mode && chk_gvram(addr, 0))
 		return(gvram_read(addr));
 #endif
 	return(RdMem[addr >> 13][addr & 0x1FFF]);
@@ -944,16 +992,24 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		fio->Fclose();
 		EXTROM1 = EXTROM;
 		EXTROM2 = EXTROM + 0x2000;
+		EnWrite[1]=0;
 		inserted = true;
 	} else {
-		EXTROM1 = EXTROM2 = EmptyRAM;
+///		EXTROM1 = EXTROM2 = EmptyRAM;
+		EXTROM1 = RAM + 0x4000;
+		EXTROM2 = RAM + 0x6000;
+		EnWrite[1]=1;
+		inserted = false;
 	}
 	delete fio;
 }
 
 void MEMORY::close_cart()
 {
-	EXTROM1 = EXTROM2 = EmptyRAM;
+///	EXTROM1 = EXTROM2 = EmptyRAM;
+	EXTROM1 = RAM + 0x4000;
+	EXTROM2 = RAM + 0x6000;
+	EnWrite[1]=1;
 	inserted = false;
 }
 
@@ -968,15 +1024,16 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	switch(port)
 	{
 #ifdef _PC6001
-	case 0x92:
-		CGSW93 = (Value&4)?0:1;
-		break;
-	case 0x93:
-		if ((Value & 0x80) == 0) {
-			switch(Value) {
-			case 0x04: CGSW93=1; RdMem[3]=CGROM1; break;
-			case 0x05: CGSW93=0;RdMem[3]=EXTROM2;break;
-			}
+	/// 64K RAM ///
+	case 0x00:
+		if (Value & 1) {
+			RdMem[0]=RAM;
+			RdMem[1]=RAM+0x2000;
+			EnWrite[0]=1;
+		} else {
+			RdMem[0]=BASICROM;
+			RdMem[1]=BASICROM+0x2000;
+			EnWrite[0]=0;
 		}
 		break;
 	/// CP/M ///
@@ -999,7 +1056,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	return;
 }
 #else
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	case 0x40:
 	case 0x41:
 	case 0x42:
@@ -1051,19 +1108,13 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 #endif
-	case 0x93:
-		switch(Value) {
-			case 0x04: CGSW93=1; RdMem[3]=CGROM; break;
-			case 0x05: CGSW93=0;if (!sr_mode) write_io8(0xf0, portF0);break;
-		}
-		break;
 	case 0xB0:
-		if (sr_mode) {
-			TimerSW = (Value&0x01)?0:1;
+		if (vm->sr_mode) {
+			d_timer->set_portB0(Value);
 		} else {
 			VRAM=(RAM+VRAMHead[CRTMode1][(data&0x06)>>1]);
-			if (CRTMode1 && Value == 6) TimerSW=0; /// Colony Oddysey
-			else TimerSW = (Value&0x01)?0:1;
+			if (CRTMode1 && Value == 6) d_timer->set_portB0(Value | 0x01); /// Colony Oddysey
+			else d_timer->set_portB0(Value);
 		}
 		break;
 	case 0xC0: // CSS
@@ -1073,15 +1124,15 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		CRTMode1=(Value&0x02) ? 0 : 1;
 		CRTMode2=(Value&0x04) ? 0 : 1;
 		CRTMode3=(Value&0x08) ? 0 : 1;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		portC1 = Value;
-		if (sr_mode)
+		if (vm->sr_mode)
 			lines=(Value&0x01) ? 200 : 204;
-		if (sr_mode)
+		if (vm->sr_mode)
 			CGROM = CGROM6;    // N66SR BASIC use CGROM6
 		else
 			CGROM = ((CRTMode1 == 0) ? CGROM1 : CGROM5);
-		if (sr_mode) {
+		if (vm->sr_mode) {
 			if (CRTMode1==1 && CRTMode2==0 && !bitmap) { /* width 80 */
 				cols=80;
 			} else if(CRTMode1==0 && CRTMode2==0 && !bitmap) { /* Width 40  */
@@ -1093,7 +1144,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 #endif
 		break;
 	case 0xC2: // ROM swtich
-		if (sr_mode) return;	/* sr_mode do nothing! */
+		if (vm->sr_mode) return;	/* sr_mode do nothing! */
 		if ((Value&0x02)==0x00) CurKANJIROM=KANJIROM;
 		else CurKANJIROM=KANJIROM+0x4000;
 		if ((Value&0x01)==0x00) {
@@ -1109,24 +1160,24 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		};
 		break;
 	case 0xC3: break; // C2H in/out switch
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	case 0xC8:
 		portC8  = Value;
 		bitmap  = (Value & 8)? 0:1;
 		rows    = (Value & 4)? 20:25;
 ///		busreq  = (Value & 2)? 0:1;
-		sr_mode = ((Value & 1)==1) ? 0 : 1;
-		if (bitmap && sr_mode)
+		vm->sr_mode = ((Value & 1)==1) ? 0 : 1;
+		if (bitmap && vm->sr_mode)
 		{
 			VRAM = (Value & 0x10) ? RAM+0x8000:RAM+0x0000;
 		}
-		if (sr_mode) {
+		if (vm->sr_mode) {
 			CGROM=CGROM6; 
 			portF0=0x11;
 		}
 		break;	
 	case 0xC9:
-		if (sr_mode && !bitmap ) 
+		if (vm->sr_mode && !bitmap ) 
 		{		
 			TEXTVRAM=RAM+(Value & 0xf)*0x1000;
 		}
@@ -1138,7 +1189,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0xCF: portCF=0; break;
 #endif
 	case 0xF0: // read block set 
-		if (sr_mode) return;	/* sr_mode do nothing! */
+		if (vm->sr_mode) return;	/* sr_mode do nothing! */
 		portF0 = Value;
 		switch(data & 0x0f)
 		{
@@ -1148,7 +1199,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		case 0x03: RdMem[0]=RdMem[1]=EXTROM2; break;
 		case 0x04: RdMem[0]=RdMem[1]=EXTROM1; break;
 		case 0x05: RdMem[0]=CurKANJIROM;RdMem[1]=BASICROM+0x2000; break;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		case 0x06: RdMem[0]=BASICROM;RdMem[1]=(SYSROM2==EmptyRAM ? CurKANJIROM+0x2000 : SYSROM2); break;
 #else
 		case 0x06: RdMem[0]=BASICROM;RdMem[1]=CurKANJIROM+0x2000;break;
@@ -1160,7 +1211,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		case 0x0b: RdMem[0]=EXTROM1;RdMem[1]=CurKANJIROM+0x2000; break;
 		case 0x0c: RdMem[0]=CurKANJIROM;RdMem[1]=EXTROM1; break;
 		case 0x0d: RdMem[0]=RAM;RdMem[1]=RAM+0x2000; break;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		case 0x0e: if (EXTRAM) {RdMem[0]=EXTRAM; RdMem[1]=EXTRAM+0x2000;break;}
 #else
 		case 0x0e: RdMem[0]=RdMem[1]=EmptyRAM; break;
@@ -1183,7 +1234,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		case 0xb0: RdMem[2]=EXTROM1;RdMem[3]=VOICEROM+0x2000; break;
 		case 0xc0: RdMem[2]=VOICEROM;RdMem[3]=EXTROM1; break;
 		case 0xd0: RdMem[2]=RAM+0x4000;RdMem[3]=RAM+0x6000; break;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		case 0xe0: if (EXTRAM) {RdMem[2]=EXTRAM+0x4000; RdMem[3]=EXTRAM+0x6000; break;}
 #else
 		case 0xe0: RdMem[2]=RdMem[3]=EmptyRAM; break;
@@ -1193,7 +1244,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		if (CGSW93)	RdMem[3] = CGROM;
 		break;
 	case 0xF1: // read block set
-		if (sr_mode) return;	/* sr_mode do nothing! */
+		if (vm->sr_mode) return;	/* sr_mode do nothing! */
 		portF1 = Value;
 		switch(data & 0x0f)
 		{
@@ -1211,7 +1262,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		case 0x0b: RdMem[4]=EXTROM1;RdMem[5]=CurKANJIROM+0x2000; break;
 		case 0x0c: RdMem[4]=CurKANJIROM;RdMem[5]=EXTROM1; break;
 		case 0x0d: RdMem[4]=RAM+0x8000;RdMem[5]=RAM+0xa000; break;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		case 0x0e: if (EXTRAM) {RdMem[4]=EXTRAM+0x8000; RdMem[5]=EXTRAM+0xa000; break;}
 #else
 		case 0x0e: RdMem[4]=RdMem[5]=EmptyRAM; break;
@@ -1234,7 +1285,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		case 0xb0: RdMem[6]=EXTROM1;RdMem[7]=CurKANJIROM+0x2000; break;
 		case 0xc0: RdMem[6]=CurKANJIROM;RdMem[7]=EXTROM1; break;
 		case 0xd0: RdMem[6]=RAM+0xc000;RdMem[7]=RAM+0xe000; break;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		case 0xe0: if (EXTRAM) {RdMem[6]=EXTRAM+0xc000;RdMem[7]=EXTRAM+0xe000; break;}
 #else
 		case 0xe0: RdMem[6]=RdMem[7]=EmptyRAM; break;
@@ -1243,7 +1294,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		};
 		break;
 	case 0xF2: // write ram block set
-		if (sr_mode) return;	/* sr_mode do nothing! */
+		if (vm->sr_mode) return;	/* sr_mode do nothing! */
 		if (data & 0x40) {EnWrite[3]=1;WrMem[6]=RAM+0xc000;WrMem[7]=RAM+0xe000;}
 		else EnWrite[3]=0;
 		if (data & 0x010) {EnWrite[2]=1;WrMem[4]=RAM+0x8000;WrMem[5]=RAM+0xa000;}
@@ -1252,7 +1303,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		else EnWrite[1]=0;
 		if (data & 0x01) {EnWrite[0]=1;WrMem[0]=RAM;WrMem[1]=RAM+0x2000;}
 		else EnWrite[0]=0;
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 		if (EXTRAM) {
 			if (Value&0x80) {EnWrite[3]=2;WrMem[6]=EXTRAM+0xc000;WrMem[7]=EXTRAM+0xe000;}
 			if (Value&0x20) {EnWrite[2]=2;WrMem[4]=EXTRAM+0x8000;WrMem[5]=EXTRAM+0xa000;}
@@ -1272,7 +1323,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 
 	switch(port)
 	{
-#ifdef _PC6801
+#if defined(_PC6601SR) || defined(_PC6001MK2SR)
 	case 0x60:case 0x61:case 0x62:case 0x63:case 0x64:case 0x65:case 0x66:case 0x67:
 	case 0x68:case 0x69:case 0x6a:case 0x6b:case 0x6c:case 0x6d:case 0x6e:case 0x6f:
 		Value=port60[ port-0x60 ];
@@ -1280,9 +1331,29 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0xC0: Value=0xff;break;
 	case 0xC2: Value=0xff;break;
 #endif
-	case 0xF0: if (!sr_mode) Value=portF0;break;
-	case 0xF1: if (!sr_mode) Value=portF1;break;
+	case 0xF0: if (!vm->sr_mode) Value=portF0;break;
+	case 0xF1: if (!vm->sr_mode) Value=portF1;break;
 	}
 	return(Value);
 }
 #endif
+
+void MEMORY::write_signal(int id, uint32 data, uint32 mask)
+{
+	if(id == SIG_MEMORY_PIO_PORT_C) {
+#ifdef _PC6001
+		if(data & 4) {
+			CGSW93=0;RdMem[3]=EXTROM2;
+		} else {
+			CGSW93=1; RdMem[3]=CGROM1;
+		}
+#else
+		if(data & 4) {
+			CGSW93=0; if (!vm->sr_mode) write_io8(0xf0, portF0);
+		} else {
+			CGSW93=1; RdMem[3]=CGROM;
+		}
+		CRTKILL = (data & 2) ? 0 : 1;
+#endif
+	}
+}

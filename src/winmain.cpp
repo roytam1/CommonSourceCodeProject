@@ -255,6 +255,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// enumerate screen mode
 	screen_mode_count = 0;
+	if(WINDOW_WIDTH <= 320 && WINDOW_HEIGHT <= 240) {
+		// FIXME: need to check if your video card really supports 320x240 resolution
+		screen_mode_width[0] = 320;
+		screen_mode_height[0] = 240;
+		screen_mode_count = 1;
+	}
 	for(int i = 0;; i++) {
 		DEVMODE dev;
 		ZeroMemory(&dev, sizeof(dev));
@@ -263,7 +269,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			break;
 		}
 		if(dev.dmPelsWidth >= WINDOW_WIDTH && dev.dmPelsHeight >= WINDOW_HEIGHT) {
-			if((dev.dmPelsWidth >= 640 && dev.dmPelsHeight >= 480) || (dev.dmPelsWidth == 320 && dev.dmPelsHeight == 240)) {
+			if(dev.dmPelsWidth >= 640 && dev.dmPelsHeight >= 480) {
 				bool found = false;
 				for(int j = 0; j < screen_mode_count; j++) {
 					if(screen_mode_width[j] == dev.dmPelsWidth && screen_mode_height[j] == dev.dmPelsHeight) {
@@ -1723,7 +1729,7 @@ void open_cart_dialog(HWND hWnd, int drv)
 #elif defined(_MASTERSYSTEM)
 		_T("Supported Files (*.rom;*.bin;*.sms)\0*.rom;*.bin;*.sms\0All Files (*.*)\0*.*\0\0"),
 		_T("Game Cartridge"),
-#elif defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601) || defined(_PC6801)
+#elif defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6001MK2SR) || defined(_PC6601) || defined(_PC6601SR)
 		_T("Supported Files (*.rom;*.bin;*.60)\0*.rom;*.bin;*.60\0All Files (*.*)\0*.*\0\0"),
 		_T("Game Cartridge"),
 #elif defined(_PCENGINE) || defined(_X1TWIN)
@@ -1837,8 +1843,8 @@ void open_tape_dialog(HWND hWnd, bool play)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-#if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6601) || defined(_PC6801)
-		_T("Supported Files (*.p6;*.cas)\0*.p6;*.cas\0All Files (*.*)\0*.*\0\0"),
+#if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6001MK2SR) || defined(_PC6601) || defined(_PC6601SR)
+		_T("Supported Files (*.wav;*.p6;*.cas)\0*.wav;*.p6;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_PC8001SR) || defined(_PC8801MA) || defined(_PC98DO)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),

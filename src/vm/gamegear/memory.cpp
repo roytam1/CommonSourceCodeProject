@@ -88,6 +88,11 @@ void MEMORY::initialize()
 	inserted = false;
 }
 
+void MEMORY::release()
+{
+	if (cart) free(cart);
+}
+
 void MEMORY::bios()
 {
 	FILEIO* fio = new FILEIO();

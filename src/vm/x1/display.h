@@ -63,6 +63,13 @@ private:
 	uint8 mode1, mode2;
 	bool hireso;
 #endif
+#ifdef _X1TURBOZ
+	uint8 zmode1, zmode2, ztpal[8];
+	struct {
+		uint8 b, r, g;
+	} zpal[4096];
+	int zpal_num;
+#endif
 	
 #ifdef _X1TURBO_FEATURE
 	uint8 text[400][640];
@@ -73,7 +80,11 @@ private:
 	uint8 cg[200][640];
 	uint8 pri_line[200][8][8];
 #endif
-	scrntype palette_pc[16];	// 0-7:text, 8-15:cg
+#ifdef _X1TURBOZ
+	scrntype palette_pc[8+8+4096];	// 0-7:text, 8-15:cg, 16-:4096cg
+#else
+	scrntype palette_pc[8+8];	// 0-7:text, 8-15:cg
+#endif
 	bool prev_vert_double;
 	int raster, cblink;
 	bool scanline;

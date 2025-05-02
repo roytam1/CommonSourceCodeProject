@@ -68,6 +68,7 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
+	// ipl reset
 	SET_BANK(0x0000, 0x07ff, wdmy, ipl, false);
 	SET_BANK(0x0800, 0x7fff, wdmy, rdmy, false);
 	SET_BANK(0x8000, 0xffff, ram, ram, false);
@@ -78,6 +79,7 @@ void MEMORY::reset()
 
 void MEMORY::special_reset()
 {
+	// reset
 	SET_BANK(0x0000, 0xffff, ram, ram, false);
 	
 	ipl_selected = false;

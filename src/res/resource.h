@@ -639,19 +639,32 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART1                  1
 #define MENU_POS_FD1                    2
-#define MENU_POS_TAPE                   3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
+#define MENU_POS_FD2                    3
+#define MENU_POS_TAPE                   4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
-// NEC PC-6001mk2
+// NEC PC-6001mkII
 #ifdef _PC6001MK2
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART1                  1
 #define MENU_POS_FD1                    2
-#define MENU_POS_TAPE                   3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
+#define MENU_POS_FD2                    3
+#define MENU_POS_TAPE                   4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
+// NEC PC-6001mkIISR
+#ifdef _PC6001MK2SR
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART1                  1
+#define MENU_POS_FD1                    2
+#define MENU_POS_FD2                    3
+#define MENU_POS_TAPE                   4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // NEC PC-6601
@@ -659,19 +672,25 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART1                  1
 #define MENU_POS_FD1                    2
-#define MENU_POS_TAPE                   3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
+#define MENU_POS_FD2                    3
+#define MENU_POS_FD3                    4
+#define MENU_POS_FD4                    5
+#define MENU_POS_TAPE                   6
+#define MENU_POS_SCREEN                 7
+#define MENU_POS_SOUND                  8
 #endif
 
-// PC-6801
-#ifdef _PC6801
+// NEC PC-6601SR
+#ifdef _PC6601SR
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART1                  1
 #define MENU_POS_FD1                    2
-#define MENU_POS_TAPE                   3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
+#define MENU_POS_FD2                    3
+#define MENU_POS_FD3                    4
+#define MENU_POS_FD4                    5
+#define MENU_POS_TAPE                   6
+#define MENU_POS_SCREEN                 7
+#define MENU_POS_SOUND                  8
 #endif
 
 // NEC PC-8001mkIISR
@@ -921,6 +940,16 @@
 
 // SHARP X1turbo
 #ifdef _X1TURBO
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
+// SHARP X1turboZ
+#ifdef _X1TURBOZ
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2

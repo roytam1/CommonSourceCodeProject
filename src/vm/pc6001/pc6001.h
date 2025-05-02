@@ -1,8 +1,9 @@
 /*
 	NEC PC-6001 Emulator 'yaPC-6001'
-	NEC PC-6001mk2 Emulator 'yaPC-6201'
+	NEC PC-6001mkII Emulator 'yaPC-6201'
+	NEC PC-6001mkIISR Emulator 'yaPC-6401'
 	NEC PC-6601 Emulator 'yaPC-6601'
-	PC-6801 Emulator 'PC-6801'
+	NEC PC-6601SR Emulator 'yaPC-6801'
 
 	Author : tanam
 	Date   : 2013.07.15-
@@ -13,43 +14,52 @@
 #ifndef _PC6001_H_
 #define _PC6001_H_
 
-#ifdef _PC6801
-#define DEVICE_NAME		"PC-6801"
-#define CONFIG_NAME		"pc6801"
-#define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		400
-#define CPU_CLOCKS			3580000
-#define HAS_YM2608
-#endif
-#ifdef _PC6601
-#define DEVICE_NAME		"NEC PC-6601"
-#define CONFIG_NAME		"pc6601"
-#define SCREEN_WIDTH		320
-#define SCREEN_HEIGHT		200
-#define CPU_CLOCKS			4000000
-#define HAS_AY_3_8910
-#endif
-#ifdef _PC6001MK2
-#define DEVICE_NAME		"NEC PC-6001mk2"
-#define CONFIG_NAME		"pc6001mk2"
-#define SCREEN_WIDTH		320
-#define SCREEN_HEIGHT		200
-#define CPU_CLOCKS			4000000
-#define HAS_AY_3_8910
-#endif
-#ifdef _PC6001
+#if defined(_PC6001)
 #define DEVICE_NAME		"NEC PC-6001"
 #define CONFIG_NAME		"pc6001"
+#define SUB_CPU_ROM_FILE_NAME	"SUBCPU.60"
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		192
-#define CPU_CLOCKS			3993600
+#define CPU_CLOCKS		3993600
 #define HAS_AY_3_8910
+#elif defined(_PC6001MK2)
+#define DEVICE_NAME		"NEC PC-6001mkII"
+#define CONFIG_NAME		"pc6001mk2"
+#define SUB_CPU_ROM_FILE_NAME	"SUBCPU.62"
+#define SCREEN_WIDTH		320
+#define SCREEN_HEIGHT		200
+#define CPU_CLOCKS		4000000
+#define HAS_AY_3_8910
+#elif defined(_PC6001MK2SR)
+#define DEVICE_NAME		"NEC PC-6001mkIISR"
+#define CONFIG_NAME		"pc6001mk2sr"
+#define SUB_CPU_ROM_FILE_NAME	"SUBCPU.68"
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
+#define CPU_CLOCKS		3580000
+#elif defined(_PC6601)
+#define DEVICE_NAME		"NEC PC-6601"
+#define CONFIG_NAME		"pc6601"
+#define SUB_CPU_ROM_FILE_NAME	"SUBCPU.66"
+#define SCREEN_WIDTH		320
+#define SCREEN_HEIGHT		200
+#define CPU_CLOCKS		4000000
+#define HAS_AY_3_8910
+#elif defined(_PC6601SR)
+#define DEVICE_NAME		"NEC PC-6601SR"
+#define CONFIG_NAME		"pc6601sr"
+#define SUB_CPU_1_ROM_FILE_NAME	"SUBCPU1.68"
+#define SUB_CPU_2_ROM_FILE_NAME	"SUBCPU2.68"
+#define SUB_CPU_3_ROM_FILE_NAME	"SUBCPU3.68"
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
+#define CPU_CLOCKS		3580000
 #endif
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
-#define MAX_DRIVE			4
+#define MAX_DRIVE		4
 #define MC6847_ATTR_OFS		0
 #define MC6847_VRAM_OFS		0x200
 #define MC6847_ATTR_AG		0x80
@@ -65,9 +75,11 @@
 #define MIN_WINDOW_WIDTH	320
 #define USE_CART1
 #define USE_FD1
-///#define USE_FD2
-///#define USE_FD3
-///#define USE_FD4
+#define USE_FD2
+#if defined(_PC6601) || defined(_PC6601SR)
+#define USE_FD3
+#define USE_FD4
+#endif
 #define USE_ACCESS_LAMP
 #define USE_TAPE
 #define TAPE_PC6001
@@ -83,19 +95,32 @@ class EVENT;
 
 class I8255;
 class IO;
-class SYSTEM;
 #ifdef _PC6001
 class MC6847;
 #else
-class PD7752;
+class UPD7752;
 #endif
-class DATAREC;
+class PC6031;
+class PC80S31K;
+class UPD765A;
 class YM2203;
 class Z80;
+
+class DATAREC;
+class MCS48;
+
+#ifdef _PC6001
 class DISPLAY;
+#endif
+#if defined(_PC6601) || defined(_PC6601SR)
+class FLOPPY;
+#endif
 class JOYSTICK;
-class KEYBOARD;
 class MEMORY;
+class PRINTER;
+class PSUB;
+class SUB;
+class TIMER;
 
 class VM
 {
@@ -106,22 +131,39 @@ protected:
 	// devices
 	EVENT* event;
 	
-	I8255* pio_k;
-	I8255* pio_f;
+	I8255* pio_sub;
 	IO* io;
-	DATAREC* drec;
 	YM2203* psg;
 	Z80* cpu;
-	SYSTEM* system;
 #ifdef _PC6001
 	MC6847* vdp;
-#else
-	PD7752* voice;
-#endif	
 	DISPLAY* display;
+#else
+	UPD7752* voice;
+#endif
+#if defined(_PC6601) || defined(_PC6601SR)
+	FLOPPY* floppy;
+#endif
 	JOYSTICK* joystick;
-	KEYBOARD* keyboard;
 	MEMORY* memory;
+	PRINTER *printer;
+	PSUB* psub;
+	TIMER* timer;
+	
+	MCS48* cpu_sub;
+	SUB* sub;
+	DATAREC* drec;
+	
+	PC6031* pc6031;
+	I8255* pio_fdd;
+	I8255* pio_pc80s31k;
+	PC80S31K *pc80s31k;
+	UPD765A* fdc_pc80s31k;
+	Z80* cpu_pc80s31k;
+	
+	bool support_sub_cpu;
+	bool support_pc80s31k;
+	
 public:
 	// ----------------------------------------
 	// initialize
@@ -170,5 +212,7 @@ public:
 	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
+	
+	int sr_mode;
 };
 #endif
