@@ -49,7 +49,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	
-	vdp->set_context(cpu, SIG_CPU_NMI, 1);
+	vdp->set_context_irq(cpu, SIG_CPU_NMI, 1);
 	key->set_context(cpu);
 	memory->set_context(vdp);
 	

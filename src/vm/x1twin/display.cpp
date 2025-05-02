@@ -35,8 +35,9 @@ void DISPLAY::initialize()
 	delete fio;
 	
 	// create pc palette
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+	}
 	
 	// initialize regs
 	pal[0] = 0xaa;
@@ -64,8 +65,7 @@ void DISPLAY::update_config()
 
 void DISPLAY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff00)
-	{
+	switch(addr & 0xff00) {
 	case 0x1000:
 		pal[0] = data;
 		update_pal();
@@ -119,8 +119,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 
 uint32 DISPLAY::read_io8(uint32 addr)
 {
-	switch(addr & 0xff00)
-	{
+	switch(addr & 0xff00) {
 	case 0x1000:
 		return pal[0];
 	case 0x1100:
@@ -181,11 +180,6 @@ void DISPLAY::event_vline(int v, int clock)
 
 void DISPLAY::update_pal()
 {
-	if(!(pal[0] || pal[1] || pal[2])) {
-		pal[0] = 0xaa;
-		pal[1] = 0xcc;
-		pal[2] = 0xf0;
-	}
 	uint8 pal2[8];
 	for(int i = 0; i < 8; i++) {
 		uint8 bit = 1 << i;
@@ -194,12 +188,15 @@ void DISPLAY::update_pal()
 	for(int c = 0; c < 8; c++) {
 		uint8 bit = 1 << c;
 		for(int t = 0; t < 8; t++) {
-			if(priority & bit)
+			if(priority & bit) {
 				pri[c][t] = pal2[c];
-			else if(t)
-				pri[c][t] = pal2[t];
-			else
+			}
+			else if(t) {
+				pri[c][t] = t;
+			}
+			else {
 				pri[c][t] = pal2[c];
+			}
 		}
 	}
 }
@@ -207,8 +204,9 @@ void DISPLAY::update_pal()
 void DISPLAY::get_cgnum()
 {
 	int ofs = (regs[0] + 1) * vm->passed_clock(vclock) / 250;	// 250clocks/line
-	if(ofs >= regs[1])
+	if(ofs >= regs[1]) {
 		ofs = regs[1] - 1;
+	}
 	int ht = ((regs[9] <= 9) ? regs[9] : 9) + 1;
 	ofs += regs[1] * (int)(vline / ht);
 	ofs += (regs[12] << 8) | regs[13];
@@ -236,15 +234,18 @@ void DISPLAY::draw_screen()
 			uint8* src_text = text[y];
 			uint8* src_cg = cg[y];
 			
-			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2)
+			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 				dest0[x2] = dest0[x2 + 1] = palette_pc[pri[src_cg[x]][src_text[x]]];
+			}
 			if(scanline) {
-//				for(int x = 0; x < 640; x++)
+//				for(int x = 0; x < 640; x++) {
 //					dest1[x] = palette_pc[0];
+//				}
 				_memset(dest1, 0, 640 * sizeof(scrntype));
 			}
-			else
+			else {
 				_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			}
 		}
 	}
 	else {
@@ -262,15 +263,18 @@ void DISPLAY::draw_screen()
 			uint8* src_text = text[y];
 			uint8* src_cg = cg[y];
 			
-			for(int x = 0; x < 640; x++)
+			for(int x = 0; x < 640; x++) {
 				dest0[x] = palette_pc[pri[src_cg[x]][src_text[x]]];
+			}
 			if(scanline) {
-//				for(int x = 0; x < 640; x++)
+//				for(int x = 0; x < 640; x++) {
 //					dest1[x] = palette_pc[0];
+//				}
 				_memset(dest1, 0, 640 * sizeof(scrntype));
 			}
-			else
+			else {
 				_memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			}
 		}
 	}
 	
@@ -281,142 +285,109 @@ void DISPLAY::draw_screen()
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = 640 - 8; x < 640; x++) {
 				dest[x] = col;
+			}
 		}
 	}
 }
 
 void DISPLAY::draw_text(int width)
 {
-	uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
+	uint16 src = (regs[12] << 8) | regs[13];
 	int hz = (regs[1] <= width) ? regs[1] : width;
 	int vt = (regs[6] <= 25) ? regs[6] : 25;
 	int ht = ((regs[9] <= 9) ? regs[9] : 9) + 1;
+	bool prev_vs = false;
 	
 	for(int y = 0; y < vt; y++) {
+		bool cur_vs = false;
+		
 		for(int x = 0; x < hz; x++) {
-			int x8 = x << 3;
+			src &= 0x7ff;
 			uint8 code = vram_t[src];
-			uint8 attr = vram_a[src];
-			src = (src + 1) & 0x7ff;
-			
+			uint8 attr = vram_a[src++];
 			uint8 col = ((attr & 0x10) && (cblink & 8)) ? 0 : (attr & 7);
+			
+			// select pcg or ank
+			uint8 null_pattern[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+			uint8 *pattern_b, *pattern_r, *pattern_g;
 			if(attr & 0x20) {
 				// pcg
-				if(attr & 0x80) {
-					// wide
-					for(int l = 0; l < 8; l++) {
-						uint8 b = (col & 1) ? pcg_b[code][l] : 0;
-						uint8 r = (col & 2) ? pcg_r[code][l] : 0;
-						uint8 g = (col & 4) ? pcg_g[code][l] : 0;
-						b = (attr & 8) ? ~b : b;
-						r = (attr & 8) ? ~r : r;
-						g = (attr & 8) ? ~g : g;
-						int yy = y * ht + l;
-						if(yy >= 200)
-							break;
-						uint8* d = &text[yy][x8];
-						
-						d[ 0] = d[ 1] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-						d[ 2] = d[ 3] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-						d[ 4] = d[ 5] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-						d[ 6] = d[ 7] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-						d[ 8] = d[ 9] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-						d[10] = d[11] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
-						d[12] = d[13] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
-						d[14] = d[15] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
-					}
-					src = (src + 1) & 0x7ff;
-					x++;
-				}
-				else {
-					// normal
-					for(int l = 0; l < 8; l++) {
-						uint8 b = (col & 1) ? pcg_b[code][l] : 0;
-						uint8 r = (col & 2) ? pcg_r[code][l] : 0;
-						uint8 g = (col & 4) ? pcg_g[code][l] : 0;
-						b = (attr & 8) ? ~b : b;
-						r = (attr & 8) ? ~r : r;
-						g = (attr & 8) ? ~g : g;
-						int yy = y * ht + l;
-						if(yy >= 200)
-							break;
-						uint8* d = &text[yy][x8];
-						
-						d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-						d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-						d[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-						d[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-						d[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-						d[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
-						d[6] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
-						d[7] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
-					}
-				}
+				pattern_b = (col & 1) ? pcg_b[code] : null_pattern;
+				pattern_r = (col & 2) ? pcg_r[code] : null_pattern;
+				pattern_g = (col & 4) ? pcg_g[code] : null_pattern;
 			}
 			else {
 				// ank
+				pattern_b = (col & 1) ? &font[code << 3] : null_pattern;
+				pattern_r = (col & 2) ? &font[code << 3] : null_pattern;
+				pattern_g = (col & 4) ? &font[code << 3] : null_pattern;
+			}
+			if(attr & 0x40) {
+				if(prev_vs) {
+					pattern_b += 4;
+					pattern_r += 4;
+					pattern_g += 4;
+				}
+				cur_vs = true;
+			}
+			
+			// rencer character
+			for(int l = 0; l < 8; l++) {
+				int line = (attr & 0x40) ? (l >> 1) : l;
+				uint8 b = (attr & 8) ? ~pattern_b[line] : pattern_b[line];
+				uint8 r = (attr & 8) ? ~pattern_r[line] : pattern_r[line];
+				uint8 g = (attr & 8) ? ~pattern_g[line] : pattern_g[line];
+				int yy = y * ht + l;
+				if(yy >= 200) {
+					break;
+				}
+				uint8* d = &text[yy][x << 3];
+				
 				if(attr & 0x80) {
-					// wide
-					for(int l = 0; l < 8; l++) {
-						uint8 pat = font[(code << 3) + l];
-						pat = (attr & 8) ? ~pat : pat;
-						int yy = y * ht + l;
-						if(yy >= 200)
-							break;
-						uint8* d = &text[yy][x8];
-						
-						d[ 0] = d[ 1] = (pat & 0x80) ? col : 0;
-						d[ 2] = d[ 3] = (pat & 0x40) ? col : 0;
-						d[ 4] = d[ 5] = (pat & 0x20) ? col : 0;
-						d[ 6] = d[ 7] = (pat & 0x10) ? col : 0;
-						d[ 8] = d[ 9] = (pat & 0x08) ? col : 0;
-						d[10] = d[11] = (pat & 0x04) ? col : 0;
-						d[12] = d[13] = (pat & 0x02) ? col : 0;
-						d[14] = d[15] = (pat & 0x01) ? col : 0;
-					}
-					src = (src + 1) & 0x7ff;
-					x++;
+					// horizontal doubled char
+					d[ 0] = d[ 1] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+					d[ 2] = d[ 3] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+					d[ 4] = d[ 5] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+					d[ 6] = d[ 7] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+					d[ 8] = d[ 9] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+					d[10] = d[11] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
+					d[12] = d[13] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
+					d[14] = d[15] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 				}
 				else {
-					// normal
-					for(int l = 0; l < 8; l++) {
-						uint8 pat = font[(code << 3) + l];
-						pat = (attr & 8) ? ~pat : pat;
-						int yy = y * ht + l;
-						if(yy >= 200)
-							break;
-						uint8* d = &text[yy][x8];
-						
-						d[0] = (pat & 0x80) ? col : 0;
-						d[1] = (pat & 0x40) ? col : 0;
-						d[2] = (pat & 0x20) ? col : 0;
-						d[3] = (pat & 0x10) ? col : 0;
-						d[4] = (pat & 0x08) ? col : 0;
-						d[5] = (pat & 0x04) ? col : 0;
-						d[6] = (pat & 0x02) ? col : 0;
-						d[7] = (pat & 0x01) ? col : 0;
-					}
+					d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+					d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+					d[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+					d[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+					d[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+					d[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
+					d[6] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
+					d[7] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 				}
 			}
+			if(attr & 0x80) {
+				// skip next one char
+				src++;
+				x++;
+			}
 		}
+		prev_vs = prev_vs ? false : cur_vs;
 	}
 }
 
 void DISPLAY::draw_cg(int width)
 {
-	uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
-	
 	for(int l = 0; l < 8; l++) {
-		uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
+		uint16 src = (regs[12] << 8) | regs[13];
 		uint16 ofs = 0x800 * l;
 		for(int y = 0; y < 200; y += 8) {
 			for(int x = 0; x < width; x++) {
+				src &= 0x7ff;
 				uint8 b = vram_b[ofs | src];
 				uint8 r = vram_r[ofs | src];
-				uint8 g = vram_g[ofs | src];
-				src = (src + 1) & 0x7ff;
+				uint8 g = vram_g[ofs | src++];
 				uint8* d = &cg[y | l][x << 3];
 				
 				d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);

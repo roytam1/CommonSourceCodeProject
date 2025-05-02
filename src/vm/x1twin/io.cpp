@@ -24,16 +24,16 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 {
 	// H -> L
 	bool next = ((data & mask) != 0);
-	if(signal && !next)
+	if(signal && !next) {
 		vram_mode = true;
+	}
 	signal = next;
 }
 
 void IO::write_io8(uint32 addr, uint32 data)
 {
 	// vram access
-	switch(addr & 0xc000)
-	{
+	switch(addr & 0xc000) {
 	case 0x0000:
 		if(vram_mode) {
 			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
@@ -47,33 +47,37 @@ void IO::write_io8(uint32 addr, uint32 data)
 			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
 			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
 		}
-		else
+		else {
 			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
+		}
 		return;
 	case 0x8000:
 		if(vram_mode) {
 			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
 			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
 		}
-		else
+		else {
 			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
+		}
 		return;
 	case 0xc000:
 		if(vram_mode) {
 			vram[VRAM_OFFSET_B | (addr & 0x3fff)] = data;
 			vram[VRAM_OFFSET_R | (addr & 0x3fff)] = data;
 		}
-		else
+		else {
 			vram[VRAM_OFFSET_G | (addr & 0x3fff)] = data;
+		}
 		return;
 	}
 	// i/o
 	addr &= IO_ADDR_MASK;
 #ifdef _DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		if(!wdev[addr]->this_device_id)
-			emu->out_debug("UNKNOWN:\t");
-		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
+//		if(!wdev[addr]->this_device_id) {
+//			emu->out_debug("UNKNOWN:\t");
+//		}
+//		emu->out_debug("%6x\tOUT8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -86,8 +90,7 @@ uint32 IO::read_io8(uint32 addr)
 {
 	// vram access
 	vram_mode = false;
-	switch(addr & 0xc000)
-	{
+	switch(addr & 0xc000) {
 	case 0x4000:
 		return vram[VRAM_OFFSET_B | (addr & 0x3fff)];
 	case 0x8000:
@@ -99,13 +102,14 @@ uint32 IO::read_io8(uint32 addr)
 	addr &= IO_ADDR_MASK;
 	uint32 val = rdev[addr]->read_io8(raddr[addr]);
 #ifdef _DEBUG_LOG
-//	if(!(prv_raddr == addr && prv_rdata == val)) {
-		if(!rdev[addr]->this_device_id)
-			emu->out_debug("UNKNOWN:\t");
-		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), addr, val);
+	if(!(prv_raddr == addr && prv_rdata == val)) {
+//		if(!rdev[addr]->this_device_id) {
+//			emu->out_debug("UNKNOWN:\t");
+//		}
+//		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), addr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
-//	}
+	}
 	prv_waddr = -1;
 #endif
 	return val;

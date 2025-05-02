@@ -35,6 +35,7 @@ public:
 	bool IsProtected(_TCHAR *filename);
 	bool Fopen(_TCHAR *filename, int mode);
 	void Fclose();
+	bool IsOpened() { return (fp != NULL); }
 	int Fgetc();
 	uint32 Fread(void* buffer, uint32 size, uint32 count);
 	uint32 Fwrite(void* buffer, uint32 size, uint32 count);

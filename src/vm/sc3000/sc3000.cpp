@@ -1,28 +1,27 @@
 /*
-	FUJITSU FM-16pi Emulator 'eFM-16pi'
+	SEGA SC-3000 Emulator 'eSC-3000'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.10.10 -
+	Date   : 2006.08.17-
 
 	[ virtual machine ]
 */
 
-#include "fm16pi.h"
+#include "sc3000.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
-#include "../beep.h"
-#include "../i8253.h"
-#include "../i8259.h"
-#include "../i86.h"
+#include "../datarec.h"
+#include "../i8251.h"
+#include "../i8255.h"
 #include "../io.h"
-#include "../ls393.h"
-#include "../mb8877.h"
-#include "../rtc58321.h"
+#include "../sn76489an.h"
+#include "../tms9918a.h"
+#include "../upd765a.h"
+#include "../z80.h"
 
-#include "display.h"
 #include "keyboard.h"
 #include "memory.h"
 
@@ -38,56 +37,68 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-//	beep = new BEEP(this, emu);
-	pit = new I8253(this, emu);
-	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
+	drec = new DATAREC(this, emu);
+	sio = new I8251(this, emu);
+	pio_k = new I8255(this, emu);
+	pio_f = new I8255(this, emu);
 	io = new IO(this, emu);
-	ls74 = new LS393(this, emu);	// 74LS74
-	fdc = new MB8877(this, emu);
-	rtc = new RTC58321(this, emu);
+	psg = new SN76489AN(this, emu);
+	vdp = new TMS9918A(this, emu);
+	fdc = new UPD765A(this, emu);
+	cpu = new Z80(this, emu);
 	
-	display = new DISPLAY(this, emu);
-	keyboard = new KEYBOARD(this, emu);
+	key = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-//	event->set_context_sound(beep);
+	event->set_context_sound(psg);
 	
-	pit->set_context_ch0(ls74, SIG_LS393_CLK, 1);
-//	pit->set_context_ch2(beep, SIG_BEEP_PULSE, 1);
-	pit->set_constant_clock(0, 307200);
-	pit->set_constant_clock(1, 307200);
-	pit->set_constant_clock(2, 307200);
-	ls74->set_context_1qa(pic, SIG_I8259_IR0);
+	drec->set_context_out(pio_k, SIG_I8255_PORT_B, 0x80);
+	pio_k->set_context_port_c(key, SIG_KEYBOARD_COLUMN, 0x07, 0);
+	pio_k->set_context_port_c(drec, SIG_DATAREC_REMOTE, 0x08, 0);
+	pio_k->set_context_port_c(drec, SIG_DATAREC_OUT, 0x10, 0);
+	pio_f->set_context_port_c(fdc, SIG_UPD765A_MOTOR, 2, 0);
+	pio_f->set_context_port_c(fdc, SIG_UPD765A_TC, 4, 0);
+	pio_f->set_context_port_c(fdc, SIG_UPD765A_RESET, 8, 0);
+	pio_f->set_context_port_c(memory, SIG_MEMORY_SEL, 0x40, 0);
+	vdp->set_context_irq(cpu, SIG_CPU_IRQ, 1);
+	fdc->set_context_irq(pio_f, SIG_I8255_PORT_A, 1);
+	fdc->set_context_index(pio_f, SIG_I8255_PORT_A, 4);
 	
-	display->set_context_fdc(fdc);
-	display->set_vram_ptr(memory->get_vram());
+	key->set_context_cpu(cpu);
+	key->set_context_pio(pio_k);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_intr(pic);
+	cpu->set_context_intr(dummy);
 	
 	// i/o bus
-	io->set_iomap_alias_w(0x00, pic, 0);
-	io->set_iomap_alias_w(0x02, pic, 1);
-	io->set_iomap_alias_w(0xe0, pit, 0);
-	io->set_iomap_alias_w(0xe2, pit, 1);
-	io->set_iomap_alias_w(0xe4, pit, 2);
-	io->set_iomap_alias_w(0xe6, pit, 3);
-	
-	io->set_iomap_alias_r(0x00, pic, 0);
-	io->set_iomap_alias_r(0x02, pic, 1);
-
-	io->set_iomap_single_r(0x24, keyboard);
-
-
-	io->set_iomap_alias_r(0xe0, pit, 0);
-	io->set_iomap_alias_r(0xe2, pit, 1);
-	io->set_iomap_alias_r(0xe4, pit, 2);
-	io->set_iomap_alias_r(0xe6, pit, 3);
+	for(int i = 0x40; i <= 0x7f; i++) {
+		io->set_iomap_single_w(i, psg);
+		io->set_iomap_single_r(i, psg);
+	}
+	for(int i = 0x80; i <= 0xbf; i++) {
+		io->set_iomap_single_w(i, vdp);
+		io->set_iomap_single_r(i, vdp);
+	}
+	for(int i = 0xc0; i <= 0xdf; i++) {
+		io->set_iomap_single_w(i, pio_k);
+		io->set_iomap_single_r(i, pio_k);
+	}
+	for(int i = 0xe0; i <= 0xe3; i++) {
+		io->set_iomap_single_w(i, fdc);
+		io->set_iomap_single_r(i, fdc);
+	}
+	for(int i = 0xe4; i <= 0xe7; i++) {
+		io->set_iomap_single_w(i, pio_f);
+		io->set_iomap_single_r(i, pio_f);
+	}
+	for(int i = 0xe8; i <= 0xeb; i++) {
+		io->set_iomap_single_w(i, sio);
+		io->set_iomap_single_r(i, sio);
+	}
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -183,7 +194,7 @@ uint32 VM::get_prv_pc()
 
 void VM::draw_screen()
 {
-	display->draw_screen();
+	vdp->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -196,7 +207,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-//	beep->init(rate, 2400, 2, 8000);
+	psg->init(rate, 3579545, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -205,22 +216,20 @@ uint16* VM::create_sound(int samples, bool fill)
 }
 
 // ----------------------------------------------------------------------------
-// notify key
-// ----------------------------------------------------------------------------
-
-void VM::key_down(int code)
-{
-	keyboard->key_down(code);
-}
-
-void VM::key_up(int code)
-{
-	keyboard->key_up(code);
-}
-
-// ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
+
+void VM::open_cart(_TCHAR* filename)
+{
+	memory->open_cart(filename);
+	reset();
+}
+
+void VM::close_cart()
+{
+	memory->close_cart();
+	reset();
+}
 
 void VM::open_disk(_TCHAR* filename, int drv)
 {
@@ -232,9 +241,24 @@ void VM::close_disk(int drv)
 	fdc->close_disk(drv);
 }
 
+void VM::play_datarec(_TCHAR* filename)
+{
+	drec->play_datarec(filename);
+}
+
+void VM::rec_datarec(_TCHAR* filename)
+{
+	drec->rec_datarec(filename);
+}
+
+void VM::close_datarec()
+{
+	drec->close_datarec();
+}
+
 bool VM::now_skip()
 {
-	return false;
+	return drec->skip();
 }
 
 void VM::update_config()

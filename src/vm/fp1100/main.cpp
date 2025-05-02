@@ -59,7 +59,7 @@ void MAIN::reset()
 	SET_BANK(0x0000, 0x8fff, ram, rom);
 	
 	slot_sel = 0;
-	intr_mask = intr_req = intr_service = 0;
+	intr_mask = intr_req = 0;
 }
 
 void MAIN::write_data8(uint32 addr, uint32 data)
@@ -82,16 +82,12 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 	case 0xff40:
 	case 0xff60:
 		slot_sel = (slot_sel & 4) | (data & 3);
-//emu->out_debug("MAIN\tSLOT=%d\n", slot_sel);
 		break;
 	case 0xff80:
 		if((intr_mask & 0x80) != (data & 0x80)) {
-		//if(!(intr_mask & 0x80) && (data & 0x80)) {
-//emu->out_debug("MAIN->SUB\tINT2=%d\n", (data&0x80)?1:0);
 			d_sub->write_signal(did_int2, data, 0x80);
 		}
 		intr_mask = data;
-//emu->out_debug("MAIN\tINTR_MASK=%2x\n", intr_mask);
 		update_intr();
 		break;
 	case 0xffa0:
@@ -102,10 +98,8 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 			SET_BANK(0x0000, 0x8fff, ram, rom);
 		}
 		slot_sel = (slot_sel & 3) | ((data & 1) << 2);
-//emu->out_debug("MAIN\tSLOT=%d\n", slot_sel);
 		break;
 	case 0xffc0:
-//emu->out_debug("MAIN->SUB\tCOMM=%2x\n", data);
 		d_sub->write_signal(did_comm, data, 0xff);
 		break;
 	case 0xffe0:
@@ -143,12 +137,10 @@ void MAIN::write_signal(int id, uint32 data, uint32 mask)
 		else {
 			intr_req &= ~(1 << id);
 		}
-//emu->out_debug("MAIN\tID=%d REQ=%2x\n", id, intr_req);
 		update_intr();
 		break;
 	case SIG_MAIN_COMM:
 		comm_data = data & 0xff;
-//emu->out_debug("MAIN<-SUB\tCOMM=%2x\n", comm_data);
 		break;
 	}
 }
@@ -164,11 +156,7 @@ void MAIN::update_intr()
 {
 	for(int i = 0; i < 5; i++) {
 		uint8 bit = priority[i];
-		if(intr_service & bit) {
-			break;
-		}
 		if((intr_req & bit) && (intr_mask & bit)) {
-//emu->out_debug("MAIN INTERRUPT REQ\n");
 			d_cpu->set_intr_line(true, true, 0);
 			return;
 		}
@@ -180,13 +168,8 @@ uint32 MAIN::intr_ack()
 {
 	for(int i = 0; i < 5; i++) {
 		uint8 bit = priority[i];
-		if(intr_service & bit) {
-			break;
-		}
 		if((intr_req & bit) && (intr_mask & bit)) {
 			intr_req &= ~bit;
-			intr_service |= bit;
-//emu->out_debug("MAIN INTERRUPT ACK VECTOR=%2x\n",vector[i]);
 			return vector[i];
 		}
 	}
@@ -196,13 +179,4 @@ uint32 MAIN::intr_ack()
 
 void MAIN::intr_reti()
 {
-	for(int i = 0; i < 5; i++) {
-		uint8 bit = priority[i];
-		if(intr_service & bit) {
-			intr_service &= ~bit;
-//emu->out_debug("MAIN RETI\n");
-			update_intr();
-			return;
-		}
-	}
 }

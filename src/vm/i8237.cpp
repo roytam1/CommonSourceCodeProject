@@ -22,29 +22,32 @@ void I8237::write_io8(uint32 addr, uint32 data)
 	int ch = (addr >> 1) & 3;
 	uint8 bit = 1 << (data & 3);
 	
-	switch(addr & 0xf)
-	{
-	case 0x0: case 0x2: case 0x4: case 0x6:
-		if(low_high)
+	switch(addr & 0x0f) {
+	case 0x00: case 0x02: case 0x04: case 0x06:
+		if(low_high) {
 			dma[ch].bareg = (dma[ch].bareg & 0xff) | (data << 8);
-		else
+		}
+		else {
 			dma[ch].bareg = (dma[ch].bareg & 0xff00) | data;
+		}
 		dma[ch].areg = dma[ch].bareg;
 		low_high = !low_high;
 		break;
-	case 0x1: case 0x3: case 0x5: case 0x7:
-		if(low_high)
+	case 0x01: case 0x03: case 0x05: case 0x07:
+		if(low_high) {
 			dma[ch].bcreg = (dma[ch].bcreg & 0xff) | (data << 8);
-		else
+		}
+		else {
 			dma[ch].bcreg = (dma[ch].bcreg & 0xff00) | data;
+		}
 		dma[ch].creg = dma[ch].bcreg;
 		low_high = !low_high;
 		break;
-	case 0x8:
+	case 0x08:
 		// command register
 		cmd = data;
 		break;
-	case 0x9:
+	case 0x09:
 		// request register
 		if(data & 4) {
 			if(!(req & bit)) {
@@ -52,32 +55,35 @@ void I8237::write_io8(uint32 addr, uint32 data)
 				do_dma();
 			}
 		}
-		else
+		else {
 			req &= ~bit;
+		}
 		break;
-	case 0xa:
+	case 0x0a:
 		// single mask register
-		if(data & 4)
+		if(data & 4) {
 			mask |= bit;
-		else
+		}
+		else {
 			mask &= ~bit;
+		}
 		break;
-	case 0xb:
+	case 0x0b:
 		// mode register
 		dma[data & 3].mode = data;
 		break;
-	case 0xc:
+	case 0x0c:
 		low_high = false;
 		break;
-	case 0xd:
+	case 0x0d:
 		// clear master
 		reset();
 		break;
-	case 0xe:
+	case 0x0e:
 		// clear mask register
 		mask = 0;
 		break;
-	case 0xf:
+	case 0x0f:
 		// all mask register
 		mask = data & 0xf;
 		break;
@@ -89,28 +95,31 @@ uint32 I8237::read_io8(uint32 addr)
 	int ch = (addr >> 1) & 3;
 	uint32 val = 0xff;
 	
-	switch(addr & 0xf)
-	{
-	case 0x0: case 0x2: case 0x4: case 0x6:
-		if(low_high)
+	switch(addr & 0x0f) {
+	case 0x00: case 0x02: case 0x04: case 0x06:
+		if(low_high) {
 			val = dma[ch].areg >> 8;
-		else
+		}
+		else {
 			val = dma[ch].areg & 0xff;
+		}
 		low_high = !low_high;
 		return val;
-	case 0x1: case 0x3: case 0x5: case 0x7:
-		if(low_high)
+	case 0x01: case 0x03: case 0x05: case 0x07:
+		if(low_high) {
 			val = dma[ch].creg >> 8;
-		else
+		}
+		else {
 			val = dma[ch].creg & 0xff;
+		}
 		low_high = !low_high;
 		return val;
-	case 0x8:
+	case 0x08:
 		// status register
 		val = (req << 4) | tc;
 		tc = 0;
 		return val;
-	case 0xd:
+	case 0x0d:
 		// temporary register
 		return tmp;
 	}
@@ -127,8 +136,9 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 				do_dma();
 			}
 		}
-		else
+		else {
 			req &= ~bit;
+		}
 	}
 	else if(SIG_I8237_BANK0 <= id && id <= SIG_I8237_BANK3) {
 		// external bank registers
@@ -162,13 +172,15 @@ void I8237::do_dma()
 				}
 				if(dma[ch].mode & 0x20) {
 					dma[ch].areg--;
-					if(dma[ch].areg == 0xffff)
+					if(dma[ch].areg == 0xffff) {
 						dma[ch].bankreg = (dma[ch].bankreg & ~dma[ch].incmask) | ((dma[ch].bankreg - 1) & dma[ch].incmask);
+					}
 				}
 				else {
 					dma[ch].areg++;
-					if(dma[ch].areg == 0)
+					if(dma[ch].areg == 0) {
 						dma[ch].bankreg = (dma[ch].bankreg & ~dma[ch].incmask) | ((dma[ch].bankreg + 1) & dma[ch].incmask);
+					}
 				}
 				
 				// check dma condition
@@ -179,8 +191,9 @@ void I8237::do_dma()
 						dma[ch].areg = dma[ch].bareg;
 						dma[ch].creg = dma[ch].bcreg;
 					}
-					else
+					else {
 						mask |= bit;
+					}
 					req &= ~bit;
 					tc |= bit;
 				}

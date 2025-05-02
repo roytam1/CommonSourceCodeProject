@@ -30,8 +30,7 @@ void UPD4991A::initialize()
 
 void UPD4991A::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xf)
-	{
+	switch(addr & 0x0f) {
 	case 0:
 	case 1:
 	case 2:
@@ -45,12 +44,15 @@ void UPD4991A::write_io8(uint32 addr, uint32 data)
 	case 10:
 	case 11:
 	case 12:
-		if(mode == 1)
-			tp1[addr & 0xf] = data;
-		else if(mode == 2)
-			tp2[addr & 0xf] = data;
-//		else
-//			cur[addr & 0xf] = data;
+		if(mode == 1) {
+			tp1[addr & 0x0f] = data;
+		}
+		else if(mode == 2) {
+			tp2[addr & 0x0f] = data;
+		}
+//		else {
+//			cur[addr & 0x0f] = data;
+//		}
 		break;
 	case 13:
 		ctrl1 = data;
@@ -59,15 +61,14 @@ void UPD4991A::write_io8(uint32 addr, uint32 data)
 		ctrl2 = data;
 		break;
 	case 15:
-		mode = data & 0xb;
+		mode = data & 0x0b;
 		break;
 	}
 }
 
 uint32 UPD4991A::read_io8(uint32 addr)
 {
-	switch(addr & 0xf)
-	{
+	switch(addr & 0x0f) {
 	case 0:
 	case 1:
 	case 2:
@@ -81,16 +82,19 @@ uint32 UPD4991A::read_io8(uint32 addr)
 	case 10:
 	case 11:
 	case 12:
-		if(mode == 1)
-			return tp1[addr & 0xf];
-		else if(mode == 2)
-			return tp2[addr & 0xf];
-		else
-			return cur[addr & 0xf];
+		if(mode == 1) {
+			return tp1[addr & 0x0f];
+		}
+		else if(mode == 2) {
+			return tp2[addr & 0x0f];
+		}
+		else {
+			return cur[addr & 0x0f];
+		}
 	case 14:
 		return ctrl2;
 	}
-	return 0xf;
+	return 0x0f;
 }
 
 void UPD4991A::event_frame()

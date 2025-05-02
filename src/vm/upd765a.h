@@ -19,17 +19,13 @@
 #define SIG_UPD765A_MOTOR	1
 #define SIG_UPD765A_SELECT	2
 #define SIG_UPD765A_FREADY	3
+#define SIG_UPD765A_RESET	4
 
 class DISK;
 
 class UPD765A : public DEVICE
 {
 private:
-	DEVICE *d_intr[MAX_OUTPUT], *d_drq[MAX_OUTPUT], *d_hdu[MAX_OUTPUT], *d_acctc[MAX_OUTPUT];
-	int did_intr[MAX_OUTPUT], did_drq[MAX_OUTPUT], did_hdu[MAX_OUTPUT], did_acctc[MAX_OUTPUT];
-	uint32 dmask_intr[MAX_OUTPUT], dmask_drq[MAX_OUTPUT], dmask_hdu[MAX_OUTPUT], dmask_acctc[MAX_OUTPUT];
-	int dcount_intr, dcount_drq, dcount_hdu, dcount_acctc;
-	
 	// fdc
 	typedef struct {
 		uint8 track;
@@ -39,12 +35,19 @@ private:
 	fdc_t fdc[4];
 	DISK* disk[4];
 	
+	// output signals
+	outputs_t outputs_irq;
+	outputs_t outputs_drq;
+	outputs_t outputs_hdu;
+	outputs_t outputs_acctc;
+	outputs_t outputs_index;
+	
 	uint8 hdu, hdue, id[4], eot, gpl, dtl;
 	
 	int phase, prevphase;
 	uint8 status, seekstat, command;
 	uint32 result;
-	bool acctc, intr, drq, motor, index;
+	bool acctc, irq, drq, motor, index;
 	int sel;	// external drive select
 	
 	uint8* bufptr;
@@ -56,11 +59,13 @@ private:
 	bool dma_data_lost;
 #endif
 	bool force_ready;
+	bool reset_signal;
+	int index_count;
 	
 	// update status
-	void set_intr(bool val);
-	void req_intr(bool val);
-	void req_intr_ndma(bool val);
+	void set_irq(bool val);
+	void req_irq(bool val);
+	void req_irq_ndma(bool val);
 	void set_drq(bool val);
 	void set_hdu(uint8 val);
 	void set_acctc(bool val);
@@ -106,7 +111,11 @@ private:
 	
 public:
 	UPD765A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_intr = dcount_drq = dcount_hdu = dcount_acctc = 0;
+		init_output_signals(&outputs_irq);
+		init_output_signals(&outputs_drq);
+		init_output_signals(&outputs_hdu);
+		init_output_signals(&outputs_acctc);
+		init_output_signals(&outputs_index);
 	}
 	~UPD765A() {}
 	
@@ -123,21 +132,20 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_intr(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_intr++;
-		d_intr[c] = device; did_intr[c] = id; dmask_intr[c] = mask;
+	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs_irq, device, id, mask);
 	}
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_drq++;
-		d_drq[c] = device; did_drq[c] = id; dmask_drq[c] = mask;
+		regist_output_signal(&outputs_drq, device, id, mask);
 	}
 	void set_context_hdu(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_hdu++;
-		d_hdu[c] = device; did_hdu[c] = id; dmask_hdu[c] = mask;
+		regist_output_signal(&outputs_hdu, device, id, mask);
 	}
 	void set_context_acctc(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_acctc++;
-		d_acctc[c] = device; did_acctc[c] = id; dmask_acctc[c] = mask;
+		regist_output_signal(&outputs_acctc, device, id, mask);
+	}
+	void set_context_index(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs_index, device, id, mask);
 	}
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);

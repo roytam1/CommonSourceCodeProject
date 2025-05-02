@@ -44,13 +44,12 @@ private:
 	uint8 slot_sel;
 	uint8 intr_mask;
 	uint8 intr_req;
-	uint8 intr_service;
 	
 	void update_intr();
 	
 public:
 	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		intr_mask = intr_req = intr_service = 0;
+		intr_mask = intr_req = 0;
 	}
 	~MAIN() {}
 	
@@ -60,6 +59,12 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_data16(uint32 addr, uint32 data) {
+		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+	}
+	uint32 read_data16(uint32 addr) {
+		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);

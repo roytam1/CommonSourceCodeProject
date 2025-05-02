@@ -20,11 +20,6 @@
 #include "familybasic/familybasic.h"
 #endif
 
-// FUJITSU FM-16pi
-#ifdef _FM16PI
-#include "fm16pi/fm16pi.h"
-#endif
-
 // FUJITSU FMR-30
 #ifdef _FMR30
 #include "fmr30/fmr30.h"
@@ -80,8 +75,23 @@
 #include "mycomz80a/mycomz80a.h"
 #endif
 
+// SHARP MZ-80K
+#ifdef _MZ80K
+#include "mz80k/mz80k.h"
+#endif
+
 // SHARP MZ-700
 #ifdef _MZ700
+#include "mz700/mz700.h"
+#endif
+
+// SHARP MZ-1200
+#ifdef _MZ1200
+#include "mz80k/mz80k.h"
+#endif
+
+// SHARP MZ-1500
+#ifdef _MZ1500
 #include "mz700/mz700.h"
 #endif
 
@@ -128,11 +138,6 @@
 // TOSHIBA PASOPIA 7
 #ifdef _PASOPIA7
 #include "pasopia7/pasopia7.h"
-#endif
-
-// SHARP PC-3200
-#ifdef _PC3200
-#include "pc3200/pc3200.h"
 #endif
 
 // NEC PC-8201
@@ -188,6 +193,11 @@
 // BANDAI RX-78
 #ifdef _RX78
 #include "rx78/rx78.h"
+#endif
+
+// SEGA SC-3000
+#ifdef _SC3000
+#include "sc3000/sc3000.h"
 #endif
 
 // EPOCH Super Cassette Vision

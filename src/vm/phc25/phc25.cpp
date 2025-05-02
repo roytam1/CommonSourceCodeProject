@@ -56,7 +56,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	vdp->set_vram_ptr(memory->get_vram(), 0x1800);
 	vdp->set_context_vsync(not, SIG_NOT_INPUT, 1);
-	not->set_context(cpu, SIG_CPU_IRQ, 1);
+	not->set_context_out(cpu, SIG_CPU_IRQ, 1);
 	
 	vdp->set_context_vsync(system, SIG_SYSTEM_PORT, 0x10);
 	drec->set_context_out(system, SIG_SYSTEM_PORT, 0x20);

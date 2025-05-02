@@ -19,15 +19,14 @@
 class LS244 : public DEVICE
 {
 private:
-	DEVICE* dev[MAX_OUTPUT];
-	int did[MAX_OUTPUT], dshift[MAX_OUTPUT], dcount;
-	uint32 dmask[MAX_OUTPUT];
+	// output signals
+	outputs_t outputs;
 	
 	uint8 din;
 	
 public:
 	LS244(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-			dcount = 0;
+		init_output_signals(&outputs);
 	}
 	~LS244() {}
 	
@@ -36,12 +35,7 @@ public:
 		din = 0xff;
 	}
 	void write_io8(uint32 addr, uint32 data) {
-		for(int i = 0; i < dcount; i++) {
-			int shift = dshift[i];
-			uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-			uint32 mask = (shift < 0) ? (dmask[i] >> (-shift)) : (dmask[i] << shift);
-			dev[i]->write_signal(did[i], val, mask);
-		}
+		write_signals(&outputs, data);
 	}
 	uint32 read_io8(uint32 addr) {
 		return din;
@@ -52,8 +46,7 @@ public:
 	
 	// unique functions
 	void set_context_output(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount++;
-		dev[c] = device; did[c] = id; dmask[c] = mask; dshift[c] = shift;
+		regist_output_signal(&outputs, device, id, mask, shift);
 	}
 };
 

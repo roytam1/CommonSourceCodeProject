@@ -9,6 +9,9 @@
 
 #include "z80ctc.h"
 
+#define EVENT_COUNTER	0
+#define EVENT_TIMER	4
+
 void Z80CTC::reset()
 {
 	for(int ch = 0; ch < 4; ch++) {
@@ -39,10 +42,12 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 			counter[ch].clocks = 0;
 			counter[ch].freeze = false;
 			
-			if(counter[ch].clock_id != -1)
+			if(counter[ch].clock_id != -1) {
 				vm->cancel_event(counter[ch].clock_id);
-			if(counter[ch].sysclock_id != -1)
+			}
+			if(counter[ch].sysclock_id != -1) {
 				vm->cancel_event(counter[ch].sysclock_id);
+			}
 			counter[ch].clock_id = counter[ch].sysclock_id = -1;
 			update_event(ch, 0);
 		}
@@ -74,8 +79,9 @@ uint32 Z80CTC::read_io8(uint32 addr)
 	if(counter[ch].clock_id != -1) {
 		int passed = vm->passed_clock(counter[ch].prev);
 		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
-		if(counter[ch].input <= input)
+		if(counter[ch].input <= input) {
 			input = counter[ch].input - 1;
+		}
 		if(input > 0) {
 			input_clock(ch, input);
 			// cancel and re-regist event
@@ -93,8 +99,9 @@ uint32 Z80CTC::read_io8(uint32 addr)
 #else
 		uint32 input = passed;
 #endif
-		if(counter[ch].input <= input)
+		if(counter[ch].input <= input) {
 			input = counter[ch].input - 1;
+		}
 		if(input > 0) {
 			input_sysclock(ch, input);
 			// cancel and re-regist event
@@ -149,8 +156,9 @@ void Z80CTC::input_clock(int ch, int clock)
 		counter[ch].start = true;
 		return;
 	}
-	if(counter[ch].freeze)
+	if(counter[ch].freeze) {
 		return;
+	}
 	
 	// update counter
 	counter[ch].count -= clock;
@@ -160,19 +168,19 @@ void Z80CTC::input_clock(int ch, int clock)
 			counter[ch].req_intr = true;
 			update_intr();
 		}
-		for(int i = 0; i < dcount_zc[ch]; i++) {
-			d_zc[ch][i]->write_signal(did_zc[ch][i], 0xffffffff, dmask_zc[ch][i]);
-			d_zc[ch][i]->write_signal(did_zc[ch][i], 0, dmask_zc[ch][i]);
-		}
+		write_signals(&counter[ch].outputs, 0xffffffff);
+		write_signals(&counter[ch].outputs, 0);
 	}
 }
 
 void Z80CTC::input_sysclock(int ch, int clock)
 {
-	if(counter[ch].control & 0x40)
+	if(counter[ch].control & 0x40) {
 		return;
-	if(!counter[ch].start || counter[ch].freeze)
+	}
+	if(!counter[ch].start || counter[ch].freeze) {
 		return;
+	}
 	counter[ch].clocks += clock;
 	int input = counter[ch].clocks >> (counter[ch].prescaler == 256 ? 8 : 4);
 	counter[ch].clocks &= counter[ch].prescaler - 1;
@@ -185,10 +193,8 @@ void Z80CTC::input_sysclock(int ch, int clock)
 			counter[ch].req_intr = true;
 			update_intr();
 		}
-		for(int i = 0; i < dcount_zc[ch]; i++) {
-			d_zc[ch][i]->write_signal(did_zc[ch][i], 0xffffffff, dmask_zc[ch][i]);
-			d_zc[ch][i]->write_signal(did_zc[ch][i], 0, dmask_zc[ch][i]);
-		}
+		write_signals(&counter[ch].outputs, 0xffffffff);
+		write_signals(&counter[ch].outputs, 0);
 	}
 }
 
@@ -196,13 +202,15 @@ void Z80CTC::update_event(int ch, int err)
 {
 	if(counter[ch].control & 0x40) {
 		// counter mode
-		if(counter[ch].sysclock_id != -1)
+		if(counter[ch].sysclock_id != -1) {
 			vm->cancel_event(counter[ch].sysclock_id);
+		}
 		counter[ch].sysclock_id = -1;
 		
 		if(counter[ch].freeze) {
-			if(counter[ch].clock_id != -1)
+			if(counter[ch].clock_id != -1) {
 				vm->cancel_event(counter[ch].clock_id);
+			}
 			counter[ch].clock_id = -1;
 			return;
 		}
@@ -215,13 +223,15 @@ void Z80CTC::update_event(int ch, int err)
 	}
 	else {
 		// timer mode
-		if(counter[ch].clock_id != -1)
+		if(counter[ch].clock_id != -1) {
 			vm->cancel_event(counter[ch].clock_id);
+		}
 		counter[ch].clock_id = -1;
 		
 		if(!counter[ch].start || counter[ch].freeze) {
-			if(counter[ch].sysclock_id != -1)
+			if(counter[ch].sysclock_id != -1) {
 				vm->cancel_event(counter[ch].sysclock_id);
+			}
 			counter[ch].sysclock_id = -1;
 			return;
 		}
@@ -273,8 +283,9 @@ void Z80CTC::update_intr()
 	if(next = iei) {
 		next = false;
 		for(int ch = 0; ch < 4; ch++) {
-			if(counter[ch].in_service)
+			if(counter[ch].in_service) {
 				break;
+			}
 			if(counter[ch].req_intr) {
 				next = true;
 				break;
@@ -283,8 +294,9 @@ void Z80CTC::update_intr()
 	}
 	if(next != intr) {
 		intr = next;
-		if(d_cpu)
+		if(d_cpu) {
 			d_cpu->set_intr_line(intr, true, intr_bit);
+		}
 	}
 }
 
@@ -293,8 +305,9 @@ uint32 Z80CTC::intr_ack()
 	// ack (M1=IORQ=L)
 	if(intr) {
 		for(int ch = 0; ch < 4; ch++) {
-			if(counter[ch].in_service)
+			if(counter[ch].in_service) {
 				break;
+			}
 			if(counter[ch].req_intr) {
 				counter[ch].req_intr = false;
 				counter[ch].in_service = true;
@@ -305,8 +318,9 @@ uint32 Z80CTC::intr_ack()
 		// invalid interrupt status
 		return 0xff;
 	}
-	if(d_child)
+	if(d_child) {
 		return d_child->intr_ack();
+	}
 	return 0xff;
 }
 
@@ -320,7 +334,8 @@ void Z80CTC::intr_reti()
 			return;
 		}
 	}
-	if(d_child)
+	if(d_child) {
 		d_child->intr_reti();
+	}
 }
 

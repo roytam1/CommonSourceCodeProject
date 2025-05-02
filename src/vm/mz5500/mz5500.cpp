@@ -82,7 +82,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc->set_context_alarm(pic, SIG_I8259_IR0 | SIG_I8259_CHIP1, 1);
 	gdc->set_vram_ptr(memory->get_vram(), 0x80000);
 	gdc->set_context_vsync(pic, SIG_I8259_IR0 | SIG_I8259_CHIP0, 1);
-	fdc->set_context_intr(pic, SIG_I8259_IR1 | SIG_I8259_CHIP1, 1);
+	fdc->set_context_irq(pic, SIG_I8259_IR1 | SIG_I8259_CHIP1, 1);
 	fdc->set_context_drq(dma, SIG_I8237_CH1, 1);
 	psg->set_context_port_a(pic, SIG_I8259_IR7 | SIG_I8259_CHIP0, 0x20, 0);
 	psg->set_context_port_a(pic, SIG_I8259_IR7 | SIG_I8259_CHIP1, 0x40, 0);

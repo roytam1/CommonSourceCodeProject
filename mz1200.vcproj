@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="fm16pi"
+	Name="mz1200"
 	ProjectGUID="{F62D036D-7569-431B-9C55-C056A4D3145A}"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,17 +42,17 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/fm16pi.tlb"
+				TypeLibraryName=".\Debug/mz1200.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_FM16PI"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MZ1200"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/fm16pi.pch"
+				PrecompiledHeaderFile=".\Debug/mz1200.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -75,11 +75,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Debug/fm16pi.exe"
+				OutputFile=".\Debug/mz1200.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/fm16pi.pdb"
+				ProgramDatabaseFile=".\Debug/mz1200.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/fm16pi.bsc"
+				OutputFile=".\Debug/mz1200.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -137,18 +137,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/fm16pi.tlb"
+				TypeLibraryName=".\Release/mz1200.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_FM16PI"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MZ1200"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/fm16pi.pch"
+				PrecompiledHeaderFile=".\Release/mz1200.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -170,10 +170,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Release/fm16pi.exe"
+				OutputFile=".\Release/mz1200.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/fm16pi.pdb"
+				ProgramDatabaseFile=".\Release/mz1200.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/fm16pi.bsc"
+				OutputFile=".\Release/mz1200.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -381,27 +381,7 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\beep.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\disk.cpp"
+					RelativePath="src\vm\datarec.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -461,27 +441,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\i8259.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\i86.cpp"
+					RelativePath="src\vm\i8255.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -521,7 +481,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\mb8877.cpp"
+					RelativePath="src\vm\pcm1bit.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -541,7 +501,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\rtc58321.cpp"
+					RelativePath="src\vm\z80.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -566,7 +526,7 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\fm16pi\display.cpp"
+					RelativePath="src\vm\mz80k\display.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -586,7 +546,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\fm16pi\fm16pi.cpp"
+					RelativePath="src\vm\mz80k\keyboard.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -606,7 +566,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\fm16pi\keyboard.cpp"
+					RelativePath="src\vm\mz80k\memory.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -626,7 +586,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\fm16pi\memory.cpp"
+					RelativePath="src\vm\mz80k\mz80k.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -681,15 +641,15 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\beep.h"
+					RelativePath="src\vm\and.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\datarec.h"
 					>
 				</File>
 				<File
 					RelativePath="src\vm\device.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\disk.h"
 					>
 				</File>
 				<File
@@ -701,11 +661,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\i8259.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\i86.h"
+					RelativePath="src\vm\i8255.h"
 					>
 				</File>
 				<File
@@ -713,19 +669,15 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\ls393.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\mb8877.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\rtc58321.h"
+					RelativePath="src\vm\pcm1bit.h"
 					>
 				</File>
 				<File
 					RelativePath="src\vm\vm.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\z80.h"
 					>
 				</File>
 			</Filter>
@@ -734,19 +686,19 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\fm16pi\display.h"
+					RelativePath="src\vm\mz80k\display.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\fm16pi\fm16pi.h"
+					RelativePath="src\vm\mz80k\keyboard.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\fm16pi\keyboard.h"
+					RelativePath="src\vm\mz80k\memory.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\fm16pi\memory.h"
+					RelativePath="src\vm\mz80k\mz80k.h"
 					>
 				</File>
 			</Filter>
@@ -756,11 +708,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\fm16pi.ico"
+				RelativePath="src\res\mz1200.ico"
 				>
 			</File>
 			<File
-				RelativePath="src\res\fm16pi.rc"
+				RelativePath="src\res\mz1200.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

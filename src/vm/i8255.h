@@ -21,23 +21,23 @@
 class I8255 : public DEVICE
 {
 private:
-	DEVICE* dev[3][MAX_OUTPUT];
-	int did[3][MAX_OUTPUT], dshift[3][MAX_OUTPUT], dcount[3];
-	uint32 dmask[3][MAX_OUTPUT];
-	
 	typedef struct {
 		uint8 wreg;
 		uint8 rreg;
 		uint8 rmask;
 		uint8 mode;
 		bool first;
+		// output signals
+		outputs_t outputs;
 	} port_t;
 	port_t port[3];
 	
 public:
 	I8255(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount[0] = dcount[1] = dcount[2] = 0;
-		port[0].wreg = port[1].wreg = port[2].wreg = port[0].rreg = port[1].rreg = port[2].rreg = 0;//0xff;
+		for(int i = 0; i < 3; i++) {
+			init_output_signals(&port[i].outputs);
+			port[i].wreg = port[i].rreg = 0;//0xff;
+		}
 	}
 	~I8255() {}
 	
@@ -49,16 +49,13 @@ public:
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[0]++;
-		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask; dshift[0][c] = shift;
+		regist_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask; dshift[1][c] = shift;
+		regist_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
 	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[2]++;
-		dev[2][c] = device; did[2][c] = id; dmask[2][c] = mask; dshift[2][c] = shift;
+		regist_output_signal(&port[2].outputs, device, id, mask, shift);
 	}
 };
 

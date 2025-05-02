@@ -19,7 +19,6 @@ class JOYSTICK : public DEVICE
 {
 private:
 	DEVICE* d_psg;
-	int did_psg[2];
 	
 	uint8* joy_stat;
 	
@@ -32,9 +31,8 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_psg(DEVICE* device, int id_pa, int id_pb) {
+	void set_context_psg(DEVICE* device) {
 		d_psg = device;
-		did_psg[0] = id_pa; did_psg[1] = id_pb;
 	}
 };
 

@@ -41,30 +41,37 @@ void RTC58321::write_io8(uint32 addr, uint32 data)
 	if(addr & 1) {
 		// command
 		if(data & RTC58321_BIT_CS) {
-			if(!(cmdreg & 4) && (data & 4))
+			if(!(cmdreg & 4) && (data & 4)) {
 				rreg = regs[regnum];
-			if((cmdreg & 2) && !(data & 2)) {
-				if(regnum == 5)
-					regs[5] = (regs[5] & 7) | (wreg & 8);
-				else if(regnum == 8)
-					regs[8] = (regs[8] & 3) | (wreg & 0xc);
 			}
-			if((cmdreg & 1) && !(data & 1))
-				regnum = wreg & 0xf;
+			if((cmdreg & 2) && !(data & 2)) {
+				if(regnum == 5) {
+					regs[5] = (regs[5] & 7) | (wreg & 8);
+				}
+				else if(regnum == 8) {
+					regs[8] = (regs[8] & 3) | (wreg & 0x0c);
+				}
+			}
+			if((cmdreg & 1) && !(data & 1)) {
+				regnum = wreg & 0x0f;
+			}
 		}
 		cmdreg = data;
 	}
-	else
+	else {
 		wreg = data;
+	}
 }
 
 uint32 RTC58321::read_io8(uint32 addr)
 {
 	// for FMR-50
-	if(addr & 1)
+	if(addr & 1) {
 		return cmdreg;
-	else
+	}
+	else {
 		return rreg | (busy ? 0 : RTC58321_BIT_READY);
+	}
 }
 
 void RTC58321::event_frame()
@@ -82,7 +89,7 @@ void RTC58321::event_frame()
 	regs[ 5] = (uint8)(hour / 10) | ampm | (regs[5] & 8);
 	regs[ 6] = DAY_OF_WEEK;
 	regs[ 7] = DAY % 10;
-	regs[ 8] = (uint8)(DAY / 10) | (regs[8] & 0xc);
+	regs[ 8] = (uint8)(DAY / 10) | (regs[8] & 0x0c);
 	regs[ 9] = MONTH % 10;
 	regs[10] = (uint8)(MONTH / 10);
 	regs[11] = YEAR % 10;
@@ -91,29 +98,28 @@ void RTC58321::event_frame()
 
 void RTC58321::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_RTC58321_DATA)
+	if(id == SIG_RTC58321_DATA) {
 		wreg = data;
+	}
 	else if(id == SIG_RTC58321_SELECT) {
-		if(data & mask)
-			regnum = wreg & 0xf;
+		if(data & mask) {
+			regnum = wreg & 0x0f;
+		}
 	}
 	else if(id == SIG_RTC58321_WRITE) {
 		if(data & mask) {
-			if(regnum == 5)
+			if(regnum == 5) {
 				regs[5] = (regs[5] & 7) | (wreg & 8);
-			else if(regnum == 8)
-				regs[8] = (regs[8] & 3) | (wreg & 0xc);
+			}
+			else if(regnum == 8) {
+				regs[8] = (regs[8] & 3) | (wreg & 0x0c);
+			}
 		}
 	}
 	else if(id == SIG_RTC58321_READ) {
 		if(data & mask) {
 			rreg = regs[regnum];
-			for(int i = 0; i < dcount_data; i++) {
-				int shift = dshift_data[i];
-				uint32 val = (shift < 0) ? (rreg >> (-shift)) : (rreg << shift);
-				uint32 mask = (shift < 0) ? (dmask_data[i] >> (-shift)) : (dmask_data[i] << shift);
-				d_data[i]->write_signal(did_data[i], val, mask);
-			}
+			write_signals(&outputs_data, rreg);
 		}
 	}
 }
@@ -121,8 +127,7 @@ void RTC58321::write_signal(int id, uint32 data, uint32 mask)
 void RTC58321::set_busy(bool val)
 {
 	if(busy != val) {
-		for(int i = 0; i < dcount_busy; i++)
-			d_busy[i]->write_signal(did_busy[i], val ? 0xffffffff : 0, dmask_busy[i]);
+		write_signals(&outputs_busy, val ? 0xffffffff : 0);
 	}
 	busy = val;
 }

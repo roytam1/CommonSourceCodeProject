@@ -1,5 +1,6 @@
 /*
 	SHARP MZ-700 Emulator 'EmuZ-700'
+	SHARP MZ-1500 Emulator 'EmuZ-1500'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -15,24 +16,22 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define EVENT_HBLANK	0
-#define EVENT_TEMPO	1
-#define EVENT_BLINK	2
-
 #ifdef _WIN32_WCE
 #define EMM_SIZE	0x100000
 #else
 #define EMM_SIZE	0x1000000
 #endif
 #define EMM_MASK	(EMM_SIZE - 1)
-#define MZT_SIZE	0x10000
-#define MZT_MASK	(MZT_SIZE - 1)
+
+class FILEIO;
 
 class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_cpu, *d_ctc, *d_pio;
-	int did_ctc, did_pio;
+#ifdef _MZ1500
+	DEVICE *d_psg_l, *d_psg_r;
+#endif
 	
 	uint8* rbank[32];
 	uint8* wbank[32];
@@ -41,14 +40,19 @@ private:
 	uint8 ram[0x10000];	// Main RAM 64KB
 	uint8 vram[0x1000];	// VRAM 4KB
 	uint8 ipl[0x1000];	// IPL 4KB
+#ifdef _MZ1500
+	uint8 ext[0x1800];	// EXT 6KB
+#endif
+	uint8 font[0x1000];	// CGROM 4KB
+	uint8 pcg[0x6000];	// PCG 8KB * 3
 	uint8 emm[EMM_SIZE];
 	uint32 emm_ptr;
-	uint8 mzt[MZT_SIZE];
 	
-	uint8 inh, inhbak;
-	uint8 hblank, tempo;
-	bool blink;
-	void update_map();
+	uint8 mem_bank, pcg_bank;
+	bool blink, tempo;
+	bool hblank;
+	void update_map_low();
+	void update_map_high();
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -80,15 +84,31 @@ public:
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
-	void set_context_ctc(DEVICE* device, int id) {
-		d_ctc = device; did_ctc = id;
+	void set_context_ctc(DEVICE* device) {
+		d_ctc = device;
 	}
-	void set_context_pio(DEVICE* device, int id) {
-		d_pio = device; did_pio = id;
+	void set_context_pio(DEVICE* device) {
+		d_pio = device;
 	}
+#ifdef _MZ1500
+	void set_context_psg_l(DEVICE* device) {
+		d_psg_l = device;
+	}
+	void set_context_psg_r(DEVICE* device) {
+		d_psg_r = device;
+	}
+#endif
 	uint8* get_vram() {
 		return vram;
 	}
+	uint8* get_font() {
+		return font;
+	}
+#ifdef _MZ1500
+	uint8* get_pcg() {
+		return pcg;
+	}
+#endif
 	void open_mzt(_TCHAR* filename);
 };
 

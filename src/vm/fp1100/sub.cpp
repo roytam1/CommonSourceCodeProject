@@ -68,6 +68,7 @@ void SUB::initialize()
 	SET_BANK(0x2000, 0x5fff, vram_b, vram_b);
 	SET_BANK(0x6000, 0x9fff, vram_r, vram_r);
 	SET_BANK(0xa000, 0xdfff, vram_g, vram_g);
+	SET_BANK(0xe000, 0xefff, wdmy, rdmy);	// I/O
 	SET_BANK(0xf000, 0xff7f, wdmy, sub3);	// 0xf400-
 	SET_BANK(0xff80, 0xffff, ram, ram);
 	
@@ -78,6 +79,13 @@ void SUB::initialize()
 	
 	key_stat = emu->key_buffer();
 	vm->regist_frame_event(this);
+}
+
+void SUB::release()
+{
+	FILE* fp=fopen("d:\\ff80.bin","wb");
+	fwrite(ram, sizeof(ram), 1, fp);
+	fclose(fp);
 }
 
 void SUB::reset()
@@ -94,29 +102,24 @@ void SUB::write_data8(uint32 addr, uint32 data)
 	addr &= 0xffff;
 	switch(addr & 0xfc00) {
 	case 0xe000:
-//emu->out_debug("SUB\tCRTC[%d]=%2x\n",addr&1,data);
 		d_crtc->write_io8(addr, data);
 		break;
 	case 0xe400:
-//emu->out_debug("SUB\tKEYSEL=%2x\n",data);
 		key_sel = data;
 		key_update();
 		// bit4: buzzer
 		d_beep->write_signal(did_beep, data, 0x10);
 		break;
 	case 0xe800:
-//emu->out_debug("SUB->MAIN\tCOMM=%2x\n",data);
 		d_main->write_signal(did_comm, data, 0xff);
 		break;
 	case 0xec00:
 		break;
 	case 0xf000:
-//emu->out_debug("SUB\tCOLOR=%2x\n",addr&1,data);
 		color = (data >> 4) & 7;
 		break;
 	default:
 		if(0x2000 <= addr && addr < 0xe000) {
-//emu->out_debug("SUB\tVRAM[%4x]=%2x\n",addr,data);
 			if(!wait && hsync) {
 				d_cpu->write_signal(did_wait, 1, 1);
 				wait = true;
@@ -166,19 +169,15 @@ void SUB::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr) {
 	case P_A:
-//emu->out_debug("SUB\tPA=%2x\n",data);
 		pa = data;
 		break;
 	case P_B:
-//emu->out_debug("SUB\tPB=%2x\n",data);
 		// printer data
 		pb = data;
 		break;
 	case P_C:
-//emu->out_debug("SUB\tPC=%2x\n",data);
 		//if((pc & 8) != (data & 8)) {
 		if(!(pc & 8) && (data & 8)) {
-//emu->out_debug("SUB->MAIN\tINTS=%d\n",(data&8)?1:0);
 			d_main->write_signal(did_ints, data, 8);
 		}
 		pc = data;
@@ -195,10 +194,8 @@ uint32 SUB::read_io8(uint32 addr)
 		return pa;
 	case P_B:
 		if(key_sel & 0x20) {
-//emu->out_debug("SUB\tKEYDAT=%2x\n",key_data);
 			return key_data;
 		}
-//emu->out_debug("SUB\tKEYDAT=ff\n");
 		return 0;//xff;
 	case P_C:
 		return pc;
@@ -213,13 +210,19 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 	switch(id) {
 	case SIG_SUB_INT2:
 		// from main pcb
-//emu->out_debug("SUB<-MAIN\tINT2=%d\n", (data&mask)?1:0);
 		d_cpu->write_signal(did_int2, data, mask);
+		// ugly patch for boot
+		if(data & mask) {
+			d_main->write_signal(did_comm, 0, 0xff);
+		}
 		break;
 	case SIG_SUB_COMM:
 		// from main pcb
 		comm_data = data & 0xff;
-//emu->out_debug("SUB<-MAIN\tCOMM=%2x\n", comm_data);
+		// ugly patch for command
+		if(vm->get_sub_prv_pc() == 0x10e || vm->get_sub_prv_pc() == 0x110) {
+			d_cpu->write_signal(did_int2, 1, 1);
+		}
 		break;
 	case SIG_SUB_HSYNC:
 		// from crtc

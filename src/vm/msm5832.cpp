@@ -29,7 +29,7 @@
 void MSM5832::initialize()
 {
 	_memset(regs, 0, sizeof(regs));
-	regs[15] = 0xf;
+	regs[15] = 0x0f;
 	wreg = regnum = 0;
 	cs = true;
 	hold = rd = wr = false;
@@ -43,8 +43,7 @@ void MSM5832::initialize()
 
 void MSM5832::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xf)
-	{
+	switch(addr & 0x0f) {
 	case 5:
 		regs[5] = (regs[5] & 7) | (data & 8);
 		break;
@@ -56,7 +55,7 @@ void MSM5832::write_io8(uint32 addr, uint32 data)
 
 uint32 MSM5832::read_io8(uint32 addr)
 {
-	return regs[addr & 0xf] | 0xf0;
+	return regs[addr & 0x0f] | 0xf0;
 }
 
 void MSM5832::event_callback(int event_id, int err)
@@ -64,8 +63,9 @@ void MSM5832::event_callback(int event_id, int err)
 	if(event_id == EVENT_1024HZ) {
 		if(!hold) {
 			regs[15] ^= BIT_1024HZ;
-			if(regnum == 15)
+			if(regnum == 15) {
 				output();
+			}
 		}
 	}
 	else if(event_id == EVENT_3600HZ) {
@@ -73,8 +73,9 @@ void MSM5832::event_callback(int event_id, int err)
 			// 3600Hz
 			regs[15] |= BIT_3600HZ;
 			// 60Hz
-			if(!cnt1)
+			if(!cnt1) {
 				regs[15] &= ~BIT_60HZ;
+			}
 			// 1Hz
 			if(!cnt2) {
 				regs[15] &= ~BIT_1HZ;
@@ -98,32 +99,37 @@ void MSM5832::event_callback(int event_id, int err)
 				regs[11] = YEAR % 10;
 				regs[12] = (uint8)((YEAR % 100) / 10);
 			}
-			if(regnum == 15)
+			if(regnum == 15) {
 				output();
+			}
 			// regist event
 			int id;
 			vm->regist_event_by_clock(this, EVENT_PULSE_OFF, CPU_CLOCKS / 8192, false, &id);
 		}
-		if(++cnt1 == 60)
+		if(++cnt1 == 60) {
 			cnt1 = 0;
-		if(++cnt2 == 3600)
+		}
+		if(++cnt2 == 3600) {
 			cnt2 = 0;
+		}
 	}
 	else if(event_id == EVENT_PULSE_OFF) {
 		// 122.1usec (1/8192sec)
 		if(!hold) {
 			regs[15] |= (BIT_1HZ | BIT_60HZ);
 			regs[15] &= ~BIT_3600HZ;
-			if(regnum == 15)
+			if(regnum == 15) {
 				output();
+			}
 		}
 	}
 }
 
 void MSM5832::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_MSM5832_DATA)
+	if(id == SIG_MSM5832_DATA) {
 		wreg = (data & mask) | (wreg & ~mask);
+	}
 	else if(id == SIG_MSM5832_ADDR) {
 		regnum = (data & mask) | (regnum & ~mask);
 		output();
@@ -132,8 +138,9 @@ void MSM5832::write_signal(int id, uint32 data, uint32 mask)
 		cs = ((data & mask) != 0);
 		output();
 	}
-	else if(id == SIG_MSM5832_HOLD)
+	else if(id == SIG_MSM5832_HOLD) {
 		hold = ((data & mask) != 0);
+	}
 	else if(id == SIG_MSM5832_READ) {
 		rd = ((data & mask) != 0);
 		output();
@@ -141,10 +148,12 @@ void MSM5832::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_MSM5832_WRITE) {
 		bool next = ((data & mask) != 0);
 		if(!wr && next && cs) {
-			if(regnum == 5)
+			if(regnum == 5) {
 				regs[5] = (regs[5] & 7) | (wreg & 8);
-			else if(regnum == 8)
+			}
+			else if(regnum == 8) {
 				regs[8] = (regs[8] & 3) | (wreg & 4);
+			}
 		}
 		wr = next;
 	}
@@ -153,12 +162,7 @@ void MSM5832::write_signal(int id, uint32 data, uint32 mask)
 void MSM5832::output()
 {
 	if(rd & cs) {
-		uint8 rreg = regs[regnum & 0xf];
-		for(int i = 0; i < dcount_data; i++) {
-			int shift = dshift_data[i];
-			uint32 val = (shift < 0) ? (rreg >> (-shift)) : (rreg << shift);
-			uint32 mask = (shift < 0) ? (dmask_data[i] >> (-shift)) : (dmask_data[i] << shift);
-			d_data[i]->write_signal(did_data[i], val, mask);
-		}
+		uint8 rreg = regs[regnum & 0x0f];
+		write_signals(&outputs_data, rreg);
 	}
 }

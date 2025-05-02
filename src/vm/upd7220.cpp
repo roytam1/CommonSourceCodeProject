@@ -12,6 +12,8 @@
 #include "upd7220.h"
 #include "../fifo.h"
 
+#define ADDR_MASK	(vram_size - 1)
+
 enum {
 	CMD_RESET	= 0x00,
 	CMD_SYNC	= 0x0e,
@@ -197,9 +199,7 @@ void UPD7220::event_vline(int v, int clock)
 {
 	bool next = (v < vs);
 	if(vsync != next) {
-		for(int i = 0; i < dcount_vsync; i++) {
-			d_vsync[i]->write_signal(did_vsync[i], next ? 0xffffffff : 0, dmask_vsync[i]);
-		}
+		write_signals(&outputs_vsync, next ? 0xffffffff : 0);
 		vsync = next;
 	}
 	hblank = true;
@@ -706,9 +706,7 @@ void UPD7220::cmd_dmaw()
 {
 	mod = cmdreg & 3;
 	low_high = false;
-	for(int i = 0; i < dcount_drq; i++) {
-		d_drq[i]->write_signal(did_drq[i], 0xffffffff, dmask_drq[i]);
-	}
+	write_signals(&outputs_drq, 0xffffffff);
 	reset_vect();
 //	statreg |= STAT_DMA;
 	cmdreg = -1;
@@ -718,9 +716,7 @@ void UPD7220::cmd_dmar()
 {
 	mod = cmdreg & 3;
 	low_high = false;
-	for(int i = 0; i < dcount_drq; i++) {
-		d_drq[i]->write_signal(did_drq[i], 0xffffffff, dmask_drq[i]);
-	}
+	write_signals(&outputs_drq, 0xffffffff);
 	reset_vect();
 //	statreg |= STAT_DMA;
 	cmdreg = -1;

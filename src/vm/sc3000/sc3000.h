@@ -1,39 +1,43 @@
 /*
-	FUJITSU FM-16pi Emulator 'eFM-16pi'
+	SEGA SC-3000 Emulator 'eSC-3000'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.10.10 -
+	Date   : 2006.08.17-
 
 	[ virtual machine ]
 */
 
-#ifndef _FM16PI_H_
-#define _FM16PI_H_
+#ifndef _SC3000_H_
+#define _SC3000_H_
 
-#define DEVICE_NAME		"FUJITSU FM-16pi"
-#define CONFIG_NAME		"fm16pi"
+#define DEVICE_NAME		"SEGA SC-3000"
+#define CONFIG_NAME		"sc3000"
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
-#define FRAMES_PER_SEC		55.4
-#define LINES_PER_FRAME 	262
-#define CHARS_PER_LINE		108
-#define CPU_CLOCKS		4915200
-#define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		200
+#define FRAMES_PER_10SECS	600
+#define FRAMES_PER_SEC		60
+#define LINES_PER_FRAME		262
+#define CHARS_PER_LINE		1
+#define CPU_CLOCKS		3579545
+#define SCREEN_WIDTH		256
+#define SCREEN_HEIGHT		192
+#define TMS9918A_VRAM_SIZE	0x4000
+#define TMS9918A_LIMIT_SPRITES
+//720
 #define MAX_DRIVE		4
-#define HAS_I86
-#define I8259_MAX_CHIPS		1
-#define IO_ADDR_MAX		0x10000
+#define UPD765A_DRQ_DELAY
+#define UPD765A_WAIT_SEEK
+#define UPD765A_STRICT_ID
 
 // device informations for win32
+#define USE_CART
 #define USE_FD1
-#define NOTIFY_KEY_DOWN
+#define USE_DATAREC
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
-#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_RELEASE	8
 
 #include "../../common.h"
 
@@ -41,16 +45,15 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
-class I8253;
-class I8259;
-class I86;
+class DATAREC;
+class I8251;
+class I8255;
 class IO;
-class LS393;
-class MB8877;
-class RTC58321;
+class SN76489AN;
+class TMS9918A;
+class UPD765A;
+class Z80;
 
-class DISPLAY;
 class KEYBOARD;
 class MEMORY;
 
@@ -62,17 +65,17 @@ protected:
 	// devices
 	EVENT* event;
 	
-	BEEP* beep;
-	I8253* pit;
-	I8259* pic;
-	I86* cpu;
+	DATAREC* drec;
+	I8251* sio;
+	I8255* pio_k;
+	I8255* pio_f;
 	IO* io;
-	LS393* ls74;	// 74LS74
-	MB8877* fdc;
-	RTC58321* rtc;
+	SN76489AN* psg;
+	TMS9918A* vdp;
+	UPD765A* fdc;
+	Z80* cpu;
 	
-	DISPLAY* display;
-	KEYBOARD* keyboard;
+	KEYBOARD* key;
 	MEMORY* memory;
 	
 public:
@@ -98,13 +101,14 @@ public:
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int samples, bool fill);
 	
-	// notify key
-	void key_down(int code);
-	void key_up(int code);
-	
 	// user interface
+	void open_cart(_TCHAR* filename);
+	void close_cart();
 	void open_disk(_TCHAR* filename, int drv);
 	void close_disk(int drv);
+	void play_datarec(_TCHAR* filename);
+	void rec_datarec(_TCHAR* filename);
+	void close_datarec();
 	bool now_skip();
 	
 	void update_config();

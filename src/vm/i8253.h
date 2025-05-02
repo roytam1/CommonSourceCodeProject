@@ -49,12 +49,10 @@ private:
 		uint32 input_clk;
 		int period;
 		uint32 prev_clk;
+		// output signals
+		outputs_t outputs;
 	} counter_t;
 	counter_t counter[3];
-	
-	DEVICE* dev[3][MAX_OUTPUT];
-	int did[3][MAX_OUTPUT], dcount[3];
-	uint32 dmask[3][MAX_OUTPUT];
 	
 	void input_clock(int ch, int clock);
 	void input_gate(int ch, bool signal);
@@ -66,8 +64,10 @@ private:
 	
 public:
 	I8253(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount[0] = dcount[1] = dcount[2] = 0;
-		counter[0].freq = counter[1].freq = counter[2].freq = 0;
+		for(int i = 0; i < 3; i++) {
+			init_output_signals(&counter[i].outputs);
+			counter[i].freq = 0;
+		}
 	}
 	~I8253() {}
 	
@@ -80,16 +80,13 @@ public:
 	
 	// unique functions
 	void set_context_ch0(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[0]++;
-		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask;
+		regist_output_signal(&counter[0].outputs, device, id, mask);
 	}
 	void set_context_ch1(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask;
+		regist_output_signal(&counter[1].outputs, device, id, mask);
 	}
 	void set_context_ch2(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[2]++;
-		dev[2][c] = device; did[2][c] = id; dmask[2][c] = mask;
+		regist_output_signal(&counter[2].outputs, device, id, mask);
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

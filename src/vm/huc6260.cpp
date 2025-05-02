@@ -24,6 +24,26 @@
 #define VF	0x40
 #define NF	0x80
 
+static const int cycles_table[256] =
+{
+	 8, 7, 3, 4, 6, 4, 6, 7, 3, 2, 2, 2, 7, 5, 7, 6,
+	 2, 7, 7, 4, 6, 4, 6, 7, 2, 5, 2, 2, 7, 5, 7, 6,
+	 7, 7, 3, 4, 4, 4, 6, 7, 4, 2, 2, 2, 5, 5, 7, 6,
+	 2, 7, 7, 2, 4, 4, 6, 7, 2, 5, 2, 2, 5, 5, 7, 6,
+	 7, 7, 3, 4, 7, 4, 6, 7, 3, 2, 2, 2, 4, 5, 7, 6,
+	 2, 7, 7, 5, 2, 4, 6, 7, 2, 5, 3, 2, 2, 5, 7, 6,
+	 7, 7, 2, 2, 4, 4, 6, 7, 4, 2, 2, 2, 7, 5, 7, 6,
+	 2, 7, 7,17, 4, 4, 6, 7, 2, 5, 4, 2, 7, 5, 7, 6,
+	 4, 7, 2, 7, 4, 4, 4, 7, 2, 2, 2, 2, 5, 5, 5, 6,
+	 2, 7, 7, 8, 4, 4, 4, 7, 2, 5, 2, 2, 5, 5, 5, 6,
+	 2, 7, 2, 7, 4, 4, 4, 7, 2, 2, 2, 2, 5, 5, 5, 6,
+	 2, 7, 7, 8, 4, 4, 4, 7, 2, 5, 2, 2, 5, 5, 5, 6,
+	 2, 7, 2,17, 4, 4, 6, 7, 2, 2, 2, 2, 5, 5, 7, 6,
+	 2, 7, 7,17, 2, 4, 6, 7, 2, 5, 3, 2, 2, 5, 7, 6,
+	 2, 7, 2,17, 4, 4, 6, 7, 2, 2, 2, 2, 5, 5, 7, 6,
+	 2, 7, 7,17, 2, 4, 6, 7, 2, 5, 4, 2, 2, 5, 7, 6
+};
+
 // interuupt
 
 inline void HUC6260::RefreshPrvIF()
@@ -77,8 +97,9 @@ inline void HUC6260::ADC(uint8 val)
 				l += 0x06;
 			}
 			_VF = (uint8)((~(M ^ val) & (M ^ h) & NF) >> 1);
-			if(h > 0x90)
+			if(h > 0x90) {
 				h += 0x60;
+			}
 			_CF = (uint8)((h & 0x100) >> 8);
 			UpdateFlagZN(M = (uint8)((l & 0x0F) + (h & 0xF0)));
 			count -= 4;
@@ -101,8 +122,9 @@ inline void HUC6260::ADC(uint8 val)
 				l += 0x06;
 			}
 			_VF = (uint8)((~(_A ^ val) & (_A ^ h) & NF) >> 1);
-			if(h > 0x90)
+			if(h > 0x90) {
 				h += 0x60;
+			}
 			_CF = (uint8)((h & 0x100) >> 8);
 			UpdateFlagZN(_A = (uint8)((l & 0x0F) + (h & 0xF0)));
 			count--;
@@ -124,10 +146,12 @@ inline void HUC6260::SBC(uint8 val)
 	if(_DF) {
 		uint32 l = (_A & 0x0F) - (val & 0x0F) - cf;
 		uint32 h = (_A >> 4) - (val >> 4) - ((l & 0x10) == 0x10);
-		if(l & 0x10)
+		if(l & 0x10) {
 			l -= 6;
-		if(h & 0x10)
+		}
+		if(h & 0x10) {
 			h -= 6;
+		}
 		_CF = (uint8)((~h & 0x10) >> 4);
 		_VF = (uint8)(((_A ^ tmp) & (_A ^ val) & NF) >> 1);
 		UpdateFlagZN(_A = (uint8)((l & 0x0F) | (h << 4)));
@@ -338,8 +362,8 @@ inline void HUC6260::SMBi(uint8 zp, uint8 bit)
 void HUC6260::initialize()
 {
 	for(int i = 0; i < 256; i++) {
-		cycles_high[i] = huc6260_cycles[i];
-		cycles_slow[i] = huc6260_cycles[i] << 2;
+		cycles_high[i] = cycles_table[i];
+		cycles_slow[i] = cycles_table[i] << 2;
 	}
 }
 
@@ -364,39 +388,50 @@ void HUC6260::reset()
 void HUC6260::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CPU_NMI) {
-		if(data & mask)
+		if(data & mask) {
 			IntStat |= INT_NMI;
-		else
+		}
+		else {
 			IntStat &= ~INT_NMI;
+		}
 	}
 	else if(id == SIG_HUC6260_IRQ2) {
-		if(data & mask)
+		if(data & mask) {
 			IntStat |= INT_IRQ2;
-		else
+		}
+		else {
 			IntStat &= ~INT_IRQ2;
+		}
 	}
 	else if(id == SIG_HUC6260_IRQ1) {
-		if(data & mask)
+		if(data & mask) {
 			IntStat |= INT_IRQ1;
-		else
+		}
+		else {
 			IntStat &= ~INT_IRQ1;
+		}
 	}
 	else if(id == SIG_HUC6260_TIRQ) {
-		if(data & mask)
+		if(data & mask) {
 			IntStat |= INT_TIRQ;
-		else
+		}
+		else {
 			IntStat &= ~INT_TIRQ;
+		}
 	}
-	else if(id == SIG_HUC6260_INTMASK)
+	else if(id == SIG_HUC6260_INTMASK) {
 		IntMask = (IntMask & ~mask) | (data & mask);
+	}
 }
 
 uint32 HUC6260::read_signal(int id)
 {
-	if(id == SIG_HUC6260_INTMASK)
+	if(id == SIG_HUC6260_INTMASK) {
 		return IntMask;
-	if(id == SIG_HUC6260_INTSTAT)
+	}
+	if(id == SIG_HUC6260_INTSTAT) {
 		return IntStat;
+	}
 	return 0;
 }
 
@@ -408,8 +443,7 @@ void HUC6260::run(int clock)
 	count += clock;
 	first = count;
 	while(count > 0) {
-		switch(TransOpe)
-		{
+		switch(TransOpe) {
 		case 0:
 			if(!prvIF && (prvIntStat & ~prvIntMask)) {
 				if((prvIntStat & INT_IRQ2) && !(prvIntMask & INT_IRQ2)) {
@@ -532,8 +566,7 @@ void HUC6260::OP(uint8 code)
 	int8 rel8;
 	uint16 addr16;
 	
-	switch(code)
-	{
+	switch(code) {
 	case 0x00:	// BRK
 		PC++;
 		PUSH8(PC >> 8);

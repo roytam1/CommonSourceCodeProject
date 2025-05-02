@@ -10,6 +10,12 @@
 #include "datarec.h"
 #include "../fileio.h"
 
+static uint8 header[44] = {
+	'R' , 'I' , 'F' , 'F' , 0x00, 0x00, 0x00, 0x00, 'W' , 'A' , 'V' , 'E' , 'f' , 'm' , 't' , ' ' ,
+	0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0xbb, 0x00, 0x00, 0x80, 0xbb, 0x00, 0x00,
+	0x01, 0x00, 0x08, 0x00, 'd' , 'a' , 't' , 'a' , 0x00, 0x00, 0x00, 0x00
+};
+
 void DATAREC::initialize()
 {
 	// data recorder
@@ -38,22 +44,21 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DATAREC_OUT) {
 		bool signal = ((data & mask) != 0);
-		if(rec && remote && signal != out)
+		if(rec && remote && signal != out) {
 			change = true;
+		}
 		out = signal;
 	}
 	else if(id == SIG_DATAREC_REMOTE) {
 		remote = ((data & mask) != 0);
-		for(int i = 0; i < dcount_remote; i++)
-			d_remote[i]->write_signal(did_remote[i], remote ? 0xffffffff : 0, dmask_remote[i]);
+		write_signals(&outputs_remote, remote ? 0xffffffff : 0);
 		update_event();
 	}
 	else if(id == SIG_DATAREC_TRIG) {
 		bool next = ((data & mask) != 0);
 		if(next && !trig) {
 			remote = !remote;
-			for(int i = 0; i < dcount_remote; i++)
-				d_remote[i]->write_signal(did_remote[i], remote ? 0xffffffff : 0, dmask_remote[i]);
+			write_signals(&outputs_remote, remote ? 0xffffffff : 0);
 			update_event();
 		}
 		trig = next;
@@ -67,26 +72,28 @@ void DATAREC::event_callback(int event_id, int err)
 		bool signal = ((buffer[bufcnt] & 0x80) != 0);
 		if(is_wave) {
 			// inc pointer
-			if(++bufcnt >= BUFFER_SIZE) {
+			if(++bufcnt >= DATAREC_BUFFER_SIZE) {
 				_memset(buffer, 0, sizeof(buffer));
 				fio->Fread(buffer, sizeof(buffer), 1);
 				bufcnt = 0;
 			}
-			if(remain)
+			if(remain) {
 				remain--;
+			}
 			update_event();
 		}
 		else {
 			// inc pointer
 			while(!(buffer[bufcnt] & 0x7f)) {
-				if(++bufcnt >= BUFFER_SIZE) {
+				if(++bufcnt >= DATAREC_BUFFER_SIZE) {
 					_memset(buffer, 0x7f, sizeof(buffer));
 					fio->Fread(buffer, sizeof(buffer), 1);
 					bufcnt = 0;
 				}
 				signal = ((buffer[bufcnt] & 0x80) != 0);
-				if(remain)
+				if(remain) {
 					remain--;
+				}
 				update_event();
 			}
 			// dec pulse count
@@ -95,8 +102,7 @@ void DATAREC::event_callback(int event_id, int err)
 		}
 		// notify the signal is changed
 		if(signal != in) {
-			for(int i = 0; i < dcount_out; i++)
-				d_out[i]->write_signal(did_out[i], signal ? 0xffffffff : 0, dmask_out[i]);
+			write_signals(&outputs_out, signal ? 0xffffffff : 0);
 			change = true;
 			in = signal;
 		}
@@ -106,7 +112,7 @@ void DATAREC::event_callback(int event_id, int err)
 			buffer[bufcnt] = out ? 0xf0 : 0x10;
 			samples++;
 			// inc pointer
-			if(++bufcnt >= BUFFER_SIZE) {
+			if(++bufcnt >= DATAREC_BUFFER_SIZE) {
 				fio->Fwrite(buffer, sizeof(buffer), 1);
 				bufcnt = 0;
 			}
@@ -115,7 +121,7 @@ void DATAREC::event_callback(int event_id, int err)
 			// inc pointer
 			bool prv = ((buffer[bufcnt] & 0x80) != 0);
 			if(prv != out || (buffer[bufcnt] & 0x7f) == 0x7f) {
-				if(++bufcnt >= BUFFER_SIZE) {
+				if(++bufcnt >= DATAREC_BUFFER_SIZE) {
 					fio->Fwrite(buffer, sizeof(buffer), 1);
 					bufcnt = 0;
 				}
@@ -155,8 +161,7 @@ void DATAREC::play_datarec(_TCHAR* filename)
 		bool signal = ((buffer[0] & 0x80) != 0);
 		// notify the signal is changed
 		if(signal != in) {
-			for(int i = 0; i < dcount_out; i++)
-				d_out[i]->write_signal(did_out[i], signal ? 0xffffffff : 0, dmask_out[i]);
+			write_signals(&outputs_out, signal ? 0xffffffff : 0);
 			in = signal;
 		}
 		play = true;
@@ -192,8 +197,9 @@ void DATAREC::close_datarec()
 	// close file
 	if(rec) {
 		if(is_wave) {
-			if(bufcnt)
+			if(bufcnt) {
 				fio->Fwrite(buffer, bufcnt, 1);
+			}
 			// write header
 			uint8 wav[44];
 			_memcpy(wav, header, sizeof(header));
@@ -210,29 +216,32 @@ void DATAREC::close_datarec()
 			fio->Fseek(0, FILEIO_SEEK_SET);
 			fio->Fwrite(wav, sizeof(wav), 1);
 		}
-		else
+		else {
 			fio->Fwrite(buffer, bufcnt + 1, 1);
+		}
 	}
-	if(play || rec)
+	if(play || rec) {
 		fio->Fclose();
+	}
 	play = rec = false;
 	update_event();
 	
 	// no sounds
-	for(int i = 0; i < dcount_out; i++)
-		d_out[i]->write_signal(did_out[i], 0, dmask_out[i]);
+	write_signals(&outputs_out, 0);
 	in = false;
 }
 
 void DATAREC::update_event()
 {
 	if(remote && ((play && remain > 0) || rec)) {
-		if(regist_id == -1)
+		if(regist_id == -1) {
 			vm->regist_event(this, 0, 21, true, &regist_id);
+		}
 	}
 	else {
-		if(regist_id != -1)
+		if(regist_id != -1) {
 			vm->cancel_event(regist_id);
+		}
 		regist_id = -1;
 	}
 }

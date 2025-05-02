@@ -1,3 +1,36 @@
+8/27/2010
+
+[VM/AND] fix output signal when it is changed
+[VM/OR] fix output signal when it is changed
+[VM/NAND] fix output signal when it is changed
+[VM/NOR] fix output signal when it is changed
+[VM/NOT] fix output signal when it is changed
+[VM/DEVICE] refine signal connections
+[VM/DISK] support SF7 floppy disk image
+[VM/EVENT] sync 2 or more cpus precisely
+[VM/I8253] fix read both low and high counter
+[VM/PCM1BIT] update to check on/off signal width in one sample
+[VM/TMS9918A] fix screen mode selection
+[VM/UPD765A] support reset signal
+[VM/UPD765A] support index hole signal
+[VM/Z80] revirt reimplemented Z80 core (temporary)
+
+[FM16PI] remove FUJITSU FM-16Pi skelton
+[PC3200] remove SHARP PC-3200 skelton
+[FP1100/MAIN] raise sub cpu's int2 at both L->H edge and H->L edge
+[FP1100/SUB] add ugly patch to raise int2 when sub cpu recieve the command
+[MZ80K] support SHARP MZ-80K
+[MZ1200] support SHARP MZ-1200
+[MZ700/MEMORY] init memory map when mzt image is loaded
+[MZ700/MEMORY] support MZ700WIN's patch block when mzt image is loaded
+[MZ1500] support SHARP MZ-1500 (QD is not supported yet)
+[PASOPIA] fix signal connections around z80ctc
+[SC3000] support SEGA SC-3000
+[X1TWIN/SUB] fix sub cpu to check key release
+[X1TWIN/DISPLAY] fix vertical/horizontal doubled character
+[X1TWIN/DISPLAY] fix palette priority register
+
+
 8/13/2010
 
 [EMU/WIN32] reset virtual machine after emu class is initialized
@@ -272,7 +305,6 @@
 
 10/11/2008
 
-[FM16PI] add FUJITSU FM-16pi skelton (not work)
 [FMR50] fix i/o address of pit and crtc
 [FRM50/MEMORY] fix busy status of line renderer
 [FMR50/MEMORY] draw cursor on text screen
@@ -357,7 +389,6 @@
 
 [PC98HA] support NEC PC-98HA
 [PC100] support NEC PC-100 (not work)
-[PC3200] add SHARP PC-3200 skelton (not work)
 [MZ700] fix sound noise problem
 [MZ700/MEMORY] support EMM memory
 [MZ2500/TIMER] modify 8253 gate control

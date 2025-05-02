@@ -20,9 +20,8 @@
 class YM2151 : public DEVICE
 {
 private:
-	DEVICE *d_irq[MAX_OUTPUT];
-	int did_irq[MAX_OUTPUT], dcount_irq;
-	uint32 dmask_irq[MAX_OUTPUT];
+	// output signals
+	outputs_t outputs_irq;
 	
 	FM::OPM* opm;
 	int usec;
@@ -33,7 +32,7 @@ private:
 	
 public:
 	YM2151(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_irq = 0;
+		init_output_signals(&outputs_irq);
 	}
 	~YM2151() {}
 	
@@ -49,8 +48,7 @@ public:
 	
 	// unique functions
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_irq++;
-		d_irq[c] = device; did_irq[c] = id; dmask_irq[c] = mask;
+		regist_output_signal(&outputs_irq, device, id, mask);
 	}
 	void init(int rate, int clock, int samples, int vol);
 };

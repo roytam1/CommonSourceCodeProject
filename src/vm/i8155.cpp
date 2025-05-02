@@ -69,20 +69,20 @@ uint32 I8155::read_data8(uint32 addr)
 
 void I8155::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 7)
-	{
+	switch(addr & 7) {
 	case 0:
 		pio[0].rmask = (data & 1) ? 0 : 0xff;
 		pio[1].rmask = (data & 2) ? 0 : 0xff;
 		pio[2].rmask = (data & 0xc) ? 0 : 0xff;
 		statreg &= ~(STA_INTE_A | STA_INTE_B);
-		if(data & CMD_INTE_A)
+		if(data & CMD_INTE_A) {
 			statreg |= STA_INTE_A;
-		if(data & CMD_INTE_B)
+		}
+		if(data & CMD_INTE_B) {
 			statreg |= STA_INTE_B;
+		}
 		// timer operation
-		switch(data & 0xc0)
-		{
+		switch(data & 0xc0) {
 		case 0x40:
 			stop_count();
 			break;
@@ -102,10 +102,12 @@ void I8155::write_io8(uint32 addr, uint32 data)
 		set_pio(1, data);
 		break;
 	case 3:
-		if(PIO_MODE_3)
+		if(PIO_MODE_3) {
 			data = (data & ~7) | (pio[2].wreg & 7);
-		if(!PIO_MODE_4)
+		}
+		if(!PIO_MODE_4) {
 			set_pio(2, data & 0x3f);
+		}
 		break;
 	case 4:
 		countreg = (countreg & 0xff00) | data;
@@ -118,8 +120,7 @@ void I8155::write_io8(uint32 addr, uint32 data)
 
 uint32 I8155::read_io8(uint32 addr)
 {
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 		if(statreg & STA_INTR_T) {
 			statreg &= ~STA_INTR_T;
@@ -152,8 +153,7 @@ uint32 I8155::read_io8(uint32 addr)
 
 void I8155::write_signal(int id, uint32 data, uint32 mask)
 {
-	switch(id)
-	{
+	switch(id) {
 	case SIG_I8155_PORT_A:
 		if(PIO_MODE_3 || PIO_MODE_4) {
 			// note: strobe signal must be checked
@@ -184,8 +184,9 @@ void I8155::write_signal(int id, uint32 data, uint32 mask)
 		pio[2].rreg = (pio[2].rreg & ~mask) | (data & mask);
 		break;
 	case SIG_I8155_CLOCK:
-		if(prev_in && !(data & mask))
+		if(prev_in && !(data & mask)) {
 			input_clock(1);
+		}
 		prev_in = ((data & mask) != 0);
 		break;
 	}
@@ -209,17 +210,20 @@ void I8155::event_callback(int event_id, int err)
 
 void I8155::input_clock(int clock)
 {
-	if(!(now_count && clock))
+	if(!(now_count && clock)) {
 		return;
+	}
 	
 	// update counter
 	count -= clock;
 	int32 tmp = COUNT_VALUE;
 loop:
-	if(half)
+	if(half) {
 		set_signal(count > (tmp >> 1));
-	else
+	}
+	else {
 		set_signal(count > 1);
+	}
 	if(count <= 0) {
 		statreg |= STA_INTR_T;
 		if(!stop_tc) {
@@ -227,8 +231,9 @@ loop:
 			count += tmp;
 			goto loop;
 		}
-		else
+		else {
 			now_count = false;
+		}
 	}
 }
 
@@ -254,8 +259,9 @@ void I8155::start_count()
 
 void I8155::stop_count()
 {
-	if(regist_id != -1)
+	if(regist_id != -1) {
 		vm->cancel_event(regist_id);
+	}
 	regist_id = -1;
 	now_count = false;
 }
@@ -266,8 +272,9 @@ void I8155::update_count()
 		// update counter
 		int passed = vm->passed_clock(prev_clk);
 		uint32 input = freq * passed / CPU_CLOCKS;
-		if(input_clk <= input)
+		if(input_clk <= input) {
 			input = input_clk - 1;
+		}
 		if(input > 0) {
 			input_clock(input);
 			// cancel and re-regist event
@@ -293,13 +300,11 @@ void I8155::set_signal(bool signal)
 {
 	if(prev_out && !signal) {
 		// H->L
-		for(int i = 0; i < dcount_timer; i++)
-			d_timer[i]->write_signal(did_timer[i], 0, dmask_timer[i]);
+		write_signals(&outputs_timer, 0);
 	}
 	else if(!prev_out && signal) {
 		// L->H
-		for(int i = 0; i < dcount_timer; i++)
-			d_timer[i]->write_signal(did_timer[i], 0xffffffff, dmask_timer[i]);
+		write_signals(&outputs_timer, 0xffffffff);
 	}
 	prev_out = signal;
 }
@@ -307,12 +312,7 @@ void I8155::set_signal(bool signal)
 void I8155::set_pio(int ch, uint8 data)
 {
 	if(pio[ch].wreg != data || pio[ch].first) {
-		for(int i = 0; i < dcount_pio[ch]; i++) {
-			int shift = dshift_pio[ch][i];
-			uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-			uint32 mask = (shift < 0) ? (dmask_pio[ch][i] >> (-shift)) : (dmask_pio[ch][i] << shift);
-			d_pio[ch][i]->write_signal(did_pio[ch][i], val, mask);
-		}
+		write_signals(&pio[ch].outputs, data);
 		pio[ch].wreg = data;
 		pio[ch].first = false;
 	}

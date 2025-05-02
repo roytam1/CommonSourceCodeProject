@@ -15,8 +15,6 @@
 #include "../emu.h"
 #include "device.h"
 
-#define ADDR_MASK	(vram_size - 1)
-
 #define MODE_MIX	((sync[0] & 0x22) == 0x00)
 #define MODE_GFX	((sync[0] & 0x22) == 0x02)
 #define MODE_CHR	((sync[0] & 0x22) == 0x20)
@@ -30,10 +28,9 @@ class FIFO;
 class UPD7220 : public DEVICE
 {
 private:
-	DEVICE *d_drq[MAX_OUTPUT], *d_vsync[MAX_OUTPUT];
-	int did_drq[MAX_OUTPUT], did_vsync[MAX_OUTPUT];
-	uint32 dmask_drq[MAX_OUTPUT], dmask_vsync[MAX_OUTPUT];
-	int dcount_drq, dcount_vsync;
+	// output signals
+	outputs_t outputs_drq;
+	outputs_t outputs_vsync;
 	
 	// vram
 	uint8* vram;
@@ -111,7 +108,8 @@ private:
 	
 public:
 	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_drq = dcount_vsync = 0;
+		init_output_signals(&outputs_drq);
+		init_output_signals(&outputs_vsync);
 		vram = NULL;
 		vram_size = 0;
 	}
@@ -130,12 +128,10 @@ public:
 	
 	// unique functions
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_drq++;
-		d_drq[c] = device; did_drq[c] = id; dmask_drq[c] = mask;
+		regist_output_signal(&outputs_drq, device, id, mask);
 	}
 	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_vsync++;
-		d_vsync[c] = device; did_vsync[c] = id; dmask_vsync[c] = mask;
+		regist_output_signal(&outputs_vsync, device, id, mask);
 	}
 	void set_vram_ptr(uint8* ptr, uint32 size) {
 		vram = ptr; vram_size = size;

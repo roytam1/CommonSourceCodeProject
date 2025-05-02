@@ -33,28 +33,22 @@ void Z80PIO::reset()
 /*
 	AD0 is to C/~D, AD1 is to B/~A:
 	
-	00	Port A data
-	01	Port A control
-	10	Port B data
-	11	Port B control
+	0	port a data
+	1	port a control
+	2	port b data
+	3	port b control
 */
 
 void Z80PIO::write_io8(uint32 addr, uint32 data)
 {
 	int ch = (addr & 2) ? 1 : 0;
 	
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 	case 2:
 		// data
 		if(port[ch].wreg != data || port[ch].first) {
-			for(int i = 0; i < dcount[ch]; i++) {
-				int shift = dshift[ch][i];
-				uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-				uint32 mask = (shift < 0) ? (dmask[ch][i] >> (-shift)) : (dmask[ch][i] << shift);
-				dev[ch][i]->write_signal(did[ch][i], val, mask);
-			}
+			write_signals(&port[ch].outputs, data);
 			port[ch].wreg = data;
 			port[ch].first = false;
 		}
@@ -63,8 +57,9 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].req_intr = true;
 			update_intr();
 		}
-		else if((port[ch].mode & 0xc0) == 0xc0)
+		else if((port[ch].mode & 0xc0) == 0xc0) {
 			check_mode3_intr(ch);
+		}
 		break;
 	case 1:
 	case 3:
@@ -77,8 +72,9 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].mask = data;
 			port[ch].set_mask = false;
 		}
-		else if(!(data & 1))
+		else if(!(data & 1)) {
 			port[ch].vector = data;
+		}
 		else if((data & 0xf) == 3) {
 			port[ch].enb_intr = ((data & 0x80) != 0);
 			port[ch].ctrl2 = data;
@@ -86,8 +82,9 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 		}
 		else if((data & 0xf) == 7) {
 			if(data & 0x10) {
-				if((port[ch].mode & 0xc0) == 0xc0)
+				if((port[ch].mode & 0xc0) == 0xc0) {
 					port[ch].set_mask = true;
+				}
 				// canel interrup ???
 				port[ch].req_intr = false;
 			}
@@ -97,16 +94,20 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 		}
 		else if((data & 0xf) == 0xf) {
 			// port[].dir 0=output, 1=input
-			if((data & 0xc0) == 0)
+			if((data & 0xc0) == 0) {
 				port[ch].dir = 0;
-			else if((data & 0xc0) == 0x40)
+			}
+			else if((data & 0xc0) == 0x40) {
 				port[ch].dir = 0xff;
-			else if((data & 0xc0) == 0xc0)
+			}
+			else if((data & 0xc0) == 0xc0) {
 				port[ch].set_dir = true;
+			}
 			port[ch].mode = data;
 		}
-		if((port[ch].mode & 0xc0) == 0xc0)
+		if((port[ch].mode & 0xc0) == 0xc0) {
 			check_mode3_intr(ch);
+		}
 		break;
 	}
 }
@@ -115,8 +116,7 @@ uint32 Z80PIO::read_io8(uint32 addr)
 {
 	int ch = (addr & 2) ? 1 : 0;
 	
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 	case 2:
 		// data
@@ -140,8 +140,9 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 			port[0].req_intr = true;
 			update_intr();
 		}
-		else if((port[0].mode & 0xc0) == 0xc0)
+		else if((port[0].mode & 0xc0) == 0xc0) {
 			check_mode3_intr(0);
+		}
 	}
 	else if(id == SIG_Z80PIO_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
@@ -151,8 +152,9 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 			port[1].req_intr = true;
 			update_intr();
 		}
-		else if((port[1].mode & 0xc0) == 0xc0)
+		else if((port[1].mode & 0xc0) == 0xc0) {
 			check_mode3_intr(1);
+		}
 	}
 }
 
@@ -163,16 +165,21 @@ void Z80PIO::check_mode3_intr(int ch)
 	uint8 val = (port[ch].rreg & port[ch].dir) | (port[ch].wreg & ~port[ch].dir);
 	val &= mask;
 	
-	if((port[ch].ctrl1 & 0x60) == 0 && val != mask)
+	if((port[ch].ctrl1 & 0x60) == 0 && val != mask) {
 		port[ch].req_intr = true;
-	else if((port[ch].ctrl1 & 0x60) == 0x20 && val != 0)
+	}
+	else if((port[ch].ctrl1 & 0x60) == 0x20 && val != 0) {
 		port[ch].req_intr = true;
-	else if((port[ch].ctrl1 & 0x60) == 0x40 && val == 0)
+	}
+	else if((port[ch].ctrl1 & 0x60) == 0x40 && val == 0) {
 		port[ch].req_intr = true;
-	else if((port[ch].ctrl1 & 0x60) == 0x60 && val == mask)
+	}
+	else if((port[ch].ctrl1 & 0x60) == 0x60 && val == mask) {
 		port[ch].req_intr = true;
-	else
+	}
+	else {
 		port[ch].req_intr = false;
+	}
 	update_intr();
 }
 
@@ -211,8 +218,9 @@ void Z80PIO::update_intr()
 	if(next = iei) {
 		next = false;
 		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service)
+			if(port[ch].in_service) {
 				break;
+			}
 			if(port[ch].enb_intr && port[ch].req_intr) {
 				next = true;
 				break;
@@ -221,8 +229,9 @@ void Z80PIO::update_intr()
 	}
 	if(next != intr) {
 		intr = next;
-		if(d_cpu)
+		if(d_cpu) {
 			d_cpu->set_intr_line(intr, true, intr_bit);
+		}
 	}
 }
 
@@ -231,8 +240,9 @@ uint32 Z80PIO::intr_ack()
 	// ack (M1=IORQ=L)
 	if(intr) {
 		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service)
+			if(port[ch].in_service) {
 				break;
+			}
 			if(port[ch].enb_intr && port[ch].req_intr) {
 				port[ch].req_intr = false;
 				port[ch].in_service = true;
@@ -243,8 +253,9 @@ uint32 Z80PIO::intr_ack()
 		// invalid interrupt status
 		return 0xff;
 	}
-	if(d_child)
+	if(d_child) {
 		return d_child->intr_ack();
+	}
 	return 0xff;
 }
 
@@ -258,7 +269,8 @@ void Z80PIO::intr_reti()
 			return;
 		}
 	}
-	if(d_child)
+	if(d_child) {
 		d_child->intr_reti();
+	}
 }
 

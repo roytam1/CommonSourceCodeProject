@@ -13,6 +13,13 @@
 
 #define ADDR_MASK (TMS9918A_VRAM_SIZE - 1)
 
+static const scrntype palette_pc[16] = {
+	RGB_COLOR(  0,   0,   0), RGB_COLOR(  0,   0,   0), RGB_COLOR( 33, 200,  66), RGB_COLOR( 94, 220, 120),
+	RGB_COLOR( 84,  85, 237), RGB_COLOR(125, 118, 252), RGB_COLOR(212,  82,  77), RGB_COLOR( 66, 235, 245),
+	RGB_COLOR(252,  85,  84), RGB_COLOR(255, 121, 120), RGB_COLOR(212, 193,  84), RGB_COLOR(230, 206, 128),
+	RGB_COLOR( 33, 176,  59), RGB_COLOR(201,  91, 186), RGB_COLOR(204, 204, 204), RGB_COLOR(255, 255, 255)
+};
+
 void TMS9918A::initialize()
 {
 	// regist event
@@ -37,8 +44,7 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 		// register
 		if(latch) {
 			if(data & 0x80) {
-				switch(data & 7)
-				{
+				switch(data & 7) {
 				case 0:
 					regs[0] = first_byte & 3;
 					if(regs[0] & 2) {
@@ -57,7 +63,7 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 					set_intstat((regs[1] & 0x20) && (status_reg & 0x80));
 					break;
 				case 2:
-					regs[2] = first_byte & 0xf;
+					regs[2] = first_byte & 0x0f;
 					name_table = (regs[2] * 1024) & ADDR_MASK;
 					break;
 				case 3:
@@ -66,8 +72,9 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 						color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
 						color_mask = ((regs[3] & 0x7f) * 8) | 7;
 					}
-					else
+					else {
 						color_table = (regs[3] * 64) & ADDR_MASK;
+					}
 					pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
 					break;
 				case 4:
@@ -76,8 +83,9 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
 						pattern_mask = ((regs[4] & 3) * 256) | 255;
 					}
-					else
+					else {
 						pattern_table = (regs[4] * 2048) & ADDR_MASK;
+					}
 					break;
 				case 5:
 					regs[5] = first_byte & 0x7f;
@@ -94,8 +102,9 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 			}
 			else {
 				vram_addr = ((data * 256) | first_byte) & ADDR_MASK;
-				if(!(data & 0x40))
+				if(!(data & 0x40)) {
 					read_io8(0);	// read ahead
+				}
 			}
 			latch = false;
 		}
@@ -139,8 +148,9 @@ void TMS9918A::draw_screen()
 	for(int y = 0; y < 192; y++) {
 		scrntype* dest = emu->screen_buffer(y);
 		uint8* src = screen[y];
-		for(int x = 0; x < 256; x++)
-			dest[x] = palette_pc[src[x] & 0xf];
+		for(int x = 0; x < 256; x++) {
+			dest[x] = palette_pc[src[x] & 0x0f];
+		}
 	}
 }
 
@@ -150,9 +160,8 @@ void TMS9918A::event_vline(int v, int clock)
 		// create virtual screen
 		if(regs[1] & 0x40) {
 			// draw character plane
-			int mode = ((regs[1] & 8) ? 4 : 0) | (regs[0] & 2) | ((regs[2] & 0x10) ? 1 : 0);
-			switch(mode)
-			{
+			int mode = (regs[0] & 2) | ((regs[1] & 0x10) >> 4) | ((regs[1] & 8) >> 1);
+			switch(mode) {
 			case 0:
 				draw_mode0();
 				break;
@@ -177,11 +186,13 @@ void TMS9918A::event_vline(int v, int clock)
 				break;
 			}
 			// draw sprite plane
-			if((regs[1] & 0x50) == 0x40)
+			if((regs[1] & 0x50) == 0x40) {
 				draw_sprites();
+			}
 		}
-		else
+		else {
 			_memset(screen, 0, sizeof(screen));
+		}
 		
 		// do interrupt
 		status_reg |= 0x80;
@@ -192,8 +203,7 @@ void TMS9918A::event_vline(int v, int clock)
 void TMS9918A::set_intstat(bool val)
 {
 	if(val != intstat) {
-		for(int i = 0; i < dcount; i++)
-			dev[i]->write_signal(did[i], val ? 0xffffffff : 0, dmask[i]);
+		write_signals(&outputs_irq, val ? 0xffffffff : 0);
 		intstat = val;
 	}
 }
@@ -205,8 +215,8 @@ void TMS9918A::draw_mode0()
 			uint16 code = vram[name_table + (name++)];
 			uint8* pattern_ptr = vram + pattern_table + code * 8;
 			uint8 color = vram[color_table + (code >> 3)];
-			uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
-			uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
+			uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0x0f);
+			uint8 bg = (color & 0x0f) ? (color & 0x0f) : (regs[7] & 0x0f);
 			for(int yy=0; yy < 8; yy++) {
 				uint8 pattern = *pattern_ptr++;
 				uint8* buffer = screen[y * 8 + yy] + x * 8;
@@ -226,7 +236,7 @@ void TMS9918A::draw_mode0()
 void TMS9918A::draw_mode1()
 {
 	uint8 fg = regs[7] >> 4;
-	uint8 bg = regs[7] & 0xf;
+	uint8 bg = regs[7] & 0x0f;
 	for(int y = 0, name = 0; y < 24; y++) {
 		for(int x = 0; x < 40; x++) {
 			uint16 code = vram[name_table + (name++)];
@@ -255,8 +265,8 @@ void TMS9918A::draw_mode2()
 			for(int yy = 0; yy < 8; yy++) {
 				uint8 pattern = *pattern_ptr++;
 				uint8 color = *color_ptr++;
-				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
-				uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
+				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0x0f);
+				uint8 bg = (color & 0x0f) ? (color & 0x0f) : (regs[7] & 0x0f);
 				uint8* buffer = screen[y * 8 + yy] + x * 8;
 				buffer[0] = (pattern & 0x80) ? fg : bg;
 				buffer[1] = (pattern & 0x40) ? fg : bg;
@@ -274,7 +284,7 @@ void TMS9918A::draw_mode2()
 void TMS9918A::draw_mode12()
 {
 	uint8 fg = regs[7] >> 4;
-	uint8 bg = regs[7] & 0xf;
+	uint8 bg = regs[7] & 0x0f;
 	for(int y = 0, name = 0; y < 24; y++) {
 		for(int x = 0; x < 40; x++) {
 			uint16 code = vram[name_table + (name++)] + (y & 0xf8) * 32;
@@ -301,8 +311,8 @@ void TMS9918A::draw_mode3()
 			uint8* pattern_ptr = vram + pattern_table + code * 8 + (y & 3) * 2;
 			for(int yy = 0; yy < 2; yy++) {
 				uint8 color = *pattern_ptr++;
-				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
-				uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
+				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0x0f);
+				uint8 bg = (color & 0x0f) ? (color & 0x0f) : (regs[7] & 0x0f);
 				for(int yyy = 0; yyy < 4; yyy++) {
 					uint8* buffer = screen[y * 8 + yy * 4 + yyy] + x * 8;
 					buffer[0] = buffer[1] = buffer[2] = buffer[3] = fg;
@@ -321,8 +331,8 @@ void TMS9918A::draw_mode23()
 			uint8* pattern_ptr = vram + pattern_table + ((code + (y & 3) * 2 + (y & 0xf8) * 32) & pattern_mask) * 8;
 			for(int yy = 0; yy < 2; yy++) {
 				uint8 color = *pattern_ptr++;
-				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
-				uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
+				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0x0f);
+				uint8 bg = (color & 0x0f) ? (color & 0x0f) : (regs[7] & 0x0f);
 				for(int yyy = 0; yyy < 4; yyy++) {
 					uint8* buffer = screen[y * 8 + yy * 4 + yyy] + x * 8;
 					buffer[0] = buffer[1] = buffer[2] = buffer[3] = fg;
@@ -336,20 +346,24 @@ void TMS9918A::draw_mode23()
 void TMS9918A::draw_modebogus()
 {
 	uint8 fg = regs[7] >> 4;
-	uint8 bg = regs[7] & 0xf;
+	uint8 bg = regs[7] & 0x0f;
 	for(int y = 0; y < 192; y++) {
 		uint8* buffer = screen[y];
 		int x = 0;
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 8; i++) {
 			buffer[x++] = bg;
-		for(int i = 0; i < 40; i++) {
-			for(int j = 0; j < 4; j++)
-				buffer[x++] = fg;
-			for(int j = 0; j < 2; j++)
-				buffer[x++] = bg;
 		}
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 40; i++) {
+			for(int j = 0; j < 4; j++) {
+				buffer[x++] = fg;
+			}
+			for(int j = 0; j < 2; j++) {
+				buffer[x++] = bg;
+			}
+		}
+		for(int i = 0; i < 8; i++) {
 			buffer[x++] = bg;
+		}
 	}
 }
 
@@ -366,25 +380,30 @@ void TMS9918A::draw_sprites()
 	
 	for(p = 0; p < 32; p++) {
 		int y = *attrib_ptr++;
-		if(y == 208)
+		if(y == 208) {
 			break;
-		if(y > 208)
+		}
+		if(y > 208) {
 			y = -(~y & 0xff);
-		else
+		}
+		else {
 			y++;
+		}
 		int x = *attrib_ptr++;
 		uint8* pattern_ptr = vram + sprite_pattern + ((size == 16) ? (*attrib_ptr & 0xfc) : *attrib_ptr) * 8;
 		attrib_ptr++;
-		uint8 c = *attrib_ptr & 0xf;
-		if(*attrib_ptr & 0x80)
+		uint8 c = *attrib_ptr & 0x0f;
+		if(*attrib_ptr & 0x80) {
 			x -= 32;
+		}
 		attrib_ptr++;
 		
 		if(!large) {
 			// draw sprite (not enlarged)
 			for(int yy = y; yy < y + size; yy++) {
-				if(yy < 0 || 191 < yy)
+				if(yy < 0 || 191 < yy) {
 					continue;
+				}
 				if(limit[yy] == 0) {
 					// illegal sprite line
 					if(yy < illegal_sprite_line) {
@@ -392,23 +411,27 @@ void TMS9918A::draw_sprites()
 						illegal_sprite = p;
 					}
 					else if(illegal_sprite_line == yy) {
-						if(illegal_sprite > p)
+						if(illegal_sprite > p) {
 							illegal_sprite = p;
+						}
 					}
 #ifdef TMS9918A_LIMIT_SPRITES
 					continue;
 #endif
 				}
-				else
+				else {
 					limit[yy]--;
+				}
 				uint16 line = pattern_ptr[yy - y] * 256 + pattern_ptr[yy - y + 16];
 				for(int xx = x; xx < x + size; xx++) {
 					if(line & 0x8000) {
 						if(0 <= xx && xx < 256) {
-							if(collision[yy][xx])
+							if(collision[yy][xx]) {
 								status_reg |= 0x20;
-							else
+							}
+							else {
 								collision[yy][xx] = 1;
+							}
 							if(c && !(collision[yy][xx] & 2)) {
 								collision[yy][xx] |= 2;
 								screen[yy][xx] = c;
@@ -433,33 +456,39 @@ void TMS9918A::draw_sprites()
 								 illegal_sprite = p;
 							}
 							else if(illegal_sprite_line == yy) {
-								if(illegal_sprite > p)
+								if(illegal_sprite > p) {
 									illegal_sprite = p;
+								}
 							}
 #ifdef TMS9918A_LIMIT_SPRITES
 							continue;
 #endif
 						}
-						else
+						else {
 							limit[yy]--;
+						}
 						uint16 line = line2;
 						for(int xx = x; xx < x + size * 2; xx += 2) {
 							if(line & 0x8000) {
 								if(0 <= xx && xx < 256) {
-									if(collision[yy][xx])
+									if(collision[yy][xx]) {
 										status_reg |= 0x20;
-									else
+									}
+									else {
 										collision[yy][xx] = 1;
+									}
 									if(c && !(collision[yy][xx] & 2)) {
 										collision[yy][xx] |= 2;
 										screen[yy][xx] = c;
 									}
 								}
 								if(0 <= xx + 1 && xx + 1 < 256) {
-									if(collision[yy][xx + 1])
+									if(collision[yy][xx + 1]) {
 										status_reg |= 0x20;
-									else
+									}
+									else {
 										collision[yy][xx + 1] = 1;
+									}
 									if(c && !(collision[yy][xx + 1] & 2)) {
 										collision[yy][xx + 1] |= 2;
 										screen[yy][xx + 1] = c;
@@ -474,9 +503,11 @@ void TMS9918A::draw_sprites()
 			}
 		}
 	}
-	if(illegal_sprite_line == 255)
+	if(illegal_sprite_line == 255) {
 		status_reg |= (p > 31) ? 31 : p;
-	else
+	}
+	else {
 		status_reg |= 0x40 + illegal_sprite;
+	}
 }
 

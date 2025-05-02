@@ -22,8 +22,16 @@ class PCM1BIT : public DEVICE
 {
 private:
 	bool signal, on, mute;
-	int max_vol, dif_vol, gen_vol, update, count;
-	bool samples[256];
+	
+#ifdef PCM1BIT_HIGH_QUALITY
+	bool samples_signal[1024];
+	bool samples_out[1024];
+	uint32 samples_clock[1024];
+	uint32 prev_clock;
+	int sample_count;
+#endif
+	int max_vol;
+	int update;
 	
 public:
 	PCM1BIT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -31,10 +39,8 @@ public:
 	
 	// common functions
 	void initialize();
-	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
-	void event_callback(int event_id, int err);
 	void mix(int32* buffer, int cnt);
 	
 	// unique function

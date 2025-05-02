@@ -19,22 +19,29 @@
 class NOT : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did;
-	uint32 dmask;
+	outputs_t outputs;
+	bool prev, first;
 	
 public:
-	NOT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	NOT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		init_output_signals(&outputs);
+		prev = first = true;
+	}
 	~NOT() {}
 	
 	// common functions
 	void write_signal(int id, uint32 data, uint32 mask) {
-		dev->write_signal(did, (data & mask) ? 0 : 0xffffffff, dmask);
+		bool next = ((data & mask) == 0);
+		if(prev != next || first) {
+			write_signals(&outputs, next ? 0xffffffff : 0);
+			prev = next;
+			first = false;
+		}
 	}
 	
 	// unique functions
-	void set_context(DEVICE* device, int id, uint32 mask) {
-		dev = device; did = id; dmask = mask;
+	void set_context_out(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs, device, id, mask);
 	}
 };
 

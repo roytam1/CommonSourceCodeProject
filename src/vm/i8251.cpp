@@ -64,15 +64,17 @@ void I8251::reset()
 void I8251::write_io8(uint32 addr, uint32 data)
 {
 	if(addr & 1) {
-		switch(mode)
-		{
+		switch(mode) {
 		case MODE_CLEAR:
-			if(data & 3)
+			if(data & 3) {
 				mode = MODE_ASYNC;
-			else if(data & 0x80)
+			}
+			else if(data & 0x80) {
 				mode = MODE_SYNC2;	// 1char
-			else
+			}
+			else {
 				mode = MODE_SYNC1;	// 2chars
+			}
 			break;
 		case MODE_SYNC1:
 			mode = MODE_SYNC2;
@@ -86,22 +88,23 @@ void I8251::write_io8(uint32 addr, uint32 data)
 				mode = MODE_CLEAR;
 				break;
 			}
-			if(data & 0x10)
+			if(data & 0x10) {
 				status &= ~(PE | OE | FE);
+			}
 			// dtr
-			for(int i = 0; i < dcount_dtr; i++)
-				d_dtr[i]->write_signal(did_dtr[i], (data & 2) ? 0xffffffff : 0, dmask_dtr[i]);
+			write_signals(&outputs_dtr, (data & 2) ? 0xffffffff : 0);
 			// rst
-			for(int i = 0; i < dcount_rst; i++)
-				d_rst[i]->write_signal(did_rst[i], (data & 8) ? 0xffffffff : 0, dmask_rst[i]);
+			write_signals(&outputs_rst, (data & 8) ? 0xffffffff : 0);
 			// rxen
 			rxen = ((data & 4) != 0);
-			if(rxen && !recv_buffer->empty() && recv_id == -1)
+			if(rxen && !recv_buffer->empty() && recv_id == -1) {
 				vm->regist_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+			}
 			// txen
 			txen = ((data & 1) != 0);
-			if(txen && !send_buffer->empty() && send_id == -1)
+			if(txen && !send_buffer->empty() && send_id == -1) {
 				vm->regist_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
+			}
 			// note: when txen=false, txrdy signal must be low
 			break;
 		}
@@ -112,29 +115,28 @@ void I8251::write_io8(uint32 addr, uint32 data)
 			// txrdy
 			if(send_buffer->full()) {
 				status &= ~TXRDY;
-				for(int i = 0; i < dcount_txrdy; i++)
-					d_txrdy[i]->write_signal(did_txrdy[i], 0, dmask_txrdy[i]);
+				write_signals(&outputs_txrdy, 0);
 			}
 			// txempty
 			status &= ~TXE;
-			for(int i = 0; i < dcount_txe; i++)
-				d_txe[i]->write_signal(did_txe[i], 0, dmask_txe[i]);
+			write_signals(&outputs_txe, 0);
 			// register event
-			if(txen && send_id == -1)
+			if(txen && send_id == -1) {
 				vm->regist_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
+			}
 		}
 	}
 }
 
 uint32 I8251::read_io8(uint32 addr)
 {
-	if(addr & 1)
+	if(addr & 1) {
 		return status;
+	}
 	else {
 		if(status & RXRDY) {
 			status &= ~RXRDY;
-			for(int i = 0; i < dcount_rxrdy; i++)
-				d_rxrdy[i]->write_signal(did_rxrdy[i], 0, dmask_rxrdy[i]);
+			write_signals(&outputs_rxrdy, 0);
 		}
 		return recv;
 	}
@@ -145,36 +147,43 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_I8251_RECV) {
 		recv_buffer->write(data & mask);
 		// register event
-		if(rxen && !recv_buffer->empty() && recv_id == -1)
+		if(rxen && !recv_buffer->empty() && recv_id == -1) {
 			vm->regist_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
+		}
 	}
 	else if(id == SIG_I8251_DSR) {
-		if(data & mask)
+		if(data & mask) {
 			status |= DSR;
-		else
+		}
+		else {
 			status &= ~DSR;
+		}
 	}
-	else if(id == SIG_I8251_CLEAR)
+	else if(id == SIG_I8251_CLEAR) {
 		recv_buffer->clear();
-	else if(id == SIG_I8251_LOOPBACK)
+	}
+	else if(id == SIG_I8251_LOOPBACK) {
 		loopback = ((data & mask) != 0);
+	}
 }
 
 void I8251::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_RECV) {
 		if(rxen && !(status & RXRDY)) {
-			if(!recv_buffer->empty())
+			if(!recv_buffer->empty()) {
 				recv = recv_buffer->read();
+			}
 			status |= RXRDY;
-			for(int i = 0; i < dcount_rxrdy; i++)
-				d_rxrdy[i]->write_signal(did_rxrdy[i], 0xffffffff, dmask_rxrdy[i]);
+			write_signals(&outputs_rxrdy, 0xffffffff);
 		}
 		// if data is still left in buffer, register event for next data
-		if(rxen && !recv_buffer->empty())
+		if(rxen && !recv_buffer->empty()) {
 			vm->regist_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
-		else
+		}
+		else {
 			recv_id = -1;
+		}
 	}
 	else if(event_id == EVENT_SEND) {
 		if(txen && !send_buffer->empty()) {
@@ -185,25 +194,24 @@ void I8251::event_callback(int event_id, int err)
 			}
 			else {
 				// send to external devices
-				for(int i = 0; i < dcount_out; i++)
-					d_out[i]->write_signal(did_out[i], send, 0xff);
+				write_signals(&outputs_out, send);
 			}
 			// txrdy
 			status |= TXRDY;
-			for(int i = 0; i < dcount_txrdy; i++)
-				d_txrdy[i]->write_signal(did_txrdy[i], 0xffffffff, dmask_txrdy[i]);
+			write_signals(&outputs_txrdy, 0xffffffff);
 			// txe
 			if(send_buffer->empty()) {
 				status |= TXE;
-				for(int i = 0; i < dcount_txe; i++)
-					d_txe[i]->write_signal(did_txe[i], 0xffffffff, dmask_txe[i]);
+				write_signals(&outputs_txe, 0xffffffff);
 			}
 		}
 		// if data is still left in buffer, register event for next data
-		if(txen && !send_buffer->empty())
+		if(txen && !send_buffer->empty()) {
 			vm->regist_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
-		else
+		}
+		else {
 			send_id = -1;
+		}
 	}
 }
 

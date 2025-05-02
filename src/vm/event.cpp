@@ -138,8 +138,19 @@ void EVENT::update_event(int clock)
 #endif
 			int cpuclock = eventclock * cpu_power;
 			
-			for(int i = 0; i < dcount_cpu; i++) {
-				d_cpu[i]->run(cpuclock);
+//			for(int i = 0; i < dcount_cpu; i++) {
+//				d_cpu[i]->run(cpuclock);
+//			}
+			if(dcount_cpu > 1) {
+				// sync cpus
+				for(int c = 0; c < cpuclock; c++) {
+					for(int i = 0; i < dcount_cpu; i++) {
+						d_cpu[i]->run(1);
+					}
+				}
+			}
+			else {
+				d_cpu[0]->run(cpuclock);
 			}
 			clock -= eventclock;
 			accum += eventclock;
@@ -300,7 +311,7 @@ uint16* EVENT::create_sound(int samples, bool fill)
 		cnt = sound_samples - buffer_ptr;
 	}
 	else {
-		cnt = (sound_samples - buffer_ptr < samples) ? sound_samples - buffer_ptr : samples;
+		cnt = ((sound_samples - buffer_ptr) < samples) ? (sound_samples - buffer_ptr) : samples;
 	}
 	
 	// create sound buffer
@@ -312,9 +323,12 @@ uint16* EVENT::create_sound(int samples, bool fill)
 	}
 	
 	if(fill) {
+#ifdef LOW_PASS_FILTER
 		// low-pass filter
-//		for(int i = 0; i < sound_samples - 1; i++)
-//			sound_tmp[i] = (sound_tmp[i] + sound_tmp[i + 1]) >> 1;
+		for(int i = 0; i < sound_samples - 1; i++) {
+			sound_tmp[i] = (sound_tmp[i] + sound_tmp[i + 1]) / 2;
+		}
+#endif
 		// copy to buffer
 		for(int i = 0; i < sound_samples; i++) {
 			int dat = sound_tmp[i];

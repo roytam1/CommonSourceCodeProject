@@ -19,21 +19,11 @@
 #define SIG_Z80SIO_CLEAR_CH0	2
 #define SIG_Z80SIO_CLEAR_CH1	3
 
-#define EVENT_SEND	2
-#define EVENT_RECV	4
-#define DELAY_SEND	2000
-#define DELAY_RECV	2000
-
 class FIFO;
 
 class Z80SIO : public DEVICE
 {
 private:
-	DEVICE *d_rts[2][MAX_OUTPUT], *d_dtr[2][MAX_OUTPUT], *d_send[2][MAX_OUTPUT];
-	int did_rts[2][MAX_OUTPUT], did_dtr[2][MAX_OUTPUT], did_send[2][MAX_OUTPUT];
-	uint32 dmask_rts[2][MAX_OUTPUT], dmask_dtr[2][MAX_OUTPUT];
-	int dcount_rts[2], dcount_dtr[2], dcount_send[2];
-	
 	typedef struct {
 		int pointer;
 		uint8 wr[8];
@@ -59,6 +49,10 @@ private:
 		bool send_intr;
 		bool req_intr;
 		bool in_service;
+		// output signals
+		outputs_t outputs_rts;
+		outputs_t outputs_dtr;
+		outputs_t outputs_send;
 	} port_t;
 	port_t port[2];
 	
@@ -70,9 +64,11 @@ private:
 	
 public:
 	Z80SIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_rts[0] = dcount_rts[1] = 0;
-		dcount_dtr[0] = dcount_dtr[1] = 0;
-		dcount_send[0] = dcount_send[1] = 0;
+		for(int i = 0; i < 2; i++) {
+			init_output_signals(&port[i].outputs_rts);
+			init_output_signals(&port[i].outputs_dtr);
+			init_output_signals(&port[i].outputs_send);
+		}
 		d_cpu = d_child = NULL;
 	}
 	~Z80SIO() {}
@@ -100,28 +96,22 @@ public:
 		d_child = device;
 	}
 	void set_context_rts0(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_rts[0]++;
-		d_rts[0][c] = device; did_rts[0][c] = id; dmask_rts[0][c] = mask;
+		regist_output_signal(&port[0].outputs_rts, device, id, mask);
 	}
 	void set_context_dtr0(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_dtr[0]++;
-		d_dtr[0][c] = device; did_dtr[0][c] = id; dmask_dtr[0][c] = mask;
+		regist_output_signal(&port[0].outputs_dtr, device, id, mask);
 	}
 	void set_context_send0(DEVICE* device, int id) {
-		int c = dcount_send[0]++;
-		d_send[0][c] = device; did_send[0][c] = id;
+		regist_output_signal(&port[0].outputs_send, device, id, 0xff);
 	}
 	void set_context_rts1(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_rts[1]++;
-		d_rts[1][c] = device; did_rts[1][c] = id; dmask_rts[1][c] = mask;
+		regist_output_signal(&port[1].outputs_rts, device, id, mask);
 	}
 	void set_context_dtr1(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_dtr[1]++;
-		d_dtr[1][c] = device; did_dtr[1][c] = id; dmask_dtr[1][c] = mask;
+		regist_output_signal(&port[1].outputs_dtr, device, id, mask);
 	}
 	void set_context_send1(DEVICE* device, int id) {
-		int c = dcount_send[1]++;
-		d_send[1][c] = device; did_send[1][c] = id;
+		regist_output_signal(&port[1].outputs_send, device, id, 0xff);
 	}
 };
 

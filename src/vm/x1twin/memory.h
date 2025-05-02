@@ -18,12 +18,11 @@
 class MEMORY : public DEVICE
 {
 private:
-	uint8 rom[0x1000];
-	uint8 ram[0x10000];
-//	uint8 wdmy[0x1000];
-//	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
+	
+	uint8 rom[0x1000];
+	uint8 ram[0x10000];
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

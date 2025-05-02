@@ -22,10 +22,8 @@
 class UPD71071 : public DEVICE
 {
 private:
-	DEVICE *d_tc[MAX_OUTPUT];
-	int did_tc[MAX_OUTPUT];
-	uint32 dmask_tc[MAX_OUTPUT];
-	int dcount_tc;
+	// output signals
+	outputs_t outputs_tc;
 	
 	DEVICE *d_mem, *dev[4];
 	uint32 areg[4], bareg[4];
@@ -39,7 +37,7 @@ private:
 	
 public:
 	UPD71071(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_tc = 0;
+		init_output_signals(&outputs_tc);
 		dev[0] = dev[1] = dev[2] = dev[3] = vm->dummy;
 	}
 	~UPD71071() {}
@@ -67,8 +65,7 @@ public:
 		dev[3] = device;
 	}
 	void set_context_tc(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_tc++;
-		d_tc[c] = device; did_tc[c] = id; dmask_tc[c] = mask;
+		regist_output_signal(&outputs_tc, device, id, mask);
 	}
 };
 

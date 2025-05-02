@@ -24,10 +24,9 @@
 class MC6847 : public DEVICE
 {
 private:
-	DEVICE *d_vsync[MAX_OUTPUT], *d_hsync[MAX_OUTPUT];
-	int did_vsync[MAX_OUTPUT], did_hsync[MAX_OUTPUT];
-	uint32 dmask_vsync[MAX_OUTPUT], dmask_hsync[MAX_OUTPUT];
-	int dcount_vsync, dcount_hsync;
+	// output signals
+	outputs_t outputs_vsync;
+	outputs_t outputs_hsync;
 	
 	uint8 extfont[256 * 16];
 	uint8 sg4[16 * 12];
@@ -55,7 +54,8 @@ public:
 	MC6847(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		ag = as = intext = css = inv = false;
 		gm = 0;
-		dcount_vsync = dcount_hsync = 0;
+		init_output_signals(&outputs_vsync);
+		init_output_signals(&outputs_hsync);
 	}
 	~MC6847() {}
 	
@@ -68,12 +68,10 @@ public:
 	
 	// unique functions
 	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_vsync++;
-		d_vsync[c] = device; did_vsync[c] = id; dmask_vsync[c] = mask;
+		regist_output_signal(&outputs_vsync, device, id, mask);
 	}
 	void set_context_hsync(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_hsync++;
-		d_hsync[c] = device; did_hsync[c] = id; dmask_hsync[c] = mask;
+		regist_output_signal(&outputs_hsync, device, id, mask);
 	}
 	void set_vram_ptr(uint8* ptr, int size) {
 		vram_ptr = ptr; vram_size = size;

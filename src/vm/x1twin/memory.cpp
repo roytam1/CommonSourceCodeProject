@@ -62,8 +62,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff00)
-	{
+	switch(addr & 0xff00) {
 	case 0x1d00:
 		SET_BANK(0x0000, 0x0fff, ram, rom);
 		break;

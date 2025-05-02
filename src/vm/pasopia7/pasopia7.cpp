@@ -88,8 +88,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_port_a(not, SIG_NOT_INPUT, 0x20, 0);
 	pio2->set_context_port_a(iotrap, SIG_IOTRAP_I8255_2_A, 0xff, 0);
 	pio2->set_context_port_c(iotrap, SIG_IOTRAP_I8255_2_C, 0xff, 0);
-	not->set_context(drec, SIG_DATAREC_REMOTE, 1);
-	fdc->set_context_intr(floppy, SIG_FLOPPY_INTR, 1);
+	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
+	fdc->set_context_irq(floppy, SIG_FLOPPY_INTR, 1);
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_1, 1);
 	ctc->set_context_zc1(beep, SIG_BEEP_PULSE, 1);
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3, 1);

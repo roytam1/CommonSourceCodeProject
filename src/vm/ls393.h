@@ -19,17 +19,17 @@
 class LS393 : public DEVICE
 {
 private:
-	DEVICE* dev[8][MAX_OUTPUT];
-	int did[8][MAX_OUTPUT], dcount[MAX_OUTPUT];
-	uint32 dmask[8][MAX_OUTPUT];
+	// output signals
+	outputs_t outputs[8];
 	
 	uint32 count;
 	bool prev_in;
 	
 public:
 	LS393(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		for(int i = 0; i < 8; i++)
-			dcount[i] = 0;
+		for(int i = 0; i < 8; i++) {
+			init_output_signals(&outputs[i]);
+		}
 		count = 0;
 		prev_in = false;
 	}
@@ -41,12 +41,11 @@ public:
 		if(prev_in && !signal) {
 			int prev_count = count++;
 			for(int i = 0; i < 8; i++) {
-				if(dcount[i]) {
+				if(outputs[i].count) {
 					int bit = 1 << i;
 					if((prev_count & bit) != (count & bit)) {
 						uint32 val = (count & bit) ? 0xffffffff : 0;
-						for(int j = 0; j < dcount[i]; j++)
-							dev[i][j]->write_signal(did[i][j], val, dmask[i][j]);
+						write_signals(&outputs[i], val);
 					}
 				}
 			}
@@ -56,36 +55,28 @@ public:
 	
 	// unique functions
 	void set_context_1qa(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[0]++;
-		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask;
+		regist_output_signal(&outputs[0], device, id, mask);
 	}
 	void set_context_1qb(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask;
+		regist_output_signal(&outputs[1], device, id, mask);
 	}
 	void set_context_1qc(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[2]++;
-		dev[2][c] = device; did[2][c] = id; dmask[2][c] = mask;
+		regist_output_signal(&outputs[2], device, id, mask);
 	}
 	void set_context_1qd(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[3]++;
-		dev[3][c] = device; did[3][c] = id; dmask[3][c] = mask;
+		regist_output_signal(&outputs[3], device, id, mask);
 	}
 	void set_context_2qa(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[4]++;
-		dev[4][c] = device; did[4][c] = id; dmask[4][c] = mask;
+		regist_output_signal(&outputs[4], device, id, mask);
 	}
 	void set_context_2qb(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[5]++;
-		dev[5][c] = device; did[5][c] = id; dmask[5][c] = mask;
+		regist_output_signal(&outputs[5], device, id, mask);
 	}
 	void set_context_2qc(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[6]++;
-		dev[6][c] = device; did[6][c] = id; dmask[6][c] = mask;
+		regist_output_signal(&outputs[6], device, id, mask);
 	}
 	void set_context_2qd(DEVICE* device, int id, uint32 mask) {
-		int c = dcount[7]++;
-		dev[7][c] = device; did[7][c] = id; dmask[7][c] = mask;
+		regist_output_signal(&outputs[7], device, id, mask);
 	}
 };
 

@@ -45,8 +45,7 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 			srl = (srl >> 1) | ((srh & 1) << 19);
 			srh = (srh >> 1) | ((din ? 1 : 0) << 19);
 			// output LSB
-			for(int i = 0; i < dcount_dout; i++)
-				d_dout[i]->write_signal(did_dout[i], (srl & 1) ? 0xffffffff : 0, dmask_dout[i]);
+			write_signals(&outputs_dout, (srl & 1) ? 0xffffffff : 0);
 		}
 		clk = next;
 	}
@@ -60,8 +59,7 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 						vm->cancel_event(event_id);
 						event_id = -1;
 					}
-					switch(cmd)
-					{
+					switch(cmd) {
 					case 4:	// 64Hz
 						vm->regist_event_by_clock(this, 0, CPU_CLOCKS / 128, true, &event_id);
 						break;
@@ -92,27 +90,29 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 					srh |= DAY_OF_WEEK << 12;
 					srh |= MONTH << 16;
 					// output LSB
-					for(int i = 0; i < dcount_dout; i++)
-						d_dout[i]->write_signal(did_dout[i], (srl & 1) ? 0xffffffff : 0, dmask_dout[i]);
+					write_signals(&outputs_dout, (srl & 1) ? 0xffffffff : 0);
 				}
 			}
 		}
 		stb = next;
 	}
-	else if(id == SIG_UPD1990A_C0)
+	else if(id == SIG_UPD1990A_C0) {
 		cmd = (cmd & ~1) | (data & mask ? 1 : 0);
-	else if(id == SIG_UPD1990A_C1)
+	}
+	else if(id == SIG_UPD1990A_C1) {
 		cmd = (cmd & ~2) | (data & mask ? 2 : 0);
-	else if(id == SIG_UPD1990A_C2)
+	}
+	else if(id == SIG_UPD1990A_C2) {
 		cmd = (cmd & ~4) | (data & mask ? 4 : 0);
-	else if(id == SIG_UPD1990A_DIN)
+	}
+	else if(id == SIG_UPD1990A_DIN) {
 		din = ((data & mask) != 0);
+	}
 }
 
 void UPD1990A::event_callback(int event_id, int err)
 {
-	for(int i = 0; i < dcount_tp; i++)
-		d_tp[i]->write_signal(did_tp[i], tp ? 0xffffffff : 0, dmask_tp[i]);
+	write_signals(&outputs_tp, tp ? 0xffffffff : 0);
 	tp = !tp;
 }
 

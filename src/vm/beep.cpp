@@ -40,8 +40,9 @@ void BEEP::write_signal(int id, uint32 data, uint32 mask)
 		}
 		mute = next;
 	}
-	else if(id == SIG_BEEP_PULSE)
+	else if(id == SIG_BEEP_PULSE) {
 		pulse += (data & mask);
+	}
 	else if(id == SIG_BEEP_FREQ) {
 		int freq = data & mask;
 		diff = (int)(32.0 * gen_rate / (freq ? freq : 1) / 2.0 + 0.5);
@@ -63,8 +64,9 @@ void BEEP::event_vline(int v, int clock)
 				diff >>= 8;
 			}
 		}
-		if(change)
+		if(change) {
 			change--;
+		}
 		pulse = lines = 0;
 	}
 }

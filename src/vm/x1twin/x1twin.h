@@ -27,16 +27,20 @@
 #define MAX_DRIVE		4
 #define IO_ADDR_MAX		0x10000
 
+#ifdef _X1TWIN
 // device informations for virtual machine (pce)
 #define PCE_FRAMES_PER_SEC	60
 #define PCE_LINES_PER_FRAME 	263
 #define PCE_CPU_CLOCKS		7159090
+#endif
 
 // device informations for win32
 #define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
+#ifdef _X1TWIN
 #define USE_CART
+#endif
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -54,7 +58,9 @@ class I8255;
 class MB8877;
 class YM2203;
 class Z80;
-//class Z80CTC;
+#ifdef _X1TURBO
+class Z80CTC;
+#endif
 
 class DISPLAY;
 class FLOPPY;
@@ -64,8 +70,10 @@ class KANJI;
 class MEMORY;
 class SUB;
 
+#ifdef _X1TWIN
 class HUC6260;
 class PCE;
+#endif
 
 class VM
 {
@@ -80,7 +88,9 @@ protected:
 	MB8877* fdc;
 	YM2203* psg;
 	Z80* cpu;
-//	Z80CTC* ctc;
+#ifdef _X1TURBO
+	Z80CTC* ctc;
+#endif
 	
 	DISPLAY* display;
 	FLOPPY* floppy;
@@ -93,8 +103,10 @@ protected:
 	// device for pce
 	EVENT* pceevent;
 	
+#ifdef _X1TWIN
 	HUC6260* pcecpu;
 	PCE* pce;
+#endif
 	
 public:
 	// ----------------------------------------
@@ -127,8 +139,10 @@ public:
 	// user interface
 	void open_disk(_TCHAR* filename, int drv);
 	void close_disk(int drv);
+#ifdef _X1TWIN
 	void open_cart(_TCHAR* filename);
 	void close_cart();
+#endif
 	bool now_skip();
 	
 	void update_config();
@@ -143,19 +157,23 @@ public:
 	void cancel_event(int regist_id);
 	void regist_frame_event(DEVICE* dev);
 	void regist_vline_event(DEVICE* dev);
+#ifdef _X1TWIN
 	void pce_regist_event(DEVICE* device, int event_id, int usec, bool loop, int* regist_id);
 	void pce_regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
 	void pce_cancel_event(int regist_id);
 	void pce_regist_frame_event(DEVICE* dev);
 	void pce_regist_vline_event(DEVICE* dev);
+#endif
 	
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
 	uint32 get_prv_pc();
+#ifdef _X1TWIN
 	uint32 pce_current_clock();
 	uint32 pce_passed_clock(uint32 prev);
 	uint32 pce_get_prv_pc();
+#endif
 	
 	// devices
 	DEVICE* get_device(int id);
@@ -163,7 +181,9 @@ public:
 	DEVICE* first_device;
 	DEVICE* last_device;
 	
+#ifdef _X1TWIN
 	bool pce_running;
+#endif
 };
 
 #endif

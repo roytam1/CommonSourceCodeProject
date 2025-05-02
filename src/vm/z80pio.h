@@ -20,10 +20,6 @@
 class Z80PIO : public DEVICE
 {
 private:
-	DEVICE* dev[2][MAX_OUTPUT];
-	int did[2][MAX_OUTPUT], dshift[2][MAX_OUTPUT], dcount[2];
-	uint32 dmask[2][MAX_OUTPUT];
-	
 	typedef struct {
 		uint8 wreg;
 		uint8 rreg;
@@ -40,6 +36,8 @@ private:
 		bool enb_intr;
 		bool req_intr;
 		bool in_service;
+		// output signals
+		outputs_t outputs;
 	} port_t;
 	port_t port[2];
 	
@@ -52,9 +50,11 @@ private:
 	
 public:
 	Z80PIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount[0] = dcount[1] = 0;
+		for(int i = 0; i < 2; i++) {
+			init_output_signals(&port[i].outputs);
+			port[i].wreg = port[i].rreg = 0;//0xff;
+		}
 		d_cpu = d_child = NULL;
-		port[0].wreg = port[1].wreg = port[0].rreg = port[1].rreg = 0;//0xff;
 	}
 	~Z80PIO() {}
 	
@@ -78,12 +78,10 @@ public:
 		d_child = device;
 	}
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[0]++;
-		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask; dshift[0][c] = shift;
+		regist_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask; dshift[1][c] = shift;
+		regist_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
 };
 

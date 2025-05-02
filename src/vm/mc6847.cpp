@@ -185,7 +185,7 @@ void MC6847::event_vline(int v, int clock)
 	set_vsync(v > 32);	// 32/262
 	
 	// hsync
-	if(dcount_hsync) {
+	if(outputs_hsync.count) {
 		set_hsync(false);
 		int id;
 		vm->regist_event_by_clock(this, 0, tWHS, false, &id);
@@ -200,9 +200,7 @@ void MC6847::event_callback(int event_id, int err)
 void MC6847::set_vsync(bool val)
 {
 	if(vsync != val) {
-		for(int i = 0; i < dcount_vsync; i++) {
-			d_vsync[i]->write_signal(did_vsync[i], val ? 0xffffffff : 0, dmask_vsync[i]);
-		}
+		write_signals(&outputs_vsync, val ? 0xffffffff : 0);
 		vsync = val;
 	}
 }
@@ -210,9 +208,7 @@ void MC6847::set_vsync(bool val)
 void MC6847::set_hsync(bool val)
 {
 	if(hsync != val) {
-		for(int i = 0; i < dcount_hsync; i++) {
-			d_hsync[i]->write_signal(did_hsync[i], val ? 0xffffffff : 0, dmask_hsync[i]);
-		}
+		write_signals(&outputs_hsync, val ? 0xffffffff : 0);
 		hsync = val;
 	}
 }

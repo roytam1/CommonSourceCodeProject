@@ -9,6 +9,10 @@
 
 #include "hd46505.h"
 
+#define EVENT_DISPLAY	0
+#define EVENT_HSYNC_S	1
+#define EVENT_HSYNC_E	2
+
 void HD46505::initialize()
 {
 	// initialize
@@ -56,16 +60,18 @@ void HD46505::write_io8(uint32 addr, uint32 data)
 
 uint32 HD46505::read_io8(uint32 addr)
 {
-	if(addr & 1)
+	if(addr & 1) {
 		return (12 <= ch && ch < 18) ? regs[ch] : 0xff;
-	else
+	}
+	else {
 		return ch;
+	}
 }
 
 void HD46505::event_vline(int v, int clock)
 {
 	// display
-	if(dcount_disp) {
+	if(outputs_disp.count) {
 		set_display(v < dve);
 		if(v < dve && dhe < CHARS_PER_LINE) {
 			int id;
@@ -80,7 +86,7 @@ void HD46505::event_vline(int v, int clock)
 	set_vsync(vs <= v && v <= ve);
 	
 	// hsync
-	if(dcount_hsync) {
+	if(outputs_hsync.count) {
 		set_hsync(false);
 		if(hs < CHARS_PER_LINE) {
 			int id;
@@ -95,19 +101,21 @@ void HD46505::event_vline(int v, int clock)
 
 void HD46505::event_callback(int event_id, int err)
 {
-	if(event_id == EVENT_DISPLAY)
+	if(event_id == EVENT_DISPLAY) {
 		set_display(false);
-	else if(event_id ==EVENT_HSYNC_S)
+	}
+	else if(event_id ==EVENT_HSYNC_S) {
 		set_hsync(true);
-	else if(event_id ==EVENT_HSYNC_E)
+	}
+	else if(event_id ==EVENT_HSYNC_E) {
 		set_hsync(false);
+	}
 }
 
 void HD46505::set_display(bool val)
 {
 	if(display != val) {
-		for(int i = 0; i < dcount_disp; i++)
-			d_disp[i]->write_signal(did_disp[i], val ? 0xffffffff : 0, dmask_disp[i]);
+		write_signals(&outputs_disp, val ? 0xffffffff : 0);
 		display = val;
 	}
 }
@@ -115,8 +123,7 @@ void HD46505::set_display(bool val)
 void HD46505::set_vblank(bool val)
 {
 	if(vblank != val) {
-		for(int i = 0; i < dcount_vblank; i++)
-			d_vblank[i]->write_signal(did_vblank[i], val ? 0xffffffff : 0, dmask_vblank[i]);
+		write_signals(&outputs_vblank, val ? 0xffffffff : 0);
 		vblank = val;
 	}
 }
@@ -124,8 +131,7 @@ void HD46505::set_vblank(bool val)
 void HD46505::set_vsync(bool val)
 {
 	if(vsync != val) {
-		for(int i = 0; i < dcount_vsync; i++)
-			d_vsync[i]->write_signal(did_vsync[i], val ? 0xffffffff : 0, dmask_vsync[i]);
+		write_signals(&outputs_vsync, val ? 0xffffffff : 0);
 		vsync = val;
 	}
 }
@@ -133,8 +139,7 @@ void HD46505::set_vsync(bool val)
 void HD46505::set_hsync(bool val)
 {
 	if(hsync != val) {
-		for(int i = 0; i < dcount_hsync; i++)
-			d_hsync[i]->write_signal(did_hsync[i], val ? 0xffffffff : 0, dmask_hsync[i]);
+		write_signals(&outputs_hsync, val ? 0xffffffff : 0);
 		hsync = val;
 	}
 }

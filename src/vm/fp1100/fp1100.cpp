@@ -66,7 +66,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(beep);
 	
 	crtc->set_context_hsync(sub, SIG_SUB_HSYNC, 1);
-	fdc->set_context_intr(fdcpack, SIG_FDCPACK_IRQ, 1);
+	fdc->set_context_irq(fdcpack, SIG_FDCPACK_IRQ, 1);
 	fdc->set_context_drq(fdcpack, SIG_FDCPACK_DRQ, 1);
 	
 	main->set_context_cpu(cpu);
@@ -181,6 +181,11 @@ uint32 VM::passed_clock(uint32 prev)
 uint32 VM::get_prv_pc()
 {
 	return cpu->get_prv_pc();
+}
+
+uint32 VM::get_sub_prv_pc()
+{
+	return subcpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

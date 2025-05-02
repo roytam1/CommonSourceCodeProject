@@ -57,9 +57,7 @@ void YM2151::event_vline(int v, int clock)
 {
 	bool next = opn->Count(usec);
 	if(irq != next) {
-		for(int i = 0; i < dcount_irq; i++) {
-			d_irq[i]->write_signal(did_irq[i], next ? 0xffffffff : 0, dmask_irq[i]);
-		}
+		write_signals(&outputs_irq, next ? 0xffffffff : 0);
 		irq = next;
 	}
 }

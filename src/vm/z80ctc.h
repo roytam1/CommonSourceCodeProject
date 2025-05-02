@@ -19,15 +19,9 @@
 #define SIG_Z80CTC_TRIG_2	2
 #define SIG_Z80CTC_TRIG_3	3
 
-#define EVENT_COUNTER	0
-#define EVENT_TIMER	4
-
 class Z80CTC : public DEVICE
 {
 private:
-	DEVICE* d_zc[4][MAX_OUTPUT];
-	int did_zc[4][MAX_OUTPUT], dcount_zc[4];
-	uint8 dmask_zc[4][MAX_OUTPUT];
 	int eventclock;
 	
 	typedef struct {
@@ -52,6 +46,8 @@ private:
 		// interrupt
 		bool req_intr;
 		bool in_service;
+		// output signals
+		outputs_t outputs;
 	} z80ctc_t;
 	z80ctc_t counter[4];
 	
@@ -67,10 +63,12 @@ private:
 	
 public:
 	Z80CTC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_zc[0] = dcount_zc[1] = dcount_zc[2] = dcount_zc[3] = 0;
+		for(int i = 0; i < 4; i++) {
+			init_output_signals(&counter[i].outputs);
+			counter[i].freq = 0;
+			counter[i].prev_in = false;
+		}
 		d_cpu = d_child = NULL;
-		counter[0].freq = counter[1].freq = counter[2].freq = counter[3].freq = 0;
-		counter[0].prev_in = counter[1].prev_in = counter[2].prev_in = counter[3].prev_in = false;
 	}
 	~Z80CTC() {}
 	
@@ -95,16 +93,13 @@ public:
 		d_child = device;
 	}
 	void set_context_zc0(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_zc[0]++;
-		d_zc[0][c] = device; did_zc[0][c] = id; dmask_zc[0][c] = mask;
+		regist_output_signal(&counter[0].outputs, device, id, mask);
 	}
 	void set_context_zc1(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_zc[1]++;
-		d_zc[1][c] = device; did_zc[1][c] = id; dmask_zc[1][c] = mask;
+		regist_output_signal(&counter[1].outputs, device, id, mask);
 	}
 	void set_context_zc2(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_zc[2]++;
-		d_zc[2][c] = device; did_zc[2][c] = id; dmask_zc[2][c] = mask;
+		regist_output_signal(&counter[2].outputs, device, id, mask);
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

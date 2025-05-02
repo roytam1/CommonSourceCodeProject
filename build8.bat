@@ -53,9 +53,21 @@ devenv.com mycomz80a.vcproj /Rebuild Release
 mkdir build\mycomz80a
 copy Release\mycomz80a.exe build\mycomz80a\.
 
+devenv.com mz80k.vcproj /Rebuild Release
+mkdir build\mz80k
+copy Release\mz80k.exe build\mz80k\.
+
 devenv.com mz700.vcproj /Rebuild Release
 mkdir build\mz700
 copy Release\mz700.exe build\mz700\.
+
+devenv.com mz1200.vcproj /Rebuild Release
+mkdir build\mz1200
+copy Release\mz1200.exe build\mz1200\.
+
+devenv.com mz1500.vcproj /Rebuild Release
+mkdir build\mz1500
+copy Release\mz1500.exe build\mz1500\.
 
 devenv.com mz2500.vcproj /Rebuild Release
 mkdir build\mz2500
@@ -130,6 +142,10 @@ copy Release\qc10cms.exe build\qc10\.
 devenv.com rx78.vcproj /Rebuild Release
 mkdir build\rx78
 copy Release\rx78.exe build\rx78\.
+
+devenv.com sc3000.vcproj /Rebuild Release
+mkdir build\sc3000
+copy Release\sc3000.exe build\sc3000\.
 
 devenv.com scv.vcproj /Rebuild Release
 mkdir build\scv

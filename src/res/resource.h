@@ -216,14 +216,6 @@
 #define MENU_POS_SOUND                  3
 #endif
 
-// FUJITSU FM-16pi
-#ifdef _FM16PI
-#define MENU_POS_CONTROL                0
-#define MENU_POS_FD1                    1
-#define MENU_POS_SCREEN                 2
-#define MENU_POS_SOUND                  3
-#endif
-
 // FUJITSU FMR-30
 #ifdef _FMR30
 #define MENU_POS_CONTROL                0
@@ -324,8 +316,35 @@
 #define MENU_POS_SOUND                  3
 #endif
 
+// SHARP MZ-80K
+#ifdef _MZ80K
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_MZT                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
 // SHARP MZ-700
 #ifdef _MZ700
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_MZT                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// SHARP MZ-1200
+#ifdef _MZ1200
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_MZT                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// SHARP MZ-1500
+#ifdef _MZ1500
 #define MENU_POS_CONTROL                0
 #define MENU_POS_DATAREC                1
 #define MENU_POS_MZT                    2
@@ -452,16 +471,6 @@
 #define MENU_POS_SOUND                  4
 #endif
 
-// SHARP PC-3200
-#ifdef _PC3200
-#define MENU_POS_CONTROL                0
-#define MENU_POS_FD1                    1
-#define MENU_POS_FD2                    2
-#define MENU_POS_DATAREC                3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
-#endif
-
 // NEC PC-8201
 #ifdef _PC8201
 #define MENU_POS_CONTROL                0
@@ -523,6 +532,15 @@
 
 // BANDAI RX-78
 #ifdef _RX78
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART                   1
+#define MENU_POS_DATAREC                2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// SEGA SC-3000
+#ifdef _SC3000
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
 #define MENU_POS_DATAREC                2

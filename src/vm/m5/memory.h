@@ -18,17 +18,14 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did, rid;
-	
 	// memory
 	uint8 ipl[0x2000];	// ipl (8k)
 	uint8 cart[0x5000];	// cartridge (20k)
 	uint8 ram[0x1000];	// ram (4k)
 	uint8 ext[0x8000];	// ext ram (32k)
 	
-	uint8 wdmy[0x10000];
-	uint8 rdmy[0x10000];
+	uint8 wdmy[0x1000];
+	uint8 rdmy[0x1000];
 	uint8* wbank[16];
 	uint8* rbank[16];
 	

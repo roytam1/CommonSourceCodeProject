@@ -41,7 +41,8 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #endif
-#define DONT_KEEP_BEEP_FREQ
+#define PCM1BIT_HIGH_QUALITY
+//#define LOW_PASS_FILTER
 
 // irq priority
 #define IRQ_Z80PIO		0
@@ -63,12 +64,13 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
 class DATAREC;
 class HD46505;
 class I8255;
 class IO;
+class LS393;
 class NOT;
+class PCM1BIT;
 class Z80;
 class Z80CTC;
 class Z80PIO;
@@ -86,14 +88,15 @@ protected:
 	// devices
 	EVENT* event;
 	
-	BEEP* beep;
 	DATAREC* drec;
 	HD46505* crtc;
 	I8255* pio0;
 	I8255* pio1;
 	I8255* pio2;
 	IO* io;
+	LS393* flipflop;
 	NOT* not;
+	PCM1BIT* pcm;
 	Z80* cpu;
 	Z80CTC* ctc;
 	Z80PIO* pio;

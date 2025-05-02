@@ -54,7 +54,6 @@ END
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
     VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
@@ -93,19 +92,36 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "FDD1"
+    POPUP "Tape"
     BEGIN
-        MENUITEM "Open",                        ID_OPEN_FD1
-        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM "Play",                        ID_PLAY_DATAREC
+        MENUITEM "Rec",                         ID_REC_DATAREC
+        MENUITEM "Close",                       ID_CLOSE_DATAREC
         MENUITEM SEPARATOR
-        MENUITEM "Recent 1",                    ID_RECENT_FD11
-        MENUITEM "Recent 2",                    ID_RECENT_FD12
-        MENUITEM "Recent 3",                    ID_RECENT_FD13
-        MENUITEM "Recent 4",                    ID_RECENT_FD14
-        MENUITEM "Recent 5",                    ID_RECENT_FD15
-        MENUITEM "Recent 6",                    ID_RECENT_FD16
-        MENUITEM "Recent 7",                    ID_RECENT_FD17
-        MENUITEM "Recent 8",                    ID_RECENT_FD18
+        MENUITEM "Play Button"                  ID_PLAY_BUTTON
+        MENUITEM "Stop Button"                  ID_STOP_BUTTON
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_DATAREC1
+        MENUITEM "Recent 2",                    ID_RECENT_DATAREC2
+        MENUITEM "Recent 3",                    ID_RECENT_DATAREC3
+        MENUITEM "Recent 4",                    ID_RECENT_DATAREC4
+        MENUITEM "Recent 5",                    ID_RECENT_DATAREC5
+        MENUITEM "Recent 6",                    ID_RECENT_DATAREC6
+        MENUITEM "Recent 7",                    ID_RECENT_DATAREC7
+        MENUITEM "Recent 8",                    ID_RECENT_DATAREC8
+    END
+    POPUP "MZT"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_MZT
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_MZT1
+        MENUITEM "Recent 2",                    ID_RECENT_MZT2
+        MENUITEM "Recent 3",                    ID_RECENT_MZT3
+        MENUITEM "Recent 4",                    ID_RECENT_MZT4
+        MENUITEM "Recent 5",                    ID_RECENT_MZT5
+        MENUITEM "Recent 6",                    ID_RECENT_MZT6
+        MENUITEM "Recent 7",                    ID_RECENT_MZT7
+        MENUITEM "Recent 8",                    ID_RECENT_MZT8
     END
     POPUP "Screen"
     BEGIN
@@ -173,7 +189,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "fm16pi.ico"
+IDI_ICON1               ICON    DISCARDABLE     "mz1200.ico"
 #endif    // âpåÍ (±“ÿ∂) resources
 /////////////////////////////////////////////////////////////////////////////
 

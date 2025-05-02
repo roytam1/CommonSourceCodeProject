@@ -31,9 +31,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	DEVICE *d_mem, *d_io, *d_pic;
-	DEVICE *d_busack[MAX_OUTPUT];
-	int did[MAX_OUTPUT], dcount;
-	uint32 dmask[MAX_OUTPUT];
+	outputs_t outputs_busack;
 	
 	/* ---------------------------------------------------------------------------
 	registers
@@ -41,37 +39,141 @@ private:
 	
 	int count, first;
 	bool busreq, halt;
-	pair regs[7], wz;
+	pair regs[6];
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
 	uint16 SP, PC, prvPC, exAF, exBC, exDE, exHL, EA;
 	uint32 intr_req_bit, intr_pend_bit;
 	
 	/* ---------------------------------------------------------------------------
-	flag tables
-	--------------------------------------------------------------------------- */
-	
-	uint8 SZ[256];
-	uint8 SZ_BIT[256];
-	uint8 SZP[256];
-	uint8 SZHV_inc[256];
-	uint8 SZHV_dec[256];
-	uint8 SZHVC_add[2 * 256 * 256];
-	uint8 SZHVC_sub[2 * 256 * 256];
-	
-	/* ---------------------------------------------------------------------------
 	virtual machine interfaces
 	--------------------------------------------------------------------------- */
 	
-	inline uint8 RM8(uint16 addr);
-	inline void WM8(uint16 addr, uint8 val);
-	inline uint16 RM16(uint16 addr);
-	inline void WM16(uint16 addr, uint16 val);
-	inline uint8 FETCHOP();
-	inline uint8 FETCH8();
-	inline uint16 FETCH16();
-	inline uint16 POP16();
-	inline uint8 IN8(uint16 addr);
-	inline void OUT8(uint16 addr, uint8 val);
+	// memory
+	inline uint8 RM8(uint16 addr) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint8 val = d_mem->read_data8w(addr, &wait);
+		count -= wait;
+		return val;
+#else
+		return d_mem->read_data8(addr);
+#endif
+	}
+	inline void WM8(uint16 addr, uint8 val) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data8w(addr, val, &wait);
+		count -= wait;
+#else
+		d_mem->write_data8(addr, val);
+#endif
+	}
+	
+	inline uint16 RM16(uint16 addr) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = d_mem->read_data16w(addr, &wait);
+		count -= wait;
+		return val;
+#else
+		return d_mem->read_data16(addr);
+#endif
+	}
+	inline void WM16(uint16 addr, uint16 val) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data16w(addr, val, &wait);
+		count -= wait;
+#else
+		d_mem->write_data16(addr, val);
+#endif
+	}
+	inline uint8 FETCHOP() {
+#ifdef Z80_M1_CYCLE_WAIT
+		count -= Z80_M1_CYCLE_WAIT;
+#endif
+		_R = (_R & 0x80) | ((_R + 1) & 0x7f);
+		return d_mem->read_data8(PC++);
+	}
+	inline uint8 FETCH8() {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint8 val = d_mem->read_data8w(PC++, &wait);
+		count -= wait;
+		return val;
+#else
+		return d_mem->read_data8(PC++);
+#endif
+	}
+	inline uint16 FETCH16() {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = d_mem->read_data16w(PC, &wait);
+		count -= wait;
+#else
+		uint16 val = d_mem->read_data16(PC);
+#endif
+		PC += 2;
+		return val;
+	}
+	inline uint16 POP16() {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = d_mem->read_data16w(SP, &wait);
+		count -= wait;
+#else
+		uint16 val = d_mem->read_data16(SP);
+#endif
+		SP += 2;
+		return val;
+	}
+	inline void PUSH16(uint16 val) {
+		SP -= 2;
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data16w(SP, val, &wait);
+		count -= wait;
+#else
+		d_mem->write_data16(SP, val);
+#endif
+	}
+	
+	// i/o
+	inline uint8 IN8(uint8 laddr, uint8 haddr) {
+		uint32 addr = laddr | (haddr << 8);
+#ifdef CPU_IO_WAIT
+		int wait;
+		uint8 val = d_io->read_io8w(addr, &wait);
+		count -= wait;
+		return val;
+#else
+		return d_io->read_io8(addr);
+#endif
+	}
+	inline void OUT8(uint8 laddr, uint8 haddr, uint8 val) {
+#ifdef NSC800
+		if(laddr == 0xbb) {
+			ICR = val;
+			return;
+		}
+#endif
+		uint32 addr = laddr | (haddr << 8);
+#ifdef CPU_IO_WAIT
+		int wait;
+		d_io->write_io8w(addr, val, &wait);
+		count -= wait;
+#else
+		d_io->write_io8(addr, val);
+#endif
+	}
+	
+	// interrupt
+	inline void NOTIFY_RETI() {
+		d_pic->intr_reti();
+	}
+	inline uint32 ACK_INTR() {
+		return d_pic->intr_ack();
+	}
 	
 	/* ---------------------------------------------------------------------------
 	opecodes
@@ -79,16 +181,16 @@ private:
 	
 	// CB,DD,ED,FD
 	void OP(uint8 code);
-	void OP_CB(uint8 code);
-	void OP_DD(uint8 code);
-	void OP_ED(uint8 code);
-	void OP_FD(uint8 code);
-	void OP_XYCB(uint8 code);
+	void OP_CB();
+	void OP_DD();
+	void OP_ED();
+	void OP_FD();
+	void OP_XY();
 	
 	// opecode
+	inline uint16 EXSP(uint16 reg);
 	inline uint8 INC(uint8 value);
 	inline uint8 DEC(uint8 value);
-	inline uint16 EXSP(uint16 reg);
 	inline uint16 ADD16(uint16 dreg, uint16 sreg);
 	inline uint8 RLC(uint8 value);
 	inline uint8 RRC(uint8 value);
@@ -105,12 +207,11 @@ public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		count = first = 0;	// passed_clock must be zero at initialize
 		busreq = false;
-		dcount = 0;
+		init_output_signals(&outputs_busack);
 	}
 	~Z80() {}
 	
 	// common functions
-	void initialize();
 	void reset();
 	void run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
@@ -140,8 +241,7 @@ public:
 		d_pic = device;
 	}
 	void set_context_busack(DEVICE* device, int id, uint32 mask) {
-		int c = dcount++;
-		d_busack[c] = device; did[c] = id; dmask[c] = mask;
+		regist_output_signal(&outputs_busack, device, id, mask);
 	}
 };
 

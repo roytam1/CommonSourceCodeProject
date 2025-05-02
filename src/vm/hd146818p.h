@@ -14,20 +14,12 @@
 #include "../emu.h"
 #include "device.h"
 
-// [DV2-DV0][RS3-RS0]
-static int periodic_intr_rate[3][16] = {
-	{0,   1,   2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384},	// 4.194304 MHz
-	{0,   1,   2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384},	// 1.048576 MHz
-	{0, 128, 256, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384}	// 32.768kHz
-};
-
 class HD146818P : public DEVICE
 {
 private:
-	DEVICE *d_intr[MAX_OUTPUT], *d_sqw[MAX_OUTPUT];
-	int did_intr[MAX_OUTPUT], did_sqw[MAX_OUTPUT];
-	uint32 dmask_intr[MAX_OUTPUT], dmask_sqw[MAX_OUTPUT];
-	int dcount_intr, dcount_sqw;
+	// output signals
+	outputs_t outputs_intr;
+	outputs_t outputs_sqw;
 	
 	uint8 ram[0x40];
 	int ch, sec, tm[8];
@@ -39,7 +31,8 @@ private:
 	
 public:
 	HD146818P(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_intr = dcount_sqw = 0;
+		init_output_signals(&outputs_intr);
+		init_output_signals(&outputs_sqw);
 	}
 	~HD146818P() {}
 	
@@ -54,12 +47,10 @@ public:
 	
 	// unique functions
 	void set_context_intr(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_intr++;
-		d_intr[c] = device; did_intr[c] = id; dmask_intr[c] = mask;
+		regist_output_signal(&outputs_intr, device, id, mask);
 	}
 	void set_context_sqw(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_sqw++;
-		d_sqw[c] = device; did_sqw[c] = id; dmask_sqw[c] = mask;
+		regist_output_signal(&outputs_sqw, device, id, mask);
 	}
 };
 

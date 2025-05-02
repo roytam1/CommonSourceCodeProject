@@ -16,19 +16,11 @@
 #include "../emu.h"
 #include "device.h"
 
-static const scrntype palette_pc[16] = {
-	RGB_COLOR(  0,   0,   0), RGB_COLOR(  0,   0,   0), RGB_COLOR( 33, 200,  66), RGB_COLOR( 94, 220, 120),
-	RGB_COLOR( 84,  85, 237), RGB_COLOR(125, 118, 252), RGB_COLOR(212,  82,  77), RGB_COLOR( 66, 235, 245),
-	RGB_COLOR(252,  85,  84), RGB_COLOR(255, 121, 120), RGB_COLOR(212, 193,  84), RGB_COLOR(230, 206, 128),
-	RGB_COLOR( 33, 176,  59), RGB_COLOR(201,  91, 186), RGB_COLOR(204, 204, 204), RGB_COLOR(255, 255, 255)
-};
-
 class TMS9918A : public DEVICE
 {
 private:
-	DEVICE* dev[MAX_OUTPUT];
-	int did[MAX_OUTPUT], dcount;
-	uint32 dmask[MAX_OUTPUT];
+	// output signals
+	outputs_t outputs_irq;
 	
 	uint8 vram[TMS9918A_VRAM_SIZE];
 	uint8 screen[192][256];
@@ -51,7 +43,7 @@ private:
 	
 public:
 	TMS9918A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount = 0;
+		init_output_signals(&outputs_irq);
 	}
 	~TMS9918A() {}
 	
@@ -63,9 +55,8 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context(DEVICE* device, int id, uint32 mask) {
-		int c = dcount++;
-		dev[c] = device; did[c] = id; dmask[c] = mask;
+	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+		regist_output_signal(&outputs_irq, device, id, mask);
 	}
 	void draw_screen();
 };

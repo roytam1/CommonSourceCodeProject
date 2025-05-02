@@ -10,6 +10,13 @@
 #include "hd146818p.h"
 #include "../fileio.h"
 
+// [DV2-DV0][RS3-RS0]
+static int periodic_intr_rate[3][16] = {
+	{0,   1,   2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384},	// 4.194304 MHz
+	{0,   1,   2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384},	// 1.048576 MHz
+	{0, 128, 256, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384}	// 32.768kHz
+};
+
 void HD146818P::initialize()
 {
 	// load ram image
@@ -55,25 +62,27 @@ void HD146818P::release()
 
 void HD146818P::reset()
 {
-	ram[0xb] &= ~0x78;
-	ram[0xc] = 0;
+	ram[0x0b] &= ~0x78;
+	ram[0x0c] = 0;
 }
 
 void HD146818P::write_io8(uint32 addr, uint32 data)
 {
-	if(addr & 1)
+	if(addr & 1) {
 		ch = data & 0x3f;
+	}
 	else {
 		if(ch == 1 || ch == 3 || ch == 5) {
 			// alarm
 			ram[ch] = data;
 			update_intr();
 		}
-		else if(ch == 0xa) {
+		else if(ch == 0x0a) {
 			// periodic interrupt
 			int dv = (data >> 4) & 7, next = 0;
-			if(dv < 3)
-				next = periodic_intr_rate[dv][data & 0xf];
+			if(dv < 3) {
+				next = periodic_intr_rate[dv][data & 0x0f];
+			}
 			if(next != period) {
 				if(event_id != -1) {
 					vm->cancel_event(event_id);
@@ -88,32 +97,32 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 			}
 			ram[ch] = data & 0x7f;	// always UIP=0
 		}
-		else if(ch == 0xb) {
-			if((ram[0xb] & 8) && !(data & 8)) {
+		else if(ch == 0x0b) {
+			if((ram[0x0b] & 8) && !(data & 8)) {
 				// keep sqw = L when sqwe = 0
-				for(int i = 0; i < dcount_sqw; i++)
-					d_sqw[i]->write_signal(did_sqw[i], 0, dmask_sqw[i]);
+				write_signals(&outputs_sqw, 0);
 			}
 			ram[ch] = data;
 			update_calendar();
 			update_intr();
 		}
-		else if(ch > 0xd)
+		else if(ch > 0x0d) {
 			ram[ch] = data;	// internal ram
+		}
 	}
 }
 
 uint32 HD146818P::read_io8(uint32 addr)
 {
 	uint8 val = ram[ch];
-	if(ch == 0xc) {
-		ram[0xc] = 0;
+	if(ch == 0x0c) {
+		ram[0x0c] = 0;
 		update_intr();
 	}
 	return val;
 }
 
-#define bcd_bin(p) ((ram[0xb] & 4) ? p : 0x10 * (int)((p) / 10) + ((p) % 10))
+#define bcd_bin(p) ((ram[0x0b] & 4) ? p : 0x10 * (int)((p) / 10) + ((p) % 10))
 
 void HD146818P::event_frame()
 {
@@ -127,14 +136,13 @@ void HD146818P::event_callback(int event_id, int err)
 {
 	// periodic interrupt
 	if(sqw = !sqw) {
-		ram[0xc] |= 0x40;
+		ram[0x0c] |= 0x40;
 		update_intr();
 	}
 	// square wave
-	if(ram[0xb] & 8) {
+	if(ram[0x0b] & 8) {
 		// output sqw when sqwe = 1
-		for(int i = 0; i < dcount_sqw; i++)
-			d_sqw[i]->write_signal(did_sqw[i], sqw ? 0xffffffff : 0, dmask_sqw[i]);
+		write_signals(&outputs_sqw, sqw ? 0xffffffff : 0);
 	}
 }
 
@@ -142,27 +150,28 @@ void HD146818P::update_calendar()
 {
 	ram[0] = bcd_bin(tm[6]);
 	ram[2] = bcd_bin(tm[5]);
-	ram[4] = (ram[0xb] & 2) ? bcd_bin(tm[4]) : (bcd_bin(tm[4] % 12) | (tm[4] >= 12 ? 0x80 : 0));
+	ram[4] = (ram[0x0b] & 2) ? bcd_bin(tm[4]) : (bcd_bin(tm[4] % 12) | (tm[4] >= 12 ? 0x80 : 0));
 	ram[6] = tm[3] + 1;
 	ram[7] = bcd_bin(tm[2]);
 	ram[8] = bcd_bin(tm[1]);
 	ram[9] = bcd_bin(tm[0] % 100);
 	
 	// alarm
-	if(ram[0] == ram[1] && ram[2] == ram[3] && ram[4] == ram[5])
-		ram[0xc] |= 0x20;
+	if(ram[0] == ram[1] && ram[2] == ram[3] && ram[4] == ram[5]) {
+		ram[0x0c] |= 0x20;
+	}
 	// update ended
-	if(sec != tm[6])
-		ram[0xc] |= 0x10;
+	if(sec != tm[6]) {
+		ram[0x0c] |= 0x10;
+	}
 	sec = tm[6];
 }
 
 void HD146818P::update_intr()
 {
-	bool next = ((ram[0xb] & ram[0xc] & 0x70) != 0);
+	bool next = ((ram[0x0b] & ram[0x0c] & 0x70) != 0);
 	if(intr != next) {
-		for(int i = 0; i < dcount_intr; i++)
-			d_intr[i]->write_signal(did_intr[i], next ? 0xffffffff : 0, dmask_intr[i]);
+		write_signals(&outputs_intr, next ? 0xffffffff : 0);
 		intr = next;
 	}
 }

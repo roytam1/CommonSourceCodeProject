@@ -9,6 +9,9 @@
 
 #include "rp5c15.h"
 
+#define EVENT_1HZ	0
+#define EVENT_16HZ	1
+
 #define YEAR		time[0]
 #define MONTH		time[1]
 #define DAY		time[2]
@@ -20,9 +23,9 @@
 void RP5C15::initialize()
 {
 	_memset(regs, 0, sizeof(regs));
-	regs[0xa] = 1;
-	regs[0xd] = 8;
-	regs[0xf] = 0xc;
+	regs[0x0a] = 1;
+	regs[0x0d] = 8;
+	regs[0x0f] = 0xc;
 	alarm = pulse_1hz = pulse_16hz = false;
 	
 	int regist_id;
@@ -33,29 +36,29 @@ void RP5C15::initialize()
 
 void RP5C15::write_io8(uint32 addr, uint32 data)
 {
-	int ch = addr & 0xf;
+	int ch = addr & 0x0f;
 	
-	switch(ch)
-	{
-	case 0x0:
-	case 0x1:
-	case 0x2:
-	case 0x3:
-	case 0x4:
-	case 0x5:
-	case 0x6:
-	case 0x7:
-	case 0x8:
-	case 0x9:
-	case 0xa:
-	case 0xb:
-	case 0xc:
-		if(regs[0xd] & 1)
+	switch(ch) {
+	case 0x00:
+	case 0x01:
+	case 0x02:
+	case 0x03:
+	case 0x04:
+	case 0x05:
+	case 0x06:
+	case 0x07:
+	case 0x08:
+	case 0x09:
+	case 0x0a:
+	case 0x0b:
+	case 0x0c:
+		if(regs[0xd] & 1) {
 			regs[ch] = data;
+		}
 		break;
-	case 0xd:
-	case 0xe:
-	case 0xf:
+	case 0x0d:
+	case 0x0e:
+	case 0x0f:
 		regs[ch] = data;
 		break;
 	}
@@ -63,10 +66,9 @@ void RP5C15::write_io8(uint32 addr, uint32 data)
 
 uint32 RP5C15::read_io8(uint32 addr)
 {
-	int ch = addr & 0xf;
+	int ch = addr & 0x0f;
 	
-	switch(ch)
-	{
+	switch(ch) {
 	case 0x00:
 		return (regs[0xd] & 1) ? regs[ch] : SECOND % 10;
 	case 0x01:
@@ -91,22 +93,27 @@ uint32 RP5C15::read_io8(uint32 addr)
 		return (regs[0xd] & 1) ? regs[ch] : (uint8)(MONTH / 10);
 	case 0x0b:
 		if(regs[0xd] & 1) {
-			if(((YEAR - 0) % 4) == 0 && (((YEAR - 0) % 100) != 0 || ((YEAR - 0) % 400) == 0))
+			if(((YEAR - 0) % 4) == 0 && (((YEAR - 0) % 100) != 0 || ((YEAR - 0) % 400) == 0)) {
 				return 0;
-			else if(((YEAR - 1) % 4) == 0 && (((YEAR - 1) % 100) != 0 || ((YEAR - 1) % 400) == 0))
+			}
+			else if(((YEAR - 1) % 4) == 0 && (((YEAR - 1) % 100) != 0 || ((YEAR - 1) % 400) == 0)) {
 				return 1;
-			else if(((YEAR - 2) % 4) == 0 && (((YEAR - 2) % 100) != 0 || ((YEAR - 2) % 400) == 0))
+			}
+			else if(((YEAR - 2) % 4) == 0 && (((YEAR - 2) % 100) != 0 || ((YEAR - 2) % 400) == 0)) {
 				return 2;
-			else
+			}
+			else {
 				return 3;
+			}
 		}
-		else
+		else {
 			return YEAR % 10;
+		}
 	case 0x0c:
 		return (regs[0xd] & 1) ? regs[ch] : (uint8)((YEAR % 100) / 10);
-	case 0xd:
-	case 0xe:
-	case 0xf:
+	case 0x0d:
+	case 0x0e:
+	case 0x0f:
 		return regs[ch];
 	}
 	return 0xff;
@@ -114,16 +121,17 @@ uint32 RP5C15::read_io8(uint32 addr)
 
 void RP5C15::event_callback(int event_id, int err)
 {
-	if(event_id == EVENT_1HZ)
+	if(event_id == EVENT_1HZ) {
 		pulse_1hz = !pulse_1hz;
-	else
+	}
+	else {
 		pulse_16hz = !pulse_16hz;
+	}
 	bool pulse = alarm;
-	pulse |= (regs[0xf] & 8) ? false : pulse_1hz;
-	pulse |= (regs[0xf] & 4) ? false : pulse_16hz;
+	pulse |= (regs[0x0f] & 8) ? false : pulse_1hz;
+	pulse |= (regs[0x0f] & 4) ? false : pulse_16hz;
 	
-	for(int i = 0; i < dcount_pulse; i++)
-		d_pulse[i]->write_signal(did_pulse[i], pulse ? 0 : 0xffffffff, dmask_pulse[i]);
+	write_signals(&outputs_pulse, pulse ? 0 : 0xffffffff);
 }
 
 void RP5C15::event_frame()
@@ -132,17 +140,18 @@ void RP5C15::event_frame()
 	emu->get_timer(time);
 	
 	int minute, hour, day;
-	minute = (regs[2] & 0xf) + (regs[3] & 7) * 10;
-	if(regs[0xa] & 1)
-		hour = (regs[4] & 0xf) + (regs[5] & 3) * 10;
-	else
-		hour = (regs[4] & 0xf) + (regs[5] & 1) * 10 + (regs[5] & 2 ? 12 : 0);
-	day = (regs[7] & 0xf) + (regs[8] & 3) * 10;
-	bool newval = ((regs[0xd] & 4) && minute == MINUTE && hour == HOUR && day == DAY) ? true : false;
+	minute = (regs[2] & 0x0f) + (regs[3] & 7) * 10;
+	if(regs[0x0a] & 1) {
+		hour = (regs[4] & 0x0f) + (regs[5] & 3) * 10;
+	}
+	else {
+		hour = (regs[4] & 0x0f) + (regs[5] & 1) * 10 + (regs[5] & 2 ? 12 : 0);
+	}
+	day = (regs[7] & 0x0f) + (regs[8] & 3) * 10;
+	bool newval = ((regs[0x0d] & 4) && minute == MINUTE && hour == HOUR && day == DAY) ? true : false;
 	
 	if(alarm != newval) {
-		for(int i = 0; i < dcount_alarm; i++)
-			d_alarm[i]->write_signal(did_alarm[i], newval ? 0 : 0xffffffff, dmask_alarm[i]);
+		write_signals(&outputs_alarm, newval ? 0 : 0xffffffff);
 		alarm = newval;
 	}
 }

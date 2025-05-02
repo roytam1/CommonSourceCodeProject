@@ -9,6 +9,7 @@
 */
 
 #include "cmt.h"
+#include "../datarec.h"
 
 void CMT::initialize()
 {
@@ -23,24 +24,23 @@ void CMT::write_io8(uint32 addr, uint32 data)
 {
 	bool signal, motor;
 	
-	switch(addr & 0xff)
-	{
+	switch(addr & 0xff) {
 	case 0x40:
 		// printer
 		pout = data;
 		break;
 	case 0x50:
 		// data recorder
-		if((signal = (data & 1) ? false : true) != out) {
-			dev->write_signal(did_out, signal ? 1 : 0, 1);
+		if((signal = ((data & 1) == 0)) != out) {
+			d_drec->write_signal(SIG_DATAREC_OUT, signal ? 1 : 0, 1);
 			out = signal;
 		}
-		if((motor = (data & 2) ? true : false) != remote) {
-			dev->write_signal(did_rmt, motor ? 1 : 0, 1);
+		if((motor = ((data & 2) != 0)) != remote) {
+			d_drec->write_signal(SIG_DATAREC_REMOTE, motor ? 1 : 0, 1);
 			remote = motor;
 		}
 		// printer
-		strobe = (data & 1) ? true : false;
+		strobe = ((data & 1) != 0);
 		break;
 	}
 }
@@ -52,9 +52,11 @@ uint32 CMT::read_io8(uint32 addr)
 
 void CMT::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_CMT_IN)
-		in = (data & mask) ? true : false;
-	else if(id == SIG_PRINTER_BUSY)
-		busy = (data & mask) ? true : false;
+	if(id == SIG_CMT_IN) {
+		in = ((data & mask) != 0);
+	}
+	else if(id == SIG_PRINTER_BUSY) {
+		busy = ((data & mask) != 0);
+	}
 }
 

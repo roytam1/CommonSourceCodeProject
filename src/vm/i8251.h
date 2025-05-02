@@ -24,14 +24,17 @@ class FIFO;
 class I8251 : public DEVICE
 {
 private:
-	DEVICE *d_out[MAX_OUTPUT], *d_rxrdy[MAX_OUTPUT], *d_txrdy[MAX_OUTPUT], *d_txe[MAX_OUTPUT], *d_dtr[MAX_OUTPUT], *d_rst[MAX_OUTPUT];
-	int did_out[MAX_OUTPUT], did_rxrdy[MAX_OUTPUT], did_txrdy[MAX_OUTPUT], did_txe[MAX_OUTPUT], did_dtr[MAX_OUTPUT], did_rst[MAX_OUTPUT];
-	uint32 dmask_rxrdy[MAX_OUTPUT], dmask_txrdy[MAX_OUTPUT], dmask_txe[MAX_OUTPUT], dmask_dtr[MAX_OUTPUT], dmask_rst[MAX_OUTPUT];
-	int dcount_out, dcount_rxrdy, dcount_txrdy, dcount_txe, dcount_dtr, dcount_rst;
-	
 	// i8251
 	uint8 recv, status, mode;
 	bool txen, rxen, loopback;
+	
+	// output signals
+	outputs_t outputs_out;
+	outputs_t outputs_rxrdy;
+	outputs_t outputs_txrdy;
+	outputs_t outputs_txe;
+	outputs_t outputs_dtr;
+	outputs_t outputs_rst;
 	
 	// buffer
 	FIFO *recv_buffer;
@@ -40,7 +43,12 @@ private:
 	
 public:
 	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_out = dcount_rxrdy = dcount_txrdy = dcount_txe = dcount_dtr = dcount_rst = 0;
+		init_output_signals(&outputs_out);
+		init_output_signals(&outputs_rxrdy);
+		init_output_signals(&outputs_txrdy);
+		init_output_signals(&outputs_txe);
+		init_output_signals(&outputs_dtr);
+		init_output_signals(&outputs_rst);
 	}
 	~I8251() {}
 	
@@ -55,28 +63,22 @@ public:
 	
 	// unique functions
 	void set_context_out(DEVICE* device, int id) {
-		int c = dcount_out++;
-		d_out[c] = device; did_out[c] = id;
+		regist_output_signal(&outputs_out, device, id, 0xff);
 	}
 	void set_context_rxrdy(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_rxrdy++;
-		d_rxrdy[c] = device; did_rxrdy[c] = id; dmask_rxrdy[c] = mask;
+		regist_output_signal(&outputs_rxrdy, device, id, mask);
 	}
 	void set_context_txrdy(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_txrdy++;
-		d_txrdy[c] = device; did_txrdy[c] = id; dmask_txrdy[c] = mask;
+		regist_output_signal(&outputs_txrdy, device, id, mask);
 	}
 	void set_context_txe(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_txe++;
-		d_txe[c] = device; did_txe[c] = id; dmask_txe[c] = mask;
+		regist_output_signal(&outputs_txe, device, id, mask);
 	}
 	void set_context_dtr(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_dtr++;
-		d_dtr[c] = device; did_dtr[c] = id; dmask_dtr[c] = mask;
+		regist_output_signal(&outputs_dtr, device, id, mask);
 	}
 	void set_context_rst(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_rst++;
-		d_rst[c] = device; did_rst[c] = id; dmask_rst[c] = mask;
+		regist_output_signal(&outputs_rst, device, id, mask);
 	}
 };
 

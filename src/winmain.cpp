@@ -1453,7 +1453,7 @@ void open_disk(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("D88 Floppy Disk Files (*.d88)\0*.d88\0TeleDisk Floppy Disk Files (*.td0)\0*.td0\0ImageDisk Floppy Disk Files (*.imd)\0*.imd\0All Files (*.*)\0*.*\0\0"),
+		_T("D88 Floppy Disk Files (*.d88)\0*.d88\0TeleDisk Floppy Disk Files (*.td0)\0*.td0\0ImageDisk Floppy Disk Files (*.imd)\0*.imd\0SF7 Floppy Disk Files (*.sf7)\0*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_path
 	);

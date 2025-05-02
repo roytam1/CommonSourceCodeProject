@@ -24,9 +24,8 @@
 class MSM5832 : public DEVICE
 {
 private:
-	DEVICE *d_data[MAX_OUTPUT];
-	int did_data[MAX_OUTPUT], dshift_data[MAX_OUTPUT], dcount_data;
-	uint32 dmask_data[MAX_OUTPUT];
+	// output signals
+	outputs_t outputs_data;
 	
 	void output();
 	uint8 regs[16];
@@ -36,7 +35,7 @@ private:
 	
 public:
 	MSM5832(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_data = 0;
+		init_output_signals(&outputs_data);
 	}
 	~MSM5832() {}
 	
@@ -49,8 +48,7 @@ public:
 	
 	// unique functions
 	void set_context_data(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount_data++;
-		d_data[c] = device; did_data[c] = id; dmask_data[c] = mask; dshift_data[c] = shift;
+		regist_output_signal(&outputs_data, device, id, mask, shift);
 	}
 };
 

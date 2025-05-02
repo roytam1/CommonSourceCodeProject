@@ -21,11 +21,14 @@ void W3100A::initialize()
 }
 
 #define GET_ADDR() { \
-	if(idm_or & 2) \
+	if(idm_or & 2) { \
 		raddr = idm_ar0 | (idm_ar1 << 8); \
-	else \
+	} \
+	else { \
 		raddr = (idm_ar0 << 8) | idm_ar1; \
+	} \
 }
+
 #define INC_ADDR() { \
 	if(idm_or & 1) { \
 		raddr++; \
@@ -38,8 +41,7 @@ void W3100A::write_io8(uint32 addr, uint32 data)
 {
 	uint16 raddr;
 	
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 		idm_or = data;
 		break;
@@ -74,12 +76,12 @@ void W3100A::process_cmd(uint16 raddr, uint8 data)
 	uint16 bufsz[4] = { 1024, 2048, 4096, 8192 };
 	int ch;
 	
-	switch(raddr)
-	{
+	switch(raddr) {
 	case 0x00:	// c0_cr
 		// sys init (ch.0 only)
-		if(data & 1)
+		if(data & 1) {
 			regs[4] = 1;	// always success
+		}
 	case 0x01:	// c1_cr
 	case 0x02:	// c2_cr
 	case 0x03:	// c3_cr
@@ -87,8 +89,9 @@ void W3100A::process_cmd(uint16 raddr, uint8 data)
 		if(data & 2) {
 			// init sock
 			uint8 mode = regs[0xa1 + 24 * ch] & 7;
-			if(mode == 0)
+			if(mode == 0) {
 				emu->disconnect_socket(ch);
+			}
 			else {
 				bool result = false, connect = false;
 				regs[0xa0 + 24 * ch] = 0;	// SOCK_CLOSE
@@ -98,8 +101,9 @@ void W3100A::process_cmd(uint16 raddr, uint8 data)
 				}
 				else if(mode == 2) {
 					result = connect = emu->init_socket_udp(ch);
-					if(result)
+					if(result) {
 						regs[0xa0 + 24 * ch] = 0xf;	// SOCK_UDP
+					}
 					is_tcp[ch] = false;
 				}
 				regs[4 + ch] &= ~(2 | 4 | 8);
@@ -142,8 +146,9 @@ void W3100A::process_cmd(uint16 raddr, uint8 data)
 			uint32 rd_ptr = is_tcp[ch] ? cx_ta_pr[ch] : cx_tr_pr[ch];
 			if(rd_ptr != send_dst_ptr[ch]) {
 				regs[ch + 4] &= ~0x20;
-				if(is_tcp[ch])
+				if(is_tcp[ch]) {
 					emu->send_data_tcp(ch);
+				}
 				else {
 					uint32 ipaddr = regs[0xa8 + 24 * ch];
 					ipaddr |= regs[0xa9 + 24 * ch] << 8;
@@ -153,8 +158,9 @@ void W3100A::process_cmd(uint16 raddr, uint8 data)
 					emu->send_data_udp(ch, ipaddr, port);
 				}
 			}
-			else
+			else {
 				regs[ch + 4] |= 0x20;	// send ok
+			}
 		}
 		if(data & 0x40) {
 			// recv
@@ -231,8 +237,7 @@ void W3100A::process_status(uint16 raddr)
 {
 	int ch;
 	
-	switch(raddr)
-	{
+	switch(raddr) {
 	case 0x1e0: ch = 0; goto lbl_cx_srw_pr;
 	case 0x1e3: ch = 1; goto lbl_cx_srw_pr;
 	case 0x1e6: ch = 2; goto lbl_cx_srw_pr;
@@ -297,8 +302,9 @@ void W3100A::disconnected(int ch)
 {
 	regs[4 + ch] &= ~4;		// established = false
 	regs[4 + ch] |= 8;		// closed = true
-	if(regs[ch] & 0x40)		// recv_ok = true
+	if(regs[ch] & 0x40) {		// recv_ok = true
 		regs[4 + ch] |= 0x40;
+	}
 	regs[0xa0 + 24 * ch] = 0;	// SOCK_CLOSED
 }
 
@@ -308,17 +314,22 @@ uint8* W3100A::get_sendbuffer(int ch, int* size)
 	uint32 rd_ptr = cx_ta_tr & (tx_bufsz[ch] - 1);
 	uint32 wr_ptr = send_dst_ptr[ch] & (tx_bufsz[ch] - 1);
 	
-	if(!(regs[ch] & 0x20))
+	if(!(regs[ch] & 0x20)) {
 		*size = 0;
-	else if(rd_ptr == wr_ptr && cx_ta_tr != send_dst_ptr[ch])
+	}
+	else if(rd_ptr == wr_ptr && cx_ta_tr != send_dst_ptr[ch]) {
 		*size = 0;
-	else if(rd_ptr <= wr_ptr)
+	}
+	else if(rd_ptr <= wr_ptr) {
 		*size = wr_ptr - rd_ptr;
-	else
+	}
+	else {
 		*size = tx_bufsz[ch] - rd_ptr;
+	}
 	uint32 ofs = 0x4000;
-	for(int i = 0; i < ch; i++)
+	for(int i = 0; i < ch; i++) {
 		ofs += tx_bufsz[i];
+	}
 	return &regs[ofs + rd_ptr];
 }
 
@@ -326,13 +337,15 @@ void W3100A::inc_sendbuffer_ptr(int ch, int size)
 {
 	if(is_tcp[ch]) {
 		cx_ta_pr[ch] += size;
-		if(cx_ta_pr[ch] == send_dst_ptr[ch])
+		if(cx_ta_pr[ch] == send_dst_ptr[ch]) {
 			regs[ch + 4] |= 0x20;	// send ok
+		}
 	}
 	else {
 		cx_tr_pr[ch] += size;
-		if(cx_tr_pr[ch] == send_dst_ptr[ch])
+		if(cx_tr_pr[ch] == send_dst_ptr[ch]) {
 			regs[ch + 4] |= 0x20;	// send ok
+		}
 	}
 }
 
@@ -341,10 +354,12 @@ uint8* W3100A::get_recvbuffer0(int ch, int* size0, int* size1)
 	uint32 wr_ptr = cx_rw_pr[ch] & (rx_bufsz[ch] - 1);
 	uint32 rr_ptr = recv_dst_ptr[ch] & (rx_bufsz[ch] - 1);
 	
-	if(!(regs[ch] & 0x40))
+	if(!(regs[ch] & 0x40)) {
 		*size0 = *size1 = 0;
-	else if(rr_ptr == wr_ptr && cx_rw_pr[ch] != recv_dst_ptr[ch])
+	}
+	else if(rr_ptr == wr_ptr && cx_rw_pr[ch] != recv_dst_ptr[ch]) {
 		*size0 = *size1 = 0;
+	}
 	else if(rr_ptr <= wr_ptr) {
 		*size0 = rx_bufsz[ch] - wr_ptr;
 		*size1 = rr_ptr;
@@ -354,16 +369,18 @@ uint8* W3100A::get_recvbuffer0(int ch, int* size0, int* size1)
 		*size1 = 0;
 	}
 	uint32 ofs = 0x6000;
-	for(int i = 0; i < ch; i++)
+	for(int i = 0; i < ch; i++) {
 		ofs += rx_bufsz[i];
+	}
 	return &regs[ofs + wr_ptr];
 }
 
 uint8* W3100A::get_recvbuffer1(int ch)
 {
 	uint32 ofs = 0x6000;
-	for(int i = 0; i < ch; i++)
+	for(int i = 0; i < ch; i++) {
 		ofs += rx_bufsz[i];
+	}
 	return &regs[ofs];
 }
 

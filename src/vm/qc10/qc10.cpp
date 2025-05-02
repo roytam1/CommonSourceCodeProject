@@ -87,7 +87,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	gdc->set_context_drq(dma0, SIG_I8237_CH1, 1);
 	gdc->set_vram_ptr(display->get_vram(), VRAM_SIZE);
 	// IR5 of I8259 #0 is from light pen
-	fdc->set_context_intr(pic, SIG_I8259_IR6 | SIG_I8259_CHIP0, 1);
+	fdc->set_context_irq(pic, SIG_I8259_IR6 | SIG_I8259_CHIP0, 1);
 	fdc->set_context_drq(dma0, SIG_I8237_CH0, 1);
 	sio->set_context_intr(pic, SIG_I8259_IR4 | SIG_I8259_CHIP0);
 	sio->set_context_send0(keyboard, SIG_KEYBOARD_RECV);

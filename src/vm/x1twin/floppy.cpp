@@ -9,12 +9,13 @@
 */
 
 #include "floppy.h"
+#include "../mb8877.h"
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
 	// $ffc
-	d_fdc->write_signal(did_drv, data, 3);
-	d_fdc->write_signal(did_side, data, 0x10);
-	d_fdc->write_signal(did_motor, data, 0x80);
+	d_fdc->write_signal(SIG_MB8877_DRIVEREG, data, 0x03);
+	d_fdc->write_signal(SIG_MB8877_SIDEREG, data, 0x10);
+	d_fdc->write_signal(SIG_MB8877_MOTOR, data, 0x80);
 }
 

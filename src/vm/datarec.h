@@ -20,21 +20,14 @@
 
 class FILEIO;
 
-#define BUFFER_SIZE 0x20000
-
-static uint8 header[44] = {
-	'R' , 'I' , 'F' , 'F' , 0x00, 0x00, 0x00, 0x00, 'W' , 'A' , 'V' , 'E' , 'f' , 'm' , 't' , ' ' ,
-	0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x80, 0xbb, 0x00, 0x00, 0x80, 0xbb, 0x00, 0x00,
-	0x01, 0x00, 0x08, 0x00, 'd' , 'a' , 't' , 'a' , 0x00, 0x00, 0x00, 0x00
-};
+#define DATAREC_BUFFER_SIZE 0x20000
 
 class DATAREC : public DEVICE
 {
 private:
-	DEVICE *d_out[MAX_OUTPUT], *d_remote[MAX_OUTPUT];
-	int did_out[MAX_OUTPUT], did_remote[MAX_OUTPUT];
-	int dcount_out, dcount_remote;
-	uint32 dmask_out[MAX_OUTPUT], dmask_remote[MAX_OUTPUT];
+	// output signals
+	outputs_t outputs_out;
+	outputs_t outputs_remote;
 	
 	// data recorder
 	FILEIO* fio;
@@ -44,14 +37,15 @@ private:
 	
 	int bufcnt, samples;
 	uint32 remain;
-	uint8 buffer[BUFFER_SIZE];
+	uint8 buffer[DATAREC_BUFFER_SIZE];
 	
 	void update_event();
 	bool check_extension(_TCHAR* filename);
 	
 public:
 	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_out = dcount_remote = 0;
+		init_output_signals(&outputs_out);
+		init_output_signals(&outputs_remote);
 	}
 	~DATAREC() {}
 	
@@ -67,12 +61,10 @@ public:
 	
 	// unique functions
 	void set_context_out(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_out++;
-		d_out[c] = device; did_out[c] = id; dmask_out[c] = mask;
+		regist_output_signal(&outputs_out, device, id, mask);
 	}
 	void set_context_remote(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_remote++;
-		d_remote[c] = device; did_remote[c] = id; dmask_remote[c] = mask;
+		regist_output_signal(&outputs_remote, device, id, mask);
 	}
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);

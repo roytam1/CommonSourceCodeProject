@@ -19,26 +19,20 @@
 #define SIG_MB8877_SIDEREG	1
 #define SIG_MB8877_MOTOR	2
 
-#define DRIVE_MASK	(MAX_DRIVE - 1)
-
-// 6msec, 12msec, 20msec, 30msec
-static const int seek_wait[4] = {6000, 12000, 20000, 30000};
-
 class DISK;
 
 class MB8877 : public DEVICE
 {
 private:
-	DEVICE *d_irq[MAX_OUTPUT], *d_drq[MAX_OUTPUT];
-	int did_irq[MAX_OUTPUT], did_drq[MAX_OUTPUT];
-	uint32 dmask_irq[MAX_OUTPUT], dmask_drq[MAX_OUTPUT];
-	int dcount_irq, dcount_drq;
-	
 	// config
 	bool ignore_crc;
 	
 	// disk info
 	DISK* disk[MAX_DRIVE];
+	
+	// output signals
+	outputs_t outputs_irq;
+	outputs_t outputs_drq;
 	
 	// drive info
 	typedef struct {
@@ -96,7 +90,8 @@ private:
 	
 public:
 	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_irq = dcount_drq = 0;
+		init_output_signals(&outputs_irq);
+		init_output_signals(&outputs_drq);
 	}
 	~MB8877() {}
 	
@@ -115,12 +110,10 @@ public:
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_irq++;
-		d_irq[c] = device; did_irq[c] = id; dmask_irq[c] = mask;
+		regist_output_signal(&outputs_irq, device, id, mask);
 	}
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_drq++;
-		d_drq[c] = device; did_drq[c] = id; dmask_drq[c] = mask;
+		regist_output_signal(&outputs_drq, device, id, mask);
 	}
 	DISK* get_disk_handler(int drv) {
 		return disk[drv];

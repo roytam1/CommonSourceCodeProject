@@ -88,8 +88,9 @@ void PCE::event_callback(int event_id, int err)
 	// update timer
 	if(timer_const) {
 		if(--timer_count <= 0) {
-			if(timer_run)
+			if(timer_run) {
 				int_request(INT_TIRQ);
+			}
 			timer_count = timer_const;
 		}
 	}
@@ -104,8 +105,9 @@ void PCE::event_vline(int v, int clock)
 	// init screen
 	if(!vdc_scanline) {
 		for(int y = vdc_minline; y < vdc_maxline; y++) {
-			for(int x = 8; x < PCE_WIDTH + 8; x++)
+			for(int x = 8; x < PCE_WIDTH + 8; x++) {
 				screen[y][x] = palette_bg[0];
+			}
 		}
 		_memset(mask_spr[vdc_minline], 0, (vdc_maxline - vdc_minline) * PCE_WIDTH);
 	}
@@ -113,8 +115,9 @@ void PCE::event_vline(int v, int clock)
 	// update status
 	bool intr = false;
 	vdc_status &= ~VDC_STAT_RR;
-	if(vdc_scanline > vdc_maxline)
+	if(vdc_scanline > vdc_maxline) {
 		vdc_status |= VDC_STAT_VD;
+	}
 	if(vdc_scanline == vdc_minline) {
 		vdc_status &= ~VDC_STAT_VD;
 		prv_scanline = dispmin;
@@ -139,16 +142,20 @@ void PCE::event_vline(int v, int clock)
 				break;
 			}
 		}
-		if(hit)
+		if(hit) {
 			vdc_status |= VDC_STAT_CR;
-		else
+		}
+		else {
 			vdc_status &= ~VDC_STAT_CR;
+		}
 		if(prv_scanline < dispmax) {
-			if(VDC_SpriteON)
+			if(VDC_SpriteON) {
 				vdc_refresh_sprite(prv_scanline, dispmax, 0);
+			}
 			vdc_refresh_line(prv_scanline, dispmax);
-			if(VDC_SpriteON)
+			if(VDC_SpriteON) {
 				vdc_refresh_sprite(prv_scanline, dispmax, 1);
+			}
 		}
 		prv_scanline = dispmax + 1;
 		// store display range
@@ -162,17 +169,20 @@ void PCE::event_vline(int v, int clock)
 		if(vdc_scanline == (vdc[VDC_RCR].w & 0x3ff) - 64) {
 			if(VDC_RasHitON && dispmin <= vdc_scanline && vdc_scanline <= dispmax) {
 				if(prv_scanline < dispmax) {
-					if(VDC_SpriteON)
+					if(VDC_SpriteON) {
 						vdc_refresh_sprite(prv_scanline, vdc_scanline, 0);
+					}
 					vdc_refresh_line(prv_scanline, vdc_scanline);
-					if(VDC_SpriteON)
+					if(VDC_SpriteON) {
 						vdc_refresh_sprite(prv_scanline, vdc_scanline, 1);
+					}
 				}
 				prv_scanline = vdc_scanline;
 			}
 			vdc_status |= VDC_STAT_RR;
-			if(VDC_RasHitON)
+			if(VDC_RasHitON) {
 				intr = true;
+			}
 		}
 		else if(vdc_scroll) {
 			if(vdc_scanline - 1 > prv_scanline) {
@@ -182,11 +192,13 @@ void PCE::event_vline(int v, int clock)
 				vdc[VDC_BXR].w = prv_scroll_x;
 				vdc[VDC_BYR].w = prv_scroll_y;
 				vdc_scroll_ydiff = prv_scroll_ydiff;
-				if(VDC_SpriteON)
+				if(VDC_SpriteON) {
 					vdc_refresh_sprite(prv_scanline, vdc_scanline - 1, 0);
+				}
 				vdc_refresh_line(prv_scanline, vdc_scanline - 1);
-				if(VDC_SpriteON)
+				if(VDC_SpriteON) {
 					vdc_refresh_sprite(prv_scanline, vdc_scanline - 1, 1);
+				}
 				prv_scanline = vdc_scanline - 1;
 				vdc[VDC_BXR].w = tmpx;
 				vdc[VDC_BYR].w = tmpy;
@@ -211,28 +223,34 @@ void PCE::event_vline(int v, int clock)
 			vdc_satb = true;
 			vdc_status &= ~VDC_STAT_DS;
 		}
-		if(intr)
+		if(intr) {
 			vdc_pendvsync = true;
-		else if(VDC_VBlankON)
+		}
+		else if(VDC_VBlankON) {
 			intr = true;
+		}
 	}
 	else if(vdc_scanline == min(vdc_maxline + 5, PCE_LINES_PER_FRAME - 1)) {
 		if(vdc_satb) {
 			vdc_status |= VDC_STAT_DS;
 			vdc_satb = false;
-			if(VDC_SATBIntON)
+			if(VDC_SATBIntON) {
 				intr = true;
+			}
 		}
 	}
 	else if(vdc_pendvsync && !intr) {
 		vdc_pendvsync = false;
-		if(VDC_VBlankON)
+		if(VDC_VBlankON) {
 			intr = true;
+		}
 	}
-	if(intr)
+	if(intr) {
 		int_request(INT_IRQ1);
-//	else
+	}
+//	else {
 //		int_cancel(INT_IRQ1);
+//	}
 }
 
 void PCE::write_data8(uint32 addr, uint32 data)
@@ -240,8 +258,7 @@ void PCE::write_data8(uint32 addr, uint32 data)
 	uint8 mpr = (addr >> 13) & 0xff;
 	uint16 ofs = addr & 0x1fff;
 	
-	switch(mpr)
-	{
+	switch(mpr) {
 	case 0x40:
 	case 0x41:
 	case 0x42:
@@ -262,8 +279,7 @@ void PCE::write_data8(uint32 addr, uint32 data)
 //		ram[addr & 0x7fff] = data;
 		return;
 	case 0xff:
-		switch(addr & 0x1c00)
-		{
+		switch(addr & 0x1c00) {
 		case 0x0000:	// vdc
 			vdc_write(ofs, data);
 			break;
@@ -290,8 +306,9 @@ void PCE::write_data8(uint32 addr, uint32 data)
 		return;
 	}
 	// bank switch for sf2d
-	if((addr & 0x1ffc) == 0x1ff0)
+	if((addr & 0x1ffc) == 0x1ff0) {
 		bank = 0x80000 * ((addr & 3) + 1);
+	}
 }
 
 uint32 PCE::read_data8(uint32 addr)
@@ -299,12 +316,13 @@ uint32 PCE::read_data8(uint32 addr)
 	uint8 mpr = (addr >> 13) & 0xff;
 	uint16 ofs = addr & 0x1fff;
 	
-	if(mpr <= 0x3f)
+	if(mpr <= 0x3f) {
 		return cart[addr & 0x7ffff];
-	if(mpr <= 0x7f)
+	}
+	if(mpr <= 0x7f) {
 		return cart[bank | (addr & 0x7ffff)];
-	switch(mpr)
-	{
+	}
+	switch(mpr) {
 //	case 0xf7:
 //		if(ofs < 0x800)
 //			return backup[ofs];
@@ -316,8 +334,7 @@ uint32 PCE::read_data8(uint32 addr)
 //	case 0xfb:
 //		return ram[addr & 0x7fff];
 	case 0xff:
-		switch (addr & 0x1c00)
-		{
+		switch (addr & 0x1c00) {
 		case 0x0000: // vdc
 			return vdc_read(ofs);
 		case 0x0400: // vce
@@ -329,8 +346,9 @@ uint32 PCE::read_data8(uint32 addr)
 			buffer = (buffer & 0x80) | timer_read(ofs);
 			return buffer;
 		case 0x1000: // joypad
-			if(joy_nibble)
+			if(joy_nibble) {
 				joy_count = (joy_count + 1) & 15;
+			}
 			buffer = joy_read(ofs);
 			return buffer;
 		case 0x1400: // interrupt control
@@ -350,8 +368,9 @@ void PCE::draw_screen()
 	for(int y = vdc_dispmin; y < vdc_dispmax; y++, dy++) {
 		scrntype* src = &screen[y][8];
 		scrntype* dst = emu->screen_buffer(dy) + dx;
-		for(int x = 0; x < vdc_dispwidth; x++)
+		for(int x = 0; x < vdc_dispwidth; x++) {
 			dst[x] = src[x];
+		}
 	}
 }
 
@@ -405,16 +424,14 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 	uint8 bgw[] = {32, 64, 128, 128};
 	uint8 incsize[] = {1, 32, 64, 128};
 	
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 		vdc_ch = data & 31;
 		break;
 	case 1:
 		break;
 	case 2:
-		switch(vdc_ch)
-		{
+		switch(vdc_ch) {
 		case VDC_VWR:
 			vdc_ratch = data;
 			return;
@@ -448,8 +465,7 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 		vdc[vdc_ch].b.l = data;
 		break;
 	case 3:
-		switch(vdc_ch)
-		{
+		switch(vdc_ch) {
 		case VDC_VWR:
 			vram[vdc[VDC_MAWR].w * 2 + 0] = vdc_ratch;
 			vram[vdc[VDC_MAWR].w * 2 + 1] = data;
@@ -512,8 +528,7 @@ uint8 PCE::vdc_read(uint16 addr)
 {
 	uint8 val;
 	
-	switch(addr & 3 )
-	{
+	switch(addr & 3 ) {
 	case 0:
 		val = vdc_status;
 		vdc_status = 0;
@@ -521,26 +536,28 @@ uint8 PCE::vdc_read(uint16 addr)
 	case 1:
 		return 0;
 	case 2:
-		if(vdc_ch == VDC_VRR)
+		if(vdc_ch == VDC_VRR) {
 			return vram[vdc[VDC_MARR].w * 2];
-		else
+		}
+		else {
 			return vdc[vdc_ch].b.l;
+		}
 	case 3:
 		if(vdc_ch == VDC_VRR) {
 			val = vram[vdc[VDC_MARR].w * 2 + 1];
 			vdc[VDC_MARR].w += vdc_inc;
 			return val;
 		}
-		else
+		else {
 			return vdc[vdc_ch].b.h;
+		}
 	}
 	return 0xff;
 }
 
 void PCE::vce_write(uint16 addr, uint8 data)
 {
-	switch(addr & 7)
-	{
+	switch(addr & 7) {
 	case 2:
 		vce_reg.b.l = data;
 		break;
@@ -563,8 +580,7 @@ uint8 PCE::vce_read(uint16 addr)
 {
 	uint8 val;
 	
-	switch(addr & 7)
-	{
+	switch(addr & 7) {
 	case 4:
 		return vce[vce_reg.w & 0x1ff].b.l;
 	case 5:
@@ -584,11 +600,13 @@ void PCE::vce_update_pal(int num)
 	scrntype col = RGB_COLOR(r << 5, g << 5, b << 5);
 	
 	if(!num) {
-		for(int i = 0; i < 256; i += 16)
+		for(int i = 0; i < 256; i += 16) {
 			pal[i] = col;
+		}
 	}
-	else if(num & 0xf)
+	else if(num & 0x0f) {
 		pal[num & 0xff] = col;
+	}
 }
 
 void PCE::vdc_refresh_line(int sy, int ey)
@@ -616,8 +634,9 @@ void PCE::vdc_refresh_line(int sy, int ey)
 				uint8* src = &vram[no * 32 + yofs * 2];
 				for(int i = 0; i < h; i++, pixel++, src+=2) {
 					uint8 pat = src[0] | src[1] | src[16] | src[17];
-					if(!pat)
+					if(!pat) {
 						continue;
+					}
 					scrntype* dst = &screen[y + i][x * 8 + xofs];
 					uint32 col = pixel[0];
 					if(pat & 0x80) dst[0] = pal[(col >>  4) & 0xf];
@@ -640,13 +659,15 @@ void PCE::vdc_refresh_line(int sy, int ey)
 void PCE::vdc_refresh_sprite(int sy, int ey, int bg)
 {
 	sprtype* spr = (sprtype*)spram + 63;
-	if(!bg)
+	if(!bg) {
 		vdc_spbg = false;
+	}
 	for(int n = 0; n < 64; n++, spr--){
 		int atr = spr->atr;
 		int spbg = (atr >> 7) & 1;
-		if(spbg != bg)
+		if(spbg != bg) {
 			continue;
+		}
 		int x = (spr->x & 0x3ff) - 32;
 		int y = (spr->y & 0x3ff) - 64;
 		int no = spr->no & 0x7ff;
@@ -654,17 +675,18 @@ void PCE::vdc_refresh_sprite(int sy, int ey, int bg)
 		int cgy = (atr >> 12) & 3;
 		cgy |= cgy >> 1;
 		no = (no >> 1) & ~(cgy * 2 + cgx);
-		if(y >= ey || y + (cgy + 1) * 16 < sy || x >= vdc_screen_w || x + (cgx + 1) *16 < 0)
+		if(y >= ey || y + (cgy + 1) * 16 < sy || x >= vdc_screen_w || x + (cgx + 1) *16 < 0) {
 			continue;
-		
+		}
 		scrntype* pal = &palette_spr[(atr & 0xf) * 16];
 		for(int i = 0; i < cgy * 2 + cgx + 1; i++) {
 			if(vchanges[no + i]) {
 				vchanges[no + i] = 0;
 				vdc_sp2pixel(no + i);
 			}
-			if(!cgx)
+			if(!cgx) {
 				i++;
+			}
 		}
 		uint8* src = &vram[no * 128];
 		uint32* pixel = &pixel_spr[no * 32];
@@ -685,37 +707,44 @@ void PCE::vdc_refresh_sprite(int sy, int ey, int bg)
 				h -= t;
 				yy += t;
 			}
-			if(h > ey - y - ysum)
+			if(h > ey - y - ysum) {
 				h = ey - y - ysum;
+			}
 			if(!spbg) {
 				vdc_spbg = true;
 				if(atr & 0x800) {
-					for(int j = 0; j <= cgx; j++)
+					for(int j = 0; j <= cgx; j++) {
 						vdc_put_sprite_hflip_makemask(&screen[yy][x + (cgx - j) * 16 + 8], src + j * 128, pixel + j * 32, pal, h, inc, &mask_spr[yy][x + (cgx - j) * 16], n);
+					}
 				}
 				else {
-					for(int j = 0; j <= cgx; j++)
+					for(int j = 0; j <= cgx; j++) {
 						vdc_put_sprite_makemask(&screen[yy][x + j * 16 + 8], src + j * 128, pixel + j * 32, pal, h, inc, &mask_spr[yy][x + j * 16], n);
+					}
 				}
 			}
 			else if(vdc_spbg) {
 				if(atr & 0x800) {
-					for(int j = 0; j <= cgx; j++)
+					for(int j = 0; j <= cgx; j++) {
 						vdc_put_sprite_hflip_mask(&screen[yy][x + (cgx - j) * 16 + 8], src + j * 128, pixel + j * 32, pal, h, inc, &mask_spr[yy][x + (cgx - j) * 16], n);
+					}
 				}
 				else {
-					for(int j = 0; j <= cgx; j++)
+					for(int j = 0; j <= cgx; j++) {
 						vdc_put_sprite_mask(&screen[yy][x + j * 16 + 8], src + j * 128, pixel + j * 32, pal, h, inc, &mask_spr[yy][x + j * 16], n);
+					}
 				}
 			}
 			else {
 				if(atr & 0x800){
-					for(int j = 0; j <= cgx; j++)
+					for(int j = 0; j <= cgx; j++) {
 						vdc_put_sprite_hflip(&screen[yy][x + (cgx - j) * 16 + 8], src + j * 128, pixel + j * 32, pal, h, inc);
+					}
 				}
 				else {
-					for(int j = 0; j <= cgx; j++)
+					for(int j = 0; j <= cgx; j++) {
 						vdc_put_sprite(&screen[yy][x + j * 16 + 8], src + j * 128, pixel + j * 32, pal, h, inc);
+					}
 				}
 			}
 			yy += h;
@@ -730,8 +759,9 @@ void PCE::vdc_put_sprite(scrntype *dst, uint8 *src, uint32 *pixel, scrntype *pal
 {
 	for(int i = 0; i < h; i++, src += inc, pixel += inc, dst += PCE_WIDTH + 8) {
 		uint16 pat = ((uint16*)src)[0] | ((uint16*)src)[16] | ((uint16*)src)[32] | ((uint16*)src)[48];
-		if(!pat)
+		if(!pat) {
 			continue;
+		}
 		uint32 col = pixel[1];
 		if(pat & 0x8000) dst[ 0] = pal[(col >>  4) & 0xf];
 		if(pat & 0x4000) dst[ 1] = pal[(col >> 12) & 0xf];
@@ -757,8 +787,9 @@ void PCE::vdc_put_sprite_hflip(scrntype *dst, uint8 *src, uint32 *pixel, scrntyp
 {
 	for(int i = 0; i < h; i++, src += inc, pixel += inc, dst += PCE_WIDTH + 8) {
 		uint16 pat = ((uint16*)src)[0] | ((uint16*)src)[16] | ((uint16*)src)[32] | ((uint16*)src)[48];
-		if(!pat)
+		if(!pat) {
 			continue;
+		}
 		uint32 col = pixel[1];
 		if(pat & 0x8000) dst[15] = pal[(col >>  4) & 0xf];
 		if(pat & 0x4000) dst[14] = pal[(col >> 12) & 0xf];
@@ -784,8 +815,9 @@ void PCE::vdc_put_sprite_mask(scrntype *dst, uint8 *src, uint32 *pixel, scrntype
 {
 	for(int i = 0; i < h; i++, src += inc, pixel += inc, dst += PCE_WIDTH + 8, mask += PCE_WIDTH) {
 		uint16 pat = ((uint16*)src)[0] | ((uint16*)src)[16] | ((uint16*)src)[32] | ((uint16*)src)[48];
-		if(!pat)
+		if(!pat) {
 			continue;
+		}
 		uint32 col = pixel[1];
 		if((pat & 0x8000) && mask[ 0] <= pr) dst[ 0] = pal[(col >>  4) & 0xf];
 		if((pat & 0x4000) && mask[ 1] <= pr) dst[ 1] = pal[(col >> 12) & 0xf];
@@ -811,8 +843,9 @@ void PCE::vdc_put_sprite_hflip_mask(scrntype *dst, uint8 *src, uint32 *pixel, sc
 {
 	for(int i = 0; i < h; i++, src += inc, pixel += inc, dst += PCE_WIDTH + 8, mask += PCE_WIDTH) {
 		uint16 pat = ((uint16*)src)[0] | ((uint16*)src)[16] | ((uint16*)src)[32] | ((uint16*)src)[48];
-		if(!pat)
+		if(!pat) {
 			continue;
+		}
 		uint32 col = pixel[1];
 		if((pat & 0x8000) && mask[15] <= pr) dst[15] = pal[(col >>  4) & 0xf];
 		if((pat & 0x4000) && mask[14] <= pr) dst[14] = pal[(col >> 12) & 0xf];
@@ -838,8 +871,9 @@ void PCE::vdc_put_sprite_makemask(scrntype *dst, uint8 *src, uint32 *pixel, scrn
 {
 	for(int i = 0; i < h; i++, src += inc, pixel += inc, dst += PCE_WIDTH + 8, mask += PCE_WIDTH) {
 		uint16 pat = ((uint16*)src)[0] | ((uint16*)src)[16] | ((uint16*)src)[32] | ((uint16*)src)[48];
-		if(!pat)
+		if(!pat) {
 			continue;
+		}
 		uint32 col = pixel[1];
 		if(pat & 0x8000) {dst[ 0] = pal[(col >>  4) & 0xf]; mask[ 0] = pr;}
 		if(pat & 0x4000) {dst[ 1] = pal[(col >> 12) & 0xf]; mask[ 1] = pr;}
@@ -865,8 +899,9 @@ void PCE::vdc_put_sprite_hflip_makemask(scrntype *dst,uint8 *src,uint32 *pixel,s
 {
 	for(int i = 0; i < h; i++, src += inc, pixel += inc, dst += PCE_WIDTH + 8, mask += PCE_WIDTH) {
 		uint16 pat = ((uint16*)src)[0] | ((uint16*)src)[16] | ((uint16*)src)[32] | ((uint16*)src)[48];
-		if(!pat)
+		if(!pat) {
 			continue;
+		}
 		uint32 col = pixel[1];
 		if(pat & 0x8000) {dst[15] = pal[(col >>  4) & 0xf]; mask[15] = pr;}
 		if(pat & 0x4000) {dst[14] = pal[(col >> 12) & 0xf]; mask[14] = pr;}
@@ -927,8 +962,9 @@ void PCE::vdc_sp2pixel(int no)
 void PCE::psg_reset()
 {
 	_memset(psg, 0, sizeof(psg));
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 6; i++) {
 		psg[i].regs[4] = 0x80;
+	}
 	psg[4].randval = psg[5].randval = 0x51f631e4;
 	
 	psg_ch = 0;
@@ -937,8 +973,7 @@ void PCE::psg_reset()
 
 void PCE::psg_write(uint16 addr, uint8 data)
 {
-	switch(addr & 0x1f)
-	{
+	switch(addr & 0x1f) {
 	case 0:
 		psg_ch = data & 7;
 		break;
@@ -959,8 +994,9 @@ void PCE::psg_write(uint16 addr, uint8 data)
 		psg[psg_ch].regs[5] = data;
 		break;
 	case 6:
-		if(psg[psg_ch].regs[4] & 0x40)
+		if(psg[psg_ch].regs[4] & 0x40) {
 			psg[psg_ch].wav[0] =data & 0x1f;
+		}
 		else {
 			psg[psg_ch].wav[psg[psg_ch].wavptr] = data & 0x1f;
 			psg[psg_ch].wavptr = (psg[psg_ch].wavptr + 1) & 0x1f;
@@ -982,8 +1018,7 @@ uint8 PCE::psg_read(uint16 addr)
 {
 	int ptr;
 	
-	switch(addr & 0x1f)
-	{
+	switch(addr & 0x1f) {
 	case 0:
 		return psg_ch;
 	case 1:
@@ -1028,8 +1063,9 @@ void PCE::mix(int32* buffer, int cnt)
 			int32 vol = max((psg_vol >> 3) & 0x1e, (psg_vol << 1) & 0x1e) + (psg[ch].regs[4] & 0x1f) + max((psg[ch].regs[5] >> 3) & 0x1e, (psg[ch].regs[5] << 1) & 0x1e) - 60;
 			vol = (vol < 0) ? 0 : (vol > 31) ? 31 : vol;
 			vol = wav * vol_tbl[vol] / 16384;
-			for(int i = 0; i < cnt; i++)
+			for(int i = 0; i < cnt; i++) {
 				buffer[i] += vol;
+			}
 		}
 		else if(ch >= 4 && (psg[ch].regs[7] & 0x80)) {
 			// noise
@@ -1056,8 +1092,9 @@ void PCE::mix(int32* buffer, int cnt)
 		}
 		else {
 			int32 wav[32];
-			for(int i = 0; i < 32; i++)
+			for(int i = 0; i < 32; i++) {
 				wav[i] = ((int32)psg[ch].wav[i] - 16) * 702;
+			}
 			uint32 freq = psg[ch].regs[2] + ((uint32)psg[ch].regs[3] << 8);
 			if(freq) {
 				int32 vol = max((psg_vol >> 3) & 0x1e, (psg_vol << 1) & 0x1e) + (psg[ch].regs[4] & 0x1f) + max((psg[ch].regs[5] >> 3) & 0x1e, (psg[ch].regs[5] << 1) & 0x1e) - 60;
@@ -1084,14 +1121,14 @@ void PCE::timer_reset()
 
 void PCE::timer_write(uint16 addr, uint8 data)
 {
-	switch(addr & 1)
-	{
+	switch(addr & 1) {
 	case 0:
 		timer_const = (data & 0x7f) + 1;
 		break;
 	case 1:
-		if(!timer_run)
+		if(!timer_run) {
 			timer_count = timer_const;
+		}
 		timer_run = data & 1;
 		break;
 	}
@@ -1125,11 +1162,12 @@ uint8 PCE::joy_read(uint16 addr)
 	uint8 val = 0xf;
 	uint16 stat = 0;
 	
-	if(!joy_count)
+	if(!joy_count) {
 		return 0;
-	if(joy_count > 5)
+	}
+	if(joy_count > 5) {
 		return 0xf;
-	
+	}
 	if(joy_count == 1) {
 		stat = joy_stat[0];
 		if(key_stat[0x26]) stat |= 0x001;	// up
@@ -1145,9 +1183,9 @@ uint8 PCE::joy_read(uint16 addr)
 		if(key_stat[0x57]) stat |= 0x400;	// w (5)
 		if(key_stat[0x45]) stat |= 0x800;	// e (6)
 	}
-	else if(joy_count == 2)
+	else if(joy_count == 2) {
 		stat = joy_stat[1];
-	
+	}
 	if(joy_second) {
 		if(joy_nibble) {
 			if(stat & 0x001) val &= ~1;	// up
@@ -1163,8 +1201,9 @@ uint8 PCE::joy_read(uint16 addr)
 		}
 	}
 	else {
-		if(joy_nibble)
+		if(joy_nibble) {
 			val = 0;
+		}
 		else {
 			if(stat & 0x100) val &= ~1;	// b3
 			if(stat & 0x200) val &= ~2;	// b4
@@ -1172,8 +1211,9 @@ uint8 PCE::joy_read(uint16 addr)
 			if(stat & 0x800) val &= ~8;	// b6
 		}
 	}
-	if(joy_count == 5)
+	if(joy_count == 5) {
 		joy_second = 0;
+	}
 	return val;
 }
 
@@ -1181,28 +1221,34 @@ uint8 PCE::joy_read(uint16 addr)
 
 void PCE::int_request(uint8 val)
 {
-	if(val & INT_IRQ2)
+	if(val & INT_IRQ2) {
 		d_cpu->write_signal(did_irq2, 1, 1);
-	if(val & INT_IRQ1)
+	}
+	if(val & INT_IRQ1) {
 		d_cpu->write_signal(did_irq1, 1, 1);
-	if(val & INT_TIRQ)
+		
+	}
+	if(val & INT_TIRQ) {
 		d_cpu->write_signal(did_tirq, 1, 1);
+	}
 }
 
 void PCE::int_cancel(uint8 val)
 {
-	if(val & INT_IRQ2)
+	if(val & INT_IRQ2) {
 		d_cpu->write_signal(did_irq2, 0, 0);
-	if(val & INT_IRQ1)
+	}
+	if(val & INT_IRQ1) {
 		d_cpu->write_signal(did_irq1, 0, 0);
-	if(val & INT_TIRQ)
+	}
+	if(val & INT_TIRQ) {
 		d_cpu->write_signal(did_tirq, 0, 0);
+	}
 }
 
 void PCE::int_write(uint16 addr, uint8 data)
 {
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 2:
 		d_cpu->write_signal(did_intmask, data, 7);
 		break;
@@ -1214,8 +1260,7 @@ void PCE::int_write(uint16 addr, uint8 data)
 
 uint8 PCE::int_read(uint16 addr)
 {
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 2:
 		return d_cpu->read_signal(did_intmask);
 	case 3:

@@ -104,7 +104,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_memory(memory);
 	dma->set_context_ch2(fdc);	// 1MB
 	dma->set_context_ch3(fdc);	// 640KB
-	fdc->set_context_intr(pic, SIG_I8259_IR6, 1);
+	fdc->set_context_irq(pic, SIG_I8259_IR6, 1);
 	fdc->set_context_drq(dma, SIG_UPD71071_CH3, 1);
 	
 	bios->set_context_fdc(fdc);

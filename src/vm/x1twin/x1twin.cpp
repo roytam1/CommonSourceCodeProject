@@ -18,7 +18,9 @@
 #include "../mb8877.h"
 #include "../ym2203.h"
 #include "../z80.h"
-//#include "../z80ctc.h"
+#ifdef _X1TURBO
+#include "../z80ctc.h"
+#endif
 
 #include "display.h"
 #include "floppy.h"
@@ -28,8 +30,10 @@
 #include "memory.h"
 #include "sub.h"
 
+#ifdef _X1TWIN
 #include "../huc6260.h"
 #include "pce.h"
+#endif
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -48,7 +52,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc = new MB8877(this, emu);
 	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
-//	ctc = new Z80CTC(this, emu);
+#ifdef _X1TURBO
+	ctc = new Z80CTC(this, emu);
+#endif
 	
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
@@ -66,30 +72,39 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
-//	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
-//	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
-//	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
+#ifdef _X1TURBO
+	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
+	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
+	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
+#endif
 	
 	display->set_context_fdc(fdc);
 	display->set_vram_ptr(io->get_vram());
 	display->set_regs_ptr(crtc->get_regs());
-	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
-	joy->set_context_psg(psg, SIG_YM2203_PORT_A, SIG_YM2203_PORT_B);
-	sub->set_context_pio(pio, SIG_I8255_PORT_B);
+	floppy->set_context_fdc(fdc);
+	joy->set_context_psg(psg);
+	sub->set_context_pio(pio);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-//	cpu->set_context_intr(ctc);
+#ifdef _X1TURBO
+	cpu->set_context_intr(ctc);
+#else
 	cpu->set_context_intr(sub);
+#endif
 	
 	// z80 family daisy chain
-//	ctc->set_context_intr(cpu, 0);
-//	ctc->set_context_child(sub);
+#ifdef _X1TURBO
+	ctc->set_context_intr(cpu, 0);
+	ctc->set_context_child(sub);
+#endif
 	sub->set_context_intr(cpu, 1);
 	
 	// i/o bus
-//	io->set_iomap_range_w(0x704, 0x707, ctc);
+#ifdef _X1TURBO
+	io->set_iomap_range_w(0x704, 0x707, ctc);
+#endif
 	io->set_iomap_range_w(0xe80, 0xe82, kanji);
 	io->set_iomap_range_w(0xff8, 0xffb, fdc);
 	io->set_iomap_single_w(0xffc, floppy);
@@ -111,12 +126,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x2000, 0x27ff, display);	// attr vram 
 	io->set_iomap_range_w(0x3000, 0x37ff, display);	// text vram
 	
-//	io->set_iomap_range_r(0x704, 0x707, ctc);
+#ifdef _X1TURBO
+	io->set_iomap_range_r(0x704, 0x707, ctc);
+#endif
 	io->set_iomap_range_r(0xe80, 0xe81, kanji);
 	io->set_iomap_range_r(0xff8, 0xffb, fdc);
 	io->set_iomap_range_w(0x1000, 0x12ff, display);
 	io->set_iomap_single_r(0x1300, display);
 	io->set_iomap_range_r(0x1400, 0x17ff, display);
+	io->set_iomap_range_r(0x1800, 0x1801, crtc);
 	io->set_iomap_single_r(0x1900, sub);
 	for(int i = 0x1a00; i <= 0x1af0; i += 0x10) {
 		io->set_iomap_range_r(i, i + 2, pio);
@@ -127,6 +145,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0x2000, 0x27ff, display);	// attr vram
 	io->set_iomap_range_r(0x3000, 0x37ff, display);	// text vram
 	
+#ifdef _X1TWIN
 	// init PC Engine
 	pceevent = new EVENT(this, emu);
 	pceevent->set_cpu_clocks(PCE_CPU_CLOCKS);
@@ -141,6 +160,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pceevent->set_context_sound(pce);
 	pce->set_context_cpu(pcecpu, SIG_HUC6260_IRQ2, SIG_HUC6260_IRQ1, SIG_HUC6260_TIRQ, SIG_HUC6260_INTMASK, SIG_HUC6260_INTSTAT);
 	pcecpu->set_context_mem(pce);
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -148,7 +168,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			device->initialize();
 		}
 	}
+#ifdef _X1TWIN
 	pce_running = false;
+#endif
 }
 
 VM::~VM()
@@ -190,9 +212,11 @@ void VM::special_reset()
 void VM::run()
 {
 	event->drive();
+#ifdef _X1TWIN
 	if(pce_running) {
 		pceevent->drive();
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -240,6 +264,7 @@ uint32 VM::get_prv_pc()
 	return cpu->get_prv_pc();
 }
 
+#ifdef _X1TWIN
 void VM::pce_regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* regist_id)
 {
 	pceevent->regist_event(dev, event_id, usec, loop, regist_id);
@@ -280,6 +305,7 @@ uint32 VM::pce_get_prv_pc()
 {
 	return pcecpu->get_prv_pc();
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen
@@ -288,9 +314,11 @@ uint32 VM::pce_get_prv_pc()
 void VM::draw_screen()
 {
 	display->draw_screen();
+#ifdef _X1TWIN
 	if(pce_running) {
 		pce->draw_screen();
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -301,18 +329,24 @@ void VM::initialize_sound(int rate, int samples)
 {
 	// init sound manager
 	event->initialize_sound(rate, samples);
+#ifdef _X1TWIN
 	pceevent->initialize_sound(rate, samples);
+#endif
 	
 	// init sound gen
 	psg->init(rate, 2000000, samples, 0, 0);
+#ifdef _X1TWIN
 	pce->initialize_sound(rate);
+#endif
 }
 
 uint16* VM::create_sound(int samples, bool fill)
 {
+#ifdef _X1TWIN
 	if(pce_running) {
 		return pceevent->create_sound(samples, fill);
 	}
+#endif
 	return event->create_sound(samples, fill);
 }
 
@@ -322,15 +356,24 @@ uint16* VM::create_sound(int samples, bool fill)
 
 void VM::key_down(int code)
 {
+#ifdef _X1TWIN
 	if(!pce_running) {
 		sub->key_down(code);
 	}
+#else
+	sub->key_down(code);
+#endif
 }
 
 void VM::key_up(int code)
 {
-//	if(!pce_running)
-//		sub->key_up(code);
+#ifdef _X1TWIN
+	if(!pce_running) {
+		sub->key_up(code);
+	}
+#else
+	sub->key_up(code);
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -347,6 +390,7 @@ void VM::close_disk(int drv)
 	fdc->close_disk(drv);
 }
 
+#ifdef _X1TWIN
 void VM::open_cart(_TCHAR* filename)
 {
 	pce->open_cart(filename);
@@ -360,6 +404,7 @@ void VM::close_cart()
 	pce->reset();
 	pcecpu->reset();
 }
+#endif
 
 bool VM::now_skip()
 {

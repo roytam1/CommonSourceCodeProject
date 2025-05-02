@@ -10,6 +10,11 @@
 #include "z80sio.h"
 #include "../fifo.h"
 
+#define EVENT_SEND	2
+#define EVENT_RECV	4
+#define DELAY_SEND	2000
+#define DELAY_RECV	2000
+
 void Z80SIO::initialize()
 {
 	for(int ch = 0; ch < 2; ch++) {
@@ -57,12 +62,15 @@ void Z80SIO::reset()
 void Z80SIO::release()
 {
 	for(int ch = 0; ch < 2; ch++) {
-		if(port[ch].send)
+		if(port[ch].send) {
 			delete port[ch].send;
-		if(port[ch].recv)
+		}
+		if(port[ch].recv) {
 			delete port[ch].recv;
-		if(port[ch].rtmp)
+		}
+		if(port[ch].rtmp) {
 			delete port[ch].rtmp;
+		}
 	}
 }
 
@@ -77,14 +85,14 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 {
 	int ch = (addr & 2) ? 1 : 0;
 	
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 	case 2:
 		// send data
 		port[ch].send->write(data);
-		if(port[ch].send_id == -1)
+		if(port[ch].send_id == -1) {
 			vm->regist_event(this, EVENT_SEND + ch, DELAY_SEND, false, &port[ch].send_id);
+		}
 		port[ch].send_intr = false;
 #ifdef UPD7210
 		port[ch].tx_count++;
@@ -95,8 +103,7 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 	case 3:
 		// control
 		if(port[ch].pointer == 0) {
-			switch(data & 0x38)
-			{
+			switch(data & 0x38) {
 			case 0x10:
 				port[ch].under_run = false;
 				port[ch].stat_intr = false;
@@ -104,10 +111,12 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 				break;
 			case 0x18:
 				// channel reset
-				if(port[ch].send_id != -1)
+				if(port[ch].send_id != -1) {
 					vm->cancel_event(port[ch].send_id);
-				if(port[ch].recv_id != -1)
+				}
+				if(port[ch].recv_id != -1) {
 					vm->cancel_event(port[ch].recv_id);
+				}
 				port[ch].nextrecv_intr = false;
 				port[ch].first_data = false;
 				port[ch].over_flow = false;
@@ -160,18 +169,17 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 		else if(port[ch].pointer == 5) {
 			if((uint32)(port[ch].wr[5] & 2) != (data & 2)) {
 				// rts
-				for(int i = 0; i < dcount_rts[ch]; i++)
-					d_rts[ch][i]->write_signal(did_rts[ch][i], (data & 2) ? 0 : 0xffffffff, dmask_rts[ch][i]);
+				write_signals(&port[ch].outputs_rts, (data & 2) ? 0 : 0xffffffff);
 			}
 			if((uint32)(port[ch].wr[5] & 0x80) != (data & 0x80)) {
 				// dtr
-				for(int i = 0; i < dcount_dtr[ch]; i++)
-					d_dtr[ch][i]->write_signal(did_dtr[ch][i], (data & 0x80) ? 0 : 0xffffffff, dmask_dtr[ch][i]);
+				write_signals(&port[ch].outputs_dtr, (data & 0x80) ? 0 : 0xffffffff);
 			}
 		}
 		port[ch].wr[port[ch].pointer] = data;
-		if(port[ch].pointer == 1 || port[ch].pointer == 2)
+		if(port[ch].pointer == 1 || port[ch].pointer == 2) {
 			update_intr();
+		}
 		port[ch].pointer = (port[ch].pointer == 0) ? (data & 7) : 0;
 		break;
 	}
@@ -182,53 +190,63 @@ uint32 Z80SIO::read_io8(uint32 addr)
 	int ch = (addr & 2) ? 1 : 0;
 	uint32 val = 0;
 	
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 	case 2:
 		// recv data;
 		if(port[ch].recv_intr) {
 			// cancel pending interrupt
-			if(--port[ch].recv_intr == 0)
+			if(--port[ch].recv_intr == 0) {
 				update_intr();
+			}
 		}
 		return port[ch].recv->read();
 	case 1:
 	case 3:
 		if(port[ch].pointer == 0) {
-			if(!port[ch].recv->empty())
+			if(!port[ch].recv->empty()) {
 				val |= 1;
+			}
 			if(ch == 0) {
 				for(int c = 0; c < 2; c++) {
-					if(port[c].in_service)
+					if(port[c].in_service) {
 						break;
+					}
 					if(port[c].req_intr) {
 						val |= 2;
 						break;
 					}
 				}
 			}
-			if(ch == 0 && intr)
+			if(ch == 0 && intr) {
 				val |= 2;
-			if(!port[ch].send->full())	// ???
-				val |= 4;
-			if(port[ch].under_run)
+			}
+			if(!port[ch].send->full()) {
+				val |= 4; // ???
+			}
+			if(port[ch].under_run) {
 				val |= 0x40;
+			}
 		}
 		else if(port[ch].pointer == 1) {
 			val = 0x8e;
-			if(port[ch].send->empty())
+			if(port[ch].send->empty()) {
 				val |= 1;
-			if(port[ch].over_flow)
+			}
+			if(port[ch].over_flow) {
 				val |= 0x20;
+			}
 		}
-		else if(port[ch].pointer == 2)
+		else if(port[ch].pointer == 2) {
 			val = port[ch].vector;
+		}
 #ifdef UPD7201
-		else if(port[ch].pointer == 3)
+		else if(port[ch].pointer == 3) {
 			val = port[ch].tx_count & 0xff;
-		else if(port[ch].pointer == 4)
+		}
+		else if(port[ch].pointer == 4) {
 			val = (port[ch].tx_count >> 8) & 0xff;
+		}
 #endif
 		port[ch].pointer = 0;
 		return val;
@@ -243,19 +261,23 @@ void Z80SIO::write_signal(int id, uint32 data, uint32 mask)
 	
 	if(id == SIG_Z80SIO_RECV_CH0 || id == SIG_Z80SIO_RECV_CH1) {
 		// recv data
-		if(!(port[ch].wr[3] & 1))
+		if(!(port[ch].wr[3] & 1)) {
 			return;
-		if(port[ch].recv_id == -1)
+		}
+		if(port[ch].recv_id == -1) {
 			vm->regist_event(this, EVENT_RECV + ch, DELAY_RECV, false, &port[ch].recv_id);
-		if(port[ch].rtmp->empty())
+		}
+		if(port[ch].rtmp->empty()) {
 			port[ch].first_data = true;
+		}
 		port[ch].rtmp->write(data & mask);
 	}
 	else {
 		// clear recv buffer
 		if(data & mask) {
-			if(port[ch].recv_id != -1)
+			if(port[ch].recv_id != -1) {
 				vm->cancel_event(port[ch].recv_id);
+			}
 			port[ch].recv_id = -1;
 			
 			port[ch].recv_intr = 0;
@@ -277,8 +299,7 @@ void Z80SIO::event_callback(int event_id, int err)
 			return;
 		}
 		uint32 data = port[ch].send->read();
-		for(int i = 0; i < dcount_send[ch]; i++)
-			d_send[ch][i]->write_signal(did_send[ch][i], data, 0xff);
+		write_signals(&port[ch].outputs_send, data);
 		if(port[ch].send->empty()) {
 			// under flow
 			if(!port[ch].under_run) {
@@ -308,20 +329,24 @@ void Z80SIO::event_callback(int event_id, int err)
 			// no error
 			port[ch].recv->write(port[ch].rtmp->read());
 			bool req = false;
-			if((port[ch].wr[1] & 0x18) == 8 && (port[ch].first_data || port[ch].nextrecv_intr))
+			if((port[ch].wr[1] & 0x18) == 8 && (port[ch].first_data || port[ch].nextrecv_intr)) {
 				req = true;
-			else if(port[ch].wr[1] & 0x10)
+			}
+			else if(port[ch].wr[1] & 0x10) {
 				req = true;
+			}
 			if(req) {
 				port[ch].recv_intr++;
 				update_intr();
 			}
 			port[ch].first_data = port[ch].nextrecv_intr = false;
 		}
-		if(port[ch].rtmp->empty())
+		if(port[ch].rtmp->empty()) {
 			port[ch].recv_id = -1;
-		else
+		}
+		else {
 			vm->regist_event(this, EVENT_RECV + ch, DELAY_RECV, false, &port[ch].recv_id);
+		}
 	}
 }
 
@@ -383,23 +408,27 @@ void Z80SIO::update_intr()
 #ifdef UPD7201
 		uint8 affect = 7;	// no interrupt pending
 		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service)
+			if(port[ch].in_service) {
 				break;
+			}
 			if(port[ch].req_intr) {
 				affect = port[ch].affect;
 				break;
 			}
 		}
 		uint8 mode = port[0].wr[2] & 0x38;
-		if(mode == 0 || mode == 8 || mode == 0x20 || mode == 0x28 || mode == 0x38)
+		if(mode == 0 || mode == 8 || mode == 0x20 || mode == 0x28 || mode == 0x38) {
 			port[1].vector = (port[1].wr[2] & 0xe3) | (affect << 2);	// 8085
-		else
+		}
+		else {
 			port[1].vector = (port[1].wr[2] & 0xf8) | (affect << 0);	// 8086
+		}
 #else
 		uint8 affect = 3;	// no interrupt pending
 		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service)
+			if(port[ch].in_service) {
 				break;
+			}
 			if(port[ch].req_intr) {
 				affect = port[ch].affect;
 				break;
@@ -415,8 +444,9 @@ void Z80SIO::update_intr()
 	if(next = iei) {
 		next = false;
 		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service)
+			if(port[ch].in_service) {
 				break;
+			}
 			if(port[ch].req_intr) {
 				next = true;
 				break;
@@ -425,8 +455,9 @@ void Z80SIO::update_intr()
 	}
 	if(next != intr) {
 		intr = next;
-		if(d_cpu)
+		if(d_cpu) {
 			d_cpu->set_intr_line(intr, true, intr_bit);
+		}
 	}
 }
 
@@ -435,8 +466,9 @@ uint32 Z80SIO::intr_ack()
 	// ack (M1=IORQ=L)
 	if(intr) {
 		for(int ch = 0; ch < 2; ch++) {
-			if(port[ch].in_service)
+			if(port[ch].in_service) {
 				break;
+			}
 			// priority is error > receive > status > send ???
 			if(port[ch].err_intr) {
 				port[ch].err_intr = false;
@@ -464,8 +496,9 @@ uint32 Z80SIO::intr_ack()
 //		emu->out_debug(_T("Z80SIO : intr_ack()\n"));
 		return 0xff;
 	}
-	if(d_child)
+	if(d_child) {
 		return d_child->intr_ack();
+	}
 	return 0xff;
 }
 
@@ -479,7 +512,8 @@ void Z80SIO::intr_reti()
 			return;
 		}
 	}
-	if(d_child)
+	if(d_child) {
 		d_child->intr_reti();
+	}
 }
 

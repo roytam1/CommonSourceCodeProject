@@ -22,12 +22,6 @@
 class I8155 : public DEVICE
 {
 private:
-	DEVICE *d_pio[3][MAX_OUTPUT], *d_timer[MAX_OUTPUT];
-	int did_pio[3][MAX_OUTPUT], did_timer[MAX_OUTPUT];
-	int dshift_pio[3][MAX_OUTPUT];
-	int dcount_pio[3], dcount_timer;
-	uint32 dmask_pio[3][MAX_OUTPUT], dmask_timer[MAX_OUTPUT];
-	
 	uint16 count, countreg;
 	bool now_count, stop_tc, half;
 	bool prev_out, prev_in;
@@ -43,8 +37,11 @@ private:
 		uint8 rmask;
 		uint8 mode;
 		bool first;
+		// output signals
+		outputs_t outputs;
 	} port_t;
 	port_t pio[3];
+	outputs_t outputs_timer;
 	uint8 cmdreg, statreg;
 	
 	uint8 ram[256];
@@ -59,8 +56,11 @@ private:
 	
 public:
 	I8155(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_pio[0] = dcount_pio[1] = dcount_pio[2] = dcount_timer = 0;
-		pio[0].wreg = pio[1].wreg = pio[2].wreg = pio[0].rreg = pio[1].rreg = pio[2].rreg = 0;//0xff;
+		for(int i = 0; i < 3; i++) {
+			init_output_signals(&pio[i].outputs);
+			pio[i].wreg = pio[i].rreg = 0;//0xff;
+		}
+		init_output_signals(&outputs_timer);
 		freq = 0;
 	}
 	~I8155() {}
@@ -77,20 +77,16 @@ public:
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount_pio[0]++;
-		d_pio[0][c] = device; did_pio[0][c] = id; dmask_pio[0][c] = mask; dshift_pio[0][c] = shift;
+		regist_output_signal(&pio[0].outputs, device, id, mask, shift);
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount_pio[1]++;
-		d_pio[1][c] = device; did_pio[1][c] = id; dmask_pio[1][c] = mask; dshift_pio[1][c] = shift;
+		regist_output_signal(&pio[1].outputs, device, id, mask, shift);
 	}
 	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount_pio[2]++;
-		d_pio[2][c] = device; did_pio[2][c] = id; dmask_pio[2][c] = mask; dshift_pio[2][c] = shift;
+		regist_output_signal(&pio[2].outputs, device, id, mask, shift);
 	}
 	void set_context_timer(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_timer++;
-		d_timer[c] = device; did_timer[c] = id; dmask_timer[c] = mask;
+		regist_output_signal(&outputs_timer, device, id, mask);
 	}
 	void set_constant_clock(uint32 hz) {
 		freq = hz;

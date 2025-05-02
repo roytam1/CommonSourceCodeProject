@@ -172,6 +172,44 @@ public:
 	}
 	
 	// device to device
+	typedef struct {
+		DEVICE *device;
+		int id;
+		uint32 mask;
+		int shift;
+	} output_t;
+	
+	typedef struct {
+		int count;
+		output_t item[MAX_OUTPUT];
+	} outputs_t;
+	
+	virtual void init_output_signals(outputs_t *items) {
+		items->count = 0;
+	}
+	virtual void regist_output_signal(outputs_t *items, DEVICE *device, int id, uint32 mask, int shift) {
+		int c = items->count++;
+		items->item[c].device = device;
+		items->item[c].id = id;
+		items->item[c].mask = mask;
+		items->item[c].shift = shift;
+	}
+	virtual void regist_output_signal(outputs_t *items, DEVICE *device, int id, uint32 mask) {
+		int c = items->count++;
+		items->item[c].device = device;
+		items->item[c].id = id;
+		items->item[c].mask = mask;
+		items->item[c].shift = 0;
+	}
+	virtual void write_signals(outputs_t *items, uint32 data) {
+		for(int i = 0; i < items->count; i++) {
+			output_t *item = &items->item[i];
+			int shift = item->shift;
+			uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
+			uint32 mask = (shift < 0) ? (item->mask >> (-shift)) : (item->mask << shift);
+			item->device->write_signal(item->id, val, mask);
+		}
+	};
 	virtual void write_signal(int id, uint32 data, uint32 mask) {}
 	virtual uint32 read_signal(int ch) {
 		return 0;

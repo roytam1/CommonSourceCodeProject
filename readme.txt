@@ -1,46 +1,50 @@
 retro pc emulator common source code
-								8/13/2010
+								8/27/2010
 
 --- What's this ?
 
-This archive includes the all source codes of:
+This archive includes the all source codes of emulators listed below:
 
-	Emu5		SORD m5 emulator
-	EmuGaki		CASIO PV-2000 emulator
-	EmuLTI8		MITSUBISHI Electric MULTI8 emulator
-	EmuPIA		TOSHIBA PASOPIA emulator
-	EmuPIA7		TOSHIBA PASOPIA7 emulator
-	EmuZ-700	SHARP MZ-700 emulator
-	EmuZ-2500	SHARP MZ-2500 emulator
-	EmuZ-2800	SHARP MZ-2800 emulator
-	EmuZ-3500	SHARP MZ-3500 emulator
-	EmuZ-5500	SHARP MZ-5500 emulator
-	EmuZ-6500	SHARP MZ-6500 emulator
-	EmuZ-6550	SHARP MZ-6550 emulator
+	Emu5		SORD m5
+	EmuGaki		CASIO PV-2000
+	EmuLTI8		MITSUBISHI Electric MULTI8
+	EmuPIA		TOSHIBA PASOPIA
+	EmuPIA7		TOSHIBA PASOPIA7
+	EmuZ-80K	SHARP MZ-80K
+	EmuZ-700	SHARP MZ-700
+	EmuZ-1200	SHARP MZ-1200
+	EmuZ-1500	SHARP MZ-1500
+	EmuZ-2500	SHARP MZ-2500
+	EmuZ-2800	SHARP MZ-2800
+	EmuZ-3500	SHARP MZ-3500
+	EmuZ-5500	SHARP MZ-5500
+	EmuZ-6500	SHARP MZ-6500
+	EmuZ-6550	SHARP MZ-6550
 	eBabbage-2nd	Gijutsu Hyoron Sha Babbage-2nd
 	eFamilyBASIC	Nintendo Family BASIC
-	eFMR-30		FUJITSU FMR-30 emulator
-	eFMR-50		FUJITSU FMR-50 emulator
-	eFMR-60		FUJITSU FMR-60 emulator
-	eFP-1100	CASIO FP-1100 emulator
-	eHANDY98	NEC PC-98HA emulator
-	eHC-40		EPSON HC-40/PX-4 emulator
-	eHC-80		EPSON HC-80/PX-8/Geneva emulator
-	eMAP-1010	SEIKO MAP-1010 emulator
-	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A emulator
-	eN5200		NEC N5200 emulator
-	ePC-8201	NEC PC-8201/PC-8201A emulator
-	ePC-98LT	NEC PC-98LT emulator
-	ePC-100		NEC PC-100 emulator
-	ePHC-25		SANYO PHC-25 emulator
-	ePV-1000	CASIO PV-1000 emulator
-	ePyuTa		TOMY PyuTa and PyuTa Jr. emulator
-	eQC-10		EPSON QC-10/QX-10 emulator
-	eRX-78		BANDAI RX-78 emulator
-	eSCV		EPOCH Super Cassette Vision emulator
-	eTK-80BS	NEC TK-80BS (COMPO BS/80) emulator
-	eX-07		CANON X-07 emulator
-	eX1twin		SHARP X1twin emulator
+	eFMR-30		FUJITSU FMR-30
+	eFMR-50		FUJITSU FMR-50
+	eFMR-60		FUJITSU FMR-60
+	eFP-1100	CASIO FP-1100
+	eHANDY98	NEC PC-98HA
+	eHC-40		EPSON HC-40/PX-4
+	eHC-80		EPSON HC-80/PX-8/Geneva
+	eMAP-1010	SEIKO MAP-1010
+	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A
+	eN5200		NEC N5200
+	ePC-8201	NEC PC-8201/PC-8201A
+	ePC-98LT	NEC PC-98LT
+	ePC-100		NEC PC-100
+	ePHC-25		SANYO PHC-25
+	ePV-1000	CASIO PV-1000
+	ePyuTa		TOMY PyuTa/PyuTa Jr.
+	eQC-10		EPSON QC-10/QX-10
+	eRX-78		BANDAI RX-78
+	eSC-3000	SEGA SC-3000
+	eSCV		EPOCH Super Cassette Vision
+	eTK-80BS	NEC TK-80BS (COMPO BS/80)
+	eX-07		CANON X-07
+	eX1twin		SHARP X1twin
 	eYS-6464A	Shinko Sangyo YS-6464A
 
 You can compile them with Microsoft Visual C++ 2008 width SP1.

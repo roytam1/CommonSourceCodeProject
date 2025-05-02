@@ -21,8 +21,7 @@
 class CMT : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did_out, did_rmt;
+	DEVICE* d_drec;
 	
 	// data recorder
 	bool in, out, remote;
@@ -42,8 +41,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context(DEVICE* device, int out, int remote) {
-		dev = device; did_out = out; did_rmt = remote;
+	void set_context_drec(DEVICE* device) {
+		d_drec = device;
 	}
 };
 

@@ -58,15 +58,17 @@
 void TF20::initialize()
 {
 	// initialize d88 handler
-	for(int i = 0; i < MAX_DRIVE; i++)
+	for(int i = 0; i < MAX_DRIVE; i++) {
 		disk[i] = new DISK();
+	}
 }
 
 void TF20::release()
 {
 	for(int i = 0; i < MAX_DRIVE; i++) {
-		if(disk[i])
+		if(disk[i]) {
 			delete disk[i];
+		}
 	}
 }
 
@@ -80,11 +82,11 @@ void TF20::reset()
 
 void TF20::write_signal(int id, uint32 data, uint32 mask)
 {
-	switch(phase)
-	{
+	switch(phase) {
 	case PHASE_IDLE:
-		if(data == EOT)
+		if(data == EOT) {
 			break;
+		}
 		if(data == ENQ) {
 			REPLY(ACK);
 			break;
@@ -99,8 +101,9 @@ void TF20::write_signal(int id, uint32 data, uint32 mask)
 		
 	case PHASE_SELECT:
 		bufr[buflen++] = data;
-		if(buflen < 3)
+		if(buflen < 3) {
 			break;
+		}
 		if(bufr[0] != DID_FIRST && bufr[0] != DID_SECOND) {
 			phase = PHASE_IDLE;
 			break;
@@ -134,16 +137,18 @@ void TF20::write_signal(int id, uint32 data, uint32 mask)
 		
 	case PHASE_HEAD:
 		bufr[buflen++] = data;
-		if(buflen < 6)
+		if(buflen < 6) {
 			break;
+		}
 		REPLY(ACK);
 		phase = PHASE_DATA;
 		break;
 		
 	case PHASE_DATA:
 		bufr[buflen++] = data;
-		if(buflen < (6 + bufr[4] + 4))
+		if(buflen < (6 + bufr[4] + 4)) {
 			break;
+		}
 		if(bufr[6] != STX) {
 			REPLY(NAK);
 			phase = PHASE_IDLE;
@@ -164,8 +169,9 @@ void TF20::write_signal(int id, uint32 data, uint32 mask)
 			phase = PHASE_IDLE;
 			break;
 		}
-		for(int i = 0; i < 7; i++)
+		for(int i = 0; i < 7; i++) {
 			REPLY(bufs[i]);
+		}
 		phase = PHASE_RESULT;
 		break;
 		
@@ -179,8 +185,9 @@ void TF20::write_signal(int id, uint32 data, uint32 mask)
 			phase = PHASE_FUNC;
 			break;
 		}
-		for(int i = 7; i < buflen; i++)
+		for(int i = 7; i < buflen; i++) {
 			REPLY(bufs[i]);
+		}
 		phase = PHASE_END;
 		break;
 		
@@ -225,8 +232,7 @@ bool TF20::process_cmd()
 	int drv, trk, sec, dst;
 	uint8 *sctr, *sctw;
 	
-	switch(bufr[3])
-	{
+	switch(bufr[3]) {
 	case FNC_RESET_P:
 	case FNC_RESET_M:
 		SET_HEAD(0);
@@ -241,22 +247,25 @@ bool TF20::process_cmd()
 		if(!disk_inserted(drv)) {
 			// drive error
 			SET_HEAD(0x80);
-			for(int i = 0; i < 128; i++)
+			for(int i = 0; i < 128; i++) {
 				SET_DATA(0xff);
+			}
 			SET_CODE(ERR_DRIVE);
 			return true;
 		}
 		if((sctr = get_sector(drv, trk, sec)) == NULL) {
 			// read error
 			SET_HEAD(0x80);
-			for(int i = 0; i < 128; i++)
+			for(int i = 0; i < 128; i++) {
 				SET_DATA(0xff);
+			}
 			SET_CODE(ERR_READ);
 			return true;
 		}
 		SET_HEAD(0x80);
-		for(int i = 0; i < 128; i++)
+		for(int i = 0; i < 128; i++) {
 			SET_DATA(sctr[i]);
+		}
 		SET_CODE(ERR_SUCCESS);
 		return true;
 		
@@ -284,8 +293,9 @@ bool TF20::process_cmd()
 			return true;
 		}
 		// dont care write type
-		for(int i = 0; i < 128; i++)
+		for(int i = 0; i < 128; i++) {
 			sctw[i] = bufr[11 + i];
+		}
 		SET_HEAD(0);
 		SET_CODE(ERR_SUCCESS);
 		return true;
@@ -378,8 +388,9 @@ bool TF20::process_cmd()
 
 bool TF20::disk_protected(int drv)
 {
-	if(drv < MAX_DRIVE)
+	if(drv < MAX_DRIVE) {
 		return disk[drv]->protect;
+	}
 	return false;
 }
 
@@ -394,10 +405,12 @@ uint8* TF20::get_sector(int drv, int trk, int sec)
 	int phys_side = total & 1;
 	int phys_trk = total >> 1;
 	
-	if(!disk_inserted(drv))
+	if(!disk_inserted(drv)) {
 		return NULL;
-	if(!disk[drv]->get_sector(phys_trk, phys_side, phys_sec))
+	}
+	if(!disk[drv]->get_sector(phys_trk, phys_side, phys_sec)) {
 		return NULL;
+	}
 	return disk[drv]->sector + (half ? 128 : 0);
 }
 
@@ -407,20 +420,23 @@ uint8* TF20::get_sector(int drv, int trk, int sec)
 
 void TF20::open_disk(_TCHAR path[], int drv)
 {
-	if(drv < MAX_DRIVE)
+	if(drv < MAX_DRIVE) {
 		disk[drv]->open(path);
+	}
 }
 
 void TF20::close_disk(int drv)
 {
-	if(drv < MAX_DRIVE)
+	if(drv < MAX_DRIVE) {
 		disk[drv]->close();
+	}
 }
 
 bool TF20::disk_inserted(int drv)
 {
-	if(drv < MAX_DRIVE)
+	if(drv < MAX_DRIVE) {
 		return disk[drv]->insert;
+	}
 	return false;
 }
 

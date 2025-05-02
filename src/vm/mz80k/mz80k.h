@@ -1,38 +1,42 @@
 /*
-	SHARP PC-3200 Emulator 'ePC-3200'
+	SHARP MZ-80K Emulator 'EmuZ-80K'
+	SHARP MZ-1200 Emulator 'EmuZ-1200'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.07.08 -
+	Date   : 2010.08.18-
 
 	[ virtual machine ]
 */
 
-#ifndef _PC3200_H_
-#define _PC3200_H_
+#ifndef _MZ80K_H_
+#define _MZ80K_H_
 
-#define DEVICE_NAME		"SHARP PC-3200"
-#define CONFIG_NAME		"pc3200"
+#ifdef _MZ1200
+#define DEVICE_NAME		"SHARP MZ-1200"
+#define CONFIG_NAME		"mz1200"
+#else
+#define DEVICE_NAME		"SHARP MZ-80K"
+#define CONFIG_NAME		"mz80k"
+#endif
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	599
-#define FRAMES_PER_SEC		59.9
-#define LINES_PER_FRAME 	262
-#define CHARS_PER_LINE		114
-#define CPU_CLOCKS		4000000
-#define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		400
-#define MAX_DRIVE		4
-//#define UPD765A_DMA_MODE
-#define UPD765A_WAIT_SEEK
+#define FRAMES_PER_10SECS	600
+#define FRAMES_PER_SEC		60
+#define LINES_PER_FRAME		262
+#define CHARS_PER_LINE		1
+#define CPU_CLOCKS		2000000
+#define SCREEN_WIDTH		320
+#define SCREEN_HEIGHT		200
+#define USE_PCM1BIT
+#define PCM1BIT_HIGH_QUALITY
+//#define LOW_PASS_FILTER
 
 // device informations for win32
 #define USE_DATAREC
-#define USE_FD1
-#define USE_FD2
-//#define USE_FD3
-//#define USE_FD4
+#define USE_DATAREC_BUTTON
+#define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -44,15 +48,18 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+#ifdef _MZ1200
+class AND;
+#endif
 class DATAREC;
+class I8253;
 class I8255;
 class IO;
-class UPD1990A;
-class UPD765A;
+class LS393;
+class PCM1BIT;
 class Z80;
 
 class DISPLAY;
-class INTERRUPT;
 class KEYBOARD;
 class MEMORY;
 
@@ -64,15 +71,18 @@ protected:
 	// devices
 	EVENT* event;
 	
+#ifdef _MZ1200
+	AND* and;
+#endif
 	DATAREC* drec;
+	I8253* ctc;
 	I8255* pio;
 	IO* io;
-	UPD1990A* rtc;
-	UPD765A* fdc;
+	LS393* counter;
+	PCM1BIT* pcm;
 	Z80* cpu;
 	
 	DISPLAY* display;
-	INTERRUPT* interrupt;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	
@@ -100,11 +110,12 @@ public:
 	uint16* create_sound(int samples, bool fill);
 	
 	// user interface
-	void open_disk(_TCHAR* filename, int drv);
-	void close_disk(int drv);
+	void open_mzt(_TCHAR* filename);
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
+	void push_play();
+	void push_stop();
 	bool now_skip();
 	
 	void update_config();
@@ -124,6 +135,7 @@ public:
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
 	uint32 get_prv_pc();
+	void set_pc(uint32 pc);
 	
 	// devices
 	DEVICE* get_device(int id);

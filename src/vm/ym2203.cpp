@@ -39,12 +39,7 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		else if(ch == 14 || ch == 15) {
 			int p = ch - 14;
 			if(port[p].wreg != data || port[p].first) {
-				for(int i = 0; i < dcount_port[p]; i++) {
-					int shift = dshift_port[p][i];
-					uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-					uint32 mask = (shift < 0) ? (dmask_port[p][i] >> (-shift)) : (dmask_port[p][i] << shift);
-					d_port[p][i]->write_signal(did_port[p][i], val, mask);
-				}
+				write_signals(&port[p].outputs, data);
 				port[p].wreg = data;
 				port[p].first = false;
 			}
@@ -95,9 +90,7 @@ void YM2203::event_vline(int v, int clock)
 {
 	bool next = opn->Count(usec);
 	if(irq != next) {
-		for(int i = 0; i < dcount_irq; i++) {
-			d_irq[i]->write_signal(did_irq[i], next ? 0xffffffff : 0, dmask_irq[i]);
-		}
+		write_signals(&outputs_irq, next ? 0xffffffff : 0);
 		irq = next;
 	}
 }

@@ -1,5 +1,6 @@
 /*
 	SHARP MZ-700 Emulator 'EmuZ-700'
+	SHARP MZ-1500 Emulator 'EmuZ-1500'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -13,15 +14,20 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../and.h"
 #include "../datarec.h"
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../io.h"
 #include "../pcm1bit.h"
+#ifdef _MZ1500
+#include "../sn76489an.h"
+#include "../z80pio.h"
+//#include "../z80sio.h"
+#endif
 #include "../z80.h"
 
 #include "display.h"
-#include "interrupt.h"
 #include "keyboard.h"
 #include "memory.h"
 
@@ -37,55 +43,110 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
+	and = new AND(this, emu);
 	drec = new DATAREC(this, emu);
 	ctc = new I8253(this, emu);
 	pio = new I8255(this, emu);
 	io = new IO(this, emu);
-	pcm0 = new PCM1BIT(this, emu);
-//	pcm1 = new PCM1BIT(this, emu);
+	pcm = new PCM1BIT(this, emu);
+#ifdef _MZ1500
+	psg_l = new SN76489AN(this, emu);
+	psg_r = new SN76489AN(this, emu);
+	pio_int = new Z80PIO(this, emu);
+//	sio_rs = new Z80SIO(this, emu);
+//	sio_qd = new Z80SIO(this, emu);
+#endif
 	cpu = new Z80(this, emu);
 	
 	display = new DISPLAY(this, emu);
-	interrupt = new INTERRUPT(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(pcm0);
-//	event->set_context_sound(pcm1);
+	event->set_context_sound(pcm);
+#ifdef _MZ1500
+	event->set_context_sound(psg_l);
+	event->set_context_sound(psg_r);
+#endif
 	
+	and->set_context_out(cpu, SIG_CPU_IRQ, 1);
+	and->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
 	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
-//	drec->set_context_out(pcm1, SIG_PCM1BIT_SIGNAL, 1);
 	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
-	ctc->set_context_ch0(pcm0, SIG_PCM1BIT_SIGNAL, 1);
+	ctc->set_context_ch0(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2, 1);
-	ctc->set_context_ch2(interrupt, SIG_INTERRUPT_CLOCK, 1);
+	ctc->set_context_ch2(and, SIG_AND_BIT_0, 1);
+#ifdef _MZ1500
+	ctc->set_context_ch0(pio_int, SIG_Z80PIO_PORT_A, 0x10);
+	ctc->set_context_ch2(pio_int, SIG_Z80PIO_PORT_A, 0x20);
+#endif
 	ctc->set_constant_clock(0, CPU_CLOCKS >> 2);
-	ctc->set_constant_clock(1, 16000);
-	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x7f, 0);
+	ctc->set_constant_clock(1, 15700);
+	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x0f, 0);
+#ifdef _MZ1500
+	pio->set_context_port_c(pcm, SIG_PCM1BIT_ON, 1, 0);
+#endif
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
-	pio->set_context_port_c(interrupt, SIG_INTERRUPT_INTMASK, 4, 0);
+	pio->set_context_port_c(and, SIG_AND_BIT_1, 4, 0);
 	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 8, 0);
-	// pc3: motor rotate control
 	
 	display->set_vram_ptr(memory->get_vram());
-	interrupt->set_context_cpu(cpu);
-	keyboard->set_context_pio(pio, SIG_I8255_PORT_B);
+	display->set_font_ptr(memory->get_font());
+#ifdef _MZ1500
+	display->set_pcg_ptr(memory->get_pcg());
+#endif
+	keyboard->set_context_pio(pio);
 	memory->set_context_cpu(cpu);
-	memory->set_context_ctc(ctc, SIG_I8253_GATE_0);
-	memory->set_context_pio(pio, SIG_I8255_PORT_C);
+	memory->set_context_ctc(ctc);
+	memory->set_context_pio(pio);
+#ifdef _MZ1500
+	memory->set_context_psg_l(psg_l);
+	memory->set_context_psg_r(psg_r);
+#endif
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-//	cpu->set_context_io(memory);
-	cpu->set_context_intr(interrupt);
+#ifdef _MZ1500
+	cpu->set_context_intr(pio_int);
+#else
+	cpu->set_context_intr(dummy);
+#endif
+	
+#ifdef _MZ1500
+	// z80 family daisy chain
+	// 0=8253 ch.2
+	pio_int->set_context_intr(cpu, 1);
+//	pio_int->set_context_child(sio_rs);
+//	sio_rs->set_context_intr(cpu, 2);
+//	sio_rs->set_context_child(sio_qd);
+//	sio_qd->set_context_intr(cpu, 3);
+#endif
 	
 	// i/o bus
 	io->set_iomap_range_r(0, 3, memory);	// EMM
 	io->set_iomap_range_w(0, 3, memory);	// EMM
 	io->set_iomap_range_w(0xe0, 0xe6, memory);
+#ifdef _MZ1500
+	io->set_iomap_single_w(0xe9, memory);	// PSG L+R
+	io->set_iomap_range_w(0xf0, 0xf1, display);
+	io->set_iomap_single_r(0xf2, psg_l);
+	io->set_iomap_single_r(0xf3, psg_r);
+	io->set_iomap_single_r(0xf7, memory);	// SIO
+//	static int z80_sio_addr[4] = {0, 2, 1, 3};
+	static int z80_pio_addr[4] = {1, 3, 0, 2};
+	for(int i = 0; i < 4; i++) {
+//		io->set_iomap_alias_w(0xb0 + i, sio_rs, z80_sio_addr[i]);
+//		io->set_iomap_alias_r(0xb0 + i, sio_rs, z80_sio_addr[i]);
+//		io->set_iomap_alias_w(0xf4 + i, sio_qd, z80_sio_addr[i]);
+//		io->set_iomap_alias_r(0xf4 + i, sio_qd, z80_sio_addr[i]);
+		io->set_iomap_alias_w(0xfc + i, pio_int, z80_pio_addr[i]);
+		io->set_iomap_alias_r(0xfc + i, pio_int, z80_pio_addr[i]);
+	}
+#else
+	io->set_iomap_single_r(0xfe, memory);	// PRINTER
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -123,6 +184,8 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
+	and->write_signal(SIG_AND_BIT_0, 0, 1);	// CLOCK = L
+	and->write_signal(SIG_AND_BIT_1, 1, 1);	// INTMASK = H
 }
 
 void VM::run()
@@ -175,6 +238,11 @@ uint32 VM::get_prv_pc()
 	return cpu->get_prv_pc();
 }
 
+void VM::set_pc(uint32 pc)
+{
+	cpu->set_pc(pc);
+}
+
 // ----------------------------------------------------------------------------
 // draw screen
 // ----------------------------------------------------------------------------
@@ -194,8 +262,11 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	pcm0->init(rate, 8000);
-//	pcm1->init(rate, 2000);	// data recorder noise
+	pcm->init(rate, 8000);
+#ifdef _MZ1500
+	psg_l->init(rate, 3579545, 8000);
+	psg_r->init(rate, 3579545, 8000);
+#endif
 }
 
 uint16* VM::create_sound(int samples, bool fill)

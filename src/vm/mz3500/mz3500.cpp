@@ -72,7 +72,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(beep);
 	
 	// set contexts main
-	fdc->set_context_intr(memory, SIG_MEMORY_INTMFD, 1);
+	fdc->set_context_irq(memory, SIG_MEMORY_INTMFD, 1);
 	
 	memory->set_context_cpu(cpu);
 	memory->set_context_sub(subcpu);

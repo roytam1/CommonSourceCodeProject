@@ -29,18 +29,12 @@ void I8255::write_io8(uint32 addr, uint32 data)
 {
 	int ch = addr & 3;
 	
-	switch(ch)
-	{
+	switch(ch) {
 	case 0:
 	case 1:
 	case 2:
 		if(port[ch].wreg != data || port[ch].first) {
-			for(int i = 0; i < dcount[ch]; i++) {
-				int shift = dshift[ch][i];
-				uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-				uint32 mask = (shift < 0) ? (dmask[ch][i] >> (-shift)) : (dmask[ch][i] << shift);
-				dev[ch][i]->write_signal(did[ch][i], val, mask);
-			}
+			write_signals(&port[ch].outputs, data);
 			port[ch].wreg = data;
 			port[ch].first = false;
 		}
@@ -56,10 +50,12 @@ void I8255::write_io8(uint32 addr, uint32 data)
 		else {
 			uint32 val = port[2].wreg;
 			int bit = (data >> 1) & 7;
-			if(data & 1)
+			if(data & 1) {
 				val |= 1 << bit;
-			else
+			}
+			else {
 				val &= ~(1 << bit);
+			}
 			write_io8(2, val);
 		}
 		break;
@@ -68,8 +64,7 @@ void I8255::write_io8(uint32 addr, uint32 data)
 
 uint32 I8255::read_io8(uint32 addr)
 {
-	switch(addr & 3)
-	{
+	switch(addr & 3) {
 	case 0:
 		if(port[0].mode == 1) {
 			// IBF, INTR
@@ -94,8 +89,7 @@ uint32 I8255::read_io8(uint32 addr)
 
 void I8255::write_signal(int id, uint32 data, uint32 mask)
 {
-	switch(id)
-	{
+	switch(id) {
 	case SIG_I8255_PORT_A:
 		if(port[0].mode == 1) {
 			// IBF, INTR

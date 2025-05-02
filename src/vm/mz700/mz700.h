@@ -1,5 +1,6 @@
 /*
 	SHARP MZ-700 Emulator 'EmuZ-700'
+	SHARP MZ-1500 Emulator 'EmuZ-1500'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -11,8 +12,13 @@
 #ifndef _MZ700_H_
 #define _MZ700_H_
 
+#ifdef _MZ1500
+#define DEVICE_NAME		"SHARP MZ-1500"
+#define CONFIG_NAME		"mz1500"
+#else
 #define DEVICE_NAME		"SHARP MZ-700"
 #define CONFIG_NAME		"mz700"
+#endif
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
@@ -20,12 +26,13 @@
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
 #define CHARS_PER_LINE		1
+//#define CPU_CLOCKS		3579545
 #define CPU_CLOCKS		3584160
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
-//#define EVENT_PRECISE		4
+//#define LOW_PASS_FILTER
 #define CPU_MEMORY_WAIT
 
 // device informations for win32
@@ -43,15 +50,20 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+class AND;
 class DATAREC;
 class I8253;
 class I8255;
 class IO;
 class PCM1BIT;
+#ifdef _MZ1500
+class SN76489AN;
+class Z80PIO;
+//class Z80SIO;
+#endif
 class Z80;
 
 class DISPLAY;
-class INTERRUPT;
 class KEYBOARD;
 class MEMORY;
 
@@ -63,16 +75,22 @@ protected:
 	// devices
 	EVENT* event;
 	
+	AND* and;
 	DATAREC* drec;
 	I8253* ctc;
 	I8255* pio;
 	IO* io;
-	PCM1BIT* pcm0;
-//	PCM1BIT* pcm1;
+	PCM1BIT* pcm;
+#ifdef _MZ1500
+	SN76489AN* psg_l;
+	SN76489AN* psg_r;
+	Z80PIO* pio_int;
+//	Z80SIO* sio_rs;	// RS-232C
+//	Z80SIO* sio_qd;	// QD
+#endif
 	Z80* cpu;
 	
 	DISPLAY* display;
-	INTERRUPT* interrupt;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	
@@ -125,6 +143,7 @@ public:
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
 	uint32 get_prv_pc();
+	void set_pc(uint32 pc);
 	
 	// devices
 	DEVICE* get_device(int id);
