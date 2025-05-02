@@ -100,6 +100,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	pio0->set_context_port_a(cassette, SIG_CASSETTE_CONTROL, 0xff, 0);
 	pio0->set_context_port_c(rst, SIG_RESET_CONTROL, 0xff, 0);
+	pio0->set_context_port_c(crtc, SIG_CRTC_MASK, 0x01, 0);
 	pio0->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
 	rtc->set_context_alarm(interrupt, SIG_INTERRUPT_RP5C15, 1);
 	rtc->set_context_pulse(opn, SIG_YM2203_PORT_B, 8);
@@ -203,6 +204,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			device->initialize();
 		}
 	}
+	monitor_type = config.monitor_type;
 }
 
 VM::~VM()
@@ -235,7 +237,7 @@ void VM::reset()
 	}
 	
 	// set initial port status
-	opn->write_signal(SIG_YM2203_PORT_B, (config.monitor_type & 2) ? 0x77 : 0x37, 0xff);
+	opn->write_signal(SIG_YM2203_PORT_B, (monitor_type & 2) ? 0x77 : 0x37, 0xff);
 }
 
 void VM::special_reset()
@@ -246,7 +248,7 @@ void VM::special_reset()
 	}
 	
 	// set initial port status
-	opn->write_signal(SIG_YM2203_PORT_B, (config.monitor_type & 2) ? 0x77 : 0x37, 0xff);
+	opn->write_signal(SIG_YM2203_PORT_B, (monitor_type & 2) ? 0x77 : 0x37, 0xff);
 }
 
 void VM::run()

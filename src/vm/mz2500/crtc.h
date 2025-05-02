@@ -17,6 +17,7 @@
 
 #define SIG_CRTC_COLUMN_SIZE	0
 #define SIG_CRTC_PALLETE	1
+#define SIG_CRTC_MASK		2
 
 #define EVENT_HSYNC	0
 #define EVENT_BLINK	256
@@ -44,9 +45,10 @@ private:
 	
 	// crtc
 	void set_hsync(int h);
-	uint8 textreg_num, textreg[32];
+	uint8 textreg_num, textreg[16];
 	uint8 cgreg_num, cgreg[32];
-	uint8 scrn_size, cg_mask;
+	uint8 scrn_size, cg_mask, cg_mask256;
+	bool cg_mask256_init;
 	bool font_size, column_size;
 	uint8 latch[4];
 	uint16 GDEVS, GDEVE;
@@ -56,6 +58,7 @@ private:
 	uint8 clear_flag;
 	uint8 palette_reg[16];
 	bool pal_select;
+	bool screen_mask;
 	
 	// priority and palette
 	uint8 priority16[16][9];
@@ -88,9 +91,7 @@ private:
 	void draw_640x200x16screen(uint8 pl);
 	void draw_640x400x4screen();
 	void draw_640x400x16screen();
-	void create_320x200map();
-	void create_640x200map();
-	void create_640x400map();
+	void create_addr_map(int xmax, int ymax);
 	uint8 cg[640*400*2];
 	uint16 map_addr[400][80];
 	uint8 map_hdsc[400][80];
@@ -100,8 +101,8 @@ private:
 	uint8 cg_matrix1[256][256][8];
 	uint8 cg_matrix2[256][256][8];
 	uint8 cg_matrix3[256][256][8];
-	uint8 text_matrix[256][9][8];
-	uint8 text_matrixw[256][9][16];
+	uint8 text_matrix[256][8][8];
+	uint8 text_matrixw[256][8][16];
 	uint8 trans_color;
 	bool map_init, trans_init;
 	
@@ -111,7 +112,6 @@ public:
 	
 	// common functions
 	void initialize();
-	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);

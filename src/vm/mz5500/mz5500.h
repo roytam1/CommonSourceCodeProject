@@ -47,6 +47,7 @@
 #define UPD765A_STRICT_ID
 #define Z80CTC_CLOCKS		2457600
 #define IO_ADDR_MAX		0x400
+#define HAS_AY_3_8912
 
 // device informations for win32
 #define USE_SPECIAL_RESET

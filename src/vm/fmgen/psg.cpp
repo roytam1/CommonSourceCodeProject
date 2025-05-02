@@ -7,6 +7,8 @@
 #include "headers.h"
 #include "misc.h"
 #include "psg.h"
+// for AY-3-8190/8192
+#include "../vm.h"
 
 // ---------------------------------------------------------------------------
 //	コンストラクタ・デストラクタ
@@ -87,11 +89,21 @@ void PSG::MakeNoiseTable()
 void PSG::SetVolume(int volume)
 {
 	double base = 0x4000 / 3.0 * pow(10.0, volume / 40.0);
+#ifdef HAS_AY_3_8912
+	// AY-3-8190/8192 (PSG): 16step
+	for (int i=31; i>=2; i-=2)
+	{
+		EmitTable[i] = EmitTable[i-1] = int(base);
+		base /= 1.414213562;
+	}
+#else
+	// YM2203 (SSG): 32step
 	for (int i=31; i>=2; i--)
 	{
 		EmitTable[i] = int(base);
 		base /= 1.189207115;
 	}
+#endif
 	EmitTable[1] = 0;
 	EmitTable[0] = 0;
 	MakeEnvelopTable();
@@ -126,11 +138,22 @@ void PSG::MakeEnvelopTable()
 	{
 		uint8 v = table2[table1[i]];
 		
+#ifdef HAS_AY_3_8912
+		// AY-3-8190/8192 (PSG): 16step
+		for (int j=0; j<32; j+=2)
+		{
+			*ptr++ = EmitTable[v];
+			*ptr++ = EmitTable[v];
+			v += table3[table1[i]] * 2;
+		}
+#else
+		// YM2203 (SSG): 32step
 		for (int j=0; j<32; j++)
 		{
 			*ptr++ = EmitTable[v];
 			v += table3[table1[i]];
 		}
+#endif
 	}
 }
 
@@ -157,13 +180,13 @@ void PSG::SetReg(uint regnum, uint8 data)
 		case 2:		// ChB Fine Tune
 		case 3:		// ChB Coarse Tune
 			tmp = ((reg[2] + reg[3] * 256) & 0xfff);
-			speriod[1] = tmp ? tperiodbase / tmp : tperiodbase;	  
+			speriod[1] = tmp ? tperiodbase / tmp : tperiodbase;
 			break;
 		
 		case 4:		// ChC Fine Tune
 		case 5:		// ChC Coarse Tune
 			tmp = ((reg[4] + reg[5] * 256) & 0xfff);
-			speriod[2] = tmp ? tperiodbase / tmp : tperiodbase;	  
+			speriod[2] = tmp ? tperiodbase / tmp : tperiodbase;
 			break;
 
 		case 6:		// Noise generator control

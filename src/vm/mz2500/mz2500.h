@@ -24,7 +24,7 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-#define MB8876
+#define HAS_MB8876
 #define TIMER_FREQ
 
 // memory wait
@@ -128,6 +128,9 @@ protected:
 	SASI* sasi;
 	TIMER* timer;
 	VOICE* voice;
+	
+	// monitor type cache
+	int monitor_type;
 	
 public:
 	// ----------------------------------------

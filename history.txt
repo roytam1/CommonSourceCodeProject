@@ -1,3 +1,22 @@
+1/16/2010
+
+[VM/Z80SIO] fix transmit/status interrupt
+
+[SCV/SOUND] support 2nd and 3rd square wave generators (by Mr.kazz)
+[SCV/SOUND] fix not to accept new command before return ack (by Mr.kazz)
+[MZ2500/CRTC] fix gfx plane mask register
+[MZ2500/CRTC] fix scroll registers
+[MZ2500/CRTC] fix to effect transparency register to outside of text region
+[MZ2500/CRTC] support screen mask i/o signal
+[MZ2500/CRTC] optimize screen rederer
+[MZ2800/CRTC] fix gfx plane mask register
+[MZ2800/CRTC] fix to effect transparency register to outside of text region
+[MZ2800/CRTC] support screen mask i/o signal
+[MZ2800/CRTC] optimize screen rederer
+[X1TWIN/DISPLAY] support 4 rasters * 50 lines screen for XEVIOUS
+[X1TWIN/SUB] fix get calender command
+
+
 12/28/2010
 
 [EMU/WIN32] support power off notification

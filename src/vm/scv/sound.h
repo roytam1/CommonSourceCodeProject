@@ -15,14 +15,17 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SOUND_CLOCK 1522400.0
-#define NOISE0_CLOCK 760.0
-#define NOISE1_CLOCK 174000.0
+#define SOUND_CLOCK  1522400.0
+#define NOISE_CLOCK      760.0
+#define SQUARE_CLOCK  174000.0
+
 #define PCM_PERIOD 120000
 
-#define MAX_VOLUME 24000
-#define MAX_NOISE 16000
-#define MAX_PCM 20000
+#define MAX_TONE   24000
+#define MAX_NOISE  16000
+#define MAX_SQUARE  8000
+#define MAX_PCM    20000
+
 #define MAX_PARAM 0x8000
 
 class SOUND : public DEVICE
@@ -41,19 +44,19 @@ private:
 		int ptr;
 	} channel_t;
 	struct channel_t tone;
-	struct channel_t noise0;
-	struct channel_t noise1;
+	struct channel_t noise;
+	struct channel_t square1;
+	struct channel_t square2;
+	struct channel_t square3;
 	struct channel_t pcm;
 	void clear_channel(channel_t *ch);
 	
 	int pcm_table[MAX_PARAM * 8];
 	uint32 cmd_addr;
 	int pcm_len;
-	bool noise1_enb;
 	
 	int volume_table[32];
 	int detune_table[32];
-	int noise1_table[129][256];
 	
 	// command buffer
 	int param_cnt, param_ptr, regist_id;

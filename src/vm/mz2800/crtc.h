@@ -17,14 +17,12 @@
 
 #define SIG_CRTC_COLUMN_SIZE	0
 #define SIG_CRTC_PALLETE	1
+#define SIG_CRTC_MASK		2
 
 class CRTC : public DEVICE
 {
 private:
 	DEVICE *d_pic, *d_pio, *d_fdc;
-	
-	// config
-	bool scan_line, scan_tmp;
 	
 	// vram
 	uint8 *vram_b, *vram_r, *vram_g, *vram_i;
@@ -35,7 +33,7 @@ private:
 	
 	// crtc
 	void set_hsync(int h);
-	uint8 textreg_num, textreg[32];
+	uint8 textreg_num, textreg[16];
 	uint8 rmwreg_num[2], rmwreg[2][32];
 	uint8 cgreg_num, cgreg[32];
 	uint8 scrn_size, cg_mask;
@@ -48,6 +46,7 @@ private:
 	uint8 clear_flag;
 	uint8 palette_reg[16];
 	bool pal_select;
+	bool screen_mask;
 	
 	// priority and palette
 	uint8 priority16[16][9];
@@ -78,8 +77,8 @@ private:
 	uint8 cg_matrix1[256][256][8];
 	uint8 cg_matrix2[256][256][8];
 	uint8 cg_matrix3[256][256][8];
-	uint8 text_matrix[256][9][8];
-	uint8 text_matrixw[256][9][16];
+	uint8 text_matrix[256][8][8];
+	uint8 text_matrixw[256][8][16];
 	uint8 trans_color;
 	bool map_init, trans_init;
 	
@@ -89,14 +88,12 @@ public:
 	
 	// common functions
 	void initialize();
-	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
 	void event_vline(int v, int clock);
-	void update_config();
 	
 	// unique function
 	void set_context_pic(DEVICE* device) {

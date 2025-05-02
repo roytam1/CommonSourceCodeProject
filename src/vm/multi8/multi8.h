@@ -27,6 +27,7 @@
 #define MAX_DRIVE		4
 //#define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
+#define HAS_AY_3_8912
 
 // device informations for win32
 #define USE_DATAREC

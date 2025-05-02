@@ -136,7 +136,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 	switch(addr & 3) {
 	case 0:
 		// command reg
-#ifdef MB8876
+#ifdef HAS_MB8876
 		cmdreg = (~data) & 0xff;
 #else
 		cmdreg = data;
@@ -145,7 +145,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		break;
 	case 1:
 		// track reg
-#ifdef MB8876
+#ifdef HAS_MB8876
 		trkreg = (~data) & 0xff;
 #else
 		trkreg = data;
@@ -159,7 +159,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		break;
 	case 2:
 		// sector reg
-#ifdef MB8876
+#ifdef HAS_MB8876
 		secreg = (~data) & 0xff;
 #else
 		secreg = data;
@@ -173,7 +173,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		break;
 	case 3:
 		// data reg
-#ifdef MB8876
+#ifdef HAS_MB8876
 		datareg = (~data) & 0xff;
 #else
 		datareg = data;
@@ -260,7 +260,7 @@ uint32 MB8877::read_io8(uint32 addr)
 			else {
 				status = 0;
 			}
-#ifdef MB8876
+#ifdef HAS_MB8876
 			return (~status) & 0xff;
 #else
 			return status;
@@ -268,7 +268,7 @@ uint32 MB8877::read_io8(uint32 addr)
 		}
 		// now sector search
 		if(now_search) {
-#ifdef MB8876
+#ifdef HAS_MB8876
 			return (~FDC_ST_BUSY) & 0xff;
 #else
 			return FDC_ST_BUSY;
@@ -320,21 +320,21 @@ uint32 MB8877::read_io8(uint32 addr)
 		if(cmdtype == FDC_CMD_TYPE1 && !now_seek) {
 			status &= ~FDC_ST_BUSY;
 		}
-#ifdef MB8876
+#ifdef HAS_MB8876
 		return (~val) & 0xff;
 #else
 		return val;
 #endif
 	case 1:
 		// track reg
-#ifdef MB8876
+#ifdef HAS_MB8876
 		return (~trkreg) & 0xff;
 #else
 		return trkreg;
 #endif
 	case 2:
 		// sector reg
-#ifdef MB8876
+#ifdef HAS_MB8876
 		return (~secreg) & 0xff;
 #else
 		return secreg;
@@ -397,7 +397,7 @@ uint32 MB8877::read_io8(uint32 addr)
 				set_drq(false);
 			}
 		}
-#ifdef MB8876
+#ifdef HAS_MB8876
 		return (~datareg) & 0xff;
 #else
 		return datareg;

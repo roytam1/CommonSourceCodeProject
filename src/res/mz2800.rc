@@ -185,8 +185,6 @@ BEGIN
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
         MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
-        MENUITEM SEPARATOR
-        MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"
     BEGIN

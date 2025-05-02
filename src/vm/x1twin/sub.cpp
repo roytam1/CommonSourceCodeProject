@@ -411,9 +411,9 @@ void SUB::process_cmd()
 	case 0xed:
 		// get calender
 		emu->get_timer(time);
-		databuf[0x1d][0] = ((int)((YEAR % 100) / 10) << 4) | (YEAR % 100);
+		databuf[0x1d][0] = ((int)((YEAR % 100) / 10) << 4) | (YEAR % 10);
 		databuf[0x1d][1] = (MONTH << 4) | DAY_OF_WEEK;
-		databuf[0x1d][2] = ((int)(DAY / 10)) | (DAY % 10);
+		databuf[0x1d][2] = ((int)(DAY / 10) << 4) | (DAY % 10);
 		datalen = 3;
 		break;
 	case 0xee:
@@ -422,9 +422,9 @@ void SUB::process_cmd()
 	case 0xef:
 		// get time
 		emu->get_timer(time);
-		databuf[0x1f][0] = ((int)(HOUR / 10)) | (HOUR % 10);
-		databuf[0x1f][1] = ((int)(MINUTE / 10)) | (MINUTE % 10);
-		databuf[0x1f][2] = ((int)(SECOND / 10)) | (SECOND % 10);
+		databuf[0x1f][0] = ((int)(HOUR / 10) << 4) | (HOUR % 10);
+		databuf[0x1f][1] = ((int)(MINUTE / 10) << 4) | (MINUTE % 10);
+		databuf[0x1f][2] = ((int)(SECOND / 10) << 4) | (SECOND % 10);
 		datalen = 3;
 		break;
 	case 0xd0:

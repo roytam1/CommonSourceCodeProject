@@ -250,7 +250,8 @@ void DISPLAY::get_cgnum()
 	if(ofs >= regs[1]) {
 		ofs = regs[1] - 1;
 	}
-	int ht = ((regs[9] <= 9) ? regs[9] : 9) + 1;
+	//int ht = ((regs[9] <= 9) ? regs[9] : 9) + 1;
+	int ht = (regs[9] & 0x1f) + 1;
 	ofs += regs[1] * (int)(vline / ht);
 	ofs += (regs[12] << 8) | regs[13];
 	cgnum = vram_t[ofs & 0x7ff];
@@ -338,15 +339,15 @@ void DISPLAY::draw_screen()
 void DISPLAY::draw_text(int width)
 {
 	uint16 src = (regs[12] << 8) | regs[13];
-	int hz = (regs[1] <= width) ? regs[1] : width;
-	int vt = (regs[6] <= 25) ? regs[6] : 25;
-	int ht = ((regs[9] <= 9) ? regs[9] : 9) + 1;
+	int hz = regs[1];
+	int vt = regs[6] & 0x7f;
+	int ht = (regs[9] & 0x1f) + 1;
 	bool prev_vs = false;
 	
 	for(int y = 0; y < vt; y++) {
 		bool cur_vs = false;
 		
-		for(int x = 0; x < hz; x++) {
+		for(int x = 0; x < hz && x < width; x++) {
 			src &= 0x7ff;
 			uint8 code = vram_t[src];
 			uint8 attr = vram_a[src++];
@@ -376,8 +377,8 @@ void DISPLAY::draw_text(int width)
 				cur_vs = true;
 			}
 			
-			// rencer character
-			for(int l = 0; l < 8; l++) {
+			// render character
+			for(int l = 0; l < 8 && l < ht; l++) {
 				int line = (attr & 0x40) ? (l >> 1) : l;
 				uint8 b = (attr & 8) ? ~pattern_b[line] : pattern_b[line];
 				uint8 r = (attr & 8) ? ~pattern_r[line] : pattern_r[line];
@@ -422,10 +423,12 @@ void DISPLAY::draw_text(int width)
 
 void DISPLAY::draw_cg(int width)
 {
-	for(int l = 0; l < 8; l++) {
+	int ht = (regs[9] & 0x1f) + 1;
+	
+	for(int l = 0; l < ht; l++) {
 		uint16 src = (regs[12] << 8) | regs[13];
 		uint16 ofs = 0x800 * l;
-		for(int y = 0; y < 200; y += 8) {
+		for(int y = 0; y < 200; y += ht) {
 			for(int x = 0; x < width; x++) {
 				src &= 0x7ff;
 				uint8 b = vram_b[ofs | src];

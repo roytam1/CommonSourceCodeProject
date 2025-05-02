@@ -44,14 +44,21 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 				port[p].first = false;
 			}
 		}
-		opn->SetReg(ch, data);
+		// don't write again for prescaler
+		if(!(0x2d <= ch && ch <= 0x2f)) {
+			opn->SetReg(ch, data);
+		}
 	}
 	else {
+#ifdef HAS_AY_3_8912
+		ch = data & 0x0f;
+#else
 		ch = data;
-		// prescaler
+		// write dummy data for prescaler
 		if(0x2d <= ch && ch <= 0x2f) {
 			opn->SetReg(ch, 0);
 		}
+#endif
 	}
 }
 

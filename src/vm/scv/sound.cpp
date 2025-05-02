@@ -19,35 +19,38 @@
 void SOUND::reset()
 {
 	clear_channel(&tone);
-	clear_channel(&noise0);
-	clear_channel(&noise1);
+	clear_channel(&noise);
+	clear_channel(&square1);
+	clear_channel(&square2);
+	clear_channel(&square3);
 	clear_channel(&pcm);
 	
 	_memset(params, 0, sizeof(params));
 	param_cnt = param_ptr = 0;
-	noise1_enb = true;
 	regist_id = -1;
 	cmd_addr = 0;
 }
 
 void SOUND::write_data8(uint32 addr, uint32 data)
 {
+	if(regist_id != -1) {
+		return; // ignore new commands before return ack
+	}
 	if(!param_cnt) {
 		// new command
-		if(data == 0)			// note off
-			param_cnt = 1;
-		else if(data == 1)		// noise ???
-			param_cnt = 10;
-		else if(data == 2)		// note on
-			param_cnt = 4;
-		else if(data == 0x1f)		// pcm
-			param_cnt = MAX_PARAM;
+		switch(data) {
+		case 0x00: param_cnt = 1;         break; // note off
+		case 0x01: param_cnt = 10;        break; // noises & square
+		case 0x02: param_cnt = 4;         break; // tone
+		case 0x1f: param_cnt = MAX_PARAM; break; // pcm
+		}
 		param_ptr = 0;
-		cmd_addr = vm->get_prv_pc();
+		cmd_addr  = vm->get_prv_pc(); // for patch
 #ifdef SOUND_DEBUG
 		emu->out_debug(_T("PC=%4x\tSOUND\t"), cmd_addr);
 #endif
 	}
+
 #ifdef SOUND_DEBUG
 	emu->out_debug("%2x ", data);
 #endif
@@ -70,9 +73,10 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 			}
 		}
 		if(--param_cnt) {
-			if(regist_id == -1) {
-				vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
+			if(regist_id != -1) {
+				vm->cancel_event(regist_id);
 			}
+			vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
 		}
 	}
 	if(!param_cnt) {
@@ -87,11 +91,13 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 void SOUND::write_io8(uint32 addr, uint32 data)
 {
 	// PC3 : L->H
-	if(data & 0x8) {
+	if(data & 0x08) {
 		// note off
 		clear_channel(&tone);
-		clear_channel(&noise0);
-		clear_channel(&noise1);
+		clear_channel(&noise);
+		clear_channel(&square1);
+		clear_channel(&square2);
+		clear_channel(&square3);
 		
 		if(cmd_addr == 0x8402) {
 			// y2 monster land
@@ -143,36 +149,24 @@ void SOUND::event_callback(int event_id, int err)
 
 void SOUND::init(int rate)
 {
-	tone.diff = (int)((SOUND_CLOCK / rate) * 128.0 * 16.0 + 0.5);
-	noise0.diff = (int)((NOISE0_CLOCK / rate) * 128.0 * 16.0 + 0.5);
-	noise1.diff = (int)((NOISE1_CLOCK / rate) * 128.0 * 16.0 + 0.5);
-	pcm.diff = (int)((SOUND_CLOCK / rate) * 128.0 * 16.0 + 0.5);
+	tone.diff    = (int)((SOUND_CLOCK  / rate) * 128.0 * 16.0 + 0.5);
+	noise.diff   = (int)((NOISE_CLOCK  / rate) * 128.0 * 16.0 + 0.5);
+	square1.diff = (int)((SQUARE_CLOCK / rate) * 128.0 * 16.0 + 0.5);
+	square2.diff = (int)((SQUARE_CLOCK / rate) * 128.0 * 16.0 + 0.5);
+	square3.diff = (int)((SQUARE_CLOCK / rate) * 128.0 * 16.0 + 0.5);
+	pcm.diff     = (int)((SOUND_CLOCK  / rate) * 128.0 * 16.0 + 0.5);
 	
 	// create volume table
-	double vol = MAX_VOLUME;
+	double vol = MAX_TONE;
 	for(int i = 0; i < 32; i++) {
-		volume_table[31 - i] = (int)vol;
+		volume_table[31 - i] = (int) vol;
 		vol /= 1.12201845439369;//1.258925412;
 	}
 	volume_table[0] = 0;
 	
 	// create detune table
 	for(int i = 0; i < 32; i++) {
-		detune_table[i] = (int)(detune_rate[i] * 256 / 100 + 0.5);
-	}
-	
-	// create noise #1 table
-	for(int i = 0; i < 0x80; i++) {
-		for(int j = 0; j < 128; j++) {
-			noise1_table[i][j] = (int)(128.0 - (1.0 - i / 128.0) * j + 0.5);
-		}
-		for(int j = 0; j < 128; j++) {
-			noise1_table[i][j + 128] = (int)((1.0 - i / 128.0) * j - 128.0 + 0.5);
-		}
-	}
-	// for lupin3
-	for(int i = 0; i < 256; i++) {
-		noise1_table[128][i] = lupin3_table[i];
+		detune_table[i] = (int) (detune_rate[i] * 256 / 100 + 0.5);
 	}
 	
 	// reset device
@@ -181,46 +175,47 @@ void SOUND::init(int rate)
 
 void SOUND::process_cmd()
 {
-	if(params[0] == 0) {
-		// note/noise off
-		clear_channel(&tone);
-		clear_channel(&noise0);
-		clear_channel(&noise1);
-		noise1_enb = true;
-	}
-	else if(params[0] == 1) {
-		// preset noise ?
-		noise0.period = params[2] << 8;
-		noise0.volume = (MAX_NOISE * (params[3] & 0x3f)) >> 6;
-		noise0.output = (noise0_table[noise0.ptr] * noise0.volume) >> 8;
-		
-		if(!params[7] && noise1_enb) {
-			noise1.timbre = (params[5] == 8) ? 128 : (params[5] > 0x7f || !params[5]) ? 0x7f : params[5];
-			noise1.period = (params[5] == 8) ? 8432 : (params[5] << 8);
-			noise1.volume = (MAX_NOISE * 0x2f) >> 7;
-			noise1.output = (noise1_table[noise1.timbre][noise1.ptr] * noise1.volume) >> 8;
-		}
-		else {
-			noise1.timbre = (params[5] > 0x7f || !params[5]) ? 0x7f : params[5];
-			noise1.period = params[4] << 8;
-			noise1.volume = (MAX_NOISE * (params[7] & 0x7f)) >> 7;
-			noise1.output = (noise1_table[noise1.timbre][noise1.ptr] * noise1.volume) >> 8;
-			noise1_enb = false;
-		}
-		
+	if(params[0] == 0x00) {
 		// note off
 		clear_channel(&tone);
+		clear_channel(&noise);
+		clear_channel(&square1);
+		clear_channel(&square2);
+		clear_channel(&square3);
 	}
-	else if(params[0] == 2) {
-		// note on : $02, timbre, period, volume ?
+	else if(params[0] == 0x01) {
+		// noise & square
+		noise.timbre = params[1] >> 5;
+		noise.period = params[2] << 8;
+		noise.volume = (MAX_NOISE * (params[3] > 0x1f ? 0x1f : params[3])) / 0x1f;
+		noise.output = (noise_table[noise.ptr] * noise.volume) >> 8;
+		
+		square1.period = params[4] << 8;
+		square1.volume = (MAX_SQUARE * (params[7] > 0x7f ? 0x7f : params[7])) / 0x7f;
+		square1.output = (square_table[square1.ptr] * square1.volume) >> 8;
+		
+		square2.period = params[5] << 8;
+		square2.volume = (MAX_SQUARE * (params[8] > 0x7f ? 0x7f : params[8])) / 0x7f;
+		square2.output = (square_table[square2.ptr] * square2.volume) >> 8;
+		
+		square3.period = params[6] << 8;
+		square3.volume = (MAX_SQUARE * (params[9] > 0x7f ? 0x7f : params[9])) / 0x7f;
+		square3.output = (square_table[square3.ptr] * square3.volume) >> 8;
+		
+		// tone off
+		clear_channel(&tone);
+	}
+	else if(params[0] == 0x02) { // note on : $02, timbre, period, volume ?
 		tone.timbre = params[1] >> 5;
 		tone.period = (params[2] * detune_table[params[1] & 0x1f]);
 		tone.volume = volume_table[params[3] & 0x1f];
 		tone.output = (timbre_table[tone.timbre][tone.ptr] * tone.volume) >> 8;
 		
-		// noise off
-		clear_channel(&noise0);
-		clear_channel(&noise1);
+		// noise & square off
+		clear_channel(&noise);
+		clear_channel(&square1);
+		clear_channel(&square2);
+		clear_channel(&square3);
 	}
 	
 	// clear command buffer
@@ -241,16 +236,16 @@ void SOUND::process_pcm(uint8 data)
 	pcm_table[pcm_len++] = (data & 0x01) ? MAX_PCM : 0;
 	
 	if(!pcm.count) {
-		pcm.count = PCM_PERIOD;
+		pcm.count  = PCM_PERIOD;
 		pcm.output = pcm_table[pcm_len - 8];
 	}
 }
 
 void SOUND::clear_channel(channel_t *ch)
 {
-	ch->count = 0;
+	ch->count  = 0;
 	ch->volume = 0;
-	ch->ptr = 0;
+	ch->ptr    = 0;
 	ch->output = 0;
 }
 
@@ -262,7 +257,7 @@ void SOUND::mix(int32* buffer, int cnt)
 		// mix pcm
 		if(pcm.count) {
 			pcm.count -= pcm.diff;
-			while(pcm.count <= 0) {
+			while (pcm.count <= 0) {
 				pcm.count += PCM_PERIOD;
 				// low-pass filter for the next sample
 				if(++pcm.ptr < pcm_len) {
@@ -279,30 +274,49 @@ void SOUND::mix(int32* buffer, int cnt)
 			// mix tone
 			if(tone.volume && tone.period) {
 				tone.count -= tone.diff;
-				while(tone.count <= 0) {
-					tone.count += tone.period;
-					tone.ptr = (tone.ptr + 1) & 0xff;
-					tone.output = (timbre_table[tone.timbre][tone.ptr] * tone.volume) >> 8;
+				while (tone.count <= 0) {
+					tone.count  += tone.period;
+					tone.ptr     = (tone.ptr + 1) & 0xff;
+					tone.output  = (timbre_table[tone.timbre][tone.ptr] * tone.volume) >> 8;
 				}
 				vol += tone.output;
 			}
-			if(noise0.volume && noise0.period) {
-				noise0.count -= noise0.diff;
-				while(noise0.count <= 0) {
-					noise0.count += noise0.period;
-					noise0.ptr = (noise0.ptr + 1) & 0xff;
-					noise0.output = (noise0_table[noise0.ptr] * noise0.volume) >> 8;
+			if(noise.volume && noise.period) {
+				noise.count -= noise.diff;
+				while (noise.count <= 0) {
+					noise.count  += noise.period;
+					noise.ptr     = (noise.ptr + 1) & 0xff;
+//					noise.output  = (noise_table[noise.timbre][noise.ptr] * noise.volume) >> 8;
+					noise.output  = (noise_table[noise.ptr] * noise.volume) >> 8;
 				}
-				vol += noise0.output;
+				vol += noise.output;
 			}
-			if(noise1.volume && noise1.period) {
-				noise1.count -= noise1.diff;
-				while(noise1.count <= 0) {
-					noise1.count += noise1.period;
-					noise1.ptr = (noise1.ptr + 1) & 0xff;
-					noise1.output = (noise1_table[noise1.timbre][noise1.ptr] * noise1.volume) >> 8;
+			if(square1.volume && square1.period) {
+				square1.count -= square1.diff;
+				while (square1.count <= 0) {
+					square1.count  += square1.period;
+					square1.ptr     = (square1.ptr + 1) & 0xff;
+					square1.output  = (square_table[square1.ptr] * square1.volume) >> 8;
 				}
-				vol += noise1.output;
+				vol += square1.output;
+			}
+			if(square2.volume && square2.period) {
+				square2.count -= square2.diff;
+				while (square2.count <= 0) {
+					square2.count  += square2.period;
+					square2.ptr     = (square2.ptr + 1) & 0xff;
+					square2.output  = (square_table[square2.ptr] * square2.volume) >> 8;
+				}
+				vol += square2.output;
+			}
+			if(square3.volume && square3.period) {
+				square3.count -= square3.diff;
+				while (square3.count <= 0) {
+					square3.count  += square3.period;
+					square3.ptr     = (square3.ptr + 1) & 0xff;
+					square3.output  = (square_table[square3.ptr] * square3.volume) >> 8;
+				}
+				vol += square3.output;
 			}
 		}
 		buffer[i] = vol;
