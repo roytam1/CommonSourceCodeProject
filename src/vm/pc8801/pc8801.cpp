@@ -29,6 +29,10 @@
 #include "../debugger.h"
 #endif
 
+#ifdef SUPPORT_PC88_PCG8100
+#include "../i8253.h"
+#endif
+
 #include "pc88.h"
 
 // ----------------------------------------------------------------------------
@@ -74,6 +78,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu_sub = new Z80(this, emu);
 //	pc88cpu_sub->set_context_event_manager(pc88event);
 	
+#ifdef SUPPORT_PC88_PCG8100
+	pc88pit = new I8253(this, emu);
+//	pc88pit->set_context_event_manager(pc88event);
+	pc88pcm0 = new PCM1BIT(this, emu);
+//	pc88pcm->set_context_event_manager(pc88event);
+	pc88pcm1 = new PCM1BIT(this, emu);
+//	pc88pcm->set_context_event_manager(pc88event);
+	pc88pcm2 = new PCM1BIT(this, emu);
+//	pc88pcm->set_context_event_manager(pc88event);
+#endif
+	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
 	pc88event->set_context_cpu(pc88cpu, (config.cpu_type != 0) ? 3993624 : 7987248);
 #else
@@ -83,6 +98,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88event->set_context_sound(pc88beep);
 	pc88event->set_context_sound(pc88opn);
 	pc88event->set_context_sound(pc88pcm);
+#ifdef SUPPORT_PC88_PCG8100
+	pc88event->set_context_sound(pc88pcm0);
+	pc88event->set_context_sound(pc88pcm1);
+	pc88event->set_context_sound(pc88pcm2);
+#endif
 	
 	pc88->set_context_beep(pc88beep);
 	pc88->set_context_cpu(pc88cpu);
@@ -91,6 +111,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88->set_context_pio(pc88pio);
 	pc88->set_context_rtc(pc88rtc);
 	pc88->set_context_sio(pc88sio);
+#ifdef SUPPORT_PC88_PCG8100
+	pc88->set_context_pcg_pit(pc88pit);
+	pc88->set_context_pcg_pcm0(pc88pcm0);
+	pc88->set_context_pcg_pcm1(pc88pcm1);
+	pc88->set_context_pcg_pcm2(pc88pcm2);
+#endif
 	pc88cpu->set_context_mem(pc88);
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
@@ -120,6 +146,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu_sub->set_context_intr(pc88sub);
 #ifdef USE_DEBUGGER
 	pc88cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
+#endif
+	
+#ifdef SUPPORT_PC88_PCG8100
+	pc88pit->set_context_ch0(pc88pcm0, SIG_PCM1BIT_SIGNAL, 1);
+	pc88pit->set_context_ch1(pc88pcm1, SIG_PCM1BIT_SIGNAL, 1);
+	pc88pit->set_context_ch2(pc88pcm2, SIG_PCM1BIT_SIGNAL, 1);
+	pc88pit->set_constant_clock(0, 3993624);
+	pc88pit->set_constant_clock(1, 3993624);
+	pc88pit->set_constant_clock(2, 3993624);
 #endif
 	
 	// initialize all devices
@@ -226,6 +261,11 @@ void VM::initialize_sound(int rate, int samples)
 	pc88opn->init(rate, 3993624, samples, 0, 0);
 #endif
 	pc88pcm->init(rate, 8000);
+#ifdef SUPPORT_PC88_PCG8100
+	pc88pcm0->init(rate, 8000);
+	pc88pcm1->init(rate, 8000);
+	pc88pcm2->init(rate, 8000);
+#endif
 }
 
 uint16* VM::create_sound(int* extra_frames)

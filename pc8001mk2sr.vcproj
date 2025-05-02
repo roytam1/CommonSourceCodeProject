@@ -482,6 +482,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\i8253.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\i8255.cpp"
 					>
 					<FileConfiguration
@@ -828,6 +848,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\i8251.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\i8253.h"
 					>
 				</File>
 				<File

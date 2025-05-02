@@ -38,6 +38,7 @@
 #define HAS_UPD4990A
 #endif
 #define SUPPORT_PC88_JOYSTICK
+#define SUPPORT_PC88_PCG8100
 
 // device informations for virtual machine
 #define FRAMES_PER_SEC		62.422
@@ -96,6 +97,10 @@ class Z80;
 class PC80S31K;
 class UPD765A;
 
+#ifdef SUPPORT_PC88_PCG8100
+class I8253;
+#endif
+
 class PC88;
 
 class VM
@@ -118,6 +123,13 @@ protected:
 	I8255* pc88pio_sub;
 	UPD765A* pc88fdc_sub;
 	Z80* pc88cpu_sub;
+	
+#ifdef SUPPORT_PC88_PCG8100
+	I8253* pc88pit;
+	PCM1BIT* pc88pcm0;
+	PCM1BIT* pc88pcm1;
+	PCM1BIT* pc88pcm2;
+#endif
 	
 	PC88* pc88;
 	

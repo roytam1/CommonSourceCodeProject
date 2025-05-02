@@ -38,7 +38,7 @@ private:
 		bool prev_in;
 		bool first_constant;
 		// constant clock
-		uint32 freq;
+		uint64 freq;
 		int clock_id;
 		int sysclock_id;
 		uint32 input;
@@ -51,7 +51,7 @@ private:
 		outputs_t outputs;
 	} z80ctc_t;
 	z80ctc_t counter[4];
-	int cpu_clocks;
+	uint64 cpu_clocks;
 	
 	void input_clock(int ch, int clock);
 	void input_sysclock(int ch, int clock);

@@ -93,6 +93,9 @@ class PC88 : public DEVICE
 private:
 	Z80 *d_cpu;
 	DEVICE *d_beep, *d_opn, *d_pcm, *d_pio, *d_rtc, *d_sio;
+#ifdef SUPPORT_PC88_PCG8100
+	DEVICE *d_pcg_pit, *d_pcg_pcm0, *d_pcg_pcm1, *d_pcg_pcm2;
+#endif
 	
 	uint8* rbank[16];
 	uint8* wbank[16];
@@ -209,6 +212,13 @@ private:
 	void release_tape();
 	bool check_data_carrier(uint8* p);
 	
+#ifdef SUPPORT_PC88_PCG8100
+	// pcg
+	uint16 pcg_addr;
+	uint8 pcg_data, pcg_ctrl;
+	uint8 pcg_pattern[0x800];
+#endif
+	
 public:
 	PC88(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~PC88() {}
@@ -263,6 +273,24 @@ public:
 	{
 		d_sio = device;
 	}
+#ifdef SUPPORT_PC88_PCG8100
+	void set_context_pcg_pit(DEVICE* device)
+	{
+		d_pcg_pit = device;
+	}
+	void set_context_pcg_pcm0(DEVICE* device)
+	{
+		d_pcg_pcm0 = device;
+	}
+	void set_context_pcg_pcm1(DEVICE* device)
+	{
+		d_pcg_pcm1 = device;
+	}
+	void set_context_pcg_pcm2(DEVICE* device)
+	{
+		d_pcg_pcm2 = device;
+	}
+#endif
 	void key_down(int code, bool repeat);
 	
 	void play_tape(_TCHAR* file_path);

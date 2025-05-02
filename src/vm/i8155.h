@@ -27,11 +27,11 @@ private:
 	bool prev_out, prev_in;
 	
 	// constant clock
-	uint32 freq;
+	uint64 freq;
 	int register_id;
 	uint32 input_clk, prev_clk;
 	int period;
-	int cpu_clocks;
+	uint64 cpu_clocks;
 	
 	typedef struct {
 		uint8 wreg;

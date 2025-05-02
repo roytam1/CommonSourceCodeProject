@@ -401,6 +401,14 @@ void PC88::reset()
 	close_tape();
 	cmt_play = cmt_rec = false;
 	cmt_register_id = -1;
+	
+#ifdef SUPPORT_PC88_PCG8100
+	// pcg
+	memcpy(pcg_pattern, kanji1 + 0x1000, sizeof(pcg_pattern));
+	write_io8(1, 0);
+	write_io8(2, 0);
+	write_io8(3, 0);
+#endif
 }
 
 void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
@@ -574,6 +582,31 @@ void PC88::write_io8(uint32 addr, uint32 data)
 				if((sum & 0xff) != 0) return;
 			}
 		}
+#ifdef SUPPORT_PC88_PCG8100
+		pcg_data = data;
+		break;
+	case 0x01:
+		pcg_addr = (pcg_addr & 0x300) | data;
+		break;
+	case 0x02:
+		if((pcg_ctrl & 0x20) && !(data & 0x20)) {
+			pcg_pattern[0x400 | pcg_addr] = kanji1[0x1400 | pcg_addr];
+		}
+		if((pcg_ctrl & 0x10) && !(data & 0x10)) {
+			pcg_pattern[0x400 | pcg_addr] = pcg_data;
+		}
+		pcg_addr = (pcg_addr & 0x0ff) | ((data & 3) << 8);
+		pcg_ctrl = data;
+		d_pcg_pcm0->write_signal(SIG_PCM1BIT_ON, data, 0x08);
+		d_pcg_pcm1->write_signal(SIG_PCM1BIT_ON, data, 0x40);
+		d_pcg_pcm2->write_signal(SIG_PCM1BIT_ON, data, 0x80);
+		break;
+	case 0x0c:
+	case 0x0d:
+	case 0x0e:
+	case 0x0f:
+		d_pcg_pit->write_io8(addr & 3, data);
+#endif
 		break;
 	case 0x10:
 		emu->printer_out(data);
@@ -1605,7 +1638,11 @@ void PC88::draw_text()
 			bool reverse = ((attrib & 1) != 0);
 			
 			uint8 code = secret ? 0 : crtc.text.expand[cy][cx];
+#ifdef SUPPORT_PC88_PCG8100
+			uint8 *pattern = ((attrib & 0x10) ? sg_pattern : pcg_pattern) + code * 8;
+#else
 			uint8 *pattern = ((attrib & 0x10) ? sg_pattern : kanji1 + 0x1000) + code * 8;
+#endif
 			
 			for(int l = 0, y = ytop; l < char_height && y < 200; l++, y++) {
 				uint8 pat = (l < 8) ? pattern[l] : 0;

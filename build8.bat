@@ -182,21 +182,13 @@ copy Release\pc9801.exe build\pc9801\.
 devenv.com pc9801e.vcproj /Rebuild Release
 mkdir build\pc9801e
 copy Release\pc9801e.exe build\pc9801e\.
-mkdir build\pc9801f
-copy Release\pc9801e.exe build\pc9801f\.
-mkdir build\pc9801m
-copy Release\pc9801e.exe build\pc9801m\.
 
 devenv.com pc9801u.vcproj /Rebuild Release
-mkdir build\pc9801u
-copy Release\pc9801u.exe build\pc9801u\.
-
 devenv.com pc9801vf.vcproj /Rebuild Release
-mkdir build\pc9801vf
-copy Release\pc9801vf.exe build\pc9801vf\.
-
 devenv.com pc9801vm.vcproj /Rebuild Release
 mkdir build\pc9801vm
+copy Release\pc9801u.exe build\pc9801vm\.
+copy Release\pc9801vf.exe build\pc9801vm\.
 copy Release\pc9801vm.exe build\pc9801vm\.
 
 devenv.com pc98do.vcproj /Rebuild Release

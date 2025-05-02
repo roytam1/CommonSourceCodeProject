@@ -44,7 +44,7 @@ private:
 		uint8 status;
 #endif
 		// constant clock
-		uint32 freq;
+		uint64 freq;
 		int register_id;
 		uint32 input_clk;
 		int period;
@@ -53,7 +53,7 @@ private:
 		outputs_t outputs;
 	} counter_t;
 	counter_t counter[3];
-	int cpu_clocks;
+	uint64 cpu_clocks;
 	
 	void input_clock(int ch, int clock);
 	void input_gate(int ch, bool signal);

@@ -747,7 +747,7 @@ void VM::draw_screen()
 int VM::access_lamp()
 {
 #if defined(_PC9801) || defined(_PC9801E)
-	return (fdc_2hd->read_signal(0) & 3) | ((fdc_2dd->read_signal(0) & 3) << 2) | ((fdc_sub->read_signal(0) & 3) << 4);
+	return (fdc_2hd->read_signal(0) & 3) | (fdc_2dd->read_signal(0) & 3) | (fdc_sub->read_signal(0) & 3);
 #elif defined(_PC9801VF) || defined(_PC9801U)
 	return fdc_2dd->read_signal(0);
 #elif defined(_PC98DO)
