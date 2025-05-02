@@ -41,12 +41,8 @@ void RTC::initialize()
 	memset(regs, 0, sizeof(regs));
 	regs[POWON] = 0x10;	// cleared
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sRTC.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("RTC.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(regs + 8, 32, 1);
 		fio->Fclose();
 	}
@@ -81,12 +77,8 @@ void RTC::release()
 	regs[POFD] = BCD(DAY);
 	
 	// save rtc regs image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sRTC.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("RTC.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(regs + 8, 32, 1);
 		fio->Fclose();
 	}

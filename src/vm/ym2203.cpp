@@ -207,9 +207,7 @@ void YM2203::mix(int32* buffer, int cnt)
 void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 {
 #ifdef HAS_YM2608
-	_TCHAR app_path[_MAX_PATH];
-	emu->application_path(app_path);
-	chip->Init(clock, rate, false, app_path);
+	chip->Init(clock, rate, false, emu->application_path());
 #else
 	chip->Init(clock, rate, false, NULL);
 #endif

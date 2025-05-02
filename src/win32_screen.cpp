@@ -614,16 +614,15 @@ void EMU::capture_screen()
 		vm->draw_screen();
 	}
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	application_path(app_path);
-	_stprintf(file_path, _T("%s%d-%d-%d_%d-%d-%d.bmp"), app_path, sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+	_TCHAR file_name[_MAX_PATH];
+	_stprintf(file_name, _T("%d-%d-%d_%d-%d-%d.bmp"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 	
 	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
 	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 	bmFileHeader.bfSize = bmFileHeader.bfOffBits + pbmInfoHeader->biSizeImage;
 	
 	DWORD dwSize;
-	HANDLE hFile = CreateFile(file_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFile(bios_path(file_name), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwSize, NULL);
 	WriteFile(hFile, lpDibSource, sizeof(BITMAPINFOHEADER), &dwSize, NULL);
 	WriteFile(hFile, lpBmpSource, pbmInfoHeader->biSizeImage, &dwSize, NULL);
@@ -632,13 +631,9 @@ void EMU::capture_screen()
 
 void EMU::start_rec_video(int fps, bool show_dialog)
 {
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	application_path(app_path);
-	_stprintf(file_path, _T("%svideo.avi"), app_path);
-	
 	// initialize vfw
 	AVIFileInit();
-	if(AVIFileOpen(&pAVIFile, file_path, OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
+	if(AVIFileOpen(&pAVIFile, bios_path(_T("video.avi")), OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
 		return;
 	}
 	
@@ -696,11 +691,7 @@ void EMU::stop_rec_video()
 	
 	// repair header
 	if(now_rec_vid) {
-		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-		application_path(app_path);
-		_stprintf(file_path, _T("%svideo.avi"), app_path);
-		
-		FILE* fp = _tfopen(file_path, _T("r+b"));
+		FILE* fp = _tfopen(bios_path(_T("video.avi")), _T("r+b"));
 		if(fp != NULL) {
 			// copy fccHandler
 			uint8 buf[4];

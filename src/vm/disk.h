@@ -53,7 +53,6 @@ private:
 	bool temporary;
 	
 	bool check_media_type();
-	bool check_file_extension(_TCHAR* file_path, _TCHAR* ext);
 	
 	// teledisk image decoder (td0)
 	bool teledisk_to_d88();

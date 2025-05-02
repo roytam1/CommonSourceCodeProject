@@ -100,55 +100,38 @@ void DISPLAY::initialize()
 	scanline = config.scan_line;
 	
 	// load rom images
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
 	
 	// ank8 (8x8)
-	_stprintf(file_path, _T("%sANK8.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("ANK8.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(font, sizeof(font), 1);
+		fio->Fclose();
+	} else if(fio->Fopen(emu->bios_path(_T("FNT0808.X1")), FILEIO_READ_BINARY)) {
+		// xmillenium rom
 		fio->Fread(font, sizeof(font), 1);
 		fio->Fclose();
 	}
-	else {
-		// xmillenium rom
-		_stprintf(file_path, _T("%sFNT0808.X1"), app_path);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-			fio->Fread(font, sizeof(font), 1);
-			fio->Fclose();
-		}
-	}
 	
 	// ank16 (8x16)
-	_stprintf(file_path, _T("%sANK16.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("ANK16.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji, 0x1000, 1);
 		fio->Fclose();
-	}
-	else {
+	} else if(fio->Fopen(emu->bios_path(_T("FNT0816.X1")), FILEIO_READ_BINARY)) {
 		// xmillenium rom
-		_stprintf(file_path, _T("%sFNT0816.X1"), app_path);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-			fio->Fread(kanji, 0x1000, 1);
-			fio->Fclose();
-		}
+		fio->Fread(kanji, 0x1000, 1);
+		fio->Fclose();
 	}
 	memcpy(kanji + 0x7f * 16, ANKFONT7f_af, sizeof(ANKFONT7f_af));
 	memcpy(kanji + 0xe0 * 16, ANKFONTe0_ff, sizeof(ANKFONTe0_ff));
 	
 	// kanji (16x16)
-	_stprintf(file_path, _T("%sKANJI.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji + 0x1000, 0x4ac00, 1);
 		fio->Fclose();
-	}
-	else {
+	} else if(fio->Fopen(emu->bios_path(_T("FNT1616.X1")), FILEIO_READ_BINARY)) {
 		// xmillenium rom
-		_stprintf(file_path, _T("%sFNT1616.X1"), app_path);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-			fio->Fread(kanji + 0x1000, 0x4ac00, 1);
-			fio->Fclose();
-		}
+		fio->Fread(kanji + 0x1000, 0x4ac00, 1);
+		fio->Fclose();
 	}
 	for(int ofs = 0x1000; ofs < 0x4bc00; ofs += 32) {
 		// LRLR.. -> LL..RR..

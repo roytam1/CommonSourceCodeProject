@@ -45,7 +45,6 @@ private:
 	uint8 buffer[DATAREC_BUFFER_SIZE];
 	
 	void update_event();
-	bool check_file_extension(_TCHAR* file_path, _TCHAR* ext);
 	
 	void load_image();
 	

@@ -130,17 +130,6 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	return NULL;
 }
 
-bool check_file_extension(_TCHAR* filename, _TCHAR* ext)
-{
-	int nam_len = _tcslen(filename);
-	int ext_len = _tcslen(ext);
-	
-	if(nam_len >= ext_len && _tcsncicmp(&filename[nam_len - ext_len], ext, ext_len) == 0) {
-		return true;
-	}
-	return false;
-}
-
 #define UPDATE_HISTORY(path, recent) { \
 	int no = 7; \
 	for(int i = 0; i < 8; i++) { \
@@ -1631,7 +1620,7 @@ void open_cart_dialog(HWND hWnd)
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 #if defined(_PCENGINE) || defined(_X1TWIN)
-		_T("Supported Files (*.pce)\0*.pce\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.rom;*.bin;*.pce)\0*.rom;*.bin;*.pce\0All Files (*.*)\0*.*\0\0"),
 		_T("HuCARD"),
 #else
 		_T("Supported Files (*.rom;*.bin)\0*.rom;*.bin\0All Files (*.*)\0*.*\0\0"), 
@@ -1748,7 +1737,7 @@ void open_datarec_dialog(HWND hWnd, bool play)
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 #if defined(DATAREC_PC8801)
-		play ? _T("Supported Files (*.cas;*.cmt;*.t88)\0*.cas;*.cmt;*.t88\0All Files (*.*)\0*.*\0\0")
+		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #elif defined(DATAREC_BINARY_ONLY)
 		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),

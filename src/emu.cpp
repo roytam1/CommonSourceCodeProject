@@ -191,9 +191,11 @@ void EMU::notify_power_off()
 }
 #endif
 
-void EMU::application_path(_TCHAR* path)
+_TCHAR* EMU::bios_path(_TCHAR* file_name)
 {
-	_tcscpy(path, app_path);
+	static _TCHAR file_path[_MAX_PATH];
+	_stprintf(file_path, _T("%s%s"), app_path, file_name);
+	return file_path;
 }
 
 // ----------------------------------------------------------------------------
@@ -363,31 +365,5 @@ bool EMU::now_skip()
 void EMU::update_config()
 {
 	vm->update_config();
-}
-
-// ----------------------------------------------------------------------------
-// misc
-// ----------------------------------------------------------------------------
-
-uint32 EMU::getcrc32(uint8 data[], int size)
-{
-	uint32 c, table[256];
-	for(int i = 0; i < 256; i++) {
-		uint32 c = i;
-		for(int j = 0; j < 8; j++) {
-			if(c & 1) {
-				c = (c >> 1) ^ 0xedb88320;
-			}
-			else {
-				c >>= 1;
-			}
-		}
-		table[i] = c;
-	}
-	c = ~0;
-	for(int i = 0; i < size; i++) {
-		c = table[(c ^ data[i]) & 0xff] ^ (c >> 8);
-	}
-	return ~c;
 }
 

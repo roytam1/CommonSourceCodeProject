@@ -24,18 +24,18 @@ void MEMORY::initialize()
 	memset(rom, 0xff, sizeof(rom));
 	memset(header, 0, sizeof(header));
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBASIC.NES"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BASIC.NES")), FILEIO_READ_BINARY)) {
 		// read header
 		fio->Fread(header, sizeof(header), 1);
 		// read program rom (max 32kb)
 		fio->Fread(rom, 0x4000, 1);
 		memcpy(rom + 0x4000, rom, 0x4000);
 		fio->Fread(rom + 0x4000, 0x4000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
+		fio->Fread(save_ram, sizeof(save_ram), 1);
 		fio->Fclose();
 	}
 	delete fio;
@@ -49,12 +49,8 @@ void MEMORY::initialize()
 
 void MEMORY::release()
 {
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(save_ram, sizeof(save_ram), 1);
 		fio->Fclose();
 	}

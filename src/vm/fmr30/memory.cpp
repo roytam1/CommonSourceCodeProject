@@ -72,12 +72,8 @@ void MEMORY::initialize()
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
@@ -87,19 +83,16 @@ void MEMORY::initialize()
 		memcpy(ipl + 0xfff0, bios2, sizeof(bios2));
 		
 		// ank8/16
-		_stprintf(file_path, _T("%sANK8.ROM"), app_path);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		if(fio->Fopen(emu->bios_path(_T("ANK8.ROM")), FILEIO_READ_BINARY)) {
 			fio->Fread(ipl, 0x800, 1);
 			fio->Fclose();
 		}
-		_stprintf(file_path, _T("%sANK16.ROM"), app_path);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		if(fio->Fopen(emu->bios_path(_T("ANK16.ROM")), FILEIO_READ_BINARY)) {
 			fio->Fread(ipl + 0x800, 0x1000, 1);
 			fio->Fclose();
 		}
 	}
-	_stprintf(file_path, _T("%sKANJI16.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("KANJI16.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji16, sizeof(kanji16), 1);
 		fio->Fclose();
 	}

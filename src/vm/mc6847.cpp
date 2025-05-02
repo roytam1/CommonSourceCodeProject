@@ -100,12 +100,8 @@ static const uint8 intfont[64 * 12] = {
 void MC6847::initialize()
 {
 	// external font
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sFONT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(extfont, sizeof(extfont), 1);
 		fio->Fclose();
 	}

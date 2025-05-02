@@ -14,13 +14,8 @@
 void ROMFILE::initialize()
 {
 	// load rom image
-	_TCHAR app_path[_MAX_PATH], file_path[2][_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path[0], _T("%sFILE.ROM"), app_path);
-	_stprintf(file_path[1], _T("%sSASI.ROM"), app_path);
-	if(fio->Fopen(file_path[0], FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("FILE.ROM")), FILEIO_READ_BINARY)) {
 		// get file size (max 16mb)
 		fio->Fseek(0, FILEIO_SEEK_END);
 		size = fio->Ftell();
@@ -35,7 +30,7 @@ void ROMFILE::initialize()
 		fio->Fread(buf, size, 1);
 		fio->Fclose();
 	}
-	else if(fio->Fopen(file_path[1], FILEIO_READ_BINARY)) {
+	else if(fio->Fopen(emu->bios_path(_T("SASI.ROM")), FILEIO_READ_BINARY)) {
 		// get file size (max 16mb)
 		fio->Fseek(0, FILEIO_SEEK_END);
 		size = fio->Ftell();

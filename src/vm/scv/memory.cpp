@@ -34,18 +34,14 @@
 
 void MEMORY::initialize()
 {
-	// load bios
 	memset(bios, 0xff, sizeof(bios));
 	memset(cart, 0xff, sizeof(cart));
 	memset(sram, 0xff, sizeof(sram));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load bios
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBIOS.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BIOS.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(bios, 0x1000, 1);
 		fio->Fclose();
 	}

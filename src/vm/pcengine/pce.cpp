@@ -81,18 +81,14 @@ void PCE::initialize()
 	memset(backup, 0, sizeof(backup));
 	memcpy(backup, image, sizeof(image));
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(backup, sizeof(backup), 1);
 		fio->Fclose();
 	}
 	delete fio;
 	
-	crc32 = emu->getcrc32(backup, sizeof(backup));
+	crc32 = getcrc32(backup, sizeof(backup));
 #endif
 	running = false;
 }
@@ -100,13 +96,9 @@ void PCE::initialize()
 void PCE::release()
 {
 #ifdef SUPPORT_BACKUP_RAM
-	if(crc32 != emu->getcrc32(backup, sizeof(backup))) {
-		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-		emu->application_path(app_path);
+	if(crc32 != getcrc32(backup, sizeof(backup))) {
 		FILEIO* fio = new FILEIO();
-		
-		_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
 			fio->Fwrite(backup, sizeof(backup), 1);
 			fio->Fclose();
 		}
@@ -366,7 +358,7 @@ void PCE::open_cart(_TCHAR* file_path)
 			if (size <= 0x080000)
 				memcpy(cart + 0x080000, cart, 0x080000);
 		}
-		joy_6btn  = (size == 0x280000 && emu->getcrc32(cart, size) == 0xd15cb6bb) | (size == 0x100000 && emu->getcrc32(cart, size) == 0xd6fc51ce);
+		joy_6btn  = (size == 0x280000 && getcrc32(cart, size) == 0xd15cb6bb) | (size == 0x100000 && getcrc32(cart, size) == 0xd6fc51ce);
 		running = true;
 	}
 	delete fio;

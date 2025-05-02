@@ -28,10 +28,8 @@ void RAMPAC2::initialize(int id)
 	}
 	else {
 		// open default rampac2 file
-		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-		emu->application_path(app_path);
-		_stprintf(file_path, _T("%sRAMPAC%d.BIN"), app_path, id);
-		
+		_TCHAR file_path[_MAX_PATH];
+		_stprintf(file_path, _T("%sRAMPAC%d.BIN"), emu->application_path(), id);
 		open_file(file_path);
 	}
 }

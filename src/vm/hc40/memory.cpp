@@ -38,29 +38,21 @@ void MEMORY::initialize()
 	memset(util, 0xff, sizeof(util));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// buttery backuped dram
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load backuped ram / rom images
 	FILEIO* fio = new FILEIO();
-	
-	// load rom images
-	_stprintf(file_path, _T("%sDRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("DRAM.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(ram, sizeof(ram), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sSYS.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("SYS.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(sys, sizeof(sys), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sBASIC.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BASIC.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(basic, sizeof(basic), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sUTIL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("UTIL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(util, sizeof(util), 1);
 		fio->Fclose();
 	}
@@ -69,13 +61,9 @@ void MEMORY::initialize()
 
 void MEMORY::release()
 {
-	// buttery backuped dram
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// save battery backuped ram
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sDRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("DRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(ram, sizeof(ram), 1);
 		fio->Fclose();
 	}

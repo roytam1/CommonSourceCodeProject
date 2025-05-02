@@ -105,4 +105,8 @@ typedef uint16 scrntype;
 typedef uint32 scrntype;
 #endif
 
+// misc
+bool check_file_extension(_TCHAR* filename, _TCHAR* ext);
+uint32 getcrc32(uint8 data[], int size);
+
 #endif

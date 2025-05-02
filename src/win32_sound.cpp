@@ -169,12 +169,8 @@ void EMU::mute_sound()
 void EMU::start_rec_sound()
 {
 	if(!now_rec_snd) {
-		_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-		application_path(app_path);
-		_stprintf(file_path, _T("%ssound.wav"), app_path);
-		
 		rec = new FILEIO();
-		if(rec->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		if(rec->Fopen(bios_path(_T("sound.wav")), FILEIO_WRITE_BINARY)) {
 			// write dummy wave header
 			struct wavheader_t header;
 			memset(&header, 0, sizeof(wavheader_t));

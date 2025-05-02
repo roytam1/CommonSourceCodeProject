@@ -95,12 +95,8 @@ void PPU::initialize()
 	memset(chr_rom, 0xff, sizeof(chr_rom));
 	memset(header, 0, sizeof(header));
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBASIC.NES"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BASIC.NES")), FILEIO_READ_BINARY)) {
 		// read header
 		fio->Fread(header, sizeof(header), 1);
 		// skip program rom

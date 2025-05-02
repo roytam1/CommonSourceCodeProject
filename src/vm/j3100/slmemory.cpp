@@ -40,28 +40,21 @@ void MEMORY::initialize()
 	memset(ipl, 0xff, sizeof(ipl));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// load image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load images
 	FILEIO* fio = new FILEIO();
-	
-//	_stprintf(file_path, _T("%sEMS.BIN"), app_path);
-//	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+//	if(fio->Fopen(emu->bios_path(_T("EMS.BIN")), FILEIO_READ_BINARY)) {
 //		fio->Fread(ems, sizeof(ems), 1);
 //		fio->Fclose();
 //	}
-	_stprintf(file_path, _T("%sKANJI.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji, sizeof(kanji), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(backup, sizeof(backup), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
@@ -91,18 +84,13 @@ void MEMORY::initialize()
 
 void MEMORY::release()
 {
-	// save image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// save images
 	FILEIO* fio = new FILEIO();
-	
-//	_stprintf(file_path, _T("%sEMS.BIN"), app_path);
-//	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+//	if(fio->Fopen(emu->bios_path(_T("EMS.BIN")), FILEIO_WRITE_BINARY)) {
 //		fio->Fwrite(ems, sizeof(ems), 1);
 //		fio->Fclose();
 //	}
-	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(backup, sizeof(backup), 1);
 		fio->Fclose();
 	}

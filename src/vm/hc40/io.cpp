@@ -65,17 +65,12 @@ void IO::initialize()
 	extcr = 0;
 	
 	// load external ram disk
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sEXTRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXTRAM.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext, 0x20000, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sEXT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext + 0x20000, 0x20000, 1);
 		fio->Fclose();
 	}
@@ -105,12 +100,8 @@ void IO::initialize()
 void IO::release()
 {
 	// save external ram disk
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sEXTRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXTRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(ext, 0x20000, 1);
 		fio->Fclose();
 	}

@@ -50,44 +50,34 @@ void MEMORY::initialize()
 		rdmy[i] = ((i & 1) ? (i >> 8) : i) & 0xff;
 	}
 	
-	// load rom/ram image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load rom/ram images
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(learn, sizeof(learn), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sDICT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("DICT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(dic, sizeof(dic), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sKANJI.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji, sizeof(kanji), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sROMDRV.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("ROMDRV.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(romdrv, sizeof(romdrv), 1);
 		fio->Fclose();
 	}
 #ifdef _PC98HA
-	_stprintf(file_path, _T("%sRAMDRV.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("RAMDRV.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(ramdrv, sizeof(ramdrv), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sMEMCARD.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("MEMCARD.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(memcard, sizeof(memcard), 1);
 		fio->Fclose();
 	}
@@ -97,24 +87,18 @@ void MEMORY::initialize()
 
 void MEMORY::release()
 {
-	// save ram image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// save ram images
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBACKUP.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BACKUP.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(learn, sizeof(learn), 1);
 		fio->Fclose();
 	}
 #ifdef _PC98HA
-	_stprintf(file_path, _T("%sRAMDRV.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("RAMDRV.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(ramdrv, sizeof(ramdrv), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sMEMCARD.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("MEMCARD.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(memcard, sizeof(memcard), 1);
 		fio->Fclose();
 	}

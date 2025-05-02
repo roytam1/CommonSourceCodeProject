@@ -16,13 +16,9 @@ void DISPLAY::initialize()
 {
 	scanline = config.scan_line;
 	
-	// load rom images
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load rom image
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sFONT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(font, sizeof(font), 1);
 		fio->Fclose();
 	}

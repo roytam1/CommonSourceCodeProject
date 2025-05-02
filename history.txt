@@ -1,3 +1,11 @@
+1/18/2013
+
+[VM/DISK] fix to always save the converted disk image
+[VM/Z80] revirt reimplemented Z80 core based on MAME 0.145
+
+[PC8801MA/PC88] support n80 format tape image
+
+
 12/29/2012
 
 [EMU/WIN32] support joysticks with more than 4 buttons

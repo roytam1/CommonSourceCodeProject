@@ -23,12 +23,8 @@ void CMOS::initialize()
 	memset(data_buffer, 0, DATA_SIZE);
 	
 	// load cmos image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sCMOS.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(data_buffer, DATA_SIZE, 1);
 		fio->Fclose();
 	}
@@ -38,12 +34,8 @@ void CMOS::initialize()
 void CMOS::release()
 {
 	// save cmos image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sCMOS.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("CMOS.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(data_buffer, DATA_SIZE, 1);
 		fio->Fclose();
 	}

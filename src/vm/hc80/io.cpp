@@ -99,46 +99,36 @@ void IO::initialize()
 	extcr = 0;
 	
 	// load images
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sBASIC.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BASIC.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(basic, 0x4000, 1);
 		memcpy(basic + 0x4000, basic, 0x4000);
 		fio->Fread(basic + 0x4000, 0x4000, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sUTIL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("UTIL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(util, 0x4000, 1);
 		memcpy(util + 0x4000, util, 0x4000);
 		fio->Fread(util + 0x4000, 0x4000, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sVRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("VRAM.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(ram + 0x8000, 0x1800, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sEXTRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXTRAM.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext, 0x20000, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sINTRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("INTRAM.BIN")), FILEIO_READ_BINARY)) {
 		fio->Fread(iramdisk_sectors, sizeof(iramdisk_sectors), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sEXT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext + 0x20000, 0x20000, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sFONT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(font, sizeof(font), 1);
 		fio->Fclose();
 	}
@@ -172,22 +162,16 @@ void IO::initialize()
 void IO::release()
 {
 	// save external ram disk
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sVRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("VRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(ram + 0x8000, 0x1800, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sEXTRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXTRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(ext, 0x20000, 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sINTRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("INTRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(iramdisk_sectors, sizeof(iramdisk_sectors), 1);
 		fio->Fclose();
 	}

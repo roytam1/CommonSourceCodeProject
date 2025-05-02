@@ -49,16 +49,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
 	// check ipl
 	uint8 machine_id = 0;
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		uint8 ipl[0x4000];
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
-		uint32 crc32 = emu->getcrc32(ipl, sizeof(ipl));
+		uint32 crc32 = getcrc32(ipl, sizeof(ipl));
 		for(int i = 0;; i++) {
 			if(machine_ids[i][0] == -1) {
 				break;
@@ -73,8 +69,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	machine_id = 0x70;
 #else
 	if(!machine_id) {
-		_stprintf(file_path, _T("%sMACHINE.ID"), app_path);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		if(fio->Fopen(emu->bios_path(_T("MACHINE.ID")), FILEIO_READ_BINARY)) {
 			machine_id = fio->Fgetc();
 			fio->Fclose();
 		}

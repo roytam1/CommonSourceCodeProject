@@ -167,14 +167,10 @@ void MEMORY::unset_memory_w(uint32 start, uint32 end)
 
 int MEMORY::read_bios(_TCHAR *file_name, uint8 *buffer, int size)
 {
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
-	_stprintf(file_path, _T("%s%s"), app_path, file_name);
-	
 	FILEIO* fio = new FILEIO();
 	int length = 0;
 	
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(file_name), FILEIO_READ_BINARY)) {
 		fio->Fread(buffer, size, 1);
 		length = fio->Ftell();
 		fio->Fclose();
@@ -185,14 +181,10 @@ int MEMORY::read_bios(_TCHAR *file_name, uint8 *buffer, int size)
 
 bool MEMORY::write_bios(_TCHAR *file_name, uint8 *buffer, int size)
 {
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
-	_stprintf(file_path, _T("%s%s"), app_path, file_name);
-	
 	FILEIO* fio = new FILEIO();
 	bool result = false;
 	
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(file_name), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(buffer, size, 1);
 		fio->Fclose();
 		result = true;

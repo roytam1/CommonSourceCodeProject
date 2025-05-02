@@ -50,19 +50,14 @@ void MEMORY::initialize()
 #endif
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// load rom image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load rom images
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
 #ifdef _MZ1200
-	_stprintf(file_path, _T("%sEXT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("EXT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext, sizeof(ext), 1);
 		fio->Fclose();
 	}

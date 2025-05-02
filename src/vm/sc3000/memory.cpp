@@ -31,18 +31,14 @@
 
 void MEMORY::initialize()
 {
-	// load ipl
 	memset(cart, 0xff, sizeof(cart));
 	memset(ipl, 0xff, sizeof(ipl));
 	memset(ram, 0, sizeof(ram));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load ipl
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sSF7000.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("SF7000.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}

@@ -1,9 +1,9 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MAME 0.145
+	Origin : MAME
 	Author : Takeda.Toshiya
-	Date   : 2012.02.15-
+	Date   : 2006.08.18-
 
 	[ Z80 ]
 */
@@ -41,25 +41,38 @@ private:
 	
 	int icount;
 	uint16 prevpc;
-	pair pc, sp, af, bc, de, hl, ix, iy, wz;
+	pair af, bc, de, hl, ix, iy;
 	pair af2, bc2, de2, hl2;
 	uint8 I, R, R2;
-	uint32 ea;
+	uint16 PC, SP, EA;
 	
 	bool busreq, halt;
 	uint8 im, iff1, iff2, icr;
 	bool after_ei, after_ldair;
 	uint32 intr_req_bit, intr_pend_bit;
 	
-	inline uint8 RM8(uint32 addr);
-	inline void WM8(uint32 addr, uint8 val);
-	inline void RM16(uint32 addr, pair *r);
-	inline void WM16(uint32 addr, pair *r);
+	/* ---------------------------------------------------------------------------
+	virtual machine interfaces
+	--------------------------------------------------------------------------- */
+	
+	// memory
+	inline uint8 RM8(uint16 addr);
+	inline void WM8(uint16 addr, uint8 val);
+	inline uint16 RM16(uint16 addr);
+	inline void WM16(uint16 addr, uint16 val);
 	inline uint8 FETCHOP();
 	inline uint8 FETCH8();
-	inline uint32 FETCH16();
-	inline uint8 IN8(uint32 addr);
-	inline void OUT8(uint32 addr, uint8 val);
+	inline uint16 FETCH16();
+	inline uint16 POP16();
+	inline void PUSH16(uint16 val);
+	
+	// i/o
+	inline uint8 IN8(uint8 laddr, uint8 haddr);
+	inline void OUT8(uint8 laddr, uint8 haddr, uint8 val);
+	
+	/* ---------------------------------------------------------------------------
+	opecodes
+	--------------------------------------------------------------------------- */
 	
 	inline uint8 INC(uint8 value);
 	inline uint8 DEC(uint8 value);
@@ -76,6 +89,7 @@ private:
 	inline uint8 RES(uint8 bit, uint8 value);
 	inline uint8 SET(uint8 bit, uint8 value);
 	
+	// opecode
 	void OP_CB(uint8 code);
 	void OP_XY(uint8 code);
 	void OP_DD(uint8 code);
@@ -132,7 +146,6 @@ public:
 	~Z80() {}
 	
 	// common functions
-	void initialize();
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
@@ -162,6 +175,12 @@ public:
 #endif
 	void set_context_busack(DEVICE* device, int id, uint32 mask) {
 		register_output_signal(&outputs_busack, device, id, mask);
+	}
+	void set_pc(uint16 value) {
+		PC = value;
+	}
+	void set_sp(uint16 value) {
+		SP = value;
 	}
 };
 

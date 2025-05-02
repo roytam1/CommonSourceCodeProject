@@ -40,18 +40,14 @@ void MEMORY::initialize()
 	memset(ipl, 0xff, sizeof(ipl));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// load rom/ram image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load rom image
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
-
-for(int i = 0xa8e; i < 0xafc; i++) ipl[i] = 0x90;
-
+		for(int i = 0xa8e; i < 0xafc; i++) {
+			ipl[i] = 0x90;
+		}
 	}
 	delete fio;
 }
@@ -59,12 +55,8 @@ for(int i = 0xa8e; i < 0xafc; i++) ipl[i] = 0x90;
 void MEMORY::release()
 {
 	// save ram image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sTVRAM.BIN"), app_path);
-	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("TVRAM.BIN")), FILEIO_WRITE_BINARY)) {
 		fio->Fwrite(tvram, sizeof(tvram), 1);
 		fio->Fclose();
 	}

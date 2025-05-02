@@ -40,18 +40,13 @@ void MAIN::initialize()
 	memset(ext, 0xff, sizeof(ext));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// load rom image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load rom images
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sBASIC.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("BASIC.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(basic, sizeof(basic), 1);
 		fio->Fclose();
 	}

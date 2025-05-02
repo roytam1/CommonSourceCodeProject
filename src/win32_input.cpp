@@ -36,12 +36,8 @@ void EMU::initialize_input()
 	mouse_enabled = false;
 	
 	// initialize keycode convert table
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%skeycode.cfg"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(bios_path(_T("keycode.cfg")), FILEIO_READ_BINARY)) {
 		fio->Fread(keycode_conv, sizeof(keycode_conv), 1);
 		fio->Fclose();
 	}

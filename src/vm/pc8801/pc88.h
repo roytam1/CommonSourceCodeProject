@@ -27,6 +27,8 @@
 #define PC88_EXRAM_BANKS	1
 #endif
 
+class Z80;
+
 typedef struct pc88_crtc_t {
 	struct {
 		uint8 disp;
@@ -81,7 +83,8 @@ typedef struct pc88_dmac_t {
 class PC88 : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_beep, *d_opn, *d_pcm, *d_pio, *d_rtc, *d_sio;
+	Z80 *d_cpu;
+	DEVICE *d_beep, *d_opn, *d_pcm, *d_pio, *d_rtc, *d_sio;
 	
 	uint8* rbank[16];
 	uint8* wbank[16];
@@ -226,7 +229,7 @@ public:
 	void set_context_beep(DEVICE* device) {
 		d_beep = device;
 	}
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(Z80* device) {
 		d_cpu = device;
 	}
 	void set_context_opn(DEVICE* device) {

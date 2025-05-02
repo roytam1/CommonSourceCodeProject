@@ -314,17 +314,6 @@ void DATAREC::update_event()
 	write_signals(&outputs_end, signal ? 0xffffffff : 0);
 }
 
-bool DATAREC::check_file_extension(_TCHAR* file_path, _TCHAR* ext)
-{
-	int nam_len = _tcslen(file_path);
-	int ext_len = _tcslen(ext);
-	
-	if(nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0) {
-		return true;
-	}
-	return false;
-}
-
 // standard PCM wave file
 
 int DATAREC::load_wav_image()

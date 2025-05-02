@@ -84,12 +84,8 @@ void MEMORY::initialize()
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 #ifdef _FMRCARD
@@ -109,29 +105,24 @@ void MEMORY::initialize()
 		memcpy(ipl + 0x3ff0, bios2, sizeof(bios2));
 	}
 #ifdef _FMR60
-	_stprintf(file_path, _T("%sANK24.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("ANK24.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ank24, sizeof(ank24), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sKANJI24.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("KANJI24.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji24, sizeof(kanji24), 1);
 		fio->Fclose();
 	}
 #else
-	_stprintf(file_path, _T("%sANK8.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("ANK8.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ank8, sizeof(ank8), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sANK16.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("ANK16.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ank16, sizeof(ank16), 1);
 		fio->Fclose();
 	}
-	_stprintf(file_path, _T("%sKANJI16.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("KANJI16.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji16, sizeof(kanji16), 1);
 		fio->Fclose();
 	}

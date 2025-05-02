@@ -308,7 +308,10 @@ public:
 	EMU(HWND hwnd, HINSTANCE hinst);
 	~EMU();
 	
-	void application_path(_TCHAR* path);
+	_TCHAR* application_path() {
+		return app_path;
+	}
+	_TCHAR* bios_path(_TCHAR* file_name);
 	
 	// ----------------------------------------
 	// for windows
@@ -470,11 +473,6 @@ public:
 #endif
 	// debug log
 	void out_debug(const _TCHAR* format, ...);
-	
-	// ----------------------------------------
-	// misc
-	// ----------------------------------------
-	uint32 getcrc32(uint8 data[], int size);
 };
 
 #endif

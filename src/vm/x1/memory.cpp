@@ -40,22 +40,14 @@ void MEMORY::initialize()
 	memset(ram, 0, sizeof(ram));
 	
 	// load ipl
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(rom, ROM_FILE_SIZE, 1);
 		fio->Fclose();
-	}
-	else {
+	} else if(fio->Fopen(emu->bios_path(ROM_FILE_NAME), FILEIO_READ_BINARY)) {
 		// xmillenium rom
-		_stprintf(file_path, _T("%s%s"), app_path, ROM_FILE_NAME);
-		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-			fio->Fread(rom, ROM_FILE_SIZE, 1);
-			fio->Fclose();
-		}
+		fio->Fread(rom, ROM_FILE_SIZE, 1);
+		fio->Fclose();
 	}
 	delete fio;
 #ifndef _X1TURBO

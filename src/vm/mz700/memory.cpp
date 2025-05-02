@@ -88,25 +88,19 @@ void MEMORY::initialize()
 	memset(font, 0, sizeof(font));
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// load rom image
-	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
-	emu->application_path(app_path);
+	// load rom images
 	FILEIO* fio = new FILEIO();
-	
-	_stprintf(file_path, _T("%s%s"), app_path, _T(IPL_FILE_NAME));
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T(IPL_FILE_NAME)), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
 #if defined(_MZ800) || defined(_MZ1500)
-	_stprintf(file_path, _T("%s%s"), app_path, _T(EXT_FILE_NAME));
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T(EXT_FILE_NAME)), FILEIO_READ_BINARY)) {
 		fio->Fread(ext, sizeof(ext), 1);
 		fio->Fclose();
 	}
 #endif
-	_stprintf(file_path, _T("%sFONT.ROM"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(font, sizeof(font), 1);
 		fio->Fclose();
 	}

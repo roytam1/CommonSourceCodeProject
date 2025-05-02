@@ -105,28 +105,6 @@ static const fd_format fd_formats[] = {
 	{ -1, 0, 0, 0, 0 },
 };
 
-static uint32 getcrc32(uint8 data[], int size)
-{
-	uint32 c, table[256];
-	for(int i = 0; i < 256; i++) {
-		uint32 c = i;
-		for(int j = 0; j < 8; j++) {
-			if(c & 1) {
-				c = (c >> 1) ^ 0xedb88320;
-			}
-			else {
-				c >>= 1;
-			}
-		}
-		table[i] = c;
-	}
-	c = ~0;
-	for(int i = 0; i < size; i++) {
-		c = table[(c ^ data[i]) & 0xff] ^ (c >> 8);
-	}
-	return ~c;
-}
-
 void DISK::open(_TCHAR path[], int offset)
 {
 	// check current disk image
@@ -140,6 +118,8 @@ void DISK::open(_TCHAR path[], int offset)
 	// open disk image
 	fi = new FILEIO();
 	if(fi->Fopen(path, FILEIO_READ_BINARY)) {
+		bool converted = false;
+		
 		_tcscpy(file_path, path);
 		_stprintf(tmp_path, _T("%s.$$$"), path);
 		temporary = false;
@@ -178,7 +158,7 @@ void DISK::open(_TCHAR path[], int offset)
 				fi->Fseek(file_size - len, FILEIO_SEEK_SET);
 				if(standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size)) {
 					_stprintf(file_path, _T("%s.D88"), path);
-					inserted = changed = true;
+					inserted = changed = converted = true;
 					goto file_loaded;
 				}
 			}
@@ -198,19 +178,19 @@ void DISK::open(_TCHAR path[], int offset)
 			try {
 				if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
 					// teledisk image file
-					inserted = changed = teledisk_to_d88();
+					inserted = changed = converted = teledisk_to_d88();
 				}
 				else if(memcmp(buffer, "IMD", 3) == 0) {
 					// imagedisk image file
-					inserted = changed = imagedisk_to_d88();
+					inserted = changed = converted = imagedisk_to_d88();
 				}
 				else if(memcmp(buffer, "MV - CPC", 8) == 0) {
 					// standard cpdread image file
-					inserted = changed = cpdread_to_d88(0);
+					inserted = changed = converted = cpdread_to_d88(0);
 				}
 				else if(memcmp(buffer, "EXTENDED", 8) == 0) {
 					// extended cpdread image file
-					inserted = changed = cpdread_to_d88(1);
+					inserted = changed = converted = cpdread_to_d88(1);
 				}
 			}
 			catch(...) {
@@ -218,12 +198,23 @@ void DISK::open(_TCHAR path[], int offset)
 			}
 		}
 file_loaded:
-		if(inserted) {
-			crc32 = getcrc32(buffer, file_size);
+		if(fi->IsOpened()) {
+			fi->Fclose();
 		}
-		fi->Fclose();
 		if(temporary) {
 			fi->Remove(tmp_path);
+		}
+		if(inserted) {
+			if(converted) {
+				// write image
+				FILEIO* fio = new FILEIO();
+				if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+					fio->Fwrite(buffer, file_size, 1);
+					fio->Fclose();
+				}
+				delete fio;
+			}
+			crc32 = getcrc32(buffer, file_size);
 		}
 		if(buffer[0x1a] != 0) {
 			write_protected = true;
@@ -477,17 +468,6 @@ bool DISK::check_media_type()
 		return (media_type == MEDIA_TYPE_2HD);
 	case DRIVE_TYPE_UNK:
 		return true; // always okay
-	}
-	return false;
-}
-
-bool DISK::check_file_extension(_TCHAR* file_path, _TCHAR* ext)
-{
-	int nam_len = _tcslen(file_path);
-	int ext_len = _tcslen(ext);
-	
-	if(nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0) {
-		return true;
 	}
 	return false;
 }
