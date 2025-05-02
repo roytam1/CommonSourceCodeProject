@@ -31,12 +31,12 @@ class Z80;
 
 typedef struct pc88_crtc_t {
 	struct {
-		uint8 disp;
 		int rate, counter;
+		uint8 cursor, attrib;
 	} blink;
 	struct {
-		bool disp, blink;
-		int x, y, line;
+		int type, mode;
+		int x, y;
 	} cursor;
 	struct {
 		uint8 data, mask;
@@ -61,7 +61,6 @@ typedef struct pc88_crtc_t {
 	uint8 read_buffer(int ofs);
 	void clear_buffer();
 	void update_blink();
-	bool cursor_on();
 	void expand_attribs(bool hireso);
 } pc88_crtc_t;
 

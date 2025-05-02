@@ -39,7 +39,12 @@ void PC80S31K::initialize()
 	
 	// load rom image
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("DISK.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(emu->bios_path(_T("PC88.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fseek(0x14000, FILEIO_SEEK_CUR);
+		fio->Fread(rom, sizeof(rom), 1);
+		fio->Fclose();
+	}
+	else if(fio->Fopen(emu->bios_path(_T("DISK.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(rom, sizeof(rom), 1);
 		fio->Fclose();
 	}

@@ -1517,7 +1517,6 @@ void PC88::draw_text()
 	}
 	crtc.status &= ~8; // clear dma underrun
 	
-	bool cursor_on = crtc.cursor_on();
 	int char_height = crtc.char_height;
 	uint8 color_mask = Port30_COLOR ? 0 : 7;
 	
@@ -1532,27 +1531,22 @@ void PC88::draw_text()
 			if(Port30_40 && (cx & 1)) {
 				continue;
 			}
-			uint8 code = crtc.read_buffer(ofs + cx);
 			uint8 attrib = crtc.attrib.expand[cy][cx];
-			
-			uint8 *pattern = ((attrib & 0x10) ? sg_pattern : kanji1 + 0x1000) + code * 8;
 			uint8 color = (attrib & 0xe0) ? ((attrib >> 5) | color_mask) : 8;
 			bool under_line = ((attrib & 8) != 0);
 			bool upper_line = ((attrib & 4) != 0);
 			bool secret = ((attrib & 2) != 0);
 			bool reverse = ((attrib & 1) != 0);
 			
-			bool cursor_now = (cursor_on && cx == crtc.cursor.x && cy == crtc.cursor.y);
+			uint8 code = secret ? 0 : crtc.read_buffer(ofs + cx);
+			uint8 *pattern = ((attrib & 0x10) ? sg_pattern : kanji1 + 0x1000) + code * 8;
 			
 			for(int l = 0, y = ytop; l < char_height && y < 200; l++, y++) {
 				uint8 pat = (l < 8) ? pattern[l] : 0;
-				if(secret || reverse) {
-					pat = 0;
-				}
 				if((upper_line && l == 0) || (under_line && l >= 7)) {
 					pat = 0xff;
 				}
-				if(cursor_now && l >= crtc.cursor.line) {
+				if(reverse) {
 					pat = ~pat;
 				}
 				
@@ -1897,6 +1891,7 @@ void PC88::intr_ei()
 void pc88_crtc_t::reset()
 {
 	blink.rate = 24;
+	cursor.type = cursor.mode = -1;
 	cursor.x = cursor.y = -1;
 	attrib.data = 0xe0;
 	attrib.mask = 0xff;
@@ -1929,7 +1924,7 @@ void pc88_crtc_t::write_cmd(uint8 data)
 		status &= ~1;
 		break;
 	case 4:	// load cursor position ON/OFF
-		cursor.disp = ((data & 1) != 0);
+		cursor.type = (data & 1) ? cursor.mode : -1;
 		break;
 	case 5:	// reset IRQ
 		break;
@@ -1949,12 +1944,11 @@ void pc88_crtc_t::write_param(uint8 data)
 			break;
 		case 1:
 			height = (data & 0x3f) + 1;
-			blink.rate = 8 * ((data >> 6) + 1);
+			blink.rate = 32 * ((data >> 6) + 1);
 			break;
 		case 2:
 			char_height = (data & 0x1f) + 1;
-			cursor.blink = ((data & 0x20) != 0);
-			cursor.line = (data & 0x40) ? 0 : 7;
+			cursor.mode = (data >> 5) & 3;
 			skip_line = ((data & 0x80) != 0);
 			break;
 		case 4:
@@ -2010,15 +2004,12 @@ void pc88_crtc_t::clear_buffer()
 
 void pc88_crtc_t::update_blink()
 {
-	if(!(blink.counter++ < blink.rate)) {
-		blink.disp ^= 1;
+	// from m88
+	if(++blink.counter > blink.rate) {
 		blink.counter = 0;
 	}
-}
-
-bool pc88_crtc_t::cursor_on()
-{
-	return cursor.disp && !(cursor.blink && !blink.disp);
+	blink.attrib = (blink.counter < blink.rate / 4) ? 2 : 0;
+	blink.cursor = (blink.counter <= blink.rate / 4) || (blink.rate / 2 <= blink.counter && blink.counter <= 3 * blink.rate / 4);
 }
 
 void pc88_crtc_t::expand_attribs(bool hireso)
@@ -2047,17 +2038,26 @@ void pc88_crtc_t::expand_attribs(bool hireso)
 						attrib.mask = 0xf0;
 					} else {
 						attrib.data = (attrib.data & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
-						attrib.data ^= ((code & 2) && !(code & 1)) ? blink.disp : 0;
+						attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
 						attrib.mask = 0xff;
 					}
 				} else {
 					attrib.data = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
-					attrib.data ^= ((code & 2) && !(code & 1)) ? blink.disp : 0;
+					attrib.data ^= ((code & 2) && !(code & 1)) ? blink.attrib : 0;
 					attrib.mask = 0xff;
 				}
 				pos += 2;
 			}
 			attrib.expand[cy][cx] = attrib.data & attrib.mask;
+			
+			if(cx == cursor.x && cy == cursor.y) {
+				if((cursor.type & 1) && blink.cursor) {
+					// no cursor
+				} else {
+					static const uint8 ctype[5] = {0, 8, 8, 1, 1};
+					attrib.expand[cy][cx] ^= ctype[cursor.type + 1];
+				}
+			}
 		}
 	}
 }

@@ -482,22 +482,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #endif
 		break;
 	case WM_CLOSE:
-		// release emulation core
-		if(emu) {
 #ifdef USE_POWER_OFF
-			// notify power off
+		// notify power off
+		if(emu) {
 			static int notified = 0;
 			if(!notified) {
 				emu->notify_power_off();
 				notified = 1;
 				return 0;
 			}
-#endif
-			delete emu;
 		}
-		emu = NULL;
-		save_config();
-		// quit fullscreen mode
+#endif
+		// release window
 		if(now_fullscreen) {
 			ChangeDisplaySettings(NULL, 0);
 		}
@@ -510,6 +506,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 #endif
 		DestroyWindow(hWnd);
+		// release emulation core
+		if(emu) {
+			delete emu;
+			emu = NULL;
+		}
+		save_config();
 		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);

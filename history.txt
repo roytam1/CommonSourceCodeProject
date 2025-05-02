@@ -1,3 +1,10 @@
+2/26/2013
+
+[WINMAIN] destroy window before emulation core is released
+
+[PC8801MA/PC88] fix text attributes
+
+
 2/7/2013
 
 [EMU/WIN32] remove the function to play media files
