@@ -8,13 +8,22 @@
 */
 
 #include "keyboard.h"
+#include "../event.h"
+#include "../../fileio.h"
 #include "../i8255.h"
 
-/** Keyboard bindings ****************************************/
+#define EVENT_SIGNAL			0
+#define DATAREC_FF_REW_SPEED	10
+
+#define CAS_NONE				0
+#define CAS_SAVEBYTE			1
+#define CAS_LOADING				2
+#define CAS_LOADBYTE			3
+
 /* normal (small alphabet) */
 byte Keys1[256][2] =
 {
-  /*  0        1        2         3        4        5       6         7 */
+/* 0       1         2        3        4        5        6        7 */
 /* 00 */
   /* */
   {0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},
@@ -600,62 +609,20 @@ byte Keys7[256][2] =
   {0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x00},{0,0x7f},
 };
 
-// ****************************************************************************
-//           key buffer (ring buffer)
-// ****************************************************************************
-struct _buffer2 {
-  int   read_idx;
-  int   write_idx;
-  int   length;
-  int   wParam[1024];
-  int   lParam[1024];
-  char  chr   [1024];
-} keybuffer;
-
-void init_keybuffer(void)
-{
-  keybuffer.read_idx=0;
-  keybuffer.write_idx=0;
-  keybuffer.length=1024-1;
-}
-
-void write_keybuffer(int wParam , int lParam , char chr)
-{
-  keybuffer.wParam[ keybuffer.write_idx]= wParam;
-  keybuffer.lParam[ keybuffer.write_idx]= lParam;
-  keybuffer.chr   [ keybuffer.write_idx]= chr;
-  if( ++keybuffer.write_idx >keybuffer.length)
-	{
-	 keybuffer.write_idx=0;
-	}
-}
-
-int read_keybuffer(int *wParam , int *lParam , char *chr)
-{
- int ret;
- ret=0;
-  if( keybuffer.read_idx != keybuffer.write_idx)
-  	{
-	 if(wParam) *wParam = keybuffer.wParam[ keybuffer.read_idx];
-	 if(lParam) *lParam = keybuffer.lParam[ keybuffer.read_idx];
-	 if(chr   ) *chr    = keybuffer.chr   [ keybuffer.read_idx];
-	 if( ++keybuffer.read_idx >keybuffer.length)
-		{
-		 keybuffer.read_idx=0;
-		}
-	 ret=1;
-	}
- return(ret);
-}
-
-int check_keybuffer()
-{
-	if (keybuffer.read_idx != keybuffer.write_idx) return 1;
-	return 0;
-}
-
 void KEYBOARD::initialize()
 {
+	fio = new FILEIO();	
+	play = rec = remote = trigger = false;
+	ff_rew = 0;
+	in_signal = out_signal = false;
+	register_id = -1;
+	
+	buffer = buffer_bak = NULL;
+	apss_buffer = NULL;
+	buffer_ptr = buffer_length = 0;
+	is_wav = false;
+	changed = 0;
+
 	key_stat = emu->key_buffer();
 	kbFlagCtrl=0;
 	kbFlagGraph=0;
@@ -663,9 +630,25 @@ void KEYBOARD::initialize()
 	kanaMode=0;
 	katakana=0;
 	stick0=0;
-	init_keybuffer();
+	p6key=0;
+	counter=0;
 	// register event to update the key status
 	register_frame_event(this);
+}
+
+void KEYBOARD::reset()
+{
+	p6key=0;
+	CasMode=CAS_NONE;
+	CasIndex=0;
+	memset(CasData, 0, 0x10000);
+	close_tape();
+}
+
+void KEYBOARD::release()
+{
+	close_file();
+	delete fio;
 }
 
 void KEYBOARD::event_frame()
@@ -682,9 +665,7 @@ void KEYBOARD::event_frame()
 	if (key_stat[VK_SHIFT]) stick0 |= STICK0_SHIFT;
 	d_mem->write_data8(0xfeca, stick0);
 	update_keyboard();
-	if (check_keybuffer()) {
-		d_cpu->write_signal(SIG_CPU_IRQ, 0x16, 0xff);
-	}
+	if (p6key) d_cpu->write_signal(SIG_CPU_IRQ, 0x16, 0xff);
 }
 
 void KEYBOARD::update_keyboard()
@@ -693,46 +674,394 @@ void KEYBOARD::update_keyboard()
 		if (key_stat[code] & 0x80) {
 			if (code == VK_SHIFT || code == VK_CONTROL) continue;
 			key_stat[code]=0;
-			if (code == VK_F6) {kanaMode = -1 * (kanaMode-1);continue;}
-			if (code == VK_F7) {katakana = -1 * (katakana-1);continue;}
-			if (code == VK_F8) {kbFlagGraph = -1 * (kbFlagGraph-1);continue;}
-			write_keybuffer(code, 0x80, 0);
+			if (code == 0x75) {kanaMode = -1 * (kanaMode-1);continue;} // VK_F6
+			if (code == 0x76) {katakana = -1 * (katakana-1);continue;} // VK_F7
+			if (code == 0x77) {kbFlagGraph = -1 * (kbFlagGraph-1);continue;} // VK_F8
+			p6key=code;
 			byte *Keys;
 			byte ascii=0;
 			if (kbFlagGraph) {
 				Keys = Keys7[code];
 			} else if (kanaMode) {
 				if (katakana) {
-  					if (stick0 & STICK0_SHIFT) Keys = Keys6[code];
-  					else Keys = Keys5[code];
+					if (stick0 & STICK0_SHIFT) Keys = Keys6[code];
+					else Keys = Keys5[code];
 				} else if (stick0 & STICK0_SHIFT) { 
 					Keys = Keys4[code];
 				} else {
-               		Keys = Keys3[code];
+					Keys = Keys3[code];
 				}
 			} else if (stick0 & STICK0_SHIFT) { 
-           		Keys = Keys2[code];
+				Keys = Keys2[code];
 			} else { 
-          		Keys = Keys1[code];
+				Keys = Keys1[code];
 			}
 			ascii = Keys[1];
 			/* control key + alphabet key */
 			if ((kbFlagCtrl == 1) && (code >= 0x41) && (code <= 0x5a)) ascii = code - 0x41 + 1;
 			/* function key */
-            if (!kanaMode && (ascii>0xef && ascii<0xfa)) kbFlagFunc=1;
+			if (!kanaMode && (ascii>0xef && ascii<0xfa)) kbFlagFunc=1;
 			d_pio->write_signal(SIG_I8255_PORT_A, ascii, 0xff);
 		}
 	}
 }
 
 uint32 KEYBOARD::intr_ack() {
-	int code, value;
-	char dummy;
-	if (read_keybuffer(&code, &value, &dummy)) {
+	if (p6key) {
+		p6key=0;
 		if (kbFlagGraph==0 && kbFlagFunc==0) return 0x02;
 		kbFlagFunc=0;
 		return 0x14;
 	}
+	if(counter++ > 20) {
+		counter = 0;
+		if (play || rec) return 0x08;
+	}
 	return 0x06;
 }
 
+void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
+{
+	bool signal = ((data & mask) != 0);
+	
+	if(id == SIG_DATAREC_OUT) {
+		if(out_signal != signal) {
+			if(rec && remote) {
+				changed++;
+			}
+			if(prev_clock != 0) {
+				if(out_signal) {
+					positive_clocks += passed_clock(prev_clock);
+				} else {
+					negative_clocks += passed_clock(prev_clock);
+				}
+				prev_clock = current_clock();
+			}
+			out_signal = signal;
+		}
+	} else if(id == SIG_DATAREC_REMOTE) {
+		set_remote(signal);
+	} else if(id == SIG_DATAREC_TRIG) {
+		// L->H: remote signal is switched
+		if(signal && !trigger) {
+			set_remote(!remote);
+		}
+		trigger = signal;
+	}
+}
+
+void KEYBOARD::event_callback(int event_id, int err)
+{
+	if(event_id == EVENT_SIGNAL) {
+		if(play) {
+			if(buffer_ptr < buffer_length && ff_rew == 0) {
+				emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
+			}
+			bool signal = in_signal;
+			if(is_wav) {
+				if(buffer_ptr >= 0 && buffer_ptr < buffer_length) {
+					signal = ((buffer[buffer_ptr] & 0x80) != 0);
+					CasData[buffer_ptr]=buffer[buffer_ptr];
+				}
+				if(ff_rew < 0) {
+					if((buffer_ptr = max(buffer_ptr - 1, 0)) == 0) {
+						set_remote(false);	// top of tape
+					}
+				} else {
+					if((buffer_ptr = min(buffer_ptr + 1, buffer_length)) == buffer_length) {
+						set_remote(false);	// end of tape
+					}
+				}
+				update_event();
+			} else {
+				if(ff_rew < 0) {
+					if(buffer_bak != NULL) {
+						memcpy(buffer, buffer_bak, buffer_length);
+					}
+					buffer_ptr = 0;
+					set_remote(false);	// top of tape
+				} else {
+					while(buffer_ptr < buffer_length) {
+						if((buffer[buffer_ptr] & 0x7f) == 0) {
+							if(++buffer_ptr == buffer_length) {
+								set_remote(false);	// end of tape
+								break;
+							}
+						} else {
+							signal = ((buffer[buffer_ptr] & 0x80) != 0);
+							uint8 tmp = buffer[buffer_ptr];
+							buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
+							break;
+						}
+					}
+				}
+			}
+			// notify the signal is changed
+			if(signal != in_signal) {
+				in_signal = signal;
+				changed++;
+				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
+			}
+		} else if(rec) {
+			if(out_signal) {
+				positive_clocks += passed_clock(prev_clock);
+			} else {
+				negative_clocks += passed_clock(prev_clock);
+			}
+			if(is_wav) {
+				if(positive_clocks != 0 || negative_clocks != 0) {
+					buffer[buffer_ptr] = (255 * positive_clocks) / (positive_clocks + negative_clocks);
+				} else {
+					buffer[buffer_ptr] = 0;
+				}
+				if(++buffer_ptr >= buffer_length) {
+					buffer_ptr = 0;
+				}
+			} else {
+				bool prev_signal = ((buffer[buffer_ptr] & 0x80) != 0);
+				bool cur_signal = (positive_clocks > negative_clocks);
+				if(prev_signal != cur_signal || (buffer[buffer_ptr] & 0x7f) == 0x7f) {
+					if(++buffer_ptr >= buffer_length) {
+						buffer_ptr = 0;
+					}
+					buffer[buffer_ptr] = cur_signal ? 0x80 : 0;
+				}
+				buffer[buffer_ptr]++;
+			}
+			prev_clock = current_clock();
+			positive_clocks = negative_clocks = 0;
+		}
+	}
+}
+
+void KEYBOARD::set_remote(bool value)
+{
+	if(remote != value) {
+		remote = value;
+		update_event();
+	}
+}
+
+void KEYBOARD::set_ff_rew(int value)
+{
+	if(ff_rew != value) {
+		if(register_id != -1) {
+			cancel_event(register_id);
+			register_id = -1;
+		}
+		ff_rew = value;
+		apss_signals = false;
+		update_event();
+	}
+}
+
+bool KEYBOARD::do_apss(int value)
+{
+	bool result = false;
+	
+	if(play) {
+		set_ff_rew(0);
+		set_remote(true);
+		set_ff_rew(value > 0 ? 1 : -1);
+		apss_remain = value;
+		
+		while(apss_remain != 0 && remote) {
+			event_callback(EVENT_SIGNAL, 0);
+		}
+		result = (apss_remain == 0);
+	}
+	
+	// stop cmt
+	set_remote(false);
+	set_ff_rew(0);
+	
+	if(value > 0) {
+		emu->out_message(_T("CMT: APSS (+%d)"), value);
+	} else {
+		emu->out_message(_T("CMT: APSS (%d)"), value);
+	}
+	return result;
+}
+
+void KEYBOARD::update_event()
+{
+	if(remote && (play || rec)) {
+		if(register_id == -1) {
+			if(ff_rew != 0) {
+				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate / DATAREC_FF_REW_SPEED, true, &register_id);
+				if(ff_rew > 0) {
+					emu->out_message(_T("CMT: Fast Forward"));
+				} else {
+					emu->out_message(_T("CMT: Fast Rewind"));
+				}
+			} else {
+				register_event(this, EVENT_SIGNAL, 1000000. / sample_rate, true, &register_id);
+				if(play) {
+					if(buffer_ptr < buffer_length) {
+						emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
+					} else {
+						emu->out_message(_T("CMT: Play"));
+					}
+				} else {
+					emu->out_message(_T("CMT: Record"));
+				}
+			}
+			prev_clock = current_clock();
+			positive_clocks = negative_clocks = 0;
+		}
+	} else {
+		if(register_id != -1) {
+			cancel_event(register_id);
+			register_id = -1;
+			if(buffer_ptr == buffer_length) {
+				emu->out_message(_T("CMT: Stop (End-of-Tape)"));
+			} else if(buffer_ptr == 0) {
+				emu->out_message(_T("CMT: Stop (Beginning-of-Tape)"));
+			} else {
+				emu->out_message(_T("CMT: Stop"));
+			}
+		}
+		prev_clock = 0;
+	}
+	
+	// update signals
+	write_signals(&outputs_remote, remote ? 0xffffffff : 0);
+	write_signals(&outputs_rotate, (register_id != -1) ? 0xffffffff : 0);
+	write_signals(&outputs_end, (buffer_ptr == buffer_length) ? 0xffffffff : 0);
+	write_signals(&outputs_top, (buffer_ptr == 0) ? 0xffffffff : 0);
+}
+
+bool KEYBOARD::play_tape(_TCHAR* file_path)
+{
+	close_tape();
+	
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		if(check_file_extension(file_path, _T(".cas"))) {
+			buffer = (uint8 *)malloc(0x10000);
+			buffer_length=load_cas_image();
+			CasIndex=0;
+			is_wav = true;
+		} else if(check_file_extension(file_path, _T(".p6"))) {
+			buffer = (uint8 *)malloc(0x10000);
+			buffer_length=load_cas_image();
+			CasIndex=0;
+			is_wav = true;
+		} else {
+			// unknown image
+			return false;
+		}
+		if(!is_wav && buffer_length != 0) {
+			buffer_bak = (uint8 *)malloc(buffer_length);
+			memcpy(buffer_bak, buffer, buffer_length);
+		}
+		
+		// get the first signal
+		bool signal = ((buffer[0] & 0x80) != 0);
+		if(signal != in_signal) {
+			write_signals(&outputs_out, signal ? 0xffffffff : 0);
+			in_signal = signal;
+		}
+		
+		play = true;
+		update_event();
+	}
+	return play;
+}
+
+bool KEYBOARD::rec_tape(_TCHAR* file_path)
+{
+	close_tape();
+	
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		sample_rate = 48000;
+		buffer_length = 1024 * 1024;
+		buffer = (uint8 *)malloc(buffer_length);		
+		// initialize buffer
+		CasIndex=0;
+		rec = true;
+		update_event();
+	}
+	return rec;
+}
+
+void KEYBOARD::close_tape()
+{
+	close_file();
+	
+	play = rec = is_wav = false;
+	buffer_ptr = buffer_length = 0;
+	update_event();
+	
+	// no sounds
+	write_signals(&outputs_out, 0);
+	in_signal = false;
+}
+
+void KEYBOARD::close_file()
+{
+	if(rec) {
+		fio->Fwrite(CasData, CasIndex + 1, 1);
+	}
+	if(play || rec) {
+		fio->Fclose();
+	}
+	if(buffer != NULL) {
+		free(buffer);
+		buffer = NULL;
+	}
+	if(buffer_bak != NULL) {
+		free(buffer_bak);
+		buffer_bak = NULL;
+	}
+	if(apss_buffer != NULL) {
+		free(apss_buffer);
+		apss_buffer = NULL;
+	}
+}
+
+int KEYBOARD::load_cas_image()
+{	
+	sample_rate = 48000;
+
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	int ptr = 0, data;
+	while((data = fio->Fgetc()) != EOF) {
+		buffer[ptr] = data;
+		ptr++;
+	}
+	return ptr;
+}
+
+void KEYBOARD::write_io8(uint32 addr, uint32 data)
+{
+    if (CasMode == CAS_SAVEBYTE) {  /* CMT SAVE */
+		if (CasIndex<0x10000) CasData[CasIndex++]=data;
+		CasMode=CAS_NONE; 
+	}
+	if (data==0x3e || data==0x3d) { //	１－１）0x3E 受信(1200baud）　または　0x3D 受信(600baud）
+		 CasMode=CAS_NONE;
+	}
+	if (data==0x39) { ///
+		 CasMode=CAS_NONE;
+	}
+	if (data==0x38) { /* CMT SAVE DATA */
+		CasMode=CAS_SAVEBYTE; 
+	}
+	if (data==0x1e || data==0x1d) { //	１－１）0x1E 受信(1200baud）　または　0x1D 受信(600baud）
+		 CasMode=CAS_NONE;
+	}
+	if (data==0x1a && CasMode!=CAS_NONE) { /* CMT LOAD STOP */
+		 CasMode=CAS_NONE;
+	}
+	/* CMT LOAD OPEN(0x1E,0x19(1200baud)/0x1D,0x19(600baud)) */
+	if (data==0x19) {
+		CasMode=CAS_LOADING;
+	}
+	d_pio->write_io8(addr, data);
+}
+
+uint32 KEYBOARD::read_io8(uint32 addr)
+{
+	if (CasMode == CAS_LOADING && CasIndex < 0x10000) return CasData[CasIndex++];
+	return (d_pio->read_io8(addr));
+}

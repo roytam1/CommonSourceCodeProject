@@ -8,14 +8,26 @@
 */
 
 #include <windows.h>
+#include <shlwapi.h>
 #include "common.h"
 
-bool check_file_extension(_TCHAR* filename, _TCHAR* ext)
+#pragma comment(lib, "shlwapi.lib")
+
+bool check_file_extension(_TCHAR* file_path, _TCHAR* ext)
 {
-	int nam_len = _tcslen(filename);
+	int nam_len = _tcslen(file_path);
 	int ext_len = _tcslen(ext);
 	
-	return (nam_len >= ext_len && _tcsncicmp(&filename[nam_len - ext_len], ext, ext_len) == 0);
+	return (nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0);
+}
+
+_TCHAR *get_file_path_without_extensiton(_TCHAR* file_path)
+{
+	static _TCHAR path[_MAX_PATH];
+	
+	_tcscpy(path, file_path);
+	PathRemoveExtension(path);
+	return path;
 }
 
 uint32 getcrc32(uint8 data[], int size)

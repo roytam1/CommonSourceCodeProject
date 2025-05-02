@@ -62,6 +62,11 @@ void FILEIO::Fclose()
 	fp = NULL;
 }
 
+_TCHAR* FILEIO::Fgets(_TCHAR *str, int n)
+{
+	return fgets(str, n, fp);
+}
+
 int FILEIO::Fgetc()
 {
 	return fgetc(fp);

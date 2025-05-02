@@ -33,6 +33,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <mmsystem.h>
+#include <process.h>
 #include <stdio.h>
 #include "common.h"
 #include "config.h"
@@ -43,6 +44,13 @@
 #define WM_SOCKET1 (WM_USER + 3)
 #define WM_SOCKET2 (WM_USER + 4)
 #define WM_SOCKET3 (WM_USER + 5)
+
+#if defined(USE_LASER_DISC) || defined(USE_VIDEO_CAPTURE)
+#define USE_DIRECT_SHOW
+#endif
+#ifdef USE_VIDEO_CAPTURE
+#define MAX_CAPTURE_DEVS 8
+#endif
 
 #ifndef SCREEN_WIDTH_ASPECT
 #define SCREEN_WIDTH_ASPECT SCREEN_WIDTH
@@ -66,6 +74,33 @@
 #include <dsound.h>
 #include <vfw.h>
 
+#ifdef USE_DIRECT_SHOW
+#pragma comment(lib, "strmiids.lib")
+#include <dshow.h>
+//#include <qedit.h>
+EXTERN_C const CLSID CLSID_SampleGrabber;
+EXTERN_C const CLSID CLSID_NullRenderer;
+EXTERN_C const IID IID_ISampleGrabberCB;
+MIDL_INTERFACE("0579154A-2B53-4994-B0D0-E773148EFF85")
+ISampleGrabberCB : public IUnknown {
+public:
+	virtual HRESULT STDMETHODCALLTYPE SampleCB( double SampleTime,IMediaSample *pSample) = 0;
+	virtual HRESULT STDMETHODCALLTYPE BufferCB( double SampleTime,BYTE *pBuffer,long BufferLen) = 0;
+};
+EXTERN_C const IID IID_ISampleGrabber;
+MIDL_INTERFACE("6B652FFF-11FE-4fce-92AD-0266B5D7C78F")
+ISampleGrabber : public IUnknown {
+public:
+	virtual HRESULT STDMETHODCALLTYPE SetOneShot( BOOL OneShot) = 0;
+	virtual HRESULT STDMETHODCALLTYPE SetMediaType( const AM_MEDIA_TYPE *pType) = 0;
+	virtual HRESULT STDMETHODCALLTYPE GetConnectedMediaType( AM_MEDIA_TYPE *pType) = 0;
+	virtual HRESULT STDMETHODCALLTYPE SetBufferSamples( BOOL BufferThem) = 0;
+	virtual HRESULT STDMETHODCALLTYPE GetCurrentBuffer( /* [out][in] */ long *pBufferSize,/* [out] */ long *pBuffer) = 0;
+	virtual HRESULT STDMETHODCALLTYPE GetCurrentSample( /* [retval][out] */ IMediaSample **ppSample) = 0;
+	virtual HRESULT STDMETHODCALLTYPE SetCallback( ISampleGrabberCB *pCallback,long WhichMethodToCallback) = 0;
+};
+#endif
+
 #ifdef USE_SOCKET
 #include <winsock.h>
 #endif
@@ -85,6 +120,16 @@
 
 class FIFO;
 class FILEIO;
+
+typedef struct thread_t {
+	PAVISTREAM pAVICompressed;
+	scrntype* lpBmpSource;
+	LPBITMAPINFOHEADER pbmInfoHeader;
+	DWORD dwAVIFileSize;
+	LONG lAVIFrames;
+	int frames;
+	int result;
+} thread_t;
 
 class EMU
 {
@@ -193,13 +238,27 @@ private:
 	
 	// record video
 	bool now_rec_vid;
+	int rec_vid_fps;
+	double rec_vid_run_frames;
+	double rec_vid_frames;
 	_TCHAR vid_file_name[_MAX_PATH];
+	
+	LPBITMAPINFO lpDibRec;
 	PAVIFILE pAVIFile;
 	PAVISTREAM pAVIStream;
 	PAVISTREAM pAVICompressed;
 	AVICOMPRESSOPTIONS opts;
 	DWORD dwAVIFileSize;
 	LONG lAVIFrames;
+	
+	HDC hdcDibRec;
+	HBITMAP hBmpRec, hOldBmpRec;
+	LPBYTE lpBufRec;
+	scrntype* lpBmpRec;
+	
+	bool use_multi_thread;
+	HANDLE hThread;
+	thread_t thread_param;
 	
 	// ----------------------------------------
 	// sound
@@ -232,10 +291,55 @@ private:
 		DWORD dwdata;
 		DWORD dwDataLength;
 	} wavheader_t;
+	
+	bool now_rec_snd;
+	_TCHAR snd_file_name[_MAX_PATH];
 	FILEIO* rec;
 	int rec_bytes;
 	int rec_buffer_ptr;
-	bool now_rec_snd;
+	
+#ifdef USE_DIRECT_SHOW
+	// ----------------------------------------
+	// direct show
+	// ----------------------------------------
+	void initialize_direct_show();
+	void release_direct_show();
+	void create_direct_show_dib_section();
+	void release_direct_show_dib_section();
+	
+	IGraphBuilder *pDShowGB;
+	IBaseFilter *pDShowBF;
+	IBaseFilter *pDShowCapBF;
+	ICaptureGraphBuilder2 *pDShowCGB;
+	ISampleGrabber *pDShowSG;
+	IMediaControl *pDShowMC;
+	IVideoWindow *pDShowVW;
+	IBasicAudio *pDShowBA;
+	IBasicVideo *pDShowBV;
+	IMediaSeeking *pDShowMS;
+	IMediaPosition *pDShowMP;
+	IVideoFrameStep *pDShowFS;
+	
+	HDC hdcDibDShow;
+	HBITMAP hBmpDShow, hOldBmpDShow;
+	LPBYTE lpBufDShow;
+	scrntype* lpBmpDShow;
+	LPBITMAPINFO lpDibDShow;
+	
+	int direct_show_width, direct_show_height;
+	bool direct_show_mute[2];
+#ifdef USE_LASER_DISC
+	double movie_fps;
+	bool now_movie_play, now_movie_pause;
+#endif
+#ifdef USE_VIDEO_CAPTURE
+	void enum_capture_devs();
+	bool connect_capture_dev(int index, bool pin);
+	int cur_capture_dev_index;
+	int num_capture_devs;
+	_TCHAR capture_dev_name[MAX_CAPTURE_DEVS][256];
+#endif
+#endif
 	
 	// ----------------------------------------
 	// media
@@ -259,6 +363,9 @@ private:
 #ifdef USE_TAPE
 	media_status_t tape_status;
 #endif
+#ifdef USE_LASER_DISC
+	media_status_t laser_disc_status;
+#endif
 	
 	void initialize_media();
 	void update_media();
@@ -274,6 +381,7 @@ private:
 	// ----------------------------------------
 	void initialize_printer();
 	void release_printer();
+	void reset_printer();
 	void update_printer();
 	
 	FILEIO *prn_fio;
@@ -311,6 +419,7 @@ private:
 	int cpu_type;
 #endif
 	_TCHAR app_path[_MAX_PATH];
+	bool suspended;
 	
 public:
 	// ----------------------------------------
@@ -338,6 +447,7 @@ public:
 #ifdef USE_POWER_OFF
 	void notify_power_off();
 #endif
+	void suspend();
 	
 	// user interface
 #ifdef USE_CART1
@@ -365,6 +475,11 @@ public:
 	void push_play();
 	void push_stop();
 #endif
+#ifdef USE_LASER_DISC
+	void open_laser_disc(_TCHAR* file_path);
+	void close_laser_disc();
+	bool laser_disc_inserted();
+#endif
 #ifdef USE_BINARY_FILE1
 	void load_binary(int drv, _TCHAR* file_path);
 	void save_binary(int drv, _TCHAR* file_path);
@@ -376,13 +491,15 @@ public:
 	bool now_rec_sound() {
 		return now_rec_snd;
 	}
+	void restart_rec_sound();
 	
 	void capture_screen();
-	void start_rec_video(int fps);
+	bool start_rec_video(int fps);
 	void stop_rec_video();
 	bool now_rec_video() {
 		return now_rec_vid;
 	}
+	void restart_rec_video();
 	
 	void update_config();
 	
@@ -415,7 +532,7 @@ public:
 	int get_window_width(int mode);
 	int get_window_height(int mode);
 	void set_display_size(int width, int height, bool window_mode);
-	void draw_screen();
+	int draw_screen();
 	void update_screen(HDC hdc);
 #ifdef USE_BITMAP
 	void reload_bitmap() {
@@ -425,6 +542,24 @@ public:
 	
 	// sound
 	void mute_sound();
+	
+#ifdef USE_VIDEO_CAPTURE
+	// video capture
+	int get_cur_capture_dev_index() {
+		return cur_capture_dev_index;
+	}
+	int get_num_capture_devs() {
+		return num_capture_devs;
+	}
+	_TCHAR* get_capture_dev_name(int index) {
+		return capture_dev_name[index];
+	}
+	void open_capture_dev(int index, bool pin);
+	void close_capture_dev();
+	void show_capture_dev_filter();
+	void show_capture_dev_pin();
+	void show_capture_dev_source();
+#endif
 	
 #ifdef USE_SOCKET
 	// socket
@@ -467,6 +602,30 @@ public:
 	// printer
 	void printer_out(uint8 value);
 	void printer_strobe(bool value);
+	
+#ifdef USE_DIRECT_SHOW
+	// direct show
+	void get_direct_show_buffer();
+	void mute_direct_show_dev(bool l, bool r);
+	
+#ifdef USE_LASER_DISC
+	bool open_movie_file(_TCHAR* file_path);
+	void close_movie_file();
+	
+	void play_movie();
+	void stop_movie();
+	void pause_movie();
+	
+	double get_movie_fps() {
+		return movie_fps;
+	}
+	void set_cur_movie_frame(int frame, bool relative);
+	uint32 get_cur_movie_frame();
+#endif
+#ifdef USE_VIDEO_CAPTURE
+	void set_capture_dev_channel(int ch);
+#endif
+#endif
 	
 #ifdef USE_SOCKET
 	// socket

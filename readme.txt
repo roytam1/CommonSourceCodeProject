@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/24/2013
+								3/26/2014
 
 --- What's this ?
 
@@ -54,6 +54,7 @@ This archive includes the all source codes of emulators listed below:
 	ePHC-20		SANYO PHC-20
 	ePHC-25		SANYO PHC-25
 	ePV-1000	CASIO PV-1000
+	ePX-7		Pioneer PX-7 (MSX1 + LaserDisc)
 	ePyuTa		TOMY PyuTa/PyuTa Jr.
 	eQC-10		EPSON QC-10/QX-10
 	eRX-78		BANDAI RX-78
@@ -66,7 +67,11 @@ This archive includes the all source codes of emulators listed below:
 	eX1turbo	SHARP X1turbo
 	eYS-6464A	Shinko Sangyo YS-6464A
 
+	yaGAMEGEAR	SEGA GAME GEAR (by Mr.tanam)
+	yaMASTERSYSTEM	SEGA MASTER SYSTEM (by Mr.tanam)
 	yaPC-6001	NEC PC-6001 (by Mr.tanam)
+	yaPC-6201	NEC PC-6001mkII (by Mr.tanam)
+	yaPC-6601	NEC PC-6601 (by Mr.tanam)
 
 You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
 
@@ -136,6 +141,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	UNZ pseudo BIOS
 - vm/fp200/*
 	PockEmul gives much hints about LCD driver
+- vm/gamegear/*.*
+	yaGAMEGEAR/yaMASTERSYSTEM by Mr.tanam
 - vm/hc40/*
 	Mr.Fred Han Kraan for EPSON HC-40/PX-4 hardware design info
 - vm/hc80/*
@@ -150,7 +157,7 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/mz2500/sasi.*
 	X millenium
 - vm/pc6001/*.*
-	yaPC-6001 by Mr.tanam
+	yaPC-6001/yaPC-6201/yaPC-6601 by Mr.tanam
 - vm/pc9801/pc88.*
 	M88 and MESS PC-8801 driver
 - vm/x1/pce.*

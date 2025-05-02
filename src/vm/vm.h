@@ -55,6 +55,11 @@
 #include "fp1100/fp1100.h"
 #endif
 
+// SEGA GAME GEAR
+#ifdef _GAMEGEAR
+#include "gamegear/gamegear.h"
+#endif
+
 // EPSON HC-20
 #ifdef _HC20
 #include "hc20/hc20.h"
@@ -93,6 +98,11 @@
 // SEIKO MAP-1010
 #ifdef _MAP1010
 #include "phc25/phc25.h"
+#endif
+
+// SEGA MASTER SYSTEM
+#ifdef _MASTERSYSTEM
+#include "gamegear/mastersystem.h"
 #endif
 
 // MITSUBISHI Elec. MULTI8
@@ -190,6 +200,16 @@
 #include "pc6001/pc6001.h"
 #endif
 
+// NEC PC-6001mk2
+#ifdef _PC6001MK2
+#include "pc6001/pc6001.h"
+#endif
+
+// NEC PC-6601
+#ifdef _PC6601
+#include "pc6001/pc6001.h"
+#endif
+
 // NEC PC-8001mkIISR
 #ifdef _PC8001SR
 #include "pc8801/pc8801.h"
@@ -268,6 +288,11 @@
 // CASIO PV-2000
 #ifdef _PV2000
 #include "pv2000/pv2000.h"
+#endif
+
+// PIONEER PX-7
+#ifdef _PX7
+#include "msx/msx.h"
 #endif
 
 // TOMY PYUTA

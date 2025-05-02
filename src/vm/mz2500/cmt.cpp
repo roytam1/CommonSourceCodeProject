@@ -118,7 +118,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 			vm->reset();
 		}
 		if((pc & 0x10) && !(data & 0x10)) {
-			emu->close_tape();
+			//emu->close_tape();
 		}
 		d_drec->write_signal(SIG_DATAREC_OUT, data, 0x80);
 		pc = data;

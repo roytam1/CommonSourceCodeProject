@@ -33,5 +33,4 @@ public:
 		d_psg = device;
 	}
 };
-
 #endif

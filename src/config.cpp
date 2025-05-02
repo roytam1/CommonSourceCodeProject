@@ -143,6 +143,14 @@ void load_config()
 		GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_tape_path[i], _MAX_PATH, config_path);
 	}
 #endif
+#ifdef USE_LASER_DISC
+	GetPrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), _T(""), config.initial_laser_disc_dir, _MAX_PATH, config_path);
+	for(int i = 0; i < MAX_HISTORY; i++) {
+		_TCHAR name[64];
+		_stprintf(name, _T("RecentLaserDiscPath1_%d"), i + 1);
+		GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_laser_disc_path[i], _MAX_PATH, config_path);
+	}
+#endif
 #ifdef USE_BINARY_FILE1
 	GetPrivateProfileString(_T("RecentFiles"), _T("InitialBinaryDir"), _T(""), config.initial_binary_dir, _MAX_PATH, config_path);
 	for(int drv = 0; drv < MAX_BINARY; drv++) {
@@ -245,6 +253,14 @@ void save_config()
 		_TCHAR name[64];
 		_stprintf(name, _T("RecentTapePath1_%d"), i + 1);
 		WritePrivateProfileString(_T("RecentFiles"), name, config.recent_tape_path[i], config_path);
+	}
+#endif
+#ifdef USE_LASER_DISC
+	WritePrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), config.initial_laser_disc_dir, config_path);
+	for(int i = 0; i < MAX_HISTORY; i++) {
+		_TCHAR name[64];
+		_stprintf(name, _T("RecentLaserDiscPath1_%d"), i + 1);
+		WritePrivateProfileString(_T("RecentFiles"), name, config.recent_laser_disc_path[i], config_path);
 	}
 #endif
 #ifdef USE_BINARY_FILE1

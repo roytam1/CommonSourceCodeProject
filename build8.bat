@@ -39,6 +39,10 @@ devenv.com fp1100.vcproj /Rebuild Release
 mkdir build\fp1100
 copy Release\fp1100.exe build\fp1100\.
 
+devenv.com gamegear.vcproj /Rebuild Release
+mkdir build\gamegear
+copy Release\gamegear.exe build\gamegear\.
+
 devenv.com hc20.vcproj /Rebuild Release
 mkdir build\hc20
 copy Release\hc20.exe build\hc20\.
@@ -64,6 +68,10 @@ copy Release\m5.exe build\m5\.
 devenv.com map1010.vcproj /Rebuild Release
 mkdir build\map1010
 copy Release\map1010.exe build\map1010\.
+
+devenv.com mastersystem.vcproj /Rebuild Release
+mkdir build\mastersystem
+copy Release\mastersystem.exe build\mastersystem\.
 
 devenv.com multi8.vcproj /Rebuild Release
 mkdir build\multi8
@@ -135,6 +143,14 @@ devenv.com pc6001.vcproj /Rebuild Release
 mkdir build\pc6001
 copy Release\pc6001.exe build\pc6001\.
 
+devenv.com pc6001mk2.vcproj /Rebuild Release
+mkdir build\pc6001mk2
+copy Release\pc6001mk2.exe build\pc6001mk2\.
+
+devenv.com pc6601.vcproj /Rebuild Release
+mkdir build\pc6601
+copy Release\pc6601.exe build\pc6601\.
+
 devenv.com pc8001mk2sr.vcproj /Rebuild Release
 mkdir build\pc8001mk2sr
 copy Release\pc8001mk2sr.exe build\pc8001mk2sr\.
@@ -202,6 +218,10 @@ copy Release\pv1000.exe build\pv1000\.
 devenv.com pv2000.vcproj /Rebuild Release
 mkdir build\pv2000
 copy Release\pv2000.exe build\pv2000\.
+
+devenv.com px7.vcproj /Rebuild Release
+mkdir build\px7
+copy Release\px7.exe build\px7\.
 
 devenv.com pyuta.vcproj /Rebuild Release
 mkdir build\pyuta

@@ -59,6 +59,9 @@ public:
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void draw_screen();
+#ifdef TMS9918A_SUPER_IMPOSE
+	bool now_super_impose;
+#endif
 };
 
 #endif

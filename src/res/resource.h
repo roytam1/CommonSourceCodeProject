@@ -155,13 +155,17 @@
 #define ID_DIRECT_LOAD_MZT              40947
 #define ID_RECENT_TAPE                  40951 // 40951-40958
 
-#define ID_LOAD_BINARY1                 40961
-#define ID_SAVE_BINARY1                 40962
-#define ID_RECENT_BINARY1               40963 // 40963-40970
+#define ID_OPEN_LASER_DISC              40961
+#define ID_CLOSE_LASER_DISC             40962
+#define ID_RECENT_LASER_DISC            40963 // 40963-40970
 
-#define ID_LOAD_BINARY2                 40971
-#define ID_SAVE_BINARY2                 40972
-#define ID_RECENT_BINARY2               40973 // 40973-40980
+#define ID_LOAD_BINARY1                 40971
+#define ID_SAVE_BINARY1                 40972
+#define ID_RECENT_BINARY1               40973 // 40973-40980
+
+#define ID_LOAD_BINARY2                 40981
+#define ID_SAVE_BINARY2                 40982
+#define ID_RECENT_BINARY2               40983 // 40983-40990
 
 #define ID_SCREEN_REC60                 41001
 #define ID_SCREEN_REC30                 41002
@@ -248,12 +252,25 @@
 #define ID_SOUND_DEVICE_TYPE6           41137
 #define ID_SOUND_DEVICE_TYPE7           41138
 
+#define ID_CAPTURE_FILTER               41201
+#define ID_CAPTURE_PIN                  41202
+#define ID_CAPTURE_SOURCE               41203
+#define ID_CAPTURE_CLOSE                41204
+#define ID_CAPTURE_DEVICE1              41205
+#define ID_CAPTURE_DEVICE2              41206
+#define ID_CAPTURE_DEVICE3              41207
+#define ID_CAPTURE_DEVICE4              41208
+#define ID_CAPTURE_DEVICE5              41209
+#define ID_CAPTURE_DEVICE6              41210
+#define ID_CAPTURE_DEVICE7              41211
+#define ID_CAPTURE_DEVICE8              41212
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        107
-#define _APS_NEXT_COMMAND_VALUE         41135
+#define _APS_NEXT_COMMAND_VALUE         41213
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
@@ -334,6 +351,16 @@
 #define MENU_POS_SOUND                  5
 #endif
 
+// SEGA GAME GEAR
+#ifdef _GAMEGEAR
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART1                  1
+#define MENU_POS_FD1                    2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
 // EPSON HC-20
 #ifdef _HC20
 #define MENU_POS_CONTROL                0
@@ -407,6 +434,14 @@
 #ifdef _MAP1010
 #define MENU_POS_CONTROL                0
 #define MENU_POS_TAPE                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
+// SEGA MASTER SYSTEM
+#ifdef _MASTERSYSTEM
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART1                  1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif
@@ -602,12 +637,31 @@
 // NEC PC-6001
 #ifdef _PC6001
 #define MENU_POS_CONTROL                0
-#define MENU_POS_FD1                    1
-#define MENU_POS_FD2                    2
-#define MENU_POS_FD3                    3
-#define MENU_POS_FD4                    4
-#define MENU_POS_SCREEN                 5
-#define MENU_POS_SOUND                  6
+#define MENU_POS_CART1                  1
+#define MENU_POS_FD1                    2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
+// NEC PC-6001mk2
+#ifdef _PC6001MK2
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART1                  1
+#define MENU_POS_FD1                    2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
+// NEC PC-6601
+#ifdef _PC6601
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART1                  1
+#define MENU_POS_FD1                    2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
 #endif
 
 // NEC PC-8001mkIISR
@@ -759,6 +813,17 @@
 #define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#endif
+
+// PIONEER PX-7
+#ifdef _PX7
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART1                  1
+#define MENU_POS_CART2                  2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_LASER_DISC             4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // TOMY PYUTA

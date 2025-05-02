@@ -106,7 +106,8 @@ typedef uint32 scrntype;
 #endif
 
 // misc
-bool check_file_extension(_TCHAR* filename, _TCHAR* ext);
+bool check_file_extension(_TCHAR* file_path, _TCHAR* ext);
+_TCHAR *get_file_path_without_extensiton(_TCHAR* file_path);
 uint32 getcrc32(uint8 data[], int size);
 
 #define FROM_BCD(v)	(((v) & 0x0f) + (((v) >> 4) & 0x0f) * 10)

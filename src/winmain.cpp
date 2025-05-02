@@ -68,6 +68,9 @@ void open_quickdisk_dialog(HWND hWnd, int drv);
 #ifdef USE_TAPE
 void open_tape_dialog(HWND hWnd, bool play);
 #endif
+#ifdef USE_LASER_DISC
+void open_laser_disc_dialog(HWND hWnd);
+#endif
 #ifdef USE_BINARY_FILE1
 void open_binary_dialog(HWND hWnd, int drv, bool load);
 #endif
@@ -180,9 +183,6 @@ void set_window(HWND hWnd, int mode);
 
 // timing control
 #define MAX_SKIP_FRAMES 10
-
-DWORD rec_next_time, rec_accum_time;
-int rec_delay[3];
 
 int get_interval()
 {
@@ -341,9 +341,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// main loop
 	int total_frames = 0, draw_frames = 0, skip_frames = 0;
-	int rec_delay_ptr = 0;
 	DWORD next_time = 0;
-	DWORD update_fps_time = next_time + 1000;
+	DWORD update_fps_time = 0;
 	bool prev_skip = false;
 	MSG msg;
 	
@@ -368,65 +367,42 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			total_frames += run_frames;
 			
 			// timing controls
-			int interval = get_interval(), sleep_period = 0;
-			bool now_skip = emu->now_skip();
+			int interval = 0, sleep_period = 0;
+			for(int i = 0; i < run_frames; i++) {
+				interval += get_interval();
+			}
+			bool now_skip = emu->now_skip() && !emu->now_rec_video();
 			
-			if((prev_skip && !now_skip) || run_frames > 1 || next_time == 0) {
+			if((prev_skip && !now_skip) || next_time == 0) {
 				next_time = timeGetTime();
 			}
-			next_time += now_skip ? 0 : interval;
+			if(!now_skip) {
+				next_time += interval;
+			}
 			prev_skip = now_skip;
 			
-			if(emu->now_rec_video()) {
-				rec_next_time += interval;
-				while(rec_next_time >= rec_accum_time) {
-					// rec pictures 15/30/60 frames per 1 second
-					emu->draw_screen();
-					draw_frames++;
-					rec_accum_time += rec_delay[rec_delay_ptr++];
-					rec_delay_ptr %= 3;
-				}
+			if(next_time > timeGetTime()) {
+				// update window if enough time
+				draw_frames += emu->draw_screen();
+				skip_frames = 0;
 				
+				// sleep 1 frame priod if need
 				DWORD current_time = timeGetTime();
-				if(next_time > current_time) {
-					skip_frames = 0;
-					
-					// sleep 1 frame priod if need
-					if((int)(next_time - current_time) >= 10) {
-						sleep_period = next_time - current_time;
-					}
-				}
-				else if(++skip_frames > MAX_SKIP_FRAMES) {
-					skip_frames = 0;
-					next_time = current_time;
+				if((int)(next_time - current_time) >= 10) {
+					sleep_period = next_time - current_time;
 				}
 			}
-			else {
-				if(next_time > timeGetTime()) {
-					// update window if enough time
-					emu->draw_screen();
-					draw_frames++;
-					skip_frames = 0;
-					
-					// sleep 1 frame priod if need
-					DWORD current_time = timeGetTime();
-					if((int)(next_time - current_time) >= 10) {
-						sleep_period = next_time - current_time;
-					}
-				}
-				else if(++skip_frames > MAX_SKIP_FRAMES) {
-					// update window at least once per 10 frames
-					emu->draw_screen();
-					draw_frames++;
-					skip_frames = 0;
-					next_time = timeGetTime();
-				}
+			else if(++skip_frames > MAX_SKIP_FRAMES) {
+				// update window at least once per 10 frames
+				draw_frames += emu->draw_screen();
+				skip_frames = 0;
+				next_time = timeGetTime();
 			}
 			Sleep(sleep_period);
 			
 			// calc frame rate
 			DWORD current_time = timeGetTime();
-			if(update_fps_time <= current_time) {
+			if(update_fps_time <= current_time && update_fps_time != 0) {
 				_TCHAR buf[256];
 				int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
 				if(emu->message_count > 0) {
@@ -438,10 +414,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 				SetWindowText(hWnd, buf);
 				
 				update_fps_time += 1000;
-				if(update_fps_time <= current_time) {
-					update_fps_time = current_time + 1000;
-				}
 				total_frames = draw_frames = 0;
+			}
+			if(update_fps_time <= current_time) {
+				update_fps_time = current_time + 1000;
 			}
 		}
 	}
@@ -551,7 +527,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case WM_MOVING:
 		if(emu) {
-			emu->mute_sound();
+			emu->suspend();
 		}
 		break;
 	case WM_KEYDOWN:
@@ -589,7 +565,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_INITMENUPOPUP:
 		if(emu) {
-			emu->mute_sound();
+			emu->suspend();
 		}
 		update_menu(hWnd, (HMENU)wParam, LOWORD(lParam));
 		break;
@@ -674,14 +650,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			if(emu) {
 				emu->reset();
 			}
-			rec_next_time = rec_accum_time = 0;
 			break;
 #ifdef USE_SPECIAL_RESET
 		case ID_SPECIAL_RESET:
 			if(emu) {
 				emu->special_reset();
 			}
-			rec_next_time = rec_accum_time = 0;
 			break;
 #endif
 #ifdef USE_BOOT_MODE
@@ -1036,6 +1010,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
+#ifdef USE_LASER_DISC
+		case ID_OPEN_LASER_DISC:
+			if(emu) {
+				open_laser_disc_dialog(hWnd);
+			}
+			break;
+		case ID_CLOSE_LASER_DISC:
+			if(emu) {
+				emu->close_laser_disc();
+			}
+			break;
+		case ID_RECENT_LASER_DISC + 0:
+		case ID_RECENT_LASER_DISC + 1:
+		case ID_RECENT_LASER_DISC + 2:
+		case ID_RECENT_LASER_DISC + 3:
+		case ID_RECENT_LASER_DISC + 4:
+		case ID_RECENT_LASER_DISC + 5:
+		case ID_RECENT_LASER_DISC + 6:
+		case ID_RECENT_LASER_DISC + 7:
+			no = LOWORD(wParam) - ID_RECENT_LASER_DISC;
+			_tcscpy(path, config.recent_laser_disc_path[no]);
+			for(int i = no; i > 0; i--) {
+				_tcscpy(config.recent_laser_disc_path[i], config.recent_laser_disc_path[i - 1]);
+			}
+			_tcscpy(config.recent_laser_disc_path[0], path);
+			if(emu) {
+				emu->open_laser_disc(path);
+			}
+			break;
+#endif
 #ifdef USE_BINARY_FILE1
 		#define BINARY_MENU_ITEMS(drv, ID_LOAD_BINARY, ID_SAVE_BINARY, ID_RECENT_BINARY) \
 		case ID_LOAD_BINARY: \
@@ -1076,12 +1080,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_REC15:
 			if(emu) {
 				static int fps[3] = {60, 30, 15};
-				static int delay[3][3] = {{16, 17, 17}, {33, 33, 34}, {66, 67, 67}};
 				no = LOWORD(wParam) - ID_SCREEN_REC60;
 				emu->start_rec_sound();
-				emu->start_rec_video(fps[no]);
-				memcpy(rec_delay, delay[no], sizeof(rec_delay));
-				rec_next_time = rec_accum_time = 0;
+				if(!emu->start_rec_video(fps[no])) {
+					emu->stop_rec_sound();
+				}
 			}
 			break;
 		case ID_SCREEN_STOP:
@@ -1164,7 +1167,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		// accelerator
 		case ID_ACCEL_SCREEN:
 			if(emu) {
-				emu->mute_sound();
+				emu->suspend();
 				set_window(hWnd, now_fullscreen ? prev_window_mode : -1);
 			}
 			break;
@@ -1250,6 +1253,41 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			//if(emu) {
 			//	emu->update_config();
 			//}
+			break;
+#endif
+#ifdef USE_VIDEO_CAPTURE
+		case ID_CAPTURE_FILTER:
+			if(emu) {
+				emu->show_capture_dev_filter();
+			}
+			break;
+		case ID_CAPTURE_PIN:
+			if(emu) {
+				emu->show_capture_dev_pin();
+			}
+			break;
+		case ID_CAPTURE_SOURCE:
+			if(emu) {
+				emu->show_capture_dev_source();
+			}
+			break;
+		case ID_CAPTURE_CLOSE:
+			if(emu) {
+				emu->close_capture_dev();
+			}
+			break;
+		case ID_CAPTURE_DEVICE1:
+		case ID_CAPTURE_DEVICE2:
+		case ID_CAPTURE_DEVICE3:
+		case ID_CAPTURE_DEVICE4:
+		case ID_CAPTURE_DEVICE5:
+		case ID_CAPTURE_DEVICE6:
+		case ID_CAPTURE_DEVICE7:
+		case ID_CAPTURE_DEVICE8:
+			no = LOWORD(wParam) - ID_CAPTURE_DEVICE1;
+			if(emu) {
+				emu->open_capture_dev(no, false);
+			}
 			break;
 #endif
 #ifdef USE_BUTTON
@@ -1513,6 +1551,25 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #endif
 	}
 #endif
+#ifdef MENU_POS_LASER_DISC
+	else if(pos == MENU_POS_LASER_DISC) {
+		// data recorder
+		bool flag = false;
+		for(int i = 0; i < MAX_HISTORY; i++) {
+			DeleteMenu(hMenu, ID_RECENT_LASER_DISC + i, MF_BYCOMMAND);
+		}
+		for(int i = 0; i < MAX_HISTORY; i++) {
+			if(_tcsicmp(config.recent_laser_disc_path[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_LASER_DISC + i, config.recent_laser_disc_path[i]);
+				flag = true;
+			}
+		}
+		if(!flag) {
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_LASER_DISC, _T("None"));
+		}
+		EnableMenuItem(hMenu, ID_CLOSE_LASER_DISC, emu->laser_disc_inserted() ? MF_ENABLED : MF_GRAYED);
+	}
+#endif
 #ifdef MENU_POS_BINARY1
 	else if(pos == MENU_POS_BINARY1) {
 		// binary #1
@@ -1626,6 +1683,32 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 			CheckMenuRadioItem(hMenu, ID_SOUND_DEVICE_TYPE0, ID_SOUND_DEVICE_TYPE0 + USE_SOUND_DEVICE_TYPE - 1, ID_SOUND_DEVICE_TYPE0 + config.sound_device_type, MF_BYCOMMAND);
 		}
 #endif
+	}
+#endif
+#ifdef MENU_POS_CAPTURE
+	else if(pos == MENU_POS_CAPTURE) {
+		// video capture menu
+		int num_devs = emu->get_num_capture_devs();
+		int cur_index = emu->get_cur_capture_dev_index();
+		
+		for(int i = 0; i < 8; i++) {
+			DeleteMenu(hMenu, ID_CAPTURE_DEVICE1 + i, MF_BYCOMMAND);
+		}
+		for(int i = 0; i < 8; i++) {
+			if(num_devs >= i + 1) {
+				AppendMenu(hMenu, MF_STRING, ID_CAPTURE_DEVICE1 + i, emu->get_capture_dev_name(i));
+			}
+		}
+		if(num_devs == 0) {
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_CAPTURE_DEVICE1, _T("None"));
+		}
+		if(cur_index != -1) {
+			CheckMenuRadioItem(hMenu, ID_CAPTURE_DEVICE1, ID_CAPTURE_DEVICE1, ID_CAPTURE_DEVICE1 + cur_index, MF_BYCOMMAND);
+		}
+		EnableMenuItem(hMenu, ID_CAPTURE_FILTER, (cur_index != -1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CAPTURE_PIN, (cur_index != -1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CAPTURE_SOURCE, (cur_index != -1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CAPTURE_CLOSE, (cur_index != -1) ? MF_ENABLED : MF_GRAYED);
 	}
 #endif
 	DrawMenuBar(hWnd);
@@ -1776,6 +1859,23 @@ void open_tape_dialog(HWND hWnd, bool play)
 		else {
 			emu->rec_tape(path);
 		}
+	}
+}
+#endif
+
+#ifdef USE_LASER_DISC
+void open_laser_disc_dialog(HWND hWnd)
+{
+	_TCHAR* path = get_open_file_name(
+		hWnd,
+		_T("Supported Files (*.avi;*.mpg;*.mpeg;*.wmv)\0*.avi;*.mpg;*.mpeg;*.wmv\0All Files (*.*)\0*.*\0\0"),
+		_T("Laser Disc"),
+		config.initial_laser_disc_dir
+	);
+	if(path) {
+		UPDATE_HISTORY(path, config.recent_laser_disc_path);
+		_tcscpy(config.initial_laser_disc_dir, get_parent_dir(path));
+		emu->open_laser_disc(path);
 	}
 }
 #endif

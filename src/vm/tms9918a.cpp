@@ -145,13 +145,47 @@ uint32 TMS9918A::read_io8(uint32 addr)
 void TMS9918A::draw_screen()
 {
 	// update screen buffer
+#if SCREEN_WIDTH == 512
+	for(int y = 0, y2 = 0; y < 192; y++, y2 += 2) {
+		scrntype* dest0 = emu->screen_buffer(y2 + 0);
+		scrntype* dest1 = emu->screen_buffer(y2 + 1);
+		uint8* src = screen[y];
+#ifdef TMS9918A_SUPER_IMPOSE
+		if(now_super_impose) {
+			for(int x = 0, x2 = 0; x < 256; x++, x2 += 2) {
+				uint8 c = src[x] & 0x0f;
+				if(c != 0) {
+					dest0[x2] = dest0[x2 + 1] = dest1[x2] = dest1[x2 + 1] = palette_pc[c];
+				}
+			}
+		} else
+#endif
+		{
+			for(int x = 0, x2 = 0; x < 256; x++, x2 += 2) {
+				dest0[x2] = dest0[x2 + 1] = palette_pc[src[x] & 0x0f];
+			}
+			memcpy(dest1, dest0, 512 * sizeof(scrntype));
+		}
+	}
+#else
 	for(int y = 0; y < 192; y++) {
 		scrntype* dest = emu->screen_buffer(y);
 		uint8* src = screen[y];
+#ifdef TMS9918A_SUPER_IMPOSE
+		if(now_super_impose) {
+			for(int x = 0; x < 256; x++) {
+				uint8 c = src[x] & 0x0f;
+				if(c != 0) {
+					dest[x] = palette_pc[c];
+				}
+			}
+		} else
+#endif
 		for(int x = 0; x < 256; x++) {
 			dest[x] = palette_pc[src[x] & 0x0f];
 		}
 	}
+#endif
 }
 
 void TMS9918A::event_vline(int v, int clock)

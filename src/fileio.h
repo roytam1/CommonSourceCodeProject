@@ -37,6 +37,7 @@ public:
 	bool Fopen(_TCHAR *filename, int mode);
 	void Fclose();
 	bool IsOpened() { return (fp != NULL); }
+	_TCHAR* Fgets(_TCHAR *str, int n);
 	int Fgetc();
 	int Fputc(int c);
 	uint32 Fread(void* buffer, uint32 size, uint32 count);

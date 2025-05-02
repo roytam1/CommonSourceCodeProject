@@ -10,6 +10,12 @@
 #include "emu.h"
 #include "vm/vm.h"
 
+#define RESULT_SUCCESS	1
+#define RESULT_FULL	2
+#define RESULT_ERROR	3
+
+unsigned __stdcall rec_video_thread(void *lpx);
+
 void EMU::initialize_screen()
 {
 	screen_width = SCREEN_WIDTH;
@@ -401,11 +407,16 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 	}
 }
 
-void EMU::draw_screen()
+int EMU::draw_screen()
 {
 	// don't draw screen before new screen size is applied to buffers
 	if(screen_size_changed) {
-		return;
+		return 0;
+	}
+	
+	// check avi file recording timing
+	if(now_rec_vid && rec_vid_run_frames <= 0) {
+		return 0;
 	}
 	
 	// lock offscreen surface
@@ -427,7 +438,7 @@ void EMU::draw_screen()
 			lpd3d9Buffer = NULL;
 			lpd3d9OffscreenSurface->UnlockRect();
 		}
-		return;
+		return 0;
 	}
 	
 #ifdef USE_SCREEN_ROTATE
@@ -514,16 +525,77 @@ void EMU::draw_screen()
 	
 	// record avi file
 	if(now_rec_vid) {
-		LONG lBytesWritten;
-		if(AVIStreamWrite(pAVICompressed, lAVIFrames++, 1, (LPBYTE)lpBmpSource, pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, &lBytesWritten) == AVIERR_OK) {
-			// if avi file size > (2GB - 16MB), create new avi file
-			if((dwAVIFileSize += lBytesWritten) >= 2130706432) {
-				stop_rec_video();
-				start_rec_video(-1);
+		static double frames = 0;
+		static int prev_vid_fps = -1;
+#ifdef SUPPORT_VARIABLE_TIMING
+		static double prev_vm_fps = -1;
+		double vm_fps = vm->frame_rate();
+		if(prev_vid_fps != rec_vid_fps || prev_vm_fps != vm_fps) {
+			prev_vid_fps = rec_vid_fps;
+			prev_vm_fps = vm_fps;
+			frames = vm_fps / rec_vid_fps;
+		}
+#else
+		if(prev_vid_fps != rec_vid_fps) {
+			prev_vid_fps = rec_vid_fps;
+			frames = FRAMES_PER_SEC / rec_vid_fps;
+		}
+#endif
+		int counter = 0;
+		if(use_multi_thread) {
+			while(rec_vid_run_frames > 0) {
+				rec_vid_run_frames -= frames;
+				rec_vid_frames += frames;
+				counter++;
+			}
+			if(counter != 0) {
+				if(hThread != (HANDLE)0) {
+					if(thread_param.result == 0) {
+						WaitForSingleObject(hThread, INFINITE);
+					}
+					hThread = (HANDLE)0;
+					
+					if(thread_param.result == RESULT_FULL) {
+						stop_rec_video();
+						if(!start_rec_video(-1)) {
+							return 0;
+						}
+					} else if(thread_param.result == RESULT_ERROR) {
+						stop_rec_video();
+						return 0;
+					}
+				}
+				BitBlt(hdcDibRec, 0, 0, source_width, source_height, hdcDibSource, 0, 0, SRCCOPY);
+				thread_param.frames += counter;
+				thread_param.result = 0;
+				if((hThread = (HANDLE)_beginthreadex(NULL, 0, rec_video_thread, &thread_param, 0, NULL)) == (HANDLE)0) {
+					stop_rec_video();
+					return 0;
+				}
 			}
 		} else {
-			stop_rec_video();
+			while(rec_vid_run_frames > 0) {
+				LONG lBytesWritten;
+				if(AVIStreamWrite(pAVICompressed, lAVIFrames++, 1, (LPBYTE)lpBmpSource, pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, &lBytesWritten) == AVIERR_OK) {
+					// if avi file size > (2GB - 16MB), create new avi file
+					if((dwAVIFileSize += lBytesWritten) >= 2130706432) {
+						stop_rec_video();
+						if(!start_rec_video(-1)) {
+							break;
+						}
+					}
+					rec_vid_run_frames -= frames;
+					rec_vid_frames += frames;
+					counter++;
+				} else {
+					stop_rec_video();
+					break;
+				}
+			}
 		}
+		return counter;
+	} else {
+		return 1;
 	}
 }
 
@@ -663,15 +735,15 @@ void EMU::capture_screen()
 	CloseHandle(hFile);
 }
 
-void EMU::start_rec_video(int fps)
+bool EMU::start_rec_video(int fps)
 {
-	bool show_dialog = (fps > 0);
-	static int prev_fps = 0;
 	if(fps > 0) {
-		prev_fps = fps;
+		rec_vid_fps = fps;
+		rec_vid_run_frames = rec_vid_frames = 0;
 	} else {
-		fps = prev_fps;
+		fps = rec_vid_fps;
 	}
+	bool show_dialog = (fps > 0);
 	
 	// create file name
 	SYSTEMTIME sTime;
@@ -682,8 +754,9 @@ void EMU::start_rec_video(int fps)
 	// initialize vfw
 	AVIFileInit();
 	if(AVIFileOpen(&pAVIFile, bios_path(vid_file_name), OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
-		return;
+		return false;
 	}
+	use_multi_thread = false;
 	
 	// stream header
 	AVISTREAMINFO strhdr;
@@ -693,10 +766,10 @@ void EMU::start_rec_video(int fps)
 	strhdr.dwScale = 1;
 	strhdr.dwRate = fps;
 	strhdr.dwSuggestedBufferSize = pbmInfoHeader->biSizeImage;
-	SetRect(&strhdr.rcFrame, 0, 0, screen_width, screen_height);
+	SetRect(&strhdr.rcFrame, 0, 0, source_width, source_height);
 	if(AVIFileCreateStream(pAVIFile, &pAVIStream, &strhdr) != AVIERR_OK) {
 		stop_rec_video();
-		return;
+		return false;
 	}
 	
 	// compression
@@ -705,23 +778,52 @@ void EMU::start_rec_video(int fps)
 	if(show_dialog && !AVISaveOptions(main_window_handle, ICMF_CHOOSE_KEYFRAME | ICMF_CHOOSE_DATARATE, 1, &pAVIStream, (LPAVICOMPRESSOPTIONS FAR *)&pOpts)) {
 		AVISaveOptionsFree(1, (LPAVICOMPRESSOPTIONS FAR *)&pOpts);
 		stop_rec_video();
-		return;
+		return false;
 	}
 	if(AVIMakeCompressedStream(&pAVICompressed, pAVIStream, &opts, NULL) != AVIERR_OK) {
 		stop_rec_video();
-		return;
+		return false;
 	}
 	if(AVIStreamSetFormat(pAVICompressed, 0, &lpDibSource->bmiHeader, lpDibSource->bmiHeader.biSize + lpDibSource->bmiHeader.biClrUsed * sizeof(RGBQUAD)) != AVIERR_OK) {
 		stop_rec_video();
-		return;
+		return false;
 	}
 	dwAVIFileSize = 0;
 	lAVIFrames = 0;
+	
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	
+	if(info.dwNumberOfProcessors > 1) {
+		use_multi_thread = true;
+		hThread = (HANDLE)0;
+		thread_param.pAVICompressed = pAVICompressed;
+		thread_param.lpBmpSource = lpBmpSource;
+		thread_param.pbmInfoHeader = pbmInfoHeader;
+		thread_param.dwAVIFileSize = 0;
+		thread_param.lAVIFrames = 0;
+		thread_param.frames = 0;
+		thread_param.result = 0;
+		
+		HDC hdc = GetDC(main_window_handle);
+		create_dib_section(hdc, source_width, source_height, &hdcDibRec, &hBmpRec, &hOldBmpRec, &lpBufRec, &lpBmpRec, &lpDibRec);
+		ReleaseDC(main_window_handle, hdc);
+	}
 	now_rec_vid = true;
+	return true;
 }
 
 void EMU::stop_rec_video()
 {
+	// release thread
+	if(use_multi_thread) {
+		if(hThread != (HANDLE)0) {
+			WaitForSingleObject(hThread, INFINITE);
+			hThread = (HANDLE)0;
+		}
+		release_dib_section(hdcDibRec, hBmpRec, hOldBmpRec, lpBufRec);
+	}
+	
 	// release vfw
 	if(pAVIStream) {
 		AVIStreamClose(pAVIStream);
@@ -753,5 +855,36 @@ void EMU::stop_rec_video()
 		}
 	}
 	now_rec_vid = false;
+}
+
+void EMU::restart_rec_video()
+{
+	bool tmp = now_rec_vid;
+	stop_rec_video();
+	if(tmp) start_rec_video(-1);
+}
+
+unsigned __stdcall rec_video_thread(void *lpx)
+{
+	thread_t *p = (thread_t *)lpx;
+	LONG lBytesWritten;
+	int result = RESULT_SUCCESS;
+	
+	while(p->frames > 0) {
+		if(AVIStreamWrite(p->pAVICompressed, p->lAVIFrames++, 1, (LPBYTE)p->lpBmpSource, p->pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, &lBytesWritten) == AVIERR_OK) {
+			p->frames--;
+			// if avi file size > (2GB - 16MB), create new avi file
+			if((p->dwAVIFileSize += lBytesWritten) >= 2130706432) {
+				result = RESULT_FULL;
+				break;
+			}
+		} else {
+			result = RESULT_ERROR;
+			break;
+		}
+	}
+	p->result = result;
+	_endthreadex(0);
+	return 0;
 }
 

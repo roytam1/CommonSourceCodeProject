@@ -127,9 +127,36 @@ void EMU::update_sound(int* extra_frames)
 		if(now_rec_snd) {
 			// record sound
 			if(sound_samples > rec_buffer_ptr) {
-				int length = (sound_samples - rec_buffer_ptr) * sizeof(uint16) * 2; // stereo
+				int samples = sound_samples - rec_buffer_ptr;
+				int length = samples * sizeof(uint16) * 2; // stereo
 				rec->Fwrite(sound_buffer + rec_buffer_ptr * 2, length, 1);
 				rec_bytes += length;
+				if(now_rec_vid) {
+					// sync video recording
+					static double frames = 0;
+					static int prev_samples = -1;
+#ifdef SUPPORT_VARIABLE_TIMING
+					static double prev_fps = -1;
+					double fps = vm->frame_rate();
+					if(prev_samples != samples || prev_fps != fps) {
+						prev_samples = samples;
+						prev_fps = fps;
+						frames = fps * (double)samples / (double)sound_rate;
+					}
+#else
+					if(prev_samples != samples) {
+						prev_samples = samples;
+						frames = FRAMES_PER_SEC * (double)samples / (double)sound_rate;
+					}
+#endif
+					rec_vid_frames -= frames;
+					if(rec_vid_frames > 2) {
+						rec_vid_run_frames -= (rec_vid_frames - 2);
+					} else if(rec_vid_frames < -2) {
+						rec_vid_run_frames -= (rec_vid_frames + 2);
+					}
+//					rec_vid_run_frames -= rec_vid_frames;
+				}
 			}
 			rec_buffer_ptr = 0;
 		}
@@ -177,12 +204,11 @@ void EMU::start_rec_sound()
 		SYSTEMTIME sTime;
 		GetLocalTime(&sTime);
 		
-		_TCHAR file_name[_MAX_PATH];
-		_stprintf(file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.wav"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+		_stprintf(snd_file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.wav"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 		
 		// create wave file
 		rec = new FILEIO();
-		if(rec->Fopen(bios_path(file_name), FILEIO_WRITE_BINARY)) {
+		if(rec->Fopen(bios_path(snd_file_name), FILEIO_WRITE_BINARY)) {
 			// write dummy wave header
 			struct wavheader_t header;
 			memset(&header, 0, sizeof(wavheader_t));
@@ -201,28 +227,39 @@ void EMU::start_rec_sound()
 void EMU::stop_rec_sound()
 {
 	if(now_rec_snd) {
-		// update wave header
-		struct wavheader_t header;
-		header.dwRIFF = 0x46464952;
-		header.dwFileSize = rec_bytes + sizeof(wavheader_t) - 8;
-		header.dwWAVE = 0x45564157;
-		header.dwfmt_ = 0x20746d66;
-		header.dwFormatSize = 16;
-		header.wFormatTag = 1;
-		header.wChannels = 2;
-		header.wBitsPerSample = 16;
-		header.dwSamplesPerSec = sound_rate;
-		header.wBlockAlign = header.wChannels * header.wBitsPerSample / 8;
-		header.dwAvgBytesPerSec = header.dwSamplesPerSec * header.wBlockAlign;
-		header.dwdata = 0x61746164;
-		header.dwDataLength = rec_bytes;
-		
-		rec->Fseek(0, FILEIO_SEEK_SET);
-		rec->Fwrite(&header, sizeof(wavheader_t), 1);
-		rec->Fclose();
-		
+		if(rec_bytes == 0) {
+			rec->Fclose();
+			rec->Remove(snd_file_name);
+		} else {
+			// update wave header
+			struct wavheader_t header;
+			header.dwRIFF = 0x46464952;
+			header.dwFileSize = rec_bytes + sizeof(wavheader_t) - 8;
+			header.dwWAVE = 0x45564157;
+			header.dwfmt_ = 0x20746d66;
+			header.dwFormatSize = 16;
+			header.wFormatTag = 1;
+			header.wChannels = 2;
+			header.wBitsPerSample = 16;
+			header.dwSamplesPerSec = sound_rate;
+			header.wBlockAlign = header.wChannels * header.wBitsPerSample / 8;
+			header.dwAvgBytesPerSec = header.dwSamplesPerSec * header.wBlockAlign;
+			header.dwdata = 0x61746164;
+			header.dwDataLength = rec_bytes;
+			
+			rec->Fseek(0, FILEIO_SEEK_SET);
+			rec->Fwrite(&header, sizeof(wavheader_t), 1);
+			rec->Fclose();
+		}
 		delete rec;
 		now_rec_snd = false;
 	}
+}
+
+void EMU::restart_rec_sound()
+{
+	bool tmp = now_rec_snd;
+	stop_rec_sound();
+	if(tmp) start_rec_sound();
 }
 

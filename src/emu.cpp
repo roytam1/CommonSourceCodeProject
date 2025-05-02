@@ -75,8 +75,13 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
+#ifdef USE_DIRECT_SHOW
+	CoInitialize(NULL);
+	initialize_direct_show();
+#endif
 	vm->initialize_sound(sound_rate, sound_samples);
 	vm->reset();
+	suspended = false;
 }
 
 EMU::~EMU()
@@ -87,6 +92,10 @@ EMU::~EMU()
 	release_printer();
 #ifdef USE_SOCKET
 	release_socket();
+#endif
+#ifdef USE_DIRECT_SHOW
+	release_direct_show();
+	CoInitialize(NULL);
 #endif
 	delete vm;
 #ifdef _DEBUG_LOG
@@ -101,7 +110,14 @@ EMU::~EMU()
 int EMU::frame_interval()
 {
 #ifdef SUPPORT_VARIABLE_TIMING
-	return (int)(1024. * 1000. / vm->frame_rate() + 0.5);
+	static int prev_interval = 0;
+	static double prev_fps = -1;
+	double fps = vm->frame_rate();
+	if(prev_fps != fps) {
+		prev_interval = (int)(1024. * 1000. / fps + 0.5);
+		prev_fps = fps;
+	}
+	return prev_interval;
 #else
 	return (int)(1024. * 1000. / FRAMES_PER_SEC + 0.5);
 #endif
@@ -109,6 +125,15 @@ int EMU::frame_interval()
 
 int EMU::run()
 {
+	if(suspended) {
+#ifdef USE_LASER_DISC
+		if(now_movie_play && !now_movie_pause) {
+			play_movie();
+		}
+#endif
+		suspended = false;
+	}
+	
 	update_input();
 	update_media();
 	update_printer();
@@ -125,6 +150,7 @@ int EMU::run()
 		vm->run();
 		extra_frames = 1;
 	}
+	rec_vid_run_frames += extra_frames;
 	return extra_frames;
 }
 
@@ -153,13 +179,12 @@ void EMU::reset()
 	}
 #endif
 	
+	// reset printer
+	reset_printer();
+	
 	// restart recording
-	bool s = now_rec_snd;
-	bool v = now_rec_vid;
-	stop_rec_sound();
-	stop_rec_video();
-	if(s) start_rec_sound();
-	if(v) start_rec_video(-1);
+	restart_rec_sound();
+	restart_rec_video();
 }
 
 #ifdef USE_SPECIAL_RESET
@@ -168,13 +193,12 @@ void EMU::special_reset()
 	// reset virtual machine
 	vm->special_reset();
 	
+	// reset printer
+	reset_printer();
+	
 	// restart recording
-	bool s = now_rec_snd;
-	bool v = now_rec_vid;
-	stop_rec_sound();
-	stop_rec_video();
-	if(s) start_rec_sound();
-	if(v) start_rec_video(-1);
+	restart_rec_sound();
+	restart_rec_video();
 }
 #endif
 
@@ -190,6 +214,20 @@ _TCHAR* EMU::bios_path(_TCHAR* file_name)
 	static _TCHAR file_path[_MAX_PATH];
 	_stprintf(file_path, _T("%s%s"), app_path, file_name);
 	return file_path;
+}
+
+void EMU::suspend()
+{
+	if(!suspended) {
+#ifdef USE_LASER_DISC
+		if(now_movie_play && !now_movie_pause) {
+			pause_movie();
+			now_movie_pause = false;
+		}
+#endif
+		mute_sound();
+		suspended = true;
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -224,6 +262,13 @@ void EMU::initialize_printer()
 void EMU::release_printer()
 {
 	delete prn_fio;
+}
+
+void EMU::reset_printer()
+{
+	prn_fio->Fclose();
+	prn_data = -1;
+	prn_strobe = false;
 }
 
 void EMU::update_printer()
@@ -356,6 +401,9 @@ void EMU::initialize_media()
 #ifdef USE_TAPE
 	memset(&tape_status, 0, sizeof(tape_status));
 #endif
+#ifdef USE_LASER_DISC
+	memset(&laser_disc_status, 0, sizeof(laser_disc_status));
+#endif
 }
 
 void EMU::update_media()
@@ -384,6 +432,12 @@ void EMU::update_media()
 			vm->rec_tape(tape_status.path);
 		}
 		out_message(_T("CMT: %s"), tape_status.path);
+	}
+#endif
+#ifdef USE_LASER_DISC
+	if(laser_disc_status.wait_count != 0 && --laser_disc_status.wait_count == 0) {
+		vm->open_laser_disc(laser_disc_status.path);
+		out_message(_T("LD: %s"), laser_disc_status.path);
 	}
 #endif
 }
@@ -418,6 +472,11 @@ void EMU::restore_media()
 		} else {
 			tape_status.path[0] = _T('\0');
 		}
+	}
+#endif
+#ifdef USE_LASER_DISC
+	if(laser_disc_status.path[0] != _T('\0')) {
+		vm->open_laser_disc(laser_disc_status.path);
 	}
 #endif
 }
@@ -593,6 +652,38 @@ void EMU::close_tape()
 bool EMU::tape_inserted()
 {
 	return vm->tape_inserted();
+}
+#endif
+
+#ifdef USE_LASER_DISC
+void EMU::open_laser_disc(_TCHAR* file_path)
+{
+	if(vm->laser_disc_inserted()) {
+		vm->close_laser_disc();
+		// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+		laser_disc_status.wait_count = (int)(vm->frame_rate() / 2);
+#else
+		laser_disc_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+		out_message(_T("LD: Ejected"));
+	} else if(laser_disc_status.wait_count == 0) {
+		vm->open_laser_disc(file_path);
+		out_message(_T("LD: %s"), file_path);
+	}
+	_tcscpy(laser_disc_status.path, file_path);
+}
+
+void EMU::close_laser_disc()
+{
+	vm->close_laser_disc();
+	clear_media_status(&laser_disc_status);
+	out_message(_T("LD: Ejected"));
+}
+
+bool EMU::laser_disc_inserted()
+{
+	return vm->laser_disc_inserted();
 }
 #endif
 

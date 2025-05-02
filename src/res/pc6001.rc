@@ -93,6 +93,13 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
+    POPUP "Cart"
+    BEGIN
+        MENUITEM "Insert",                      ID_OPEN_CART1
+        MENUITEM "Eject",                       ID_CLOSE_CART1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_CART1
+    END
     POPUP "FD1"
     BEGIN
         MENUITEM "Insert",                      ID_OPEN_FD1
@@ -100,26 +107,15 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD1
     END
-    POPUP "FD2"
+    POPUP "CMT"
     BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD2
-        MENUITEM "Eject",                       ID_CLOSE_FD2
+        MENUITEM "Play",                        ID_PLAY_TAPE
+        MENUITEM "Rec",                         ID_REC_TAPE
+        MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD2
-    END
-    POPUP "FD3"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD3
-        MENUITEM "Eject",                       ID_CLOSE_FD3
+        MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD3
-    END
-    POPUP "FD4"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD4
-        MENUITEM "Eject",                       ID_CLOSE_FD4
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD4
+        MENUITEM "Recent",                      ID_RECENT_TAPE
     END
     POPUP "Screen"
     BEGIN
