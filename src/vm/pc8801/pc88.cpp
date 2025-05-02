@@ -576,6 +576,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 	case 0x10:
+		emu->printer_out(data);
 		d_rtc->write_signal(SIG_UPD1990A_C0, data, 1);
 		d_rtc->write_signal(SIG_UPD1990A_C1, data, 2);
 		d_rtc->write_signal(SIG_UPD1990A_C2, data, 4);
@@ -677,7 +678,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 	case 0x40:
-		// bit0: printer strobe
+		emu->printer_strobe((data & 1) == 0);
 		d_rtc->write_signal(SIG_UPD1990A_STB, ~data, 2);
 		d_rtc->write_signal(SIG_UPD1990A_CLK, data, 4);
 		// bit3: crtc i/f sync mode

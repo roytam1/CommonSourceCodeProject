@@ -76,6 +76,7 @@ class FLOPPY;
 class KEYBOARD;
 class MEMORY;
 class NOTE;
+class PRINTER;
 
 class VM
 {
@@ -86,11 +87,11 @@ protected:
 	EVENT* event;
 	
 	BEEP* beep;
-	I8251* sio_r;
-	I8251* sio_k;
+	I8251* sio_rs;
+	I8251* sio_kbd;
 	I8253* pit;
-	I8255* pio_s;
-	I8255* pio_p;
+	I8255* pio_sys;
+	I8255* pio_prn;
 	I8259* pic;
 	I86* cpu;
 	IO* io;
@@ -108,6 +109,7 @@ protected:
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	NOTE* note;
+	PRINTER* printer;
 	
 public:
 	// ----------------------------------------

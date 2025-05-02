@@ -127,6 +127,7 @@ class IO;
 class JOYSTICK;
 class MEMORY;
 class MOUSE;
+class PRINTER;
 class PSUB;
 
 class MCS48;
@@ -170,6 +171,7 @@ protected:
 	JOYSTICK* joy;
 	MEMORY* memory;
 	MOUSE* mouse;
+	PRINTER* printer;
 	PSUB* psub;
 	
 	MCS48* cpu_sub;

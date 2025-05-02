@@ -35,6 +35,7 @@
 #include "joystick.h"
 #include "memory.h"
 #include "mouse.h"
+#include "printer.h"
 #include "psub.h"
 
 #include "../mcs48.h"
@@ -93,6 +94,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	joy = new JOYSTICK(this, emu);
 	memory = new MEMORY(this, emu);
 	mouse = new MOUSE(this, emu);
+	printer = new PRINTER(this, emu);
 	
 	if(pseudo_sub_cpu) {
 		psub = new PSUB(this, emu);
@@ -126,9 +128,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 0x04);
+	pio->set_context_port_a(printer, SIG_PRINTER_OUT, 0xff, 0);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 0x01, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN40, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x60, 0);
+	pio->set_context_port_c(printer, SIG_PRINTER_STB, 0x80, 0);
 #ifdef _X1TURBO_FEATURE
 	fdc->set_context_drq(dma, SIG_Z80DMA_READY, 1);
 #endif

@@ -312,7 +312,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 #if defined(_MZ800) || defined(_MZ1500)
 	for(int i = 0; i < MAX_DRIVE; i++) {
-		fdc->set_drive_type(i, DRIVE_TYPE_2D);
+		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
 	}
 #endif
 }

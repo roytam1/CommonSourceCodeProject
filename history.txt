@@ -1,3 +1,14 @@
+12/31/2013
+
+[EMU/WIN32] support printer interface
+
+[PC8801/PC88] support printer interface
+[PC9801/PRINTER] support printer interface
+[PC98LT/PRINTER] support printer interface
+[MZ800] change the floppy drive type from 2D to 2DD
+[X1TURBO/PRINTER] support printer interface
+
+
 12/5/2013
 
 [VM/MC6840] support MC6840 (partial)

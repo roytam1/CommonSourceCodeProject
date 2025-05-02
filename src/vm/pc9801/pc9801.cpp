@@ -44,6 +44,7 @@
 #include "joystick.h"
 #include "keyboard.h"
 #include "mouse.h"
+#include "printer.h"
 
 #if defined(SUPPORT_320KB_FDD_IF)
 #include "../pc80s31k.h"
@@ -146,6 +147,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	joystick = new JOYSTICK(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	mouse = new MOUSE(this, emu);
+	printer = new PRINTER(this, emu);
 	
 #if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives
@@ -214,6 +216,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// sysport port.c bit2: enable txrdy interrupt
 	// sysport port.c bit1: enable txempty interrupt
 	// sysport port.c bit0: enable rxrdy interrupt
+	pio_prn->set_context_port_a(printer, SIG_PRINTER_OUT, 0xff, 0);
+	pio_prn->set_context_port_c(printer, SIG_PRINTER_STB, 0x80, 0);
 #if defined(HAS_I86) || defined(HAS_V30)
 	pio_prn->set_context_port_c(not, SIG_NOT_INPUT, 8, 0);
 	not->set_context_out(pic, SIG_I8259_CHIP1 | SIG_I8259_IR0, 1);

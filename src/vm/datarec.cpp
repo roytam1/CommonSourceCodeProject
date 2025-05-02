@@ -616,7 +616,7 @@ int DATAREC::load_wav_image(int offset)
 					if(max_sample < wav_buffer[i + j]) max_sample = wav_buffer[i + j];
 					if(min_sample > wav_buffer[i + j]) min_sample = wav_buffer[i + j];
 				}
-				if(max_sample - min_sample> 4096) {
+				if(max_sample - min_sample > 4096) {
 					zero_buffer[i] = (max_sample + min_sample) / 2;
 				} else {
 					zero_buffer[i] = wav_buffer[i];

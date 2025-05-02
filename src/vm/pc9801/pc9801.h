@@ -186,6 +186,7 @@ class FMSOUND;
 class JOYSTICK;
 class KEYBOARD;
 class MOUSE;
+class PRINTER;
 
 #if defined(SUPPORT_320KB_FDD_IF)
 // 320kb fdd drives
@@ -258,6 +259,7 @@ protected:
 	JOYSTICK* joystick;
 	KEYBOARD* keyboard;
 	MOUSE* mouse;
+	PRINTER* printer;
 	
 #if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives

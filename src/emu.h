@@ -270,9 +270,20 @@ private:
 	}
 	
 	// ----------------------------------------
+	// printer
+	// ----------------------------------------
+	void initialize_printer();
+	void release_printer();
+	void update_printer();
+	
+	FILEIO *prn_fio;
+	int prn_data, prn_wait_frames;
+	bool prn_strobe;
+	
+#ifdef USE_SOCKET
+	// ----------------------------------------
 	// socket
 	// ----------------------------------------
-#ifdef USE_SOCKET
 	void initialize_socket();
 	void release_socket();
 	void update_socket();
@@ -415,8 +426,8 @@ public:
 	// sound
 	void mute_sound();
 	
-	// socket
 #ifdef USE_SOCKET
+	// socket
 	int get_socket(int ch) {
 		return soc[ch];
 	}
@@ -453,8 +464,12 @@ public:
 	// timer
 	void get_host_time(cur_time_t* time);
 	
-	// socket
+	// printer
+	void printer_out(uint8 value);
+	void printer_strobe(bool value);
+	
 #ifdef USE_SOCKET
+	// socket
 	bool init_socket_tcp(int ch);
 	bool init_socket_udp(int ch);
 	bool connect_socket(int ch, uint32 ipaddr, int port);
@@ -463,6 +478,7 @@ public:
 	void send_data_tcp(int ch);
 	void send_data_udp(int ch, uint32 ipaddr, int port);
 #endif
+	
 	// debug log
 	void out_debug(const _TCHAR* format, ...);
 	

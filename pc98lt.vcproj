@@ -765,6 +765,28 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="src\vm\pc9801\printer.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -887,6 +909,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc98ha\pc98ha.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\pc9801\printer.h"
 					>
 				</File>
 			</Filter>

@@ -9,6 +9,7 @@
 
 #include "emu.h"
 #include "vm/vm.h"
+#include "fileio.h"
 
 #ifndef FD_BASE_NUMBER
 #define FD_BASE_NUMBER 1
@@ -70,6 +71,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	initialize_screen();
 	initialize_sound();
 	initialize_media();
+	initialize_printer();
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
@@ -82,6 +84,7 @@ EMU::~EMU()
 	release_input();
 	release_screen();
 	release_sound();
+	release_printer();
 #ifdef USE_SOCKET
 	release_socket();
 #endif
@@ -108,6 +111,7 @@ int EMU::run()
 {
 	update_input();
 	update_media();
+	update_printer();
 #ifdef USE_SOCKET
 	update_socket();
 #endif
@@ -204,6 +208,60 @@ void EMU::get_host_time(cur_time_t* time)
 	time->hour = sTime.wHour;
 	time->minute = sTime.wMinute;
 	time->second = sTime.wSecond;
+}
+
+// ----------------------------------------------------------------------------
+// printer
+// ----------------------------------------------------------------------------
+
+void EMU::initialize_printer()
+{
+	prn_fio = new FILEIO();
+	prn_data = -1;
+	prn_strobe = false;
+}
+
+void EMU::release_printer()
+{
+	delete prn_fio;
+}
+
+void EMU::update_printer()
+{
+	if(prn_fio->IsOpened() && --prn_wait_frames == 0) {
+		prn_fio->Fclose();
+	}
+}
+
+void EMU::printer_out(uint8 value)
+{
+	prn_data = value;
+}
+
+void EMU::printer_strobe(bool value)
+{
+	bool falling = (prn_strobe && !value);
+	prn_strobe = value;
+	
+	if(falling) {
+		if(!prn_fio->IsOpened()) {
+			if(prn_data == -1) {
+				return;
+			}
+			cur_time_t time;
+			_TCHAR file_name[_MAX_PATH];
+			get_host_time(&time);
+			_stprintf(file_name, _T("prn_%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.txt"), time.year, time.month, time.day, time.hour, time.minute, time.second);
+			prn_fio->Fopen(bios_path(file_name), FILEIO_WRITE_BINARY);
+		}
+		prn_fio->Fputc(prn_data);
+		// wait 10sec
+#ifdef SUPPORT_VARIABLE_TIMING
+		prn_wait_frames = (int)(vm->frame_rate() * 10.0 + 0.5);
+#else
+		prn_wait_frames = (int)(FRAMES_PER_SEC * 10.0 + 0.5);
+#endif
+	}
 }
 
 // ----------------------------------------------------------------------------
