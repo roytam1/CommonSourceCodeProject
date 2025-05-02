@@ -16,6 +16,10 @@
 #include "../ym2203.h"
 #include "../../config.h"
 
+#define DEVICE_JOYSTICK	0
+#define DEVICE_MOUSE	1
+#define DEVICE_JOYMOUSE	2	// not supported yet
+
 #define EVENT_TIMER	0
 #define EVENT_BUSREQ	1
 
@@ -183,10 +187,10 @@ void PC88::initialize()
 		dest[6] = dest[7] = ((i & 8) ? 0xf0 : 0) | ((i & 0x80) ? 0x0f : 0);
 	}
 	
-	for(int i = 0; i < 8; i++) {
+	// initialize text palette
+	for(int i = 0; i < 9; i++) {
 		palette_text_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
 	}
-	palette_text_pc[8] = 0;
 	
 	line200 = false;
 	
@@ -195,16 +199,18 @@ void PC88::initialize()
 #else
 	cpu_clock_low = true;
 #endif
-	
-//	int mem_wait_clock = ((config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) && cpu_clock_low) ? 0 : 1;
-	int mem_wait_clock= (config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) ? 1 : cpu_clock_low ? 0 : 1;
-	for(int i = 0; i < 16; i++) {
-		mem_wait_clocks[i] = mem_wait_clock;
+	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
+		mem_wait_clocks = 1;
+	}
+	else {
+		mem_wait_clocks = cpu_clock_low ? 0 : 1;
 	}
 	
 	key_status = emu->key_buffer();
 #ifdef SUPPORT_PC88_JOYSTICK
-	joy_status = emu->joy_buffer();
+	joystick_status = emu->joy_buffer();
+	mouse_status = emu->mouse_buffer();
+	mouse_strobe_clock_lim = (int)((cpu_clock_low ? 720 : 1440) * 1.25);
 #endif
 	
 	register_frame_event(this);
@@ -248,7 +254,8 @@ void PC88::reset()
 	skip_line = true;
 	
 	cursor_on = cursor_blink = false;
-	cursor_x = cursor_y = cursor_line = 0;
+	cursor_x = cursor_y = -1;
+	cursor_line = 0;
 	
 	blink_on = false;
 	blink_rate = 24;
@@ -276,7 +283,16 @@ void PC88::reset()
 	dma_hl = false;
 	
 	// keyboard
-	kana = caps = 0;
+	key_kana = key_caps = 0;
+	
+	// mouse
+#ifdef SUPPORT_PC88_JOYSTICK
+	mouse_strobe = 0;
+	mouse_strobe_clock = current_clock();
+	mouse_phase = -1;
+	mouse_dx = mouse_dy = mouse_lx = mouse_ly = 0;
+#endif
+	opn_ch = 0;
 	
 	// kanji rom
 	kanji1_addr.d = kanji2_addr.d = 0;
@@ -300,7 +316,7 @@ void PC88::write_data8(uint32 addr, uint32 data)
 	int *wait = &wait_tmp;
 #endif
 	addr &= 0xffff;
-	*wait = mem_wait_clocks[addr >> 12];
+	*wait = mem_wait_clocks;
 	
 	if((addr & 0xfc00) == 0x8000) {
 		// text window
@@ -325,10 +341,10 @@ void PC88::write_data8(uint32 addr, uint32 data)
 			gvram[(addr & 0x3fff) | 0x8000] = data;
 			return;
 		case 8:
-			*wait = alu_wait_clocks;
 			addr &= 0x3fff;
 			switch(alu_ctrl2 & 0x30) {
 			case 0x00:
+				*wait = gvram_wait_clocks + 1; // read modify write ???
 				for(int i = 0; i < 3; i++) {
 					switch((alu_ctrl1 >> i) & 0x11) {
 					case 0x00:	// reset
@@ -344,14 +360,17 @@ void PC88::write_data8(uint32 addr, uint32 data)
 				}
 				break;
 			case 0x10:
+				*wait = gvram_wait_clocks;
 				gvram[addr | 0x0000] = alu_reg[0];
 				gvram[addr | 0x4000] = alu_reg[1];
 				gvram[addr | 0x8000] = alu_reg[2];
 				break;
 			case 0x20:
+				*wait = gvram_wait_clocks;
 				gvram[addr | 0x0000] = alu_reg[1];
 				break;
 			case 0x30:
+				*wait = gvram_wait_clocks;
 				gvram[addr | 0x4000] = alu_reg[0];
 				break;
 			}
@@ -371,7 +390,7 @@ uint32 PC88::read_data8(uint32 addr)
 	int *wait = &wait_tmp;
 #endif
 	addr &= 0xffff;
-	*wait = mem_wait_clocks[addr >> 12];
+	*wait = mem_wait_clocks;
 	
 	if((addr & 0xfc00) == 0x8000) {
 		// text window
@@ -393,7 +412,7 @@ uint32 PC88::read_data8(uint32 addr)
 			*wait = gvram_wait_clocks;
 			return gvram[(addr & 0x3fff) | 0x8000];
 		case 8:
-			*wait = alu_wait_clocks;
+			*wait = gvram_wait_clocks;
 			addr &= 0x3fff;
 			alu_reg[0] = gvram[addr | 0x0000];
 			alu_reg[1] = gvram[addr | 0x4000];
@@ -489,10 +508,28 @@ void PC88::write_io8(uint32 addr, uint32 data)
 			update_gvram_wait();
 		}
 		d_beep->write_signal(SIG_BEEP_ON, data, 0x20);
-		// bit6: joystick port pin#8
+#ifdef SUPPORT_PC88_JOYSTICK
+		if(mouse_strobe != (data & 0x40)) {
+			mouse_strobe = data & 0x40;
+			if(mouse_strobe && (mouse_phase == -1 || passed_clock(mouse_strobe_clock) > mouse_strobe_clock_lim)) {
+				mouse_phase = 0;//mouse_dx = mouse_dy = 0;
+			}
+			else {
+				mouse_phase = (mouse_phase + 1) & 3;
+			}
+			if(mouse_phase == 0) {
+				// latch position
+				mouse_lx = -((mouse_dx > 127) ? 127 : (mouse_dx < -127) ? -127 : mouse_dx);
+				mouse_ly = -((mouse_dy > 127) ? 127 : (mouse_dy < -127) ? -127 : mouse_dy);
+				mouse_dx = mouse_dy = 0;
+			}
+			mouse_strobe_clock = current_clock();
+		}
+#endif
 		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, data, 0x80);
 		break;
 	case 0x44:
+		opn_ch = data;
 	case 0x45:
 #ifdef HAS_YM2608
 	case 0x46:
@@ -541,6 +578,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		switch(crtc_cmd) {
 		case 0:	// reset CRTC
 			crtc_status = 0;
+			cursor_x = cursor_y = -1;
 			break;
 		case 1:	// start display
 			crtc_status |= 0x10;
@@ -707,7 +745,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-uint32 PC88::read_io8(uint32 addr)
+uint32 PC88::read_io8tmp(uint32 addr)
 {
 	uint32 val = 0xff;
 	
@@ -739,11 +777,11 @@ uint32 PC88::read_io8(uint32 addr)
 					key_status[0x10] = 1;
 				}
 			}
-			key_status[0x15] = kana;
+			key_status[0x15] = key_kana;
 		}
 		else if(addr == 0x0a) {
 			key_status_bak[6] = key_status[0x14];
-			key_status[0x14] = caps;
+			key_status[0x14] = key_caps;
 		}
 		for(int i = 0; i < 8; i++) {
 			if(key_status[key_table[addr & 0x0f][i]]) {
@@ -785,6 +823,38 @@ uint32 PC88::read_io8(uint32 addr)
 		}
 		return val;
 	case 0x45:
+		if(opn_ch == 14) {
+#ifdef SUPPORT_PC88_JOYSTICK
+			if(config.device_type == DEVICE_JOYSTICK) {
+				return (~(joystick_status[0] >> 0) & 0x0f) | 0xf0;
+			}
+			else if(config.device_type == DEVICE_MOUSE) {
+				switch(mouse_phase) {
+				case 0:
+					return ((mouse_lx >> 4) & 0x0f) | 0xf0;
+				case 1:
+					return ((mouse_lx >> 0) & 0x0f) | 0xf0;
+				case 2:
+					return ((mouse_ly >> 4) & 0x0f) | 0xf0;
+				case 3:
+					return ((mouse_ly >> 0) & 0x0f) | 0xf0;
+				}
+				return 0xf0; // ???
+			}
+#endif
+			return 0xff;
+		}
+		else if(opn_ch == 15) {
+#ifdef SUPPORT_PC88_JOYSTICK
+			if(config.device_type == DEVICE_JOYSTICK) {
+				return (~(joystick_status[0] >> 4) & 0x03) | 0xfc;
+			}
+			else if(config.device_type == DEVICE_MOUSE) {
+				return (~mouse_status[2] & 0x03) | 0xfc;
+			}
+#endif
+			return 0xff;
+		}
 #ifdef HAS_YM2608
 	case 0x46:
 	case 0x47:
@@ -853,34 +923,16 @@ void PC88::write_dma_io8(uint32 addr, uint32 data)
 
 void PC88::update_gvram_wait()
 {
-	// from M88 memory wait table
-	if(config.boot_mode == MODE_PC88_V1H || config.boot_mode == MODE_PC88_V2) {
-		if(vblank) {
-//			gvram_wait_clocks = cpu_clock_low ? 1 : 3;
-			gvram_wait_clocks = cpu_clock_low ? 2 : 3;
-		}
-		else {
-//			gvram_wait_clocks = cpu_clock_low ? 2 : 5;
-			gvram_wait_clocks = cpu_clock_low ? 3 : 5;
+	gvram_wait_clocks  = cpu_clock_low ? 1 : 2;
+	if(!vblank) {
+		gvram_wait_clocks *= 2;
+	}
+	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
+		gvram_wait_clocks *= 2;
+		if(!vblank && !ghs_mode) {
+			gvram_wait_clocks *= 2;
 		}
 	}
-	else if(ghs_mode) {
-		if(vblank) {
-			gvram_wait_clocks = cpu_clock_low ? 3 : 4;
-		}
-		else {
-			gvram_wait_clocks = cpu_clock_low ? 4 : 8;
-		}
-	}
-	else {
-		if(vblank) {
-			gvram_wait_clocks = cpu_clock_low ? 3 : 7;
-		}
-		else {
-			gvram_wait_clocks = cpu_clock_low ? 30 : 72;
-		}
-	}
-	alu_wait_clocks = gvram_wait_clocks + 4; // ???
 }
 
 void PC88::update_gvram_sel()
@@ -958,11 +1010,9 @@ void PC88::update_tvram_memmap()
 {
 	if(tvram_sel == 0) {
 		SET_BANK(0xf000, 0xffff, tvram, tvram);
-		mem_wait_clocks[15] = mem_wait_clocks[0] + 1;
 	}
 	else {
 		SET_BANK(0xf000, 0xffff, ram + 0xf000, ram + 0xf000);
-		mem_wait_clocks[15] = mem_wait_clocks[0] + 0;
 	}
 }
 
@@ -990,11 +1040,9 @@ void PC88::event_frame()
 		blink_on = !blink_on;
 		blink_counter = 0;
 	}
-	
 #ifdef SUPPORT_PC88_JOYSTICK
-	// update joystick status
-	d_opn->write_signal(SIG_YM2203_PORT_A, ~(joy_status[0] >> 0), 0x0f);	// direction
-	d_opn->write_signal(SIG_YM2203_PORT_B, ~(joy_status[0] >> 4), 0x03);	// button
+	mouse_dx += mouse_status[0];
+	mouse_dy += mouse_status[1];
 #endif
 }
 
@@ -1045,10 +1093,10 @@ void PC88::key_down(int code, bool repeat)
 {
 	if(!repeat) {
 		if(code == 0x14) {
-			caps ^= 1;
+			key_caps ^= 1;
 		}
 		else if(code == 0x15) {
-			kana ^= 1;
+			key_kana ^= 1;
 		}
 	}
 }
@@ -1071,29 +1119,37 @@ void PC88::draw_screen()
 		if(graph_mode & 0x10) {
 			draw_color_graph();
 		}
-		else if(line200) {
-			draw_mono_graph();
-		}
-		else {
+		else if(!line200) {
 			if(text_mode & 2) {
 				memset(attribs, 0xe0, sizeof(attribs));
 			}
 			else if(!attribs_expanded) {
 				expand_attribs();
 			}
-			draw_mono_hires_graph();
+			draw_color_hires_graph();
+		}
+		else {
+			draw_mono_graph();
 		}
 	}
 	
 	// update palette
 	if(update_palette) {
-		if(graph_mode & 0x10) {
+		static const int pex[8] = {
+			0,  36,  73, 109, 146, 182, 219, 255 // from m88
+		};
+		if((graph_mode & 0x10) || !line200) {
+			// color
 			for(int i = 0; i < 8; i++) {
-				palette_graph_pc[i] = RGB_COLOR(palette[i].r << 5, palette[i].g << 5, palette[i].b << 5);
+//				palette_graph_pc[i] = RGB_COLOR(palette[i].r << 5, palette[i].g << 5, palette[i].b << 5);
+				palette_graph_pc[i] = RGB_COLOR(pex[palette[i].r], pex[palette[i].g], pex[palette[i].b]);
 			}
+			palette_graph_pc[8] = 0; // non dot in hireso screen
 		}
 		else {
-			palette_graph_pc[0] = RGB_COLOR(palette[8].r << 5, palette[8].g << 5, palette[8].b << 5);
+			// mono
+//			palette_graph_pc[0] = RGB_COLOR(palette[8].r << 5, palette[8].g << 5, palette[8].b << 5);
+			palette_graph_pc[0] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			palette_graph_pc[1] = RGB_COLOR(255, 255, 255);
 		}
 		update_palette = false;
@@ -1108,7 +1164,7 @@ void PC88::draw_screen()
 			uint8* src_g = graph[y];
 			
 			for(int x = 0; x < 640; x++) {
-				uint8 t = src_t[x];
+				uint32 t = src_t[x];
 				dest0[x] = t ? palette_text_pc[t] : palette_graph_pc[src_g[x]];
 			}
 			if(config.scan_line) {
@@ -1122,6 +1178,18 @@ void PC88::draw_screen()
 			}
 		}
 	}
+	else if(config.boot_mode == MODE_PC88_V2) {
+		for(int y = 0; y < 400; y++) {
+			scrntype* dest = emu->screen_buffer(y);
+			uint8* src_t = text[y >> 1];
+			uint8* src_g = graph[y];
+			
+			for(int x = 0; x < 640; x++) {
+				uint32 t = src_t[x];
+				dest[x] = t ? palette_text_pc[t] : palette_graph_pc[src_g[x]];
+			}
+		}
+	}
 	else {
 		for(int y = 0; y < 400; y++) {
 			scrntype* dest = emu->screen_buffer(y);
@@ -1129,7 +1197,7 @@ void PC88::draw_screen()
 			uint8* src_g = graph[y];
 			
 			for(int x = 0; x < 640; x++) {
-				uint8 t = src_t[x];
+				uint32 t = src_t[x];
 				dest[x] = palette_text_pc[t ? t : src_g[x]];
 			}
 		}
@@ -1165,27 +1233,25 @@ void PC88::expand_attribs()
 		char_height_tmp >>= 1;
 	}
 	for(int cy = 0, ytop = 0, ofs = 0; cy < text_height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib_num * 2) {
-		if(attrib_num != 0) {
-			if(attrib_num == 20 && crtc_buffer[ofs + 80] == 0 && crtc_buffer[ofs + 81] == 120 && crtc_buffer[ofs + 82] == 1 && crtc_buffer[ofs + 83] == 2) {
-				// XXX: ugly patch for alpha :-(
-				memset(attribs[cy], 0, 80);
+		if(attrib_num == 20 && crtc_buffer[ofs + 80] == 0 && crtc_buffer[ofs + 82] == 1 && (crtc_buffer[ofs + 84] & 0x7f) >= 79) {
+			// XXX: ugly patch for alpha :-(
+			text_attrib = crtc_buffer[ofs + 81];
+			memset(attribs[cy], text_attrib, 80);
+		}
+		else {
+			uint8 flags[128];
+			memset(flags, 0, sizeof(flags));
+			for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
+				flags[crtc_buffer[ofs + i + 80] & 0x7f] = 1;
 			}
-			else {
-				uint8 flags[128];
-				memset(flags, 0, sizeof(flags));
-				for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
-					flags[crtc_buffer[ofs + i + 80] & 0x7f] = 1;
+			for(int cx = 0, pos = 0; cx < text_width && cx < 80; cx++) {
+				if(flags[cx]) {
+					text_attrib = crtc_buffer[ofs + pos + 81];
+					pos += 2;
 				}
-				for(int cx = 0, pos = 0; cx < text_width && cx < 80; cx++) {
-					if(flags[cx]) {
-						text_attrib = crtc_buffer[ofs + pos + 81];
-						pos += 2;
-					}
-					attribs[cy][cx] = text_attrib;
-				}
+				attribs[cy][cx] = text_attrib;
 			}
 		}
-		
 	}
 }
 
@@ -1294,6 +1360,47 @@ void PC88::draw_color_graph()
 	}
 }
 
+void PC88::draw_color_hires_graph()
+{
+	int char_height_tmp = char_height ? char_height : 16;
+	int shift = (text_mode & 1) ? 0 : 1;
+	
+	for(int y = 0, addr = 0; y < 200; y++) {
+		int cy = y / char_height_tmp;
+		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
+			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
+			uint8 c = attribs[cy][cx >> shift] >> 5;
+			addr++;
+			uint8 *dest = &graph[y][x];
+			dest[0] = (b & 0x80) ? c : 8;	// 8: black
+			dest[1] = (b & 0x40) ? c : 8;
+			dest[2] = (b & 0x20) ? c : 8;
+			dest[3] = (b & 0x10) ? c : 8;
+			dest[4] = (b & 0x08) ? c : 8;
+			dest[5] = (b & 0x04) ? c : 8;
+			dest[6] = (b & 0x02) ? c : 8;
+			dest[7] = (b & 0x01) ? c : 8;
+		}
+	}
+	for(int y = 200, addr = 0; y < 400; y++) {
+		int cy = y / char_height_tmp;
+		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
+			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
+			uint8 c = attribs[cy][cx >> shift] >> 5;
+			addr++;
+			uint8 *dest = &graph[y][x];
+			dest[0] = (r & 0x80) ? c : 8;
+			dest[1] = (r & 0x40) ? c : 8;
+			dest[2] = (r & 0x20) ? c : 8;
+			dest[3] = (r & 0x10) ? c : 8;
+			dest[4] = (r & 0x08) ? c : 8;
+			dest[5] = (r & 0x04) ? c : 8;
+			dest[6] = (r & 0x02) ? c : 8;
+			dest[7] = (r & 0x01) ? c : 8;
+		}
+	}
+}
+
 void PC88::draw_mono_graph()
 {
 	for(int y = 0, addr = 0; y < 200; y++) {
@@ -1311,47 +1418,6 @@ void PC88::draw_mono_graph()
 			dest[5] = ((b | r | g) & 0x04) >> 2;
 			dest[6] = ((b | r | g) & 0x02) >> 1;
 			dest[7] = ((b | r | g) & 0x01)     ;
-		}
-	}
-}
-
-void PC88::draw_mono_hires_graph()
-{
-	int char_height_tmp = char_height ? char_height : 16;
-	int shift = (text_mode & 1) ? 0 : 1;
-	
-	for(int y = 0, addr = 0; y < 200; y++) {
-		int cy = y / char_height_tmp;
-		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
-			uint8 b = (disp_ctrl & 2) ? 0 : gvram[addr | 0x0000];
-			uint8 c = attribs[cy][cx >> shift] >> 5;
-			addr++;
-			uint8 *dest = &graph[y][x];
-			dest[0] = (b & 0x80) ? c : 0;
-			dest[1] = (b & 0x40) ? c : 0;
-			dest[2] = (b & 0x20) ? c : 0;
-			dest[3] = (b & 0x10) ? c : 0;
-			dest[4] = (b & 0x08) ? c : 0;
-			dest[5] = (b & 0x04) ? c : 0;
-			dest[6] = (b & 0x02) ? c : 0;
-			dest[7] = (b & 0x01) ? c : 0;
-		}
-	}
-	for(int y = 200, addr = 0; y < 400; y++) {
-		int cy = y / char_height_tmp;
-		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
-			uint8 r = (disp_ctrl & 4) ? 0 : gvram[addr | 0x4000];
-			uint8 c = attribs[cy][cx >> shift] >> 5;
-			addr++;
-			uint8 *dest = &graph[y][x];
-			dest[0] = (r & 0x80) ? c : 0;
-			dest[1] = (r & 0x40) ? c : 0;
-			dest[2] = (r & 0x20) ? c : 0;
-			dest[3] = (r & 0x10) ? c : 0;
-			dest[4] = (r & 0x08) ? c : 0;
-			dest[5] = (r & 0x04) ? c : 0;
-			dest[6] = (r & 0x02) ? c : 0;
-			dest[7] = (r & 0x01) ? c : 0;
 		}
 	}
 }

@@ -17,14 +17,14 @@ namespace FM
 	{
 	public:
 		void	Reset();
-		bool	Count(int32 us);
+		bool	Count(int32 clock);
 		int32	GetNextEvent();
 	
 	protected:
 		virtual void SetStatus(uint bit) = 0;
 		virtual void ResetStatus(uint bit) = 0;
 
-		void	SetTimerBase(uint clock);
+		void	SetTimerPrescaler(int32 p);
 		void	SetTimerA(uint addr, uint data);
 		void	SetTimerB(uint data);
 		void	SetTimerControl(uint data);
@@ -38,7 +38,7 @@ namespace FM
 		
 		int32	timera, timera_count;
 		int32	timerb, timerb_count;
-		int32	timer_step;
+		int32	prescaler;
 	};
 
 // ---------------------------------------------------------------------------

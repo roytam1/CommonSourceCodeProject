@@ -1,9 +1,9 @@
 /*
-	TOSHIBA PASOPIA 7 Emulator 'EmuPIA7'
+	TOSHIBA PASOPIA Emulator 'EmuPIA'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.09.20 -
+	Date   : 2012.03.01 -
 
 	[ floppy ]
 */
@@ -18,6 +18,11 @@ void FLOPPY::initialize()
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
+	if(!supported) {
+		// OA-BASIC without floppy drives
+		return;
+	}
+	
 	switch(addr & 0xff) {
 	case 0xe0:
 		// tc off
@@ -26,6 +31,10 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	case 0xe2:
 		// tc on
 		d_fdc->write_signal(SIG_UPD765A_TC, 1, 1);
+		break;
+	case 0xe4:
+	case 0xe5:
+		d_fdc->write_io8(addr, data);
 		break;
 	case 0xe6:
 		// fdc reset
@@ -40,7 +49,15 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 
 uint32 FLOPPY::read_io8(uint32 addr)
 {
+	if(!supported) {
+		// OA-BASIC without floppy drives
+		return 0xff;
+	}
+	
 	switch(addr & 0xff) {
+	case 0xe4:
+	case 0xe5:
+		return d_fdc->read_io8(addr);
 	case 0xe6:
 		// fdc intr
 		return intr ? 0x80 : 0;

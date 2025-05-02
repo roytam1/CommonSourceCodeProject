@@ -59,7 +59,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	initialize_screen();
 	initialize_sound(frequency, samples);
 #ifdef USE_FD1
-	update_disk_insert();
+	initialize_disk_insert();
 #endif
 #ifdef USE_MEDIA
 	initialize_media();
@@ -103,9 +103,8 @@ int EMU::frame_interval()
 #endif
 }
 
-void EMU::run()
+int EMU::run()
 {
-	// run real machine
 	update_input();
 	update_timer();
 #ifdef USE_FD1
@@ -114,13 +113,17 @@ void EMU::run()
 #ifdef USE_SOCKET
 	update_socket();
 #endif
+	
+	// virtual machine may be driven to fill sound buffer
 	int extra_frames = 0;
 	update_sound(&extra_frames);
 	
-	// run virtual machine
+	// drive virtual machine
 	if(extra_frames == 0) {
 		vm->run();
+		extra_frames = 1;
 	}
+	return extra_frames;
 }
 
 void EMU::reset()
@@ -318,13 +321,13 @@ void EMU::update_config()
 	vm->update_config();
 }
 
-#ifdef USE_RAM
-void EMU::load_ram(_TCHAR* file_path)
+#ifdef USE_BINARY_FILE1
+void EMU::load_binary(int drv, _TCHAR* file_path)
 {
-	vm->load_ram(file_path);
+	vm->load_binary(drv, file_path);
 }
-void EMU::save_ram(_TCHAR* file_path)
+void EMU::save_binary(int drv, _TCHAR* file_path)
 {
-	vm->save_ram(file_path);
+	vm->save_binary(drv, file_path);
 }
 #endif

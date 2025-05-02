@@ -151,12 +151,12 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::load_ram(_TCHAR* file_path)
+void VM::load_binary(int drv, _TCHAR* file_path)
 {
 	memory->read_image(file_path, ram, sizeof(ram));
 }
 
-void VM::save_ram(_TCHAR* file_path)
+void VM::save_binary(int drv, _TCHAR* file_path)
 {
 	memory->write_image(file_path, ram, sizeof(ram));
 }

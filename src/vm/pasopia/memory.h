@@ -69,6 +69,7 @@ public:
 	uint8* get_attr() {
 		return attr;
 	}
+	void load_ipl();
 };
 
 #endif

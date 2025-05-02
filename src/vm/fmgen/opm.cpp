@@ -109,7 +109,7 @@ void OPM::RebuildTimeTable()
 
 	assert(fmclock < (0x80000000 >> FM_RATIOBITS));
 	rateratio = ((fmclock << FM_RATIOBITS) + rate/2) / rate;
-	SetTimerBase(fmclock);
+	SetTimerPrescaler(64);
 	
 //	FM::MakeTimeTable(rateratio);
 	chip.SetRatio(rateratio);

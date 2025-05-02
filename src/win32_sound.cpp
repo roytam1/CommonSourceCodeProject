@@ -19,7 +19,7 @@ void EMU::initialize_sound(int rate, int samples)
 	sound_rate = rate;
 	sound_samples = samples;
 	vm->initialize_sound(sound_rate, sound_samples);
-	sound_ok = now_mute = now_rec_snd = FALSE;
+	sound_ok = sound_started = now_mute = now_rec_snd = FALSE;
 	
 	// initialize direct sound
 	PCMWAVEFORMAT pcmwf;
@@ -68,8 +68,6 @@ void EMU::initialize_sound(int rate, int samples)
 		return;
 	}
 	
-	// start play
-	lpdsb->Play(0, 0, DSBPLAY_LOOPING);
 	sound_ok = first_half = TRUE;
 }
 
@@ -99,10 +97,17 @@ void EMU::update_sound(int* extra_frames)
 	now_mute = FALSE;
 	
 	if(sound_ok) {
-		// check current position
 		DWORD play_c, write_c, offset, size1, size2;
 		WORD *ptr1, *ptr2;
 		
+		// start play
+		if(!sound_started) {
+			lpdsb->Play(0, 0, DSBPLAY_LOOPING);
+			sound_started = TRUE;
+			return;
+		}
+		
+		// check current position
 		if(FAILED(lpdsb->GetCurrentPosition(&play_c, &write_c))) {
 			return;
 		}

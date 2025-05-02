@@ -11,9 +11,8 @@
 #define _EMU_H_
 
 // DirectX
-//#define DIRECTDRAW_VERSION 0x300
-#define DIRECTSOUND_VERSION 0x500
-//#define DIRECT3D_VERSION 0x900
+#define DIRECTSOUND_VERSION 0x900
+#define DIRECT3D_VERSION 0x900
 
 // for debug
 //#define _DEBUG_LOG
@@ -107,6 +106,7 @@ private:
 	void release_input();
 	void update_input();
 	
+	uint8 keycode_conv[256];
 	uint8 key_status[256];	// windows key code mapping
 #ifdef USE_SHIFT_NUMPAD_KEY
 	uint8 key_converted[256];
@@ -116,8 +116,6 @@ private:
 	
 	uint8 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4-b7 = trigger #1-#4
 	int joy_num;
-	uint32 joy_xmin[2], joy_xmax[2];
-	uint32 joy_ymin[2], joy_ymax[2];
 	
 	int mouse_status[3];	// x, y, button (b0 = left, b1 = right)
 	BOOL mouse_enabled;
@@ -132,7 +130,7 @@ private:
 	// ----------------------------------------
 	void initialize_screen();
 	void release_screen();
-	void create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib);
+	void create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, HBITMAP *hOldBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib);
 	
 	HWND main_window_handle;
 	HINSTANCE instance_handle;
@@ -163,7 +161,7 @@ private:
 	
 	// screen buffer
 	HDC hdcDib;
-	HBITMAP hBmp;
+	HBITMAP hBmp, hOldBmp;
 	LPBYTE lpBuf;
 	scrntype* lpBmp;
 	LPBITMAPINFO lpDib;
@@ -171,7 +169,7 @@ private:
 #ifdef USE_SCREEN_ROTATE
 	// rotate buffer
 	HDC hdcDibRotate;
-	HBITMAP hBmpRotate;
+	HBITMAP hBmpRotate, hOldBmpRotate;
 	LPBYTE lpBufRotate;
 	scrntype* lpBmpRotate;
 	LPBITMAPINFO lpDibRotate;
@@ -179,13 +177,13 @@ private:
 	
 	// stretch buffer
 	HDC hdcDibStretch1;
-	HBITMAP hBmpStretch1;
+	HBITMAP hBmpStretch1, hOldBmpStretch1;
 	LPBYTE lpBufStretch1;
 	scrntype* lpBmpStretch1;
 	LPBITMAPINFO lpDibStretch1;
 	
 	HDC hdcDibStretch2;
-	HBITMAP hBmpStretch2;
+	HBITMAP hBmpStretch2, hOldBmpStretch2;
 	LPBYTE lpBufStretch2;
 	scrntype* lpBmpStretch2;
 	LPBITMAPINFO lpDibStretch2;
@@ -217,7 +215,7 @@ private:
 	void update_sound(int* extra_frames);
 	
 	int sound_rate, sound_samples;
-	BOOL sound_ok, now_mute;
+	BOOL sound_ok, sound_started, now_mute;
 	
 	// direct sound
 	LPDIRECTSOUND lpds;
@@ -320,7 +318,7 @@ public:
 	
 	// drive virtual machine
 	int frame_interval();
-	void run();
+	int run();
 	void reset();
 #ifdef USE_SPECIAL_RESET
 	void special_reset();
@@ -355,9 +353,9 @@ public:
 	void open_media(_TCHAR* file_path);
 	void close_media();
 #endif
-#ifdef USE_RAM
-	void load_ram(_TCHAR* file_path);
-	void save_ram(_TCHAR* file_path);
+#ifdef USE_BINARY_FILE1
+	void load_binary(int drv, _TCHAR* file_path);
+	void save_binary(int drv, _TCHAR* file_path);
 #endif
 	BOOL now_skip();
 	

@@ -15,14 +15,11 @@
 #include "../emu.h"
 #include "device.h"
 
-#ifdef Z80_M1_CYCLE_WAIT
-#define SIG_Z80_M1_CYCLE_WAIT	0
-#endif
 #ifdef HAS_NSC800
-#define SIG_NSC800_INT	1
-#define SIG_NSC800_RSTA	2
-#define SIG_NSC800_RSTB	3
-#define SIG_NSC800_RSTC	4
+#define SIG_NSC800_INT	0
+#define SIG_NSC800_RSTA	1
+#define SIG_NSC800_RSTB	2
+#define SIG_NSC800_RSTC	3
 #endif
 
 class Z80 : public DEVICE
@@ -43,9 +40,6 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int icount;
-#ifdef Z80_M1_CYCLE_WAIT
-	int m1_cycle_wait;
-#endif
 	uint16 prevpc;
 	pair pc, sp, af, bc, de, hl, ix, iy, wz;
 	pair af2, bc2, de2, hl2;
@@ -116,7 +110,7 @@ private:
 	}
 	inline uint16 DEBUG_FETCH8_RELPC() {
 		int8 res = (int8)debug_ops[debug_ptr++];
-		return prevPC + debug_ptr + res;
+		return prevpc + debug_ptr + res;
 	}
 	void DASM();
 	void DASM_CB();
@@ -129,9 +123,6 @@ private:
 	
 public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-#ifdef Z80_M1_CYCLE_WAIT
-		m1_cycle_wait = Z80_M1_CYCLE_WAIT;
-#endif
 		busreq = false;
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;

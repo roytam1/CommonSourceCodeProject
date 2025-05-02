@@ -33,7 +33,11 @@ void init_config()
 	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
 #ifdef _HC80
-	config.ramdisk_type = 2;	// Nonintelligent ram disk
+	config.device_type = 2;	// Nonintelligent ram disk
+#endif
+#ifdef _PC8801MA
+	config.boot_mode = 2;	// V2 mode, 4MHz
+	config.cpu_clock_low = true;
 #endif
 }
 
@@ -42,7 +46,7 @@ void load_config()
 	// initial settings
 	init_config();
 	
-	// get config path
+	// get application path
 	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
@@ -50,20 +54,21 @@ void load_config()
 		pt--;
 	}
 	app_path[pt + 1] = _T('\0');
-	_stprintf(config_path, _T("%s%s.cfg"), app_path, _T(CONFIG_NAME));
 	
 	// load config
+	_stprintf(config_path, _T("%s%s.cfg"), app_path, _T(CONFIG_NAME));
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(config_path, FILEIO_READ_BINARY)) {
 		fio->Fread((void *)&config, sizeof(config), 1);
 		fio->Fclose();
+		
+		// check config version
+		if(!(config.version1 == FILE_VERSION && config.version2 == CONFIG_VERSION)) {
+			init_config();
+		}
+		config.cpu_power = 0;
 	}
 	delete fio;
-	
-	// check config version
-	if(!(config.version1 == FILE_VERSION && config.version2 == CONFIG_VERSION)) {
-		init_config();
-	}
 }
 
 void save_config()

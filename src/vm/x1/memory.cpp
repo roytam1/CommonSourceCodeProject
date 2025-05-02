@@ -74,7 +74,7 @@ void MEMORY::reset()
 	bank = 0x10;
 	d_pio->write_signal(SIG_I8255_PORT_B, 0x00, 0x10);
 #else
-	d_cpu->write_signal(SIG_Z80_M1_CYCLE_WAIT, 1, 1);
+	m1_cycle = 1;
 #endif
 }
 
@@ -88,6 +88,16 @@ uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffff;
 	return rbank[addr >> 12][addr & 0xfff];
+}
+
+uint32 MEMORY::fetch_op(uint32 addr, int *wait)
+{
+#ifdef _X1TURBO
+	*wait = 0;
+#else
+	*wait = m1_cycle;
+#endif
+	return read_data8(addr);
 }
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
@@ -110,7 +120,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 #ifdef _X1TURBO
 			d_pio->write_signal(SIG_I8255_PORT_B, 0x00, 0x10);
 #else
-			d_cpu->write_signal(SIG_Z80_M1_CYCLE_WAIT, 1, 1);
+			m1_cycle = 1;
 #endif
 		}
 		break;
@@ -121,7 +131,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 #ifdef _X1TURBO
 			d_pio->write_signal(SIG_I8255_PORT_B, 0x10, 0x10);
 #else
-			d_cpu->write_signal(SIG_Z80_M1_CYCLE_WAIT, 0, 0);
+			m1_cycle = 0;
 #endif
 		}
 		break;

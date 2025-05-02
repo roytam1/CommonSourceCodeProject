@@ -181,6 +181,13 @@ uint32 MEMORY::read_data8w(uint32 addr, int* wait)
 	return read_data8(addr);
 }
 
+uint32 MEMORY::fetch_op(uint32 addr, int* wait)
+{
+	addr &= 0xffff;
+	*wait = page_wait[addr >> 13] + 1;
+	return read_data8(addr);
+}
+
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {

@@ -10,6 +10,7 @@
 #include "emu.h"
 #include "vm/vm.h"
 #include "fifo.h"
+#include "fileio.h"
 
 #define KEY_KEEP_FRAMES 3
 
@@ -22,19 +23,26 @@ void EMU::initialize_input()
 	
 	// initialize joysticks
 	joy_num = joyGetNumDevs();
-	for(int i = 0; i < joy_num && i < 2; i++) {
-		JOYCAPS joycaps;
-		joyGetDevCaps(i, &joycaps, sizeof(JOYCAPS));
-		uint32 x = (joycaps.wXmin + joycaps.wXmax) / 2;
-		joy_xmin[i] = (joycaps.wXmin + x) / 2;
-		joy_xmax[i] = (joycaps.wXmax + x) / 2;
-		uint32 y = (joycaps.wYmin + joycaps.wYmax) / 2;
-		joy_ymin[i] = (joycaps.wYmin + y) / 2;
-		joy_ymax[i] = (joycaps.wYmax + y) / 2;
-	}
 	
 	// mouse emulation is disenabled
 	mouse_enabled = FALSE;
+	
+	// initialize keycode convert table
+	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+	application_path(app_path);
+	FILEIO* fio = new FILEIO();
+	
+	_stprintf(file_path, _T("%skeycode.cfg"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(keycode_conv, sizeof(keycode_conv), 1);
+		fio->Fclose();
+	}
+	else {
+		for(int i = 0; i < 256; i++) {
+			keycode_conv[i] = i;
+		}
+	}
+	delete fio;
 	
 #ifdef USE_SHIFT_NUMPAD_KEY
 	// initialize shift+numpad conversion
@@ -131,10 +139,10 @@ void EMU::update_input()
 	for(int i = 0; i < joy_num && i < 2; i++) {
 		JOYINFO joyinfo;
 		if(joyGetPos(i, &joyinfo) == JOYERR_NOERROR) {
-			if(joyinfo.wYpos < joy_ymin[i]) joy_status[i] |= 0x01;
-			if(joyinfo.wYpos > joy_ymax[i]) joy_status[i] |= 0x02;
-			if(joyinfo.wXpos < joy_xmin[i]) joy_status[i] |= 0x04;
-			if(joyinfo.wXpos > joy_xmax[i]) joy_status[i] |= 0x08;
+			if(joyinfo.wYpos < 0x3fff) joy_status[i] |= 0x01;	// up
+			if(joyinfo.wYpos > 0xbfff) joy_status[i] |= 0x02;	// down
+			if(joyinfo.wXpos < 0x3fff) joy_status[i] |= 0x04;	// left
+			if(joyinfo.wXpos > 0xbfff) joy_status[i] |= 0x08;	// right
 			if(joyinfo.wButtons & JOY_BUTTON1) joy_status[i] |= 0x10;
 			if(joyinfo.wButtons & JOY_BUTTON2) joy_status[i] |= 0x20;
 			if(joyinfo.wButtons & JOY_BUTTON3) joy_status[i] |= 0x40;
@@ -247,6 +255,8 @@ static const int numpad_table[256] = {
 
 void EMU::key_down(int code, bool repeat)
 {
+	BOOL keep_frames = FALSE;
+	
 	if(code == VK_SHIFT) {
 		if(GetAsyncKeyState(VK_LSHIFT) & 0x8000) key_status[VK_LSHIFT] = 0x80;
 		if(GetAsyncKeyState(VK_RSHIFT) & 0x8000) key_status[VK_RSHIFT] = 0x80;
@@ -262,41 +272,46 @@ void EMU::key_down(int code, bool repeat)
 		if(GetAsyncKeyState(VK_RMENU) & 0x8000) key_status[VK_RMENU] = 0x80;
 		if(!(key_status[VK_LMENU] || key_status[VK_RMENU])) key_status[VK_LMENU] = 0x80;
 	}
-	if(code == 0xf0) {
-		key_status[code = VK_CAPITAL] = KEY_KEEP_FRAMES;
-		repeat = false;
+	else if(code == 0xf0) {
+		code = VK_CAPITAL;
+		keep_frames = TRUE;
 	}
 	else if(code == 0xf2) {
-		key_status[code = VK_KANA] = KEY_KEEP_FRAMES;
-		repeat = false;
+		code = VK_KANA;
+		keep_frames = TRUE;
 	}
 	else if(code == 0xf3 || code == 0xf4) {
-		key_status[code = VK_KANJI] = KEY_KEEP_FRAMES;
+		code = VK_KANJI;
+		keep_frames = TRUE;
+	}
+#ifdef USE_SHIFT_NUMPAD_KEY
+	if(code == VK_SHIFT) {
+		key_shift_pressed = TRUE;
+		return;
+	}
+	else if(numpad_table[code] != 0) {
+		if(key_shift_pressed || key_shift_released) {
+			key_converted[code] = 1;
+			key_shift_pressed = TRUE;
+			code = numpad_table[code];
+		}
+	}
+#endif
+	if(!(code == VK_SHIFT || code == VK_CONTROL || code == VK_MENU)) {
+		code = keycode_conv[code];
+	}
+	
+#ifdef DONT_KEEEP_KEY_PRESSED
+	if(!(code == VK_SHIFT || code == VK_CONTROL || code == VK_MENU)) {
+		key_status[code] = KEY_KEEP_FRAMES;
+	}
+	else
+#endif
+	key_status[code] = keep_frames ? KEY_KEEP_FRAMES : 0x80;
+#ifdef NOTIFY_KEY_DOWN
+	if(keep_frames) {
 		repeat = false;
 	}
-	else {
-#ifdef USE_SHIFT_NUMPAD_KEY
-		if(code == VK_SHIFT) {
-			key_shift_pressed = TRUE;
-			return;
-		}
-		else if(numpad_table[code] != 0) {
-			if(key_shift_pressed || key_shift_released) {
-				key_converted[code] = 1;
-				key_shift_pressed = TRUE;
-				code = numpad_table[code];
-			}
-		}
-#endif
-#ifdef DONT_KEEEP_KEY_PRESSED
-		if(!(code == VK_SHIFT || code == VK_CONTROL || code == VK_MENU)) {
-			key_status[code] = KEY_KEEP_FRAMES;
-		}
-		else
-#endif
-		key_status[code] = 0x80;
-	}
-#ifdef NOTIFY_KEY_DOWN
 	vm->key_down(code, repeat);
 #endif
 }
@@ -328,6 +343,9 @@ void EMU::key_up(int code)
 		code = numpad_table[code];
 	}
 #endif
+	if(!(code == VK_SHIFT || code == VK_CONTROL || code == VK_MENU)) {
+		code = keycode_conv[code];
+	}
 	if(key_status[code]) {
 		key_status[code] &= 0x7f;
 #ifdef NOTIFY_KEY_DOWN

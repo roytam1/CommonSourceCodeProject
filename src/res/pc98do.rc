@@ -82,11 +82,11 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "PC-98"                        ID_PC98DO_BOOT_MODE_PC98
-        MENUITEM "PC-88 V1(S)"                  ID_PC8801_BOOT_MODE_V1S
-        MENUITEM "PC-88 V1(H)"                  ID_PC8801_BOOT_MODE_V1H
-        MENUITEM "PC-88 V2"                     ID_PC8801_BOOT_MODE_V2
-        MENUITEM "PC-88 N"                      ID_PC8801_BOOT_MODE_N
+        MENUITEM "PC-98"                        ID_PC98DO_MODE_PC98
+        MENUITEM "PC-88 V1(S)"                  ID_PC8801_MODE_V1S
+        MENUITEM "PC-88 V1(H)"                  ID_PC8801_MODE_V1H
+        MENUITEM "PC-88 V2"                     ID_PC8801_MODE_V2
+        MENUITEM "PC-88 N"                      ID_PC8801_MODE_N
         MENUITEM SEPARATOR
         MENUITEM "CPU 10/8MHz",                 ID_PC9801_CPU_CLOCK_HIGH
         MENUITEM "CPU 8/4MHz",                  ID_PC9801_CPU_CLOCK_LOW

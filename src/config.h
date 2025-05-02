@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x31
+#define FILE_VERSION	0x32
 
 void init_config();
 void load_config();
@@ -30,7 +30,9 @@ typedef struct {
 #endif
 #ifdef USE_FD1
 	_TCHAR initial_disk_path[_MAX_PATH];
-#if defined(USE_FD6) || defined(USE_FD5)
+#if defined(USE_FD8) || defined(USE_FD7)
+	_TCHAR recent_disk_path[8][8][_MAX_PATH];
+#elif defined(USE_FD6) || defined(USE_FD5)
 	_TCHAR recent_disk_path[6][8][_MAX_PATH];
 #else
 	_TCHAR recent_disk_path[4][8][_MAX_PATH];
@@ -48,9 +50,9 @@ typedef struct {
 	_TCHAR initial_media_path[_MAX_PATH];
 	_TCHAR recent_media_path[8][_MAX_PATH];
 #endif
-#ifdef USE_RAM
-	_TCHAR initial_ram_path[_MAX_PATH];
-	_TCHAR recent_ram_path[8][_MAX_PATH];
+#ifdef USE_BINARY_FILE1
+	_TCHAR initial_binary_path[_MAX_PATH];
+	_TCHAR recent_binary_path[2][8][_MAX_PATH];
 #endif
 	
 	// screen
@@ -70,14 +72,14 @@ typedef struct {
 #ifdef USE_DIPSWITCH
 	uint8 dipswitch;
 #endif
-#ifdef _HC80
-	int ramdisk_type;
-#endif
-#if defined(_MZ800) || defined(_PC98DO) || defined(_PC8801MA)
+#if defined(_MZ800) || defined(_PASOPIA) || defined(_PC98DO) || defined(_PC8801MA)
 	int boot_mode;
 #endif
 #if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
 	bool cpu_clock_low;	// 10MHz <-> 8MHz
+#endif
+#if defined(_HC80) || defined(_PASOPIA) || defined(_PC8801MA)
+	int device_type;
 #endif
 #if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
 	int monitor_type;

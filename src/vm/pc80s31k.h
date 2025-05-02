@@ -38,6 +38,7 @@ public:
 	void initialize();
 	void reset();
 	uint32 read_data8(uint32 addr);
+	uint32 fetch_op(uint32 addr, int *wait);
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);

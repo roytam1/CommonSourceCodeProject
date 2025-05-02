@@ -6,23 +6,24 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.20 -
 
-	[ joystick ]
+	[ kanji rom pac 2 ]
 */
 
-#ifndef _JOYPAC2_H_
-#define _JOYPAC2_H_
+#ifndef _KANJIPAC2_H_
+#define _KANJIPAC2_H_
 
 #include "../vm.h"
 #include "../../emu.h"
 #include "pac2dev.h"
 
-class JOYPAC2 : public PAC2DEV
+class KANJIPAC2 : public PAC2DEV
 {
 private:
-	uint8* joy;
+	uint8 rom[0x20000];
+	uint32 ptr;
 public:
-	JOYPAC2(VM* parent_vm, EMU* parent_emu) : PAC2DEV(parent_vm, parent_emu) {}
-	~JOYPAC2() {}
+	KANJIPAC2(VM* parent_vm, EMU* parent_emu) : PAC2DEV(parent_vm, parent_emu) {}
+	~KANJIPAC2() {}
 	
 	// common functions
 	void initialize(int id);

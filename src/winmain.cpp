@@ -72,8 +72,8 @@ void open_datarec_dialog(HWND hWnd, BOOL play);
 #ifdef USE_MEDIA
 void open_media_dialog(HWND hWnd);
 #endif
-#ifdef USE_RAM
-void open_ram_dialog(HWND hWnd, BOOL load);
+#ifdef USE_BINARY_FILE1
+void open_binary_dialog(HWND hWnd, int drv, BOOL load);
 #endif
 
 void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
@@ -157,7 +157,7 @@ BOOL check_file_extension(_TCHAR* filename, _TCHAR* ext)
 
 // d88 bank switch
 
-#define MAX_D88_BANKS 32
+#define MAX_D88_BANKS 50
 
 typedef struct {
 	_TCHAR name[18];
@@ -235,7 +235,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 #else
 	RECT rect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
 #endif
-	AdjustWindowRectEx(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_VISIBLE, TRUE, 0);
+	AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, TRUE);
 	HDC hdcScr = GetDC(NULL);
 	desktop_width = GetDeviceCaps(hdcScr, HORZRES);
 	desktop_height = GetDeviceCaps(hdcScr, VERTRES);
@@ -247,7 +247,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	dest_y = (dest_y < 0) ? 0 : dest_y;
 	
 	// show window
-	HWND hWnd = CreateWindow(_T("CWINDOW"), _T(DEVICE_NAME), WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_MINIMIZEBOX,
+	HWND hWnd = CreateWindow(_T("CWINDOW"), _T(DEVICE_NAME), WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE,
 	                         dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
@@ -349,10 +349,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 #endif
 	}
 	
+	// set priority
+	SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+	
 	// main loop
 	int total_frames = 0, draw_frames = 0, skip_frames = 0;
 	int rec_delay_ptr = 0;
-	DWORD next_time = timeGetTime();
+	DWORD next_time = 0;
 	DWORD update_fps_time = next_time + 1000;
 	MSG msg;
 	
@@ -372,13 +375,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			}
 		}
 		else if(emu) {
-			// get next period
-			int interval = get_interval();
-			next_time += emu->now_skip() ? 0 : interval;
-			
 			// drive machine
-			emu->run();
-			total_frames++;
+			int run_frames = emu->run();
+			total_frames += run_frames;
+			
+			// timing controls
+			int interval = get_interval(), sleep_period = 0;
+			if(run_frames > 1 || next_time == 0) {
+				next_time = timeGetTime();
+			}
+			next_time += emu->now_skip() ? 0 : interval;
 			
 			if(emu->now_rec_video()) {
 				rec_next_time += interval;
@@ -395,8 +401,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 					skip_frames = 0;
 					
 					// sleep 1 frame priod if need
-					if((int)(next_time - current_time) >= interval) {
-						Sleep(interval);
+					if((int)(next_time - current_time) >= 10) {
+						sleep_period = next_time - current_time;
 					}
 				}
 				else if(++skip_frames > MAX_SKIP_FRAMES) {
@@ -412,8 +418,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 					skip_frames = 0;
 					
 					// sleep 1 frame priod if need
-					if((int)(next_time - timeGetTime()) >= interval) {
-						Sleep(interval);
+					if((int)(next_time - timeGetTime()) >= 10) {
+						sleep_period = next_time - timeGetTime();
 					}
 				}
 				else if(++skip_frames > MAX_SKIP_FRAMES) {
@@ -424,7 +430,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 					next_time = timeGetTime();
 				}
 			}
-			Sleep(0);
+			Sleep(sleep_period);
 			
 			// calc frame rate
 			DWORD current_time = timeGetTime();
@@ -680,39 +686,61 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_HC80_RAMDISK0:
 		case ID_HC80_RAMDISK1:
 		case ID_HC80_RAMDISK2:
-			config.ramdisk_type = LOWORD(wParam) - ID_HC80_RAMDISK0;
+			config.device_type = LOWORD(wParam) - ID_HC80_RAMDISK0;
 			break;
 #endif
 #ifdef _MZ800
-		case ID_MZ800_BOOT_MODE_MZ800:
-		case ID_MZ800_BOOT_MODE_MZ700:
-			config.boot_mode = LOWORD(wParam) - ID_MZ800_BOOT_MODE_MZ800;
+		case ID_MZ800_MODE_MZ800:
+		case ID_MZ800_MODE_MZ700:
+			config.boot_mode = LOWORD(wParam) - ID_MZ800_MODE_MZ800;
 			if(emu) {
 				emu->update_config();
 			}
 			break;
 #endif
+#ifdef _PASOPIA
+		case ID_PASOPIA_MODE_TBASIC_V1_0:
+		case ID_PASOPIA_MODE_TBASIC_V1_1:
+		case ID_PASOPIA_MODE_OABASIC:
+		case ID_PASOPIA_MODE_OABASIC_NO_DISK:
+		case ID_PASOPIA_MODE_MINI_PASCAL:
+			config.boot_mode = LOWORD(wParam) - ID_PASOPIA_MODE_TBASIC_V1_0;
+			if(emu) {
+				emu->update_config();
+			}
+			break;
+		case ID_PASOPIA_DEVICE_RAM_PAC:
+		case ID_PASOPIA_DEVICE_KANJI_ROM:
+		case ID_PASOPIA_DEVICE_JOYSTICK:
+			config.device_type = LOWORD(wParam) - ID_PASOPIA_DEVICE_RAM_PAC;
+			break;
+#endif
 #ifdef _PC98DO
-		case ID_PC98DO_BOOT_MODE_PC98:
-		case ID_PC8801_BOOT_MODE_V1S:
-		case ID_PC8801_BOOT_MODE_V1H:
-		case ID_PC8801_BOOT_MODE_V2:
-		case ID_PC8801_BOOT_MODE_N:
-			config.boot_mode = LOWORD(wParam) - ID_PC98DO_BOOT_MODE_PC98;
+		case ID_PC98DO_MODE_PC98:
+		case ID_PC8801_MODE_V1S:
+		case ID_PC8801_MODE_V1H:
+		case ID_PC8801_MODE_V2:
+		case ID_PC8801_MODE_N:
+			config.boot_mode = LOWORD(wParam) - ID_PC98DO_MODE_PC98;
 			if(emu) {
 				emu->update_config();
 			}
 			break;
 #endif
 #ifdef _PC8801MA
-		case ID_PC8801_BOOT_MODE_V1S:
-		case ID_PC8801_BOOT_MODE_V1H:
-		case ID_PC8801_BOOT_MODE_V2:
-		case ID_PC8801_BOOT_MODE_N:
-			config.boot_mode = LOWORD(wParam) - ID_PC8801_BOOT_MODE_V1S;
+		case ID_PC8801_MODE_V1S:
+		case ID_PC8801_MODE_V1H:
+		case ID_PC8801_MODE_V2:
+		case ID_PC8801_MODE_N:
+			config.boot_mode = LOWORD(wParam) - ID_PC8801_MODE_V1S;
 			if(emu) {
 				emu->update_config();
 			}
+			break;
+		case ID_PC8801_DEVICE_JOYSTICK:
+		case ID_PC8801_DEVICE_MOUSE:
+		case ID_PC8801_DEVICE_JOYMOUSE:
+			config.device_type = LOWORD(wParam) - ID_PC8801_DEVICE_JOYSTICK;
 			break;
 #endif
 #if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
@@ -840,6 +868,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SELECT_D88_BANK + 29: \
 		case ID_SELECT_D88_BANK + 30: \
 		case ID_SELECT_D88_BANK + 31: \
+		case ID_SELECT_D88_BANK + 32: \
+		case ID_SELECT_D88_BANK + 33: \
+		case ID_SELECT_D88_BANK + 34: \
+		case ID_SELECT_D88_BANK + 35: \
+		case ID_SELECT_D88_BANK + 36: \
+		case ID_SELECT_D88_BANK + 37: \
+		case ID_SELECT_D88_BANK + 38: \
+		case ID_SELECT_D88_BANK + 39: \
+		case ID_SELECT_D88_BANK + 40: \
+		case ID_SELECT_D88_BANK + 41: \
+		case ID_SELECT_D88_BANK + 42: \
+		case ID_SELECT_D88_BANK + 43: \
+		case ID_SELECT_D88_BANK + 44: \
+		case ID_SELECT_D88_BANK + 45: \
+		case ID_SELECT_D88_BANK + 46: \
+		case ID_SELECT_D88_BANK + 47: \
+		case ID_SELECT_D88_BANK + 48: \
+		case ID_SELECT_D88_BANK + 49: \
 			no = LOWORD(wParam) - ID_SELECT_D88_BANK; \
 			if(emu && d88_file[drv].cur_bank != no) { \
 				emu->open_disk(drv, d88_file[drv].path, d88_file[drv].bank[no].offset); \
@@ -970,35 +1016,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
-#ifdef USE_RAM
-		case ID_LOAD_RAM:
-			if(emu) {
-				open_ram_dialog(hWnd, TRUE);
-			}
+#ifdef USE_BINARY_FILE1
+		#define BINARY_MENU_ITEMS(drv, ID_LOAD_BINARY, ID_SAVE_BINARY, ID_RECENT_BINARY) \
+		case ID_LOAD_BINARY: \
+			if(emu) { \
+				open_binary_dialog(hWnd, drv, TRUE); \
+			} \
+			break; \
+		case ID_SAVE_BINARY: \
+			if(emu) { \
+				open_binary_dialog(hWnd, drv, FALSE); \
+			} \
+			break; \
+		case ID_RECENT_BINARY + 0: \
+		case ID_RECENT_BINARY + 1: \
+		case ID_RECENT_BINARY + 2: \
+		case ID_RECENT_BINARY + 3: \
+		case ID_RECENT_BINARY + 4: \
+		case ID_RECENT_BINARY + 5: \
+		case ID_RECENT_BINARY + 6: \
+		case ID_RECENT_BINARY + 7: \
+			no = LOWORD(wParam) - ID_RECENT_BINARY; \
+			_tcscpy(path, config.recent_binary_path[drv][no]); \
+			for(int i = no; i > 0; i--) { \
+				_tcscpy(config.recent_binary_path[drv][i], config.recent_binary_path[drv][i - 1]); \
+			} \
+			_tcscpy(config.recent_binary_path[drv][0], path); \
+			if(emu) { \
+				emu->load_binary(drv, path); \
+			} \
 			break;
-		case ID_SAVE_RAM:
-			if(emu) {
-				open_ram_dialog(hWnd, FALSE);
-			}
-			break;
-		case ID_RECENT_RAM + 0:
-		case ID_RECENT_RAM + 1:
-		case ID_RECENT_RAM + 2:
-		case ID_RECENT_RAM + 3:
-		case ID_RECENT_RAM + 4:
-		case ID_RECENT_RAM + 5:
-		case ID_RECENT_RAM + 6:
-		case ID_RECENT_RAM + 7:
-			no = LOWORD(wParam) - ID_RECENT_RAM;
-			_tcscpy(path, config.recent_ram_path[no]);
-			for(int i = no; i > 0; i--) {
-				_tcscpy(config.recent_ram_path[i], config.recent_ram_path[i - 1]);
-			}
-			_tcscpy(config.recent_ram_path[0], path);
-			if(emu) {
-				emu->load_ram(path);
-			}
-			break;
+		BINARY_MENU_ITEMS(0, ID_LOAD_BINARY1, ID_SAVE_BINARY1, ID_RECENT_BINARY1)
+#endif
+#ifdef USE_BINARY_FILE2
+		BINARY_MENU_ITEMS(1, ID_LOAD_BINARY2, ID_SAVE_BINARY2, ID_RECENT_BINARY2)
 #endif
 		case ID_SCREEN_REC60:
 		case ID_SCREEN_REC30:
@@ -1236,23 +1287,36 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 #endif
 #ifdef _HC80
-		if(config.ramdisk_type >= 0 && config.ramdisk_type < 3) {
-			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0 + config.ramdisk_type, MF_BYCOMMAND);
+		if(config.device_type >= 0 && config.device_type < 3) {
+			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0 + config.device_type, MF_BYCOMMAND);
 		}
 #endif
 #ifdef _MZ800
 		if(config.boot_mode >= 0 && config.boot_mode < 2) {
-			CheckMenuRadioItem(hMenu, ID_MZ800_BOOT_MODE_MZ800, ID_MZ800_BOOT_MODE_MZ700, ID_MZ800_BOOT_MODE_MZ800 + config.boot_mode, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_MZ800_MODE_MZ800, ID_MZ800_MODE_MZ700, ID_MZ800_MODE_MZ800 + config.boot_mode, MF_BYCOMMAND);
+		}
+#endif
+#ifdef _PASOPIA
+		if(config.boot_mode >= 0 && config.boot_mode < 5) {
+			CheckMenuRadioItem(hMenu, ID_PASOPIA_MODE_TBASIC_V1_0, ID_PASOPIA_MODE_MINI_PASCAL, ID_PASOPIA_MODE_TBASIC_V1_0 + config.boot_mode, MF_BYCOMMAND);
+		}
+		if(config.device_type >= 0 && config.boot_mode < 3) {
+			CheckMenuRadioItem(hMenu, ID_PASOPIA_DEVICE_RAM_PAC, ID_PASOPIA_DEVICE_JOYSTICK, ID_PASOPIA_DEVICE_RAM_PAC + config.device_type, MF_BYCOMMAND);
 		}
 #endif
 #ifdef _PC98DO
 		if(config.boot_mode >= 0 && config.boot_mode < 5) {
-			CheckMenuRadioItem(hMenu, ID_PC98DO_BOOT_MODE_PC98, ID_PC8801_BOOT_MODE_N, ID_PC98DO_BOOT_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_PC98DO_MODE_PC98, ID_PC8801_MODE_N, ID_PC98DO_MODE_PC98 + config.boot_mode, MF_BYCOMMAND);
 		}
 #endif
 #ifdef _PC8801MA
 		if(config.boot_mode >= 0 && config.boot_mode < 4) {
-			CheckMenuRadioItem(hMenu, ID_PC8801_BOOT_MODE_V1S, ID_PC8801_BOOT_MODE_N, ID_PC8801_BOOT_MODE_V1S + config.boot_mode, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_PC8801_MODE_V1S, ID_PC8801_MODE_N, ID_PC8801_MODE_V1S + config.boot_mode, MF_BYCOMMAND);
+		}
+		if(config.device_type >= 0 && config.boot_mode < 3) {
+//			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_JOYMOUSE, ID_PC8801_DEVICE_JOYSTICK + config.boot_mode, MF_BYCOMMAND);
+			// joymouse is not supported yet...
+			CheckMenuRadioItem(hMenu, ID_PC8801_DEVICE_JOYSTICK, ID_PC8801_DEVICE_MOUSE, ID_PC8801_DEVICE_JOYSTICK + config.device_type, MF_BYCOMMAND);
 		}
 #endif
 #if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC8801MA)
@@ -1302,7 +1366,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		BOOL flag = FALSE; \
 		while(DeleteMenu(hMenu, 3, MF_BYPOSITION) != 0) {} \
 		if(d88_file[drv].bank_num > 1) { \
-			AppendMenu(hMenu, MF_STRING | MF_GRAYED, ID_D88_FILE_PATH, d88_file[drv].path); \
+			AppendMenu(hMenu, MF_STRING | MF_DISABLED, ID_D88_FILE_PATH, d88_file[drv].path); \
 			for(int i = 0; i < d88_file[drv].bank_num; i++) { \
 				_TCHAR tmp[32]; \
 				_stprintf(tmp, _T("%d: %s"), i + 1, d88_file[drv].bank[i].name); \
@@ -1407,22 +1471,30 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		}
 	}
 #endif
-#ifdef MENU_POS_RAM
-	else if(pos == MENU_POS_RAM) {
-		// ram
-		BOOL flag = FALSE;
-		for(int i = 0; i < 8; i++) {
-			DeleteMenu(hMenu, ID_RECENT_RAM + i, MF_BYCOMMAND);
+#ifdef MENU_POS_BINARY1
+	else if(pos == MENU_POS_BINARY1) {
+		// binary #1
+		#define UPDATE_MENU_BINARY(drv, ID_RECENT_BINARY) \
+		BOOL flag = FALSE; \
+		for(int i = 0; i < 8; i++) { \
+			DeleteMenu(hMenu, ID_RECENT_BINARY + i, MF_BYCOMMAND); \
+		} \
+		for(int i = 0; i < 8; i++) { \
+			if(_tcscmp(config.recent_binary_path[drv][i], _T(""))) { \
+				AppendMenu(hMenu, MF_STRING, ID_RECENT_BINARY + i, config.recent_binary_path[drv][i]); \
+				flag = TRUE; \
+			} \
+		} \
+		if(!flag) { \
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_BINARY, _T("None")); \
 		}
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_ram_path[i], _T(""))) {
-				AppendMenu(hMenu, MF_STRING, ID_RECENT_RAM + i, config.recent_ram_path[i]);
-				flag = TRUE;
-			}
-		}
-		if(!flag) {
-			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_RAM, _T("None"));
-		}
+		UPDATE_MENU_BINARY(0, ID_RECENT_BINARY1)
+	}
+#endif
+#ifdef MENU_POS_BINARY2
+	else if(pos == MENU_POS_BINARY2) {
+		// binary #2
+		UPDATE_MENU_BINARY(1, ID_RECENT_BINARY2)
 	}
 #endif
 #ifdef MENU_POS_SCREEN
@@ -1682,22 +1754,26 @@ void open_media_dialog(HWND hWnd)
 }
 #endif
 
-#ifdef USE_RAM
-void open_ram_dialog(HWND hWnd, BOOL load)
+#ifdef USE_BINARY_FILE1
+void open_binary_dialog(HWND hWnd, int drv, BOOL load)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.ram)\0*.ram\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.ram;*.bin)\0*.ram;*.bin\0All Files (*.*)\0*.*\0\0"),
+#if defined(_PASOPIA) || defined(_PASOPIA7)
+		_T("RAM Pack Cartridge"),
+#else
 		_T("Memory Dump"),
-		config.initial_ram_path
+#endif
+		config.initial_binary_path
 	);
 	if(path) {
-		UPDATE_HISTORY(path, config.recent_ram_path);
+		UPDATE_HISTORY(path, config.recent_binary_path[drv]);
 		if(load) {
-			emu->load_ram(path);
+			emu->load_binary(drv, path);
 		}
 		else {
-			emu->save_ram(path);
+			emu->save_binary(drv, path);
 		}
 	}
 }
@@ -1719,7 +1795,7 @@ void set_window(HWND hWnd, int mode)
 #endif
 		int height = emu->get_window_height(mode);
 		RECT rect = {0, 0, width, height};
-		AdjustWindowRectEx(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_VISIBLE, TRUE, 0);
+		AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, TRUE);
 		int dest_x = (int)((desktop_width - (rect.right - rect.left)) / 2);
 		int dest_y = (int)((desktop_height - (rect.bottom - rect.top)) / 2);
 		//dest_x = (dest_x < 0) ? 0 : dest_x;

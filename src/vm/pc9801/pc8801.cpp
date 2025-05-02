@@ -157,8 +157,7 @@ void VM::reset()
 	}
 	
 	// initial device settings
-	pc88opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// joystick
-	pc88opn->write_signal(SIG_YM2203_PORT_B, 0xff, 0xff);	// joystick
+	pc88opn->SetReg(0x29, 3); // for Misty Blue
 	pc88pio->write_signal(SIG_I8255_PORT_C, 0, 0xff);
 	pc88pio_sub->write_signal(SIG_I8255_PORT_C, 0, 0xff);
 }

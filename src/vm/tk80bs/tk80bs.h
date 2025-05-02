@@ -30,7 +30,7 @@
 // device informations for win32
 #define USE_DATAREC
 #define DATAREC_BINARY_ONLY
-#define USE_RAM
+#define USE_BINARY_FILE1
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -111,8 +111,8 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void load_ram(_TCHAR* file_path);
-	void save_ram(_TCHAR* file_path);
+	void load_binary(int drv, _TCHAR* file_path);
+	void save_binary(int drv, _TCHAR* file_path);
 	void play_datarec(_TCHAR* file_path);
 	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();

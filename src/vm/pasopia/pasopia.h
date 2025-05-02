@@ -14,12 +14,21 @@
 #ifdef _LCD
 #define DEVICE_NAME		"TOSHIBA PASOPIA with LCD"
 #define CONFIG_NAME		"pasopialcd"
-#define CONFIG_VERSION		0x01
 #else
 #define DEVICE_NAME		"TOSHIBA PASOPIA"
 #define CONFIG_NAME		"pasopia"
-#define CONFIG_VERSION		0x01
 #endif
+#define CONFIG_VERSION		0x02
+
+#define MODE_TBASIC_V1_0	0
+#define MODE_TBASIC_V1_1	1
+#define MODE_OABASIC		2
+#define MODE_OABASIC_NO_DISK	3
+#define MODE_MINI_PASCAL	4
+
+#define DEVICE_RAM_PAC		0
+#define DEVICE_KANJI_ROM	1
+#define DEVICE_JOYSTICK		2
 
 // device informations for virtual machine
 #ifdef _LCD
@@ -41,22 +50,22 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #endif
+#define MAX_DRIVE		4
 #define SUPPORT_VARIABLE_TIMING
-
-// irq priority
-#define IRQ_Z80PIO		0
-//				1
-#define IRQ_Z80CTC		2
-//				3-5
-#define IRQ_EXTERNAL		6
 
 // device informations for win32
 #define USE_DATAREC
+#define USE_FD1
+#define USE_FD2
+//#define USE_FD3
+//#define USE_FD4
+#define USE_BINARY_FILE1
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
+#define USE_ACCESS_LAMP
 
 #include "../../common.h"
 
@@ -71,10 +80,12 @@ class IO;
 class LS393;
 class NOT;
 class PCM1BIT;
+class UPD765A;
 class Z80;
 class Z80CTC;
 class Z80PIO;
 
+class FLOPPY;
 class DISPLAY;
 class KEYBOARD;
 class MEMORY;
@@ -97,14 +108,18 @@ protected:
 	LS393* flipflop;
 	NOT* not;
 	PCM1BIT* pcm;
+	UPD765A* fdc;
 	Z80* cpu;
 	Z80CTC* ctc;
 	Z80PIO* pio;
 	
+	FLOPPY* floppy;
 	DISPLAY* display;
 	KEYBOARD* key;
 	MEMORY* memory;
 	PAC2* pac2;
+	
+	int boot_mode;
 	
 public:
 	// ----------------------------------------
@@ -125,15 +140,21 @@ public:
 	
 	// draw screen
 	void draw_screen();
+	int access_lamp();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
+	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void close_disk(int drv);
+	bool disk_inserted(int drv);
 	void play_datarec(_TCHAR* file_path);
 	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
+	void load_binary(int drv, _TCHAR* file_path);
+	void save_binary(int drv, _TCHAR* file_path) {}
 	bool now_skip();
 	
 	void update_config();

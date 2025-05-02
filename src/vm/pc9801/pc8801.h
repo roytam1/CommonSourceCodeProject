@@ -15,7 +15,7 @@
 #define DEVICE_NAME		"NEC PC-8801MA"
 #define CONFIG_NAME		"pc8801ma"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 #define MODE_PC88_V1S	0
 #define MODE_PC88_V1H	1
@@ -27,10 +27,10 @@
 #define SUPPORT_PC88_HIGH_CLOCK
 #define SUPPORT_PC88_OPNA
 #define PC88_EXRAM_BANKS	4
+#define HAS_UPD4990A
 #endif
 #define SUPPORT_PC88_JOYSTICK
 
-//#define Z80_M1_CYCLE_WAIT	1
 #define Z80_MEMORY_WAIT
 
 // device informations for virtual machine

@@ -14,20 +14,25 @@
 #include "../event.h"
 
 #include "../datarec.h"
+#include "../disk.h"
 #include "../hd46505.h"
 #include "../i8255.h"
 #include "../io.h"
 #include "../ls393.h"
 #include "../not.h"
 #include "../pcm1bit.h"
+#include "../upd765a.h"
 #include "../z80.h"
 #include "../z80ctc.h"
 #include "../z80pio.h"
 
+#include "floppy.h"
 #include "display.h"
 #include "keyboard.h"
 #include "memory.h"
 #include "pac2.h"
+
+#include "../../config.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -35,6 +40,8 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+	boot_mode = config.boot_mode;
+	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -49,10 +56,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	flipflop = new LS393(this, emu); // LS74
 	not = new NOT(this, emu);
 	pcm = new PCM1BIT(this, emu);
+	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);
 	ctc = new Z80CTC(this, emu);
 	pio = new Z80PIO(this, emu);
 	
+	floppy = new FLOPPY(this, emu);
 	display = new DISPLAY(this, emu);
 	key = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
@@ -75,6 +84,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_port_a(not, SIG_NOT_INPUT, 0x20, 0);
 	flipflop->set_context_1qa(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	not->set_context_out(drec, SIG_DATAREC_REMOTE, 1);
+	fdc->set_context_irq(floppy, SIG_FLOPPY_INTR, 1);
 	ctc->set_context_zc1(flipflop, SIG_LS393_CLK, 1);
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(0, CPU_CLOCKS);
@@ -87,6 +97,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_vram_ptr(memory->get_vram());
 	display->set_attr_ptr(memory->get_attr());
 	display->set_regs_ptr(crtc->get_regs());
+	floppy->set_context_fdc(fdc);
+	floppy->supported = (boot_mode != MODE_OABASIC_NO_DISK);
 	key->set_context_pio(pio);
 	memory->set_context_pio0(pio0);
 	memory->set_context_pio1(pio1);
@@ -144,10 +156,17 @@ pio2	20	8255	out cmt, sound
 	io->set_iomap_alias_w(0x32, pio, 1);
 	io->set_iomap_alias_w(0x33, pio, 3);
 	io->set_iomap_single_w(0x3c, memory);
+	io->set_iomap_single_w(0xe0, floppy);
+	io->set_iomap_single_w(0xe2, floppy);
+	io->set_iomap_range_rw(0xe4, 0xe5, floppy);
+	io->set_iomap_single_rw(0xe6, floppy);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
+	}
+	for(int i = 0; i < 4; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 	}
 }
 
@@ -211,6 +230,12 @@ void VM::draw_screen()
 	display->draw_screen();
 }
 
+int VM::access_lamp()
+{
+	uint32 status = fdc->read_signal(0);
+	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
+}
+
 // ----------------------------------------------------------------------------
 // soud manager
 // ----------------------------------------------------------------------------
@@ -233,6 +258,21 @@ uint16* VM::create_sound(int* extra_frames)
 // user interface
 // ----------------------------------------------------------------------------
 
+void VM::open_disk(int drv, _TCHAR* file_path, int offset)
+{
+	fdc->open_disk(drv, file_path, offset);
+}
+
+void VM::close_disk(int drv)
+{
+	fdc->close_disk(drv);
+}
+
+bool VM::disk_inserted(int drv)
+{
+	return fdc->disk_inserted(drv);
+}
+
 void VM::play_datarec(_TCHAR* file_path)
 {
 	drec->play_datarec(file_path);
@@ -248,6 +288,11 @@ void VM::close_datarec()
 	drec->close_datarec();
 }
 
+void VM::load_binary(int drv, _TCHAR* file_path)
+{
+	pac2->open_rampac2(file_path);
+}
+
 bool VM::now_skip()
 {
 	return drec->skip();
@@ -255,8 +300,18 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->update_config();
+	if(boot_mode != config.boot_mode) {
+		// boot mode is changed !!!
+		boot_mode = config.boot_mode;
+		memory->load_ipl();
+		floppy->supported = (boot_mode != MODE_OABASIC_NO_DISK);
+		// reset virtual machine
+		reset();
+	}
+	else {
+		for(DEVICE* device = first_device; device; device = device->next_device) {
+			device->update_config();
+		}
 	}
 }
 

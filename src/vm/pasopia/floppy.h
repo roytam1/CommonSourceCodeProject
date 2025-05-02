@@ -1,5 +1,5 @@
 /*
-	TOSHIBA PASOPIA 7 Emulator 'EmuPIA7'
+	TOSHIBA PASOPIA Emulator 'EmuPIA'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -37,6 +37,7 @@ public:
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
 	}
+	bool supported;
 };
 
 #endif

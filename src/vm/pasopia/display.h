@@ -25,7 +25,6 @@ private:
 	uint8* regs;
 	uint8 mode;
 	uint16 cursor, cblink;
-	int ch;
 	
 	uint8 screen[200][640];
 	uint8 font[0x800];
@@ -40,6 +39,8 @@ private:
 	void draw_screen1_wide(uint16 src);
 	void draw_screen2_normal(uint16 src);
 	void draw_screen2_wide(uint16 src);
+	void draw_screen15_normal(uint16 src);
+	void draw_screen15_wide(uint16 src);
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

@@ -69,13 +69,13 @@
 //		IRQ 出力を読み出す
 //	
 //	bool Count(uint32 t)
-//		音源のタイマーを t [μ秒] 進める．
+//		音源のタイマーを t [clock] 進める．
 //		音源の内部状態に変化があった時(timer オーバーフロー)
 //		true を返す
 //
 //	uint32 GetNextEvent()
 //		音源のタイマーのどちらかがオーバーフローするまでに必要な
-//		時間[μ秒]を返す
+//		時間[clock]を返す
 //		タイマーが停止している場合は ULONG_MAX を返す… と思う
 //	
 //	void SetVolumeFM(int db)/SetVolumePSG(int db) ...

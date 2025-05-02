@@ -28,14 +28,14 @@ void EMU::initialize_screen()
 	
 	// create dib sections
 	HDC hdc = GetDC(main_window_handle);
-	create_dib_section(hdc, screen_width, screen_height, &hdcDib, &hBmp, &lpBuf, &lpBmp, &lpDib);
-	
+	create_dib_section(hdc, screen_width, screen_height, &hdcDib, &hBmp, &hOldBmp, &lpBuf, &lpBmp, &lpDib);
 #ifdef USE_SCREEN_ROTATE
-	create_dib_section(hdc, screen_height, screen_width, &hdcDibRotate, &hBmpRotate, &lpBufRotate, &lpBmpRotate, &lpDibRotate);
+	create_dib_section(hdc, screen_height, screen_width, &hdcDibRotate, &hBmpRotate, &hOldBmpRotate, &lpBufRotate, &lpBmpRotate, &lpDibRotate);
 #endif
+	ReleaseDC(main_window_handle, hdc);
 	
 	hdcDibStretch1 = hdcDibStretch2 = NULL;
-	hBmpStretch1 = hBmpStretch2 = NULL;
+	hBmpStretch1 = hOldBmpStretch1 = hBmpStretch2 = hOldBmpStretch2 = NULL;
 	lpBufStretch1 = lpBufStretch2 = NULL;
 	
 #ifdef USE_D3D9
@@ -60,10 +60,9 @@ void EMU::initialize_screen()
 	first_invalidate = self_invalidate = FALSE;
 }
 
-#define release_dib_section(hdcdib, hbmp, lpbuf) { \
-	if(hdcdib != NULL) { \
-		DeleteDC(hdcdib); \
-		hdcdib = NULL; \
+#define release_dib_section(hdcdib, hbmp, holdbmp, lpbuf) { \
+	if(hdcdib != NULL && holdbmp != NULL) { \
+		SelectObject(hdcdib, holdbmp); \
 	} \
 	if(hbmp != NULL) { \
 		DeleteObject(hbmp); \
@@ -72,6 +71,10 @@ void EMU::initialize_screen()
 	if(lpbuf != NULL) { \
 		GlobalFree(lpbuf); \
 		lpbuf = NULL; \
+	} \
+	if(hdcdib != NULL) { \
+		DeleteDC(hdcdib); \
+		hdcdib = NULL; \
 	} \
 }
 
@@ -113,12 +116,12 @@ void EMU::release_screen()
 	stop_rec_video();
 	
 	// release dib sections
-	release_dib_section(hdcDib, hBmp, lpBuf);
+	release_dib_section(hdcDib, hBmp, hOldBmp, lpBuf);
 #ifdef USE_SCREEN_ROTATE
-	release_dib_section(hdcDibRotate, hBmpRotate, lpBufRotate);
+	release_dib_section(hdcDibRotate, hBmpRotate, hOldBmpRotate, lpBufRotate);
 #endif
-	release_dib_section(hdcDibStretch1, hBmpStretch1, lpBufStretch1);
-	release_dib_section(hdcDibStretch2, hBmpStretch2, lpBufStretch2);
+	release_dib_section(hdcDibStretch1, hBmpStretch1, hOldBmpStretch1, lpBufStretch1);
+	release_dib_section(hdcDibStretch2, hBmpStretch2, hOldBmpStretch2, lpBufStretch2);
 	
 #ifdef USE_D3D9
 	// release d3d9
@@ -126,8 +129,9 @@ void EMU::release_screen()
 #endif
 }
 
-void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib)
+void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, HBITMAP *hOldBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib)
 {
+	*hdcDib = CreateCompatibleDC(hdc);
 	*lpBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
 	*lpDib = (LPBITMAPINFO)(*lpBuf);
 	memset(&(*lpDib)->bmiHeader, 0, sizeof(BITMAPINFOHEADER));
@@ -157,8 +161,7 @@ void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMA
 	(*lpDib)->bmiHeader.biClrUsed = 0;
 	(*lpDib)->bmiHeader.biClrImportant = 0;
 	*hBmp = CreateDIBSection(hdc, *lpDib, DIB_RGB_COLORS, (PVOID*)&(*lpBmp), NULL, 0);
-	*hdcDib = CreateCompatibleDC(hdc);
-	SelectObject(*hdcDib, *hBmp);
+	*hOldBmp = (HBITMAP)SelectObject(*hdcDib, *hBmp);
 }
 
 int EMU::get_window_width(int mode)
@@ -240,7 +243,6 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 	}
 #endif
 	
-	int new_pow_x = 1, new_pow_y = 1;
 	if(config.stretch_screen && !window_mode) {
 		// fit to full screen
 		stretched_width = (display_height * source_width_aspect) / source_height_aspect;
@@ -249,15 +251,6 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 			stretched_width = display_width;
 			stretched_height = (display_width * source_height_aspect) / source_width_aspect;
 		}
-#ifdef USE_D3D9
-		// support high quality stretch in d3d9 mode
-		while(stretched_width > source_width * new_pow_x) {
-			new_pow_x++;
-		}
-		while(stretched_height > source_height * new_pow_y) {
-			new_pow_y++;
-		}
-#endif
 	}
 	else {
 		int tmp_pow_x = display_width / source_width_aspect;
@@ -271,48 +264,51 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 		}
 		stretched_width = source_width_aspect * tmp_pow;
 		stretched_height = source_height_aspect * tmp_pow;
-		
-#if !(SCREEN_WIDTH_ASPECT == SCREEN_WIDTH && SCREEN_HEIGHT_ASPECT == SCREEN_HEIGHT)
-		// dot aspect is not 1:1, so we need to stretch screen
-		while(stretched_width > source_width * new_pow_x) {
-			new_pow_x++;
-		}
-		while(stretched_height > source_height * new_pow_y) {
-			new_pow_y++;
-		}
-#ifndef USE_D3D9
-		// support high quality stretch only for x1 window size in gdi mode
-		if(new_pow_x > 1 && new_pow_y > 1) {
-			new_pow_x = new_pow_y = 1;
-		}
-#endif
-#endif
 	}
 	screen_dest_x = (display_width - stretched_width) / 2;
 	screen_dest_y = (display_height - stretched_height) / 2;
 	
-	if(stretched_width == source_width * new_pow_x && stretched_height == source_height * new_pow_y) {
+	int new_pow_x = 1, new_pow_y = 1;
+	while(stretched_width > source_width * new_pow_x) {
+		new_pow_x++;
+	}
+	while(stretched_height > source_height * new_pow_y) {
+		new_pow_y++;
+	}
+#ifndef USE_D3D9
+	// support high quality stretch only for x1 window size in gdi mode
+	if(new_pow_x > 1 && new_pow_y > 1) {
 		new_pow_x = new_pow_y = 1;
 	}
+#endif
+//	if(stretched_width == source_width * new_pow_x && stretched_height == source_height * new_pow_y) {
+//		new_pow_x = new_pow_y = 1;
+//	}
 	if(stretch_pow_x != new_pow_x || stretch_pow_y != new_pow_y) {
 		stretch_pow_x = new_pow_x;
 		stretch_pow_y = new_pow_y;
 		stretch_changed = TRUE;
 	}
+#ifdef USE_D3D9
+	if(stretch_pow_x != 1 || stretch_pow_y != 1) {
+		render_to_d3d9Buffer = FALSE;
+	}
+#endif
 	
 	if(stretch_changed) {
-		release_dib_section(hdcDibStretch1, hBmpStretch1, lpBufStretch1);
-		release_dib_section(hdcDibStretch2, hBmpStretch2, lpBufStretch2);
+		release_dib_section(hdcDibStretch1, hBmpStretch1, hOldBmpStretch1, lpBufStretch1);
+		release_dib_section(hdcDibStretch2, hBmpStretch2, hOldBmpStretch2, lpBufStretch2);
 		stretch_screen = FALSE;
 		
 		if(stretch_pow_x != 1 || stretch_pow_y != 1) {
 			HDC hdc = GetDC(main_window_handle);
-			create_dib_section(hdc, source_width * stretch_pow_x, source_height * stretch_pow_y, &hdcDibStretch1, &hBmpStretch1, &lpBufStretch1, &lpBmpStretch1, &lpDibStretch1);
+			create_dib_section(hdc, source_width * stretch_pow_x, source_height * stretch_pow_y, &hdcDibStretch1, &hBmpStretch1, &hOldBmpStretch1, &lpBufStretch1, &lpBmpStretch1, &lpDibStretch1);
 			SetStretchBltMode(hdcDibStretch1, COLORONCOLOR);
 #ifndef USE_D3D9
-			create_dib_section(hdc, stretched_width, stretched_height, &hdcDibStretch2, &hBmpStretch2, &lpBufStretch2, &lpBmpStretch2, &lpDibStretch2);
+			create_dib_section(hdc, stretched_width, stretched_height, &hdcDibStretch2, &hBmpStretch2, &hOldBmpStretch2, &lpBufStretch2, &lpBmpStretch2, &lpDibStretch2);
 			SetStretchBltMode(hdcDibStretch2, HALFTONE);
 #endif
+			ReleaseDC(main_window_handle, hdc);
 			stretch_screen = TRUE;
 		}
 		
@@ -325,9 +321,12 @@ void EMU::set_display_size(int width, int height, BOOL window_mode)
 				// initialize present params
 				D3DPRESENT_PARAMETERS d3dpp;
 				ZeroMemory(&d3dpp, sizeof(d3dpp));
-				d3dpp.Windowed = TRUE;
-				d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+				d3dpp.BackBufferWidth = display_width;
+				d3dpp.BackBufferHeight = display_height;
 				d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+				d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+				d3dpp.hDeviceWindow = main_window_handle;
+				d3dpp.Windowed = TRUE;
 				d3dpp.PresentationInterval = config.wait_vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
 				
 				// create d3d9 device
@@ -383,13 +382,13 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 		
 		// re-create dib sections
 		HDC hdc = GetDC(main_window_handle);
-		release_dib_section(hdcDib, hBmp, lpBuf);
-		create_dib_section(hdc, screen_width, screen_height, &hdcDib, &hBmp, &lpBuf, &lpBmp, &lpDib);
-		
+		release_dib_section(hdcDib, hBmp, hOldBmp, lpBuf);
+		create_dib_section(hdc, screen_width, screen_height, &hdcDib, &hBmp, &hOldBmp, &lpBuf, &lpBmp, &lpDib);
 #ifdef USE_SCREEN_ROTATE
-		release_dib_section(hdcDibRotate, hBmpRotate, lpBufRotate);
-		create_dib_section(hdc, screen_height, screen_width, &hdcDibRotate, &hBmpRotate, &lpBufRotate, &lpBmpRotate, &lpDibRotate);
+		release_dib_section(hdcDibRotate, hBmpRotate, hOldBmpRotate, lpBufRotate);
+		create_dib_section(hdc, screen_height, screen_width, &hdcDibRotate, &hBmpRotate, &hOldBmpRotate, &lpBufRotate, &lpBmpRotate, &lpDibRotate);
 #endif
+		ReleaseDC(main_window_handle, hdc);
 		
 		// stop recording
 		if(now_rec_vid) {
@@ -457,7 +456,6 @@ void EMU::draw_screen()
 		// about 50% faster than StretchBlt()
 		scrntype* src = lpBmpSource + source_width * (source_height - 1);
 		scrntype* out = lpBmpStretch1 + source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
-		
 		int data_len = source_width * stretch_pow_x;
 		
 		for(int y = 0; y < source_height; y++) {
@@ -504,12 +502,12 @@ void EMU::draw_screen()
 			scrntype *src = stretch_screen ? lpBmpStretch1 : lpBmpSource;
 			src += source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
 			scrntype *out = lpd3d9Buffer;
-			
 			int data_len = source_width * stretch_pow_x;
-			int data_size = sizeof(scrntype) * data_len;
 			
 			for(int y = 0; y < source_height * stretch_pow_y; y++) {
-				memcpy(out, src, data_size);
+				for(int i = 0; i < data_len; i++) {
+					out[i] = src[i];
+				}
 				src -= data_len;
 				out += data_len;
 			}
@@ -547,16 +545,17 @@ void EMU::update_screen(HDC hdc)
 {
 #ifdef USE_BITMAP
 	if(first_invalidate || !self_invalidate) {
+		HDC hmdc = CreateCompatibleDC(hdc);
 		HBITMAP hBitmap = LoadBitmap(instance_handle, _T("IDI_BITMAP1"));
 		BITMAP bmp;
 		GetObject(hBitmap, sizeof(BITMAP), &bmp);
 		int w = (int)bmp.bmWidth;
 		int h = (int)bmp.bmHeight;
-		HDC hmdc = CreateCompatibleDC(hdc);
-		SelectObject(hmdc, hBitmap);
+		HBITMAP hOldBitmap = (HBITMAP)SelectObject(hmdc, hBitmap);
 		BitBlt(hdc, 0, 0, w, h, hmdc, 0, 0, SRCCOPY);
-		DeleteDC(hmdc);
+		SelectObject(hmdc, hOldBitmap);
 		DeleteObject(hBitmap);
+		DeleteDC(hmdc);
 	}
 #endif
 	if(first_draw_screen) {

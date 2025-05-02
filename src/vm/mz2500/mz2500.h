@@ -27,7 +27,6 @@
 #define TIMER_FREQ
 
 // memory wait
-#define Z80_M1_CYCLE_WAIT	1
 #define Z80_MEMORY_WAIT
 #define Z80_IO_WAIT
 #define VRAM_WAIT

@@ -24,10 +24,7 @@ void KANJIPAC2::initialize(int id)
 		fio->Fclose();
 	}
 	delete fio;
-}
-
-void KANJIPAC2::reset()
-{
+	
 	ptr = 0;
 }
 

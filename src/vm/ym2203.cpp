@@ -18,6 +18,7 @@ void YM2203::initialize()
 #endif
 	register_vline_event(this);
 	mute = false;
+	clock_prev = clock_accum = 0;
 }
 
 void YM2203::release()
@@ -28,10 +29,8 @@ void YM2203::release()
 void YM2203::reset()
 {
 	chip->Reset();
-	chip->SetReg(0x27, 0);
-#if defined(_X1TWIN) || defined(_X1TURBO)
-	chip->SetReg(0x2e, 0);
-#endif
+	chip->SetReg(0x27, 0); // stop timer
+	
 	port[0].first = port[1].first = true;
 }
 
@@ -51,7 +50,11 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		ch = data;
 		// write dummy data for prescaler
 		if(0x2d <= ch && ch <= 0x2f) {
+			update_count();
 			chip->SetReg(ch, 0);
+#ifndef HAS_AY_3_8912
+			update_interrupt();
+#endif
 		}
 #endif
 		break;
@@ -69,6 +72,7 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		}
 		// don't write again for prescaler
 		if(!(0x2d <= ch && ch <= 0x2f)) {
+			update_count();
 			chip->SetReg(ch, data);
 #ifndef HAS_AY_3_8912
 			update_interrupt();
@@ -80,6 +84,7 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		ch1 = data1 = data;
 		break;
 	case 3:
+		update_count();
 		chip->SetReg(0x100 | ch1, data);
 		data1 = data;
 		update_interrupt();
@@ -93,31 +98,32 @@ uint32 YM2203::read_io8(uint32 addr)
 	switch(addr & amask) {
 #ifndef HAS_AY_3_8912
 	case 0:
+		/* BUSY : x : x : x : x : x : FLAGB : FLAGA */
+		update_count();
+		update_interrupt();
 		return chip->ReadStatus();
 #endif
 	case 1:
 		if(ch == 14) {
-#if defined(_PC98DO) || defined(_PC8801MA)
-			return port[0].rreg;
-#else
 			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
-#endif
 		}
 		else if(ch == 15) {
-#if defined(_PC98DO) || defined(_PC8801MA)
-			return port[1].rreg;
-#else
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
-#endif
 		}
 		return chip->GetReg(ch);
 #ifdef HAS_YM2608
 	case 2:
+		/* BUSY : x : PCMBUSY : ZERO : BRDY : EOS : FLAGB : FLAGA */
+		update_count();
+		update_interrupt();
 		return chip->ReadStatusEx();
 	case 3:
 		if(ch1 == 8) {
 			return chip->GetReg(0x100 | ch1);
 		}
+//		else if(ch1 == 0x0f) {
+//			return 0x80; // from mame fm.c
+//		}
 		return data1;
 #endif
 	}
@@ -139,10 +145,21 @@ void YM2203::write_signal(int id, uint32 data, uint32 mask)
 
 void YM2203::event_vline(int v, int clock)
 {
-	chip->Count(usec_per_vline);
+	update_count();
 #ifndef HAS_AY_3_8912
 	update_interrupt();
 #endif
+}
+
+void YM2203::update_count()
+{
+	clock_accum += clock_const * passed_clock(clock_prev);
+	uint32 count = clock_accum >> 20;
+	if(count) {
+		chip->Count(count);
+		clock_accum -= count << 20;
+	}
+	clock_prev = current_clock();
 }
 
 #ifndef HAS_AY_3_8912
@@ -173,10 +190,17 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 #endif
 	chip->SetVolumeFM(volf);
 	chip->SetVolumePSG(volp);
+	
+	chip_clock = clock;
+}
+
+void YM2203::SetReg(uint addr, uint data)
+{
+	chip->SetReg(addr, data);
 }
 
 void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
 {
-	usec_per_vline = (int)(1000000.0 / new_frames_per_sec / (double)new_lines_per_frame + 0.5);
+	clock_const = (uint32)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks + 0.5);
 }
 

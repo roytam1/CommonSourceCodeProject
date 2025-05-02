@@ -1,4 +1,5 @@
 /*
+	TOSHIBA PASOPIA Emulator 'EmuPIA'
 	TOSHIBA PASOPIA 7 Emulator 'EmuPIA7'
 	Skelton for retropc emulator
 
@@ -25,6 +26,7 @@ public:
 	
 	virtual void initialize(int id) {}
 	virtual void release() {}
+	virtual void reset() {}
 	virtual void write_io8(uint32 addr, uint32 data) {}
 	virtual uint32 read_io8(uint32 addr) { return 0xff; }
 };

@@ -81,6 +81,16 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
+        MENUITEM "T-BASIC Ver 1.0"              ID_PASOPIA_MODE_TBASIC_V1_0
+        MENUITEM "T-BASIC Ver 1.1"              ID_PASOPIA_MODE_TBASIC_V1_1
+        MENUITEM "OA-BASIC (Disk)"              ID_PASOPIA_MODE_OABASIC
+        MENUITEM "OA-BASIC"                     ID_PASOPIA_MODE_OABASIC_NO_DISK
+        MENUITEM "MINI PASCAL"                  ID_PASOPIA_MODE_MINI_PASCAL
+        MENUITEM SEPARATOR
+        MENUITEM "RAMPAC",                      ID_PASOPIA_DEVICE_RAM_PAC
+        MENUITEM "Kanji ROM",                   ID_PASOPIA_DEVICE_KANJI_ROM
+        MENUITEM "Joystick",                    ID_PASOPIA_DEVICE_JOYSTICK
+        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
@@ -92,6 +102,20 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
+    POPUP "FDD1"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD1
+        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_FD1
+    END
+    POPUP "FDD2"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD2
+        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_FD2
+    END
     POPUP "Tape"
     BEGIN
         MENUITEM "Play",                        ID_PLAY_DATAREC
@@ -99,6 +123,12 @@ BEGIN
         MENUITEM "Close",                       ID_CLOSE_DATAREC
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_DATAREC
+    END
+    POPUP "RAMPAC"
+    BEGIN
+        MENUITEM "Open",                        ID_LOAD_BINARY1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_BINARY1
     END
     POPUP "Screen"
     BEGIN

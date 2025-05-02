@@ -60,6 +60,7 @@ public:
 	uint32 read_data8(uint32 addr);
 	void write_data8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_data8w(uint32 addr, int* wait);
+	uint32 fetch_op(uint32 addr, int* wait);
 	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);

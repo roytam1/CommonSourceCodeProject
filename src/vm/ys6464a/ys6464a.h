@@ -25,7 +25,7 @@
 #define MEMORY_BANK_SIZE	0x2000
 
 // device informations for win32
-#define USE_RAM
+#define USE_BINARY_FILE1
 #define USE_BITMAP
 #define USE_BUTTON
 #define MAX_BUTTONS		21
@@ -133,8 +133,8 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// user interface
-	void load_ram(_TCHAR* file_path);
-	void save_ram(_TCHAR* file_path);
+	void load_binary(int drv, _TCHAR* file_path);
+	void save_binary(int drv, _TCHAR* file_path);
 	bool now_skip();
 	
 	void update_config();

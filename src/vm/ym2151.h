@@ -24,11 +24,16 @@ private:
 	outputs_t outputs_irq;
 	
 	FM::OPM* opm;
-	int usec;
 	
+	int chip_clock;
 	uint8 ch;
 	bool mute;
 	
+	uint32 clock_prev;
+	uint32 clock_accum;
+	uint32 clock_const;
+	
+	void update_count();
 	void update_interrupt();
 	
 public:
@@ -53,6 +58,7 @@ public:
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void init(int rate, int clock, int samples, int vol);
+	void SetReg(uint addr, uint data); // for patch
 };
 
 #endif

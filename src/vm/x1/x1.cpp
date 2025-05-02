@@ -143,8 +143,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	joy->set_context_psg(psg);
 #ifdef _X1TURBO
 	memory->set_context_pio(pio);
-#else
-	memory->set_context_cpu(cpu);	// m1 wait
 #endif
 	sub->set_context_pio(pio);
 	sub->set_context_datarec(drec);
@@ -305,6 +303,7 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
+	psg->SetReg(0x2e, 0);	// set prescaler
 }
 
 void VM::special_reset()

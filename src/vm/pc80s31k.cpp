@@ -78,6 +78,13 @@ uint32 PC80S31K::read_data8(uint32 addr)
 	return rbank[addr >> 13][addr & 0x1fff];
 }
 
+uint32 PC80S31K::fetch_op(uint32 addr, int *wait)
+{
+	addr &= 0xffff;
+	*wait = (addr < 0x2000) ? 1 : 0;
+	return rbank[addr >> 13][addr & 0x1fff];
+}
+
 void PC80S31K::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffff;

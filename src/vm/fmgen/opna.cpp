@@ -134,7 +134,7 @@ void OPNBase::SetPrescaler(uint p)
 		assert(fmclock < (0x80000000 >> FM_RATIOBITS));
 		uint ratio = ((fmclock << FM_RATIOBITS) + rate/2) / rate;
 
-		SetTimerBase(fmclock);
+		SetTimerPrescaler(table[p][0] * 12);
 //		MakeTimeTable(ratio);
 		chip.SetRatio(ratio);
 		psg.SetClock(clock / table[p][1], psgrate);

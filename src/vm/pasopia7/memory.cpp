@@ -122,16 +122,19 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	if(data & 1) {
-		SET_BANK(0x0000, 0x3fff, ram + 0x0000, basic + 0x0000);
-		SET_BANK(0x4000, 0x7fff, ram + 0x4000, bios + 0x0000);
-	}
-	else if(data & 2) {
+	if(data & 2) {
 		SET_BANK(0x0000, 0x3fff, ram + 0x0000, ram + 0x0000);
-		SET_BANK(0x4000, 0x7fff, ram + 0x4000, ram + 0x4000);
 	}
 	else {
 		SET_BANK(0x0000, 0x3fff, ram + 0x0000, basic + 0x0000);
+	}
+	if(data & 1) {
+		SET_BANK(0x4000, 0x7fff, ram + 0x4000, bios + 0x0000);
+	}
+	else if(data & 2) {
+		SET_BANK(0x4000, 0x7fff, ram + 0x4000, ram + 0x4000);
+	}
+	else {
 		SET_BANK(0x4000, 0x7fff, ram + 0x4000, basic + 0x4000);
 	}
 	if(data & 4) {

@@ -14,6 +14,7 @@
 #include "../event.h"
 
 #include "../datarec.h"
+#include "../disk.h"
 #include "../hd46505.h"
 #include "../i8255.h"
 #include "../ls393.h"
@@ -150,6 +151,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			device->reset();
 		}
 	}
+	for(int i = 0; i < 4; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
+	}
 }
 
 VM::~VM()
@@ -273,6 +277,11 @@ void VM::rec_datarec(_TCHAR* file_path)
 void VM::close_datarec()
 {
 	drec->close_datarec();
+}
+
+void VM::load_binary(int drv, _TCHAR* file_path)
+{
+	pac2->open_rampac2(drv, file_path);
 }
 
 bool VM::now_skip()

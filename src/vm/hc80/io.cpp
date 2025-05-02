@@ -89,7 +89,7 @@ static const uint8 dot_tbl[8] = {
 void IO::initialize()
 {
 	// config
-	ramdisk_type = config.ramdisk_type;
+	device_type = config.device_type;
 	
 	// init ram and external ram disk
 	memset(ram, 0, sizeof(ram));
@@ -368,36 +368,36 @@ void IO::write_io8(uint32 addr, uint32 data)
 #endif
 		break;
 	case 0x80:
-		if(ramdisk_type == 1) {
+		if(device_type == 1) {
 			iramdisk_write_data(data);
 		}
 		break;
 	case 0x81:
-		if(ramdisk_type == 1) {
+		if(device_type == 1) {
 			iramdisk_write_cmd(data);
 		}
 		break;
 	case 0x90:
 		// EXTAR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			extar = (extar & 0xffff00) | data;
 		}
 		break;
 	case 0x91:
 		// EXTAR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			extar = (extar & 0xff00ff) | (data << 8);
 		}
 		break;
 	case 0x92:
 		// EXTAR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			extar = (extar & 0x00ffff) | ((data & 7) << 16);
 		}
 		break;
 	case 0x93:
 		// EXTOR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			if(extar < 0x20000) {
 				ext[extar] = data;
 			}
@@ -406,7 +406,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x94:
 		// EXTCR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			extcr = data;
 		}
 		break;
@@ -466,18 +466,18 @@ uint32 IO::read_io8(uint32 addr)
 #endif
 		return val;
 	case 0x80:
-		if(ramdisk_type == 1) {
+		if(device_type == 1) {
 			return iramdisk_read_data();
 		}
 		return 0xff;
 	case 0x81:
-		if(ramdisk_type == 1) {
+		if(device_type == 1) {
 			return iramdisk_read_stat();
 		}
 		return 0xff;
 	case 0x93:
 		// EXTIR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			if(extar < 0x40000) {
 				val = ext[extar];
 			}
@@ -487,7 +487,7 @@ uint32 IO::read_io8(uint32 addr)
 		return 0xff;
 	case 0x94:
 		// EXTSR
-		if(ramdisk_type == 2) {
+		if(device_type == 2) {
 			return extcr & ~0x80;
 		}
 		return 0xff;

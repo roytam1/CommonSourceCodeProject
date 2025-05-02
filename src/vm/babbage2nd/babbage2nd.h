@@ -25,7 +25,7 @@
 #define MEMORY_BANK_SIZE	0x800
 
 // device informations for win32
-#define USE_RAM
+#define USE_BINARY_FILE1
 #define NOTIFY_KEY_DOWN
 #define USE_BITMAP
 #define USE_BUTTON
@@ -147,8 +147,8 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void load_ram(_TCHAR* file_path);
-	void save_ram(_TCHAR* file_path);
+	void load_binary(int drv, _TCHAR* file_path);
+	void save_binary(int drv, _TCHAR* file_path);
 	bool now_skip();
 	
 	void update_config();

@@ -92,7 +92,7 @@ private:
 	FIFO *tf20_buf;
 	
 	// ramdisk
-	int ramdisk_type;
+	int device_type;
 	
 	// externam ram disk
 	uint8 ext[0x40000];

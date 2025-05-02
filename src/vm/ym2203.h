@@ -42,9 +42,14 @@ private:
 	} port_t;
 	port_t port[2];
 	
+	int chip_clock;
 	bool mute;
-	int usec_per_vline;
 	
+	uint32 clock_prev;
+	uint32 clock_accum;
+	uint32 clock_const;
+	
+	void update_count();
 #ifndef HAS_AY_3_8912
 	// output signals
 	outputs_t outputs_irq;
@@ -87,6 +92,7 @@ public:
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
 	void init(int rate, int clock, int samples, int volf, int volp);
+	void SetReg(uint addr, uint data); // for patch
 };
 
 #endif

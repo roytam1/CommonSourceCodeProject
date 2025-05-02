@@ -129,6 +129,9 @@ public:
 		*wait = wait0 + wait1 + wait2 + wait3;
 		return val;
 	}
+	virtual uint32 fetch_op(uint32 addr, int *wait) {
+		return read_data8w(addr, wait);
+	}
 	virtual void write_dma_data8(uint32 addr, uint32 data) {
 		write_data8(addr, data);
 	}

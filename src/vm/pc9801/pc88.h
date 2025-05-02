@@ -64,8 +64,8 @@ private:
 	uint8 ghs_mode;
 	
 	bool cpu_clock_low;
-	int mem_wait_clocks[16];
-	int gvram_wait_clocks, alu_wait_clocks;
+	int mem_wait_clocks;
+	int gvram_wait_clocks;
 	int busreq_clocks;
 	bool opn_busy;
 	
@@ -101,15 +101,15 @@ private:
 	uint8 text[200][640];
 	uint8 attribs[200][80];
 	uint8 graph[400][640];
-	scrntype palette_text_pc[9];	// 8=non transparent black
-	scrntype palette_graph_pc[9];	// 8=back color
+	scrntype palette_text_pc[9];	// 8 = non transparent black
+	scrntype palette_graph_pc[9];	// 8 = non dot in hireso screen
 	
 	uint8 get_crtc_buffer(int ofs);
 	void expand_attribs();
 	void draw_text();
 	void draw_color_graph();
+	void draw_color_hires_graph();
 	void draw_mono_graph();
-	void draw_mono_hires_graph();
 	
 	// dma (temporary)
 	typedef struct {
@@ -121,11 +121,21 @@ private:
 	
 	// keyboard
 	uint8 *key_status;
-#ifdef SUPPORT_PC88_JOYSTICK
-	uint8 *joy_status;
-#endif
 	uint8 key_status_bak[8];
-	uint8 caps, kana;
+	uint8 key_caps, key_kana;
+	
+	// joystick & mouse
+#ifdef SUPPORT_PC88_JOYSTICK
+	uint8 *joystick_status;
+	int* mouse_status;
+	uint8 mouse_strobe;
+	uint32 mouse_strobe_clock;
+	uint32 mouse_strobe_clock_lim;
+	int mouse_phase;
+	int mouse_dx, mouse_dy;
+	int mouse_lx, mouse_ly;
+#endif
+	uint8 opn_ch;
 	
 	// kanji rom
 	pair kanji1_addr, kanji2_addr;

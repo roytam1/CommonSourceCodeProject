@@ -51,6 +51,8 @@
 #define USE_FD2
 //#define USE_FD3
 //#define USE_FD4
+#define USE_BINARY_FILE1
+#define USE_BINARY_FILE2
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -147,6 +149,8 @@ public:
 	void play_datarec(_TCHAR* file_path);
 	void rec_datarec(_TCHAR* file_path);
 	void close_datarec();
+	void load_binary(int drv, _TCHAR* file_path);
+	void save_binary(int drv, _TCHAR* file_path) {}
 	bool now_skip();
 	
 	void update_config();

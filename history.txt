@@ -1,12 +1,49 @@
+3/6/2012
+
+[WINMAIN] fix to reset timing controls when run any extra frames to fill sound buffer
+[EMU/WIN32] fix to stretch offscreen buffer in both window mode and fullscreen mode
+[EMU/WIN32] fix to call ReleaseDC() to release the device context
+[EMU/WIN32] fix to call SelectObject() to select the old hBmp before release the DIBSection
+[EMU/WIN32] fix to start play sound buffer when virtual machine is driven
+[EMU/WIN32] fix to use constant threshold for joystick direction values
+[EMU/WIN32] support table to convert given keycodes from winmain
+[EMU/WIN32] fix to initialize d88 multi volume handler
+
+[VM/DEVICE] add virtual function to fetch opecode
+[VM/FMGEN] fix to give the advanced time with chip clock, not usec
+[VM/YM2151] fix to initialize register #29 to enable only timer interrupt
+[VM/YM2151] fix to update fmgen count when read/write opm registers
+[VM/YM2151] fix to update fmgen count with chip clocks
+[VM/YM2203] fix to update fmgen count when read/write opn(a) registers
+[VM/YM2203] fix to update fmgen count with chip clocks
+[VM/Z80] fix to use new fetch_op() function to fetch opecode from memory bus
+
+[PASOPIA] support floppy drives by Mr.zak
+[PASOPIA/DISPLAY] fix attribute and display mode by Mr.zak
+[PASOPIA/MEMORY] fix vram access via pio by Mr.zak
+[PASOPIA/PAC2] support kanji rom and joystick pac by Mr.zak
+[PASOPIA/RAMPAC2] support to change file to load/save rampac2 image by Mr.zak
+
+[PASOPIA7] fix memory bank switch by Mr.zak
+[PASOPIA7/RAMPAC2] support to change file to load/save rampac2 image by Mr.zak
+
+[PC8801MA] change rtc device type from uPD1990A to uPD4990A
+[PC8801MA/PC88] support bus mouse
+[PC8801MA/PC88] change memory wait cycles
+[PC8801MA/PC88] fix not to draw cursor before cursor position is updated
+[PC8801MA/PC88] fix to refer text attributes for hireso screen
+[PC8801MA/PC88] fix a ugly patch for attributes issue for RST Ongaku Disk 12
+
+
 2/22/2012
 
 [WINMAIN] add codes to check memory leaks in debug build
-[VM/*] Fix memory leaks
+[VM/*] fix memory leaks
 
-[MULTI8/CMT] Fix not to refer other device in release() function
-[MZ1500/QUICKDISK] Fix not to refer other device in release() function
-[PC9801/CMT] Fix not to refer other device in release() function
-[TK80BS/CMT] Fix not to refer other device in release() function
+[MULTI8/CMT] fix not to refer other device in release() function
+[MZ1500/QUICKDISK] fix not to refer other device in release() function
+[PC9801/CMT] fix not to refer other device in release() function
+[TK80BS/CMT] fix not to refer other device in release() function
 
 
 2/21/2012
@@ -23,7 +60,7 @@
 
 [JX/DISPLAY] fix not to render screen just after screen size is changed
 [PC8801MA/PC88] fix to render 640x400 graph screen refering text attributes
-[PC8801MA/PC88] update memory wait cycles based on m88 and QUASI88
+[PC8801MA/PC88] update memory/dma wait cycles based on m88 and QUASI88
 
 
 2/16/2012

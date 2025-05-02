@@ -91,10 +91,10 @@ BEGIN
     END
     POPUP "RAM"
     BEGIN
-        MENUITEM "Load",                        ID_LOAD_RAM
-        MENUITEM "Save",                        ID_SAVE_RAM
+        MENUITEM "Load",                        ID_LOAD_BINARY1
+        MENUITEM "Save",                        ID_SAVE_BINARY1
         MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_RAM
+        MENUITEM "Recent",                      ID_RECENT_BINARY1
     END
 END
 

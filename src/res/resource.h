@@ -35,17 +35,31 @@
 #define ID_HC80_RAMDISK1                40032
 #define ID_HC80_RAMDISK2                40033
 
-#define ID_MZ800_BOOT_MODE_MZ800        40031
-#define ID_MZ800_BOOT_MODE_MZ700        40032
+#define ID_MZ800_MODE_MZ800             40031
+#define ID_MZ800_MODE_MZ700             40032
 
-#define ID_PC98DO_BOOT_MODE_PC98        40031
-#define ID_PC8801_BOOT_MODE_V1S         40032
-#define ID_PC8801_BOOT_MODE_V1H         40033
-#define ID_PC8801_BOOT_MODE_V2          40034
-#define ID_PC8801_BOOT_MODE_N           40035
+#define ID_PASOPIA_MODE_TBASIC_V1_0     40031
+#define ID_PASOPIA_MODE_TBASIC_V1_1     40032
+#define ID_PASOPIA_MODE_OABASIC         40033
+#define ID_PASOPIA_MODE_OABASIC_NO_DISK 40034
+#define ID_PASOPIA_MODE_MINI_PASCAL     40035
+
+#define ID_PASOPIA_DEVICE_RAM_PAC       40041
+#define ID_PASOPIA_DEVICE_KANJI_ROM     40042
+#define ID_PASOPIA_DEVICE_JOYSTICK      40043
+
+#define ID_PC98DO_MODE_PC98             40031
+#define ID_PC8801_MODE_V1S              40032
+#define ID_PC8801_MODE_V1H              40033
+#define ID_PC8801_MODE_V2               40034
+#define ID_PC8801_MODE_N                40035
 
 #define ID_PC9801_CPU_CLOCK_HIGH        40041
 #define ID_PC9801_CPU_CLOCK_LOW         40042
+
+#define ID_PC8801_DEVICE_JOYSTICK       40051
+#define ID_PC8801_DEVICE_MOUSE          40052
+#define ID_PC8801_DEVICE_JOYMOUSE       40053
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102
@@ -83,9 +97,16 @@
 #define ID_D88_FILE_PATH6               40620
 #define ID_SELECT_D88_BANK6             40621 // 40121-40200
 
-#define ID_OPEN_CART                    40901
-#define ID_CLOSE_CART                   40902
-#define ID_RECENT_CART                  40911 // 40911-40918
+// Reserved 40701-40800 for FD7
+// Reserved 40801-40900 for FD8
+
+#define ID_OPEN_QUICKDISK               40901
+#define ID_CLOSE_QUICKDISK              40902
+#define ID_RECENT_QUICKDISK             40903 // 40903-40910
+
+#define ID_OPEN_CART                    40911
+#define ID_CLOSE_CART                   40912
+#define ID_RECENT_CART                  40913 // 40913-40920
 
 #define ID_PLAY_DATAREC                 40921
 #define ID_REC_DATAREC                  40922
@@ -94,17 +115,17 @@
 #define ID_STOP_BUTTON                  40925
 #define ID_RECENT_DATAREC               40931 // 40931-40938
 
-#define ID_OPEN_QUICKDISK               40941
-#define ID_CLOSE_QUICKDISK              40942
-#define ID_RECENT_QUICKDISK             40951 // 40951-40958
+#define ID_OPEN_MEDIA                   40941
+#define ID_CLOSE_MEDIA                  40942
+#define ID_RECENT_MEDIA                 40943 // 40943-40950
 
-#define ID_OPEN_MEDIA                   40961
-#define ID_CLOSE_MEDIA                  40962
-#define ID_RECENT_MEDIA                 40971 // 40971-40978
+#define ID_LOAD_BINARY1                 40951
+#define ID_SAVE_BINARY1                 40952
+#define ID_RECENT_BINARY1               40953 // 40951-40960
 
-#define ID_LOAD_RAM                     40981
-#define ID_SAVE_RAM                     40982
-#define ID_RECENT_RAM                   40991 // 40991-40998
+#define ID_LOAD_BINARY2                 40961
+#define ID_SAVE_BINARY2                 40962
+#define ID_RECENT_BINARY2               40963 // 40961-40970
 
 #define ID_SCREEN_REC60                 41001
 #define ID_SCREEN_REC30                 41002
@@ -185,7 +206,7 @@
 // GIJUTSU-HYORON-SHA Babbase-2nd
 #ifdef _BABBAGE2ND
 #define MENU_POS_CONTROL                0
-#define MENU_POS_RAM                    1
+#define MENU_POS_BINARY1                1
 #endif
 
 // Nintendo Family BASIC
@@ -467,9 +488,12 @@
 // TOSHIBA PASOPIA
 #ifdef _PASOPIA
 #define MENU_POS_CONTROL                0
-#define MENU_POS_DATAREC                1
-#define MENU_POS_SCREEN                 2
-#define MENU_POS_SOUND                  3
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_DATAREC                3
+#define MENU_POS_BINARY1                4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // TOSHIBA PASOPIA7
@@ -478,8 +502,10 @@
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
 #define MENU_POS_DATAREC                3
-#define MENU_POS_SCREEN                 4
-#define MENU_POS_SOUND                  5
+#define MENU_POS_BINARY1                4
+#define MENU_POS_BINARY2                5
+#define MENU_POS_SCREEN                 6
+#define MENU_POS_SOUND                  7
 #endif
 
 // NEC PC-8201
@@ -661,7 +687,7 @@
 // NEC TK-80BS (COMPO BS/80)
 #ifdef _TK80BS
 #define MENU_POS_CONTROL                0
-#define MENU_POS_RAM                    1
+#define MENU_POS_BINARY1                1
 #define MENU_POS_DATAREC                2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
@@ -699,5 +725,5 @@
 // SHINKO SANGYO YS-6464A
 #ifdef _YS6464A
 #define MENU_POS_CONTROL                0
-#define MENU_POS_RAM                    1
+#define MENU_POS_BINARY1                1
 #endif
