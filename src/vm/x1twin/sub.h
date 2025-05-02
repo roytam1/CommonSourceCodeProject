@@ -29,8 +29,11 @@ private:
 	
 	FIFO* key_buf;
 	uint8* key_stat;
-	int key_prev, key_break;
-	bool caps, kana;
+	int key_prev, key_break, key_repeat;
+	bool key_shift_released;
+	bool key_converted[256];
+	bool key_shift, key_ctrl, key_graph;
+	bool key_caps, key_kana;
 	
 	bool iei, intr;
 	uint32 intr_bit;
@@ -39,7 +42,7 @@ private:
 	void process_cmd();
 	void set_ibf(bool val);
 	void set_obf(bool val);
-	uint16 get_key(int code);
+	uint16 get_key(int code, bool repeat);
 	
 public:
 	SUB(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -53,6 +56,7 @@ public:
 	void set_intr_iei(bool val);
 	uint32 intr_ack();
 	void intr_reti();
+	void event_frame();
 	void event_callback(int event_id, int err);
 	
 	// unique functions
@@ -63,7 +67,7 @@ public:
 	void set_context_pio(DEVICE* device) {
 		d_pio = device;
 	}
-	void key_down(int code);
+	void key_down(int code, bool repeat);
 	void key_up(int code);
 };
 

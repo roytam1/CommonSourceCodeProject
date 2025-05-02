@@ -508,7 +508,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_KEYDOWN:
 		if(emu) {
-			emu->key_down(LOBYTE(wParam));
+			bool repeat = ((HIWORD(lParam) & 0x4000) != 0);
+			emu->key_down(LOBYTE(wParam), repeat);
 		}
 		break;
 	case WM_KEYUP:
@@ -518,7 +519,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_SYSKEYDOWN:
 		if(emu) {
-			emu->key_down(LOBYTE(wParam));
+			bool repeat = ((HIWORD(lParam) & 0x4000) != 0);
+			emu->key_down(LOBYTE(wParam), repeat);
 		}
 #ifdef USE_ALT_F10_KEY
 		return 0;	// not activate menu when hit ALT/F10
@@ -1140,7 +1142,7 @@ LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
 				if(emu) {
-					emu->key_down(LOBYTE(wParam));
+					emu->key_down(LOBYTE(wParam), false);
 				}
 				return 0;
 			case WM_KEYUP:

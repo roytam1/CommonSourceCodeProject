@@ -60,10 +60,13 @@ class EVENT;
 class HD46505;
 class I8255;
 class MB8877;
+class YM2151;
 class YM2203;
 class Z80;
-#ifdef _X1TURBO
 class Z80CTC;
+#ifdef _X1TURBO
+class Z80DMA;
+class Z80SIO;
 #endif
 
 class DISPLAY;
@@ -90,10 +93,13 @@ protected:
 	HD46505* crtc;
 	I8255* pio;
 	MB8877* fdc;
+	YM2151* opm;
 	YM2203* psg;
 	Z80* cpu;
-#ifdef _X1TURBO
 	Z80CTC* ctc;
+#ifdef _X1TURBO
+	Z80DMA* dma;
+	Z80SIO* sio;
 #endif
 	
 	DISPLAY* display;
@@ -137,7 +143,7 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// notify key
-	void key_down(int code);
+	void key_down(int code, bool repeat);
 	void key_up(int code);
 	
 	// user interface

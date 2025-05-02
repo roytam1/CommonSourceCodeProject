@@ -94,7 +94,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "FDD1"
+    POPUP "FDD0"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD1
         MENUITEM "Close",                       ID_CLOSE_FD1
@@ -108,7 +108,7 @@ BEGIN
         MENUITEM "Recent 7",                    ID_RECENT_FD17
         MENUITEM "Recent 8",                    ID_RECENT_FD18
     END
-    POPUP "FDD2"
+    POPUP "FDD1"
     BEGIN
         MENUITEM "Open",                        ID_OPEN_FD2
         MENUITEM "Close",                       ID_CLOSE_FD2

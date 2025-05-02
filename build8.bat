@@ -105,6 +105,14 @@ mkdir build\pasopia7
 copy Release\pasopia7.exe build\pasopia7\.
 copy Release\pasopia7lcd.exe build\pasopia7\.
 
+devenv.com pc8201.vcproj /Rebuild Release
+mkdir build\pc8201
+copy Release\pc8201.exe build\pc8201\.
+
+devenv.com pc8201a.vcproj /Rebuild Release
+mkdir build\pc8201a
+copy Release\pc8201a.exe build\pc8201a\.
+
 devenv.com pc9801.vcproj /Rebuild Release
 mkdir build\pc9801
 copy Release\pc9801.exe build\pc9801\.
@@ -112,6 +120,10 @@ copy Release\pc9801.exe build\pc9801\.
 devenv.com pc9801e.vcproj /Rebuild Release
 mkdir build\pc9801e
 copy Release\pc9801e.exe build\pc9801e\.
+mkdir build\pc9801f
+copy Release\pc9801e.exe build\pc9801f\.
+mkdir build\pc9801m
+copy Release\pc9801e.exe build\pc9801m\.
 
 devenv.com pc98ha.vcproj /Rebuild Release
 mkdir build\pc98ha
@@ -124,14 +136,6 @@ copy Release\pc98lt.exe build\pc98lt\.
 devenv.com pc100.vcproj /Rebuild Release
 mkdir build\pc100
 copy Release\pc100.exe build\pc100\.
-
-devenv.com pc8201.vcproj /Rebuild Release
-mkdir build\pc8201
-copy Release\pc8201.exe build\pc8201\.
-
-devenv.com pc8201a.vcproj /Rebuild Release
-mkdir build\pc8201a
-copy Release\pc8201a.exe build\pc8201a\.
 
 devenv.com phc20.vcproj /Rebuild Release
 mkdir build\phc20
@@ -151,8 +155,8 @@ copy Release\pv2000.exe build\pv2000\.
 
 devenv.com pyuta.vcproj /Rebuild Release
 mkdir build\pyuta
-mkdir build\pyuta_jr
 copy Release\pyuta.exe build\pyuta\.
+mkdir build\pyuta_jr
 copy Release\pyuta.exe build\pyuta_jr\.
 
 devenv.com qc10.vcproj /Rebuild Release

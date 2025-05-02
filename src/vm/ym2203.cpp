@@ -27,6 +27,9 @@ void YM2203::reset()
 {
 	opn->Reset();
 	opn->SetReg(0x27, 0);
+#ifdef HAS_AY_3_8912
+	opn->SetReg(0x2e, 0);
+#endif
 	port[0].first = port[1].first = true;
 }
 

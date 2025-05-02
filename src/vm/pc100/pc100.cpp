@@ -281,7 +281,7 @@ uint16* VM::create_sound(int* extra_frames)
 // notify key
 // ----------------------------------------------------------------------------
 
-void VM::key_down(int code)
+void VM::key_down(int code, bool repeat)
 {
 	ioctrl->key_down(code);
 }

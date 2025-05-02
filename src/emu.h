@@ -320,7 +320,7 @@ public:
 	void update_config();
 	
 	// input device
-	void key_down(int code);
+	void key_down(int code, bool repeat);
 	void key_up(int code);
 #ifdef USE_BUTTON
 	void press_button(int num);

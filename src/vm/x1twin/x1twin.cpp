@@ -16,10 +16,13 @@
 #include "../hd46505.h"
 #include "../i8255.h"
 #include "../mb8877.h"
+#include "../ym2151.h"
 #include "../ym2203.h"
 #include "../z80.h"
-#ifdef _X1TURBO
 #include "../z80ctc.h"
+#ifdef _X1TURBO
+#include "../z80dma.h"
+#include "../z80sio.h"
 #endif
 
 #include "display.h"
@@ -50,10 +53,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc = new HD46505(this, emu);
 	pio = new I8255(this, emu);
 	fdc = new MB8877(this, emu);
+	opm = new YM2151(this, emu);
 	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
-#ifdef _X1TURBO
 	ctc = new Z80CTC(this, emu);
+#ifdef _X1TURBO
+	dma = new Z80DMA(this, emu);
+	sio = new Z80SIO(this, emu);
 #endif
 	
 	display = new DISPLAY(this, emu);
@@ -66,6 +72,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
+	event->set_context_sound(opm);
 	event->set_context_sound(psg);
 	
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
@@ -75,11 +82,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef _FDC_DEBUG_LOG
 	fdc->set_context_cpu(cpu);
 #endif
-#ifdef _X1TURBO
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
 	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
-#endif
 	
 	display->set_context_fdc(fdc);
 	display->set_vram_ptr(io->get_vram());
@@ -87,7 +92,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc);
 	joy->set_context_psg(psg);
 #ifndef _X1TURBO
-	memory->set_context_cpu(cpu);
+	memory->set_context_cpu(cpu);	// m1 wait
 #endif
 	sub->set_context_pio(pio);
 	
@@ -95,20 +100,26 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 #ifdef _X1TURBO
-	cpu->set_context_intr(ctc);
+	cpu->set_context_intr(sio);
 #else
-	cpu->set_context_intr(sub);
+	cpu->set_context_intr(ctc);
 #endif
 	
 	// z80 family daisy chain
 #ifdef _X1TURBO
-	ctc->set_context_intr(cpu, 0);
-	ctc->set_context_child(sub);
+	sio->set_context_intr(cpu, 0);
+	sio->set_context_child(dma);
+	dma->set_context_intr(cpu, 1);
+	dma->set_context_child(ctc);
 #endif
-	sub->set_context_intr(cpu, 1);
+	ctc->set_context_intr(cpu, 2);
+	ctc->set_context_child(sub);
+	sub->set_context_intr(cpu, 3);
 	
 	// i/o bus
-#ifdef _X1TURBO
+	io->set_iomap_single_w(0x700, opm);
+	io->set_iomap_single_rw(0x701, opm);
+#ifndef _X1TURBO
 	io->set_iomap_range_rw(0x704, 0x707, ctc);
 #endif
 	io->set_iomap_range_r(0xe80, 0xe81, kanji);
@@ -125,14 +136,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_range_w(i, i + 3, pio);
 	}
 	for(int i = 0x1b00; i <= 0x1bff; i++) {
-		io->set_iomap_alias_r(i, psg, 1);
-		io->set_iomap_alias_w(i, psg, 1);
+		io->set_iomap_alias_rw(i, psg, 1);
 	}
 	for(int i = 0x1c00; i <= 0x1cff; i++) {
 		io->set_iomap_alias_w(i, psg, 0);
 	}
 	io->set_iomap_range_w(0x1d00, 0x1eff, memory);
 #ifdef _X1TURBO
+	io->set_iomap_range_rw(0x1f80, 0x1f8f, dma);
+	io->set_iomap_range_rw(0x1f90, 0x1f93, sio);
+	io->set_iomap_range_rw(0x1fa0, 0x1fa3, ctc);
 	io->set_iomap_single_rw(0x1fd0, display);
 	io->set_iomap_single_rw(0x1fe0, display);
 #endif
@@ -330,6 +343,7 @@ void VM::initialize_sound(int rate, int samples)
 #endif
 	
 	// init sound gen
+	opm->init(rate, 4000000, samples, 0);
 	psg->init(rate, 2000000, samples, 0, 0);
 #ifdef _X1TWIN
 	pce->initialize_sound(rate);
@@ -354,14 +368,16 @@ uint16* VM::create_sound(int* extra_frames)
 // notify key
 // ----------------------------------------------------------------------------
 
-void VM::key_down(int code)
+void VM::key_down(int code, bool repeat)
 {
 #ifdef _X1TWIN
-	if(!pce_running) {
-		sub->key_down(code);
+	if(!pce_running && !repeat) {
+		sub->key_down(code, false);
 	}
 #else
-	sub->key_down(code);
+	if(!repeat) {
+		sub->key_down(code, false);
+	}
 #endif
 }
 

@@ -271,6 +271,26 @@ void DISPLAY::event_vline(int v, int clock)
 	vline = v;
 	vclock = vm->current_clock();
 	prev_clock = 0;
+	
+	// render screen
+	if(v == 0) {
+		_memset(text, 0, sizeof(text));
+		_memset(cg, 0, sizeof(cg));
+		_memset(prev_top, 0, sizeof(prev_top));
+	}
+	if(v < 200) {
+		if((regs[8] & 0x30) != 0x30) {
+			int ht = (regs[9] & 0x1f) + 1;
+			if((v % ht) == 0) {
+				draw_text(v / ht);
+			}
+			draw_cg(v);
+			_memcpy(&pri_line[v][0][0], &pri[0][0], sizeof(pri));
+		}
+		else {
+			_memset(&pri_line[v][0][0], 0, sizeof(pri));
+		}
+	}
 }
 
 void DISPLAY::update_pal()
@@ -321,19 +341,9 @@ void DISPLAY::get_cur_code()
 
 void DISPLAY::draw_screen()
 {
-	// clear screen buffer
-	_memset(text, 0, sizeof(text));
-	_memset(cg, 0, sizeof(cg));
-	
+	// copy to real screen
 	if(column & 0x40) {
 		// column 40
-		if((regs[8] & 0x30) != 0x30) {
-			// render screen
-			draw_text(40);
-			draw_cg(40);
-		}
-		
-		// copy to real screen
 		for(int y = 0; y < 200; y++) {
 			scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
 			scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
@@ -341,7 +351,7 @@ void DISPLAY::draw_screen()
 			uint8* src_cg = cg[y];
 			
 			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
-				dest0[x2] = dest0[x2 + 1] = palette_pc[pri[src_cg[x]][src_text[x]]];
+				dest0[x2] = dest0[x2 + 1] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
 			}
 			if(scanline) {
 				_memset(dest1, 0, 640 * sizeof(scrntype));
@@ -353,13 +363,6 @@ void DISPLAY::draw_screen()
 	}
 	else {
 		// column 80
-		if((regs[8] & 0x30) != 0x30) {
-			// render screen
-			draw_text(80);
-			draw_cg(80);
-		}
-		
-		// copy to real screen
 		for(int y = 0; y < 200; y++) {
 			scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
 			scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
@@ -367,7 +370,7 @@ void DISPLAY::draw_screen()
 			uint8* src_cg = cg[y];
 			
 			for(int x = 0; x < 640; x++) {
-				dest0[x] = palette_pc[pri[src_cg[x]][src_text[x]]];
+				dest0[x] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
 			}
 			if(scanline) {
 				_memset(dest1, 0, 640 * sizeof(scrntype));
@@ -392,120 +395,89 @@ void DISPLAY::draw_screen()
 	}
 }
 
-void DISPLAY::draw_text(int width)
+void DISPLAY::draw_text(int y)
 {
-	uint16 src = (regs[12] << 8) | regs[13];
+	int width = (column & 0x40) ? 40 : 80;
 	int hz = regs[1];
 	int vt = regs[6] & 0x7f;
 	int ht = (regs[9] & 0x1f) + 1;
+	uint16 src = ((regs[12] << 8) | regs[13]) + hz * y;
 	
-	uint8 prev_code[81], prev_attr[81];;
-	_memset(prev_code, 0, sizeof(prev_code));
-	_memset(prev_attr, 0, sizeof(prev_attr));
-	
-	for(int y = 0; y < vt; y++) {
-		for(int x = 0; x < hz && x < width; x++) {
-			src &= 0x7ff;
-			uint8 code = vram_t[src];
-			uint8 attr = vram_a[src++];
-			uint8 col = ((attr & 0x10) && (cblink & 8)) ? 0 : (attr & 7);
-			
-			// select pcg or ank
-			static const uint8 null_pattern[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-			const uint8 *pattern_b, *pattern_r, *pattern_g;
-			if(attr & 0x20) {
-				// pcg
-				pattern_b = (col & 1) ? pcg_b[code] : null_pattern;
-				pattern_r = (col & 2) ? pcg_r[code] : null_pattern;
-				pattern_g = (col & 4) ? pcg_g[code] : null_pattern;
-			}
-			else {
-				// ank
-				pattern_b = (col & 1) ? &font[code << 3] : null_pattern;
-				pattern_r = (col & 2) ? &font[code << 3] : null_pattern;
-				pattern_g = (col & 4) ? &font[code << 3] : null_pattern;
-			}
-			
-			// check vertical doubled char
-			if((attr & 0x40) && (prev_code[x] == code) && (prev_attr[x] == attr)) {
+	for(int x = 0; x < hz && x < width; x++) {
+		src &= 0x7ff;
+		uint8 code = vram_t[src];
+		uint8 attr = vram_a[src];
+		uint8 col = ((attr & 0x10) && (cblink & 8)) ? 0 : (attr & 7);
+		
+		// select pcg or ank
+		static const uint8 null_pattern[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+		const uint8 *pattern_b, *pattern_r, *pattern_g;
+		if(attr & 0x20) {
+			// pcg
+			pattern_b = (col & 1) ? pcg_b[code] : null_pattern;
+			pattern_r = (col & 2) ? pcg_r[code] : null_pattern;
+			pattern_g = (col & 4) ? pcg_g[code] : null_pattern;
+		}
+		else {
+			// ank
+			pattern_b = (col & 1) ? &font[code << 3] : null_pattern;
+			pattern_r = (col & 2) ? &font[code << 3] : null_pattern;
+			pattern_g = (col & 4) ? &font[code << 3] : null_pattern;
+		}
+		
+		// check vertical doubled char
+		uint8 is_top = 0, is_bottom = prev_top[x];
+		if(attr & 0x40) {
+			if(is_bottom) {
 				// bottom 4 rasters of vertical doubled char
 				pattern_b += 4;
 				pattern_r += 4;
 				pattern_g += 4;
-				// next line must not be bottom of this character !!!
-				prev_attr[x] = attr & ~0x40;
 			}
 			else {
-				prev_attr[x] = attr;
-			}
-			prev_code[x] = code;
-			
-			// render character
-			for(int l = 0; l < 8 && l < ht; l++) {
-				int line = (attr & 0x40) ? (l >> 1) : l;
-				uint8 b = (attr & 8) ? ~pattern_b[line] : pattern_b[line];
-				uint8 r = (attr & 8) ? ~pattern_r[line] : pattern_r[line];
-				uint8 g = (attr & 8) ? ~pattern_g[line] : pattern_g[line];
-				int yy = y * ht + l;
-				if(yy >= 200) {
-					break;
+				// check next line
+				uint8 next_code = 0, next_attr = 0;
+				if(y < vt - 1) {
+					uint16 addr = (src + hz) & 0x7ff;
+					next_code = vram_t[addr];
+					next_attr = vram_a[addr];
 				}
-				uint8* d = &text[yy][x << 3];
-				
-				if(attr & 0x80) {
-					// horizontal doubled char
-					d[ 0] = d[ 1] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-					d[ 2] = d[ 3] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-					d[ 4] = d[ 5] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-					d[ 6] = d[ 7] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-					d[ 8] = d[ 9] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-					d[10] = d[11] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
-					d[12] = d[13] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
-					d[14] = d[15] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+				if(code == next_code && attr == next_attr) {
+					// top 4 rasters of vertical doubled char
+					is_top = 1;
 				}
 				else {
-					d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
-					d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
-					d[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
-					d[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
-					d[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
-					d[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
-					d[6] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
-					d[7] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+					// this is not vertical doubled char !!!
+					attr &= ~0x40;
 				}
 			}
-			if(attr & 0x80) {
-				// skip next one char
-				src++;
-				x++;
-				prev_code[x] = prev_code[x - 1];
-				prev_attr[x] = prev_attr[x - 1];
-			}
 		}
-	}
-}
-
-void DISPLAY::draw_cg(int width)
-{
-	int hz = regs[1];
-	int vt = regs[6] & 0x7f;
-	int ht = (regs[9] & 0x1f) + 1;
-	
-	for(int l = 0; l < ht; l++) {
-		uint16 src = (regs[12] << 8) | regs[13];
-		uint16 ofs = 0x800 * l;
-		for(int y = 0; y < vt; y++) {
+		prev_top[x] = is_top;
+		
+		// render character
+		for(int l = 0; l < 8 && l < ht; l++) {
+			int line = (attr & 0x40) ? (l >> 1) : l;
+			uint8 b = (attr & 8) ? ~pattern_b[line] : pattern_b[line];
+			uint8 r = (attr & 8) ? ~pattern_r[line] : pattern_r[line];
+			uint8 g = (attr & 8) ? ~pattern_g[line] : pattern_g[line];
 			int yy = y * ht + l;
 			if(yy >= 200) {
 				break;
 			}
-			for(int x = 0; x < hz && x < width; x++) {
-				src &= 0x7ff;
-				uint8 b = vram_b[ofs | src];
-				uint8 r = vram_r[ofs | src];
-				uint8 g = vram_g[ofs | src++];
-				uint8* d = &cg[yy][x << 3];
-				
+			uint8* d = &text[yy][x << 3];
+			
+			if(attr & 0x80) {
+				// horizontal doubled char
+				d[ 0] = d[ 1] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+				d[ 2] = d[ 3] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+				d[ 4] = d[ 5] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+				d[ 6] = d[ 7] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+				d[ 8] = d[ 9] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+				d[10] = d[11] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
+				d[12] = d[13] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
+				d[14] = d[15] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+			}
+			else {
 				d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
 				d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
 				d[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
@@ -516,6 +488,45 @@ void DISPLAY::draw_cg(int width)
 				d[7] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 			}
 		}
+		if(attr & 0x80) {
+			// skip next one char
+			src++;
+			x++;
+		}
+		src++;
+	}
+}
+
+void DISPLAY::draw_cg(int line)
+{
+	int width = (column & 0x40) ? 40 : 80;
+	int hz = regs[1];
+	int vt = regs[6] & 0x7f;
+	int ht = (regs[9] & 0x1f) + 1;
+	
+	int y = line / ht;
+	int l = line % ht;
+	if(y >= vt) {
+		return;
+	}
+	uint16 src = ((regs[12] << 8) | regs[13]) + hz * y;
+	uint16 ofs = 0x800 * l;
+	
+	for(int x = 0; x < hz && x < width; x++) {
+		src &= 0x7ff;
+		uint8 b = vram_b[ofs | src];
+		uint8 r = vram_r[ofs | src];
+		uint8 g = vram_g[ofs | src++];
+		uint8* d = &cg[line][x << 3];
+		
+		d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+		d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+		d[2] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+		d[3] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+		d[4] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+		d[5] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04) >> 0);
+		d[6] = ((b & 0x02) >> 1) | ((r & 0x02) >> 0) | ((g & 0x02) << 1);
+		d[7] = ((b & 0x01) >> 0) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
 	}
 }
 

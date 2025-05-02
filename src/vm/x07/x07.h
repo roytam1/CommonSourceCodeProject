@@ -102,7 +102,7 @@ public:
 	uint16* create_sound(int* extra_frames);
 	
 	// notify key
-	void key_down(int code);
+	void key_down(int code, bool repeat);
 	void key_up(int code);
 	
 	// user interface

@@ -146,7 +146,7 @@ void EMU::update_input()
 			// update shift key status
 			int shift = autokey_buffer->read_not_remove(0) & 0x100;
 			if(shift && !autokey_shift) {
-				key_down(VK_SHIFT);
+				key_down(VK_SHIFT, false);
 			}
 			else if(!shift && autokey_shift) {
 				key_up(VK_SHIFT);
@@ -157,7 +157,7 @@ void EMU::update_input()
 		}
 	case 3:
 		if(autokey_buffer && !autokey_buffer->empty()) {
-			key_down(autokey_buffer->read_not_remove(0) & 0xff);
+			key_down(autokey_buffer->read_not_remove(0) & 0xff, false);
 		}
 		autokey_phase++;
 		break;
@@ -191,7 +191,7 @@ void EMU::update_input()
 #endif
 }
 
-void EMU::key_down(int code)
+void EMU::key_down(int code, bool repeat)
 {
 #ifdef _PV2000
 	// CASIO PV-2000 patch
@@ -231,7 +231,7 @@ void EMU::key_down(int code)
 		key_status[code] = 0x80;
 	}
 #ifdef NOTIFY_KEY_DOWN
-	vm->key_down(code);
+	vm->key_down(code, repeat);
 #endif
 }
 
@@ -270,7 +270,7 @@ void EMU::press_button(int num)
 	int code = buttons[num].code;
 	
 	if(code) {
-		key_down(code);
+		key_down(code, false);
 		key_status[code] = KEY_KEEP_FRAMES;
 	}
 	else {

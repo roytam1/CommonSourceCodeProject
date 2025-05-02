@@ -38,6 +38,7 @@ private:
 	
 	uint8 pal[3];
 	uint8 priority, pri[8][8];	// pri[cg][txt]
+	uint8 pri_line[200][8][8];
 	int vline, vclock, prev_clock;
 	uint8 cur_code, cur_attr, cur_line;
 	uint8 column;
@@ -49,13 +50,14 @@ private:
 	uint8 cg[200][640];
 	uint8 font[0x800];
 	scrntype palette_pc[8];
+	uint8 prev_top[80];
 	int cblink;
 	bool scanline;
 	
 	void update_pal();
 	void get_cur_code();
-	void draw_text(int width);
-	void draw_cg(int width);
+	void draw_text(int y);
+	void draw_cg(int line);
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

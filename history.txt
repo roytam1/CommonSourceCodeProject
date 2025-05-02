@@ -1,4 +1,20 @@
-1/26/2010
+2/16/2011
+
+[EMU/WIN32] notify key repeat
+
+[VM/YM2203] fix prescaler for AY-3-8190/8192
+[VM/YM2151] fix typo
+
+[X1TWIN] support fm sound card
+[X1TWIN/DISPLAY] fix routine to render vertical doubled character
+[X1TWIN/DISPLAY] render screen in each scan line
+[X1TWIN/SUB] support pressing both shift and numpad key for XANADU
+[X1TWIN/SUB] support key repeat
+[X1TWIN/SUB] fix ctrl + '_'
+[X1TWIN/SUB] fix $e6 command to return key code until it is released
+
+
+1/26/2011
 
 [EMU/WIN32] support capture screen
 
@@ -11,7 +27,7 @@
 [X1TWIN/SUB] fix command processing period
 
 
-1/21/2010
+1/21/2011
 
 [EMU/WIN32] support output debug log to console
 
@@ -35,12 +51,12 @@
 [X1TWIN/SUB] remove game key read command because this is turbo feature
 
 
-1/17/2010
+1/17/2011
 
 [PV1000/VDP] fix pattern offset register for Dig-Dug and Space Panic
 
 
-1/16/2010
+1/16/2011
 
 [VM/YM2203] support AY-3-8190/8192
 [VM/Z80SIO] fix transmit/status interrupt

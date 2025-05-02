@@ -55,7 +55,7 @@ void YM2151::write_signal(int id, uint32 data, uint32 mask)
 
 void YM2151::event_vline(int v, int clock)
 {
-	bool next = opn->Count(usec);
+	bool next = opm->Count(usec);
 	if(irq != next) {
 		write_signals(&outputs_irq, next ? 0xffffffff : 0);
 		irq = next;
@@ -75,8 +75,8 @@ void YM2151::mix(int32* buffer, int cnt)
 
 void YM2151::init(int rate, int clock, int samples, int vol)
 {
-	opn->Init(clock, rate, false);
-	opn->SetVolume(vol);
+	opm->Init(clock, rate, false);
+	opm->SetVolume(vol);
 	sound_tmp = (int32*)malloc(samples * 2 * sizeof(int32));
 }
 

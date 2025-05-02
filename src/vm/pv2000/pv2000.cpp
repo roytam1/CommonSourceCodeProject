@@ -205,7 +205,7 @@ uint16* VM::create_sound(int* extra_frames)
 // notify key
 // ----------------------------------------------------------------------------
 
-void VM::key_down(int code)
+void VM::key_down(int code, bool repeat)
 {
 	if(!(code == 0x9 || code == 0x10 || code == 0x11)) {
 		key->key_down();
