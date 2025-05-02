@@ -24,8 +24,9 @@ void init_config()
 		_tcscpy(config.recent_cart[i], _T(""));
 #endif
 #ifdef USE_FD1
-		for(int j = 0; j < 4; j++)
+		for(int j = 0; j < 4; j++) {
 			_tcscpy(config.recent_disk[j][i], _T(""));
+		}
 #endif
 #ifdef USE_DATAREC
 		_tcscpy(config.recent_datarec[i], _T(""));
@@ -56,11 +57,6 @@ void init_config()
 #ifdef _HC80
 	config.ramdisk_type = 2;	// default = Nonintelligent ram disk
 #endif
-#ifdef _WIN32_WCE
-	config.window_mode = 0;
-	config.sound_frequency = 3;
-	config.sound_latency = 2;
-#else
 #ifdef USE_SCREEN_X2
 	config.window_mode = 1;
 #else
@@ -68,10 +64,6 @@ void init_config()
 #endif
 	config.sound_frequency = 5;
 	config.sound_latency = 0;
-#endif
-	config.d3d9_interval = 0;
-	config.d3d9_device = 0;
-	config.d3d9_filter = 0;
 }
 
 void load_config()
@@ -83,14 +75,11 @@ void load_config()
 	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
-	while(app_path[pt] != '\\')
+	while(app_path[pt] != '\\') {
 		pt--;
+	}
 	app_path[pt + 1] = '\0';
-#ifdef _WIN32_WCE
-	_stprintf(config_path, _T("%s%sce.cfg"), app_path, _T(CONFIG_NAME));
-#else
 	_stprintf(config_path, _T("%s%s.cfg"), app_path, _T(CONFIG_NAME));
-#endif
 	
 	// load config
 	FILEIO* fio = new FILEIO();
@@ -101,8 +90,9 @@ void load_config()
 	delete fio;
 	
 	// check config version
-	if(!(config.version1 == FILE_VERSION && config.version2 == CONFIG_VERSION))
+	if(!(config.version1 == FILE_VERSION && config.version2 == CONFIG_VERSION)) {
 		init_config();
+	}
 }
 
 void save_config()
@@ -111,14 +101,11 @@ void save_config()
 	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH];
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
-	while(app_path[pt] != '\\')
+	while(app_path[pt] != '\\') {
 		pt--;
+	}
 	app_path[pt + 1] = '\0';
-#ifdef _WIN32_WCE
-	_stprintf(config_path, _T("%s%sce.cfg"), app_path, _T(CONFIG_NAME));
-#else
 	_stprintf(config_path, _T("%s%s.cfg"), app_path, _T(CONFIG_NAME));
-#endif
 	
 	// save config
 	FILEIO* fio = new FILEIO();

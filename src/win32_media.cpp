@@ -28,8 +28,9 @@ void EMU::open_media(_TCHAR* filename)
 	_TCHAR root[_MAX_PATH], path[_MAX_PATH], tmp[_MAX_PATH];
 	_tcscpy(root, filename);
 	int pt = _tcslen(root);
-	while(root[pt] != '\\')
+	while(root[pt] != '\\') {
 		pt--;
+	}
 	root[pt + 1] = '\0';
 	
 	// get file path
@@ -42,8 +43,9 @@ void EMU::open_media(_TCHAR* filename)
 				_stprintf(path, "%s%s", root, tmp);
 				_tcscpy(media_path[media_cnt++], path);
 			}
-			if(media_cnt >= MEDIA_MAX)
+			if(media_cnt >= MEDIA_MAX) {
 				break;
+			}
 		}
 		fclose(fp);
 	}
@@ -62,8 +64,9 @@ int EMU::media_count()
 
 void EMU::play_media(int trk)
 {
-	if(trk < 1 || media_cnt < trk)
+	if(trk < 1 || media_cnt < trk) {
 		return;
+	}
 	_TCHAR cmd[_MAX_PATH];
 	_stprintf(cmd, _T("open \"%s\" alias tape"), media_path[trk - 1]);
 	mciSendString(cmd, NULL, 0, NULL);

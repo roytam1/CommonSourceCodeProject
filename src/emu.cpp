@@ -28,18 +28,21 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	// get module path
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	int pt = _tcslen(app_path);
-	while(app_path[pt] != '\\')
+	while(app_path[pt] != '\\') {
 		pt--;
+	}
 	app_path[pt + 1] = '\0';
 	
 	// load sound config
 	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
 	static double late_table[4] = {0.1, 0.2, 0.3, 0.4};
 	
-	if(!(0 <= config.sound_frequency && config.sound_frequency <= 7))
+	if(!(0 <= config.sound_frequency && config.sound_frequency <= 7)) {
 		config.sound_frequency = 5;
-	if(!(0 <= config.sound_latency && config.sound_latency <= 3))
+	}
+	if(!(0 <= config.sound_latency && config.sound_latency <= 3)) {
 		config.sound_latency = 0;
+	}
 	int frequency = freq_table[config.sound_frequency];
 	int latency = (int)(frequency * late_table[config.sound_latency]);
 	
@@ -54,9 +57,6 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
-#ifdef USE_CAPTURE
-	initialize_capture();
-#endif
 }
 
 EMU::~EMU()
@@ -70,11 +70,9 @@ EMU::~EMU()
 #ifdef USE_SOCKET
 	release_socket();
 #endif
-#ifdef USE_CAPTURE
-	release_capture();
-#endif
-	if(vm)
+	if(vm) {
 		delete vm;
+	}
 	close_debug();
 }
 
@@ -152,8 +150,9 @@ void EMU::out_debug(const _TCHAR* format, ...)
 	
 	va_start(ap, format);
 	_vstprintf(buffer, format, ap);
-	if(debug)
+	if(debug) {
 		_ftprintf(debug, _T("%s"), buffer);
+	}
 	va_end(ap);
 #endif
 }

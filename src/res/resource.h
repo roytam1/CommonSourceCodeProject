@@ -105,14 +105,6 @@
 #define ID_SCREEN_WINDOW1               40094
 #define ID_SCREEN_WINDOW2               40095
 #define ID_SCREEN_FULLSCREEN            40096
-#define ID_SCREEN_DEVICE_DEFAULT        40097
-#define ID_SCREEN_DEVICE_HARDWARE_TNL   40098
-#define ID_SCREEN_DEVICE_HARDWARE       40099
-#define ID_SCREEN_DEVICE_SOFTWARE       40100
-#define ID_SCREEN_FILTER_DEFAULT        40101
-#define ID_SCREEN_FILTER_POINT          40102
-#define ID_SCREEN_FILTER_LINEAR         40103
-#define ID_SCREEN_PRESENT_INTERVAL      40104
 #define ID_SCREEN_MONITOR_TYPE0         40105
 #define ID_SCREEN_MONITOR_TYPE1         40106
 #define ID_SCREEN_MONITOR_TYPE2         40107
@@ -132,18 +124,6 @@
 #define ID_SOUND_LATE1                  40121
 #define ID_SOUND_LATE2                  40122
 #define ID_SOUND_LATE3                  40123
-#define ID_CAPTURE_FILTER               40124
-#define ID_CAPTURE_PIN                  40125
-#define ID_CAPTURE_SOURCE               40126
-#define ID_CAPTURE_DISCONNECT           40127
-#define ID_CAPTURE_DEVICE1              40128
-#define ID_CAPTURE_DEVICE2              40129
-#define ID_CAPTURE_DEVICE3              40130
-#define ID_CAPTURE_DEVICE4              40131
-#define ID_CAPTURE_DEVICE5              40132
-#define ID_CAPTURE_DEVICE6              40133
-#define ID_CAPTURE_DEVICE7              40134
-#define ID_CAPTURE_DEVICE8              40135
 #define ID_AUTOKEY_START                40136
 #define ID_AUTOKEY_STOP                 40137
 #define ID_JOYKEY_DIR0                  40138
@@ -295,7 +275,6 @@
 #define MENU_POS_MEDIA                  5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
-#define MENU_POS_CAPTURE                8
 #endif
 
 // SHARP MZ-2800

@@ -65,10 +65,6 @@ typedef struct {
 #ifdef _HC80
 	int ramdisk_type;	// 0=None, 1=Intelligent ram disk, 2=Nonintelligent ram disk
 #endif
-	// direct3d
-	int d3d9_interval;	// 0=Don't wait vsync, 1=Wait vsync
-	int d3d9_device;	// 0=Default, 1=Hardware TnL, 2=Hardware, 3=Software
-	int d3d9_filter;	// 0==Point, 1=Linear
 } config_t;
 
 extern config_t config;

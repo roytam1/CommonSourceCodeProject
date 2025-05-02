@@ -10,6 +10,7 @@
 */
 
 #include "floppy.h"
+#include "../upd765a.h"
 
 void FLOPPY::reset()
 {
@@ -18,24 +19,16 @@ void FLOPPY::reset()
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xffff)
-	{
-	case 0x92:
+	switch(addr & 0xffff) {
 	case 0xca:
-//		if(((addr >> 4) ^ chgreg) & 1)
-//			break;
 		d_fdc->write_io8(1, data);
 		break;
-	case 0x94:
 	case 0xcc:
-//		if(((addr >> 4) ^ chgreg) & 1)
-//			break;
-		if((ctrlreg ^ data) & 0x10) {
-			// mode chang
-//			fdcstatusreset();
-//			fdc_dmaready(0);
-//			dmac_check();
+		if(!(ctrlreg & 0x80) && (data & 0x80)) {
+			d_fdc->reset();
 		}
+		d_fdc->write_signal(did_fready, data, 0x40);
+		d_fdc->write_signal(did_motor, data, 0x08);
 		ctrlreg = data;
 		break;
 	case 0xbe:
@@ -46,32 +39,15 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 
 uint32 FLOPPY::read_io8(uint32 addr)
 {
-	switch(addr & 0xffff)
-	{
-	case 0x90:
+	switch(addr & 0xffff) {
 	case 0xc8:
-//		if(((addr >> 4) ^ chgreg) & 1)
-//			break;
 		return d_fdc->read_io8(0);
-	case 0x92:
 	case 0xca:
-//		if(((addr >> 4) ^ chgreg) & 1)
-//			break;
 		return d_fdc->read_io8(1);
-	case 0x94:
 	case 0xcc:
-//		if(((addr >> 4) ^ chgreg) & 1)
-//			break;
-		return (addr & 0x10) ? 0x40 : 0x70;
+		return d_fdc->fdc_status() | 0x64;
 	case 0xbe:
-		return (chgreg & 3) | 8;
+		return (chgreg & 0x03) | 0x08;
 	}
 	return addr & 0xff;
 }
-
-void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
-{
-	// drq from fdc
-	d_dma->write_signal(did_dma[chgreg & 1], data, mask);
-}
-

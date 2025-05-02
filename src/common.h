@@ -13,9 +13,10 @@
 #include <tchar.h>
 
 // variable scope of 'for' loop for microsoft visual c++ 6.0 and embedded visual c++ 4.0
-#if (defined(_MSC_VER) && (_MSC_VER == 1200)) || defined(_WIN32_WCE)
+#if defined(_MSC_VER) && (_MSC_VER == 1200)
 #define for if(0);else for
 #endif
+
 // disable warnings C4189, C4995 and C4996 for microsoft visual c++ 2005
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #pragma warning( disable : 4819 )
@@ -71,23 +72,12 @@ typedef union {
 } pair;
 
 // memory functions
-//#ifdef _WIN32_WCE
-//#define _memcpy(dest, src, length) CopyMemory((dest), (src), (length))
-//#define _memmove(dest, src, length) MoveMemory((dest), (src), (length))
-//#define _memset(dest, value, length) FillMemory((dest), (length), (value))
-//#else
 #define _memcpy(dest, src, length) memcpy((dest), (src), (length))
 #define _memmove(dest, src, length) memmove((dest), (src), (length))
 #define _memset(dest, value, length) memset((dest), (value), (length))
-//#endif
 
 // rgb color
-#ifdef _WIN32_WCE
-#define _RGB565
-#else
-//#define _RGB555
 #define _RGB888
-#endif
 
 #if defined(_RGB555)
 #define RGB_COLOR(r, g, b) ((uint16)(((uint16)(r) & 0xf8) << 7) | (uint16)(((uint16)(g) & 0xf8) << 2) | (uint16)(((uint16)(b) & 0xf8) >> 3))

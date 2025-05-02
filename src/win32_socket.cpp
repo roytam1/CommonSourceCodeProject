@@ -47,8 +47,9 @@ void EMU::socket_connected(int ch)
 void EMU::socket_disconnected(int ch)
 {
 	// winmain notify that network is disconnected
-	if(!socket_delay[ch])
+	if(!socket_delay[ch]) {
 		socket_delay[ch] = 1;//56;
+	}
 }
 
 void EMU::update_socket()
@@ -61,13 +62,15 @@ void EMU::update_socket()
 			uint8* buf1 = vm->get_recvbuffer1(i);
 			
 			int size = recv_w_ptr[i] - recv_r_ptr[i];
-			if(size > size0 + size1)
+			if(size > size0 + size1) {
 				size = size0 + size1;
+			}
 			char* src = &recv_buffer[i][recv_r_ptr[i]];
 			recv_r_ptr[i] += size;
 			
-			if(size <= size0)
+			if(size <= size0) {
 				_memcpy(buf0, src, size);
+			}
 			else {
 				_memcpy(buf0, src, size0);
 				_memcpy(buf1, src + size0, size - size0);
@@ -75,8 +78,9 @@ void EMU::update_socket()
 			vm->inc_recvbuffer_ptr(i, size);
 		}
 		else if(socket_delay[i] != 0) {
-			 if(--socket_delay[i] == 0)
+			if(--socket_delay[i] == 0) {
 				vm->network_disconnected(i);
+			}
 		}
 	}
 }
@@ -85,10 +89,12 @@ bool EMU::init_socket_tcp(int ch)
 {
 	is_tcp[ch] = true;
 	
-	if(soc[ch] != INVALID_SOCKET)
+	if(soc[ch] != INVALID_SOCKET) {
 		disconnect_socket(ch);
-	if((soc[ch] = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+	}
+	if((soc[ch] = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 		return false;
+	}
 	if(WSAAsyncSelect(soc[ch], main_window_handle, WM_SOCKET0 + ch, FD_CONNECT | FD_WRITE | FD_READ | FD_CLOSE) == SOCKET_ERROR) {
 		closesocket(soc[ch]);
 		soc[ch] = INVALID_SOCKET;
@@ -103,8 +109,9 @@ bool EMU::init_socket_udp(int ch)
 	is_tcp[ch] = false;
 	
 	disconnect_socket(ch);
-	if((soc[ch] = socket(PF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
+	if((soc[ch] = socket(PF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
 		return false;
+	}
 	if(WSAAsyncSelect(soc[ch], main_window_handle, WM_SOCKET0 + ch, FD_CONNECT | FD_WRITE | FD_READ | FD_CLOSE) == SOCKET_ERROR) {
 		closesocket(soc[ch]);
 		soc[ch] = INVALID_SOCKET;
@@ -123,8 +130,9 @@ bool EMU::connect_socket(int ch, uint32 ipaddr, int port)
 	_memset(tcpaddr.sin_zero, (int)0, sizeof(tcpaddr.sin_zero));
 	
 	if(connect(soc[ch], (struct sockaddr *)&tcpaddr, sizeof(tcpaddr)) == SOCKET_ERROR) {
-		if(WSAGetLastError() != WSAEWOULDBLOCK)
+		if(WSAGetLastError() != WSAEWOULDBLOCK) {
 			return false;
+		}
 	}
 	return true;
 }
@@ -146,8 +154,9 @@ bool EMU::listen_socket(int ch)
 
 void EMU::send_data_tcp(int ch)
 {
-	if(is_tcp[ch])
+	if(is_tcp[ch]) {
 		send_data(ch);
+	}
 }
 
 void EMU::send_data_udp(int ch, uint32 ipaddr, int port)
@@ -170,8 +179,9 @@ void EMU::send_data(int ch)
 		int size;
 		uint8* buf = vm->get_sendbuffer(ch, &size);
 		
-		if(!size)
+		if(!size) {
 			return;
+		}
 		if(is_tcp[ch]) {
 			if((size = send(soc[ch], (char *)buf, size, 0)) == SOCKET_ERROR) {
 				// if WSAEWOULDBLOCK, WM_SOCKET* and FD_WRITE will come later
@@ -214,8 +224,9 @@ void EMU::recv_data(int ch)
 		int size = SOCKET_BUFFER_MAX - recv_w_ptr[ch];
 		char* buf = &recv_buffer[ch][recv_w_ptr[ch]];
 		
-		if(size < 8)
+		if(size < 8) {
 			return;
+		}
 		if((size = recvfrom(soc[ch], buf + 8, size - 8, 0, (struct sockaddr *)&addr, &len)) == SOCKET_ERROR) {
 			disconnect_socket(ch);
 			socket_disconnected(ch);

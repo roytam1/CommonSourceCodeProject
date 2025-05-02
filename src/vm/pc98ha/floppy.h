@@ -18,11 +18,13 @@
 
 #define SIG_FLOPPY_DRQ	0
 
+class UPD765A;
+
 class FLOPPY : public DEVICE
 {
 private:
-	DEVICE *d_fdc, *d_dma;
-	int did_dma[2];
+	UPD765A *d_fdc;
+	int did_fready, did_motor;
 	
 	uint8 chgreg, ctrlreg;
 	
@@ -34,14 +36,10 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_fdc(DEVICE* device) {
-		d_fdc = device;
-	}
-	void set_context_dma(DEVICE* device, int id2, int id3) {
-		d_dma = device; did_dma[1] = id2; did_dma[0] = id3;
+	void set_context_fdc(UPD765A* device, int id_fready, int id_motor) {
+		d_fdc = device; did_fready = id_fready; did_motor = id_motor;
 	}
 };
 

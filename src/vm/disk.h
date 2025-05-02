@@ -186,6 +186,7 @@ public:
 	bool insert;
 	bool protect;
 	bool change;
+	uint8 media_type;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];

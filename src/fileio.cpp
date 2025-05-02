@@ -28,8 +28,7 @@ bool FILEIO::Fopen(_TCHAR *filename, int mode)
 {
 	Fclose();
 	
-	switch(mode)
-	{
+	switch(mode) {
 	case FILEIO_READ_BINARY:
 		return ((fp = _tfopen(filename, _T("rb"))) == NULL) ? false : true;
 	case FILEIO_WRITE_BINARY:
@@ -48,8 +47,9 @@ bool FILEIO::Fopen(_TCHAR *filename, int mode)
 
 void FILEIO::Fclose()
 {
-	if(fp)
+	if(fp) {
 		fclose(fp);
+	}
 	fp = NULL;
 }
 
@@ -70,8 +70,7 @@ uint32 FILEIO::Fwrite(void* buffer, uint32 size, uint32 count)
 
 uint32 FILEIO::Fseek(long offset, int origin)
 {
-	switch(origin)
-	{
+	switch(origin) {
 	case FILEIO_SEEK_CUR:
 		return fseek(fp, offset, SEEK_CUR);
 	case FILEIO_SEEK_END:

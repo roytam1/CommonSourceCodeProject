@@ -29,6 +29,7 @@
 #include "../upd71071.h"
 #include "../upd765a.h"
 
+#include "bios.h"
 #ifdef _PC98HA
 #include "calendar.h"
 #endif
@@ -67,6 +68,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma = new UPD71071(this, emu);	// V50 internal
 	fdc = new UPD765A(this, emu);
 	
+	bios = new BIOS(this, emu);
 #ifdef _PC98HA
 	calendar = new CALENDAR(this, emu);
 #endif
@@ -103,19 +105,20 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_ch2(fdc);	// 1MB
 	dma->set_context_ch3(fdc);	// 640KB
 	fdc->set_context_intr(pic, SIG_I8259_IR6, 1);
-	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
+	fdc->set_context_drq(dma, SIG_UPD71071_CH3, 1);
 	
+	bios->set_context_fdc(fdc);
 #ifdef _PC98HA
 	calendar->set_context_rtc(rtc);
 #endif
 	display->set_context_fdc(fdc);
 	display->set_vram_ptr(memory->get_vram());
-	floppy->set_context_fdc(fdc);
-	floppy->set_context_dma(dma, SIG_UPD71071_CH2, SIG_UPD71071_CH3);
+	floppy->set_context_fdc(fdc, SIG_UPD765A_FREADY, SIG_UPD765A_MOTOR);
 	keyboard->set_context_sio(sio_k, SIG_I8251_RECV);
 	note->set_context_pic(pic, SIG_I8259_IR5);
 	
 	// cpu bus
+	cpu->set_context_bios(bios);
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
@@ -144,9 +147,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_w(0x73, pit, 1);
 	io->set_iomap_alias_w(0x75, pit, 2);
 	io->set_iomap_alias_w(0x77, pit, 3);
-#ifdef DOCKING_STATION
-	io->set_iomap_single_w(0x92, floppy);
-	io->set_iomap_single_w(0x94, floppy);
+#if defined(_PC98LT) || defined(DOCKING_STATION)
 	io->set_iomap_single_w(0xca, floppy);
 	io->set_iomap_single_w(0xcc, floppy);
 	io->set_iomap_single_w(0xbe, floppy);
@@ -187,10 +188,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x71, pit, 0);
 	io->set_iomap_alias_r(0x73, pit, 1);
 	io->set_iomap_alias_r(0x75, pit, 2);
-#ifdef DOCKING_STATION
-	io->set_iomap_single_r(0x90, floppy);
-	io->set_iomap_single_r(0x92, floppy);
-	io->set_iomap_single_r(0x94, floppy);
+#if defined(_PC98LT) || defined(DOCKING_STATION)
 	io->set_iomap_single_r(0xc8, floppy);
 	io->set_iomap_single_r(0xca, floppy);
 	io->set_iomap_single_r(0xcc, floppy);
@@ -209,12 +207,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->initialize();
+		}
 	}
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id != event->this_device_id)
+		if(device->this_device_id != event->this_device_id) {
 			device->reset();
+		}
 	}
 	
 	// initial device settings
@@ -232,15 +232,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 VM::~VM()
 {
 	// delete all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->release();
+	}
 }
 
 DEVICE* VM::get_device(int id)
 {
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(device->this_device_id == id)
+		if(device->this_device_id == id) {
 			return device;
+		}
 	}
 	return NULL;
 }
@@ -252,8 +254,9 @@ DEVICE* VM::get_device(int id)
 void VM::reset()
 {
 	// reset all devices
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
 }
 
 void VM::run()
@@ -368,7 +371,8 @@ bool VM::now_skip()
 
 void VM::update_config()
 {
-	for(DEVICE* device = first_device; device; device = device->next_device)
+	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
+	}
 }
 

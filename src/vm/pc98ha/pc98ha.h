@@ -45,17 +45,20 @@
 #endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
-#define MAX_DRIVE		4
+#define MAX_DRIVE		1
 #define HAS_V30
+#define I86_BIOS_CALL
 #define I8259_MAX_CHIPS		1
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
+#define UPD765A_MEDIA_CHANGE
 #define IO_ADDR_MAX		0x10000
 #define IOBUS_RETURN_ADDR
 #define EVENT_PRECISE	40
-
+#ifdef _PC98HA
 //#define DOCKING_STATION
+#endif
 
 #include "../../common.h"
 
@@ -78,6 +81,7 @@ class UPD1990A;
 class UPD71071;
 class UPD765A;
 
+class BIOS;
 #ifdef _PC98HA
 class CALENDAR;
 #endif
@@ -112,6 +116,7 @@ protected:
 	UPD71071* dma;
 	UPD765A* fdc;
 	
+	BIOS* bios;
 #ifdef _PC98HA
 	CALENDAR* calendar;
 #endif

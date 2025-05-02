@@ -17,38 +17,6 @@
 
 #define ADDR_MASK	(vram_size - 1)
 
-#define CMD_RESET	0x00
-#define CMD_SYNC	0x0e
-#define CMD_SLAVE	0x6e
-#define CMD_MASTER	0x6f
-#define CMD_START	0x6b
-#define CMD_BCTRL	0x0c
-#define CMD_ZOOM	0x46
-#define CMD_SCROLL	0x70
-#define CMD_CSRFORM	0x4b
-#define CMD_PITCH	0x47
-#define CMD_LPEN	0xc0
-#define CMD_VECTW	0x4c
-#define CMD_VECTE	0x6c
-#define CMD_TEXTW	0x78
-#define CMD_TEXTE	0x68
-#define CMD_CSRW	0x49
-#define CMD_CSRR	0xe0
-#define CMD_MASK	0x4a
-#define CMD_WRITE	0x20
-#define CMD_READ	0xa0
-#define CMD_DMAR	0xa4
-#define CMD_DMAW	0x24
-
-#define STAT_LPEN	0x80
-#define STAT_HBLANK	0x40
-#define STAT_VSYNC	0x20
-#define STAT_DMA	0x10
-#define STAT_DRAW	0x08
-#define STAT_EMPTY	0x04
-#define STAT_FULL	0x02
-#define STAT_DRDY	0x01
-
 #define MODE_MIX	((sync[0] & 0x22) == 0x00)
 #define MODE_GFX	((sync[0] & 0x22) == 0x02)
 #define MODE_CHR	((sync[0] & 0x22) == 0x20)
@@ -56,11 +24,6 @@
 #define RT_MULBIT	15
 #define RT_TABLEBIT	12
 #define RT_TABLEMAX	(1 << RT_TABLEBIT)
-
-static const int vectdir[16][4] = {
-	{ 0, 1, 1, 0}, { 1, 1, 1,-1}, { 1, 0, 0,-1}, { 1,-1,-1,-1}, { 0,-1,-1, 0}, {-1,-1,-1, 1}, {-1, 0, 0, 1}, {-1, 1, 1, 1},
-	{ 0, 1, 1, 1}, { 1, 1, 1, 0}, { 1, 0, 1,-1}, { 1,-1, 0,-1}, { 0,-1,-1,-1}, {-1,-1,-1, 0}, {-1, 0,-1, 1}, {-1, 1, 0, 1}	// SL
-};
 
 class FIFO;
 
@@ -76,35 +39,31 @@ private:
 	uint8* vram;
 	uint32 vram_size;
 	
-	// fifo and regs
-	FIFO *fi, *fo, *ft;
+	// regs
 	int cmdreg;
 	uint8 statreg;
 	
 	// params
-	uint8 sync[16];		// sync
+	uint8 sync[16];
 	int vs, hc;
-	uint8 zoom, zr, zw;	// zoom
-	uint8 ra[16];		// scroll, textw
-	uint8 cs[3];		// cursor
-	int pitch;		// pitch
-	uint32 lad;		// lpen
-	uint8 vect[11];		// vectw
-	int ead, dad;		// csrw, csrr
-	uint8 maskl, maskh;	// mask
-	uint8 mod;		// mod
-	
+	uint8 zoom, zr, zw;
+	uint8 ra[16];
+	uint8 cs[3];
+	uint8 pitch;
+	uint32 lad;
+	uint8 vect[11];
+	int ead, dad;
+	uint8 maskl, maskh;
+	uint8 mod;
 	bool hblank, vsync, start;
-	bool low_high;		// dma word access
+	bool low_high;
+	
+	// fifo buffers
+	uint8 params[16];
+	int params_count;
+	FIFO *fo;
 	
 	// draw
-	void draw_vectl();
-	void draw_vectt();
-	void draw_vectc();
-	void draw_vectr();
-	void draw_text();
-	void pset(int x, int y);
-	
 	int rt[RT_TABLEMAX + 1];
 	int dx, dy;	// from ead, dad
 	int dir, dif, sl, dc, d, d2, d1, dm;
@@ -119,7 +78,7 @@ private:
 	void cmd_master();
 	void cmd_slave();
 	void cmd_start();
-	void cmd_bctrl();
+	void cmd_stop();
 	void cmd_zoom();
 	void cmd_scroll();
 	void cmd_csrform();
@@ -135,10 +94,20 @@ private:
 	void cmd_read();
 	void cmd_dmaw();
 	void cmd_dmar();
+	void cmd_unk_5a();
 	
 	void cmd_write_sub(uint32 addr, uint8 data);
-	uint8 cmd_read_sub(uint32 addr);
-	void vectreset();
+	void write_vram(uint32 addr, uint8 data);
+	uint8 read_vram(uint32 addr);
+	void update_vect();
+	void reset_vect();
+	
+	void draw_vectl();
+	void draw_vectt();
+	void draw_vectc();
+	void draw_vectr();
+	void draw_text();
+	void draw_pset(int x, int y);
 	
 public:
 	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -151,6 +120,7 @@ public:
 	// common functions
 	void initialize();
 	void release();
+	void reset();
 	void write_dma8(uint32 addr, uint32 data);
 	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);

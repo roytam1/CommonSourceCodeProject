@@ -18,8 +18,7 @@
 #define SIG_UPD765A_TC		0
 #define SIG_UPD765A_MOTOR	1
 #define SIG_UPD765A_SELECT	2
-
-#define DRIVE_MASK	(MAX_DRIVE - 1)
+#define SIG_UPD765A_FREADY	3
 
 class DISK;
 
@@ -37,8 +36,8 @@ private:
 		uint8 result;
 		bool access;
 	} fdc_t;
-	fdc_t fdc[MAX_DRIVE];
-	DISK* disk[MAX_DRIVE];
+	fdc_t fdc[4];
+	DISK* disk[4];
 	
 	uint8 hdu, hdue, id[4], eot, gpl, dtl;
 	
@@ -56,6 +55,7 @@ private:
 #ifdef UPD765A_DMA_MODE
 	bool dma_data_lost;
 #endif
+	bool force_ready;
 	
 	// update status
 	void set_intr(bool val);
@@ -142,6 +142,7 @@ public:
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	uint8 media_type(int drv);
 	uint8 fdc_status();
 };
 

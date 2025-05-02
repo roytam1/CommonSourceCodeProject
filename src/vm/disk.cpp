@@ -21,15 +21,20 @@ DISK::DISK()
 
 DISK::~DISK()
 {
-	if(insert)
+	if(insert) {
 		close();
+	}
 }
 
 void DISK::open(_TCHAR path[])
 {
-	// eject disk if inserted
-	if(insert)
+	// check current disk image
+	if(insert) {
+		if(_tcsicmp(file_path, path) == 0) {
+			return;
+		}
 		close();
+	}
 	
 	// open disk image
 	fi = new FILEIO();
@@ -61,8 +66,10 @@ void DISK::open(_TCHAR path[])
 			}
 		}
 		fi->Fclose();
-		if(temporary)
+		if(temporary) {
 			fi->Remove(tmp_path);
+		}
+		media_type = buffer[0x1b];
 	}
 	delete fi;
 }
@@ -90,21 +97,24 @@ bool DISK::get_track(int trk, int side)
 	sector_size = sector_num = 0;
 	
 	// disk not inserted
-	if(!insert)
+	if(!insert) {
 		return false;
+	}
 	
 	// search track
 	int trkside = trk * 2 + (side & 1);
-	if(!(0 <= trkside && trkside < 164))
+	if(!(0 <= trkside && trkside < 164)) {
 		return false;
+	}
 	uint32 offset = buffer[0x20 + trkside * 4 + 0];
 	offset |= buffer[0x20 + trkside * 4 + 1] << 8;
 	offset |= buffer[0x20 + trkside * 4 + 2] << 16;
 	offset |= buffer[0x20 + trkside * 4 + 3] << 24;
 	
-	if(!offset)
+	if(!offset) {
 		return false;
-	
+	}
+
 	// track found
 	uint8* t = buffer + offset;
 	sector_num = t[4] | (t[5] << 8);
@@ -121,25 +131,29 @@ bool DISK::make_track(int trk, int side)
 	sector_size = sector_num = 0;
 	
 	// create dummy track
-	for(int i = 0; i < 0x1800; i++)
+	for(int i = 0; i < 0x1800; i++) {
 		track[i] = rand();
+	}
 	track_size = 0x1800;
 	
 	// disk not inserted
-	if(!insert)
+	if(!insert) {
 		return false;
+	}
 	
 	// search track
 	int trkside = trk * 2 + (side & 1);
-	if(!(0 <= trkside && trkside < 164))
+	if(!(0 <= trkside && trkside < 164)) {
 		return false;
+	}
 	uint32 offset = buffer[0x20 + trkside * 4 + 0];
 	offset |= buffer[0x20 + trkside * 4 + 1] << 8;
 	offset |= buffer[0x20 + trkside * 4 + 2] << 16;
 	offset |= buffer[0x20 + trkside * 4 + 3] << 24;
 	
-	if(!offset)
+	if(!offset) {
 		return false;
+	}
 	
 	// get verify info
 	uint8* t = buffer + offset;
@@ -150,24 +164,28 @@ bool DISK::make_track(int trk, int side)
 	int p = 0;
 	
 	// gap0
-	for(int i = 0; i < 80; i++)
+	for(int i = 0; i < 80; i++) {
 		track[p++] = 0x4e;
+	}
 	// sync
-	for(int i = 0; i < 12; i++)
+	for(int i = 0; i < 12; i++) {
 		track[p++] = 0;
+	}
 	// index mark
 	track[p++] = 0xc2;
 	track[p++] = 0xc2;
 	track[p++] = 0xc2;
 	track[p++] = 0xfc;
 	// gap1
-	for(int i = 0; i < 50; i++)
+	for(int i = 0; i < 50; i++) {
 		track[p++] = 0x4e;
+	}
 	// sectors
 	for(int i = 0; i < sector_num; i ++) {
 		// sync
-		for(int j = 0; j < 12; j++)
+		for(int j = 0; j < 12; j++) {
 			track[p++] = 0;
+		}
 		// id address mark
 		track[p++] = 0xa1;
 		track[p++] = 0xa1;
@@ -185,11 +203,13 @@ bool DISK::make_track(int trk, int side)
 		track[p++] = crc >> 8;
 		track[p++] = crc & 0xff;
 		// gap2
-		for(int j = 0; j < 22; j++)
+		for(int j = 0; j < 22; j++) {
 			track[p++] = 0x4e;
+		}
 		// sync
-		for(int j = 0; j < 12; j++)
+		for(int j = 0; j < 12; j++) {
 			track[p++] = 0;
+		}
 		// data mark, deleted mark
 		track[p++] = 0xa1;
 		track[p++] = 0xa1;
@@ -206,12 +226,14 @@ bool DISK::make_track(int trk, int side)
 		track[p++] = crc & 0xff;
 		t += size + 0x10;
 		// gap3
-		for(int j = 0; j < gap3; j++)
+		for(int j = 0; j < gap3; j++) {
 			track[p++] = 0x4e;
+		}
 	}
 	// gap4
-	while(p < 0x1800)
+	while(p < 0x1800) {
 		track[p++] = 0x4e;
+	}
 	track_size = p;
 	
 	return true;
@@ -223,31 +245,36 @@ bool DISK::get_sector(int trk, int side, int index)
 	sector = NULL;
 	
 	// disk not inserted
-	if(!insert)
+	if(!insert) {
 		return false;
+	}
 	
 	// search track
 	int trkside = trk * 2 + (side & 1);
-	if(!(0 <= trkside && trkside < 164))
+	if(!(0 <= trkside && trkside < 164)) {
 		return false;
+	}
 	uint32 offset = buffer[0x20 + trkside * 4 + 0];
 	offset |= buffer[0x20 + trkside * 4 + 1] << 8;
 	offset |= buffer[0x20 + trkside * 4 + 2] << 16;
 	offset |= buffer[0x20 + trkside * 4 + 3] << 24;
 	
-	if(!offset)
+	if(!offset) {
 		return false;
+	}
 	
 	// track found
 	uint8* t = buffer + offset;
 	sector_num = t[4] | (t[5] << 8);
 	
-	if(index >= sector_num)
+	if(index >= sector_num) {
 		return false;
+	}
 	
 	// skip sector
-	for(int i = 0; i < index; i++)
+	for(int i = 0; i < index; i++) {
 		t += (t[0xe] | (t[0xf] << 8)) + 0x10;
+	}
 	
 	// header info
 	id[0] = t[0];
@@ -283,8 +310,9 @@ bool DISK::get_sector(int trk, int side, int index)
 */
 
 #define COPYBUFFER(src, size) { \
-	if(file_size + (size) > DISK_BUFFER_SIZE) \
+	if(file_size + (size) > DISK_BUFFER_SIZE) { \
 		return false; \
+	} \
 	_memcpy(buffer + file_size, (src), (size)); \
 	file_size += (size); \
 }
@@ -312,8 +340,9 @@ bool DISK::td2d()
 		int rd = 1;
 		init_decode();
 		do {
-			if((rd = decode(obuf, 512)) > 0)
+			if((rd = decode(obuf, 512)) > 0) {
 				fo->Fwrite(obuf, rd, 1);
+			}
 		}
 		while(rd > 0);
 		fo->Fclose();
@@ -322,8 +351,9 @@ bool DISK::td2d()
 		
 		// reopen the temporary file
 		fi->Fclose();
-		if(!fi->Fopen(tmp_path, FILEIO_READ_BINARY))
+		if(!fi->Fopen(tmp_path, FILEIO_READ_BINARY)) {
 			return false;
+		}
 	}
 	if(hdr.flag & 0x80) {
 		// skip comment
@@ -377,8 +407,9 @@ bool DISK::td2d()
 				fi->Fread(buf, len, 1);
 				
 				// convert
-				if(flag == 0)
+				if(flag == 0) {
 					_memcpy(dst, buf, len);
+				}
 				else if(flag == 1) {
 					int len2 = buf[0] | (buf[1] << 8);
 					while(len2--) {
@@ -391,30 +422,37 @@ bool DISK::td2d()
 						int type = buf[s++];
 						int len2 = buf[s++];
 						if(type == 0) {
-							while(len2--)
+							while(len2--) {
 								dst[d++] = buf[s++];
+							}
 						}
 						else if(type < 5) {
 							uint8 pat[256];
 							int n = 2;
-							while(type-- > 1)
+							while(type-- > 1) {
 								n *= 2;
-							for(int j = 0; j < n; j++)
+							}
+							for(int j = 0; j < n; j++) {
 								pat[j] = buf[s++];
+							}
 							while(len2--) {
-								for(int j = 0; j < n; j++)
+								for(int j = 0; j < n; j++) {
 									dst[d++] = pat[j];
+								}
 							}
 						}
-						else
+						else {
 							break; // unknown type
+						}
 					}
 				}
-				else
+				else {
 					break; // unknown flag
+				}
 			}
-			else
+			else {
 				d88_sct.size = 0;
+			}
 			
 			// copy to d88
 			COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
@@ -437,8 +475,9 @@ int DISK::next_word()
 		for(int i = 0; i < 512; i++) {
 			int d = fi->Fgetc();
 			if(d == EOF) {
-				if(i)
+				if(i) {
 					break;
+				}
 				return(-1);
 			}
 			inbuf[i] = d;
@@ -454,8 +493,9 @@ int DISK::next_word()
 
 int DISK::get_bit()
 {
-	if(next_word() < 0)
+	if(next_word() < 0) {
 		return -1;
+	}
 	short i = getbuf;
 	getbuf <<= 1;
 	getlen--;
@@ -464,8 +504,9 @@ int DISK::get_bit()
 
 int DISK::get_byte()
 {
-	if(next_word() != 0)
+	if(next_word() != 0) {
 		return -1;
+	}
 	uint16 i = getbuf;
 	getbuf <<= 8;
 	getlen -= 8;
@@ -515,18 +556,21 @@ void DISK::reconst()
 		son[k] = i;
 	}
 	for(i = 0; i < TABLE_SIZE; i++) {
-		if((k = son[i]) >= TABLE_SIZE)
+		if((k = son[i]) >= TABLE_SIZE) {
 			prnt[k] = i;
-		else
+		}
+		else {
 			prnt[k] = prnt[k + 1] = i;
+		}
 	}
 }
 
 void DISK::update(int c)
 {
 	int i, j, k, l;
-	if(freq[ROOT_POSITION] == MAX_FREQ)
+	if(freq[ROOT_POSITION] == MAX_FREQ) {
 		reconst();
+	}
 	c = prnt[c + TABLE_SIZE];
 	do {
 		k = ++freq[c];
@@ -537,13 +581,15 @@ void DISK::update(int c)
 			freq[l] = k;
 			i = son[c];
 			prnt[i] = l;
-			if(i < TABLE_SIZE)
+			if(i < TABLE_SIZE) {
 				prnt[i + 1] = l;
+			}
 			j = son[l];
 			son[l] = i;
 			prnt[j] = c;
-			if(j < TABLE_SIZE)
+			if(j < TABLE_SIZE) {
 				prnt[j + 1] = c;
+			}
 			son[c] = j;
 			c = l;
 		}
@@ -556,8 +602,9 @@ short DISK::decode_char()
 	int ret;
 	uint16 c = son[ROOT_POSITION];
 	while(c < TABLE_SIZE) {
-		if((ret = get_bit()) < 0)
+		if((ret = get_bit()) < 0) {
 			return -1;
+		}
 		c += (unsigned)ret;
 		c = son[c];
 	}
@@ -570,14 +617,16 @@ short DISK::decode_position()
 {
 	short bit;
 	uint16 i, j, c;
-	if((bit = get_byte()) < 0)
+	if((bit = get_byte()) < 0) {
 		return -1;
+	}
 	i = (uint16)bit;
 	c = (uint16)d_code[i] << 6;
 	j = d_len[i] - 2;
 	while(j--) {
-		if((bit = get_bit()) < 0)
+		if((bit = get_bit()) < 0) {
 			 return -1;
+		}
 		i = (i << 1) + bit;
 	}
 	return (c | i & 0x3f);
@@ -588,8 +637,9 @@ void DISK::init_decode()
 	ibufcnt= ibufndx = bufcnt = getbuf = 0;
 	getlen = 0;
 	start_huff();
-	for(int i = 0; i < STRING_BUFFER_SIZE - LOOKAHEAD_BUFFER_SIZE; i++)
+	for(int i = 0; i < STRING_BUFFER_SIZE - LOOKAHEAD_BUFFER_SIZE; i++) {
 		text_buf[i] = ' ';
+	}
 	ptr = STRING_BUFFER_SIZE - LOOKAHEAD_BUFFER_SIZE;
 }
 
@@ -599,8 +649,9 @@ int DISK::decode(uint8 *buf, int len)
 	int  count;
 	for(count = 0; count < len;) {
 		if(bufcnt == 0) {
-			if((c = decode_char()) < 0)
+			if((c = decode_char()) < 0) {
 				return count;
+			}
 			if(c < 256) {
 				*(buf++) = (uint8)c;
 				text_buf[ptr++] = (uint8)c;
@@ -608,8 +659,9 @@ int DISK::decode(uint8 *buf, int len)
 				count++;
 			} 
 			else {
-				if((pos = decode_position()) < 0)
+				if((pos = decode_position()) < 0) {
 					return count;
+				}
 				bufpos = (ptr - pos - 1) & (STRING_BUFFER_SIZE - 1);
 				bufcnt = c - 255 + THRESHOLD;
 				bufndx = 0;
@@ -624,8 +676,9 @@ int DISK::decode(uint8 *buf, int len)
 				ptr &= (STRING_BUFFER_SIZE - 1);
 				count++;
 			}
-			if(bufndx >= bufcnt) 
+			if(bufndx >= bufcnt) {
 				bufndx = bufcnt = 0;
+			}
 		}
 	}
 	return count;
@@ -643,8 +696,9 @@ bool DISK::imd2d()
 	fi->Fseek(0, FILEIO_SEEK_SET);
 	int tmp;
 	while((tmp = fi->Fgetc()) != 0x1a) {
-		if(tmp == EOF)
+		if(tmp == EOF) {
 			return false;
+		}
 	}
 	
 	// create d88 image
@@ -661,26 +715,33 @@ bool DISK::imd2d()
 	int trkptr = sizeof(d88_hdr_t);
 	for(int t = 0; t < 164; t++) {
 		// check end of file
-		if(fi->Fread(&trk, sizeof(imd_trk_t), 1) != 1)
+		if(fi->Fread(&trk, sizeof(imd_trk_t), 1) != 1) {
 			break;
+		}
 		// check track header
-		if(trk.mode > 5 || trk.size > 6)
+		if(trk.mode > 5 || trk.size > 6) {
 			return false;
-		if(!trk.nsec)
+		}
+		if(!trk.nsec) {
 			continue;
+		}
 		d88_hdr.trkptr[t] = trkptr;
 		
 		// setup sector id
 		uint8 c[64], h[64], r[64];
 		fi->Fread(r, trk.nsec, 1);
-		if(trk.head & 0x80)
+		if(trk.head & 0x80) {
 			fi->Fread(c, trk.nsec, 1);
-		else
+		}
+		else {
 			_memset(c, trk.cyl, sizeof(c));
-		if(trk.head & 0x40)
+		}
+		if(trk.head & 0x40) {
 			fi->Fread(h, trk.nsec, 1);
-		else
+		}
+		else {
 			_memset(h, trk.head & 1, sizeof(h));
+		}
 		
 		// read sectors in this track
 		for(int i = 0; i < trk.nsec; i++) {
@@ -688,8 +749,9 @@ bool DISK::imd2d()
 			static uint8 del[] = {0, 0, 0, 0x10, 0x10, 0, 0, 0x10, 0x10};
 			static uint8 err[] = {0, 0, 0, 0, 0, 0x10, 0x10, 0x10, 0x10};
 			int sectype = fi->Fgetc();
-			if(sectype > 8)
+			if(sectype > 8) {
 				return false;
+			}
 			_memset(&d88_sct, 0, sizeof(d88_sct_t));
 			d88_sct.c = c[i];
 			d88_sct.h = h[i];
@@ -712,8 +774,9 @@ bool DISK::imd2d()
 				int tmp = fi->Fgetc();
 				_memset(dst, tmp, d88_sct.size);
 			}
-			else
+			else {
 				d88_sct.size = 0;
+			}
 			
 			// copy to d88
 			COPYBUFFER(&d88_sct, sizeof(d88_sct_t));

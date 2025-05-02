@@ -28,7 +28,6 @@
 #define USE_FD4
 #define USE_MEDIA
 #define USE_SOCKET
-#define USE_CAPTURE
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6

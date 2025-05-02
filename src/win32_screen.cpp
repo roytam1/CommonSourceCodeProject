@@ -56,44 +56,15 @@ void EMU::initialize_screen()
 	hdcDibOut = CreateCompatibleDC(hdc);
 	SelectObject(hdcDibOut, hBmpOut);
 #endif
-#ifdef _USE_D3D9
-	// init d3d9
-	lpd3d = NULL;
-	lpd3d9dev = NULL;
-	lpSurface = NULL;
-	lpDDSBack = NULL;
-#endif
+	
 	// init video recording
 	now_recv = false;
-#ifdef SUPPORT_VFW
 	pAVIStream = NULL;
 	pAVICompressed = NULL;
 	pAVIFile = NULL;
-#endif
 	first_invalidate = true;
 	self_invalidate = false;
 }
-
-#ifdef _USE_D3D9
-#define RELEASE_D3D9() { \
-	if(lpDDSBack) { \
-		lpDDSBack->Release(); \
-		lpDDSBack = NULL; \
-	} \
-	if(lpSurface) { \
-		lpSurface->Release(); \
-		lpSurface = NULL; \
-	} \
-	if(lpd3d9dev) { \
-		lpd3d9dev->Release(); \
-		lpd3d9dev = NULL; \
-	} \
-	if(lpd3d) { \
-		lpd3d->Release(); \
-		lpd3d = NULL; \
-	} \
-}
-#endif
 
 void EMU::release_screen()
 {
@@ -104,10 +75,7 @@ void EMU::release_screen()
 	DeleteObject(hBmpOut);
 	GlobalFree(lpBufOut);
 #endif
-#ifdef _USE_D3D9
-	// release d3d9
-	RELEASE_D3D9();
-#endif
+	
 	// stop video recording
 	stop_rec_video();
 }
@@ -194,66 +162,6 @@ void EMU::set_window_size(int width, int height)
 #endif
 	dest_x = (window_width - buffer_x) >> 1;
 	dest_y = (window_height - buffer_y) >> 1;
-#ifdef _USE_D3D9
-	// release and init d3d9 again
-	RELEASE_D3D9();
-	lpd3d = Direct3DCreate9(D3D_SDK_VERSION);
-	if(lpd3d) {
-		// init present params
-		D3DPRESENT_PARAMETERS d3dpp;
-		ZeroMemory(&d3dpp, sizeof(d3dpp));
-		d3dpp.Windowed = TRUE;
-		d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-		d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-		if(config.d3d9_interval == 0)
-			d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-		else
-			d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
-		// create device
-		HRESULT hr;
-		if(config.d3d9_device == 0) {
-			hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, main_window_handle, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
-			if(hr != D3D_OK) {
-				hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
-				if(hr != D3D_OK)
-					hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
-			}
-		}
-		else if(config.d3d9_device == 1)
-			hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, main_window_handle, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
-		else if(config.d3d9_device == 2)
-			hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
-		else
-			hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
-		// create surface
-		if(hr == D3D_OK) {
-			hr = lpd3d9dev->CreateOffscreenPlainSurface(buffer_x, buffer_y, D3DFMT_X1R5G5B5, D3DPOOL_DEFAULT, &lpSurface, NULL);
-			if(hr != D3D_OK) {
-				hr = lpd3d9dev->CreateOffscreenPlainSurface(buffer_x, buffer_y, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &lpSurface, NULL);
-				if(hr != D3D_OK)
-					hr = lpd3d9dev->CreateOffscreenPlainSurface(buffer_x, buffer_y, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &lpSurface, NULL);
-			}
-			hr = lpd3d9dev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &lpDDSBack);
-			if(hr == D3D_OK) {
-				// adjust rect to keep aspect
-				D3DSURFACE_DESC d3dsd;
-				ZeroMemory(&d3dsd, sizeof(d3dsd));
-				lpDDSBack->GetDesc(&d3dsd);
-				UINT rect_w = d3dsd.Width, w = (d3dsd.Height  * buffer_x) / buffer_y;
-				UINT rect_h = d3dsd.Height, h = (d3dsd.Width * buffer_y) / buffer_x;
-				if(w < d3dsd.Width) rect_w = w;
-				if(h < d3dsd.Height) rect_h = h;
-				UINT rect_l = (d3dsd.Width - rect_w) >> 1;
-				UINT rect_t = (d3dsd.Height - rect_h) >> 1;
-				SetRect(&DstRect, rect_l, rect_t, rect_l + rect_w, rect_t +rect_h);
-				if(config.d3d9_filter == 0)
-					filter = D3DTEXF_LINEAR;
-				else
-					filter = D3DTEXF_POINT;
-			}
-		}
-	}
-#endif
 }
 
 void EMU::draw_screen()
@@ -273,12 +181,14 @@ void EMU::draw_screen()
 				scrntype* outx = out;
 				for(int x = 0; x < screen_width; x++) {
 					scrntype col = src[x];
-					for(int px = 0; px < stretch_x; px++)
+					for(int px = 0; px < stretch_x; px++) {
 						*outx++ = col;
+					}
 				}
 			}
-			else
+			else {
 				_memcpy(out, src, screen_width * sizeof(scrntype));
+			}
 			for(int py = 1; py < stretch_y; py++) {
 				scrntype* outy = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - py - 1);
 				_memcpy(outy, out, screen_width * stretch_x * sizeof(scrntype));
@@ -301,36 +211,17 @@ void EMU::draw_screen()
 	}
 #endif
 #endif
-#ifdef _USE_D3D9
-	// update screen
-	if(lpd3d9dev && lpSurface && lpDDSBack) {
-		lpd3d9dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0, 0);
-		lpd3d9dev->BeginScene();
-		HDC hdc;
-		lpSurface->GetDC(&hdc);
-#ifdef USE_SECOND_BUFFER
-		BitBlt(hdc, 0, 0, buffer_x, buffer_y, use_buffer ? hdcDibOut : hdcDib, 0, 0, SRCCOPY);
-#else
-		BitBlt(hdc, 0, 0, buffer_x, buffer_y, hdcDib, 0, 0, SRCCOPY);
-#endif
-		lpSurface->ReleaseDC(hdc);
-		lpd3d9dev->StretchRect(lpSurface, NULL, lpDDSBack, &DstRect, filter);
-		lpd3d9dev->EndScene();
-		lpd3d9dev->Present(NULL, NULL, NULL, NULL);
-	}
-#else
 	// invalidate window
 	self_invalidate = true;
 	InvalidateRect(main_window_handle, NULL, FALSE);
 	UpdateWindow(main_window_handle);
-#endif
-#ifdef SUPPORT_VFW
+	
 	// record picture
 	if(now_recv) {
-		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, screen_width * screen_height * 2, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK)
+		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, screen_width * screen_height * 2, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK) {
 			stop_rec_video();
+		}
 	}
-#endif
 }
 
 void EMU::update_screen(HDC hdc)
@@ -350,7 +241,6 @@ void EMU::update_screen(HDC hdc)
 	}
 	first_invalidate = self_invalidate = false;
 #endif
-#ifndef _USE_D3D9
 #ifdef USE_LED
 	for(int i = 0; i < MAX_LEDS; i++) {
 		int x = leds[i].x;
@@ -364,7 +254,6 @@ void EMU::update_screen(HDC hdc)
 	BitBlt(hdc, dest_x, dest_y, buffer_x, buffer_y, use_buffer ? hdcDibOut : hdcDib, 0, 0, SRCCOPY);
 #else
 	BitBlt(hdc, dest_x, dest_y, buffer_x, buffer_y, hdcDib, 0, 0, SRCCOPY);
-#endif
 #endif
 #endif
 }
@@ -402,15 +291,15 @@ void EMU::change_screen_size(int sw, int sh, int swa, int ww1, int wh1, int ww2,
 
 void EMU::start_rec_video(int fps, bool show_dialog)
 {
-#ifdef SUPPORT_VFW
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	application_path(app_path);
 	_stprintf(file_path, _T("%svideo.avi"), app_path);
 	
 	// init vfw
 	AVIFileInit();
-	if(AVIFileOpen(&pAVIFile, file_path, OF_WRITE | OF_CREATE, NULL) != AVIERR_OK)
+	if(AVIFileOpen(&pAVIFile, file_path, OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
 		return;
+	}
 	
 	// stream header
 	AVISTREAMINFO strhdr;
@@ -445,17 +334,17 @@ void EMU::start_rec_video(int fps, bool show_dialog)
 	rec_frames = 0;
 	rec_fps = fps;
 	now_recv = true;
-#endif
 }
 
 void EMU::stop_rec_video()
 {
-#ifdef SUPPORT_VFW
 	// release vfw
-	if(pAVIStream)
+	if(pAVIStream) {
 		AVIStreamClose(pAVIStream);
-	if(pAVICompressed)
+	}
+	if(pAVICompressed) {
 		AVIStreamClose(pAVICompressed);
+	}
 	if(pAVIFile) {
 		AVIFileClose(pAVIFile);
 		AVIFileExit();
@@ -484,18 +373,18 @@ void EMU::stop_rec_video()
 		}
 	}
 	now_recv = false;
-#endif
 }
 
 void EMU::restart_rec_video()
 {
-#ifdef SUPPORT_VFW
 	if(now_recv) {
 		// release vfw
-		if(pAVIStream)
+		if(pAVIStream) {
 			AVIStreamClose(pAVIStream);
-		if(pAVICompressed)
+		}
+		if(pAVICompressed) {
 			AVIStreamClose(pAVICompressed);
+		}
 		if(pAVIFile) {
 			AVIFileClose(pAVIFile);
 			AVIFileExit();
@@ -506,6 +395,5 @@ void EMU::restart_rec_video()
 		
 		start_rec_video(rec_fps, false);
 	}
-#endif
 }
 

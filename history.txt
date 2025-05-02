@@ -1,3 +1,25 @@
+5/12/2010
+
+[EMU/WIN32] remove Windows CE support
+[EMU/WIN32] remove Direct 3D support
+[EMU/WIN32] remove waveOut api support
+[EMU/WIN32] remove video capture support
+
+[VM/DISK] support media type property
+[VM/DISK] check if the current disk image is reopened
+[VM/UPD7220] update csform/csrw commands
+[VM/UPD7220] support unknown $5a command
+[VM/UPD765A] support force ready signal for NEC PC-98 series
+[VM/UPD765A] fix result status for recalib/seek commands
+[VM/UPD764A] update hdu for sence device status command
+[VM/UPD765A] raise interrupt when disk is inserted or ejected
+
+[MZ2500/CRTC] remove super impose support
+[PC98LT] support floppy drive
+[PC98LT/BIOS] support pseudo disk bios to check the media type
+[PC98LT/FLOPPY] remove unused io address for 1MB FDD I/F
+
+
 12/31/2009
 
 [YS6464A] support Shinko Sangyo YS-6464A
@@ -238,7 +260,7 @@
 
 [MZ700] fix vsync/hsnyc timing
 [MZ700/MEMORY] support 16MB EMM board
-[PC98HA] support PC-98LT
+[PC98LT] support PC-98LT
 [TK80BS] support TK-80BS (COMPO BS/80)
 
 

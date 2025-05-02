@@ -174,16 +174,6 @@ BEGIN
         MENUITEM "Window",                      ID_SCREEN_WINDOW1
         MENUITEM "Fullscreen",                  ID_SCREEN_FULLSCREEN
         MENUITEM SEPARATOR
-        MENUITEM "D3D9 Device Default"          ID_SCREEN_DEVICE_DEFAULT
-        MENUITEM "Hardware TnL"                 ID_SCREEN_DEVICE_HARDWARE_TNL
-        MENUITEM "Hardware"                     ID_SCREEN_DEVICE_HARDWARE
-        MENUITEM "Software"                     ID_SCREEN_DEVICE_SOFTWARE
-        MENUITEM SEPARATOR
-        MENUITEM "D3D9 Filter Point"            ID_SCREEN_FILTER_POINT
-        MENUITEM "Linear"                       ID_SCREEN_FILTER_LINEAR
-        MENUITEM SEPARATOR
-        MENUITEM "D3D9 Wait VSync"              ID_SCREEN_PRESENT_INTERVAL
-        MENUITEM SEPARATOR
         MENUITEM "400 Lines, Analog",           ID_SCREEN_MONITOR_TYPE0
         MENUITEM "400 Lines, Digital",          ID_SCREEN_MONITOR_TYPE1
         MENUITEM "200 Lines, Analog",           ID_SCREEN_MONITOR_TYPE2
@@ -209,22 +199,6 @@ BEGIN
         MENUITEM "200msec",                     ID_SOUND_LATE1
         MENUITEM "300msec",                     ID_SOUND_LATE2
         MENUITEM "400msec",                     ID_SOUND_LATE3
-    END
-    POPUP "Video"
-    BEGIN
-        MENUITEM "Filter"                       ID_CAPTURE_FILTER
-        MENUITEM "Pin"                          ID_CAPTURE_PIN
-        MENUITEM "Source"                       ID_CAPTURE_SOURCE
-        MENUITEM "Disconnect"                   ID_CAPTURE_DISCONNECT
-        MENUITEM SEPARATOR
-        MENUITEM "Device 1"                     ID_CAPTURE_DEVICE1
-        MENUITEM "Device 2"                     ID_CAPTURE_DEVICE2
-        MENUITEM "Device 3"                     ID_CAPTURE_DEVICE3
-        MENUITEM "Device 4"                     ID_CAPTURE_DEVICE4
-        MENUITEM "Device 5"                     ID_CAPTURE_DEVICE5
-        MENUITEM "Device 6"                     ID_CAPTURE_DEVICE6
-        MENUITEM "Device 7"                     ID_CAPTURE_DEVICE7
-        MENUITEM "Device 8"                     ID_CAPTURE_DEVICE8
     END
 END
 
