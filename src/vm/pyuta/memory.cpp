@@ -54,8 +54,9 @@ void MEMORY::initialize()
 		fio->Fclose();
 		has_extrom = true;
 	}
-	else
+	else {
 		has_extrom = false;
+	}
 	delete fio;
 	
 	// set memory map

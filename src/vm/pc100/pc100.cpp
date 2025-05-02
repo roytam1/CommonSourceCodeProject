@@ -75,7 +75,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio1->set_context_port_c(memory, SIG_MEMORY_VRAM_PLANE, 0x3f, 0);
 	pio1->set_context_port_c(and, SIG_AND_BIT_0, 0x80, 0);
 	pio1->set_context_port_c(ioctrl, SIG_IOCTRL_RESET, 0x40, 0);
-	pic->set_context(cpu);
+	pic->set_context_cpu(cpu);
 	rtc->set_context_data(pio0, SIG_I8255_PORT_C, 0xf, 0);
 	rtc->set_context_busy(pio0, SIG_I8255_PORT_C, 0x10);
 	fdc->set_context_irq(cpu, SIG_CPU_NMI, 1);

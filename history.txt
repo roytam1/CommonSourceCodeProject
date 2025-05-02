@@ -1,3 +1,20 @@
+9/20/2010
+
+[VM/DEVICE] support interface for memory mappied i/o
+[VM/I8237] fix bank register
+[VM/I8253] fix counter latch before the counter update event is occured
+[VM/MEMORY] support general memory bus
+[VM/SN76489AN] fix noise generator
+[VM/UPD765A] fix to wait 100usec before go to result phase
+[VM/UPD7220] fix not to terminate write command after data is set
+[VM/UPD7220] support interface to get the cursor address and top/bottom lines
+
+[MZ3500/MAIN] update memory mapper
+[MZ3500/SUB] implement serial i/o for keyboard
+[PC9801] support NEC PC-9801 (First Model)
+[PC9801E] support NEC PC-9801E/F/M
+
+
 9/4/2010
 
 [VM/EVENT] support to run extra frames for continuous sound

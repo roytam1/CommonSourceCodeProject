@@ -97,7 +97,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit->set_constant_clock(2, 1996800);
 #endif
 	pio_s->set_context_port_c(beep, SIG_BEEP_MUTE, 8, 0);
-	pic->set_context(cpu);
+	pic->set_context_cpu(cpu);
 #ifdef _PC98LT
 	rtc->set_context_dout(pio_s, SIG_I8255_PORT_B, 1);
 #endif

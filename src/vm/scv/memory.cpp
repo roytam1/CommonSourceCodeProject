@@ -169,8 +169,9 @@ void MEMORY::open_cart(_TCHAR* filename)
 		save_path[len - 2] = _T('A');
 		save_path[len - 1] = _T('V');
 	}
-	else
+	else {
 		_stprintf(save_path, _T("%s.SAV"), filename);
+	}
 	
 	// open cart and backuped sram
 	FILEIO* fio = new FILEIO();

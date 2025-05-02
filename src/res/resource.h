@@ -446,6 +446,44 @@
 #define MENU_POS_SOUND                  5
 #endif
 
+// NEC PC-8201
+#ifdef _PC8201
+#define MENU_POS_CONTROL                0
+//#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 1
+#define MENU_POS_SOUND                  2
+#endif
+
+// NEC PC-8201A
+#ifdef _PC8201A
+#define MENU_POS_CONTROL                0
+//#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 1
+#define MENU_POS_SOUND                  2
+#endif
+
+// NEC PC-9801
+#ifdef _PC9801
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
+// NEC PC-9801E/F/M
+#ifdef _PC9801E
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
 // NEC PC-98HA
 #ifdef _PC98HA
 #define MENU_POS_CONTROL                0
@@ -469,22 +507,6 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
-#endif
-
-// NEC PC-8201
-#ifdef _PC8201
-#define MENU_POS_CONTROL                0
-//#define MENU_POS_DATAREC                1
-#define MENU_POS_SCREEN                 1
-#define MENU_POS_SOUND                  2
-#endif
-
-// NEC PC-8201A
-#ifdef _PC8201A
-#define MENU_POS_CONTROL                0
-//#define MENU_POS_DATAREC                1
-#define MENU_POS_SCREEN                 1
-#define MENU_POS_SOUND                  2
 #endif
 
 // SANYO PHC-20

@@ -160,8 +160,9 @@ void UPD71071::write_signal(int id, uint32 data, uint32 mask)
 		req |= bit;
 		do_dma();
 	}
-	else
+	else {
 		req &= ~bit;
+	}
 }
 
 void UPD71071::do_dma()
@@ -204,8 +205,9 @@ void UPD71071::do_dma()
 						areg[c] = bareg[c];
 						creg[c] = bcreg[c];
 					}
-					else
+					else {
 						mask |= bit;
+					}
 					req &= ~bit;
 					sreq &= ~bit;
 					tc |= bit;

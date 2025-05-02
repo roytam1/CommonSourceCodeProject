@@ -9,10 +9,12 @@
 */
 
 #include "floppy.h"
+#include "memory.h"
 #include "../upd765a.h"
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
 	d_fdc->write_signal(SIG_UPD765A_MOTOR, 1, 1);
+	d_mem->write_signal(SIG_MEMORY_MOTOR, 1, 1);
 }
 

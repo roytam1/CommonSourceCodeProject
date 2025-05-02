@@ -399,8 +399,9 @@ void Z80SIO::update_intr()
 			port[ch].req_intr = true;
 			port[ch].affect = (ch ? 0 : 4) | 0;
 		}
-		else
+		else {
 			port[ch].req_intr = false;
+		}
 	}
 	
 	// create vector
@@ -437,8 +438,9 @@ void Z80SIO::update_intr()
 		port[1].vector = (port[1].wr[2] & 0xf1) | (affect << 1);
 #endif
 	}
-	else
+	else {
 		port[1].vector = port[1].wr[2];
+	}
 	
 	// set intr
 	if(next = iei) {

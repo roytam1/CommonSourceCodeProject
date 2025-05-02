@@ -1,34 +1,52 @@
 /*
-	SHARP MZ-3500 Emulator 'EmuZ-3500'
+	NEC PC-9801 Emulator 'ePC-9801'
+	NEC PC-9801E/F/M Emulator 'ePC-9801E'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.04.17 -
+	Date   : 2010.09.15-
 
 	[ virtual machine ]
 */
 
-#ifndef _MZ3500_H_
-#define _MZ3500_H_
+#ifndef _PC9801_H_
+#define _PC9801_H_
 
-#define DEVICE_NAME		"SHARP MZ-3500"
-#define CONFIG_NAME		"mz3500"
+#ifdef _PC9801
+#define DEVICE_NAME		"NEC PC-9801"
+#define CONFIG_NAME		"pc9801"
+#else
+#define DEVICE_NAME		"NEC PC-9801E/F/M"
+#define CONFIG_NAME		"pc9801e"
+#endif
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	473
-#define FRAMES_PER_SEC		47.3
+#define FRAMES_PER_10SECS	554
+#define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		108
-#define CPU_CLOCKS		4000000
+#ifdef _PC9801
+#define CPU_CLOCKS		5000000
+#else
+#define CPU_CLOCKS		8000000
+#endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define I8259_MAX_CHIPS		2
 #define UPD765A_DMA_MODE
-#define UPD765A_WAIT_SEEK
+//#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
-#define IO_ADDR_MAX		0x100
+#define UPD765A_MEDIA_CHANGE
+#define UPD7220_MSB_FIRST
+#define HAS_I86
+#define I8259_MAX_CHIPS		2
+#define MEMORY_ADDR_MAX		0x100000
+#define MEMORY_BANK_SIZE	0x1000
+#define IO_ADDR_MAX		0x10000
+//#define EVENT_PRECISE	40
+#define EVENT_PRECISE	1
 
 // device informations for win32
 #define USE_FD1
@@ -47,21 +65,24 @@ class DEVICE;
 class EVENT;
 
 class BEEP;
+class I8237;
 class I8251;
 class I8253;
 class I8255;
+class I8259;
+class I86;
 class IO;
 class LS244;
+class MEMORY;
+class NOT;
 class UPD1990A;
 class UPD7220;
 class UPD765A;
-class Z80;
+class YM2203;
 
 class DISPLAY;
+class FLOPPY;
 class KEYBOARD;
-class MEMORY;
-class MFD;
-class SUBMEMORY;
 
 class VM
 {
@@ -71,27 +92,40 @@ protected:
 	// devices
 	EVENT* event;
 	
-	IO* io;
-	UPD765A* fdc;
-	Z80* cpu;
-	
-	MEMORY* memory;
-	MFD* mfd;
-	
 	BEEP* beep;
-	I8251* sio;
-	I8253* ctc;
-	I8255* pio;
-	IO* subio;
-	LS244* ls244;
+	I8237* dma;
+	I8251* sio_rs;
+	I8251* sio_kbd;
+	I8253* pit;
+	I8255* pio_sys;
+	I8255* pio_prn;
+	I8255* pio_fdd;
+	I8259* pic;
+	I86* cpu;
+	IO* io;
+	LS244* dmareg1;
+	LS244* dmareg2;
+	LS244* dmareg3;
+	LS244* dmareg0;
+	MEMORY* memory;
+	NOT* not;
 	UPD1990A* rtc;
 	UPD7220* gdc_chr;
 	UPD7220* gdc_gfx;
-	Z80* subcpu;
+	UPD765A* fdc_2hd;
+	UPD765A* fdc_2dd;
+	YM2203* opn;
 	
 	DISPLAY* display;
+	FLOPPY* floppy;
 	KEYBOARD* keyboard;
-	SUBMEMORY* submemory;
+	
+	// memory
+	uint8 ram[0xa0000];
+	uint8 ipl[0x18000];
+	uint8 sound_bios[0x2000];
+	uint8 fd_bios_2hd[0x1000];
+	uint8 fd_bios_2dd[0x1000];
 	
 public:
 	// ----------------------------------------
@@ -121,7 +155,7 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* filename, int drv);
+	void open_disk(_TCHAR* file_path, int drv);
 	void close_disk(int drv);
 	bool now_skip();
 	

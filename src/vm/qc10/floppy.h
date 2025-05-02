@@ -18,7 +18,7 @@
 class FLOPPY : public DEVICE
 {
 private:
-	DEVICE *d_fdc;
+	DEVICE *d_fdc, *d_mem;
 	
 public:
 	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -30,6 +30,9 @@ public:
 	// unique function
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
+	}
+	void set_context_mem(DEVICE* device) {
+		d_mem = device;
 	}
 };
 

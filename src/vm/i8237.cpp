@@ -163,11 +163,11 @@ void I8237::do_dma()
 				else if((dma[ch].mode & 0xc) == 4) {
 					// io -> memory
 					tmp = dma[ch].dev->read_dma8(0);
-					d_mem->write_dma8(dma[ch].areg | (dma[ch].bankreg << 8), tmp);
+					d_mem->write_dma8(dma[ch].areg | (dma[ch].bankreg << 16), tmp);
 				}
 				else if((dma[ch].mode & 0xc) == 8) {
 					// memory -> io
-					tmp = d_mem->read_dma8(dma[ch].areg | (dma[ch].bankreg << 8));
+					tmp = d_mem->read_dma8(dma[ch].areg | (dma[ch].bankreg << 16));
 					dma[ch].dev->write_dma8(0, tmp);
 				}
 				if(dma[ch].mode & 0x20) {

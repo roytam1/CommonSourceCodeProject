@@ -9,9 +9,10 @@
 
 #include "sn76489an.h"
 
-#define FB_WNOISE 0x14002
-#define FB_PNOISE 0x08000
-#define NG_PRESET 0x00f35
+#define NOISE_FB	0x10000
+#define NOISE_DST_TAP	4
+#define NOISE_SRC_TAP	8
+#define NOISE_MODE	((regs[6] & 4) ? 1 : 0)
 
 void SN76489AN::initialize()
 {
@@ -31,8 +32,8 @@ void SN76489AN::reset()
 		regs[i + 0] = 0;
 		regs[i + 1] = 0x0f;	// volume = 0
 	}
-	noise_gen = NG_PRESET;
-	ch[3].signal = (NG_PRESET & 1) ? true : false;
+	noise_gen = NOISE_FB;
+	ch[3].signal = false;
 }
 
 void SN76489AN::write_io8(uint32 addr, uint32 data)
@@ -44,34 +45,33 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 		switch(index & 7) {
 		case 0: case 2: case 4:
 			// tone : frequency
-			regs[index] = (regs[index] & 0x3f0) | (data & 0xf);
+			regs[index] = (regs[index] & 0x3f0) | (data & 0x0f);
 			ch[c].period = regs[index] ? regs[index] : 1;
 //			ch[c].count = 0;
 			break;
 		case 1: case 3: case 5: case 7:
 			// tone / noise : volume
-			regs[index] = data & 0xf;
-			ch[c].volume = volume_table[data & 0xf];
+			regs[index] = data & 0x0f;
+			ch[c].volume = volume_table[data & 0x0f];
 			break;
 		case 6:
 			// noise : frequency, mode
 			regs[6] = data;
-			noise_fb = (data & 4) ? FB_WNOISE : FB_PNOISE;
 			data &= 3;
 			ch[3].period = (data == 3) ? (ch[2].period << 9) : (1 << (data + 5));
 //			ch[3].count = 0;
-			noise_gen = NG_PRESET;
-			ch[3].signal = (NG_PRESET & 1) ? true : false;
+			noise_gen = NOISE_FB;
+			ch[3].signal = false;
 			break;
 		}
 	}
 	else {
 		int c = index >> 1;
 		
-		switch(index & 0x7) {
+		switch(index & 0x07) {
 		case 0: case 2: case 4:
 			// tone : frequency
-			regs[index] = (regs[index] & 0xf) | (((uint16)data << 4) & 0x3f0);
+			regs[index] = (regs[index] & 0x0f) | (((uint16)data << 4) & 0x3f0);
 			ch[c].period = regs[index] ? regs[index] : 1;
 //			ch[c].count = 0;
 			// update noise shift frequency
@@ -134,11 +134,14 @@ void SN76489AN::mix(int32* buffer, int cnt)
 			if(ch[j].count < 0) {
 				ch[j].count += ch[j].period << 8;
 				if(j == 3) {
-					if(noise_gen & 1) {
-						noise_gen ^= noise_fb;
+					if(((noise_gen & NOISE_DST_TAP) ? 1 : 0) ^ (((noise_gen & NOISE_SRC_TAP) ? 1 : 0) * NOISE_MODE)) {
+						noise_gen >>= 1;
+						noise_gen |= NOISE_FB;
 					}
-					noise_gen >>= 1;
-					ch[3].signal = (noise_gen & 1) ? true : false;
+					else {
+						noise_gen >>= 1;
+					}
+					ch[3].signal = ((noise_gen & 1) != 0);
 				}
 				else {
 					ch[j].signal = !ch[j].signal;

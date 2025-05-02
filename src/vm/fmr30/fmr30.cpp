@@ -89,7 +89,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit->set_context_ch1(timer, SIG_TIMER_CH1, 1);
 	pit->set_constant_clock(0, 1000000);
 	pit->set_constant_clock(1, 1000000);
-	pic->set_context(cpu);
+	pic->set_context_cpu(cpu);
 //	fdc->set_context_drq(dma, SIG_I8237_CH0, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	

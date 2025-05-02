@@ -77,6 +77,10 @@ devenv.com mz2800.vcproj /Rebuild Release
 mkdir build\mz2800
 copy Release\mz2800.exe build\mz2800\.
 
+devenv.com mz3500.vcproj /Rebuild Release
+mkdir build\mz3500
+copy Release\mz3500.exe build\mz3500\.
+
 devenv.com mz5500.vcproj /Rebuild Release
 mkdir build\mz5500
 copy Release\mz5500.exe build\mz5500\.
@@ -96,6 +100,14 @@ devenv.com pasopia7lcd.vcproj /Rebuild Release
 mkdir build\pasopia7
 copy Release\pasopia7.exe build\pasopia7\.
 copy Release\pasopia7lcd.exe build\pasopia7\.
+
+devenv.com pc9801.vcproj /Rebuild Release
+mkdir build\pc9801
+copy Release\pc9801.exe build\pc9801\.
+
+devenv.com pc9801e.vcproj /Rebuild Release
+mkdir build\pc9801e
+copy Release\pc9801e.exe build\pc9801e\.
 
 devenv.com pc98ha.vcproj /Rebuild Release
 mkdir build\pc98ha
@@ -135,7 +147,9 @@ copy Release\pv2000.exe build\pv2000\.
 
 devenv.com pyuta.vcproj /Rebuild Release
 mkdir build\pyuta
+mkdir build\pyuta_jr
 copy Release\pyuta.exe build\pyuta\.
+copy Release\pyuta.exe build\pyuta_jr\.
 
 devenv.com qc10.vcproj /Rebuild Release
 devenv.com qc10cms.vcproj /Rebuild Release

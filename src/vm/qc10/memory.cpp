@@ -72,6 +72,9 @@ void MEMORY::reset()
 	
 	// init beep
 	beep_on = beep_cont = beep_pit = false;
+	
+	// init fdc/fdd status
+	fdc_irq = motor = false;
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -114,7 +117,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0x18: case 0x19: case 0x1a: case 0x1b:
 		return config.dipswitch;
 	case 0x30: case 0x31: case 0x32: case 0x33:
-		return (bank & 0xf0) | d_fdc->fdc_status();
+		return (bank & 0xf0) | (d_fdc->disk_inserted() ? 8 : 0) | (motor ? 0 : 2) | (fdc_irq ? 1 : 0);
 	}
 	return 0xff;
 }
@@ -129,9 +132,17 @@ uint32 MEMORY::read_io8(uint32 addr)
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
-	// beep on from pit
-	beep_pit = ((data & mask) != 0);
-	update_beep();
+	if(id == SIG_MEMORY_BEEP) {
+		// beep on from pit
+		beep_pit = ((data & mask) != 0);
+		update_beep();
+	}
+	else if(id == SIG_MEMORY_FDC_IRQ) {
+		fdc_irq = ((data & mask) != 0);
+	}
+	else if(id == SIG_MEMORY_MOTOR) {
+		motor = ((data & mask) != 0);
+	}
 }
 
 void MEMORY::update_map()

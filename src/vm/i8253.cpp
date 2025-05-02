@@ -346,17 +346,26 @@ void I8253::latch_count(int ch)
 		// update counter
 		int passed = vm->passed_clock(counter[ch].prev_clk);
 		uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
-		if(counter[ch].input_clk <= input) {
-			input = counter[ch].input_clk - 1;
-		}
 		if(input > 0) {
+			bool expired = (counter[ch].input_clk <= input);
 			input_clock(ch, input);
 			// cancel and re-regist event
-			vm->cancel_event(counter[ch].regist_id);
-			counter[ch].input_clk -= input;
-			counter[ch].period -= passed;
-			counter[ch].prev_clk = vm->current_clock();
-			vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+			if(expired) {
+				vm->cancel_event(counter[ch].regist_id);
+				if(counter[ch].freq && counter[ch].start) {
+					counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
+					counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
+					counter[ch].prev_clk = vm->current_clock();
+					vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+				}
+			}
+			else {
+				vm->cancel_event(counter[ch].regist_id);
+				counter[ch].input_clk -= input;
+				counter[ch].period -= passed;
+				counter[ch].prev_clk = vm->current_clock();
+				vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+			}
 		}
 	}
 	// latch counter

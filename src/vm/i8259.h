@@ -64,7 +64,7 @@ public:
 	uint32 intr_ack();
 	
 	// unique functions
-	void set_context(DEVICE* device) {
+	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
 };

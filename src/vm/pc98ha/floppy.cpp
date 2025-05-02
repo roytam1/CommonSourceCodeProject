@@ -15,6 +15,7 @@
 void FLOPPY::reset()
 {
 	chgreg = 3;
+	ctrlreg = 0x80;
 }
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
@@ -45,7 +46,7 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	case 0xca:
 		return d_fdc->read_io8(1);
 	case 0xcc:
-		return d_fdc->fdc_status() | 0x64;
+		return (d_fdc->disk_inserted() ? 0x10 : 0) | 0x64;
 	case 0xbe:
 		return (chgreg & 0x03) | 0x08;
 	}

@@ -71,7 +71,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_memory(memory);
 	dma->set_context_ch1(fdc);
 	pio->set_context_port_c(keyboard, SIG_KEYBOARD_INPUT, 3, 0);
-	pic->set_context(cpu);
+	pic->set_context_cpu(cpu);
 	div->set_context_2qb(ctc0, SIG_Z80CTC_TRIG_3, 1);
 #if defined(_MZ6500) || defined(_MZ6550)
 	div->set_context_1qb(ctc1, SIG_Z80CTC_TRIG_0, 1);

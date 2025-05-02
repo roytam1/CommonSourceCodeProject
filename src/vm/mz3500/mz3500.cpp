@@ -133,7 +133,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0xec, 0xef, main);	// reset int0
 	io->set_iomap_range_r(0xf4, 0xf7, fdc);		// fdc: f4h,f6h = status, f5h,f7h = data
 	io->set_iomap_range_r(0xf8, 0xfb, main);	// mfd interface
-	io->set_iomap_range_r(0xfc, 0xff, main);	// memory mpaper
+	io->set_iomap_range_r(0xfd, 0xff, main);	// memory mpaper
 	
 	// mz3500sm p.18
 	subio->set_iomap_range_w(0x00, 0x0f, sub);	// int0 to main (set flipflop)

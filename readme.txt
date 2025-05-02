@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/4/2010
+								9/20/2010
 
 --- What's this ?
 
@@ -33,6 +33,8 @@ This archive includes the all source codes of emulators listed below:
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A
 	eN5200		NEC N5200
 	ePC-8201	NEC PC-8201/PC-8201A
+	ePC-9801	NEC PC-9801
+	ePC-9801E	NEC PC-9801E/F/M
 	ePC-98LT	NEC PC-98LT
 	ePC-100		NEC PC-100
 	ePHC-20		SANYO PHC-20

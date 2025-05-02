@@ -183,7 +183,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		update_bank();
 		break;
 	case 0x0c10:
-		learn_bank = data & 0xf;
+		learn_bank = data & 0x0f;
 		update_bank();
 		break;
 	case 0x0e8e:
@@ -199,7 +199,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		update_bank();
 		break;
 	case 0xcc10:
-		romdrv_bank = data & 0xf;
+		romdrv_bank = data & 0x0f;
 		update_bank();
 		break;
 #else
@@ -217,7 +217,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		break;
 #endif
 	case 0x8c10:
-		kanji_bank = data & 0xf;
+		kanji_bank = data & 0x0f;
 		update_bank();
 		break;
 	}

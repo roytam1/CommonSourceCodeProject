@@ -150,6 +150,16 @@
 #include "pc8201/pc8201.h"
 #endif
 
+// NEC PC-9801
+#ifdef _PC9801
+#include "pc9801/pc9801.h"
+#endif
+
+// NEC PC-9801E/F/M
+#ifdef _PC9801E
+#include "pc9801/pc9801.h"
+#endif
+
 // NEC PC-98HA
 #ifdef _PC98HA
 #include "pc98ha/pc98ha.h"

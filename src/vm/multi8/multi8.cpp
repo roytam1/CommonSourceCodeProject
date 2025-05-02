@@ -72,7 +72,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit->set_constant_clock(1, CPU_CLOCKS >> 1);
 	pio->set_context_port_b(display, SIG_DISPLAY_I8255_B, 0xff, 0);
 	pio->set_context_port_c(memory, SIG_MEMORY_I8255_C, 0xff, 0);
-	pic->set_context(cpu);
+	pic->set_context_cpu(cpu);
 	fdc->set_context_irq(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
 	opn->set_context_port_a(cmt, SIG_CMT_REMOTE, 0x2, 0);

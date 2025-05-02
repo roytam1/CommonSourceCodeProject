@@ -78,8 +78,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			machine_id = fio->Fgetc();
 			fio->Fclose();
 		}
-		else
+		else {
 			machine_id = 0xf8;
+		}
 	}
 #endif
 	is_i286 = ((machine_id & 7) == 0);
@@ -163,10 +164,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0->set_constant_clock(2, 307200);
 	pit1->set_constant_clock(1, 1228800);
 	if(is_i286) {
-		pic->set_context(i286);
+		pic->set_context_cpu(i286);
 	}
 	else {
-		pic->set_context(i386);
+		pic->set_context_cpu(i386);
 	}
 	fdc->set_context_drq(dma, SIG_UPD71071_CH0, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);

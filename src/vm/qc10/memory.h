@@ -15,7 +15,9 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_MEMORY_BEEP	0
+#define SIG_MEMORY_BEEP		0
+#define SIG_MEMORY_FDC_IRQ	1
+#define SIG_MEMORY_MOTOR	2
 
 class UPD765A;
 
@@ -37,6 +39,8 @@ private:
 	
 	bool beep_on, beep_cont, beep_pit;
 	void update_beep();
+	
+	bool fdc_irq, motor;
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

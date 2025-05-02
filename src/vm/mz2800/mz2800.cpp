@@ -90,7 +90,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit->set_context_ch2(pic, SIG_I8259_CHIP1 | SIG_I8259_IR0, 1);
 	pio0->set_context_port_c(rst, SIG_RESET_CONTROL, 0xff, 0);
 	pio0->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
-	pic->set_context(cpu);
+	pic->set_context_cpu(cpu);
 	fdc->set_context_drq(dma, SIG_UPD71071_CH1, 1);
 	fdc->set_context_irq(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5, 1);
 	rtc->set_context_alarm(pic, SIG_I8259_CHIP1 | SIG_I8259_IR2, 1);

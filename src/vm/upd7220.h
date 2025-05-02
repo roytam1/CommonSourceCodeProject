@@ -53,7 +53,11 @@ private:
 	uint8 maskl, maskh;
 	uint8 mod;
 	bool hblank, vsync, start;
+	int blink_cursor;
+	int blink_attr;
+	int blink_rate;
 	bool low_high;
+	bool cmd_write_done;
 	
 	// fifo buffers
 	uint8 params[16];
@@ -123,6 +127,7 @@ public:
 	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void event_frame();
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	
@@ -150,6 +155,12 @@ public:
 	}
 	int* get_ead() {
 		return &ead;
+	}
+	uint32 cursor_addr(uint32 mask);
+	int cursor_top();
+	int cursor_bottom();
+	bool attr_blink() {
+		return (blink_attr < (blink_rate * 3 / 4));
 	}
 };
 

@@ -43,7 +43,7 @@
 #define UPD765A_MEDIA_CHANGE
 #define IO_ADDR_MAX		0x10000
 #define IOBUS_RETURN_ADDR
-#define EVENT_PRECISE	40
+//#define EVENT_PRECISE	40
 #ifdef _PC98HA
 //#define DOCKING_STATION
 #endif

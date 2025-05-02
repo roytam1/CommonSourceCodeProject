@@ -872,10 +872,12 @@ void I386::trap(int irq, int irq_gate)
 //	eip = prev_eip;
 //	CHANGE_PC(eip);
 //	trap(GENERAL_PROTECTION_FAULT, 0);
-//	if(!sreg[CS].d)
+//	if(!sreg[CS].d) {
 //		PUSH16(error);
-//	else
+//	}
+//	else {
 //		PUSH32(error);
+//	}
 //}
 
 #define CYCLES_NUM(x)	(cycles -= (x))
@@ -2314,8 +2316,9 @@ void I386::ja_rel8()	// Opcode 0x77
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jbe_rel8()	// Opcode 0x76
@@ -2325,8 +2328,9 @@ void I386::jbe_rel8()	// Opcode 0x76
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jc_rel8()	// Opcode 0x72
@@ -2336,8 +2340,9 @@ void I386::jc_rel8()	// Opcode 0x72
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jg_rel8()	// Opcode 0x7f
@@ -2347,8 +2352,9 @@ void I386::jg_rel8()	// Opcode 0x7f
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jge_rel8()	// Opcode 0x7d
@@ -2358,8 +2364,9 @@ void I386::jge_rel8()	// Opcode 0x7d
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jl_rel8()	// Opcode 0x7c
@@ -2369,8 +2376,9 @@ void I386::jl_rel8()	// Opcode 0x7c
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jle_rel8()	// Opcode 0x7e
@@ -2380,8 +2388,9 @@ void I386::jle_rel8()	// Opcode 0x7e
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jnc_rel8()	// Opcode 0x73
@@ -2391,8 +2400,9 @@ void I386::jnc_rel8()	// Opcode 0x73
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jno_rel8()	// Opcode 0x71
@@ -2402,8 +2412,9 @@ void I386::jno_rel8()	// Opcode 0x71
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jnp_rel8()	// Opcode 0x7b
@@ -2413,8 +2424,9 @@ void I386::jnp_rel8()	// Opcode 0x7b
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jns_rel8()	// Opcode 0x79
@@ -2424,8 +2436,9 @@ void I386::jns_rel8()	// Opcode 0x79
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jnz_rel8()	// Opcode 0x75
@@ -2435,8 +2448,9 @@ void I386::jnz_rel8()	// Opcode 0x75
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jo_rel8()	// Opcode 0x70
@@ -2446,8 +2460,9 @@ void I386::jo_rel8()	// Opcode 0x70
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jp_rel8()	// Opcode 0x7a
@@ -2457,8 +2472,9 @@ void I386::jp_rel8()	// Opcode 0x7a
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::js_rel8()	// Opcode 0x78
@@ -2468,8 +2484,9 @@ void I386::js_rel8()	// Opcode 0x78
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jz_rel8()	// Opcode 0x74
@@ -2479,8 +2496,9 @@ void I386::jz_rel8()	// Opcode 0x74
 		NEAR_BRANCH(disp);
 		CYCLES(CYCLES_JCC_DISP8);		/* TODO: Timing = 7 + m */
 	}
-	else
+	else {
 		CYCLES(CYCLES_JCC_DISP8_NOBRANCH);
+	}
 }
 
 void I386::jmp_rel8()	// Opcode 0xeb
@@ -4116,8 +4134,9 @@ void I386::into()	// Opcode 0xce
 		trap(OVERFLOW_TRAP, 1);
 		CYCLES(CYCLES_INTO_OF1);
 	}
-	else
+	else {
 		CYCLES(CYCLES_INTO_OF0);
+	}
 }
 
 void I386::escape()	// Opcodes 0xd8 - 0xdf

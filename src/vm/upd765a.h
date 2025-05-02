@@ -15,12 +15,11 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_UPD765A_DACK	0
+#define SIG_UPD765A_RESET	0
 #define SIG_UPD765A_TC		1
 #define SIG_UPD765A_MOTOR	2
 #define SIG_UPD765A_DRVSEL	3
 #define SIG_UPD765A_FREADY	4
-#define SIG_UPD765A_RESET	5
 
 class DISK;
 
@@ -54,7 +53,7 @@ private:
 	uint8 buffer[0x4000];
 	int count;
 	int event_phase, event_drv;
-	int phase_id, seek_id, drq_id, lost_id;
+	int phase_id, seek_id, drq_id, lost_id, result7_id;
 #ifdef UPD765A_DMA_MODE
 	bool dma_data_lost;
 #endif
@@ -79,6 +78,7 @@ private:
 	void shift_to_scan(int length);
 	void shift_to_result(int length);
 	void shift_to_result7();
+	void shift_to_result7_event();
 	
 	// command
 	void process_cmd(int cmd);
@@ -150,8 +150,8 @@ public:
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	bool disk_inserted();	// current hdu
 	uint8 media_type(int drv);
-	uint8 fdc_status();
 };
 
 #endif

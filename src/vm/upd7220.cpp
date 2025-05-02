@@ -12,8 +12,6 @@
 #include "upd7220.h"
 #include "../fifo.h"
 
-#define ADDR_MASK	(vram_size - 1)
-
 enum {
 	CMD_RESET	= 0x00,
 	CMD_SYNC	= 0x0e,
@@ -70,7 +68,9 @@ void UPD7220::initialize()
 	// default (QC-10)
 	vs = LINES_PER_FRAME * 16 / 421;
 	hc = (int)(CPU_CLOCKS * 29 / FRAMES_PER_SEC / LINES_PER_FRAME / 109 + 0.5);
+	
 	vsync = hblank = false;
+	vm->regist_frame_event(this);
 	vm->regist_vline_event(this);
 }
 
@@ -195,6 +195,16 @@ uint32 UPD7220::read_io8(uint32 addr)
 	return 0xff;
 }
 
+void UPD7220::event_frame()
+{
+	if(++blink_cursor >= blink_rate * 4) {
+		blink_cursor = 0;
+	}
+	if(++blink_attr >= blink_rate * 2) {
+		blink_attr = 0;
+	}
+}
+
 void UPD7220::event_vline(int v, int clock)
 {
 	bool next = (v < vs);
@@ -210,6 +220,24 @@ void UPD7220::event_vline(int v, int clock)
 void UPD7220::event_callback(int event_id, int err)
 {
 	hblank = false;
+}
+
+uint32 UPD7220::cursor_addr(uint32 mask)
+{
+	if((cs[0] & 0x80) && ((cs[1] & 0x20) || (blink_cursor < blink_rate * 2))) {
+		return (ead << 1) & mask;
+	}
+	return -1;
+}
+
+int UPD7220::cursor_top()
+{
+	return cs[1] & 0x1f;
+}
+
+int UPD7220::cursor_bottom()
+{
+	return cs[2] >> 3;
 }
 
 // command process
@@ -404,6 +432,28 @@ void UPD7220::process_cmd()
 	case CMD_CSRW:
 		cmd_csrw();
 		break;
+	case CMD_WRITE + 0x00:
+	case CMD_WRITE + 0x01:
+	case CMD_WRITE + 0x02:
+	case CMD_WRITE + 0x03:
+	case CMD_WRITE + 0x08:
+	case CMD_WRITE + 0x09:
+	case CMD_WRITE + 0x0a:
+	case CMD_WRITE + 0x0b:
+	case CMD_WRITE + 0x10:
+	case CMD_WRITE + 0x11:
+	case CMD_WRITE + 0x12:
+	case CMD_WRITE + 0x13:
+	case CMD_WRITE + 0x18:
+	case CMD_WRITE + 0x19:
+	case CMD_WRITE + 0x1a:
+	case CMD_WRITE + 0x1b:
+		if(cmd_write_done) {
+			reset_vect();
+		}
+		cmdreg = -1;
+		cmd_write_done = false;
+		break;
 	}
 }
 
@@ -419,6 +469,9 @@ void UPD7220::cmd_reset()
 	ead = dad = 0;
 	maskl = maskh = 0xff;
 	mod = 0;
+	blink_cursor = 0;
+	blink_attr = 0;
+	blink_rate = 16;
 	
 	// init fifo
 	params_count = 0;
@@ -428,6 +481,7 @@ void UPD7220::cmd_reset()
 	start = false;
 	statreg = 0;
 	cmdreg = -1;
+	cmd_write_done = false;
 }
 
 void UPD7220::cmd_sync()
@@ -508,6 +562,7 @@ void UPD7220::cmd_csrform()
 	if(params_count > 2) {
 		cmdreg = -1;
 	}
+	blink_rate = (cs[1] >> 6) | ((cs[2] & 7) << 2);
 }
 
 void UPD7220::cmd_pitch()
@@ -640,8 +695,8 @@ void UPD7220::cmd_write()
 				cmd_write_sub(ead * 2 + 1, h);
 				ead += dif;
 			}
-			reset_vect();
-			cmdreg = -1;
+			cmd_write_done = true;
+			params_count = 0;
 		}
 		break;
 	case 0x10: // low byte
@@ -651,8 +706,8 @@ void UPD7220::cmd_write()
 				cmd_write_sub(ead * 2 + 0, l);
 				ead += dif;
 			}
-			reset_vect();
-			cmdreg = -1;
+			cmd_write_done = true;
+			params_count = 0;
 		}
 		break;
 	case 0x18: // high byte
@@ -662,8 +717,8 @@ void UPD7220::cmd_write()
 				cmd_write_sub(ead * 2 + 1, h);
 				ead += dif;
 			}
-			reset_vect();
-			cmdreg = -1;
+			cmd_write_done = true;
+			params_count = 0;
 		}
 		break;
 	default: // invalid
@@ -751,15 +806,15 @@ void UPD7220::cmd_write_sub(uint32 addr, uint8 data)
 
 void UPD7220::write_vram(uint32 addr, uint8 data)
 {
-	if(vram) {
-		vram[addr & ADDR_MASK] = data;
+	if(vram != NULL && addr < vram_size) {
+		vram[addr] = data;
 	}
 }
 
 uint8 UPD7220::read_vram(uint32 addr)
 {
-	if(vram) {
-		return vram[addr & ADDR_MASK];
+	if(vram != NULL && addr < vram_size) {
+		return vram[addr];
 	}
 	return 0xff;
 }

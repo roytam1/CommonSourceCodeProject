@@ -269,8 +269,9 @@ void PCE::write_data8(uint32 addr, uint32 data)
 		cart[addr & 0xfffff] = data;
 		return;
 	case 0xf7:
-//		if(ofs < 0x800)
+//		if(ofs < 0x800) {
 //			backup[ofs] = data;
+//		}
 		return;
 	case 0xf8:
 		ram[ofs] = data;
@@ -326,8 +327,9 @@ uint32 PCE::read_data8(uint32 addr)
 	}
 	switch(mpr) {
 //	case 0xf7:
-//		if(ofs < 0x800)
+//		if(ofs < 0x800) {
 //			return backup[ofs];
+//		}
 //		return 0xff;
 	case 0xf8:
 		return ram[ofs];

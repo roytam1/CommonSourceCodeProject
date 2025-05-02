@@ -54,8 +54,9 @@ void HD46505::write_io8(uint32 addr, uint32 data)
 			dhec = (int)(CPU_CLOCKS * dhe / FRAMES_PER_SEC / LINES_PER_FRAME / CHARS_PER_LINE + 0.5);
 		}
 	}
-	else
+	else {
 		ch = data;
+	}
 }
 
 uint32 HD46505::read_io8(uint32 addr)

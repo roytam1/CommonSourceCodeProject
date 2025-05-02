@@ -119,8 +119,9 @@ void DISPLAY::draw_screen()
 			break;
 		}
 	}
-	else
+	else {
 		_memset(screen, 0, sizeof(screen));
+	}
 	
 	// copy to real screen
 	uint16 bcol = palette_pc[mode & 7];
@@ -253,8 +254,9 @@ void DISPLAY::draw_screen1_normal(uint16 src)
 						c_r = p & 7;
 						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
 					}
-					else
+					else {
 						p = 0;
+					}
 				}
 				src_g = (src_g + 0x800) & 0x3fff;
 				uint8* d = &screen[y + l][x << 3];
@@ -311,8 +313,9 @@ void DISPLAY::draw_screen1_wide(uint16 src)
 						c_r = p & 7;
 						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
 					}
-					else
+					else {
 						p = 0;
+					}
 				}
 				src_g = (src_g + 0x800) & 0x3fff;
 				uint8* d = &screen[y + l][x << 4];

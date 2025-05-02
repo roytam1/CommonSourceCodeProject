@@ -15,7 +15,8 @@
 #define EVENT_SEEK	1
 #define EVENT_DRQ	2
 #define EVENT_LOST	3
-#define EVENT_INDEX	4
+#define EVENT_RESULT7	4
+#define EVENT_INDEX	5
 
 #define PHASE_IDLE	0
 #define PHASE_CMD	1
@@ -88,7 +89,10 @@
 	if(lost_id != -1) { \
 		vm->cancel_event(lost_id); \
 	} \
-	phase_id = seek_id = drq_id = lost_id = -1; \
+	if(result7_id != -1) { \
+		vm->cancel_event(result7_id); \
+	} \
+	phase_id = seek_id = drq_id = lost_id = result7_id = -1; \
 }
 
 #define CANCEL_DRQ() { \
@@ -124,7 +128,7 @@ void UPD765A::initialize()
 	status = S_RQM;
 	seekstat = 0;
 	bufptr = buffer; // temporary
-	phase_id = seek_id = drq_id = lost_id = -1;
+	phase_id = seek_id = drq_id = lost_id = result7_id = -1;
 	motor = false;	// motor off
 	force_ready = false;
 	reset_signal = true;
@@ -189,13 +193,55 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 		
 		switch(phase) {
 		case PHASE_IDLE:
-			emu->out_debug("FDC CMD=%2x\n", data);
+//			emu->out_debug("FDC: CMD=%2x\n", data);
+			switch(data & 0x1f) {
+			case 0x02:
+				emu->out_debug("FDC: CMD=%2x READ DIAGNOSTIC\n", data);
+				break;
+			case 0x03:
+				emu->out_debug("FDC: CMD=%2x SPECIFY\n", data);
+				break;
+			case 0x04:
+				emu->out_debug("FDC: CMD=%2x SENCE DEVSTAT\n", data);
+				break;
+			case 0x05:
+			case 0x09:
+				emu->out_debug("FDC: CMD=%2x WRITE DATA\n", data);
+				break;
+			case 0x06:
+			case 0x0c:
+				emu->out_debug("FDC: CMD=%2x READ DATA\n", data);
+				break;
+			case 0x07:
+				emu->out_debug("FDC: CMD=%2x RECALIB\n", data);
+				break;
+			case 0x08:
+				emu->out_debug("FDC: CMD=%2x SENCE INTSTAT\n", data);
+				break;
+			case 0x0a:
+				emu->out_debug("FDC: CMD=%2x READ ID\n", data);
+				break;
+			case 0x0d:
+				emu->out_debug("FDC: CMD=%2x WRITE ID\n", data);
+				break;
+			case 0x0f:
+				emu->out_debug("FDC: CMD=%2x SEEK\n", data);
+				break;
+			case 0x11:
+			case 0x19:
+			case 0x1d:
+				emu->out_debug("FDC: CMD=%2x SCAN\n", data);
+				break;
+			default:
+				emu->out_debug("FDC: CMD=%2x INVALID\n", data);
+				break;
+			}
 			command = data;
 			process_cmd(command & 0x1f);
 			break;
 			
 		case PHASE_CMD:
-			emu->out_debug("FDC PARAM=%2x\n", data);
+			emu->out_debug("FDC: PARAM=%2x\n", data);
 			*bufptr++ = data;
 			if(--count) {
 				status |= S_RQM;
@@ -206,7 +252,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 			break;
 			
 		case PHASE_WRITE:
-			emu->out_debug("FDC WRITE=%2x\n", data);
+			emu->out_debug("FDC: WRITE=%2x\n", data);
 			*bufptr++ = data;
 			if(--count) {
 //				req_irq_ndma(true);
@@ -276,7 +322,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 			switch(phase) {
 			case PHASE_RESULT:
 				data = *bufptr++;
-				emu->out_debug("FDC RESULT=%2x\n", data);
+				emu->out_debug("FDC: RESULT=%2x\n", data);
 				if(--count) {
 					status |= S_RQM;
 				}
@@ -288,7 +334,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 				
 			case PHASE_READ:
 				data = *bufptr++;
-				emu->out_debug("FDC READ=%2x\n", data);
+				emu->out_debug("FDC: READ=%2x\n", data);
 				if(--count) {
 //					req_irq_ndma(true);
 #ifdef UPD765A_DRQ_DELAY
@@ -322,12 +368,12 @@ uint32 UPD765A::read_io8(uint32 addr)
 
 void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_UPD765A_DACK) {
-#ifdef UPD765A_DMA_MODE
-		if(data & mask) {
-			dma_data_lost = false;
+	if(id == SIG_UPD765A_RESET) {
+		bool next = ((data & mask) != 0);
+		if(!reset_signal && next) {
+			reset();
 		}
-#endif
+		reset_signal = next;
 	}
 	else if(id == SIG_UPD765A_TC) {
 		if((data & mask) && acctc) {
@@ -351,14 +397,8 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 	}
 #endif
 	else if(id == SIG_UPD765A_FREADY) {
+		// for NEC PC-98x1 series
 		force_ready = ((data & mask) != 0);
-	}
-	else if(id == SIG_UPD765A_RESET) {
-		bool next = ((data & mask) != 0);
-		if(!reset_signal && next) {
-			reset();
-		}
-		reset_signal = next;
 	}
 }
 
@@ -396,6 +436,10 @@ void UPD765A::event_callback(int event_id, int err)
 		shift_to_result7();
 		set_drq(false);
 		lost_id = -1;
+	}
+	else if(event_id == EVENT_RESULT7) {
+		shift_to_result7_event();
+		result7_id = -1;
 	}
 	else if(event_id == EVENT_INDEX) {
 		int drv = hdu & DRIVE_MASK;
@@ -657,7 +701,7 @@ void UPD765A::cmd_read_data()
 		REGIST_EVENT(PHASE_EXEC, 25000 << __min(7, id[3]));
 		break;
 	case PHASE_EXEC:
-		read_data((command & 0x1f) == 12 ? true : false, false);
+		read_data((command & 0x1f) == 12, false);
 		break;
 	case PHASE_READ:
 		if(result) {
@@ -714,7 +758,7 @@ void UPD765A::cmd_write_data()
 		}
 		break;
 	case PHASE_WRITE:
-		write_data((command & 0x1f) == 9 ? true : false);
+		write_data((command & 0x1f) == 9);
 		if(result) {
 			shift_to_result7();
 			break;
@@ -736,7 +780,7 @@ void UPD765A::cmd_write_data()
 		if(prevphase == PHASE_WRITE) {
 			// terminate while transfer ?
 			_memset(bufptr, 0, count);
-			write_data((command & 0x1f) == 9 ? true : false);
+			write_data((command & 0x1f) == 9);
 		}
 		shift_to_result7();
 		break;
@@ -894,10 +938,12 @@ uint32 UPD765A::read_sector()
 	
 	// get sector counts in the current track
 	if(!disk[drv]->get_track(trk, side)) {
+		emu->out_debug("FDC: TRACK NOT FOUND (TRK=%d SIDE=%d)\n", trk, side);
 		return ST0_AT | ST1_MA;
 	}
 	int secnum = disk[drv]->sector_num;
 	if(!secnum) {
+		emu->out_debug("FDC: NO SECTORS IN TRACK (TRK=%d SIDE=%d)\n", trk, side);
 		return ST0_AT | ST1_MA;
 	}
 	int cy = -1;
@@ -924,6 +970,7 @@ uint32 UPD765A::read_sector()
 		}
 		return 0;
 	}
+	emu->out_debug("FDC: SECTOR NOT FOUND (TRK=%d SIDE=%d ID=%2x,%2x,%2x,%2x)\n", trk, side, id[0], id[1], id[2], id[3]);
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
 			return ST0_AT | ST1_ND | ST2_BC;
@@ -1248,6 +1295,18 @@ void UPD765A::shift_to_result(int length)
 
 void UPD765A::shift_to_result7()
 {
+#ifdef UPD765A_WAIT_RESULT7
+	if(result7_id != -1) {
+		vm->cancel_event(result7_id);
+	}
+	vm->regist_event(this, EVENT_RESULT7, 100, false, &result7_id);
+#else
+	shift_to_result7_event();
+#endif
+}
+
+void UPD765A::shift_to_result7_event()
+{
 	buffer[0] = (result & 0xf8) | (hdue & 7);
 	buffer[1] = uint8(result >>  8);
 	buffer[2] = uint8(result >> 16);
@@ -1298,6 +1357,12 @@ bool UPD765A::disk_inserted(int drv)
 	return false;
 }
 
+bool UPD765A::disk_inserted()
+{
+	int drv = hdu & DRIVE_MASK;
+	return disk_inserted(drv);
+}
+
 uint8 UPD765A::media_type(int drv)
 {
 	if(drv < MAX_DRIVE && disk[drv]->insert) {
@@ -1306,16 +1371,3 @@ uint8 UPD765A::media_type(int drv)
 	return 0;
 }
 
-uint8 UPD765A::fdc_status()
-{
-	// TODO: ugly function for each virtual machines
-#if defined(_PC98LT) || defined(_PC98HA)
-	int drv = hdu & DRIVE_MASK;
-	return (drv < MAX_DRIVE && disk[drv]->insert) ? 0x10 : 0;
-#elif defined(_QC10)
-	int drv = hdu & DRIVE_MASK;
-	return (disk[drv]->insert ? 8 : 0) | (motor ? 0 : 2) | (irq ? 1 : 0);
-#else
-	return 0;
-#endif
-}

@@ -34,7 +34,7 @@ private:
 		bool signal;
 	} channel_t;
 	channel_t ch[4];
-	uint32 noise_fb, noise_gen;
+	uint32 noise_gen;
 	int volume_table[16];
 	int diff;
 	bool mute, cs, we;

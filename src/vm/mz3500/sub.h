@@ -61,6 +61,12 @@ private:
 	// keyboard
 	bool dk, stk, hlt;	// to cpu
 	bool dc, stc, ackc;	// from cpu
+	int key_phase;
+	int key_send_data, key_send_bit;
+	int key_recv_data, key_recv_bit;
+	void key_send(int data, bool command);
+	void key_recv(int data);
+	void key_drive();
 	
 public:
 	SUB(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -81,6 +87,7 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
+	void event_callback(int event_id, int err);
 	
 	// unique functions
 	void set_context_main(DEVICE* device) {

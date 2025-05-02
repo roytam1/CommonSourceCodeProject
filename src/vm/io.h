@@ -73,60 +73,23 @@ public:
 	uint32 read_io32w(uint32 addr, int* wait);
 	
 	// unique functions
-	void set_iomap_single_w(uint32 addr, DEVICE* device) {
-		write_table[addr & IO_ADDR_MASK].dev = device;
-		write_table[addr & IO_ADDR_MASK].addr = addr & IO_ADDR_MASK;
-	}
-	void set_iomap_single_r(uint32 addr, DEVICE* device) {
-		read_table[addr & IO_ADDR_MASK].dev = device;
-		read_table[addr & IO_ADDR_MASK].addr = addr & IO_ADDR_MASK;
-	}
-	void set_iomap_alias_w(uint32 addr, DEVICE* device, uint32 alias) {
-		write_table[addr & IO_ADDR_MASK].dev = device;
-		write_table[addr & IO_ADDR_MASK].addr = alias & IO_ADDR_MASK;
-	}
-	void set_iomap_alias_r(uint32 addr, DEVICE* device, uint32 alias) {
-		read_table[addr & IO_ADDR_MASK].dev = device;
-		read_table[addr & IO_ADDR_MASK].addr = alias & IO_ADDR_MASK;
-	}
-	void set_iomap_range_w(uint32 s, uint32 e, DEVICE* device) {
-		for(uint32 i = s; i <= e; i++) {
-			write_table[i & IO_ADDR_MASK].dev = device;
-			write_table[i & IO_ADDR_MASK].addr = i & IO_ADDR_MASK;
-		}
-	}
-	void set_iomap_range_r(uint32 s, uint32 e, DEVICE* device) {
-		for(uint32 i = s; i <= e; i++) {
-			read_table[i & IO_ADDR_MASK].dev = device;
-			read_table[i & IO_ADDR_MASK].addr = i & IO_ADDR_MASK;
-		}
-	}
-	void set_iowait_single_w(uint32 addr, int wait) {
-		write_table[addr & IO_ADDR_MASK].wait = wait;
-	}
-	void set_iowait_single_r(uint32 addr, int wait) {
-		read_table[addr & IO_ADDR_MASK].wait = wait;
-	}
-	void set_iowait_range_w(uint32 s, uint32 e, int wait) {
-		for(uint32 i = s; i <= e; i++) {
-			write_table[i & IO_ADDR_MASK].wait = wait;
-		}
-	}
-	void set_iowait_range_r(uint32 s, uint32 e, int wait) {
-		for(uint32 i = s; i <= e; i++) {
-			read_table[i & IO_ADDR_MASK].wait = wait;
-		}
-	}
-	void set_iovalue_single_r(uint32 addr, uint32 value) {
-		read_table[addr & IO_ADDR_MASK].value = value;
-		read_table[addr & IO_ADDR_MASK].value_registered = true;
-	}
-	void set_iovalue_range_r(uint32 s, uint32 e, uint32 value) {
-		for(uint32 i = s; i <= e; i++) {
-			read_table[i & IO_ADDR_MASK].value = value;
-			read_table[i & IO_ADDR_MASK].value_registered = true;
-		}
-	}
+	void set_iomap_single_r(uint32 addr, DEVICE* device);
+	void set_iomap_single_w(uint32 addr, DEVICE* device);
+	void set_iomap_single_rw(uint32 addr, DEVICE* device);
+	void set_iomap_alias_r(uint32 addr, DEVICE* device, uint32 alias);
+	void set_iomap_alias_w(uint32 addr, DEVICE* device, uint32 alias);
+	void set_iomap_alias_rw(uint32 addr, DEVICE* device, uint32 alias);
+	void set_iomap_range_r(uint32 s, uint32 e, DEVICE* device);
+	void set_iomap_range_w(uint32 s, uint32 e, DEVICE* device);
+	void set_iomap_range_rw(uint32 s, uint32 e, DEVICE* device);
+	void set_iowait_single_r(uint32 addr, int wait);
+	void set_iowait_single_w(uint32 addr, int wait);
+	void set_iowait_single_rw(uint32 addr, int wait);
+	void set_iowait_range_r(uint32 s, uint32 e, int wait);
+	void set_iowait_range_w(uint32 s, uint32 e, int wait);
+	void set_iowait_range_rw(uint32 s, uint32 e, int wait);
+	void set_iovalue_single_r(uint32 addr, uint32 value);
+	void set_iovalue_range_r(uint32 s, uint32 e, uint32 value);
 };
 
 #endif

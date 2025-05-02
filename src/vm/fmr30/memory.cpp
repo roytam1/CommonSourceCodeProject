@@ -175,7 +175,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0x121:
 	case 0x122:
 	case 0x123:
-		d_dma->write_signal(SIG_I8237_BANK0 + (addr & 3), data, 0xf);
+		d_dma->write_signal(SIG_I8237_BANK0 + (addr & 3), data, 0x0f);
 		break;
 	// lcd controller
 	case 0x300:
@@ -216,10 +216,10 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		}
 		break;
 	case 0x30e:
-		kanji16[(kj_ofs | ((kj_row & 0xf) << 1)) & 0x3ffff] = data;
+		kanji16[(kj_ofs | ((kj_row & 0x0f) << 1)) & 0x3ffff] = data;
 		break;
 	case 0x30f:
-		kanji16[(kj_ofs | ((kj_row++ & 0xf) << 1) | 1) & 0x3ffff] = data;
+		kanji16[(kj_ofs | ((kj_row++ & 0x0f) << 1) | 1) & 0x3ffff] = data;
 		break;
 	}
 }
@@ -254,9 +254,9 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0x30d:
 		return kj_l;
 	case 0x30e:
-		return kanji16[(kj_ofs | ((kj_row & 0xf) << 1)) & 0x3ffff];
+		return kanji16[(kj_ofs | ((kj_row & 0x0f) << 1)) & 0x3ffff];
 	case 0x30f:
-		return kanji16[(kj_ofs | ((kj_row++ & 0xf) << 1) | 1) & 0x3ffff];
+		return kanji16[(kj_ofs | ((kj_row++ & 0x0f) << 1) | 1) & 0x3ffff];
 	}
 	return 0xff;
 }
