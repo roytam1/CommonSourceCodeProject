@@ -418,8 +418,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 					skip_frames = 0;
 					
 					// sleep 1 frame priod if need
-					if((int)(next_time - timeGetTime()) >= 10) {
-						sleep_period = next_time - timeGetTime();
+					DWORD current_time = timeGetTime();
+					if((int)(next_time - current_time) >= 10) {
+						sleep_period = next_time - current_time;
 					}
 				}
 				else if(++skip_frames > MAX_SKIP_FRAMES) {
@@ -1111,14 +1112,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				set_window(hWnd, LOWORD(wParam) - ID_SCREEN_FULLSCREEN1 + 8);
 			}
 			break;
-		case ID_SCREEN_STRETCH:
-			config.stretch_screen = !config.stretch_screen;
+		case ID_SCREEN_USE_D3D9:
+			config.use_d3d9 = !config.use_d3d9;
 			if(emu) {
 				emu->set_display_size(-1, -1, !now_fullscreen);
 			}
 			break;
 		case ID_SCREEN_WAIT_VSYNC:
 			config.wait_vsync = !config.wait_vsync;
+			if(emu) {
+				emu->set_display_size(-1, -1, !now_fullscreen);
+			}
+			break;
+		case ID_SCREEN_STRETCH:
+			config.stretch_screen = !config.stretch_screen;
 			if(emu) {
 				emu->set_display_size(-1, -1, !now_fullscreen);
 			}
@@ -1547,8 +1554,9 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		else if(config.window_mode >= 8 && config.window_mode < screen_mode_count + 8) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_FULLSCREEN1 + config.window_mode - 8, MF_BYCOMMAND);
 		}
-		CheckMenuItem(hMenu, ID_SCREEN_STRETCH, config.stretch_screen ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_SCREEN_USE_D3D9, config.use_d3d9 ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_SCREEN_WAIT_VSYNC, config.wait_vsync ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_SCREEN_STRETCH, config.stretch_screen ? MF_CHECKED : MF_UNCHECKED);
 		
 #ifdef USE_MONITOR_TYPE
 		if(config.monitor_type >= 0 && config.monitor_type < USE_MONITOR_TYPE) {

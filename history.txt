@@ -1,3 +1,15 @@
+8/18/2012
+
+[EMU/WIN32] support to switch GDI/Direct3D9
+
+[VM/UPD7220] add get_start() function
+[VM/YM2203] support mamefm.dll(V1)
+
+[PC8801MA/PC88] fix text attributes based on m88
+[PC8801MA/PC88] fix to update memory wait in reset() 
+[PC9801/DISPLAY] fix to check gdc start status
+
+
 3/20/2012
 
 [EMU/WIN32] fix not to render screen to Direct3D9 buffer while recording video
@@ -816,7 +828,7 @@ Fix typo (regist -> register, recieve -> receive)
 5/12/2010
 
 [EMU/WIN32] remove Windows CE support
-[EMU/WIN32] remove Direct 3D support
+[EMU/WIN32] remove Direct3D support
 [EMU/WIN32] remove waveOut api support
 [EMU/WIN32] remove video capture support
 

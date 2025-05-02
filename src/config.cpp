@@ -21,13 +21,13 @@ void init_config()
 	config.version1 = FILE_VERSION;
 	config.version2 = CONFIG_VERSION;
 	
-	config.window_mode = 0;
-	config.stretch_screen = false;
+#if !(defined(USE_BITMAP) || defined(USE_LED))
+	config.use_d3d9 = true;
+	config.stretch_screen = true;
+#endif
 	
 	config.sound_frequency = 6;	// 48KHz
 	config.sound_latency = 1;	// 100msec
-	
-	config.cpu_power = 0;
 	
 #ifdef USE_DIPSWITCH
 	config.dipswitch = DIPSWITCH_DEFAULT;
@@ -66,6 +66,11 @@ void load_config()
 		if(!(config.version1 == FILE_VERSION && config.version2 == CONFIG_VERSION)) {
 			init_config();
 		}
+#if defined(USE_BITMAP) || defined(USE_LED)
+		config.window_mode = 0;
+		config.use_d3d9 = false;
+		config.stretch_screen = false;
+#endif
 		config.cpu_power = 0;
 	}
 	delete fio;

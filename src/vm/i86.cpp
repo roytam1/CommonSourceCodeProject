@@ -863,33 +863,33 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 	else if(count == 1) {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_1 : timing.rot_m8_1;
 		
-		switch(ModRM & 0x38) {
-		case 0x00:	/* ROL eb, 1 */
+		switch((ModRM >> 3) & 7) {
+		case 0:	/* ROL eb, 1 */
 			CarryVal = src & 0x80;
 			dst = (src << 1) + CF;
 			PutbackRMByte(ModRM, dst);
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x08:	/* ROR eb, 1 */
+		case 1:	/* ROR eb, 1 */
 			CarryVal = src & 0x01;
 			dst = ((CF << 8) + src) >> 1;
 			PutbackRMByte(ModRM, dst);
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x10:	/* RCL eb, 1 */
+		case 2:	/* RCL eb, 1 */
 			dst = (src << 1) + CF;
 			PutbackRMByte(ModRM, dst);
 			SetCFB(dst);
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x18:	/* RCR eb, 1 */
+		case 3:	/* RCR eb, 1 */
 			dst = ((CF << 8) + src) >> 1;
 			PutbackRMByte(ModRM, dst);
 			CarryVal = src & 0x01;
 			OverVal = (src ^ dst) & 0x80;
 			break;
-		case 0x20:	/* SHL eb, 1 */
-		case 0x30:
+		case 4:	/* SHL eb, 1 */
+		case 6:
 			dst = src << 1;
 			PutbackRMByte(ModRM, dst);
 			SetCFB(dst);
@@ -897,7 +897,7 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			break;
-		case 0x28:	/* SHR eb, 1 */
+		case 5:	/* SHR eb, 1 */
 			dst = src >> 1;
 			PutbackRMByte(ModRM, dst);
 			CarryVal = src & 0x01;
@@ -905,7 +905,7 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			break;
-		case 0x38:	/* SAR eb, 1 */
+		case 7:	/* SAR eb, 1 */
 			dst = ((int8)src) >> 1;
 			PutbackRMByte(ModRM, dst);
 			CarryVal = src & 0x01;
@@ -913,34 +913,36 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			break;
+		default:
+			__assume(0);
 		}
 	}
 	else {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m8_bit;
 		
-		switch(ModRM & 0x38) {
-		case 0x00:	/* ROL eb, count */
+		switch((ModRM >> 3) & 7) {
+		case 0:	/* ROL eb, count */
 			for(; count > 0; count--) {
 				CarryVal = dst & 0x80;
 				dst = (dst << 1) + CF;
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x08:	/* ROR eb, count */
+		case 1:	/* ROR eb, count */
 			for(; count > 0; count--) {
 				CarryVal = dst & 0x01;
 				dst = (dst >> 1) + (CF << 7);
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x10:	/* RCL eb, count */
+		case 2:	/* RCL eb, count */
 			for(; count > 0; count--) {
 				dst = (dst << 1) + CF;
 				SetCFB(dst);
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x18:	/* RCR eb, count */
+		case 3:	/* RCR eb, count */
 			for(; count > 0; count--) {
 				dst = (CF << 8) + dst;
 				CarryVal = dst & 0x01;
@@ -948,15 +950,15 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			}
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x20:
-		case 0x30:	/* SHL eb, count */
+		case 4:	/* SHL eb, count */
+		case 6:
 			dst <<= count;
 			SetCFB(dst);
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x28:	/* SHR eb, count */
+		case 5:	/* SHR eb, count */
 			dst >>= count - 1;
 			CarryVal = dst & 0x01;
 			dst >>= 1;
@@ -964,7 +966,7 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
-		case 0x38:	/* SAR eb, count */
+		case 7:	/* SAR eb, count */
 			dst = ((int8)dst) >> (count - 1);
 			CarryVal = dst & 0x01;
 			dst = ((int8)((uint8)dst)) >> 1;
@@ -972,6 +974,8 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
+		default:
+			__assume(0);
 		}
 	}
 }
@@ -987,33 +991,33 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 	else if(count == 1) {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_1 : timing.rot_m16_1;
 		
-		switch(ModRM & 0x38) {
-		case 0x00:	/* ROL ew, 1 */
+		switch((ModRM >> 3) & 7) {
+		case 0:	/* ROL ew, 1 */
 			CarryVal = src & 0x8000;
 			dst = (src << 1) + CF;
 			PutbackRMWord(ModRM, dst);
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x08:	/* ROR ew, 1 */
+		case 1:	/* ROR ew, 1 */
 			CarryVal = src & 0x01;
 			dst = ((CF << 16) + src) >> 1;
 			PutbackRMWord(ModRM, dst);
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x10:	/* RCL ew, 1 */
+		case 2:	/* RCL ew, 1 */
 			dst = (src << 1) + CF;
 			PutbackRMWord(ModRM, dst);
 			SetCFW(dst);
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x18:	/* RCR ew, 1 */
+		case 3:	/* RCR ew, 1 */
 			dst = ((CF << 16) + src) >> 1;
 			PutbackRMWord(ModRM, dst);
 			CarryVal = src & 0x01;
 			OverVal = (src ^ dst) & 0x8000;
 			break;
-		case 0x20:	/* SHL ew, 1 */
-		case 0x30:
+		case 4:	/* SHL ew, 1 */
+		case 6:
 			dst = src << 1;
 			PutbackRMWord(ModRM, dst);
 			SetCFW(dst);
@@ -1021,7 +1025,7 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			break;
-		case 0x28:	/* SHR ew, 1 */
+		case 5:	/* SHR ew, 1 */
 			dst = src >> 1;
 			PutbackRMWord(ModRM, dst);
 			CarryVal = src & 0x01;
@@ -1029,7 +1033,7 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			break;
-		case 0x38:	/* SAR ew, 1 */
+		case 7:	/* SAR ew, 1 */
 			dst = ((int16)src) >> 1;
 			PutbackRMWord(ModRM, dst);
 			CarryVal = src & 0x01;
@@ -1037,34 +1041,36 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			break;
+		default:
+			__assume(0);
 		}
 	}
 	else {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m16_bit;
 		
-		switch(ModRM & 0x38) {
-		case 0x00:	/* ROL ew, count */
+		switch((ModRM >> 3) & 7) {
+		case 0:	/* ROL ew, count */
 			for(; count > 0; count--) {
 				CarryVal = dst & 0x8000;
 				dst = (dst << 1) + CF;
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x08:	/* ROR ew, count */
+		case 1:	/* ROR ew, count */
 			for(; count > 0; count--) {
 				CarryVal = dst & 0x01;
 				dst = (dst >> 1) + (CF << 15);
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x10:	/* RCL ew, count */
+		case 2:	/* RCL ew, count */
 			for(; count > 0; count--) {
 				dst = (dst << 1) + CF;
 				SetCFW(dst);
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x18:	/* RCR ew, count */
+		case 3:	/* RCR ew, count */
 			for(; count > 0; count--) {
 				dst = dst + (CF << 16);
 				CarryVal = dst & 0x01;
@@ -1072,15 +1078,15 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			}
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x20:
-		case 0x30:	/* SHL ew, count */
+		case 4:	/* SHL ew, count */
+		case 6:
 			dst <<= count;
 			SetCFW(dst);
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x28:	/* SHR ew, count */
+		case 5:	/* SHR ew, count */
 			dst >>= count - 1;
 			CarryVal = dst & 0x01;
 			dst >>= 1;
@@ -1088,7 +1094,7 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			PutbackRMWord(ModRM, dst);
 			break;
-		case 0x38:	/* SAR ew, count */
+		case 7:	/* SAR ew, count */
 			dst = ((int16)dst) >> (count - 1);
 			CarryVal = dst & 0x01;
 			dst = ((int16)((uint16)dst)) >> 1;
@@ -1096,6 +1102,8 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			PutbackRMWord(ModRM, dst);
 			break;
+		default:
+			__assume(0);
 		}
 	}
 }
@@ -1596,6 +1604,7 @@ void I86::instruction(uint8 code)
 	case 0xfd: _std(); break;
 	case 0xfe: _fepre(); break;
 	case 0xff: _ffpre(); break;
+	default: __assume(0);
 	}
 }
 
@@ -1731,7 +1740,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 	switch(next) {
 	case 0:
 		ModRM = FETCHOP;
-		switch(ModRM & 0x38) {
+		switch((ModRM >> 3) & 7) {
 		case 0:  /* sldt */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
@@ -1739,14 +1748,14 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 			PutRMWord(ModRM, ldtr.sel);
 			icount -= 2;
 			break;
-		case 8:  /* str */
+		case 1:  /* str */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
 			PutRMWord(ModRM, tr.sel);
 			icount -= 2;
 			break;
-		case 0x10:  /* lldt */
+		case 2:  /* lldt */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
@@ -1763,7 +1772,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 			ldtr.base &= 0xffffff;
 			icount -= 24;
 			break;
-		case 0x18:  /* ltr */
+		case 3:  /* ltr */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
@@ -1780,7 +1789,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 			tr.base &= 0xffffff;
 			icount -= 27;
 			break;
-		case 0x20:  /* verr */
+		case 4:  /* verr */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
@@ -1793,7 +1802,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 			}
 			icount -= 11;
 			break;
-		case 0x28:  /* verw */
+		case 5:  /* verw */
 			if(!PM) {
 				interrupt(ILLEGAL_INSTRUCTION);
 			}
@@ -1806,36 +1815,39 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 			}
 			icount -= 16;
 			break;
-		default:
+		case 6:
+		case 7:
 			interrupt(ILLEGAL_INSTRUCTION);
 			break;
+		default:
+			__assume(0);
 		}
 		break;
 	case 1:
 		/* lgdt, lldt in protected mode privilege level 0 required else common protection
 		   failure 0xd */
 		ModRM = FETCHOP;
-		switch(ModRM & 0x38) {
+		switch((ModRM >> 3) & 7) {
 		case 0:  /* sgdt */
 			PutRMWord(ModRM, gdtr.limit);
 			PutRMWordOffset(2, gdtr.base & 0xffff);
 			PutRMByteOffset(4, gdtr.base >> 16);
 			icount -= 9;
 			break;
-		case 8:  /* sidt */
+		case 1:  /* sidt */
 			PutRMWord(ModRM, idtr.limit);
 			PutRMWordOffset(2, idtr.base & 0xffff);
 			PutRMByteOffset(4, idtr.base >> 16);
 			icount -= 9;
 			break;
-		case 0x10:  /* lgdt */
+		case 2:  /* lgdt */
 			if(PM && (CPL!= 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
 			gdtr.limit = GetRMWord(ModRM);
 			gdtr.base = GetRMWordOffset(2) | (GetRMByteOffset(4) << 16);
 			break;
-		case 0x18:  /* lidt */
+		case 3:  /* lidt */
 			if(PM && (CPL!= 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
@@ -1843,20 +1855,23 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 			idtr.base = GetRMWordOffset(2) | (GetRMByteOffset(4) << 16);
 			icount -= 11;
 			break;
-		case 0x20:  /* smsw */
+		case 4:  /* smsw */
 			PutRMWord(ModRM, msw);
 			icount -= 16;
 			break;
-		case 0x30:  /* lmsw */
+		case 6:  /* lmsw */
 			if(PM && (CPL!= 0)) {
 				interrupt(GENERAL_PROTECTION_FAULT);
 			}
 			msw = (msw & 1) | GetRMWord(ModRM);
 			icount -= 13;
 			break;
-		default:
+		case 5:
+		case 7:
 			interrupt(ILLEGAL_INSTRUCTION);
 			break;
+		default:
+			__assume(0);
 		}
 		break;
 	case 2:  /* LAR */
@@ -3514,48 +3529,50 @@ inline void I86::_80pre()    /* Opcode 0x80 */
 	unsigned dst = GetRMByte(ModRM);
 	unsigned src = FETCH;
 	
-	switch(ModRM & 0x38) {
-	case 0x00:	/* ADD eb, d8 */
+	switch((ModRM >> 3) & 7) {
+	case 0:	/* ADD eb, d8 */
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x08:	/* OR eb, d8 */
+	case 1:	/* OR eb, d8 */
 		ORB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x10:	/* ADC eb, d8 */
+	case 2:	/* ADC eb, d8 */
 		src += CF;
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x18:	/* SBB eb, b8 */
+	case 3:	/* SBB eb, b8 */
 		src += CF;
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x20:	/* AND eb, d8 */
+	case 4:	/* AND eb, d8 */
 		ANDB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x28:	/* SUB eb, d8 */
+	case 5:	/* SUB eb, d8 */
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x30:	/* XOR eb, d8 */
+	case 6:	/* XOR eb, d8 */
 		XORB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x38:	/* CMP eb, d8 */
+	case 7:	/* CMP eb, d8 */
 		SUBB(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		break;
+	default:
+		__assume(0);
 	}
 }
 
@@ -3566,48 +3583,50 @@ inline void I86::_81pre()    /* Opcode 0x81 */
 	unsigned src = FETCH;
 	src += (FETCH << 8);
 	
-	switch(ModRM & 0x38) {
-	case 0x00:	/* ADD ew, d16 */
+	switch((ModRM >> 3) & 7) {
+	case 0:	/* ADD ew, d16 */
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x08:	/* OR ew, d16 */
+	case 1:	/* OR ew, d16 */
 		ORW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x10:	/* ADC ew, d16 */
+	case 2:	/* ADC ew, d16 */
 		src += CF;
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x18:	/* SBB ew, d16 */
+	case 3:	/* SBB ew, d16 */
 		src += CF;
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x20:	/* AND ew, d16 */
+	case 4:	/* AND ew, d16 */
 		ANDW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x28:	/* SUB ew, d16 */
+	case 5:	/* SUB ew, d16 */
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x30:	/* XOR ew, d16 */
+	case 6:	/* XOR ew, d16 */
 		XORW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16;
 		break;
-	case 0x38:	/* CMP ew, d16 */
+	case 7:	/* CMP ew, d16 */
 		SUBW(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16_ro;
 		break;
+	default:
+		__assume(0);
 	}
 }
 
@@ -3617,48 +3636,50 @@ inline void I86::_82pre()    /* Opcode 0x82 */
 	unsigned dst = GetRMByte(ModRM);
 	unsigned src = FETCH;
 	
-	switch(ModRM & 0x38) {
-	case 0x00:	/* ADD eb, d8 */
+	switch((ModRM >> 3) & 7) {
+	case 0:	/* ADD eb, d8 */
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x08:	/* OR eb, d8 */
+	case 1:	/* OR eb, d8 */
 		ORB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x10:	/* ADC eb, d8 */
+	case 2:	/* ADC eb, d8 */
 		src += CF;
 		ADDB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x18:	/* SBB eb, d8 */
+	case 3:	/* SBB eb, d8 */
 		src += CF;
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x20:	/* AND eb, d8 */
+	case 4:	/* AND eb, d8 */
 		ANDB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x28:	/* SUB eb, d8 */
+	case 5:	/* SUB eb, d8 */
 		SUBB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x30:	/* XOR eb, d8 */
+	case 6:	/* XOR eb, d8 */
 		XORB(dst, src);
 		PutbackRMByte(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8;
 		break;
-	case 0x38:	/* CMP eb, d8 */
+	case 7:	/* CMP eb, d8 */
 		SUBB(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		break;
+	default:
+		__assume(0);
 	}
 }
 
@@ -3668,48 +3689,50 @@ inline void I86::_83pre()    /* Opcode 0x83 */
 	unsigned dst = GetRMWord(ModRM);
 	unsigned src = (uint16)((int16)((int8)FETCH));
 	
-	switch(ModRM & 0x38) {
-	case 0x00:	/* ADD ew, d16 */
+	switch((ModRM >> 3) & 7) {
+	case 0:	/* ADD ew, d16 */
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x08:	/* OR ew, d16 */
+	case 1:	/* OR ew, d16 */
 		ORW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x10:	/* ADC ew, d16 */
+	case 2:	/* ADC ew, d16 */
 		src += CF;
 		ADDW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x18:	/* SBB ew, d16 */
+	case 3:	/* SBB ew, d16 */
 		src += CF;
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x20:	/* AND ew, d16 */
+	case 4:	/* AND ew, d16 */
 		ANDW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x28:	/* SUB ew, d16 */
+	case 5:	/* SUB ew, d16 */
 		SUBW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x30:	/* XOR ew, d16 */
+	case 6:	/* XOR ew, d16 */
 		XORW(dst, src);
 		PutbackRMWord(ModRM, dst);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8;
 		break;
-	case 0x38:	/* CMP ew, d16 */
+	case 7:	/* CMP ew, d16 */
 		SUBW(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8_ro;
 		break;
+	default:
+		__assume(0);
 	}
 }
 
@@ -3807,37 +3830,51 @@ inline void I86::_mov_sregw()    /* Opcode 0x8e */
 	
 	icount -= (ModRM >= 0xc0) ? timing.mov_sr : timing.mov_sm;
 #ifdef HAS_I286
-	switch(ModRM & 0x38) {
-	case 0x00:  /* mov es, ew */
+	switch((ModRM >> 3) & 7) {
+	case 0:  /* mov es, ew */
 		i286_data_descriptor(ES, src);
 		break;
-	case 0x08:  /* mov cs, ew */
+	case 1:  /* mov cs, ew */
 		break;  /* doesn't do a jump far */
-	case 0x10:  /* mov ss, ew */
+	case 2:  /* mov ss, ew */
 		i286_data_descriptor(SS, src);
 		instruction(FETCHOP);
 		break;
-	case 0x18:  /* mov ds, ew */
+	case 3:  /* mov ds, ew */
 		i286_data_descriptor(DS, src);
 		break;
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+		break;
+	default:
+		__assume(0);
 	}
 #else
-	switch(ModRM & 0x38) {
-	case 0x00:  /* mov es, ew */
+	switch((ModRM >> 3) & 7) {
+	case 0:  /* mov es, ew */
 		sregs[ES] = src;
 		base[ES] = SegBase(ES);
 		break;
-	case 0x08:  /* mov cs, ew */
+	case 1:  /* mov cs, ew */
 		break;  /* doesn't do a jump far */
-	case 0x10:  /* mov ss, ew */
+	case 2:  /* mov ss, ew */
 		sregs[SS] = src;
 		base[SS] = SegBase(SS); /* no interrupt allowed before next instr */
 		instruction(FETCHOP);
 		break;
-	case 0x18:  /* mov ds, ew */
+	case 3:  /* mov ds, ew */
 		sregs[DS] = src;
 		base[DS] = SegBase(DS);
 		break;
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+		break;
+	default:
+		__assume(0);
 	}
 #endif
 }
@@ -4886,9 +4923,9 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 	unsigned tmp = (unsigned)GetRMByte(ModRM);
 	unsigned tmp2;
 	
-	switch(ModRM & 0x38) {
-	case 0x00:  /* TEST Eb, data8 */
-	case 0x08:  /* ??? */
+	switch((ModRM >> 3) & 7) {
+	case 0:  /* TEST Eb, data8 */
+	case 1:  /* ??? */
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		tmp &= FETCH;
 		
@@ -4896,19 +4933,19 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 		SetSZPF_Byte(tmp);
 		break;
 		
-	case 0x10:  /* NOT Eb */
+	case 2:  /* NOT Eb */
 		icount -= (ModRM >= 0xc0) ? timing.negnot_r8 : timing.negnot_m8;
 		PutbackRMByte(ModRM, ~tmp);
 		break;
 		
-	case 0x18:  /* NEG Eb */
+	case 3:  /* NEG Eb */
 		icount -= (ModRM >= 0xc0) ? timing.negnot_r8 : timing.negnot_m8;
 		tmp2 = 0;
 		SUBB(tmp2, tmp);
 		PutbackRMByte(ModRM, tmp2);
 		break;
 		
-	case 0x20:  /* MUL AL, Eb */
+	case 4:  /* MUL AL, Eb */
 		icount -= (ModRM >= 0xc0) ? timing.mul_r8 : timing.mul_m8;
 		{
 			uint16 result;
@@ -4926,7 +4963,7 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 		}
 		break;
 		
-	case 0x28:  /* IMUL AL, Eb */
+	case 5:  /* IMUL AL, Eb */
 		icount -= (ModRM >= 0xc0) ? timing.imul_r8 : timing.imul_m8;
 		{
 			int16 result;
@@ -4944,7 +4981,7 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 		}
 		break;
 		
-	case 0x30:  /* DIV AL, Ew */
+	case 6:  /* DIV AL, Ew */
 		icount -= (ModRM >= 0xc0) ? timing.div_r8 : timing.div_m8;
 		{
 			uint16 result;
@@ -4968,7 +5005,7 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 		}
 		break;
 		
-	case 0x38:  /* IDIV AL, Ew */
+	case 7:  /* IDIV AL, Ew */
 		icount -= (ModRM >= 0xc0) ? timing.idiv_r8 : timing.idiv_m8;
 		{
 			int16 result;
@@ -4993,6 +5030,9 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 			}
 		}
 		break;
+		
+	default:
+		__assume(0);
 	}
 }
 
@@ -5002,9 +5042,9 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 	unsigned tmp = GetRMWord(ModRM);
 	unsigned tmp2;
 	
-	switch(ModRM & 0x38) {
-	case 0x00:  /* TEST Ew, data16 */
-	case 0x08:  /* ??? */
+	switch((ModRM >> 3) & 7) {
+	case 0:  /* TEST Ew, data16 */
+	case 1:  /* ??? */
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16_ro;
 		tmp2 = FETCH;
 		tmp2 += FETCH << 8;
@@ -5015,20 +5055,20 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 		SetSZPF_Word(tmp);
 		break;
 		
-	case 0x10:  /* NOT Ew */
+	case 2:  /* NOT Ew */
 		icount -= (ModRM >= 0xc0) ? timing.negnot_r16 : timing.negnot_m16;
 		tmp = ~tmp;
 		PutbackRMWord(ModRM, tmp);
 		break;
 		
-	case 0x18:  /* NEG Ew */
+	case 3:  /* NEG Ew */
 		icount -= (ModRM >= 0xc0) ? timing.negnot_r16 : timing.negnot_m16;
 		tmp2 = 0;
 		SUBW(tmp2, tmp);
 		PutbackRMWord(ModRM, tmp2);
 		break;
 		
-	case 0x20:  /* MUL AX, Ew */
+	case 4:  /* MUL AX, Ew */
 		icount -= (ModRM >= 0xc0) ? timing.mul_r16 : timing.mul_m16;
 		{
 			uint32 result;
@@ -5047,7 +5087,7 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 		}
 		break;
 		
-	case 0x28:  /* IMUL AX, Ew */
+	case 5:  /* IMUL AX, Ew */
 		icount -= (ModRM >= 0xc0) ? timing.imul_r16 : timing.imul_m16;
 		{
 			int32 result;
@@ -5068,7 +5108,7 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 		}
 		break;
 		
-	case 0x30:  /* DIV AX, Ew */
+	case 6:  /* DIV AX, Ew */
 		icount -= (ModRM >= 0xc0) ? timing.div_r16 : timing.div_m16;
 		{
 			uint32 result;
@@ -5094,7 +5134,7 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 		}
 		break;
 		
-	case 0x38:  /* IDIV AX, Ew */
+	case 7:  /* IDIV AX, Ew */
 		icount -= (ModRM >= 0xc0) ? timing.idiv_r16 : timing.idiv_m16;
 		{
 			int32 result;
@@ -5118,6 +5158,9 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 			}
 		}
 		break;
+		
+	default:
+		__assume(0);
 	}
 }
 
@@ -5192,8 +5235,8 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 	unsigned tmp1;
 	uint16 ip;
 	
-	switch(ModRM & 0x38) {
-	case 0x00:  /* INC ew */
+	switch((ModRM >> 3) & 7) {
+	case 0:  /* INC ew */
 		icount -= (ModRM >= 0xc0) ? timing.incdec_r16 : timing.incdec_m16;
 		tmp = GetRMWord(ModRM);
 		tmp1 = tmp + 1;
@@ -5202,7 +5245,7 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		SetSZPF_Word(tmp1);
 		PutbackRMWord(ModRM, (uint16)tmp1);
 		break;
-	case 0x08:  /* DEC ew */
+	case 1:  /* DEC ew */
 		icount -= (ModRM >= 0xc0) ? timing.incdec_r16 : timing.incdec_m16;
 		tmp = GetRMWord(ModRM);
 		tmp1 = tmp - 1;
@@ -5211,7 +5254,7 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		SetSZPF_Word(tmp1);
 		PutbackRMWord(ModRM, (uint16)tmp1);
 		break;
-	case 0x10:  /* CALL ew */
+	case 2:  /* CALL ew */
 		icount -= (ModRM >= 0xc0) ? timing.call_r16 : timing.call_m16;
 		tmp = GetRMWord(ModRM);
 		ip = pc - base[CS];
@@ -5224,7 +5267,7 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		}
 #endif
 		break;
-	case 0x18:  /* CALL FAR ea */
+	case 3:  /* CALL FAR ea */
 		icount -= timing.call_m32;
 		tmp = sregs[CS];	/* need to skip displacements of ea */
 		tmp1 = GetRMWord(ModRM);
@@ -5245,12 +5288,12 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		}
 #endif
 		break;
-	case 0x20:  /* JMP ea */
+	case 4:  /* JMP ea */
 		icount -= (ModRM >= 0xc0) ? timing.jmp_r16 : timing.jmp_m16;
 		ip = GetRMWord(ModRM);
 		pc = (base[CS] + ip) & AMASK;
 		break;
-	case 0x28:  /* JMP FAR ea */
+	case 5:  /* JMP FAR ea */
 		icount -= timing.jmp_m32;
 #ifdef HAS_I286
 		tmp = GetRMWord(ModRM);
@@ -5262,14 +5305,16 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		pc = (pc + base[CS]) & AMASK;
 #endif
 		break;
-	case 0x30:  /* PUSH ea */
+	case 6:  /* PUSH ea */
 		icount -= (ModRM >= 0xc0) ? timing.push_r16 : timing.push_m16;
 		tmp = GetRMWord(ModRM);
 		PUSH(tmp);
 		break;
-	case 0x38:  /* invalid ??? */
+	case 7:  /* invalid ??? */
 		icount -= 10;
 		break;
+	default:
+		__assume(0);
 	}
 }
 

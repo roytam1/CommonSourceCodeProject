@@ -173,6 +173,9 @@ public:
 	int* get_ead() {
 		return &ead;
 	}
+	bool get_start() {
+		return start;
+	}
 	uint32 cursor_addr(uint32 mask);
 	int cursor_top();
 	int cursor_bottom();

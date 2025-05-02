@@ -16,6 +16,10 @@ void YM2203::initialize()
 #else
 	chip = new FM::OPN;
 #endif
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+	fmdll = new CFMDLL(_T("mamefm.dll"));
+	dllchip = NULL;
+#endif
 	register_vline_event(this);
 	mute = false;
 	clock_prev = clock_accum = 0;
@@ -24,12 +28,23 @@ void YM2203::initialize()
 void YM2203::release()
 {
 	delete chip;
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+	if(dllchip) {
+		fmdll->Release(dllchip);
+	}
+	delete fmdll;
+#endif
 }
 
 void YM2203::reset()
 {
 	chip->Reset();
-	chip->SetReg(0x27, 0); // stop timer
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+	if(dllchip) {
+		fmdll->Reset(dllchip);
+	}
+#endif
+	this->SetReg(0x27, 0); // stop timer
 	
 	port[0].first = port[1].first = true;
 	irq_prev = false;
@@ -52,7 +67,7 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		// write dummy data for prescaler
 		if(0x2d <= ch && ch <= 0x2f) {
 			update_count();
-			chip->SetReg(ch, 0);
+			this->SetReg(ch, 0);
 #ifndef HAS_AY_3_8912
 			update_interrupt();
 #endif
@@ -74,7 +89,7 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		// don't write again for prescaler
 		if(!(0x2d <= ch && ch <= 0x2f)) {
 			update_count();
-			chip->SetReg(ch, data);
+			this->SetReg(ch, data);
 #ifndef HAS_AY_3_8912
 			update_interrupt();
 #endif
@@ -86,7 +101,7 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		break;
 	case 3:
 		update_count();
-		chip->SetReg(0x100 | ch1, data);
+		this->SetReg(0x100 | ch1, data);
 		data1 = data;
 		update_interrupt();
 		break;
@@ -181,6 +196,11 @@ void YM2203::mix(int32* buffer, int cnt)
 {
 	if(cnt > 0 && !mute) {
 		chip->Mix(buffer, cnt);
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+		if(dllchip) {
+			fmdll->Mix(dllchip, buffer, cnt);
+		}
+#endif
 	}
 }
 
@@ -196,12 +216,30 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 	chip->SetVolumeFM(volf);
 	chip->SetVolumePSG(volp);
 	
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#ifdef HAS_YM2608
+	fmdll->Create((LPVOID*)&dllchip, clock, rate);
+#else
+	fmdll->Create((LPVOID*)&dllchip, clock * 2, rate);
+#endif
+	if(dllchip) {
+		fmdll->SetVolumeFM(dllchip, volf);
+//		fmdll->SetVolumePSG(dllchip, volp);
+		chip->SetChannelMask(0x3f);
+		fmdll->SetChannelMask(dllchip, ~0x3f);
+	}
+#endif
 	chip_clock = clock;
 }
 
 void YM2203::SetReg(uint addr, uint data)
 {
 	chip->SetReg(addr, data);
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+	if(dllchip) {
+		fmdll->SetReg(dllchip, addr, data);
+	}
+#endif
 }
 
 void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)

@@ -14,6 +14,9 @@
 #include "../emu.h"
 #include "device.h"
 #include "fmgen/opna.h"
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+#include "fmdll/fmdll.h"
+#endif
 
 #define SIG_YM2203_PORT_A	0
 #define SIG_YM2203_PORT_B	1
@@ -26,6 +29,10 @@ private:
 	FM::OPNA* chip;
 #else
 	FM::OPN* chip;
+#endif
+#if defined(_WIN32) && !defined(HAS_AY_3_8912)
+	CFMDLL* fmdll;
+	LPVOID* dllchip;
 #endif
 	
 	uint8 ch, mode;

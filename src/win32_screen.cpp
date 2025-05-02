@@ -38,7 +38,6 @@ void EMU::initialize_screen()
 	hBmpStretch1 = hOldBmpStretch1 = hBmpStretch2 = hOldBmpStretch2 = NULL;
 	lpBufStretch1 = lpBufStretch2 = NULL;
 	
-#ifdef USE_D3D9
 	// initialize d3d9
 	lpd3d9 = NULL;
 	lpd3d9Device = NULL;
@@ -46,7 +45,7 @@ void EMU::initialize_screen()
 	lpd3d9OffscreenSurface = NULL;
 	lpd3d9Buffer = NULL;
 	render_to_d3d9Buffer = false;
-#endif
+	use_d3d9 = config.use_d3d9;
 	wait_vsync = config.wait_vsync;
 	
 	// initialize video recording
@@ -78,37 +77,35 @@ void EMU::initialize_screen()
 	} \
 }
 
-#ifdef USE_D3D9
 #define release_d3d9() { \
-	if(lpd3d9OffscreenSurface) { \
+	if(lpd3d9OffscreenSurface != NULL) { \
 		lpd3d9OffscreenSurface->Release(); \
 		lpd3d9OffscreenSurface = NULL; \
 	} \
-	if(lpd3d9Surface) { \
+	if(lpd3d9Surface != NULL) { \
 		lpd3d9Surface->Release(); \
 		lpd3d9Surface = NULL; \
 	} \
-	if(lpd3d9Device) { \
+	if(lpd3d9Device != NULL) { \
 		lpd3d9Device->Release(); \
 		lpd3d9Device = NULL; \
 	} \
-	if(lpd3d9) { \
+	if(lpd3d9 != NULL) { \
 		lpd3d9->Release(); \
 		lpd3d9 = NULL; \
 	} \
 }
 
 #define release_d3d9_surface() { \
-	if(lpd3d9OffscreenSurface) { \
+	if(lpd3d9OffscreenSurface != NULL) { \
 		lpd3d9OffscreenSurface->Release(); \
 		lpd3d9OffscreenSurface = NULL; \
 	} \
-	if(lpd3d9Surface) { \
+	if(lpd3d9Surface != NULL) { \
 		lpd3d9Surface->Release(); \
 		lpd3d9Surface = NULL; \
 	} \
 }
-#endif
 
 void EMU::release_screen()
 {
@@ -123,10 +120,8 @@ void EMU::release_screen()
 	release_dib_section(hdcDibStretch1, hBmpStretch1, hOldBmpStretch1, lpBufStretch1);
 	release_dib_section(hdcDibStretch2, hBmpStretch2, hOldBmpStretch2, lpBufStretch2);
 	
-#ifdef USE_D3D9
 	// release d3d9
 	release_d3d9();
-#endif
 }
 
 void EMU::create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, HBITMAP *hOldBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib)
@@ -174,7 +169,8 @@ int EMU::get_window_width(int mode)
 	return window_width + screen_width_aspect * mode;
 }
 
-int EMU::get_window_height(int mode) {
+int EMU::get_window_height(int mode)
+{
 #ifdef USE_SCREEN_ROTATE
 	if(config.monitor_type) {
 		return window_width + screen_width_aspect * mode;
@@ -185,6 +181,7 @@ int EMU::get_window_height(int mode) {
 
 void EMU::set_display_size(int width, int height, bool window_mode)
 {
+RETRY:
 	bool display_size_changed = false;
 	bool stretch_changed = false;
 	
@@ -193,15 +190,19 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 		display_height = height;
 		display_size_changed = stretch_changed = true;
 	}
+	if(use_d3d9 != config.use_d3d9) {
+		if(!(use_d3d9 = config.use_d3d9)) {
+			release_d3d9();
+		}
+		display_size_changed = stretch_changed = true;
+	}
 	if(wait_vsync != config.wait_vsync) {
 		wait_vsync = config.wait_vsync;
 		display_size_changed = stretch_changed = true;
 	}
 	
-#ifdef USE_D3D9
 	// virtual machine renders to d3d9 buffer directly???
-	render_to_d3d9Buffer = true;
-#endif
+	render_to_d3d9Buffer = use_d3d9;
 	
 #ifdef USE_SCREEN_ROTATE
 	if(config.monitor_type) {
@@ -219,9 +220,8 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 		source_height = screen_width;
 		source_width_aspect = screen_height_aspect;
 		source_height_aspect = screen_width_aspect;
-#ifdef USE_D3D9
+		
 		render_to_d3d9Buffer = false;
-#endif
 	}
 	else {
 #endif
@@ -275,25 +275,18 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 	while(stretched_height > source_height * new_pow_y) {
 		new_pow_y++;
 	}
-#ifndef USE_D3D9
-	// support high quality stretch only for x1 window size in gdi mode
-	if(new_pow_x > 1 && new_pow_y > 1) {
+	if(!use_d3d9 && new_pow_x > 1 && new_pow_y > 1) {
+		// support high quality stretch only for x1 window size in gdi mode
 		new_pow_x = new_pow_y = 1;
 	}
-#endif
-//	if(stretched_width == source_width * new_pow_x && stretched_height == source_height * new_pow_y) {
-//		new_pow_x = new_pow_y = 1;
-//	}
 	if(stretch_pow_x != new_pow_x || stretch_pow_y != new_pow_y) {
 		stretch_pow_x = new_pow_x;
 		stretch_pow_y = new_pow_y;
 		stretch_changed = true;
 	}
-#ifdef USE_D3D9
 	if(stretch_pow_x != 1 || stretch_pow_y != 1) {
 		render_to_d3d9Buffer = false;
 	}
-#endif
 	
 	if(stretch_changed) {
 		release_dib_section(hdcDibStretch1, hBmpStretch1, hOldBmpStretch1, lpBufStretch1);
@@ -304,20 +297,24 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 			HDC hdc = GetDC(main_window_handle);
 			create_dib_section(hdc, source_width * stretch_pow_x, source_height * stretch_pow_y, &hdcDibStretch1, &hBmpStretch1, &hOldBmpStretch1, &lpBufStretch1, &lpBmpStretch1, &lpDibStretch1);
 			SetStretchBltMode(hdcDibStretch1, COLORONCOLOR);
-#ifndef USE_D3D9
-			create_dib_section(hdc, stretched_width, stretched_height, &hdcDibStretch2, &hBmpStretch2, &hOldBmpStretch2, &lpBufStretch2, &lpBmpStretch2, &lpDibStretch2);
-			SetStretchBltMode(hdcDibStretch2, HALFTONE);
-#endif
+			if(!use_d3d9) {
+				create_dib_section(hdc, stretched_width, stretched_height, &hdcDibStretch2, &hBmpStretch2, &hOldBmpStretch2, &lpBufStretch2, &lpBmpStretch2, &lpDibStretch2);
+				SetStretchBltMode(hdcDibStretch2, HALFTONE);
+			}
 			ReleaseDC(main_window_handle, hdc);
 			stretch_screen = true;
 		}
 		
-#ifdef USE_D3D9
-		if(display_size_changed) {
+		if(use_d3d9 && display_size_changed) {
 			// release and initialize d3d9
 			release_d3d9();
 			
-			if((lpd3d9 = Direct3DCreate9(D3D_SDK_VERSION)) != NULL) {
+			if((lpd3d9 = Direct3DCreate9(D3D_SDK_VERSION)) == NULL) {
+				MessageBox(main_window_handle, _T("Failed to initialize Direct3D9"), _T(DEVICE_NAME), MB_OK | MB_ICONWARNING);
+				config.use_d3d9 = false;
+				goto RETRY;
+			}
+			else {
 				// initialize present params
 				D3DPRESENT_PARAMETERS d3dpp;
 				ZeroMemory(&d3dpp, sizeof(d3dpp));
@@ -338,11 +335,13 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 					}
 				}
 				if(hr != D3D_OK) {
-					release_d3d9();
+					MessageBox(main_window_handle, _T("Failed to create a Direct3D9 device"), _T(DEVICE_NAME), MB_OK | MB_ICONWARNING);
+					config.use_d3d9 = false;
+					goto RETRY;
 				}
 			}
 		}
-		if(lpd3d9Device != NULL) {
+		if(use_d3d9 && lpd3d9Device != NULL) {
 			// release and create d3d9 surfaces
 			release_d3d9_surface();
 			
@@ -354,13 +353,14 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 				lpd3d9Device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 0.0, 0);
 			}
 			else {
-				release_d3d9();
+				MessageBox(main_window_handle, _T("Failed to create a Direct3D9 offscreen surface"), _T(DEVICE_NAME), MB_OK | MB_ICONWARNING);
+				config.use_d3d9 = false;
+				goto RETRY;
 			}
 		}
 		if(stretch_screen) {
 			render_to_d3d9Buffer = false;
 		}
-#endif
 	}
 	
 	first_draw_screen = false;
@@ -407,30 +407,26 @@ void EMU::draw_screen()
 	if(screen_size_changed) {
 		return;
 	}
-
-#ifdef USE_D3D9
+	
 	// lock offscreen surface
 	D3DLOCKED_RECT pLockedRect;
-	if(lpd3d9OffscreenSurface != NULL && lpd3d9OffscreenSurface->LockRect(&pLockedRect, NULL, 0) == D3D_OK) {
+	if(use_d3d9 && lpd3d9OffscreenSurface != NULL && lpd3d9OffscreenSurface->LockRect(&pLockedRect, NULL, 0) == D3D_OK) {
 		lpd3d9Buffer = (scrntype *)pLockedRect.pBits;
 	}
 	else {
 		lpd3d9Buffer = NULL;
 	}
-#endif
 	
 	// draw screen
 	vm->draw_screen();
 	
 	// screen size was changed in vm->draw_screen()
 	if(screen_size_changed) {
-#ifdef USE_D3D9
 		// unlock offscreen surface
-		if(lpd3d9Buffer != NULL) {
+		if(use_d3d9 && lpd3d9Buffer != NULL) {
 			lpd3d9Buffer = NULL;
 			lpd3d9OffscreenSurface->UnlockRect();
 		}
-#endif
 		return;
 	}
 	
@@ -450,10 +446,6 @@ void EMU::draw_screen()
 	
 	// stretch screen
 	if(stretch_screen) {
-#if 0
-		StretchBlt(hdcDibStretch1, 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y, hdcDibSource, 0, 0, source_width, source_height, SRCCOPY);
-#else
-		// about 50% faster than StretchBlt()
 		scrntype* src = lpBmpSource + source_width * (source_height - 1);
 		scrntype* out = lpBmpStretch1 + source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
 		int data_len = source_width * stretch_pow_x;
@@ -488,16 +480,14 @@ void EMU::draw_screen()
 			src -= source_width;
 			out -= data_len;
 		}
-#endif
-#ifndef USE_D3D9
-		StretchBlt(hdcDibStretch2, 0, 0, stretched_width, stretched_height, hdcDibStretch1, 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y, SRCCOPY);
-#endif
+		if(!use_d3d9) {
+			StretchBlt(hdcDibStretch2, 0, 0, stretched_width, stretched_height, hdcDibStretch1, 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y, SRCCOPY);
+		}
 	}
 	first_draw_screen = true;
 	
-#ifdef USE_D3D9
 	// copy bitmap to d3d9 offscreen surface
-	if(lpd3d9Buffer != NULL) {
+	if(use_d3d9 && lpd3d9Buffer != NULL) {
 		if(!(render_to_d3d9Buffer && !now_rec_vid)) {
 			scrntype *src = stretch_screen ? lpBmpStretch1 : lpBmpSource;
 			src += source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
@@ -516,7 +506,6 @@ void EMU::draw_screen()
 		lpd3d9Buffer = NULL;
 		lpd3d9OffscreenSurface->UnlockRect();
 	}
-#endif
 	
 	// invalidate window
 	InvalidateRect(main_window_handle, NULL, first_invalidate);
@@ -533,11 +522,9 @@ void EMU::draw_screen()
 
 scrntype* EMU::screen_buffer(int y)
 {
-#ifdef USE_D3D9
-	if(lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
+	if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
 		return lpd3d9Buffer + screen_width * y;
 	}
-#endif
 	return lpBmp + screen_width * (screen_height - y - 1);
 }
 
@@ -570,19 +557,19 @@ void EMU::update_screen(HDC hdc)
 		}
 #else
 		// standard screen
-#ifdef USE_D3D9
-		LPDIRECT3DSURFACE9 lpd3d9BackSurface = NULL;
-		if(lpd3d9Device != NULL && lpd3d9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &lpd3d9BackSurface) == D3D_OK && lpd3d9BackSurface != NULL) {
-			RECT rectSrc = { 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y };
-			RECT rectDst = { screen_dest_x, screen_dest_y, screen_dest_x + stretched_width, screen_dest_y + stretched_height };
-			
-			lpd3d9Device->UpdateSurface(lpd3d9OffscreenSurface, NULL, lpd3d9Surface, NULL);
-			lpd3d9Device->StretchRect(lpd3d9Surface, &rectSrc, lpd3d9BackSurface, &rectDst, stretch_screen ? D3DTEXF_LINEAR : D3DTEXF_POINT);
-			lpd3d9BackSurface->Release();
-			lpd3d9Device->Present(NULL, NULL, NULL, NULL);
+		if(use_d3d9) {
+			LPDIRECT3DSURFACE9 lpd3d9BackSurface = NULL;
+			if(lpd3d9Device != NULL && lpd3d9Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &lpd3d9BackSurface) == D3D_OK && lpd3d9BackSurface != NULL) {
+				RECT rectSrc = { 0, 0, source_width * stretch_pow_x, source_height * stretch_pow_y };
+				RECT rectDst = { screen_dest_x, screen_dest_y, screen_dest_x + stretched_width, screen_dest_y + stretched_height };
+				
+				lpd3d9Device->UpdateSurface(lpd3d9OffscreenSurface, NULL, lpd3d9Surface, NULL);
+				lpd3d9Device->StretchRect(lpd3d9Surface, &rectSrc, lpd3d9BackSurface, &rectDst, stretch_screen ? D3DTEXF_LINEAR : D3DTEXF_POINT);
+				lpd3d9BackSurface->Release();
+				lpd3d9Device->Present(NULL, NULL, NULL, NULL);
+			}
 		}
-#else
-		if(stretch_screen) {
+		else if(stretch_screen) {
 			BitBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibStretch2, 0, 0, SRCCOPY);
 		}
 		else {
@@ -593,7 +580,6 @@ void EMU::update_screen(HDC hdc)
 				StretchBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibSource, 0, 0, source_width, source_height, SRCCOPY);
 			}
 		}
-#endif
 #ifdef USE_ACCESS_LAMP
 		// draw access lamps of drives
 		int status = vm->access_lamp() & 7;
@@ -623,12 +609,10 @@ void EMU::update_screen(HDC hdc)
 
 void EMU::capture_screen()
 {
-#ifdef USE_D3D9
-	// virtual machine may render screen to d3d9 buffer directly...
-	if(render_to_d3d9Buffer && !now_rec_vid) {
+	if(use_d3d9 && render_to_d3d9Buffer && !now_rec_vid) {
+		// virtual machine may render screen to d3d9 buffer directly...
 		vm->draw_screen();
 	}
-#endif
 	
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	application_path(app_path);

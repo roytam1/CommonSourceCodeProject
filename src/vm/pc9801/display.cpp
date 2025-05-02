@@ -516,10 +516,22 @@ uint32 DISPLAY::read_grcg(uint32 addr)
 void DISPLAY::draw_screen()
 {
 	// render screen
-	if(modereg1[MODE1_DISP]) {
-		draw_chr_screen();
-		draw_gfx_screen();
-		
+	bool gdc_chr_start = d_gdc_chr->get_start();
+	bool gdc_gfx_start = d_gdc_gfx->get_start();
+	
+	if(modereg1[MODE1_DISP] && (gdc_chr_start || gdc_gfx_start)) {
+		if(gdc_chr_start) {
+			draw_chr_screen();
+		}
+		else {
+			memset(screen_chr, 0, sizeof(screen_chr));
+		}
+		if(gdc_gfx_start) {
+			draw_gfx_screen();
+		}
+		else {
+			memset(screen_gfx, 0, sizeof(screen_gfx));
+		}
 		for(int y = 0; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_chr = screen_chr[y];

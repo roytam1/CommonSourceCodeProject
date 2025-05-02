@@ -160,8 +160,9 @@
 #define ID_SCREEN_FULLSCREEN18          41038
 #define ID_SCREEN_FULLSCREEN19          41039
 #define ID_SCREEN_FULLSCREEN20          41040
-#define ID_SCREEN_STRETCH               41041
+#define ID_SCREEN_USE_D3D9              41041
 #define ID_SCREEN_WAIT_VSYNC            41042
+#define ID_SCREEN_STRETCH               41043
 
 #define ID_SCREEN_MONITOR_TYPE0         41051
 #define ID_SCREEN_MONITOR_TYPE1         41052

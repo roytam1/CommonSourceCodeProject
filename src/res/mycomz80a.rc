@@ -136,8 +136,10 @@ BEGIN
         MENUITEM "Fullscreen 18",               ID_SCREEN_FULLSCREEN18
         MENUITEM "Fullscreen 19",               ID_SCREEN_FULLSCREEN19
         MENUITEM "Fullscreen 20",               ID_SCREEN_FULLSCREEN20
-        MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
+        MENUITEM SEPARATOR
+        MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
+        MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
         MENUITEM SEPARATOR
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END

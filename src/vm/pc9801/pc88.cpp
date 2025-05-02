@@ -204,12 +204,6 @@ void PC88::initialize()
 #else
 	cpu_clock_low = true;
 #endif
-	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
-		mem_wait_clocks = 1;
-	}
-	else {
-		mem_wait_clocks = cpu_clock_low ? 0 : 1;
-	}
 	
 #ifdef SUPPORT_PC88_JOYSTICK
 	joystick_status = emu->joy_buffer();
@@ -257,11 +251,21 @@ void PC88::reset()
 	usart_dcd = false;
 	opn_busy = true;
 	
+	// memory wait
+	if(config.boot_mode == MODE_PC88_V1S || config.boot_mode == MODE_PC88_N) {
+		mem_wait_clocks = 1;
+	}
+	else {
+		mem_wait_clocks = cpu_clock_low ? 0 : 1;
+	}
+	
 	// crtc
 	crtc_cmd = crtc_ptr = 0;
+	crtc_mode = 0;
 	crtc_status = 0;
 	
-	text_attrib = 0;
+	text_attrib = 0xe0;
+	text_attrib_mask = 0xff;
 	attrib_num = 20;
 	
 	text_width = 80;
@@ -273,7 +277,7 @@ void PC88::reset()
 	cursor_x = cursor_y = -1;
 	cursor_line = 0;
 	
-	blink_on = false;
+	blink_on = 0;
 	blink_rate = 24;
 	blink_counter = 0;
 	
@@ -626,7 +630,8 @@ void PC88::write_io8(uint32 addr, uint32 data)
 				skip_line = ((data & 0x80) != 0);
 				break;
 			case 4:
-				attrib_num = (data & 0x20) ? 0 : (data & 0x1f) + 1;
+				crtc_mode = (data >> 5) & 7;
+				attrib_num = (crtc_mode == 1) ? 0 : (data & 0x1f) + 1;
 				break;
 			}
 			break;
@@ -1139,7 +1144,7 @@ void PC88::event_frame()
 	
 	// update blink counter
 	if(!(blink_counter++ < blink_rate)) {
-		blink_on = !blink_on;
+		blink_on ^= 1;
 		blink_counter = 0;
 	}
 #ifdef SUPPORT_PC88_JOYSTICK
@@ -1325,10 +1330,7 @@ void PC88::draw_screen()
 			draw_color_graph();
 		}
 		else if(!line200) {
-			if(text_mode & 2) {
-				memset(attribs, 0xe0, sizeof(attribs));
-			}
-			else if(!attribs_expanded) {
+			if(!attribs_expanded) {
 				expand_attribs();
 			}
 			draw_color_hires_graph();
@@ -1423,15 +1425,21 @@ uint8 PC88::get_crtc_buffer(int ofs)
 	return 0;
 }
 
+/*
+	attributes:	bit7: green
+			bit6: red
+			bit5: blue
+			bit4: graph=1/character=0
+			bit3: under line
+			bit2: upper line
+			bit1: secret
+			bit0: reverse
+*/
+
 void PC88::expand_attribs()
 {
 	if(attrib_num == 0) {
-		if(text_mode & 2) {
-			memset(attribs, 0, sizeof(attribs));
-		}
-		else {
-			memset(attribs, 0xe0, sizeof(attribs));
-		}
+		memset(attribs, 0xe0, sizeof(attribs));
 		return;
 	}
 	
@@ -1441,24 +1449,34 @@ void PC88::expand_attribs()
 		char_height_tmp >>= 1;
 	}
 	for(int cy = 0, ytop = 0, ofs = 0; cy < text_height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib_num * 2) {
-		if(attrib_num == 20 && crtc_buffer[ofs + 80] == 0 && crtc_buffer[ofs + 82] == 1 && (crtc_buffer[ofs + 84] & 0x7f) >= 79) {
-			// XXX: ugly patch for alpha :-(
-			text_attrib = crtc_buffer[ofs + 81];
-			memset(attribs[cy], text_attrib, 80);
+		uint8 flags[128];
+		memset(flags, 0, sizeof(flags));
+		for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
+			flags[crtc_buffer[ofs + i + 80] & 0x7f] = 1;
 		}
-		else {
-			uint8 flags[128];
-			memset(flags, 0, sizeof(flags));
-			for(int i = 2 * (attrib_num - 1); i >= 0; i -= 2) {
-				flags[crtc_buffer[ofs + i + 80] & 0x7f] = 1;
-			}
-			for(int cx = 0, pos = 0; cx < text_width && cx < 80; cx++) {
-				if(flags[cx]) {
-					text_attrib = crtc_buffer[ofs + pos + 81];
-					pos += 2;
+		for(int cx = 0, pos = 0; cx < text_width && cx < 80; cx++) {
+			if(flags[cx]) {
+				uint8 code = crtc_buffer[ofs + pos + 81];
+				if(crtc_mode == 2) {
+					// color
+					if(code & 8) {
+						text_attrib = (text_attrib & 0x0f) | (code & 0xf0);
+						text_attrib_mask = 0xf0;
+					}
+					else {
+						text_attrib = (text_attrib & 0xf0) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
+						text_attrib ^= ((code & 2) && !(code & 1)) ? blink_on : 0;
+						text_attrib_mask = 0xff;
+					}
 				}
-				attribs[cy][cx] = text_attrib;
+				else {
+					text_attrib = 0xe0 | ((code >> 3) & 0x10) | ((code >> 2) & 0x0d) | ((code << 1) & 2);
+					text_attrib ^= ((code & 2) && !(code & 1)) ? blink_on : 0;
+					text_attrib_mask = 0xff;
+				}
+				pos += 2;
 			}
+			attribs[cy][cx] = text_attrib & text_attrib_mask;
 		}
 	}
 }
@@ -1482,37 +1500,24 @@ void PC88::draw_text()
 			uint8 code = get_crtc_buffer(ofs + cx);
 			uint8 attrib = attribs[cy][cx];
 			
-			bool under_line = false, upper_line = false, reverse = false, blink = false, secret = false;
-			uint8 color = 7;
-			uint8 *pattern = kanji1 + 0x1000 + code * 8;
+			uint8 *pattern = ((attrib & 0x10) ? sg_pattern : (kanji1 + 0x1000)) + code * 8;
+			uint8 color = (attrib & 0xe0) ? (attrib >> 5) : 8;
+			bool under_line = ((attrib & 8) != 0);
+			bool upper_line = ((attrib & 4) != 0);
+			bool secret = ((attrib & 2) != 0);
+			bool reverse = ((attrib & 1) != 0);
 			
-			if(!(text_mode & 2) && (attrib & 8)) {
-				if(attrib & 0x10) {
-					pattern = sg_pattern + code * 8;
-				}
-				color = (attrib & 0xe0) ? (attrib >> 5) : 8;
-			}
-			else {
-				if(attrib & 0x80) {
-					pattern = sg_pattern + code * 8;
-				}
-				under_line = ((attrib & 0x20) != 0);
-				upper_line = ((attrib & 0x10) != 0);
-				reverse = ((attrib & 4) != 0);
-				blink = ((attrib & 2) != 0) && blink_on;
-				secret = ((attrib & 1) != 0);
-			}
 			bool cursor_now = (cursor_draw && cx == cursor_x && cy == cursor_y);
 			
 			for(int l = 0, y = ytop; l < char_height_tmp && y < 200; l++, y++) {
 				uint8 pat = (l < 8) ? pattern[l] : 0;
-				if(secret) {
+				if(secret || reverse) {
 					pat = 0;
 				}
 				if((upper_line && l == 0) || (under_line && l >= 7)) {
 					pat = 0xff;
 				}
-				if(blink || reverse || (cursor_now && l >= cursor_line)) {
+				if(cursor_now && l >= cursor_line) {
 					pat = ~pat;
 				}
 				

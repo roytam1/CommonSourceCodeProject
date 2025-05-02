@@ -56,17 +56,11 @@
 #define WINDOW_HEIGHT SCREEN_HEIGHT_ASPECT
 #endif
 
-#if !(defined(USE_BITMAP) || defined(USE_LED))
-#define USE_D3D9
-#endif
-
-#ifdef USE_D3D9
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 #include <d3d9.h>
 #include <d3dx9.h>
 #include <d3d9types.h>
-#endif
 
 #include <dsound.h>
 #include <vfw.h>
@@ -188,7 +182,6 @@ private:
 	scrntype* lpBmpStretch2;
 	LPBITMAPINFO lpDibStretch2;
 	
-#ifdef USE_D3D9
 	// for direct3d9
 	LPDIRECT3D9 lpd3d9;
 	LPDIRECT3DDEVICE9 lpd3d9Device;
@@ -196,7 +189,7 @@ private:
 	LPDIRECT3DSURFACE9 lpd3d9OffscreenSurface;
 	scrntype *lpd3d9Buffer;
 	bool render_to_d3d9Buffer;
-#endif
+	bool use_d3d9;
 	bool wait_vsync;
 	
 	// record video

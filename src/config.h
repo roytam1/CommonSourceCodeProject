@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x32
+#define FILE_VERSION	0x33
 
 void init_config();
 void load_config();
@@ -57,8 +57,9 @@ typedef struct {
 	
 	// screen
 	int window_mode;
-	bool stretch_screen;
+	bool use_d3d9;
 	bool wait_vsync;
+	bool stretch_screen;
 	
 	// sound
 	int sound_frequency;

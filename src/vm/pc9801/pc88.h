@@ -78,9 +78,11 @@ private:
 	
 	// crtc
 	uint8 crtc_cmd, crtc_ptr;
+	uint8 crtc_mode;
 	uint8 crtc_status;
 	
 	uint8 text_attrib;
+	uint8 text_attrib_mask;
 	int attrib_num;
 	
 	int text_width, text_height, char_height;
@@ -89,7 +91,7 @@ private:
 	bool cursor_on, cursor_blink;
 	int cursor_x, cursor_y, cursor_line;
 	
-	bool blink_on;
+	uint8 blink_on;
 	int blink_rate, blink_counter;
 	
 	uint8 crtc_buffer[120 * 200];
