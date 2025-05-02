@@ -218,7 +218,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	qd->set_context_sio(sio_qd);
 	
 	// floppy drives
+	floppy->set_context_cpu(cpu);
 	floppy->set_context_fdc(fdc);
+	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 #endif
 	
 	// cpu bus
@@ -253,14 +258,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(_MZ800) || defined(_MZ1500)
 	// floppy drives
 	io->set_iomap_range_rw(0xd8, 0xdb, fdc);
-	io->set_iomap_range_w(0xdc, 0xdd, floppy);
+	io->set_iomap_range_w(0xdc, 0xdf, floppy);
 #endif
 	
 	// memory mapper
-#if defined(_MZ800) || defined(_MZ1500)
 #if defined(_MZ800)
 	io->set_iomap_range_r(0xe0, 0xe1, memory);
-#endif
+	io->set_iomap_range_w(0xe0, 0xe6, memory);
+#elif defined(_MZ1500)
 	io->set_iomap_range_w(0xe0, 0xe6, memory);
 #else
 	io->set_iomap_range_w(0xe0, 0xe4, memory);

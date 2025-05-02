@@ -153,6 +153,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 	switch(addr & 3) {
 	case 0:
 		// command reg
+		cmdreg_tmp = cmdreg;
 #ifdef HAS_MB8876
 		cmdreg = (~data) & 0xff;
 #else
@@ -858,6 +859,25 @@ void MB8877::cmd_forceint()
 	// force interrupt if bit0-bit3 is high
 	if(cmdreg & 0x0f) {
 		set_irq(true);
+	}
+	
+	// finish current seeking
+	if(now_seek) {
+		if(seektrk > fdc[drvreg].track) {
+			fdc[drvreg].track++;
+		}
+		else if(seektrk < fdc[drvreg].track) {
+			fdc[drvreg].track--;
+		}
+		if((cmdreg_tmp & 0x10) || ((cmdreg_tmp & 0xf0) == 0)) {
+			trkreg = fdc[drvreg].track;
+		}
+		if(seektrk == fdc[drvreg].track) {
+			// auto update
+			if((cmdreg_tmp & 0xf0) == 0) {
+				datareg = 0;
+			}
+		}
 	}
 	now_search = now_seek = false;
 	

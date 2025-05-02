@@ -116,7 +116,7 @@ void DISK::open(_TCHAR path[], int offset)
 {
 	// check current disk image
 	if(inserted) {
-		if(_tcsicmp(file_path, path) == 0 && file_offset == offset) {
+		if(_tcsicmp(orig_path, path) == 0 && file_offset == offset) {
 			return;
 		}
 		close();
@@ -130,8 +130,9 @@ void DISK::open(_TCHAR path[], int offset)
 	if(fi->Fopen(path, FILEIO_READ_BINARY)) {
 		bool converted = false;
 		
-		_tcscpy(file_path, path);
-		_stprintf(tmp_path, _T("%s.$$$"), path);
+		_tcscpy(orig_path, path);
+		_tcscpy(dest_path, path);
+		_stprintf(temp_path, _T("%s.$$$"), path);
 		temporary = false;
 		
 		// check if file protected
@@ -195,7 +196,7 @@ void DISK::open(_TCHAR path[], int offset)
 				inserted = changed = true;
 				goto file_loaded;
 			}
-			_stprintf(file_path, _T("%s.D88"), path);
+			_stprintf(dest_path, _T("%s.D88"), path);
 			
 			// check file header
 			try {
@@ -225,18 +226,20 @@ file_loaded:
 			fi->Fclose();
 		}
 		if(temporary) {
-			fi->Remove(tmp_path);
+			fi->Remove(temp_path);
 		}
 		if(inserted) {
+#if 0
 			if(converted) {
 				// write image
 				FILEIO* fio = new FILEIO();
-				if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+				if(fio->Fopen(dest_path, FILEIO_WRITE_BINARY)) {
 					fio->Fwrite(buffer, file_size, 1);
 					fio->Fclose();
 				}
 				delete fio;
 			}
+#endif
 			crc32 = getcrc32(buffer, file_size);
 		}
 		if(buffer[0x1a] != 0) {
@@ -285,7 +288,7 @@ void DISK::close()
 		if(!write_protected && file_size && getcrc32(buffer, file_size) != crc32) {
 			// write image
 			FILEIO* fio = new FILEIO();
-			if(fio->Fopen(file_path, FILEIO_READ_WRITE_BINARY)) {
+			if(fio->Fopen(dest_path, FILEIO_READ_WRITE_BINARY)) {
 				fio->Fseek(file_offset, FILEIO_SEEK_SET);
 				if(is_standard_image) {
 					if(is_fdi_image) {
@@ -635,7 +638,7 @@ bool DISK::teledisk_to_d88()
 	if(hdr.sig[0] == 't' && hdr.sig[1] == 'd') {
 		// decompress to the temporary file
 		FILEIO* fo = new FILEIO();
-		if(!fo->Fopen(tmp_path, FILEIO_WRITE_BINARY)) {
+		if(!fo->Fopen(temp_path, FILEIO_WRITE_BINARY)) {
 			delete fo;
 			return false;
 		}
@@ -653,7 +656,7 @@ bool DISK::teledisk_to_d88()
 		
 		// reopen the temporary file
 		fi->Fclose();
-		if(!fi->Fopen(tmp_path, FILEIO_READ_BINARY)) {
+		if(!fi->Fopen(temp_path, FILEIO_READ_BINARY)) {
 			return false;
 		}
 	}
@@ -1104,7 +1107,6 @@ bool DISK::cpdread_to_d88(int extended)
 {
 	struct d88_hdr_t d88_hdr;
 	struct d88_sct_t d88_sct;
-	int t = 0;
 	int total = 0;
 	
 	// get cylinder number and side number
@@ -1127,18 +1129,20 @@ bool DISK::cpdread_to_d88(int extended)
 	
 	for(int c = 0; c < ncyl; c++) {
 		for(int h = 0; h < nside; h++) {
-			d88_hdr.trkptr[t++] = trkptr;
-			if(nside == 1) {
-				// double side
-				d88_hdr.trkptr[t++] = trkptr;
-			}
-			
 			// read sectors in this track
 			uint8 *track_info = tmp_buffer + trkofs;
+			int cyl = track_info[0x10];
+			int side = track_info[0x11];
 			int nsec = track_info[0x15];
 			int size = 1 << (track_info[0x14] + 7); // standard
 			int sctofs = trkofs + 0x100;
 			
+			if(nside == 1) {
+				// double side
+				d88_hdr.trkptr[2 * cyl] = d88_hdr.trkptr[2 * cyl + 1] = trkptr;
+			} else {
+				d88_hdr.trkptr[2 * cyl + side] = trkptr;
+			}
 			for(int s = 0; s < nsec; s++) {
 				// get sector size
 				uint8 *sector_info = tmp_buffer + trkofs + 0x18 + s * 8;
@@ -1154,7 +1158,7 @@ bool DISK::cpdread_to_d88(int extended)
 				d88_sct.n = sector_info[3];
 				d88_sct.nsec = nsec;
 				d88_sct.dens = 0;
-				d88_sct.del = 0;
+				d88_sct.del = (sector_info[5] & 0x40) ? 0x10 : 0;
 				d88_sct.stat = 0;
 				d88_sct.size = size;
 				

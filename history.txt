@@ -1,3 +1,16 @@
+1/8/2014
+
+[VM/DISK] fix cpdread converter to check cylinder/side in track info block
+[VM/DISK] fix cpdread converter to check deleted mark
+[VM/MB8877] fix to seek one track when force interrupt is done
+
+[MZ800/FLOPPY] connect fdc drq signal to cpu irq pin
+[MZ800/FLOPPY] support irq mask register
+[MZ800/FLOPPY] support motor on/off signal delay
+[MZ800/MEMORY] support monochrome display
+[MZ800/MEMORY] fix to connect vblank signal to Z80PIO:PA5, not hblank signal
+
+
 12/31/2013
 
 [EMU/WIN32] support printer interface

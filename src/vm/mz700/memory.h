@@ -114,6 +114,9 @@ public:
 	// common functions
 	void initialize();
 	void reset();
+#if defined(_MZ800)
+	void update_config();
+#endif
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	

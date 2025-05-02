@@ -47,7 +47,7 @@ private:
 	
 	// registor
 	uint8 status, status_tmp;
-	uint8 cmdreg;
+	uint8 cmdreg, cmdreg_tmp;
 	uint8 trkreg;
 	uint8 secreg;
 	uint8 datareg;

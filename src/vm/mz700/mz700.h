@@ -71,6 +71,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_CAPS
 #if defined(_MZ800)
+#define USE_MONITOR_TYPE	2
 #define USE_SCANLINE
 #endif
 #if defined(_MZ800) || defined(_MZ1500)

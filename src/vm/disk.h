@@ -46,8 +46,9 @@ class DISK
 private:
 	FILEIO* fi;
 	uint8 buffer[DISK_BUFFER_SIZE];
-	_TCHAR file_path[_MAX_PATH];
-	_TCHAR tmp_path[_MAX_PATH];
+	_TCHAR orig_path[_MAX_PATH];
+	_TCHAR dest_path[_MAX_PATH];
+	_TCHAR temp_path[_MAX_PATH];
 	int file_size;
 	int file_offset;
 	uint32 crc32;

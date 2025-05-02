@@ -108,15 +108,12 @@ void MEMORY::initialize()
 	SET_BANK(0x0000, 0xffff, ram, ram);
 	
 	// create pc palette
+#if defined(_MZ800)
+	update_config();
+#else
 	for(int i = 0; i < 8; i++) {
 		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
 	}
-#if defined(_MZ800)
-	for(int i = 0; i < 16; i++) {
-		int val = (i & 8) ? 255 : 127;
-		palette_mz800_pc[i] = RGB_COLOR((i & 2) ? val : 0, (i & 4) ? val : 0, (i & 1) ? val : 0);
-	}
-	palette_mz800_pc[8] = palette_mz800_pc[7];
 #endif
 	
 	// register event
@@ -182,6 +179,31 @@ void MEMORY::reset()
 	// motor is always rotating...
 	d_pio->write_signal(SIG_I8255_PORT_C, 0xff, 0x10);
 }
+
+#if defined(_MZ800)
+void MEMORY::update_config()
+{
+	if(config.monitor_type == 0) {
+		// color
+		for(int i = 0; i < 8; i++) {
+			palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+		}
+		for(int i = 0; i < 16; i++) {
+			int val = (i & 8) ? 255 : 127;
+			palette_mz800_pc[i] = RGB_COLOR((i & 2) ? val : 0, (i & 4) ? val : 0, (i & 1) ? val : 0);
+		}
+	} else {
+		// monochrome
+		for(int i = 0; i < 8; i++) {
+			palette_pc[i] = RGB_COLOR(255 * i / 7, 255 * i / 7, 255 * i / 7);
+		}
+		for(int i = 0; i < 16; i++) {
+			palette_mz800_pc[i] = RGB_COLOR(255 * i / 15, 255 * i / 15, 255 * i / 15);
+		}
+	}
+	palette_mz800_pc[8] = palette_mz800_pc[7];
+}
+#endif
 
 void MEMORY::event_vline(int v, int clock)
 {
@@ -645,6 +667,10 @@ void MEMORY::set_vblank(bool val)
 	if(vblank != val) {
 		// VBLANK -> 8255:PC7
 		d_pio->write_signal(SIG_I8255_PORT_C, val ? 0 : 0xff, 0x80);
+#if defined(_MZ800)
+		// VBLANK -> Z80PIO:PA5
+		d_pio_int->write_signal(SIG_Z80PIO_PORT_A, val ? 0 : 0xff, 0x20);
+#endif
 		vblank = val;
 	}
 }
@@ -652,10 +678,6 @@ void MEMORY::set_vblank(bool val)
 void MEMORY::set_hblank(bool val)
 {
 	if(hblank != val) {
-#if defined(_MZ800)
-		// HBLANK -> Z80PIO:PA5
-		d_pio_int->write_signal(SIG_Z80PIO_PORT_A, val ? 0 : 0xff, 0x20);
-#endif
 		hblank = val;
 	}
 }
