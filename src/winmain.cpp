@@ -50,6 +50,8 @@ BOOL commandbar_show, sip_on;
 
 // buttons
 #ifdef USE_BUTTON
+#define MAX_FONT_SIZE 32
+HFONT hFont[MAX_FONT_SIZE];
 HWND hButton[MAX_BUTTONS];
 WNDPROC buttonWndProc[MAX_BUTTONS];
 #endif
@@ -363,14 +365,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			CommandBar_AddAdornments(hCmdBar, 0, 0);
 #endif
 #ifdef USE_BUTTON
+			_memset(hFont, 0, sizeof(hFont));
 			for(int i = 0; i < MAX_BUTTONS; i++) {
 				hButton[i] = CreateWindow(_T("BUTTON"), buttons[i].caption,
-				                          WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+				                          WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_MULTILINE,
 				                          buttons[i].x, buttons[i].y,
 				                          buttons[i].width, buttons[i].height,
 				                          hWnd, (HMENU)(ID_BUTTON + i), hInst, NULL);
 				buttonWndProc[i] = (WNDPROC)(LONG_PTR)GetWindowLong(hButton[i], GWL_WNDPROC);
 				SetWindowLong(hButton[i], GWL_WNDPROC, (LONG)(LONG_PTR)ButtonWndProc);
+				//HFONT hFont = GetWindowFont(hButton[i]);
+				if(!hFont[buttons[i].font_size]) {
+					LOGFONT logfont;
+					logfont.lfEscapement = 0;
+					logfont.lfOrientation = 0;
+					logfont.lfWeight = FW_NORMAL;
+					logfont.lfItalic = FALSE;
+					logfont.lfUnderline = FALSE;
+					logfont.lfStrikeOut = FALSE;
+					logfont.lfCharSet = DEFAULT_CHARSET;
+#ifndef _WIN32_WCE
+					logfont.lfOutPrecision = OUT_TT_PRECIS;
+#endif
+					logfont.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+					logfont.lfQuality = DEFAULT_QUALITY;
+					logfont.lfPitchAndFamily = FIXED_PITCH | FF_DONTCARE;
+					_tcscpy(logfont.lfFaceName, _T("Arial"));
+					logfont.lfHeight = buttons[i].font_size;
+					logfont.lfWidth = buttons[i].font_size >> 1;
+					hFont[buttons[i].font_size] = CreateFontIndirect(&logfont);
+				}
+				SetWindowFont(hButton[i], hFont[buttons[i].font_size], TRUE);
 			}
 #endif
 			break;
@@ -390,6 +415,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			if(fullscreen_now)
 				ChangeDisplaySettings(NULL, 0);
 			fullscreen_now = FALSE;
+#endif
+#ifdef USE_BUTTON
+			for(int i = 0; i < MAX_FONT_SIZE; i++) {
+				if(hFont[i])
+					DeleteObject(hFont[i]);
+			}
 #endif
 			DestroyWindow(hWnd);
 			return 0;

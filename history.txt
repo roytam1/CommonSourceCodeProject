@@ -1,6 +1,11 @@
+12/31/2009
+
+[YS6464A] support Shinko Sangyo YS-6464A
+
+
 12/28/2009
 
-[EMU/WIN32] support artwork, buttons and leds for one-board micro computers
+[EMU/WIN32] support artwork, buttons and leds for single-board computers
 [VM/I386] reimplement 80386 (based on MAME i386 core)
 [VM/I8237] support increment mask of bank register
 [VM/I8251] check number of sync characters

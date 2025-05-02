@@ -510,6 +510,13 @@
 #define MENU_POS_SOUND                  5
 #endif
 
+// SHINKO SANGYO YS-6464A
+#ifdef _YS6464A
+#define MENU_POS_CONTROL                0
+#define MENU_POS_RAM                    1
+#define MENU_POS_SCREEN                 2
+#endif
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

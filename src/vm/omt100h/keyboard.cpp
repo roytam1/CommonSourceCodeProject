@@ -21,7 +21,7 @@ void KEYBOARD::key_down(int code)
 		d_pio->write_signal(did_pio, code, 0x1f);
 	}
 	else if(0x70 <= code && code <= 0x73) {
-		code = (0x73 - code) + 0x10;
+		code = (code - 0x70) + 0x10;
 		d_pio->write_signal(did_pio, code, 0x1f);
 	}
 	else if(code == 0x74) {

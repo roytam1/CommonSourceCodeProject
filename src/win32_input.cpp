@@ -261,8 +261,14 @@ void EMU::press_button(int num)
 {
 	int code = buttons[num].code;
 	
-	key_down(code);
-	key_status[code] = KEY_KEEP_FRAMES;
+	if(code) {
+		key_down(code);
+		key_status[code] = KEY_KEEP_FRAMES;
+	}
+	else {
+		// code=0: reset virtual machine
+		vm->reset();
+	}
 }
 #endif
 

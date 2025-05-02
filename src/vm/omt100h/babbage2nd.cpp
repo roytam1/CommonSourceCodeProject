@@ -113,6 +113,7 @@ void VM::reset()
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device)
 		device->reset();
+	
 }
 
 void VM::run()

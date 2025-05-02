@@ -1,22 +1,22 @@
 /*
-	Gijutsu-Hyoron-Sha Babbage-2nd Emulator 'eBabbage-2nd'
+	SHINKO SANGYO YS-6464A Emulator 'eYS-6464A'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2009.12.26 -
+	Date   : 2009.12.30 -
 
 	[ virtual machine ]
 */
 
-#include "babbage2nd.h"
+#include "ys6464a.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
 #include "../io.h"
+#include "../i8255.h"
+#include "../pcm1bit.h"
 #include "../z80.h"
-#include "../z80ctc.h"
-#include "../z80pio.h"
 
 #include "display.h"
 #include "keyboard.h"
@@ -35,10 +35,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	io = new IO(this, emu);
+	pio = new I8255(this, emu);
+//	pcm = new PCM1BIT(this, emu);
 	cpu = new Z80(this, emu);
-	ctc = new Z80CTC(this, emu);
-	pio1 = new Z80PIO(this, emu);
-	pio2 = new Z80PIO(this, emu);
 	
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
@@ -46,36 +45,22 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
+//	event->set_context_sound(pcm);
 	
-	pio2->set_context_port_b(display, SIG_DISPLAY_7SEG_LED, 0xff, 0);
-	keyboard->set_context_pio(pio2, SIG_Z80PIO_PORT_A);
-	// p.145, fig.3-4
-	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_1, 1);
-	ctc->set_context_zc1(ctc, SIG_Z80CTC_TRIG_0, 1);
-	// p.114, fig.2-52
-	pio1->set_context_port_b(display, SIG_DISPLAY_8BIT_LED, 0xff, 0);
-	//pio1->set_context_port_b(pio1, SIG_Z80PIO_PORT_A, 0xff, 0);
+//	pio->set_context_port_b(pcm, SIG_PCM1BIT_SIGNAL, 0x01, 0);
+	pio->set_context_port_b(display, SIG_DISPLAY_PORT_B, 0xf0, 0);
+	pio->set_context_port_c(display, SIG_DISPLAY_PORT_C, 0xf0, 0);
+	pio->set_context_port_c(keyboard, SIG_KEYBOARD_PORT_C, 0xf0, 0);
+	keyboard->set_context_pio(pio, SIG_I8255_PORT_C);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_intr(ctc);
-	
-	// z80 family daisy chain
-	ctc->set_context_intr(cpu, 0);
-	ctc->set_context_child(pio1);
-	pio1->set_context_intr(cpu, 1);
-	pio1->set_context_child(pio2);
-	pio2->set_context_intr(cpu, 2);
+	cpu->set_context_intr(dummy);
 	
 	// i/o bus
-	io->set_iomap_range_w(0x00, 0x03, ctc);
-	io->set_iomap_range_w(0x10, 0x13, pio1);
-	io->set_iomap_range_w(0x20, 0x23, pio2);
-	
-	io->set_iomap_range_r(0x00, 0x03, ctc);
-	io->set_iomap_range_r(0x10, 0x13, pio1);
-	io->set_iomap_range_r(0x20, 0x23, pio2);
+	io->set_iomap_range_w(0xf8, 0xfb, pio);
+	io->set_iomap_range_r(0xf8, 0xfb, pio);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -182,25 +167,14 @@ void VM::initialize_sound(int rate, int samples)
 {
 	// init sound manager
 	event->initialize_sound(rate, samples);
+	
+	// init sound gen
+//	pcm->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
 {
 	return event->create_sound(samples, fill);
-}
-
-// ----------------------------------------------------------------------------
-// notify key
-// ----------------------------------------------------------------------------
-
-void VM::key_down(int code)
-{
-	keyboard->key_down(code);
-}
-
-void VM::key_up(int code)
-{
-	//keyboard->key_up(code);
 }
 
 // ----------------------------------------------------------------------------

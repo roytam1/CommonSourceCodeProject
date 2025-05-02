@@ -138,5 +138,9 @@ devenv.com x1twin.vcproj /Rebuild Release
 mkdir build\x1twin
 copy Release\x1twin.exe build\x1twin\.
 
+devenv.com ys6464a.vcproj /Rebuild Release
+mkdir build\ys6464a
+copy Release\ys6464a.exe build\ys6464a\.
+
 pause
 echo on

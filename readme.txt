@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/28/2009
+								12/31/2009
 
 --- What's this ?
 
@@ -36,6 +36,7 @@ This archive includes the all source codes of:
 	eTK-80BS	NEC TK-80BS (COMPO BS/80) emulator
 	eX-07		CANON X-07 emulator
 	eX1twin		SHARP X1twin emulator
+	eYS-6464A	Shinko Sangyo YS-6464A
 
 You can compile them with:
 

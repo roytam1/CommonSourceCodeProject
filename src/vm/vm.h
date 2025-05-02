@@ -186,4 +186,9 @@
 #include "x1twin/x1twin.h"
 #endif
 
+// SHINKO SANGYO YS-6464A
+#ifdef _YS6464A
+#include "ys6464a/ys6464a.h"
+#endif
+
 #endif
