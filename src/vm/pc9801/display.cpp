@@ -57,9 +57,8 @@ void DISPLAY::initialize()
 {
 	// clear font
 	uint8 *p = font + 0x81000;
-	uint8 *q = font + 0x82000;
+	uint8 *q = font + 0x83000;
 	for(int i = 0; i < 256; i++) {
-		q += 8;
 		for(int j = 0; j < 4; j++) {
 			uint32 bit = 0;
 			if(i & (1 << j)) {
@@ -73,6 +72,7 @@ void DISPLAY::initialize()
 			*(uint16 *)q = (uint16)bit;
 			q += 2;
 		}
+		q += 8;
 	}
 	for(int i = 0; i < 0x80; i++) {
 		q = font + (i << 12);
@@ -95,8 +95,7 @@ void DISPLAY::initialize()
 		// 8x8 font
 		uint8 *dst = font + 0x82000;
 		uint8 *src = buf;
-		int cnt = 256;
-		while(cnt--) {
+		for(int i = 0; i < 256; i++) {
 			memcpy(dst, src, 8);
 			dst += 16;
 			src += 8;
@@ -647,12 +646,12 @@ void DISPLAY::draw_chr_screen()
 				}
 			}
 			else {
-				uint16 lo = code & 0xff;
-				if(modereg1[MODE1_FONTSEL]) {
-					offset = 0x80000 | (lo << 4);
+				offset = 0x80000 | ((code & 0xff) << 4);
+				if((attr & ATTR_VL) && modereg1[MODE1_ATRSEL]) {
+					offset |= 0x1000;
 				}
-				else {
-					offset = 0x82000 | (lo << 4);
+				if(!modereg1[MODE1_FONTSEL]) {
+					offset |= 0x2000;
 				}
 				gaiji1st = 0;
 			}

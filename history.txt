@@ -1,3 +1,10 @@
+2/7/2012
+
+[VM/UPD765A] fix the wait time to finish seek command
+
+[PC9801/DISPLAY] support semi graphics on text screen
+
+
 2/6/2012
 
 [VM/YM2151] fix to raise irq when timer is expired before it is reset

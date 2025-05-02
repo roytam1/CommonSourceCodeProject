@@ -648,7 +648,7 @@ void UPD765A::cmd_recalib()
 void UPD765A::seek(int drv, int trk)
 {
 	// get distance
-	int seektime = (trk == fdc[drv].track) ? 100 : 40 * abs(trk - fdc[drv].track) + 500; //usec
+	int seektime = (trk == fdc[drv].track) ? 120 : 40 * abs(trk - fdc[drv].track) + 500; //usec
 	
 	if(drv >= MAX_DRIVE) {
 		// invalid drive number
