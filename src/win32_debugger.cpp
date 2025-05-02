@@ -39,6 +39,20 @@ void my_putch(HANDLE hStdOut, _TCHAR c)
 	WriteConsole(hStdOut, &c, 1, &dwWritten, NULL);
 }
 
+//bool is_decimal(_TCHAR *str)
+//{
+//	int len = _tcslen(str);
+//	if(len >= 3 && str[0] >= _T('1') && str[0] <= _T('9') && (str[len - 1] == _T('D') || str[len - 1] == _T('d'))) {
+//		for(int i = 1; i < len - 1; i++) {
+//			if(!(str[0] >= _T('0') && str[0] <= _T('9'))) {
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
+//	return false;
+//}
+
 uint32 my_hexatoi(_TCHAR *str)
 {
 	_TCHAR *s;
@@ -48,13 +62,13 @@ uint32 my_hexatoi(_TCHAR *str)
 	} else if(_tcslen(str) == 3 && str[0] == _T('\'') && str[2] == _T('\'')) {
 		// ank
 		return str[1] & 0xff;
-	} else if(str[_tcslen(str) - 1] == _T('D') || str[_tcslen(str) - 1] == _T('d')) {
-		// decimal
-		return atoi(str);
 	} else if((s = _tcsstr(str, _T(":"))) != NULL) {
 		// 0000:0000
 		s[0] = _T('\0');
-		return (_tcstol(str, NULL, 16) << 4) + _tcstol(s + 1, NULL, 16);
+		return (my_hexatoi(str) << 4) + my_hexatoi(s + 1);
+//	} else if(is_decimal(str)) {
+//		// decimal
+//		return atoi(str);
 	}
 	return _tcstol(str, NULL, 16);
 }

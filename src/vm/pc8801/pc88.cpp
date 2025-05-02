@@ -152,13 +152,16 @@ static const int key_table[15][8] = {
 	{ 0x0d, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }
 };
 
-static const int key_conv_table[6][2] = {
-	{0x2d, 0x2e}, // INS	-> SHIFT + DEL
-	{0x75, 0x70}, // F6	-> SHIFT + F1
-	{0x76, 0x71}, // F7	-> SHIFT + F2
-	{0x77, 0x72}, // F8	-> SHIFT + F3
-	{0x78, 0x73}, // F9	-> SHIFT + F4
-	{0x79, 0x74}, // F10	-> SHIFT + F5
+static const int key_conv_table[9][3] = {
+	{0x2d, 0x2e, 1}, // INS	-> SHIFT + DEL
+	{0x75, 0x70, 1}, // F6	-> SHIFT + F1
+	{0x76, 0x71, 1}, // F7	-> SHIFT + F2
+	{0x77, 0x72, 1}, // F8	-> SHIFT + F3
+	{0x78, 0x73, 1}, // F9	-> SHIFT + F4
+	{0x79, 0x74, 1}, // F10	-> SHIFT + F5
+	{0x08, 0x2e, 0}, // BS	-> DEL
+	{0x1c, 0x20, 0}, // •ÏŠ·-> SPACE
+	{0x1d, 0x20, 0}, // Œˆ’è-> SPACE
 };
 
 static const uint8 intr_mask2_table[8] = {
@@ -1266,11 +1269,11 @@ void PC88::event_frame()
 	// update key status
 	memcpy(key_status, emu->key_buffer(), sizeof(key_status));
 	
-	for(int i = 0; i < 6; i++) {
+	for(int i = 0; i < 9; i++) {
 		// INS or F6-F10 -> SHIFT + DEL or F1-F5
 		if(key_status[key_conv_table[i][0]]) {
 			key_status[key_conv_table[i][1]] = 1;
-			key_status[0x10] = 1;
+			key_status[0x10] |= key_conv_table[i][2];
 		}
 	}
 	if(key_status[0x11] && (key_status[0xbc] || key_status[0xbe])) {

@@ -1,3 +1,12 @@
+10/11/2014
+
+[WIN32/DEBUGGER] fix issue that hexa value ends with d is recognized as decimal
+
+[VM/Z80] fix disassembler
+
+[PC8801MA/PC88] fix to press insdel key automatically when backspace is pressed
+
+
 10/10/2014
 
 [VM/I8155] fix issue in the case that cpu clock is less than const frequency

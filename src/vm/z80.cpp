@@ -2749,7 +2749,7 @@ int dasm(uint32 pc, _TCHAR *buffer)
 	case 0xfa: _stprintf(buffer, _T("JP M, %4x"), debug_fetch16()); break;
 	case 0xfb: _stprintf(buffer, _T("EI")); break;
 	case 0xfc: _stprintf(buffer, _T("CALL M, %4x"), debug_fetch16()); break;
-	case 0xfd: dasm_fd(pc, buffer);
+	case 0xfd: dasm_fd(pc, buffer); break;
 	case 0xfe: _stprintf(buffer, _T("CP %2x"), debug_fetch8()); break;
 	case 0xff: _stprintf(buffer, _T("RST 7")); break;
 	default: __assume(0);
