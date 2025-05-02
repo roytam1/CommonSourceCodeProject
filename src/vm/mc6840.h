@@ -44,7 +44,8 @@ private:
 	void set_signal(int ch, bool signal);
 	
 public:
-	MC6840(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MC6840(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 3; i++) {
 			init_output_signals(&timer[i].outputs);
 			counter[i].freq = 0;
@@ -61,19 +62,24 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
-	void set_context_ch0(DEVICE* device, int id, uint32 mask) {
+	void set_context_ch0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&timer[0].outputs, device, id, mask);
 	}
-	void set_context_ch1(DEVICE* device, int id, uint32 mask) {
+	void set_context_ch1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&timer[1].outputs, device, id, mask);
 	}
-	void set_context_ch2(DEVICE* device, int id, uint32 mask) {
+	void set_context_ch2(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&timer[2].outputs, device, id, mask);
 	}
-	void set_constant_clock(int ch, uint32 hz) {
+	void set_constant_clock(int ch, uint32 hz)
+	{
 		timer[ch].freq = hz;
 	}
 };

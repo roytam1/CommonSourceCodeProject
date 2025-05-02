@@ -9,6 +9,9 @@
 */
 
 #include "i386.h"
+#ifdef USE_DEBUGGER
+#include "debugger.h"
+#endif
 
 /* ----------------------------------------------------------------------------
 	MAME i386
@@ -150,7 +153,7 @@ enum
 
 #include "mame/softfloat/softfloat.c"
 #include "mame/i386/i386.c"
-#ifdef _CPU_DEBUG_LOG
+#ifdef USE_DEBUGGER
 #include "mame/i386/i386dasm.c"
 #endif
 
@@ -168,6 +171,15 @@ void I386::initialize()
 #ifdef SINGLE_MODE_DMA
 	cpustate->dma = d_dma;
 #endif
+#ifdef USE_DEBUGGER
+	cpustate->emu = emu;
+	cpustate->debugger = d_debugger;
+	cpustate->program_stored = d_mem;
+	cpustate->io_stored = d_io;
+	
+	d_debugger->set_context_mem(d_mem);
+	d_debugger->set_context_io(d_io);
+#endif
 	cpustate->shutdown = 0;
 }
 
@@ -180,36 +192,11 @@ void I386::reset()
 {
 	i386_state *cpustate = (i386_state *)opaque;
 	CPU_RESET_CALL(CPU_MODEL);
-#ifdef _CPU_DEBUG_LOG
-	debug_count = 0;
-#endif
 }
 
 int I386::run(int cycles)
 {
 	i386_state *cpustate = (i386_state *)opaque;
-#ifdef _CPU_DEBUG_LOG
-	if(debug_count) {
-		char buffer[256];
-		UINT64 eip = cpustate->eip;
-		UINT8 ops[16];
-		for(int i = 0; i < 16; i++) {
-			ops[i] = d_mem->read_data8(cpustate->pc + i);
-		}
-		UINT8 *oprom = ops;
-		
-		if(cpustate->operand_size) {
-			CPU_DISASSEMBLE_CALL(x86_32);
-		} else {
-			CPU_DISASSEMBLE_CALL(x86_16);
-		}
-		emu->out_debug(_T("%4x\t%s\n"), cpustate->pc, buffer);
-		
-		if(--debug_count == 0) {
-			emu->out_debug(_T("<--------------------------------------------------------------- I386 DASM ----\n"));
-		}
-	}
-#endif
 	return CPU_EXECUTE_CALL(i386);
 }
 
@@ -229,14 +216,6 @@ void I386::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_I386_A20) {
 		i386_set_a20_line(cpustate, data & mask);
 	}
-#ifdef _CPU_DEBUG_LOG
-	else if(id == SIG_CPU_DEBUG) {
-		if(debug_count == 0) {
-			emu->out_debug(_T("---- I386 DASM --------------------------------------------------------------->\n"));
-		}
-		debug_count = 16;
-	}
-#endif
 }
 
 void I386::set_intr_line(bool line, bool pending, uint32 bit)
@@ -262,6 +241,152 @@ uint32 I386::get_pc()
 	i386_state *cpustate = (i386_state *)opaque;
 	return cpustate->prev_pc;
 }
+
+uint32 I386::get_next_pc()
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	return cpustate->pc;
+}
+
+#ifdef USE_DEBUGGER
+void I386::debug_write_data8(uint32 addr, uint32 data)
+{
+	int wait;
+	d_mem->write_data8w(addr, data, &wait);
+}
+
+uint32 I386::debug_read_data8(uint32 addr)
+{
+	int wait;
+	return d_mem->read_data8w(addr, &wait);
+}
+
+void I386::debug_write_data16(uint32 addr, uint32 data)
+{
+	int wait;
+	d_mem->write_data16w(addr, data, &wait);
+}
+
+uint32 I386::debug_read_data16(uint32 addr)
+{
+	int wait;
+	return d_mem->read_data16w(addr, &wait);
+}
+
+void I386::debug_write_data32(uint32 addr, uint32 data)
+{
+	int wait;
+	d_mem->write_data32w(addr, data, &wait);
+}
+
+uint32 I386::debug_read_data32(uint32 addr)
+{
+	int wait;
+	return d_mem->read_data32w(addr, &wait);
+}
+
+void I386::debug_write_io8(uint32 addr, uint32 data)
+{
+	int wait;
+	d_io->write_io8w(addr, data, &wait);
+}
+
+uint32 I386::debug_read_io8(uint32 addr) {
+	int wait;
+	return d_io->read_io8w(addr, &wait);
+}
+
+void I386::debug_write_io16(uint32 addr, uint32 data)
+{
+	int wait;
+	d_io->write_io16w(addr, data, &wait);
+}
+
+uint32 I386::debug_read_io16(uint32 addr) {
+	int wait;
+	return d_io->read_io16w(addr, &wait);
+}
+
+void I386::debug_write_io32(uint32 addr, uint32 data)
+{
+	int wait;
+	d_io->write_io32w(addr, data, &wait);
+}
+
+uint32 I386::debug_read_io32(uint32 addr) {
+	int wait;
+	return d_io->read_io32w(addr, &wait);
+}
+
+bool I386::debug_write_reg(_TCHAR *reg, uint32 data)
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	if(_tcsicmp(reg, _T("AX")) == 0) {
+		REG16(AX) = data;
+	} else if(_tcsicmp(reg, _T("BX")) == 0) {
+		REG16(BX) = data;
+	} else if(_tcsicmp(reg, _T("CX")) == 0) {
+		REG16(CX) = data;
+	} else if(_tcsicmp(reg, _T("DX")) == 0) {
+		REG16(DX) = data;
+	} else if(_tcsicmp(reg, _T("SP")) == 0) {
+		REG16(SP) = data;
+	} else if(_tcsicmp(reg, _T("BP")) == 0) {
+		REG16(BP) = data;
+	} else if(_tcsicmp(reg, _T("SI")) == 0) {
+		REG16(SI) = data;
+	} else if(_tcsicmp(reg, _T("DI")) == 0) {
+		REG16(DI) = data;
+	} else if(_tcsicmp(reg, _T("AL")) == 0) {
+		REG8(AL) = data;
+	} else if(_tcsicmp(reg, _T("AH")) == 0) {
+		REG8(AH) = data;
+	} else if(_tcsicmp(reg, _T("BL")) == 0) {
+		REG8(BL) = data;
+	} else if(_tcsicmp(reg, _T("BH")) == 0) {
+		REG8(BH) = data;
+	} else if(_tcsicmp(reg, _T("CL")) == 0) {
+		REG8(CL) = data;
+	} else if(_tcsicmp(reg, _T("CH")) == 0) {
+		REG8(CH) = data;
+	} else if(_tcsicmp(reg, _T("DL")) == 0) {
+		REG8(DL) = data;
+	} else if(_tcsicmp(reg, _T("DH")) == 0) {
+		REG8(DH) = data;
+	} else {
+		return false;
+	}
+	return false;
+}
+
+void I386::debug_regs_info(_TCHAR *buffer)
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	_stprintf(buffer, _T("AX=%04X  BX=%04X CX=%04X DX=%04X SP=%04X  BP=%04X  SI=%04X  DI=%04X\nDS=%04X  ES=%04X SS=%04X CS=%04X IP=%04X  FLAG=[%c%c%c%c%c%c%c%c%c]"),
+	REG16(AX), REG16(BX), REG16(CX), REG16(DX), REG16(SP), REG16(BP), REG16(SI), REG16(DI),
+	cpustate->sreg[DS].selector, cpustate->sreg[ES].selector, cpustate->sreg[SS].selector, cpustate->sreg[CS].selector, cpustate->eip,
+	cpustate->OF ? _T('O') : _T('-'), cpustate->DF ? _T('D') : _T('-'), cpustate->IF ? _T('I') : _T('-'), cpustate->TF ? _T('T') : _T('-'),
+	cpustate->SF ? _T('S') : _T('-'), cpustate->ZF ? _T('Z') : _T('-'), cpustate->AF ? _T('A') : _T('-'), cpustate->PF ? _T('P') : _T('-'), cpustate->CF ? _T('C') : _T('-'));
+}
+
+int I386::debug_dasm(uint32 pc, _TCHAR *buffer)
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	UINT64 eip = cpustate->eip;
+	UINT8 ops[16];
+	for(int i = 0; i < 16; i++) {
+		int wait;
+		ops[i] = d_mem->read_data8w(pc + i, &wait);
+	}
+	UINT8 *oprom = ops;
+	
+	if(cpustate->operand_size) {
+		return CPU_DISASSEMBLE_CALL(x86_32) & DASMFLAG_LENGTHMASK;
+	} else {
+		return CPU_DISASSEMBLE_CALL(x86_16) & DASMFLAG_LENGTHMASK;
+	}
+}
+#endif
 
 void I386::set_address_mask(uint32 mask)
 {

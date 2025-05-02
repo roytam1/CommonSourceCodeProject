@@ -35,13 +35,16 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique functions
-	void set_context_vdp(MC6847* device) {
+	void set_context_vdp(MC6847* device)
+	{
 		d_vdp = device;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		ram_ptr = vram_ptr = ptr;
 	}
-	void set_context_timer(TIMER* device) {
+	void set_context_timer(TIMER* device)
+	{
 		d_timer = device;
 	}
 	void draw_screen();

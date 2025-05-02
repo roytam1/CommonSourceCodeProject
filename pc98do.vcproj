@@ -317,6 +317,46 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\win32_debugger.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\win32_input.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\win32_input.cpp"
 					>
 					<FileConfiguration
@@ -1068,6 +1108,10 @@
 				>
 				<File
 					RelativePath="src\vm\beep.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\debugger.h"
 					>
 				</File>
 				<File

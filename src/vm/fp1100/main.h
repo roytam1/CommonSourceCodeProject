@@ -46,7 +46,8 @@ private:
 	void update_intr();
 	
 public:
-	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		intr_mask = intr_req = 0;
 	}
 	~MAIN() {}
@@ -56,10 +57,12 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data) {
+	void write_data16(uint32 addr, uint32 data)
+	{
 		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
 	}
-	uint32 read_data16(uint32 addr) {
+	uint32 read_data16(uint32 addr)
+	{
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	void write_io8(uint32 addr, uint32 data);
@@ -69,13 +72,16 @@ public:
 	void intr_reti();
 	
 	// unique functions
-	void set_context_cpu(DEVICE *device) {
+	void set_context_cpu(DEVICE *device)
+	{
 		d_cpu = device;
 	}
-	void set_context_sub(DEVICE *device) {
+	void set_context_sub(DEVICE *device)
+	{
 		d_sub = device;
 	}
-	void set_context_slot(int slot, DEVICE *device) {
+	void set_context_slot(int slot, DEVICE *device)
+	{
 		d_slot[slot] = device;
 	}
 };

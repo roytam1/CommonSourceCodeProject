@@ -35,7 +35,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique function
-	void set_context_fdc(UPD765A* device) {
+	void set_context_fdc(UPD765A* device)
+	{
 		d_fdc = device;
 	}
 };

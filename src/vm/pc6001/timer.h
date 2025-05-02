@@ -73,14 +73,17 @@ public:
 	void intr_reti();
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_sub(DEVICE* device) {
+	void set_context_sub(DEVICE* device)
+	{
 		d_sub = device;
 	}
 #ifndef _PC6001
-	void set_context_memory(MEMORY* device) {
+	void set_context_memory(MEMORY* device)
+	{
 		d_mem = device;
 	}
 #endif

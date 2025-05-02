@@ -109,7 +109,8 @@ public:
 	uint32 read_signal(int ch);
 	
 	// unique functiosn
-	void set_context_ext(DEVICE* device) {
+	void set_context_ext(DEVICE* device)
+	{
 		d_ext = device;
 	}
 	void open_disk(int drv, _TCHAR* file_path, int offset);

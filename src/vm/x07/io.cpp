@@ -352,7 +352,7 @@ void IO::event_vline(int v, int clock)
 
 void IO::write_io8(uint32 addr, uint32 data)
 {
-//	emu->out_debug("OUT\t%4x, %2x\n", addr, data);
+//	emu->out_debug_log("OUT\t%4x, %2x\n", addr, data);
 	switch(addr & 0xff) {
 	case 0x80:
 		font_code = data;
@@ -381,7 +381,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 			// temporary patch: register the event to stop
 			int intv = ram[0x450] * 50000;
 			if(register_id_beep != -1) {
-				cancel_event(register_id_beep);
+				cancel_event(this, register_id_beep);
 			}
 			register_event(this, EVENT_BEEP, intv, false, &register_id_beep);
 		}
@@ -457,7 +457,7 @@ uint32 IO::read_io8(uint32 addr)
 		val = rregs[6];
 		break;
 	}
-//	emu->out_debug("IN\t%4x = %2x\n", addr, val);
+//	emu->out_debug_log("IN\t%4x = %2x\n", addr, val);
 	return val;
 }
 
@@ -955,7 +955,7 @@ void IO::send_to_sub()
 				sub_int |= 1;
 				update_intr();
 			}
-//			emu->out_debug("CMD TYPE = %2x, LEN = %d RSP=%d\n", cmd_type, cmd_len, rsp_buf->count());
+//			emu->out_debug_log("CMD TYPE = %2x, LEN = %d RSP=%d\n", cmd_type, cmd_len, rsp_buf->count());
 		}
 	}
 }
@@ -1064,7 +1064,7 @@ void IO::process_sub()
 		cur_time.update_year();
 		cur_time.update_day_of_week();
 		// restart event
-		cancel_event(register_id_1sec);
+		cancel_event(this, register_id_1sec);
 		register_event(this, EVENT_1SEC, 1000000, true, &register_id_1sec);
 		break;
 	case 0x0b:	// CalcDay

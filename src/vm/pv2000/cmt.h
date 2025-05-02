@@ -42,7 +42,8 @@ public:
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return (play || rec);
 	}
 	bool skip() { return (start & 1) && (play || rec); }

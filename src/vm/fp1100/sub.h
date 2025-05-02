@@ -65,10 +65,12 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data) {
+	void write_data16(uint32 addr, uint32 data)
+	{
 		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
 	}
-	uint32 read_data16(uint32 addr) {
+	uint32 read_data16(uint32 addr)
+	{
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	void write_io8(uint32 addr, uint32 data);
@@ -77,16 +79,20 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context_cpu(DEVICE *device) {
+	void set_context_cpu(DEVICE *device)
+	{
 		d_cpu = device;
 	}
-	void set_context_main(DEVICE *device) {
+	void set_context_main(DEVICE *device)
+	{
 		d_main = device;
 	}
-	void set_context_beep(DEVICE *device) {
+	void set_context_beep(DEVICE *device)
+	{
 		d_beep = device;
 	}
-	void set_context_crtc(DEVICE *device, uint8* ptr) {
+	void set_context_crtc(DEVICE *device, uint8* ptr)
+	{
 		d_crtc = device;
 		regs = ptr;
 	}
@@ -95,7 +101,8 @@ public:
 	void draw_screen();
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return false;
 	}
 	void close_tape();

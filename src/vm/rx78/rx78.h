@@ -29,6 +29,7 @@
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
 #define USE_AUTO_KEY_CAPS
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -81,6 +82,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

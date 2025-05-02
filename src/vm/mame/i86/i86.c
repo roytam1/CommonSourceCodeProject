@@ -39,7 +39,6 @@ struct i8086_state
 	INT32 AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal;      /* 0 or non-0 valued flags */
 	UINT8 ParityVal;
 	UINT8 TF, IF;                  /* 0 or 1 valued flags */
-	UINT8 MF;                          /* V30 mode flag */
 	UINT8 int_vector;
 	INT8 nmi_state;
 	INT8 irq_state;
@@ -61,6 +60,12 @@ struct i8086_state
 #endif
 #ifdef SINGLE_MODE_DMA
 	DEVICE *dma;
+#endif
+#ifdef USE_DEBUGGER
+	EMU *emu;
+	DEBUGGER *debugger;
+	DEVICE *program_stored;
+	DEVICE *io_stored;
 #endif
 	int icount;
 
@@ -214,6 +219,19 @@ static CPU_EXECUTE( i8086 )
 {
 	if (cpustate->halted || cpustate->busreq)
 	{
+#ifdef USE_DEBUGGER
+		if(cpustate->debugger->now_debugging) {
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging && !cpustate->debugger->now_going) {
+				cpustate->debugger->now_suspended = true;
+			}
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if(cpustate->dma != NULL) {
 			cpustate->dma->do_dma();
@@ -242,9 +260,39 @@ static CPU_EXECUTE( i8086 )
 	/* run until we're out */
 	while (cpustate->icount > 0 && !cpustate->busreq)
 	{
-		cpustate->seg_prefix = FALSE;
-		cpustate->prevpc = cpustate->pc;
-		TABLE86;
+#ifdef USE_DEBUGGER
+		bool now_debugging = cpustate->debugger->now_debugging;
+		if(now_debugging) {
+			cpustate->debugger->check_break_points(cpustate->pc);
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging) {
+				cpustate->program = cpustate->io = cpustate->debugger;
+			} else {
+				now_debugging = false;
+			}
+			cpustate->seg_prefix = FALSE;
+			cpustate->prevpc = cpustate->pc;
+			TABLE86;
+			if(now_debugging) {
+				if(!cpustate->debugger->now_going) {
+					cpustate->debugger->now_suspended = true;
+				}
+				cpustate->program = cpustate->program_stored;
+				cpustate->io = cpustate->io_stored;
+			}
+		} else {
+#endif
+			cpustate->seg_prefix = FALSE;
+			cpustate->prevpc = cpustate->pc;
+			TABLE86;
+#ifdef USE_DEBUGGER
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if(cpustate->dma != NULL) {
 			cpustate->dma->do_dma();
@@ -287,6 +335,19 @@ static CPU_EXECUTE( i80186 )
 {
 	if (cpustate->halted || cpustate->busreq)
 	{
+#ifdef USE_DEBUGGER
+		if(cpustate->debugger->now_debugging) {
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging && !cpustate->debugger->now_going) {
+				cpustate->debugger->now_suspended = true;
+			}
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if (cpustate->dma != NULL) {
 			cpustate->dma->do_dma();
@@ -315,9 +376,39 @@ static CPU_EXECUTE( i80186 )
 	/* run until we're out */
 	while (cpustate->icount > 0 && !cpustate->busreq)
 	{
-		cpustate->seg_prefix = FALSE;
-		cpustate->prevpc = cpustate->pc;
-		TABLE186;
+#ifdef USE_DEBUGGER
+		bool now_debugging = cpustate->debugger->now_debugging;
+		if(now_debugging) {
+			cpustate->debugger->check_break_points(cpustate->pc);
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging) {
+				cpustate->program = cpustate->io = cpustate->debugger;
+			} else {
+				now_debugging = false;
+			}
+			cpustate->seg_prefix = FALSE;
+			cpustate->prevpc = cpustate->pc;
+			TABLE186;
+			if(now_debugging) {
+				if(!cpustate->debugger->now_going) {
+					cpustate->debugger->now_suspended = true;
+				}
+				cpustate->program = cpustate->program_stored;
+				cpustate->io = cpustate->io_stored;
+			}
+		} else {
+#endif
+			cpustate->seg_prefix = FALSE;
+			cpustate->prevpc = cpustate->pc;
+			TABLE186;
+#ifdef USE_DEBUGGER
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if (cpustate->dma != NULL) {
 			cpustate->dma->do_dma();

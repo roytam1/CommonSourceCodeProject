@@ -30,7 +30,8 @@ public:
 	bool bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, int32* CarryFlag);
 	
 	// unique functions
-	void set_context_fdc(UPD765A* device) {
+	void set_context_fdc(UPD765A* device)
+	{
 		d_fdc = device;
 	}
 };

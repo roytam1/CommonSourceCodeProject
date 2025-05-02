@@ -58,6 +58,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -68,7 +69,7 @@ class EVENT;
 class I8237;
 class I8255;
 class I8259;
-class I86;
+class I286;
 class IO;
 class LS393;
 class RP5C01;
@@ -94,7 +95,7 @@ protected:
 	I8237* dma;
 	I8255* pio;
 	I8259* pic;	// includes 2chips
-	I86* cpu;
+	I286* cpu;
 	IO* io;
 	LS393* div;
 	RP5C01* rtc;
@@ -129,6 +130,11 @@ public:
 	void special_reset();
 	void run();
 	double frame_rate();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

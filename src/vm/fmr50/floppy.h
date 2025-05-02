@@ -40,13 +40,16 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_fdc(MB8877* device) {
+	void set_context_fdc(MB8877* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void change_disk(int drv) {
+	void change_disk(int drv)
+	{
 		changed[drv] = true;
 	}
 };

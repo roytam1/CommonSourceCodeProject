@@ -31,6 +31,7 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	8
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -75,6 +76,9 @@ protected:
 	uint8 ext[0x8000];	// ext ram (32k)
 	bool inserted;
 	
+	// FD5 floppy drive uint
+	Z80* subcpu;
+	
 public:
 	// ----------------------------------------
 	// initialize
@@ -90,6 +94,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

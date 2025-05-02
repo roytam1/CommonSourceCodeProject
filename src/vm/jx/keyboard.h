@@ -46,13 +46,16 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_pit(DEVICE* device) {
+	void set_context_pit(DEVICE* device)
+	{
 		d_pit = device;
 	}
 	void key_down(int code);

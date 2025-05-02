@@ -44,25 +44,32 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_pcm(DEVICE* device) {
+	void set_context_pcm(DEVICE* device)
+	{
 		d_pcm = device;
 	}
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_rtc(DEVICE* device) {
+	void set_context_rtc(DEVICE* device)
+	{
 		d_rtc = device;
 	}
-	void set_vram_ptr(uint8 *ptr) {
+	void set_vram_ptr(uint8 *ptr)
+	{
 		vram = ptr;
 	}
 	void key_down(int code);

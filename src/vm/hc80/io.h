@@ -127,19 +127,24 @@ public:
 	uint32 intr_ack();
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
-	void set_context_beep(DEVICE* device) {
+	void set_context_beep(DEVICE* device)
+	{
 		d_beep = device;
 	}
-	void set_context_tf20(DEVICE* device) {
+	void set_context_tf20(DEVICE* device)
+	{
 		d_tf20 = device;
 	}
 	void draw_screen();

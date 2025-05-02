@@ -47,7 +47,8 @@ private:
 	void draw_sprites();
 	
 public:
-	TMS9918A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	TMS9918A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_irq);
 #ifdef TMS9918A_SUPER_IMPOSE
 		now_super_impose = false;
@@ -66,7 +67,8 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void draw_screen();

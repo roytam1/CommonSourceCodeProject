@@ -43,9 +43,6 @@ private:
 	outputs_t outputs_drq;
 	outputs_t outputs_hdu;
 	outputs_t outputs_index;
-#ifdef _FDC_DEBUG_LOG
-	DEVICE *d_cpu;
-#endif
 	
 	uint8 hdu, hdue, id[4], eot, gpl, dtl;
 	
@@ -123,14 +120,12 @@ private:
 	void cmd_invalid();
 	
 public:
-	UPD765A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	UPD765A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_irq);
 		init_output_signals(&outputs_drq);
 		init_output_signals(&outputs_hdu);
 		init_output_signals(&outputs_index);
-#ifdef _FDC_DEBUG_LOG
-		d_cpu = NULL;
-#endif
 		raise_irq_when_media_changed = false;
 	}
 	~UPD765A() {}
@@ -148,24 +143,24 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
-	void set_context_drq(DEVICE* device, int id, uint32 mask) {
+	void set_context_drq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_drq, device, id, mask);
 	}
-	void set_context_hdu(DEVICE* device, int id, uint32 mask) {
+	void set_context_hdu(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_hdu, device, id, mask);
 	}
-	void set_context_index(DEVICE* device, int id, uint32 mask) {
+	void set_context_index(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_index, device, id, mask);
 	}
-#ifdef _FDC_DEBUG_LOG
-	void set_context_cpu(DEVICE* device) {
-		d_cpu = device;
-	}
-#endif
-	DISK* get_disk_handler(int drv) {
+	DISK* get_disk_handler(int drv)
+	{
 		return disk[drv];
 	}
 	void open_disk(int drv, _TCHAR path[], int offset);

@@ -33,7 +33,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 };

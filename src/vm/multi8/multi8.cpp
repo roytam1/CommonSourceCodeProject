@@ -23,6 +23,10 @@
 #include "../ym2203.h"
 #include "../z80.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "cmt.h"
 #include "display.h"
 #include "floppy.h"
@@ -88,6 +92,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// i/o bus
 	io->set_iomap_range_rw(0x00, 0x01, key);
@@ -155,6 +162,20 @@ double VM::frame_rate()
 {
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

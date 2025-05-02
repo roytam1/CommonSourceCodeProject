@@ -18,18 +18,22 @@ private:
 	int* buf;
 	int cnt, rpt, wpt, size;
 public:
-	FIFO(int s) {
+	FIFO(int s)
+	{
 		cnt = rpt = wpt = 0;
 		size = s;
 		buf = (int*)malloc(s * sizeof(int));
 	}
-	void release() {
+	void release()
+	{
 		free(buf);
 	}
-	void clear() {
+	void clear()
+	{
 		cnt = rpt = wpt = 0;
 	}
-	void write(int val) {
+	void write(int val)
+	{
 		if(cnt < size) {
 			buf[wpt++] = val;
 			if(wpt >= size) {
@@ -38,7 +42,8 @@ public:
 			cnt++;
 		}
 	}
-	int read() {
+	int read()
+	{
 		int val = 0;
 		if(cnt) {
 			val = buf[rpt++];
@@ -49,7 +54,8 @@ public:
 		}
 		return val;
 	}
-	int read_not_remove(int pt) {
+	int read_not_remove(int pt)
+	{
 		if(pt >= 0 && pt < cnt) {
 			pt += rpt;
 			if(pt >= size) {
@@ -59,13 +65,16 @@ public:
 		}
 		return 0;
 	}
-	int count() {
+	int count()
+	{
 		return cnt;
 	}
-	bool full() {
+	bool full()
+	{
 		return (cnt == size);
 	}
-	bool empty() {
+	bool empty()
+	{
 		return (cnt == 0);
 	}
 };

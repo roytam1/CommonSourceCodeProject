@@ -34,10 +34,12 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
 };

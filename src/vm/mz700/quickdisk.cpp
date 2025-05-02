@@ -82,21 +82,21 @@ void QUICKDISK::reset()
 
 #define CANCEL_RESTORE_EVENT() { \
 	if(restore_id != -1) { \
-		cancel_event(restore_id); \
+		cancel_event(this, restore_id); \
 		restore_id = -1; \
 	} \
 }
 
 #define REGISTER_END_EVENT() { \
 	if(end_id != -1) { \
-		cancel_event(end_id); \
+		cancel_event(this, end_id); \
 	} \
 	register_event(this, EVENT_END, PERIOD_END, false, &end_id); \
 }
 
 #define CANCEL_END_EVENT() { \
 	if(end_id != -1) { \
-		cancel_event(end_id); \
+		cancel_event(this, end_id); \
 		end_id = -1; \
 	} \
 }

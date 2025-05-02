@@ -36,7 +36,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_opn(DEVICE* device) {
+	void set_context_opn(DEVICE* device)
+	{
 		d_opn = device;
 	}
 };

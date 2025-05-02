@@ -128,33 +128,41 @@ public:
 	
 	// unitque function
 #if defined(HAS_I286)
-	void set_context_cpu(I286* device) {
+	void set_context_cpu(I286* device)
 #else
-	void set_context_cpu(I386* device) {
+	void set_context_cpu(I386* device)
 #endif
+	{
 		d_cpu = device;
 	}
-	void set_machine_id(uint8 id) {
+	void set_machine_id(uint8 id)
+	{
 		machine_id = id;
 	}
-	void set_context_crtc(DEVICE* device) {
+	void set_context_crtc(DEVICE* device)
+	{
 		d_crtc = device;
 	}
-	void set_chregs_ptr(uint8* ptr) {
+	void set_chregs_ptr(uint8* ptr)
+	{
 		chreg = ptr;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
-	uint8* get_cvram() {
+	uint8* get_cvram()
+	{
 		return cvram;
 	}
 #ifdef _FMR60
-	uint8* get_avram() {
+	uint8* get_avram()
+	{
 		return avram;
 	}
 #else
-	uint8* get_kvram() {
+	uint8* get_kvram()
+	{
 		return kvram;
 	}
 #endif

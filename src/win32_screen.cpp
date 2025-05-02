@@ -54,7 +54,7 @@ void EMU::initialize_screen()
 	wait_vsync = config.wait_vsync;
 	
 	// initialize video recording
-	now_rec_vid = false;
+	now_rec_video = false;
 	hdcDibRec = NULL;
 	pAVIStream = NULL;
 	pAVICompressed = NULL;
@@ -398,7 +398,7 @@ void EMU::change_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 		ReleaseDC(main_window_handle, hdc);
 		
 		// stop recording
-		if(now_rec_vid) {
+		if(now_rec_video) {
 			stop_rec_video();
 			stop_rec_sound();
 		}
@@ -416,7 +416,7 @@ int EMU::draw_screen()
 	}
 	
 	// check avi file recording timing
-	if(now_rec_vid && rec_vid_run_frames <= 0) {
+	if(now_rec_video && rec_video_run_frames <= 0) {
 		return 0;
 	}
 	
@@ -500,7 +500,7 @@ int EMU::draw_screen()
 	
 	// copy bitmap to d3d9 offscreen surface
 	if(use_d3d9 && lpd3d9Buffer != NULL) {
-		if(!(render_to_d3d9Buffer && !now_rec_vid)) {
+		if(!(render_to_d3d9Buffer && !now_rec_video)) {
 			scrntype *src = stretch_screen ? lpBmpStretch1 : lpBmpSource;
 			src += source_width * stretch_pow_x * (source_height * stretch_pow_y - 1);
 			scrntype *out = lpd3d9Buffer;
@@ -525,57 +525,57 @@ int EMU::draw_screen()
 	self_invalidate = true;
 	
 	// record avi file
-	if(now_rec_vid) {
+	if(now_rec_video) {
 		static double frames = 0;
-		static int prev_vid_fps = -1;
+		static int prev_video_fps = -1;
 #ifdef SUPPORT_VARIABLE_TIMING
 		static double prev_vm_fps = -1;
 		double vm_fps = vm->frame_rate();
-		if(prev_vid_fps != rec_vid_fps || prev_vm_fps != vm_fps) {
-			prev_vid_fps = rec_vid_fps;
+		if(prev_video_fps != rec_video_fps || prev_vm_fps != vm_fps) {
+			prev_video_fps = rec_video_fps;
 			prev_vm_fps = vm_fps;
-			frames = vm_fps / rec_vid_fps;
+			frames = vm_fps / rec_video_fps;
 		}
 #else
-		if(prev_vid_fps != rec_vid_fps) {
-			prev_vid_fps = rec_vid_fps;
-			frames = FRAMES_PER_SEC / rec_vid_fps;
+		if(prev_video_fps != rec_video_fps) {
+			prev_video_fps = rec_video_fps;
+			frames = FRAMES_PER_SEC / rec_video_fps;
 		}
 #endif
 		int counter = 0;
-		if(use_multi_thread) {
-			while(rec_vid_run_frames > 0) {
-				rec_vid_run_frames -= frames;
-				rec_vid_frames += frames;
+		if(use_video_thread) {
+			while(rec_video_run_frames > 0) {
+				rec_video_run_frames -= frames;
+				rec_video_frames += frames;
 				counter++;
 			}
 			if(counter != 0) {
-				if(hThread != (HANDLE)0) {
-					if(thread_param.result == 0) {
-						WaitForSingleObject(hThread, INFINITE);
+				if(hVideoThread != (HANDLE)0) {
+					if(video_thread_param.result == 0) {
+						WaitForSingleObject(hVideoThread, INFINITE);
 					}
-					hThread = (HANDLE)0;
+					hVideoThread = (HANDLE)0;
 					
-					if(thread_param.result == RESULT_FULL) {
+					if(video_thread_param.result == RESULT_FULL) {
 						stop_rec_video();
 						if(!start_rec_video(-1)) {
 							return 0;
 						}
-					} else if(thread_param.result == RESULT_ERROR) {
+					} else if(video_thread_param.result == RESULT_ERROR) {
 						stop_rec_video();
 						return 0;
 					}
 				}
 				BitBlt(hdcDibRec, 0, 0, source_width, source_height, hdcDibSource, 0, 0, SRCCOPY);
-				thread_param.frames += counter;
-				thread_param.result = 0;
-				if((hThread = (HANDLE)_beginthreadex(NULL, 0, rec_video_thread, &thread_param, 0, NULL)) == (HANDLE)0) {
+				video_thread_param.frames += counter;
+				video_thread_param.result = 0;
+				if((hVideoThread = (HANDLE)_beginthreadex(NULL, 0, rec_video_thread, &video_thread_param, 0, NULL)) == (HANDLE)0) {
 					stop_rec_video();
 					return 0;
 				}
 			}
 		} else {
-			while(rec_vid_run_frames > 0) {
+			while(rec_video_run_frames > 0) {
 				LONG lBytesWritten;
 				if(AVIStreamWrite(pAVICompressed, lAVIFrames++, 1, (LPBYTE)lpBmpSource, pbmInfoHeader->biSizeImage, AVIIF_KEYFRAME, NULL, &lBytesWritten) == AVIERR_OK) {
 					// if avi file size > (2GB - 16MB), create new avi file
@@ -585,8 +585,8 @@ int EMU::draw_screen()
 							break;
 						}
 					}
-					rec_vid_run_frames -= frames;
-					rec_vid_frames += frames;
+					rec_video_run_frames -= frames;
+					rec_video_frames += frames;
 					counter++;
 				} else {
 					stop_rec_video();
@@ -602,7 +602,7 @@ int EMU::draw_screen()
 
 scrntype* EMU::screen_buffer(int y)
 {
-	if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
+	if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_video) {
 		return lpd3d9Buffer + screen_width * y;
 	}
 	return lpBmp + screen_width * (screen_height - y - 1);
@@ -711,7 +711,7 @@ quit:
 
 void EMU::capture_screen()
 {
-	if(use_d3d9 && render_to_d3d9Buffer && !now_rec_vid) {
+	if(use_d3d9 && render_to_d3d9Buffer && !now_rec_video) {
 		// virtual machine may render screen to d3d9 buffer directly...
 		vm->draw_screen();
 	}
@@ -739,10 +739,10 @@ void EMU::capture_screen()
 bool EMU::start_rec_video(int fps)
 {
 	if(fps > 0) {
-		rec_vid_fps = fps;
-		rec_vid_run_frames = rec_vid_frames = 0;
+		rec_video_fps = fps;
+		rec_video_run_frames = rec_video_frames = 0;
 	} else {
-		fps = rec_vid_fps;
+		fps = rec_video_fps;
 	}
 	bool show_dialog = (fps > 0);
 	
@@ -750,14 +750,14 @@ bool EMU::start_rec_video(int fps)
 	SYSTEMTIME sTime;
 	GetLocalTime(&sTime);
 	
-	_stprintf(vid_file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.avi"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
+	_stprintf(video_file_name, _T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.avi"), sTime.wYear, sTime.wMonth, sTime.wDay, sTime.wHour, sTime.wMinute, sTime.wSecond);
 	
 	// initialize vfw
 	AVIFileInit();
-	if(AVIFileOpen(&pAVIFile, bios_path(vid_file_name), OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
+	if(AVIFileOpen(&pAVIFile, bios_path(video_file_name), OF_WRITE | OF_CREATE, NULL) != AVIERR_OK) {
 		return false;
 	}
-	use_multi_thread = false;
+	use_video_thread = false;
 	
 	// stream header
 	AVISTREAMINFO strhdr;
@@ -796,31 +796,31 @@ bool EMU::start_rec_video(int fps)
 	GetSystemInfo(&info);
 	
 	if(info.dwNumberOfProcessors > 1) {
-		use_multi_thread = true;
-		hThread = (HANDLE)0;
-		thread_param.pAVICompressed = pAVICompressed;
-		thread_param.lpBmpSource = lpBmpSource;
-		thread_param.pbmInfoHeader = pbmInfoHeader;
-		thread_param.dwAVIFileSize = 0;
-		thread_param.lAVIFrames = 0;
-		thread_param.frames = 0;
-		thread_param.result = 0;
+		use_video_thread = true;
+		hVideoThread = (HANDLE)0;
+		video_thread_param.pAVICompressed = pAVICompressed;
+		video_thread_param.lpBmpSource = lpBmpSource;
+		video_thread_param.pbmInfoHeader = pbmInfoHeader;
+		video_thread_param.dwAVIFileSize = 0;
+		video_thread_param.lAVIFrames = 0;
+		video_thread_param.frames = 0;
+		video_thread_param.result = 0;
 		
 		HDC hdc = GetDC(main_window_handle);
 		create_dib_section(hdc, source_width, source_height, &hdcDibRec, &hBmpRec, &hOldBmpRec, &lpBufRec, &lpBmpRec, &lpDibRec);
 		ReleaseDC(main_window_handle, hdc);
 	}
-	now_rec_vid = true;
+	now_rec_video = true;
 	return true;
 }
 
 void EMU::stop_rec_video()
 {
 	// release thread
-	if(use_multi_thread) {
-		if(hThread != (HANDLE)0) {
-			WaitForSingleObject(hThread, INFINITE);
-			hThread = (HANDLE)0;
+	if(use_video_thread) {
+		if(hVideoThread != (HANDLE)0) {
+			WaitForSingleObject(hVideoThread, INFINITE);
+			hVideoThread = (HANDLE)0;
 		}
 		if(hdcDibRec) {
 			release_dib_section(hdcDibRec, hBmpRec, hOldBmpRec, lpBufRec);
@@ -843,8 +843,8 @@ void EMU::stop_rec_video()
 	pAVIFile = NULL;
 	
 	// repair header
-	if(now_rec_vid) {
-		FILE* fp = _tfopen(bios_path(vid_file_name), _T("r+b"));
+	if(now_rec_video) {
+		FILE* fp = _tfopen(bios_path(video_file_name), _T("r+b"));
 		if(fp != NULL) {
 			// copy fccHandler
 			uint8 buf[4];
@@ -857,19 +857,19 @@ void EMU::stop_rec_video()
 			fclose(fp);
 		}
 	}
-	now_rec_vid = false;
+	now_rec_video = false;
 }
 
 void EMU::restart_rec_video()
 {
-	bool tmp = now_rec_vid;
+	bool tmp = now_rec_video;
 	stop_rec_video();
 	if(tmp) start_rec_video(-1);
 }
 
 unsigned __stdcall rec_video_thread(void *lpx)
 {
-	thread_t *p = (thread_t *)lpx;
+	volatile video_thread_t *p = (video_thread_t *)lpx;
 	LONG lBytesWritten;
 	int result = RESULT_SUCCESS;
 	

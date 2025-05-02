@@ -55,14 +55,16 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram_b = ptr + 0x0000;
 		vram_r = ptr + 0x4000;
 		vram_g = ptr + 0x8000;
 		vram_t = ptr + 0xc000;
 		vram_a = ptr + 0xc800;
 	}
-	void set_regs_ptr(uint8* ptr) {
+	void set_regs_ptr(uint8* ptr)
+	{
 		regs = ptr;
 	}
 	void draw_screen();

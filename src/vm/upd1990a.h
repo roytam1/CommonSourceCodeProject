@@ -42,7 +42,8 @@ private:
 #endif
 	
 public:
-	UPD1990A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	UPD1990A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_dout);
 		init_output_signals(&outputs_tp);
 		cmd = mode = tpmode = 0;
@@ -58,16 +59,19 @@ public:
 	// common functions
 	void initialize();
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 read_signal(int ch) {
+	uint32 read_signal(int ch)
+	{
 		return (uint32)(shift_data & 1);
 	}
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_dout(DEVICE* device, int id, uint32 mask) {
+	void set_context_dout(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_dout, device, id, mask);
 	}
-	void set_context_tp(DEVICE* device, int id, uint32 mask) {
+	void set_context_tp(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_tp, device, id, mask);
 	}
 };

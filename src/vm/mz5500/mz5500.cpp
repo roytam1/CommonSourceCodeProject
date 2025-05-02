@@ -16,7 +16,7 @@
 #include "../i8237.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../io.h"
 #include "../ls393.h"
 #include "../rp5c01.h"
@@ -25,6 +25,10 @@
 #include "../ym2203.h"
 #include "../z80ctc.h"
 #include "../z80sio.h"
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
 
 #include "display.h"
 #include "keyboard.h"
@@ -45,7 +49,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma = new I8237(this, emu);
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
+	cpu = new I286(this, emu);
 	io = new IO(this, emu);
 	div = new LS393(this, emu);
 	rtc = new RP5C01(this, emu);
@@ -112,6 +116,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma);
+#endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
 	// i/o bus
@@ -206,6 +213,20 @@ double VM::frame_rate()
 {
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

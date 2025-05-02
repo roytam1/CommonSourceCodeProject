@@ -28,6 +28,10 @@
 #include "../upd71071.h"
 #include "../upd765a.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "bios.h"
 #include "calendar.h"
 #include "floppy.h"
@@ -117,6 +121,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma);
+#endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
 	// i/o bus
@@ -221,6 +228,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

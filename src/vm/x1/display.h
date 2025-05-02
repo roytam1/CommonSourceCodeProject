@@ -132,17 +132,21 @@ public:
 	
 	// unique function
 #ifdef _X1TURBO_FEATURE
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_crtc(HD46505* device) {
+	void set_context_crtc(HD46505* device)
+	{
 		d_crtc = device;
 	}
 #endif
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram_ptr = ptr;
 	}
-	void set_regs_ptr(uint8* ptr) {
+	void set_regs_ptr(uint8* ptr)
+	{
 		regs = ptr;
 	}
 	void draw_screen();

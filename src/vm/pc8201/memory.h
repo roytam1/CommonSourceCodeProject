@@ -45,13 +45,16 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_cmt(DEVICE* device) {
+	void set_context_cmt(DEVICE* device)
+	{
 		d_cmt = device;
 	}
-	void set_context_drec(DEVICE* device) {
+	void set_context_drec(DEVICE* device)
+	{
 		d_drec = device;
 	}
-	void set_context_rtc(DEVICE* device) {
+	void set_context_rtc(DEVICE* device)
+	{
 		d_rtc = device;
 	}
 };

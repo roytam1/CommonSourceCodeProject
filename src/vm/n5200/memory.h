@@ -45,10 +45,12 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unitque function
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
-	uint8* get_tvram() {
+	uint8* get_tvram()
+	{
 		return tvram;
 	}
 };

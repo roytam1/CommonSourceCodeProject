@@ -45,10 +45,12 @@ public:
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return (play || rec);
 	}
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
 };

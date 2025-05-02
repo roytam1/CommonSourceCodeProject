@@ -49,21 +49,26 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_cmt(DEVICE* device) {
+	void set_context_cmt(DEVICE* device)
+	{
 		d_cmt = device;
 	}
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_psg(DEVICE* device) {
+	void set_context_psg(DEVICE* device)
+	{
 		d_psg = device;
 	}
-	void set_context_vdp(DEVICE* device) {
+	void set_context_vdp(DEVICE* device)
+	{
 		d_vdp = device;
 	}
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
-	bool cart_inserted() {
+	bool cart_inserted()
+	{
 		return (ctype != 0);
 	}
 };

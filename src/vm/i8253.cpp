@@ -335,7 +335,7 @@ void I8253::stop_count(int ch)
 	
 	// cancel event
 	if(counter[ch].register_id != -1) {
-		cancel_event(counter[ch].register_id);
+		cancel_event(this, counter[ch].register_id);
 	}
 	counter[ch].register_id = -1;
 }
@@ -351,7 +351,7 @@ void I8253::latch_count(int ch)
 			input_clock(ch, input);
 			// cancel and re-register event
 			if(expired) {
-				cancel_event(counter[ch].register_id);
+				cancel_event(this, counter[ch].register_id);
 				if(counter[ch].freq && counter[ch].start) {
 					counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
 					counter[ch].period = cpu_clocks / counter[ch].freq * counter[ch].input_clk;
@@ -360,7 +360,7 @@ void I8253::latch_count(int ch)
 				}
 			}
 			else {
-				cancel_event(counter[ch].register_id);
+				cancel_event(this, counter[ch].register_id);
 				counter[ch].input_clk -= input;
 				counter[ch].period -= passed;
 				counter[ch].prev_clk = current_clock();

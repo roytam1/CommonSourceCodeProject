@@ -71,7 +71,10 @@ typedef struct pc88_crtc_t {
 
 typedef struct pc88_dmac_t {
 	struct {
-		pair start, length;
+		pair start_addr, length;
+		pair cur_addr, counter;
+		uint8 mode;
+		int nbytes;
 		DEVICE *src, *dest;
 		bool running;
 	} ch[4];
@@ -81,6 +84,7 @@ typedef struct pc88_dmac_t {
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void start(int c);
+	void run(int c, int nbytes);
 	void finish(int c);
 } pc88_dmac_t;
 
@@ -231,25 +235,32 @@ public:
 	void intr_ei();
 	
 	// unique functions
-	void set_context_beep(DEVICE* device) {
+	void set_context_beep(DEVICE* device)
+	{
 		d_beep = device;
 	}
-	void set_context_cpu(Z80* device) {
+	void set_context_cpu(Z80* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_opn(DEVICE* device) {
+	void set_context_opn(DEVICE* device)
+	{
 		d_opn = device;
 	}
-	void set_context_pcm(DEVICE* device) {
+	void set_context_pcm(DEVICE* device)
+	{
 		d_pcm = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_rtc(DEVICE* device) {
+	void set_context_rtc(DEVICE* device)
+	{
 		d_rtc = device;
 	}
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
 	void key_down(int code, bool repeat);
@@ -257,7 +268,8 @@ public:
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return (cmt_play || cmt_rec);
 	}
 	bool now_skip();

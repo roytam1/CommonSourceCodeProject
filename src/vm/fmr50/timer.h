@@ -40,13 +40,16 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pcm(DEVICE* device) {
+	void set_context_pcm(DEVICE* device)
+	{
 		d_pcm = device;
 	}
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void set_context_rtc(DEVICE* device) {
+	void set_context_rtc(DEVICE* device)
+	{
 		d_rtc = device;
 	}
 };

@@ -35,7 +35,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
 };

@@ -18,12 +18,16 @@
 #include "../i8251.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../io.h"
 #include "../memory.h"
 #include "../msm58321.h"
 #include "../pcm1bit.h"
 #include "../upd765a.h"
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
 
 #include "crtc.h"
 #include "ioctrl.h"
@@ -46,7 +50,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0 = new I8255(this, emu);
 	pio1 = new I8255(this, emu);
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
+	cpu = new I286(this, emu);
 	io = new IO(this, emu);
 	memory = new MEMORY(this, emu);
 	rtc = new MSM58321(this, emu);
@@ -90,6 +94,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// memory bus
 	memset(ram, 0, sizeof(ram));
@@ -180,6 +187,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

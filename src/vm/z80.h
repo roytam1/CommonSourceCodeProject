@@ -22,6 +22,10 @@
 #define SIG_NSC800_RSTC	3
 #endif
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class Z80 : public DEVICE
 {
 private:
@@ -32,6 +36,10 @@ private:
 	DEVICE *d_mem, *d_io, *d_pic;
 #ifdef SINGLE_MODE_DMA
 	DEVICE *d_dma;
+#endif
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+	DEVICE *d_mem_stored, *d_io_stored;
 #endif
 	outputs_t outputs_busack;
 	
@@ -89,41 +97,9 @@ private:
 	debug
 	--------------------------------------------------------------------------- */
 	
-#ifdef _CPU_DEBUG_LOG
-	int debug_count, debug_ptr;
-	bool dasm_done;
-	uint8 debug_ops[4];
-	_TCHAR debug_dasm[32];
-	
-	inline uint8 DEBUG_FETCHOP() {
-		return debug_ops[debug_ptr++];
-	}
-	inline uint8 DEBUG_FETCH8() {
-		return debug_ops[debug_ptr++];
-	}
-	inline uint16 DEBUG_FETCH16() {
-		uint16 val = debug_ops[debug_ptr] | (debug_ops[debug_ptr + 1] << 8);
-		debug_ptr += 2;
-		return val;
-	}
-	inline int8 DEBUG_FETCH8_REL() {
-		return (int8)debug_ops[debug_ptr++];
-	}
-	inline uint16 DEBUG_FETCH8_RELPC() {
-		int8 res = (int8)debug_ops[debug_ptr++];
-		return prevpc + debug_ptr + res;
-	}
-	void DASM();
-	void DASM_CB();
-	void DASM_DD();
-	void DASM_ED();
-	void DASM_FD();
-	void DASM_DDCB();
-	void DASM_FDCB();
-#endif
-	
 public:
-	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		busreq = false;
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
@@ -137,43 +113,85 @@ public:
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void set_intr_line(bool line, bool pending, uint32 bit) {
+	void set_intr_line(bool line, bool pending, uint32 bit)
+	{
 		uint32 mask = 1 << bit;
 		intr_req_bit = line ? (intr_req_bit | mask) : (intr_req_bit & ~mask);
 		intr_pend_bit = pending ? (intr_pend_bit | mask) : (intr_pend_bit & ~mask);
 	}
-	void set_extra_clock(int clock) {
+	void set_extra_clock(int clock)
+	{
 		extra_icount += clock;
 	}
-	int get_extra_clock() {
+	int get_extra_clock()
+	{
 		return extra_icount;
 	}
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return prevpc;
 	}
+	uint32 get_next_pc()
+	{
+		return pc.w.l;
+	}
+#ifdef USE_DEBUGGER
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	uint32 debug_prog_addr_mask()
+	{
+		return 0xffff;
+	}
+	uint32 debug_data_addr_mask()
+	{
+		return 0xffff;
+	}
+	void debug_write_data8(uint32 addr, uint32 data);
+	uint32 debug_read_data8(uint32 addr);
+	void debug_write_io8(uint32 addr, uint32 data);
+	uint32 debug_read_io8(uint32 addr);
+	bool debug_write_reg(_TCHAR *reg, uint32 data);
+	void debug_regs_info(_TCHAR *buffer);
+	int debug_dasm(uint32 pc, _TCHAR *buffer);
+#endif
 	
-	// unique function
-	void set_context_mem(DEVICE* device) {
+	// unique functions
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
-	void set_context_intr(DEVICE* device) {
+	void set_context_intr(DEVICE* device)
+	{
 		d_pic = device;
 	}
 #ifdef SINGLE_MODE_DMA
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
 #endif
-	void set_context_busack(DEVICE* device, int id, uint32 mask) {
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
+	void set_context_busack(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_busack, device, id, mask);
 	}
-	void set_pc(uint16 value) {
+	void set_pc(uint16 value)
+	{
 		pc.w.l = value;
 	}
-	void set_sp(uint16 value) {
+	void set_sp(uint16 value)
+	{
 		sp.w.l = value;
 	}
 };

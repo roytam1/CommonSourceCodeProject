@@ -37,7 +37,8 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context_drec(DEVICE* device) {
+	void set_context_drec(DEVICE* device)
+	{
 		d_drec = device;
 	}
 };

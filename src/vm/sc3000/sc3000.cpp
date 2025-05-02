@@ -22,6 +22,10 @@
 #include "../upd765a.h"
 #include "../z80.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "keyboard.h"
 #include "memory.h"
 
@@ -64,9 +68,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	vdp->set_context_irq(cpu, SIG_CPU_IRQ, 1);
 	fdc->set_context_irq(pio_f, SIG_I8255_PORT_A, 1);
 	fdc->set_context_index(pio_f, SIG_I8255_PORT_A, 4);
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
-#endif
 	
 	key->set_context_cpu(cpu);
 	key->set_context_pio(pio_k);
@@ -75,6 +76,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(dummy);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// i/o bus
 	io->set_iomap_range_rw(0x40, 0x7f, psg);
@@ -113,6 +117,20 @@ DEVICE* VM::get_device(int id)
 	}
 	return NULL;
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // drive virtual machine

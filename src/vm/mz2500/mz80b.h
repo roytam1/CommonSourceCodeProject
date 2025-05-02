@@ -42,7 +42,7 @@
 #define Z80SIO_DELAY_RECV	100
 #endif
 #ifdef SUPPORT_16BIT_BOARD
-#define HAS_I86
+#define HAS_I88
 #define I8259_MAX_CHIPS		1
 #endif
 
@@ -71,6 +71,7 @@
 #endif
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -101,7 +102,7 @@ class QUICKDISK;
 #endif
 
 #ifdef SUPPORT_16BIT_BOARD
-class I86;
+class I286;
 class I8259;
 class MZ1M01;
 #endif
@@ -138,7 +139,7 @@ protected:
 	
 #ifdef SUPPORT_16BIT_BOARD
 	Z80PIO* pio_to16;
-	I86* cpu_16;
+	I286* cpu_16;
 	I8259* pic_16;
 	MZ1M01* mz1m01;
 #endif
@@ -159,6 +160,11 @@ public:
 	void reset();
 	void special_reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

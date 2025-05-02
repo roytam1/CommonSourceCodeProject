@@ -60,30 +60,38 @@ public:
 	uint32 read_signal(int ch);
 	
 	// unique functions
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
-	void set_disk_handler(int drv, DISK* dsk) {
+	void set_disk_handler(int drv, DISK* dsk)
+	{
 		disk[drv] = dsk;
 	}
-	void set_cmos_ptr(uint8* ptr) {
+	void set_cmos_ptr(uint8* ptr)
+	{
 		cmos = ptr;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram = ptr;
 	}
-	void set_cvram_ptr(uint8* ptr) {
+	void set_cvram_ptr(uint8* ptr)
+	{
 		cvram = ptr;
 	}
 #ifdef _FMR60
-	void set_avram_ptr(uint8* ptr) {
+	void set_avram_ptr(uint8* ptr)
+	{
 		avram = ptr;
 	}
 #else
-	void set_kvram_ptr(uint8* ptr) {
+	void set_kvram_ptr(uint8* ptr)
+	{
 		kvram = ptr;
 	}
 #endif

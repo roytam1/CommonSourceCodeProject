@@ -43,7 +43,8 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram_ptr = ptr;
 	}
 	void draw_screen();

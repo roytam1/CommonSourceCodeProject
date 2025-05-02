@@ -28,21 +28,26 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_frame() {
+	void event_frame()
+	{
 		if(rst) rst--;
 	}
 	
 	// unique function
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_ctc(DEVICE* device) {
+	void set_context_ctc(DEVICE* device)
+	{
 		d_ctc = device;
 	}
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
-	void nmi_reset() {
+	void nmi_reset()
+	{
 		rst = 20;
 	}
 };

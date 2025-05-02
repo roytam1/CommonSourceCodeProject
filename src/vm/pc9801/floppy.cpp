@@ -64,7 +64,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		}
 		if(data & 1) {
 			if(timer_id != -1) {
-				cancel_event(timer_id);
+				cancel_event(this, timer_id);
 			}
 			register_event(this, EVENT_TIMER, 100000, false, &timer_id);
 		}
@@ -95,7 +95,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 			}
 			if(data & 1) {
 				if(timer_id != -1) {
-					cancel_event(timer_id);
+					cancel_event(this, timer_id);
 				}
 				register_event(this, EVENT_TIMER, 100000, false, &timer_id);
 			}

@@ -45,13 +45,16 @@ public:
 	uint32 intr_ack();
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_fdc(UPD765A* device) {
+	void set_context_fdc(UPD765A* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 };

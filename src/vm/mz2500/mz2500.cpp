@@ -26,6 +26,10 @@
 #include "../z80pio.h"
 #include "../z80sio.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "calendar.h"
 #include "cmt.h"
 #include "crtc.h"
@@ -99,9 +103,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_i->set_context_port_c(cmt, SIG_CMT_PIO_PC, 0xff, 0);
 	pio_i->set_context_port_c(crtc, SIG_CRTC_MASK, 0x01, 0);
 	pio_i->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
-#endif
 	rtc->set_context_alarm(interrupt, SIG_INTERRUPT_RP5C15, 1);
 	rtc->set_context_pulse(opn, SIG_YM2203_PORT_B, 8);
 	opn->set_context_port_a(floppy, SIG_FLOPPY_REVERSE, 0x02, 0);
@@ -133,6 +134,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pio);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// z80 family daisy chain
 	pio->set_context_intr(cpu, 0);
@@ -231,6 +235,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

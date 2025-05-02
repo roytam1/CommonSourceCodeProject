@@ -36,10 +36,12 @@ public:
 	// common functions
 	void initialize();
 	void release();
-	void write_io8(uint32 addr, uint32 data) {
+	void write_io8(uint32 addr, uint32 data)
+	{
 		write_io16(addr, data);
 	}
-	uint32 read_io8(uint32 addr) {
+	uint32 read_io8(uint32 addr)
+	{
 		return (uint8)read_io16(addr);
 	}
 	void write_io16(uint32 addr, uint32 data);
@@ -47,7 +49,8 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
 };

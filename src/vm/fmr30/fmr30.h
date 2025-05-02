@@ -39,6 +39,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -50,7 +51,7 @@ class I8237;
 class I8251;
 class I8253;
 class I8259;
-class I86;
+class I286;
 class IO;
 class MB8877;
 class SN76489AN;
@@ -81,7 +82,7 @@ protected:
 	I8251* sio_ch2;
 	I8253* pit;
 	I8259* pic;
-	I86* cpu;
+	I286* cpu;
 	IO* io;
 	MB8877* fdc;
 	SN76489AN* psg;
@@ -112,6 +113,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

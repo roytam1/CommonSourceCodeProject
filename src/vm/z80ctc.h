@@ -64,7 +64,8 @@ private:
 	void update_intr();
 	
 public:
-	Z80CTC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	Z80CTC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		memset(counter, 0, sizeof(counter));
 		for(int i = 0; i < 4; i++) {
 			init_output_signals(&counter[i].outputs);
@@ -81,16 +82,19 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
-	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
+	{
 		cpu_clocks = new_clocks;
 	}
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
-	void set_context_child(DEVICE* device) {
+	void set_context_child(DEVICE* device)
+	{
 		d_child = device;
 	}
 	void set_intr_iei(bool val);
@@ -98,16 +102,20 @@ public:
 	void intr_reti();
 	
 	// unique functions
-	void set_context_zc0(DEVICE* device, int id, uint32 mask) {
+	void set_context_zc0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&counter[0].outputs, device, id, mask);
 	}
-	void set_context_zc1(DEVICE* device, int id, uint32 mask) {
+	void set_context_zc1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&counter[1].outputs, device, id, mask);
 	}
-	void set_context_zc2(DEVICE* device, int id, uint32 mask) {
+	void set_context_zc2(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&counter[2].outputs, device, id, mask);
 	}
-	void set_constant_clock(int ch, uint32 hz) {
+	void set_constant_clock(int ch, uint32 hz)
+	{
 		counter[ch].freq = hz;
 	}
 };

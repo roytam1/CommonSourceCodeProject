@@ -87,6 +87,9 @@ BEGIN
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
         MENUITEM SEPARATOR
+        MENUITEM "Debug Main CPU",              ID_OPEN_DEBUGGER0
+        MENUITEM "Close Debugger",              ID_CLOSE_DEBUGGER
+        MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
     POPUP "Cart"

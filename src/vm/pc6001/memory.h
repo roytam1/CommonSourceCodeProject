@@ -132,24 +132,29 @@ public:
 	byte gvram_read(uint32 A);
 	void gvram_write(uint32 A, uint32 V);
 #endif
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
 #ifndef _PC6001
-	void set_context_timer(TIMER* device) {
+	void set_context_timer(TIMER* device)
+	{
 		d_timer = device;
 	}
 #endif
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
-	bool cart_inserted() {
+	bool cart_inserted()
+	{
 		return inserted;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return RAM;
 	}
 #ifndef _PC6001
-	int get_CRTMode2() {
+	int get_CRTMode2()
+	{
 		return CRTMode2;
 	}
 #endif

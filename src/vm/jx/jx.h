@@ -40,6 +40,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #define KEYBOARD_HACK
 #define TIMER_HACK
@@ -116,6 +117,11 @@ public:
 	void reset();
 	void notify_power_off();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

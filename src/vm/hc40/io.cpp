@@ -597,7 +597,7 @@ void IO::send_to_7508(uint8 val)
 				if(changed) {
 					cur_time.update_day_of_week();
 					// restart event
-					cancel_event(register_id_1sec);
+					cancel_event(this, register_id_1sec);
 					register_event_by_clock(this, EVENT_1SEC, CPU_CLOCKS, true, &register_id_1sec);
 				}
 			}
@@ -648,7 +648,7 @@ void IO::send_to_7508(uint8 val)
 	default:
 		// unknown cmd
 		cmd_buf->read();
-		emu->out_debug(_T("unknown cmd %2x\n"), cmd);
+		emu->out_debug_log(_T("unknown cmd %2x\n"), cmd);
 	}
 }
 

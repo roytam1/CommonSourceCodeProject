@@ -83,6 +83,10 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_ACCESS_LAMP
+// i386 core will support debugger later
+//#if defined(HAS_I286)
+#define USE_DEBUGGER
+//#endif
 
 #include "../../common.h"
 
@@ -168,6 +172,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

@@ -18,6 +18,10 @@
 #include "../tms9918a.h"
 #include "../z80.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "cmt.h"
 #include "keyboard.h"
 #include "printer.h"
@@ -54,6 +58,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(dummy);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// memory bus
 	memset(ram, 0, sizeof(ram));
@@ -125,6 +132,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

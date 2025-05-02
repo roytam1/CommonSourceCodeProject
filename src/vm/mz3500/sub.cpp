@@ -124,7 +124,7 @@ void SUB::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xf0) {
 	case 0x00:	// mz3500sm p.18,77
-//		emu->out_debug("SUB->MAIN\tINT0=1\n");
+//		emu->out_debug_log("SUB->MAIN\tINT0=1\n");
 		d_main->write_signal(SIG_MAIN_INT0, 1, 1);
 		break;
 	case 0x50:	// mz3500sm p.28
@@ -137,7 +137,7 @@ uint32 SUB::read_io8(uint32 addr)
 {
 	switch(addr & 0xf0) {
 	case 0x00:	// mz3500sm p.18,77
-//		emu->out_debug("SUB->MAIN\tINT0=1\n");
+//		emu->out_debug_log("SUB->MAIN\tINT0=1\n");
 		d_main->write_signal(SIG_MAIN_INT0, 1, 1);
 		break;
 	case 0x40:	// mz3500sm p.80
@@ -174,7 +174,7 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 		bool next = ((data & mask) != 0);
 		if(!stc && next) {
 			// L->H
-//			emu->out_debug("STC L->H\n");
+//			emu->out_debug_log("STC L->H\n");
 			if(key_phase == PHASE_KEYBOARD_INIT) {
 				key_phase = 0;
 			}
@@ -193,7 +193,7 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 		bool next = ((data & mask) != 0);
 		if(ackc && !next) {
 			// H->L
-//			emu->out_debug("ACKC H->L\n");
+//			emu->out_debug_log("ACKC H->L\n");
 			if(key_phase == PHASE_SEND_ACK) {
 				key_drive();
 			}
@@ -233,7 +233,7 @@ void SUB::key_send(int data, bool command)
 
 void SUB::key_recv(int data)
 {
-//	emu->out_debug("RECV %2x\n", data);
+//	emu->out_debug_log("RECV %2x\n", data);
 }
 
 void SUB::key_drive()
@@ -295,13 +295,13 @@ void SUB::key_drive()
 		key_phase++;
 		break;
 	case PHASE_RECV_ACK_H:
-//		emu->out_debug("DK=STK=H\n");
+//		emu->out_debug_log("DK=STK=H\n");
 		dk = stk = true;
 		WAIT_USEC(17.5);
 		key_phase++;
 		break;
 	case PHASE_RECV_ACK_L:
-//		emu->out_debug("DK=STK=L\n");
+//		emu->out_debug_log("DK=STK=L\n");
 		dk = stk = false;
 		key_phase = 0;
 		key_recv(key_recv_data >> 1);

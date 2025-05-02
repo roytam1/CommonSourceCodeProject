@@ -33,6 +33,10 @@
 #include "../datarec.h"
 #include "../mcs48.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #if defined(_PC6601) || defined(_PC6601SR)
 #include "floppy.h"
 #endif
@@ -112,7 +116,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		sub = new SUB(this, emu);
 		drec = new DATAREC(this, emu);
 		event->set_context_cpu(cpu_sub, 8000000);
+		cpu_sub->set_context_mem(new MCS48MEM(this, emu));
 		cpu_sub->set_context_io(sub);
+#ifdef USE_DEBUGGER
+		cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 		sub->set_context_pio(pio_sub);
 		sub->set_context_drec(drec);
 		sub->set_context_timer(timer);
@@ -124,6 +132,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		psub->set_context_pio(pio_sub);
 		psub->set_context_timer(timer);
 		timer->set_context_sub(psub);
+		cpu_sub = NULL;
 	}
 	if(support_pc80s31k) {
 		pio_fdd = new I8255(this, emu);
@@ -150,6 +159,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		cpu_pc80s31k->set_context_mem(pc80s31k);
 		cpu_pc80s31k->set_context_io(pc80s31k);
 		cpu_pc80s31k->set_context_intr(pc80s31k);
+#ifdef USE_DEBUGGER
+		cpu_pc80s31k->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #if defined(_PC6601) || defined(_PC6601SR)
 		floppy->set_context_ext(pio_fdd);
 #endif
@@ -158,12 +170,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(_PC6601) || defined(_PC6601SR)
 		floppy->set_context_ext(pc6031);
 #endif
+		cpu_pc80s31k = NULL;
 	}
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(timer);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// i/o bus
 	if(support_sub_cpu) {
@@ -266,6 +282,24 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	} else if(index == 1) {
+		return cpu_sub;
+	} else if(index == 2) {
+		return cpu_pc80s31k;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

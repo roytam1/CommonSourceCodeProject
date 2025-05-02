@@ -194,7 +194,7 @@ void RTC::write_to_cur_time()
 	cur_time.update_day_of_week();
 	
 	// restart event
-	cancel_event(register_id);
+	cancel_event(this, register_id);
 	register_event_by_clock(this, EVENT_1HZ, CPU_CLOCKS, true, &register_id);
 }
 

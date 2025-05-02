@@ -70,7 +70,7 @@
 
 #define REGISTER_PHASE_EVENT(phs, usec) { \
 	if(phase_id != -1) { \
-		cancel_event(phase_id); \
+		cancel_event(this, phase_id); \
 	} \
 	event_phase = phs; \
 	register_event(this, EVENT_PHASE, 100, false, &phase_id); \
@@ -78,7 +78,7 @@
 
 #define REGISTER_PHASE_EVENT_NEW(phs, usec) { \
 	if(phase_id != -1) { \
-		cancel_event(phase_id); \
+		cancel_event(this, phase_id); \
 	} \
 	event_phase = phs; \
 	register_event(this, EVENT_PHASE, usec, false, &phase_id); \
@@ -94,24 +94,24 @@
 
 #define CANCEL_EVENT() { \
 	if(phase_id != -1) { \
-		cancel_event(phase_id); \
+		cancel_event(this, phase_id); \
 		phase_id = -1; \
 	} \
 	if(drq_id != -1) { \
-		cancel_event(drq_id); \
+		cancel_event(this, drq_id); \
 		drq_id = -1; \
 	} \
 	if(lost_id != -1) { \
-		cancel_event(lost_id); \
+		cancel_event(this, lost_id); \
 		lost_id = -1; \
 	} \
 	if(result7_id != -1) { \
-		cancel_event(result7_id); \
+		cancel_event(this, result7_id); \
 		result7_id = -1; \
 	} \
 	for(int d = 0; d < 4; d++) { \
 		if(seek_id[d] != -1) { \
-			cancel_event(seek_id[d]); \
+			cancel_event(this, seek_id[d]); \
 			seek_id[d] = -1; \
 		} \
 	} \
@@ -193,44 +193,44 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 #ifdef _FDC_DEBUG_LOG
 				switch(data & 0x1f) {
 				case 0x02:
-					emu->out_debug("FDC: CMD=%2x READ DIAGNOSTIC\n", data);
+					emu->out_debug_log("FDC: CMD=%2x READ DIAGNOSTIC\n", data);
 					break;
 				case 0x03:
-					emu->out_debug("FDC: CMD=%2x SPECIFY\n", data);
+					emu->out_debug_log("FDC: CMD=%2x SPECIFY\n", data);
 					break;
 				case 0x04:
-					emu->out_debug("FDC: CMD=%2x SENCE DEVSTAT\n", data);
+					emu->out_debug_log("FDC: CMD=%2x SENCE DEVSTAT\n", data);
 					break;
 				case 0x05:
 				case 0x09:
-					emu->out_debug("FDC: CMD=%2x WRITE DATA\n", data);
+					emu->out_debug_log("FDC: CMD=%2x WRITE DATA\n", data);
 					break;
 				case 0x06:
 				case 0x0c:
-					emu->out_debug("FDC: CMD=%2x READ DATA\n", data);
+					emu->out_debug_log("FDC: CMD=%2x READ DATA\n", data);
 					break;
 				case 0x07:
-					emu->out_debug("FDC: CMD=%2x RECALIB\n", data);
+					emu->out_debug_log("FDC: CMD=%2x RECALIB\n", data);
 					break;
 				case 0x08:
-					emu->out_debug("FDC: CMD=%2x SENCE INTSTAT\n", data);
+					emu->out_debug_log("FDC: CMD=%2x SENCE INTSTAT\n", data);
 					break;
 				case 0x0a:
-					emu->out_debug("FDC: CMD=%2x READ ID\n", data);
+					emu->out_debug_log("FDC: CMD=%2x READ ID\n", data);
 					break;
 				case 0x0d:
-					emu->out_debug("FDC: CMD=%2x WRITE ID\n", data);
+					emu->out_debug_log("FDC: CMD=%2x WRITE ID\n", data);
 					break;
 				case 0x0f:
-					emu->out_debug("FDC: CMD=%2x SEEK\n", data);
+					emu->out_debug_log("FDC: CMD=%2x SEEK\n", data);
 					break;
 				case 0x11:
 				case 0x19:
 				case 0x1d:
-					emu->out_debug("FDC: CMD=%2x SCAN\n", data);
+					emu->out_debug_log("FDC: CMD=%2x SCAN\n", data);
 					break;
 				default:
-					emu->out_debug("FDC: CMD=%2x INVALID\n", data);
+					emu->out_debug_log("FDC: CMD=%2x INVALID\n", data);
 					break;
 				}
 #endif
@@ -240,7 +240,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				
 			case PHASE_CMD:
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug("FDC: PARAM=%2x\n", data);
+				emu->out_debug_log("FDC: PARAM=%2x\n", data);
 #endif
 				*bufptr++ = data;
 				if(--count) {
@@ -253,7 +253,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				
 			case PHASE_WRITE:
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug("FDC: WRITE=%2x\n", data);
+				emu->out_debug_log("FDC: WRITE=%2x\n", data);
 #endif
 				*bufptr++ = data;
 				set_drq(false);
@@ -301,7 +301,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 			case PHASE_RESULT:
 				data = *bufptr++;
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug("FDC: RESULT=%2x\n", data);
+				emu->out_debug_log("FDC: RESULT=%2x\n", data);
 #endif
 				if(--count) {
 					status |= S_RQM;
@@ -327,7 +327,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 			case PHASE_READ:
 				data = *bufptr++;
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug("FDC: READ=%2x\n", data);
+				emu->out_debug_log("FDC: READ=%2x\n", data);
 #endif
 				set_drq(false);
 				if(--count) {
@@ -345,11 +345,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 	else {
 		// fdc status
 #ifdef _FDC_DEBUG_LOG
-		// request cpu to output debug log
-		if(d_cpu) {
-			d_cpu->write_signal(SIG_CPU_DEBUG, 1, 1);
-		}
-//		emu->out_debug(_T("FDC: STATUS=%2x\n"), seekstat | status);
+//		emu->out_debug_log(_T("FDC: STATUS=%2x\n"), seekstat | status);
 #endif
 		return seekstat | status;
 	}
@@ -450,7 +446,7 @@ void UPD765A::event_callback(int event_id, int err)
 	}
 	else if(event_id == EVENT_LOST) {
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug("FDC: DATA LOST\n");
+		emu->out_debug_log("FDC: DATA LOST\n");
 #endif
 		lost_id = -1;
 		result = ST1_OR;
@@ -479,7 +475,7 @@ void UPD765A::event_callback(int event_id, int err)
 void UPD765A::set_irq(bool val)
 {
 #ifdef _FDC_DEBUG_LOG
-//	emu->out_debug("FDC: IRQ=%d\n", val ? 1 : 0);
+//	emu->out_debug_log("FDC: IRQ=%d\n", val ? 1 : 0);
 #endif
 	write_signals(&outputs_irq, (val && !irq_masked) ? 0xffffffff : 0);
 }
@@ -487,14 +483,14 @@ void UPD765A::set_irq(bool val)
 void UPD765A::set_drq(bool val)
 {
 #ifdef _FDC_DEBUG_LOG
-//	emu->out_debug("FDC: DRQ=%d\n", val ? 1 : 0);
+//	emu->out_debug_log("FDC: DRQ=%d\n", val ? 1 : 0);
 #endif
 	// cancel next drq and data lost events
 	if(drq_id != -1) {
-		cancel_event(drq_id);
+		cancel_event(this, drq_id);
 	}
 	if(lost_id != -1) {
-		cancel_event(lost_id);
+		cancel_event(this, lost_id);
 	}
 	drq_id = lost_id = -1;
 	// register data lost event if data exists
@@ -516,7 +512,7 @@ void UPD765A::set_drq(bool val)
 		// EPSON QC-10 CP/M Plus
 		if(val && dma_data_lost) {
 #ifdef _FDC_DEBUG_LOG
-			emu->out_debug("FDC: DATA LOST (DMA)\n");
+			emu->out_debug_log("FDC: DATA LOST (DMA)\n");
 #endif
 			result = ST1_OR;
 			write_signals(&outputs_drq, 0);
@@ -678,7 +674,7 @@ void UPD765A::seek(int drv, int trk)
 		seek_event(drv);
 #else
 		if(seek_id[drv] != -1) {
-			cancel_event(seek_id[drv]);
+			cancel_event(this, seek_id[drv]);
 		}
 		register_event(this, EVENT_SEEK + drv, seektime, false, &seek_id[drv]);
 		seekstat |= 1 << drv;
@@ -964,14 +960,14 @@ uint32 UPD765A::read_sector()
 	// get sector counts in the current track
 	if(!disk[drv]->make_track(trk, side)) {
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug("FDC: TRACK NOT FOUND (TRK=%d SIDE=%d)\n", trk, side);
+		emu->out_debug_log("FDC: TRACK NOT FOUND (TRK=%d SIDE=%d)\n", trk, side);
 #endif
 		return ST0_AT | ST1_MA;
 	}
 	int secnum = disk[drv]->sector_num;
 	if(!secnum) {
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug("FDC: NO SECTORS IN TRACK (TRK=%d SIDE=%d)\n", trk, side);
+		emu->out_debug_log("FDC: NO SECTORS IN TRACK (TRK=%d SIDE=%d)\n", trk, side);
 #endif
 		return ST0_AT | ST1_MA;
 	}
@@ -1008,7 +1004,7 @@ uint32 UPD765A::read_sector()
 		return 0;
 	}
 #ifdef _FDC_DEBUG_LOG
-	emu->out_debug("FDC: SECTOR NOT FOUND (TRK=%d SIDE=%d ID=%2x,%2x,%2x,%2x)\n", trk, side, id[0], id[1], id[2], id[3]);
+	emu->out_debug_log("FDC: SECTOR NOT FOUND (TRK=%d SIDE=%d ID=%2x,%2x,%2x,%2x)\n", trk, side, id[0], id[1], id[2], id[3]);
 #endif
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
@@ -1357,7 +1353,7 @@ void UPD765A::shift_to_result7()
 {
 #ifdef UPD765A_WAIT_RESULT7
 	if(result7_id != -1) {
-		cancel_event(result7_id);
+		cancel_event(this, result7_id);
 		result7_id = -1;
 	}
 	if(phase != PHASE_TIMER) {
@@ -1453,7 +1449,7 @@ void UPD765A::open_disk(int drv, _TCHAR path[], int offset)
 		disk[drv]->open(path, offset);
 		if(disk[drv]->changed) {
 #ifdef _FDC_DEBUG_LOG
-			emu->out_debug("FDC: Disk Changed (Drive=%d)\n", drv);
+			emu->out_debug_log("FDC: Disk Changed (Drive=%d)\n", drv);
 #endif
 			if(raise_irq_when_media_changed) {
 				fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;
@@ -1468,7 +1464,7 @@ void UPD765A::close_disk(int drv)
 	if(drv < MAX_DRIVE && disk[drv]->inserted) {
 		disk[drv]->close();
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug("FDC: Disk Ejected (Drive=%d)\n", drv);
+		emu->out_debug_log("FDC: Disk Ejected (Drive=%d)\n", drv);
 #endif
 		if(raise_irq_when_media_changed) {
 			fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;

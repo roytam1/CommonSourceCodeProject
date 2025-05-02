@@ -150,7 +150,7 @@ void EMU::get_direct_show_buffer()
 				StretchBlt(hdcDib, 0, 0, screen_width, screen_height, hdcDibDShow, 0, 0, direct_show_width, direct_show_height, SRCCOPY);
 			}
 		}
-		if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
+		if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_video) {
 			for(int y = 0; y < screen_height; y++) {
 				scrntype* src = lpBmp + screen_width * (screen_height - y - 1);
 				scrntype* dst = lpd3d9Buffer + screen_width * y;
@@ -158,7 +158,7 @@ void EMU::get_direct_show_buffer()
 			}
 		}
 	} else {
-		if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_vid) {
+		if(use_d3d9 && lpd3d9Buffer != NULL && render_to_d3d9Buffer && !now_rec_video) {
 			memset(lpd3d9Buffer, 0, screen_width * screen_height * sizeof(scrntype));
 		} else {
 			memset(lpBmp, 0, screen_width * screen_height * sizeof(scrntype));

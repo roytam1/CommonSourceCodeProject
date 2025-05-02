@@ -23,6 +23,10 @@
 #include "../z80.h"
 #include "../z80pio.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "cmt.h"
 #include "floppy.h"
 #include "keyboard.h"
@@ -37,7 +41,7 @@
 #endif
 
 #ifdef SUPPORT_16BIT_BOARD
-#include "../i86.h"
+#include "../i286.h"
 #include "../i8259.h"
 #include "mz1m01.h"
 #endif
@@ -77,7 +81,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 #ifdef SUPPORT_16BIT_BOARD
 	pio_to16 = new Z80PIO(this, emu);
-	cpu_16 = new I86(this, emu);	// 8088
+	cpu_16 = new I286(this, emu);	// 8088
 	pic_16 = new I8259(this, emu);
 	mz1m01 = new MZ1M01(this, emu);
 #endif
@@ -101,9 +105,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_i->set_context_port_a(memory, SIG_CRTC_REVERSE, 0x10, 0);
 	pio_i->set_context_port_c(cmt, SIG_CMT_PIO_PC, 0xff, 0);
 	pio_i->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
-#endif
 	pio->set_context_port_a(memory, SIG_MEMORY_VRAM_SEL, 0xc0, 0);
 	pio->set_context_port_a(memory, SIG_CRTC_WIDTH80, 0x20, 0);
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x1f, 0);
@@ -145,6 +146,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu_16->set_context_mem(mz1m01);
 	cpu_16->set_context_io(mz1m01);
 	cpu_16->set_context_intr(pic_16);
+#ifdef USE_DEBUGGER
+	cpu_16->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	mz1m01->set_context_cpu(cpu_16);
 	mz1m01->set_context_pic(pic_16);
@@ -168,6 +172,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef SUPPORT_QUICK_DISK
 	pio->set_context_child(sio);
 	sio->set_context_intr(cpu, 2);
+#endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
 	// i/o bus
@@ -255,6 +262,25 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+#ifdef SUPPORT_16BIT_BOARD
+	else if(index == 1) {
+		return cpu_16;
+	}
+#endif
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

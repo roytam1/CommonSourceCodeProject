@@ -38,7 +38,8 @@ private:
 	uint8 write_dummy[MEMORY_BANK_SIZE];
 	
 public:
-	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		int bank_num = MEMORY_ADDR_MAX / MEMORY_BANK_SIZE;
 		
 		read_table = (bank_t *)malloc(sizeof(bank_t) * bank_num);
@@ -73,19 +74,22 @@ public:
 	// unique functions
 	void set_memory_r(uint32 start, uint32 end, uint8 *memory);
 	void set_memory_w(uint32 start, uint32 end, uint8 *memory);
-	void set_memory_rw(uint32 start, uint32 end, uint8 *memory) {
+	void set_memory_rw(uint32 start, uint32 end, uint8 *memory)
+	{
 		set_memory_r(start, end, memory);
 		set_memory_w(start, end, memory);
 	}
 	void set_memory_mapped_io_r(uint32 start, uint32 end, DEVICE *device);
 	void set_memory_mapped_io_w(uint32 start, uint32 end, DEVICE *device);
-	void set_memory_mapped_io_rw(uint32 start, uint32 end, DEVICE *device) {
+	void set_memory_mapped_io_rw(uint32 start, uint32 end, DEVICE *device)
+	{
 		set_memory_mapped_io_r(start, end, device);
 		set_memory_mapped_io_w(start, end, device);
 	}
 	void unset_memory_r(uint32 start, uint32 end);
 	void unset_memory_w(uint32 start, uint32 end);
-	void unset_memory_rw(uint32 start, uint32 end) {
+	void unset_memory_rw(uint32 start, uint32 end)
+	{
 		unset_memory_r(start, end);
 		unset_memory_w(start, end);
 	}

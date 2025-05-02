@@ -34,7 +34,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique function
-	void set_context_cpu(DEVICE *device) {
+	void set_context_cpu(DEVICE *device)
+	{
 		d_cpu = device;
 	}
 	void key_down(int code, bool repeat);

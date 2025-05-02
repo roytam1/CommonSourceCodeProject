@@ -1,3 +1,33 @@
+9/7/2014
+
+[WIN32/DEBUGGER] support debugger console
+
+[VM/DEBUGGER] support common debugger object
+[VM/EVENT] fix to check ownew of event before it is canceled
+[VM/I8080] support debugger
+[VM/I86] support debugger
+[VM/I86] remove code for i186 and i286
+[VM/I286] fix for i8086/i8088/i80186
+[VM/I286] fix not to quit REP when remained icount is less than 0
+[VM/I286] support debugger
+[VM/I386] support debugger
+[VM/MB8877] fix not to cancel event registered by other device
+[VM/MCS48] support debugger
+[VM/UPD7801] support debugger
+[VM/Z80] support debugger
+
+[FM16PI] fix to use new i86 core
+[FMR30] fix to use new i86 core
+[MZ2200] fix to use new i86 core
+[MZ5500] fix to use new i86 core
+[MZ6500] fix to use new i86 core
+[MZ6550] fix to use new i86 core
+[PC8801/PC88] fix uPD8257 address and counter registers
+[PC100] fix to use new i86 core
+[PC9801] fix to use new i86 core
+[PC9801E] fix to use new i86 core
+
+
 8/29/2014
 
 [PC8801/PC88] fix crtc to support non transparent mode

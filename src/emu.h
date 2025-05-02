@@ -17,13 +17,6 @@
 // for debug
 //#define _DEBUG_LOG
 #ifdef _DEBUG_LOG
-	// output debug log to console
-//	#define _DEBUG_CONSOLE
-	// output debug log to file
-	#define _DEBUG_FILE
-	
-	// output cpu debug log
-//	#define _CPU_DEBUG_LOG
 	// output fdc debug log
 //	#define _FDC_DEBUG_LOG
 	// output i/o debug log
@@ -105,26 +98,32 @@ class CMySampleGrabberCB : public ISampleGrabberCB {
 private:
 	VM *vm;
 public:
-	CMySampleGrabberCB(VM *vm_ptr) {
+	CMySampleGrabberCB(VM *vm_ptr)
+	{
 		vm = vm_ptr;
 	}
-	STDMETHODIMP_(ULONG) AddRef() {
+	STDMETHODIMP_(ULONG) AddRef()
+	{
 		return 2;
 	}
-	STDMETHODIMP_(ULONG) Release() {
+	STDMETHODIMP_(ULONG) Release()
+	{
 		return 1;
 	}
-	STDMETHODIMP QueryInterface(REFIID riid, void **ppv) {
+	STDMETHODIMP QueryInterface(REFIID riid, void **ppv)
+	{
 		if(riid == IID_ISampleGrabberCB || riid == IID_IUnknown) {
 			*ppv = (void *) static_cast<ISampleGrabberCB*>(this);
 			return NOERROR;
 		}
 		return E_NOINTERFACE;
 	}
-	STDMETHODIMP SampleCB(double SampleTime, IMediaSample *pSample) {
+	STDMETHODIMP SampleCB(double SampleTime, IMediaSample *pSample)
+	{
 		return S_OK;
 	}
-	STDMETHODIMP BufferCB(double dblSampleTime, BYTE *pBuffer, long lBufferSize) {
+	STDMETHODIMP BufferCB(double dblSampleTime, BYTE *pBuffer, long lBufferSize)
+	{
 		vm->movie_sound_callback(pBuffer, lBufferSize);
 		return S_OK;
 	}
@@ -149,10 +148,11 @@ public:
 #define SOCKET_BUFFER_MAX 0x100000
 #endif
 
+class EMU;
 class FIFO;
 class FILEIO;
 
-typedef struct thread_t {
+typedef struct video_thread_t {
 	PAVISTREAM pAVICompressed;
 	scrntype* lpBmpSource;
 	LPBITMAPINFOHEADER pbmInfoHeader;
@@ -160,7 +160,17 @@ typedef struct thread_t {
 	LONG lAVIFrames;
 	int frames;
 	int result;
-} thread_t;
+} video_thread_t;
+
+#ifdef USE_DEBUGGER
+typedef struct debugger_thread_t {
+	EMU *emu;
+	VM *vm;
+	int cpu_index;
+	bool running;
+	bool request_terminate;
+} debugger_thread_t;
+#endif
 
 class EMU
 {
@@ -200,9 +210,6 @@ private:
 	void initialize_screen();
 	void release_screen();
 	void create_dib_section(HDC hdc, int width, int height, HDC *hdcDib, HBITMAP *hBmp, HBITMAP *hOldBmp, LPBYTE *lpBuf, scrntype **lpBmp, LPBITMAPINFO *lpDib);
-	
-	HWND main_window_handle;
-	HINSTANCE instance_handle;
 	
 	// screen settings
 	int screen_width, screen_height;
@@ -268,11 +275,10 @@ private:
 	bool wait_vsync;
 	
 	// record video
-	bool now_rec_vid;
-	int rec_vid_fps;
-	double rec_vid_run_frames;
-	double rec_vid_frames;
-	_TCHAR vid_file_name[_MAX_PATH];
+	_TCHAR video_file_name[_MAX_PATH];
+	int rec_video_fps;
+	double rec_video_run_frames;
+	double rec_video_frames;
 	
 	LPBITMAPINFO lpDibRec;
 	PAVIFILE pAVIFile;
@@ -287,9 +293,9 @@ private:
 	LPBYTE lpBufRec;
 	scrntype* lpBmpRec;
 	
-	bool use_multi_thread;
-	HANDLE hThread;
-	thread_t thread_param;
+	bool use_video_thread;
+	HANDLE hVideoThread;
+	video_thread_t video_thread_param;
 	
 	// ----------------------------------------
 	// sound
@@ -307,24 +313,7 @@ private:
 	bool first_half;
 	
 	// record sound
-	typedef struct {
-		DWORD dwRIFF;
-		DWORD dwFileSize;
-		DWORD dwWAVE;
-		DWORD dwfmt_;
-		DWORD dwFormatSize;
-		WORD wFormatTag;
-		WORD wChannels;
-		DWORD dwSamplesPerSec;
-		DWORD dwAvgBytesPerSec;
-		WORD wBlockAlign;
-		WORD wBitsPerSample;
-		DWORD dwdata;
-		DWORD dwDataLength;
-	} wavheader_t;
-	
-	bool now_rec_snd;
-	_TCHAR snd_file_name[_MAX_PATH];
+	_TCHAR sound_file_name[_MAX_PATH];
 	FILEIO* rec;
 	int rec_bytes;
 	int rec_buffer_ptr;
@@ -407,7 +396,8 @@ private:
 	void update_media();
 	void restore_media();
 	
-	void clear_media_status(media_status_t *status) {
+	void clear_media_status(media_status_t *status)
+	{
 		status->path[0] = _T('\0');
 		status->wait_count = 0;
 	}
@@ -440,22 +430,33 @@ private:
 	int recv_r_ptr[SOCKET_MAX], recv_w_ptr[SOCKET_MAX];
 #endif
 	
+#ifdef USE_DEBUGGER
+	// ----------------------------------------
+	// debugger
+	// ----------------------------------------
+	void initialize_debugger();
+	void release_debugger();
+	HANDLE hDebuggerThread;
+	debugger_thread_t debugger_thread_param;
+#endif
+	
+#ifdef _DEBUG_LOG
+	// ----------------------------------------
+	// debug log
+	// ----------------------------------------
+	void initialize_debug_log();
+	void release_debug_log();
+	FILE* debug_log;
+#endif
+	
 	// ----------------------------------------
 	// misc
 	// ----------------------------------------
-	void open_debug();
-	void close_debug();
-#ifdef _DEBUG_CONSOLE
-	HANDLE hConsole;
-#endif
-#ifdef _DEBUG_FILE
-	FILE* debug;
-#endif
 #ifdef USE_CPU_TYPE
 	int cpu_type;
 #endif
 	_TCHAR app_path[_MAX_PATH];
-	bool suspended;
+	bool now_suspended;
 	
 public:
 	// ----------------------------------------
@@ -464,7 +465,8 @@ public:
 	EMU(HWND hwnd, HINSTANCE hinst);
 	~EMU();
 	
-	_TCHAR* application_path() {
+	_TCHAR* application_path()
+	{
 		return app_path;
 	}
 	_TCHAR* bios_path(_TCHAR* file_name);
@@ -472,6 +474,8 @@ public:
 	// ----------------------------------------
 	// for windows
 	// ----------------------------------------
+	HWND main_window_handle;
+	HINSTANCE instance_handle;
 	
 	// drive virtual machine
 	int frame_interval();
@@ -524,25 +528,22 @@ public:
 	
 	void start_rec_sound();
 	void stop_rec_sound();
-	bool now_rec_sound() {
-		return now_rec_snd;
-	}
 	void restart_rec_sound();
+	bool now_rec_sound;
 	
 	void capture_screen();
 	bool start_rec_video(int fps);
 	void stop_rec_video();
-	bool now_rec_video() {
-		return now_rec_vid;
-	}
 	void restart_rec_video();
+	bool now_rec_video;
 	
 	void update_config();
 	
 	// input device
 	void key_down(int code, bool repeat);
 	void key_up(int code);
-	void key_lost_focus() {
+	void key_lost_focus()
+	{
 		lost_focus = true;
 	}
 #ifdef USE_BUTTON
@@ -552,14 +553,16 @@ public:
 	void enable_mouse();
 	void disenable_mouse();
 	void toggle_mouse();
-	bool get_mouse_enabled() {
+	bool get_mouse_enabled()
+	{
 		return mouse_enabled;
 	}
 	
 #ifdef USE_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
-	bool now_auto_key() {
+	bool now_auto_key()
+	{
 		return (autokey_phase != 0);
 	}
 #endif
@@ -571,7 +574,8 @@ public:
 	int draw_screen();
 	void update_screen(HDC hdc);
 #ifdef USE_BITMAP
-	void reload_bitmap() {
+	void reload_bitmap()
+	{
 		first_invalidate = true;
 	}
 #endif
@@ -581,13 +585,16 @@ public:
 	
 #ifdef USE_VIDEO_CAPTURE
 	// video capture
-	int get_cur_capture_dev_index() {
+	int get_cur_capture_dev_index()
+	{
 		return cur_capture_dev_index;
 	}
-	int get_num_capture_devs() {
+	int get_num_capture_devs()
+	{
 		return num_capture_devs;
 	}
-	_TCHAR* get_capture_dev_name(int index) {
+	_TCHAR* get_capture_dev_name(int index)
+	{
 		return capture_dev_name[index];
 	}
 	void open_capture_dev(int index, bool pin);
@@ -599,7 +606,8 @@ public:
 	
 #ifdef USE_SOCKET
 	// socket
-	int get_socket(int ch) {
+	int get_socket(int ch)
+	{
 		return soc[ch];
 	}
 	void socket_connected(int ch);
@@ -608,23 +616,35 @@ public:
 	void recv_data(int ch);
 #endif
 	
+#ifdef USE_DEBUGGER
+	// debugger
+	void open_debugger(int cpu_index);
+	void close_debugger();
+	bool debugger_enabled(int cpu_index);
+	bool now_debugging;
+#endif
+	
 	// ----------------------------------------
 	// for virtual machine
 	// ----------------------------------------
 	
 	// power off
-	void power_off() {
+	void power_off()
+	{
 		PostMessage(main_window_handle, WM_CLOSE, 0, 0L);
 	}
 	
 	// input device
-	uint8* key_buffer() {
+	uint8* key_buffer()
+	{
 		return key_status;
 	}
-	uint32* joy_buffer() {
+	uint32* joy_buffer()
+	{
 		return joy_status;
 	}
-	int* mouse_buffer() {
+	int* mouse_buffer()
+	{
 		return mouse_status;
 	}
 	
@@ -652,10 +672,12 @@ public:
 	void stop_movie();
 	void pause_movie();
 	
-	double get_movie_frame_rate() {
+	double get_movie_frame_rate()
+	{
 		return movie_frame_rate;
 	}
-	int get_movie_sound_rate() {
+	int get_movie_sound_rate()
+	{
 		return movie_sound_rate;
 	}
 	void set_cur_movie_frame(int frame, bool relative);
@@ -678,7 +700,7 @@ public:
 #endif
 	
 	// debug log
-	void out_debug(const _TCHAR* format, ...);
+	void out_debug_log(const _TCHAR* format, ...);
 	
 	void out_message(const _TCHAR* format, ...);
 	int message_count;

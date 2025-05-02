@@ -55,27 +55,27 @@ static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};
 
 #define CANCEL_EVENT(event) { \
 	if(register_id[event] != -1) { \
-		cancel_event(register_id[event]); \
+		cancel_event(this, register_id[event]); \
 		register_id[event] = -1; \
 	} \
 }
 #define REGISTER_EVENT(event, usec) { \
 	if(register_id[event] != -1) { \
-		cancel_event(register_id[event]); \
+		cancel_event(this, register_id[event]); \
 		register_id[event] = -1; \
 	} \
-	register_event(this, (event << 8) | cmdtype, usec, false, &register_id[event]); \
+	register_event(this, (event << 8) | (cmdtype & 0xff), usec, false, &register_id[event]); \
 }
 #define REGISTER_SEEK_EVENT() { \
 	if(register_id[EVENT_SEEK] != -1) { \
-		cancel_event(register_id[EVENT_SEEK]); \
+		cancel_event(this, register_id[EVENT_SEEK]); \
 		register_id[EVENT_SEEK] = -1; \
 	} \
 	if(disk[drvreg]->drive_type == DRIVE_TYPE_2HD) { \
-		register_event(this, (EVENT_SEEK << 8) | cmdtype, seek_wait_hi[cmdreg & 3], false, &register_id[EVENT_SEEK]); \
+		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_hi[cmdreg & 3], false, &register_id[EVENT_SEEK]); \
 	} \
 	else { \
-		register_event(this, (EVENT_SEEK << 8) | cmdtype, seek_wait_lo[cmdreg & 3], false, &register_id[EVENT_SEEK]); \
+		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_lo[cmdreg & 3], false, &register_id[EVENT_SEEK]); \
 	} \
 	now_seek = after_seek = true; \
 }
@@ -88,17 +88,17 @@ static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};
 		usec = 24; \
 	} \
 	if(register_id[EVENT_DRQ] != -1) { \
-		cancel_event(register_id[EVENT_DRQ]); \
+		cancel_event(this, register_id[EVENT_DRQ]); \
 		register_id[EVENT_DRQ] = -1; \
 	} \
-	register_event(this, (EVENT_DRQ << 8) | cmdtype, usec, false, &register_id[EVENT_DRQ]); \
+	register_event(this, (EVENT_DRQ << 8) | (cmdtype & 0xff), usec, false, &register_id[EVENT_DRQ]); \
 }
 #define REGISTER_LOST_EVENT() { \
 	if(register_id[EVENT_LOST] != -1) { \
-		cancel_event(register_id[EVENT_LOST]); \
+		cancel_event(this, register_id[EVENT_LOST]); \
 		register_id[EVENT_LOST] = -1; \
 	} \
-	register_event(this, (EVENT_LOST << 8) | cmdtype, disk[drvreg]->get_usec_per_bytes(1), false, &register_id[EVENT_LOST]); \
+	register_event(this, (EVENT_LOST << 8) | (cmdtype & 0xff), disk[drvreg]->get_usec_per_bytes(1), false, &register_id[EVENT_LOST]); \
 }
 
 void MB8877::initialize()
@@ -137,7 +137,7 @@ void MB8877::reset()
 		fdc[i].index = 0;
 		fdc[i].access = false;
 	}
-	for(int i = 0; i < 7; i++) {
+	for(int i = 0; i < 8; i++) {
 		register_id[i] = -1;
 	}
 	now_search = now_seek = after_seek = drive_sel = false;
@@ -337,11 +337,7 @@ uint32 MB8877::read_io8(uint32 addr)
 		}
 		set_irq(false);
 #ifdef _FDC_DEBUG_LOG
-		// request cpu to output debug log
-		if(d_cpu) {
-			d_cpu->write_signal(SIG_CPU_DEBUG, 1, 1);
-		}
-		emu->out_debug(_T("FDC\tSTATUS=%2x\n"), val);
+		emu->out_debug_log(_T("FDC\tSTATUS=%2x\n"), val);
 #endif
 #ifdef HAS_MB8876
 		return (~val) & 0xff;
@@ -375,7 +371,7 @@ uint32 MB8877::read_io8(uint32 addr)
 					if(cmdtype == FDC_CMD_RD_SEC) {
 						// single sector
 #ifdef _FDC_DEBUG_LOG
-						emu->out_debug(_T("FDC\tEND OF SECTOR\n"));
+						emu->out_debug_log(_T("FDC\tEND OF SECTOR\n"));
 #endif
 						status &= ~FDC_ST_BUSY;
 						cmdtype = 0;
@@ -384,7 +380,7 @@ uint32 MB8877::read_io8(uint32 addr)
 					else {
 						// multisector
 #ifdef _FDC_DEBUG_LOG
-						emu->out_debug(_T("FDC\tEND OF SECTOR (SEARCH NEXT)\n"));
+						emu->out_debug_log(_T("FDC\tEND OF SECTOR (SEARCH NEXT)\n"));
 #endif
 						REGISTER_EVENT(EVENT_MULTI1, 30);
 						REGISTER_EVENT(EVENT_MULTI2, 60);
@@ -419,7 +415,7 @@ uint32 MB8877::read_io8(uint32 addr)
 				}
 				if(fdc[drvreg].index >= disk[drvreg]->get_track_size()) {
 #ifdef _FDC_DEBUG_LOG
-					emu->out_debug(_T("FDC\tEND OF TRACK\n"));
+					emu->out_debug_log(_T("FDC\tEND OF TRACK\n"));
 #endif
 					status &= ~FDC_ST_BUSY;
 					status |= FDC_ST_LOSTDATA;
@@ -438,7 +434,7 @@ uint32 MB8877::read_io8(uint32 addr)
 			}
 		}
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug(_T("FDC\tDATA=%2x\n"), datareg);
+		emu->out_debug_log(_T("FDC\tDATA=%2x\n"), datareg);
 #endif
 #ifdef HAS_MB8876
 		return (~datareg) & 0xff;
@@ -591,7 +587,7 @@ void MB8877::event_callback(int event_id, int err)
 	case EVENT_LOST:
 		if(status & FDC_ST_BUSY) {
 #ifdef _FDC_DEBUG_LOG
-			emu->out_debug("FDC\tDATA LOST\n");
+			emu->out_debug_log("FDC\tDATA LOST\n");
 #endif
 			status |= FDC_ST_LOSTDATA;
 			status &= ~FDC_ST_BUSY;
@@ -616,7 +612,7 @@ void MB8877::process_cmd()
 		_T("RD DATA "),	_T("RD DATA "),	_T("RD DATA "),	_T("WR DATA "),
 		_T("RD ADDR "),	_T("FORCEINT"),	_T("RD TRACK"),	_T("WR TRACK")
 	};
-	emu->out_debug(_T("FDC\tCMD=%2xh (%s) DATA=%2xh DRV=%d TRK=%3d SIDE=%d SEC=%2d\n"), cmdreg, cmdstr[cmdreg >> 4], datareg, drvreg, trkreg, sidereg, secreg);
+	emu->out_debug_log(_T("FDC\tCMD=%2xh (%s) DATA=%2xh DRV=%d TRK=%3d SIDE=%d SEC=%2d\n"), cmdreg, cmdstr[cmdreg >> 4], datareg, drvreg, trkreg, sidereg, secreg);
 #endif
 	
 	CANCEL_EVENT(EVENT_TYPE4);

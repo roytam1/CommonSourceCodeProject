@@ -89,7 +89,8 @@ private:
 	int vp_h;
 	int console;
 public:
-	_315_5124(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	_315_5124(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_irq);
 	}
 	~_315_5124() {}
@@ -102,13 +103,16 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_key(KEYBOARD* device) {
+	void set_context_key(KEYBOARD* device)
+	{
 		d_key = device;
 	}
-	void set_context_psg(DEVICE* device) {
+	void set_context_psg(DEVICE* device)
+	{
 		d_psg = device;
 	}
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		init_output_signals(&outputs_irq);
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
@@ -119,7 +123,8 @@ public:
 	void update_bg_pattern_cache(void);
 	void viewport_check(void);
 	void vdp_reg_w(uint8 r, uint8 d);
-	void set_console(int gg) {
+	void set_console(int gg)
+	{
 		console = gg;
 	}
 };

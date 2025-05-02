@@ -76,10 +76,12 @@ public:
 #endif
 	
 	// unique function
-	void set_context_cpu(Z80* device) {
+	void set_context_cpu(Z80* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 	void load_dat_image(_TCHAR* file_path);

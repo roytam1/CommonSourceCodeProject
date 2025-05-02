@@ -44,7 +44,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_drec(DEVICE* device) {
+	void set_context_drec(DEVICE* device)
+	{
 		d_drec = device;
 	}
 };

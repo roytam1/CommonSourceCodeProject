@@ -41,6 +41,7 @@
 #define USE_MONITOR_TYPE	2
 #define USE_SCREEN_ROTATE
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -53,7 +54,7 @@ class BEEP;
 class I8251;
 class I8255;
 class I8259;
-class I86;
+class I286;
 class IO;
 class MEMORY;
 class MSM58321;
@@ -78,7 +79,7 @@ protected:
 	I8255* pio0;
 	I8255* pio1;
 	I8259* pic;	// includes 2chips
-	I86* cpu;
+	I286* cpu;
 	IO* io;
 	MEMORY* memory;
 	MSM58321* rtc;
@@ -108,6 +109,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

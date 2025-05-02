@@ -33,9 +33,6 @@ private:
 	// output signals
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
-#ifdef _FDC_DEBUG_LOG
-	DEVICE *d_cpu;
-#endif
 	
 	// drive info
 	typedef struct {
@@ -100,12 +97,10 @@ private:
 	void set_drq(bool val);
 	
 public:
-	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_irq);
 		init_output_signals(&outputs_drq);
-#ifdef _FDC_DEBUG_LOG
-		d_cpu = NULL;
-#endif
 		motor_on = false;
 	}
 	~MB8877() {}
@@ -124,18 +119,16 @@ public:
 	void update_config();
 	
 	// unique function
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
-	void set_context_drq(DEVICE* device, int id, uint32 mask) {
+	void set_context_drq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_drq, device, id, mask);
 	}
-#ifdef _FDC_DEBUG_LOG
-	void set_context_cpu(DEVICE* device) {
-		d_cpu = device;
-	}
-#endif
-	DISK* get_disk_handler(int drv) {
+	DISK* get_disk_handler(int drv)
+	{
 		return disk[drv];
 	}
 	void open_disk(int drv, _TCHAR path[], int offset);

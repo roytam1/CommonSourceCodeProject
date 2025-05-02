@@ -55,19 +55,24 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_apu(DEVICE* device) {
+	void set_context_apu(DEVICE* device)
+	{
 		d_apu = device;
 	}
-	void set_context_ppu(DEVICE* device) {
+	void set_context_ppu(DEVICE* device)
+	{
 		d_ppu = device;
 	}
-	void set_context_drec(DEVICE* device) {
+	void set_context_drec(DEVICE* device)
+	{
 		d_drec = device;
 	}
-	void set_spr_ram_ptr(uint8* ptr) {
+	void set_spr_ram_ptr(uint8* ptr)
+	{
 		spr_ram = ptr;
 	}
 	void load_rom_image(_TCHAR *file_name);

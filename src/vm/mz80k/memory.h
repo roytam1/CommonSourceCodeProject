@@ -52,26 +52,32 @@ public:
 	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data) {
+	void write_data16(uint32 addr, uint32 data)
+	{
 		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
 	}
-	uint32 read_data16(uint32 addr) {
+	uint32 read_data16(uint32 addr)
+	{
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	
 	// unitque function
-	void set_context_ctc(DEVICE* device) {
+	void set_context_ctc(DEVICE* device)
+	{
 		d_ctc = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 #ifdef _MZ1200
-	void set_context_disp(DEVICE* device) {
+	void set_context_disp(DEVICE* device)
+	{
 		d_disp = device;
 	}
 #endif
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
 };

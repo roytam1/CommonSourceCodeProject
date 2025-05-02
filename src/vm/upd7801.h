@@ -27,6 +27,10 @@
 #define P_SI	3
 #define P_SO	4
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class UPD7801 : public DEVICE
 {
 private:
@@ -35,6 +39,10 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	DEVICE *d_mem, *d_io;
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+	DEVICE *d_mem_stored, *d_io_stored;
+#endif
 	
 	/* ---------------------------------------------------------------------------
 	registers
@@ -43,8 +51,8 @@ private:
 	int count, period, scount, tcount;
 	bool wait;
 	
-	pair regs[4];
-	uint16 SP, PC, prevPC, altVA, altBC, altDE, altHL;
+	pair regs[8];
+	uint16 SP, PC, prevPC;
 	uint8 PSW, IRR, IFF, SIRQ, HALT, MK, MB, MC, TM0, TM1, SR;
 	// for port c
 	uint8 SAK, TO, PORTC;
@@ -76,6 +84,9 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	void run_one_opecode();
+#ifdef USE_DEBUGGER
+	void run_one_opecode_debugger();
+#endif
 	void OP();
 	void OP48();
 	void OP4C();
@@ -90,20 +101,55 @@ public:
 	~UPD7801() {}
 	
 	// common function
+	void initialize();
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return prevPC;
 	}
+	uint32 get_next_pc()
+	{
+		return PC;
+	}
+#ifdef USE_DEBUGGER
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	uint32 debug_prog_addr_mask()
+	{
+		return 0xffff;
+	}
+	uint32 debug_data_addr_mask()
+	{
+		return 0xffff;
+	}
+	void debug_write_data8(uint32 addr, uint32 data);
+	uint32 debug_read_data8(uint32 addr);
+	void debug_write_io8(uint32 addr, uint32 data);
+	uint32 debug_read_io8(uint32 addr);
+	bool debug_write_reg(_TCHAR *reg, uint32 data);
+	void debug_regs_info(_TCHAR *buffer);
+	int debug_dasm(uint32 pc, _TCHAR *buffer);
+#endif
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
 };
 
 #endif

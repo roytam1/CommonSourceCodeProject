@@ -43,7 +43,8 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
 	void key_down(int code);

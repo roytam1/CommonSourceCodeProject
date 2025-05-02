@@ -283,7 +283,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		}
 		else if(0xcff80 <= addr && addr < 0xcffe0) {
 #ifdef _DEBUG_LOG
-//			emu->out_debug(_T("MW\t%4x, %2x\n"), addr, data);
+//			emu->out_debug_log(_T("MW\t%4x, %2x\n"), addr, data);
 #endif
 			// memory mapped i/o
 			switch(addr & 0xffff) {
@@ -447,7 +447,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
 #ifdef _DEBUG_LOG
-//			emu->out_debug(_T("MR\t%4x\n"), addr);
+//			emu->out_debug_log(_T("MR\t%4x\n"), addr);
 #endif
 			// memory mapped i/o
 			switch(addr & 0xffff) {

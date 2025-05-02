@@ -5,10 +5,18 @@
 	Author : Takeda.Toshiya
 	Date  : 2011.04.23-
 
-	[ 80x86 ]
+	[ i86/v30 ]
 */
 
+// disable warnings C4146 for microsoft visual c++ 2005
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#pragma warning( disable : 4146 )
+#endif
+
 #include "i86.h"
+#ifdef USE_DEBUGGER
+#include "debugger.h"
+#endif
 
 #define DIVIDE_FAULT			0
 #define NMI_INT_VECTOR			2
@@ -136,7 +144,7 @@ struct i80x86_timing {
 	uint8	bound;						/* (80186) BOUND */
 };
 
-#if defined(HAS_I86) || defined(HAS_V30)
+#if defined(HAS_I86)
 /* these come from the 8088 timings in OPCODE.LST, but with the
    penalty for 16-bit memory accesses removed wherever possible */
 static const struct i80x86_timing timing = {
@@ -199,7 +207,7 @@ static const struct i80x86_timing timing = {
 	18, 9, 17,		/* MOVS 8-bit */
 	18, 9, 17,		/* MOVS 16-bit */
 };
-#elif defined(HAS_I86)
+#else
 /* these come from the Intel 80186 datasheet */
 static const struct i80x86_timing timing = {
 	45, 28,			/* exception, IRET */
@@ -271,79 +279,6 @@ static const struct i80x86_timing timing = {
 	15, 25, 4, 16, 8,	/* (80186) ENTER/LEAVE */
 	33,			/* (80186) BOUND */
 };
-#elif defined(HAS_I286)
-/* these come from the 80286 timings in OPCODE.LST */
-/* many of these numbers are suspect */
-static const struct i80x86_timing timing = {
-	23, 17,			/* exception, IRET */
-	0, 2, 3, 1,		/* INTs */
-	2,			/* segment overrides */
-	2, 2, 2,		/* flag operations */
-	3, 3, 16, 14,		/* arithmetic adjusts */
-	3, 3,			/* decimal adjusts */
-	2, 2,			/* sign extension */
-	2, 7, 3, 3, 3, 5,	/* misc */
-
-	7, 7, 11,		/* direct JMPs */
-	7, 11, 26,		/* indirect JMPs */
-	7, 13,			/* direct CALLs */
-	7, 11, 29,		/* indirect CALLs */
-	11, 15, 11, 15,		/* returns */
-	3, 7, 4, 8,		/* conditional JMPs */
-	4, 8, 4, 8,		/* loops */
-
-	5, 5, 5, 5,		/* port reads */
-	3, 3, 3, 3,		/* port writes */
-
-	2, 3, 3,		/* move, 8-bit */
-	2, 3,			/* move, 8-bit immediate */
-	2, 3, 3,		/* move, 16-bit */
-	2, 3,			/* move, 16-bit immediate */
-	5, 5, 3, 3,		/* move, AL/AX memory */
-	2, 5, 2, 3,		/* move, segment registers */
-	3, 5,			/* exchange, 8-bit */
-	3, 5, 3,		/* exchange, 16-bit */
-
-	5, 5, 3, 3,		/* pushes */
-	5, 5, 5, 5,		/* pops */
-
-	2, 7, 7,		/* ALU ops, 8-bit */
-	3, 7, 7,		/* ALU ops, 8-bit immediate */
-	2, 7, 7,		/* ALU ops, 16-bit */
-	3, 7, 7,		/* ALU ops, 16-bit immediate */
-	3, 7, 7,		/* ALU ops, 16-bit w/8-bit immediate */
-	13, 21, 16, 24,		/* MUL */
-	13, 21, 16, 24,		/* IMUL */
-	14, 22, 17, 25,		/* DIV */
-	17, 25, 20, 28,		/* IDIV */
-	2, 2, 7, 7,		/* INC/DEC */
-	2, 2, 7, 7,		/* NEG/NOT */
-
-	2, 5, 0,		/* reg shift/rotate */
-	7, 8, 1,		/* m8 shift/rotate */
-	7, 8, 1,		/* m16 shift/rotate */
-
-	13, 5, 12,		/* CMPS 8-bit */
-	13, 5, 12,		/* CMPS 16-bit */
-	9, 5, 8,		/* SCAS 8-bit */
-	9, 5, 8,		/* SCAS 16-bit */
-	5, 5, 4,		/* LODS 8-bit */
-	5, 5, 4,		/* LODS 16-bit */
-	4, 4, 3,		/* STOS 8-bit */
-	4, 4, 3,		/* STOS 16-bit */
-	5, 5, 4,		/* MOVS 8-bit */
-	5, 5, 4,		/* MOVS 16-bit */
-
-	5, 5, 4,		/* (80186) INS 8-bit */
-	5, 5, 4,		/* (80186) INS 16-bit */
-	5, 5, 4,		/* (80186) OUTS 8-bit */
-	5, 5, 4,		/* (80186) OUTS 16-bit */
-	3, 17, 19,		/* (80186) PUSH immediate, PUSHA/POPA */
-	21, 24,			/* (80186) IMUL immediate 8-bit */
-	21, 24,			/* (80186) IMUL immediate 16-bit */
-	11, 15, 12, 4, 5,	/* (80186) ENTER/LEAVE */
-	13,			/* (80186) BOUND */
-};
 #endif
 
 /************************************************************************/
@@ -391,17 +326,10 @@ static const struct i80x86_timing timing = {
 #define OF			(OverVal != 0)
 #define DF			(DirVal < 0)
 #define MD			(MF != 0)
-#ifdef HAS_I286
-#define PM			(msw & 1)
-#define CPL			(sregs[CS] & 3)
-#define IOPL			((flags & 0x3000) >> 12)
-#endif
 
 /************************************************************************/
 
-#ifndef HAS_I286
 #define AMASK	0xfffff
-#endif
 
 #define read_mem_byte(a)	d_mem->read_data8((a) & AMASK)
 #define read_mem_word(a)	d_mem->read_data16((a) & AMASK)
@@ -459,30 +387,26 @@ static const struct i80x86_timing timing = {
 #define RegByte(ModRM) regs.b[Mod_RM.reg.b[ModRM]]
 
 #define GetRMWord(ModRM) \
-	((ModRM) >= 0xc0 ? regs.w[Mod_RM.RM.w[ModRM]] : (GetEA(ModRM), i286_check_permission(ea_seg, eo, I286_WORD, I286_READ), ReadWord(ea)))
+	((ModRM) >= 0xc0 ? regs.w[Mod_RM.RM.w[ModRM]] : (GetEA(ModRM), ReadWord(ea)))
 
 #define PutbackRMWord(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
 		regs.w[Mod_RM.RM.w[ModRM]] = val; \
 	} \
 	else { \
-		i286_check_permission(ea_seg, eo, I286_WORD, I286_WRITE); \
 		WriteWord(ea, val); \
 	} \
 }
 
 #define GetNextRMWord ( \
-	i286_check_permission(ea_seg, ea + 2 - base[ea_seg], I286_WORD, I286_READ), \
 	ReadWord(ea + 2) \
 )
 
 #define GetRMWordOffset(offs) ( \
-	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_WORD, I286_READ), \
 	ReadWord(ea - eo + (uint16)(eo + offs)) \
 )
 
 #define GetRMByteOffset(offs) ( \
-	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_BYTE, I286_READ), \
 	ReadByte(ea - eo + (uint16)(eo + offs)) \
 )
 
@@ -492,17 +416,14 @@ static const struct i80x86_timing timing = {
 	} \
 	else { \
 		GetEA(ModRM); \
-		i286_check_permission(ea_seg, eo, I286_WORD, I286_WRITE); \
 		WriteWord(ea, val); \
 	} \
 }
 
 #define PutRMWordOffset(offs, val) \
-	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_WORD, I286_WRITE); \
 	WriteWord(ea - eo + (uint16)(eo + offs), val)
 
 #define PutRMByteOffset(offs, val) \
-	i286_check_permission(ea_seg, (uint16)(eo + offs), I286_BYTE, I286_WRITE); \
 	WriteByte(ea - eo + (uint16)(eo + offs), val)
 
 #define PutImmRMWord(ModRM) { \
@@ -512,14 +433,13 @@ static const struct i80x86_timing timing = {
 	} \
 	else { \
 		GetEA(ModRM); \
-		i286_check_permission(ea_seg, eo, I286_WORD, I286_WRITE); \
 		FETCHWORD(val) \
 		WriteWord(ea, val); \
 	} \
 }
 
 #define GetRMByte(ModRM) \
-	((ModRM) >= 0xc0 ? regs.b[Mod_RM.RM.b[ModRM]] : (GetEA(ModRM), i286_check_permission(ea_seg, eo, I286_BYTE, I286_READ), ReadByte(ea)))
+	((ModRM) >= 0xc0 ? regs.b[Mod_RM.RM.b[ModRM]] : (GetEA(ModRM), ReadByte(ea)))
 
 #define PutRMByte(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
@@ -527,7 +447,6 @@ static const struct i80x86_timing timing = {
 	} \
 	else { \
 		GetEA(ModRM); \
-		i286_check_permission(ea_seg, eo, I286_BYTE, I286_WRITE); \
 		WriteByte(ea, val); \
 	} \
 }
@@ -538,7 +457,6 @@ static const struct i80x86_timing timing = {
 	} \
 	else { \
 		GetEA(ModRM); \
-		i286_check_permission(ea_seg, eo, I286_BYTE, I286_WRITE); \
 		WriteByte(ea, FETCH); \
 	} \
 }
@@ -548,7 +466,6 @@ static const struct i80x86_timing timing = {
 		regs.b[Mod_RM.RM.b[ModRM]] = val; \
 	} \
 	else { \
-		i286_check_permission(ea_seg, eo, I286_BYTE, I286_WRITE); \
 		WriteByte(ea, val); \
 	} \
 }
@@ -584,6 +501,25 @@ static const struct i80x86_timing timing = {
 
 /************************************************************************/
 
+#ifndef INLINE
+#define INLINE inline
+#endif
+
+#define offs_t UINT32
+
+// Disassembler constants
+const UINT32 DASMFLAG_SUPPORTED     = 0x80000000;   // are disassembly flags supported?
+const UINT32 DASMFLAG_STEP_OUT      = 0x40000000;   // this instruction should be the end of a step out sequence
+const UINT32 DASMFLAG_STEP_OVER     = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
+const UINT32 DASMFLAG_OVERINSTMASK  = 0x18000000;   // number of extra instructions to skip when stepping over
+const UINT32 DASMFLAG_OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
+const UINT32 DASMFLAG_LENGTHMASK    = 0x0000ffff;   // the low 16-bits contain the actual length
+
+/* Highly useful macro for compile-time knowledge of an array size */
+#define ARRAY_LENGTH(x)     (sizeof(x) / sizeof(x[0]))
+
+int necv_dasm_one(char *buffer, UINT32 eip, const UINT8 *oprom);
+
 void I86::initialize()
 {
 	static const BREGS reg_name[8] = {AL, CL, DL, BL, AH, CH, DH, BH};
@@ -596,11 +532,12 @@ void I86::initialize()
 		Mod_RM.RM.w[i] = (WREGS)(i & 7);
 		Mod_RM.RM.b[i] = (BREGS)reg_name[i & 7];
 	}
-#ifdef HAS_I286
-	AMASK = 0xfffff;
+#ifdef USE_DEBUGGER
+	d_mem_stored = d_mem;
+	d_io_stored = d_io;
+	d_debugger->set_context_mem(d_mem);
+	d_debugger->set_context_io(d_io);
 #endif
-	prefix_seg = 0;	// ???
-	seg_prefix = false;
 }
 
 void I86::reset()
@@ -625,33 +562,32 @@ void I86::reset()
 	test_state = false;
 	halted = false;
 	
-#ifdef HAS_I286
-	msw = 0xfff0;
-	limit[CS] = limit[SS] = limit[DS] = limit[ES] = 0xffff;
-	memset(rights, 0, sizeof(rights));
-	
-	gdtr.base = idtr.base = ldtr.base = tr.base = 0;
-	gdtr.limit = ldtr.limit = tr.limit = 0;
-	idtr.limit = 0x3ff;
-	ldtr.sel = tr.sel = 0;
-	ldtr.rights = tr.rights = 0;
-	
-	pc = 0xffff0;
-	flags = 2;
-#else
 	pc = 0xffff0 & AMASK;
 	flags = 0;
-#endif
 	ExpandFlags(flags);
 #ifdef HAS_V30
 	SetMD(1);
 #endif
+	seg_prefix = false;
 }
 
 int I86::run(int clock)
 {
 	/* return now if BUSREQ */
 	if(busreq) {
+#ifdef USE_DEBUGGER
+		if(d_debugger->now_debugging) {
+			if(d_debugger->now_suspended) {
+				emu->mute_sound();
+				while(d_debugger->now_debugging && d_debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(d_debugger->now_debugging && !d_debugger->now_going) {
+				d_debugger->now_suspended = true;
+			}
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if(d_dma) {
 			d_dma->do_dma();
@@ -667,7 +603,11 @@ int I86::run(int clock)
 		// run only one opcode
 		icount = -extra_icount;
 		extra_icount = 0;
+#ifdef USE_DEBUGGER
+		run_one_opecode_debugger();
+#else
 		run_one_opecode();
+#endif
 		return -icount;
 	}
 	else {
@@ -678,7 +618,11 @@ int I86::run(int clock)
 		extra_icount = 0;
 		
 		while(icount > 0 && !busreq) {
+#ifdef USE_DEBUGGER
+			run_one_opecode_debugger();
+#else
 			run_one_opecode();
+#endif
 		}
 		int passed_icount = first_icount - icount;
 		if(busreq && icount > 0) {
@@ -687,6 +631,38 @@ int I86::run(int clock)
 		return passed_icount;
 	}
 }
+
+#ifdef USE_DEBUGGER
+void I86::run_one_opecode_debugger()
+{
+	bool now_debugging = d_debugger->now_debugging;
+	if(now_debugging) {
+		d_debugger->check_break_points(pc);
+		if(d_debugger->now_suspended) {
+			emu->mute_sound();
+			while(d_debugger->now_debugging && d_debugger->now_suspended) {
+				Sleep(10);
+			}
+		}
+		if(d_debugger->now_debugging) {
+			d_mem = d_io = d_debugger;
+		} else {
+			now_debugging = false;
+		}
+		
+		run_one_opecode();
+		if(now_debugging) {
+			if(!d_debugger->now_going) {
+				d_debugger->now_suspended = true;
+			}
+			d_mem = d_mem_stored;
+			d_io = d_io_stored;
+		}
+	} else {
+		run_one_opecode();
+	}
+}
+#endif
 
 void I86::run_one_opecode()
 {
@@ -702,16 +678,7 @@ void I86::run_one_opecode()
 	if(pc == 0xff6e1) { regs.b[AL] = 0x0d; pc += 2; }
 #endif
 #endif
-#ifdef HAS_I286
-	try {
-		instruction(FETCHOP);
-	}
-	catch(int e) {
-		interrupt(e);
-	}
-#else
 	instruction(FETCHOP);
-#endif
 	if(int_state & NMI_REQ_BIT) {
 		if(halted) {
 			pc++;
@@ -752,11 +719,6 @@ void I86::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_I86_TEST) {
 		test_state = ((data & mask) != 0);
 	}
-#ifdef HAS_I286
-	else if(id == SIG_I86_A20) {
-		AMASK = (data & mask) ? 0xffffff : 0xfffff;
-	}
-#endif
 }
 
 void I86::set_intr_line(bool line, bool pending, uint32 bit)
@@ -769,6 +731,113 @@ void I86::set_intr_line(bool line, bool pending, uint32 bit)
 	}
 }
 
+#ifdef USE_DEBUGGER
+void I86::debug_write_data8(uint32 addr, uint32 data)
+{
+	int wait;
+	d_mem_stored->write_data8w(addr, data, &wait);
+}
+
+uint32 I86::debug_read_data8(uint32 addr)
+{
+	int wait;
+	return d_mem_stored->read_data8w(addr, &wait);
+}
+
+void I86::debug_write_data16(uint32 addr, uint32 data)
+{
+	int wait;
+	d_mem_stored->write_data16w(addr, data, &wait);
+}
+
+uint32 I86::debug_read_data16(uint32 addr)
+{
+	int wait;
+	return d_mem_stored->read_data16w(addr, &wait);
+}
+
+void I86::debug_write_io8(uint32 addr, uint32 data)
+{
+	int wait;
+	d_io_stored->write_io8w(addr, data, &wait);
+}
+
+uint32 I86::debug_read_io8(uint32 addr) {
+	int wait;
+	return d_io_stored->read_io8w(addr, &wait);
+}
+
+void I86::debug_write_io16(uint32 addr, uint32 data)
+{
+	int wait;
+	d_io_stored->write_io16w(addr, data, &wait);
+}
+
+uint32 I86::debug_read_io16(uint32 addr) {
+	int wait;
+	return d_io_stored->read_io16w(addr, &wait);
+}
+
+bool I86::debug_write_reg(_TCHAR *reg, uint32 data)
+{
+	if(_tcsicmp(reg, _T("AX")) == 0) {
+		regs.w[AX] = data;
+	} else if(_tcsicmp(reg, _T("BX")) == 0) {
+		regs.w[BX] = data;
+	} else if(_tcsicmp(reg, _T("CX")) == 0) {
+		regs.w[CX] = data;
+	} else if(_tcsicmp(reg, _T("DX")) == 0) {
+		regs.w[DX] = data;
+	} else if(_tcsicmp(reg, _T("SP")) == 0) {
+		regs.w[SP] = data;
+	} else if(_tcsicmp(reg, _T("BP")) == 0) {
+		regs.w[BP] = data;
+	} else if(_tcsicmp(reg, _T("SI")) == 0) {
+		regs.w[SI] = data;
+	} else if(_tcsicmp(reg, _T("DI")) == 0) {
+		regs.w[DI] = data;
+	} else if(_tcsicmp(reg, _T("AL")) == 0) {
+		regs.b[AL] = data;
+	} else if(_tcsicmp(reg, _T("AH")) == 0) {
+		regs.b[AH] = data;
+	} else if(_tcsicmp(reg, _T("BL")) == 0) {
+		regs.b[BL] = data;
+	} else if(_tcsicmp(reg, _T("BH")) == 0) {
+		regs.b[BH] = data;
+	} else if(_tcsicmp(reg, _T("CL")) == 0) {
+		regs.b[CL] = data;
+	} else if(_tcsicmp(reg, _T("CH")) == 0) {
+		regs.b[CH] = data;
+	} else if(_tcsicmp(reg, _T("DL")) == 0) {
+		regs.b[DL] = data;
+	} else if(_tcsicmp(reg, _T("DH")) == 0) {
+		regs.b[DH] = data;
+	} else {
+		return false;
+	}
+	return true;
+}
+
+void I86::debug_regs_info(_TCHAR *buffer)
+{
+	_stprintf(buffer, _T("AX=%04X  BX=%04X CX=%04X DX=%04X SP=%04X  BP=%04X  SI=%04X  DI=%04X\nDS=%04X  ES=%04X SS=%04X CS=%04X IP=%04X  FLAG=[%c%c%c%c%c%c%c%c%c]"),
+	regs.w[AX], regs.w[BX], regs.w[CX], regs.w[DX], regs.w[SP], regs.w[BP], regs.w[SI], regs.w[DI], sregs[DS], sregs[ES], sregs[SS], sregs[CS], (uint16)(pc - base[CS]),
+	OF ? _T('O') : _T('-'), DF ? _T('D') : _T('-'), IF ? _T('I') : _T('-'), TF ? _T('T') : _T('-'),
+	SF ? _T('S') : _T('-'), ZF ? _T('Z') : _T('-'), AF ? _T('A') : _T('-'), PF ? _T('P') : _T('-'), CF ? _T('C') : _T('-'));
+}
+
+int I86::debug_dasm(uint32 pc, _TCHAR *buffer)
+{
+	UINT32 eip = (UINT32)(uint16)(pc - base[CS]);
+	UINT8 ops[16];
+	for(int i = 0; i < 16; i++) {
+		int wait;
+		ops[i] = d_mem->read_data8w(pc + i, &wait);
+	}
+	return necv_dasm_one(buffer, eip, ops) & DASMFLAG_LENGTHMASK;
+}
+#endif
+
 void I86::interrupt(int int_num)
 {
 	unsigned dest_seg, dest_off;
@@ -778,25 +847,16 @@ void I86::interrupt(int int_num)
 		int_num = d_pic->intr_ack() & 0xff;
 		int_state &= ~INT_REQ_BIT;
 	}
-#ifdef HAS_I286
-	if(PM) {
-		i286_interrupt_descriptor(int_num);
-	}
-	else {
-#endif
-		dest_off = ReadWord(int_num * 4);
-		dest_seg = ReadWord(int_num * 4 + 2);
-		
-		_pushf();
-		TF = IF = 0;
-		PUSH(sregs[CS]);
-		PUSH(ip);
-		sregs[CS] = (uint16)dest_seg;
-		base[CS] = SegBase(CS);
-		pc = (base[CS] + dest_off) & AMASK;
-#ifdef HAS_I286
-	}
-#endif
+	dest_off = ReadWord(int_num * 4);
+	dest_seg = ReadWord(int_num * 4 + 2);
+	
+	_pushf();
+	TF = IF = 0;
+	PUSH(sregs[CS]);
+	PUSH(ip);
+	sregs[CS] = (uint16)dest_seg;
+	base[CS] = SegBase(CS);
+	pc = (base[CS] + dest_off) & AMASK;
 	icount -= timing.exception;
 }
 
@@ -1119,197 +1179,6 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 	}
 }
 
-#ifdef HAS_I286
-int I86::i286_selector_okay(uint16 selector)
-{
-	if(selector & 4) {
-		return (selector & ~7) < ldtr.limit;
-	}
-	else {
-		return (selector & ~7) < gdtr.limit;
-	}
-}
-
-uint32 I86::i286_selector_to_address(uint16 selector)
-{
-	if(selector & 4) {
-		return ldtr.base + (selector & ~7);
-	}
-	else {
-		return gdtr.base + (selector & ~7);
-	}
-}
-
-void I86::i286_data_descriptor(int reg, uint16 selector)
-{
-	if(PM) {
-		uint16 help;
-		/* selector format
-		   15..3: number/address in descriptor table
-		   2    : 0 global, 1 local descriptor table
-		   1, 0 : requested privileg level
-		   must be higher or same as current privileg level in code selector */
-		if(selector & 4) { /* local descriptor table */
-			if(selector > ldtr.limit) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			sregs[reg] = selector;
-			limit[reg] = ReadWord(ldtr.base + (selector & ~7));
-			base[reg] = ReadWord(ldtr.base + (selector & ~7) + 2) | (ReadWord(ldtr.base + (selector & ~7) + 4) << 16);
-			rights[reg] = base[reg] >> 24;
-			base[reg] &= 0xffffff;
-		}
-		else { /* global descriptor table */
-			if(!(selector & ~7) || (selector > gdtr.limit)) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			sregs[reg] = selector;
-			limit[reg] = ReadWord(gdtr.base + (selector & ~7));
-			base[reg] = ReadWord(gdtr.base + (selector & ~7) + 2);
-			help = ReadWord(gdtr.base + (selector & ~7) + 4);
-			rights[reg] = help >> 8;
-			base[reg] |= (help & 0xff) << 16;
-		}
-	}
-	else {
-		sregs[reg] = selector;
-		base[reg] = selector << 4;
-	}
-}
-
-void I86::i286_code_descriptor(uint16 selector, uint16 offset)
-{
-	uint16 word1, word2, word3;
-	if(PM) {
-		/* selector format
-		   15..3: number/address in descriptor table
-		   2    : 0 global, 1 local descriptor table
-		   1, 0 : requested privileg level
-		   must be higher or same as current privileg level in code selector */
-		if(selector & 4) { /* local descriptor table */
-			if(selector > ldtr.limit) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			word1 = ReadWord(ldtr.base + (selector & ~7));
-			word2 = ReadWord(ldtr.base + (selector & ~7) + 2);
-			word3 = ReadWord(ldtr.base + (selector & ~7) + 4);
-		}
-		else { /* global descriptor table */
-			if(!(selector & ~7) || (selector > gdtr.limit)) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			word1 = ReadWord(gdtr.base + (selector & ~7));
-			word2 = ReadWord(gdtr.base + (selector & ~7) + 2);
-			word3 = ReadWord(gdtr.base + (selector & ~7) + 4);
-		}
-		if(word3 & 0x1000) {
-			sregs[CS] = selector;
-			limit[CS] = word1;
-			base[CS] = word2 | ((word3 & 0xff) << 16);
-			rights[CS] = word3 >> 8;
-			pc = base[CS] + offset;
-		}
-		else { /* systemdescriptor */
-			switch(word3 & 0xf00) {
-			case 0x400: /* call gate */
-				/* word3 & 0x1f words to be copied from stack to stack */
-				i286_data_descriptor(CS, word2);
-				pc = base[CS] + word1;
-				break;
-			case 0x500: /* task gate */
-				i286_data_descriptor(CS, word2);
-				pc = base[CS] + word1;
-				break;
-			case 0x600: /* interrupt gate */
-				TF = IF = 0;
-				i286_data_descriptor(CS, word2);
-				pc = base[CS] + word1;
-				break;
-			case 0x700: /* trap gate */
-				i286_data_descriptor(CS, word2);
-				pc = base[CS] + word1;
-				break;
-			}
-		}
-	}
-	else {
-		sregs[CS] = selector;
-		base[CS] = selector << 4;
-		pc = base[CS] + offset;
-	}
-}
-
-void I86::i286_interrupt_descriptor(uint16 int_num)
-{
-	uint16 word1, word2, word3;
-	if((int_num << 3) >= idtr.limit) {
-		;/* go into shutdown mode */
-		return;
-	}
-	_pushf();
-	PUSH(sregs[CS]);
-	PUSH(pc - base[CS]);
-	word1 = ReadWord(idtr.base + (int_num << 3));
-	word2 = ReadWord(idtr.base + (int_num << 3) + 2);
-	word3 = ReadWord(idtr.base + (int_num << 3) + 4);
-	switch(word3 & 0xf00) {
-	case 0x500: /* task gate */
-		i286_data_descriptor(CS, word2);
-		pc = base[CS] + word1;
-		break;
-	case 0x600: /* interrupt gate */
-		TF = IF = 0;
-		i286_data_descriptor(CS, word2);
-		pc = base[CS] + word1;
-		break;
-	case 0x700: /* trap gate */
-		i286_data_descriptor(CS, word2);
-		pc = base[CS] + word1;
-		break;
-	}
-}
-
-#define IS_PRESENT(a)	(((a) & 0x80) == 0x80)
-#define IS_WRITEABLE(a)	(((a) & 0xa) == 2)
-#define IS_READABLE(a)	((((a) & 0xa) == 0xa) || (((a) & 8) == 0))
-
-void I86::i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, i286_operation operation)
-{
-	if(PM) {
-		/* Is the segment physically present? */
-		if(!IS_PRESENT(rights[check_seg])) {
-			throw GENERAL_PROTECTION_FAULT;
-		}
-
-		/* Would we go past the segment boundary? */
-		if((offset + (size - 1)) > limit[check_seg]) {
-			throw GENERAL_PROTECTION_FAULT;
-		}
-
-		switch(operation) {
-		case I286_READ:
-			/* Is the segment readable? */
-			if(!IS_READABLE(rights[check_seg])) {
-				throw GENERAL_PROTECTION_FAULT;
-			}
-			break;
-
-		case I286_WRITE:
-			/* Is the segment writeable? */
-			if(!IS_WRITEABLE(rights[check_seg])) {
-				throw GENERAL_PROTECTION_FAULT;
-			}
-			break;
-
-		case I286_EXECUTE:
-			/* TODO */
-			break;
-		}
-		/* TODO: Mark segment as accessed? */
-	}
-}
-#endif
-
 void I86::instruction(uint8 code)
 {
 	prevpc = pc - 1;
@@ -1330,7 +1199,7 @@ void I86::instruction(uint8 code)
 	case 0x0c: _or_ald8(); break;
 	case 0x0d: _or_axd16(); break;
 	case 0x0e: _push_cs(); break;
-#if defined(HAS_V30) || defined(HAS_I286)
+#if defined(HAS_V30)
 	case 0x0f: _0fpre(); break;
 #else
 	case 0x0f: _invalid(); break;
@@ -1415,7 +1284,7 @@ void I86::instruction(uint8 code)
 	case 0x5d: _pop_bp(); break;
 	case 0x5e: _pop_si(); break;
 	case 0x5f: _pop_di(); break;
-#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
+#if defined(HAS_V30)
 	case 0x60: _pusha(); break;
 	case 0x61: _popa(); break;
 	case 0x62: _bound(); break;
@@ -1424,11 +1293,7 @@ void I86::instruction(uint8 code)
 	case 0x61: _invalid(); break;
 	case 0x62: _invalid(); break;
 #endif
-#if defined(HAS_I286)
-	case 0x63: _arpl(); break;
-#else
 	case 0x63: _invalid(); break;
-#endif
 #if defined(HAS_V30)
 	case 0x64: _repc(0); break;
 	case 0x65: _repc(1); break;
@@ -1438,7 +1303,7 @@ void I86::instruction(uint8 code)
 #endif
 	case 0x66: _invalid(); break;
 	case 0x67: _invalid(); break;
-#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
+#if defined(HAS_V30)
 	case 0x68: _push_d16(); break;
 	case 0x69: _imul_d16(); break;
 	case 0x6a: _push_d8(); break;
@@ -1537,7 +1402,7 @@ void I86::instruction(uint8 code)
 	case 0xbd: _mov_bpd16(); break;
 	case 0xbe: _mov_sid16(); break;
 	case 0xbf: _mov_did16(); break;
-#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
+#if defined(HAS_V30)
 	case 0xc0: _rotshft_bd8(); break;
 	case 0xc1: _rotshft_wd8(); break;
 #else
@@ -1550,7 +1415,7 @@ void I86::instruction(uint8 code)
 	case 0xc5: _lds_dw(); break;
 	case 0xc6: _mov_bd8(); break;
 	case 0xc7: _mov_wd16(); break;
-#if defined(HAS_V30) || defined(HAS_I186) || defined(HAS_I286)
+#if defined(HAS_V30)
 	case 0xc8: _enter(); break;
 	case 0xc9: _leav(); break;	/* _leave() */
 #else
@@ -1675,14 +1540,8 @@ inline void I86::_push_es()    /* Opcode 0x06 */
 
 inline void I86::_pop_es()    /* Opcode 0x07 */
 {
-#ifdef HAS_I286
-	uint16 tmp;
-	POP(tmp);
-	i286_data_descriptor(ES, tmp);
-#else
 	POP(sregs[ES]);
 	base[ES] = SegBase(ES);
-#endif
 	icount -= timing.pop_seg;
 }
 
@@ -1740,205 +1599,9 @@ inline void I86::_push_cs()    /* Opcode 0x0e */
 	PUSH(sregs[CS]);
 }
 
+#if defined(HAS_V30)
 inline void I86::_0fpre()    /* Opcode 0x0f */
 {
-#ifdef HAS_I286
-	unsigned next = FETCHOP;
-	uint16 ModRM;
-	uint16 tmp;
-	uint32 addr;
-	
-	switch(next) {
-	case 0:
-		ModRM = FETCHOP;
-		switch((ModRM >> 3) & 7) {
-		case 0:  /* sldt */
-			if(!PM) {
-				interrupt(ILLEGAL_INSTRUCTION);
-			}
-			PutRMWord(ModRM, ldtr.sel);
-			icount -= 2;
-			break;
-		case 1:  /* str */
-			if(!PM) {
-				interrupt(ILLEGAL_INSTRUCTION);
-			}
-			PutRMWord(ModRM, tr.sel);
-			icount -= 2;
-			break;
-		case 2:  /* lldt */
-			if(!PM) {
-				interrupt(ILLEGAL_INSTRUCTION);
-			}
-			if(PM && (CPL != 0)) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			ldtr.sel = GetRMWord(ModRM);
-			if((ldtr.sel & ~7) >= gdtr.limit) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			ldtr.limit = ReadWord(gdtr.base + (ldtr.sel & ~7));
-			ldtr.base = ReadWord(gdtr.base + (ldtr.sel & ~7) + 2) | (ReadWord(gdtr.base + (ldtr.sel & ~7) + 4) << 16);
-			ldtr.rights = ldtr.base >> 24;
-			ldtr.base &= 0xffffff;
-			icount -= 24;
-			break;
-		case 3:  /* ltr */
-			if(!PM) {
-				interrupt(ILLEGAL_INSTRUCTION);
-			}
-			if(CPL!= 0) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			tr.sel = GetRMWord(ModRM);
-			if((tr.sel & ~7) >= gdtr.limit) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			tr.limit = ReadWord(gdtr.base + (tr.sel & ~7));
-			tr.base = ReadWord(gdtr.base + (tr.sel & ~7) + 2) | (ReadWord(gdtr.base + (tr.sel & ~7) + 4) << 16);
-			tr.rights = tr.base >> 24;
-			tr.base &= 0xffffff;
-			icount -= 27;
-			break;
-		case 4:  /* verr */
-			if(!PM) {
-				interrupt(ILLEGAL_INSTRUCTION);
-			}
-			tmp = GetRMWord(ModRM);
-			if(tmp & 4) {
-				ZeroVal = !(((tmp & ~7) < ldtr.limit) && IS_READABLE(ReadByte(ldtr.base + (tmp & ~7) + 5)));
-			}
-			else {
-				ZeroVal = !(((tmp & ~7) < gdtr.limit) && IS_READABLE(ReadByte(gdtr.base + (tmp & ~7) + 5)));
-			}
-			icount -= 11;
-			break;
-		case 5:  /* verw */
-			if(!PM) {
-				interrupt(ILLEGAL_INSTRUCTION);
-			}
-			tmp = GetRMWord(ModRM);
-			if(tmp & 4) {
-				ZeroVal = !(((tmp & ~7) < ldtr.limit) && IS_WRITEABLE(ReadByte(ldtr.base + (tmp & ~7) + 5)));
-			}
-			else {
-				ZeroVal = !(((tmp & ~7) < gdtr.limit) && IS_WRITEABLE(ReadByte(gdtr.base + (tmp & ~7) + 5)));
-			}
-			icount -= 16;
-			break;
-		case 6:
-		case 7:
-			interrupt(ILLEGAL_INSTRUCTION);
-			break;
-		default:
-			__assume(0);
-		}
-		break;
-	case 1:
-		/* lgdt, lldt in protected mode privilege level 0 required else common protection
-		   failure 0xd */
-		ModRM = FETCHOP;
-		switch((ModRM >> 3) & 7) {
-		case 0:  /* sgdt */
-			PutRMWord(ModRM, gdtr.limit);
-			PutRMWordOffset(2, gdtr.base & 0xffff);
-			PutRMByteOffset(4, gdtr.base >> 16);
-			icount -= 9;
-			break;
-		case 1:  /* sidt */
-			PutRMWord(ModRM, idtr.limit);
-			PutRMWordOffset(2, idtr.base & 0xffff);
-			PutRMByteOffset(4, idtr.base >> 16);
-			icount -= 9;
-			break;
-		case 2:  /* lgdt */
-			if(PM && (CPL!= 0)) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			gdtr.limit = GetRMWord(ModRM);
-			gdtr.base = GetRMWordOffset(2) | (GetRMByteOffset(4) << 16);
-			break;
-		case 3:  /* lidt */
-			if(PM && (CPL!= 0)) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			idtr.limit = GetRMWord(ModRM);
-			idtr.base = GetRMWordOffset(2) | (GetRMByteOffset(4) << 16);
-			icount -= 11;
-			break;
-		case 4:  /* smsw */
-			PutRMWord(ModRM, msw);
-			icount -= 16;
-			break;
-		case 6:  /* lmsw */
-			if(PM && (CPL!= 0)) {
-				interrupt(GENERAL_PROTECTION_FAULT);
-			}
-			msw = (msw & 1) | GetRMWord(ModRM);
-			icount -= 13;
-			break;
-		case 5:
-		case 7:
-			interrupt(ILLEGAL_INSTRUCTION);
-			break;
-		default:
-			__assume(0);
-		}
-		break;
-	case 2:  /* LAR */
-		ModRM = FETCHOP;
-		tmp = GetRMWord(ModRM);
-//		ZeroVal = i286_selector_okay(tmp);
-//		if(ZeroVal) {
-//			RegWord(ModRM) = tmp;
-//		}
-		if(i286_selector_okay(tmp)) {
-			ZeroVal = 0;
-			RegWord(ModRM) = ReadByte(i286_selector_to_address(tmp) + 5) << 8;
-		}
-		else {
-			ZeroVal = 1;
-		}
-		icount -= 16;
-		break;
-	case 3:  /* LSL */
-		if(!PM) {
-			interrupt(ILLEGAL_INSTRUCTION);
-		}
-		ModRM = FETCHOP;
-		tmp = GetRMWord(ModRM);
-//		ZeroVal = i286_selector_okay(tmp);
-//		if(ZeroVal) {
-//			if(tmp & 4) {
-//				addr = ldtr.base + (tmp & ~7);
-//			}
-//			else {
-//				addr = gdtr.base + (tmp & ~7);
-//			}
-//			RegWord(ModRM) = ReadWord(addr);
-//		}
-		if(i286_selector_okay(tmp)) {
-			ZeroVal = 0;
-			addr = i286_selector_to_address(tmp);
-			RegWord(ModRM) = ReadWord(addr);
-		}
-		else {
-			ZeroVal = 1;
-		}
-		icount -= 26;
-		break;
-	case 6:  /* clts */
-		if(PM && (CPL!= 0)) {
-			interrupt(GENERAL_PROTECTION_FAULT);
-		}
-		msw = ~8;
-		icount -= 5;
-		break;
-	default:
-		interrupt(ILLEGAL_INSTRUCTION);
-		break;
-	}
-#elif defined(HAS_V30)
 	static const uint16 bytes[] = {
 		1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
 	};
@@ -2427,8 +2090,8 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		interrupt(ModRM);
 		break;
 	}
-#endif
 }
+#endif
 
 inline void I86::_adc_br8()    /* Opcode 0x10 */
 {
@@ -2492,14 +2155,8 @@ inline void I86::_push_ss()    /* Opcode 0x16 */
 
 inline void I86::_pop_ss()    /* Opcode 0x17 */
 {
-#ifdef HAS_I286
-	uint16 tmp;
-	POP(tmp);
-	i286_data_descriptor(SS, tmp);
-#else
 	POP(sregs[SS]);
 	base[SS] = SegBase(SS);
-#endif
 	icount -= timing.pop_seg;
 	instruction(FETCHOP); /* no interrupt before next instruction */
 }
@@ -2566,14 +2223,8 @@ inline void I86::_push_ds()    /* Opcode 0x1e */
 
 inline void I86::_pop_ds()    /* Opcode 0x1f */
 {
-#ifdef HAS_I286
-	uint16 tmp;
-	POP(tmp);
-	i286_data_descriptor(DS, tmp);
-#else
 	POP(sregs[DS]);
 	base[DS] = SegBase(DS);
-#endif
 	icount -= timing.push_seg;
 }
 
@@ -3001,11 +2652,7 @@ inline void I86::_push_sp()    /* Opcode 0x54 */
 	unsigned tmp = regs.w[SP];
 	
 	icount -= timing.push_r16;
-#ifdef HAS_I286
-	PUSH(tmp);
-#else
 	PUSH(tmp - 2);
-#endif
 }
 
 inline void I86::_push_bp()    /* Opcode 0x55 */
@@ -3118,29 +2765,6 @@ inline void I86::_bound()    /* Opcode 0x62 */
 		interrupt(BOUNDS_CHECK_FAULT);
 	}
 	icount -= timing.bound;
-}
-
-inline void I86::_arpl()    /* Opcode 0x63 */
-{
-#ifdef HAS_I286
-	if(PM) {
-		uint16 ModRM = FETCHOP;
-		uint16 tmp = GetRMWord(ModRM);
-		uint16 source = RegWord(ModRM);
-		
-		if(i286_selector_okay(tmp) && i286_selector_okay(source) && ((tmp & 3) < (source & 3))) {
-			ZeroVal = 0;
-			PutbackRMWord(ModRM, (tmp & ~3) | (source & 3));
-		}
-		else {
-			ZeroVal = 1;
-		}
-		icount -= 21;
-	}
-	else {
-		interrupt(ILLEGAL_INSTRUCTION);
-	}
-#endif
 }
 
 inline void I86::_repc(int flagval)
@@ -3813,16 +3437,9 @@ inline void I86::_mov_wsreg()    /* Opcode 0x8c */
 {
 	unsigned ModRM = FETCH;
 	icount -= (ModRM >= 0xc0) ? timing.mov_rs : timing.mov_ms;
-#ifdef HAS_I286
-	if(ModRM & 0x20) {	/* 1xx is invalid */
-		interrupt(ILLEGAL_INSTRUCTION);
-		return;
-	}
-#else
 	if(ModRM & 0x20) {
 		return;	/* 1xx is invalid */
 	}
-#endif
 	PutRMWord(ModRM, sregs[(ModRM & 0x38) >> 3]);
 }
 
@@ -3840,29 +3457,6 @@ inline void I86::_mov_sregw()    /* Opcode 0x8e */
 	uint16 src = GetRMWord(ModRM);
 	
 	icount -= (ModRM >= 0xc0) ? timing.mov_sr : timing.mov_sm;
-#ifdef HAS_I286
-	switch((ModRM >> 3) & 7) {
-	case 0:  /* mov es, ew */
-		i286_data_descriptor(ES, src);
-		break;
-	case 1:  /* mov cs, ew */
-		break;  /* doesn't do a jump far */
-	case 2:  /* mov ss, ew */
-		i286_data_descriptor(SS, src);
-		instruction(FETCHOP);
-		break;
-	case 3:  /* mov ds, ew */
-		i286_data_descriptor(DS, src);
-		break;
-	case 4:
-	case 5:
-	case 6:
-	case 7:
-		break;
-	default:
-		__assume(0);
-	}
-#else
 	switch((ModRM >> 3) & 7) {
 	case 0:  /* mov es, ew */
 		sregs[ES] = src;
@@ -3887,7 +3481,6 @@ inline void I86::_mov_sregw()    /* Opcode 0x8e */
 	default:
 		__assume(0);
 	}
-#endif
 }
 
 inline void I86::_popw()    /* Opcode 0x8f */
@@ -3974,13 +3567,9 @@ inline void I86::_call_far()    /* Opcode 0x9a */
 	ip = pc - base[CS];
 	PUSH(sregs[CS]);
 	PUSH(ip);
-#ifdef HAS_I286
-	i286_code_descriptor(tmp2, tmp);
-#else
 	sregs[CS] = (uint16)tmp2;
 	base[CS] = SegBase(CS);
 	pc = (base[CS] + (uint16)tmp) & AMASK;
-#endif
 #ifdef I86_BIOS_CALL
 	if(d_bios && d_bios->bios_call(pc, regs.w, sregs, &ZeroVal, &CarryVal)) {
 		/* bios call */
@@ -4004,11 +3593,7 @@ inline void I86::_pushf()    /* Opcode 0x9c */
 	icount -= timing.pushf;
 	
 	tmp = CompressFlags();
-#ifdef HAS_I286
-	PUSH(tmp & ~0xf000);
-#else
 	PUSH(tmp | 0xf000);
-#endif
 }
 
 inline void I86::_popf()    /* Opcode 0x9d */
@@ -4325,12 +3910,8 @@ inline void I86::_les_dw()    /* Opcode 0xc4 */
 	unsigned ModRM = FETCH;
 	uint16 tmp = GetRMWord(ModRM);
 	RegWord(ModRM) = tmp;
-#ifdef HAS_I286
-	i286_data_descriptor(ES, GetNextRMWord);
-#else
 	sregs[ES] = GetNextRMWord;
 	base[ES] = SegBase(ES);
-#endif
 	icount -= timing.load_ptr;
 }
 
@@ -4339,12 +3920,8 @@ inline void I86::_lds_dw()    /* Opcode 0xc5 */
 	unsigned ModRM = FETCH;
 	uint16 tmp = GetRMWord(ModRM);
 	RegWord(ModRM) = tmp;
-#ifdef HAS_I286
-	i286_data_descriptor(DS, GetNextRMWord);
-#else
 	sregs[DS] = GetNextRMWord;
 	base[DS] = SegBase(DS);
-#endif
 	icount -= timing.load_ptr;
 }
 
@@ -4392,38 +3969,20 @@ inline void I86::_retf_d16()    /* Opcode 0xca */
 {
 	unsigned count = FETCH;
 	count += FETCH << 8;
-#ifdef HAS_I286
-	{
-		int tmp, tmp2;
-		POP(tmp2);
-		POP(tmp);
-		i286_code_descriptor(tmp, tmp2);
-	}
-#else
 	POP(pc);
 	POP(sregs[CS]);
 	base[CS] = SegBase(CS);
 	pc = (pc + base[CS]) & AMASK;
-#endif
 	regs.w[SP] += count;
 	icount -= timing.ret_far_imm;
 }
 
 inline void I86::_retf()    /* Opcode 0xcb */
 {
-#ifdef HAS_I286
-	{
-		int tmp, tmp2;
-		POP(tmp2);
-		POP(tmp);
-		i286_code_descriptor(tmp, tmp2);
-	}
-#else
 	POP(pc);
 	POP(sregs[CS]);
 	base[CS] = SegBase(CS);
 	pc = (pc + base[CS]) & AMASK;
-#endif
 	icount -= timing.ret_far;
 }
 
@@ -4460,19 +4019,10 @@ inline void I86::_into()    /* Opcode 0xce */
 inline void I86::_iret()    /* Opcode 0xcf */
 {
 	icount -= timing.iret;
-#ifdef HAS_I286
-	{
-		int tmp, tmp2;
-		POP(tmp2);
-		POP(tmp);
-		i286_code_descriptor(tmp, tmp2);
-	}
-#else
 	POP(pc);
 	POP(sregs[CS]);
 	base[CS] = SegBase(CS);
 	pc = (pc + base[CS]) & AMASK;
-#endif
 	_popf();
 	
 	/* if the IF is set, and an interrupt is pending, signal an interrupt */
@@ -4669,13 +4219,9 @@ inline void I86::_jmp_far()    /* Opcode 0xea */
 	tmp1 = FETCH;
 	tmp1 += FETCH << 8;
 	
-#ifdef HAS_I286
-	i286_code_descriptor(tmp1, tmp);
-#else
 	sregs[CS] = (uint16)tmp1;
 	base[CS] = SegBase(CS);
 	pc = (base[CS] + tmp) & AMASK;
-#endif
 	icount -= timing.jmp_far;
 }
 
@@ -5285,13 +4831,9 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		ip = pc - base[CS];
 		PUSH(tmp);
 		PUSH(ip);
-#ifdef HAS_I286
-		i286_code_descriptor(GetNextRMWord, tmp1);
-#else
 		sregs[CS] = GetNextRMWord;
 		base[CS] = SegBase(CS);
 		pc = (base[CS] + tmp1) & AMASK;
-#endif
 #ifdef I86_BIOS_CALL
 		if(d_bios && d_bios->bios_call(pc, regs.w, sregs, &ZeroVal, &CarryVal)) {
 			/* bios call */
@@ -5306,15 +4848,10 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 		break;
 	case 5:  /* JMP FAR ea */
 		icount -= timing.jmp_m32;
-#ifdef HAS_I286
-		tmp = GetRMWord(ModRM);
-		i286_code_descriptor(GetNextRMWord, tmp);
-#else
 		pc = GetRMWord(ModRM);
 		sregs[CS] = GetNextRMWord;
 		base[CS] = SegBase(CS);
 		pc = (pc + base[CS]) & AMASK;
-#endif
 		break;
 	case 6:  /* PUSH ea */
 		icount -= (ModRM >= 0xc0) ? timing.push_r16 : timing.push_m16;
@@ -5331,11 +4868,1575 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 
 inline void I86::_invalid()
 {
-#ifdef HAS_I286
-	interrupt(ILLEGAL_INSTRUCTION);
-#else
 	/* i8086/i8088 ignore an invalid opcode. */
 	/* i80186/i80188 probably also ignore an invalid opcode. */
 	icount -= 10;
-#endif
 }
+
+/*
+   NEC V-series Disassembler
+
+   Originally Written for i386 by Ville Linde
+   Converted to NEC-V by Aaron Giles
+*/
+
+enum
+{
+	PARAM_REG8 = 1,		/* 8-bit register */
+	PARAM_REG16,		/* 16-bit register */
+	PARAM_REG2_8,		/* 8-bit register */
+	PARAM_REG2_16,		/* 16-bit register */
+	PARAM_RM8,			/* 8-bit memory or register */
+	PARAM_RM16,			/* 16-bit memory or register */
+	PARAM_RMPTR8,		/* 8-bit memory or register */
+	PARAM_RMPTR16,		/* 16-bit memory or register */
+	PARAM_I3,			/* 3-bit immediate */
+	PARAM_I4,			/* 4-bit immediate */
+	PARAM_I8,			/* 8-bit signed immediate */
+	PARAM_I16,			/* 16-bit signed immediate */
+	PARAM_UI8,			/* 8-bit unsigned immediate */
+	PARAM_IMM,			/* 16-bit immediate */
+	PARAM_ADDR,			/* 16:16 address */
+	PARAM_REL8,			/* 8-bit PC-relative displacement */
+	PARAM_REL16,		/* 16-bit PC-relative displacement */
+	PARAM_MEM_OFFS,		/* 16-bit mem offset */
+	PARAM_SREG,			/* segment register */
+	PARAM_SFREG,		/* V25/V35 special function register */
+	PARAM_1,			/* used by shift/rotate instructions */
+	PARAM_AL,
+	PARAM_CL,
+	PARAM_DL,
+	PARAM_BL,
+	PARAM_AH,
+	PARAM_CH,
+	PARAM_DH,
+	PARAM_BH,
+	PARAM_AW,
+	PARAM_CW,
+	PARAM_DW,
+	PARAM_BW,
+	PARAM_SP,
+	PARAM_BP,
+	PARAM_IX,
+	PARAM_IY
+};
+
+enum
+{
+	MODRM = 1,
+	GROUP,
+	FPU,
+	TWO_BYTE,
+	PREFIX,
+	SEG_PS,
+	SEG_DS0,
+	SEG_DS1,
+	SEG_SS
+};
+
+struct I386_OPCODE {
+	char mnemonic[32];
+	UINT32 flags;
+	UINT32 param1;
+	UINT32 param2;
+	UINT32 param3;
+	offs_t dasm_flags;
+};
+
+struct GROUP_OP {
+	char mnemonic[32];
+	const I386_OPCODE *opcode;
+};
+
+static const UINT8 *opcode_ptr;
+static const UINT8 *opcode_ptr_base;
+
+static const I386_OPCODE necv_opcode_table1[256] =
+{
+	// 0x00
+	{"add",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"add",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"add",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"add",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"add",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"add",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"push    ds1",		0,				0,					0,					0				},
+	{"pop     ds1",		0,				0,					0,					0				},
+	{"or",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"or",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"or",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"or",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"or",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"or",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"push    ps",		0,				0,					0,					0				},
+	{"two_byte",		TWO_BYTE,		0,					0,					0				},
+	// 0x10
+	{"addc",			MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"addc",			MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"addc",			MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"addc",			MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"addc",			0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"addc",			0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"push    ss",		0,				0,					0,					0				},
+	{"pop     ss",		0,				0,					0,					0				},
+	{"subc",			MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"subc",			MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"subc",			MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"subc",			MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"subc",			0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"subc",			0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"push    ds0",		0,				0,					0,					0				},
+	{"pop     ds0",		0,				0,					0,					0				},
+	// 0x20
+	{"and",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"and",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"and",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"and",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"and",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"and",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"ds1:",			SEG_DS1,		0,					0,					0				},
+	{"adj4a",			0,				0,					0,					0				},
+	{"sub",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"sub",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"sub",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"sub",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"sub",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"sub",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"ps:",				SEG_PS,			0,					0,					0				},
+	{"adj4s",			0,				0,					0,					0				},
+	// 0x30
+	{"xor",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"xor",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"xor",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"xor",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"xor",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"xor",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"ss:",				SEG_SS,			0,					0,					0				},
+	{"adjba",			0,				0,					0,					0				},
+	{"cmp",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"cmp",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"cmp",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"cmp",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"cmp",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"cmp",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"ds0:",			SEG_DS0,		0,					0,					0				},
+	{"adjbs",			0,				0,					0,					0				},
+	// 0x40
+	{"inc",				0,				PARAM_AW,			0,					0				},
+	{"inc",				0,				PARAM_CW,			0,					0				},
+	{"inc",				0,				PARAM_DW,			0,					0				},
+	{"inc",				0,				PARAM_BW,			0,					0				},
+	{"inc",				0,				PARAM_SP,			0,					0				},
+	{"inc",				0,				PARAM_BP,			0,					0				},
+	{"inc",				0,				PARAM_IX,			0,					0				},
+	{"inc",				0,				PARAM_IY,			0,					0				},
+	{"dec",				0,				PARAM_AW,			0,					0				},
+	{"dec",				0,				PARAM_CW,			0,					0				},
+	{"dec",				0,				PARAM_DW,			0,					0				},
+	{"dec",				0,				PARAM_BW,			0,					0				},
+	{"dec",				0,				PARAM_SP,			0,					0				},
+	{"dec",				0,				PARAM_BP,			0,					0				},
+	{"dec",				0,				PARAM_IX,			0,					0				},
+	{"dec",				0,				PARAM_IY,			0,					0				},
+	// 0x50
+	{"push",			0,				PARAM_AW,			0,					0				},
+	{"push",			0,				PARAM_CW,			0,					0				},
+	{"push",			0,				PARAM_DW,			0,					0				},
+	{"push",			0,				PARAM_BW,			0,					0				},
+	{"push",			0,				PARAM_SP,			0,					0				},
+	{"push",			0,				PARAM_BP,			0,					0				},
+	{"push",			0,				PARAM_IX,			0,					0				},
+	{"push",			0,				PARAM_IY,			0,					0				},
+	{"pop",				0,				PARAM_AW,			0,					0				},
+	{"pop",				0,				PARAM_CW,			0,					0				},
+	{"pop",				0,				PARAM_DW,			0,					0				},
+	{"pop",				0,				PARAM_BW,			0,					0				},
+	{"pop",				0,				PARAM_SP,			0,					0				},
+	{"pop",				0,				PARAM_BP,			0,					0				},
+	{"pop",				0,				PARAM_IX,			0,					0				},
+	{"pop",				0,				PARAM_IY,			0,					0				},
+	// 0x60
+	{"push    r",		0,				0,					0,					0				},
+	{"pop     r",		0,				0,					0,					0				},
+	{"chkind",			MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"brkn",			0,				PARAM_UI8,			0,					0,				DASMFLAG_STEP_OVER},	/* V25S/V35S only */
+	{"repnc",			PREFIX,			0,					0,					0				},
+	{"repc",			PREFIX,			0,					0,					0				},
+	{"fpo2    0",		0,				0,					0,					0				},	/* for a coprocessor that was never made */
+	{"fpo2    1",		0,				0,					0,					0				},	/* for a coprocessor that was never made */
+	{"push",			0,				PARAM_IMM,			0,					0				},
+	{"mul",				MODRM,			PARAM_REG16,		PARAM_RM16,			PARAM_IMM		},
+	{"push",			0,				PARAM_I8,			0,					0				},
+	{"mul",				MODRM,			PARAM_REG16,		PARAM_RM16,			PARAM_I8		},
+	{"inmb",			0,				0,					0,					0				},
+	{"inmw",			0,				0,					0,					0				},
+	{"outmb",			0,				0,					0,					0				},
+	{"outmw",			0,				0,					0,					0				},
+	// 0x70
+	{"bv",				0,				PARAM_REL8,			0,					0				},
+	{"bnv",				0,				PARAM_REL8,			0,					0				},
+	{"bc",				0,				PARAM_REL8,			0,					0				},
+	{"bnc",				0,				PARAM_REL8,			0,					0				},
+	{"be",				0,				PARAM_REL8,			0,					0				},
+	{"bne",				0,				PARAM_REL8,			0,					0				},
+	{"bnh",				0,				PARAM_REL8,			0,					0				},
+	{"bh",				0,				PARAM_REL8,			0,					0				},
+	{"bn",				0,				PARAM_REL8,			0,					0				},
+	{"bp",				0,				PARAM_REL8,			0,					0				},
+	{"bpe",				0,				PARAM_REL8,			0,					0				},
+	{"bpo",				0,				PARAM_REL8,			0,					0				},
+	{"blt",				0,				PARAM_REL8,			0,					0				},
+	{"bge",				0,				PARAM_REL8,			0,					0				},
+	{"ble",				0,				PARAM_REL8,			0,					0				},
+	{"bgt",				0,				PARAM_REL8,			0,					0				},
+	// 0x80
+	{"immb",			GROUP,			0,					0,					0				},
+	{"immw",			GROUP,			0,					0,					0				},
+	{"immb",			GROUP,			0,					0,					0				},
+	{"immws",			GROUP,			0,					0,					0				},
+	{"test",			MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"test",			MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"xch",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"xch",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"mov",				MODRM,			PARAM_RM8,			PARAM_REG8,			0				},
+	{"mov",				MODRM,			PARAM_RM16,			PARAM_REG16,		0				},
+	{"mov",				MODRM,			PARAM_REG8,			PARAM_RM8,			0				},
+	{"mov",				MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"mov",				MODRM,			PARAM_RM16,			PARAM_SREG,			0				},
+	{"ldea",			MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"mov",				MODRM,			PARAM_SREG,			PARAM_RM16,			0				},
+	{"pop",				MODRM,			PARAM_RM16,			0,					0				},
+	// 0x90
+	{"nop",				0,				0,					0,					0				},
+	{"xch",				0,				PARAM_AW,			PARAM_CW,			0				},
+	{"xch",				0,				PARAM_AW,			PARAM_DW,			0				},
+	{"xch",				0,				PARAM_AW,			PARAM_BW,			0				},
+	{"xch",				0,				PARAM_AW,			PARAM_SP,			0				},
+	{"xch",				0,				PARAM_AW,			PARAM_BP,			0				},
+	{"xch",				0,				PARAM_AW,			PARAM_IX,			0				},
+	{"xch",				0,				PARAM_AW,			PARAM_IY,			0				},
+	{"cvtbw",			0,				0,					0,					0				},
+	{"cvtwl",			0,				0,					0,					0				},
+	{"call",			0,				PARAM_ADDR,			0,					0,				DASMFLAG_STEP_OVER},
+	{"poll",			0,				0,					0,					0				},
+	{"push    psw",		0,				0,					0,					0				},
+	{"pop     psw",		0,				0,					0,					0				},
+	{"mov     psw,ah",	0,				0,					0,					0				},
+	{"mov     ah,psw",	0,				0,					0,					0				},
+	// 0xa0
+	{"mov",				0,				PARAM_AL,			PARAM_MEM_OFFS,		0				},
+	{"mov",				0,				PARAM_AW,			PARAM_MEM_OFFS,		0				},
+	{"mov",				0,				PARAM_MEM_OFFS,		PARAM_AL,			0				},
+	{"mov",				0,				PARAM_MEM_OFFS,		PARAM_AW,			0				},
+	{"movbkb",			0,				0,					0,					0				},
+	{"movbkw",			0,				0,					0,					0				},
+	{"cmpbkb",			0,				0,					0,					0				},
+	{"cmpbkw",			0,				0,					0,					0				},
+	{"test",			0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"test",			0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"stmb",			0,				0,					0,					0				},
+	{"stmw",			0,				0,					0,					0				},
+	{"ldmb",			0,				0,					0,					0				},
+	{"ldmw",			0,				0,					0,					0				},
+	{"cmpmb",			0,				0,					0,					0				},
+	{"cmpmw",			0,				0,					0,					0				},
+	// 0xb0
+	{"mov",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_CL,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_DL,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_BL,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_AH,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_CH,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_DH,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_BH,			PARAM_UI8,			0				},
+	{"mov",				0,				PARAM_AW,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_CW,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_DW,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_BW,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_SP,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_BP,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_IX,			PARAM_IMM,			0				},
+	{"mov",				0,				PARAM_IY,			PARAM_IMM,			0				},
+	// 0xc0
+	{"shiftbi",			GROUP,			0,					0,					0				},
+	{"shiftwi",			GROUP,			0,					0,					0				},
+	{"ret",				0,				PARAM_I16,			0,					0,				DASMFLAG_STEP_OUT},
+	{"ret",				0,				0,					0,					0,				DASMFLAG_STEP_OUT},
+	{"mov     ds1,",	MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"mov     ds0,",	MODRM,			PARAM_REG16,		PARAM_RM16,			0				},
+	{"mov",				MODRM,			PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"mov",				MODRM,			PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"prepare",			0,				PARAM_I16,			PARAM_UI8,			0				},
+	{"dispose",			0,				0,					0,					0				},
+	{"retf",			0,				PARAM_I16,			0,					0,				DASMFLAG_STEP_OUT},
+	{"retf",			0,				0,					0,					0,				DASMFLAG_STEP_OUT},
+	{"brk     3",		0,				0,					0,					0,				DASMFLAG_STEP_OVER},
+	{"brk",				0,				PARAM_UI8,			0,					0,				DASMFLAG_STEP_OVER},
+	{"brkv",			0,				0,					0,					0				},
+	{"reti",			0,				0,					0,					0,				DASMFLAG_STEP_OUT},
+	// 0xd0
+	{"shiftb",			GROUP,			0,					0,					0				},
+	{"shiftw",			GROUP,			0,					0,					0				},
+	{"shiftbv",			GROUP,			0,					0,					0				},
+	{"shiftwv",			GROUP,			0,					0,					0				},
+	{"cvtbd",			0,				PARAM_I8,			0,					0				},
+	{"cvtdb",			0,				PARAM_I8,			0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"trans",			0,				0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	{"escape",			FPU,			0,					0,					0				},
+	// 0xe0
+	{"dbnzne",			0,				PARAM_REL8,			0,					0,				DASMFLAG_STEP_OVER},
+	{"dbnze",			0,				PARAM_REL8,			0,					0,				DASMFLAG_STEP_OVER},
+	{"dbnz",			0,				PARAM_REL8,			0,					0,				DASMFLAG_STEP_OVER},
+	{"bcwz",			0,				PARAM_REL8,			0,					0				},
+	{"in",				0,				PARAM_AL,			PARAM_UI8,			0				},
+	{"in",				0,				PARAM_AW,			PARAM_UI8,			0				},
+	{"out",				0,				PARAM_UI8,			PARAM_AL,			0				},
+	{"out",				0,				PARAM_UI8,			PARAM_AW,			0				},
+	{"call",			0,				PARAM_REL16,		0,					0,				DASMFLAG_STEP_OVER},
+	{"br",				0,				PARAM_REL16,		0,					0				},
+	{"br",				0,				PARAM_ADDR,			0,					0				},
+	{"br",				0,				PARAM_REL8,			0,					0				},
+	{"in",				0,				PARAM_AL,			PARAM_DW,			0				},
+	{"in",				0,				PARAM_AW,			PARAM_DW,			0				},
+	{"out",				0,				PARAM_DW,			PARAM_AL,			0				},
+	{"out",				0,				PARAM_DW,			PARAM_AW,			0				},
+	// 0xf0
+	{"buslock",			PREFIX,			0,					0,					0				},
+	{"brks",			0,				PARAM_UI8,			0,					0,				DASMFLAG_STEP_OVER},	/* V25S/V35S only */
+	{"repne",			PREFIX,			0,					0,					0				},
+	{"rep",				PREFIX,			0,					0,					0				},
+	{"halt",			0,				0,					0,					0				},
+	{"not1    cy",		0,				0,					0,					0				},
+	{"group1b",			GROUP,			0,					0,					0				},
+	{"group1w",			GROUP,			0,					0,					0				},
+	{"clr1    cy",		0,				0,					0,					0				},
+	{"set1    cy",		0,				0,					0,					0				},
+	{"di",				0,				0,					0,					0				},
+	{"ei",				0,				0,					0,					0				},
+	{"clr1    dir",		0,				0,					0,					0				},
+	{"set1    dir",		0,				0,					0,					0				},
+	{"group2b",			GROUP,			0,					0,					0				},
+	{"group2w",			GROUP,			0,					0,					0				}
+};
+
+static const I386_OPCODE necv_opcode_table2[256] =
+{
+	// 0x00
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x10
+	{"test1",			MODRM,			PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"test1",			MODRM,			PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"clr1",			MODRM,			PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"clr1",			MODRM,			PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"set1",			MODRM,			PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"set1",			MODRM,			PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"not1",			MODRM,			PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"not1",			MODRM,			PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"test1",			MODRM,			PARAM_RMPTR8,		PARAM_I3,			0				},
+	{"test1",			MODRM,			PARAM_RMPTR16,		PARAM_I4,			0				},
+	{"clr1",			MODRM,			PARAM_RMPTR8,		PARAM_I3,			0				},
+	{"clr1",			MODRM,			PARAM_RMPTR16,		PARAM_I4,			0				},
+	{"set1",			MODRM,			PARAM_RMPTR8,		PARAM_I3,			0				},
+	{"set1",			MODRM,			PARAM_RMPTR16,		PARAM_I4,			0				},
+	{"not1",			MODRM,			PARAM_RMPTR8,		PARAM_I3,			0				},
+	{"not1",			MODRM,			PARAM_RMPTR16,		PARAM_I4,			0				},
+	// 0x20
+	{"add4s",			0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"sub4s",			0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"movspa",			0,				0,					0,					0				},	/* V25/V35 only */
+	{"cmp4s",			0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"rol4",			MODRM,			PARAM_RMPTR8,		0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"ror4",			MODRM,			PARAM_RMPTR8,		0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"brkcs",			MODRM,			PARAM_REG2_16,		0,					0,				DASMFLAG_STEP_OVER},	/* V25/V35 only */
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x30
+	{"???",				0,				0,					0,					0				},
+	{"ins",				MODRM,			PARAM_REG2_8,		PARAM_REG8,			0				},
+	{"???",				0,				0,					0,					0				},
+	{"ext",				MODRM,			PARAM_REG2_8,		PARAM_REG8,			0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"ins",				MODRM,			PARAM_REG2_8,		PARAM_I4,			0				},
+	{"???",				0,				0,					0,					0				},
+	{"ext",				MODRM,			PARAM_REG2_8,		PARAM_I4,			0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x40
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x50
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x60
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x70
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x80
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0x90
+	{"???",				0,				0,					0,					0				},
+	{"retrbi",			0,				0,					0,					0				},	/* V25/V35 only */
+	{"fint",			0,				0,					0,					0				},	/* V25/V35 only */
+	{"???",				0,				0,					0,					0				},
+	{"tsksw",			MODRM,			PARAM_REG2_16,		0,					0				},	/* V25/V35 only */
+	{"movspb",			MODRM,			PARAM_REG2_16,		0,					0				},	/* V25/V35 only */
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"btclr",			0,				PARAM_SFREG,		PARAM_I3,			PARAM_REL8		},	/* V25/V35 only */
+	{"???",				0,				0,					0,					0				},
+	{"stop",			0,				0,					0,					0				},	/* V25/V35 only */
+	{"???",				0,				0,					0,					0				},
+	// 0xa0
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0xb0
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0xc0
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0xd0
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0xe0
+	{"brkxa",			0,				PARAM_UI8,			0,					0				},	/* V33,53 only */
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	// 0xf0
+	{"retxa",			0,				PARAM_UI8,			0,					0				},	/* V33,53 only */
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"brkem",			0,				PARAM_UI8,			0,					0				}	/* V20,30,40,50 only */
+};
+
+static const I386_OPCODE immb_table[8] =
+{
+	{"add",				0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"or",				0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"addc",			0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"subc",			0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"and",				0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"sub",				0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"xor",				0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"cmp",				0,				PARAM_RMPTR8,		PARAM_UI8,			0				}
+};
+
+static const I386_OPCODE immw_table[8] =
+{
+	{"add",				0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"or",				0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"addc",			0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"subc",			0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"and",				0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"sub",				0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"xor",				0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"cmp",				0,				PARAM_RMPTR16,		PARAM_IMM,			0				}
+};
+
+static const I386_OPCODE immws_table[8] =
+{
+	{"add",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"or",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"addc",			0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"subc",			0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"and",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"sub",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"xor",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"cmp",				0,				PARAM_RMPTR16,		PARAM_I8,			0				}
+};
+
+static const I386_OPCODE shiftbi_table[8] =
+{
+	{"rol",				0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"ror",				0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"rolc",			0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"rorc",			0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"shl",				0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"shr",				0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"???",				0,				PARAM_RMPTR8,		PARAM_I8,			0				},
+	{"shra",			0,				PARAM_RMPTR8,		PARAM_I8,			0				}
+};
+
+static const I386_OPCODE shiftwi_table[8] =
+{
+	{"rol",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"ror",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"rolc",			0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"rorc",			0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"shl",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"shr",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"???",				0,				PARAM_RMPTR16,		PARAM_I8,			0				},
+	{"shra",			0,				PARAM_RMPTR16,		PARAM_I8,			0				}
+};
+
+static const I386_OPCODE shiftb_table[8] =
+{
+	{"rol",				0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"ror",				0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"rolc",			0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"rorc",			0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"shl",				0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"shr",				0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"???",				0,				PARAM_RMPTR8,		PARAM_1,			0				},
+	{"shra",			0,				PARAM_RMPTR8,		PARAM_1,			0				}
+};
+
+static const I386_OPCODE shiftw_table[8] =
+{
+	{"rol",				0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"ror",				0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"rolc",			0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"rorc",			0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"shl",				0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"shr",				0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"???",				0,				PARAM_RMPTR16,		PARAM_1,			0				},
+	{"shra",			0,				PARAM_RMPTR16,		PARAM_1,			0				}
+};
+
+static const I386_OPCODE shiftbv_table[8] =
+{
+	{"rol",				0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"ror",				0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"rolc",			0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"rorc",			0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"shl",				0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"shr",				0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"???",				0,				PARAM_RMPTR8,		PARAM_CL,			0				},
+	{"shra",			0,				PARAM_RMPTR8,		PARAM_CL,			0				}
+};
+
+static const I386_OPCODE shiftwv_table[8] =
+{
+	{"rol",				0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"ror",				0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"rolc",			0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"rorc",			0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"shl",				0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"shr",				0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"???",				0,				PARAM_RMPTR16,		PARAM_CL,			0				},
+	{"shra",			0,				PARAM_RMPTR16,		PARAM_CL,			0				}
+};
+
+static const I386_OPCODE group1b_table[8] =
+{
+	{"test",			0,				PARAM_RMPTR8,		PARAM_UI8,			0				},
+	{"???",				0,				0,					0,					0				},
+	{"not",				0,				PARAM_RMPTR8,		0,					0				},
+	{"neg",				0,				PARAM_RMPTR8,		0,					0				},
+	{"mulu",			0,				PARAM_RMPTR8,		0,					0				},
+	{"mul",				0,				PARAM_RMPTR8,		0,					0				},
+	{"divu",			0,				PARAM_RMPTR8,		0,					0				},
+	{"div",				0,				PARAM_RMPTR8,		0,					0				}
+};
+
+static const I386_OPCODE group1w_table[8] =
+{
+	{"test",			0,				PARAM_RMPTR16,		PARAM_IMM,			0				},
+	{"???",				0,				0,					0,					0				},
+	{"not",				0,				PARAM_RMPTR16,		0,					0				},
+	{"neg",				0,				PARAM_RMPTR16,		0,					0				},
+	{"mulu",			0,				PARAM_RMPTR16,		0,					0				},
+	{"mul",				0,				PARAM_RMPTR16,		0,					0				},
+	{"divu",			0,				PARAM_RMPTR16,		0,					0				},
+	{"div",				0,				PARAM_RMPTR16,		0,					0				}
+};
+
+static const I386_OPCODE group2b_table[8] =
+{
+	{"inc",				0,				PARAM_RMPTR8,		0,					0				},
+	{"dec",				0,				PARAM_RMPTR8,		0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				},
+	{"???",				0,				0,					0,					0				}
+};
+
+static const I386_OPCODE group2w_table[8] =
+{
+	{"inc",				0,				PARAM_RMPTR16,		0,					0				},
+	{"dec",				0,				PARAM_RMPTR16,		0,					0				},
+	{"call",			0,				PARAM_RMPTR16,		0,					0,				DASMFLAG_STEP_OVER},
+	{"call    far ptr ",0,				PARAM_RM16,			0,					0,				DASMFLAG_STEP_OVER},
+	{"br",				0,				PARAM_RMPTR16,		0,					0				},
+	{"br      far ptr ",0,				PARAM_RM16,			0,					0				},
+	{"push",			0,				PARAM_RMPTR16,		0,					0				},
+	{"???",				0,				0,					0,					0				}
+};
+
+static const GROUP_OP group_op_table[] =
+{
+	{ "immb",				immb_table				},
+	{ "immw",				immw_table				},
+	{ "immws",				immws_table				},
+	{ "shiftbi",			shiftbi_table			},
+	{ "shiftwi",			shiftwi_table			},
+	{ "shiftb",				shiftb_table			},
+	{ "shiftw",				shiftw_table			},
+	{ "shiftbv",			shiftbv_table			},
+	{ "shiftwv",			shiftwv_table			},
+	{ "group1b",			group1b_table			},
+	{ "group1w",			group1w_table			},
+	{ "group2b",			group2b_table			},
+	{ "group2w",			group2w_table			}
+};
+
+
+
+static const char *const nec_reg[8] = { "aw",  "cw",  "dw",  "bw",  "sp",  "bp",  "ix",  "iy" };
+static const char *const nec_reg8[8] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" };
+static const char *const nec_sreg[8] = { "ds1", "ps", "ss", "ds0", "???", "???", "???", "???" };
+static const char *const nec_sfreg[256] =
+{
+	/* 0x00 */
+	"p0",	"pm0",	"pmc0",	"???",	"???",	"???",	"???",	"???",
+	"p1",	"pm1",	"pmc1",	"???",	"???",	"???",	"???",	"???",
+	/* 0x10 */
+	"p2",	"pm2",	"pmc2",	"???",	"???",	"???",	"???",	"???",
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	/* 0x20 */
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	/* 0x30 */
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	"pt",	"???",	"???",	"pmt",	"???",	"???",	"???",	"???",
+	/* 0x40 */
+	"intm",	"???",	"???",	"???",	"ems0",	"ems1",	"ems2",	"???",
+	"???",	"???",	"???",	"???",	"exic0","exic1","exic2","???",
+	/* 0x50 */
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	/* 0x60 */
+	"rxb0",	"???",	"txb0",	"???",	"???",	"srms0","stms0","???",
+	"scm0",	"scc0",	"brg0",	"scs0",	"seic0","sric0","stic0","???",
+	/* 0x70 */
+	"rxb1",	"???",	"txb1",	"???",	"???",	"srms1","stms1","???",
+	"scm1",	"scc1",	"brg1",	"scs1",	"seic1","sric1","stic1","???",
+	/* 0x80 */
+	"tm0",	"???",	"md0",	"???",	"???",	"???",	"???",	"???",
+	"tm1",	"???",	"md1",	"???",	"???",	"???",	"???",	"???",
+	/* 0x90 */
+	"tmc0",	"tmc1",	"???",	"???",	"tmms0","tmms1","tmms2","???",
+	"???",	"???",	"???",	"???",	"tmic0","tmic1","tmic2","???",
+	/* 0xa0 */
+	"dmac0","dmam0","dmac1","dmam1","???",	"???",	"???",	"???",
+	"???",	"???",	"???",	"???",	"dic0",	"dic1",	"???",	"???",
+	/* 0xb0 */
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	/* 0xc0 */
+	"sar0l","sar0m","sar0h","???",	"dar0l","dar0m","dar0h","???",
+	"tc0l",	"tc0h",	"???",	"???",	"???",	"???",	"???",	"???",
+	/* 0xd0 */
+	"sar1l","sar1m","sar1h","???",	"dar1l","dar1m","dar1h","???",
+	"tc1l",	"tc1h",	"???",	"???",	"???",	"???",	"???",	"???",
+	/* 0xe0 */
+	"stbc",	"rfm",	"???",	"???",	"???",	"???",	"???",	"???",
+	"wtc",	"???",	"flag",	"prc",	"tbic",	"???",	"???",	"irqs",
+	/* 0xf0 */
+	"???",	"???",	"???",	"???",	"???",	"???",	"???",	"???",
+	"???",	"???",	"???",	"???",	"ispr",	"???",	"???",	"idb"
+};
+
+static UINT32 pc;
+static UINT8 modrm;
+static UINT32 segment;
+static offs_t dasm_flags;
+static char modrm_string[256];
+
+#define MODRM_REG1	((modrm >> 3) & 0x7)
+#define MODRM_REG2	(modrm & 0x7)
+
+#define MAX_LENGTH	8
+
+INLINE UINT8 FETCHD(void)
+{
+	if ((opcode_ptr - opcode_ptr_base) + 1 > MAX_LENGTH)
+		return 0xff;
+	pc++;
+	return *opcode_ptr++;
+}
+
+INLINE UINT16 FETCHD16(void)
+{
+	UINT16 d;
+	if ((opcode_ptr - opcode_ptr_base) + 2 > MAX_LENGTH)
+		return 0xffff;
+	d = opcode_ptr[0] | (opcode_ptr[1] << 8);
+	opcode_ptr += 2;
+	pc += 2;
+	return d;
+}
+
+static char *hexstring(UINT32 value, int digits)
+{
+	static char buffer[20];
+	buffer[0] = '0';
+	if (digits)
+		sprintf(&buffer[1], "%0*Xh", digits, value);
+	else
+		sprintf(&buffer[1], "%Xh", value);
+	return (buffer[1] >= '0' && buffer[1] <= '9') ? &buffer[1] : &buffer[0];
+}
+
+static char *shexstring(UINT32 value, int digits, int always)
+{
+	static char buffer[20];
+	if (value >= 0x80000000)
+		sprintf(buffer, "-%s", hexstring(-value, digits));
+	else if (always)
+		sprintf(buffer, "+%s", hexstring(value, digits));
+	else
+		return hexstring(value, digits);
+	return buffer;
+}
+
+static void handle_modrm(char* s)
+{
+	INT8 disp8;
+	INT16 disp16;
+	UINT8 mod, rm;
+
+	modrm = FETCHD();
+	mod = (modrm >> 6) & 0x3;
+	rm = (modrm & 0x7);
+
+	if( modrm >= 0xc0 )
+		return;
+
+	switch(segment)
+	{
+		case SEG_PS: s += sprintf( s, "ps:" ); break;
+		case SEG_DS0: s += sprintf( s, "ds0:" ); break;
+		case SEG_DS1: s += sprintf( s, "ds1:" ); break;
+		case SEG_SS: s += sprintf( s, "ss:" ); break;
+	}
+
+	s += sprintf( s, "[" );
+	switch( rm )
+	{
+		case 0: s += sprintf( s, "bw+ix" ); break;
+		case 1: s += sprintf( s, "bw+iy" ); break;
+		case 2: s += sprintf( s, "bp+ix" ); break;
+		case 3: s += sprintf( s, "bp+iy" ); break;
+		case 4: s += sprintf( s, "ix" ); break;
+		case 5: s += sprintf( s, "iy" ); break;
+		case 6:
+			if( mod == 0 ) {
+				disp16 = FETCHD16();
+				s += sprintf( s, "%s", hexstring((unsigned) (UINT16) disp16, 0) );
+			} else {
+				s += sprintf( s, "bp" );
+			}
+			break;
+		case 7: s += sprintf( s, "bw" ); break;
+	}
+	if( mod == 1 ) {
+		disp8 = FETCHD();
+		s += sprintf( s, "%s", shexstring((INT32)disp8, 0, TRUE) );
+	} else if( mod == 2 ) {
+		disp16 = FETCHD16();
+		s += sprintf( s, "%s", shexstring((INT32)disp16, 0, TRUE) );
+	}
+	s += sprintf( s, "]" );
+}
+
+static char* handle_param(char* s, UINT32 param)
+{
+	UINT8 i8;
+	UINT16 i16;
+	UINT16 ptr;
+	UINT32 addr;
+	INT8 d8;
+	INT16 d16;
+
+	switch(param)
+	{
+		case PARAM_REG8:
+			s += sprintf( s, "%s", nec_reg8[MODRM_REG1] );
+			break;
+
+		case PARAM_REG16:
+			s += sprintf( s, "%s", nec_reg[MODRM_REG1] );
+			break;
+
+		case PARAM_REG2_8:
+			s += sprintf( s, "%s", nec_reg8[MODRM_REG2] );
+			break;
+
+		case PARAM_REG2_16:
+			s += sprintf( s, "%s", nec_reg[MODRM_REG2] );
+			break;
+
+		case PARAM_RM8:
+		case PARAM_RMPTR8:
+			if( modrm >= 0xc0 ) {
+				s += sprintf( s, "%s", nec_reg8[MODRM_REG2] );
+			} else {
+				if (param == PARAM_RMPTR8)
+					s += sprintf( s, "byte ptr " );
+				s += sprintf( s, "%s", modrm_string );
+			}
+			break;
+
+		case PARAM_RM16:
+		case PARAM_RMPTR16:
+			if( modrm >= 0xc0 ) {
+				s += sprintf( s, "%s", nec_reg[MODRM_REG2] );
+			} else {
+				if (param == PARAM_RMPTR16)
+					s += sprintf( s, "word ptr " );
+				s += sprintf( s, "%s", modrm_string );
+			}
+			break;
+
+		case PARAM_I3:
+			i8 = FETCHD();
+			s += sprintf( s, "%d", i8 & 0x07 );
+			break;
+
+		case PARAM_I4:
+			i8 = FETCHD();
+			s += sprintf( s, "%d", i8 & 0x0f );
+			break;
+
+		case PARAM_I8:
+			i8 = FETCHD();
+			s += sprintf( s, "%s", shexstring((INT8)i8, 0, FALSE) );
+			break;
+
+		case PARAM_I16:
+			i16 = FETCHD16();
+			s += sprintf( s, "%s", shexstring((INT16)i16, 0, FALSE) );
+			break;
+
+		case PARAM_UI8:
+			i8 = FETCHD();
+			s += sprintf( s, "%s", shexstring((UINT8)i8, 0, FALSE) );
+			break;
+
+		case PARAM_IMM:
+			i16 = FETCHD16();
+			s += sprintf( s, "%s", hexstring(i16, 0) );
+			break;
+
+		case PARAM_ADDR:
+			addr = FETCHD16();
+			ptr = FETCHD16();
+			s += sprintf( s, "%s:", hexstring(ptr, 4) );
+			s += sprintf( s, "%s", hexstring(addr, 0) );
+			break;
+
+		case PARAM_REL16:
+			/* make sure to keep the relative offset within the segment */
+			d16 = FETCHD16();
+			s += sprintf( s, "%s", hexstring((pc & 0xFFFF0000) | ((pc + d16) & 0x0000FFFF), 0) );
+			break;
+
+		case PARAM_REL8:
+			d8 = FETCHD();
+			s += sprintf( s, "%s", hexstring(pc + d8, 0) );
+			break;
+
+		case PARAM_MEM_OFFS:
+			switch(segment)
+			{
+				case SEG_PS: s += sprintf( s, "ps:" ); break;
+				case SEG_DS0: s += sprintf( s, "ds0:" ); break;
+				case SEG_DS1: s += sprintf( s, "ds1:" ); break;
+				case SEG_SS: s += sprintf( s, "ss:" ); break;
+			}
+
+			i16 = FETCHD16();
+			s += sprintf( s, "[%s]", hexstring(i16, 0) );
+			break;
+
+		case PARAM_SREG:
+			s += sprintf( s, "%s", nec_sreg[MODRM_REG1] );
+			break;
+
+		case PARAM_SFREG:
+			i8 = FETCHD();
+			s += sprintf( s, "%s", nec_sfreg[i8] );
+			break;
+
+		case PARAM_1:
+			s += sprintf( s, "1" );
+			break;
+
+		case PARAM_AL: s += sprintf( s, "al" ); break;
+		case PARAM_CL: s += sprintf( s, "cl" ); break;
+		case PARAM_DL: s += sprintf( s, "dl" ); break;
+		case PARAM_BL: s += sprintf( s, "bl" ); break;
+		case PARAM_AH: s += sprintf( s, "ah" ); break;
+		case PARAM_CH: s += sprintf( s, "ch" ); break;
+		case PARAM_DH: s += sprintf( s, "dh" ); break;
+		case PARAM_BH: s += sprintf( s, "bh" ); break;
+
+		case PARAM_AW: s += sprintf( s, "aw" ); break;
+		case PARAM_CW: s += sprintf( s, "cw" ); break;
+		case PARAM_DW: s += sprintf( s, "dw" ); break;
+		case PARAM_BW: s += sprintf( s, "bw" ); break;
+		case PARAM_SP: s += sprintf( s, "sp" ); break;
+		case PARAM_BP: s += sprintf( s, "bp" ); break;
+		case PARAM_IX: s += sprintf( s, "ix" ); break;
+		case PARAM_IY: s += sprintf( s, "iy" ); break;
+	}
+	return s;
+}
+
+static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
+{
+	switch (op1 & 0x7)
+	{
+		case 0:		// Group D8
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fadd    dword ptr %s", modrm_string); break;
+					case 1: sprintf(s, "fmul    dword ptr %s", modrm_string); break;
+					case 2: sprintf(s, "fcom    dword ptr %s", modrm_string); break;
+					case 3: sprintf(s, "fcomp   dword ptr %s", modrm_string); break;
+					case 4: sprintf(s, "fsub    dword ptr %s", modrm_string); break;
+					case 5: sprintf(s, "fsubr   dword ptr %s", modrm_string); break;
+					case 6: sprintf(s, "fdiv    dword ptr %s", modrm_string); break;
+					case 7: sprintf(s, "fdivr   dword ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fadd    st(0),st(%d)", op2 & 0x7); break;
+					case 1: sprintf(s, "fcom    st(0),st(%d)", op2 & 0x7); break;
+					case 2: sprintf(s, "fsub    st(0),st(%d)", op2 & 0x7); break;
+					case 3: sprintf(s, "fdiv    st(0),st(%d)", op2 & 0x7); break;
+					case 4: sprintf(s, "fmul    st(0),st(%d)", op2 & 0x7); break;
+					case 5: sprintf(s, "fcomp   st(0),st(%d)", op2 & 0x7); break;
+					case 6: sprintf(s, "fsubr   st(0),st(%d)", op2 & 0x7); break;
+					case 7: sprintf(s, "fdivr   st(0),st(%d)", op2 & 0x7); break;
+				}
+			}
+			break;
+		}
+
+		case 1:		// Group D9
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fld     dword ptr %s", modrm_string); break;
+					case 1: sprintf(s, "??? (FPU)"); break;
+					case 2: sprintf(s, "fst     dword ptr %s", modrm_string); break;
+					case 3: sprintf(s, "fstp    dword ptr %s", modrm_string); break;
+					case 4: sprintf(s, "fldenv  word ptr %s", modrm_string); break;
+					case 5: sprintf(s, "fldcw   word ptr %s", modrm_string); break;
+					case 6: sprintf(s, "fstenv  word ptr %s", modrm_string); break;
+					case 7: sprintf(s, "fstcw   word ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+						sprintf(s, "fld     st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+						sprintf(s, "fxch    st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x10: sprintf(s, "fnop"); break;
+					case 0x20: sprintf(s, "fchs"); break;
+					case 0x21: sprintf(s, "fabs"); break;
+					case 0x24: sprintf(s, "ftst"); break;
+					case 0x25: sprintf(s, "fxam"); break;
+					case 0x28: sprintf(s, "fld1"); break;
+					case 0x29: sprintf(s, "fldl2t"); break;
+					case 0x2a: sprintf(s, "fldl2e"); break;
+					case 0x2b: sprintf(s, "fldpi"); break;
+					case 0x2c: sprintf(s, "fldlg2"); break;
+					case 0x2d: sprintf(s, "fldln2"); break;
+					case 0x2e: sprintf(s, "fldz"); break;
+					case 0x30: sprintf(s, "f2xm1"); break;
+					case 0x31: sprintf(s, "fyl2x"); break;
+					case 0x32: sprintf(s, "fptan"); break;
+					case 0x33: sprintf(s, "fpatan"); break;
+					case 0x34: sprintf(s, "fxtract"); break;
+					case 0x35: sprintf(s, "fprem1"); break;
+					case 0x36: sprintf(s, "fdecstp"); break;
+					case 0x37: sprintf(s, "fincstp"); break;
+					case 0x38: sprintf(s, "fprem"); break;
+					case 0x39: sprintf(s, "fyl2xp1"); break;
+					case 0x3a: sprintf(s, "fsqrt"); break;
+					case 0x3b: sprintf(s, "fsincos"); break;
+					case 0x3c: sprintf(s, "frndint"); break;
+					case 0x3d: sprintf(s, "fscale"); break;
+					case 0x3e: sprintf(s, "fsin"); break;
+					case 0x3f: sprintf(s, "fcos"); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+				}
+			}
+			break;
+		}
+
+		case 2:		// Group DA
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fiadd   dword ptr %s", modrm_string); break;
+					case 1: sprintf(s, "fimul   dword ptr %s", modrm_string); break;
+					case 2: sprintf(s, "ficom   dword ptr %s", modrm_string); break;
+					case 3: sprintf(s, "ficomp  dword ptr %s", modrm_string); break;
+					case 4: sprintf(s, "fisub   dword ptr %s", modrm_string); break;
+					case 5: sprintf(s, "fisubr  dword ptr %s", modrm_string); break;
+					case 6: sprintf(s, "fidiv   dword ptr %s", modrm_string); break;
+					case 7: sprintf(s, "fidivr  dword ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+						sprintf(s, "fcmovb  st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+						sprintf(s, "fcmove  st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+						sprintf(s, "fcmovbe st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+						sprintf(s, "fcmovu  st(0),st(%d)", op2 & 0x7); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+
+				}
+			}
+			break;
+		}
+
+		case 3:		// Group DB
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fild    dword ptr %s", modrm_string); break;
+					case 1: sprintf(s, "??? (FPU)"); break;
+					case 2: sprintf(s, "fist    dword ptr %s", modrm_string); break;
+					case 3: sprintf(s, "fistp   dword ptr %s", modrm_string); break;
+					case 4: sprintf(s, "??? (FPU)"); break;
+					case 5: sprintf(s, "fld     tword ptr %s", modrm_string); break;
+					case 6: sprintf(s, "??? (FPU)"); break;
+					case 7: sprintf(s, "fstp    tword ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+						sprintf(s, "fcmovnb st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+						sprintf(s, "fcmovne st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+						sprintf(s, "fcmovnbe st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+						sprintf(s, "fcmovnu st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x22: sprintf(s, "fclex"); break;
+					case 0x23: sprintf(s, "finit"); break;
+
+					case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+						sprintf(s, "fucomi  st(0),st(%d)", op2 & 0x7); break;
+
+					case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
+						sprintf(s, "fcomi   st(0),st(%d)", op2 & 0x7); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+				}
+			}
+			break;
+		}
+
+		case 4:		// Group DC
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fadd    qword ptr %s", modrm_string); break;
+					case 1: sprintf(s, "fmul    qword ptr %s", modrm_string); break;
+					case 2: sprintf(s, "fcom    qword ptr %s", modrm_string); break;
+					case 3: sprintf(s, "fcomp   qword ptr %s", modrm_string); break;
+					case 4: sprintf(s, "fsub    qword ptr %s", modrm_string); break;
+					case 5: sprintf(s, "fsubr   qword ptr %s", modrm_string); break;
+					case 6: sprintf(s, "fdiv    qword ptr %s", modrm_string); break;
+					case 7: sprintf(s, "fdivr   qword ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+						sprintf(s, "fadd    st(%d),st(0)", op2 & 0x7); break;
+
+					case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+						sprintf(s, "fmul    st(%d),st(0)", op2 & 0x7); break;
+
+					case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+						sprintf(s, "fsubr   st(%d),st(0)", op2 & 0x7); break;
+
+					case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+						sprintf(s, "fsub    st(%d),st(0)", op2 & 0x7); break;
+
+					case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
+						sprintf(s, "fdivr   st(%d),st(0)", op2 & 0x7); break;
+
+					case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
+						sprintf(s, "fdiv    st(%d),st(0)", op2 & 0x7); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+				}
+			}
+			break;
+		}
+
+		case 5:		// Group DD
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fld     qword ptr %s", modrm_string); break;
+					case 1: sprintf(s, "??? (FPU)"); break;
+					case 2: sprintf(s, "fst     qword ptr %s", modrm_string); break;
+					case 3: sprintf(s, "fstp    qword ptr %s", modrm_string); break;
+					case 4: sprintf(s, "frstor  %s", modrm_string); break;
+					case 5: sprintf(s, "??? (FPU)"); break;
+					case 6: sprintf(s, "fsave   %s", modrm_string); break;
+					case 7: sprintf(s, "fstsw   word ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+						sprintf(s, "ffree   st(%d)", op2 & 0x7); break;
+
+					case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+						sprintf(s, "fst     st(%d)", op2 & 0x7); break;
+
+					case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+						sprintf(s, "fstp    st(%d)", op2 & 0x7); break;
+
+					case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+						sprintf(s, "fucom   st(%d), st(0)", op2 & 0x7); break;
+
+					case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+						sprintf(s, "fucomp  st(%d)", op2 & 0x7); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+				}
+			}
+			break;
+		}
+
+		case 6:		// Group DE
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fiadd   word ptr %s", modrm_string); break;
+					case 1: sprintf(s, "fimul   word ptr %s", modrm_string); break;
+					case 2: sprintf(s, "ficom   word ptr %s", modrm_string); break;
+					case 3: sprintf(s, "ficomp  word ptr %s", modrm_string); break;
+					case 4: sprintf(s, "fisub   word ptr %s", modrm_string); break;
+					case 5: sprintf(s, "fisubr  word ptr %s", modrm_string); break;
+					case 6: sprintf(s, "fidiv   word ptr %s", modrm_string); break;
+					case 7: sprintf(s, "fidivr  word ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+						sprintf(s, "faddp   st(%d)", op2 & 0x7); break;
+
+					case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+						sprintf(s, "fmulp   st(%d)", op2 & 0x7); break;
+
+					case 0x19: sprintf(s, "fcompp"); break;
+
+					case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+						sprintf(s, "fsubrp  st(%d)", op2 & 0x7); break;
+
+					case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+						sprintf(s, "fsubp   st(%d)", op2 & 0x7); break;
+
+					case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
+						sprintf(s, "fdivrp  st(%d), st(0)", op2 & 0x7); break;
+
+					case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
+						sprintf(s, "fdivp   st(%d)", op2 & 0x7); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+				}
+			}
+			break;
+		}
+
+		case 7:		// Group DF
+		{
+			if (op2 < 0xc0)
+			{
+				pc--;		// adjust fetch pointer, so modrm byte read again
+				opcode_ptr--;
+				handle_modrm( modrm_string );
+				switch ((op2 >> 3) & 0x7)
+				{
+					case 0: sprintf(s, "fild    word ptr %s", modrm_string); break;
+					case 1: sprintf(s, "??? (FPU)"); break;
+					case 2: sprintf(s, "fist    word ptr %s", modrm_string); break;
+					case 3: sprintf(s, "fistp   word ptr %s", modrm_string); break;
+					case 4: sprintf(s, "fbld    %s", modrm_string); break;
+					case 5: sprintf(s, "fild    qword ptr %s", modrm_string); break;
+					case 6: sprintf(s, "fbstp   %s", modrm_string); break;
+					case 7: sprintf(s, "fistp   qword ptr %s", modrm_string); break;
+				}
+			}
+			else
+			{
+				switch (op2 & 0x3f)
+				{
+					case 0x20: sprintf(s, "fstsw   aw"); break;
+
+					case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+						sprintf(s, "fucomip st(%d)", op2 & 0x7); break;
+
+					case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
+						sprintf(s, "fcomip  st(%d),st(0)", op2 & 0x7); break;
+
+					default: sprintf(s, "??? (FPU)"); break;
+				}
+			}
+			break;
+		}
+	}
+}
+
+static void decode_opcode(char *s, const I386_OPCODE *op, UINT8 op1 )
+{
+	int i;
+	UINT8 op2;
+
+	switch( op->flags )
+	{
+		case TWO_BYTE:
+			op2 = FETCHD();
+			decode_opcode( s, &necv_opcode_table2[op2], op1 );
+			return;
+
+		case SEG_PS:
+		case SEG_DS0:
+		case SEG_DS1:
+		case SEG_SS:
+			segment = op->flags;
+			op2 = FETCHD();
+			decode_opcode( s, &necv_opcode_table1[op2], op1 );
+			return;
+
+		case PREFIX:
+			s += sprintf( s, "%-8s", op->mnemonic );
+			op2 = FETCHD();
+			decode_opcode( s, &necv_opcode_table1[op2], op1 );
+			return;
+
+		case GROUP:
+			handle_modrm( modrm_string );
+			for( i=0; i < ARRAY_LENGTH(group_op_table); i++ ) {
+				if( strcmp(op->mnemonic, group_op_table[i].mnemonic) == 0 )
+				{
+					decode_opcode( s, &group_op_table[i].opcode[MODRM_REG1], op1 );
+					return;
+				}
+			}
+			goto handle_unknown;
+
+		case FPU:
+			op2 = FETCHD();
+			handle_fpu( s, op1, op2);
+			return;
+
+		case MODRM:
+			handle_modrm( modrm_string );
+			break;
+	}
+
+	s += sprintf( s, "%-8s", op->mnemonic );
+	dasm_flags = op->dasm_flags;
+
+	if( op->param1 != 0 ) {
+		s = handle_param( s, op->param1 );
+	}
+
+	if( op->param2 != 0 ) {
+		s += sprintf( s, "," );
+		s = handle_param( s, op->param2 );
+	}
+
+	if( op->param3 != 0 ) {
+		s += sprintf( s, "," );
+		s = handle_param( s, op->param3 );
+	}
+	return;
+
+handle_unknown:
+	sprintf(s, "???");
+}
+
+int necv_dasm_one(char *buffer, UINT32 eip, const UINT8 *oprom)
+{
+	UINT8 op;
+
+	opcode_ptr = opcode_ptr_base = oprom;
+	pc = eip;
+	dasm_flags = 0;
+	segment = 0;
+
+	op = FETCHD();
+
+	decode_opcode( buffer, &necv_opcode_table1[op], op );
+	return (pc-eip) | dasm_flags | DASMFLAG_SUPPORTED;
+}
+

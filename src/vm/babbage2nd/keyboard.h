@@ -26,7 +26,8 @@ public:
 	// common functions
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 	void key_down(int code);

@@ -47,7 +47,8 @@ private:
 	void set_busy(bool val);
 	
 public:
-	MSM58321(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MSM58321(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_data);
 #ifndef HAS_MSM5832
 		init_output_signals(&outputs_busy);
@@ -61,11 +62,13 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_data(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_data(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&outputs_data, device, id, mask, shift);
 	}
 #ifndef HAS_MSM5832
-	void set_context_busy(DEVICE* device, int id, uint32 mask) {
+	void set_context_busy(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_busy, device, id, mask);
 	}
 #endif

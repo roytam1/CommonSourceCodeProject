@@ -23,7 +23,11 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
+#if defined(HAS_V30)
 #include "../i86.h"
+#else
+#include "../i286.h"
+#endif
 #include "../io.h"
 #include "../ls244.h"
 #include "../memory.h"
@@ -37,6 +41,10 @@
 #include "../upd7220.h"
 #include "../upd765a.h"
 #include "../ym2203.h"
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
 
 #include "display.h"
 #include "floppy.h"
@@ -116,7 +124,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_sys = new I8255(this, emu);		// for system port
 	pio_prn = new I8255(this, emu);		// for printer
 	pic = new I8259(this, emu);
+#if defined(HAS_V30)
 	cpu = new I86(this, emu);
+#else
+	cpu = new I286(this, emu);
+#endif
 	io = new IO(this, emu);
 	dmareg1 = new LS244(this, emu);
 	dmareg2 = new LS244(this, emu);
@@ -277,6 +289,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma);
 #endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 #if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives
@@ -297,6 +312,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu_sub->set_context_mem(pc80s31k);
 	cpu_sub->set_context_io(pc80s31k);
 	cpu_sub->set_context_intr(pc80s31k);
+#ifdef USE_DEBUGGER
+	cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #endif
 	
 	// memory bus
@@ -522,6 +540,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu->set_context_mem(pc88);
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
+#ifdef USE_DEBUGGER
+	pc88cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	pc88opn->set_context_irq(pc88, SIG_PC88_SOUND_IRQ, 1);
 	pc88sio->set_context_rxrdy(pc88, SIG_PC88_USART_IRQ, 1);
 	pc88sio->set_context_out(pc88, SIG_PC88_USART_OUT);
@@ -540,12 +561,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0xf0, -4);
 	pc88pio_sub->clear_ports_by_cmdreg = true;
 	pc88fdc_sub->set_context_irq(pc88cpu_sub, SIG_CPU_IRQ, 1);
-#ifdef _FDC_DEBUG_LOG
-	pc88fdc_sub->set_context_cpu(pc88cpu_sub);
-#endif
 	pc88cpu_sub->set_context_mem(pc88sub);
 	pc88cpu_sub->set_context_io(pc88sub);
 	pc88cpu_sub->set_context_intr(pc88sub);
+#ifdef USE_DEBUGGER
+	pc88cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #endif
 	
 	// initialize all devices
@@ -671,6 +692,34 @@ double VM::frame_rate()
 #endif
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+#if defined(_PC98DO)
+	if(index == 0 && boot_mode == 0) {
+		return cpu;
+	} else if(index == 1 && boot_mode != 0) {
+		return pc88cpu;
+	} else if(index == 2 && boot_mode != 0) {
+		return pc88cpu_sub;
+	}
+#else
+	if(index == 0) {
+		return cpu;
+#if defined(SUPPORT_320KB_FDD_IF)
+	} else if(index == 1) {
+		return cpu_sub;
+#endif
+	}
+#endif
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

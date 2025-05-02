@@ -65,12 +65,14 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
 	void open_disk(_TCHAR path[]);
 	void close_disk();
-	bool disk_inserted() {
+	bool disk_inserted()
+	{
 		return insert;
 	}
 };

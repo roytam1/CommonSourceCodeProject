@@ -25,6 +25,10 @@
 #include "../z80.h"
 #include "../z80sio.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "display.h"
 #include "floppy.h"
 #include "keyboard.h"
@@ -92,9 +96,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(pic, SIG_I8259_IR6 | SIG_I8259_CHIP0, 1);
 	fdc->set_context_irq(memory, SIG_MEMORY_FDC_IRQ, 1);
 	fdc->set_context_drq(dma0, SIG_I8237_CH0, 1);
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
-#endif
 	sio->set_context_intr(pic, SIG_I8259_IR4 | SIG_I8259_CHIP0);
 	sio->set_context_send0(keyboard, SIG_KEYBOARD_RECV);
 	
@@ -118,6 +119,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(pic);
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma0);
+#endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
 	// i/o bus
@@ -195,6 +199,20 @@ double VM::frame_rate()
 {
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

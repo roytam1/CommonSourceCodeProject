@@ -168,10 +168,12 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_memory(DEVICE* device) {
+	void set_context_memory(DEVICE* device)
+	{
 		d_mem = device;
 	}
 	void initialize_sound(int rate, int samples);

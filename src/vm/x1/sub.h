@@ -50,7 +50,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
@@ -59,13 +60,16 @@ public:
 	void intr_reti();
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_rtc(DEVICE* device) {
+	void set_context_rtc(DEVICE* device)
+	{
 		d_rtc = device;
 	}
-	void set_context_drec(DATAREC* device) {
+	void set_context_drec(DATAREC* device)
+	{
 		d_drec = device;
 	}
 	void play_tape(bool value);

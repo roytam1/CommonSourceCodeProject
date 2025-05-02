@@ -122,6 +122,6 @@ void UPD4991A::write_to_cur_time()
 	cur_time.update_day_of_week();
 	
 	// restart event
-	cancel_event(register_id);
+	cancel_event(this, register_id);
 	register_event(this, 0, 1000000.0, true, &register_id);
 }

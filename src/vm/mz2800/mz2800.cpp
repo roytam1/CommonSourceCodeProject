@@ -26,6 +26,10 @@
 #include "../z80pio.h"
 #include "../z80sio.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "crtc.h"
 #include "floppy.h"
 #include "joystick.h"
@@ -123,6 +127,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma);
 #endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// i/o bus
 	io->set_iomap_range_rw(0x70, 0x7f, dma);
@@ -217,6 +224,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

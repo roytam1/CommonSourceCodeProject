@@ -448,7 +448,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			PutMemB(ES,cpustate->regs.w[DI],read_port_byte(cpustate->regs.w[DX]));
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[DI] += cpustate->DirVal;
@@ -464,7 +464,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			PutMemW(ES,cpustate->regs.w[DI],read_port_word(cpustate->regs.w[DX]));
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[DI] += 2 * cpustate->DirVal;
@@ -480,7 +480,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			write_port_byte(cpustate->regs.w[DX],GetMemB(DS,cpustate->regs.w[SI]));
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[SI] += cpustate->DirVal; /* GOL 11/27/01 */
@@ -496,7 +496,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			write_port_word(cpustate->regs.w[DX],GetMemW(DS,cpustate->regs.w[SI]));
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[SI] += 2 * cpustate->DirVal; /* GOL 11/27/01 */
@@ -512,7 +512,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		{
 			BYTE tmp;
 
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			tmp = GetMemB(DS,cpustate->regs.w[SI]);
 			PutMemB(ES,cpustate->regs.w[DI], tmp);
 			cpustate->regs.w[CX]--;
@@ -529,7 +529,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		{
 			WORD tmp;
 
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			tmp = GetMemW(DS,cpustate->regs.w[SI]);
 			PutMemW(ES,cpustate->regs.w[DI], tmp);
 			cpustate->regs.w[CX]--;
@@ -547,7 +547,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		{
 			unsigned dst, src;
 
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			dst = GetMemB(ES, cpustate->regs.w[DI]);
 			src = GetMemB(DS, cpustate->regs.w[SI]);
 			SUBB(src,dst); /* opposite of the usual convention */
@@ -566,7 +566,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		{
 			unsigned dst, src;
 
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			dst = GetMemW(ES, cpustate->regs.w[DI]);
 			src = GetMemW(DS, cpustate->regs.w[SI]);
 			SUBW(src,dst); /* opposite of the usual convention */
@@ -582,7 +582,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			PutMemB(ES,cpustate->regs.w[DI],cpustate->regs.b[AL]);
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[DI] += cpustate->DirVal;
@@ -595,7 +595,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			PutMemW(ES,cpustate->regs.w[DI],cpustate->regs.w[AX]);
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[DI] += 2 * cpustate->DirVal;
@@ -608,7 +608,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			cpustate->regs.b[AL] = GetMemB(DS,cpustate->regs.w[SI]);
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[SI] += cpustate->DirVal;
@@ -621,7 +621,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		cpustate->rep_in_progress = FALSE;
 		while(cpustate->regs.w[CX])
 		{
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			cpustate->regs.w[AX] = GetMemW(DS,cpustate->regs.w[SI]);
 			cpustate->regs.w[CX]--;
 			cpustate->regs.w[SI] += 2 * cpustate->DirVal;
@@ -637,7 +637,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		{
 			unsigned src, dst;
 
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			src = GetMemB(ES, cpustate->regs.w[DI]);
 			dst = cpustate->regs.b[AL];
 			SUBB(dst,src);
@@ -655,7 +655,7 @@ static void PREFIX(rep)(i8086_state *cpustate,int flagval)
 		{
 			unsigned src, dst;
 
-			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
+//			if (ICOUNT <= 0) { cpustate->pc = cpustate->prevpc; cpustate->rep_in_progress = TRUE; break; }
 			src = GetMemW(ES, cpustate->regs.w[DI]);
 			dst = cpustate->regs.w[AX];
 			SUBW(dst,src);

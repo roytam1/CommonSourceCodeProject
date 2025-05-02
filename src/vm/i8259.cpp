@@ -62,7 +62,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 			}
 			if(irr != pic[c].irr) {
 				if(pic[c].irr_tmp_id != -1) {
-					cancel_event(pic[c].irr_tmp_id);
+					cancel_event(this, pic[c].irr_tmp_id);
 				}
 				register_event(this, c, 10, false, &pic[c].irr_tmp_id);
 			}

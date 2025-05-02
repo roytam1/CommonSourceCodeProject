@@ -64,7 +64,8 @@ private:
 	int get_next_count(int ch);
 	
 public:
-	I8253(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I8253(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 3; i++) {
 			init_output_signals(&counter[i].outputs);
 			counter[i].freq = 0;
@@ -78,21 +79,26 @@ public:
 	uint32 read_io8(uint32 addr);
 	void event_callback(int event_id, int err);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
+	{
 		cpu_clocks = new_clocks;
 	}
 	
 	// unique functions
-	void set_context_ch0(DEVICE* device, int id, uint32 mask) {
+	void set_context_ch0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&counter[0].outputs, device, id, mask);
 	}
-	void set_context_ch1(DEVICE* device, int id, uint32 mask) {
+	void set_context_ch1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&counter[1].outputs, device, id, mask);
 	}
-	void set_context_ch2(DEVICE* device, int id, uint32 mask) {
+	void set_context_ch2(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&counter[2].outputs, device, id, mask);
 	}
-	void set_constant_clock(int ch, uint32 hz) {
+	void set_constant_clock(int ch, uint32 hz)
+	{
 		counter[ch].freq = hz;
 	}
 };

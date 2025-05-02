@@ -30,7 +30,8 @@ private:
 	int register_id;
 	
 public:
-	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		prev = 0;
 		motor_on = false;
 	}
@@ -45,7 +46,8 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_fdc(MB8877* device) {
+	void set_context_fdc(MB8877* device)
+	{
 		d_fdc = device;
 	}
 };

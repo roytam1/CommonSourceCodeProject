@@ -266,6 +266,6 @@ void RP5C01::write_to_cur_time()
 	cur_time.update_day_of_week();
 	
 	// restart events
-	cancel_event(register_id);
+	cancel_event(this, register_id);
 	register_event(this, EVENT_1SEC, 1000000, true, &register_id);
 }

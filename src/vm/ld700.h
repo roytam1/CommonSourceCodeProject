@@ -60,7 +60,8 @@ private:
 	void set_cur_track(int track);
 	
 public:
-	LD700(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	LD700(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_exv);
 		init_output_signals(&outputs_ack);
 		init_output_signals(&outputs_sound);
@@ -77,13 +78,16 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
-	void set_context_exv(DEVICE* device, int id, uint32 mask) {
+	void set_context_exv(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_exv, device, id, mask);
 	}
-	void set_context_ack(DEVICE* device, int id, uint32 mask) {
+	void set_context_ack(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_ack, device, id, mask);
 	}
-	void set_context_sound(DEVICE* device, int id, uint32 mask) {
+	void set_context_sound(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_sound, device, id, mask);
 	}
 	void open_disc(_TCHAR* file_path);

@@ -31,10 +31,12 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
 };

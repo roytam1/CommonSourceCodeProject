@@ -26,7 +26,8 @@ private:
 	bool prev_in;
 	
 public:
-	LS393(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	LS393(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 8; i++) {
 			init_output_signals(&outputs[i]);
 		}
@@ -36,7 +37,8 @@ public:
 	~LS393() {}
 	
 	// common functions
-	void write_signal(int id, uint32 data, uint32 mask) {
+	void write_signal(int id, uint32 data, uint32 mask)
+	{
 		bool signal = ((data & mask) != 0);
 		if(prev_in && !signal) {
 			int prev_count = count++;
@@ -54,28 +56,36 @@ public:
 	}
 	
 	// unique functions
-	void set_context_1qa(DEVICE* device, int id, uint32 mask) {
+	void set_context_1qa(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[0], device, id, mask);
 	}
-	void set_context_1qb(DEVICE* device, int id, uint32 mask) {
+	void set_context_1qb(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[1], device, id, mask);
 	}
-	void set_context_1qc(DEVICE* device, int id, uint32 mask) {
+	void set_context_1qc(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[2], device, id, mask);
 	}
-	void set_context_1qd(DEVICE* device, int id, uint32 mask) {
+	void set_context_1qd(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[3], device, id, mask);
 	}
-	void set_context_2qa(DEVICE* device, int id, uint32 mask) {
+	void set_context_2qa(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[4], device, id, mask);
 	}
-	void set_context_2qb(DEVICE* device, int id, uint32 mask) {
+	void set_context_2qb(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[5], device, id, mask);
 	}
-	void set_context_2qc(DEVICE* device, int id, uint32 mask) {
+	void set_context_2qc(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[6], device, id, mask);
 	}
-	void set_context_2qd(DEVICE* device, int id, uint32 mask) {
+	void set_context_2qd(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs[7], device, id, mask);
 	}
 };

@@ -35,10 +35,12 @@ public:
 	uint32 read_dma_io8(uint32 addr);
 	
 	// unique function
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
 };

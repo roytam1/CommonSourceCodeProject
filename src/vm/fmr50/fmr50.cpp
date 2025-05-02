@@ -31,6 +31,10 @@
 #include "../pcm1bit.h"
 #include "../upd71071.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "bios.h"
 #include "cmos.h"
 #include "floppy.h"
@@ -209,6 +213,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma);
 #endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// i/o bus
 	io->set_iomap_alias_rw(0x00, pic, I8259_ADDR_CHIP0 | 0);
@@ -319,6 +326,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

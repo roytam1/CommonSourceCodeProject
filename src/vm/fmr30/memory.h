@@ -63,19 +63,24 @@ public:
 	void event_frame();
 	
 	// unitque function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
-	uint8* get_cvram() {
+	uint8* get_cvram()
+	{
 		return cvram;
 	}
-	uint8* get_kvram() {
+	uint8* get_kvram()
+	{
 		return kvram;
 	}
 	void draw_screen();

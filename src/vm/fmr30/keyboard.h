@@ -30,7 +30,8 @@ public:
 	void reset();
 	
 	// unique function
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
 	void key_down(int code);

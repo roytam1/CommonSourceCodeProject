@@ -36,7 +36,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_psg(DEVICE* device) {
+	void set_context_psg(DEVICE* device)
+	{
 		d_psg = device;
 	}
 };

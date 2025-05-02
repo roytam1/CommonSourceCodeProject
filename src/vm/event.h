@@ -87,7 +87,8 @@ private:
 #endif
 	
 public:
-	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		dcount_cpu = dcount_sound = 0;
 		frame_event_count = vline_event_count = 0;
 		
@@ -121,18 +122,21 @@ public:
 	void update_config();
 	
 	// common event functions
-	int event_manager_id() {
+	int event_manager_id()
+	{
 		return this_device_id;
 	}
-	void set_frames_per_sec(double new_frames_per_sec) {
+	void set_frames_per_sec(double new_frames_per_sec)
+	{
 		next_frames_per_sec = new_frames_per_sec;
 	}
-	void set_lines_per_frame(int new_lines_per_frame) {
+	void set_lines_per_frame(int new_lines_per_frame)
+	{
 		next_lines_per_frame = new_lines_per_frame;
 	}
 	void register_event(DEVICE* device, int event_id, double usec, bool loop, int* register_id);
 	void register_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* register_id);
-	void cancel_event(int register_id);
+	void cancel_event(DEVICE* device, int register_id);
 	void register_frame_event(DEVICE* device);
 	void register_vline_event(DEVICE* device);
 	uint32 current_clock();
@@ -142,7 +146,8 @@ public:
 	void set_skip_frames(bool value);
 	
 	// unique functions
-	double frame_rate() {
+	double frame_rate()
+	{
 		return next_frames_per_sec;
 	}
 	void drive();
@@ -151,16 +156,19 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 	
-	void set_context_cpu(DEVICE* device, int clocks) {
+	void set_context_cpu(DEVICE* device, int clocks)
+	{
 		int index = dcount_cpu++;
 		d_cpu[index].device = device;
 		d_cpu[index].cpu_clocks = clocks;
 		d_cpu[index].accum_clocks = 0;
 	}
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		set_context_cpu(device, CPU_CLOCKS);
 	}
-	void set_context_sound(DEVICE* device) {
+	void set_context_sound(DEVICE* device)
+	{
 		d_sound[dcount_sound++] = device;
 	}
 	bool now_skip();

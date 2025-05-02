@@ -46,12 +46,12 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		param_ptr = 0;
 		cmd_addr  = get_cpu_pc(0); // for patch
 #ifdef SOUND_DEBUG
-		emu->out_debug(_T("PC=%4x\tSOUND\t"), cmd_addr);
+		emu->out_debug_log(_T("PC=%4x\tSOUND\t"), cmd_addr);
 #endif
 	}
 
 #ifdef SOUND_DEBUG
-	emu->out_debug("%2x ", data);
+	emu->out_debug_log("%2x ", data);
 #endif
 	if(param_cnt) {
 		params[param_ptr++] = data;
@@ -73,7 +73,7 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		}
 		if(--param_cnt) {
 			if(register_id != -1) {
-				cancel_event(register_id);
+				cancel_event(this, register_id);
 			}
 			register_event(this, 0, ACK_WAIT, false, &register_id);
 		}
@@ -82,7 +82,7 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		// process command
 		process_cmd();
 #ifdef SOUND_DEBUG
-		emu->out_debug("\n");
+		emu->out_debug_log("\n");
 #endif
 	}
 }
@@ -104,7 +104,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 			if(pause || !(params[0] == 0x1f && param_ptr > 5)) {
 				// terminate command
 				if(register_id != -1) {
-					cancel_event(register_id);
+					cancel_event(this, register_id);
 				}
 				memset(params, 0, sizeof(params));
 				param_cnt = param_ptr = 0;
@@ -130,7 +130,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 //			}
 		}
 #ifdef SOUND_DEBUG
-		emu->out_debug("PC3\n");
+		emu->out_debug_log("PC3\n");
 #endif
 	}
 }

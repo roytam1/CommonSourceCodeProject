@@ -84,7 +84,7 @@ uint32 Z80CTC::read_io8(uint32 addr)
 		if(input > 0) {
 			input_clock(ch, input);
 			// cancel and re-register event
-			cancel_event(counter[ch].clock_id);
+			cancel_event(this, counter[ch].clock_id);
 			counter[ch].input -= input;
 			counter[ch].period -= passed;
 			counter[ch].prev = current_clock();
@@ -104,7 +104,7 @@ uint32 Z80CTC::read_io8(uint32 addr)
 		if(input > 0) {
 			input_sysclock(ch, input);
 			// cancel and re-register event
-			cancel_event(counter[ch].sysclock_id);
+			cancel_event(this, counter[ch].sysclock_id);
 			counter[ch].input -= passed;
 			counter[ch].period -= passed;
 			counter[ch].prev = current_clock();
@@ -204,13 +204,13 @@ void Z80CTC::update_event(int ch, int err)
 	if(counter[ch].control & 0x40) {
 		// counter mode
 		if(counter[ch].sysclock_id != -1) {
-			cancel_event(counter[ch].sysclock_id);
+			cancel_event(this, counter[ch].sysclock_id);
 		}
 		counter[ch].sysclock_id = -1;
 		
 		if(counter[ch].freeze) {
 			if(counter[ch].clock_id != -1) {
-				cancel_event(counter[ch].clock_id);
+				cancel_event(this, counter[ch].clock_id);
 			}
 			counter[ch].clock_id = -1;
 			return;
@@ -225,13 +225,13 @@ void Z80CTC::update_event(int ch, int err)
 	else {
 		// timer mode
 		if(counter[ch].clock_id != -1) {
-			cancel_event(counter[ch].clock_id);
+			cancel_event(this, counter[ch].clock_id);
 		}
 		counter[ch].clock_id = -1;
 		
 		if(!counter[ch].start || counter[ch].freeze) {
 			if(counter[ch].sysclock_id != -1) {
-				cancel_event(counter[ch].sysclock_id);
+				cancel_event(this, counter[ch].sysclock_id);
 			}
 			counter[ch].sysclock_id = -1;
 			return;

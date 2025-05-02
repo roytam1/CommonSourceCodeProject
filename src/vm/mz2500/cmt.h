@@ -62,10 +62,12 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_drec(DATAREC* device) {
+	void set_context_drec(DATAREC* device)
+	{
 		d_drec = device;
 	}
 	void play_tape(bool value);

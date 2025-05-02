@@ -2936,6 +2936,12 @@ static void clear_cpustate(i386_state *cpustate)
 #ifdef SINGLE_MODE_DMA
 	DEVICE *save_dma = cpustate->dma;
 #endif
+#ifdef USE_DEBUGGER
+	EMU *save_emu = cpustate->emu;
+	DEBUGGER *save_debugger = cpustate->debugger;
+	DEVICE *save_program_stored = cpustate->program_stored;
+	DEVICE *save_io_stored = cpustate->io_stored;
+#endif
 	int busreq = cpustate->busreq;
 
 	memset( cpustate, 0, sizeof(*cpustate) );
@@ -2948,6 +2954,12 @@ static void clear_cpustate(i386_state *cpustate)
 #endif
 #ifdef SINGLE_MODE_DMA
 	cpustate->dma = save_dma;
+#endif
+#ifdef USE_DEBUGGER
+	cpustate->emu = save_emu;
+	cpustate->debugger = save_debugger;
+	cpustate->program_stored = save_program_stored;
+	cpustate->io_stored = save_io_stored;
 #endif
 	cpustate->busreq = busreq;
 }
@@ -3125,6 +3137,19 @@ static CPU_EXECUTE( i386 )
 
 	if (cpustate->halted || cpustate->busreq)
 	{
+#ifdef USE_DEBUGGER
+		if(cpustate->debugger->now_debugging) {
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging && !cpustate->debugger->now_going) {
+				cpustate->debugger->now_suspended = true;
+			}
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if(cpustate->dma != NULL) {
 			cpustate->dma->do_dma();
@@ -3149,52 +3174,126 @@ static CPU_EXECUTE( i386 )
 
 	while( cpustate->cycles > 0 && !cpustate->busreq )
 	{
-		i386_check_irq_line(cpustate);
-		cpustate->operand_size = cpustate->sreg[CS].d;
-		cpustate->address_size = cpustate->sreg[CS].d;
-		cpustate->operand_prefix = 0;
-		cpustate->address_prefix = 0;
-
-		cpustate->ext = 1;
-		int old_tf = cpustate->TF;
-
-		cpustate->segment_prefix = 0;
-		cpustate->prev_eip = cpustate->eip;
-		cpustate->prev_pc = cpustate->pc;
-
-		if(cpustate->delayed_interrupt_enable != 0)
-		{
-			cpustate->IF = 1;
-			cpustate->delayed_interrupt_enable = 0;
-		}
-#ifdef DEBUG_MISSING_OPCODE
-		cpustate->opcode_bytes_length = 0;
-		cpustate->opcode_pc = cpustate->pc;
-#endif
-		try
-		{
-			I386OP(decode_opcode)(cpustate);
-			if(cpustate->TF && old_tf)
-			{
-				cpustate->prev_eip = cpustate->eip;
-				cpustate->ext = 1;
-				i386_trap(cpustate,1,0,0);
+#ifdef USE_DEBUGGER
+		bool now_debugging = cpustate->debugger->now_debugging;
+		if(now_debugging) {
+			cpustate->debugger->check_break_points(cpustate->pc);
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
 			}
+			if(cpustate->debugger->now_debugging) {
+				cpustate->program = cpustate->io = cpustate->debugger;
+			} else {
+				now_debugging = false;
+			}
+			i386_check_irq_line(cpustate);
+			cpustate->operand_size = cpustate->sreg[CS].d;
+			cpustate->address_size = cpustate->sreg[CS].d;
+			cpustate->operand_prefix = 0;
+			cpustate->address_prefix = 0;
 
-		}
-		catch(UINT64 e)
-		{
 			cpustate->ext = 1;
-			i386_trap_with_error(cpustate,e&0xffffffff,0,0,e>>32);
-		}
+			int old_tf = cpustate->TF;
+
+			cpustate->segment_prefix = 0;
+			cpustate->prev_eip = cpustate->eip;
+			cpustate->prev_pc = cpustate->pc;
+
+			if(cpustate->delayed_interrupt_enable != 0)
+			{
+				cpustate->IF = 1;
+				cpustate->delayed_interrupt_enable = 0;
+			}
+#ifdef DEBUG_MISSING_OPCODE
+			cpustate->opcode_bytes_length = 0;
+			cpustate->opcode_pc = cpustate->pc;
+#endif
+			try
+			{
+				I386OP(decode_opcode)(cpustate);
+				if(cpustate->TF && old_tf)
+				{
+					cpustate->prev_eip = cpustate->eip;
+					cpustate->ext = 1;
+					i386_trap(cpustate,1,0,0);
+				}
+
+			}
+			catch(UINT64 e)
+			{
+				cpustate->ext = 1;
+				i386_trap_with_error(cpustate,e&0xffffffff,0,0,e>>32);
+			}
 #ifdef SINGLE_MODE_DMA
-		if(cpustate->dma != NULL) {
-			cpustate->dma->do_dma();
+			if(cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
+			/* adjust for any interrupts that came in */
+			cpustate->cycles -= cpustate->extra_cycles;
+			cpustate->extra_cycles = 0;
+			
+			if(now_debugging) {
+				if(!cpustate->debugger->now_going) {
+					cpustate->debugger->now_suspended = true;
+				}
+				cpustate->program = cpustate->program_stored;
+				cpustate->io = cpustate->io_stored;
+			}
+		} else {
+#endif
+			i386_check_irq_line(cpustate);
+			cpustate->operand_size = cpustate->sreg[CS].d;
+			cpustate->address_size = cpustate->sreg[CS].d;
+			cpustate->operand_prefix = 0;
+			cpustate->address_prefix = 0;
+
+			cpustate->ext = 1;
+			int old_tf = cpustate->TF;
+
+			cpustate->segment_prefix = 0;
+			cpustate->prev_eip = cpustate->eip;
+			cpustate->prev_pc = cpustate->pc;
+
+			if(cpustate->delayed_interrupt_enable != 0)
+			{
+				cpustate->IF = 1;
+				cpustate->delayed_interrupt_enable = 0;
+			}
+#ifdef DEBUG_MISSING_OPCODE
+			cpustate->opcode_bytes_length = 0;
+			cpustate->opcode_pc = cpustate->pc;
+#endif
+			try
+			{
+				I386OP(decode_opcode)(cpustate);
+				if(cpustate->TF && old_tf)
+				{
+					cpustate->prev_eip = cpustate->eip;
+					cpustate->ext = 1;
+					i386_trap(cpustate,1,0,0);
+				}
+
+			}
+			catch(UINT64 e)
+			{
+				cpustate->ext = 1;
+				i386_trap_with_error(cpustate,e&0xffffffff,0,0,e>>32);
+			}
+#ifdef SINGLE_MODE_DMA
+			if(cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
+			/* adjust for any interrupts that came in */
+			cpustate->cycles -= cpustate->extra_cycles;
+			cpustate->extra_cycles = 0;
+#ifdef USE_DEBUGGER
 		}
 #endif
-		/* adjust for any interrupts that came in */
-		cpustate->cycles -= cpustate->extra_cycles;
-		cpustate->extra_cycles = 0;
 	}
 
 	int passed_cycles = cpustate->base_cycles - cpustate->cycles;

@@ -41,7 +41,8 @@ private:
 	uint8 req, sreq, mask, tc;
 	
 public:
-	UPD71071(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	UPD71071(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 4; i++) {
 			dma[i].dev = vm->dummy;
 		}
@@ -60,27 +61,34 @@ public:
 	void do_dma();
 	
 	// unique functions
-	void set_context_memory(DEVICE* device) {
+	void set_context_memory(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_ch0(DEVICE* device) {
+	void set_context_ch0(DEVICE* device)
+	{
 		dma[0].dev = device;
 	}
-	void set_context_ch1(DEVICE* device) {
+	void set_context_ch1(DEVICE* device)
+	{
 		dma[1].dev = device;
 	}
-	void set_context_ch2(DEVICE* device) {
+	void set_context_ch2(DEVICE* device)
+	{
 		dma[2].dev = device;
 	}
-	void set_context_ch3(DEVICE* device) {
+	void set_context_ch3(DEVICE* device)
+	{
 		dma[3].dev = device;
 	}
 #ifdef SINGLE_MODE_DMA
-	void set_context_child_dma(DEVICE* device) {
+	void set_context_child_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
 #endif
-	void set_context_tc(DEVICE* device, int id, uint32 mask) {
+	void set_context_tc(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_tc, device, id, mask);
 	}
 };

@@ -92,6 +92,10 @@ BEGIN
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
         MENUITEM SEPARATOR
+        MENUITEM "Debug Main CPU",              ID_OPEN_DEBUGGER0
+        MENUITEM "Debug MZ-1M01 CPU",           ID_OPEN_DEBUGGER1
+        MENUITEM "Close Debugger",              ID_CLOSE_DEBUGGER
+        MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
     POPUP "CMT"

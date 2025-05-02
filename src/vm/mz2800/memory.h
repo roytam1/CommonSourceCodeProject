@@ -52,19 +52,24 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unitque function
-	void set_context_crtc(DEVICE* device) {
+	void set_context_crtc(DEVICE* device)
+	{
 		d_crtc = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
-	uint8* get_tvram() {
+	uint8* get_tvram()
+	{
 		return tvram;
 	}
-	uint8* get_kanji() {
+	uint8* get_kanji()
+	{
 		return kanji;
 	}
-	uint8* get_pcg() {
+	uint8* get_pcg()
+	{
 		return pcg;
 	}
 };

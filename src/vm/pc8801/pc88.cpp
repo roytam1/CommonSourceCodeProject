@@ -594,14 +594,14 @@ void PC88::write_io8(uint32 addr, uint32 data)
 					// detect the data carrier at the top of tape
 					usart_dcd = true;
 					if(cmt_register_id != -1) {
-						cancel_event(cmt_register_id);
+						cancel_event(this, cmt_register_id);
 					}
 					register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
 				}
 			} else {
 				// stop motor
 				if(cmt_register_id != -1) {
-					cancel_event(cmt_register_id);
+					cancel_event(this, cmt_register_id);
 					cmt_register_id = -1;
 				}
 				usart_dcd = false;
@@ -944,6 +944,14 @@ uint32 PC88::read_io8(uint32 addr)
 		return 0xff;
 	case 0x5c:
 		return gvram_plane | 0xf8;
+	case 0x60:
+	case 0x61:
+	case 0x62:
+	case 0x63:
+	case 0x64:
+	case 0x65:
+	case 0x66:
+	case 0x67:
 	case 0x68:
 		return dmac.read_io8(addr);
 	case 0x6e:
@@ -999,7 +1007,7 @@ void PC88::update_timing()
 	set_frames_per_sec(frames_per_sec);
 	set_lines_per_frame(lines_per_frame);
 	
-	emu->out_debug("H=%d,V=%d,CH=%d,SKIP=%d\n",crtc.height,crtc.vretrace,crtc.char_height,crtc.skip_line);
+	emu->out_debug_log("H=%d,V=%d,CH=%d,SKIP=%d\n",crtc.height,crtc.vretrace,crtc.char_height,crtc.skip_line);
 }
 
 void PC88::update_mem_wait()
@@ -1277,10 +1285,13 @@ void PC88::event_vline(int v, int clock)
 				d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 				register_event_by_clock(this, EVENT_BUSREQ, busreq_clocks, false, NULL);
 			}
+			// run dma transfer to crtc
+			if((v % crtc.char_height) == 0) {
+				dmac.run(2, 80 + crtc.attrib.num * 2);
+			}
 		}
 	} else if(v == disp_line) {
 		if(/*(crtc.status & 0x10) && */dmac.ch[2].running) {
-			// run dma transfer to crtc
 			dmac.finish(2);
 		}
 		crtc.vblank = true;
@@ -1347,7 +1358,7 @@ void PC88::play_tape(_TCHAR* file_path)
 			// start motor and detect the data carrier at the top of tape
 			usart_dcd = true;
 			if(cmt_register_id != -1) {
-				cancel_event(cmt_register_id);
+				cancel_event(this, cmt_register_id);
 			}
 			register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
 		}
@@ -2165,9 +2176,9 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 	case 4:
 	case 6:
 		if(!high_low) {
-			ch[(addr >> 1) & 3].start.b.l = data;
+			ch[(addr >> 1) & 3].start_addr.b.l = data;
 		} else {
-			ch[(addr >> 1) & 3].start.b.h = data;
+			ch[(addr >> 1) & 3].start_addr.b.h = data;
 		}
 		high_low = !high_low;
 		break;
@@ -2179,6 +2190,7 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 			ch[(addr >> 1) & 3].length.b.l = data;
 		} else {
 			ch[(addr >> 1) & 3].length.b.h = data & 0x3f;
+			ch[(addr >> 1) & 3].mode = data & 0xc0;
 		}
 		high_low = !high_low;
 		break;
@@ -2192,7 +2204,28 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 uint32 pc88_dmac_t::read_io8(uint32 addr)
 {
 	switch(addr & 0x0f) {
+	case 0:
+	case 2:
+	case 4:
+	case 6:
+		high_low = !high_low;
+		if(high_low) {
+			return ch[(addr >> 1) & 3].cur_addr.b.l;
+		} else {
+			return ch[(addr >> 1) & 3].cur_addr.b.h;
+		}
+	case 1:
+	case 3:
+	case 5:
+	case 7:
+		high_low = !high_low;
+		if(high_low) {
+			return ch[(addr >> 1) & 3].counter.b.l;
+		} else {
+			return (ch[(addr >> 1) & 3].counter.b.h & 0x3f) | ch[(addr >> 1) & 3].mode;
+		}
 	case 8:
+		high_low = false;
 		return status;
 	}
 	return 0xff;
@@ -2203,16 +2236,31 @@ void pc88_dmac_t::start(int c)
 	uint8 bit = 1 << c;
 	if(mode & bit) {
 		status &= ~bit;
+		ch[c].cur_addr.sd = ch[c].start_addr.sd;
+		ch[c].counter.sd = ch[c].length.sd + 1;
 		ch[c].running = true;
+	}
+}
+
+void pc88_dmac_t::run(int c, int nbytes)
+{
+	if(ch[c].running) {
+		while(nbytes > 0 && ch[c].counter.sd > 0) {
+			ch[c].dest->write_dma_io8(0, ch[c].src->read_dma_data8(ch[c].cur_addr.w.l));
+			ch[c].cur_addr.sd++;
+			ch[c].counter.sd--;
+			nbytes--;
+		}
 	}
 }
 
 void pc88_dmac_t::finish(int c)
 {
 	if(ch[c].running) {
-		uint16 addr = ch[c].start.w.l;
-		for(int i = 0; i <= ch[c].length.sd; i++) {
-			ch[c].dest->write_dma_io8(0, ch[c].src->read_dma_data8(addr++));
+		while(ch[c].counter.sd > 0) {
+			ch[c].dest->write_dma_io8(0, ch[c].src->read_dma_data8(ch[c].cur_addr.w.l));
+			ch[c].cur_addr.sd++;
+			ch[c].counter.sd--;
 		}
 		status |= (1 << c);
 		ch[c].running = false;

@@ -25,27 +25,33 @@ private:
 	uint8 din;
 	
 public:
-	LS244(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	LS244(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs);
 	}
 	~LS244() {}
 	
 	// common functions
-	void initialize() {
+	void initialize()
+	{
 		din = 0xff;
 	}
-	void write_io8(uint32 addr, uint32 data) {
+	void write_io8(uint32 addr, uint32 data)
+	{
 		write_signals(&outputs, data);
 	}
-	uint32 read_io8(uint32 addr) {
+	uint32 read_io8(uint32 addr)
+	{
 		return din;
 	}
-	void write_signal(int id, uint32 data, uint32 mask) {
+	void write_signal(int id, uint32 data, uint32 mask)
+	{
 		din = (din & ~mask) | (data & mask);
 	}
 	
 	// unique functions
-	void set_context_output(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_output(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&outputs, device, id, mask, shift);
 	}
 };

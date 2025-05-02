@@ -54,7 +54,8 @@ private:
 	void update_bank();
 	
 public:
-	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		intfd = int0 = int1 = int2 = int3 = int4 = false;
 		me = e1 = false;
 	}
@@ -65,10 +66,12 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data) {
+	void write_data16(uint32 addr, uint32 data)
+	{
 		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
 	}
-	uint32 read_data16(uint32 addr) {
+	uint32 read_data16(uint32 addr)
+	{
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	void write_io8(uint32 addr, uint32 data);
@@ -76,19 +79,24 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_subcpu(DEVICE* device) {
+	void set_context_subcpu(DEVICE* device)
+	{
 		d_subcpu = device;
 	}
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	uint8 *get_ipl() {
+	uint8 *get_ipl()
+	{
 		return ipl;
 	}
-	uint8 *get_common() {
+	uint8 *get_common()
+	{
 		return common;
 	}
 };

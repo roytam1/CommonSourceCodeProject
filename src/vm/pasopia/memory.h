@@ -43,29 +43,36 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data) {
+	void write_data16(uint32 addr, uint32 data)
+	{
 		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
 	}
-	uint32 read_data16(uint32 addr) {
+	uint32 read_data16(uint32 addr)
+	{
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_pio0(DEVICE* device) {
+	void set_context_pio0(DEVICE* device)
+	{
 		d_pio0 = device;
 	}
-	void set_context_pio1(DEVICE* device) {
+	void set_context_pio1(DEVICE* device)
+	{
 		d_pio1 = device;
 	}
-	void set_context_pio2(DEVICE* device) {
+	void set_context_pio2(DEVICE* device)
+	{
 		d_pio2 = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
-	uint8* get_attr() {
+	uint8* get_attr()
+	{
 		return attr;
 	}
 	void load_ipl();

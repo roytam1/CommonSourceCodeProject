@@ -28,7 +28,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique functions
-	void set_context_pit(DEVICE* device) {
+	void set_context_pit(DEVICE* device)
+	{
 		d_pit = device;
 	}
 };

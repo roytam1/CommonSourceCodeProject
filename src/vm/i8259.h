@@ -54,7 +54,8 @@ private:
 	void update_intr();
 	
 public:
-	I8259(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I8259(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		d_cpu = NULL;
 	}
 	~I8259() {}
@@ -69,14 +70,16 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// interrupt common functions
-	void set_intr_line(bool line, bool pending, uint32 bit) {
+	void set_intr_line(bool line, bool pending, uint32 bit)
+	{
 		// request from Z80 familly
 		write_signal(bit, line ? 1 : 0, 1);
 	}
 	uint32 intr_ack();
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
 };

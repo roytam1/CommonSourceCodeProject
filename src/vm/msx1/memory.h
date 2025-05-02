@@ -74,13 +74,16 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_ldp(DEVICE* device) {
+	void set_context_ldp(DEVICE* device)
+	{
 		d_ldp = device;
 	}
-	void set_context_vdp(DEVICE* device) {
+	void set_context_vdp(DEVICE* device)
+	{
 		d_vdp = device;
 	}
 };
@@ -108,7 +111,8 @@ public:
 	// unique functions
 	void open_cart(_TCHAR *file_path);
 	void close_cart();
-	bool cart_inserted() {
+	bool cart_inserted()
+	{
 		return inserted;
 	}
 };
@@ -131,7 +135,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_slot(int drv, DEVICE *device) {
+	void set_context_slot(int drv, DEVICE *device)
+	{
 		d_slot[drv] = device;
 	}
 };

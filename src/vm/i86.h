@@ -16,7 +16,10 @@
 #include "device.h"
 
 #define SIG_I86_TEST	0
-#define SIG_I86_A20	1
+
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
 
 class I86 : public DEVICE
 {
@@ -28,6 +31,10 @@ private:
 	DEVICE *d_mem, *d_io, *d_pic, *d_bios;
 #ifdef SINGLE_MODE_DMA
 	DEVICE *d_dma;
+#endif
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+	DEVICE *d_mem_stored, *d_io_stored;
 #endif
 	
 	/* ---------------------------------------------------------------------------
@@ -47,23 +54,6 @@ private:
 	uint8 ParityVal;
 	uint8 TF, IF, MF;
 	
-#ifdef HAS_I286
-	uint32 AMASK;
-	uint16 msw;
-	uint16 limit[4];
-	uint8 rights[4];
-	struct {
-		uint32 base;
-		uint16 limit;
-	} gdtr, idtr;
-	struct {
-		uint16 sel;
-		uint32 base;
-		uint16 limit;
-		uint8 rights;
-	} ldtr, tr;
-#endif
-	
 	int int_state;
 	bool test_state;
 	bool busreq, halted;
@@ -82,25 +72,6 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	// sub
-	enum i286_size {
-		I286_BYTE = 1,
-		I286_WORD = 2
-	};
-	enum i286_operation {
-		I286_READ = 1,
-		I286_WRITE,
-		I286_EXECUTE
-	};
-#ifdef HAS_I286
-	int i286_selector_okay(uint16 selector);
-	uint32 i286_selector_to_address(uint16 selector);
-	void i286_data_descriptor(int reg, uint16 selector);
-	void i286_code_descriptor(uint16 selector, uint16 offset);
-	void i286_interrupt_descriptor(uint16 int_num);
-	void i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, i286_operation operation);
-#else
-	void i286_check_permission(uint8 check_seg, uint16 offset, i286_size size, i286_operation operation) {}
-#endif
 	void interrupt(int num);
 	void trap();
 	unsigned GetEA(unsigned ModRM);
@@ -109,6 +80,9 @@ private:
 	
 	// opecode
 	void run_one_opecode();
+#ifdef USE_DEBUGGER
+	void run_one_opecode_debugger();
+#endif
 	void instruction(uint8 code);
 	inline void _add_br8();
 	inline void _add_wr16();
@@ -125,7 +99,9 @@ private:
 	inline void _or_ald8();
 	inline void _or_axd16();
 	inline void _push_cs();
+#if defined(HAS_V30)
 	inline void _0fpre();
+#endif
 	inline void _adc_br8();
 	inline void _adc_wr16();
 	inline void _adc_r8b();
@@ -209,7 +185,6 @@ private:
 	inline void _pusha();
 	inline void _popa();
 	inline void _bound();
-	inline void _arpl();
 	inline void _repc(int flagval);
 	inline void _push_d16();
 	inline void _imul_d16();
@@ -359,7 +334,8 @@ private:
 	inline void _invalid();
 	
 public:
-	I86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		d_bios = NULL;
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
@@ -374,32 +350,75 @@ public:
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void set_intr_line(bool line, bool pending, uint32 bit);
-	void set_extra_clock(int clock) {
+	void set_extra_clock(int clock)
+	{
 		extra_icount += clock;
 	}
-	int get_extra_clock() {
+	int get_extra_clock()
+	{
 		return extra_icount;
 	}
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return prevpc;
 	}
+	uint32 get_next_pc()
+	{
+		return pc;
+	}
+#ifdef USE_DEBUGGER
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	uint32 debug_prog_addr_mask()
+	{
+		return 0xfffff;
+	}
+	uint32 debug_data_addr_mask()
+	{
+		return 0xfffff;
+	}
+	void debug_write_data8(uint32 addr, uint32 data);
+	uint32 debug_read_data8(uint32 addr);
+	void debug_write_data16(uint32 addr, uint32 data);
+	uint32 debug_read_data16(uint32 addr);
+	void debug_write_io8(uint32 addr, uint32 data);
+	uint32 debug_read_io8(uint32 addr);
+	void debug_write_io16(uint32 addr, uint32 data);
+	uint32 debug_read_io16(uint32 addr);
+	bool debug_write_reg(_TCHAR *reg, uint32 data);
+	void debug_regs_info(_TCHAR *buffer);
+	int debug_dasm(uint32 pc, _TCHAR *buffer);
+#endif
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
-	void set_context_intr(DEVICE* device) {
+	void set_context_intr(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void set_context_bios(DEVICE* device) {
+	void set_context_bios(DEVICE* device)
+	{
 		d_bios = device;
 	}
 #ifdef SINGLE_MODE_DMA
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
+	}
+#endif
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
 	}
 #endif
 };

@@ -82,7 +82,8 @@ private:
 	void update_intr();
 	
 public:
-	Z80SIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	Z80SIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		memset(port, 0, sizeof(port));
 		for(int i = 0; i < 2; i++) {
 			init_output_signals(&port[i].outputs_rts);
@@ -107,11 +108,13 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
-	void set_context_child(DEVICE* device) {
+	void set_context_child(DEVICE* device)
+	{
 		d_child = device;
 	}
 	void set_intr_iei(bool val);
@@ -119,46 +122,60 @@ public:
 	void intr_reti();
 	
 	// unique functions
-	void set_context_rts0(DEVICE* device, int id, uint32 mask) {
+	void set_context_rts0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_rts, device, id, mask);
 	}
-	void set_context_dtr0(DEVICE* device, int id, uint32 mask) {
+	void set_context_dtr0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_dtr, device, id, mask);
 	}
-	void set_context_send0(DEVICE* device, int id) {
+	void set_context_send0(DEVICE* device, int id)
+	{
 		register_output_signal(&port[0].outputs_send, device, id, 0xff);
 	}
-	void set_context_sync0(DEVICE* device, int id, uint32 mask) {
+	void set_context_sync0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_sync, device, id, mask);
 	}
-	void set_context_break0(DEVICE* device, int id, uint32 mask) {
+	void set_context_break0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_break, device, id, mask);
 	}
-	void set_context_rxdone0(DEVICE* device, int id, uint32 mask) {
+	void set_context_rxdone0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_rxdone, device, id, mask);
 	}
-	void set_context_txdone0(DEVICE* device, int id, uint32 mask) {
+	void set_context_txdone0(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_txdone, device, id, mask);
 	}
-	void set_context_rts1(DEVICE* device, int id, uint32 mask) {
+	void set_context_rts1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_rts, device, id, mask);
 	}
-	void set_context_dtr1(DEVICE* device, int id, uint32 mask) {
+	void set_context_dtr1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_dtr, device, id, mask);
 	}
-	void set_context_send1(DEVICE* device, int id) {
+	void set_context_send1(DEVICE* device, int id)
+	{
 		register_output_signal(&port[1].outputs_send, device, id, 0xff);
 	}
-	void set_context_sync1(DEVICE* device, int id, uint32 mask) {
+	void set_context_sync1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_sync, device, id, mask);
 	}
-	void set_context_break1(DEVICE* device, int id, uint32 mask) {
+	void set_context_break1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_break, device, id, mask);
 	}
-	void set_context_rxdone1(DEVICE* device, int id, uint32 mask) {
+	void set_context_rxdone1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_rxdone, device, id, mask);
 	}
-	void set_context_txdone1(DEVICE* device, int id, uint32 mask) {
+	void set_context_txdone1(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_txdone, device, id, mask);
 	}
 };

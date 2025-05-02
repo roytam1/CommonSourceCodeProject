@@ -99,6 +99,7 @@
 #define USE_SCANLINE
 #define USE_SOUND_DEVICE_TYPE	3
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -209,6 +210,11 @@ public:
 	void special_reset();
 	void run();
 	double frame_rate();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

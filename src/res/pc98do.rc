@@ -102,6 +102,11 @@ BEGIN
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
         MENUITEM SEPARATOR
+        MENUITEM "Debug PC-98 Main CPU",        ID_OPEN_DEBUGGER0
+        MENUITEM "Debug PC-88 Main CPU",        ID_OPEN_DEBUGGER1
+        MENUITEM "Debug PC-88 Sub CPU",         ID_OPEN_DEBUGGER2
+        MENUITEM "Close Debugger",              ID_CLOSE_DEBUGGER
+        MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
     POPUP "PC98-FD1"

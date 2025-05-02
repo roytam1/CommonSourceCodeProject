@@ -376,7 +376,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			for(int i = 0; i < run_frames; i++) {
 				interval += get_interval();
 			}
-			bool now_skip = emu->now_skip() && !emu->now_rec_video();
+			bool now_skip = emu->now_skip() && !emu->now_rec_video;
 			
 			if((prev_skip && !now_skip) || next_time == 0) {
 				next_time = timeGetTime();
@@ -764,6 +764,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_AUTOKEY_STOP:
 			if(emu) {
 				emu->stop_auto_key();
+			}
+			break;
+#endif
+#ifdef USE_DEBUGGER
+		case ID_OPEN_DEBUGGER0:
+		case ID_OPEN_DEBUGGER1:
+		case ID_OPEN_DEBUGGER2:
+		case ID_OPEN_DEBUGGER3:
+			if(emu) {
+				no = LOWORD(wParam) - ID_OPEN_DEBUGGER0;
+				emu->open_debugger(no);
+			}
+			break;
+		case ID_CLOSE_DEBUGGER:
+			if(emu) {
+				emu->close_debugger();
 			}
 			break;
 #endif
@@ -1404,6 +1420,14 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		EnableMenuItem(hMenu, ID_AUTOKEY_START, now_paste ? MF_GRAYED : MF_ENABLED);
 		EnableMenuItem(hMenu, ID_AUTOKEY_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
 #endif
+#ifdef USE_DEBUGGER
+		// debugger
+		EnableMenuItem(hMenu, ID_OPEN_DEBUGGER0, emu && !emu->now_debugging && emu->debugger_enabled(0) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_OPEN_DEBUGGER1, emu && !emu->now_debugging && emu->debugger_enabled(1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_OPEN_DEBUGGER2, emu && !emu->now_debugging && emu->debugger_enabled(2) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_OPEN_DEBUGGER3, emu && !emu->now_debugging && emu->debugger_enabled(3) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CLOSE_DEBUGGER, emu &&  emu->now_debugging                             ? MF_ENABLED : MF_GRAYED);
+#endif
 	}
 #endif
 #ifdef MENU_POS_CART1
@@ -1605,7 +1629,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// recording
 		bool now_rec = true, now_stop = true;
 		if(emu) {
-			now_rec = emu->now_rec_video();
+			now_rec = emu->now_rec_video;
 			now_stop = !now_rec;
 		}
 		EnableMenuItem(hMenu, ID_SCREEN_REC60, now_rec ? MF_GRAYED : MF_ENABLED);
@@ -1670,7 +1694,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// sound menu
 		bool now_rec = false, now_stop = false;
 		if(emu) {
-			now_rec = emu->now_rec_sound();
+			now_rec = emu->now_rec_sound;
 			now_stop = !now_rec;
 		}
 		EnableMenuItem(hMenu, ID_SOUND_REC, now_rec ? MF_GRAYED : MF_ENABLED);

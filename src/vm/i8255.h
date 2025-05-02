@@ -33,7 +33,8 @@ private:
 	port_t port[3];
 	
 public:
-	I8255(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I8255(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 3; i++) {
 			init_output_signals(&port[i].outputs);
 			port[i].wreg = port[i].rreg = 0;//0xff;
@@ -50,13 +51,16 @@ public:
 	uint32 read_signal(int id);
 	
 	// unique functions
-	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
-	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
-	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[2].outputs, device, id, mask, shift);
 	}
 	bool clear_ports_by_cmdreg;

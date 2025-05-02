@@ -50,7 +50,8 @@ private:
 	void set_hsync(bool val);
 	
 public:
-	HD46505(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	HD46505(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_disp);
 		init_output_signals(&outputs_vblank);
 		init_output_signals(&outputs_vsync);
@@ -70,24 +71,30 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique function
-	void set_context_disp(DEVICE* device, int id, uint32 mask) {
+	void set_context_disp(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_disp, device, id, mask);
 	}
-	void set_context_vblank(DEVICE* device, int id, uint32 mask) {
+	void set_context_vblank(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_vblank, device, id, mask);
 	}
-	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
+	void set_context_vsync(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_vsync, device, id, mask);
 	}
-	void set_context_hsync(DEVICE* device, int id, uint32 mask) {
+	void set_context_hsync(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_hsync, device, id, mask);
 	}
 #ifdef HD46505_HORIZ_FREQ
-	void set_horiz_freq(int freq) {
+	void set_horiz_freq(int freq)
+	{
 		next_horiz_freq = freq;
 	}
 #endif
-	uint8* get_regs() {
+	uint8* get_regs()
+	{
 		return regs;
 	}
 };

@@ -38,7 +38,8 @@ private:
 	void write_to_cur_time();
 	
 public:
-	RP5C01(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	RP5C01(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_alarm);
 		init_output_signals(&outputs_pulse);
 	}
@@ -52,10 +53,12 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_alarm(DEVICE* device, int id, uint32 mask) {
+	void set_context_alarm(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_alarm, device, id, mask);
 	}
-	void set_context_pulse(DEVICE* device, int id, uint32 mask) {
+	void set_context_pulse(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_pulse, device, id, mask);
 	}
 };

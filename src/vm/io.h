@@ -49,7 +49,8 @@ private:
 	uint32 read_port32(uint32 addr, bool is_dma);
 	
 public:
-	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		memset(wr_table, 0, sizeof(wr_table));
 		memset(rd_table, 0, sizeof(rd_table));
 		

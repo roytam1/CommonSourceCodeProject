@@ -130,9 +130,9 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 	uint32 addr2 = haddr | wr_table[laddr].addr;
 #ifdef _IO_DEBUG_LOG
 	if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
-		emu->out_debug("UNKNOWN:\t");
+		emu->out_debug_log("UNKNOWN:\t");
 	}
-	emu->out_debug("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
+	emu->out_debug_log("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xff;
@@ -181,9 +181,9 @@ uint32 IO::read_port8(uint32 addr, bool is_dma, int* wait)
 	}
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
-		emu->out_debug("UNKNOWN:\t");
+		emu->out_debug_log("UNKNOWN:\t");
 	}
-	emu->out_debug("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), addr, val);
+	emu->out_debug_log("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), addr, val);
 #endif
 	switch(addr & 0xff00) {
 	case 0x1900:	// sub cpu

@@ -71,7 +71,8 @@ private:
 	int get_vram_wait();
 	
 public:
-	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		memset(wr_table, 0, sizeof(wr_table));
 		memset(rd_table, 0, sizeof(rd_table));
 		
@@ -93,10 +94,12 @@ public:
 	uint32 read_dma_io8w(uint32 addr, int* wait);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
 	void set_iomap_single_r(uint32 addr, DEVICE* device);

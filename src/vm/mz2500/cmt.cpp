@@ -95,7 +95,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 //			now_apss_tmp = ((pa & 0x80) == 0);
 //		} else if(!(pa & 1) && (data & 1)) {
 //			if(register_id_frew != -1) {
-//				cancel_event(register_id_frew);
+//				cancel_event(this, register_id_frew);
 //				register_id_frew = -1;
 //			}
 		}
@@ -106,7 +106,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 //			now_apss_tmp = ((pa & 0x80) == 0);
 //		} else if(!(pa & 2) && (data & 2)) {
 //			if(register_id_ffwd != -1) {
-//				cancel_event(register_id_ffwd);
+//				cancel_event(this, register_id_ffwd);
 //				register_id_ffwd = -1;
 //			}
 		}
@@ -116,7 +116,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 //			register_event(this, EVENT_FWD, PERIOD_CMT_SIGNAL, false, &register_id_fwd);
 //		} else if(!(pa & 4) && (data & 4)) {
 //			if(register_id_fwd != -1) {
-//				cancel_event(register_id_fwd);
+//				cancel_event(this, register_id_fwd);
 //				register_id_fwd = -1;
 //			}
 		}
@@ -124,14 +124,14 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 			stop();
 			// stop apss
 			if(register_id_apss != -1) {
-				cancel_event(register_id_apss);
+				cancel_event(this, register_id_apss);
 				register_id_apss = -1;
 			}
 			now_apss = false;
 //			register_event(this, EVENT_STOP, PERIOD_CMT_SIGNAL, false, &register_id_stop);
 //		} else if(!(pa & 8) && (data & 8)) {
 //			if(register_id_stop != -1) {
-//				cancel_event(register_id_stop);
+//				cancel_event(this, register_id_stop);
 //				register_id_stop = -1;
 //			}
 		}
@@ -146,11 +146,11 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 			}
 //		} else if((pa & 1) && !(data & 1)) {
 //			if(register_id_ffwd != -1) {
-//				cancel_event(register_id_ffwd);
+//				cancel_event(this, register_id_ffwd);
 //				register_id_ffwd = -1;
 //			}
 //			if(register_id_frew != -1) {
-//				cancel_event(register_id_frew);
+//				cancel_event(this, register_id_frew);
 //				register_id_frew = -1;
 //			}
 		}
@@ -159,7 +159,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 //			register_event(this, EVENT_FWD, PERIOD_CMT_SIGNAL, false, &register_id_fwd);
 //		} else if((pa & 4) && !(data & 4)) {
 //			if(register_id_fwd != -1) {
-//				cancel_event(register_id_fwd);
+//				cancel_event(this, register_id_fwd);
 //				register_id_fwd = -1;
 //			}
 		}
@@ -168,7 +168,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 //			register_event(this, EVENT_STOP, PERIOD_CMT_SIGNAL, false, &register_id_stop);
 //		} else if((pa & 8) && !(data & 8)) {
 //			if(register_id_stop != -1) {
-//				cancel_event(register_id_stop);
+//				cancel_event(this, register_id_stop);
 //				register_id_stop = -1;
 //			}
 		}
@@ -189,7 +189,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 			register_event(this, EVENT_EJECT, PERIOD_CMT_SIGNAL, false, &register_id_eject);
 		} else if(!(pc & 0x10) && (data & 0x10)) {
 			if(register_id_eject != -1) {
-				cancel_event(register_id_eject);
+				cancel_event(this, register_id_eject);
 				register_id_eject = -1;
 			}
 		}
@@ -248,7 +248,7 @@ void CMT::event_callback(int event_id, int err)
 		forward();
 #ifndef _MZ80B
 //		if(register_id_apss != -1) {
-//			cancel_event(register_id_apss);
+//			cancel_event(this, register_id_apss);
 //			register_id_apss = -1;
 //		}
 		now_apss = false;
@@ -258,7 +258,7 @@ void CMT::event_callback(int event_id, int err)
 		stop();
 #ifndef _MZ80B
 		if(register_id_apss != -1) {
-			cancel_event(register_id_apss);
+			cancel_event(this, register_id_apss);
 			register_id_apss = -1;
 		}
 		now_apss = false;
@@ -298,7 +298,7 @@ void CMT::close_tape()
 	
 #ifndef _MZ80B
 	if(register_id_apss != -1) {
-		cancel_event(register_id_apss);
+		cancel_event(this, register_id_apss);
 		register_id_apss = -1;
 	}
 #endif

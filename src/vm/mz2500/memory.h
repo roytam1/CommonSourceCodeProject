@@ -66,22 +66,28 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unitque function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_crtc(DEVICE* device) {
+	void set_context_crtc(DEVICE* device)
+	{
 		d_crtc = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
-	uint8* get_tvram() {
+	uint8* get_tvram()
+	{
 		return tvram;
 	}
-	uint8* get_kanji() {
+	uint8* get_kanji()
+	{
 		return kanji;
 	}
-	uint8* get_pcg() {
+	uint8* get_pcg()
+	{
 		return pcg;
 	}
 };

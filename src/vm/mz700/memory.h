@@ -131,17 +131,21 @@ public:
 #endif
 	
 	// unitque functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_pit(DEVICE* device) {
+	void set_context_pit(DEVICE* device)
+	{
 		d_pit = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 #if defined(_MZ800)
-	void set_context_pio_int(DEVICE* device) {
+	void set_context_pio_int(DEVICE* device)
+	{
 		d_pio_int = device;
 	}
 #endif

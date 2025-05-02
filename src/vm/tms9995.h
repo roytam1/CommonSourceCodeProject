@@ -100,7 +100,8 @@ private:
 	inline uint16 setst_sla_laeco(uint16 a, uint16 c);
 	
 public:
-	TMS9995(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	TMS9995(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		// init registers
 		WP = PC = ST = 0;
 		memset(RAM, 0, sizeof(RAM));
@@ -120,15 +121,18 @@ public:
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return prevPC;
 	}
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
 };

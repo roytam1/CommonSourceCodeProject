@@ -34,7 +34,8 @@ private:
 	void update_intr();
 	
 public:
-	HD146818P(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	HD146818P(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_intr);
 		init_output_signals(&outputs_sqw);
 	}
@@ -49,10 +50,12 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_intr(DEVICE* device, int id, uint32 mask) {
+	void set_context_intr(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_intr, device, id, mask);
 	}
-	void set_context_sqw(DEVICE* device, int id, uint32 mask) {
+	void set_context_sqw(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_sqw, device, id, mask);
 	}
 };

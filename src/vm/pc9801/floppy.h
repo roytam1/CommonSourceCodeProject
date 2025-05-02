@@ -55,21 +55,26 @@ public:
 	
 	// unique functions
 #if defined(SUPPORT_OLD_FDD_IF)
-	void set_context_fdc_2hd(UPD765A* device) {
+	void set_context_fdc_2hd(UPD765A* device)
+	{
 		d_fdc_2hd = device;
 	}
-	void set_context_fdc_2dd(UPD765A* device) {
+	void set_context_fdc_2dd(UPD765A* device)
+	{
 		d_fdc_2dd = device;
 	}
 #else
-	void set_context_fdc(UPD765A* device) {
+	void set_context_fdc(UPD765A* device)
+	{
 		d_fdc = device;
 	}
 #endif
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
 };

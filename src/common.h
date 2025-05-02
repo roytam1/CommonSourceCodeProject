@@ -120,7 +120,8 @@ uint32 getcrc32(uint8 data[], int size);
 typedef struct cur_time_t {
 	int year, month, day, day_of_week, hour, minute, second;
 	bool initialized;
-	cur_time_t() {
+	cur_time_t()
+	{
 		initialized = false;
 	}
 	void increment();

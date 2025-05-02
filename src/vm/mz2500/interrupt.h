@@ -40,7 +40,8 @@ private:
 	void update_intr();
 	
 public:
-	INTERRUPT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	INTERRUPT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		d_cpu = d_child = NULL;
 	}
 	~INTERRUPT() {}
@@ -51,11 +52,13 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
-	void set_context_child(DEVICE* device) {
+	void set_context_child(DEVICE* device)
+	{
 		d_child = device;
 	}
 	void set_intr_iei(bool val);

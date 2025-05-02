@@ -16,10 +16,14 @@
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../io.h"
 #include "../mb8877.h"
 #include "../sn76489an.h"
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
 
 #include "../fmr50/bios.h"
 #include "cmos.h"
@@ -50,7 +54,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio_ch2 = new I8251(this, emu);	// RS-232C ch.2
 	pit = new I8253(this, emu);
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
+	cpu = new I286(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	psg = new SN76489AN(this, emu);
@@ -114,6 +118,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_bios(bios);
 #ifdef SINGLE_MODE_DMA
 	cpu->set_context_dma(dma);
+#endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
 	// i/o bus
@@ -201,6 +208,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

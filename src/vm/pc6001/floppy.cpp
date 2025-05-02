@@ -524,11 +524,6 @@ void FLOPPY::open_disk(int drv, _TCHAR path[], int offset)
 {
 	if(drv < 2) {
 		disk[drv]->open(path, offset);
-#ifdef _FDC_DEBUG_LOG
-		if(disk[drv]->changed) {
-			emu->out_debug("FDC: Disk Changed (Drive=%d)\n", drv);
-		}
-#endif
 		Seek88(drv, 0, 1);
 	}
 }
@@ -537,9 +532,6 @@ void FLOPPY::close_disk(int drv)
 {
 	if(drv < 2 && disk[drv]->inserted) {
 		disk[drv]->close();
-#ifdef _FDC_DEBUG_LOG
-		emu->out_debug("FDC: Disk Ejected (Drive=%d)\n", drv);
-#endif
 	}
 }
 

@@ -58,13 +58,16 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pit(DEVICE* device) {
+	void set_context_pit(DEVICE* device)
+	{
 		d_pit = device;
 	}
-	void set_context_pcm(DEVICE* device) {
+	void set_context_pcm(DEVICE* device)
+	{
 		d_pcm = device;
 	}
-	void set_context_fdc(UPD765A* device) {
+	void set_context_fdc(UPD765A* device)
+	{
 		d_fdc = device;
 	}
 };

@@ -19,6 +19,10 @@
 #include "../upd7801.h"
 #include "../z80.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "main.h"
 #include "sub.h"
 #include "fdcpack.h"
@@ -67,9 +71,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_hsync(sub, SIG_SUB_HSYNC, 1);
 	fdc->set_context_drq(main, SIG_MAIN_INTA, 1);
 	fdc->set_context_irq(main, SIG_MAIN_INTB, 1);
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
-#endif
 	
 	main->set_context_cpu(cpu);
 	main->set_context_sub(sub);
@@ -93,8 +94,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(main);
 	cpu->set_context_io(main);
 	cpu->set_context_intr(main);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	subcpu->set_context_mem(sub);
 	subcpu->set_context_io(sub);
+#ifdef USE_DEBUGGER
+	subcpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -147,6 +154,22 @@ double VM::frame_rate()
 {
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	} else if(index == 1) {
+		return subcpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

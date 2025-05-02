@@ -45,6 +45,7 @@
 #define USE_MONITOR_TYPE	4
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -135,6 +136,11 @@ public:
 	void reset();
 	void special_reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

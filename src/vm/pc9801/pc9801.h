@@ -146,6 +146,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #endif
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -161,7 +162,11 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
+#if defined(HAS_V30)
 class I86;
+#else
+class I286;
+#endif
 class IO;
 class LS244;
 class MEMORY;
@@ -227,7 +232,11 @@ protected:
 	I8255* pio_sys;
 	I8255* pio_prn;
 	I8259* pic;
+#if defined(HAS_V30)
 	I86* cpu;
+#else
+	I286* cpu;
+#endif
 	IO* io;
 	LS244* dmareg1;
 	LS244* dmareg2;
@@ -314,6 +323,11 @@ public:
 	void reset();
 	void run();
 	double frame_rate();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

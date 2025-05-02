@@ -28,6 +28,10 @@
 #include "../z80dma.h"
 #endif
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "display.h"
 #include "emm.h"
 #include "floppy.h"
@@ -98,6 +102,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	if(pseudo_sub_cpu) {
 		psub = new PSUB(this, emu);
+		cpu_sub = NULL;
+		cpu_kbd = NULL;
 	} else {
 		// sub cpu
 		cpu_sub = new MCS48(this, emu);
@@ -135,9 +141,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_c(printer, SIG_PRINTER_STB, 0x80, 0);
 #ifdef _X1TURBO_FEATURE
 	fdc->set_context_drq(dma, SIG_Z80DMA_READY, 1);
-#endif
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
 #endif
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
@@ -179,7 +182,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		psub->set_context_drec(drec);
 	} else {
 		// sub cpu
+		cpu_sub->set_context_mem(new MCS48MEM(this, emu));
 		cpu_sub->set_context_io(sub);
+#ifdef USE_DEBUGGER
+		cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 		drec->set_context_end(sub, SIG_SUB_TAPE_END, 1);
 		drec->set_context_apss(sub, SIG_SUB_TAPE_APSS, 1);
 		pio_sub->set_context_port_c(sub, SIG_SUB_PIO_PORT_C, 0x80, 0);
@@ -197,7 +204,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		sub->set_context_drec(drec);
 		
 		// keyboard
+		cpu_kbd->set_context_mem(new MCS48MEM(this, emu));
 		cpu_kbd->set_context_io(kbd);
+#ifdef USE_DEBUGGER
+		cpu_kbd->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 		kbd->set_context_cpu(cpu_sub);
 	}
 	
@@ -206,6 +217,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_io(io);
 #if defined(_X1TURBO_FEATURE) && defined(SINGLE_MODE_DMA)
 	cpu->set_context_dma(dma);
+#endif
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
 	// z80 family daisy chain
@@ -325,6 +339,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	pcecpu->set_context_mem(pce);
 	pcecpu->set_context_io(pce);
+#ifdef USE_DEBUGGER
+//	pcecpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	pce->set_context_cpu(pcecpu);
 #endif
 	
@@ -416,6 +433,28 @@ double VM::frame_rate()
 #endif
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	} else if(index == 1) {
+		return cpu_sub;
+	} else if(index == 2) {
+		return cpu_kbd;
+#ifdef _X1TWIN
+	} else if(index == 3 && pce->cart_inserted()) {
+		return pcecpu;
+#endif
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

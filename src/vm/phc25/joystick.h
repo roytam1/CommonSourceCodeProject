@@ -30,7 +30,8 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_psg(DEVICE* device) {
+	void set_context_psg(DEVICE* device)
+	{
 		d_psg = device;
 	}
 };

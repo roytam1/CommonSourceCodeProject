@@ -26,7 +26,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 {
 #ifdef _DEBUG_LOG
 	// open debug logfile
-	open_debug();
+	initialize_debug_log();
 #endif
 	message_count = 0;
 	
@@ -67,6 +67,9 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	
 	// initialize
 	vm = new VM(this);
+#ifdef USE_DEBUGGER
+	initialize_debugger();
+#endif
 	initialize_input();
 	initialize_screen();
 	initialize_sound();
@@ -81,11 +84,14 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #endif
 	vm->initialize_sound(sound_rate, sound_samples);
 	vm->reset();
-	suspended = false;
+	now_suspended = false;
 }
 
 EMU::~EMU()
 {
+#ifdef USE_DEBUGGER
+	release_debugger();
+#endif
 	release_input();
 	release_screen();
 	release_sound();
@@ -99,7 +105,7 @@ EMU::~EMU()
 #endif
 	delete vm;
 #ifdef _DEBUG_LOG
-	close_debug();
+	release_debug_log();
 #endif
 }
 
@@ -125,13 +131,13 @@ int EMU::frame_interval()
 
 int EMU::run()
 {
-	if(suspended) {
+	if(now_suspended) {
 #ifdef USE_LASER_DISC
 		if(now_movie_play && !now_movie_pause) {
 			play_movie();
 		}
 #endif
-		suspended = false;
+		now_suspended = false;
 	}
 	
 	update_input();
@@ -150,7 +156,7 @@ int EMU::run()
 		vm->run();
 		extra_frames = 1;
 	}
-	rec_vid_run_frames += extra_frames;
+	rec_video_run_frames += extra_frames;
 	return extra_frames;
 }
 
@@ -218,7 +224,7 @@ _TCHAR* EMU::bios_path(_TCHAR* file_name)
 
 void EMU::suspend()
 {
-	if(!suspended) {
+	if(!now_suspended) {
 #ifdef USE_LASER_DISC
 		if(now_movie_play && !now_movie_pause) {
 			pause_movie();
@@ -226,7 +232,7 @@ void EMU::suspend()
 		}
 #endif
 		mute_sound();
-		suspended = true;
+		now_suspended = true;
 	}
 }
 
@@ -313,31 +319,21 @@ void EMU::printer_strobe(bool value)
 // debug log
 // ----------------------------------------------------------------------------
 
-void EMU::open_debug()
+#ifdef _DEBUG_LOG
+void EMU::initialize_debug_log()
 {
-#ifdef _DEBUG_CONSOLE
-	AllocConsole();
-	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTitle("Debug Log");
-#endif
-#ifdef _DEBUG_FILE
-	debug = _tfopen(_T("d:\\debug.log"), _T("w"));
-#endif
+	debug_log = _tfopen(_T("d:\\debug.log"), _T("w"));
 }
 
-void EMU::close_debug()
+void EMU::release_debug_log()
 {
-#ifdef _DEBUG_CONSOLE
-	FreeConsole();
-#endif
-#ifdef _DEBUG_FILE
-	if(debug) {
-		fclose(debug);
+	if(debug_log) {
+		fclose(debug_log);
 	}
-#endif
 }
+#endif
 
-void EMU::out_debug(const _TCHAR* format, ...)
+void EMU::out_debug_log(const _TCHAR* format, ...)
 {
 #ifdef _DEBUG_LOG
 	va_list ap;
@@ -353,24 +349,18 @@ void EMU::out_debug(const _TCHAR* format, ...)
 	}
 	_tcscpy(prev_buffer, buffer);
 	
-#ifdef _DEBUG_CONSOLE
-	DWORD dwWritten;
-	WriteConsole(hConsole, buffer, _tcslen(buffer), &dwWritten, NULL);
-#endif
-#ifdef _DEBUG_FILE
-	if(debug) {
-		_ftprintf(debug, _T("%s"), buffer);
+	if(debug_log) {
+		_ftprintf(debug_log, _T("%s"), buffer);
 		static int size = 0;
 		if((size += _tcslen(buffer)) > 0x8000000) { // 128MB
 			static int index = 1;
 			TCHAR path[_MAX_PATH];
 			_stprintf(path, _T("d:\\debug_#%d.log"), ++index);
-			fclose(debug);
-			debug = _tfopen(path, _T("w"));
+			fclose(debug_log);
+			debug_log = _tfopen(path, _T("w"));
 			size = 0;
 		}
 	}
-#endif
 #endif
 }
 
@@ -490,8 +480,8 @@ void EMU::open_cart(int drv, _TCHAR* file_path)
 		out_message(_T("Cart%d: %s"), drv + 1, file_path);
 		
 		// restart recording
-		bool s = now_rec_snd;
-		bool v = now_rec_vid;
+		bool s = now_rec_sound;
+		bool v = now_rec_video;
 		stop_rec_sound();
 		stop_rec_video();
 		if(s) start_rec_sound();

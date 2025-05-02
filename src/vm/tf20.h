@@ -43,7 +43,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unitque function
-	void set_context_sio(DEVICE* device, int id) {
+	void set_context_sio(DEVICE* device, int id)
+	{
 		d_sio = device;
 		did_sio = id;
 	}

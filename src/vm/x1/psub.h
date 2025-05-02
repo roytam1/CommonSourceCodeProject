@@ -69,7 +69,8 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
@@ -78,10 +79,12 @@ public:
 	void intr_reti();
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_drec(DATAREC* device) {
+	void set_context_drec(DATAREC* device)
+	{
 		d_drec = device;
 	}
 	void key_down(int code, bool repeat);

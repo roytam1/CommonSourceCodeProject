@@ -777,7 +777,7 @@ void PSUB::event_callback(int event_id, int err)
 			}
 		} else {
 			if(CasEventID != -1) {
-				cancel_event(CasEventID);
+				cancel_event(this, CasEventID);
 				CasEventID = -1;
 			}
 		}
@@ -820,7 +820,7 @@ void PSUB::write_io8(uint32 addr, uint32 data)
 		}
 		else if(data==0x06) {
 			if(StrigEventID != -1) {
-				cancel_event(StrigEventID);
+				cancel_event(this, StrigEventID);
 				StrigEventID = -1;
 			}
 //			register_event(this, EVENT_STRIG, 3000, false, &StrigEventID); // 3msec
@@ -846,7 +846,7 @@ void PSUB::write_io8(uint32 addr, uint32 data)
 		/* CMT LOAD OPEN(0x1E,0x19(1200baud)/0x1D,0x19(600baud)) */
 		else if (data==0x19) {
 			if(CasEventID != -1) {
-				cancel_event(CasEventID);
+				cancel_event(this, CasEventID);
 				CasEventID = -1;
 			}
 			register_event(this, EVENT_CASSETTE, 1000000.0 / (CasBaud / 12), true, &CasEventID);

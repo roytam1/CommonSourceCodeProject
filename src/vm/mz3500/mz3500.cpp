@@ -23,6 +23,10 @@
 #include "../upd765a.h"
 #include "../z80.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "main.h"
 #include "sub.h"
 
@@ -64,9 +68,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(main, SIG_MAIN_INTFD, 1);
 	fdc->set_context_drq(main, SIG_MAIN_DRQ, 1);
 	fdc->set_context_index(main, SIG_MAIN_INDEX, 1);
-#ifdef _FDC_DEBUG_LOG
-	fdc->set_context_cpu(cpu);
-#endif
 	
 	// mz3500sm p.72,77
 	sio->set_context_rxrdy(subcpu, SIG_CPU_NMI, 1);
@@ -144,10 +145,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(main);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(main);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	subcpu->set_context_mem(sub);
 	subcpu->set_context_io(subio);
 	subcpu->set_context_intr(sub);
+#ifdef USE_DEBUGGER
+	subcpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -203,6 +210,22 @@ double VM::frame_rate()
 {
 	return event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	} else if(index == 1) {
+		return subcpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

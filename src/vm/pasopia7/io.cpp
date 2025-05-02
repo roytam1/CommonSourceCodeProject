@@ -20,9 +20,9 @@ void IO::write_io8(uint32 addr, uint32 data)
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 #ifdef _IO_DEBUG_LOG
 	if(!write_table[laddr].dev->this_device_id) {
-		emu->out_debug("UNKNOWN:\t");
+		emu->out_debug_log("UNKNOWN:\t");
 	}
-	emu->out_debug("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), laddr | haddr, data);
+	emu->out_debug_log("%6x\tOUT8\t%4x,%2x\n", get_cpu_pc(0), laddr | haddr, data);
 #endif
 	write_table[laddr].dev->write_io8(haddr | write_table[laddr].addr, data & 0xff);
 }
@@ -38,9 +38,9 @@ uint32 IO::read_io8(uint32 addr)
 	uint32 val = read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);
 #ifdef _IO_DEBUG_LOG
 	if(!read_table[laddr].dev->this_device_id && !read_table[laddr].value_registered) {
-		emu->out_debug("UNKNOWN:\t");
+		emu->out_debug_log("UNKNOWN:\t");
 	}
-	emu->out_debug("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), laddr | haddr, val);
+	emu->out_debug_log("%6x\tIN8\t%4x = %2x\n", get_cpu_pc(0), laddr | haddr, val);
 #endif
 	return val & 0xff;
 }

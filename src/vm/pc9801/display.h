@@ -87,14 +87,17 @@ public:
 	uint32 read_memory_mapped_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_pic(DEVICE *device) {
+	void set_context_pic(DEVICE *device)
+	{
 		d_pic = device;
 	}
-	void set_context_gdc_chr(UPD7220 *device, uint8 *ra) {
+	void set_context_gdc_chr(UPD7220 *device, uint8 *ra)
+	{
 		d_gdc_chr = device;
 		ra_chr = ra;
 	}
-	void set_context_gdc_gfx(UPD7220 *device, uint8 *ra, uint8 *cs) {
+	void set_context_gdc_gfx(UPD7220 *device, uint8 *ra, uint8 *cs)
+	{
 		d_gdc_gfx = device;
 		ra_gfx = ra; cs_gfx = cs;
 	}

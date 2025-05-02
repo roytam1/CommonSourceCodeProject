@@ -38,7 +38,8 @@ private:
 	bool mio;
 	
 public:
-	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		// vm->dummy must be generated first !
 		for(int i = 0; i < IO_ADDR_MAX; i++) {
 			write_table[i].dev = read_table[i].dev = vm->dummy;
@@ -53,7 +54,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_ram_ptr(uint8* ptr) {
+	void set_ram_ptr(uint8* ptr)
+	{
 		ram = ptr;
 	}
 	void set_iomap_single_r(uint32 addr, DEVICE* device);

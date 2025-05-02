@@ -76,10 +76,12 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
-	void write_data16(uint32 addr, uint32 data) {
+	void write_data16(uint32 addr, uint32 data)
+	{
 		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
 	}
-	uint32 read_data16(uint32 addr) {
+	uint32 read_data16(uint32 addr)
+	{
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	void write_io8(uint32 addr, uint32 data);
@@ -89,43 +91,56 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_main(DEVICE* device) {
+	void set_context_main(DEVICE* device)
+	{
 		d_main = device;
 	}
-	void set_ipl(uint8* ptr) {
+	void set_ipl(uint8* ptr)
+	{
 		ipl = ptr;
 	}
-	void set_common(uint8* ptr) {
+	void set_common(uint8* ptr)
+	{
 		common = ptr;
 	}
-	uint8* get_vram_chr() {
+	uint8* get_vram_chr()
+	{
 		return vram_chr;
 	}
-	void set_sync_ptr_chr(uint8* ptr) {
+	void set_sync_ptr_chr(uint8* ptr)
+	{
 		sync_chr = ptr;
 	}
-	void set_ra_ptr_chr(uint8* ptr) {
+	void set_ra_ptr_chr(uint8* ptr)
+	{
 		ra_chr = ptr;
 	}
-	void set_cs_ptr_chr(uint8* ptr) {
+	void set_cs_ptr_chr(uint8* ptr)
+	{
 		cs_chr = ptr;
 	}
-	void set_ead_ptr_chr(int* ptr) {
+	void set_ead_ptr_chr(int* ptr)
+	{
 		ead_chr = ptr;
 	}
-	uint8* get_vram_gfx() {
+	uint8* get_vram_gfx()
+	{
 		return vram_gfx;
 	}
-	void set_sync_ptr_gfx(uint8* ptr) {
+	void set_sync_ptr_gfx(uint8* ptr)
+	{
 		sync_gfx = ptr;
 	}
-	void set_ra_ptr_gfx(uint8* ptr) {
+	void set_ra_ptr_gfx(uint8* ptr)
+	{
 		ra_gfx = ptr;
 	}
-	void set_cs_ptr_gfx(uint8* ptr) {
+	void set_cs_ptr_gfx(uint8* ptr)
+	{
 		cs_gfx = ptr;
 	}
-	void set_ead_ptr_gfx(int* ptr) {
+	void set_ead_ptr_gfx(int* ptr)
+	{
 		ead_gfx = ptr;
 	}
 	void key_down(int code);

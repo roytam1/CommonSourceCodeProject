@@ -65,7 +65,7 @@ void EVENT::reset()
 	// clear events except loop event
 	for(int i = 0; i < MAX_EVENT; i++) {
 		if(event[i].active && event[i].loop_clock == 0) {
-			cancel_event(i);
+			cancel_event(NULL, i);
 		}
 	}
 	
@@ -244,14 +244,14 @@ void EVENT::register_event_by_clock(DEVICE* device, int event_id, int clock, boo
 {
 #ifdef _DEBUG_LOG
 	if(!initialize_done && !loop) {
-		emu->out_debug(_T("EVENT: non-loop event is registered before initialize is done\n"));
+		emu->out_debug_log(_T("EVENT: non-loop event is registered before initialize is done\n"));
 	}
 #endif
 	
 	// register event
 	if(first_free_event == NULL) {
 #ifdef _DEBUG_LOG
-		emu->out_debug(_T("EVENT: too many events !!!\n"));
+		emu->out_debug_log(_T("EVENT: too many events !!!\n"));
 #endif
 		if(register_id != NULL) {
 			*register_id = -1;
@@ -310,11 +310,15 @@ void EVENT::insert_event(event_t *event_handle)
 	}
 }
 
-void EVENT::cancel_event(int register_id)
+void EVENT::cancel_event(DEVICE* device, int register_id)
 {
 	// cancel registered event
 	if(0 <= register_id && register_id < MAX_EVENT) {
 		event_t *event_handle = &event[register_id];
+		if(device != NULL && device != event_handle->device) {
+			emu->out_debug_log("EVENT: event cannot be canceled by non ownew device (id=%d) !!!\n", device->this_device_id);
+			return;
+		}
 		if(event_handle->active) {
 			if(event_handle->prev != NULL) {
 				event_handle->prev->next = event_handle->next;
@@ -339,7 +343,7 @@ void EVENT::register_frame_event(DEVICE* dev)
 	}
 #ifdef _DEBUG_LOG
 	else {
-		emu->out_debug(_T("EVENT: too many frame events !!!\n"));
+		emu->out_debug_log(_T("EVENT: too many frame events !!!\n"));
 	}
 #endif
 }
@@ -351,7 +355,7 @@ void EVENT::register_vline_event(DEVICE* dev)
 	}
 #ifdef _DEBUG_LOG
 	else {
-		emu->out_debug(_T("EVENT: too many vline events !!!\n"));
+		emu->out_debug_log(_T("EVENT: too many vline events !!!\n"));
 	}
 #endif
 }

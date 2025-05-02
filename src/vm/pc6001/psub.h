@@ -62,16 +62,19 @@ public:
 	uint32 intr_ack();
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_timer(DEVICE* device) {
+	void set_context_timer(DEVICE* device)
+	{
 		d_timer = device;
 	}
 	bool play_tape(_TCHAR* file_path);
 	bool rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return (play || rec);
 	}
 };

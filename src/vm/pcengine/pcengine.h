@@ -74,7 +74,8 @@ public:
 	void open_cart(int drv, _TCHAR* file_path);
 	void close_cart(int drv);
 	bool cart_inserted(int drv);
-	bool now_skip() {
+	bool now_skip()
+	{
 		return false;
 	}
 	void update_config();

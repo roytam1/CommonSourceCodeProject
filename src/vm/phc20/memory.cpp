@@ -93,11 +93,11 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			}
 			else {
 				// unknown ???
-				emu->out_debug("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
+				emu->out_debug_log("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 			}
 			break;
 		default:
-			emu->out_debug("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
+			emu->out_debug_log("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 			break;
 		}
 		return;
@@ -127,7 +127,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 			// bit1: vsync or hsync ???
 			return sysport;
 		}
-		emu->out_debug("%6x\tRM8\t%4x\n", get_cpu_pc(0), addr);
+		emu->out_debug_log("%6x\tRM8\t%4x\n", get_cpu_pc(0), addr);
 		return 0xff;
 	}
 	return rbank[addr >> 10][addr & 0x3ff];

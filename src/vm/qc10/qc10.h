@@ -48,6 +48,7 @@
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -117,6 +118,11 @@ public:
 	void reset();
 	void run();
 	double frame_rate();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

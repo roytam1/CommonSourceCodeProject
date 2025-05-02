@@ -57,7 +57,8 @@ private:
 	void draw_alpha();
 	
 public:
-	MC6847(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MC6847(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		d_cpu = NULL;
 		ag = as = intext = css = inv = false;
 		gm = 0;
@@ -75,16 +76,20 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
+	void set_context_vsync(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_vsync, device, id, mask);
 	}
-	void set_context_hsync(DEVICE* device, int id, uint32 mask) {
+	void set_context_hsync(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_hsync, device, id, mask);
 	}
-	void set_vram_ptr(uint8* ptr, int size) {
+	void set_vram_ptr(uint8* ptr, int size)
+	{
 		vram_ptr = ptr; vram_size = size;
 	}
 	void load_font_image(_TCHAR *path);

@@ -157,15 +157,18 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
-	void set_context_cpu(HUC6280* device) {
+	void set_context_cpu(HUC6280* device)
+	{
 		d_cpu = device;
 	}
-	void initialize_sound(int rate) {
+	void initialize_sound(int rate)
+	{
 		sample_rate = rate;
 	}
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
-	bool cart_inserted() {
+	bool cart_inserted()
+	{
 		return inserted;
 	}
 	void draw_screen();

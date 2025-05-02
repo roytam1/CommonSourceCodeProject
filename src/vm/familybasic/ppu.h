@@ -62,10 +62,12 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	uint8 *get_spr_ram() {
+	uint8 *get_spr_ram()
+	{
 		return spr_ram;
 	}
 	void load_rom_image(_TCHAR *file_name);

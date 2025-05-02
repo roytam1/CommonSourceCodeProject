@@ -25,6 +25,10 @@
 #include "../pc80s31k.h"
 #include "../upd765a.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "pc88.h"
 
 // ----------------------------------------------------------------------------
@@ -90,6 +94,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88cpu->set_context_mem(pc88);
 	pc88cpu->set_context_io(pc88);
 	pc88cpu->set_context_intr(pc88);
+#ifdef USE_DEBUGGER
+	pc88cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	pc88opn->set_context_irq(pc88, SIG_PC88_SOUND_IRQ, 1);
 	pc88sio->set_context_rxrdy(pc88, SIG_PC88_USART_IRQ, 1);
 	pc88sio->set_context_out(pc88, SIG_PC88_USART_OUT);
@@ -108,12 +115,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0xf0, -4);
 	pc88pio_sub->clear_ports_by_cmdreg = true;
 	pc88fdc_sub->set_context_irq(pc88cpu_sub, SIG_CPU_IRQ, 1);
-#ifdef _FDC_DEBUG_LOG
-	pc88fdc_sub->set_context_cpu(pc88cpu_sub);
-#endif
 	pc88cpu_sub->set_context_mem(pc88sub);
 	pc88cpu_sub->set_context_io(pc88sub);
 	pc88cpu_sub->set_context_intr(pc88sub);
+#ifdef USE_DEBUGGER
+	pc88cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -171,6 +178,22 @@ double VM::frame_rate()
 {
 	return pc88event->frame_rate();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return pc88cpu;
+	} else if(index == 1) {
+		return pc88cpu_sub;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

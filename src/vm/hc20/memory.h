@@ -103,23 +103,28 @@ public:
 	void event_frame();
 	
 	// unitque function
-	void set_context_beep(BEEP* device) {
+	void set_context_beep(BEEP* device)
+	{
 		d_beep = device;
 	}
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_rtc(DEVICE* device) {
+	void set_context_rtc(DEVICE* device)
+	{
 		d_rtc = device;
 	}
-	void set_context_tf20(DEVICE* device) {
+	void set_context_tf20(DEVICE* device)
+	{
 		d_tf20 = device;
 	}
 	void notify_power_off();
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return (cmt_play || cmt_rec);
 	}
 	void draw_screen();

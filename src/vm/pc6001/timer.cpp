@@ -147,7 +147,7 @@ void TIMER::set_portB0(uint32 data)
 	if(data & 1) {
 		// stop
 		if(timer_id != -1) {
-			cancel_event(timer_id);
+			cancel_event(this, timer_id);
 			timer_id = -1;
 		}
 	} else {

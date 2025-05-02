@@ -40,7 +40,8 @@ private:
 	void update_interrupt();
 	
 public:
-	YM2151(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	YM2151(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_irq);
 	}
 	~YM2151() {}
@@ -57,7 +58,8 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 	void init(int rate, int clock, int samples, int vol);

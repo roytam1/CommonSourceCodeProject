@@ -31,11 +31,13 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique functions
-	void set_context_dma(DEVICE* device) {
+	void set_context_dma(DEVICE* device)
+	{
 		d_dma = device;
 	}
 #ifndef TYPE_SL
-	void set_context_dma2(DEVICE* device) {
+	void set_context_dma2(DEVICE* device)
+	{
 		d_dma2 = device;
 	}
 #endif

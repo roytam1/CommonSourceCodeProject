@@ -41,10 +41,12 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_memory_ptr(uint8* ptr) {
+	void set_memory_ptr(uint8* ptr)
+	{
 		base = ptr;
 		vram = ptr + 0xb800;
 		pcg = ptr + 0xbc00;

@@ -95,26 +95,32 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram_b = ptr + 0x00000;
 		vram_r = ptr + 0x20000;
 		vram_g = ptr + 0x40000;
 		vram_i = ptr + 0x60000;
 	}
-	void set_tvram_ptr(uint8* ptr) {
+	void set_tvram_ptr(uint8* ptr)
+	{
 		tvram = ptr;
 	}
-	void set_kanji_ptr(uint8* ptr) {
+	void set_kanji_ptr(uint8* ptr)
+	{
 		kanji1 = ptr + 0x00000;
 		kanji2 = ptr + 0x40000;
 	}
-	void set_pcg_ptr(uint8* ptr) {
+	void set_pcg_ptr(uint8* ptr)
+	{
 		pcg0 = ptr + 0x0000;
 		pcg1 = ptr + 0x1000;
 		pcg2 = ptr + 0x2000;

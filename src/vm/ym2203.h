@@ -87,7 +87,8 @@ private:
 #endif
 	
 public:
-	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 2; i++) {
 			init_output_signals(&port[i].outputs);
 			port[i].wreg = port[i].rreg = 0;//0xff;
@@ -111,17 +112,20 @@ public:
 	
 	// unique functions
 #ifdef HAS_YM_SERIES
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
 #endif
 #ifdef SUPPORT_YM2203_PORT_A
-	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
 #endif
 #ifdef SUPPORT_YM2203_PORT_B
-	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
 #endif

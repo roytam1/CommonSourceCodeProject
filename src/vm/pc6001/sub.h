@@ -53,18 +53,22 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_context_drec(DEVICE* device) {
+	void set_context_drec(DEVICE* device)
+	{
 		d_drec = device;
 	}
-	void set_context_timer(DEVICE* device) {
+	void set_context_timer(DEVICE* device)
+	{
 		d_timer = device;
 	}
 	bool rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return rec;
 	}
 };

@@ -70,7 +70,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique function
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
 	void draw_screen();

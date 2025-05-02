@@ -36,7 +36,8 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context_opn(DEVICE* device) {
+	void set_context_opn(DEVICE* device)
+	{
 		d_opn = device;
 	}
 };

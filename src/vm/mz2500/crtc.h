@@ -121,31 +121,38 @@ public:
 	void update_config();
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_int(DEVICE* device) {
+	void set_context_int(DEVICE* device)
+	{
 		d_int = device;
 	}
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram_b = ptr + 0x00000;
 		vram_r = ptr + 0x08000;
 		vram_g = ptr + 0x10000;
 		vram_i = ptr + 0x18000;
 	}
-	void set_tvram_ptr(uint8* ptr) {
+	void set_tvram_ptr(uint8* ptr)
+	{
 		tvram1 = ptr + 0x0000;
 		attrib = ptr + 0x0800;
 		tvram2 = ptr + 0x1000;
 	}
-	void set_kanji_ptr(uint8* ptr) {
+	void set_kanji_ptr(uint8* ptr)
+	{
 		kanji1 = ptr + 0x00000;
 		kanji2 = ptr + 0x20000;
 	}
-	void set_pcg_ptr(uint8* ptr) {
+	void set_pcg_ptr(uint8* ptr)
+	{
 		pcg0 = ptr + 0x0000;
 		pcg1 = ptr + 0x0800;
 		pcg2 = ptr + 0x1000;

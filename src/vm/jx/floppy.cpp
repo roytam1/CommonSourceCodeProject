@@ -26,14 +26,14 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 			// WatchDog Timer is enabled
 			if((prev & 0x40) && !(data & 0x40)) {
 				if(register_id != -1) {
-					cancel_event(register_id);
+					cancel_event(this, register_id);
 				}
 				register_event_by_clock(this, 0, 3 * CPU_CLOCKS, false, &register_id);
 			}
 		}
 		else {
 			if(register_id != -1) {
-				cancel_event(register_id);
+				cancel_event(this, register_id);
 				register_id = -1;
 			}
 		}
@@ -48,7 +48,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 void FLOPPY::event_callback(int event_id, int err)
 {
 	// WatchDog Timer
-emu->out_debug("WatchDog Timer\n");
+	emu->out_debug_log("WatchDog Timer\n");
 	d_pic->write_signal(SIG_I8259_IR6, 1, 1);
 	register_id = -1;
 }

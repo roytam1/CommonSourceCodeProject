@@ -53,7 +53,8 @@ public:
 	
 	// unique function
 #ifdef _X1TURBO_FEATURE
-	void set_context_pio(DEVICE* device) {
+	void set_context_pio(DEVICE* device)
+	{
 		d_pio = device;
 	}
 #endif

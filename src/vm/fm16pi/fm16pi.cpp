@@ -16,13 +16,17 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../io.h"
 #include "../mb8877.h"
 #include "../memory.h"
 #include "../msm58321.h"
 #include "../not.h"
 #include "../pcm1bit.h"
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
 
 #include "sub.h"
 
@@ -41,7 +45,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit = new I8253(this, emu);
 	pio = new I8255(this, emu);	// for system port
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
+	cpu = new I286(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	memory = new MEMORY(this, emu);
@@ -103,6 +107,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// memory bus
 	memset(ram, 0, sizeof(ram));
@@ -258,7 +265,7 @@ void VM::reset()
 
 void VM::notify_power_off()
 {
-//	emu->out_debug("--- POWER OFF ---\n");
+//	emu->out_debug_log("--- POWER OFF ---\n");
 	sub->notify_power_off();
 }
 
@@ -266,6 +273,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

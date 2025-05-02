@@ -9,6 +9,9 @@
 */
 
 #include "i8080.h"
+#ifdef USE_DEBUGGER
+#include "debugger.h"
+#endif
 
 #define AF	regs[0].w.l
 #define BC	regs[1].w.l
@@ -397,6 +400,16 @@ static const uint16 DAA[2048] = {
 
 // main
 
+void I8080::initialize()
+{
+#ifdef USE_DEBUGGER
+	d_mem_stored = d_mem;
+	d_io_stored = d_io;
+	d_debugger->set_context_mem(d_mem);
+	d_debugger->set_context_io(d_io);
+#endif
+}
+
 void I8080::reset()
 {
 	// reset
@@ -407,9 +420,6 @@ void I8080::reset()
 	HALT = BUSREQ = false;
 	
 	count = 0;
-#ifdef _CPU_DEBUG_LOG
-	debug_count = 0;
-#endif
 }
 
 void I8080::write_signal(int id, uint32 data, uint32 mask)
@@ -463,14 +473,6 @@ void I8080::write_signal(int id, uint32 data, uint32 mask)
 		SID = ((data & mask) != 0);
 	}
 #endif
-#ifdef _CPU_DEBUG_LOG
-	else if(id == SIG_CPU_DEBUG) {
-		if(debug_count == 0) {
-			emu->out_debug(_T("---- 8085 DASM --------------------------------------------------------------->\n"));
-		}
-		debug_count = 16;
-	}
-#endif
 }
 
 void I8080::set_intr_line(bool line, bool pending, uint32 bit)
@@ -487,6 +489,19 @@ int I8080::run(int clock)
 {
 	// return now if BUSREQ
 	if(BUSREQ) {
+#ifdef USE_DEBUGGER
+		if(d_debugger->now_debugging) {
+			if(d_debugger->now_suspended) {
+				emu->mute_sound();
+				while(d_debugger->now_debugging && d_debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(d_debugger->now_debugging && !d_debugger->now_going) {
+				d_debugger->now_suspended = true;
+			}
+		}
+#endif
 		count = 0;
 		return 1;
 	}
@@ -516,12 +531,79 @@ int I8080::run(int clock)
 
 void I8080::run_one_opecode()
 {
-	afterEI = false;
-	OP(FETCHOP());
-	if(afterEI) {
+	// rune one opecode
+#ifdef USE_DEBUGGER
+	bool now_debugging = d_debugger->now_debugging;
+	if(now_debugging) {
+		d_debugger->check_break_points(PC);
+		if(d_debugger->now_suspended) {
+			emu->mute_sound();
+			while(d_debugger->now_debugging && d_debugger->now_suspended) {
+				Sleep(10);
+			}
+		}
+		if(d_debugger->now_debugging) {
+			d_mem = d_io = d_debugger;
+		} else {
+			now_debugging = false;
+		}
+		
+		afterEI = false;
 		OP(FETCHOP());
-		d_pic->intr_ei();
+		
+		if(now_debugging) {
+			if(!d_debugger->now_going) {
+				d_debugger->now_suspended = true;
+			}
+			d_mem = d_mem_stored;
+			d_io = d_io_stored;
+		}
+	} else {
+#endif
+		afterEI = false;
+		OP(FETCHOP());
+#ifdef USE_DEBUGGER
 	}
+#endif
+	
+	// ei: run next opecode
+	if(afterEI) {
+#ifdef USE_DEBUGGER
+		bool now_debugging = d_debugger->now_debugging;
+		if(now_debugging) {
+			d_debugger->check_break_points(PC);
+			if(d_debugger->now_suspended) {
+				emu->mute_sound();
+				while(d_debugger->now_debugging && d_debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(d_debugger->now_debugging) {
+				d_mem = d_io = d_debugger;
+			} else {
+				now_debugging = false;
+			}
+			
+			OP(FETCHOP());
+			d_pic->intr_ei();
+			
+			if(now_debugging) {
+				if(!d_debugger->now_going) {
+					d_debugger->now_suspended = true;
+				}
+				d_mem = d_mem_stored;
+				d_io = d_io_stored;
+			}
+		} else {
+#endif
+			OP(FETCHOP());
+			d_pic->intr_ei();
+#ifdef USE_DEBUGGER
+		}
+#endif
+	}
+	
+	// check interrupt
 	if(IM & IM_REQ) {
 		if(IM & IM_NMI) {
 			INT(0x24);
@@ -615,15 +697,6 @@ void I8080::OP(uint8 code)
 	
 	prevPC = PC - 1;
 	count -= cc_op[code];
-	
-#ifdef _CPU_DEBUG_LOG
-	bool prevHALT = HALT;
-	uint16 _AF = AF, _BC = BC, _DE = DE, _HL = HL, _SP = SP;
-	debug_ops[0] = code;
-	debug_ops[1] = RM8(PC + 0);
-	debug_ops[2] = RM8(PC + 1);
-	debug_ops[3] = RM8(PC + 2);
-#endif
 	
 	switch(code) {
 	case 0x00: // NOP
@@ -1497,291 +1570,354 @@ void I8080::OP(uint8 code)
 	default:
 		__assume(0);
 	}
-#ifdef _CPU_DEBUG_LOG
-	if(debug_count) {
-		if(!(prevHALT && HALT)) {
-			emu->out_debug(_T("%4x\tAF=%4x BC=%4x DE=%4x HL=%4x SP=%4x [%c%c%c%c%c%c%c%c]\n"),
-				prevPC, _AF, _BC, _DE, _HL, _SP,
-				(_AF & CF) ? 'C' : ' ', (_AF & NF) ? 'N' : ' ', (_AF & VF) ? 'V' : ' ', (_AF & XF) ? 'X' : ' ',
-				(_AF & HF) ? 'H' : ' ', (_AF & YF) ? 'Y' : ' ', (_AF & ZF) ? 'Z' : ' ', (_AF & SF) ? 'S' : ' ');
-			DASM();
-			emu->out_debug(_T("%4x\t%s\n"), prevPC, debug_dasm);
-			if(--debug_count == 0) {
-				emu->out_debug(_T("<--------------------------------------------------------------- 8085 DASM ----\n"));
-			}
-		}
-	}
-#endif
 }
 
-#ifdef _CPU_DEBUG_LOG
-#define OPE(A)	debug_ops[(A) - prevPC]
-#define ARG(A)	debug_ops[(A) - prevPC]
-#define ARGW(A)	(debug_ops[(A) - prevPC] | (debug_ops[(A) + 1 - prevPC] << 8))
-
-void I8080::DASM()
+#ifdef USE_DEBUGGER
+void I8080::debug_write_data8(uint32 addr, uint32 data)
 {
-	uint8 op;
-	unsigned PC = prevPC;
-	
-	switch(op = OPE(PC++))
-	{
-		case 0x00: _stprintf(debug_dasm, _T("nop"));                             break;
-		case 0x01: _stprintf(debug_dasm, _T("lxi  b,$%04x"), ARGW(PC)); PC+=2;   break;
-		case 0x02: _stprintf(debug_dasm, _T("stax b"));                          break;
-		case 0x03: _stprintf(debug_dasm, _T("inx  b"));                          break;
-		case 0x04: _stprintf(debug_dasm, _T("inr  b"));                          break;
-		case 0x05: _stprintf(debug_dasm, _T("dcr  b"));                          break;
-		case 0x06: _stprintf(debug_dasm, _T("mvi  b,$%02x"), ARG(PC)); PC++;     break;
-		case 0x07: _stprintf(debug_dasm, _T("rlc"));                             break;
-		case 0x08: _stprintf(debug_dasm, _T("dsub (*)"));                        break;
-		case 0x09: _stprintf(debug_dasm, _T("dad  b"));                          break;
-		case 0x0a: _stprintf(debug_dasm, _T("ldax b"));                          break;
-		case 0x0b: _stprintf(debug_dasm, _T("dcx  b"));                          break;
-		case 0x0c: _stprintf(debug_dasm, _T("inr  c"));                          break;
-		case 0x0d: _stprintf(debug_dasm, _T("dcr  c"));                          break;
-		case 0x0e: _stprintf(debug_dasm, _T("mvi  c,$%02x"), ARG(PC)); PC++;     break;
-		case 0x0f: _stprintf(debug_dasm, _T("rrc"));                             break;
-		case 0x10: _stprintf(debug_dasm, _T("asrh (*)"));                        break;
-		case 0x11: _stprintf(debug_dasm, _T("lxi  d,$%04x"), ARGW(PC)); PC+=2;   break;
-		case 0x12: _stprintf(debug_dasm, _T("stax d"));                          break;
-		case 0x13: _stprintf(debug_dasm, _T("inx  d"));                          break;
-		case 0x14: _stprintf(debug_dasm, _T("inr  d"));                          break;
-		case 0x15: _stprintf(debug_dasm, _T("dcr  d"));                          break;
-		case 0x16: _stprintf(debug_dasm, _T("mvi  d,$%02x"), ARG(PC)); PC++;     break;
-		case 0x17: _stprintf(debug_dasm, _T("ral"));                             break;
-		case 0x18: _stprintf(debug_dasm, _T("rlde (*)"));                        break;
-		case 0x19: _stprintf(debug_dasm, _T("dad  d"));                          break;
-		case 0x1a: _stprintf(debug_dasm, _T("ldax d"));                          break;
-		case 0x1b: _stprintf(debug_dasm, _T("dcx  d"));                          break;
-		case 0x1c: _stprintf(debug_dasm, _T("inr  e"));                          break;
-		case 0x1d: _stprintf(debug_dasm, _T("dcr  e"));                          break;
-		case 0x1e: _stprintf(debug_dasm, _T("mvi  e,$%02x"), ARG(PC)); PC++;     break;
-		case 0x1f: _stprintf(debug_dasm, _T("rar"));                             break;
-		case 0x20: _stprintf(debug_dasm, _T("rim"));                             break;
-		case 0x21: _stprintf(debug_dasm, _T("lxi  h,$%04x"), ARGW(PC)); PC+=2;   break;
-		case 0x22: _stprintf(debug_dasm, _T("shld $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0x23: _stprintf(debug_dasm, _T("inx  h"));                          break;
-		case 0x24: _stprintf(debug_dasm, _T("inr  h"));                          break;
-		case 0x25: _stprintf(debug_dasm, _T("dcr  h"));                          break;
-		case 0x26: _stprintf(debug_dasm, _T("mvi  h,$%02x"), ARG(PC)); PC++;     break;
-		case 0x27: _stprintf(debug_dasm, _T("daa"));                             break;
-		case 0x28: _stprintf(debug_dasm, _T("ldeh $%02x (*)"), ARG(PC)); PC++;   break;
-		case 0x29: _stprintf(debug_dasm, _T("dad  h"));                          break;
-		case 0x2a: _stprintf(debug_dasm, _T("lhld $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0x2b: _stprintf(debug_dasm, _T("dcx  h"));                          break;
-		case 0x2c: _stprintf(debug_dasm, _T("inr  l"));                          break;
-		case 0x2d: _stprintf(debug_dasm, _T("dcr  l"));                          break;
-		case 0x2e: _stprintf(debug_dasm, _T("mvi  l,$%02x"), ARG(PC)); PC++;     break;
-		case 0x2f: _stprintf(debug_dasm, _T("cma"));                             break;
-		case 0x30: _stprintf(debug_dasm, _T("sim"));                             break;
-		case 0x31: _stprintf(debug_dasm, _T("lxi  sp,$%04x"), ARGW(PC)); PC+=2;  break;
-		case 0x32: _stprintf(debug_dasm, _T("stax $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0x33: _stprintf(debug_dasm, _T("inx  sp"));                         break;
-		case 0x34: _stprintf(debug_dasm, _T("inr  m"));                          break;
-		case 0x35: _stprintf(debug_dasm, _T("dcr  m"));                          break;
-		case 0x36: _stprintf(debug_dasm, _T("mvi  m,$%02x"), ARG(PC)); PC++;     break;
-		case 0x37: _stprintf(debug_dasm, _T("stc"));                             break;
-		case 0x38: _stprintf(debug_dasm, _T("ldes $%02x"), ARG(PC)); PC++;       break;
-		case 0x39: _stprintf(debug_dasm, _T("dad sp"));                          break;
-		case 0x3a: _stprintf(debug_dasm, _T("ldax $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0x3b: _stprintf(debug_dasm, _T("dcx  sp"));                         break;
-		case 0x3c: _stprintf(debug_dasm, _T("inr  a"));                          break;
-		case 0x3d: _stprintf(debug_dasm, _T("dcr  a"));                          break;
-		case 0x3e: _stprintf(debug_dasm, _T("mvi  a,$%02x"), ARG(PC)); PC++;     break;
-		case 0x3f: _stprintf(debug_dasm, _T("cmf"));                             break;
-		case 0x40: _stprintf(debug_dasm, _T("mov  b,b"));                        break;
-		case 0x41: _stprintf(debug_dasm, _T("mov  b,c"));                        break;
-		case 0x42: _stprintf(debug_dasm, _T("mov  b,d"));                        break;
-		case 0x43: _stprintf(debug_dasm, _T("mov  b,e"));                        break;
-		case 0x44: _stprintf(debug_dasm, _T("mov  b,h"));                        break;
-		case 0x45: _stprintf(debug_dasm, _T("mov  b,l"));                        break;
-		case 0x46: _stprintf(debug_dasm, _T("mov  b,m"));                        break;
-		case 0x47: _stprintf(debug_dasm, _T("mov  b,a"));                        break;
-		case 0x48: _stprintf(debug_dasm, _T("mov  c,b"));                        break;
-		case 0x49: _stprintf(debug_dasm, _T("mov  c,c"));                        break;
-		case 0x4a: _stprintf(debug_dasm, _T("mov  c,d"));                        break;
-		case 0x4b: _stprintf(debug_dasm, _T("mov  c,e"));                        break;
-		case 0x4c: _stprintf(debug_dasm, _T("mov  c,h"));                        break;
-		case 0x4d: _stprintf(debug_dasm, _T("mov  c,l"));                        break;
-		case 0x4e: _stprintf(debug_dasm, _T("mov  c,m"));                        break;
-		case 0x4f: _stprintf(debug_dasm, _T("mov  c,a"));                        break;
-		case 0x50: _stprintf(debug_dasm, _T("mov  d,b"));                        break;
-		case 0x51: _stprintf(debug_dasm, _T("mov  d,c"));                        break;
-		case 0x52: _stprintf(debug_dasm, _T("mov  d,d"));                        break;
-		case 0x53: _stprintf(debug_dasm, _T("mov  d,e"));                        break;
-		case 0x54: _stprintf(debug_dasm, _T("mov  d,h"));                        break;
-		case 0x55: _stprintf(debug_dasm, _T("mov  d,l"));                        break;
-		case 0x56: _stprintf(debug_dasm, _T("mov  d,m"));                        break;
-		case 0x57: _stprintf(debug_dasm, _T("mov  d,a"));                        break;
-		case 0x58: _stprintf(debug_dasm, _T("mov  e,b"));                        break;
-		case 0x59: _stprintf(debug_dasm, _T("mov  e,c"));                        break;
-		case 0x5a: _stprintf(debug_dasm, _T("mov  e,d"));                        break;
-		case 0x5b: _stprintf(debug_dasm, _T("mov  e,e"));                        break;
-		case 0x5c: _stprintf(debug_dasm, _T("mov  e,h"));                        break;
-		case 0x5d: _stprintf(debug_dasm, _T("mov  e,l"));                        break;
-		case 0x5e: _stprintf(debug_dasm, _T("mov  e,m"));                        break;
-		case 0x5f: _stprintf(debug_dasm, _T("mov  e,a"));                        break;
-		case 0x60: _stprintf(debug_dasm, _T("mov  h,b"));                        break;
-		case 0x61: _stprintf(debug_dasm, _T("mov  h,c"));                        break;
-		case 0x62: _stprintf(debug_dasm, _T("mov  h,d"));                        break;
-		case 0x63: _stprintf(debug_dasm, _T("mov  h,e"));                        break;
-		case 0x64: _stprintf(debug_dasm, _T("mov  h,h"));                        break;
-		case 0x65: _stprintf(debug_dasm, _T("mov  h,l"));                        break;
-		case 0x66: _stprintf(debug_dasm, _T("mov  h,m"));                        break;
-		case 0x67: _stprintf(debug_dasm, _T("mov  h,a"));                        break;
-		case 0x68: _stprintf(debug_dasm, _T("mov  l,b"));                        break;
-		case 0x69: _stprintf(debug_dasm, _T("mov  l,c"));                        break;
-		case 0x6a: _stprintf(debug_dasm, _T("mov  l,d"));                        break;
-		case 0x6b: _stprintf(debug_dasm, _T("mov  l,e"));                        break;
-		case 0x6c: _stprintf(debug_dasm, _T("mov  l,h"));                        break;
-		case 0x6d: _stprintf(debug_dasm, _T("mov  l,l"));                        break;
-		case 0x6e: _stprintf(debug_dasm, _T("mov  l,m"));                        break;
-		case 0x6f: _stprintf(debug_dasm, _T("mov  l,a"));                        break;
-		case 0x70: _stprintf(debug_dasm, _T("mov  m,b"));                        break;
-		case 0x71: _stprintf(debug_dasm, _T("mov  m,c"));                        break;
-		case 0x72: _stprintf(debug_dasm, _T("mov  m,d"));                        break;
-		case 0x73: _stprintf(debug_dasm, _T("mov  m,e"));                        break;
-		case 0x74: _stprintf(debug_dasm, _T("mov  m,h"));                        break;
-		case 0x75: _stprintf(debug_dasm, _T("mov  m,l"));                        break;
-		case 0x76: _stprintf(debug_dasm, _T("hlt"));                             break;
-		case 0x77: _stprintf(debug_dasm, _T("mov  m,a"));                        break;
-		case 0x78: _stprintf(debug_dasm, _T("mov  a,b"));                        break;
-		case 0x79: _stprintf(debug_dasm, _T("mov  a,c"));                        break;
-		case 0x7a: _stprintf(debug_dasm, _T("mov  a,d"));                        break;
-		case 0x7b: _stprintf(debug_dasm, _T("mov  a,e"));                        break;
-		case 0x7c: _stprintf(debug_dasm, _T("mov  a,h"));                        break;
-		case 0x7d: _stprintf(debug_dasm, _T("mov  a,l"));                        break;
-		case 0x7e: _stprintf(debug_dasm, _T("mov  a,m"));                        break;
-		case 0x7f: _stprintf(debug_dasm, _T("mov  a,a"));                        break;
-		case 0x80: _stprintf(debug_dasm, _T("add  b"));                          break;
-		case 0x81: _stprintf(debug_dasm, _T("add  c"));                          break;
-		case 0x82: _stprintf(debug_dasm, _T("add  d"));                          break;
-		case 0x83: _stprintf(debug_dasm, _T("add  e"));                          break;
-		case 0x84: _stprintf(debug_dasm, _T("add  h"));                          break;
-		case 0x85: _stprintf(debug_dasm, _T("add  l"));                          break;
-		case 0x86: _stprintf(debug_dasm, _T("add  m"));                          break;
-		case 0x87: _stprintf(debug_dasm, _T("add  a"));                          break;
-		case 0x88: _stprintf(debug_dasm, _T("adc  b"));                          break;
-		case 0x89: _stprintf(debug_dasm, _T("adc  c"));                          break;
-		case 0x8a: _stprintf(debug_dasm, _T("adc  d"));                          break;
-		case 0x8b: _stprintf(debug_dasm, _T("adc  e"));                          break;
-		case 0x8c: _stprintf(debug_dasm, _T("adc  h"));                          break;
-		case 0x8d: _stprintf(debug_dasm, _T("adc  l"));                          break;
-		case 0x8e: _stprintf(debug_dasm, _T("adc  m"));                          break;
-		case 0x8f: _stprintf(debug_dasm, _T("adc  a"));                          break;
-		case 0x90: _stprintf(debug_dasm, _T("sub  b"));                          break;
-		case 0x91: _stprintf(debug_dasm, _T("sub  c"));                          break;
-		case 0x92: _stprintf(debug_dasm, _T("sub  d"));                          break;
-		case 0x93: _stprintf(debug_dasm, _T("sub  e"));                          break;
-		case 0x94: _stprintf(debug_dasm, _T("sub  h"));                          break;
-		case 0x95: _stprintf(debug_dasm, _T("sub  l"));                          break;
-		case 0x96: _stprintf(debug_dasm, _T("sub  m"));                          break;
-		case 0x97: _stprintf(debug_dasm, _T("sub  a"));                          break;
-		case 0x98: _stprintf(debug_dasm, _T("sbb  b"));                          break;
-		case 0x99: _stprintf(debug_dasm, _T("sbb  c"));                          break;
-		case 0x9a: _stprintf(debug_dasm, _T("sbb  d"));                          break;
-		case 0x9b: _stprintf(debug_dasm, _T("sbb  e"));                          break;
-		case 0x9c: _stprintf(debug_dasm, _T("sbb  h"));                          break;
-		case 0x9d: _stprintf(debug_dasm, _T("sbb  l"));                          break;
-		case 0x9e: _stprintf(debug_dasm, _T("sbb  m"));                          break;
-		case 0x9f: _stprintf(debug_dasm, _T("sbb  a"));                          break;
-		case 0xa0: _stprintf(debug_dasm, _T("ana  b"));                          break;
-		case 0xa1: _stprintf(debug_dasm, _T("ana  c"));                          break;
-		case 0xa2: _stprintf(debug_dasm, _T("ana  d"));                          break;
-		case 0xa3: _stprintf(debug_dasm, _T("ana  e"));                          break;
-		case 0xa4: _stprintf(debug_dasm, _T("ana  h"));                          break;
-		case 0xa5: _stprintf(debug_dasm, _T("ana  l"));                          break;
-		case 0xa6: _stprintf(debug_dasm, _T("ana  m"));                          break;
-		case 0xa7: _stprintf(debug_dasm, _T("ana  a"));                          break;
-		case 0xa8: _stprintf(debug_dasm, _T("xra  b"));                          break;
-		case 0xa9: _stprintf(debug_dasm, _T("xra  c"));                          break;
-		case 0xaa: _stprintf(debug_dasm, _T("xra  d"));                          break;
-		case 0xab: _stprintf(debug_dasm, _T("xra  e"));                          break;
-		case 0xac: _stprintf(debug_dasm, _T("xra  h"));                          break;
-		case 0xad: _stprintf(debug_dasm, _T("xra  l"));                          break;
-		case 0xae: _stprintf(debug_dasm, _T("xra  m"));                          break;
-		case 0xaf: _stprintf(debug_dasm, _T("xra  a"));                          break;
-		case 0xb0: _stprintf(debug_dasm, _T("ora  b"));                          break;
-		case 0xb1: _stprintf(debug_dasm, _T("ora  c"));                          break;
-		case 0xb2: _stprintf(debug_dasm, _T("ora  d"));                          break;
-		case 0xb3: _stprintf(debug_dasm, _T("ora  e"));                          break;
-		case 0xb4: _stprintf(debug_dasm, _T("ora  h"));                          break;
-		case 0xb5: _stprintf(debug_dasm, _T("ora  l"));                          break;
-		case 0xb6: _stprintf(debug_dasm, _T("ora  m"));                          break;
-		case 0xb7: _stprintf(debug_dasm, _T("ora  a"));                          break;
-		case 0xb8: _stprintf(debug_dasm, _T("cmp  b"));                          break;
-		case 0xb9: _stprintf(debug_dasm, _T("cmp  c"));                          break;
-		case 0xba: _stprintf(debug_dasm, _T("cmp  d"));                          break;
-		case 0xbb: _stprintf(debug_dasm, _T("cmp  e"));                          break;
-		case 0xbc: _stprintf(debug_dasm, _T("cmp  h"));                          break;
-		case 0xbd: _stprintf(debug_dasm, _T("cmp  l"));                          break;
-		case 0xbe: _stprintf(debug_dasm, _T("cmp  m"));                          break;
-		case 0xbf: _stprintf(debug_dasm, _T("cmp  a"));                          break;
-		case 0xc0: _stprintf(debug_dasm, _T("rnz"));                             break;
-		case 0xc1: _stprintf(debug_dasm, _T("pop  b"));                          break;
-		case 0xc2: _stprintf(debug_dasm, _T("jnz  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xc3: _stprintf(debug_dasm, _T("jmp  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xc4: _stprintf(debug_dasm, _T("cnz  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xc5: _stprintf(debug_dasm, _T("push b"));                          break;
-		case 0xc6: _stprintf(debug_dasm, _T("adi  $%02x"), ARG(PC)); PC++;       break;
-		case 0xc7: _stprintf(debug_dasm, _T("rst  0"));                          break;
-		case 0xc8: _stprintf(debug_dasm, _T("rz"));                              break;
-		case 0xc9: _stprintf(debug_dasm, _T("ret"));                             break;
-		case 0xca: _stprintf(debug_dasm, _T("jz   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xcb: _stprintf(debug_dasm, _T("rstv 8 (*)"));                      break;
-		case 0xcc: _stprintf(debug_dasm, _T("cz   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xcd: _stprintf(debug_dasm, _T("call $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xce: _stprintf(debug_dasm, _T("aci  $%02x"), ARG(PC)); PC++;       break;
-		case 0xcf: _stprintf(debug_dasm, _T("rst  1"));                          break;
-		case 0xd0: _stprintf(debug_dasm, _T("rnc"));                             break;
-		case 0xd1: _stprintf(debug_dasm, _T("pop  d"));                          break;
-		case 0xd2: _stprintf(debug_dasm, _T("jnc  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xd3: _stprintf(debug_dasm, _T("out  $%02x"), ARG(PC)); PC++;       break;
-		case 0xd4: _stprintf(debug_dasm, _T("cnc  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xd5: _stprintf(debug_dasm, _T("push d"));                          break;
-		case 0xd6: _stprintf(debug_dasm, _T("sui  $%02x"), ARG(PC)); PC++;       break;
-		case 0xd7: _stprintf(debug_dasm, _T("rst  2"));                          break;
-		case 0xd8: _stprintf(debug_dasm, _T("rc"));                              break;
-		case 0xd9: _stprintf(debug_dasm, _T("shlx d (*)"));                      break;
-		case 0xda: _stprintf(debug_dasm, _T("jc   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xdb: _stprintf(debug_dasm, _T("in   $%02x"), ARG(PC)); PC++;       break;
-		case 0xdc: _stprintf(debug_dasm, _T("cc   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xdd: _stprintf(debug_dasm, _T("jnx  $%04x (*)"), ARGW(PC)); PC+=2; break;
-		case 0xde: _stprintf(debug_dasm, _T("sbi  $%02x"), ARG(PC)); PC++;       break;
-		case 0xdf: _stprintf(debug_dasm, _T("rst  3"));                          break;
-		case 0xe0: _stprintf(debug_dasm, _T("rpo"));                             break;
-		case 0xe1: _stprintf(debug_dasm, _T("pop  h"));                          break;
-		case 0xe2: _stprintf(debug_dasm, _T("jpo  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xe3: _stprintf(debug_dasm, _T("xthl"));                            break;
-		case 0xe4: _stprintf(debug_dasm, _T("cpo  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xe5: _stprintf(debug_dasm, _T("push h"));                          break;
-		case 0xe6: _stprintf(debug_dasm, _T("ani  $%02x"), ARG(PC)); PC++;       break;
-		case 0xe7: _stprintf(debug_dasm, _T("rst  4"));                          break;
-		case 0xe8: _stprintf(debug_dasm, _T("rpe"));                             break;
-		case 0xe9: _stprintf(debug_dasm, _T("PChl"));                            break;
-		case 0xea: _stprintf(debug_dasm, _T("jpe  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xeb: _stprintf(debug_dasm, _T("xchg"));                            break;
-		case 0xec: _stprintf(debug_dasm, _T("cpe  $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xed: _stprintf(debug_dasm, _T("lhlx d (*)"));                      break;
-		case 0xee: _stprintf(debug_dasm, _T("xri  $%02x"), ARG(PC)); PC++;       break;
-		case 0xef: _stprintf(debug_dasm, _T("rst  5"));                          break;
-		case 0xf0: _stprintf(debug_dasm, _T("rp"));                              break;
-		case 0xf1: _stprintf(debug_dasm, _T("pop  a"));                          break;
-		case 0xf2: _stprintf(debug_dasm, _T("jp   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xf3: _stprintf(debug_dasm, _T("di"));                              break;
-		case 0xf4: _stprintf(debug_dasm, _T("cp   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xf5: _stprintf(debug_dasm, _T("push a"));                          break;
-		case 0xf6: _stprintf(debug_dasm, _T("ori  $%02x"), ARG(PC)); PC++;       break;
-		case 0xf7: _stprintf(debug_dasm, _T("rst  6"));                          break;
-		case 0xf8: _stprintf(debug_dasm, _T("rm"));                              break;
-		case 0xf9: _stprintf(debug_dasm, _T("sphl"));                            break;
-		case 0xfa: _stprintf(debug_dasm, _T("jm   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xfb: _stprintf(debug_dasm, _T("ei"));                              break;
-		case 0xfc: _stprintf(debug_dasm, _T("cm   $%04x"), ARGW(PC)); PC+=2;     break;
-		case 0xfd: _stprintf(debug_dasm, _T("jx   $%04x (*)"), ARGW(PC)); PC+=2; break;
-		case 0xfe: _stprintf(debug_dasm, _T("cpi  $%02x"), ARG(PC)); PC++;       break;
-		case 0xff: _stprintf(debug_dasm, _T("rst  7"));                          break;
+	int wait;
+	d_mem_stored->write_data8w(addr, data, &wait);
+}
+
+uint32 I8080::debug_read_data8(uint32 addr)
+{
+	int wait;
+	return d_mem_stored->read_data8w(addr, &wait);
+}
+
+void I8080::debug_write_io8(uint32 addr, uint32 data)
+{
+	int wait;
+	d_io_stored->write_io8w(addr, data, &wait);
+}
+
+uint32 I8080::debug_read_io8(uint32 addr) {
+	int wait;
+	return d_io_stored->read_io8w(addr, &wait);
+}
+
+bool I8080::debug_write_reg(_TCHAR *reg, uint32 data)
+{
+	if(_tcsicmp(reg, _T("PC")) == 0) {
+		PC = data;
+	} else if(_tcsicmp(reg, _T("SP")) == 0) {
+		SP = data;
+	} else if(_tcsicmp(reg, _T("AF")) == 0) {
+		AF = data;
+	} else if(_tcsicmp(reg, _T("BC")) == 0) {
+		BC = data;
+	} else if(_tcsicmp(reg, _T("DE")) == 0) {
+		DE = data;
+	} else if(_tcsicmp(reg, _T("HL")) == 0) {
+		HL = data;
+	} else if(_tcsicmp(reg, _T("A")) == 0) {
+		_A = data;
+	} else if(_tcsicmp(reg, _T("F")) == 0) {
+		_F = data;
+	} else if(_tcsicmp(reg, _T("B")) == 0) {
+		_B = data;
+	} else if(_tcsicmp(reg, _T("C")) == 0) {
+		_C = data;
+	} else if(_tcsicmp(reg, _T("D")) == 0) {
+		_D = data;
+	} else if(_tcsicmp(reg, _T("E")) == 0) {
+		_E = data;
+	} else if(_tcsicmp(reg, _T("H")) == 0) {
+		_H = data;
+	} else if(_tcsicmp(reg, _T("L")) == 0) {
+		_L = data;
+	} else {
+		return false;
 	}
+	return true;
+}
+
+void I8080::debug_regs_info(_TCHAR *buffer)
+{
+/*
+F = [--------]  A = 00  BC = 0000  DE = 0000  HL = 0000  SP = 0000  PC = 0000
+IM= [--------]         (BC)= 0000 (DE)= 0000 (HL)= 0000 (SP)= 0000
+*/
+	int wait;
+	_stprintf(buffer, _T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  SP = %04X  PC = %04X\nIM= [%c%c%c%c%c%c%c%c]         (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X"),
+	(_F & CF) ? _T('C') : _T('-'), (_F & NF) ? _T('N') : _T('-'), (_F & VF) ? _T('V') : _T('-'), (_F & XF) ? _T('X') : _T('-'),
+	(_F & HF) ? _T('H') : _T('-'), (_F & YF) ? _T('Y') : _T('-'), (_F & ZF) ? _T('Z') : _T('-'), (_F & SF) ? _T('S') : _T('-'),
+	_A, BC, DE, HL, SP, PC,
+	(IM & 0x80) ? _T('S') : _T('-'), (IM & 0x40) ? _T('7') : _T('-'), (IM & 0x20) ? _T('6') : _T('-'), (IM & 0x10) ? _T('5') : _T('-'),
+	(IM & 0x08) ? _T('E') : _T('-'), (IM & 0x04) ? _T('7') : _T('-'), (IM & 0x02) ? _T('6') : _T('-'), (IM & 0x01) ? _T('5') : _T('-'),
+	d_mem_stored->read_data16w(BC, &wait), d_mem_stored->read_data16w(DE, &wait), d_mem_stored->read_data16w(HL, &wait), d_mem_stored->read_data16w(SP, &wait));
+}
+
+// disassembler
+
+int I8080::debug_dasm(uint32 pc, _TCHAR *buffer)
+{
+	uint8 ops[4];
+	int ptr = 0;
+	
+	for(int i = 0; i < 4; i++) {
+		int wait;
+		ops[i] = d_mem_stored->read_data8w(pc + i, &wait);
+	}
+	switch(ops[ptr++])
+	{
+		case 0x00: _stprintf(buffer, _T("nop")); break;
+		case 0x01: _stprintf(buffer, _T("lxi  b,$%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x02: _stprintf(buffer, _T("stax b")); break;
+		case 0x03: _stprintf(buffer, _T("inx  b")); break;
+		case 0x04: _stprintf(buffer, _T("inr  b")); break;
+		case 0x05: _stprintf(buffer, _T("dcr  b")); break;
+		case 0x06: _stprintf(buffer, _T("mvi  b,$%02x"), ops[ptr++]); break;
+		case 0x07: _stprintf(buffer, _T("rlc")); break;
+		case 0x08: _stprintf(buffer, _T("dsub (*)")); break;
+		case 0x09: _stprintf(buffer, _T("dad  b")); break;
+		case 0x0a: _stprintf(buffer, _T("ldax b")); break;
+		case 0x0b: _stprintf(buffer, _T("dcx  b")); break;
+		case 0x0c: _stprintf(buffer, _T("inr  c")); break;
+		case 0x0d: _stprintf(buffer, _T("dcr  c")); break;
+		case 0x0e: _stprintf(buffer, _T("mvi  c,$%02x"), ops[ptr++]); break;
+		case 0x0f: _stprintf(buffer, _T("rrc")); break;
+		case 0x10: _stprintf(buffer, _T("asrh (*)")); break;
+		case 0x11: _stprintf(buffer, _T("lxi  d,$%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x12: _stprintf(buffer, _T("stax d")); break;
+		case 0x13: _stprintf(buffer, _T("inx  d")); break;
+		case 0x14: _stprintf(buffer, _T("inr  d")); break;
+		case 0x15: _stprintf(buffer, _T("dcr  d")); break;
+		case 0x16: _stprintf(buffer, _T("mvi  d,$%02x"), ops[ptr++]); break;
+		case 0x17: _stprintf(buffer, _T("ral")); break;
+		case 0x18: _stprintf(buffer, _T("rlde (*)")); break;
+		case 0x19: _stprintf(buffer, _T("dad  d")); break;
+		case 0x1a: _stprintf(buffer, _T("ldax d")); break;
+		case 0x1b: _stprintf(buffer, _T("dcx  d")); break;
+		case 0x1c: _stprintf(buffer, _T("inr  e")); break;
+		case 0x1d: _stprintf(buffer, _T("dcr  e")); break;
+		case 0x1e: _stprintf(buffer, _T("mvi  e,$%02x"), ops[ptr++]); break;
+		case 0x1f: _stprintf(buffer, _T("rar")); break;
+		case 0x20: _stprintf(buffer, _T("rim")); break;
+		case 0x21: _stprintf(buffer, _T("lxi  h,$%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x22: _stprintf(buffer, _T("shld $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x23: _stprintf(buffer, _T("inx  h")); break;
+		case 0x24: _stprintf(buffer, _T("inr  h")); break;
+		case 0x25: _stprintf(buffer, _T("dcr  h")); break;
+		case 0x26: _stprintf(buffer, _T("mvi  h,$%02x"), ops[ptr++]); break;
+		case 0x27: _stprintf(buffer, _T("daa")); break;
+		case 0x28: _stprintf(buffer, _T("ldeh $%02x (*)"), ops[ptr++]); break;
+		case 0x29: _stprintf(buffer, _T("dad  h")); break;
+		case 0x2a: _stprintf(buffer, _T("lhld $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x2b: _stprintf(buffer, _T("dcx  h")); break;
+		case 0x2c: _stprintf(buffer, _T("inr  l")); break;
+		case 0x2d: _stprintf(buffer, _T("dcr  l")); break;
+		case 0x2e: _stprintf(buffer, _T("mvi  l,$%02x"), ops[ptr++]); break;
+		case 0x2f: _stprintf(buffer, _T("cma")); break;
+		case 0x30: _stprintf(buffer, _T("sim")); break;
+		case 0x31: _stprintf(buffer, _T("lxi  sp,$%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x32: _stprintf(buffer, _T("stax $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x33: _stprintf(buffer, _T("inx  sp")); break;
+		case 0x34: _stprintf(buffer, _T("inr  m")); break;
+		case 0x35: _stprintf(buffer, _T("dcr  m")); break;
+		case 0x36: _stprintf(buffer, _T("mvi  m,$%02x"), ops[ptr++]); break;
+		case 0x37: _stprintf(buffer, _T("stc")); break;
+		case 0x38: _stprintf(buffer, _T("ldes $%02x"), ops[ptr++]); break;
+		case 0x39: _stprintf(buffer, _T("dad sp")); break;
+		case 0x3a: _stprintf(buffer, _T("ldax $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0x3b: _stprintf(buffer, _T("dcx  sp")); break;
+		case 0x3c: _stprintf(buffer, _T("inr  a")); break;
+		case 0x3d: _stprintf(buffer, _T("dcr  a")); break;
+		case 0x3e: _stprintf(buffer, _T("mvi  a,$%02x"), ops[ptr++]); break;
+		case 0x3f: _stprintf(buffer, _T("cmf")); break;
+		case 0x40: _stprintf(buffer, _T("mov  b,b")); break;
+		case 0x41: _stprintf(buffer, _T("mov  b,c")); break;
+		case 0x42: _stprintf(buffer, _T("mov  b,d")); break;
+		case 0x43: _stprintf(buffer, _T("mov  b,e")); break;
+		case 0x44: _stprintf(buffer, _T("mov  b,h")); break;
+		case 0x45: _stprintf(buffer, _T("mov  b,l")); break;
+		case 0x46: _stprintf(buffer, _T("mov  b,m")); break;
+		case 0x47: _stprintf(buffer, _T("mov  b,a")); break;
+		case 0x48: _stprintf(buffer, _T("mov  c,b")); break;
+		case 0x49: _stprintf(buffer, _T("mov  c,c")); break;
+		case 0x4a: _stprintf(buffer, _T("mov  c,d")); break;
+		case 0x4b: _stprintf(buffer, _T("mov  c,e")); break;
+		case 0x4c: _stprintf(buffer, _T("mov  c,h")); break;
+		case 0x4d: _stprintf(buffer, _T("mov  c,l")); break;
+		case 0x4e: _stprintf(buffer, _T("mov  c,m")); break;
+		case 0x4f: _stprintf(buffer, _T("mov  c,a")); break;
+		case 0x50: _stprintf(buffer, _T("mov  d,b")); break;
+		case 0x51: _stprintf(buffer, _T("mov  d,c")); break;
+		case 0x52: _stprintf(buffer, _T("mov  d,d")); break;
+		case 0x53: _stprintf(buffer, _T("mov  d,e")); break;
+		case 0x54: _stprintf(buffer, _T("mov  d,h")); break;
+		case 0x55: _stprintf(buffer, _T("mov  d,l")); break;
+		case 0x56: _stprintf(buffer, _T("mov  d,m")); break;
+		case 0x57: _stprintf(buffer, _T("mov  d,a")); break;
+		case 0x58: _stprintf(buffer, _T("mov  e,b")); break;
+		case 0x59: _stprintf(buffer, _T("mov  e,c")); break;
+		case 0x5a: _stprintf(buffer, _T("mov  e,d")); break;
+		case 0x5b: _stprintf(buffer, _T("mov  e,e")); break;
+		case 0x5c: _stprintf(buffer, _T("mov  e,h")); break;
+		case 0x5d: _stprintf(buffer, _T("mov  e,l")); break;
+		case 0x5e: _stprintf(buffer, _T("mov  e,m")); break;
+		case 0x5f: _stprintf(buffer, _T("mov  e,a")); break;
+		case 0x60: _stprintf(buffer, _T("mov  h,b")); break;
+		case 0x61: _stprintf(buffer, _T("mov  h,c")); break;
+		case 0x62: _stprintf(buffer, _T("mov  h,d")); break;
+		case 0x63: _stprintf(buffer, _T("mov  h,e")); break;
+		case 0x64: _stprintf(buffer, _T("mov  h,h")); break;
+		case 0x65: _stprintf(buffer, _T("mov  h,l")); break;
+		case 0x66: _stprintf(buffer, _T("mov  h,m")); break;
+		case 0x67: _stprintf(buffer, _T("mov  h,a")); break;
+		case 0x68: _stprintf(buffer, _T("mov  l,b")); break;
+		case 0x69: _stprintf(buffer, _T("mov  l,c")); break;
+		case 0x6a: _stprintf(buffer, _T("mov  l,d")); break;
+		case 0x6b: _stprintf(buffer, _T("mov  l,e")); break;
+		case 0x6c: _stprintf(buffer, _T("mov  l,h")); break;
+		case 0x6d: _stprintf(buffer, _T("mov  l,l")); break;
+		case 0x6e: _stprintf(buffer, _T("mov  l,m")); break;
+		case 0x6f: _stprintf(buffer, _T("mov  l,a")); break;
+		case 0x70: _stprintf(buffer, _T("mov  m,b")); break;
+		case 0x71: _stprintf(buffer, _T("mov  m,c")); break;
+		case 0x72: _stprintf(buffer, _T("mov  m,d")); break;
+		case 0x73: _stprintf(buffer, _T("mov  m,e")); break;
+		case 0x74: _stprintf(buffer, _T("mov  m,h")); break;
+		case 0x75: _stprintf(buffer, _T("mov  m,l")); break;
+		case 0x76: _stprintf(buffer, _T("hlt")); break;
+		case 0x77: _stprintf(buffer, _T("mov  m,a")); break;
+		case 0x78: _stprintf(buffer, _T("mov  a,b")); break;
+		case 0x79: _stprintf(buffer, _T("mov  a,c")); break;
+		case 0x7a: _stprintf(buffer, _T("mov  a,d")); break;
+		case 0x7b: _stprintf(buffer, _T("mov  a,e")); break;
+		case 0x7c: _stprintf(buffer, _T("mov  a,h")); break;
+		case 0x7d: _stprintf(buffer, _T("mov  a,l")); break;
+		case 0x7e: _stprintf(buffer, _T("mov  a,m")); break;
+		case 0x7f: _stprintf(buffer, _T("mov  a,a")); break;
+		case 0x80: _stprintf(buffer, _T("add  b")); break;
+		case 0x81: _stprintf(buffer, _T("add  c")); break;
+		case 0x82: _stprintf(buffer, _T("add  d")); break;
+		case 0x83: _stprintf(buffer, _T("add  e")); break;
+		case 0x84: _stprintf(buffer, _T("add  h")); break;
+		case 0x85: _stprintf(buffer, _T("add  l")); break;
+		case 0x86: _stprintf(buffer, _T("add  m")); break;
+		case 0x87: _stprintf(buffer, _T("add  a")); break;
+		case 0x88: _stprintf(buffer, _T("adc  b")); break;
+		case 0x89: _stprintf(buffer, _T("adc  c")); break;
+		case 0x8a: _stprintf(buffer, _T("adc  d")); break;
+		case 0x8b: _stprintf(buffer, _T("adc  e")); break;
+		case 0x8c: _stprintf(buffer, _T("adc  h")); break;
+		case 0x8d: _stprintf(buffer, _T("adc  l")); break;
+		case 0x8e: _stprintf(buffer, _T("adc  m")); break;
+		case 0x8f: _stprintf(buffer, _T("adc  a")); break;
+		case 0x90: _stprintf(buffer, _T("sub  b")); break;
+		case 0x91: _stprintf(buffer, _T("sub  c")); break;
+		case 0x92: _stprintf(buffer, _T("sub  d")); break;
+		case 0x93: _stprintf(buffer, _T("sub  e")); break;
+		case 0x94: _stprintf(buffer, _T("sub  h")); break;
+		case 0x95: _stprintf(buffer, _T("sub  l")); break;
+		case 0x96: _stprintf(buffer, _T("sub  m")); break;
+		case 0x97: _stprintf(buffer, _T("sub  a")); break;
+		case 0x98: _stprintf(buffer, _T("sbb  b")); break;
+		case 0x99: _stprintf(buffer, _T("sbb  c")); break;
+		case 0x9a: _stprintf(buffer, _T("sbb  d")); break;
+		case 0x9b: _stprintf(buffer, _T("sbb  e")); break;
+		case 0x9c: _stprintf(buffer, _T("sbb  h")); break;
+		case 0x9d: _stprintf(buffer, _T("sbb  l")); break;
+		case 0x9e: _stprintf(buffer, _T("sbb  m")); break;
+		case 0x9f: _stprintf(buffer, _T("sbb  a")); break;
+		case 0xa0: _stprintf(buffer, _T("ana  b")); break;
+		case 0xa1: _stprintf(buffer, _T("ana  c")); break;
+		case 0xa2: _stprintf(buffer, _T("ana  d")); break;
+		case 0xa3: _stprintf(buffer, _T("ana  e")); break;
+		case 0xa4: _stprintf(buffer, _T("ana  h")); break;
+		case 0xa5: _stprintf(buffer, _T("ana  l")); break;
+		case 0xa6: _stprintf(buffer, _T("ana  m")); break;
+		case 0xa7: _stprintf(buffer, _T("ana  a")); break;
+		case 0xa8: _stprintf(buffer, _T("xra  b")); break;
+		case 0xa9: _stprintf(buffer, _T("xra  c")); break;
+		case 0xaa: _stprintf(buffer, _T("xra  d")); break;
+		case 0xab: _stprintf(buffer, _T("xra  e")); break;
+		case 0xac: _stprintf(buffer, _T("xra  h")); break;
+		case 0xad: _stprintf(buffer, _T("xra  l")); break;
+		case 0xae: _stprintf(buffer, _T("xra  m")); break;
+		case 0xaf: _stprintf(buffer, _T("xra  a")); break;
+		case 0xb0: _stprintf(buffer, _T("ora  b")); break;
+		case 0xb1: _stprintf(buffer, _T("ora  c")); break;
+		case 0xb2: _stprintf(buffer, _T("ora  d")); break;
+		case 0xb3: _stprintf(buffer, _T("ora  e")); break;
+		case 0xb4: _stprintf(buffer, _T("ora  h")); break;
+		case 0xb5: _stprintf(buffer, _T("ora  l")); break;
+		case 0xb6: _stprintf(buffer, _T("ora  m")); break;
+		case 0xb7: _stprintf(buffer, _T("ora  a")); break;
+		case 0xb8: _stprintf(buffer, _T("cmp  b")); break;
+		case 0xb9: _stprintf(buffer, _T("cmp  c")); break;
+		case 0xba: _stprintf(buffer, _T("cmp  d")); break;
+		case 0xbb: _stprintf(buffer, _T("cmp  e")); break;
+		case 0xbc: _stprintf(buffer, _T("cmp  h")); break;
+		case 0xbd: _stprintf(buffer, _T("cmp  l")); break;
+		case 0xbe: _stprintf(buffer, _T("cmp  m")); break;
+		case 0xbf: _stprintf(buffer, _T("cmp  a")); break;
+		case 0xc0: _stprintf(buffer, _T("rnz")); break;
+		case 0xc1: _stprintf(buffer, _T("pop  b")); break;
+		case 0xc2: _stprintf(buffer, _T("jnz  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xc3: _stprintf(buffer, _T("jmp  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xc4: _stprintf(buffer, _T("cnz  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xc5: _stprintf(buffer, _T("push b")); break;
+		case 0xc6: _stprintf(buffer, _T("adi  $%02x"), ops[ptr++]); break;
+		case 0xc7: _stprintf(buffer, _T("rst  0")); break;
+		case 0xc8: _stprintf(buffer, _T("rz")); break;
+		case 0xc9: _stprintf(buffer, _T("ret")); break;
+		case 0xca: _stprintf(buffer, _T("jz   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xcb: _stprintf(buffer, _T("rstv 8 (*)")); break;
+		case 0xcc: _stprintf(buffer, _T("cz   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xcd: _stprintf(buffer, _T("call $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xce: _stprintf(buffer, _T("aci  $%02x"), ops[ptr++]); break;
+		case 0xcf: _stprintf(buffer, _T("rst  1")); break;
+		case 0xd0: _stprintf(buffer, _T("rnc")); break;
+		case 0xd1: _stprintf(buffer, _T("pop  d")); break;
+		case 0xd2: _stprintf(buffer, _T("jnc  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xd3: _stprintf(buffer, _T("out  $%02x"), ops[ptr++]); break;
+		case 0xd4: _stprintf(buffer, _T("cnc  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xd5: _stprintf(buffer, _T("push d")); break;
+		case 0xd6: _stprintf(buffer, _T("sui  $%02x"), ops[ptr++]); break;
+		case 0xd7: _stprintf(buffer, _T("rst  2")); break;
+		case 0xd8: _stprintf(buffer, _T("rc")); break;
+		case 0xd9: _stprintf(buffer, _T("shlx d (*)")); break;
+		case 0xda: _stprintf(buffer, _T("jc   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xdb: _stprintf(buffer, _T("in   $%02x"), ops[ptr++]); break;
+		case 0xdc: _stprintf(buffer, _T("cc   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xdd: _stprintf(buffer, _T("jnx  $%04x (*)"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xde: _stprintf(buffer, _T("sbi  $%02x"), ops[ptr++]); break;
+		case 0xdf: _stprintf(buffer, _T("rst  3")); break;
+		case 0xe0: _stprintf(buffer, _T("rpo")); break;
+		case 0xe1: _stprintf(buffer, _T("pop  h")); break;
+		case 0xe2: _stprintf(buffer, _T("jpo  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xe3: _stprintf(buffer, _T("xthl")); break;
+		case 0xe4: _stprintf(buffer, _T("cpo  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xe5: _stprintf(buffer, _T("push h")); break;
+		case 0xe6: _stprintf(buffer, _T("ani  $%02x"), ops[ptr++]); break;
+		case 0xe7: _stprintf(buffer, _T("rst  4")); break;
+		case 0xe8: _stprintf(buffer, _T("rpe")); break;
+		case 0xe9: _stprintf(buffer, _T("PChl")); break;
+		case 0xea: _stprintf(buffer, _T("jpe  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xeb: _stprintf(buffer, _T("xchg")); break;
+		case 0xec: _stprintf(buffer, _T("cpe  $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xed: _stprintf(buffer, _T("lhlx d (*)")); break;
+		case 0xee: _stprintf(buffer, _T("xri  $%02x"), ops[ptr++]); break;
+		case 0xef: _stprintf(buffer, _T("rst  5")); break;
+		case 0xf0: _stprintf(buffer, _T("rp")); break;
+		case 0xf1: _stprintf(buffer, _T("pop  a")); break;
+		case 0xf2: _stprintf(buffer, _T("jp   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xf3: _stprintf(buffer, _T("di")); break;
+		case 0xf4: _stprintf(buffer, _T("cp   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xf5: _stprintf(buffer, _T("push a")); break;
+		case 0xf6: _stprintf(buffer, _T("ori  $%02x"), ops[ptr++]); break;
+		case 0xf7: _stprintf(buffer, _T("rst  6")); break;
+		case 0xf8: _stprintf(buffer, _T("rm")); break;
+		case 0xf9: _stprintf(buffer, _T("sphl")); break;
+		case 0xfa: _stprintf(buffer, _T("jm   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xfb: _stprintf(buffer, _T("ei")); break;
+		case 0xfc: _stprintf(buffer, _T("cm   $%04x"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xfd: _stprintf(buffer, _T("jx   $%04x (*)"), ops[ptr] | (ops[ptr + 1] << 8)); ptr += 2; break;
+		case 0xfe: _stprintf(buffer, _T("cpi  $%02x"), ops[ptr++]); break;
+		case 0xff: _stprintf(buffer, _T("rst  7")); break;
+	}
+	return ptr;
 }
 #endif

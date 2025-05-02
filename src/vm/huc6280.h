@@ -34,10 +34,12 @@ public:
 	uint32 get_pc();
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
 	uint8 irq_status_r(uint16 offset);

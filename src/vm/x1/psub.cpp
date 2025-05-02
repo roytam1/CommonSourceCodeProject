@@ -269,7 +269,7 @@ void PSUB::event_callback(int event_id, int err)
 				// this is command parameter
 				*datap++ = inbuf;
 #ifdef DEBUG_COMMAND
-				emu->out_debug(_T(" %2x"), inbuf);
+				emu->out_debug_log(_T(" %2x"), inbuf);
 #endif
 				cmdlen--;
 			}
@@ -277,7 +277,7 @@ void PSUB::event_callback(int event_id, int err)
 				// this is new command
 				mode = inbuf;
 #ifdef DEBUG_COMMAND
-				emu->out_debug(_T("X1 PSUB: cmd %2x"), inbuf);
+				emu->out_debug_log(_T("X1 PSUB: cmd %2x"), inbuf);
 #endif
 				if(0xd0 <= mode && mode <= 0xd7) {
 					cmdlen = 6;
@@ -292,7 +292,7 @@ void PSUB::event_callback(int event_id, int err)
 				// this command has no parameters or all parameters are received,
 				// so cpu processes the command
 #ifdef DEBUG_COMMAND
-				emu->out_debug(_T("\n"));
+				emu->out_debug_log(_T("\n"));
 #endif
 				process_cmd();
 			}
@@ -367,7 +367,7 @@ void PSUB::key_down(int code, bool repeat)
 		
 		// setup key repeat event
 		if(key_register_id != -1) {
-			cancel_event(key_register_id);
+			cancel_event(this, key_register_id);
 			key_register_id = -1;
 		}
 		if(!(0x70 <= code && code <= 0x87)) {
@@ -417,7 +417,7 @@ void PSUB::key_up(int code)
 		key_buf->write(0xff);
 		key_prev = 0;
 		if(key_register_id != -1) {
-			cancel_event(key_register_id);
+			cancel_event(this, key_register_id);
 			key_register_id = -1;
 		}
 	}
@@ -567,7 +567,7 @@ void PSUB::process_cmd()
 		databuf[0x16][0] |= get_key_low() & 0x1f;
 #endif
 #ifdef DEBUG_COMMAND
-		emu->out_debug(_T("X1 PSUB: keycode %2x %2x\n"), databuf[0x16][0], databuf[0x16][1]);
+		emu->out_debug_log(_T("X1 PSUB: keycode %2x %2x\n"), databuf[0x16][0], databuf[0x16][1]);
 #endif
 		datalen = 2;
 		break;
@@ -642,7 +642,7 @@ void PSUB::process_cmd()
 				break;
 #ifdef DEBUG_COMMAND
 			default:
-				emu->out_debug(_T("X1 PSUB: unknown CMT control %2x\n"), databuf[0x19][0]);
+				emu->out_debug_log(_T("X1 PSUB: unknown CMT control %2x\n"), databuf[0x19][0]);
 				break;
 #endif
 			}
@@ -684,7 +684,7 @@ void PSUB::process_cmd()
 		cur_time.minute = FROM_BCD(databuf[0x1e][1] & 0x7f);
 		cur_time.second = FROM_BCD(databuf[0x1e][2] & 0x7f);
 		// restart event
-		cancel_event(time_register_id);
+		cancel_event(this, time_register_id);
 		register_event(this, EVENT_1SEC, 1000000, true, &time_register_id);
 		break;
 	case 0xef:
@@ -696,7 +696,7 @@ void PSUB::process_cmd()
 		break;
 #ifdef DEBUG_COMMAND
 	default:
-		emu->out_debug(_T("X1 PSUB: unknown cmd %2x\n"), mode);
+		emu->out_debug_log(_T("X1 PSUB: unknown cmd %2x\n"), mode);
 #endif
 	}
 }

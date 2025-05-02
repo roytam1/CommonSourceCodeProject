@@ -16,6 +16,12 @@
 #define ID_AUTOKEY_STOP                 40004
 #define ID_EXIT                         40005
 
+#define ID_OPEN_DEBUGGER0               40006
+#define ID_OPEN_DEBUGGER1               40007
+#define ID_OPEN_DEBUGGER2               40008
+#define ID_OPEN_DEBUGGER3               40009
+#define ID_CLOSE_DEBUGGER               40010
+
 #define ID_BOOT_MODE0                   40011
 #define ID_BOOT_MODE1                   40012
 #define ID_BOOT_MODE2                   40013

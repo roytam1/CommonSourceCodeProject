@@ -92,6 +92,12 @@ BEGIN
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
         MENUITEM SEPARATOR
+        MENUITEM "Debug Main CPU",              ID_OPEN_DEBUGGER0
+        MENUITEM "Debug Sub CPU",               ID_OPEN_DEBUGGER1
+        MENUITEM "Debug Keyboard CPU",          ID_OPEN_DEBUGGER2
+        MENUITEM "Debug PC-Engine CPU",         ID_OPEN_DEBUGGER3
+        MENUITEM "Close Debugger",              ID_CLOSE_DEBUGGER
+        MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
     POPUP "FD0"

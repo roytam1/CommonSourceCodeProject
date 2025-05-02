@@ -71,16 +71,20 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_mem(MEMORY* device) {
+	void set_context_mem(MEMORY* device)
+	{
 		d_mem = device;
 	}
-	void set_regs_ptr(uint8* ptr) {
+	void set_regs_ptr(uint8* ptr)
+	{
 		regs = ptr;
 	}
-	void set_font_ptr(uint8* ptr) {
+	void set_font_ptr(uint8* ptr)
+	{
 		font = ptr;
 	}
-	void set_kanji_ptr(uint8* ptr) {
+	void set_kanji_ptr(uint8* ptr)
+	{
 		kanji = ptr;
 	}
 	void draw_screen();

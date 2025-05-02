@@ -260,7 +260,7 @@ void I8155::start_count()
 void I8155::stop_count()
 {
 	if(register_id != -1) {
-		cancel_event(register_id);
+		cancel_event(this, register_id);
 	}
 	register_id = -1;
 	now_count = false;
@@ -278,7 +278,7 @@ void I8155::update_count()
 		if(input > 0) {
 			input_clock(input);
 			// cancel and re-register event
-			cancel_event(register_id);
+			cancel_event(this, register_id);
 			input_clk -= input;
 			period -= passed;
 			prev_clk = current_clock();

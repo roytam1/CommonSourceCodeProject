@@ -51,10 +51,12 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void set_context_sio(DEVICE* device_kb, DEVICE* device_sub, DEVICE* device_ch1, DEVICE* device_ch2) {
+	void set_context_sio(DEVICE* device_kb, DEVICE* device_sub, DEVICE* device_ch1, DEVICE* device_ch2)
+	{
 		d_kb = device_kb; d_sub = device_sub; d_ch1 = device_ch1; d_ch2 = device_ch2;
 	}
 };

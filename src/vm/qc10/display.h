@@ -53,29 +53,36 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context_gdc(UPD7220* device) {
+	void set_context_gdc(UPD7220* device)
+	{
 		d_gdc = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 #ifdef _COLOR_MONITOR
 		return vram_b;
 #else
 		return vram;
 #endif
 	}
-	void set_sync_ptr(uint8* ptr) {
+	void set_sync_ptr(uint8* ptr)
+	{
 		sync = ptr;
 	}
-	void set_zoom_ptr(uint8* ptr) {
+	void set_zoom_ptr(uint8* ptr)
+	{
 		zoom = ptr;
 	}
-	void set_ra_ptr(uint8* ptr) {
+	void set_ra_ptr(uint8* ptr)
+	{
 		ra = ptr;
 	}
-	void set_cs_ptr(uint8* ptr) {
+	void set_cs_ptr(uint8* ptr)
+	{
 		cs = ptr;
 	}
-	void set_ead_ptr(int* ptr) {
+	void set_ead_ptr(int* ptr)
+	{
 		ead = ptr;
 	}
 	void draw_screen();

@@ -184,7 +184,7 @@ void HD63484::process_cmd()
 				rwp = (rwp & 0xff000) | ((fifo[1] & 0xfff0) >> 4);
 			}
 			else {
-				emu->out_debug(_T("HD63484: unsupported register\n"));
+				emu->out_debug_log(_T("HD63484: unsupported register\n"));
 			}
 		}
 		else if((fifo[0] & 0xfff0) == 0x1800) {
@@ -472,7 +472,7 @@ void HD63484::process_cmd()
 			}
 		}
 		else {
-			emu->out_debug(_T("unsupported command\n"));
+			emu->out_debug_log(_T("unsupported command\n"));
 		}
 		fifo_ptr = 0;
 	}
@@ -667,7 +667,7 @@ int HD63484::org_first_pixel(int _org_dpd)
 	case 4:
 		return 0;
 	}
-	emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+	emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 	return 0;
 }
 
@@ -700,7 +700,7 @@ void HD63484::dot(int x, int y, int opm, uint16 color)
 		bitmask = 0xffff;
 		break;
 	default:
-		emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+		emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 		bpp = 0;
 		bitmask = 0x0000;
 	}
@@ -785,7 +785,7 @@ int HD63484::get_pixel(int x, int y)
 		bitmask = 0xffff;
 		break;
 	default:
-		emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+		emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 		bpp = 0;
 		bitmask = 0x0000;
 	}
@@ -989,18 +989,18 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 	int getpixel;
 	
 	if(opcode & 0x800) {
-		emu->out_debug(_T("HD63484 ptn not supported\n"));
+		emu->out_debug_log(_T("HD63484 ptn not supported\n"));
 	}
 	else {
 		switch(opcode & 0x700) {
 			case 0x000: dst_step1_x =  1; dst_step1_y =  0; dst_step2_x = -ax_neg * ax; dst_step2_y =  1; break;
-			case 0x100: emu->out_debug(_T("HD63484 ptn not supported\n")); break;
+			case 0x100: emu->out_debug_log(_T("HD63484 ptn not supported\n")); break;
 			case 0x200: dst_step1_x =  0; dst_step1_y =  1; dst_step2_x = -1; dst_step2_y = -ax_neg * ax; break;
-			case 0x300: emu->out_debug(_T("HD63484 ptn not supported\n")); break;
+			case 0x300: emu->out_debug_log(_T("HD63484 ptn not supported\n")); break;
 			case 0x400: dst_step1_x = -1; dst_step1_y =  0; dst_step2_x =  ax_neg * ax; dst_step2_y = -1; break;
-			case 0x500: emu->out_debug(_T("HD63484 ptn not supported\n")); break;
+			case 0x500: emu->out_debug_log(_T("HD63484 ptn not supported\n")); break;
 			case 0x600: dst_step1_x =  0; dst_step1_y = -1; dst_step2_x =  1; dst_step2_y =  ax_neg * ax; break;
-			case 0x700: emu->out_debug(_T("HD63484 ptn not supported\n")); break;
+			case 0x700: emu->out_debug_log(_T("HD63484 ptn not supported\n")); break;
 		}
 	}
 	for(;;) {
@@ -1026,7 +1026,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 				}
 				break;
 			case 3:
-				emu->out_debug(_T("HD63484 ptn not supported\n"));
+				emu->out_debug_log(_T("HD63484 ptn not supported\n"));
 				break;
 			}
 			if(opcode & 0x800) {
@@ -1166,7 +1166,7 @@ void HD63484::paint(int sx, int sy, int col)
 	case 4:
 		break;
 	default:
-		emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+		emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 	}
 	if((getpixel != col) && (getpixel != edg)) {
 		sx++;
@@ -1189,7 +1189,7 @@ void HD63484::paint(int sx, int sy, int col)
 	case 4:
 		break;
 	default:
-		emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+		emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 	}
 	if((getpixel != col) && (getpixel != edg)) {
 		sx--;
@@ -1212,7 +1212,7 @@ void HD63484::paint(int sx, int sy, int col)
 	case 4:
 		break;
 	default:
-		emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+		emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 	}
 	if((getpixel != col) && (getpixel != edg)) {
 		sy++;
@@ -1235,7 +1235,7 @@ void HD63484::paint(int sx, int sy, int col)
 	case 4:
 		break;
 	default:
-		emu->out_debug(_T("HD63484 graphic bit mode not supported\n"));
+		emu->out_debug_log(_T("HD63484 graphic bit mode not supported\n"));
 	}
 	if((getpixel != col) && (getpixel != edg)) {
 		sy--;

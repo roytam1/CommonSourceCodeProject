@@ -44,13 +44,16 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_font_ptr(uint8* ptr) {
+	void set_font_ptr(uint8* ptr)
+	{
 		font_ptr = ptr;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram0 = ptr; vram1 = ptr + 0x1000;
 	}
 	void draw_screen();

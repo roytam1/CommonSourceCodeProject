@@ -121,7 +121,8 @@ private:
 	void draw_pset(int x, int y);
 	
 public:
-	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_drq);
 		init_output_signals(&outputs_vsync);
 		vram = NULL;
@@ -144,42 +145,53 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	
 	// unique functions
-	void set_context_drq(DEVICE* device, int id, uint32 mask) {
+	void set_context_drq(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_drq, device, id, mask);
 	}
-	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
+	void set_context_vsync(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_vsync, device, id, mask);
 	}
-	void set_vram_ptr(uint8* ptr, uint32 size) {
+	void set_vram_ptr(uint8* ptr, uint32 size)
+	{
 		vram = ptr; vram_size = size;
 	}
 #ifdef UPD7220_HORIZ_FREQ
-	void set_horiz_freq(int freq) {
+	void set_horiz_freq(int freq)
+	{
 		next_horiz_freq = freq;
 	}
 #endif
-	uint8* get_sync() {
+	uint8* get_sync()
+	{
 		return sync;
 	}
-	uint8* get_zoom() {
+	uint8* get_zoom()
+	{
 		return &zoom;
 	}
-	uint8* get_ra() {
+	uint8* get_ra()
+	{
 		return ra;
 	}
-	uint8* get_cs() {
+	uint8* get_cs()
+	{
 		return cs;
 	}
-	int* get_ead() {
+	int* get_ead()
+	{
 		return &ead;
 	}
-	bool get_start() {
+	bool get_start()
+	{
 		return start;
 	}
 	uint32 cursor_addr(uint32 mask);
 	int cursor_top();
 	int cursor_bottom();
-	bool attr_blink() {
+	bool attr_blink()
+	{
 		return (blink_attr < (blink_rate * 3 / 4));
 	}
 };

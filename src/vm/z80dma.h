@@ -60,7 +60,8 @@ private:
 	void update_intr();
 	
 public:
-	Z80DMA(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	Z80DMA(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 6 * 8 + 1 + 1; i++) {
 			regs.t[i] = 0;
 		}
@@ -76,11 +77,13 @@ public:
 	void do_dma();
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
-	void set_context_child(DEVICE* device) {
+	void set_context_child(DEVICE* device)
+	{
 		d_child = device;
 	}
 	void set_intr_iei(bool val);
@@ -88,10 +91,12 @@ public:
 	void intr_reti();
 	
 	// unique function
-	void set_context_memory(DEVICE* device) {
+	void set_context_memory(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_io(DEVICE* device) {
+	void set_context_io(DEVICE* device)
+	{
 		d_io = device;
 	}
 };

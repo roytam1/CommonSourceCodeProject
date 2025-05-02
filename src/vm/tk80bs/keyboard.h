@@ -37,18 +37,22 @@ public:
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 intr_ack();
-	uint32 read_signal(int ch) {
+	uint32 read_signal(int ch)
+	{
 		return kb_type & 3;
 	}
 	
 	// unique functions
-	void set_context_pio_b(DEVICE* device) {
+	void set_context_pio_b(DEVICE* device)
+	{
 		d_pio_b = device;
 	}
-	void set_context_pio_t(DEVICE* device) {
+	void set_context_pio_t(DEVICE* device)
+	{
 		d_pio_t = device;
 	}
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
 	void key_down(int code);

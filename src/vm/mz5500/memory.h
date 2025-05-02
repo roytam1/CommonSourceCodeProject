@@ -65,10 +65,12 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unitque function
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
 };

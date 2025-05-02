@@ -20,6 +20,10 @@
 #include "../z80.h"
 #include "../z80ctc.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "cmt.h"
 #include "keyboard.h"
 
@@ -58,6 +62,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(ctc);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// z80 family daisy chain
 	ctc->set_context_intr(cpu, 0);
@@ -82,6 +89,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0x30, 0x37, key);
 	io->set_iomap_single_w(0x40, cmt);
 	io->set_iomap_single_rw(0x50, cmt);
+	
+	// FD5 floppy drive uint
+	subcpu = NULL;
+#ifdef USE_DEBUGGER
+//	subcpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -127,6 +140,22 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	} else if(index == 1) {
+		return subcpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

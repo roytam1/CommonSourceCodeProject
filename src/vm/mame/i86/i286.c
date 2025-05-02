@@ -64,6 +64,12 @@ struct i80286_state
 #ifdef SINGLE_MODE_DMA
 	DEVICE *dma;
 #endif
+#ifdef USE_DEBUGGER
+	EMU *emu;
+	DEBUGGER *debugger;
+	DEVICE *program_stored;
+	DEVICE *io_stored;
+#endif
 	INT32   AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal; /* 0 or non-0 valued flags */
 	UINT8   ParityVal;
 	UINT8   TF, IF;     /* 0 or 1 valued flags */
@@ -221,6 +227,19 @@ static CPU_EXECUTE( i80286 )
 {
 	if (cpustate->halted || cpustate->busreq)
 	{
+#ifdef USE_DEBUGGER
+		if(cpustate->debugger->now_debugging) {
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging && !cpustate->debugger->now_going) {
+				cpustate->debugger->now_suspended = true;
+			}
+		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if (cpustate->dma != NULL) {
 			cpustate->dma->do_dma();
@@ -249,19 +268,59 @@ static CPU_EXECUTE( i80286 )
 	/* run until we're out */
 	while(cpustate->icount > 0 && !cpustate->busreq)
 	{
-		cpustate->seg_prefix=FALSE;
-		try
-		{
-			if (PM && ((cpustate->pc-cpustate->base[CS]) > cpustate->limit[CS]))
-				throw TRAP(GENERAL_PROTECTION_FAULT, cpustate->sregs[CS] & ~3);
-			cpustate->prevpc = cpustate->pc;
+#ifdef USE_DEBUGGER
+		bool now_debugging = cpustate->debugger->now_debugging;
+		if(now_debugging) {
+			cpustate->debugger->check_break_points(cpustate->pc);
+			if(cpustate->debugger->now_suspended) {
+				cpustate->emu->mute_sound();
+				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					Sleep(10);
+				}
+			}
+			if(cpustate->debugger->now_debugging) {
+				cpustate->program = cpustate->io = cpustate->debugger;
+			} else {
+				now_debugging = false;
+			}
+			cpustate->seg_prefix=FALSE;
+			try
+			{
+				if (PM && ((cpustate->pc-cpustate->base[CS]) > cpustate->limit[CS]))
+					throw TRAP(GENERAL_PROTECTION_FAULT, cpustate->sregs[CS] & ~3);
+				cpustate->prevpc = cpustate->pc;
 
-			TABLE286 // call instruction
+				TABLE286 // call instruction
+			}
+			catch (UINT32 e)
+			{
+				i80286_trap2(cpustate,e);
+			}
+			if(now_debugging) {
+				if(!cpustate->debugger->now_going) {
+					cpustate->debugger->now_suspended = true;
+				}
+				cpustate->program = cpustate->program_stored;
+				cpustate->io = cpustate->io_stored;
+			}
+		} else {
+#endif
+			cpustate->seg_prefix=FALSE;
+			try
+			{
+				if (PM && ((cpustate->pc-cpustate->base[CS]) > cpustate->limit[CS]))
+					throw TRAP(GENERAL_PROTECTION_FAULT, cpustate->sregs[CS] & ~3);
+				cpustate->prevpc = cpustate->pc;
+
+				TABLE286 // call instruction
+			}
+			catch (UINT32 e)
+			{
+				i80286_trap2(cpustate,e);
+			}
+#ifdef USE_DEBUGGER
 		}
-		catch (UINT32 e)
-		{
-			i80286_trap2(cpustate,e);
-		}
+#endif
 #ifdef SINGLE_MODE_DMA
 		if (cpustate->dma != NULL) {
 			cpustate->dma->do_dma();

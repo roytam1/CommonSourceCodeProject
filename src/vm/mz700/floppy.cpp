@@ -41,7 +41,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		if(!(prev_dc & 0x80) && (data & 0x80)) {
 			// L -> H
 			if(register_id != -1) {
-				cancel_event(register_id);
+				cancel_event(this, register_id);
 				register_id = -1;
 			}
 			if(!motor_on) {
@@ -50,7 +50,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		} else if((prev_dc & 0x80) && !(data & 0x80)) {
 			// H -> L
 			if(register_id != -1) {
-				cancel_event(register_id);
+				cancel_event(this, register_id);
 				register_id = -1;
 			}
 			if(motor_on) {

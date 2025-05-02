@@ -35,7 +35,8 @@ private:
 	void update_irq();
 	
 public:
-	M6502(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	M6502(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		busreq = false;
 	}
 	~M6502() {}
@@ -45,18 +46,22 @@ public:
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void set_intr_line(bool line, bool pending, uint32 bit) {
+	void set_intr_line(bool line, bool pending, uint32 bit)
+	{
 		write_signal(SIG_CPU_IRQ, line ? 1 : 0, 1);
 	}
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return prev_pc;
 	}
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
-	void set_context_intr(DEVICE* device) {
+	void set_context_intr(DEVICE* device)
+	{
 		d_pic = device;
 	}
 };

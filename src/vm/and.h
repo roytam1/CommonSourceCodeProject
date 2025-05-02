@@ -31,7 +31,8 @@ private:
 	bool prev, first;
 	
 public:
-	AND(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	AND(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs);
 		bits_mask = bits_in = 0;
 		prev = first = true;
@@ -39,7 +40,8 @@ public:
 	~AND() {}
 	
 	// common functions
-	void write_signal(int id, uint32 data, uint32 mask) {
+	void write_signal(int id, uint32 data, uint32 mask)
+	{
 		if(data & mask) {
 			bits_in |= id;
 		}
@@ -55,10 +57,12 @@ public:
 	}
 	
 	// unique functions
-	void set_context_out(DEVICE* device, int id, uint32 mask) {
+	void set_context_out(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs, device, id, mask);
 	}
-	void set_mask(uint32 mask) {
+	void set_mask(uint32 mask)
+	{
 		bits_mask |= mask;
 	}
 };

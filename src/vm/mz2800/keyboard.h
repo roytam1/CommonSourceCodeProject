@@ -38,10 +38,12 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_pio0(DEVICE* device) {
+	void set_context_pio0(DEVICE* device)
+	{
 		d_pio0 = device;
 	}
-	void set_context_pio1(DEVICE* device) {
+	void set_context_pio1(DEVICE* device)
+	{
 		d_pio1 = device;
 	}
 };

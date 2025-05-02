@@ -28,10 +28,12 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique function
-	void set_context_pit(DEVICE* device) {
+	void set_context_pit(DEVICE* device)
+	{
 		d_pit = device;
 	}
-	void set_context_sio(DEVICE* device) {
+	void set_context_sio(DEVICE* device)
+	{
 		d_sio = device;
 	}
 };

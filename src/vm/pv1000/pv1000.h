@@ -31,6 +31,7 @@
 #define KEY_TO_JOY_BUTTON_2	0x58
 #define KEY_TO_JOY_BUTTON_3	0x41
 #define KEY_TO_JOY_BUTTON_4	0x53
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -81,6 +82,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

@@ -29,7 +29,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_fdc(DEVICE *device) {
+	void set_context_fdc(DEVICE *device)
+	{
 		d_fdc = device;
 	}
 };

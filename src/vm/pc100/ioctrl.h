@@ -48,16 +48,20 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_pic(DEVICE* device) {
+	void set_context_pic(DEVICE* device)
+	{
 		d_pic = device;
 	}
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_beep(DEVICE* device) {
+	void set_context_beep(DEVICE* device)
+	{
 		d_beep = device;
 	}
-	void set_context_pcm(DEVICE* device) {
+	void set_context_pcm(DEVICE* device)
+	{
 		d_pcm = device;
 	}
 	void key_down(int code);

@@ -25,6 +25,10 @@
 #include "../sn76489an.h"
 #include "../upd765a.h"
 
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #include "display.h"
 #include "floppy.h"
 #include "keyboard.h"
@@ -76,6 +80,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(mem);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	crtc->set_context_disp(display, SIG_DISPLAY_ENABLE, 1);
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
@@ -209,6 +216,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

@@ -9,7 +9,7 @@
 
 #include "memory.h"
 #include "../i8237.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../../fileio.h"
 
 static const uint8 bios1[] = {

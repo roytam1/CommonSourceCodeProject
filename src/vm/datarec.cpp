@@ -267,7 +267,7 @@ void DATAREC::set_ff_rew(int value)
 {
 	if(ff_rew != value) {
 		if(register_id != -1) {
-			cancel_event(register_id);
+			cancel_event(this, register_id);
 			register_id = -1;
 		}
 		ff_rew = value;
@@ -332,7 +332,7 @@ void DATAREC::update_event()
 		}
 	} else {
 		if(register_id != -1) {
-			cancel_event(register_id);
+			cancel_event(this, register_id);
 			register_id = -1;
 			if(buffer_ptr == buffer_length) {
 				emu->out_message(_T("CMT: Stop (End-of-Tape)"));

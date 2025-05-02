@@ -41,6 +41,7 @@
 #define USE_AUTO_KEY_CAPS
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -106,6 +107,11 @@ public:
 	void reset();
 	void run();
 	double frame_rate();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

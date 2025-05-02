@@ -87,7 +87,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 			}
 			if(next != period) {
 				if(register_id_sqw != -1) {
-					cancel_event(register_id_sqw);
+					cancel_event(this, register_id_sqw);
 					register_id_sqw = -1;
 				}
 				if(next) {
@@ -200,7 +200,7 @@ void HD146818P::write_to_cur_time()
 	cur_time.update_day_of_week();
 	
 	// restart event
-	cancel_event(register_id_1sec);
+	cancel_event(this, register_id_1sec);
 	register_event(this, EVENT_1SEC, 1000000, true, &register_id_1sec);
 }
 

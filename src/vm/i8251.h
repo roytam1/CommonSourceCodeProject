@@ -44,7 +44,8 @@ private:
 	int recv_id, send_id;
 	
 public:
-	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_out);
 		init_output_signals(&outputs_rxrdy);
 		init_output_signals(&outputs_syndet);
@@ -65,25 +66,32 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_out(DEVICE* device, int id) {
+	void set_context_out(DEVICE* device, int id)
+	{
 		register_output_signal(&outputs_out, device, id, 0xff);
 	}
-	void set_context_rxrdy(DEVICE* device, int id, uint32 mask) {
+	void set_context_rxrdy(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_rxrdy, device, id, mask);
 	}
-	void set_context_syndet(DEVICE* device, int id, uint32 mask) {
+	void set_context_syndet(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_syndet, device, id, mask);
 	}
-	void set_context_txrdy(DEVICE* device, int id, uint32 mask) {
+	void set_context_txrdy(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_txrdy, device, id, mask);
 	}
-	void set_context_txe(DEVICE* device, int id, uint32 mask) {
+	void set_context_txe(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_txe, device, id, mask);
 	}
-	void set_context_dtr(DEVICE* device, int id, uint32 mask) {
+	void set_context_dtr(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_dtr, device, id, mask);
 	}
-	void set_context_rst(DEVICE* device, int id, uint32 mask) {
+	void set_context_rst(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_rst, device, id, mask);
 	}
 };

@@ -37,6 +37,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_POWER_OFF
 #define USE_ACCESS_LAMP
+#define USE_DEBUGGER
 
 #include "../../common.h"
 
@@ -48,7 +49,7 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
-class I86;
+class I286;
 class IO;
 class MB8877;
 class MEMORY;
@@ -70,7 +71,7 @@ protected:
 	I8253* pit;
 	I8255* pio;
 	I8259* pic;
-	I86* cpu;
+	I286* cpu;
 	IO* io;
 	MB8877* fdc;
 	MEMORY* memory;
@@ -101,6 +102,11 @@ public:
 	void reset();
 	void notify_power_off();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

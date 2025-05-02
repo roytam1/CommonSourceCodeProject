@@ -61,7 +61,8 @@ public:
 	void event_vline(int v, int clock);
 	
 	// unique functions
-	void set_vram_ptr(uint16* ptr, uint32 size) {
+	void set_vram_ptr(uint16* ptr, uint32 size)
+	{
 		vram = ptr; vram_size = size;
 	}
 };

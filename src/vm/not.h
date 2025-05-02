@@ -23,14 +23,16 @@ private:
 	bool prev, first;
 	
 public:
-	NOT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	NOT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs);
 		prev = first = true;
 	}
 	~NOT() {}
 	
 	// common functions
-	void write_signal(int id, uint32 data, uint32 mask) {
+	void write_signal(int id, uint32 data, uint32 mask)
+	{
 		bool next = ((data & mask) == 0);
 		if(prev != next || first) {
 			write_signals(&outputs, next ? 0xffffffff : 0);
@@ -40,7 +42,8 @@ public:
 	}
 	
 	// unique functions
-	void set_context_out(DEVICE* device, int id, uint32 mask) {
+	void set_context_out(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs, device, id, mask);
 	}
 };

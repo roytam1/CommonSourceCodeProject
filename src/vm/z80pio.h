@@ -58,7 +58,8 @@ private:
 	void update_intr();
 	
 public:
-	Z80PIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	Z80PIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		memset(port, 0, sizeof(port));
 		for(int i = 0; i < 2; i++) {
 			init_output_signals(&port[i].outputs_data);
@@ -77,11 +78,13 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// interrupt common functions
-	void set_context_intr(DEVICE* device, uint32 bit) {
+	void set_context_intr(DEVICE* device, uint32 bit)
+	{
 		d_cpu = device;
 		intr_bit = bit;
 	}
-	void set_context_child(DEVICE* device) {
+	void set_context_child(DEVICE* device)
+	{
 		d_child = device;
 	}
 	void set_intr_iei(bool val);
@@ -89,19 +92,24 @@ public:
 	void intr_reti();
 	
 	// unique functions
-	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[0].outputs_data, device, id, mask, shift);
 	}
-	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[1].outputs_data, device, id, mask, shift);
 	}
-	void set_context_ready_a(DEVICE* device, int id, uint32 mask) {
+	void set_context_ready_a(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[0].outputs_ready, device, id, mask);
 	}
-	void set_context_ready_b(DEVICE* device, int id, uint32 mask) {
+	void set_context_ready_b(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&port[1].outputs_ready, device, id, mask);
 	}
-	void set_hand_shake(int ch, bool value) {
+	void set_hand_shake(int ch, bool value)
+	{
 		port[ch].hand_shake = value;
 	}
 };

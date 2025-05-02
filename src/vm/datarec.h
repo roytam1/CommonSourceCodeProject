@@ -71,7 +71,8 @@ private:
 	int load_mzt_image();
 	
 public:
-	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		init_output_signals(&outputs_out);
 		init_output_signals(&outputs_remote);
 		init_output_signals(&outputs_rotate);
@@ -86,7 +87,8 @@ public:
 	void reset();
 	void release();
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 read_signal(int ch) {
+	uint32 read_signal(int ch)
+	{
 		return in_signal ? 1 : 0;
 	}
 	void event_frame();
@@ -96,28 +98,35 @@ public:
 #endif
 	
 	// unique functions
-	void set_context_out(DEVICE* device, int id, uint32 mask) {
+	void set_context_out(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_out, device, id, mask);
 	}
-	void set_context_remote(DEVICE* device, int id, uint32 mask) {
+	void set_context_remote(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_remote, device, id, mask);
 	}
-	void set_context_rotate(DEVICE* device, int id, uint32 mask) {
+	void set_context_rotate(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_rotate, device, id, mask);
 	}
-	void set_context_end(DEVICE* device, int id, uint32 mask) {
+	void set_context_end(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_end, device, id, mask);
 	}
-	void set_context_top(DEVICE* device, int id, uint32 mask) {
+	void set_context_top(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_top, device, id, mask);
 	}
-	void set_context_apss(DEVICE* device, int id, uint32 mask) {
+	void set_context_apss(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_apss, device, id, mask);
 	}
 	bool play_tape(_TCHAR* file_path);
 	bool rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return (play || rec);
 	}
 	void set_remote(bool value);

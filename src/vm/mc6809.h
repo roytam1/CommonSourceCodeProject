@@ -328,12 +328,14 @@ public:
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return ppc.w.l;
 	}
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
 };

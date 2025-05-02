@@ -138,7 +138,7 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 #endif
 						};
 						if(register_id_tp != -1) {
-							cancel_event(register_id_tp);
+							cancel_event(this, register_id_tp);
 							register_id_tp = -1;
 						}
 						register_event(this, EVENT_TP, tbl[(mode & 0x0f) - 4], true, &register_id_tp);
@@ -154,7 +154,7 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 			case 0x03:
 				if(hold) {
 					// restart event
-					cancel_event(register_id_1sec);
+					cancel_event(this, register_id_1sec);
 					register_event(this, EVENT_1SEC, 1000000.0, true, &register_id_1sec);
 					hold = false;
 				}

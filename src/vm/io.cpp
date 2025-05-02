@@ -111,9 +111,9 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 	uint32 addr2 = haddr | wr_table[laddr].addr;
 #ifdef _IO_DEBUG_LOG
 	if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
-		emu->out_debug(_T("UNKNOWN:\t"));
+		emu->out_debug_log(_T("UNKNOWN:\t"));
 	}
-	emu->out_debug(_T("%6x\tOUT8\t%4x,%2x\n"), get_cpu_pc(0), addr, data);
+	emu->out_debug_log(_T("%6x\tOUT8\t%4x,%2x\n"), get_cpu_pc(0), addr, data);
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xff;
@@ -133,9 +133,9 @@ uint32 IO::read_port8(uint32 addr, bool is_dma)
 	uint32 val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io8(addr2) : rd_table[laddr].dev->read_io8(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
-		emu->out_debug(_T("UNKNOWN:\t"));
+		emu->out_debug_log(_T("UNKNOWN:\t"));
 	}
-	emu->out_debug(_T("%6x\tIN8\t%4x = %2x\n"), get_cpu_pc(0), addr, val);
+	emu->out_debug_log(_T("%6x\tIN8\t%4x = %2x\n"), get_cpu_pc(0), addr, val);
 #endif
 	return val & 0xff;
 }
@@ -146,9 +146,9 @@ void IO::write_port16(uint32 addr, uint32 data, bool is_dma)
 	uint32 addr2 = haddr | wr_table[laddr].addr;
 #ifdef _IO_DEBUG_LOG
 	if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
-		emu->out_debug(_T("UNKNOWN:\t"));
+		emu->out_debug_log(_T("UNKNOWN:\t"));
 	}
-	emu->out_debug(_T("%6x\tOUT16\t%4x,%4x\n"), get_cpu_pc(0), addr, data);
+	emu->out_debug_log(_T("%6x\tOUT16\t%4x,%4x\n"), get_cpu_pc(0), addr, data);
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xffff;
@@ -168,9 +168,9 @@ uint32 IO::read_port16(uint32 addr, bool is_dma)
 	uint32 val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io16(addr2) : rd_table[laddr].dev->read_io16(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
-		emu->out_debug(_T("UNKNOWN:\t"));
+		emu->out_debug_log(_T("UNKNOWN:\t"));
 	}
-	emu->out_debug(_T("%6x\tIN16\t%4x = %4x\n"), get_cpu_pc(0), addr, val);
+	emu->out_debug_log(_T("%6x\tIN16\t%4x = %4x\n"), get_cpu_pc(0), addr, val);
 #endif
 	return val & 0xffff;
 }
@@ -181,9 +181,9 @@ void IO::write_port32(uint32 addr, uint32 data, bool is_dma)
 	uint32 addr2 = haddr | wr_table[laddr].addr;
 #ifdef _IO_DEBUG_LOG
 	if(!wr_table[laddr].dev->this_device_id && !wr_table[laddr].is_flipflop) {
-		emu->out_debug(_T("UNKNOWN:\t"));
+		emu->out_debug_log(_T("UNKNOWN:\t"));
 	}
-	emu->out_debug(_T("%6x\tOUT32\t%4x,%8x\n"), get_cpu_pc(0), addr, data);
+	emu->out_debug_log(_T("%6x\tOUT32\t%4x,%8x\n"), get_cpu_pc(0), addr, data);
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data;
@@ -203,9 +203,9 @@ uint32 IO::read_port32(uint32 addr, bool is_dma)
 	uint32 val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io32(addr2) : rd_table[laddr].dev->read_io32(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
-		emu->out_debug(_T("UNKNOWN:\t"));
+		emu->out_debug_log(_T("UNKNOWN:\t"));
 	}
-	emu->out_debug(_T("%6x\tIN32\t%4x = %8x\n"), get_cpu_pc(0), laddr | haddr, val);
+	emu->out_debug_log(_T("%6x\tIN32\t%4x = %8x\n"), get_cpu_pc(0), laddr | haddr, val);
 #endif
 	return val;
 }

@@ -37,13 +37,16 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique function
-	void set_context_key(DEVICE* device) {
+	void set_context_key(DEVICE* device)
+	{
 		d_key = device;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram = ptr;
 	}
-	void set_led_ptr(uint8* ptr) {
+	void set_led_ptr(uint8* ptr)
+	{
 		led = ptr;
 	}
 	void draw_screen();

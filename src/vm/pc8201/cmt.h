@@ -46,7 +46,8 @@ public:
 	// unique functions
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted() {
+	bool tape_inserted()
+	{
 		return rec;
 	}
 };

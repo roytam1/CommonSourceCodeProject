@@ -27,10 +27,12 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique function
-	void set_context_fdc(DEVICE* device) {
+	void set_context_fdc(DEVICE* device)
+	{
 		d_fdc = device;
 	}
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
 };

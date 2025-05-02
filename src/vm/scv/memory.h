@@ -70,16 +70,20 @@ public:
 	// unique functions
 	void open_cart(_TCHAR* file_path);
 	void close_cart();
-	bool cart_inserted() {
+	bool cart_inserted()
+	{
 		return inserted;
 	}
-	void set_context_sound(DEVICE* device) {
+	void set_context_sound(DEVICE* device)
+	{
 		d_sound = device;
 	}
-	uint8* get_font() {
+	uint8* get_font()
+	{
 		return bios + 0x200;
 	}
-	uint8* get_vram() {
+	uint8* get_vram()
+	{
 		return vram;
 	}
 };

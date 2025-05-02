@@ -57,7 +57,8 @@ private:
 	void set_pio(int ch, uint8 data);
 	
 public:
-	I8155(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I8155(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 		for(int i = 0; i < 3; i++) {
 			init_output_signals(&pio[i].outputs);
 			pio[i].wreg = pio[i].rreg = 0;//0xff;
@@ -76,24 +77,30 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
-	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {
+	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
+	{
 		cpu_clocks = new_clocks;
 	}
 	
 	// unique functions
-	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&pio[0].outputs, device, id, mask, shift);
 	}
-	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&pio[1].outputs, device, id, mask, shift);
 	}
-	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&pio[2].outputs, device, id, mask, shift);
 	}
-	void set_context_timer(DEVICE* device, int id, uint32 mask) {
+	void set_context_timer(DEVICE* device, int id, uint32 mask)
+	{
 		register_output_signal(&outputs_timer, device, id, mask);
 	}
-	void set_constant_clock(uint32 hz) {
+	void set_constant_clock(uint32 hz)
+	{
 		freq = hz;
 	}
 };

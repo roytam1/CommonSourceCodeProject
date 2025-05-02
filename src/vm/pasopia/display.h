@@ -53,16 +53,20 @@ public:
 	void event_frame();
 	
 	// unique function
-	void set_context_crtc(DEVICE* device) {
+	void set_context_crtc(DEVICE* device)
+	{
 		d_crtc = device;
 	}
-	void set_vram_ptr(uint8* ptr) {
+	void set_vram_ptr(uint8* ptr)
+	{
 		vram = ptr;
 	}
-	void set_attr_ptr(uint8* ptr) {
+	void set_attr_ptr(uint8* ptr)
+	{
 		attr = ptr;
 	}
-	void set_regs_ptr(uint8* ptr) {
+	void set_regs_ptr(uint8* ptr)
+	{
 		regs = ptr;
 	}
 	void draw_screen();

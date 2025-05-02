@@ -38,13 +38,16 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_cpu(DEVICE* device)
+	{
 		d_cpu = device;
 	}
-	void set_context_pio1(DEVICE* device) {
+	void set_context_pio1(DEVICE* device)
+	{
 		d_pio1 = device;
 	}
-	void set_context_pio2(DEVICE* device) {
+	void set_context_pio2(DEVICE* device)
+	{
 		d_pio2 = device;
 	}
 	void key_down(int code);

@@ -352,7 +352,8 @@ private:
 	void cpx_ix();
 	
 public:
-	MC6800(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	MC6800(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 		for(int i = 0; i < 4; i++) {
 			init_output_signals(&port[i].outputs);
@@ -371,28 +372,35 @@ public:
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 get_pc() {
+	uint32 get_pc()
+	{
 		return prevpc;
 	}
 	
 	// unique function
-	void set_context_mem(DEVICE* device) {
+	void set_context_mem(DEVICE* device)
+	{
 		d_mem = device;
 	}
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
-	void set_context_port1(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port1(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[0].outputs, device, id, mask, shift);
 	}
-	void set_context_port2(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port2(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
-	void set_context_port3(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port3(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[2].outputs, device, id, mask, shift);
 	}
-	void set_context_port4(DEVICE* device, int id, uint32 mask, int shift) {
+	void set_context_port4(DEVICE* device, int id, uint32 mask, int shift)
+	{
 		register_output_signal(&port[2].outputs, device, id, mask, shift);
 	}
-	void set_context_sio(DEVICE* device, int id) {
+	void set_context_sio(DEVICE* device, int id)
+	{
 		register_output_signal(&outputs_sio, device, id, 0xff);
 	}
 #endif
