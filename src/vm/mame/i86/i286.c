@@ -67,7 +67,6 @@ struct i80286_state
 	INT32   AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal; /* 0 or non-0 valued flags */
 	UINT8   ParityVal;
 	UINT8   TF, IF;     /* 0 or 1 valued flags */
-	UINT8   int_vector;
 	INT8    nmi_state;
 	INT8    irq_state;
 	INT8    test_state;
@@ -77,6 +76,7 @@ struct i80286_state
 	int halted;         /* Is the CPU halted ? */
 	int busreq;
 	int trap_level;
+	int shutdown;
 
 	int icount;
 	char seg_prefix;
@@ -149,9 +149,10 @@ static CPU_RESET( i80286 )
 	memset(&cpustate->regs, 0, sizeof(i80286basicregs));
 	cpustate->sregs[CS] = 0xf000;
 	cpustate->base[CS] = 0xff0000;
-	/* temporary, until I have the right reset vector working */
-	cpustate->base[CS] = cpustate->sregs[CS] << 4;
-	cpustate->pc = 0xffff0;
+//	/* temporary, until I have the right reset vector working */
+//	cpustate->base[CS] = cpustate->sregs[CS] << 4;
+//	cpustate->pc = 0xffff0;
+	cpustate->pc = 0xfffff0;
 	cpustate->limit[CS]=cpustate->limit[SS]=cpustate->limit[DS]=cpustate->limit[ES]=0xffff;
 	cpustate->sregs[DS]=cpustate->sregs[SS]=cpustate->sregs[ES]=0;
 	cpustate->base[DS]=cpustate->base[SS]=cpustate->base[ES]=0;

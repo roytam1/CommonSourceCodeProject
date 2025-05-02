@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="fmrcard"
+	Name="fmr50_i286"
 	ProjectGUID="{699AB843-1860-4ABF-B52C-D6A84D0F81E8}"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,18 +42,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/fmrcard.tlb"
+				TypeLibraryName=".\Debug/fmr50_i286.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_FMRCARD"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_FMR50;HAS_I286"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/fmrcard.pch"
+				PrecompiledHeaderFile=".\Debug/fmr50_i286.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -76,11 +76,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Debug/fmrcard.exe"
+				OutputFile=".\Debug/fmr50_i286.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/fmrcard.pdb"
+				ProgramDatabaseFile=".\Debug/fmr50_i286.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -98,7 +98,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/fmrcard.bsc"
+				OutputFile=".\Debug/fmr50_i286.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -138,7 +138,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/fmrcard.tlb"
+				TypeLibraryName=".\Release/fmr50_i286.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -146,11 +146,11 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_FMRCARD"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_FMR50;HAS_I286"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/fmrcard.pch"
+				PrecompiledHeaderFile=".\Release/fmr50_i286.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -172,10 +172,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Release/fmrcard.exe"
+				OutputFile=".\Release/fmr50_i286.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/fmrcard.pdb"
+				ProgramDatabaseFile=".\Release/fmr50_i286.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/fmrcard.bsc"
+				OutputFile=".\Release/fmr50_i286.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -397,28 +397,6 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\beep.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\disk.cpp"
 					>
 					<FileConfiguration
@@ -485,7 +463,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\i386.cpp"
+					RelativePath="src\vm\i286.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -573,28 +551,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\i86.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\io.cpp"
 					>
 					<FileConfiguration
@@ -640,6 +596,28 @@
 				</File>
 				<File
 					RelativePath="src\vm\msm58321.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\pcm1bit.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -899,10 +877,6 @@
 				Filter="h"
 				>
 				<File
-					RelativePath="src\vm\beep.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\device.h"
 					>
 				</File>
@@ -919,7 +893,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\i386.h"
+					RelativePath="src\vm\i286.h"
 					>
 				</File>
 				<File
@@ -935,10 +909,6 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\i86.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\io.h"
 					>
 				</File>
@@ -948,6 +918,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\msm58321.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\pcm1bit.h"
 					>
 				</File>
 				<File
@@ -1002,11 +976,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\fmrcard.ico"
+				RelativePath="src\res\fmr50.ico"
 				>
 			</File>
 			<File
-				RelativePath="src\res\fmrcard.rc"
+				RelativePath="src\res\fmr50_i286.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

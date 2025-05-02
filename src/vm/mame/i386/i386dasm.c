@@ -4,7 +4,7 @@
    Written by Ville Linde
 */
 
-#include "emu.h"
+//#include "emu.h"
 
 enum
 {
@@ -41,6 +41,7 @@ enum
 	PARAM_REL,          /* 16 or 32-bit PC-relative displacement */
 	PARAM_REL8,         /* 8-bit PC-relative displacement */
 	PARAM_MEM_OFFS,     /* 16 or 32-bit mem offset */
+	PARAM_PREIMP,       /* prefix with implicit register */
 	PARAM_SREG,         /* segment register */
 	PARAM_CREG,         /* control register */
 	PARAM_DREG,         /* debug register */
@@ -161,7 +162,7 @@ static const I386_OPCODE i386_opcode_table1[256] =
 	{"sub",             MODRM,          PARAM_RM,           PARAM_REG,          0               },
 	{"sub",             MODRM,          PARAM_REG8,         PARAM_RM8,          0               },
 	{"sub",             MODRM,          PARAM_REG,          PARAM_RM,           0               },
-	{"sub",             0,              PARAM_AL,           PARAM_I8,           0               },
+	{"sub",             0,              PARAM_AL,           PARAM_UI8,          0               },
 	{"sub",             0,              PARAM_EAX,          PARAM_IMM,          0               },
 	{"seg_cs",          SEG_CS,         0,                  0,                  0               },
 	{"das",             0,              0,                  0,                  0               },
@@ -231,8 +232,8 @@ static const I386_OPCODE i386_opcode_table1[256] =
 	{"imul",            MODRM,          PARAM_REG,          PARAM_RM,           PARAM_I8        },
 	{"insb",            0,              0,                  0,                  0               },
 	{"insw\0insd\0insd",VAR_NAME,       0,                  0,                  0               },
-	{"outsb",           0,              0,                  0,                  0               },
-	{"outsw\0outsd\0outsd",VAR_NAME,    0,                  0,                  0               },
+	{"outsb",           0,              PARAM_PREIMP,       0,                  0               },
+	{"outsw\0outsd\0outsd",VAR_NAME,    PARAM_PREIMP,       0,                  0               },
 	// 0x70
 	{"jo",              0,              PARAM_REL8,         0,                  0               },
 	{"jno",             0,              PARAM_REL8,         0,                  0               },
@@ -289,16 +290,16 @@ static const I386_OPCODE i386_opcode_table1[256] =
 	{"mov",             0,              PARAM_EAX,          PARAM_MEM_OFFS,     0               },
 	{"mov",             0,              PARAM_MEM_OFFS,     PARAM_AL,           0               },
 	{"mov",             0,              PARAM_MEM_OFFS,     PARAM_EAX,          0               },
-	{"movsb",           0,              0,                  0,                  0               },
-	{"movsw\0movsd\0movsq",VAR_NAME,    0,                  0,                  0               },
-	{"cmpsb",           0,              0,                  0,                  0               },
-	{"cmpsw\0cmpsd\0cmpsq",VAR_NAME,    0,                  0,                  0               },
+	{"movsb",           0,              PARAM_PREIMP,       0,                  0               },
+	{"movsw\0movsd\0movsq",VAR_NAME,    PARAM_PREIMP,       0,                  0               },
+	{"cmpsb",           0,              PARAM_PREIMP,       0,                  0               },
+	{"cmpsw\0cmpsd\0cmpsq",VAR_NAME,    PARAM_PREIMP,       0,                  0               },
 	{"test",            0,              PARAM_AL,           PARAM_UI8,          0               },
 	{"test",            0,              PARAM_EAX,          PARAM_IMM,          0               },
 	{"stosb",           0,              0,                  0,                  0               },
 	{"stosw\0stosd\0stosq",VAR_NAME,    0,                  0,                  0               },
-	{"lodsb",           0,              0,                  0,                  0               },
-	{"lodsw\0lodsd\0lodsq",VAR_NAME,    0,                  0,                  0               },
+	{"lodsb",           0,              PARAM_PREIMP,       0,                  0               },
+	{"lodsw\0lodsd\0lodsq",VAR_NAME,    PARAM_PREIMP,       0,                  0               },
 	{"scasb",           0,              0,                  0,                  0               },
 	{"scasw\0scasd\0scasq",VAR_NAME,    0,                  0,                  0               },
 	// 0xb0
@@ -321,15 +322,15 @@ static const I386_OPCODE i386_opcode_table1[256] =
 	// 0xc0
 	{"groupC0",         GROUP,          0,                  0,                  0               },
 	{"groupC1",         GROUP,          0,                  0,                  0               },
-	{"ret",             0,              PARAM_I16,          0,                  0,              DASMFLAG_STEP_OUT},
+	{"ret",             0,              PARAM_UI16,         0,                  0,              DASMFLAG_STEP_OUT},
 	{"ret",             0,              0,                  0,                  0,              DASMFLAG_STEP_OUT},
 	{"les",             MODRM,          PARAM_REG,          PARAM_RM,           0               },
 	{"lds",             MODRM,          PARAM_REG,          PARAM_RM,           0               },
 	{"mov",             MODRM,          PARAM_RMPTR8,       PARAM_UI8,          0               },
 	{"mov",             MODRM,          PARAM_RMPTR,        PARAM_IMM,          0               },
-	{"enter",           0,              PARAM_I16,          PARAM_UI8,          0               },
+	{"enter",           0,              PARAM_UI16,         PARAM_UI8,          0               },
 	{"leave",           0,              0,                  0,                  0               },
-	{"retf",            0,              PARAM_I16,          0,                  0,              DASMFLAG_STEP_OUT},
+	{"retf",            0,              PARAM_UI16,         0,                  0,              DASMFLAG_STEP_OUT},
 	{"retf",            0,              0,                  0,                  0,              DASMFLAG_STEP_OUT},
 	{"int 3",           0,              0,                  0,                  0,              DASMFLAG_STEP_OVER},
 	{"int",             0,              PARAM_UI8,          0,                  0,              DASMFLAG_STEP_OVER},
@@ -340,8 +341,8 @@ static const I386_OPCODE i386_opcode_table1[256] =
 	{"groupD1",         GROUP,          0,                  0,                  0               },
 	{"groupD2",         GROUP,          0,                  0,                  0               },
 	{"groupD3",         GROUP,          0,                  0,                  0               },
-	{"aam",             0,              PARAM_I8,           0,                  0               },
-	{"aad",             0,              PARAM_I8,           0,                  0               },
+	{"aam",             0,              PARAM_UI8,          0,                  0               },
+	{"aad",             0,              PARAM_UI8,          0,                  0               },
 	{"salc",            0,              0,                  0,                  0               }, //AMD docs name it
 	{"xlat",            0,              0,                  0,                  0               },
 	{"escape",          FPU,            0,                  0,                  0               },
@@ -623,7 +624,7 @@ static const I386_OPCODE i386_opcode_table2[256] =
 	{"pshufw\0"
 		"pshufd\0"
 		"pshuflw\0"
-		"pshufhw",          MODRM|VAR_NAME4,PARAM_MMX,          PARAM_MMXM,         PARAM_I8        },
+		"pshufhw",          MODRM|VAR_NAME4,PARAM_MMX,          PARAM_MMXM,         PARAM_UI8       },
 	{"group0F71",       GROUP,          0,                  0,                  0               },
 	{"group0F72",       GROUP,          0,                  0,                  0               },
 	{"group0F73",       GROUP,          0,                  0,                  0               },
@@ -690,7 +691,7 @@ static const I386_OPCODE i386_opcode_table2[256] =
 	{"pop     fs",      0,              0,                  0,                  0               },
 	{"cpuid",           0,              0,                  0,                  0               },
 	{"bt",              MODRM,          PARAM_RM,           PARAM_REG,          0               },
-	{"shld",            MODRM,          PARAM_RM,           PARAM_REG,          PARAM_I8        },
+	{"shld",            MODRM,          PARAM_RM,           PARAM_REG,          PARAM_UI8       },
 	{"shld",            MODRM,          PARAM_RM,           PARAM_REG,          PARAM_CL        },
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
@@ -698,7 +699,7 @@ static const I386_OPCODE i386_opcode_table2[256] =
 	{"pop     gs",      0,              0,                  0,                  0               },
 	{"rsm",             0,              0,                  0,                  0               },
 	{"bts",             MODRM,          PARAM_RM,           PARAM_REG,          0               },
-	{"shrd",            MODRM,          PARAM_RM,           PARAM_REG,          PARAM_I8        },
+	{"shrd",            MODRM,          PARAM_RM,           PARAM_REG,          PARAM_UI8       },
 	{"shrd",            MODRM,          PARAM_RM,           PARAM_REG,          PARAM_CL        },
 	{"group0FAE",       GROUP,          0,                  0,                  0               },
 	{"imul",            MODRM,          PARAM_REG,          PARAM_RM,           0               },
@@ -736,12 +737,12 @@ static const I386_OPCODE i386_opcode_table2[256] =
 		"cmpsd\0"
 		"cmpss",            MODRM|VAR_NAME4,PARAM_XMM,          PARAM_XMMM,         0               },
 	{"movnti",          MODRM,          PARAM_RM,           PARAM_REG,          0               },
-	{"pinsrw",          MODRM,          PARAM_MMX,          PARAM_MMXM,         PARAM_I8        },
-	{"pextrw",          MODRM,          PARAM_MMX,          PARAM_MMXM,         PARAM_I8        },
+	{"pinsrw",          MODRM,          PARAM_MMX,          PARAM_MMXM,         PARAM_UI8       },
+	{"pextrw",          MODRM,          PARAM_MMX,          PARAM_MMXM,         PARAM_UI8       },
 	{"shufps\0"
 		"shufpd\0"
 		"???\0"
-		"???",              MODRM|VAR_NAME4,PARAM_XMM,          PARAM_XMMM,         PARAM_I8        },
+		"???",              MODRM|VAR_NAME4,PARAM_XMM,          PARAM_XMMM,         PARAM_UI8       },
 	{"group0FC7",           GROUP,          0,          0,                  0               },
 	{"bswap",           0,              PARAM_EAX,          0,                  0               },
 	{"bswap",           0,              PARAM_ECX,          0,                  0               },
@@ -1616,14 +1617,14 @@ static const I386_OPCODE i386_opcode_table0F3A[256] =
 
 static const I386_OPCODE group80_table[8] =
 {
-	{"add",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"or",              0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"adc",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"sbb",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"and",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"sub",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"xor",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"cmp",             0,              PARAM_RMPTR8,       PARAM_I8,           0               }
+	{"add",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"or",              0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"adc",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"sbb",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"and",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"sub",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"xor",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"cmp",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               }
 };
 
 static const I386_OPCODE group81_table[8] =
@@ -1652,26 +1653,26 @@ static const I386_OPCODE group83_table[8] =
 
 static const I386_OPCODE groupC0_table[8] =
 {
-	{"rol",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"ror",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"rcl",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"rcr",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"shl",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"shr",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"sal",             0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"sar",             0,              PARAM_RMPTR8,       PARAM_I8,           0               }
+	{"rol",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"ror",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"rcl",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"rcr",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"shl",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"shr",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"sal",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"sar",             0,              PARAM_RMPTR8,       PARAM_UI8,          0               }
 };
 
 static const I386_OPCODE groupC1_table[8] =
 {
-	{"rol",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"ror",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"rcl",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"rcr",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"shl",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"shr",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"sal",             0,              PARAM_RMPTR,        PARAM_I8,           0               },
-	{"sar",             0,              PARAM_RMPTR,        PARAM_I8,           0               }
+	{"rol",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"ror",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"rcl",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"rcr",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"shl",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"shr",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"sal",             0,              PARAM_RMPTR,        PARAM_UI8,          0               },
+	{"sar",             0,              PARAM_RMPTR,        PARAM_UI8,          0               }
 };
 
 static const I386_OPCODE groupD0_table[8] =
@@ -1724,8 +1725,8 @@ static const I386_OPCODE groupD3_table[8] =
 
 static const I386_OPCODE groupF6_table[8] =
 {
-	{"test",            0,              PARAM_RMPTR8,       PARAM_I8,           0               },
-	{"test",            0,              PARAM_RMPTR8,       PARAM_I8,           0               },
+	{"test",            0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
+	{"test",            0,              PARAM_RMPTR8,       PARAM_UI8,          0               },
 	{"not",             0,              PARAM_RMPTR8,       0,                  0               },
 	{"neg",             0,              PARAM_RMPTR8,       0,                  0               },
 	{"mul",             0,              PARAM_RMPTR8,       0,                  0               },
@@ -1822,11 +1823,11 @@ static const I386_OPCODE group0F71_table[8] =
 {
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psrlw",           0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psrlw",           0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psraw",           0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psraw",           0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psllw",           0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psllw",           0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               }
 };
 
@@ -1834,23 +1835,23 @@ static const I386_OPCODE group0F72_table[8] =
 {
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psrld",           0,              PARAM_MMX,          PARAM_I8,           0               },
-	{"psrldq",          0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psrld",           0,              PARAM_MMX,          PARAM_UI8,          0               },
+	{"psrldq",          0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"pslld",           0,              PARAM_MMX,          PARAM_I8,           0               },
-	{"pslldq",          0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"pslld",           0,              PARAM_MMX,          PARAM_UI8,          0               },
+	{"pslldq",          0,              PARAM_MMX,          PARAM_UI8,          0               },
 };
 
 static const I386_OPCODE group0F73_table[8] =
 {
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psrlq",           0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psrlq",           0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psraq",           0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psraq",           0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"psllq",           0,              PARAM_MMX,          PARAM_I8,           0               },
+	{"psllq",           0,              PARAM_MMX,          PARAM_UI8,          0               },
 	{"???",             0,              0,                  0,                  0               }
 };
 
@@ -1873,10 +1874,10 @@ static const I386_OPCODE group0FBA_table[8] =
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
 	{"???",             0,              0,                  0,                  0               },
-	{"bt",              0,              PARAM_RM,           PARAM_I8,           0               },
-	{"bts",             0,              PARAM_RM,           PARAM_I8,           0               },
-	{"btr",             0,              PARAM_RM,           PARAM_I8,           0               },
-	{"btc",             0,              PARAM_RM,           PARAM_I8,           0               }
+	{"bt",              0,              PARAM_RM,           PARAM_UI8,          0               },
+	{"bts",             0,              PARAM_RM,           PARAM_UI8,          0               },
+	{"btr",             0,              PARAM_RM,           PARAM_UI8,          0               },
+	{"btc",             0,              PARAM_RM,           PARAM_UI8,          0               }
 };
 
 static const I386_OPCODE group0FC7_table[8] =
@@ -1951,7 +1952,7 @@ static UINT8 curmode;
 #define MODRM_REG1  ((modrm >> 3) & 0x7)
 #define MODRM_REG2  (modrm & 0x7)
 
-INLINE UINT8 FETCH(void)
+INLINE UINT8 _FETCH(void)
 {
 	if ((opcode_ptr - opcode_ptr_base) + 1 > max_length)
 		return 0xff;
@@ -1959,7 +1960,7 @@ INLINE UINT8 FETCH(void)
 	return *opcode_ptr++;
 }
 
-INLINE UINT16 FETCH16(void)
+INLINE UINT16 _FETCH16(void)
 {
 	UINT16 d;
 	if ((opcode_ptr - opcode_ptr_base) + 2 > max_length)
@@ -1970,7 +1971,7 @@ INLINE UINT16 FETCH16(void)
 	return d;
 }
 
-INLINE UINT32 FETCH32(void)
+INLINE UINT32 _FETCH32(void)
 {
 	UINT32 d;
 	if ((opcode_ptr - opcode_ptr_base) + 4 > max_length)
@@ -1981,7 +1982,7 @@ INLINE UINT32 FETCH32(void)
 	return d;
 }
 
-INLINE UINT8 FETCHD(void)
+INLINE UINT8 _FETCHD(void)
 {
 	if ((opcode_ptr - opcode_ptr_base) + 1 > max_length)
 		return 0xff;
@@ -1989,7 +1990,7 @@ INLINE UINT8 FETCHD(void)
 	return *opcode_ptr++;
 }
 
-INLINE UINT16 FETCHD16(void)
+INLINE UINT16 _FETCHD16(void)
 {
 	UINT16 d;
 	if ((opcode_ptr - opcode_ptr_base) + 2 > max_length)
@@ -2000,7 +2001,7 @@ INLINE UINT16 FETCHD16(void)
 	return d;
 }
 
-INLINE UINT32 FETCHD32(void)
+INLINE UINT32 _FETCHD32(void)
 {
 	UINT32 d;
 	if ((opcode_ptr - opcode_ptr_base) + 4 > max_length)
@@ -2057,14 +2058,14 @@ static char* handle_sib_byte( char* s, UINT8 mod )
 {
 	UINT32 i32;
 	UINT8 scale, i, base;
-	UINT8 sib = FETCHD();
+	UINT8 sib = _FETCHD();
 
 	scale = (sib >> 6) & 0x3;
 	i = ((sib >> 3) & 0x7) | sibex;
 	base = (sib & 0x7) | rmex;
 
 	if (base == 5 && mod == 0) {
-		i32 = FETCH32();
+		i32 = _FETCH32();
 		s += sprintf( s, "%s", hexstring(i32, 0) );
 	} else if (base != 5 || mod != 3)
 		s += sprintf( s, "%s", i386_reg[address_size][base] );
@@ -2084,7 +2085,7 @@ static void handle_modrm(char* s)
 	INT32 disp32;
 	UINT8 mod, rm;
 
-	modrm = FETCHD();
+	modrm = _FETCHD();
 	mod = (modrm >> 6) & 0x3;
 	rm = (modrm & 0x7) | rmex;
 
@@ -2106,16 +2107,16 @@ static void handle_modrm(char* s)
 		if ((rm & 7) == 4)
 			s = handle_sib_byte( s, mod );
 		else if ((rm & 7) == 5 && mod == 0) {
-			disp32 = FETCHD32();
+			disp32 = _FETCHD32();
 			s += sprintf( s, "rip%s", shexstring(disp32, 0, TRUE) );
 		} else
 			s += sprintf( s, "%s", i386_reg[2][rm]);
 		if( mod == 1 ) {
-			disp8 = FETCHD();
+			disp8 = _FETCHD();
 			if (disp8 != 0)
 				s += sprintf( s, "%s", shexstring((INT32)disp8, 0, TRUE) );
 		} else if( mod == 2 ) {
-			disp32 = FETCHD32();
+			disp32 = _FETCHD32();
 			if (disp32 != 0)
 				s += sprintf( s, "%s", shexstring(disp32, 0, TRUE) );
 		}
@@ -2123,7 +2124,7 @@ static void handle_modrm(char* s)
 		if ((rm & 7) == 4)
 			s = handle_sib_byte( s, mod );
 		else if ((rm & 7) == 5 && mod == 0) {
-			disp32 = FETCHD32();
+			disp32 = _FETCHD32();
 			if (curmode == 64)
 				s += sprintf( s, "eip%s", shexstring(disp32, 0, TRUE) );
 			else
@@ -2131,11 +2132,11 @@ static void handle_modrm(char* s)
 		} else
 			s += sprintf( s, "%s", i386_reg[1][rm]);
 		if( mod == 1 ) {
-			disp8 = FETCHD();
+			disp8 = _FETCHD();
 			if (disp8 != 0)
 				s += sprintf( s, "%s", shexstring((INT32)disp8, 0, TRUE) );
 		} else if( mod == 2 ) {
-			disp32 = FETCHD32();
+			disp32 = _FETCHD32();
 			if (disp32 != 0)
 				s += sprintf( s, "%s", shexstring(disp32, 0, TRUE) );
 		}
@@ -2150,7 +2151,7 @@ static void handle_modrm(char* s)
 			case 5: s += sprintf( s, "di" ); break;
 			case 6:
 				if( mod == 0 ) {
-					disp16 = FETCHD16();
+					disp16 = _FETCHD16();
 					s += sprintf( s, "%s", hexstring((unsigned) (UINT16) disp16, 0) );
 				} else {
 					s += sprintf( s, "bp" );
@@ -2159,11 +2160,11 @@ static void handle_modrm(char* s)
 			case 7: s += sprintf( s, "bx" ); break;
 		}
 		if( mod == 1 ) {
-			disp8 = FETCHD();
+			disp8 = _FETCHD();
 			if (disp8 != 0)
 				s += sprintf( s, "%s", shexstring((INT32)disp8, 0, TRUE) );
 		} else if( mod == 2 ) {
-			disp16 = FETCHD16();
+			disp16 = _FETCHD16();
 			if (disp16 != 0)
 				s += sprintf( s, "%s", shexstring((INT32)disp16, 0, TRUE) );
 		}
@@ -2321,63 +2322,63 @@ static char* handle_param(char* s, UINT32 param)
 			break;
 
 		case PARAM_I4:
-			i8 = FETCHD();
+			i8 = _FETCHD();
 			s += sprintf( s, "%d", i8 & 0x0f );
 			break;
 
 		case PARAM_I8:
-			i8 = FETCHD();
+			i8 = _FETCHD();
 			s += sprintf( s, "%s", shexstring((INT8)i8, 0, FALSE) );
 			break;
 
 		case PARAM_I16:
-			i16 = FETCHD16();
+			i16 = _FETCHD16();
 			s += sprintf( s, "%s", shexstring((INT16)i16, 0, FALSE) );
 			break;
 
 		case PARAM_UI8:
-			i8 = FETCHD();
+			i8 = _FETCHD();
 			s += sprintf( s, "%s", shexstring((UINT8)i8, 0, FALSE) );
 			break;
 
 		case PARAM_UI16:
-			i16 = FETCHD16();
+			i16 = _FETCHD16();
 			s += sprintf( s, "%s", shexstring((UINT16)i16, 0, FALSE) );
 			break;
 
 		case PARAM_IMM64:
 			if (operand_size == 2) {
-				UINT32 lo32 = FETCHD32();
-				i32 = FETCHD32();
+				UINT32 lo32 = _FETCHD32();
+				i32 = _FETCHD32();
 				s += sprintf( s, "%s", hexstring64(lo32, i32) );
 			} else if( operand_size ) {
-				i32 = FETCHD32();
+				i32 = _FETCHD32();
 				s += sprintf( s, "%s", hexstring(i32, 0) );
 			} else {
-				i16 = FETCHD16();
+				i16 = _FETCHD16();
 				s += sprintf( s, "%s", hexstring(i16, 0) );
 			}
 			break;
 
 		case PARAM_IMM:
 			if( operand_size ) {
-				i32 = FETCHD32();
+				i32 = _FETCHD32();
 				s += sprintf( s, "%s", hexstring(i32, 0) );
 			} else {
-				i16 = FETCHD16();
+				i16 = _FETCHD16();
 				s += sprintf( s, "%s", hexstring(i16, 0) );
 			}
 			break;
 
 		case PARAM_ADDR:
 			if( operand_size ) {
-				addr = FETCHD32();
-				ptr = FETCHD16();
+				addr = _FETCHD32();
+				ptr = _FETCHD16();
 				s += sprintf( s, "%s:", hexstring(ptr, 4) );
 				s += sprintf( s, "%s", hexstring(addr, 0) );
 			} else {
-				addr = FETCHD16();
-				ptr = FETCHD16();
+				addr = _FETCHD16();
+				ptr = _FETCHD16();
 				s += sprintf( s, "%s:", hexstring(ptr, 4) );
 				s += sprintf( s, "%s", hexstring(addr, 0) );
 			}
@@ -2385,17 +2386,17 @@ static char* handle_param(char* s, UINT32 param)
 
 		case PARAM_REL:
 			if( operand_size ) {
-				d32 = FETCHD32();
+				d32 = _FETCHD32();
 				s += sprintf( s, "%s", hexstringpc(pc + d32) );
 			} else {
 				/* make sure to keep the relative offset within the segment */
-				d16 = FETCHD16();
+				d16 = _FETCHD16();
 				s += sprintf( s, "%s", hexstringpc((pc & 0xFFFF0000) | ((pc + d16) & 0x0000FFFF)) );
 			}
 			break;
 
 		case PARAM_REL8:
-			d8 = FETCHD();
+			d8 = _FETCHD();
 			s += sprintf( s, "%s", hexstringpc(pc + d8) );
 			break;
 
@@ -2411,11 +2412,23 @@ static char* handle_param(char* s, UINT32 param)
 			}
 
 			if( address_size ) {
-				i32 = FETCHD32();
+				i32 = _FETCHD32();
 				s += sprintf( s, "[%s]", hexstring(i32, 0) );
 			} else {
-				i16 = FETCHD16();
+				i16 = _FETCHD16();
 				s += sprintf( s, "[%s]", hexstring(i16, 0) );
+			}
+			break;
+
+		case PARAM_PREIMP:
+			switch(segment)
+			{
+				case SEG_CS: s += sprintf( s, "cs:" ); break;
+				case SEG_DS: s += sprintf( s, "ds:" ); break;
+				case SEG_ES: s += sprintf( s, "es:" ); break;
+				case SEG_FS: s += sprintf( s, "fs:" ); break;
+				case SEG_GS: s += sprintf( s, "gs:" ); break;
+				case SEG_SS: s += sprintf( s, "ss:" ); break;
 			}
 			break;
 
@@ -2863,7 +2876,7 @@ static void decode_opcode(char *s, const I386_OPCODE *op, UINT8 op1)
 				regex = (op1 << 1) & 8;
 				sibex = (op1 << 2) & 8;
 				rmex = (op1 << 3) & 8;
-				op2 = FETCH();
+				op2 = _FETCH();
 				decode_opcode( s, &i386_opcode_table1[op2], op1 );
 				return;
 			}
@@ -2876,7 +2889,7 @@ static void decode_opcode(char *s, const I386_OPCODE *op, UINT8 op1)
 				operand_size ^= 1;
 				operand_prefix = 1;
 			}
-			op2 = FETCH();
+			op2 = _FETCH();
 			decode_opcode( s, &i386_opcode_table1[op2], op2 );
 			return;
 
@@ -2890,19 +2903,19 @@ static void decode_opcode(char *s, const I386_OPCODE *op, UINT8 op1)
 					address_size ^= 3;
 				address_prefix = 1;
 			}
-			op2 = FETCH();
+			op2 = _FETCH();
 			decode_opcode( s, &i386_opcode_table1[op2], op2 );
 			return;
 
 		case TWO_BYTE:
 			if (&opcode_ptr[-2] >= opcode_ptr_base)
 				pre0f = opcode_ptr[-2];
-			op2 = FETCHD();
+			op2 = _FETCHD();
 			decode_opcode( s, &i386_opcode_table2[op2], op1 );
 			return;
 
 		case THREE_BYTE:
-			op2 = FETCHD();
+			op2 = _FETCHD();
 			if (opcode_ptr[-2] == 0x38)
 				decode_opcode( s, &i386_opcode_table0F38[op2], op1 );
 			else
@@ -2917,12 +2930,12 @@ static void decode_opcode(char *s, const I386_OPCODE *op, UINT8 op1)
 		case SEG_SS:
 			rex = regex = sibex = rmex = 0;
 			segment = op->flags;
-			op2 = FETCH();
+			op2 = _FETCH();
 			decode_opcode( s, &i386_opcode_table1[op2], op2 );
 			return;
 
 		case PREFIX:
-			op2 = FETCH();
+			op2 = _FETCH();
 			if ((op2 != 0x0f) && (op2 != 0x90))
 				s += sprintf( s, "%-7s ", op->mnemonic );
 			if ((op2 == 0x90) && !pre0f)
@@ -2941,7 +2954,7 @@ static void decode_opcode(char *s, const I386_OPCODE *op, UINT8 op1)
 			goto handle_unknown;
 
 		case FPU:
-			op2 = FETCHD();
+			op2 = _FETCHD();
 			handle_fpu( s, op1, op2);
 			return;
 
@@ -3033,7 +3046,7 @@ int i386_dasm_one_ex(char *buffer, UINT64 eip, const UINT8 *oprom, int mode)
 	address_prefix = 0;
 	operand_prefix = 0;
 
-	op = FETCH();
+	op = _FETCH();
 
 	decode_opcode( buffer, &i386_opcode_table1[op], op );
 	return (pc-eip) | dasm_flags | DASMFLAG_SUPPORTED;

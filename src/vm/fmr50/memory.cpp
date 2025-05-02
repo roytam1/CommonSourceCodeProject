@@ -9,7 +9,11 @@
 */
 
 #include "memory.h"
-#include "../i86.h"
+#if defined(HAS_I286)
+#include "../i286.h"
+#else
+#include "../i386.h"
+#endif
 #include "../../fileio.h"
 
 static const uint8 bios1[] = {
@@ -87,16 +91,6 @@ void MEMORY::initialize()
 	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
-#ifdef _FMRCARD
-		// skip keyboard check...
-		char ver[] = "FMR-CARD        V3.2L31D92/02/10";
-		char tmp[33];
-		memset(tmp, 0, sizeof(tmp));
-		memcpy(tmp, ipl, 32);
-		if(strcmp(tmp, ver) == 0) {
-			memset(ipl + 0x214f, 0x90, 14);
-		}
-#endif
 	}
 	else {
 		// load pseudo ipl
@@ -129,7 +123,6 @@ void MEMORY::initialize()
 	delete fio;
 	
 	// set memory
-	amask = 0xffffff;
 	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
 	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 #ifdef _FMR60
@@ -141,6 +134,9 @@ void MEMORY::initialize()
 	// set palette
 	for(int i = 0; i < 8; i++) {
 		dpal[i] = i;
+		apal[i][0] = (i & 1) ? 0xf0 : 0;
+		apal[i][1] = (i & 2) ? 0xf0 : 0;
+		apal[i][2] = (i & 4) ? 0xf0 : 0;
 	}
 	for(int i = 0; i < 16; i++) {
 		if(i & 8) {
@@ -151,6 +147,8 @@ void MEMORY::initialize()
 		}
 		palette_txt[i] = palette_cg[i];
 	}
+	palette_txt[0] = RGB_COLOR(63, 63, 63);
+	apalsel = 0;
 	
 	// register event
 	register_frame_event(this);
@@ -180,11 +178,13 @@ void MEMORY::reset()
 	cmdreg = maskreg = compbit = bankdis = 0;
 	memset(compreg, sizeof(compreg), 0xff);
 #endif
+	dma_addr_reg = dma_wrap_reg = 0;
+	dma_addr_mask = 0x00ffffff;
+	d_cpu->set_address_mask(0x00ffffff);
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	addr &= amask;
 	if(addr & 0xff000000) {
 		// > 16MB
 		return;
@@ -436,7 +436,6 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-	addr &= amask;
 	if(addr & 0xff000000) {
 		// > 16MB
 		if(addr >= 0xffffc000) {
@@ -494,6 +493,16 @@ uint32 MEMORY::read_data8(uint32 addr)
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 
+void MEMORY::write_dma_data8(uint32 addr, uint32 data)
+{
+	write_data8(addr & dma_addr_mask, data);
+}
+
+uint32 MEMORY::read_dma_data8(uint32 addr)
+{
+	return read_data8(addr & dma_addr_mask);
+}
+
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xffff) {
@@ -511,22 +520,34 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			d_cpu->reset();
 		}
 		// protect mode
-		if(is_i286) {
-			d_cpu->write_signal(SIG_I86_A20, data, 0x20);
+#if defined(HAS_I286)
+		if(data & 0x20) {
+			d_cpu->set_address_mask(0x00ffffff);
+		} else {
+			d_cpu->set_address_mask(0x000fffff);
 		}
-		else {
-			switch(data & 0x30) {
-			case 0x00:	// 20bit
-				amask = 0xfffff;
-				break;
-			case 0x20:	// 24bit
-				amask = 0xffffff;
-				break;
-			case 0x30:	// 32bit
-				amask = 0xffffffff;
-				break;
-			}
+#else
+		switch(data & 0x30) {
+		case 0x00:	// 20bit
+			d_cpu->set_address_mask(0x000fffff);
+			break;
+		case 0x20:	// 24bit
+			d_cpu->set_address_mask(0x00ffffff);
+			break;
+		default:	// 32bit
+			d_cpu->set_address_mask(0xffffffff);
+			break;
 		}
+#endif
+		update_dma_addr_mask();
+		break;
+	case 0x22:
+		dma_addr_reg = data;
+		update_dma_addr_mask();
+		break;
+	case 0x24:
+		dma_wrap_reg = data;
+		update_dma_addr_mask();
 		break;
 	case 0x400:
 		// video output control
@@ -560,25 +581,6 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		apal[apalsel][2] = data & 0xf0;
 		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
-	case 0xfd90:
-		// palette code register
-		apalsel = data & 0xf;
-		break;
-	case 0xfd92:
-		// blue level register
-		apal[apalsel][0] = data;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
-		break;
-	case 0xfd94:
-		// red level register
-		apal[apalsel][1] = data;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
-		break;
-	case 0xfd96:
-		// green level register
-		apal[apalsel][2] = data;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
-		break;
 	case 0xfd98:
 	case 0xfd99:
 	case 0xfd9a:
@@ -610,11 +612,15 @@ uint32 MEMORY::read_io8(uint32 addr)
 	switch(addr & 0xffff) {
 	case 0x20:
 		// reset cause register
-		val = rst;
-		rst &= ~3;
+		val = rst | (d_cpu->get_shutdown_flag() << 1);
+		rst = 0;
+		d_cpu->set_shutdown_flag(0);
 		return val | 0x7c;
 	case 0x21:
-		return 0xff;
+//		return 0x1f;
+		return 0xdf;
+	case 0x24:
+		return dma_wrap_reg;
 	case 0x30:
 		// machine & cpu id
 		return machine_id;
@@ -634,20 +640,11 @@ uint32 MEMORY::read_io8(uint32 addr)
 		return mainmem | rplane | 0x7c;
 	case 0x40a:
 		// blue level register
-		return apal[apalsel][0] | 0xf;
+		return apal[apalsel][0];
 	case 0x40c:
 		// red level register
-		return apal[apalsel][1] | 0xf;
-	case 0x40e:
-		// green level register
-		return apal[apalsel][2] | 0xf;
-	case 0xfd92:
-		// blue level register
-		return apal[apalsel][0];
-	case 0xfd94:
-		// red level register
 		return apal[apalsel][1];
-	case 0xfd96:
+	case 0x40e:
 		// green level register
 		return apal[apalsel][2];
 	case 0xfd98:
@@ -729,6 +726,29 @@ void MEMORY::update_bank()
 	}
 	else {
 		SET_BANK(0xf8000, 0xfffff, ram + 0xf8000, ram + 0xf8000);
+	}
+}
+
+void MEMORY::update_dma_addr_mask()
+{
+	switch(dma_addr_reg & 3) {
+	case 0:
+		dma_addr_mask = d_cpu->get_address_mask();
+		break;
+	case 1:
+		if(!(dma_wrap_reg & 1) && d_cpu->get_address_mask() == 0x000fffff) {
+			dma_addr_mask = 0x000fffff;
+		} else {
+			dma_addr_mask = 0x00ffffff;
+		}
+		break;
+	default:
+		if(!(dma_wrap_reg & 1) && d_cpu->get_address_mask() == 0x000fffff) {
+			dma_addr_mask = 0x000fffff;
+		} else {
+			dma_addr_mask = 0xffffffff;
+		}
+		break;
 	}
 }
 
@@ -817,7 +837,7 @@ void MEMORY::draw_screen()
 		uint8* cg = screen_cg[y];
 		
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
-			dest[x] = txt[x] ? palette_txt[txt[x]] : palette_cg[cg[x]];
+			dest[x] = txt[x] ? palette_txt[txt[x] & 15] : palette_cg[cg[x]];
 		}
 	}
 }
@@ -840,20 +860,18 @@ void MEMORY::draw_text()
 			uint8 codeh = cvram[src];
 			uint8 attrh = avram[src];
 			src = (src + 1) & 0x1ffff;
-			uint8 col = attrl & 15;
+			uint8 col = (attrl & 15) | 16;
 			bool blnk = (attrh & 0x40) || ((blink & 32) && (attrh & 0x10));
 			bool rev = ((attrh & 8) != 0);
+			uint8 xor_mask = (rev != blnk) ? 0xff : 0;
 			
 			if(codeh & 0x80) {
 				// kanji
 				int ofs = (codel | ((codeh & 0x7f) << 8)) * 72;
 				for(int l = 3; l < 27 && l < yofs; l++) {
-					uint8 pat0 = kanji24[ofs++];
-					uint8 pat1 = kanji24[ofs++];
-					uint8 pat2 = kanji24[ofs++];
-					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
-					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
-					pat2 = blnk ? 0 : rev ? ~pat2 : pat2;
+					uint8 pat0 = kanji24[ofs++] ^ xor_mask;
+					uint8 pat1 = kanji24[ofs++] ^ xor_mask;
+					uint8 pat2 = kanji24[ofs++] ^ xor_mask;
 					int yy = y * yofs + l;
 					if(yy >= 750) {
 						break;
@@ -894,10 +912,8 @@ void MEMORY::draw_text()
 				// ank
 				int ofs = codel * 48;
 				for(int l = 3; l < 27 && l < yofs; l++) {
-					uint8 pat0 = ank24[ofs++];
-					uint8 pat1 = ank24[ofs++];
-					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
-					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
+					uint8 pat0 = ank24[ofs++] ^ xor_mask;
+					uint8 pat1 = ank24[ofs++] ^ xor_mask;
 					int yy = y * yofs + l;
 					if(yy >= 750) {
 						break;
@@ -953,9 +969,10 @@ void MEMORY::draw_text40()
 			uint8 attr = cvram[src];
 			uint8 l = kvram[src] & 0x7f;
 			src = (src + 1) & 0xfff;
-			uint8 col = ((attr & 0x20) >> 2) | (attr & 7);
+			uint8 col = ((attr & 0x20) >> 2) | (attr & 7) | 16;
 			bool blnk = (blink & 32) && (attr & 0x10);
 			bool rev = ((attr & 8) != 0);
+			uint8 xor_mask = (rev != blnk) ? 0xff : 0;
 			
 			if(attr & 0x40) {
 				// kanji
@@ -971,10 +988,8 @@ void MEMORY::draw_text40()
 				}
 				
 				for(int l = 0; l < 16 && l < yofs; l++) {
-					uint8 pat0 = kanji16[ofs + (l << 1) + 0];
-					uint8 pat1 = kanji16[ofs + (l << 1) + 1];
-					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
-					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
+					uint8 pat0 = kanji16[ofs + (l << 1) + 0] ^ xor_mask;
+					uint8 pat1 = kanji16[ofs + (l << 1) + 1] ^ xor_mask;
 					int yy = y * yofs + l;
 					if(yy >= 400) {
 						break;
@@ -1003,8 +1018,7 @@ void MEMORY::draw_text40()
 			}
 			else {
 				for(int l = 0; l < 16 && l < yofs; l++) {
-					uint8 pat = ank16[(code << 4) + l];
-					pat = blnk ? 0 : rev ? ~pat : pat;
+					uint8 pat = ank16[(code << 4) + l] ^ xor_mask;
 					int yy = y * yofs + l;
 					if(yy >= 400) {
 						break;
@@ -1052,9 +1066,10 @@ void MEMORY::draw_text80()
 			uint8 attr = cvram[src];
 			uint8 l = kvram[src] & 0x7f;
 			src = (src + 1) & 0xfff;
-			uint8 col = ((attr & 0x20) >> 2) | (attr & 7);
+			uint8 col = ((attr & 0x20) >> 2) | (attr & 7) | 16;
 			bool blnk = (blink & 32) && (attr & 0x10);
 			bool rev = ((attr & 8) != 0);
+			uint8 xor_mask = (rev != blnk) ? 0xff : 0;
 			
 			if(attr & 0x40) {
 				// kanji
@@ -1070,10 +1085,8 @@ void MEMORY::draw_text80()
 				}
 				
 				for(int l = 0; l < 16 && l < yofs; l++) {
-					uint8 pat0 = kanji16[ofs + (l << 1) + 0];
-					uint8 pat1 = kanji16[ofs + (l << 1) + 1];
-					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
-					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
+					uint8 pat0 = kanji16[ofs + (l << 1) + 0] ^ xor_mask;
+					uint8 pat1 = kanji16[ofs + (l << 1) + 1] ^ xor_mask;
 					int yy = y * yofs + l;
 					if(yy >= 400) {
 						break;
@@ -1102,8 +1115,7 @@ void MEMORY::draw_text80()
 			}
 			else {
 				for(int l = 0; l < 16 && l < yofs; l++) {
-					uint8 pat = ank16[(code << 4) + l];
-					pat = blnk ? 0 : rev ? ~pat : pat;
+					uint8 pat = ank16[(code << 4) + l] ^ xor_mask;
 					int yy = y * yofs + l;
 					if(yy >= 400) {
 						break;

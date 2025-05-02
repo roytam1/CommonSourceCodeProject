@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								4/9/2014
+								5/1/2014
 
 --- What's this ?
 
@@ -29,6 +29,8 @@ This archive includes the all source codes of emulators listed below:
 	eFMR-30		FUJITSU FMR-30
 	eFMR-50		FUJITSU FMR-50
 	eFMR-60		FUJITSU FMR-60
+	eFMR-70		FUJITSU FMR-70
+	eFMR-80		FUJITSU FMR-80
 	eFP-200		CASIO FP-200
 	eFP-1100	CASIO FP-1100
 	eHANDY98	NEC PC-98HA

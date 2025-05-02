@@ -24,6 +24,7 @@ class TIMER : public DEVICE
 private:
 	DEVICE *d_pcm, *d_pic, *d_rtc;
 	
+	uint16 free_run_counter;
 	uint8 intr_reg, rtc_data;
 	bool tmout0, tmout1;
 	void update_intr();

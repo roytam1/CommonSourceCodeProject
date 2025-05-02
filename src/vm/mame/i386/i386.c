@@ -33,13 +33,12 @@ MODRM_TABLE i386_MODRM_table[256];
 static void i386_trap_with_error(i386_state* cpustate, int irq, int irq_gate, int trap_level, UINT32 err);
 static void i286_task_switch(i386_state* cpustate, UINT16 selector, UINT8 nested);
 static void i386_task_switch(i386_state* cpustate, UINT16 selector, UINT8 nested);
+static void pentium_smi(i386_state* cpustate);
 
 #define FAULT(fault,error) {cpustate->ext = 1; i386_trap_with_error(cpustate,fault,0,0,error); return;}
 #define FAULT_EXP(fault,error) {cpustate->ext = 1; i386_trap_with_error(cpustate,fault,0,trap_level+1,error); return;}
 
 /*************************************************************************/
-
-#define INT_DEBUG   1
 
 static UINT32 i386_load_protected_mode_segment(i386_state *cpustate, I386_SREG *seg, UINT64 *desc )
 {
@@ -140,7 +139,7 @@ static void i386_load_segment_descriptor(i386_state *cpustate, int segment )
 		{
 			cpustate->sreg[segment].base = cpustate->sreg[segment].selector << 4;
 			cpustate->sreg[segment].limit = 0xffff;
-			cpustate->sreg[segment].flags = (segment == CS) ? 0x009a : 0x0092;
+			cpustate->sreg[segment].flags = (segment == CS) ? 0x00fb : 0x00f3;
 			cpustate->sreg[segment].d = 0;
 			cpustate->sreg[segment].valid = true;
 		}
@@ -292,6 +291,7 @@ static void modrm_to_EA(i386_state *cpustate,UINT8 mod_rm, UINT32* out_ea, UINT8
 
 	if( mod_rm >= 0xc0 )
 		fatalerror("i386: Called modrm_to_EA with modrm value %02X!\n",mod_rm);
+
 
 	if( cpustate->address_size ) {
 		switch( rm )
@@ -649,6 +649,7 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 		{
 			logerror("IRQ: Triple fault. CPU reset.\n");
 			CPU_RESET_CALL(CPU_MODEL);
+			cpustate->shutdown = 1;
 			return;
 		}
 
@@ -850,10 +851,7 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 				cpustate->sreg[SS].selector = stack.selector;
 				i386_load_protected_mode_segment(cpustate,&cpustate->sreg[SS],NULL);
 				i386_set_descriptor_accessed(cpustate, stack.selector);
-				if(flags & 0x0008)
-					REG32(ESP) = i386_get_stack_ptr(cpustate,DPL);
-				else
-					REG16(SP) = i386_get_stack_ptr(cpustate,DPL);
+				REG32(ESP) = newESP;
 				if(V8086_MODE)
 				{
 					//logerror("IRQ (%08x): Interrupt during V8086 task\n",cpustate->pc);
@@ -930,24 +928,33 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 				}
 			}
 		}
-
-		if(type != 0x0e && type != 0x0f)  // if not 386 interrupt or trap gate
+		UINT32 tempSP = REG32(ESP);
+		try
 		{
-			PUSH16(cpustate, oldflags & 0xffff );
-			PUSH16(cpustate, cpustate->sreg[CS].selector );
-			if(irq == 3 || irq == 4 || irq == 9 || irq_gate == 1)
-				PUSH16(cpustate, cpustate->eip );
+			// this is ugly but the alternative is worse
+			if(type != 0x0e && type != 0x0f)  // if not 386 interrupt or trap gate
+			{
+				PUSH16(cpustate, oldflags & 0xffff );
+				PUSH16(cpustate, cpustate->sreg[CS].selector );
+				if(irq == 3 || irq == 4 || irq == 9 || irq_gate == 1)
+					PUSH16(cpustate, cpustate->eip );
+				else
+					PUSH16(cpustate, cpustate->prev_eip );
+			}
 			else
-				PUSH16(cpustate, cpustate->prev_eip );
+			{
+				PUSH32(cpustate, oldflags & 0x00ffffff );
+				PUSH32(cpustate, cpustate->sreg[CS].selector );
+				if(irq == 3 || irq == 4 || irq == 9 || irq_gate == 1)
+					PUSH32(cpustate, cpustate->eip );
+				else
+					PUSH32(cpustate, cpustate->prev_eip );
+			}
 		}
-		else
+		catch(UINT64 e)
 		{
-			PUSH32(cpustate, oldflags & 0x00ffffff );
-			PUSH32(cpustate, cpustate->sreg[CS].selector );
-			if(irq == 3 || irq == 4 || irq == 9 || irq_gate == 1)
-				PUSH32(cpustate, cpustate->eip );
-			else
-				PUSH32(cpustate, cpustate->prev_eip );
+			REG32(ESP) = tempSP;
+			throw e;
 		}
 		if(SetRPL != 0)
 			segment = (segment & ~0x03) | cpustate->CPL;
@@ -1108,6 +1115,7 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 	I386_SREG seg;
 	UINT16 old_task;
 	UINT8 ar_byte;  // access rights byte
+	UINT32 oldcr3 = cpustate->cr[3];
 
 	/* TODO: Task State Segment privilege checks */
 
@@ -1168,7 +1176,6 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 	cpustate->ldtr.limit = seg.limit;
 	cpustate->ldtr.base = seg.base;
 	cpustate->ldtr.flags = seg.flags;
-	cpustate->cr[3] = READ32(cpustate,tss+0x1c);  // CR3 (PDBR)
 	cpustate->eip = READ32(cpustate,tss+0x20);
 	set_flags(cpustate,READ32(cpustate,tss+0x24));
 	REG32(EAX) = READ32(cpustate,tss+0x28);
@@ -1191,6 +1198,14 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 	i386_load_segment_descriptor(cpustate, FS);
 	cpustate->sreg[GS].selector = READ32(cpustate,tss+0x5c) & 0xffff;
 	i386_load_segment_descriptor(cpustate, GS);
+	/* For nested tasks, we write the outgoing task's selector to the back-link field of the new TSS,
+	   and set the NT flag in the EFLAGS register before setting cr3 as the old tss address might be gone */
+	if(nested != 0)
+	{
+		WRITE32(cpustate,tss+0,old_task);
+		cpustate->NT = 1;
+	}
+	cpustate->cr[3] = READ32(cpustate,tss+0x1c);  // CR3 (PDBR)
 
 	/* Set the busy bit in the new task's descriptor */
 	if(selector & 0x0004)
@@ -1204,13 +1219,6 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 		WRITE8(cpustate,cpustate->gdtr.base + (selector & ~0x0007) + 5,ar_byte | 0x02);
 	}
 
-	/* For nested tasks, we write the outgoing task's selector to the back-link field of the new TSS,
-	   and set the NT flag in the EFLAGS register */
-	if(nested != 0)
-	{
-		WRITE32(cpustate,tss+0,old_task);
-		cpustate->NT = 1;
-	}
 	CHANGE_PC(cpustate,cpustate->eip);
 
 	cpustate->CPL = cpustate->sreg[CS].selector & 0x03;
@@ -1219,6 +1227,12 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 
 static void i386_check_irq_line(i386_state *cpustate)
 {
+	if(!cpustate->smm && cpustate->smi)
+	{
+		pentium_smi(cpustate);
+		return;
+	}
+
 	/* Check if the interrupts are enabled */
 	if ( (cpustate->irq_state) && cpustate->IF )
 	{
@@ -1347,7 +1361,7 @@ static void i386_protected_mode_jump(i386_state *cpustate, UINT16 seg, UINT32 of
 				return;
 			case 0x04:  // 286 Call Gate
 			case 0x0c:  // 386 Call Gate
-				logerror("JMP: Call gate at %08x\n",cpustate->pc);
+				//logerror("JMP: Call gate at %08x\n",cpustate->pc);
 				SetRPL = 1;
 				memset(&call_gate, 0, sizeof(call_gate));
 				call_gate.segment = segment;
@@ -1642,7 +1656,7 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 				gate.segment = selector;
 				i386_load_call_gate(cpustate,&gate);
 				DPL = gate.dpl;
-				logerror("CALL: Call gate at %08x (%i parameters)\n",cpustate->pc,gate.dword_count);
+				//logerror("CALL: Call gate at %08x (%i parameters)\n",cpustate->pc,gate.dword_count);
 				if(DPL < CPL)
 				{
 					logerror("CALL: Call gate DPL %i is less than CPL %i.\n",DPL,CPL);
@@ -1749,6 +1763,10 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 						FAULT(FAULT_SS,stack.selector)  // #SS(SS selector)
 					}
 					UINT32 newESP = i386_get_stack_ptr(cpustate,DPL);
+					if(!stack.d)
+					{
+						newESP &= 0xffff;
+					}
 					if(operand32 != 0)
 					{
 						if(newESP < ((gate.dword_count & 0x1f) + 16))
@@ -1764,7 +1782,6 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 					}
 					else
 					{
-						newESP &= 0x0000ffff;
 						if(newESP < ((gate.dword_count & 0x1f) + 8))
 						{
 							logerror("CALL: Call gate: New stack has no room for 16-bit return address and parameters.\n");
@@ -1780,11 +1797,11 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 					offset = gate.offset;
 
 					cpustate->CPL = (stack.flags >> 5) & 0x03;
-					/* check for page fault at new stack TODO: check if stack frame crosses page boundary */
+					/* check for page fault at new stack */
 					WRITE_TEST(cpustate, stack.base+newESP-1);
 					/* switch to new stack */
 					oldSS = cpustate->sreg[SS].selector;
-					cpustate->sreg[SS].selector = i386_get_stack_segment(cpustate,gate.selector & 0x03);
+					cpustate->sreg[SS].selector = i386_get_stack_segment(cpustate,cpustate->CPL);
 					if(operand32 != 0)
 					{
 						oldESP = REG32(ESP);
@@ -1794,10 +1811,7 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 						oldESP = REG16(SP);
 					}
 					i386_load_segment_descriptor(cpustate, SS );
-					if(operand32 != 0)
-						REG32(ESP) = i386_get_stack_ptr(cpustate,gate.selector & 0x03);
-					else
-						REG16(SP) = i386_get_stack_ptr(cpustate,gate.selector & 0x03) & 0x0000ffff;
+					REG32(ESP) = newESP;
 
 					if(operand32 != 0)
 					{
@@ -1917,26 +1931,38 @@ static void i386_protected_mode_call(i386_state *cpustate, UINT16 seg, UINT32 of
 
 	if(SetRPL != 0)
 		selector = (selector & ~0x03) | cpustate->CPL;
-	if(operand32 == 0)
+
+	UINT32 tempSP = REG32(ESP);
+	try
 	{
-		/* 16-bit operand size */
-		PUSH16(cpustate, cpustate->sreg[CS].selector );
-		PUSH16(cpustate, cpustate->eip & 0x0000ffff );
-		cpustate->sreg[CS].selector = selector;
-		cpustate->performed_intersegment_jump = 1;
-		cpustate->eip = offset;
-		i386_load_segment_descriptor(cpustate,CS);
+		// this is ugly but the alternative is worse
+		if(operand32 == 0)
+		{
+			/* 16-bit operand size */
+			PUSH16(cpustate, cpustate->sreg[CS].selector );
+			PUSH16(cpustate, cpustate->eip & 0x0000ffff );
+			cpustate->sreg[CS].selector = selector;
+			cpustate->performed_intersegment_jump = 1;
+			cpustate->eip = offset;
+			i386_load_segment_descriptor(cpustate,CS);
+		}
+		else
+		{
+			/* 32-bit operand size */
+			PUSH32(cpustate, cpustate->sreg[CS].selector );
+			PUSH32(cpustate, cpustate->eip );
+			cpustate->sreg[CS].selector = selector;
+			cpustate->performed_intersegment_jump = 1;
+			cpustate->eip = offset;
+			i386_load_segment_descriptor(cpustate, CS );
+		}
 	}
-	else
+	catch(UINT64 e)
 	{
-		/* 32-bit operand size */
-		PUSH32(cpustate, cpustate->sreg[CS].selector );
-		PUSH32(cpustate, cpustate->eip );
-		cpustate->sreg[CS].selector = selector;
-		cpustate->performed_intersegment_jump = 1;
-		cpustate->eip = offset;
-		i386_load_segment_descriptor(cpustate, CS );
+		REG32(ESP) = tempSP;
+		throw e;
 	}
+
 	CHANGE_PC(cpustate,cpustate->eip);
 }
 
@@ -2715,17 +2741,17 @@ static void report_invalid_opcode(i386_state *cpustate)
 #endif
 }
 
-static void report_unimplemented_opcode(i386_state *cpustate)
+static void report_invalid_modrm(i386_state *cpustate, const char* opcode, UINT8 modrm)
 {
 #ifndef DEBUG_MISSING_OPCODE
-	fatalerror("i386: Unimplemented opcode %02X at %08X\n", cpustate->opcode, cpustate->pc - 1 );
+	logerror("i386: Invalid %s modrm %01X at %08X\n", opcode, modrm, cpustate->pc - 2);
 #else
-	astring errmsg;
-	errmsg.cat("i386: Unimplemented opcode ");
+	logerror("i386: Invalid %s modrm %01X", opcode, modrm);
 	for (int a = 0; a < cpustate->opcode_bytes_length; a++)
-		errmsg.catprintf(" %02X", cpustate->opcode_bytes[a]);
-	errmsg.catprintf(" at %08X", cpustate->opcode_pc );
+		logerror(" %02X", cpustate->opcode_bytes[a]);
+	logerror(" at %08X\n", cpustate->opcode_pc);
 #endif
+	i386_trap(cpustate, 6, 0, 0);
 }
 
 /* Forward declarations */
@@ -2804,13 +2830,15 @@ static void i386_postload(i386_state *cpustate)
 	CHANGE_PC(cpustate,cpustate->eip);
 }
 
-static CPU_INIT( i386 )
+static void *i386_common_init()
 {
 	int i, j;
 	static const int regs8[8] = {AL,CL,DL,BL,AH,CH,DH,BH};
 	static const int regs16[8] = {AX,CX,DX,BX,SP,BP,SI,DI};
 	static const int regs32[8] = {EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI};
 	i386_state *cpustate = (i386_state *)malloc(sizeof(i386_state));
+
+	assert((sizeof(XMM_REG)/sizeof(double)) == 2);
 
 	build_cycle_table();
 
@@ -2833,7 +2861,14 @@ static CPU_INIT( i386 )
 		i386_MODRM_table[i].rm.d = regs32[i & 0x7];
 	}
 
+	cpustate->smi = false;
+
 	return cpustate;
+}
+
+CPU_INIT( i386 )
+{
+	return i386_common_init();
 }
 
 static void build_opcode_table(i386_state *cpustate, UINT32 features)
@@ -2933,6 +2968,10 @@ static CPU_RESET( i386 )
 
 	cpustate->idtr.base = 0;
 	cpustate->idtr.limit = 0x3ff;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	cpustate->a20_mask = ~0;
 
@@ -2957,6 +2996,93 @@ static CPU_RESET( i386 )
 	CHANGE_PC(cpustate,cpustate->eip);
 }
 
+static void pentium_smi(i386_state *cpustate)
+{
+	UINT32 smram_state = cpustate->smbase + 0xfe00;
+	UINT32 old_cr0 = cpustate->cr[0];
+	UINT32 old_flags = get_flags(cpustate);
+
+	if(cpustate->smm)
+		return;
+
+	cpustate->cr[0] &= ~(0x8000000d);
+	set_flags(cpustate, 2);
+	cpustate->smm = true;
+	cpustate->smi_latched = false;
+
+	// save state
+	WRITE32(cpustate, cpustate->cr[4], smram_state+SMRAM_IP5_CR4);
+	WRITE32(cpustate, cpustate->sreg[ES].limit, smram_state+SMRAM_IP5_ESLIM);
+	WRITE32(cpustate, cpustate->sreg[ES].base, smram_state+SMRAM_IP5_ESBASE);
+	WRITE32(cpustate, cpustate->sreg[ES].flags, smram_state+SMRAM_IP5_ESACC);
+	WRITE32(cpustate, cpustate->sreg[CS].limit, smram_state+SMRAM_IP5_CSLIM);
+	WRITE32(cpustate, cpustate->sreg[CS].base, smram_state+SMRAM_IP5_CSBASE);
+	WRITE32(cpustate, cpustate->sreg[CS].flags, smram_state+SMRAM_IP5_CSACC);
+	WRITE32(cpustate, cpustate->sreg[SS].limit, smram_state+SMRAM_IP5_SSLIM);
+	WRITE32(cpustate, cpustate->sreg[SS].base, smram_state+SMRAM_IP5_SSBASE);
+	WRITE32(cpustate, cpustate->sreg[SS].flags, smram_state+SMRAM_IP5_SSACC);
+	WRITE32(cpustate, cpustate->sreg[DS].limit, smram_state+SMRAM_IP5_DSLIM);
+	WRITE32(cpustate, cpustate->sreg[DS].base, smram_state+SMRAM_IP5_DSBASE);
+	WRITE32(cpustate, cpustate->sreg[DS].flags, smram_state+SMRAM_IP5_DSACC);
+	WRITE32(cpustate, cpustate->sreg[FS].limit, smram_state+SMRAM_IP5_FSLIM);
+	WRITE32(cpustate, cpustate->sreg[FS].base, smram_state+SMRAM_IP5_FSBASE);
+	WRITE32(cpustate, cpustate->sreg[FS].flags, smram_state+SMRAM_IP5_FSACC);
+	WRITE32(cpustate, cpustate->sreg[GS].limit, smram_state+SMRAM_IP5_GSLIM);
+	WRITE32(cpustate, cpustate->sreg[GS].base, smram_state+SMRAM_IP5_GSBASE);
+	WRITE32(cpustate, cpustate->sreg[GS].flags, smram_state+SMRAM_IP5_GSACC);
+	WRITE32(cpustate, cpustate->ldtr.flags, smram_state+SMRAM_IP5_LDTACC);
+	WRITE32(cpustate, cpustate->ldtr.limit, smram_state+SMRAM_IP5_LDTLIM);
+	WRITE32(cpustate, cpustate->ldtr.base, smram_state+SMRAM_IP5_LDTBASE);
+	WRITE32(cpustate, cpustate->gdtr.limit, smram_state+SMRAM_IP5_GDTLIM);
+	WRITE32(cpustate, cpustate->gdtr.base, smram_state+SMRAM_IP5_GDTBASE);
+	WRITE32(cpustate, cpustate->idtr.limit, smram_state+SMRAM_IP5_IDTLIM);
+	WRITE32(cpustate, cpustate->idtr.base, smram_state+SMRAM_IP5_IDTBASE);
+	WRITE32(cpustate, cpustate->task.limit, smram_state+SMRAM_IP5_TRLIM);
+	WRITE32(cpustate, cpustate->task.base, smram_state+SMRAM_IP5_TRBASE);
+	WRITE32(cpustate, cpustate->task.flags, smram_state+SMRAM_IP5_TRACC);
+
+	WRITE32(cpustate, cpustate->sreg[ES].selector, smram_state+SMRAM_ES);
+	WRITE32(cpustate, cpustate->sreg[CS].selector, smram_state+SMRAM_CS);
+	WRITE32(cpustate, cpustate->sreg[SS].selector, smram_state+SMRAM_SS);
+	WRITE32(cpustate, cpustate->sreg[DS].selector, smram_state+SMRAM_DS);
+	WRITE32(cpustate, cpustate->sreg[FS].selector, smram_state+SMRAM_FS);
+	WRITE32(cpustate, cpustate->sreg[GS].selector, smram_state+SMRAM_GS);
+	WRITE32(cpustate, cpustate->ldtr.segment, smram_state+SMRAM_LDTR);
+	WRITE32(cpustate, cpustate->task.segment, smram_state+SMRAM_TR);
+
+	WRITE32(cpustate, cpustate->dr[7], smram_state+SMRAM_DR7);
+	WRITE32(cpustate, cpustate->dr[6], smram_state+SMRAM_DR6);
+	WRITE32(cpustate, REG32(EAX), smram_state+SMRAM_EAX);
+	WRITE32(cpustate, REG32(ECX), smram_state+SMRAM_ECX);
+	WRITE32(cpustate, REG32(EDX), smram_state+SMRAM_EDX);
+	WRITE32(cpustate, REG32(EBX), smram_state+SMRAM_EBX);
+	WRITE32(cpustate, REG32(ESP), smram_state+SMRAM_ESP);
+	WRITE32(cpustate, REG32(EBP), smram_state+SMRAM_EBP);
+	WRITE32(cpustate, REG32(ESI), smram_state+SMRAM_ESI);
+	WRITE32(cpustate, REG32(EDI), smram_state+SMRAM_EDI);
+	WRITE32(cpustate, cpustate->eip, smram_state+SMRAM_EIP);
+	WRITE32(cpustate, old_flags, smram_state+SMRAM_EAX);
+	WRITE32(cpustate, cpustate->cr[3], smram_state+SMRAM_CR3);
+	WRITE32(cpustate, old_cr0, smram_state+SMRAM_CR0);
+
+	cpustate->sreg[DS].selector = cpustate->sreg[ES].selector = cpustate->sreg[FS].selector = cpustate->sreg[GS].selector = cpustate->sreg[SS].selector = 0;
+	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;
+	cpustate->sreg[DS].limit = cpustate->sreg[ES].limit = cpustate->sreg[FS].limit = cpustate->sreg[GS].limit = cpustate->sreg[SS].limit = 0xffffffff;
+	cpustate->sreg[DS].flags = cpustate->sreg[ES].flags = cpustate->sreg[FS].flags = cpustate->sreg[GS].flags = cpustate->sreg[SS].flags = 0x8093;
+	cpustate->sreg[DS].valid = cpustate->sreg[ES].valid = cpustate->sreg[FS].valid = cpustate->sreg[GS].valid = cpustate->sreg[SS].valid =true;
+	cpustate->sreg[CS].selector = 0x3000; // pentium only, ppro sel = smbase >> 4
+	cpustate->sreg[CS].base = cpustate->smbase;
+	cpustate->sreg[CS].limit = 0xffffffff;
+	cpustate->sreg[CS].flags = 0x809b;
+	cpustate->sreg[CS].valid = true;
+	cpustate->cr[4] = 0;
+	cpustate->dr[7] = 0x400;
+	cpustate->eip = 0x8000;
+
+	cpustate->nmi_masked = true;
+	CHANGE_PC(cpustate,cpustate->eip);
+}
+
 static void i386_set_irq_line(i386_state *cpustate,int irqline, int state)
 {
 	if (state != CLEAR_LINE && cpustate->halted)
@@ -2967,6 +3093,11 @@ static void i386_set_irq_line(i386_state *cpustate,int irqline, int state)
 	if ( irqline == INPUT_LINE_NMI )
 	{
 		/* NMI (I do not think that this is 100% right) */
+		if(cpustate->nmi_masked)
+		{
+			cpustate->nmi_latched = true;
+			return;
+		}
 		if ( state )
 			i386_trap(cpustate,2, 1, 0);
 	}
@@ -3031,8 +3162,6 @@ static CPU_EXECUTE( i386 )
 		cpustate->prev_eip = cpustate->eip;
 		cpustate->prev_pc = cpustate->pc;
 
-		//debugger_instruction_hook(device, cpustate->pc);
-
 		if(cpustate->delayed_interrupt_enable != 0)
 		{
 			cpustate->IF = 1;
@@ -3084,7 +3213,7 @@ static CPU_EXECUTE( i386 )
 
 static CPU_INIT( i486 )
 {
-	return CPU_INIT_CALL(i386);
+	return i386_common_init();
 }
 
 static CPU_RESET( i486 )
@@ -3109,6 +3238,10 @@ static CPU_RESET( i486 )
 	cpustate->eflags = 0;
 	cpustate->eflags_mask = 0x00077fd7;
 	cpustate->eip = 0xfff0;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3133,7 +3266,7 @@ static CPU_RESET( i486 )
 
 static CPU_INIT( pentium )
 {
-	return CPU_INIT_CALL(i386);
+	return i386_common_init();
 }
 
 static CPU_RESET( pentium )
@@ -3159,6 +3292,11 @@ static CPU_RESET( pentium )
 	cpustate->eflags_mask = 0x003f7fd7;
 	cpustate->eip = 0xfff0;
 	cpustate->mxcsr = 0x1f80;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->smbase = 0x30000;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3198,7 +3336,7 @@ static CPU_RESET( pentium )
 
 static CPU_INIT( mediagx )
 {
-	return CPU_INIT_CALL(i386);
+	return i386_common_init();
 }
 
 static CPU_RESET( mediagx )
@@ -3223,6 +3361,10 @@ static CPU_RESET( mediagx )
 	cpustate->eflags = 0x00200000;
 	cpustate->eflags_mask = 0x00277fd7; /* TODO: is this correct? */
 	cpustate->eip = 0xfff0;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3256,7 +3398,7 @@ static CPU_RESET( mediagx )
 
 static CPU_INIT( pentium_pro )
 {
-	return CPU_INIT_CALL(pentium);
+	return i386_common_init();
 }
 
 static CPU_RESET( pentium_pro )
@@ -3282,6 +3424,11 @@ static CPU_RESET( pentium_pro )
 	cpustate->eflags_mask = 0x00277fd7; /* TODO: is this correct? */
 	cpustate->eip = 0xfff0;
 	cpustate->mxcsr = 0x1f80;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->smbase = 0x30000;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3305,7 +3452,14 @@ static CPU_RESET( pentium_pro )
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
+	// [ 2:2] I/O breakpoints
+	// [ 4:4] Time Stamp Counter
+	// [ 5:5] Pentium CPU style model specific registers
+	// [ 7:7] Machine Check Exception
+	// [ 8:8] CMPXCHG8B instruction
+	// [15:15] CMOV and FCMOV
+	// No MMX
+	cpustate->feature_flags = 0x000081bf;
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3315,7 +3469,7 @@ static CPU_RESET( pentium_pro )
 
 static CPU_INIT( pentium_mmx )
 {
-	return CPU_INIT_CALL(pentium);
+	return i386_common_init();
 }
 
 static CPU_RESET( pentium_mmx )
@@ -3341,6 +3495,11 @@ static CPU_RESET( pentium_mmx )
 	cpustate->eflags_mask = 0x00277fd7; /* TODO: is this correct? */
 	cpustate->eip = 0xfff0;
 	cpustate->mxcsr = 0x1f80;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->smbase = 0x30000;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3364,7 +3523,13 @@ static CPU_RESET( pentium_mmx )
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
+	// [ 2:2] I/O breakpoints
+	// [ 4:4] Time Stamp Counter
+	// [ 5:5] Pentium CPU style model specific registers
+	// [ 7:7] Machine Check Exception
+	// [ 8:8] CMPXCHG8B instruction
+	// [23:23] MMX instructions
+	cpustate->feature_flags = 0x008001bf;
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3374,7 +3539,7 @@ static CPU_RESET( pentium_mmx )
 
 static CPU_INIT( pentium2 )
 {
-	return CPU_INIT_CALL(pentium);
+	return i386_common_init();
 }
 
 static CPU_RESET( pentium2 )
@@ -3400,6 +3565,11 @@ static CPU_RESET( pentium2 )
 	cpustate->eflags_mask = 0x00277fd7; /* TODO: is this correct? */
 	cpustate->eip = 0xfff0;
 	cpustate->mxcsr = 0x1f80;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->smbase = 0x30000;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3423,7 +3593,7 @@ static CPU_RESET( pentium2 )
 	cpustate->cpu_version = REG32(EDX);
 
 	// [ 0:0] FPU on chip
-	cpustate->feature_flags = 0x00000001;       // TODO: enable relevant flags here
+	cpustate->feature_flags = 0x008081bf;       // TODO: enable relevant flags here
 
 	CHANGE_PC(cpustate,cpustate->eip);
 }
@@ -3433,7 +3603,7 @@ static CPU_RESET( pentium2 )
 
 static CPU_INIT( pentium3 )
 {
-	return CPU_INIT_CALL(pentium);
+	return i386_common_init();
 }
 
 static CPU_RESET( pentium3 )
@@ -3459,6 +3629,11 @@ static CPU_RESET( pentium3 )
 	cpustate->eflags_mask = 0x00277fd7; /* TODO: is this correct? */
 	cpustate->eip = 0xfff0;
 	cpustate->mxcsr = 0x1f80;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->smbase = 0x30000;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 
@@ -3494,7 +3669,7 @@ static CPU_RESET( pentium3 )
 
 static CPU_INIT( pentium4 )
 {
-	return CPU_INIT_CALL(pentium);
+	return i386_common_init();
 }
 
 static CPU_RESET( pentium4 )
@@ -3520,6 +3695,11 @@ static CPU_RESET( pentium4 )
 	cpustate->eflags_mask = 0x00277fd7; /* TODO: is this correct? */
 	cpustate->eip = 0xfff0;
 	cpustate->mxcsr = 0x1f80;
+	cpustate->smm = false;
+	cpustate->smi_latched = false;
+	cpustate->smbase = 0x30000;
+	cpustate->nmi_masked = false;
+	cpustate->nmi_latched = false;
 
 	x87_reset(cpustate);
 

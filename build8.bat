@@ -23,13 +23,21 @@ devenv.com fmr30.vcproj /Rebuild Release
 mkdir build\fmr30
 copy Release\fmr30.exe build\fmr30\.
 
-devenv.com fmr50.vcproj /Rebuild Release
+devenv.com fmr50_i286.vcproj /Rebuild Release
+devenv.com fmr50_i386.vcproj /Rebuild Release
+devenv.com fmr50_i486.vcproj /Rebuild Release
 mkdir build\fmr50
-copy Release\fmr50.exe build\fmr50\.
+copy Release\fmr50_i286.exe build\fmr50\.
+copy Release\fmr50_i386.exe build\fmr50\.
+copy Release\fmr50_i486.exe build\fmr50\.
 
 devenv.com fmr60.vcproj /Rebuild Release
+devenv.com fmr70.vcproj /Rebuild Release
+devenv.com fmr80.vcproj /Rebuild Release
 mkdir build\fmr60
 copy Release\fmr60.exe build\fmr60\.
+copy Release\fmr70.exe build\fmr60\.
+copy Release\fmr80.exe build\fmr60\.
 
 devenv.com fp200.vcproj /Rebuild Release
 mkdir build\fp200

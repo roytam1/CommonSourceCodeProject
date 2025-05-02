@@ -12,20 +12,33 @@
 #define _FMR50_H_
 
 #if defined(_FMR50)
-#define DEVICE_NAME		"FUJITSU FMR-50"
-#define CONFIG_NAME		"fmr50"
+#if defined(HAS_I286)
+#define DEVICE_NAME		"FUJITSU FMR-50 (i286)"
+#define CONFIG_NAME		"fmr50_i286"
+#elif defined(HAS_I386)
+#define DEVICE_NAME		"FUJITSU FMR-50 (i386)"
+#define CONFIG_NAME		"fmr50_i386"
+#elif defined(HAS_I486)
+#define DEVICE_NAME		"FUJITSU FMR-50 (i486)"
+#define CONFIG_NAME		"fmr50_i486"
+#elif defined(HAS_PENTIUM)
+#define DEVICE_NAME		"FUJITSU FMR-250"
+#define CONFIG_NAME		"fmr250"
+#endif
 #elif defined(_FMR60)
+#if defined(HAS_I286)
 #define DEVICE_NAME		"FUJITSU FMR-60"
 #define CONFIG_NAME		"fmr60"
-#elif defined(_FMRCARD)
-#define DEVICE_NAME		"FUJITSU FMR-CARD"
-#define CONFIG_NAME		"fmrcard"
-#elif defined(_OASYS30)
-#define DEVICE_NAME		"FUJITSU OASYS 30"
-#define CONFIG_NAME		"oasys30"
-#elif defined(_OASYSPOCKET3)
-#define DEVICE_NAME		"FUJITSU OASYS Pocket3"
-#define CONFIG_NAME		"oasyspocket3"
+#elif defined(HAS_I386)
+#define DEVICE_NAME		"FUJITSU FMR-70"
+#define CONFIG_NAME		"fmr70"
+#elif defined(HAS_I486)
+#define DEVICE_NAME		"FUJITSU FMR-80"
+#define CONFIG_NAME		"fmr80"
+#elif defined(HAS_PENTIUM)
+#define DEVICE_NAME		"FUJITSU FMR-280"
+#define CONFIG_NAME		"fmr280"
+#endif
 #endif
 
 // device informations for virtual machine
@@ -37,17 +50,11 @@
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		54
 #endif
-//#if defined(_FMRCARD) || defined(_OASYS30) || defined(_OASYSPOCKET3)
-#define CPU_CLOCKS		8000000
-//#else
 //#define CPU_CLOCKS		12000000
-//#endif
+#define CPU_CLOCKS		8000000
 #if defined(_FMR60)
 #define SCREEN_WIDTH		1120
 #define SCREEN_HEIGHT		750
-#elif defined(_OASYSPOCKET3)
-#define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		200
 #else
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
@@ -55,15 +62,17 @@
 #define MAX_DRIVE		4
 #define MAX_SCSI		8
 #define MAX_MEMCARD		2
-#define HAS_I286
+#if defined(HAS_I286)
 #define I86_BIOS_CALL
-#define HAS_I386
+#else
 #define I386_BIOS_CALL
+#endif
 #define I8259_MAX_CHIPS		2
 //#define SINGLE_MODE_DMA
 #define IO_ADDR_MAX		0x10000
 
 // device informations for win32
+#define USE_CPU_TYPE		2
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -77,22 +86,6 @@
 
 #include "../../common.h"
 
-static uint32 machine_ids[][2] = {
-	{0x6a868423, 0xf8},	// FMR-50FD/HD		87/05/22 V12 L10
-	{0xb6e51659, 0xf8},	// FMR-60FD/HD		87/01/27 V12 L09
-	{0x3777a7cb, 0xe0},	// FMR-50FX/HX		89/01/24 V12 L12
-				// FMR-60FX/HX		
-	{0xde3044c7, 0xd8},	// FMR-50LT5/LT6	88/10/04 V40 L12
-	{0x6eaeaef1, 0x0a},	// FMR-50NE/T3		94/12/01 V70 L01
-	{0xafc9606e, 0xf8},	// Panacom M500HD	89/04/14 V12 L12
-	{0x78a920e9, 0x70},	// FMR-CARD		92/02/10 V63 L13
-//	{0x86072415, 0x0a},	// FMR-250L4		94/10/20 V90 L12
-//	{0xe77c3518, 0x0a}.	// FMR-250N/T3		96/04/10 V69 L15
-//	{0x06b44c36, 0xba},	// OASYS 30AX401	92/10/20
-//	{0x7cf02e08, 0xba},	// OASYS Pocket 3	??/??/??
-	{-1, -1}
-};
-
 class EMU;
 class DEVICE;
 class EVENT;
@@ -104,8 +97,11 @@ class HD63484;
 class I8251;
 class I8253;
 class I8259;
+#if defined(HAS_I286)
 class I286;
+#else
 class I386;
+#endif
 class IO;
 class MB8877;
 class MSM58321;
@@ -137,8 +133,11 @@ protected:
 	I8253* pit0;
 	I8253* pit1;
 	I8259* pic;
-	I286* i286;
-	I386* i386;
+#if defined(HAS_I286)
+	I286* cpu;
+#else
+	I386* cpu;
+#endif
 	IO* io;
 	MB8877* fdc;
 	MSM58321* rtc;
@@ -153,9 +152,6 @@ protected:
 	SCSI* scsi;
 //	SERIAL* serial;
 	TIMER* timer;
-	
-private:
-	bool is_i286;
 	
 public:
 	// ----------------------------------------

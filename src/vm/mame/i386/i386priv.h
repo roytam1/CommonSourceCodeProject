@@ -169,6 +169,76 @@ enum
 	MMX_MM7=X87_ST7
 };
 
+enum smram
+{
+	SMRAM_SMBASE = 0xF8,
+	SMRAM_SMREV  = 0xFC,
+	SMRAM_IORSRT = 0x100,
+	SMRAM_AHALT  = 0x102,
+	SMRAM_IOEDI  = 0x104,
+	SMRAM_IOECX  = 0x108,
+	SMRAM_IOESI  = 0x10C,
+
+	SMRAM_ES     = 0x1A8,
+	SMRAM_CS     = 0x1AC,
+	SMRAM_SS     = 0x1B0,
+	SMRAM_DS     = 0x1B4,
+	SMRAM_FS     = 0x1B8,
+	SMRAM_GS     = 0x1BC,
+	SMRAM_LDTR   = 0x1C0,
+	SMRAM_TR     = 0x1C4,
+	SMRAM_DR7    = 0x1C8,
+	SMRAM_DR6    = 0x1CC,
+	SMRAM_EAX    = 0x1D0,
+	SMRAM_ECX    = 0x1D4,
+	SMRAM_EDX    = 0x1D8,
+	SMRAM_EBX    = 0x1DC,
+	SMRAM_ESP    = 0x1E0,
+	SMRAM_EBP    = 0x1E4,
+	SMRAM_ESI    = 0x1E8,
+	SMRAM_EDI    = 0x1EC,
+	SMRAM_EIP    = 0x1F0,
+	SMRAM_EFLAGS = 0x1F4,
+	SMRAM_CR3    = 0x1F8,
+	SMRAM_CR0    = 0x1FC,
+};
+
+enum smram_intel_p5
+{
+	SMRAM_IP5_IOEIP   = 0x110,
+	SMRAM_IP5_CR4     = 0x128,
+	SMRAM_IP5_ESLIM   = 0x130,
+	SMRAM_IP5_ESBASE  = 0x134,
+	SMRAM_IP5_ESACC   = 0x138,
+	SMRAM_IP5_CSLIM   = 0x13C,
+	SMRAM_IP5_CSBASE  = 0x140,
+	SMRAM_IP5_CSACC   = 0x144,
+	SMRAM_IP5_SSLIM   = 0x148,
+	SMRAM_IP5_SSBASE  = 0x14C,
+	SMRAM_IP5_SSACC   = 0x150,
+	SMRAM_IP5_DSLIM   = 0x154,
+	SMRAM_IP5_DSBASE  = 0x158,
+	SMRAM_IP5_DSACC   = 0x15C,
+	SMRAM_IP5_FSLIM   = 0x160,
+	SMRAM_IP5_FSBASE  = 0x164,
+	SMRAM_IP5_FSACC   = 0x168,
+	SMRAM_IP5_GSLIM   = 0x16C,
+	SMRAM_IP5_GSBASE  = 0x170,
+	SMRAM_IP5_GSACC   = 0x174,
+	SMRAM_IP5_LDTLIM  = 0x178,
+	SMRAM_IP5_LDTBASE = 0x17C,
+	SMRAM_IP5_LDTACC  = 0x180,
+	SMRAM_IP5_GDTLIM  = 0x184,
+	SMRAM_IP5_GDTBASE = 0x188,
+	SMRAM_IP5_GDTACC  = 0x18C,
+	SMRAM_IP5_IDTLIM  = 0x190,
+	SMRAM_IP5_IDTBASE = 0x194,
+	SMRAM_IP5_IDTACC  = 0x198,
+	SMRAM_IP5_TRLIM   = 0x19C,
+	SMRAM_IP5_TRBASE  = 0x1A0,
+	SMRAM_IP5_TRACC   = 0x1A4,
+};
+
 /* Protected mode exceptions */
 #define FAULT_UD 6   // Invalid Opcode
 #define FAULT_NM 7   // Coprocessor not available
@@ -235,19 +305,29 @@ union I386_GPR {
 	UINT8 b[32];
 };
 
-union X87_REG {
-	UINT64 i;
-	double f;
+union MMX_REG {
+	UINT32 d[2];
+	INT32  i[2];
+	UINT16 w[4];
+	INT16  s[4];
+	UINT8  b[8];
+	INT8   c[8];
+	float  f[2];
+	UINT64 q;
+	INT64  l;
 };
 
-typedef UINT64 MMX_REG;
-
 union XMM_REG {
-	UINT32 d[4];
+	UINT8  b[16];
 	UINT16 w[8];
-	UINT8 b[16];
+	UINT32 d[4];
 	UINT64 q[2];
-	float f[4];
+	INT8   c[16];
+	INT16  s[8];
+	INT32  i[4];
+	INT64  l[2];
+	float  f[4];
+	double  f64[2];
 };
 
 struct i386_state
@@ -297,6 +377,7 @@ struct i386_state
 
 	int halted;
 	int busreq;
+	int shutdown;
 
 	int operand_size;
 	int address_size;
@@ -328,7 +409,7 @@ struct i386_state
 	UINT32 cpu_version;
 	UINT32 feature_flags;
 	UINT64 tsc;
-
+	UINT64 perfctr[2];
 
 	// FPU
 	floatx80 x87_reg[8];
@@ -366,6 +447,13 @@ struct i386_state
 
 	UINT8 *cycle_table_pm;
 	UINT8 *cycle_table_rm;
+
+	bool smm;
+	bool smi;
+	bool smi_latched;
+	bool nmi_masked;
+	bool nmi_latched;
+	UINT32 smbase;
 
 	// bytes in current opcode, debug only
 #ifdef DEBUG_MISSING_OPCODE
@@ -408,7 +496,7 @@ static int i386_limit_check(i386_state *cpustate, int seg, UINT32 offset);
 #define SetSZPF16(x)        {cpustate->ZF = ((UINT16)(x)==0);  cpustate->SF = ((x)&0x8000) ? 1 : 0; cpustate->PF = i386_parity_table[x & 0xFF]; }
 #define SetSZPF32(x)        {cpustate->ZF = ((UINT32)(x)==0);  cpustate->SF = ((x)&0x80000000) ? 1 : 0; cpustate->PF = i386_parity_table[x & 0xFF]; }
 
-#define MMX(n)              cpustate->fpu_reg[(n)].i
+#define MMX(n)              (*((MMX_REG *)(&cpustate->x87_reg[(n)].low)))
 #define XMM(n)              cpustate->sse_reg[(n)]
 
 /***********************************************************************************/
@@ -614,8 +702,8 @@ INLINE UINT16 FETCH16(i386_state *cpustate)
 	UINT32 address = cpustate->pc, error;
 
 	if( address & 0x1 ) {       /* Unaligned read */
-		value = FETCH(cpustate);
-		value |= FETCH(cpustate) << 8;
+		value = (FETCH(cpustate) << 0);
+		value |= (FETCH(cpustate) << 8);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -635,10 +723,10 @@ INLINE UINT32 FETCH32(i386_state *cpustate)
 	UINT32 address = cpustate->pc, error;
 
 	if( cpustate->pc & 0x3 ) {      /* Unaligned read */
-		value = FETCH(cpustate);
-		value |= FETCH(cpustate) << 8;
-		value |= FETCH(cpustate) << 16;
-		value |= FETCH(cpustate) << 24;
+		value = (FETCH(cpustate) << 0);
+		value |= (FETCH(cpustate) << 8);
+		value |= (FETCH(cpustate) << 16);
+		value |= (FETCH(cpustate) << 24);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -673,8 +761,8 @@ INLINE UINT16 READ16(i386_state *cpustate,UINT32 ea)
 	UINT32 address = ea, error;
 
 	if( ea & 0x1 ) {        /* Unaligned read */
-		value = (READ8( cpustate, address+0 ) << 0) |
-				(READ8( cpustate, address+1 ) << 8);
+		value = (READ8( cpustate, address+0 ) << 0);
+		value |= (READ8( cpustate, address+1 ) << 8);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -693,10 +781,10 @@ INLINE UINT32 READ32(i386_state *cpustate,UINT32 ea)
 	UINT32 address = ea, error;
 
 	if( ea & 0x3 ) {        /* Unaligned read */
-		value = (READ8( cpustate, address+0 ) << 0) |
-				(READ8( cpustate, address+1 ) << 8) |
-				(READ8( cpustate, address+2 ) << 16) |
-				(READ8( cpustate, address+3 ) << 24);
+		value = (READ8( cpustate, address+0 ) << 0);
+		value |= (READ8( cpustate, address+1 ) << 8);
+		value |= (READ8( cpustate, address+2 ) << 16),
+		value |= (READ8( cpustate, address+3 ) << 24);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -716,14 +804,14 @@ INLINE UINT64 READ64(i386_state *cpustate,UINT32 ea)
 	UINT32 address = ea, error;
 
 	if( ea & 0x7 ) {        /* Unaligned read */
-		value = (((UINT64) READ8( cpustate, address+0 )) << 0) |
-				(((UINT64) READ8( cpustate, address+1 )) << 8) |
-				(((UINT64) READ8( cpustate, address+2 )) << 16) |
-				(((UINT64) READ8( cpustate, address+3 )) << 24) |
-				(((UINT64) READ8( cpustate, address+4 )) << 32) |
-				(((UINT64) READ8( cpustate, address+5 )) << 40) |
-				(((UINT64) READ8( cpustate, address+6 )) << 48) |
-				(((UINT64) READ8( cpustate, address+7 )) << 56);
+		value = (((UINT64) READ8( cpustate, address+0 )) << 0);
+		value |= (((UINT64) READ8( cpustate, address+1 )) << 8);
+		value |= (((UINT64) READ8( cpustate, address+2 )) << 16);
+		value |= (((UINT64) READ8( cpustate, address+3 )) << 24);
+		value |= (((UINT64) READ8( cpustate, address+4 )) << 32);
+		value |= (((UINT64) READ8( cpustate, address+5 )) << 40);
+		value |= (((UINT64) READ8( cpustate, address+6 )) << 48);
+		value |= (((UINT64) READ8( cpustate, address+7 )) << 56);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -732,8 +820,8 @@ INLINE UINT64 READ64(i386_state *cpustate,UINT32 ea)
 		}
 
 		address &= cpustate->a20_mask;
-		value = (((UINT64) cpustate->program->read_data32( address+0 )) << 0) |
-				(((UINT64) cpustate->program->read_data32( address+4 )) << 32);
+		value = (((UINT64) cpustate->program->read_data32( address+0 )) << 0);
+		value |= (((UINT64) cpustate->program->read_data32( address+4 )) << 32);
 	}
 	return value;
 }
@@ -756,8 +844,8 @@ INLINE UINT16 READ16PL0(i386_state *cpustate,UINT32 ea)
 	UINT32 address = ea, error;
 
 	if( ea & 0x1 ) {        /* Unaligned read */
-		value = (READ8PL0( cpustate, address+0 ) << 0) |
-				(READ8PL0( cpustate, address+1 ) << 8);
+		value = (READ8PL0( cpustate, address+0 ) << 0);
+		value |= (READ8PL0( cpustate, address+1 ) << 8);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -776,10 +864,10 @@ INLINE UINT32 READ32PL0(i386_state *cpustate,UINT32 ea)
 	UINT32 address = ea, error;
 
 	if( ea & 0x3 ) {        /* Unaligned read */
-		value = (READ8PL0( cpustate, address+0 ) << 0) |
-				(READ8PL0( cpustate, address+1 ) << 8) |
-				(READ8PL0( cpustate, address+2 ) << 16) |
-				(READ8PL0( cpustate, address+3 ) << 24);
+		value = (READ8PL0( cpustate, address+0 ) << 0);
+		value |= (READ8PL0( cpustate, address+1 ) << 8);
+		value |= (READ8PL0( cpustate, address+2 ) << 16);
+		value |= (READ8PL0( cpustate, address+3 ) << 24);
 	} else {
 		if (cpustate->cr[0] & 0x80000000)       // page translation enabled
 		{
@@ -1223,8 +1311,9 @@ INLINE UINT16 READPORT16(i386_state *cpustate, offs_t port)
 {
 	if (port & 1)
 	{
-		return  READPORT8(cpustate, port) |
-				(READPORT8(cpustate, port + 1) << 8);
+		UINT16 value = READPORT8(cpustate, port);
+		value |= (READPORT8(cpustate, port + 1) << 8);
+		return value;
 	}
 	else
 	{
@@ -1251,10 +1340,11 @@ INLINE UINT32 READPORT32(i386_state *cpustate, offs_t port)
 {
 	if (port & 3)
 	{
-		return  READPORT8(cpustate, port) |
-				(READPORT8(cpustate, port + 1) << 8) |
-				(READPORT8(cpustate, port + 2) << 16) |
-				(READPORT8(cpustate, port + 3) << 24);
+		UINT32 value = READPORT8(cpustate, port);
+		value |= (READPORT8(cpustate, port + 1) << 8);
+		value |= (READPORT8(cpustate, port + 2) << 16);
+		value |= (READPORT8(cpustate, port + 3) << 24);
+		return value;
 	}
 	else
 	{
@@ -1283,19 +1373,173 @@ INLINE void WRITEPORT32(i386_state *cpustate, offs_t port, UINT32 value)
     MSR ACCESS
 ***********************************************************************************/
 
+// Pentium MSR handling
+UINT64 pentium_msr_read(i386_state *cpustate, UINT32 offset,UINT8 *valid_msr)
+{
+	switch(offset)
+	{
+	// Machine Check Exception (TODO)
+	case 0x00:
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading P5_MC_ADDR");
+		return 0;
+	case 0x01:
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading P5_MC_TYPE");
+		return 0;
+	// Time Stamp Counter
+	case 0x10:
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading TSC");
+		return cpustate->tsc;
+	// Event Counters (TODO)
+	case 0x11:  // CESR
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading CESR");
+		return 0;
+	case 0x12:  // CTR0
+		*valid_msr = 1;
+		return cpustate->perfctr[0];
+	case 0x13:  // CTR1
+		*valid_msr = 1;
+		return cpustate->perfctr[1];
+	default:
+		if(!(offset & ~0xf)) // 2-f are test registers
+		{
+			*valid_msr = 1;
+			logerror("RDMSR: Reading test MSR %x", offset);
+			return 0;
+		}
+		logerror("RDMSR: invalid P5 MSR read %08x at %08x\n",offset,cpustate->pc-2);
+		*valid_msr = 0;
+		return 0;
+	}
+	return -1;
+}
+
+void pentium_msr_write(i386_state *cpustate, UINT32 offset, UINT64 data, UINT8 *valid_msr)
+{
+	switch(offset)
+	{
+	// Machine Check Exception (TODO)
+	case 0x00:
+		popmessage("WRMSR: Writing P5_MC_ADDR");
+		*valid_msr = 1;
+		break;
+	case 0x01:
+		popmessage("WRMSR: Writing P5_MC_TYPE");
+		*valid_msr = 1;
+		break;
+	// Time Stamp Counter
+	case 0x10:
+		cpustate->tsc = data;
+		popmessage("WRMSR: Writing to TSC");
+		*valid_msr = 1;
+		break;
+	// Event Counters (TODO)
+	case 0x11:  // CESR
+		popmessage("WRMSR: Writing to CESR");
+		*valid_msr = 1;
+		break;
+	case 0x12:  // CTR0
+		cpustate->perfctr[0] = data;
+		*valid_msr = 1;
+		break;
+	case 0x13:  // CTR1
+		cpustate->perfctr[1] = data;
+		*valid_msr = 1;
+		break;
+	default:
+		if(!(offset & ~0xf)) // 2-f are test registers
+		{
+			*valid_msr = 1;
+			logerror("WRMSR: Writing test MSR %x", offset);
+			break;
+		}
+		logerror("WRMSR: invalid MSR write %08x (%08x%08x) at %08x\n",offset,(UINT32)(data >> 32),(UINT32)data,cpustate->pc-2);
+		*valid_msr = 0;
+		break;
+	}
+}
+
+// P6 (Pentium Pro, Pentium II, Pentium III) MSR handling
+UINT64 p6_msr_read(i386_state *cpustate, UINT32 offset,UINT8 *valid_msr)
+{
+	switch(offset)
+	{
+	// Machine Check Exception (TODO)
+	case 0x00:
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading P5_MC_ADDR");
+		return 0;
+	case 0x01:
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading P5_MC_TYPE");
+		return 0;
+	// Time Stamp Counter
+	case 0x10:
+		*valid_msr = 1;
+		popmessage("RDMSR: Reading TSC");
+		return cpustate->tsc;
+	// Performance Counters (TODO)
+	case 0xc1:  // PerfCtr0
+		*valid_msr = 1;
+		return cpustate->perfctr[0];
+	case 0xc2:  // PerfCtr1
+		*valid_msr = 1;
+		return cpustate->perfctr[1];
+	default:
+		logerror("RDMSR: unimplemented register called %08x at %08x\n",offset,cpustate->pc-2);
+		*valid_msr = 1;
+		return 0;
+	}
+	return -1;
+}
+
+void p6_msr_write(i386_state *cpustate, UINT32 offset, UINT64 data, UINT8 *valid_msr)
+{
+	switch(offset)
+	{
+	// Time Stamp Counter
+	case 0x10:
+		cpustate->tsc = data;
+		popmessage("WRMSR: Writing to TSC");
+		*valid_msr = 1;
+		break;
+	// Performance Counters (TODO)
+	case 0xc1:  // PerfCtr0
+		cpustate->perfctr[0] = data;
+		*valid_msr = 1;
+		break;
+	case 0xc2:  // PerfCtr1
+		cpustate->perfctr[1] = data;
+		*valid_msr = 1;
+		break;
+	default:
+		logerror("WRMSR: unimplemented register called %08x (%08x%08x) at %08x\n",offset,(UINT32)(data >> 32),(UINT32)data,cpustate->pc-2);
+		*valid_msr = 1;
+		break;
+	}
+}
+
 INLINE UINT64 MSR_READ(i386_state *cpustate, UINT32 offset,UINT8 *valid_msr)
 {
 	UINT64 res;
+	UINT8 cpu_type = (cpustate->cpu_version >> 8) & 0x0f;
 
 	*valid_msr = 0;
 
-	switch(offset)
+	switch(cpu_type)
 	{
-		default:
-			logerror("RDMSR: unimplemented register called %08x at %08x\n",offset,cpustate->pc-2);
-			res = -1;
-			*valid_msr = 1;
-			break;
+	case 5:  // Pentium
+		res = pentium_msr_read(cpustate,offset,valid_msr);
+		break;
+	case 6:  // Pentium Pro, Pentium II, Pentium III
+		res = p6_msr_read(cpustate,offset,valid_msr);
+		break;
+	default:
+		res = 0;
+		break;
 	}
 
 	return res;
@@ -1304,13 +1548,16 @@ INLINE UINT64 MSR_READ(i386_state *cpustate, UINT32 offset,UINT8 *valid_msr)
 INLINE void MSR_WRITE(i386_state *cpustate, UINT32 offset, UINT64 data, UINT8 *valid_msr)
 {
 	*valid_msr = 0;
+	UINT8 cpu_type = (cpustate->cpu_version >> 8) & 0x0f;
 
-	switch(offset)
+	switch(cpu_type)
 	{
-		default:
-			logerror("WRMSR: unimplemented register called %08x (%08x%08x) at %08x\n",offset,(UINT32)(data >> 32),(UINT32)data,cpustate->pc-2);
-			*valid_msr = 1;
-			break;
+	case 5:  // Pentium
+		pentium_msr_write(cpustate,offset,data,valid_msr);
+		break;
+	case 6:  // Pentium Pro, Pentium II, Pentium III
+		p6_msr_write(cpustate,offset,data,valid_msr);
+		break;
 	}
 }
 

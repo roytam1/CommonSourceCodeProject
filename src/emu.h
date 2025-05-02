@@ -35,6 +35,7 @@
 #include <mmsystem.h>
 #include <process.h>
 #include <stdio.h>
+#include <assert.h>
 #include "common.h"
 #include "config.h"
 #include "vm/vm.h"

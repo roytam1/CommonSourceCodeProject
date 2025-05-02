@@ -15,6 +15,7 @@
 
 void TIMER::initialize()
 {
+	free_run_counter = 0;
 	intr_reg = rtc_data = 0;
 	tmout0 = tmout1 = false;
 }
@@ -45,6 +46,11 @@ void TIMER::write_io8(uint32 addr, uint32 data)
 uint32 TIMER::read_io8(uint32 addr)
 {
 	switch(addr) {
+	case 0x26:
+		free_run_counter = (uint16)passed_usec(0);
+		return free_run_counter & 0xff;
+	case 0x27:
+		return free_run_counter >> 8;
 	case 0x60:
 		return (tmout0 ? 1 : 0) | (tmout1 ? 2 : 0) | ((intr_reg & 7) << 2) | 0xe0;
 	case 0x70:

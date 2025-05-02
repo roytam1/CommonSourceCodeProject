@@ -15,6 +15,7 @@
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #pragma warning( disable : 4018 )
+#pragma warning( disable : 4146 )
 #pragma warning( disable : 4244 )
 #endif
 
@@ -27,6 +28,10 @@
 //#elif defined(HAS_I286)
 	#define CPU_MODEL i80286
 //#endif
+
+#ifndef INLINE
+#define INLINE inline
+#endif
 
 #ifndef _BIG_ENDIAN
 #define LSB_FIRST
@@ -54,6 +59,17 @@ const endianness_t ENDIANNESS_NATIVE = ENDIANNESS_BIG;
 // endian-based value: first value is if 'endian' matches native, second is if 'endian' doesn't match native
 #define ENDIAN_VALUE_NE_NNE(endian,leval,beval)	(((endian) == ENDIANNESS_NATIVE) ? (neval) : (nneval))
 
+// Disassembler constants
+const UINT32 DASMFLAG_SUPPORTED     = 0x80000000;   // are disassembly flags supported?
+const UINT32 DASMFLAG_STEP_OUT      = 0x40000000;   // this instruction should be the end of a step out sequence
+const UINT32 DASMFLAG_STEP_OVER     = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
+const UINT32 DASMFLAG_OVERINSTMASK  = 0x18000000;   // number of extra instructions to skip when stepping over
+const UINT32 DASMFLAG_OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
+const UINT32 DASMFLAG_LENGTHMASK    = 0x0000ffff;   // the low 16-bits contain the actual length
+
+/* Highly useful macro for compile-time knowledge of an array size */
+#define ARRAY_LENGTH(x)     (sizeof(x) / sizeof(x[0]))
+
 enum line_state
 {
 	CLEAR_LINE = 0,				// clear (a fired or held) line
@@ -80,6 +96,10 @@ enum
 #define CPU_EXECUTE(name)			int CPU_EXECUTE_NAME(name)(cpu_state *cpustate, int icount)
 #define CPU_EXECUTE_CALL(name)			CPU_EXECUTE_NAME(name)(cpustate, icount)
 
+#define CPU_DISASSEMBLE_NAME(name)		cpu_disassemble_##name
+#define CPU_DISASSEMBLE(name)			int CPU_DISASSEMBLE_NAME(name)(char *buffer, offs_t eip, const UINT8 *oprom)
+#define CPU_DISASSEMBLE_CALL(name)		CPU_DISASSEMBLE_NAME(name)(buffer, eip, oprom)
+
 #define logerror(...)
 
 //#if defined(HAS_I86) || defined(HAS_I88) || defined(HAS_I186)
@@ -89,6 +109,9 @@ enum
 	#define cpu_state i80286_state
 	#include "mame/i86/i286.c"
 //#endif
+#ifdef _CPU_DEBUG_LOG
+#include "mame/i386/i386dasm.c"
+#endif
 
 void I286::initialize()
 {
@@ -128,11 +151,32 @@ void I286::reset()
 	cpustate->dma = d_dma;
 #endif
 	cpustate->busreq = busreq;
+#ifdef _CPU_DEBUG_LOG
+	debug_count = 0;
+#endif
 }
 
 int I286::run(int icount)
 {
 	cpu_state *cpustate = (cpu_state *)opaque;
+#ifdef _CPU_DEBUG_LOG
+	if(debug_count) {
+		char buffer[256];
+		UINT64 eip = cpustate->pc - cpustate->sregs[CS];
+		UINT8 ops[16];
+		for(int i = 0; i < 16; i++) {
+			ops[i] = d_mem->read_data8(cpustate->pc + i);
+		}
+		UINT8 *oprom = ops;
+		
+		CPU_DISASSEMBLE_CALL(x86_16);
+		emu->out_debug(_T("%4x\t%s\n"), cpustate->pc, buffer);
+		
+		if(--debug_count == 0) {
+			emu->out_debug(_T("<--------------------------------------------------------------- I286 DASM ----\n"));
+		}
+	}
+#endif
 	return CPU_EXECUTE_CALL(CPU_MODEL);
 }
 
@@ -155,6 +199,14 @@ void I286::write_signal(int id, uint32 data, uint32 mask)
 #ifdef HAS_I286
 	else if(id == SIG_I86_A20) {
 		i80286_set_a20_line(cpustate, data & mask);
+	}
+#endif
+#ifdef _CPU_DEBUG_LOG
+	else if(id == SIG_CPU_DEBUG) {
+		if(debug_count == 0) {
+			emu->out_debug(_T("---- I286 DASM --------------------------------------------------------------->\n"));
+		}
+		debug_count = 16;
 	}
 #endif
 }
@@ -181,4 +233,28 @@ uint32 I286::get_pc()
 {
 	cpu_state *cpustate = (cpu_state *)opaque;
 	return cpustate->prevpc;
+}
+
+void I286::set_address_mask(uint32 mask)
+{
+	cpu_state *cpustate = (cpu_state *)opaque;
+	cpustate->amask = mask;
+}
+
+uint32 I286::get_address_mask()
+{
+	cpu_state *cpustate = (cpu_state *)opaque;
+	return cpustate->amask;
+}
+
+void I286::set_shutdown_flag(int shutdown)
+{
+	cpu_state *cpustate = (cpu_state *)opaque;
+	cpustate->shutdown = shutdown;
+}
+
+int I286::get_shutdown_flag()
+{
+	cpu_state *cpustate = (cpu_state *)opaque;
+	return cpustate->shutdown;
 }

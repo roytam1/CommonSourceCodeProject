@@ -40,11 +40,6 @@
 #include "fmr50/fmr50.h"
 #endif
 
-// FUJITSU FMR-CARD
-#ifdef _FMRCARD
-#include "fmr50/fmr50.h"
-#endif
-
 // CASIO FP-200
 #ifdef _FP200
 #include "fp200/fp200.h"

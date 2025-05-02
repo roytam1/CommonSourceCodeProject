@@ -32,9 +32,6 @@ these four paragraphs for those parts of this code that are retained.
 //#include "softfloat-specialize"
 #include "fpu_constant.h"
 
-// FIXME:
-#define float_flag_denormal float_flag_invalid
-
 static const floatx80 floatx80_log10_2 = packFloatx80(0, 0x3ffd, U64(0x9a209a84fbcff798));
 static const floatx80 floatx80_ln_2 = packFloatx80(0, 0x3ffe, U64(0xb17217f7d1cf79ac));
 static const floatx80 floatx80_one = packFloatx80(0, 0x3fff, U64(0x8000000000000000));
@@ -52,7 +49,6 @@ static const floatx80 floatx80_default_nan = packFloatx80(0, 0xffff, U64(0xfffff
 
 INLINE bits64 extractFloatx80Frac( floatx80 a )
 {
-
 	return a.low;
 
 }
@@ -64,7 +60,6 @@ INLINE bits64 extractFloatx80Frac( floatx80 a )
 
 INLINE int32 extractFloatx80Exp( floatx80 a )
 {
-
 	return a.high & 0x7FFF;
 
 }
@@ -76,7 +71,6 @@ INLINE int32 extractFloatx80Exp( floatx80 a )
 
 INLINE flag extractFloatx80Sign( floatx80 a )
 {
-
 	return a.high>>15;
 
 }

@@ -72,6 +72,17 @@ const endianness_t ENDIANNESS_NATIVE = ENDIANNESS_BIG;
 // endian-based value: first value is if 'endian' matches native, second is if 'endian' doesn't match native
 #define ENDIAN_VALUE_NE_NNE(endian,leval,beval)	(((endian) == ENDIANNESS_NATIVE) ? (neval) : (nneval))
 
+// Disassembler constants
+const UINT32 DASMFLAG_SUPPORTED     = 0x80000000;   // are disassembly flags supported?
+const UINT32 DASMFLAG_STEP_OUT      = 0x40000000;   // this instruction should be the end of a step out sequence
+const UINT32 DASMFLAG_STEP_OVER     = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
+const UINT32 DASMFLAG_OVERINSTMASK  = 0x18000000;   // number of extra instructions to skip when stepping over
+const UINT32 DASMFLAG_OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
+const UINT32 DASMFLAG_LENGTHMASK    = 0x0000ffff;   // the low 16-bits contain the actual length
+
+/* Highly useful macro for compile-time knowledge of an array size */
+#define ARRAY_LENGTH(x)     (sizeof(x) / sizeof(x[0]))
+
 enum line_state
 {
 	CLEAR_LINE = 0,				// clear (a fired or held) line
@@ -97,6 +108,10 @@ enum
 #define CPU_EXECUTE_NAME(name)			cpu_execute_##name
 #define CPU_EXECUTE(name)			int CPU_EXECUTE_NAME(name)(i386_state *cpustate, int cycles)
 #define CPU_EXECUTE_CALL(name)			CPU_EXECUTE_NAME(name)(cpustate, cycles)
+
+#define CPU_DISASSEMBLE_NAME(name)		cpu_disassemble_##name
+#define CPU_DISASSEMBLE(name)			int CPU_DISASSEMBLE_NAME(name)(char *buffer, offs_t eip, const UINT8 *oprom)
+#define CPU_DISASSEMBLE_CALL(name)		CPU_DISASSEMBLE_NAME(name)(buffer, eip, oprom)
 
 #define fatalerror(...) exit(1)
 #define logerror(...)
@@ -135,6 +150,9 @@ enum
 
 #include "mame/softfloat/softfloat.c"
 #include "mame/i386/i386.c"
+#ifdef _CPU_DEBUG_LOG
+#include "mame/i386/i386dasm.c"
+#endif
 
 void I386::initialize()
 {
@@ -150,6 +168,7 @@ void I386::initialize()
 #ifdef SINGLE_MODE_DMA
 	cpustate->dma = d_dma;
 #endif
+	cpustate->shutdown = 0;
 }
 
 void I386::release()
@@ -161,11 +180,36 @@ void I386::reset()
 {
 	i386_state *cpustate = (i386_state *)opaque;
 	CPU_RESET_CALL(CPU_MODEL);
+#ifdef _CPU_DEBUG_LOG
+	debug_count = 0;
+#endif
 }
 
 int I386::run(int cycles)
 {
 	i386_state *cpustate = (i386_state *)opaque;
+#ifdef _CPU_DEBUG_LOG
+	if(debug_count) {
+		char buffer[256];
+		UINT64 eip = cpustate->eip;
+		UINT8 ops[16];
+		for(int i = 0; i < 16; i++) {
+			ops[i] = d_mem->read_data8(cpustate->pc + i);
+		}
+		UINT8 *oprom = ops;
+		
+		if(cpustate->operand_size) {
+			CPU_DISASSEMBLE_CALL(x86_32);
+		} else {
+			CPU_DISASSEMBLE_CALL(x86_16);
+		}
+		emu->out_debug(_T("%4x\t%s\n"), cpustate->pc, buffer);
+		
+		if(--debug_count == 0) {
+			emu->out_debug(_T("<--------------------------------------------------------------- I386 DASM ----\n"));
+		}
+	}
+#endif
 	return CPU_EXECUTE_CALL(i386);
 }
 
@@ -185,6 +229,14 @@ void I386::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_I386_A20) {
 		i386_set_a20_line(cpustate, data & mask);
 	}
+#ifdef _CPU_DEBUG_LOG
+	else if(id == SIG_CPU_DEBUG) {
+		if(debug_count == 0) {
+			emu->out_debug(_T("---- I386 DASM --------------------------------------------------------------->\n"));
+		}
+		debug_count = 16;
+	}
+#endif
 }
 
 void I386::set_intr_line(bool line, bool pending, uint32 bit)
@@ -209,4 +261,28 @@ uint32 I386::get_pc()
 {
 	i386_state *cpustate = (i386_state *)opaque;
 	return cpustate->prev_pc;
+}
+
+void I386::set_address_mask(uint32 mask)
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	cpustate->a20_mask = mask;
+}
+
+uint32 I386::get_address_mask()
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	return cpustate->a20_mask;
+}
+
+void I386::set_shutdown_flag(int shutdown)
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	cpustate->shutdown = shutdown;
+}
+
+int I386::get_shutdown_flag()
+{
+	i386_state *cpustate = (i386_state *)opaque;
+	return cpustate->shutdown;
 }

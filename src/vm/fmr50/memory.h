@@ -18,17 +18,28 @@
 #define SIG_MEMORY_DISP		0
 #define SIG_MEMORY_VSYNC	1
 
+#if defined(HAS_I286)
+class I286;
+#else
+class I386;
+#endif
+
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_crtc;
+#if defined(HAS_I286)
+	I286 *d_cpu;
+#else
+	I386 *d_cpu;
+#endif
+	DEVICE *d_crtc;
 	
 	uint8* rbank[8192];	// 16MB / 2KB
 	uint8* wbank[8192];
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	
-	uint8 ram[0x200000];	// RAM 1+1MB
+	uint8 ram[0x400000];	// RAM 1+3MB
 #ifdef _FMR60
 	uint8 vram[0x80000];	// VRAM 512KB
 	uint8 cvram[0x2000];
@@ -53,8 +64,8 @@ private:
 	// memory
 	uint8 protect, rst;
 	uint8 mainmem, rplane, wplane;
-	uint32 amask;
-	bool is_i286;
+	uint8 dma_addr_reg, dma_wrap_reg;
+	uint32 dma_addr_mask;
 	
 	// crtc
 	uint8* chreg;
@@ -90,6 +101,7 @@ private:
 	scrntype palette_cg[16];
 	
 	void update_bank();
+	void update_dma_addr_mask();
 #ifdef _FMR60
 	void draw_text();
 #else
@@ -107,17 +119,23 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_dma_data8(uint32 addr, uint32 data);
+	uint32 read_dma_data8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
 	
 	// unitque function
-	void set_context_cpu(DEVICE* device) {
+#if defined(HAS_I286)
+	void set_context_cpu(I286* device) {
+#else
+	void set_context_cpu(I386* device) {
+#endif
 		d_cpu = device;
 	}
 	void set_machine_id(uint8 id) {
-		machine_id = id; is_i286 = ((id & 7) == 0);
+		machine_id = id;
 	}
 	void set_context_crtc(DEVICE* device) {
 		d_crtc = device;

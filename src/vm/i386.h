@@ -28,6 +28,9 @@ private:
 	DEVICE *d_dma;
 #endif
 	void *opaque;
+#ifdef _CPU_DEBUG_LOG
+	int debug_count;
+#endif
 	
 public:
 	I386(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
@@ -71,6 +74,10 @@ public:
 		d_dma = device;
 	}
 #endif
+	void set_address_mask(uint32 mask);
+	uint32 get_address_mask();
+	void set_shutdown_flag(int shutdown);
+	int get_shutdown_flag();
 };
 
 #endif

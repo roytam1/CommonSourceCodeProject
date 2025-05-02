@@ -20,8 +20,11 @@
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8259.h"
+#if defined(HAS_I286)
 #include "../i286.h"
+#else
 #include "../i386.h"
+#endif
 #include "../io.h"
 #include "../mb8877.h"
 #include "../msm58321.h"
@@ -45,51 +48,66 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
-	// check ipl
-	uint8 machine_id = 0;
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
-		uint8 ipl[0x4000];
-		fio->Fread(ipl, sizeof(ipl), 1);
-		fio->Fclose();
-		uint32 crc32 = getcrc32(ipl, sizeof(ipl));
-		for(int i = 0;; i++) {
-			if(machine_ids[i][0] == -1) {
-				break;
-			}
-			if(machine_ids[i][0] == crc32) {
-				machine_id = machine_ids[i][1];
-				break;
-			}
-		}
-	}
-#ifdef _FMRCARD
-	machine_id = 0x70;
-#else
-	if(!machine_id) {
-		if(fio->Fopen(emu->bios_path(_T("MACHINE.ID")), FILEIO_READ_BINARY)) {
-			machine_id = fio->Fgetc();
-			fio->Fclose();
-		}
-		else {
-			machine_id = 0xf8;
-		}
-	}
+/*
+	Machine ID & CPU ID
+
+	FMR-50FD/HD/LT	0xF8
+	FMR-50FX/HX	0xE0
+	FMR-50SFX/SHX	0xE8
+	FMR-50LT	0xF8
+	FMR-50NBX	0x28
+	FMR-50NB	0x60
+	FMR-50NE/T	0x08
+	FMR-CARD	0x70
+
+	80286		0x00
+	80386		0x01
+	80386SX		0x03
+	80486		0x02
+*/
+	static const int cpu_clock[] = {
+#if defined(HAS_I286)
+		 8000000, 12000000
+#elif defined(HAS_I386)
+		16000000, 20000000
+#elif defined(HAS_I486)
+		20000000, 25000000
 #endif
+	};
+	
+#if defined(_FMR60) && (defined(HAS_I386) || defined(HAS_I486) || defined(HAS_PENTIUM))
+	uint8 machine_id = 0xf0;	// FMR-70/80
+#else
+	uint8 machine_id = 0xf8;	// FMR-50/60
+#endif
+	
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(emu->bios_path(_T("MACHINE.ID")), FILEIO_READ_BINARY)) {
+		machine_id = fio->Fgetc();
+		fio->Fclose();
+	}
 	delete fio;
-	is_i286 = ((machine_id & 7) == 0);
+	
+	machine_id &= ~7;
+#if defined(HAS_I286)
+	machine_id |= 0;	// 286
+#elif defined(HAS_I386)
+//	machine_id |= 1;	// 386DX
+	machine_id |= 3;	// 386SX
+#elif defined(HAS_I486)
+	machine_id |= 2;	// 486SX/DX
+#endif
 	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
-	if(is_i286) {
-		i286 = new I286(this, emu);
-	}
-	else {
-		i386 = new I386(this, emu);
-	}
+#if defined(HAS_I286)
+	cpu = new I286(this, emu);
+#else
+	cpu = new I386(this, emu);
+#endif
 	crtc = new HD46505(this, emu);
 #ifdef _FMR60
 	acrtc = new HD63484(this, emu);
@@ -114,12 +132,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	timer = new TIMER(this, emu);
 	
 	// set contexts
-	if(is_i286) {
-		event->set_context_cpu(i286);
-	}
-	else {
-		event->set_context_cpu(i386);
-	}
+	event->set_context_cpu(cpu, cpu_clock[config.cpu_type & 1]);
 	event->set_context_sound(pcm);
 	
 /*	pic	0	timer
@@ -156,12 +169,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0->set_constant_clock(1, 307200);
 	pit0->set_constant_clock(2, 307200);
 	pit1->set_constant_clock(1, 1228800);
-	if(is_i286) {
-		pic->set_context_cpu(i286);
-	}
-	else {
-		pic->set_context_cpu(i386);
-	}
+	pic->set_context_cpu(cpu);
 	fdc->set_context_drq(dma, SIG_UPD71071_CH0, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	rtc->set_context_data(timer, SIG_TIMER_RTC, 0x0f, 0);
@@ -183,12 +191,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc);
 	floppy->set_context_pic(pic);
 	keyboard->set_context_pic(pic);
-	if(is_i286) {
-		memory->set_context_cpu(i286);
-	}
-	else {
-		memory->set_context_cpu(i386);
-	}
+	memory->set_context_cpu(cpu);
 	memory->set_machine_id(machine_id);
 	memory->set_context_crtc(crtc);
 	memory->set_chregs_ptr(crtc->get_regs());
@@ -199,24 +202,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	timer->set_context_rtc(rtc);
 	
 	// cpu bus
-	if(is_i286) {
-		i286->set_context_mem(memory);
-		i286->set_context_io(io);
-		i286->set_context_intr(pic);
-		i286->set_context_bios(bios);
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(pic);
+	cpu->set_context_bios(bios);
 #ifdef SINGLE_MODE_DMA
-		i286->set_context_dma(dma);
+	cpu->set_context_dma(dma);
 #endif
-	}
-	else {
-		i386->set_context_mem(memory);
-		i386->set_context_io(io);
-		i386->set_context_intr(pic);
-		i386->set_context_bios(bios);
-#ifdef SINGLE_MODE_DMA
-		i386->set_context_dma(dma);
-#endif
-	}
 	
 	// i/o bus
 	io->set_iomap_alias_rw(0x00, pic, I8259_ADDR_CHIP0 | 0);
@@ -225,6 +217,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_rw(0x12, pic, I8259_ADDR_CHIP1 | 1);
 	io->set_iomap_single_rw(0x20, memory);	// reset
 	io->set_iomap_single_r(0x21, memory);	// cpu misc
+	io->set_iomap_single_w(0x22, memory);	// dma
+	io->set_iomap_single_rw(0x24, memory);	// dma
+	io->set_iomap_single_r(0x26, timer);
+	io->set_iomap_single_r(0x27, timer);
 	io->set_iomap_single_r(0x30, memory);	// cpu id
 	io->set_iomap_alias_rw(0x40, pit0, 0);
 	io->set_iomap_alias_rw(0x42, pit0, 1);
@@ -270,10 +266,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_rw(0xc30, scsi);
 	io->set_iomap_single_rw(0xc32, scsi);
 	io->set_iomap_range_rw(0x3000, 0x3fff, cmos);
-	io->set_iomap_single_w(0xfd90, memory);		// crtc
-	io->set_iomap_single_rw(0xfd92, memory);	// crtc
-	io->set_iomap_single_rw(0xfd94, memory);	// crtc
-	io->set_iomap_single_rw(0xfd96, memory);	// crtc
 	io->set_iomap_range_rw(0xfd98, 0xfd9f, memory);	// crtc
 	io->set_iomap_single_rw(0xfda0, memory);	// crtc
 	

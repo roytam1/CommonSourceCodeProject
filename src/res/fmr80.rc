@@ -82,8 +82,8 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "CPU 80286 8MHz",              ID_CPU_TYPE0
-        MENUITEM "CPU 80286 12MHz",             ID_CPU_TYPE1
+        MENUITEM "CPU 486SX 20MHz",             ID_CPU_TYPE0
+        MENUITEM "CPU 486SX 25MHz",             ID_CPU_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1

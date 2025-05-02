@@ -1,3 +1,20 @@
+5/1/2014
+
+[VM/I286] reimplement based on MAME 0.149
+[VM/I286] support disassembler
+[VM/I386] reimplement based on MAME 0.152
+[VM/I386] support disassembler
+
+[FMR50] split project for i286, i386 and i486
+[FMR60] split project for i286, i386 and i486
+[FMR50/MEMORY] improve memory address mask for cpu and dma
+[FMR50/MEMORY] support shutdown flag
+[FMR50/MEMORY] remove invalid color palette i/o
+[FMR50/MEMORY] fix text color palette #0
+[FMR50/MEMORY] fix text reverse/blink
+[FMR50/TIMER] support free run counter
+
+
 4/17/2014
 
 [WINMAIN] fix resource reak issue (thanks Mr.Redart)

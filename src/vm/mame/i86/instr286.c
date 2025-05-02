@@ -114,6 +114,7 @@ static void i80286_trap2(i80286_state *cpustate,UINT32 error)
 		// create a shutdown output line that causes a reset
 		// NMI can wake processor without reset
 		CPU_RESET_CALL(CPU_MODEL);
+		cpustate->shutdown = 1;
 	}
 	cpustate->trap_level = 0;
 }
@@ -621,7 +622,7 @@ static void PREFIX286(_0fpre)(i8086_state *cpustate)
 		else {
 			desc[2] = ReadWord(addr+4);
 			r = RIGHTS(desc);
-			if (DPL(r)>=PMAX(RPL(tmp),CPL)) {
+			if (DPL(r)>=PMAX(RPL(tmp),CPL) || (SEGDESC(r) && CODE(r) && CONF(r))) {
 				cpustate->ZeroVal = 0;
 				// rights are expected to be in upper byte
 				RegWord(ModRM) = r << 8;
@@ -639,7 +640,7 @@ static void PREFIX286(_0fpre)(i8086_state *cpustate)
 			desc[2] = ReadWord(addr+4);
 			r = RIGHTS(desc);
 			if (!SEGDESC(r) && (GATE(r) >= CALLGATE)) cpustate->ZeroVal = 1; // not valid for gates
-			else if (DPL(r)>=PMAX(RPL(tmp),CPL)) {
+			else if (DPL(r)>=PMAX(RPL(tmp),CPL) || (SEGDESC(r) && CODE(r) && CONF(r))) {
 				cpustate->ZeroVal = 0;
 				RegWord(ModRM) = ReadWord(addr);
 			}
