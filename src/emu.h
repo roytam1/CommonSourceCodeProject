@@ -18,7 +18,17 @@
 // for debug
 //#define _DEBUG_LOG
 #ifdef _DEBUG_LOG
-#define _IO_DEBUG_LOG
+	// output debug log to console
+//	#define _DEBUG_CONSOLE
+	// output debug log to file
+	#define _DEBUG_FILE
+	
+	// output cpu debug log
+//	#define _CPU_DEBUG_LOG
+	// output fdc debug log
+//	#define _FDC_DEBUG_LOG
+	// output i/o debug log
+//	#define _IO_DEBUG_LOG
 #endif
 
 #include <windows.h>
@@ -233,7 +243,10 @@ private:
 	// ----------------------------------------
 	void open_debug();
 	void close_debug();
-#ifdef _DEBUG_LOG
+#ifdef _DEBUG_CONSOLE
+	HANDLE hConsole;
+#endif
+#ifdef _DEBUG_FILE
 	FILE* debug;
 #endif
 	_TCHAR app_path[_MAX_PATH];

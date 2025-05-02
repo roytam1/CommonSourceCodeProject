@@ -21,6 +21,7 @@
 #define SIG_CPU_IRQ	101
 #define SIG_CPU_NMI	102
 #define SIG_CPU_BUSREQ	103
+#define SIG_CPU_DEBUG	201
 
 class DEVICE
 {
@@ -88,35 +89,40 @@ public:
 	}
 	virtual void write_data8w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
+		write_data8(addr, data);
 	}
 	virtual uint32 read_data8w(uint32 addr, int* wait) {
 		*wait = 0;
-		return 0xff;
+		return read_data8(addr);
 	}
 	virtual void write_data16w(uint32 addr, uint32 data, int* wait) {
-		*wait = 0;
-		write_data8(addr, data & 0xff);
-		write_data8(addr + 1, (data >> 8) & 0xff);
+		int wait0, wait1;
+		write_data8w(addr, data & 0xff, &wait0);
+		write_data8w(addr + 1, (data >> 8) & 0xff, &wait1);
+		*wait = wait0 + wait1;
 	}
 	virtual uint32 read_data16w(uint32 addr, int* wait) {
-		*wait = 0;
-		uint32 val = read_data8(addr);
-		val |= read_data8(addr + 1) << 8;
+		int wait0, wait1;
+		uint32 val = read_data8w(addr, &wait0);
+		val |= read_data8w(addr + 1, &wait1) << 8;
+		*wait = wait0 + wait1;
 		return val;
 	}
 	virtual void write_data32w(uint32 addr, uint32 data, int* wait) {
-		*wait = 0;
-		write_data8(addr, data & 0xff);
-		write_data8(addr + 1, (data >> 8) & 0xff);
-		write_data8(addr + 2, (data >> 16) & 0xff);
-		write_data8(addr + 3, (data >> 24) & 0xff);
+		int wait0, wait1, wait2, wait3;
+		write_data8w(addr, data & 0xff, &wait0);
+		write_data8w(addr + 1, (data >> 8) & 0xff, &wait1);
+		write_data8w(addr + 2, (data >> 16) & 0xff, &wait2);
+		write_data8w(addr + 3, (data >> 24) & 0xff, &wait3);
+		*wait = wait0 + wait1 + wait2 + wait3;
 	}
 	virtual uint32 read_data32w(uint32 addr, int* wait) {
-		*wait = 0;
-		uint32 val = read_data8(addr);
-		val |= read_data8(addr + 1) << 8;
-		val |= read_data8(addr + 2) << 16;
-		val |= read_data8(addr + 3) << 24;
+		int wait0, wait1, wait2, wait3;
+		uint32 val = read_data8w(addr, &wait0);
+		val |= read_data8w(addr + 1, &wait1) << 8;
+		val |= read_data8w(addr + 2, &wait2) << 16;
+		val |= read_data8w(addr + 3, &wait3) << 24;
+		*wait = wait0 + wait1 + wait2 + wait3;
 		return val;
 	}
 	virtual void write_dma8(uint32 addr, uint32 data) {
@@ -159,37 +165,40 @@ public:
 	}
 	virtual void write_io8w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
+		write_io8(addr, data);
 	}
 	virtual uint32 read_io8w(uint32 addr, int* wait) {
 		*wait = 0;
-#ifdef IOBUS_RETURN_ADDR
-		return (addr & 1 ? addr >> 8 : addr) & 0xff;
-#else
-		return 0xff;
-#endif
+		return read_io8(addr);
 	}
 	virtual void write_io16w(uint32 addr, uint32 data, int* wait) {
-		*wait = 0;
-		write_io8(addr, data & 0xff);
-		write_io8(addr + 1, (data >> 8) & 0xff);
+		int wait0, wait1;
+		write_io8w(addr, data & 0xff, &wait0);
+		write_io8w(addr + 1, (data >> 8) & 0xff, &wait1);
+		*wait = wait0 + wait1;
 	}
 	virtual uint32 read_io16w(uint32 addr, int* wait) {
-		*wait = 0;
-		uint32 val = read_io8(addr);
-		val |= read_io8(addr + 1) << 8;
+		int wait0, wait1;
+		uint32 val = read_io8w(addr, &wait0);
+		val |= read_io8w(addr + 1, &wait1) << 8;
+		*wait = wait0 + wait1;
 		return val;
 	}
 	virtual void write_io32w(uint32 addr, uint32 data, int* wait) {
-		*wait = 0;
-		write_io8(addr, data & 0xff);
-		write_io8(addr + 1, (data >> 8) & 0xff);
-		write_io8(addr + 2, (data >> 16) & 0xff);
-		write_io8(addr + 3, (data >> 24) & 0xff);
+		int wait0, wait1, wait2, wait3;
+		write_io8w(addr, data & 0xff, &wait0);
+		write_io8w(addr + 1, (data >> 8) & 0xff, &wait1);
+		write_io8w(addr + 2, (data >> 16) & 0xff, &wait2);
+		write_io8w(addr + 3, (data >> 24) & 0xff, &wait3);
+		*wait = wait0 + wait1 + wait2 + wait3;
 	}
 	virtual uint32 read_io32w(uint32 addr, int* wait) {
-		*wait = 0;
-		uint32 val = read_io8(addr);
-		val |= read_io8(addr + 1) << 8;
+		int wait0, wait1, wait2, wait3;
+		uint32 val = read_io8w(addr, &wait0);
+		val |= read_io8w(addr + 1, &wait1) << 8;
+		val |= read_io8w(addr + 2, &wait2) << 16;
+		val |= read_io8w(addr + 3, &wait3) << 24;
+		*wait = wait0 + wait1 + wait2 + wait3;
 		return val;
 	}
 	
@@ -220,6 +229,44 @@ public:
 		val |= read_memory_mapped_io8(addr + 1) << 8;
 		val |= read_memory_mapped_io8(addr + 2) << 16;
 		val |= read_memory_mapped_io8(addr + 3) << 24;
+		return val;
+	}
+	virtual void write_memory_mapped_io8w(uint32 addr, uint32 data, int* wait) {
+		*wait = 0;
+		write_memory_mapped_io8(addr, data);
+	}
+	virtual uint32 read_memory_mapped_io8w(uint32 addr, int* wait) {
+		*wait = 0;
+		return read_memory_mapped_io8(addr);
+	}
+	virtual void write_memory_mapped_io16w(uint32 addr, uint32 data, int* wait) {
+		int wait0, wait1;
+		write_memory_mapped_io8w(addr, data & 0xff, &wait0);
+		write_memory_mapped_io8w(addr + 1, (data >> 8) & 0xff, &wait1);
+		*wait = wait0 + wait1;
+	}
+	virtual uint32 read_memory_mapped_io16w(uint32 addr, int* wait) {
+		int wait0, wait1;
+		uint32 val = read_memory_mapped_io8w(addr, &wait0);
+		val |= read_memory_mapped_io8w(addr + 1, &wait1) << 8;
+		*wait = wait0 + wait1;
+		return val;
+	}
+	virtual void write_memory_mapped_io32w(uint32 addr, uint32 data, int* wait) {
+		int wait0, wait1, wait2, wait3;
+		write_memory_mapped_io8w(addr, data & 0xff, &wait0);
+		write_memory_mapped_io8w(addr + 1, (data >> 8) & 0xff, &wait1);
+		write_memory_mapped_io8w(addr + 2, (data >> 16) & 0xff, &wait2);
+		write_memory_mapped_io8w(addr + 3, (data >> 24) & 0xff, &wait3);
+		*wait = wait0 + wait1 + wait2 + wait3;
+	}
+	virtual uint32 read_memory_mapped_io32w(uint32 addr, int* wait) {
+		int wait0, wait1, wait2, wait3;
+		uint32 val = read_memory_mapped_io8w(addr, &wait0);
+		val |= read_memory_mapped_io8w(addr + 1, &wait1) << 8;
+		val |= read_memory_mapped_io8w(addr + 2, &wait2) << 16;
+		val |= read_memory_mapped_io8w(addr + 3, &wait3) << 24;
+		*wait = wait0 + wait1 + wait2 + wait3;
 		return val;
 	}
 	

@@ -25,7 +25,7 @@ private:
 	uint8 databuf[32][8], *datap;
 	uint8 mode, cmdlen, datalen;
 	uint8 inbuf, outbuf;
-	bool inrdy, outrdy;
+	bool ibf, obf;
 	
 	FIFO* key_buf;
 	uint8* key_stat;
@@ -37,8 +37,8 @@ private:
 	
 	void update_intr();
 	void process_cmd();
-	void set_inrdy(bool val);
-	void set_outrdy(bool val);
+	void set_ibf(bool val);
+	void set_obf(bool val);
 	uint16 get_key(int code);
 	
 public:

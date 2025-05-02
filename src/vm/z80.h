@@ -15,11 +15,14 @@
 #include "../emu.h"
 #include "device.h"
 
-#ifdef NSC800
-#define SIG_NSC800_INT	0
-#define SIG_NSC800_RSTA	1
-#define SIG_NSC800_RSTB	2
-#define SIG_NSC800_RSTC	3
+#ifdef Z80_M1_CYCLE_WAIT
+#define SIG_Z80_M1_CYCLE_WAIT	0
+#endif
+#ifdef HAS_NSC800
+#define SIG_NSC800_INT	1
+#define SIG_NSC800_RSTA	2
+#define SIG_NSC800_RSTB	3
+#define SIG_NSC800_RSTC	4
 #endif
 #define NMI_REQ_BIT	0x80000000
 
@@ -38,6 +41,9 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int count, first;
+#ifdef Z80_M1_CYCLE_WAIT
+	int m1_cycle_wait;
+#endif
 	bool busreq, halt;
 	pair regs[6];
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
@@ -90,7 +96,7 @@ private:
 	}
 	inline uint8 FETCHOP() {
 #ifdef Z80_M1_CYCLE_WAIT
-		count -= Z80_M1_CYCLE_WAIT;
+		count -= m1_cycle_wait;
 #endif
 		_R = (_R & 0x80) | ((_R + 1) & 0x7f);
 		return d_mem->read_data8(PC++);
@@ -151,7 +157,7 @@ private:
 #endif
 	}
 	inline void OUT8(uint8 laddr, uint8 haddr, uint8 val) {
-#ifdef NSC800
+#ifdef HAS_NSC800
 		if(laddr == 0xbb) {
 			ICR = val;
 			return;
@@ -203,9 +209,49 @@ private:
 	inline uint8 RES(uint8 bit, uint8 value);
 	inline uint8 SET(uint8 bit, uint8 value);
 	
+	/* ---------------------------------------------------------------------------
+	debug
+	--------------------------------------------------------------------------- */
+	
+#ifdef _CPU_DEBUG_LOG
+	int debug_count, debug_ptr;
+	uint8 debug_ops[4];
+	_TCHAR debug_dasm[32];
+	
+	inline uint8 DEBUG_FETCHOP() {
+		return debug_ops[debug_ptr++];
+	}
+	inline uint8 DEBUG_FETCH8() {
+		return debug_ops[debug_ptr++];
+	}
+	inline uint16 DEBUG_FETCH16() {
+		uint16 val = debug_ops[debug_ptr] | (debug_ops[debug_ptr + 1] << 8);
+		debug_ptr += 2;
+		return val;
+	}
+	inline int8 DEBUG_FETCH8_REL() {
+		int res = debug_ops[debug_ptr++];
+		return (res < 128) ? res : (res - 256);
+	}
+	inline uint16 DEBUG_FETCH8_RELPC() {
+		int res = debug_ops[debug_ptr++];
+		return prvPC + debug_ptr + ((res < 128) ? res : (res - 256));
+	}
+	void DASM();
+	void DASM_CB();
+	void DASM_DD();
+	void DASM_ED();
+	void DASM_FD();
+	void DASM_DDCB();
+	void DASM_FDCB();
+#endif
+	
 public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		count = first = 0;	// passed_clock must be zero at initialize
+#ifdef Z80_M1_CYCLE_WAIT
+		m1_cycle_wait = Z80_M1_CYCLE_WAIT;
+#endif
 		busreq = false;
 		init_output_signals(&outputs_busack);
 	}

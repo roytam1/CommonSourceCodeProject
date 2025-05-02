@@ -18,8 +18,10 @@
 
 EMU::EMU(HWND hwnd, HINSTANCE hinst)
 {
+#ifdef _DEBUG_LOG
 	// open debug logfile
 	open_debug();
+#endif
 	
 	// store main window handle
 	main_window_handle = hwnd;
@@ -75,7 +77,9 @@ EMU::~EMU()
 	if(vm) {
 		delete vm;
 	}
+#ifdef _DEBUG_LOG
 	close_debug();
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -143,15 +147,25 @@ void EMU::application_path(_TCHAR* path)
 
 void EMU::open_debug()
 {
-#ifdef _DEBUG_LOG
+#ifdef _DEBUG_CONSOLE
+	AllocConsole();
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTitle("Debug Log");
+#endif
+#ifdef _DEBUG_FILE
 	debug = fopen("d:\\debug.log", "w");
 #endif
 }
 
 void EMU::close_debug()
 {
-#ifdef _DEBUG_LOG
-	fclose(debug);
+#ifdef _DEBUG_CONSOLE
+	FreeConsole();
+#endif
+#ifdef _DEBUG_FILE
+	if(debug) {
+		fclose(debug);
+	}
 #endif
 }
 
@@ -163,9 +177,15 @@ void EMU::out_debug(const _TCHAR* format, ...)
 	
 	va_start(ap, format);
 	_vstprintf(buffer, format, ap);
+#ifdef _DEBUG_CONSOLE
+	DWORD dwWritten;
+	WriteConsole(hConsole, buffer, _tcslen(buffer), &dwWritten, NULL);
+#endif
+#ifdef _DEBUG_FILE
 	if(debug) {
 		_ftprintf(debug, _T("%s"), buffer);
 	}
+#endif
 	va_end(ap);
 #endif
 }

@@ -97,6 +97,14 @@ uint32 IO::read_io8(uint32 addr)
 	case 0xc000:
 		return vram_g[addr & 0x3fff];
 	}
+#ifdef _X1TURBO
+	if(addr == 0x1fd0) {
+		int ofs = (data & 0x10) ? 0xc000 : 0;
+		vram_b = vram + 0x0000 + ofs;
+		vram_r = vram + 0x4000 + ofs;
+		vram_g = vram + 0x8000 + ofs;
+	}
+#endif
 	// i/o
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32 val = read_table[laddr].dev->read_io8(haddr | read_table[laddr].addr);

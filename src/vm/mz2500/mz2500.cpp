@@ -102,6 +102,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0->set_context_port_c(rst, SIG_RESET_CONTROL, 0xff, 0);
 	pio0->set_context_port_c(crtc, SIG_CRTC_MASK, 0x01, 0);
 	pio0->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 	rtc->set_context_alarm(interrupt, SIG_INTERRUPT_RP5C15, 1);
 	rtc->set_context_pulse(opn, SIG_YM2203_PORT_B, 8);
 	opn->set_context_port_a(floppy, SIG_FLOPPY_REVERSE, 0x02, 0);

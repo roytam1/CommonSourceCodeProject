@@ -1,6 +1,30 @@
+1/21/2010
+
+[EMU/WIN32] support output debug log to console
+
+[VM/DEVICE] fix virtual functions for memory and i/o access with wait
+[VM/MB8877] support output debug log
+[VM/MB8877] support request cpu to output debug log when status is read
+[VM/Z80] support variable m1 cycle wait
+[VM/Z80] support disassembler to output executed mnemonics
+[VM/Z80SIO] change delay timing for data transmitter
+
+[X1TWIN] fix i/o map for display controller and text/attr vram
+[X1TWIN/DISPLAY] fix routine to render vertical doubled character
+[X1TWIN/DISPLAY] fix routine to get accessing vram address and raster
+[X1TWIN/DISPLAY] fix graphic renderer to check view range in crtc registers
+[X1TWIN/FLOPPY] fix not to stop motor of floppy drive
+[X1TWIN/MEMORY] fix to wait 1 clock in m1 cycle when ipl rom is selected
+[X1TWIN/SUB] fix not to raise irq before all data are recieved by main cpu
+[X1TWIN/SUB] fix to exit interrupt automatically without reti
+[X1TWIN/SUB] fix to raise obf when new command is processed
+[X1TWIN/SUB] fix caps lock
+[X1TWIN/SUB] remove game key read command because this is turbo feature
+
+
 1/17/2010
 
-[PV1000/VDP] fix pattern offset register for Dig-Dag and Space Panic
+[PV1000/VDP] fix pattern offset register for Dig-Dug and Space Panic
 
 
 1/16/2010
@@ -26,6 +50,7 @@
 12/28/2010
 
 [EMU/WIN32] support power off notification
+
 [VM/DATAREC] support to load MZT/M12 tape images
 [VM/I8251] support break signal
 [VM/MB8877] change irq signal to low when new command is processed

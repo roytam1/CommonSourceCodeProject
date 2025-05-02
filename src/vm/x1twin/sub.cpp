@@ -145,14 +145,16 @@ void SUB::reset()
 	databuf[0x16][0] = 0xff;
 	mode = cmdlen = datalen = 0;
 	
-	inrdy = true;
-	set_inrdy(false);
-	outrdy = false;
-	set_outrdy(true);
+	ibf = true;
+	set_ibf(false);
+	obf = false;
+	set_obf(true);
 	
+	// key buffer
 	key_buf->clear();
 	key_prev = key_break = 0;
-	caps = kana = false;
+	caps = true;
+	kana = false;
 	
 	// interrupt
 	iei = true;
@@ -165,12 +167,12 @@ void SUB::reset()
 void SUB::write_io8(uint32 addr, uint32 data)
 {
 	inbuf = data;
-	set_inrdy(true);
+	set_ibf(true);
 }
 
 uint32 SUB::read_io8(uint32 addr)
 {
-	set_outrdy(true);
+	set_obf(true);
 	return outbuf;
 }
 
@@ -184,36 +186,26 @@ void SUB::set_intr_iei(bool val)
 
 uint32 SUB::intr_ack()
 {
-#if 1
 	return read_io8(0x1900);
-#else
-	// read key buffer
-	mode = 0xe6;
-	process_cmd();
-	
-	// return vector
-	return databuf[0x14][0];
-#endif
 }
 
 void SUB::intr_reti()
 {
-	intr = false;
+	// NOTE: some software uses RET, not RETI ???
+//	intr = false;
 }
 
 void SUB::update_intr()
 {
 	if(intr && iei) {
 		d_cpu->set_intr_line(true, true, 1);
-	}
-	else {
-		d_cpu->set_intr_line(false, true, 1);
+		intr = false;
 	}
 }
 
 void SUB::event_callback(int event_id, int err)
 {
-	uint8 cmdlen_tbl[] = {
+	static const uint8 cmdlen_tbl[] = {
 		0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 3, 0
 	};
 	
@@ -226,54 +218,53 @@ void SUB::event_callback(int event_id, int err)
 		databuf[0x16][1] = 0;
 	}
 #endif
-	if(datalen) {
-		// send status
-		if(outrdy) {
-			outbuf = *datap++;
-			set_outrdy(false);
-			datalen--;
-		}
-	}
-	else if(cmdlen) {
-		// recieve command
-		if(inrdy) {
+	if(ibf) {
+		// sub cpu recieved data from main cpu
+		if(cmdlen) {
+			// this is command parameter
 			*datap++ = inbuf;
-			set_inrdy(false);
-			if(--cmdlen == 0) {
-				process_cmd();
+			cmdlen--;
+		}
+		else {
+			// this is new command
+			mode = inbuf;
+			datap = &databuf[mode - 0xd0][0];
+			if(0xd0 <= mode && mode <= 0xd7) {
+				cmdlen = 6;
+			}
+			else if(0xe3 <= mode && mode <= 0xef) {
+				cmdlen = cmdlen_tbl[mode - 0xe3];
 			}
 		}
-	}
-	else if(inrdy) {
-		// recieve new command
-		mode = inbuf;
-		set_inrdy(false);
-		cmdlen = 0;
-		if(0xd0 <= mode && mode <= 0xd7) {
-			cmdlen = 6;
-			datap = &databuf[mode - 0xd0][0];
-		}
-		else if(0xe3 <= mode && mode <= 0xef) {
-			cmdlen = cmdlen_tbl[mode - 0xe3];
-			datap = &databuf[mode - 0xd0][0];
-		}
 		if(cmdlen == 0) {
+			// this command has no parameters or all parameters are recieved,
+			// so cpu processes the command
 			process_cmd();
 		}
+		// sub cpu can accept new command or parameter
+		set_ibf(false);
+		set_obf(true);
 	}
-	else if(!key_buf->empty() && databuf[0x14][0] && !intr) {
-#if 1
-		// send vector
-		outbuf = databuf[0x14][0];
-		set_outrdy(false);
-		
-		// read key buffer
-		mode = 0xe6;
-		process_cmd();
-#endif
-		// interrupt
-		intr = true;
-		update_intr();
+	else if(obf) {
+		// sub cpu can send data to main cpu
+		if(datalen) {
+			// sub cpu sends result data
+			outbuf = *datap++;
+			set_obf(false);
+			datalen--;
+		}
+		else if(!key_buf->empty() && databuf[0x14][0] && !intr && iei) {
+			// key buffer is not empty and interrupt is not disabled,
+			// so sub cpu sends vector and raise irq
+			outbuf = databuf[0x14][0];
+			set_obf(false);
+			intr = true;
+			update_intr();
+			
+			// read key buffer
+			mode = 0xe6;
+			process_cmd();
+		}
 	}
 }
 
@@ -287,7 +278,8 @@ void SUB::key_down(int code)
 		}
 		key_buf->write(lh);
 		key_prev = code;
-		// break
+		
+		// break key is pressed
 		if((lh >> 8) == 3) {
 			d_pio->write_signal(SIG_I8255_PORT_B, 0, 1);
 			key_break = code;
@@ -298,12 +290,15 @@ void SUB::key_down(int code)
 void SUB::key_up(int code)
 {
 	if(code == key_prev) {
+		// last pressed key is released
 		if(!databuf[0x14][0]) {
 			key_buf->clear();
 		}
 		key_buf->write(0xff);
+		key_prev = 0;
 	}
 	if(code == key_break) {
+		// break key is released
 		d_pio->write_signal(SIG_I8255_PORT_B, 0xff, 1);
 		key_break = 0;
 	}
@@ -314,13 +309,34 @@ void SUB::process_cmd()
 	int time[8];
 	
 	// preset 
-	if(0xe3 <= mode && mode <= 0xef) {
-		datap = &databuf[mode - 0xd0][0];
-	}
+	datap = &databuf[mode - 0xd0][0];
 	datalen = 0;
 	
 	// process command
 	switch(mode) {
+	case 0xd0:
+	case 0xd1:
+	case 0xd2:
+	case 0xd3:
+	case 0xd4:
+	case 0xd5:
+	case 0xd6:
+	case 0xd7:
+		// timer set
+		break;
+	case 0xd8:
+	case 0xd9:
+	case 0xda:
+	case 0xdb:
+	case 0xdc:
+	case 0xdd:
+	case 0xde:
+	case 0xdf:
+		// time read
+		datap = &databuf[mode - 0xd8][0];	// data buffer for timer set
+		datalen = 6;
+		break;
+#ifdef _X1TURBO
 	case 0xe3:
 		// game key read (for turbo)
 		databuf[0x13][0] = 0;
@@ -358,15 +374,13 @@ void SUB::process_cmd()
 #endif
 		datalen = 3;
 		break;
+#endif
 	case 0xe4:
 		// irq vector
 		d_cpu->set_intr_line(false, false, 0);
 		key_buf->clear();
-		databuf[0x16][0] |= 0x40;
+		databuf[0x16][0] = 0xff;
 		databuf[0x16][1] = 0;
-		mode = 0;
-		datalen = 0;
-		set_outrdy(true);
 		break;
 	case 0xe6:
 		// keydata read
@@ -427,44 +441,22 @@ void SUB::process_cmd()
 		databuf[0x1f][2] = ((int)(SECOND / 10) << 4) | (SECOND % 10);
 		datalen = 3;
 		break;
-	case 0xd0:
-	case 0xd1:
-	case 0xd2:
-	case 0xd3:
-	case 0xd4:
-	case 0xd5:
-	case 0xd6:
-	case 0xd7:
-		// timer set
-		break;
-	case 0xd8:
-	case 0xd9:
-	case 0xda:
-	case 0xdb:
-	case 0xdc:
-	case 0xdd:
-	case 0xde:
-	case 0xdf:
-		datalen = 6;
-		datap = &databuf[mode - 0xd0][0];
-		break;
 	}
-	mode = 0;
 }
 
-void SUB::set_inrdy(bool val)
+void SUB::set_ibf(bool val)
 {
-	if(inrdy != val) {
+	if(ibf != val) {
 		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0xff : 0, 0x40);
-		inrdy = val;
+		ibf = val;
 	}
 }
 
-void SUB::set_outrdy(bool val)
+void SUB::set_obf(bool val)
 {
-	if(outrdy != val) {
+	if(obf != val) {
 		d_pio->write_signal(SIG_I8255_PORT_B, val ? 0xff : 0, 0x20);
-		outrdy = val;
+		obf = val;
 	}
 }
 
@@ -479,10 +471,10 @@ uint16 SUB::get_key(int code)
 		kana = !kana;
 	}
 	if(key_stat[0x11]) {
-		l ^= 0x01;
+		l ^= 0x01;	// ctrl
 	}
 	if(key_stat[0x10]) {
-		l ^= 0x02;
+		l ^= 0x02;	// shift
 	}
 	if(kana) {
 		l ^= 0x04;
@@ -491,44 +483,45 @@ uint16 SUB::get_key(int code)
 		l ^= 0x08;
 	}
 	if(key_stat[0x12]) {
-		l ^= 0x10;
+		l ^= 0x10;	// graph (alt)
 	}
 	if(0x60 <= code && code <= 0x74) {
-		// function and numpad
-		l ^= 0x80;
+		l ^= 0x80;	// function or numpad
 	}
 	if(kana) {
 		if(!(l & 2)) {
-			h = keycode_ks[code];
+			h = keycode_ks[code];	// kana+shift
 		}
 		else {
-			h = keycode_k[code];
+			h = keycode_k[code];	// kana
 		}
 	}
 	else {
 		if(!(l & 1)) {
-			h = keycode_c[code];
+			h = keycode_c[code];	// ctrl
 		}
 		else if(!(l & 0x10)) {
-			h = keycode_g[code];
+			h = keycode_g[code];	// graph
 		}
 		else {
 			if(!(l & 2)) {
-				h = keycode_s[code];
+				h = keycode_s[code];	// shift
 			}
 			else {
-				h = keycode[code];
+				h = keycode[code];	// (none shifted)
 			}
 			if(caps) {
-				if(('a' <= h && h <= 'z') || ('A' <= h && h <= 'Z')) {
-					h ^= 0x20;
+				if(0x41 <= code && code <= 0x5a) {
+					h ^= 0x20;	// alphabet
 				}
 			}
 		}
 	}
+#ifndef _X1TURBO
 	if(!h) {
 		l = 0xff;
 	}
+#endif
 	return l | (h << 8);
 }
 

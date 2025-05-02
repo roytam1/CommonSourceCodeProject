@@ -16,6 +16,8 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	// $ffc
 	d_fdc->write_signal(SIG_MB8877_DRIVEREG, data, 0x03);
 	d_fdc->write_signal(SIG_MB8877_SIDEREG, data, 0x10);
-	d_fdc->write_signal(SIG_MB8877_MOTOR, data, 0x80);
+	// NOTE: motor seems to be on automatically when fdc command is requested,
+	// so motor is always on temporary
+//	d_fdc->write_signal(SIG_MB8877_MOTOR, data, 0x80);
 }
 

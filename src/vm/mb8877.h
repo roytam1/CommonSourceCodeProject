@@ -33,6 +33,9 @@ private:
 	// output signals
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
+#ifdef _FDC_DEBUG_LOG
+	DEVICE *d_cpu;
+#endif
 	
 	// drive info
 	typedef struct {
@@ -92,6 +95,9 @@ public:
 	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		init_output_signals(&outputs_irq);
 		init_output_signals(&outputs_drq);
+#ifdef _FDC_DEBUG_LOG
+		d_cpu = NULL;
+#endif
 	}
 	~MB8877() {}
 	
@@ -115,6 +121,11 @@ public:
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
 		regist_output_signal(&outputs_drq, device, id, mask);
 	}
+#ifdef _FDC_DEBUG_LOG
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+#endif
 	DISK* get_disk_handler(int drv) {
 		return disk[drv];
 	}

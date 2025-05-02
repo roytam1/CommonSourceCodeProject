@@ -28,6 +28,7 @@ private:
 #ifdef _X1TURBO
 	uint8 vram_k[0x800];
 #endif
+	uint8* vram_ptr;
 	uint8* vram_b;
 	uint8* vram_r;
 	uint8* vram_g;
@@ -37,11 +38,14 @@ private:
 	
 	uint8 pal[3];
 	uint8 priority, pri[8][8];	// pri[cg][txt]
-	int vline, vclock;
-	int cgnum;
+	int vline, vclock, vclocks;
+	uint8 cur_code, cur_attr, cur_line;
 	uint8 column;
+#ifdef _X1TURBO
+	uint8 mode1, mode2;
+#endif
 	
-	uint8 text[200][640+16];	// +16 for wide char
+	uint8 text[200][640+8];	// +8 for wide char
 	uint8 cg[200][640];
 	uint8 font[0x800];
 	scrntype palette_pc[8];
@@ -49,7 +53,7 @@ private:
 	bool scanline;
 	
 	void update_pal();
-	void get_cgnum();
+	void get_cur_code();
 	void draw_text(int width);
 	void draw_cg(int width);
 	
@@ -73,9 +77,7 @@ public:
 		d_fdc = device;
 	}
 	void set_vram_ptr(uint8* ptr) {
-		vram_b = ptr + 0x0000;
-		vram_r = ptr + 0x4000;
-		vram_g = ptr + 0x8000;
+		vram_ptr = ptr;
 	}
 	void set_regs_ptr(uint8* ptr) {
 		regs = ptr;

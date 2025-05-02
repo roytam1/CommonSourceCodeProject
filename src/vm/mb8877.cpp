@@ -250,76 +250,74 @@ uint32 MB8877::read_io8(uint32 addr)
 	switch(addr & 3) {
 	case 0:
 		// status reg
-		
-		// now force interrupt
 		if(cmdtype == FDC_CMD_TYPE4) {
-			// MZ-2500 RELICS invites STATUS = 0
+			// now force interrupt
 			if(!disk[drvreg]->insert || !motor) {
 				status = FDC_ST_NOTREADY;
 			}
 			else {
+				// MZ-2500 RELICS invites STATUS = 0
 				status = 0;
 			}
-#ifdef HAS_MB8876
-			return (~status) & 0xff;
-#else
-			return status;
-#endif
+			val = status;
 		}
-		// now sector search
-		if(now_search) {
-#ifdef HAS_MB8876
-			return (~FDC_ST_BUSY) & 0xff;
-#else
-			return FDC_ST_BUSY;
-#endif
-		}
-		// disk not inserted, motor stop
-		if(!disk[drvreg]->insert || !motor) {
-			status |= FDC_ST_NOTREADY;
+		else if(now_search) {
+			// now sector search
+			val = FDC_ST_BUSY;
 		}
 		else {
-			status &= ~FDC_ST_NOTREADY;
-		}
-		// write protect
-		if(cmdtype == FDC_CMD_TYPE1 || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC || cmdtype == FDC_CMD_WR_TRK) {
-			if(disk[drvreg]->insert && disk[drvreg]->protect) {
-				status |= FDC_ST_WRITEP;
+			// disk not inserted, motor stop
+			if(!disk[drvreg]->insert || !motor) {
+				status |= FDC_ST_NOTREADY;
+			}
+			else {
+				status &= ~FDC_ST_NOTREADY;
+			}
+			// write protect
+			if(cmdtype == FDC_CMD_TYPE1 || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC || cmdtype == FDC_CMD_WR_TRK) {
+				if(disk[drvreg]->insert && disk[drvreg]->protect) {
+					status |= FDC_ST_WRITEP;
+				}
+				else {
+					status &= ~FDC_ST_WRITEP;
+				}
 			}
 			else {
 				status &= ~FDC_ST_WRITEP;
 			}
-		}
-		else {
-			status &= ~FDC_ST_WRITEP;
-		}
-		
-		// track0, index hole
-		if(cmdtype == FDC_CMD_TYPE1) {
-			if(fdc[drvreg].track == 0) {
-				status |= FDC_ST_TRACK00;
-			}
-			else {
-				status &= ~FDC_ST_TRACK00;
-			}
-			if(!(status & FDC_ST_NOTREADY)) {
-				if(indexcnt == 0) {
-					status |= FDC_ST_INDEX;
+			// track0, index hole
+			if(cmdtype == FDC_CMD_TYPE1) {
+				if(fdc[drvreg].track == 0) {
+					status |= FDC_ST_TRACK00;
 				}
 				else {
-					status &= ~FDC_ST_INDEX;
+					status &= ~FDC_ST_TRACK00;
 				}
-				if(++indexcnt >= ((disk[drvreg]->sector_num == 0) ? 16 : disk[drvreg]->sector_num)) {
-					indexcnt = 0;
+				if(!(status & FDC_ST_NOTREADY)) {
+					if(indexcnt == 0) {
+						status |= FDC_ST_INDEX;
+					}
+					else {
+						status &= ~FDC_ST_INDEX;
+					}
+					if(++indexcnt >= ((disk[drvreg]->sector_num == 0) ? 16 : disk[drvreg]->sector_num)) {
+						indexcnt = 0;
+					}
 				}
 			}
+			// show busy a moment
+			val = status;
+			if(cmdtype == FDC_CMD_TYPE1 && !now_seek) {
+				status &= ~FDC_ST_BUSY;
+			}
 		}
-		
-		// show busy a moment
-		val = status;
-		if(cmdtype == FDC_CMD_TYPE1 && !now_seek) {
-			status &= ~FDC_ST_BUSY;
+#ifdef _FDC_DEBUG_LOG
+		// request cpu to output debug log
+		if(d_cpu) {
+			d_cpu->write_signal(SIG_CPU_DEBUG, 1, 1);
 		}
+		emu->out_debug(_T("FDC\tSTATUS=%2x\n"), val);
+#endif
 #ifdef HAS_MB8876
 		return (~val) & 0xff;
 #else
@@ -351,12 +349,18 @@ uint32 MB8877::read_io8(uint32 addr)
 				if(fdc[drvreg].index >= disk[drvreg]->sector_size) {
 					if(cmdtype == FDC_CMD_RD_SEC) {
 						// single sector
+#ifdef _FDC_DEBUG_LOG
+						emu->out_debug(_T("FDC\tEND OF SECTOR\n"));
+#endif
 						status &= ~FDC_ST_BUSY;
 						cmdtype = 0;
 						set_irq(true);
 					}
 					else {
 						// multisector
+#ifdef _FDC_DEBUG_LOG
+						emu->out_debug(_T("FDC\tEND OF SECTOR (SEARCH NEXT)\n"));
+#endif
 						REGIST_EVENT(EVENT_MULTI1, 30);
 						REGIST_EVENT(EVENT_MULTI2, 60);
 					}
@@ -385,6 +389,9 @@ uint32 MB8877::read_io8(uint32 addr)
 					fdc[drvreg].index++;
 				}
 				if(fdc[drvreg].index >= disk[drvreg]->track_size) {
+#ifdef _FDC_DEBUG_LOG
+					emu->out_debug(_T("FDC\tEND OF TRACK\n"));
+#endif
 					status &= ~FDC_ST_BUSY;
 					status &= ~FDC_ST_DRQ;
 					status |= FDC_ST_LOSTDATA;
@@ -397,6 +404,9 @@ uint32 MB8877::read_io8(uint32 addr)
 				set_drq(false);
 			}
 		}
+#ifdef _FDC_DEBUG_LOG
+		emu->out_debug(_T("FDC\tDATA=%2x\n"), datareg);
+#endif
 #ifdef HAS_MB8876
 		return (~datareg) & 0xff;
 #else
@@ -533,6 +543,16 @@ void MB8877::event_callback(int event_id, int err)
 
 void MB8877::process_cmd()
 {
+#ifdef _FDC_DEBUG_LOG
+	static const _TCHAR *cmdstr[0x10] = {
+		_T("RESTORE "),	_T("SEEK    "),	_T("STEP    "),	_T("STEP    "),
+		_T("STEP IN "),	_T("STEP IN "),	_T("STEP OUT"),	_T("STEP OUT"),
+		_T("RD DATA "),	_T("RD DATA "),	_T("RD DATA "),	_T("WR DATA "),
+		_T("RD ADDR "),	_T("FORCEINT"),	_T("RD TRACK"),	_T("WR TRACK")
+	};
+	emu->out_debug(_T("FDC\tCMD=%2xh (%s) DATA=%2xh DRV=%d TRK=%3d SIDE=%d SEC=%2d\n"), cmdreg, cmdstr[cmdreg >> 4], datareg, drvreg, trkreg, sidereg, secreg);
+#endif
+	
 	CANCEL_EVENT(EVENT_TYPE4);
 	set_irq(false);
 	

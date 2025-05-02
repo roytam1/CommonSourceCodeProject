@@ -263,19 +263,6 @@ uint32 MEMORY::read_data8w(uint32 addr, int* wait)
 	return read_data8(addr);
 }
 
-void MEMORY::write_data16w(uint32 addr, uint32 data, int* wait)
-{
-	*wait = ((mem_bank & MEM_BANK_MON) && addr < 0x1000) ? 2 : 0;
-	write_data8(addr, data & 0xff);
-	write_data8(addr + 1, data >> 8);
-}
-
-uint32 MEMORY::read_data16w(uint32 addr, int* wait)
-{
-	*wait = ((mem_bank & MEM_BANK_MON) && addr < 0x1000) ? 2 : 0;
-	return read_data8(addr) | (read_data8(addr + 1) << 8);
-}
-
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {

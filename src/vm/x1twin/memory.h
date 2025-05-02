@@ -18,6 +18,10 @@
 class MEMORY : public DEVICE
 {
 private:
+#ifndef _X1TURBO
+	DEVICE *d_cpu;
+#endif
+	
 	uint8* wbank[16];
 	uint8* rbank[16];
 	
@@ -34,6 +38,13 @@ public:
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
+	
+	// unique function
+#ifndef _X1TURBO
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+#endif
 };
 
 #endif

@@ -167,17 +167,6 @@ uint32 MEMORY::read_data8(uint32 addr)
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 
-void MEMORY::write_data16(uint32 addr, uint32 data)
-{
-	write_data8(addr, data & 0xff);
-	write_data8(addr + 1, data >> 8);
-}
-
-uint32 MEMORY::read_data16(uint32 addr)
-{
-	return read_data8(addr) | (read_data8(addr + 1) << 8);
-}
-
 void MEMORY::write_data8w(uint32 addr, uint32 data, int* wait)
 {
 	addr &= 0xffff;
@@ -190,21 +179,6 @@ uint32 MEMORY::read_data8w(uint32 addr, int* wait)
 	addr &= 0xffff;
 	*wait = page_wait[addr >> 13];
 	return read_data8(addr);
-}
-
-void MEMORY::write_data16w(uint32 addr, uint32 data, int* wait)
-{
-	addr &= 0xffff;
-	*wait = page_wait[addr >> 13] << 1;
-	write_data8(addr, data & 0xff);
-	write_data8(addr + 1, data >> 8);
-}
-
-uint32 MEMORY::read_data16w(uint32 addr, int* wait)
-{
-	addr &= 0xffff;
-	*wait = page_wait[addr >> 13] << 1;
-	return read_data8(addr) | (read_data8(addr + 1) << 8);
 }
 
 void MEMORY::write_io8(uint32 addr, uint32 data)

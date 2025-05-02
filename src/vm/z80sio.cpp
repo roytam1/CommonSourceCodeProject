@@ -12,7 +12,8 @@
 
 #define EVENT_SEND	2
 #define EVENT_RECV	4
-#define DELAY_SEND	2000
+//#define DELAY_SEND	2000
+#define DELAY_SEND	100
 #define DELAY_RECV	2000
 
 void Z80SIO::initialize()

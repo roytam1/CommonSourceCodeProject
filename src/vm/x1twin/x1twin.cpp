@@ -72,6 +72,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
+#ifdef _FDC_DEBUG_LOG
+	fdc->set_context_cpu(cpu);
+#endif
 #ifdef _X1TURBO
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
@@ -83,6 +86,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc);
 	joy->set_context_psg(psg);
+#ifndef _X1TURBO
+	memory->set_context_cpu(cpu);
+#endif
 	sub->set_context_pio(pio);
 	
 	// cpu bus
@@ -103,47 +109,34 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// i/o bus
 #ifdef _X1TURBO
-	io->set_iomap_range_w(0x704, 0x707, ctc);
+	io->set_iomap_range_rw(0x704, 0x707, ctc);
 #endif
+	io->set_iomap_range_r(0xe80, 0xe81, kanji);
 	io->set_iomap_range_w(0xe80, 0xe82, kanji);
-	io->set_iomap_range_w(0xff8, 0xffb, fdc);
+	io->set_iomap_range_rw(0xff8, 0xffb, fdc);
 	io->set_iomap_single_w(0xffc, floppy);
-	io->set_iomap_range_w(0x1000, 0x12ff, display);
-	io->set_iomap_single_w(0x1300, display);
-	io->set_iomap_range_w(0x1500, 0x17ff, display);
-	io->set_iomap_range_w(0x1800, 0x1801, crtc);
-	io->set_iomap_single_w(0x1900, sub);
+	io->set_iomap_range_rw(0x1000, 0x17ff, display);
+	for(int i = 0x1800; i <= 0x18f0; i += 0x10) {
+		io->set_iomap_range_rw(i, i + 1, crtc);
+	}
+	io->set_iomap_range_rw(0x1900, 0x19ff, sub);
 	for(int i = 0x1a00; i <= 0x1af0; i += 0x10) {
+		io->set_iomap_range_r(i, i + 2, pio);
 		io->set_iomap_range_w(i, i + 3, pio);
 	}
 	for(int i = 0x1b00; i <= 0x1bff; i++) {
+		io->set_iomap_alias_r(i, psg, 1);
 		io->set_iomap_alias_w(i, psg, 1);
 	}
 	for(int i = 0x1c00; i <= 0x1cff; i++) {
 		io->set_iomap_alias_w(i, psg, 0);
 	}
 	io->set_iomap_range_w(0x1d00, 0x1eff, memory);
-	io->set_iomap_range_w(0x2000, 0x2fff, display);	// attr vram 
-	io->set_iomap_range_w(0x3000, 0x3fff, display);	// text/kanji vram
-	
 #ifdef _X1TURBO
-	io->set_iomap_range_r(0x704, 0x707, ctc);
+	io->set_iomap_single_rw(0x1fd0, display);
+	io->set_iomap_single_rw(0x1fe0, display);
 #endif
-	io->set_iomap_range_r(0xe80, 0xe81, kanji);
-	io->set_iomap_range_r(0xff8, 0xffb, fdc);
-	io->set_iomap_range_w(0x1000, 0x12ff, display);
-	io->set_iomap_single_r(0x1300, display);
-	io->set_iomap_range_r(0x1400, 0x17ff, display);
-	io->set_iomap_range_r(0x1800, 0x1801, crtc);
-	io->set_iomap_single_r(0x1900, sub);
-	for(int i = 0x1a00; i <= 0x1af0; i += 0x10) {
-		io->set_iomap_range_r(i, i + 2, pio);
-	}
-	for(int i = 0x1b00; i <= 0x1bff; i++) {
-		io->set_iomap_alias_r(i, psg, 1);
-	}
-	io->set_iomap_range_r(0x2000, 0x27ff, display);	// attr vram
-	io->set_iomap_range_r(0x3000, 0x37ff, display);	// text vram
+	io->set_iomap_range_rw(0x2000, 0x3fff, display);	// tvram 
 	
 #ifdef _X1TWIN
 	// init PC Engine
@@ -168,6 +161,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 			device->initialize();
 		}
 	}
+	// NOTE: motor seems to be on automatically when fdc command is requested,
+	// so motor is always on temporary
+	fdc->write_signal(SIG_MB8877_MOTOR, 1, 1);
 #ifdef _X1TWIN
 	pce_running = false;
 #endif

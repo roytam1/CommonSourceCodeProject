@@ -47,6 +47,15 @@ void DISPLAY::initialize()
 	update_pal();
 	column = 0x40;
 	
+	_memset(vram_t, 0, sizeof(vram_t));
+	_memset(vram_a, 0, sizeof(vram_a));
+#ifdef _X1TURBO
+	_memset(vram_k, 0, sizeof(vram_k));
+#endif
+	_memset(pcg_b, 0, sizeof(pcg_b));
+	_memset(pcg_r, 0, sizeof(pcg_r));
+	_memset(pcg_g, 0, sizeof(pcg_g));
+	
 	// regist event
 	vm->regist_frame_event(this);
 	vm->regist_vline_event(this);
@@ -54,8 +63,12 @@ void DISPLAY::initialize()
 
 void DISPLAY::reset()
 {
-	_memset(vram_t, 0, sizeof(vram_t));
-	_memset(vram_a, 0, sizeof(vram_a));
+#ifdef _X1TURBO
+	mode1 = mode2 = 0;
+#endif
+	vram_b = vram_ptr + 0x0000;
+	vram_r = vram_ptr + 0x4000;
+	vram_g = vram_ptr + 0x8000;
 }
 
 void DISPLAY::update_config()
@@ -83,17 +96,37 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		update_pal();
 		break;
 	case 0x1500:
-		get_cgnum();
-		pcg_b[cgnum][vline & 7] = data;
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+			pcg_b[cur_code][cur_line & 7] = data;
+//		}
 		break;
 	case 0x1600:
-		get_cgnum();
-		pcg_r[cgnum][vline & 7] = data;
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+			pcg_r[cur_code][cur_line & 7] = data;
+//		}
 		break;
 	case 0x1700:
-		get_cgnum();
-		pcg_g[cgnum][vline & 7] = data;
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+			pcg_g[cur_code][cur_line & 7] = data;
+//		}
 		break;
+#ifdef _X1TURBO
+	case 0x1fd0:
+		if((mode1 & 8) != (data & 8)) {
+			int ofs = (data & 8) ? 0xc000 : 0;
+			vram_b = vram_ptr + 0x0000 + ofs;
+			vram_r = vram_ptr + 0x4000 + ofs;
+			vram_g = vram_ptr + 0x8000 + ofs;
+		}
+		mode1 = data;
+		break;
+	case 0x1fe0:
+		mode2 = data;
+		break;
+#endif
 	case 0x2000:
 	case 0x2100:
 	case 0x2200:
@@ -151,17 +184,35 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	case 0x1300:
 		return priority;
 	case 0x1400:
-		get_cgnum();
-		return font[(cgnum << 3) | (vline & 7)];
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+//			return pcg_b[cur_code][cur_line & 7];	// blue ???
+//		}
+		return font[(cur_code << 3) | (cur_line & 7)];
 	case 0x1500:
-		get_cgnum();
-		return pcg_b[cgnum][vline & 7];
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+			return pcg_b[cur_code][cur_line & 7];
+//		}
+//		return font[(cur_code << 3) | (cur_line & 7)];
 	case 0x1600:
-		get_cgnum();
-		return pcg_b[cgnum][vline & 7];
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+			return pcg_r[cur_code][cur_line & 7];
+//		}
+//		return font[(cur_code << 3) | (cur_line & 7)];
 	case 0x1700:
-		get_cgnum();
-		return pcg_b[cgnum][vline & 7];
+		get_cur_code();
+//		if(cur_attr & 0x20) {
+			return pcg_g[cur_code][cur_line & 7];
+//		}
+//		return font[(cur_code << 3) | (cur_line & 7)];
+#ifdef _X1TURBO
+	case 0x1fd0:
+		return mode1;
+	case 0x1fe0:
+		return mode2;
+#endif
 	case 0x2000:
 	case 0x2100:
 	case 0x2200:
@@ -219,6 +270,7 @@ void DISPLAY::event_vline(int v, int clock)
 {
 	vline = v;
 	vclock = vm->current_clock();
+	vclocks = clock;
 }
 
 void DISPLAY::update_pal()
@@ -244,17 +296,18 @@ void DISPLAY::update_pal()
 	}
 }
 
-void DISPLAY::get_cgnum()
+void DISPLAY::get_cur_code()
 {
-	int ofs = (regs[0] + 1) * vm->passed_clock(vclock) / 250;	// 250clocks/line
+	int ofs = (regs[0] + 1) * vm->passed_clock(vclock) / vclocks;
 	if(ofs >= regs[1]) {
 		ofs = regs[1] - 1;
 	}
-	//int ht = ((regs[9] <= 9) ? regs[9] : 9) + 1;
 	int ht = (regs[9] & 0x1f) + 1;
 	ofs += regs[1] * (int)(vline / ht);
 	ofs += (regs[12] << 8) | regs[13];
-	cgnum = vram_t[ofs & 0x7ff];
+	cur_code = vram_t[ofs & 0x7ff];
+	cur_attr = vram_a[ofs & 0x7ff];
+	cur_line = vline % ht;
 }
 
 void DISPLAY::draw_screen()
@@ -282,9 +335,6 @@ void DISPLAY::draw_screen()
 				dest0[x2] = dest0[x2 + 1] = palette_pc[pri[src_cg[x]][src_text[x]]];
 			}
 			if(scanline) {
-//				for(int x = 0; x < 640; x++) {
-//					dest1[x] = palette_pc[0];
-//				}
 				_memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 			else {
@@ -311,9 +361,6 @@ void DISPLAY::draw_screen()
 				dest0[x] = palette_pc[pri[src_cg[x]][src_text[x]]];
 			}
 			if(scanline) {
-//				for(int x = 0; x < 640; x++) {
-//					dest1[x] = palette_pc[0];
-//				}
 				_memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 			else {
@@ -342,11 +389,12 @@ void DISPLAY::draw_text(int width)
 	int hz = regs[1];
 	int vt = regs[6] & 0x7f;
 	int ht = (regs[9] & 0x1f) + 1;
-	bool prev_vs = false;
+	
+	uint8 prev_code[81], prev_attr[81];;
+	_memset(prev_code, 0, sizeof(prev_code));
+	_memset(prev_attr, 0, sizeof(prev_attr));
 	
 	for(int y = 0; y < vt; y++) {
-		bool cur_vs = false;
-		
 		for(int x = 0; x < hz && x < width; x++) {
 			src &= 0x7ff;
 			uint8 code = vram_t[src];
@@ -354,8 +402,8 @@ void DISPLAY::draw_text(int width)
 			uint8 col = ((attr & 0x10) && (cblink & 8)) ? 0 : (attr & 7);
 			
 			// select pcg or ank
-			uint8 null_pattern[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-			uint8 *pattern_b, *pattern_r, *pattern_g;
+			static const uint8 null_pattern[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+			const uint8 *pattern_b, *pattern_r, *pattern_g;
 			if(attr & 0x20) {
 				// pcg
 				pattern_b = (col & 1) ? pcg_b[code] : null_pattern;
@@ -368,14 +416,20 @@ void DISPLAY::draw_text(int width)
 				pattern_r = (col & 2) ? &font[code << 3] : null_pattern;
 				pattern_g = (col & 4) ? &font[code << 3] : null_pattern;
 			}
-			if(attr & 0x40) {
-				if(prev_vs) {
-					pattern_b += 4;
-					pattern_r += 4;
-					pattern_g += 4;
-				}
-				cur_vs = true;
+			
+			// check vertical doubled char
+			if((attr & 0x40) && (prev_code[x] == code) && (prev_attr[x] == attr)) {
+				// bottom 4 rasters of vertical doubled char
+				pattern_b += 4;
+				pattern_r += 4;
+				pattern_g += 4;
+				// next line must not be bottom of this character !!!
+				prev_attr[x] = attr & ~0x40;
 			}
+			else {
+				prev_attr[x] = attr;
+			}
+			prev_code[x] = code;
 			
 			// render character
 			for(int l = 0; l < 8 && l < ht; l++) {
@@ -415,26 +469,33 @@ void DISPLAY::draw_text(int width)
 				// skip next one char
 				src++;
 				x++;
+				prev_code[x] = prev_code[x - 1];
+				prev_attr[x] = prev_attr[x - 1];
 			}
 		}
-		prev_vs = prev_vs ? false : cur_vs;
 	}
 }
 
 void DISPLAY::draw_cg(int width)
 {
+	int hz = regs[1];
+	int vt = regs[6] & 0x7f;
 	int ht = (regs[9] & 0x1f) + 1;
 	
 	for(int l = 0; l < ht; l++) {
 		uint16 src = (regs[12] << 8) | regs[13];
 		uint16 ofs = 0x800 * l;
-		for(int y = 0; y < 200; y += ht) {
-			for(int x = 0; x < width; x++) {
+		for(int y = 0; y < vt; y++) {
+			int yy = y * ht + l;
+			if(yy >= 200) {
+				break;
+			}
+			for(int x = 0; x < hz && x < width; x++) {
 				src &= 0x7ff;
 				uint8 b = vram_b[ofs | src];
 				uint8 r = vram_r[ofs | src];
 				uint8 g = vram_g[ofs | src++];
-				uint8* d = &cg[y | l][x << 3];
+				uint8* d = &cg[yy][x << 3];
 				
 				d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
 				d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
