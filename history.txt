@@ -1,3 +1,13 @@
+8/31/2010
+
+[VM/UPD765A] support dack signal
+
+[FP1100/SUB] support logic to clear vram
+[FP1100/SUB] fix vram write access
+[FP1100/SUB] fix screen renderer
+[MZ1500/DISPLAY] fix color palette
+
+
 8/27/2010
 
 [VM/AND] fix output signal when it is changed

@@ -9,6 +9,8 @@
 */
 
 #include "sub.h"
+#include "main.h"
+#include "../beep.h"
 #include "../upd7801.h"
 #include "../../config.h"
 
@@ -81,13 +83,6 @@ void SUB::initialize()
 	vm->regist_frame_event(this);
 }
 
-void SUB::release()
-{
-	FILE* fp=fopen("d:\\ff80.bin","wb");
-	fwrite(ram, sizeof(ram), 1, fp);
-	fclose(fp);
-}
-
 void SUB::reset()
 {
 	pa = pc = 0;
@@ -108,10 +103,10 @@ void SUB::write_data8(uint32 addr, uint32 data)
 		key_sel = data;
 		key_update();
 		// bit4: buzzer
-		d_beep->write_signal(did_beep, data, 0x10);
+		d_beep->write_signal(SIG_BEEP_ON, data, 0x10);
 		break;
 	case 0xe800:
-		d_main->write_signal(did_comm, data, 0xff);
+		d_main->write_signal(SIG_MAIN_COMM, data, 0xff);
 		break;
 	case 0xec00:
 		break;
@@ -121,20 +116,10 @@ void SUB::write_data8(uint32 addr, uint32 data)
 	default:
 		if(0x2000 <= addr && addr < 0xe000) {
 			if(!wait && hsync) {
-				d_cpu->write_signal(did_wait, 1, 1);
+				d_cpu->write_signal(SIG_UPD7801_WAIT, 1, 1);
 				wait = true;
 			}
-			uint32 addr2 = (addr - 2000) & 0x3fff;
-			if(color & 1) {
-				vram_b[addr2] = ~data;
-			}
-			if(color & 2) {
-				vram_r[addr2] = ~data;
-			}
-			if(color & 4) {
-				vram_g[addr2] = ~data;
-			}
-			break;
+			data = ~data;
 		}
 		wbank[addr >> 7][addr & 0x7f] = data;
 		break;
@@ -157,7 +142,7 @@ uint32 SUB::read_data8(uint32 addr)
 	default:
 		if(0x2000 <= addr && addr < 0xe000) {
 			if(!wait && hsync) {
-				d_cpu->write_signal(did_wait, 1, 1);
+				d_cpu->write_signal(SIG_UPD7801_WAIT, 1, 1);
 				wait = true;
 			}
 		}
@@ -169,6 +154,11 @@ void SUB::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr) {
 	case P_A:
+		if((pa & 0x20) && !(data & 0x20)) {
+			_memset(vram_b, 0, sizeof(vram_b));
+			_memset(vram_r, 0, sizeof(vram_r));
+			_memset(vram_g, 0, sizeof(vram_g));
+		}
 		pa = data;
 		break;
 	case P_B:
@@ -178,7 +168,7 @@ void SUB::write_io8(uint32 addr, uint32 data)
 	case P_C:
 		//if((pc & 8) != (data & 8)) {
 		if(!(pc & 8) && (data & 8)) {
-			d_main->write_signal(did_ints, data, 8);
+			d_main->write_signal(SIG_MAIN_INTS, data, 8);
 		}
 		pc = data;
 		break;
@@ -210,10 +200,10 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 	switch(id) {
 	case SIG_SUB_INT2:
 		// from main pcb
-		d_cpu->write_signal(did_int2, data, mask);
+		d_cpu->write_signal(SIG_UPD7801_INTF2, data, mask);
 		// ugly patch for boot
 		if(data & mask) {
-			d_main->write_signal(did_comm, 0, 0xff);
+			d_main->write_signal(SIG_MAIN_COMM, 0, 0xff);
 		}
 		break;
 	case SIG_SUB_COMM:
@@ -221,14 +211,14 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 		comm_data = data & 0xff;
 		// ugly patch for command
 		if(vm->get_sub_prv_pc() == 0x10e || vm->get_sub_prv_pc() == 0x110) {
-			d_cpu->write_signal(did_int2, 1, 1);
+			d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);
 		}
 		break;
 	case SIG_SUB_HSYNC:
 		// from crtc
 		hsync = ((data & mask) != 0);
 		if(wait && !hsync) {
-			d_cpu->write_signal(did_wait, 0, 0);
+			d_cpu->write_signal(SIG_UPD7801_WAIT, 0, 0);
 			wait = false;
 		}
 		break;
@@ -286,14 +276,15 @@ void SUB::key_update()
 		}
 	}
 	if((key_data & 0x80) != (prev & 0x80)) {
-		d_cpu->write_signal(did_int0, key_data, 0x80);
+		d_cpu->write_signal(SIG_UPD7801_INTF0, key_data, 0x80);
 	}
 }
 
 void SUB::draw_screen()
 {
 	// render screen
-	int lmax = (regs[9] & 0x1f);
+//	int lmax = (regs[9] & 0x1f) + 1;
+	int lmax = (regs[9] & 0x1f) < 8 ? 8 : 16;
 	int ymax = (regs[6] & 0x7f) * lmax;
 	uint16 src = ((regs[12] << 11) | (regs[13] << 3)) & 0x3fff;
 	uint16 cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3fff;
@@ -307,9 +298,12 @@ void SUB::draw_screen()
 				for(int x = 0; x < 640; x += 16) {
 					for(int l = 0; l < lmax; l++) {
 						uint16 src2 = src | (l & 7);
-						uint8 b = (pa & 1) ? 0 : vram_b[src2];
-						uint8 r = (pa & 2) ? 0 : vram_r[src2];
-						uint8 g = (pa & 4) ? 0 : vram_g[src2];
+//						uint8 b = (pa & 1) ? 0 : vram_b[src2];
+//						uint8 r = (pa & 2) ? 0 : vram_r[src2];
+//						uint8 g = (pa & 4) ? 0 : vram_g[src2];
+						uint8 b = vram_b[src2];
+						uint8 r = vram_r[src2];
+						uint8 g = vram_g[src2];
 						if(lmax > 8) {
 							if(l < 8) {
 								r = g = b;
@@ -353,9 +347,12 @@ void SUB::draw_screen()
 				for(int x = 0; x < 640; x += 8) {
 					for(int l = 0; l < lmax; l++) {
 						uint16 src2 = src | (l & 7);
-						uint8 b = (pa & 1) ? 0 : vram_b[src2];
-						uint8 r = (pa & 2) ? 0 : vram_r[src2];
-						uint8 g = (pa & 4) ? 0 : vram_g[src2];
+//						uint8 b = (pa & 1) ? 0 : vram_b[src2];
+//						uint8 r = (pa & 2) ? 0 : vram_r[src2];
+//						uint8 g = (pa & 4) ? 0 : vram_g[src2];
+						uint8 b = vram_b[src2];
+						uint8 r = vram_r[src2];
+						uint8 g = vram_g[src2];
 						if(lmax > 8) {
 							if(l < 8) {
 								r = g = b;

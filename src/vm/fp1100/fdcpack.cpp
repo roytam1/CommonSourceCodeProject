@@ -9,6 +9,8 @@
 */
 
 #include "fdcpack.h"
+#include "main.h"
+#include "../upd765a.h"
 
 void FDCPACK::write_io8(uint32 addr, uint32 data)
 {
@@ -16,11 +18,11 @@ void FDCPACK::write_io8(uint32 addr, uint32 data)
 		switch(addr & 7) {
 		case 0:
 		case 1:
-			d_fdc->write_signal(did_motor, 1, 1);
+			d_fdc->write_signal(SIG_UPD765A_MOTOR, 1, 1);
 			break;
 		case 2:
 		case 3:
-			d_fdc->write_signal(did_tc, 1, 1);
+			d_fdc->write_signal(SIG_UPD765A_TC, 1, 1);
 			break;
 		case 5:
 			// data register
@@ -58,9 +60,9 @@ uint32 FDCPACK::read_io8(uint32 addr)
 void FDCPACK::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_FDCPACK_DRQ) {
-		d_main->write_signal(did_inta, data, mask);
+		d_main->write_signal(SIG_MAIN_INTA, data, mask);
 	}
 	else if(id == SIG_FDCPACK_IRQ) {
-		d_main->write_signal(did_intb, data, mask);
+		d_main->write_signal(SIG_MAIN_INTB, data, mask);
 	}
 }

@@ -29,7 +29,6 @@ private:
 	DEVICE *d_cpu;
 	// to sub pcb
 	DEVICE *d_sub;
-	int did_int2, did_comm;
 	// to slots
 	DEVICE *d_slot[8];
 	
@@ -55,7 +54,6 @@ public:
 	
 	// common functions
 	void initialize();
-	void release();
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
@@ -75,9 +73,8 @@ public:
 	void set_context_cpu(DEVICE *device) {
 		d_cpu = device;
 	}
-	void set_context_sub(DEVICE *device, int id_int2, int id_comm) {
+	void set_context_sub(DEVICE *device) {
 		d_sub = device;
-		did_int2 = id_int2; did_comm = id_comm;
 	}
 	void set_context_slot(int slot, DEVICE *device) {
 		d_slot[slot] = device;

@@ -9,6 +9,7 @@
 */
 
 #include "main.h"
+#include "sub.h"
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
@@ -47,13 +48,6 @@ void MAIN::initialize()
 	SET_BANK(0x0000, 0xffff, ram, ram);
 }
 
-void MAIN::release()
-{
-	FILE* fp=fopen("d:\\main.bin","wb");
-	fwrite(ram, sizeof(ram), 1,fp);
-	fclose(fp);
-}
-
 void MAIN::reset()
 {
 	SET_BANK(0x0000, 0x8fff, ram, rom);
@@ -85,7 +79,7 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0xff80:
 		if((intr_mask & 0x80) != (data & 0x80)) {
-			d_sub->write_signal(did_int2, data, 0x80);
+			d_sub->write_signal(SIG_SUB_INT2, data, 0x80);
 		}
 		intr_mask = data;
 		update_intr();
@@ -100,7 +94,7 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 		slot_sel = (slot_sel & 3) | ((data & 1) << 2);
 		break;
 	case 0xffc0:
-		d_sub->write_signal(did_comm, data, 0xff);
+		d_sub->write_signal(SIG_SUB_COMM, data, 0xff);
 		break;
 	case 0xffe0:
 		break;

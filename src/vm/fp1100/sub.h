@@ -24,13 +24,10 @@ class SUB : public DEVICE
 private:
 	// to sub cpu
 	DEVICE *d_cpu;
-	int did_int0, did_int2, did_wait;
 	// to main pcb
 	DEVICE *d_main;
-	int did_ints, did_comm;
 	// to beep
 	DEVICE *d_beep;
-	int did_beep;
 	// from/to crtc
 	DEVICE *d_crtc;
 	uint8 *regs;
@@ -66,7 +63,6 @@ public:
 	
 	// common functions
 	void initialize();
-void release();//patch
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
@@ -82,17 +78,14 @@ void release();//patch
 	void event_frame();
 	
 	// unique functions
-	void set_context_cpu(DEVICE *device, int id_int0, int id_int2, int id_wait) {
+	void set_context_cpu(DEVICE *device) {
 		d_cpu = device;
-		did_int0 = id_int0; did_int2 = id_int2; did_wait = id_wait;
 	}
-	void set_context_main(DEVICE *device, int id_ints, int id_comm) {
+	void set_context_main(DEVICE *device) {
 		d_main = device;
-		did_ints = id_ints; did_comm = id_comm;
 	}
-	void set_context_beep(DEVICE *device, int id_beep) {
+	void set_context_beep(DEVICE *device) {
 		d_beep = device;
-		did_beep = id_beep;
 	}
 	void set_context_crtc(DEVICE *device, uint8* ptr) {
 		d_crtc = device;

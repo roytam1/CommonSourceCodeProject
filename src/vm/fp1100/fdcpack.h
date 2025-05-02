@@ -23,10 +23,8 @@ class FDCPACK : public DEVICE
 private:
 	// to fdc
 	DEVICE *d_fdc;
-	int did_motor, did_tc;
 	// to main pcb
 	DEVICE *d_main;
-	int did_inta, did_intb;
 	
 public:
 	FDCPACK(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -38,13 +36,11 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_fdc(DEVICE *device, int id_motor, int id_tc) {
+	void set_context_fdc(DEVICE *device) {
 		d_main = device;
-		did_motor = id_motor; did_tc = id_tc;
 	}
-	void set_context_main(DEVICE *device, int id_inta, int id_intb) {
+	void set_context_main(DEVICE *device) {
 		d_main = device;
-		did_inta = id_inta; did_intb = id_intb;
 	}
 };
 

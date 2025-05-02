@@ -15,11 +15,12 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_UPD765A_TC		0
-#define SIG_UPD765A_MOTOR	1
-#define SIG_UPD765A_SELECT	2
-#define SIG_UPD765A_FREADY	3
-#define SIG_UPD765A_RESET	4
+#define SIG_UPD765A_DACK	0
+#define SIG_UPD765A_TC		1
+#define SIG_UPD765A_MOTOR	2
+#define SIG_UPD765A_SELECT	3
+#define SIG_UPD765A_FREADY	4
+#define SIG_UPD765A_RESET	5
 
 class DISK;
 

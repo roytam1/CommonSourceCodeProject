@@ -37,7 +37,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		priority = data;
 		break;
 	case 0xf1:
-		palette[data & 7] = (data >> 4) & 7;
+		palette[(data >> 4) & 7] = data & 7;
 		break;
 	}
 }

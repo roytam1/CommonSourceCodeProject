@@ -70,7 +70,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_drq(fdcpack, SIG_FDCPACK_DRQ, 1);
 	
 	main->set_context_cpu(cpu);
-	main->set_context_sub(sub, SIG_SUB_INT2, SIG_SUB_COMM);
+	main->set_context_sub(sub);
 	main->set_context_slot(0, rampack1);
 	main->set_context_slot(1, rampack2);
 	main->set_context_slot(2, rampack3);
@@ -80,13 +80,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	main->set_context_slot(6, rompack);
 	main->set_context_slot(7, fdcpack);
 	
-	sub->set_context_cpu(subcpu, SIG_UPD7801_INTF0, SIG_UPD7801_INTF2, SIG_UPD7801_WAIT);
-	sub->set_context_main(main, SIG_MAIN_INTS, SIG_MAIN_COMM);
-	sub->set_context_beep(beep, SIG_BEEP_ON);
+	sub->set_context_cpu(subcpu);
+	sub->set_context_main(main);
+	sub->set_context_beep(beep);
 	sub->set_context_crtc(crtc, crtc->get_regs());
 	
-	fdcpack->set_context_fdc(fdc, SIG_UPD765A_MOTOR, SIG_UPD765A_TC);
-	fdcpack->set_context_main(main, SIG_MAIN_INTA, SIG_MAIN_INTB);
+	fdcpack->set_context_fdc(fdc);
+	fdcpack->set_context_main(main);
 	
 	// cpu bus
 	cpu->set_context_mem(main);
