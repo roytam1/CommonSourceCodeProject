@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/4/2010
+								8/6/2010
 
 --- What's this ?
 
@@ -24,6 +24,7 @@ This archive includes the all source codes of:
 	eHANDY98	NEC PC-98HA emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
+	eMAP-1010	SEIKO MAP-1010 emulator
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A emulator
 	eN5200		NEC N5200 emulator
 	ePC-8201	NEC PC-8201/PC-8201A emulator

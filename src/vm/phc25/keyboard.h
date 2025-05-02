@@ -1,5 +1,6 @@
 /*
 	SANYO PHC-25 Emulator 'ePHC-25'
+	SEIKO MAP-1010 Emulator 'eMAP-1010'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -19,13 +20,20 @@ class KEYBOARD : public DEVICE
 {
 private:
 	uint8* key_stat;
-	uint8 status[9];
+	
+#ifdef _MAP1010
+	int kana_pressed;
+#else
+	uint8 status[16];
+#endif
+	
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~KEYBOARD() {}
 	
 	// common functions
 	void initialize();
+	void reset();
 	uint32 read_io8(uint32 addr);
 	void event_frame();
 };

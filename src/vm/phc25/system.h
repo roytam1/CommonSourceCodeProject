@@ -1,5 +1,6 @@
 /*
 	SANYO PHC-25 Emulator 'ePHC-25'
+	SEIKO MAP-1010 Emulator 'eMAP-1010'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -30,6 +31,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);

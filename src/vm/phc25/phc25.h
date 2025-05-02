@@ -1,5 +1,6 @@
 /*
 	SANYO PHC-25 Emulator 'ePHC-25'
+	SEIKO MAP-1010 Emulator 'eMAP-1010'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -11,8 +12,13 @@
 #ifndef _PHC25_H_
 #define _PHC25_H_
 
+#ifdef _MAP1010
+#define DEVICE_NAME		"SEIKO MAP-1010"
+#define CONFIG_NAME		"map1010"
+#else
 #define DEVICE_NAME		"SANYO PHC-25"
 #define CONFIG_NAME		"phc25"
+#endif
 #define CONFIG_VERSION		0x01
 
 // device informations for virtual machine
@@ -44,10 +50,11 @@ class EVENT;
 class DATAREC;
 class IO;
 class MC6847;
+class NOT;
 class YM2203;
 class Z80;
 
-//class JOYSTICK;
+class JOYSTICK;
 class KEYBOARD;
 class MEMORY;
 class SYSTEM;
@@ -63,10 +70,11 @@ protected:
 	DATAREC* drec;
 	IO* io;
 	MC6847* vdp;
+	NOT* not;
 	YM2203* psg;
 	Z80* cpu;
 	
-//	JOYSTICK* joystick;
+	JOYSTICK* joystick;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	SYSTEM* system;

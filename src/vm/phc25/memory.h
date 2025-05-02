@@ -1,5 +1,6 @@
 /*
 	SANYO PHC-25 Emulator 'ePHC-25'
+	SEIKO MAP-1010 Emulator 'eMAP-1010'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -18,10 +19,14 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_drec, *d_vdp;
+	DEVICE *d_kbd;
 	
 	uint8 rom[0x6000];
+#ifdef _MAP1010
+	uint8 ram[0x8000];
+#else
 	uint8 ram[0x4000];
+#endif
 	uint8 vram[0x1800];
 	
 	uint8 wdmy[0x800];
@@ -46,6 +51,9 @@ public:
 	}
 	
 	// unique functions
+	void set_context_keyboard(DEVICE* device) {
+		d_kbd = device;
+	}
 	uint8* get_vram() {
 		return vram;
 	}

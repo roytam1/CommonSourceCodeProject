@@ -60,6 +60,11 @@
 #include "m5/m5.h"
 #endif
 
+// SEIKO MAP-1010
+#ifdef _MAP1010
+#include "phc25/phc25.h"
+#endif
+
 // MITSUBISHI Elec. MULTI8
 #ifdef _MULTI8
 #include "multi8/multi8.h"

@@ -34,6 +34,7 @@ private:
 	uint8 sg6[64 * 12];
 	uint8 screen[192][256];
 	uint8 *vram_ptr;
+	int vram_size;
 	scrntype palette_pc[16];
 	
 	bool ag, as;
@@ -74,8 +75,8 @@ public:
 		int c = dcount_hsync++;
 		d_hsync[c] = device; did_hsync[c] = id; dmask_hsync[c] = mask;
 	}
-	void set_vram_ptr(uint8* ptr) {
-		vram_ptr = ptr;
+	void set_vram_ptr(uint8* ptr, int size) {
+		vram_ptr = ptr; vram_size = size;
 	}
 	void draw_screen();
 };

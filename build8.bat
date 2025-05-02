@@ -35,6 +35,10 @@ devenv.com m5.vcproj /Rebuild Release
 mkdir build\m5
 copy Release\m5.exe build\m5\.
 
+devenv.com map1010.vcproj /Rebuild Release
+mkdir build\map1010
+copy Release\map1010.exe build\map1010\.
+
 devenv.com multi8.vcproj /Rebuild Release
 mkdir build\multi8
 copy Release\multi8.exe build\multi8\.

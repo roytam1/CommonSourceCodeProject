@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="phc25"
+	Name="map1010"
 	ProjectGUID="{F62D036D-7569-431B-9C55-C056A4D3145A}"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,17 +42,17 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/phc25.tlb"
+				TypeLibraryName=".\Debug/map1010.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_PHC25"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MAP1010"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/phc25.pch"
+				PrecompiledHeaderFile=".\Debug/map1010.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -75,11 +75,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Debug/phc25.exe"
+				OutputFile=".\Debug/map1010.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/phc25.pdb"
+				ProgramDatabaseFile=".\Debug/map1010.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/phc25.bsc"
+				OutputFile=".\Debug/map1010.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -137,18 +137,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/phc25.tlb"
+				TypeLibraryName=".\Release/map1010.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_PHC25"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MAP1010"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/phc25.pch"
+				PrecompiledHeaderFile=".\Release/map1010.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -170,10 +170,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Release/phc25.exe"
+				OutputFile=".\Release/map1010.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/phc25.pdb"
+				ProgramDatabaseFile=".\Release/map1010.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/phc25.bsc"
+				OutputFile=".\Release/map1010.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -857,11 +857,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\phc25.ico"
+				RelativePath="src\res\map1010.ico"
 				>
 			</File>
 			<File
-				RelativePath="src\res\phc25.rc"
+				RelativePath="src\res\map1010.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

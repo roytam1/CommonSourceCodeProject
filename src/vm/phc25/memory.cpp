@@ -1,5 +1,6 @@
 /*
 	SANYO PHC-25 Emulator 'ePHC-25'
+	SEIKO MAP-1010 Emulator 'eMAP-1010'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -47,10 +48,17 @@ void MEMORY::initialize()
 	delete fio;
 	
 	// set memory map
+#ifdef _MAP1010
+	SET_BANK(0x0000, 0x5fff, wdmy, rom );
+	SET_BANK(0x6000, 0x77ff, vram, vram);
+	SET_BANK(0x7800, 0x7fff, wdmy, rdmy);
+	SET_BANK(0x8000, 0xffff, ram,  ram );
+#else
 	SET_BANK(0x0000, 0x5fff, wdmy, rom );
 	SET_BANK(0x6000, 0x77ff, vram, vram);
 	SET_BANK(0x7800, 0xbfff, wdmy, rdmy);
 	SET_BANK(0xc000, 0xffff, ram,  ram );
+#endif
 }
 
 void MEMORY::reset()
@@ -61,11 +69,33 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
+	addr &= 0xffff;
+#ifdef _MAP1010
+	if(0x7800 <= addr && addr < 0x8000) {
+		// memory mapped i/o
+//		emu->out_debug("UNKNOWN:\t%6x\tWM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
+		return;
+	}
+#endif
 	wbank[addr >> 11][addr & 0x7ff] = data;
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
+	addr &= 0xffff;
+#ifdef _MAP1010
+	if(0x7800 <= addr && addr < 0x7860) {
+		uint32 data = d_kbd->read_io8(addr);
+//		emu->out_debug("%6x\tRM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
+		return data;
+	}
+	else if(0x7860 <= addr && addr < 0x8000) {
+		// memory mapped i/o
+		uint32 data = 0xff;
+//		emu->out_debug("UNKNOWN:\t%6x\tRM8\t%4x,%2x\n", vm->get_prv_pc(), addr, data);
+		return data;
+	}
+#endif
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 

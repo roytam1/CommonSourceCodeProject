@@ -143,8 +143,10 @@ void MC6847::initialize()
 	palette_pc[GREEN     ] = RGB_COLOR( 22,134, 10);
 	palette_pc[BEIGE     ] = RGB_COLOR(255,198,170);
 	
+	// LINES_PER_FRAME must be 262
+	tWHS = (int)(CPU_CLOCKS / FRAMES_PER_SEC / LINES_PER_FRAME * 16.5 / 227.5 + 0.5);
+	
 	// regist event
-	tWHS = (int)(CPU_CLOCKS / FRAMES_PER_SEC / 262 * 16.5 / 227.5 + 0.5);
 	vm->regist_vline_event(this);
 }
 
@@ -251,7 +253,10 @@ void MC6847::draw_cg(int xofs, int yofs)
 	
 	for(int y = 0; y < 192; y += yofs) {
 		for(int x = 0; x < 256; x += xofs * 4) {
-			uint8 data = vram_ptr[ofs++];
+			uint8 data = vram_ptr[ofs];
+			if(++ofs >= vram_size) {
+				ofs = 0;
+			}
 			uint8* dest = &screen[y][x];
 			
 			if(xofs == 4) {
@@ -285,7 +290,10 @@ void MC6847::draw_rg(int xofs, int yofs)
 	
 	for(int y = 0; y < 192; y += yofs) {
 		for(int x = 0; x < 256; x += xofs * 8) {
-			uint8 data = vram_ptr[ofs++];
+			uint8 data = vram_ptr[ofs];
+			if(++ofs >= vram_size) {
+				ofs = 0;
+			}
 			uint8* dest = &screen[y][x];
 			
 			if(xofs == 2) {
@@ -326,7 +334,9 @@ void MC6847::draw_alpha()
 		for(int x = 0; x < 256; x += 8) {
 			uint8 data = vram_ptr[ofs];
 			uint8 attr = vram_ptr[ofs + MC6847_ATTR_OFS];
-			ofs++;
+			if(++ofs >= vram_size) {
+				ofs = 0;
+			}
 			// vram data bits may be connected to mode signals
 			bool as2 = as;
 			bool intext2 = intext;
@@ -373,17 +383,14 @@ void MC6847::draw_alpha()
 				col_fore = color_table[col];
 				col_back = color_table[col ^ 1];
 			} else {
-#ifdef _PHC25
-				intext2 = false;
-#endif
 				if(intext2) {
 					// semiggraphics 6
 					pattern = &sg6[12 * (data & 0x3f)];
-					col_fore = (data >> 4) & 7;
+					col_fore = (css2 ? 4 : 0) | ((data >> 6) & 3);
 				} else {
 					// semiggraphics 4
 					pattern = &sg4[12 * (data & 0x0f)];
-					col_fore = (css2 ? 4 : 0) | ((data >> 6) & 3);
+					col_fore = (data >> 4) & 7;
 				}
 				col_back = BLACK;
 			}

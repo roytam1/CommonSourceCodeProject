@@ -523,6 +523,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		return 0;	// not activate menu when hit ALT/F10
 #endif
 		break;
+	case WM_SYSCHAR:
+#ifdef USE_ALT_F10_KEY
+		return 0;	// not activate menu when hit ALT/F10
+#endif
+		break;
 	case WM_INITMENUPOPUP:
 		if(emu) {
 			emu->mute_sound();

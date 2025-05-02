@@ -290,6 +290,14 @@
 #define MENU_POS_SOUND                  4
 #endif
 
+// SEIKO MAP-1010
+#ifdef _MAP1010
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // MITSUBISHI Elec. MULTI8
 #ifdef _MULTI8
 #define MENU_POS_CONTROL                0
