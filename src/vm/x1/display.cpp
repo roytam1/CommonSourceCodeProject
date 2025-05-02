@@ -688,16 +688,17 @@ void DISPLAY::draw_text(int y)
 #endif
 		}
 #ifdef _X1TURBO_FEATURE
-		else if(hireso) {
-			// ank 8x16 or kanji
-			uint32 ofs = code << 4;
-			if(knj & 0x80) {
-				ofs = adr2knj_x1t((knj << 8) | code);
-				if(knj & 0x40) {
-					ofs += 16; // right
-				}
+		else if(knj & 0x80) {
+			uint32 ofs = adr2knj_x1t((knj << 8) | code);
+			if(knj & 0x40) {
+				ofs += 16; // right
 			}
 			pattern_b = pattern_r = pattern_g = &kanji[ofs];
+			shift = hireso ? 0 : -1;
+		}
+		else if(hireso || (mode1 & 4)) {
+			// ank 8x16 or kanji
+			pattern_b = pattern_r = pattern_g = &kanji[code << 4];
 		}
 #endif
 		else {
@@ -714,7 +715,14 @@ void DISPLAY::draw_text(int y)
 		for(int l = 0; l < ch_height; l++) {
 			int line = cur_vert_double ? raster + (l >> 1) : l;
 #ifdef _X1TURBO_FEATURE
-			line >>= shift;
+			if(shift == 1) {
+				line >>= 1;
+			} else if(shift == -1) {
+				line <<= 1;
+				if(cur_vert_double) {
+					line |= l & 1;
+				}
+			}
 #endif
 			uint8 b, r, g;
 			if((x & 1) && (prev_attr & 0x80)) {

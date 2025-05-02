@@ -15,6 +15,13 @@
 
 void HD46505::initialize()
 {
+	// register events
+	register_frame_event(this);
+	register_vline_event(this);
+}
+
+void HD46505::reset()
+{
 	// initialize
 	display = false;
 	vblank = vsync = hsync = true;
@@ -44,10 +51,6 @@ void HD46505::initialize()
 	horiz_freq = 0;
 	next_horiz_freq = HD46505_HORIZ_FREQ;
 #endif
-	
-	// register events
-	register_frame_event(this);
-	register_vline_event(this);
 }
 
 void HD46505::write_io8(uint32 addr, uint32 data)

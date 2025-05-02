@@ -1,3 +1,20 @@
+8/8/2013
+
+[VM/DISK] fix not to convert standard disk images to d88 format images
+[VM/DISK] add ugly patch for X1turbo ALPHA
+[VM/HD46505] reset registers and timings in reset()
+[VM/MB8877] fix to use contant wait to search sector for standard disk image
+[VM/MB8877] add ugly patch for X1turbo ALPHA
+[VM/YM2151] fix to show busy status in a moment
+[VM/YM2203] fix to show busy status in a moment
+[VM/Z80DMA] fix dma stop condition
+
+[PC8801/PC88] improve initial memory pattern
+[X1TURBO/DISPLAY] fix text renderer for kanji character on standard display
+[X1TURBO/DISPLAY] fix text renderer for 16rasters/char mode
+[X1TURBO/IO] fix not to add wait for text vram (temporary)
+
+
 8/2/2013
 
 [EMU/WIN32] fix to create new avi file when current file is close to 2GB

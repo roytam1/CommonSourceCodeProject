@@ -146,20 +146,15 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma, int* wait)
 	} else {
 		wr_table[laddr].dev->write_io8(addr2, data & 0xff);
 	}
-	if(addr >= 0x2000 && addr < 0x4000) {
-		// tvram
-		*wait = get_vram_wait();
-	} else {
-		switch(addr & 0xff00) {
-		case 0x1900:	// sub cpu
-		case 0x1b00:	// psg
-		case 0x1c00:	// psg
-			*wait = 1;
-			break;
-		default:
-			*wait = 0;
-			break;
-		}
+	switch(addr & 0xff00) {
+	case 0x1900:	// sub cpu
+	case 0x1b00:	// psg
+	case 0x1c00:	// psg
+		*wait = 1;
+		break;
+	default:
+		*wait = 0;
+		break;
 	}
 }
 
@@ -200,20 +195,15 @@ uint32 IO::read_port8(uint32 addr, bool is_dma, int* wait)
 	}
 	prv_waddr = -1;
 #endif
-	if(addr >= 0x2000 && addr < 0x4000) {
-		// tvram
-		*wait = get_vram_wait();
-	} else {
-		switch(addr & 0xff00) {
-		case 0x1900:	// sub cpu
-		case 0x1b00:	// psg
-		case 0x1c00:	// psg
-			*wait = 1;
-			break;
-		default:
-			*wait = 0;
-			break;
-		}
+	switch(addr & 0xff00) {
+	case 0x1900:	// sub cpu
+	case 0x1b00:	// psg
+	case 0x1c00:	// psg
+		*wait = 1;
+		break;
+	default:
+		*wait = 0;
+		break;
 	}
 	return val & 0xff;
 }

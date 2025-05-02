@@ -10,8 +10,8 @@
 #ifndef _DISK_H_
 #define _DISK_H_
 
-#include <stdlib.h>
-#include "../common.h"
+#include "vm.h"
+#include "../emu.h"
 
 // d88 media type
 #define MEDIA_TYPE_2D	0x00
@@ -52,6 +52,7 @@ private:
 	int file_offset;
 	uint32 crc32;
 	bool temporary;
+	uint8 fdi_header[4096];
 	
 	bool check_media_type();
 	
@@ -154,9 +155,9 @@ public:
 	bool write_protected;
 	bool changed;
 	uint8 media_type;
-	uint8 drive_type;
-	int drive_rpm;
-	bool drive_mfm;
+	bool is_standard_image;
+	bool is_fdi_image;
+	bool is_alpha;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];
@@ -164,7 +165,6 @@ public:
 	int data_size_shift;
 	bool too_many_sectors;
 	
-	uint8 verify[256];
 	int sync_position[256];
 	int id_position[256];
 	int data_position[256];
@@ -176,6 +176,11 @@ public:
 	uint8 density;
 	uint8 deleted;
 	uint8 status;
+	
+	// drive
+	uint8 drive_type;
+	int drive_rpm;
+	bool drive_mfm;
 };
 
 #endif

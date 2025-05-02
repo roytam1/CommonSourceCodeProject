@@ -14,7 +14,7 @@ void YM2151::initialize()
 	opm = new FM::OPM;
 	register_vline_event(this);
 	mute = false;
-	clock_prev = clock_accum = 0;
+	clock_prev = clock_accum = clock_busy = 0;
 }
 
 void YM2151::release()
@@ -25,7 +25,7 @@ void YM2151::release()
 void YM2151::reset()
 {
 	opm->Reset();
-	irq_prev = false;
+	irq_prev = busy = false;
 }
 
 void YM2151::write_io8(uint32 addr, uint32 data)
@@ -34,6 +34,8 @@ void YM2151::write_io8(uint32 addr, uint32 data)
 		update_count();
 		opm->SetReg(ch, data);
 		update_interrupt();
+		clock_busy = current_clock();
+		busy = true;
 	}
 	else {
 		ch = data;
@@ -45,7 +47,15 @@ uint32 YM2151::read_io8(uint32 addr)
 	if(addr & 1) {
 		update_count();
 		update_interrupt();
-		return opm->ReadStatus();
+		uint32 status = opm->ReadStatus() & ~0x80;
+		if(busy) {
+			// FIXME: we need to investigate the correct busy period
+			if(passed_usec(clock_busy) < 8) {
+				status |= 0x80;
+			}
+			busy = false;
+		}
+		return status;
 	}
 	return 0xff;
 }

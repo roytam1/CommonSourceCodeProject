@@ -1396,10 +1396,15 @@ double UPD765A::get_usec_to_exec_phase()
 	int trk = fdc[drv].track;
 	int side = (hdu >> 2) & 1;
 	
+	// XXX: this is a standard image and skew may be incorrect
+	if(disk[drv]->is_standard_image) {
+		return 100;
+	}
+	
+	// search target sector
 	int position = get_cur_position(drv);
 	int trans_position = -1, sync_position;
 	
-	// search target sector
 	if(disk[drv]->get_track(trk, side) && disk[drv]->sector_num != 0) {
 		if((command & 0x1f) == 0x02) {
 			// read diagnotics

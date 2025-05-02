@@ -564,11 +564,9 @@ void CRTC::event_vline(int v, int clock)
 {
 	bool next = !(GDEVS <= v && v < GDEVE);	// vblank = true
 	if(vblank != next) {
-#ifdef VRAM_WAIT
-		d_mem->write_signal(SIG_MEMORY_VBLANK, next ? 1 : 0, 1);
-#endif
 		d_pio->write_signal(SIG_I8255_PORT_B, next ? 0 : 1, 1);
 		d_int->write_signal(SIG_INTERRUPT_CRTC, next ? 1 : 0, 1);
+		d_mem->write_signal(SIG_MEMORY_VBLANK, next ? 1 : 0, 1);
 		vblank = next;
 	}
 	// complete clear screen
@@ -594,9 +592,7 @@ void CRTC::set_hsync(int h)
 {
 	bool next = !(GDEHS <= h && h < GDEHE);	// hblank = true
 	if(hblank != next) {
-#ifdef VRAM_WAIT
 		d_mem->write_signal(SIG_MEMORY_HBLANK, next ? 1 : 0, 1);
-#endif
 		hblank = next;
 	}
 }

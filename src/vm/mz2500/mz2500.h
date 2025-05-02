@@ -29,7 +29,6 @@
 // memory wait
 #define Z80_MEMORY_WAIT
 #define Z80_IO_WAIT
-#define VRAM_WAIT
 
 // device informations for win32
 #define USE_SPECIAL_RESET

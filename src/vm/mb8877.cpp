@@ -84,6 +84,9 @@ static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};
 	if(usec < 4) { \
 		usec = 4; \
 	} \
+	else if(usec > 24 && disk[drvreg]->is_alpha) { \
+		usec = 24; \
+	} \
 	if(register_id[EVENT_DRQ] != -1) { \
 		cancel_event(register_id[EVENT_DRQ]); \
 		register_id[EVENT_DRQ] = -1; \
@@ -572,6 +575,9 @@ void MB8877::event_callback(int event_id, int err)
 		break;
 	case EVENT_LOST:
 		if(status & FDC_ST_BUSY) {
+#ifdef _FDC_DEBUG_LOG
+			emu->out_debug("FDC\tDATA LOST\n");
+#endif
 			status |= FDC_ST_LOSTDATA;
 			status &= ~FDC_ST_BUSY;
 			//status &= ~FDC_ST_DRQ;
@@ -879,7 +885,8 @@ uint8 MB8877::search_track()
 		return 0;
 	}
 	for(int i = 0; i < disk[drvreg]->sector_num; i++) {
-		if(disk[drvreg]->verify[i] == trkreg) {
+		disk[drvreg]->get_sector(trk, sidereg, i);
+		if(disk[drvreg]->id[0] == trkreg) {
 			return 0;
 		}
 	}
@@ -914,18 +921,14 @@ uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 	// scan sectors
 	for(int i = 0; i < sector_num; i++) {
 		// get sector
-		int index = first_sector + i;
-		if(index >= sector_num) {
-			index -= sector_num;
-		}
+		int index = (first_sector + i) % sector_num;
 		disk[drvreg]->get_sector(trk, side, index);
 		
 		// check id
-		if(disk[drvreg]->id[2] != sct) {
+		if((cmdreg & 2) && (disk[drvreg]->id[1] & 1) != ((cmdreg >> 3) & 1)) {
 			continue;
 		}
-		// check density
-		if(disk[drvreg]->density) {
+		if(disk[drvreg]->id[2] != sct) {
 			continue;
 		}
 		
@@ -995,6 +998,11 @@ int MB8877::get_cur_position()
 
 double MB8877::get_usec_to_start_trans()
 {
+	// XXX: this is a standard image and skew may be incorrect
+	if(disk[drvreg]->is_standard_image) {
+		return 100;
+	}
+	
 	// get current position
 	int position = get_cur_position();
 	int bytes = next_trans_position[drvreg] - position;

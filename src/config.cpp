@@ -58,6 +58,9 @@ void init_config()
 	config.boot_mode = 2;		// V2 mode, 4MHz
 	config.cpu_type = 1;
 #endif
+#if defined(_X1TURBO) || defined(_X1TURBOZ)
+	config.device_type = 1;		// Keyboard mode B
+#endif
 #if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
 	config.sound_device_type = 1;	// CZ-8BS1
 #endif

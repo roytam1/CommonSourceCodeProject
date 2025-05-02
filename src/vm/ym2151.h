@@ -33,6 +33,9 @@ private:
 	uint32 clock_accum;
 	uint32 clock_const;
 	
+	uint32 clock_busy;
+	bool busy;
+	
 	void update_count();
 	void update_interrupt();
 	

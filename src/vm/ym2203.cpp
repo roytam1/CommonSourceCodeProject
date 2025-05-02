@@ -22,7 +22,7 @@ void YM2203::initialize()
 #endif
 	register_vline_event(this);
 	mute = false;
-	clock_prev = clock_accum = 0;
+	clock_prev = clock_accum = clock_busy = 0;
 }
 
 void YM2203::release()
@@ -47,7 +47,7 @@ void YM2203::reset()
 	this->SetReg(0x27, 0); // stop timer
 	
 	port[0].first = port[1].first = true;
-	irq_prev = false;
+	irq_prev = busy = false;
 }
 
 #ifdef HAS_YM2608
@@ -70,6 +70,8 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 			this->SetReg(ch, 0);
 #ifndef HAS_AY_3_8912
 			update_interrupt();
+			clock_busy = current_clock();
+			busy = true;
 #endif
 		}
 #endif
@@ -92,6 +94,8 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 			this->SetReg(ch, data);
 #ifndef HAS_AY_3_8912
 			update_interrupt();
+			clock_busy = current_clock();
+			busy = true;
 #endif
 		}
 		break;
@@ -111,13 +115,25 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 
 uint32 YM2203::read_io8(uint32 addr)
 {
+#ifndef HAS_AY_3_8912
+	uint32 status;
+#endif
+	
 	switch(addr & amask) {
 #ifndef HAS_AY_3_8912
 	case 0:
 		/* BUSY : x : x : x : x : x : FLAGB : FLAGA */
 		update_count();
 		update_interrupt();
-		return chip->ReadStatus();
+		status = chip->ReadStatus() & ~0x80;
+		if(busy) {
+			// FIXME: we need to investigate the correct busy period
+			if(passed_usec(clock_busy) < 8) {
+				status |= 0x80;
+			}
+			busy = false;
+		}
+		return status;
 #endif
 	case 1:
 		if(ch == 14) {
@@ -132,7 +148,15 @@ uint32 YM2203::read_io8(uint32 addr)
 		/* BUSY : x : PCMBUSY : ZERO : BRDY : EOS : FLAGB : FLAGA */
 		update_count();
 		update_interrupt();
-		return chip->ReadStatusEx();
+		status = chip->ReadStatusEx() & ~0x80;
+		if(busy) {
+			// FIXME: we need to investigate the correct busy period
+			if(passed_usec(clock_busy) < 8) {
+				status |= 0x80;
+			}
+			busy = false;
+		}
+		return status;
 	case 3:
 		if(ch1 == 8) {
 			return chip->GetReg(0x100 | ch1);

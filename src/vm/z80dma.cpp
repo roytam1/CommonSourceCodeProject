@@ -442,9 +442,6 @@ void Z80DMA::do_dma()
 	bool occured = false;
 	bool finished = false;
 	bool found = false;
-#ifdef DMA_DEBUG
-	int count = 0;
-#endif
 	
 	// from Xmillenium (thanks Y.S.)
 	if(BLOCKLEN == 0) {
@@ -582,11 +579,8 @@ restart:
 		}
 		upcount++;
 		occured = true;
-#ifdef DMA_DEBUG
-		count++;
-#endif
 		
-		if(found || !now_ready()) {
+		if(found/* || !now_ready()*/) {
 			if(upcount < blocklen) {
 				upcount--;
 			}
@@ -617,7 +611,7 @@ inc_ports:
 	
 #ifdef DMA_DEBUG
 	if(occured) {
-		emu->out_debug(_T("Z80DMA: COUNT=%4x FOUND=%d\n"), count, found ? 1 : 0);
+		emu->out_debug(_T("Z80DMA: COUNT=%d BLOCKLEN=%d FOUND=%d\n"), upcount, blocklen, found ? 1 : 0);
 	}
 #endif
 	if(occured && (upcount == blocklen || found)) {

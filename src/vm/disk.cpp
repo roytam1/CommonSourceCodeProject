@@ -121,7 +121,9 @@ void DISK::open(_TCHAR path[], int offset)
 		}
 		close();
 	}
+	memset(buffer, 0, sizeof(buffer));
 	media_type = MEDIA_TYPE_UNK;
+	is_standard_image = is_fdi_image = false;
 	
 	// open disk image
 	fi = new FILEIO();
@@ -158,8 +160,7 @@ void DISK::open(_TCHAR path[], int offset)
 		// is this 2d format ?
 		if(check_file_extension(path, _T(".2d"))) {
 			if(standard_to_d88(MEDIA_TYPE_2D, 40, 2, 16, 256)) {
-				_stprintf(file_path, _T("%s.D88"), path);
-				inserted = changed = converted = true;
+				inserted = changed = is_standard_image = true;
 				goto file_loaded;
 			}
 			fi->Fseek(0, FILEIO_SEEK_SET);
@@ -175,12 +176,12 @@ void DISK::open(_TCHAR path[], int offset)
 			int len = p->ncyl * p->nside * p->nsec * p->size;
 			// 4096 bytes: FDI header ???
 			if(file_size == len || (file_size == (len + 4096) && (len == 655360 || len == 1261568))) {
-				if(file_size > len) {
-					fi->Fseek(file_size - len, FILEIO_SEEK_SET);
+				if(file_size == len + 4096) {
+					is_fdi_image = true;
+					fi->Fread(fdi_header, 4096, 1);
 				}
 				if(standard_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size)) {
-					_stprintf(file_path, _T("%s.D88"), path);
-					inserted = changed = converted = true;
+					inserted = changed = is_standard_image = true;
 					goto file_loaded;
 				}
 			}
@@ -264,6 +265,15 @@ file_loaded:
 				}
 			}
 		}
+		// FIXME: ugly patch for X1turbo ALPHA
+		is_alpha = false;
+#if defined(_X1TURBO) || defined(_X1TURBOZ)
+		if(media_type == MEDIA_TYPE_2D) {
+			uint32 offset = buffer[0x20] | (buffer[0x21] << 8) | (buffer[0x22] << 16) | (buffer[0x23] << 24);
+			uint8 *t = buffer + offset;
+			is_alpha = (strcmp((char *)(t + 0x11), "turbo ALPHA") == 0);
+		}
+#endif
 	}
 	delete fi;
 }
@@ -277,7 +287,31 @@ void DISK::close()
 			FILEIO* fio = new FILEIO();
 			if(fio->Fopen(file_path, FILEIO_READ_WRITE_BINARY)) {
 				fio->Fseek(file_offset, FILEIO_SEEK_SET);
-				fio->Fwrite(buffer, file_size, 1);
+				if(is_standard_image) {
+					if(is_fdi_image) {
+						fio->Fwrite(fdi_header, 4096, 1);
+					}
+					for(int trkside = 0; trkside < 164; trkside++) {
+						uint32 offset = buffer[0x20 + trkside * 4 + 0];
+						offset |= buffer[0x20 + trkside * 4 + 1] << 8;
+						offset |= buffer[0x20 + trkside * 4 + 2] << 16;
+						offset |= buffer[0x20 + trkside * 4 + 3] << 24;
+						
+						if(!offset) {
+							break;
+						}
+						uint8* t = buffer + offset;
+						int sector_num = t[4] | (t[5] << 8);
+						
+						for(int i = 0; i < sector_num; i++) {
+							int data_size = t[14] | (t[15] << 8);
+							fio->Fwrite(t + 0x10, data_size, 1);
+							t += data_size + 0x10;
+						}
+					}
+				} else {
+					fio->Fwrite(buffer, file_size, 1);
+				}
 				fio->Fclose();
 			}
 			delete fio;
@@ -366,7 +400,6 @@ retry:
 		data_position[i] = total;
 		total += (data_size >> data_size_shift) + 2 + gap3_size;
 		
-		verify[i] = t[0];
 		t += data_size + 0x10;
 	}
 	return true;
@@ -496,7 +529,7 @@ bool DISK::get_sector(int trk, int side, int index)
 	
 	// skip sector
 	for(int i = 0; i < index; i++) {
-		t += (t[0xe] | (t[0xf] << 8)) + 0x10;
+		t += (t[14] | (t[15] << 8)) + 0x10;
 	}
 	
 	// header info
@@ -515,7 +548,7 @@ bool DISK::get_sector(int trk, int side, int index)
 	deleted = t[7];
 	status = t[8];
 	sector = t + 0x10;
-	sector_size = t[0xe] | (t[0xf] << 8);
+	sector_size = t[14] | (t[15] << 8);
 	
 	return true;
 }
@@ -534,9 +567,9 @@ int DISK::get_rpm()
 int DISK::get_track_size()
 {
 	if(inserted) {
-		return (media_type == MEDIA_TYPE_2HD || media_type == MEDIA_TYPE_144) ? 12500 : drive_mfm ? 6250 : 3100;
+		return media_type == MEDIA_TYPE_144 ? 12500 : media_type == MEDIA_TYPE_2HD ? 10410 : drive_mfm ? 6250 : 3100;
 	} else {
-		return (drive_type == DRIVE_TYPE_2HD || drive_type == DRIVE_TYPE_144) ? 12500 : drive_mfm ? 6250 : 3100;
+		return drive_type == DRIVE_TYPE_144 ? 12500 : drive_type == DRIVE_TYPE_2HD ? 10410 : drive_mfm ? 6250 : 3100;
 	}
 }
 

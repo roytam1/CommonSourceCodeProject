@@ -69,18 +69,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc = new HD46505(this, emu);
 	pio = new I8255(this, emu);
 	fdc = new MB8877(this, emu);
-	if(sound_device_type >= 1) {
-		opm1 = new YM2151(this, emu);
-	}
-	if(sound_device_type == 2) {
-		opm2 = new YM2151(this, emu);
-	}
 	psg = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
 	if(sound_device_type >= 1) {
+		opm1 = new YM2151(this, emu);
 		ctc1 = new Z80CTC(this, emu);
 	}
 	if(sound_device_type == 2) {
+		opm2 = new YM2151(this, emu);
 		ctc2 = new Z80CTC(this, emu);
 	}
 #ifdef _X1TURBO_FEATURE
