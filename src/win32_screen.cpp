@@ -55,6 +55,7 @@ void EMU::initialize_screen()
 	
 	// initialize video recording
 	now_rec_vid = false;
+	hdcDibRec = NULL;
 	pAVIStream = NULL;
 	pAVICompressed = NULL;
 	pAVIFile = NULL;
@@ -821,7 +822,9 @@ void EMU::stop_rec_video()
 			WaitForSingleObject(hThread, INFINITE);
 			hThread = (HANDLE)0;
 		}
-		release_dib_section(hdcDibRec, hBmpRec, hOldBmpRec, lpBufRec);
+		if(hdcDibRec) {
+			release_dib_section(hdcDibRec, hBmpRec, hOldBmpRec, lpBufRec);
+		}
 	}
 	
 	// release vfw

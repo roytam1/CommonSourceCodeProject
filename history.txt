@@ -1,3 +1,15 @@
+4/17/2014
+
+[WINMAIN] fix resource reak issue (thanks Mr.Redart)
+[EMU/WIN32] fix resource reak issue (thanks Mr.Redart)
+
+[VM/FMGEN] fix compiler dependent issue
+[VM/YM2203] support full sound generator dll features (thanks Mr.Redart)
+
+[MZ1500/QUICKDISK] support *.qdf raw quick disk images
+[PX7/MEMORY] fix super impose signal based on openMSX-0.10.0
+
+
 4/10/2014
 
 [EMU/WIN32] support to map keys to joystick buttons
@@ -13,7 +25,7 @@
 [EMU/WIN32] support to capture the movie sounds in DirectShow codes
 
 [VM/DATAREC] support SORD M5 cas format tape image
-[VM/LD700] support PIONEER LD-700 laser-disc player
+[VM/LD700] support PIONEER LD-700 laser-disc player based on openMSX-0.10.0
 [VM/PCM1BIT] fix noise occurs when input signals top
 [VM/YM2203] support to overwrite i/o mode to fixed value
 

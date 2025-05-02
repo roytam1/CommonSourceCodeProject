@@ -29,27 +29,25 @@ WNDPROC buttonWndProc[MAX_BUTTONS];
 #endif
 
 // menu
-bool now_menu = false;
+static HMENU hMenu = NULL;
 bool now_menuloop = false;
 
 void update_menu(HWND hWnd, HMENU hMenu, int pos);
 
 void show_menu_bar(HWND hWnd)
 {
-	if(!now_menu) {
-		HMENU hMenu = LoadMenu((HINSTANCE)GetModuleHandle(0), MAKEINTRESOURCE(IDR_MENU1));
+	if(!(hMenu != NULL && IsMenu(hMenu))) {
+		hMenu = LoadMenu((HINSTANCE)GetModuleHandle(0), MAKEINTRESOURCE(IDR_MENU1));
 		SetMenu(hWnd, hMenu);
-		now_menu = true;
 	}
 }
 
 void hide_menu_bar(HWND hWnd)
 {
-	if(now_menu) {
-		HMENU hMenu = GetMenu(hWnd);
+	if(hMenu != NULL && IsMenu(hMenu)) {
 		SetMenu(hWnd, NULL);
 		DestroyMenu(hMenu);
-		now_menu = false;
+		hMenu = NULL;
 	}
 }
 
@@ -495,6 +493,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 		}
 #endif
+		if(hMenu != NULL && IsMenu(hMenu)) {
+			DestroyMenu(hMenu);
+		}
 		DestroyWindow(hWnd);
 		// release emulation core
 		if(emu) {
@@ -1819,7 +1820,7 @@ void open_quickdisk_dialog(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.mzt;*.q20)\0*.mzt;*.q20\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.mzt;*.q20;*.qdf)\0*.mzt;*.q20;*.qdf\0All Files (*.*)\0*.*\0\0"),
 		_T("Quick Disk"),
 		config.initial_quickdisk_dir
 	);

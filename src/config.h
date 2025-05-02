@@ -122,6 +122,7 @@ typedef struct {
 #ifdef USE_SOUND_DEVICE_TYPE
 	int sound_device_type;
 #endif
+	_TCHAR fmgen_dll_path[_MAX_PATH];
 } config_t;
 
 extern config_t config;

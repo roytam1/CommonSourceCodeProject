@@ -88,6 +88,7 @@ void SLOT_SUB::initialize()
 
 void SLOT_SUB::reset()
 {
+	super_impose = false;
 	req_intr = false;
 	pc4 = false;
 	mute_l = mute_r = true;
@@ -102,14 +103,26 @@ void SLOT_SUB::write_data8(uint32 addr, uint32 data)
 	if(addr == 0x7ffe) {
 		d_ldp->write_signal(SIG_LD700_REMOTE, data, 1);
 	} else if(addr == 0x7fff) {
-		bool prev = mute_l;
+		// super impose
+		bool prev_super_impose = super_impose;
+		super_impose = ((data & 1) == 0);
+		if(super_impose) {
+			if(req_intr && !prev_super_impose) {
+				d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+			}
+		} else {
+			d_cpu->write_signal(SIG_CPU_IRQ, 0, 0);
+		}
+		d_vdp->write_signal(SIG_TMS9918A_SUPER_IMPOSE, super_impose ? 1 : 0, 1);
+		
+		// mute
+		bool prev_mute_l = mute_l;
 		mute_l = ((data & 0x80) == 0);
-		if(!prev && mute_l) {
+		if(!prev_mute_l && mute_l) {
 			mute_r = !pc4;
 		}
 		d_ldp->write_signal(SIG_LD700_MUTE_L, mute_l ? 1 : 0, 1);
 		d_ldp->write_signal(SIG_LD700_MUTE_R, mute_r ? 1 : 0, 1);
-//		d_vdp->write_signal(SIG_TMS9918A_SUPER_IMPOSE, data, 1);
 	} else {
 		wbank[addr >> 13][addr & 0x1fff] = data;
 	}
@@ -120,9 +133,10 @@ uint32 SLOT_SUB::read_data8(uint32 addr)
 	if(addr == 0x7ffe) {
 		return (clock ? 0 : 1) | (ack ? 0 : 0x80) | 0x7e;
 	} else if(addr == 0x7fff) {
-		bool tmp = req_intr;
+		uint32 data = (req_intr ? 1 : 0) | (exv ? 0 : 0x80) | 0x7e;
 		req_intr = false;
-		return (tmp ? 1 : 0) | (exv ? 0 : 0x80) | 0x7e;
+		d_cpu->write_signal(SIG_CPU_IRQ, 0, 0);
+		return data;
 	} else {
 		return rbank[addr >> 13][addr & 0x1fff];
 	}
@@ -135,9 +149,10 @@ void SLOT_SUB::write_signal(int id, uint32 data, uint32 mask)
 		exv = ((data & mask) != 0);
 		if(prev && !exv) {
 			req_intr = true;
-			d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+			if(super_impose) {
+				d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+			}
 		}
-		d_vdp->write_signal(SIG_TMS9918A_SUPER_IMPOSE, exv ? 1 : 0, 1);
 	} else if(id == SIG_SLOT2_ACK) {
 		ack = ((data & mask) != 0);
 	} else if(id == SIG_SLOT2_MUTE) {

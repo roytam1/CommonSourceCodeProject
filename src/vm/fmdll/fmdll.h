@@ -89,6 +89,7 @@ private:
 	DLLFUNC1	fm_reset;
 	DLLFUNC3	fm_setrate;
 	DLLFUNC2	fm_setvolfm;
+	DLLFUNC2	fm_setvolpsg;
 	DLLFUNC2	fm_setchannelmask;
 	DLLFUNC3	fm_getpcm;
 	DLLFUNC3	fm_setreg;
@@ -100,34 +101,35 @@ private:
 public:
 	CFMDLL(LPCTSTR lpFilename) {
 		hDll = LoadLibrary(lpFilename);
-		if (hDll) {
-		
-		fm_create = (DLLFUNC3) GetProcAddress(hDll, "fm_create");
-		fm_setrate = (DLLFUNC3) GetProcAddress(hDll, "fm_setrate");
-		fm_reset = (DLLFUNC1) GetProcAddress(hDll, "fm_reset");
-		fm_setvolfm = (DLLFUNC2) GetProcAddress(hDll, "fm_setvolfm");
-		fm_setchannelmask = (DLLFUNC2) GetProcAddress(hDll, "fm_setchannelmask");
-		fm_setreg = (DLLFUNC3) GetProcAddress(hDll, "fm_setreg");
-		fm_getpcm = (DLLFUNC3) GetProcAddress(hDll, "fm_getpcm");
-		fm_release = (DLLFUNC1) GetProcAddress(hDll, "fm_release");
-		fm_getstatus = (DLLFUNC2) GetProcAddress(hDll, "fm_getstatus");
-		fm_getcaps = (DLLFUNC1) GetProcAddress(hDll, "fm_getcaps");
-		fm_getdllver = (DLLFUNC1) GetProcAddress(hDll, "fm_getdllver");
-		
-		//	この関数があるのはV1以降
-		if (!fm_getdllver) {
-			FreeLibrary(hDll);
-			hDll = NULL;
-		}
+		if (hDll != NULL) {
+			fm_create = (DLLFUNC3) GetProcAddress(hDll, "fm_create");
+			fm_setrate = (DLLFUNC3) GetProcAddress(hDll, "fm_setrate");
+			fm_reset = (DLLFUNC1) GetProcAddress(hDll, "fm_reset");
+			fm_setvolfm = (DLLFUNC2) GetProcAddress(hDll, "fm_setvolfm");
+			fm_setvolpsg = (DLLFUNC2) GetProcAddress(hDll, "fm_setvolpsg");
+			fm_setchannelmask = (DLLFUNC2) GetProcAddress(hDll, "fm_setchannelmask");
+			fm_setreg = (DLLFUNC3) GetProcAddress(hDll, "fm_setreg");
+			fm_getpcm = (DLLFUNC3) GetProcAddress(hDll, "fm_getpcm");
+			fm_release = (DLLFUNC1) GetProcAddress(hDll, "fm_release");
+			fm_getstatus = (DLLFUNC2) GetProcAddress(hDll, "fm_getstatus");
+			fm_getcaps = (DLLFUNC1) GetProcAddress(hDll, "fm_getcaps");
+			fm_getdllver = (DLLFUNC1) GetProcAddress(hDll, "fm_getdllver");
+			
+			//	この関数があるのはV1以降
+			if (fm_getdllver == NULL) {
+				FreeLibrary(hDll);
+				hDll = NULL;
+			}
 #ifdef USE_CS
-		else
-			InitializeCriticalSection(&cs);
+			else {
+				InitializeCriticalSection(&cs);
+			}
 #endif
 		}
 	}
 	
 	~CFMDLL() {
-		if (hDll) {
+		if (hDll != NULL) {
 #ifdef USE_CS
 			DeleteCriticalSection(&cs);
 #endif
@@ -139,7 +141,7 @@ public:
 	//	音源作成(&chipなのに注意)
 	BOOL Create(LPVOID *chip, int clock, int rate) {
 		BOOL	bRet = FALSE;
-		if (hDll) {
+		if (hDll != NULL && fm_create != NULL) {
 			CLI();
 			bRet = fm_create(chip, clock, rate);
 //			LPVOID	lpv;
@@ -156,7 +158,7 @@ public:
 		
 	//	音源リセット
 	void Reset(LPVOID chip) {
-		if (hDll) {
+		if (hDll != NULL && fm_reset != NULL) {
 			CLI();
 			fm_reset(chip);
 			STI();
@@ -165,7 +167,7 @@ public:
 	
 	//	合成レート設定
 	void SetRate(LPVOID chip, int clock, int rate) {
-		if (hDll) {
+		if (hDll != NULL && fm_setrate != NULL) {
 			CLI();
 			fm_setrate(chip, clock, rate);
 			STI();
@@ -174,7 +176,7 @@ public:
 	
 	//	レジスタ設定
 	void SetReg(LPVOID chip, UINT adr, BYTE data) {
-		if (hDll) {
+		if (hDll != NULL && fm_setreg != NULL) {
 			CLI();
 			fm_setreg(chip, adr, data);
 			STI();
@@ -183,16 +185,25 @@ public:
 	
 	//	FM音源ボリューム設定(fmgen互換)
 	void SetVolumeFM(LPVOID chip, int vol) {
-		if (hDll) {
+		if (hDll != NULL && fm_setvolfm != NULL) {
 			CLI();
 			fm_setvolfm(chip, vol);
 			STI();
 		}
 	}
 	
+	//	PSG音源ボリューム設定(fmgen互換)
+	void SetVolumePSG(LPVOID chip, int vol) {
+		if (hDll != NULL && fm_setvolpsg != NULL) {
+			CLI();
+			fm_setvolpsg(chip, vol);
+			STI();
+		}
+	}
+	
 	//	チャンネルマスク(fmgen互換)
 	void SetChannelMask(LPVOID chip, int mask) {
-		if (hDll) {
+		if (hDll != NULL && fm_setchannelmask != NULL) {
 			CLI();
 			fm_setchannelmask(chip, mask);
 			STI();
@@ -201,7 +212,7 @@ public:
 	
 	//	合成
 	void Mix(LPVOID chip, int *pcm, int samples) {
-		if (hDll) {
+		if (hDll != NULL && fm_getpcm != NULL) {
 			CLI();
 			fm_getpcm(chip, (DWORD) pcm, samples);
 			STI();
@@ -210,7 +221,7 @@ public:
 	
 	//	開放
 	void Release(LPVOID chip) {
-		if (hDll) {
+		if (hDll != NULL && fm_release != NULL) {
 			CLI();
 			fm_release(chip);
 //			chip = NULL;
@@ -220,7 +231,7 @@ public:
 	
 	DWORD GetStatus(LPVOID chip, DWORD adr) {
 		DWORD	dwRet = 0xff;
-		if (hDll) {
+		if (hDll != NULL && fm_getstatus != NULL) {
 			CLI();
 			dwRet = fm_getstatus(chip, adr);
 			STI();
@@ -232,7 +243,7 @@ public:
 	//	mamefmは現在FM音源のみ
 	DWORD GetCaps(LPVOID chip) {
 		DWORD	dwRet = 0;
-		if (hDll) {
+		if (hDll != NULL && fm_getcaps != NULL) {
 			CLI();
 			dwRet = fm_getcaps(chip);
 			STI();

@@ -57,6 +57,7 @@ private:
 	
 	bool clock;
 	bool exv, ack;
+	bool super_impose;
 	bool req_intr;
 	bool pc4, mute_l, mute_r;
 	

@@ -17,7 +17,8 @@ void YM2203::initialize()
 	chip = new FM::OPN;
 #endif
 #ifdef SUPPORT_MAME_FM_DLL
-	fmdll = new CFMDLL(_T("mamefm.dll"));
+//	fmdll = new CFMDLL(_T("mamefm.dll"));
+	fmdll = new CFMDLL(config.fmgen_dll_path);
 	dllchip = NULL;
 #endif
 	register_vline_event(this);
@@ -266,9 +267,27 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 #endif
 	if(dllchip) {
 		fmdll->SetVolumeFM(dllchip, volf);
-//		fmdll->SetVolumePSG(dllchip, volp);
-		chip->SetChannelMask(0x3f);
-		fmdll->SetChannelMask(dllchip, ~0x3f);
+		fmdll->SetVolumePSG(dllchip, volp);
+		
+		DWORD mask = 0;
+		DWORD dwCaps = fmdll->GetCaps(dllchip);
+		if((dwCaps & SUPPORT_FM_A) == SUPPORT_FM_A) {
+			mask = 0x07;
+		}
+		if((dwCaps & SUPPORT_FM_B) == SUPPORT_FM_B) {
+			mask |= 0x38;
+		}
+		if((dwCaps & SUPPORT_PSG) == SUPPORT_PSG) {
+			mask |= 0x1c0;
+		}
+		if((dwCaps & SUPPORT_ADPCM_B) == SUPPORT_ADPCM_B) {
+			mask |= 0x200;
+		}
+		if((dwCaps & SUPPORT_RHYTHM) == SUPPORT_RHYTHM) {
+			mask |= 0xfc00;
+		}
+		chip->SetChannelMask(mask);
+		fmdll->SetChannelMask(dllchip, ~mask);
 	}
 #endif
 	chip_clock = clock;
