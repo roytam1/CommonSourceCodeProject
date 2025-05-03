@@ -1495,9 +1495,11 @@ void KEYBOARD::write_data8(uint32 addr, uint32 data)
 	}
 }
 
-void KEYBOARD::initialize(void)
+KEYBOARD::KEYBOARD(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_emu)
 {
 	int i;
+	p_vm = parent_vm;
+	p_emu = parent_emu;
   
 	keycode_7 = 0;
    
@@ -1521,6 +1523,8 @@ void KEYBOARD::initialize(void)
 #if defined(_FM77AV_VARIANTS)
 	rxrdy_status = false;
 	key_ack_status = false;
+	init_output_signals(&rxrdy);
+	init_output_signals(&key_ack);
 
 	rtc_count24h = false;
 	rtc_dayofweek = 0;
@@ -1535,14 +1539,24 @@ void KEYBOARD::initialize(void)
 	rtc_sec = 0;
 	event_key_rtc = -1;
 #endif
+	
+	init_output_signals(&break_line);
+	
+	init_output_signals(&kana_led);
+	init_output_signals(&caps_led);
+	init_output_signals(&ins_led);
 }
 
 void KEYBOARD::release(void)
 {
 	cmd_fifo->release();
-	delete cmd_fifo;
 	data_fifo->release();
+	delete cmd_fifo;
 	delete data_fifo;
+}
+
+KEYBOARD::~KEYBOARD()
+{
 }
 
    

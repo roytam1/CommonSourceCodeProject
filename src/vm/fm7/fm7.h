@@ -37,7 +37,7 @@
 #define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
 //#define USE_DISK_WRITE_PROTECT
-//#define USE_DEBUGGER
+#define USE_DEBUGGER
 //#define _DEBUG_LOG
 //#define _FDC_DEBUG_LOG
 
@@ -118,6 +118,26 @@
 #define HAS_CYCLESTEAL
 #define CAPABLE_Z80
 #endif
+
+// 0 = PSG or NONE
+// 1 = OPN (+PSG)
+// 2 = WHG (+PSG)
+// 3 = WHG + OPN (+PSG)
+// 4 = THG  (+PSG)
+// 5 = THG + OPN (+PSG)
+// 6 = THG + WHG (+PSG)
+// 7 = THG + WHG + OPN (+PSG)
+#if defined(_FM8)
+// WITHOUT PSG?
+#define SOUND_DEVICE_TYPE_DEFAULT	0
+#elif defined(_FM7) || defined(_FMNEW7) || defined(_FM77_VARIANTS)
+// PSG ONLY
+#define SOUND_DEVICE_TYPE_DEFAULT	0
+#elif defined(_FM77AV_VARIANTS)
+// OPN
+#define SOUND_DEVICE_TYPE_DEFAULT	1
+#endif
+#define IGNORE_CRC_DEFAULT			true
 
 // device informations for virtual machine
 
@@ -264,7 +284,7 @@ protected:
         uint32 mainfreq_high_mmr;
  
         uint32 fdd_type[MAX_DRIVE];
-        BOOL   fdd_connect[MAX_DRIVE];
+        bool   fdd_connect[MAX_DRIVE];
 
         FILEIO* cmt_fileio;
         bool cmt_enabled; // 77AV40SX is disabled.
@@ -318,7 +338,7 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-#ifdef USE_DISK_WRITE_PROTECT
+#if defined(USE_DISK_WRITE_PROTECT)
 	void write_protect_fd(int drv, bool flag);
 	bool is_write_protect_fd(int drv);
 #endif
@@ -328,10 +348,9 @@ public:
 	void close_tape();
 	bool tape_inserted();
 	bool now_skip();
-#ifdef USE_TAPE_PTR
-	int get_tape_ptr(void);
+#if defined(USE_TAPE_PTR)
+        int get_tape_ptr(void);
 #endif
-	
 	void update_config();
 	//void save_state(FILEIO* state_fio);
 	//bool load_state(FILEIO* state_fio);

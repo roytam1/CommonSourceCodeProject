@@ -104,18 +104,8 @@ class KEYBOARD : public DEVICE {
 	DEVICE *display;
 	DEVICE *mainio;
  public:
-	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
-	{
-#if defined(_FM77AV_VARIANTS)
-		init_output_signals(&rxrdy);
-		init_output_signals(&key_ack);
-#endif
-		init_output_signals(&break_line);
-		init_output_signals(&kana_led);
-		init_output_signals(&caps_led);
-		init_output_signals(&ins_led);
-	}
-	~KEYBOARD() {}
+	KEYBOARD(VM *parent_vm, EMU *parent_emu);
+	~KEYBOARD();
    
 	void key_up(uint32 vk);
 	void key_down(uint32 vk);
@@ -124,7 +114,6 @@ class KEYBOARD : public DEVICE {
 	uint32 read_data8(uint32 addr);
 	void write_data8(uint32 addr, uint32 data);
 	void reset(void);
-	void initialize(void);
 	void release(void);
 	
 	void set_context_display(DEVICE *p) {

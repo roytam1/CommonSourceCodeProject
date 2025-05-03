@@ -23,6 +23,11 @@
 #include "../beep.h"
 //#include "../pcm1bit.h"
 #include "../ym2203.h"
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 #if defined(_FM77AV_VARIANTS)
 #include "./mb61vh010.h"
 #endif
@@ -173,9 +178,9 @@ void VM::connect_bus(void)
 	event->set_context_sound(opn[0]);
 	event->set_context_sound(opn[1]);
 	event->set_context_sound(opn[2]);
-#ifdef DATAREC_SOUND
+//#ifdef DATAREC_SOUND
 	event->set_context_sound(drec);
-#endif
+//#endif
    
 	mainio->set_context_maincpu(maincpu);
 	mainio->set_context_subcpu(subcpu);
@@ -240,6 +245,11 @@ void VM::connect_bus(void)
    
 	maincpu->set_context_mem(mainmem);
 	subcpu->set_context_mem(display);
+	
+#ifdef USE_DEBUGGER
+	maincpu->set_context_debugger(new DEBUGGER(this, emu));
+	subcpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
@@ -432,8 +442,8 @@ bool VM::disk_inserted(int drv)
 {
 	return fdc->disk_inserted(drv);
 }
- 
-#ifdef USE_DISK_WRITE_PROTECT
+
+#if defined(USE_DISK_WRITE_PROTECT)
 void VM::write_protect_fd(int drv, bool flag)
 {
 	fdc->write_protect_fd(drv, flag);
@@ -465,7 +475,7 @@ bool VM::tape_inserted()
 	return drec->tape_inserted();
 }
 
-#ifdef USE_TAPE_PTR
+#if defined(USE_TAPE_PTR)
 int VM::get_tape_ptr(void)
 {
         return drec->get_tape_ptr();

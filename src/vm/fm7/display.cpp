@@ -10,7 +10,6 @@
 # include "mb61vh010.h"
 #endif
 extern "C" {
-
   extern void initvramtbl_4096_vec(void);
   extern void detachvramtbl_4096_vec(void);
   extern void PutBlank(uint32 *p, int height);
@@ -548,7 +547,6 @@ uint8 DISPLAY::acknowledge_irq(void)
 	//if(cancel_request) this->do_irq(false);
 	cancel_request = false;
 	do_irq(false);
-	//printf("DISPLAY: ACKNOWLEDGE\n");
 	return 0xff;
 }
 
@@ -787,7 +785,7 @@ uint8 DISPLAY::get_miscreg(void)
 {
 	uint8 ret;
 #if defined(_FM77AV_VARIANTS)
-	ret = 0x00;
+	ret = 0x6a;
 	if(!hblank && !vblank) ret |= 0x80;
 	if(vsync) ret |= 0x04;
 	if(alu->read_signal(SIG_ALU_BUSYSTAT) == 0) ret |= 0x10;
@@ -1090,7 +1088,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 		case SIG_FM7_SUB_HALT:
 			if(cancel_request && flag) {
 				sub_run = true;
-				subcpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+				subcpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
 				//printf("SUB: HALT : CANCEL\n");
 				return;
 			}
@@ -1358,9 +1356,7 @@ uint32 DISPLAY::read_data8(uint32 addr)
 			mask = 0x1fff;
 			pagemod = addr >> 13;
 			if((alu->read_data8(ALU_CMDREG) & 0x80) != 0) {
-			  	  dummy = alu->read_data8((addr & 0x3fff) + ALU_WRITE_PROXY);
-				  return 0xff;
-				  //	return alu->read_data8((((addr + offset) & mask) | (pagemod << 13)) + page_offset + ALU_WRITE_PROXY);
+				dummy = alu->read_data8((addr & 0x3fff) + ALU_WRITE_PROXY);
 			}
 			if((multimode_accessmask & (1 << color)) != 0) {
 				return 0xff;
@@ -1372,9 +1368,7 @@ uint32 DISPLAY::read_data8(uint32 addr)
 			mask = 0x3fff;
 			pagemod = (addr & 0xc000) >> 14;
 			if((alu->read_data8(ALU_CMDREG) & 0x80) != 0) {
-				dummy = alu->read_data8((addr & 0x3fff) + ALU_WRITE_PROXY); 
-				return 0xff;
-				  //return alu->read_data8((((addr + offset) & mask) | (pagemod << 14)) + page_offset + ALU_WRITE_PROXY);
+				dummy = alu->read_data8((addr & 0x3fff) + ALU_WRITE_PROXY);
 			}
 			if((multimode_accessmask & (1 << pagemod)) != 0) {
 				return 0xff;
@@ -1510,13 +1504,13 @@ uint32 DISPLAY::read_data8(uint32 addr)
 		}
 #if defined(_FM77AV_VARIANTS)
 		if((raddr >= 0x14) && (raddr < 0x1b)) {
-		  retval = 0xff;
+			retval = 0xff;
 		} 
 		if((raddr >= 0x1c) && (raddr < 0x20)) {
-		  retval = 0xff;
+			retval = 0xff;
 		} 
-		if((raddr >= 0x20) && (raddr < 0x2a)) {
-		  retval = 0xff;
+		if((raddr >= 0x20) && (raddr < 0x2c)) {
+			retval = 0xff;
 		} 
 #endif
 		return retval;
@@ -1563,13 +1557,17 @@ uint32 DISPLAY::read_data8(uint32 addr)
 		if(((1 << rpage) & multimode_accessmask) != 0) return 0xff;
 		if(mode320) {
 		  	raddr  = (addr + offset) & 0x1fff;
-			//raddr  = addr & 0x1fff;
 			rofset = addr & 0xe000;
 		} else { // 640x200
-		  //raddr  = addr & 0x3fff;
 		  	raddr = (addr + offset) & 0x3fff;
 			rofset = addr & 0xc000;
-		}		  
+		}
+		//{
+		//	uint32 rpc = subcpu->get_pc();
+		//	printf("SUBCPU: %04x %02x %02x %02x\n",
+		//	       rpc, this->read_data8(rpc),
+		//	       this->read_data8((rpc + 1) & 0xffff), this->read_data8((rpc + 2) & 0xffff));
+		//}
 		return gvram[(raddr | rofset) + tmp_offset];
 	}
 #endif
@@ -1783,7 +1781,7 @@ void DISPLAY::write_data8(uint32 addr, uint32 data)
 #endif
 		//if(addr >= 0x02) printf("SUB: IOWRITE PC=%04x, ADDR=%02x DATA=%02x\n", subcpu->get_pc(), addr, val8);
 		switch(addr) {
-#if defined(_FM77) || defined(_FM77L2) || defined(_FM77L4) || defined(_FM77AV_VARIANTS)
+#if defined(_FM77) || defined(_FM77L2) || defined(_FM77L4)
 			case 0x05:
 				set_cyclesteal(val8);
 				break;
@@ -1974,13 +1972,17 @@ void DISPLAY::write_data8(uint32 addr, uint32 data)
 		if(((1 << rpage) & multimode_accessmask) != 0) return;
 		if(mode320) {
 		  	raddr  = (addr + offset) & 0x1fff;
-			//raddr  = addr & 0x1fff;
 			rofset = addr & 0xe000;
 		} else { // 640x200
-			//raddr  = addr & 0x3fff;
 		  	raddr = (addr + offset) & 0x3fff;
 			rofset = addr & 0xc000;
 		}		  
+		//{
+		//	uint32 rpc = subcpu->get_pc();
+		//	printf("SUBCPU: %04x %02x %02x %02x\n",
+		//	       rpc, this->read_data8(rpc), this->read_data8((rpc + 1) & 0xffff),
+		//	       this->read_data8((rpc + 2) & 0xffff));
+		//}
 		gvram[(raddr | rofset) + tmp_offset] = val8;
 		return;
 	}
