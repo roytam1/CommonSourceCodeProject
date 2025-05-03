@@ -51,6 +51,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_alarm(DEVICE* device, int id, uint32 mask)

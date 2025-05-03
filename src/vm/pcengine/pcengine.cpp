@@ -11,10 +11,11 @@
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
-#include "../../fileio.h"
 
 #include "../huc6280.h"
 #include "pce.h"
+
+#include "../../fileio.h"
 
 // ----------------------------------------------------------------------------
 // initialize

@@ -35,6 +35,8 @@
 
 #include "pc88.h"
 
+#include "../../fileio.h"
+
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
@@ -347,5 +349,31 @@ void VM::update_config()
 			device->update_config();
 		}
 	}
+}
+
+#define STATE_VERSION	1
+
+void VM::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->save_state(fio);
+	}
+	fio->FputInt32(boot_mode);
+}
+
+bool VM::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		if(!device->load_state(fio)) {
+			return false;
+		}
+	}
+	boot_mode = fio->FgetInt32();
+	return true;
 }
 

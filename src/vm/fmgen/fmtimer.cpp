@@ -7,6 +7,8 @@
 #include "headers.h"
 #include "fmtimer.h"
 
+#include "../../fileio.h"
+
 using namespace FM;
 
 // ---------------------------------------------------------------------------
@@ -99,5 +101,44 @@ int32 Timer::GetNextEvent()
 void Timer::SetTimerPrescaler(int32 p)
 {
 	prescaler = p;
+}
+
+// ---------------------------------------------------------------------------
+//	ステートセーブ
+//
+#define TIMER_STATE_VERSION	1
+
+void Timer::SaveState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(TIMER_STATE_VERSION);
+	
+	fio->FputUint8(status);
+	fio->FputUint8(regtc);
+	fio->Fwrite(regta, sizeof(regta), 1);
+	fio->FputInt32(timera);
+	fio->FputInt32(timera_count);
+	fio->FputInt32(timerb);
+	fio->FputInt32(timerb_count);
+	fio->FputInt32(prescaler);
+}
+
+bool Timer::LoadState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != TIMER_STATE_VERSION) {
+		return false;
+	}
+	status = fio->FgetUint8();
+	regtc = fio->FgetUint8();
+	fio->Fread(regta, sizeof(regta), 1);
+	timera = fio->FgetInt32();
+	timera_count = fio->FgetInt32();
+	timerb = fio->FgetInt32();
+	timerb_count = fio->FgetInt32();
+	prescaler = fio->FgetInt32();
+	return true;
 }
 

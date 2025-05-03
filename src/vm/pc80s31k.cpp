@@ -118,6 +118,7 @@ uint32 PC80S31K::read_io8(uint32 addr)
 		return val;
 	case 0xfe:
 		val = d_pio->read_io8(addr & 3);
+#ifdef _DEBUG_PC80S31K
 		{
 			static uint32 prev = -1;
 			if(prev != val){
@@ -125,8 +126,8 @@ uint32 PC80S31K::read_io8(uint32 addr)
 				prev = val;
 			}
 		}
+#endif
 		return val;
-//		return d_pio->read_io8(addr & 3);
 	}
 	return 0xff;
 }
@@ -192,5 +193,27 @@ void PC80S31K::write_io8(uint32 addr, uint32 data)
 uint32 PC80S31K::intr_ack()
 {
 	return 0;	// NOP
+}
+
+#define STATE_VERSION	1
+
+void PC80S31K::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(ram, sizeof(ram), 1);
+}
+
+bool PC80S31K::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(ram, sizeof(ram), 1);
+	return true;
 }
 

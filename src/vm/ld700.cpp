@@ -32,8 +32,8 @@
 
 void LD700::initialize()
 {
-	prev_signal = false;
-	prev_time = 0;
+	prev_remote_signal = false;
+	prev_remote_time = 0;
 	command = num_bits = 0;
 	
 	status = STATUS_EJECT;
@@ -43,6 +43,7 @@ void LD700::initialize()
 	cur_frame_raw = 0;
 	wait_frame_raw = 0;
 	
+	prev_sound_signal = false;
 	sound_buffer_l = new FIFO(48000 * 4);
 	sound_buffer_r = new FIFO(48000 * 4);
 	signal_buffer = new FIFO(48000 * 4);
@@ -77,10 +78,10 @@ void LD700::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_LD700_REMOTE) {
 		bool signal = ((data & mask) != 0);
-		if(prev_signal != signal) {
-			int usec = (int)passed_usec(prev_time);
-			prev_time = current_clock();
-			prev_signal = signal;
+		if(prev_remote_signal != signal) {
+			int usec = (int)passed_usec(prev_remote_time);
+			prev_remote_time = current_clock();
+			prev_remote_signal = signal;
 			
 			// from openmsx-0.10.0/src/laserdisc/
 			switch(phase) {
@@ -289,10 +290,9 @@ void LD700::event_callback(int event_id, int err)
 		set_ack(false);
 	} else if(event_id == EVENT_SOUND) {
 		if(signal_buffer_ok) {
-			static bool prev = false;
 			int sample = signal_buffer->read();
-			bool signal = sample > 100 ? true : sample < -100 ? false : prev;
-			prev = signal;
+			bool signal = sample > 100 ? true : sample < -100 ? false : prev_sound_signal;
+			prev_sound_signal = signal;
 			write_signals(&outputs_sound, signal ? 0xffffffff : 0);
 		}
 		sound_sample_l = sound_buffer_l->read();

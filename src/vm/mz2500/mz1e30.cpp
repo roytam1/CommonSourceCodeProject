@@ -105,13 +105,11 @@ void MZ1E30::write_io8(uint32 addr, uint32 data)
 			if(cmd_ptr == 6) {
 				check_cmd();
 			}
-		}
-		else if(phase == PHASE_C2) {
+		} else if(phase == PHASE_C2) {
 			if(++status_ptr == 10) {
 				set_status(0);
 			}
-		}
-		else if(phase == PHASE_WRITE) {
+		} else if(phase == PHASE_WRITE) {
 			buffer[buffer_ptr++] = data;
 			if(buffer_ptr == 256) {
 				flush(unit);
@@ -122,8 +120,7 @@ void MZ1E30::write_io8(uint32 addr, uint32 data)
 						set_status(0x0f);
 						set_drq(false);
 					}
-				}
-				else {
+				} else {
 					set_status(0);
 					set_drq(false);
 				}
@@ -138,12 +135,10 @@ void MZ1E30::write_io8(uint32 addr, uint32 data)
 				phase = PHASE_COMMAND;
 				cmd_ptr = 0;
 			}
-		}
-		else if(data == 0x20) {
+		} else if(data == 0x20) {
 			if(datareg & 1) {
 				phase = PHASE_SELECT;
-			}
-			else {
+			} else {
 				phase = PHASE_FREE;
 			}
 		}
@@ -172,24 +167,20 @@ uint32 MZ1E30::read_io8(uint32 addr)
 						set_status(0x0f);
 						set_drq(false);
 					}
-				}
-				else {
+				} else {
 					set_status(0);
 					set_drq(false);
 				}
 			}
-		}
-		else if(phase == PHASE_SENSE) {
+		} else if(phase == PHASE_SENSE) {
 			val = status_buf[status_ptr++];
 			if(status_ptr == 4) {
 				set_status(0);
 			}
-		}
-		else if(phase == PHASE_STATUS) {
+		} else if(phase == PHASE_STATUS) {
 			val = error ? 0x02 : status;
 			phase = PHASE_MESSAGE;
-		}
-		else if(phase == PHASE_MESSAGE) {
+		} else if(phase == PHASE_MESSAGE) {
 			phase = PHASE_FREE;
 		}
 		return val;
@@ -258,8 +249,7 @@ void MZ1E30::check_cmd()
 		if(drive[unit].fio != NULL) {
 			status = 0x00;
 			set_status(0x00);
-		}
-		else {
+		} else {
 			status = 0x02;
 			set_status(0x7f);
 		}
@@ -270,8 +260,7 @@ void MZ1E30::check_cmd()
 			sector = 0;
 			status = 0x00;
 			set_status(0x00);
-		}
-		else {
+		} else {
 			status = 0x02;
 			set_status(0x7f);
 		}
@@ -302,8 +291,7 @@ void MZ1E30::check_cmd()
 		status = 0;
 		if(format(unit)) {
 			set_status(0);
-		}
-		else {
+		} else {
 			set_status(0x0f);
 		}
 		break;
@@ -318,8 +306,7 @@ void MZ1E30::check_cmd()
 			phase = PHASE_READ;
 			buffer_ptr = 0;
 			set_drq(true);
-		}
-		else {
+		} else {
 			set_status(0x0f);
 		}
 		break;
@@ -334,8 +321,7 @@ void MZ1E30::check_cmd()
 			buffer_ptr = 0;
 			memset(buffer, 0, sizeof(buffer));
 			set_drq(true);
-		}
-		else {
+		} else {
 			set_status(0x0f);
 		}
 		break;
@@ -385,8 +371,7 @@ void MZ1E30::set_drq(bool flag)
 {
 	if(flag) {
 		status_irq_drq |= STATUS_DRQ;
-	}
-	else {
+	} else {
 		status_irq_drq &= ~STATUS_DRQ;
 	}
 }
@@ -439,6 +424,56 @@ bool MZ1E30::format(int drv)
 		}
 		drive[drv & 1].access = true;
 	}
+	return true;
+}
+
+#define STATE_VERSION	1
+
+void MZ1E30::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint32(rom_address);
+	fio->Fwrite(buffer, sizeof(buffer), 1);
+	fio->FputInt32(phase);
+	fio->FputInt32(sector);
+	fio->FputInt32(blocks);
+	fio->Fwrite(cmd, sizeof(cmd), 1);
+	fio->FputInt32(cmd_ptr);
+	fio->FputInt32(unit);
+	fio->FputInt32(buffer_ptr);
+	fio->FputUint8(status);
+	fio->FputUint8(status_irq_drq);
+	fio->FputUint8(error);
+	fio->Fwrite(status_buf, sizeof(status_buf), 1);
+	fio->FputInt32(status_ptr);
+	fio->FputUint8(datareg);
+}
+
+bool MZ1E30::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	rom_address = fio->FgetUint32();
+	fio->Fread(buffer, sizeof(buffer), 1);
+	phase = fio->FgetInt32();
+	sector = fio->FgetInt32();
+	blocks = fio->FgetInt32();
+	fio->Fread(cmd, sizeof(cmd), 1);
+	cmd_ptr = fio->FgetInt32();
+	unit = fio->FgetInt32();
+	buffer_ptr = fio->FgetInt32();
+	status = fio->FgetUint8();
+	status_irq_drq = fio->FgetUint8();
+	error = fio->FgetUint8();
+	fio->Fread(status_buf, sizeof(status_buf), 1);
+	status_ptr = fio->FgetInt32();
+	datareg = fio->FgetUint8();
 	return true;
 }
 

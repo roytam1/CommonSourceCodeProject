@@ -29,20 +29,23 @@ class DISK;
 class UPD765A : public DEVICE
 {
 private:
-	// fdc
-	typedef struct {
-		uint8 track;
-		uint8 result;
-		bool access;
-	} fdc_t;
-	fdc_t fdc[4];
-	DISK* disk[4];
-	
 	// output signals
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
 	outputs_t outputs_hdu;
 	outputs_t outputs_index;
+	
+	// fdc
+	struct {
+		uint8 track;
+		uint8 result;
+		bool access;
+		// timing
+		int cur_position;
+		int next_trans_position;
+		uint32 prev_clock;
+	} fdc[4];
+	DISK* disk[4];
 	
 	uint8 hdu, hdue, id[4], eot, gpl, dtl;
 	
@@ -66,9 +69,6 @@ private:
 	bool prev_index;
 	
 	// timing
-	int cur_position[4];
-	int next_trans_position[4];
-	uint32 prev_clock[4];
 	uint32 prev_drq_clock;
 	
 	int get_cur_position(int drv);
@@ -141,6 +141,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask)

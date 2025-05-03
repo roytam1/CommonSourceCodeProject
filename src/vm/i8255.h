@@ -21,7 +21,7 @@
 class I8255 : public DEVICE
 {
 private:
-	typedef struct {
+	struct {
 		uint8 wreg;
 		uint8 rreg;
 		uint8 rmask;
@@ -29,8 +29,7 @@ private:
 		bool first;
 		// output signals
 		outputs_t outputs;
-	} port_t;
-	port_t port[3];
+	} port[3];
 	
 public:
 	I8255(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
@@ -49,6 +48,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int id);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift)

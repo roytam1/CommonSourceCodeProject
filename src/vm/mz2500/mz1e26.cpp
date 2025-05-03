@@ -11,17 +11,17 @@
 
 void MZ1E26::initialize()
 {
-	prev_data = 0;
+//	prev_data = 0;
 }
 
 void MZ1E26::write_data8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff) {
 	case 0xca:
-		if((prev_data & 0x10) && !(data & 0x10)) {
+//		if((prev_data & 0x10) && !(data & 0x10)) {
 			// power off
-		}
-		prev_data = data;
+//		}
+//		prev_data = data;
 		break;
 	}
 }

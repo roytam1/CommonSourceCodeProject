@@ -22,9 +22,7 @@
 class Z80CTC : public DEVICE
 {
 private:
-	int eventclock;
-	
-	typedef struct {
+	struct {
 		uint8 control;
 		bool slope;
 		uint16 count;
@@ -49,15 +47,14 @@ private:
 		bool in_service;
 		// output signals
 		outputs_t outputs;
-	} z80ctc_t;
-	z80ctc_t counter[4];
+	} counter[4];
 	uint64 cpu_clocks;
 	
 	void input_clock(int ch, int clock);
 	void input_sysclock(int ch, int clock);
 	void update_event(int ch, int err);
 	
-	// interrupt
+	// daisy chain
 	DEVICE *d_cpu, *d_child;
 	bool iei, oei;
 	uint32 intr_bit;
@@ -86,6 +83,8 @@ public:
 	{
 		cpu_clocks = new_clocks;
 	}
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit)

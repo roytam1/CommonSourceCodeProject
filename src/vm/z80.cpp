@@ -12,6 +12,7 @@
 #ifdef USE_DEBUGGER
 #include "debugger.h"
 #endif
+#include "../fileio.h"
 
 #ifndef CPU_START_ADDR
 #define CPU_START_ADDR	0
@@ -3817,3 +3818,84 @@ void dasm_fdcb(uint32 pc, _TCHAR *buffer)
 	}
 }
 #endif
+
+#define STATE_VERSION	1
+
+void Z80::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputInt32(icount);
+	fio->FputInt32(extra_icount);
+	fio->FputUint16(prevpc);
+	fio->FputUint32(pc.d);
+	fio->FputUint32(sp.d);
+	fio->FputUint32(af.d);
+	fio->FputUint32(bc.d);
+	fio->FputUint32(de.d);
+	fio->FputUint32(hl.d);
+	fio->FputUint32(ix.d);
+	fio->FputUint32(iy.d);
+	fio->FputUint32(wz.d);
+	fio->FputUint32(af2.d);
+	fio->FputUint32(bc2.d);
+	fio->FputUint32(de2.d);
+	fio->FputUint32(hl2.d);
+	fio->FputUint8(I);
+	fio->FputUint8(R);
+	fio->FputUint8(R2);
+	fio->FputUint32(ea);
+	fio->FputBool(busreq);
+	fio->FputBool(halt);
+	fio->FputUint8(im);
+	fio->FputUint8(iff1);
+	fio->FputUint8(iff2);
+	fio->FputUint8(icr);
+	fio->FputBool(after_ei);
+	fio->FputBool(after_ldair);
+	fio->FputUint32(intr_req_bit);
+	fio->FputUint32(intr_pend_bit);
+}
+
+bool Z80::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	icount = fio->FgetInt32();
+	extra_icount = fio->FgetInt32();
+	prevpc = fio->FgetUint16();
+	pc.d = fio->FgetUint32();
+	sp.d = fio->FgetUint32();
+	af.d = fio->FgetUint32();
+	bc.d = fio->FgetUint32();
+	de.d = fio->FgetUint32();
+	hl.d = fio->FgetUint32();
+	ix.d = fio->FgetUint32();
+	iy.d = fio->FgetUint32();
+	wz.d = fio->FgetUint32();
+	af2.d = fio->FgetUint32();
+	bc2.d = fio->FgetUint32();
+	de2.d = fio->FgetUint32();
+	hl2.d = fio->FgetUint32();
+	I = fio->FgetUint8();
+	R = fio->FgetUint8();
+	R2 = fio->FgetUint8();
+	ea = fio->FgetUint32();
+	busreq = fio->FgetBool();
+	halt = fio->FgetBool();
+	im = fio->FgetUint8();
+	iff1 = fio->FgetUint8();
+	iff2 = fio->FgetUint8();
+	icr = fio->FgetUint8();
+	after_ei = fio->FgetBool();
+	after_ldair = fio->FgetBool();
+	intr_req_bit = fio->FgetUint32();
+	intr_pend_bit = fio->FgetUint32();
+	return true;
+}
+

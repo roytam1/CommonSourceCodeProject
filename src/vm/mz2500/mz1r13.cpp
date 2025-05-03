@@ -71,3 +71,27 @@ uint32 MZ1R13::read_io8(uint32 addr)
 	return 0xff;
 }
 
+#define STATE_VERSION	1
+
+void MZ1R13::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint16(address);
+	fio->FputBool(select_kanji);
+}
+
+bool MZ1R13::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	address = fio->FgetUint16();
+	select_kanji = fio->FgetBool();
+	return true;
+}
+

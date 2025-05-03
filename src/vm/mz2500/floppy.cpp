@@ -11,6 +11,7 @@
 
 #include "floppy.h"
 #include "../mb8877.h"
+#include "../../fileio.h"
 
 #ifdef _MZ2500
 void FLOPPY::initialize()
@@ -45,6 +46,28 @@ void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_FLOPPY_REVERSE) {
 		reversed = ((data & mask) != 0);
 	}
+}
+
+#define STATE_VERSION	1
+
+void FLOPPY::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputBool(reversed);
+}
+
+bool FLOPPY::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	reversed = fio->FgetBool();
+	return true;
 }
 #endif
 

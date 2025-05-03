@@ -39,11 +39,10 @@ private:
 	int status_ptr;
 	uint8 datareg;
 	
-	typedef struct {
+	struct {
 		FILEIO *fio;
 		bool access;
-	} drive_t;
-	drive_t drive[2];
+	} drive[2];
 	
 	void check_cmd();
 	void set_status(uint8 err);
@@ -65,6 +64,8 @@ public:
 	uint32 read_dma_io8(uint32 addr);
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 };
 
 #endif

@@ -54,6 +54,8 @@
 void init_config();
 void load_config();
 void save_config();
+void save_config_state(void *f);
+bool load_config_state(void *f);
 
 typedef struct {
 	// control

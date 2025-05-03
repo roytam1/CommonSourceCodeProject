@@ -22,7 +22,7 @@
 class Z80PIO : public DEVICE
 {
 private:
-	typedef struct {
+	struct {
 		uint32 wreg;
 		uint8 rreg;
 		uint8 mode;
@@ -46,15 +46,15 @@ private:
 		// output signals
 		outputs_t outputs_data;
 		outputs_t outputs_ready;
-	} port_t;
-	port_t port[2];
+	} port[2];
 	
-	// interrupt
+	void update_ready();
+	void check_mode3_intr(int ch);
+	
+	// daisy chain
 	DEVICE *d_cpu, *d_child;
 	bool iei, oei;
 	uint32 intr_bit;
-	void update_ready();
-	void check_mode3_intr(int ch);
 	void update_intr();
 	
 public:
@@ -76,6 +76,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit)

@@ -1,3 +1,43 @@
+12/23/2014
+
+[EMU/WIN32] simplify get/put functions for several types in file i/o class
+
+[VM/BEEP] support save/load state
+[VM/DATAREC] support save/load state
+[VM/DISK] support save/load state
+[VM/DISK] fix issue that disk image except d88 or beta image may not be saved
+[VM/EVENT] fix load state function to update number of sound samples per frame
+[VM/FMGEN] support save/load state
+[VM/I8251] support save/load state
+[VM/I8253] support save/load state
+[VM/I8255] support save/load state
+[VM/IO] support save/load state
+[VM/MB8877] support save/load state
+[VM/PC6031] fix to initialize old_D2H
+[VM/PC80S31K] support save/load state
+[VM/PCM1BIT] support save/load state
+[VM/RP5C01] support save/load state
+[VM/UPD765A] support save/load state
+[VM/UPD1990A] support save/load state
+[VM/W3100A] support save/load state
+[VM/YM2151] support save/load state
+[VM/YM2203] support save/load state
+[VM/Z80] support save/load state
+[VM/Z80CTC] support save/load state
+[VM/Z80DMA] support save/load state
+[VM/Z80PIO] support save/load state
+[VM/Z80SIO] support save/load state
+
+[MZ80B] support save/load state
+[MZ1500/QUICKDISK] fix to clear first data/send break flags
+[MZ2500] support save/load state
+[MZ2500/CMT] fix issue that Laydock is not correctly booted
+[PC8001SR] support save/load state
+[PC8801MA] support save/load state
+[PC8801MA/PC88] fix to reset dirty NIPPY patch flag
+[PC8801MA/PC88] fix not to render text scree when dma ch.2 is not running
+
+
 12/18/2014
 
 [EMU/WIN32] support save/load state

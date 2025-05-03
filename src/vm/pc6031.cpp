@@ -212,9 +212,7 @@ void PC6031::FddOut60(unsigned char dat)
 // control input from disk unit (port D2H)
 unsigned char PC6031::FddCntIn60(void)
 {
-	static int old;
-
-	if ((old & 0x01) ^ mdisk.DAV || mdisk.RFD && mdisk.DAV) {
+	if (((old_D2H & 0x01) ^ mdisk.DAV) || mdisk.RFD && mdisk.DAV) {
 		mdisk.DAC = mdisk.DAV;
 	} else if (mdisk.ATN) {
 		mdisk.RFD = 1;
@@ -226,7 +224,7 @@ unsigned char PC6031::FddCntIn60(void)
 	else if (mdisk.RFD) {
 		mdisk.DAV = 1;
 	}	
-	old = io_D2H;
+	old_D2H = io_D2H;
 	io_D2H = 0xf0 | 0x08 /* (mdisk.ATN<<3) */ | (mdisk.DAC<<2) | (mdisk.RFD<<1) | mdisk.DAV;
 	return (io_D2H);
 }
@@ -283,6 +281,7 @@ void PC6031::initialize()
 	io_D1H = 0;
 	io_D2H = 0xf0 | 0x08 /* (mdisk.ATN<<3) */ | (mdisk.DAC<<2) | (mdisk.RFD<<1) | mdisk.DAV;
 	io_D3H = 0;
+	old_D2H = 0;
 }
 
 void PC6031::release()

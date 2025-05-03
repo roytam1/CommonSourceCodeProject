@@ -143,6 +143,10 @@ public:
 #define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #endif
 
+#ifdef USE_FD1
+#define MAX_D88_BANKS 64
+#endif
+
 #ifdef USE_SOCKET
 #define SOCKET_MAX 4
 #define SOCKET_BUFFER_MAX 0x100000
@@ -496,6 +500,21 @@ public:
 	void notify_power_off();
 #endif
 	void suspend();
+	
+	// media
+#ifdef USE_FD1
+	typedef struct {
+		_TCHAR name[18];
+		int offset;
+	} d88_bank_t;
+	typedef struct {
+		_TCHAR path[_MAX_PATH];
+		d88_bank_t bank[MAX_D88_BANKS];
+		int bank_num;
+		int cur_bank;
+	} d88_file_t;
+	d88_file_t d88_file[MAX_FD];
+#endif
 	
 	// user interface
 #ifdef USE_CART1

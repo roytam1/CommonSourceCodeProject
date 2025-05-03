@@ -413,6 +413,10 @@ void PC88::reset()
 	write_io8(2, 0);
 	write_io8(3, 0);
 #endif
+#ifdef NIPPY_PATCH
+	// dirty patch for NIPPY
+	nippy_patch = false;
+#endif
 }
 
 void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
@@ -428,8 +432,7 @@ void PC88::write_data8w(uint32 addr, uint32 data, int* wait)
 		}
 		ram[addr & 0xffff] = data;
 		return;
-	}
-	else if((addr & 0xc000) == 0xc000) {
+	} else if((addr & 0xc000) == 0xc000) {
 #else
 	if((addr & 0xc000) == 0x8000) {
 #endif
@@ -501,8 +504,7 @@ uint32 PC88::read_data8w(uint32 addr, int* wait)
 			addr = (Port70_TEXTWND << 8) + (addr & 0x3ff);
 		}
 		return ram[addr & 0xffff];
-	}
-	else if((addr & 0xc000) == 0xc000) {
+	} else if((addr & 0xc000) == 0xc000) {
 #else
 	if((addr & 0xc000) == 0x8000) {
 #endif
@@ -551,10 +553,6 @@ uint32 PC88::fetch_op(uint32 addr, int *wait)
 	return data;
 }
 
-#if !defined(_PC8001SR)
-#define NIPPY_PATCH
-#endif
-
 void PC88::write_io8(uint32 addr, uint32 data)
 {
 	addr &= 0xff;
@@ -563,7 +561,6 @@ void PC88::write_io8(uint32 addr, uint32 data)
 #endif
 #ifdef NIPPY_PATCH
 	// dirty patch for NIPPY
-	static bool nippy_patch = false;
 	if(addr == 0x31 && data == 0x3f && d_cpu->get_pc() == 0xaa4f && nippy_patch) {
 		data = 0x39; // select n88rom
 	}
@@ -711,6 +708,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 			update_palette = true;
 		}
 #ifdef NIPPY_PATCH
+		// dirty patch for NIPPY
 		nippy_patch = (data == 0x37 && d_cpu->get_pc() == 0xaa32);
 #endif
 		break;
@@ -1404,6 +1402,7 @@ void PC88::play_tape(_TCHAR* file_path)
 		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
 		memset(cmt_buffer, 0, sizeof(cmt_buffer));
 		cmt_fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
+		cmt_fio->Fclose();
 		
 		if(strncmp((char *)cmt_buffer, "PC-8801 Tape Image(T88)", 23) == 0) {
 			// this is t88 format
@@ -1445,7 +1444,8 @@ void PC88::rec_tape(_TCHAR* file_path)
 {
 	close_tape();
 	
-	if(cmt_fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+	if(cmt_fio->Fopen(file_path, FILEIO_READ_WRITE_NEW_BINARY)) {
+		_tcscpy(rec_file_path, file_path);
 		cmt_bufptr = 0;
 		cmt_rec = true;
 	}
@@ -1463,10 +1463,10 @@ void PC88::close_tape()
 void PC88::release_tape()
 {
 	// close file
-	if(cmt_rec && cmt_bufptr) {
-		cmt_fio->Fwrite(cmt_buffer, cmt_bufptr, 1);
-	}
-	if(cmt_play || cmt_rec) {
+	if(cmt_fio->IsOpened()) {
+		if(cmt_rec && cmt_bufptr) {
+			cmt_fio->Fwrite(cmt_buffer, cmt_bufptr, 1);
+		}
 		cmt_fio->Fclose();
 	}
 	cmt_play = cmt_rec = false;
@@ -1659,7 +1659,7 @@ void PC88::draw_screen()
 
 void PC88::draw_text()
 {
-	if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
+	if(!dmac.ch[2].running || !(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
 		memset(text, 0, sizeof(text));
 		return;
 	}
@@ -2363,6 +2363,8 @@ void pc88_dmac_t::start(int c)
 	if(mode & (1 << c)) {
 		status &= ~(1 << c);
 		ch[c].running = true;
+	}else {
+		ch[c].running = false;
 	}
 }
 
@@ -2402,7 +2404,198 @@ void pc88_dmac_t::finish(int c)
 			mode &= ~(1 << c);
 		}
 		status |= (1 << c);
-		ch[c].running = false;
+//		ch[c].running = false;
 	}
+}
+
+#define STATE_VERSION	1
+
+void PC88::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(ram, sizeof(ram), 1);
+#if defined(PC88_EXRAM_BANKS)
+	fio->Fwrite(exram, sizeof(exram), 1);
+#endif
+	fio->Fwrite(gvram, sizeof(gvram), 1);
+	fio->Fwrite(tvram, sizeof(tvram), 1);
+	fio->Fwrite(port, sizeof(port), 1);
+	fio->Fwrite(&crtc, sizeof(crtc), 1);
+	fio->Fwrite(&dmac, sizeof(dmac), 1);
+	fio->Fwrite(alu_reg, sizeof(alu_reg), 1);
+	fio->FputUint8(gvram_plane);
+	fio->FputUint8(gvram_sel);
+	fio->FputBool(cpu_clock_low);
+	fio->FputBool(mem_wait_on);
+	fio->FputInt32(m1_wait_clocks);
+	fio->FputInt32(mem_wait_clocks_r);
+	fio->FputInt32(mem_wait_clocks_w);
+	fio->FputInt32(tvram_wait_clocks_r);
+	fio->FputInt32(tvram_wait_clocks_w);
+	fio->FputInt32(gvram_wait_clocks_r);
+	fio->FputInt32(gvram_wait_clocks_w);
+	fio->FputInt32(busreq_clocks);
+	fio->Fwrite(palette, sizeof(palette), 1);
+	fio->FputBool(update_palette);
+	fio->FputBool(hireso);
+	fio->Fwrite(text, sizeof(text), 1);
+	fio->Fwrite(graph, sizeof(graph), 1);
+	fio->Fwrite(palette_text_pc, sizeof(palette_text_pc), 1);
+	fio->Fwrite(palette_graph_pc, sizeof(palette_graph_pc), 1);
+	fio->FputBool(usart_dcd);
+	fio->FputBool(opn_busy);
+	fio->FputUint8(key_caps);
+	fio->FputUint8(key_kana);
+#ifdef SUPPORT_PC88_JOYSTICK
+	fio->FputUint32(mouse_strobe_clock);
+	fio->FputUint32(mouse_strobe_clock_lim);
+	fio->FputInt32(mouse_phase);
+	fio->FputInt32(mouse_dx);
+	fio->FputInt32(mouse_dy);
+	fio->FputInt32(mouse_lx);
+	fio->FputInt32(mouse_ly);
+#endif
+	fio->FputUint8(intr_req);
+	fio->FputBool(intr_req_sound);
+	fio->FputUint8(intr_mask1);
+	fio->FputUint8(intr_mask2);
+	fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
+	if(cmt_rec && cmt_fio->IsOpened()) {
+		int length_tmp = (int)cmt_fio->Ftell();
+		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
+		fio->FputInt32(length_tmp);
+		while(length_tmp != 0) {
+			uint8 buffer[1024];
+			int length_rw = min(length_tmp, sizeof(buffer));
+			cmt_fio->Fread(buffer, length_rw, 1);
+			fio->Fwrite(buffer, length_rw, 1);
+			length_tmp -= length_rw;
+		}
+	} else {
+		fio->FputInt32(0);
+	}
+	fio->FputInt32(cmt_bufptr);
+	fio->FputInt32(cmt_bufcnt);
+	fio->Fwrite(cmt_buffer, sizeof(cmt_buffer), 1);
+	fio->Fwrite(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
+	fio->FputInt32(cmt_data_carrier_cnt);
+	fio->FputBool(cmt_play);
+	fio->FputBool(cmt_rec);
+	fio->FputInt32(cmt_register_id);
+#ifdef SUPPORT_PC88_PCG8100
+	fio->FputUint16(pcg_addr);
+	fio->FputUint8(pcg_data);
+	fio->FputUint8(pcg_ctrl);
+	fio->Fwrite(pcg_pattern, sizeof(pcg_pattern), 1);
+#endif
+#ifdef NIPPY_PATCH
+	fio->FputBool(nippy_patch);
+#endif
+}
+
+bool PC88::load_state(FILEIO* fio)
+{
+	int length_tmp;
+	
+	release_tape();
+	
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(ram, sizeof(ram), 1);
+#if defined(PC88_EXRAM_BANKS)
+	fio->Fread(exram, sizeof(exram), 1);
+#endif
+	fio->Fread(gvram, sizeof(gvram), 1);
+	fio->Fread(tvram, sizeof(tvram), 1);
+	fio->Fread(port, sizeof(port), 1);
+	fio->Fread(&crtc, sizeof(crtc), 1);
+	fio->Fread(&dmac, sizeof(dmac), 1);
+	fio->Fread(alu_reg, sizeof(alu_reg), 1);
+	gvram_plane = fio->FgetUint8();
+	gvram_sel = fio->FgetUint8();
+	cpu_clock_low = fio->FgetBool();
+	mem_wait_on = fio->FgetBool();
+	m1_wait_clocks = fio->FgetInt32();
+	mem_wait_clocks_r = fio->FgetInt32();
+	mem_wait_clocks_w = fio->FgetInt32();
+	tvram_wait_clocks_r = fio->FgetInt32();
+	tvram_wait_clocks_w = fio->FgetInt32();
+	gvram_wait_clocks_r = fio->FgetInt32();
+	gvram_wait_clocks_w = fio->FgetInt32();
+	busreq_clocks = fio->FgetInt32();
+	fio->Fread(palette, sizeof(palette), 1);
+	update_palette = fio->FgetBool();
+	hireso = fio->FgetBool();
+	fio->Fread(text, sizeof(text), 1);
+	fio->Fread(graph, sizeof(graph), 1);
+	fio->Fread(palette_text_pc, sizeof(palette_text_pc), 1);
+	fio->Fread(palette_graph_pc, sizeof(palette_graph_pc), 1);
+	usart_dcd = fio->FgetBool();
+	opn_busy = fio->FgetBool();
+	key_caps = fio->FgetUint8();
+	key_kana = fio->FgetUint8();
+#ifdef SUPPORT_PC88_JOYSTICK
+	mouse_strobe_clock = fio->FgetUint32();
+	mouse_strobe_clock_lim = fio->FgetUint32();
+	mouse_phase = fio->FgetInt32();
+	mouse_dx = fio->FgetInt32();
+	mouse_dy = fio->FgetInt32();
+	mouse_lx = fio->FgetInt32();
+	mouse_ly = fio->FgetInt32();
+#endif
+	intr_req = fio->FgetUint8();
+	intr_req_sound = fio->FgetBool();
+	intr_mask1 = fio->FgetUint8();
+	intr_mask2 = fio->FgetUint8();
+	fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
+	if((length_tmp = fio->FgetInt32()) != 0) {
+		cmt_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+		while(length_tmp != 0) {
+			uint8 buffer[1024];
+			int length_rw = min(length_tmp, sizeof(buffer));
+			fio->Fread(buffer, length_rw, 1);
+			if(cmt_fio->IsOpened()) {
+				cmt_fio->Fwrite(buffer, length_rw, 1);
+			}
+			length_tmp -= length_rw;
+		}
+	}
+	cmt_bufptr = fio->FgetInt32();
+	cmt_bufcnt = fio->FgetInt32();
+	fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
+	fio->Fread(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
+	cmt_data_carrier_cnt = fio->FgetInt32();
+	cmt_play = fio->FgetBool();
+	cmt_rec = fio->FgetBool();
+	cmt_register_id = fio->FgetInt32();
+#ifdef SUPPORT_PC88_PCG8100
+	pcg_addr = fio->FgetUint16();
+	pcg_data = fio->FgetUint8();
+	pcg_ctrl = fio->FgetUint8();
+	fio->Fread(pcg_pattern, sizeof(pcg_pattern), 1);
+#endif
+#ifdef NIPPY_PATCH
+	nippy_patch = fio->FgetBool();
+#endif
+	
+	// restore dma device
+	dmac.mem = dmac.ch[2].io = this;
+	dmac.ch[0].io = dmac.ch[1].io = dmac.ch[3].io = vm->dummy;
+	
+	// restore memory map
+#if defined(_PC8001SR)
+	update_n80_write();
+	update_n80_read();
+#else
+	update_low_memmap();
+	update_tvram_memmap();
+#endif
+	return true;
 }
 

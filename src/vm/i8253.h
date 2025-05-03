@@ -24,7 +24,7 @@
 class I8253 : public DEVICE
 {
 private:
-	typedef struct {
+	struct {
 		bool prev_out;
 		bool prev_in;
 		bool gate;
@@ -51,8 +51,7 @@ private:
 		uint32 prev_clk;
 		// output signals
 		outputs_t outputs;
-	} counter_t;
-	counter_t counter[3];
+	} counter[3];
 	uint64 cpu_clocks;
 	
 	void input_clock(int ch, int clock);
@@ -84,6 +83,8 @@ public:
 	{
 		cpu_clocks = new_clocks;
 	}
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_ch0(DEVICE* device, int id, uint32 mask)

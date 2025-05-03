@@ -573,6 +573,7 @@ bool EVENT::load_state(FILEIO* fio)
 		memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
 	}
 	buffer_ptr = accum_samples = 0;
+	update_samples = (int)(1024.0 * (double)sound_rate / frames_per_sec / (double)lines_per_frame + 0.5);
 	
 	return true;
 }

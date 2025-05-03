@@ -73,6 +73,7 @@
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER
+#define USE_STATE
 
 #include "../../common.h"
 
@@ -107,6 +108,8 @@ class I286;
 class I8259;
 class MZ1M01;
 #endif
+
+class FILEIO;
 
 class VM
 {
@@ -194,6 +197,8 @@ public:
 	bool now_skip();
 	
 	void update_config();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// ----------------------------------------
 	// for each device

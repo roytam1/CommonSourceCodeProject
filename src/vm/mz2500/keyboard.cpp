@@ -12,6 +12,7 @@
 #include "keyboard.h"
 #include "../i8255.h"
 #include "../z80pio.h"
+#include "../../fileio.h"
 
 #ifdef _MZ2500
 #define MAX_COLUMN 14
@@ -72,5 +73,27 @@ void KEYBOARD::create_keystat()
 	uint8 val = keys[(column & 0x10) ? (column & 0x0f) : 0x0f];
 	d_pio_i->write_signal(SIG_I8255_PORT_B, val, 0x80);	// to i8255 port b
 	d_pio->write_signal(SIG_Z80PIO_PORT_B, val, 0xff);	// to z80pio port b
+}
+
+#define STATE_VERSION	1
+
+void KEYBOARD::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint8(column);
+}
+
+bool KEYBOARD::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	column = fio->FgetUint8();
+	return true;
 }
 

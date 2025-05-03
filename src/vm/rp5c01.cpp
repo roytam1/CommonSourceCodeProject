@@ -235,7 +235,7 @@ void RP5C01::read_from_cur_time()
 	time[12] = TO_BCD_HI(cur_time.year);
 	
 	// check alarm
-	static uint8 mask[9] = {0, 0, 0x0f, 0x07, 0x0f, 0x03, 0x07, 0x0f, 0x03};
+	static const uint8 mask[9] = {0, 0, 0x0f, 0x07, 0x0f, 0x03, 0x07, 0x0f, 0x03};
 	bool tmp = true;
 	
 	for(int i = 3; i < 9; i++) {
@@ -269,3 +269,50 @@ void RP5C01::write_to_cur_time()
 	cancel_event(this, register_id);
 	register_event(this, EVENT_1SEC, 1000000, true, &register_id);
 }
+
+#define STATE_VERSION	1
+
+void RP5C01::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	cur_time.save_state((void *)fio);
+	fio->FputInt32(register_id);
+	fio->Fwrite(regs, sizeof(regs), 1);
+	fio->Fwrite(time, sizeof(time), 1);
+#ifndef HAS_RP5C15
+	fio->Fwrite(ram, sizeof(ram), 1);
+	fio->FputBool(modified);
+#endif
+	fio->FputBool(alarm);
+	fio->FputBool(pulse_1hz);
+	fio->FputBool(pulse_16hz);
+	fio->FputInt32(count_16hz);
+}
+
+bool RP5C01::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	if(!cur_time.load_state((void *)fio)) {
+		return false;
+	}
+	register_id = fio->FgetInt32();
+	fio->Fread(regs, sizeof(regs), 1);
+	fio->Fread(time, sizeof(time), 1);
+#ifndef HAS_RP5C15
+	fio->Fread(ram, sizeof(ram), 1);
+	modified = fio->FgetBool();
+#endif
+	alarm = fio->FgetBool();
+	pulse_1hz = fio->FgetBool();
+	pulse_16hz = fio->FgetBool();
+	count_16hz = fio->FgetInt32();
+	return true;
+}
+

@@ -12,6 +12,7 @@
 #include "cmt.h"
 #include "../datarec.h"
 #include "../i8255.h"
+#include "../../fileio.h"
 
 #define EVENT_FREW	0
 #define EVENT_FFWD	1
@@ -179,6 +180,11 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 		if(!(pc & 2) && (data & 2)) {
 			vm->special_reset();
 		}
+#ifdef _MZ2500
+		if(!(pc & 8) && (data & 8)) {
+			vm->reset();
+		}
+#else
 		if((pc & 8) && !(data & 8)) {
 //			if(register_id_ipl == -1) {
 				register_event(this, EVENT_IPL, PERIOD_IPL_SIGNAL, false, &register_id_ipl);
@@ -189,6 +195,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 				register_id_ipl = -1;
 			}
 		}
+#endif
 		if((pc & 0x10) && !(data & 0x10)) {
 			register_event(this, EVENT_EJECT, PERIOD_CMT_SIGNAL, false, &register_id_eject);
 		} else if(!(pc & 0x10) && (data & 0x10)) {
@@ -309,5 +316,59 @@ void CMT::close_tape()
 		register_id_apss = -1;
 	}
 #endif
+}
+
+#define STATE_VERSION	1
+
+void CMT::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint8(pa);
+	fio->FputUint8(pc);
+	fio->FputBool(play);
+	fio->FputBool(rec);
+	fio->FputBool(now_play);
+	fio->FputBool(now_rewind);
+	fio->FputInt32(register_id_frew);
+	fio->FputInt32(register_id_ffwd);
+	fio->FputInt32(register_id_fwd);
+	fio->FputInt32(register_id_stop);
+	fio->FputInt32(register_id_eject);
+#ifndef _MZ80B
+	fio->FputInt32(register_id_apss);
+	fio->FputBool(now_apss);
+	fio->FputBool(now_apss_tmp);
+#endif
+	fio->FputInt32(register_id_ipl);
+}
+
+bool CMT::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	pa = fio->FgetUint8();
+	pc = fio->FgetUint8();
+	play = fio->FgetBool();
+	rec = fio->FgetBool();
+	now_play = fio->FgetBool();
+	now_rewind = fio->FgetBool();
+	register_id_frew = fio->FgetInt32();
+	register_id_ffwd = fio->FgetInt32();
+	register_id_fwd = fio->FgetInt32();
+	register_id_stop = fio->FgetInt32();
+	register_id_eject = fio->FgetInt32();
+#ifndef _MZ80B
+	register_id_apss = fio->FgetInt32();
+	now_apss = fio->FgetBool();
+	now_apss_tmp = fio->FgetBool();
+#endif
+	register_id_ipl = fio->FgetInt32();
+	return true;
 }
 

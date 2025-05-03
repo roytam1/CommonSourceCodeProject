@@ -8,6 +8,7 @@
 */
 
 #include "interrupt.h"
+#include "../../fileio.h"
 
 //#define SUPPURT_CHILD_DEVICE
 
@@ -59,22 +60,19 @@ void INTERRUPT::write_signal(int id, uint32 data, uint32 mask)
 			irq[0].req_intr = next;
 			update_intr();
 		}
-	}
-	else if(id == SIG_INTERRUPT_I8253) {
+	} else if(id == SIG_INTERRUPT_I8253) {
 		bool next = ((data & mask) != 0);
 		if(next != irq[1].req_intr) {
 			irq[1].req_intr = next;
 			update_intr();
 		}
-	}
-	else if(id == SIG_INTERRUPT_PRINTER) {
+	} else if(id == SIG_INTERRUPT_PRINTER) {
 		bool next = ((data & mask) != 0);
 		if(next != irq[2].req_intr) {
 			irq[2].req_intr = next;
 			update_intr();
 		}
-	}
-	else if(id == SIG_INTERRUPT_RP5C15) {
+	} else if(id == SIG_INTERRUPT_RP5C15) {
 		bool next = ((data & mask) != 0);
 		if(next != irq[3].req_intr) {
 			irq[3].req_intr = next;
@@ -131,8 +129,7 @@ void INTERRUPT::update_intr()
 	}
 	if(req_intr_ch != -1) {
 		d_cpu->set_intr_line(true, true, intr_bit);
-	}
-	else {
+	} else {
 		d_cpu->set_intr_line(false, true, intr_bit);
 	}
 }
@@ -172,5 +169,37 @@ void INTERRUPT::intr_reti()
 		d_child->intr_reti();
 	}
 #endif
+}
+
+#define STATE_VERSION	1
+
+void INTERRUPT::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint8(select);
+	fio->Fwrite(irq, sizeof(irq), 1);
+	fio->FputInt32(req_intr_ch);
+	fio->FputBool(iei);
+	fio->FputBool(oei);
+	fio->FputUint32(intr_bit);
+}
+
+bool INTERRUPT::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	select = fio->FgetUint8();
+	fio->Fread(irq, sizeof(irq), 1);
+	req_intr_ch = fio->FgetInt32();
+	iei = fio->FgetBool();
+	oei = fio->FgetBool();
+	intr_bit = fio->FgetUint32();
+	return true;
 }
 

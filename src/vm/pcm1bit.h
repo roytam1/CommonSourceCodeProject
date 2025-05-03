@@ -43,6 +43,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
 	void mix(int32* buffer, int cnt);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void init(int rate, int volume);

@@ -23,23 +23,20 @@ class IO : public DEVICE
 {
 private:
 	// i/o map
-	typedef struct {
+	struct {
 		DEVICE* dev;
 		uint32 addr;
 		int wait;
 		bool is_flipflop;
-	} write_t;
+	} wr_table[IO_ADDR_MAX];
 	
-	typedef struct {
+	struct {
 		DEVICE* dev;
 		uint32 addr;
 		int wait;
 		bool value_registered;
 		uint32 value;
-	} read_t;
-	
-	write_t wr_table[IO_ADDR_MAX];
-	read_t rd_table[IO_ADDR_MAX];
+	} rd_table[IO_ADDR_MAX];
 	
 	void write_port8(uint32 addr, uint32 data, bool is_dma);
 	uint32 read_port8(uint32 addr, bool is_dma);
@@ -81,6 +78,8 @@ public:
 	uint32 read_dma_io16(uint32 addr);
 	void write_dma_io32(uint32 addr, uint32 data);
 	uint32 read_dma_io32(uint32 addr);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_iomap_single_r(uint32 addr, DEVICE* device);

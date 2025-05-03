@@ -183,6 +183,10 @@ public:
 	uint8 drive_type;
 	int drive_rpm;
 	bool drive_mfm;
+	
+	// state
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 };
 
 #endif

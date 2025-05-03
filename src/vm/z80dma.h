@@ -20,7 +20,6 @@
 class Z80DMA : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_child;
 	DEVICE *d_mem, *d_io;
 	
 	typedef union {
@@ -46,8 +45,7 @@ private:
 	bool dma_stop;
 	bool bus_master;
 	
-	bool iei, oei;
-	uint32 intr_bit;
+	// interrupt
 	bool req_intr;
 	bool in_service;
 	uint8 vector;
@@ -57,6 +55,11 @@ private:
 	void release_bus();
 	void update_read_buffer();
 	void request_intr(int level);
+	
+	// daisy chain
+	DEVICE *d_cpu, *d_child;
+	bool iei, oei;
+	uint32 intr_bit;
 	void update_intr();
 	
 public:
@@ -75,6 +78,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void do_dma();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit)

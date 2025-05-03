@@ -44,12 +44,16 @@ bool FILEIO::Fopen(_TCHAR *filename, int mode)
 		return ((fp = _tfopen(filename, _T("wb"))) != NULL);
 	case FILEIO_READ_WRITE_BINARY:
 		return ((fp = _tfopen(filename, _T("r+b"))) != NULL);
+	case FILEIO_READ_WRITE_NEW_BINARY:
+		return ((fp = _tfopen(filename, _T("w+b"))) != NULL);
 	case FILEIO_READ_ASCII:
 		return ((fp = _tfopen(filename, _T("r"))) != NULL);
 	case FILEIO_WRITE_ASCII:
 		return ((fp = _tfopen(filename, _T("w"))) != NULL);
 	case FILEIO_READ_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("r+w"))) != NULL);
+		return ((fp = _tfopen(filename, _T("r+"))) != NULL);
+	case FILEIO_READ_WRITE_NEW_ASCII:
+		return ((fp = _tfopen(filename, _T("w+"))) != NULL);
 	}
 	return false;
 }
@@ -62,136 +66,122 @@ void FILEIO::Fclose()
 	fp = NULL;
 }
 
+#define GET_VALUE(type) \
+	uint8 buffer[sizeof(type)]; \
+	fread(buffer, sizeof(buffer), 1, fp); \
+	return *(type *)buffer
+
+#define PUT_VALUE(type, v) \
+	fwrite(&v, sizeof(type), 1, fp)
+
 bool FILEIO::FgetBool()
 {
-	BYTE buffer[sizeof(bool)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(bool *)buffer;
+	GET_VALUE(bool);
 }
 
 void FILEIO::FputBool(bool val)
 {
-	this->Fwrite(&val, sizeof(bool), 1);
+	PUT_VALUE(bool, val);
 }
 
 uint8 FILEIO::FgetUint8()
 {
-	BYTE buffer[sizeof(uint8)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(uint8 *)buffer;
+	GET_VALUE(uint8);
 }
 
 void FILEIO::FputUint8(uint8 val)
 {
-	this->Fwrite(&val, sizeof(uint8), 1);
+	PUT_VALUE(uint8, val);
 }
 
 uint16 FILEIO::FgetUint16()
 {
-	BYTE buffer[sizeof(uint16)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(uint16 *)buffer;
+	GET_VALUE(uint16);
 }
 
 void FILEIO::FputUint16(uint16 val)
 {
-	this->Fwrite(&val, sizeof(uint16), 1);
+	PUT_VALUE(uint16, val);
 }
 
 uint32 FILEIO::FgetUint32()
 {
-	BYTE buffer[sizeof(uint32)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(uint32 *)buffer;
+	GET_VALUE(uint32);
 }
 
 void FILEIO::FputUint32(uint32 val)
 {
-	this->Fwrite(&val, sizeof(uint32), 1);
+	PUT_VALUE(uint32, val);
 }
 
 uint64 FILEIO::FgetUint64()
 {
-	BYTE buffer[sizeof(uint64)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(uint64 *)buffer;
+	GET_VALUE(uint64);
 }
 
 void FILEIO::FputUint64(uint64 val)
 {
-	this->Fwrite(&val, sizeof(uint64), 1);
+	PUT_VALUE(uint64, val);
 }
 
 int8 FILEIO::FgetInt8()
 {
-	BYTE buffer[sizeof(int8)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(int8 *)buffer;
+	GET_VALUE(int8);
 }
 
 void FILEIO::FputInt8(int8 val)
 {
-	this->Fwrite(&val, sizeof(int8), 1);
+	PUT_VALUE(int8, val);
 }
 
 int16 FILEIO::FgetInt16()
 {
-	BYTE buffer[sizeof(int16)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(int16 *)buffer;
+	GET_VALUE(int16);
 }
 
 void FILEIO::FputInt16(int16 val)
 {
-	this->Fwrite(&val, sizeof(int16), 1);
+	PUT_VALUE(int16, val);
 }
 
 int32 FILEIO::FgetInt32()
 {
-	BYTE buffer[sizeof(int32)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(int32 *)buffer;
+	GET_VALUE(int32);
 }
 
 void FILEIO::FputInt32(int32 val)
 {
-	this->Fwrite(&val, sizeof(int32), 1);
+	PUT_VALUE(int32, val);
 }
 
 int64 FILEIO::FgetInt64()
 {
-	BYTE buffer[sizeof(int64)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(int64 *)buffer;
+	GET_VALUE(int64);
 }
 
 void FILEIO::FputInt64(int64 val)
 {
-	this->Fwrite(&val, sizeof(int64), 1);
+	PUT_VALUE(int64, val);
 }
 
 float FILEIO::FgetFloat()
 {
-	BYTE buffer[sizeof(float)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(float *)buffer;
+	GET_VALUE(float);
 }
 
 void FILEIO::FputFloat(float val)
 {
-	this->Fwrite(&val, sizeof(float), 1);
+	PUT_VALUE(float, val);
 }
 
 double FILEIO::FgetDouble()
 {
-	BYTE buffer[sizeof(double)];
-	this->Fread(buffer, sizeof(buffer), 1);
-	return *(double *)buffer;
+	GET_VALUE(double);
 }
 
 void FILEIO::FputDouble(double val)
 {
-	this->Fwrite(&val, sizeof(double), 1);
+	PUT_VALUE(double, val);
 }
 
 int FILEIO::Fgetc()

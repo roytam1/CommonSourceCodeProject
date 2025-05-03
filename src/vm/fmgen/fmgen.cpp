@@ -26,6 +26,8 @@
 #include "fmgen.h"
 #include "fmgeninl.h"
 
+#include "../../fileio.h"
+
 #define LOGNAME "fmgen"
 
 // ---------------------------------------------------------------------------
@@ -268,6 +270,37 @@ void Chip::MakeTable()
 			multable_[h][l] = uint(mul * rr);
 		}
 	}
+}
+
+// ---------------------------------------------------------------------------
+//	ステートセーブ
+//
+#define CHIP_STATE_VERSION	1
+
+void Chip::SaveState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(CHIP_STATE_VERSION);
+	
+	fio->FputUint32(ratio_);
+	fio->FputUint32(aml_);
+	fio->FputUint32(pml_);
+	fio->FputInt32(pmv_);
+}
+
+bool Chip::LoadState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != CHIP_STATE_VERSION) {
+		return false;
+	}
+	ratio_ = fio->FgetUint32();
+	aml_ = fio->FgetUint32();
+	pml_ = fio->FgetUint32();
+	pmv_ = fio->FgetInt32();
+	return true;
 }
 
 
@@ -697,6 +730,111 @@ inline FM::ISample FM::Operator::CalcFBL(uint fb)
 	return out_;
 }
 
+// ---------------------------------------------------------------------------
+//	ステートセーブ
+//
+#define OPERATOR_STATE_VERSION	1
+
+void Operator::SaveState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(OPERATOR_STATE_VERSION);
+	
+	fio->FputInt32(out_);
+	fio->FputInt32(out2_);
+	fio->FputInt32(in2_);
+	fio->FputUint32(dp_);
+	fio->FputUint32(detune_);
+	fio->FputUint32(detune2_);
+	fio->FputUint32(multiple_);
+	fio->FputUint32(pg_count_);
+	fio->FputUint32(pg_diff_);
+	fio->FputInt32(pg_diff_lfo_);
+	fio->FputUint32(bn_);
+	fio->FputInt32(eg_level_);
+	fio->FputInt32(eg_level_on_next_phase_);
+	fio->FputInt32(eg_count_);
+	fio->FputInt32(eg_count_diff_);
+	fio->FputInt32(eg_out_);
+	fio->FputInt32(tl_out_);
+	fio->FputInt32(eg_rate_);
+	fio->FputInt32(eg_curve_count_);
+	fio->FputInt32(ssg_offset_);
+	fio->FputInt32(ssg_vector_);
+	fio->FputInt32(ssg_phase_);
+	fio->FputUint32(key_scale_rate_);
+	fio->FputInt32(static_cast<int>(eg_phase_));
+	fio->FputInt32((int)(ams_ - &amtable[0][0][0]));
+	fio->FputUint32(ms_);
+	fio->FputUint32(tl_);
+	fio->FputUint32(tl_latch_);
+	fio->FputUint32(ar_);
+	fio->FputUint32(dr_);
+	fio->FputUint32(sr_);
+	fio->FputUint32(sl_);
+	fio->FputUint32(rr_);
+	fio->FputUint32(ks_);
+	fio->FputUint32(ssg_type_);
+	fio->FputBool(keyon_);
+	fio->FputBool(amon_);
+	fio->FputBool(param_changed_);
+	fio->FputBool(mute_);
+	fio->FputInt32(dbgopout_);
+	fio->FputInt32(dbgpgout_);
+}
+
+bool Operator::LoadState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != OPERATOR_STATE_VERSION) {
+		return false;
+	}
+	out_ = fio->FgetInt32();
+	out2_ = fio->FgetInt32();
+	in2_ = fio->FgetInt32();
+	dp_ = fio->FgetUint32();
+	detune_ = fio->FgetUint32();
+	detune2_ = fio->FgetUint32();
+	multiple_ = fio->FgetUint32();
+	pg_count_ = fio->FgetUint32();
+	pg_diff_ = fio->FgetUint32();
+	pg_diff_lfo_ = fio->FgetInt32();
+	bn_ = fio->FgetUint32();
+	eg_level_ = fio->FgetInt32();
+	eg_level_on_next_phase_ = fio->FgetInt32();
+	eg_count_ = fio->FgetInt32();
+	eg_count_diff_ = fio->FgetInt32();
+	eg_out_ = fio->FgetInt32();
+	tl_out_ = fio->FgetInt32();
+	eg_rate_ = fio->FgetInt32();
+	eg_curve_count_ = fio->FgetInt32();
+	ssg_offset_ = fio->FgetInt32();
+	ssg_vector_ = fio->FgetInt32();
+	ssg_phase_ = fio->FgetInt32();
+	key_scale_rate_ = fio->FgetUint32();
+	eg_phase_ = static_cast<EGPhase>(fio->FgetInt32());
+	ams_ = &amtable[0][0][0] + fio->FgetInt32();
+	ms_ = fio->FgetUint32();
+	tl_ = fio->FgetUint32();
+	tl_latch_ = fio->FgetUint32();
+	ar_ = fio->FgetUint32();
+	dr_ = fio->FgetUint32();
+	sr_ = fio->FgetUint32();
+	sl_ = fio->FgetUint32();
+	rr_ = fio->FgetUint32();
+	ks_ = fio->FgetUint32();
+	ssg_type_ = fio->FgetUint32();
+	keyon_ = fio->FgetBool();
+	amon_ = fio->FgetBool();
+	param_changed_ = fio->FgetBool();
+	mute_ = fio->FgetBool();
+	dbgopout_ = fio->FgetInt32();
+	dbgpgout_ = fio->FgetInt32();
+	return true;
+}
+
 #undef Sine
 
 // ---------------------------------------------------------------------------
@@ -958,6 +1096,53 @@ ISample Channel4::CalcLN(uint noise)
 	int o = op[3].out_;
 	op[3].CalcN(noise);
 	return *out[2] + o;
+}
+
+// ---------------------------------------------------------------------------
+//	ステートセーブ
+//
+#define CHANNEL4_STATE_VERSION	1
+
+void Channel4::SaveState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(CHANNEL4_STATE_VERSION);
+	
+	fio->FputUint32(fb);
+	fio->Fwrite(buf, sizeof(buf), 1);
+	for(int i = 0; i < 3; i++) {
+		fio->FputInt32((int)(in [i] - &buf[0]));
+		fio->FputInt32((int)(out[i] - &buf[0]));
+	}
+	fio->FputInt32((int)(pms - &pmtable[0][0][0]));
+	fio->FputInt32(algo_);
+	for(int i = 0; i < 4; i++) {
+		op[i].SaveState(f);
+	}
+}
+
+bool Channel4::LoadState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != CHANNEL4_STATE_VERSION) {
+		return false;
+	}
+	fb = fio->FgetUint32();
+	fio->Fread(buf, sizeof(buf), 1);
+	for(int i = 0; i < 3; i++) {
+		in [i] = &buf[0] + fio->FgetInt32();
+		out[i] = &buf[0] + fio->FgetInt32();
+	}
+	pms = &pmtable[0][0][0] + fio->FgetInt32();
+	algo_ = fio->FgetInt32();
+	for(int i = 0; i < 4; i++) {
+		if(!op[i].LoadState(f)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 }	// namespace FM

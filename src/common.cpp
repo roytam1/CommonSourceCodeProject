@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <shlwapi.h>
 #include "common.h"
+#include "fileio.h"
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -99,7 +100,44 @@ void cur_time_t::update_year()
 
 void cur_time_t::update_day_of_week()
 {
-	static int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+	static const int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
 	int y = year - (month < 3);
 	day_of_week = (y + y / 4 - y / 100 + y / 400 + t[month - 1] + day) % 7;
 }
+
+#define STATE_VERSION	1
+
+void cur_time_t::save_state(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(STATE_VERSION);
+	
+	fio->FputInt32(year);
+	fio->FputInt32(month);
+	fio->FputInt32(day);
+	fio->FputInt32(day_of_week);
+	fio->FputInt32(hour);
+	fio->FputInt32(minute);
+	fio->FputInt32(second);
+	fio->FputBool(initialized);
+}
+
+bool cur_time_t::load_state(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	year = fio->FgetInt32();
+	month = fio->FgetInt32();
+	day = fio->FgetInt32();
+	day_of_week = fio->FgetInt32();
+	hour = fio->FgetInt32();
+	minute = fio->FgetInt32();
+	second = fio->FgetInt32();
+	initialized = fio->FgetBool();
+	return true;
+}
+

@@ -788,8 +788,8 @@ void MEMORY::close_tape()
 
 void MEMORY::draw_screen()
 {
-	static int xtop[12] = {0, 0, 40, 40, 80, 80, 0, 0, 40, 40, 80, 80};
-	static int ytop[12] = {0, 8, 0, 8, 0, 8, 16, 24, 16, 24, 16, 24};
+	static const int xtop[12] = {0, 0, 40, 40, 80, 80, 0, 0, 40, 40, 80, 80};
+	static const int ytop[12] = {0, 8, 0, 8, 0, 8, 16, 24, 16, 24, 16, 24};
 	
 	for(int c = 0; c < 12; c++) {
 		int x = xtop[c];

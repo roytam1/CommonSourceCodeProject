@@ -40,8 +40,13 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	GetFullPathName(tmp_path, _MAX_PATH, app_path, &ptr);
 	*ptr = _T('\0');
 	
+#ifdef USE_FD1
+	// initialize d88 file info
+	memset(d88_file, 0, sizeof(d88_file));
+#endif
+	
 	// load sound config
-	static int freq_table[8] = {
+	static const int freq_table[8] = {
 		2000, 4000, 8000, 11025, 22050, 44100,
 #ifdef OVERRIDE_SOUND_FREQ_48000HZ
 		OVERRIDE_SOUND_FREQ_48000HZ,
@@ -50,7 +55,7 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #endif
 		96000,
 	};
-	static double late_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
+	static const double late_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
 	
 	if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
 		config.sound_frequency = 6;	// default: 48KHz
@@ -748,12 +753,15 @@ void EMU::save_state_tmp(_TCHAR* file_path)
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		// save state file version
 		fio->FputUint32(STATE_VERSION);
+		// save config
+		save_config_state((void *)fio);
 		// save inserted medias
 #ifdef USE_CART1
 		fio->Fwrite(&cart_status, sizeof(cart_status), 1);
 #endif
 #ifdef USE_FD1
 		fio->Fwrite(disk_status, sizeof(disk_status), 1);
+		fio->Fwrite(d88_file, sizeof(d88_file), 1);
 #endif
 #ifdef USE_QD1
 		fio->Fwrite(&quickdisk_status, sizeof(quickdisk_status), 1);
@@ -763,9 +771,6 @@ void EMU::save_state_tmp(_TCHAR* file_path)
 #endif
 #ifdef USE_LASER_DISC
 		fio->Fwrite(&laser_disc_status, sizeof(laser_disc_status), 1);
-#endif
-#ifdef USE_CPU_TYPE
-		fio->FputInt32(config.cpu_type);
 #endif
 		// save vm state
 		vm->save_state(fio);
@@ -783,43 +788,47 @@ bool EMU::load_state_tmp(_TCHAR* file_path)
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// check state file version
 		if(fio->FgetUint32() == STATE_VERSION) {
-			// load inserted medias
+			// load config
+			if(load_config_state((void *)fio)) {
+				// load inserted medias
 #ifdef USE_CART1
-			fio->Fread(&cart_status, sizeof(cart_status), 1);
+				fio->Fread(&cart_status, sizeof(cart_status), 1);
 #endif
 #ifdef USE_FD1
-			fio->Fread(disk_status, sizeof(disk_status), 1);
+				fio->Fread(disk_status, sizeof(disk_status), 1);
+				fio->Fread(d88_file, sizeof(d88_file), 1);
 #endif
 #ifdef USE_QD1
-			fio->Fread(&quickdisk_status, sizeof(quickdisk_status), 1);
+				fio->Fread(&quickdisk_status, sizeof(quickdisk_status), 1);
 #endif
 #ifdef USE_TAPE
-			fio->Fread(&tape_status, sizeof(tape_status), 1);
+				fio->Fread(&tape_status, sizeof(tape_status), 1);
 #endif
 #ifdef USE_LASER_DISC
-			fio->Fread(&laser_disc_status, sizeof(laser_disc_status), 1);
+				fio->Fread(&laser_disc_status, sizeof(laser_disc_status), 1);
 #endif
 #ifdef USE_CPU_TYPE
-			if((config.cpu_type = fio->FgetInt32()) != cpu_type) {
-				// stop sound
-				if(sound_ok && sound_started) {
-					lpdsb->Stop();
-					sound_started = false;
+				if(cpu_type != config.cpu_type) {
+					// stop sound
+					if(sound_ok && sound_started) {
+						lpdsb->Stop();
+						sound_started = false;
+					}
+					// reinitialize virtual machine
+					delete vm;
+					vm = new VM(this);
+					vm->initialize_sound(sound_rate, sound_samples);
+					vm->reset();
+					cpu_type = config.cpu_type;
 				}
-				// reinitialize virtual machine
-				delete vm;
-				vm = new VM(this);
-				vm->initialize_sound(sound_rate, sound_samples);
-				vm->reset();
-				cpu_type = config.cpu_type;
-			}
 #endif
-			// restore inserted medias
-			restore_media();
-			// load vm state
-			if(vm->load_state(fio)) {
-				// check end of state
-				result = (fio->FgetInt32() == -1);
+				// restore inserted medias
+				restore_media();
+				// load vm state
+				if(vm->load_state(fio)) {
+					// check end of state
+					result = (fio->FgetInt32() == -1);
+				}
 			}
 		}
 		fio->Fclose();

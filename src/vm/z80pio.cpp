@@ -8,6 +8,7 @@
 */
 
 #include "z80pio.h"
+#include "../fileio.h"
 
 #define MODE_OUTPUT	0x00
 #define MODE_INPUT	0x40
@@ -320,5 +321,71 @@ void Z80PIO::intr_reti()
 	if(d_child) {
 		d_child->intr_reti();
 	}
+}
+
+#define STATE_VERSION	1
+
+void Z80PIO::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	for(int i = 0; i < 2; i++) {
+		fio->FputUint32(port[i].wreg);
+		fio->FputUint8(port[i].rreg);
+		fio->FputUint8(port[i].mode);
+		fio->FputUint8(port[i].ctrl1);
+		fio->FputUint8(port[i].ctrl2);
+		fio->FputUint8(port[i].dir);
+		fio->FputUint8(port[i].mask);
+		fio->FputUint8(port[i].vector);
+		fio->FputBool(port[i].set_dir);
+		fio->FputBool(port[i].set_mask);
+		fio->FputBool(port[i].hand_shake);
+		fio->FputInt32(port[i].ready_signal);
+		fio->FputBool(port[i].input_empty);
+		fio->FputBool(port[i].output_ready);
+		fio->FputBool(port[i].enb_intr);
+		fio->FputBool(port[i].enb_intr_tmp);
+		fio->FputBool(port[i].req_intr);
+		fio->FputBool(port[i].in_service);
+	}
+	fio->FputBool(iei);
+	fio->FputBool(oei);
+	fio->FputUint32(intr_bit);
+}
+
+bool Z80PIO::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	for(int i = 0; i < 2; i++) {
+		port[i].wreg = fio->FgetUint32();
+		port[i].rreg = fio->FgetUint8();
+		port[i].mode = fio->FgetUint8();
+		port[i].ctrl1 = fio->FgetUint8();
+		port[i].ctrl2 = fio->FgetUint8();
+		port[i].dir = fio->FgetUint8();
+		port[i].mask = fio->FgetUint8();
+		port[i].vector = fio->FgetUint8();
+		port[i].set_dir = fio->FgetBool();
+		port[i].set_mask = fio->FgetBool();
+		port[i].hand_shake = fio->FgetBool();
+		port[i].ready_signal = fio->FgetInt32();
+		port[i].input_empty = fio->FgetBool();
+		port[i].output_ready = fio->FgetBool();
+		port[i].enb_intr = fio->FgetBool();
+		port[i].enb_intr_tmp = fio->FgetBool();
+		port[i].req_intr = fio->FgetBool();
+		port[i].in_service = fio->FgetBool();
+	}
+	iei = fio->FgetBool();
+	oei = fio->FgetBool();
+	intr_bit = fio->FgetUint32();
+	return true;
 }
 

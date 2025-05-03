@@ -25,17 +25,17 @@ private:
 	uint8 select;
 	
 	// interrupt
-	typedef struct {
+	struct {
 		uint8 vector;
 		bool enb_intr;
 		bool req_intr;
 		bool in_service;
-	} irq_t;
-	irq_t irq[4];
+	} irq[4];
+	int req_intr_ch;
 	
+	// daisy chain
 	DEVICE *d_cpu, *d_child;
 	bool iei, oei;
-	int req_intr_ch;
 	uint32 intr_bit;
 	void update_intr();
 	
@@ -50,6 +50,8 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit)

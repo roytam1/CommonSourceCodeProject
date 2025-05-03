@@ -47,6 +47,7 @@
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER
+#define USE_STATE
 
 #include "../../common.h"
 
@@ -81,6 +82,8 @@ class MZ1E30;
 class MZ1R13;
 class MZ1R37;
 class TIMER;
+
+class FILEIO;
 
 class VM
 {
@@ -172,6 +175,8 @@ public:
 	bool now_skip();
 	
 	void update_config();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// ----------------------------------------
 	// for each device

@@ -8,6 +8,7 @@
 */
 
 #include "upd1990a.h"
+#include "../fileio.h"
 
 #define EVENT_1SEC	0
 #define EVENT_TP	1
@@ -201,3 +202,56 @@ void UPD1990A::event_callback(int event_id, int err)
 		tp = !tp;
 	}
 }
+
+#define STATE_VERSION	1
+
+void UPD1990A::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	cur_time.save_state((void *)fio);
+	fio->FputInt32(register_id_1sec);
+	fio->FputUint8(cmd);
+	fio->FputUint8(mode);
+	fio->FputUint8(tpmode);
+	fio->FputUint64(shift_data);
+	fio->FputBool(clk);
+	fio->FputBool(stb);
+	fio->FputBool(din);
+	fio->FputBool(hold);
+	fio->FputBool(tp);
+	fio->FputInt32(register_id_tp);
+#ifdef HAS_UPD4990A
+	fio->FputUint8(shift_cmd);
+#endif
+}
+
+bool UPD1990A::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	if(!cur_time.load_state((void *)fio)) {
+		return false;
+	}
+	register_id_1sec = fio->FgetInt32();
+	cmd = fio->FgetUint8();
+	mode = fio->FgetUint8();
+	tpmode = fio->FgetUint8();
+	shift_data = fio->FgetUint64();
+	clk = fio->FgetBool();
+	stb = fio->FgetBool();
+	din = fio->FgetBool();
+	hold = fio->FgetBool();
+	tp = fio->FgetBool();
+	register_id_tp = fio->FgetInt32();
+#ifdef HAS_UPD4990A
+	shift_cmd = fio->FgetUint8();
+#endif
+	return true;
+}
+

@@ -76,3 +76,31 @@ uint32 MZ1R12::read_io8(uint32 addr)
 	return 0xff;
 }
 
+#define STATE_VERSION	1
+
+void MZ1R12::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(sram, sizeof(sram), 1);
+	fio->FputBool(read_only);
+	fio->FputUint16(address);
+	fio->FputUint32(crc32);
+}
+
+bool MZ1R12::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(sram, sizeof(sram), 1);
+	read_only = fio->FgetBool();
+	address = fio->FgetUint16();
+	crc32 = fio->FgetUint32();
+	return true;
+}
+

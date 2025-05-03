@@ -41,7 +41,7 @@ static const int freq_limit[8] = {
 static const int noise_freq[16] = {
 	4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
 };
-const int dmc_clocks[16] = {
+const const int dmc_clocks[16] = {
 	428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54
 };
 static const int duty_lut[4] = {

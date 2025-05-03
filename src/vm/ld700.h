@@ -31,8 +31,8 @@ private:
 	outputs_t outputs_ack;
 	outputs_t outputs_sound;
 	
-	bool prev_signal;
-	uint32 prev_time;
+	bool prev_remote_signal;
+	uint32 prev_remote_time;
 	uint32 command, num_bits;
 	
 	int phase, status;
@@ -44,6 +44,7 @@ private:
 	int num_tracks, track_frame_raw[MAX_TRACKS];
 	int num_pauses, pause_frame_raw[MAX_PAUSES];
 	
+	bool prev_sound_signal;
 	FIFO *sound_buffer_l, *sound_buffer_r, *signal_buffer;
 	bool signal_buffer_ok;
 	int sound_event_id;

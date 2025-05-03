@@ -26,6 +26,10 @@
 #define PC88_EXRAM_BANKS	1
 #endif
 
+#if !defined(_PC8001SR)
+#define NIPPY_PATCH
+#endif
+
 class Z80;
 
 typedef struct pc88_crtc_t {
@@ -185,8 +189,8 @@ private:
 	uint8 key_status[256];
 	uint8 key_caps, key_kana;
 	
-	// joystick & mouse
 #ifdef SUPPORT_PC88_JOYSTICK
+	// joystick & mouse
 	uint32 *joystick_status;
 	int* mouse_status;
 	uint32 mouse_strobe_clock;
@@ -205,6 +209,7 @@ private:
 	
 	// data recorder
 	FILEIO *cmt_fio;
+	_TCHAR rec_file_path[MAX_PATH];
 	int cmt_bufptr, cmt_bufcnt;
 	uint8 cmt_buffer[CMT_BUFFER_SIZE];
 	int cmt_data_carrier[1024], cmt_data_carrier_cnt;
@@ -219,6 +224,11 @@ private:
 	uint16 pcg_addr;
 	uint8 pcg_data, pcg_ctrl;
 	uint8 pcg_pattern[0x800];
+#endif
+	
+#ifdef NIPPY_PATCH
+	// dirty patch for NIPPY
+	bool nippy_patch;
 #endif
 	
 public:
@@ -248,6 +258,8 @@ public:
 	void event_vline(int v, int clock);
 	uint32 intr_ack();
 	void intr_ei();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_beep(DEVICE* device)

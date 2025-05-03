@@ -53,6 +53,10 @@ private:
 #ifdef SUPPORT_MAME_FM_DLL
 	CFMDLL* fmdll;
 	LPVOID* dllchip;
+	struct {
+		bool written;
+		uint8 data;
+	} port_log[0x200];
 #endif
 	
 	uint8 ch, mode;
@@ -60,14 +64,13 @@ private:
 	uint8 ch1, data1;
 #endif
 	
-	typedef struct {
+	struct {
 		uint8 wreg;
 		uint8 rreg;
 		bool first;
 		// output signals
 		outputs_t outputs;
-	} port_t;
-	port_t port[2];
+	} port[2];
 	
 	int chip_clock;
 	bool irq_prev, mute;
@@ -109,6 +112,8 @@ public:
 	void event_vline(int v, int clock);
 	void mix(int32* buffer, int cnt);
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 #ifdef HAS_YM_SERIES

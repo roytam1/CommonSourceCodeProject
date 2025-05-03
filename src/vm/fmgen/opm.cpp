@@ -9,6 +9,8 @@
 #include "opm.h"
 #include "fmgeninl.h"
 
+#include "../../fileio.h"
+
 //#define LOGNAME "opm"
 
 namespace FM
@@ -512,6 +514,91 @@ void OPM::Mix(Sample* buffer, int nsamples)
 		}
 	}
 #undef IStoSample
+}
+
+// ---------------------------------------------------------------------------
+//	ステートセーブ
+//
+#define OPM_STATE_VERSION	1
+
+void OPM::SaveState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(OPM_STATE_VERSION);
+	
+	fio->FputInt32(fmvolume);
+	fio->FputUint32(clock);
+	fio->FputUint32(rate);
+	fio->FputUint32(pcmrate);
+	fio->FputUint32(pmd);
+	fio->FputUint32(amd);
+	fio->FputUint32(lfocount);
+	fio->FputUint32(lfodcount);
+	fio->FputUint32(lfo_count_);
+	fio->FputUint32(lfo_count_diff_);
+	fio->FputUint32(lfo_step_);
+	fio->FputUint32(lfo_count_prev_);
+	fio->FputUint32(lfowaveform);
+	fio->FputUint32(rateratio);
+	fio->FputUint32(noise);
+	fio->FputInt32(noisecount);
+	fio->FputUint32(noisedelta);
+	fio->FputBool(interpolation);
+	fio->FputUint8(lfofreq);
+	fio->FputUint8(status);
+	fio->FputBool(interrupt);
+	fio->FputUint8(reg01);
+	fio->Fwrite(kc, sizeof(kc), 1);
+	fio->Fwrite(kf, sizeof(kf), 1);
+	fio->Fwrite(pan, sizeof(pan), 1);
+	for(int i = 0; i < 8; i++) {
+		ch[i].SaveState(f);
+	}
+	chip.SaveState(f);
+}
+
+bool OPM::LoadState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != OPM_STATE_VERSION) {
+		return false;
+	}
+	fmvolume = fio->FgetInt32();
+	clock = fio->FgetUint32();
+	rate = fio->FgetUint32();
+	pcmrate = fio->FgetUint32();
+	pmd = fio->FgetUint32();
+	amd = fio->FgetUint32();
+	lfocount = fio->FgetUint32();
+	lfodcount = fio->FgetUint32();
+	lfo_count_ = fio->FgetUint32();
+	lfo_count_diff_ = fio->FgetUint32();
+	lfo_step_ = fio->FgetUint32();
+	lfo_count_prev_ = fio->FgetUint32();
+	lfowaveform = fio->FgetUint32();
+	rateratio = fio->FgetUint32();
+	noise = fio->FgetUint32();
+	noisecount = fio->FgetInt32();
+	noisedelta = fio->FgetUint32();
+	interpolation = fio->FgetBool();
+	lfofreq = fio->FgetUint8();
+	status = fio->FgetUint8();
+	interrupt = fio->FgetBool();
+	reg01 = fio->FgetUint8();
+	fio->Fread(kc, sizeof(kc), 1);
+	fio->Fread(kf, sizeof(kf), 1);
+	fio->Fread(pan, sizeof(pan), 1);
+	for(int i = 0; i < 8; i++) {
+		if(!ch[i].LoadState(f)) {
+			return false;
+		}
+	}
+	if(!chip.LoadState(f)) {
+		return false;
+	}
+	return true;
 }
 
 }	// namespace FM

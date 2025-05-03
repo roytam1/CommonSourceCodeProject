@@ -8,6 +8,7 @@
 */
 
 #include "beep.h"
+#include "../fileio.h"
 
 void BEEP::reset()
 {
@@ -50,5 +51,33 @@ void BEEP::init(int rate, double frequency, int volume)
 void BEEP::set_frequency(double frequency)
 {
 	diff = (int)(1024.0 * gen_rate / frequency / 2.0 + 0.5);
+}
+
+#define STATE_VERSION	1
+
+void BEEP::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputBool(signal);
+	fio->FputInt32(count);
+	fio->FputBool(on);
+	fio->FputBool(mute);
+}
+
+bool BEEP::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	signal = fio->FgetBool();
+	count = fio->FgetInt32();
+	on = fio->FgetBool();
+	mute = fio->FgetBool();
+	return true;
 }
 

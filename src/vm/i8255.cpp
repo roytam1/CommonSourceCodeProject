@@ -8,6 +8,7 @@
 */
 
 #include "i8255.h"
+#include "../fileio.h"
 
 // mode1 input
 #define BIT_IBF_A	0x20	// PC5
@@ -228,5 +229,39 @@ uint32 I8255::read_signal(int id)
 		return port[2].wreg;
 	}
 	return 0;
+}
+
+#define STATE_VERSION	1
+
+void I8255::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	for(int i = 0; i < 3; i++) {
+		fio->FputUint8(port[i].wreg);
+		fio->FputUint8(port[i].rreg);
+		fio->FputUint8(port[i].rmask);
+		fio->FputUint8(port[i].mode);
+		fio->FputBool(port[i].first);
+	}
+}
+
+bool I8255::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	for(int i = 0; i < 3; i++) {
+		port[i].wreg = fio->FgetUint8();
+		port[i].rreg = fio->FgetUint8();
+		port[i].rmask = fio->FgetUint8();
+		port[i].mode = fio->FgetUint8();
+		port[i].first = fio->FgetBool();
+	}
+	return true;
 }
 

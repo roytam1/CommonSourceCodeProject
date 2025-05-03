@@ -27,20 +27,22 @@ private:
 	// config
 	bool ignore_crc;
 	
-	// disk info
-	DISK* disk[MAX_DRIVE];
-	
 	// output signals
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
 	
 	// drive info
-	typedef struct {
+	struct {
 		int track;
 		int index;
 		bool access;
-	} fdc_t;
-	fdc_t fdc[MAX_DRIVE];
+		// timing
+		int cur_position;
+		int next_trans_position;
+		int next_sync_position;
+		uint32 prev_clock;
+	} fdc[MAX_DRIVE];
+	DISK* disk[MAX_DRIVE];
 	
 	// registor
 	uint8 status, status_tmp;
@@ -65,10 +67,6 @@ private:
 	bool drive_sel;
 	
 	// timing
-	int cur_position[MAX_DRIVE];
-	int next_trans_position[MAX_DRIVE];
-	int next_sync_position[MAX_DRIVE];
-	uint32 prev_clock[MAX_DRIVE];
 	uint32 prev_drq_clock;
 	
 	int get_cur_position();
@@ -118,6 +116,8 @@ public:
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
 	void update_config();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask)

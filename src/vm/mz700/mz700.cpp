@@ -303,8 +303,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(_MZ800) || defined(_MZ1500)
 	// z80pio/sio
 	// z80pio and z80sio*2
-	static int z80_sio_addr[4] = {0, 2, 1, 3};
-	static int z80_pio_addr[4] = {1, 3, 0, 2};
+	static const int z80_sio_addr[4] = {0, 2, 1, 3};
+	static const int z80_pio_addr[4] = {1, 3, 0, 2};
 	for(int i = 0; i < 4; i++) {
 		io->set_iomap_alias_rw(0xb0 + i, sio_rs, z80_sio_addr[i]);
 		io->set_iomap_alias_rw(0xf4 + i, sio_qd, z80_sio_addr[i]);

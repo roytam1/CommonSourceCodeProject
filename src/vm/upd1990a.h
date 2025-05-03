@@ -64,6 +64,8 @@ public:
 		return (uint32)(shift_data & 1);
 	}
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_dout(DEVICE* device, int id, uint32 mask)

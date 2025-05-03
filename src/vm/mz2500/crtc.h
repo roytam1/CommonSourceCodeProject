@@ -95,7 +95,7 @@ private:
 	uint16 map_addr[400][80];
 	uint8 map_hdsc[400][80];
 	
-	// speed optimize
+	// speed optimization
 	uint8 cg_matrix0[256][256][8];
 	uint8 cg_matrix1[256][256][8];
 	uint8 cg_matrix2[256][256][8];
@@ -103,6 +103,7 @@ private:
 	uint8 text_matrix[256][8][8];
 	uint8 text_matrixw[256][8][16];
 	uint8 trans_color;
+	
 	bool map_init, trans_init;
 	
 public:
@@ -119,6 +120,8 @@ public:
 	void event_callback(int event_id, int err);
 	void event_vline(int v, int clock);
 	void update_config();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_mem(DEVICE* device)

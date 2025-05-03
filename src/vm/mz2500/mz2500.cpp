@@ -45,6 +45,8 @@
 #include "mz1r37.h"
 #include "timer.h"
 
+#include "../../fileio.h"
+
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
@@ -383,5 +385,31 @@ void VM::update_config()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
 	}
+}
+
+#define STATE_VERSION	1
+
+void VM::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->save_state(fio);
+	}
+	fio->FputInt32(monitor_type);
+}
+
+bool VM::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		if(!device->load_state(fio)) {
+			return false;
+		}
+	}
+	monitor_type = fio->FgetInt32();
+	return true;
 }
 

@@ -33,7 +33,7 @@ class FIFO;
 class Z80SIO : public DEVICE
 {
 private:
-	typedef struct {
+	struct {
 		int pointer;
 		uint8 wr[8];
 		uint8 vector;
@@ -72,10 +72,9 @@ private:
 		outputs_t outputs_break;
 		outputs_t outputs_txdone;
 		outputs_t outputs_rxdone;
-	} port_t;
-	port_t port[2];
+	} port[2];
 	
-	// interrupt
+	// daisy chain
 	DEVICE *d_cpu, *d_child;
 	bool iei, oei;
 	uint32 intr_bit;
@@ -106,6 +105,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit)

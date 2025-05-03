@@ -74,6 +74,8 @@ public:
 #ifndef _MZ80B
 	void update_config();
 #endif
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_cpu(Z80* device)

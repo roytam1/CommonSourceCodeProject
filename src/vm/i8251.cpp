@@ -9,6 +9,7 @@
 
 #include "i8251.h"
 #include "../fifo.h"
+#include "../fileio.h"
 
 // max 256kbytes
 #define BUFFER_SIZE	0x40000
@@ -234,5 +235,49 @@ void I8251::event_callback(int event_id, int err)
 			send_id = -1;
 		}
 	}
+}
+
+#define STATE_VERSION	1
+
+void I8251::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint8(recv);
+	fio->FputUint8(status);
+	fio->FputUint8(mode);
+	fio->FputBool(txen);
+	fio->FputBool(rxen);
+	fio->FputBool(loopback);
+	recv_buffer->save_state((void *)fio);
+	send_buffer->save_state((void *)fio);
+	fio->FputInt32(recv_id);
+	fio->FputInt32(send_id);
+}
+
+bool I8251::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	recv = fio->FgetUint8();
+	status = fio->FgetUint8();
+	mode = fio->FgetUint8();
+	txen = fio->FgetBool();
+	rxen = fio->FgetBool();
+	loopback = fio->FgetBool();
+	if(!recv_buffer->load_state((void *)fio)) {
+		return false;
+	}
+	if(!send_buffer->load_state((void *)fio)) {
+		return false;
+	}
+	recv_id = fio->FgetInt32();
+	send_id = fio->FgetInt32();
+	return true;
 }
 

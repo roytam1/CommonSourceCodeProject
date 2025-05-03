@@ -2197,7 +2197,6 @@ void UPD7801::write_signal(int id, uint32 data, uint32 mask)
 		}
 	}
 	else if(id == SIG_UPD7801_INTF2) {
-		static uint32 prev = 0;
 		if((data & mask) && (MK & 0x20)) {
 			IRR |= INTF2;
 		}

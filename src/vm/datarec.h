@@ -32,7 +32,9 @@ private:
 	outputs_t outputs_apss;
 	
 	// data recorder
-	FILEIO* fio;
+	FILEIO* play_fio;
+	FILEIO* rec_fio;
+	_TCHAR rec_file_path[MAX_PATH];
 	
 	bool play, rec, remote, trigger;
 	int ff_rew;
@@ -40,16 +42,19 @@ private:
 	uint32 prev_clock;
 	int positive_clocks, negative_clocks;
 	int changed;
+	bool prev_skip;
 	int register_id;
 	
 	int sample_rate;
+	int buffer_ptr, buffer_length;
 	uint8 *buffer, *buffer_bak;
 #ifdef DATAREC_SOUND
+	int snd_buffer_length;
 	int16 *snd_buffer, snd_sample;
 #endif
-	int buffer_ptr, buffer_length;
 	bool is_wav;
 	
+	int apss_buffer_length;
 	bool *apss_buffer;
 	int apss_ptr, apss_count, apss_remain;
 	bool apss_signals;
@@ -96,6 +101,8 @@ public:
 #ifdef DATAREC_SOUND
 	void mix(int32* buffer, int cnt);
 #endif
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_out(DEVICE* device, int id, uint32 mask)

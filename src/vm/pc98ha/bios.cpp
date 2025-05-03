@@ -18,7 +18,7 @@
 
 bool BIOS::bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, int32* CarryFlag)
 {
-	static int check_cmds[16] = {1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0};
+	static const int check_cmds[16] = {1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0};
 	uint8 *regs8 = (uint8 *)regs;
 	
 	if(intnum == 0x1b && check_cmds[AH & 0x0f]) {

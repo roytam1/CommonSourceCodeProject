@@ -55,7 +55,7 @@ private:
 	
 	DISK60 mdisk;
 	unsigned char io_D1H;
-	unsigned char io_D2H;
+	unsigned char io_D2H, old_D2H;
 	unsigned char io_D3H;
 	int DrvNum;
 	

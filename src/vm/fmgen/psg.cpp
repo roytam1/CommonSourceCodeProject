@@ -10,6 +10,8 @@
 // for AY-3-8190/8192
 #include "../vm.h"
 
+#include "../../fileio.h"
+
 // ---------------------------------------------------------------------------
 //	コンストラクタ・デストラクタ
 //
@@ -19,6 +21,7 @@ PSG::PSG()
 	MakeNoiseTable();
 	Reset();
 	mask = 0x3f;
+	envelop = enveloptable[0]; // temporary fix
 }
 
 PSG::~PSG()
@@ -372,3 +375,52 @@ void PSG::Mix(Sample* dest, int nsamples)
 uint	PSG::noisetable[noisetablesize] = { 0, };
 int		PSG::EmitTable[0x20] = { -1, };
 uint	PSG::enveloptable[16][64] = { 0, };
+
+// ---------------------------------------------------------------------------
+//	ステートセーブ
+//
+#define PSG_STATE_VERSION	1
+
+void PSG::SaveState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(PSG_STATE_VERSION);
+	
+	fio->Fwrite(reg, sizeof(reg), 1);
+	fio->FputInt32((int)(envelop - &enveloptable[0][0]));
+	fio->Fwrite(olevel, sizeof(olevel), 1);
+	fio->Fwrite(scount, sizeof(scount), 1);
+	fio->Fwrite(speriod, sizeof(speriod), 1);
+	fio->FputUint32(ecount);
+	fio->FputUint32(eperiod);
+	fio->FputUint32(ncount);
+	fio->FputUint32(nperiod);
+	fio->FputUint32(tperiodbase);
+	fio->FputUint32(eperiodbase);
+	fio->FputUint32(nperiodbase);
+	fio->FputInt32(mask);
+}
+
+bool PSG::LoadState(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != PSG_STATE_VERSION) {
+		return false;
+	}
+	fio->Fread(reg, sizeof(reg), 1);
+	envelop = &enveloptable[0][0] + fio->FgetInt32();
+	fio->Fread(olevel, sizeof(olevel), 1);
+	fio->Fread(scount, sizeof(scount), 1);
+	fio->Fread(speriod, sizeof(speriod), 1);
+	ecount = fio->FgetUint32();
+	eperiod = fio->FgetUint32();
+	ncount = fio->FgetUint32();
+	nperiod = fio->FgetUint32();
+	tperiodbase = fio->FgetUint32();
+	eperiodbase = fio->FgetUint32();
+	nperiodbase = fio->FgetUint32();
+	mask = fio->FgetInt32();
+	return true;
+}

@@ -8,6 +8,7 @@
 */
 
 #include "pcm1bit.h"
+#include "../fileio.h"
 
 void PCM1BIT::initialize()
 {
@@ -127,5 +128,49 @@ void PCM1BIT::mix(int32* buffer, int cnt)
 void PCM1BIT::init(int rate, int volume)
 {
 	max_vol = volume;
+}
+
+#define STATE_VERSION	1
+
+void PCM1BIT::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputBool(signal);
+	fio->FputBool(on);
+	fio->FputBool(mute);
+#ifdef PCM1BIT_HIGH_QUALITY
+	fio->Fwrite(samples_signal, sizeof(samples_signal), 1);
+	fio->Fwrite(samples_out, sizeof(samples_out), 1);
+	fio->Fwrite(samples_clock, sizeof(samples_clock), 1);
+	fio->FputInt32(sample_count);
+	fio->FputUint32(prev_clock);
+	fio->FputInt32(prev_vol);
+#endif
+	fio->FputInt32(update);
+}
+
+bool PCM1BIT::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	signal = fio->FgetBool();
+	on = fio->FgetBool();
+	mute = fio->FgetBool();
+#ifdef PCM1BIT_HIGH_QUALITY
+	fio->Fread(samples_signal, sizeof(samples_signal), 1);
+	fio->Fread(samples_out, sizeof(samples_out), 1);
+	fio->Fread(samples_clock, sizeof(samples_clock), 1);
+	sample_count = fio->FgetInt32();
+	prev_clock = fio->FgetUint32();
+	prev_vol = fio->FgetInt32();
+#endif
+	update = fio->FgetInt32();
+	return true;
 }
 

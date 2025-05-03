@@ -10,6 +10,7 @@
 
 #include "upd765a.h"
 #include "disk.h"
+#include "../fileio.h"
 
 #define EVENT_PHASE	0
 #define EVENT_DRQ	1
@@ -124,16 +125,8 @@ void UPD765A::initialize()
 		disk[i] = new DISK();
 	}
 	
-	// initialize timing
-	memset(cur_position, 0, sizeof(cur_position));
-	memset(prev_clock, 0, sizeof(prev_clock));
-	
 	// initialize fdc
-	for(int i = 0; i < 4; i++) {
-		fdc[i].track = 0;
-		fdc[i].result = 0;
-		fdc[i].access = false;
-	}
+	memset(fdc, 0, sizeof(fdc));
 	memset(buffer, 0, sizeof(buffer));
 	
 	phase = prevphase = PHASE_IDLE;
@@ -442,8 +435,8 @@ void UPD765A::event_callback(int event_id, int err)
 		status |= S_RQM;
 		
 		int drv = hdu & DRIVE_MASK;
-		cur_position[drv] = (cur_position[drv] + 1) % disk[drv]->get_track_size();
-		prev_clock[drv] = prev_drq_clock = current_clock();
+		fdc[drv].cur_position = (fdc[drv].cur_position + 1) % disk[drv]->get_track_size();
+		fdc[drv].prev_clock = prev_drq_clock = current_clock();
 		set_drq(true);
 	}
 	else if(event_id == EVENT_LOST) {
@@ -947,7 +940,7 @@ void UPD765A::read_diagnostic()
 	// read from the 1st sector data
 	memcpy(buffer, disk[drv]->track + disk[drv]->data_position[0], disk[drv]->get_track_size() - disk[drv]->data_position[0]);
 	memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[0], disk[drv]->track, disk[drv]->data_position[0]);
-	next_trans_position[drv] = disk[drv]->data_position[0];
+	fdc[drv].next_trans_position = disk[drv]->data_position[0];
 	
 	shift_to_read(0x80 << __min(8, id[3]));
 	return;
@@ -995,7 +988,7 @@ uint32 UPD765A::read_sector()
 			memcpy(buffer, disk[drv]->track + disk[drv]->data_position[i], disk[drv]->get_track_size() - disk[drv]->data_position[i]);
 			memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[i], disk[drv]->track, disk[drv]->data_position[i]);
 		}
-		next_trans_position[drv] = disk[drv]->data_position[i];
+		fdc[drv].next_trans_position = disk[drv]->data_position[i];
 		
 		if(disk[drv]->status) {
 			return ST0_AT | ST1_DE | ST2_DD;
@@ -1091,7 +1084,7 @@ uint32 UPD765A::find_id()
 			continue;
 		}
 		// sector number is matched
-		next_trans_position[drv] = disk[drv]->data_position[i];
+		fdc[drv].next_trans_position = disk[drv]->data_position[i];
 		return 0;
 	}
 	if(cy != id[0] && cy != -1) {
@@ -1170,7 +1163,7 @@ void UPD765A::cmd_read_id()
 		}
 		if((result = read_id()) == 0) {
 			int drv = hdu & DRIVE_MASK;
-			int bytes = next_trans_position[drv] - get_cur_position(drv);
+			int bytes = fdc[drv].next_trans_position - get_cur_position(drv);
 			if(bytes < 0) {
 				bytes += disk[drv]->get_track_size();
 			}
@@ -1200,7 +1193,7 @@ void UPD765A::cmd_write_id()
 			REGISTER_PHASE_EVENT(PHASE_TIMER, 1000000);
 			break;
 		}
-		next_trans_position[hdu & DRIVE_MASK] = get_cur_position(hdu & DRIVE_MASK);
+		fdc[hdu & DRIVE_MASK].next_trans_position = get_cur_position(hdu & DRIVE_MASK);
 		shift_to_write(4 * eot);
 		break;
 	case PHASE_TC:
@@ -1247,7 +1240,7 @@ uint32 UPD765A::read_id()
 			id[1] = disk[drv]->id[1];
 			id[2] = disk[drv]->id[2];
 			id[3] = disk[drv]->id[3];
-			next_trans_position[drv] = disk[drv]->id_position[index] + 6;
+			fdc[drv].next_trans_position = disk[drv]->id_position[index] + 6;
 			return 0;
 		}
 	}
@@ -1311,8 +1304,8 @@ void UPD765A::shift_to_read(int length)
 	count = length;
 	
 	int drv = hdu & DRIVE_MASK;
-	cur_position[drv] = next_trans_position[drv];
-	prev_clock[drv] = prev_drq_clock = current_clock();
+	fdc[drv].cur_position = fdc[drv].next_trans_position;
+	fdc[drv].prev_clock = prev_drq_clock = current_clock();
 	set_drq(true);
 }
 
@@ -1324,8 +1317,8 @@ void UPD765A::shift_to_write(int length)
 	count = length;
 	
 	int drv = hdu & DRIVE_MASK;
-	cur_position[drv] = next_trans_position[drv];
-	prev_clock[drv] = prev_drq_clock = current_clock();
+	fdc[drv].cur_position = fdc[drv].next_trans_position;
+	fdc[drv].prev_clock = prev_drq_clock = current_clock();
 	set_drq(true);
 }
 
@@ -1338,8 +1331,8 @@ void UPD765A::shift_to_scan(int length)
 	count = length;
 	
 	int drv = hdu & DRIVE_MASK;
-	cur_position[drv] = next_trans_position[drv];
-	prev_clock[drv] = prev_drq_clock = current_clock();
+	fdc[drv].cur_position = fdc[drv].next_trans_position;
+	fdc[drv].prev_clock = prev_drq_clock = current_clock();
 	set_drq(true);
 }
 
@@ -1389,7 +1382,7 @@ void UPD765A::shift_to_result7_event()
 
 int UPD765A::get_cur_position(int drv)
 {
-	return (int)(cur_position[drv] + passed_usec(prev_clock[drv]) / disk[drv]->get_usec_per_bytes(1)) % disk[drv]->get_track_size();
+	return (int)(fdc[drv].cur_position + passed_usec(fdc[drv].prev_clock) / disk[drv]->get_usec_per_bytes(1)) % disk[drv]->get_track_size();
 }
 
 double UPD765A::get_usec_to_exec_phase()
@@ -1538,5 +1531,101 @@ void UPD765A::set_drive_mfm(int drv, bool mfm)
 	if(drv < MAX_DRIVE) {
 		disk[drv]->drive_mfm = mfm;
 	}
+}
+
+#define STATE_VERSION	1
+
+void UPD765A::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(fdc, sizeof(fdc), 1);
+	for(int i = 0; i < 4; i++) {
+		disk[i]->save_state(fio);
+	}
+	fio->FputUint8(hdu);
+	fio->FputUint8(hdue);
+	fio->Fwrite(id, sizeof(id), 1);
+	fio->FputUint8(eot);
+	fio->FputUint8(gpl);
+	fio->FputUint8(dtl);
+	fio->FputInt32(phase);
+	fio->FputInt32(prevphase);
+	fio->FputUint8(status);
+	fio->FputUint8(seekstat);
+	fio->FputUint8(command);
+	fio->FputUint32(result);
+	fio->FputInt32(step_rate_time);
+	fio->FputBool(no_dma_mode);
+	fio->FputBool(motor_on);
+#ifdef UPD765A_DMA_MODE
+	fio->FputBool(dma_data_lost);
+#endif
+	fio->FputBool(irq_masked);
+	fio->FputBool(drq_masked);
+	fio->FputInt32((int)(bufptr - buffer));
+	fio->Fwrite(buffer, sizeof(buffer), 1);
+	fio->FputInt32(count);
+	fio->FputInt32(event_phase);
+	fio->FputInt32(phase_id);
+	fio->FputInt32(drq_id);
+	fio->FputInt32(lost_id);
+	fio->FputInt32(result7_id);
+	fio->Fwrite(seek_id, sizeof(seek_id), 1);
+	fio->FputBool(force_ready);
+	fio->FputBool(reset_signal);
+	fio->FputBool(prev_index);
+	fio->FputUint32(prev_drq_clock);
+}
+
+bool UPD765A::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(fdc, sizeof(fdc), 1);
+	for(int i = 0; i < 4; i++) {
+		if(!disk[i]->load_state(fio)) {
+			return false;
+		}
+	}
+	hdu = fio->FgetUint8();
+	hdue = fio->FgetUint8();
+	fio->Fread(id, sizeof(id), 1);
+	eot = fio->FgetUint8();
+	gpl = fio->FgetUint8();
+	dtl = fio->FgetUint8();
+	phase = fio->FgetInt32();
+	prevphase = fio->FgetInt32();
+	status = fio->FgetUint8();
+	seekstat = fio->FgetUint8();
+	command = fio->FgetUint8();
+	result = fio->FgetUint32();
+	step_rate_time = fio->FgetInt32();
+	no_dma_mode = fio->FgetBool();
+	motor_on = fio->FgetBool();
+#ifdef UPD765A_DMA_MODE
+	dma_data_lost = fio->FgetBool();
+#endif
+	irq_masked = fio->FgetBool();
+	drq_masked = fio->FgetBool();
+	bufptr = buffer + fio->FgetInt32();
+	fio->Fread(buffer, sizeof(buffer), 1);
+	count = fio->FgetInt32();
+	event_phase = fio->FgetInt32();
+	phase_id = fio->FgetInt32();
+	drq_id = fio->FgetInt32();
+	lost_id = fio->FgetInt32();
+	result7_id = fio->FgetInt32();
+	fio->Fread(seek_id, sizeof(seek_id), 1);
+	force_ready = fio->FgetBool();
+	reset_signal = fio->FgetBool();
+	prev_index = fio->FgetBool();
+	prev_drq_clock = fio->FgetUint32();
+	return true;
 }
 

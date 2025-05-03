@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
+#include "fileio.h"
 
 config_t config;
 
@@ -295,5 +296,67 @@ void save_config()
 #ifdef USE_SOUND_DEVICE_TYPE
 	WritePrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
 #endif
+}
+
+#define STATE_VERSION	1
+
+void save_config_state(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	fio->FputUint32(STATE_VERSION);
+	
+#ifdef USE_BOOT_MODE
+	fio->FputInt32(config.boot_mode);
+#endif
+#ifdef USE_CPU_TYPE
+	fio->FputInt32(config.cpu_type);
+#endif
+#ifdef USE_DIPSWITCH
+	fio->FputUint32(config.dipswitch);
+#endif
+#ifdef USE_DEVICE_TYPE
+	fio->FputInt32(config.device_type);
+#endif
+#ifdef USE_FD1
+	fio->FputBool(config.ignore_crc);
+#endif
+#ifdef USE_MONITOR_TYPE
+	fio->FputInt32(config.monitor_type);
+#endif
+#ifdef USE_SOUND_DEVICE_TYPE
+	fio->FputInt32(config.sound_device_type);
+#endif
+}
+
+bool load_config_state(void *f)
+{
+	FILEIO *fio = (FILEIO *)f;
+	
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+#ifdef USE_BOOT_MODE
+	config.boot_mode = fio->FgetInt32();
+#endif
+#ifdef USE_CPU_TYPE
+	config.cpu_type = fio->FgetInt32();
+#endif
+#ifdef USE_DIPSWITCH
+	config.dipswitch = fio->FgetUint32();
+#endif
+#ifdef USE_DEVICE_TYPE
+	config.device_type = fio->FgetInt32();
+#endif
+#ifdef USE_FD1
+	config.ignore_crc = fio->FgetBool();
+#endif
+#ifdef USE_MONITOR_TYPE
+	config.monitor_type = fio->FgetInt32();
+#endif
+#ifdef USE_SOUND_DEVICE_TYPE
+	config.sound_device_type = fio->FgetInt32();
+#endif
+	return true;
 }
 

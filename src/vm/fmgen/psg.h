@@ -69,6 +69,9 @@ public:
 	void SetReg(uint regnum, uint8 data);
 	uint GetReg(uint regnum) { return reg[regnum & 0x0f]; }
 
+	void SaveState(void *f);
+	bool LoadState(void *f);
+	
 protected:
 	void MakeNoiseTable();
 	void MakeEnvelopTable();

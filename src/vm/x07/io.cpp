@@ -979,7 +979,7 @@ void IO::ack_from_sub()
 
 void IO::process_sub()
 {
-	static uint8 dow[8] = {128, 192, 224, 240, 248, 252, 254, 255};
+	static const uint8 dow[8] = {128, 192, 224, 240, 248, 252, 254, 255};
 	uint8 val;
 	uint16 addr;
 	int sx, sy, ex, ey, cr, i;

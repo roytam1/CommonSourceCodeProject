@@ -21,14 +21,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -118,14 +116,11 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		// read write modify
 		if(page[b] == 0x30) {
 			d_crtc->write_data8((addr & 0x1fff) + 0x0000, data);
-		}
-		else if(page[b] == 0x31) {
+		} else if(page[b] == 0x31) {
 			d_crtc->write_data8((addr & 0x1fff) + 0x2000, data);
-		}
-		else if(page[b] == 0x32) {
+		} else if(page[b] == 0x32) {
 			d_crtc->write_data8((addr & 0x1fff) + 0x4000, data);
-		}
-		else {
+		} else {
 			d_crtc->write_data8((addr & 0x1fff) + 0x6000, data);
 		}
 		return;
@@ -147,14 +142,11 @@ uint32 MEMORY::read_data8(uint32 addr)
 		// read write modify
 		if(page[b] == 0x30) {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x0000);
-		}
-		else if(page[b] == 0x31) {
+		} else if(page[b] == 0x31) {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x2000);
-		}
-		else if(page[b] == 0x32) {
+		} else if(page[b] == 0x32) {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x4000);
-		}
-		else {
+		} else {
 			return d_crtc->read_data8((addr & 0x1fff) + 0x6000);
 		}
 	}
@@ -208,8 +200,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			if(page_type[i] == PAGE_TYPE_KANJI) {
 				if(kanji_bank & 0x80) {
 					SET_BANK(i * 0x2000,  i * 0x2000 + 0x7ff, wdmy, kanji + (kanji_bank & 0x7f) * 0x800);
-				}
-				else {
+				} else {
 					SET_BANK(i * 0x2000,  i * 0x2000 + 0x7ff, pcg, pcg);
 				}
 			}
@@ -237,8 +228,7 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MEMORY_HBLANK) {
 		hblank = ((data & mask) != 0);
-	}
-	else if(id == SIG_MEMORY_VBLANK) {
+	} else if(id == SIG_MEMORY_VBLANK) {
 		vblank = ((data & mask) != 0);
 	}
 	
@@ -261,37 +251,32 @@ void MEMORY::set_map(uint8 data)
 		// main ram
 		SET_BANK(base,  base + 0x1fff, ram + data * 0x2000, ram + data * 0x2000);
 		page_type[bank] = PAGE_TYPE_NORMAL;
-	}
-	else if(0x20 <= data && data <= 0x2f) {
+	} else if(0x20 <= data && data <= 0x2f) {
 		// vram
-		static int ofs_table[] = {0x00, 0x01, 0x04, 0x05, 0x08, 0x09, 0x0c, 0x0d, 0x02, 0x03, 0x06, 0x07, 0x0a, 0x0b, 0x0e, 0x0f};
+		static const int ofs_table[] = {0x00, 0x01, 0x04, 0x05, 0x08, 0x09, 0x0c, 0x0d, 0x02, 0x03, 0x06, 0x07, 0x0a, 0x0b, 0x0e, 0x0f};
 		int ofs = ofs_table[data - 0x20] * 0x2000;
 		SET_BANK(base,  base + 0x1fff, vram + ofs, vram + ofs);
 		page_type[bank] = PAGE_TYPE_VRAM;
 		page_wait[bank] = 1;
 		is_vram[bank] = true;
-	}
-	else if(0x30 <= data && data <= 0x33) {
+	} else if(0x30 <= data && data <= 0x33) {
 		// read modify write
 		SET_BANK(base,  base + 0x1fff, wdmy, rdmy);
 		page_type[bank] = PAGE_TYPE_MODIFY;
 		page_wait[bank] = 2;
 		is_vram[bank] = true;
-	}
-	else if(0x34 <= data && data <= 0x37) {
+	} else if(0x34 <= data && data <= 0x37) {
 		// ipl rom
 		SET_BANK(base,  base + 0x1fff, wdmy, ipl + (data - 0x34) * 0x2000);
 		page_type[bank] = PAGE_TYPE_NORMAL;
-	}
-	else if(data == 0x38) {
+	} else if(data == 0x38) {
 		// text vram
 		SET_BANK(base         ,  base + 0x17ff, tvram, tvram);
 		SET_BANK(base + 0x1800,  base + 0x1fff, wdmy, rdmy);
 		page_type[bank] = PAGE_TYPE_VRAM;
 		page_wait[bank] = 1;
 		is_vram[bank] = true;
-	}
-	else if(data == 0x39) {
+	} else if(data == 0x39) {
 		// kanji rom, pcg
 		SET_BANK(base,  base + 0x1fff, pcg, pcg);
 		if(kanji_bank & 0x80) {
@@ -299,23 +284,72 @@ void MEMORY::set_map(uint8 data)
 		}
 		page_type[bank] = PAGE_TYPE_KANJI;
 		page_wait[bank] = 2;
-	}
-	else if(data == 0x3a) {
+	} else if(data == 0x3a) {
 		// dictionary rom
 		SET_BANK(base,  base + 0x1fff, wdmy, dic + dic_bank * 0x2000);
 		page_type[bank] = PAGE_TYPE_DIC;
-	}
-	else if(0x3c <= data && data <= 0x3f) {
+	} else if(0x3c <= data && data <= 0x3f) {
 		// phone rom
 		SET_BANK(base,  base + 0x1fff, wdmy, phone + (data - 0x3c) * 0x2000);
 		page_type[bank] = PAGE_TYPE_NORMAL;
-	}
-	else {
+	} else {
 		// n.c
 		SET_BANK(base,  base + 0x1fff, wdmy, rdmy);
 		page_type[bank] = PAGE_TYPE_NORMAL;
 	}
 	page[bank] = data;
 	bank = (bank + 1) & 7;
+}
+
+#define STATE_VERSION	1
+
+void MEMORY::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(ram, sizeof(ram), 1);
+	fio->Fwrite(vram, sizeof(vram), 1);
+	fio->Fwrite(tvram, sizeof(tvram), 1);
+	fio->Fwrite(pcg, sizeof(pcg), 1);
+	fio->FputUint8(bank);
+	fio->Fwrite(page, sizeof(page), 1);
+	fio->FputUint8(dic_bank);
+	fio->FputUint8(kanji_bank);
+	fio->FputBool(blank);
+	fio->FputBool(hblank);
+	fio->FputBool(vblank);
+	fio->FputBool(busreq);
+}
+
+bool MEMORY::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(ram, sizeof(ram), 1);
+	fio->Fread(vram, sizeof(vram), 1);
+	fio->Fread(tvram, sizeof(tvram), 1);
+	fio->Fread(pcg, sizeof(pcg), 1);
+	bank = fio->FgetUint8();
+	fio->Fread(page, sizeof(page), 1);
+	dic_bank = fio->FgetUint8();
+	kanji_bank = fio->FgetUint8();
+	blank = fio->FgetBool();
+	hblank = fio->FgetBool();
+	vblank = fio->FgetBool();
+	busreq = fio->FgetBool();
+	
+	// restore memory map
+	uint8 bank_tmp = bank;
+	bank = 0;
+	for(int i = 0; i < 8; i++) {
+		set_map(page[i]);
+	}
+	bank = bank_tmp;
+	return true;
 }
 

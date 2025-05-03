@@ -8,6 +8,7 @@
 */
 
 #include "io.h"
+#include "../fileio.h"
 
 void IO::write_io8(uint32 addr, uint32 data)
 {
@@ -117,11 +118,9 @@ void IO::write_port8(uint32 addr, uint32 data, bool is_dma)
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xff;
-	}
-	else if(is_dma) {
+	} else if(is_dma) {
 		wr_table[laddr].dev->write_dma_io8(addr2, data & 0xff);
-	}
-	else {
+	} else {
 		wr_table[laddr].dev->write_io8(addr2, data & 0xff);
 	}
 }
@@ -152,11 +151,9 @@ void IO::write_port16(uint32 addr, uint32 data, bool is_dma)
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xffff;
-	}
-	else if(is_dma) {
+	} else if(is_dma) {
 		wr_table[laddr].dev->write_dma_io16(addr2, data & 0xffff);
-	}
-	else {
+	} else {
 		wr_table[laddr].dev->write_io16(addr2, data & 0xffff);
 	}
 }
@@ -187,11 +184,9 @@ void IO::write_port32(uint32 addr, uint32 data, bool is_dma)
 #endif
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data;
-	}
-	else if(is_dma) {
+	} else if(is_dma) {
 		wr_table[laddr].dev->write_dma_io32(addr2, data);
-	}
-	else {
+	} else {
 		wr_table[laddr].dev->write_io32(addr2, data);
 	}
 }
@@ -334,5 +329,31 @@ void IO::set_iowait_range_rw(uint32 s, uint32 e, int wait)
 {
 	set_iowait_range_r(s, e, wait);
 	set_iowait_range_w(s, e, wait);
+}
+
+#define STATE_VERSION	1
+
+void IO::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	for(int i = 0; i < IO_ADDR_MAX; i++) {
+		fio->FputUint32(rd_table[i].value);
+	}
+}
+
+bool IO::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	for(int i = 0; i < IO_ADDR_MAX; i++) {
+		rd_table[i].value = fio->FgetUint32();
+	}
+	return true;
 }
 

@@ -129,6 +129,8 @@ typedef struct cur_time_t {
 	void increment();
 	void update_year();
 	void update_day_of_week();
+	void save_state(void *f);
+	bool load_state(void *f);
 } cur_time_t;
 
 #endif

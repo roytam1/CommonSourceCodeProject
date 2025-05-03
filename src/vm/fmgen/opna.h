@@ -105,6 +105,9 @@ namespace FM
 		void	RebuildTimeTable();
 		void	Intr(bool value);
 		
+		void SaveState(void *f);
+		bool LoadState(void *f);
+		
 		int		fmvolume;
 		
 		uint	clock;				// OPN ÉNÉçÉbÉN
@@ -148,6 +151,9 @@ namespace FM
 		void 	SetReg(uint addr, uint data);
 		void	SetADPCMBReg(uint reg, uint data);
 		uint	GetReg(uint addr);	
+		
+		void SaveState(void *f);
+		bool LoadState(void *f);
 	
 	protected:
 		void	FMMix(Sample* buffer, int nsamples);
@@ -248,6 +254,9 @@ namespace FM
 		int		dbgGetOpOut(int c, int s) { return ch[c].op[s].dbgopout_; }
 		int		dbgGetPGOut(int c, int s) { return ch[c].op[s].dbgpgout_; }
 		Channel4* dbgGetCh(int c) { return &ch[c]; }
+		
+		void SaveState(void *f);
+		bool LoadState(void *f);
 	
 	private:
 		void	SetStatus(uint bit);
@@ -287,6 +296,8 @@ namespace FM
 		int		dbgGetPGOut(int c, int s) { return ch[c].op[s].dbgpgout_; }
 		Channel4* dbgGetCh(int c) { return &ch[c]; }
 
+		void SaveState(void *f);
+		bool LoadState(void *f);
 		
 	private:
 		struct Rhythm

@@ -8,6 +8,7 @@
 */
 
 #include "ym2151.h"
+#include "../fileio.h"
 
 void YM2151::initialize()
 {
@@ -119,5 +120,47 @@ void YM2151::SetReg(uint addr, uint data)
 void YM2151::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
 {
 	clock_const = (uint32)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks + 0.5);
+}
+
+#define STATE_VERSION	1
+
+void YM2151::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	opm->SaveState((void *)fio);
+	fio->FputInt32(chip_clock);
+	fio->FputUint8(ch);
+	fio->FputBool(irq_prev);
+	fio->FputBool(mute);
+	fio->FputUint32(clock_prev);
+	fio->FputUint32(clock_accum);
+	fio->FputUint32(clock_const);
+	fio->FputUint32(clock_busy);
+	fio->FputBool(busy);
+}
+
+bool YM2151::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	if(!opm->LoadState((void *)fio)) {
+		return false;
+	}
+	chip_clock = fio->FgetInt32();
+	ch = fio->FgetUint8();
+	irq_prev = fio->FgetBool();
+	mute = fio->FgetBool();
+	clock_prev = fio->FgetUint32();
+	clock_accum = fio->FgetUint32();
+	clock_const = fio->FgetUint32();
+	clock_busy = fio->FgetUint32();
+	busy = fio->FgetBool();
+	return true;
 }
 

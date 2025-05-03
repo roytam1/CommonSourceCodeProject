@@ -143,23 +143,6 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	_tcscpy(recent[0], path); \
 }
 
-// d88 bank switch
-
-#ifdef USE_FD1
-#define MAX_D88_BANKS 64
-typedef struct {
-	_TCHAR name[18];
-	int offset;
-} d88_bank_t;
-typedef struct {
-	_TCHAR path[_MAX_PATH];
-	d88_bank_t bank[MAX_D88_BANKS];
-	int bank_num;
-	int cur_bank;
-} d88_file_t;
-d88_file_t d88_file[MAX_FD];
-#endif
-
 // screen
 int desktop_width;
 int desktop_height;
@@ -198,11 +181,6 @@ LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow)
 {
-#ifdef USE_FD1
-	// initialize d88 file info
-	memset(d88_file, 0, sizeof(d88_file));
-#endif
-	
 	// load config
 	load_config();
 	
@@ -920,9 +898,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SELECT_D88_BANK + 62: \
 		case ID_SELECT_D88_BANK + 63: \
 			no = LOWORD(wParam) - ID_SELECT_D88_BANK; \
-			if(emu && d88_file[drv].cur_bank != no) { \
-				emu->open_disk(drv, d88_file[drv].path, d88_file[drv].bank[no].offset); \
-				d88_file[drv].cur_bank = no; \
+			if(emu && emu->d88_file[drv].cur_bank != no) { \
+				emu->open_disk(drv, emu->d88_file[drv].path, emu->d88_file[drv].bank[no].offset); \
+				emu->d88_file[drv].cur_bank = no; \
 			} \
 			break;
 		FD_MENU_ITEMS(0, ID_OPEN_FD1, ID_CLOSE_FD1, ID_RECENT_FD1, ID_SELECT_D88_BANK1)
@@ -1105,7 +1083,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_REC30:
 		case ID_SCREEN_REC15:
 			if(emu) {
-				static int fps[3] = {60, 30, 15};
+				static const int fps[3] = {60, 30, 15};
 				no = LOWORD(wParam) - ID_SCREEN_REC60;
 				emu->start_rec_sound();
 				if(!emu->start_rec_video(fps[no])) {
@@ -1472,12 +1450,12 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		#define UPDATE_MENU_FD(drv, ID_RECENT_FD, ID_D88_FILE_PATH, ID_SELECT_D88_BANK, ID_CLOSE_FD) \
 		bool flag = false; \
 		while(DeleteMenu(hMenu, 3, MF_BYPOSITION) != 0) {} \
-		if(d88_file[drv].bank_num > 1) { \
-			AppendMenu(hMenu, MF_STRING | MF_DISABLED, ID_D88_FILE_PATH, d88_file[drv].path); \
-			for(int i = 0; i < d88_file[drv].bank_num; i++) { \
+		if(emu->d88_file[drv].bank_num > 1) { \
+			AppendMenu(hMenu, MF_STRING | MF_DISABLED, ID_D88_FILE_PATH, emu->d88_file[drv].path); \
+			for(int i = 0; i < emu->d88_file[drv].bank_num; i++) { \
 				_TCHAR tmp[32]; \
-				_stprintf(tmp, _T("%d: %s"), i + 1, d88_file[drv].bank[i].name); \
-				AppendMenu(hMenu, MF_STRING | (i == d88_file[drv].cur_bank ? MF_CHECKED : 0), ID_SELECT_D88_BANK + i, tmp); \
+				_stprintf(tmp, _T("%d: %s"), i + 1, emu->d88_file[drv].bank[i].name); \
+				AppendMenu(hMenu, MF_STRING | (i == emu->d88_file[drv].cur_bank ? MF_CHECKED : 0), ID_SELECT_D88_BANK + i, tmp); \
 			} \
 			AppendMenu(hMenu, MF_SEPARATOR, 0, NULL); \
 		} \
@@ -1801,9 +1779,9 @@ void open_disk_dialog(HWND hWnd, int drv)
 
 void open_disk(int drv, _TCHAR* path, int bank)
 {
-	d88_file[drv].bank_num = 0;
-	d88_file[drv].cur_bank = -1;
-	d88_file[drv].bank[0].offset = 0;
+	emu->d88_file[drv].bank_num = 0;
+	emu->d88_file[drv].cur_bank = -1;
+	emu->d88_file[drv].bank[0].offset = 0;
 	
 	if(check_file_extension(path, _T(".d88")) || check_file_extension(path, _T(".d77"))) {
 		FILE *fp = _tfopen(path, _T("rb"));
@@ -1811,36 +1789,36 @@ void open_disk(int drv, _TCHAR* path, int bank)
 			try {
 				fseek(fp, 0, SEEK_END);
 				int file_size = ftell(fp), file_offset = 0;
-				while(file_offset + 0x2b0 <= file_size && d88_file[drv].bank_num < MAX_D88_BANKS) {
-					d88_file[drv].bank[d88_file[drv].bank_num].offset = file_offset;
+				while(file_offset + 0x2b0 <= file_size && emu->d88_file[drv].bank_num < MAX_D88_BANKS) {
+					emu->d88_file[drv].bank[emu->d88_file[drv].bank_num].offset = file_offset;
 					fseek(fp, file_offset, SEEK_SET);
 #ifdef _UNICODE
 					char tmp[18];
 					fread(tmp, 17, 1, fp);
 					tmp[17] = 0;
-					MultiByteToWideChar(CP_ACP, 0, tmp, -1, d88_file[drv].bank[d88_file[drv].bank_num].name, 18);
+					MultiByteToWideChar(CP_ACP, 0, tmp, -1, emu->d88_file[drv].bank[emu->d88_file[drv].bank_num].name, 18);
 #else
-					fread(d88_file[drv].bank[d88_file[drv].bank_num].name, 17, 1, fp);
-					d88_file[drv].bank[d88_file[drv].bank_num].name[17] = 0;
+					fread(emu->d88_file[drv].bank[emu->d88_file[drv].bank_num].name, 17, 1, fp);
+					emu->d88_file[drv].bank[emu->d88_file[drv].bank_num].name[17] = 0;
 #endif
 					fseek(fp, file_offset + 0x1c, SEEK_SET);
 					file_offset += fgetc(fp);
 					file_offset += fgetc(fp) << 8;
 					file_offset += fgetc(fp) << 16;
 					file_offset += fgetc(fp) << 24;
-					d88_file[drv].bank_num++;
+					emu->d88_file[drv].bank_num++;
 				}
-				_tcscpy(d88_file[drv].path, path);
-				d88_file[drv].cur_bank = bank;
+				_tcscpy(emu->d88_file[drv].path, path);
+				emu->d88_file[drv].cur_bank = bank;
 			}
 			catch(...) {
-				d88_file[drv].bank_num = 0;
+				emu->d88_file[drv].bank_num = 0;
 			}
 		}
 	}
-	emu->open_disk(drv, path, d88_file[drv].bank[bank].offset);
+	emu->open_disk(drv, path, emu->d88_file[drv].bank[bank].offset);
 #ifdef USE_FD2
-	if((drv & 1) == 0 && drv + 1 < MAX_FD && bank + 1 < d88_file[drv].bank_num) {
+	if((drv & 1) == 0 && drv + 1 < MAX_FD && bank + 1 < emu->d88_file[drv].bank_num) {
 		open_disk(drv + 1, path, bank + 1);
 	}
 #endif
@@ -1849,8 +1827,8 @@ void open_disk(int drv, _TCHAR* path, int bank)
 void close_disk(int drv)
 {
 	emu->close_disk(drv);
-	d88_file[drv].bank_num = 0;
-	d88_file[drv].cur_bank = -1;
+	emu->d88_file[drv].bank_num = 0;
+	emu->d88_file[drv].cur_bank = -1;
 
 }
 #endif

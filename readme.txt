@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/16/2014
+								12/23/2014
 
 --- What's this ?
 
@@ -166,6 +166,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Moriya for Sord M5 hardware design info
 - vm/mycomz80a/mon.c
 	Based on MON80 by Mr.Tesuya Suzuki
+- vm/mz1200/*
+	MZ-80A emulator by Mr.Suga
 - vm/mz2500/sasi.*
 	X millenium
 - vm/pc6001/*.*

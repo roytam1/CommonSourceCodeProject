@@ -38,6 +38,7 @@ private:
 	uint16 buffer[QUICKDISK_BUFFER_SIZE];
 	int buffer_ptr, write_ptr;
 	bool first_data;
+	bool send_break;
 	
 	bool wrga, mton, sync;
 	bool motor_on;

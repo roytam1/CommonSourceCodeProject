@@ -1708,7 +1708,7 @@ uint8 PCE::joy_read(uint16 addr)
 	return val;
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void PCE::save_state(FILEIO* fio)
 {
@@ -1718,7 +1718,7 @@ void PCE::save_state(FILEIO* fio)
 	fio->FputBool(support_6btn);
 	fio->FputBool(support_sgfx);
 	fio->Fwrite(ram, sizeof(ram), 1);
-	fio->Fwrite(cart, sizeof(cart), 1);
+	fio->Fwrite(cart + 0x80000, 0x80000, 1);
 #ifdef SUPPORT_BACKUP_RAM
 	fio->Fwrite(backup, sizeof(backup), 1);
 	fio->FputUint32(backup_crc32);
@@ -1753,7 +1753,7 @@ bool PCE::load_state(FILEIO* fio)
 	support_6btn = fio->FgetBool();
 	support_sgfx = fio->FgetBool();
 	fio->Fread(ram, sizeof(ram), 1);
-	fio->Fread(cart, sizeof(cart), 1);
+	fio->Fread(cart + 0x80000, 0x80000, 1);
 #ifdef SUPPORT_BACKUP_RAM
 	fio->Fread(backup, sizeof(backup), 1);
 	backup_crc32 = fio->FgetUint32();

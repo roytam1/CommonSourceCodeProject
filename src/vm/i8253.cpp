@@ -8,6 +8,7 @@
 */
 
 #include "i8253.h"
+#include "../fileio.h"
 
 void I8253::initialize()
 {
@@ -61,12 +62,10 @@ void I8253::write_io8(uint32 addr, uint32 data)
 		if(counter[ch].low_write) {
 			counter[ch].count_reg = data;
 			counter[ch].low_write = false;
-		}
-		else if(counter[ch].high_write) {
+		} else if(counter[ch].high_write) {
 			if((counter[ch].ctrl_reg & 0x30) == 0x20) {
 				counter[ch].count_reg = data << 8;
-			}
-			else {
+			} else {
 				counter[ch].count_reg |= data << 8;
 			}
 			counter[ch].high_write = false;
@@ -77,8 +76,7 @@ void I8253::write_io8(uint32 addr, uint32 data)
 		// set signal
 		if(counter[ch].mode == 0) {
 			set_signal(ch, false);
-		}
-		else {
+		} else {
 			set_signal(ch, true);
 		}
 		// start count
@@ -87,8 +85,7 @@ void I8253::write_io8(uint32 addr, uint32 data)
 			stop_count(ch);
 			counter[ch].delay = true;
 			start_count(ch);
-		}
-		else if(counter[ch].mode == 2 || counter[ch].mode == 3) {
+		} else if(counter[ch].mode == 2 || counter[ch].mode == 3) {
 			// start with new counter after the current count is finished
 			if(!counter[ch].start) {
 				counter[ch].delay = true;
@@ -123,7 +120,7 @@ void I8253::write_io8(uint32 addr, uint32 data)
 		ch = (data >> 6) & 3;
 		
 		if(data & 0x30) {
-			static int modes[8] = {0, 1, 2, 3, 4, 5, 2, 3};
+			static const int modes[8] = {0, 1, 2, 3, 4, 5, 2, 3};
 //			int prev = counter[ch].mode;
 			counter[ch].mode = modes[(data >> 1) & 7];
 			counter[ch].count_latched = false;
@@ -133,8 +130,7 @@ void I8253::write_io8(uint32 addr, uint32 data)
 			// set signal
 			if(counter[ch].mode == 0) {
 				set_signal(ch, false);
-			}
-			else {
+			} else {
 				set_signal(ch, true);
 			}
 			// stop count
@@ -145,8 +141,7 @@ void I8253::write_io8(uint32 addr, uint32 data)
 #ifdef HAS_I8254
 			counter[ch].null_count = true;
 #endif
-		}
-		else if(!counter[ch].count_latched) {
+		} else if(!counter[ch].count_latched) {
 			latch_count(ch);
 		}
 		break;
@@ -180,8 +175,7 @@ uint32 I8253::read_io8(uint32 addr)
 				counter[ch].count_latched = false;
 			}
 			return counter[ch].latch & 0xff;
-		}
-		else if(counter[ch].high_read) {
+		} else if(counter[ch].high_read) {
 			counter[ch].high_read = false;
 			counter[ch].count_latched = false;
 			return (counter[ch].latch >> 8) & 0xff;
@@ -261,8 +255,7 @@ loop:
 	if(counter[ch].mode == 3) {
 		int32 half = tmp >> 1;
 		set_signal(ch, counter[ch].count > half);
-	}
-	else {
+	} else {
 		if(counter[ch].count <= 1) {
 			if(counter[ch].mode == 2 || counter[ch].mode == 4 || counter[ch].mode == 5) {
 				set_signal(ch, false);
@@ -279,8 +272,7 @@ loop:
 			counter[ch].null_count = false;
 #endif
 			goto loop;
-		}
-		else {
+		} else {
 			counter[ch].start = false;
 			counter[ch].count = 0x10000;
 		}
@@ -301,8 +293,7 @@ void I8253::input_gate(int ch, bool signal)
 		if(counter[ch].mode == 2 || counter[ch].mode == 3) {
 			set_signal(ch, true);
 		}
-	}
-	else if(!prev && signal) {
+	} else if(!prev && signal) {
 		// restart count
 		stop_count(ch);
 		if(!(counter[ch].mode == 0 || counter[ch].mode == 4)) {
@@ -364,8 +355,7 @@ void I8253::latch_count(int ch)
 					counter[ch].prev_clk = current_clock();
 					register_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].register_id);
 				}
-			}
-			else {
+			} else {
 				cancel_event(this, counter[ch].register_id);
 				counter[ch].input_clk -= input;
 				counter[ch].period -= passed;
@@ -381,13 +371,11 @@ void I8253::latch_count(int ch)
 		// lower byte
 		counter[ch].low_read = true;
 		counter[ch].high_read = false;
-	}
-	else if((counter[ch].ctrl_reg & 0x30) == 0x20) {
+	} else if((counter[ch].ctrl_reg & 0x30) == 0x20) {
 		// upper byte
 		counter[ch].low_read = false;
 		counter[ch].high_read = true;
-	}
-	else {
+	} else {
 		// lower -> upper
 		counter[ch].low_read = counter[ch].high_read = true;
 	}
@@ -401,8 +389,7 @@ void I8253::set_signal(int ch, bool signal)
 	if(prev && !signal) {
 		// H->L
 		write_signals(&counter[ch].outputs, 0);
-	}
-	else if(!prev && signal) {
+	} else if(!prev && signal) {
 		// L->H
 		write_signals(&counter[ch].outputs, 0xffffffff);
 	}
@@ -418,4 +405,80 @@ int I8253::get_next_count(int ch)
 		return (counter[ch].count > half) ? counter[ch].count - half : counter[ch].count;
 	}
 	return counter[ch].count;
+}
+
+#define STATE_VERSION	1
+
+void I8253::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	for(int i = 0; i < 3; i++) {
+		fio->FputBool(counter[i].prev_out);
+		fio->FputBool(counter[i].prev_in);
+		fio->FputBool(counter[i].gate);
+		fio->FputInt32(counter[i].count);
+		fio->FputUint16(counter[i].latch);
+		fio->FputUint16(counter[i].count_reg);
+		fio->FputUint8(counter[i].ctrl_reg);
+		fio->FputBool(counter[i].count_latched);
+		fio->FputBool(counter[i].low_read);
+		fio->FputBool(counter[i].high_read);
+		fio->FputBool(counter[i].low_write);
+		fio->FputBool(counter[i].high_write);
+		fio->FputInt32(counter[i].mode);
+		fio->FputBool(counter[i].delay);
+		fio->FputBool(counter[i].start);
+#ifdef HAS_I8254
+		fio->FputBool(counter[i].null_count);
+		fio->FputBool(counter[i].status_latched);
+		fio->FputUint8(counter[i].status);
+#endif
+		fio->FputUint64(counter[i].freq);
+		fio->FputInt32(counter[i].register_id);
+		fio->FputUint32(counter[i].input_clk);
+		fio->FputInt32(counter[i].period);
+		fio->FputUint32(counter[i].prev_clk);
+	}
+	fio->FputUint64(cpu_clocks);
+}
+
+bool I8253::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	for(int i = 0; i < 3; i++) {
+		counter[i].prev_out = fio->FgetBool();
+		counter[i].prev_in = fio->FgetBool();
+		counter[i].gate = fio->FgetBool();
+		counter[i].count = fio->FgetInt32();
+		counter[i].latch = fio->FgetUint16();
+		counter[i].count_reg = fio->FgetUint16();
+		counter[i].ctrl_reg = fio->FgetUint8();
+		counter[i].count_latched = fio->FgetBool();
+		counter[i].low_read = fio->FgetBool();
+		counter[i].high_read = fio->FgetBool();
+		counter[i].low_write = fio->FgetBool();
+		counter[i].high_write = fio->FgetBool();
+		counter[i].mode = fio->FgetInt32();
+		counter[i].delay = fio->FgetBool();
+		counter[i].start = fio->FgetBool();
+#ifdef HAS_I8254
+		counter[i].null_count = fio->FgetBool();
+		counter[i].status_latched = fio->FgetBool();
+		counter[i].status = fio->FgetUint8();
+#endif
+		counter[i].freq = fio->FgetUint64();
+		counter[i].register_id = fio->FgetInt32();
+		counter[i].input_clk = fio->FgetUint32();
+		counter[i].period = fio->FgetInt32();
+		counter[i].prev_clk = fio->FgetUint32();
+	}
+	cpu_clocks = fio->FgetUint64();
+	return true;
 }

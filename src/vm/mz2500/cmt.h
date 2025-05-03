@@ -60,6 +60,8 @@ public:
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_pio(DEVICE* device)

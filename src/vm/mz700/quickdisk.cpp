@@ -37,6 +37,7 @@ void QUICKDISK::initialize()
 {
 	insert = protect = false;
 	home = true;
+	first_data = send_break = true;
 }
 
 void QUICKDISK::release()
@@ -226,6 +227,7 @@ void QUICKDISK::restore()
 	// reached to home position
 	set_home(false);
 	buffer_ptr = 0;
+	first_data = send_break = true;
 	
 	// start to send
 	send_data();
@@ -238,7 +240,6 @@ void QUICKDISK::send_data()
 	}
 retry:
 	if(buffer_ptr < QUICKDISK_BUFFER_SIZE && buffer[buffer_ptr] != DATA_EMPTY) {
-		static bool send_break = true;
 		if(buffer[buffer_ptr] == DATA_BREAK) {
 			// send break signal
 			if(send_break) {

@@ -17,7 +17,7 @@
 class MZ1E26 : public DEVICE
 {
 private:
-	uint8 prev_data;
+//	uint8 prev_data;
 	
 public:
 	MZ1E26(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

@@ -10,6 +10,7 @@
 
 #include "mb8877.h"
 #include "disk.h"
+#include "../fileio.h"
 
 #define FDC_ST_BUSY		0x01	// busy
 #define FDC_ST_INDEX		0x02	// index hole
@@ -106,8 +107,7 @@ void MB8877::initialize()
 	}
 	
 	// initialize timing
-	memset(cur_position, 0, sizeof(cur_position));
-	memset(prev_clock, 0, sizeof(prev_clock));
+	memset(fdc, 0, sizeof(fdc));
 	
 	// initialize fdc
 	seektrk = 0;
@@ -525,8 +525,8 @@ void MB8877::event_callback(int event_id, int err)
 		if(!(status_tmp & FDC_ST_RECNFND)) {
 			status = status_tmp | (FDC_ST_BUSY | FDC_ST_DRQ);
 			REGISTER_LOST_EVENT();
-			cur_position[drvreg] = next_trans_position[drvreg];
-			prev_clock[drvreg] = prev_drq_clock = current_clock();
+			fdc[drvreg].cur_position = fdc[drvreg].next_trans_position;
+			fdc[drvreg].prev_clock = prev_drq_clock = current_clock();
 			set_drq(true);
 			drive_sel = false;
 		} else {
@@ -546,8 +546,8 @@ void MB8877::event_callback(int event_id, int err)
 		if(status & FDC_ST_BUSY) {
 			status |= FDC_ST_DRQ;
 			REGISTER_LOST_EVENT();
-			cur_position[drvreg] = (cur_position[drvreg] + 1) % disk[drvreg]->get_track_size();
-			prev_clock[drvreg] = prev_drq_clock = current_clock();
+			fdc[drvreg].cur_position = (fdc[drvreg].cur_position + 1) % disk[drvreg]->get_track_size();
+			fdc[drvreg].prev_clock = prev_drq_clock = current_clock();
 			set_drq(true);
 		}
 		break;
@@ -925,8 +925,8 @@ uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 		}
 		
 		// sector found
-		next_trans_position[drvreg] = disk[drvreg]->data_position[i];
-		next_sync_position[drvreg] = disk[drvreg]->sync_position[i];
+		fdc[drvreg].next_trans_position = disk[drvreg]->data_position[i];
+		fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[i];
 		fdc[drvreg].index = 0;
 		return (disk[drvreg]->deleted ? FDC_ST_RECTYPE : 0) | ((disk[drvreg]->status && !ignore_crc) ? FDC_ST_CRCERR : 0);
 	}
@@ -966,8 +966,8 @@ uint8 MB8877::search_addr()
 	
 	// get sector
 	if(disk[drvreg]->get_sector(trk, sidereg, first_sector)) {
-		next_trans_position[drvreg] = disk[drvreg]->id_position[first_sector];
-		next_sync_position[drvreg] = disk[drvreg]->sync_position[first_sector];
+		fdc[drvreg].next_trans_position = disk[drvreg]->id_position[first_sector];
+		fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[first_sector];
 		fdc[drvreg].index = 0;
 		secreg = disk[drvreg]->id[0];
 		return (disk[drvreg]->status && !ignore_crc) ? FDC_ST_CRCERR : 0;
@@ -985,7 +985,7 @@ uint8 MB8877::search_addr()
 
 int MB8877::get_cur_position()
 {
-	return (int)(cur_position[drvreg] + passed_usec(prev_clock[drvreg]) / disk[drvreg]->get_usec_per_bytes(1)) % disk[drvreg]->get_track_size();
+	return (int)(fdc[drvreg].cur_position + passed_usec(fdc[drvreg].prev_clock) / disk[drvreg]->get_usec_per_bytes(1)) % disk[drvreg]->get_track_size();
 }
 
 double MB8877::get_usec_to_start_trans()
@@ -1004,8 +1004,8 @@ double MB8877::get_usec_to_start_trans()
 	
 	// get time from current position
 	int position = get_cur_position();
-	int bytes = next_trans_position[drvreg] - position;
-	if(next_sync_position[drvreg] < position) {
+	int bytes = fdc[drvreg].next_trans_position - position;
+	if(fdc[drvreg].next_sync_position < position) {
 		bytes += disk[drvreg]->get_track_size();
 	}
 	double time = disk[drvreg]->get_usec_per_bytes(bytes);
@@ -1098,3 +1098,76 @@ uint8 MB8877::fdc_status()
 	return 0;
 #endif
 }
+
+#define STATE_VERSION	1
+
+void MB8877::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputBool(ignore_crc);
+	fio->Fwrite(fdc, sizeof(fdc), 1);
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		disk[i]->save_state(fio);
+	}
+	fio->FputUint8(status);
+	fio->FputUint8(status_tmp);
+	fio->FputUint8(cmdreg);
+	fio->FputUint8(cmdreg_tmp);
+	fio->FputUint8(trkreg);
+	fio->FputUint8(secreg);
+	fio->FputUint8(datareg);
+	fio->FputUint8(drvreg);
+	fio->FputUint8(sidereg);
+	fio->FputUint8(cmdtype);
+	fio->Fwrite(register_id, sizeof(register_id), 1);
+	fio->FputBool(now_search);
+	fio->FputBool(now_seek);
+	fio->FputBool(after_seek);
+	fio->FputInt32(no_command);
+	fio->FputInt32(seektrk);
+	fio->FputBool(seekvct);
+	fio->FputBool(motor_on);
+	fio->FputBool(drive_sel);
+	fio->FputUint32(prev_drq_clock);
+}
+
+bool MB8877::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	ignore_crc = fio->FgetBool();
+	fio->Fread(fdc, sizeof(fdc), 1);
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		if(!disk[i]->load_state(fio)) {
+			return false;
+		}
+	}
+	status = fio->FgetUint8();
+	status_tmp = fio->FgetUint8();
+	cmdreg = fio->FgetUint8();
+	cmdreg_tmp = fio->FgetUint8();
+	trkreg = fio->FgetUint8();
+	secreg = fio->FgetUint8();
+	datareg = fio->FgetUint8();
+	drvreg = fio->FgetUint8();
+	sidereg = fio->FgetUint8();
+	cmdtype = fio->FgetUint8();
+	fio->Fread(register_id, sizeof(register_id), 1);
+	now_search = fio->FgetBool();
+	now_seek = fio->FgetBool();
+	after_seek = fio->FgetBool();
+	no_command = fio->FgetInt32();
+	seektrk = fio->FgetInt32();
+	seekvct = fio->FgetBool();
+	motor_on = fio->FgetBool();
+	drive_sel = fio->FgetBool();
+	prev_drq_clock = fio->FgetUint32();
+	return true;
+}
+

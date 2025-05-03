@@ -9,6 +9,7 @@
 
 #include "mouse.h"
 #include "../z80sio.h"
+#include "../../fileio.h"
 
 void MOUSE::initialize()
 {
@@ -20,8 +21,7 @@ void MOUSE::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MOUSE_SEL) {
 		select = ((data & mask) != 0);
-	}
-	else if(id == SIG_MOUSE_DTR) {
+	} else if(id == SIG_MOUSE_DTR) {
 		if(!select || (data & mask)) {
 			return;
 		}
@@ -38,3 +38,26 @@ void MOUSE::write_signal(int id, uint32 data, uint32 mask)
 		d_sio->write_signal(SIG_Z80SIO_RECV_CH1, d2, 0xff);
 	}
 }
+
+#define STATE_VERSION	1
+
+void MOUSE::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputBool(select);
+}
+
+bool MOUSE::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	select = fio->FgetBool();
+	return true;
+}
+

@@ -54,16 +54,16 @@ public:
 	void initialize();
 	void reset();
 	void special_reset();
-	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_data8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_data8w(uint32 addr, int* wait);
 	uint32 fetch_op(uint32 addr, int* wait);
-	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unitque function
 	void set_context_cpu(DEVICE* device)
