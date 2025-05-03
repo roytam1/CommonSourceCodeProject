@@ -1,3 +1,8 @@
+8/23/2015
+
+[VM/DISK] fix routine to check FM-7 DEATH FORCE
+
+
 8/22/2015-2
 
 [VM/DISK] support solid 1dd 280kb disk image with .img extension

@@ -143,8 +143,11 @@ void DISK::open(const _TCHAR* file_path, int bank)
 			fi->Fseek(offset, FILEIO_SEEK_SET);
 			fi->Fread(buffer, file_size.d, 1);
 			file_bank = bank;
+			if(check_file_extension(file_path, _T(".1dd"))) {
+				is_1dd_image = true;
+				media_type = MEDIA_TYPE_2DD;
+			}
 			inserted = changed = true;
-			is_1dd_image = check_file_extension(file_path, _T(".1dd"));
 //			trim_required = true;
 			
 			// fix sector number from big endian to little endian
@@ -265,9 +268,7 @@ file_loaded:
 			crc32 = getcrc32(buffer, file_size.d);
 		}
 		if(media_type == MEDIA_TYPE_UNK) {
-			if(is_1dd_image) {
-				media_type = MEDIA_TYPE_2DD;
-			} else if((media_type = buffer[0x1b]) == MEDIA_TYPE_2HD) {
+			if((media_type = buffer[0x1b]) == MEDIA_TYPE_2HD) {
 				for(int trkside = 0; trkside < 164; trkside++) {
 					pair offset;
 					offset.read_4bytes_le_from(buffer + 0x20 + trkside * 4);
@@ -305,9 +306,9 @@ file_loaded:
 						static const uint8 gambler[] = {0xb7, 0xde, 0xad, 0xdc, 0xdd, 0xcc, 0xde, 0xd7, 0xb1, 0x20, 0xbc, 0xde, 0xba, 0xc1, 0xad, 0xb3, 0xbc, 0xdd, 0xca};
 						if(memcmp((void *)(t + 0x30), gambler, sizeof(gambler)) == 0) {
 							is_special_disk = SPECIAL_DISK_FM7_GAMBLER;
+							break;
 						}
-						break;
-					} else if(data_size.sd == 0x200 && t[0] == 0 && t[1] == 0 && t[2] == 0xf7 && t[3] == 0x02) {
+					} else if(data_size.sd == 0x200 && t[0] == 0 && t[1] == 0 && t[2] == 0xf7 && t[3] == 2) {
 						//"DEATHFORCE/77AV" + $f7*17 + $00 + $00
 						static const uint8 deathforce[] ={
 							0x44, 0x45, 0x41, 0x54, 0x48, 0x46, 0x4f, 0x52,
@@ -318,8 +319,8 @@ file_loaded:
 						};
 						if(memcmp((void *)(t + 0x10), deathforce, sizeof(deathforce)) == 0) {
 							is_special_disk = SPECIAL_DISK_FM7_DEATHFORCE;
+							break;
 						}
-						break;
 					}
 					t += data_size.sd + 0x10;
 				}
