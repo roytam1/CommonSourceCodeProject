@@ -174,11 +174,11 @@ private:
 	
 	void draw_text();
 #if defined(_PC8001SR)
-	void draw_320x200_color_graph();
-	void draw_320x200_4color_graph();
+	bool draw_320x200_color_graph();
+	bool draw_320x200_4color_graph();
 	void draw_320x200_attrib_graph();
 #endif
-	void draw_640x200_color_graph();
+	bool draw_640x200_color_graph();
 	void draw_640x200_mono_graph();
 #if defined(_PC8001SR)
 	void draw_640x200_attrib_graph();

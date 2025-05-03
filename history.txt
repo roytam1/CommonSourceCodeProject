@@ -1,3 +1,22 @@
+12/29/2014
+
+[VM/SN76489AN] support save/load state
+[VM/TMS9918A] support save/load state
+[VM/TMS9995] support save/load state
+[VM/UPD7801] support save/load state
+
+[M5] support save/load state
+[MZ700] support save/load state
+[MZ800] support save/load state
+[MZ1500] support save/load state
+[MZ1500/KANJI] support MZ-1R23 and MZ-1R24
+[PC8801MA/PC88] fix many PC-8001mkIISR issues (thanks Mr.apaslothy)
+[PV2000] support save/load state
+[PYUTA] support save/load state
+[SC3000] support save/load state
+[SCV] support save/load state
+
+
 12/26/2014
 
 [VM/AND] support save/load state
@@ -15,6 +34,11 @@
 [PC8801MA/PC88] fix many PC-8001mkIISR issues (thanks Mr.apaslothy)
 [PC8801MA/PC88] fix cmt issue that pacland cannot be loaded on PC-8001mkIISR
 [PC9801] support save/load state
+[PC9801E] support save/load state
+[PC9801U] support save/load state
+[PC9801VF] support save/load state
+[PC9801VM] support save/load state
+[PC98DO] support save/load state
 
 
 12/25/2014
@@ -31,6 +55,8 @@
 [MZ2200] support save/load state
 [PC8801MA/PC88] fix many PC-8001mkIISR issues (thanks Mr.apaslothy)
 [PC8801MA/PC88] fix renderer for graphic screen with text attribute color
+[X1] support save/load state
+[X1TWIN] support save/load state
 [X1TURBO] support save/load state
 
 
@@ -68,7 +94,7 @@
 [MZ1500/QUICKDISK] fix to clear first data/send break flags
 [MZ2500] support save/load state
 [MZ2500/CMT] fix issue that Laydock is not correctly booted
-[PC8001SR] support save/load state
+[PC8001MKIISR] support save/load state
 [PC8801MA] support save/load state
 [PC8801MA/PC88] fix to reset dirty NIPPY patch flag
 [PC8801MA/PC88] fix not to render text scree when dma ch.2 is not running
@@ -172,7 +198,7 @@
 
 10/4/2014
 
-[PC8001SR/PC88] fix color/monochrome and 320x200/640x200 bits in port31
+[PC8801MA/PC88] fix color/monochrome and 320x200/640x200 bits in port31
 
 
 9/29/2014

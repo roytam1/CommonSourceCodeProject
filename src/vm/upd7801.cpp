@@ -12,6 +12,7 @@
 #ifdef USE_DEBUGGER
 #include "debugger.h"
 #endif
+#include "../fileio.h"
 
 #define PRESCALER	16
 
@@ -3791,5 +3792,71 @@ void UPD7801::OP74()
 	default:
 		emu->out_debug_log(_T("PC=%4x\tCPU\tUNKNOWN OP : 74 %2x\n"), prevPC, ope);
 	}
+}
+
+#define STATE_VERSION	1
+
+void UPD7801::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputInt32(count);
+	state_fio->FputInt32(period);
+	state_fio->FputInt32(scount);
+	state_fio->FputInt32(tcount);
+	state_fio->FputBool(wait);
+	state_fio->Fwrite(regs, sizeof(regs), 1);
+	state_fio->FputUint16(SP);
+	state_fio->FputUint16(PC);
+	state_fio->FputUint16(prevPC);
+	state_fio->FputUint8(PSW);
+	state_fio->FputUint8(IRR);
+	state_fio->FputUint8(IFF);
+	state_fio->FputUint8(SIRQ);
+	state_fio->FputUint8(HALT);
+	state_fio->FputUint8(MK);
+	state_fio->FputUint8(MB);
+	state_fio->FputUint8(MC);
+	state_fio->FputUint8(TM0);
+	state_fio->FputUint8(TM1);
+	state_fio->FputUint8(SR);
+	state_fio->FputUint8(SAK);
+	state_fio->FputUint8(TO);
+	state_fio->FputUint8(PORTC);
+}
+
+bool UPD7801::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	count = state_fio->FgetInt32();
+	period = state_fio->FgetInt32();
+	scount = state_fio->FgetInt32();
+	tcount = state_fio->FgetInt32();
+	wait = state_fio->FgetBool();
+	state_fio->Fread(regs, sizeof(regs), 1);
+	SP = state_fio->FgetUint16();
+	PC = state_fio->FgetUint16();
+	prevPC = state_fio->FgetUint16();
+	PSW = state_fio->FgetUint8();
+	IRR = state_fio->FgetUint8();
+	IFF = state_fio->FgetUint8();
+	SIRQ = state_fio->FgetUint8();
+	HALT = state_fio->FgetUint8();
+	MK = state_fio->FgetUint8();
+	MB = state_fio->FgetUint8();
+	MC = state_fio->FgetUint8();
+	TM0 = state_fio->FgetUint8();
+	TM1 = state_fio->FgetUint8();
+	SR = state_fio->FgetUint8();
+	SAK = state_fio->FgetUint8();
+	TO = state_fio->FgetUint8();
+	PORTC = state_fio->FgetUint8();
+	return true;
 }
 

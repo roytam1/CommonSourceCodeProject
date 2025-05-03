@@ -4,31 +4,32 @@
 	SHARP MZ-1500 Emulator 'EmuZ-1500'
 
 	Author : Takeda.Toshiya
-	Date   : 2010.09.02 -
+	Date   : 2014.12.26-
 
-	[ ram file ]
+	[ kanji/dictionary rom ]
 */
 
-#ifndef _RAMFILE_H_
-#define _RAMFILE_H_
+#ifndef _KANJI_H_
+#define _KANJI_H_
 
 #include "../vm.h"
 #include "../../emu.h"
 #include "../device.h"
 
-class RAMFILE : public DEVICE
+class KANJI : public DEVICE
 {
 private:
-	uint8 *data_buffer;
-	uint32 data_addr;
+	uint8 kanji[0x20000];
+	uint8 dic[0x40000];
+	uint32 control_reg;
+	uint32 kanji_addr, dic_addr;
 	
 public:
-	RAMFILE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
-	~RAMFILE() {}
+	KANJI(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	~KANJI() {}
 	
 	// common functions
 	void initialize();
-	void release();
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
