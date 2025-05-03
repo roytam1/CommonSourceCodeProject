@@ -119,19 +119,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		break;
 	}
 	if(update_map_required) {
-#ifdef _X1TURBO_FEATURE
-		if(!(bank & 0x10)) {
-			uint8 *ptr = extram + 0x8000 * (bank & 0x0f);
-			SET_BANK(0x0000, 0x7fff, ptr, ptr);
-		}
-		else
-#endif
-		if(romsel) {
-			SET_BANK(0x0000, 0x7fff, ram, rom);
-		}
-		else {
-			SET_BANK(0x0000, 0x7fff, ram, ram);
-		}
+		update_map();
 	}
 }
 
@@ -144,5 +132,57 @@ uint32 MEMORY::read_io8(uint32 addr)
 	}
 #endif
 	return 0xff;
+}
+
+void MEMORY::update_map()
+{
+#ifdef _X1TURBO_FEATURE
+	if(!(bank & 0x10)) {
+		uint8 *ptr = extram + 0x8000 * (bank & 0x0f);
+		SET_BANK(0x0000, 0x7fff, ptr, ptr);
+	} else
+#endif
+	if(romsel) {
+		SET_BANK(0x0000, 0x7fff, ram, rom);
+	} else {
+		SET_BANK(0x0000, 0x7fff, ram, ram);
+	}
+}
+
+#define STATE_VERSION	1
+
+void MEMORY::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(ram, sizeof(ram), 1);
+	fio->FputUint8(romsel);
+#ifdef _X1TURBO_FEATURE
+	fio->Fwrite(extram, sizeof(extram), 1);
+	fio->FputUint8(bank);
+#else
+	fio->FputInt32(m1_cycle);
+#endif
+}
+
+bool MEMORY::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(ram, sizeof(ram), 1);
+	romsel = fio->FgetUint8();
+#ifdef _X1TURBO_FEATURE
+	fio->Fread(extram, sizeof(extram), 1);
+	bank = fio->FgetUint8();
+#else
+	m1_cycle = fio->FgetInt32();
+#endif
+	update_map();
+	return true;
 }
 

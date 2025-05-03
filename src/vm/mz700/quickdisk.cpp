@@ -121,35 +121,30 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 			// start to write
 			first_data = true;
 			write_ptr = 0;
-		}
-		else if(!wrga && next) {
+		} else if(!wrga && next) {
 			// end to write
 			write_crc();
 		}
 		wrga = next;
-	}
-	else if(id == QUICKDISK_SIO_DTRB) {
+	} else if(id == QUICKDISK_SIO_DTRB) {
 		if(mton && !next) {
 			// H->L: start motor
 			if(motor_on && wrga) {
 				// restart to send
 				send_data();
 				REGISTER_END_EVENT();
-			}
-			else {
+			} else {
 				// start motor and restore to home position
 				motor_on = true;
 				REGISTER_RESTORE_EVENT();
 				CANCEL_END_EVENT();
 			}
-		}
-		else if(!mton && next) {
+		} else if(!mton && next) {
 			// L->H: home signal is high
 			set_home(true);
 		}
 		mton = next;
-	}
-	else if(id == QUICKDISK_SIO_SYNC) {
+	} else if(id == QUICKDISK_SIO_SYNC) {
 		// enter hunt/sync phase
 		sync = next;
 		if(sync) {
@@ -160,12 +155,10 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 			}
 			send_data();
 		}
-	}
-	else if(id == QUICKDISK_SIO_RXDONE) {
+	} else if(id == QUICKDISK_SIO_RXDONE) {
 		// send next data
 		send_data();
-	}
-	else if(id == QUICKDISK_SIO_DATA || id == QUICKDISK_SIO_BREAK) {
+	} else if(id == QUICKDISK_SIO_DATA || id == QUICKDISK_SIO_BREAK) {
 		// write data
 		if(!(motor_on && !wrga)) {
 			return;
@@ -179,8 +172,7 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 			}
 			WRITE_BUFFER(data);
 			write_ptr = buffer_ptr;
-		}
-		else if(id == QUICKDISK_SIO_BREAK) {
+		} else if(id == QUICKDISK_SIO_BREAK) {
 			write_crc();
 			WRITE_BUFFER(DATA_BREAK);
 			first_data = true;
@@ -190,8 +182,7 @@ void QUICKDISK::write_signal(int id, uint32 data, uint32 mask)
 		
 		if(buffer_ptr < QUICKDISK_BUFFER_SIZE) {
 			REGISTER_END_EVENT();
-		}
-		else {
+		} else {
 			CANCEL_END_EVENT();
 			end_of_disk();
 		}
@@ -214,8 +205,7 @@ void QUICKDISK::event_callback(int event_id, int err)
 		// reached to home position
 		restore_id = -1;
 		restore();
-	}
-	else if(event_id == EVENT_END) {
+	} else if(event_id == EVENT_END) {
 		// reached to end of disk
 		end_id = -1;
 		end_of_disk();
@@ -258,8 +248,7 @@ retry:
 		send_break = true;
 		accessed = true;
 		REGISTER_END_EVENT();
-	}
-	else {
+	} else {
 		// reached to end of disk
 		CANCEL_END_EVENT();
 		end_of_disk();
@@ -290,8 +279,7 @@ void QUICKDISK::end_of_disk()
 	// reached to end of disk
 	if(mton || !wrga) {
 		motor_on = false;
-	}
-	else {
+	} else {
 		REGISTER_RESTORE_EVENT();
 	}
 	set_home(true);
@@ -554,8 +542,7 @@ void QUICKDISK::release_disk()
 					header[0x16] = (uint8)buffer[buffer_ptr + 24];	// exec addr
 					header[0x17] = (uint8)buffer[buffer_ptr + 25];
 					fio->Fwrite(header, MZT_HEADER_SIZE, 1);
-				}
-				else {
+				} else {
 					// data
 					for(int i = 0; i < size; i++) {
 						fio->Fputc(buffer[buffer_ptr + i]);
@@ -567,5 +554,59 @@ void QUICKDISK::release_disk()
 		}
 		delete fio;
 	}
+}
+
+#define STATE_VERSION	1
+
+void QUICKDISK::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(file_path, sizeof(file_path), 1);
+	fio->FputBool(insert);
+	fio->FputBool(protect);
+	fio->FputBool(home);
+	fio->FputBool(modified);
+	fio->FputBool(accessed);
+	fio->Fwrite(buffer, sizeof(buffer), 1);
+	fio->FputInt32(buffer_ptr);
+	fio->FputInt32(write_ptr);
+	fio->FputBool(first_data);
+	fio->FputBool(send_break);
+	fio->FputBool(wrga);
+	fio->FputBool(mton);
+	fio->FputBool(sync);
+	fio->FputBool(motor_on);
+	fio->FputInt32(restore_id);
+	fio->FputInt32(end_id);
+}
+
+bool QUICKDISK::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(file_path, sizeof(file_path), 1);
+	insert = fio->FgetBool();
+	protect = fio->FgetBool();
+	home = fio->FgetBool();
+	modified = fio->FgetBool();
+	accessed = fio->FgetBool();
+	fio->Fread(buffer, sizeof(buffer), 1);
+	buffer_ptr = fio->FgetInt32();
+	write_ptr = fio->FgetInt32();
+	first_data = fio->FgetBool();
+	send_break = fio->FgetBool();
+	wrga = fio->FgetBool();
+	mton = fio->FgetBool();
+	sync = fio->FgetBool();
+	motor_on = fio->FgetBool();
+	restore_id = fio->FgetInt32();
+	end_id = fio->FgetInt32();
+	return true;
 }
 

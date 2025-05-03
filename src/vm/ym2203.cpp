@@ -49,7 +49,9 @@ void YM2203::reset()
 #endif
 	this->SetReg(0x27, 0); // stop timer
 	
+#ifdef SUPPORT_YM2203_PORT
 	port[0].first = port[1].first = true;
+#endif
 	irq_prev = busy = false;
 }
 
@@ -78,29 +80,29 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 #endif
 		break;
 	case 1:
+#ifdef SUPPORT_YM2203_PORT
 		if(ch == 7) {
 #ifdef YM2203_PORT_MODE
 			mode = (data & 0x3f) | YM2203_PORT_MODE;
 #else
 			mode = data;
 #endif
-		}
+		} else if(ch == 14) {
 #ifdef SUPPORT_YM2203_PORT_A
-		else if(ch == 14) {
 			if(port[0].wreg != data || port[0].first) {
 				write_signals(&port[0].outputs, data);
 				port[0].wreg = data;
 				port[0].first = false;
 			}
-		}
 #endif
+		} else if(ch == 15) {
 #ifdef SUPPORT_YM2203_PORT_B
-		else if(ch == 15) {
 			if(port[1].wreg != data || port[1].first) {
 				write_signals(&port[1].outputs, data);
 				port[1].wreg = data;
 				port[1].first = false;
 			}
+#endif
 		}
 #endif
 		// don't write again for prescaler
@@ -149,14 +151,15 @@ uint32 YM2203::read_io8(uint32 addr)
 		}
 #endif
 	case 1:
-#ifdef SUPPORT_YM2203_PORT_A
+#ifdef SUPPORT_YM2203_PORT
 		if(ch == 14) {
+#ifdef SUPPORT_YM2203_PORT_A
 			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
-		}
 #endif
+		} else if(ch == 15) {
 #ifdef SUPPORT_YM2203_PORT_B
-		else if(ch == 15) {
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
+#endif
 		}
 #endif
 		return chip->GetReg(ch);
@@ -179,10 +182,9 @@ uint32 YM2203::read_io8(uint32 addr)
 	case 3:
 		if(ch1 == 8) {
 			return chip->GetReg(0x100 | ch1);
-		}
-//		else if(ch1 == 0x0f) {
+//		} else if(ch1 == 0x0f) {
 //			return 0x80; // from mame fm.c
-//		}
+		}
 		return data1;
 #endif
 	}
@@ -193,17 +195,15 @@ void YM2203::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_YM2203_MUTE) {
 		mute = ((data & mask) != 0);
-	}
 #ifdef SUPPORT_YM2203_PORT_A
-	else if(id == SIG_YM2203_PORT_A) {
+	} else if(id == SIG_YM2203_PORT_A) {
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
-	}
 #endif
 #ifdef SUPPORT_YM2203_PORT_B
-	else if(id == SIG_YM2203_PORT_B) {
+	} else if(id == SIG_YM2203_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
-	}
 #endif
+	}
 }
 
 void YM2203::event_vline(int v, int clock)
@@ -330,16 +330,20 @@ void YM2203::save_state(FILEIO* fio)
 	fio->Fwrite(port_log, sizeof(port_log), 1);
 #endif
 	fio->FputUint8(ch);
+#ifdef SUPPORT_YM2203_PORT
 	fio->FputUint8(mode);
+#endif
 #ifdef HAS_YM2608
 	fio->FputUint8(ch1);
 	fio->FputUint8(data1);
 #endif
+#ifdef SUPPORT_YM2203_PORT
 	for(int i = 0; i < 2; i++) {
 		fio->FputUint8(port[i].wreg);
 		fio->FputUint8(port[i].rreg);
 		fio->FputBool(port[i].first);
 	}
+#endif
 	fio->FputInt32(chip_clock);
 	fio->FputBool(irq_prev);
 	fio->FputBool(mute);
@@ -365,16 +369,20 @@ bool YM2203::load_state(FILEIO* fio)
 	fio->Fread(port_log, sizeof(port_log), 1);
 #endif
 	ch = fio->FgetUint8();
+#ifdef SUPPORT_YM2203_PORT
 	mode = fio->FgetUint8();
+#endif
 #ifdef HAS_YM2608
 	ch1 = fio->FgetUint8();
 	data1 = fio->FgetUint8();
 #endif
+#ifdef SUPPORT_YM2203_PORT
 	for(int i = 0; i < 2; i++) {
 		port[i].wreg = fio->FgetUint8();
 		port[i].rreg = fio->FgetUint8();
 		port[i].first = fio->FgetBool();
 	}
+#endif
 	chip_clock = fio->FgetInt32();
 	irq_prev = fio->FgetBool();
 	mute = fio->FgetBool();

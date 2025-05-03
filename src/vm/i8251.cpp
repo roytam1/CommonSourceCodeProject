@@ -73,11 +73,9 @@ void I8251::write_io8(uint32 addr, uint32 data)
 		case MODE_CLEAR:
 			if(data & 3) {
 				mode = MODE_ASYNC;
-			}
-			else if(data & 0x80) {
+			} else if(data & 0x80) {
 				mode = MODE_SYNC2;	// 1char
-			}
-			else {
+			} else {
 				mode = MODE_SYNC1;	// 2chars
 			}
 			break;
@@ -113,8 +111,7 @@ void I8251::write_io8(uint32 addr, uint32 data)
 			// note: when txen=false, txrdy signal must be low
 			break;
 		}
-	}
-	else {
+	} else {
 		if(status & TXRDY) {
 			send_buffer->write(data);
 			// txrdy
@@ -137,8 +134,7 @@ uint32 I8251::read_io8(uint32 addr)
 {
 	if(addr & 1) {
 		return status;
-	}
-	else {
+	} else {
 		if(status & RXRDY) {
 			status &= ~RXRDY;
 			write_signals(&outputs_rxrdy, 0);
@@ -155,8 +151,7 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 		if(rxen && !recv_buffer->empty() && recv_id == -1) {
 			register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 		}
-	}
-	else if(id == SIG_I8251_BREAK) {
+	} else if(id == SIG_I8251_BREAK) {
 		if(data & mask) {
 			recv_buffer->write(RECV_BREAK);
 			// register event
@@ -164,19 +159,15 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 				register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
 			}
 		}
-	}
-	else if(id == SIG_I8251_DSR) {
+	} else if(id == SIG_I8251_DSR) {
 		if(data & mask) {
 			status |= DSR;
-		}
-		else {
+		} else {
 			status &= ~DSR;
 		}
-	}
-	else if(id == SIG_I8251_CLEAR) {
+	} else if(id == SIG_I8251_CLEAR) {
 		recv_buffer->clear();
-	}
-	else if(id == SIG_I8251_LOOPBACK) {
+	} else if(id == SIG_I8251_LOOPBACK) {
 		loopback = ((data & mask) != 0);
 	}
 }
@@ -191,8 +182,7 @@ void I8251::event_callback(int event_id, int err)
 					// break
 					status |= SYNDET;
 					write_signals(&outputs_syndet, 0xffffffff);
-				}
-				else {
+				} else {
 					recv = (uint8)val;
 					status |= RXRDY;
 					write_signals(&outputs_rxrdy, 0xffffffff);
@@ -202,19 +192,16 @@ void I8251::event_callback(int event_id, int err)
 		// if data is still left in buffer, register event for next data
 		if(rxen && !recv_buffer->empty()) {
 			register_event(this, EVENT_RECV, RECV_DELAY, false, &recv_id);
-		}
-		else {
+		} else {
 			recv_id = -1;
 		}
-	}
-	else if(event_id == EVENT_SEND) {
+	} else if(event_id == EVENT_SEND) {
 		if(txen && !send_buffer->empty()) {
 			uint8 send = send_buffer->read();
 			if(loopback) {
 				// send to this device
 				write_signal(SIG_I8251_RECV, send, 0xff);
-			}
-			else {
+			} else {
 				// send to external devices
 				write_signals(&outputs_out, send);
 			}
@@ -230,8 +217,7 @@ void I8251::event_callback(int event_id, int err)
 		// if data is still left in buffer, register event for next data
 		if(txen && !send_buffer->empty()) {
 			register_event(this, EVENT_SEND, SEND_DELAY, false, &send_id);
-		}
-		else {
+		} else {
 			send_id = -1;
 		}
 	}

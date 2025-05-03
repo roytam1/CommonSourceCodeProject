@@ -21,8 +21,7 @@ void BEEP::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_BEEP_ON) {
 		on = ((data & mask) != 0);
-	}
-	else if(id == SIG_BEEP_MUTE) {
+	} else if(id == SIG_BEEP_MUTE) {
 		mute = ((data & mask) != 0);
 	}
 }

@@ -274,12 +274,11 @@ DEVICE *VM::get_cpu(int index)
 {
 	if(index == 0) {
 		return cpu;
-	}
 #ifdef SUPPORT_16BIT_BOARD
-	else if(index == 1) {
+	} else if(index == 1) {
 		return cpu_16;
-	}
 #endif
+	}
 	return NULL;
 }
 #endif

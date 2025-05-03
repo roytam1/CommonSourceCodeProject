@@ -64,7 +64,7 @@ private:
 	bool hireso;
 #endif
 #ifdef _X1TURBOZ
-	uint8 zmode1, zmode2, ztpal[8];
+	uint8 zmode1, zpriority, zscroll, zmode2, ztpal[8];
 	struct {
 		uint8 b, r, g;
 	} zpal[4096];
@@ -129,6 +129,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
 	void event_vline(int v, int clock);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 #ifdef _X1TURBO_FEATURE

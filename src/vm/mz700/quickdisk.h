@@ -64,6 +64,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_sio(DEVICE* device)

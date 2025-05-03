@@ -11,6 +11,7 @@
 #ifdef USE_DEBUGGER
 #include "debugger.h"
 #endif
+#include "../fileio.h"
 
 /* ----------------------------------------------------------------------------
 	MAME i286
@@ -183,21 +184,17 @@ void I286::write_signal(int id, uint32 data, uint32 mask)
 	
 	if(id == SIG_CPU_NMI) {
 		set_irq_line(cpustate, INPUT_LINE_NMI, (data & mask) ? HOLD_LINE : CLEAR_LINE);
-	}
-	else if(id == SIG_CPU_IRQ) {
+	} else if(id == SIG_CPU_IRQ) {
 		set_irq_line(cpustate, INPUT_LINE_IRQ, (data & mask) ? HOLD_LINE : CLEAR_LINE);
-	}
-	else if(id == SIG_CPU_BUSREQ) {
+	} else if(id == SIG_CPU_BUSREQ) {
 		cpustate->busreq = (data & mask) ? 1 : 0;
-	}
-	else if(id == SIG_I86_TEST) {
+	} else if(id == SIG_I86_TEST) {
 		cpustate->test_state = (data & mask) ? 1 : 0;
-	}
 #ifdef HAS_I286
-	else if(id == SIG_I86_A20) {
+	} else if(id == SIG_I86_A20) {
 		i80286_set_a20_line(cpustate, data & mask);
-	}
 #endif
+	}
 }
 
 void I286::set_intr_line(bool line, bool pending, uint32 bit)
@@ -371,3 +368,44 @@ int I286::get_shutdown_flag()
 	return cpustate->shutdown;
 }
 #endif
+
+
+#define STATE_VERSION	1
+
+void I286::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(opaque, sizeof(cpu_state), 1);
+}
+
+bool I286::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(opaque, sizeof(cpu_state), 1);
+	
+	cpu_state *cpustate = (cpu_state *)opaque;
+	cpustate->pic = d_pic;
+	cpustate->program = d_mem;
+	cpustate->io = d_io;
+#ifdef I86_BIOS_CALL
+	cpustate->bios = d_bios;
+#endif
+#ifdef SINGLE_MODE_DMA
+	cpustate->dma = d_dma;
+#endif
+#ifdef USE_DEBUGGER
+	cpustate->emu = emu;
+	cpustate->debugger = d_debugger;
+	cpustate->program_stored = d_mem;
+	cpustate->io_stored = d_io;
+#endif
+	return true;
+}
+

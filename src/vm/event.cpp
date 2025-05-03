@@ -134,8 +134,7 @@ void EVENT::drive()
 		if(event_remain < 0) {
 			if(-event_remain > vclocks[v]) {
 				update_event(vclocks[v]);
-			}
-			else {
+			} else {
 				update_event(-event_remain);
 			}
 		}
@@ -149,8 +148,7 @@ void EVENT::drive()
 				int cpu_done_tmp;
 				if(dcount_cpu == 1) {
 					cpu_done_tmp = d_cpu[0].device->run(-1);
-				}
-				else {
+				} else {
 					// sync to sub cpus
 					if(cpu_done == 0) {
 						cpu_done = d_cpu[0].device->run(-1);
@@ -176,8 +174,7 @@ void EVENT::drive()
 			if(event_done > 0) {
 				if(event_done > event_remain) {
 					update_event(event_remain);
-				}
-				else {
+				} else {
 					update_event(event_done);
 				}
 				event_remain -= event_done;
@@ -202,8 +199,7 @@ void EVENT::update_event(int clock)
 		if(event_handle->loop_clock != 0) {
 			event_handle->expired_clock += event_handle->loop_clock;
 			insert_event(event_handle);
-		}
-		else {
+		} else {
 			event_handle->active = false;
 			event_handle->next = first_free_event;
 			first_free_event = event_handle;
@@ -279,8 +275,7 @@ void EVENT::insert_event(event_t *event_handle)
 	if(first_fire_event == NULL) {
 		first_fire_event = event_handle;
 		event_handle->prev = event_handle->next = NULL;
-	}
-	else {
+	} else {
 		for(event_t *insert_pos = first_fire_event; insert_pos != NULL; insert_pos = insert_pos->next) {
 			if(insert_pos->expired_clock > event_handle->expired_clock) {
 				if(insert_pos->prev != NULL) {
@@ -290,8 +285,7 @@ void EVENT::insert_event(event_t *event_handle)
 					event_handle->next = insert_pos;
 					insert_pos->prev = event_handle;
 					break;
-				}
-				else {
+				} else {
 					// add to head
 					first_fire_event = event_handle;
 					event_handle->prev = NULL;
@@ -299,8 +293,7 @@ void EVENT::insert_event(event_t *event_handle)
 					insert_pos->prev = event_handle;
 					break;
 				}
-			}
-			else if(insert_pos->next == NULL) {
+			} else if(insert_pos->next == NULL) {
 				// add to tail
 				insert_pos->next = event_handle;
 				event_handle->prev = insert_pos;
@@ -323,8 +316,7 @@ void EVENT::cancel_event(DEVICE* device, int register_id)
 		if(event_handle->active) {
 			if(event_handle->prev != NULL) {
 				event_handle->prev->next = event_handle->next;
-			}
-			else {
+			} else {
 				first_fire_event = event_handle->next;
 			}
 			if(event_handle->next != NULL) {
@@ -341,24 +333,22 @@ void EVENT::register_frame_event(DEVICE* dev)
 {
 	if(frame_event_count < MAX_EVENT) {
 		frame_event[frame_event_count++] = dev;
-	}
+	} else {
 #ifdef _DEBUG_LOG
-	else {
 		emu->out_debug_log(_T("EVENT: too many frame events !!!\n"));
-	}
 #endif
+	}
 }
 
 void EVENT::register_vline_event(DEVICE* dev)
 {
 	if(vline_event_count < MAX_EVENT) {
 		vline_event[vline_event_count++] = dev;
-	}
+	} else {
 #ifdef _DEBUG_LOG
-	else {
 		emu->out_debug_log(_T("EVENT: too many vline events !!!\n"));
-	}
 #endif
+	}
 }
 
 void EVENT::mix_sound(int samples)
@@ -378,8 +368,7 @@ void EVENT::mix_sound(int samples)
 			}
 		}
 		buffer_ptr += samples;
-	}
-	else {
+	} else {
 		// notify to sound devices
 		for(int i = 0; i < dcount_sound; i++) {
 			d_sound[i]->mix(sound_tmp + buffer_ptr * 2, 0);
@@ -448,8 +437,7 @@ uint16* EVENT::create_sound(int* extra_frames)
 	if(buffer_ptr > sound_samples) {
 		buffer_ptr -= sound_samples;
 		memcpy(sound_tmp, sound_tmp + sound_samples * 2, buffer_ptr * sizeof(int32) * 2);
-	}
-	else {
+	} else {
 		buffer_ptr = 0;
 	}
 	*extra_frames = frames;

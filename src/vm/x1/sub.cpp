@@ -14,6 +14,7 @@
 #include "../i8255.h"
 #include "../mcs48.h"
 #include "../upd1990a.h"
+#include "../../fileio.h"
 
 /*
 SUB CPU
@@ -70,8 +71,8 @@ void SUB::reset()
 	p1_in = 0;
 	p2_in = 4;
 	
-	iei = true;
 	intr = obf = false;
+	iei = true;
 	
 	close_tape();
 }
@@ -260,5 +261,51 @@ void SUB::update_intr()
 	} else {
 		d_cpu->set_intr_line(false, true, intr_bit);
 	}
+}
+
+#define STATE_VERSION	1
+
+void SUB::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint8(p1_out);
+	fio->FputUint8(p1_in);
+	fio->FputUint8(p2_out);
+	fio->FputUint8(p2_in);
+	fio->FputUint8(portc);
+	fio->FputBool(tape_play);
+	fio->FputBool(tape_rec);
+	fio->FputBool(tape_eot);
+	fio->FputBool(tape_apss);
+	fio->FputBool(intr);
+	fio->FputBool(obf);
+	fio->FputBool(iei);
+	fio->FputUint32(intr_bit);
+}
+
+bool SUB::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	p1_out = fio->FgetUint8();
+	p1_in = fio->FgetUint8();
+	p2_out = fio->FgetUint8();
+	p2_in = fio->FgetUint8();
+	portc = fio->FgetUint8();
+	tape_play = fio->FgetBool();
+	tape_rec = fio->FgetBool();
+	tape_eot = fio->FgetBool();
+	tape_apss = fio->FgetBool();
+	intr = fio->FgetBool();
+	obf = fio->FgetBool();
+	iei = fio->FgetBool();
+	intr_bit = fio->FgetUint32();
+	return true;
 }
 

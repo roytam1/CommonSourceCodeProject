@@ -29,21 +29,18 @@ private:
 	DEVICE *d_cpu;
 	
 	// i/o map
-	typedef struct {
+	struct {
 		DEVICE* dev;
 		uint32 addr;
 		bool is_flipflop;
-	} write_t;
+	} wr_table[IO_ADDR_MAX];
 	
-	typedef struct {
+	struct {
 		DEVICE* dev;
 		uint32 addr;
 		bool value_registered;
 		uint32 value;
-	} read_t;
-	
-	write_t wr_table[IO_ADDR_MAX];
-	read_t rd_table[IO_ADDR_MAX];
+	} rd_table[IO_ADDR_MAX];
 	
 	// vram
 #ifdef _X1TURBO_FEATURE
@@ -92,6 +89,8 @@ public:
 	uint32 read_io8w(uint32 addr, int* wait);
 	void write_dma_io8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_dma_io8w(uint32 addr, int* wait);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device)

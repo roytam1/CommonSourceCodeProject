@@ -101,6 +101,7 @@
 #define USE_SOUND_DEVICE_TYPE	3
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER
+#define USE_STATE
 
 #include "../../common.h"
 
@@ -140,6 +141,8 @@ class KEYBOARD;
 class HUC6280;
 class PCE;
 #endif
+
+class FILEIO;
 
 class VM
 {
@@ -249,6 +252,8 @@ public:
 #ifdef _X1TURBO_FEATURE
 	void update_dipswitch();
 #endif
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// ----------------------------------------
 	// for each device

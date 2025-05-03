@@ -43,11 +43,9 @@ void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 			update = 2;
 			signal = next;
 		}
-	}
-	else if(id == SIG_PCM1BIT_ON) {
+	} else if(id == SIG_PCM1BIT_ON) {
 		on = ((data & mask) != 0);
-	}
-	else if(id == SIG_PCM1BIT_MUTE) {
+	} else if(id == SIG_PCM1BIT_MUTE) {
 		mute = ((data & mask) != 0);
 	}
 }
@@ -83,20 +81,17 @@ void PCM1BIT::mix(int32* buffer, int cnt)
 					if(samples_out[s]) {
 						if(samples_signal[s]) {
 							on_clocks += clock - start_clock;
-						}
-						else {
+						} else {
 							off_clocks += clock - start_clock;
 						}
 					}
 					start_clock = clock;
 					start_index = s + 1;
-				}
-				else {
+				} else {
 					if(samples_out[s]) {
 						if(samples_signal[s]) {
 							on_clocks += end_clock - start_clock;
-						}
-						else {
+						} else {
 							off_clocks += end_clock - start_clock;
 						}
 					}

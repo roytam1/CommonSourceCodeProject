@@ -1,3 +1,20 @@
+12/25/2014
+
+[EMU/WIN32] fix to remove printer file if the file size is less than 2 bytes
+[EMU/WIN32] fix to initialize virtual machine when sound device type is changed
+
+[VM/HD46505] support save/load state
+[VM/I286] support save/load state
+[VM/I8259] support save/load state
+[VM/MCS48] support save/load state
+[VM/UPD1990A] fix to show lsb bit of second after all bit are read
+
+[MZ2200] support save/load state
+[PC8801MA/PC88] fix many PC-8001mkIISR issues (thanks Mr.apaslothy)
+[PC8801MA/PC88] fix renderer for graphic screen with text attribute color
+[X1TURBO] support save/load state
+
+
 12/23/2014
 
 [EMU/WIN32] simplify get/put functions for several types in file i/o class

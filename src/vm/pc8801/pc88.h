@@ -173,13 +173,18 @@ private:
 	scrntype palette_graph_pc[8];
 	
 	void draw_text();
+#if defined(_PC8001SR)
 	void draw_320x200_color_graph();
 	void draw_320x200_4color_graph();
 	void draw_320x200_attrib_graph();
+#endif
 	void draw_640x200_color_graph();
 	void draw_640x200_mono_graph();
+#if defined(_PC8001SR)
 	void draw_640x200_attrib_graph();
+#else
 	void draw_640x400_attrib_graph();
+#endif
 	
 	// misc
 	bool usart_dcd;

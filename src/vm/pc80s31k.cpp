@@ -19,14 +19,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x2000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x2000 * (i - sb); \
 		} \
 	} \
@@ -45,12 +43,10 @@ void PC80S31K::initialize()
 		fio->Fseek(0x14000, FILEIO_SEEK_CUR);
 		fio->Fread(rom, sizeof(rom), 1);
 		fio->Fclose();
-	}
-	else if(fio->Fopen(emu->bios_path(_T("DISK.ROM")), FILEIO_READ_BINARY)) {
+	} else if(fio->Fopen(emu->bios_path(_T("DISK.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(rom, sizeof(rom), 1);
 		fio->Fclose();
-	}
-	else {
+	} else {
 		// stop cpu
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 	}
@@ -140,11 +136,9 @@ void PC80S31K::write_io8(uint32 addr, uint32 data)
 			uint32 mode = data >> drv;
 			if(mode & 1) {
 				d_fdc->set_drive_type(drv, DRIVE_TYPE_2HD);
-			}
-			else if(mode & 4) {
+			} else if(mode & 4) {
 				d_fdc->set_drive_type(drv, DRIVE_TYPE_2DD);
-			}
-			else {
+			} else {
 				d_fdc->set_drive_type(drv, DRIVE_TYPE_2D);
 			}
 		}
@@ -174,14 +168,11 @@ void PC80S31K::write_io8(uint32 addr, uint32 data)
 			int bit = (data >> 1) & 7;
 			if(bit == 4){
 //				emu->out_debug_log("SUB\tOUT DAV=%d\n", data & 1);
-			}
-			else if(bit == 5){
+			} else if(bit == 5){
 //				emu->out_debug_log("SUB\tOUT RFD=%d\n", data & 1);
-			}
-			else if(bit == 6){
+			} else if(bit == 6){
 //				emu->out_debug_log("SUB\tOUT DAC=%d\n", data & 1);
-			}
-			else if(bit == 7){
+			} else if(bit == 7){
 //				emu->out_debug_log("SUB\tOUT ATN=%d\n", data & 1);
 			}
 		}

@@ -47,6 +47,9 @@
 #define Port31_400LINE	false
 #endif
 
+#define Port31_V1_320x200	(port[0x31] & 0x10)	// PC-8001 (V1)
+#define Port31_V1_MONO		(port[0x31] & 0x04)	// PC-8001 (V1)
+
 #define Port31_COLOR	(port[0x31] & 0x10)	// PC-8001
 #define Port31_320x200	(port[0x31] & 0x04)	// PC-8001
 
@@ -605,11 +608,12 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		pcg_addr = (pcg_addr & 0x300) | data;
 		break;
 	case 0x02:
-		if((pcg_ctrl & 0x20) && !(data & 0x20)) {
-			pcg_pattern[0x400 | pcg_addr] = kanji1[0x1400 | pcg_addr];
-		}
 		if((pcg_ctrl & 0x10) && !(data & 0x10)) {
-			pcg_pattern[0x400 | pcg_addr] = pcg_data;
+			if(pcg_ctrl & 0x20) {
+				pcg_pattern[0x400 | pcg_addr] = kanji1[0x1400 | pcg_addr];
+			} else {
+				pcg_pattern[0x400 | pcg_addr] = pcg_data;
+			}
 		}
 		pcg_addr = (pcg_addr & 0x0ff) | ((data & 3) << 8);
 		pcg_ctrl = data;
@@ -1026,8 +1030,12 @@ uint32 PC88::read_io8_debug(uint32 addr)
 		return dmac.read_io8(addr);
 	case 0x6e:
 		return (cpu_clock_low ? 0x80 : 0) | 0x7f;
+#if !defined(_PC8001SR)
 	case 0x70:
+		// PC-8001mkIISR returns the constant value
+		// this port is used to detect PC-8001mkIISR or 8801mkIISR
 		return port[0x70];
+#endif
 	case 0x71:
 		return port[0x71];
 	case 0xe2:
@@ -1336,7 +1344,11 @@ void PC88::event_vline(int v, int clock)
 		if(crtc.status & 0x10) {
 			// start dma transfer to crtc
 			dmac.start(2);
-			
+			if(!dmac.ch[2].running) {
+				// dma underrun occurs !!!
+				crtc.status |= 8;
+				crtc.status &= ~0x10;
+			}
 			// dma wait cycles
 			busreq_clocks = (int)((double)(dmac.ch[2].count.sd + 1) * (cpu_clock_low ? 7.0 : 16.0) / (double)disp_line + 0.5);
 		}
@@ -1514,9 +1526,9 @@ void PC88::draw_screen()
 	scrntype *palette_pc = palette_graph_pc;
 #if defined(_PC8001SR)
 	if(config.boot_mode != MODE_PC80_V2) {
-		if(Port31_320x200) {
+		if(Port31_V1_320x200) {
 			draw_320x200_4color_graph();
-		} else if(Port31_COLOR) {
+		} else if(Port31_V1_MONO) {
 			draw_640x200_mono_graph();
 		} else {
 			draw_640x200_attrib_graph();
@@ -1554,9 +1566,10 @@ void PC88::draw_screen()
 		static const int pex[8] = {
 			0,  36,  73, 109, 146, 182, 219, 255 // from m88
 		};
+		scrntype back_color = 0;
 #if defined(_PC8001SR)
 		if(config.boot_mode != MODE_PC80_V2) {
-			if(Port31_320x200) {
+			if(Port31_V1_320x200) {
 				for(int i = 0; i < 3; i++) {
 					uint8 b = (port[0x31] & 4) ? 7 : 0;
 					uint8 r = (i          & 1) ? 7 : 0;
@@ -1564,9 +1577,11 @@ void PC88::draw_screen()
 					palette_graph_pc[i] = RGB_COLOR(pex[r], pex[g], pex[b]);
 				}
 				palette_graph_pc[3] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
-			} else if(Port31_COLOR) {
+			} else if(Port31_V1_MONO) {
 				palette_graph_pc[0] = 0;
 				palette_graph_pc[1] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
+			} else {
+				back_color = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			}
 		} else {
 			if(Port31_COLOR) {
@@ -1576,6 +1591,8 @@ void PC88::draw_screen()
 					uint8 g = (port[0x54 + i] & 4) ? 7 : 0;
 					palette_graph_pc[i] = RGB_COLOR(pex[r], pex[g], pex[b]);
 				}
+			} else {
+				back_color = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			}
 		}
 #else
@@ -1587,9 +1604,10 @@ void PC88::draw_screen()
 			palette_graph_pc[0] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			palette_graph_pc[1] = RGB(255, 255, 255);
 		}
+		back_color = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 #endif
 		// back color for attrib mode
-		palette_text_pc[0] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
+		palette_text_pc[0] = back_color;
 		update_palette = false;
 	}
 	
@@ -1659,7 +1677,7 @@ void PC88::draw_screen()
 
 void PC88::draw_text()
 {
-	if(!dmac.ch[2].running || !(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
+	if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
 		memset(text, 0, sizeof(text));
 		return;
 	}
@@ -1726,6 +1744,7 @@ void PC88::draw_text()
 	}
 }
 
+#if defined(_PC8001SR)
 void PC88::draw_320x200_color_graph()
 {
 	if(!Port31_GRAPH || (Port53_G0DS && Port53_G1DS && Port53_G2DS && Port53_G3DS && Port53_G4DS && Port53_G5DS)) {
@@ -1823,29 +1842,53 @@ void PC88::draw_320x200_attrib_graph()
 	uint8 *gvram_g1 = Port53_G5DS ? gvram_null : (gvram + 0xa000);
 	
 	int char_height = crtc.char_height ? crtc.char_height : 8;
-	int shift = Port30_40 ? 1 : 0;
 	uint8 color_mask = Port30_COLOR ? 0 : 7;
 	
-	for(int y = 0, addr = 0; y < 200; y++) {
-		int cy = y / char_height;
-		for(int x = 0, cx = 0; x < 640; x += 16, cx++) {
-			uint8 a = crtc.attrib.expand[cy][cx >> shift];
-			uint8 c = (a & 0xe0) ? ((a >> 5) | color_mask) : 8;
-			uint8 brg = gvram_b0[addr] | gvram_r0[addr] | gvram_g0[addr] |
-			            gvram_b1[addr] | gvram_r1[addr] | gvram_g1[addr];
-			addr++;
-			uint8 *dest = &graph[y][x];
-			dest[ 0] = dest[ 1] = (brg & 0x80) ? c : 0;
-			dest[ 2] = dest[ 3] = (brg & 0x40) ? c : 0;
-			dest[ 4] = dest[ 5] = (brg & 0x20) ? c : 0;
-			dest[ 6] = dest[ 7] = (brg & 0x10) ? c : 0;
-			dest[ 8] = dest[ 9] = (brg & 0x08) ? c : 0;
-			dest[10] = dest[11] = (brg & 0x04) ? c : 0;
-			dest[12] = dest[13] = (brg & 0x02) ? c : 0;
-			dest[14] = dest[15] = (brg & 0x01) ? c : 0;
+	if(Port30_40) {
+		for(int y = 0, addr = 0; y < 200; y++) {
+			int cy = y / char_height;
+			for(int x = 0, cx = 0; x < 640; x += 16, cx += 2) {
+				uint8 attrib = crtc.attrib.expand[cy][cx];
+				uint8 color = (attrib & 0xe0) ? ((attrib >> 5) | color_mask) : 8;
+				uint8 brg = gvram_b0[addr] | gvram_r0[addr] | gvram_g0[addr] |
+				            gvram_b1[addr] | gvram_r1[addr] | gvram_g1[addr];
+				addr++;
+				uint8 *dest = &graph[y][x];
+				dest[ 0] = dest[ 1] = (brg & 0x80) ? color : 0;
+				dest[ 2] = dest[ 3] = (brg & 0x40) ? color : 0;
+				dest[ 4] = dest[ 5] = (brg & 0x20) ? color : 0;
+				dest[ 6] = dest[ 7] = (brg & 0x10) ? color : 0;
+				dest[ 8] = dest[ 9] = (brg & 0x08) ? color : 0;
+				dest[10] = dest[11] = (brg & 0x04) ? color : 0;
+				dest[12] = dest[13] = (brg & 0x02) ? color : 0;
+				dest[14] = dest[15] = (brg & 0x01) ? color : 0;
+			}
+		}
+	} else {
+		for(int y = 0, addr = 0; y < 200; y++) {
+			int cy = y / char_height;
+			for(int x = 0, cx = 0; x < 640; x += 16, cx += 2) {
+				uint8 attrib_l = crtc.attrib.expand[cy][cx];
+				uint8 color_l = (attrib_l & 0xe0) ? ((attrib_l >> 5) | color_mask) : 8;
+				uint8 attrib_r = crtc.attrib.expand[cy][cx + 1];
+				uint8 color_r = (attrib_r & 0xe0) ? ((attrib_r >> 5) | color_mask) : 8;
+				uint8 brg = gvram_b0[addr] | gvram_r0[addr] | gvram_g0[addr] |
+				            gvram_b1[addr] | gvram_r1[addr] | gvram_g1[addr];
+				addr++;
+				uint8 *dest = &graph[y][x];
+				dest[ 0] = dest[ 1] = (brg & 0x80) ? color_l : 0;
+				dest[ 2] = dest[ 3] = (brg & 0x40) ? color_l : 0;
+				dest[ 4] = dest[ 5] = (brg & 0x20) ? color_l : 0;
+				dest[ 6] = dest[ 7] = (brg & 0x10) ? color_l : 0;
+				dest[ 8] = dest[ 9] = (brg & 0x08) ? color_r : 0;
+				dest[10] = dest[11] = (brg & 0x04) ? color_r : 0;
+				dest[12] = dest[13] = (brg & 0x02) ? color_r : 0;
+				dest[14] = dest[15] = (brg & 0x01) ? color_r : 0;
+			}
 		}
 	}
 }
+#endif
 
 void PC88::draw_640x200_color_graph()
 {
@@ -1903,6 +1946,7 @@ void PC88::draw_640x200_mono_graph()
 	}
 }
 
+#if defined(_PC8001SR)
 void PC88::draw_640x200_attrib_graph()
 {
 	if(!Port31_GRAPH || (Port53_G0DS && Port53_G1DS && Port53_G2DS)) {
@@ -1914,29 +1958,32 @@ void PC88::draw_640x200_attrib_graph()
 	uint8 *gvram_g = Port53_G2DS ? gvram_null : (gvram + 0x8000);
 	
 	int char_height = crtc.char_height ? crtc.char_height : 8;
-	int shift = Port30_40 ? 1 : 0;
-	uint8 color_mask = Port30_COLOR ? 0 : 7;
+	uint8 color_mask = Port30_COLOR ? 0 : 7, color;
 	
 	for(int y = 0, addr = 0; y < 200; y++) {
 		int cy = y / char_height;
 		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
-			uint8 a = crtc.attrib.expand[cy][cx >> shift];
-			uint8 c = (a & 0xe0) ? ((a >> 5) | color_mask) : 8;
+			if(Port30_40 && (cx & 1)) {
+				// don't update color
+			} else {
+				uint8 attrib = crtc.attrib.expand[cy][cx];
+				color = (attrib & 0xe0) ? ((attrib >> 5) | color_mask) : 8;
+			}
 			uint8 brg = gvram_b[addr] | gvram_r[addr] | gvram_g[addr];
 			addr++;
 			uint8 *dest = &graph[y][x];
-			dest[0] = (brg & 0x80) ? c : 0;
-			dest[1] = (brg & 0x40) ? c : 0;
-			dest[2] = (brg & 0x20) ? c : 0;
-			dest[3] = (brg & 0x10) ? c : 0;
-			dest[4] = (brg & 0x08) ? c : 0;
-			dest[5] = (brg & 0x04) ? c : 0;
-			dest[6] = (brg & 0x02) ? c : 0;
-			dest[7] = (brg & 0x01) ? c : 0;
+			dest[0] = (brg & 0x80) ? color : 0;
+			dest[1] = (brg & 0x40) ? color : 0;
+			dest[2] = (brg & 0x20) ? color : 0;
+			dest[3] = (brg & 0x10) ? color : 0;
+			dest[4] = (brg & 0x08) ? color : 0;
+			dest[5] = (brg & 0x04) ? color : 0;
+			dest[6] = (brg & 0x02) ? color : 0;
+			dest[7] = (brg & 0x01) ? color : 0;
 		}
 	}
 }
-
+#else
 void PC88::draw_640x400_attrib_graph()
 {
 	if(!Port31_GRAPH || (Port53_G0DS && Port53_G1DS)) {
@@ -1947,46 +1994,54 @@ void PC88::draw_640x400_attrib_graph()
 	uint8 *gvram_r = Port53_G1DS ? gvram_null : (gvram + 0x4000);
 	
 	int char_height = crtc.char_height ? crtc.char_height : 16;
-	int shift = Port30_40 ? 1 : 0;
-	uint8 color_mask = Port30_COLOR ? 0 : 7;
+	uint8 color_mask = Port30_COLOR ? 0 : 7, color;
 	
 	for(int y = 0, addr = 0; y < 200; y++) {
 		int cy = y / char_height;
 		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
-			uint8 a = crtc.attrib.expand[cy][cx >> shift];
-			uint8 c = (a & 0xe0) ? ((a >> 5) | color_mask) : 8;
+			if(Port30_40 && (cx & 1)) {
+				// don't update color
+			} else {
+				uint8 attrib = crtc.attrib.expand[cy][cx];
+				color = (attrib & 0xe0) ? ((attrib >> 5) | color_mask) : 8;
+			}
 			uint8 b = gvram_b[addr];
 			addr++;
 			uint8 *dest = &graph[y][x];
-			dest[0] = (b & 0x80) ? c : 0;
-			dest[1] = (b & 0x40) ? c : 0;
-			dest[2] = (b & 0x20) ? c : 0;
-			dest[3] = (b & 0x10) ? c : 0;
-			dest[4] = (b & 0x08) ? c : 0;
-			dest[5] = (b & 0x04) ? c : 0;
-			dest[6] = (b & 0x02) ? c : 0;
-			dest[7] = (b & 0x01) ? c : 0;
+			dest[0] = (b & 0x80) ? color : 0;
+			dest[1] = (b & 0x40) ? color : 0;
+			dest[2] = (b & 0x20) ? color : 0;
+			dest[3] = (b & 0x10) ? color : 0;
+			dest[4] = (b & 0x08) ? color : 0;
+			dest[5] = (b & 0x04) ? color : 0;
+			dest[6] = (b & 0x02) ? color : 0;
+			dest[7] = (b & 0x01) ? color : 0;
 		}
 	}
 	for(int y = 200, addr = 0; y < 400; y++) {
 		int cy = y / char_height;
 		for(int x = 0, cx = 0; x < 640; x += 8, cx++) {
-			uint8 a = crtc.attrib.expand[cy][cx >> shift];
-			uint8 c = (a & 0xe0) ? ((a >> 5) | color_mask) : 8;
+			if(Port30_40 && (cx & 1)) {
+				// don't update color
+			} else {
+				uint8 attrib = crtc.attrib.expand[cy][cx];
+				color = (attrib & 0xe0) ? ((attrib >> 5) | color_mask) : 8;
+			}
 			uint8 r = gvram_r[addr];
 			addr++;
 			uint8 *dest = &graph[y][x];
-			dest[0] = (r & 0x80) ? c : 0;
-			dest[1] = (r & 0x40) ? c : 0;
-			dest[2] = (r & 0x20) ? c : 0;
-			dest[3] = (r & 0x10) ? c : 0;
-			dest[4] = (r & 0x08) ? c : 0;
-			dest[5] = (r & 0x04) ? c : 0;
-			dest[6] = (r & 0x02) ? c : 0;
-			dest[7] = (r & 0x01) ? c : 0;
+			dest[0] = (r & 0x80) ? color : 0;
+			dest[1] = (r & 0x40) ? color : 0;
+			dest[2] = (r & 0x20) ? color : 0;
+			dest[3] = (r & 0x10) ? color : 0;
+			dest[4] = (r & 0x08) ? color : 0;
+			dest[5] = (r & 0x04) ? color : 0;
+			dest[6] = (r & 0x02) ? color : 0;
+			dest[7] = (r & 0x01) ? color : 0;
 		}
 	}
 }
+#endif
 
 void PC88::request_intr(int level, bool status)
 {
@@ -2363,7 +2418,7 @@ void pc88_dmac_t::start(int c)
 	if(mode & (1 << c)) {
 		status &= ~(1 << c);
 		ch[c].running = true;
-	}else {
+	} else {
 		ch[c].running = false;
 	}
 }
@@ -2404,7 +2459,7 @@ void pc88_dmac_t::finish(int c)
 			mode &= ~(1 << c);
 		}
 		status |= (1 << c);
-//		ch[c].running = false;
+		ch[c].running = false;
 	}
 }
 

@@ -12,6 +12,7 @@
 #include "keyboard.h"
 #include "sub.h"
 #include "../mcs48.h"
+#include "../../fileio.h"
 
 #define CAPS	0xfe
 #define KANA	0xff
@@ -138,5 +139,31 @@ void KEYBOARD::key_down(int code, bool repeat)
 		kana_locked ^= 1;
 		break;
 	}
+}
+
+#define STATE_VERSION	1
+
+void KEYBOARD::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputUint8(caps_locked);
+	fio->FputUint8(kana_locked);
+	fio->FputUint16(column);
+}
+
+bool KEYBOARD::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	caps_locked = fio->FgetUint8();
+	kana_locked= fio->FgetUint8();
+	column = fio->FgetUint16();
+	return true;
 }
 

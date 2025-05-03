@@ -675,3 +675,31 @@ void VM::update_dipswitch()
 }
 #endif
 
+#define STATE_VERSION	1
+
+void VM::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->save_state(fio);
+	}
+	fio->FputBool(pseudo_sub_cpu);
+	fio->FputInt32(sound_device_type);
+}
+
+bool VM::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		if(!device->load_state(fio)) {
+			return false;
+		}
+	}
+	pseudo_sub_cpu = fio->FgetBool();
+	sound_device_type = fio->FgetInt32();
+	return true;
+}
+

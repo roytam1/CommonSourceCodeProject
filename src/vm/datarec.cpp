@@ -248,14 +248,13 @@ void DATAREC::event_callback(int event_id, int err)
 			prev_clock = current_clock();
 			positive_clocks = negative_clocks = 0;
 		}
-	}
 #ifdef DATAREC_SOUND
-	else if(event_id == EVENT_SOUND) {
+	} else if(event_id == EVENT_SOUND) {
 		if(mix_buffer_ptr < mix_buffer_length) {
 			mix_buffer[mix_buffer_ptr++] = snd_sample;
 		}
-	}
 #endif
+	}
 }
 
 void DATAREC::set_remote(bool value)

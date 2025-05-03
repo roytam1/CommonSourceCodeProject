@@ -37,8 +37,7 @@ void YM2151::write_io8(uint32 addr, uint32 data)
 		update_interrupt();
 		clock_busy = current_clock();
 		busy = true;
-	}
-	else {
+	} else {
 		ch = data;
 	}
 }
@@ -90,8 +89,7 @@ void YM2151::update_interrupt()
 	bool irq = opm->ReadIRQ();
 	if(!irq_prev && irq) {
 		write_signals(&outputs_irq, 0xffffffff);
-	}
-	else if(irq_prev && !irq) {
+	} else if(irq_prev && !irq) {
 		write_signals(&outputs_irq, 0);
 	}
 	irq_prev = irq;

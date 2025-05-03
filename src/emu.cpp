@@ -69,6 +69,9 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #ifdef USE_CPU_TYPE
 	cpu_type = config.cpu_type;
 #endif
+#ifdef USE_SOUND_DEVICE_TYPE
+	sound_device_type = config.sound_device_type;
+#endif
 	
 	// initialize
 	vm = new VM(this);
@@ -167,8 +170,17 @@ int EMU::run()
 
 void EMU::reset()
 {
+	// check if virtual machine should be reinitialized
+	bool reinitialize = false;
 #ifdef USE_CPU_TYPE
-	if(cpu_type != config.cpu_type) {
+	reinitialize |= (cpu_type != config.cpu_type);
+	cpu_type = config.cpu_type;
+#endif
+#ifdef USE_SOUND_DEVICE_TYPE
+	reinitialize |= (sound_device_type != config.sound_device_type);
+	sound_device_type = config.sound_device_type;
+#endif
+	if(reinitialize) {
 		// stop sound
 		if(sound_ok && sound_started) {
 			lpdsb->Stop();
@@ -181,14 +193,10 @@ void EMU::reset()
 		vm->reset();
 		// restore inserted medias
 		restore_media();
-		cpu_type = config.cpu_type;
 	} else {
-#endif
 		// reset virtual machine
 		vm->reset();
-#ifdef USE_CPU_TYPE
 	}
-#endif
 	
 	// reset printer
 	reset_printer();
@@ -272,12 +280,13 @@ void EMU::initialize_printer()
 
 void EMU::release_printer()
 {
+	close_printer_file();
 	delete prn_fio;
 }
 
 void EMU::reset_printer()
 {
-	prn_fio->Fclose();
+	close_printer_file();
 	prn_data = -1;
 	prn_strobe = false;
 }
@@ -285,7 +294,27 @@ void EMU::reset_printer()
 void EMU::update_printer()
 {
 	if(prn_fio->IsOpened() && --prn_wait_frames == 0) {
+		close_printer_file();
+	}
+}
+
+void EMU::open_printer_file()
+{
+	cur_time_t time;
+	get_host_time(&time);
+	_stprintf(prn_file_name, _T("prn_%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.txt"), time.year, time.month, time.day, time.hour, time.minute, time.second);
+	prn_fio->Fopen(bios_path(prn_file_name), FILEIO_WRITE_BINARY);
+}
+
+void EMU::close_printer_file()
+{
+	if(prn_fio->IsOpened()) {
+		// remove if the file size is less than 2 bytes
+		bool remove = (prn_fio->Ftell() < 2);
 		prn_fio->Fclose();
+		if(remove) {
+			prn_fio->Remove(bios_path(prn_file_name));
+		}
 	}
 }
 
@@ -304,11 +333,7 @@ void EMU::printer_strobe(bool value)
 			if(prn_data == -1) {
 				return;
 			}
-			cur_time_t time;
-			_TCHAR file_name[_MAX_PATH];
-			get_host_time(&time);
-			_stprintf(file_name, _T("prn_%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.txt"), time.year, time.month, time.day, time.hour, time.minute, time.second);
-			prn_fio->Fopen(bios_path(file_name), FILEIO_WRITE_BINARY);
+			open_printer_file();
 		}
 		prn_fio->Fputc(prn_data);
 		// wait 10sec
@@ -807,8 +832,17 @@ bool EMU::load_state_tmp(_TCHAR* file_path)
 #ifdef USE_LASER_DISC
 				fio->Fread(&laser_disc_status, sizeof(laser_disc_status), 1);
 #endif
+				// check if virtual machine should be reinitialized
+				bool reinitialize = false;
 #ifdef USE_CPU_TYPE
-				if(cpu_type != config.cpu_type) {
+				reinitialize |= (cpu_type != config.cpu_type);
+				cpu_type = config.cpu_type;
+#endif
+#ifdef USE_SOUND_DEVICE_TYPE
+				reinitialize |= (sound_device_type != config.sound_device_type);
+				sound_device_type = config.sound_device_type;
+#endif
+				if(reinitialize) {
 					// stop sound
 					if(sound_ok && sound_started) {
 						lpdsb->Stop();
@@ -819,9 +853,7 @@ bool EMU::load_state_tmp(_TCHAR* file_path)
 					vm = new VM(this);
 					vm->initialize_sound(sound_rate, sound_samples);
 					vm->reset();
-					cpu_type = config.cpu_type;
 				}
-#endif
 				// restore inserted medias
 				restore_media();
 				// load vm state

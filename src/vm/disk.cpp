@@ -203,16 +203,13 @@ void DISK::open(_TCHAR path[], int offset)
 				if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
 					// teledisk image file
 					inserted = changed = converted = teledisk_to_d88();
-				}
-				else if(memcmp(buffer, "IMD", 3) == 0) {
+				} else if(memcmp(buffer, "IMD", 3) == 0) {
 					// imagedisk image file
 					inserted = changed = converted = imagedisk_to_d88();
-				}
-				else if(memcmp(buffer, "MV - CPC", 8) == 0) {
+				} else if(memcmp(buffer, "MV - CPC", 8) == 0) {
 					// standard cpdread image file
 					inserted = changed = converted = cpdread_to_d88(0);
-				}
-				else if(memcmp(buffer, "EXTENDED", 8) == 0) {
+				} else if(memcmp(buffer, "EXTENDED", 8) == 0) {
 					// extended cpdread image file
 					inserted = changed = converted = cpdread_to_d88(1);
 				}
@@ -386,8 +383,7 @@ retry:
 		// Too many sectors in this track
 		gap3_size = 32;
 		data_size_shift = 0;
-	}
-	else if((gap3_size = (get_track_size() - total) / (sector_num + 2)) < 12) {
+	} else if((gap3_size = (get_track_size() - total) / (sector_num + 2)) < 12) {
 		// ID:N is modified
 		data_size_shift++;
 		goto retry;
@@ -720,15 +716,13 @@ bool DISK::teledisk_to_d88()
 				// convert
 				if(flag == 0) {
 					memcpy(dst, buf, len);
-				}
-				else if(flag == 1) {
+				} else if(flag == 1) {
 					int len2 = buf[0] | (buf[1] << 8);
 					while(len2--) {
 						dst[d++] = buf[2];
 						dst[d++] = buf[3];
 					}
-				}
-				else if(flag == 2) {
+				} else if(flag == 2) {
 					for(int s = 0; s < len;) {
 						int type = buf[s++];
 						int len2 = buf[s++];
@@ -736,8 +730,7 @@ bool DISK::teledisk_to_d88()
 							while(len2--) {
 								dst[d++] = buf[s++];
 							}
-						}
-						else if(type < 5) {
+						} else if(type < 5) {
 							uint8 pat[256];
 							int n = 2;
 							while(type-- > 1) {
@@ -751,17 +744,14 @@ bool DISK::teledisk_to_d88()
 									dst[d++] = pat[j];
 								}
 							}
-						}
-						else {
+						} else {
 							break; // unknown type
 						}
 					}
-				}
-				else {
+				} else {
 					break; // unknown flag
 				}
-			}
-			else {
+			} else {
 				d88_sct.size = 0;
 			}
 			
@@ -870,8 +860,7 @@ void DISK::reconst()
 	for(i = 0; i < TABLE_SIZE; i++) {
 		if((k = son[i]) >= TABLE_SIZE) {
 			prnt[k] = i;
-		}
-		else {
+		} else {
 			prnt[k] = prnt[k + 1] = i;
 		}
 	}
@@ -969,8 +958,7 @@ int DISK::decode(uint8 *buf, int len)
 				text_buf[ptr++] = (uint8)c;
 				ptr &= (STRING_BUFFER_SIZE - 1);
 				count++;
-			} 
-			else {
+			} else {
 				if((pos = decode_position()) < 0) {
 					return count;
 				}
@@ -978,8 +966,7 @@ int DISK::decode(uint8 *buf, int len)
 				bufcnt = c - 255 + THRESHOLD;
 				bufndx = 0;
 			}
-		}
-		else {
+		} else {
 			while(bufndx < bufcnt && count < len) {
 				c = text_buf[(bufpos + bufndx) & (STRING_BUFFER_SIZE - 1)];
 				*(buf++) = (uint8)c;
@@ -1047,14 +1034,12 @@ bool DISK::imagedisk_to_d88()
 		fi->Fread(r, trk.nsec, 1);
 		if(trk.head & 0x80) {
 			fi->Fread(c, trk.nsec, 1);
-		}
-		else {
+		} else {
 			memset(c, trk.cyl, sizeof(c));
 		}
 		if(trk.head & 0x40) {
 			fi->Fread(h, trk.nsec, 1);
-		}
-		else {
+		} else {
 			memset(h, trk.head & 1, sizeof(h));
 		}
 		
@@ -1083,13 +1068,11 @@ bool DISK::imagedisk_to_d88()
 			if(sectype == 1 || sectype == 3 || sectype == 5 || sectype == 7) {
 				// uncompressed
 				fi->Fread(dst, d88_sct.size, 1);
-			}
-			else if(sectype == 2 || sectype == 4 || sectype == 6 || sectype == 8) {
+			} else if(sectype == 2 || sectype == 4 || sectype == 6 || sectype == 8) {
 				// compressed
 				int tmp = fi->Fgetc();
 				memset(dst, tmp, d88_sct.size);
-			}
-			else {
+			} else {
 				d88_sct.size = 0;
 			}
 			
@@ -1176,8 +1159,7 @@ bool DISK::cpdread_to_d88(int extended)
 			
 			if(extended) {
 				trkofs += tmp_buffer[trkofs_ptr++] * 256;
-			}
-			else {
+			} else {
 				trkofs += tmp_buffer[0x32] + tmp_buffer[0x33] * 256;
 			}
 		}

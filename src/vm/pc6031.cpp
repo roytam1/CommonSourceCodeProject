@@ -152,7 +152,7 @@ void PC6031::FddOut60(unsigned char dat)
 		case SAVE:					// 15h save
 			break;
 		}
-	}else{					// when data
+	} else {					// when data
 		switch (mdisk.command) {
 		case WRITE_DATA:			// 01h write data
 			switch (mdisk.step) {

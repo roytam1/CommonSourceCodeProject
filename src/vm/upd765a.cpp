@@ -240,8 +240,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				*bufptr++ = data;
 				if(--count) {
 					status |= S_RQM;
-				}
-				else {
+				} else {
 					process_cmd(command & 0x1f);
 				}
 				break;
@@ -254,8 +253,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				set_drq(false);
 				if(--count) {
 					REGISTER_DRQ_EVENT();
-				}
-				else {
+				} else {
 					process_cmd(command & 0x1f);
 				}
 				fdc[hdu & DRIVE_MASK].access = true;
@@ -273,8 +271,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				set_drq(false);
 				if(--count) {
 					REGISTER_DRQ_EVENT();
-				}
-				else {
+				} else {
 					cmd_scan();
 				}
 				fdc[hdu & DRIVE_MASK].access = true;
@@ -300,8 +297,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 #endif
 				if(--count) {
 					status |= S_RQM;
-				}
-				else {
+				} else {
 					// EPSON QC-10 CP/M Plus
 					bool clear_irq = true;
 					if((command & 0x1f) == 0x08) {
@@ -327,8 +323,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 				set_drq(false);
 				if(--count) {
 					REGISTER_DRQ_EVENT();
-				}
-				else {
+				} else {
 					process_cmd(command & 0x1f);
 				}
 				fdc[hdu & DRIVE_MASK].access = true;
@@ -336,8 +331,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 			}
 		}
 		return 0xff;
-	}
-	else {
+	} else {
 		// fdc status
 #ifdef _FDC_DEBUG_LOG
 //		emu->out_debug_log(_T("FDC: STATUS=%2x\n"), seekstat | status);
@@ -372,8 +366,7 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 			reset();
 		}
 		reset_signal = next;
-	}
-	else if(id == SIG_UPD765A_TC) {
+	} else if(id == SIG_UPD765A_TC) {
 		if(phase == PHASE_READ || phase == PHASE_WRITE || phase == PHASE_SCAN || (phase == PHASE_RESULT && count == 7)) {
 			if(data & mask) {
 				prevphase = phase;
@@ -381,30 +374,24 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 				process_cmd(command & 0x1f);
 			}
 		}
-	}
-	else if(id == SIG_UPD765A_MOTOR) {
+	} else if(id == SIG_UPD765A_MOTOR) {
 		motor_on = ((data & mask) != 0);
-	}
-	else if(id == SIG_UPD765A_MOTOR_NEG) {
+	} else if(id == SIG_UPD765A_MOTOR_NEG) {
 		motor_on = ((data & mask) == 0);
-	}
 #ifdef UPD765A_EXT_DRVSEL
-	else if(id == SIG_UPD765A_DRVSEL) {
+	} else if(id == SIG_UPD765A_DRVSEL) {
 		hdu = (hdu & 4) | (data & DRIVE_MASK);
 		write_signals(&outputs_hdu, hdu);
-	}
 #endif
-	else if(id == SIG_UPD765A_IRQ_MASK) {
+	} else if(id == SIG_UPD765A_IRQ_MASK) {
 		if(!(irq_masked = ((data & mask) != 0))) {
 			write_signals(&outputs_irq, 0);
 		}
-	}
-	else if(id == SIG_UPD765A_DRQ_MASK) {
+	} else if(id == SIG_UPD765A_DRQ_MASK) {
 		if(!(drq_masked = ((data & mask) != 0))) {
 			write_signals(&outputs_drq, 0);
 		}
-	}
-	else if(id == SIG_UPD765A_FREADY) {
+	} else if(id == SIG_UPD765A_FREADY) {
 		// for NEC PC-98x1 series
 		force_ready = ((data & mask) != 0);
 	}
@@ -429,8 +416,7 @@ void UPD765A::event_callback(int event_id, int err)
 		phase_id = -1;
 		phase = event_phase;
 		process_cmd(command & 0x1f);
-	}
-	else if(event_id == EVENT_DRQ) {
+	} else if(event_id == EVENT_DRQ) {
 		drq_id = -1;
 		status |= S_RQM;
 		
@@ -438,8 +424,7 @@ void UPD765A::event_callback(int event_id, int err)
 		fdc[drv].cur_position = (fdc[drv].cur_position + 1) % disk[drv]->get_track_size();
 		fdc[drv].prev_clock = prev_drq_clock = current_clock();
 		set_drq(true);
-	}
-	else if(event_id == EVENT_LOST) {
+	} else if(event_id == EVENT_LOST) {
 #ifdef _FDC_DEBUG_LOG
 		emu->out_debug_log("FDC: DATA LOST\n");
 #endif
@@ -447,20 +432,17 @@ void UPD765A::event_callback(int event_id, int err)
 		result = ST1_OR;
 		set_drq(false);
 		shift_to_result7();
-	}
-	else if(event_id == EVENT_RESULT7) {
+	} else if(event_id == EVENT_RESULT7) {
 		result7_id = -1;
 		shift_to_result7_event();
-	}
-	else if(event_id == EVENT_INDEX) {
+	} else if(event_id == EVENT_INDEX) {
 		int drv = hdu & DRIVE_MASK;
 		bool now_index = (disk[drv]->inserted && get_cur_position(drv) == 0);
 		if(prev_index != now_index) {
 			write_signals(&outputs_index, now_index ? 0xffffffff : 0);
 			prev_index = now_index;
 		}
-	}
-	else if(event_id >= EVENT_SEEK && event_id < EVENT_SEEK + 4) {
+	} else if(event_id >= EVENT_SEEK && event_id < EVENT_SEEK + 4) {
 		int drv = event_id - EVENT_SEEK;
 		seek_id[drv] = -1;
 		seek_event(drv);
@@ -500,8 +482,7 @@ void UPD765A::set_drq(bool val)
 	}
 	if(no_dma_mode) {
 		write_signals(&outputs_irq, (val && !irq_masked) ? 0xffffffff : 0);
-	}
-	else {
+	} else {
 		write_signals(&outputs_drq, (val && !drq_masked) ? 0xffffffff : 0);
 #ifdef UPD765A_DMA_MODE
 		// EPSON QC-10 CP/M Plus
@@ -662,8 +643,7 @@ void UPD765A::seek(int drv, int trk)
 		// invalid drive number
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR | ST0_AT;
 		set_irq(true);
-	}
-	else {
+	} else {
 		fdc[drv].track = trk;
 #ifdef UPD765A_DONT_WAIT_SEEK
 		seek_event(drv);
@@ -683,11 +663,9 @@ void UPD765A::seek_event(int drv)
 	
 	if(drv >= MAX_DRIVE) {
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR | ST0_AT;
-	}
-	else if(force_ready || disk[drv]->inserted) {
+	} else if(force_ready || disk[drv]->inserted) {
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE;
-	}
-	else {
+	} else {
 #ifdef UPD765A_NO_ST0_AT_FOR_SEEK
 		// for NEC PC-100
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR;
@@ -759,8 +737,7 @@ void UPD765A::cmd_write_data()
 		}
 		if(result) {
 			shift_to_result7();
-		}
-		else {
+		} else {
 			int length = 0x80 << __min(8, id[3]);
 			if(!id[3]) {
 				length = __min(dtl, 0x80);
@@ -899,8 +876,7 @@ void UPD765A::read_data(bool deleted, bool scan)
 	int length = id[3] ? (0x80 << __min(8, id[3])) : (__min(dtl, 0x80));
 	if(!scan) {
 		shift_to_read(length);
-	}
-	else {
+	} else {
 		shift_to_scan(length);
 	}
 	return;
@@ -983,8 +959,7 @@ uint32 UPD765A::read_sector()
 		if(disk[drv]->data_size_shift != 0 || disk[drv]->too_many_sectors) {
 			memset(buffer, disk[drv]->drive_mfm ? 0x4e : 0xff, sizeof(buffer));
 			memcpy(buffer, disk[drv]->sector, disk[drv]->sector_size);
-		}
-		else {
+		} else {
 			memcpy(buffer, disk[drv]->track + disk[drv]->data_position[i], disk[drv]->get_track_size() - disk[drv]->data_position[i]);
 			memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[i], disk[drv]->track, disk[drv]->data_position[i]);
 		}
@@ -1004,8 +979,7 @@ uint32 UPD765A::read_sector()
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
 			return ST0_AT | ST1_ND | ST2_BC;
-		}
-		else {
+		} else {
 			return ST0_AT | ST1_ND | ST2_NC;
 		}
 	}
@@ -1052,8 +1026,7 @@ uint32 UPD765A::write_sector(bool deleted)
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
 			return ST0_AT | ST1_ND | ST2_BC;
-		}
-		else {
+		} else {
 			return ST0_AT | ST1_ND | ST2_NC;
 		}
 	}
@@ -1090,8 +1063,7 @@ uint32 UPD765A::find_id()
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
 			return ST0_AT | ST1_ND | ST2_BC;
-		}
-		else {
+		} else {
 			return ST0_AT | ST1_ND | ST2_NC;
 		}
 	}
@@ -1168,8 +1140,7 @@ void UPD765A::cmd_read_id()
 				bytes += disk[drv]->get_track_size();
 			}
 			REGISTER_PHASE_EVENT_NEW(PHASE_TIMER, disk[drv]->get_usec_per_bytes(bytes));
-		}
-		else {
+		} else {
 			REGISTER_PHASE_EVENT(PHASE_TIMER, 5000);
 		}
 		break;
@@ -1353,8 +1324,7 @@ void UPD765A::shift_to_result7()
 	}
 	if(phase != PHASE_TIMER) {
 		register_event(this, EVENT_RESULT7, 100, false, &result7_id);
-	}
-	else
+	} else
 #endif
 	shift_to_result7_event();
 }
@@ -1405,8 +1375,7 @@ double UPD765A::get_usec_to_exec_phase()
 			// read diagnotics
 			trans_position = disk[drv]->data_position[0];
 			sync_position = disk[drv]->sync_position[0];
-		}
-		else {
+		} else {
 			for(int i = 0; i < disk[drv]->sector_num; i++) {
 				if(!disk[drv]->get_sector(trk, side, i)) {
 					continue;

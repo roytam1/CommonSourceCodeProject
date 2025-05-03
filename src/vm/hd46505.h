@@ -69,6 +69,8 @@ public:
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_disp(DEVICE* device, int id, uint32 mask)

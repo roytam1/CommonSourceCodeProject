@@ -15,16 +15,12 @@
 #include "io_wait_hireso.h"
 #endif
 #include "display.h"
+#include "../../fileio.h"
 
 void IO::initialize()
 {
 	prev_clock = vram_wait_index = 0;
 	column40 = true;
-#ifdef _X1TURBO_FEATURE
-	memset(crtc_regs, 0, sizeof(crtc_regs));
-	crtc_ch = 0;
-	hireso = true;
-#endif
 }
 
 void IO::reset()
@@ -35,6 +31,11 @@ void IO::reset()
 	vram_g = vram + 0x8000;
 	vram_mode = signal = false;
 	vdisp = 0;
+#ifdef _X1TURBO_FEATURE
+	memset(crtc_regs, 0, sizeof(crtc_regs));
+	crtc_ch = 0;
+	hireso = true;
+#endif
 }
 
 void IO::write_signal(int id, uint32 data, uint32 mask)
@@ -301,5 +302,61 @@ void IO::set_flipflop_range_rw(uint32 s, uint32 e, uint32 value)
 		rd_table[i & IO_ADDR_MASK].value = value;
 		rd_table[i & IO_ADDR_MASK].value_registered = true;
 	}
+}
+
+#define STATE_VERSION	1
+
+void IO::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	for(int i = 0; i < IO_ADDR_MAX; i++) {
+		fio->FputUint32(rd_table[i].value);
+	}
+	fio->Fwrite(vram, sizeof(vram), 1);
+	fio->FputBool(vram_mode);
+	fio->FputBool(signal);
+	fio->FputInt32((int)(vram_b - vram));
+	fio->FputInt32((int)(vram_r - vram));
+	fio->FputInt32((int)(vram_g - vram));
+	fio->FputUint8(vdisp);
+	fio->FputUint32(prev_clock);
+	fio->FputUint32(vram_wait_index);
+	fio->FputBool(column40);
+#ifdef _X1TURBO_FEATURE
+	fio->Fwrite(crtc_regs, sizeof(crtc_regs), 1);
+	fio->FputInt32(crtc_ch);
+	fio->FputBool(hireso);
+#endif
+}
+
+bool IO::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	for(int i = 0; i < IO_ADDR_MAX; i++) {
+		rd_table[i].value = fio->FgetUint32();
+	}
+	fio->Fread(vram, sizeof(vram), 1);
+	vram_mode = fio->FgetBool();
+	signal = fio->FgetBool();
+	vram_b = vram + fio->FgetInt32();
+	vram_r = vram + fio->FgetInt32();
+	vram_g = vram + fio->FgetInt32();
+	vdisp = fio->FgetUint8();
+	prev_clock = fio->FgetUint32();
+	vram_wait_index = fio->FgetUint32();
+	column40 = fio->FgetBool();
+#ifdef _X1TURBO_FEATURE
+	fio->Fread(crtc_regs, sizeof(crtc_regs), 1);
+	crtc_ch = fio->FgetInt32();
+	hireso = fio->FgetBool();
+#endif
+	return true;
 }
 

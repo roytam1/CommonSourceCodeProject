@@ -67,8 +67,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 {
 	if(addr & 1) {
 		ch = data & 0x3f;
-	}
-	else {
+	} else {
 		if(ch <= 9) {
 			regs[ch] = data;
 			if(!(ch == 1 || ch == 3 || ch == 5)) {
@@ -78,8 +77,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 				check_alarm();
 				update_intr();
 			}
-		}
-		else if(ch == 0x0a) {
+		} else if(ch == 0x0a) {
 			// periodic interrupt
 			int dv = (data >> 4) & 7, next = 0;
 			if(dv < 3) {
@@ -97,8 +95,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 				period = next;
 			}
 			regs[ch] = data & 0x7f;	// always UIP=0
-		}
-		else if(ch == 0x0b) {
+		} else if(ch == 0x0b) {
 			if((regs[0x0b] & 8) && !(data & 8)) {
 				// keep sqw = L when sqwe = 0
 				write_signals(&outputs_sqw, 0);
@@ -110,8 +107,7 @@ void HD146818P::write_io8(uint32 addr, uint32 data)
 				check_alarm();
 			}
 			update_intr();
-		}
-		else if(ch > 0x0d) {
+		} else if(ch > 0x0d) {
 			// internal ram
 			if(regs[ch] != data) {
 				regs[ch] = data;
@@ -125,8 +121,7 @@ uint32 HD146818P::read_io8(uint32 addr)
 {
 	if(addr & 1) {
 		return 0xff;
-	}
-	else {
+	} else {
 		uint8 val = regs[ch];
 		if(ch == 0x0c) {
 			regs[0x0c] = 0;

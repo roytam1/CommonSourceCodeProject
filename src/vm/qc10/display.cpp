@@ -63,11 +63,9 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 #ifdef _COLOR_MONITOR
 		if(data & 1) {
 			d_gdc->set_vram_ptr(vram_b, VRAM_SIZE);
-		}
-		else if(data & 2) {
+		} else if(data & 2) {
 			d_gdc->set_vram_ptr(vram_g, VRAM_SIZE);
-		}
-		else {
+		} else {
 			d_gdc->set_vram_ptr(vram_r, VRAM_SIZE);
 		}
 #endif
@@ -133,8 +131,7 @@ void DISPLAY::draw_screen()
 						screen[y][x + 12] = screen[y][x + 13] = ((r & 0x40) ? 1 : 0) | ((g & 0x40) ? 2 : 0) | ((b & 0x40) ? 4 : 0);
 						screen[y][x + 14] = screen[y][x + 15] = ((r & 0x80) ? 1 : 0) | ((g & 0x80) ? 2 : 0) | ((b & 0x80) ? 4 : 0);
 					}
-				}
-				else {
+				} else {
 					for(int x = 0; x < 640; x+= 8) {
 						uint8 r = vram_r[ptr];
 						uint8 g = vram_g[ptr];
@@ -170,8 +167,7 @@ void DISPLAY::draw_screen()
 						screen[y][x + 12] = screen[y][x + 13] = (pat & 0x40) ? 1 : 0;
 						screen[y][x + 14] = screen[y][x + 15] = (pat & 0x80) ? 1 : 0;
 					}
-				}
-				else {
+				} else {
 					for(int x = 0; x < 640; x+= 8) {
 						uint8 pat = vram[ptr++];
 						ptr &= VRAM_SIZE - 1;
@@ -187,8 +183,7 @@ void DISPLAY::draw_screen()
 					}
 				}
 			}
-		}
-		else {
+		} else {
 			for(int y = total; y < total + line;) {
 				if(wide) {
 					for(int x = 0; x < 640; x += 16) {
@@ -225,8 +220,7 @@ void DISPLAY::draw_screen()
 							}
 						}
 					}
-				}
-				else{
+				} else {
 					for(int x = 0; x < 640; x += 8) {
 						bool cursor = (ptr == caddr);
 						uint8 code = vram[ptr++];
@@ -293,8 +287,7 @@ void DISPLAY::draw_screen()
 				memcpy(dest, tmp, sizeof(scrntype) * 640);
 			}
 		}
-	}
-	else {
+	} else {
 		for(int y = 0; y < 400; y++) {
 			scrntype* dest = emu->screen_buffer(y);
 			uint8* src = screen[y];

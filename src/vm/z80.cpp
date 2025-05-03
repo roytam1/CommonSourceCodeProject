@@ -346,8 +346,7 @@ inline void Z80::OUT8(uint32 addr, uint8 val)
 	if(cond) { \
 		PCD = FETCH16(); \
 		WZ = PCD; \
-	} \
-	else { \
+	} else { \
 		WZ = FETCH16(); /* implicit do PC += 2 */ \
 	} \
 } while(0)
@@ -362,8 +361,7 @@ inline void Z80::OUT8(uint32 addr, uint8 val)
 	if(cond) { \
 		JR(); \
 		icount -= cc_ex[opcode]; \
-	} \
-	else PC++; \
+	} else PC++; \
 } while(0)
 
 #define CALL() do { \
@@ -380,8 +378,7 @@ inline void Z80::OUT8(uint32 addr, uint8 val)
 		PUSH(pc); \
 		PCD = ea; \
 		icount -= cc_ex[opcode]; \
-	} \
-	else { \
+	} else { \
 		WZ = FETCH16(); /* implicit call PC+=2; */ \
 	} \
 } while(0)
@@ -528,8 +525,7 @@ inline uint8 Z80::DEC(uint8 value)
 	if(F & NF) { \
 		if((F & HF) | ((A & 0xf) > 9)) a -= 6; \
 		if((F & CF) | (A > 0x99)) a -= 0x60; \
-	} \
-	else { \
+	} else { \
 		if((F & HF) | ((A & 0xf) > 9)) a += 6; \
 		if((F & CF) | (A > 0x99)) a += 0x60; \
 	} \
@@ -2053,28 +2049,22 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 		intr_req_bit = (intr_req_bit & ~mask) | (data & mask);
 		// always pending (temporary)
 		intr_pend_bit = (intr_pend_bit & ~mask) | (0xffffffff & mask);
-	}
-	else if(id == SIG_CPU_NMI) {
+	} else if(id == SIG_CPU_NMI) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | NMI_REQ_BIT) : (intr_req_bit & ~NMI_REQ_BIT);
-	}
-	else if(id == SIG_CPU_BUSREQ) {
+	} else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
 		write_signals(&outputs_busack, busreq ? 0xffffffff : 0);
-	}
 #ifdef HAS_NSC800
-	else if(id == SIG_NSC800_INT) {
+	} else if(id == SIG_NSC800_INT) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 1) : (intr_req_bit & ~1);
-	}
-	else if(id == SIG_NSC800_RSTA) {
+	} else if(id == SIG_NSC800_RSTA) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 8) : (intr_req_bit & ~8);
-	}
-	else if(id == SIG_NSC800_RSTB) {
+	} else if(id == SIG_NSC800_RSTB) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 4) : (intr_req_bit & ~4);
-	}
-	else if(id == SIG_NSC800_RSTC) {
+	} else if(id == SIG_NSC800_RSTC) {
 		intr_req_bit = (data & mask) ? (intr_req_bit | 2) : (intr_req_bit & ~2);
-	}
 #endif
+	}
 }
 
 int Z80::run(int clock)
@@ -2098,8 +2088,7 @@ int Z80::run(int clock)
 		extra_icount = 0;
 		run_one_opecode();
 		return -icount;
-	}
-	else {
+	} else {
 		// run cpu while given clocks
 		icount += clock;
 		int first_icount = icount;
@@ -2215,9 +2204,8 @@ void Z80::run_one_opecode()
 			icount -= 11;
 			iff1 = 0;
 			intr_req_bit &= ~NMI_REQ_BIT;
-		}
 #ifdef HAS_NSC800
-		else if((intr_req_bit & 1) && (icr & 1)) {
+		} else if((intr_req_bit & 1) && (icr & 1)) {
 			// INTR
 			LEAVE_HALT();
 			PUSH(pc);
@@ -2225,8 +2213,7 @@ void Z80::run_one_opecode()
 			icount -= cc_op[0xcd] + cc_ex[0xff];
 			iff1 = iff2 = 0;
 			intr_req_bit &= ~1;
-		}
-		else if((intr_req_bit & 8) && (icr & 8)) {
+		} else if((intr_req_bit & 8) && (icr & 8)) {
 			// RSTA
 			LEAVE_HALT();
 			PUSH(pc);
@@ -2234,8 +2221,7 @@ void Z80::run_one_opecode()
 			icount -= cc_op[0xff] + cc_ex[0xff];
 			iff1 = iff2 = 0;
 			intr_req_bit &= ~8;
-		}
-		else if((intr_req_bit & 4) && (icr & 4)) {
+		} else if((intr_req_bit & 4) && (icr & 4)) {
 			// RSTB
 			LEAVE_HALT();
 			PUSH(pc);
@@ -2243,8 +2229,7 @@ void Z80::run_one_opecode()
 			icount -= cc_op[0xff] + cc_ex[0xff];
 			iff1 = iff2 = 0;
 			intr_req_bit &= ~4;
-		}
-		else if((intr_req_bit & 2) && (icr & 2)) {
+		} else if((intr_req_bit & 2) && (icr & 2)) {
 			// RSTC
 			LEAVE_HALT();
 			PUSH(pc);
@@ -2252,9 +2237,8 @@ void Z80::run_one_opecode()
 			icount -= cc_op[0xff] + cc_ex[0xff];
 			iff1 = iff2 = 0;
 			intr_req_bit &= ~2;
-		}
 #else
-		else if(iff1) {
+		} else if(iff1) {
 			// interrupt
 			LEAVE_HALT();
 			
@@ -2275,14 +2259,12 @@ void Z80::run_one_opecode()
 				case 0xff: PUSH(pc); PCD = 0x0038; break;	// RST 38H
 				}
 				icount -= cc_op[vector & 0xff] + cc_ex[0xff];
-			}
-			else if(im == 1) {
+			} else if(im == 1) {
 				// mode 1
 				PUSH(pc);
 				PCD = 0x0038;
 				icount -= cc_op[0xff] + cc_ex[0xff];
-			}
-			else {
+			} else {
 				// mode 2
 				PUSH(pc);
 				RM16((vector & 0xff) | (I << 8), &pc);
@@ -2291,8 +2273,7 @@ void Z80::run_one_opecode()
 			iff1 = iff2 = 0;
 			intr_req_bit = 0;
 			WZ = PCD;
-		}
-		else {
+		} else {
 			intr_req_bit &= intr_pend_bit;
 		}
 #endif

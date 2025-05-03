@@ -62,24 +62,19 @@ uint16 TMS9995::RM16(uint16 addr)
 		period += MEM_WAIT_WORD;
 		uint16 tmp = d_mem->read_data8(addr);
 		return (tmp << 8) | d_mem->read_data8(addr + 1);
-	}
-	else if(addr < 0xf0fc) {
+	} else if(addr < 0xf0fc) {
 		return *(uint16 *)(&RAM[addr & 0xff]);
-	}
-	else if(addr < 0xfffa) {
+	} else if(addr < 0xfffa) {
 		period += MEM_WAIT_WORD;
 		uint16 tmp = d_mem->read_data8(addr);
 		return (tmp << 8) | d_mem->read_data8(addr + 1);
-	}
-	else if(addr < 0xfffc) {
+	} else if(addr < 0xfffc) {
 		if(dec_enabled && !(mode & 1)) {
 			return (dec_timer >> 4) & 0xffff;
-		}
-		else {
+		} else {
 			return dec_count;
 		}
-	}
-	else {
+	} else {
 		return *(uint16 *)(&RAM[addr & 0xff]);
 	}
 }
@@ -90,20 +85,16 @@ void TMS9995::WM16(uint16 addr, uint16 val)
 		period += MEM_WAIT_WORD;
 		d_mem->write_data8(addr, val >> 8);
 		d_mem->write_data8(addr + 1, val & 0xff);
-	}
-	else if(addr < 0xf0fc) {
+	} else if(addr < 0xf0fc) {
 		*(uint16 *)(&RAM[addr & 0xff]) = val;
-	}
-	else if(addr < 0xfffa) {
+	} else if(addr < 0xfffa) {
 		period += MEM_WAIT_WORD;
 		d_mem->write_data8(addr, val >> 8);
 		d_mem->write_data8(addr + 1, val & 0xff);
-	}
-	else if(addr < 0xfffc) {
+	} else if(addr < 0xfffc) {
 		dec_interval = val;
 		update_dec();
-	}
-	else {
+	} else {
 		*(uint16 *)(&RAM[addr & 0xff]) = val;
 	}
 }
@@ -113,25 +104,20 @@ uint8 TMS9995::RM8(uint16 addr)
 	if((addr < 0xf000)) {
 		period += MEM_WAIT_BYTE;
 		return d_mem->read_data8(addr);
-	}
-	else if(addr < 0xf0fc) {
+	} else if(addr < 0xf0fc) {
 		return RAM[BYTE_XOR_BE(addr & 0xff)];
-	}
-	else if(addr < 0xfffa) {
+	} else if(addr < 0xfffa) {
 		period += MEM_WAIT_BYTE;
 		return d_mem->read_data8(addr);
-	}
-	else if(addr < 0xfffc) {
+	} else if(addr < 0xfffc) {
 		uint16 tmp;
 		if(dec_enabled && !(mode & 1)) {
 			tmp = (dec_timer >> 4) & 0xffff;
-		}
-		else {
+		} else {
 			tmp = dec_count;
 		}
 		return (addr & 1) ? (tmp & 0xff) : (tmp >> 8);
-	}
-	else {
+	} else {
 		return RAM[BYTE_XOR_BE(addr & 0xff)];
 	}
 }
@@ -141,19 +127,15 @@ void TMS9995::WM8(uint32 addr, uint8 val)
 	if((addr < 0xf000)) {
 		period += MEM_WAIT_BYTE;
 		d_mem->write_data8(addr, val);
-	}
-	else if(addr < 0xf0fc) {
+	} else if(addr < 0xf0fc) {
 		RAM[BYTE_XOR_BE(addr & 0xff)] = val;
-	}
-	else if(addr < 0xfffa) {
+	} else if(addr < 0xfffa) {
 		period += MEM_WAIT_BYTE;
 		d_mem->write_data8(addr, val);
-	}
-	else if(addr < 0xfffc) {
+	} else if(addr < 0xfffc) {
 		dec_interval = (val << 8) | val;
 		update_dec();
-	}
-	else {
+	} else {
 		RAM[BYTE_XOR_BE(addr & 0xff)] = val;
 	}
 }
@@ -179,8 +161,7 @@ uint16 TMS9995::IN8(int addr)
 	case 0x1fd:
 		if(mid) {
 			return d_io->read_io8(addr) | 0x10;
-		}
-		else {
+		} else {
 			return d_io->read_io8(addr) & ~ 0x10;
 		}
 	}
@@ -193,8 +174,7 @@ void TMS9995::OUT8(uint16 addr, uint16 val)
 	case 0xf70:
 		if(val & 1) {
 			mode |= 1;
-		}
-		else {
+		} else {
 			mode &= ~1;
 		}
 		update_dec();
@@ -202,8 +182,7 @@ void TMS9995::OUT8(uint16 addr, uint16 val)
 	case 0xf71:
 		if(val & 1) {
 			mode |= 2;
-		}
-		else {
+		} else {
 			mode &= ~2;
 		}
 		update_dec();
@@ -225,8 +204,7 @@ void TMS9995::OUT8(uint16 addr, uint16 val)
 	case 0xf7f:
 		if(val & 1) {
 			mode |= (1 << (addr - 0xf70));
-		}
-		else {
+		} else {
 			mode &= ~(1 << (addr - 0xf70));
 		}
 		break;
@@ -299,8 +277,7 @@ int TMS9995::run(int clock)
 		count = 0;
 		run_one_opecode();
 		return -count;
-	}
-	else {
+	} else {
 		// run cpu while given clocks
 		count += clock;
 		int first_count = count;
@@ -324,14 +301,12 @@ void TMS9995::run_one_opecode()
 			ST &= ~ST_IM;
 			idle = false;
 			period += 56;
-		}
-		else if(level <= (ST & ST_IM)) {
+		} else if(level <= (ST & ST_IM)) {
 			contextswitch(level*4);
 			if(level) {
 				ST = (ST & ~ST_IM) | (level -1);
 				int_pending = false;
-			}
-			else {
+			} else {
 				ST &= ~ST_IM;
 			}
 			ST &= 0xfe00;
@@ -344,8 +319,7 @@ void TMS9995::run_one_opecode()
 				mode &= ~mode_mask;
 			}
 			period += 56;
-		}
-		else {
+		} else {
 			int_pending = false;
 		}
 	}
@@ -354,8 +328,7 @@ void TMS9995::run_one_opecode()
 	if(idle) {
 		EXTOUT8(2);
 		period += 8;
-	}
-	else {
+	} else {
 		int_enabled = true;
 		prevPC = PC;
 		uint16 op = FETCH16();
@@ -385,11 +358,9 @@ void TMS9995::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_TMS9995_NMI) {
 		nmi = ((data & mask) != 0);
 		update_int();
-	}
-	else if(id == SIG_TMS9995_INT1) {
+	} else if(id == SIG_TMS9995_INT1) {
 		set_irq_line(0, ((data & mask) != 0));
-	}
-	else if(id == SIG_TMS9995_INT4) {
+	} else if(id == SIG_TMS9995_INT4) {
 		set_irq_line(1, ((data & mask) != 0));
 	}
 }
@@ -412,13 +383,11 @@ void TMS9995::set_irq_line(int irqline, bool state)
 						dec_count = dec_interval;
 					}
 				}
-			}
-			else {
+			} else {
 				int_latch |= int_mask;
 				mode |= mode_mask;
 			}
-		}
-		else {
+		} else {
 			int_state &= ~int_mask;
 		}
 		update_int();
@@ -429,21 +398,18 @@ void TMS9995::update_int()
 {
 	if(nmi) {
 		int_pending = true;
-	}
-	else {
+	} else {
 		int cur_int, level;
 		if(mode & 1) {
 			cur_int = (int_state & ~0x10) | int_latch;
-		}
-		else {
+		} else {
 			cur_int = int_state | int_latch;
 		}
 		if(cur_int) {
 			for (level = 0; !(cur_int & 1); cur_int >>= 1, level++) {
 				;
 			}
-		}
-		else {
+		} else {
 			level = 16;
 		}
 		irq_level = level;
@@ -570,8 +536,7 @@ void TMS9995::h0100(uint16 op)
 		if((d == 0) || (q < -32768L) || (q > 32767L)) {
 			ST |= ST_OV;
 			period += 40;
-		}
-		else {
+		} else {
 			ST &= ~ST_OV;
 			setst_lae(q);
 			WREG(R0, q);
@@ -584,11 +549,9 @@ void TMS9995::h0100(uint16 op)
 		ST &= ~(ST_LGT | ST_AGT | ST_EQ);
 		if(p > 0) {
 			ST |= (ST_LGT | ST_AGT);
-		}
-		else if(p < 0) {
+		} else if(p < 0) {
 			ST |= ST_LGT;
-		}
-		else {
+		} else {
 			ST |= ST_EQ;
 		}
 		WREG(R0, p >> 16);
@@ -720,8 +683,7 @@ void TMS9995::h0400(uint16 op)
 		val = -(int16)RM16(addr);
 		if(val) {
 			ST &= ~ ST_C;
-		}
-		else {
+		} else {
 			ST |= ST_C;
 		}
 		setst_laeo(val);
@@ -775,15 +737,13 @@ void TMS9995::h0400(uint16 op)
 		period += 12;
 		if(((int16)val) > 0) {
 			ST |= ST_LGT | ST_AGT;
-		}
-		else if(((int16)val) < 0) {
+		} else if(((int16)val) < 0) {
 			ST |= ST_LGT;
 			if(val == 0x8000) {
 				ST |= ST_OV;
 			}
 			val = -((int16)val);
-		}
-		else {
+		} else {
 			ST |= ST_EQ;
 		}
 		WM16(addr, val);
@@ -973,8 +933,7 @@ void TMS9995::h2000(uint16 op)
 		if(d == 0 || d <= h) {
 			ST |= ST_OV;
 			period += 24;
-		}
-		else {
+		} else {
 			ST &= ~ST_OV;
 			WM16(dst, p / d);
 			WM16((dst + 2) & 0xffff, p % d);
@@ -1006,8 +965,7 @@ void TMS9995::ldcr_stcr(uint16 op)
 	}
 	if(cnt <= 8) {
 		addr = decipheraddrbyte(op);
-	}
-	else {
+	} else {
 		addr = decipheraddr(op) & ~1;
 	}
 	if(op < 0x3400) {
@@ -1016,22 +974,19 @@ void TMS9995::ldcr_stcr(uint16 op)
 			val = RM16(addr & ~1);
 			if(addr & 1) {
 				val &= 0xff;
-			}
-			else {
+			} else {
 				val = (val >> 8) & 0xff;
 			}
 			(void)RREG(cnt + cnt);
 			setst_byte_laep(val);
-		}
-		else {
+		} else {
 			val = RM16(addr);
 			(void)RREG(cnt + cnt);
 			setst_lae(val);
 		}
 		WCRU((RREG(R12) >> 1), cnt, val);
 		period += 36 + cnt + cnt;
-	}
-	else {
+	} else {
 		// STCR
 		if(cnt <= 8) {
 			int val2 = RM16(addr & ~1);
@@ -1040,13 +995,11 @@ void TMS9995::ldcr_stcr(uint16 op)
 			setst_byte_laep(val);
 			if(addr & 1) {
 				WM16(addr & ~1, (val & 0xff) | (val2 & 0xff00));
-			}
-			else {
+			} else {
 				WM16(addr & ~1, (val2 & 0xff) | ((val << 8) & 0xff00));
 			}
 			period += 76 + cnt;
-		}
-		else {
+		} else {
 			(void)RM16(addr);
 			(void)RREG(cnt + cnt);
 			val = RCRU((RREG(R12) >> 1), cnt);
@@ -1163,8 +1116,7 @@ uint16 TMS9995::decipheraddr(uint16 op)
 		if(reg) {
 			period += 12;
 			return RM16(reg + WP) + tmp;
-		}
-		else {
+		} else {
 			period += 4;
 			return tmp;
 		}
@@ -1192,8 +1144,7 @@ uint16 TMS9995::decipheraddrbyte(uint16 op)
 		if(reg) {
 			period += 12;
 			return RM16(reg + WP) + tmp;
-		}
-		else {
+		} else {
 			period += 4;
 			return tmp;
 		}
@@ -1222,8 +1173,7 @@ inline void TMS9995::getstat()
 {
 	if(ST & ST_OP) {
 		lastparity = 1;
-	}
-	else {
+	} else {
 		lastparity = 0;
 	}
 }
@@ -1237,8 +1187,7 @@ inline int16 TMS9995::arithmetic_right_shift(int16 val, int c)
 {
 	if(val < 0) {
 		return (val >> c) | inverted_right_shift_mask_table[c];
-	}
-	else {
+	} else {
 		return (val >> c) & right_shift_mask_table[c];
 	}
 }
@@ -1248,11 +1197,9 @@ inline void TMS9995::setst_lae(int16 val)
 	ST &= ~(ST_LGT | ST_AGT | ST_EQ);
 	if(val > 0) {
 		ST |= (ST_LGT | ST_AGT);
-	}
-	else if(val < 0) {
+	} else if(val < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 }
@@ -1262,11 +1209,9 @@ inline void TMS9995::setst_byte_laep(int8 val)
 	ST &= ~(ST_LGT | ST_AGT | ST_EQ);
 	if(val > 0) {
 		ST |= (ST_LGT | ST_AGT);
-	}
-	else if(val < 0) {
+	} else if(val < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	lastparity = val;
@@ -1276,8 +1221,7 @@ inline void TMS9995::setst_e(uint16 val, uint16 to)
 {
 	if(val == to) {
 		ST |= ST_EQ;
-	}
-	else {
+	} else {
 		ST &= ~ ST_EQ;
 	}
 }
@@ -1287,8 +1231,7 @@ inline void TMS9995::setst_c_lae(uint16 to, uint16 val)
 	ST &= ~(ST_LGT | ST_AGT | ST_EQ);
 	if(val == to) {
 		ST |= ST_EQ;
-	}
-	else {
+	} else {
 		if(((int16)val) > ((int16)to)) {
 			ST |= ST_AGT;
 		}
@@ -1311,11 +1254,9 @@ inline int16 TMS9995::setst_add_laeco(int a, int b)
 	int16 res2 = (int16)res;
 	if(res2 > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(res2 < 0) {
+	} else if(res2 < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	return res2;
@@ -1334,11 +1275,9 @@ inline int16 TMS9995::setst_sub_laeco(int a, int b)
 	int16 res2 = (int16)res;
 	if(res2 > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(res2 < 0) {
+	} else if(res2 < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	return res2;
@@ -1357,11 +1296,9 @@ inline int8 TMS9995::setst_addbyte_laecop(int a, int b)
 	int8 res2 = (int8)res;
 	if(res2 > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(res2 < 0) {
+	} else if(res2 < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	lastparity = res2;
@@ -1381,11 +1318,9 @@ inline int8 TMS9995::setst_subbyte_laecop(int a, int b)
 	int8 res2 = (int8)res;
 	if(res2 > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(res2 < 0) {
+	} else if(res2 < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	lastparity = res2;
@@ -1397,14 +1332,12 @@ inline void TMS9995::setst_laeo(int16 val)
 	ST &= ~(ST_LGT | ST_AGT | ST_EQ | ST_OV);
 	if(val > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(val < 0) {
+	} else if(val < 0) {
 		ST |= ST_LGT;
 		if(((uint16)val) == 0x8000) {
 			ST |= ST_OV;
 		}
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 }
@@ -1421,11 +1354,9 @@ inline uint16 TMS9995::setst_sra_laec(int16 a, uint16 c)
 	}
 	if(a > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(a < 0) {
+	} else if(a < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	return a;
@@ -1443,11 +1374,9 @@ inline uint16 TMS9995::setst_srl_laec(uint16 a,uint16 c)
 	}
 	if(((int16)a) > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(((int16)a) < 0) {
+	} else if(((int16)a) < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	return a;
@@ -1464,11 +1393,9 @@ inline uint16 TMS9995::setst_src_laec(uint16 a,uint16 c)
 	}
 	if(((int16)a) > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(((int16)a) < 0) {
+	} else if(((int16)a) < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	return a;
@@ -1493,11 +1420,9 @@ inline uint16 TMS9995::setst_sla_laeco(uint16 a, uint16 c)
 	}
 	if(((int16)a) > 0) {
 		ST |= ST_LGT | ST_AGT;
-	}
-	else if(((int16)a) < 0) {
+	} else if(((int16)a) < 0) {
 		ST |= ST_LGT;
-	}
-	else {
+	} else {
 		ST |= ST_EQ;
 	}
 	return a;

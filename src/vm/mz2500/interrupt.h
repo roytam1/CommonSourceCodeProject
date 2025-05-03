@@ -33,7 +33,7 @@ private:
 	} irq[4];
 	int req_intr_ch;
 	
-	// daisy chain
+	// z80 daisy chain
 	DEVICE *d_cpu, *d_child;
 	bool iei, oei;
 	uint32 intr_bit;

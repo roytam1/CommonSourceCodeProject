@@ -37,8 +37,7 @@ public:
 			// this is the first device
 			vm->first_device = this;
 			this_device_id = 0;
-		}
-		else {
+		} else {
 			// this is not the first device
 			vm->last_device->next_device = this;
 			this_device_id = vm->last_device->this_device_id + 1;

@@ -13,6 +13,7 @@
 #include "../datarec.h"
 #include "../i8255.h"
 #include "../../fifo.h"
+#include "../../fileio.h"
 
 //#define DEBUG_COMMAND
 
@@ -162,6 +163,7 @@ void PSUB::reset()
 {
 	memset(databuf, 0, sizeof(databuf));
 	databuf[0x16][0] = 0xff;
+	datap = &databuf[0][0];	// temporary fix
 	mode = 0;
 	cmdlen = datalen = 0;
 	
@@ -234,8 +236,7 @@ void PSUB::update_intr()
 {
 	if(intr && iei) {
 		d_cpu->set_intr_line(true, true, intr_bit);
-	}
-	else {
+	} else {
 		d_cpu->set_intr_line(false, true, intr_bit);
 	}
 }
@@ -249,8 +250,7 @@ void PSUB::event_callback(int event_id, int err)
 			emu->get_host_time(&cur_time);	// resync
 			cur_time.initialized = true;
 		}
-	}
-	else if(event_id == EVENT_DRIVE) {
+	} else if(event_id == EVENT_DRIVE) {
 		// drive sub cpu
 		static const int cmdlen_tbl[] = {
 			0, 1, 0, 0, 1, 0, 1, 0, 0, 3, 0, 3, 0
@@ -272,8 +272,7 @@ void PSUB::event_callback(int event_id, int err)
 				emu->out_debug_log(_T(" %2x"), inbuf);
 #endif
 				cmdlen--;
-			}
-			else {
+			} else {
 				// this is new command
 				mode = inbuf;
 #ifdef DEBUG_COMMAND
@@ -282,8 +281,7 @@ void PSUB::event_callback(int event_id, int err)
 				if(0xd0 <= mode && mode <= 0xd7) {
 					cmdlen = 6;
 					datap = &databuf[mode - 0xd0][0]; // receive buffer
-				}
-				else if(0xe3 <= mode && mode <= 0xef) {
+				} else if(0xe3 <= mode && mode <= 0xef) {
 					cmdlen = cmdlen_tbl[mode - 0xe3];
 					datap = &databuf[mode - 0xd0][0]; // receive buffer
 				}
@@ -312,8 +310,7 @@ void PSUB::event_callback(int event_id, int err)
 				outbuf = *datap++;
 				set_obf(false);
 				datalen--;
-			}
-			else if(!key_buf->empty() && databuf[0x14][0] && !intr && iei) {
+			} else if(!key_buf->empty() && databuf[0x14][0] && !intr && iei) {
 				// key buffer is not empty and interrupt is not disabled,
 				// so sub cpu sends vector and raise irq
 				outbuf = databuf[0x14][0];
@@ -326,8 +323,7 @@ void PSUB::event_callback(int event_id, int err)
 				process_cmd();
 			}
 		}
-	}
-	else if(event_id == EVENT_REPEAT) {
+	} else if(event_id == EVENT_REPEAT) {
 		key_register_id = -1;
 		key_down(key_prev, true);
 	}
@@ -383,12 +379,11 @@ void PSUB::key_down(int code, bool repeat)
 			d_pio->write_signal(SIG_I8255_PORT_B, 0, 1);
 			key_break = code;
 		}
-	}
 #ifdef _X1TURBO_FEATURE
-	else if(key_prev == 0 && IS_LOWBYTE_KEY(code)) {
+	} else if(key_prev == 0 && IS_LOWBYTE_KEY(code)) {
 		key_buf->write(0xff);
-	}
 #endif
+	}
 }
 
 void PSUB::key_up(int code)
@@ -553,8 +548,7 @@ void PSUB::process_cmd()
 				databuf[0x16][0] = lh & 0xff;
 				databuf[0x16][1] = lh >> 8;
 			}
-		}
-		else {
+		} else {
 			// interrupt enabed
 			if(!key_buf->empty()) {
 				lh = key_buf->read();
@@ -753,23 +747,18 @@ uint16 PSUB::get_key(int code, bool repeat)
 	if(key_kana_locked) {
 		if(!(l & 0x02)) {
 			h = keycode_ks[code];	// kana+shift
-		}
-		else {
+		} else {
 			h = keycode_k[code];	// kana
 		}
-	}
-	else {
+	} else {
 		if(!(l & 0x01)) {
 			h = keycode_c[code];	// ctrl
-		}
-		else if(!(l & 0x10)) {
+		} else if(!(l & 0x10)) {
 			h = keycode_g[code];	// graph
-		}
-		else {
+		} else {
 			if(!(l & 0x02)) {
 				h = keycode_s[code];	// shift
-			}
-			else {
+			} else {
 				h = keycode[code];	// (none shifted)
 			}
 			if(key_caps_locked) {
@@ -785,5 +774,81 @@ uint16 PSUB::get_key(int code, bool repeat)
 	}
 #endif
 	return l | (h << 8);
+}
+
+#define STATE_VERSION	1
+
+void PSUB::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	cur_time.save_state((void *)fio);
+	fio->FputInt32(time_register_id);
+	fio->Fwrite(databuf, sizeof(databuf), 1);
+	fio->FputInt32((int)(datap - &databuf[0][0]));
+	fio->FputUint8(mode);
+	fio->FputUint8(inbuf);
+	fio->FputUint8(outbuf);
+	fio->FputBool(ibf);
+	fio->FputBool(obf);
+	fio->FputInt32(cmdlen);
+	fio->FputInt32(datalen);
+	key_buf->save_state((void *)fio);
+	fio->FputInt32(key_prev);
+	fio->FputInt32(key_break);
+	fio->FputBool(key_shift);
+	fio->FputBool(key_ctrl);
+	fio->FputBool(key_graph);
+	fio->FputBool(key_caps_locked);
+	fio->FputBool(key_kana_locked);
+	fio->FputInt32(key_register_id);
+	fio->FputBool(play);
+	fio->FputBool(rec);
+	fio->FputBool(eot);
+	fio->FputBool(iei);
+	fio->FputBool(intr);
+	fio->FputUint32(intr_bit);
+}
+
+bool PSUB::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	if(!cur_time.load_state((void *)fio)) {
+		return false;
+	}
+	time_register_id = fio->FgetInt32();
+	fio->Fread(databuf, sizeof(databuf), 1);
+	datap = &databuf[0][0] + fio->FgetInt32();
+	mode = fio->FgetUint8();
+	inbuf = fio->FgetUint8();
+	outbuf = fio->FgetUint8();
+	ibf = fio->FgetBool();
+	obf = fio->FgetBool();
+	cmdlen = fio->FgetInt32();
+	datalen = fio->FgetInt32();
+	if(!key_buf->load_state((void *)fio)) {
+		return false;
+	}
+	key_prev = fio->FgetInt32();
+	key_break = fio->FgetInt32();
+	key_shift = fio->FgetBool();
+	key_ctrl = fio->FgetBool();
+	key_graph = fio->FgetBool();
+	key_caps_locked = fio->FgetBool();
+	key_kana_locked = fio->FgetBool();
+	key_register_id = fio->FgetInt32();
+	play = fio->FgetBool();
+	rec = fio->FgetBool();
+	eot = fio->FgetBool();
+	iei = fio->FgetBool();
+	intr = fio->FgetBool();
+	intr_bit = fio->FgetUint32();
+	return true;
 }
 

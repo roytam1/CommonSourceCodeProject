@@ -146,8 +146,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			if(data & 0x40) {
 				wr_tmp[wr_num++] = GET_REGNUM(PORTB_TIMING);
 			}
-		}
-		else if((data & 0x87) == 4) {
+		} else if((data & 0x87) == 4) {
 #ifdef DMA_DEBUG
 			emu->out_debug_log(_T("Z80DMA: WR1=%2x\n"), data);
 #endif
@@ -155,8 +154,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			if(data & 0x40) {
 				wr_tmp[wr_num++] = GET_REGNUM(PORTA_TIMING);
 			}
-		}
-		else if((data & 0x80) == 0) {
+		} else if((data & 0x80) == 0) {
 #ifdef DMA_DEBUG
 			emu->out_debug_log(_T("Z80DMA: WR0=%2x\n"), data);
 #endif
@@ -173,8 +171,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			if(data & 0x40) {
 				wr_tmp[wr_num++] = GET_REGNUM(BLOCKLEN_H);
 			}
-		}
-		else if((data & 0x83) == 0x80) {
+		} else if((data & 0x83) == 0x80) {
 #ifdef DMA_DEBUG
 			emu->out_debug_log(_T("Z80DMA: WR3=%2x\n"), data);
 #endif
@@ -186,8 +183,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				wr_tmp[wr_num++] = GET_REGNUM(MATCH_BYTE);
 			}
 			enabled = ((data & 0x40) != 0);
-		}
-		else if((data & 0x83) == 0x81) {
+		} else if((data & 0x83) == 0x81) {
 #ifdef DMA_DEBUG
 			emu->out_debug_log(_T("Z80DMA: WR4=%2x\n"), data);
 #endif
@@ -201,14 +197,12 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			if(data & 0x10) {
 				wr_tmp[wr_num++] = GET_REGNUM(INTERRUPT_CTRL);
 			}
-		}
-		else if((data & 0xc7) == 0x82) {
+		} else if((data & 0xc7) == 0x82) {
 #ifdef DMA_DEBUG
 			emu->out_debug_log(_T("Z80DMA: WR5=%2x\n"), data);
 #endif
 			WR5 = data;
-		}
-		else if((data & 0x83) == 0x83) {
+		} else if((data & 0x83) == 0x83) {
 #ifdef DMA_DEBUG
 			emu->out_debug_log(_T("Z80DMA: WR6=%2x\n"), data);
 #endif
@@ -315,8 +309,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 			}
 		}
 		wr_ptr = 0;
-	}
-	else {
+	} else {
 		int nreg = wr_tmp[wr_ptr];
 #ifdef DMA_DEBUG
 		emu->out_debug_log(_T("Z80DMA: WR[%d,%d]=%2x\n"), nreg >> 3, nreg & 7, data);
@@ -335,8 +328,7 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 				wr_tmp[wr_num++] = GET_REGNUM(INTERRUPT_VECTOR);
 			}
 			wr_ptr = 0;
-		}
-		else if(wr_tmp[wr_num] == GET_REGNUM(READ_MASK)) {
+		} else if(wr_tmp[wr_num] == GET_REGNUM(READ_MASK)) {
 			// from Xmillenium
 			update_read_buffer();
 		}
@@ -367,8 +359,7 @@ void Z80DMA::write_signal(int id, uint32 data, uint32 mask)
 	
 	if(data & mask) {
 		ready |= (1 << id);
-	}
-	else {
+	} else {
 		ready &= ~(1 << id);
 	}
 	if(!prev_ready && now_ready()) {
@@ -389,8 +380,7 @@ bool Z80DMA::now_ready()
 	// FIXME: DRQ active is really L, but FDC class sends H
 	if(READY_ACTIVE_HIGH) {
 		return (ready == 0);
-	}
-	else {
+	} else {
 		return (ready != 0);
 	}
 }
@@ -436,11 +426,9 @@ void Z80DMA::do_dma()
 	// from Xmillenium (thanks Y.S.)
 	if(BLOCKLEN == 0) {
 		blocklen = 65537;
-	}
-	else if(BLOCKLEN == 0xffff) {
+	} else if(BLOCKLEN == 0xffff) {
 		blocklen = (int)65536;
-	}
-	else {
+	} else {
 		blocklen = BLOCKLEN + 1;
 	}
 	
@@ -469,8 +457,7 @@ restart:
 #ifdef DMA_DEBUG
 				emu->out_debug_log(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_a, data);
 #endif
-			}
-			else {
+			} else {
 				data = d_io->read_dma_io8w(addr_a, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug_log(_T("Z80DMA: INP(%4x)=%2x -> "), addr_a, data);
@@ -479,20 +466,17 @@ restart:
 			if(d_cpu != NULL) {
 				if(CHECK_WAIT_SIGNAL) {
 					d_cpu->set_extra_clock(PORTA_CYCLE_LEN + wait_r);
-				}
-				else {
+				} else {
 					d_cpu->set_extra_clock(PORTA_CYCLE_LEN);
 				}
 			}
-		}
-		else {
+		} else {
 			if(PORTB_MEMORY) {
 				data = d_mem->read_dma_data8w(addr_b, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug_log(_T("Z80DMA: RAM[%4x]=%2x -> "), addr_b, data);
 #endif
-			}
-			else {
+			} else {
 				data = d_io->read_dma_io8w(addr_b, &wait_r);
 #ifdef DMA_DEBUG
 				emu->out_debug_log(_T("Z80DMA: INP(%4x)=%2x -> "), addr_b, data);
@@ -501,8 +485,7 @@ restart:
 			if(d_cpu != NULL) {
 				if(CHECK_WAIT_SIGNAL) {
 					d_cpu->set_extra_clock(PORTB_CYCLE_LEN + wait_r);
-				}
-				else {
+				} else {
 					d_cpu->set_extra_clock(PORTB_CYCLE_LEN);
 				}
 			}
@@ -516,8 +499,7 @@ restart:
 					emu->out_debug_log(_T("RAM[%4x]\n"), addr_b);
 #endif
 					d_mem->write_dma_data8w(addr_b, data, &wait_w);
-				}
-				else {
+				} else {
 #ifdef DMA_DEBUG
 					emu->out_debug_log(_T("OUT(%4x)\n"), addr_b);
 #endif
@@ -526,20 +508,17 @@ restart:
 				if(d_cpu != NULL) {
 					if(CHECK_WAIT_SIGNAL) {
 						d_cpu->set_extra_clock(PORTB_CYCLE_LEN + wait_w);
-					}
-					else {
+					} else {
 						d_cpu->set_extra_clock(PORTB_CYCLE_LEN);
 					}
 				}
-			}
-			else {
+			} else {
 				if(PORTA_MEMORY) {
 #ifdef DMA_DEBUG
 					emu->out_debug_log(_T("RAM[%4x]\n"), addr_a);
 #endif
 					d_mem->write_dma_data8w(addr_a, data, &wait_w);
-				}
-				else {
+				} else {
 #ifdef DMA_DEBUG
 					emu->out_debug_log(_T("OUT(%4x)\n"), addr_a);
 #endif
@@ -548,8 +527,7 @@ restart:
 				if(d_cpu != NULL) {
 					if(CHECK_WAIT_SIGNAL) {
 						d_cpu->set_extra_clock(PORTA_CYCLE_LEN + wait_w);
-					}
-					else {
+					} else {
 						d_cpu->set_extra_clock(PORTA_CYCLE_LEN);
 					}
 				}
@@ -580,15 +558,13 @@ restart:
 inc_ports:
 		if(PORTA_IS_SOURCE) {
 			addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
-		}
-		else {
+		} else {
 			addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
 		}
 		if(TRANSFER_MODE == TM_TRANSFER || TRANSFER_MODE == TM_SEARCH_TRANSFER) {
 			if(PORTA_IS_SOURCE) {
 				addr_b += PORTB_FIXED ? 0 : PORTB_INC ? 1 : -1;
-			}
-			else {
+			} else {
 				addr_a += PORTA_FIXED ? 0 : PORTA_INC ? 1 : -1;
 			}
 		}
@@ -677,8 +653,7 @@ void Z80DMA::release_bus()
 #endif
 			if(OPERATING_MODE == OM_BYTE) {
 				d_cpu->set_extra_clock(2);
-			}
-			else {
+			} else {
 				d_cpu->set_extra_clock(3);
 			}
 		}
@@ -693,8 +668,7 @@ void Z80DMA::request_intr(int level)
 		
 		if(STATUS_AFFECTS_VECTOR) {
 			vector = (uint8)((INTERRUPT_VECTOR & 0xf9) | (level << 1));
-		}
-		else {
+		} else {
 			vector = (uint8)INTERRUPT_VECTOR;
 		}
 		update_intr();
@@ -745,8 +719,7 @@ uint32 Z80DMA::intr_ack()
 	if(in_service) {
 		// invalid interrupt status
 		return 0xff;
-	}
-	else if(req_intr) {
+	} else if(req_intr) {
 		req_intr = false;
 		in_service = true;
 		enabled = false;

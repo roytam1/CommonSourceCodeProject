@@ -33,6 +33,8 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 };
 
 #endif

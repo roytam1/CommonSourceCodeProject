@@ -413,7 +413,10 @@ private:
 	void release_printer();
 	void reset_printer();
 	void update_printer();
+	void open_printer_file();
+	void close_printer_file();
 	
+	_TCHAR prn_file_name[MAX_PATH];
 	FILEIO *prn_fio;
 	int prn_data, prn_wait_frames;
 	bool prn_strobe;
@@ -466,6 +469,9 @@ private:
 	// ----------------------------------------
 #ifdef USE_CPU_TYPE
 	int cpu_type;
+#endif
+#ifdef USE_SOUND_DEVICE_TYPE
+	int sound_device_type;
 #endif
 	_TCHAR app_path[_MAX_PATH];
 	bool now_suspended;

@@ -1292,3 +1292,51 @@ int MCS48::debug_dasm(uint32 pc, _TCHAR *buffer)
 	return ptr - pc;
 }
 #endif
+
+#define STATE_VERSION	1
+
+void MCS48MEM::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(ram, sizeof(ram), 1);
+}
+
+bool MCS48MEM::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(ram, sizeof(ram), 1);
+	return true;
+}
+
+void MCS48::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(opaque, sizeof(mcs48_state), 1);
+}
+
+bool MCS48::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(opaque, sizeof(mcs48_state), 1);
+	
+	mcs48_state *cpustate = (mcs48_state *)opaque;
+	cpustate->mem = d_mem;
+	cpustate->io = d_io;
+	cpustate->intr = d_intr;
+	return true;
+}
+

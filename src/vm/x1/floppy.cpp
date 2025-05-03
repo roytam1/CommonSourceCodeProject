@@ -14,6 +14,7 @@
 #ifdef _X1TURBO_FEATURE
 #include "../disk.h"
 #endif
+#include "../../fileio.h"
 
 #define EVENT_MOTOR_ON	0
 #define EVENT_MOTOR_OFF	1
@@ -87,5 +88,31 @@ void FLOPPY::event_callback(int event_id, int err)
 		motor_on = false;
 	}
 	register_id = -1;
+}
+
+#define STATE_VERSION	1
+
+void FLOPPY::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputInt32(prev);
+	fio->FputBool(motor_on);
+	fio->FputInt32(register_id);
+}
+
+bool FLOPPY::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	prev = fio->FgetInt32();
+	motor_on = fio->FgetBool();
+	register_id = fio->FgetInt32();
+	return true;
 }
 

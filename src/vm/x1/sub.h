@@ -33,9 +33,12 @@ private:
 	bool tape_play, tape_rec, tape_eot, tape_apss;
 	void update_tape();
 	
+	// interrupt
+	bool intr, obf;
+	
 	// z80 daisy chain
 	DEVICE *d_cpu;
-	bool iei, intr, obf;
+	bool iei;
 	uint32 intr_bit;
 	void update_intr();
 	
@@ -48,6 +51,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// interrupt common functions
 	void set_context_intr(DEVICE* device, uint32 bit)

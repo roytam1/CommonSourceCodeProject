@@ -44,6 +44,8 @@ public:
 	uint32 read_io8(uint32 addr);
 #endif
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique functions
 	void set_context_fdc(MB8877* device)

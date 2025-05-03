@@ -58,3 +58,26 @@ uint32 EMM::read_io8(uint32 addr)
 	return 0xff;
 }
 
+#define STATE_VERSION	1
+
+void EMM::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(data_buffer, sizeof(data_buffer), 1);
+	fio->FputUint32(data_addr);
+}
+
+bool EMM::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(data_buffer, sizeof(data_buffer), 1);
+	data_addr = fio->FgetUint32();
+	return true;
+}

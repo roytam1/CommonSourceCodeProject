@@ -205,7 +205,7 @@ void DISPLAY::reset()
 			}
 		}
 	}
-	zmode1 = zmode2 = 0;
+	zmode1 = zpriority = zscroll = zmode2 = 0;
 	zpal_num = 0;
 #endif
 	cur_line = cur_code = 0;
@@ -315,6 +315,12 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		case 0x1fb7:
 			ztpal[addr & 7] = data;
 			palette_pc[addr & 7] = RGB_COLOR((((data >> 2) & 3) * 255) / 3, (((data >> 4) & 3) * 255) / 3, (((data >> 0) & 3) * 255) / 3);
+			break;
+		case 0x1fc0:
+			zpriority = data;
+			break;
+		case 0x1fc4:
+			zscroll = data;
 			break;
 		case 0x1fc5:
 			zmode2 = data;
@@ -429,6 +435,10 @@ uint32 DISPLAY::read_io8(uint32 addr)
 		case 0x1fb6:
 		case 0x1fb7:
 			return ztpal[addr & 7];
+		case 0x1fc0:
+			return zpriority;
+		case 0x1fc4:
+			return zscroll;
 		case 0x1fc5:
 			return zmode2;
 		case 0x1fd0:
@@ -790,23 +800,20 @@ void DISPLAY::draw_text(int y)
 				shift = hireso ? 1 : 0;
 			}
 #endif
-		}
 #ifdef _X1TURBO_FEATURE
-		else if(knj & 0x80) {
+		} else if(knj & 0x80) {
 			uint32 ofs = adr2knj_x1t((knj << 8) | code);
 			if(knj & 0x40) {
 				ofs += 16; // right
 			}
 			pattern_b = pattern_r = pattern_g = &kanji[ofs];
 			shift = hireso ? ((ch_height >= 32) ? 1 : 0) : ((ch_height >= 16) ? 0 : -1);
-		}
-		else if(hireso || (mode1 & 4)) {
+		} else if(hireso || (mode1 & 4)) {
 			// ank 8x16 or kanji
 			pattern_b = pattern_r = pattern_g = &kanji[code << 4];
 			shift = hireso ? ((ch_height >= 32) ? 1 : 0) : ((ch_height >= 16) ? 0 : -1);
-		}
 #endif
-		else {
+		} else {
 			// ank 8x8
 			pattern_b = pattern_r = pattern_g = &font[code << 3];
 		}
@@ -1106,5 +1113,121 @@ uint16 DISPLAY::jis2sjis(uint16 jis)
 		c1 += 0x40;
 	}
 	return (c1 << 8) | c2;
+}
+
+#define STATE_VERSION	1
+
+void DISPLAY::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(vram_t, sizeof(vram_t), 1);
+	fio->Fwrite(vram_a, sizeof(vram_a), 1);
+#ifdef _X1TURBO_FEATURE
+	fio->Fwrite(vram_k, sizeof(vram_k), 1);
+#endif
+	fio->Fwrite(pcg_b, sizeof(pcg_b), 1);
+	fio->Fwrite(pcg_r, sizeof(pcg_r), 1);
+	fio->Fwrite(pcg_g, sizeof(pcg_g), 1);
+#ifdef _X1TURBO_FEATURE
+	fio->Fwrite(gaiji_b, sizeof(gaiji_b), 1);
+	fio->Fwrite(gaiji_r, sizeof(gaiji_r), 1);
+	fio->Fwrite(gaiji_g, sizeof(gaiji_g), 1);
+#endif
+	fio->FputUint8(cur_code);
+	fio->FputUint8(cur_line);
+	fio->FputInt32(kaddr);
+	fio->FputInt32(kofs);
+	fio->FputInt32(kflag);
+	fio->FputInt32((int)(kanji_ptr - &kanji[0]));
+	fio->Fwrite(pal, sizeof(pal), 1);
+	fio->FputUint8(priority);
+	fio->Fwrite(pri, sizeof(pri), 1);
+	fio->FputBool(column40);
+#ifdef _X1TURBO_FEATURE
+	fio->FputUint8(mode1);
+	fio->FputUint8(mode2);
+	fio->FputBool(hireso);
+#endif
+#ifdef _X1TURBOZ
+	fio->FputUint8(zmode1);
+	fio->FputUint8(zpriority);
+	fio->FputUint8(zscroll);
+	fio->FputUint8(zmode2);
+	fio->Fwrite(ztpal, sizeof(ztpal), 1);
+	fio->Fwrite(zpal, sizeof(zpal), 1);
+	fio->FputInt32(zpal_num);
+	fio->Fwrite(palette_pc, sizeof(palette_pc), 1);
+#endif
+	fio->FputBool(prev_vert_double);
+	fio->FputInt32(raster);
+	fio->FputInt32(cblink);
+	fio->FputBool(scanline);
+	fio->FputInt32(ch_height);
+	fio->FputInt32(hz_total);
+	fio->FputInt32(hz_disp);
+	fio->FputInt32(vt_disp);
+	fio->FputInt32(st_addr);
+	fio->FputUint32(vblank_clock);
+}
+
+bool DISPLAY::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(vram_t, sizeof(vram_t), 1);
+	fio->Fread(vram_a, sizeof(vram_a), 1);
+#ifdef _X1TURBO_FEATURE
+	fio->Fread(vram_k, sizeof(vram_k), 1);
+#endif
+	fio->Fread(pcg_b, sizeof(pcg_b), 1);
+	fio->Fread(pcg_r, sizeof(pcg_r), 1);
+	fio->Fread(pcg_g, sizeof(pcg_g), 1);
+#ifdef _X1TURBO_FEATURE
+	fio->Fread(gaiji_b, sizeof(gaiji_b), 1);
+	fio->Fread(gaiji_r, sizeof(gaiji_r), 1);
+	fio->Fread(gaiji_g, sizeof(gaiji_g), 1);
+#endif
+	cur_code = fio->FgetUint8();
+	cur_line = fio->FgetUint8();
+	kaddr = fio->FgetInt32();
+	kofs = fio->FgetInt32();
+	kflag = fio->FgetInt32();
+	kanji_ptr = &kanji[0] + fio->FgetInt32();
+	fio->Fread(pal, sizeof(pal), 1);
+	priority = fio->FgetUint8();
+	fio->Fread(pri, sizeof(pri), 1);
+	column40 = fio->FgetBool();
+#ifdef _X1TURBO_FEATURE
+	mode1 = fio->FgetUint8();
+	mode2 = fio->FgetUint8();
+	hireso = fio->FgetBool();
+#endif
+#ifdef _X1TURBOZ
+	zmode1 = fio->FgetUint8();
+	zpriority = fio->FgetUint8();
+	zscroll = fio->FgetUint8();
+	zmode2 = fio->FgetUint8();
+	fio->Fread(ztpal, sizeof(ztpal), 1);
+	fio->Fread(zpal, sizeof(zpal), 1);
+	zpal_num = fio->FgetInt32();
+	fio->Fread(palette_pc, sizeof(palette_pc), 1);
+#endif
+	prev_vert_double = fio->FgetBool();
+	raster = fio->FgetInt32();
+	cblink = fio->FgetInt32();
+	scanline = fio->FgetBool();
+	ch_height = fio->FgetInt32();
+	hz_total = fio->FgetInt32();
+	hz_disp = fio->FgetInt32();
+	vt_disp = fio->FgetInt32();
+	st_addr = fio->FgetInt32();
+	vblank_clock = fio->FgetUint32();
+	return true;
 }
 

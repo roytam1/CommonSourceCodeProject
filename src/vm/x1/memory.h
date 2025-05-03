@@ -35,6 +35,7 @@ private:
 #else
 	int m1_cycle;
 #endif
+	void update_map();
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -50,6 +51,8 @@ public:
 #endif
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 #ifdef _X1TURBO_FEATURE

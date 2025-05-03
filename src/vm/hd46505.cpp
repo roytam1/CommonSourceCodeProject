@@ -8,6 +8,7 @@
 */
 
 #include "hd46505.h"
+#include "../fileio.h"
 
 #define EVENT_DISPLAY	0
 #define EVENT_HSYNC_S	1
@@ -62,8 +63,7 @@ void HD46505::write_io8(uint32 addr, uint32 data)
 			}
 			regs[ch] = data;
 		}
-	}
-	else {
+	} else {
 		ch = data;
 	}
 }
@@ -72,8 +72,7 @@ uint32 HD46505::read_io8(uint32 addr)
 {
 	if(addr & 1) {
 		return (12 <= ch && ch < 18) ? regs[ch] : 0xff;
-	}
-	else {
+	} else {
 		return ch;
 	}
 }
@@ -172,11 +171,9 @@ void HD46505::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_DISPLAY) {
 		set_display(false);
-	}
-	else if(event_id == EVENT_HSYNC_S) {
+	} else if(event_id == EVENT_HSYNC_S) {
 		set_hsync(true);
-	}
-	else if(event_id == EVENT_HSYNC_E) {
+	} else if(event_id == EVENT_HSYNC_E) {
 		set_hsync(false);
 	}
 }
@@ -211,5 +208,73 @@ void HD46505::set_hsync(bool val)
 		write_signals(&outputs_hsync, val ? 0xffffffff : 0);
 		hsync = val;
 	}
+}
+
+#define STATE_VERSION	1
+
+void HD46505::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(regs, sizeof(regs), 1);
+	fio->FputInt32(ch);
+	fio->FputBool(timing_changed);
+	fio->FputInt32(cpu_clocks);
+#ifdef HD46505_HORIZ_FREQ
+	fio->FputInt32(horiz_freq);
+	fio->FputInt32(next_horiz_freq);
+#endif
+	fio->FputDouble(frames_per_sec);
+	fio->FputInt32(hz_total);
+	fio->FputInt32(hz_disp);
+	fio->FputInt32(hs_start);
+	fio->FputInt32(hs_end);
+	fio->FputInt32(vt_total);
+	fio->FputInt32(vt_disp);
+	fio->FputInt32(vs_start);
+	fio->FputInt32(vs_end);
+	fio->FputInt32(disp_end_clock);
+	fio->FputInt32(hs_start_clock);
+	fio->FputInt32(hs_end_clock);
+	fio->FputBool(display);
+	fio->FputBool(vblank);
+	fio->FputBool(vsync);
+	fio->FputBool(hsync);
+}
+
+bool HD46505::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(regs, sizeof(regs), 1);
+	ch = fio->FgetInt32();
+	timing_changed = fio->FgetBool();
+	cpu_clocks = fio->FgetInt32();
+#ifdef HD46505_HORIZ_FREQ
+	horiz_freq = fio->FgetInt32();
+	next_horiz_freq = fio->FgetInt32();
+#endif
+	frames_per_sec = fio->FgetDouble();
+	hz_total = fio->FgetInt32();
+	hz_disp = fio->FgetInt32();
+	hs_start = fio->FgetInt32();
+	hs_end = fio->FgetInt32();
+	vt_total = fio->FgetInt32();
+	vt_disp = fio->FgetInt32();
+	vs_start = fio->FgetInt32();
+	vs_end = fio->FgetInt32();
+	disp_end_clock = fio->FgetInt32();
+	hs_start_clock = fio->FgetInt32();
+	hs_end_clock = fio->FgetInt32();
+	display = fio->FgetBool();
+	vblank = fio->FgetBool();
+	vsync = fio->FgetBool();
+	hsync = fio->FgetBool();
+	return true;
 }
 

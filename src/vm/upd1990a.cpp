@@ -53,8 +53,7 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 #endif
 		}
 		clk = next;
-	}
-	else if(id == SIG_UPD1990A_STB) {
+	} else if(id == SIG_UPD1990A_STB) {
 		bool next = ((data & mask) != 0);
 		if(!stb && next && !clk) {
 #ifdef HAS_UPD4990A
@@ -93,13 +92,16 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 				hold = true;
 				break;
 			case 0x03:
-				shift_data = 0;
+				// after all bits are read, lsb of second data can be read
+				shift_data = TO_BCD(cur_time.second);
+				//shift_data = 0;
 #ifdef HAS_UPD4990A
 				if(mode & 0x80) {
+					shift_data <<= 8;
 					shift_data |= TO_BCD(cur_time.year);
-					shift_data <<= 4;
 				}
 #endif
+				shift_data <<= 4;
 				shift_data |= cur_time.month;
 				shift_data <<= 4;
 				shift_data |= cur_time.day_of_week;
@@ -163,24 +165,19 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 			}
 		}
 		stb = next;
-	}
-	else if(id == SIG_UPD1990A_CMD) {
+	} else if(id == SIG_UPD1990A_CMD) {
 		cmd = (cmd & ~mask) | (data & mask);
 		cmd &= 7;
-	}
-	else if(id == SIG_UPD1990A_C0) {
+	} else if(id == SIG_UPD1990A_C0) {
 		cmd = (cmd & ~1) | (data & mask ? 1 : 0);
 		cmd &= 7;
-	}
-	else if(id == SIG_UPD1990A_C1) {
+	} else if(id == SIG_UPD1990A_C1) {
 		cmd = (cmd & ~2) | (data & mask ? 2 : 0);
 		cmd &= 7;
-	}
-	else if(id == SIG_UPD1990A_C2) {
+	} else if(id == SIG_UPD1990A_C2) {
 		cmd = (cmd & ~4) | (data & mask ? 4 : 0);
 		cmd &= 7;
-	}
-	else if(id == SIG_UPD1990A_DIN) {
+	} else if(id == SIG_UPD1990A_DIN) {
 		din = ((data & mask) != 0);
 	}
 }
@@ -196,8 +193,7 @@ void UPD1990A::event_callback(int event_id, int err)
 			emu->get_host_time(&cur_time);	// resync
 			cur_time.initialized = true;
 		}
-	}
-	else if(event_id == EVENT_TP) {
+	} else if(event_id == EVENT_TP) {
 		write_signals(&outputs_tp, tp ? 0xffffffff : 0);
 		tp = !tp;
 	}

@@ -33,6 +33,9 @@
 #define SUPPORT_YM2203_PORT_A
 #define SUPPORT_YM2203_PORT_B
 #endif
+#if defined(SUPPORT_YM2203_PORT_A) || defined(SUPPORT_YM2203_PORT_B)
+#define SUPPORT_YM2203_PORT
+#endif
 
 #ifdef SUPPORT_YM2203_PORT_A
 #define SIG_YM2203_PORT_A	0
@@ -59,11 +62,15 @@ private:
 	} port_log[0x200];
 #endif
 	
-	uint8 ch, mode;
+	uint8 ch;
+#ifdef SUPPORT_YM2203_PORT
+	uint8 mode;
+#endif
 #ifdef HAS_YM2608
 	uint8 ch1, data1;
 #endif
 	
+#ifdef SUPPORT_YM2203_PORT
 	struct {
 		uint8 wreg;
 		uint8 rreg;
@@ -71,6 +78,7 @@ private:
 		// output signals
 		outputs_t outputs;
 	} port[2];
+#endif
 	
 	int chip_clock;
 	bool irq_prev, mute;
@@ -92,10 +100,12 @@ private:
 public:
 	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef SUPPORT_YM2203_PORT
 		for(int i = 0; i < 2; i++) {
 			init_output_signals(&port[i].outputs);
 			port[i].wreg = port[i].rreg = 0;//0xff;
 		}
+#endif
 #ifdef HAS_YM_SERIES
 		init_output_signals(&outputs_irq);
 #endif

@@ -220,54 +220,45 @@ static const op_t op74[256] = {
 #define ZHC_ADD(a, b, c) { \
 	if(a) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 	if(a == b) { \
 		PSW = (PSW & ~F_CY) | (c); \
-	} \
-	else if(a < b) { \
+	} else if(a < b) { \
 		PSW |= F_CY; \
-	} \
-	else { \
+	} else { \
 		PSW &= ~F_CY; \
 	} \
 	if((a & 15) < (b & 15)) { \
 		PSW |= F_HC; \
-	} \
-	else { \
+	} else { \
 		PSW &= ~F_HC; \
 	} \
 }
 #define ZHC_SUB(a, b, c) { \
 	if(a) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 	if(a == b) { \
 		PSW = (PSW & ~F_CY) | (c); \
-	} \
-	else if(a > b) { \
+	} else if(a > b) { \
 		PSW |= F_CY; \
-	} \
-	else { \
+	} else { \
 		PSW &= ~F_CY; \
 	} \
 	if((a & 15) > (b & 15)) { \
 		PSW |= F_HC; \
-	} \
-	else { \
+	} else { \
 		PSW &= ~F_HC; \
 	} \
 }
 #define SET_Z(n) { \
 	if(n) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
@@ -571,8 +562,7 @@ inline void UPD7801::UPDATE_PORTC(uint8 IOM)
 	if(_C--) { \
 		PSW &= ~F_CY; \
 		PC--; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_CY; \
 	} \
 }
@@ -595,30 +585,25 @@ inline void UPD7801::UPDATE_PORTC(uint8 IOM)
 	uint8 lo = _A & 0xf, hi = _A >> 4, diff = 0; \
 	if(lo <= 9 && !(PSW & F_HC)) { \
 		diff = (hi >= 10 || (PSW & F_CY)) ? 0x60 : 0x00; \
-	} \
-	else if(lo >= 10 && !(PSW & F_HC)) { \
+	} else if(lo >= 10 && !(PSW & F_HC)) { \
 		diff = (hi >= 9 || (PSW & F_CY)) ? 0x66 : 0x06; \
-	} \
-	else if(lo <= 2 && (PSW & F_HC)) { \
+	} else if(lo <= 2 && (PSW & F_HC)) { \
 		diff = (hi >= 10 || (PSW & F_CY)) ? 0x66 : 0x06; \
 	} \
 	_A += diff; \
 	if(_A) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 	if((PSW & F_CY) || (lo <= 9 ? hi >= 10 : hi >= 9)) { \
 		PSW |= F_CY; \
-	} \
-	else { \
+	} else { \
 		PSW &= ~F_CY; \
 	} \
 	if(lo >= 10) { \
 		PSW |= F_HC; \
-	} \
-	else { \
+	} else { \
 		PSW &= ~F_HC; \
 	} \
 }
@@ -736,8 +721,7 @@ inline void UPD7801::UPDATE_PORTC(uint8 IOM)
 	uint8 tmp = FETCH8(); \
 	if(o & 1) { \
 		PC -= 256 - tmp; \
-	} \
-	else { \
+	} else { \
 		PC += tmp; \
 	} \
 }
@@ -812,40 +796,35 @@ inline void UPD7801::UPDATE_PORTC(uint8 IOM)
 #define OFFA(r, n) { \
 	if(r & n) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z | F_SK; \
 	} \
 }
 #define OFFAW() { \
 	if(_A & RM8(FETCHWA())) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z | F_SK; \
 	} \
 }
 #define OFFAX(r) { \
 	if(_A & RM8(r)) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z | F_SK; \
 	} \
 }
 #define OFFI(r) { \
 	if(r & FETCH8()) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z | F_SK; \
 	} \
 }
 #define OFFI_IO(p) { \
 	if(IN8(p) & FETCH8()) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z | F_SK; \
 	} \
 }
@@ -853,48 +832,42 @@ inline void UPD7801::UPDATE_PORTC(uint8 IOM)
 	uint8 tmp = RM8(FETCHWA()); \
 	if(tmp & FETCH8()) { \
 		PSW &= ~F_Z; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z | F_SK; \
 	} \
 }
 #define ONA(r, n) { \
 	if(r & n) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
 #define ONAW() { \
 	if(_A & RM8(FETCHWA())) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
 #define ONAX(r) { \
 	if(_A & RM8(r)) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
 #define ONI(r) { \
 	if(r & FETCH8()) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
 #define ONI_IO(p) { \
 	if(IN8(p) & FETCH8()) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
@@ -902,8 +875,7 @@ inline void UPD7801::UPDATE_PORTC(uint8 IOM)
 	uint8 tmp = RM8(FETCHWA()); \
 	if(tmp & FETCH8()) { \
 		PSW = (PSW & ~F_Z) | F_SK; \
-	} \
-	else { \
+	} else { \
 		PSW |= F_Z; \
 	} \
 }
@@ -1139,8 +1111,7 @@ int UPD7801::run(int clock)
 		run_one_opecode();
 #endif
 		return -count;
-	}
-	else {
+	} else {
 		// run cpu while given clocks
 		count += clock;
 		int first_count = count;
@@ -1160,8 +1131,7 @@ void UPD7801::run_one_opecode()
 {
 	if(wait) {
 		period = 1;
-	}
-	else {
+	} else {
 		// interrupt is enabled after next opecode of ei
 		if(IFF & 2) {
 			IFF--;
@@ -2183,28 +2153,22 @@ void UPD7801::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_UPD7801_INTF0) {
 		if(data & mask) {
 			IRR |= INTF0;
-		}
-		else {
+		} else {
 			IRR &= ~INTF0;
 		}
-	}
-	else if(id == SIG_UPD7801_INTF1) {
+	} else if(id == SIG_UPD7801_INTF1) {
 		if(data & mask) {
 			IRR |= INTF1;
-		}
-		else {
+		} else {
 			IRR &= ~INTF1;
 		}
-	}
-	else if(id == SIG_UPD7801_INTF2) {
+	} else if(id == SIG_UPD7801_INTF2) {
 		if((data & mask) && (MK & 0x20)) {
 			IRR |= INTF2;
-		}
-		else if(!(data & mask) && !(MK & 0x20)) {
+		} else if(!(data & mask) && !(MK & 0x20)) {
 			IRR |= INTF2;
 		}
-	}
-	else if(id == SIG_UPD7801_WAIT) {
+	} else if(id == SIG_UPD7801_WAIT) {
 		wait = ((data & mask) != 0);
 	}
 }
@@ -2343,8 +2307,7 @@ void UPD7801::OP()
 	case 0x34:	// lxi h,word
 		if(PSW & F_L0) {
 			PC += 2;
-		}
-		else {
+		} else {
 			HL = FETCH16();
 		}
 		PSW = (PSW & ~F_L1) | F_L0; return;
@@ -2455,8 +2418,7 @@ void UPD7801::OP()
 	case 0x69:	// mvi a,byte
 		if(PSW & F_L1) {
 			PC++;
-		}
-		else {
+		} else {
 			_A = FETCH8();
 		}
 		PSW = (PSW & ~F_L0) | F_L1; return;
@@ -2473,8 +2435,7 @@ void UPD7801::OP()
 	case 0x6f:	// mvi l,byte
 		if(PSW & F_L0) {
 			PC++;
-		}
-		else {
+		} else {
 			_L = FETCH8();
 		}
 		PSW = (PSW & ~F_L1) | F_L0; return;
@@ -2643,8 +2604,7 @@ void UPD7801::OP4C()
 			UPDATE_PORTC(0x20);
 			_A = RM8((_B << 8) | ope);
 			UPDATE_PORTC(0);
-		}
-		else {
+		} else {
 			emu->out_debug_log(_T("PC=%4x\tCPU\tUNKNOWN OP : 4c %2x\n"), prevPC, ope);
 		}
 	}
@@ -2686,8 +2646,7 @@ void UPD7801::OP4D()
 			UPDATE_PORTC(0x20);
 			WM8((_B << 8) | ope, _A);
 			UPDATE_PORTC(0);
-		}
-		else {
+		} else {
 			emu->out_debug_log(_T("PC=%4x\tCPU\tUNKNOWN OP : 4d %2x\n"), prevPC, ope);
 		}
 	}
