@@ -81,6 +81,12 @@ devenv.com mastersystem.vcproj /Rebuild Release
 mkdir build\mastersystem
 copy Release\mastersystem.exe build\mastersystem\.
 
+devenv.com msx1.vcproj /Rebuild Release
+devenv.com msx2.vcproj /Rebuild Release
+mkdir build\msx
+copy Release\msx1.exe build\msx\.
+copy Release\msx2.exe build\msx\.
+
 devenv.com multi8.vcproj /Rebuild Release
 mkdir build\multi8
 copy Release\multi8.exe build\multi8\.

@@ -100,6 +100,16 @@
 #include "gamegear/mastersystem.h"
 #endif
 
+// ASCII MSX
+#ifdef _MSX1
+#include "msx/msx.h"
+#endif
+
+// ASCII MSX2
+#ifdef _MSX2
+#include "msx/msx.h"
+#endif
+
 // MITSUBISHI Elec. MULTI8
 #ifdef _MULTI8
 #include "multi8/multi8.h"
@@ -312,7 +322,7 @@
 
 // PIONEER PX-7
 #ifdef _PX7
-#include "msx1/msx1.h"
+#include "msx/msx.h"
 #endif
 
 // TOMY PYUTA

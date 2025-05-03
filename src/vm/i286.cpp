@@ -146,7 +146,7 @@ void I286::initialize()
 	cpustate->pic = d_pic;
 	cpustate->program = d_mem;
 	cpustate->io = d_io;
-#ifdef I86_BIOS_CALL
+#ifdef I86_PSEUDO_BIOS
 	cpustate->bios = d_bios;
 #endif
 #ifdef SINGLE_MODE_DMA
@@ -178,7 +178,7 @@ void I286::reset()
 	cpustate->pic = d_pic;
 	cpustate->program = d_mem;
 	cpustate->io = d_io;
-#ifdef I86_BIOS_CALL
+#ifdef I86_PSEUDO_BIOS
 	cpustate->bios = d_bios;
 #endif
 #ifdef SINGLE_MODE_DMA
@@ -416,7 +416,7 @@ bool I286::load_state(FILEIO* state_fio)
 	cpustate->pic = d_pic;
 	cpustate->program = d_mem;
 	cpustate->io = d_io;
-#ifdef I86_BIOS_CALL
+#ifdef I86_PSEUDO_BIOS
 	cpustate->bios = d_bios;
 #endif
 #ifdef SINGLE_MODE_DMA
