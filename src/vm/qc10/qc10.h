@@ -12,8 +12,14 @@
 #define _QC10_H_
 
 // device informations for win32
+#ifdef _COLOR_MONITOR
+#define DEVICE_NAME		"EPSON QC-10 with color monitor subboard"
+#define CONFIG_NAME		"qc10cms"
+#else
 #define DEVICE_NAME		"EPSON QC-10"
 #define CONFIG_NAME		"qc10"
+#endif
+#define CONFIG_VERSION		0x02
 
 #define WINDOW_WIDTH1		640
 #define WINDOW_HEIGHT1		400
@@ -21,13 +27,20 @@
 #define WINDOW_HEIGHT2		400
 
 #define USE_DIPSWITCH
+#define DIPSWITCH_DEFAULT	0xe0
 #define USE_FD1
 #define USE_FD2
+#define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 
 // device informations for virtual machine
+#ifdef _COLOR_MONITOR
+#define FRAMES_PER_10SECS	569
+#define FRAMES_PER_SEC		56.9
+#else
 #define FRAMES_PER_10SECS	458
 #define FRAMES_PER_SEC		45.8
+#endif
 #define LINES_PER_FRAME 	421
 #define CHARS_PER_LINE		108
 #define CPU_CLOCKS		3993600
@@ -61,6 +74,7 @@ class DISPLAY;
 class FLOPPY;
 class KEYBOARD;
 class MEMORY;
+class MFONT;
 
 class VM
 {
@@ -81,7 +95,7 @@ protected:
 	I8255* pio;
 	I8259* pic;	// includes 2chips
 	IO8* io;
-	UPD7220* crtc;
+	UPD7220* gdc;
 	UPD765A* fdc;
 	Z80* cpu;
 	Z80SIO* sio;
@@ -90,6 +104,7 @@ protected:
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
+	MFONT* mfont;
 	
 public:
 	// ----------------------------------------

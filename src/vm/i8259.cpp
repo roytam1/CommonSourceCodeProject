@@ -132,7 +132,7 @@ void I8259::update_intr()
 	
 	for(int c = 0; c < I8259_MAX_CHIPS; c++) {
 		uint8 irr = pic[c].irr;
-		if((c + 1 < I8259_MAX_CHIPS) && (pic[c].icw4 & 0x10)) {
+		if(c + 1 < I8259_MAX_CHIPS) {
 			// this is master
 			if(pic[c + 1].irr & (~pic[c + 1].imr)) {
 				// request from slave
@@ -150,7 +150,7 @@ void I8259::update_intr()
 			level = (level + 1) & 7;
 			bit = 1 << level;
 		}
-		if((pic[c].icw3 & bit) && (pic[c].icw4 & 0x10)) {
+		if((c + 1 < I8259_MAX_CHIPS) && (pic[c].icw3 & bit)) {
 			// check slave
 			continue;
 		}

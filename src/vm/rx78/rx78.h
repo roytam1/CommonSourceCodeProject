@@ -14,8 +14,9 @@
 // device informations for win32
 #define DEVICE_NAME		"BANDAI RX-78"
 #define CONFIG_NAME		"rx78"
+#define CONFIG_VERSION		0x01
 
-#define WINDOW_WIDTH1		256
+#define WINDOW_WIDTH1		288
 #define WINDOW_HEIGHT1		184
 #define WINDOW_WIDTH2		576
 #define WINDOW_HEIGHT2		368
@@ -28,7 +29,6 @@
 #define USE_AUTO_KEY_RELEASE	10
 #define USE_AUTO_KEY_CAPS
 #define USE_SCREEN_X2
-#define DONT_KEEP_ASPECT
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -37,6 +37,7 @@
 #define CHARS_PER_LINE		1
 #define CPU_CLOCKS		4090909
 #define SCREEN_WIDTH		192
+#define SCREEN_WIDTH_ASPECT	288
 #define SCREEN_HEIGHT		184
 
 #include "../../common.h"

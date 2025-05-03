@@ -26,6 +26,7 @@ void UPD7220::initialize()
 	cs[0] = cs[1] = cs[2] = 0;
 	ead = dad = 0;
 	maskl = maskh = 0xff;
+	mod = 0;
 	vsync = hblank = start = false;
 	// default (QC-10)
 	vs = LINES_PER_FRAME * 16 / 421;
@@ -47,23 +48,27 @@ void UPD7220::release()
 void UPD7220::write_dma8(uint32 addr, uint32 data)
 {
 	// for dma access
-	switch(cmdreg & 0x1f)
+	switch(cmdreg & 0x18)
 	{
 	case 0x00:
 		// low and high
-		if(low_high)
-			cmd_write_sub((ead++) * 2 + 1, data & maskh);
+		if(low_high) {
+			cmd_write_sub(ead * 2 + 1, data & maskh);
+			ead += dif;
+		}
 		else
 			cmd_write_sub(ead * 2 + 0, data & maskl);
 		low_high = !low_high;
 		break;
 	case 0x10:
 		// low byte
-		cmd_write_sub((ead++) * 2 + 0, data & maskl);
+		cmd_write_sub(ead * 2 + 0, data & maskl);
+		ead += dif;
 		break;
-	case 0x11:
+	case 0x18:
 		// high byte
-		cmd_write_sub((ead++) * 2 + 1, data & maskh);
+		cmd_write_sub(ead * 2 + 1, data & maskh);
+		ead += dif;
 		break;
 	}
 }
@@ -73,24 +78,30 @@ uint32 UPD7220::read_dma8(uint32 addr)
 	uint32 val = 0xff;
 	
 	// for dma access
-	switch(cmdreg & 0x1f)
+	switch(cmdreg & 0x18)
 	{
 	case 0x00:
 		// low and high
-		if(low_high)
-			val = cmd_read_sub((ead++) * 2 + 1);
+		if(low_high) {
+			val = cmd_read_sub(ead * 2 + 1);
+			ead += dif;
+		}
 		else
 			val = cmd_read_sub(ead * 2 + 0);
 		low_high = !low_high;
-		return val;
+		break;
 	case 0x10:
 		// low byte
-		return cmd_read_sub((ead++) * 2 + 0);
-	case 0x11:
+		val =  cmd_read_sub(ead * 2 + 0);
+		ead += dif;
+		break;
+	case 0x18:
 		// high byte
-		return cmd_read_sub((ead++) * 2 + 1);
+		val =  cmd_read_sub(ead * 2 + 1);
+		ead += dif;
+		break;
 	}
-	return 0xff;
+	return val;
 }
 
 void UPD7220::write_io8(uint32 addr, uint32 data)
@@ -99,6 +110,7 @@ void UPD7220::write_io8(uint32 addr, uint32 data)
 	{
 	case 0:
 		// set parameter
+//		emu->out_debug("\tPARAM = %2x\n", data);
 		if(cmdreg != -1) {
 			fi->write(data);
 			check_cmd();
@@ -110,6 +122,7 @@ void UPD7220::write_io8(uint32 addr, uint32 data)
 			process_cmd();
 		// set new command
 		cmdreg = data;
+//		emu->out_debug("CMDREG = %2x\n", cmdreg);
 		ft->clear();	// for vectw
 		check_cmd();
 		break;
@@ -151,7 +164,12 @@ uint32 UPD7220::read_io8(uint32 addr)
 
 void UPD7220::event_vsync(int v, int clock)
 {
-	vsync = (v < vs);
+	bool next = (v < vs);
+	if(vsync != next) {
+		for(int i = 0; i < dcount_vsync; i++)
+			d_vsync[i]->write_signal(did_vsync[i], next ? 0xffffffff : 0, dmask_vsync[i]);
+		vsync = next;
+	}
 	hblank = true;
 	int id;
 	vm->regist_event_by_clock(this, 0, hc, false, &id);
@@ -297,6 +315,13 @@ void UPD7220::process_cmd()
 	case CMD_CSRW:
 		cmd_csrw();
 		break;
+	case CMD_WRITE + 0x00: case CMD_WRITE + 0x01: case CMD_WRITE + 0x02: case CMD_WRITE + 0x03:
+	case CMD_WRITE + 0x08: case CMD_WRITE + 0x09: case CMD_WRITE + 0x0a: case CMD_WRITE + 0x0b:
+	case CMD_WRITE + 0x10: case CMD_WRITE + 0x11: case CMD_WRITE + 0x12: case CMD_WRITE + 0x13:
+	case CMD_WRITE + 0x18: case CMD_WRITE + 0x19: case CMD_WRITE + 0x1a: case CMD_WRITE + 0x1b:
+		// no params ?
+		mod = cmdreg & 3;
+		break;
 	}
 }
 
@@ -326,7 +351,7 @@ void UPD7220::cmd_reset()
 void UPD7220::cmd_sync()
 {
 	start = ((cmdreg & 1) != 0);
-	for(int i = 0; i < 8; i++)
+	for(int i = 0; i < 8 && !fi->empty(); i++)
 		sync[i] = fi->read();
 	cmdreg = -1;
 	
@@ -404,29 +429,33 @@ void UPD7220::cmd_lpen()
 	cmdreg = -1;
 }
 
+#define UPDATE_VECT() { \
+	dir = vect[0] & 7; \
+	dif = vectdir[dir][0] + vectdir[dir][1] * 40; \
+	sl = vect[0] & 0x80; \
+	dc = (vect[1] | (vect[ 2] << 8)) & 0x3fff; \
+	d  = (vect[3] | (vect[ 4] << 8)) & 0x3fff; \
+	d2 = (vect[5] | (vect[ 6] << 8)) & 0x3fff; \
+	d1 = (vect[7] | (vect[ 8] << 8)) & 0x3fff; \
+	dm = (vect[9] | (vect[10] << 8)) & 0x3fff; \
+}
+
 void UPD7220::cmd_vectw()
 {
-	for(int i = 0; i < 11; i++)
+	for(int i = 0; i < 11 && !ft->empty(); i++)
 		vect[i] = ft->read();
+	UPDATE_VECT();
 	cmdreg = -1;
 }
 
 void UPD7220::cmd_vecte()
 {
-	// get param
 	dx = ((ead %  40) << 4) | (dad & 0xf);
 	dy = ead / 40;
-	dir = vect[0] & 7;
-	sl = vect[0] & 0x80;
-	dc = (vect[1] | (vect[ 2] << 8)) & 0x3fff;
-	d  = (vect[3] | (vect[ 4] << 8)) & 0x3fff;
-	d2 = (vect[5] | (vect[ 6] << 8)) & 0x3fff;
-	d1 = (vect[7] | (vect[ 8] << 8)) & 0x3fff;
-	dm = (vect[9] | (vect[10] << 8)) & 0x3fff;
 	
 	// execute command
-//	if(vect[0] & 0x08)
-//		draw_vectl();
+	if(vect[0] & 0x08)
+		draw_vectl();
 	if(vect[0] & 0x10)
 		draw_vectt();
 	if(vect[0] & 0x20)
@@ -434,22 +463,14 @@ void UPD7220::cmd_vecte()
 	if(vect[0] & 0x40)
 		draw_vectr();
 	vectreset();
-	
 	statreg |= STAT_DRAW;
 	cmdreg = -1;
 }
 
 void UPD7220::cmd_texte()
 {
-	dx = ((ead %  40) << 4) | (dad & 0xf);
+	dx = ((ead % 40) << 4) | (dad & 0xf);
 	dy = ead / 40;
-	dir = vect[0] & 7;
-	sl = vect[0] & 0x80;
-	dc = (vect[1] | (vect[ 2] << 8)) & 0x3fff;
-	d  = (vect[3] | (vect[ 4] << 8)) & 0x3fff;
-	d2 = (vect[5] | (vect[ 6] << 8)) & 0x3fff;
-	d1 = (vect[7] | (vect[ 8] << 8)) & 0x3fff;
-	dm = (vect[9] | (vect[10] << 8)) & 0x3fff;
 	
 	// execute command
 	if(vect[0] & 0x08)
@@ -461,7 +482,6 @@ void UPD7220::cmd_texte()
 	if(vect[0] & 0x40)
 		draw_vectr();
 	vectreset();
-	
 	statreg |= STAT_DRAW;
 	cmdreg = -1;
 }
@@ -473,6 +493,7 @@ void UPD7220::cmd_csrw()
 	ead |= ft->read() << 16;
 	dad = (ead >> 20) & 0xf;
 	ead &= 0x3ffff;
+//	emu->out_debug("\tCSRW: X=%d,Y=%d,DOT=%d\n",ead%40,(int)(ead/40),dad);
 	cmdreg = -1;
 }
 
@@ -495,7 +516,8 @@ void UPD7220::cmd_mask()
 
 void UPD7220::cmd_write()
 {
-	int l, h, w = (vect[1] | (vect[2] << 8)) & 0x3fff;
+	int l, h;
+	mod = cmdreg & 3;
 	
 	switch(cmdreg & 0x18)
 	{
@@ -503,53 +525,65 @@ void UPD7220::cmd_write()
 		// low and high
 		l = fi->read() & maskl;
 		h = fi->read() & maskh;
-		for(int i = 0; i < w + 1; i++) {
+		for(int i = 0; i < dc + 1; i++) {
 			cmd_write_sub(ead * 2 + 0, l);
-			cmd_write_sub((ead++) * 2 + 1, h);
+			cmd_write_sub(ead * 2 + 1, h);
+			ead += dif;
 		}
 		break;
 	case 0x10:
 		// low byte
 		l = fi->read() & maskl;
-		for(int i = 0; i < w + 1; i++)
-			cmd_write_sub((ead++) * 2 + 0, l);
+		for(int i = 0; i < dc + 1; i++) {
+			cmd_write_sub(ead * 2 + 0, l);
+			ead += dif;
+		}
 		break;
 	case 0x18:
 		// high byte
 		h = fi->read() & maskh;
-		for(int i = 0; i < w + 1; i++)
-			cmd_write_sub((ead++) * 2 + 1, h);
+		for(int i = 0; i < dc + 1; i++) {
+			cmd_write_sub(ead * 2 + 1, h);
+			ead += dif;
+		}
 		break;
 	default:
 		// invalid
 		cmdreg = -1;
 		break;
 	}
+	// ???
 	vectreset();
+	cmdreg = -1;
 }
 
 void UPD7220::cmd_read()
 {
-	int w = (vect[1] | (vect[2] << 8)) & 0x3fff;
+	mod = cmdreg & 3;
 	
 	switch(cmdreg & 0x18)
 	{
 	case 0x00:
 		// low and high
-		for(int i = 0; i < w; i++) {
+		for(int i = 0; i < dc; i++) {
 			fo->write(cmd_read_sub(ead * 2 + 0));
-			fo->write(cmd_read_sub((ead++) * 2 + 1));
+			fo->write(cmd_read_sub(ead * 2 + 1));
+			ead += dif;
 		}
 		break;
 	case 0x10:
 		// low byte
-		for(int i = 0; i < w; i++)
-			fo->write(cmd_read_sub((ead++) * 2 + 0));
+		for(int i = 0; i < dc; i++) {
+			fo->write(cmd_read_sub(ead * 2 + 0));
+			ead += dif;
+		}
 		break;
 	case 0x18:
 		// high byte
-		for(int i = 0; i < w; i++)
-			fo->write(cmd_read_sub((ead++) * 2 + 1));
+		for(int i = 0; i < dc; i++) {
+			fo->write(cmd_read_sub(ead * 2 + 1));
+			ead += dif;
+		}
 		break;
 	default:
 		// invalid
@@ -561,9 +595,10 @@ void UPD7220::cmd_read()
 
 void UPD7220::cmd_dmaw()
 {
+	mod = cmdreg & 3;
 	low_high = false;
-	if(d_drq)
-		d_drq->write_signal(did_drq, 0xffffffff, dmask_drq);
+	for(int i = 0; i < dcount_drq; i++)
+		d_drq[i]->write_signal(did_drq[i], 0xffffffff, dmask_drq[i]);
 	vectreset();
 //	statreg |= STAT_DMA;
 	cmdreg = -1;
@@ -571,9 +606,10 @@ void UPD7220::cmd_dmaw()
 
 void UPD7220::cmd_dmar()
 {
+	mod = cmdreg & 3;
 	low_high = false;
-	if(d_drq)
-		d_drq->write_signal(did_drq, 0xffffffff, dmask_drq);
+	for(int i = 0; i < dcount_drq; i++)
+		d_drq[i]->write_signal(did_drq[i], 0xffffffff, dmask_drq[i]);
 	vectreset();
 //	statreg |= STAT_DMA;
 	cmdreg = -1;
@@ -581,25 +617,30 @@ void UPD7220::cmd_dmar()
 
 void UPD7220::cmd_write_sub(uint32 addr, uint8 data)
 {
-	switch(cmdreg & 0x3)
+	switch(mod)
 	{
-	case 0x0:
+	case 0:
 		// replace
 		vram[addr & ADDR_MASK] = data;
 		break;
-	case 0x1:
+	case 1:
 		// complement
 		vram[addr & ADDR_MASK] ^= data;
 		break;
-	case 0x2:
+	case 2:
 		// reset
 		vram[addr & ADDR_MASK] &= ~data;
 		break;
-	case 0x3:
+	case 3:
 		// set
 		vram[addr & ADDR_MASK] |= data;
 		break;
 	}
+}
+
+uint8 UPD7220::cmd_read_sub(uint32 addr)
+{
+	return vram[addr & ADDR_MASK];
 }
 
 void UPD7220::vectreset()
@@ -614,18 +655,16 @@ void UPD7220::vectreset()
 	vect[ 8] = 0xff;
 	vect[ 9] = 0xff;
 	vect[10] = 0xff;
+	UPDATE_VECT();
 }
 
 // draw
 
 void UPD7220::draw_vectl()
 {
-	// init pattern mask
 	pattern = ra[8] | (ra[9] << 8);
 	
-	if(dc == 0)
-		pset(dx, dy);
-	else {
+	if(dc) {
 		int x = dx, y = dy;
 		
 		switch(dir)
@@ -680,14 +719,15 @@ void UPD7220::draw_vectl()
 			break;
 		}
 	}
+	else
+		pset(dx, dy);
 }
 
 void UPD7220::draw_vectt()
 {
-	// init pattern mask
-	pattern = 0xffff;
 	uint16 draw = ra[8] | (ra[9] << 8);
-	if(sl) // reverse
+	if(sl) {
+		// reverse
 		draw = (draw & 0x0001 ? 0x8000 : 0) | (draw & 0x0002 ? 0x4000 : 0) | 
 		       (draw & 0x0004 ? 0x2000 : 0) | (draw & 0x0008 ? 0x1000 : 0) | 
 		       (draw & 0x0010 ? 0x0800 : 0) | (draw & 0x0020 ? 0x0400 : 0) | 
@@ -696,10 +736,11 @@ void UPD7220::draw_vectt()
 		       (draw & 0x0400 ? 0x0020 : 0) | (draw & 0x0800 ? 0x0010 : 0) | 
 		       (draw & 0x1000 ? 0x0008 : 0) | (draw & 0x2000 ? 0x0004 : 0) | 
 		       (draw & 0x8000 ? 0x0002 : 0) | (draw & 0x8000 ? 0x0001 : 0);
-	
+	}
 	int vx1 = vectdir[dir][0], vy1 = vectdir[dir][1];
 	int vx2 = vectdir[dir][2], vy2 = vectdir[dir][3];
 	int muly = zw + 1;
+	pattern = 0xffff;
 	
 	while(muly--) {
 		int cx = dx, cy = dy;
@@ -726,148 +767,139 @@ void UPD7220::draw_vectt()
 		dx += vx2;
 		dy += vy2;
 	}
+	ead = (dx >> 4) + dy * 40;
+	dad = dx & 0xf;
 }
 
 void UPD7220::draw_vectc()
 {
-	// init pattern mask
-	pattern = ra[8] | (ra[9] << 8);
-	
-	int x = dx, y = dy;
 	int m = (d * 10000 + 14141) / 14142;
 	int t = dc > m ? m : dc;
+	pattern = ra[8] | (ra[9] << 8);
 	
-	if(m == 0)
-		pset(x, y);
-	else {
+	if(m) {
 		switch(dir)
 		{
 		case 0:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x + s), (y + i));
+				pset((dx + s), (dy + i));
 			}
 			break;
 		case 1:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x + i), (y + s));
+				pset((dx + i), (dy + s));
 			}
 			break;
 		case 2:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x + i), (y - s));
+				pset((dx + i), (dy - s));
 			}
 			break;
 		case 3:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x + s), (y - i));
+				pset((dx + s), (dy - i));
 			}
 			break;
 		case 4:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x - s), (y - i));
+				pset((dx - s), (dy - i));
 			}
 			break;
 		case 5:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x - i), (y - s));
+				pset((dx - i), (dy - s));
 			}
 			break;
 		case 6:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x - i), (y + s));
+				pset((dx - i), (dy + s));
 			}
 			break;
 		case 7:
 			for(int i = dm; i <= t; i++) {
 				int s = (rt[(i << RT_TABLEBIT) / m] * d);
 				s = (s + (1 << (RT_MULBIT - 1))) >> RT_MULBIT;
-				pset((x - s), (y + i));
+				pset((dx - s), (dy + i));
 			}
 			break;
 		}
 	}
+	else
+		pset(dx, dy);
 }
 
 void UPD7220::draw_vectr()
 {
-	// init pattern mask
-	pattern = ra[8] | (ra[9] << 8);
-	
 	int vx1 = vectdir[dir][0], vy1 = vectdir[dir][1];
 	int vx2 = vectdir[dir][2], vy2 = vectdir[dir][3];
-	int x = dx, y = dy;
+	pattern = ra[8] | (ra[9] << 8);
 	
 	for(int i = 0; i < d; i++) {
-		pset(x, y);
-		x += vx1;
-		y += vy1;
+		pset(dx, dy);
+		dx += vx1;
+		dy += vy1;
 	}
 	for(int i = 0; i < d2; i++) {
-		pset(x, y);
-		x += vx2;
-		y += vy2;
+		pset(dx, dy);
+		dx += vx2;
+		dy += vy2;
 	}
 	for(int i = 0; i < d; i++) {
-		pset(x, y);
-		x -= vx1;
-		y -= vy1;
+		pset(dx, dy);
+		dx -= vx1;
+		dy -= vy1;
 	}
 	for(int i = 0; i < d2; i++) {
-		pset(x, y);
-		x -= vx2;
-		y -= vy2;
+		pset(dx, dy);
+		dx -= vx2;
+		dy -= vy2;
 	}
+	ead = (dx >> 4) + dy * 40;
+	dad = dx & 0xf;
 }
 
 void UPD7220::draw_text()
 {
-	// init pattern mask
-	pattern = 0xffff;
-	
 	int dir2 = dir + (sl ? 8 : 0);
 	int vx1 = vectdir[dir2][0], vy1 = vectdir[dir2][1];
 	int vx2 = vectdir[dir2][2], vy2 = vectdir[dir2][3];
-	int sx = ((d - 1) & 0x3fff) + 1, sy = dc + 1;
+	int sx = d, sy = dc + 1;
+	if(dir == 0 && sy == 40) sy = 640;	// patch
+//	emu->out_debug("\tTEXT: dx=%d,dy=%d,sx=%d,sy=%d\n",dx,dy,sx,sy);
 	int index = 15;
 	
 	while(sy--) {
 		int muly = zw + 1;
 		while(muly--) {
+			while(dx < 0) dx += 640;
+			while(dx >= 640) dx -= 640;
 			int cx = dx, cy = dy;
 			uint8 bit = ra[index];
 			int xrem = sx;
-			
 			while(xrem--) {
+				pattern = (bit & 1) ? 0xffff : 0;
+				bit = (bit >> 1) | ((bit & 1) ? 0x80 : 0);
 				int mulx = zw + 1;
-				if(bit & 1) {
-					bit >>= 1;
-					bit |= 0x80;
-					while(mulx--) {
-						pset(cx, cy);
-						cx += vx1;
-						cy += vy1;
-					}
-				}
-				else {
-					bit >>= 1;
-					while(mulx--) {
-						cx += vx1;
-						cy += vy1;
-					}
+				while(mulx--) {
+					while(cx < 0) cx += 640;
+					while(cx >= 640) cx -= 640;
+					pset(cx, cy);
+					cx += vx1;
+					cy += vy1;
 				}
 			}
 			dx += vx2;
@@ -875,20 +907,38 @@ void UPD7220::draw_text()
 		}
 		index = ((index - 1) & 7) | 8;
 	}
+	ead = (dx >> 4) + dy * 40;
+	dad = dx & 0xf;
 }
 
 void UPD7220::pset(int x, int y)
 {
 	uint16 dot = pattern & 1;
 	pattern = (pattern >> 1) | (dot << 15);
-	int addr = y * 80 + (x >> 3);
+	uint32 addr = (y * 80 + (x >> 3)) & ADDR_MASK;
 	
-	if(!(y < 0 || x < 0 || 640 <= x || vram_size <= addr)) {
-		uint8 data = 0x80 >> (x & 7);
-		if(dot)
-			vram[addr] |= data;
-//		else
-//			vram[addr] &= ~data;
-	}
+//	if(!(y < 0 || x < 0 || 640 <= x)) {
+		uint8 bit = 1 << (x & 7);
+		uint8 cur = vram[addr];
+		switch(mod)
+		{
+		case 0:
+			// replace
+			vram[addr] = (cur & ~bit) | (dot ? bit : 0);
+			break;
+		case 1:
+			// complement
+			vram[addr] = (cur & ~bit) | ((cur ^ (dot ? 0xff : 0)) & bit);
+			break;
+		case 2:
+			// reset
+			vram[addr] &= dot ? ~bit : 0xff;
+			break;
+		case 3:
+			// set
+			vram[addr] |= dot ? bit : 0;
+			break;
+		}
+//	}
 }
 

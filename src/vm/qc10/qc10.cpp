@@ -29,6 +29,7 @@
 #include "floppy.h"
 #include "keyboard.h"
 #include "memory.h"
+#include "mfont.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -51,7 +52,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
 	io = new IO8(this, emu);
-	crtc = new UPD7220(this, emu);
+	gdc = new UPD7220(this, emu);
 	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);
 	sio = new Z80SIO(this, emu);	// uPD7201
@@ -60,6 +61,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy = new FLOPPY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
+	mfont = new MFONT(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -68,7 +70,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc->set_context_intr(pic, SIG_I8259_IR2 | SIG_I8259_CHIP1, 1);
 	dma0->set_context_memory(memory);
 	dma0->set_context_ch0(fdc);
-	dma0->set_context_ch1(crtc);
+	dma0->set_context_ch1(gdc);
 	dma1->set_context_memory(memory);
 	pit0->set_context_ch0(memory, SIG_MEMORY_BEEP);
 	pit0->set_context_ch1(pic, SIG_I8259_IR5 | SIG_I8259_CHIP1);
@@ -82,24 +84,26 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit1->set_constant_clock(2, CPU_CLOCKS >> 1);	// 1.9968MHz
 	pio->set_context_port_c(pic, SIG_I8259_IR0 | SIG_I8259_CHIP1, 8, 0);
 	pic->set_context(cpu);
-	crtc->set_context_drq(dma0, SIG_I8237_CH1, 1);
-	crtc->set_vram_ptr(display->get_vram(), VRAM_SIZE);
+	gdc->set_context_drq(dma0, SIG_I8237_CH1, 1);
+	gdc->set_vram_ptr(display->get_vram(), VRAM_SIZE);
 	// IR5 of I8259 #0 is from light pen
 	fdc->set_context_intr(pic, SIG_I8259_IR6 | SIG_I8259_CHIP0, 1);
 	fdc->set_context_drq(dma0, SIG_I8237_CH0, 1);
 	sio->set_context_intr(pic, SIG_I8259_IR4 | SIG_I8259_CHIP0);
 	sio->set_context_send0(keyboard, SIG_KEYBOARD_RECV);
 	
-	display->set_sync_ptr(crtc->get_sync());
-	display->set_zoom_ptr(crtc->get_zoom());
-	display->set_ra_ptr(crtc->get_ra());
-	display->set_cs_ptr(crtc->get_cs());
-	display->set_ead_ptr(crtc->get_ead());
+	display->set_context_gdc(gdc);
+	display->set_sync_ptr(gdc->get_sync());
+	display->set_zoom_ptr(gdc->get_zoom());
+	display->set_ra_ptr(gdc->get_ra());
+	display->set_cs_ptr(gdc->get_cs());
+	display->set_ead_ptr(gdc->get_ead());
 	floppy->set_context(fdc, SIG_UPD765A_MOTOR);
 	keyboard->set_context(sio, SIG_Z80SIO_RECV_CH0, SIG_Z80SIO_CLEAR_CH0);
 	memory->set_context_pit(pit0, SIG_I8253_GATE_0, SIG_I8253_GATE_2);
 	memory->set_context_beep(beep, SIG_BEEP_ON);
 	memory->set_context_fdc(fdc);
+	mfont->set_context(pic, SIG_I8259_IR7 | SIG_I8259_CHIP1);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -119,12 +123,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_w(0x13, sio, 3);
 	io->set_iomap_range_w(0x14, 0x17, pio);
 	io->set_iomap_range_w(0x18, 0x23, memory);
+	io->set_iomap_single_w(0x2d, display);
 	io->set_iomap_range_w(0x30, 0x33, floppy);
 	io->set_iomap_single_w(0x35, fdc);
-	io->set_iomap_range_w(0x38, 0x3b, crtc);
+	io->set_iomap_range_w(0x38, 0x3b, gdc);
 	io->set_iomap_range_w(0x3c, 0x3d, rtc);
 	io->set_iomap_range_w(0x40, 0x4f, dma0);
 	io->set_iomap_range_w(0x50, 0x5f, dma1);
+	io->set_iomap_range_w(0xfc, 0xfd, mfont);
 	
 	io->set_iomap_range_r(0x00, 0x02, pit0);
 	io->set_iomap_range_r(0x04, 0x06, pit1);
@@ -138,13 +144,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x13, sio, 3);
 	io->set_iomap_range_r(0x14, 0x16, pio);
 	io->set_iomap_range_r(0x18, 0x1b, memory);
-	io->set_iomap_single_r(0x2c, display);
+	io->set_iomap_range_r(0x2c, 0x2d, display);
 	io->set_iomap_range_r(0x30, 0x33, memory);
 	io->set_iomap_range_r(0x34, 0x35, fdc);
-	io->set_iomap_range_r(0x38, 0x39, crtc);
+	io->set_iomap_range_r(0x38, 0x39, gdc);
 	io->set_iomap_single_r(0x3c, rtc);
 	io->set_iomap_range_r(0x40, 0x4f, dma0);
 	io->set_iomap_range_r(0x50, 0x5f, dma1);
+	io->set_iomap_range_r(0xfc, 0xfd, mfont);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {

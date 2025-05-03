@@ -13,14 +13,15 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define CONFIG_VERSION	0x16
+#define FILE_VERSION	0x21
 
 void init_config();
 void load_config();
 void save_config();
 
 typedef struct {
-	int version;	// config file version
+	int version1;	// config file version
+	int version2;
 	
 	// recent files
 #ifdef USE_CART
@@ -49,11 +50,14 @@ typedef struct {
 #endif;
 	int window_mode;
 	// sound
-	int sound_frequency;	// 0=11025Hz, 1=22050Hz, 2=44100Hz, 3=48000Hz
+	int sound_frequency;	// 0=2000Hz, 1=4000Hz, 2=8000Hz, 3=11025Hz, 4=22050Hz, 5=44100Hz, 6=48000Hz
 	int sound_latency;	// 0=100msec, 1=200msec, 2=300msec, 3=400msec
 #ifdef USE_DIPSWITCH
 	uint8 dipswitch;
 #endif
+	int d3d9_interval;	// 0=Don't wait vsync, 1=Wait vsync
+	int d3d9_device;	// 0=Default, 1=Hardware TnL, 2=Hardware, 3=Software
+	int d3d9_filter;	// 0=Default, 1=Point, 1=Linear
 } config_t;
 
 #endif

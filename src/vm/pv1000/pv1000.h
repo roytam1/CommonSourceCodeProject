@@ -14,6 +14,7 @@
 // device informations for win32
 #define DEVICE_NAME		"CASIO PV-1000"
 #define CONFIG_NAME		"pv1000"
+#define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		256
 #define WINDOW_HEIGHT1		192

@@ -38,6 +38,9 @@ uint32 SYSPORT::read_io8(uint32 addr)
 	case 0x8f:
 		// shut
 		return shut;
+	case 0xbe:
+		// z80sio ack
+		return d_sio->intr_ack();
 	case 0xca:
 		// voice communication ???
 		return 0x7f;
@@ -48,5 +51,5 @@ uint32 SYSPORT::read_io8(uint32 addr)
 void SYSPORT::event_callback(int event_id, int err)
 {
 	// memory reshresh
-	dev->write_signal(did, 1, 1);
+	d_dma->write_signal(did_dma, 1, 1);
 }

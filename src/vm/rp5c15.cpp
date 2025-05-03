@@ -78,14 +78,7 @@ uint32 RP5C15::read_io8(uint32 addr)
 	case 0x04:
 		return (regs[0xd] & 1) ? regs[ch] : ((regs[0xa] & 1) ? HOUR : HOUR % 12) % 10;
 	case 0x05:
-		if(regs[0xd] & 1)
-			return regs[ch];
-		else {
-			if(regs[0xa] & 1)
-				return (uint8)(HOUR / 10);
-			else
-				return (uint8)((HOUR % 12) / 10) | (HOUR < 12 ? 0 : 2);
-		}
+		return (regs[0xd] & 1) ? regs[ch] : (uint8)((regs[0xa] & 1) ? HOUR / 10 : ((HOUR % 12) / 10) | (HOUR < 12 ? 0 : 2));
 	case 0x06:
 		return (regs[0xd] & 1) ? regs[ch] : DAY_OF_WEEK;
 	case 0x07:

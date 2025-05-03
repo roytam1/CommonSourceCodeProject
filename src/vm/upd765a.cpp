@@ -384,7 +384,7 @@ void UPD765A::cmd_sence_intstat()
 				break;
 			}
 		}
-		for (; i < MAX_DRIVE; i++) {
+		for(; i < MAX_DRIVE; i++) {
 			if(fdc[i].result)
 				intr = true;
 		}
@@ -732,6 +732,10 @@ uint32 UPD765A::read_sector()
 		if(!disk[drv]->get_sector(trk, side, i))
 			continue;
 		cy = disk[drv]->id[0];
+#ifdef UPD765A_STRICT_ID
+		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[3] != id[3])
+			continue;
+#endif
 		if(disk[drv]->id[2] != id[2])
 			continue;
 		// sector number is matched
@@ -773,6 +777,10 @@ uint32 UPD765A::write_sector(bool deleted)
 		if(!disk[drv]->get_sector(trk, side, i))
 			continue;
 		cy = disk[drv]->id[0];
+#ifdef UPD765A_STRICT_ID
+		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[3] != id[3])
+			continue;
+#endif
 		if(disk[drv]->id[2] != id[2])
 			continue;
 		// sector number is matched
@@ -809,6 +817,10 @@ uint32 UPD765A::find_id()
 		if(!disk[drv]->get_sector(trk, side, i))
 			continue;
 		cy = disk[drv]->id[0];
+#ifdef UPD765A_STRICT_ID
+		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[3] != id[3])
+			continue;
+#endif
 		if(disk[drv]->id[2] != id[2])
 			continue;
 		// sector number is matched
@@ -876,6 +888,7 @@ void UPD765A::cmd_read_id()
 		break;
 	case PHASE_CMD:
 		set_hdu(buffer[0]);
+		break;	// memo
 	case PHASE_EXEC:
 		if(check_cond(false) & ST1_MA) {
 			REGIST_EVENT(PHASE_EXEC, 1000000);

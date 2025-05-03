@@ -10,6 +10,26 @@
 #include "i8251.h"
 #include "fifo.h"
 
+// max 256kbytes
+#define BUFFER_SIZE	0x40000
+// 100usec/byte
+#define RECV_DELAY	100
+
+#define TXRDY		0x01
+#define RXRDY		0x02
+#define TXE		0x04
+#define PE		0x08
+#define OE		0x10
+#define FE		0x20
+#define SYNDET		0x40
+#define DSR		0x80
+
+#define MODE_CLEAR	0
+#define MODE_SYNC	1
+#define MODE_ASYNC	2
+#define MODE_SYNC1	3
+#define MODE_SYNC2	4
+
 void I8251::initialize()
 {
 	fifo = new FIFO(BUFFER_SIZE);
@@ -66,8 +86,8 @@ void I8251::write_io8(uint32 addr, uint32 data)
 	}
 	else {
 		if(txen) {
-			for(int i = 0; i < dcount; i++)
-				dev[i]->write_signal(did[i], data, 0xff);
+			for(int i = 0; i < dcount_sio; i++)
+				d_sio[i]->write_signal(did_sio[i], data, 0xff);
 		}
 	}
 }
@@ -77,7 +97,12 @@ uint32 I8251::read_io8(uint32 addr)
 	if(addr & 1)
 		return status;
 	else {
-		status &= ~RXRDY;
+		if(status & RXRDY) {
+			status &= ~RXRDY;
+			// notify rxrdy
+			for(int i = 0; i < dcount_rxrdy; i++)
+				d_rxrdy[i]->write_signal(did_rxrdy[i], 0, dmask_rxrdy[i]);
+		}
 		return recv;
 	}
 }
@@ -102,6 +127,9 @@ void I8251::event_callback(int event_id, int err)
 		if(fifo->empty())
 			status |= PE;
 		status |= RXRDY;
+		// notidy rxrdy
+		for(int i = 0; i < dcount_rxrdy; i++)
+			d_rxrdy[i]->write_signal(did_rxrdy[i], 0xffffffff, dmask_rxrdy[i]);
 	}
 	// if data is still left in buffer, register event for next data
 	if(rxen && !fifo->empty())

@@ -14,6 +14,7 @@
 // device informations for win32
 #define DEVICE_NAME		"CASIO PV-2000"
 #define CONFIG_NAME		"pv2000"
+#define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		256
 #define WINDOW_HEIGHT1		192
@@ -23,6 +24,7 @@
 #define USE_CART
 #define USE_DATAREC
 #define DATAREC_BINARY_ONLY
+#define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -101,6 +103,7 @@ public:
 	
 	// notify key
 	void key_down(int code);
+	void key_up(int code) {}
 	
 	// user interface
 	void open_cart(_TCHAR* filename);

@@ -124,7 +124,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	keyboard->set_context_pio1(pio1, SIG_Z80PIO_PORT_B);
 	memory->set_context(crtc);
 	mouse->set_context(sio, SIG_Z80SIO_RECV_CH1, SIG_Z80SIO_CLEAR_CH1);
-	sysport->set_context(dma, SIG_UPD71071_CH2);
+	sysport->set_context_dma(dma, SIG_UPD71071_CH2);
+	sysport->set_context_sio(sio);
 	timer->set_context(pit, SIG_I8253_GATE_0, SIG_I8253_GATE_1);
 	
 	// cpu bus
@@ -174,6 +175,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0xc8, 0xc9, opn);
 	io->set_iomap_range_r(0xa0, 0xa3, sio);
 //	io->set_iomap_single_r(0xaf, sasi);
+	io->set_iomap_single_r(0xbe, sysport);
 	io->set_iomap_single_r(0xca, sysport);
 	for(uint32 p = 0xcc; p <= 0xfcc; p += 0x100)
 		io->set_iomap_single_r(p, calendar);

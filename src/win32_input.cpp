@@ -19,7 +19,7 @@ void EMU::initialize_input()
 	_memset(joy_status, 0, sizeof(joy_status));
 	_memset(mouse_status, 0, sizeof(mouse_status));
 	
-#ifndef _WIN32_WCE
+#ifdef SUPPORT_JOYSTICK
 	// initialize joysticks
 	joy_num = joyGetNumDevs();
 	if(joy_num > 0) {
@@ -44,7 +44,7 @@ void EMU::initialize_input()
 	// mouse emulation is disenabled
 	mouse_enable = false;
 	
-#ifdef USE_AUTO_KEY
+#ifdef SUPPORT_AUTO_KEY
 	// initialize autokey
 	cb_phase = cb_code = 0;
 	cb_shift = false;
@@ -57,7 +57,8 @@ void EMU::release_input()
 	// release mouse
 	if(mouse_enable)
 		disenable_mouse();
-#ifdef USE_AUTO_KEY
+	
+#ifdef SUPPORT_AUTO_KEY
 	// release autokey buffer
 	if(clipboard)
 		free(clipboard);
@@ -74,7 +75,7 @@ void EMU::update_input()
 	
 	// update joystick status
 	_memset(joy_status, 0, sizeof(joy_status));
-#ifndef _WIN32_WCE
+#ifdef SUPPORT_JOYSTICK
 	if(joy_num > 0) {
 		// joystick #1
 		JOYINFO joyinfo;
@@ -113,7 +114,7 @@ void EMU::update_input()
 #endif
 	// update mouse status
 	_memset(mouse_status, 0, sizeof(mouse_status));
-#ifndef _WIN32_WCE
+#ifdef SUPPORT_MOUSE
 	if(mouse_enable) {
 		// get current status
 		POINT pt;
@@ -131,7 +132,7 @@ void EMU::update_input()
 		}
 	}
 #endif
-#ifdef USE_AUTO_KEY
+#ifdef SUPPORT_AUTO_KEY
 	// auto key
 	switch(cb_phase)
 	{
@@ -222,7 +223,7 @@ void EMU::key_down(int code)
 #else
 		key_status[code] = 0x80;
 #endif
-#if defined(_PV2000) || defined(_QC10) || defined(_X07)
+#ifdef NOTIFY_KEY_DOWN
 	vm->key_down(code);
 #endif
 }
@@ -246,7 +247,7 @@ void EMU::key_up(int code)
 		if(!(GetAsyncKeyState(VK_RMENU) & 0x8000)) key_status[VK_RMENU] &= 0x7f;
 	}
 	key_status[code] &= 0x7f;
-#if defined(_QC10) || defined(_X07)
+#ifdef NOTIFY_KEY_DOWN
 	vm->key_up(code);
 #endif
 }
@@ -284,7 +285,7 @@ void EMU::toggle_mouse()
 		enable_mouse();
 }
 
-#ifdef USE_AUTO_KEY
+#ifdef SUPPORT_AUTO_KEY
 void EMU::start_auto_key()
 {
 	stop_auto_key();

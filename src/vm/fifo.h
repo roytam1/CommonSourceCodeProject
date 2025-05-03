@@ -47,8 +47,14 @@ public:
 		}
 		return val;
 	}
-	int read_not_remove() {
-		return cnt ? buf[rpt] : 0;
+	int read_not_remove(int pt) {
+		if(pt < cnt) {
+			pt += rpt;
+			if(pt >= size)
+				pt -= size;
+			return buf[pt];
+		}
+		return 0;
 	}
 	int count() {
 		return cnt;

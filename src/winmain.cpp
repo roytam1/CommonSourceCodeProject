@@ -119,9 +119,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	// get window position
 	RECT rect = {0, 0, WINDOW_WIDTH1, WINDOW_HEIGHT1};
 	AdjustWindowRectEx(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_VISIBLE, TRUE, 0);
-	HDC hdc = CreateDC(_T("DISPLAY"), NULL, NULL, NULL);
-	int width = GetDeviceCaps(hdc, HORZRES);
-	int height = GetDeviceCaps(hdc, VERTRES);
+#ifdef _HC40
+	rect.bottom += GetSystemMetrics(SM_CYMENUSIZE);
+#endif
+	HDC hdcScr = GetDC(NULL);
+	int width = GetDeviceCaps(hdcScr, HORZRES);
+	int height = GetDeviceCaps(hdcScr, VERTRES);
+	ReleaseDC(NULL, hdcScr);
 	int dest_x = (int)((width - (rect.right - rect.left)) / 2);
 	int dest_y = (int)((height - (rect.bottom - rect.top)) / 2);
 	dest_x = (dest_x < 0) ? 0 : dest_x;
@@ -135,13 +139,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	if(config.window_mode == 1)
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW2, 0L);
-	else if(config.window_mode == 2)
-		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_640X480, 0L);
-	else if(config.window_mode == 3)
-		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_320X240, 0L);
+	else if(config.window_mode == 2 || config.window_mode == 3)
+		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_FULLSCREEN, 0L);
 	else
 		config.window_mode = 0;
-	
 	// accelerator
 	HACCEL hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
 #endif
@@ -149,14 +150,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	// disenable ime
 	ImmAssociateContext(hWnd, 0);
 	
-#ifdef _USE_GAPI
-	// initialize gapi
-	GXOpenDisplay(hWnd, GX_FULLSCREEN);
-#endif
-	
 	// initialize emulation core
 	emu = new EMU(hWnd);
-	emu->set_screen_size(WINDOW_WIDTH1, WINDOW_HEIGHT1);
+#ifdef _WIN32_WCE
+	emu->set_window_size(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+#else
+	emu->set_window_size(WINDOW_WIDTH1, WINDOW_HEIGHT1);
+#endif
 	
 	// timing control
 	int remain = 1000;
@@ -268,10 +268,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-#ifndef _USE_GAPI
-	HDC hdc;
-	PAINTSTRUCT ps;
-#endif
 	_TCHAR path[_MAX_PATH];
 	int no;
 	
@@ -301,31 +297,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				ChangeDisplaySettings(NULL, 0);
 			fullscreen_now = FALSE;
 #endif
-#ifdef _USE_GAPI
-			// release gapi
-			GXCloseDisplay();
-#endif
 			DestroyWindow(hWnd);
 			return 0;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
-#ifdef _USE_GAPI
-		case WM_KILLFOCUS:
-			GXSuspend();
-			break;
-		case WM_SETFOCUS:
-			GXResume();
-			break;
-#else
 		case WM_PAINT:
+#ifdef _USE_D3D9
+			ValidateRect(hWnd, 0);
+#else
 			if(emu) {
-				hdc = BeginPaint(hWnd, &ps);
+				PAINTSTRUCT ps;
+				HDC hdc = BeginPaint(hWnd, &ps);
 				emu->update_screen(hdc);
 				EndPaint(hWnd, &ps);
 			}
-			return 0;
 #endif
+			return 0;
 #ifdef _USE_WAVEOUT
 		case MM_WOM_DONE:
 			if(emu)
@@ -339,10 +327,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 #endif
 #ifdef _WIN32_WCE
-//		case WM_LBUTTONDOWN:
-//			if(hCmdBar)
-//				CommandBar_Show(hCmdBar, (commandbar_show = !commandbar_show));
-//			break;
+		case WM_LBUTTONDOWN:
+			if(hCmdBar)
+				CommandBar_Show(hCmdBar, (commandbar_show = !commandbar_show));
+			break;
 #endif
 		case WM_KEYDOWN:
 			if(emu)
@@ -370,6 +358,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			if(emu)
 				emu->mute_sound();
 			update_menu((HMENU)wParam, LOWORD(lParam));
+			break;
+		case WM_RESIZE:
+			if(emu) {
+#ifdef _WIN32_WCE
+				emu->set_window_size(-1, -1);
+#else
+				if(fullscreen_now)
+					emu->set_window_size(-1, -1);
+				else
+					set_window(hWnd, config.window_mode);
+#endif
+			}
 			break;
 #ifdef USE_SOCKET
 		case WM_SOCKET0: no = 0; goto socket;
@@ -664,14 +664,28 @@ record_video:
 					if(emu)
 						set_window(hWnd, 1);
 					break;
-				case ID_SCREEN_640X480:
+				case ID_SCREEN_FULLSCREEN:
 					if(emu && !fullscreen_now)
 						set_window(hWnd, 2);
 					break;
-				case ID_SCREEN_320X240:
-					if(emu && !fullscreen_now)
-						set_window(hWnd, 3);
+#ifdef _USE_D3D9
+				case ID_SCREEN_DEVICE_DEFAULT:      config.d3d9_device = 0; goto d3d9_params;
+				case ID_SCREEN_DEVICE_HARDWARE_TNL: config.d3d9_device = 1; goto d3d9_params;
+				case ID_SCREEN_DEVICE_HARDWARE:     config.d3d9_device = 2; goto d3d9_params;
+				case ID_SCREEN_DEVICE_SOFTWARE:     config.d3d9_device = 3; goto d3d9_params;
+				case ID_SCREEN_FILTER_DEFAULT:      config.d3d9_filter = 0; goto d3d9_params;
+				case ID_SCREEN_FILTER_POINT:        config.d3d9_filter = 1; goto d3d9_params;
+				case ID_SCREEN_FILTER_LINEAR:       config.d3d9_filter = 2; goto d3d9_params;
+				case ID_SCREEN_PRESENT_INTERVAL:
+					if(config.d3d9_interval)
+						config.d3d9_interval = 0;
+					else
+						config.d3d9_interval = 1;
+d3d9_params:
+					if(emu)
+						emu->set_window_size(-1, -1);
 					break;
+#endif
 #ifndef _WIN32_WCE
 				// accelerator
 				case ID_ACCEL_SCREEN:
@@ -796,7 +810,7 @@ void update_menu(HMENU hMenu, int pos)
 #ifdef USE_AUTO_KEY
 		// auto key
 		bool now_paste = true, now_stop = true;
-#ifndef _WIN32_WCE
+#ifdef SUPPORT_AUTO_KEY
 		if(emu) {
 			now_paste = emu->now_auto_key();
 			now_stop = !now_paste;
@@ -972,33 +986,49 @@ void update_menu(HMENU hMenu, int pos)
 		// screen mode
 #ifdef _WIN32_WCE
 		EnableMenuItem(hMenu, ID_SCREEN_WINDOW1, MF_GRAYED);
-		EnableMenuItem(hMenu, ID_SCREEN_640X480, MF_GRAYED);
 #ifdef USE_SCREEN_X2
 		EnableMenuItem(hMenu, ID_SCREEN_WINDOW2, MF_GRAYED);
-		EnableMenuItem(hMenu, ID_SCREEN_320X240, MF_GRAYED);
 #endif
+		EnableMenuItem(hMenu, ID_SCREEN_FULLSCREEN, MF_GRAYED);
 #else
+		if(config.window_mode == 0)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_FULLSCREEN, ID_SCREEN_WINDOW1, MF_BYCOMMAND);
 #ifdef USE_SCREEN_X2
-		if(config.window_mode == 0)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_WINDOW1, MF_BYCOMMAND);
 		else if(config.window_mode == 1)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_WINDOW2, MF_BYCOMMAND);
-		else if(config.window_mode == 2)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_640X480, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_FULLSCREEN, ID_SCREEN_WINDOW2, MF_BYCOMMAND);
+#endif
 		else
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_320X240, MF_BYCOMMAND);
-		EnableMenuItem(hMenu, ID_SCREEN_640X480, fullscreen_now ? MF_GRAYED : MF_ENABLED);
-		EnableMenuItem(hMenu, ID_SCREEN_320X240, fullscreen_now ? MF_GRAYED : MF_ENABLED);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_FULLSCREEN, ID_SCREEN_FULLSCREEN, MF_BYCOMMAND);
+#endif
+		// d3d9 params
+#ifdef _USE_D3D9
+		if(config.d3d9_device == 0)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, ID_SCREEN_DEVICE_SOFTWARE, ID_SCREEN_DEVICE_DEFAULT, MF_BYCOMMAND);
+		else if(config.d3d9_device == 1)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, ID_SCREEN_DEVICE_SOFTWARE, ID_SCREEN_DEVICE_HARDWARE_TNL, MF_BYCOMMAND);
+		else if(config.d3d9_device == 2)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, ID_SCREEN_DEVICE_SOFTWARE, ID_SCREEN_DEVICE_HARDWARE, MF_BYCOMMAND);
+		else
+			CheckMenuRadioItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, ID_SCREEN_DEVICE_SOFTWARE, ID_SCREEN_DEVICE_SOFTWARE, MF_BYCOMMAND);
+		if(config.d3d9_filter == 0)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_DEFAULT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_DEFAULT, MF_BYCOMMAND);
+		else if(config.d3d9_filter == 1)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_DEFAULT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_POINT, MF_BYCOMMAND);
+		else
+			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_DEFAULT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_LINEAR, MF_BYCOMMAND);
+		CheckMenuItem(hMenu, ID_SCREEN_PRESENT_INTERVAL, config.d3d9_interval ? MF_CHECKED : MF_UNCHECKED);
 #else
-		if(config.window_mode == 0)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_640X480, ID_SCREEN_WINDOW1, MF_BYCOMMAND);
-		else if(config.window_mode == 2)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_640X480, ID_SCREEN_640X480, MF_BYCOMMAND);
-		EnableMenuItem(hMenu, ID_SCREEN_640X480, fullscreen_now ? MF_GRAYED : MF_ENABLED);
+		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_HARDWARE_TNL, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_HARDWARE, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_SOFTWARE, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_FILTER_DEFAULT, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_FILTER_POINT, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_FILTER_LINEAR, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_PRESENT_INTERVAL, MF_GRAYED);
 #endif
-#endif
-		// mz2500 monitor type
 #ifdef USE_MONITOR_TYPE
+		// mz2500 monitor type
 		if(config.monitor_type == 0)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_A400L, MF_BYCOMMAND);
 		else if(config.monitor_type == 1)
@@ -1008,8 +1038,8 @@ void update_menu(HMENU hMenu, int pos)
 		else
 			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_D200L, MF_BYCOMMAND);
 #endif
-		// scanline
 #ifdef USE_SCANLINE
+		// scanline
 		CheckMenuItem(hMenu, ID_SCREEN_SCANLINE, config.scan_line ? MF_CHECKED : MF_UNCHECKED);
 #endif
 	}
@@ -1220,17 +1250,24 @@ void set_window(HWND hwnd, int mode)
 	WINDOWPLACEMENT place;
 	place.length = sizeof(WINDOWPLACEMENT);
 	
+	HDC hdcScr = GetDC(NULL);
+	int sw = GetDeviceCaps(hdcScr, HORZRES);
+	int sh = GetDeviceCaps(hdcScr, VERTRES);
+	int sb = GetDeviceCaps(hdcScr, BITSPIXEL);
+	ReleaseDC(NULL, hdcScr);
+	
 	if(mode == 0 || mode == 1) {
 		// window
-		RECT rect = {0, 0, (mode == 0) ? WINDOW_WIDTH1 : WINDOW_WIDTH2, (mode == 0) ? WINDOW_HEIGHT1 : WINDOW_HEIGHT2};
-		AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE, TRUE);
-		
+		int width = emu->get_window_width(mode);
+		int height = emu->get_window_height(mode);
+		RECT rect = {0, 0, width, height};
+		AdjustWindowRectEx(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_VISIBLE, TRUE, 0);
+#ifdef _HC40
+		if(mode == 0) rect.bottom += GetSystemMetrics(SM_CYMENUSIZE);
+#endif
 		if(!fullscreen_now) {
-			HDC hdc = CreateDC(_T("DISPLAY"), NULL, NULL, NULL);
-			int width = GetDeviceCaps(hdc, HORZRES);
-			int height = GetDeviceCaps(hdc, VERTRES);
-			dest_x = (int)((width - (rect.right - rect.left)) / 2);
-			dest_y = (int)((height - (rect.bottom - rect.top)) / 2);
+			dest_x = (int)((sw - (rect.right - rect.left)) / 2);
+			dest_y = (int)((sh - (rect.bottom - rect.top)) / 2);
 			dest_x = (dest_x < 0) ? 0 : dest_x;
 			dest_y = (dest_y < 0) ? 0 : dest_y;
 			SetWindowPos(hwnd, NULL, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
@@ -1244,19 +1281,22 @@ void set_window(HWND hwnd, int mode)
 		config.window_mode = mode;
 		
 		// set screen size to emu class
-		emu->set_screen_size((mode == 0) ? WINDOW_WIDTH1 : WINDOW_WIDTH2, (mode == 0) ? WINDOW_HEIGHT1 : WINDOW_HEIGHT2);
+		emu->set_window_size(width, height);
 	}
-	else if((mode == 2 || mode == 3) && !fullscreen_now) {
+	else if(mode == 2 && !fullscreen_now) {
 		// fullscreen
+#ifdef _USE_D3D9
+		int width = sw, height = sh;
+#else
+		int width = 640, height = 480;
+#endif
 		DEVMODE dev;
-		HDC hdc = GetDC(NULL);
 		ZeroMemory(&dev, sizeof(dev));
 		dev.dmSize = sizeof(dev);
 		dev.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-		dev.dmBitsPerPel = GetDeviceCaps(hdc, BITSPIXEL);
-		dev.dmPelsWidth = (mode == 2) ? 640 : 320;
-		dev.dmPelsHeight = (mode == 2) ? 480 : 240;
-		ReleaseDC(NULL, hdc);
+		dev.dmBitsPerPel = sb;
+		dev.dmPelsWidth = width;
+		dev.dmPelsHeight = height;
 		
 		if(ChangeDisplaySettings(&dev, CDS_TEST) == DISP_CHANGE_SUCCESSFUL) {
 			GetWindowPlacement(hwnd, &place);
@@ -1265,13 +1305,13 @@ void set_window(HWND hwnd, int mode)
 			ChangeDisplaySettings(&dev, CDS_FULLSCREEN);
 			style = GetWindowLong(hwnd, GWL_STYLE);
 			SetWindowLong(hwnd, GWL_STYLE, WS_VISIBLE);
-			SetWindowPos(hwnd, HWND_TOP, 0, 0, (mode == 2) ? 640 : 320, (mode == 2) ? 480 : 240, SWP_SHOWWINDOW);
-			SetCursorPos((mode == 2) ? 320 : 160, (mode == 2) ? 200 : 100);
+			SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_SHOWWINDOW);
+			SetCursorPos(width >> 1, height >> 1);
 			fullscreen_now = TRUE;
 			config.window_mode = mode;
 			
 			// set screen size to emu class
-			emu->set_screen_size((mode == 2) ? 640 : 320, (mode == 2) ? 480 - 18 : 240 - 18);
+			emu->set_window_size(width, height - 18);
 		}
 	}
 #endif

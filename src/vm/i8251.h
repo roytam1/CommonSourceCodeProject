@@ -17,33 +17,15 @@
 #define SIG_I8251_RECV	0
 #define SIG_I8251_CLEAR	1
 
-// max 256kbytes
-#define BUFFER_SIZE	0x40000
-// 100usec/byte
-#define RECV_DELAY	100
-
-#define TXRDY		0x01
-#define RXRDY		0x02
-#define TXE		0x04
-#define PE		0x08
-#define OE		0x10
-#define FE		0x20
-#define SYNDET		0x40
-#define DSR		0x80
-
-#define MODE_CLEAR	0
-#define MODE_SYNC	1
-#define MODE_ASYNC	2
-#define MODE_SYNC1	3
-#define MODE_SYNC2	4
-
 class FIFO;
 
 class I8251 : public DEVICE
 {
 private:
-	DEVICE* dev[MAX_OUTPUT];
-	int did[MAX_OUTPUT], dcount;
+	DEVICE *d_sio[MAX_OUTPUT], *d_rxrdy[MAX_OUTPUT];
+	int did_sio[MAX_OUTPUT], did_rxrdy[MAX_OUTPUT];
+	uint32 dmask_rxrdy[MAX_OUTPUT];
+	int dcount_sio, dcount_rxrdy;
 	
 	// i8251
 	uint8 recv, status, mode;
@@ -54,7 +36,7 @@ private:
 	
 public:
 	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount = 0;
+		dcount_sio = dcount_rxrdy = 0;
 	}
 	~I8251() {}
 	
@@ -68,9 +50,13 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id) {
-		int c = dcount++;
-		dev[c] = device; did[c] = id;
+	void set_context_sio(DEVICE* device, int id) {
+		int c = dcount_sio++;
+		d_sio[c] = device; did_sio[c] = id;
+	}
+	void set_context_rxrdy(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_rxrdy++;
+		d_rxrdy[c] = device; did_rxrdy[c] = id; dmask_rxrdy[c] = mask;
 	}
 };
 

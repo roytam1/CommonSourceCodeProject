@@ -14,8 +14,9 @@
 // device informations for win32
 #define DEVICE_NAME		"EPOCH SCV"
 #define CONFIG_NAME		"scv"
+#define CONFIG_VERSION		0x01
 
-#define WINDOW_WIDTH1		192
+#define WINDOW_WIDTH1		288
 #define WINDOW_HEIGHT1		222
 #define WINDOW_WIDTH2		576
 #define WINDOW_HEIGHT2		444
@@ -23,7 +24,6 @@
 #define USE_CART
 #define USE_KEY_TO_JOY
 #define USE_SCREEN_X2
-#define DONT_KEEP_ASPECT
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
@@ -32,6 +32,7 @@
 #define CHARS_PER_LINE		1
 #define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		192
+#define SCREEN_WIDTH_ASPECT	288
 #define SCREEN_HEIGHT		222
 
 // memory wait

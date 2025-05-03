@@ -11,9 +11,9 @@
 #define _EMU_H_
 
 // DirectX
-#define DIRECTDRAW_VERSION 0x300
-#define DIRECTSOUND_VERSION 0x500
-#define DIRECT3D_VERSION 0x500
+//#define DIRECTDRAW_VERSION 0x300
+//#define DIRECTSOUND_VERSION 0x500
+//#define DIRECT3D_VERSION 0x900
 
 // for debug
 //#define _DEBUG_LOG
@@ -25,21 +25,82 @@
 #include "common.h"
 #include "vm/vm.h"
 
-#ifdef _USE_GAPI
-#include <gx.h>
+#define WM_RESIZE  (WM_USER + 1)
+#define WM_SOCKET0 (WM_USER + 2)
+#define WM_SOCKET1 (WM_USER + 3)
+#define WM_SOCKET2 (WM_USER + 4)
+#define WM_SOCKET3 (WM_USER + 5)
+
+#if !defined(_USE_D3D9) && defined(USE_SCREEN_X2)
+#define STRETCH_SCREEN
+#define STRETCH_WIDTH	1024
+#define STRETCH_HEIGHT	480
+#endif
+#ifndef SCREEN_BUFFER_WIDTH
+#define SCREEN_BUFFER_WIDTH SCREEN_WIDTH
+#endif
+#ifndef SCREEN_BUFFER_HEIGHT
+#define SCREEN_BUFFER_HEIGHT SCREEN_HEIGHT
+#endif
+#ifndef SCREEN_WIDTH_ASPECT
+#define SCREEN_WIDTH_ASPECT SCREEN_WIDTH
+#endif
+#ifndef WINDOW_WIDTH2
+#define WINDOW_WIDTH2 WINDOW_WIDTH1
+#endif
+#ifndef WINDOW_HEIGHT2
+#define WINDOW_HEIGHT2 WINDOW_HEIGHT1
+#endif
+
+#ifndef _WIN32_WCE
+#ifdef USE_AUTO_KEY
+#define SUPPORT_AUTO_KEY
+#endif
+#define SUPPORT_CAPTURE
+#define SUPPORT_JOYSTICK
+#define SUPPORT_MEDIA
+#define SUPPORT_MOUSE
+#define SUPPORT_SOCKET
+#define SUPPORT_VFW
+#endif
+
+#ifdef _USE_D3D9
+#include <d3d9.h>
+#include <d3dx9.h>
+#include <d3d9types.h>
 #endif
 #ifndef _USE_WAVEOUT
 #include <dsound.h>
 #endif
-
-#ifndef _WIN32_WCE
-#ifdef USE_SOCKET
+#if defined(USE_SOCKET) && defined(SUPPORT_SOCKET)
 #include <winsock.h>
 #endif
-#ifdef USE_CAPTURE
+#if defined(USE_CAPTURE) && defined(SUPPORT_CAPTURE)
 #include <dshow.h>
-#include <qedit.h>
+//#include <qedit.h>
+EXTERN_C const CLSID CLSID_SampleGrabber;
+EXTERN_C const CLSID CLSID_NullRenderer;
+EXTERN_C const IID IID_ISampleGrabberCB;
+MIDL_INTERFACE("0579154A-2B53-4994-B0D0-E773148EFF85")
+ISampleGrabberCB : public IUnknown {
+public:
+	virtual HRESULT STDMETHODCALLTYPE SampleCB( double SampleTime,IMediaSample *pSample) = 0;
+	virtual HRESULT STDMETHODCALLTYPE BufferCB( double SampleTime,BYTE *pBuffer,long BufferLen) = 0;
+};
+EXTERN_C const IID IID_ISampleGrabber;
+MIDL_INTERFACE("6B652FFF-11FE-4fce-92AD-0266B5D7C78F")
+ISampleGrabber : public IUnknown {
+public:
+	virtual HRESULT STDMETHODCALLTYPE SetOneShot( BOOL OneShot) = 0;
+	virtual HRESULT STDMETHODCALLTYPE SetMediaType( const AM_MEDIA_TYPE *pType) = 0;
+	virtual HRESULT STDMETHODCALLTYPE GetConnectedMediaType( AM_MEDIA_TYPE *pType) = 0;
+	virtual HRESULT STDMETHODCALLTYPE SetBufferSamples( BOOL BufferThem) = 0;
+	virtual HRESULT STDMETHODCALLTYPE GetCurrentBuffer( /* [out][in] */ long *pBufferSize,/* [out] */ long *pBuffer) = 0;
+	virtual HRESULT STDMETHODCALLTYPE GetCurrentSample( /* [retval][out] */ IMediaSample **ppSample) = 0;
+	virtual HRESULT STDMETHODCALLTYPE SetCallback( ISampleGrabberCB *pCallback,long WhichMethodToCallback) = 0;
+};
 #endif
+#ifdef SUPPORT_VFW
 #include <vfw.h>
 #endif
 
@@ -47,10 +108,6 @@
 #define MEDIA_MAX 64
 #endif
 #ifdef USE_SOCKET
-#define WM_SOCKET0 (WM_USER + 1)
-#define WM_SOCKET1 (WM_USER + 2)
-#define WM_SOCKET2 (WM_USER + 3)
-#define WM_SOCKET3 (WM_USER + 4)
 #define SOCKET_MAX 4
 #define SOCKET_BUFFER_MAX 0x100000
 #endif
@@ -60,6 +117,7 @@
 
 class FILEIO;
 
+#ifdef SUPPORT_AUTO_KEY
 static int autokey_table[256] = {
 	0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x00d,0x000,0x000,0x00d,0x000,0x000,
 	0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
@@ -85,30 +143,13 @@ static int autokey_table[256] = {
 	0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,
 	0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000
 };
+#endif
 
 class EMU
 {
 protected:
 	VM* vm;
 private:
-	// ----------------------------------------
-	// debug log
-	// ----------------------------------------
-#ifdef _DEBUG_LOG
-	FILE* debug;
-#endif
-	void open_debug();
-	void close_debug();
-	
-	// ----------------------------------------
-	// window
-	// ----------------------------------------
-	HWND main_window_handle;
-	int window_width, window_height;
-	int power_x, power_y;
-	int dest_x, dest_y;
-	_TCHAR app_path[_MAX_PATH];
-	
 	// ----------------------------------------
 	// input
 	// ----------------------------------------
@@ -120,14 +161,13 @@ private:
 	uint8 joy_status[2];	// joystick #1, #2 (b0 = up, b1 = down, b2 = left, b3 = right, b4-b7 = trigger #1-#4
 	int mouse_status[3];	// x, y, button (b0 = left, b1 = right)
 	bool mouse_enable;
-	
-#ifndef _WIN32_WCE
+#ifdef SUPPORT_JOYSTICK
 	int joy_num;
 	uint32 joy_xmin[2], joy_xmax[2];
 	uint32 joy_ymin[2], joy_ymax[2];
 	JOYCAPS joycaps[2];
 #endif
-#ifdef USE_AUTO_KEY
+#ifdef SUPPORT_AUTO_KEY
 	int cb_phase, cb_size, cb_ptr, cb_code;
 	bool cb_shift;
 	char* clipboard;
@@ -139,24 +179,49 @@ private:
 	void initialize_screen();
 	void release_screen();
 	
-	HDC hdcDIB;
-	HBITMAP hBMP;
-	LPBYTE lpBuf;
-	LPWORD lpBMP;
-	LPBITMAPINFO lpDIB;
-#ifdef _USE_GAPI
-	LPWORD lpGapi;
+	HWND main_window_handle;
+	int screen_width, screen_height;
+	int screen_width_aspect;
+	int window_width1, window_height1;
+	int window_width2, window_height2;
+	int window_width, window_height;
+#ifdef STRETCH_SCREEN
+	int stretch_x, stretch_y;
 #endif
+	int dest_x, dest_y;
 	
+	// for render
+	HDC hdcDib;
+	HBITMAP hBmp;
+	LPBYTE lpBuf;
+	LPWORD lpBmp;
+	LPBITMAPINFO lpDib;
+#ifdef STRETCH_SCREEN
+	// for stretch
+	HDC hdcDibOut;
+	HBITMAP hBmpOut;
+	LPBYTE lpBufOut;
+	LPWORD lpBmpOut;
+	LPBITMAPINFO lpDibOut;
+#endif
+#ifdef _USE_D3D9
+	// for direct3d9
+	LPDIRECT3D9 lpd3d;
+	LPDIRECT3DDEVICE9 lpd3d9dev;
+	LPDIRECT3DSURFACE9 lpSurface;
+	LPDIRECT3DSURFACE9 lpDDSBack;
+	D3DTEXTUREFILTERTYPE filter;
+	RECT DstRect;
+#endif
 	// record video
-#ifndef _WIN32_WCE
+	bool now_recv;
+	int rec_frames, rec_fps;
+#ifdef SUPPORT_VFW
 	PAVIFILE pAVIFile;
 	PAVISTREAM pAVIStream;
 	PAVISTREAM pAVICompressed;
 	AVICOMPRESSOPTIONS opts;
 #endif
-	bool now_recv;
-	int rec_frames, rec_fps;
 	
 	// ----------------------------------------
 	// sound
@@ -204,15 +269,15 @@ private:
 	// media
 	// ----------------------------------------
 #ifdef USE_MEDIA
-#ifdef _WIN32_WCE
-	void initialize_media() {}
-	void release_media() {}
-#else
+#ifdef SUPPORT_MEDIA
 	void initialize_media();
 	void release_media();
 	
 	_TCHAR media_path[MEDIA_MAX][_MAX_PATH];
 	int media_cnt;
+#else
+	void initialize_media() {}
+	void release_media() {}
 #endif
 #endif
 	
@@ -226,11 +291,7 @@ private:
 	// socket
 	// ----------------------------------------
 #ifdef USE_SOCKET
-#ifdef _WIN32_WCE
-	void initialize_socket() {}
-	void release_socket() {}
-	void update_socket() {}
-#else
+#ifdef SUPPORT_SOCKET
 	void initialize_socket();
 	void release_socket();
 	void update_socket();
@@ -241,6 +302,10 @@ private:
 	int socket_delay[SOCKET_MAX];
 	char recv_buffer[SOCKET_MAX][SOCKET_BUFFER_MAX];
 	int recv_r_ptr[SOCKET_MAX], recv_w_ptr[SOCKET_MAX];
+#else
+	void initialize_socket() {}
+	void release_socket() {}
+	void update_socket() {}
 #endif
 #endif
 	
@@ -248,10 +313,7 @@ private:
 	// capture
 	// ----------------------------------------
 #ifdef USE_CAPTURE
-#ifdef _WIN32_WCE
-	void initialize_capture() {}
-	void release_capture() {}
-#else
+#ifdef SUPPORT_CAPTURE
 	void initialize_capture();
 	void release_capture();
 	IPin* get_pin(IBaseFilter *pFilter, PIN_DIRECTION PinDir);
@@ -273,13 +335,26 @@ private:
 	int capture_src_y;
 	int capture_src_height;
 	long capture_bufsize;
-	HDC hdcCapDIB;
-	HBITMAP hCapBMP;
+	HDC hdcCapDib;
+	HBITMAP hCapBmp;
 	LPBYTE lpCapBuf;
-	LPWORD lpCapBMP;
-	LPBITMAPINFO lpCapDIB;
+	LPWORD lpCapBmp;
+	LPBITMAPINFO lpCapDib;
+#else
+	void initialize_capture() {}
+	void release_capture() {}
 #endif
 #endif
+	
+	// ----------------------------------------
+	// misc
+	// ----------------------------------------
+	void open_debug();
+	void close_debug();
+#ifdef _DEBUG_LOG
+	FILE* debug;
+#endif
+	_TCHAR app_path[_MAX_PATH];
 	
 public:
 	// ----------------------------------------
@@ -316,12 +391,12 @@ public:
 	void close_datarec();
 #endif
 #ifdef USE_MEDIA
-#ifdef _WIN32_WCE
-	void open_media(_TCHAR* filename) {}
-	void close_media() {}
-#else
+#ifdef SUPPORT_MEDIA
 	void open_media(_TCHAR* filename);
 	void close_media();
+#else
+	void open_media(_TCHAR* filename) {}
+	void close_media() {}
 #endif
 #endif
 	bool now_skip();
@@ -346,14 +421,20 @@ public:
 	void disenable_mouse();
 	void toggle_mouse();
 	
-#ifdef USE_AUTO_KEY
+#ifdef SUPPORT_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
 	bool now_auto_key() { return cb_phase ? true : false; }
+#else
+	void start_auto_key() {}
+	void stop_auto_key() {}
+	bool now_auto_key() { return false; }
 #endif
 	
 	// screen
-	void set_screen_size(int width, int height);
+	int get_window_width(int mode) { return mode ? window_width2 : window_width1; }
+	int get_window_height(int mode) { return mode ? window_height2 : window_height1; }
+	void set_window_size(int width, int height);
 	void draw_screen();
 	void update_screen(HDC hdc);
 	
@@ -365,32 +446,23 @@ public:
 	
 	// socket
 #ifdef USE_SOCKET
-#ifdef _WIN32_WCE
-	int get_socket(int ch) { return -1; }
-	void socket_connected(int ch) {}
-	void socket_disconnected(int ch) {}
-	void send_data(int ch) {}
-	void recv_data(int ch) {}
-#else
+#ifdef SUPPORT_SOCKET
 	int get_socket(int ch) { return soc[ch]; }
 	void socket_connected(int ch);
 	void socket_disconnected(int ch);
 	void send_data(int ch);
 	void recv_data(int ch);
+#else
+	int get_socket(int ch) { return -1; }
+	void socket_connected(int ch) {}
+	void socket_disconnected(int ch) {}
+	void send_data(int ch) {}
+	void recv_data(int ch) {}
 #endif
 #endif
 	// capture
 #ifdef USE_CAPTURE
-#ifdef _WIN32_WCE
-	int get_capture_devices() { return 0; }
-	_TCHAR* get_capture_device_name(int index) { return NULL; }
-	int get_connected_capture_device() { return -1; }
-	void connect_capture_device(int index, bool pin) {}
-	void disconnect_capture_device() {}
-	void show_capture_device_filter() {}
-	void show_capture_device_pin() {}
-	void show_capture_device_source() {}
-#else
+#ifdef SUPPORT_CAPTURE
 	int get_capture_devices() { return capture_devs; }
 	_TCHAR* get_capture_device_name(int index) { return capture_dev_name[index]; }
 	int get_connected_capture_device() { return capture_connected; }
@@ -399,6 +471,15 @@ public:
 	void show_capture_device_filter();
 	void show_capture_device_pin();
 	void show_capture_device_source();
+#else
+	int get_capture_devices() { return 0; }
+	_TCHAR* get_capture_device_name(int index) { return NULL; }
+	int get_connected_capture_device() { return -1; }
+	void connect_capture_device(int index, bool pin) {}
+	void disconnect_capture_device() {}
+	void show_capture_device_filter() {}
+	void show_capture_device_pin() {}
+	void show_capture_device_source() {}
 #endif
 #endif
 	
@@ -406,40 +487,33 @@ public:
 	// for virtual machine
 	// ----------------------------------------
 	
-	// get input device status
+	// input device
 	uint8* key_buffer() { return key_status; }
 	uint8* joy_buffer() { return joy_status; }
 	int* mouse_buffer() { return mouse_status; }
 	
-	// get screen buffer
+	// screen
+	void change_screen_size(int sw, int sh, int swa, int ww1, int wh1, int ww2, int wh2);
 	uint16* screen_buffer(int y);
 	
-	// get timer
+	// timer
 	void get_timer(int time[]);
 	
-	// play media
+	// media
 #ifdef USE_MEDIA
-#ifdef _WIN32_WCE
-	int media_count() { return 0; }
-	void play_media(int trk) {}
-	void stop_media() {}
-#else
+#ifdef SUPPORT_MEDIA
 	int media_count();
 	void play_media(int trk);
 	void stop_media();
+#else
+	int media_count() { return 0; }
+	void play_media(int trk) {}
+	void stop_media() {}
 #endif
 #endif
 	// socket
 #ifdef USE_SOCKET
-#ifdef _WIN32_WCE
-	bool init_socket_tcp(int ch) { return false; }
-	bool init_socket_udp(int ch) { return false; }
-	bool connect_socket(int ch, uint32 ipaddr, int port) { return false; }
-	void disconnect_socket(int ch) {}
-	bool listen_socket(int ch) { return false; }
-	void send_data_tcp(int ch) {}
-	void send_data_udp(int ch, uint32 ipaddr, int port) {}
-#else
+#ifdef SUPPORT_SOCKET
 	bool init_socket_tcp(int ch);
 	bool init_socket_udp(int ch);
 	bool connect_socket(int ch, uint32 ipaddr, int port);
@@ -447,16 +521,24 @@ public:
 	bool listen_socket(int ch);
 	void send_data_tcp(int ch);
 	void send_data_udp(int ch, uint32 ipaddr, int port);
+#else
+	bool init_socket_tcp(int ch) { return false; }
+	bool init_socket_udp(int ch) { return false; }
+	bool connect_socket(int ch, uint32 ipaddr, int port) { return false; }
+	void disconnect_socket(int ch) {}
+	bool listen_socket(int ch) { return false; }
+	void send_data_tcp(int ch) {}
+	void send_data_udp(int ch, uint32 ipaddr, int port) {}
 #endif
 #endif
 	// capture
 #ifdef USE_CAPTURE
-#ifdef _WIN32_WCE
-	bool get_capture_device_buffer() { return false; }
-	void set_capture_device_channel(int ch) {}
-#else
+#ifdef SUPPORT_CAPTURE
 	bool get_capture_device_buffer();
 	void set_capture_device_channel(int ch);
+#else
+	bool get_capture_device_buffer() { return false; }
+	void set_capture_device_channel(int ch) {}
 #endif
 #endif
 	// debug log

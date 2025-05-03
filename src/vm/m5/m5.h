@@ -14,6 +14,7 @@
 // device informations for win32
 #define DEVICE_NAME		"SORD m5"
 #define CONFIG_NAME		"m5"
+#define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		256
 #define WINDOW_HEIGHT1		192

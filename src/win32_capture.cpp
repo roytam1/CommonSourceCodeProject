@@ -194,21 +194,21 @@ void EMU::connect_capture_device(int index, bool pin)
 	// create DIBSection
 	HDC hdc = CreateDC("DISPLAY", NULL, NULL, NULL);
 	lpCapBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
-	lpCapDIB = (LPBITMAPINFO)lpCapBuf;
-	lpCapDIB->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	lpCapDIB->bmiHeader.biWidth = capture_width;
-	lpCapDIB->bmiHeader.biHeight = capture_height;
-	lpCapDIB->bmiHeader.biPlanes = 1;
-	lpCapDIB->bmiHeader.biBitCount = 24;
-	lpCapDIB->bmiHeader.biCompression = BI_RGB;
-	lpCapDIB->bmiHeader.biSizeImage = 0;
-	lpCapDIB->bmiHeader.biXPelsPerMeter = 0;
-	lpCapDIB->bmiHeader.biYPelsPerMeter = 0;
-	lpCapDIB->bmiHeader.biClrUsed = 0;
-	lpCapDIB->bmiHeader.biClrImportant = 0;
-	hCapBMP = CreateDIBSection(hdc, lpCapDIB, DIB_RGB_COLORS, (PVOID*)&lpCapBMP, NULL, 0);
-	hdcCapDIB = CreateCompatibleDC(hdc);
-	SelectObject(hdcCapDIB, hCapBMP);
+	lpCapDib = (LPBITMAPINFO)lpCapBuf;
+	lpCapDib->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	lpCapDib->bmiHeader.biWidth = capture_width;
+	lpCapDib->bmiHeader.biHeight = capture_height;
+	lpCapDib->bmiHeader.biPlanes = 1;
+	lpCapDib->bmiHeader.biBitCount = 24;
+	lpCapDib->bmiHeader.biCompression = BI_RGB;
+	lpCapDib->bmiHeader.biSizeImage = 0;
+	lpCapDib->bmiHeader.biXPelsPerMeter = 0;
+	lpCapDib->bmiHeader.biYPelsPerMeter = 0;
+	lpCapDib->bmiHeader.biClrUsed = 0;
+	lpCapDib->bmiHeader.biClrImportant = 0;
+	hCapBmp = CreateDIBSection(hdc, lpCapDib, DIB_RGB_COLORS, (PVOID*)&lpCapBmp, NULL, 0);
+	hdcCapDib = CreateCompatibleDC(hdc);
+	SelectObject(hdcCapDib, hCapBmp);
 	
 	capture_connected = index;
 }
@@ -217,8 +217,8 @@ void EMU::disconnect_capture_device()
 {
 	if(capture_connected != -1) {
 		// release DIBSection
-		DeleteDC(hdcCapDIB);
-		DeleteObject(hCapBMP);
+		DeleteDC(hdcCapDib);
+		DeleteObject(hCapBmp);
 		GlobalFree(lpCapBuf);
 		
 		// release dshow
@@ -294,27 +294,27 @@ void EMU::show_capture_device_source()
 			capture_bufsize = capture_width * capture_height * 3;	// GetCurrentBuffer sometimes returns the wrong size
 			
 			// release and re-create DIBSection
-			DeleteDC(hdcCapDIB);
-			DeleteObject(hCapBMP);
+			DeleteDC(hdcCapDib);
+			DeleteObject(hCapBmp);
 			GlobalFree(lpCapBuf);
 			
 			HDC hdc = CreateDC("DISPLAY", NULL, NULL, NULL);
 			lpCapBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
-			lpCapDIB = (LPBITMAPINFO)lpCapBuf;
-			lpCapDIB->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-			lpCapDIB->bmiHeader.biWidth = capture_width;
-			lpCapDIB->bmiHeader.biHeight = capture_height;
-			lpCapDIB->bmiHeader.biPlanes = 1;
-			lpCapDIB->bmiHeader.biBitCount = 24;
-			lpCapDIB->bmiHeader.biCompression = BI_RGB;
-			lpCapDIB->bmiHeader.biSizeImage = 0;
-			lpCapDIB->bmiHeader.biXPelsPerMeter = 0;
-			lpCapDIB->bmiHeader.biYPelsPerMeter = 0;
-			lpCapDIB->bmiHeader.biClrUsed = 0;
-			lpCapDIB->bmiHeader.biClrImportant = 0;
-			hCapBMP = CreateDIBSection(hdc, lpCapDIB, DIB_RGB_COLORS, (PVOID*)&lpCapBMP, NULL, 0);
-			hdcCapDIB = CreateCompatibleDC(hdc);
-			SelectObject(hdcCapDIB, hCapBMP);
+			lpCapDib = (LPBITMAPINFO)lpCapBuf;
+			lpCapDib->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+			lpCapDib->bmiHeader.biWidth = capture_width;
+			lpCapDib->bmiHeader.biHeight = capture_height;
+			lpCapDib->bmiHeader.biPlanes = 1;
+			lpCapDib->bmiHeader.biBitCount = 24;
+			lpCapDib->bmiHeader.biCompression = BI_RGB;
+			lpCapDib->bmiHeader.biSizeImage = 0;
+			lpCapDib->bmiHeader.biXPelsPerMeter = 0;
+			lpCapDib->bmiHeader.biYPelsPerMeter = 0;
+			lpCapDib->bmiHeader.biClrUsed = 0;
+			lpCapDib->bmiHeader.biClrImportant = 0;
+			hCapBmp = CreateDIBSection(hdc, lpCapDib, DIB_RGB_COLORS, (PVOID*)&lpCapBmp, NULL, 0);
+			hdcCapDib = CreateCompatibleDC(hdc);
+			SelectObject(hdcCapDib, hCapBmp);
 		}
 		pCrs->Release();
 	}
@@ -341,8 +341,8 @@ IPin* EMU::get_pin(IBaseFilter *pFilter, PIN_DIRECTION PinDir)
 bool EMU::get_capture_device_buffer()
 {
 	if(capture_connected != -1) {
-		pSGrab->GetCurrentBuffer(&capture_bufsize, (long *)lpCapBMP);
-		StretchBlt(hdcDIB, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hdcCapDIB, 0, capture_src_y, capture_width, capture_src_height, SRCCOPY);
+		pSGrab->GetCurrentBuffer(&capture_bufsize, (long *)lpCapBmp);
+		StretchBlt(hdcDib, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hdcCapDib, 0, capture_src_y, capture_width, capture_src_height, SRCCOPY);
 		return true;
 	}
 	return false;

@@ -67,13 +67,14 @@ class FIFO;
 class UPD7220 : public DEVICE
 {
 private:
-	DEVICE* d_drq;
-	int did_drq;
-	uint32 dmask_drq;
+	DEVICE *d_drq[MAX_OUTPUT], *d_vsync[MAX_OUTPUT];
+	int did_drq[MAX_OUTPUT], did_vsync[MAX_OUTPUT];
+	uint32 dmask_drq[MAX_OUTPUT], dmask_vsync[MAX_OUTPUT];
+	int dcount_drq, dcount_vsync;
 	
 	// vram
 	uint8* vram;
-	int vram_size;
+	uint32 vram_size;
 	
 	// fifo and regs
 	FIFO *fi, *fo, *ft;
@@ -89,8 +90,9 @@ private:
 	uint8 pitch;		// pitch
 	uint32 lad;		// lpen
 	uint8 vect[11];		// vectw
-	int ead, dad;	// csrw, csrr
+	int ead, dad;		// csrw, csrr
 	uint8 maskl, maskh;	// mask
+	uint8 mod;		// mod
 	
 	bool hblank, vsync, start;
 	bool low_high;		// dma word access
@@ -105,7 +107,7 @@ private:
 	
 	int rt[RT_TABLEMAX + 1];
 	int dx, dy;	// from ead, dad
-	int dir, sl, dc, d, d2, d1, dm;
+	int dir, dif, sl, dc, d, d2, d1, dm;
 	uint16 pattern;
 	
 	// command
@@ -135,12 +137,12 @@ private:
 	void cmd_dmar();
 	
 	void cmd_write_sub(uint32 addr, uint8 data);
-	uint8 cmd_read_sub(uint32 addr) { return vram[addr & ADDR_MASK]; }
+	uint8 cmd_read_sub(uint32 addr);
 	void vectreset();
 	
 public:
 	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		d_drq = NULL;
+		dcount_drq = dcount_vsync = 0;
 	}
 	~UPD7220() {}
 	
@@ -156,11 +158,14 @@ public:
 	
 	// unique functions
 	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		d_drq = device;
-		did_drq = id;
-		dmask_drq = mask;
+		int c = dcount_drq++;
+		d_drq[c] = device; did_drq[c] = id; dmask_drq[c] = mask;
 	}
-	void set_vram_ptr(uint8* ptr, int size) {
+	void set_context_vsync(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_vsync++;
+		d_vsync[c] = device; did_vsync[c] = id; dmask_vsync[c] = mask;
+	}
+	void set_vram_ptr(uint8* ptr, uint32 size) {
 		vram = ptr; vram_size = size;
 	}
 	uint8* get_sync() {

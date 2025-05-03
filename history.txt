@@ -1,3 +1,89 @@
+4/12/2008
+
+[VM/LS393] support 74LS393
+[VM/RP5C01] support RP-5C01
+[VM/UPD7220] fix pset function
+[VM/UPD7220] notify vsync
+[VM/UPD765A] check sector id strictly
+
+[MZ5500] support MZ-5500
+
+
+4/7/2008
+
+[EMU/WIN32] support the screen size changing requested by the virtual machine
+
+[VM/MZ2800] support z80sio interrupt vector port
+
+
+4/3/2008
+
+[VM/I8259] fix the cascade mode condition
+[VM/UPD7220] fix low/high byte condition in dma commands
+[VM/UPD7220] check the param count in fifo buffer in sync/vectw commands
+[VM/UPD7220] get mod param in write command with no params
+[VM/UPD7220] check mod param in vect/char drawing commands
+[VM/UPD7220] check dir param in read/write command
+[VM/UPD7220] support line drawing in vecte command
+[VM/UPD7220] update ead/dad after drawing commands
+[VM/UPD7220] fix lsb/msb order in pset function
+
+[QC10] change the default dipswitch status
+[QC10/DISPLAY] support color monitor subboard
+[QC10/KEYBOARD] support SF1-SF4 keys
+[QC10/MFONT] support multifonts rom card
+
+
+3/22/2008
+
+[VM/I8251] notify rxrdy is changed
+[VM/TF20] fix the error result of read command
+
+[HC80/IO] support HD6303 commands for microcassette (returns error code)
+[HC80/IO] support HD6303 commands for serial i/o
+[HC80/IO] support TF-20
+[HC80/IO] support 8kb/16kb rom capsule
+[HC80/IO] remove 8251 codes and use common 8251 class
+
+
+3/20/2008
+
+[EMU/WIN32] set DirectX9 graphics params on the screen menu
+
+[HC40/IO] fix key buffers
+[HC80] support EPSON HC-80/PX-8/Geneva
+
+
+3/2/2008
+
+[EMU/WIN32] support DirectX9 graphics
+[EMU/WIN32] fix the window size problem of eHC-40
+
+
+2/29/2008
+
+[EMU/WIN32] more quick stretch screen
+[EMU/CONFIG] divide the config version to the file version and the virtual machine version
+[VM/TF20] support EPSON TF-20 terminal floppy drives
+
+[HC40/IO] don't reset 7508 sub cpu when boot the system
+[HC40/IO] support system reset
+[HC40/IO] support buzzer partially (constant frequency)
+[HC40/IO] support ART (8251 subset)
+[HC40/IO] support TF-20 connected to ART
+
+
+2/27/2008
+
+[EMU/WIN32] Windows CE.NET binaries for GAPI are no longer supported
+[EMU/WIN32] don't use StretchBlt
+
+[HC40] support EPSON HC-40/PX-4
+[QC10/MEMORY] fix the gate signal bit in $18
+[QC10/MEMORY] fix the memory bank switch
+[X07/IO] change LCD display color
+
+
 2/20/2008
 
 VC++ 6.0 project files are removed.

@@ -10,6 +10,16 @@
 #ifndef _VM_H_
 #define _VM_H_
 
+// EPSON HC-40
+#ifdef _HC40
+#include "hc40/hc40.h"
+#endif
+
+// EPSON HC-80
+#ifdef _HC80
+#include "hc80/hc80.h"
+#endif
+
 // SORD m5
 #ifdef _M5
 #include "m5/m5.h"
@@ -28,6 +38,11 @@
 // SHARP MZ-2800
 #ifdef _MZ2800
 #include "mz2800/mz2800.h"
+#endif
+
+// SHARP MZ-5500
+#ifdef _MZ5500
+#include "mz5500/mz5500.h"
 #endif
 
 // TOSHIBA PASOPIA

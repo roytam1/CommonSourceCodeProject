@@ -15,9 +15,11 @@
 #ifdef _LCD
 #define DEVICE_NAME		"TOSHIBA PASOPIA 7 with LCD"
 #define CONFIG_NAME		"pasopia7lcd"
+#define CONFIG_VERSION		0x01
 #else
 #define DEVICE_NAME		"TOSHIBA PASOPIA 7"
 #define CONFIG_NAME		"pasopia7"
+#define CONFIG_VERSION		0x01
 #endif
 
 #ifdef _LCD

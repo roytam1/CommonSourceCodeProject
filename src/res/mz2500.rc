@@ -172,7 +172,18 @@ BEGIN
         MENUITEM "Stop"                         ID_SCREEN_STOP
         MENUITEM SEPARATOR
         MENUITEM "Window",                      ID_SCREEN_WINDOW1
-        MENUITEM "Fullscreen",                  ID_SCREEN_640X480
+        MENUITEM "Fullscreen",                  ID_SCREEN_FULLSCREEN
+        MENUITEM SEPARATOR
+        MENUITEM "D3D9 Device Default"          ID_SCREEN_DEVICE_DEFAULT
+        MENUITEM "Hardware TnL"                 ID_SCREEN_DEVICE_HARDWARE_TNL
+        MENUITEM "Hardware"                     ID_SCREEN_DEVICE_HARDWARE
+        MENUITEM "Software"                     ID_SCREEN_DEVICE_SOFTWARE
+        MENUITEM SEPARATOR
+        MENUITEM "D3D9 Filter Default"          ID_SCREEN_FILTER_DEFAULT
+        MENUITEM "Point"                        ID_SCREEN_FILTER_POINT
+        MENUITEM "Linear"                       ID_SCREEN_FILTER_LINEAR
+        MENUITEM SEPARATOR
+        MENUITEM "D3D9 Wait VSync"              ID_SCREEN_PRESENT_INTERVAL
         MENUITEM SEPARATOR
         MENUITEM "400 Lines, Analog",           ID_SCREEN_A400L
         MENUITEM "400 Lines, Digital",          ID_SCREEN_D400L

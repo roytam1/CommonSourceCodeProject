@@ -17,17 +17,29 @@
 
 #define VRAM_SIZE	0x20000
 
+class UPD7220;
+
 class DISPLAY : public DEVICE
 {
 private:
-	uint16 palette_pc[16];	// normal, intensify
-	uint8 font[0x10000];	// 16bytes * 256chars
+	UPD7220 *d_gdc;
+	
+#ifdef _COLOR_MONITOR
+	uint8 vram_r[VRAM_SIZE];
+	uint8 vram_g[VRAM_SIZE];
+	uint8 vram_b[VRAM_SIZE];
+	uint16 palette_pc[8];
+#else
 	uint8 vram[VRAM_SIZE];
+	uint8 font[0x10000];	// 16bytes * 256chars
+	uint16 palette_pc[16];	// normal, intensify
+#endif
 	uint8 screen[400][640];
 	uint16 tmp[640];
 	
 	uint8 *sync, *zoom, *ra, *cs;
 	int* ead;
+	uint8 bank;
 	int blink;
 	
 public:
@@ -36,12 +48,21 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
+	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void event_frame();
 	
 	// unique functions
+	void set_context_gdc(UPD7220* device) {
+		d_gdc = device;
+	}
 	uint8* get_vram() {
+#ifdef _COLOR_MONITOR
+		return vram_b;
+#else
 		return vram;
+#endif
 	}
 	void set_sync_ptr(uint8* ptr) {
 		sync = ptr;

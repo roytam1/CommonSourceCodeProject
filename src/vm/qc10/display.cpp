@@ -10,10 +10,16 @@
 
 #include <math.h>
 #include "display.h"
+#include "../upd7220.h"
 #include "../../fileio.h"
 
 void DISPLAY::initialize()
 {
+#ifdef _COLOR_MONITOR
+	_memset(vram_r, 0, sizeof(vram_r));
+	_memset(vram_g, 0, sizeof(vram_g));
+	_memset(vram_b, 0, sizeof(vram_b));
+#else
 	_memset(vram, 0, sizeof(vram));
 	
 	// load rom images
@@ -27,24 +33,60 @@ void DISPLAY::initialize()
 		fio->Fclose();
 	}
 	delete fio;
+#endif
 	
 	// create pc palette
+#ifdef _COLOR_MONITOR
+	for(int i = 0; i < 8; i++)
+		palette_pc[i] = RGB_COLOR(i & 1 ? 0x1f : 0, i & 2 ? 0x1f : 0, i & 4 ? 0x1f : 0);
+#else
 	for(int i = 1; i < 8; i++) {
 		palette_pc[i + 0] = RGB_COLOR(0, 0x14, 0);
 		palette_pc[i + 8] = RGB_COLOR(0, 0x1f, 0);
 	}
 	palette_pc[0] = palette_pc[8] = 0;
+#endif
 	
 	// cursor blinking
 	vm->regist_frame_event(this);
 	blink = 0;
 }
 
+void DISPLAY::reset()
+{
+#ifdef _COLOR_MONITOR
+	d_gdc->set_vram_ptr(vram_b, VRAM_SIZE);
+#endif
+	bank = 1;
+}
+
+void DISPLAY::write_io8(uint32 addr, uint32 data)
+{
+#ifdef _COLOR_MONITOR
+	if(data & 1)
+		d_gdc->set_vram_ptr(vram_b, VRAM_SIZE);
+	else if(data & 2)
+		d_gdc->set_vram_ptr(vram_g, VRAM_SIZE);
+	else
+		d_gdc->set_vram_ptr(vram_r, VRAM_SIZE);
+#endif
+	bank = data;
+}
+
 uint32 DISPLAY::read_io8(uint32 addr)
 {
-	// display type $2c
-	return 0xfe; // monochrome
-	//return 0x02; // color
+	switch(addr & 0xff)
+	{
+	case 0x2c:
+#ifdef _COLOR_MONITOR
+		return 0xfd;
+#else
+		return 0xfe;
+#endif
+	case 0x2d:
+		return bank;
+	}
+	return 0xff;
 }
 
 void DISPLAY::event_frame()
@@ -54,6 +96,7 @@ void DISPLAY::event_frame()
 
 void DISPLAY::draw_screen()
 {
+	uint8 cg = sync[0] & 0x22;
 	int al = (sync[6] | (sync[7] << 8)) & 0x3ff;
 	
 	for(int i = 0, total = 0; i < 4 && total < al; i++) {
@@ -62,44 +105,83 @@ void DISPLAY::draw_screen()
 		tmp |= ra[4 * i + 2] << 16;
 		tmp |= ra[4 * i + 3] << 24;
 		
-		int ptr = tmp & 0x3ffff;
-		int line = (tmp >> 20) & 0x3ff;
-		bool gfx = ((tmp & 0x40000000) != 0);
-		bool wide = ((tmp & 0x80000000) != 0);
-		
-		if((sync[0] & 0x22) == 0x20)	// char mode
-			ptr &= 0x1fff;
+		int ptr = tmp & ((cg == 0x20) ? 0x1fff : 0x3ffff);
 		ptr <<= 1;
+		int line = (tmp >> 20) & 0x3ff;
+		bool gfx = (cg == 2) ? true : (cg == 0x20) ? false : ((tmp & 0x40000000) != 0);
+		bool wide = ((tmp & 0x80000000) != 0);
 		int caddr = ((cs[0] & 0x80) && ((cs[1] & 0x20) || !(blink & 0x10))) ? (*ead << 1) : -1;
 		
+#ifdef _COLOR_MONITOR
+//		if(gfx) {
+			for(int y = total; y < total + line && y < 400; y++) {
+				if(wide) {
+					for(int x = 0; x < 640; x+= 16) {
+						uint8 r = vram_r[ptr];
+						uint8 g = vram_g[ptr];
+						uint8 b = vram_b[ptr++];
+						ptr &= VRAM_SIZE - 1;
+						
+						screen[y][x +  0] = screen[y][x +  1] = ((r & 0x01) ? 1 : 0) | ((g & 0x01) ? 2 : 0) | ((b & 0x01) ? 4 : 0);
+						screen[y][x +  2] = screen[y][x +  3] = ((r & 0x02) ? 1 : 0) | ((g & 0x02) ? 2 : 0) | ((b & 0x02) ? 4 : 0);
+						screen[y][x +  4] = screen[y][x +  5] = ((r & 0x04) ? 1 : 0) | ((g & 0x04) ? 2 : 0) | ((b & 0x04) ? 4 : 0);
+						screen[y][x +  6] = screen[y][x +  7] = ((r & 0x08) ? 1 : 0) | ((g & 0x08) ? 2 : 0) | ((b & 0x08) ? 4 : 0);
+						screen[y][x +  8] = screen[y][x +  9] = ((r & 0x10) ? 1 : 0) | ((g & 0x10) ? 2 : 0) | ((b & 0x10) ? 4 : 0);
+						screen[y][x + 10] = screen[y][x + 11] = ((r & 0x20) ? 1 : 0) | ((g & 0x20) ? 2 : 0) | ((b & 0x20) ? 4 : 0);
+						screen[y][x + 12] = screen[y][x + 13] = ((r & 0x40) ? 1 : 0) | ((g & 0x40) ? 2 : 0) | ((b & 0x40) ? 4 : 0);
+						screen[y][x + 14] = screen[y][x + 15] = ((r & 0x80) ? 1 : 0) | ((g & 0x80) ? 2 : 0) | ((b & 0x80) ? 4 : 0);
+					}
+				}
+				else {
+					for(int x = 0; x < 640; x+= 8) {
+						uint8 r = vram_r[ptr];
+						uint8 g = vram_g[ptr];
+						uint8 b = vram_b[ptr++];
+						ptr &= VRAM_SIZE - 1;
+						
+						screen[y][x + 0] = ((r & 0x01) ? 1 : 0) | ((g & 0x01) ? 2 : 0) | ((b & 0x01) ? 4 : 0);
+						screen[y][x + 1] = ((r & 0x02) ? 1 : 0) | ((g & 0x02) ? 2 : 0) | ((b & 0x02) ? 4 : 0);
+						screen[y][x + 2] = ((r & 0x04) ? 1 : 0) | ((g & 0x04) ? 2 : 0) | ((b & 0x04) ? 4 : 0);
+						screen[y][x + 3] = ((r & 0x08) ? 1 : 0) | ((g & 0x08) ? 2 : 0) | ((b & 0x08) ? 4 : 0);
+						screen[y][x + 4] = ((r & 0x10) ? 1 : 0) | ((g & 0x10) ? 2 : 0) | ((b & 0x10) ? 4 : 0);
+						screen[y][x + 5] = ((r & 0x20) ? 1 : 0) | ((g & 0x20) ? 2 : 0) | ((b & 0x20) ? 4 : 0);
+						screen[y][x + 6] = ((r & 0x40) ? 1 : 0) | ((g & 0x40) ? 2 : 0) | ((b & 0x40) ? 4 : 0);
+						screen[y][x + 7] = ((r & 0x80) ? 1 : 0) | ((g & 0x80) ? 2 : 0) | ((b & 0x80) ? 4 : 0);
+					}
+				}
+			}
+//		}
+#else
 		if(gfx) {
 			for(int y = total; y < total + line && y < 400; y++) {
 				if(wide) {
 					for(int x = 0; x < 640; x+= 16) {
 						uint8 pat = vram[ptr++];
+						ptr &= VRAM_SIZE - 1;
 						
-						screen[y][x +  0] = screen[y][x +  1] = (pat & 0x80) ? 1 : 0;
-						screen[y][x +  2] = screen[y][x +  3] = (pat & 0x40) ? 1 : 0;
-						screen[y][x +  4] = screen[y][x +  5] = (pat & 0x20) ? 1 : 0;
-						screen[y][x +  6] = screen[y][x +  7] = (pat & 0x10) ? 1 : 0;
-						screen[y][x +  8] = screen[y][x +  9] = (pat & 0x08) ? 1 : 0;
-						screen[y][x + 10] = screen[y][x + 11] = (pat & 0x04) ? 1 : 0;
-						screen[y][x + 12] = screen[y][x + 13] = (pat & 0x02) ? 1 : 0;
-						screen[y][x + 14] = screen[y][x + 15] = (pat & 0x01) ? 1 : 0;
+						screen[y][x +  0] = screen[y][x +  1] = (pat & 0x01) ? 1 : 0;
+						screen[y][x +  2] = screen[y][x +  3] = (pat & 0x02) ? 1 : 0;
+						screen[y][x +  4] = screen[y][x +  5] = (pat & 0x04) ? 1 : 0;
+						screen[y][x +  6] = screen[y][x +  7] = (pat & 0x08) ? 1 : 0;
+						screen[y][x +  8] = screen[y][x +  9] = (pat & 0x10) ? 1 : 0;
+						screen[y][x + 10] = screen[y][x + 11] = (pat & 0x20) ? 1 : 0;
+						screen[y][x + 12] = screen[y][x + 13] = (pat & 0x40) ? 1 : 0;
+						screen[y][x + 14] = screen[y][x + 15] = (pat & 0x80) ? 1 : 0;
 					}
 				}
 				else {
 					for(int x = 0; x < 640; x+= 8) {
 						uint8 pat = vram[ptr++];
+						ptr &= VRAM_SIZE - 1;
 						
-						screen[y][x + 0] = (pat & 0x80) ? 1 : 0;
-						screen[y][x + 1] = (pat & 0x40) ? 1 : 0;
-						screen[y][x + 2] = (pat & 0x20) ? 1 : 0;
-						screen[y][x + 3] = (pat & 0x10) ? 1 : 0;
-						screen[y][x + 4] = (pat & 0x08) ? 1 : 0;
-						screen[y][x + 5] = (pat & 0x04) ? 1 : 0;
-						screen[y][x + 6] = (pat & 0x02) ? 1 : 0;
-						screen[y][x + 7] = (pat & 0x01) ? 1 : 0;
+						screen[y][x + 0] = (pat & 0x01) ? 1 : 0;
+						screen[y][x + 1] = (pat & 0x02) ? 1 : 0;
+						screen[y][x + 2] = (pat & 0x04) ? 1 : 0;
+						screen[y][x + 3] = (pat & 0x08) ? 1 : 0;
+						screen[y][x + 4] = (pat & 0x10) ? 1 : 0;
+						screen[y][x + 5] = (pat & 0x20) ? 1 : 0;
+						screen[y][x + 6] = (pat & 0x40) ? 1 : 0;
+						screen[y][x + 7] = (pat & 0x80) ? 1 : 0;
 					}
 				}
 			}
@@ -111,6 +193,7 @@ void DISPLAY::draw_screen()
 						bool cursor = (ptr == caddr);
 						uint8 code = vram[ptr++];
 						uint8 attrib = vram[ptr++];
+						ptr &= VRAM_SIZE - 1;
 						uint8* pattern = &font[code * 16];
 						
 						for(int l = y % 16; l < 16 && (y + l) < 400; l++) {
@@ -142,7 +225,9 @@ void DISPLAY::draw_screen()
 					for(int x = 0; x < 640; x += 8) {
 						bool cursor = (ptr == caddr);
 						uint8 code = vram[ptr++];
+						ptr &= VRAM_SIZE - 1;
 						uint8 attrib = vram[ptr++];
+						ptr &= VRAM_SIZE - 1;
 						uint8* pattern = &font[code * 16];
 						
 						for(int l = y % 16; l < 16 && (y + l) < 400; l++) {
@@ -173,6 +258,7 @@ void DISPLAY::draw_screen()
 				y += 16 - (y % 16);
 			}
 		}
+#endif
 		total += line;
 	}
 	
@@ -204,7 +290,11 @@ void DISPLAY::draw_screen()
 			uint8* src = screen[y];
 			
 			for(int x = 0; x < 640; x++)
+#ifdef _COLOR_MONITOR
+				dest[x] = palette_pc[src[x] & 7];
+#else
 				dest[x] = palette_pc[src[x] & 0xf];
+#endif
 		}
 	}
 }

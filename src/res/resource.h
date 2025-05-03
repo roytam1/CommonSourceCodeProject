@@ -92,58 +92,88 @@
 #define ID_SCREEN_STOP                  40083
 #define ID_SCREEN_WINDOW1               40084
 #define ID_SCREEN_WINDOW2               40085
-#define ID_SCREEN_640X480               40086
-#define ID_SCREEN_320X240               40087
-#define ID_SCREEN_A400L                 40088
-#define ID_SCREEN_D400L                 40089
-#define ID_SCREEN_A200L                 40090
-#define ID_SCREEN_D200L                 40091
-#define ID_SCREEN_SCANLINE              40092
-#define ID_SOUND_REC                    40093
-#define ID_SOUND_STOP                   40094
-#define ID_SOUND_FREQ0                  40095
-#define ID_SOUND_FREQ1                  40096
-#define ID_SOUND_FREQ2                  40097
-#define ID_SOUND_FREQ3                  40098
-#define ID_SOUND_FREQ4                  40099
-#define ID_SOUND_FREQ5                  40100
-#define ID_SOUND_FREQ6                  40101
-#define ID_SOUND_LATE0                  40102
-#define ID_SOUND_LATE1                  40103
-#define ID_SOUND_LATE2                  40104
-#define ID_SOUND_LATE3                  40105
-#define ID_CAPTURE_FILTER               40106
-#define ID_CAPTURE_PIN                  40107
-#define ID_CAPTURE_SOURCE               40108
-#define ID_CAPTURE_DISCONNECT           40109
-#define ID_CAPTURE_DEVICE1              40110
-#define ID_CAPTURE_DEVICE2              40111
-#define ID_CAPTURE_DEVICE3              40112
-#define ID_CAPTURE_DEVICE4              40113
-#define ID_CAPTURE_DEVICE5              40114
-#define ID_CAPTURE_DEVICE6              40115
-#define ID_CAPTURE_DEVICE7              40116
-#define ID_CAPTURE_DEVICE8              40117
-#define ID_AUTOKEY_START                40118
-#define ID_AUTOKEY_STOP                 40119
-#define ID_JOYKEY_DIR0                  40120
-#define ID_JOYKEY_DIR1                  40121
-#define ID_JOYKEY_DIR2                  40122
-#define ID_JOYKEY_DIR3                  40123
-#define ID_JOYKEY_DIR4                  40124
-#define ID_JOYKEY_BTN0                  40125
-#define ID_JOYKEY_BTN1                  40126
-#define ID_JOYKEY_BTN2                  40127
-#define ID_DIPSWITCH1                   40128
-#define ID_DIPSWITCH2                   40129
-#define ID_DIPSWITCH3                   40130
-#define ID_DIPSWITCH4                   40131
-#define ID_DIPSWITCH5                   40132
-#define ID_DIPSWITCH6                   40133
-#define ID_DIPSWITCH7                   40134
-#define ID_DIPSWITCH8                   40135
+#define ID_SCREEN_FULLSCREEN            40086
+#define ID_SCREEN_DEVICE_DEFAULT        40087
+#define ID_SCREEN_DEVICE_HARDWARE_TNL   40088
+#define ID_SCREEN_DEVICE_HARDWARE       40089
+#define ID_SCREEN_DEVICE_SOFTWARE       40090
+#define ID_SCREEN_FILTER_DEFAULT        40091
+#define ID_SCREEN_FILTER_POINT          40092
+#define ID_SCREEN_FILTER_LINEAR         40093
+#define ID_SCREEN_PRESENT_INTERVAL      40094
+#define ID_SCREEN_A400L                 40095
+#define ID_SCREEN_D400L                 40096
+#define ID_SCREEN_A200L                 40097
+#define ID_SCREEN_D200L                 40098
+#define ID_SCREEN_SCANLINE              40099
+#define ID_SOUND_REC                    40100
+#define ID_SOUND_STOP                   40101
+#define ID_SOUND_FREQ0                  40102
+#define ID_SOUND_FREQ1                  40103
+#define ID_SOUND_FREQ2                  40104
+#define ID_SOUND_FREQ3                  40105
+#define ID_SOUND_FREQ4                  40106
+#define ID_SOUND_FREQ5                  40107
+#define ID_SOUND_FREQ6                  40108
+#define ID_SOUND_LATE0                  40109
+#define ID_SOUND_LATE1                  40110
+#define ID_SOUND_LATE2                  40111
+#define ID_SOUND_LATE3                  40112
+#define ID_CAPTURE_FILTER               40113
+#define ID_CAPTURE_PIN                  40114
+#define ID_CAPTURE_SOURCE               40115
+#define ID_CAPTURE_DISCONNECT           40116
+#define ID_CAPTURE_DEVICE1              40117
+#define ID_CAPTURE_DEVICE2              40118
+#define ID_CAPTURE_DEVICE3              40119
+#define ID_CAPTURE_DEVICE4              40120
+#define ID_CAPTURE_DEVICE5              40121
+#define ID_CAPTURE_DEVICE6              40122
+#define ID_CAPTURE_DEVICE7              40123
+#define ID_CAPTURE_DEVICE8              40124
+#define ID_AUTOKEY_START                40125
+#define ID_AUTOKEY_STOP                 40126
+#define ID_JOYKEY_DIR0                  40127
+#define ID_JOYKEY_DIR1                  40128
+#define ID_JOYKEY_DIR2                  40129
+#define ID_JOYKEY_DIR3                  40130
+#define ID_JOYKEY_DIR4                  40131
+#define ID_JOYKEY_BTN0                  40132
+#define ID_JOYKEY_BTN1                  40133
+#define ID_JOYKEY_BTN2                  40134
+#define ID_DIPSWITCH1                   40135
+#define ID_DIPSWITCH2                   40136
+#define ID_DIPSWITCH3                   40137
+#define ID_DIPSWITCH4                   40138
+#define ID_DIPSWITCH5                   40139
+#define ID_DIPSWITCH6                   40140
+#define ID_DIPSWITCH7                   40141
+#define ID_DIPSWITCH8                   40142
 
 // menu positions
+
+// EPSON HC-40
+#ifdef _HC40
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_DATAREC                5
+#define MENU_POS_SCREEN                 6
+#define MENU_POS_SOUND                  7
+#endif
+
+// EPSON HC-80
+#ifdef _HC80
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
 
 // SORD m5
 #ifdef _M5
@@ -179,6 +209,17 @@
 
 // SHARP MZ-2800
 #ifdef _MZ2800
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
+// SHARP MZ-5500
+#ifdef _MZ5500
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
@@ -271,7 +312,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40136
+#define _APS_NEXT_COMMAND_VALUE         40143
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

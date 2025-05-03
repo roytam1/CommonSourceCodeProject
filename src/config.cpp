@@ -16,7 +16,8 @@ config_t config;
 void init_config()
 {
 	// initial settings
-	config.version = CONFIG_VERSION;
+	config.version1 = FILE_VERSION;
+	config.version2 = CONFIG_VERSION;
 	
 	for(int i = 0; i < 8; i++) {
 #ifdef USE_CART
@@ -43,16 +44,25 @@ void init_config()
 #ifdef USE_MONITOR_TYPE
 	config.monitor_type = 0;
 #endif
-	config.window_mode = 0;
-#ifdef _WIN32_WCE
-	config.sound_frequency = 1;
-#else
-	config.sound_frequency = 5;
-#endif
-	config.sound_latency = 0;
 #ifdef USE_DIPSWITCH
-	config.dipswitch = 0xff;
+	config.dipswitch = DIPSWITCH_DEFAULT;
 #endif
+#ifdef _WIN32_WCE
+	config.window_mode = 0;
+	config.sound_frequency = 3;
+	config.sound_latency = 2;
+#else
+#ifdef USE_SCREEN_X2
+	config.window_mode = 1;
+#else
+	config.window_mode = 0;
+#endif
+	config.sound_frequency = 5;
+	config.sound_latency = 0;
+#endif
+	config.d3d9_interval = 0;
+	config.d3d9_device = 0;
+	config.d3d9_filter = 0;
 }
 
 void load_config()
@@ -81,8 +91,8 @@ void load_config()
 	}
 	delete fio;
 	
-	// check id
-	if(config.version != CONFIG_VERSION)
+	// check config version
+	if(!(config.version1 == FILE_VERSION && config.version2 == CONFIG_VERSION))
 		init_config();
 }
 

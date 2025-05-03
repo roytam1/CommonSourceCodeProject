@@ -18,9 +18,8 @@
 class SYSPORT : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did;
-
+	DEVICE *d_dma, *d_sio;
+	int did_dma;
 	uint8 shut;
 	
 public:
@@ -32,10 +31,13 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void event_callback(int event_id, int err);
-
+	
 	// unique function
-	void set_context(DEVICE* device, int id) {
-		dev = device; did = id;
+	void set_context_dma(DEVICE* device, int id) {
+		d_dma = device; did_dma = id;
+	}
+	void set_context_sio(DEVICE* device) {
+		d_sio = device;
 	}
 };
 

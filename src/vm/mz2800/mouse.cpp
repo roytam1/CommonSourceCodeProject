@@ -30,7 +30,7 @@ void MOUSE::write_signal(int id, uint32 data, uint32 mask)
 		uint32 d1 = (uint8)stat[0];
 		uint32 d2 = (uint8)stat[1];
 		
-		dev->write_signal(did_clear, 0xffffffff, 1);
+//		dev->write_signal(did_clear, 1, 1);
 		dev->write_signal(did_send, d0, 0xff);
 		dev->write_signal(did_send, d1, 0xff);
 		dev->write_signal(did_send, d2, 0xff);

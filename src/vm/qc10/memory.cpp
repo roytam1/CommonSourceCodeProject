@@ -76,14 +76,14 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-//	wbank[addr >> 11][addr & 0x7ff] = data;
-	wbank[(addr >> 11) & 0x1f][addr & 0x7ff] = data;
+	addr &= 0xffff;
+	wbank[addr >> 11][addr & 0x7ff] = data;
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-//	return rbank[addr >> 11][addr & 0x7ff];
-	return rbank[(addr >> 11) & 0x1f][addr & 0x7ff];
+	addr &= 0xffff;
+	return rbank[addr >> 11][addr & 0x7ff];
 }
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
@@ -94,7 +94,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		bank = data;
 		// timer gate signal
 		d_pit->write_signal(did_gate0, data, 1);
-		d_pit->write_signal(did_gate2, data, 0x80);
+		d_pit->write_signal(did_gate2, data, 2);
 		// beep on
 		beep_cont = ((data & 4) != 0);
 		update_beep();
@@ -139,31 +139,46 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 
 void MEMORY::update_map()
 {
-	// RAM
-	if(bank & 0x10) {
-		SET_BANK(0x0000, 0xdfff, ram + 0x00000, ram + 0x00000);
-	}
-	else if(bank & 0x20) {
-		SET_BANK(0x0000, 0xdfff, ram + 0x10000, ram + 0x10000);
-	}
-	else if(bank & 0x40) {
-		SET_BANK(0x0000, 0xdfff, ram + 0x20000, ram + 0x20000);
-	}
-	else if(bank & 0x80) {
-		SET_BANK(0x0000, 0xdfff, ram + 0x30000, ram + 0x30000);
-	}
-	else {
-		SET_BANK(0x0000, 0xdfff, wdmy, rdmy);
-	}
-	SET_BANK(0xe000, 0xffff, ram + 0xe000, ram + 0xe000);
-	
-	// PROM
 	if(!(psel & 1)) {
 		SET_BANK(0x0000, 0x1fff, wdmy, ipl);
+		SET_BANK(0x2000, 0xdfff, wdmy, rdmy);
 	}
-	if(csel & 1) {
+	else if(csel & 1) {
+		if(bank & 0x10) {
+			SET_BANK(0x0000, 0x7fff, ram + 0x00000, ram + 0x00000);
+		}
+		else if(bank & 0x20) {
+			SET_BANK(0x0000, 0x7fff, ram + 0x10000, ram + 0x10000);
+		}
+		else if(bank & 0x40) {
+			SET_BANK(0x0000, 0x7fff, ram + 0x20000, ram + 0x20000);
+		}
+		else if(bank & 0x80) {
+			SET_BANK(0x0000, 0x7fff, ram + 0x30000, ram + 0x30000);
+		}
+		else {
+			SET_BANK(0x0000, 0x7fff, wdmy, rdmy);
+		}
 		SET_BANK(0x8000, 0x87ff, cmos, cmos);
 	}
+	else {
+		if(bank & 0x10) {
+			SET_BANK(0x0000, 0xdfff, ram + 0x00000, ram + 0x00000);
+		}
+		else if(bank & 0x20) {
+			SET_BANK(0x0000, 0xdfff, ram + 0x10000, ram + 0x10000);
+		}
+		else if(bank & 0x40) {
+			SET_BANK(0x0000, 0xdfff, ram + 0x20000, ram + 0x20000);
+		}
+		else if(bank & 0x80) {
+			SET_BANK(0x0000, 0xdfff, ram + 0x30000, ram + 0x30000);
+		}
+		else {
+			SET_BANK(0x0000, 0xdfff, wdmy, rdmy);
+		}
+	}
+	SET_BANK(0xe000, 0xffff, ram + 0xe000, ram + 0xe000);
 }
 
 void MEMORY::update_beep()

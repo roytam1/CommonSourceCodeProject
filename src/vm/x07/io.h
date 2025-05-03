@@ -277,6 +277,10 @@ private:
 	int cmt_ptr;
 	bool cmt_play, cmt_rec, cmt_mode;
 	
+	// x-720
+	bool vblank;
+	uint8 font_code;
+	
 	// video
 	void draw_font(int x, int y, uint8 code);
 	void draw_udk();
@@ -303,6 +307,7 @@ public:
 	void release();
 	void reset();
 	void event_frame();
+	void event_vsync(int v, int clock);
 	void event_callback(int event_id, int err);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);

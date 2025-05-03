@@ -14,7 +14,7 @@ void IO8::write_io8(uint32 addr, uint32 data)
 	uint32 laddr = addr & IO8_ADDR_MASK, haddr = addr & ~IO8_ADDR_MASK;
 #ifdef _DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		emu->out_debug("OUT\t%4x,%2x\n", laddr | haddr, data);
+//		emu->out_debug("OUT\t%4x,%2x\n", laddr | haddr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -28,7 +28,7 @@ uint32 IO8::read_io8(uint32 addr)
 	uint32 val = rdev[laddr]->read_io8(haddr | raddr[laddr]);
 #ifdef _DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		emu->out_debug("IN\t%4x = %2x\n", laddr | haddr, val);
+//		emu->out_debug("IN\t%4x = %2x\n", laddr | haddr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}
@@ -42,7 +42,7 @@ void IO8::write_io8w(uint32 addr, uint32 data, int* wait)
 	*wait = wwait[laddr];
 #ifdef _DEBUG_LOG
 	if(!(prv_waddr == addr && prv_wdata == data)) {
-		emu->out_debug("OUT\t%4x,%2x\n", laddr | haddr, data);
+//		emu->out_debug("OUT\t%4x,%2x\n", laddr | haddr, data);
 		prv_waddr = addr;
 		prv_wdata = data;
 	}
@@ -57,7 +57,7 @@ uint32 IO8::read_io8w(uint32 addr, int* wait)
 	uint32 val = rdev[laddr]->read_io8(haddr | raddr[laddr]);
 #ifdef _DEBUG_LOG
 	if(!(prv_raddr == addr && prv_rdata == val)) {
-		emu->out_debug("IN\t%4x = %2x\n", laddr | haddr, val);
+//		emu->out_debug("IN\t%4x = %2x\n", laddr | haddr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
 	}

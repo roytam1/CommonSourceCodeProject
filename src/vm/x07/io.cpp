@@ -13,6 +13,10 @@
 #include "io.h"
 #include "../fifo.h"
 
+//memo: how to request the display size changing
+//emu->change_screen_size(TV_SCREEN_WIDTH, TV_SCREEN_HEIGHT, 0, TV_WINDOW_WIDTH1, TV_WINDOW_HEIGHT1, TV_WINDOW_WIDTH2, TV_WINDOW_HEIGHT2);
+//emu->change_screen_size(SCREEN_WIDTH, SCREEN_HEIGHT, 0, WINDOW_WIDTH1, WINDOW_HEIGHT1, WINDOW_WIDTH2, WINDOW_HEIGHT2);
+
 void IO::initialize()
 {
 	// load font
@@ -48,6 +52,7 @@ void IO::initialize()
 	
 	// video
 	vm->regist_frame_event(this);
+	vm->regist_vsync_event(this);
 }
 
 void IO::release()
@@ -106,10 +111,19 @@ void IO::event_frame()
 	cursor_blink++;
 }
 
+void IO::event_vsync(int v, int clock)
+{
+	vblank = !(v < 192);
+}
+
 void IO::write_io8(uint32 addr, uint32 data)
 {
+//	emu->out_debug("OUT\t%4x, %2x\n", addr, data);
 	switch(addr & 0xff)
 	{
+	case 0x80:
+		font_code = data;
+		break;
 	case 0xf0:
 		d_mem->write_signal(0, data, 0xff);
 	case 0xf1:
@@ -161,6 +175,24 @@ uint32 IO::read_io8(uint32 addr)
 	
 	switch(addr & 0xff)
 	{
+	case 0x80:
+	case 0x81:
+	case 0x82:
+	case 0x83:
+	case 0x84:
+	case 0x85:
+	case 0x86:
+	case 0x87:
+	case 0x88:
+	case 0x89:
+	case 0x8a:
+	case 0x8b:
+	case 0x8c:
+		val = ((addr & 0xf) < 8) ? udc[(font_code << 3) | (addr & 7)] : 0;
+		break;
+	case 0x90:
+		val =  vblank ? 0x80 : 0;
+		break;
 	case 0xf0:
 	case 0xf1:
 	case 0xf3:
@@ -218,7 +250,8 @@ void IO::update_intr()
 
 void IO::draw_screen()
 {
-	uint16 cb = RGB_COLOR(0x1f, 0x1f, 0x1f);
+	uint16 cd = RGB_COLOR(6, 7, 2);
+	uint16 cb = RGB_COLOR(20, 21, 20);
 	
 	for(int y = 0; y < 4; y++) {
 		int py = y * 8;
@@ -228,7 +261,7 @@ void IO::draw_screen()
 				for(int l = 0; l < 8; l++) {
 					uint16* dest = emu->screen_buffer(py + l);
 					dest += px;
-					dest[0] = dest[1] = dest[2] = dest[3] = dest[4] = dest[5] = (l < 7) ? cb : 0;
+					dest[0] = dest[1] = dest[2] = dest[3] = dest[4] = dest[5] = (l < 7) ? cb : cd;
 				}
 			}
 			else {
@@ -236,12 +269,12 @@ void IO::draw_screen()
 					uint8* src = &lcd[py + l][px];
 					uint16* dest = emu->screen_buffer(py + l);
 					dest += px;
-					dest[0] = src[0] ? 0 : cb;
-					dest[1] = src[1] ? 0 : cb;
-					dest[2] = src[2] ? 0 : cb;
-					dest[3] = src[3] ? 0 : cb;
-					dest[4] = src[4] ? 0 : cb;
-					dest[5] = src[5] ? 0 : cb;
+					dest[0] = src[0] ? cd : cb;
+					dest[1] = src[1] ? cd : cb;
+					dest[2] = src[2] ? cd : cb;
+					dest[3] = src[3] ? cd : cb;
+					dest[4] = src[4] ? cd : cb;
+					dest[5] = src[5] ? cd : cb;
 				}
 			}
 		}
@@ -626,7 +659,7 @@ void IO::send_to_sub()
 	else {
 		cmd_buf->write(wregs[1]);
 		if(cmd_buf->count() == 2) {
-			uint8 cmd_type = cmd_buf->read_not_remove();
+			uint8 cmd_type = cmd_buf->read_not_remove(0);
 			if(cmd_type == 7 && wregs[1] > 4) {
 				cmd_buf->clear();
 				cmd_buf->write(wregs[1] & 0x7f);
@@ -640,7 +673,7 @@ void IO::send_to_sub()
 	}
 	// check cmd length
 	if(!cmd_buf->empty()) {
-		uint8 cmd_type = cmd_buf->read_not_remove();
+		uint8 cmd_type = cmd_buf->read_not_remove(0);
 		uint8 cmd_len = sub_cmd_len[cmd_type];
 		if(cmd_len & 0x80) {
 			if((cmd_len & 0x7f) < cmd_buf->count() && !wregs[1])
@@ -663,7 +696,7 @@ void IO::send_to_sub()
 void IO::recv_from_sub()
 {
 	rregs[0] = 0x40;
-	rregs[1] = rsp_buf->read_not_remove();
+	rregs[1] = rsp_buf->read_not_remove(0);
 	rregs[2] |= 1;
 }
 

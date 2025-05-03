@@ -14,6 +14,7 @@
 // device informations for win32
 #define DEVICE_NAME		"SHARP MZ-2800"
 #define CONFIG_NAME		"mz2800"
+#define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		640
 #define WINDOW_HEIGHT1		400

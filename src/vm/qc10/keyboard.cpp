@@ -27,6 +27,13 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 void KEYBOARD::key_down(int code)
 {
 	if(enable) {
+		if(key_stat[0x10]) {
+			if(code == 0x0d) code = 0x83;	// SHIFT + ENTER
+			if(code == 0x70) code = 0x84;	// SHIFT + F1
+			if(code == 0x71) code = 0x85;	// SHIFT + F2
+			if(code == 0x72) code = 0x86;	// SHIFT + F3
+			if(code == 0x73) code = 0x87;	// SHIFT + F4
+		}
 		if(code = key_map[code])
 			dev->write_signal(did_send, code, 0xff);
 	}
