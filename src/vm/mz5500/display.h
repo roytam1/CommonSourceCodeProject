@@ -33,8 +33,8 @@ private:
 	
 	uint8 screen[400][640];
 	uint16 tmp[640];
-	uint16 palette_pc_base[8];
-	uint16 palette_pc[8];
+	scrntype palette_pc_base[8];
+	scrntype palette_pc[8];
 	bool scanline;
 	
 	uint8 *vram_b, *vram_r, *vram_g, *mapram;

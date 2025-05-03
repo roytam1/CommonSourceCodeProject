@@ -68,8 +68,8 @@ void IO::initialize()
 	vm->regist_event_by_clock(this, EVENT_ONESEC, CPU_CLOCKS, true, &id);
 	
 	// set pallete
-	pd = RGB_COLOR(6, 7, 2);
-	pb = RGB_COLOR(20, 21, 20);
+	pd = RGB_COLOR(48, 56, 16);
+	pb = RGB_COLOR(160, 168, 160);
 	
 	// init 7508
 	onesec_intr = alarm_intr = false;
@@ -627,7 +627,7 @@ void IO::draw_screen()
 	if(yoff & 0x80) {
 		uint8* vram = ram + ((vadr & 0xf8) << 8);
 		for(int y = 0; y < 64; y++) {
-			uint16* dest = emu->screen_buffer((y - (yoff & 0x3f)) & 0x3f);
+			scrntype* dest = emu->screen_buffer((y - (yoff & 0x3f)) & 0x3f);
 			for(int x = 0; x < 30; x++) {
 				uint8 pat = *vram++;
 				dest[0] = (pat & 0x80) ? pd : pb;
@@ -645,7 +645,7 @@ void IO::draw_screen()
 	}
 	else {
 		for(int y = 0; y < 64; y++) {
-			uint16* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->screen_buffer(y);
 			for(int x = 0; x < 240; x++)
 				dest[x] = pb;
 		}

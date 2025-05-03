@@ -132,8 +132,8 @@ void IO::initialize()
 	vm->regist_event_by_clock(this, EVENT_6303, 100, true, &id);
 	
 	// set pallete
-	pd = RGB_COLOR(6, 7, 2);
-	pb = RGB_COLOR(20, 21, 20);
+	pd = RGB_COLOR(48, 56, 16);
+	pb = RGB_COLOR(160, 168, 160);
 	
 	// init 7508
 	onesec_intr = alarm_intr = false;
@@ -1788,14 +1788,14 @@ void IO::draw_screen()
 			}
 		}
 		for(int y = 0; y < 64; y++) {
-			uint16* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->screen_buffer(y);
 			for(int x = 0; x < 480; x++)
 				dest[x] = lcd[y][x] ? pd : pb;
 		}
 	}
 	else {
 		for(int y = 0; y < 64; y++) {
-			uint16* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->screen_buffer(y);
 			for(int x = 0; x < 480; x++)
 				dest[x] = pb;
 		}

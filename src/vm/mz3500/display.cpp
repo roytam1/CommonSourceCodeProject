@@ -32,7 +32,7 @@ void DISPLAY::initialize()
 	
 	// create pc palette
 	for(int i = 0; i < 8; i++)
-		palette_pc[i] = RGB_COLOR(i & 1 ? 0x1f : 0, i & 2 ? 0x1f : 0, i & 4 ? 0x1f : 0);
+		palette_pc[i] = RGB_COLOR((i & 1) ? 255 : 0, (i & 2) ? 255 : 0, (i & 4) ? 255 : 0);
 	
 	// cursor blinking
 	vm->regist_frame_event(this);
@@ -61,7 +61,7 @@ void DISPLAY::draw_screen()
 	
 	// copy to pc screen
 	for(int y = 0; y < 400; y++) {
-		uint16* dest = emu->screen_buffer(y);
+		scrntype* dest = emu->screen_buffer(y);
 		uint8* src = screen[y];
 		
 		for(int x = 0; x < 640; x++)
@@ -71,10 +71,10 @@ void DISPLAY::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 640 - 8; x < 640; x++)
 				dest[x] = col;
 		}

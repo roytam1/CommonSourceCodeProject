@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								1/2/2009
+								1/16/2009
 
 --- What's this ?
 
@@ -34,7 +34,7 @@ This archive includes the all source codes of:
 
 You can compile them with:
 
-	Windows PC	Microsoft Visual C++ 2005 width SP1
+	Windows PC	Microsoft Visual C++ 2008 width SP1
 	CE.NET 4.x	Microsoft eMbedded Visual C++ 4.0 width SP4
 
 
@@ -76,6 +76,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Oh!Ishi for the chip specification info
 - vm/z80.*
 	MAME Z80 core
+- vm/fmr50/bios.*
+	FM-TOWNs emulator on bochs
 - vm/hc40/*
 	Mr.Fred Han Kraan for EPSON HC-40/PX-4 hardware design info
 - vm/hc80/*

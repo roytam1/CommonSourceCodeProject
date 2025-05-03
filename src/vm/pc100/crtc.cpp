@@ -162,11 +162,11 @@ void CRTC::draw_screen()
 	
 	if(cmd != 0xffff) {
 		// mono
-		uint16 col = RGB_COLOR(31, 31, 31);
+		scrntype col = RGB_COLOR(255, 255, 255);
 		for(int y = 0; y < 512; y++) {
 			int ptr = sa & 0x1ffff;
 			sa += 0x80;
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			
 			for(int x = 0; x < 720; x += 8) {
 				uint8 pat = vram0[ptr++];
@@ -188,7 +188,7 @@ void CRTC::draw_screen()
 		for(int y = 0; y < 512; y++) {
 			int ptr = sa & 0x1ffff;
 			sa += 0x80;
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			
 			for(int x = 0; x < 720; x += 8) {
 				uint8 p0 = vram0[ptr];
@@ -212,10 +212,10 @@ void CRTC::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 512 - 8; y < 512; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 720 - 8; x < 720; x++)
 				dest[x] = col;
 		}
@@ -224,9 +224,9 @@ void CRTC::draw_screen()
 
 void CRTC::update_palette(int num)
 {
-	int r = (palette[num] >> 0) & 7; r = r ? (r << 2) | 3 : 0;
-	int g = (palette[num] >> 3) & 7; g = g ? (g << 2) | 3 : 0;
-	int b = (palette[num] >> 6) & 7; b = b ? (b << 2) | 3 : 0;
-	palette_pc[num] = RGB_COLOR(r, g, b);
+	int r = (palette[num] >> 0) & 7;
+	int g = (palette[num] >> 3) & 7;
+	int b = (palette[num] >> 6) & 7;
+	palette_pc[num] = RGB_COLOR(r << 5, g << 5, b << 5);
 }
 

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="shift_jis"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="multi8"
 	ProjectGUID="{F62D036D-7569-431B-9C55-C056A4D3145A}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -80,6 +81,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/multi8.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -101,9 +104,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -175,6 +175,8 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release/multi8.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -196,9 +198,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -270,6 +269,8 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release_d3d9/multi8.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -291,9 +292,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -827,7 +825,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\multi8\floppy.cpp"
+					RelativePath="src\vm\multi8\display.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -847,7 +845,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\multi8\display.cpp"
+					RelativePath="src\vm\multi8\floppy.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1087,11 +1085,11 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\multi8\floppy.h"
+					RelativePath="src\vm\multi8\display.h"
 					>
 				</File>
 				<File
-					RelativePath="src\vm\multi8\display.h"
+					RelativePath="src\vm\multi8\floppy.h"
 					>
 				</File>
 				<File

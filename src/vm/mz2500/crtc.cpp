@@ -23,17 +23,17 @@ void CRTC::initialize()
 		uint8 r, g, b, r8, g8, b8;
 		if((i & 0xf) == 8) {
 			// gray
-			r = r8 = 19;
-			g = g8 = 19;
-			b = b8 = 19;
+			r = r8 = 152;
+			g = g8 = 152;
+			b = b8 = 152;
 		}
 		else {
-			r = ((i & 0x0a) == 0x0a) ? 31 : ((i & 0x0a) == 2) ? 15 : 0;
-			g = ((i & 0x0c) == 0x0c) ? 31 : ((i & 0x0c) == 4) ? 15 : 0;
-			b = ((i & 0x09) == 0x09) ? 31 : ((i & 0x09) == 1) ? 15 : 0;
-			r8 = (i & 2) ? 31 : 0;
-			g8 = (i & 4) ? 31 : 0;
-			b8 = (i & 1) ? 31 : 0;
+			r = ((i & 0xa) == 0xa) ? 255 : ((i & 0xa) == 2) ? 127 : 0;
+			g = ((i & 0xc) == 0xc) ? 255 : ((i & 0xc) == 4) ? 127 : 0;
+			b = ((i & 0x9) == 0x9) ? 255 : ((i & 0x9) == 1) ? 127 : 0;
+			r8 = (i & 2) ? 255 : 0;
+			g8 = (i & 4) ? 255 : 0;
+			b8 = (i & 1) ? 255 : 0;
 		}
 		
 		if(monitor_digital)
@@ -47,7 +47,7 @@ void CRTC::initialize()
 		palette4096[i] = RGB_COLOR(r, g, b);
 	}
 	for(int i = 0; i < 8; i++)
-		palette16[i + 16] = RGB_COLOR(((i & 2) ? 31 : 0), ((i & 4) ? 31 : 0), ((i & 1) ? 31 : 0));
+		palette16[i + 16] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
 	for(int i = 0; i < 16; i++) {
 		for(int j = 1; j < 8; j++)
 			priority16[i][j] = j + 16;
@@ -59,16 +59,16 @@ void CRTC::initialize()
 	
 	// set 256 palette
 	for(int i = 0; i < 256; i++) {
-		palette256[i] = RGB_COLOR((((i & 0x20) ? 16 : 0) | ((i & 2) ? 8 : 0) | ((i & 0x80) ? 4 : 0)),
-		                          (((i & 0x40) ? 16 : 0) | ((i & 4) ? 8 : 0) | ((i & 0x80) ? 4 : 0)),
-		                          (((i & 0x10) ? 16 : 0) | ((i & 1) ? 8 : 0) | ((i & 0x80) ? 4 : 0)));
+		palette256[i] = RGB_COLOR(((i & 0x20) ? 128 : 0) | ((i & 2) ? 64 : 0) | ((i & 0x80) ? 32 : 0),
+		                          ((i & 0x40) ? 128 : 0) | ((i & 4) ? 64 : 0) | ((i & 0x80) ? 32 : 0),
+		                          ((i & 0x10) ? 128 : 0) | ((i & 1) ? 64 : 0) | ((i & 0x80) ? 32 : 0));
 	}
 	for(int i = 0; i < 8; i++)
-		palette256[i + 256] = RGB_COLOR(((i & 2) ? 31 : 0), ((i & 4) ? 31 : 0), ((i & 1) ? 31 : 0));
+		palette256[i + 256] = RGB_COLOR(((i & 2) ? 255 : 0), ((i & 4) ? 255 : 0), ((i & 1) ? 255 : 0));
 	for(int i = 0; i < 64; i++) {
-		palette256[i + 256 + 16] = RGB_COLOR(((i & 2) ? 8 : 0) | ((i & 0x10) ? 16 : 0), 
-		                                     ((i & 4) ? 8 : 0) | ((i & 0x20) ? 16 : 0), 
-		                                     ((i & 1) ? 8 : 0) | ((i & 0x08) ? 16 : 0));
+		palette256[i + 256 + 16] = RGB_COLOR(((i & 2) ? 64 : 0) | ((i & 0x10) ? 128 : 0), 
+		                                     ((i & 4) ? 64 : 0) | ((i & 0x20) ? 128 : 0), 
+		                                     ((i & 1) ? 64 : 0) | ((i & 0x08) ? 128 : 0));
 	}
 	for(int i = 0; i < 256; i++) {
 		for(int j = 1; j < 16 + 64; j++)
@@ -287,10 +287,10 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 		g = palette4096g[num];
 		b = palette4096b[num];
 		if(haddr & 1)
-			g = (data & 0x0f) << 1;
+			g = (data & 0x0f) << 4;
 		else {
-			r = (data & 0xf0) >> 3;
-			b = (data & 0x0f) << 1;
+			r = data & 0xf0;
+			b = (data & 0x0f) << 4;
 		}
 		palette4096r[num] = r;
 		palette4096g[num] = g;
@@ -390,9 +390,9 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 				uint8 b0 = (data & 0x03) >> 0;
 				uint8 r0 = (data & 0x0c) >> 2;
 				uint8 g0 = (data & 0x30) >> 4;
-				uint16 b = ((i & 0x10) ? 0x10 : 0) | ((i & 1) ? 8 : 0) | ((b0 == 0 && (i & 0x80)) || (b0 == 1 && (i & 8)) || (b0 == 2) ? 4 : 0);
-				uint16 r = ((i & 0x20) ? 0x10 : 0) | ((i & 2) ? 8 : 0) | ((r0 == 0 && (i & 0x80)) || (r0 == 1 && (i & 8)) || (r0 == 2) ? 4 : 0);
-				uint16 g = ((i & 0x40) ? 0x10 : 0) | ((i & 4) ? 8 : 0) | ((g0 == 0 && (i & 0x80)) || (g0 == 1 && (i & 8)) || (g0 == 2) ? 4 : 0);
+				uint16 b = ((i & 0x10) ? 128 : 0) | ((i & 1) ? 64 : 0) | ((b0 == 0 && (i & 0x80)) || (b0 == 1 && (i & 8)) || (b0 == 2) ? 32 : 0);
+				uint16 r = ((i & 0x20) ? 128 : 0) | ((i & 2) ? 64 : 0) | ((r0 == 0 && (i & 0x80)) || (r0 == 1 && (i & 8)) || (r0 == 2) ? 32 : 0);
+				uint16 g = ((i & 0x40) ? 128 : 0) | ((i & 4) ? 64 : 0) | ((g0 == 0 && (i & 0x80)) || (g0 == 1 && (i & 8)) || (g0 == 2) ? 32 : 0);
 				palette256[i] = RGB_COLOR(r, g, b);
 			}
 			update256 = true;
@@ -403,7 +403,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 			int col = data & 0xf;
 			int col16 = col << 4;
 			int p = data & 0x10;
-			palette_reg[c] = data & 0x0f;
+			palette_reg[c] = data & 0xf;
 			
 			// update priority
 			for(int i = 1; i < 8; i++)
@@ -564,17 +564,17 @@ void CRTC::draw_screen()
 			uint8 r, g, b, r8, g8, b8;
 			if((i & 0x0f) == 0x08) {
 				// gray
-				r = r8 = 0x13;
-				g = g8 = 0x13;
-				b = b8 = 0x13;
+				r = r8 = 152;
+				g = g8 = 152;
+				b = b8 = 152;
 			}
 			else {
-				r = ((i & 0x0a) == 0x0a) ? 0x1f : ((i & 0x0a) == 0x02) ? 0x0f : 0;
-				g = ((i & 0x0c) == 0x0c) ? 0x1f : ((i & 0x0c) == 0x04) ? 0x0f : 0;
-				b = ((i & 0x09) == 0x09) ? 0x1f : ((i & 0x09) == 0x01) ? 0x0f : 0;
-				r8 = (i & 0x02) ? 0x1f : 0;
-				g8 = (i & 0x04) ? 0x1f : 0;
-				b8 = (i & 0x01) ? 0x1f : 0;
+				r = ((i & 0x0a) == 0x0a) ? 255 : ((i & 0x0a) == 0x02) ? 127 : 0;
+				g = ((i & 0x0c) == 0x0c) ? 255 : ((i & 0x0c) == 0x04) ? 127 : 0;
+				b = ((i & 0x09) == 0x09) ? 255 : ((i & 0x09) == 0x01) ? 127 : 0;
+				r8 = (i & 0x02) ? 255 : 0;
+				g8 = (i & 0x04) ? 255 : 0;
+				b8 = (i & 0x01) ? 255 : 0;
 			}
 			
 			if(monitor_digital)
@@ -592,7 +592,7 @@ void CRTC::draw_screen()
 		update16 = true;
 	}
 	if(update16) {
-		uint16 palette16tmp[16 + 8], palette4096tmp[16 + 8];
+		scrntype palette16tmp[16 + 8], palette4096tmp[16 + 8];
 		for(int i = 0; i < 16 + 8; i++) {
 			palette16tmp[i] = palette16[(i & 16) ? i : (palette_reg[i]) ? (palette_reg[i] & cg_mask) : (back16 & cg_mask)];
 			uint8 col = (i == 16) ? 0 : (i & 16) ? (i & 0xf) + 8 : i;
@@ -604,17 +604,17 @@ void CRTC::draw_screen()
 				palette4096pri[i][j] = palette4096tmp[priority16[i][j]];
 			}
 		}
-		_memcpy(palette16txt, &palette16tmp[16], sizeof(uint16) * 8);
+		_memcpy(palette16txt, &palette16tmp[16], sizeof(scrntype) * 8);
 		palette16txt[0] = (back16 == 0 && palette_reg[0] == 2) ? 0 : palette16[palette_reg[back16]]; // tower of doruaga
 		palette16txt[8] = 0;
-		_memcpy(palette4096txt, &palette4096tmp[16], sizeof(uint16) * 8);
+		_memcpy(palette4096txt, &palette4096tmp[16], sizeof(scrntype) * 8);
 		palette4096txt[0] = palette4096[palette_reg[back16]];
 		palette4096txt[8] = 0;
 		update16 = false;
 	}
 	
 	// update 256 palette
-	uint16 back256 = RGB_COLOR((textreg[0xb] & 0x38) >> 1, ((textreg[0xb] & 0xc0) >> 4) | ((textreg[0xc] & 0x1) << 4), (textreg[0xb] & 0x07) << 2);
+	scrntype back256 = RGB_COLOR((textreg[0xb] & 0x38) << 2, ((textreg[0xb] & 0xc0) >> 1) | ((textreg[0xc] & 1) << 7), (textreg[0xb] & 7) << 5);
 	if(back256 != prev256) {
 		prev256 = back256;
 		update256 = true;
@@ -625,7 +625,7 @@ void CRTC::draw_screen()
 			for(int j = 0; j < 16 + 64; j++)
 				palette256pri[i][j] = palette256[priority256[i][j]];
 		}
-		_memcpy(palette256txt, &palette256[256], sizeof(uint16) * (16 + 64));
+		_memcpy(palette256txt, &palette256[256], sizeof(scrntype) * (16 + 64));
 		palette256txt[0] = back256;
 		palette256txt[8] = 0;
 		update256 = false;
@@ -649,13 +649,13 @@ void CRTC::draw_screen()
 	if(cgreg[0x0e] == 0x1d || cgreg[0x0e] == 0x9d) {
 		// 256 colors
 		for(int y = 0; y < vs && y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
 			for(int x = 0; x < 640; x++)
 				dest[x] = palette256txt[src_text[x]];
 		}
 		for(int y = vs; y < ve && y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 			for(int x = 0; x < hs && x < 640; x++)
 				dest[x] = palette256txt[src_text[x]];
@@ -665,7 +665,7 @@ void CRTC::draw_screen()
 				dest[x] = palette256txt[src_text[x]];
 		}
 		for(int y = ve; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_text = &text[640 * y];
 			for(int x = 0; x < 640; x++)
 				dest[x] = palette256txt[src_text[x]];
@@ -674,13 +674,13 @@ void CRTC::draw_screen()
 	else if(!pal_select) {
 		// 16 colors
 		for(int y = 0; y < vs && y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 			for(int x = 0; x < 640; x++)
 				dest[x] = palette16txt[src_text[x]];
 		}
 		for(int y = vs; y < ve && y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 			for(int x = 0; x < hs && x < 640; x++)
 				dest[x] = palette16txt[src_text[x]];
@@ -690,7 +690,7 @@ void CRTC::draw_screen()
 				dest[x] = palette16txt[src_text[x]];
 		}
 		for(int y = ve; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 			for(int x = 0; x < 640; x++)
 				dest[x] = palette16txt[src_text[x]];
@@ -701,34 +701,34 @@ void CRTC::draw_screen()
 		if(emu->get_capture_device_buffer()) {
 			// enable super impose
 			for(int y = 0; y < vs && y < 400; y++) {
-				uint16 *dest = emu->screen_buffer(y);
+				scrntype *dest = emu->screen_buffer(y);
 				uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 				for(int x = 0; x < 640; x++) {
-					uint16 col = palette4096txt[src_text[x]];
+					scrntype col = palette4096txt[src_text[x]];
 					if(col) dest[x] = col;
 				}
 			}
 			for(int y = vs; y < ve && y < 400; y++) {
-				uint16 *dest = emu->screen_buffer(y);
+				scrntype *dest = emu->screen_buffer(y);
 				uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 				for(int x = 0; x < hs && x < 640; x++) {
-					uint16 col = palette4096txt[src_text[x]];
+					scrntype col = palette4096txt[src_text[x]];
 					if(col) dest[x] = col;
 				}
 				for(int x = hs; x < he && x < 640; x++) {
-					uint16 col = palette4096pri[src_cg[x]][src_text[x]];
+					scrntype col = palette4096pri[src_cg[x]][src_text[x]];
 					if(col) dest[x] = col;
 				}
 				for(int x = he; x < 640; x++) {
-					uint16 col = palette4096txt[src_text[x]];
+					scrntype col = palette4096txt[src_text[x]];
 					if(col) dest[x] = col;
 				}
 			}
 			for(int y = ve; y < 400; y++) {
-				uint16 *dest = emu->screen_buffer(y);
+				scrntype *dest = emu->screen_buffer(y);
 				uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 				for(int x = 0; x < 640; x++) {
-					uint16 col = palette4096txt[src_text[x]];
+					scrntype col = palette4096txt[src_text[x]];
 					if(col) dest[x] = col;
 				}
 			}
@@ -736,13 +736,13 @@ void CRTC::draw_screen()
 		else {
 			// disable super impose
 			for(int y = 0; y < vs && y < 400; y++) {
-				uint16 *dest = emu->screen_buffer(y);
+				scrntype *dest = emu->screen_buffer(y);
 				uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 				for(int x = 0; x < 640; x++)
 					dest[x] = palette4096txt[src_text[x]];
 			}
 			for(int y = vs; y < ve && y < 400; y++) {
-				uint16 *dest = emu->screen_buffer(y);
+				scrntype *dest = emu->screen_buffer(y);
 				uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 				for(int x = 0; x < hs && x < 640; x++)
 					dest[x] = palette4096txt[src_text[x]];
@@ -752,7 +752,7 @@ void CRTC::draw_screen()
 					dest[x] = palette4096txt[src_text[x]];
 			}
 			for(int y = ve; y < 400; y++) {
-				uint16 *dest = emu->screen_buffer(y);
+				scrntype *dest = emu->screen_buffer(y);
 				uint8 *src_cg = &cg[640 * y], *src_text = &text[640 * y];
 				for(int x = 0; x < 640; x++)
 					dest[x] = palette4096txt[src_text[x]];
@@ -763,10 +763,10 @@ void CRTC::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 640 - 8; x < 640; x++)
 				dest[x] = col;
 		}

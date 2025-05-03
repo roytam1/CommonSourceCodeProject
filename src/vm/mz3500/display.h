@@ -28,7 +28,7 @@ private:
 	uint8 screen[400][640];
 	uint8 scr_gfx[400][640];
 	uint8 font[0x2000];
-	uint16 palette_pc[8];
+	scrntype palette_pc[8];
 	int blink;
 	
 	// gdcc

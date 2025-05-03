@@ -58,11 +58,11 @@ private:
 	
 	// priority and palette
 	uint8 priority16[16][9];
-	uint16 palette16[16+8], palette4096[16];
+	scrntype palette16[16+8], palette4096[16];
 	uint8 palette4096r[16], palette4096g[16], palette4096b[16];
-	uint16 palette16txt[9], palette4096txt[9];
-	uint16 palette16pri[16][9], palette4096pri[16][9];
-	uint16 palette65536[0x10000];	// BRGI
+	scrntype palette16txt[9], palette4096txt[9];
+	scrntype palette16pri[16][9], palette4096pri[16][9];
+	scrntype palette65536[0x10000];	// BRGI
 	uint8 prev16;
 	bool update16;
 	

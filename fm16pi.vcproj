@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="shift_jis"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="fm16pi"
 	ProjectGUID="{F62D036D-7569-431B-9C55-C056A4D3145A}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -80,6 +81,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/fm16pi.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -101,9 +104,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -175,6 +175,8 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release/fm16pi.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -196,9 +198,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -270,6 +269,8 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release_d3d9/fm16pi.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -291,9 +292,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -577,6 +575,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\i86.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\io.cpp"
 					>
 					<FileConfiguration
@@ -618,26 +636,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\rtc58321.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\i86.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -801,6 +799,10 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\i86.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\io.h"
 					>
 				</File>
@@ -818,10 +820,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\vm.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\i86.h"
 					>
 				</File>
 			</Filter>

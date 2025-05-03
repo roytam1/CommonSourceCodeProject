@@ -259,10 +259,10 @@ void MEMORY::draw_screen()
 	if(dcr1 & 1)
 		draw_cg();
 	
-	uint16 cd = RGB_COLOR(6, 7, 2);
-	uint16 cb = RGB_COLOR(20, 21, 20);
+	scrntype cd = RGB_COLOR(48, 56, 16);
+	scrntype cb = RGB_COLOR(160, 168, 160);
 	for(int y = 0; y < 400; y++) {
-		uint16* dest = emu->screen_buffer(y);
+		scrntype* dest = emu->screen_buffer(y);
 		uint8* txt = screen_txt[y];
 		uint8* cg = screen_cg[y];
 		
@@ -273,11 +273,11 @@ void MEMORY::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0) | d_bios->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 31) :
-		             (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 255) :
+		               (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 640 - 8; x < 640; x++)
 				dest[x] = col;
 		}

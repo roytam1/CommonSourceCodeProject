@@ -31,7 +31,7 @@ private:
 	uint8 font[0x800];
 	uint8* vram;
 	uint8* attr;
-	uint16 palette_pc[8];
+	scrntype palette_pc[8];
 	bool scanline;
 	
 	void draw_screen0_normal(uint16 src);

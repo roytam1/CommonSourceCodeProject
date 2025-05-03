@@ -114,7 +114,7 @@ private:
 	uint8 udgc[256][255+2];
 	uint8 mov[64][80];
 	uint8 lcd[SCREEN_HEIGHT][SCREEN_WIDTH];
-	uint16 pd, pb;
+	scrntype pd, pb;
 	int blink;
 	// tf20
 	FIFO *tf20_buf;

@@ -1,5 +1,5 @@
 echo off
-set path=%path%;"C:\Program Files\Microsoft Visual Studio 8\Common7\IDE"
+set path=%path%;"C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE"
 mkdir build
 
 devenv.com fmr30.vcproj /Rebuild Release_d3d9

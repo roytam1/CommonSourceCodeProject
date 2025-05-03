@@ -38,11 +38,11 @@ void DISPLAY::initialize()
 	// create pc palette
 #ifdef _COLOR_MONITOR
 	for(int i = 0; i < 8; i++)
-		palette_pc[i] = RGB_COLOR(i & 1 ? 0x1f : 0, i & 2 ? 0x1f : 0, i & 4 ? 0x1f : 0);
+		palette_pc[i] = RGB_COLOR(i & 1 ? 255 : 0, i & 2 ? 255 : 0, (i & 4) ? 255 : 0);
 #else
 	for(int i = 1; i < 8; i++) {
-		palette_pc[i + 0] = RGB_COLOR(0, 0x14, 0);
-		palette_pc[i + 8] = RGB_COLOR(0, 0x1f, 0);
+		palette_pc[i + 0] = RGB_COLOR(0, 160, 0);
+		palette_pc[i + 8] = RGB_COLOR(0, 255, 0);
 	}
 	palette_pc[0] = palette_pc[8] = 0;
 #endif
@@ -268,7 +268,7 @@ void DISPLAY::draw_screen()
 			uint8* src = screen[y];
 			
 			for(int x = 0, dx = 0; x < 640 && dx < 640; x++) {
-				uint16 col = palette_pc[src[x] & 0xf];
+				scrntype col = palette_pc[src[x] & 0xf];
 				for(int zx = 0; zx < *zoom + 1; zx++) {
 					if(dx >= 640)
 						break;
@@ -279,14 +279,14 @@ void DISPLAY::draw_screen()
 			for(int zy = 1; zy < *zoom + 1; zy++) {
 				if(dy >= 400)
 					break;
-				uint16* dest = emu->screen_buffer(dy++);
-				_memcpy(dest, tmp, sizeof(uint16) * 640);
+				scrntype *dest = emu->screen_buffer(dy++);
+				_memcpy(dest, tmp, sizeof(scrntype) * 640);
 			}
 		}
 	}
 	else {
 		for(int y = 0; y < 400; y++) {
-			uint16* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->screen_buffer(y);
 			uint8* src = screen[y];
 			
 			for(int x = 0; x < 640; x++)
@@ -301,10 +301,10 @@ void DISPLAY::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 640 - 8; x < 640; x++)
 				dest[x] = col;
 		}

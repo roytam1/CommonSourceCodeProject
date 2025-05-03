@@ -80,14 +80,19 @@ void MEMORY::initialize()
 	}
 	delete fio;
 	
+	// set memory
+	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
+	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
+	SET_BANK(0xffc000, 0xffffff, wdmy, ipl);
+	
 	// set palette
 	for(int i = 0; i < 8; i++)
 		dpal[i] = i;
 	for(int i = 0; i < 16; i++) {
 		if(i & 8)
-			palette_cg[i] = RGB_COLOR(i & 2 ? 0x1f : 0, i & 4 ? 0x1f : 0, i & 1 ? 0x1f : 0);
+			palette_cg[i] = RGB_COLOR(i & 2 ? 255 : 0, i & 4 ? 255 : 0, i & 1 ? 255 : 0);
 		else
-			palette_cg[i] = RGB_COLOR(i & 2 ? 0x10 : 0, i & 4 ? 0x10 : 0, i & 1 ? 0x10 : 0);
+			palette_cg[i] = RGB_COLOR(i & 2 ? 127 : 0, i & 4 ? 127 : 0, i & 1 ? 127 : 0);
 		palette_txt[i] = palette_cg[i];
 	}
 	
@@ -312,17 +317,17 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0x40a:
 		// blue level register
 		apal[apalsel][0] = data & 0xf0;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
 	case 0x40c:
 		// red level register
 		apal[apalsel][1] = data & 0xf0;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
 	case 0x40e:
 		// green level register
 		apal[apalsel][2] = data & 0xf0;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
 	case 0xfd90:
 		// palette code register
@@ -331,17 +336,17 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0xfd92:
 		// blue level register
 		apal[apalsel][0] = data;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
 	case 0xfd94:
 		// red level register
 		apal[apalsel][1] = data;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
 	case 0xfd96:
 		// green level register
 		apal[apalsel][2] = data;
-		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1], apal[apalsel][2], apal[apalsel][0]);
 		break;
 	case 0xfd98:
 	case 0xfd99:
@@ -354,9 +359,9 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		// digital palette
 		dpal[addr & 7] = data;
 		if(data & 8)
-			palette_cg[addr & 7] = RGB_COLOR(data & 2 ? 0x1f : 0, data & 4 ? 0x1f : 0, data & 1 ? 0x1f : 0);
+			palette_cg[addr & 7] = RGB_COLOR(data & 2 ? 255 : 0, data & 4 ? 255 : 0, data & 1 ? 255 : 0);
 		else
-			palette_cg[addr & 7] = RGB_COLOR(data & 2 ? 0x10 : 0, data & 4 ? 0x10 : 0, data & 1 ? 0x10 : 0);
+			palette_cg[addr & 7] = RGB_COLOR(data & 2 ? 127 : 0, data & 4 ? 127 : 0, data & 1 ? 127 : 0);
 		break;
 	case 0xfda0:
 		// video output control
@@ -451,37 +456,42 @@ void MEMORY::event_frame()
 
 void MEMORY::update_bank()
 {
-	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
-	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 	if(!mainmem) {
-		SET_BANK(0x0c0000, 0x0effff, wdmy, rdmy);
+		SET_BANK(0xc0000, 0xeffff, wdmy, rdmy);
 		if(dispctrl & 0x40) {
 			// 400 line
 			int ofs = (rplane | ((pagesel >> 2) & 4)) * 0x8000;
-			SET_BANK(0x0c0000, 0x0c7fff, vram + ofs, vram + ofs);
+			SET_BANK(0xc0000, 0xc7fff, vram + ofs, vram + ofs);
 		}
 		else {
 			// 200 line
 			int ofs = (rplane | ((pagesel >> 1) & 0xc)) * 0x4000;
-			SET_BANK(0x0c0000, 0x0c3fff, vram + ofs, vram + ofs);
-			SET_BANK(0x0c4000, 0x0c7fff, vram + ofs, vram + ofs);
+			SET_BANK(0xc0000, 0xc3fff, vram + ofs, vram + ofs);
+			SET_BANK(0xc4000, 0xc7fff, vram + ofs, vram + ofs);
 		}
-		SET_BANK(0x0c8000, 0x0c8fff, cvram, cvram);
+		SET_BANK(0xc8000, 0xc8fff, cvram, cvram);
+		SET_BANK(0xc9000, 0xc9fff, wdmy, rdmy);
 		if(ankcg & 1) {
-			SET_BANK(0x0ca000, 0x0ca7ff, wdmy, ank8);
-			SET_BANK(0x0cb000, 0x0cbfff, wdmy, ank16);
+			SET_BANK(0xca000, 0xca7ff, wdmy, ank8);
+			SET_BANK(0xca800, 0xcafff, wdmy, rdmy);
+			SET_BANK(0xcb000, 0xcbfff, wdmy, ank16);
 		}
 		else {
-			SET_BANK(0x0ca000, 0x0cafff, kvram, kvram);
+			SET_BANK(0xca000, 0xcafff, kvram, kvram);
+			SET_BANK(0xcb000, 0xcbfff, wdmy, rdmy);
 		}
+		SET_BANK(0xcc000, 0xeffff, wdmy, rdmy);
+	}
+	else {
+		SET_BANK(0xc0000, 0xeffff, ram + 0xc0000, ram + 0xc0000);
 	}
 	if(!(protect & 0x20)) {
-//		SET_BANK(0x0f8000, 0x0fbfff, wdmy, rdmy);
-//		SET_BANK(0x0fc000, 0x0fffff, wdmy, ipl);
-		SET_BANK(0x0f8000, 0x0fbfff, ram + 0xf8000, rdmy);
-		SET_BANK(0x0fc000, 0x0fffff, ram + 0xfc000, ipl);
+		SET_BANK(0xf8000, 0xfbfff, ram + 0xf8000, rdmy);
+		SET_BANK(0xfc000, 0xfffff, ram + 0xfc000, ipl);
 	}
-	SET_BANK(0xffc000, 0xffffff, wdmy, ipl);
+	else {
+		SET_BANK(0xf8000, 0xfffff, ram + 0xf8000, ram + 0xf8000);
+	}
 }
 
 void MEMORY::draw_screen()
@@ -495,7 +505,7 @@ void MEMORY::draw_screen()
 		draw_cg();
 	
 	for(int y = 0; y < 400; y++) {
-		uint16* dest = emu->screen_buffer(y);
+		scrntype* dest = emu->screen_buffer(y);
 		uint8* txt = screen_txt[y];
 		uint8* cg = screen_cg[y];
 		
@@ -506,11 +516,11 @@ void MEMORY::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0) | d_bios->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 31) :
-		             (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 255) :
+		               (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 640 - 8; x < 640; x++)
 				dest[x] = col;
 		}

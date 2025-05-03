@@ -83,8 +83,8 @@ private:
 	int blink;
 	uint8 screen_txt[400][648];
 	uint8 screen_cg[400][640];
-	uint16 palette_txt[16];
-	uint16 palette_cg[16];
+	scrntype palette_txt[16];
+	scrntype palette_cg[16];
 	
 	void update_bank();
 	void draw_text();

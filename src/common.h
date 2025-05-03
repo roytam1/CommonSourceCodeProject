@@ -57,11 +57,21 @@ typedef signed int int32;
 
 // rgb color
 #ifdef _WIN32_WCE
-// RGB565
-#define RGB_COLOR(r, g, b) (uint16)(((uint16)(r) << 11) | ((uint16)(g) << 6) | (uint16)(b))
+#define _RGB565
 #else
-// RGB555
-#define RGB_COLOR(r, g, b) (uint16)(((uint16)(r) << 10) | ((uint16)(g) << 5) | (uint16)(b))
+//#define _RGB555
+#define _RGB888
+#endif
+
+#if defined(_RGB555)
+#define RGB_COLOR(r, g, b) ((uint16)(((uint16)(r) & 0xf8) << 7) | (uint16)(((uint16)(g) & 0xf8) << 2) | (uint16)(((uint16)(b) & 0xf8) >> 3))
+typedef uint16 scrntype;
+#elif defined(_RGB565)
+#define RGB_COLOR(r, g, b) ((uint16)(((uint16)(r) & 0xf8) << 8) | (uint16)(((uint16)(g) & 0xfc) << 3) | (uint16)(((uint16)(b) & 0xf8) >> 3))
+typedef uint16 scrntype;
+#elif defined(_RGB888)
+#define RGB_COLOR(r, g, b) (((uint16)(r) << 16) | ((uint16)(g) << 8) | ((uint16)(b) << 0))
+typedef uint32 scrntype;
 #endif
 
 #endif

@@ -33,15 +33,18 @@ void EMU::initialize_screen()
 	lpDibOut->bmiHeader.biWidth = SECOND_BUFFER_WIDTH;
 	lpDibOut->bmiHeader.biHeight = SECOND_BUFFER_HEIGHT;
 	lpDibOut->bmiHeader.biPlanes = 1;
+#if defined(_RGB555)
 	lpDibOut->bmiHeader.biBitCount = 16;
-#ifdef _WIN32_WCE
-	// RGB565
+	lpDibOut->bmiHeader.biCompression = BI_RGB;
+#elif defined(_RGB565)
+	lpDibOut->bmiHeader.biBitCount = 16;
 	lpDibOut->bmiHeader.biCompression = BI_BITFIELDS;
 	LPDWORD lpBfOut = (LPDWORD)lpDibOut->bmiColors;
 	lpBfOut[0] = 0x1f << 11;
 	lpBfOut[1] = 0x3f << 5;
 	lpBfOut[2] = 0x1f << 0;
-#else
+#elif defined(_RGB888)
+	lpDibOut->bmiHeader.biBitCount = 32;
 	lpDibOut->bmiHeader.biCompression = BI_RGB;
 #endif
 	lpDibOut->bmiHeader.biSizeImage = 0;
@@ -115,15 +118,18 @@ void EMU::create_screen_buffer(HDC hdc)
 	lpDib->bmiHeader.biWidth = screen_width;
 	lpDib->bmiHeader.biHeight = screen_height;
 	lpDib->bmiHeader.biPlanes = 1;
+#if defined(_RGB555)
 	lpDib->bmiHeader.biBitCount = 16;
-#ifdef _WIN32_WCE
-	// RGB565
+	lpDib->bmiHeader.biCompression = BI_RGB;
+#elif defined(_RGB565)
+	lpDib->bmiHeader.biBitCount = 16;
 	lpDib->bmiHeader.biCompression = BI_BITFIELDS;
 	LPDWORD lpBf = (LPDWORD)lpDib->bmiColors;
 	lpBf[0] = 0x1f << 11;
 	lpBf[1] = 0x3f << 5;
 	lpBf[2] = 0x1f << 0;
-#else
+#elif defined(_RGB888)
+	lpDib->bmiHeader.biBitCount = 32;
 	lpDib->bmiHeader.biCompression = BI_RGB;
 #endif
 	lpDib->bmiHeader.biSizeImage = 0;
@@ -259,21 +265,21 @@ void EMU::draw_screen()
 	// stretch screen
 	if(!(stretch_x == 1 && stretch_y == 1)) {
 		for(int y = 0; y < screen_height; y++) {
-			uint16* src = lpBmp + screen_width * (screen_height - y - 1);
-			uint16* out = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - 1);
+			scrntype* src = lpBmp + screen_width * (screen_height - y - 1);
+			scrntype* out = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - 1);
 			if(stretch_x > 1) {
-				uint16* outx = out;
+				scrntype* outx = out;
 				for(int x = 0; x < screen_width; x++) {
-					uint16 col = src[x];
+					scrntype col = src[x];
 					for(int px = 0; px < stretch_x; px++)
 						*outx++ = col;
 				}
 			}
 			else
-				_memcpy(out, src, screen_width * 2);
+				_memcpy(out, src, screen_width * sizeof(scrntype));
 			for(int py = 1; py < stretch_y; py++) {
-				uint16* outy = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - py - 1);
-				_memcpy(outy, out, screen_width * stretch_x * 2);
+				scrntype* outy = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - py - 1);
+				_memcpy(outy, out, screen_width * stretch_x * sizeof(scrntype));
 			}
 		}
 		use_buffer = true;
@@ -282,8 +288,8 @@ void EMU::draw_screen()
 	// rotate screen
 	if(now_rotate) {
 		for(int y = 0; y < screen_height; y++) {
-			uint16* src = lpBmp + screen_width * (screen_height - y - 1);
-			uint16* out = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - 1) + (screen_height - y - 1);
+			scrntype* src = lpBmp + screen_width * (screen_height - y - 1);
+			scrntype* out = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - 1) + (screen_height - y - 1);
 			for(int x = 0; x < screen_width; x++) {
 				*out = src[x];
 				out -= SECOND_BUFFER_WIDTH;
@@ -335,7 +341,7 @@ void EMU::update_screen(HDC hdc)
 #endif
 }
 
-uint16* EMU::screen_buffer(int y)
+scrntype* EMU::screen_buffer(int y)
 {
 	return lpBmp + screen_width * (screen_height - y - 1);
 }

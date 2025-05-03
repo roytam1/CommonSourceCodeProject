@@ -70,7 +70,7 @@ void VDP::draw_screen()
 		}
 	}
 	for(int y = 0; y < 192; y++) {
-		uint16* dest = emu->screen_buffer(y);
+		scrntype* dest = emu->screen_buffer(y);
 		for(int x = 0; x < 256; x++)
 			dest[x] = palette_pc[bg[y][x] & 7];
 	}

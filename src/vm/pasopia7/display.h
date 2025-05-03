@@ -36,7 +36,7 @@ private:
 	uint8* vram_g;
 	uint8* vram_a;
 	uint8* pal;
-	uint16 palette_pc[8];
+	scrntype palette_pc[8];
 	bool scanline;
 	
 	void draw_text_normal(uint16 src);

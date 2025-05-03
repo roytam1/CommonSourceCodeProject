@@ -15,9 +15,9 @@
 #include "../../emu.h"
 #include "../device.h"
 
-static const uint16 palette_pc[8] = {
-	RGB_COLOR( 0, 0, 0), RGB_COLOR(31, 0, 0), RGB_COLOR( 0,31, 0), RGB_COLOR(31,31, 0),
-	RGB_COLOR( 0, 0,31), RGB_COLOR(31, 0,31), RGB_COLOR( 0,31,31), RGB_COLOR(31,31,31)
+static const scrntype palette_pc[8] = {
+	RGB_COLOR(  0,  0,  0), RGB_COLOR(255,  0,  0), RGB_COLOR(  0,255,  0), RGB_COLOR(255,255,  0),
+	RGB_COLOR(  0,  0,255), RGB_COLOR(255,  0,255), RGB_COLOR(  0,255,255), RGB_COLOR(255,255,255)
 };
 static const uint8 plane[4] = {0, 1, 2, 4};
 

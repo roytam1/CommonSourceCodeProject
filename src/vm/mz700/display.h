@@ -22,7 +22,7 @@ private:
 	uint8 font[0x1000];
 	uint8 *vram_char;
 	uint8 *vram_col;
-	uint16 palette_pc[8];
+	scrntype palette_pc[8];
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

@@ -21,7 +21,7 @@ private:
 	DEVICE *d_pic, *d_fdc;
 	int did_pic;
 	
-	uint16 palette_pc[16];
+	scrntype palette_pc[16];
 	uint16 palette[16];
 	uint8 sel, regs[8];
 	uint16 vs, cmd;

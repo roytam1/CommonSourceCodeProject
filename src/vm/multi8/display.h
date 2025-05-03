@@ -36,7 +36,7 @@ private:
 	uint8* vram_g;
 	uint8* vram_t;
 	uint8* vram_a;
-	uint16 palette_pc[8];
+	scrntype palette_pc[8];
 	bool scanline;
 	
 	void draw_graph_color();

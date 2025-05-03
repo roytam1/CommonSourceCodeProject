@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="shift_jis"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="hc40"
 	ProjectGUID="{E189B8CC-341D-4715-9266-08610C61015A}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -80,6 +81,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/hc40.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -101,9 +104,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -175,6 +175,8 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release/hc40.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -196,9 +198,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -270,6 +269,8 @@
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile=".\Release_d3d9/hc40.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -291,9 +292,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -602,6 +600,26 @@
 				Filter="cpp"
 				>
 				<File
+					RelativePath="src\vm\hc40\hc40.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\hc40\io.cpp"
 					>
 					<FileConfiguration
@@ -623,26 +641,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\hc40\memory.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\hc40\hc40.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -734,15 +732,15 @@
 				Filter="h"
 				>
 				<File
+					RelativePath="src\vm\hc40\hc40.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\hc40\io.h"
 					>
 				</File>
 				<File
 					RelativePath="src\vm\hc40\memory.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\hc40\hc40.h"
 					>
 				</File>
 			</Filter>
@@ -751,10 +749,6 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
-			<File
-				RelativePath="src\res\resource.h"
-				>
-			</File>
 			<File
 				RelativePath="src\res\hc40.ico"
 				>
@@ -780,6 +774,10 @@
 						AdditionalIncludeDirectories="src\res"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="src\res\resource.h"
+				>
 			</File>
 		</Filter>
 	</Files>

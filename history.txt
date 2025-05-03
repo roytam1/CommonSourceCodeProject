@@ -1,3 +1,14 @@
+1/16/2009
+
+[EMU/WIN32] change screen buffer type from uint16 to user-defined type
+[EMU/WIN32] change screen buffer depth from RGB555 to RGB888 on windows pc
+[VM/I8155] support i8155
+
+[FMR50/MEMORY] optimize memory bank switch
+
+*) change the compiler from vs2005 to vs2008
+
+
 1/2/2009
 
 [EMU/WIN32] support power off requested by vm

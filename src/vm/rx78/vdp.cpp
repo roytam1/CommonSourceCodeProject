@@ -110,7 +110,7 @@ void VDP::draw_screen()
 	
 	// copy to screen buffer
 	for(int y = 0; y < 184; y++) {
-		uint16* dest = emu->screen_buffer(y);
+		scrntype* dest = emu->screen_buffer(y);
 		uint8* src0 = screen0[y];
 		uint8* src1 = screen1[y];
 		
@@ -126,9 +126,9 @@ void VDP::create_pal()
 		uint8 tmp = ((i & 1) ? reg[0] : 0) | ((i & 2) ? reg[1] : 0) | ((i & 4) ? reg[2] : 0);
 		if(tmp & cmask)
 			tmp &= cmask;
-		uint16 r = ((tmp & 0x11) == 0x11) ? 0x1f : ((tmp & 0x11) == 0x1) ? 0xf : 0;
-		uint16 g = ((tmp & 0x22) == 0x22) ? 0x1f : ((tmp & 0x22) == 0x2) ? 0xf : 0;
-		uint16 b = ((tmp & 0x44) == 0x44) ? 0x1f : ((tmp & 0x44) == 0x4) ? 0xf : 0;
+		uint16 r = ((tmp & 0x11) == 0x11) ? 255 : ((tmp & 0x11) == 0x1) ? 127 : 0;
+		uint16 g = ((tmp & 0x22) == 0x22) ? 255 : ((tmp & 0x22) == 0x2) ? 127 : 0;
+		uint16 b = ((tmp & 0x44) == 0x44) ? 255 : ((tmp & 0x44) == 0x4) ? 127 : 0;
 		
 		palette_pc[i] = RGB_COLOR(r, g, b);
 	}
@@ -136,9 +136,9 @@ void VDP::create_pal()
 		uint8 tmp = ((i & 1) ? reg[3] : 0) | ((i & 2) ? reg[4] : 0) | ((i & 4) ? reg[5] : 0);
 		if(tmp & cmask)
 			tmp &= cmask;
-		uint16 r = ((tmp & 0x11) == 0x11) ? 0x1f : ((tmp & 0x11) == 0x1) ? 0xf : 0;
-		uint16 g = ((tmp & 0x22) == 0x22) ? 0x1f : ((tmp & 0x22) == 0x2) ? 0xf : 0;
-		uint16 b = ((tmp & 0x44) == 0x44) ? 0x1f : ((tmp & 0x44) == 0x4) ? 0xf : 0;
+		uint16 r = ((tmp & 0x11) == 0x11) ? 255 : ((tmp & 0x11) == 0x1) ? 127 : 0;
+		uint16 g = ((tmp & 0x22) == 0x22) ? 255 : ((tmp & 0x22) == 0x2) ? 127 : 0;
+		uint16 b = ((tmp & 0x44) == 0x44) ? 255 : ((tmp & 0x44) == 0x4) ? 127 : 0;
 		
 		palette_pc[i] = RGB_COLOR(r, g, b);
 	}
@@ -147,9 +147,9 @@ void VDP::create_pal()
 void VDP::create_bg()
 {
 	// create bg palette
-	uint16 r = ((bg & 0x11) == 0x11) ? 0x1f : ((bg & 0x11) == 0x1) ? 0xf : 0;
-	uint16 g = ((bg & 0x22) == 0x22) ? 0x1f : ((bg & 0x22) == 0x2) ? 0xf : 0;
-	uint16 b = ((bg & 0x44) == 0x44) ? 0x1f : ((bg & 0x44) == 0x4) ? 0xf : 0;
+	uint16 r = ((bg & 0x11) == 0x11) ? 255 : ((bg & 0x11) == 0x1) ? 127 : 0;
+	uint16 g = ((bg & 0x22) == 0x22) ? 255 : ((bg & 0x22) == 0x2) ? 127 : 0;
+	uint16 b = ((bg & 0x44) == 0x44) ? 255 : ((bg & 0x44) == 0x4) ? 127 : 0;
 	
 	palette_pc[16] = RGB_COLOR(r, g, b);
 }

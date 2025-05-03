@@ -137,7 +137,7 @@ void TMS9918A::draw_screen()
 {
 	// update screen buffer
 	for(int y = 0; y < 192; y++) {
-		uint16* dest = emu->screen_buffer(y);
+		scrntype* dest = emu->screen_buffer(y);
 		uint8* src = screen[y];
 		for(int x = 0; x < 256; x++)
 			dest[x] = palette_pc[src[x] & 0xf];

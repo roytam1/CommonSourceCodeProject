@@ -16,13 +16,11 @@
 #include "../emu.h"
 #include "device.h"
 
-#define RGB_PAL(r, g, b) RGB_COLOR((uint16)((r) >> 3), (uint16)((g) >> 3), (uint16)((b) >> 3))
-
-static const uint16 palette_pc[16] = {
-	RGB_PAL(  0,   0,   0), RGB_PAL(  0,   0,   0), RGB_PAL( 33, 200,  66), RGB_PAL( 94, 220, 120),
-	RGB_PAL( 84,  85, 237), RGB_PAL(125, 118, 252), RGB_PAL(212,  82,  77), RGB_PAL( 66, 235, 245),
-	RGB_PAL(252,  85,  84), RGB_PAL(255, 121, 120), RGB_PAL(212, 193,  84), RGB_PAL(230, 206, 128),
-	RGB_PAL( 33, 176,  59), RGB_PAL(201,  91, 186), RGB_PAL(204, 204, 204), RGB_PAL(255, 255, 255)
+static const scrntype palette_pc[16] = {
+	RGB_COLOR(  0,   0,   0), RGB_COLOR(  0,   0,   0), RGB_COLOR( 33, 200,  66), RGB_COLOR( 94, 220, 120),
+	RGB_COLOR( 84,  85, 237), RGB_COLOR(125, 118, 252), RGB_COLOR(212,  82,  77), RGB_COLOR( 66, 235, 245),
+	RGB_COLOR(252,  85,  84), RGB_COLOR(255, 121, 120), RGB_COLOR(212, 193,  84), RGB_COLOR(230, 206, 128),
+	RGB_COLOR( 33, 176,  59), RGB_COLOR(201,  91, 186), RGB_COLOR(204, 204, 204), RGB_COLOR(255, 255, 255)
 };
 
 class TMS9918A : public DEVICE

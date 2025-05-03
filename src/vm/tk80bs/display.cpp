@@ -40,8 +40,8 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 void DISPLAY::draw_screen()
 {
 	// draw screen
-	uint16 col_w = (mode & 2) ? RGB_COLOR(31, 31, 31) : 0;
-	uint16 col_b = (mode & 2) ? 0 : RGB_COLOR(31, 31, 31);
+	scrntype col_w = (mode & 2) ? RGB_COLOR(255, 255, 255) : 0;
+	scrntype col_b = (mode & 2) ? 0 : RGB_COLOR(255, 255, 255);
 	int code_ofs = (mode & 1) << 8;
 	int ptr = 0;
 	
@@ -52,7 +52,7 @@ void DISPLAY::draw_screen()
 			
 			for(int l = 0; l < 8; l++) {
 				uint8 pat = font_base[l];
-				uint16* dest = &screen[l][x];
+				scrntype* dest = &screen[l][x];
 				
 				dest[0] = (pat & 0x80) ? col_w : col_b;
 				dest[1] = (pat & 0x40) ? col_w : col_b;
@@ -65,16 +65,16 @@ void DISPLAY::draw_screen()
 			}
 		}
 		for(int l = 0; l < 8; l++) {
-			uint16* dest = emu->screen_buffer(y + l);
-			uint16* src = screen[l];
-			_memcpy(dest, src, 512);	// 256*sizeof(uint16)
+			scrntype* dest = emu->screen_buffer(y + l);
+			scrntype* src = screen[l];
+			_memcpy(dest, src, 256 * sizeof(scrntype));
 		}
 	}
 	// draw leds
-	uint16 col_red = RGB_COLOR(31, 0, 0);
-	uint16 col_on = RGB_COLOR(31, 1, 9);
-	uint16 col_off = RGB_COLOR(7, 0, 0);
-	uint16 col[10];
+	scrntype col_red = RGB_COLOR(255, 0, 0);
+	scrntype col_on = RGB_COLOR(255, 8, 72);
+	scrntype col_off = RGB_COLOR(56, 0, 0);
+	scrntype col[10];
 	
 	_memset(screen, 0, sizeof(screen));
 	for(int i = 0; i < 8; i++) {
@@ -91,7 +91,7 @@ void DISPLAY::draw_screen()
 			col[8] = pat & 0x80 ? col_on : col_off;
 			col[9] = col_red;
 			for(int y = 0; y < 35; y++) {
-				uint16 *dest = &screen[y + 1][dest_x[i]];
+				scrntype *dest = &screen[y + 1][dest_x[i]];
 				for(int x = 0; x < 24; x++)
 					dest[x] = col[pat_led[y][x]];
 			}
@@ -102,16 +102,16 @@ void DISPLAY::draw_screen()
 	col[2] = d_key->read_signal(0) & 2 ? col_red : col_off;
 	
 	for(int y = 0; y < 31; y++) {
-		uint16 *dest = &screen[y + 3][210];
+		scrntype *dest = &screen[y + 3][210];
 		for(int x = 0; x < 42; x++)
 			dest[x] = col[pat_kb[y][x]];
 	}
 	
 	// copy to screen
 	for(int y = 0; y < 36; y++) {
-		uint16* dest = emu->screen_buffer(y + 128);
-		uint16* src = screen[y];
-		_memcpy(dest, src, 512);	// 256*sizeof(uint16)
+		scrntype* dest = emu->screen_buffer(y + 128);
+		scrntype* src = screen[y];
+		_memcpy(dest, src, 256 * sizeof(scrntype));
 	}
 }
 

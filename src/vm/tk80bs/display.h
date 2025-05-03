@@ -98,7 +98,7 @@ private:
 	DEVICE* d_key;
 	
 	uint8 font[0x1000];
-	uint16 screen[36][256];
+	scrntype screen[36][256];
 	
 	uint8 *vram, *led;
 	int mode, dma;

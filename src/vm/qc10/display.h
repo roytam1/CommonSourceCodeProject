@@ -29,11 +29,11 @@ private:
 	uint8 vram_r[VRAM_SIZE];
 	uint8 vram_g[VRAM_SIZE];
 	uint8 vram_b[VRAM_SIZE];
-	uint16 palette_pc[8];
+	scrntype palette_pc[8];
 #else
 	uint8 vram[VRAM_SIZE];
 	uint8 font[0x10000];	// 16bytes * 256chars
-	uint16 palette_pc[16];	// normal, intensify
+	scrntype palette_pc[16];	// normal, intensify
 #endif
 	uint8 screen[400][640];
 	uint16 tmp[640];

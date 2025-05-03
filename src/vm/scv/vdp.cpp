@@ -67,14 +67,14 @@ void VDP::draw_screen()
 	
 	for(int y = 0; y < ty; y++) {
 		// patch for nekketsu kung-fu road
-		uint16* d = emu->screen_buffer(y);
+		scrntype* d = emu->screen_buffer(y);
 		uint8* t = &text[y + 23][24];
 		
 		for(int x = 0; x < SCREEN_WIDTH; x++)
 			d[x] = palette_pc[t[x]];
 	}
 	for(int y = ty; y < SCREEN_HEIGHT; y++) {
-		uint16* d = emu->screen_buffer(y);
+		scrntype* d = emu->screen_buffer(y);
 		uint8* s = &sprite[y + 21][28];
 		uint8* t = &text[y + 23][24];
 		

@@ -196,13 +196,13 @@ private:
 	HDC hdcDib;
 	HBITMAP hBmp;
 	LPBYTE lpBuf;
-	LPWORD lpBmp;
+	scrntype* lpBmp;
 	LPBITMAPINFO lpDib;
 #ifdef USE_SECOND_BUFFER
 	HDC hdcDibOut;
 	HBITMAP hBmpOut;
 	LPBYTE lpBufOut;
-	LPWORD lpBmpOut;
+	scrntype* lpBmpOut;
 	LPBITMAPINFO lpDibOut;
 #endif
 #ifdef _USE_D3D9
@@ -509,7 +509,7 @@ public:
 	
 	// screen
 	void change_screen_size(int sw, int sh, int swa, int ww1, int wh1, int ww2, int wh2);
-	uint16* screen_buffer(int y);
+	scrntype* screen_buffer(int y);
 	
 	// timer
 	void get_timer(int time[]);

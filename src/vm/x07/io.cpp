@@ -250,8 +250,8 @@ void IO::update_intr()
 
 void IO::draw_screen()
 {
-	uint16 cd = RGB_COLOR(6, 7, 2);
-	uint16 cb = RGB_COLOR(20, 21, 20);
+	scrntype cd = RGB_COLOR(48, 56, 16);
+	scrntype cb = RGB_COLOR(160, 168, 160);
 	
 	for(int y = 0; y < 4; y++) {
 		int py = y * 8;
@@ -259,7 +259,7 @@ void IO::draw_screen()
 			int px = x * 6;
 			if(cursor_on && (cursor_blink & 0x20) && cursor_x == x && cursor_y == y) {
 				for(int l = 0; l < 8; l++) {
-					uint16* dest = emu->screen_buffer(py + l);
+					scrntype* dest = emu->screen_buffer(py + l);
 					dest += px;
 					dest[0] = dest[1] = dest[2] = dest[3] = dest[4] = dest[5] = (l < 7) ? cb : cd;
 				}
@@ -267,7 +267,7 @@ void IO::draw_screen()
 			else {
 				for(int l = 0; l < 8; l++) {
 					uint8* src = &lcd[py + l][px];
-					uint16* dest = emu->screen_buffer(py + l);
+					scrntype* dest = emu->screen_buffer(py + l);
 					dest += px;
 					dest[0] = src[0] ? cd : cb;
 					dest[1] = src[1] ? cd : cb;

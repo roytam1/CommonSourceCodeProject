@@ -30,7 +30,7 @@ void DISPLAY::initialize()
 	
 	// create pc palette
 	for(int i = 0; i < 8; i++)
-		palette_pc[i] = RGB_COLOR((i & 2) ? 0x1f : 0, (i & 4) ? 0x1f : 0, (i & 1) ? 0x1f : 0);
+		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
 	
 	// initialize
 	for(int i = 0; i < 7; i++)
@@ -123,8 +123,8 @@ void DISPLAY::draw_screen()
 		draw_text_normal();
 	
 	for(int y = 0; y < 200; y++) {
-		uint16* dest0 = emu->screen_buffer(y * 2 + 0);
-		uint16* dest1 = emu->screen_buffer(y * 2 + 1);
+		scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
+		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
 		uint8* src = screen[y];
 		
 		for(int x = 0; x < 640; x++)
@@ -132,19 +132,19 @@ void DISPLAY::draw_screen()
 		if(scanline) {
 //			for(int x = 0; x < 640; x++)
 //				dest1[x] = palette_pc[0];
-			_memset(dest1, 0, 640 * 2);
+			_memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 		else
-			_memcpy(dest1, dest0, 640 * 2);
+			_memcpy(dest1, dest0, 640 * sizeof(scrntype));
 	}
 	
 	// access lamp
 	uint32 stat_f = dev->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
-		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
+		scrntype col = (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
+		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
-			uint16 *dest = emu->screen_buffer(y);
+			scrntype *dest = emu->screen_buffer(y);
 			for(int x = 640 - 8; x < 640; x++)
 				dest[x] = col;
 		}

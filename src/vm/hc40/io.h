@@ -92,7 +92,7 @@ private:
 	uint8 extcr;
 	
 	// display
-	uint16 pd, pb;
+	scrntype pd, pb;
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
