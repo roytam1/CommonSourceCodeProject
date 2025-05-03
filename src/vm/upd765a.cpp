@@ -964,7 +964,7 @@ uint32 UPD765A::read_sector()
 			continue;
 		}
 		// sector number is matched
-		if(disk[drv]->data_size_shift != 0 || disk[drv]->too_many_sectors) {
+		if(disk[drv]->invalid_format) {
 			memset(buffer, disk[drv]->drive_mfm ? 0x4e : 0xff, sizeof(buffer));
 			memcpy(buffer, disk[drv]->sector, disk[drv]->sector_size.sd);
 		} else {

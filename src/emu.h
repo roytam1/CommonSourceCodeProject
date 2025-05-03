@@ -346,7 +346,7 @@ private:
 	IBasicVideo *pBasicVideo;
 	IBasicAudio *pBasicAudio;
 	bool bTimeFormatFrame;
-	bool bVirticalReversed;
+	bool bVerticalReversed;
 	
 	HDC hdcDibDShow;
 	HBITMAP hBmpDShow, hOldBmpDShow;

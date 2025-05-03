@@ -1,3 +1,11 @@
+2/28/2015
+
+[COMMON] fix typo virtical to vertical (thanks Mr.Koucha-Youkan)
+
+[VM/DISK] fix to use correct gap0/gap1/gap3 length for known format images
+[VM/Z80] fix disassembler (thanks Mr.Reddam)
+
+
 2/21/2015
 
 [WIN32/INPUT] support to specify wait after shift key is pressed or released
