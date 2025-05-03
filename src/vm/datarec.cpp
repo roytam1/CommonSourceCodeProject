@@ -386,7 +386,7 @@ bool DATAREC::play_tape(_TCHAR* file_path)
 			if((buffer_length = load_mzt_image()) != 0) {
 				buffer = (uint8 *)malloc(buffer_length);
 				load_mzt_image();
-				play = true;
+				play = is_wav = true;
 			}
 		} else if(check_file_extension(file_path, _T(".mtw"))) {
 			// skip mzt image
@@ -523,6 +523,8 @@ void DATAREC::close_file()
 
 // standard cas image for my emulator
 
+static const uint8 msx_cas_header[8] = {0x1f, 0xa6, 0xde, 0xba, 0xcc, 0x13, 0x7d, 0x74};
+
 int DATAREC::load_cas_image()
 {
 	sample_rate = 48000;
@@ -530,12 +532,14 @@ int DATAREC::load_cas_image()
 	
 	// SORD m5 or NEC PC-6001 series cas image ?
 	static const uint8 momomomomomo[6] = {0xd3, 0xd3, 0xd3, 0xd3, 0xd3, 0xd3};
-	uint8 tmp_header[16];
+	uint8 tmp_header[8];
 	play_fio->Fseek(0, FILEIO_SEEK_SET);
 	play_fio->Fread(tmp_header, sizeof(tmp_header), 1);
 	
 	if(memcmp(tmp_header, "SORDM5", 6) == 0) {
 		return load_m5_cas_image();
+	} else if(memcmp(tmp_header, msx_cas_header, 8) == 0) {
+		return load_msx_cas_image();
 	} else if(memcmp(tmp_header, momomomomomo, 6) == 0) {
 		return load_p6_image(false);
 	}
@@ -875,6 +879,82 @@ int DATAREC::load_m5_cas_image()
 	return ptr;
 }
 
+// ASCII MSX tape image (fMSX)
+// MAME/MESS /src/lib/formats/fmsx_cas.c by Mr.Sean Yong
+
+#define CAS_PERIOD		(16)
+#define CAS_HEADER_PERIODS	(4000)
+#define CAS_EMPTY_PERIODS	(1000)
+
+int DATAREC::load_msx_cas_image()
+{
+	sample_rate = 22050;
+	sample_usec = 1000000. / sample_rate;
+	
+	play_fio->Fseek(0, FILEIO_SEEK_END);
+	int cas_size = play_fio->Ftell();
+	uint8 *bytes = (uint8 *)malloc(cas_size);
+	play_fio->Fseek(0, FILEIO_SEEK_SET);
+	play_fio->Fread(bytes, cas_size, 1);
+	
+	int cas_pos, bit, state = 1, samples_pos, size, n, i, p;
+	
+	cas_pos = 0;
+	samples_pos = 0;
+	
+	while(/*samples_pos < sample_count && */cas_pos < cas_size) {
+		/* Check if we need to output a header */
+		if(cas_pos + 8 < cas_size) {
+			if(!memcmp( bytes + cas_pos, msx_cas_header, 8)) {
+				/* Write CAS_EMPTY_PERIODS of silence */
+				n = CAS_EMPTY_PERIODS * CAS_PERIOD;
+				while(n--) {
+					if(buffer != NULL) {
+						buffer[samples_pos] = 0;
+					}
+					samples_pos++;
+				}
+				/* Write CAS_HEADER_PERIODS of header (high frequency) */
+				for(i = 0; i < CAS_HEADER_PERIODS * 4 ; i++) {
+					for(n = 0; n < CAS_PERIOD / 4; n++) {
+						if(buffer != NULL) {
+							buffer[samples_pos + n] = (state ? 0xff : 0);
+						}
+					}
+					samples_pos += CAS_PERIOD / 4 ;
+					state = !state;
+				}
+				cas_pos += 8;
+			}
+		}
+		
+		for(i = 0; i <= 11; i++) {
+			if(i == 0) {
+				bit = 0;
+			} else if(i < 9) {
+				bit = (bytes[cas_pos] & (1 << (i - 1) ) );
+			} else {
+				bit = 1;
+			}
+			
+			/* write this one bit */
+			for(n = 0; n < (bit ? 4 : 2); n++) {
+				size = (bit ? CAS_PERIOD / 4 : CAS_PERIOD / 2);
+				for(p = 0; p < size; p++) {
+					if(buffer != NULL) {
+						buffer[samples_pos + p] = (state ? 0xff : 0);
+					}
+				}
+				state = !state;
+				samples_pos += size;
+			}
+		}
+		cas_pos++;
+	}
+	free(bytes);
+	return samples_pos;
+}
+
 #define P6_PUT_1200HZ() { \
 	if(buffer != NULL) { \
 		for(int p = 0; p < 20; p++) buffer[ptr++] = 0xff; \
@@ -1103,15 +1183,27 @@ int DATAREC::load_t77_image()
 
 // SHARP MZ series tape image
 
+//#define MZT_PUT_SIGNAL(signal, len) { \
+//	int remain = len; \
+//	while(remain > 0) { \
+//		if(buffer != NULL) { \
+//			buffer[ptr++] = ((signal != 0) ? 0x80 : 0) | min(remain, 0x7f); \
+//		} else { \
+//			ptr++; \
+//		} \
+//		remain -= min(remain, 0x7f); \
+//	} \
+//}
+
 #define MZT_PUT_SIGNAL(signal, len) { \
 	int remain = len; \
 	while(remain > 0) { \
 		if(buffer != NULL) { \
-			buffer[ptr++] = ((signal != 0) ? 0x80 : 0) | min(remain, 0x7f); \
+			buffer[ptr++] = (signal != 0) ? 0xff : 0; \
 		} else { \
 			ptr++; \
 		} \
-		remain -= min(remain, 0x7f); \
+		remain--; \
 	} \
 }
 

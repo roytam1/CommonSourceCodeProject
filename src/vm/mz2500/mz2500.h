@@ -24,6 +24,8 @@
 #define HAS_MB8876
 #define HAS_RP5C15
 #define DATAREC_SOUND
+// FIXME: need to adjust speed for BASIC-M25 Demonstration
+//#define DATAREC_FF_REW_SPEED	10
 #define SUPPORT_VARIABLE_TIMING
 
 // memory wait
@@ -37,6 +39,7 @@
 #define USE_FD3
 #define USE_FD4
 #define USE_TAPE
+#define USE_TAPE_BUTTON
 #define USE_SOCKET
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
@@ -176,6 +179,12 @@ public:
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
+	void push_play();
+	void push_stop();
+	void push_fast_forward();
+	void push_fast_rewind();
+	void push_apss_forward() {}
+	void push_apss_rewind() {}
 	bool now_skip();
 	
 	void update_config();
