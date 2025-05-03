@@ -1,3 +1,14 @@
+10/25/2014
+
+[WINMAIN] fix frame rate issue (thanks Mr.Rednow)
+[WIN32/DEBUGGER] fix issue about inputting decimal value
+
+[VM/Z80] fix disassembler
+
+[PC8801MA/PC88] fix uPD8257 dma controller
+[PC9801] fix PC-9801-26K bios size
+
+
 10/11/2014
 
 [WIN32/DEBUGGER] fix issue that hexa value ends with d is recognized as decimal

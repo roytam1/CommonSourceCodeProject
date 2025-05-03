@@ -39,20 +39,6 @@ void my_putch(HANDLE hStdOut, _TCHAR c)
 	WriteConsole(hStdOut, &c, 1, &dwWritten, NULL);
 }
 
-//bool is_decimal(_TCHAR *str)
-//{
-//	int len = _tcslen(str);
-//	if(len >= 3 && str[0] >= _T('1') && str[0] <= _T('9') && (str[len - 1] == _T('D') || str[len - 1] == _T('d'))) {
-//		for(int i = 1; i < len - 1; i++) {
-//			if(!(str[0] >= _T('0') && str[0] <= _T('9'))) {
-//				return false;
-//			}
-//		}
-//		return true;
-//	}
-//	return false;
-//}
-
 uint32 my_hexatoi(_TCHAR *str)
 {
 	_TCHAR *s;
@@ -66,9 +52,9 @@ uint32 my_hexatoi(_TCHAR *str)
 		// 0000:0000
 		s[0] = _T('\0');
 		return (my_hexatoi(str) << 4) + my_hexatoi(s + 1);
-//	} else if(is_decimal(str)) {
-//		// decimal
-//		return atoi(str);
+	} else if(str[0] == _T('%')) {
+		// decimal
+		return atoi(str + 1);
 	}
 	return _tcstol(str, NULL, 16);
 }
@@ -732,6 +718,8 @@ unsigned __stdcall debugger_thread(void *lpx)
 				
 				my_printf(hStdOut, _T("! reset [cpu] - reset\n"));
 				my_printf(hStdOut, _T("! key <code> [<msec>] - press key\n"));
+				
+				my_printf(hStdOut, _T("<value> - hexa, decimal(%%d), ascii('a')\n"));
 			} else {
 				my_printf(hStdOut, _T("unknown command %s\n"), params[0]);
 			}

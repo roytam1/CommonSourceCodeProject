@@ -1645,7 +1645,7 @@ void Z80::OP_ED(uint8 code)
 	case 0x6d: RETI(); break;						/* RETI             */
 	case 0x6e: im = 0; break;						/* im   0           */
 	case 0x6f: RLD(); break;						/* RLD  (HL)        */
-	case 0x70: {uint8 res = IN8(BC); F = (F & CF) | SZP[res];} break;	/* IN   0,(C)       */
+	case 0x70: {uint8 res = IN8(BC); F = (F & CF) | SZP[res];} break;	/* IN   F,(C)       */
 	case 0x71: OUT8(BC, 0); break;						/* OUT  (C),0       */
 	case 0x72: SBC16(sp); break;						/* SBC  HL,SP       */
 	case 0x73: ea = FETCH16(); WM16(ea, &sp); WZ = ea + 1; break;		/* LD   (w),SP      */
@@ -3170,7 +3170,7 @@ void dasm_ed(uint32 pc, _TCHAR *buffer)
 	case 0x6d: _stprintf(buffer, _T("RETI")); break;
 	case 0x6e: _stprintf(buffer, _T("IM 0")); break;
 	case 0x6f: _stprintf(buffer, _T("RLD (HL)")); break;
-	case 0x70: _stprintf(buffer, _T("IN 0, (C)")); break;
+	case 0x70: _stprintf(buffer, _T("IN F, (C)")); break;
 	case 0x71: _stprintf(buffer, _T("OUT (C), 0")); break;
 	case 0x72: _stprintf(buffer, _T("SBC HL, SP")); break;
 	case 0x73: _stprintf(buffer, _T("LD (%4x), SP"), debug_fetch16()); break;

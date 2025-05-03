@@ -373,9 +373,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			
 			// timing controls
 			int interval = 0, sleep_period = 0;
-			for(int i = 0; i < run_frames; i++) {
+//			for(int i = 0; i < run_frames; i++) {
 				interval += get_interval();
-			}
+//			}
 			bool now_skip = emu->now_skip() && !emu->now_rec_video;
 			
 			if((prev_skip && !now_skip) || next_time == 0) {

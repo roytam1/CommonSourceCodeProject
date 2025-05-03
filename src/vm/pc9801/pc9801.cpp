@@ -348,7 +348,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_memory_mapped_io_rw(0xa0000, 0xa3fff, display);
 	// A8000h - BFFFFh: VRAM
 	memory->set_memory_mapped_io_rw(0xa8000, 0xbffff, display);
-	memory->set_memory_r(0xcc000, 0xcdfff, sound_bios);
+	memory->set_memory_r(0xcc000, 0xcffff, sound_bios);
 #if defined(_PC9801) || defined(_PC9801E)
 	memory->set_memory_r(0xd6000, 0xd6fff, fd_bios_2dd);
 	memory->set_memory_r(0xd7000, 0xd7fff, fd_bios_2hd);

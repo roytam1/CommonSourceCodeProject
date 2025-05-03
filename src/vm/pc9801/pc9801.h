@@ -284,7 +284,7 @@ protected:
 	// memory
 	uint8 ram[0xa0000];
 	uint8 ipl[0x18000];
-	uint8 sound_bios[0x2000];
+	uint8 sound_bios[0x4000];
 #if defined(_PC9801) || defined(_PC9801E)
 	uint8 fd_bios_2hd[0x1000];
 	uint8 fd_bios_2dd[0x1000];

@@ -71,15 +71,15 @@ typedef struct pc88_crtc_t {
 
 typedef struct pc88_dmac_t {
 	struct {
-		pair start_addr, length;
-		pair cur_addr, counter;
+		pair addr, count;
 		uint8 mode;
 		int nbytes;
-		DEVICE *src, *dest;
+		DEVICE *io;
 		bool running;
 	} ch[4];
 	uint8 mode, status;
 	bool high_low;
+	DEVICE *mem;
 	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);

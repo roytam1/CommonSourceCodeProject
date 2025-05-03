@@ -380,7 +380,8 @@ void PC88::reset()
 	
 	// dma
 	memset(&dmac, 0, sizeof(dmac));
-	dmac.ch[2].src = dmac.ch[2].dest = this;
+	dmac.mem = dmac.ch[2].io = this;
+	dmac.ch[0].io = dmac.ch[1].io = dmac.ch[3].io = vm->dummy;
 	
 	// keyboard
 	key_kana = key_caps = 0;
@@ -1303,7 +1304,7 @@ void PC88::event_vline(int v, int clock)
 			dmac.start(2);
 			
 			// dma wait cycles
-			busreq_clocks = (int)((double)(dmac.ch[2].length.sd + 1) * (cpu_clock_low ? 7.0 : 16.0) / (double)disp_line + 0.5);
+			busreq_clocks = (int)((double)(dmac.ch[2].count.sd + 1) * (cpu_clock_low ? 7.0 : 16.0) / (double)disp_line + 0.5);
 		}
 		crtc.clear_buffer();
 		crtc.vblank = false;
@@ -2215,15 +2216,25 @@ void pc88_crtc_t::set_attrib(uint8 code)
 
 void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 {
+	int c = (addr >> 1) & 3;
+	
 	switch(addr & 0x0f) {
 	case 0:
 	case 2:
 	case 4:
 	case 6:
-		if(!high_low) {
-			ch[(addr >> 1) & 3].start_addr.b.l = data;
-		} else {
-			ch[(addr >> 1) & 3].start_addr.b.h = data;
+		if(!(mode & (1 << c))) {
+			if(!high_low) {
+				if((mode & 0x80) && c == 2) {
+					ch[3].addr.b.l = data;
+				}
+				ch[c].addr.b.l = data;
+			} else {
+				if((mode & 0x80) && c == 2) {
+					ch[3].addr.b.h = data;
+				}
+				ch[c].addr.b.h = data;
+			}
 		}
 		high_low = !high_low;
 		break;
@@ -2231,11 +2242,20 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 	case 3:
 	case 5:
 	case 7:
-		if(!high_low) {
-			ch[(addr >> 1) & 3].length.b.l = data;
-		} else {
-			ch[(addr >> 1) & 3].length.b.h = data & 0x3f;
-			ch[(addr >> 1) & 3].mode = data & 0xc0;
+		if(!(mode & (1 << c))) {
+			if(!high_low) {
+				if((mode & 0x80) && c == 2) {
+					ch[3].count.b.l = data;
+				}
+				ch[c].count.b.l = data;
+			} else {
+				if((mode & 0x80) && c == 2) {
+					ch[3].count.b.h = data & 0x3f;
+					ch[3].mode = data & 0xc0;
+				}
+				ch[c].count.b.h = data & 0x3f;
+				ch[c].mode = data & 0xc0;
+			}
 		}
 		high_low = !high_low;
 		break;
@@ -2248,41 +2268,45 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 
 uint32 pc88_dmac_t::read_io8(uint32 addr)
 {
+	uint32 val = 0xff;
+	int c = (addr >> 1) & 3;
+	
 	switch(addr & 0x0f) {
 	case 0:
 	case 2:
 	case 4:
 	case 6:
-		high_low = !high_low;
-		if(high_low) {
-			return ch[(addr >> 1) & 3].cur_addr.b.l;
+		if(!high_low) {
+			val = ch[c].addr.b.l;
 		} else {
-			return ch[(addr >> 1) & 3].cur_addr.b.h;
+			val = ch[c].addr.b.h;
 		}
+		high_low = !high_low;
+		break;
 	case 1:
 	case 3:
 	case 5:
 	case 7:
-		high_low = !high_low;
-		if(high_low) {
-			return ch[(addr >> 1) & 3].counter.b.l;
+		if(!high_low) {
+			val = ch[c].count.b.l;
 		} else {
-			return (ch[(addr >> 1) & 3].counter.b.h & 0x3f) | ch[(addr >> 1) & 3].mode;
+			val = (ch[c].count.b.h & 0x3f) | ch[c].mode;
 		}
+		high_low = !high_low;
+		break;
 	case 8:
-		high_low = false;
-		return status;
+		val = status;
+		status &= 0xf0;
+//		high_low = false;
+		break;
 	}
-	return 0xff;
+	return val;
 }
 
 void pc88_dmac_t::start(int c)
 {
-	uint8 bit = 1 << c;
-	if(mode & bit) {
-		status &= ~bit;
-		ch[c].cur_addr.sd = ch[c].start_addr.sd;
-		ch[c].counter.sd = ch[c].length.sd + 1;
+	if(mode & (1 << c)) {
+		status &= ~(1 << c);
 		ch[c].running = true;
 	}
 }
@@ -2290,10 +2314,14 @@ void pc88_dmac_t::start(int c)
 void pc88_dmac_t::run(int c, int nbytes)
 {
 	if(ch[c].running) {
-		while(nbytes > 0 && ch[c].counter.sd > 0) {
-			ch[c].dest->write_dma_io8(0, ch[c].src->read_dma_data8(ch[c].cur_addr.w.l));
-			ch[c].cur_addr.sd++;
-			ch[c].counter.sd--;
+		while(nbytes > 0 && ch[c].count.sd >= 0) {
+//			if(ch[c].mode == 0x80) {
+				ch[c].io->write_dma_io8(0, mem->read_dma_data8(ch[c].addr.w.l));
+//			} else if(ch[c].mode == 0x40) {
+//				mem->write_dma_data8(ch[c].addr.w.l, ch[c].io->read_dma_io8(0));
+//			}
+			ch[c].addr.sd++;
+			ch[c].count.sd--;
 			nbytes--;
 		}
 	}
@@ -2302,10 +2330,21 @@ void pc88_dmac_t::run(int c, int nbytes)
 void pc88_dmac_t::finish(int c)
 {
 	if(ch[c].running) {
-		while(ch[c].counter.sd > 0) {
-			ch[c].dest->write_dma_io8(0, ch[c].src->read_dma_data8(ch[c].cur_addr.w.l));
-			ch[c].cur_addr.sd++;
-			ch[c].counter.sd--;
+		while(ch[c].count.sd >= 0) {
+//			if(ch[c].mode == 0x80) {
+				ch[c].io->write_dma_io8(0, mem->read_dma_data8(ch[c].addr.w.l));
+//			} else if(ch[c].mode == 0x40) {
+//				mem->write_dma_data8(ch[c].addr.w.l, ch[c].io->read_dma_io8(0));
+//			}
+			ch[c].addr.sd++;
+			ch[c].count.sd--;
+		}
+		if((mode & 0x80) && c == 2) {
+			ch[2].addr.sd = ch[3].addr.sd;
+			ch[2].count.sd = ch[3].count.sd;
+			ch[2].mode = ch[3].mode;
+		} else if(mode & 0x40) {
+			mode &= ~(1 << c);
 		}
 		status |= (1 << c);
 		ch[c].running = false;
