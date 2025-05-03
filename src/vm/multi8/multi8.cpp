@@ -73,13 +73,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_b(display, SIG_DISPLAY_I8255_B, 0xff, 0);
 	pio->set_context_port_c(memory, SIG_MEMORY_I8255_C, 0xff, 0);
 	pic->set_context(cpu);
-	fdc->set_context_drdy(floppy, SIG_FLOPPY_DRDY, 1);
+	fdc->set_context_drq(floppy, SIG_FLOPPY_DRDY, 1);
 	fdc->set_context_acctc(floppy, SIG_FLOPPY_ACCTC, 1);
 	opn->set_context_port_a(cmt, SIG_CMT_REMOTE, 0x2, 0);
 	opn->set_context_port_a(pio, SIG_I8255_PORT_A, 0x2, 1);
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(pic);
 	
 	cmt->set_context(sio, SIG_I8251_RECV, SIG_I8251_CLEAR);
 	display->set_context(fdc);
@@ -90,6 +87,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	kanji->set_context(pio, SIG_I8255_PORT_A);
 	memory->set_context(pio, SIG_I8255_PORT_A);
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(pic);
+	
+	// i/o bus
 	io->set_iomap_range_w(0x00, 0x01, key);
 	io->set_iomap_alias_w(0x18, opn, 0);
 	io->set_iomap_alias_w(0x19, opn, 1);

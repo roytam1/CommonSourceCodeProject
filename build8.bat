@@ -14,6 +14,10 @@ devenv.com mz2500.vcproj /Rebuild Release
 mkdir build\mz2500
 copy release\mz2500.exe build\mz2500\.
 
+devenv.com mz2800.vcproj /Rebuild Release
+mkdir build\mz2800
+copy release\mz2800.exe build\mz2800\.
+
 devenv.com pasopia.vcproj /Rebuild Release
 mkdir build\pasopia_t
 mkdir build\pasopia_oa
@@ -34,6 +38,14 @@ devenv.com pv2000.vcproj /Rebuild Release
 mkdir build\pv2000
 copy release\pv2000.exe build\pv2000\.
 
+devenv.com pyuta.vcproj /Rebuild Release
+mkdir build\pyuta
+copy release\pyuta.exe build\pyuta\.
+
+devenv.com qc10.vcproj /Rebuild Release
+mkdir build\qc10
+copy release\qc10.exe build\qc10\.
+
 devenv.com rx78.vcproj /Rebuild Release
 mkdir build\rx78
 copy release\rx78.exe build\rx78\.
@@ -41,6 +53,10 @@ copy release\rx78.exe build\rx78\.
 devenv.com scv.vcproj /Rebuild Release
 mkdir build\scv
 copy release\scv.exe build\scv\.
+
+devenv.com x07.vcproj /Rebuild Release
+mkdir build\x07
+copy release\x07.exe build\x07\.
 
 pause
 echo on

@@ -27,8 +27,6 @@ class Z80CTC : public DEVICE
 private:
 	DEVICE* d_zc[4][MAX_OUTPUT];
 	int did_zc[4][MAX_OUTPUT], dcount_zc[MAX_OUTPUT];
-	DEVICE* d_pic;
-	int pri;
 	int eventclock;
 	
 	typedef struct {
@@ -48,19 +46,26 @@ private:
 		uint32 input;
 		int period;
 		uint32 prev;
+		// interrupt
+		bool req_intr;
+		bool in_service;
 	} z80ctc_t;
 	z80ctc_t counter[4];
-	
-	uint32 tmp;
 	
 	void input_clock(int ch, int clock);
 	void input_sysclock(int ch, int clock);
 	void update_event(int ch, int err);
 	
+	// interrupt
+	DEVICE *d_cpu, *d_child;
+	bool iei, oei, intr;
+	uint32 intr_bit;
+	void update_intr();
+	
 public:
 	Z80CTC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_zc[0] = dcount_zc[1] = dcount_zc[2] = dcount_zc[3] = 0;
-		d_pic = NULL;
+		d_cpu = d_child = NULL;
 		counter[0].freq = counter[1].freq = counter[2].freq = counter[3].freq = 0;
 	}
 	~Z80CTC() {}
@@ -72,7 +77,19 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
 	
+	// interrupt common functions
+	void set_intr_iei(bool val);
+	uint32 intr_ack();
+	void intr_reti();
+	
 	// unique functions
+	void set_context_intr(DEVICE* device, uint32 bit) {
+		d_cpu = device;
+		intr_bit = bit;
+	}
+	void set_context_child(DEVICE* device) {
+		d_child = device;
+	}
 	void set_context_zc0(DEVICE* device, int id) {
 		int c = dcount_zc[0]++;
 		d_zc[0][c] = device; did_zc[0][c] = id;
@@ -84,9 +101,6 @@ public:
 	void set_context_zc2(DEVICE* device, int id) {
 		int c = dcount_zc[2]++;
 		d_zc[2][c] = device; did_zc[2][c] = id;
-	}
-	void set_context_int(DEVICE* device, int priority) {
-		d_pic = device; pri = priority;
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

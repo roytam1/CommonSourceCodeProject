@@ -21,6 +21,9 @@ private:
 	DEVICE* dev;
 	
 	uint16 palette_pc[17];	// 8cols * 2 + bg
+	uint8 screen0[184][192];
+	uint8 screen1[184][192];
+	
 	uint8* vram[6];
 	uint8 reg[6], bg, cmask, pmask;
 	

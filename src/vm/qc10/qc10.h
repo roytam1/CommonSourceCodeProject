@@ -3,13 +3,13 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.12.12 -
+	Date   : 2008.02.13 -
 
 	[ virtual machine ]
 */
 
-#ifndef _MULTI8_H_
-#define _MULTI8_H_
+#ifndef _QC10_H_
+#define _QC10_H_
 
 // device informations for win32
 #define DEVICE_NAME		"EPSON QC-10"
@@ -20,12 +20,10 @@
 #define WINDOW_WIDTH2		640
 #define WINDOW_HEIGHT2		400
 
+#define USE_DIPSWITCH
 #define USE_FD1
 #define USE_FD2
-#define USE_FD3
-#define USE_FD4
 #define USE_ALT_F10_KEY
-#define USE_SCANLINE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	458
@@ -35,8 +33,9 @@
 #define CPU_CLOCKS		3993600
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
-#define I8259_MAX_CHIPS		2
 #define MAX_DRIVE		4
+#define I8259_MAX_CHIPS		2
+#define UPD7201
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
 
@@ -47,20 +46,21 @@ class DEVICE;
 class EVENT;
 
 class BEEP;
-class HD146818P:
+class HD146818P;
 class I8237;
 class I8253;
 class I8255;
 class I8259;
 class IO8;
-class NOT;
-class UPD7201;
 class UPD7220;
 class UPD765A;
 class Z80;
+class Z80SIO;
 
+class DISPLAY;
+class FLOPPY;
+class KEYBOARD;
 class MEMORY;
-class TIMER;
 
 class VM
 {
@@ -70,7 +70,6 @@ protected:
 	EMU* emu;
 	
 	// devices
-	DEVICE* dummy;
 	EVENT* event;
 	
 	BEEP* beep;
@@ -82,14 +81,15 @@ protected:
 	I8255* pio;
 	I8259* pic;	// includes 2chips
 	IO8* io;
-	NOT* not;
-	UPD7201* sio;
 	UPD7220* crtc;
 	UPD765A* fdc;
 	Z80* cpu;
+	Z80SIO* sio;
 	
+	DISPLAY* display;
+	FLOPPY* floppy;
+	KEYBOARD* keyboard;
 	MEMORY* memory;
-	TIMER* timer;
 	
 public:
 	// ----------------------------------------
@@ -113,6 +113,10 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int samples, bool fill);
+	
+	// notify key
+	void key_down(int code);
+	void key_up(int code);
 	
 	// user interface
 	void open_disk(_TCHAR* filename, int drv);
@@ -139,6 +143,7 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
+	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
 };

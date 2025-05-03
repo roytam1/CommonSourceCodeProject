@@ -134,7 +134,14 @@
 #define ID_JOYKEY_BTN0                  40125
 #define ID_JOYKEY_BTN1                  40126
 #define ID_JOYKEY_BTN2                  40127
-#define ID_MZ2500_PIC_PATCH             40128
+#define ID_DIPSWITCH1                   40128
+#define ID_DIPSWITCH2                   40129
+#define ID_DIPSWITCH3                   40130
+#define ID_DIPSWITCH4                   40131
+#define ID_DIPSWITCH5                   40132
+#define ID_DIPSWITCH6                   40133
+#define ID_DIPSWITCH7                   40134
+#define ID_DIPSWITCH8                   40135
 
 // menu positions
 
@@ -168,6 +175,17 @@
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
 #define MENU_POS_CAPTURE                8
+#endif
+
+// SHARP MZ-2800
+#ifdef _MZ2800
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
 #endif
 
 // TOSHIBA PASOPIA
@@ -205,6 +223,24 @@
 #define MENU_POS_SOUND                  4
 #endif
 
+// TOMY PYUTA
+#ifdef _PYUTA
+#define MENU_POS_CONTROL                0
+#define MENU_POS_CART                   1
+#define MENU_POS_DATAREC                2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// EPSON QC-10
+#ifdef _QC10
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
 // BANDAI RX-78
 #ifdef _RX78
 #define MENU_POS_CONTROL                0
@@ -222,12 +258,20 @@
 #define MENU_POS_SOUND                  3
 #endif
 
+// CANON X-07
+#ifdef _X07
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40129
+#define _APS_NEXT_COMMAND_VALUE         40136
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

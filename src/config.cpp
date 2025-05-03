@@ -50,8 +50,8 @@ void init_config()
 	config.sound_frequency = 5;
 #endif
 	config.sound_latency = 0;
-#ifdef _MZ2500
-	config.pic_patch = false;
+#ifdef USE_DIPSWITCH
+	config.dipswitch = 0xff;
 #endif
 }
 

@@ -66,13 +66,6 @@
 //#define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 
-// irq priority
-#define IRQ_Z80PIO	0
-//			1
-#define IRQ_Z80CTC	2
-//			3-5
-#define IRQ_EXTERNAL	6
-
 #include "../../common.h"
 
 class EMU;
@@ -88,7 +81,6 @@ class SN76489AN;
 class UPD765A;
 class Z80;
 class Z80CTC;
-class Z80PIC;
 class Z80PIO;
 
 class FLOPPY;
@@ -101,13 +93,10 @@ class PAC2;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
 	// devices
-	DEVICE* dummy;
 	EVENT* event;
 	
 	BEEP* beep;
@@ -122,7 +111,6 @@ protected:
 	UPD765A* fdc;
 	Z80* cpu;
 	Z80CTC* ctc;
-	Z80PIC* pic;
 	Z80PIO* pio;
 	
 	FLOPPY* floppy;
@@ -184,6 +172,7 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
+	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
 };

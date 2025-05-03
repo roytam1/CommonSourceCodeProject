@@ -52,13 +52,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	
 	drec->set_context(cmt, SIG_CMT_IN, 1);
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(dummy);
 	cmt->set_context(drec, SIG_DATAREC_OUT, SIG_DATAREC_REMOTE);
 	vdp->set_context(cpu);
 	vdp->set_vram_ptr(memory->get_vram());
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(dummy);
+	
+	// i/o bus
 	io->set_iomap_range_w(0xe2, 0xe3, prt);
 	io->set_iomap_single_w(0xf0, cmt);
 	io->set_iomap_range_w(0xf1, 0xf2, memory);

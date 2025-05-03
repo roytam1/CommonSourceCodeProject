@@ -42,13 +42,13 @@ void VDP::event_callback(int event_id, int err)
 void VDP::event_vsync(int v, int clock)
 {
 	if(v < LINES_PER_HBLANK) {
-		dev->write_signal(SIG_CPU_BUSREQ, 0xffffffff, 1);
+		dev->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		int id;
 		vm->regist_event_by_clock(this, 0, 800, false, &id);
 	}
 	else {
-		if(dev->accept_int())
-			dev->write_signal(SIG_CPU_DO_INT, 0xff, 0xffffffff);
+		// vsync interrupt (not pending ???)
+		dev->set_intr_line(true, false, 0);
 	}
 }
 

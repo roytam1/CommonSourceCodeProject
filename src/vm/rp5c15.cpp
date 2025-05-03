@@ -20,6 +20,9 @@
 void RP5C15::initialize()
 {
 	_memset(regs, 0, sizeof(regs));
+	regs[0xa] = 1;
+	regs[0xd] = 8;
+	regs[0xf] = 0xc;
 	alarm = pulse_1hz = pulse_16hz = false;
 	
 	int regist_id;
@@ -65,15 +68,15 @@ uint32 RP5C15::read_io8(uint32 addr)
 	switch(ch)
 	{
 	case 0x00:
-		return (regs[0xd] & 0x1) ? regs[ch] : SECOND % 10;
+		return (regs[0xd] & 1) ? regs[ch] : SECOND % 10;
 	case 0x01:
-		return (regs[0xd] & 0x1) ? regs[ch] : (uint8)(SECOND / 10);
+		return (regs[0xd] & 1) ? regs[ch] : (uint8)(SECOND / 10);
 	case 0x02:
-		return (regs[0xd] & 0x1) ? regs[ch] : MINUTE % 10;
+		return (regs[0xd] & 1) ? regs[ch] : MINUTE % 10;
 	case 0x03:
-		return (regs[0xd] & 0x1) ? regs[ch] : (uint8)(MINUTE / 10);
+		return (regs[0xd] & 1) ? regs[ch] : (uint8)(MINUTE / 10);
 	case 0x04:
-		return (regs[0xd] & 0x1) ? regs[ch] : ((regs[0xa] & 1) ? HOUR : HOUR % 12) % 10;
+		return (regs[0xd] & 1) ? regs[ch] : ((regs[0xa] & 1) ? HOUR : HOUR % 12) % 10;
 	case 0x05:
 		if(regs[0xd] & 1)
 			return regs[ch];
@@ -108,6 +111,10 @@ uint32 RP5C15::read_io8(uint32 addr)
 			return YEAR % 10;
 	case 0x0c:
 		return (regs[0xd] & 1) ? regs[ch] : (uint8)((YEAR % 100) / 10);
+	case 0xd:
+	case 0xe:
+	case 0xf:
+		return regs[ch];
 	}
 	return 0xff;
 }

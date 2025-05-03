@@ -34,6 +34,9 @@
 #define SCREEN_WIDTH		192
 #define SCREEN_HEIGHT		222
 
+// memory wait
+//#define CPU_MEMORY_WAIT
+
 #include "../../common.h"
 
 class EMU;
@@ -53,7 +56,6 @@ protected:
 	EMU* emu;
 	
 	// devices
-	DEVICE* dummy;
 	EVENT* event;
 	
 	UPD7801* cpu;
@@ -111,6 +113,7 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
+	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
 };

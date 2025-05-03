@@ -17,13 +17,15 @@
 #define SIG_BEEP_ON	0
 #define SIG_BEEP_MUTE	1
 #define SIG_BEEP_PULSE	2
+#define SIG_BEEP_FREQ	3
 
 #define DELAY_FRAMES	3
 
 class BEEP : public DEVICE
 {
 private:
-	int vol;
+	int gen_rate;
+	int gen_vol;
 	bool signal;
 	int count;
 	int diff;

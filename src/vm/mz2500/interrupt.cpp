@@ -9,15 +9,19 @@
 */
 
 #include "interrupt.h"
-#include "../../config.h"
 
-extern config_t config;
+//#define SUPPURT_CHILD_DEVICE
 
 void INTERRUPT::reset()
 {
-	patch = config.pic_patch;
-	enable = 0;
-	paddr = ctrl[0] = ctrl[1] = ctrl[2] = count[0] = count[1] = count[2] = -1;
+	for(int ch = 0; ch < 4; ch++) {
+		irq[ch].enb_intr = false;
+		irq[ch].req_intr = false;
+		irq[ch].in_service = false;
+	}
+	iei = oei = true;
+	req_intr_ch = -1;
+	select = 0;
 }
 
 void INTERRUPT::write_io8(uint32 addr, uint32 data)
@@ -25,58 +29,22 @@ void INTERRUPT::write_io8(uint32 addr, uint32 data)
 	switch(addr & 0xff)
 	{
 	case 0xc6:
-//		if((enable & 8) && !(data & 8))
-//			d_pic->cancel_int(IRQ_CRTC);
-		if((enable & 4) && !(data & 4))
-			d_pic->cancel_int(IRQ_I8253);
-//		if((enable & 2) && !(data & 2))
-//			d_pic->cancel_int(IRQ_PRINTER);
-//		if((enable & 1) && !(data & 1))
-//			d_pic->cancel_int(IRQ_RP5C15);
-		enable = data;
+		irq[0].enb_intr = ((data & 8) != 0);
+		irq[1].enb_intr = ((data & 4) != 0);
+		irq[2].enb_intr = ((data & 2) != 0);
+		irq[3].enb_intr = ((data & 1) != 0);
+		select = data;
+		update_intr();
 		break;
 	case 0xc7:
-		if(enable & 0x80)
-			vectors[0] = data;	// crtc
-		if(enable & 0x40) {
-			vectors[1] = data;	// i8253
-			paddr = d_cpu->get_prv_pc();
-//			emu->out_debug("v1=%2x, addr=%4x\n", data, paddr);
-			if((vectors[1] == 0x10 && paddr == 0xe96a) ||	// MULTIPLAN
-			   (vectors[1] == 0xe0 && paddr == 0x234d) ||	// RELICS
-			   (vectors[1] == 0x02 && paddr == 0xb0de) ||	// SUPERt–]
-			   (vectors[1] == 0x00 && paddr == 0x434f) ||	// Wizardly
-			   (vectors[1] == 0xfe && paddr == 0x0f60)) {	// ŽEl‹äŠy•”
-				patch = true;
-				d_pic->cancel_int(IRQ_I8253);
-			}
-			else if((vectors[1] == 0x06 && paddr == 0x7187) ||	// GALAGA
-			        (vectors[1] == 0x02 && paddr == 0x83ee) ||	// LAYDOCK
-			        (vectors[1] == 0x04 && paddr == 0xea3f) ||	// THEXDER
-			        (vectors[1] == 0x04 && paddr == 0xd8d4) ||	// Ys3
-			        (vectors[1] == 0x00 && paddr == 0x0a28))	// ‹ã‹Ê“`
-				patch = false;
-		}
-		if(enable & 0x20)
-			vectors[2] = data;	// printer
-		if(enable & 0x10)
-			vectors[3] = data;	// rp5c15
-		break;
-	case 0xe4:
-	case 0xe5:
-	case 0xe6:
-		if(count[addr & 3] != data) {
-			count[addr & 3] = data;
-		}
-		d_pit->write_io8(addr, data);
-		break;
-	case 0xe7:
-		if((data & 0xc0) != 0xc0 && (data & 0x30)) {
-			// i8253 ctrl
-			int ch = (data >> 6) & 3;
-			ctrl[ch] = data;
-		}
-		d_pit->write_io8(addr, data);
+		if(select & 0x80)
+			irq[0].vector = data;	// crtc
+		if(select & 0x40)
+			irq[1].vector = data;	// i8253
+		if(select & 0x20)
+			irq[2].vector = data;	// printer
+		if(select & 0x10)
+			irq[3].vector = data;	// rp5c15
 		break;
 	}
 }
@@ -84,36 +52,117 @@ void INTERRUPT::write_io8(uint32 addr, uint32 data)
 void INTERRUPT::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_INTERRUPT_CRTC) {
-		if((enable & 8) && (data & mask))
-			d_pic->request_int(this, IRQ_CRTC, vectors[0], false);
+		bool next = ((data & mask) != 0);
+		if(next != irq[0].req_intr) {
+			irq[0].req_intr = next;
+			update_intr();
+		}
 	}
 	else if(id == SIG_INTERRUPT_I8253) {
-		if(enable & 4) {
-			if(patch) {
-				if(!(data & mask))
-					d_pic->request_int(this, IRQ_I8253, vectors[1], false);
-			}
-			else {
-				if(!(data & mask))
-					d_pic->request_int(this, IRQ_I8253, vectors[1], true);
-				else
-					d_pic->cancel_int(IRQ_I8253);
-			}
+		bool next = ((data & mask) == 0);
+		if(next != irq[1].req_intr) {
+			irq[1].req_intr = next;
+			update_intr();
 		}
 	}
 	else if(id == SIG_INTERRUPT_PRINTER) {
-		if((enable & 2) && (data & mask))
-			d_pic->request_int(this, IRQ_PRINTER, vectors[2], false);
+		bool next = ((data & mask) != 0);
+		if(next != irq[2].req_intr) {
+			irq[2].req_intr = next;
+			update_intr();
+		}
 	}
 	else if(id == SIG_INTERRUPT_RP5C15) {
-		if((enable & 1) && (data & mask))
-			d_pic->request_int(this, IRQ_RP5C15, vectors[3], false);
+		bool next = ((data & mask) != 0);
+		if(next != irq[3].req_intr) {
+			irq[3].req_intr = next;
+			update_intr();
+		}
 	}
 }
 
-void INTERRUPT::update_config()
+void INTERRUPT::set_intr_iei(bool val)
 {
-	if(patch = config.pic_patch)
-		d_pic->cancel_int(IRQ_I8253);
+	if(iei != val) {
+		iei = val;
+		update_intr();
+	}
+}
+
+#define set_intr_oei(val) { \
+	if(oei != val) { \
+		oei = val; \
+		if(d_child) \
+			d_child->set_intr_iei(oei); \
+	} \
+}
+
+void INTERRUPT::update_intr()
+{
+#ifdef SUPPURT_CHILD_DEVICE
+	// set oei
+	bool next = false;
+	if(iei) {
+		next = true;
+		for(int ch = 0; ch < 4; ch++) {
+			if(irq[ch].in_service) {
+				next = false;
+				break;
+			}
+		}
+	}
+	set_intr_oei(next);
+#endif
+	// set intr
+	req_intr_ch = -1;
+	if(iei) {
+		for(int ch = 0; ch < 4; ch++) {
+			if(irq[ch].in_service)
+				break;
+			if(irq[ch].enb_intr && irq[ch].req_intr) {
+				req_intr_ch = ch;
+				break;
+			}
+		}
+	}
+	if(req_intr_ch != -1)
+		d_cpu->set_intr_line(true, true, intr_bit);
+	else
+		d_cpu->set_intr_line(false, true, intr_bit);
+}
+
+uint32 INTERRUPT::intr_ack()
+{
+	// ack (M1=IORQ=L)
+	if(req_intr_ch != -1) {
+		int ch = req_intr_ch;
+		irq[ch].req_intr = false;
+		irq[ch].in_service = true;
+#ifdef SUPPURT_CHILD_DEVICE
+		update_intr();
+#endif
+		return irq[ch].vector;
+	}
+#ifdef SUPPURT_CHILD_DEVICE
+	if(d_child)
+		return d_child->intr_ack();
+#endif
+	return 0xff;
+}
+
+void INTERRUPT::intr_reti()
+{
+	// detect RETI
+	for(int ch = 0; ch < 4; ch++) {
+		if(irq[ch].in_service) {
+			irq[ch].in_service = false;
+			update_intr();
+			return;
+		}
+	}
+#ifdef SUPPURT_CHILD_DEVICE
+	if(d_child)
+		d_child->intr_reti();
+#endif
 }
 

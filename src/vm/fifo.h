@@ -32,7 +32,8 @@ public:
 	void write(int val) {
 		if(cnt < size) {
 			buf[wpt++] = val;
-			wpt &= size - 1;
+			if(wpt >= size)
+				wpt = 0;
 			cnt++;
 		}
 	}
@@ -40,10 +41,14 @@ public:
 		int val = 0;
 		if(cnt) {
 			val = buf[rpt++];
-			rpt &= size - 1;
+			if(rpt >= size)
+				rpt = 0;
 			cnt--;
 		}
 		return val;
+	}
+	int read_not_remove() {
+		return cnt ? buf[rpt] : 0;
 	}
 	int count() {
 		return cnt;

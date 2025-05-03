@@ -19,7 +19,7 @@ void DATAREC::initialize()
 	
 	regist_id = -1;
 	play = rec = false;
-	in = out = remote = false;
+	in = out = change = remote = false;
 	is_wave = false;
 }
 
@@ -36,8 +36,12 @@ void DATAREC::release()
 
 void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_DATAREC_OUT)
-		out = (data & mask) ? true : false;
+	if(id == SIG_DATAREC_OUT) {
+		bool signal = (data & mask) ? true : false;
+		if(rec && remote && signal != out)
+			change = true;
+		out = signal;
+	}
 	else if(id == SIG_DATAREC_REMOTE) {
 		remote = (data & mask) ? true : false;
 		update_event();
@@ -81,6 +85,7 @@ void DATAREC::event_callback(int event_id, int err)
 		if(signal != in) {
 			for(int i = 0; i < dcount; i++)
 				dev[i]->write_signal(did[i], signal ? 0xffffffff : 0, dmask[i]);
+			change = true;
 			in = signal;
 		}
 	}
@@ -228,3 +233,9 @@ bool DATAREC::check_extension(_TCHAR* filename)
 	return false;
 }
 
+bool DATAREC::skip()
+{
+	bool val = change;
+	change = false;
+	return val;
+}

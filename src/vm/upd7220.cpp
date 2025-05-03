@@ -20,20 +20,21 @@ void UPD7220::initialize()
 	
 	cmdreg = -1; // no command
 	statreg = 0;
-	hsync = vsync = start = false;
-	blink = 0;
+	sync[6] = 0x90; sync[7] = 0x01;
+	zoom = zr = zw = 0;
 	ra[0] = ra[1] = ra[2] = 0; ra[3] = 0x19;
 	cs[0] = cs[1] = cs[2] = 0;
-	sync[6] = 0x90; sync[7] = 0x01;
-	zr = zw = zoom = 0;
 	ead = dad = 0;
 	maskl = maskh = 0xff;
+	vsync = hblank = start = false;
+	// default (QC-10)
+	vs = LINES_PER_FRAME * 16 / 421;
+	hc = (int)(CPU_CLOCKS * 29 / FRAMES_PER_SEC / LINES_PER_FRAME / 109 + 0.5);
 	
 	for(int i = 0; i <= RT_TABLEMAX; i++)
 		rt[i] = (int)((double)(1 << RT_MULBIT) * (1 - sqrt(1 - pow((0.70710678118654 * i) / RT_TABLEMAX, 2))));
 	
 	vm->regist_vsync_event(this);
-	vm->regist_hsync_event(this);
 }
 
 void UPD7220::release()
@@ -43,7 +44,7 @@ void UPD7220::release()
 	delete ft;
 }
 
-void UPD7220::write_data8(uint32 addr, uint32 data)
+void UPD7220::write_dma8(uint32 addr, uint32 data)
 {
 	// for dma access
 	switch(cmdreg & 0x1f)
@@ -67,7 +68,7 @@ void UPD7220::write_data8(uint32 addr, uint32 data)
 	}
 }
 
-uint32 UPD7220::read_data8(uint32 addr)
+uint32 UPD7220::read_dma8(uint32 addr)
 {
 	uint32 val = 0xff;
 	
@@ -109,7 +110,7 @@ void UPD7220::write_io8(uint32 addr, uint32 data)
 			process_cmd();
 		// set new command
 		cmdreg = data;
-		ft->init();	// for vectw
+		ft->clear();	// for vectw
 		check_cmd();
 		break;
 	case 2:
@@ -131,7 +132,7 @@ uint32 UPD7220::read_io8(uint32 addr)
 	case 0:
 		// status
 		val = statreg;
-		val |= hsync ? STAT_HBLANK : 0;
+		val |= hblank ? STAT_HBLANK : 0;
 		val |= vsync ? STAT_VSYNC : 0;
 		val |= fi->empty() ? STAT_EMPTY : 0;
 		val |= fi->full() ? STAT_FULL : 0;
@@ -148,14 +149,17 @@ uint32 UPD7220::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void UPD7220::void event_vsync(int v, int clock)
+void UPD7220::event_vsync(int v, int clock)
 {
-	vsync = (v < 400) ? false : true;
+	vsync = (v < vs);
+	hblank = true;
+	int id;
+	vm->regist_event_by_clock(this, 0, hc, false, &id);
 }
 
-void UPD7220::void event_hsync(int v, int h, int clock)
+void UPD7220::event_callback(int event_id, int err)
 {
-	hsync = (h < 80) ? false : true;
+	hblank = false;
 }
 
 // command process
@@ -299,18 +303,17 @@ void UPD7220::process_cmd()
 void UPD7220::cmd_reset()
 {
 	// init gdc params
+	sync[6] = 0x90; sync[7] = 0x01;
+	zoom = zr = zw = 0;
 	ra[0] = ra[1] = ra[2] = 0; ra[3] = 0x19;
 	cs[0] = cs[1] = cs[2] = 0;
-	sync[6] = 0x90; sync[7] = 0x01;
-	
-	zr = zw = zoom = 0;
 	ead = dad = 0;
 	maskl = maskh = 0xff;
 	
 	// init fifo
-	fi->init();
-	fo->init();
-	ft->init();
+	fi->clear();
+	fo->clear();
+	ft->clear();
 	
 	// stop display and drawing
 	start = false;
@@ -322,10 +325,25 @@ void UPD7220::cmd_reset()
 
 void UPD7220::cmd_sync()
 {
-	start = (cmdreg & 1) ? true : false;
+	start = ((cmdreg & 1) != 0);
 	for(int i = 0; i < 8; i++)
 		sync[i] = fi->read();
 	cmdreg = -1;
+	
+	// calc vsync/hblank timing
+	int v1 = sync[2] >> 5;		// VS
+	v1 += (sync[3] & 3) << 3;
+	int v2 = sync[5] & 0x3f;	// VFP
+	v2 += sync[6];			// AL
+	v2 += (sync[7] & 3) << 8;
+	v2 += sync[7] >> 2;		// VBP
+	vs = (int)(LINES_PER_FRAME * v1 / (v1 + v2) + 0.5);
+	
+	int h1 = sync[1] + 2;		// AW
+	int h2 = (sync[2] & 0x1f) + 1;	// HS
+	h2 += (sync[3] >> 2) + 1;	// HFP
+	h2 += (sync[4] & 0x3f) + 1;	// HBP
+	hc = (int)(CPU_CLOCKS * h2 / FRAMES_PER_SEC / LINES_PER_FRAME / (h1 + h2) + 0.5);
 }
 
 void UPD7220::cmd_master()
@@ -346,14 +364,14 @@ void UPD7220::cmd_start()
 
 void UPD7220::cmd_bctrl()
 {
-	start = (cmdreg & 1) ? true : false;
+	start = ((cmdreg & 1) != 0);
 	cmdreg = -1;
 }
 
 void UPD7220::cmd_zoom()
 {
 	uint8 tmp = fi->read();
-	zr = (tmp & 0xf0) >> 4;
+	zr = tmp >> 4;
 	zw = tmp & 0xf;
 	cmdreg = -1;
 }
@@ -544,10 +562,9 @@ void UPD7220::cmd_read()
 void UPD7220::cmd_dmaw()
 {
 	low_high = false;
-	if(dev)
-		dev->write_signal(did, 0xffffffff, 1);
+	if(d_drq)
+		d_drq->write_signal(did_drq, 0xffffffff, dmask_drq);
 	vectreset();
-	
 //	statreg |= STAT_DMA;
 	cmdreg = -1;
 }
@@ -555,10 +572,9 @@ void UPD7220::cmd_dmaw()
 void UPD7220::cmd_dmar()
 {
 	low_high = false;
-	if(dev)
-		dev->write_signal(did, 0xffffffff, 1);
+	if(d_drq)
+		d_drq->write_signal(did_drq, 0xffffffff, dmask_drq);
 	vectreset();
-	
 //	statreg |= STAT_DMA;
 	cmdreg = -1;
 }

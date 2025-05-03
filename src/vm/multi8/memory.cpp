@@ -45,11 +45,11 @@ void MEMORY::initialize()
 		fio->Fclose();
 		
 		// 8255 Port A, bit1 = 0 (fdc rom status)
-		dev->write_signal(did, 0, 0x02);
+		dev->write_signal(did, 0, 2);
 	}
 	else
 		// 8255 Port A, bit1 = 1 (fdc rom not status)
-		dev->write_signal(did, 0xffffffff, 0x02);
+		dev->write_signal(did, 2, 2);
 	delete fio;
 }
 

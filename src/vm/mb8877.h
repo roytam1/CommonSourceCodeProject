@@ -60,6 +60,11 @@ class DISK;
 class MB8877 : public DEVICE
 {
 private:
+	DEVICE *d_irq[MAX_OUTPUT], *d_drq[MAX_OUTPUT];
+	int did_irq[MAX_OUTPUT], did_drq[MAX_OUTPUT];
+	uint32 dmask_irq[MAX_OUTPUT], dmask_drq[MAX_OUTPUT];
+	int dcount_irq, dcount_drq;
+	
 	// config
 	bool ignore_crc;
 	
@@ -115,14 +120,22 @@ private:
 	void cmd_writetrack();
 	void cmd_forceint();
 	
+	// irq/dma
+	void set_irq(bool val);
+	void set_drq(bool val);
+	
 public:
-	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		dcount_irq = dcount_drq = 0;
+	}
 	~MB8877() {}
 	
 	// common functions
 	void initialize();
 	void release();
 	void reset();
+	void write_dma8(uint32 addr, uint32 data);
+	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
@@ -131,6 +144,14 @@ public:
 	void update_config();
 	
 	// unique function
+	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_irq++;
+		d_irq[c] = device; did_irq[c] = id; dmask_irq[c] = mask;
+	}
+	void set_context_drq(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_drq++;
+		d_drq[c] = device; did_drq[c] = id; dmask_drq[c] = mask;
+	}
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);

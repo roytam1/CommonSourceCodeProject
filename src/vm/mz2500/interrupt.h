@@ -23,31 +23,46 @@
 class INTERRUPT : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_pic, *d_pit;
+	uint8 select;
 	
-	uint32 enable, vectors[4];
-	bool patch;
-	uint32 paddr, ctrl[3], count[3];
+	// interrupt
+	typedef struct {
+		uint8 vector;
+		bool enb_intr;
+		bool req_intr;
+		bool in_service;
+	} irq_t;
+	irq_t irq[4];
+	
+	DEVICE *d_cpu, *d_child;
+	bool iei, oei;
+	int req_intr_ch;
+	uint32 intr_bit;
+	void update_intr();
 	
 public:
-	INTERRUPT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	INTERRUPT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		d_cpu = d_child = NULL;
+	}
 	~INTERRUPT() {}
 	
 	// common functions
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void update_config();
+	
+	// interrupt common functions
+	void set_intr_iei(bool val);
+	uint32 intr_ack();
+	void intr_reti();
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) {
+	void set_context_intr(DEVICE* device, uint32 bit) {
 		d_cpu = device;
+		intr_bit = bit;
 	}
-	void set_context_pic(DEVICE* device) {
-		d_pic = device;
-	}
-	void set_context_pit(DEVICE* device) {
-		d_pit = device;
+	void set_context_child(DEVICE* device) {
+		d_child = device;
 	}
 };
 

@@ -418,6 +418,16 @@ socket:
 					rec_next_time = rec_accum_time = 0;
 					break;
 #endif
+#ifdef USE_DIPSWITCH
+				case ID_DIPSWITCH1: config.dipswitch ^= 0x01; break;
+				case ID_DIPSWITCH2: config.dipswitch ^= 0x02; break;
+				case ID_DIPSWITCH3: config.dipswitch ^= 0x04; break;
+				case ID_DIPSWITCH4: config.dipswitch ^= 0x08; break;
+				case ID_DIPSWITCH5: config.dipswitch ^= 0x10; break;
+				case ID_DIPSWITCH6: config.dipswitch ^= 0x20; break;
+				case ID_DIPSWITCH7: config.dipswitch ^= 0x40; break;
+				case ID_DIPSWITCH8: config.dipswitch ^= 0x80; break;
+#endif
 				case ID_CPU_POWER0: no = 0; goto cpu_power;
 				case ID_CPU_POWER1: no = 1; goto cpu_power;
 				case ID_CPU_POWER2: no = 2; goto cpu_power;
@@ -428,13 +438,6 @@ cpu_power:
 					if(emu)
 						emu->update_config();
 					break;
-#ifdef _MZ2500
-				case ID_MZ2500_PIC_PATCH:
-					config.pic_patch = !config.pic_patch;
-					if(emu)
-						emu->update_config();
-					break;
-#endif
 #ifdef USE_AUTO_KEY
 				case ID_AUTOKEY_START:
 					if(emu)
@@ -770,6 +773,16 @@ void update_menu(HMENU hMenu, int pos)
 #ifdef MENU_POS_CONTROL
 	if(pos == MENU_POS_CONTROL) {
 		// control menu
+#ifdef USE_DIPSWITCH
+		CheckMenuItem(hMenu, ID_DIPSWITCH1, !(config.dipswitch & 0x01) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH2, !(config.dipswitch & 0x02) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH3, !(config.dipswitch & 0x04) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH4, !(config.dipswitch & 0x08) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH5, !(config.dipswitch & 0x10) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH6, !(config.dipswitch & 0x20) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH7, !(config.dipswitch & 0x40) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_DIPSWITCH8, !(config.dipswitch & 0x80) ? MF_CHECKED : MF_UNCHECKED);
+#endif
 		if(config.cpu_power == 0)
 			CheckMenuRadioItem(hMenu, ID_CPU_POWER0, ID_CPU_POWER4, ID_CPU_POWER0, MF_BYCOMMAND);
 		else if(config.cpu_power == 1)
@@ -791,9 +804,6 @@ void update_menu(HMENU hMenu, int pos)
 #endif
 		EnableMenuItem(hMenu, ID_AUTOKEY_START, now_paste ? MF_GRAYED : MF_ENABLED);
 		EnableMenuItem(hMenu, ID_AUTOKEY_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
-#endif
-#ifdef _MZ2500
-		CheckMenuItem(hMenu, ID_MZ2500_PIC_PATCH, config.pic_patch ? MF_CHECKED : MF_UNCHECKED);
 #endif
 	}
 #endif

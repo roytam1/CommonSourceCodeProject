@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define CONFIG_VERSION	0x15
+#define CONFIG_VERSION	0x16
 
 void init_config();
 void load_config();
@@ -51,9 +51,8 @@ typedef struct {
 	// sound
 	int sound_frequency;	// 0=11025Hz, 1=22050Hz, 2=44100Hz, 3=48000Hz
 	int sound_latency;	// 0=100msec, 1=200msec, 2=300msec, 3=400msec
-#ifdef _MZ2500
-	// MZ2500
-	bool pic_patch;
+#ifdef USE_DIPSWITCH
+	uint8 dipswitch;
 #endif
 } config_t;
 

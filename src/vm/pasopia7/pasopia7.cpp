@@ -22,7 +22,6 @@
 #include "../upd765a.h"
 #include "../z80.h"
 #include "../z80ctc.h"
-#include "../z80pic.h"
 #include "../z80pio.h"
 
 #include "floppy.h"
@@ -57,7 +56,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);
 	ctc = new Z80CTC(this, emu);
-	pic = new Z80PIC(this, emu);
 	pio = new Z80PIO(this, emu);
 	
 	floppy = new FLOPPY(this, emu);
@@ -78,11 +76,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_disp(pio0, SIG_I8255_PORT_B, 8);
 	crtc->set_context_vsync(pio0, SIG_I8255_PORT_B, 0x20);
 	pio0->set_context_port_a(display, SIG_DISPLAY_I8255_0_A, 0xff, 0);
-#ifdef _LCD
-	pio0->write_signal(SIG_I8255_PORT_B, 0, (0x10 | 0x40));
-#else
-	pio0->write_signal(SIG_I8255_PORT_B, 0x10, (0x10 | 0x40));
-#endif
 	pio1->set_context_port_a(memory, SIG_MEMORY_I8255_1_A, 0xff, 0);
 	pio1->set_context_port_b(display, SIG_DISPLAY_I8255_1_B, 0xff, 0);
 	pio1->set_context_port_b(memory, SIG_MEMORY_I8255_1_B, 0xff, 0);
@@ -97,19 +90,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_port_c(iotrap, SIG_IOTRAP_I8255_2_C, 0xff, 0);
 	not->set_context(drec, SIG_DATAREC_REMOTE, 1);
 	fdc->set_context_intr(floppy, SIG_FLOPPY_INTR, 1);
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(pic);
 	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_1);
 	ctc->set_context_zc1(beep, SIG_BEEP_PULSE);
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3);
-	ctc->set_context_int(pic, IRQ_Z80CTC);
 	ctc->set_constant_clock(0, CPU_CLOCKS);
 	ctc->set_constant_clock(2, CPU_CLOCKS);
-	pic->set_context(cpu);
 	pio->set_context_port_a(beep, SIG_BEEP_ON, 0x80, 0);
 	pio->set_context_port_a(key, SIG_KEYBOARD_Z80PIO_A, 0xff, 0);
-	pio->set_context_int(pic, IRQ_Z80PIO);
 	
 	display->set_context(fdc);
 	display->set_vram_ptr(memory->get_vram());
@@ -124,6 +111,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_context_pio0(pio0, SIG_I8255_PORT_B);
 	memory->set_context_pio2(pio2, SIG_I8255_PORT_C);
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(pio);
+	
+	// z80 family daisy chain
+	pio->set_context_intr(cpu, 0);
+	pio->set_context_child(ctc);
+	ctc->set_context_intr(cpu, 1);
+	
+	// i/o bus
 	io->set_iomap_range_w(0x08, 0x0b, pio0);
 	io->set_iomap_range_w(0x0c, 0x0f, pio1);
 	io->set_iomap_range_w(0x10, 0x11, crtc);
@@ -162,6 +160,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id)
 			device->reset();
 	}
+	
+	// set initial port status
+#ifdef _LCD
+	pio0->write_signal(SIG_I8255_PORT_B, 0, (0x10 | 0x40));
+#else
+	pio0->write_signal(SIG_I8255_PORT_B, 0x10, (0x10 | 0x40));
+#endif
 }
 
 VM::~VM()

@@ -1,95 +1,136 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MESS
+	Origin : MAME TMS9928A Core
 	Author : Takeda.Toshiya
 	Date   : 2006.08.18 -
+	         2007.07.21 -
 
 	[ TMS9918A ]
 */
 
 #include "tms9918a.h"
 
+#define ADDR_MASK (TMS9918A_VRAM_SIZE - 1)
+
 void TMS9918A::initialize()
 {
-	// initialize
-	_memset(regs, 0, sizeof(regs));
-	status_reg = latch_reg = vram_latch = 0;
-	vram_addr = 0;
-	latch = intstat = false;
-	
 	// regist event
 	vm->regist_vsync_event(this);
 }
 
 void TMS9918A::reset()
 {
+	_memset(vram, 0, sizeof(vram));
 	_memset(regs, 0, sizeof(regs));
-	status_reg = latch_reg = vram_latch = 0;
+	status_reg = read_ahead = first_byte = 0;
 	vram_addr = 0;
-	latch = intstat = false;
+	intstat = latch = false;
+	color_table = pattern_table = name_table = 0;
+	sprite_pattern = sprite_attrib = 0;
+	color_mask = pattern_mask = 0;
 }
 
 void TMS9918A::write_io8(uint32 addr, uint32 data)
 {
 	if(addr & 1) {
-		// control reg
+		// register
 		if(latch) {
 			if(data & 0x80) {
-				// write register
-				int num = data & 7;
-				uint8 prev = regs[num];
-				regs[num] = latch_reg & mask[num];
-				
-				// check interrupt
-				if(num == 1 && !(prev & 0x20) && (regs[1] & 0x20) && (status_reg & 0x80)) {
-					for(int i = 0; i < dcount; i++)
-						dev[i]->write_signal(did[i], 0xffffffff, dmask[i]);
+				switch(data & 7)
+				{
+				case 0:
+					regs[0] = first_byte & 3;
+					if(regs[0] & 2) {
+						color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
+						color_mask = ((regs[3] & 0x7f) * 8) | 7;
+						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
+						pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
+					}
+					else {
+						color_table = (regs[3] * 64) & ADDR_MASK;
+						pattern_table = (regs[4] * 2048) & ADDR_MASK;
+					}
+					break;
+				case 1:
+					regs[1] = first_byte & 0xfb;
+					set_intstat((regs[1] & 0x20) && (status_reg & 0x80));
+					break;
+				case 2:
+					regs[2] = first_byte & 0xf;
+					name_table = (regs[2] * 1024) & ADDR_MASK;
+					break;
+				case 3:
+					regs[3] = first_byte;
+					if(regs[0] & 2) {
+						color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
+						color_mask = ((regs[3] & 0x7f) * 8) | 7;
+					}
+					else
+						color_table = (regs[3] * 64) & ADDR_MASK;
+					pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
+					break;
+				case 4:
+					regs[4] = first_byte & 7;
+					if(regs[0] & 2) {
+						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
+						pattern_mask = ((regs[4] & 3) * 256) | 255;
+					}
+					else
+						pattern_table = (regs[4] * 2048) & ADDR_MASK;
+					break;
+				case 5:
+					regs[5] = first_byte & 0x7f;
+					sprite_attrib = (regs[5] * 128) & ADDR_MASK;
+					break;
+				case 6:
+					regs[6] = first_byte & 7;
+					sprite_pattern = (regs[6] * 2048) & ADDR_MASK;
+					break;
+				case 7:
+					regs[7] = first_byte;
+					break;
 				}
 			}
 			else {
-				// write address
-				vram_addr = (((uint16)data << 8) | latch_reg) & (TMS9918A_VRAM_SIZE - 1);
-				// read latch
-				if(!(data & 0x40)) {
-					vram_latch = vram[vram_addr];
-					vram_addr = (vram_addr + 1) & (TMS9918A_VRAM_SIZE - 1);
-				}
+				vram_addr = ((data * 256) | first_byte) & ADDR_MASK;
+				if(!(data & 0x40))
+					read_io8(0);	// read ahead
 			}
 			latch = false;
 		}
 		else {
-			latch_reg = data;
+			first_byte = data;
 			latch = true;
 		}
 	}
 	else {
 		// vram
 		vram[vram_addr] = data;
-		vram_addr = (vram_addr + 1) & (TMS9918A_VRAM_SIZE - 1);
-		vram_latch = data;
+		vram_addr = (vram_addr + 1) & ADDR_MASK;
+		read_ahead = data;
 		latch = false;
 	}
 }
 
 uint32 TMS9918A::read_io8(uint32 addr)
 {
-	uint8 val = 0xff;
-	
 	if(addr & 1) {
-		// status reg
-		val = status_reg;
-		status_reg &= 0x1f;
+		// register
+		uint8 val = status_reg;
+		status_reg = 0x1f;
+		set_intstat(false);
 		latch = false;
+		return val;
 	}
 	else {
 		// vram
-		val = vram_latch;
-		vram_latch = vram[vram_addr];
-		vram_addr = (vram_addr + 1) & (TMS9918A_VRAM_SIZE - 1);
+		uint8 val = read_ahead;
+		read_ahead = vram[vram_addr];
+		vram_addr = (vram_addr + 1) & ADDR_MASK;
 		latch = false;
+		return val;
 	}
-	return val;
 }
 
 void TMS9918A::draw_screen()
@@ -108,67 +149,75 @@ void TMS9918A::event_vsync(int v, int clock)
 	if(v == 192) {
 		// create virtual screen
 		if(regs[1] & 0x40) {
-			// not blank
-			
 			// draw character plane
-			int mode = ((regs[1] & 0x8) >> 1) | (regs[0] & 0x2) | ((regs[2] & 0x10) >> 1);
+			int mode = ((regs[1] & 8) ? 4 : 0) | (regs[0] & 2) | ((regs[2] & 0x10) ? 1 : 0);
 			switch(mode)
 			{
-			case 0: draw_mode0(); break;
-			case 1: draw_mode1(); break;
-			case 2: draw_mode2(); break;
-			case 3: draw_mode12(); break;
-			case 4: draw_mode3(); break;
-			case 5: draw_mode13(); break;
-			case 6: draw_mode23(); break;
-			case 7: draw_mode123(); break;
+			case 0:
+				draw_mode0();
+				break;
+			case 1:
+				draw_mode1();
+				break;
+			case 2:
+				draw_mode2();
+				break;
+			case 3:
+				draw_mode12();
+				break;
+			case 4:
+				draw_mode3();
+				break;
+			case 6:
+				draw_mode23();
+				break;
+			case 5:
+			case 7:
+				draw_modebogus();
+				break;
 			}
-			
 			// draw sprite plane
 			if((regs[1] & 0x50) == 0x40)
 				draw_sprites();
 		}
-		else {
-			// blank
+		else
 			_memset(screen, 0, sizeof(screen));
-		}
 		
 		// do interrupt
-		if((regs[1] & 0x20) && !(status_reg & 0x80)) {
-			for(int i = 0; i < dcount; i++)
-				dev[i]->write_signal(did[i], 0xffffffff, dmask[i]);
-		}
 		status_reg |= 0x80;
+		set_intstat((regs[1] & 0x20) != 0);
+	}
+}
+
+void TMS9918A::set_intstat(bool val)
+{
+	if(val != intstat) {
+		for(int i = 0; i < dcount; i++)
+			dev[i]->write_signal(did[i], val ? 0xffffffff : 0, dmask[i]);
+		intstat = val;
 	}
 }
 
 void TMS9918A::draw_mode0()
 {
-	// mode 0
-	int name = 0;
-	int name_base = ((regs[2] & 0xf) << 10) & (TMS9918A_VRAM_SIZE - 1);
-	int pattern_base = (regs[0] & 0x2) ? ((regs[4] & 0x4) << 11) & (TMS9918A_VRAM_SIZE - 1) : ((regs[4] & 0x7) << 11) & (TMS9918A_VRAM_SIZE - 1);
-	int color_base = (regs[0] & 0x2) ? ((regs[3] & 0x80) << 6) & (TMS9918A_VRAM_SIZE - 1) : (regs[3] << 6) & (TMS9918A_VRAM_SIZE - 1);
-	uint8 backdrop_color = regs[7] & 0xf;
-	
-	for(int y = 0; y < 24; y++) {
-		for(int x = 0; x < 32; x++, name++) {
-			int code = vram[name_base + name];
-			uint8* pattern_ptr = &vram[pattern_base + code * 8];
-			uint8 color = vram[color_base + (code >> 3)];
-			uint8 fore_color = (color >> 4) ? (color >> 4) : backdrop_color;
-			uint8 back_color = (color & 0xf) ? (color & 0xf) : backdrop_color;
-			for(int yy = 0; yy < 8; yy++) {
+	for(int y = 0, name = 0; y < 24; y++) {
+		for(int x = 0; x < 32; x++) {
+			uint16 code = vram[name_table + (name++)];
+			uint8* pattern_ptr = vram + pattern_table + code * 8;
+			uint8 color = vram[color_table + (code >> 3)];
+			uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
+			uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
+			for(int yy=0; yy < 8; yy++) {
+				uint8 pattern = *pattern_ptr++;
 				uint8* buffer = screen[y * 8 + yy] + x * 8;
-				uint8 pattern = pattern_ptr[yy];
-				buffer[0] = (pattern & 0x80) ? fore_color : back_color;
-				buffer[1] = (pattern & 0x40) ? fore_color : back_color;
-				buffer[2] = (pattern & 0x20) ? fore_color : back_color;
-				buffer[3] = (pattern & 0x10) ? fore_color : back_color;
-				buffer[4] = (pattern & 0x08) ? fore_color : back_color;
-				buffer[5] = (pattern & 0x04) ? fore_color : back_color;
-				buffer[6] = (pattern & 0x02) ? fore_color : back_color;
-				buffer[7] = (pattern & 0x01) ? fore_color : back_color;
+				buffer[0] = (pattern & 0x80) ? fg : bg;
+				buffer[1] = (pattern & 0x40) ? fg : bg;
+				buffer[2] = (pattern & 0x20) ? fg : bg;
+				buffer[3] = (pattern & 0x10) ? fg : bg;
+				buffer[4] = (pattern & 0x08) ? fg : bg;
+				buffer[5] = (pattern & 0x04) ? fg : bg;
+				buffer[6] = (pattern & 0x02) ? fg : bg;
+				buffer[7] = (pattern & 0x01) ? fg : bg;
 			}
 		}
 	}
@@ -176,27 +225,21 @@ void TMS9918A::draw_mode0()
 
 void TMS9918A::draw_mode1()
 {
-	// mode 1
-	int name = 0;
-	int name_base = ((regs[2] & 0xf) << 10) & (TMS9918A_VRAM_SIZE - 1);
-	int pattern_base = (regs[0] & 0x2) ? ((regs[4] & 0x4) << 11) & (TMS9918A_VRAM_SIZE - 1) : ((regs[4] & 0x7) << 11) & (TMS9918A_VRAM_SIZE - 1);
-	uint8 backdrop_color = regs[7] & 0xf;
-	uint8 fore_color = (regs[7] >> 4) ? (regs[7] >> 4) : backdrop_color;
-	uint8 back_color = (regs[7] & 0xf) ? (regs[7] & 0xf) : backdrop_color;
-	
-	for(int y = 0; y < 24; y++) {
-		for(int x = 0; x < 40; x++, name++) {
-			int code = vram[name_base + name];
-			uint8* pattern_ptr = &vram[pattern_base + code * 8];
+	uint8 fg = regs[7] >> 4;
+	uint8 bg = regs[7] & 0xf;
+	for(int y = 0, name = 0; y < 24; y++) {
+		for(int x = 0; x < 40; x++) {
+			uint16 code = vram[name_table + (name++)];
+			uint8* pattern_ptr = vram + pattern_table + code * 8;
 			for(int yy = 0; yy < 8; yy++) {
+				uint8 pattern = *pattern_ptr++;
 				uint8* buffer = screen[y * 8 + yy] + x * 6 + 8;
-				uint8 pattern = pattern_ptr[yy];
-				buffer[0] = (pattern & 0x80) ? fore_color : back_color;
-				buffer[1] = (pattern & 0x40) ? fore_color : back_color;
-				buffer[2] = (pattern & 0x20) ? fore_color : back_color;
-				buffer[3] = (pattern & 0x10) ? fore_color : back_color;
-				buffer[4] = (pattern & 0x08) ? fore_color : back_color;
-				buffer[5] = (pattern & 0x04) ? fore_color : back_color;
+				buffer[0] = (pattern & 0x80) ? fg : bg;
+				buffer[1] = (pattern & 0x40) ? fg : bg;
+				buffer[2] = (pattern & 0x20) ? fg : bg;
+				buffer[3] = (pattern & 0x10) ? fg : bg;
+				buffer[4] = (pattern & 0x08) ? fg : bg;
+				buffer[5] = (pattern & 0x04) ? fg : bg;
 			}
 		}
 	}
@@ -204,34 +247,25 @@ void TMS9918A::draw_mode1()
 
 void TMS9918A::draw_mode2()
 {
-	// mode 2
-	int name = 0;
-	int name_base = ((regs[2] & 0xf) << 10) & (TMS9918A_VRAM_SIZE - 1);
-	int pattern_base = (regs[0] & 0x2) ? ((regs[4] & 0x4) << 11) & (TMS9918A_VRAM_SIZE - 1) : ((regs[4] & 0x7) << 11) & (TMS9918A_VRAM_SIZE - 1);
-	int color_base = (regs[0] & 0x2) ? ((regs[3] & 0x80) << 6) & (TMS9918A_VRAM_SIZE - 1) : (regs[3] << 6) & (TMS9918A_VRAM_SIZE - 1);
-	int color_mask = ((regs[3] & 0x7f) << 3) | 0x7;
-	int pattern_mask = ((regs[4] & 0x3) << 8) | (color_mask & 0xff);
-	uint8 backdrop_color = regs[7] & 0xf;
-	
-	for(int y = 0; y < 24; y++) {
-		for(int x = 0; x < 32; x++, name++) {
-			int code = vram[name_base + name] + (y & 0xf8) * 32;
-			uint8* pattern_ptr = &vram[pattern_base + (code & color_mask) * 8];
-			uint8* color_ptr = &vram[color_base + (code & pattern_mask) * 8];
+	for(int y = 0, name = 0; y < 24; y++) {
+		for(int x = 0; x < 32; x++) {
+			uint16 code = vram[name_table + (name++)] + (y & 0xf8) * 32;
+			uint8* pattern_ptr = vram + pattern_table + (code & pattern_mask) * 8;
+			uint8* color_ptr = vram + color_table + (code & color_mask) * 8;
 			for(int yy = 0; yy < 8; yy++) {
+				uint8 pattern = *pattern_ptr++;
+				uint8 color = *color_ptr++;
+				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
+				uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
 				uint8* buffer = screen[y * 8 + yy] + x * 8;
-				uint8 pattern = pattern_ptr[yy];
-				uint8 color = color_ptr[yy];
-				uint8 fore_color = (color >> 4) ? (color >> 4) : backdrop_color;
-				uint8 back_color = (color & 0xf) ? (color & 0xf) : backdrop_color;
-				buffer[0] = (pattern & 0x80) ? fore_color : back_color;
-				buffer[1] = (pattern & 0x40) ? fore_color : back_color;
-				buffer[2] = (pattern & 0x20) ? fore_color : back_color;
-				buffer[3] = (pattern & 0x10) ? fore_color : back_color;
-				buffer[4] = (pattern & 0x08) ? fore_color : back_color;
-				buffer[5] = (pattern & 0x04) ? fore_color : back_color;
-				buffer[6] = (pattern & 0x02) ? fore_color : back_color;
-				buffer[7] = (pattern & 0x01) ? fore_color : back_color;
+				buffer[0] = (pattern & 0x80) ? fg : bg;
+				buffer[1] = (pattern & 0x40) ? fg : bg;
+				buffer[2] = (pattern & 0x20) ? fg : bg;
+				buffer[3] = (pattern & 0x10) ? fg : bg;
+				buffer[4] = (pattern & 0x08) ? fg : bg;
+				buffer[5] = (pattern & 0x04) ? fg : bg;
+				buffer[6] = (pattern & 0x02) ? fg : bg;
+				buffer[7] = (pattern & 0x01) ? fg : bg;
 			}
 		}
 	}
@@ -239,29 +273,21 @@ void TMS9918A::draw_mode2()
 
 void TMS9918A::draw_mode12()
 {
-	// mode 1 + mode 2
-	int name = 0;
-	int name_base = ((regs[2] & 0xf) << 10) & (TMS9918A_VRAM_SIZE - 1);
-	int pattern_base = (regs[0] & 0x2) ? ((regs[4] & 0x4) << 11) & (TMS9918A_VRAM_SIZE - 1) : ((regs[4] & 0x7) << 11) & (TMS9918A_VRAM_SIZE - 1);
-	int color_mask = ((regs[3] & 0x7f) << 3) | 0x7;
-	int pattern_mask = ((regs[4] & 0x3) << 8) | (color_mask & 0xff);
-	uint8 backdrop_color = regs[7] & 0xf;
-	uint8 fore_color = (regs[7] >> 4) ? (regs[7] >> 4) : backdrop_color;
-	uint8 back_color = (regs[7] & 0xf) ? (regs[7] & 0xf) : backdrop_color;
-	
-	for(int y = 0; y < 24; y++) {
-		for(int x = 0; x < 40; x++, name++) {
-			int code = (vram[name_base + name] + (y & 0xf8) * 32) & pattern_mask;
-			uint8* pattern_ptr = &vram[pattern_base + code * 8];
+	uint8 fg = regs[7] >> 4;
+	uint8 bg = regs[7] & 0xf;
+	for(int y = 0, name = 0; y < 24; y++) {
+		for(int x = 0; x < 40; x++) {
+			uint16 code = vram[name_table + (name++)] + (y & 0xf8) * 32;
+			uint8* pattern_ptr = vram + pattern_table + (code & pattern_mask) * 8;
 			for(int yy = 0; yy < 8; yy++) {
+				uint8 pattern = *pattern_ptr++;
 				uint8* buffer = screen[y * 8 + yy] + x * 6 + 8;
-				uint8 pattern = pattern_ptr[yy];
-				buffer[0] = (pattern & 0x80) ? fore_color : back_color;
-				buffer[1] = (pattern & 0x40) ? fore_color : back_color;
-				buffer[2] = (pattern & 0x20) ? fore_color : back_color;
-				buffer[3] = (pattern & 0x10) ? fore_color : back_color;
-				buffer[4] = (pattern & 0x08) ? fore_color : back_color;
-				buffer[5] = (pattern & 0x04) ? fore_color : back_color;
+				buffer[0] = (pattern & 0x80) ? fg : bg;
+				buffer[1] = (pattern & 0x40) ? fg : bg;
+				buffer[2] = (pattern & 0x20) ? fg : bg;
+				buffer[3] = (pattern & 0x10) ? fg : bg;
+				buffer[4] = (pattern & 0x08) ? fg : bg;
+				buffer[5] = (pattern & 0x04) ? fg : bg;
 			}
 		}
 	}
@@ -269,146 +295,98 @@ void TMS9918A::draw_mode12()
 
 void TMS9918A::draw_mode3()
 {
-	// mode 3
-	int name = 0;
-	int name_base = ((regs[2] & 0xf) << 10) & (TMS9918A_VRAM_SIZE - 1);
-	int pattern_base = (regs[0] & 0x2) ? ((regs[4] & 0x4) << 11) & (TMS9918A_VRAM_SIZE - 1) : ((regs[4] & 0x7) << 11) & (TMS9918A_VRAM_SIZE - 1);
-	uint8 backdrop_color = regs[7] & 0xf;
-	
-	for(int y = 0; y < 24; y++) {
-		for(int x = 0; x < 32; x++, name++) {
-			int code = vram[name_base + name];
-			uint8* pattern_ptr = &vram[pattern_base + code * 8 + (y & 0x3) * 2];
+	for(int y = 0, name = 0; y < 24; y++) {
+		for(int x = 0; x < 32; x++) {
+			uint16 code = vram[name_table + (name++)];
+			uint8* pattern_ptr = vram + pattern_table + code * 8 + (y & 3) * 2;
 			for(int yy = 0; yy < 2; yy++) {
-				uint8 color = pattern_ptr[yy];
-				uint8 fore_color = (color >> 4) ? (color >> 4) : backdrop_color;
-				uint8 back_color = (color & 0xf) ? (color & 0xf) : backdrop_color;
+				uint8 color = *pattern_ptr++;
+				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
+				uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
 				for(int yyy = 0; yyy < 4; yyy++) {
 					uint8* buffer = screen[y * 8 + yy * 4 + yyy] + x * 8;
-					buffer[0] = buffer[1] = buffer[2] = buffer[3] = fore_color;
-					buffer[4] = buffer[5] = buffer[6] = buffer[7] = back_color;
+					buffer[0] = buffer[1] = buffer[2] = buffer[3] = fg;
+					buffer[4] = buffer[5] = buffer[6] = buffer[7] = bg;
 				}
 			}
 		}
-	}
-}
-
-void TMS9918A::draw_mode13()
-{
-	// mode 1 + mode 3
-	uint8 backdrop_color = regs[7] & 0xf;
-	uint8 fore_color = (regs[7] >> 4) ? (regs[7] >> 4) : backdrop_color;
-	uint8 back_color = (regs[7] & 0xf) ? (regs[7] & 0xf) : backdrop_color;
-	
-	for(int y = 0; y < 192; y++) {
-		uint8* buffer = screen[y];
-		int x = 0;
-		for(int i = 0; i < 8; i++)
-			buffer[x++] = back_color;
-		for(int i = 0; i < 40; i++) {
-			for(int j = 0; j < 4; j++)
-				buffer[x++] = fore_color;
-			for(int j = 0; j < 2; j++)
-				buffer[x++] = back_color;
-		}
-		for(int i = 0; i < 8; i++)
-			buffer[x++] = back_color;
 	}
 }
 
 void TMS9918A::draw_mode23()
 {
-	// mode 2 + mode 3
-	int name = 0;
-	int name_base = ((regs[2] & 0xf) << 10) & (TMS9918A_VRAM_SIZE - 1);
-	int pattern_base = (regs[0] & 0x2) ? ((regs[4] & 0x4) << 11) & (TMS9918A_VRAM_SIZE - 1) : ((regs[4] & 0x7) << 11) & (TMS9918A_VRAM_SIZE - 1);
-	int color_mask = ((regs[3] & 0x7f) << 3) | 0x7;
-	int pattern_mask = ((regs[4] & 0x3) << 8) | (color_mask & 0xff);
-	uint8 backdrop_color = regs[7] & 0xf;
-	
-	for(int y = 0; y < 24; y++) {
-		for(int x = 0; x < 32; x++, name++) {
-			int code = vram[name_base + name];
-			uint8* pattern_ptr = &vram[pattern_base + ((code + (y & 0x3) * 2 + (y & 0xf8) * 32) & pattern_mask) * 8];
+	for(int y = 0, name = 0; y < 24;y++) {
+		for(int x = 0; x < 32; x++) {
+			uint16 code = vram[name_table + (name++)];
+			uint8* pattern_ptr = vram + pattern_table + ((code + (y & 3) * 2 + (y & 0xf8) * 32) & pattern_mask) * 8;
 			for(int yy = 0; yy < 2; yy++) {
-				uint8 color = pattern_ptr[yy];
-				uint8 fore_color = (color >> 4) ? (color >> 4) : backdrop_color;
-				uint8 back_color = (color & 0xf) ? (color & 0xf) : backdrop_color;
+				uint8 color = *pattern_ptr++;
+				uint8 fg = (color & 0xf0) ? (color >> 4) : (regs[7] & 0xf);
+				uint8 bg = (color & 0xf) ? (color & 0xf) : (regs[7] & 0xf);
 				for(int yyy = 0; yyy < 4; yyy++) {
 					uint8* buffer = screen[y * 8 + yy * 4 + yyy] + x * 8;
-					buffer[0] = buffer[1] = buffer[2] = buffer[3] = fore_color;
-					buffer[4] = buffer[5] = buffer[6] = buffer[7] = back_color;
+					buffer[0] = buffer[1] = buffer[2] = buffer[3] = fg;
+					buffer[4] = buffer[5] = buffer[6] = buffer[7] = bg;
 				}
 			}
 		}
 	}
 }
 
-void TMS9918A::draw_mode123()
+void TMS9918A::draw_modebogus()
 {
-	// mode 1 + mode 2 + mode 3
-	uint8 backdrop_color = regs[7] & 0xf;
-	uint8 fore_color = (regs[7] >> 4) ? (regs[7] >> 4) : backdrop_color;
-	uint8 back_color = (regs[7] & 0xf) ? (regs[7] & 0xf) : backdrop_color;
-	
+	uint8 fg = regs[7] >> 4;
+	uint8 bg = regs[7] & 0xf;
 	for(int y = 0; y < 192; y++) {
 		uint8* buffer = screen[y];
 		int x = 0;
 		for(int i = 0; i < 8; i++)
-			buffer[x++] = back_color;
+			buffer[x++] = bg;
 		for(int i = 0; i < 40; i++) {
 			for(int j = 0; j < 4; j++)
-				buffer[x++] = fore_color;
+				buffer[x++] = fg;
 			for(int j = 0; j < 2; j++)
-				buffer[x++] = back_color;
+				buffer[x++] = bg;
 		}
 		for(int i = 0; i < 8; i++)
-			buffer[x++] = back_color;
+			buffer[x++] = bg;
 	}
 }
 
 void TMS9918A::draw_sprites()
 {
-	int attrib_base = (regs[5] * 128) & (TMS9918A_VRAM_SIZE - 1);
-	uint8* attrib_ptr = &vram[attrib_base];
+	uint8* attrib_ptr = vram + sprite_attrib;
+	int size = (regs[1] & 2) ? 16 : 8;
+	bool large = ((regs[1] & 1) != 0);
+	uint8 limit[192], collision[192][256];
+	int illegal_sprite = 0, illegal_sprite_line = 255, p;
+	_memset(limit, 4, sizeof(limit));
+	_memset(collision, 0, sizeof(collision));
+	status_reg = 0x80;
 	
-	int sprite_size = (regs[1] & 0x2) ? 16 : 8;
-	bool sprite_large = (regs[1] & 0x1) ? true : false;
-	
-	int sprite_limit[192];
-	for(int i = 0; i < 192; i++)
-		sprite_limit[i] = 4;
-	int illegal_sprite_line = 255, illegal_sprite = 0, p;
-	
-	status_reg &= 0x80;
-	_memset(sprite_check, 0, sizeof(sprite_check));
-	
-	// draw 32 sprites
 	for(p = 0; p < 32; p++) {
-		// get sprite location
 		int y = *attrib_ptr++;
 		if(y == 208)
 			break;
-		y = (y > 208) ? -(~y & 0xff) : y + 1;
-		
+		if(y > 208)
+			y = -(~y & 0xff);
+		else
+			y++;
 		int x = *attrib_ptr++;
-		int pattern_base = (((regs[6] & 0x7) * 2048) & (TMS9918A_VRAM_SIZE - 1)) + ((sprite_size == 16) ? (*attrib_ptr & 0xfc) : *attrib_ptr) * 8;
-		uint8* pattern_ptr = &vram[pattern_base];
+		uint8* pattern_ptr = vram + sprite_pattern + ((size == 16) ? (*attrib_ptr & 0xfc) : *attrib_ptr) * 8;
 		attrib_ptr++;
-		
-		uint8 color = *attrib_ptr & 0xf;
+		uint8 c = *attrib_ptr & 0xf;
 		if(*attrib_ptr & 0x80)
 			x -= 32;
 		attrib_ptr++;
 		
-		if(!sprite_large) {
-			// normal size
-			for(int yy = y; yy < (y + sprite_size); yy++) {
-				if(!(0 <= yy && yy < 192))
+		if(!large) {
+			// draw sprite (not enlarged)
+			for(int yy = y; yy < y + size; yy++) {
+				if(yy < 0 || 191 < yy)
 					continue;
-				
-				// check illegal sprite
-				if(sprite_limit[yy] == 0) {
+				if(limit[yy] == 0) {
+					// illegal sprite line
 					if(yy < illegal_sprite_line) {
 						illegal_sprite_line = yy;
 						illegal_sprite = p;
@@ -417,24 +395,23 @@ void TMS9918A::draw_sprites()
 						if(illegal_sprite > p)
 							illegal_sprite = p;
 					}
+#ifdef TMS9918A_LIMIT_SPRITES
 					continue;
+#endif
 				}
-				else {
-					sprite_limit[yy]--;
-				}
-				
-				// draw sprite
-				int line = pattern_ptr[yy - y] * 256 + pattern_ptr[yy - y + 16];
-				for(int xx = x; xx < (x + sprite_size); xx++) {
+				else
+					limit[yy]--;
+				uint16 line = pattern_ptr[yy - y] * 256 + pattern_ptr[yy - y + 16];
+				for(int xx = x; xx < x + size; xx++) {
 					if(line & 0x8000) {
 						if(0 <= xx && xx < 256) {
-							if(sprite_check[yy * 256 + xx])
+							if(collision[yy][xx])
 								status_reg |= 0x20;
 							else
-								sprite_check[yy * 256 + xx] = 1;
-							if(color && !(sprite_check[yy * 256 + xx] & 0x2)) {
-								sprite_check[yy * 256 + xx] |= 0x2;
-								screen[yy][xx] = color;
+								collision[yy][xx] = 1;
+							if(c && !(collision[yy][xx] & 2)) {
+								collision[yy][xx] |= 2;
+								screen[yy][xx] = c;
 							}
 						}
 					}
@@ -443,49 +420,49 @@ void TMS9918A::draw_sprites()
 			}
 		}
 		else {
-			// large size
-			for(int i = 0; i < sprite_size; i++) {
+			// draw enlarged sprite
+			for(int i = 0; i < size; i++) {
 				int yy = y + i * 2;
-				int line2 = pattern_ptr[i] * 256 + pattern_ptr[i + 16];
+				uint16 line2 = pattern_ptr[i] * 256 + pattern_ptr[i + 16];
 				for(int j = 0; j < 2; j++) {
-					if(0 <= yy && y < 192) {
-						// check illegal sprite
-						if(sprite_limit[yy] == 0) {
+					if(0 <= yy && yy <= 191) {
+						if(limit[yy] == 0) {
+							// illegal sprite line
 							if(yy < illegal_sprite_line) {
 								illegal_sprite_line = yy;
-								illegal_sprite = p;
+								 illegal_sprite = p;
 							}
 							else if(illegal_sprite_line == yy) {
 								if(illegal_sprite > p)
 									illegal_sprite = p;
 							}
+#ifdef TMS9918A_LIMIT_SPRITES
 							continue;
+#endif
 						}
-						else {
-							sprite_limit[yy]--;
-						}
-						
-						int line = line2;
-						for(int xx = x ; xx < (x + sprite_size * 2); xx += 2) {
+						else
+							limit[yy]--;
+						uint16 line = line2;
+						for(int xx = x; xx < x + size * 2; xx += 2) {
 							if(line & 0x8000) {
 								if(0 <= xx && xx < 256) {
-									if(sprite_check[yy * 256 + xx])
+									if(collision[yy][xx])
 										status_reg |= 0x20;
 									else
-										sprite_check[yy * 256 + xx] = 0x01;
-									if(color && !(sprite_check[yy * 256 + xx] & 0x02)) {
-										sprite_check[yy * 256 + xx] |= 0x02;
-										screen[yy][xx] = color;
+										collision[yy][xx] = 1;
+									if(c && !(collision[yy][xx] & 2)) {
+										collision[yy][xx] |= 2;
+										screen[yy][xx] = c;
 									}
 								}
 								if(0 <= xx + 1 && xx + 1 < 256) {
-									if (sprite_check[yy * 256 + xx + 1])
+									if(collision[yy][xx + 1])
 										status_reg |= 0x20;
 									else
-									 	sprite_check[yy * 256 + xx + 1] = 0x01;
-									if(color && !(sprite_check[yy * 256 + xx + 1] & 0x02)) {
-										sprite_check[yy * 256 + xx + 1] |= 0x02;
-										screen[yy][xx + 1] = color;
+										collision[yy][xx + 1] = 1;
+									if(c && !(collision[yy][xx + 1] & 2)) {
+										collision[yy][xx + 1] |= 2;
+										screen[yy][xx + 1] = c;
 									}
 								}
 							}
@@ -497,9 +474,8 @@ void TMS9918A::draw_sprites()
 			}
 		}
 	}
-	
 	if(illegal_sprite_line == 255)
-		status_reg |= (p > 0x1f) ? 0x1f : p;
+		status_reg |= (p > 31) ? 31 : p;
 	else
 		status_reg |= 0x40 + illegal_sprite;
 }

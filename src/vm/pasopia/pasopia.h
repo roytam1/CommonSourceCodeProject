@@ -81,7 +81,6 @@ class IO8;
 class NOT;
 class Z80;
 class Z80CTC;
-class Z80PIC;
 class Z80PIO;
 
 class DISPLAY;
@@ -91,13 +90,10 @@ class PAC2;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
 	// devices
-	DEVICE* dummy;
 	EVENT* event;
 	
 	BEEP* beep;
@@ -110,7 +106,6 @@ protected:
 	NOT* not;
 	Z80* cpu;
 	Z80CTC* ctc;
-	Z80PIC* pic;
 	Z80PIO* pio;
 	
 	DISPLAY* display;
@@ -167,6 +162,7 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
+	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
 };

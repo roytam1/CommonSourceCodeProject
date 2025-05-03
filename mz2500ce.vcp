@@ -339,10 +339,6 @@ SOURCE=.\src\vm\z80.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\z80pic.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\vm\z80pio.cpp
 # End Source File
 # Begin Source File
@@ -548,10 +544,6 @@ SOURCE=.\src\vm\ym2203.h
 # Begin Source File
 
 SOURCE=.\src\vm\z80.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\z80pic.h
 # End Source File
 # Begin Source File
 

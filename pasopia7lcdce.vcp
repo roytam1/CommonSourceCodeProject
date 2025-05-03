@@ -311,10 +311,6 @@ SOURCE=.\src\vm\z80ctc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\z80pic.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\vm\z80pio.cpp
 # End Source File
 # End Group
@@ -327,7 +323,7 @@ SOURCE=.\src\vm\pasopia7\display.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\pasopia7\floopy.cpp
+SOURCE=.\src\vm\pasopia7\floppy.cpp
 # End Source File
 # Begin Source File
 
@@ -444,10 +440,6 @@ SOURCE=.\src\vm\z80.h
 # Begin Source File
 
 SOURCE=.\src\vm\z80ctc.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\z80pic.h
 # End Source File
 # Begin Source File
 

@@ -22,9 +22,11 @@
 class YM2203 : public DEVICE
 {
 private:
-	DEVICE* dev[2][MAX_OUTPUT];
-	int did[2][MAX_OUTPUT], dshift[2][MAX_OUTPUT], dcount[2];
-	uint32 dmask[2][MAX_OUTPUT];
+	DEVICE *d_irq[MAX_OUTPUT], *d_port[2][MAX_OUTPUT];
+	int did_irq[MAX_OUTPUT], did_port[2][MAX_OUTPUT];
+	int dshift_port[2][MAX_OUTPUT];
+	int dcount_irq, dcount_port[2];
+	uint32 dmask_irq[MAX_OUTPUT], dmask_port[2][MAX_OUTPUT];
 	
 	FM::OPN* opn;
 	int usec;
@@ -37,11 +39,11 @@ private:
 		bool first;
 	} port_t;
 	port_t port[2];
-	bool mute;
+	bool irq, mute;
 	
 public:
 	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount[0] = dcount[1] = 0;
+		dcount_irq = dcount_port[0] = dcount_port[1] = 0;
 		port[0].wreg = port[1].wreg = port[0].rreg = port[1].rreg = 0;//0xff;
 	}
 	~YM2203() {}
@@ -57,13 +59,17 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique functions
+	void set_context_irq(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_irq++;
+		d_irq[c] = device; did_irq[c] = id; dmask_irq[c] = mask;
+	}
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[0]++;
-		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask; dshift[0][c] = shift;
+		int c = dcount_port[0]++;
+		d_port[0][c] = device; did_port[0][c] = id; dmask_port[0][c] = mask; dshift_port[0][c] = shift;
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask; dshift[1][c] = shift;
+		int c = dcount_port[1]++;
+		d_port[1][c] = device; did_port[1][c] = id; dmask_port[1][c] = mask; dshift_port[1][c] = shift;
 	}
 	void init(int rate, int clock, int samples, int volf, int volp);
 };

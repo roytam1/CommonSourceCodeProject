@@ -18,9 +18,8 @@
 #define MAX_OUTPUT	8
 
 // common signal id
-#define SIG_CPU_DO_INT	101
-#define SIG_CPU_DO_NMI	102
-#define SIG_CPU_BUSREQ	103
+#define SIG_CPU_NMI	101
+#define SIG_CPU_BUSREQ	102
 
 class DEVICE
 {
@@ -88,6 +87,12 @@ public:
 		*wait = 0;
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
+	virtual void write_dma8(uint32 addr, uint32 data) {
+		write_data8(addr, data);
+	}
+	virtual uint32 read_dma8(uint32 addr) {
+		return read_data8(addr);
+	}
 	
 	// i/o bus
 	virtual void write_io8(uint32 addr, uint32 data) {}
@@ -108,16 +113,17 @@ public:
 		return 0;
 	}
 	
-	// device to pic
-	virtual void request_int(DEVICE* device, int pri, uint32 vector, bool pending) {}
-	virtual void cancel_int(int pri) {}
+	// interrupt device to device
+	virtual void set_intr_iei(bool val) {}
 	
-	// cpu to pic
-	virtual void do_reti() {}
-	virtual void do_ei() {}
-	virtual bool accept_int() {
-		return false;
+	// interrupt device to cpu
+	virtual void set_intr_line(bool line, bool pending, uint32 bit) {}
+	
+	// interrupt cpu to device
+	virtual uint32 intr_ack() {
+		return 0xff;
 	}
+	virtual void intr_reti() {}
 	
 	// cpu
 	virtual void run(int clock) {}

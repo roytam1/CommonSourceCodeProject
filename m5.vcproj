@@ -521,26 +521,6 @@
 						/>
 					</FileConfiguration>
 				</File>
-				<File
-					RelativePath="src\vm\z80pic.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
 			</Filter>
 			<Filter
 				Name="VM Driver Source Files"
@@ -691,10 +671,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\z80ctc.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\z80pic.h"
 					>
 				</File>
 			</Filter>

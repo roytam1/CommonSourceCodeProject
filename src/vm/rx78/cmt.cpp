@@ -25,12 +25,12 @@ void CMT::write_io8(uint32 addr, uint32 data)
 	// data recorder
 	if(!remote) {
 		// motor on
-		dev->write_signal(did_rmt, 0xffffffff, 1);
+		dev->write_signal(did_rmt, 1, 1);
 		remote = true;
 	}
 	bool signal = (data & 1) ? true : false;
 	if(signal != out) {
-		dev->write_signal(did_out, signal ? 0xffffffff : 0, 1);
+		dev->write_signal(did_out, signal ? 1 : 0, 1);
 		out = signal;
 	}
 	now_acc = true;
@@ -40,7 +40,7 @@ uint32 CMT::read_io8(uint32 addr)
 {
 	if(!remote) {
 		// motor on
-		dev->write_signal(did_rmt, 0xffffffff, 1);
+		dev->write_signal(did_rmt, 1, 1);
 		remote = true;
 	}
 	now_acc = true;

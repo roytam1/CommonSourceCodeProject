@@ -42,7 +42,7 @@ private:
 	uint8* key_stat;
 	uint8* joy_stat;
 	int key_no;
-	bool enb, req;
+	bool intr_enb;
 	
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -52,7 +52,6 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void do_ei();
 	
 	// unique functions
 	void set_context(DEVICE* device) {

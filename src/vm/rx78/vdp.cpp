@@ -67,16 +67,13 @@ void VDP::write_io8(uint32 addr, uint32 data)
 
 void VDP::event_vsync(int v, int clock)
 {
-	// interrupt
-	if(v == 184 && dev->accept_int())
-		dev->write_signal(SIG_CPU_DO_INT, 0xff, 0xffffffff);
+	// vsync interrupt (not pending ???)
+	if(v == 184)
+		dev->set_intr_line(true, false, 0);
 }
 
 void VDP::draw_screen()
 {
-	uint8 screen0[184][192];
-	uint8 screen1[184][192];
-	
 	// create screen
 	for(int y = 0, src = 0; y < 184; y++) {
 		uint8* dest0 = screen0[y];

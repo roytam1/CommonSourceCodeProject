@@ -12,31 +12,32 @@
 
 void I8237::reset()
 {
-	for(int c = 0; c < 4; c++)
-		count[c] = 0xffff;
 	low_high = false;
-	cmd = stat = req = run = 0;
+	cmd = req = tc = 0;
 	mask = 0xff;
 }
 
 void I8237::write_io8(uint32 addr, uint32 data)
 {
-	int c = (addr >> 1) & 3;
+	int ch = (addr >> 1) & 3;
+	uint8 bit = 1 << (data & 3);
 	
-	switch(addr & 0xff)
+	switch(addr & 0xf)
 	{
 	case 0x0: case 0x2: case 0x4: case 0x6:
 		if(low_high)
-			areg[c] = (areg[c] & 0xff) | data << 8;
+			dma[ch].bareg = (dma[ch].bareg & 0xff) | (data << 8);
 		else
-			areg[c] = (areg[c] & 0xff00) | data;
+			dma[ch].bareg = (dma[ch].bareg & 0xff00) | data;
+		dma[ch].areg = dma[ch].bareg;
 		low_high = !low_high;
 		break;
 	case 0x1: case 0x3: case 0x5: case 0x7:
 		if(low_high)
-			creg[c] = (creg[c] & 0xff) | data << 8;
+			dma[ch].bcreg = (dma[ch].bcreg & 0xff) | (data << 8);
 		else
-			creg[c] = (creg[c] & 0xff00) | data;
+			dma[ch].bcreg = (dma[ch].bcreg & 0xff00) | data;
+		dma[ch].creg = dma[ch].bcreg;
 		low_high = !low_high;
 		break;
 	case 0x8:
@@ -46,25 +47,28 @@ void I8237::write_io8(uint32 addr, uint32 data)
 	case 0x9:
 		// request register
 		if(data & 4) {
-			req |= 1 << (data & 3);
-			do_dma();
+			if(!(req & bit)) {
+				req |= bit;
+				do_dma();
+			}
 		}
 		else
-			req &= ~(1 << (data & 3));
+			req &= ~bit;
 		break;
 	case 0xa:
 		// single mask register
 		if(data & 4)
-			mask |= 1 << (data & 3);
+			mask |= bit;
 		else
-			mask &= ~(1 << (data & 3));
+			mask &= ~bit;
 		break;
 	case 0xb:
 		// mode register
-		mode[data & 3] = data;
+		dma[data & 3].mode = data;
 		break;
 	case 0xc:
 		low_high = false;
+		break;
 	case 0xd:
 		// clear master
 		reset();
@@ -82,6 +86,34 @@ void I8237::write_io8(uint32 addr, uint32 data)
 
 uint32 I8237::read_io8(uint32 addr)
 {
+	int ch = (addr >> 1) & 3;
+	uint32 val = 0xff;
+	
+	switch(addr & 0xf)
+	{
+	case 0x0: case 0x2: case 0x4: case 0x6:
+		if(low_high)
+			val = dma[ch].areg >> 8;
+		else
+			val = dma[ch].areg & 0xff;
+		low_high = !low_high;
+		return val;
+	case 0x1: case 0x3: case 0x5: case 0x7:
+		if(low_high)
+			val = dma[ch].creg >> 8;
+		else
+			val = dma[ch].creg & 0xff;
+		low_high = !low_high;
+		return val;
+	case 0x8:
+		// status register
+		val = (req << 4) | tc;
+		tc = 0;
+		return val;
+	case 0xd:
+		// temporary register
+		return tmp;
+	}
 	return 0xff;
 }
 
@@ -90,8 +122,10 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 	uint8 bit = 1 << (id & 3);
 	
 	if(data & mask) {
-		req |= bit;
-		do_dma();
+		if(!(req & bit)) {
+			req |= bit;
+			do_dma();
+		}
 	}
 	else
 		req &= ~bit;
@@ -99,67 +133,43 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 
 void I8237::do_dma()
 {
-	for(int c = 0; c < 4; c++) {
-		uint8 bit = 1 << c;
-		
-		// requested and not masked
+	for(int ch = 0; ch < 4; ch++) {
+		uint8 bit = 1 << ch;
 		if((req & bit) && !(mask & bit)) {
 			// execute dma
-			uint16 addr, count;
-			if(count[c] == 0xffff) {
-				// start
-				addr = areg[c];
-				count = creg[c];
-			}
-			else {
-				// restart
-				addr = addr[c];
-				count = count[c];
-			}
-			run |= bit;
-			
-			for(;;) {
-				if((mode[c] & 0xc) == 0x0) {
+			while(req & bit) {
+				if((dma[ch].mode & 0xc) == 0) {
 					// verify
 				}
-				else if((mode[c] & 0xc) == 0x4) {
+				else if((dma[ch].mode & 0xc) == 4) {
 					// io -> memory
-					uint32 val = dev[c]->read_data8(0);
-					mem->write_data8(addr, val);
+					tmp = dma[ch].dev->read_dma8(0);
+					d_mem->write_dma8(dma[ch].areg, tmp);
 				}
-				else if((mode[c] & 0xc) == 0x8) {
+				else if((dma[ch].mode & 0xc) == 8) {
 					// memory -> io
-					uint32 val = mem->read_data8(addr);
-					dev[c]->write_data8(0, val);
+					tmp = d_mem->read_dma8(dma[ch].areg);
+					dma[ch].dev->write_dma8(0, tmp);
 				}
-				if(mode[c] & 0x20)
-					addr--;
+				if(dma[ch].mode & 0x20)
+					dma[ch].areg--;
 				else
-					addr++;
+					dma[ch].areg++;
 				
 				// check dma condition
-				if(count-- == 0)
-					break;
-				if(!(req & bit))
-					break;
-			}
-			if(count == 0xffff) {
-				// tc
-				if(mode[c] & 0x10) {
-					// self initialize
-					addr = areg[c];
-					count = creg[c];
+				if(dma[ch].creg-- == 0) {
+					// TC
+					if(dma[ch].mode & 0x10) {
+						// self initialize
+						dma[ch].areg = dma[ch].bareg;
+						dma[ch].creg = dma[ch].bcreg;
+					}
+					else
+						mask |= bit;
+					req &= ~bit;
+					tc |= bit;
 				}
-				else
-					bit |= bit;
-				run &= ~bit;
 			}
-			req &= ~bit;
-			
-			// store current count
-			addr[c] = addr;
-			count[c] = count;
-			return;
 		}
 	}
 }

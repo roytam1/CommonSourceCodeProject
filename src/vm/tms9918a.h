@@ -1,9 +1,10 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : MESS
+	Origin : MAME TMS9928A Core
 	Author : Takeda.Toshiya
 	Date   : 2006.08.18 -
+	         2007.07.21 -
 
 	[ TMS9918A ]
 */
@@ -23,9 +24,6 @@ static const uint16 palette_pc[16] = {
 	RGB_PAL(252,  85,  84), RGB_PAL(255, 121, 120), RGB_PAL(212, 193,  84), RGB_PAL(230, 206, 128),
 	RGB_PAL( 33, 176,  59), RGB_PAL(201,  91, 186), RGB_PAL(204, 204, 204), RGB_PAL(255, 255, 255)
 };
-static const uint8 mask[8] = {
-	0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff
-};
 
 class TMS9918A : public DEVICE
 {
@@ -35,23 +33,24 @@ private:
 	uint32 dmask[MAX_OUTPUT];
 	
 	uint8 vram[TMS9918A_VRAM_SIZE];
-	uint8 sprite_check[256 * 192];
-	uint8 regs[8];
-	uint8 status_reg, latch_reg, vram_latch;
+	uint8 screen[192][256];
+	uint8 regs[8], status_reg, read_ahead, first_byte;
 	uint16 vram_addr;
 	bool latch, intstat;
+	uint16 color_table, pattern_table, name_table;
+	uint16 sprite_pattern, sprite_attrib;
+	uint16 color_mask, pattern_mask;
 	
-	// draw
-	uint8 screen[192][256];
+	void set_intstat(bool val);
 	void draw_mode0();
 	void draw_mode1();
 	void draw_mode2();
 	void draw_mode12();
 	void draw_mode3();
-	void draw_mode13();
 	void draw_mode23();
-	void draw_mode123();
+	void draw_modebogus();
 	void draw_sprites();
+	
 public:
 	TMS9918A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount = 0;

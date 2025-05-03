@@ -11,19 +11,23 @@
 
 void Z80PIO::reset()
 {
-	for(int i = 0; i < 2; i++) {
-		port[i].mode = 0x40;
-		port[i].ctrl1 = 0;
-		port[i].ctrl2 = 0;
-		port[i].dir = 0xff;
-		port[i].mask = 0xff;
-		port[i].vector = 0;
-		port[i].int_enb = false;
-		port[i].set_dir = false;
-		port[i].set_mask = false;
-		port[i].prv_req = false;
-		port[i].first = true;
+	for(int ch = 0; ch < 2; ch++) {
+		port[ch].mode = 0x40;
+		port[ch].ctrl1 = 0;
+		port[ch].ctrl2 = 0;
+		port[ch].dir = 0xff;
+		port[ch].mask = 0xff;
+		port[ch].vector = 0;
+		port[ch].set_dir = false;
+		port[ch].set_mask = false;
+		port[ch].first = true;
+		// interrupt
+		port[ch].enb_intr = false;
+		port[ch].req_intr = false;
+		port[ch].in_service = false;
 	}
+	iei = oei = true;
+	intr = false;
 }
 
 /*
@@ -54,13 +58,13 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].wreg = data;
 			port[ch].first = false;
 		}
-		if((port[ch].mode & 0xc0) == 0x00 || (port[ch].mode & 0xc0) == 0x80) {
+		if((port[ch].mode & 0xc0) == 0 || (port[ch].mode & 0xc0) == 0x80) {
 			// mode0/2 data is recieved by other chip
-			if(port[ch].int_enb && d_pic)
-				d_pic->request_int(this, pri + ch, port[ch].vector, true);
+			port[ch].req_intr = true;
+			update_intr();
 		}
 		else if((port[ch].mode & 0xc0) == 0xc0)
-			do_interrupt(ch);
+			check_mode3_intr(ch);
 		break;
 	case 1:
 	case 3:
@@ -73,26 +77,27 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].mask = data;
 			port[ch].set_mask = false;
 		}
-		else if(!(data & 0x01))
+		else if(!(data & 1))
 			port[ch].vector = data;
-		else if((data & 0x0f) == 0x03) {
-			port[ch].int_enb = (data & 0x80) ? true : false;
+		else if((data & 0xf) == 3) {
+			port[ch].enb_intr = ((data & 0x80) != 0);
 			port[ch].ctrl2 = data;
+			update_intr();
 		}
-		else if((data & 0x0f) == 0x07) {
+		else if((data & 0xf) == 7) {
 			if(data & 0x10) {
 				if((port[ch].mode & 0xc0) == 0xc0)
 					port[ch].set_mask = true;
 				// canel interrup ???
-				if(d_pic)
-					d_pic->cancel_int(pri + ch);
+				port[ch].req_intr = false;
 			}
-			port[ch].int_enb = (data & 0x80) ? true : false;
+			port[ch].enb_intr = ((data & 0x80) != 0);
 			port[ch].ctrl1 = data;
+			update_intr();
 		}
-		else if((data & 0x0f) == 0x0f) {
+		else if((data & 0xf) == 0xf) {
 			// port[].dir 0=output, 1=input
-			if((data & 0xc0) == 0x00)
+			if((data & 0xc0) == 0)
 				port[ch].dir = 0;
 			else if((data & 0xc0) == 0x40)
 				port[ch].dir = 0xff;
@@ -101,7 +106,7 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 			port[ch].mode = data;
 		}
 		if((port[ch].mode & 0xc0) == 0xc0)
-			do_interrupt(ch);
+			check_mode3_intr(ch);
 		break;
 	}
 }
@@ -131,50 +136,128 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
 		if((port[0].mode & 0xc0) == 0x40 || (port[0].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio recieved the data sent by other chip
-			if(port[0].int_enb && d_pic)
-				d_pic->request_int(this, pri + 0, port[0].vector, true);
+			port[0].req_intr = true;
+			update_intr();
 		}
 		else if((port[0].mode & 0xc0) == 0xc0)
-			do_interrupt(0);
+			check_mode3_intr(0);
 	}
 	else if(id == SIG_Z80PIO_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
 		if((port[1].mode & 0xc0) == 0x40 || (port[1].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio recieved the data sent by other chip
-			if(port[1].int_enb && d_pic)
-				d_pic->request_int(this, pri + 1, port[1].vector, true);
+			port[1].req_intr = true;
+			update_intr();
 		}
 		else if((port[1].mode & 0xc0) == 0xc0)
-			do_interrupt(1);
+			check_mode3_intr(1);
 	}
 }
 
-void Z80PIO::do_interrupt(int ch)
+void Z80PIO::check_mode3_intr(int ch)
 {
 	// check mode3 interrupt status
-	bool next_req = false;
 	uint8 mask = ~port[ch].mask;
 	uint8 val = (port[ch].rreg & port[ch].dir) | (port[ch].wreg & ~port[ch].dir);
-//	uint8 val = port[ch].rreg & port[ch].dir;
 	val &= mask;
 	
-	if(!port[ch].int_enb)
-		next_req = false;
-	else if((port[ch].ctrl1 & 0x60) == 0x00 && val != mask)
-		next_req = true;
-	else if((port[ch].ctrl1 & 0x60) == 0x20 && val != 0x00)
-		next_req = true;
-	else if((port[ch].ctrl1 & 0x60) == 0x40 && val == 0x00)
-		next_req = true;
+	if((port[ch].ctrl1 & 0x60) == 0 && val != mask)
+		port[ch].req_intr = true;
+	else if((port[ch].ctrl1 & 0x60) == 0x20 && val != 0)
+		port[ch].req_intr = true;
+	else if((port[ch].ctrl1 & 0x60) == 0x40 && val == 0)
+		port[ch].req_intr = true;
 	else if((port[ch].ctrl1 & 0x60) == 0x60 && val == mask)
-		next_req = true;
-	
-	if(port[ch].prv_req != next_req && d_pic) {
-		if(next_req)
-			d_pic->request_int(this, pri + ch, port[ch].vector, true);
-		else
-			d_pic->cancel_int(pri + ch);
+		port[ch].req_intr = true;
+	else
+		port[ch].req_intr = false;
+	update_intr();
+}
+
+void Z80PIO::set_intr_iei(bool val)
+{
+	if(iei != val) {
+		iei = val;
+		update_intr();
 	}
-	port[ch].prv_req = next_req;
+}
+
+#define set_intr_oei(val) { \
+	if(oei != val) { \
+		oei = val; \
+		if(d_child) \
+			d_child->set_intr_iei(oei); \
+	} \
+}
+
+void Z80PIO::update_intr()
+{
+	bool next;
+	
+	// set oei
+	if(next = iei) {
+		for(int ch = 0; ch < 2; ch++) {
+			if(port[ch].in_service) {
+				next = false;
+				break;
+			}
+		}
+	}
+	set_intr_oei(next);
+	
+	// set intr
+	if(next = iei) {
+		next = false;
+		for(int ch = 0; ch < 2; ch++) {
+			if(port[ch].in_service)
+				break;
+			if(port[ch].enb_intr && port[ch].req_intr) {
+				next = true;
+				break;
+			}
+		}
+	}
+	if(next != intr) {
+		intr = next;
+		if(d_cpu)
+			d_cpu->set_intr_line(intr, true, intr_bit);
+	}
+}
+
+uint32 Z80PIO::intr_ack()
+{
+	// ack (M1=IORQ=L)
+	if(intr) {
+		for(int ch = 0; ch < 2; ch++) {
+			if(port[ch].in_service)
+				break;
+			if(port[ch].enb_intr && port[ch].req_intr) {
+				port[ch].req_intr = false;
+				port[ch].in_service = true;
+				update_intr();
+				return port[ch].vector;
+			}
+		}
+		// invalid interrupt status
+//		emu->out_debug(_T("Z80PIO : intr_ack()\n"));
+		return 0xff;
+	}
+	if(d_child)
+		return d_child->intr_ack();
+	return 0xff;
+}
+
+void Z80PIO::intr_reti()
+{
+	// detect RETI
+	for(int ch = 0; ch < 2; ch++) {
+		if(port[ch].in_service) {
+			port[ch].in_service = false;
+			update_intr();
+			return;
+		}
+	}
+	if(d_child)
+		d_child->intr_reti();
 }
 

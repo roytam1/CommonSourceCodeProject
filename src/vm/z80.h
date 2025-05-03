@@ -16,10 +16,12 @@
 #include "device.h"
 
 #ifdef NSC800
-#define SIG_NSC800_DO_RSTA	0
-#define SIG_NSC800_DO_RSTB	1
-#define SIG_NSC800_DO_RSTC	2
+#define SIG_NSC800_INT	0
+#define SIG_NSC800_RSTA	1
+#define SIG_NSC800_RSTB	2
+#define SIG_NSC800_RSTC	3
 #endif
+#define NMI_REQ_BIT	0x80000000
 
 #define AF	regs[0].w
 #define BC	regs[1].w
@@ -377,6 +379,7 @@ private:
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
 	uint16 SP, PC, prvPC, exAF, exBC, exDE, exHL, EA;
 	bool busreq, halt;
+	uint32 intr_req_bit, intr_pend_bit;
 	
 	/* ---------------------------------------------------------------------------
 	virtual machine interfaces
@@ -443,27 +446,23 @@ private:
 #ifdef CPU_MEMORY_WAIT
 		int wait;
 		uint16 val = d_mem->read_data16w(PC, &wait);
-		PC += 2;
 		count -= wait;
-		return val;
 #else
 		uint16 val = d_mem->read_data16(PC);
+#endif
 		PC += 2;
 		return val;
-#endif
 	}
 	inline uint16 POP16() {
 #ifdef CPU_MEMORY_WAIT
 		int wait;
 		uint16 val = d_mem->read_data16w(SP, &wait);
-		SP += 2;
 		count -= wait;
-		return val;
 #else
 		uint16 val = d_mem->read_data16(SP);
+#endif
 		SP += 2;
 		return val;
-#endif
 	}
 	inline void PUSH16(uint16 val) {
 		SP -= 2;
@@ -507,10 +506,10 @@ private:
 	
 	// interrupt
 	inline void NOTIFY_RETI() {
-		d_pic->do_reti();
+		d_pic->intr_reti();
 	}
-	inline void NOTIFY_EI() {
-		d_pic->do_ei();
+	inline uint32 ACK_INTR() {
+		return d_pic->intr_ack();
 	}
 	
 	/* ---------------------------------------------------------------------------
@@ -518,12 +517,12 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	// CB,DD,ED,FD
-	void execute_op();
-	void execute_opCB();
-	void execute_opDD();
-	void execute_opED();
-	void execute_opFD();
-	void execute_opXY();
+	void OP(uint8 code);
+	void OP_CB();
+	void OP_DD();
+	void OP_ED();
+	void OP_FD();
+	void OP_XY();
 	
 	// opecode
 	inline uint16 EXSP(uint16 reg);
@@ -551,8 +550,10 @@ public:
 	void reset();
 	void run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	bool accept_int() {
-		return (IFF1 == 1) ? true : false;
+	void set_intr_line(bool line, bool pending, uint32 bit) {
+		uint32 mask = 1 << bit;
+		intr_req_bit = line ? (intr_req_bit | mask) : (intr_req_bit & ~mask);
+		intr_pend_bit = pending ? (intr_pend_bit | mask) : (intr_pend_bit & ~mask);
 	}
 	int passed_clock() {
 		return first - count;
@@ -568,7 +569,7 @@ public:
 	void set_context_io(DEVICE* device) {
 		d_io = device;
 	}
-	void set_context_int(DEVICE* device) {
+	void set_context_intr(DEVICE* device) {
 		d_pic = device;
 	}
 };

@@ -19,7 +19,6 @@
 #include "../tms9918a.h"
 #include "../z80.h"
 #include "../z80ctc.h"
-#include "../z80pic.h"
 
 #include "cmt.h"
 #include "keyboard.h"
@@ -43,7 +42,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	vdp = new TMS9918A(this, emu);
 	cpu = new Z80(this, emu);
 	ctc = new Z80CTC(this, emu);
-	pic = new Z80PIC(this, emu);
 	
 	cmt = new CMT(this, emu);
 	key = new KEYBOARD(this, emu);
@@ -55,13 +53,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	drec->set_context(cmt, SIG_CMT_IN, 1);
 	vdp->set_context(ctc, SIG_Z80CTC_TRIG_3, 1);
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(pic);
-	ctc->set_context_int(pic, 0);
-	pic->set_context(cpu);
 	cmt->set_context(drec, SIG_DATAREC_OUT, SIG_DATAREC_REMOTE);
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(ctc);
+	
+	// z80 family daisy chain
+	ctc->set_context_intr(cpu, 0);
+	
+	// i/o bus
 	io->set_iomap_range_w(0x00, 0x03, ctc);
 	io->set_iomap_range_w(0x10, 0x11, vdp);
 	io->set_iomap_single_w(0x20, psg);

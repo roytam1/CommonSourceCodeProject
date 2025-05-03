@@ -25,7 +25,7 @@ void BEEP::write_signal(int id, uint32 data, uint32 mask)
 		if(!on && next) {
 			count = 0;
 			pulse = lines = 0;
-			change = 2;
+			change = constant ? 2 : 0;
 		}
 		on = next;
 	}
@@ -40,6 +40,10 @@ void BEEP::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_BEEP_PULSE)
 		pulse += (data & mask);
+	else if(id == SIG_BEEP_FREQ) {
+		int freq = data & mask;
+		diff = (int)(32.0 * gen_rate / (freq ? freq : 1) / 2.0 + 0.5);
+	}
 }
 
 #define mydiff(p, q) ((p) > (q) ? (p) - (q) : (q) - (p))
@@ -72,14 +76,16 @@ void BEEP::mix(int32* buffer, int cnt)
 			count += diff;
 			signal = !signal;
 		}
-		buffer[i] += signal ? vol : -vol;
+		buffer[i] += signal ? gen_vol : -gen_vol;
 	}
 }
 
 void BEEP::init(int rate, int frequency, int divide, int volume)
 {
-	if(frequency != -1)
+	if(frequency != -1) {
 		diff = (int)(32.0 * rate / frequency / 2.0 + 0.5);	// constant frequency
+		constant = 0;
+	}
 	else {
 /*
 		frequency = pulse * FRAMES_PER_SEC / DELAY_FRAMES
@@ -91,6 +97,7 @@ void BEEP::init(int rate, int frequency, int divide, int volume)
 		constant = (long)((256.0 * 16.0 * DELAY_FRAMES * rate * divide) / FRAMES_PER_SEC + 0.5);
 		vm->regist_vsync_event(this);
 	}
-	vol = volume;
+	gen_rate = rate;
+	gen_vol = volume;
 }
 

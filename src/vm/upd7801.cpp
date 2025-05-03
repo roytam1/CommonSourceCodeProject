@@ -701,6 +701,7 @@ void UPD7801::run(int clock)
 			IFF--;
 		
 		// run 1 opecode
+		period = 0;
 		prvPC = PC;
 		OP();
 		count -= period;
@@ -780,21 +781,21 @@ void UPD7801::OP()
 		// skip this mnemonic
 		switch(ope)
 		{
-		case 0x48: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op48[ope].oplen - 2; period = op48[ope].clock; break;
-		case 0x4c: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op4c[ope].oplen - 2; period = op4c[ope].clock; break;
-		case 0x4d: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op4d[ope].oplen - 2; period = op4d[ope].clock; break;
-		case 0x60: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op60[ope].oplen - 2; period = op60[ope].clock; break;
-		case 0x64: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op64[ope].oplen - 2; period = op64[ope].clock; break;
-		case 0x70: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op70[ope].oplen - 2; period = op70[ope].clock; break;
-		case 0x74: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op74[ope].oplen - 2; period = op74[ope].clock; break;
-		case 0x34: PSW &= ~(F_SK        | F_L1);                 PC += op[ope].oplen - 1;   period = op[ope].clock;   break;
-		case 0x69: PSW &= ~(F_SK | F_L0       );                 PC += op[ope].oplen - 1;   period = op[ope].clock;   break;
-		case 0x6f: PSW &= ~(F_SK        | F_L1);                 PC += op[ope].oplen - 1;   period = op[ope].clock;   break;
-		default:   PSW &= ~(F_SK | F_L0 | F_L1);                 PC += op[ope].oplen - 1;   period = op[ope].clock;   break;
+		case 0x48: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op48[ope].oplen - 2; period += op48[ope].clock; break;
+		case 0x4c: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op4c[ope].oplen - 2; period += op4c[ope].clock; break;
+		case 0x4d: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op4d[ope].oplen - 2; period += op4d[ope].clock; break;
+		case 0x60: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op60[ope].oplen - 2; period += op60[ope].clock; break;
+		case 0x64: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op64[ope].oplen - 2; period += op64[ope].clock; break;
+		case 0x70: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op70[ope].oplen - 2; period += op70[ope].clock; break;
+		case 0x74: PSW &= ~(F_SK | F_L0 | F_L1); ope = FETCH8(); PC += op74[ope].oplen - 2; period += op74[ope].clock; break;
+		case 0x34: PSW &= ~(F_SK        | F_L1);                 PC += op[ope].oplen - 1;   period += op[ope].clock;   break;
+		case 0x69: PSW &= ~(F_SK | F_L0       );                 PC += op[ope].oplen - 1;   period += op[ope].clock;   break;
+		case 0x6f: PSW &= ~(F_SK        | F_L1);                 PC += op[ope].oplen - 1;   period += op[ope].clock;   break;
+		default:   PSW &= ~(F_SK | F_L0 | F_L1);                 PC += op[ope].oplen - 1;   period += op[ope].clock;   break;
 		}
 		return;
 	}
-	period = op[ope].clock;
+	period += op[ope].clock;
 	
 	switch(ope)
 	{
@@ -1079,7 +1080,7 @@ void UPD7801::OP()
 void UPD7801::OP48()
 {
 	uint8 ope = FETCH8();
-	period = op48[ope].clock;
+	period += op48[ope].clock;
 	
 	switch(ope)
 	{
@@ -1169,7 +1170,7 @@ void UPD7801::OP48()
 void UPD7801::OP4C()
 {
 	uint8 ope = FETCH8();
-	period = op4c[ope].clock;
+	period += op4c[ope].clock;
 	
 	switch(ope)
 	{
@@ -1209,7 +1210,7 @@ void UPD7801::OP4C()
 void UPD7801::OP4D()
 {
 	uint8 ope = FETCH8();
-	period = op4d[ope].clock;
+	period += op4d[ope].clock;
 	
 	switch(ope)
 	{
@@ -1252,7 +1253,7 @@ void UPD7801::OP4D()
 void UPD7801::OP60()
 {
 	uint8 ope = FETCH8();
-	period = op60[ope].clock;
+	period += op60[ope].clock;
 	
 	switch(ope)
 	{
@@ -1712,7 +1713,7 @@ void UPD7801::OP60()
 void UPD7801::OP64()
 {
 	uint8 ope = FETCH8();
-	period = op64[ope].clock;
+	period += op64[ope].clock;
 	
 	switch(ope)
 	{
@@ -2084,7 +2085,7 @@ void UPD7801::OP64()
 void UPD7801::OP70()
 {
 	uint8 ope = FETCH8();
-	period = op70[ope].clock;
+	period += op70[ope].clock;
 	
 	switch(ope)
 	{
@@ -2354,7 +2355,7 @@ void UPD7801::OP70()
 void UPD7801::OP74()
 {
 	uint8 ope = FETCH8();
-	period = op74[ope].clock;
+	period += op74[ope].clock;
 	
 	switch(ope)
 	{

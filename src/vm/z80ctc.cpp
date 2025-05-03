@@ -8,7 +8,6 @@
 */
 
 #include "z80ctc.h"
-#include "z80pic.h"
 
 void Z80CTC::reset()
 {
@@ -19,8 +18,12 @@ void Z80CTC::reset()
 		counter[ch].prescaler = 256;
 		counter[ch].freeze = counter[ch].start = counter[ch].latch = false;
 		counter[ch].clock_id = counter[ch].sysclock_id = -1;
+		// interrupt
+		counter[ch].req_intr = false;
+		counter[ch].in_service = false;
 	}
-	tmp = 0;
+	iei = oei = true;
+	intr = false;
 }
 
 void Z80CTC::write_io8(uint32 addr, uint32 data)
@@ -136,8 +139,10 @@ void Z80CTC::input_clock(int ch, int clock)
 	uint32 carry = 0;
 	while(counter[ch].count <= 0) {
 		counter[ch].count += counter[ch].constant;
-		if((counter[ch].control & 0x80) && d_pic)
-			d_pic->request_int(this, pri + ch, counter[ch].vector, true);
+		if(counter[ch].control & 0x80) {
+			counter[ch].req_intr = true;
+			update_intr();
+		}
 		carry++;
 	}
 	if(carry) {
@@ -161,8 +166,10 @@ void Z80CTC::input_sysclock(int ch, int clock)
 	uint32 carry = 0;
 	while(counter[ch].count <= 0) {
 		counter[ch].count += counter[ch].constant;
-		if((counter[ch].control & 0x80) && d_pic)
-			d_pic->request_int(this, pri + ch, counter[ch].vector, true);
+		if(counter[ch].control & 0x80) {
+			counter[ch].req_intr = true;
+			update_intr();
+		}
 		carry++;
 	}
 	if(carry) {
@@ -211,5 +218,92 @@ void Z80CTC::update_event(int ch, int err)
 			vm->regist_event_by_clock(this, EVENT_TIMER + ch, counter[ch].period, false, &counter[ch].sysclock_id);
 		}
 	}
+}
+
+void Z80CTC::set_intr_iei(bool val)
+{
+	if(iei != val) {
+		iei = val;
+		update_intr();
+	}
+}
+
+#define set_intr_oei(val) { \
+	if(oei != val) { \
+		oei = val; \
+		if(d_child) \
+			d_child->set_intr_iei(oei); \
+	} \
+}
+
+void Z80CTC::update_intr()
+{
+	bool next;
+	
+	// set oei
+	if(next = iei) {
+		for(int ch = 0; ch < 4; ch++) {
+			if(counter[ch].in_service) {
+				next = false;
+				break;
+			}
+		}
+	}
+	set_intr_oei(next);
+	
+	// set intr
+	if(next = iei) {
+		next = false;
+		for(int ch = 0; ch < 4; ch++) {
+			if(counter[ch].in_service)
+				break;
+			if(counter[ch].req_intr) {
+				next = true;
+				break;
+			}
+		}
+	}
+	if(next != intr) {
+		intr = next;
+		if(d_cpu)
+			d_cpu->set_intr_line(intr, true, intr_bit);
+	}
+}
+
+uint32 Z80CTC::intr_ack()
+{
+	// ack (M1=IORQ=L)
+	if(intr) {
+		for(int ch = 0; ch < 4; ch++) {
+			if(counter[ch].in_service)
+				break;
+			if(counter[ch].req_intr) {
+				counter[ch].req_intr = false;
+				counter[ch].in_service = true;
+				update_intr();
+				return counter[ch].vector;
+			}
+		}
+		// invalid interrupt status
+//		emu->out_debug(_T("Z80CTC : intr_ack()\n"));
+		return 0xff;
+	}
+	if(d_child)
+		return d_child->intr_ack();
+	return 0xff;
+}
+
+void Z80CTC::intr_reti()
+{
+	// detect RETI
+	for(int ch = 0; ch < 4; ch++) {
+		if(counter[ch].in_service) {
+			counter[ch].in_service = false;
+			update_intr();
+			return;
+		}
+	}
+	if(d_child)
+		d_child->intr_reti();
 }
 

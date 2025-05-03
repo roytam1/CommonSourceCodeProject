@@ -509,13 +509,12 @@ void CRTC::event_vsync(int v, int clock)
 	bool next = (GDEVS <= v && v < GDEVE) ? false : true;	// vblank = true
 	if(vblank != next) {
 #ifdef VRAM_WAIT
-		d_mem->write_signal(did1_mem, next ? 0xffffffff : 0, 1);
+		d_mem->write_signal(did1_mem, next ? 1 : 0, 1);
 #endif
-		d_pio->write_signal(did_pio, next ? 0 : 0xffffffff, 1);
+		d_pio->write_signal(did_pio, next ? 0 : 1, 1);
+		d_vblank->write_signal(did_vblank, next ? 1 : 0, 1);
 		vblank = next;
 	}
-	if(v == GDEVE && GDEVS != GDEVE)
-		d_vblank->write_signal(did_vblank, 0xffffffff, 1);
 	// complete clear screen
 	if(v == 400)
 		clear_flag = 0;
@@ -537,7 +536,7 @@ void CRTC::set_hsync(int h)
 	bool next = (GDEHS <= h && h < GDEHE) ? false : true;	// hblank = true
 	if(hblank != next) {
 #ifdef VRAM_WAIT
-		d_mem->write_signal(did0_mem, next ? 0xffffffff : 0, 1);
+		d_mem->write_signal(did0_mem, next ? 1 : 0, 1);
 #endif
 		hblank = next;
 	}
@@ -1462,23 +1461,14 @@ void CRTC::draw_320x200x16screen(uint8 pl)
 				I = (cgreg[0x18] & 0x80) ? vram_i[src] : 0;
 			}
 			
-			uint8* cdest = &cg[dest2];
-			col = cg_matrix0[B][R][0] | cg_matrix1[G][I][0];
-			cdest[ 0] = cdest[ 1] = col ? col : cdest[ 0];
-			col = cg_matrix0[B][R][1] | cg_matrix1[G][I][1];
-			cdest[ 2] = cdest[ 3] = col ? col : cdest[ 2];
-			col = cg_matrix0[B][R][2] | cg_matrix1[G][I][2];
-			cdest[ 4] = cdest[ 5] = col ? col : cdest[ 4];
-			col = cg_matrix0[B][R][3] | cg_matrix1[G][I][3];
-			cdest[ 6] = cdest[ 7] = col ? col : cdest[ 6];
-			col = cg_matrix0[B][R][4] | cg_matrix1[G][I][4];
-			cdest[ 8] = cdest[ 9] = col ? col : cdest[ 8];
-			col = cg_matrix0[B][R][5] | cg_matrix1[G][I][5];
-			cdest[10] = cdest[11] = col ? col : cdest[10];
-			col = cg_matrix0[B][R][6] | cg_matrix1[G][I][6];
-			cdest[12] = cdest[13] = col ? col : cdest[12];
-			col = cg_matrix0[B][R][7] | cg_matrix1[G][I][7];
-			cdest[14] = cdest[15] = col ? col : cdest[14];
+			col = cg_matrix0[B][R][0] | cg_matrix1[G][I][0]; if(col) cg[dest2     ] = cg[dest2 +  1] = col;
+			col = cg_matrix0[B][R][1] | cg_matrix1[G][I][1]; if(col) cg[dest2 +  2] = cg[dest2 +  3] = col;
+			col = cg_matrix0[B][R][2] | cg_matrix1[G][I][2]; if(col) cg[dest2 +  4] = cg[dest2 +  5] = col;
+			col = cg_matrix0[B][R][3] | cg_matrix1[G][I][3]; if(col) cg[dest2 +  6] = cg[dest2 +  7] = col;
+			col = cg_matrix0[B][R][4] | cg_matrix1[G][I][4]; if(col) cg[dest2 +  8] = cg[dest2 +  9] = col;
+			col = cg_matrix0[B][R][5] | cg_matrix1[G][I][5]; if(col) cg[dest2 + 10] = cg[dest2 + 11] = col;
+			col = cg_matrix0[B][R][6] | cg_matrix1[G][I][6]; if(col) cg[dest2 + 12] = cg[dest2 + 13] = col;
+			col = cg_matrix0[B][R][7] | cg_matrix1[G][I][7]; if(col) cg[dest2 + 14] = cg[dest2 + 15] = col;
 		}
 		dest += 640;
 	}
@@ -1504,15 +1494,14 @@ void CRTC::draw_320x200x256screen(uint8 pl)
 			I1 = (cgreg[0x18] & 0x08) ? vram_i[src + 0x0000] : 0;
 			I0 = (cgreg[0x18] & 0x80) ? vram_i[src + 0x2000] : 0;
 			
-			uint8* cdest = &cg[dest2];
-			cdest[ 0] = cdest[ 1] = cg_matrix0[B0][R0][0] | cg_matrix1[G0][I0][0] | cg_matrix2[B1][R1][0] | cg_matrix3[G1][I1][0];
-			cdest[ 2] = cdest[ 3] = cg_matrix0[B0][R0][1] | cg_matrix1[G0][I0][1] | cg_matrix2[B1][R1][1] | cg_matrix3[G1][I1][1];
-			cdest[ 4] = cdest[ 5] = cg_matrix0[B0][R0][2] | cg_matrix1[G0][I0][2] | cg_matrix2[B1][R1][2] | cg_matrix3[G1][I1][2];
-			cdest[ 6] = cdest[ 7] = cg_matrix0[B0][R0][3] | cg_matrix1[G0][I0][3] | cg_matrix2[B1][R1][3] | cg_matrix3[G1][I1][3];
-			cdest[ 8] = cdest[ 9] = cg_matrix0[B0][R0][4] | cg_matrix1[G0][I0][4] | cg_matrix2[B1][R1][4] | cg_matrix3[G1][I1][4];
-			cdest[10] = cdest[11] = cg_matrix0[B0][R0][5] | cg_matrix1[G0][I0][5] | cg_matrix2[B1][R1][5] | cg_matrix3[G1][I1][5];
-			cdest[12] = cdest[13] = cg_matrix0[B0][R0][6] | cg_matrix1[G0][I0][6] | cg_matrix2[B1][R1][6] | cg_matrix3[G1][I1][6];
-			cdest[14] = cdest[15] = cg_matrix0[B0][R0][7] | cg_matrix1[G0][I0][7] | cg_matrix2[B1][R1][7] | cg_matrix3[G1][I1][7];
+			cg[dest2     ] = cg[dest2 +  1] = cg_matrix0[B0][R0][0] | cg_matrix1[G0][I0][0] | cg_matrix2[B1][R1][0] | cg_matrix3[G1][I1][0];
+			cg[dest2 +  2] = cg[dest2 +  3] = cg_matrix0[B0][R0][1] | cg_matrix1[G0][I0][1] | cg_matrix2[B1][R1][1] | cg_matrix3[G1][I1][1];
+			cg[dest2 +  4] = cg[dest2 +  5] = cg_matrix0[B0][R0][2] | cg_matrix1[G0][I0][2] | cg_matrix2[B1][R1][2] | cg_matrix3[G1][I1][2];
+			cg[dest2 +  6] = cg[dest2 +  7] = cg_matrix0[B0][R0][3] | cg_matrix1[G0][I0][3] | cg_matrix2[B1][R1][3] | cg_matrix3[G1][I1][3];
+			cg[dest2 +  8] = cg[dest2 +  9] = cg_matrix0[B0][R0][4] | cg_matrix1[G0][I0][4] | cg_matrix2[B1][R1][4] | cg_matrix3[G1][I1][4];
+			cg[dest2 + 10] = cg[dest2 + 11] = cg_matrix0[B0][R0][5] | cg_matrix1[G0][I0][5] | cg_matrix2[B1][R1][5] | cg_matrix3[G1][I1][5];
+			cg[dest2 + 12] = cg[dest2 + 13] = cg_matrix0[B0][R0][6] | cg_matrix1[G0][I0][6] | cg_matrix2[B1][R1][6] | cg_matrix3[G1][I1][6];
+			cg[dest2 + 14] = cg[dest2 + 15] = cg_matrix0[B0][R0][7] | cg_matrix1[G0][I0][7] | cg_matrix2[B1][R1][7] | cg_matrix3[G1][I1][7];
 		}
 		dest += 640;
 	}
@@ -1534,15 +1523,14 @@ void CRTC::draw_640x200x16screen(uint8 pl)
 			G = (cgreg[0x18] & 0x04) ? vram_g[src] : 0;
 			I = (cgreg[0x18] & 0x08) ? vram_i[src] : 0;
 			
-			uint8* cdest = &cg[dest2];
-			cdest[0] = cg_matrix0[B][R][0] | cg_matrix1[G][I][0];
-			cdest[1] = cg_matrix0[B][R][1] | cg_matrix1[G][I][1];
-			cdest[2] = cg_matrix0[B][R][2] | cg_matrix1[G][I][2];
-			cdest[3] = cg_matrix0[B][R][3] | cg_matrix1[G][I][3];
-			cdest[4] = cg_matrix0[B][R][4] | cg_matrix1[G][I][4];
-			cdest[5] = cg_matrix0[B][R][5] | cg_matrix1[G][I][5];
-			cdest[6] = cg_matrix0[B][R][6] | cg_matrix1[G][I][6];
-			cdest[7] = cg_matrix0[B][R][7] | cg_matrix1[G][I][7];
+			cg[dest2    ] = cg_matrix0[B][R][0] | cg_matrix1[G][I][0];
+			cg[dest2 + 1] = cg_matrix0[B][R][1] | cg_matrix1[G][I][1];
+			cg[dest2 + 2] = cg_matrix0[B][R][2] | cg_matrix1[G][I][2];
+			cg[dest2 + 3] = cg_matrix0[B][R][3] | cg_matrix1[G][I][3];
+			cg[dest2 + 4] = cg_matrix0[B][R][4] | cg_matrix1[G][I][4];
+			cg[dest2 + 5] = cg_matrix0[B][R][5] | cg_matrix1[G][I][5];
+			cg[dest2 + 6] = cg_matrix0[B][R][6] | cg_matrix1[G][I][6];
+			cg[dest2 + 7] = cg_matrix0[B][R][7] | cg_matrix1[G][I][7];
 		}
 		dest += 640;
 	}
@@ -1561,7 +1549,7 @@ void CRTC::draw_640x400x4screen()
 			
 			B = (cgreg[0x18] & 0x01) ? ((src & 0x4000) ? vram_g[src & 0x3fff] : vram_b[src]) : 0;
 			R = (cgreg[0x18] & 0x02) ? ((src & 0x4000) ? vram_i[src & 0x3fff] : vram_r[src]) : 0;
-#if 1
+			
 			cg[dest2    ] = cg_matrix0[B][R][0];
 			cg[dest2 + 1] = cg_matrix0[B][R][1];
 			cg[dest2 + 2] = cg_matrix0[B][R][2];
@@ -1570,16 +1558,6 @@ void CRTC::draw_640x400x4screen()
 			cg[dest2 + 5] = cg_matrix0[B][R][5];
 			cg[dest2 + 6] = cg_matrix0[B][R][6];
 			cg[dest2 + 7] = cg_matrix0[B][R][7];
-#else
-			cg[dest2++] = cg_matrix0[B][R][0];
-			cg[dest2++] = cg_matrix0[B][R][1];
-			cg[dest2++] = cg_matrix0[B][R][2];
-			cg[dest2++] = cg_matrix0[B][R][3];
-			cg[dest2++] = cg_matrix0[B][R][4];
-			cg[dest2++] = cg_matrix0[B][R][5];
-			cg[dest2++] = cg_matrix0[B][R][6];
-			cg[dest2++] = cg_matrix0[B][R][7];
-#endif
 		}
 	}
 }
@@ -1599,7 +1577,7 @@ void CRTC::draw_640x400x16screen()
 			R = vram_r[src];
 			G = vram_g[src];
 			I = vram_i[src];
-#if 1
+			
 			cg[dest2    ] = cg_matrix0[B][R][0] | cg_matrix1[G][I][0];
 			cg[dest2 + 1] = cg_matrix0[B][R][1] | cg_matrix1[G][I][1];
 			cg[dest2 + 2] = cg_matrix0[B][R][2] | cg_matrix1[G][I][2];
@@ -1608,16 +1586,6 @@ void CRTC::draw_640x400x16screen()
 			cg[dest2 + 5] = cg_matrix0[B][R][5] | cg_matrix1[G][I][5];
 			cg[dest2 + 6] = cg_matrix0[B][R][6] | cg_matrix1[G][I][6];
 			cg[dest2 + 7] = cg_matrix0[B][R][7] | cg_matrix1[G][I][7];
-#else
-			cg[dest2++] = cg_matrix0[B][R][0] | cg_matrix1[G][I][0];
-			cg[dest2++] = cg_matrix0[B][R][1] | cg_matrix1[G][I][1];
-			cg[dest2++] = cg_matrix0[B][R][2] | cg_matrix1[G][I][2];
-			cg[dest2++] = cg_matrix0[B][R][3] | cg_matrix1[G][I][3];
-			cg[dest2++] = cg_matrix0[B][R][4] | cg_matrix1[G][I][4];
-			cg[dest2++] = cg_matrix0[B][R][5] | cg_matrix1[G][I][5];
-			cg[dest2++] = cg_matrix0[B][R][6] | cg_matrix1[G][I][6];
-			cg[dest2++] = cg_matrix0[B][R][7] | cg_matrix1[G][I][7];
-#endif
 		}
 	}
 }

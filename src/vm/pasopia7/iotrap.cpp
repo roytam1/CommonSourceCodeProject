@@ -28,7 +28,7 @@ void IOTRAP::write_io8(uint32 addr, uint32 data)
 			d_pio2->write_signal(did_pio2, 0xffffffff, 2);
 			// nmi
 			if(!nmi_mask)
-				d_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
+				d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 		}
 		break;
 	}
@@ -47,7 +47,7 @@ uint32 IOTRAP::read_io8(uint32 addr)
 			d_pio2->write_signal(did_pio2, 0xffffffff, 2);
 			// nmi
 			if(!nmi_mask)
-				d_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
+				d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 		}
 		return 0xff;
 	}
@@ -73,5 +73,5 @@ void IOTRAP::do_reset()
 	d_pio2->write_signal(did_pio2, 0xffffffff, 4);
 	// nmi
 	if(!nmi_mask)
-		d_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
+		d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 }

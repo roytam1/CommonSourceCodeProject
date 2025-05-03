@@ -52,13 +52,10 @@ class VDP;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
 	// devices
-	DEVICE* dummy;
 	EVENT* event;
 	
 	IO8* io;
@@ -117,6 +114,7 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
+	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
 };

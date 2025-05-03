@@ -14,6 +14,7 @@
 #include "../upd7801.h"
 
 //#define SOUND_DEBUG
+#define ACK_WAIT 100
 
 void SOUND::reset()
 {
@@ -68,7 +69,7 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		}
 		if(--param_cnt) {
 			if(regist_id == -1)
-				vm->regist_event(this, 0, 100, false, &regist_id);
+				vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
 		}
 	}
 	if(!param_cnt) {
@@ -126,10 +127,10 @@ void SOUND::event_callback(int event_id, int err)
 {
 	if(pcm.count && param_ptr == 5 && params[0] == 0x1f && params[1] == 0x04 && params[2] == 0x64) {
 		// wait previous pcm
-		vm->regist_event(this, 0, 100, false, &regist_id);
+		vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
 		return;
 	}
-	dev->write_signal(SIG_UPD7801_INTF1, 0xffffffff, 1);
+	dev->write_signal(SIG_UPD7801_INTF1, 1, 1);
 	regist_id = -1;
 }
 

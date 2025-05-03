@@ -49,13 +49,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	
-	vdp->set_context(cpu, SIG_CPU_DO_NMI, 1);
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(key);
+	vdp->set_context(cpu, SIG_CPU_NMI, 1);
 	key->set_context(cpu);
 	memory->set_context(vdp);
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(dummy);
+	
+	// i/o bus
 	io->set_iomap_single_w(0x00, cmt);
 	io->set_iomap_single_w(0x20, key);
 	io->set_iomap_single_w(0x40, psg);
@@ -189,9 +192,10 @@ uint16* VM::create_sound(int samples, bool fill)
 // notify key
 // ----------------------------------------------------------------------------
 
-void VM::key_down()
+void VM::key_down(int code)
 {
-	key->key_down();
+	if(!(code == 0x9 || code == 0x10 || code == 0x11))
+		key->key_down();
 }
 
 // ----------------------------------------------------------------------------

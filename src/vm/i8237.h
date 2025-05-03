@@ -23,31 +23,32 @@
 class I8237 : public DEVICE
 {
 private:
-	DEVICE* dummy;
-	DEVICE* mem;
-	DEVICE* dev[4];
+	DEVICE* d_mem;
+	
+	typedef struct {
+		DEVICE* dev;
+		uint16 areg;
+		uint16 creg;
+		uint16 bareg;
+		uint16 bcreg;
+		uint8 mode;
+	} dma_t;
+	dma_t dma[4];
+	
 	bool low_high;
-	uint16 areg[4];
-	uint16 creg[4];
-	uint16 addr[4];
-	uint16 count[4];
-	uint8 mode[4];
 	uint8 cmd;
-	uint8 mask;
 	uint8 req;
-	uint8 run;
-	uint8 stat;
+	uint8 mask;
+	uint8 tc;
+	uint32 tmp;
 	
 	void do_dma();
 	
 public:
 	I8237(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dummy = new DEVICE();
-		dev[0] = dev[1] = dev[2] = dev[3] = dummy;
+		dma[0].dev = dma[1].dev = dma[2].dev = dma[3].dev = vm->dummy;
 	}
-	~I8237() {
-		delete dummy;
-	}
+	~I8237() {}
 	
 	// common functions
 	void reset();
@@ -57,19 +58,19 @@ public:
 	
 	// unique functions
 	void set_context_memory(DEVICE* device) {
-		mem = device;
+		d_mem = device;
 	}
-	void set_context_ch0(DEIVCE* device) {
-		dev[0] = device;
+	void set_context_ch0(DEVICE* device) {
+		dma[0].dev = device;
 	}
-	void set_context_ch1(DEIVCE* device) {
-		dev[1] = device;
+	void set_context_ch1(DEVICE* device) {
+		dma[1].dev = device;
 	}
-	void set_context_ch2(DEIVCE* device) {
-		dev[2] = device;
+	void set_context_ch2(DEVICE* device) {
+		dma[2].dev = device;
 	}
-	void set_context_ch3(DEIVCE* device) {
-		dev[3] = device;
+	void set_context_ch3(DEVICE* device) {
+		dma[3].dev = device;
 	}
 };
 

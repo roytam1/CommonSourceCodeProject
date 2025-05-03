@@ -15,12 +15,12 @@ void KEYBOARD::initialize()
 	key_stat = emu->key_buffer();
 	joy_stat = emu->joy_buffer();
 	key_no = 0;
-	enb = req = false;
+	intr_enb = false;
 }
 
 void KEYBOARD::write_io8(uint32 addr, uint32 data)
 {
-	enb = (data == 0xf) ? true : false;
+	intr_enb = (data == 0xf) ? true : false;
 	key_no = data & 0xf;
 }
 
@@ -69,19 +69,11 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void KEYBOARD::do_ei()
-{
-	// check cpu status
-	if(!(req && enb && dev->accept_int()))
-		return;
-	// do interrupt
-	req = enb = false;
-	dev->write_signal(SIG_CPU_DO_INT, 0xff, 0xffffffff);
-}
-
 void KEYBOARD::key_down()
 {
-	req = true;
-	do_ei();
+	if(intr_enb) {
+		dev->set_intr_line(true, true, 0);
+		intr_enb = false;
+	}
 }
 

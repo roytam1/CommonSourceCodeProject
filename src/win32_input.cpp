@@ -194,6 +194,21 @@ void EMU::key_down(int code)
 	else if(code == 0x8)
 		code = 0x25;
 #endif
+	if(code == VK_SHIFT) {
+		if(GetAsyncKeyState(VK_LSHIFT) & 0x8000) key_status[VK_LSHIFT] = 0x80;
+		if(GetAsyncKeyState(VK_RSHIFT) & 0x8000) key_status[VK_RSHIFT] = 0x80;
+		if(!(key_status[VK_LSHIFT] || key_status[VK_RSHIFT])) key_status[VK_LSHIFT] = 0x80;
+	}
+	else if(code == VK_CONTROL) {
+		if(GetAsyncKeyState(VK_LCONTROL) & 0x8000) key_status[VK_LCONTROL] = 0x80;
+		if(GetAsyncKeyState(VK_RCONTROL) & 0x8000) key_status[VK_RCONTROL] = 0x80;
+		if(!(key_status[VK_LCONTROL] || key_status[VK_RCONTROL])) key_status[VK_LCONTROL] = 0x80;
+	}
+	else if(code == VK_MENU) {
+		if(GetAsyncKeyState(VK_LMENU) & 0x8000) key_status[VK_LMENU] = 0x80;
+		if(GetAsyncKeyState(VK_RMENU) & 0x8000) key_status[VK_RMENU] = 0x80;
+		if(!(key_status[VK_LMENU] || key_status[VK_RMENU])) key_status[VK_LMENU] = 0x80;
+	}
 	if(code == 0xf0) // CAPS
 		key_status[VK_CAPITAL] = KEY_KEEP_FRAMES;
 	else if(code == 0xf2) // KANA
@@ -207,10 +222,8 @@ void EMU::key_down(int code)
 #else
 		key_status[code] = 0x80;
 #endif
-#ifdef _PV2000
-	// CASIO PV-2000 patch
-	if(!(code == 0x9 || code == 0x10 || code == 0x11))
-		vm->key_down();
+#if defined(_PV2000) || defined(_QC10) || defined(_X07)
+	vm->key_down(code);
 #endif
 }
 
@@ -220,7 +233,22 @@ void EMU::key_up(int code)
 	if(code == 0x8)
 		code = 0x25;
 #endif
+	if(code == VK_SHIFT) {
+		if(!(GetAsyncKeyState(VK_LSHIFT) & 0x8000)) key_status[VK_LSHIFT] &= 0x7f;
+		if(!(GetAsyncKeyState(VK_RSHIFT) & 0x8000)) key_status[VK_RSHIFT] &= 0x7f;
+	}
+	else if(code == VK_CONTROL) {
+		if(!(GetAsyncKeyState(VK_LCONTROL) & 0x8000)) key_status[VK_LCONTROL] &= 0x7f;
+		if(!(GetAsyncKeyState(VK_RCONTROL) & 0x8000)) key_status[VK_RCONTROL] &= 0x7f;
+	}
+	else if(code == VK_MENU) {
+		if(!(GetAsyncKeyState(VK_LMENU) & 0x8000)) key_status[VK_LMENU] &= 0x7f;
+		if(!(GetAsyncKeyState(VK_RMENU) & 0x8000)) key_status[VK_RMENU] &= 0x7f;
+	}
 	key_status[code] &= 0x7f;
+#if defined(_QC10) || defined(_X07)
+	vm->key_up(code);
+#endif
 }
 
 void EMU::enable_mouse()

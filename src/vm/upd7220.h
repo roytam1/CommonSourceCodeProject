@@ -67,8 +67,9 @@ class FIFO;
 class UPD7220 : public DEVICE
 {
 private:
-	DEVICE* dev;
-	int did;
+	DEVICE* d_drq;
+	int did_drq;
+	uint32 dmask_drq;
 	
 	// vram
 	uint8* vram;
@@ -81,7 +82,8 @@ private:
 	
 	// params
 	uint8 sync[16];		// sync
-	uint8 zr, zw, zoom;	// zoom
+	int vs, hc;
+	uint8 zoom, zr, zw;	// zoom
 	uint8 ra[16];		// scroll, textw
 	uint8 cs[3];		// cursor
 	uint8 pitch;		// pitch
@@ -90,7 +92,7 @@ private:
 	int ead, dad;	// csrw, csrr
 	uint8 maskl, maskh;	// mask
 	
-	bool start, hsync, vsync;
+	bool hblank, vsync, start;
 	bool low_high;		// dma word access
 	
 	// draw
@@ -138,26 +140,43 @@ private:
 	
 public:
 	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev = NULL;
+		d_drq = NULL;
 	}
 	~UPD7220() {}
 	
 	// common functions
 	void initialize();
 	void release();
-	void write_data8(uint32 addr, uint32 data);	// for dma
-	uint32 read_data8(uint32 addr);
+	void write_dma8(uint32 addr, uint32 data);
+	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void event_vsync(int v, int clock);
-	void event_hsync(int v, int h, int clock);
+	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id) {
-		dev = device; did = id;
+	void set_context_drq(DEVICE* device, int id, uint32 mask) {
+		d_drq = device;
+		did_drq = id;
+		dmask_drq = mask;
 	}
 	void set_vram_ptr(uint8* ptr, int size) {
 		vram = ptr; vram_size = size;
+	}
+	uint8* get_sync() {
+		return sync;
+	}
+	uint8* get_zoom() {
+		return &zoom;
+	}
+	uint8* get_ra() {
+		return ra;
+	}
+	uint8* get_cs() {
+		return cs;
+	}
+	int* get_ead() {
+		return &ead;
 	}
 };
 

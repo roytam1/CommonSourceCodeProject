@@ -38,7 +38,7 @@ private:
 	FILEIO* fio;
 	int regist_id;
 	bool play, rec, is_wave;
-	bool in, out, remote;
+	bool in, out, change, remote;
 	
 	int bufcnt, samples;
 	uint32 remain;
@@ -71,9 +71,7 @@ public:
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
-	bool skip() {
-		return remote && ((play && remain > 0) || rec);
-	}
+	bool skip();
 };
 
 #endif

@@ -23,8 +23,6 @@ private:
 	DEVICE* dev[2][MAX_OUTPUT];
 	int did[2][MAX_OUTPUT], dshift[2][MAX_OUTPUT], dcount[2];
 	uint32 dmask[2][MAX_OUTPUT];
-	DEVICE* d_pic;
-	int pri;
 	
 	typedef struct {
 		uint8 wreg;
@@ -35,19 +33,27 @@ private:
 		uint8 dir;
 		uint8 mask;
 		uint8 vector;
-		bool int_enb;
 		bool set_dir;
 		bool set_mask;
-		bool prv_req;
 		bool first;
+		// interrupt
+		bool enb_intr;
+		bool req_intr;
+		bool in_service;
 	} port_t;
 	port_t port[2];
-	void do_interrupt(int ch);
+	
+	// interrupt
+	DEVICE *d_cpu, *d_child;
+	bool iei, oei, intr;
+	uint32 intr_bit;
+	void check_mode3_intr(int ch);
+	void update_intr();
 	
 public:
 	Z80PIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount[0] = dcount[1] = 0;
-		d_pic = NULL;
+		d_cpu = d_child = NULL;
 		port[0].wreg = port[1].wreg = port[0].rreg = port[1].rreg = 0;//0xff;
 	}
 	~Z80PIO() {}
@@ -58,7 +64,19 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	
+	// interrupt common functions
+	void set_intr_iei(bool val);
+	uint32 intr_ack();
+	void intr_reti();
+	
 	// unique function
+	void set_context_intr(DEVICE* device, uint32 bit) {
+		d_cpu = device;
+		intr_bit = bit;
+	}
+	void set_context_child(DEVICE* device) {
+		d_child = device;
+	}
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
 		int c = dcount[0]++;
 		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask; dshift[0][c] = shift;
@@ -66,9 +84,6 @@ public:
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
 		int c = dcount[1]++;
 		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask; dshift[1][c] = shift;
-	}
-	void set_context_int(DEVICE* device, int priority) {
-		d_pic = device; pri = priority;
 	}
 };
 

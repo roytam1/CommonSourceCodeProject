@@ -1,6 +1,5 @@
-
 retro pc emulator common source code
-								Feb 1, 2007
+								2/20/2008
 
 --- What's this ?
 
@@ -12,14 +11,18 @@ This archive includes the all source codes of:
 	EmuPIA		TOSHIBA PASOPIA emulator
 	EmuPIA7		TOSHIBA PASOPIA7 emulator
 	EmuZ-2500	SHARP MZ-2500 emulator
+	EmuZ-2800	SHARP MZ-2800 emulator
 	ePV-1000	CASIO PV-1000 emulator
+	ePyuTa		TOMY PyuTa and PyuTa Jr. emulator
+	eQC-10		EPSON QC-10/QX-10 emulator
 	eRX-78		BANDAI RX-78 emulator
 	eSCV		EPOCH Super Cassette Vision emulator
+	eX-07		CANON X-07 emulator
 
 You can compile them with:
 
-	Win32		Mircosoft Visual C++ 6.0 with SP6
-			Microsoft Visual C++ 2500 width SP1
+	Windows PC	Mircosoft Visual C++ 6.0 with SP6
+			Microsoft Visual C++ 2005 width SP1
 	CE.NET 4.x	Microsoft eMbedded Visual C++ 4.0 width SP4
 
 
@@ -36,46 +39,56 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/fmgen/*
 	M88/fmgen
 - vm/i8259.*
-	MESS 8259 core
+	Neko Project 2 and MESS 8259 core
 - vm/mb8877.*
 	XM7
 - vm/sn76489an.*
 	MAME SN76496 core
 - vm/tms9918a.*
 	MAME TMS9928 core
+- vm/tms9995.*
+	MAME TMS99xx core
+- vm/upd71071.*
+	88VA Eternal Grafx
 - vm/upd7220.*
 	Neko Project 2
 - vm/upd765a.*
 	M88 fdc/fdu core
 - vm/upd7801.*
 	MAME uPD7810 core
+- vm/x86.*
+	MAME x86 ore
 - vm/w3100a.*
-	Mr.Oh! Ishi
+	Mr.Oh!Ishi for the chip specification info
 - vm/z80.*
 	MAME Z80 core
 - vm/m5/*
 	MESS sord driver
+	Mr.Moriya for Sord M5 hardware design info
 - vm/mz2500/sasi.*
 	X millenium
 - vm/pv1000/*
-	This machine is reverse engineered by Mr.Enri
-	http://www2.odn.ne.jp/~haf09260/Pv1000/EnrPV.htm
+	Mr.Enri for CASIO PV-1000 hardware design info
 - vm/pv2000/*
-	This machine is reverse engineered by Mr.Enri
-	http://www2.odn.ne.jp/~haf09260/Pv2000/EnrPV.htm
+	Mr.Enri for CASIO PV-2000 hardware design info
+- vm/pyuta/*
+	MESS tutor driver
+	Mr.Enri for TOMY PyuTa Jr. hardware design info
 - vm/scv/*
-	This machine is reverse engineered by Mr.Enri and Mr.333
-	http://www2.odn.ne.jp/~haf09260/Scv/EnrScv.htm
+	Mr.Enri and Mr.333 for Epoch Super Cassette Vision hardware info
+- vm/x07/io.*
+	x07_emul by Mr.J.Brigaud
 - win32_sound.cpp
-	XM7 (DirectSound), M88 (wavOut API)
+	XM7 for DirectSound implement
+	M88 for wavOut API implement
 - res/*.ico
+	Mr.Temmaru and Mr.Marukun
 	See also res/icon.txt
 
-The design of emulation core is based on nester and XM6.
-
+- emulation core design
+	nester and XM6
 
 ----------------------------------------
-Takeda.Toshiya
+TAKEDA, toshiya
 t-takeda@m1.interq.or.jp
 http://www1.interq.or.jp/~t-takeda/top.html
-

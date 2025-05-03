@@ -3,12 +3,12 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.12.12 -
+	Date   : 2008.02.13 -
 
 	[ virtual machine ]
 */
 
-#include "multi8.h"
+#include "qc10.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
@@ -20,14 +20,15 @@
 #include "../i8255.h"
 #include "../i8259.h"
 #include "../io8.h"
-#include "../not.h"
-#include "../upd7201.h"
 #include "../upd7220.h"
 #include "../upd765a.h"
 #include "../z80.h"
+#include "../z80sio.h"
 
+#include "display.h"
+#include "floppy.h"
+#include "keyboard.h"
 #include "memory.h"
-#include "timer.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -50,47 +51,75 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
 	io = new IO8(this, emu);
-	not = new NOT(this, emu);
-	sio = new UPD7201(this, emu);
 	crtc = new UPD7220(this, emu);
 	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);
+	sio = new Z80SIO(this, emu);	// uPD7201
 	
+	display = new DISPLAY(this, emu);
+	floppy = new FLOPPY(this, emu);
+	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
-	timer = new TIMER(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
 	
+	rtc->set_context_intr(pic, SIG_I8259_IR2 | SIG_I8259_CHIP1, 1);
 	dma0->set_context_memory(memory);
-	dma0->set_context_ch0(fdc):
-	dma0->set_context_ch0(crtc):
+	dma0->set_context_ch0(fdc);
+	dma0->set_context_ch1(crtc);
 	dma1->set_context_memory(memory);
-	pit0->set_context_ch0(not, SIG_NOT_INPUT);
+	pit0->set_context_ch0(memory, SIG_MEMORY_BEEP);
 	pit0->set_context_ch1(pic, SIG_I8259_IR5 | SIG_I8259_CHIP1);
 	pit0->set_context_ch2(pic, SIG_I8259_IR1 | SIG_I8259_CHIP0);
+	pit0->set_constant_clock(2, CPU_CLOCKS >> 1);	// 1.9968MHz
 	pit1->set_context_ch0(beep, SIG_BEEP_PULSE);
 	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_0);
 	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_1);
-	not->set_context(beep, SIG_BEEP_ON, 1);
+	pit1->set_constant_clock(0, CPU_CLOCKS >> 1);	// 1.9968MHz
+	pit1->set_constant_clock(1, CPU_CLOCKS >> 1);	// 1.9968MHz
+	pit1->set_constant_clock(2, CPU_CLOCKS >> 1);	// 1.9968MHz
+	pio->set_context_port_c(pic, SIG_I8259_IR0 | SIG_I8259_CHIP1, 8, 0);
+	pic->set_context(cpu);
+	crtc->set_context_drq(dma0, SIG_I8237_CH1, 1);
+	crtc->set_vram_ptr(display->get_vram(), VRAM_SIZE);
+	// IR5 of I8259 #0 is from light pen
+	fdc->set_context_intr(pic, SIG_I8259_IR6 | SIG_I8259_CHIP0, 1);
+	fdc->set_context_drq(dma0, SIG_I8237_CH0, 1);
+	sio->set_context_intr(pic, SIG_I8259_IR4 | SIG_I8259_CHIP0);
+	sio->set_context_send0(keyboard, SIG_KEYBOARD_RECV);
+	
+	display->set_sync_ptr(crtc->get_sync());
+	display->set_zoom_ptr(crtc->get_zoom());
+	display->set_ra_ptr(crtc->get_ra());
+	display->set_cs_ptr(crtc->get_cs());
+	display->set_ead_ptr(crtc->get_ead());
+	floppy->set_context(fdc, SIG_UPD765A_MOTOR);
+	keyboard->set_context(sio, SIG_Z80SIO_RECV_CH0, SIG_Z80SIO_CLEAR_CH0);
+	memory->set_context_pit(pit0, SIG_I8253_GATE_0, SIG_I8253_GATE_2);
+	memory->set_context_beep(beep, SIG_BEEP_ON);
+	memory->set_context_fdc(fdc);
+	
+	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_int(pic);
+	cpu->set_context_intr(pic);
 	
-	timer->set_context_pit0(pit0, SIG_I8253_CLOCK_2);
-	timer->set_context_pit1(pit1, SIG_I8253_CLOCK_0, SIG_I8253_CLOCK_1, SIG_I8253_CLOCK_2);
-	
+	// i/o bus
 	io->set_iomap_range_w(0x00, 0x03, pit0);
 	io->set_iomap_range_w(0x04, 0x07, pit1);
 	io->set_iomap_alias_w(0x08, pic, 0);
 	io->set_iomap_alias_w(0x09, pic, 1);
 	io->set_iomap_alias_w(0x0c, pic, 2);
 	io->set_iomap_alias_w(0x0d, pic, 3);
-	io->set_iomap_range_w(0x10, 0x13, sio);
+	io->set_iomap_alias_w(0x10, sio, 0);
+	io->set_iomap_alias_w(0x11, sio, 2);
+	io->set_iomap_alias_w(0x12, sio, 1);
+	io->set_iomap_alias_w(0x13, sio, 3);
 	io->set_iomap_range_w(0x14, 0x17, pio);
 	io->set_iomap_range_w(0x18, 0x23, memory);
-	//30-33 motor
+	io->set_iomap_range_w(0x30, 0x33, floppy);
 	io->set_iomap_single_w(0x35, fdc);
 	io->set_iomap_range_w(0x38, 0x3b, crtc);
 	io->set_iomap_range_w(0x3c, 0x3d, rtc);
@@ -103,10 +132,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x09, pic, 1);
 	io->set_iomap_alias_r(0x0c, pic, 2);
 	io->set_iomap_alias_r(0x0d, pic, 3);
-	io->set_iomap_range_r(0x10, 0x13, sio);
+	io->set_iomap_alias_r(0x10, sio, 0);
+	io->set_iomap_alias_r(0x11, sio, 2);
+	io->set_iomap_alias_r(0x12, sio, 1);
+	io->set_iomap_alias_r(0x13, sio, 3);
 	io->set_iomap_range_r(0x14, 0x16, pio);
 	io->set_iomap_range_r(0x18, 0x1b, memory);
-	//2c display type
+	io->set_iomap_single_r(0x2c, display);
 	io->set_iomap_range_r(0x30, 0x33, memory);
 	io->set_iomap_range_r(0x34, 0x35, fdc);
 	io->set_iomap_range_r(0x38, 0x39, crtc);
@@ -208,7 +240,7 @@ uint32 VM::passed_clock(uint32 prev)
 
 void VM::draw_screen()
 {
-//	crtc->draw_screen();
+	display->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -221,12 +253,26 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-//	opn->init(rate, 3579545, samples);
+	beep->init(rate, -1, 2, 10000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
 {
 	return event->create_sound(samples, fill);
+}
+
+// ----------------------------------------------------------------------------
+// notify key
+// ----------------------------------------------------------------------------
+
+void VM::key_down(int code)
+{
+	keyboard->key_down(code);
+}
+
+void VM::key_up(int code)
+{
+	keyboard->key_up(code);
 }
 
 // ----------------------------------------------------------------------------

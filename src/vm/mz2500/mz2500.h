@@ -75,7 +75,6 @@ class RP5C15;
 class W3100A;
 class YM2203;
 class Z80;
-class Z80PIC;
 class Z80PIO;
 class Z80SIO;
 
@@ -99,13 +98,10 @@ class VOICE;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
 	// devices
-	DEVICE* dummy;
 	EVENT* event;
 	
 	I8253* pit;
@@ -117,7 +113,6 @@ protected:
 	W3100A* w3100a;
 	YM2203* opn;
 	Z80* cpu;
-	Z80PIC* pic;
 	Z80PIO* pio1;
 	Z80SIO* sio;
 	
@@ -197,6 +192,7 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
+	DEVICE* dummy;
 	DEVICE* first_device;
 	DEVICE* last_device;
 };

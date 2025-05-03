@@ -45,12 +45,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(dummy);
 	vdp->set_context(cpu);
 	vdp->set_memory_ptr(memory->get_memory());
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(dummy);
+	
+	// i/o bus
 	io->set_iomap_range_w(0xf8, 0xfa, psg);
 	io->set_iomap_range_w(0xfc, 0xfd, joystick);
 	io->set_iomap_range_w(0xfe, 0xff, vdp);

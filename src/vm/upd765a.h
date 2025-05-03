@@ -77,10 +77,10 @@ class DISK;
 class UPD765A : public DEVICE
 {
 private:
-	DEVICE *d_intr[MAX_OUTPUT], *d_drdy[MAX_OUTPUT], *d_hdu[MAX_OUTPUT], *d_acctc[MAX_OUTPUT];
-	int did_intr[MAX_OUTPUT], did_drdy[MAX_OUTPUT], did_hdu[MAX_OUTPUT], did_acctc[MAX_OUTPUT];
-	uint32 dmask_intr[MAX_OUTPUT], dmask_drdy[MAX_OUTPUT], dmask_hdu[MAX_OUTPUT], dmask_acctc[MAX_OUTPUT];
-	int dcount_intr, dcount_drdy, dcount_hdu, dcount_acctc;
+	DEVICE *d_intr[MAX_OUTPUT], *d_drq[MAX_OUTPUT], *d_hdu[MAX_OUTPUT], *d_acctc[MAX_OUTPUT];
+	int did_intr[MAX_OUTPUT], did_drq[MAX_OUTPUT], did_hdu[MAX_OUTPUT], did_acctc[MAX_OUTPUT];
+	uint32 dmask_intr[MAX_OUTPUT], dmask_drq[MAX_OUTPUT], dmask_hdu[MAX_OUTPUT], dmask_acctc[MAX_OUTPUT];
+	int dcount_intr, dcount_drq, dcount_hdu, dcount_acctc;
 	
 	// fdc
 	typedef struct {
@@ -96,19 +96,22 @@ private:
 	int phase, prevphase;
 	uint8 status, seekstat, command;
 	uint32 result;
-	bool acctc, intr, drdy, motor;
+	bool acctc, intr, motor;
 	
 	uint8* bufptr;
 	uint8 buffer[0x4000];
 	int count;
 	int event_phase, event_drv;
 	int phase_id, seek_id, lost_id;
+#ifdef UPD765A_DMA_MODE
+	bool dma_done;
+#endif
 	
 	// update status
 	void set_intr(bool val);
 	void req_intr(bool val);
 	void req_intr_ndma(bool val);
-	void set_drdy(bool val);
+	void set_drq(bool val);
 	void set_hdu(uint8 val);
 	void set_acctc(bool val);
 	
@@ -153,7 +156,7 @@ private:
 	
 public:
 	UPD765A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_intr = dcount_drdy = dcount_hdu = dcount_acctc = 0;
+		dcount_intr = dcount_drq = dcount_hdu = dcount_acctc = 0;
 	}
 	~UPD765A() {}
 	
@@ -161,8 +164,8 @@ public:
 	void initialize();
 	void release();
 	void reset();
-	void write_data8(uint32 addr, uint32 data);
-	uint32 read_data8(uint32 addr);
+	void write_dma8(uint32 addr, uint32 data);
+	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
@@ -174,9 +177,9 @@ public:
 		int c = dcount_intr++;
 		d_intr[c] = device; did_intr[c] = id; dmask_intr[c] = mask;
 	}
-	void set_context_drdy(DEVICE* device, int id, uint32 mask) {
-		int c = dcount_drdy++;
-		d_drdy[c] = device; did_drdy[c] = id; dmask_drdy[c] = mask;
+	void set_context_drq(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_drq++;
+		d_drq[c] = device; did_drq[c] = id; dmask_drq[c] = mask;
 	}
 	void set_context_hdu(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_hdu++;
@@ -188,6 +191,8 @@ public:
 	}
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
+	bool disk_inserted(int drv);
+	uint8 fdc_status();
 };
 
 #endif

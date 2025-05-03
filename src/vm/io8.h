@@ -14,25 +14,35 @@
 #include "../emu.h"
 #include "device.h"
 
+#ifndef IO8_ADDR_MAX
+#define IO8_ADDR_MAX 0x100
+#endif
+#define IO8_ADDR_MASK (IO8_ADDR_MAX - 1)
+
 class IO8 : public DEVICE
 {
 private:
 	// i/o map
-	DEVICE* wdev[256];
-	DEVICE* rdev[256];
-	uint32 waddr[256];
-	uint32 raddr[256];
-	int wwait[256];
-	int rwait[256];
+	DEVICE* wdev[IO8_ADDR_MAX];
+	DEVICE* rdev[IO8_ADDR_MAX];
+	uint32 waddr[IO8_ADDR_MAX];
+	uint32 raddr[IO8_ADDR_MAX];
+	int wwait[IO8_ADDR_MAX];
+	int rwait[IO8_ADDR_MAX];
+	
+	// for debug
+	uint32 prv_waddr, prv_wdata;
+	uint32 prv_raddr, prv_rdata;
 	
 public:
 	IO8(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		// vm->dummy must be generated first !
-		for(int i = 0; i < 256; i++) {
+		for(int i = 0; i < IO8_ADDR_MAX; i++) {
 			wdev[i] = rdev[i] = vm->dummy;
 			waddr[i] = raddr[i] = i;
 			wwait[i] = rwait[i] = 0;
 		}
+		prv_waddr = prv_raddr = -1;
 	}
 	~IO8() {}
 	
@@ -44,46 +54,46 @@ public:
 	
 	// unique functions
 	void set_iomap_single_w(uint32 addr, DEVICE* device) {
-		wdev[addr & 0xff] = device;
-		waddr[addr & 0xff] = addr & 0xff;
+		wdev[addr & IO8_ADDR_MASK] = device;
+		waddr[addr & IO8_ADDR_MASK] = addr & IO8_ADDR_MASK;
 	}
 	void set_iomap_single_r(uint32 addr, DEVICE* device) {
-		rdev[addr & 0xff] = device;
-		raddr[addr & 0xff] = addr & 0xff;
+		rdev[addr & IO8_ADDR_MASK] = device;
+		raddr[addr & IO8_ADDR_MASK] = addr & IO8_ADDR_MASK;
 	}
 	void set_iomap_alias_w(uint32 addr, DEVICE* device, uint32 alias) {
-		wdev[addr & 0xff] = device;
-		waddr[addr & 0xff] = alias & 0xff;
+		wdev[addr & IO8_ADDR_MASK] = device;
+		waddr[addr & IO8_ADDR_MASK] = alias & IO8_ADDR_MASK;
 	}
 	void set_iomap_alias_r(uint32 addr, DEVICE* device, uint32 alias) {
-		rdev[addr & 0xff] = device;
-		raddr[addr & 0xff] = alias & 0xff;
+		rdev[addr & IO8_ADDR_MASK] = device;
+		raddr[addr & IO8_ADDR_MASK] = alias & IO8_ADDR_MASK;
 	}
 	void set_iomap_range_w(uint32 s, uint32 e, DEVICE* device) {
 		for(uint32 i = s; i <= e; i++) {
-			wdev[i & 0xff] = device;
-			waddr[i & 0xff] = i & 0xff;
+			wdev[i & IO8_ADDR_MASK] = device;
+			waddr[i & IO8_ADDR_MASK] = i & IO8_ADDR_MASK;
 		}
 	}
 	void set_iomap_range_r(uint32 s, uint32 e, DEVICE* device) {
 		for(uint32 i = s; i <= e; i++) {
-			rdev[i & 0xff] = device;
-			raddr[i & 0xff] = i & 0xff;
+			rdev[i & IO8_ADDR_MASK] = device;
+			raddr[i & IO8_ADDR_MASK] = i & IO8_ADDR_MASK;
 		}
 	}
 	void set_iowait_single_w(uint32 addr, int wait) {
-		wwait[addr & 0xff] = wait;
+		wwait[addr & IO8_ADDR_MASK] = wait;
 	}
 	void set_iowait_single_r(uint32 addr, int wait) {
-		rwait[addr & 0xff] = wait;
+		rwait[addr & IO8_ADDR_MASK] = wait;
 	}
 	void set_iowait_range_w(uint32 s, uint32 e, int wait) {
 		for(uint32 i = s; i <= e; i++)
-			wwait[i & 0xff] = wait;
+			wwait[i & IO8_ADDR_MASK] = wait;
 	}
 	void set_iowait_range_r(uint32 s, uint32 e, int wait) {
 		for(uint32 i = s; i <= e; i++)
-			rwait[i & 0xff] = wait;
+			rwait[i & IO8_ADDR_MASK] = wait;
 	}
 };
 

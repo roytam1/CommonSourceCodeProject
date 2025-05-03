@@ -244,42 +244,113 @@ private:
 	
 	// memory
 	inline uint8 RM8(uint16 addr) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint8 val = d_mem->read_data8w(addr, &wait);
+		period += wait;
+		return val;
+#else
 		return d_mem->read_data8(addr);
+#endif
 	}
 	inline void WM8(uint16 addr, uint8 val) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data8w(addr, val, &wait);
+		period += wait;
+#else
 		d_mem->write_data8(addr, val);
+#endif
 	}
 	inline uint16 RM16(uint16 addr) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = d_mem->read_data16w(addr, &wait);
+		period += wait;
+		return val;
+#else
 		return d_mem->read_data16(addr);
+#endif
 	}
 	inline void WM16(uint16 addr, uint16 val) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data16w(addr, val, &wait);
+		period += wait;
+#else
 		d_mem->write_data16(addr, val);
+#endif
 	}
 	inline uint8 FETCH8() {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint8 val = d_mem->read_data8w(PC++, &wait);
+		period += wait;
+		return val;
+#else
 		return d_mem->read_data8(PC++);
+#endif
 	}
 	inline uint16 FETCH16() {
-		uint16 tmp = d_mem->read_data16(PC);
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = d_mem->read_data16w(PC, &wait);
+		period += wait;
+#else
+		uint16 val = d_mem->read_data16(PC);
+#endif
 		PC += 2;
-		return tmp;
+		return val;
 	}
 	inline uint16 FETCHWA() {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = (_V << 8) | d_mem->read_data8w(PC++, &wait);
+		period += wait;
+		return val;
+#else
 		return (_V << 8) | d_mem->read_data8(PC++);
+#endif
 	}
 	inline uint8 POP8() {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint8 val = d_mem->read_data8w(SP++, &wait);
+		period += wait;
+		return val;
+#else
 		return d_mem->read_data8(SP++);
+#endif
 	}
 	inline void PUSH8(uint8 val) {
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data8w(--SP, val, &wait);
+		period += wait;
+#else
 		d_mem->write_data8(--SP, val);
+#endif
 	}
 	inline uint16 POP16() {
-		uint16 tmp = d_mem->read_data16(SP);
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		uint16 val = d_mem->read_data16w(SP, &wait);
+		period += wait;
+#else
+		uint16 val = d_mem->read_data16(SP);
+#endif
 		SP += 2;
-		return tmp;
+		return val;
 	}
 	inline void PUSH16(uint16 val) {
 		SP -= 2;
+#ifdef CPU_MEMORY_WAIT
+		int wait;
+		d_mem->write_data16w(SP, val, &wait);
+		period += wait;
+#else
 		d_mem->write_data16(SP, val);
+#endif
 	}
 	inline uint8 IN8(int port) {
 		if(port == P_C)

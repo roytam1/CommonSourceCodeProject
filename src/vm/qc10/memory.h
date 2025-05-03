@@ -1,9 +1,9 @@
 /*
-	EPSON QC-10/QX-10 Emulator 'eQC-10'
-	(Skelton for Z-80 PC Emulator)
+	EPSON QC-10 Emulator 'eQC-10'
+	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2005.06.10-
+	Date   : 2008.02.15 -
 
 	[ memory ]
 */
@@ -11,26 +11,33 @@
 #ifndef _MEMORY_H_
 #define _MEMORY_H_
 
-#include "vm.h"
-#include "../emu.h"
+#include "../vm.h"
+#include "../../emu.h"
+#include "../device.h"
 
-#include "device.h"
+#define SIG_MEMORY_BEEP	0
+
+class UPD765A;
 
 class MEMORY : public DEVICE
 {
 private:
-	void update_map();
-	uint8 bank;
-	bool psel, csel;
+	DEVICE *d_pit, *d_beep;
+	UPD765A *d_fdc;
+	int did_gate0, did_gate2, did_beep;
 	
+	uint8* rbank[32];
+	uint8* wbank[32];
+	uint8 wdmy[0x10000];
+	uint8 rdmy[0x10000];
 	uint8 ipl[0x2000];
 	uint8 ram[0x40000];
 	uint8 cmos[0x800];
+	uint8 bank, psel, csel;
+	void update_map();
 	
-	uint8 dummy_w[0x800];
-	uint8 dummy_r[0x800];
-	uint8* bank_w[32];
-	uint8* bank_r[32];
+	bool beep_on, beep_cont, beep_pit;
+	void update_beep();
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -41,22 +48,24 @@ public:
 	void release();
 	void reset();
 	
-	void write_data8(uint16 addr, uint8 data);
-	uint8 read_data8(uint16 addr);
-	void write_data16(uint16 addr, uint16 data) { write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8); }
-	uint16 read_data16(uint16 addr) { return read_data8(addr) | (read_data8(addr + 1) << 8); }
+	void write_data8(uint32 addr, uint32 data);
+	uint32 read_data8(uint32 addr);
+	void write_io8(uint32 addr, uint32 data);
+	uint32 read_io8(uint32 addr);
+	void write_signal(int id, uint32 data, uint32 mask);
 	
-	void write_io8(uint16 addr, uint8 data);
-	uint8 read_io8(uint16 addr);
-	
-	int iomap_write(int index) {
-		static const int map[13] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, -1 };
-		return map[index];
+	// unique functions
+	void set_context_pit(DEVICE* device, int id0, int id1) {
+		d_pit = device;
+		did_gate0 = id0;
+		did_gate2 = id1;
 	}
-	int iomap_read(int index) {
-		static const int map[9] = { 0x18, 0x19, 0x1a, 0x1b, 0x30, 0x31, 0x32, 0x33, -1 };
-//		static const int map[5] = { 0x30, 0x31, 0x32, 0x33, -1 };
-		return map[index];
+	void set_context_beep(DEVICE* device, int id) {
+		d_beep = device;
+		did_beep = id;
+	}
+	void set_context_fdc(UPD765A* device) {
+		d_fdc = device;
 	}
 };
 

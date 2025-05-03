@@ -732,7 +732,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\multi8\floopy.cpp"
+					RelativePath="src\vm\multi8\floppy.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"

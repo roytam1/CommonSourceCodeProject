@@ -22,7 +22,6 @@
 #include "../w3100a.h"
 #include "../ym2203.h"
 #include "../z80.h"
-#include "../z80pic.h"
 #include "../z80pio.h"
 #include "../z80sio.h"
 
@@ -71,7 +70,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	w3100a = new W3100A(this, emu);
 	opn = new YM2203(this, emu);
 	cpu = new Z80(this, emu);
-	pic = new Z80PIC(this, emu);
 	pio1 = new Z80PIO(this, emu);
 	sio = new Z80SIO(this, emu);
 	
@@ -108,19 +106,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0->set_context_port_c(rst, SIG_RESET_CONTROL, 0xff, 0);
 	pio0->set_context_port_c(pcm, SIG_PCM1BIT_SIGNAL, 0x04, 0);
 	rtc->set_context_alarm(interrupt, SIG_INTERRUPT_RP5C15, 1);
-	rtc->set_context_pulse(opn, SIG_YM2203_PORT_B, 0x80);
+	rtc->set_context_pulse(opn, SIG_YM2203_PORT_B, 8);
 	opn->set_context_port_a(floppy, SIG_FLOPPY_REVERSE, 0x02, 0);
 	opn->set_context_port_a(crtc, SIG_CRTC_PALLETE, 0x04, 0);
 	opn->set_context_port_a(mouse, SIG_MOUSE_SEL, 0x08, 0);
-	opn->write_signal(SIG_YM2203_PORT_B, opn_b, 0xff);
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_int(pic);
-	pic->set_context(cpu);
 	pio1->set_context_port_a(crtc, SIG_CRTC_COLUMN_SIZE, 0x20, 0);
 	pio1->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0xff, 0);
-	pio1->set_context_int(pic, IRQ_Z80PIO);
-	sio->set_context_int(pic, IRQ_Z80SIO);
 	sio->set_context_dtr1(mouse, SIG_MOUSE_DTR, 1);
 	
 	calendar->set_context(rtc);
@@ -136,9 +127,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_pcg_ptr(memory->get_pcg());
 	floppy->set_context_cpu(cpu);
 	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG);
-	interrupt->set_context_cpu(cpu);
-	interrupt->set_context_pic(pic);
-	interrupt->set_context_pit(pit);
 	keyboard->set_context_pio0(pio0, SIG_I8255_PORT_B);
 	keyboard->set_context_pio1(pio1, SIG_Z80PIO_PORT_B);
 	memory->set_context_cpu(cpu);
@@ -146,6 +134,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	mouse->set_context(sio, SIG_Z80SIO_RECV_CH1, SIG_Z80SIO_CLEAR_CH1);
 	timer->set_context(pit, SIG_I8253_GATE_0, SIG_I8253_GATE_1, SIG_I8253_CLOCK_0);
 	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
+	cpu->set_context_intr(pio1);
+	
+	// z80 family daisy chain
+	pio1->set_context_intr(cpu, 0);
+	pio1->set_context_child(sio);
+	sio->set_context_intr(cpu, 1);
+	sio->set_context_child(interrupt);
+	interrupt->set_context_intr(cpu, 2);
+	
+	// i/o bus
 	io->set_iomap_range_w(0x60, 0x63, w3100a);
 	io->set_iomap_range_w(0xa0, 0xa3, sio);
 	io->set_iomap_range_w(0xa4, 0xa5, sasi);
@@ -165,7 +166,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0xdc, 0xdd, floppy);
 	io->set_iomap_range_w(0xe0, 0xe3, pio0);
 	io->set_iomap_range_w(0xe4, 0xe7, pit);
-//	io->set_iomap_range_w(0xe4, 0xe7, interrupt);	// for patch
 	io->set_iomap_range_w(0xe8, 0xeb, pio1);
 	io->set_iomap_single_w(0xef, joystick);
 	io->set_iomap_range_w(0xf0, 0xf3, timer);
@@ -212,6 +212,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id)
 			device->ipl_reset();
 	}
+	
+	// set initial port status
+	opn->write_signal(SIG_YM2203_PORT_B, opn_b, 0xff);
 }
 
 VM::~VM()

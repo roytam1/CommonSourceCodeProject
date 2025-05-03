@@ -43,8 +43,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(sound);
 	
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
 	io->set_context_mem(memory);
 	io->set_context_sound(sound);
 	memory->set_context(sound);
@@ -52,6 +50,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	vdp->set_context(cpu);
 	vdp->set_font_ptr(memory->get_font());
 	vdp->set_vram_ptr(memory->get_vram());
+	
+	// cpu bus
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(io);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {

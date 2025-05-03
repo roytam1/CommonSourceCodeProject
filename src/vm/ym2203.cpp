@@ -14,7 +14,7 @@ void YM2203::initialize()
 	opn = new FM::OPN;
 	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
 	vm->regist_vsync_event(this);
-	mute = false;
+	irq = mute = false;
 }
 
 void YM2203::release()
@@ -38,11 +38,11 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 		else if(ch == 14 || ch == 15) {
 			int p = ch - 14;
 			if(port[p].wreg != data || port[p].first) {
-				for(int i = 0; i < dcount[p]; i++) {
-					int shift = dshift[p][i];
+				for(int i = 0; i < dcount_port[p]; i++) {
+					int shift = dshift_port[p][i];
 					uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-					uint32 mask = (shift < 0) ? (dmask[p][i] >> (-shift)) : (dmask[p][i] << shift);
-					dev[p][i]->write_signal(did[p][i], val, mask);
+					uint32 mask = (shift < 0) ? (dmask_port[p][i] >> (-shift)) : (dmask_port[p][i] << shift);
+					d_port[p][i]->write_signal(did_port[p][i], val, mask);
 				}
 				port[p].wreg = data;
 				port[p].first = false;
@@ -84,7 +84,12 @@ void YM2203::write_signal(int id, uint32 data, uint32 mask)
 
 void YM2203::event_vsync(int v, int clock)
 {
-	opn->Count(usec);
+	bool next = opn->Count(usec);
+	if(irq != next) {
+		for(int i = 0; i < dcount_irq; i++)
+			d_irq[i]->write_signal(did_irq[i], next ? 0xffffffff : 0, dmask_irq[i]);
+		irq = next;
+	}
 }
 
 void YM2203::mix(int32* buffer, int cnt)

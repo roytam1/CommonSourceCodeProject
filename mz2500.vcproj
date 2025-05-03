@@ -708,28 +708,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\z80pic.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\z80pio.cpp"
 					>
 					<FileConfiguration
@@ -1352,10 +1330,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\z80.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\z80pic.h"
 					>
 				</File>
 				<File
