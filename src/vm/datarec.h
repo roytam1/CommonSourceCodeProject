@@ -31,23 +31,25 @@ class DATAREC : public DEVICE
 {
 private:
 	DEVICE* dev[MAX_OUTPUT];
-	int dev_id[MAX_OUTPUT], dev_cnt;
-	uint32 dev_mask[MAX_OUTPUT];
+	int did[MAX_OUTPUT], dcount;
+	uint32 dmask[MAX_OUTPUT];
 	
 	// data recorder
 	FILEIO* fio;
-	int event_id;
+	int regist_id;
 	bool play, rec, is_wave;
 	bool in, out, remote;
 	
 	int bufcnt, samples;
+	uint32 remain;
 	uint8 buffer[BUFFER_SIZE];
 	
+	void update_event();
 	bool check_extension(_TCHAR* filename);
 	
 public:
 	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_cnt = 0;
+		dcount = 0;
 	}
 	~DATAREC() {}
 	
@@ -59,18 +61,18 @@ public:
 	uint32 read_signal(int ch) {
 		return in ? 1 : 0;
 	}
-	void event_callback(int event_id);
+	void event_callback(int event_id, int err);
 	
 	// unique functions
 	void set_context(DEVICE* device, int id, uint32 mask) {
-		int c = dev_cnt++;
-		dev[c] = device; dev_id[c] = id; dev_mask[c] = mask;
+		int c = dcount++;
+		dev[c] = device; did[c] = id; dmask[c] = mask;
 	}
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
 	bool skip() {
-		return remote && (play || rec);
+		return remote && ((play && remain > 0) || rec);
 	}
 };
 

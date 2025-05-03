@@ -545,7 +545,7 @@ void UPD7220::cmd_dmaw()
 {
 	low_high = false;
 	if(dev)
-		dev->write_signal(dev_id, 0xffffffff, 1);
+		dev->write_signal(did, 0xffffffff, 1);
 	vectreset();
 	
 //	statreg |= STAT_DMA;
@@ -556,7 +556,7 @@ void UPD7220::cmd_dmar()
 {
 	low_high = false;
 	if(dev)
-		dev->write_signal(dev_id, 0xffffffff, 1);
+		dev->write_signal(did, 0xffffffff, 1);
 	vectreset();
 	
 //	statreg |= STAT_DMA;

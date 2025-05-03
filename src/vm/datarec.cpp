@@ -17,7 +17,7 @@ void DATAREC::initialize()
 	_memset(buffer, 0, sizeof(buffer));
 	bufcnt = samples = 0;
 	
-	event_id = -1;
+	regist_id = -1;
 	play = rec = false;
 	in = out = remote = false;
 	is_wave = false;
@@ -38,11 +38,13 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DATAREC_OUT)
 		out = (data & mask) ? true : false;
-	else if(id == SIG_DATAREC_REMOTE)
+	else if(id == SIG_DATAREC_REMOTE) {
 		remote = (data & mask) ? true : false;
+		update_event();
+	}
 }
 
-void DATAREC::event_callback(int event_id)
+void DATAREC::event_callback(int event_id, int err)
 {
 	if(play && remote) {
 		// get the next signal
@@ -54,6 +56,9 @@ void DATAREC::event_callback(int event_id)
 				fio->Fread(buffer, sizeof(buffer), 1);
 				bufcnt = 0;
 			}
+			if(remain)
+				remain--;
+			update_event();
 		}
 		else {
 			// inc pointer
@@ -64,6 +69,9 @@ void DATAREC::event_callback(int event_id)
 					bufcnt = 0;
 				}
 				signal = (buffer[bufcnt] & 0x80) ? true : false;
+				if(remain)
+					remain--;
+				update_event();
 			}
 			// dec pulse count
 			uint8 tmp = buffer[bufcnt];
@@ -71,8 +79,8 @@ void DATAREC::event_callback(int event_id)
 		}
 		// notify the signal is changed
 		if(signal != in) {
-			for(int i = 0; i < dev_cnt; i++)
-				dev[i]->write_signal(dev_id[i], signal ? 0xffffffff : 0, dev_mask[i]);
+			for(int i = 0; i < dcount; i++)
+				dev[i]->write_signal(did[i], signal ? 0xffffffff : 0, dmask[i]);
 			in = signal;
 		}
 	}
@@ -107,13 +115,18 @@ void DATAREC::play_datarec(_TCHAR* filename)
 	close_datarec();
 	
 	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
-		// check file extension
-		is_wave = check_extension(filename);
+		// get file size
+		fio->Fseek(0, FILEIO_SEEK_END);
+		remain = fio->Ftell();
+		fio->Fseek(0, FILEIO_SEEK_SET);
 		
 		// open for play
+		is_wave = check_extension(filename);
 		if(is_wave) {
-			_memset(buffer, 0, sizeof(buffer));
 			fio->Fseek(sizeof(header), FILEIO_SEEK_SET);
+			remain -= sizeof(header);
+			
+			_memset(buffer, 0, sizeof(buffer));
 			fio->Fread(buffer, sizeof(buffer), 1);
 		}
 		else {
@@ -125,15 +138,12 @@ void DATAREC::play_datarec(_TCHAR* filename)
 		bool signal = (buffer[0] & 0x80) ? true : false;
 		// notify the signal is changed
 		if(signal != in) {
-			for(int i = 0; i < dev_cnt; i++)
-				dev[i]->write_signal(dev_id[i], signal ? 0xffffffff : 0, dev_mask[i]);
+			for(int i = 0; i < dcount; i++)
+				dev[i]->write_signal(did[i], signal ? 0xffffffff : 0, dmask[i]);
 			in = signal;
 		}
-		
-		// regist event
-		if(event_id == -1)
-			vm->regist_event(this, 0, 21, true, &event_id);
 		play = true;
+		update_event();
 	}
 }
 
@@ -155,11 +165,8 @@ void DATAREC::rec_datarec(_TCHAR* filename)
 			buffer[0] = out ? 0x80 : 0;
 		}
 		bufcnt = samples = 0;
-		
-		// regist event
-		if(event_id == -1)
-			vm->regist_event(this, 0, 21, true, &event_id);
 		rec = true;
+		update_event();
 	}
 }
 
@@ -192,11 +199,20 @@ void DATAREC::close_datarec()
 	if(play || rec)
 		fio->Fclose();
 	play = rec = false;
-	
-	// cancel event
-	if(event_id != -1)
-		vm->cancel_event(event_id);
-	event_id = -1;
+	update_event();
+}
+
+void DATAREC::update_event()
+{
+	if(remote && ((play && remain > 0) || rec)) {
+		if(regist_id == -1)
+			vm->regist_event(this, 0, 21, true, &regist_id);
+	}
+	else {
+		if(regist_id != -1)
+			vm->cancel_event(regist_id);
+		regist_id = -1;
+	}
 }
 
 bool DATAREC::check_extension(_TCHAR* filename)

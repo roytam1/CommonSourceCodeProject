@@ -15,14 +15,6 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#ifdef _WIN32_WCE
-// RGB565
-#define RGB_COLOR(r, g, b) (uint16)(((uint16)(r) << 11) | ((uint16)(g) << 6) | (uint16)(b))
-#else
-// RGB555
-#define RGB_COLOR(r, g, b) (uint16)(((uint16)(r) << 10) | ((uint16)(g) << 5) | (uint16)(b))
-#endif
-
 static const uint16 palette_pc[8] = {
 	RGB_COLOR( 0, 0, 0), RGB_COLOR(31, 0, 0), RGB_COLOR( 0,31, 0), RGB_COLOR(31,31, 0),
 	RGB_COLOR( 0, 0,31), RGB_COLOR(31, 0,31), RGB_COLOR( 0,31,31), RGB_COLOR(31,31,31)
@@ -50,6 +42,7 @@ public:
 	// common functions
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
+	void event_callback(int event_id, int err);
 	void event_vsync(int v, int clock);
 	
 	// unique function

@@ -73,7 +73,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			attr_latch = attr_wrap ? attr_latch : attr_data;
 			vram[0xc000 | laddr] = attr_latch;
 			// 8255-0, Port B
-			dev_pio0->write_signal(dev_pio0_id, (attr_latch << 4) | (attr_latch & 7), 0x87);
+			d_pio0->write_signal(did_pio0, (attr_latch << 4) | (attr_latch & 7), 0x87);
 		}
 		return;
 	}
@@ -94,7 +94,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 			attr_latch = vram[0xc000 | laddr];
 			val &= vram[0x8000 | laddr];
 			// 8255-0, Port B
-			dev_pio0->write_signal(dev_pio0_id, (attr_latch << 4) | (attr_latch & 7), 0x87);
+			d_pio0->write_signal(did_pio0, (attr_latch << 4) | (attr_latch & 7), 0x87);
 		}
 		return val;
 	}
@@ -126,9 +126,9 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	vram_sel = (data & 4) ? true : false;
 	// I/O memory access
 	if(data & 8)
-		dev_io->write_signal(dev_io_id, 0xffffffff, 1);
+		d_io->write_signal(did_io, 0xffffffff, 1);
 	// 8255-2, Port C
-	dev_pio2->write_signal(dev_pio2_id, data, 3);
+	d_pio2->write_signal(did_pio2, data, 3);
 }
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)

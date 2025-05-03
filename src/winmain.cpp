@@ -50,7 +50,6 @@ void open_datarec(HWND hWnd, BOOL play);
 void open_media(HWND hWnd);
 #endif
 void set_window(HWND hwnd, int mode);
-int window_mode = 0;
 BOOL fullscreen_now = FALSE;
 
 // windows main
@@ -59,6 +58,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 
 // timing control
 int intervals[FRAMES_PER_10SECS];
+#ifdef _WIN32_WCE
+#define MIN_SKIP_FRAMES 1
+#define MAX_SKIP_FRAMES 30
+#else
+#define MIN_SKIP_FRAMES 0
+#define MAX_SKIP_FRAMES 10
+#endif
+DWORD rec_next_time, rec_accum_time;
+int rec_delay[3];
 
 int get_interval()
 {
@@ -74,6 +82,9 @@ int get_interval()
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow)
 {
+	// load config
+	load_config();
+	
 	// create window
 	WNDCLASS wndclass;
 	wndclass.style = CS_HREDRAW | CS_VREDRAW;
@@ -96,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	// show window
 	hInst = hInstance;
 	HWND hWnd = CreateWindow(_T("CWINDOW"), _T(DEVICE_NAME), WS_VISIBLE,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+	                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
 	
@@ -118,9 +129,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// show window
 	HWND hWnd = CreateWindow(_T("CWINDOW"), _T(DEVICE_NAME), WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
-		dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
+	                         dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, hInstance, NULL);
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
+	
+	if(config.window_mode == 1)
+		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW2, 0L);
+	else if(config.window_mode == 2)
+		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_640X480, 0L);
+	else if(config.window_mode == 3)
+		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_320X240, 0L);
+	else
+		config.window_mode = 0;
 	
 	// accelerator
 	HACCEL hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
@@ -129,8 +149,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	// disenable ime
 	ImmAssociateContext(hWnd, 0);
 	
+#ifdef _USE_GAPI
+	// initialize gapi
+	GXOpenDisplay(hWnd, GX_FULLSCREEN);
+#endif
+	
 	// initialize emulation core
-	load_config();
 	emu = new EMU(hWnd);
 	emu->set_screen_size(WINDOW_WIDTH1, WINDOW_HEIGHT1);
 	
@@ -146,7 +170,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// main loop
 	int current_interval = get_interval(), next_interval;
-	int skip_frames = 0, fps = 0, total = 0;
+	int skip_frames = 0, rec_cnt = 0, fps = 0, total = 0;
 	DWORD next_time = timeGetTime();
 	DWORD fps_time = next_time + 1000;
 	MSG msg;
@@ -154,16 +178,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	while(1) {
 		// check window message
 		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-#ifdef _WIN32_WCE
-			if(!GetMessage(&msg, NULL, 0, 0))
+			if(!GetMessage(&msg, NULL, 0, 0)) {
+#ifndef _WIN32_WCE
+				ExitProcess(0);	// trick
+#endif
 				return msg.wParam;
+			}
+#ifdef _WIN32_WCE
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 #else
-			if(!GetMessage(&msg, NULL, 0, 0)) {
-				ExitProcess(0);	// trick
-				return msg.wParam;
-			}
 			if(!TranslateAccelerator(hWnd, hAccel, &msg)) {
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -172,36 +196,64 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		}
 		else if(emu) {
 			// get next period
-			next_time += emu->now_skip() ? 0 : current_interval;	// skip when play/rec tape
-//			next_time += current_interval;
+			next_time += emu->now_skip() ? 0 : current_interval;
+			rec_next_time += current_interval;
 			next_interval = get_interval();
 			
 			// drive machine
 			emu->run();
 			total++;
 			
-			if(next_time > timeGetTime()) {
-				// update window if enough time
-				emu->draw_screen();
-				skip_frames = 0;
-				fps++;
+			if(emu->now_rec_video()) {
+				while(rec_next_time >= rec_accum_time) {
+					// rec pictures 10/15/30 frames per 1 second
+					emu->draw_screen();
+					fps++;
+					rec_accum_time += rec_delay[rec_cnt];
+					rec_cnt = (rec_cnt == 2) ? 0 : rec_cnt + 1;
+				}
 				
-				// sleep 1 frame priod if need
-				if((int)(next_time - timeGetTime()) >= next_interval)
-					Sleep(next_interval);
+				DWORD tmp = timeGetTime();
+				if(next_time > tmp) {
+					skip_frames = 0;
+					
+					// sleep 1 frame priod if need
+					if((int)(next_time - tmp) >= next_interval)
+						Sleep(next_interval);
+				}
+				else if(++skip_frames > MAX_SKIP_FRAMES) {
+					skip_frames = 0;
+					next_time = tmp;
+				}
 			}
-			else if(++skip_frames > 10) {
-				// update window at least once per 10 frames
-				emu->draw_screen();
-				skip_frames = 0;
-				fps++;
-				next_time = timeGetTime();
+			else {
+				if(next_time > timeGetTime()) {
+					if(skip_frames >= MIN_SKIP_FRAMES) {
+						// update window if enough time
+						emu->draw_screen();
+						skip_frames = 0;
+						fps++;
+					}
+					else
+						skip_frames++;
+					
+					// sleep 1 frame priod if need
+					if((int)(next_time - timeGetTime()) >= next_interval)
+						Sleep(next_interval);
+				}
+				else if(++skip_frames > MAX_SKIP_FRAMES) {
+					// update window at least once per 10 frames
+					emu->draw_screen();
+					skip_frames = 0;
+					fps++;
+					next_time = timeGetTime();
+				}
 			}
 			current_interval = next_interval;
 			Sleep(0);
 			
 			// calc frame rate
-			if(fps_time < timeGetTime()) {
+			if(fps_time <= timeGetTime()) {
 				_TCHAR buf[32];
 				int ratio = (int)(100 * fps / total + 0.5);
 				_stprintf(buf, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), fps, ratio);
@@ -211,13 +263,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			}
 		}
 	}
+	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
+#ifndef _USE_GAPI
 	HDC hdc;
 	PAINTSTRUCT ps;
-	// recent files
+#endif
 	_TCHAR path[_MAX_PATH];
 	int no;
 	
@@ -236,22 +290,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				delete emu;
 			emu = NULL;
 			save_config();
-			
-			// destroy command bar, quit fullscreen
 #ifdef _WIN32_WCE
+			// destroy command bar
 			if(hCmdBar)
 				CommandBar_Destroy(hCmdBar);
 			hCmdBar = NULL;
 #else
+			// quit fullscreen mode
 			if(fullscreen_now)
 				ChangeDisplaySettings(NULL, 0);
 			fullscreen_now = FALSE;
+#endif
+#ifdef _USE_GAPI
+			// release gapi
+			GXCloseDisplay();
 #endif
 			DestroyWindow(hWnd);
 			return 0;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
+#ifdef _USE_GAPI
+		case WM_KILLFOCUS:
+			GXSuspend();
+			break;
+		case WM_SETFOCUS:
+			GXResume();
+			break;
+#else
 		case WM_PAINT:
 			if(emu) {
 				hdc = BeginPaint(hWnd, &ps);
@@ -259,6 +325,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				EndPaint(hWnd, &ps);
 			}
 			return 0;
+#endif
+#ifdef _USE_WAVEOUT
+		case MM_WOM_DONE:
+			if(emu)
+				emu->notify_sound();
+			break;
+#endif
 #ifndef _WIN32_WCE
 		case WM_MOVING:
 			if(emu)
@@ -266,10 +339,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 #endif
 #ifdef _WIN32_WCE
-		case WM_LBUTTONDOWN:
-			if(hCmdBar)
-				CommandBar_Show(hCmdBar, (commandbar_show = !commandbar_show));
-			break;
+//		case WM_LBUTTONDOWN:
+//			if(hCmdBar)
+//				CommandBar_Show(hCmdBar, (commandbar_show = !commandbar_show));
+//			break;
 #endif
 		case WM_KEYDOWN:
 			if(emu)
@@ -336,11 +409,13 @@ socket:
 				case ID_RESET:
 					if(emu)
 						emu->reset();
+					rec_next_time = rec_accum_time = 0;
 					break;
 #ifdef USE_IPL_RESET
 				case ID_IPL_RESET:
 					if(emu)
 						emu->ipl_reset();
+					rec_next_time = rec_accum_time = 0;
 					break;
 #endif
 				case ID_CPU_POWER0: no = 0; goto cpu_power;
@@ -353,6 +428,23 @@ cpu_power:
 					if(emu)
 						emu->update_config();
 					break;
+#ifdef _MZ2500
+				case ID_MZ2500_PIC_PATCH:
+					config.pic_patch = !config.pic_patch;
+					if(emu)
+						emu->update_config();
+					break;
+#endif
+#ifdef USE_AUTO_KEY
+				case ID_AUTOKEY_START:
+					if(emu)
+						emu->start_auto_key();
+					break;
+				case ID_AUTOKEY_STOP:
+					if(emu)
+						emu->stop_auto_key();
+					break;
+#endif
 				case ID_EXIT:
 					SendMessage(hWnd, WM_CLOSE, 0, 0L);
 					break;
@@ -542,6 +634,25 @@ recent_media:
 						emu->open_media(path);
 					break;
 #endif
+				case ID_SCREEN_REC30: no = 30; goto record_video;
+				case ID_SCREEN_REC15: no = 15; goto record_video;
+				case ID_SCREEN_REC10: no = 10;
+record_video:
+					if(emu) {
+						emu->start_rec_video(no, true);
+						emu->start_rec_sound();
+						rec_delay[0] = (no == 30) ? 33 : (no == 15) ? 66 : 100;
+						rec_delay[1] = (no == 30) ? 33 : (no == 15) ? 67 : 100;
+						rec_delay[2] = (no == 30) ? 34 : (no == 15) ? 67 : 100;
+						rec_next_time = rec_accum_time = 0;
+					}
+					break;
+				case ID_SCREEN_STOP:
+					if(emu) {
+						emu->stop_rec_video();
+						emu->stop_rec_sound();
+					}
+					break;
 				case ID_SCREEN_WINDOW1:
 					if(emu)
 						set_window(hWnd, 0);
@@ -560,11 +671,15 @@ recent_media:
 					break;
 #ifndef _WIN32_WCE
 				// accelerator
-				case ID_SCREEN_ACCEL:
+				case ID_ACCEL_SCREEN:
 					if(emu) {
 						emu->mute_sound();
 						set_window(hWnd, fullscreen_now ? 0 : 2);
 					}
+					break;
+				case ID_ACCEL_MOUSE:
+					if(emu)
+						emu->toggle_mouse();
 					break;
 #endif
 #ifdef USE_MONITOR_TYPE
@@ -596,7 +711,10 @@ monitor_type:
 				case ID_SOUND_FREQ0: no = 0; goto sound_frequency;
 				case ID_SOUND_FREQ1: no = 1; goto sound_frequency;
 				case ID_SOUND_FREQ2: no = 2; goto sound_frequency;
-				case ID_SOUND_FREQ3: no = 3;
+				case ID_SOUND_FREQ3: no = 3; goto sound_frequency;
+				case ID_SOUND_FREQ4: no = 4; goto sound_frequency;
+				case ID_SOUND_FREQ5: no = 5; goto sound_frequency;
+				case ID_SOUND_FREQ6: no = 6;
 sound_frequency:
 					config.sound_frequency = no;
 					if(emu)
@@ -611,6 +729,36 @@ sound_latency:
 					if(emu)
 						emu->update_config();
 					break;
+#ifdef USE_CAPTURE
+				case ID_CAPTURE_FILTER:
+					if(emu)
+						emu->show_capture_device_filter();
+					break;
+				case ID_CAPTURE_PIN:
+					if(emu)
+						emu->show_capture_device_pin();
+					break;
+				case ID_CAPTURE_SOURCE:
+					if(emu)
+						emu->show_capture_device_source();
+					break;
+				case ID_CAPTURE_DISCONNECT:
+					if(emu)
+						emu->disconnect_capture_device();
+					break;
+				case ID_CAPTURE_DEVICE1: no = 0; goto capture_device;
+				case ID_CAPTURE_DEVICE2: no = 1; goto capture_device;
+				case ID_CAPTURE_DEVICE3: no = 2; goto capture_device;
+				case ID_CAPTURE_DEVICE4: no = 3; goto capture_device;
+				case ID_CAPTURE_DEVICE5: no = 4; goto capture_device;
+				case ID_CAPTURE_DEVICE6: no = 5; goto capture_device;
+				case ID_CAPTURE_DEVICE7: no = 6; goto capture_device;
+				case ID_CAPTURE_DEVICE8: no = 7;
+capture_device:
+					if(emu)
+						emu->connect_capture_device(no, false);
+					break;
+#endif
 			}
 			break;
 	}
@@ -619,6 +767,7 @@ sound_latency:
 
 void update_menu(HMENU hMenu, int pos)
 {
+#ifdef MENU_POS_CONTROL
 	if(pos == MENU_POS_CONTROL) {
 		// control menu
 		if(config.cpu_power == 0)
@@ -631,363 +780,214 @@ void update_menu(HMENU hMenu, int pos)
 			CheckMenuRadioItem(hMenu, ID_CPU_POWER0, ID_CPU_POWER4, ID_CPU_POWER3, MF_BYCOMMAND);
 		else
 			CheckMenuRadioItem(hMenu, ID_CPU_POWER0, ID_CPU_POWER4, ID_CPU_POWER4, MF_BYCOMMAND);
+#ifdef USE_AUTO_KEY
+		// auto key
+		bool now_paste = true, now_stop = true;
+#ifndef _WIN32_WCE
+		if(emu) {
+			now_paste = emu->now_auto_key();
+			now_stop = !now_paste;
+		}
+#endif
+		EnableMenuItem(hMenu, ID_AUTOKEY_START, now_paste ? MF_GRAYED : MF_ENABLED);
+		EnableMenuItem(hMenu, ID_AUTOKEY_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
+#endif
+#ifdef _MZ2500
+		CheckMenuItem(hMenu, ID_MZ2500_PIC_PATCH, config.pic_patch ? MF_CHECKED : MF_UNCHECKED);
+#endif
 	}
-#ifdef USE_CART
+#endif
+#ifdef MENU_POS_CART
 	if(pos == MENU_POS_CART) {
 		// cartridge
+		UINT uIDs[8] = {
+			ID_RECENT_CART1, ID_RECENT_CART2, ID_RECENT_CART3, ID_RECENT_CART4,
+			ID_RECENT_CART5, ID_RECENT_CART6, ID_RECENT_CART7, ID_RECENT_CART8
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_CART1, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART2, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART3, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART4, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART5, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART6, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART7, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_CART8, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_cart[0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART1, config.recent_cart[0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART2, config.recent_cart[1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART3, config.recent_cart[2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART4, config.recent_cart[3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART5, config.recent_cart[4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART6, config.recent_cart[5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART7, config.recent_cart[6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_cart[7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_CART8, config.recent_cart[7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_cart[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_cart[i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_CART1, _T("None"));
 	}
 #endif
-#ifdef USE_FD1
+#ifdef MENU_POS_FD1
 	if(pos == MENU_POS_FD1) {
-		// tape
+		// floppy drive #1
+		UINT uIDs[8] = {
+			ID_RECENT_FD11, ID_RECENT_FD12, ID_RECENT_FD13, ID_RECENT_FD14,
+			ID_RECENT_FD15, ID_RECENT_FD16, ID_RECENT_FD17, ID_RECENT_FD18
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_FD11, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD12, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD13, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD14, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD15, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD16, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD17, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD18, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_disk[0][0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD11, config.recent_disk[0][0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD12, config.recent_disk[0][1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD13, config.recent_disk[0][2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD14, config.recent_disk[0][3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD15, config.recent_disk[0][4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD16, config.recent_disk[0][5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD17, config.recent_disk[0][6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[0][7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD18, config.recent_disk[0][7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_disk[0][i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_disk[0][i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD11, _T("None"));
 	}
 #endif
-#ifdef USE_FD2
+#ifdef MENU_POS_FD2
 	if(pos == MENU_POS_FD2) {
-		// tape
+		// floppy drive #2
+		UINT uIDs[8] = {
+			ID_RECENT_FD21, ID_RECENT_FD22, ID_RECENT_FD23, ID_RECENT_FD24,
+			ID_RECENT_FD25, ID_RECENT_FD26, ID_RECENT_FD27, ID_RECENT_FD28
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_FD21, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD22, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD23, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD24, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD25, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD26, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD27, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD28, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_disk[1][0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD21, config.recent_disk[1][0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD22, config.recent_disk[1][1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD23, config.recent_disk[1][2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD24, config.recent_disk[1][3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD25, config.recent_disk[1][4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD26, config.recent_disk[1][5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD27, config.recent_disk[1][6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[1][7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD28, config.recent_disk[1][7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_disk[1][i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_disk[1][i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD21, _T("None"));
 	}
 #endif
-#ifdef USE_FD3
+#ifdef MENU_POS_FD3
 	if(pos == MENU_POS_FD3) {
-		// tape
+		// floppy drive #3
+		UINT uIDs[8] = {
+			ID_RECENT_FD31, ID_RECENT_FD32, ID_RECENT_FD33, ID_RECENT_FD34,
+			ID_RECENT_FD35, ID_RECENT_FD36, ID_RECENT_FD37, ID_RECENT_FD38
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_FD31, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD32, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD33, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD34, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD35, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD36, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD37, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD38, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_disk[2][0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD31, config.recent_disk[2][0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD32, config.recent_disk[2][1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD33, config.recent_disk[2][2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD34, config.recent_disk[2][3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD35, config.recent_disk[2][4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD36, config.recent_disk[2][5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD37, config.recent_disk[2][6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[2][7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD38, config.recent_disk[2][7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_disk[2][i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_disk[2][i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD31, _T("None"));
 	}
 #endif
-#ifdef USE_FD4
+#ifdef MENU_POS_FD4
 	if(pos == MENU_POS_FD4) {
-		// tape
+		// floppy drive #4
+		UINT uIDs[8] = {
+			ID_RECENT_FD41, ID_RECENT_FD42, ID_RECENT_FD43, ID_RECENT_FD44,
+			ID_RECENT_FD45, ID_RECENT_FD46, ID_RECENT_FD47, ID_RECENT_FD48
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_FD41, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD42, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD43, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD44, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD45, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD46, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD47, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_FD48, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_disk[3][0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD41, config.recent_disk[3][0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD42, config.recent_disk[3][1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD43, config.recent_disk[3][2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD44, config.recent_disk[3][3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD45, config.recent_disk[3][4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD46, config.recent_disk[3][5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD47, config.recent_disk[3][6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_disk[3][7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_FD48, config.recent_disk[3][7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_disk[3][i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_disk[3][i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_FD41, _T("None"));
 	}
 #endif
-#ifdef USE_DATAREC
+#ifdef MENU_POS_DATAREC
 	if(pos == MENU_POS_DATAREC) {
-		// tape
+		// data recorder
+		UINT uIDs[8] = {
+			ID_RECENT_DATAREC1, ID_RECENT_DATAREC2, ID_RECENT_DATAREC3, ID_RECENT_DATAREC4,
+			ID_RECENT_DATAREC5, ID_RECENT_DATAREC6, ID_RECENT_DATAREC7, ID_RECENT_DATAREC8
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_DATAREC1, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC2, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC3, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC4, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC5, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC6, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC7, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_DATAREC8, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_datarec[0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC1, config.recent_datarec[0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC2, config.recent_datarec[1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC3, config.recent_datarec[2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC4, config.recent_datarec[3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC5, config.recent_datarec[4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC6, config.recent_datarec[5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC7, config.recent_datarec[6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_datarec[7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_DATAREC8, config.recent_datarec[7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_datarec[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_datarec[i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_DATAREC1, _T("None"));
 	}
 #endif
-#ifdef USE_MEDIA
+#ifdef MENU_POS_MEDIA
 	if(pos == MENU_POS_MEDIA) {
-		// tape
+		// media
+		UINT uIDs[8] = {
+			ID_RECENT_MEDIA1, ID_RECENT_MEDIA2, ID_RECENT_MEDIA3, ID_RECENT_MEDIA4,
+			ID_RECENT_MEDIA5, ID_RECENT_MEDIA6, ID_RECENT_MEDIA7, ID_RECENT_MEDIA8
+		};
 		bool flag = false;
-		DeleteMenu(hMenu, ID_RECENT_MEDIA1, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA2, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA3, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA4, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA5, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA6, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA7, MF_BYCOMMAND);
-		DeleteMenu(hMenu, ID_RECENT_MEDIA8, MF_BYCOMMAND);
-		if(_tcscmp(config.recent_media[0], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA1, config.recent_media[0]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[1], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA2, config.recent_media[1]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[2], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA3, config.recent_media[2]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[3], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA4, config.recent_media[3]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[4], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA5, config.recent_media[4]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[5], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA6, config.recent_media[5]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[6], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA7, config.recent_media[6]);
-			flag = true;
-		}
-		if(_tcscmp(config.recent_media[7], _T(""))) {
-			AppendMenu(hMenu, MF_STRING, ID_RECENT_MEDIA8, config.recent_media[7]);
-			flag = true;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_media[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_media[i]);
+				flag = true;
+			}
 		}
 		if(!flag)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MEDIA1, _T("None"));
 	}
 #endif
+#ifdef MENU_POS_SCREEN
 	if(pos == MENU_POS_SCREEN) {
-		// screen menu
+		// recording
+		bool now_rec = true, now_stop = true;
+#ifndef _WIN32_WCE
+		if(emu) {
+			now_rec = emu->now_rec_video();
+			now_stop = !now_rec;
+		}
+#endif
+		EnableMenuItem(hMenu, ID_SCREEN_REC30, now_rec ? MF_GRAYED : MF_ENABLED);
+		EnableMenuItem(hMenu, ID_SCREEN_REC15, now_rec ? MF_GRAYED : MF_ENABLED);
+		EnableMenuItem(hMenu, ID_SCREEN_REC10, now_rec ? MF_GRAYED : MF_ENABLED);
+		EnableMenuItem(hMenu, ID_SCREEN_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
+		
+		// screen mode
+#ifdef _WIN32_WCE
+		EnableMenuItem(hMenu, ID_SCREEN_WINDOW1, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_640X480, MF_GRAYED);
 #ifdef USE_SCREEN_X2
-		if(window_mode == 0)
+		EnableMenuItem(hMenu, ID_SCREEN_WINDOW2, MF_GRAYED);
+		EnableMenuItem(hMenu, ID_SCREEN_320X240, MF_GRAYED);
+#endif
+#else
+#ifdef USE_SCREEN_X2
+		if(config.window_mode == 0)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_WINDOW1, MF_BYCOMMAND);
-		else if(window_mode == 1)
+		else if(config.window_mode == 1)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_WINDOW2, MF_BYCOMMAND);
-		else if(window_mode == 2)
+		else if(config.window_mode == 2)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_640X480, MF_BYCOMMAND);
 		else
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_320X240, ID_SCREEN_320X240, MF_BYCOMMAND);
 		EnableMenuItem(hMenu, ID_SCREEN_640X480, fullscreen_now ? MF_GRAYED : MF_ENABLED);
 		EnableMenuItem(hMenu, ID_SCREEN_320X240, fullscreen_now ? MF_GRAYED : MF_ENABLED);
 #else
-		if(window_mode == 0)
+		if(config.window_mode == 0)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_640X480, ID_SCREEN_WINDOW1, MF_BYCOMMAND);
-		else if(window_mode == 2)
+		else if(config.window_mode == 2)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, ID_SCREEN_640X480, ID_SCREEN_640X480, MF_BYCOMMAND);
 		EnableMenuItem(hMenu, ID_SCREEN_640X480, fullscreen_now ? MF_GRAYED : MF_ENABLED);
 #endif
+#endif
+		// mz2500 monitor type
 #ifdef USE_MONITOR_TYPE
 		if(config.monitor_type == 0)
 			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_A400L, MF_BYCOMMAND);
@@ -998,10 +998,13 @@ void update_menu(HMENU hMenu, int pos)
 		else
 			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_D200L, MF_BYCOMMAND);
 #endif
+		// scanline
 #ifdef USE_SCANLINE
 		CheckMenuItem(hMenu, ID_SCREEN_SCANLINE, config.scan_line ? MF_CHECKED : MF_UNCHECKED);
 #endif
 	}
+#endif
+#ifdef MENU_POS_SOUND
 	if(pos == MENU_POS_SOUND) {
 		// sound menu
 		bool now_rec = false, now_stop = false;
@@ -1013,13 +1016,19 @@ void update_menu(HMENU hMenu, int pos)
 		EnableMenuItem(hMenu, ID_SOUND_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
 		
 		if(config.sound_frequency == 0)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ3, ID_SOUND_FREQ0, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ0, MF_BYCOMMAND);
 		else if(config.sound_frequency == 1)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ3, ID_SOUND_FREQ1, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ1, MF_BYCOMMAND);
 		else if(config.sound_frequency == 2)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ3, ID_SOUND_FREQ2, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ2, MF_BYCOMMAND);
+		else if(config.sound_frequency == 3)
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ3, MF_BYCOMMAND);
+		else if(config.sound_frequency == 4)
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ4, MF_BYCOMMAND);
+		else if(config.sound_frequency == 5)
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ5, MF_BYCOMMAND);
 		else
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ3, ID_SOUND_FREQ3, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ6, MF_BYCOMMAND);
 		if(config.sound_latency == 0)
 			CheckMenuRadioItem(hMenu, ID_SOUND_LATE0, ID_SOUND_LATE3, ID_SOUND_LATE0, MF_BYCOMMAND);
 		else if(config.sound_latency == 1)
@@ -1029,6 +1038,33 @@ void update_menu(HMENU hMenu, int pos)
 		else
 			CheckMenuRadioItem(hMenu, ID_SOUND_LATE0, ID_SOUND_LATE3, ID_SOUND_LATE3, MF_BYCOMMAND);
 	}
+#endif
+#ifdef MENU_POS_CAPTURE
+	if(pos == MENU_POS_CAPTURE) {
+		// video capture menu
+		UINT uIDs[8] = {
+			ID_CAPTURE_DEVICE1, ID_CAPTURE_DEVICE2, ID_CAPTURE_DEVICE3, ID_CAPTURE_DEVICE4,
+			ID_CAPTURE_DEVICE5, ID_CAPTURE_DEVICE6, ID_CAPTURE_DEVICE7, ID_CAPTURE_DEVICE8
+		};
+		int cap_devs = emu->get_capture_devices();
+		int connected = emu->get_connected_capture_device();
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(cap_devs >= i + 1)
+				AppendMenu(hMenu, MF_STRING, uIDs[i], emu->get_capture_device_name(i));
+		}
+		if(!cap_devs)
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_CAPTURE_DEVICE1, _T("None"));
+		if(connected != -1)
+			CheckMenuRadioItem(hMenu, ID_CAPTURE_DEVICE1, ID_CAPTURE_DEVICE1, uIDs[connected], MF_BYCOMMAND);
+		EnableMenuItem(hMenu, ID_CAPTURE_FILTER, (connected != -1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CAPTURE_PIN, (connected != -1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CAPTURE_SOURCE, (connected != -1) ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_CAPTURE_DISCONNECT, (connected != -1) ? MF_ENABLED : MF_GRAYED);
+	}
+#endif
 }
 
 #ifdef USE_CART
@@ -1071,7 +1107,7 @@ void open_disk(HWND hWnd, int drv)
 	_memset(&OpenFileName, 0, sizeof(OpenFileName));
 	OpenFileName.lStructSize = sizeof(OPENFILENAME);
 	OpenFileName.hwndOwner = hWnd;
-	OpenFileName.lpstrFilter = _T("Floppy Disk Files (*.d88)\0*.d88\0All Files (*.*)\0*.*\0\0");
+	OpenFileName.lpstrFilter = _T("D88 Floppy Disk Files (*.d88)\0*.d88\0TeleDisk Floppy Disk Files (*.td0)\0*.td0\0All Files (*.*)\0*.*\0\0");
 	OpenFileName.lpstrFile = szFile;
 	OpenFileName.nMaxFile = _MAX_PATH;
 	OpenFileName.lpstrTitle = _T("Floppy Disk");
@@ -1142,7 +1178,7 @@ void open_media(HWND hWnd)
 	_memset(&OpenFileName, 0, sizeof(OpenFileName));
 	OpenFileName.lStructSize = sizeof(OPENFILENAME);
 	OpenFileName.hwndOwner = hWnd;
-	OpenFileName.lpstrFilter = _T("Sound Cassette (*.m3u)\0*.m3u\0All Files (*.*)\0*.*\0\0");
+	OpenFileName.lpstrFilter = _T("Sound Cassette Files (*.m3u)\0*.m3u\0All Files (*.*)\0*.*\0\0");
 	OpenFileName.lpstrFile = szFile;
 	OpenFileName.nMaxFile = _MAX_PATH;
 	OpenFileName.lpstrTitle = _T("Sound Cassette");
@@ -1195,7 +1231,7 @@ void set_window(HWND hwnd, int mode)
 			SetWindowPos(hwnd, HWND_TOP, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_SHOWWINDOW);
 			fullscreen_now = FALSE;
 		}
-		window_mode = mode;
+		config.window_mode = mode;
 		
 		// set screen size to emu class
 		emu->set_screen_size((mode == 0) ? WINDOW_WIDTH1 : WINDOW_WIDTH2, (mode == 0) ? WINDOW_HEIGHT1 : WINDOW_HEIGHT2);
@@ -1222,7 +1258,7 @@ void set_window(HWND hwnd, int mode)
 			SetWindowPos(hwnd, HWND_TOP, 0, 0, (mode == 2) ? 640 : 320, (mode == 2) ? 480 : 240, SWP_SHOWWINDOW);
 			SetCursorPos((mode == 2) ? 320 : 160, (mode == 2) ? 200 : 100);
 			fullscreen_now = TRUE;
-			window_mode = mode;
+			config.window_mode = mode;
 			
 			// set screen size to emu class
 			emu->set_screen_size((mode == 2) ? 640 : 320, (mode == 2) ? 480 - 18 : 240 - 18);

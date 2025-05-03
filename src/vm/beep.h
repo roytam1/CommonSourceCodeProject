@@ -15,20 +15,23 @@
 #include "device.h"
 
 #define SIG_BEEP_ON	0
-#define SIG_BEEP_PULSE	1
-#define SIG_BEEP_MUTE	2
+#define SIG_BEEP_MUTE	1
+#define SIG_BEEP_PULSE	2
+
+#define DELAY_FRAMES	3
 
 class BEEP : public DEVICE
 {
 private:
-//	int constant;
-	long constant;
-	int count;
-	int diff;
-	int pulse;
-	int prv;
 	int vol;
 	bool signal;
+	int count;
+	int diff;
+	int lines;
+	int change;
+	int pulse, prv;
+	long constant;
+	
 	bool on;
 	bool mute;
 	
@@ -37,9 +40,9 @@ public:
 	~BEEP() {}
 	
 	// common functions
-	void initialize();
+	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_frame();
+	void event_vsync(int v, int clock);
 	void mix(int32* buffer, int cnt);
 	
 	// unique function

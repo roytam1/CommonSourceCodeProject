@@ -43,8 +43,8 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 				
 				// check interrupt
 				if(num == 1 && !(prev & 0x20) && (regs[1] & 0x20) && (status_reg & 0x80)) {
-					for(int i = 0; i < dev_cnt; i++)
-						dev[i]->write_signal(dev_id[i], 0xffffffff, dev_mask[i]);
+					for(int i = 0; i < dcount; i++)
+						dev[i]->write_signal(did[i], 0xffffffff, dmask[i]);
 				}
 			}
 			else {
@@ -135,8 +135,8 @@ void TMS9918A::event_vsync(int v, int clock)
 		
 		// do interrupt
 		if((regs[1] & 0x20) && !(status_reg & 0x80)) {
-			for(int i = 0; i < dev_cnt; i++)
-				dev[i]->write_signal(dev_id[i], 0xffffffff, dev_mask[i]);
+			for(int i = 0; i < dcount; i++)
+				dev[i]->write_signal(did[i], 0xffffffff, dmask[i]);
 		}
 		status_reg |= 0x80;
 	}

@@ -1,6 +1,6 @@
 
 retro pc emulator common source code
-								Dec 6, 2006
+								Feb 1, 2007
 
 --- What's this ?
 
@@ -9,6 +9,7 @@ This archive includes the all source codes of:
 	Emu5		SORD m5 emulator
 	EmuGaki		CASIO PV-2000 emulator
 	EmuLTI8		MITSUBISHI Elec. MULTI8 emulator
+	EmuPIA		TOSHIBA PASOPIA emulator
 	EmuPIA7		TOSHIBA PASOPIA7 emulator
 	EmuZ-2500	SHARP MZ-2500 emulator
 	ePV-1000	CASIO PV-1000 emulator
@@ -17,8 +18,9 @@ This archive includes the all source codes of:
 
 You can compile them with:
 
-	Win32		Mircosoft Visual C++ 6.0 with Service Pack 6.
-			Microsoft Visual C++ 2500
+	Win32		Mircosoft Visual C++ 6.0 with SP6
+			Microsoft Visual C++ 2500 width SP1
+	CE.NET 4.x	Microsoft eMbedded Visual C++ 4.0 width SP4
 
 
 --- License
@@ -32,7 +34,7 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/device.h
 	XM6
 - vm/fmgen/*
-	M88
+	M88/fmgen
 - vm/i8259.*
 	MESS 8259 core
 - vm/mb8877.*
@@ -46,7 +48,7 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/upd765a.*
 	M88 fdc/fdu core
 - vm/upd7801.*
-	MAME uPD7810 core.
+	MAME uPD7810 core
 - vm/w3100a.*
 	Mr.Oh! Ishi
 - vm/z80.*

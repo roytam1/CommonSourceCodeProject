@@ -1,5 +1,5 @@
 /*
-	Skelton for Z-80 PC Emulator
+	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
 	Date   : 2006.08.27 -
@@ -47,12 +47,8 @@ void EMU::socket_connected(int ch)
 void EMU::socket_disconnected(int ch)
 {
 	// winmain notify that network is disconnected
-#if 1
 	if(!socket_delay[ch])
 		socket_delay[ch] = 1;//56;
-#else
-	vm->network_disconnected(ch);
-#endif
 }
 
 void EMU::update_socket()
@@ -213,7 +209,6 @@ void EMU::recv_data(int ch)
 		recv_w_ptr[ch] += size;
 	}
 	else {
-#if 1
 		SOCKADDR_IN addr;
 		int len = sizeof(addr);
 		int size = SOCKET_BUFFER_MAX - recv_w_ptr[ch];
@@ -236,42 +231,6 @@ void EMU::recv_data(int ch)
 		buf[6] = (char)addr.sin_port;
 		buf[7] = (char)(addr.sin_port >> 8);
 		recv_w_ptr[ch] += size;
-#else
-		// get buffer
-		int size0, size1;
-		uint8* buf0 = vm->get_recvbuffer0(ch, &size0, &size1);
-		uint8* buf1 = vm->get_recvbuffer1(ch);
-		int size = size0 + size1;
-		
-		SOCKADDR_IN addr;
-		int len = sizeof(addr);
-		char buf[0x2000];
-		
-		if(size < 8)
-			return;
-		if((size = recvfrom(soc[ch], buf + 8, size - 8, 0, (struct sockaddr *)&addr, &len)) == SOCKET_ERROR) {
-			disconnect_socket(ch);
-			socket_disconnected(ch);
-			return;
-		}
-		size += 8;
-		buf[0] = size >> 8;
-		buf[1] = size;
-		buf[2] = (char)addr.sin_addr.s_addr;
-		buf[3] = (char)(addr.sin_addr.s_addr >> 8);
-		buf[4] = (char)(addr.sin_addr.s_addr >> 16);
-		buf[5] = (char)(addr.sin_addr.s_addr >> 24);
-		buf[6] = (char)addr.sin_port;
-		buf[7] = (char)(addr.sin_port >> 8);
-		
-		if(size <= size0)
-			_memcpy(buf0, buf, size);
-		else {
-			_memcpy(buf0, buf, size0);
-			_memcpy(buf1, buf + size0, size - size0);
-		}
-		vm->inc_recvbuffer_ptr(ch, size);
-#endif
 	}
 }
 

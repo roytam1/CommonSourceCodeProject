@@ -54,7 +54,7 @@ END
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_SCREEN_ACCEL,        VIRTKEY, ALT, NOINVERT
+    VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
 #endif    // “ú–{Œê resources
@@ -105,6 +105,11 @@ BEGIN
     END
     POPUP "Screen"
     BEGIN
+        MENUITEM "Rec 30fps"                    ID_SCREEN_REC30
+        MENUITEM "Rec 15fps"                    ID_SCREEN_REC15
+        MENUITEM "Rec 10fps"                    ID_SCREEN_REC10
+        MENUITEM "Stop"                         ID_SCREEN_STOP
+        MENUITEM SEPARATOR
         MENUITEM "Window x1",                   ID_SCREEN_WINDOW1
         MENUITEM "Window x2",                   ID_SCREEN_WINDOW2
         MENUITEM "Fullscreen 640x480",          ID_SCREEN_640X480
@@ -115,10 +120,13 @@ BEGIN
         MENUITEM "Rec"                          ID_SOUND_REC
         MENUITEM "Stop"                         ID_SOUND_STOP
         MENUITEM SEPARATOR
-        MENUITEM "11025Hz",                     ID_SOUND_FREQ0
-        MENUITEM "22050Hz",                     ID_SOUND_FREQ1
-        MENUITEM "44100Hz",                     ID_SOUND_FREQ2
-        MENUITEM "48000Hz",                     ID_SOUND_FREQ3
+        MENUITEM "2000Hz",                      ID_SOUND_FREQ0
+        MENUITEM "4000Hz",                      ID_SOUND_FREQ1
+        MENUITEM "8000Hz",                      ID_SOUND_FREQ2
+        MENUITEM "11025Hz",                     ID_SOUND_FREQ3
+        MENUITEM "22050Hz",                     ID_SOUND_FREQ4
+        MENUITEM "44100Hz",                     ID_SOUND_FREQ5
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
         MENUITEM SEPARATOR
         MENUITEM "100msec",                     ID_SOUND_LATE0
         MENUITEM "200msec",                     ID_SOUND_LATE1

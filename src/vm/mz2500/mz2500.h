@@ -27,7 +27,10 @@
 #define USE_FD4
 #define USE_MEDIA
 #define USE_SOCKET
+#define USE_CAPTURE
 #define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
 #define USE_MONITOR_TYPE
 
@@ -41,6 +44,13 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define MB8876
+#define TIMER_FREQ
+
+// memory wait
+#define Z80_M1_CYCLE_WAIT	1
+#define CPU_MEMORY_WAIT
+#define CPU_IO_WAIT
+#define VRAM_WAIT
 
 // irq priority
 #define IRQ_Z80PIO	0
@@ -60,11 +70,14 @@ class I8253;
 class I8255;
 class IO8;
 class MB8877;
+class PCM1BIT;
 class RP5C15;
 class W3100A;
 class YM2203;
 class Z80;
+class Z80PIC;
 class Z80PIO;
+class Z80SIO;
 
 class CALENDAR;
 class CASSETTE;
@@ -72,14 +85,17 @@ class CRTC;
 class EMM;
 class EXTROM;
 class FLOPPY;
+class INTERRUPT;
 class JOYSTICK;
 class KANJI;
 class KEYBOARD;
 class MEMORY;
+class MOUSE;
+class RESET;
 class ROMFILE;
 class SASI;
 class TIMER;
-class Z80PIC;
+class VOICE;
 
 class VM
 {
@@ -96,11 +112,14 @@ protected:
 	I8255* pio0;
 	IO8* io;
 	MB8877* fdc;
-	RP5C15* rp5c15;
+	PCM1BIT* pcm;
+	RP5C15* rtc;
 	W3100A* w3100a;
 	YM2203* opn;
 	Z80* cpu;
+	Z80PIC* pic;
 	Z80PIO* pio1;
+	Z80SIO* sio;
 	
 	CALENDAR* calendar;
 	CASSETTE* cassette;
@@ -108,14 +127,17 @@ protected:
 	EMM* emm;
 	EXTROM* extrom;
 	FLOPPY* floppy;
+	INTERRUPT* interrupt;
 	JOYSTICK* joystick;
 	KANJI* kanji;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
+	MOUSE* mouse;
+	RESET* rst;
 	ROMFILE* romfile;
 	SASI* sasi;
 	TIMER* timer;
-	Z80PIC* pic;
+	VOICE* voice;
 	
 public:
 	// ----------------------------------------
@@ -142,7 +164,6 @@ public:
 	uint16* create_sound(int samples, bool fill);
 	
 	// socket
-	// network
 	void network_connected(int ch);
 	void network_disconnected(int ch);
 	uint8* get_sendbuffer(int ch, int* size);
@@ -169,6 +190,10 @@ public:
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
 	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

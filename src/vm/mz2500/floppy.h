@@ -20,9 +20,9 @@
 class FLOPPY : public DEVICE
 {
 private:
-	DEVICE* cpu;
-	DEVICE* fdc;
-	int fdc_id0, fdc_id1;
+	DEVICE* d_cpu;
+	DEVICE* d_fdc;
+	int did0_fdc, did1_fdc;
 	
 	bool reverse;
 	bool laydock;
@@ -38,12 +38,10 @@ public:
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device) {
-		cpu = device;
+		d_cpu = device;
 	}
 	void set_context_fdc(DEVICE* device, int id0, int id1) {
-		fdc = device;
-		fdc_id0 = id0;
-		fdc_id1 = id1;
+		d_fdc = device; did0_fdc = id0; did1_fdc = id1;
 	}
 };
 

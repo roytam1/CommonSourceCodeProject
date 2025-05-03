@@ -16,14 +16,18 @@
 #include "../device.h"
 
 #define PAGE_TYPE_NORMAL	0
-#define PAGE_TYPE_KANJI		1
-#define PAGE_TYPE_DIC		2
-#define PAGE_TYPE_MODIFY	3
+#define PAGE_TYPE_VRAM		1
+#define PAGE_TYPE_KANJI		2
+#define PAGE_TYPE_DIC		3
+#define PAGE_TYPE_MODIFY	4
+
+#define SIG_MEMORY_HBLANK	0
+#define SIG_MEMORY_VBLANK	1
 
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE *d_cpu, *d_crtc;
 	
 	uint8* rbank[32];
 	uint8* wbank[32];
@@ -40,9 +44,12 @@ private:
 	
 	uint8 bank;
 	uint8 page[8];
-	uint8 page_type[8];
+	int page_type[8];
+	int page_wait[8];
+	bool is_vram[8];
 	uint8 dic_bank;
 	uint8 kanji_bank;
+	bool blank, hblank, vblank, busreq;
 	
 	void set_map(uint8 data);
 
@@ -54,17 +61,40 @@ public:
 	void initialize();
 	void reset();
 	void ipl_reset();
+	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_data16(uint32 addr, uint32 data);
+	uint32 read_data16(uint32 addr);
+	
+	void write_data8w(uint32 addr, uint32 data, int* wait);
+	uint32 read_data8w(uint32 addr, int* wait);
+	void write_data16w(uint32 addr, uint32 data, int* wait);
+	uint32 read_data16w(uint32 addr, int* wait);
+	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unitque function
-	void set_context(DEVICE* device) { dev = device; }
-	uint8* get_vram() { return vram; }
-	uint8* get_tvram() { return tvram; }
-	uint8* get_kanji() { return kanji; }
-	uint8* get_pcg() { return pcg; }
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+	void set_context_crtc(DEVICE* device) {
+		d_crtc = device;
+	}
+	uint8* get_vram() {
+		return vram;
+	}
+	uint8* get_tvram() {
+		return tvram;
+	}
+	uint8* get_kanji() {
+		return kanji;
+	}
+	uint8* get_pcg() {
+		return pcg;
+	}
 };
 
 #endif

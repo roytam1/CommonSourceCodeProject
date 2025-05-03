@@ -24,11 +24,11 @@ void KANJI::initialize()
 		fio->Fclose();
 		
 		// 8255 Port A, bit6 = 0 (kanji rom status)
-		dev->write_signal(dev_id, 0, 0x40);
+		dev->write_signal(did, 0, 0x40);
 	}
 	else
 		// 8255 Port A, bit6 = 1 (kanji rom not status)
-		dev->write_signal(dev_id, 0xffffffff, 0x40);
+		dev->write_signal(did, 0xffffffff, 0x40);
 	delete fio;
 }
 

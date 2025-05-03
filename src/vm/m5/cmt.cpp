@@ -32,11 +32,11 @@ void CMT::write_io8(uint32 addr, uint32 data)
 	case 0x50:
 		// data recorder
 		if((signal = (data & 1) ? false : true) != out) {
-			dev->write_signal(out_id, signal ? 0xffffffff : 0, 1);
+			dev->write_signal(did_out, signal ? 0xffffffff : 0, 1);
 			out = signal;
 		}
 		if((motor = (data & 2) ? true : false) != remote) {
-			dev->write_signal(rmt_id, motor ? 0xffffffff : 0, 1);
+			dev->write_signal(did_rmt, motor ? 0xffffffff : 0, 1);
 			remote = motor;
 		}
 		// printer

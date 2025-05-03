@@ -21,9 +21,9 @@ class Z80PIO : public DEVICE
 {
 private:
 	DEVICE* dev[2][MAX_OUTPUT];
-	int dev_id[2][MAX_OUTPUT], dev_shift[2][MAX_OUTPUT], dev_cnt[2];
-	uint32 dev_mask[2][MAX_OUTPUT];
-	DEVICE* intr;
+	int did[2][MAX_OUTPUT], dshift[2][MAX_OUTPUT], dcount[2];
+	uint32 dmask[2][MAX_OUTPUT];
+	DEVICE* d_pic;
 	int pri;
 	
 	typedef struct {
@@ -46,8 +46,8 @@ private:
 	
 public:
 	Z80PIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_cnt[0] = dev_cnt[1] = 0;
-		intr = NULL;
+		dcount[0] = dcount[1] = 0;
+		d_pic = NULL;
 		port[0].wreg = port[1].wreg = port[0].rreg = port[1].rreg = 0;//0xff;
 	}
 	~Z80PIO() {}
@@ -60,14 +60,16 @@ public:
 	
 	// unique function
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dev_cnt[0]++;
-		dev[0][c] = device; dev_id[0][c] = id; dev_mask[0][c] = mask; dev_shift[0][c] = shift;
+		int c = dcount[0]++;
+		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask; dshift[0][c] = shift;
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dev_cnt[1]++;
-		dev[1][c] = device; dev_id[1][c] = id; dev_mask[1][c] = mask; dev_shift[1][c] = shift;
+		int c = dcount[1]++;
+		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask; dshift[1][c] = shift;
 	}
-	void set_context_int(DEVICE* device, int priority) { intr = device; pri = priority; }
+	void set_context_int(DEVICE* device, int priority) {
+		d_pic = device; pri = priority;
+	}
 };
 
 #endif

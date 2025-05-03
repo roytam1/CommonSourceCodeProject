@@ -21,8 +21,8 @@
 class IOTRAP : public DEVICE
 {
 private:
-	DEVICE *dev_cpu, *dev_pio2;
-	int dev_pio2_id;
+	DEVICE *d_cpu, *d_pio2;
+	int did_pio2;
 	bool nmi_mask, pasopia;
 	
 public:
@@ -36,8 +36,12 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_cpu(DEVICE* device) { dev_cpu = device; }
-	void set_context_pio2(DEVICE* device, int id) { dev_pio2 = device; dev_pio2_id = id; }
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
+	void set_context_pio2(DEVICE* device, int id) {
+		d_pio2 = device; did_pio2 = id;
+	}
 	void do_reset();
 };
 

@@ -18,15 +18,15 @@ class HD146818P : public DEVICE
 {
 private:
 	DEVICE* dev[MAX_OUTPUT];
-	int dev_id[MAX_OUTPUT], dev_cnt;
-	uint32 dev_mask[MAX_OUTPUT];
+	int did[MAX_OUTPUT], dcount;
+	uint32 dmask[MAX_OUTPUT];
 	
 	uint8 ram[0x40];
 	int ch, prev_sec;
 	bool update, alarm, period, prev_irq;
 public:
 	HD146818P(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_cnt = 0;
+		dcount = 0;
 	}
 	~HD146818P() {}
 	
@@ -39,8 +39,8 @@ public:
 	
 	// unique functions
 	void set_context(DEVICE* device, int id, uint32 mask) {
-		int c = dev_cnt++;
-		dev[c] = device; dev_id[c] = id; dev_mask[c] = mask;
+		int c = dcount++;
+		dev[c] = device; did[c] = id; dmask[c] = mask;
 	}
 };
 

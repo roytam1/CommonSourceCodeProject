@@ -18,8 +18,8 @@
 class IO : public DEVICE
 {
 private:
-	DEVICE* memory;
-	DEVICE* sound;
+	DEVICE* d_mem;
+	DEVICE* d_sound;
 	
 	uint8* key;
 	uint8* joy;
@@ -36,8 +36,12 @@ public:
 	uint32 read_io8(uint32 addr);
 	
 	// unique functions
-	void set_context_mem(DEVICE* device) { memory = device; }
-	void set_context_sound(DEVICE* device) { sound = device; }
+	void set_context_mem(DEVICE* device) {
+		d_mem = device;
+	}
+	void set_context_sound(DEVICE* device) {
+		d_sound = device;
+	}
 };
 
 #endif

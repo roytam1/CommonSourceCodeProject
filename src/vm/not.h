@@ -20,8 +20,8 @@ class NOT : public DEVICE
 {
 private:
 	DEVICE* dev;
-	int dev_id;
-	uint32 dev_mask;
+	int did;
+	uint32 dmask;
 	
 public:
 	NOT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -29,12 +29,12 @@ public:
 	
 	// common functions
 	void write_signal(int id, uint32 data, uint32 mask) {
-		dev->write_signal(dev_id, (data & mask) ? 0 : 0xffffffff, dev_mask);
+		dev->write_signal(did, (data & mask) ? 0 : 0xffffffff, dmask);
 	}
 	
 	// unique functions
 	void set_context(DEVICE* device, int id, uint32 mask) {
-		dev = device; dev_id = id; dev_mask = mask;
+		dev = device; did = id; dmask = mask;
 	}
 };
 

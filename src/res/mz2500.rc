@@ -54,7 +54,8 @@ END
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_SCREEN_ACCEL,        VIRTKEY, ALT, NOINVERT
+    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
+    VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
 #endif    // “ú–{Œê resources
@@ -87,6 +88,11 @@ BEGIN
         MENUITEM "CPU x4"                       ID_CPU_POWER2
         MENUITEM "CPU x8"                       ID_CPU_POWER3
         MENUITEM "CPU x16"                      ID_CPU_POWER4
+        MENUITEM SEPARATOR
+        MENUITEM "8253 IRQ Patch"               ID_MZ2500_PIC_PATCH
+        MENUITEM SEPARATOR
+        MENUITEM "Paste"                        ID_AUTOKEY_START
+        MENUITEM "Stop"                         ID_AUTOKEY_STOP
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
@@ -162,6 +168,11 @@ BEGIN
     END
     POPUP "Screen"
     BEGIN
+        MENUITEM "Rec 30fps"                    ID_SCREEN_REC30
+        MENUITEM "Rec 15fps"                    ID_SCREEN_REC15
+        MENUITEM "Rec 10fps"                    ID_SCREEN_REC10
+        MENUITEM "Stop"                         ID_SCREEN_STOP
+        MENUITEM SEPARATOR
         MENUITEM "Window",                      ID_SCREEN_WINDOW1
         MENUITEM "Fullscreen",                  ID_SCREEN_640X480
         MENUITEM SEPARATOR
@@ -177,15 +188,34 @@ BEGIN
         MENUITEM "Rec"                          ID_SOUND_REC
         MENUITEM "Stop"                         ID_SOUND_STOP
         MENUITEM SEPARATOR
-        MENUITEM "11025Hz",                     ID_SOUND_FREQ0
-        MENUITEM "22050Hz",                     ID_SOUND_FREQ1
-        MENUITEM "44100Hz",                     ID_SOUND_FREQ2
-        MENUITEM "48000Hz",                     ID_SOUND_FREQ3
+        MENUITEM "2000Hz",                      ID_SOUND_FREQ0
+        MENUITEM "4000Hz",                      ID_SOUND_FREQ1
+        MENUITEM "8000Hz",                      ID_SOUND_FREQ2
+        MENUITEM "11025Hz",                     ID_SOUND_FREQ3
+        MENUITEM "22050Hz",                     ID_SOUND_FREQ4
+        MENUITEM "44100Hz",                     ID_SOUND_FREQ5
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
         MENUITEM SEPARATOR
         MENUITEM "100msec",                     ID_SOUND_LATE0
         MENUITEM "200msec",                     ID_SOUND_LATE1
         MENUITEM "300msec",                     ID_SOUND_LATE2
         MENUITEM "400msec",                     ID_SOUND_LATE3
+    END
+    POPUP "Video"
+    BEGIN
+        MENUITEM "Filter"                       ID_CAPTURE_FILTER
+        MENUITEM "Pin"                          ID_CAPTURE_PIN
+        MENUITEM "Source"                       ID_CAPTURE_SOURCE
+        MENUITEM "Disconnect"                   ID_CAPTURE_DISCONNECT
+        MENUITEM SEPARATOR
+        MENUITEM "Device 1"                     ID_CAPTURE_DEVICE1
+        MENUITEM "Device 2"                     ID_CAPTURE_DEVICE2
+        MENUITEM "Device 3"                     ID_CAPTURE_DEVICE3
+        MENUITEM "Device 4"                     ID_CAPTURE_DEVICE4
+        MENUITEM "Device 5"                     ID_CAPTURE_DEVICE5
+        MENUITEM "Device 6"                     ID_CAPTURE_DEVICE6
+        MENUITEM "Device 7"                     ID_CAPTURE_DEVICE7
+        MENUITEM "Device 8"                     ID_CAPTURE_DEVICE8
     END
 END
 

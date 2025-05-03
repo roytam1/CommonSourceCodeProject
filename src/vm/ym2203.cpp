@@ -35,28 +35,17 @@ void YM2203::write_io8(uint32 addr, uint32 data)
 	if(addr & 1) {
 		if(ch == 7)
 			mode = data;
-		else if(ch == 14) {
-			if(port[0].wreg != data || port[0].first) {
-				for(int i = 0; i < dev_cnt[0]; i++) {
-					int shift = dev_shift[0][i];
+		else if(ch == 14 || ch == 15) {
+			int p = ch - 14;
+			if(port[p].wreg != data || port[p].first) {
+				for(int i = 0; i < dcount[p]; i++) {
+					int shift = dshift[p][i];
 					uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-					uint32 mask = (shift < 0) ? (dev_mask[0][i] >> (-shift)) : (dev_mask[0][i] << shift);
-					dev[0][i]->write_signal(dev_id[0][i], val, mask);
+					uint32 mask = (shift < 0) ? (dmask[p][i] >> (-shift)) : (dmask[p][i] << shift);
+					dev[p][i]->write_signal(did[p][i], val, mask);
 				}
-				port[0].wreg = data;
-				port[0].first = false;
-			}
-		}
-		else if(ch == 15) {
-			if(port[1].wreg != data || port[1].first) {
-				for(int i = 0; i < dev_cnt[1]; i++) {
-					int shift = dev_shift[1][i];
-					uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-					uint32 mask = (shift < 0) ? (dev_mask[1][i] >> (-shift)) : (dev_mask[1][i] << shift);
-					dev[1][i]->write_signal(dev_id[1][i], val, mask);
-				}
-				port[1].wreg = data;
-				port[1].first = false;
+				port[p].wreg = data;
+				port[p].first = false;
 			}
 		}
 		opn->SetReg(ch, data);
@@ -108,9 +97,11 @@ void YM2203::mix(int32* buffer, int cnt)
 		buffer[i] = sound_tmp[j];
 }
 
-void YM2203::init(int rate, int clock, int samples)
+void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 {
 	opn->Init(clock, rate, false, NULL);
+	opn->SetVolumeFM(volf);
+	opn->SetVolumePSG(volp);
 	sound_tmp = (int32*)malloc(samples * 2 * sizeof(int32));
 }
 

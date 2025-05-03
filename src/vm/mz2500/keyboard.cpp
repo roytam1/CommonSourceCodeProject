@@ -44,7 +44,7 @@ void KEYBOARD::event_frame()
 void KEYBOARD::create_keystat()
 {
 	uint8 val = (!(column & 0x10)) ? keys[0xf] : ((column & 0xf) > 0xd) ? 0xff : keys[column & 0xf];
-	pio0->write_signal(pio0_id, val, 0x80);	// to i8255 port b
-	pio1->write_signal(pio1_id, val, 0xff);	// to z80pio port b
+	d_pio0->write_signal(did_pio0, val, 0x80);	// to i8255 port b
+	d_pio1->write_signal(did_pio1, val, 0xff);	// to z80pio port b
 }
 

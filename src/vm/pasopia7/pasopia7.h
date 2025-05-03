@@ -38,6 +38,8 @@
 //#define USE_FD3
 //#define USE_FD4
 #define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
 #define USE_SCANLINE
 
 // device informations for virtual machine
@@ -79,6 +81,7 @@ class EVENT;
 
 class BEEP;
 class DATAREC;
+class HD46505;
 class I8255;
 class NOT;
 class SN76489AN;
@@ -89,13 +92,12 @@ class Z80PIC;
 class Z80PIO;
 
 class FLOPPY;
-class HD46505;
+class DISPLAY;
 class IO8;
 class IOTRAP;
 class KEYBOARD;
 class MEMORY;
 class PAC2;
-class TIMER;
 
 class VM
 {
@@ -110,6 +112,7 @@ protected:
 	
 	BEEP* beep;
 	DATAREC* drec;
+	HD46505* crtc;
 	I8255* pio0;
 	I8255* pio1;
 	I8255* pio2;
@@ -123,13 +126,12 @@ protected:
 	Z80PIO* pio;
 	
 	FLOPPY* floppy;
-	HD46505* crtc;
+	DISPLAY* display;
 	IO8* io;
 	IOTRAP* iotrap;
 	KEYBOARD* key;
 	MEMORY* memory;
 	PAC2* pac2;
-	TIMER* timer;
 	
 public:
 	// ----------------------------------------
@@ -175,6 +177,10 @@ public:
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
 	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

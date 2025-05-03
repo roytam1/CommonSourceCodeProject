@@ -13,6 +13,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../hd46505.h"
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8255.h"
@@ -23,12 +24,11 @@
 #include "../z80.h"
 
 #include "cmt.h"
+#include "display.h"
 #include "floppy.h"
-#include "hd46505.h"
 #include "kanji.h"
 #include "keyboard.h"
 #include "memory.h"
-#include "timer.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -42,6 +42,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
+	crtc = new HD46505(this, emu);
 	sio = new I8251(this, emu);
 	pit = new I8253(this, emu);
 	pio = new I8255(this, emu);
@@ -52,22 +53,24 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu = new Z80(this, emu);
 	
 	cmt = new CMT(this, emu);
+	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
-	crtc = new HD46505(this, emu);
 	kanji = new KANJI(this, emu);
 	key = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
-	timer = new TIMER(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(opn);
 	
+	crtc->set_context_vsync(pio, SIG_I8255_PORT_A, 0x20);
 	sio->set_context(cmt, SIG_CMT_OUT);
 	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2);
 	pit->set_context_ch1(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5);
 	pit->set_context_ch2(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
-	pio->set_context_port_b(crtc, SIG_HD46505_I8255_B, 0xff, 0);
+	pit->set_constant_clock(0, CPU_CLOCKS >> 1);
+	pit->set_constant_clock(1, CPU_CLOCKS >> 1);
+	pio->set_context_port_b(display, SIG_DISPLAY_I8255_B, 0xff, 0);
 	pio->set_context_port_c(memory, SIG_MEMORY_I8255_C, 0xff, 0);
 	pic->set_context(cpu);
 	fdc->set_context_drdy(floppy, SIG_FLOPPY_DRDY, 1);
@@ -77,14 +80,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_int(pic);
+	
 	cmt->set_context(sio, SIG_I8251_RECV, SIG_I8251_CLEAR);
+	display->set_context(fdc);
+	display->set_vram_ptr(memory->get_vram());
+	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context_fdc(fdc, SIG_UPD765A_TC, SIG_UPD765A_MOTOR);
 	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0);
-	crtc->set_context(pio, SIG_I8255_PORT_A);
-	crtc->set_vram_ptr(memory->get_vram());
 	kanji->set_context(pio, SIG_I8255_PORT_A);
 	memory->set_context(pio, SIG_I8255_PORT_A);
-	timer->set_context(pit, SIG_I8253_CLOCK_0, SIG_I8253_CLOCK_1);
 	
 	io->set_iomap_range_w(0x00, 0x01, key);
 	io->set_iomap_alias_w(0x18, opn, 0);
@@ -95,7 +99,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x28, 0x2b, pio);
 	io->set_iomap_alias_w(0x2c, pic, 0);
 	io->set_iomap_alias_w(0x2d, pic, 1);
-	io->set_iomap_range_w(0x30, 0x37, crtc);
+	io->set_iomap_range_w(0x30, 0x37, display);
 	io->set_iomap_range_w(0x40, 0x41, kanji);
 	io->set_iomap_alias_w(0x71, fdc, 1);
 	io->set_iomap_alias_w(0x72, fdc, 1);
@@ -111,7 +115,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0x28, 0x2a, pio);
 	io->set_iomap_alias_r(0x2c, pic, 0);
 	io->set_iomap_alias_r(0x2d, pic, 1);
-	io->set_iomap_range_r(0x30, 0x37, crtc);
+	io->set_iomap_range_r(0x30, 0x37, display);
 	io->set_iomap_range_r(0x40, 0x41, kanji);
 	io->set_iomap_alias_r(0x70, fdc, 0);
 	io->set_iomap_alias_r(0x71, fdc, 1);
@@ -195,13 +199,24 @@ void VM::regist_hsync_event(DEVICE* dev)
 	event->regist_hsync_event(dev);
 }
 
+uint32 VM::current_clock()
+{
+	return event->current_clock();
+}
+
+uint32 VM::passed_clock(uint32 prev)
+{
+	uint32 current = event->current_clock();
+	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
 // ----------------------------------------------------------------------------
 // draw screen
 // ----------------------------------------------------------------------------
 
 void VM::draw_screen()
 {
-	crtc->draw_screen();
+	display->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -214,7 +229,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	opn->init(rate, 3579545, samples);
+	opn->init(rate, 3579545, samples, 0, 0);
 }
 
 uint16* VM::create_sound(int samples, bool fill)

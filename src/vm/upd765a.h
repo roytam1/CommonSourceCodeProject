@@ -77,15 +77,16 @@ class DISK;
 class UPD765A : public DEVICE
 {
 private:
-	DEVICE *dev_intr[MAX_OUTPUT], *dev_drdy[MAX_OUTPUT], *dev_hdu[MAX_OUTPUT], *dev_acctc[MAX_OUTPUT];
-	int dev_intr_id[MAX_OUTPUT], dev_drdy_id[MAX_OUTPUT], dev_hdu_id[MAX_OUTPUT], dev_acctc_id[MAX_OUTPUT];
-	uint32 dev_intr_mask[MAX_OUTPUT], dev_drdy_mask[MAX_OUTPUT], dev_hdu_mask[MAX_OUTPUT], dev_acctc_mask[MAX_OUTPUT];
-	int dev_intr_cnt, dev_drdy_cnt, dev_hdu_cnt, dev_acctc_cnt;
+	DEVICE *d_intr[MAX_OUTPUT], *d_drdy[MAX_OUTPUT], *d_hdu[MAX_OUTPUT], *d_acctc[MAX_OUTPUT];
+	int did_intr[MAX_OUTPUT], did_drdy[MAX_OUTPUT], did_hdu[MAX_OUTPUT], did_acctc[MAX_OUTPUT];
+	uint32 dmask_intr[MAX_OUTPUT], dmask_drdy[MAX_OUTPUT], dmask_hdu[MAX_OUTPUT], dmask_acctc[MAX_OUTPUT];
+	int dcount_intr, dcount_drdy, dcount_hdu, dcount_acctc;
 	
 	// fdc
 	typedef struct {
 		uint8 track;
 		uint8 result;
+		bool access;
 	} fdc_t;
 	fdc_t fdc[MAX_DRIVE];
 	DISK* disk[MAX_DRIVE];
@@ -152,7 +153,7 @@ private:
 	
 public:
 	UPD765A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_intr_cnt = dev_drdy_cnt = dev_hdu_cnt = dev_acctc_cnt = 0;
+		dcount_intr = dcount_drdy = dcount_hdu = dcount_acctc = 0;
 	}
 	~UPD765A() {}
 	
@@ -165,24 +166,25 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_callback(int event_id);
+	uint32 read_signal(int ch);
+	void event_callback(int event_id, int err);
 	
 	// unique function
 	void set_context_intr(DEVICE* device, int id, uint32 mask) {
-		int c = dev_intr_cnt++;
-		dev_intr[c] = device; dev_intr_id[c] = id; dev_intr_mask[c] = mask;
+		int c = dcount_intr++;
+		d_intr[c] = device; did_intr[c] = id; dmask_intr[c] = mask;
 	}
 	void set_context_drdy(DEVICE* device, int id, uint32 mask) {
-		int c = dev_drdy_cnt++;
-		dev_drdy[c] = device; dev_drdy_id[c] = id; dev_drdy_mask[c] = mask;
+		int c = dcount_drdy++;
+		d_drdy[c] = device; did_drdy[c] = id; dmask_drdy[c] = mask;
 	}
 	void set_context_hdu(DEVICE* device, int id, uint32 mask) {
-		int c = dev_hdu_cnt++;
-		dev_hdu[c] = device; dev_hdu_id[c] = id; dev_hdu_mask[c] = mask;
+		int c = dcount_hdu++;
+		d_hdu[c] = device; did_hdu[c] = id; dmask_hdu[c] = mask;
 	}
 	void set_context_acctc(DEVICE* device, int id, uint32 mask) {
-		int c = dev_acctc_cnt++;
-		dev_acctc[c] = device; dev_acctc_id[c] = id; dev_acctc_mask[c] = mask;
+		int c = dcount_acctc++;
+		d_acctc[c] = device; did_acctc[c] = id; dmask_acctc[c] = mask;
 	}
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);

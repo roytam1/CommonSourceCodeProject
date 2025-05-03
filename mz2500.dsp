@@ -43,8 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /Ob2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_MZ2500" /FR /FD /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /W3 /GX /O2 /Ob2 /I ".\Win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_MZ2500" /FR /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x411 /d "NDEBUG"
@@ -54,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib wsock32.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib wsock32.lib Win32\strmiids.lib vfw32.lib /nologo /subsystem:windows /machine:I386
 
 !ELSEIF  "$(CFG)" == "mz2500 - Win32 Debug"
 
@@ -70,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_MZ2500" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I ".\Win32" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_MZ2500" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x411 /d "_DEBUG"
@@ -80,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib wsock32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib wsock32.lib Win32\strmiids.lib vfw32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 
 !ENDIF 
 
@@ -97,6 +96,10 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\src\emu.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\win32_capture.cpp
 # End Source File
 # Begin Source File
 
@@ -176,6 +179,10 @@ SOURCE=.\src\vm\mb8877.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\pcm1bit.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\rp5c15.cpp
 # End Source File
 # Begin Source File
@@ -192,7 +199,15 @@ SOURCE=.\src\vm\z80.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\z80pic.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\z80pio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\z80sio.cpp
 # End Source File
 # End Group
 # Begin Group "VM Driver Source Files"
@@ -224,6 +239,10 @@ SOURCE=.\src\vm\mz2500\floppy.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\mz2500\interrupt.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\mz2500\joystick.cpp
 # End Source File
 # Begin Source File
@@ -240,7 +259,15 @@ SOURCE=.\src\vm\mz2500\memory.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\mz2500\mouse.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\mz2500\mz2500.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\mz2500\reset.cpp
 # End Source File
 # Begin Source File
 
@@ -253,10 +280,6 @@ SOURCE=.\src\vm\mz2500\sasi.cpp
 # Begin Source File
 
 SOURCE=.\src\vm\mz2500\timer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\mz2500\z80pic.cpp
 # End Source File
 # End Group
 # Begin Source File
@@ -364,6 +387,10 @@ SOURCE=.\src\vm\mb8877.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\pcm1bit.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\rp5c15.h
 # End Source File
 # Begin Source File
@@ -384,7 +411,15 @@ SOURCE=.\src\vm\z80.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\z80pic.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\z80pio.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\z80sio.h
 # End Source File
 # End Group
 # Begin Group "VM Driver Header Files"
@@ -416,6 +451,10 @@ SOURCE=.\src\vm\mz2500\floppy.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\mz2500\interrupt.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\mz2500\joystick.h
 # End Source File
 # Begin Source File
@@ -432,7 +471,15 @@ SOURCE=.\src\vm\mz2500\memory.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\mz2500\mouse.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\mz2500\mz2500.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\mz2500\reset.h
 # End Source File
 # Begin Source File
 
@@ -448,7 +495,7 @@ SOURCE=.\src\vm\mz2500\timer.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\mz2500\z80pic.h
+SOURCE=.\src\vm\mz2500\voice.h
 # End Source File
 # End Group
 # Begin Source File

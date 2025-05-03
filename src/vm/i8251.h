@@ -43,7 +43,7 @@ class I8251 : public DEVICE
 {
 private:
 	DEVICE* dev[MAX_OUTPUT];
-	int dev_id[MAX_OUTPUT], dev_cnt;
+	int did[MAX_OUTPUT], dcount;
 	
 	// i8251
 	uint8 recv, status, mode;
@@ -54,7 +54,7 @@ private:
 	
 public:
 	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_cnt = 0;
+		dcount = 0;
 	}
 	~I8251() {}
 	
@@ -65,12 +65,12 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_callback(int event_id);
+	void event_callback(int event_id, int err);
 	
 	// unique functions
 	void set_context(DEVICE* device, int id) {
-		int c = dev_cnt++;
-		dev[c] = device; dev_id[c] = id;
+		int c = dcount++;
+		dev[c] = device; did[c] = id;
 	}
 };
 

@@ -21,7 +21,7 @@ private:
 	uint8* key;
 	uint8* joy;
 	uint8 column;
-	uint8 stat;
+	uint8 stat0, stat1;
 	
 public:
 	JOYSTICK(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -32,6 +32,7 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void event_frame();
 };
 
 #endif

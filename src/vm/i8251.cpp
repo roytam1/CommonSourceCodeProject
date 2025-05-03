@@ -66,8 +66,8 @@ void I8251::write_io8(uint32 addr, uint32 data)
 	}
 	else {
 		if(txen) {
-			for(int i = 0; i < dev_cnt; i++)
-				dev[i]->write_signal(dev_id[i], data, 0xff);
+			for(int i = 0; i < dcount; i++)
+				dev[i]->write_signal(did[i], data, 0xff);
 		}
 	}
 }
@@ -94,7 +94,7 @@ void I8251::write_signal(int id, uint32 data, uint32 mask)
 		fifo->clear();
 }
 
-void I8251::event_callback(int event_id)
+void I8251::event_callback(int event_id, int err)
 {
 	if(rxen && !(status & RXRDY)) {
 		if(!fifo->empty())

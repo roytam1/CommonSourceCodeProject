@@ -24,7 +24,6 @@ void EMU::open_media(_TCHAR* filename)
 {
 	media_cnt = 0;
 	
-#ifndef _WIN32_WCE
 	// get media root path
 	_TCHAR root[_MAX_PATH], path[_MAX_PATH], tmp[_MAX_PATH];
 	_tcscpy(root, filename);
@@ -48,7 +47,6 @@ void EMU::open_media(_TCHAR* filename)
 		}
 		fclose(fp);
 	}
-#endif
 }
 
 void EMU::close_media()
@@ -66,20 +64,15 @@ void EMU::play_media(int trk)
 {
 	if(trk < 1 || media_cnt < trk)
 		return;
-	
-#ifndef _WIN32_WCE
 	_TCHAR cmd[_MAX_PATH];
 	_stprintf(cmd, _T("open \"%s\" alias tape"), media_path[trk - 1]);
 	mciSendString(cmd, NULL, 0, NULL);
 	mciSendString(_T("play tape notify"), NULL, 0, main_window_handle);
-#endif
 }
 
 void EMU::stop_media()
 {
-#ifndef _WIN32_WCE
 	mciSendString(_T("stop tape"), NULL, 0, NULL);
 	mciSendString(_T("close tape"), NULL, 0, NULL);
-#endif
 }
 

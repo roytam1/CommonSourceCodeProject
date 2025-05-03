@@ -122,7 +122,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-void SOUND::event_callback(int id)
+void SOUND::event_callback(int event_id, int err)
 {
 	if(pcm.count && param_ptr == 5 && params[0] == 0x1f && params[1] == 0x04 && params[2] == 0x64) {
 		// wait previous pcm

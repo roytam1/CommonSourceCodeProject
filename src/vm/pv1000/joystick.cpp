@@ -14,11 +14,14 @@ void JOYSTICK::initialize()
 {
 	key = emu->key_buffer();
 	joy = emu->joy_buffer();
+	
+	// regist event to interrupt
+	vm->regist_frame_event(this);
 }
 
 void JOYSTICK::reset()
 {
-	stat = 0;
+	stat0 = 0;
 }
 
 void JOYSTICK::write_io8(uint32 addr, uint32 data)
@@ -26,11 +29,10 @@ void JOYSTICK::write_io8(uint32 addr, uint32 data)
 	switch(addr & 0xff)
 	{
 	case 0xfc:
-		stat = data;
+		stat0 = stat1 = data;
 		break;
 	case 0xfd:
 		column = data;
-		stat = 3;
 		break;
 	}
 //	emu->out_debug(_T("OUT\t%2x, %2x\n"), addr & 0xff, data);
@@ -43,7 +45,7 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 	switch(addr & 0xff)
 	{
 	case 0xfc:
-		val = stat;
+		val = stat1;
 		break;
 	case 0xfd:
 		val = 0;
@@ -75,4 +77,9 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 	}
 //	emu->out_debug(_T("IN\t%2x, %2x\n"), addr & 0xff, val);
 	return val;
+}
+
+void JOYSTICK::event_frame()
+{
+	stat1 = stat1 ? 0 : stat0;
 }

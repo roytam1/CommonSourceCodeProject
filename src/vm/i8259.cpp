@@ -23,7 +23,7 @@ void I8259::initialize()
 
 void I8259::write_io8(uint32 addr, uint32 data)
 {
-	int c = (addr & 0xff) >> 1;
+	int c = (addr & 0xfe) >> 1;
 	
 	if(addr & 1) {
 		if(pic[c].icw2_r) {
@@ -109,7 +109,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 
 uint32 I8259::read_io8(uint32 addr)
 {
-	int c = (addr & 0xff) >> 1;
+	int c = (addr & 0xfe) >> 1;
 	
 	if(addr & 1)
 		return pic[c].imr;

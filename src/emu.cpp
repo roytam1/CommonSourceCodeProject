@@ -25,16 +25,19 @@ EMU::EMU(HWND hwnd)
 	// store main window handle
 	main_window_handle = hwnd;
 	
+	// get module path
+	GetModuleFileName(NULL, app_path, _MAX_PATH);
+	int pt = _tcslen(app_path);
+	while(app_path[pt] != '\\')
+		pt--;
+	app_path[pt + 1] = '\0';
+	
 	// load sound config
-#ifdef _WIN32_WCE
-	static int freq_table[4] = {1000, 2000, 3000, 4000};
-#else
-	static int freq_table[4] = {11025, 22050, 44100, 48000};
-#endif
+	static int freq_table[7] = {2000, 4000, 8000, 11025, 22050, 44100, 48000};
 	static double late_table[4] = {0.1, 0.2, 0.3, 0.4};
 	
-	if(!(0 <= config.sound_frequency && config.sound_frequency <= 3))
-		config.sound_frequency = 3;
+	if(!(0 <= config.sound_frequency && config.sound_frequency <= 6))
+		config.sound_frequency = 5;
 	if(!(0 <= config.sound_latency && config.sound_latency <= 3))
 		config.sound_latency = 0;
 	int frequency = freq_table[config.sound_frequency];
@@ -51,6 +54,9 @@ EMU::EMU(HWND hwnd)
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
+#ifdef USE_CAPTURE
+	initialize_capture();
+#endif
 }
 
 EMU::~EMU()
@@ -63,6 +69,9 @@ EMU::~EMU()
 #endif
 #ifdef USE_SOCKET
 	release_socket();
+#endif
+#ifdef USE_CAPTURE
+	release_capture();
 #endif
 	if(vm)
 		delete vm;
@@ -82,7 +91,6 @@ void EMU::run()
 #ifdef USE_SOCKET
 	update_socket();
 #endif
-	
 	// run virtual machine
 	vm->run();
 }
@@ -94,6 +102,9 @@ void EMU::reset()
 #ifdef USE_MEDIA
 	stop_media();
 #endif
+	// restart recording
+	restart_rec_video();
+	restart_rec_sound();
 }
 
 #ifdef USE_IPL_RESET
@@ -104,16 +115,15 @@ void EMU::ipl_reset()
 #ifdef USE_MEDIA
 	stop_media();
 #endif
+	// restart recording
+	restart_rec_video();
+	restart_rec_sound();
 }
 #endif
 
 void EMU::application_path(_TCHAR* path)
 {
-	GetModuleFileName(NULL, path, _MAX_PATH);
-	int pt = _tcslen(path);
-	while(path[pt] != '\\')
-		pt--;
-	path[pt + 1] = '\0';
+	_tcscpy(path, app_path);
 }
 
 // ----------------------------------------------------------------------------
@@ -122,21 +132,21 @@ void EMU::application_path(_TCHAR* path)
 
 void EMU::open_debug()
 {
-#ifdef _DEBUG_LOG_
+#ifdef _DEBUG_LOG
 	debug = fopen("d:\\debug.log", "w");
 #endif
 }
 
 void EMU::close_debug()
 {
-#ifdef _DEBUG_LOG_
+#ifdef _DEBUG_LOG
 	fclose(debug);
 #endif
 }
 
 void EMU::out_debug(const _TCHAR* format, ...)
 {
-#ifdef _DEBUG_LOG_
+#ifdef _DEBUG_LOG
 	va_list ap;
 	_TCHAR buffer[1024];
 	
@@ -156,10 +166,18 @@ void EMU::out_debug(const _TCHAR* format, ...)
 void EMU::open_cart(_TCHAR* filename)
 {
 	vm->open_cart(filename);
+	
+	// restart recording
+	restart_rec_video();
+	restart_rec_sound();
 }
 void EMU::close_cart()
 {
 	vm->close_cart();
+	
+	// stop recording
+	stop_rec_video();
+	stop_rec_sound();
 }
 #endif
 

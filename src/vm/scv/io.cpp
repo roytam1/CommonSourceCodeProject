@@ -35,9 +35,9 @@ void IO::write_io8(uint32 addr, uint32 data)
 		break;
 	case P_C:
 		if((uint8)(data & 0x60) != (pc & 0x60))
-			memory->write_io8(addr, data);
+			d_mem->write_io8(addr, data);
 		if((uint8)(data & 0x8) != (pc & 0x8))
-			sound->write_io8(addr, data);
+			d_sound->write_io8(addr, data);
 		pc = data;
 		break;
 	case P_SI:

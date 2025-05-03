@@ -20,10 +20,10 @@
 class RP5C15 : public DEVICE
 {
 private:
-	DEVICE *dev_alarm[MAX_OUTPUT], *dev_pulse[MAX_OUTPUT];
-	int dev_alarm_id[MAX_OUTPUT], dev_pulse_id[MAX_OUTPUT];
-	uint32 dev_alarm_mask[MAX_OUTPUT], dev_pulse_mask[MAX_OUTPUT];
-	int dev_alarm_cnt, dev_pulse_cnt;
+	DEVICE *d_alarm[MAX_OUTPUT], *d_pulse[MAX_OUTPUT];
+	int did_alarm[MAX_OUTPUT], did_pulse[MAX_OUTPUT];
+	uint32 dmask_alarm[MAX_OUTPUT], dmask_pulse[MAX_OUTPUT];
+	int dcount_alarm, dcount_pulse;
 	
 	uint8 regs[16];
 	int time[8];
@@ -31,7 +31,7 @@ private:
 	
 public:
 	RP5C15(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_alarm_cnt = dev_pulse_cnt = 0;
+		dcount_alarm = dcount_pulse = 0;
 	}
 	~RP5C15() {}
 	
@@ -39,17 +39,17 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_callback(int event_id);
+	void event_callback(int event_id, int err);
 	void event_frame();
 	
 	// unique functions
 	void set_context_alarm(DEVICE* device, int id, uint32 mask) {
-		int c = dev_alarm_cnt++;
-		dev_alarm[c] = device; dev_alarm_id[c] = id; dev_alarm_mask[c] = mask;
+		int c = dcount_alarm++;
+		d_alarm[c] = device; did_alarm[c] = id; dmask_alarm[c] = mask;
 	}
 	void set_context_pulse(DEVICE* device, int id, uint32 mask) {
-		int c = dev_pulse_cnt++;
-		dev_pulse[c] = device; dev_pulse_id[c] = id; dev_pulse_mask[c] = mask;
+		int c = dcount_pulse++;
+		d_pulse[c] = device; did_pulse[c] = id; dmask_pulse[c] = mask;
 	}
 };
 

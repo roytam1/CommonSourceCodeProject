@@ -59,7 +59,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_io(io);
 	cpu->set_context_int(pic);
 	ctc->set_context_int(pic, 0);
-	ctc->set_event(16);
 	pic->set_context(cpu);
 	cmt->set_context(drec, SIG_DATAREC_OUT, SIG_DATAREC_REMOTE);
 	
@@ -149,6 +148,17 @@ void VM::regist_vsync_event(DEVICE* dev)
 void VM::regist_hsync_event(DEVICE* dev)
 {
 	event->regist_hsync_event(dev);
+}
+
+uint32 VM::current_clock()
+{
+	return event->current_clock();
+}
+
+uint32 VM::passed_clock(uint32 prev)
+{
+	uint32 current = event->current_clock();
+	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
 }
 
 // ----------------------------------------------------------------------------

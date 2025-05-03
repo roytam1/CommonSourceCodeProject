@@ -130,6 +130,17 @@ void VM::regist_hsync_event(DEVICE* dev)
 	event->regist_hsync_event(dev);
 }
 
+uint32 VM::current_clock()
+{
+	return event->current_clock();
+}
+
+uint32 VM::passed_clock(uint32 prev)
+{
+	uint32 current = event->current_clock();
+	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
 // ----------------------------------------------------------------------------
 // draw screen
 // ----------------------------------------------------------------------------

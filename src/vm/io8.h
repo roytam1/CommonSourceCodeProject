@@ -22,13 +22,16 @@ private:
 	DEVICE* rdev[256];
 	uint32 waddr[256];
 	uint32 raddr[256];
+	int wwait[256];
+	int rwait[256];
 	
 public:
 	IO8(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		// vm->dummy must be generated first !
-		for(uint32 i = 0; i < 256; i++) {
-			wdev[i & 0xff] = rdev[i & 0xff] = vm->dummy;
-			waddr[i & 0xff] = raddr[i & 0xff] = i & 0xff;
+		for(int i = 0; i < 256; i++) {
+			wdev[i] = rdev[i] = vm->dummy;
+			waddr[i] = raddr[i] = i;
+			wwait[i] = rwait[i] = 0;
 		}
 	}
 	~IO8() {}
@@ -36,6 +39,8 @@ public:
 	// common functions
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void write_io8w(uint32 addr, uint32 data, int* wait);
+	uint32 read_io8w(uint32 addr, int* wait);
 	
 	// unique functions
 	void set_iomap_single_w(uint32 addr, DEVICE* device) {
@@ -65,6 +70,20 @@ public:
 			rdev[i & 0xff] = device;
 			raddr[i & 0xff] = i & 0xff;
 		}
+	}
+	void set_iowait_single_w(uint32 addr, int wait) {
+		wwait[addr & 0xff] = wait;
+	}
+	void set_iowait_single_r(uint32 addr, int wait) {
+		rwait[addr & 0xff] = wait;
+	}
+	void set_iowait_range_w(uint32 s, uint32 e, int wait) {
+		for(uint32 i = s; i <= e; i++)
+			wwait[i & 0xff] = wait;
+	}
+	void set_iowait_range_r(uint32 s, uint32 e, int wait) {
+		for(uint32 i = s; i <= e; i++)
+			rwait[i & 0xff] = wait;
 	}
 };
 

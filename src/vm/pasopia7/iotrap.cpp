@@ -25,10 +25,10 @@ void IOTRAP::write_io8(uint32 addr, uint32 data)
 	case 0x03:
 		if(pasopia) {
 			// trap : 8255-2 Port B, bit 1
-			dev_pio2->write_signal(dev_pio2_id, 0xffffffff, 2);
+			d_pio2->write_signal(did_pio2, 0xffffffff, 2);
 			// nmi
 			if(!nmi_mask)
-				dev_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
+				d_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
 		}
 		break;
 	}
@@ -44,10 +44,10 @@ uint32 IOTRAP::read_io8(uint32 addr)
 	case 0x03:
 		if(pasopia) {
 			// trap : 8255-2 Port B, bit 1
-			dev_pio2->write_signal(dev_pio2_id, 0xffffffff, 2);
+			d_pio2->write_signal(did_pio2, 0xffffffff, 2);
 			// nmi
 			if(!nmi_mask)
-				dev_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
+				d_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
 		}
 		return 0xff;
 	}
@@ -59,7 +59,7 @@ void IOTRAP::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_IOTRAP_I8255_2_A) {
 		// reset nmi : 8255-2 Port B, bit 1+2
 		if(data & 1)
-			dev_pio2->write_signal(dev_pio2_id, 0, 6);
+			d_pio2->write_signal(did_pio2, 0, 6);
 	}
 	else if(id == SIG_IOTRAP_I8255_2_C) {
 		nmi_mask = (data & 0x80) ? true : false;
@@ -70,8 +70,8 @@ void IOTRAP::write_signal(int id, uint32 data, uint32 mask)
 void IOTRAP::do_reset()
 {
 	// reset : 8255-2 Port B, bit 2
-	dev_pio2->write_signal(dev_pio2_id, 0xffffffff, 4);
+	d_pio2->write_signal(did_pio2, 0xffffffff, 4);
 	// nmi
 	if(!nmi_mask)
-		dev_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
+		d_cpu->write_signal(SIG_CPU_DO_NMI, 0xffffffff, 1);
 }

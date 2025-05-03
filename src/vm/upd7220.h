@@ -68,7 +68,7 @@ class UPD7220 : public DEVICE
 {
 private:
 	DEVICE* dev;
-	int dev_id;
+	int did;
 	
 	// vram
 	uint8* vram;
@@ -154,12 +154,10 @@ public:
 	
 	// unique functions
 	void set_context(DEVICE* device, int id) {
-		dev = device;
-		dev_id = id;
+		dev = device; did = id;
 	}
 	void set_vram_ptr(uint8* ptr, int size) {
-		vram = ptr;
-		vram_size = size;
+		vram = ptr; vram_size = size;
 	}
 };
 

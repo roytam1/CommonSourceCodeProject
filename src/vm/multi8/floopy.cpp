@@ -16,13 +16,13 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	{
 	case 0x73:
 		// motor on/off
-		dev_fdc->write_signal(dev_fdc_id1, (data & 1) ? 0xffffffff : 0, 1);
+		d_fdc->write_signal(did1_fdc, (data & 1) ? 0xffffffff : 0, 1);
 		break;
 	case 0x74:
 		// tc on
-		dev_fdc->write_signal(dev_fdc_id0, 0xffffffff, 1);
+		d_fdc->write_signal(did0_fdc, 0xffffffff, 1);
 		// interrupt
-		dev_pic->write_signal(dev_pic_id, 0xffffffff, 1);
+		d_pic->write_signal(did_pic, 0xffffffff, 1);
 		break;
 	}
 }

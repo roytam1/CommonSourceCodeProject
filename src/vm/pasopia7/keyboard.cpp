@@ -58,6 +58,6 @@ void KEYBOARD::create_key()
 		}
 	}
 	// to Z-80PIO Port B
-	dev->write_signal(dev_id, ~val, 0xff);
+	dev->write_signal(did, ~val, 0xff);
 }
 

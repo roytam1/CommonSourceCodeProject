@@ -16,7 +16,6 @@
 #include "../device.h"
 
 #define SIG_CASSETTE_CONTROL	0
-#define SIG_CASSETTE_RESET	1
 
 #define EVENT_PRE	0
 #define EVENT_SIGNAL	1
@@ -29,7 +28,7 @@ private:
 	int dev_id;
 	
 	// play sound tape
-	uint8 areg, creg;
+	uint8 prev;
 	int id_pre, id_signal, id_after;
 	int fw_rw;
 	bool signal, playing;
@@ -49,7 +48,7 @@ public:
 	void release();
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_callback(int event_id);
+	void event_callback(int event_id, int err);
 	
 	// unique function
 	void set_context(DEVICE* device, int id) {

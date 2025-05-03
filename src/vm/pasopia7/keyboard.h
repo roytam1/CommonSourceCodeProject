@@ -36,7 +36,7 @@ class KEYBOARD : public DEVICE
 {
 private:
 	DEVICE* dev;
-	int dev_id;
+	int did;
 	
 	uint8* key_stat;
 	void create_key();
@@ -52,7 +52,9 @@ public:
 	void event_frame();
 	
 	// unique functions
-	void set_context(DEVICE* device, int id) { dev = device; dev_id = id; }
+	void set_context(DEVICE* device, int id) {
+		dev = device; did = id;
+	}
 };
 
 #endif

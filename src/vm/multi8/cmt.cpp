@@ -59,7 +59,7 @@ void CMT::play_datarec(_TCHAR* filename)
 		// send data to sio
 		// this implement does not care the sio buffer size... :-(
 		for(int i = 0; i < size; i++)
-			dev->write_signal(dev_id0, buffer[i], 0xffffffff);
+			dev->write_signal(did0, buffer[i], 0xffffffff);
 		play = true;
 	}
 }
@@ -84,6 +84,6 @@ void CMT::close_datarec()
 	play = rec = false;
 	
 	// clear sio buffer
-	dev->write_signal(dev_id1, 0, 0);
+	dev->write_signal(did1, 0, 0);
 }
 

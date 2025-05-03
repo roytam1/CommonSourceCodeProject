@@ -688,12 +688,13 @@ void UPD7801::reset()
 	_V = MB = MC = TM0 = TM1 = SR = 0xff;
 	MK = 0x1f;
 	PORTC = TO = SAK = 0;
-	count = scount = tcount = 0;
+	scount = tcount = 0;
 }
 
 void UPD7801::run(int clock)
 {
 	count += clock;
+	first = count;
 	while(count > 0) {
 		// interrupt is enabled after next opecode of ei
 		if(IFF & 2) // if(IFF > 1)
@@ -746,6 +747,7 @@ void UPD7801::run(int clock)
 			}
 		}
 	}
+	first = count;
 }
 
 void UPD7801::write_signal(int id, uint32 data, uint32 mask)

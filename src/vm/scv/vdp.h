@@ -15,14 +15,6 @@
 #include "../../emu.h"
 #include "../device.h"
 
-#ifdef _WIN32_WCE
-// RGB565
-#define RGB_COLOR(r, g, b) (uint16)(((uint16)(r) << 11) | ((uint16)(g) << 6) | (uint16)(b))
-#else
-// RGB555
-#define RGB_COLOR(r, g, b) (uint16)(((uint16)(r) << 10) | ((uint16)(g) << 5) | (uint16)(b))
-#endif
-
 static const uint16 palette_pc[16] = {
 #if 1
 	RGB_COLOR( 0,11,19), RGB_COLOR( 0, 0, 0), RGB_COLOR( 7,18,31), RGB_COLOR( 0, 0,31),
@@ -95,9 +87,15 @@ public:
 	void event_vsync(int v, int clock);
 	
 	// unique function
-	void set_context(DEVICE* device) { dev = device; }
-	void set_font_ptr(uint8* ptr) { font_ptr = ptr; }
-	void set_vram_ptr(uint8* ptr) { vram0 = ptr; vram1 = ptr + 0x1000; }
+	void set_context(DEVICE* device) {
+		dev = device;
+	}
+	void set_font_ptr(uint8* ptr) {
+		font_ptr = ptr;
+	}
+	void set_vram_ptr(uint8* ptr) {
+		vram0 = ptr; vram1 = ptr + 0x1000;
+	}
 	void draw_screen();
 };
 

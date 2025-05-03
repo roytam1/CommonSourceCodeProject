@@ -502,28 +502,51 @@ inline uint8 Z80::SET(uint8 bit, uint8 value) {
 	} \
 }
 
-// main
-
-void Z80::initialize()
-{
-	// initialize
-	count = 0;
+#ifdef NSC800
+#define DO_INT(v) { \
+	if(HALT) { \
+		PC++; HALT = 0; \
+	} \
+	PUSH(PC); PC = (v); count -= 7; IFF1 = IFF2 = 0; \
 }
+#endif
+
+// main
 
 void Z80::reset()
 {
 	// reset
 	PC = _I = _R = 0;
-	IM = IFF1 = IFF2 = HALT = 0;
+	IM = IFF1 = IFF2 = ICR = 0;
+	busreq = halt = false;
 }
 
 void Z80::write_signal(int id, uint32 data, uint32 mask)
 {
+#ifdef NSC800
+	// for NSC800
+	if(id == SIG_CPU_DO_INT) {
+		if(ICR & 1)
+			DO_INT(data & 0xff);
+	}
+	else if(id == SIG_NSC800_DO_RSTA) {
+		if((ICR & 8) && (data & mask))
+			DO_INT(0x3c);
+	}
+	else if(id == SIG_NSC800_DO_RSTB) {
+		if((ICR & 4) && (data & mask))
+			DO_INT(0x34);
+	}
+	else if(id == SIG_NSC800_DO_RSTC) {
+		if((ICR & 2) && (data & mask))
+			DO_INT(0x2c);
+	}
+#else
 	if(id == SIG_CPU_DO_INT) {
 		// interrupt
-		if(HALT) {
+		if(halt) {
 			PC++;
-			HALT = 0;
+			halt = false;
 		}
 		uint8 v0 = data;
 		uint16 v12 = data >> 8;
@@ -575,12 +598,13 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 		}
 		IFF1 = IFF2 = 0;
 	}
+#endif
 	else if(id == SIG_CPU_DO_NMI) {
 		// nmi
 		if(data & mask) {
-			if(HALT) {
+			if(halt) {
 				PC++;
-				HALT = 0;
+				halt = false;
 			}
 			PUSH16(PC);
 			PC = 0x0066;
@@ -588,13 +612,24 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 			IFF1 = 0;
 		}
 	}
+	else if(id == SIG_CPU_BUSREQ) {
+		busreq = (data & mask) ? true : false;
+		if(busreq)
+			count = first = 0;
+	}
 }
 
 void Z80::run(int clock)
 {
+	// return now if BUSREQ
+	if(busreq) {
+		count = first = 0;
+		return;
+	}
+	
 	// run cpu while given clocks
 	count += clock;
-	
+	first = count;
 	while(count > 0) {
 		// check IFF1
 		if(IFF1 > 1 && --IFF1 == 1)
@@ -604,14 +639,13 @@ void Z80::run(int clock)
 		prvPC = PC;
 		execute_op();
 	}
+	first = count;
 }
 
 void Z80::execute_op()
 {
-	count -= m1_wait[PC];	// m1 cycle
-	uint8 cmd = FETCH8();
+	uint8 cmd = FETCHOP();
 	count -= cc_op[cmd];
-	_R = (_R & 0x80) | ((_R + 1) & 0x7f);
 	
 	switch(cmd)
 	{
@@ -970,7 +1004,7 @@ void Z80::execute_op()
 			break;
 		case 0x76: // HALT
 			PC--;
-			HALT = 1;
+			halt = true;
 			break;
 		case 0x77: // LD (HL), A
 			WM8(HL, _A);
@@ -1387,9 +1421,8 @@ void Z80::execute_op()
 
 void Z80::execute_opCB()
 {
-	uint8 cmd = FETCH8();
+	uint8 cmd = FETCHOP();
 	count -= cc_cb[cmd];
-	_R = (_R & 0x80) | ((_R + 1) & 0x7f);
 	
 	switch(cmd)
 	{
@@ -2166,10 +2199,8 @@ void Z80::execute_opCB()
 
 void Z80::execute_opDD()
 {
-	count -= m1_wait[PC];	// m1 cycle
-	uint8 cmd = FETCH8();
+	uint8 cmd = FETCHOP();
 	count -= cc_xy[cmd];
-	_R = (_R & 0x80) | ((_R + 1) & 0x7f);
 	
 	switch(cmd)
 	{
@@ -2462,10 +2493,8 @@ void Z80::execute_opDD()
 
 void Z80::execute_opED()
 {
-	count -= m1_wait[PC];	// m1 cycle
-	uint8 cmd = FETCH8();
+	uint8 cmd = FETCHOP();
 	count -= cc_ed[cmd];
-	_R = (_R & 0x80) | ((_R + 1) & 0x7f);
 	
 	switch(cmd)
 	{
@@ -2726,10 +2755,8 @@ void Z80::execute_opED()
 
 void Z80::execute_opFD()
 {
-	count -= m1_wait[PC];	// m1 cycle
-	uint8 cmd = FETCH8();
+	uint8 cmd = FETCHOP();
 	count -= cc_xy[cmd];
-	_R = (_R & 0x80) | ((_R + 1) & 0x7f);
 	
 	switch(cmd)
 	{
@@ -3026,8 +3053,7 @@ void Z80::execute_opFD()
 void Z80::execute_opXY()
 {
 	uint8 cmd = FETCH8();
-	count -= cc_xy[cmd];
-	_R = (_R & 0x80) | ((_R + 1) & 0x7f);
+	count -= cc_xycb[cmd];
 	
 	switch(cmd)
 	{

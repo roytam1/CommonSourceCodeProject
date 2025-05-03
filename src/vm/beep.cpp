@@ -9,45 +9,63 @@
 
 #include "beep.h"
 
-void BEEP::initialize()
+void BEEP::reset()
 {
-	count = 0;
-	diff = 16;
 	signal = true;
-	on = false;
-	mute = false;
+	pulse = prv = lines = 0;
+	change = 0;
+	
+	on = mute = false;
 }
 
 void BEEP::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_BEEP_ON) {
 		bool next = (data & mask) ? true : false;
-		if(!on && next)
+		if(!on && next) {
 			count = 0;
+			pulse = lines = 0;
+			change = 2;
+		}
 		on = next;
+	}
+	else if(id == SIG_BEEP_MUTE) {
+		bool next = (data & mask) ? true : false;
+		if(mute && !next) {
+			count = 0;
+			pulse = lines = 0;
+			change = 2;
+		}
+		mute = next;
 	}
 	else if(id == SIG_BEEP_PULSE)
 		pulse += (data & mask);
-	else if(id == SIG_BEEP_MUTE)
-		mute = (data & mask) ? true : false;
 }
 
-#define myabs(v) ((v) < 0 ? -(v) : (v))
+#define mydiff(p, q) ((p) > (q) ? (p) - (q) : (q) - (p))
 
-void BEEP::event_frame()
+void BEEP::event_vsync(int v, int clock)
 {
-	if(myabs(pulse - prv) > 3)
-		prv = pulse;
-	if(prv) {
-		diff = constant / prv;
-		diff >>= 8;
+	if(++lines == LINES_PER_FRAME * DELAY_FRAMES) {
+		if(change == 1) {
+#ifndef DONT_KEEP_BEEP_FREQ
+			if(mydiff(pulse, prv) > 4)
+#endif
+				prv = pulse;
+			if(prv) {
+				diff = constant / prv;
+				diff >>= 8;
+			}
+		}
+		if(change)
+			change--;
+		pulse = lines = 0;
 	}
-	pulse = 0;
 }
 
 void BEEP::mix(int32* buffer, int cnt)
 {
-	if(mute || !on)
+	if(!on || mute || change || diff < 32)
 		return;
 	for(int i = 0; i < cnt; i++) {
 		if((count -= 32) < 0) {
@@ -61,11 +79,17 @@ void BEEP::mix(int32* buffer, int cnt)
 void BEEP::init(int rate, int frequency, int divide, int volume)
 {
 	if(frequency != -1)
-		diff = 32 * rate / frequency / 2;
+		diff = (int)(32.0 * rate / frequency / 2.0 + 0.5);	// constant frequency
 	else {
-		constant = (int)(32768.0 * rate / FRAMES_PER_SEC * divide + 0.5);
-		pulse = prv = 0;
-		vm->regist_frame_event(this);
+/*
+		frequency = pulse * FRAMES_PER_SEC / DELAY_FRAMES
+		diff = 32 * rate / frequency / 2
+		     = 16 * rate / pulse / FRAMES_PER_SEC * DELAY_FRAMES
+		     = constant / pulse
+		constant = 16 * rate / FRAMES_PER_SEC * DELAY_FRAMES
+*/
+		constant = (long)((256.0 * 16.0 * DELAY_FRAMES * rate * divide) / FRAMES_PER_SEC + 0.5);
+		vm->regist_vsync_event(this);
 	}
 	vol = volume;
 }

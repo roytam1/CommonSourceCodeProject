@@ -18,8 +18,9 @@
 #define MAX_OUTPUT	8
 
 // common signal id
-#define SIG_CPU_DO_INT	0
-#define SIG_CPU_DO_NMI	1
+#define SIG_CPU_DO_INT	101
+#define SIG_CPU_DO_NMI	102
+#define SIG_CPU_BUSREQ	103
 
 class DEVICE
 {
@@ -72,10 +73,32 @@ public:
 	virtual uint32 read_data16(uint32 addr) {
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
+	virtual void write_data8w(uint32 addr, uint32 data, int* wait) {
+		*wait = 0;
+	}
+	virtual uint32 read_data8w(uint32 addr, int* wait) {
+		*wait = 0;
+		return 0xff;
+	}
+	virtual void write_data16w(uint32 addr, uint32 data, int* wait) {
+		*wait = 0;
+		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+	}
+	virtual uint32 read_data16w(uint32 addr, int* wait) {
+		*wait = 0;
+		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
 	
 	// i/o bus
 	virtual void write_io8(uint32 addr, uint32 data) {}
 	virtual uint32 read_io8(uint32 addr) {
+		return 0xff;
+	}
+	virtual void write_io8w(uint32 addr, uint32 data, int* wait) {
+		*wait = 0;
+	}
+	virtual uint32 read_io8w(uint32 addr, int* wait) {
+		*wait = 0;
 		return 0xff;
 	}
 	
@@ -86,7 +109,7 @@ public:
 	}
 	
 	// device to pic
-	virtual void request_int(int pri, uint32 vector, bool pending) {}
+	virtual void request_int(DEVICE* device, int pri, uint32 vector, bool pending) {}
 	virtual void cancel_int(int pri) {}
 	
 	// cpu to pic
@@ -96,8 +119,11 @@ public:
 		return false;
 	}
 	
-	// cpu patch
+	// cpu
 	virtual void run(int clock) {}
+	virtual int passed_clock() {
+		return 0;
+	}
 	virtual uint32 get_prv_pc() {
 		return 0;
 	}
@@ -106,7 +132,7 @@ public:
 	virtual void mix(int32* buffer, int cnt) {}
 	
 	// event callback
-	virtual void event_callback(int event_id) {}
+	virtual void event_callback(int event_id, int err) {}
 	virtual void event_frame() {}
 	virtual void event_vsync(int v, int clock) {}
 	virtual void event_hsync(int v, int h, int clock) {}

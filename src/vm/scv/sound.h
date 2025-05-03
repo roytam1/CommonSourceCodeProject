@@ -70,11 +70,13 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	void write_io8(uint32 addr, uint32 data);
-	void event_callback(int event_id);
+	void event_callback(int event_id, int err);
 	void mix(int32* buffer, int cnt);
 	
 	// unique function
-	void set_context(DEVICE* device) { dev = device; }
+	void set_context(DEVICE* device) {
+		dev = device;
+	}
 	void init(int rate);
 };
 

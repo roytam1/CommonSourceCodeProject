@@ -24,6 +24,9 @@
 #define USE_DATAREC
 #define DATAREC_BINARY_ONLY
 #define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
 #define USE_SCREEN_X2
 
 // device informations for virtual machine
@@ -122,6 +125,10 @@ public:
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
 	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

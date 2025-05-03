@@ -43,8 +43,16 @@ void init_config()
 #ifdef USE_MONITOR_TYPE
 	config.monitor_type = 0;
 #endif
-	config.sound_frequency = 3;
+	config.window_mode = 0;
+#ifdef _WIN32_WCE
+	config.sound_frequency = 1;
+#else
+	config.sound_frequency = 5;
+#endif
 	config.sound_latency = 0;
+#ifdef _MZ2500
+	config.pic_patch = false;
+#endif
 }
 
 void load_config()

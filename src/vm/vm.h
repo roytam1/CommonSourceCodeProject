@@ -25,6 +25,11 @@
 #include "mz2500/mz2500.h"
 #endif
 
+// TOSHIBA PASOPIA
+#ifdef _PASOPIA
+#include "pasopia/pasopia.h"
+#endif
+
 // TOSHIBA PASOPIA 7
 #ifdef _PASOPIA7
 #include "pasopia7/pasopia7.h"
@@ -38,6 +43,11 @@
 // CASIO PV-2000
 #ifdef _PV2000
 #include "pv2000/pv2000.h"
+#endif
+
+// EPSON QC-10
+#ifdef _QC10
+#include "qc10/qc10.h"
 #endif
 
 // BANDAI RX-78

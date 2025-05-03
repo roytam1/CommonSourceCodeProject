@@ -21,32 +21,34 @@
 #define WINDOW_HEIGHT2		384
 
 #define USE_CART
-#define USE_JOYKEY
+#define USE_KEY_TO_JOY
 #define USE_SCREEN_X2
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	592
 #define FRAMES_PER_SEC		59
-#define LINES_PER_FRAME 	67
-#define LINES_PER_HBLANK 	51
+#define LINES_PER_FRAME		67
+#define CHARS_PER_LINE		1
 #define CPU_CLOCKS		3579545
-#define CLOCKS_PER_HBLANK	100
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		192
+
+#define LINES_PER_HBLANK 	51
+#define CLOCKS_PER_HBLANK	800
 
 #include "../../common.h"
 
 class EMU;
 class DEVICE;
+class EVENT;
+
 class IO8;
 class Z80;
 
 class JOYSTICK;
 class MEMORY;
-class SOUND;
+class PSG;
 class VDP;
-
-#define MAX_EVENT	32
 
 class VM
 {
@@ -57,45 +59,15 @@ protected:
 	
 	// devices
 	DEVICE* dummy;
+	EVENT* event;
+	
 	IO8* io;
 	Z80* cpu;
 	
 	JOYSTICK* joystick;
 	MEMORY* memory;
-	SOUND* sound;
+	PSG* psg;
 	VDP* vdp;
-private:
-	int clocks[LINES_PER_FRAME];
-	int power;
-	
-	// event manager
-	void initialize_event();
-	void reset_event();
-	void update_event(int clock);
-	
-	typedef struct {
-		bool enable;
-		DEVICE* device;
-		int event_id;
-		int clock;
-		int loop;
-	} event_t;
-	event_t event[MAX_EVENT];
-	DEVICE* frame_event[MAX_EVENT];
-	DEVICE* vsync_event[MAX_EVENT];
-	int next, past;
-	int event_cnt, frame_event_cnt, vsync_event_cnt;
-	
-	// sound manager
-	void release_sound();
-	void reset_sound();
-	void update_sound();
-	
-	uint16* sound_buffer;
-	int32* sound_tmp;
-	int buffer_ptr;
-	int sound_samples;
-	int accum_samples, update_samples;
 	
 public:
 	// ----------------------------------------
@@ -137,6 +109,11 @@ public:
 	void cancel_event(int regist_id);
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
+	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

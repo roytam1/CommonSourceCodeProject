@@ -22,6 +22,7 @@ private:
 	DEVICE* dev;
 	
 	typedef struct {
+		DEVICE* device;
 		bool request;
 		bool running;
 		uint8 vector;
@@ -35,10 +36,11 @@ public:
 	
 	// common functions
 	void reset();
-	void request_int(int pri, uint32 vector, bool pending);
+	void request_int(DEVICE* device, int pri, uint32 vector, bool pending);
 	void cancel_int(int pri);
 	void do_reti();
 	void do_ei();
+	uint32 read_signal(int ch);
 	
 	// unique functions
 	void set_context(DEVICE* device) {

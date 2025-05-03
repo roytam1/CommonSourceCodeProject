@@ -20,4 +20,9 @@
 	#define min _MIN
 #endif
 
+// disable warning C4996 for microsoft visual c++ 2005
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#pragma warning( disable : 4996 )
+#endif
+
 #endif	// WIN_HEADERS_H

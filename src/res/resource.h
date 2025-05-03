@@ -5,6 +5,8 @@
 #define IDR_MENU1                       101
 #define IDI_ICON1                       102
 #define IDR_ACCELERATOR1                103
+#define ID_ACCEL_SCREEN                 104
+#define ID_ACCEL_MOUSE                  105
 #define ID_RESET                        40001
 #define ID_IPL_RESET                    40002
 #define ID_CPU_POWER0                   40003
@@ -84,26 +86,55 @@
 #define ID_RECENT_MEDIA6                40077
 #define ID_RECENT_MEDIA7                40078
 #define ID_RECENT_MEDIA8                40079
-#define ID_SCREEN_WINDOW1               40080
-#define ID_SCREEN_WINDOW2               40081
-#define ID_SCREEN_640X480               40082
-#define ID_SCREEN_320X240               40083
-#define ID_SCREEN_A400L                 40084
-#define ID_SCREEN_D400L                 40085
-#define ID_SCREEN_A200L                 40086
-#define ID_SCREEN_D200L                 40087
-#define ID_SCREEN_SCANLINE              40088
-#define ID_SCREEN_ACCEL                 40089
-#define ID_SOUND_REC                    40090
-#define ID_SOUND_STOP                   40091
-#define ID_SOUND_FREQ0                  40092
-#define ID_SOUND_FREQ1                  40093
-#define ID_SOUND_FREQ2                  40094
-#define ID_SOUND_FREQ3                  40095
-#define ID_SOUND_LATE0                  40096
-#define ID_SOUND_LATE1                  40097
-#define ID_SOUND_LATE2                  40098
-#define ID_SOUND_LATE3                  40099
+#define ID_SCREEN_REC30                 40080
+#define ID_SCREEN_REC15                 40081
+#define ID_SCREEN_REC10                 40082
+#define ID_SCREEN_STOP                  40083
+#define ID_SCREEN_WINDOW1               40084
+#define ID_SCREEN_WINDOW2               40085
+#define ID_SCREEN_640X480               40086
+#define ID_SCREEN_320X240               40087
+#define ID_SCREEN_A400L                 40088
+#define ID_SCREEN_D400L                 40089
+#define ID_SCREEN_A200L                 40090
+#define ID_SCREEN_D200L                 40091
+#define ID_SCREEN_SCANLINE              40092
+#define ID_SOUND_REC                    40093
+#define ID_SOUND_STOP                   40094
+#define ID_SOUND_FREQ0                  40095
+#define ID_SOUND_FREQ1                  40096
+#define ID_SOUND_FREQ2                  40097
+#define ID_SOUND_FREQ3                  40098
+#define ID_SOUND_FREQ4                  40099
+#define ID_SOUND_FREQ5                  40100
+#define ID_SOUND_FREQ6                  40101
+#define ID_SOUND_LATE0                  40102
+#define ID_SOUND_LATE1                  40103
+#define ID_SOUND_LATE2                  40104
+#define ID_SOUND_LATE3                  40105
+#define ID_CAPTURE_FILTER               40106
+#define ID_CAPTURE_PIN                  40107
+#define ID_CAPTURE_SOURCE               40108
+#define ID_CAPTURE_DISCONNECT           40109
+#define ID_CAPTURE_DEVICE1              40110
+#define ID_CAPTURE_DEVICE2              40111
+#define ID_CAPTURE_DEVICE3              40112
+#define ID_CAPTURE_DEVICE4              40113
+#define ID_CAPTURE_DEVICE5              40114
+#define ID_CAPTURE_DEVICE6              40115
+#define ID_CAPTURE_DEVICE7              40116
+#define ID_CAPTURE_DEVICE8              40117
+#define ID_AUTOKEY_START                40118
+#define ID_AUTOKEY_STOP                 40119
+#define ID_JOYKEY_DIR0                  40120
+#define ID_JOYKEY_DIR1                  40121
+#define ID_JOYKEY_DIR2                  40122
+#define ID_JOYKEY_DIR3                  40123
+#define ID_JOYKEY_DIR4                  40124
+#define ID_JOYKEY_BTN0                  40125
+#define ID_JOYKEY_BTN1                  40126
+#define ID_JOYKEY_BTN2                  40127
+#define ID_MZ2500_PIC_PATCH             40128
 
 // menu positions
 
@@ -136,6 +167,15 @@
 #define MENU_POS_MEDIA                  5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_CAPTURE                8
+#endif
+
+// TOSHIBA PASOPIA
+#ifdef _PASOPIA
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // TOSHIBA PASOPIA7
@@ -186,8 +226,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        104
-#define _APS_NEXT_COMMAND_VALUE         40100
+#define _APS_NEXT_RESOURCE_VALUE        106
+#define _APS_NEXT_COMMAND_VALUE         40129
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

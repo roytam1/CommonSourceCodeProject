@@ -21,7 +21,7 @@ class FLOPPY : public DEVICE
 {
 private:
 	DEVICE *dev;
-	int dev_id0, dev_id1;
+	int did0, did1;
 	bool intr;
 	
 public:
@@ -34,7 +34,9 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id0, int id1) { dev = device; dev_id0 = id0; dev_id1 = id1; }
+	void set_context(DEVICE* device, int id0, int id1) {
+		dev = device; did0 = id0; did1 = id1;
+	}
 };
 
 #endif

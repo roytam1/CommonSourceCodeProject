@@ -22,8 +22,8 @@ class I8255 : public DEVICE
 {
 private:
 	DEVICE* dev[3][MAX_OUTPUT];
-	int dev_id[3][MAX_OUTPUT], dev_shift[3][MAX_OUTPUT], dev_cnt[3];
-	uint32 dev_mask[3][MAX_OUTPUT];
+	int did[3][MAX_OUTPUT], dshift[3][MAX_OUTPUT], dcount[3];
+	uint32 dmask[3][MAX_OUTPUT];
 	
 	typedef struct {
 		uint8 wreg;
@@ -35,7 +35,7 @@ private:
 	
 public:
 	I8255(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dev_cnt[0] = dev_cnt[1] = dev_cnt[2] = 0;
+		dcount[0] = dcount[1] = dcount[2] = 0;
 		port[0].wreg = port[1].wreg = port[2].wreg = port[0].rreg = port[1].rreg = port[2].rreg = 0;//0xff;
 	}
 	~I8255() {}
@@ -48,16 +48,16 @@ public:
 	
 	// unique functions
 	void set_context_port_a(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dev_cnt[0]++;
-		dev[0][c] = device; dev_id[0][c] = id; dev_mask[0][c] = mask; dev_shift[0][c] = shift;
+		int c = dcount[0]++;
+		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask; dshift[0][c] = shift;
 	}
 	void set_context_port_b(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dev_cnt[1]++;
-		dev[1][c] = device; dev_id[1][c] = id; dev_mask[1][c] = mask; dev_shift[1][c] = shift;
+		int c = dcount[1]++;
+		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask; dshift[1][c] = shift;
 	}
 	void set_context_port_c(DEVICE* device, int id, uint32 mask, int shift) {
-		int c = dev_cnt[2]++;
-		dev[2][c] = device; dev_id[2][c] = id; dev_mask[2][c] = mask; dev_shift[2][c] = shift;
+		int c = dcount[2]++;
+		dev[2][c] = device; did[2][c] = id; dmask[2][c] = mask; dshift[2][c] = shift;
 	}
 };
 

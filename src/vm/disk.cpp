@@ -32,23 +32,34 @@ void DISK::open(_TCHAR path[])
 		close();
 	
 	// open disk image
-	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(path, FILEIO_READ_BINARY)) {
-		// file size, file name
-		fio->Fseek(0, FILEIO_SEEK_END);
-		file_size = fio->Ftell();
-		fio->Fseek(0, FILEIO_SEEK_SET);
+	fi = new FILEIO();
+	if(fi->Fopen(path, FILEIO_READ_BINARY)) {
 		_tcscpy(file_path, path);
+		_stprintf(tmp_path, _T("%s.$$$"), path);
+		temporary = false;
+		
+		fi->Fseek(0, FILEIO_SEEK_END);
+		file_size = fi->Ftell();
+		fi->Fseek(0, FILEIO_SEEK_SET);
+		protect = fi->IsProtected(path);
 		
 		// check file size
 		if(0 < file_size && file_size <= DISK_BUFFER_SIZE) {
-			fio->Fread(buf, file_size, 1);
+			fi->Fread(buffer, file_size, 1);
 			insert = true;
+			
+			// check file format
+			if((buffer[0] == 'T' && buffer[1] == 'D') || (buffer[0] == 't' && buffer[1] == 'd')) {
+				// this is teledisk image and must be converted to d88
+				insert = t2d();
+				_stprintf(file_path, _T("%s.D88"), path);
+			}
 		}
-		fio->Fclose();
-		protect = fio->IsProtected(path);
+		fi->Fclose();
+		if(temporary)
+			fi->Remove(tmp_path);
 	}
-	delete fio;
+	delete fi;
 }
 
 void DISK::close()
@@ -58,7 +69,7 @@ void DISK::close()
 		// write image
 		FILEIO* fio = new FILEIO();
 		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
-			fio->Fwrite(buf, file_size, 1);
+			fio->Fwrite(buffer, file_size, 1);
 			fio->Fclose();
 		}
 		delete fio;
@@ -78,20 +89,19 @@ bool DISK::get_track(int trk, int side)
 		return false;
 	
 	// search track
-	if(trk < 0 || trk > 83)
-		return false;
-	
 	int trkside = trk * 2 + (side & 1);
-	uint32 offset = buf[0x20 + trkside * 4 + 0];
-	offset |= buf[0x20 + trkside * 4 + 1] << 8;
-	offset |= buf[0x20 + trkside * 4 + 2] << 16;
-	offset |= buf[0x20 + trkside * 4 + 3] << 24;
+	if(!(0 <= trkside && trkside < 164))
+		return false;
+	uint32 offset = buffer[0x20 + trkside * 4 + 0];
+	offset |= buffer[0x20 + trkside * 4 + 1] << 8;
+	offset |= buffer[0x20 + trkside * 4 + 2] << 16;
+	offset |= buffer[0x20 + trkside * 4 + 3] << 24;
 	
 	if(!offset)
 		return false;
 	
 	// track found
-	uint8* t = buf + offset;
+	uint8* t = buffer + offset;
 	sector_num = t[4] | (t[5] << 8);
 	
 	for(int i = 0; i < sector_num; i++) {
@@ -115,20 +125,19 @@ bool DISK::make_track(int trk, int side)
 		return false;
 	
 	// search track
-	if(trk < 0 || trk > 83)
-		return false;
-	
 	int trkside = trk * 2 + (side & 1);
-	uint32 offset = buf[0x20 + trkside * 4 + 0];
-	offset |= buf[0x20 + trkside * 4 + 1] << 8;
-	offset |= buf[0x20 + trkside * 4 + 2] << 16;
-	offset |= buf[0x20 + trkside * 4 + 3] << 24;
+	if(!(0 <= trkside && trkside < 164))
+		return false;
+	uint32 offset = buffer[0x20 + trkside * 4 + 0];
+	offset |= buffer[0x20 + trkside * 4 + 1] << 8;
+	offset |= buffer[0x20 + trkside * 4 + 2] << 16;
+	offset |= buffer[0x20 + trkside * 4 + 3] << 24;
 	
 	if(!offset)
 		return false;
 	
 	// get verify info
-	uint8* t = buf + offset;
+	uint8* t = buffer + offset;
 	sector_num = t[4] | (t[5] << 8);
 	
 	// make track image
@@ -213,20 +222,19 @@ bool DISK::get_sector(int trk, int side, int index)
 		return false;
 	
 	// search track
-	if(trk < 0 || trk > 83)
-		return false;
-	
 	int trkside = trk * 2 + (side & 1);
-	uint32 offset = buf[0x20 + trkside * 4 + 0];
-	offset |= buf[0x20 + trkside * 4 + 1] << 8;
-	offset |= buf[0x20 + trkside * 4 + 2] << 16;
-	offset |= buf[0x20 + trkside * 4 + 3] << 24;
+	if(!(0 <= trkside && trkside < 164))
+		return false;
+	uint32 offset = buffer[0x20 + trkside * 4 + 0];
+	offset |= buffer[0x20 + trkside * 4 + 1] << 8;
+	offset |= buffer[0x20 + trkside * 4 + 2] << 16;
+	offset |= buffer[0x20 + trkside * 4 + 3] << 24;
 	
 	if(!offset)
 		return false;
 	
 	// track found
-	uint8* t = buf + offset;
+	uint8* t = buffer + offset;
 	sector_num = t[4] | (t[5] << 8);
 	
 	if(index >= sector_num)
@@ -255,5 +263,366 @@ bool DISK::get_sector(int trk, int side, int index)
 	sector_size = t[0xe] | (t[0xf] << 8);
 	
 	return true;
+}
+
+// teledisk image decoder
+
+/*
+	this teledisk image decoder is based on:
+	
+		LZHUF.C English version 1.0 based on Japanese version 29-NOV-1988
+		LZSS coded by Haruhiko OKUMURA
+		Adaptive Huffman Coding coded by Haruyasu YOSHIZAKI
+		Edited and translated to English by Kenji RIKITAKE
+		TDLZHUF.C by WTK
+*/
+
+#define COPYBUFFER(src, size) { \
+	if(file_size + (size) > DISK_BUFFER_SIZE) \
+		return false; \
+	_memcpy(buffer + file_size, (src), (size)); \
+	file_size += (size); \
+}
+
+bool DISK::t2d()
+{
+	struct hdr_t hdr;
+	struct cmt_t cmt;
+	struct trk_t trk;
+	struct sct_t sct;
+	struct d88hdr_t d88hdr;
+	struct d88sct_t d88sct;
+	uint8 obuf[512];
+	
+	// check teledisk header
+	fi->Fseek(0, FILEIO_SEEK_SET);
+	fi->Fread(&hdr, sizeof(hdr_t), 1);
+	if(hdr.sig[0] == 't' && hdr.sig[1] == 'd') {
+		// decompress to the temporary file
+		FILEIO* fo = new FILEIO();
+		if(!fo->Fopen(tmp_path, FILEIO_WRITE_BINARY)) {
+			delete fo;
+			return false;
+		}
+		int rd = 1;
+		init_decode();
+		do {
+			if((rd = decode(obuf, 512)) > 0)
+				fo->Fwrite(obuf, rd, 1);
+		}
+		while(rd > 0);
+		fo->Fclose();
+		delete fo;
+		temporary = true;
+		
+		// reopen the temporary file
+		fi->Fclose();
+		if(!fi->Fopen(tmp_path, FILEIO_READ_BINARY))
+			return false;
+	}
+	if(hdr.flag & 0x80) {
+		// skip comment
+		fi->Fread(&cmt, sizeof(cmt_t), 1);
+		fi->Fseek(cmt.len, FILEIO_SEEK_CUR);
+	}
+	
+	// create d88 image
+	file_size = 0;
+	
+	// create d88 header
+	_memset(&d88hdr, 0, sizeof(d88hdr_t));
+	strcpy(d88hdr.title, "TELEDISK");
+	d88hdr.protect = 0; // non-protected
+	d88hdr.type = 0; // 2d
+	COPYBUFFER(&d88hdr, sizeof(d88hdr_t));
+	
+	// create tracks
+	int trkcnt = 0, trkptr = sizeof(d88hdr_t);
+	fi->Fread(&trk, sizeof(trk_t), 1);
+	while(trk.nsec != 0xff) {
+		d88hdr.trkptr[trkcnt++] = trkptr;
+		
+		// read sectors in this track
+		for(int i = 0; i < trk.nsec; i++) {
+			uint8 buf[2048], dst[2048];
+			_memset(buf, 0, sizeof(buf));
+			_memset(dst, 0, sizeof(dst));
+			
+			// read sector header
+			fi->Fread(&sct, sizeof(sct_t), 1);
+			
+			// create d88 sector header
+			_memset(&d88sct, 0, sizeof(d88sct_t));
+			d88sct.c = sct.c;
+			d88sct.h = sct.h;
+			d88sct.r = sct.r;
+			d88sct.n = sct.n;
+			d88sct.nsec = trk.nsec;
+			d88sct.dens = 0; // ”{–§“x
+			d88sct.del = (sct.ctrl & 4) ? 0x10 : 0;
+			d88sct.stat = (sct.ctrl & 2) ? 0x10 : 0; // crc?
+			d88sct.size = secsize[sct.n & 3];
+			
+			// create sector image
+			if(sct.ctrl != 0x10) {
+				// read sector source
+				int len = fi->Fgetc();
+				len += fi->Fgetc() * 256 - 1;
+				int flag = fi->Fgetc(), d = 0;
+				fi->Fread(buf, len, 1);
+				
+				// convert
+				if(flag == 0)
+					_memcpy(dst, buf, len);
+				else if(flag == 1) {
+					int len2 = buf[0] | (buf[1] << 8);
+					while(len2--) {
+						dst[d++] = buf[2];
+						dst[d++] = buf[3];
+					}
+				}
+				else if(flag == 2) {
+					for(int s = 0; s < len;) {
+						int type = buf[s++];
+						int len2 = buf[s++];
+						if(type == 0) {
+							while(len2--)
+								dst[d++] = buf[s++];
+						}
+						else if(type < 5) {
+							uint8 pat[256];
+							int n = 2;
+							while(type-- > 1)
+								n *= 2;
+							for(int j = 0; j < n; j++)
+								pat[j] = buf[s++];
+							while(len2--) {
+								for(int j = 0; j < n; j++)
+									dst[d++] = pat[j];
+							}
+						}
+						else
+							break; // unknown type
+					}
+				}
+				else
+					break; // unknown flag
+			}
+			else
+				d88sct.size = 0;
+			
+			// copy to d88
+			COPYBUFFER(&d88sct, sizeof(d88sct_t));
+			COPYBUFFER(dst, d88sct.size);
+			trkptr += sizeof(d88sct_t) + d88sct.size;
+		}
+		// read next track
+		fi->Fread(&trk, sizeof(trk_t), 1);
+	}
+	d88hdr.size = trkptr;
+	_memcpy(buffer, &d88hdr, sizeof(d88hdr_t));
+	return true;
+}
+
+int DISK::next_word()
+{
+	if(ibufndx >= ibufcnt) {
+		ibufndx = ibufcnt = 0;
+		_memset(inbuf, 0, 512);
+		for(int i = 0; i < 512; i++) {
+			int d = fi->Fgetc();
+			if(d == EOF) {
+				if(i)
+					break;
+				return(-1);
+			}
+			inbuf[i] = d;
+			ibufcnt = i + 1;
+		}
+	}
+	while(getlen <= 8) {
+		getbuf |= inbuf[ibufndx++] << (8 - getlen);
+		getlen += 8;
+	}
+	return 0;
+}
+
+int DISK::get_bit()
+{
+	if(next_word() < 0)
+		return -1;
+	short i = getbuf;
+	getbuf <<= 1;
+	getlen--;
+	return (i < 0) ? 1 : 0;
+}
+
+int DISK::get_byte()
+{
+	if(next_word() != 0)
+		return -1;
+	uint16 i = getbuf;
+	getbuf <<= 8;
+	getlen -= 8;
+	i >>= 8;
+	return (int)i;
+}
+
+void DISK::start_huff()
+{
+	int i, j;
+	for(i = 0; i < N_CHAR; i++) {
+		freq[i] = 1;
+		son[i] = i + TABLE_SIZE;
+		prnt[i + TABLE_SIZE] = i;
+	}
+	i = 0; j = N_CHAR;
+	while(j <= ROOT_POSITION) {
+		freq[j] = freq[i] + freq[i + 1];
+		son[j] = i;
+		prnt[i] = prnt[i + 1] = j;
+		i += 2; j++;
+	}
+	freq[TABLE_SIZE] = 0xffff;
+	prnt[ROOT_POSITION] = 0;
+}
+
+void DISK::reconst()
+{
+	short i, j = 0, k;
+	uint16 f, l;
+	for(i = 0; i < TABLE_SIZE; i++) {
+		if(son[i] >= TABLE_SIZE) {
+			freq[j] = (freq[i] + 1) / 2;
+			son[j] = son[i];
+			j++;
+		}
+	}
+	for(i = 0, j = N_CHAR; j < TABLE_SIZE; i += 2, j++) {
+		k = i + 1;
+		f = freq[j] = freq[i] + freq[k];
+		for(k = j - 1; f < freq[k]; k--);
+		k++;
+		l = (j - k) * 2;
+		_memmove(&freq[k + 1], &freq[k], l);
+		freq[k] = f;
+		_memmove(&son[k + 1], &son[k], l);
+		son[k] = i;
+	}
+	for(i = 0; i < TABLE_SIZE; i++) {
+		if((k = son[i]) >= TABLE_SIZE)
+			prnt[k] = i;
+		else
+			prnt[k] = prnt[k + 1] = i;
+	}
+}
+
+void DISK::update(int c)
+{
+	int i, j, k, l;
+	if(freq[ROOT_POSITION] == MAX_FREQ)
+		reconst();
+	c = prnt[c + TABLE_SIZE];
+	do {
+		k = ++freq[c];
+		if(k > freq[l = c + 1]) {
+			while(k > freq[++l]);
+			l--;
+			freq[c] = freq[l];
+			freq[l] = k;
+			i = son[c];
+			prnt[i] = l;
+			if(i < TABLE_SIZE)
+				prnt[i + 1] = l;
+			j = son[l];
+			son[l] = i;
+			prnt[j] = c;
+			if(j < TABLE_SIZE)
+				prnt[j + 1] = c;
+			son[c] = j;
+			c = l;
+		}
+	}
+	while((c = prnt[c]) != 0);
+}
+
+short DISK::decode_char()
+{
+	int ret;
+	uint16 c = son[ROOT_POSITION];
+	while(c < TABLE_SIZE) {
+		if((ret = get_bit()) < 0)
+			return -1;
+		c += (unsigned)ret;
+		c = son[c];
+	}
+	c -= TABLE_SIZE;
+	update(c);
+	return c;
+}
+
+short DISK::decode_position()
+{
+	short bit;
+	uint16 i, j, c;
+	if((bit = get_byte()) < 0)
+		return -1;
+	i = (uint16)bit;
+	c = (uint16)d_code[i] << 6;
+	j = d_len[i] - 2;
+	while(j--) {
+		if((bit = get_bit()) < 0)
+			 return -1;
+		i = (i << 1) + bit;
+	}
+	return (c | i & 0x3f);
+}
+
+void DISK::init_decode()
+{
+	ibufcnt= ibufndx = bufcnt = getbuf = 0;
+	getlen = 0;
+	start_huff();
+	for(int i = 0; i < STRING_BUFFER_SIZE - LOOKAHEAD_BUFFER_SIZE; i++)
+		text_buf[i] = ' ';
+	ptr = STRING_BUFFER_SIZE - LOOKAHEAD_BUFFER_SIZE;
+}
+
+int DISK::decode(uint8 *buf, int len)
+{
+	short c, pos;
+	int  count;
+	for(count = 0; count < len;) {
+		if(bufcnt == 0) {
+			if((c = decode_char()) < 0)
+				return count;
+			if(c < 256) {
+				*(buf++) = (uint8)c;
+				text_buf[ptr++] = (uint8)c;
+				ptr &= (STRING_BUFFER_SIZE - 1);
+				count++;
+			} 
+			else {
+				if((pos = decode_position()) < 0)
+					return count;
+				bufpos = (ptr - pos - 1) & (STRING_BUFFER_SIZE - 1);
+				bufcnt = c - 255 + THRESHOLD;
+				bufndx = 0;
+			}
+		}
+		else {
+			while(bufndx < bufcnt && count < len) {
+				c = text_buf[(bufpos + bufndx) & (STRING_BUFFER_SIZE - 1)];
+				*(buf++) = (uint8)c;
+				bufndx++;
+				text_buf[ptr++] = (uint8)c;
+				ptr &= (STRING_BUFFER_SIZE - 1);
+				count++;
+			}
+			if(bufndx >= bufcnt) 
+				bufndx = bufcnt = 0;
+		}
+	}
+	return count;
 }
 

@@ -17,17 +17,17 @@ void Z80PIC::reset()
 	pri_cnt = 0;
 }
 
-void Z80PIC::request_int(int pri, uint32 vector, bool pending)
+void Z80PIC::request_int(DEVICE* device, int pri, uint32 vector, bool pending)
 {
 	if(pri_cnt < pri + 1)
 		pri_cnt = pri + 1;
 	
-	// accept the request when the requested interrupt is not running now
-	if(!irq[pri].running) {
-		irq[pri].request = true;
-		irq[pri].vector = vector;
-		do_ei();
-	}
+	// request interrupt
+	irq[pri].device = device;
+	irq[pri].request = true;
+	irq[pri].vector = vector;
+	do_ei();
+	
 	// cancel request when not pending
 	if(!pending)
 		irq[pri].request = false;
@@ -44,6 +44,9 @@ void Z80PIC::do_reti()
 	for(int i = 0; i < pri_cnt; i++) {
 		if(irq[i].running) {
 			irq[i].running = false;
+			irq[i].device->do_reti();
+//			emu->out_debug("RETI\t%d\n", i);
+			
 			// try next interrupt
 			do_ei();
 			return;
@@ -67,9 +70,14 @@ void Z80PIC::do_ei()
 			irq[i].running = true;
 			irq[i].request = false;
 			dev->write_signal(SIG_CPU_DO_INT, (uint32)irq[i].vector, 0xffffffff);
+//			emu->out_debug("INT\t%d\n", i);
 			return;
 		}
 	}
 }
 
+uint32 Z80PIC::read_signal(int ch)
+{
+	return irq[ch].request ? 1 : 0;
+}
 

@@ -91,8 +91,8 @@ void HD146818P::event_frame()
 	bool irq = (update || alarm || period) ? true : false;
 	
 	if(irq != prev_irq) {
-		for(int i = 0; i < dev_cnt; i++)
-			dev[i]->write_signal(dev_id[i], irq ? 0xffffffff : 0, dev_mask[i]);
+		for(int i = 0; i < dcount; i++)
+			dev[i]->write_signal(did[i], irq ? 0xffffffff : 0, dmask[i]);
 		prev_irq = irq;
 	}
 	prev_sec = t[6];

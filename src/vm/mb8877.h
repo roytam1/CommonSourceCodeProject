@@ -126,7 +126,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_callback(int event_id);
+	uint32 read_signal(int ch);
+	void event_callback(int event_id, int err);
 	void update_config();
 	
 	// unique function

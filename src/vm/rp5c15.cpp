@@ -47,7 +47,7 @@ void RP5C15::write_io8(uint32 addr, uint32 data)
 	case 0xa:
 	case 0xb:
 	case 0xc:
-		if(regs[0xd] & 0x1)
+		if(regs[0xd] & 1)
 			regs[ch] = data;
 		break;
 	case 0xd:
@@ -73,28 +73,28 @@ uint32 RP5C15::read_io8(uint32 addr)
 	case 0x03:
 		return (regs[0xd] & 0x1) ? regs[ch] : (uint8)(MINUTE / 10);
 	case 0x04:
-		return (regs[0xd] & 0x1) ? regs[ch] : ((regs[0xa] & 0x1) ? HOUR : HOUR % 12) % 10;
+		return (regs[0xd] & 0x1) ? regs[ch] : ((regs[0xa] & 1) ? HOUR : HOUR % 12) % 10;
 	case 0x05:
-		if(regs[0xd] & 0x1)
+		if(regs[0xd] & 1)
 			return regs[ch];
 		else {
-			if(regs[0xa] & 0x1)
+			if(regs[0xa] & 1)
 				return (uint8)(HOUR / 10);
 			else
 				return (uint8)((HOUR % 12) / 10) | (HOUR < 12 ? 0 : 2);
 		}
 	case 0x06:
-		return (regs[0xd] & 0x1) ? regs[ch] : DAY_OF_WEEK;
+		return (regs[0xd] & 1) ? regs[ch] : DAY_OF_WEEK;
 	case 0x07:
-		return (regs[0xd] & 0x1) ? regs[ch] : DAY % 10;
+		return (regs[0xd] & 1) ? regs[ch] : DAY % 10;
 	case 0x08:
-		return (regs[0xd] & 0x1) ? regs[ch] : (uint8)(DAY / 10);
+		return (regs[0xd] & 1) ? regs[ch] : (uint8)(DAY / 10);
 	case 0x09:
-		return (regs[0xd] & 0x1) ? regs[ch] : MONTH % 10;
+		return (regs[0xd] & 1) ? regs[ch] : MONTH % 10;
 	case 0x0a:
-		return (regs[0xd] & 0x1) ? regs[ch] : (uint8)(MONTH / 10);
+		return (regs[0xd] & 1) ? regs[ch] : (uint8)(MONTH / 10);
 	case 0x0b:
-		if(regs[0xd] & 0x1) {
+		if(regs[0xd] & 1) {
 			if(((YEAR - 0) % 4) == 0 && (((YEAR - 0) % 100) != 0 || ((YEAR - 0) % 400) == 0))
 				return 0;
 			else if(((YEAR - 1) % 4) == 0 && (((YEAR - 1) % 100) != 0 || ((YEAR - 1) % 400) == 0))
@@ -107,23 +107,23 @@ uint32 RP5C15::read_io8(uint32 addr)
 		else
 			return YEAR % 10;
 	case 0x0c:
-		return (regs[0xd] & 0x1) ? regs[ch] : (uint8)((YEAR % 100) / 10);
+		return (regs[0xd] & 1) ? regs[ch] : (uint8)((YEAR % 100) / 10);
 	}
 	return 0xff;
 }
 
-void RP5C15::event_callback(int event_id)
+void RP5C15::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_1HZ)
 		pulse_1hz = !pulse_1hz;
 	else
 		pulse_16hz = !pulse_16hz;
 	bool pulse = alarm;
-	pulse |= (regs[0xf] & 0x8) ? false : pulse_1hz;
-	pulse |= (regs[0xf] & 0x4) ? false : pulse_16hz;
+	pulse |= (regs[0xf] & 8) ? false : pulse_1hz;
+	pulse |= (regs[0xf] & 4) ? false : pulse_16hz;
 	
-	for(int i = 0; i < dev_pulse_cnt; i++)
-		dev_pulse[i]->write_signal(dev_pulse_id[i], pulse ? 0 : 0xffffffff, dev_pulse_mask[i]);
+	for(int i = 0; i < dcount_pulse; i++)
+		d_pulse[i]->write_signal(did_pulse[i], pulse ? 0 : 0xffffffff, dmask_pulse[i]);
 }
 
 void RP5C15::event_frame()
@@ -132,17 +132,17 @@ void RP5C15::event_frame()
 	emu->get_timer(time);
 	
 	int minute, hour, day;
-	minute = (regs[2] & 0xf) + (regs[3] & 0x7) * 10;
+	minute = (regs[2] & 0xf) + (regs[3] & 7) * 10;
 	if(regs[0xa] & 1)
-		hour = (regs[4] & 0xf) + (regs[5] & 0x3) * 10;
+		hour = (regs[4] & 0xf) + (regs[5] & 3) * 10;
 	else
-		hour = (regs[4] & 0xf) + (regs[5] & 0x1) * 10 + (regs[5] & 0x2 ? 12 : 0);
-	day = (regs[7] & 0xf) + (regs[8] & 0x3) * 10;
-	bool newval = ((regs[0xd] & 0x4) && minute == MINUTE && hour == HOUR && day == DAY) ? true : false;
+		hour = (regs[4] & 0xf) + (regs[5] & 1) * 10 + (regs[5] & 2 ? 12 : 0);
+	day = (regs[7] & 0xf) + (regs[8] & 3) * 10;
+	bool newval = ((regs[0xd] & 4) && minute == MINUTE && hour == HOUR && day == DAY) ? true : false;
 	
 	if(alarm != newval) {
-		for(int i = 0; i < dev_alarm_cnt; i++)
-			dev_alarm[i]->write_signal(dev_alarm_id[i], newval ? 0 : 0xffffffff, dev_alarm_mask[i]);
+		for(int i = 0; i < dcount_alarm; i++)
+			d_alarm[i]->write_signal(did_alarm[i], newval ? 0 : 0xffffffff, dmask_alarm[i]);
 		alarm = newval;
 	}
 }

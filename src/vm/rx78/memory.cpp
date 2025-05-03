@@ -48,7 +48,7 @@ void MEMORY::initialize()
 	SET_BANK(0xf000, 0xffff, wdmy, rdmy);
 	
 	for(int i = 0; i < 6; i++)
-		vbank[i] = vram + 4416 * i;
+		vbank[i] = vram + 0x2000 * i;
 	rpage = wpage = 0;
 }
 

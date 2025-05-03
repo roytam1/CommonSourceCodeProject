@@ -41,9 +41,15 @@ void EMU::initialize_input()
 		joy_ymax[1] = (joycaps[1].wYmax + x) / 2;
 	}
 #endif
-	
 	// mouse emulation is disenabled
 	mouse_enable = false;
+	
+#ifdef USE_AUTO_KEY
+	// initialize autokey
+	cb_phase = cb_code = 0;
+	cb_shift = false;
+	clipboard = NULL;
+#endif
 }
 
 void EMU::release_input()
@@ -51,6 +57,11 @@ void EMU::release_input()
 	// release mouse
 	if(mouse_enable)
 		disenable_mouse();
+#ifdef USE_AUTO_KEY
+	// release autokey buffer
+	if(clipboard)
+		free(clipboard);
+#endif
 }
 
 void EMU::update_input()
@@ -62,9 +73,8 @@ void EMU::update_input()
 	}
 	
 	// update joystick status
-#ifndef _WIN32_WCE
 	_memset(joy_status, 0, sizeof(joy_status));
-	
+#ifndef _WIN32_WCE
 	if(joy_num > 0) {
 		// joystick #1
 		JOYINFO joyinfo;
@@ -94,7 +104,7 @@ void EMU::update_input()
 		}
 	}
 #endif
-#ifdef USE_JOYKEY
+#ifdef USE_KEY_TO_JOY
 	// emulate joystick #1 with keyboard
 	if(key_status[0x26]) joy_status[0] |= 0x01;	// up
 	if(key_status[0x28]) joy_status[0] |= 0x02;	// down
@@ -103,7 +113,6 @@ void EMU::update_input()
 #endif
 	// update mouse status
 	_memset(mouse_status, 0, sizeof(mouse_status));
-	
 #ifndef _WIN32_WCE
 	if(mouse_enable) {
 		// get current status
@@ -120,6 +129,56 @@ void EMU::update_input()
 			ClientToScreen(main_window_handle, &pt);
 			SetCursorPos(pt.x, pt.y);
 		}
+	}
+#endif
+#ifdef USE_AUTO_KEY
+	// auto key
+	switch(cb_phase)
+	{
+	case 1: {
+		int c = clipboard[cb_ptr++];
+		if((0x81 <= c && c <= 0x9f) || 0xe0 <= c)
+			cb_ptr++;	// kanji ?
+		else if(c == 0xd && clipboard[cb_ptr] == 0xa)
+			cb_ptr++;	// cr-lf
+		cb_code = autokey_table[c];
+#ifdef USE_AUTO_KEY_CAPS
+		bool shift = (cb_code & (0x100 | 0x800)) ? true : false;
+#else
+		bool shift = (cb_code & (0x100 | 0x400)) ? true : false;
+#endif
+		if(!cb_shift && shift)
+			key_down(VK_SHIFT);
+		else if(cb_shift && !shift)
+			key_up(VK_SHIFT);
+		cb_shift = shift;
+		cb_phase++;
+		break;
+	}
+	case 2:
+		if(cb_code & 0xff)
+			key_down(cb_code & 0xff);
+		cb_phase++;
+		break;
+	case USE_AUTO_KEY:
+		if(cb_code & 0xff)
+			key_up(cb_code & 0xff);
+		cb_phase++;
+		break;
+	case USE_AUTO_KEY_RELEASE:
+		if(cb_code == 0xd) {
+			cb_phase++;
+			break;
+		}
+	case 30:
+		if(cb_ptr < cb_size)
+			cb_phase = 1;
+		else
+			stop_auto_key();
+		break;
+	default:
+		if(cb_phase)
+			cb_phase++;
 	}
 #endif
 }
@@ -197,3 +256,39 @@ void EMU::toggle_mouse()
 		enable_mouse();
 }
 
+#ifdef USE_AUTO_KEY
+void EMU::start_auto_key()
+{
+	stop_auto_key();
+	
+	if(OpenClipboard(NULL)) {
+		HANDLE hClip = GetClipboardData(CF_TEXT);
+		if(hClip) {
+			char* buf = (char*)GlobalLock(hClip);
+			cb_size = strlen(buf);
+			clipboard = (char*)malloc(cb_size + 1);
+			memcpy(clipboard, buf, cb_size + 1);
+			GlobalUnlock(hClip);
+			
+			cb_phase = 1;
+			cb_ptr = 0;
+			cb_shift = false;
+		}
+		CloseClipboard();
+	}
+}
+
+void EMU::stop_auto_key()
+{
+	if(clipboard) {
+		free(clipboard);
+		clipboard = NULL;
+	}
+	if(cb_shift)
+		key_up(VK_SHIFT);
+	if(cb_code & 0xff)
+		key_up(cb_code & 0xff);
+	cb_phase = cb_code = 0;
+	cb_shift = false;
+}
+#endif

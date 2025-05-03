@@ -27,11 +27,11 @@ void I8255::write_io8(uint32 addr, uint32 data)
 	case 1:
 	case 2:
 		if(port[ch].wreg != data || port[ch].first) {
-			for(int i = 0; i < dev_cnt[ch]; i++) {
-				int shift = dev_shift[ch][i];
+			for(int i = 0; i < dcount[ch]; i++) {
+				int shift = dshift[ch][i];
 				uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-				uint32 mask = (shift < 0) ? (dev_mask[ch][i] >> (-shift)) : (dev_mask[ch][i] << shift);
-				dev[ch][i]->write_signal(dev_id[ch][i], val, mask);
+				uint32 mask = (shift < 0) ? (dmask[ch][i] >> (-shift)) : (dmask[ch][i] << shift);
+				dev[ch][i]->write_signal(did[ch][i], val, mask);
 			}
 			port[ch].wreg = data;
 			port[ch].first = false;

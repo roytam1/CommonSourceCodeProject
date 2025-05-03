@@ -21,15 +21,15 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	{
 	case 0xdc:
 		// drive reg
-		if(cpu->get_prv_pc() == 0x5698 && data == 0x86)
+		if(d_cpu->get_prv_pc() == 0x5698 && data == 0x86)
 			laydock = true;
 		if(laydock)
 			data &= 0xfc;
-		fdc->write_signal(fdc_id0, data, 0xff);
+		d_fdc->write_signal(did0_fdc, data, 0xff);
 		break;
 	case 0xdd:
 		// side reg
-		fdc->write_signal(fdc_id1, data, 0xff);
+		d_fdc->write_signal(did1_fdc, data, 0xff);
 		break;
 	}
 }

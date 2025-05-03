@@ -55,7 +55,9 @@ public:
 	void do_ei();
 	
 	// unique functions
-	void set_context(DEVICE* device) { dev = device; }
+	void set_context(DEVICE* device) {
+		dev = device;
+	}
 	void key_down();
 };
 

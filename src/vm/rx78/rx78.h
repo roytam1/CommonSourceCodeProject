@@ -22,8 +22,11 @@
 
 #define USE_CART
 #define USE_DATAREC
-#define USE_JOYKEY
+#define USE_KEY_TO_JOY
 #define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		6
+#define USE_AUTO_KEY_RELEASE	10
+#define USE_AUTO_KEY_CAPS
 #define USE_SCREEN_X2
 #define DONT_KEEP_ASPECT
 
@@ -119,6 +122,10 @@ public:
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
 	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

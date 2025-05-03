@@ -23,7 +23,7 @@ private:
 	uint8 cart[0x4000];
 	uint8 ram[0x4000];
 	uint8 ext[0x5000];
-	uint8 vram[4416*6];
+	uint8 vram[0x2000 * 6];
 	
 	uint8 wdmy[0x10000];
 	uint8 rdmy[0x10000];
@@ -42,6 +42,12 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_data16(uint32 addr, uint32 data) {
+		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+	}
+	uint32 read_data16(uint32 addr) {
+		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unique functions

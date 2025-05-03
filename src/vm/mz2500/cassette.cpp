@@ -12,17 +12,17 @@
 
 // pre-silent (0.2sec)
 #define REGIST_PRE() { \
-	signal = false; \
+	set_signal(false); \
 	vm->regist_event(this, EVENT_PRE, 200000, false, &id_pre); \
 }
 // signal (0.5sec)
 #define REGIST_SIGNAL() { \
-	signal = true; \
+	set_signal(true); \
 	vm->regist_event(this, EVENT_SIGNAL, 500000, false, &id_signal); \
 }
 // after-silent (0.3sec)
 #define REGIST_AFTER() { \
-	signal = false; \
+	set_signal(false); \
 	vm->regist_event(this, EVENT_AFTER, 300000, false, &id_after); \
 }
 #define CANCEL_EVENT() { \
@@ -37,9 +37,11 @@
 
 void CASSETTE::initialize()
 {
-	areg = creg = 0xff;
-	signal = playing = false;
-	fw_rw = 0;
+	prev = 0xff;
+	signal = playing = true;
+	set_signal(false);
+	fw_rw = 1;
+	set_fw_rw(0);
 	track = 0.0;
 	id_pre = id_signal = id_after = -1;
 }
@@ -56,54 +58,44 @@ void CASSETTE::reset()
 
 void CASSETTE::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_CASSETTE_CONTROL) {
-		// from i8255 port a
-		if((areg & 1) && !(data & 1)) {
-			// rewind
-			stop_media();
-			set_fw_rw(-1);
-			CANCEL_EVENT();
-			REGIST_PRE();
-		}
-		if((areg & 2) && !(data & 2)) {
-			// forward
-			stop_media();
-			set_fw_rw(1);
-			CANCEL_EVENT();
-			REGIST_PRE();
-		}
-		if((areg & 4) && !(data & 4)) {
-			// start play
-			play_media();
-			set_fw_rw(1);
-			CANCEL_EVENT();
-		}
-		if((areg & 8) && !(data & 8)) {
-			// stop
-			stop_media();
-			set_fw_rw(0);
-			CANCEL_EVENT();
-		}
-		areg = data & mask;
+	// from i8255 port a
+	if((prev & 1) && !(data & 1)) {
+		// rewind
+		stop_media();
+		set_fw_rw(-1);
+		CANCEL_EVENT();
+		REGIST_PRE();
 	}
-	else if(id == SIG_CASSETTE_RESET) {
-		// from i8255 port c
-		if(!(creg & 2) && (data & 2))
-			vm->reset();
-		if(!(creg & 8) && (data & 8))
-			vm->ipl_reset();
-		creg = data & mask;
+	if((prev & 2) && !(data & 2)) {
+		// forward
+		stop_media();
+		set_fw_rw(1);
+		CANCEL_EVENT();
+		REGIST_PRE();
 	}
+	if((prev & 4) && !(data & 4)) {
+		// start play
+		play_media();
+		set_fw_rw(1);
+		CANCEL_EVENT();
+	}
+	if((prev & 8) && !(data & 8)) {
+		// stop
+		stop_media();
+		set_fw_rw(0);
+		CANCEL_EVENT();
+	}
+	prev = data & mask;
 }
 
-void CASSETTE::event_callback(int event_id)
+void CASSETTE::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_PRE) {
 		id_pre = -1;
 		REGIST_SIGNAL();
 	}
 	else if(event_id == EVENT_SIGNAL) {
-		id_after = -1;
+		id_signal = -1;
 		REGIST_AFTER();
 	}
 	else if(event_id == EVENT_AFTER) {
@@ -112,7 +104,7 @@ void CASSETTE::event_callback(int event_id)
 			track = (float)((int)track + 1) + 0.1F;
 			if((int)(track + 0.5) > emu->media_count()) {
 				// reach last
-				if(areg & 0x20)
+				if(prev & 0x20)
 					set_fw_rw(0); // stop now
 				else {
 					set_fw_rw(-1); // auto rewind
@@ -132,7 +124,7 @@ void CASSETTE::event_callback(int event_id)
 			track = (float)((int)track - 1) + 0.9F;
 			if(track < 1.0) {
 				// reach top
-				if(areg & 0x40)
+				if(prev & 0x40)
 					set_fw_rw(0); // stop now
 				else {
 					set_fw_rw(1); // auto play
@@ -169,7 +161,7 @@ void CASSETTE::stop_media()
 void CASSETTE::set_fw_rw(int val)
 {
 	if(fw_rw != val) {
-		dev->write_signal(dev_id, val ? 0 : 0xffffffff, 0x08);	// to i8255 port b
+		dev->write_signal(dev_id, val ? 0 : 0xffffffff, 8);	// to i8255 port b
 		fw_rw = val;
 	}
 }
@@ -177,7 +169,7 @@ void CASSETTE::set_fw_rw(int val)
 void CASSETTE::set_signal(bool val)
 {
 	if(signal != val) {
-		dev->write_signal(dev_id, val ? 0 : 0xffffffff, 0x40);	// to i8255 port b
+		dev->write_signal(dev_id, val ? 0xffffffff : 0, 0x40);	// to i8255 port b
 		signal = val;
 	}
 }

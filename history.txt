@@ -1,0 +1,92 @@
+2/11, 2007
+
+[COMMON] support auto key hitting from the clipboard
+[COMMON] save and restore the window mode when the emulator is restarted
+[COMMON/DEVICE] modify memory access wait
+[COMMON/DEVICE] support i/o access wait
+[VM/DISK] fix the crash problem when the invalid track number is set
+[VM/HD46505] support HD46505
+[VM/HD46505] fix the display/vsync/hsync signals timing
+[VM/I8253] more precise signal timing in mode #2, #4 and #5
+[VM/MB8877] support the access led status
+[VM/PICM1BIT] support 1bit pcm
+[VM/UPD765A] support the acces led status
+[VM/YM2203] support the volume adjustment
+[COMMON/Z80] modify memory access wait
+[COMMON/Z80] support i/o access wait
+[VM/Z80SIO] fix the recv and under-run interrupt flags
+[VM/Z80SIO] fix the status affect vector
+[VM/Z80SIO] cancel the interrupt request when read the recv buffer
+[VM/Z80SIO] support the i/f to clear the recv buffer
+
+[MULTI8/DISPLAY] remove HD46505 codes
+[MULTI8/DISPLAY] draw the flopppy drive access led
+[MZ2500] support 1bit pcm
+[MZ2500] adjust fm/psg volume
+[MZ2500] support i/o access wait
+[MZ2500/CRTC] render screen with less cpu power
+[MZ2500/CRTC] draw the floppy drive access led
+[MZ2500/INTERRUPT] reimplement interrupt handler with the common Z80PIC class
+[MZ2500/INTERRUPT] add the patch for GALAGA, LAYDOCK, THEXDER, MULTIPLAN, Super Shunbou, Wizardry and Ys3
+[MZ2500/MEMORY] modify memory access wait
+[MZ2500/MOUSE] clear Z80SIO recv buffer when send the mouse status
+[PASOPIA] support OA-BASIC
+[PASOPIA] support hsync signal
+[PASOPIA/DISPLAY] remove HD46505 codes
+[PASOPIA/MEMORY] fix the memory map $8000-$ffff
+[PASOPIA7/DISPLAY] remove HD46505 codes
+[PASOPIA7/DISPLAY] draw the flopppy drive access led
+[PV1000] rewrite with the common event manager class
+[PV1000/JOYSTICK] fix $fc status (not complete)
+[PV1000/VDP] add the patch for SPACE PANIC
+
+
+2/1, 2007
+
+[COMMON] ignore some warnings on Visual Studio 2005
+[WIN32/SCREEN] support video recording
+[WIN32/SOUND] record wave as 16bit, stereo (for TMPGEnc)
+[WIN32/SOUND] dont use multi threading to recieve MM_WOM_DONE event
+[WIN32/WCE] build 4 binaries (use GAPI or GDI, DirectSound or waveOut)
+[VM/BEEP] modify beep sound generator for more stable frequency
+[VM/DATAREC] auto stop at the end of tape image
+[VM/DEVICE] add virtual functions to get the memory wait and passed clocks in cpu class
+[VM/EVENT] more precise event timing refering the passed clock in cpu class
+[VM/I8253] drive counter when it reaches the terminal count or read the count registers
+[VM/I8253] more precise output signal timing
+[VM/NSC800] suppor NSC800
+[VM/Z80] fix the clocks for opecodes DD-CB-** and FD-CB-**
+[VM/Z80CTC] drive counter when it reaches the terminal count or read the count registers
+[VM/Z80PIC] accept the interrupt request when it is running
+
+[MULTI8/HD46505] dont use hsync event and use the event callback to drive the hsync signal 
+[MZ2500/CRTC] dont use hsync event and use the event callback to drive the hsync signal 
+[MZ2500/MEMORY] support the memory wait in display period
+[MZ2500/Z80PIC] accept the interrupt request when it is running 
+[MZ2500/Z80PIC] recognize the i8253 clock signal as level, or edge only for MUDER CLUB, KUGYOKUDEN and RELICS 
+[PASOPIA] reimplement EmuPIA under the common source code project 
+[PASOPIA7/HD46505] dont use hsync event and use the event callback to drive the hsync signal 
+
+
+12/31, 2006
+
+[WIN32] support DirectShow video capture devices (DX8 or later is required)
+[WIN32] support Windows CE.net 4.x devices (use GAPI and waveOut APIs)
+[VM] each device can get the cpu time
+[VM/BEEP] modify beep sound generator for more stable frequency
+[VM/Z80] support BUSREQ
+[VM/Z80PIC] call do_reti() in the device that requested the interrupt
+[VM/Z80SIO] suppor Z80SIO
+[VM/DISK] support TeleDisk floppy disk image
+[VM/EVENT] fix the problem in the case that the new event is registered in the event callback routine
+[VM/I8253] drive the counter more accurate and less power
+
+[MZ2500] reimplement EmuZ-2500 under the common source code project
+[MZ2500] support the ethernet card function designed by Mr.Oh!Ishi
+[MZ2500/CRTC] support the super impose function
+[MZ2500/MEMORY] support VRAM access wait 
+
+
+12/7, 2006
+
+Initial release

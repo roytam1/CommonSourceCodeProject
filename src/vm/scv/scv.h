@@ -21,7 +21,7 @@
 #define WINDOW_HEIGHT2		444
 
 #define USE_CART
-#define USE_JOYKEY
+#define USE_KEY_TO_JOY
 #define USE_SCREEN_X2
 #define DONT_KEEP_ASPECT
 
@@ -104,6 +104,10 @@ public:
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
 	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

@@ -12,21 +12,21 @@
 
 void TIMER::initialize()
 {
-	// 32usec -> 31.25KHz
-	int regist_id;
-	vm->regist_event(this, 0, 32, true, &regist_id);
+#ifndef TIMER_FREQ
+	int id;
+	vm->regist_event(this, 0, 32, true, &id);
+#endif
 }
 
 void TIMER::write_io8(uint32 addr, uint32 data)
 {
 	// input gate signal to i8253 ch0 and ch1
-	dev->write_signal(dev_g0, 1, 0xffffffff);
-	dev->write_signal(dev_g1, 1, 0xffffffff);
+	dev->write_signal(did0, 1, 0xffffffff);
+	dev->write_signal(did1, 1, 0xffffffff);
 }
 
-void TIMER::event_callback(int event_id)
+void TIMER::event_callback(int event_id, int err)
 {
-	// input 31.25KHz to i8253 ch0
-	dev->write_signal(dev_c0, 1, 0xffffffff);
+	dev->write_signal(did2, 1, 0xffffffff);
 }
 

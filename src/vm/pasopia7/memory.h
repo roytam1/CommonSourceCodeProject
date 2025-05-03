@@ -22,8 +22,8 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *dev_io, *dev_pio0, *dev_pio2;
-	int dev_io_id, dev_pio0_id, dev_pio2_id;
+	DEVICE *d_io, *d_pio0, *d_pio2;
+	int did_io, did_pio0, did_pio2;
 	
 	uint8 bios[0x4000];
 	uint8 basic[0x8000];
@@ -47,16 +47,34 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+	void write_data16(uint32 addr, uint32 data) {
+		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+	}
+	uint32 read_data16(uint32 addr) {
+		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_io(DEVICE* device, int id) { dev_io = device; dev_io_id = id; }
-	void set_context_pio0(DEVICE* device, int id) { dev_pio0 = device; dev_pio0_id = id; }
-	void set_context_pio2(DEVICE* device, int id) { dev_pio2 = device; dev_pio2_id = id; }
-	uint8* get_ram() { return ram; }
-	uint8* get_vram() { return vram; }
-	uint8* get_pal() { return pal; }
+	void set_context_io(DEVICE* device, int id) {
+		d_io = device; did_io = id;
+	}
+	void set_context_pio0(DEVICE* device, int id) {
+		d_pio0 = device; did_pio0 = id;
+	}
+	void set_context_pio2(DEVICE* device, int id) {
+		d_pio2 = device; did_pio2 = id;
+	}
+	uint8* get_ram() {
+		return ram;
+	}
+	uint8* get_vram() {
+		return vram;
+	}
+	uint8* get_pal() {
+		return pal;
+	}
 };
 
 #endif

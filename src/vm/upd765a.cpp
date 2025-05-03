@@ -36,10 +36,15 @@
 
 void UPD765A::initialize()
 {
+	// initialize d88 handler
+	for(int i = 0; i < MAX_DRIVE; i++)
+		disk[i] = new DISK();
+	
+	// initialize fdc
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		fdc[i].track = 0;
 		fdc[i].result = 0;
-		disk[i] = new DISK();
+		fdc[i].access = false;
 	}
 	_memset(buffer, 0, sizeof(buffer));
 	
@@ -117,6 +122,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				status &= ~S_NDM;
 				process_cmd(command & 0x1f);
 			}
+			fdc[hdu & DRIVE_MASK].access = true;
 			break;
 			
 		case PHASE_SCAN:
@@ -137,6 +143,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 				status &= ~S_NDM;
 				cmd_scan();
 			}
+			fdc[hdu & DRIVE_MASK].access = true;
 			break;
 		}
 	}
@@ -173,6 +180,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 					status &= ~S_NDM;
 					process_cmd(command & 0x1f);
 				}
+				fdc[hdu & DRIVE_MASK].access = true;
 				return data;
 			}
 		}
@@ -201,7 +209,19 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 		motor = (data & mask) ? true : false;
 }
 
-void UPD765A::event_callback(int event_id)
+uint32 UPD765A::read_signal(int ch)
+{
+	// get access status
+	uint32 stat = 0;
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		if(fdc[i].access)
+			stat |= 1 << i;
+		fdc[i].access = false;
+	}
+	return stat;
+}
+
+void UPD765A::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_PHASE) {
 		phase = event_phase;
@@ -228,22 +248,22 @@ void UPD765A::set_intr(bool val)
 
 void UPD765A::req_intr(bool val)
 {
-	for(int i = 0; i < dev_intr_cnt; i++)
-		dev_intr[i]->write_signal(dev_intr_id[i], val ? 0xffffffff : 0, dev_intr_mask[i]);
+	for(int i = 0; i < dcount_intr; i++)
+		d_intr[i]->write_signal(did_intr[i], val ? 0xffffffff : 0, dmask_intr[i]);
 }
 
 void UPD765A::req_intr_ndma(bool val)
 {
 #ifndef UPD765A_DMA_MODE
-	for(int i = 0; i < dev_intr_cnt; i++)
-		dev_intr[i]->write_signal(dev_intr_id[i], val ? 0xffffffff : 0, dev_intr_mask[i]);
+	for(int i = 0; i < dcount_intr; i++)
+		d_intr[i]->write_signal(did_intr[i], val ? 0xffffffff : 0, dmask_intr[i]);
 #endif
 }
 
 void UPD765A::set_drdy(bool val)
 {
-	for(int i = 0; i < dev_drdy_cnt; i++)
-		dev_drdy[i]->write_signal(dev_drdy_id[i], val ? 0xffffffff : 0, dev_drdy_mask[i]);
+	for(int i = 0; i < dcount_drdy; i++)
+		d_drdy[i]->write_signal(did_drdy[i], val ? 0xffffffff : 0, dmask_drdy[i]);
 	if(val) {
 		CANCEL_LOST();
 		vm->regist_event(this, EVENT_LOST, 30000, false, &lost_id);
@@ -253,15 +273,15 @@ void UPD765A::set_drdy(bool val)
 
 void UPD765A::set_hdu(uint8 val)
 {
-	for(int i = 0; i < dev_hdu_cnt; i++)
-		dev_hdu[i]->write_signal(dev_hdu_id[i], val, dev_hdu_mask[i]);
+	for(int i = 0; i < dcount_hdu; i++)
+		d_hdu[i]->write_signal(did_hdu[i], val, dmask_hdu[i]);
 	hdu = val;
 }
 
 void UPD765A::set_acctc(bool val)
 {
-	for(int i = 0; i < dev_acctc_cnt; i++)
-		dev_acctc[i]->write_signal(dev_acctc_id[i], val ? 0xffffffff : 0, dev_acctc_mask[i]);
+	for(int i = 0; i < dcount_acctc; i++)
+		d_acctc[i]->write_signal(did_acctc[i], val ? 0xffffffff : 0, dmask_acctc[i]);
 	acctc = val;
 }
 

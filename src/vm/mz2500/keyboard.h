@@ -37,9 +37,9 @@ static const int key_map[14][8] = {
 class KEYBOARD : public DEVICE
 {
 private:
-	DEVICE* pio0;	// i8255
-	DEVICE* pio1;	// z80pio
-	int pio0_id, pio1_id;
+	DEVICE* d_pio0;	// i8255
+	DEVICE* d_pio1;	// z80pio
+	int did_pio0, did_pio1;
 	
 	// keyboard
 	uint8* key_stat;
@@ -58,12 +58,10 @@ public:
 	
 	// unique function
 	void set_context_pio0(DEVICE* device, int id) {
-		pio0 = device;
-		pio0_id = id;
+		d_pio0 = device; did_pio0 = id;
 	}
 	void set_context_pio1(DEVICE* device, int id) {
-		pio1 = device;
-		pio1_id = id;
+		d_pio1 = device; did_pio1 = id;
 	}
 };
 

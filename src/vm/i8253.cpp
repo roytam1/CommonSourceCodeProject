@@ -11,41 +11,71 @@
 
 void I8253::initialize()
 {
-	for(int i = 0; i < 3; i++) {
-		counter[i].count = 0x10000;
-		counter[i].count_reg = 0;
-		counter[i].ctrl_reg = 0x34;
-		counter[i].mode = 3;
-		counter[i].mode0_flag = false;
-		counter[i].r_cnt = 0;
-		counter[i].delay = 0;
-		counter[i].start = false;
+	for(int ch = 0; ch < 3; ch++) {
+		counter[ch].signal = true;
+		counter[ch].count = 0x10000;
+		counter[ch].count_reg = 0;
+		counter[ch].ctrl_reg = 0x34;
+		counter[ch].mode = 3;
+		counter[ch].r_cnt = 0;
+		counter[ch].w_cnt = 0;
+		counter[ch].delay = false;
+		counter[ch].start = false;
+		counter[ch].regist_id = -1;
 	}
 }
 
-#define COUNT_VALUE(n) ((!counter[n].count_reg) ? 0x10000 : (counter[n].mode == 3 && counter[n].count_reg == 1) ? 0x10001 : counter[n].count_reg)
+#define COUNT_VALUE(n) ((counter[n].count_reg == 0) ? 0x10000 : (counter[n].mode == 3 && counter[n].count_reg == 1) ? 0x10001 : counter[n].count_reg)
 
 void I8253::write_io8(uint32 addr, uint32 data)
 {
 	int ch = addr & 3;
 	
-	switch(ch)
+	switch(addr & 3)
 	{
 	case 0:
 	case 1:
 	case 2:
+		// write count register
+		if(!counter[ch].w_cnt) {
+			if((counter[ch].ctrl_reg & 0x30) == 0x10)
+				counter[ch].w_cnt = 1;
+			else if((counter[ch].ctrl_reg & 0x30) == 0x20)
+				counter[ch].w_cnt = 1;
+			else
+				counter[ch].w_cnt = 2;
+		}
 		if((counter[ch].ctrl_reg & 0x30) == 0x10)
 			counter[ch].count_reg = data;
 		else if((counter[ch].ctrl_reg & 0x30) == 0x20)
 			counter[ch].count_reg = data << 8;
+		else {
+			if(counter[ch].w_cnt == 2)
+				counter[ch].count_reg = data;
+			else
+				counter[ch].count_reg |= data << 8;
+		}
+		counter[ch].w_cnt--;
+		
+		// set signal
+		if(counter[ch].mode == 0)
+			set_signal(ch, false);
 		else
-			counter[ch].count_reg = ((counter[ch].count_reg & 0xff00) >> 8) | (data << 8);
-		// start count now if mode is not 1 or 5
-		if(!(counter[ch].mode == 1 || counter[ch].mode == 5))
-			counter[ch].start = true;
-		// copy to counter at 1st clock, start count at 2nd clock
-		counter[ch].delay = 1;
-		counter[ch].mode0_flag = false;
+			set_signal(ch, true);
+		// start count
+		if(counter[ch].mode == 0 || counter[ch].mode == 4) {
+			// restart with new count
+			stop_count(ch);
+			counter[ch].delay = true;
+			start_count(ch);
+		}
+		else if(counter[ch].mode == 2 || counter[ch].mode == 3) {
+			// start with new counter after the current count is finished
+			if(!counter[ch].start) {
+				counter[ch].delay = true;
+				start_count(ch);
+			}
+		}
 		break;
 		
 	case 3: // ctrl reg
@@ -53,8 +83,42 @@ void I8253::write_io8(uint32 addr, uint32 data)
 			break;
 		ch = (data >> 6) & 3;
 		
-		if((data & 0x30) == 0x00) {
-			// counter latch
+		if(data & 0x30) {
+			static int modes[8] = {0, 1, 2, 3, 4, 5, 2, 3};
+			int prev = counter[ch].mode;
+			counter[ch].mode = modes[(data >> 1) & 7];
+			counter[ch].r_cnt = counter[ch].w_cnt = 0;
+			counter[ch].ctrl_reg = data;
+			// set signal
+			if(counter[ch].mode == 0)
+				set_signal(ch, false);
+			else
+				set_signal(ch, true);
+			// stop count
+//			if(counter[ch].mode != prev || counter[ch].mode == 0 || counter[ch].mode == 4) {
+				stop_count(ch);
+				counter[ch].count_reg = 0;
+//			}
+		}
+		else {
+			
+			if(counter[ch].regist_id != -1) {
+				// update counter
+				int passed = vm->passed_clock(counter[ch].prev);
+				uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
+				if(counter[ch].input <= input)
+					input = counter[ch].input - 1;
+				if(input > 0) {
+					input_clock(ch, input);
+					// cancel and re-regist event
+					vm->cancel_event(counter[ch].regist_id);
+					counter[ch].input -= input;
+					counter[ch].period -= passed;
+					counter[ch].prev = vm->current_clock();
+					vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+				}
+			}
+			// latch counter
 			if((counter[ch].ctrl_reg & 0x30) == 0x10) {
 				// lower byte
 				counter[ch].latch = (uint16)counter[ch].count;
@@ -71,11 +135,6 @@ void I8253::write_io8(uint32 addr, uint32 data)
 				counter[ch].r_cnt = 2;
 			}
 		}
-		else {
-			counter[ch].ctrl_reg = data;
-			counter[ch].mode = ((data & 0xe) == 0xc) ? 2 : ((data & 0xe) == 0xe) ? 3 : (data & 0xe) >> 1;
-			counter[ch].count_reg = 0;
-		}
 		break;
 	}
 }
@@ -91,6 +150,23 @@ uint32 I8253::read_io8(uint32 addr)
 	case 2:
 		if(!counter[ch].r_cnt) {
 			// not latched (through current count)
+			if(counter[ch].regist_id != -1) {
+				// update counter
+				int passed = vm->passed_clock(counter[ch].prev);
+				uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
+				if(counter[ch].input <= input)
+					input = counter[ch].input - 1;
+				if(input > 0) {
+					input_clock(ch, input);
+					// cancel and re-regist event
+					vm->cancel_event(counter[ch].regist_id);
+					counter[ch].input -= input;
+					counter[ch].period -= passed;
+					counter[ch].prev = vm->current_clock();
+					vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+				}
+			}
+			// latch counter
 			if((counter[ch].ctrl_reg & 0x30) == 0x10) {
 				// lower byte
 				counter[ch].latch = (uint16)counter[ch].count;
@@ -113,6 +189,21 @@ uint32 I8253::read_io8(uint32 addr)
 		return val;
 	}
 	return 0xff;
+}
+
+void I8253::event_callback(int event_id, int err)
+{
+	int ch = event_id;
+	counter[ch].regist_id = -1;
+	input_clock(ch, counter[ch].input);
+	
+	// regist next event
+	if(counter[ch].freq && counter[ch].start) {
+		counter[ch].input = counter[ch].delay ? 1 : get_next_count(ch);
+		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input + err;
+		counter[ch].prev = vm->current_clock() + err;
+		vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+	}
 }
 
 void I8253::write_signal(int id, uint32 data, uint32 mask)
@@ -142,38 +233,104 @@ void I8253::write_signal(int id, uint32 data, uint32 mask)
 
 void I8253::input_clock(int ch, int clock)
 {
-	if(!counter[ch].start)
+	if(!(counter[ch].start && clock))
 		return;
-	if(counter[ch].delay & clock) {
-		clock -= counter[ch].delay;
-		counter[ch].delay = 0;
+	if(counter[ch].delay) {
+		clock -= 1;
+		counter[ch].delay = false;
 		counter[ch].count = COUNT_VALUE(ch);
 	}
 	
-	int carry = 0;
+	// update counter
 	counter[ch].count -= clock;
-	while(counter[ch].count <= 0) {
-		if(counter[ch].mode == 0 || counter[ch].mode == 2 || counter[ch].mode == 3)
-			counter[ch].count += COUNT_VALUE(ch);
-		else {
-			counter[ch].count = 0;
-			counter[ch].start = false;
-		}
-		if(!(counter[ch].mode == 0 && counter[ch].mode0_flag))
-			carry++;
-		counter[ch].mode0_flag = true;
+	int32 tmp = COUNT_VALUE(ch);
+loop:
+	if(counter[ch].mode == 3) {
+		int32 half = tmp >> 1;
+		set_signal(ch, (counter[ch].count >= half) ? true : false);
 	}
-	for(int i = 0; i < carry; i++) {
-		for(int j = 0; j < dev_cnt[ch]; j++)
-			dev[ch][j]->write_signal(dev_id[ch][j], 1, 0xffffffff);
+	else {
+		if(counter[ch].count <= 1) {
+			if(counter[ch].mode == 2 || counter[ch].mode == 4 || counter[ch].mode == 5)
+				set_signal(ch, false);
+		}
+		if(counter[ch].count <= 0)
+			set_signal(ch, true);
+	}
+	if(counter[ch].count <= 0) {
+		if(counter[ch].mode == 0 || counter[ch].mode == 2 || counter[ch].mode == 3) {
+			counter[ch].count += tmp;
+			goto loop;
+		}
+		else {
+			counter[ch].start = false;
+			counter[ch].count = 0x10000;
+		}
 	}
 }
 
 void I8253::input_gate(int ch, bool signal)
 {
-	if(!(counter[ch].mode == 0 || counter[ch].mode == 4))
-		counter[ch].count = COUNT_VALUE(ch);
-	counter[ch].start = true;
-	counter[ch].mode0_flag = false;
+	// set signal
+	if(counter[ch].mode == 1)
+		set_signal(ch, false);
+	// start/restart count
+	if(!(counter[ch].mode == 0 || counter[ch].mode == 4)) {
+		stop_count(ch);
+		counter[ch].delay = true;
+		start_count(ch);
+	}
 }
 
+void I8253::start_count(int ch)
+{
+	if(counter[ch].w_cnt)
+		return;
+	counter[ch].start = true;
+	
+	// regist event
+	if(counter[ch].freq) {
+		counter[ch].input = counter[ch].delay ? 1 : get_next_count(ch);
+		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input;
+		counter[ch].prev = vm->current_clock();
+		vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
+	}
+}
+
+void I8253::stop_count(int ch)
+{
+	counter[ch].start = false;
+	
+	// cancel event
+	if(counter[ch].regist_id != -1)
+		vm->cancel_event(counter[ch].regist_id);
+	counter[ch].regist_id = -1;
+}
+
+void I8253::set_signal(int ch, bool signal)
+{
+	bool prev = counter[ch].signal;
+	counter[ch].signal = signal;
+	
+	if(prev && !signal) {
+		// H->L
+		for(int i = 0; i < dcount[ch]; i++)
+			dev[ch][i]->write_signal(did[ch][i], 1, 0xffffffff);
+	}
+	else if(!prev && signal) {
+		// L->H
+		for(int i = 0; i < dcount[ch]; i++)
+			dev[ch][i]->write_signal(did[ch][i], 0, 0xffffffff);
+	}
+}
+
+int I8253::get_next_count(int ch)
+{
+	if(counter[ch].mode == 2 || counter[ch].mode == 4 || counter[ch].mode == 5)
+		return (counter[ch].count > 1) ? counter[ch].count - 1 : 1;
+	if(counter[ch].mode == 3) {
+		int32 half = COUNT_VALUE(ch) >> 1;
+		return (counter[ch].count > half) ? counter[ch].count - half : counter[ch].count;
+	}
+	return counter[ch].count;
+}

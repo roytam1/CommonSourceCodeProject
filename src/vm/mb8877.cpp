@@ -56,9 +56,6 @@ void MB8877::initialize()
 		fdc[i].index = 0;
 		fdc[i].access = false;
 	}
-	for(int i = 0; i < 7; i++)
-		regist_id[i] = -1;
-	now_seek = now_search = false;
 }
 
 void MB8877::release()
@@ -331,7 +328,19 @@ void MB8877::write_signal(int id, uint32 data, uint32 mask)
 		sidereg = data & mask;
 }
 
-void MB8877::event_callback(int event_id)
+uint32 MB8877::read_signal(int ch)
+{
+	// get access status
+	uint32 stat = 0;
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		if(fdc[i].access)
+			stat |= 1 << i;
+		fdc[i].access = false;
+	}
+	return stat;
+}
+
+void MB8877::event_callback(int event_id, int err)
 {
 	int event = event_id >> 8;
 	int cmd = event_id & 0xff;

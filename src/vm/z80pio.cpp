@@ -45,19 +45,19 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 	case 2:
 		// data
 		if(port[ch].wreg != data || port[ch].first) {
-			for(int i = 0; i < dev_cnt[ch]; i++) {
-				int shift = dev_shift[ch][i];
+			for(int i = 0; i < dcount[ch]; i++) {
+				int shift = dshift[ch][i];
 				uint32 val = (shift < 0) ? (data >> (-shift)) : (data << shift);
-				uint32 mask = (shift < 0) ? (dev_mask[ch][i] >> (-shift)) : (dev_mask[ch][i] << shift);
-				dev[ch][i]->write_signal(dev_id[ch][i], val, mask);
+				uint32 mask = (shift < 0) ? (dmask[ch][i] >> (-shift)) : (dmask[ch][i] << shift);
+				dev[ch][i]->write_signal(did[ch][i], val, mask);
 			}
 			port[ch].wreg = data;
 			port[ch].first = false;
 		}
 		if((port[ch].mode & 0xc0) == 0x00 || (port[ch].mode & 0xc0) == 0x80) {
 			// mode0/2 data is recieved by other chip
-			if(port[ch].int_enb && intr)
-				intr->request_int(pri + ch, port[ch].vector, true);
+			if(port[ch].int_enb && d_pic)
+				d_pic->request_int(this, pri + ch, port[ch].vector, true);
 		}
 		else if((port[ch].mode & 0xc0) == 0xc0)
 			do_interrupt(ch);
@@ -84,8 +84,8 @@ void Z80PIO::write_io8(uint32 addr, uint32 data)
 				if((port[ch].mode & 0xc0) == 0xc0)
 					port[ch].set_mask = true;
 				// canel interrup ???
-				if(intr)
-					intr->cancel_int(pri + ch);
+				if(d_pic)
+					d_pic->cancel_int(pri + ch);
 			}
 			port[ch].int_enb = (data & 0x80) ? true : false;
 			port[ch].ctrl1 = data;
@@ -131,8 +131,8 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
 		if((port[0].mode & 0xc0) == 0x40 || (port[0].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio recieved the data sent by other chip
-			if(port[0].int_enb && intr)
-				intr->request_int(pri + 0, port[0].vector, true);
+			if(port[0].int_enb && d_pic)
+				d_pic->request_int(this, pri + 0, port[0].vector, true);
 		}
 		else if((port[0].mode & 0xc0) == 0xc0)
 			do_interrupt(0);
@@ -141,8 +141,8 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
 		if((port[1].mode & 0xc0) == 0x40 || (port[1].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio recieved the data sent by other chip
-			if(port[1].int_enb && intr)
-				intr->request_int(pri + 1, port[1].vector, true);
+			if(port[1].int_enb && d_pic)
+				d_pic->request_int(this, pri + 1, port[1].vector, true);
 		}
 		else if((port[1].mode & 0xc0) == 0xc0)
 			do_interrupt(1);
@@ -169,11 +169,11 @@ void Z80PIO::do_interrupt(int ch)
 	else if((port[ch].ctrl1 & 0x60) == 0x60 && val == mask)
 		next_req = true;
 	
-	if(port[ch].prv_req != next_req && intr) {
+	if(port[ch].prv_req != next_req && d_pic) {
 		if(next_req)
-			intr->request_int(pri + ch, port[ch].vector, true);
+			d_pic->request_int(this, pri + ch, port[ch].vector, true);
 		else
-			intr->cancel_int(pri + ch);
+			d_pic->cancel_int(pri + ch);
 	}
 	port[ch].prv_req = next_req;
 }

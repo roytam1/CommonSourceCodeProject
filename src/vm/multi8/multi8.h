@@ -27,6 +27,9 @@
 //#define USE_FD3
 //#define USE_FD4
 #define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
 #define USE_SCANLINE
 
 // device informations for virtual machine
@@ -48,6 +51,7 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+class HD46505;
 class I8251;
 class I8253;
 class I8255;
@@ -58,12 +62,11 @@ class YM2203;
 class Z80;
 
 class CMT;
+class DISPLAY;
 class FLOPPY;
-class HD46505;
 class KANJI;
 class KEYBOARD;
 class MEMORY;
-class TIMER;
 
 class VM
 {
@@ -76,6 +79,7 @@ protected:
 	DEVICE* dummy;
 	EVENT* event;
 	
+	HD46505* crtc;
 	I8251* sio;
 	I8253* pit;
 	I8255* pio;
@@ -86,12 +90,11 @@ protected:
 	Z80* cpu;
 	
 	CMT* cmt;
+	DISPLAY* display;
 	FLOPPY* floppy;
-	HD46505* crtc;
 	KANJI* kanji;
 	KEYBOARD* key;
 	MEMORY* memory;
-	TIMER* timer;
 	
 public:
 	// ----------------------------------------
@@ -137,6 +140,10 @@ public:
 	void regist_frame_event(DEVICE* dev);
 	void regist_vsync_event(DEVICE* dev);
 	void regist_hsync_event(DEVICE* dev);
+	
+	// clock
+	uint32 current_clock();
+	uint32 passed_clock(uint32 prev);
 	
 	// devices
 	DEVICE* get_device(int id);

@@ -15,6 +15,7 @@
 
 #include "../beep.h"
 #include "../datarec.h"
+#include "../hd46505.h"
 #include "../i8255.h"
 #include "../not.h"
 #include "../sn76489an.h"
@@ -25,13 +26,12 @@
 #include "../z80pio.h"
 
 #include "floppy.h"
-#include "hd46505.h"
+#include "display.h"
 #include "io8.h"
 #include "iotrap.h"
 #include "keyboard.h"
 #include "memory.h"
 #include "pac2.h"
-#include "timer.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -47,6 +47,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	beep = new BEEP(this, emu);
 	drec = new DATAREC(this, emu);
+	crtc = new HD46505(this, emu);
 	pio0 = new I8255(this, emu);
 	pio1 = new I8255(this, emu);
 	pio2 = new I8255(this, emu);
@@ -60,13 +61,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio = new Z80PIO(this, emu);
 	
 	floppy = new FLOPPY(this, emu);
-	crtc = new HD46505(this, emu);
+	display = new DISPLAY(this, emu);
 	io = new IO8(this, emu);
 	iotrap = new IOTRAP(this, emu);
 	key = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
 	pac2 = new PAC2(this, emu);
-	timer = new TIMER(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -75,11 +75,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg1);
 	
 	drec->set_context(pio2, SIG_I8255_PORT_B, 0x20);
-	pio0->set_context_port_a(crtc, SIG_HD46505_I8255_0_A, 0xff, 0);
+	crtc->set_context_disp(pio0, SIG_I8255_PORT_B, 8);
+	crtc->set_context_vsync(pio0, SIG_I8255_PORT_B, 0x20);
+	pio0->set_context_port_a(display, SIG_DISPLAY_I8255_0_A, 0xff, 0);
+#ifdef _LCD
+	pio0->write_signal(SIG_I8255_PORT_B, 0, (0x10 | 0x40));
+#else
+	pio0->write_signal(SIG_I8255_PORT_B, 0x10, (0x10 | 0x40));
+#endif
 	pio1->set_context_port_a(memory, SIG_MEMORY_I8255_1_A, 0xff, 0);
-	pio1->set_context_port_b(crtc, SIG_HD46505_I8255_1_B, 0xff, 0);
+	pio1->set_context_port_b(display, SIG_DISPLAY_I8255_1_B, 0xff, 0);
 	pio1->set_context_port_b(memory, SIG_MEMORY_I8255_1_B, 0xff, 0);
-	pio1->set_context_port_c(crtc, SIG_HD46505_I8255_1_C, 0xff, 0);
+	pio1->set_context_port_c(display, SIG_DISPLAY_I8255_1_C, 0xff, 0);
 	pio1->set_context_port_c(memory, SIG_MEMORY_I8255_1_C, 0xff, 0);
 	pio2->set_context_port_a(beep, SIG_BEEP_MUTE, 0x2, 0);
 	pio2->set_context_port_a(psg0, SIG_SN76489AN_MUTE, 0x2, 0);
@@ -97,15 +104,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ctc->set_context_zc1(beep, SIG_BEEP_PULSE);
 	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3);
 	ctc->set_context_int(pic, IRQ_Z80CTC);
-	ctc->set_event(16);
+	ctc->set_constant_clock(0, CPU_CLOCKS);
+	ctc->set_constant_clock(2, CPU_CLOCKS);
 	pic->set_context(cpu);
 	pio->set_context_port_a(beep, SIG_BEEP_ON, 0x80, 0);
 	pio->set_context_port_a(key, SIG_KEYBOARD_Z80PIO_A, 0xff, 0);
 	pio->set_context_int(pic, IRQ_Z80PIO);
+	
+	display->set_context(fdc);
+	display->set_vram_ptr(memory->get_vram());
+	display->set_pal_ptr(memory->get_pal());
+	display->set_regs_ptr(crtc->get_regs());
 	floppy->set_context(fdc, SIG_UPD765A_TC, SIG_UPD765A_MOTOR);
-	crtc->set_context(pio0, SIG_I8255_PORT_B);
-	crtc->set_vram_ptr(memory->get_vram());
-	crtc->set_pal_ptr(memory->get_pal());
 	io->set_ram_ptr(memory->get_ram());
 	iotrap->set_context_cpu(cpu);
 	iotrap->set_context_pio2(pio2, SIG_I8255_PORT_B);
@@ -113,7 +123,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_context_io(io, SIG_IO8_MIO);
 	memory->set_context_pio0(pio0, SIG_I8255_PORT_B);
 	memory->set_context_pio2(pio2, SIG_I8255_PORT_C);
-	timer->set_context(ctc, SIG_Z80CTC_TRIG_0, SIG_Z80CTC_TRIG_2);
 	
 	io->set_iomap_range_w(0x08, 0x0b, pio0);
 	io->set_iomap_range_w(0x0c, 0x0f, pio1);
@@ -224,13 +233,24 @@ void VM::regist_hsync_event(DEVICE* dev)
 	event->regist_hsync_event(dev);
 }
 
+uint32 VM::current_clock()
+{
+	return event->current_clock();
+}
+
+uint32 VM::passed_clock(uint32 prev)
+{
+	uint32 current = event->current_clock();
+	return (current > prev) ? current - prev : current + (uint32)~prev + 1;
+}
+
 // ----------------------------------------------------------------------------
 // draw screen
 // ----------------------------------------------------------------------------
 
 void VM::draw_screen()
 {
-	crtc->draw_screen();
+	display->draw_screen();
 }
 
 // ----------------------------------------------------------------------------

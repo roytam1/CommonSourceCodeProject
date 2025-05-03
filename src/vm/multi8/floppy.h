@@ -21,8 +21,8 @@
 class FLOPPY : public DEVICE
 {
 private:
-	DEVICE *dev_fdc, *dev_pic;
-	int dev_fdc_id0, dev_fdc_id1, dev_pic_id;
+	DEVICE *d_fdc, *d_pic;
+	int did0_fdc, did1_fdc, did_pic;
 	
 	bool acctc, drdy;
 	
@@ -36,8 +36,12 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_fdc(DEVICE* device, int id0, int id1) { dev_fdc = device; dev_fdc_id0 = id0; dev_fdc_id1 = id1; }
-	void set_context_pic(DEVICE* device, int id) { dev_pic = device; dev_pic_id = id; }
+	void set_context_fdc(DEVICE* device, int id0, int id1) {
+		d_fdc = device; did0_fdc = id0; did1_fdc = id1;
+	}
+	void set_context_pic(DEVICE* device, int id) {
+		d_pic = device; did_pic = id;
+	}
 };
 
 #endif
