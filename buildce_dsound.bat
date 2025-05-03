@@ -46,6 +46,10 @@ evc mz5500ce.vcp /MAKE "mz5500ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECO
 mkdir build\mz5500
 copy GDI_DSOUND\mz5500ce.exe build\mz5500\.
 
+evc mz6500ce.vcp /MAKE "mz6500ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\mz6500
+copy GDI_DSOUND\mz6500ce.exe build\mz6500\.
+
 evc pasopiace.vcp /MAKE "pasopiace - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\pasopia_oa
 mkdir build\pasopia_t

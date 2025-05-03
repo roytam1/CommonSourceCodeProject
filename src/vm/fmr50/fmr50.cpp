@@ -23,6 +23,7 @@
 #include "../i8253.h"
 #include "../i8259.h"
 #include "../i86.h"
+//#include "../i386.h"
 #include "../io.h"
 #include "../mb8877.h"
 #include "../rtc58321.h"
@@ -61,6 +62,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit1 = new I8253(this, emu);
 	pic = new I8259(this, emu);
 	cpu = new I86(this, emu);
+//	cpu = new I386(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	rtc = new RTC58321(this, emu);
@@ -134,6 +136,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
 	keyboard->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
 	memory->set_context_cpu(cpu, SIG_I86_A20);
+//	memory->set_context_cpu(cpu, SIG_I386_A20);
 	memory->set_context_fdc(fdc);
 	memory->set_context_bios(bios);
 	memory->set_context_crtc(crtc);

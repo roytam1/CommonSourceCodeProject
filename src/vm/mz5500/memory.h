@@ -26,13 +26,29 @@ private:
 	uint8* wbank[64];
 	uint8 wdmy[0x4000];
 	uint8 rdmy[0x4000];
-	uint8 ram[0x80000];	// Main RAM 512KB
-	uint8 vram[0x80000];	// VRAM 192KB + 1024B + padding
+#ifdef _MZ6550
+	uint8 ipl[0x8000];	// IPL 32KB
+#else
 	uint8 ipl[0x4000];	// IPL 16KB
+#endif
+#if defined(_MZ6500) || defined(_MZ6550)
+	uint8 ram[0x90000];	// Main RAM 640KB
+#else
+	uint8 ram[0x80000];	// Main RAM 512KB
+#endif
+	uint8 vram[0x80000];	// VRAM 192KB + 1024B + padding
 	uint8 kanji[0x40000];	// Kanji ROM 256KB
 	uint8 dic[0x40000];	// Dictionary ROM 256KB
-	
+#ifdef _MZ6550
+	uint8 dic2[0x100000];	// New Dictionary ROM 1MB
+#endif
+#if defined(_MZ6500) || defined(_MZ6550)
+	uint8 mz1r32[0x100000];	// MZ-1R32 512KB * 2
+#endif
+	uint8 bank1, bank2;
 	uint32 haddr;		// DMAC high-order address latch
+	
+	void update_bank();
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -40,12 +56,14 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_dma8(uint32 addr, uint32 data);
 	uint32 read_dma8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void write_io8(uint32 addr, uint32 data);
+	uint32 read_io8(uint32 addr);
 	
 	// unitque function
 	void set_context_cpu(DEVICE* device) {

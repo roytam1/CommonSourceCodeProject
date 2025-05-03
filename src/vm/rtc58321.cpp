@@ -17,6 +17,14 @@
 #define MINUTE		time[5]
 #define SECOND		time[6]
 
+// for FMR-50
+#ifndef RTC58321_BIT_CS
+#define RTC58321_BIT_CS		0x80
+#endif
+#ifndef RTC58321_BIT_READY
+#define RTC58321_BIT_READY	0x80
+#endif
+
 void RTC58321::initialize()
 {
 	_memset(regs, 0, sizeof(regs));
@@ -119,4 +127,3 @@ void RTC58321::set_busy(bool val)
 	busy = val;
 }
 
-;

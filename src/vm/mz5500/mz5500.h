@@ -12,7 +12,7 @@
 #define _MZ5500_H_
 
 // device informations for win32
-#ifdef _MZ5500
+#if defined(_MZ5500)
 #define DEVICE_NAME		"SHARP MZ-5500"
 #define CONFIG_NAME		"mz5500"
 #elif defined(_MZ6500)
@@ -45,7 +45,7 @@
 #define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		108
-#ifdef _MZ5500
+#if defined(_MZ5500)
 #define CPU_CLOCKS		4915200
 #elif defined(_MZ6500) || defined(_MZ6550)
 #define CPU_CLOCKS		8000000

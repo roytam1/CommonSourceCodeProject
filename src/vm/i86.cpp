@@ -15,6 +15,9 @@
 #define ILLEGAL_INSTRUCTION		6
 #define GENERAL_PROTECTION_FAULT	0xd
 
+#define INT_REQ_BIT	1
+#define NMI_REQ_BIT	2
+
 // flags
 #define CF	(CarryVal != 0)
 #define SF	(SignVal < 0)
@@ -245,7 +248,7 @@ void I86::write_signal(int id, uint32 data, uint32 mask)
 			intstat &= ~NMI_REQ_BIT;
 	}
 	else if(id == SIG_CPU_BUSREQ) {
-		busreq = (data & mask) ? true : false;
+		busreq = ((data & mask) != 0);
 		if(busreq)
 			count = extra_count = first = 0;
 	}
@@ -255,6 +258,14 @@ void I86::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_I86_A20)
 		AMASK = (data & mask) ? 0xffffff : 0xfffff;
 #endif
+}
+
+void I86::set_intr_line(bool line, bool pending, uint32 bit)
+{
+	if(line)
+		intstat |= INT_REQ_BIT;
+	else
+		intstat &= ~INT_REQ_BIT;
 }
 
 void I86::interrupt(unsigned num)

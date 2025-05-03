@@ -313,6 +313,28 @@
 #define MENU_POS_SOUND                  6
 #endif
 
+// SHARP MZ-6500
+#ifdef _MZ6500
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
+// SHARP MZ-6550
+#ifdef _MZ6550
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
 // TOSHIBA PASOPIA
 #ifdef _PASOPIA
 #define MENU_POS_CONTROL                0

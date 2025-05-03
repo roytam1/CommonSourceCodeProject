@@ -577,7 +577,7 @@ void I8080::OP(uint8 code)
 	case 0x31: // LXI SP,nnnn
 		SP = FETCH16();
 		break;
-	case 0x32: // STAX nnnn
+	case 0x32: // STA nnnn
 		WM8(FETCH16(), _A);
 		break;
 	case 0x33: // INX SP
@@ -610,7 +610,7 @@ void I8080::OP(uint8 code)
 	case 0x39: // DAD SP
 		DAD(SP);
 		break;
-	case 0x3a: // LDAX nnnn
+	case 0x3a: // LDA nnnn
 		_A = RM8(FETCH16());
 		break;
 	case 0x3b: // DCX SP
@@ -1030,7 +1030,7 @@ void I8080::OP(uint8 code)
 	case 0xc6: // ADI nn
 		tmp8 = FETCH8();
 		ADD(tmp8);
-			break;
+		break;
 	case 0xc7: // RST 0
 		RST(0);
 		break;

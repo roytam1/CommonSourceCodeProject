@@ -72,12 +72,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma->set_context_ch1(fdc);
 	pio->set_context_port_c(keyboard, SIG_KEYBOARD_INPUT, 3, 0);
 	pic->set_context(cpu);
-	div->set_context_2qb(ctc0, SIG_Z80CTC_TRIG_3);
+	div->set_context_2qb(ctc0, SIG_Z80CTC_TRIG_3, 1);
 #if defined(_MZ6500) || defined(_MZ6550)
-	div->set_context_1qb(ctc1, SIG_Z80CTC_TRIG_0);
-	div->set_context_2qb(ctc1, SIG_Z80CTC_TRIG_1);
-	div->set_context_2qb(ctc1, SIG_Z80CTC_TRIG_2);
-	div->set_context_2qd(ctc1, SIG_Z80CTC_TRIG_3);
+	div->set_context_1qb(ctc1, SIG_Z80CTC_TRIG_0, 1);
+	div->set_context_2qb(ctc1, SIG_Z80CTC_TRIG_1, 1);
+	div->set_context_2qb(ctc1, SIG_Z80CTC_TRIG_2, 1);
+	div->set_context_2qd(ctc1, SIG_Z80CTC_TRIG_3, 1);
 #endif
 	rtc->set_context_alarm(pic, SIG_I8259_IR0 | SIG_I8259_CHIP1, 1);
 	gdc->set_vram_ptr(memory->get_vram(), 0x80000);
@@ -88,7 +88,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	psg->set_context_port_a(pic, SIG_I8259_IR7 | SIG_I8259_CHIP1, 0x40, 0);
 	psg->set_context_port_a(memory, SIG_MEMORY_BANK, 0xe0, 0);
 	ctc0->set_context_intr(pic, SIG_I8259_IR5 | SIG_I8259_CHIP0);
-	ctc0->set_context_zc0(div, SIG_LS393_CLK);
+	ctc0->set_context_zc0(div, SIG_LS393_CLK, 1);
 #if defined(_MZ6500) || defined(_MZ6550)
 	ctc0->set_context_child(ctc1);
 	ctc1->set_context_intr(pic, SIG_I8259_IR5 | SIG_I8259_CHIP0);
@@ -117,36 +117,44 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x00, 0x0f, dma);
 	io->set_iomap_range_w(0x10, 0x1f, pio);
 	io->set_iomap_range_w(0x20, 0x2f, fdc);
-	for(int i = 0x30; i < 0x3f; i += 2)
+	for(int i = 0x30; i < 0x40; i += 2)
 		io->set_iomap_alias_w(i, pic, (i >> 1) & 1);
-	for(int i = 0x40; i < 0x4f; i += 2)
+	for(int i = 0x40; i < 0x50; i += 2)
 		io->set_iomap_alias_w(i, pic, 2 | ((i >> 1) & 1));
 	io->set_iomap_range_w(0x50, 0x5f, memory);
 	io->set_iomap_range_w(0x70, 0x7f, sysport);
-	for(int i = 0x100; i < 0x10f; i += 2)
+#if defined(_MZ6500) || defined(_MZ6550)
+	io->set_iomap_single_w(0xcd, memory);
+#endif
+	for(int i = 0x100; i < 0x110; i += 2)
 		io->set_iomap_alias_w(i, gdc, (i >> 1) & 1);
 	io->set_iomap_range_w(0x110, 0x17f, display);
 	io->set_iomap_range_w(0x200, 0x20f, sio);
 	io->set_iomap_range_w(0x210, 0x21f, ctc0);
 	io->set_iomap_range_w(0x220, 0x22f, rtc);
-	io->set_iomap_range_w(0x230, 0x23f, psg);
+	for(int i = 0x230; i < 0x240; i++)
+		io->set_iomap_alias_w(i, psg, ~i & 1);
 	io->set_iomap_range_w(0x260, 0x26f, sysport);
 	
 	io->set_iomap_range_r(0x00, 0x0f, dma);
 	io->set_iomap_range_r(0x10, 0x1f, pio);
 	io->set_iomap_range_r(0x20, 0x2f, fdc);
-	for(int i = 0x30; i < 0x3f; i += 2)
+	for(int i = 0x30; i < 0x40; i += 2)
 		io->set_iomap_alias_r(i, pic, (i >> 1) & 1);
-	for(int i = 0x40; i < 0x4f; i += 2)
+	for(int i = 0x40; i < 0x50; i += 2)
 		io->set_iomap_alias_r(i, pic, 2 | ((i >> 1) & 1));
 	io->set_iomap_range_r(0x60, 0x6f, sysport);
-	for(int i = 0x100; i < 0x10f; i += 2)
+#if defined(_MZ6500) || defined(_MZ6550)
+	io->set_iomap_single_r(0xcd, memory);
+#endif
+	for(int i = 0x100; i < 0x110; i += 2)
 		io->set_iomap_alias_r(i, gdc, (i >> 1) & 1);
 	io->set_iomap_range_r(0x110, 0x17f, display);
 	io->set_iomap_range_r(0x200, 0x20f, sio);
 	io->set_iomap_range_r(0x210, 0x21f, ctc0);
 	io->set_iomap_range_r(0x220, 0x22f, rtc);
-	io->set_iomap_range_r(0x230, 0x23f, psg);
+	for(int i = 0x230; i < 0x240; i++)
+		io->set_iomap_alias_r(i, psg, ~i & 1);
 	io->set_iomap_range_r(0x240, 0x24f, sysport);
 	io->set_iomap_range_r(0x250, 0x25f, sysport);
 	io->set_iomap_range_r(0x270, 0x27f, sysport);

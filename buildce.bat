@@ -46,6 +46,10 @@ evc mz5500ce.vcp /MAKE "mz5500ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CEC
 mkdir build\mz5500
 copy GDI_WAVEOUT\mz5500ce.exe build\mz5500\.
 
+evc mz6500ce.vcp /MAKE "mz6500ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\mz6500
+copy GDI_WAVEOUT\mz6500ce.exe build\mz6500\.
+
 evc pasopiace.vcp /MAKE "pasopiace - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\pasopia_oa
 mkdir build\pasopia_t

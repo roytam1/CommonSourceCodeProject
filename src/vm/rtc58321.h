@@ -19,14 +19,6 @@
 #define SIG_RTC58321_WRITE	2
 #define SIG_RTC58321_READ	3
 
-// for FMR-50
-#ifndef RTC58321_BIT_CS
-#define RTC58321_BIT_CS		0x80
-#endif
-#ifndef RTC58321_BIT_READY
-#define RTC58321_BIT_READY	0x80
-#endif
-
 class RTC58321 : public DEVICE
 {
 private:

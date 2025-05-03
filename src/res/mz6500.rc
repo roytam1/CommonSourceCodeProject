@@ -1,0 +1,219 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// “ú–{Œê resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+#ifdef _WIN32
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
+BEGIN
+    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
+    VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
+END
+
+#endif    // “ú–{Œê resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// ‰pŒê (±ÒØ¶) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU DISCARDABLE 
+BEGIN
+    POPUP "Control"
+    BEGIN
+        MENUITEM "Reset",                       ID_RESET
+        MENUITEM "NMI Reset",                   ID_IPL_RESET
+        MENUITEM SEPARATOR
+        MENUITEM "CPU x1"                       ID_CPU_POWER0
+        MENUITEM "CPU x2"                       ID_CPU_POWER1
+        MENUITEM "CPU x4"                       ID_CPU_POWER2
+        MENUITEM "CPU x8"                       ID_CPU_POWER3
+        MENUITEM "CPU x16"                      ID_CPU_POWER4
+        MENUITEM SEPARATOR
+        MENUITEM "Paste"                        ID_AUTOKEY_START
+        MENUITEM "Stop"                         ID_AUTOKEY_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "Exit",                        ID_EXIT
+    END
+    POPUP "FDD1"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD1
+        MENUITEM "Close",                       ID_CLOSE_FD1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD11
+        MENUITEM "Recent 2",                    ID_RECENT_FD12
+        MENUITEM "Recent 3",                    ID_RECENT_FD13
+        MENUITEM "Recent 4",                    ID_RECENT_FD14
+        MENUITEM "Recent 5",                    ID_RECENT_FD15
+        MENUITEM "Recent 6",                    ID_RECENT_FD16
+        MENUITEM "Recent 7",                    ID_RECENT_FD17
+        MENUITEM "Recent 8",                    ID_RECENT_FD18
+    END
+    POPUP "FDD2"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD2
+        MENUITEM "Close",                       ID_CLOSE_FD2
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD21
+        MENUITEM "Recent 2",                    ID_RECENT_FD22
+        MENUITEM "Recent 3",                    ID_RECENT_FD23
+        MENUITEM "Recent 4",                    ID_RECENT_FD24
+        MENUITEM "Recent 5",                    ID_RECENT_FD25
+        MENUITEM "Recent 6",                    ID_RECENT_FD26
+        MENUITEM "Recent 7",                    ID_RECENT_FD27
+        MENUITEM "Recent 8",                    ID_RECENT_FD28
+    END
+    POPUP "FDD3"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD3
+        MENUITEM "Close",                       ID_CLOSE_FD3
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD31
+        MENUITEM "Recent 2",                    ID_RECENT_FD32
+        MENUITEM "Recent 3",                    ID_RECENT_FD33
+        MENUITEM "Recent 4",                    ID_RECENT_FD34
+        MENUITEM "Recent 5",                    ID_RECENT_FD35
+        MENUITEM "Recent 6",                    ID_RECENT_FD36
+        MENUITEM "Recent 7",                    ID_RECENT_FD37
+        MENUITEM "Recent 8",                    ID_RECENT_FD38
+    END
+    POPUP "FDD4"
+    BEGIN
+        MENUITEM "Open",                        ID_OPEN_FD4
+        MENUITEM "Close",                       ID_CLOSE_FD4
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_FD41
+        MENUITEM "Recent 2",                    ID_RECENT_FD42
+        MENUITEM "Recent 3",                    ID_RECENT_FD43
+        MENUITEM "Recent 4",                    ID_RECENT_FD44
+        MENUITEM "Recent 5",                    ID_RECENT_FD45
+        MENUITEM "Recent 6",                    ID_RECENT_FD46
+        MENUITEM "Recent 7",                    ID_RECENT_FD47
+        MENUITEM "Recent 8",                    ID_RECENT_FD48
+    END
+    POPUP "Screen"
+    BEGIN
+        MENUITEM "Rec 60fps"                    ID_SCREEN_REC60
+        MENUITEM "Rec 30fps"                    ID_SCREEN_REC30
+        MENUITEM "Rec 15fps"                    ID_SCREEN_REC15
+        MENUITEM "Stop"                         ID_SCREEN_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "Window",                      ID_SCREEN_WINDOW1
+        MENUITEM "Fullscreen",                  ID_SCREEN_FULLSCREEN
+        MENUITEM SEPARATOR
+        MENUITEM "D3D9 Device Default"          ID_SCREEN_DEVICE_DEFAULT
+        MENUITEM "Hardware TnL"                 ID_SCREEN_DEVICE_HARDWARE_TNL
+        MENUITEM "Hardware"                     ID_SCREEN_DEVICE_HARDWARE
+        MENUITEM "Software"                     ID_SCREEN_DEVICE_SOFTWARE
+        MENUITEM SEPARATOR
+        MENUITEM "D3D9 Filter Point"            ID_SCREEN_FILTER_POINT
+        MENUITEM "Linear"                       ID_SCREEN_FILTER_LINEAR
+        MENUITEM SEPARATOR
+        MENUITEM "D3D9 Wait VSync"              ID_SCREEN_PRESENT_INTERVAL
+        MENUITEM SEPARATOR
+        MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
+    END
+    POPUP "Sound"
+    BEGIN
+        MENUITEM "Rec"                          ID_SOUND_REC
+        MENUITEM "Stop"                         ID_SOUND_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "2000Hz",                      ID_SOUND_FREQ0
+        MENUITEM "4000Hz",                      ID_SOUND_FREQ1
+        MENUITEM "8000Hz",                      ID_SOUND_FREQ2
+        MENUITEM "11025Hz",                     ID_SOUND_FREQ3
+        MENUITEM "22050Hz",                     ID_SOUND_FREQ4
+        MENUITEM "44100Hz",                     ID_SOUND_FREQ5
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
+        MENUITEM "96000Hz",                     ID_SOUND_FREQ7
+        MENUITEM SEPARATOR
+        MENUITEM "100msec",                     ID_SOUND_LATE0
+        MENUITEM "200msec",                     ID_SOUND_LATE1
+        MENUITEM "300msec",                     ID_SOUND_LATE2
+        MENUITEM "400msec",                     ID_SOUND_LATE3
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON    DISCARDABLE     "mz6500.ico"
+#endif    // ‰pŒê (±ÒØ¶) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

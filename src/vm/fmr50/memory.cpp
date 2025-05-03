@@ -49,14 +49,12 @@ void MEMORY::initialize()
 #endif
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
-#ifdef _FMR60
 	// init machine id
-	id[0] = 0xe0;	// FMR-60HX
-#else
-	// init machine id
-	id[0] = 0xf8;	// FMR-50HD
+	id[0] = 0xf8;	// FMR-50FD/HD, FMR-60FD/HD
+//	id[0] = 0xe0;	// FMR-50FX/HX, FMR-60FX/HX
 //	id[0] = 0xd8;	// FMR-50/LT3
-#endif
+//	id[0] = 0x0a;	// FMR-50NE/T2
+//	id[0] = 0xba;	// OASYS 30 AX 401
 	id[1] = 0xff;
 	
 	// load rom image
@@ -118,6 +116,8 @@ void MEMORY::initialize()
 #endif
 	SET_BANK(0xffc000, 0xffffff, wdmy, ipl);
 	
+	amask = 0xffffff;
+	
 	// set palette
 	for(int i = 0; i < 8; i++)
 		dpal[i] = i;
@@ -161,7 +161,7 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	addr &= 0xffffff;
+	addr &= 0xffffff;//amask;
 	if(!mainmem) {
 #ifdef _FMR60
 		if(0xc0000 <= addr && addr < 0xe0000) {
@@ -397,7 +397,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-	addr &= 0xffffff;
+	addr &= 0xffffff;//amask;
 #ifdef _FMR50
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
@@ -478,6 +478,18 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		}
 		// protect mode
 		d_cpu->write_signal(did_a20, data, 0x20);
+		switch(data & 0x30)
+		{
+		case 0x00:	// 20bit
+			amask = 0xfffff;
+			break;
+		case 0x20:	// 24bit
+			amask = 0xffffff;
+			break;
+		case 0x30:	// 32bit
+			amask = 0xffffffff;
+			break;
+		}
 		break;
 	case 0x400:
 		// video output control

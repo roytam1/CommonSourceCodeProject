@@ -67,6 +67,8 @@
 #define MAX_MEMCARD		2
 #define HAS_I286
 #define I86_BIOS_CALL
+//#define HAS_I386
+//#define I386_BIOS_CALL
 #define I8259_MAX_CHIPS		2
 #define IO_ADDR_MAX		0x10000
 
@@ -85,6 +87,7 @@ class I8251;
 class I8253;
 class I8259;
 class I86;
+//class I386;
 class IO;
 class MB8877;
 class RTC58321;
@@ -117,6 +120,7 @@ protected:
 	I8253* pit1;
 	I8259* pic;
 	I86* cpu;
+//	I386* cpu;
 	IO* io;
 	MB8877* fdc;
 	RTC58321* rtc;

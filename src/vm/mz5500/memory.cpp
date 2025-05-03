@@ -33,6 +33,12 @@ void MEMORY::initialize()
 	_memset(ipl, 0xff, sizeof(ipl));
 	_memset(kanji, 0xff, sizeof(kanji));
 	_memset(dic, 0xff, sizeof(dic));
+#ifdef _MZ6550
+	_memset(dic2, 0xff, sizeof(dic2));
+#endif
+#if defined(_MZ6500) || defined(_MZ6550)
+	_memset(mz1r32, 0, sizeof(mz1r32));
+#endif
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
@@ -55,18 +61,41 @@ void MEMORY::initialize()
 		fio->Fread(dic, sizeof(dic), 1);
 		fio->Fclose();
 	}
+#ifdef _MZ6550
+	_stprintf(file_path, _T("%sDICT2.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(dic2, sizeof(dic2), 1);
+		fio->Fclose();
+	}
+#endif
 	delete fio;
 	
 	// set memory bank
+#if defined(_MZ6500) || defined(_MZ6550)
+	SET_BANK(0x00000, 0x9ffff, ram, ram);
+#else
 	SET_BANK(0x00000, 0x7ffff, ram, ram);
 	SET_BANK(0x80000, 0x9ffff, wdmy, rdmy);	// aux
+#endif
 	SET_BANK(0xa0000, 0xbffff, wdmy, kanji);
 	SET_BANK(0xc0000, 0xeffff, vram, vram);
+#ifdef _MZ6550
+	SET_BANK(0xf0000, 0xf7fff, wdmy, rdmy);	// aux
+	SET_BANK(0xf8000, 0xfffff, wdmy, ipl);
+#else
 	SET_BANK(0xf0000, 0xfbfff, wdmy, rdmy);	// aux
 	SET_BANK(0xfc000, 0xfffff, wdmy, ipl);
+#endif
 	
 	// init dmac
 	haddr = 0;
+}
+
+void MEMORY::reset()
+{
+	bank1 = 0xe0;
+	bank2 = 0;
+	update_bank();
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -103,13 +132,37 @@ uint32 MEMORY::read_dma8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	// $50: DMAC high-order address latch
-	haddr = (data & 0xf0) << 12;
+	switch(addr & 0xff)
+	{
+	case 0x50:
+		haddr = (data & 0xf0) << 12;
+		break;
+#if defined(_MZ6500) || defined(_MZ6550)
+	case 0xcd:
+		// MZ-1R32
+		bank2 = data & 0xf;
+		update_bank();
+		break;
+#endif
+	}
+}
+
+uint32 MEMORY::read_io8(uint32 addr)
+{
+	return 0xf0 | bank2;	// ???
 }
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
-	switch(data & 0xe0)
+	bank1 = data;
+	update_bank();
+}
+
+void MEMORY::update_bank()
+{
+	int ofs;
+	
+	switch(bank1 & 0xe0)
 	{
 	case 0xe0:
 		SET_BANK(0x0a0000, 0x0bffff, wdmy, kanji);
@@ -123,6 +176,13 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 	case 0x80:
 		SET_BANK(0x0a0000, 0x0bffff, wdmy, dic + 0x20000);
 		break;
+#if defined(_MZ6500) || defined(_MZ6550)
+	case 0x60:
+		// MZ-1R32
+		ofs = 0x20000 * ((bank2 >> 1) & 7);
+		SET_BANK(0x0a0000, 0x0bffff, mz1r32 + ofs, mz1r32 + ofs);
+		break;
+#endif
 	default:
 		SET_BANK(0x0a0000, 0x0bffff, wdmy, rdmy);
 		break;

@@ -15,6 +15,7 @@ void KEYBOARD::initialize()
 	key_stat = emu->key_buffer();
 	column = 0;
 	caps = true;
+	kana = false;
 }
 
 uint32 KEYBOARD::read_io8(uint32 addr)
@@ -27,8 +28,12 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 				if(key_stat[key_map[i][j]])
 					val &= ~(1 << j);
 			}
-			if(i == 8 && caps)
-				val &= ~0x10;
+			if(i == 8) {
+				if(caps)
+					val &= ~0x10;
+				if(kana)
+					val &= ~8;
+			}
 		}
 	}
 	return val;
@@ -46,5 +51,7 @@ void KEYBOARD::key_down(int code)
 {
 	if(code == 0x14)
 		caps = !caps;
+	else if(code == 0x15)
+		kana = !kana;
 }
 

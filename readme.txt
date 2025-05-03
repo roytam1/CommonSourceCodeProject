@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								4/9/2009
+								5/17/2009
 
 --- What's this ?
 
@@ -15,6 +15,7 @@ This archive includes the all source codes of:
 	EmuZ-2800	SHARP MZ-2800 emulator
 	EmuZ-3500	SHARP MZ-3500 emulator
 	EmuZ-5500	SHARP MZ-5500 emulator
+	EmuZ-6500	SHARP MZ-6500 emulator
 	eFMR-30		FUJITSU FMR-30 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
 	eFMR-60		FUJITSU FMR-60 emulator

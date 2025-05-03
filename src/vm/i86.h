@@ -18,9 +18,6 @@
 #define SIG_I86_TEST	0
 #define SIG_I86_A20	1
 
-#define INT_REQ_BIT	1
-#define NMI_REQ_BIT	2
-
 // regs
 #define AX	0
 #define CX	1
@@ -740,12 +737,7 @@ public:
 	void reset();
 	void run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
-	void set_intr_line(bool line, bool pending, uint32 bit) {
-		if(line)
-			intstat |= INT_REQ_BIT;
-		else
-			intstat &= ~INT_REQ_BIT;
-	}
+	void set_intr_line(bool line, bool pending, uint32 bit);
 	int passed_clock() {
 		return first - count;
 	}

@@ -15,6 +15,7 @@ void Z80CTC::reset()
 		counter[ch].count = counter[ch].constant = 256;
 		counter[ch].clocks = 0;
 		counter[ch].control = 0;
+		counter[ch].slope = false;
 		counter[ch].prescaler = 256;
 		counter[ch].freeze = counter[ch].start = counter[ch].latch = false;
 		counter[ch].clock_id = counter[ch].sysclock_id = -1;
@@ -50,11 +51,11 @@ void Z80CTC::write_io8(uint32 addr, uint32 data)
 		if(data & 1) {
 			// control word
 			counter[ch].prescaler = (data & 0x20) ? 256 : 16;
-			counter[ch].latch = (data & 4) ? true : false;
-//			counter[ch].freeze = ((data & 6) == 2) ? true : false;
-			counter[ch].freeze = (data & 2) ? true : false;
-			counter[ch].start = (counter[ch].freq || !(data & 8)) ? true : false;
+			counter[ch].latch = ((data & 4) != 0);
+			counter[ch].freeze = ((data & 2) != 0);
+			counter[ch].start = (counter[ch].freq || !(data & 8));
 			counter[ch].control = data;
+			counter[ch].slope = ((data & 0x10) != 0);
 			update_event(ch, 0);
 		}
 		else {
@@ -120,9 +121,22 @@ void Z80CTC::event_callback(int event_id, int err)
 void Z80CTC::write_signal(int id, uint32 data, uint32 mask)
 {
 	int ch = id & 3;
-	int clock = data & mask;
-	input_clock(ch, clock);
-	update_event(ch, 0);
+#if 1
+	if(data & mask) {
+		input_clock(ch, 1);
+		update_event(ch, 0);
+	}
+#else
+	// more correct implements...
+	bool next = ((data & mask) != 0);
+	if(counter[ch].prev_in != next) {
+		if(counter[ch].slope == next) {
+			input_clock(ch, 1);
+			update_event(ch, 0);
+		}
+		counter[ch].prev_in = next;
+	}
+#endif
 }
 
 void Z80CTC::input_clock(int ch, int clock)
@@ -136,18 +150,16 @@ void Z80CTC::input_clock(int ch, int clock)
 	
 	// update counter
 	counter[ch].count -= clock;
-	uint32 carry = 0;
 	while(counter[ch].count <= 0) {
 		counter[ch].count += counter[ch].constant;
 		if(counter[ch].control & 0x80) {
 			counter[ch].req_intr = true;
 			update_intr();
 		}
-		carry++;
-	}
-	if(carry) {
-		for(int i = 0; i < dcount_zc[ch]; i++)
-			d_zc[ch][i]->write_signal(did_zc[ch][i], carry, 0xffffffff);
+		for(int i = 0; i < dcount_zc[ch]; i++) {
+			d_zc[ch][i]->write_signal(did_zc[ch][i], 0xffffffff, dmask_zc[ch][i]);
+			d_zc[ch][i]->write_signal(did_zc[ch][i], 0, dmask_zc[ch][i]);
+		}
 	}
 }
 
@@ -163,18 +175,16 @@ void Z80CTC::input_sysclock(int ch, int clock)
 	
 	// update counter
 	counter[ch].count -= input;
-	uint32 carry = 0;
 	while(counter[ch].count <= 0) {
 		counter[ch].count += counter[ch].constant;
 		if(counter[ch].control & 0x80) {
 			counter[ch].req_intr = true;
 			update_intr();
 		}
-		carry++;
-	}
-	if(carry) {
-		for(int i = 0; i < dcount_zc[ch]; i++)
-			d_zc[ch][i]->write_signal(did_zc[ch][i], carry, 0xffffffff);
+		for(int i = 0; i < dcount_zc[ch]; i++) {
+			d_zc[ch][i]->write_signal(did_zc[ch][i], 0xffffffff, dmask_zc[ch][i]);
+			d_zc[ch][i]->write_signal(did_zc[ch][i], 0, dmask_zc[ch][i]);
+		}
 	}
 }
 

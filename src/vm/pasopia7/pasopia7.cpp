@@ -90,9 +90,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio2->set_context_port_c(iotrap, SIG_IOTRAP_I8255_2_C, 0xff, 0);
 	not->set_context(drec, SIG_DATAREC_REMOTE, 1);
 	fdc->set_context_intr(floppy, SIG_FLOPPY_INTR, 1);
-	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_1);
-	ctc->set_context_zc1(beep, SIG_BEEP_PULSE);
-	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3);
+	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_1, 1);
+	ctc->set_context_zc1(beep, SIG_BEEP_PULSE, 1);
+	ctc->set_context_zc2(ctc, SIG_Z80CTC_TRIG_3, 1);
 	ctc->set_constant_clock(0, CPU_CLOCKS);
 	ctc->set_constant_clock(2, CPU_CLOCKS);
 	pio->set_context_port_a(beep, SIG_BEEP_ON, 0x80, 0);

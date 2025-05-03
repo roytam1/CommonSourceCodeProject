@@ -9,9 +9,14 @@
 
 #include "sn76489an.h"
 
+#define FB_WNOISE 0x14002
+#define FB_PNOISE 0x08000
+#define NG_PRESET 0x00f35
+
 void SN76489AN::initialize()
 {
 	mute = false;
+	cs = we = true;
 }
 
 void SN76489AN::reset()
@@ -82,7 +87,32 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 void SN76489AN::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_SN76489AN_MUTE)
-		mute = (data & mask) ? true : false;
+		mute = ((data & mask) != 0);
+	else if(id == SIG_SN76489AN_DATA)
+		val = data & mask;
+	else if(id == SIG_SN76489AN_CS) {
+		bool next = ((data & mask) != 0);
+		if(cs != next) {
+			if(!(cs = next) && !we)
+				write_io8(0, val);
+		}
+	}
+	else if(id == SIG_SN76489AN_CS) {
+		bool next = ((data & mask) != 0);
+		if(cs != next) {
+			cs = next;
+			if(!cs && !we)
+				write_io8(0, val);
+		}
+	}
+	else if(id == SIG_SN76489AN_WE) {
+		bool next = ((data & mask) != 0);
+		if(we != next) {
+			we = next;
+			if(!cs && !we)
+				write_io8(0, val);
+		}
+	}
 }
 
 void SN76489AN::mix(int32* buffer, int cnt)

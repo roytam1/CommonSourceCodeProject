@@ -45,7 +45,7 @@ class KEYBOARD : public DEVICE
 private:
 	uint8* key_stat;
 	uint16 column;
-	bool caps;
+	bool caps, kana;
 	
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

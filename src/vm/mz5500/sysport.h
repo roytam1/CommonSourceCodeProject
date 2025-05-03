@@ -19,7 +19,7 @@ class SYSPORT : public DEVICE
 {
 private:
 	DEVICE *d_fdc, *d_ctc, *d_sio;
-	int rst;
+	int rst, highden;
 	
 public:
 	SYSPORT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

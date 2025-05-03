@@ -26,11 +26,13 @@ class Z80CTC : public DEVICE
 {
 private:
 	DEVICE* d_zc[4][MAX_OUTPUT];
-	int did_zc[4][MAX_OUTPUT], dcount_zc[MAX_OUTPUT];
+	int did_zc[4][MAX_OUTPUT], dcount_zc[4];
+	uint8 dmask_zc[4][MAX_OUTPUT];
 	int eventclock;
 	
 	typedef struct {
 		uint8 control;
+		bool slope;
 		uint16 count;
 		uint16 constant;
 		uint8 vector;
@@ -39,6 +41,7 @@ private:
 		bool freeze;
 		bool start;
 		bool latch;
+		bool prev_in;
 		// constant clock
 		uint32 freq;
 		int clock_id;
@@ -67,6 +70,7 @@ public:
 		dcount_zc[0] = dcount_zc[1] = dcount_zc[2] = dcount_zc[3] = 0;
 		d_cpu = d_child = NULL;
 		counter[0].freq = counter[1].freq = counter[2].freq = counter[3].freq = 0;
+		counter[0].prev_in = counter[1].prev_in = counter[2].prev_in = counter[3].prev_in = false;
 	}
 	~Z80CTC() {}
 	
@@ -90,17 +94,17 @@ public:
 	void set_context_child(DEVICE* device) {
 		d_child = device;
 	}
-	void set_context_zc0(DEVICE* device, int id) {
+	void set_context_zc0(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_zc[0]++;
-		d_zc[0][c] = device; did_zc[0][c] = id;
+		d_zc[0][c] = device; did_zc[0][c] = id; dmask_zc[0][c] = mask;
 	}
-	void set_context_zc1(DEVICE* device, int id) {
+	void set_context_zc1(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_zc[1]++;
-		d_zc[1][c] = device; did_zc[1][c] = id;
+		d_zc[1][c] = device; did_zc[1][c] = id; dmask_zc[1][c] = mask;
 	}
-	void set_context_zc2(DEVICE* device, int id) {
+	void set_context_zc2(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_zc[2]++;
-		d_zc[2][c] = device; did_zc[2][c] = id;
+		d_zc[2][c] = device; did_zc[2][c] = id; dmask_zc[2][c] = mask;
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

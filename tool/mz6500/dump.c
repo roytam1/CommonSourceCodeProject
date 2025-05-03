@@ -10,20 +10,22 @@
 void main()
 {
 	FILE* fp;
-	void *buf;
+	char *buf;
 	void far *src;
 	unsigned char bank, i;
+	int j;
 	
 	buf = malloc(0x8000);
 	
 	fp = fopen("MZ65IPL.ROM", "wb");
 	src = MK_FP(0xfc00, 0);
 	far_memcpy(buf, src, 0x4000);
-	fwrite(buf, 0x4000, 1, fp);
+	for(j = 0; j < 0x4000; j++)
+		fputc(buf[j], fp);
 	fclose(fp);
 	
 	fp = fopen("MZ65DIC.ROM", "wb");
-	for(i = 4; i <= 5; i++) {
+	for(i = 5; i >= 4; i--) {
 		bank = inp(0x230);
 		bank &= 0x1f;
 		bank |= i << 5;
@@ -45,7 +47,7 @@ void main()
 	fclose(fp);
 	
 	fp = fopen("MZ65KNJ.ROM", "wb");
-	for(i = 6; i <= 7; i++) {
+	for(i = 7; i >= 6; i--) {
 		bank = inp(0x230);
 		bank &= 0x1f;
 		bank |= i << 5;

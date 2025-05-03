@@ -82,9 +82,10 @@ private:
 #endif
 	uint8 id[2];		// MACHINE ID
 	
-	// memory map
+	// memory
 	uint8 protect, rst;
 	uint8 mainmem, rplane, wplane;
+	uint32 amask;
 	
 	// crtc
 	uint8* chreg;

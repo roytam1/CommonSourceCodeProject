@@ -66,7 +66,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 4);
 	pio->set_context_port_c(display, SIG_DISPLAY_COLUMN, 0x40, 0);
 	pio->set_context_port_c(io, SIG_IO_MODE, 0x20, 0);
-//	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3);
+//	ctc->set_context_zc0(ctc, SIG_Z80CTC_TRIG_3, 1);
 //	ctc->set_constant_clock(1, CPU_CLOCKS >> 1);
 //	ctc->set_constant_clock(2, CPU_CLOCKS >> 1);
 	

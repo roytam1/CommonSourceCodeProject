@@ -24,6 +24,9 @@ void SYSPORT::write_io8(uint32 addr, uint32 data)
 		// port-c
 		if(data & 8)
 			d_fdc->reset();
+#if defined(_MZ6500) || defined(_MZ6550)
+		highden = data & 4;
+#endif
 		break;
 	case 0x260:
 		// z80ctc reti
@@ -39,7 +42,11 @@ uint32 SYSPORT::read_io8(uint32 addr)
 	{
 	case 0x60:
 		// port-a
-		return rst ? 0xfd : 0xff;
+#if defined(_MZ6500) || defined(_MZ6550)
+		return 0xfc | (rst ? 0 : 2) | (highden ? 1 : 0);
+#else
+		return 0xfd | (rst ? 0 : 2);
+#endif
 	case 0x240:
 		// z80ctc vector
 		return d_ctc->intr_ack();

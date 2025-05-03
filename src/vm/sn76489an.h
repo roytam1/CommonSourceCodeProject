@@ -15,10 +15,9 @@
 #include "device.h"
 
 #define SIG_SN76489AN_MUTE	0
-
-#define FB_WNOISE 0x14002
-#define FB_PNOISE 0x08000
-#define NG_PRESET 0x00f35
+#define SIG_SN76489AN_DATA	1
+#define SIG_SN76489AN_CS	2
+#define SIG_SN76489AN_WE	3
 
 class SN76489AN : public DEVICE
 {
@@ -38,7 +37,8 @@ private:
 	uint32 noise_fb, noise_gen;
 	int volume_table[16];
 	int diff;
-	bool mute;
+	bool mute, cs, we;
+	uint8 val;
 	
 public:
 	SN76489AN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
