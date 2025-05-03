@@ -80,6 +80,7 @@ typedef struct {
 #ifdef USE_TAPE
 	bool wave_shaper;
 	bool direct_load_mzt;
+	bool baud_high;
 #endif
 	
 	// recent files

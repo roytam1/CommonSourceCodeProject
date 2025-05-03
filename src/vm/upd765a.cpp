@@ -484,8 +484,12 @@ void UPD765A::set_drq(bool val)
 		// EPSON QC-10 CP/M Plus
 		dma_data_lost = true;
 #else
-		register_event(this, EVENT_LOST, disk[hdu & DRIVE_MASK]->get_usec_per_bytes(1), false, &lost_id);
-//		register_event(this, EVENT_LOST, 30000, false, &lost_id);
+		if((command & 0x1f) != 0x0d) {
+			register_event(this, EVENT_LOST, disk[hdu & DRIVE_MASK]->get_usec_per_bytes(1), false, &lost_id);
+		} else {
+			// FIXME: write id
+			register_event(this, EVENT_LOST, 30000, false, &lost_id);
+		}
 #endif
 	}
 	if(no_dma_mode) {
