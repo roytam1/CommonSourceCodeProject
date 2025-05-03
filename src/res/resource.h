@@ -473,6 +473,14 @@
 #define MENU_POS_SOUND                  3
 #endif
 
+// SHARP MZ-80A
+#ifdef _MZ80A
+#define MENU_POS_CONTROL                0
+#define MENU_POS_TAPE                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // SHARP MZ-80B
 #ifdef _MZ80B
 #define MENU_POS_CONTROL                0

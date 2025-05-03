@@ -110,6 +110,11 @@
 #include "mycomz80a/mycomz80a.h"
 #endif
 
+// SHARP MZ-80A
+#ifdef _MZ80A
+#include "mz80k/mz80k.h"
+#endif
+
 // SHARP MZ-80B
 #ifdef _MZ80B
 #include "mz2500/mz80b.h"

@@ -5,15 +5,22 @@
 	Author : Takeda.Toshiya
 	Date   : 2010.08.18-
 
+	SHARP MZ-80A Emulator 'EmuZ-80A'
+	Modify : Hideki Suga
+	Date   : 2014.12.10 -
+
 	[ virtual machine ]
 */
 
 #ifndef _MZ80K_H_
 #define _MZ80K_H_
 
-#ifdef _MZ1200
+#if defined(_MZ1200)
 #define DEVICE_NAME		"SHARP MZ-1200"
 #define CONFIG_NAME		"mz1200"
+#elif defined(_MZ80A)
+#define DEVICE_NAME		"SHARP MZ-80A"
+#define CONFIG_NAME		"mz80a"
 #else
 #define DEVICE_NAME		"SHARP MZ-80K"
 #define CONFIG_NAME		"mz80k"
@@ -44,7 +51,7 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 class AND;
 #endif
 class DATAREC;
@@ -66,7 +73,7 @@ protected:
 	// devices
 	EVENT* event;
 	
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	AND* and;
 #endif
 	DATAREC* drec;

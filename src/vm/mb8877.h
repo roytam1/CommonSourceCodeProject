@@ -58,6 +58,7 @@ private:
 	// status
 	bool now_search;
 	bool now_seek, after_seek;
+	int no_command;
 	int seektrk;
 	bool seekvct;
 	bool motor_on;

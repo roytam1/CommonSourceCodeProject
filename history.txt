@@ -1,3 +1,10 @@
+12/16/2014
+
+[VM/MB8877] fix to show not ready status a moment when no command is running
+
+[MZ80A] add EmuZ-80A codes (thanks Mr.Suga)
+
+
 11/28/2014
 
 [X1TURBO/DISPLAY] fix text renderer for 32rasters/char mode
@@ -317,13 +324,13 @@
 
 [WINMAIN] fix to use GetFullPathName() to get the parent directory
 
-[VM/MB8877] modify contant period for searching sector
+[VM/MB8877] modify constant period for searching sector
 
 
 8/16/2013
 
 [VM/DISK] add ugly patch for X1turbo ARCUS
-[VM/MB8877] fix to use contant period for searching sector if disk has no skew
+[VM/MB8877] fix to use constant period for searching sector if disk has no skew
 [VM/MB8877] fix to show busy status while searching sector if sector not found
 [VM/Z80DMA] fix dma stop condition
 
@@ -354,7 +361,7 @@
 [VM/DISK] fix not to convert standard disk images to d88 format images
 [VM/DISK] add ugly patch for X1turbo ALPHA
 [VM/HD46505] reset registers and timings in reset()
-[VM/MB8877] fix to use contant wait to search sector for standard disk image
+[VM/MB8877] fix to use constant wait to search sector for standard disk image
 [VM/MB8877] add ugly patch for X1turbo ALPHA
 [VM/YM2151] fix to show busy status in a moment
 [VM/YM2203] fix to show busy status in a moment

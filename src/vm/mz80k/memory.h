@@ -5,6 +5,10 @@
 	Author : Takeda.Toshiya
 	Date   : 2010.08.18-
 
+	SHARP MZ-80A Emulator 'EmuZ-80A'
+	Modify : Hideki Suga
+	Date   : 2014.12.10 -
+
 	[ memory ]
 */
 
@@ -19,7 +23,7 @@ class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_ctc, *d_pio;
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	DEVICE *d_disp;
 #endif
 	
@@ -29,14 +33,20 @@ private:
 	uint8 rdmy[0x400];
 	
 	uint8 ram[0xd000];	// RAM 48KB + swap 4KB
+#if defined(_MZ80A)
+	uint8 e200;		// scroll
+	uint8 vram[0x800];	// VRAM 2KB
+#else
 	uint8 vram[0x400];	// VRAM 1KB
+#endif
+
 	uint8 ipl[0x1000];	// IPL 4KB
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	uint8 ext[0x1800];	// EXT 6KB1024
 #endif
 	
 	bool tempo, blink;
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	bool hblank;
 #endif
 	
@@ -62,10 +72,16 @@ public:
 	{
 		d_pio = device;
 	}
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	void set_context_disp(DEVICE* device)
 	{
 		d_disp = device;
+	}
+#endif
+#if defined(_MZ80A)
+	uint8* get_e200()
+	{
+		return &e200;
 	}
 #endif
 	uint8* get_vram()

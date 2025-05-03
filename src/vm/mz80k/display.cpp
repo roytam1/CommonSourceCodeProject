@@ -5,6 +5,10 @@
 	Author : Takeda.Toshiya
 	Date   : 2010.08.18-
 
+	SHARP MZ-80A Emulator 'EmuZ-80A'
+	Modify : Hideki Suga
+	Date   : 2014.12.10 -
+
 	[ display ]
 */
 
@@ -23,7 +27,7 @@ void DISPLAY::initialize()
 	
 	// create pc palette
 	palette_pc[0] = RGB_COLOR(0, 0, 0);
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	palette_pc[1] = RGB_COLOR(0, 255, 0);
 #else
 	palette_pc[1] = RGB_COLOR(255, 255, 255);
@@ -36,7 +40,7 @@ void DISPLAY::initialize()
 void DISPLAY::reset()
 {
 	vgate = true;
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	reverse = false;
 #endif
 }
@@ -46,7 +50,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_VGATE) {
 		vgate = ((data & mask) != 0);
 	}
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	else if(id == SIG_DISPLAY_REVERSE) {
 		reverse = ((data & mask) != 0);
 	}
@@ -57,11 +61,15 @@ void DISPLAY::event_vline(int v, int clock)
 {
 	if(0 <= v && v < 200) {
 		// draw one line
+#if defined(_MZ80A)
+		int ptr = (v >> 3) * 40 + ((int)*e200_ptr << 3);	// scroll
+#else
 		int ptr = (v >> 3) * 40;
+#endif
 		for(int x = 0; x < 320; x += 8) {
-			uint8 code = vram_ptr[ptr++];
+			uint8 code = vram_ptr[(ptr++) & 0x7ff];
 			uint8 pat = font[(code << 3) | (v & 7)];
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 			if(reverse) {
 				pat = ~pat;
 			}

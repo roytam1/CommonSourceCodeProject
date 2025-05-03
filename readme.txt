@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/24/2014
+								12/16/2014
 
 --- What's this ?
 
@@ -78,6 +78,8 @@ This archive includes the all source codes of emulators listed below:
 	yaPC-6401	NEC PC-6001mkIISR (by Mr.tanam)
 	yaPC-6601	NEC PC-6601 (by Mr.tanam)
 	yaPC-6801	NEC PC-6601SR (by Mr.tanam)
+
+	EmuZ-80A	SHARP MZ-80A (by Mr.Suga)
 
 You can build them with Microsoft Visual C++ 2008 SP1 and DirectX SDK.
 

@@ -5,11 +5,15 @@
 	Author : Takeda.Toshiya
 	Date   : 2010.08.18-
 
+	SHARP MZ-80A Emulator 'EmuZ-80A'
+	Modify : Hideki Suga
+	Date   : 2014.12.10 -
+
 	[ memory ]
 */
 
 #include "memory.h"
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 #include "display.h"
 #endif
 #include "../i8253.h"
@@ -44,8 +48,11 @@ void MEMORY::initialize()
 	memset(ram, 0, sizeof(ram));
 	memset(vram, 0, sizeof(vram));
 	memset(ipl, 0xff, sizeof(ipl));
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	memset(ext, 0xff, sizeof(ext));
+#endif
+#if defined(_MZ80A)
+	e200 = 0x00;	// scroll
 #endif
 	memset(rdmy, 0xff, sizeof(rdmy));
 	
@@ -55,7 +62,7 @@ void MEMORY::initialize()
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	if(fio->Fopen(emu->bios_path(_T("EXT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext, sizeof(ext), 1);
 		fio->Fclose();
@@ -69,11 +76,17 @@ void MEMORY::initialize()
 	SET_BANK(0x0000, 0x0fff, wdmy, ipl);
 	SET_BANK(0x1000, 0xbfff, ram + 0x1000, ram + 0x1000);
 	SET_BANK(0xc000, 0xcfff, ram + 0xc000, ram + 0xc000);
-	SET_BANK(0xd000, 0xd3ff, vram, vram);
+#if defined(_MZ80A)
+	SET_BANK(0xd000, 0xd7ff, vram, vram);	// VRAM 2KB
+	SET_BANK(0xd800, 0xdfff, wdmy, rdmy);
+#else
+	SET_BANK(0xd000, 0xd3ff, vram, vram);	// VRAM 1KB
 	SET_BANK(0xd400, 0xd7ff, vram, vram);
 	SET_BANK(0xd800, 0xdbff, vram, vram);
 	SET_BANK(0xdc00, 0xdfff, vram, vram);
-#ifdef _MZ1200
+#endif
+
+#if defined(_MZ1200) || defined(_MZ80A)
 	SET_BANK(0xe000, 0xe7ff, wdmy, rdmy);
 	SET_BANK(0xe800, 0xffff, wdmy, ext);
 #else
@@ -88,14 +101,14 @@ void MEMORY::initialize()
 
 void MEMORY::reset()
 {
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	// reset memory swap
 	SET_BANK(0x0000, 0x0fff, wdmy, ipl);
 	SET_BANK(0xc000, 0xcfff, ram + 0xc000, ram + 0xc000);
 #endif
 	
 	tempo = blink = false;
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	hblank = false;
 #endif
 	
@@ -113,7 +126,7 @@ void MEMORY::event_vline(int v, int clock)
 		d_pio->write_signal(SIG_I8255_PORT_C, 0, 0x80);
 	}
 	
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	// hblank
 	hblank = true;
 	register_event_by_clock(this, EVENT_HBLANK, 92, false, NULL);
@@ -130,7 +143,7 @@ void MEMORY::event_callback(int event_id, int err)
 		// 1.5khz
 		d_pio->write_signal(SIG_I8255_PORT_C, (blink = !blink) ? 0xff : 0, 0x40);
 	}
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	else if(event_id == EVENT_HBLANK) {
 		hblank = false;
 	}
@@ -153,7 +166,29 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			// 8253 gate0
 			d_ctc->write_signal(SIG_I8253_GATE_0, data, 1);
 			break;
-#ifdef _MZ1200
+		}
+		return;
+	}
+	wbank[addr >> 10][addr & 0x3ff] = data;
+}
+
+uint32 MEMORY::read_data8(uint32 addr)
+{
+	addr &= 0xffff;
+	if(0xe000 <= addr && addr <= 0xe7ff) {
+		// memory mapped i/o
+		switch(addr) {
+		case 0xe000: case 0xe001: case 0xe002: case 0xe003:
+			return d_pio->read_io8(addr & 3);
+		case 0xe004: case 0xe005: case 0xe006: case 0xe007:
+			return d_ctc->read_io8(addr & 3);
+		case 0xe008:
+#if defined(_MZ1200) || defined(_MZ80A)
+			return (hblank ? 0x80 : 0) | (tempo ? 1 : 0) | 0x7e;
+#else
+			return (tempo ? 1 : 0) | 0xfe;
+#endif
+#if defined(_MZ1200) || defined(_MZ80A)
 		case 0xe00c:
 			// memory swap
 			SET_BANK(0x0000, 0x0fff, ram + 0xc000, ram + 0xc000);
@@ -172,33 +207,13 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			// reverse display
 			d_disp->write_signal(SIG_DISPLAY_REVERSE, 1, 1);
 			break;
+#endif
+#if defined(_MZ80A)
 		default:
 			if(0xe200 <= addr && addr <= 0xe2ff) {
-				// scroll ???
+				e200 = (uint8)(addr & 0xff);	// scroll
 			}
 			break;
-#endif
-		}
-		return;
-	}
-	wbank[addr >> 10][addr & 0x3ff] = data;
-}
-
-uint32 MEMORY::read_data8(uint32 addr)
-{
-	addr &= 0xffff;
-	if(0xe000 <= addr && addr <= 0xe7ff) {
-		// memory mapped i/o
-		switch(addr) {
-		case 0xe000: case 0xe001: case 0xe002: case 0xe003:
-			return d_pio->read_io8(addr & 3);
-		case 0xe004: case 0xe005: case 0xe006: case 0xe007:
-			return d_ctc->read_io8(addr & 3);
-		case 0xe008:
-#ifdef _MZ1200
-			return (hblank ? 0x80 : 0) | (tempo ? 1 : 0) | 0x7e;
-#else
-			return (tempo ? 1 : 0) | 0xfe;
 #endif
 		}
 		return 0xff;

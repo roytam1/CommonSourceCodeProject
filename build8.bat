@@ -89,6 +89,10 @@ devenv.com mycomz80a.vcproj /Rebuild Release
 mkdir build\mycomz80a
 copy Release\mycomz80a.exe build\mycomz80a\.
 
+devenv.com mz80a.vcproj /Rebuild Release
+mkdir build\mz80a
+copy Release\mz80a.exe build\mz80a\.
+
 devenv.com mz80b.vcproj /Rebuild Release
 mkdir build\mz80b
 copy Release\mz80b.exe build\mz80b\.

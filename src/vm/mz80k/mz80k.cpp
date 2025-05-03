@@ -5,6 +5,10 @@
 	Author : Takeda.Toshiya
 	Date   : 2010.08.18-
 
+	SHARP MZ-80A Emulator 'EmuZ-80A'
+	Modify : Hideki Suga
+	Date   : 2014.12.10 -
+
 	[ virtual machine ]
 */
 
@@ -13,7 +17,7 @@
 #include "../device.h"
 #include "../event.h"
 
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 #include "../and.h"
 #endif
 #include "../datarec.h"
@@ -42,7 +46,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	and = new AND(this, emu);
 #endif
 	drec = new DATAREC(this, emu);
@@ -60,7 +64,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(pcm);
 	
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	and->set_context_out(cpu, SIG_CPU_IRQ, 1);
 	and->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
 #endif
@@ -68,7 +72,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
 	ctc->set_context_ch0(counter, SIG_LS393_CLK, 1);
 	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2, 1);
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	ctc->set_context_ch2(and, SIG_AND_BIT_0, 1);
 #else
 	ctc->set_context_ch2(cpu, SIG_CPU_IRQ, 1);
@@ -78,17 +82,20 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x0f, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_VGATE, 1, 0);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	pio->set_context_port_c(and, SIG_AND_BIT_1, 4, 0);
 #endif
 	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 8, 0);
 	counter->set_context_1qa(pcm, SIG_PCM1BIT_SIGNAL, 1);
 	
 	display->set_vram_ptr(memory->get_vram());
+#if defined(_MZ80A)
+	display->set_e200_ptr(memory->get_e200());
+#endif
 	keyboard->set_context_pio(pio);
 	memory->set_context_ctc(ctc);
 	memory->set_context_pio(pio);
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	memory->set_context_disp(display);
 #endif
 	
@@ -139,7 +146,7 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-#ifdef _MZ1200
+#if defined(_MZ1200) || defined(_MZ80A)
 	and->write_signal(SIG_AND_BIT_0, 0, 1);	// CLOCK = L
 	and->write_signal(SIG_AND_BIT_1, 1, 1);	// INTMASK = H
 #endif
