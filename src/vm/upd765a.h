@@ -172,6 +172,8 @@ public:
 	bool disk_inserted();	// current hdu
 	bool disk_ejected(int drv);
 	bool disk_ejected();	// current hdu
+	void set_disk_protected(int drv, bool value);
+	bool get_disk_protected(int drv);
 	uint8 media_type(int drv);
 	void set_drive_type(int drv, uint8 type);
 	uint8 get_drive_type(int drv);

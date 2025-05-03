@@ -940,6 +940,61 @@ bool VM::disk_inserted(int drv)
 	return false;
 }
 
+void VM::set_disk_protected(int drv, bool value)
+{
+#if defined(_PC9801) || defined(_PC9801E)
+	if(drv == 0 || drv == 1) {
+		fdc_2hd->set_disk_protected(drv, value);
+	} else if(drv == 2 || drv == 3) {
+		fdc_2dd->set_disk_protected(drv - 2, value);
+	} else if(drv == 4 || drv == 5) {
+		fdc_sub->set_disk_protected(drv - 4, value);
+	}
+#elif defined(_PC9801VF) || defined(_PC9801U)
+	if(drv == 0 || drv == 1) {
+		fdc_2dd->set_disk_protected(drv, value);
+	}
+#elif defined(_PC98DO)
+	if(drv == 0 || drv == 1) {
+		fdc->set_disk_protected(drv, value);
+	} else if(drv == 2 || drv == 3) {
+		pc88fdc_sub->set_disk_protected(drv - 2, value);
+	}
+#else
+	if(drv == 0 || drv == 1) {
+		fdc->set_disk_protected(drv, value);
+	}
+#endif
+}
+
+bool VM::get_disk_protected(int drv)
+{
+#if defined(_PC9801) || defined(_PC9801E)
+	if(drv == 0 || drv == 1) {
+		return fdc_2hd->get_disk_protected(drv);
+	} else if(drv == 2 || drv == 3) {
+		return fdc_2dd->get_disk_protected(drv - 2);
+	} else if(drv == 4 || drv == 5) {
+		return fdc_sub->get_disk_protected(drv - 4);
+	}
+#elif defined(_PC9801VF) || defined(_PC9801U)
+	if(drv == 0 || drv == 1) {
+		return fdc_2dd->get_disk_protected(drv);
+	}
+#elif defined(_PC98DO)
+	if(drv == 0 || drv == 1) {
+		return fdc->get_disk_protected(drv);
+	} else if(drv == 2 || drv == 3) {
+		return pc88fdc_sub->get_disk_protected(drv - 2);
+	}
+#else
+	if(drv == 0 || drv == 1) {
+		return fdc->get_disk_protected(drv);
+	}
+#endif
+	return false;
+}
+
 #if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
 void VM::play_tape(_TCHAR* file_path)
 {

@@ -346,6 +346,16 @@ bool VM::disk_inserted(int drv)
 	return pc88fdc_sub->disk_inserted(drv);
 }
 
+void VM::set_disk_protected(int drv, bool value)
+{
+	pc88fdc_sub->set_disk_protected(drv, value);
+}
+
+bool VM::get_disk_protected(int drv)
+{
+	return pc88fdc_sub->get_disk_protected(drv);
+}
+
 void VM::play_tape(_TCHAR* file_path)
 {
 	pc88->play_tape(file_path);

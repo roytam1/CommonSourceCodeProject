@@ -39,11 +39,16 @@ void init_config()
 	// initial settings
 	memset(&config, 0, sizeof(config_t));
 	
+#ifdef _WIN32
 	config.use_direct_input = true;
 	config.disable_dwm = false;
+#endif
+	config.swap_joy_buttons = false;
 	
 #if !(defined(USE_BITMAP) || defined(USE_LED))
+#ifdef _WIN32
 	config.use_d3d9 = true;
+#endif
 	config.stretch_type = 1;	// Stretch (Aspect)
 #endif
 	config.sound_frequency = 6;	// 48KHz
@@ -89,9 +94,6 @@ void load_config()
 	_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
-	config.use_direct_input = GetPrivateProfileBool(_T("Control"), _T("UseDirectInput"), config.use_direct_input, config_path);
-	config.disable_dwm = GetPrivateProfileBool(_T("Control"), _T("DisableDwm"), config.disable_dwm, config_path);
-	
 #ifdef USE_BOOT_MODE
 	config.boot_mode = GetPrivateProfileInt(_T("Control"), _T("BootMode"), config.boot_mode, config_path);
 #endif
@@ -182,8 +184,10 @@ void load_config()
 	// screen
 #if !(defined(USE_BITMAP) || defined(USE_LED))
 	config.window_mode = GetPrivateProfileInt(_T("Screen"), _T("WindowMode"), config.window_mode, config_path);
+#ifdef _WIN32
 	config.use_d3d9 = GetPrivateProfileBool(_T("Screen"), _T("UseD3D9"), config.use_d3d9, config_path);
 	config.wait_vsync = GetPrivateProfileBool(_T("Screen"), _T("WaitVSync"), config.wait_vsync, config_path);
+#endif
 	config.stretch_type = GetPrivateProfileInt(_T("Screen"), _T("StretchType"), config.stretch_type, config_path);
 #endif
 #ifdef USE_MONITOR_TYPE
@@ -206,6 +210,13 @@ void load_config()
 	config.sound_device_type = GetPrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
 #endif
 	GetPrivateProfileString(_T("Sound"), _T("FMGenDll"), _T("mamefm.dll"), config.fmgen_dll_path, _MAX_PATH, config_path);
+	
+	// input
+#ifdef _WIN32
+	config.use_direct_input = GetPrivateProfileBool(_T("Input"), _T("UseDirectInput"), config.use_direct_input, config_path);
+	config.disable_dwm = GetPrivateProfileBool(_T("Input"), _T("DisableDwm"), config.disable_dwm, config_path);
+#endif
+	config.swap_joy_buttons = GetPrivateProfileBool(_T("Input"), _T("SwapJoyButtons"), config.swap_joy_buttons, config_path);
 }
 
 void save_config()
@@ -218,9 +229,6 @@ void save_config()
 	_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
-	WritePrivateProfileBool(_T("Control"), _T("UseDirectInput"), config.use_direct_input, config_path);
-	WritePrivateProfileBool(_T("Control"), _T("DisableDwm"), config.disable_dwm, config_path);
-	
 #ifdef USE_BOOT_MODE
 	WritePrivateProfileInt(_T("Control"), _T("BootMode"), config.boot_mode, config_path);
 #endif
@@ -311,8 +319,10 @@ void save_config()
 	// screen
 #if !(defined(USE_BITMAP) || defined(USE_LED))
 	WritePrivateProfileInt(_T("Screen"), _T("WindowMode"), config.window_mode, config_path);
+#ifdef _WIN32
 	WritePrivateProfileBool(_T("Screen"), _T("UseD3D9"), config.use_d3d9, config_path);
 	WritePrivateProfileBool(_T("Screen"), _T("WaitVSync"), config.wait_vsync, config_path);
+#endif
 	WritePrivateProfileInt(_T("Screen"), _T("StretchType"), config.stretch_type, config_path);
 #endif
 #ifdef USE_MONITOR_TYPE
@@ -334,6 +344,13 @@ void save_config()
 #ifdef USE_SOUND_DEVICE_TYPE
 	WritePrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
 #endif
+	
+	// input
+#ifdef _WIN32
+	WritePrivateProfileBool(_T("Input"), _T("UseDirectInput"), config.use_direct_input, config_path);
+	WritePrivateProfileBool(_T("Input"), _T("DisableDwm"), config.disable_dwm, config_path);
+#endif
+	WritePrivateProfileBool(_T("Input"), _T("SwapJoyButtons"), config.swap_joy_buttons, config_path);
 }
 
 #define STATE_VERSION	2

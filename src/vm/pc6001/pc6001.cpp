@@ -442,6 +442,39 @@ bool VM::disk_inserted(int drv)
 	}
 }
 
+void VM::set_disk_protected(int drv, bool value)
+{
+#if defined(_PC6601) || defined(_PC6601SR)
+	if(drv < 2) {
+		floppy->set_disk_protected(drv, value);
+		return;
+	} else {
+		drv -= 2;
+	}
+#endif
+	if(support_pc80s31k) {
+		fdc_pc80s31k->set_disk_protected(drv, value);
+	} else {
+		pc6031->set_disk_protected(drv, value);
+	}
+}
+
+bool VM::get_disk_protected(int drv)
+{
+#if defined(_PC6601) || defined(_PC6601SR)
+	if(drv < 2) {
+		return floppy->get_disk_protected(drv);
+	} else {
+		drv -= 2;
+	}
+#endif
+	if(support_pc80s31k) {
+		return fdc_pc80s31k->get_disk_protected(drv);
+	} else {
+		return pc6031->get_disk_protected(drv);
+	}
+}
+
 void VM::play_tape(_TCHAR* file_path)
 {
 	if(support_sub_cpu) {

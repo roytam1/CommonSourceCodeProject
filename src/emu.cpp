@@ -319,7 +319,7 @@ void EMU::close_printer_file()
 		bool remove = (prn_fio->Ftell() < 2);
 		prn_fio->Fclose();
 		if(remove) {
-			FILEIO::Remove(bios_path(prn_file_name));
+			FILEIO::RemoveFile(bios_path(prn_file_name));
 		}
 	}
 }
@@ -532,7 +532,7 @@ void EMU::restore_media()
 		if(cart_status[drv].path[0] != _T('\0')) {
 			if(check_file_extension(cart_status[drv].path, _T(".hex")) && hex2bin(cart_status[drv].path, bios_path(_T("hex2bin.$$$")))) {
 				vm->open_cart(drv, bios_path(_T("hex2bin.$$$")));
-				FILEIO::Remove(bios_path(_T("hex2bin.$$$")));
+				FILEIO::RemoveFile(bios_path(_T("hex2bin.$$$")));
 			} else {
 				vm->open_cart(drv, cart_status[drv].path);
 			}
@@ -575,7 +575,7 @@ void EMU::open_cart(int drv, _TCHAR* file_path)
 	if(drv < MAX_CART) {
 		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, bios_path(_T("hex2bin.$$$")))) {
 			vm->open_cart(drv, bios_path(_T("hex2bin.$$$")));
-			FILEIO::Remove(bios_path(_T("hex2bin.$$$")));
+			FILEIO::RemoveFile(bios_path(_T("hex2bin.$$$")));
 		} else {
 			vm->open_cart(drv, file_path);
 		}
@@ -650,6 +650,22 @@ bool EMU::disk_inserted(int drv)
 {
 	if(drv < MAX_FD) {
 		return vm->disk_inserted(drv);
+	} else {
+		return false;
+	}
+}
+
+void EMU::set_disk_protected(int drv, bool value)
+{
+	if(drv < MAX_FD) {
+		vm->set_disk_protected(drv, value);
+	}
+}
+
+bool EMU::get_disk_protected(int drv)
+{
+	if(drv < MAX_FD) {
+		return vm->get_disk_protected(drv);
 	} else {
 		return false;
 	}
@@ -818,7 +834,7 @@ void EMU::load_binary(int drv, _TCHAR* file_path)
 	if(drv < MAX_BINARY) {
 		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, bios_path(_T("hex2bin.$$$")))) {
 			vm->load_binary(drv, bios_path(_T("hex2bin.$$$")));
-			FILEIO::Remove(bios_path(_T("hex2bin.$$$")));
+			FILEIO::RemoveFile(bios_path(_T("hex2bin.$$$")));
 		} else {
 			vm->load_binary(drv, file_path);
 		}

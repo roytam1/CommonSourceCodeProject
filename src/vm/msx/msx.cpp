@@ -333,6 +333,16 @@ bool VM::disk_inserted(int drv)
 {
 	return memory->disk_inserted(drv);
 }
+
+void VM::set_disk_protected(int drv, bool value)
+{
+	memory->set_disk_protected(drv, value);
+}
+
+bool VM::get_disk_protected(int drv)
+{
+	return memory->get_disk_protected(drv);
+}
 #endif
 
 bool VM::now_skip()

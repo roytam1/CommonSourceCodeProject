@@ -16,6 +16,7 @@
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
 #define USE_SPECIAL_RESET
+//#define SUPPORT_DUMMY_DEVICE_LED 3
 
 //#undef  HAS_YM2608
 //#define SUPPORT_YM2203_PORT
@@ -83,31 +84,21 @@
 #define CAPABLE_Z80
 
 #elif defined(_FM77AV)
-#define DEVICE_NAME		"FUJITSU FM77AV"
+#define DEVICE_NAME		"FUJITSU FM-77AV"
 #define CONFIG_NAME		"fm77av"
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM77AV20"
+#define DEVICE_NAME		"FUJITSU FM-77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
-#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
-
-#elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM77AV40"
-#define CONFIG_NAME		"fm77av40"
-#define _FM77AV_VARIANTS
-#define HAS_2DD_2D
-#define HAS_DMA
 #define USE_DRIVE_TYPE 2
-#define CAPABLE_DICTROM
-#define HAS_400LINE_AV
 
 #elif defined(_FM77AV20EX)
-#define DEVICE_NAME		"FUJITSU FM77AV20EX"
+#define DEVICE_NAME		"FUJITSU FM-77AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -116,8 +107,18 @@
 #define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 
+#elif defined(_FM77AV40)
+#define DEVICE_NAME		"FUJITSU FM-77AV40"
+#define CONFIG_NAME		"fm77av40"
+#define _FM77AV_VARIANTS
+#define HAS_2DD_2D
+#define HAS_DMA
+#define USE_DRIVE_TYPE 2
+#define CAPABLE_DICTROM
+#define HAS_400LINE_AV
+
 #elif defined(_FM77AV40EX)
-#define DEVICE_NAME		"FUJITSU FM77AV40EX"
+#define DEVICE_NAME		"FUJITSU FM-77AV40EX"
 #define CONFIG_NAME		"fm77av40ex"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
@@ -127,7 +128,7 @@
 #define HAS_400LINE_AV
 
 #elif defined(_FM77AV40SX)
-#define DEVICE_NAME		"FUJITSU FM77AV40SX"
+#define DEVICE_NAME		"FUJITSU FM-77AV40SX"
 #define CONFIG_NAME		"fm77av40sx"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
@@ -271,6 +272,9 @@ class YM2203;
 class MB8877;
 class MEMORY;
 class DATAREC;
+#if defined(SUPPORT_DUMMY_DEVICE_LED)
+class DUMMYDEVICE;
+#endif
 
 class DISPLAY;
 #if defined(_FM77AV_VARIANTS)
@@ -296,7 +300,11 @@ protected:
 	MC6809* maincpu;
 	FM7_MAINMEM* mainmem;
 	FM7_MAINIO* mainio;
-
+#if defined(SUPPORT_DUMMY_DEVICE_LED)
+	DUMMYDEVICE* led_terminate;
+#else
+	DEVICE* led_terminate;
+#endif
 	MB8877* fdc;
         YM2203* opn[3];
         YM2203* psg; // Is right? AY-3-8910 is right device.
@@ -364,6 +372,9 @@ public:
 	void special_reset();
 	void run();
 	double frame_rate();
+#if defined(SUPPORT_DUMMY_DEVICE_LED)
+	uint32 get_led_status();
+#endif
 	
 #ifdef USE_DEBUGGER
 	// debugger
@@ -390,10 +401,8 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-#if defined(USE_DISK_WRITE_PROTECT)
-	void write_protect_fd(int drv, bool flag);
-	bool is_write_protect_fd(int drv);
-#endif
+	void set_disk_protected(int drv, bool value);
+	bool get_disk_protected(int drv);
 	
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);

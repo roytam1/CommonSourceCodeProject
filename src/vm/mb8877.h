@@ -18,8 +18,6 @@
 #define SIG_MB8877_DRIVEREG		0
 #define SIG_MB8877_SIDEREG		1
 #define SIG_MB8877_MOTOR		2
-#define SIG_MB8877_CMDPHASE		3
-#define SIG_MB8877_READ_DRIVE_REG	4
 
 class DISK;
 
@@ -80,7 +78,7 @@ private:
 	
 	// image handler
 	uint8 search_track();
-	uint8 search_sector(int trk, int side, int sct, bool compare);
+	uint8 search_sector();
 	uint8 search_addr();
 	
 	// command
@@ -140,6 +138,8 @@ public:
 	void open_disk(int drv, _TCHAR path[], int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	void set_disk_protected(int drv, bool value);
+	bool get_disk_protected(int drv);
 	void set_drive_type(int drv, uint8 type);
 	uint8 get_drive_type(int drv);
 	void set_drive_rpm(int drv, int rpm);

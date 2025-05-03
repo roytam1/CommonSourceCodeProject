@@ -28,9 +28,15 @@ bool FILEIO::IsFileExists(_TCHAR *filename)
 	return ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
 }
 
-bool FILEIO::IsProtected(_TCHAR *filename)
+bool FILEIO::IsFileProtected(_TCHAR *filename)
 {
 	return ((GetFileAttributes(filename) & FILE_ATTRIBUTE_READONLY) != 0);
+}
+
+void FILEIO::RemoveFile(_TCHAR *filename)
+{
+	DeleteFile(filename);
+//	_tremove(filename);	// not supported on wince
 }
 
 bool FILEIO::Fopen(_TCHAR *filename, int mode)
@@ -517,10 +523,4 @@ uint32 FILEIO::Fseek(long offset, int origin)
 uint32 FILEIO::Ftell()
 {
 	return ftell(fp);
-}
-
-void FILEIO::Remove(_TCHAR *filename)
-{
-	DeleteFile(filename);
-//	_tremove(filename);	// not supported on wince
 }

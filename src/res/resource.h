@@ -93,56 +93,64 @@
 
 #define ID_OPEN_FD1                     40101
 #define ID_CLOSE_FD1                    40102
-#define ID_IGNORE_CRC1                  40103
+#define ID_WRITE_PROTECT_FD1            40103
+#define ID_IGNORE_CRC_FD1               40104
 #define ID_RECENT_FD1                   40111 // 40111-40118
 #define ID_D88_FILE_PATH1               40120
 #define ID_SELECT_D88_BANK1             40121 // 40121-40200
 
 #define ID_OPEN_FD2                     40201
 #define ID_CLOSE_FD2                    40202
-#define ID_IGNORE_CRC2                  40203
+#define ID_WRITE_PROTECT_FD2            40203
+#define ID_IGNORE_CRC_FD2               40204
 #define ID_RECENT_FD2                   40211 // 40211-40218
 #define ID_D88_FILE_PATH2               40220
 #define ID_SELECT_D88_BANK2             40221 // 40221-40300
 
 #define ID_OPEN_FD3                     40301
 #define ID_CLOSE_FD3                    40302
-#define ID_IGNORE_CRC3                  40303
+#define ID_WRITE_PROTECT_FD3            40303
+#define ID_IGNORE_CRC_FD3               40304
 #define ID_RECENT_FD3                   40311 // 40311-40318
 #define ID_D88_FILE_PATH3               40320
 #define ID_SELECT_D88_BANK3             40321 // 40321-40400
 
 #define ID_OPEN_FD4                     40401
 #define ID_CLOSE_FD4                    40402
-#define ID_IGNORE_CRC4                  40403
+#define ID_WRITE_PROTECT_FD4            40403
+#define ID_IGNORE_CRC_FD4               40404
 #define ID_RECENT_FD4                   40411 // 40411-40418
 #define ID_D88_FILE_PATH4               40420
 #define ID_SELECT_D88_BANK4             40421 // 40421-40500
 
 #define ID_OPEN_FD5                     40501
 #define ID_CLOSE_FD5                    40502
-#define ID_IGNORE_CRC5                  40503
+#define ID_WRITE_PROTECT_FD5            40503
+#define ID_IGNORE_CRC_FD5               40504
 #define ID_RECENT_FD5                   40511 // 40511-40518
 #define ID_D88_FILE_PATH5               40520
 #define ID_SELECT_D88_BANK5             40521 // 40521-40600
 
 #define ID_OPEN_FD6                     40601
 #define ID_CLOSE_FD6                    40602
-#define ID_IGNORE_CRC6                  40603
+#define ID_WRITE_PROTECT_FD6            40603
+#define ID_IGNORE_CRC_FD6               40604
 #define ID_RECENT_FD6                   40611 // 40611-40618
 #define ID_D88_FILE_PATH6               40620
 #define ID_SELECT_D88_BANK6             40621 // 40621-40700
 
 #define ID_OPEN_FD7                     40701
 #define ID_CLOSE_FD7                    40702
-#define ID_IGNORE_CRC7                  40703
+#define ID_WRITE_PROTECT_FD7            40703
+#define ID_IGNORE_CRC_FD7               40704
 #define ID_RECENT_FD7                   40711 // 40711-40718
 #define ID_D88_FILE_PATH7               40720
 #define ID_SELECT_D88_BANK7             40721 // 40721-40800
 
 #define ID_OPEN_FD8                     40801
 #define ID_CLOSE_FD8                    40802
-#define ID_IGNORE_CRC8                  40803
+#define ID_WRITE_PROTECT_FD8            40803
+#define ID_IGNORE_CRC_FD8               40804
 #define ID_RECENT_FD8                   40811 // 40811-40818
 #define ID_D88_FILE_PATH8               40820
 #define ID_SELECT_D88_BANK8             40821 // 40821-40900
@@ -293,12 +301,16 @@
 #define ID_CAPTURE_DEVICE7              41211
 #define ID_CAPTURE_DEVICE8              41212
 
+#define ID_INPUT_USE_DINPUT             41301
+#define ID_INPUT_DISABLE_DWM            41302
+#define ID_INPUT_SWAP_JOY_BUTTONS       41303
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        107
-#define _APS_NEXT_COMMAND_VALUE         41213
+#define _APS_NEXT_COMMAND_VALUE         41304
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
@@ -318,6 +330,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // FUJITSU FM-7
@@ -328,6 +341,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // FUJITSU FM-77
@@ -338,6 +352,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // FUJITSU FM-77AV
@@ -348,6 +363,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // FUJITSU FM16pi
@@ -357,6 +373,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // FUJITSU FMR-30
@@ -366,6 +383,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // FUJITSU FMR-50
@@ -378,6 +396,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // FUJITSU FMR-60
@@ -389,6 +408,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // CASIO FP-200
@@ -397,6 +417,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // CASIO FP-1100
@@ -407,6 +428,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // SEGA GAME GEAR
@@ -417,6 +439,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // EPSON HC-20
@@ -427,6 +450,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // EPSON HC-40
@@ -439,6 +463,7 @@
 #define MENU_POS_TAPE                   5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // EPSON HC-80
@@ -450,6 +475,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // TOSHIBA J-3100GT
@@ -459,6 +485,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // TOSHIBA J-3100SL
@@ -468,6 +495,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // IBM Japan Ltd PC/JX
@@ -477,6 +505,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // SORD m5
@@ -486,6 +515,7 @@
 #define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // SEIKO MAP-1010
@@ -494,6 +524,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SEGA MASTER SYSTEM
@@ -502,6 +533,7 @@
 #define MENU_POS_CART1                  1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // ASCII MSX1
@@ -514,6 +546,7 @@
 #define MENU_POS_FD2                    5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // ASCII MSX2
@@ -526,6 +559,7 @@
 #define MENU_POS_FD2                    5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // MITSUBISHI Elec. MULTI8
@@ -536,6 +570,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // Japan Electronics College MYCOMZ-80A
@@ -544,6 +579,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SHARP MZ-80A
@@ -556,6 +592,7 @@
 #define MENU_POS_FD4                    5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // SHARP MZ-80B
@@ -568,6 +605,7 @@
 #define MENU_POS_FD4                    5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // SHARP MZ-80K
@@ -576,6 +614,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SHARP MZ-700
@@ -584,6 +623,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SHARP MZ-800
@@ -595,6 +635,7 @@
 #define MENU_POS_FD2                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP MZ-1200
@@ -603,6 +644,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SHARP MZ-1500
@@ -614,6 +656,7 @@
 #define MENU_POS_FD2                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP MZ-2200
@@ -627,6 +670,7 @@
 #define MENU_POS_FD4                    6
 #define MENU_POS_SCREEN                 7
 #define MENU_POS_SOUND                  8
+#define MENU_POS_INPUT                  9
 #endif
 
 // SHARP MZ-2500
@@ -639,6 +683,7 @@
 #define MENU_POS_TAPE                   5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // SHARP MZ-2800
@@ -650,6 +695,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP MZ-3500
@@ -661,6 +707,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP MZ-5500
@@ -672,6 +719,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP MZ-6500
@@ -683,6 +731,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP MZ-6550
@@ -694,6 +743,7 @@
 #define MENU_POS_FD4                    4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // NEC N5200
@@ -703,6 +753,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // TOSHIBA PASOPIA
@@ -714,6 +765,7 @@
 #define MENU_POS_BINARY1                4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // TOSHIBA PASOPIA7
@@ -726,6 +778,7 @@
 #define MENU_POS_BINARY2                5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // NEC PC-6001
@@ -737,6 +790,7 @@
 #define MENU_POS_TAPE                   4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // NEC PC-6001mkII
@@ -748,6 +802,7 @@
 #define MENU_POS_TAPE                   4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // NEC PC-6001mkIISR
@@ -759,6 +814,7 @@
 #define MENU_POS_TAPE                   4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // NEC PC-6601
@@ -772,6 +828,7 @@
 #define MENU_POS_TAPE                   6
 #define MENU_POS_SCREEN                 7
 #define MENU_POS_SOUND                  8
+#define MENU_POS_INPUT                  9
 #endif
 
 // NEC PC-6601SR
@@ -785,6 +842,7 @@
 #define MENU_POS_TAPE                   6
 #define MENU_POS_SCREEN                 7
 #define MENU_POS_SOUND                  8
+#define MENU_POS_INPUT                  9
 #endif
 
 // NEC PC-8001mkIISR
@@ -795,6 +853,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // NEC PC-8201
@@ -803,6 +862,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // NEC PC-8201A
@@ -811,6 +871,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // NEC PC-8801MA
@@ -821,6 +882,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // NEC PC-9801
@@ -835,6 +897,7 @@
 #define MENU_POS_TAPE                   7
 #define MENU_POS_SCREEN                 8
 #define MENU_POS_SOUND                  9
+#define MENU_POS_INPUT                  10
 #endif
 
 // NEC PC-9801E/F/M
@@ -849,6 +912,7 @@
 #define MENU_POS_TAPE                   7
 #define MENU_POS_SCREEN                 8
 #define MENU_POS_SOUND                  9
+#define MENU_POS_INPUT                  10
 #endif
 
 // NEC PC-9801U
@@ -858,6 +922,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // NEC PC-9801VF
@@ -867,6 +932,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // NEC PC-9801VM
@@ -876,6 +942,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // NEC PC-98DO
@@ -888,6 +955,7 @@
 #define MENU_POS_TAPE                   5
 #define MENU_POS_SCREEN                 6
 #define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // NEC PC-98HA
@@ -896,6 +964,7 @@
 #define MENU_POS_FD1                    1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // NEC PC-98LT
@@ -904,6 +973,7 @@
 #define MENU_POS_FD1                    1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // NEC PC-100
@@ -913,6 +983,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // NEC-HE PC Engine
@@ -921,6 +992,7 @@
 #define MENU_POS_CART1                  1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SANYO PHC-20
@@ -929,6 +1001,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SANYO PHC-25
@@ -937,6 +1010,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // CASIO PV-1000
@@ -945,6 +1019,7 @@
 #define MENU_POS_CART1                  1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // CASIO PV-2000
@@ -954,6 +1029,7 @@
 #define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // PIONEER PX-7
@@ -965,6 +1041,7 @@
 #define MENU_POS_LASER_DISC             4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // TOMY PYUTA
@@ -974,6 +1051,7 @@
 #define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // EPSON QC-10
@@ -983,6 +1061,7 @@
 #define MENU_POS_FD2                    2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // BANDAI RX-78
@@ -992,6 +1071,7 @@
 #define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // SEGA SC-3000
@@ -1002,6 +1082,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // EPOCH Super Cassette Vision
@@ -1010,6 +1091,7 @@
 #define MENU_POS_CART1                  1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // NEC TK-80BS (COMPO BS/80)
@@ -1019,6 +1101,7 @@
 #define MENU_POS_TAPE                   2
 #define MENU_POS_SCREEN                 3
 #define MENU_POS_SOUND                  4
+#define MENU_POS_INPUT                  5
 #endif
 
 // CANON X-07
@@ -1027,6 +1110,7 @@
 #define MENU_POS_TAPE                   1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 
 // SHARP X1
@@ -1037,6 +1121,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // SHARP X1twin
@@ -1048,6 +1133,7 @@
 #define MENU_POS_CART1                  4
 #define MENU_POS_SCREEN                 5
 #define MENU_POS_SOUND                  6
+#define MENU_POS_INPUT                  7
 #endif
 
 // SHARP X1turbo
@@ -1058,6 +1144,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // SHARP X1turboZ
@@ -1068,6 +1155,7 @@
 #define MENU_POS_TAPE                   3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#define MENU_POS_INPUT                  6
 #endif
 
 // SHINKO SANGYO YS-6464A
@@ -1082,5 +1170,6 @@
 #define MENU_POS_CART1                  1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
 #endif
 

@@ -58,9 +58,6 @@ bool load_config_state(void *f);
 
 typedef struct {
 	// control
-	bool use_direct_input;
-	bool disable_dwm;
-	
 #ifdef USE_BOOT_MODE
 	int boot_mode;
 #endif
@@ -115,8 +112,10 @@ typedef struct {
 	
 	// screen
 	int window_mode;
+#ifdef _WIN32
 	bool use_d3d9;
 	bool wait_vsync;
+#endif
 	int stretch_type;
 #ifdef USE_MONITOR_TYPE
 	int monitor_type;
@@ -138,6 +137,13 @@ typedef struct {
 	int sound_device_type;
 #endif
 	_TCHAR fmgen_dll_path[_MAX_PATH];
+	
+	// input
+#ifdef _WIN32
+	bool use_direct_input;
+	bool disable_dwm;
+#endif
+	bool swap_joy_buttons;
 } config_t;
 
 extern config_t config;
