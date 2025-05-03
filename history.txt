@@ -1,5 +1,10 @@
 3/12/2015
 
+[FMR50/BIOS] support to format a floppy disk image physically
+
+
+3/12/2015
+
 [VM/DATAREC] support to play tape sound
 [VM/DATAREC] support FUJITSU FM-7/77 t77 format tape image (thanks Mr.Artane.)
 [VM/EVENT] suppot to change secondary cpu clock (thanks Mr.Artane.)

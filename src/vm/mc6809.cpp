@@ -331,7 +331,7 @@ int MC6809::run(int clock)
 		icount -= extra_icount;
 		extra_icount = 0;
 		
-		while((icount > 0) && ((int_state & MC6809_HALT_BIT) == 0)){
+		while((icount > 0) && ((int_state & MC6809_HALT_BIT) == 0)) {
 			run_one_opecode();
 		}
 		
