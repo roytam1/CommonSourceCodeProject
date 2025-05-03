@@ -71,9 +71,16 @@ void init_config()
 #if defined(USE_DEVICE_TYPE) && defined(DEVICE_TYPE_DEFAULT)
 	config.device_type = DEVICE_TYPE_DEFAULT;
 #endif
-#if defined(USE_FD1) && defined(IGNORE_CRC_DEFAULT)
+#if defined(USE_FD1)
 	for(int drv = 0; drv < MAX_FD; drv++) {
-		config.ignore_crc[drv] = IGNORE_CRC_DEFAULT;
+#if defined(CORRECT_DISK_TIMING_DEFAULT)
+		config.correct_disk_timing[drv] = CORRECT_DISK_TIMING_DEFAULT;
+#else
+		config.correct_disk_timing[drv] = true;
+#endif
+#if defined(IGNORE_DISK_CRC_DEFAULT)
+		config.ignore_disk_crc[drv] = IGNORE_DISK_CRC_DEFAULT;
+#endif
 	}
 #endif
 #if defined(USE_SOUND_DEVICE_TYPE) && defined(SOUND_DEVICE_TYPE_DEFAULT)
@@ -112,8 +119,10 @@ void load_config()
 #ifdef USE_FD1
 	for(int drv = 0; drv < MAX_FD; drv++) {
 		_TCHAR name[64];
-		_stprintf_s(name, 64, _T("IgnoreCRC%d"), drv + 1);
-		config.ignore_crc[drv] = GetPrivateProfileBool(_T("Control"), name, config.ignore_crc[drv], config_path);
+		_stprintf_s(name, 64, _T("CorrectDiskTiming%d"), drv + 1);
+		config.correct_disk_timing[drv] = GetPrivateProfileBool(_T("Control"), name, config.correct_disk_timing[drv], config_path);
+		_stprintf_s(name, 64, _T("IgnoreDiskCRC%d"), drv + 1);
+		config.ignore_disk_crc[drv] = GetPrivateProfileBool(_T("Control"), name, config.ignore_disk_crc[drv], config_path);
 	}
 #endif
 #ifdef USE_TAPE
@@ -247,8 +256,10 @@ void save_config()
 #ifdef USE_FD1
 	for(int drv = 0; drv < MAX_FD; drv++) {
 		_TCHAR name[64];
-		_stprintf_s(name, 64, _T("IgnoreCRC%d"), drv + 1);
-		WritePrivateProfileBool(_T("Control"), name, config.ignore_crc[drv], config_path);
+		_stprintf_s(name, 64, _T("CorrectDiskTiming%d"), drv + 1);
+		WritePrivateProfileBool(_T("Control"), name, config.correct_disk_timing[drv], config_path);
+		_stprintf_s(name, 64, _T("IgnoreDiskCRC%d"), drv + 1);
+		WritePrivateProfileBool(_T("Control"), name, config.ignore_disk_crc[drv], config_path);
 	}
 #endif
 #ifdef USE_TAPE
@@ -353,7 +364,7 @@ void save_config()
 	WritePrivateProfileBool(_T("Input"), _T("SwapJoyButtons"), config.swap_joy_buttons, config_path);
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void save_config_state(void *f)
 {
@@ -378,7 +389,8 @@ void save_config_state(void *f)
 #endif
 #ifdef USE_FD1
 	for(int drv = 0; drv < MAX_FD; drv++) {
-		state_fio->FputBool(config.ignore_crc[drv]);
+		state_fio->FputBool(config.correct_disk_timing[drv]);
+		state_fio->FputBool(config.ignore_disk_crc[drv]);
 	}
 #endif
 #ifdef USE_MONITOR_TYPE
@@ -413,7 +425,8 @@ bool load_config_state(void *f)
 #endif
 #ifdef USE_FD1
 	for(int drv = 0; drv < MAX_FD; drv++) {
-		config.ignore_crc[drv] = state_fio->FgetBool();
+		config.correct_disk_timing[drv] = state_fio->FgetBool();
+		config.ignore_disk_crc[drv] = state_fio->FgetBool();
 	}
 #endif
 #ifdef USE_MONITOR_TYPE

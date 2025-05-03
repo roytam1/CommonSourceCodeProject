@@ -1,3 +1,23 @@
+8/5/2015
+
+[WINMAIN] support menu to enable/disable correct fdc timing
+
+[VM/DISK] improve to check both id crc error and data crc error
+[VM/I286] fix issue that emulation may go to infinite loop when cpu is halted
+[VM/MB8877] fix index hole signal width to 5msec (thanks Mr.Sato)
+[VM/MB8877] improve drq signal timing to check E flag of type-2 and 3 commands
+[VM/MB8877] improve drq signal timing for write track command
+[VM/MB8877] improve data lost timing for write sector and write track commands
+[VM/MB8877] improve to check both id crc error and data crc error
+[VM/UPD765A] improve timing to go to exec phase
+[VM/UPD765A] improve to check both id crc error and data crc error
+[VM/Z80SIO] improve transmitting timing (thanks Mr.Sato)
+
+[FMR50/BIOS] improve to check both id crc error and data crc error
+[FMR50/BIOS] improve write track command for sectors without data field
+[MSX2/MEMORY] improve to check both id crc error and data crc error
+
+
 8/3/2015
 
 [VM/DISK] support sectors without data field

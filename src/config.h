@@ -75,7 +75,8 @@ typedef struct {
 	int drive_type;
 #endif
 #ifdef USE_FD1
-	bool ignore_crc[16];
+	bool correct_disk_timing[16];
+	bool ignore_disk_crc[16];
 #endif
 #ifdef USE_TAPE
 	bool tape_sound;
