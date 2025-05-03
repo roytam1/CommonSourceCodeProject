@@ -100,7 +100,7 @@ class PC88 : public DEVICE
 private:
 	YM2203 *d_opn;
 	Z80 *d_cpu;
-	DEVICE *d_beep, *d_pcm, *d_pio, *d_rtc, *d_sio;
+	DEVICE *d_pcm, *d_pio, *d_rtc, *d_sio;
 #ifdef SUPPORT_PC88_PCG8100
 	DEVICE *d_pcg_pit, *d_pcg_pcm0, *d_pcg_pcm1, *d_pcg_pcm2;
 #endif
@@ -227,6 +227,9 @@ private:
 	void release_tape();
 	bool check_data_carrier();
 	
+	// beep/sing
+	bool beep_on, beep_signal, sing_signal;
+	
 #ifdef SUPPORT_PC88_PCG8100
 	// pcg
 	uint16 pcg_addr;
@@ -270,10 +273,6 @@ public:
 	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
-	void set_context_beep(DEVICE* device)
-	{
-		d_beep = device;
-	}
 	void set_context_cpu(Z80* device)
 	{
 		d_cpu = device;

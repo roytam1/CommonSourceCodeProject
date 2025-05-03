@@ -22,7 +22,7 @@
 	} \
 }
 
-#define SET_BANK_R(s, e, r) { \
+#define SET_BANK_R(s, e, r, w) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
 	for(int i = sb; i <= eb; i++) { \
 		if((r) == rdmy) { \
@@ -30,6 +30,7 @@
 		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
+		wait[i] = w; \
 	} \
 }
 
@@ -46,7 +47,7 @@ void MAIN::initialize()
 	delete fio;
 	
 	SET_BANK_W(0x0000, 0xffff, ram);
-	SET_BANK_R(0x0000, 0xffff, ram);
+	SET_BANK_R(0x0000, 0xffff, ram, 0);
 }
 
 void MAIN::reset()
@@ -68,6 +69,21 @@ uint32 MAIN::read_data8(uint32 addr)
 	addr &= 0xffff;
 	return rbank[addr >> 12][addr & 0xfff];
 }
+
+#ifdef Z80_MEMORY_WAIT
+void MAIN::write_data8w(uint32 addr, uint32 data, int *wait)
+{
+	*wait = 0;
+	write_data8(addr, data);
+}
+
+uint32 MAIN::read_data8w(uint32 addr, int *wait)
+{
+	addr &= 0xffff;
+	*wait = wait[addr >> 12];
+	return read_data8(addr);
+}
+#endif
 
 void MAIN::write_io8(uint32 addr, uint32 data)
 {
@@ -130,6 +146,20 @@ uint32 MAIN::read_io8(uint32 addr)
 	return val;
 }
 
+#ifdef Z80_IO_WAIT
+void MAIN::write_io8w(uint32 addr, uint32 data, int *wait)
+{
+	*wait = 1;
+	write_io8(addr, data);
+}
+
+uint32 MAIN::read_io8w(uint32 addr, int *wait)
+{
+	*wait = 1;
+	return read_io8(addr);
+}
+#endif
+
 static const uint8 bits[5] = {
 	0x10, 0x01, 0x02, 0x04, 0x08
 };
@@ -166,9 +196,9 @@ void MAIN::write_signal(int id, uint32 data, uint32 mask)
 void MAIN::update_memory_map()
 {
 	if(rom_sel) {
-		SET_BANK_R(0x0000, 0x8fff, rom);
+		SET_BANK_R(0x0000, 0x8fff, rom, 24);
 	} else {
-		SET_BANK_R(0x0000, 0x8fff, ram);
+		SET_BANK_R(0x0000, 0x8fff, ram, 0);
 	}
 }
 

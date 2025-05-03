@@ -10,7 +10,6 @@
 */
 
 #include "pc88.h"
-#include "../beep.h"
 #include "../event.h"
 #include "../i8251.h"
 #include "../pcm1bit.h"
@@ -27,6 +26,7 @@
 #define EVENT_BUSREQ	1
 #define EVENT_CMT_SEND	2
 #define EVENT_CMT_DCD	3
+#define EVENT_BEEP	4
 
 #define IRQ_USART	0
 #define IRQ_VRTC	1
@@ -322,7 +322,8 @@ void PC88::initialize()
 	
 	register_frame_event(this);
 	register_vline_event(this);
-	register_event(this, EVENT_TIMER, 1000000 / 600, true, NULL);
+	register_event(this, EVENT_TIMER, 1000000.0 / 600.0, true, NULL);
+	register_event(this, EVENT_BEEP, 1000000.0 / 4800.0, true, NULL);
 }
 
 void PC88::release()
@@ -412,6 +413,9 @@ void PC88::reset()
 	close_tape();
 	cmt_play = cmt_rec = false;
 	cmt_register_id = -1;
+	
+	// beep/sing
+	beep_on = beep_signal = sing_signal = false;
 	
 #ifdef SUPPORT_PC88_PCG8100
 	// pcg
@@ -758,7 +762,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		if(mod & 0x10) {
 			update_gvram_wait();
 		}
-		d_beep->write_signal(SIG_BEEP_ON, data, 0x20);
+		beep_on = ((data & 0x20) != 0);
 #ifdef SUPPORT_PC88_JOYSTICK
 		if(mod & 0x40) {
 			if(Port40_JOP1 && (mouse_phase == -1 || passed_clock(mouse_strobe_clock) > mouse_strobe_clock_lim)) {
@@ -775,7 +779,8 @@ void PC88::write_io8(uint32 addr, uint32 data)
 			mouse_strobe_clock = current_clock();
 		}
 #endif
-		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, data, 0x80);
+		sing_signal = ((data & 0x80) != 0);
+		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, ((beep_on && beep_signal) || sing_signal) ? 1 : 0, 1);
 		break;
 	case 0x44:
 	case 0x45:
@@ -1323,6 +1328,10 @@ void PC88::event_callback(int event_id, int err)
 		}
 		usart_dcd = true; // Jackie Chan no Spartan X
 		cmt_register_id = -1;
+		break;
+	case EVENT_BEEP:
+		beep_signal = !beep_signal;
+		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, ((beep_on && beep_signal) || sing_signal) ? 1 : 0, 1);
 		break;
 	}
 }
@@ -2543,7 +2552,7 @@ void pc88_dmac_t::finish(int c)
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void PC88::save_state(FILEIO* state_fio)
 {
@@ -2619,6 +2628,9 @@ void PC88::save_state(FILEIO* state_fio)
 	state_fio->Fwrite(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
 	state_fio->FputInt32(cmt_data_carrier_cnt);
 	state_fio->FputInt32(cmt_register_id);
+	state_fio->FputBool(beep_on);
+	state_fio->FputBool(beep_signal);
+	state_fio->FputBool(sing_signal);
 #ifdef SUPPORT_PC88_PCG8100
 	state_fio->FputUint16(pcg_addr);
 	state_fio->FputUint8(pcg_data);
@@ -2708,6 +2720,9 @@ bool PC88::load_state(FILEIO* state_fio)
 	state_fio->Fread(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
 	cmt_data_carrier_cnt = state_fio->FgetInt32();
 	cmt_register_id = state_fio->FgetInt32();
+	beep_on = state_fio->FgetBool();
+	beep_signal = state_fio->FgetBool();
+	sing_signal = state_fio->FgetBool();
 #ifdef SUPPORT_PC88_PCG8100
 	pcg_addr = state_fio->FgetUint16();
 	pcg_data = state_fio->FgetUint8();

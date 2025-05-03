@@ -33,6 +33,7 @@ private:
 	
 	uint8 *wbank[16];
 	uint8 *rbank[16];
+	int wait[16];
 	uint8 wdmy[0x1000];
 	uint8 rdmy[0x1000];
 	uint8 ram[0x10000];
@@ -60,8 +61,16 @@ public:
 	void reset();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
+#ifdef Z80_MEMORY_WAIT
+	void write_data8w(uint32 addr, uint32 data, int *wait);
+	uint32 read_data8w(uint32 addr, int *wait);
+#endif
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+#ifdef Z80_IO_WAIT
+	void write_io8w(uint32 addr, uint32 data, int *wait);
+	uint32 read_io8w(uint32 addr, int *wait);
+#endif
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 intr_ack();
 	void intr_reti();

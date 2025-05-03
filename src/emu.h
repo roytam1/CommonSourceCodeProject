@@ -511,10 +511,7 @@ public:
 #ifdef USE_FD1
 	struct {
 		_TCHAR path[_MAX_PATH];
-		struct {
-			_TCHAR name[18];
-//			int offset;
-		} bank[MAX_D88_BANKS];
+		_TCHAR disk_name[MAX_D88_BANKS][18];
 		int bank_num;
 		int cur_bank;
 	} d88_file[MAX_FD];
