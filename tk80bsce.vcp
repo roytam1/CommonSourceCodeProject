@@ -211,6 +211,10 @@ SOURCE=.\src\vm\i8255.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\pcm1bit.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\z80.cpp
 # ADD CPP /Oxt /Ob0
 
@@ -286,6 +290,10 @@ SOURCE=.\src\vm\i8251.h
 # Begin Source File
 
 SOURCE=.\src\vm\i8255.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\pcm1bit.h
 # End Source File
 # Begin Source File
 

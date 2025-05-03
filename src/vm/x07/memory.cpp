@@ -22,7 +22,7 @@
 void MEMORY::initialize()
 {
 	// initialize memory
-	_memset(c3, 0xc3, sizeof(c3));
+//	_memset(c3, 0xc3, sizeof(c3));
 	_memset(app, 0xff, sizeof(app));
 	_memset(tv, 0xff, sizeof(tv));
 	_memset(bas, 0xff, sizeof(bas));
@@ -65,7 +65,7 @@ void MEMORY::release()
 
 void MEMORY::reset()
 {
-	SET_BANK(0x0000, 0x1fff, wdmy, c3);
+//	SET_BANK(0x0000, 0x1fff, wdmy, c3);
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -80,6 +80,6 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
-	SET_BANK(0x0000, 0x1fff, ram, ram);
+//	SET_BANK(0x0000, 0x1fff, ram, ram);
 }
 

@@ -19,7 +19,7 @@ void DATAREC::initialize()
 	
 	regist_id = -1;
 	play = rec = false;
-	in = out = change = remote = false;
+	in = out = change = remote = trig = false;
 	is_wave = false;
 }
 
@@ -44,7 +44,19 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_DATAREC_REMOTE) {
 		remote = ((data & mask) != 0);
+		for(int i = 0; i < dcount_remote; i++)
+			d_remote[i]->write_signal(did_remote[i], remote ? 0xffffffff : 0, dmask_remote[i]);
 		update_event();
+	}
+	else if(id == SIG_DATAREC_TRIG) {
+		bool next = ((data & mask) != 0);
+		if(next && !trig) {
+			remote = !remote;
+			for(int i = 0; i < dcount_remote; i++)
+				d_remote[i]->write_signal(did_remote[i], remote ? 0xffffffff : 0, dmask_remote[i]);
+			update_event();
+		}
+		trig = next;
 	}
 }
 
@@ -83,8 +95,8 @@ void DATAREC::event_callback(int event_id, int err)
 		}
 		// notify the signal is changed
 		if(signal != in) {
-			for(int i = 0; i < dcount; i++)
-				dev[i]->write_signal(did[i], signal ? 0xffffffff : 0, dmask[i]);
+			for(int i = 0; i < dcount_out; i++)
+				d_out[i]->write_signal(did_out[i], signal ? 0xffffffff : 0, dmask_out[i]);
 			change = true;
 			in = signal;
 		}
@@ -143,8 +155,8 @@ void DATAREC::play_datarec(_TCHAR* filename)
 		bool signal = ((buffer[0] & 0x80) != 0);
 		// notify the signal is changed
 		if(signal != in) {
-			for(int i = 0; i < dcount; i++)
-				dev[i]->write_signal(did[i], signal ? 0xffffffff : 0, dmask[i]);
+			for(int i = 0; i < dcount_out; i++)
+				d_out[i]->write_signal(did_out[i], signal ? 0xffffffff : 0, dmask_out[i]);
 			in = signal;
 		}
 		play = true;
@@ -207,8 +219,8 @@ void DATAREC::close_datarec()
 	update_event();
 	
 	// no sounds
-	for(int i = 0; i < dcount; i++)
-		dev[i]->write_signal(did[i], 0, dmask[i]);
+	for(int i = 0; i < dcount_out; i++)
+		d_out[i]->write_signal(did_out[i], 0, dmask_out[i]);
 	in = false;
 }
 

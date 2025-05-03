@@ -141,6 +141,16 @@ public:
 	virtual uint32 get_prv_pc() {
 		return 0;
 	}
+	virtual void set_pc(uint32 pc) {
+	}
+	
+	// bios
+	virtual bool bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, int32* CarryFlag) {
+		return false;
+	}
+	virtual bool bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, int32* CarryFlag) {
+		return false;
+	}
 	
 	// sound
 	virtual void mix(int32* buffer, int cnt) {}

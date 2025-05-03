@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x22
+#define FILE_VERSION	0x23
 
 void init_config();
 void load_config();
@@ -35,6 +35,12 @@ typedef struct {
 #endif
 #ifdef USE_MEDIA
 	_TCHAR recent_media[8][_MAX_PATH];
+#endif
+#ifdef USE_RAM
+	_TCHAR recent_ram[8][_MAX_PATH];
+#endif
+#ifdef USE_MZT
+	_TCHAR recent_mzt[8][_MAX_PATH];
 #endif
 	// control
 	int cpu_power;		// cpu clock <<= cpu_power

@@ -1,3 +1,25 @@
+10/6/2008
+
+[EMU/WIN32] fix the problem when new file path is specified
+[EMU/WIN32] support 96khz sound
+
+[VM/DATAREC] support trigger signal
+[VM/DATAREC] output remote signal
+[VM/I8253] fix mode3 output signal
+[VM/PCM1BIT] support LPF
+[VM/UPD765A] fix AT bit in the result of seek command
+[VM/X86] support pseudo bios call
+
+[MZ700] support mzt/m12 file
+[MZ700] support datarec control signals
+[MZ700] fix vsync/hsnyc timing
+[MZ700/MEMORY] support memory wait
+[TK80BS] support circuits on TK-80 main board
+[TK80BS] support 2ch sound (PC1 and PC2 of 8255)
+[TK80BS/MEMORY] support save/load ram image
+[TK80BS/MEMORY] fix interrupt address
+
+
 8/27/2008
 
 [EMU/WIN32] fix build problem for Windows CE

@@ -19,6 +19,11 @@ void PCM1BIT::initialize()
 	vm->regist_frame_event(this);
 }
 
+void PCM1BIT::reset()
+{
+	gen_vol = 0;
+}
+
 void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_PCM1BIT_SIGNAL) {
@@ -35,45 +40,47 @@ void PCM1BIT::write_signal(int id, uint32 data, uint32 mask)
 
 void PCM1BIT::event_frame()
 {
-	if(update)
-		update--;
+	if(update) {
+		if(--update == 0)
+			gen_vol = 0;
+	}
 }
 
 void PCM1BIT::event_callback(int event_id, int err)
 {
-	samples[count++ & 0xff] = signal;
+	if(count < 256)
+		samples[count++] = signal;
 }
 
 void PCM1BIT::mix(int32* buffer, int cnt)
 {
 	if(on && !mute && update) {
 #ifdef PCM1BIT_HIGH_QUALITY
-		if(count > cnt) {
-			for(int i = 0; i < cnt; i++)
-				buffer[i] += samples[count - cnt + i] ? vol : -vol;
-		}
-		else {
-			for(int i = 0; i < cnt; i++)
-				buffer[i] += (i < count ? samples[i] : signal) ? vol : -vol;
+		for(int i = 0; i < cnt; i++) {
+			if((i < count) ? samples[i] : signal) {
+				if((gen_vol += dif_vol) > max_vol)
+					gen_vol = max_vol;
+			}
+			else {
+				if((gen_vol -= dif_vol) < -max_vol)
+					gen_vol = -max_vol;
+			}
+			buffer[i] += gen_vol;
 		}
 #else
 		for(int i = 0; i < cnt; i++)
-			buffer[i] += signal ? vol : -vol;
+			buffer[i] += signal ? max_vol : -max_vol;
 #endif
 	}
-#ifdef PCM1BIT_HIGH_QUALITY
-	samples[0] = signal;
-	count = 1;
-#else
 	count = 0;
-#endif
 }
 
 void PCM1BIT::init(int rate, int volume)
 {
 	// create gain
-	vol = volume;
+	max_vol = volume;
 #ifdef PCM1BIT_HIGH_QUALITY
+	dif_vol = max_vol >> 3;
 	int id;
 	vm->regist_event_by_clock(this, 0, CPU_CLOCKS / rate, true, &id);
 #endif

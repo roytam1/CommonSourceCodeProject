@@ -258,6 +258,10 @@ void X86::write_signal(int id, uint32 data, uint32 mask)
 
 void X86::interrupt(unsigned num)
 {
+	if(d_bios && d_bios->bios_int(num, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		// bios call
+		return;
+	}
 #ifdef I286
 	if(PM) {
 		if((num << 3) >= idtr_limit) // go into shutdown mode
@@ -3259,7 +3263,8 @@ inline void X86::_call_far()
 	tmp1 += FETCH8() << 8;
 	unsigned tmp2 = FETCH8();
 	tmp2 += FETCH8() << 8;
-	uint16 ip = PC - base[CS];
+	uint16 cs = sregs[CS], ip = PC - base[CS];
+	uint32 pc = PC;
 	PUSH16(sregs[CS]);
 	PUSH16(ip);
 #ifdef I286
@@ -3269,6 +3274,14 @@ inline void X86::_call_far()
 	base[CS] = SegBase(CS);
 	PC = (base[CS] + (uint16)tmp1) & AMASK;
 #endif
+	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		// bios call
+		POP16();
+		POP16();
+		sregs[CS] = cs;
+		base[CS] = SegBase(CS);
+		PC = pc;
+	}
 	count -= cycles.call_far;
 }
 
@@ -3896,10 +3909,18 @@ inline void X86::_outax()	// Opcode 0xe7
 inline void X86::_call_d16()	// Opcode 0xe8
 {
 	uint16 tmp = FETCH16();
-	uint16 ip = PC - base[CS];
+	uint16 cs = sregs[CS], ip = PC - base[CS];
+	uint32 pc = PC;
 	PUSH16(ip);
 	ip += tmp;
 	PC = (ip + base[CS]) & AMASK;
+	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		// bios call
+		POP16();
+		sregs[CS] = cs;
+		base[CS] = SegBase(CS);
+		PC = pc;
+	}
 	count -= cycles.call_near;
 }
 
@@ -4397,7 +4418,8 @@ inline void X86::_opfe()	// Opcode 0xfe
 inline void X86::_opff()	// Opcode 0xff
 {
 	unsigned ModRM = FETCHOP(), tmp1, tmp2;
-	uint16 ip;
+	uint16 cs, ip;
+	uint32 pc;
 	
 	switch(ModRM & 0x38)
 	{
@@ -4422,14 +4444,25 @@ inline void X86::_opff()	// Opcode 0xff
 	case 0x10:	// CALL ew
 		count -= (ModRM >= 0xc0) ? cycles.call_r16 : cycles.call_m16;
 		tmp1 = GetRMWord(ModRM);
+		cs = sregs[CS];
+		pc = PC;
 		ip = PC - base[CS];
 		PUSH16(ip);
 		PC = (base[CS] + (uint16)tmp1) & AMASK;
+		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
+			// bios call
+			POP16();
+			sregs[CS] = cs;
+			base[CS] = SegBase(CS);
+			PC = pc;
+		}
 		break;
 	case 0x18:	// CALL FAR ea
 		count -= cycles.call_m32;
 		tmp1 = sregs[CS];
 		tmp2 = GetRMWord(ModRM);
+		cs = sregs[CS];
+		pc = PC;
 		ip = PC - base[CS];
 		PUSH16(tmp1);
 		PUSH16(ip);
@@ -4440,6 +4473,14 @@ inline void X86::_opff()	// Opcode 0xff
 		base[CS] = SegBase(CS);
 		PC = (base[CS] + tmp2) & AMASK;
 #endif
+		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
+			// bios call
+			POP16();
+			POP16();
+			sregs[CS] = cs;
+			base[CS] = SegBase(CS);
+			PC = pc;
+		}
 		break;
 	case 0x20:	// JMP ea
 		count -= (ModRM >= 0xc0) ? cycles.jmp_r16 : cycles.jmp_m16;

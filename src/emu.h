@@ -392,6 +392,10 @@ public:
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
 #endif
+#ifdef USE_DATAREC_BUTTON
+	void push_play();
+	void push_stop();
+#endif
 #ifdef USE_MEDIA
 #ifdef SUPPORT_MEDIA
 	void open_media(_TCHAR* filename);
@@ -400,6 +404,13 @@ public:
 	void open_media(_TCHAR* filename) {}
 	void close_media() {}
 #endif
+#endif
+#ifdef USE_RAM
+	void load_ram(_TCHAR* filename);
+	void save_ram(_TCHAR* filename);
+#endif
+#ifdef USE_MZT
+	void open_mzt(_TCHAR* filename);
 #endif
 	bool now_skip();
 	

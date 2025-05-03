@@ -45,6 +45,7 @@
 #define UPD765A_DRQ_DELAY
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
+#define UPD765A_NO_DISK_ST0_AT
 #define IO8_ADDR_MAX		0x10000
 
 #include "../../common.h"

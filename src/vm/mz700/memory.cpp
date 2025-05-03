@@ -34,9 +34,7 @@ void MEMORY::initialize()
 	_memset(vram + 0x800, 0x71, 0x800);
 	_memset(ipl, 0xff, sizeof(ipl));
 	_memset(rdmy, 0xff, sizeof(rdmy));
-#ifdef _TINYIMAS
-	_memset(emm, 0x20, sizeof(emm));
-#endif
+	_memset(emm, 0, sizeof(emm));
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -48,13 +46,11 @@ void MEMORY::initialize()
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
-#ifdef _TINYIMAS
 	_stprintf(file_path, _T("%sEMM.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(emm, sizeof(emm), 1);
 		fio->Fclose();
 	}
-#endif
 	delete fio;
 	
 	// regist event
@@ -72,9 +68,7 @@ void MEMORY::reset()
 	blink = false;
 	// motor is always rotating...
 	d_pio->write_signal(did_pio, 0xff, 0x10);
-#ifdef _TINYIMAS
 	emm_ptr = 0;
-#endif
 }
 
 void MEMORY::event_vsync(int v, int clock)
@@ -88,7 +82,7 @@ void MEMORY::event_vsync(int v, int clock)
 	// hblank
 	hblank = 0x80;
 	int id;
-	vm->regist_event_by_clock(this, EVENT_HBLANK, 160, false, &id);
+	vm->regist_event_by_clock(this, EVENT_HBLANK, 165, false, &id);
 }
 
 void MEMORY::event_callback(int event_id, int err)
@@ -157,11 +151,35 @@ uint32 MEMORY::read_data8(uint32 addr)
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 
+void MEMORY::write_data8w(uint32 addr, uint32 data, int* wait)
+{
+	*wait = ((inh & 1) && addr < 0x1000) ? 1 : 0;
+	write_data8(addr, data);
+}
+
+uint32 MEMORY::read_data8w(uint32 addr, int* wait)
+{
+	*wait = ((inh & 1) && addr < 0x1000) ? 1 : 0;
+	return read_data8(addr);
+}
+
+void MEMORY::write_data16w(uint32 addr, uint32 data, int* wait)
+{
+	*wait = ((inh & 1) && addr < 0x1000) ? 2 : 0;
+	write_data8(addr, data & 0xff);
+	write_data8(addr + 1, data >> 8);
+}
+
+uint32 MEMORY::read_data16w(uint32 addr, int* wait)
+{
+	*wait = ((inh & 1) && addr < 0x1000) ? 2 : 0;
+	return read_data8(addr) | (read_data8(addr + 1) << 8);
+}
+
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff)
 	{
-#ifdef _TINYIMAS
 	case 0:
 		emm_ptr = (emm_ptr & 0xffff00) | data;
 		emm_ptr &= EMM_MASK;
@@ -178,7 +196,6 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		emm[emm_ptr++] = data;
 		emm_ptr &= EMM_MASK;
 		break;
-#endif
 	case 0xe0:
 		inh &= ~1;
 		update_map();
@@ -209,7 +226,6 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-#ifdef _TINYIMAS
 uint32 MEMORY::read_io8(uint32 addr)
 {
 	uint32 val;
@@ -229,7 +245,6 @@ uint32 MEMORY::read_io8(uint32 addr)
 	}
 	return 0xff;
 }
-#endif
 
 void MEMORY::update_map()
 {
@@ -247,5 +262,26 @@ void MEMORY::update_map()
 	else {
 		SET_BANK(0xd000, 0xffff, ram + 0xd000, ram + 0xd000);
 	}
+}
+
+void MEMORY::open_mzt(_TCHAR* filename)
+{
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+		_memset(mzt, 0, sizeof(mzt));
+		fio->Fread(mzt, sizeof(mzt), 1);
+		fio->Fclose();
+		
+		int ptr = 0, size, ofs, adr;
+		while(size = mzt[ptr + 0x12] | (mzt[ptr + 0x13] << 8)) {
+			ofs = mzt[ptr + 0x14] | (mzt[ptr + 0x15] << 8);
+			adr = mzt[ptr + 0x16] | (mzt[ptr + 0x17] << 8);
+			ptr += 128;
+			_memcpy(ram + ofs, mzt + ptr, size);
+			ptr += size;
+		}
+		d_cpu->set_pc(adr);
+	}
+	delete fio;
 }
 

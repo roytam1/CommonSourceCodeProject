@@ -199,10 +199,6 @@ SOURCE=.\src\win32_timer.cpp
 # PROP Default_Filter "cpp"
 # Begin Source File
 
-SOURCE=.\src\vm\beep.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\vm\datarec.cpp
 # End Source File
 # Begin Source File
@@ -283,10 +279,6 @@ SOURCE=.\src\emu.h
 # Begin Group "VM Common Header Files"
 
 # PROP Default_Filter "h"
-# Begin Source File
-
-SOURCE=.\src\vm\beep.h
-# End Source File
 # Begin Source File
 
 SOURCE=.\src\vm\datarec.h

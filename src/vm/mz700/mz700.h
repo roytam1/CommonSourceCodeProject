@@ -22,6 +22,8 @@
 #define WINDOW_HEIGHT2		400
 
 #define USE_DATAREC
+#define USE_DATAREC_BUTTON
+#define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -33,14 +35,15 @@
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
 #define CHARS_PER_LINE		1
-#define CPU_CLOCKS		3579525
+#define CPU_CLOCKS		3584160
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
+//#define EVENT_PRECISE		4
 
-// for Tiny iM@s opening demo
-#define _TINYIMAS
+// memory wait
+#define CPU_MEMORY_WAIT
 
 #include "../../common.h"
 
@@ -48,15 +51,11 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-#ifdef USE_PCM1BIT
-class PCM1BIT;
-#else
-class BEEP;
-#endif
 class DATAREC;
 class I8253;
 class I8255;
 class IO8;
+class PCM1BIT;
 class Z80;
 
 class DISPLAY;
@@ -72,15 +71,12 @@ protected:
 	// devices
 	EVENT* event;
 	
-#ifdef USE_PCM1BIT
-	PCM1BIT* pcm;
-#else
-	BEEP* beep;
-#endif
 	DATAREC* drec;
 	I8253* ctc;
 	I8255* pio;
 	IO8* io;
+	PCM1BIT* pcm0;
+//	PCM1BIT* pcm1;
 	Z80* cpu;
 	
 	DISPLAY* display;
@@ -112,13 +108,13 @@ public:
 	uint16* create_sound(int samples, bool fill);
 	
 	// user interface
+	void open_mzt(_TCHAR* filename);
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();
+	void push_play();
+	void push_stop();
 	bool now_skip();
-#ifdef _TINYIMAS
-	int skip_frames;
-#endif
 	
 	void update_config();
 	

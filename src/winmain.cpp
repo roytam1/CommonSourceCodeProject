@@ -27,11 +27,15 @@ DWORD GetLongFullPathName(_TCHAR* src, _TCHAR* dst)
 #ifdef _WIN32_WCE
 	// do nothing...
 	_tcscpy(dst, src);
-	return 0;
+	return _tcslen(dst);
 #else
 	_TCHAR tmp[_MAX_PATH];
 	GetFullPathName(src, _MAX_PATH, tmp, NULL);
-	return GetLongPathName(tmp, dst, _MAX_PATH);
+	DWORD len = GetLongPathName(tmp, dst, _MAX_PATH);
+	if(len)
+		return len;
+	_tcscpy(dst, tmp);
+	return _tcslen(dst);
 #endif
 }
 
@@ -62,6 +66,14 @@ void update_datarec_history(_TCHAR* path);
 #ifdef USE_MEDIA
 void open_media(HWND hWnd);
 void update_media_history(_TCHAR* path);
+#endif
+#ifdef USE_RAM
+void open_ram(HWND hWnd, BOOL load);
+void update_ram_history(_TCHAR* path);
+#endif
+#ifdef USE_MZT
+void open_mzt(HWND hWnd);
+void update_mzt_history(_TCHAR* path);
 #endif
 void set_window(HWND hwnd, int mode);
 BOOL fullscreen_now = FALSE;
@@ -241,7 +253,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 			
 			if(emu->now_rec_video()) {
 				while(rec_next_time >= rec_accum_time) {
-					// rec pictures 10/15/30 frames per 1 second
+					// rec pictures 15/30/60 frames per 1 second
 					emu->draw_screen();
 					fps++;
 					rec_accum_time += rec_delay[rec_cnt];
@@ -651,6 +663,16 @@ recent_datarec:
 						emu->play_datarec(path);
 					break;
 #endif
+#ifdef USE_DATAREC_BUTTON
+				case ID_PLAY_BUTTON:
+					if(emu)
+						emu->push_play();
+					break;
+				case ID_STOP_BUTTON:
+					if(emu)
+						emu->push_stop();
+					break;
+#endif
 #ifdef USE_MEDIA
 				case ID_OPEN_MEDIA:
 					if(emu)
@@ -677,16 +699,64 @@ recent_media:
 						emu->open_media(path);
 					break;
 #endif
+#ifdef USE_RAM
+				case ID_LOAD_RAM:
+					if(emu)
+						open_ram(hWnd, TRUE);
+					break;
+				case ID_SAVE_RAM:
+					if(emu)
+						open_ram(hWnd, FALSE);
+					break;
+				case ID_RECENT_RAM1: no = 0; goto recent_ram;
+				case ID_RECENT_RAM2: no = 1; goto recent_ram;
+				case ID_RECENT_RAM3: no = 2; goto recent_ram;
+				case ID_RECENT_RAM4: no = 3; goto recent_ram;
+				case ID_RECENT_RAM5: no = 4; goto recent_ram;
+				case ID_RECENT_RAM6: no = 5; goto recent_ram;
+				case ID_RECENT_RAM7: no = 6; goto recent_ram;
+				case ID_RECENT_RAM8: no = 7;
+recent_ram:
+					_tcscpy(path, config.recent_ram[no]);
+					for(int i = no; i > 0; i--)
+						_tcscpy(config.recent_ram[i], config.recent_ram[i - 1]);
+					_tcscpy(config.recent_ram[0], path);
+					if(emu)
+						emu->load_ram(path);
+					break;
+#endif
+#ifdef USE_MZT
+				case ID_OPEN_MZT:
+					if(emu)
+						open_mzt(hWnd);
+					break;
+				case ID_RECENT_MZT1: no = 0; goto recent_mzt;
+				case ID_RECENT_MZT2: no = 1; goto recent_mzt;
+				case ID_RECENT_MZT3: no = 2; goto recent_mzt;
+				case ID_RECENT_MZT4: no = 3; goto recent_mzt;
+				case ID_RECENT_MZT5: no = 4; goto recent_mzt;
+				case ID_RECENT_MZT6: no = 5; goto recent_mzt;
+				case ID_RECENT_MZT7: no = 6; goto recent_mzt;
+				case ID_RECENT_MZT8: no = 7;
+recent_mzt:
+					_tcscpy(path, config.recent_mzt[no]);
+					for(int i = no; i > 0; i--)
+						_tcscpy(config.recent_mzt[i], config.recent_mzt[i - 1]);
+					_tcscpy(config.recent_mzt[0], path);
+					if(emu)
+						emu->open_mzt(path);
+					break;
+#endif
+				case ID_SCREEN_REC60: no = 60; goto record_video;
 				case ID_SCREEN_REC30: no = 30; goto record_video;
-				case ID_SCREEN_REC15: no = 15; goto record_video;
-				case ID_SCREEN_REC10: no = 10;
+				case ID_SCREEN_REC15: no = 15;
 record_video:
 					if(emu) {
 						emu->start_rec_video(no, true);
 						emu->start_rec_sound();
-						rec_delay[0] = (no == 30) ? 33 : (no == 15) ? 66 : 100;
-						rec_delay[1] = (no == 30) ? 33 : (no == 15) ? 67 : 100;
-						rec_delay[2] = (no == 30) ? 34 : (no == 15) ? 67 : 100;
+						rec_delay[0] = (no == 60) ? 16 : (no == 30) ? 33 : 66;
+						rec_delay[1] = (no == 60) ? 17 : (no == 30) ? 33 : 67;
+						rec_delay[2] = (no == 60) ? 17 : (no == 30) ? 34 : 67;
 						rec_next_time = rec_accum_time = 0;
 					}
 					break;
@@ -788,7 +858,8 @@ screen_rotate:
 				case ID_SOUND_FREQ3: no = 3; goto sound_frequency;
 				case ID_SOUND_FREQ4: no = 4; goto sound_frequency;
 				case ID_SOUND_FREQ5: no = 5; goto sound_frequency;
-				case ID_SOUND_FREQ6: no = 6;
+				case ID_SOUND_FREQ6: no = 6; goto sound_frequency;
+				case ID_SOUND_FREQ7: no = 7;
 sound_frequency:
 					config.sound_frequency = no;
 					if(emu)
@@ -1035,6 +1106,48 @@ void update_menu(HMENU hMenu, int pos)
 			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MEDIA1, _T("None"));
 	}
 #endif
+#ifdef MENU_POS_RAM
+	if(pos == MENU_POS_RAM) {
+		// ram
+		UINT uIDs[8] = {
+			ID_RECENT_RAM1, ID_RECENT_RAM2, ID_RECENT_RAM3, ID_RECENT_RAM4,
+			ID_RECENT_RAM5, ID_RECENT_RAM6, ID_RECENT_RAM7, ID_RECENT_RAM8
+		};
+		bool flag = false;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_ram[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_ram[i]);
+				flag = true;
+			}
+		}
+		if(!flag)
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_RAM1, _T("None"));
+	}
+#endif
+#ifdef MENU_POS_MZT
+	if(pos == MENU_POS_MZT) {
+		// ram
+		UINT uIDs[8] = {
+			ID_RECENT_MZT1, ID_RECENT_MZT2, ID_RECENT_MZT3, ID_RECENT_MZT4,
+			ID_RECENT_MZT5, ID_RECENT_MZT6, ID_RECENT_MZT7, ID_RECENT_MZT8
+		};
+		bool flag = false;
+		
+		for(int i = 0; i < 8; i++)
+			DeleteMenu(hMenu, uIDs[i], MF_BYCOMMAND);
+		for(int i = 0; i < 8; i++) {
+			if(_tcscmp(config.recent_mzt[i], _T(""))) {
+				AppendMenu(hMenu, MF_STRING, uIDs[i], config.recent_mzt[i]);
+				flag = true;
+			}
+		}
+		if(!flag)
+			AppendMenu(hMenu, MF_GRAYED | MF_STRING, ID_RECENT_MZT1, _T("None"));
+	}
+#endif
 #ifdef MENU_POS_SCREEN
 	if(pos == MENU_POS_SCREEN) {
 		// recording
@@ -1045,9 +1158,9 @@ void update_menu(HMENU hMenu, int pos)
 			now_stop = !now_rec;
 		}
 #endif
+		EnableMenuItem(hMenu, ID_SCREEN_REC60, now_rec ? MF_GRAYED : MF_ENABLED);
 		EnableMenuItem(hMenu, ID_SCREEN_REC30, now_rec ? MF_GRAYED : MF_ENABLED);
 		EnableMenuItem(hMenu, ID_SCREEN_REC15, now_rec ? MF_GRAYED : MF_ENABLED);
-		EnableMenuItem(hMenu, ID_SCREEN_REC10, now_rec ? MF_GRAYED : MF_ENABLED);
 		EnableMenuItem(hMenu, ID_SCREEN_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
 		
 		// screen mode
@@ -1126,19 +1239,21 @@ void update_menu(HMENU hMenu, int pos)
 		EnableMenuItem(hMenu, ID_SOUND_STOP, now_stop ? MF_GRAYED : MF_ENABLED);
 		
 		if(config.sound_frequency == 0)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ0, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ0, MF_BYCOMMAND);
 		else if(config.sound_frequency == 1)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ1, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ1, MF_BYCOMMAND);
 		else if(config.sound_frequency == 2)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ2, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ2, MF_BYCOMMAND);
 		else if(config.sound_frequency == 3)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ3, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ3, MF_BYCOMMAND);
 		else if(config.sound_frequency == 4)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ4, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ4, MF_BYCOMMAND);
 		else if(config.sound_frequency == 5)
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ5, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ5, MF_BYCOMMAND);
+		else if(config.sound_frequency == 6)
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ6, MF_BYCOMMAND);
 		else
-			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ6, ID_SOUND_FREQ6, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SOUND_FREQ0, ID_SOUND_FREQ7, ID_SOUND_FREQ7, MF_BYCOMMAND);
 		if(config.sound_latency == 0)
 			CheckMenuRadioItem(hMenu, ID_SOUND_LATE0, ID_SOUND_LATE3, ID_SOUND_LATE0, MF_BYCOMMAND);
 		else if(config.sound_latency == 1)
@@ -1329,6 +1444,83 @@ void update_media_history(_TCHAR* path)
 	for(int i = no; i > 0; i--)
 		_tcscpy(config.recent_media[i], config.recent_media[i - 1]);
 	_tcscpy(config.recent_media[0], path);
+}
+#endif
+
+#ifdef USE_RAM
+void open_ram(HWND hWnd, BOOL load)
+{
+	_TCHAR szFile[_MAX_PATH] = _T("");
+	OPENFILENAME OpenFileName;
+	_memset(&OpenFileName, 0, sizeof(OpenFileName));
+	OpenFileName.lStructSize = sizeof(OPENFILENAME);
+	OpenFileName.hwndOwner = hWnd;
+	OpenFileName.lpstrFilter = _T("RAM Files (*.ram)\0*.ram\0All Files (*.*)\0*.*\0\0");
+	OpenFileName.lpstrFile = szFile;
+	OpenFileName.nMaxFile = _MAX_PATH;
+	OpenFileName.lpstrTitle = _T("RAM Image");
+	
+	if(GetOpenFileName(&OpenFileName)) {
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(OpenFileName.lpstrFile, long_path);
+		
+		update_ram_history(long_path);
+		if(load)
+			emu->load_ram(long_path);
+		else
+			emu->save_ram(long_path);
+	}
+}
+
+void update_ram_history(_TCHAR* path)
+{
+	int no = 7;
+	for(int i = 0; i < 8; i++) {
+		if(_tcscmp(config.recent_ram[i], path) == 0) {
+			no = i;
+			break;
+		}
+	}
+	for(int i = no; i > 0; i--)
+		_tcscpy(config.recent_ram[i], config.recent_ram[i - 1]);
+	_tcscpy(config.recent_ram[0], path);
+}
+#endif
+
+#ifdef USE_MZT
+void open_mzt(HWND hWnd)
+{
+	_TCHAR szFile[_MAX_PATH] = _T("");
+	OPENFILENAME OpenFileName;
+	_memset(&OpenFileName, 0, sizeof(OpenFileName));
+	OpenFileName.lStructSize = sizeof(OPENFILENAME);
+	OpenFileName.hwndOwner = hWnd;
+	OpenFileName.lpstrFilter = _T("MZT Files (*.mzt;*.m12)\0*.mzt;*.m12\0All Files (*.*)\0*.*\0\0");
+	OpenFileName.lpstrFile = szFile;
+	OpenFileName.nMaxFile = _MAX_PATH;
+	OpenFileName.lpstrTitle = _T("MZT Image");
+	
+	if(GetOpenFileName(&OpenFileName)) {
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(OpenFileName.lpstrFile, long_path);
+		
+		update_mzt_history(long_path);
+		emu->open_mzt(long_path);
+	}
+}
+
+void update_mzt_history(_TCHAR* path)
+{
+	int no = 7;
+	for(int i = 0; i < 8; i++) {
+		if(_tcscmp(config.recent_mzt[i], path) == 0) {
+			no = i;
+			break;
+		}
+	}
+	for(int i = no; i > 0; i--)
+		_tcscpy(config.recent_mzt[i], config.recent_mzt[i - 1]);
+	_tcscpy(config.recent_mzt[0], path);
 }
 #endif
 

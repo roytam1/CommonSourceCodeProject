@@ -514,8 +514,9 @@ inline uint8 Z80::SET(uint8 bit, uint8 value) {
 void Z80::reset()
 {
 	// reset
-	PC = _I = _R = 0;
+	PC = CPU_START_ADDR;
 //	AF = SP = 0xffff;
+	_I = _R = 0;
 	IM = IFF1 = IFF2 = ICR = 0;
 	halt = false;
 	intr_req_bit = intr_pend_bit = 0;

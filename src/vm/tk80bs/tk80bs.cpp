@@ -15,6 +15,7 @@
 
 #include "../i8251.h"
 #include "../i8255.h"
+#include "../pcm1bit.h"
 #include "../z80.h"
 
 #include "cmt.h"
@@ -34,8 +35,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	sio = new I8251(this, emu);
-	pio = new I8255(this, emu);
+	sio_b = new I8251(this, emu);	// on TK-80BS
+	pio_b = new I8255(this, emu);
+	pio_t = new I8255(this, emu);	// on TK-80
+	pcm0 = new PCM1BIT(this, emu);
+	pcm1 = new PCM1BIT(this, emu);
 	cpu = new Z80(this, emu);	// 8080
 	
 	cmt = new CMT(this, emu);
@@ -45,21 +49,39 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(dummy);
+	event->set_context_sound(pcm0);
+	event->set_context_sound(pcm1);
 	
-	sio->set_context_out(cmt, SIG_CMT_OUT);
-	pio->set_context_port_c(display, SIG_DISPLAY_I8255_C, 3, 0);
+/*	8255 on TK-80
 	
-	cmt->set_context_sio(sio, SIG_I8251_RECV, SIG_I8251_CLEAR);
+	PA	key matrix
+	PB0	serial in
+	PC0	serial out
+	PC1	sound #1
+	PC2	sound #2
+	PC4-6	key column
+	PC7	dma disable
+*/
+	sio_b->set_context_out(cmt, SIG_CMT_OUT);
+	pio_b->set_context_port_c(display, SIG_DISPLAY_MODE, 3, 0);
+	pio_t->set_context_port_c(pcm0, SIG_PCM1BIT_SIGNAL, 2, 0);
+	pio_t->set_context_port_c(pcm1, SIG_PCM1BIT_SIGNAL, 4, 0);
+	pio_t->set_context_port_c(keyboard, SIG_KEYBOARD_COLUMN, 0x70, 0);
+	pio_t->set_context_port_c(display, SIG_DISPLAY_DMA, 0x80, 0);
+	
+	cmt->set_context_sio(sio_b, SIG_I8251_RECV, SIG_I8251_CLEAR);
+	display->set_context_key(keyboard);
 	display->set_vram_ptr(memory->get_vram());
-	keyboard->set_context_pio(pio, SIG_I8255_PORT_A);
+	display->set_led_ptr(memory->get_led());
+	keyboard->set_context_pio_b(pio_b, SIG_I8255_PORT_A);
+	keyboard->set_context_pio_t(pio_t, SIG_I8255_PORT_A);
 	keyboard->set_context_cpu(cpu);
-	memory->set_context_sio(sio);
-	memory->set_context_pio(pio);
+	memory->set_context_sio(sio_b);
+	memory->set_context_pio(pio_b);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
-	cpu->set_context_io(dummy);
+	cpu->set_context_io(pio_t);
 	cpu->set_context_intr(keyboard);
 	
 	// initialize and reset all devices except the event manager
@@ -71,6 +93,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id)
 			device->reset();
 	}
+	
+	// init 8255 on TK-80
+	pio_t->write_io8(0xfb, 0x92);
+	pio_t->write_signal(SIG_I8255_PORT_A, 0xff, 0xff);
 }
 
 VM::~VM()
@@ -98,6 +124,10 @@ void VM::reset()
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device)
 		device->reset();
+	
+	// init 8255 on TK-80
+	pio_t->write_io8(0xfb, 0x92);
+	pio_t->write_signal(SIG_I8255_PORT_A, 0xff, 0xff);
 }
 
 void VM::run()
@@ -167,6 +197,10 @@ void VM::initialize_sound(int rate, int samples)
 {
 	// init sound manager
 	event->initialize_sound(rate, samples);
+	
+	// init sound gen
+	pcm0->init(rate, 8000);
+	pcm1->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -185,12 +219,22 @@ void VM::key_down(int code)
 
 void VM::key_up(int code)
 {
-//	keyboard->key_up(code);
+	keyboard->key_up(code);
 }
 
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
+
+void VM::load_ram(_TCHAR* filename)
+{
+	memory->load_ram(filename);
+}
+
+void VM::save_ram(_TCHAR* filename)
+{
+	memory->save_ram(filename);
+}
 
 void VM::play_datarec(_TCHAR* filename)
 {

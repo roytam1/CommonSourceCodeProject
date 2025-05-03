@@ -131,9 +131,9 @@ BEGIN
     END
     POPUP "Screen"
     BEGIN
+        MENUITEM "Rec 60fps"                    ID_SCREEN_REC60
         MENUITEM "Rec 30fps"                    ID_SCREEN_REC30
         MENUITEM "Rec 15fps"                    ID_SCREEN_REC15
-        MENUITEM "Rec 10fps"                    ID_SCREEN_REC10
         MENUITEM "Stop"                         ID_SCREEN_STOP
         MENUITEM SEPARATOR
         MENUITEM "Window",                      ID_SCREEN_WINDOW1
@@ -161,6 +161,7 @@ BEGIN
         MENUITEM "22050Hz",                     ID_SOUND_FREQ4
         MENUITEM "44100Hz",                     ID_SOUND_FREQ5
         MENUITEM "48000Hz",                     ID_SOUND_FREQ6
+        MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
         MENUITEM "100msec",                     ID_SOUND_LATE0
         MENUITEM "200msec",                     ID_SOUND_LATE1

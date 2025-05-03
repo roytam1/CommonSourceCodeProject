@@ -17,12 +17,13 @@
 #define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		256
-#define WINDOW_HEIGHT1		128
+#define WINDOW_HEIGHT1		164
 #define WINDOW_WIDTH2		512
-#define WINDOW_HEIGHT2		256
+#define WINDOW_HEIGHT2		328
 
 #define USE_DATAREC
 #define DATAREC_BINARY_ONLY
+#define USE_RAM
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -36,8 +37,10 @@
 #define LINES_PER_FRAME 	262
 #define CHARS_PER_LINE		1
 #define CPU_CLOCKS		2048000
+//#define CPU_START_ADDR		0xf000
 #define SCREEN_WIDTH		256
-#define SCREEN_HEIGHT		128
+#define SCREEN_HEIGHT		164
+//#define IO8_ADDR_MAX		8
 
 #include "../../common.h"
 
@@ -47,6 +50,7 @@ class EVENT;
 
 class I8251;
 class I8255;
+class PCM1BIT;
 class Z80;
 
 class CMT;
@@ -62,8 +66,11 @@ protected:
 	// devices
 	EVENT* event;
 	
-	I8251* sio;
-	I8255* pio;
+	I8251* sio_b;
+	I8255* pio_b;
+	I8255* pio_t;
+	PCM1BIT* pcm0;
+	PCM1BIT* pcm1;
 	Z80* cpu;
 	
 	CMT* cmt;
@@ -99,6 +106,8 @@ public:
 	void key_up(int code);
 	
 	// user interface
+	void load_ram(_TCHAR* filename);
+	void save_ram(_TCHAR* filename);
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);
 	void close_datarec();

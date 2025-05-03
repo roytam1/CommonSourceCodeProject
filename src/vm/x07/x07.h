@@ -40,6 +40,7 @@
 #define LINES_PER_FRAME		262
 #define CHARS_PER_LINE		1
 #define CPU_CLOCKS		3840000
+#define CPU_START_ADDR		0xc3c3
 #define SCREEN_WIDTH		120
 #define SCREEN_HEIGHT		32
 #define TV_SCREEN_WIDTH		256

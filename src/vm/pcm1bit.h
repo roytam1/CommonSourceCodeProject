@@ -22,7 +22,7 @@ class PCM1BIT : public DEVICE
 {
 private:
 	bool signal, on, mute;
-	int vol, update, count;
+	int max_vol, dif_vol, gen_vol, update, count;
 	bool samples[256];
 	
 public:
@@ -31,6 +31,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
 	void event_callback(int event_id, int err);

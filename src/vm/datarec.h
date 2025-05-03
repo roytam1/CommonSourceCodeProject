@@ -16,6 +16,7 @@
 
 #define SIG_DATAREC_OUT		0
 #define SIG_DATAREC_REMOTE	1
+#define SIG_DATAREC_TRIG	2
 
 class FILEIO;
 
@@ -30,15 +31,16 @@ static uint8 header[44] = {
 class DATAREC : public DEVICE
 {
 private:
-	DEVICE* dev[MAX_OUTPUT];
-	int did[MAX_OUTPUT], dcount;
-	uint32 dmask[MAX_OUTPUT];
+	DEVICE *d_out[MAX_OUTPUT], *d_remote[MAX_OUTPUT];
+	int did_out[MAX_OUTPUT], did_remote[MAX_OUTPUT];
+	int dcount_out, dcount_remote;
+	uint32 dmask_out[MAX_OUTPUT], dmask_remote[MAX_OUTPUT];
 	
 	// data recorder
 	FILEIO* fio;
 	int regist_id;
 	bool play, rec, is_wave;
-	bool in, out, change, remote;
+	bool in, out, change, remote, trig;
 	
 	int bufcnt, samples;
 	uint32 remain;
@@ -49,7 +51,7 @@ private:
 	
 public:
 	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount = 0;
+		dcount_out = dcount_remote = 0;
 	}
 	~DATAREC() {}
 	
@@ -64,9 +66,13 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context(DEVICE* device, int id, uint32 mask) {
-		int c = dcount++;
-		dev[c] = device; did[c] = id; dmask[c] = mask;
+	void set_context_out(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_out++;
+		d_out[c] = device; did_out[c] = id; dmask_out[c] = mask;
+	}
+	void set_context_remote(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_remote++;
+		d_remote[c] = device; did_remote[c] = id; dmask_remote[c] = mask;
 	}
 	void play_datarec(_TCHAR* filename);
 	void rec_datarec(_TCHAR* filename);

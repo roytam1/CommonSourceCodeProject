@@ -356,7 +356,7 @@ private:
 	contexts
 	--------------------------------------------------------------------------- */
 	
-	DEVICE *d_mem, *d_io, *d_pic;
+	DEVICE *d_mem, *d_io, *d_pic, *d_bios;
 	
 	/* ---------------------------------------------------------------------------
 	registers
@@ -723,6 +723,7 @@ private:
 	
 public:
 	X86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+		d_bios = NULL;
 		count = extra_count = first = 0;	// passed_clock must be zero at initialize
 		busreq = false;
 	}
@@ -755,6 +756,9 @@ public:
 	}
 	void set_context_intr(DEVICE* device) {
 		d_pic = device;
+	}
+	void set_context_bios(DEVICE* device) {
+		d_bios = device;
 	}
 };
 

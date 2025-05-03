@@ -19,7 +19,7 @@ class MEMORY : public DEVICE
 {
 private:
 	// memory
-	uint8 c3[0x2000];
+//	uint8 c3[0x2000];
 	uint8 ram[0x6000];
 	uint8 app[0x2000];
 	uint8 vram[0x1800];

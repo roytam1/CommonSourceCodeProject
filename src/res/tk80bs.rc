@@ -92,6 +92,20 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
+    POPUP "RAM"
+    BEGIN
+        MENUITEM "Load",                        ID_LOAD_RAM
+        MENUITEM "Save",                        ID_SAVE_RAM
+        MENUITEM SEPARATOR
+        MENUITEM "Recent 1",                    ID_RECENT_RAM1
+        MENUITEM "Recent 2",                    ID_RECENT_RAM2
+        MENUITEM "Recent 3",                    ID_RECENT_RAM3
+        MENUITEM "Recent 4",                    ID_RECENT_RAM4
+        MENUITEM "Recent 5",                    ID_RECENT_RAM5
+        MENUITEM "Recent 6",                    ID_RECENT_RAM6
+        MENUITEM "Recent 7",                    ID_RECENT_RAM7
+        MENUITEM "Recent 8",                    ID_RECENT_RAM8
+    END
     POPUP "Tape"
     BEGIN
         MENUITEM "Play",                        ID_PLAY_DATAREC
@@ -109,9 +123,9 @@ BEGIN
     END
     POPUP "Screen"
     BEGIN
+        MENUITEM "Rec 60fps"                    ID_SCREEN_REC60
         MENUITEM "Rec 30fps"                    ID_SCREEN_REC30
         MENUITEM "Rec 15fps"                    ID_SCREEN_REC15
-        MENUITEM "Rec 10fps"                    ID_SCREEN_REC10
         MENUITEM "Stop"                         ID_SCREEN_STOP
         MENUITEM SEPARATOR
         MENUITEM "Window x1",                   ID_SCREEN_WINDOW1
@@ -140,6 +154,7 @@ BEGIN
         MENUITEM "22050Hz",                     ID_SOUND_FREQ4
         MENUITEM "44100Hz",                     ID_SOUND_FREQ5
         MENUITEM "48000Hz",                     ID_SOUND_FREQ6
+        MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
         MENUITEM "100msec",                     ID_SOUND_LATE0
         MENUITEM "200msec",                     ID_SOUND_LATE1

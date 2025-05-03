@@ -21,6 +21,8 @@
 
 #define EMM_SIZE	0x1000000
 #define EMM_MASK	(EMM_SIZE - 1)
+#define MZT_SIZE	0x20000
+#define MZT_MASK	(MZT_SIZE - 1)
 
 class MEMORY : public DEVICE
 {
@@ -35,10 +37,9 @@ private:
 	uint8 ram[0x10000];	// Main RAM 64KB
 	uint8 vram[0x1000];	// VRAM 4KB
 	uint8 ipl[0x1000];	// IPL 4KB
-#ifdef _TINYIMAS
 	uint8 emm[EMM_SIZE];
 	uint32 emm_ptr;
-#endif
+	uint8 mzt[MZT_SIZE];
 	
 	uint8 inh, inhbak;
 	uint8 hblank, tempo;
@@ -63,10 +64,13 @@ public:
 	uint32 read_data16(uint32 addr) {
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
+	void write_data8w(uint32 addr, uint32 data, int* wait);
+	uint32 read_data8w(uint32 addr, int* wait);
+	void write_data16w(uint32 addr, uint32 data, int* wait);
+	uint32 read_data16w(uint32 addr, int* wait);
+	
 	void write_io8(uint32 addr, uint32 data);
-#ifdef _TINYIMAS
 	uint32 read_io8(uint32 addr);
-#endif
 	
 	// unitque function
 	void set_context_cpu(DEVICE* device) {
@@ -81,6 +85,7 @@ public:
 	uint8* get_vram() {
 		return vram;
 	}
+	void open_mzt(_TCHAR* filename);
 };
 
 #endif

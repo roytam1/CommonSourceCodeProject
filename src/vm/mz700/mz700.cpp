@@ -13,15 +13,11 @@
 #include "../device.h"
 #include "../event.h"
 
-#ifdef USE_PCM1BIT
-#include "../pcm1bit.h"
-#else
-#include "../beep.h"
-#endif
 #include "../datarec.h"
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../io8.h"
+#include "../pcm1bit.h"
 #include "../z80.h"
 
 #include "display.h"
@@ -41,15 +37,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-#ifdef USE_PCM1BIT
-	pcm = new PCM1BIT(this, emu);
-#else
-	beep = new BEEP(this, emu);
-#endif
 	drec = new DATAREC(this, emu);
 	ctc = new I8253(this, emu);
 	pio = new I8255(this, emu);
 	io = new IO8(this, emu);
+	pcm0 = new PCM1BIT(this, emu);
+//	pcm1 = new PCM1BIT(this, emu);
 	cpu = new Z80(this, emu);
 	
 	display = new DISPLAY(this, emu);
@@ -59,25 +52,21 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-#ifdef USE_PCM1BIT
-	event->set_context_sound(pcm);
-#else
-	event->set_context_sound(beep);
-#endif
+	event->set_context_sound(pcm0);
+//	event->set_context_sound(pcm1);
 	
-	drec->set_context(pio, SIG_I8255_PORT_C, 0x20);
-#ifdef USE_PCM1BIT
-	ctc->set_context_ch0(pcm, SIG_PCM1BIT_SIGNAL);
-#else
-	ctc->set_context_ch0(beep, SIG_BEEP_PULSE);
-#endif
+	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
+//	drec->set_context_out(pcm1, SIG_PCM1BIT_SIGNAL, 1);
+	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
+	ctc->set_context_ch0(pcm0, SIG_PCM1BIT_SIGNAL);
 	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2);
 	ctc->set_context_ch2(interrupt, SIG_INTERRUPT_CLOCK);
-	ctc->set_constant_clock(0, 895000);
+	ctc->set_constant_clock(0, CPU_CLOCKS >> 2);
 	ctc->set_constant_clock(1, 16000);
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x7f, 0);
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
 	pio->set_context_port_c(interrupt, SIG_INTERRUPT_INTMASK, 4, 0);
+	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 8, 0);
 	// pc3: motor rotate control
 	
 	display->set_vram_ptr(memory->get_vram());
@@ -94,10 +83,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(interrupt);
 	
 	// i/o bus
-#ifdef _TINYIMAS
 	io->set_iomap_range_r(0, 3, memory);	// EMM
 	io->set_iomap_range_w(0, 3, memory);	// EMM
-#endif
 	io->set_iomap_range_w(0xe0, 0xe6, memory);
 	
 	// initialize and reset all devices except the event manager
@@ -109,15 +96,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		if(device->this_device_id != event->this_device_id)
 			device->reset();
 	}
-#ifdef _TINYIMAS
-	skip_frames = -1;
-#endif
-	// initial device settings
-#ifdef USE_PCM1BIT
-	pcm->write_signal(SIG_PCM1BIT_ON, 1, 1);
-#else
-	beep->write_signal(SIG_BEEP_ON, 1, 1);
-#endif
 }
 
 VM::~VM()
@@ -145,17 +123,10 @@ void VM::reset()
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device)
 		device->reset();
-#ifdef _TINYIMAS
-	skip_frames = -1;
-#endif
 }
 
 void VM::run()
 {
-#ifdef _TINYIMAS
-	if(skip_frames > 0)
-		skip_frames--;
-#endif
 	event->drive();
 }
 
@@ -223,11 +194,8 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-#ifdef USE_PCM1BIT
-	pcm->init(rate, 8000);
-#else
-	beep->init(rate, -1, 2, 8000);
-#endif
+	pcm0->init(rate, 8000);
+//	pcm1->init(rate, 2000);	// data recorder noise
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -239,14 +207,15 @@ uint16* VM::create_sound(int samples, bool fill)
 // user interface
 // ----------------------------------------------------------------------------
 
+void VM::open_mzt(_TCHAR* filename)
+{
+	memory->open_mzt(filename);
+}
+
 void VM::play_datarec(_TCHAR* filename)
 {
 	drec->play_datarec(filename);
 	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
-#ifdef _TINYIMAS
-	if(skip_frames < 0)
-		skip_frames = 16000;
-#endif
 }
 
 void VM::rec_datarec(_TCHAR* filename)
@@ -261,13 +230,23 @@ void VM::close_datarec()
 	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
 }
 
+void VM::push_play()
+{
+	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+}
+
+void VM::push_stop()
+{
+	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+}
+
 bool VM::now_skip()
 {
-//#ifdef _TINYIMAS
-//	return (skip_frames > 0);
-//#else
-	return false; //drec->skip();
-//#endif
+#ifdef _TINYIMAS
+	return false;
+#else
+	return drec->skip();
+#endif
 }
 
 void VM::update_config()

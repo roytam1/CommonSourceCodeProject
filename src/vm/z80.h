@@ -23,6 +23,10 @@
 #endif
 #define NMI_REQ_BIT	0x80000000
 
+#ifndef CPU_START_ADDR
+#define CPU_START_ADDR	0
+#endif
+
 #define AF	regs[0].w
 #define BC	regs[1].w
 #define DE 	regs[2].w
@@ -565,6 +569,9 @@ public:
 	}
 	uint32 get_prv_pc() {
 		return prvPC;
+	}
+	void set_pc(uint32 pc) {
+		PC = pc;
 	}
 	
 	// unique function

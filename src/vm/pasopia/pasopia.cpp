@@ -61,7 +61,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
 	
-	drec->set_context(pio2, SIG_I8255_PORT_B, 0x20);
+	drec->set_context_out(pio2, SIG_I8255_PORT_B, 0x20);
 	crtc->set_context_disp(pio1, SIG_I8255_PORT_B, 8);
 	crtc->set_context_vsync(pio1, SIG_I8255_PORT_B, 0x20);
 	crtc->set_context_hsync(pio1, SIG_I8255_PORT_B, 0x40);

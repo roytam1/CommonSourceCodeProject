@@ -32,10 +32,12 @@ void MEMORY::initialize()
 	_memset(basic, 0xff, sizeof(basic));
 	_memset(bsmon, 0xff, sizeof(bsmon));
 	_memset(ram, 0, sizeof(ram));
-	_memset(vram, 0, sizeof(vram));
+	_memset(vram, 0x20, sizeof(vram));
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load ipl
+	uint8 top[3] = {0xc3, 0x00, 0xf0};
+	uint8 rst[3] = {0xc3, 0xdd, 0x83};
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
@@ -44,6 +46,11 @@ void MEMORY::initialize()
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(mon, sizeof(mon), 1);
 		fio->Fclose();
+	}
+	else {
+		// default
+		_memcpy(mon, top, 3);
+		_memcpy(mon + 0x38, rst, 3);
 	}
 	_stprintf(file_path, _T("%sLV1BASIC.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
@@ -59,14 +66,10 @@ void MEMORY::initialize()
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(bsmon, sizeof(bsmon), 1);
 		fio->Fclose();
+		// patch
+		_memcpy(mon + 0x38, rst, 3);
 	}
 	delete fio;
-	
-	// patch mon
-	uint8 top[3] = {0xc3, 0x00, 0xf0};
-	uint8 rst[3] = {0xc3, 0xdd, 0x88};
-	_memcpy(mon, top, 3);
-	_memcpy(mon + 0x88, rst, 3);
 	
 	// memory map
 	SET_BANK(0x0000, 0xffff, wdmy, rdmy);
@@ -110,5 +113,25 @@ uint32 MEMORY::read_data8(uint32 addr)
 		return d_pio->read_io8(addr & 3);
 	}
 	return rbank[addr >> 8][addr & 0xff];
+}
+
+void MEMORY::load_ram(_TCHAR* filename)
+{
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(filename, FILEIO_READ_BINARY)) {
+		fio->Fread(ram, sizeof(ram), 1);
+		fio->Fclose();
+	}
+	delete fio;
+}
+
+void MEMORY::save_ram(_TCHAR* filename)
+{
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(filename, FILEIO_WRITE_BINARY)) {
+		fio->Fwrite(ram, sizeof(ram), 1);
+		fio->Fclose();
+	}
+	delete fio;
 }
 

@@ -566,8 +566,10 @@ void UPD765A::seek_event(int drv)
 	
 	if(drv >= MAX_DRIVE)
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE;
+#ifdef UPD765A_NO_DISK_ST0_AT
 	else if(!disk[drv]->insert)
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE | ST0_NR;
+#endif
 	else if(disk[drv]->get_track(trk, 0) || disk[drv]->get_track(trk, 1))
 		fdc[drv].result = (drv & DRIVE_MASK) | ST0_SE;
 	else

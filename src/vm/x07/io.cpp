@@ -125,7 +125,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		font_code = data;
 		break;
 	case 0xf0:
-		d_mem->write_signal(0, data, 0xff);
+//		d_mem->write_signal(0, data, 0xff);
 	case 0xf1:
 	case 0xf2:
 	case 0xf3:

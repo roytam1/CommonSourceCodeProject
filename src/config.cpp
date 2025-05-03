@@ -33,6 +33,12 @@ void init_config()
 #ifdef USE_MEDIA
 		_tcscpy(config.recent_media[i], _T(""));
 #endif
+#ifdef USE_RAM
+		_tcscpy(config.recent_ram[i], _T(""));
+#endif
+#ifdef USE_MZT
+		_tcscpy(config.recent_mzt[i], _T(""));
+#endif
 	}
 	config.cpu_power = 0;
 #ifdef USE_FD1

@@ -56,6 +56,11 @@ public:
 	uint8* get_vram() {
 		return vram;
 	}
+	uint8* get_led() {
+		return ram + 0x3f8;
+	}
+	void load_ram(_TCHAR* filename);
+	void save_ram(_TCHAR* filename);
 };
 
 #endif

@@ -32,10 +32,10 @@ EMU::EMU(HWND hwnd)
 	app_path[pt + 1] = '\0';
 	
 	// load sound config
-	static int freq_table[7] = {2000, 4000, 8000, 11025, 22050, 44100, 48000};
+	static int freq_table[8] = {2000, 4000, 8000, 11025, 22050, 44100, 48000, 96000};
 	static double late_table[4] = {0.1, 0.2, 0.3, 0.4};
 	
-	if(!(0 <= config.sound_frequency && config.sound_frequency <= 6))
+	if(!(0 <= config.sound_frequency && config.sound_frequency <= 7))
 		config.sound_frequency = 5;
 	if(!(0 <= config.sound_latency && config.sound_latency <= 3))
 		config.sound_latency = 0;
@@ -206,6 +206,17 @@ void EMU::close_datarec()
 }
 #endif
 
+#ifdef USE_DATAREC_BUTTON
+void EMU::push_play()
+{
+	vm->push_play();
+}
+void EMU::push_stop()
+{
+	vm->push_stop();
+}
+#endif
+
 bool EMU::now_skip()
 {
 	return vm->now_skip();
@@ -216,3 +227,20 @@ void EMU::update_config()
 	vm->update_config();
 }
 
+#ifdef USE_RAM
+void EMU::load_ram(_TCHAR* filename)
+{
+	vm->load_ram(filename);
+}
+void EMU::save_ram(_TCHAR* filename)
+{
+	vm->save_ram(filename);
+}
+#endif
+
+#ifdef USE_MZT
+void EMU::open_mzt(_TCHAR* filename)
+{
+	vm->open_mzt(filename);
+}
+#endif
