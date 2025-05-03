@@ -1,3 +1,17 @@
+8/13/2015
+
+[VM/HUC6280] support debugger
+[VM/I86] fix aad instruction for NEC V30
+[VM/I286] add NEC V30 instructions based on MAME 0.128
+
+[PC9801U] fix to use new V30 core
+[PC9801VF] fix to use new V30 core
+[PC9801VM] fix to use new V30 core
+[PC98DO] fix to use new V30 core
+[PC98HA] fix to use new V30 core
+[PC98LT] fix to use new V30 core
+
+
 8/9/2015
 
 [VM/MB8877] support MB8866
