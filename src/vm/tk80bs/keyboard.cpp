@@ -142,16 +142,13 @@ void KEYBOARD::key_down(int code)
 		if(kana_lock) {
 			if(key_stat[0x10]) {
 				code = matrix_ks[code & 0xff];
-			}
-			else {
+			} else {
 				code = matrix_k[code & 0xff];
 			}
-		}
-		else {
+		} else {
 			if(key_stat[0x10]) {
 				code = matrix_s[code & 0xff];
-			}
-			else {
+			} else {
 				code = matrix[code & 0xff];
 			}
 		}

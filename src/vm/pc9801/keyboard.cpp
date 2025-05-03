@@ -11,6 +11,7 @@
 
 #include "keyboard.h"
 #include "../i8251.h"
+#include "../../fileio.h"
 
 static const int key_table[256] = {
 	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,0x0e,0x0f,  -1,  -1,  -1,0x1c,  -1,  -1,
@@ -48,14 +49,12 @@ void KEYBOARD::key_down(int code, bool repeat)
 			caps = !caps;
 			d_sio->write_signal(SIG_I8251_RECV, 0x71 | (caps ? 0 : 0x80), 0xff);
 		}
-	}
-	else if(code == 0x15) {
+	} else if(code == 0x15) {
 		if(!repeat) {
 			kana = !kana;
 			d_sio->write_signal(SIG_I8251_RECV, 0x72 | (kana ? 0 : 0x80), 0xff);
 		}
-	}
-	else if((code = key_table[code & 0xff]) != -1) {
+	} else if((code = key_table[code & 0xff]) != -1) {
 		if(flag[code]) {
 			d_sio->write_signal(SIG_I8251_RECV, code | 0x80, 0xff);
 		}
@@ -75,5 +74,31 @@ void KEYBOARD::key_up(int code)
 		}
 		flag[code] = 0;
 	}
+}
+
+#define STATE_VERSION	1
+
+void KEYBOARD::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputBool(kana);
+	state_fio->FputBool(caps);
+	state_fio->Fwrite(flag, sizeof(flag), 1);
+}
+
+bool KEYBOARD::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	kana = state_fio->FgetBool();
+	caps = state_fio->FgetBool();
+	state_fio->Fread(flag, sizeof(flag), 1);
+	return true;
 }
 

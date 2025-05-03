@@ -83,8 +83,8 @@ public:
 	{
 		cpu_clocks = new_clocks;
 	}
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_ch0(DEVICE* device, int id, uint32 mask)

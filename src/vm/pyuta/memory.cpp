@@ -17,14 +17,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -47,8 +45,7 @@ void MEMORY::initialize()
 		fio->Fread(basic, sizeof(basic), 1);
 		fio->Fclose();
 		has_extrom = true;
-	}
-	else {
+	} else {
 		has_extrom = false;
 	}
 	delete fio;
@@ -74,8 +71,7 @@ void MEMORY::reset()
 	if(ctype == 3) { \
 		SET_BANK(0x0000, 0x3fff, wdmy, ipl); \
 		SET_BANK(0x4000, 0xbfff, wdmy, cart); \
-	} \
-	else { \
+	} else { \
 		SET_BANK(0x0000, 0x7fff, wdmy, ipl); \
 		SET_BANK(0x8000, 0xbfff, wdmy, cart); \
 	} \
@@ -91,29 +87,21 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	addr &= 0xffff;
 	if(addr < 0xe000) {
 		wbank[addr >> 12][addr & 0xfff] = data;
-	}
-	else if(addr == 0xe000) {
+	} else if(addr == 0xe000) {
 		d_vdp->write_io8(0, data);
-	}
-	else if(addr == 0xe002) {
+	} else if(addr == 0xe002) {
 		d_vdp->write_io8(1, data);
-	}
-	else if(addr == 0xe108 && has_extrom) {
+	} else if(addr == 0xe108 && has_extrom) {
 		DISABLE_CART();
-	}
-	else if(addr == 0xe10c && has_extrom) {
+	} else if(addr == 0xe10c && has_extrom) {
 		ENABLE_CART();
-	}
-	else if(addr == 0xe810) {
+	} else if(addr == 0xe810) {
 		// printer data
-	}
-	else if(addr == 0xe840) {
+	} else if(addr == 0xe840) {
 		// printer strobe
-	}
-	else if(addr == 0xe200) {
+	} else if(addr == 0xe200) {
 		d_psg->write_io8(0, data);
-	}
-	else if(0xee00 <= addr && addr <= 0xeeff) {
+	} else if(0xee00 <= addr && addr <= 0xeeff) {
 		// cmt
 		if(!(addr & 0x1f)) {
 			bool signal = ((addr & 0x20) != 0);
@@ -146,17 +134,13 @@ uint32 MEMORY::read_data8(uint32 addr)
 	addr &= 0xffff;
 	if(addr < 0xe000) {
 		return rbank[addr >> 12][addr & 0xfff];
-	}
-	else if(addr == 0xe000) {
+	} else if(addr == 0xe000) {
 		return d_vdp->read_io8(0);
-	}
-	else if(addr == 0xe002) {
+	} else if(addr == 0xe002) {
 		return d_vdp->read_io8(1);
-	}
-	else if(addr == 0xe110) {
+	} else if(addr == 0xe110) {
 		return 0;	// tutor 0x42 ???
-	}
-	else if(addr == 0xe800) {
+	} else if(addr == 0xe800) {
 		// PyuTa Jr. JOY1
 		if(joy[0] & 0x10) val |= 0x04;	// JOY1 B1
 		if(joy[0] & 0x20) val |= 0x08;	// JOY1 B2
@@ -165,12 +149,10 @@ uint32 MEMORY::read_data8(uint32 addr)
 		if(joy[0] & 0x01) val |= 0x40;	// JOY1 UP
 		if(joy[0] & 0x08) val |= 0x80;	// JOY1 RIGHT
 		return val;
-	}
-	else if(addr == 0xe820) {
+	} else if(addr == 0xe820) {
 		// printer busy
 		return 0;
-	}
-	else if(addr == 0xea00) {
+	} else if(addr == 0xea00) {
 		// PyuTa Jr. KEY
 		if(key[0x0d]             ) val |= 0x04;	// RETURN
 		if(key[0x20]             ) val |= 0x08;	// PALLETE -> SPACE
@@ -179,8 +161,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 		if(key[0x31] || key[0x61]) val |= 0x40;	// 1
 		if(key[0x32] || key[0x62]) val |= 0x80;	// 2
 		return val;
-	}
-	else if(addr == 0xec00) {
+	} else if(addr == 0xec00) {
 		// PyuTa Jr. KEY
 		if(key[0x5a]) val |= 0x04;	// COLOR SELECT << -> Z
 		if(key[0x58]) val |= 0x08;	// COLOR SELECT >> -> X
@@ -189,8 +170,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 		if(key[0x28]) val |= 0x40;	// DOWN
 		if(key[0x27]) val |= 0x80;	// RIGHT
 		return val;
-	}
-	else if(addr == 0xee00) {
+	} else if(addr == 0xee00) {
 		// PyuTa Jr. JOY2
 		if(joy[1] & 0x10) val |= 0x04;	// JOY2 B1
 		if(joy[1] & 0x20) val |= 0x08;	// JOY2 B2
@@ -199,8 +179,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 		if(joy[1] & 0x01) val |= 0x40;	// JOY2 UP
 		if(joy[1] & 0x08) val |= 0x80;	// JOY2 RIGHT
 		return val;
-	}
-	else {
+	} else {
 		return 0xff;	// pull up ?
 	}
 }

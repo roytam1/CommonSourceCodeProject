@@ -71,8 +71,7 @@ void PAC2::write_io8(uint32 addr, uint32 data)
 	case 0x1b:
 		if(data & 0x80) {
 			dev[sel]->write_io8(addr, data);
-		}
-		else {
+		} else {
 			sel = data & 7;
 		}
 		break;

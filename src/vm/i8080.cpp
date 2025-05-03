@@ -339,8 +339,7 @@ static const uint16 DAA[2048] = {
 #define JMP(c) { \
 	if(c) { \
 		PC = FETCH16(); \
-	} \
-	else { \
+	} else { \
 		PC += 2; \
 		count += 3; \
 	} \
@@ -351,8 +350,7 @@ static const uint16 DAA[2048] = {
 		count -= 7; \
 		PUSH16(PC); \
 		PC = a; \
-	} \
-	else { \
+	} else { \
 		PC += 2; \
 		count += 2; \
 	} \
@@ -361,8 +359,7 @@ static const uint16 DAA[2048] = {
 #define JMP(c) { \
 	if(c) { \
 		PC = FETCH16(); \
-	} \
-	else { \
+	} else { \
 		PC += 2; \
 	} \
 }
@@ -372,8 +369,7 @@ static const uint16 DAA[2048] = {
 		count -= 6; \
 		PUSH16(PC); \
 		PC = a; \
-	} \
-	else { \
+	} else { \
 		PC += 2; \
 	} \
 }
@@ -427,60 +423,48 @@ void I8080::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_CPU_NMI) {
 		if(data & mask) {
 			IM |= IM_NMI;
-		}
-		else {
+		} else {
 			IM &= ~IM_NMI;
 		}
-	}
-	else if(id == SIG_CPU_BUSREQ) {
+	} else if(id == SIG_CPU_BUSREQ) {
 		BUSREQ = ((data & mask) != 0);
 		write_signals(&outputs_busack, BUSREQ ? 0xffffffff : 0);
-	}
-	else if(id == SIG_I8080_INTR) {
+	} else if(id == SIG_I8080_INTR) {
 		if(data & mask) {
 			IM |= IM_INT;
-		}
-		else {
+		} else {
 			IM &= ~IM_INT;
 		}
-	}
 #ifdef HAS_I8085
-	else if(id == SIG_I8085_RST5) {
+	} else if(id == SIG_I8085_RST5) {
 		if(data & mask) {
 			IM |= IM_I5;
-		}
-		else {
+		} else {
 			IM &= ~IM_I5;
 		}
-	}
-	else if(id == SIG_I8085_RST6) {
+	} else if(id == SIG_I8085_RST6) {
 		if(data & mask) {
 			IM |= IM_I6;
-		}
-		else {
+		} else {
 			IM &= ~IM_I6;
 		}
-	}
-	else if(id == SIG_I8085_RST7) {
+	} else if(id == SIG_I8085_RST7) {
 		if(data & mask) {
 			IM |= IM_I7;
-		}
-		else {
+		} else {
 			IM &= ~IM_I7;
 		}
-	}
-	else if(id == SIG_I8085_SID) {
+	} else if(id == SIG_I8085_SID) {
 		SID = ((data & mask) != 0);
-	}
 #endif
+	}
 }
 
 void I8080::set_intr_line(bool line, bool pending, uint32 bit)
 {
 	if(line) {
 		IM |= IM_INT;
-	}
-	else {
+	} else {
 		IM &= ~IM_INT;
 	}
 }
@@ -499,8 +483,7 @@ int I8080::run(int clock)
 		count = 0;
 		run_one_opecode();
 		return -count;
-	}
-	else {
+	} else {
 		// run cpu while given clocks
 		count += clock;
 		int first_count = count;
@@ -597,8 +580,7 @@ void I8080::run_one_opecode()
 			count -= 5;	// unknown
 			RIM_IEN = IM & IM_IEN;
 			IM &= ~(IM_IEN | IM_NMI);
-		}
-		else if(IM & IM_IEN) {
+		} else if(IM & IM_IEN) {
 #ifdef HAS_I8085
 #ifdef _FP200
 			if(/*!(IM & IM_M7) &&*/ (IM & IM_I7)) {
@@ -609,20 +591,17 @@ void I8080::run_one_opecode()
 				count -= 7;	// unknown
 				RIM_IEN = 0;
 				IM &= ~(IM_IEN | IM_I7);
-			}
-			else if(!(IM & IM_M6) && (IM & IM_I6)) {
+			} else if(!(IM & IM_M6) && (IM & IM_I6)) {
 				INT(0x34);
 				count -= 7;	// unknown
 				RIM_IEN = 0;
 				IM &= ~(IM_IEN | IM_I6);
-			}
-			else if(!(IM & IM_M5) && (IM & IM_I5)) {
+			} else if(!(IM & IM_M5) && (IM & IM_I5)) {
 				INT(0x2c);
 				count -= 7;	// unknown
 				RIM_IEN = 0;
 				IM &= ~(IM_IEN | IM_I5);
-			}
-			else
+			} else
 #endif
 			if(IM & IM_INT) {
 				uint32 vector = ACK_INTR();
@@ -1362,8 +1341,7 @@ void I8080::OP(uint8 code)
 		if(_F & VF) {
 			count -= 12;
 			RST(8);
-		}
-		else {
+		} else {
 			count -= 6;
 		}
 #else

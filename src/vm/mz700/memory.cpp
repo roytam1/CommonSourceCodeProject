@@ -47,14 +47,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -270,12 +268,10 @@ void MEMORY::event_callback(int event_id, int err)
 	if(event_id == EVENT_TEMPO) {
 		// 32KHz
 		tempo = !tempo;
-	}
-	else if(event_id == EVENT_BLINK) {
+	} else if(event_id == EVENT_BLINK) {
 		// 556 OUT (1.5KHz) -> 8255:PC6
 		d_pio->write_signal(SIG_I8255_PORT_C, (blink = !blink) ? 0xff : 0, 0x40);
-	}
-	else if(event_id == EVENT_HBLANK) {
+	} else if(event_id == EVENT_HBLANK) {
 		set_hblank(true);
 #if defined(_MZ700) || defined(_MZ1500)
 		if(hblank_vram) {
@@ -284,22 +280,19 @@ void MEMORY::event_callback(int event_id, int err)
 		}
 		hblank_vram = true;
 #endif
-	}
-	else if(event_id == EVENT_HSYNC_S) {
+	} else if(event_id == EVENT_HSYNC_S) {
 		hsync = true;
-	}
-	else if(event_id == EVENT_HSYNC_E) {
+	} else if(event_id == EVENT_HSYNC_E) {
 		hsync = false;
-	}
 #if defined(_MZ1500)
-	else if(event_id == EVENT_HBLANK_PCG) {
+	} else if(event_id == EVENT_HBLANK_PCG) {
 		if(hblank_pcg) {
 			// wait because pcg is accessed
 			d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
 		}
 		hblank_pcg = true;
-	}
 #endif
+	}
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -368,8 +361,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 					if(page & bit) {
 						if(wf & bit) {
 							vram[addr] = data;
-						}
-						else {
+						} else {
 							vram[addr] = 0;
 						}
 					}
@@ -382,8 +374,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 					if(page & bit) {
 						if(wf & bit) {
 							vram[addr] |= data;
-						}
-						else {
+						} else {
 							vram[addr] &= ~data;
 						}
 					}
@@ -404,8 +395,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 				hblank_pcg = true;
 			}
 		}
-	}
-	else {
+	} else {
 #endif
 		if(mem_bank & MEM_BANK_MON_H) {
 			if(0xd000 <= addr && addr <= 0xdfff) {
@@ -414,8 +404,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 					d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 					hblank_vram = true;
 				}
-			}
-			else if(0xe000 <= addr && addr <= 0xe00f) {
+			} else if(0xe000 <= addr && addr <= 0xe00f) {
 				// memory mapped i/o
 				switch(addr & 0x0f) {
 				case 0: case 1: case 2: case 3:
@@ -473,8 +462,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 					}
 				}
 				return result;
-			}
-			else {
+			} else {
 				int page = vram_page_mask(rf) & rf;
 				for(int i = 0, bit = 1; i < 4; i++, bit <<= 1, addr += 0x2000) {
 					if(page & bit) {
@@ -496,8 +484,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 				hblank_pcg = true;
 			}
 		}
-	}
-	else {
+	} else {
 #endif
 		if(mem_bank & MEM_BANK_MON_H) {
 			if(0xd000 <= addr && addr <= 0xdfff) {
@@ -506,8 +493,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 					d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 					hblank_vram = true;
 				}
-			}
-			else if(0xe000 <= addr && addr <= 0xe00f) {
+			} else if(0xe000 <= addr && addr <= 0xe00f) {
 				// memory mapped i/o
 				switch(addr & 0x0f) {
 				case 0: case 1: case 2: case 3:
@@ -623,8 +609,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	case 0xf0:
 		if(data & 0x40) {
 			palette_sw = (data & 3) << 2;
-		}
-		else {
+		} else {
 			palette[(data >> 4) & 3] = data & 0x0f;
 		}
 		for(int i = 0; i < 16; i++) {
@@ -686,8 +671,7 @@ void MEMORY::update_map_low()
 {
 	if(mem_bank & MEM_BANK_MON_L) {
 		SET_BANK(0x0000, 0x0fff, wdmy, ipl);
-	}
-	else {
+	} else {
 		SET_BANK(0x0000, 0x0fff, ram, ram);
 	}
 }
@@ -699,16 +683,14 @@ void MEMORY::update_map_middle()
 		if(mem_bank & MEM_BANK_CGROM_R) {
 			SET_BANK(0x1000, 0x1fff, wdmy, font);
 			SET_BANK(0xc000, 0xcfff, vram + 0x2000, vram + 0x2000);
-		}
-		else {
+		} else {
 			SET_BANK(0x1000, 0x1fff, ram + 0x1000, ram + 0x1000);
 			SET_BANK(0xc000, 0xcfff, ram + 0xc000, ram + 0xc000);
 		}
 	} else {
 		if(mem_bank & MEM_BANK_CGROM) {
 			SET_BANK(0x1000, 0x1fff, wdmy, font);
-		}
-		else {
+		} else {
 			SET_BANK(0x1000, 0x1fff, ram + 0x1000, ram + 0x1000);
 		}
 		SET_BANK(0xc000, 0xcfff, ram + 0xc000, ram + 0xc000);
@@ -723,24 +705,19 @@ void MEMORY::update_map_high()
 	if(MZ700_MODE) {
 		if(mem_bank & MEM_BANK_PCG) {
 			SET_BANK(0xd000, 0xffff, wdmy, rdmy);
-		}
-		else if(mem_bank & MEM_BANK_MON_H) {
+		} else if(mem_bank & MEM_BANK_MON_H) {
 			SET_BANK(0xd000, 0xdfff, vram + 0x3000, vram + 0x3000);
 			SET_BANK(0xe000, 0xffff, wdmy, ext);
-		}
-		else {
+		} else {
 			SET_BANK(0xd000, 0xffff, ram + 0xd000, ram + 0xd000);
 		}
-	}
-	else {
+	} else {
 		SET_BANK(0xd000, 0xdfff, ram + 0xd000, ram + 0xd000);
 		if(mem_bank & MEM_BANK_PCG) {
 			SET_BANK(0xe000, 0xffff, wdmy, rdmy);
-		}
-		else if(mem_bank & MEM_BANK_MON_H) {
+		} else if(mem_bank & MEM_BANK_MON_H) {
 			SET_BANK(0xe000, 0xffff, wdmy, ext);
-		}
-		else {
+		} else {
 			SET_BANK(0xe000, 0xffff, ram + 0xe000, ram + 0xe000);
 		}
 	}
@@ -751,14 +728,12 @@ void MEMORY::update_map_high()
 		if(pcg_bank & 3) {
 			uint8 *bank = pcg + ((pcg_bank & 3) - 1) * 0x2000;
 			SET_BANK(0xd000, 0xefff, bank, bank);
-		}
-		else {
+		} else {
 			SET_BANK(0xd000, 0xdfff, wdmy, font);	// read only
 			SET_BANK(0xe000, 0xefff, wdmy, font);
 		}
 		SET_BANK(0xf000, 0xffff, wdmy, rdmy);
-	}
-	else {
+	} else {
 #endif
 		if(mem_bank & MEM_BANK_MON_H) {
 			SET_BANK(0xd000, 0xdfff, vram, vram);
@@ -768,8 +743,7 @@ void MEMORY::update_map_high()
 #else
 			SET_BANK(0xe000, 0xffff, wdmy, rdmy);
 #endif
-		}
-		else {
+		} else {
 			SET_BANK(0xd000, 0xffff, ram + 0xd000, ram + 0xd000);
 		}
 #if defined(_MZ1500)
@@ -806,8 +780,7 @@ int MEMORY::vram_addr(int addr)
 				addr -= sw * 128;
 			}
 		}
-	}
-	else {
+	} else {
 		// 320x200
 		if(ssa * 64 <= addr && addr < sea * 64) {
 			addr += sof * 8;
@@ -862,8 +835,7 @@ void MEMORY::draw_line(int v)
 				dest[5] = pcg_dot[5] ? pcg_dot[5] : (pat_t & 0x04) ? col_f : col_b;
 				dest[6] = pcg_dot[6] ? pcg_dot[6] : (pat_t & 0x02) ? col_f : col_b;
 				dest[7] = pcg_dot[7] ? pcg_dot[7] : (pat_t & 0x01) ? col_f : col_b;
-			}
-			else {
+			} else {
 				// text_fore > pcg > text_back
 				dest[0] = (pat_t & 0x80) ? col_f : pcg_dot[0] ? pcg_dot[0] : col_b;
 				dest[1] = (pat_t & 0x40) ? col_f : pcg_dot[1] ? pcg_dot[1] : col_b;
@@ -874,8 +846,7 @@ void MEMORY::draw_line(int v)
 				dest[6] = (pat_t & 0x02) ? col_f : pcg_dot[6] ? pcg_dot[6] : col_b;
 				dest[7] = (pat_t & 0x01) ? col_f : pcg_dot[7] ? pcg_dot[7] : col_b;
 			}
-		}
-		else {
+		} else {
 #endif
 			// text only
 			dest[0] = (pat_t & 0x80) ? col_f : col_b;
@@ -910,8 +881,7 @@ void MEMORY::draw_screen()
 		}
 		if(!config.scan_line) {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
-		}
-		else {
+		} else {
 			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 	}
@@ -1044,14 +1014,12 @@ void MEMORY::draw_screen()
 			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 				dest0[x2] = dest0[x2 + 1] = palette_pc[src[x] & 7];
 			}
-		}
-		else if(dmd & 4) {
+		} else if(dmd & 4) {
 			// 640x200
 			for(int x = 0; x < 640; x++) {
 				dest0[x] = palette_mz800_pc[src[x] & 15];
 			}
-		}
-		else {
+		} else {
 			// 320x200
 			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 				dest0[x2] = dest0[x2 + 1] = palette_mz800_pc[src[x] & 15];
@@ -1059,8 +1027,7 @@ void MEMORY::draw_screen()
 		}
 		if(!config.scan_line) {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
-		}
-		else {
+		} else {
 			memset(dest1, 0, 640 * sizeof(scrntype));
 		}
 	}

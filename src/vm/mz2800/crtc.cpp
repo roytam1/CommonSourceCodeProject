@@ -120,8 +120,7 @@ void CRTC::write_data8(uint32 addr, uint32 data)
 			vram_i[addr] &= ~rmwreg[lh][6];
 			vram_i[addr] |= (rmwreg[lh][4] & 8) ? (data & rmwreg[lh][3] & rmwreg[lh][6]) : 0;
 		}
-	}
-	else if((rmwreg[lh][5] & 0xc0) == 0x40) {
+	} else if((rmwreg[lh][5] & 0xc0) == 0x40) {
 		// PSET
 		if(rmwreg[lh][5] & 1) {
 			vram_b[addr] &= ~data;
@@ -164,8 +163,7 @@ uint32 CRTC::read_data8(uint32 addr)
 		val |= (compare == (((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1) | ((i & 0x02) << 2))) ? 0x02 : 0;
 		val |= (compare == (((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2) | ((i & 0x01) << 3))) ? 0x01 : 0;
 		return val;
-	}
-	else {
+	} else {
 		return latch[lh][pl];
 	}
 }
@@ -187,8 +185,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 		b = palette4096b[num];
 		if(addr & 0x100) {
 			g = (data & 0x0f) << 4;
-		}
-		else {
+		} else {
 			r = data & 0xf0;
 			b = (data & 0x0f) << 4;
 		}
@@ -213,8 +210,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 				trans_init |= ((textreg[0] & 2) != (uint8)(data & 2));
 			}
 			textreg[textreg_num] = data;
-		}
-		else if(0x80 <= textreg_num && textreg_num < 0x90) {
+		} else if(0x80 <= textreg_num && textreg_num < 0x90) {
 			int c = textreg_num & 0x0f;
 			
 			prev = palette_reg[c];
@@ -361,11 +357,9 @@ void CRTC::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CRTC_COLUMN_SIZE) {
 		column_size = ((data & mask) != 0);	// from z80pio port a
-	}
-	else if(id == SIG_CRTC_PALLETE) {
+	} else if(id == SIG_CRTC_PALLETE) {
 		pal_select = ((data & mask) == 0);	// from ym2203 port a
-	}
-	else if(id == SIG_CRTC_MASK) {
+	} else if(id == SIG_CRTC_MASK) {
 		screen_mask = ((data & mask) != 0);	// from i8255 port c
 	}
 }
@@ -374,8 +368,7 @@ void CRTC::event_callback(int event_id, int err)
 {
 	if(event_id & 512) {
 		blink = !blink;
-	}
-	else {
+	} else {
 		set_hsync(event_id);
 	}
 }
@@ -395,8 +388,7 @@ void CRTC::event_vline(int v, int clock)
 	if(v == 0) {
 		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, 0, 2);
 		d_pio->write_signal(SIG_I8255_PORT_B, 0, 2);
-	}
-	else if(v == 400) {
+	} else if(v == 400) {
 		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR1, 2, 2);
 		d_pio->write_signal(SIG_I8255_PORT_B, 2, 2);
 	}
@@ -410,14 +402,12 @@ void CRTC::event_vline(int v, int clock)
 	// register hsync events
 	if(!GDEHS) {
 		set_hsync(0);
-	}
-	else if(GDEHS < CHARS_PER_LINE) {
+	} else if(GDEHS < CHARS_PER_LINE) {
 		register_event_by_clock(this, GDEHS, GDEHSC, false, NULL);
 	}
 	if(!GDEHE) {
 		set_hsync(0);
-	}
-	else if(GDEHE < CHARS_PER_LINE) {
+	} else if(GDEHE < CHARS_PER_LINE) {
 		register_event_by_clock(this, GDEHE, GDEHEC, false, NULL);
 	}
 }
@@ -487,8 +477,7 @@ void CRTC::draw_screen()
 			scrntype *dest = emu->screen_buffer(y);
 			memset(dest, 0, sizeof(scrntype) * 640);
 		}
-	}
-	else if(cgreg[6] == 0x1b || cgreg[6] == 0x1f) {
+	} else if(cgreg[6] == 0x1b || cgreg[6] == 0x1f) {
 		// 65536 colors
 		for(int y = 0; y < vs && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
@@ -518,8 +507,7 @@ void CRTC::draw_screen()
 				dest[x] = palette16txt[src_text[x]];
 			}
 		}
-	}
-	else if(!pal_select) {
+	} else if(!pal_select) {
 		// 16 colors
 		for(int y = 0; y < vs && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
@@ -549,8 +537,7 @@ void CRTC::draw_screen()
 				dest[x] = palette16txt[src_text[x]];
 			}
 		}
-	}
-	else {
+	} else {
 		// 4096 colors
 		for(int y = 0; y < vs && y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
@@ -612,8 +599,7 @@ void CRTC::draw_text()
 	// draw text
 	if(column_size) {
 		draw_80column_screen();
-	}
-	else {
+	} else {
 		draw_40column_screen();
 	}
 	
@@ -624,8 +610,7 @@ void CRTC::draw_text()
 		// 80 colums
 		SC = (textreg[7] & 0x7f) - 9;
 		EC = (textreg[8] & 0x7f) - 9;
-	}
-	else {
+	} else {
 		// 40 column
 		SC = (textreg[7] & 0x7f) - 8;
 		EC = (textreg[8] & 0x7f) - 8;
@@ -642,8 +627,7 @@ void CRTC::draw_text()
 		for(int y = EL; y < 400; y++) {
 			memset(text + 640 * y, trans_color, 640);
 		}
-	}
-	else {
+	} else {
 		for(int y = EL; y < SL; y++) {
 			memset(text + 640 * y, trans_color, 640);
 		}
@@ -653,8 +637,7 @@ void CRTC::draw_text()
 			memset(text + 640 * y, trans_color, SC << 3);
 			memset(text + 640 * y + (EC << 3), trans_color, (80 - EC) << 3);
 		}
-	}
-	else {
+	} else {
 		for(int y = 0; y < 400; y++) {
 			memset(text + 640 * y + (EC << 3), trans_color, (SC - EC) << 3);
 		}
@@ -712,8 +695,7 @@ void CRTC::draw_40column_screen()
 				if((text[src1] & 8) && (text[src2] & 8)) {
 					// non transparent black
 					col = 8;
-				}
-				else {
+				} else {
 					col = (((text[src1] & 7) << 3) | (text[src2] & 7)) + 16;
 				}
 				text[dest++] = col;
@@ -841,14 +823,12 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 						memset(text + dest, val, 8);
 					}
 					dest += 640;
-				}
-				else {
+				} else {
 					if(attr & 0x40) {
 						pat1 = ~pattern1[(code + i) << 1];
 						pat2 = ~pattern2[(code + i) << 1];
 						pat3 = ~pattern3[(code + i) << 1];
-					}
-					else {
+					} else {
 						pat1 = pattern1[(code + i) << 1];
 						pat2 = pattern2[(code + i) << 1];
 						pat3 = pattern3[(code + i) << 1];
@@ -872,8 +852,7 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 					if(dest >= 0) {
 						if(dest >= 640) {
 							memcpy(text + dest, text + dest - 640, 8);
-						}
-						else {
+						} else {
 							uint8* tdest = &text[dest];
 							col = ((pat1 & 0x80) >> 7) | ((pat2 & 0x80) >> 6) | ((pat3 & 0x80) >> 5); tdest[0] = col ? col : trans_color;
 							col = ((pat1 & 0x40) >> 6) | ((pat2 & 0x40) >> 5) | ((pat3 & 0x40) >> 4); tdest[1] = col ? col : trans_color;
@@ -888,8 +867,7 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 					dest += 640;
 				}
 			}
-		}
-		else {
+		} else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
 				if(!(y++ < 480)) {
@@ -899,18 +877,15 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 					if((attr & 0x80) && blink) {
 						if(attr & 0x40) {
 							memset(text + dest, 7, 8);
-						}
-						else {
+						} else {
 							memset(text + dest, trans_color, 8);
 						}
-					}
-					else {
+					} else {
 						if(attr & 0x40) {
 							pat1 = ~pattern1[(code + i) << 1];
 							pat2 = ~pattern2[(code + i) << 1];
 							pat3 = ~pattern3[(code + i) << 1];
-						}
-						else {
+						} else {
 							pat1 = pattern1[(code + i) << 1];
 							pat2 = pattern2[(code + i) << 1];
 							pat3 = pattern3[(code + i) << 1];
@@ -929,24 +904,20 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 				dest += 640;
 			}
 		}
-	}
-	else {
+	} else {
 		// monochrome
 		
 		// generate addr
 		if(font_size) {
 			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | (t1 << 3);
-			}
-			else {
+			} else {
 				code = t1 << 3;
 			}
-		}
-		else {
+		} else {
 			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | ((t1 & 0xfe) << 3);
-			}
-			else {
+			} else {
 				code = (t1 & 0xfe) << 3;
 			}
 		}
@@ -964,8 +935,7 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 				// reverse, blink
 				if(attr & 0x40) {
 					pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-				}
-				else {
+				} else {
 					pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
 				}
 				if(dest >= 0) {
@@ -981,8 +951,7 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 				}
 				dest += 640;
 			}
-		}
-		else {
+		} else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
 				if(!(y++ < 480)) {
@@ -992,8 +961,7 @@ void CRTC::draw_80column_font(uint16 src, int dest, int y)
 					// reverse, blink
 					if(attr & 0x40) {
 						pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-					}
-					else {
+					} else {
 						pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
 					}
 					memcpy(&text[dest], text_matrix[pat1][col], 8);
@@ -1069,14 +1037,12 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 						memset(text + dest, val, 16);
 					}
 					dest += 640;
-				}
-				else {
+				} else {
 					if(attr & 0x40) {
 						pat1 = ~pattern1[(code + i) << 1];
 						pat2 = ~pattern2[(code + i) << 1];
 						pat3 = ~pattern3[(code + i) << 1];
-					}
-					else {
+					} else {
 						pat1 = pattern1[(code + i) << 1];
 						pat2 = pattern2[(code + i) << 1];
 						pat3 = pattern3[(code + i) << 1];
@@ -1100,8 +1066,7 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 					if(dest >= 0) {
 						if(dest >= 640) {
 							memcpy(text + dest, text + dest - 640, 16);
-						}
-						else {
+						} else {
 							uint8* tdest = &text[dest];
 							col = ((pat1 & 0x80) >> 7) | ((pat2 & 0x80) >> 6) | ((pat3 & 0x80) >> 5); tdest[ 0] = tdest[ 1] = col ? col : trans_color;
 							col = ((pat1 & 0x40) >> 6) | ((pat2 & 0x40) >> 5) | ((pat3 & 0x40) >> 4); tdest[ 2] = tdest[ 3] = col ? col : trans_color;
@@ -1116,8 +1081,7 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 					dest += 640;
 				}
 			}
-		}
-		else {
+		} else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
 				if(!(y++ < 480)) {
@@ -1127,18 +1091,15 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 					if((attr & 0x80) && blink) {
 						if(attr & 0x40) {
 							memset(text + dest, 7, 16);
-						}
-						else {
+						} else {
 							memset(text + dest, trans_color, 16);
 						}
-					}
-					else {
+					} else {
 						if(attr & 0x40) {
 							pat1 = ~pattern1[(code + i) << 1];
 							pat2 = ~pattern2[(code + i) << 1];
 							pat3 = ~pattern3[(code + i) << 1];
-						}
-						else {
+						} else {
 							pat1 = pattern1[(code + i) << 1];
 							pat2 = pattern2[(code + i) << 1];
 							pat3 = pattern3[(code + i) << 1];
@@ -1157,24 +1118,20 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 				dest += 640;
 			}
 		}
-	}
-	else {
+	} else {
 		// monochrome
 		
 		// generate addr
 		if(font_size) {
 			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | (t1 << 3);
-			}
-			else {
+			} else {
 				code = t1 << 3;
 			}
-		}
-		else {
+		} else {
 			if(sel == 0x80 || sel == 0xc0) {
 				code = ((t2 & 0x3f) << 11) | ((t1 & 0xfe) << 3);
-			}
-			else {
+			} else {
 				code = (t1 & 0xfe) << 3;
 			}
 		}
@@ -1190,8 +1147,7 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 				// reverse, blink
 				if(attr & 0x40) {
 					pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-				}
-				else {
+				} else {
 					pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
 				}
 				if(dest >= 0) {
@@ -1207,8 +1163,7 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 				}
 				dest += 640;
 			}
-		}
-		else {
+		} else {
 			for(int i = 0; i < 16; i++) {
 				// check end line of screen
 				if(!(y++ < 480)) {
@@ -1218,8 +1173,7 @@ void CRTC::draw_40column_font(uint16 src, int dest, int y)
 					// reverse, blink
 					if(attr & 0x40) {
 						pat1 = ((attr & 0x80) && blink) ? 0xff : ~pattern1[(code + i) << 1];
-					}
-					else {
+					} else {
 						pat1 = ((attr & 0x80) && blink) ? 0x00 : pattern1[(code + i) << 1];
 					}
 					memcpy(&text[dest], text_matrixw[pat1][col], 16);
@@ -1298,8 +1252,7 @@ void CRTC::draw_cg()
 				dest += 640;
 			}
 		}
-	}
-	else {
+	} else {
 		// 65536 color mode
 		uint8 B0 = 0, R0 = 0, G0 = 0, I0 = 0;
 		uint8 B1 = 0, R1 = 0, G1 = 0, I1 = 0;

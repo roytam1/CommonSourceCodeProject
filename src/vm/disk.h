@@ -185,8 +185,8 @@ public:
 	bool drive_mfm;
 	
 	// state
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 };
 
 #endif

@@ -103,8 +103,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_MODE) {
 		// 8255 PC on TK-80BS
 		mode = data & mask;
-	}
-	else if(id == SIG_DISPLAY_DMA) {
+	} else if(id == SIG_DISPLAY_DMA) {
 		// 8255 PC on TK-80
 		dma = data & mask;
 	}

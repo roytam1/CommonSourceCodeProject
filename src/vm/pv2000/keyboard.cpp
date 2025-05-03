@@ -67,14 +67,12 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 			if(joy_stat[0] & 0x08) val |= 2;
 			if(joy_stat[1] & 0x02) val |= 4;
 			if(joy_stat[1] & 0x08) val |= 8;
-		}
-		else if(key_no == 7) {
+		} else if(key_no == 7) {
 			if(joy_stat[0] & 0x04) val |= 1;
 			if(joy_stat[0] & 0x01) val |= 2;
 			if(joy_stat[1] & 0x04) val |= 4;
 			if(joy_stat[1] & 0x01) val |= 8;
-		}
-		else if(key_no == 8) {
+		} else if(key_no == 8) {
 			if(joy_stat[0] & 0x10) val |= 1;
 			if(joy_stat[0] & 0x20) val |= 2;
 			if(joy_stat[1] & 0x10) val |= 4;

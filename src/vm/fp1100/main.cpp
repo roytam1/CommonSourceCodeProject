@@ -16,14 +16,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -86,8 +84,7 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 	case 0xffa0:
 		if(data & 2) {
 			SET_BANK(0x0000, 0x8fff, ram, ram);
-		}
-		else {
+		} else {
 			SET_BANK(0x0000, 0x8fff, ram, rom);
 		}
 		slot_sel = (slot_sel & 6) | (data & 1);
@@ -136,8 +133,7 @@ void MAIN::write_signal(int id, uint32 data, uint32 mask)
 				intr_req |= priority[id];
 				update_intr();
 			}
-		}
-		else {
+		} else {
 			if(intr_req & priority[id]) {
 				intr_req &= ~priority[id];
 				update_intr();

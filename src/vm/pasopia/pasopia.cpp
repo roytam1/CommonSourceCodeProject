@@ -337,8 +337,7 @@ void VM::update_config()
 		floppy->supported = (boot_mode != MODE_OABASIC_NO_DISK);
 		// reset virtual machine
 		reset();
-	}
-	else {
+	} else {
 		for(DEVICE* device = first_device; device; device = device->next_device) {
 			device->update_config();
 		}

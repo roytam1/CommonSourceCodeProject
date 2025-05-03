@@ -16,14 +16,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x4000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy + 0x4000 * (i & 3); \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x4000 * (i - sb); \
 		} \
 	} \
@@ -243,11 +241,9 @@ void MEMORY::update_bank()
 #ifdef _PC98HA
 	if(ramdrv_sel == 0x80) {
 		// ???
-	}
-	else if(ramdrv_sel == 0x81 && ramdrv_bank < 88) {
+	} else if(ramdrv_sel == 0x81 && ramdrv_bank < 88) {
 		SET_BANK(0xdc000, 0xdffff, ramdrv + 0x4000 * ramdrv_bank, ramdrv + 0x4000 * ramdrv_bank);
-	}
-	else if(ramdrv_sel == 0x82) {
+	} else if(ramdrv_sel == 0x82) {
 		// memory card
 		SET_BANK(0xdc000, 0xdffff, memcard + 0x4000 * ramdrv_bank, memcard + 0x4000 * ramdrv_bank);
 	}

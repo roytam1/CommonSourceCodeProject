@@ -17,14 +17,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -118,23 +116,19 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	if(data & 2) {
 		SET_BANK(0x0000, 0x3fff, ram + 0x0000, ram + 0x0000);
-	}
-	else {
+	} else {
 		SET_BANK(0x0000, 0x3fff, ram + 0x0000, basic + 0x0000);
 	}
 	if(data & 1) {
 		SET_BANK(0x4000, 0x7fff, ram + 0x4000, bios + 0x0000);
-	}
-	else if(data & 2) {
+	} else if(data & 2) {
 		SET_BANK(0x4000, 0x7fff, ram + 0x4000, ram + 0x4000);
-	}
-	else {
+	} else {
 		SET_BANK(0x4000, 0x7fff, ram + 0x4000, basic + 0x4000);
 	}
 	if(data & 4) {
 		SET_BANK(0x8000, 0xbfff, wdmy, rdmy);
-	}
-	else {
+	} else {
 		SET_BANK(0x8000, 0xbfff, ram + 0x8000, ram + 0x8000);
 	}
 	SET_BANK(0xc000, 0xffff, ram + 0xc000, ram + 0xc000);
@@ -150,11 +144,9 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MEMORY_I8255_1_A) {
 		plane = data;
-	}
-	else if(id == SIG_MEMORY_I8255_1_B) {
+	} else if(id == SIG_MEMORY_I8255_1_B) {
 		attr_data = data & 0x0f;
-	}
-	else if(id == SIG_MEMORY_I8255_1_C) {
+	} else if(id == SIG_MEMORY_I8255_1_C) {
 		attr_wrap = ((data & 0x10) != 0);
 		pal_sel = ((data & 0x0c) != 0);
 	}

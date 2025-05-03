@@ -51,8 +51,7 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 			d_sio->write_signal(SIG_I8251_RECV, 0xe0, 0xff);
 		}
 		rst = next;
-	}
-	else if(id == SIG_KEYBOARD_RECV) {
+	} else if(id == SIG_KEYBOARD_RECV) {
 		// receive command
 		data &= mask;
 		if(data == 0) {
@@ -70,12 +69,10 @@ void KEYBOARD::key_down(int code)
 	if(code == 0x14) {
 		caps = !caps;
 		d_sio->write_signal(SIG_I8251_RECV, 0x71 | (caps ? 0 : 0x80), 0xff);
-	}
-	else if(code == 0x15) {
+	} else if(code == 0x15) {
 		kana = !kana;
 		d_sio->write_signal(SIG_I8251_RECV, 0x72 | (kana ? 0 : 0x80), 0xff);
-	}
-	else if((code = key_table[code & 0xff]) != -1) {
+	} else if((code = key_table[code & 0xff]) != -1) {
 		if(flag[code]) {
 			d_sio->write_signal(SIG_I8251_RECV, code | 0x80, 0xff);
 		}

@@ -287,8 +287,7 @@ void BIOS::initialize()
 			seg |= buffer[++addr & (IPL_SIZE - 1)] << 8;
 			disk_pc2 = ofs + (seg << 4);
 		}
-	}
-	else {
+	} else {
 		// use pseudo ipl
 		cmos_pc = 0xfffc9;
 		wait_pc = 0xfffd3;
@@ -405,8 +404,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 3 || AH == 4) {
+		} else if(AH == 3 || AH == 4) {
 			// resture/seek
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -437,8 +435,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 5) {
+		} else if(AH == 5) {
 			// read sectors
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -589,8 +586,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 6) {
+		} else if(AH == 6) {
 			// write sectors
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -743,8 +739,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 7) {
+		} else if(AH == 7) {
 			// verify sectors
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -820,15 +815,13 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 8) {
+		} else if(AH == 8) {
 			// reset hard drive controller
 			AH = 0;
 			CX = 0;
 			*CarryFlag = 0;
 			return true;
-		}
-		else if(AH == 9) {
+		} else if(AH == 9) {
 			// read id
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -865,8 +858,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 0xa) {
+		} else if(AH == 0xa) {
 			// format track
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -896,15 +888,13 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 0xd) {
+		} else if(AH == 0xd) {
 			// read error
 			AH = 0;
 			CX = 0;
 			*CarryFlag = 0;
 			return true;
-		}
-		else if(AH == 0xe) {
+		} else if(AH == 0xe) {
 			// disk change ???
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -939,8 +929,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			CX = 0;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 0xfa) {
+		} else if(AH == 0xfa) {
 			// unknown
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -965,8 +954,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 2;
 			*CarryFlag = 1;
 			return true;
-		}
-		else if(AH == 0xfd) {
+		} else if(AH == 0xfd) {
 			// unknown
 			if((AL & 0xf0) == 0x20) {
 				// floppy
@@ -992,9 +980,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			CX = 0;
 			*CarryFlag = 1;
 			return true;
-		}
-		// for pseudo bios
-		else if(AH == 0x80) {
+		} else if(AH == 0x80) {
 			// pseudo bios: init i/o
 			for(int i = 0;; i++) {
 				if(iotable[i][0] < 0) {
@@ -1026,8 +1012,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 #endif
 			*CarryFlag = 0;
 			return true;
-		}
-		else if(AH == 0x81) {
+		} else if(AH == 0x81) {
 			// pseudo bios: boot from fdd #0
 			*ZeroFlag = (timeout > (int)(FRAMES_PER_SEC * 4));
 			if(!disk[0]->inserted) {
@@ -1068,8 +1053,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			*ZeroFlag = 1;
 			*CarryFlag = 0;
 			return true;
-		}
-		else if(AH == 0x82) {
+		} else if(AH == 0x82) {
 			// pseudo bios: boot from scsi-hdd #0
 			timeout = 0;
 			if(!scsi_blocks[0]) {
@@ -1112,8 +1096,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			*CarryFlag = 0;
 			return true;
 		}
-	}
-	else if(PC == cmos_pc) {
+	} else if(PC == cmos_pc) {
 		// cmos
 #ifdef _DEBUG_LOG
 		emu->out_debug_log(_T("%6x\tCMOS BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), get_cpu_pc(0), AH,AL,CX,DX,BX,DS,DI);
@@ -1122,12 +1105,10 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// init cmos
 			memcpy(cmos, cmos_t, sizeof(cmos_t));
 			memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
-		}
-		else if(AH == 5) {
+		} else if(AH == 5) {
 			// get $a2
 			BX = cmos[0xa2] | (cmos[0xa3] << 8);
-		}
-		else if(AH == 10) {
+		} else if(AH == 10) {
 			// memory to cmos
 			int block = AL * 10;
 			int len = cmos[block + 6] | (cmos[block + 7] << 8);
@@ -1136,8 +1117,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			for(int i = 0; i < len; i++) {
 				cmos[dst++] = d_mem->read_data8(src++);
 			}
-		}
-		else if(AH == 11) {
+		} else if(AH == 11) {
 			// cmos to memory
 			int block = AL * 10;
 			int len = cmos[block + 6] | (cmos[block + 7] << 8);
@@ -1146,16 +1126,14 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			for(int i = 0; i < len; i++) {
 				d_mem->write_data8(dst++, cmos[src++]);
 			}
-		}
-		else if(AH == 20) {
+		} else if(AH == 20) {
 			// check block header
 			BX = 0;
 		}
 		AH = 0;
 		*CarryFlag = 0;
 		return true;
-	}
-	else if(PC == wait_pc) {
+	} else if(PC == wait_pc) {
 		// wait
 #ifdef _DEBUG_LOG
 		emu->out_debug_log(_T("%6x\tWAIT BIOS: AH=%2x,AL=%2x,CX=%4x,DX=%4x,BX=%4x,DS=%2x,DI=%2x\n"), get_cpu_pc(0), AH,AL,CX,DX,BX,DS,DI);
@@ -1173,8 +1151,7 @@ bool BIOS::bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 	if(intnum == 0x93) {
 		// disk bios
 		return bios_call(0xfffc4, regs, sregs, ZeroFlag, CarryFlag);
-	}
-	else if(intnum == 0xaa) {
+	} else if(intnum == 0xaa) {
 		// power management bios
 		if(AH == 0) {
 			if(AL > 2) {
@@ -1186,8 +1163,7 @@ bool BIOS::bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			AH = 0;
 			*CarryFlag = 0;
 			return true;
-		}
-		else if(AH == 1) {
+		} else if(AH == 1) {
 			AH = 0;
 			AL = BL = powmode;
 			*CarryFlag = 0;

@@ -29,14 +29,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x400 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x400 * (i - sb); \
 		} \
 	} \
@@ -121,8 +119,7 @@ void MEMORY::event_vline(int v, int clock)
 	// vblank
 	if(v == 0) {
 		d_pio->write_signal(SIG_I8255_PORT_C, 0xff, 0x80);
-	}
-	else if(v == 200) {
+	} else if(v == 200) {
 		d_pio->write_signal(SIG_I8255_PORT_C, 0, 0x80);
 	}
 	
@@ -138,16 +135,14 @@ void MEMORY::event_callback(int event_id, int err)
 	if(event_id == EVENT_TEMPO) {
 		// 32khz
 		tempo = !tempo;
-	}
-	else if(event_id == EVENT_BLINK) {
+	} else if(event_id == EVENT_BLINK) {
 		// 1.5khz
 		d_pio->write_signal(SIG_I8255_PORT_C, (blink = !blink) ? 0xff : 0, 0x40);
-	}
 #if defined(_MZ1200) || defined(_MZ80A)
-	else if(event_id == EVENT_HBLANK) {
+	} else if(event_id == EVENT_HBLANK) {
 		hblank = false;
-	}
 #endif
+	}
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)

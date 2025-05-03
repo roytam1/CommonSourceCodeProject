@@ -55,14 +55,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -160,36 +158,29 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_SUB_RTC_DOUT) {
 		dout = ((data & mask) != 0);
-	}
-	else if(id == SIG_SUB_PIO_OBF) {
+	} else if(id == SIG_SUB_PIO_OBF) {
 		obf = ((data & mask) != 0);
-	}
-	else if(id == SIG_SUB_PIO_PM) {
+	} else if(id == SIG_SUB_PIO_PM) {
 		pm = ((data & mask) != 0);
-	}
-	else if(id == SIG_SUB_KEYBOARD_DC) {
+	} else if(id == SIG_SUB_KEYBOARD_DC) {
 		dc = ((data & mask) != 0);
-	}
-	else if(id == SIG_SUB_KEYBOARD_STC) {
+	} else if(id == SIG_SUB_KEYBOARD_STC) {
 		bool next = ((data & mask) != 0);
 		if(!stc && next) {
 			// L->H
 //			emu->out_debug_log("STC L->H\n");
 			if(key_phase == PHASE_KEYBOARD_INIT) {
 				key_phase = 0;
-			}
-			else if(key_phase == 0) {
+			} else if(key_phase == 0) {
 				key_phase = PHASE_RECV_BIT3;
 				key_recv_data = 0;
 				key_recv_bit = 8;
-			}
-			else if(PHASE_RECV_BIT3 <= key_phase && key_phase <= PHASE_RECV_BIT0) {
+			} else if(PHASE_RECV_BIT3 <= key_phase && key_phase <= PHASE_RECV_BIT0) {
 				key_drive();
 			}
 		}
 		stc = next;
-	}
-	else if(id == SIG_SUB_KEYBOARD_ACKC) {
+	} else if(id == SIG_SUB_KEYBOARD_ACKC) {
 		bool next = ((data & mask) != 0);
 		if(ackc && !next) {
 			// H->L
@@ -390,8 +381,7 @@ void SUB::draw_chr()
 						dest[5] = (pat & 0x04) ? color : 0;
 						dest[6] = (pat & 0x02) ? color : 0;
 						dest[7] = (pat & 0x01) ? color : 0;
-					}
-					else {
+					} else {
 						// 16dots (40columns)
 						dest[ 0] = dest[ 1] = (pat & 0x80) ? color : 0;
 						dest[ 2] = dest[ 3] = (pat & 0x40) ? color : 0;

@@ -14,6 +14,7 @@
 #include "../i8237.h"
 #include "../i8259.h"
 #include "../upd765a.h"
+#include "../../fileio.h"
 
 #define EVENT_TIMER	0
 
@@ -118,8 +119,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		if(!(modereg & 2) && (data & 2)) {
 			d_fdc->set_drive_type(0, DRIVE_TYPE_2HD);
 			d_fdc->set_drive_type(1, DRIVE_TYPE_2HD);
-		}
-		else if((modereg & 2) && !(data & 2)) {
+		} else if((modereg & 2) && !(data & 2)) {
 			d_fdc->set_drive_type(0, DRIVE_TYPE_2DD);
 			d_fdc->set_drive_type(1, DRIVE_TYPE_2DD);
 		}
@@ -203,16 +203,14 @@ void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 	case SIG_FLOPPY_IRQ:
 		if(modereg & 1) {
 			d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR3, data, mask);
-		}
-		else {
+		} else {
 			d_pic->write_signal(SIG_I8259_CHIP1 | SIG_I8259_IR2, data, mask);
 		}
 		break;
 	case SIG_FLOPPY_DRQ:
 		if(modereg & 1) {
 			d_dma->write_signal(SIG_I8237_CH2, data, mask);
-		}
-		else {
+		} else {
 			d_dma->write_signal(SIG_I8237_CH3, data, mask);
 		}
 		break;
@@ -234,3 +232,46 @@ void FLOPPY::event_callback(int event_id, int err)
 #endif
 	timer_id = -1;
 }
+
+#define STATE_VERSION	1
+
+void FLOPPY::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+#if defined(SUPPORT_2HD_FDD_IF)
+	state_fio->FputUint8(ctrlreg_2hd);
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
+	state_fio->FputUint8(ctrlreg_2dd);
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
+	state_fio->FputUint8(ctrlreg);
+	state_fio->FputUint8(modereg);
+#endif
+	state_fio->FputInt32(timer_id);
+}
+
+bool FLOPPY::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+#if defined(SUPPORT_2HD_FDD_IF)
+	ctrlreg_2hd = state_fio->FgetUint8();
+#endif
+#if defined(SUPPORT_2DD_FDD_IF)
+	ctrlreg_2dd = state_fio->FgetUint8();
+#endif
+#if defined(SUPPORT_2HD_2DD_FDD_IF)
+	ctrlreg = state_fio->FgetUint8();
+	modereg = state_fio->FgetUint8();
+#endif
+	timer_id = state_fio->FgetInt32();
+	return true;
+}
+

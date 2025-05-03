@@ -155,8 +155,7 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 			}
 			ear = next;
 		}
-	}
-	else if(id == SIG_IO_ART) {
+	} else if(id == SIG_IO_ART) {
 		// data from art
 		art_buf->write(data & mask);
 		if(rxen && !art_buf->empty() && register_id_art == -1) {
@@ -178,8 +177,7 @@ void IO::event_callback(int event_id, int err)
 		cur_clock = current_clock();
 		isr |= BIT_OVF;
 		update_intr();
-	}
-	else if(event_id == EVENT_1SEC) {
+	} else if(event_id == EVENT_1SEC) {
 		// update rtc
 		if(cur_time.initialized) {
 			cur_time.increment();
@@ -192,8 +190,7 @@ void IO::event_callback(int event_id, int err)
 			isr |= BIT_7508;
 			update_intr();
 		}
-	}
-	else if(event_id == EVENT_ART) {
+	} else if(event_id == EVENT_ART) {
 		// recv from art event
 		if(rxen && !(artsr & RXRDY)) {
 			if(!art_buf->empty()) {
@@ -210,8 +207,7 @@ void IO::event_callback(int event_id, int err)
 		// if data is still left in buffer, register event for next data
 		if(rxen && !art_buf->empty()) {
 			register_event(this, EVENT_ART, RECV_DELAY, false, &register_id_art);
-		}
-		else {
+		} else {
 			register_id_art = -1;
 		}
 	}
@@ -384,17 +380,13 @@ uint32 IO::intr_ack()
 	if(isr & BIT_7508) {
 		isr &= ~BIT_7508;
 		return 0xf0;
-	}
-	else if(isr & BIT_ART) {
+	} else if(isr & BIT_ART) {
 		return 0xf2;
-	}
-	else if(isr & BIT_ICF) {
+	} else if(isr & BIT_ICF) {
 		return 0xf4;
-	}
-	else if(isr & BIT_OVF) {
+	} else if(isr & BIT_OVF) {
 		return 0xf6;
-	}
-	else if(isr & BIT_EXT) {
+	} else if(isr & BIT_EXT) {
 		return 0xf8;
 	}
 	// unknown
@@ -435,11 +427,9 @@ void IO::send_to_7508(uint8 val)
 			res |= (alarm_intr && alarm_intr_enb) ? 2 : 0;
 			// clear interrupt
 			onesec_intr = alarm_intr = res_z80 = res_7508 = false;
-		}
-		else if(key_buf->count()) {
+		} else if(key_buf->count()) {
 			res = key_buf->read();
-		}
-		else {
+		} else {
 			res = 0xbf;
 		}
 		rsp_buf->write(res);
@@ -664,8 +654,7 @@ void IO::key_down(int code)
 		kb_caps = !kb_caps;
 		update_key(kb_caps ? 0xb4 : 0xa4);
 		update_key(kb_caps ? 0xa4 : 0xb4);
-	}
-	else {
+	} else {
 		update_key(key_tbl[code & 0xff]);
 	}
 }
@@ -674,8 +663,7 @@ void IO::key_up(int code)
 {
 	if(code == 0x10) {
 		update_key(0xa3);	// break shift
-	}
-	else if(code == 0x11) {
+	} else if(code == 0x11) {
 		update_key(0xa2);	// break ctrl
 	}
 }
@@ -688,8 +676,7 @@ void IO::update_key(int code)
 			// stop key
 			key_buf->clear();
 			key_buf->write(code);
-		}
-		else {
+		} else {
 			key_buf->write(code);
 		}
 		
@@ -725,8 +712,7 @@ void IO::draw_screen()
 			}
 			vram += 2;
 		}
-	}
-	else {
+	} else {
 		for(int y = 0; y < 64; y++) {
 			scrntype* dest = emu->screen_buffer(y);
 			for(int x = 0; x < 240; x++) {

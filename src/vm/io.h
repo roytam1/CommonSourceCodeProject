@@ -78,8 +78,8 @@ public:
 	uint32 read_dma_io16(uint32 addr);
 	void write_dma_io32(uint32 addr, uint32 data);
 	uint32 read_dma_io32(uint32 addr);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_iomap_single_r(uint32 addr, DEVICE* device);

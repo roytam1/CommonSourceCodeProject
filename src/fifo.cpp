@@ -76,31 +76,31 @@ bool FIFO::empty()
 
 void FIFO::save_state(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(STATE_VERSION);
+	state_fio->FputUint32(STATE_VERSION);
 	
-	fio->FputInt32(size);
-	fio->Fwrite(buf, size * sizeof(int), 1);
-	fio->FputInt32(cnt);
-	fio->FputInt32(rpt);
-	fio->FputInt32(wpt);
+	state_fio->FputInt32(size);
+	state_fio->Fwrite(buf, size * sizeof(int), 1);
+	state_fio->FputInt32(cnt);
+	state_fio->FputInt32(rpt);
+	state_fio->FputInt32(wpt);
 }
 
 bool FIFO::load_state(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != size) {
+	if(state_fio->FgetInt32() != size) {
 		return false;
 	}
-	fio->Fread(buf, size * sizeof(int), 1);
-	cnt = fio->FgetInt32();
-	rpt = fio->FgetInt32();
-	wpt = fio->FgetInt32();
+	state_fio->Fread(buf, size * sizeof(int), 1);
+	cnt = state_fio->FgetInt32();
+	rpt = state_fio->FgetInt32();
+	wpt = state_fio->FgetInt32();
 	return true;
 }
 

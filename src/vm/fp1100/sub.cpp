@@ -18,14 +18,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x80 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x80 * (i - sb); \
 		} \
 	} \
@@ -300,15 +298,12 @@ void SUB::draw_screen()
 						if(lmax > 8) {
 							if(l < 8) {
 								r = g = b;
-							}
-							else if(l < 16) {
+							} else if(l < 16) {
 								g = b = r;
-							}
-							else {
+							} else {
 								b = r = g;
 							}
-						}
-						else if(pa & 0x10) {
+						} else if(pa & 0x10) {
 							b = r = g = b | r | g;
 						}
 						uint8* d = &screen[y + l][x];
@@ -333,8 +328,7 @@ void SUB::draw_screen()
 					src = (src + 8) & 0x3fff;
 				}
 			}
-		}
-		else {
+		} else {
 			// 80 column
 			for(int y = 0; y < ymax && y < 400; y += lmax) {
 				for(int x = 0; x < 640; x += 8) {
@@ -349,15 +343,12 @@ void SUB::draw_screen()
 						if(lmax > 8) {
 							if(l < 8) {
 								r = g = b;
-							}
-							else if(l < 16) {
+							} else if(l < 16) {
 								g = b = r;
-							}
-							else {
+							} else {
 								b = r = g;
 							}
-						}
-						else if(pa & 0x10) {
+						} else if(pa & 0x10) {
 							b = r = g = b | r | g; // mono
 						}
 						uint8* d = &screen[y + l][x];
@@ -397,8 +388,7 @@ void SUB::draw_screen()
 			}
 		}
 		emu->screen_skip_line = false;
-	}
-	else {
+	} else {
 		// 200 line
 		for(int y = 0; y < 200; y++) {
 			scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
@@ -410,8 +400,7 @@ void SUB::draw_screen()
 			}
 			if(config.scan_line) {
 				memset(dest1, 0, 640 * sizeof(scrntype));
-			}
-			else {
+			} else {
 				memcpy(dest1, dest0, 640 * sizeof(scrntype));
 			}
 		}

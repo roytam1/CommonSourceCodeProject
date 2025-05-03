@@ -87,8 +87,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DISPLAY_PORT_B) {
 		pb = data;
-	}
-	else if(id == SIG_DISPLAY_PORT_C) {
+	} else if(id == SIG_DISPLAY_PORT_C) {
 		pc = data & 0xf0;
 	}
 }

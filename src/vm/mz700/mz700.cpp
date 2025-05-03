@@ -519,8 +519,7 @@ void VM::update_config()
 		// boot mode is changed !!!
 		boot_mode = config.boot_mode;
 		reset();
-	}
-	else {
+	} else {
 #endif
 		for(DEVICE* device = first_device; device; device = device->next_device) {
 			device->update_config();

@@ -64,8 +64,8 @@ public:
 	uint32 read_dma_io8(uint32 addr);
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 };
 
 #endif

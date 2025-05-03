@@ -34,11 +34,9 @@ void SYSTEM::write_io8(uint32 addr, uint32 data)
 	case 0x29:
 		if((data & 0x0c) == 0) {
 			d_dma->write_signal(SIG_I8237_MASK0 + (data & 3), 0, 0xff);
-		}
-		else if((data & 0x0c) == 4) {
+		} else if((data & 0x0c) == 4) {
 			d_dma->write_signal(SIG_I8237_MASK0 + (data & 3), 0x0f, 0xff);
-		}
-		else if((data & 0x0c) == 0x0c) {
+		} else if((data & 0x0c) == 0x0c) {
 			d_dma->write_signal(SIG_I8237_MASK0 + (data & 3), 0xff, 0xff);
 		}
 	case 0x3b:

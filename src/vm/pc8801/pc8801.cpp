@@ -353,27 +353,27 @@ void VM::update_config()
 
 #define STATE_VERSION	1
 
-void VM::save_state(FILEIO* fio)
+void VM::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
+	state_fio->FputUint32(STATE_VERSION);
 	
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		device->save_state(fio);
+		device->save_state(state_fio);
 	}
-	fio->FputInt32(boot_mode);
+	state_fio->FputInt32(boot_mode);
 }
 
-bool VM::load_state(FILEIO* fio)
+bool VM::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
 	for(DEVICE* device = first_device; device; device = device->next_device) {
-		if(!device->load_state(fio)) {
+		if(!device->load_state(state_fio)) {
 			return false;
 		}
 	}
-	boot_mode = fio->FgetInt32();
+	boot_mode = state_fio->FgetInt32();
 	return true;
 }
 

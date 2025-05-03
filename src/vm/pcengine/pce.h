@@ -155,8 +155,8 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void mix(int32* buffer, int cnt);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_cpu(HUC6280* device)

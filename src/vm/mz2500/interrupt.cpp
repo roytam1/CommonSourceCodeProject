@@ -173,33 +173,33 @@ void INTERRUPT::intr_reti()
 
 #define STATE_VERSION	1
 
-void INTERRUPT::save_state(FILEIO* fio)
+void INTERRUPT::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputUint8(select);
-	fio->Fwrite(irq, sizeof(irq), 1);
-	fio->FputInt32(req_intr_ch);
-	fio->FputBool(iei);
-	fio->FputBool(oei);
-	fio->FputUint32(intr_bit);
+	state_fio->FputUint8(select);
+	state_fio->Fwrite(irq, sizeof(irq), 1);
+	state_fio->FputInt32(req_intr_ch);
+	state_fio->FputBool(iei);
+	state_fio->FputBool(oei);
+	state_fio->FputUint32(intr_bit);
 }
 
-bool INTERRUPT::load_state(FILEIO* fio)
+bool INTERRUPT::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	select = fio->FgetUint8();
-	fio->Fread(irq, sizeof(irq), 1);
-	req_intr_ch = fio->FgetInt32();
-	iei = fio->FgetBool();
-	oei = fio->FgetBool();
-	intr_bit = fio->FgetUint32();
+	select = state_fio->FgetUint8();
+	state_fio->Fread(irq, sizeof(irq), 1);
+	req_intr_ch = state_fio->FgetInt32();
+	iei = state_fio->FgetBool();
+	oei = state_fio->FgetBool();
+	intr_bit = state_fio->FgetUint32();
 	return true;
 }
 

@@ -426,45 +426,45 @@ void MEMORY::draw_screen()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* fio)
+void MEMORY::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(ram, sizeof(ram), 1);
-	fio->Fwrite(vram, sizeof(vram), 1);
-	fio->Fwrite(tvram, sizeof(tvram), 1);
-	fio->FputBool(ipl_selected);
-	fio->FputUint8(vram_sel);
-	fio->FputUint8(vram_page);
-	fio->FputUint8(back_color);
-	fio->FputUint8(text_color);
-	fio->FputUint8(vram_mask);
-	fio->FputBool(width80);
-	fio->FputBool(reverse);
-	fio->FputBool(hblank);
+	state_fio->Fwrite(ram, sizeof(ram), 1);
+	state_fio->Fwrite(vram, sizeof(vram), 1);
+	state_fio->Fwrite(tvram, sizeof(tvram), 1);
+	state_fio->FputBool(ipl_selected);
+	state_fio->FputUint8(vram_sel);
+	state_fio->FputUint8(vram_page);
+	state_fio->FputUint8(back_color);
+	state_fio->FputUint8(text_color);
+	state_fio->FputUint8(vram_mask);
+	state_fio->FputBool(width80);
+	state_fio->FputBool(reverse);
+	state_fio->FputBool(hblank);
 }
 
-bool MEMORY::load_state(FILEIO* fio)
+bool MEMORY::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(ram, sizeof(ram), 1);
-	fio->Fread(vram, sizeof(vram), 1);
-	fio->Fread(tvram, sizeof(tvram), 1);
-	ipl_selected = fio->FgetBool();
-	vram_sel = fio->FgetUint8();
-	vram_page = fio->FgetUint8();
-	back_color = fio->FgetUint8();
-	text_color = fio->FgetUint8();
-	vram_mask = fio->FgetUint8();
-	width80 = fio->FgetBool();
-	reverse = fio->FgetBool();
-	hblank = fio->FgetBool();
+	state_fio->Fread(ram, sizeof(ram), 1);
+	state_fio->Fread(vram, sizeof(vram), 1);
+	state_fio->Fread(tvram, sizeof(tvram), 1);
+	ipl_selected = state_fio->FgetBool();
+	vram_sel = state_fio->FgetUint8();
+	vram_page = state_fio->FgetUint8();
+	back_color = state_fio->FgetUint8();
+	text_color = state_fio->FgetUint8();
+	vram_mask = state_fio->FgetUint8();
+	width80 = state_fio->FgetBool();
+	reverse = state_fio->FgetBool();
+	hblank = state_fio->FgetBool();
 	
 	if(ipl_selected) {
 		SET_BANK(0x0000, 0x07ff, wdmy, ipl, false);

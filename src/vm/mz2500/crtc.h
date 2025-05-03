@@ -120,8 +120,8 @@ public:
 	void event_callback(int event_id, int err);
 	void event_vline(int v, int clock);
 	void update_config();
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique function
 	void set_context_mem(DEVICE* device)

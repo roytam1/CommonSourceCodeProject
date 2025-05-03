@@ -220,8 +220,7 @@ void I8155::input_clock(int clock)
 loop:
 	if(half) {
 		set_signal(count > (tmp >> 1));
-	}
-	else {
+	} else {
 		set_signal(count > 1);
 	}
 	if(count <= 0) {
@@ -230,8 +229,7 @@ loop:
 			set_signal(true);
 			count += tmp;
 			goto loop;
-		}
-		else {
+		} else {
 			now_count = false;
 		}
 	}
@@ -301,8 +299,7 @@ void I8155::set_signal(bool signal)
 	if(prev_out && !signal) {
 		// H->L
 		write_signals(&outputs_timer, 0);
-	}
-	else if(!prev_out && signal) {
+	} else if(!prev_out && signal) {
 		// L->H
 		write_signals(&outputs_timer, 0xffffffff);
 	}

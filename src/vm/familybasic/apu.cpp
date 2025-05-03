@@ -41,7 +41,7 @@ static const int freq_limit[8] = {
 static const int noise_freq[16] = {
 	4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
 };
-const const int dmc_clocks[16] = {
+static const int dmc_clocks[16] = {
 	428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54
 };
 static const int duty_lut[4] = {
@@ -70,8 +70,7 @@ int32 APU::create_rectangle(rectangle_t *chan)
 		chan->env_phase += chan->env_delay;
 		if(chan->holdnote) {
 			chan->env_vol = (chan->env_vol + 1) & 0x0f;
-		}
-		else if(chan->env_vol < 0x0f) {
+		} else if(chan->env_vol < 0x0f) {
 			chan->env_vol++;
 		}
 	}
@@ -87,12 +86,10 @@ int32 APU::create_rectangle(rectangle_t *chan)
 			if(chan->sweep_inc) {
 				if(chan->sweep_complement) {
 					chan->freq += ~(chan->freq >> chan->sweep_shifts);
-				}
-				else {
+				} else {
 					chan->freq -= (chan->freq >> chan->sweep_shifts);
 				}
-			}
-			else {
+			} else {
 				chan->freq += (chan->freq >> chan->sweep_shifts);
 			}
 		}
@@ -100,8 +97,7 @@ int32 APU::create_rectangle(rectangle_t *chan)
 	
 	if(chan->fixed_envelope) {
 		output = chan->volume << 8; // fixed volume
-	}
-	else {
+	} else {
 		output = (chan->env_vol ^ 0x0f) << 8;
 	}
 	sample_weight = chan->phaseacc;
@@ -141,8 +137,7 @@ int32 APU::create_triangle(triangle_t *chan)
 		if(chan->vbl_length > 0 && !chan->holdnote) {
 			chan->vbl_length -= count_rate;
 		}
-	}
-	else if(!chan->holdnote && chan->write_latency) {
+	} else if(!chan->holdnote && chan->write_latency) {
 		if(--chan->write_latency == 0) {
 			chan->counter_started = true;
 		}
@@ -196,16 +191,14 @@ int32 APU::create_noise(noise_t *chan)
 		chan->env_phase += chan->env_delay;
 		if(chan->holdnote) {
 			chan->env_vol = (chan->env_vol + 1) & 0x0f;
-		}
-		else if(chan->env_vol < 0x0f) {
+		} else if(chan->env_vol < 0x0f) {
 			chan->env_vol++;
 		}
 	}
 	
 	if(chan->fixed_envelope) {
 		outvol = chan->volume << 8; // fixed volume
-	}
-	else {
+	} else {
 		outvol = (chan->env_vol ^ 0x0f) << 8;
 	}
 	sample_weight = chan->phaseacc;
@@ -267,16 +260,14 @@ int32 APU::create_dmc(dmc_t *chan)
 				
 				if(chan->address == 0xffff) {
 					chan->address = 0x8000;
-				}
-				else {
+				} else {
 					chan->address++;
 				}
 			}
 			if(--chan->dma_length == 0) {
 				if(chan->looping) {
 					dmc_reload(chan);
-				}
-				else {
+				} else {
 					// check to see if we should generate an irq
 					if(chan->irq_gen) {
 						chan->irq_occurred = true;
@@ -297,8 +288,7 @@ int32 APU::create_dmc(dmc_t *chan)
 				if(chan->regs[1] < 0x7d) {
 					chan->regs[1] += 2;
 				}
-			}
-			else {
+			} else {
 				if(chan->regs[1] > 1) {
 					chan->regs[1] -= 2;
 				}
@@ -310,8 +300,7 @@ int32 APU::create_dmc(dmc_t *chan)
 			total += (chan->regs[1] << 8) * sample_weight;
 		}
 		chan->output_vol = (int)floor(total / cycle_rate + 0.5);
-	}
-	else {
+	} else {
 		chan->output_vol = chan->regs[1] << 8;
 	}
 	
@@ -422,8 +411,7 @@ void APU::write_data_sync(uint32 addr, uint32 data)
 		dmc.looping = ((data & 0x40) != 0);
 		if(data & 0x80) {
 			dmc.irq_gen = true;
-		}
-		else {
+		} else {
 			dmc.irq_gen = false;
 			dmc.irq_occurred = false;
 		}
@@ -465,8 +453,7 @@ void APU::write_data_sync(uint32 addr, uint32 data)
 			if(!dmc.dma_length) {
 				dmc_reload(&dmc);
 			}
-		}
-		else {
+		} else {
 			dmc.dma_length = 0;
 			dmc.irq_occurred = false;
 		}
@@ -526,8 +513,7 @@ void APU::write_data_cur(uint32 addr, uint32 data)
 		dmc.looping_cur = ((data & 0x40) != 0);
 		if(data & 0x80) {
 			dmc.irq_gen_cur = true;
-		}
-		else {
+		} else {
 			dmc.irq_gen_cur = false;
 			dmc.irq_occurred_cur = false;
 		}
@@ -557,8 +543,7 @@ void APU::write_data_cur(uint32 addr, uint32 data)
 				dmc.dma_length_cur = dmc.cached_dmalength_cur;
 			}
 			dmc.enabled_cur = true;
-		}
-		else {
+		} else {
 			dmc.dma_length_cur = 0;
 			dmc.enabled_cur = false;
 			dmc.irq_occurred_cur = false;
@@ -694,8 +679,7 @@ void APU::event_vline(int v, int clock)
 				if(dmc.looping_cur) {
 					dmc.dma_length_cur = dmc.cached_dmalength_cur;
 					dmc.irq_occurred_cur = false;
-				}
-				else {
+				} else {
 					dmc.dma_length_cur = 0;
 					if(dmc.irq_gen_cur) {
 						dmc.irq_occurred_cur = true;

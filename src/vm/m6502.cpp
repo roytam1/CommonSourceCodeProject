@@ -264,8 +264,7 @@
 			P |= F_C; \
 		} \
 		A = (lo & 0x0f) + (hi & 0xf0); \
-	} \
-	else { \
+	} else { \
 		int c = (P & F_C); \
 		int sum = A + tmp + c; \
 		P &= ~(F_V | F_C); \
@@ -413,8 +412,7 @@
 		if(irq_state && !(P & F_I)) { \
 			after_cli = true; \
 		} \
-	} \
-	else { \
+	} else { \
 		PULL(P); \
 	} \
 	P |= (F_T | F_B);
@@ -491,8 +489,7 @@
 			P |= F_N; \
 		} \
 		A = (lo & 0x0f) | (hi & 0xf0); \
-	} \
-	else { \
+	} else { \
 		int c = (P & F_C) ^ F_C; \
 		int sum = A - tmp - c; \
 		P &= ~(F_V | F_C); \
@@ -572,21 +569,18 @@
 		if(P & F_C) { \
 			tmp = (tmp >> 1) | 0x80; \
 			P |= F_N; \
-		} \
-		else { \
+		} else { \
 			tmp >>= 1; \
 			P &= ~F_N; \
 		} \
 		if(tmp) { \
 			P &= ~F_Z; \
-		} \
-		else { \
+		} else { \
 			P |= F_Z; \
 		} \
 		if((t ^ tmp) & 0x40) { \
 			P |= F_V; \
-		} \
-		else { \
+		} else { \
 			P &= ~F_V; \
 		} \
 		if(lo + (lo & 0x01) > 0x05) { \
@@ -595,12 +589,10 @@
 		if(hi + (hi & 0x10) > 0x50) { \
 			P |= F_C; \
 			tmp = (tmp+0x60) & 0xff; \
-		} \
-		else { \
+		} else { \
 			P &= ~F_C; \
 		} \
-	} \
-	else { \
+	} else { \
 		tmp &= A; \
 		ROR; \
 		P &=~(F_V| F_C); \
@@ -1022,8 +1014,7 @@ int M6502::run(int clock)
 		icount = 0;
 		run_one_opecode();
 		return -icount;
-	}
-	else {
+	} else {
 		// run cpu while given clocks
 		icount += clock;
 		int first_icount = icount;
@@ -1052,8 +1043,7 @@ void M6502::run_one_opecode()
 		PCL = RDMEM(EAD);
 		PCH = RDMEM(EAD + 1);
 		nmi_state = false;
-	}
-	else if(pending_irq) {
+	} else if(pending_irq) {
 		update_irq();
 	}
 	prev_pc = pc.w.l;
@@ -1066,8 +1056,7 @@ void M6502::run_one_opecode()
 		if(irq_state) {
 			pending_irq = true;
 		}
-	}
-	else if(pending_irq) {
+	} else if(pending_irq) {
 		update_irq();
 	}
 }
@@ -1078,20 +1067,17 @@ void M6502::write_signal(int id, uint32 data, uint32 mask)
 	
 	if(id == SIG_CPU_NMI) {
 		nmi_state = state;
-	}
-	else if(id == SIG_CPU_IRQ) {
+	} else if(id == SIG_CPU_IRQ) {
 		irq_state = state;
 		if(state) {
 			pending_irq = true;
 		}
-	}
-	else if(id == SIG_M6502_OVERFLOW) {
+	} else if(id == SIG_M6502_OVERFLOW) {
 		if(so_state && !state) {
 			P |= F_V;
 		}
 		so_state = state;
-	}
-	else if(id == SIG_CPU_BUSREQ) {
+	} else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
 	}
 }

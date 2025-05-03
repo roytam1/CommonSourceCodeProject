@@ -78,29 +78,29 @@ uint32 MZ1R12::read_io8(uint32 addr)
 
 #define STATE_VERSION	1
 
-void MZ1R12::save_state(FILEIO* fio)
+void MZ1R12::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(sram, sizeof(sram), 1);
-	fio->FputBool(read_only);
-	fio->FputUint16(address);
-	fio->FputUint32(crc32);
+	state_fio->Fwrite(sram, sizeof(sram), 1);
+	state_fio->FputBool(read_only);
+	state_fio->FputUint16(address);
+	state_fio->FputUint32(crc32);
 }
 
-bool MZ1R12::load_state(FILEIO* fio)
+bool MZ1R12::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(sram, sizeof(sram), 1);
-	read_only = fio->FgetBool();
-	address = fio->FgetUint16();
-	crc32 = fio->FgetUint32();
+	state_fio->Fread(sram, sizeof(sram), 1);
+	read_only = state_fio->FgetBool();
+	address = state_fio->FgetUint16();
+	crc32 = state_fio->FgetUint32();
 	return true;
 }
 

@@ -23,8 +23,7 @@ void RAMPAC2::initialize(int id)
 	if(_tcscmp(config.recent_binary_path[id - 1][0], _T("")) != 0) {
 		// open last file
 		open_file(config.recent_binary_path[id - 1][0]);
-	}
-	else {
+	} else {
 		// open default rampac2 file
 		_TCHAR file_path[_MAX_PATH];
 		_stprintf(file_path, _T("%sRAMPAC%d.BIN"), emu->application_path(), id);
@@ -83,8 +82,7 @@ void RAMPAC2::open_file(_TCHAR* file_path)
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(ram, sizeof(ram), 1);
 		fio->Fclose();
-	}
-	else {
+	} else {
 		// initialize formatted image
 		memset(ram, 0, sizeof(ram));
 		memcpy(ram, header, sizeof(header));

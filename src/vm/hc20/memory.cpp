@@ -19,14 +19,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x2000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x2000 * (i - sb); \
 		} \
 	} \
@@ -217,12 +215,10 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			break;
 		}
 		ram[addr] = data;
-	}
-	else if(addr < 0x80) {
+	} else if(addr < 0x80) {
 		d_rtc->write_io8(1, addr & 0x3f);
 		d_rtc->write_io8(0, data);
-	}
-	else {
+	} else {
 		wbank[(addr >> 13) & 7][addr & 0x1fff] = data;
 	}
 }
@@ -256,8 +252,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 					if(lcd_select & 8) {
 						block->bank = lcd_data & 0x40 ? 40 : 0;
 						block->addr = lcd_data & 0x3f;
-					}
-					else if(block->addr < 40) {
+					} else if(block->addr < 40) {
 						block->buffer[block->bank + block->addr] = lcd_data;
 						block->addr++;
 					}
@@ -283,8 +278,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 		}
 //		return ram[addr];
 		return addr;
-	}
-	else if(addr < 0x80) {
+	} else if(addr < 0x80) {
 		d_rtc->write_io8(1, addr & 0x3f);
 		return d_rtc->read_io8(0);
 	}
@@ -295,28 +289,23 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MEMORY_PORT_2) {
 		sio_select = ((data & 0x04) != 0);
-	}
-	else if(id == SIG_MEMORY_SIO_MAIN) {
+	} else if(id == SIG_MEMORY_SIO_MAIN) {
 		if(!sio_select) {
 			d_tf20->write_signal(SIGNAL_TF20_SIO, data, 0xff);
-		}
-		else {
+		} else {
 			send_to_slave(data & mask);
 		}
-	}
-	else if(id == SIG_MEMORY_SIO_TF20) {
+	} else if(id == SIG_MEMORY_SIO_TF20) {
 		if(!sio_select) {
 			send_to_main(data & mask);
 		}
-	}
-	else if(id == SIG_MEMORY_RTC_IRQ) {
+	} else if(id == SIG_MEMORY_RTC_IRQ) {
 		if(data & mask) {
 			if(!(int_status & INT_CLOCK)) {
 				int_status |= INT_CLOCK;
 				update_intr();
 			}
-		}
-		else {
+		} else {
 			if((int_status & INT_CLOCK) && (int_status &= ~INT_CLOCK) == 0) {
 				update_intr();
 			}
@@ -347,8 +336,7 @@ void MEMORY::update_sound()
 			if(sound_freq != 0) {
 				d_beep->set_frequency(sound_freq);
 				d_beep->write_signal(SIG_BEEP_ON, 1, 1);
-			}
-			else {
+			} else {
 				d_beep->write_signal(SIG_BEEP_ON, 0, 0);
 			}
 		}
@@ -481,11 +469,9 @@ void MEMORY::send_to_slave(uint8 val)
 			ofs |= cmd_buf->read();
 			if(cmd == 6) {
 				slave_mem[ofs] = cmd_buf->read();
-			}
-			else if(cmd == 7) {
+			} else if(cmd == 7) {
 				slave_mem[ofs] |= cmd_buf->read();
-			}
-			else if(cmd == 8) {
+			} else if(cmd == 8) {
 				slave_mem[ofs] &= cmd_buf->read();
 			}
 		}
@@ -574,8 +560,7 @@ void MEMORY::send_to_slave(uint8 val)
 						cmt_count = 0;
 					}
 				}
-			}
-			else {
+			} else {
 				cmd_buf->clear();
 			}
 		}
@@ -671,8 +656,7 @@ void MEMORY::send_to_slave(uint8 val)
 		if(cmd == 0x32) {
 			sound[0].freq = tone_table[6];
 			sound[0].period = CPU_CLOCKS * 3 / 256 / 100;
-		}
-		else {
+		} else {
 			sound[0].freq = tone_table[20];
 			sound[0].period = CPU_CLOCKS / 256;
 		}

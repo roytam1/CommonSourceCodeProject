@@ -1168,139 +1168,139 @@ void DATAREC::mix(int32* buffer, int cnt)
 
 #define STATE_VERSION	1
 
-void DATAREC::save_state(FILEIO* fio)
+void DATAREC::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
+	state_fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
 	if(rec && rec_fio->IsOpened()) {
 		int length_tmp = (int)rec_fio->Ftell();
 		rec_fio->Fseek(0, FILEIO_SEEK_SET);
-		fio->FputInt32(length_tmp);
+		state_fio->FputInt32(length_tmp);
 		while(length_tmp != 0) {
 			uint8 buffer[1024];
 			int length_rw = min(length_tmp, sizeof(buffer));
 			rec_fio->Fread(buffer, length_rw, 1);
-			fio->Fwrite(buffer, length_rw, 1);
+			state_fio->Fwrite(buffer, length_rw, 1);
 			length_tmp -= length_rw;
 		}
 	} else {
-		fio->FputInt32(0);
+		state_fio->FputInt32(0);
 	}
-	fio->FputBool(play);
-	fio->FputBool(rec);
-	fio->FputBool(remote);
-	fio->FputBool(trigger);
-	fio->FputInt32(ff_rew);
-	fio->FputBool(in_signal);
-	fio->FputBool(out_signal);
-	fio->FputUint32(prev_clock);
-	fio->FputInt32(positive_clocks);
-	fio->FputInt32(negative_clocks);
-	fio->FputInt32(changed);
-	fio->FputBool(prev_skip);
-	fio->FputInt32(register_id);
-	fio->FputInt32(sample_rate);
-	fio->FputInt32(buffer_ptr);
+	state_fio->FputBool(play);
+	state_fio->FputBool(rec);
+	state_fio->FputBool(remote);
+	state_fio->FputBool(trigger);
+	state_fio->FputInt32(ff_rew);
+	state_fio->FputBool(in_signal);
+	state_fio->FputBool(out_signal);
+	state_fio->FputUint32(prev_clock);
+	state_fio->FputInt32(positive_clocks);
+	state_fio->FputInt32(negative_clocks);
+	state_fio->FputInt32(changed);
+	state_fio->FputBool(prev_skip);
+	state_fio->FputInt32(register_id);
+	state_fio->FputInt32(sample_rate);
+	state_fio->FputInt32(buffer_ptr);
 	if(buffer) {
-		fio->FputInt32(buffer_length);
-		fio->Fwrite(buffer, buffer_length, 1);
+		state_fio->FputInt32(buffer_length);
+		state_fio->Fwrite(buffer, buffer_length, 1);
 	} else {
-		fio->FputInt32(0);
+		state_fio->FputInt32(0);
 	}
 	if(buffer_bak) {
-		fio->FputInt32(buffer_length);
-		fio->Fwrite(buffer_bak, buffer_length, 1);
+		state_fio->FputInt32(buffer_length);
+		state_fio->Fwrite(buffer_bak, buffer_length, 1);
 	} else {
-		fio->FputInt32(0);
+		state_fio->FputInt32(0);
 	}
 #ifdef DATAREC_SOUND
 	if(snd_buffer) {
-		fio->FputInt32(snd_buffer_length);
-		fio->Fwrite(snd_buffer, snd_buffer_length, 1);
+		state_fio->FputInt32(snd_buffer_length);
+		state_fio->Fwrite(snd_buffer, snd_buffer_length, 1);
 	} else {
-		fio->FputInt32(0);
+		state_fio->FputInt32(0);
 	}
-	fio->FputInt16(snd_sample);
+	state_fio->FputInt16(snd_sample);
 #endif
-	fio->FputBool(is_wav);
+	state_fio->FputBool(is_wav);
 	if(apss_buffer) {
-		fio->FputInt32(apss_buffer_length);
-		fio->Fwrite(apss_buffer, apss_buffer_length, 1);
+		state_fio->FputInt32(apss_buffer_length);
+		state_fio->Fwrite(apss_buffer, apss_buffer_length, 1);
 	} else {
-		fio->FputInt32(0);
+		state_fio->FputInt32(0);
 	}
-	fio->FputInt32(apss_ptr);
-	fio->FputInt32(apss_count);
-	fio->FputInt32(apss_remain);
-	fio->FputBool(apss_signals);
+	state_fio->FputInt32(apss_ptr);
+	state_fio->FputInt32(apss_count);
+	state_fio->FputInt32(apss_remain);
+	state_fio->FputBool(apss_signals);
 }
 
-bool DATAREC::load_state(FILEIO* fio)
+bool DATAREC::load_state(FILEIO* state_fio)
 {
 	int length_tmp;
 	
 	close_file();
 	
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
-	if((length_tmp = fio->FgetInt32()) != 0) {
+	state_fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
+	if((length_tmp = state_fio->FgetInt32()) != 0) {
 		rec_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
 		while(length_tmp != 0) {
 			uint8 buffer[1024];
 			int length_rw = min(length_tmp, sizeof(buffer));
-			fio->Fread(buffer, length_rw, 1);
+			state_fio->Fread(buffer, length_rw, 1);
 			if(rec_fio->IsOpened()) {
 				rec_fio->Fwrite(buffer, length_rw, 1);
 			}
 			length_tmp -= length_rw;
 		}
 	}
-	play = fio->FgetBool();
-	rec = fio->FgetBool();
-	remote = fio->FgetBool();
-	trigger = fio->FgetBool();
-	ff_rew = fio->FgetInt32();
-	in_signal = fio->FgetBool();
-	out_signal = fio->FgetBool();
-	prev_clock = fio->FgetUint32();
-	positive_clocks = fio->FgetInt32();
-	negative_clocks = fio->FgetInt32();
-	changed = fio->FgetInt32();
-	prev_skip = fio->FgetBool();
-	register_id = fio->FgetInt32();
-	sample_rate = fio->FgetInt32();
-	buffer_ptr = fio->FgetInt32();
-	if((buffer_length = fio->FgetInt32()) != 0) {
+	play = state_fio->FgetBool();
+	rec = state_fio->FgetBool();
+	remote = state_fio->FgetBool();
+	trigger = state_fio->FgetBool();
+	ff_rew = state_fio->FgetInt32();
+	in_signal = state_fio->FgetBool();
+	out_signal = state_fio->FgetBool();
+	prev_clock = state_fio->FgetUint32();
+	positive_clocks = state_fio->FgetInt32();
+	negative_clocks = state_fio->FgetInt32();
+	changed = state_fio->FgetInt32();
+	prev_skip = state_fio->FgetBool();
+	register_id = state_fio->FgetInt32();
+	sample_rate = state_fio->FgetInt32();
+	buffer_ptr = state_fio->FgetInt32();
+	if((buffer_length = state_fio->FgetInt32()) != 0) {
 		buffer = (uint8 *)malloc(buffer_length);
-		fio->Fread(buffer, buffer_length, 1);
+		state_fio->Fread(buffer, buffer_length, 1);
 	}
-	if((length_tmp = fio->FgetInt32()) != 0) {
+	if((length_tmp = state_fio->FgetInt32()) != 0) {
 		buffer_bak = (uint8 *)malloc(length_tmp);
-		fio->Fread(buffer_bak, length_tmp, 1);
+		state_fio->Fread(buffer_bak, length_tmp, 1);
 	}
 #ifdef DATAREC_SOUND
-	if((snd_buffer_length = fio->FgetInt32()) != 0) {
+	if((snd_buffer_length = state_fio->FgetInt32()) != 0) {
 		snd_buffer = (int16 *)malloc(snd_buffer_length);
-		fio->Fread(snd_buffer, snd_buffer_length, 1);
+		state_fio->Fread(snd_buffer, snd_buffer_length, 1);
 	}
-	snd_sample = fio->FgetInt16();
+	snd_sample = state_fio->FgetInt16();
 #endif
-	is_wav = fio->FgetBool();
-	if((apss_buffer_length = fio->FgetInt32()) != 0) {
+	is_wav = state_fio->FgetBool();
+	if((apss_buffer_length = state_fio->FgetInt32()) != 0) {
 		apss_buffer = (bool *)malloc(apss_buffer_length);
-		fio->Fread(apss_buffer, apss_buffer_length, 1);
+		state_fio->Fread(apss_buffer, apss_buffer_length, 1);
 	}
-	apss_ptr = fio->FgetInt32();
-	apss_count = fio->FgetInt32();
-	apss_remain = fio->FgetInt32();
-	apss_signals = fio->FgetBool();
+	apss_ptr = state_fio->FgetInt32();
+	apss_count = state_fio->FgetInt32();
+	apss_remain = state_fio->FgetInt32();
+	apss_signals = state_fio->FgetBool();
 	
 #ifdef DATAREC_SOUND
 	// clear mix buffer

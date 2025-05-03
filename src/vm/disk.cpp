@@ -1239,82 +1239,82 @@ bool DISK::standard_to_d88(int type, int ncyl, int nside, int nsec, int size)
 
 #define STATE_VERSION	1
 
-void DISK::save_state(FILEIO* fio)
+void DISK::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
+	state_fio->FputUint32(STATE_VERSION);
 	
-	fio->Fwrite(buffer, sizeof(buffer), 1);
-	fio->Fwrite(orig_path, sizeof(orig_path), 1);
-	fio->Fwrite(dest_path, sizeof(dest_path), 1);
-	fio->FputInt32(file_size);
-	fio->FputInt32(file_offset);
-	fio->FputUint32(crc32);
-	fio->Fwrite(fdi_header, sizeof(fdi_header), 1);
-	fio->FputBool(inserted);
-	fio->FputBool(ejected);
-	fio->FputBool(write_protected);
-	fio->FputBool(changed);
-	fio->FputUint8(media_type);
-	fio->FputBool(is_standard_image);
-	fio->FputBool(is_fdi_image);
-	fio->FputBool(is_alpha);
-	fio->Fwrite(track, sizeof(track), 1);
-	fio->FputInt32(sector_num);
-	fio->FputInt32(data_size_shift);
-	fio->FputBool(too_many_sectors);
-	fio->FputBool(no_skew);
-	fio->Fwrite(sync_position, sizeof(sync_position), 1);
-	fio->Fwrite(id_position, sizeof(id_position), 1);
-	fio->Fwrite(data_position, sizeof(data_position), 1);
-	fio->FputInt32(sector ? (int)(sector - buffer) : -1);
-	fio->FputInt32(sector_size);
-	fio->Fwrite(id, sizeof(id), 1);
-	fio->FputUint8(density);
-	fio->FputUint8(deleted);
-	fio->FputUint8(status);
-	fio->FputUint8(drive_type);
-	fio->FputInt32(drive_rpm);
-	fio->FputBool(drive_mfm);
+	state_fio->Fwrite(buffer, sizeof(buffer), 1);
+	state_fio->Fwrite(orig_path, sizeof(orig_path), 1);
+	state_fio->Fwrite(dest_path, sizeof(dest_path), 1);
+	state_fio->FputInt32(file_size);
+	state_fio->FputInt32(file_offset);
+	state_fio->FputUint32(crc32);
+	state_fio->Fwrite(fdi_header, sizeof(fdi_header), 1);
+	state_fio->FputBool(inserted);
+	state_fio->FputBool(ejected);
+	state_fio->FputBool(write_protected);
+	state_fio->FputBool(changed);
+	state_fio->FputUint8(media_type);
+	state_fio->FputBool(is_standard_image);
+	state_fio->FputBool(is_fdi_image);
+	state_fio->FputBool(is_alpha);
+	state_fio->Fwrite(track, sizeof(track), 1);
+	state_fio->FputInt32(sector_num);
+	state_fio->FputInt32(data_size_shift);
+	state_fio->FputBool(too_many_sectors);
+	state_fio->FputBool(no_skew);
+	state_fio->Fwrite(sync_position, sizeof(sync_position), 1);
+	state_fio->Fwrite(id_position, sizeof(id_position), 1);
+	state_fio->Fwrite(data_position, sizeof(data_position), 1);
+	state_fio->FputInt32(sector ? (int)(sector - buffer) : -1);
+	state_fio->FputInt32(sector_size);
+	state_fio->Fwrite(id, sizeof(id), 1);
+	state_fio->FputUint8(density);
+	state_fio->FputUint8(deleted);
+	state_fio->FputUint8(status);
+	state_fio->FputUint8(drive_type);
+	state_fio->FputInt32(drive_rpm);
+	state_fio->FputBool(drive_mfm);
 }
 
-bool DISK::load_state(FILEIO* fio)
+bool DISK::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	fio->Fread(buffer, sizeof(buffer), 1);
-	fio->Fread(orig_path, sizeof(orig_path), 1);
-	fio->Fread(dest_path, sizeof(dest_path), 1);
-	file_size = fio->FgetInt32();
-	file_offset = fio->FgetInt32();
-	crc32 = fio->FgetUint32();
-	fio->Fread(fdi_header, sizeof(fdi_header), 1);
-	inserted = fio->FgetBool();
-	ejected = fio->FgetBool();
-	write_protected = fio->FgetBool();
-	changed = fio->FgetBool();
-	media_type = fio->FgetUint8();
-	is_standard_image = fio->FgetBool();
-	is_fdi_image = fio->FgetBool();
-	is_alpha = fio->FgetBool();
-	fio->Fread(track, sizeof(track), 1);
-	sector_num = fio->FgetInt32();
-	data_size_shift = fio->FgetInt32();
-	too_many_sectors = fio->FgetBool();
-	no_skew = fio->FgetBool();
-	fio->Fread(sync_position, sizeof(sync_position), 1);
-	fio->Fread(id_position, sizeof(id_position), 1);
-	fio->Fread(data_position, sizeof(data_position), 1);
-	int offset = fio->FgetInt32();
+	state_fio->Fread(buffer, sizeof(buffer), 1);
+	state_fio->Fread(orig_path, sizeof(orig_path), 1);
+	state_fio->Fread(dest_path, sizeof(dest_path), 1);
+	file_size = state_fio->FgetInt32();
+	file_offset = state_fio->FgetInt32();
+	crc32 = state_fio->FgetUint32();
+	state_fio->Fread(fdi_header, sizeof(fdi_header), 1);
+	inserted = state_fio->FgetBool();
+	ejected = state_fio->FgetBool();
+	write_protected = state_fio->FgetBool();
+	changed = state_fio->FgetBool();
+	media_type = state_fio->FgetUint8();
+	is_standard_image = state_fio->FgetBool();
+	is_fdi_image = state_fio->FgetBool();
+	is_alpha = state_fio->FgetBool();
+	state_fio->Fread(track, sizeof(track), 1);
+	sector_num = state_fio->FgetInt32();
+	data_size_shift = state_fio->FgetInt32();
+	too_many_sectors = state_fio->FgetBool();
+	no_skew = state_fio->FgetBool();
+	state_fio->Fread(sync_position, sizeof(sync_position), 1);
+	state_fio->Fread(id_position, sizeof(id_position), 1);
+	state_fio->Fread(data_position, sizeof(data_position), 1);
+	int offset = state_fio->FgetInt32();
 	sector = (offset != -1) ? buffer + offset : NULL;
-	sector_size = fio->FgetInt32();
-	fio->Fread(id, sizeof(id), 1);
-	density = fio->FgetUint8();
-	deleted = fio->FgetUint8();
-	status = fio->FgetUint8();
-	drive_type = fio->FgetUint8();
-	drive_rpm = fio->FgetInt32();
-	drive_mfm = fio->FgetBool();
+	sector_size = state_fio->FgetInt32();
+	state_fio->Fread(id, sizeof(id), 1);
+	density = state_fio->FgetUint8();
+	deleted = state_fio->FgetUint8();
+	status = state_fio->FgetUint8();
+	drive_type = state_fio->FgetUint8();
+	drive_rpm = state_fio->FgetInt32();
+	drive_mfm = state_fio->FgetBool();
 	return true;
 }
 

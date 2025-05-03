@@ -17,6 +17,7 @@
 #ifdef USE_DEBUGGER
 #include "debugger.h"
 #endif
+#include "../fileio.h"
 
 #define DIVIDE_FAULT			0
 #define NMI_INT_VECTOR			2
@@ -392,8 +393,7 @@ static const struct i80x86_timing timing = {
 #define PutbackRMWord(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
 		regs.w[Mod_RM.RM.w[ModRM]] = val; \
-	} \
-	else { \
+	} else { \
 		WriteWord(ea, val); \
 	} \
 }
@@ -413,8 +413,7 @@ static const struct i80x86_timing timing = {
 #define PutRMWord(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
 		regs.w[Mod_RM.RM.w[ModRM]] = val; \
-	} \
-	else { \
+	} else { \
 		GetEA(ModRM); \
 		WriteWord(ea, val); \
 	} \
@@ -430,8 +429,7 @@ static const struct i80x86_timing timing = {
 	uint16 val; \
 	if (ModRM >= 0xc0) { \
 		FETCHWORD(regs.w[Mod_RM.RM.w[ModRM]]) \
-	} \
-	else { \
+	} else { \
 		GetEA(ModRM); \
 		FETCHWORD(val) \
 		WriteWord(ea, val); \
@@ -444,8 +442,7 @@ static const struct i80x86_timing timing = {
 #define PutRMByte(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
 		regs.b[Mod_RM.RM.b[ModRM]] = val; \
-	} \
-	else { \
+	} else { \
 		GetEA(ModRM); \
 		WriteByte(ea, val); \
 	} \
@@ -454,8 +451,7 @@ static const struct i80x86_timing timing = {
 #define PutImmRMByte(ModRM) { \
 	if (ModRM >= 0xc0) { \
 		regs.b[Mod_RM.RM.b[ModRM]] = FETCH; \
-	} \
-	else { \
+	} else { \
 		GetEA(ModRM); \
 		WriteByte(ea, FETCH); \
 	} \
@@ -464,8 +460,7 @@ static const struct i80x86_timing timing = {
 #define PutbackRMByte(ModRM, val) { \
 	if (ModRM >= 0xc0) { \
 		regs.b[Mod_RM.RM.b[ModRM]] = val; \
-	} \
-	else { \
+	} else { \
 		WriteByte(ea, val); \
 	} \
 }
@@ -596,8 +591,7 @@ int I86::run(int clock)
 		run_one_opecode();
 #endif
 		return -icount;
-	}
-	else {
+	} else {
 		/* run cpu while given clocks */
 		icount += clock;
 		int first_icount = icount;
@@ -673,8 +667,7 @@ void I86::run_one_opecode()
 		}
 		int_state &= ~NMI_REQ_BIT;
 		interrupt(NMI_INT_VECTOR);
-	}
-	else if((int_state & INT_REQ_BIT) && IF) {
+	} else if((int_state & INT_REQ_BIT) && IF) {
 		if(halted) {
 			pc++;
 			halted = false;
@@ -695,15 +688,12 @@ void I86::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_CPU_NMI) {
 		if(data & mask) {
 			int_state |= NMI_REQ_BIT;
-		}
-		else {
+		} else {
 			int_state &= ~NMI_REQ_BIT;
 		}
-	}
-	else if(id == SIG_CPU_BUSREQ) {
+	} else if(id == SIG_CPU_BUSREQ) {
 		busreq = ((data & mask) != 0);
-	}
-	else if(id == SIG_I86_TEST) {
+	} else if(id == SIG_I86_TEST) {
 		test_state = ((data & mask) != 0);
 	}
 }
@@ -712,8 +702,7 @@ void I86::set_intr_line(bool line, bool pending, uint32 bit)
 {
 	if(line) {
 		int_state |= INT_REQ_BIT;
-	}
-	else {
+	} else {
 		int_state &= ~INT_REQ_BIT;
 	}
 }
@@ -919,8 +908,7 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 	
 	if(count == 0) {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base : timing.rot_m8_base;
-	}
-	else if(count == 1) {
+	} else if(count == 1) {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_1 : timing.rot_m8_1;
 		
 		switch((ModRM >> 3) & 7) {
@@ -976,8 +964,7 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 		default:
 			__assume(0);
 		}
-	}
-	else {
+	} else {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m8_bit;
 		
 		switch((ModRM >> 3) & 7) {
@@ -1047,8 +1034,7 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 	
 	if(count == 0) {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base : timing.rot_m16_base;
-	}
-	else if(count == 1) {
+	} else if(count == 1) {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_1 : timing.rot_m16_1;
 		
 		switch((ModRM >> 3) & 7) {
@@ -1104,8 +1090,7 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 		default:
 			__assume(0);
 		}
-	}
-	else {
+	} else {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m16_bit;
 		
 		switch((ModRM >> 3) & 7) {
@@ -1605,8 +1590,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 3;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1620,8 +1604,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 3;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1635,8 +1618,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 5;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1651,8 +1633,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 5;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1667,8 +1648,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 4;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1683,8 +1663,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 4;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1699,8 +1678,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 4;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1709,8 +1687,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		tmp2 = regs.b[CL] & 7;
 		if(tmp & bytes[tmp2]) {
 			tmp &= ~bytes[tmp2];
-		}
-		else {
+		} else {
 			tmp |= bytes[tmp2];
 		}
 		PutbackRMByte(ModRM, tmp);
@@ -1720,8 +1697,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 4;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1730,8 +1706,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		tmp2 = regs.b[CL] & 0xf;
 		if(tmp & bytes[tmp2]) {
 			tmp &= ~bytes[tmp2];
-		}
-		else {
+		} else {
 			tmp |= bytes[tmp2];
 		}
 		PutbackRMWord(ModRM, tmp);
@@ -1741,8 +1716,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 4;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1757,8 +1731,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 4;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1773,8 +1746,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 6;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1790,8 +1762,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 6;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1807,8 +1778,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 5;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1824,8 +1794,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 5;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1841,8 +1810,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 5;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -1852,8 +1820,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		tmp2 &= 7;
 		if(tmp & bytes[tmp2]) {
 			tmp &= ~bytes[tmp2];
-		}
-		else {
+		} else {
 			tmp |= bytes[tmp2];
 		}
 		PutbackRMByte(ModRM, tmp);
@@ -1863,8 +1830,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.w[Mod_RM.RM.w[ModRM]];
 			icount -= 5;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadWord(ea);
@@ -1874,8 +1840,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		tmp2 &= 0xf;
 		if(tmp & bytes[tmp2]) {
 			tmp &= ~bytes[tmp2];
-		}
-		else {
+		} else {
 			tmp |= bytes[tmp2];
 		}
 		PutbackRMWord(ModRM, tmp);
@@ -1926,8 +1891,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 					v1 += 100;
 					result = v1 - (v2 + CarryVal);
 					CarryVal = 1;
-				}
-				else {
+				} else {
 					result = v1 - (v2 + CarryVal);
 					CarryVal = 0;
 				}
@@ -1963,8 +1927,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 					v1 += 100;
 					result = v1 - (v2 + CarryVal);
 					CarryVal = 1;
-				}
-				else {
+				} else {
 					result = v1 - (v2 + CarryVal);
 					CarryVal = 0;
 				}
@@ -1985,8 +1948,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 25;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -2006,8 +1968,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 29;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -2030,8 +1991,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 29;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -2043,8 +2003,7 @@ inline void I86::_0fpre()    /* Opcode 0x0f */
 		if(ModRM >= 0xc0) {
 			tmp = regs.b[Mod_RM.RM.b[ModRM]];
 			icount -= 29;
-		}
-		else {
+		} else {
 			int old = icount;
 			GetEA(ModRM);
 			tmp = ReadByte(ea);
@@ -2433,8 +2392,7 @@ inline void I86::_aaa()    /* Opcode 0x37 */
 		regs.b[AH] += ALcarry;
 		AuxVal = 1;
 		CarryVal = 1;
-	}
-	else {
+	} else {
 		AuxVal = 0;
 		CarryVal = 0;
 	}
@@ -2503,8 +2461,7 @@ inline void I86::_aas()    /* Opcode 0x3f */
 		regs.b[AH] -= 1;
 		AuxVal = 1;
 		CarryVal = 1;
-	}
-	else {
+	} else {
 		AuxVal = 0;
 		CarryVal = 0;
 	}
@@ -2961,8 +2918,7 @@ inline void I86::_jo()    /* Opcode 0x70 */
 	if(OF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -2973,8 +2929,7 @@ inline void I86::_jno()    /* Opcode 0x71 */
 	if(!OF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -2985,8 +2940,7 @@ inline void I86::_jb()    /* Opcode 0x72 */
 	if(CF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -2997,8 +2951,7 @@ inline void I86::_jnb()    /* Opcode 0x73 */
 	if(!CF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3009,8 +2962,7 @@ inline void I86::_jz()    /* Opcode 0x74 */
 	if(ZF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3021,8 +2973,7 @@ inline void I86::_jnz()    /* Opcode 0x75 */
 	if(!ZF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3033,8 +2984,7 @@ inline void I86::_jbe()    /* Opcode 0x76 */
 	if(CF || ZF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3045,8 +2995,7 @@ inline void I86::_jnbe()    /* Opcode 0x77 */
 	if(!(CF || ZF)) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3057,8 +3006,7 @@ inline void I86::_js()    /* Opcode 0x78 */
 	if(SF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3069,8 +3017,7 @@ inline void I86::_jns()    /* Opcode 0x79 */
 	if(!SF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3081,8 +3028,7 @@ inline void I86::_jp()    /* Opcode 0x7a */
 	if(PF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3093,8 +3039,7 @@ inline void I86::_jnp()    /* Opcode 0x7b */
 	if(!PF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3105,8 +3050,7 @@ inline void I86::_jl()    /* Opcode 0x7c */
 	if((SF!= OF) && !ZF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3117,8 +3061,7 @@ inline void I86::_jnl()    /* Opcode 0x7d */
 	if(ZF || (SF == OF)) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3129,8 +3072,7 @@ inline void I86::_jle()    /* Opcode 0x7e */
 	if(ZF || (SF!= OF)) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3141,8 +3083,7 @@ inline void I86::_jnle()    /* Opcode 0x7f */
 	if((SF == OF) && !ZF) {
 		pc += tmp;
 		icount -= timing.jcc_t;
-	}
-	else {
+	} else {
 		icount -= timing.jcc_nt;
 	}
 }
@@ -3999,8 +3940,7 @@ inline void I86::_into()    /* Opcode 0xce */
 	if(OF) {
 		icount -= timing.into_t;
 		interrupt(OVERFLOW_TRAP);
-	}
-	else {
+	} else {
 		icount -= timing.into_nt;
 	}
 }
@@ -4049,8 +3989,7 @@ inline void I86::_aam()    /* Opcode 0xd4 */
 	icount -= timing.aam;
 	if(mult == 0) {
 		interrupt(DIVIDE_FAULT);
-	}
-	else {
+	} else {
 		regs.b[AH] = regs.b[AL] / mult;
 		regs.b[AL] %= mult;
 		SetSZPF_Word(regs.w[AX]);
@@ -4096,8 +4035,7 @@ inline void I86::_loopne()    /* Opcode 0xe0 */
 	if(!ZF && tmp) {
 		icount -= timing.loop_t;
 		pc += disp;
-	}
-	else {
+	} else {
 		icount -= timing.loop_nt;
 	}
 }
@@ -4110,8 +4048,7 @@ inline void I86::_loope()    /* Opcode 0xe1 */
 	if(ZF && tmp) {
 		icount -= timing.loope_t;
 		pc += disp;
-	}
-	else {
+	} else {
 		icount -= timing.loope_nt;
 	}
 }
@@ -4124,8 +4061,7 @@ inline void I86::_loop()    /* Opcode 0xe2 */
 	if(tmp) {
 		icount -= timing.loop_t;
 		pc += disp;
-	}
-	else {
+	} else {
 		icount -= timing.loop_nt;
 	}
 }
@@ -4136,8 +4072,7 @@ inline void I86::_jcxz()    /* Opcode 0xe3 */
 	if(regs.w[CX] == 0) {
 		icount -= timing.jcxz_t;
 		pc += disp;
-	}
-	else {
+	} else {
 		icount -= timing.jcxz_nt;
 	}
 }
@@ -4538,13 +4473,11 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 				if((result / tmp) > 0xff) {
 					interrupt(DIVIDE_FAULT);
 					break;
-				}
-				else {
+				} else {
 					regs.b[AH] = result % tmp;
 					regs.b[AL] = result / tmp;
 				}
-			}
-			else {
+			} else {
 				interrupt(DIVIDE_FAULT);
 				break;
 			}
@@ -4564,13 +4497,11 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 				if((result /= (int16)((int8)tmp)) > 0xff) {
 					interrupt(DIVIDE_FAULT);
 					break;
-				}
-				else {
+				} else {
 					regs.b[AL] = (uint8)result;
 					regs.b[AH] = tmp2;
 				}
-			}
-			else {
+			} else {
 				interrupt(DIVIDE_FAULT);
 				break;
 			}
@@ -4666,14 +4597,12 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 				if((result / tmp) > 0xffff) {
 					interrupt(DIVIDE_FAULT);
 					break;
-				}
-				else {
+				} else {
 					regs.w[DX] = tmp2;
 					result /= tmp;
 					regs.w[AX] = result;
 				}
-			}
-			else {
+			} else {
 				interrupt(DIVIDE_FAULT);
 				break;
 			}
@@ -4692,13 +4621,11 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 				if((result /= (int32)((int16)tmp)) > 0xffff) {
 					interrupt(DIVIDE_FAULT);
 					break;
-				}
-				else {
+				} else {
 					regs.w[AX] = result;
 					regs.w[DX] = tmp2;
 				}
-			}
-			else {
+			} else {
 				interrupt(DIVIDE_FAULT);
 				break;
 			}
@@ -4763,8 +4690,7 @@ inline void I86::_fepre()    /* Opcode 0xfe */
 		/* INC eb */
 		tmp1 = tmp + 1;
 		SetOFB_Add(tmp1, tmp, 1);
-	}
-	else {
+	} else {
 		/* DEC eb */
 		tmp1 = tmp - 1;
 		SetOFB_Sub(tmp1, 1, tmp);
@@ -5756,22 +5682,24 @@ static char *hexstring(UINT32 value, int digits)
 {
 	static char buffer[20];
 	buffer[0] = '0';
-	if (digits)
+	if (digits) {
 		sprintf(&buffer[1], "%0*Xh", digits, value);
-	else
+	} else {
 		sprintf(&buffer[1], "%Xh", value);
+	}
 	return (buffer[1] >= '0' && buffer[1] <= '9') ? &buffer[1] : &buffer[0];
 }
 
 static char *shexstring(UINT32 value, int digits, int always)
 {
 	static char buffer[20];
-	if (value >= 0x80000000)
+	if (value >= 0x80000000) {
 		sprintf(buffer, "-%s", hexstring(-value, digits));
-	else if (always)
+	} else if (always) {
 		sprintf(buffer, "+%s", hexstring(value, digits));
-	else
+	} else {
 		return hexstring(value, digits);
+	}
 	return buffer;
 }
 
@@ -5991,9 +5919,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fdiv    dword ptr %s", modrm_string); break;
 					case 7: sprintf(s, "fdivr   dword ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch ((op2 >> 3) & 0x7)
 				{
 					case 0: sprintf(s, "fadd    st(0),st(%d)", op2 & 0x7); break;
@@ -6027,9 +5953,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fstenv  word ptr %s", modrm_string); break;
 					case 7: sprintf(s, "fstcw   word ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -6091,9 +6015,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fidiv   dword ptr %s", modrm_string); break;
 					case 7: sprintf(s, "fidivr  dword ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -6133,9 +6055,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "??? (FPU)"); break;
 					case 7: sprintf(s, "fstp    tword ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -6183,9 +6103,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fdiv    qword ptr %s", modrm_string); break;
 					case 7: sprintf(s, "fdivr   qword ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -6230,9 +6148,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fsave   %s", modrm_string); break;
 					case 7: sprintf(s, "fstsw   word ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -6274,9 +6190,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fidiv   word ptr %s", modrm_string); break;
 					case 7: sprintf(s, "fidivr  word ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -6323,9 +6237,7 @@ static void handle_fpu(char *s, UINT8 op1, UINT8 op2)
 					case 6: sprintf(s, "fbstp   %s", modrm_string); break;
 					case 7: sprintf(s, "fistp   qword ptr %s", modrm_string); break;
 				}
-			}
-			else
-			{
+			} else {
 				switch (op2 & 0x3f)
 				{
 					case 0x20: sprintf(s, "fstsw   aw"); break;
@@ -6427,5 +6339,79 @@ int necv_dasm_one(char *buffer, UINT32 eip, const UINT8 *oprom)
 
 	decode_opcode( buffer, &necv_opcode_table1[op], op );
 	return (pc-eip) | dasm_flags | DASMFLAG_SUPPORTED;
+}
+
+#define STATE_VERSION	1
+
+void I86::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->Fwrite(&regs, sizeof(regs), 1);
+	state_fio->FputUint32(pc);
+	state_fio->FputUint32(prevpc);
+	state_fio->Fwrite(base, sizeof(base), 1);
+	state_fio->Fwrite(sregs, sizeof(sregs), 1);
+	state_fio->FputUint16(flags);
+	state_fio->FputInt32(AuxVal);
+	state_fio->FputInt32(OverVal);
+	state_fio->FputInt32(SignVal);
+	state_fio->FputInt32(ZeroVal);
+	state_fio->FputInt32(CarryVal);
+	state_fio->FputInt32(DirVal);
+	state_fio->FputUint8(ParityVal);
+	state_fio->FputUint8(TF);
+	state_fio->FputUint8(IF);
+	state_fio->FputUint8(MF);
+	state_fio->FputInt32(int_state);
+	state_fio->FputBool(test_state);
+	state_fio->FputBool(busreq);
+	state_fio->FputBool(halted);
+	state_fio->FputInt32(icount);
+	state_fio->FputInt32(extra_icount);
+	state_fio->FputBool(seg_prefix);
+	state_fio->FputUint8(prefix_seg);
+	state_fio->FputUint32(ea);
+	state_fio->FputUint16(eo);
+	state_fio->FputUint8(ea_seg);
+}
+
+bool I86::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	state_fio->Fread(&regs, sizeof(regs), 1);
+	pc = state_fio->FgetUint32();
+	prevpc = state_fio->FgetUint32();
+	state_fio->Fread(base, sizeof(base), 1);
+	state_fio->Fread(sregs, sizeof(sregs), 1);
+	flags = state_fio->FgetUint16();
+	AuxVal = state_fio->FgetInt32();
+	OverVal = state_fio->FgetInt32();
+	SignVal = state_fio->FgetInt32();
+	ZeroVal = state_fio->FgetInt32();
+	CarryVal = state_fio->FgetInt32();
+	DirVal = state_fio->FgetInt32();
+	ParityVal = state_fio->FgetUint8();
+	TF = state_fio->FgetUint8();
+	IF = state_fio->FgetUint8();
+	MF = state_fio->FgetUint8();
+	int_state = state_fio->FgetInt32();
+	test_state = state_fio->FgetBool();
+	busreq = state_fio->FgetBool();
+	halted = state_fio->FgetBool();
+	icount = state_fio->FgetInt32();
+	extra_icount = state_fio->FgetInt32();
+	seg_prefix = state_fio->FgetBool();
+	prefix_seg = state_fio->FgetUint8();
+	ea = state_fio->FgetUint32();
+	eo = state_fio->FgetUint16();
+	ea_seg = state_fio->FgetUint8();
+	return true;
 }
 

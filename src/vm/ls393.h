@@ -37,23 +37,9 @@ public:
 	~LS393() {}
 	
 	// common functions
-	void write_signal(int id, uint32 data, uint32 mask)
-	{
-		bool signal = ((data & mask) != 0);
-		if(prev_in && !signal) {
-			int prev_count = count++;
-			for(int i = 0; i < 8; i++) {
-				if(outputs[i].count) {
-					int bit = 1 << i;
-					if((prev_count & bit) != (count & bit)) {
-						uint32 val = (count & bit) ? 0xffffffff : 0;
-						write_signals(&outputs[i], val);
-					}
-				}
-			}
-		}
-		prev_in = signal;
-	}
+	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_1qa(DEVICE* device, int id, uint32 mask)

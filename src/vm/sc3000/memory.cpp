@@ -15,14 +15,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -68,8 +66,7 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 	// from PIO-P6
 	if(data & mask) {
 		SET_BANK(0x0000, 0x3fff, ram, ram);
-	}
-	else {
+	} else {
 		// ROM
 		SET_BANK(0x0000, 0x1fff, ram + 0x0000, ipl);
 		SET_BANK(0x2000, 0x3fff, ram + 0x2000, rdmy);

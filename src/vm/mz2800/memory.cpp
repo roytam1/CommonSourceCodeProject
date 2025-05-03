@@ -15,14 +15,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -86,11 +84,9 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	if((addr & 0xfc0000) == 0x80000) {
 		write_dma_data8((addr & 0x3ffff) | mem_window, data);
-	}
-	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
+	} else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
 		d_crtc->write_data8(addr, data);
-	}
-	else {
+	} else {
 		write_dma_data8(addr, data);
 	}
 }
@@ -99,11 +95,9 @@ uint32 MEMORY::read_data8(uint32 addr)
 {
 	if((addr & 0xfc0000) == 0x80000) {
 		return read_dma_data8((addr & 0x3ffff) | mem_window);
-	}
-	else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
+	} else if((addr & 0xfe0000) == 0xc0000 && !vram_bank) {
 		return d_crtc->read_data8(addr);
-	}
-	else {
+	} else {
 		return read_dma_data8(addr);
 	}
 }
@@ -133,24 +127,19 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			// temporary implement
 			if(kanji_bank & 0x80) {
 				SET_BANK(0x0f0000, 0x0f0fff, wdmy, kanji + 0x1000 * (kanji_bank & 0x7f));
-			}
-			else {
+			} else {
 				SET_BANK(0x0f0000, 0x0f0fff, pcg, pcg);
 			}
 			SET_BANK(0x0f1000, 0x0f3fff, pcg + 0x1000, pcg + 0x1000);
 			SET_BANK(0x0f4000, 0x0f5fff, tvram, tvram);
 			SET_BANK(0x0f6000, 0x0f7fff, tvram, tvram);
-		}
-		else if(data == 4) {
+		} else if(data == 4) {
 			SET_BANK(0x0c0000, 0x0dffff, vram, vram);
-		}
-		else if(data == 5) {
+		} else if(data == 5) {
 			SET_BANK(0x0c0000, 0x0dffff, vram + 0x20000, vram + 0x20000);
-		}
-		else if(data == 6) {
+		} else if(data == 6) {
 			SET_BANK(0x0c0000, 0x0dffff, vram + 0x40000, vram + 0x40000);
-		}
-		else if(data == 7) {
+		} else if(data == 7) {
 			SET_BANK(0x0c0000, 0x0dffff, vram + 0x60000, vram + 0x60000);
 		}
 		vram_bank = data;
@@ -164,8 +153,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		// kanji rom / pcg bank
 		if(data & 0x80) {
 			SET_BANK(0x0f0000, 0x0f0fff, wdmy, kanji + 0x1000 * (data & 0x7f));
-		}
-		else {
+		} else {
 			SET_BANK(0x0f0000, 0x0f0fff, pcg, pcg);
 		}
 		kanji_bank = data;

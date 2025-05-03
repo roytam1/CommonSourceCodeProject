@@ -48,8 +48,7 @@ uint32 FDCPACK::read_io8(uint32 addr)
 			// data register + dack
 			return d_fdc->read_dma_io8(1);
 		}
-	}
-	else if(0xff00 <= addr && addr < 0xff80) {
+	} else if(0xff00 <= addr && addr < 0xff80) {
 		return 0x04; // device id
 	}
 	return 0xff;

@@ -320,77 +320,77 @@ void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_li
 
 #define STATE_VERSION	1
 
-void YM2203::save_state(FILEIO* fio)
+void YM2203::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	chip->SaveState((void *)fio);
+	chip->SaveState((void *)state_fio);
 #ifdef SUPPORT_MAME_FM_DLL
-	fio->Fwrite(port_log, sizeof(port_log), 1);
+	state_fio->Fwrite(port_log, sizeof(port_log), 1);
 #endif
-	fio->FputUint8(ch);
+	state_fio->FputUint8(ch);
 #ifdef SUPPORT_YM2203_PORT
-	fio->FputUint8(mode);
+	state_fio->FputUint8(mode);
 #endif
 #ifdef HAS_YM2608
-	fio->FputUint8(ch1);
-	fio->FputUint8(data1);
+	state_fio->FputUint8(ch1);
+	state_fio->FputUint8(data1);
 #endif
 #ifdef SUPPORT_YM2203_PORT
 	for(int i = 0; i < 2; i++) {
-		fio->FputUint8(port[i].wreg);
-		fio->FputUint8(port[i].rreg);
-		fio->FputBool(port[i].first);
+		state_fio->FputUint8(port[i].wreg);
+		state_fio->FputUint8(port[i].rreg);
+		state_fio->FputBool(port[i].first);
 	}
 #endif
-	fio->FputInt32(chip_clock);
-	fio->FputBool(irq_prev);
-	fio->FputBool(mute);
-	fio->FputUint32(clock_prev);
-	fio->FputUint32(clock_accum);
-	fio->FputUint32(clock_const);
-	fio->FputUint32(clock_busy);
-	fio->FputBool(busy);
+	state_fio->FputInt32(chip_clock);
+	state_fio->FputBool(irq_prev);
+	state_fio->FputBool(mute);
+	state_fio->FputUint32(clock_prev);
+	state_fio->FputUint32(clock_accum);
+	state_fio->FputUint32(clock_const);
+	state_fio->FputUint32(clock_busy);
+	state_fio->FputBool(busy);
 }
 
-bool YM2203::load_state(FILEIO* fio)
+bool YM2203::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	if(!chip->LoadState((void *)fio)) {
+	if(!chip->LoadState((void *)state_fio)) {
 		return false;
 	}
 #ifdef SUPPORT_MAME_FM_DLL
-	fio->Fread(port_log, sizeof(port_log), 1);
+	state_fio->Fread(port_log, sizeof(port_log), 1);
 #endif
-	ch = fio->FgetUint8();
+	ch = state_fio->FgetUint8();
 #ifdef SUPPORT_YM2203_PORT
-	mode = fio->FgetUint8();
+	mode = state_fio->FgetUint8();
 #endif
 #ifdef HAS_YM2608
-	ch1 = fio->FgetUint8();
-	data1 = fio->FgetUint8();
+	ch1 = state_fio->FgetUint8();
+	data1 = state_fio->FgetUint8();
 #endif
 #ifdef SUPPORT_YM2203_PORT
 	for(int i = 0; i < 2; i++) {
-		port[i].wreg = fio->FgetUint8();
-		port[i].rreg = fio->FgetUint8();
-		port[i].first = fio->FgetBool();
+		port[i].wreg = state_fio->FgetUint8();
+		port[i].rreg = state_fio->FgetUint8();
+		port[i].first = state_fio->FgetBool();
 	}
 #endif
-	chip_clock = fio->FgetInt32();
-	irq_prev = fio->FgetBool();
-	mute = fio->FgetBool();
-	clock_prev = fio->FgetUint32();
-	clock_accum = fio->FgetUint32();
-	clock_const = fio->FgetUint32();
-	clock_busy = fio->FgetUint32();
-	busy = fio->FgetBool();
+	chip_clock = state_fio->FgetInt32();
+	irq_prev = state_fio->FgetBool();
+	mute = state_fio->FgetBool();
+	clock_prev = state_fio->FgetUint32();
+	clock_accum = state_fio->FgetUint32();
+	clock_const = state_fio->FgetUint32();
+	clock_busy = state_fio->FgetUint32();
+	busy = state_fio->FgetBool();
 #ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		for(int i = 0; i < 0x200; i++) {

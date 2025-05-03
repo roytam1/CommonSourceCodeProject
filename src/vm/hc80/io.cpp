@@ -235,13 +235,11 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 		// notify rxrdy is changed from i8251
 		if(data & mask) {
 			isr |= BIT_8251;
-		}
-		else {
+		} else {
 			isr &= ~BIT_8251;
 		}
 		update_intr();
-	}
-	else if(id == SIG_IO_BARCODE) {
+	} else if(id == SIG_IO_BARCODE) {
 		// signal from barcode reader
 		if(!slbcr) {
 			bool next = ((data & mask) != 0);
@@ -252,8 +250,7 @@ void IO::write_signal(int id, uint32 data, uint32 mask)
 			}
 			ear = next;
 		}
-	}
-	else if(id == SIG_IO_TF20) {
+	} else if(id == SIG_IO_TF20) {
 		// recv from tf20
 		tf20_buf->write(data);
 	}
@@ -273,8 +270,7 @@ void IO::event_callback(int event_id, int err)
 		cur_clock = current_clock();
 		isr |= BIT_OVF;
 		update_intr();
-	}
-	else if(event_id == EVENT_1SEC) {
+	} else if(event_id == EVENT_1SEC) {
 		// update rtc
 		if(cur_time.initialized) {
 			cur_time.increment();
@@ -287,8 +283,7 @@ void IO::event_callback(int event_id, int err)
 			isr |= BIT_7508;
 			update_intr();
 		}
-	}
-	else if(event_id == EVENT_6303) {
+	} else if(event_id == EVENT_6303) {
 		// communicate between z80 and 6303
 		if(psr & BIT_OBF) {
 			psr &= ~BIT_OBF;
@@ -490,20 +485,15 @@ uint32 IO::intr_ack()
 	if(isr & BIT_7508) {
 		isr &= ~BIT_7508;
 		return 0xf0;
-	}
-	else if(isr & BIT_8251) {
+	} else if(isr & BIT_8251) {
 		return 0xf2;
-	}
-	else if(isr & BIT_CD) {
+	} else if(isr & BIT_CD) {
 		return 0xf4;
-	}
-	else if(isr & BIT_ICF) {
+	} else if(isr & BIT_ICF) {
 		return 0xf6;
-	}
-	else if(isr & BIT_OVF) {
+	} else if(isr & BIT_OVF) {
 		return 0xf8;
-	}
-	else if(isr & BIT_EXT) {
+	} else if(isr & BIT_EXT) {
 		return 0xfa;
 	}
 	// unknown
@@ -544,11 +534,9 @@ void IO::send_to_7508(uint8 val)
 			res |= (alarm_intr && alarm_intr_enb) ? 2 : 0;
 			// clear interrupt
 			onesec_intr = alarm_intr = res_z80 = res_7508 = false;
-		}
-		else if(key_buf->count()) {
+		} else if(key_buf->count()) {
 			res = key_buf->read();
-		}
-		else {
+		} else {
 			res = 0xbf;
 		}
 		rsp7508_buf->write(res);
@@ -794,8 +782,7 @@ void IO::key_down(int code)
 		kb_caps = !kb_caps;
 		update_key(kb_caps ? 0xb4 : 0xa4);
 		update_key(kb_caps ? 0xa4 : 0xb4);
-	}
-	else {
+	} else {
 		update_key(key_tbl[code & 0xff]);
 	}
 }
@@ -804,8 +791,7 @@ void IO::key_up(int code)
 {
 	if(code == 0x10) {
 		update_key(0xa3);	// break shift
-	}
-	else if(code == 0x11) {
+	} else if(code == 0x11) {
 		update_key(0xa2);	// break ctrl
 	}
 }
@@ -818,8 +804,7 @@ void IO::update_key(int code)
 			// stop key
 			key_buf->clear();
 			key_buf->write(code);
-		}
-		else {
+		} else {
 			key_buf->write(code);
 		}
 		
@@ -857,14 +842,11 @@ void IO::process_6303()
 			uint8 ope = cmd6303_buf->read();
 			if(ope == 1) {
 				ram[addr] &= val;
-			}
-			else if(ope == 2) {
+			} else if(ope == 2) {
 				ram[addr] |= val;
-			}
-			else if(ope == 3) {
+			} else if(ope == 3) {
 				ram[addr] ^= val;
-			}
-			else {
+			} else {
 				ram[addr] = val;
 			}
 			rsp6303_buf->write(RCD00);
@@ -1008,8 +990,7 @@ void IO::process_6303()
 						memset(&ram[cs_addr + (sy + y) * 80], code, 80);
 					}
 				}
-			}
-			else {
+			} else {
 				// graph screen
 				for(int y = 0; y < num; y++) {
 					if(sy + y < 8) {
@@ -1143,14 +1124,11 @@ void IO::process_6303()
 						if(dx + x < 60 && dy + y < 64) {
 							if(ope == 1) {
 								ram[gs_addr + (dx + x + (dy + y) * 60)] &= d;
-							}
-							else if(ope == 2) {
+							} else if(ope == 2) {
 								ram[gs_addr + (dx + x + (dy + y) * 60)] |= d;
-							}
-							else if(ope == 3) {
+							} else if(ope == 3) {
 								ram[gs_addr + (dx + x + (dy + y) * 60)] ^= d;
-							}
-							else {
+							} else {
 								ram[gs_addr + (dx + x + (dy + y) * 60)] = d;
 							}
 						}
@@ -1198,8 +1176,7 @@ void IO::process_6303()
 			uint8 ope = cmd6303_buf->read();
 			if(ope == 1) {
 				draw_point(x, y, 0);
-			}
-			else {
+			} else {
 				draw_point(x, y, 1);
 			}
 			rsp6303_buf->write(RCD00);
@@ -1233,8 +1210,7 @@ void IO::process_6303()
 			uint8 mode = cmd6303_buf->read();
 			if(mode == 1) {
 				draw_line(sx, sy, ex, ey, ~ope);
-			}
-			else {
+			} else {
 				draw_line(sx, sy, ex, ey, ope);
 			}
 			rsp6303_buf->write(RCD00);
@@ -1250,8 +1226,7 @@ void IO::process_6303()
 					cmd6303_buf->read();
 				}
 				rsp6303_buf->write(RCD06);
-			}
-			else {
+			} else {
 				int ofs = code << 3;
 				for(int i = 0; i < 8; i++) {
 					font[ofs + i] = cmd6303_buf->read();
@@ -1566,8 +1541,7 @@ void IO::process_6303()
 			for(int i = 0; i < cnt; i++) {
 				if(addr & 0x8000) {
 					rsp6303_buf->write(util[(addr + i) & 0x7fff]);
-				}
-				else {
+				} else {
 					rsp6303_buf->write(basic[(addr + i) & 0x7fff]);
 				}
 			}
@@ -1622,8 +1596,7 @@ void IO::draw_point(int x, int y, uint16 dot)
 		int ofs = y * 60 + (x >> 3);
 		if(dot) {
 			ram[gs_addr + ofs] |= bit;
-		}
-		else {
+		} else {
 			ram[gs_addr + ofs] &= ~bit;
 		}
 	}
@@ -1651,8 +1624,7 @@ void IO::draw_line(int sx, int sy, int ex, int ey, uint16 ope)
 			draw_point(next_x, next_y, ope & 0x8000);
 			ope = (ope << 1) | (ope & 0x8000 ? 1 : 0);
 		}
-	}
-	else {
+	} else {
 		int frac = delta_x - delta_y / 2;
 		while(next_y != ey) {
 			if(frac >= 0) {
@@ -1726,8 +1698,7 @@ void IO::iramdisk_write_data(uint8 val)
 		case 1: //READSECTOR
 			if(track > 14 || sector > 63) {
 				iramdisk_buf[0] = 2;
-			}
-			else {
+			} else {
 				iramdisk_buf[0] = 0;
 				for(int t = 0;t < 128; t++) {
 					iramdisk_buf[t + 1] = iramdisk_sectors[track][sector][t];
@@ -1738,8 +1709,7 @@ void IO::iramdisk_write_data(uint8 val)
 		case 3: //WRITESECTOR
 			if(track > 14 || sector > 63) {
 				iramdisk_buf[0] = 2;
-			}
-			else {
+			} else {
 				iramdisk_buf[0] = 0;
 				for(int t = 0; t < 128; t++) {
 					iramdisk_sectors[track][sector][t] = iramdisk_buf[t+2];
@@ -1781,8 +1751,7 @@ void IO::iramdisk_write_cmd(uint8 val)
 		iramdisk_dest = IRAMDISK_OUT;
 		if(iramdisk_cmd == 0) {
 			iramdisk_buf[0] = 1;	// RESET
-		}
-		else {
+		} else {
 			iramdisk_buf[0] = 0;	//INIT
 		}
 	}
@@ -1806,8 +1775,7 @@ uint8 IO::iramdisk_read_stat()
 {
 	if(iramdisk_dest == IRAMDISK_OUT) {
 		return IRAMDISK_WAIT;
-	}
-	else {
+	} else {
 		return 0;
 	}
 }
@@ -1873,8 +1841,7 @@ void IO::draw_screen()
 					}
 				}
 			}
-		}
-		else {
+		} else {
 			// graph screen
 			uint8* vram = &ram[gs_addr];
 			for(int y = 0; y < 64; y++) {
@@ -1919,8 +1886,7 @@ void IO::draw_screen()
 				dest[x] = lcd[y][x] ? pd : pb;
 			}
 		}
-	}
-	else {
+	} else {
 		for(int y = 0; y < 64; y++) {
 			scrntype* dest = emu->screen_buffer(y);
 			for(int x = 0; x < 480; x++) {

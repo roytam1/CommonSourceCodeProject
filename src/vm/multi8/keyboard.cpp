@@ -164,12 +164,10 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 	case 0x01:
 		if(init == 1) {
 			return 1;
-		}
-		else if(init == 2) {
+		} else if(init == 2) {
 			init = 3;
 			return 1;
-		}
-		else if(init == 3) {
+		} else if(init == 3) {
 			init = 0;
 			return 0;
 		}
@@ -196,34 +194,26 @@ void KEYBOARD::event_frame()
 	if(key_stat[0x70]) {
 		next_code = 0;
 		function = true;
-	}
-	else if(key_stat[0x71]) {
+	} else if(key_stat[0x71]) {
 		next_code = 1;
 		function = true;
-	}
-	else if(key_stat[0x72]) {
+	} else if(key_stat[0x72]) {
 		next_code = 2;
 		function = true;
-	}
-	else if(key_stat[0x73]) {
+	} else if(key_stat[0x73]) {
 		next_code = 3;
 		function = true;
-	}
-	else {
+	} else {
 		const uint8* matrix = matrix_normal;
 		if(ctrl) {
 			matrix = matrix_ctrl;
-		}
-		else if(graph) {
+		} else if(graph) {
 			matrix = matrix_graph;
-		}
-		else if(kana && shift) {
+		} else if(kana && shift) {
 			matrix = matrix_shiftkana;
-		}
-		else if(kana && !shift) {
+		} else if(kana && !shift) {
 			matrix = matrix_kana;
-		}
-		else if(shift) {
+		} else if(shift) {
 			matrix = matrix_shift;
 		}
 		for(int i = 0; i < 256; i++) {
@@ -237,8 +227,7 @@ void KEYBOARD::event_frame()
 		if(caps) {
 			if('a' <= next_code && next_code <= 'z') {
 				next_code -= 0x20;
-			}
-			else if('A' <= next_code && next_code <= 'Z') {
+			} else if('A' <= next_code && next_code <= 'Z') {
 				next_code += 0x20;
 			}
 		}

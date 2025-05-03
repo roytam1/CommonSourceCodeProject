@@ -194,8 +194,7 @@ void DISPLAY::event_frame()
 	if(crtv > 1) {
 		// dont raise irq at first frame
 		crtv--;
-	}
-	else if(crtv == 1) {
+	} else if(crtv == 1) {
 		d_pic->write_signal(SIG_I8259_CHIP0 | SIG_I8259_IR2, 1, 1);
 		crtv = 0;
 	}
@@ -224,8 +223,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		if(data & 1) {
 			d_gdc_chr->set_horiz_freq(24830);
 			d_gdc_gfx->set_horiz_freq(24830);
-		}
-		else {
+		} else {
 			d_gdc_chr->set_horiz_freq(15750);
 			d_gdc_gfx->set_horiz_freq(15750);
 		}
@@ -259,8 +257,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 #if defined(SUPPORT_16_COLORS)
 			vram_disp_e = vram + 0x20000;
 #endif
-		}
-		else {
+		} else {
 			vram_disp_b = vram + 0x08000;
 			vram_disp_r = vram + 0x10000;
 			vram_disp_g = vram + 0x18000;
@@ -273,8 +270,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		if(data & 1) {
 			vram_draw = vram + 0x20000;
 			d_gdc_gfx->set_vram_ptr(vram + 0x20000, 0x20000);
-		}
-		else {
+		} else {
 			vram_draw = vram + 0x00000;
 			d_gdc_gfx->set_vram_ptr(vram, 0x20000);
 		}
@@ -369,11 +365,9 @@ uint32 DISPLAY::read_io8(uint32 addr)
 			if(!font_lr) {
 				return font[((font_code & 0x7f7f) << 4) + (font_line & 0x0f)];
 			}
-		}
-		else if(font_code & 0xff00) {
+		} else if(font_code & 0xff00) {
 			return font[((font_code & 0x7f7f) << 4) + font_lr + (font_line & 0x0f)];
-		}
-		else if(!(font_line & 0x10)) {
+		} else if(!(font_line & 0x10)) {
 			return font[0x80000 + (font_code << 4) + font_line];
 		}
 		return 0;
@@ -385,32 +379,27 @@ void DISPLAY::write_memory_mapped_io8(uint32 addr, uint32 data)
 {
 	if(0xa0000 <= addr && addr < 0xa3fe2) {
 		tvram[addr - 0xa0000] = data;
-	}
-	else if(0xa3fe2 <= addr && addr < 0xa4000) {
+	} else if(0xa3fe2 <= addr && addr < 0xa4000) {
 		// memory switch
 		if(modereg1[MODE1_MEMSW]) {
 			tvram[addr - 0xa0000] = data;
 		}
-	}
-	else if(0xa8000 <= addr && addr < 0xc0000) {
+	} else if(0xa8000 <= addr && addr < 0xc0000) {
 #if defined(SUPPORT_16_COLORS)
 		if(grcg_mode & GRCG_CG_MODE) {
 			write_grcg(addr, data);
-		}
-		else
+		} else
 #endif
 		vram_draw[addr - 0xa0000] = data;
-	}
 #if defined(SUPPORT_16_COLORS)
-	else if(0xe0000 <= addr && addr < 0xe8000) {
+	} else if(0xe0000 <= addr && addr < 0xe8000) {
 		if(grcg_mode & GRCG_CG_MODE) {
 			write_grcg(addr, data);
-		}
-		else {
+		} else {
 			vram_draw[addr - 0xe0000] = data;
 		}
-	}
 #endif
+	}
 }
 
 #if defined(SUPPORT_16_COLORS)
@@ -457,29 +446,26 @@ uint32 DISPLAY::read_memory_mapped_io8(uint32 addr)
 {
 	if(0xa0000 <= addr && addr < 0xa2000) {
 		return tvram[addr - 0xa0000];
-	}
-	else if(0xa2000 <= addr && addr < 0xa4000) {
+	} else if(0xa2000 <= addr && addr < 0xa4000) {
 		if(addr & 1) {
 			return 0xff;
 		}
 		return tvram[addr - 0xa0000];
-	}
-	else if(0xa8000 <= addr && addr < 0xc0000) {
+	} else if(0xa8000 <= addr && addr < 0xc0000) {
 #if defined(SUPPORT_16_COLORS)
 		if(grcg_mode & GRCG_CG_MODE) {
 			return read_grcg(addr);
 		}
 #endif
 		return vram_draw[addr - 0xa0000];
-	}
 #if defined(SUPPORT_16_COLORS)
-	else if(0xe0000 <= addr && addr < 0xe8000) {
+	} else if(0xe0000 <= addr && addr < 0xe8000) {
 		if(grcg_mode & GRCG_CG_MODE) {
 			return read_grcg(addr);
 		}
 		return vram_draw[addr - 0xe0000];
-	}
 #endif
+	}
 	return 0xff;
 }
 
@@ -490,12 +476,10 @@ uint32 DISPLAY::read_grcg(uint32 addr)
 		/* invalid */
 		if(0xe0000 <= addr && addr < 0xe8000) {
 			return vram_draw[addr - 0xe0000];
-		}
-		else {
+		} else {
 			return vram_draw[addr - 0xa0000];
 		}
-	}
-	else {
+	} else {
 		/* TCR */
 		uint8 data = 0;
 		addr &= 0x7fff;
@@ -525,14 +509,12 @@ void DISPLAY::draw_screen()
 	if(modereg1[MODE1_DISP] && (gdc_chr_start || gdc_gfx_start)) {
 		if(gdc_chr_start) {
 			draw_chr_screen();
-		}
-		else {
+		} else {
 			memset(screen_chr, 0, sizeof(screen_chr));
 		}
 		if(gdc_gfx_start) {
 			draw_gfx_screen();
-		}
-		else {
+		} else {
 			memset(screen_gfx, 0, sizeof(screen_gfx));
 		}
 		for(int y = 0; y < 400; y++) {
@@ -553,8 +535,7 @@ void DISPLAY::draw_screen()
 					dest[x] = chr ? palette_chr[chr & 7] : palette_gfx8[src_gfx[x] & 7];
 				}
 #if defined(SUPPORT_16_COLORS)
-			}
-			else {
+			} else {
 				for(int x = 0; x < 640; x++) {
 					uint8 chr = src_chr[x];
 					dest[x] = chr ? palette_chr[chr & 7] : palette_gfx16[src_gfx[x]];
@@ -562,8 +543,7 @@ void DISPLAY::draw_screen()
 			}
 #endif
 		}
-	}
-	else {
+	} else {
 		for(int y = 0; y < 400; y++) {
 			scrntype *dest = emu->screen_buffer(y);
 			memset(dest, 0, 640 * sizeof(scrntype));
@@ -644,24 +624,21 @@ void DISPLAY::draw_chr_screen()
 			if(kanji2nd) {
 				kanji2nd = 0;
 				offset = last + 0x800;
-			}
-			else if(code & 0xff00) {
+			} else if(code & 0xff00) {
 				uint16 lo = code & 0x7f;
 				uint16 hi = (code >> 8) & 0x7f;
 				offset = (lo << 4) | (hi << 12);
 				if(lo == 0x56 || lo == 0x57) {
 					offset += gaiji1st;
 					gaiji1st ^= 0x800;
-				}
-				else {
+				} else {
 					uint16 lo = code & 0xff;
 					if(lo < 0x09 || lo >= 0x0c) {
 						kanji2nd = 1;
 					}
 					gaiji1st = 0;
 				}
-			}
-			else {
+			} else {
 				offset = 0x80000 | ((code & 0xff) << 4);
 				if((attr & ATTR_VL) && modereg1[MODE1_ATRSEL]) {
 					offset |= 0x1000;
@@ -680,8 +657,7 @@ void DISPLAY::draw_chr_screen()
 					uint8 pattern = font[offset + l];
 					if(!(attr & ATTR_ST)) {
 						pattern = 0;
-					}
-					else if(((attr & ATTR_BL) && attr_blink) || (attr & ATTR_RV)) {
+					} else if(((attr & ATTR_BL) && attr_blink) || (attr & ATTR_RV)) {
 						pattern = ~pattern;
 					}
 					if((attr & ATTR_UL) && l == 15) {
@@ -702,8 +678,7 @@ void DISPLAY::draw_chr_screen()
 						if(pattern & 0x04) dest[10] = dest[11] = color;
 						if(pattern & 0x02) dest[12] = dest[13] = color;
 						if(pattern & 0x01) dest[14] = dest[15] = color;
-					}
-					else {
+					} else {
 						if(pattern & 0x80) dest[0] = color;
 						if(pattern & 0x40) dest[1] = color;
 						if(pattern & 0x20) dest[2] = color;
@@ -767,13 +742,74 @@ void DISPLAY::draw_gfx_screen()
 			// 200 line
 			if(modereg1[MODE1_200LINE]) {
 				memset(dest, 0, 640);
-			}
-			else {
+			} else {
 				memcpy(dest, dest - 640, 640);
 			}
 			dest += 640;
 			y++;
 		}
 	}
+}
+
+#define STATE_VERSION	1
+
+void DISPLAY::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->Fwrite(tvram, sizeof(tvram), 1);
+	state_fio->Fwrite(vram, sizeof(vram), 1);
+	state_fio->Fwrite(palette_gfx8, sizeof(palette_gfx8), 1);
+	state_fio->Fwrite(digipal, sizeof(digipal), 1);
+#if defined(SUPPORT_16_COLORS)
+	state_fio->Fwrite(palette_gfx16, sizeof(palette_gfx16), 1);
+	state_fio->Fwrite(anapal, sizeof(anapal), 1);
+	state_fio->FputUint8(anapal_sel);
+#endif
+	state_fio->FputUint8(crtv);
+	state_fio->Fwrite(scroll, sizeof(scroll), 1);
+	state_fio->Fwrite(modereg1, sizeof(modereg1), 1);
+#if defined(SUPPORT_16_COLORS)
+	state_fio->Fwrite(modereg2, sizeof(modereg2), 1);
+	state_fio->FputUint8(grcg_mode);
+	state_fio->FputUint8(grcg_tile_ptr);
+	state_fio->Fwrite(grcg_tile, sizeof(grcg_tile), 1);
+#endif
+	state_fio->FputUint16(font_code);
+	state_fio->FputUint8(font_line);
+	state_fio->FputUint16(font_lr);
+}
+
+bool DISPLAY::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	state_fio->Fread(tvram, sizeof(tvram), 1);
+	state_fio->Fread(vram, sizeof(vram), 1);
+	state_fio->Fread(palette_gfx8, sizeof(palette_gfx8), 1);
+	state_fio->Fread(digipal, sizeof(digipal), 1);
+#if defined(SUPPORT_16_COLORS)
+	state_fio->Fread(palette_gfx16, sizeof(palette_gfx16), 1);
+	state_fio->Fread(anapal, sizeof(anapal), 1);
+	anapal_sel = state_fio->FgetUint8();
+#endif
+	crtv = state_fio->FgetUint8();
+	state_fio->Fread(scroll, sizeof(scroll), 1);
+	state_fio->Fread(modereg1, sizeof(modereg1), 1);
+#if defined(SUPPORT_16_COLORS)
+	state_fio->Fread(modereg2, sizeof(modereg2), 1);
+	grcg_mode = state_fio->FgetUint8();
+	grcg_tile_ptr = state_fio->FgetUint8();
+	state_fio->Fread(grcg_tile, sizeof(grcg_tile), 1);
+#endif
+	font_code = state_fio->FgetUint16();
+	font_line = state_fio->FgetUint8();
+	font_lr = state_fio->FgetUint16();
+	return true;
 }
 

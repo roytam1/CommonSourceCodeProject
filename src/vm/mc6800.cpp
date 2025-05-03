@@ -50,8 +50,7 @@ uint32 MC6800::RM(uint32 Addr)
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	if(Addr < 0x20) {
 		return mc6801_io_r(Addr);
-	}
-	else if(Addr >= 0x80 && Addr < 0x100 && (ram_ctrl & 0x40)) {
+	} else if(Addr >= 0x80 && Addr < 0x100 && (ram_ctrl & 0x40)) {
 		return ram[Addr & 0x7f];
 	}
 #endif
@@ -63,11 +62,9 @@ void MC6800::WM(uint32 Addr, uint32 Value)
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	if(Addr < 0x20) {
 		mc6801_io_w(Addr, Value);
-	}
-	else if(Addr >= 0x80 && Addr < 0x100 && (ram_ctrl & 0x40)) {
+	} else if(Addr >= 0x80 && Addr < 0x100 && (ram_ctrl & 0x40)) {
 		ram[Addr & 0x7f] = Value;
-	}
-	else
+	} else
 #endif
 	d_mem->write_data8(Addr, Value);
 }
@@ -417,8 +414,7 @@ void MC6800::increment_counter(int amount)
 				// skip 10 bits
 				trcsr &= ~TRCSR_WU;
 				recv_buffer->read();
-			}
-			else if(!(trcsr & TRCSR_RDRF)) {
+			} else if(!(trcsr & TRCSR_RDRF)) {
 				// note: wait reveived data is read by cpu, so overrun framing error never occurs
 				rdr = recv_buffer->read();
 				trcsr |= TRCSR_RDRF;
@@ -681,16 +677,14 @@ void MC6800::write_signal(int id, uint32 data, uint32 mask)
 	case SIG_CPU_IRQ:
 		if(data & mask) {
 			int_state |= INT_REQ_BIT;
-		}
-		else {
+		} else {
 			int_state &= ~INT_REQ_BIT;
 		}
 		break;
 	case SIG_CPU_NMI:
 		if(data & mask) {
 			int_state |= NMI_REQ_BIT;
-		}
-		else {
+		} else {
 			int_state &= ~NMI_REQ_BIT;
 		}
 		break;
@@ -774,8 +768,7 @@ int MC6800::run(int clock)
 		}
 #endif
 		return -icount;
-	}
-	else {
+	} else {
 		/* run cpu while given clocks */
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 		CLEANUP_COUNTERS();
@@ -823,8 +816,7 @@ void MC6800::run_one_opecode()
 {
 	if(wai_state & (MC6800_WAI | HD6301_SLP)) {
 		increment_counter(1);
-	}
-	else {
+	} else {
 		uint8 ireg = M_RDOP(PCD);
 		prevpc = PC;
 		PC++;
@@ -837,42 +829,37 @@ void MC6800::run_one_opecode()
 		wai_state &= ~HD6301_SLP;
 		int_state &= ~NMI_REQ_BIT;
 		enter_interrupt(0xfffc);
-	}
-	else if(int_state & INT_REQ_BIT) {
+	} else if(int_state & INT_REQ_BIT) {
 		wai_state &= ~HD6301_SLP;
 		if(!(CC & 0x10)) {
 			int_state &= ~INT_REQ_BIT;
 			enter_interrupt(0xfff8);
 		}
-	}
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
-	else if((tcsr & (TCSR_EICI | TCSR_ICF)) == (TCSR_EICI | TCSR_ICF)) {
+	} else if((tcsr & (TCSR_EICI | TCSR_ICF)) == (TCSR_EICI | TCSR_ICF)) {
 		wai_state &= ~HD6301_SLP;
 		if(!(CC & 0x10)) {
 			TAKE_ICI;
 		}
-	}
-	else if((tcsr & (TCSR_EOCI | TCSR_OCF)) == (TCSR_EOCI | TCSR_OCF)) {
+	} else if((tcsr & (TCSR_EOCI | TCSR_OCF)) == (TCSR_EOCI | TCSR_OCF)) {
 		wai_state &= ~HD6301_SLP;
 		if(!(CC & 0x10)) {
 			TAKE_OCI;
 		}
-	}
-	else if((tcsr & (TCSR_ETOI | TCSR_TOF)) == (TCSR_ETOI | TCSR_TOF)) {
+	} else if((tcsr & (TCSR_ETOI | TCSR_TOF)) == (TCSR_ETOI | TCSR_TOF)) {
 		wai_state &= ~HD6301_SLP;
 		if(!(CC & 0x10)) {
 			TAKE_TOI;
 		}
-	}
-	else if(((trcsr & (TRCSR_RIE | TRCSR_RDRF)) == (TRCSR_RIE | TRCSR_RDRF)) ||
-	        ((trcsr & (TRCSR_RIE | TRCSR_ORFE)) == (TRCSR_RIE | TRCSR_ORFE)) ||
-	        ((trcsr & (TRCSR_TIE | TRCSR_TDRE)) == (TRCSR_TIE | TRCSR_TDRE))) {
+	} else if(((trcsr & (TRCSR_RIE | TRCSR_RDRF)) == (TRCSR_RIE | TRCSR_RDRF)) ||
+	          ((trcsr & (TRCSR_RIE | TRCSR_ORFE)) == (TRCSR_RIE | TRCSR_ORFE)) ||
+	          ((trcsr & (TRCSR_TIE | TRCSR_TDRE)) == (TRCSR_TIE | TRCSR_TDRE))) {
 		wai_state &= ~HD6301_SLP;
 		if(!(CC & 0x10)) {
 			TAKE_SCI;
 		}
-	}
 #endif
+	}
 }
 
 #ifdef USE_DEBUGGER
@@ -1129,10 +1116,11 @@ static unsigned Dasm680x (int subtype, char *buf, unsigned pc, const UINT8 *opro
 	args = table[code][1];
 	invalid = table[code][2];
 
-//	if (opcode == bsr || opcode == jsr)
+//	if (opcode == bsr || opcode == jsr) {
 //		flags = DASMFLAG_STEP_OVER;
-//	else if (opcode == rti || opcode == rts)
+//	} else if (opcode == rti || opcode == rts) {
 //		flags = DASMFLAG_STEP_OUT;
+//	}
 
 	if ( invalid & invalid_mask )   /* invalid for this cpu type ? */
 	{
@@ -1201,8 +1189,7 @@ void MC6800::enter_interrupt(uint16 irq_vector)
 	if(wai_state & MC6800_WAI) {
 		icount -= 4;
 		wai_state &= ~MC6800_WAI;
-	}
-	else {
+	} else {
 		PUSHWORD(pPC);
 		PUSHWORD(pX);
 		PUSHBYTE(A);
@@ -2514,8 +2501,7 @@ void MC6800::nim_ix()
 	CLR_NZV;
 	if(!r) {
 		SEZ;
-	}
-	else {
+	} else {
 		SEN;
 	}
 	WM(EAD, r);
@@ -2543,8 +2529,7 @@ void MC6800::oim_ix_mb8861()
 	CLR_NZV;
 	if(!r) {
 		SEZ;
-	}
-	else {
+	} else {
 		SEN;
 	}
 	WM(EAD, r);
@@ -2596,8 +2581,7 @@ void MC6800::xim_ix()
 	CLR_NZ;
 	if(!r) {
 		SEZ;
-	}
-	else {
+	} else {
 		SEN;
 	}
 	WM(EAD, r);
@@ -2684,11 +2668,9 @@ void MC6800::tmm_ix()
 	CLR_NZV;
 	if(!t || !r) {
 		SEZ;
-	}
-	else if(r == t) {
+	} else if(r == t) {
 		SEV;
-	}
-	else {
+	} else {
 		SEN;
 	}
 }

@@ -1,3 +1,22 @@
+12/26/2014
+
+[VM/AND] support save/load state
+[VM/I8237] support save/load state
+[VM/I86] support save/load state
+[VM/LS244] support save/load state
+[VM/LS393] support save/load state
+[VM/NAND] support save/load state
+[VM/NOR] support save/load state
+[VM/NOT] support save/load state
+[VM/OR] support save/load state
+[VM/UPD1990A] fix to show lsb bit of second when shift register is not updated
+[VM/UPD7220] support save/load state
+
+[PC8801MA/PC88] fix many PC-8001mkIISR issues (thanks Mr.apaslothy)
+[PC8801MA/PC88] fix cmt issue that pacland cannot be loaded on PC-8001mkIISR
+[PC9801] support save/load state
+
+
 12/25/2014
 
 [EMU/WIN32] fix to remove printer file if the file size is less than 2 bytes

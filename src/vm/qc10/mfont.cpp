@@ -61,8 +61,7 @@ void MFONT::write_io8(uint32 addr, uint32 data)
 				}
 				status = BIT_IBF | BIT_OBF;
 				d_pic->write_signal(SIG_I8259_IR7 | SIG_I8259_CHIP1, 1, 1);
-			}
-			else {
+			} else {
 				// error
 				status = BIT_ERR;
 			}

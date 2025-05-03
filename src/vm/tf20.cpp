@@ -194,8 +194,7 @@ void TF20::write_signal(int id, uint32 data, uint32 mask)
 	case PHASE_END:
 		if(data == ENQ) {
 			REPLY(ACK);
-		}
-		else if(data == ACK) {
+		} else if(data == ACK) {
 			REPLY(EOT);
 		}
 		phase = PHASE_FUNC;

@@ -747,67 +747,67 @@ void Z80DMA::intr_reti()
 
 #define STATE_VERSION	1
 
-void Z80DMA::save_state(FILEIO* fio)
+void Z80DMA::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(&regs, sizeof(regs), 1);
-	fio->FputUint8(status);
-	fio->Fwrite(wr_tmp, sizeof(wr_tmp), 1);
-	fio->FputInt32(wr_num);
-	fio->FputInt32(wr_ptr);
-	fio->Fwrite(rr_tmp, sizeof(rr_tmp), 1);
-	fio->FputInt32(rr_num);
-	fio->FputInt32(rr_ptr);
-	fio->FputBool(enabled);
-	fio->FputUint32(ready);
-	fio->FputBool(force_ready);
-	fio->FputUint16(addr_a);
-	fio->FputUint16(addr_b);
-	fio->FputInt32(upcount);
-	fio->FputInt32(blocklen);
-	fio->FputBool(dma_stop);
-	fio->FputBool(bus_master);
-	fio->FputBool(req_intr);
-	fio->FputBool(in_service);
-	fio->FputUint8(vector);
-	fio->FputBool(iei);
-	fio->FputBool(oei);
-	fio->FputUint32(intr_bit);
+	state_fio->Fwrite(&regs, sizeof(regs), 1);
+	state_fio->FputUint8(status);
+	state_fio->Fwrite(wr_tmp, sizeof(wr_tmp), 1);
+	state_fio->FputInt32(wr_num);
+	state_fio->FputInt32(wr_ptr);
+	state_fio->Fwrite(rr_tmp, sizeof(rr_tmp), 1);
+	state_fio->FputInt32(rr_num);
+	state_fio->FputInt32(rr_ptr);
+	state_fio->FputBool(enabled);
+	state_fio->FputUint32(ready);
+	state_fio->FputBool(force_ready);
+	state_fio->FputUint16(addr_a);
+	state_fio->FputUint16(addr_b);
+	state_fio->FputInt32(upcount);
+	state_fio->FputInt32(blocklen);
+	state_fio->FputBool(dma_stop);
+	state_fio->FputBool(bus_master);
+	state_fio->FputBool(req_intr);
+	state_fio->FputBool(in_service);
+	state_fio->FputUint8(vector);
+	state_fio->FputBool(iei);
+	state_fio->FputBool(oei);
+	state_fio->FputUint32(intr_bit);
 }
 
-bool Z80DMA::load_state(FILEIO* fio)
+bool Z80DMA::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(&regs, sizeof(regs), 1);
-	status = fio->FgetUint8();
-	fio->Fread(wr_tmp, sizeof(wr_tmp), 1);
-	wr_num = fio->FgetInt32();
-	wr_ptr = fio->FgetInt32();
-	fio->Fread(rr_tmp, sizeof(rr_tmp), 1);
-	rr_num = fio->FgetInt32();
-	rr_ptr = fio->FgetInt32();
-	enabled = fio->FgetBool();
-	ready = fio->FgetUint32();
-	force_ready = fio->FgetBool();
-	addr_a = fio->FgetUint16();
-	addr_b = fio->FgetUint16();
-	upcount = fio->FgetInt32();
-	blocklen = fio->FgetInt32();
-	dma_stop = fio->FgetBool();
-	bus_master = fio->FgetBool();
-	req_intr = fio->FgetBool();
-	in_service = fio->FgetBool();
-	vector = fio->FgetUint8();
-	iei = fio->FgetBool();
-	oei = fio->FgetBool();
-	intr_bit = fio->FgetUint32();
+	state_fio->Fread(&regs, sizeof(regs), 1);
+	status = state_fio->FgetUint8();
+	state_fio->Fread(wr_tmp, sizeof(wr_tmp), 1);
+	wr_num = state_fio->FgetInt32();
+	wr_ptr = state_fio->FgetInt32();
+	state_fio->Fread(rr_tmp, sizeof(rr_tmp), 1);
+	rr_num = state_fio->FgetInt32();
+	rr_ptr = state_fio->FgetInt32();
+	enabled = state_fio->FgetBool();
+	ready = state_fio->FgetUint32();
+	force_ready = state_fio->FgetBool();
+	addr_a = state_fio->FgetUint16();
+	addr_b = state_fio->FgetUint16();
+	upcount = state_fio->FgetInt32();
+	blocklen = state_fio->FgetInt32();
+	dma_stop = state_fio->FgetBool();
+	bus_master = state_fio->FgetBool();
+	req_intr = state_fio->FgetBool();
+	in_service = state_fio->FgetBool();
+	vector = state_fio->FgetUint8();
+	iei = state_fio->FgetBool();
+	oei = state_fio->FgetBool();
+	intr_bit = state_fio->FgetUint32();
 	return true;
 }
 

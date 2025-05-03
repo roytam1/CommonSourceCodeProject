@@ -46,8 +46,8 @@ public:
 	{
 		ram[addr & 0xff] = data;
 	}
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 };
 
 class MCS48 : public DEVICE
@@ -100,8 +100,8 @@ public:
 	void debug_regs_info(_TCHAR *buffer);
 	int debug_dasm(uint32 pc, _TCHAR *buffer);
 #endif
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_state_fio);
+	bool load_state(FILEIO* state_state_fio);
 	
 	// unique functions
 	void set_context_mem(DEVICE* device)

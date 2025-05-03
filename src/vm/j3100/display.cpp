@@ -66,16 +66,13 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_ENABLE) {
 		if(data & mask) {
 			status |= 0x11;
-		}
-		else {
+		} else {
 			status &= ~0x11;
 		}
-	}
-	else if(id == SIG_DISPLAY_VBLANK) {
+	} else if(id == SIG_DISPLAY_VBLANK) {
 		if(data & mask) {
 			status &= ~0x08;
-		}
-		else {
+		} else {
 			status |= 0x08;
 		}
 	}
@@ -118,8 +115,7 @@ void DISPLAY::draw_screen()
 			draw_graph_640x400();
 			width = 640;
 			height = 400;
-		}
-		else {
+		} else {
 			// 640x200 mono
 			draw_graph_640x200();
 			width = 640;
@@ -139,16 +135,14 @@ void DISPLAY::draw_screen()
 				for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 					dest0[x2] = dest0[x2 + 1] = palette_pc[src[x]];
 				}
-			}
-			else {
+			} else {
 				for(int x = 0; x < 640; x++) {
 					dest0[x] = palette_pc[src[x]];
 				}
 			}
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
-	}
-	else {
+	} else {
 		// 640x400
 		for(int y = 0; y < 400; y++) {
 			scrntype* dest = emu->screen_buffer(y);

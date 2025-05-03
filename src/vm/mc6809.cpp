@@ -275,24 +275,19 @@ void MC6809::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_CPU_IRQ) {
 		if(data & mask) {
 			int_state |= MC6809_IRQ_BIT;
-		}
-		else {
+		} else {
 			int_state &= ~MC6809_IRQ_BIT;
 		}
-	}
-	else if(id == SIG_CPU_FIRQ) {
+	} else if(id == SIG_CPU_FIRQ) {
 		if(data & mask) {
 			int_state |= MC6809_FIRQ_BIT;
-		}
-		else {
+		} else {
 			int_state &= ~MC6809_FIRQ_BIT;
 		}
-	}
-	else if(id == SIG_CPU_NMI) {
+	} else if(id == SIG_CPU_NMI) {
 		if(data & mask) {
 			int_state |= MC6809_NMI_BIT;
-		}
-		else {
+		} else {
 			int_state &= ~MC6809_NMI_BIT;
 		}
 	}
@@ -306,8 +301,7 @@ int MC6809::run(int clock)
 		icount = 0;
 		run_one_opecode();
 		return -icount;
-	}
-	else {
+	} else {
 		// run cpu while given clocks
 		icount += clock;
 		int first_icount = icount;
@@ -327,8 +321,7 @@ void MC6809::run_one_opecode()
 		if(int_state & MC6809_CWAI) {
 			int_state &= ~MC6809_CWAI;
 			icount -= 7; /* subtract +7 cycles next time */
-		}
-		else {
+		} else {
 			CC |= CC_E; /* save entire state */
 			PUSHWORD(pPC);
 			PUSHWORD(pU);
@@ -342,8 +335,7 @@ void MC6809::run_one_opecode()
 		}
 		CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
 		PCD = RM16(0xfffc);
-	}
-	else if(int_state & (MC6809_FIRQ_BIT | MC6809_IRQ_BIT)) {
+	} else if(int_state & (MC6809_FIRQ_BIT | MC6809_IRQ_BIT)) {
 		int_state &= ~MC6809_SYNC; /* clear SYNC flag */
 		if((int_state & MC6809_FIRQ_BIT) && !(CC & CC_IF)) {
 			/* fast IRQ */
@@ -351,8 +343,7 @@ void MC6809::run_one_opecode()
 			if(int_state & MC6809_CWAI) {
 				int_state &= ~MC6809_CWAI; /* clear CWAI */
 				icount -= 7; /* subtract +7 cycles */
-			}
-			else {
+			} else {
 				CC &= ~CC_E; /* save 'short' state */
 				PUSHWORD(pPC);
 				PUSHBYTE(CC);
@@ -360,15 +351,13 @@ void MC6809::run_one_opecode()
 			}
 			CC |= CC_IF | CC_II; /* inhibit FIRQ and IRQ */
 			PCD = RM16(0xfff6);
-		}
-		else if((int_state & MC6809_IRQ_BIT) && !(CC & CC_II)) {
+		} else if((int_state & MC6809_IRQ_BIT) && !(CC & CC_II)) {
 			/* standard IRQ */
 			int_state &= ~MC6809_IRQ_BIT;
 			if(int_state & MC6809_CWAI) {
 				int_state &= ~MC6809_CWAI; /* clear CWAI flag */
 				icount -= 7; /* subtract +7 cycles */
-			}
-			else {
+			} else {
 				CC |= CC_E; /* save entire state */
 				PUSHWORD(pPC);
 				PUSHWORD(pU);
@@ -386,8 +375,7 @@ void MC6809::run_one_opecode()
 	}
 	if (int_state & (MC6809_CWAI | MC6809_SYNC)) {
 		icount = 0;
-	}
-	else {
+	} else {
 		pPPC = pPC;
 		uint8 ireg = ROP(PCD);
 		PC++;
@@ -1163,8 +1151,7 @@ void MC6809::exg()
 	if((tb ^ (tb >> 4)) & 0x08) {
 		/* transfer $ff to both registers */
 		t1 = t2 = 0xff;
-	}
-	else {
+	} else {
 		switch(tb >> 4) {
 		case  0: t1 = D;  break;
 		case  1: t1 = X;  break;
@@ -1228,8 +1215,7 @@ void MC6809::tfr()
 	if((tb ^ (tb >> 4)) & 0x08) {
 		/* transfer $ff to register */
 		t = 0xff;
-	}
-	else {
+	} else {
 		switch(tb >> 4) {
 		case  0: t = D;  break;
 		case  1: t = X;  break;

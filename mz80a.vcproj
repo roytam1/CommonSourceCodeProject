@@ -422,6 +422,26 @@
 				Filter="cpp"
 				>
 				<File
+					RelativePath="src\vm\and.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\datarec.cpp"
 					>
 					<FileConfiguration
@@ -483,6 +503,26 @@
 				</File>
 				<File
 					RelativePath="src\vm\i8255.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\ls393.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -687,6 +727,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\i8255.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\ls393.h"
 					>
 				</File>
 				<File

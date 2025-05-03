@@ -122,8 +122,8 @@ public:
 	void release();
 	void reset();
 	void update_config();
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// common event functions
 	int event_manager_id()

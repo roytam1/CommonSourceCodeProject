@@ -64,8 +64,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		mask = 1 << (addr & 7);
 		if(data & 7) {
 			graph_color |= mask;
-		}
-		else {
+		} else {
 			graph_color &= ~mask;
 		}
 		break;
@@ -108,26 +107,22 @@ void DISPLAY::draw_screen()
 	if((regs[8] & 0x30) != 0x30) {
 		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		}
-		else {
+		} else {
 			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
 		}
 		
 		// render screen
 		if(graph_color) {
 			draw_graph_color();
-		}
-		else {
+		} else {
 			draw_graph_mono();
 		}
 		if(text_wide) {
 			draw_text_wide();
-		}
-		else {
+		} else {
 			draw_text_normal();
 		}
-	}
-	else {
+	} else {
 		memset(screen, 0, sizeof(screen));
 	}
 	
@@ -145,8 +140,7 @@ void DISPLAY::draw_screen()
 //				dest1[x] = palette_pc[0];
 //			}
 			memset(dest1, 0, 640 * sizeof(scrntype));
-		}
-		else {
+		} else {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}

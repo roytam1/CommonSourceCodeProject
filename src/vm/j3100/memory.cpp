@@ -15,14 +15,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -74,8 +72,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		if(kanji_bank != (data & 0x8f)) {
 			if(data & 0x80) {
 				SET_BANK(0xe0000, 0xeffff, wdmy, kanji + 0x10000 * (data & 0x0f));
-			}
-			else {
+			} else {
 				SET_BANK(0xe0000, 0xeffff, wdmy, rdmy);
 			}
 			kanji_bank = data & 0x8f;

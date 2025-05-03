@@ -325,12 +325,10 @@ void IO::event_callback(int event_id, int err)
 		register_id_beep = -1;
 		d_beep->write_signal(SIG_BEEP_ON, 0, 0);
 		rregs[4] = (wregs[4] &= ~2);
-	}
-	else if(event_id == EVENT_CMT) {
+	} else if(event_id == EVENT_CMT) {
 		sub_int |= 2;
 		update_intr();
-	}
-	else if(event_id == EVENT_1SEC) {
+	} else if(event_id == EVENT_1SEC) {
 		if(cur_time.initialized) {
 			cur_time.increment();
 		} else {
@@ -384,8 +382,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 				cancel_event(this, register_id_beep);
 			}
 			register_event(this, EVENT_BEEP, intv, false, &register_id_beep);
-		}
-		else {
+		} else {
 			d_beep->write_signal(SIG_BEEP_ON, 0, 1);
 		}
 		break;
@@ -444,8 +441,7 @@ uint32 IO::read_io8(uint32 addr)
 	case 0xf2:
 		if(wregs[5] & 4) {
 			rregs[2] |= 2;
-		}
-		else {
+		} else {
 			rregs[2] &= 0xfd;
 		}
 		val = rregs[2] | 2;
@@ -468,20 +464,17 @@ void IO::update_intr()
 		rregs[1] = key_buf->read();
 		rregs[2] |= 1;
 		d_cpu->write_signal(SIG_NSC800_RSTA, 1, 1);
-	}
-	else if(brk) {
+	} else if(brk) {
 		rregs[0] = 0x80;
 		rregs[1] = 5;
 		rregs[2] |= 1;
 		brk = false;
 		d_cpu->write_signal(SIG_NSC800_RSTA, 1, 1);
-	}
-	else if(sub_int & 1) {
+	} else if(sub_int & 1) {
 		recv_from_sub();
 		sub_int &= ~1;
 		d_cpu->write_signal(SIG_NSC800_RSTA, 1, 1);
-	}
-	else if(sub_int & 2) {
+	} else if(sub_int & 2) {
 		sub_int &= ~2;
 		d_cpu->write_signal(SIG_NSC800_RSTB, 1, 1);
 	}
@@ -506,8 +499,7 @@ void IO::draw_screen()
 					dest += px;
 					dest[0] = dest[1] = dest[2] = dest[3] = dest[4] = dest[5] = (l < 7) ? cb : cd;
 				}
-			}
-			else {
+			} else {
 				for(int l = 0; l < 8; l++) {
 					uint8* src = &lcd[py + l][px];
 					scrntype* dest = emu->screen_buffer(py + l);
@@ -574,8 +566,7 @@ void IO::draw_line(int sx, int sy, int ex, int ey)
 			frac += delta_y;
 			draw_point(next_x, next_y, 0xff);
 		}
-	}
-	else {
+	} else {
 		int frac = delta_x - delta_y / 2;
 		while(next_y != ey) {
 			if(frac >= 0) {
@@ -683,8 +674,7 @@ void IO::key_down(int code)
 	case 0x12:
 		if(graph) {
 			graph = kana = false;
-		}
-		else {
+		} else {
 			graph = true;
 		}
 		break;
@@ -695,8 +685,7 @@ void IO::key_down(int code)
 	case 0x15:
 		if(kana) {
 			graph = kana = false;
-		}
-		else {
+		} else {
 			kana = true;
 		}
 		break;
@@ -780,23 +769,18 @@ fkey:
 			uint8 val = 0;
 			if(ctrl) {
 				val = key_tbl_c[code];
-			}
-			else if(kana) {
+			} else if(kana) {
 				if(shift) {
 					val = key_tbl_ks[code];
-				}
-				else {
+				} else {
 					val = key_tbl_k[code];
 				}
-			}
-			else if(graph) {
+			} else if(graph) {
 				val = key_tbl_g[code];
-			}
-			else {
+			} else {
 				if(shift) {
 					val = key_tbl_s[code];
-				}
-				else {
+				} else {
 					val = key_tbl[code];
 				}
 			}
@@ -914,23 +898,20 @@ void IO::send_to_sub()
 		if(locate_on && (wregs[1] & 0x7f) != 0x24 && 0x20 <= wregs[1] && wregs[1] < 0x80) {
 			cursor_x++;
 			draw_font(cursor_x, cursor_x, wregs[1]);
-		}
-		else {
+		} else {
 			if((wregs[1] & 0x7f) < 0x47) {
 				cmd_buf->write(wregs[1] & 0x7f);
 			}
 			locate_on = 0;
 		}
-	}
-	else {
+	} else {
 		cmd_buf->write(wregs[1]);
 		if(cmd_buf->count() == 2) {
 			uint8 cmd_type = cmd_buf->read_not_remove(0);
 			if(cmd_type == 7 && wregs[1] > 4) {
 				cmd_buf->clear();
 				cmd_buf->write(wregs[1] & 0x7f);
-			}
-			else if(cmd_type == 0x0c && wregs[1] == 0xb0) {
+			} else if(cmd_type == 0x0c && wregs[1] == 0xb0) {
 				memset(lcd, 0, sizeof(lcd));
 				cmd_buf->clear();
 				cmd_buf->write(wregs[1] & 0x7f);
@@ -1012,17 +993,13 @@ void IO::process_sub()
 		addr |= cmd_buf->read() << 8;
 		if(addr == 0xc00e) {
 			val = 0x0a;
-		}
-		else if(addr == 0xd000) {
+		} else if(addr == 0xd000) {
 			val = 0x30;
-		}
-		else if(WRAM_OFS_UDC0 <= addr && addr < WRAM_OFS_UDC1) {
+		} else if(WRAM_OFS_UDC0 <= addr && addr < WRAM_OFS_UDC1) {
 			val = udc[FONT_OFS_UDC0 + (addr - WRAM_OFS_UDC0)];
-		}
-		else if(WRAM_OFS_UDC1 <= addr && addr < WRAM_OFS_KBUF) {
+		} else if(WRAM_OFS_UDC1 <= addr && addr < WRAM_OFS_KBUF) {
 			val = udc[FONT_OFS_UDC1 + (addr - WRAM_OFS_UDC1)];
-		}
-		else {
+		} else {
 			val = wram[addr & 0x7ff];
 		}
 		rsp_buf->write(val);
@@ -1033,11 +1010,9 @@ void IO::process_sub()
 		addr |= cmd_buf->read() << 8;
 		if(WRAM_OFS_UDC0 <= addr && addr < WRAM_OFS_UDC1) {
 			udc[FONT_OFS_UDC0 + (addr - WRAM_OFS_UDC0)] = val;
-		}
-		else if(WRAM_OFS_UDC1 <= addr && addr < WRAM_OFS_KBUF) {
+		} else if(WRAM_OFS_UDC1 <= addr && addr < WRAM_OFS_KBUF) {
 			udc[FONT_OFS_UDC1 + (addr - WRAM_OFS_UDC1)] = val;
-		}
-		else {
+		} else {
 			wram[addr & 0x7ff] = val;
 		}
 		break;
@@ -1085,8 +1060,7 @@ void IO::process_sub()
 		for(i = 0; i < 120; i++) {
 			if(sy < 32) {
 				rsp_buf->write(lcd[sy][i]);
-			}
-			else {
+			} else {
 				rsp_buf->write(0);
 			}
 		}
@@ -1096,8 +1070,7 @@ void IO::process_sub()
 		sy = cmd_buf->read();
 		if(sx < 120 && sy < 32) {
 			rsp_buf->write(lcd[sy][sx]);
-		}
-		else {
+		} else {
 			rsp_buf->write(0);
 		}
 		break;

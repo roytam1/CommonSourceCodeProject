@@ -46,6 +46,8 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 					shift_data &= ~bit;
 				}
 				// output LSB
+				dout = (uint32)(shift_data & 1);
+				dout_changed = true;
 				write_signals(&outputs_dout, (shift_data & 1) ? 0xffffffff : 0);
 			}
 #ifdef HAS_UPD4990A
@@ -114,6 +116,8 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 				shift_data <<= 8;
 				shift_data |= TO_BCD(cur_time.second);
 				// output LSB
+				dout = (uint32)(shift_data & 1);
+				dout_changed = true;
 				write_signals(&outputs_dout, (shift_data & 1) ? 0xffffffff : 0);
 				break;
 			case 0x04:
@@ -189,6 +193,12 @@ void UPD1990A::event_callback(int event_id, int err)
 			if(!hold) {
 				cur_time.increment();
 			}
+			if(dout_changed) {
+				dout_changed = false;
+			} else {
+				dout = cur_time.second & 1;
+				write_signals(&outputs_dout, (cur_time.second & 1) ? 0xffffffff : 0);
+			}
 		} else {
 			emu->get_host_time(&cur_time);	// resync
 			cur_time.initialized = true;
@@ -199,54 +209,58 @@ void UPD1990A::event_callback(int event_id, int err)
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
-void UPD1990A::save_state(FILEIO* fio)
+void UPD1990A::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	cur_time.save_state((void *)fio);
-	fio->FputInt32(register_id_1sec);
-	fio->FputUint8(cmd);
-	fio->FputUint8(mode);
-	fio->FputUint8(tpmode);
-	fio->FputUint64(shift_data);
-	fio->FputBool(clk);
-	fio->FputBool(stb);
-	fio->FputBool(din);
-	fio->FputBool(hold);
-	fio->FputBool(tp);
-	fio->FputInt32(register_id_tp);
+	cur_time.save_state((void *)state_fio);
+	state_fio->FputInt32(register_id_1sec);
+	state_fio->FputUint8(cmd);
+	state_fio->FputUint8(mode);
+	state_fio->FputUint8(tpmode);
+	state_fio->FputUint64(shift_data);
+	state_fio->FputBool(clk);
+	state_fio->FputBool(stb);
+	state_fio->FputBool(din);
+	state_fio->FputBool(hold);
+	state_fio->FputBool(tp);
+	state_fio->FputUint32(dout);
+	state_fio->FputBool(dout_changed);
+	state_fio->FputInt32(register_id_tp);
 #ifdef HAS_UPD4990A
-	fio->FputUint8(shift_cmd);
+	state_fio->FputUint8(shift_cmd);
 #endif
 }
 
-bool UPD1990A::load_state(FILEIO* fio)
+bool UPD1990A::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)fio)) {
+	if(!cur_time.load_state((void *)state_fio)) {
 		return false;
 	}
-	register_id_1sec = fio->FgetInt32();
-	cmd = fio->FgetUint8();
-	mode = fio->FgetUint8();
-	tpmode = fio->FgetUint8();
-	shift_data = fio->FgetUint64();
-	clk = fio->FgetBool();
-	stb = fio->FgetBool();
-	din = fio->FgetBool();
-	hold = fio->FgetBool();
-	tp = fio->FgetBool();
-	register_id_tp = fio->FgetInt32();
+	register_id_1sec = state_fio->FgetInt32();
+	cmd = state_fio->FgetUint8();
+	mode = state_fio->FgetUint8();
+	tpmode = state_fio->FgetUint8();
+	shift_data = state_fio->FgetUint64();
+	clk = state_fio->FgetBool();
+	stb = state_fio->FgetBool();
+	din = state_fio->FgetBool();
+	hold = state_fio->FgetBool();
+	tp = state_fio->FgetBool();
+	dout = state_fio->FgetUint32();
+	dout_changed = state_fio->FgetBool();
+	register_id_tp = state_fio->FgetInt32();
 #ifdef HAS_UPD4990A
-	shift_cmd = fio->FgetUint8();
+	shift_cmd = state_fio->FgetUint8();
 #endif
 	return true;
 }

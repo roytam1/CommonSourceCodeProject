@@ -225,45 +225,45 @@ void I8251::event_callback(int event_id, int err)
 
 #define STATE_VERSION	1
 
-void I8251::save_state(FILEIO* fio)
+void I8251::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputUint8(recv);
-	fio->FputUint8(status);
-	fio->FputUint8(mode);
-	fio->FputBool(txen);
-	fio->FputBool(rxen);
-	fio->FputBool(loopback);
-	recv_buffer->save_state((void *)fio);
-	send_buffer->save_state((void *)fio);
-	fio->FputInt32(recv_id);
-	fio->FputInt32(send_id);
+	state_fio->FputUint8(recv);
+	state_fio->FputUint8(status);
+	state_fio->FputUint8(mode);
+	state_fio->FputBool(txen);
+	state_fio->FputBool(rxen);
+	state_fio->FputBool(loopback);
+	recv_buffer->save_state((void *)state_fio);
+	send_buffer->save_state((void *)state_fio);
+	state_fio->FputInt32(recv_id);
+	state_fio->FputInt32(send_id);
 }
 
-bool I8251::load_state(FILEIO* fio)
+bool I8251::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	recv = fio->FgetUint8();
-	status = fio->FgetUint8();
-	mode = fio->FgetUint8();
-	txen = fio->FgetBool();
-	rxen = fio->FgetBool();
-	loopback = fio->FgetBool();
-	if(!recv_buffer->load_state((void *)fio)) {
+	recv = state_fio->FgetUint8();
+	status = state_fio->FgetUint8();
+	mode = state_fio->FgetUint8();
+	txen = state_fio->FgetBool();
+	rxen = state_fio->FgetBool();
+	loopback = state_fio->FgetBool();
+	if(!recv_buffer->load_state((void *)state_fio)) {
 		return false;
 	}
-	if(!send_buffer->load_state((void *)fio)) {
+	if(!send_buffer->load_state((void *)state_fio)) {
 		return false;
 	}
-	recv_id = fio->FgetInt32();
-	send_id = fio->FgetInt32();
+	recv_id = state_fio->FgetInt32();
+	send_id = state_fio->FgetInt32();
 	return true;
 }
 

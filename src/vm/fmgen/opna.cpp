@@ -187,39 +187,39 @@ void OPNBase::Intr(bool value)
 
 void OPNBase::SaveState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(OPN_BASE_STATE_VERSION);
+	state_fio->FputUint32(OPN_BASE_STATE_VERSION);
 	
 	Timer::SaveState(f);
-	fio->FputInt32(fmvolume);
-	fio->FputUint32(clock);
-	fio->FputUint32(rate);
-	fio->FputUint32(psgrate);
-	fio->FputUint32(status);
-	fio->FputBool(interrupt);
-	fio->FputUint8(prescale);
+	state_fio->FputInt32(fmvolume);
+	state_fio->FputUint32(clock);
+	state_fio->FputUint32(rate);
+	state_fio->FputUint32(psgrate);
+	state_fio->FputUint32(status);
+	state_fio->FputBool(interrupt);
+	state_fio->FputUint8(prescale);
 	chip.SaveState(f);
 	psg.SaveState(f);
 }
 
 bool OPNBase::LoadState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != OPN_BASE_STATE_VERSION) {
+	if(state_fio->FgetUint32() != OPN_BASE_STATE_VERSION) {
 		return false;
 	}
 	if(!Timer::LoadState(f)) {
 		return false;
 	}
-	fmvolume = fio->FgetInt32();
-	clock = fio->FgetUint32();
-	rate = fio->FgetUint32();
-	psgrate = fio->FgetUint32();
-	status = fio->FgetUint32();
-	interrupt = fio->FgetBool();
-	prescale = fio->FgetUint8();
+	fmvolume = state_fio->FgetInt32();
+	clock = state_fio->FgetUint32();
+	rate = state_fio->FgetUint32();
+	psgrate = state_fio->FgetUint32();
+	status = state_fio->FgetUint32();
+	interrupt = state_fio->FgetBool();
+	prescale = state_fio->FgetUint8();
 	if(!chip.LoadState(f)) {
 		return false;
 	}
@@ -436,14 +436,14 @@ void OPN::Mix(Sample* buffer, int nsamples)
 
 void OPN::SaveState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(OPN_STATE_VERSION);
+	state_fio->FputUint32(OPN_STATE_VERSION);
 	
 	OPNBase::SaveState(f);
-	fio->Fwrite(fnum, sizeof(fnum), 1);
-	fio->Fwrite(fnum3, sizeof(fnum3), 1);
-	fio->Fwrite(fnum2, sizeof(fnum2), 1);
+	state_fio->Fwrite(fnum, sizeof(fnum), 1);
+	state_fio->Fwrite(fnum3, sizeof(fnum3), 1);
+	state_fio->Fwrite(fnum2, sizeof(fnum2), 1);
 	for(int i = 0; i < 3; i++) {
 		ch[i].SaveState(f);
 	}
@@ -451,17 +451,17 @@ void OPN::SaveState(void *f)
 
 bool OPN::LoadState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != OPN_STATE_VERSION) {
+	if(state_fio->FgetUint32() != OPN_STATE_VERSION) {
 		return false;
 	}
 	if(!OPNBase::LoadState(f)) {
 		return false;
 	}
-	fio->Fread(fnum, sizeof(fnum), 1);
-	fio->Fread(fnum3, sizeof(fnum3), 1);
-	fio->Fread(fnum2, sizeof(fnum2), 1);
+	state_fio->Fread(fnum, sizeof(fnum), 1);
+	state_fio->Fread(fnum3, sizeof(fnum3), 1);
+	state_fio->Fread(fnum2, sizeof(fnum2), 1);
 	for(int i = 0; i < 3; i++) {
 		if(!ch[i].LoadState(f)) {
 			return false;
@@ -1277,48 +1277,48 @@ void OPNABase::Mix6(Sample* buffer, int nsamples, int activech)
 
 void OPNABase::SaveState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(OPNA_BASE_STATE_VERSION);
+	state_fio->FputUint32(OPNA_BASE_STATE_VERSION);
 	
 	OPNBase::SaveState(f);
-	fio->Fwrite(pan, sizeof(pan), 1);
-	fio->Fwrite(fnum2, sizeof(fnum2), 1);
-	fio->FputUint8(reg22);
-	fio->FputUint32(reg29);
-	fio->FputUint32(stmask);
-	fio->FputUint32(statusnext);
-	fio->FputUint32(lfocount);
-	fio->FputUint32(lfodcount);
-	fio->Fwrite(fnum, sizeof(fnum), 1);
-	fio->Fwrite(fnum3, sizeof(fnum3), 1);
-	fio->Fwrite(adpcmbuf, 0x40000, 1);
-	fio->FputUint32(adpcmmask);
-	fio->FputUint32(adpcmnotice);
-	fio->FputUint32(startaddr);
-	fio->FputUint32(stopaddr);
-	fio->FputUint32(memaddr);
-	fio->FputUint32(limitaddr);
-	fio->FputInt32(adpcmlevel);
-	fio->FputInt32(adpcmvolume);
-	fio->FputInt32(adpcmvol);
-	fio->FputUint32(deltan);
-	fio->FputInt32(adplc);
-	fio->FputInt32(adpld);
-	fio->FputUint32(adplbase);
-	fio->FputInt32(adpcmx);
-	fio->FputInt32(adpcmd);
-	fio->FputInt32(adpcmout);
-	fio->FputInt32(apout0);
-	fio->FputInt32(apout1);
-	fio->FputUint32(adpcmreadbuf);
-	fio->FputBool(adpcmplay);
-	fio->FputInt8(granuality);
-	fio->FputBool(adpcmmask_);
-	fio->FputUint8(control1);
-	fio->FputUint8(control2);
-	fio->Fwrite(adpcmreg, sizeof(adpcmreg), 1);
-	fio->FputInt32(rhythmmask_);
+	state_fio->Fwrite(pan, sizeof(pan), 1);
+	state_fio->Fwrite(fnum2, sizeof(fnum2), 1);
+	state_fio->FputUint8(reg22);
+	state_fio->FputUint32(reg29);
+	state_fio->FputUint32(stmask);
+	state_fio->FputUint32(statusnext);
+	state_fio->FputUint32(lfocount);
+	state_fio->FputUint32(lfodcount);
+	state_fio->Fwrite(fnum, sizeof(fnum), 1);
+	state_fio->Fwrite(fnum3, sizeof(fnum3), 1);
+	state_fio->Fwrite(adpcmbuf, 0x40000, 1);
+	state_fio->FputUint32(adpcmmask);
+	state_fio->FputUint32(adpcmnotice);
+	state_fio->FputUint32(startaddr);
+	state_fio->FputUint32(stopaddr);
+	state_fio->FputUint32(memaddr);
+	state_fio->FputUint32(limitaddr);
+	state_fio->FputInt32(adpcmlevel);
+	state_fio->FputInt32(adpcmvolume);
+	state_fio->FputInt32(adpcmvol);
+	state_fio->FputUint32(deltan);
+	state_fio->FputInt32(adplc);
+	state_fio->FputInt32(adpld);
+	state_fio->FputUint32(adplbase);
+	state_fio->FputInt32(adpcmx);
+	state_fio->FputInt32(adpcmd);
+	state_fio->FputInt32(adpcmout);
+	state_fio->FputInt32(apout0);
+	state_fio->FputInt32(apout1);
+	state_fio->FputUint32(adpcmreadbuf);
+	state_fio->FputBool(adpcmplay);
+	state_fio->FputInt8(granuality);
+	state_fio->FputBool(adpcmmask_);
+	state_fio->FputUint8(control1);
+	state_fio->FputUint8(control2);
+	state_fio->Fwrite(adpcmreg, sizeof(adpcmreg), 1);
+	state_fio->FputInt32(rhythmmask_);
 	for(int i = 0; i < 6; i++) {
 		ch[i].SaveState(f);
 	}
@@ -1326,51 +1326,51 @@ void OPNABase::SaveState(void *f)
 
 bool OPNABase::LoadState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != OPNA_BASE_STATE_VERSION) {
+	if(state_fio->FgetUint32() != OPNA_BASE_STATE_VERSION) {
 		return false;
 	}
 	if(!OPNBase::LoadState(f)) {
 		return false;
 	}
-	fio->Fread(pan, sizeof(pan), 1);
-	fio->Fread(fnum2, sizeof(fnum2), 1);
-	reg22 = fio->FgetUint8();
-	reg29 = fio->FgetUint32();
-	stmask = fio->FgetUint32();
-	statusnext = fio->FgetUint32();
-	lfocount = fio->FgetUint32();
-	lfodcount = fio->FgetUint32();
-	fio->Fread(fnum, sizeof(fnum), 1);
-	fio->Fread(fnum3, sizeof(fnum3), 1);
-	fio->Fread(adpcmbuf, 0x40000, 1);
-	adpcmmask = fio->FgetUint32();
-	adpcmnotice = fio->FgetUint32();
-	startaddr = fio->FgetUint32();
-	stopaddr = fio->FgetUint32();
-	memaddr = fio->FgetUint32();
-	limitaddr = fio->FgetUint32();
-	adpcmlevel = fio->FgetInt32();
-	adpcmvolume = fio->FgetInt32();
-	adpcmvol = fio->FgetInt32();
-	deltan = fio->FgetUint32();
-	adplc = fio->FgetInt32();
-	adpld = fio->FgetInt32();
-	adplbase = fio->FgetUint32();
-	adpcmx = fio->FgetInt32();
-	adpcmd = fio->FgetInt32();
-	adpcmout = fio->FgetInt32();
-	apout0 = fio->FgetInt32();
-	apout1 = fio->FgetInt32();
-	adpcmreadbuf = fio->FgetUint32();
-	adpcmplay = fio->FgetBool();
-	granuality = fio->FgetInt8();
-	adpcmmask_ = fio->FgetBool();
-	control1 = fio->FgetUint8();
-	control2 = fio->FgetUint8();
-	fio->Fread(adpcmreg, sizeof(adpcmreg), 1);
-	rhythmmask_ = fio->FgetInt32();
+	state_fio->Fread(pan, sizeof(pan), 1);
+	state_fio->Fread(fnum2, sizeof(fnum2), 1);
+	reg22 = state_fio->FgetUint8();
+	reg29 = state_fio->FgetUint32();
+	stmask = state_fio->FgetUint32();
+	statusnext = state_fio->FgetUint32();
+	lfocount = state_fio->FgetUint32();
+	lfodcount = state_fio->FgetUint32();
+	state_fio->Fread(fnum, sizeof(fnum), 1);
+	state_fio->Fread(fnum3, sizeof(fnum3), 1);
+	state_fio->Fread(adpcmbuf, 0x40000, 1);
+	adpcmmask = state_fio->FgetUint32();
+	adpcmnotice = state_fio->FgetUint32();
+	startaddr = state_fio->FgetUint32();
+	stopaddr = state_fio->FgetUint32();
+	memaddr = state_fio->FgetUint32();
+	limitaddr = state_fio->FgetUint32();
+	adpcmlevel = state_fio->FgetInt32();
+	adpcmvolume = state_fio->FgetInt32();
+	adpcmvol = state_fio->FgetInt32();
+	deltan = state_fio->FgetUint32();
+	adplc = state_fio->FgetInt32();
+	adpld = state_fio->FgetInt32();
+	adplbase = state_fio->FgetUint32();
+	adpcmx = state_fio->FgetInt32();
+	adpcmd = state_fio->FgetInt32();
+	adpcmout = state_fio->FgetInt32();
+	apout0 = state_fio->FgetInt32();
+	apout1 = state_fio->FgetInt32();
+	adpcmreadbuf = state_fio->FgetUint32();
+	adpcmplay = state_fio->FgetBool();
+	granuality = state_fio->FgetInt8();
+	adpcmmask_ = state_fio->FgetBool();
+	control1 = state_fio->FgetUint8();
+	control2 = state_fio->FgetUint8();
+	state_fio->Fread(adpcmreg, sizeof(adpcmreg), 1);
+	rhythmmask_ = state_fio->FgetInt32();
 	for(int i = 0; i < 6; i++) {
 		if(!ch[i].LoadState(f)) {
 			return false;
@@ -1707,39 +1707,39 @@ void OPNA::Mix(Sample* buffer, int nsamples)
 
 void OPNA::SaveState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(OPNA_STATE_VERSION);
+	state_fio->FputUint32(OPNA_STATE_VERSION);
 	
 	OPNABase::SaveState(f);
 	for(int i = 0; i < 6; i++) {
-		fio->FputUint8(rhythm[i].pan);
-		fio->FputInt8(rhythm[i].level);
-		fio->FputUint32(rhythm[i].pos);
+		state_fio->FputUint8(rhythm[i].pan);
+		state_fio->FputInt8(rhythm[i].level);
+		state_fio->FputUint32(rhythm[i].pos);
 	}
-	fio->FputInt8(rhythmtl);
-	fio->FputInt32(rhythmtvol);
-	fio->FputUint8(rhythmkey);
+	state_fio->FputInt8(rhythmtl);
+	state_fio->FputInt32(rhythmtvol);
+	state_fio->FputUint8(rhythmkey);
 }
 
 bool OPNA::LoadState(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != OPNA_STATE_VERSION) {
+	if(state_fio->FgetUint32() != OPNA_STATE_VERSION) {
 		return false;
 	}
 	if(!OPNABase::LoadState(f)) {
 		return false;
 	}
 	for(int i = 0; i < 6; i++) {
-		rhythm[i].pan = fio->FgetUint8();
-		rhythm[i].level = fio->FgetInt8();
-		rhythm[i].pos = fio->FgetUint32();
+		rhythm[i].pan = state_fio->FgetUint8();
+		rhythm[i].level = state_fio->FgetInt8();
+		rhythm[i].pos = state_fio->FgetUint32();
 	}
-	rhythmtl = fio->FgetInt8();
-	rhythmtvol = fio->FgetInt32();
-	rhythmkey = fio->FgetUint8();
+	rhythmtl = state_fio->FgetInt8();
+	rhythmtvol = state_fio->FgetInt32();
+	rhythmkey = state_fio->FgetUint8();
 	return true;
 }
 

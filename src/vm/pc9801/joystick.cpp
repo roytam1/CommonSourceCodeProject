@@ -11,6 +11,7 @@
 
 #include "joystick.h"
 #include "../ym2203.h"
+#include "../../fileio.h"
 
 void JOYSTICK::initialize()
 {
@@ -31,5 +32,27 @@ void JOYSTICK::event_frame()
 	if(select & 0x80) {
 		d_opn->write_signal(SIG_YM2203_PORT_A, ~joy_status[(select & 0x40) >> 6], 0x3f);
 	}
+}
+
+#define STATE_VERSION	1
+
+void JOYSTICK::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputUint8(select);
+}
+
+bool JOYSTICK::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	select = state_fio->FgetUint8();
+	return true;
 }
 

@@ -35,6 +35,8 @@ private:
 	uint8 cmd, mode, tpmode;
 	uint64 shift_data;
 	bool clk, stb, din, hold, tp;
+	uint32 dout;
+	bool dout_changed;
 	int register_id_tp;
 	
 #ifdef HAS_UPD4990A
@@ -50,6 +52,8 @@ public:
 		shift_data = 0;
 		clk = stb = din = tp = true;
 		hold = false;
+		dout = 0;
+		dout_changed = false;
 #ifdef HAS_UPD4990A
 		shift_cmd = 0;
 #endif
@@ -61,11 +65,11 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int ch)
 	{
-		return (uint32)(shift_data & 1);
+		return dout;
 	}
 	void event_callback(int event_id, int err);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_dout(DEVICE* device, int id, uint32 mask)

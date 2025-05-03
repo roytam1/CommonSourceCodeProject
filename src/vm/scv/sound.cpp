@@ -60,13 +60,11 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 			if(param_ptr == 6) {
 				memset(pcm_table, 0, sizeof(pcm_table));
 				pcm_len = pcm.ptr = 0;
-			}
-			else if(param_ptr >= 7) {
+			} else if(param_ptr >= 7) {
 				// 0xfe,0x00 : end of pcm, intf1 must not be done except star speeder
 				if(params[param_ptr - 2] == 0xfe && data == 0x00 && cmd_addr != 0xa765) {
 					param_cnt = 1;
-				}
-				else {
+				} else {
 					process_pcm(params[param_ptr - 2]);
 				}
 			}
@@ -113,12 +111,10 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 				if(pause) {
 					clear_channel(&pcm);
 				}
-			}
-//			else if(register_id == -1) {
+//			} else if(register_id == -1) {
 //				vm->register_callback(this, 0, 100, false, &register_id);
-//			}
-		}
-		else {
+			}
+		} else {
 			if(params[0]) {
 				// terminate command
 				memset(params, 0, sizeof(params));
@@ -181,8 +177,7 @@ void SOUND::process_cmd()
 		clear_channel(&square1);
 		clear_channel(&square2);
 		clear_channel(&square3);
-	}
-	else if(params[0] == 0x01) {
+	} else if(params[0] == 0x01) {
 		// noise & square
 		noise.timbre = params[1] >> 5;
 		noise.period = params[2] << 8;
@@ -203,8 +198,7 @@ void SOUND::process_cmd()
 		
 		// tone off
 		clear_channel(&tone);
-	}
-	else if(params[0] == 0x02) { // note on : $02, timbre, period, volume ?
+	} else if(params[0] == 0x02) { // note on : $02, timbre, period, volume ?
 		tone.timbre = params[1] >> 5;
 		tone.period = (params[2] * detune_table[params[1] & 0x1f]);
 		tone.volume = volume_table[params[3] & 0x1f];
@@ -261,15 +255,13 @@ void SOUND::mix(int32* buffer, int cnt)
 				// low-pass filter for the next sample
 				if(++pcm.ptr < pcm_len) {
 					pcm.output =  (pcm_table[pcm.ptr] + pcm_table[pcm.ptr + 1] + pcm_table[pcm.ptr + 2] + pcm_table[pcm.ptr + 3]) >> 2;
-				}
-				else {
+				} else {
 					pcm.count = 0;
 					break;
 				}
 			}
 			vol = pcm.output;
-		}
-		else {
+		} else {
 			// mix tone
 			if(tone.volume && tone.period) {
 				tone.count -= tone.diff;

@@ -21,8 +21,7 @@ void KANJI::initialize()
 		
 		// 8255 Port A, bit6 = 0 (kanji rom exists)
 		d_pio->write_signal(SIG_I8255_PORT_A, 0, 0x40);
-	}
-	else {
+	} else {
 		// 8255 Port A, bit6 = 1 (kanji rom does not exist)
 		d_pio->write_signal(SIG_I8255_PORT_A, 0x40, 0x40);
 	}

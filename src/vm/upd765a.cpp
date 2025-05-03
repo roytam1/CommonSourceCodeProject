@@ -1504,97 +1504,97 @@ void UPD765A::set_drive_mfm(int drv, bool mfm)
 
 #define STATE_VERSION	1
 
-void UPD765A::save_state(FILEIO* fio)
+void UPD765A::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(fdc, sizeof(fdc), 1);
+	state_fio->Fwrite(fdc, sizeof(fdc), 1);
 	for(int i = 0; i < 4; i++) {
-		disk[i]->save_state(fio);
+		disk[i]->save_state(state_fio);
 	}
-	fio->FputUint8(hdu);
-	fio->FputUint8(hdue);
-	fio->Fwrite(id, sizeof(id), 1);
-	fio->FputUint8(eot);
-	fio->FputUint8(gpl);
-	fio->FputUint8(dtl);
-	fio->FputInt32(phase);
-	fio->FputInt32(prevphase);
-	fio->FputUint8(status);
-	fio->FputUint8(seekstat);
-	fio->FputUint8(command);
-	fio->FputUint32(result);
-	fio->FputInt32(step_rate_time);
-	fio->FputBool(no_dma_mode);
-	fio->FputBool(motor_on);
+	state_fio->FputUint8(hdu);
+	state_fio->FputUint8(hdue);
+	state_fio->Fwrite(id, sizeof(id), 1);
+	state_fio->FputUint8(eot);
+	state_fio->FputUint8(gpl);
+	state_fio->FputUint8(dtl);
+	state_fio->FputInt32(phase);
+	state_fio->FputInt32(prevphase);
+	state_fio->FputUint8(status);
+	state_fio->FputUint8(seekstat);
+	state_fio->FputUint8(command);
+	state_fio->FputUint32(result);
+	state_fio->FputInt32(step_rate_time);
+	state_fio->FputBool(no_dma_mode);
+	state_fio->FputBool(motor_on);
 #ifdef UPD765A_DMA_MODE
-	fio->FputBool(dma_data_lost);
+	state_fio->FputBool(dma_data_lost);
 #endif
-	fio->FputBool(irq_masked);
-	fio->FputBool(drq_masked);
-	fio->FputInt32((int)(bufptr - buffer));
-	fio->Fwrite(buffer, sizeof(buffer), 1);
-	fio->FputInt32(count);
-	fio->FputInt32(event_phase);
-	fio->FputInt32(phase_id);
-	fio->FputInt32(drq_id);
-	fio->FputInt32(lost_id);
-	fio->FputInt32(result7_id);
-	fio->Fwrite(seek_id, sizeof(seek_id), 1);
-	fio->FputBool(force_ready);
-	fio->FputBool(reset_signal);
-	fio->FputBool(prev_index);
-	fio->FputUint32(prev_drq_clock);
+	state_fio->FputBool(irq_masked);
+	state_fio->FputBool(drq_masked);
+	state_fio->FputInt32((int)(bufptr - buffer));
+	state_fio->Fwrite(buffer, sizeof(buffer), 1);
+	state_fio->FputInt32(count);
+	state_fio->FputInt32(event_phase);
+	state_fio->FputInt32(phase_id);
+	state_fio->FputInt32(drq_id);
+	state_fio->FputInt32(lost_id);
+	state_fio->FputInt32(result7_id);
+	state_fio->Fwrite(seek_id, sizeof(seek_id), 1);
+	state_fio->FputBool(force_ready);
+	state_fio->FputBool(reset_signal);
+	state_fio->FputBool(prev_index);
+	state_fio->FputUint32(prev_drq_clock);
 }
 
-bool UPD765A::load_state(FILEIO* fio)
+bool UPD765A::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(fdc, sizeof(fdc), 1);
+	state_fio->Fread(fdc, sizeof(fdc), 1);
 	for(int i = 0; i < 4; i++) {
-		if(!disk[i]->load_state(fio)) {
+		if(!disk[i]->load_state(state_fio)) {
 			return false;
 		}
 	}
-	hdu = fio->FgetUint8();
-	hdue = fio->FgetUint8();
-	fio->Fread(id, sizeof(id), 1);
-	eot = fio->FgetUint8();
-	gpl = fio->FgetUint8();
-	dtl = fio->FgetUint8();
-	phase = fio->FgetInt32();
-	prevphase = fio->FgetInt32();
-	status = fio->FgetUint8();
-	seekstat = fio->FgetUint8();
-	command = fio->FgetUint8();
-	result = fio->FgetUint32();
-	step_rate_time = fio->FgetInt32();
-	no_dma_mode = fio->FgetBool();
-	motor_on = fio->FgetBool();
+	hdu = state_fio->FgetUint8();
+	hdue = state_fio->FgetUint8();
+	state_fio->Fread(id, sizeof(id), 1);
+	eot = state_fio->FgetUint8();
+	gpl = state_fio->FgetUint8();
+	dtl = state_fio->FgetUint8();
+	phase = state_fio->FgetInt32();
+	prevphase = state_fio->FgetInt32();
+	status = state_fio->FgetUint8();
+	seekstat = state_fio->FgetUint8();
+	command = state_fio->FgetUint8();
+	result = state_fio->FgetUint32();
+	step_rate_time = state_fio->FgetInt32();
+	no_dma_mode = state_fio->FgetBool();
+	motor_on = state_fio->FgetBool();
 #ifdef UPD765A_DMA_MODE
-	dma_data_lost = fio->FgetBool();
+	dma_data_lost = state_fio->FgetBool();
 #endif
-	irq_masked = fio->FgetBool();
-	drq_masked = fio->FgetBool();
-	bufptr = buffer + fio->FgetInt32();
-	fio->Fread(buffer, sizeof(buffer), 1);
-	count = fio->FgetInt32();
-	event_phase = fio->FgetInt32();
-	phase_id = fio->FgetInt32();
-	drq_id = fio->FgetInt32();
-	lost_id = fio->FgetInt32();
-	result7_id = fio->FgetInt32();
-	fio->Fread(seek_id, sizeof(seek_id), 1);
-	force_ready = fio->FgetBool();
-	reset_signal = fio->FgetBool();
-	prev_index = fio->FgetBool();
-	prev_drq_clock = fio->FgetUint32();
+	irq_masked = state_fio->FgetBool();
+	drq_masked = state_fio->FgetBool();
+	bufptr = buffer + state_fio->FgetInt32();
+	state_fio->Fread(buffer, sizeof(buffer), 1);
+	count = state_fio->FgetInt32();
+	event_phase = state_fio->FgetInt32();
+	phase_id = state_fio->FgetInt32();
+	drq_id = state_fio->FgetInt32();
+	lost_id = state_fio->FgetInt32();
+	result7_id = state_fio->FgetInt32();
+	state_fio->Fread(seek_id, sizeof(seek_id), 1);
+	force_ready = state_fio->FgetBool();
+	reset_signal = state_fio->FgetBool();
+	prev_index = state_fio->FgetBool();
+	prev_drq_clock = state_fio->FgetUint32();
 	return true;
 }
 

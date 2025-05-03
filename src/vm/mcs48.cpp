@@ -1295,43 +1295,43 @@ int MCS48::debug_dasm(uint32 pc, _TCHAR *buffer)
 
 #define STATE_VERSION	1
 
-void MCS48MEM::save_state(FILEIO* fio)
+void MCS48MEM::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(ram, sizeof(ram), 1);
+	state_fio->Fwrite(ram, sizeof(ram), 1);
 }
 
-bool MCS48MEM::load_state(FILEIO* fio)
+bool MCS48MEM::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(ram, sizeof(ram), 1);
+	state_fio->Fread(ram, sizeof(ram), 1);
 	return true;
 }
 
-void MCS48::save_state(FILEIO* fio)
+void MCS48::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(opaque, sizeof(mcs48_state), 1);
+	state_fio->Fwrite(opaque, sizeof(mcs48_state), 1);
 }
 
-bool MCS48::load_state(FILEIO* fio)
+bool MCS48::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(opaque, sizeof(mcs48_state), 1);
+	state_fio->Fread(opaque, sizeof(mcs48_state), 1);
 	
 	mcs48_state *cpustate = (mcs48_state *)opaque;
 	cpustate->mem = d_mem;

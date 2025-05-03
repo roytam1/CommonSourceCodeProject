@@ -130,8 +130,7 @@ void KEYBOARD::event_callback(int id, int err)
 				if(v) { \
 					SET_HALF_BIT(1); \
 					SET_HALF_BIT(0); \
-				} \
-				else { \
+				} else { \
 					SET_HALF_BIT(0); \
 					SET_HALF_BIT(1); \
 				} \
@@ -158,15 +157,14 @@ void KEYBOARD::event_callback(int id, int err)
 			send_count--;
 		}
 #endif
-	}
 #ifndef TIMER_HACK
-	else if(id == EVENT_TIMER) {
+	} else if(id == EVENT_TIMER) {
 		if(!(nmi_reg & 0x20)) {
 			d_pit->write_signal(SIG_I8253_CLOCK_1, 1, 1);
 			d_pit->write_signal(SIG_I8253_CLOCK_1, 0, 0);
 		}
-	}
 #endif
+	}
 }
 
 void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)

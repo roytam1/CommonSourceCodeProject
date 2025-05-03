@@ -1710,71 +1710,71 @@ uint8 PCE::joy_read(uint16 addr)
 
 #define STATE_VERSION	2
 
-void PCE::save_state(FILEIO* fio)
+void PCE::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputBool(support_6btn);
-	fio->FputBool(support_sgfx);
-	fio->Fwrite(ram, sizeof(ram), 1);
-	fio->Fwrite(cart + 0x80000, 0x80000, 1);
+	state_fio->FputBool(support_6btn);
+	state_fio->FputBool(support_sgfx);
+	state_fio->Fwrite(ram, sizeof(ram), 1);
+	state_fio->Fwrite(cart + 0x80000, 0x80000, 1);
 #ifdef SUPPORT_BACKUP_RAM
-	fio->Fwrite(backup, sizeof(backup), 1);
-	fio->FputUint32(backup_crc32);
+	state_fio->Fwrite(backup, sizeof(backup), 1);
+	state_fio->FputUint32(backup_crc32);
 #endif
-	fio->FputUint32(bank);
-	fio->FputUint8(buffer);
-	fio->FputInt32(prev_width);
-	fio->FputBool(inserted);
-	fio->Fwrite(vdc, sizeof(vdc), 1);
-	fio->Fwrite(&vce, sizeof(vce), 1);
-	fio->Fwrite(&vpc, sizeof(vpc), 1);
-	fio->Fwrite(psg, sizeof(psg), 1);
-	fio->FputUint8(psg_ch);
-	fio->FputUint8(psg_vol);
-	fio->FputUint8(psg_lfo_freq);
-	fio->FputUint8(psg_lfo_ctrl);
-	fio->FputUint8(joy_sel);
-	fio->FputUint8(joy_clr);
-	fio->FputUint8(joy_count);
-	fio->FputUint8(joy_bank);
-	fio->FputBool(joy_6btn);
+	state_fio->FputUint32(bank);
+	state_fio->FputUint8(buffer);
+	state_fio->FputInt32(prev_width);
+	state_fio->FputBool(inserted);
+	state_fio->Fwrite(vdc, sizeof(vdc), 1);
+	state_fio->Fwrite(&vce, sizeof(vce), 1);
+	state_fio->Fwrite(&vpc, sizeof(vpc), 1);
+	state_fio->Fwrite(psg, sizeof(psg), 1);
+	state_fio->FputUint8(psg_ch);
+	state_fio->FputUint8(psg_vol);
+	state_fio->FputUint8(psg_lfo_freq);
+	state_fio->FputUint8(psg_lfo_ctrl);
+	state_fio->FputUint8(joy_sel);
+	state_fio->FputUint8(joy_clr);
+	state_fio->FputUint8(joy_count);
+	state_fio->FputUint8(joy_bank);
+	state_fio->FputBool(joy_6btn);
 }
 
-bool PCE::load_state(FILEIO* fio)
+bool PCE::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	support_6btn = fio->FgetBool();
-	support_sgfx = fio->FgetBool();
-	fio->Fread(ram, sizeof(ram), 1);
-	fio->Fread(cart + 0x80000, 0x80000, 1);
+	support_6btn = state_fio->FgetBool();
+	support_sgfx = state_fio->FgetBool();
+	state_fio->Fread(ram, sizeof(ram), 1);
+	state_fio->Fread(cart + 0x80000, 0x80000, 1);
 #ifdef SUPPORT_BACKUP_RAM
-	fio->Fread(backup, sizeof(backup), 1);
-	backup_crc32 = fio->FgetUint32();
+	state_fio->Fread(backup, sizeof(backup), 1);
+	backup_crc32 = state_fio->FgetUint32();
 #endif
-	bank = fio->FgetUint32();
-	buffer = fio->FgetUint8();
-	prev_width = fio->FgetInt32();
-	inserted = fio->FgetBool();
-	fio->Fread(vdc, sizeof(vdc), 1);
-	fio->Fread(&vce, sizeof(vce), 1);
-	fio->Fread(&vpc, sizeof(vpc), 1);
-	fio->Fread(psg, sizeof(psg), 1);
-	psg_ch = fio->FgetUint8();
-	psg_vol = fio->FgetUint8();
-	psg_lfo_freq = fio->FgetUint8();
-	psg_lfo_ctrl = fio->FgetUint8();
-	joy_sel = fio->FgetUint8();
-	joy_clr = fio->FgetUint8();
-	joy_count = fio->FgetUint8();
-	joy_bank = fio->FgetUint8();
-	joy_6btn = fio->FgetBool();
+	bank = state_fio->FgetUint32();
+	buffer = state_fio->FgetUint8();
+	prev_width = state_fio->FgetInt32();
+	inserted = state_fio->FgetBool();
+	state_fio->Fread(vdc, sizeof(vdc), 1);
+	state_fio->Fread(&vce, sizeof(vce), 1);
+	state_fio->Fread(&vpc, sizeof(vpc), 1);
+	state_fio->Fread(psg, sizeof(psg), 1);
+	psg_ch = state_fio->FgetUint8();
+	psg_vol = state_fio->FgetUint8();
+	psg_lfo_freq = state_fio->FgetUint8();
+	psg_lfo_ctrl = state_fio->FgetUint8();
+	joy_sel = state_fio->FgetUint8();
+	joy_clr = state_fio->FgetUint8();
+	joy_count = state_fio->FgetUint8();
+	joy_bank = state_fio->FgetUint8();
+	joy_6btn = state_fio->FgetBool();
 	return true;
 }
 

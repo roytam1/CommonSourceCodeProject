@@ -41,17 +41,14 @@ void TIMER::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_TIMER_CH0) {
 		if(data & mask) {
 			status |= 1;
-		}
-		else {
+		} else {
 			status &= ~1;
 		}
 		update_intr();
-	}
-	else if(id == SIG_TIMER_CH1) {
+	} else if(id == SIG_TIMER_CH1) {
 		if(data & mask) {
 			status |= 2;
-		}
-		else {
+		} else {
 			status &= ~2;
 		}
 		update_intr();

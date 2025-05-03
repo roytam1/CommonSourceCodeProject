@@ -129,11 +129,9 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 		// pcm on from pit
 		pcm_pit = ((data & mask) != 0);
 		update_pcm();
-	}
-	else if(id == SIG_MEMORY_FDC_IRQ) {
+	} else if(id == SIG_MEMORY_FDC_IRQ) {
 		fdc_irq = ((data & mask) != 0);
-	}
-	else if(id == SIG_MEMORY_MOTOR) {
+	} else if(id == SIG_MEMORY_MOTOR) {
 		motor = ((data & mask) != 0);
 	}
 }
@@ -143,39 +141,29 @@ void MEMORY::update_map()
 	if(!(psel & 1)) {
 		SET_BANK(0x0000, 0x1fff, wdmy, ipl);
 		SET_BANK(0x2000, 0xdfff, wdmy, rdmy);
-	}
-	else if(csel & 1) {
+	} else if(csel & 1) {
 		if(bank & 0x10) {
 			SET_BANK(0x0000, 0x7fff, ram + 0x00000, ram + 0x00000);
-		}
-		else if(bank & 0x20) {
+		} else if(bank & 0x20) {
 			SET_BANK(0x0000, 0x7fff, ram + 0x10000, ram + 0x10000);
-		}
-		else if(bank & 0x40) {
+		} else if(bank & 0x40) {
 			SET_BANK(0x0000, 0x7fff, ram + 0x20000, ram + 0x20000);
-		}
-		else if(bank & 0x80) {
+		} else if(bank & 0x80) {
 			SET_BANK(0x0000, 0x7fff, ram + 0x30000, ram + 0x30000);
-		}
-		else {
+		} else {
 			SET_BANK(0x0000, 0x7fff, wdmy, rdmy);
 		}
 		SET_BANK(0x8000, 0x87ff, cmos, cmos);
-	}
-	else {
+	} else {
 		if(bank & 0x10) {
 			SET_BANK(0x0000, 0xdfff, ram + 0x00000, ram + 0x00000);
-		}
-		else if(bank & 0x20) {
+		} else if(bank & 0x20) {
 			SET_BANK(0x0000, 0xdfff, ram + 0x10000, ram + 0x10000);
-		}
-		else if(bank & 0x40) {
+		} else if(bank & 0x40) {
 			SET_BANK(0x0000, 0xdfff, ram + 0x20000, ram + 0x20000);
-		}
-		else if(bank & 0x80) {
+		} else if(bank & 0x80) {
 			SET_BANK(0x0000, 0xdfff, ram + 0x30000, ram + 0x30000);
-		}
-		else {
+		} else {
 			SET_BANK(0x0000, 0xdfff, wdmy, rdmy);
 		}
 	}
@@ -187,8 +175,7 @@ void MEMORY::update_pcm()
 	if(!pcm_on && (pcm_cont || pcm_pit)) {
 		d_pcm->write_signal(SIG_PCM1BIT_ON, 1, 1);
 		pcm_on = true;
-	}
-	else if(pcm_on && !(pcm_cont || pcm_pit)) {
+	} else if(pcm_on && !(pcm_cont || pcm_pit)) {
 		d_pcm->write_signal(SIG_PCM1BIT_ON, 0, 1);
 		pcm_on = false;
 	}

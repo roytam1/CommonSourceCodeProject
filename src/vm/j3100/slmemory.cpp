@@ -15,14 +15,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -114,8 +112,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		if(kanji_bank != (data & 0x8f)) {
 			if(data & 0x80) {
 				SET_BANK(0xe0000, 0xeffff, wdmy, kanji + 0x10000 * (data & 0x0f));
-			}
-			else {
+			} else {
 				SET_BANK(0xe0000, 0xeffff, wdmy, rdmy);
 			}
 			kanji_bank = data & 0x8f;
@@ -185,8 +182,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0xef:
 		if(ems_index == 50) {
 			return (ems_regs[0] & 0x0f) | 0x80;
-		}
-		else if(ems_index == 51) {
+		} else if(ems_index == 51) {
 			return (ems_regs[1] & 0x1f) | (ems_bsl << 5);
 		}
 		break;
@@ -215,8 +211,7 @@ void MEMORY::update_ems(int page)
 	case 0:
 		if(pe && pa < 56) {
 			SET_BANK(0xd0000, 0xd3fff, ems + 0x4000 * pa, ems + 0x4000 * pa);
-		}
-		else {
+		} else {
 			SET_BANK(0xd0000, 0xd3fff, wdmy, rdmy);
 		}
 		break;
@@ -225,13 +220,11 @@ void MEMORY::update_ems(int page)
 			if(ems_bsl == 0) {
 				SET_BANK(0xc4000, 0xc7fff, ems + 0x4000 * pa, ems + 0x4000 * pa);
 				SET_BANK(0xd4000, 0xd7fff, wdmy, rdmy);
-			}
-			else {
+			} else {
 				SET_BANK(0xc4000, 0xc7fff, wdmy, rdmy);
 				SET_BANK(0xd4000, 0xd7fff, ems + 0x4000 * pa, ems + 0x4000 * pa);
 			}
-		}
-		else {
+		} else {
 			SET_BANK(0xc4000, 0xc7fff, wdmy, rdmy);
 			SET_BANK(0xd4000, 0xd7fff, wdmy, rdmy);
 		}
@@ -241,13 +234,11 @@ void MEMORY::update_ems(int page)
 			if(ems_bsl <= 1) {
 				SET_BANK(0xc8000, 0xcbfff, ems + 0x4000 * pa, ems + 0x4000 * pa);
 				SET_BANK(0xd8000, 0xdbfff, wdmy, rdmy);
-			}
-			else {
+			} else {
 				SET_BANK(0xc8000, 0xcbfff, wdmy, rdmy);
 				SET_BANK(0xd8000, 0xdbfff, ems + 0x4000 * pa, ems + 0x4000 * pa);
 			}
-		}
-		else {
+		} else {
 			SET_BANK(0xc8000, 0xcbfff, wdmy, rdmy);
 			SET_BANK(0xd8000, 0xdbfff, wdmy, rdmy);
 		}
@@ -257,13 +248,11 @@ void MEMORY::update_ems(int page)
 			if(ems_bsl <= 2) {
 				SET_BANK(0xcc000, 0xcffff, ems + 0x4000 * pa, ems + 0x4000 * pa);
 				SET_BANK(0xdc000, 0xdffff, wdmy, rdmy);
-			}
-			else {
+			} else {
 				SET_BANK(0xcc000, 0xcffff, wdmy, rdmy);
 				SET_BANK(0xdc000, 0xdffff, ems + 0x4000 * pa, ems + 0x4000 * pa);
 			}
-		}
-		else {
+		} else {
 			SET_BANK(0xcc000, 0xcffff, wdmy, rdmy);
 			SET_BANK(0xdc000, 0xdffff, wdmy, rdmy);
 		}

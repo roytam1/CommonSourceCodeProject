@@ -72,8 +72,7 @@ void SN76489AN::write_io8(uint32 addr, uint32 data)
 			ch[3].signal = false;
 			break;
 		}
-	}
-	else {
+	} else {
 		int c = index >> 1;
 		
 		switch(index & 0x07) {
@@ -95,19 +94,16 @@ void SN76489AN::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_SN76489AN_MUTE) {
 		mute = ((data & mask) != 0);
-	}
-	else if(id == SIG_SN76489AN_DATA) {
+	} else if(id == SIG_SN76489AN_DATA) {
 		val = data & mask;
-	}
-	else if(id == SIG_SN76489AN_CS) {
+	} else if(id == SIG_SN76489AN_CS) {
 		bool next = ((data & mask) != 0);
 		if(cs != next) {
 			if(!(cs = next) && !we) {
 				write_io8(0, val);
 			}
 		}
-	}
-	else if(id == SIG_SN76489AN_CS) {
+	} else if(id == SIG_SN76489AN_CS) {
 		bool next = ((data & mask) != 0);
 		if(cs != next) {
 			cs = next;
@@ -115,8 +111,7 @@ void SN76489AN::write_signal(int id, uint32 data, uint32 mask)
 				write_io8(0, val);
 			}
 		}
-	}
-	else if(id == SIG_SN76489AN_WE) {
+	} else if(id == SIG_SN76489AN_WE) {
 		bool next = ((data & mask) != 0);
 		if(we != next) {
 			we = next;
@@ -145,13 +140,11 @@ void SN76489AN::mix(int32* buffer, int cnt)
 					if(((noise_gen & NOISE_DST_TAP) ? 1 : 0) ^ (((noise_gen & NOISE_SRC_TAP) ? 1 : 0) * NOISE_MODE)) {
 						noise_gen >>= 1;
 						noise_gen |= NOISE_FB;
-					}
-					else {
+					} else {
 						noise_gen >>= 1;
 					}
 					ch[3].signal = ((noise_gen & 1) != 0);
-				}
-				else {
+				} else {
 					ch[j].signal = !ch[j].signal;
 				}
 			}

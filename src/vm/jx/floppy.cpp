@@ -30,8 +30,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 				}
 				register_event_by_clock(this, 0, 3 * CPU_CLOCKS, false, &register_id);
 			}
-		}
-		else {
+		} else {
 			if(register_id != -1) {
 				cancel_event(this, register_id);
 				register_id = -1;

@@ -37,8 +37,8 @@ public:
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
 	void mix(int32* buffer, int cnt);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique function
 	void init(int rate, double frequency, int volume);

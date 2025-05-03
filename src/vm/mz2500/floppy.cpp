@@ -50,23 +50,23 @@ void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 
 #define STATE_VERSION	1
 
-void FLOPPY::save_state(FILEIO* fio)
+void FLOPPY::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputBool(reversed);
+	state_fio->FputBool(reversed);
 }
 
-bool FLOPPY::load_state(FILEIO* fio)
+bool FLOPPY::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	reversed = fio->FgetBool();
+	reversed = state_fio->FgetBool();
 	return true;
 }
 #endif

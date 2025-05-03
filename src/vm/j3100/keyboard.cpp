@@ -49,8 +49,7 @@ void KEYBOARD::write_io8(uint32 addr, uint32 data)
 	case 0x64:
 		if(kbic_cmd != -1 || kbsc_cmd != -1) {
 			cmd_param->write(data);
-		}
-		else {
+		} else {
 			kbsc_cmd = data;
 		}
 		process_cmd();
@@ -117,8 +116,7 @@ void KEYBOARD::process_cmd()
 			kbic_cmd = -1;
 			break;
 		}
-	}
-	else {
+	} else {
 		
 	}
 }

@@ -81,8 +81,7 @@ void VDP::event_vline(int v, int clock)
 {
 	if(v == 239) {
 		d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);
-	}
-	else if(v == 261) {
+	} else if(v == 261) {
 		d_cpu->write_signal(SIG_UPD7801_INTF2, 0, 1);
 	}
 }
@@ -152,13 +151,11 @@ void VDP::draw_text_screen()
 				// draw text
 				uint8 data = (x < 26) ? (vram1[y32 + x] & 0x7f) : 0;
 				draw_text(x, y, data, ct, cb);
-			}
-			else if((vdc0 & 3) == 1) {
+			} else if((vdc0 & 3) == 1) {
 				// semi graph
 				uint8 data = vram1[y32 + x];
 				draw_graph(x, y, data, cg);
-			}
-			else if((vdc0 & 3) == 3) {
+			} else if((vdc0 & 3) == 3) {
 				// block
 				uint8 data = vram1[y32 + x];
 				draw_block(x, y, data);
@@ -293,8 +290,7 @@ void VDP::draw_sprite_screen()
 			if(conx || cony) {
 				draw_sprite(dx, dy, sx, ex, sy, ey, no2, col1);
 			}
-		}
-		else {
+		} else {
 			// mono color sprite
 			int no1 = atb3, no2 = atb3 | 1, no3 = atb3 | 8, no4 = atb3 | 9;
 			

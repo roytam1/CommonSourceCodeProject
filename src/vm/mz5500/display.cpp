@@ -81,34 +81,25 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 				pri[14] = (p2 >= p3 && p2 >= p4) ? 2 : (p3 >= p2 && p3 >= p4) ? 3 : 4;
 				pri[15] = (p1 >= p2 && p1 >= p3 && p1 >= p4) ? 1 : (p2 >= p1 && p2 >= p3 && p2 >= p4) ? 2 : (p3 >= p1 && p3 >= p2 && p3 >= p4) ? 3 : 4;
 				vds[0] = 0;
-			}
-			else {
+			} else {
 				memset(pri, 0, sizeof(pri));
 				vds[0] = 7;
 			}
-		}
-		else if(rno == 1 || rno == 2) {
+		} else if(rno == 1 || rno == 2) {
 			vma[1] = wregs[1] | (wregs[2] << 8);
-		}
-		else if(rno == 3) {
+		} else if(rno == 3) {
 			vds[1] = wregs[3] & 7;
-		}
-		else if(rno == 4 || rno == 5) {
+		} else if(rno == 4 || rno == 5) {
 			vma[2] = wregs[4] | (wregs[5] << 8);
-		}
-		else if(rno == 6) {
+		} else if(rno == 6) {
 			vds[2] = wregs[6] & 7;
-		}
-		else if(rno == 7 || rno == 8) {
+		} else if(rno == 7 || rno == 8) {
 			vma[3] = wregs[7] | (wregs[8] << 8);
-		}
-		else if(rno == 9) {
+		} else if(rno == 9) {
 			vds[3] = wregs[9] & 7;
-		}
-		else if(rno == 10 || rno == 11) {
+		} else if(rno == 10 || rno == 11) {
 			vma[4] = wregs[10] | (wregs[11] << 8);
-		}
-		else if(rno == 12) {
+		} else if(rno == 12) {
 			vds[4] = wregs[12] & 7;
 		}
 		rno = (++rno) & 0x0f;
@@ -243,8 +234,7 @@ void DISPLAY::draw_screen()
 	int ymax = (cs[0] & 1) ? 200 : 400;
 	if(mode_r & 4) {
 		draw_320dot_screen(ymax);
-	}
-	else {
+	} else {
 		draw_640dot_screen(ymax);
 	}
 	
@@ -260,8 +250,7 @@ void DISPLAY::draw_screen()
 			}
 		}
 		emu->screen_skip_line = false;
-	}
-	else {
+	} else {
 		// 200 lines
 		for(int y = 0; y < 200; y++) {
 			scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
@@ -273,8 +262,7 @@ void DISPLAY::draw_screen()
 			}
 			if(scanline) {
 				memset(dest1, 0, 640 * sizeof(scrntype));
-			}
-			else {
+			} else {
 				memcpy(dest1, dest0, 640 * sizeof(scrntype));
 			}
 		}
@@ -343,8 +331,7 @@ void DISPLAY::draw_640dot_screen(int ymax)
 					col = ((b & 0x80) ? 1 : 0) | ((r & 0x80) ? 2 : 0) | ((g & 0x80) ? 4 : 0);
 					screen[y][x + 14] = screen[y][x + 15] = col ? col : bcol;
 				}
-			}
-			else {
+			} else {
 				for(int x = 0; x < 640; x+= 8) {
 					if(!(x & 8)) {
 						uint8 mapx = mapram[(x >> 4) << 1];
@@ -452,8 +439,7 @@ void DISPLAY::draw_320dot_screen(int ymax)
 					col = ((b & 0x80) ? 1 : 0) | ((r & 0x80) ? 2 : 0) | ((g & 0x80) ? 4 : 0);
 					screen[y][x + 28] = screen[y][x + 29] = screen[y][x + 30] = screen[y][x + 31] = col ? col : bcol;
 				}
-			}
-			else {
+			} else {
 				for(int x = 0; x < 640; x+= 16) {
 					uint8 mapx = mapram[(x >> 4) << 1];
 					if(mapx & 0x10) wx1 = !wx1;
@@ -506,14 +492,12 @@ void DISPLAY::update_palette()
 			palette_pc[i] = palette_pc_base[7];
 		}
 		palette_pc[0] = palette_pc_base[0];
-	}
-	else if(mode_c & 4) {
+	} else if(mode_c & 4) {
 		// plane priority
 		for(int i = 0; i < 8; i++) {
 			palette_pc[i] = palette_pc_base[plane_priority[mode_p][palette[i]]];
 		}
-	}
-	else {
+	} else {
 		// color
 		for(int i = 0; i < 8; i++) {
 			palette_pc[i] = palette_pc_base[palette[i]];

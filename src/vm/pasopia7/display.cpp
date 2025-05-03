@@ -55,11 +55,9 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DISPLAY_I8255_0_A) {
 		mode = data;
-	}
-	else if(id == SIG_DISPLAY_I8255_1_B) {
+	} else if(id == SIG_DISPLAY_I8255_1_B) {
 		text_page = (data >> 4) & 7;
-	}
-	else if(id == SIG_DISPLAY_I8255_1_C) {
+	} else if(id == SIG_DISPLAY_I8255_1_C) {
 		blink = ((data & 0x20) != 0);
 		pal_dis = ((data & 8) != 0);
 	}
@@ -81,8 +79,7 @@ void DISPLAY::draw_screen()
 		uint16 src = ((regs[12] << 11) | (regs[13] << 3)) & 0x3ff8;
 		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		}
-		else {
+		} else {
 			cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
 		}
 		
@@ -111,8 +108,7 @@ void DISPLAY::draw_screen()
 			for(int x = 0; x < 320; x++) {
 				dest1[x] = palette_pc[0];
 			}
-		}
-		else {
+		} else {
 			memcpy(dest1, dest0, 320 * sizeof(scrntype));
 		}
 	}
@@ -125,8 +121,7 @@ void DISPLAY::draw_screen()
 				flash = 0xffff;
 			}
 			flash_cnt -= 320;
-		}
-		else {
+		} else {
 			if(regs[0] < 53 || 58 < regs[0] || 56 < regs[2]) {
 				flash = 0xffff;
 			}
@@ -141,8 +136,7 @@ void DISPLAY::draw_screen()
 		uint16 src = (((regs[12] << 11) | (regs[13] << 3)) + (flash_cnt & flash)) & 0x3ff8;
 		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		}
-		else {
+		} else {
 			cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
 		}
 		
@@ -184,8 +178,7 @@ void DISPLAY::draw_screen()
 //				dest1[x] = palette_pc[0];
 //			}
 			memset(dest1, 0, 640 * sizeof(scrntype));
-		}
-		else {
+		} else {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
@@ -461,8 +454,7 @@ void DISPLAY::draw_fine_normal(uint16 src)
 					d[5] = pal[((p1 & 0x04) >> 2) | ((p2 & 0x04) >> 1) | ((p3 & 0x04) >> 0) | 8] & 7;
 					d[6] = pal[((p1 & 0x02) >> 1) | ((p2 & 0x02) >> 0) | ((p3 & 0x02) << 1) | 0] & 7;
 					d[7] = pal[((p1 & 0x01) >> 0) | ((p2 & 0x01) << 1) | ((p3 & 0x01) << 2) | 8] & 7;
-				}
-				else {
+				} else {
 					// text
 					uint8 p1 = vram_b[src + l] & p;
 					uint8 p2 = vram_r[src + l] & p;
@@ -583,8 +575,7 @@ void DISPLAY::draw_fine_wide(uint16 src)
 					d[13] = pal[((p1 & 0x02) >> 1) | ((p2 & 0x02) >> 0) | ((p3 & 0x02) << 1) | 8] & 7;
 					d[14] = pal[((p1 & 0x01) >> 0) | ((p2 & 0x01) << 1) | ((p3 & 0x01) << 2) | 0] & 7;
 					d[15] = pal[((p1 & 0x01) >> 0) | ((p2 & 0x01) << 1) | ((p3 & 0x01) << 2) | 8] & 7;
-				}
-				else {
+				} else {
 					// text
 					uint8 p1 = vram_b[src + l] & p;
 					uint8 p2 = vram_r[src + l] & p;
@@ -722,8 +713,7 @@ void DISPLAY::draw_fine_lcd(uint16 src)
 					d[6] = pal[((p1 & 0x02) >> 1) | ((p2 & 0x02) >> 0) | ((p3 & 0x02) << 1) | 0] & 7;
 					d[7] = pal[((p1 & 0x01) >> 0) | ((p2 & 0x01) << 1) | ((p3 & 0x01) << 2) | 8] & 7;
 				}
-			}
-			else {
+			} else {
 				// text
 				for(int l = 0; l < 8; l++) {
 					uint8 p1 = vram_b[src_g + l];

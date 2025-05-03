@@ -45,8 +45,7 @@ void SYSTEM::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_SYSTEM_TC2O) {
 		if(data & mask) {
 			status |= 0x20;
-		}
-		else {
+		} else {
 			status &= ~0x20;
 		}
 	}

@@ -303,45 +303,45 @@ void MEMORY::set_map(uint8 data)
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* fio)
+void MEMORY::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(ram, sizeof(ram), 1);
-	fio->Fwrite(vram, sizeof(vram), 1);
-	fio->Fwrite(tvram, sizeof(tvram), 1);
-	fio->Fwrite(pcg, sizeof(pcg), 1);
-	fio->FputUint8(bank);
-	fio->Fwrite(page, sizeof(page), 1);
-	fio->FputUint8(dic_bank);
-	fio->FputUint8(kanji_bank);
-	fio->FputBool(blank);
-	fio->FputBool(hblank);
-	fio->FputBool(vblank);
-	fio->FputBool(busreq);
+	state_fio->Fwrite(ram, sizeof(ram), 1);
+	state_fio->Fwrite(vram, sizeof(vram), 1);
+	state_fio->Fwrite(tvram, sizeof(tvram), 1);
+	state_fio->Fwrite(pcg, sizeof(pcg), 1);
+	state_fio->FputUint8(bank);
+	state_fio->Fwrite(page, sizeof(page), 1);
+	state_fio->FputUint8(dic_bank);
+	state_fio->FputUint8(kanji_bank);
+	state_fio->FputBool(blank);
+	state_fio->FputBool(hblank);
+	state_fio->FputBool(vblank);
+	state_fio->FputBool(busreq);
 }
 
-bool MEMORY::load_state(FILEIO* fio)
+bool MEMORY::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(ram, sizeof(ram), 1);
-	fio->Fread(vram, sizeof(vram), 1);
-	fio->Fread(tvram, sizeof(tvram), 1);
-	fio->Fread(pcg, sizeof(pcg), 1);
-	bank = fio->FgetUint8();
-	fio->Fread(page, sizeof(page), 1);
-	dic_bank = fio->FgetUint8();
-	kanji_bank = fio->FgetUint8();
-	blank = fio->FgetBool();
-	hblank = fio->FgetBool();
-	vblank = fio->FgetBool();
-	busreq = fio->FgetBool();
+	state_fio->Fread(ram, sizeof(ram), 1);
+	state_fio->Fread(vram, sizeof(vram), 1);
+	state_fio->Fread(tvram, sizeof(tvram), 1);
+	state_fio->Fread(pcg, sizeof(pcg), 1);
+	bank = state_fio->FgetUint8();
+	state_fio->Fread(page, sizeof(page), 1);
+	dic_bank = state_fio->FgetUint8();
+	kanji_bank = state_fio->FgetUint8();
+	blank = state_fio->FgetBool();
+	hblank = state_fio->FgetBool();
+	vblank = state_fio->FgetBool();
+	busreq = state_fio->FgetBool();
 	
 	// restore memory map
 	uint8 bank_tmp = bank;

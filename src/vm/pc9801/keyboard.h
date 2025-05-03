@@ -33,8 +33,10 @@ public:
 	// common functions
 	void initialize();
 	void reset();
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
-	// unique function
+	// unique functions
 	void set_context_sio(DEVICE* device)
 	{
 		d_sio = device;

@@ -372,23 +372,23 @@ int I286::get_shutdown_flag()
 
 #define STATE_VERSION	1
 
-void I286::save_state(FILEIO* fio)
+void I286::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(opaque, sizeof(cpu_state), 1);
+	state_fio->Fwrite(opaque, sizeof(cpu_state), 1);
 }
 
-bool I286::load_state(FILEIO* fio)
+bool I286::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(opaque, sizeof(cpu_state), 1);
+	state_fio->Fread(opaque, sizeof(cpu_state), 1);
 	
 	cpu_state *cpustate = (cpu_state *)opaque;
 	cpustate->pic = d_pic;

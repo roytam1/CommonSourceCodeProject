@@ -60,11 +60,9 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DISPLAY_ADDR_L) {
 		vram_addr = (vram_addr & 0x700) | (data & 0xff);
-	}
-	else if(id == SIG_DISPLAY_ADDR_H) {
+	} else if(id == SIG_DISPLAY_ADDR_H) {
 		vram_addr = (vram_addr & 0xff) | ((data & 7) << 8);
-	}
-	else if(id == SIG_DISPLAY_MODE) {
+	} else if(id == SIG_DISPLAY_MODE) {
 		chr = ((data & 0x40) == 0);
 		wide = ((data & 0x80) != 0);
 	}
@@ -81,16 +79,14 @@ void DISPLAY::draw_screen()
 	if((regs[8] & 0x30) != 0x30) {
 		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		}
-		else {
+		} else {
 			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
 		}
 		
 		// render screen
 		if(wide) {
 			draw_40column();
-		}
-		else {
+		} else {
 			draw_80column();
 		}
 	}
@@ -107,8 +103,7 @@ void DISPLAY::draw_screen()
 		}
 		if(scanline) {
 			memset(dest1, 0, 640 * sizeof(scrntype));
-		}
-		else {
+		} else {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}

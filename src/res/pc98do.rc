@@ -102,6 +102,9 @@ BEGIN
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
         MENUITEM SEPARATOR
+        MENUITEM "Save State",                  ID_SAVE_STATE
+        MENUITEM "Load State",                  ID_LOAD_STATE
+        MENUITEM SEPARATOR
         MENUITEM "Debug PC-98 Main CPU",        ID_OPEN_DEBUGGER0
         MENUITEM "Debug PC-88 Main CPU",        ID_OPEN_DEBUGGER1
         MENUITEM "Debug PC-88 Sub CPU",         ID_OPEN_DEBUGGER2

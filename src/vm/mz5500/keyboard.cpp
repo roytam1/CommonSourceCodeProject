@@ -235,24 +235,20 @@ void KEYBOARD::key_down(int code)
 		// muhenkan->graph
 		if(graph) {
 			graph = false;
-		}
-		else {
+		} else {
 			graph = true;
 			kana = false;
 		}
 		return;
-	}
-	else if(code == 0x14) {
+	} else if(code == 0x14) {
 		// caps
 		caps = !caps;
 		return;
-	}
-	else if(code == 0x15) {
+	} else if(code == 0x15) {
 		// kana
 		if(kana) {
 			kana = false;
-		}
-		else {
+		} else {
 			kana = true;
 			graph = false;
 		}
@@ -265,24 +261,19 @@ void KEYBOARD::key_down(int code)
 	if(kana) {
 		if(shift) {
 			code = key_table_kana_shift[code];
-		}
-		else {
+		} else {
 			code = key_table_kana[code];
 		}
-	}
-	else if(graph) {
+	} else if(graph) {
 		if(shift) {
 			code = key_table_graph_shift[code];
-		}
-		else {
+		} else {
 			code = key_table_graph[code];
 		}
-	}
-	else {
+	} else {
 		if(shift) {
 			code = key_table_shift[code];
-		}
-		else {
+		} else {
 			code = key_table[code];
 		}
 	}
@@ -292,15 +283,13 @@ void KEYBOARD::key_down(int code)
 	if(caps) {
 		if(0x41 <= code && code <= 0x5a) {
 			code += 0x20;
-		}
-		else if(0x61 <= code && code <= 0x7a) {
+		} else if(0x61 <= code && code <= 0x7a) {
 			code -= 0x20;
 		}
 	}
 	if(ctrl) {
 		key_buf->write(2);
-	}
-	else if(algo) {
+	} else if(algo) {
 		key_buf->write(4);
 	}
 	key_buf->write(code);
@@ -324,8 +313,7 @@ void KEYBOARD::drive()
 		if(dc && (!key_buf->empty() || !rsp_buf->empty())) {
 			if(!rsp_buf->empty()) {
 				send = rsp_buf->read();
-			}
-			else {
+			} else {
 				send = key_buf->read();
 			}
 			send = ~send & 0x1ff;
@@ -340,8 +328,7 @@ void KEYBOARD::drive()
 			phase = PHASE_SEND_EB_L;
 			// 500msec
 			timeout = TIMEOUT_500MSEC;
-		}
-		else if(!dc && !stc) {
+		} else if(!dc && !stc) {
 			recv = 0;
 			SET_DK(0);
 			phase = PHASE_RECV_D4_H;

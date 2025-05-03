@@ -306,56 +306,56 @@ void IO::set_flipflop_range_rw(uint32 s, uint32 e, uint32 value)
 
 #define STATE_VERSION	1
 
-void IO::save_state(FILEIO* fio)
+void IO::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
 	for(int i = 0; i < IO_ADDR_MAX; i++) {
-		fio->FputUint32(rd_table[i].value);
+		state_fio->FputUint32(rd_table[i].value);
 	}
-	fio->Fwrite(vram, sizeof(vram), 1);
-	fio->FputBool(vram_mode);
-	fio->FputBool(signal);
-	fio->FputInt32((int)(vram_b - vram));
-	fio->FputInt32((int)(vram_r - vram));
-	fio->FputInt32((int)(vram_g - vram));
-	fio->FputUint8(vdisp);
-	fio->FputUint32(prev_clock);
-	fio->FputUint32(vram_wait_index);
-	fio->FputBool(column40);
+	state_fio->Fwrite(vram, sizeof(vram), 1);
+	state_fio->FputBool(vram_mode);
+	state_fio->FputBool(signal);
+	state_fio->FputInt32((int)(vram_b - vram));
+	state_fio->FputInt32((int)(vram_r - vram));
+	state_fio->FputInt32((int)(vram_g - vram));
+	state_fio->FputUint8(vdisp);
+	state_fio->FputUint32(prev_clock);
+	state_fio->FputUint32(vram_wait_index);
+	state_fio->FputBool(column40);
 #ifdef _X1TURBO_FEATURE
-	fio->Fwrite(crtc_regs, sizeof(crtc_regs), 1);
-	fio->FputInt32(crtc_ch);
-	fio->FputBool(hireso);
+	state_fio->Fwrite(crtc_regs, sizeof(crtc_regs), 1);
+	state_fio->FputInt32(crtc_ch);
+	state_fio->FputBool(hireso);
 #endif
 }
 
-bool IO::load_state(FILEIO* fio)
+bool IO::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
 	for(int i = 0; i < IO_ADDR_MAX; i++) {
-		rd_table[i].value = fio->FgetUint32();
+		rd_table[i].value = state_fio->FgetUint32();
 	}
-	fio->Fread(vram, sizeof(vram), 1);
-	vram_mode = fio->FgetBool();
-	signal = fio->FgetBool();
-	vram_b = vram + fio->FgetInt32();
-	vram_r = vram + fio->FgetInt32();
-	vram_g = vram + fio->FgetInt32();
-	vdisp = fio->FgetUint8();
-	prev_clock = fio->FgetUint32();
-	vram_wait_index = fio->FgetUint32();
-	column40 = fio->FgetBool();
+	state_fio->Fread(vram, sizeof(vram), 1);
+	vram_mode = state_fio->FgetBool();
+	signal = state_fio->FgetBool();
+	vram_b = vram + state_fio->FgetInt32();
+	vram_r = vram + state_fio->FgetInt32();
+	vram_g = vram + state_fio->FgetInt32();
+	vdisp = state_fio->FgetUint8();
+	prev_clock = state_fio->FgetUint32();
+	vram_wait_index = state_fio->FgetUint32();
+	column40 = state_fio->FgetBool();
 #ifdef _X1TURBO_FEATURE
-	fio->Fread(crtc_regs, sizeof(crtc_regs), 1);
-	crtc_ch = fio->FgetInt32();
-	hireso = fio->FgetBool();
+	state_fio->Fread(crtc_regs, sizeof(crtc_regs), 1);
+	crtc_ch = state_fio->FgetInt32();
+	hireso = state_fio->FgetBool();
 #endif
 	return true;
 }

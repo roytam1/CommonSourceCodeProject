@@ -124,8 +124,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 			ls373 = pio_7seg & 0x7f;
 		}
 		pio_7seg = data;
-	}
-	else if(id == SIG_DISPLAY_8BIT_LED) {
+	} else if(id == SIG_DISPLAY_8BIT_LED) {
 		pio_8bit = data;
 	}
 }

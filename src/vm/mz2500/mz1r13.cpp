@@ -73,25 +73,25 @@ uint32 MZ1R13::read_io8(uint32 addr)
 
 #define STATE_VERSION	1
 
-void MZ1R13::save_state(FILEIO* fio)
+void MZ1R13::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputUint16(address);
-	fio->FputBool(select_kanji);
+	state_fio->FputUint16(address);
+	state_fio->FputBool(select_kanji);
 }
 
-bool MZ1R13::load_state(FILEIO* fio)
+bool MZ1R13::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	address = fio->FgetUint16();
-	select_kanji = fio->FgetBool();
+	address = state_fio->FgetUint16();
+	select_kanji = state_fio->FgetBool();
 	return true;
 }
 

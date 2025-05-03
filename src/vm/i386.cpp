@@ -206,14 +206,11 @@ void I386::write_signal(int id, uint32 data, uint32 mask)
 	
 	if(id == SIG_CPU_NMI) {
 		i386_set_irq_line(cpustate, INPUT_LINE_NMI, (data & mask) ? HOLD_LINE : CLEAR_LINE);
-	}
-	else if(id == SIG_CPU_IRQ) {
+	} else if(id == SIG_CPU_IRQ) {
 		i386_set_irq_line(cpustate, INPUT_LINE_IRQ, (data & mask) ? HOLD_LINE : CLEAR_LINE);
-	}
-	else if(id == SIG_CPU_BUSREQ) {
+	} else if(id == SIG_CPU_BUSREQ) {
 		cpustate->busreq = (data & mask) ? 1 : 0;
-	}
-	else if(id == SIG_I386_A20) {
+	} else if(id == SIG_I386_A20) {
 		i386_set_a20_line(cpustate, data & mask);
 	}
 }

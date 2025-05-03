@@ -116,8 +116,8 @@ public:
 	uint32 read_signal(int ch);
 	void event_callback(int event_id, int err);
 	void update_config();
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32 mask)

@@ -49,12 +49,11 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DISPLAY_VGATE) {
 		vgate = ((data & mask) != 0);
-	}
 #if defined(_MZ1200) || defined(_MZ80A)
-	else if(id == SIG_DISPLAY_REVERSE) {
+	} else if(id == SIG_DISPLAY_REVERSE) {
 		reverse = ((data & mask) != 0);
-	}
 #endif
+	}
 }
 
 void DISPLAY::event_vline(int v, int clock)

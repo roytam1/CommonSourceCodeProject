@@ -28,14 +28,12 @@ static const uint8 key_map[9][8] = {
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x400 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x400 * (i - sb); \
 		} \
 	} \
@@ -86,12 +84,10 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			if(data == 0xf9) {
 				// datarec out h
 				d_drec->write_signal(SIG_DATAREC_OUT, 1, 1);
-			}
-			else if(data == 0x0a) {
+			} else if(data == 0x0a) {
 				// datarec out l
 				d_drec->write_signal(SIG_DATAREC_OUT, 0, 1);
-			}
-			else {
+			} else {
 				// unknown ???
 				emu->out_debug_log("%6x\tWM8\t%4x,%2x\n", get_cpu_pc(0), addr, data);
 			}
@@ -150,8 +146,7 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(data & mask) {
 		sysport |= mask;
-	}
-	else {
+	} else {
 		sysport &= ~mask;
 	}
 }

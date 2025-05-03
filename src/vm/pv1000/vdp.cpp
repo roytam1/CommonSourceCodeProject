@@ -50,8 +50,7 @@ void VDP::event_vline(int v, int clock)
 	if(v < LINES_PER_HBLANK) {
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		register_event_by_clock(this, 0, 800, false, NULL);
-	}
-	else {
+	} else {
 		// hsync interrupt (not pending ???)
 		d_cpu->set_intr_line(true, false, 0);
 	}
@@ -70,8 +69,7 @@ void VDP::draw_screen()
 			
 			if(code < 0xe0 || force_pattern) {
 				draw_pattern(x8, y8, code << 5);
-			}
-			else {
+			} else {
 				draw_pcg(x8, y8, (code & 0x1f) << 5);
 			}
 		}

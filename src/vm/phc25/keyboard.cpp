@@ -73,24 +73,19 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 	// memory mapped i/o
 	if(0x7800 <= addr && addr < 0x7850) {
 		return key_stat[key_map[addr - 0x7800]] ? 0 : 1;
-	}
-	else if(addr == 0x7850) {
+	} else if(addr == 0x7850) {
 		// LSHIFT
 		return key_stat[0x10] ? 0 : 1;
-	}
-	else if(addr == 0x7851) {
+	} else if(addr == 0x7851) {
 		// RSHIFT
 		return 1;
-	}
-	else if(addr == 0x7852) {
+	} else if(addr == 0x7852) {
 		// CTRL
 		return key_stat[0x11] ? 0 : 1;
-	}
-	else if(addr == 0x7853) {
+	} else if(addr == 0x7853) {
 		// GRAPH
 		return key_stat[0x12] ? 0 : 1;
-	}
-	else if(addr == 0x785c) {
+	} else if(addr == 0x785c) {
 		// KANA
 		if(kana_pressed) {
 			kana_pressed--;

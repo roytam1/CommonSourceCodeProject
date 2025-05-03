@@ -127,45 +127,45 @@ void PCM1BIT::init(int rate, int volume)
 
 #define STATE_VERSION	1
 
-void PCM1BIT::save_state(FILEIO* fio)
+void PCM1BIT::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputBool(signal);
-	fio->FputBool(on);
-	fio->FputBool(mute);
+	state_fio->FputBool(signal);
+	state_fio->FputBool(on);
+	state_fio->FputBool(mute);
 #ifdef PCM1BIT_HIGH_QUALITY
-	fio->Fwrite(samples_signal, sizeof(samples_signal), 1);
-	fio->Fwrite(samples_out, sizeof(samples_out), 1);
-	fio->Fwrite(samples_clock, sizeof(samples_clock), 1);
-	fio->FputInt32(sample_count);
-	fio->FputUint32(prev_clock);
-	fio->FputInt32(prev_vol);
+	state_fio->Fwrite(samples_signal, sizeof(samples_signal), 1);
+	state_fio->Fwrite(samples_out, sizeof(samples_out), 1);
+	state_fio->Fwrite(samples_clock, sizeof(samples_clock), 1);
+	state_fio->FputInt32(sample_count);
+	state_fio->FputUint32(prev_clock);
+	state_fio->FputInt32(prev_vol);
 #endif
-	fio->FputInt32(update);
+	state_fio->FputInt32(update);
 }
 
-bool PCM1BIT::load_state(FILEIO* fio)
+bool PCM1BIT::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	signal = fio->FgetBool();
-	on = fio->FgetBool();
-	mute = fio->FgetBool();
+	signal = state_fio->FgetBool();
+	on = state_fio->FgetBool();
+	mute = state_fio->FgetBool();
 #ifdef PCM1BIT_HIGH_QUALITY
-	fio->Fread(samples_signal, sizeof(samples_signal), 1);
-	fio->Fread(samples_out, sizeof(samples_out), 1);
-	fio->Fread(samples_clock, sizeof(samples_clock), 1);
-	sample_count = fio->FgetInt32();
-	prev_clock = fio->FgetUint32();
-	prev_vol = fio->FgetInt32();
+	state_fio->Fread(samples_signal, sizeof(samples_signal), 1);
+	state_fio->Fread(samples_out, sizeof(samples_out), 1);
+	state_fio->Fread(samples_clock, sizeof(samples_clock), 1);
+	sample_count = state_fio->FgetInt32();
+	prev_clock = state_fio->FgetUint32();
+	prev_vol = state_fio->FgetInt32();
 #endif
-	update = fio->FgetInt32();
+	update = state_fio->FgetInt32();
 	return true;
 }
 

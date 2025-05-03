@@ -109,35 +109,35 @@ void cur_time_t::update_day_of_week()
 
 void cur_time_t::save_state(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(STATE_VERSION);
+	state_fio->FputUint32(STATE_VERSION);
 	
-	fio->FputInt32(year);
-	fio->FputInt32(month);
-	fio->FputInt32(day);
-	fio->FputInt32(day_of_week);
-	fio->FputInt32(hour);
-	fio->FputInt32(minute);
-	fio->FputInt32(second);
-	fio->FputBool(initialized);
+	state_fio->FputInt32(year);
+	state_fio->FputInt32(month);
+	state_fio->FputInt32(day);
+	state_fio->FputInt32(day_of_week);
+	state_fio->FputInt32(hour);
+	state_fio->FputInt32(minute);
+	state_fio->FputInt32(second);
+	state_fio->FputBool(initialized);
 }
 
 bool cur_time_t::load_state(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	year = fio->FgetInt32();
-	month = fio->FgetInt32();
-	day = fio->FgetInt32();
-	day_of_week = fio->FgetInt32();
-	hour = fio->FgetInt32();
-	minute = fio->FgetInt32();
-	second = fio->FgetInt32();
-	initialized = fio->FgetBool();
+	year = state_fio->FgetInt32();
+	month = state_fio->FgetInt32();
+	day = state_fio->FgetInt32();
+	day_of_week = state_fio->FgetInt32();
+	hour = state_fio->FgetInt32();
+	minute = state_fio->FgetInt32();
+	second = state_fio->FgetInt32();
+	initialized = state_fio->FgetBool();
 	return true;
 }
 

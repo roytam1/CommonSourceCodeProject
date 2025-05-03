@@ -16,14 +16,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -181,41 +179,32 @@ void MAIN::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_MAIN_SACK) {
 		sack = ((data & mask) != 0);
 //		emu->out_debug_log("SUB->MAIN\tSACK=%d\n",sack?1:0);
-	}
-	else if(id == SIG_MAIN_SRDY) {
+	} else if(id == SIG_MAIN_SRDY) {
 		srdy = ((data & mask) != 0);
 //		emu->out_debug_log("SUB->MAIN\tSRDY=%d\n",srdy?1:0);
-	}
-	else if(id == SIG_MAIN_INTFD) {
+	} else if(id == SIG_MAIN_INTFD) {
 		intfd = ((data & mask) != 0);
 //		emu->out_debug_log("FDC->MAIN\tINTFD=%d\n",intfd?1:0);
 		update_irq();
-	}
-	else if(id == SIG_MAIN_INT0) {
+	} else if(id == SIG_MAIN_INT0) {
 		int0 = ((data & mask) != 0);
 //		emu->out_debug_log("SUB->MAIN\tINT0=%d\n",int0?1:0);
 		update_irq();
-	}
-	else if(id == SIG_MAIN_INT1) {
+	} else if(id == SIG_MAIN_INT1) {
 		int1 = ((data & mask) != 0);
 		update_irq();
-	}
-	else if(id == SIG_MAIN_INT2) {
+	} else if(id == SIG_MAIN_INT2) {
 		int2 = ((data & mask) != 0);
 		update_irq();
-	}
-	else if(id == SIG_MAIN_INT3) {
+	} else if(id == SIG_MAIN_INT3) {
 		int3 = ((data & mask) != 0);
 		update_irq();
-	}
-	else if(id == SIG_MAIN_INT4) {
+	} else if(id == SIG_MAIN_INT4) {
 		int4 = ((data & mask) != 0);
 		update_irq();
-	}
-	else if(id == SIG_MAIN_DRQ) {
+	} else if(id == SIG_MAIN_DRQ) {
 		drq = ((data & mask) != 0);
-	}
-	else if(id == SIG_MAIN_INDEX) {
+	} else if(id == SIG_MAIN_INDEX) {
 		index = ((data & mask) != 0);
 	}
 }
@@ -228,25 +217,20 @@ void MAIN::update_irq()
 		intfd = false;
 		inp = 0;
 		next = true;
-	}
-	else if(e1) {
+	} else if(e1) {
 		if(int0) {
 			inp = 1;
 			next = true;
-		}
-		else if(int1) {
+		} else if(int1) {
 			inp = 2;
 			next = true;
-		}
-		else if(int2) {
+		} else if(int2) {
 			inp = 3;
 			next = true;
-		}
-		else if(int3) {
+		} else if(int3) {
 			inp = 4;
 			next = true;
-		}
-		else if(int4) {
+		} else if(int4) {
 			inp = 5;
 			next = true;
 		}
@@ -272,13 +256,11 @@ void MAIN::update_bank()
 		case 0x01: SET_BANK(0xc000, 0xffff, ram + 0x00000, ram + 0x00000); break;
 		case 0x0f: SET_BANK(0xf800, 0xffff, common, common); break;
 		}
-	}
-	else if((ms & 3) == 1) {
+	} else if((ms & 3) == 1) {
 		// SD1: SYSTEM LOADING & CP/M
 		SET_BANK(0x0000, 0xf7ff, ram, ram);
 		SET_BANK(0xf800, 0xffff, common, common);
-	}
-	else if((ms & 3) == 2) {
+	} else if((ms & 3) == 2) {
 		// SD2: ROM based BASIC
 		SET_BANK(0x0000, 0x1fff, wdmy, basic);
 		switch(mo & 0x07) {
@@ -308,8 +290,7 @@ void MAIN::update_bank()
 		case 0x0d: SET_BANK(0xc000, 0xffff, ram + 0x3c000, ram + 0x3c000); break;
 		case 0x0f: SET_BANK(0xf800, 0xffff, common, common); break;
 		}
-	}
-	else {
+	} else {
 		// SD3: RAM based BASIC
 		SET_BANK(0x0000, 0x1fff, ram, ram);
 		switch(mo & 0x07) {

@@ -55,8 +55,7 @@ uint32 RAMPACK::read_io8(uint32 addr)
 {
 	if(addr < 0x4000) {
 		return ram[addr];
-	}
-	else if(0xff00 <= addr && addr < 0xff80) {
+	} else if(0xff00 <= addr && addr < 0xff80) {
 		return 0x01; // device id
 	}
 	return 0xff;

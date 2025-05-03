@@ -34,8 +34,12 @@ public:
 #endif
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+#ifdef HAS_YM2608
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
+#endif
 	
-	// unique functions
+	// unique function
 	void set_context_opn(DEVICE* device)
 	{
 		d_opn = device;

@@ -429,51 +429,51 @@ bool MZ1E30::format(int drv)
 
 #define STATE_VERSION	1
 
-void MZ1E30::save_state(FILEIO* fio)
+void MZ1E30::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputUint32(rom_address);
-	fio->Fwrite(buffer, sizeof(buffer), 1);
-	fio->FputInt32(phase);
-	fio->FputInt32(sector);
-	fio->FputInt32(blocks);
-	fio->Fwrite(cmd, sizeof(cmd), 1);
-	fio->FputInt32(cmd_ptr);
-	fio->FputInt32(unit);
-	fio->FputInt32(buffer_ptr);
-	fio->FputUint8(status);
-	fio->FputUint8(status_irq_drq);
-	fio->FputUint8(error);
-	fio->Fwrite(status_buf, sizeof(status_buf), 1);
-	fio->FputInt32(status_ptr);
-	fio->FputUint8(datareg);
+	state_fio->FputUint32(rom_address);
+	state_fio->Fwrite(buffer, sizeof(buffer), 1);
+	state_fio->FputInt32(phase);
+	state_fio->FputInt32(sector);
+	state_fio->FputInt32(blocks);
+	state_fio->Fwrite(cmd, sizeof(cmd), 1);
+	state_fio->FputInt32(cmd_ptr);
+	state_fio->FputInt32(unit);
+	state_fio->FputInt32(buffer_ptr);
+	state_fio->FputUint8(status);
+	state_fio->FputUint8(status_irq_drq);
+	state_fio->FputUint8(error);
+	state_fio->Fwrite(status_buf, sizeof(status_buf), 1);
+	state_fio->FputInt32(status_ptr);
+	state_fio->FputUint8(datareg);
 }
 
-bool MZ1E30::load_state(FILEIO* fio)
+bool MZ1E30::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	rom_address = fio->FgetUint32();
-	fio->Fread(buffer, sizeof(buffer), 1);
-	phase = fio->FgetInt32();
-	sector = fio->FgetInt32();
-	blocks = fio->FgetInt32();
-	fio->Fread(cmd, sizeof(cmd), 1);
-	cmd_ptr = fio->FgetInt32();
-	unit = fio->FgetInt32();
-	buffer_ptr = fio->FgetInt32();
-	status = fio->FgetUint8();
-	status_irq_drq = fio->FgetUint8();
-	error = fio->FgetUint8();
-	fio->Fread(status_buf, sizeof(status_buf), 1);
-	status_ptr = fio->FgetInt32();
-	datareg = fio->FgetUint8();
+	rom_address = state_fio->FgetUint32();
+	state_fio->Fread(buffer, sizeof(buffer), 1);
+	phase = state_fio->FgetInt32();
+	sector = state_fio->FgetInt32();
+	blocks = state_fio->FgetInt32();
+	state_fio->Fread(cmd, sizeof(cmd), 1);
+	cmd_ptr = state_fio->FgetInt32();
+	unit = state_fio->FgetInt32();
+	buffer_ptr = state_fio->FgetInt32();
+	status = state_fio->FgetUint8();
+	status_irq_drq = state_fio->FgetUint8();
+	error = state_fio->FgetUint8();
+	state_fio->Fread(status_buf, sizeof(status_buf), 1);
+	status_ptr = state_fio->FgetInt32();
+	datareg = state_fio->FgetUint8();
 	return true;
 }
 

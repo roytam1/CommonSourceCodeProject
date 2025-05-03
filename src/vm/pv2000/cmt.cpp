@@ -41,8 +41,7 @@ void CMT::write_io8(uint32 addr, uint32 data)
 				buffer[bufcnt] |= bit;
 				if(!(bit & 0x80)) {
 					bit <<= 1;
-				}
-				else {
+				} else {
 					if(++bufcnt == BUFFER_SIZE) {
 						fio->Fwrite(buffer, sizeof(buffer), 1);
 						memset(buffer, 0, sizeof(buffer));
@@ -60,8 +59,7 @@ void CMT::write_io8(uint32 addr, uint32 data)
 			buffer[bufcnt] |= (data & 1) ? bit : 0;
 			if(!(bit & 0x80)) {
 				bit <<= 1;
-			}
-			else {
+			} else {
 				if(++bufcnt == BUFFER_SIZE) {
 					fio->Fwrite(buffer, sizeof(buffer), 1);
 					memset(buffer, 0, sizeof(buffer));
@@ -82,8 +80,7 @@ uint32 CMT::read_io8(uint32 addr)
 		val |= (buffer[bufcnt] & bit ? 1 : 0);
 		if(!(bit & 0x80)) {
 			bit <<= 1;
-		}
-		else {
+		} else {
 			if(++bufcnt == BUFFER_SIZE) {
 				memset(buffer, 0, sizeof(buffer));
 				fio->Fread(buffer, sizeof(buffer), 1);

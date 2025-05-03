@@ -61,8 +61,7 @@ void IOTRAP::write_signal(int id, uint32 data, uint32 mask)
 		if(data & 1) {
 			d_pio2->write_signal(SIG_I8255_PORT_B, 0, 6);
 		}
-	}
-	else if(id == SIG_IOTRAP_I8255_2_C) {
+	} else if(id == SIG_IOTRAP_I8255_2_C) {
 		nmi_mask = ((data & 0x80) != 0);
 		pasopia = ((data & 0x40) != 0);
 	}

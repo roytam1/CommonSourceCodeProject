@@ -140,8 +140,7 @@ void SERIAL::update_intr(int ch)
 	if((sioctrl[ch].rxrdy && (sioctrl[ch].ctrl & 0x40)) || (sioctrl[ch].txrdy && (sioctrl[ch].ctrl & 0x20))) {
 		d_pic->write_signal(pic_ids[ch], 1, 1);
 		sioctrl[ch].intstat |=  4;
-	}
-	else {
+	} else {
 		d_pic->write_signal(pic_ids[ch], 0, 1);
 		sioctrl[ch].intstat &=  ~4;
 	}

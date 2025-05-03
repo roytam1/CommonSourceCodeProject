@@ -146,8 +146,7 @@ void MSM58321::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MSM58321_DATA) {
 		wreg = (data & mask) | (wreg & ~mask);
-	}
-	else if(id == SIG_MSM58321_CS) {
+	} else if(id == SIG_MSM58321_CS) {
 		bool next = ((data & mask) != 0);
 //		if(!cs && next) {
 //			if(wr) {
@@ -162,12 +161,10 @@ void MSM58321::write_signal(int id, uint32 data, uint32 mask)
 //		}
 		cs = next;
 		output_data();
-	}
-	else if(id == SIG_MSM58321_READ) {
+	} else if(id == SIG_MSM58321_READ) {
 		rd = ((data & mask) != 0);
 		output_data();
-	}
-	else if(id == SIG_MSM58321_WRITE) {
+	} else if(id == SIG_MSM58321_WRITE) {
 		bool next = ((data & mask) != 0);
 		if(!wr && next && cs) {
 			regs[regnum] = wreg & 0x0f;
@@ -176,20 +173,17 @@ void MSM58321::write_signal(int id, uint32 data, uint32 mask)
 			}
 		}
 		wr = next;
-	}
-	else if(id == SIG_MSM58321_ADDR_WRITE) {
+	} else if(id == SIG_MSM58321_ADDR_WRITE) {
 		bool next = ((data & mask) != 0);
 		if(addr_wr && !next && cs) {
 			regnum = wreg & 0x0f;
 			output_data();
 		}
 		addr_wr = next;
-	}
-	else if(id == SIG_MSM5832_ADDR) {
+	} else if(id == SIG_MSM5832_ADDR) {
 		regnum = (data & mask) | (regnum & ~mask);
 		output_data();
-	}
-	else if(id == SIG_MSM5832_HOLD) {
+	} else if(id == SIG_MSM5832_HOLD) {
 		hold = ((data & mask) != 0);
 	}
 }

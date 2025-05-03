@@ -409,76 +409,76 @@ int I8253::get_next_count(int ch)
 
 #define STATE_VERSION	1
 
-void I8253::save_state(FILEIO* fio)
+void I8253::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
 	for(int i = 0; i < 3; i++) {
-		fio->FputBool(counter[i].prev_out);
-		fio->FputBool(counter[i].prev_in);
-		fio->FputBool(counter[i].gate);
-		fio->FputInt32(counter[i].count);
-		fio->FputUint16(counter[i].latch);
-		fio->FputUint16(counter[i].count_reg);
-		fio->FputUint8(counter[i].ctrl_reg);
-		fio->FputBool(counter[i].count_latched);
-		fio->FputBool(counter[i].low_read);
-		fio->FputBool(counter[i].high_read);
-		fio->FputBool(counter[i].low_write);
-		fio->FputBool(counter[i].high_write);
-		fio->FputInt32(counter[i].mode);
-		fio->FputBool(counter[i].delay);
-		fio->FputBool(counter[i].start);
+		state_fio->FputBool(counter[i].prev_out);
+		state_fio->FputBool(counter[i].prev_in);
+		state_fio->FputBool(counter[i].gate);
+		state_fio->FputInt32(counter[i].count);
+		state_fio->FputUint16(counter[i].latch);
+		state_fio->FputUint16(counter[i].count_reg);
+		state_fio->FputUint8(counter[i].ctrl_reg);
+		state_fio->FputBool(counter[i].count_latched);
+		state_fio->FputBool(counter[i].low_read);
+		state_fio->FputBool(counter[i].high_read);
+		state_fio->FputBool(counter[i].low_write);
+		state_fio->FputBool(counter[i].high_write);
+		state_fio->FputInt32(counter[i].mode);
+		state_fio->FputBool(counter[i].delay);
+		state_fio->FputBool(counter[i].start);
 #ifdef HAS_I8254
-		fio->FputBool(counter[i].null_count);
-		fio->FputBool(counter[i].status_latched);
-		fio->FputUint8(counter[i].status);
+		state_fio->FputBool(counter[i].null_count);
+		state_fio->FputBool(counter[i].status_latched);
+		state_fio->FputUint8(counter[i].status);
 #endif
-		fio->FputUint64(counter[i].freq);
-		fio->FputInt32(counter[i].register_id);
-		fio->FputUint32(counter[i].input_clk);
-		fio->FputInt32(counter[i].period);
-		fio->FputUint32(counter[i].prev_clk);
+		state_fio->FputUint64(counter[i].freq);
+		state_fio->FputInt32(counter[i].register_id);
+		state_fio->FputUint32(counter[i].input_clk);
+		state_fio->FputInt32(counter[i].period);
+		state_fio->FputUint32(counter[i].prev_clk);
 	}
-	fio->FputUint64(cpu_clocks);
+	state_fio->FputUint64(cpu_clocks);
 }
 
-bool I8253::load_state(FILEIO* fio)
+bool I8253::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
 	for(int i = 0; i < 3; i++) {
-		counter[i].prev_out = fio->FgetBool();
-		counter[i].prev_in = fio->FgetBool();
-		counter[i].gate = fio->FgetBool();
-		counter[i].count = fio->FgetInt32();
-		counter[i].latch = fio->FgetUint16();
-		counter[i].count_reg = fio->FgetUint16();
-		counter[i].ctrl_reg = fio->FgetUint8();
-		counter[i].count_latched = fio->FgetBool();
-		counter[i].low_read = fio->FgetBool();
-		counter[i].high_read = fio->FgetBool();
-		counter[i].low_write = fio->FgetBool();
-		counter[i].high_write = fio->FgetBool();
-		counter[i].mode = fio->FgetInt32();
-		counter[i].delay = fio->FgetBool();
-		counter[i].start = fio->FgetBool();
+		counter[i].prev_out = state_fio->FgetBool();
+		counter[i].prev_in = state_fio->FgetBool();
+		counter[i].gate = state_fio->FgetBool();
+		counter[i].count = state_fio->FgetInt32();
+		counter[i].latch = state_fio->FgetUint16();
+		counter[i].count_reg = state_fio->FgetUint16();
+		counter[i].ctrl_reg = state_fio->FgetUint8();
+		counter[i].count_latched = state_fio->FgetBool();
+		counter[i].low_read = state_fio->FgetBool();
+		counter[i].high_read = state_fio->FgetBool();
+		counter[i].low_write = state_fio->FgetBool();
+		counter[i].high_write = state_fio->FgetBool();
+		counter[i].mode = state_fio->FgetInt32();
+		counter[i].delay = state_fio->FgetBool();
+		counter[i].start = state_fio->FgetBool();
 #ifdef HAS_I8254
-		counter[i].null_count = fio->FgetBool();
-		counter[i].status_latched = fio->FgetBool();
-		counter[i].status = fio->FgetUint8();
+		counter[i].null_count = state_fio->FgetBool();
+		counter[i].status_latched = state_fio->FgetBool();
+		counter[i].status = state_fio->FgetUint8();
 #endif
-		counter[i].freq = fio->FgetUint64();
-		counter[i].register_id = fio->FgetInt32();
-		counter[i].input_clk = fio->FgetUint32();
-		counter[i].period = fio->FgetInt32();
-		counter[i].prev_clk = fio->FgetUint32();
+		counter[i].freq = state_fio->FgetUint64();
+		counter[i].register_id = state_fio->FgetInt32();
+		counter[i].input_clk = state_fio->FgetUint32();
+		counter[i].period = state_fio->FgetInt32();
+		counter[i].prev_clk = state_fio->FgetUint32();
 	}
-	cpu_clocks = fio->FgetUint64();
+	cpu_clocks = state_fio->FgetUint64();
 	return true;
 }

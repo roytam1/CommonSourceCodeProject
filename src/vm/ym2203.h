@@ -122,8 +122,8 @@ public:
 	void event_vline(int v, int clock);
 	void mix(int32* buffer, int cnt);
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 #ifdef HAS_YM_SERIES

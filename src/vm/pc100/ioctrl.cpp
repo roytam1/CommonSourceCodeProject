@@ -102,8 +102,7 @@ uint32 IOCTRL::read_io8(uint32 addr)
 	case 0x22:
 		if(config.monitor_type) {
 			return key_mouse | 0x0d;	// virt monitor
-		}
-		else {
+		} else {
 			return key_mouse | 0x2d;	// horiz monitor
 		}
 	}
@@ -121,18 +120,15 @@ void IOCTRL::event_callback(int event_id, int err)
 			d_pic->write_signal(SIG_I8259_IR3, 1, 1);
 		}
 		register_id = -1;
-	}
-	else if(event_id == EVENT_600HZ) {
+	} else if(event_id == EVENT_600HZ) {
 		if(ts == 0) {
 			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
 		}
-	}
-	else if(event_id == EVENT_100HZ) {
+	} else if(event_id == EVENT_100HZ) {
 		if(ts == 1) {
 			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
 		}
-	}
-	else if(event_id == EVENT_50HZ) {
+	} else if(event_id == EVENT_50HZ) {
 		if(ts == 2) {
 			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
 		}
@@ -151,15 +147,13 @@ void IOCTRL::event_callback(int event_id, int err)
 				key_buf->write(mouse_stat[1] & 0xff);
 				update_key();
 				key_prev = val;
-			}
-			else if(key_prev != val) {
+			} else if(key_prev != val) {
 				key_buf->write(val);
 				update_key();
 				key_prev = val;
 			}
 		}
-	}
-	else if(event_id == EVENT_10HZ) {
+	} else if(event_id == EVENT_10HZ) {
 		if(ts == 3) {
 			d_pic->write_signal(SIG_I8259_IR2, 1, 1);
 		}
@@ -186,11 +180,9 @@ void IOCTRL::key_down(int code)
 {
 	if(code == 0x14) {
 		caps = !caps;
-	}
-	else if(code == 0x15) {
+	} else if(code == 0x15) {
 		kana = !kana;
-	}
-	else if((code = key_table[code & 0xff]) != -1) {
+	} else if((code = key_table[code & 0xff]) != -1) {
 		code |= 0x80;
 		key_buf->write(code | 0x100);
 		update_key();

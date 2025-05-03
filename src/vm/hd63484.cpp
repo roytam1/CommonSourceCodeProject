@@ -77,8 +77,7 @@ void HD63484::write_io16(uint32 addr, uint32 data)
 			fifo[fifo_ptr++] = regs[0];
 			process_cmd();
 		}
-	}
-	else {
+	} else {
 		// register no
 		ch = data & 0xff;
 	}
@@ -90,15 +89,12 @@ uint32 HD63484::read_io16(uint32 addr)
 		// data
 		if(ch == 0x80) {
 			return vpos;
-		}
-		else if(ch == 0) {
+		} else if(ch == 0) {
 			return readfifo;
-		}
-		else {
+		} else {
 			return 0;
 		}
-	}
-	else {
+	} else {
 		// status
 		return 0xff22 | (fifo_ptr ? 0 : 1) | (rand() & 4);	// write FIFO ready + command end + (read FIFO ready or read FIFO not ready)
 	}
@@ -118,8 +114,7 @@ void HD63484::process_cmd()
 			return;
 		}
 		len = fifo[1] + 2;
-	}
-	else if(len == -2) {
+	} else if(len == -2) {
 		if(fifo_ptr < 2) {
 			return;
 		}
@@ -130,136 +125,109 @@ void HD63484::process_cmd()
 			// ORG
 			org = ((fifo[1] & 0xff) << 12) | ((fifo[2] & 0xfff0) >> 4);
 			org_dpd = fifo[2] & 0xf;
-		}
-		else if((fifo[0] & 0xffe0) == 0x800) {
+		} else if((fifo[0] & 0xffe0) == 0x800) {
 			// WPR
 			if(fifo[0] == 0x800) {
 				cl0 = fifo[1];
-			}
-			else if(fifo[0] == 0x801) {
+			} else if(fifo[0] == 0x801) {
 				cl1 = fifo[1];
-			}
-			else if(fifo[0] == 0x802) {
+			} else if(fifo[0] == 0x802) {
 				ccmp = fifo[1];
-			}
-			else if(fifo[0] == 0x803) {
+			} else if(fifo[0] == 0x803) {
 				edg = fifo[1];
-			}
-			else if(fifo[0] == 0x804) {
+			} else if(fifo[0] == 0x804) {
 				mask = fifo[1];
-			}
-			else if(fifo[0] == 0x805) {
+			} else if(fifo[0] == 0x805) {
 				ppy  = (fifo[1] & 0xf000) >> 12;
 				pzcy = (fifo[1] & 0x0f00) >> 8;
 				ppx  = (fifo[1] & 0x00f0) >> 4;
 				pzcx = (fifo[1] & 0x000f) >> 0;
-			}
-			else if(fifo[0] == 0x806) {
+			} else if(fifo[0] == 0x806) {
 				psy  = (fifo[1] & 0xf000) >> 12;
 				psx  = (fifo[1] & 0x00f0) >> 4;
-			}
-			else if(fifo[0] == 0x807) {
+			} else if(fifo[0] == 0x807) {
 				pey  = (fifo[1] & 0xf000) >> 12;
 				pzy  = (fifo[1] & 0x0f00) >> 8;
 				pex  = (fifo[1] & 0x00f0) >> 4;
 				pzx  = (fifo[1] & 0x000f) >> 0;
-			}
-			else if(fifo[0] == 0x808) {
+			} else if(fifo[0] == 0x808) {
 				xmin = fifo[1];
-			}
-			else if(fifo[0] == 0x809) {
+			} else if(fifo[0] == 0x809) {
 				ymin = fifo[1];
-			}
-			else if(fifo[0] == 0x80a) {
+			} else if(fifo[0] == 0x80a) {
 				xmax = fifo[1];
-			}
-			else if(fifo[0] == 0x80b) {
+			} else if(fifo[0] == 0x80b) {
 				ymax = fifo[1];
-			}
-			else if(fifo[0] == 0x80c) {
+			} else if(fifo[0] == 0x80c) {
 				rwp = (rwp & 0xfff) | ((fifo[1] & 0xff) << 12);
 				rwp_dn = (fifo[1] & 0xc000) >> 14;
-			}
-			else if(fifo[0] == 0x80d) {
+			} else if(fifo[0] == 0x80d) {
 				rwp = (rwp & 0xff000) | ((fifo[1] & 0xfff0) >> 4);
-			}
-			else {
+			} else {
 				emu->out_debug_log(_T("HD63484: unsupported register\n"));
 			}
-		}
-		else if((fifo[0] & 0xfff0) == 0x1800) {
+		} else if((fifo[0] & 0xfff0) == 0x1800) {
 			// WPTN
 			int start = fifo[0] & 0xf;
 			int n = fifo[1];
 			for(int i = 0; i < n; i++) {
 				pattern[start + i] = fifo[2 + i];
 			}
-		}
-		else if(fifo[0] == 0x4400) {
+		} else if(fifo[0] == 0x4400) {
 			// RD
 			readfifo = vram[rwp];
 			rwp = (rwp + 1) & ADDR_MASK;
-		}
-		else if(fifo[0] == 0x4800) {
+		} else if(fifo[0] == 0x4800) {
 			// WT
 			vram[rwp] = fifo[1];
 			rwp = (rwp + 1) & ADDR_MASK;
-		}
-		else if(fifo[0] == 0x5800) {
+		} else if(fifo[0] == 0x5800) {
 			// CLR
 			doclr16(fifo[0], fifo[1], &rwp, fifo[2], fifo[3]);
 			int fifo2 = (int)fifo[2], fifo3 = (int)fifo[3];
 			if(fifo2 < 0) fifo2 *= -1;
 			if(fifo3 < 0) fifo3 *= -1;
 			rwp += (fifo2 + 1) * (fifo3 + 1);
-		}
-		else if((fifo[0] & 0xfffc) == 0x5c00) {
+		} else if((fifo[0] & 0xfffc) == 0x5c00) {
 			// SCLR
 			doclr16(fifo[0], fifo[1], &rwp, fifo[2], fifo[3]);
 			int fifo2 = (int)fifo[2], fifo3 = (int)fifo[3];
 			if(fifo2 < 0) fifo2 *= -1;
 			if(fifo3 < 0) fifo3 *= -1;
 			rwp += (fifo2 + 1) * (fifo3 + 1);
-		}
-		else if((fifo[0] & 0xf0ff) == 0x6000) {
+		} else if((fifo[0] & 0xf0ff) == 0x6000) {
 			// CPY
 			docpy16(fifo[0], ((fifo[1] & 0xff) << 12) | ((fifo[2] & 0xfff0) >> 4), &rwp, fifo[3], fifo[4]);
 			int fifo2 = (int)fifo[2], fifo3 = (int)fifo[3];
 			if(fifo2 < 0) fifo2 *= -1;
 			if(fifo3 < 0) fifo3 *= -1;
 			rwp += (fifo2 + 1) * (fifo3 + 1);
-		}
-		else if((fifo[0] & 0xf0fc) == 0x7000) {
+		} else if((fifo[0] & 0xf0fc) == 0x7000) {
 			// SCPY
 			docpy16(fifo[0], ((fifo[1] & 0xff) << 12) | ((fifo[2] & 0xfff0) >> 4), &rwp, fifo[3], fifo[4]);
 			int fifo2 = (int)fifo[2], fifo3 = (int)fifo[3];
 			if(fifo2 < 0) fifo2 *= -1;
 			if(fifo3 < 0) fifo3 *= -1;
 			rwp += (fifo2 + 1) * (fifo3 + 1);
-		}
-		else if(fifo[0] == 0x8000) {
+		} else if(fifo[0] == 0x8000) {
 			// AMOVE
 			cpx = fifo[1];
 			cpy = fifo[2];
-		}
-		else if(fifo[0] == 0x8400) {
+		} else if(fifo[0] == 0x8400) {
 			// RMOVE
 			cpx += (int16)fifo[1];
 			cpy += (int16)fifo[2];
-		}
-		else if((fifo[0] & 0xff00) == 0x8800) {
+		} else if((fifo[0] & 0xff00) == 0x8800) {
 			// ALINE
 			line(cpx, cpy, fifo[1], fifo[2], fifo[0] & 0xff);
 			cpx = (int16)fifo[1];
 			cpy = (int16)fifo[2];
-		}
-		else if((fifo[0] & 0xff00) == 0x8c00) {
+		} else if((fifo[0] & 0xff00) == 0x8c00) {
 			// RLINE
 			line(cpx, cpy, cpx + (int16)fifo[1], cpy + (int16)fifo[2], fifo[0] & 0xff);
 			cpx += (int16)fifo[1];
 			cpy += (int16)fifo[2];
-		}
-		else if((fifo[0] & 0xfff8) == 0x9000) {
+		} else if((fifo[0] & 0xfff8) == 0x9000) {
 			// ARCT
 			line(cpx, cpy, (int16)fifo[1], cpy, fifo[0] & 0xff);
 			line((int16)fifo[1], cpy, (int16)fifo[1], (int16)fifo[2], fifo[0] & 0xff);
@@ -267,8 +235,7 @@ void HD63484::process_cmd()
 			line(cpx, (int16)fifo[2], cpx, cpy, fifo[0] & 0xff);
 			cpx = (int16)fifo[1];
 			cpy = (int16)fifo[2];
-		}
-		else if((fifo[0] & 0xfff8) == 0x9400) {
+		} else if((fifo[0] & 0xfff8) == 0x9400) {
 			// RRCT
 			line(cpx, cpy, cpx + (int16)fifo[1], cpy, fifo[0] & 0xff);
 			line(cpx + (int16)fifo[1], cpy, cpx + (int16)fifo[1], cpy + (int16)fifo[2], fifo[0] & 0xff);
@@ -276,8 +243,7 @@ void HD63484::process_cmd()
 			line(cpx, cpy + (int16)fifo[2], cpx, cpy, fifo[0] & 0xff);
 			cpx += (int16)fifo[1];
 			cpy += (int16)fifo[2];
-		}
-		else if((fifo[0] & 0xfff8) == 0xa400) {
+		} else if((fifo[0] & 0xfff8) == 0xa400) {
 			// RPLG  added
 			int sx = cpx;
 			int sy = cpy;
@@ -289,8 +255,7 @@ void HD63484::process_cmd()
 				sy = ey;
 			}
 			line(sx, sy, cpx, cpy, fifo[0] & 7);
-		}
-		else if((fifo[0] & 0xfff8) == 0xc000) {
+		} else if((fifo[0] & 0xfff8) == 0xc000) {
 			// AFRCT
 			int16 pcx = fifo[1], pcy = fifo[2];
 			int16 ax = pcx - cpx, ay = pcy - cpy;
@@ -304,8 +269,7 @@ void HD63484::process_cmd()
 					if(ax > 0) {
 						xx++;
 						ax--;
-					}
-					else {
+					} else {
 						xx--;
 						ax++;
 					}
@@ -318,8 +282,7 @@ void HD63484::process_cmd()
 						break;
 					}
 					ay++;
-				}
-				else {
+				} else {
 					yy++;
 					xx -= ax;
 					if(ay == 0) {
@@ -328,8 +291,7 @@ void HD63484::process_cmd()
 					ay--;
 				}
 			}
-		}
-		else if((fifo[0] & 0xfff8) == 0xc400) {
+		} else if((fifo[0] & 0xfff8) == 0xc400) {
 			// RFRCT
 			line(cpx, cpy, cpx + (int16)fifo[1], cpy, fifo[0] & 0xff);
 			line(cpx + fifo[1], cpy, cpx + fifo[1], cpy + fifo[2], fifo[0] & 0xff);
@@ -337,16 +299,13 @@ void HD63484::process_cmd()
 			line(cpx, cpy + fifo[2], cpx, cpy, fifo[0] & 0xff);
 			cpx=cpx + (int16)fifo[1];
 			cpy=cpy + (int16)fifo[2];
-		}
-		else if(fifo[0] == 0xc800) {
+		} else if(fifo[0] == 0xc800) {
 			// PAINT
 			paint(cpx, cpy, cl0);
-		}
-		else if((fifo[0] & 0xfff8) == 0xcc00) {
+		} else if((fifo[0] & 0xfff8) == 0xcc00) {
 			// DOT
 			dot(cpx, cpy, fifo[0] & 0xff, cl0);
-		}
-		else if((fifo[0] & 0xf000) == 0xd000) {
+		} else if((fifo[0] & 0xf000) == 0xd000) {
 			// PTN
 			ptn(fifo[0], psx, psy, pex - psx, pey - psy);
 			if(!(fifo[0] & 0x800)) {
@@ -354,8 +313,7 @@ void HD63484::process_cmd()
 				case 0x000:
 					if(pey - psy > 0) {
 						cpy += pey - psy;
-					}
-					else {
+					} else {
 						cpy -= pey - psy;
 					}
 					break;
@@ -365,8 +323,7 @@ void HD63484::process_cmd()
 				case 0x200:
 					if(pey - psy > 0) {
 						cpx += pey - psy;
-					}
-					else {
+					} else {
 						cpx -= pey - psy;
 					}
 					break;
@@ -376,8 +333,7 @@ void HD63484::process_cmd()
 				case 0x400:
 					if(pey - psy > 0) {
 						cpy -= pey - psy;
-					}
-					else {
+					} else {
 						cpy += pey - psy;
 					}
 					break;
@@ -387,8 +343,7 @@ void HD63484::process_cmd()
 				case 0x600:
 					if(pey - psy > 0) {
 						cpx -= pey - psy;
-					}
-					else {
+					} else {
 						cpx += pey - psy;
 					}
 					break;
@@ -396,82 +351,71 @@ void HD63484::process_cmd()
 					// missing
 					break;
 				}
-			}
-			else {
+			} else {
 				// missing
 			}
-		}
-		else if((fifo[0] & 0xf018) == 0xe000) {
+		} else if((fifo[0] & 0xf018) == 0xe000) {
 			// AGCPY
 			agcpy(fifo[0], (int16)fifo[1], (int16)fifo[2], cpx, cpy, fifo[3], fifo[4]);
 			switch(fifo[0] & 0x700) {
 			case 0x000:
 				if(fifo[4] > 0) {
 					cpy += fifo[4];
-				}
-				else {
+				} else {
 					cpy -= fifo[4];
 				}
 				break;
 			case 0x100:
 				if(fifo[4] > 0) {
 					cpy -= fifo[4];
-				}
-				else {
+				} else {
 					cpy += fifo[4];
 				}
 				break;
 			case 0x200:
 				if(fifo[4] > 0) {
 					cpy += fifo[4];
-				}
-				else {
+				} else {
 					cpy -= fifo[4];
 				}
 				break;
 			case 0x300:
 				if(fifo[4] > 0) {
 					cpy -= fifo[4];
-				}
-				else {
+				} else {
 					cpy += fifo[4];
 				}
 				break;
 			case 0x400:
 				if(fifo[3] > 0) {
 					cpx += fifo[3];
-				}
-				else {
+				} else {
 					cpx -= fifo[3];
 				}
 				break;
 			case 0x500:
 				if(fifo[3] > 0) {
 					cpx += fifo[3];
-				}
-				else {
+				} else {
 					cpx -= fifo[3];
 				}
 				break;
 			case 0x600:
 				if(fifo[3] > 0) {
 					cpx -= fifo[3];
-				}
-				else {
+				} else {
 					cpx += fifo[3];
 				}
 				break;
 			case 0x700:
 				if(fifo[3] > 0) {
 					cpx -= fifo[3];
-				}
-				else {
+				} else {
 					cpx += fifo[3];
 				}
 				break;
 			}
-		}
-		else {
+		} else {
 			emu->out_debug_log(_T("unsupported command\n"));
 		}
 		fifo_ptr = 0;
@@ -504,8 +448,7 @@ void HD63484::doclr16(int opcode, uint16 fill, int *dst, int _ax, int _ay)
 			if(ax > 0) {
 				*dst = (*dst + 1) & ADDR_MASK;
 				ax--;
-			}
-			else {
+			} else {
 				*dst = (*dst - 1) & ADDR_MASK;
 				ax++;
 			}
@@ -517,8 +460,7 @@ void HD63484::doclr16(int opcode, uint16 fill, int *dst, int _ax, int _ay)
 				break;
 			}
 			ay++;
-		}
-		else {
+		} else {
 			*dst = (*dst - (MWR1 & 0xfff) - ax) & ADDR_MASK;
 			if(ay == 0) {
 				break;
@@ -587,14 +529,12 @@ void HD63484::docpy16(int opcode, int src, int *dst, int _ax, int _ay)
 					src = (src - (MWR1 & 0xfff)) & ADDR_MASK;
 					*dst = (*dst + dstep1) & ADDR_MASK;
 					ay--;
-				}
-				else {
+				} else {
 					src = (src + (MWR1 & 0xfff)) & ADDR_MASK;
 					*dst = (*dst + dstep1) & ADDR_MASK;
 					ay++;
 				}
-			}
-			else {
+			} else {
 				if(ax == 0) {
 					break;
 				}
@@ -602,8 +542,7 @@ void HD63484::docpy16(int opcode, int src, int *dst, int _ax, int _ay)
 					src = (src + 1) & ADDR_MASK;
 					*dst = (*dst + dstep1) & ADDR_MASK;
 					ax--;
-				}
-				else {
+				} else {
 					src = (src - 1) & ADDR_MASK;
 					*dst = (*dst + dstep1) & ADDR_MASK;
 					ax++;
@@ -619,8 +558,7 @@ void HD63484::docpy16(int opcode, int src, int *dst, int _ax, int _ay)
 					break;
 				}
 				ax++;
-			}
-			else {
+			} else {
 				src = (src + 1 - ay * (MWR1 & 0xfff)) & ADDR_MASK;
 				*dst = (*dst + dstep2) & ADDR_MASK;
 				if(ax == 0) {
@@ -628,8 +566,7 @@ void HD63484::docpy16(int opcode, int src, int *dst, int _ax, int _ay)
 				}
 				ax--;
 			}
-		}
-		else {
+		} else {
 			ax = _ax;
 			if(_ay < 0) {
 				src = (src + (MWR1 & 0xfff) - ax) & ADDR_MASK;
@@ -638,8 +575,7 @@ void HD63484::docpy16(int opcode, int src, int *dst, int _ax, int _ay)
 					break;
 				}
 				ay++;
-			}
-			else {
+			} else {
 				src = (src - (MWR1 & 0xfff) - ax) & ADDR_MASK;
 				*dst = (*dst + dstep2) & ADDR_MASK;
 				if(ay == 0) {
@@ -707,8 +643,7 @@ void HD63484::dot(int x, int y, int opm, uint16 color)
 	if(x >= 0) {
 		x_int = x / (16 / bpp);
 		x_mod = x % (16 / bpp);
-	}
-	else {
+	} else {
 		x_int = x / (16 / bpp);
 		x_mod = -1 * (x % (16 / bpp));
 		if(x_mod) {
@@ -792,8 +727,7 @@ int HD63484::get_pixel(int x, int y)
 	if(x >= 0) {
 		x_int = x / (16 / bpp);
 		x_mod = x % (16 / bpp);
-	}
-	else {
+	} else {
 		x_int = x / (16 / bpp);
 		x_mod = -1 * (x % (16 / bpp));
 		if(x_mod) {
@@ -818,8 +752,7 @@ int HD63484::get_pixel_ptn(int x, int y)
 	if(x >= 0) {
 		x_int = x / (16 / bpp);
 		x_mod = x % (16 / bpp);
-	}
-	else {
+	} else {
 		x_int = x / (16 / bpp);
 		x_mod = -1 * (x % (16 / bpp));
 		if(x_mod) {
@@ -832,8 +765,7 @@ int HD63484::get_pixel_ptn(int x, int y)
 	
 	if((pattern[dst] & bitmask_shifted) >> (x_mod * bpp)) {
 		return 1;
-	}
-	else {
+	} else {
 		return 0;
 	}
 }
@@ -866,8 +798,7 @@ void HD63484::agcpy(int opcode, int src_x, int src_y, int dst_x, int dst_y, int1
 		src_step1_y = (_ay >= 0) ? 1 : -1;
 		src_step2_x = (_ax >= 0) ? 1 : -1;
 		src_step2_y = -ay;
-	}
-	else {
+	} else {
 		switch(opcode & 0x700) {
 		case 0x000: dst_step1_x =  1; dst_step1_y =  0; dst_step2_x = -ax_neg * ax; dst_step2_y =  1; break;
 		case 0x100: dst_step1_x =  1; dst_step1_y =  0; dst_step2_x = -ax_neg * ax; dst_step2_y = -1; break;
@@ -896,16 +827,14 @@ void HD63484::agcpy(int opcode, int src_x, int src_y, int dst_x, int dst_y, int1
 					xxd += dst_step1_x;
 					yyd += dst_step1_y;
 					ay--;
-				}
-				else {
+				} else {
 					xxs += src_step1_x;
 					yys += src_step1_y;
 					xxd += dst_step1_x;
 					yyd += dst_step1_y;
 					ay++;
 				}
-			}
-			else {
+			} else {
 				if(ax == 0) {
 					break;
 				}
@@ -915,8 +844,7 @@ void HD63484::agcpy(int opcode, int src_x, int src_y, int dst_x, int dst_y, int1
 					xxd += dst_step1_x;
 					yyd += dst_step1_y;
 					ax--;
-				}
-				else {
+				} else {
 					xxs += src_step1_x;
 					yys += src_step1_y;
 					xxd += dst_step1_x;
@@ -936,8 +864,7 @@ void HD63484::agcpy(int opcode, int src_x, int src_y, int dst_x, int dst_y, int1
 					break;
 				}
 				ax++;
-			}
-			else {
+			} else {
 				xxs += src_step2_x;
 				yys += src_step2_y;
 				xxd += dst_step2_x;
@@ -947,8 +874,7 @@ void HD63484::agcpy(int opcode, int src_x, int src_y, int dst_x, int dst_y, int1
 				}
 				ax--;
 			}
-		}
-		else {
+		} else {
 			ax = _ax;
 			if(_ay < 0) {
 				xxs += src_step2_x;
@@ -959,8 +885,7 @@ void HD63484::agcpy(int opcode, int src_x, int src_y, int dst_x, int dst_y, int1
 					break;
 				}
 				ay++;
-			}
-			else {
+			} else {
 				xxs += src_step2_x;
 				yys += src_step2_y;
 				xxd += dst_step2_x;
@@ -990,8 +915,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 	
 	if(opcode & 0x800) {
 		emu->out_debug_log(_T("HD63484 ptn not supported\n"));
-	}
-	else {
+	} else {
 		switch(opcode & 0x700) {
 			case 0x000: dst_step1_x =  1; dst_step1_y =  0; dst_step2_x = -ax_neg * ax; dst_step2_y =  1; break;
 			case 0x100: emu->out_debug_log(_T("HD63484 ptn not supported\n")); break;
@@ -1010,8 +934,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 			case 0:
 				if(getpixel) {
 					dot(xxd, yyd, opcode & 7, cl1);
-				}
-				else {
+				} else {
 					dot(xxd, yyd, opcode & 7, cl0);
 				}
 				break;
@@ -1039,16 +962,14 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 					xxd += dst_step1_x;
 					yyd += dst_step1_y;
 					ay--;
-				}
-				else {
+				} else {
 					xxs += src_step1_x;
 					yys += src_step1_y;
 					xxd += dst_step1_x;
 					yyd += dst_step1_y;
 					ay++;
 				}
-			}
-			else {
+			} else {
 				if(ax == 0) {
 					break;
 				}
@@ -1058,8 +979,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 					xxd += dst_step1_x;
 					yyd += dst_step1_y;
 					ax--;
-				}
-				else {
+				} else {
 					xxs += src_step1_x;
 					yys += src_step1_y;
 					xxd += dst_step1_x;
@@ -1077,8 +997,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 				yyd += dst_step2_y;
 				if(ax == 0) break;
 				ax++;
-			}
-			else {
+			} else {
 				xxs += src_step2_x;
 				yys += src_step2_y;
 				xxd += dst_step2_x;
@@ -1086,8 +1005,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 				if(ax == 0) break;
 				ax--;
 			}
-		}
-		else {
+		} else {
 			ax = _ax;
 			if(_ay < 0) {
 				xxs += src_step2_x;
@@ -1096,8 +1014,7 @@ void HD63484::ptn(int opcode, int src_x, int src_y, int16 _ax, int16 _ay)
 				yyd += dst_step2_y;
 				if(ay == 0) break;
 				ay++;
-			}
-			else {
+			} else {
 				xxs += src_step2_x;
 				yys += src_step2_y;
 				xxd += dst_step2_x;
@@ -1122,22 +1039,19 @@ void HD63484::line(int16 sx, int16 sy, int16 ex, int16 ey, int16 col)
 			if(ax > 0) {
 				cpx_t++;
 				ax--;
-			}
-			else {
+			} else {
 				cpx_t--;
 				ax++;
 			}
 			cpy_t = sy + ay * (cpx_t - sx) / (ex - sx);
 		}
-	}
-	else {
+	} else {
 		while(ay) {
 			dot(cpx_t, cpy_t, col & 7, cl0);
 			if(ay > 0) {
 				cpy_t++;
 				ay--;
-			}
-			else {
+			} else {
 				cpy_t--;
 				ay++;
 			}

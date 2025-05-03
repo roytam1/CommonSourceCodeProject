@@ -9,6 +9,7 @@
 */
 
 #include "i8237.h"
+#include "../fileio.h"
 
 void I8237::reset()
 {
@@ -26,8 +27,7 @@ void I8237::write_io8(uint32 addr, uint32 data)
 	case 0x00: case 0x02: case 0x04: case 0x06:
 		if(low_high) {
 			dma[ch].bareg = (dma[ch].bareg & 0xff) | (data << 8);
-		}
-		else {
+		} else {
 			dma[ch].bareg = (dma[ch].bareg & 0xff00) | data;
 		}
 		dma[ch].areg = dma[ch].bareg;
@@ -36,8 +36,7 @@ void I8237::write_io8(uint32 addr, uint32 data)
 	case 0x01: case 0x03: case 0x05: case 0x07:
 		if(low_high) {
 			dma[ch].bcreg = (dma[ch].bcreg & 0xff) | (data << 8);
-		}
-		else {
+		} else {
 			dma[ch].bcreg = (dma[ch].bcreg & 0xff00) | data;
 		}
 		dma[ch].creg = dma[ch].bcreg;
@@ -56,8 +55,7 @@ void I8237::write_io8(uint32 addr, uint32 data)
 				do_dma();
 #endif
 			}
-		}
-		else {
+		} else {
 			req &= ~bit;
 		}
 		break;
@@ -65,8 +63,7 @@ void I8237::write_io8(uint32 addr, uint32 data)
 		// single mask register
 		if(data & 4) {
 			mask |= bit;
-		}
-		else {
+		} else {
 			mask &= ~bit;
 		}
 		break;
@@ -101,8 +98,7 @@ uint32 I8237::read_io8(uint32 addr)
 	case 0x00: case 0x02: case 0x04: case 0x06:
 		if(low_high) {
 			val = dma[ch].areg >> 8;
-		}
-		else {
+		} else {
 			val = dma[ch].areg & 0xff;
 		}
 		low_high = !low_high;
@@ -110,8 +106,7 @@ uint32 I8237::read_io8(uint32 addr)
 	case 0x01: case 0x03: case 0x05: case 0x07:
 		if(low_high) {
 			val = dma[ch].creg >> 8;
-		}
-		else {
+		} else {
 			val = dma[ch].creg & 0xff;
 		}
 		low_high = !low_high;
@@ -139,16 +134,13 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 				do_dma();
 #endif
 			}
-		}
-		else {
+		} else {
 			req &= ~bit;
 		}
-	}
-	else if(SIG_I8237_BANK0 <= id && id <= SIG_I8237_BANK3) {
+	} else if(SIG_I8237_BANK0 <= id && id <= SIG_I8237_BANK3) {
 		// external bank registers
 		dma[id & 3].bankreg = data & mask;
-	}
-	else if(SIG_I8237_MASK0 <= id && id <= SIG_I8237_MASK3) {
+	} else if(SIG_I8237_MASK0 <= id && id <= SIG_I8237_MASK3) {
 		// external bank registers
 		dma[id & 3].incmask = data & mask;
 	}
@@ -165,13 +157,11 @@ void I8237::do_dma()
 			while(req & bit) {
 				if((dma[ch].mode & 0x0c) == 0) {
 					// verify
-				}
-				else if((dma[ch].mode & 0x0c) == 4) {
+				} else if((dma[ch].mode & 0x0c) == 4) {
 					// io -> memory
 					tmp = read_io(ch);
 					write_mem(dma[ch].areg | (dma[ch].bankreg << 16), tmp);
-				}
-				else if((dma[ch].mode & 0x0c) == 8) {
+				} else if((dma[ch].mode & 0x0c) == 8) {
 					// memory -> io
 					tmp = read_mem(dma[ch].areg | (dma[ch].bankreg << 16));
 					write_io(ch, tmp);
@@ -181,8 +171,7 @@ void I8237::do_dma()
 					if(dma[ch].areg == 0xffff) {
 						dma[ch].bankreg = (dma[ch].bankreg & ~dma[ch].incmask) | ((dma[ch].bankreg - 1) & dma[ch].incmask);
 					}
-				}
-				else {
+				} else {
 					dma[ch].areg++;
 					if(dma[ch].areg == 0) {
 						dma[ch].bankreg = (dma[ch].bankreg & ~dma[ch].incmask) | ((dma[ch].bankreg + 1) & dma[ch].incmask);
@@ -196,19 +185,17 @@ void I8237::do_dma()
 						// self initialize
 						dma[ch].areg = dma[ch].bareg;
 						dma[ch].creg = dma[ch].bcreg;
-					}
-					else {
+					} else {
 						mask |= bit;
 					}
 					req &= ~bit;
 					tc |= bit;
-				}
 #ifdef SINGLE_MODE_DMA
-				else if((dma[ch].mode & 0xc0) == 0x40) {
+				} else if((dma[ch].mode & 0xc0) == 0x40) {
 					// single mode
 					break;
-				}
 #endif
+				}
 			}
 		}
 	}
@@ -223,8 +210,7 @@ void I8237::write_mem(uint32 addr, uint32 data)
 {
 	if(mode_word) {
 		d_mem->write_dma_data16(addr << 1, data);
-	}
-	else {
+	} else {
 		d_mem->write_dma_data8(addr, data);
 	}
 }
@@ -233,8 +219,7 @@ uint32 I8237::read_mem(uint32 addr)
 {
 	if(mode_word) {
 		return d_mem->read_dma_data16(addr << 1);
-	}
-	else {
+	} else {
 		return d_mem->read_dma_data8(addr);
 	}
 }
@@ -243,8 +228,7 @@ void I8237::write_io(int ch, uint32 data)
 {
 	if(mode_word) {
 		dma[ch].dev->write_dma_io16(0, data);
-	}
-	else {
+	} else {
 		dma[ch].dev->write_dma_io8(0, data);
 	}
 }
@@ -253,9 +237,60 @@ uint32 I8237::read_io(int ch)
 {
 	if(mode_word) {
 		return dma[ch].dev->read_dma_io16(0);
-	}
-	else {
+	} else {
 		return dma[ch].dev->read_dma_io8(0);
 	}
+}
+
+#define STATE_VERSION	1
+
+void I8237::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	for(int i = 0; i < 4; i++) {
+		state_fio->FputUint16(dma[i].areg);
+		state_fio->FputUint16(dma[i].creg);
+		state_fio->FputUint16(dma[i].bareg);
+		state_fio->FputUint16(dma[i].bcreg);
+		state_fio->FputUint8(dma[i].mode);
+		state_fio->FputUint16(dma[i].bankreg);
+		state_fio->FputUint16(dma[i].incmask);
+	}
+	state_fio->FputBool(low_high);
+	state_fio->FputUint8(cmd);
+	state_fio->FputUint8(req);
+	state_fio->FputUint8(mask);
+	state_fio->FputUint8(tc);
+	state_fio->FputUint32(tmp);
+	state_fio->FputBool(mode_word);
+}
+
+bool I8237::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	for(int i = 0; i < 4; i++) {
+		dma[i].areg = state_fio->FgetUint16();
+		dma[i].creg = state_fio->FgetUint16();
+		dma[i].bareg = state_fio->FgetUint16();
+		dma[i].bcreg = state_fio->FgetUint16();
+		dma[i].mode = state_fio->FgetUint8();
+		dma[i].bankreg = state_fio->FgetUint16();
+		dma[i].incmask = state_fio->FgetUint16();
+	}
+	low_high = state_fio->FgetBool();
+	cmd = state_fio->FgetUint8();
+	req = state_fio->FgetUint8();
+	mask = state_fio->FgetUint8();
+	tc = state_fio->FgetUint8();
+	tmp = state_fio->FgetUint32();
+	mode_word = state_fio->FgetBool();
+	return true;
 }
 

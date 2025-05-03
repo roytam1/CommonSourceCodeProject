@@ -52,8 +52,7 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 						color_mask = ((regs[3] & 0x7f) * 8) | 7;
 						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
 						pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
-					}
-					else {
+					} else {
 						color_table = (regs[3] * 64) & ADDR_MASK;
 						pattern_table = (regs[4] * 2048) & ADDR_MASK;
 					}
@@ -71,8 +70,7 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 					if(regs[0] & 2) {
 						color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
 						color_mask = ((regs[3] & 0x7f) * 8) | 7;
-					}
-					else {
+					} else {
 						color_table = (regs[3] * 64) & ADDR_MASK;
 					}
 					pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
@@ -82,8 +80,7 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 					if(regs[0] & 2) {
 						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
 						pattern_mask = ((regs[4] & 3) * 256) | 255;
-					}
-					else {
+					} else {
 						pattern_table = (regs[4] * 2048) & ADDR_MASK;
 					}
 					break;
@@ -99,21 +96,18 @@ void TMS9918A::write_io8(uint32 addr, uint32 data)
 					regs[7] = first_byte;
 					break;
 				}
-			}
-			else {
+			} else {
 				vram_addr = ((data * 256) | first_byte) & ADDR_MASK;
 				if(!(data & 0x40)) {
 					read_io8(0);	// read ahead
 				}
 			}
 			latch = false;
-		}
-		else {
+		} else {
 			first_byte = data;
 			latch = true;
 		}
-	}
-	else {
+	} else {
 		// vram
 		vram[vram_addr] = data;
 		vram_addr = (vram_addr + 1) & ADDR_MASK;
@@ -131,8 +125,7 @@ uint32 TMS9918A::read_io8(uint32 addr)
 		set_intstat(false);
 		latch = false;
 		return val;
-	}
-	else {
+	} else {
 		// vram
 		uint8 val = read_ahead;
 		read_ahead = vram[vram_addr];
@@ -237,8 +230,7 @@ void TMS9918A::event_vline(int v, int clock)
 			if((regs[1] & 0x50) == 0x40) {
 				draw_sprites();
 			}
-		}
-		else {
+		} else {
 			memset(screen, 0, sizeof(screen));
 		}
 		
@@ -435,8 +427,7 @@ void TMS9918A::draw_sprites()
 		}
 		if(y > 208) {
 			y = -(~y & 0xff);
-		}
-		else {
+		} else {
 			y++;
 		}
 		int x = *attrib_ptr++;
@@ -459,8 +450,7 @@ void TMS9918A::draw_sprites()
 					if(yy < illegal_sprite_line) {
 						illegal_sprite_line = yy;
 						illegal_sprite = p;
-					}
-					else if(illegal_sprite_line == yy) {
+					} else if(illegal_sprite_line == yy) {
 						if(illegal_sprite > p) {
 							illegal_sprite = p;
 						}
@@ -468,8 +458,7 @@ void TMS9918A::draw_sprites()
 #ifdef TMS9918A_LIMIT_SPRITES
 					continue;
 #endif
-				}
-				else {
+				} else {
 					limit[yy]--;
 				}
 				uint16 line = pattern_ptr[yy - y] * 256 + pattern_ptr[yy - y + 16];
@@ -478,8 +467,7 @@ void TMS9918A::draw_sprites()
 						if(0 <= xx && xx < 256) {
 							if(collision[yy][xx]) {
 								status_reg |= 0x20;
-							}
-							else {
+							} else {
 								collision[yy][xx] = 1;
 							}
 							if(c && !(collision[yy][xx] & 2)) {
@@ -491,8 +479,7 @@ void TMS9918A::draw_sprites()
 					line *= 2;
 				}
 			}
-		}
-		else {
+		} else {
 			// draw enlarged sprite
 			for(int i = 0; i < size; i++) {
 				int yy = y + i * 2;
@@ -504,8 +491,7 @@ void TMS9918A::draw_sprites()
 							if(yy < illegal_sprite_line) {
 								illegal_sprite_line = yy;
 								 illegal_sprite = p;
-							}
-							else if(illegal_sprite_line == yy) {
+							} else if(illegal_sprite_line == yy) {
 								if(illegal_sprite > p) {
 									illegal_sprite = p;
 								}
@@ -513,8 +499,7 @@ void TMS9918A::draw_sprites()
 #ifdef TMS9918A_LIMIT_SPRITES
 							continue;
 #endif
-						}
-						else {
+						} else {
 							limit[yy]--;
 						}
 						uint16 line = line2;
@@ -523,8 +508,7 @@ void TMS9918A::draw_sprites()
 								if(0 <= xx && xx < 256) {
 									if(collision[yy][xx]) {
 										status_reg |= 0x20;
-									}
-									else {
+									} else {
 										collision[yy][xx] = 1;
 									}
 									if(c && !(collision[yy][xx] & 2)) {
@@ -535,8 +519,7 @@ void TMS9918A::draw_sprites()
 								if(0 <= xx + 1 && xx + 1 < 256) {
 									if(collision[yy][xx + 1]) {
 										status_reg |= 0x20;
-									}
-									else {
+									} else {
 										collision[yy][xx + 1] = 1;
 									}
 									if(c && !(collision[yy][xx + 1] & 2)) {
@@ -555,8 +538,7 @@ void TMS9918A::draw_sprites()
 	}
 	if(illegal_sprite_line == 255) {
 		status_reg |= (p > 31) ? 31 : p;
-	}
-	else {
+	} else {
 		status_reg |= 0x40 + illegal_sprite;
 	}
 }

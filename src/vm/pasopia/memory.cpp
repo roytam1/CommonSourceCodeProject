@@ -16,14 +16,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -68,8 +66,7 @@ void MEMORY::load_ipl()
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(rom, sizeof(rom), 1);
 		fio->Fclose();
-	}
-	else {
+	} else {
 		// old bios file name
 		if(fio->Fopen(emu->bios_path(_T("TBASIC.ROM")), FILEIO_READ_BINARY)) {
 			fio->Fread(rom, sizeof(rom), 1);
@@ -106,8 +103,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	}
 	if(memmap & 2) {
 		SET_BANK(0x0000, 0x7fff, ram, ram);
-	}
-	else {
+	} else {
 		SET_BANK(0x0000, 0x7fff, ram, rom);
 	}
 	// to 8255-2 port-c, bit2
@@ -128,11 +124,9 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 		d_pio0->write_signal(SIG_I8255_PORT_C, vram[vram_ptr & 0x3fff], 0xff);
 		// to 8255-1 port-b, bit7
 		d_pio1->write_signal(SIG_I8255_PORT_B, attr[vram_ptr & 0x3fff] ? 0x80 : 0, 0x80);
-	}
-	else if(id == SIG_MEMORY_I8255_0_B) {
+	} else if(id == SIG_MEMORY_I8255_0_B) {
 		vram_data = data & 0xff;
-	}
-	else if(id == SIG_MEMORY_I8255_1_C) {
+	} else if(id == SIG_MEMORY_I8255_1_C) {
 		// bit6 of high byte: 0=write, 1=read
 		vram_ptr = (vram_ptr & 0x00ff) | ((data & 0xff) << 8);
 		if(!(vram_ptr & 0x4000)) {

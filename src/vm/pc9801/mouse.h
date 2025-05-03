@@ -41,8 +41,10 @@ public:
 	void event_callback(int event_id, int err);
 	void event_frame();
 	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
-	// unique function
+	// unique functions
 	void set_context_pic(DEVICE* device)
 	{
 		d_pic = device;

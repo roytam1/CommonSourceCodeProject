@@ -35,14 +35,11 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 		// drive select register
 		if(data & 1) {
 			nextdrv = 0;
-		}
-		else if(data & 2) {
+		} else if(data & 2) {
 			nextdrv = 1;
-		}
-		else if(data & 4) {
+		} else if(data & 4) {
 			nextdrv = 2;
-		}
-		else if(data & 8) {
+		} else if(data & 8) {
 			nextdrv = 3;
 		}
 		if(drvsel != nextdrv) {

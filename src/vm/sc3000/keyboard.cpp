@@ -63,8 +63,7 @@ void KEYBOARD::update_keyboard()
 				data |= (1 << i);
 			}
 		}
-	}
-	else {
+	} else {
 		// joystick
 		for(int i = 0; i < 12; i++) {
 			uint8 map = key_map[7][i];

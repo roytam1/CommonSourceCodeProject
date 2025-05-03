@@ -33,8 +33,7 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CMT_REMOTE) {
 		remote = ((data & mask) != 0);
-	}
-	else if(id == SIG_CMT_OUT) {
+	} else if(id == SIG_CMT_OUT) {
 		if(rec && remote) {
 			// recv from sio
 			buffer[bufcnt++] = data & mask;

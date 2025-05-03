@@ -59,8 +59,7 @@ void CMT::event_frame()
 	if(remote) {
 		if(now_acc) {
 			framecnt = 0;
-		}
-		else if(++framecnt >= FRAMES_PER_SEC) {
+		} else if(++framecnt >= FRAMES_PER_SEC) {
 			// motor off if not accessed for past 1 sec
 			d_drec->write_signal(SIG_DATAREC_REMOTE, 0, 1);
 			remote = false;

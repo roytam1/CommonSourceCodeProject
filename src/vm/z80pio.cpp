@@ -325,67 +325,67 @@ void Z80PIO::intr_reti()
 
 #define STATE_VERSION	1
 
-void Z80PIO::save_state(FILEIO* fio)
+void Z80PIO::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
 	for(int i = 0; i < 2; i++) {
-		fio->FputUint32(port[i].wreg);
-		fio->FputUint8(port[i].rreg);
-		fio->FputUint8(port[i].mode);
-		fio->FputUint8(port[i].ctrl1);
-		fio->FputUint8(port[i].ctrl2);
-		fio->FputUint8(port[i].dir);
-		fio->FputUint8(port[i].mask);
-		fio->FputUint8(port[i].vector);
-		fio->FputBool(port[i].set_dir);
-		fio->FputBool(port[i].set_mask);
-		fio->FputBool(port[i].hand_shake);
-		fio->FputInt32(port[i].ready_signal);
-		fio->FputBool(port[i].input_empty);
-		fio->FputBool(port[i].output_ready);
-		fio->FputBool(port[i].enb_intr);
-		fio->FputBool(port[i].enb_intr_tmp);
-		fio->FputBool(port[i].req_intr);
-		fio->FputBool(port[i].in_service);
+		state_fio->FputUint32(port[i].wreg);
+		state_fio->FputUint8(port[i].rreg);
+		state_fio->FputUint8(port[i].mode);
+		state_fio->FputUint8(port[i].ctrl1);
+		state_fio->FputUint8(port[i].ctrl2);
+		state_fio->FputUint8(port[i].dir);
+		state_fio->FputUint8(port[i].mask);
+		state_fio->FputUint8(port[i].vector);
+		state_fio->FputBool(port[i].set_dir);
+		state_fio->FputBool(port[i].set_mask);
+		state_fio->FputBool(port[i].hand_shake);
+		state_fio->FputInt32(port[i].ready_signal);
+		state_fio->FputBool(port[i].input_empty);
+		state_fio->FputBool(port[i].output_ready);
+		state_fio->FputBool(port[i].enb_intr);
+		state_fio->FputBool(port[i].enb_intr_tmp);
+		state_fio->FputBool(port[i].req_intr);
+		state_fio->FputBool(port[i].in_service);
 	}
-	fio->FputBool(iei);
-	fio->FputBool(oei);
-	fio->FputUint32(intr_bit);
+	state_fio->FputBool(iei);
+	state_fio->FputBool(oei);
+	state_fio->FputUint32(intr_bit);
 }
 
-bool Z80PIO::load_state(FILEIO* fio)
+bool Z80PIO::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
 	for(int i = 0; i < 2; i++) {
-		port[i].wreg = fio->FgetUint32();
-		port[i].rreg = fio->FgetUint8();
-		port[i].mode = fio->FgetUint8();
-		port[i].ctrl1 = fio->FgetUint8();
-		port[i].ctrl2 = fio->FgetUint8();
-		port[i].dir = fio->FgetUint8();
-		port[i].mask = fio->FgetUint8();
-		port[i].vector = fio->FgetUint8();
-		port[i].set_dir = fio->FgetBool();
-		port[i].set_mask = fio->FgetBool();
-		port[i].hand_shake = fio->FgetBool();
-		port[i].ready_signal = fio->FgetInt32();
-		port[i].input_empty = fio->FgetBool();
-		port[i].output_ready = fio->FgetBool();
-		port[i].enb_intr = fio->FgetBool();
-		port[i].enb_intr_tmp = fio->FgetBool();
-		port[i].req_intr = fio->FgetBool();
-		port[i].in_service = fio->FgetBool();
+		port[i].wreg = state_fio->FgetUint32();
+		port[i].rreg = state_fio->FgetUint8();
+		port[i].mode = state_fio->FgetUint8();
+		port[i].ctrl1 = state_fio->FgetUint8();
+		port[i].ctrl2 = state_fio->FgetUint8();
+		port[i].dir = state_fio->FgetUint8();
+		port[i].mask = state_fio->FgetUint8();
+		port[i].vector = state_fio->FgetUint8();
+		port[i].set_dir = state_fio->FgetBool();
+		port[i].set_mask = state_fio->FgetBool();
+		port[i].hand_shake = state_fio->FgetBool();
+		port[i].ready_signal = state_fio->FgetInt32();
+		port[i].input_empty = state_fio->FgetBool();
+		port[i].output_ready = state_fio->FgetBool();
+		port[i].enb_intr = state_fio->FgetBool();
+		port[i].enb_intr_tmp = state_fio->FgetBool();
+		port[i].req_intr = state_fio->FgetBool();
+		port[i].in_service = state_fio->FgetBool();
 	}
-	iei = fio->FgetBool();
-	oei = fio->FgetBool();
-	intr_bit = fio->FgetUint32();
+	iei = state_fio->FgetBool();
+	oei = state_fio->FgetBool();
+	intr_bit = state_fio->FgetUint32();
 	return true;
 }
 

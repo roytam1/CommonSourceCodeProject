@@ -89,13 +89,11 @@ void SASI::write_io8(uint32 addr, uint32 data)
 			if(cmd_ptr == 6) {
 				check_cmd();
 			}
-		}
-		else if(phase == PHASE_C2) {
+		} else if(phase == PHASE_C2) {
 			if(++status_ptr == 10) {
 				set_status(0);
 			}
-		}
-		else if(phase == PHASE_WRITE) {
+		} else if(phase == PHASE_WRITE) {
 			buffer[buffer_ptr++] = data;
 			if(buffer_ptr == 256) {
 				flush(unit);
@@ -106,8 +104,7 @@ void SASI::write_io8(uint32 addr, uint32 data)
 						set_status(0x0f);
 						set_drq(false);
 					}
-				}
-				else {
+				} else {
 					set_status(0);
 					set_drq(false);
 				}
@@ -148,28 +145,24 @@ uint32 SASI::read_io8(uint32 addr)
 						set_status(0x0f);
 						set_drq(false);
 					}
-				}
-				else {
+				} else {
 					set_status(0);
 					set_drq(false);
 				}
 			}
-		}
-		else if(phase == PHASE_SENSE) {
+		} else if(phase == PHASE_SENSE) {
 			val = status_buf[status_ptr++];
 			if(status_ptr == 4) {
 				set_status(0);
 			}
-		}
-		else if(phase == PHASE_STATUS) {
+		} else if(phase == PHASE_STATUS) {
 //			val = error ? 0x02 : status;
 //			phase = PHASE_MESSAGE;
 			val = (error ? 2 : 0) | (unit << 5);
 			phase = PHASE_FREE;
-		}
-//		else if(phase == PHASE_MESSAGE) {
+//		} else if(phase == PHASE_MESSAGE) {
 //			phase = PHASE_FREE;
-//		}
+		}
 		return val;
 	case 0x1f1:
 		// status
@@ -224,8 +217,7 @@ void SASI::event_callback(int event_id, int err)
 	if(event_id == EVENT_COMMAND) {
 		phase = PHASE_COMMAND;
 		cmd_ptr = 0;
-	}
-	else if(event_id == EVENT_STATUS) {
+	} else if(event_id == EVENT_STATUS) {
 		phase = PHASE_STATUS;
 		// raise irq
 		if(maskreg & 2) {
@@ -249,8 +241,7 @@ void SASI::check_cmd()
 		if(drive[unit].fio != NULL) {
 			status = 0x00;
 			set_status(0x00);
-		}
-		else {
+		} else {
 			status = 0x02;
 			set_status(0x7f);
 		}
@@ -261,8 +252,7 @@ void SASI::check_cmd()
 			sector = 0;
 			status = 0x00;
 			set_status(0x00);
-		}
-		else {
+		} else {
 			status = 0x02;
 			set_status(0x7f);
 		}
@@ -293,8 +283,7 @@ void SASI::check_cmd()
 		status = 0;
 		if(format(unit)) {
 			set_status(0);
-		}
-		else {
+		} else {
 			set_status(0x0f);
 		}
 		break;
@@ -309,8 +298,7 @@ void SASI::check_cmd()
 			phase = PHASE_READ;
 			buffer_ptr = 0;
 			set_drq(true);
-		}
-		else {
+		} else {
 			set_status(0x0f);
 		}
 		break;
@@ -325,8 +313,7 @@ void SASI::check_cmd()
 			buffer_ptr = 0;
 			memset(buffer, 0, sizeof(buffer));
 			set_drq(true);
-		}
-		else {
+		} else {
 			set_status(0x0f);
 		}
 		break;
@@ -361,8 +348,7 @@ void SASI::set_drq(bool flag)
 {
 	if(flag) {
 		status_irq_drq |= STATUS_DRQ;
-	}
-	else {
+	} else {
 		status_irq_drq &= ~STATUS_DRQ;
 	}
 }

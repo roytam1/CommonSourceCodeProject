@@ -76,8 +76,7 @@ void DISPLAY::draw_screen()
 		uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
 		if((regs[8] & 0xc0) == 0xc0) {
 			cursor = -1;
-		}
-		else {
+		} else {
 			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
 		}
 		
@@ -110,8 +109,7 @@ void DISPLAY::draw_screen()
 			draw_screen15_normal(src);
 			break;
 		}
-	}
-	else {
+	} else {
 		memset(screen, 0, sizeof(screen));
 	}
 	
@@ -127,8 +125,7 @@ void DISPLAY::draw_screen()
 		}
 		if(scanline) {
 			memset(dest1, 0, 640 * sizeof(scrntype));
-		}
-		else {
+		} else {
 			memcpy(dest1, dest0, 640 * sizeof(scrntype));
 		}
 	}
@@ -269,8 +266,7 @@ void DISPLAY::draw_screen1_normal(uint16 src)
 						c_l = (p >> 4) & 7;
 						c_r = p & 7;
 						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
-					}
-					else {
+					} else {
 						p = 0;
 					}
 				}
@@ -342,8 +338,7 @@ void DISPLAY::draw_screen1_wide(uint16 src)
 						c_l = (p >> 4) & 7;
 						c_r = p & 7;
 						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
-					}
-					else {
+					} else {
 						p = 0;
 					}
 				}
@@ -540,8 +535,7 @@ void DISPLAY::draw_screen15_normal(uint16 src)
 						c_l = (p >> 4) & 7;
 						c_r = p & 7;
 						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
-					}
-					else {
+					} else {
 						p = 0;
 					}
 				}
@@ -612,8 +606,7 @@ void DISPLAY::draw_screen15_wide(uint16 src)
 						c_l = (p >> 4) & 7;
 						c_r = p & 7;
 						p = (p & 0xf0 ? 0xf0 : 0) | (p & 0x0f ? 0x0f : 0);
-					}
-					else {
+					} else {
 						p = 0;
 					}
 				}

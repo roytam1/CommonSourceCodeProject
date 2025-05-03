@@ -17,14 +17,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x80 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x80 * (i - sb); \
 		} \
 	} \
@@ -81,8 +79,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	}
 	if((addr & 0xfe00) == 0x3400) {
 		wbank[0x68][addr & 3] = data;
-	}
-	else {
+	} else {
 		wbank[addr >> 7][addr & 0x7f] = data;
 	}
 }
@@ -141,8 +138,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		save_path[len - 3] = _T('S');
 		save_path[len - 2] = _T('A');
 		save_path[len - 1] = _T('V');
-	}
-	else {
+	} else {
 		_stprintf(save_path, _T("%s.SAV"), file_path);
 	}
 	
@@ -164,8 +160,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		// load rom image, PC5=1, PC6=0
 		if(header.ctype == 0) {
 			fio->Fread(cart + 0xe000, 0x2000, 1);
-		}
-		else if(header.ctype == 2) {
+		} else if(header.ctype == 2) {
 			fio->Fread(cart + 0x8000, 0x8000, 1);
 		}
 		memcpy(cart + 0x10000, cart, 0x10000);
@@ -173,8 +168,7 @@ void MEMORY::open_cart(_TCHAR* file_path)
 		// load rom image, PC5=0/1, PC6=1
 		if(header.ctype == 2) {
 			fio->Fread(cart + 0x10000, 0x10000, 1);
-		}
-		else if(header.ctype == 3) {
+		} else if(header.ctype == 3) {
 			fio->Fread(cart + 0x10000, 0x8000, 1);
 			memcpy(cart + 0x18000, cart + 0x10000, 0x8000);
 		}

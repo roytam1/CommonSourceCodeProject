@@ -92,27 +92,27 @@ void FLOPPY::event_callback(int event_id, int err)
 
 #define STATE_VERSION	1
 
-void FLOPPY::save_state(FILEIO* fio)
+void FLOPPY::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputInt32(prev);
-	fio->FputBool(motor_on);
-	fio->FputInt32(register_id);
+	state_fio->FputInt32(prev);
+	state_fio->FputBool(motor_on);
+	state_fio->FputInt32(register_id);
 }
 
-bool FLOPPY::load_state(FILEIO* fio)
+bool FLOPPY::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	prev = fio->FgetInt32();
-	motor_on = fio->FgetBool();
-	register_id = fio->FgetInt32();
+	prev = state_fio->FgetInt32();
+	motor_on = state_fio->FgetBool();
+	register_id = state_fio->FgetInt32();
 	return true;
 }
 

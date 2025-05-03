@@ -15,14 +15,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x2000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x2000 * (i - sb); \
 		} \
 	} \
@@ -85,8 +83,7 @@ void MEMORY::set_bank(uint32 val)
 {
 	if(val & 1) {
 		SET_BANK(0x0000, 0xffff, ram, ram);
-	}
-	else {
+	} else {
 		SET_BANK(0x0000, 0x7fff, wdmy, sys);
 		SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
 	}

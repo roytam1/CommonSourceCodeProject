@@ -622,7 +622,47 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\ls244.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\memory.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\not.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -851,26 +891,6 @@
 				Name="VM Driver Source Files"
 				Filter="cpp"
 				>
-				<File
-					RelativePath="src\vm\pc9801\cmt.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
 				<File
 					RelativePath="src\vm\pc9801\display.cpp"
 					>
@@ -1195,10 +1215,6 @@
 				Name="VM Driver Header Files"
 				Filter="h"
 				>
-				<File
-					RelativePath="src\vm\pc9801\cmt.h"
-					>
-				</File>
 				<File
 					RelativePath="src\vm\pc9801\display.h"
 					>

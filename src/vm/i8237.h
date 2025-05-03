@@ -36,7 +36,7 @@ private:
 	DEVICE* d_dma;
 #endif
 	
-	typedef struct {
+	struct {
 		DEVICE* dev;
 		uint16 areg;
 		uint16 creg;
@@ -46,8 +46,7 @@ private:
 		// external bank
 		uint16 bankreg;
 		uint16 incmask;
-	} dma_t;
-	dma_t dma[4];
+	} dma[4];
 	
 	bool low_high;
 	uint8 cmd;
@@ -82,6 +81,8 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void do_dma();
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_memory(DEVICE* device)

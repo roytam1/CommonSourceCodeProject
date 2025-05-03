@@ -77,23 +77,23 @@ void KEYBOARD::create_keystat()
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* fio)
+void KEYBOARD::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputUint8(column);
+	state_fio->FputUint8(column);
 }
 
-bool KEYBOARD::load_state(FILEIO* fio)
+bool KEYBOARD::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	column = fio->FgetUint8();
+	column = state_fio->FgetUint8();
 	return true;
 }
 

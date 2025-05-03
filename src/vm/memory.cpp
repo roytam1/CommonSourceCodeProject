@@ -25,8 +25,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 	
 	if(read_table[bank].dev != NULL) {
 		return read_table[bank].dev->read_memory_mapped_io8(addr);
-	}
-	else {
+	} else {
 		return read_table[bank].memory[addr & BANK_MASK];
 	}
 }
@@ -37,8 +36,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	
 	if(write_table[bank].dev != NULL) {
 		write_table[bank].dev->write_memory_mapped_io8(addr, data);
-	}
-	else {
+	} else {
 		write_table[bank].memory[addr & BANK_MASK] = data;
 	}
 }
@@ -49,8 +47,7 @@ uint32 MEMORY::read_data16(uint32 addr)
 	
 	if(read_table[bank].dev != NULL) {
 		return read_table[bank].dev->read_memory_mapped_io16(addr);
-	}
-	else {
+	} else {
 		uint32 val = read_data8(addr);
 		val |= read_data8(addr + 1) << 8;
 		return val;
@@ -63,8 +60,7 @@ void MEMORY::write_data16(uint32 addr, uint32 data)
 	
 	if(write_table[bank].dev != NULL) {
 		write_table[bank].dev->write_memory_mapped_io16(addr, data);
-	}
-	else {
+	} else {
 		write_data8(addr, data & 0xff);
 		write_data8(addr + 1, (data >> 8) & 0xff);
 	}
@@ -76,8 +72,7 @@ uint32 MEMORY::read_data32(uint32 addr)
 	
 	if(read_table[bank].dev != NULL) {
 		return read_table[bank].dev->read_memory_mapped_io32(addr);
-	}
-	else {
+	} else {
 		uint32 val = read_data16(addr);
 		val |= read_data16(addr + 2) << 16;
 		return val;
@@ -90,8 +85,7 @@ void MEMORY::write_data32(uint32 addr, uint32 data)
 	
 	if(write_table[bank].dev != NULL) {
 		write_table[bank].dev->write_memory_mapped_io32(addr, data);
-	}
-	else {
+	} else {
 		write_data16(addr, data & 0xffff);
 		write_data16(addr + 2, (data >> 16) & 0xffff);
 	}

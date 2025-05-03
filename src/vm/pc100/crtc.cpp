@@ -168,8 +168,7 @@ void CRTC::write_memory_mapped_io8(uint32 addr, uint32 data)
 {
 	if(addr & 1) {
 		bush = data;
-	}
-	else {
+	} else {
 		busl = data;
 	}
 	uint32 bus = busl | (bush << 8) | (busl << 16) | (bush << 24);
@@ -183,8 +182,7 @@ void CRTC::write_memory_mapped_io8(uint32 addr, uint32 data)
 				vram[ofsh] = (vram[ofsh] & maskh) | (h & ~maskh);
 			}
 		}
-	}
-	else {
+	} else {
 		uint32 l = bus & 0xff;
 		for(int pl = 0; pl < 4; pl++) {
 			if(write_plane & (1 << pl)) {
@@ -231,12 +229,10 @@ void CRTC::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_CRTC_BITMASK_LOW) {
 		// $18: 8255 PA
 		maskl = data & 0xff;
-	}
-	else if(id == SIG_CRTC_BITMASK_HIGH) {
+	} else if(id == SIG_CRTC_BITMASK_HIGH) {
 		// $1A: 8255 PB
 		maskh = data & 0xff;
-	}
-	else if(id == SIG_CRTC_VRAM_PLANE) {
+	} else if(id == SIG_CRTC_VRAM_PLANE) {
 		// $1C: 8255 PC
 		write_plane = data & 0x0f;
 		read_plane = (data >> 4) & 3;
@@ -276,8 +272,7 @@ void CRTC::draw_screen()
 				dest[x + 7] = pat & 0x80 ? col : 0;
 			}
 		}
-	}
-	else {
+	} else {
 		// color
 		for(int y = 0; y < 512; y++) {
 			int ptr = sa & 0x1ffff;

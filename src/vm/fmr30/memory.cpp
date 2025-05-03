@@ -46,14 +46,12 @@ static const uint8 bios2[] = {
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -75,8 +73,7 @@ void MEMORY::initialize()
 	if(fio->Fopen(emu->bios_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
-	}
-	else {
+	} else {
 		// load pseudo ipl
 		memcpy(ipl + 0xc000, bios1, sizeof(bios1));
 		memcpy(ipl + 0xfff0, bios2, sizeof(bios2));
@@ -189,11 +186,9 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		kj_row = 0;
 		if(kj_h < 0x30) {
 			kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10);
-		}
-		else if(kj_h < 0x70) {
+		} else if(kj_h < 0x70) {
 			kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) + (((kj_l - 0x20) & 0x60) <<  9) + (((kj_h - 0x00) & 0x0f) << 10) + (((kj_h - 0x30) & 0x70) * 0xc00) + 0x08000;
-		}
-		else {
+		} else {
 			kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10) | 0x38000;
 		}
 		break;
@@ -257,15 +252,13 @@ void MEMORY::update_bank()
 		SET_BANK(0xc0000, 0xc7fff, vram + bank, vram + bank);
 		SET_BANK(0xc8000, 0xc8fff, cvram, cvram);
 		SET_BANK(0xca000, 0xcafff, kvram, kvram);
-	}
-	else {
+	} else {
 		SET_BANK(0xc0000, 0xcffff, ram + 0xc0000, ram + 0xc0000);
 	}
 	if(!(mcr1 & 1)) {
 		// $f000-$ffff: rom
 		SET_BANK(0xf0000, 0xfffff, wdmy, ipl);
-	}
-	else {
+	} else {
 		SET_BANK(0xf0000, 0xfffff, ram + 0xf0000, ram + 0xf0000);
 	}
 }
@@ -278,8 +271,7 @@ void MEMORY::draw_screen()
 	if(dcr1 & 2) {
 		if(dcr1 & 8) {
 			draw_text40();
-		}
-		else {
+		} else {
 			draw_text80();
 		}
 	}
@@ -331,11 +323,9 @@ void MEMORY::draw_text40()
 				int ofs;
 				if(h < 0x30) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10);
-				}
-				else if(h < 0x70) {
+				} else if(h < 0x70) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) + (((l - 0x20) & 0x60) <<  9) + (((h - 0x00) & 0x0f) << 10) + (((h - 0x30) & 0x70) * 0xc00) + 0x08000;
-				}
-				else {
+				} else {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
 				}
 				
@@ -369,8 +359,7 @@ void MEMORY::draw_text40()
 				}
 				src = (src + 2) & 0xfff;
 				x++;
-			}
-			else {
+			} else {
 				for(int l = 0; l < 16 && l < yofs; l++) {
 					uint8 pat = ank16[(code << 4) + l];
 					pat = blnk ? 0 : rev ? ~pat : pat;
@@ -432,11 +421,9 @@ void MEMORY::draw_text80()
 				int ofs;
 				if(h < 0x30) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10);
-				}
-				else if(h < 0x70) {
+				} else if(h < 0x70) {
 					ofs = (((l - 0x00) & 0x1f) <<  5) + (((l - 0x20) & 0x60) <<  9) + (((h - 0x00) & 0x0f) << 10) + (((h - 0x30) & 0x70) * 0xc00) + 0x08000;
-				}
-				else {
+				} else {
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
 				}
 				
@@ -470,8 +457,7 @@ void MEMORY::draw_text80()
 				}
 				src = (src + 2) & 0xfff;
 				x++;
-			}
-			else {
+			} else {
 				for(int l = 0; l < 16 && l < yofs; l++) {
 					uint8 pat = ank16[(code << 4) + l];
 					pat = blnk ? 0 : rev ? ~pat : pat;

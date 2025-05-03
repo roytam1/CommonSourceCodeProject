@@ -428,8 +428,7 @@ void MC6847::draw_alpha()
 				int col = (css2 ? 2 : 0) | (inv2 ? 1 : 0);
 				col_fore = color_table[col];
 				col_back = color_table[col ^ 1];
-			}
-			else {
+			} else {
 				if(intext2) {
 					// semiggraphics 6
 					pattern = &sg6[12 * (data & 0x3f)];

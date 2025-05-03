@@ -265,47 +265,47 @@ void SUB::update_intr()
 
 #define STATE_VERSION	1
 
-void SUB::save_state(FILEIO* fio)
+void SUB::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->FputUint8(p1_out);
-	fio->FputUint8(p1_in);
-	fio->FputUint8(p2_out);
-	fio->FputUint8(p2_in);
-	fio->FputUint8(portc);
-	fio->FputBool(tape_play);
-	fio->FputBool(tape_rec);
-	fio->FputBool(tape_eot);
-	fio->FputBool(tape_apss);
-	fio->FputBool(intr);
-	fio->FputBool(obf);
-	fio->FputBool(iei);
-	fio->FputUint32(intr_bit);
+	state_fio->FputUint8(p1_out);
+	state_fio->FputUint8(p1_in);
+	state_fio->FputUint8(p2_out);
+	state_fio->FputUint8(p2_in);
+	state_fio->FputUint8(portc);
+	state_fio->FputBool(tape_play);
+	state_fio->FputBool(tape_rec);
+	state_fio->FputBool(tape_eot);
+	state_fio->FputBool(tape_apss);
+	state_fio->FputBool(intr);
+	state_fio->FputBool(obf);
+	state_fio->FputBool(iei);
+	state_fio->FputUint32(intr_bit);
 }
 
-bool SUB::load_state(FILEIO* fio)
+bool SUB::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	p1_out = fio->FgetUint8();
-	p1_in = fio->FgetUint8();
-	p2_out = fio->FgetUint8();
-	p2_in = fio->FgetUint8();
-	portc = fio->FgetUint8();
-	tape_play = fio->FgetBool();
-	tape_rec = fio->FgetBool();
-	tape_eot = fio->FgetBool();
-	tape_apss = fio->FgetBool();
-	intr = fio->FgetBool();
-	obf = fio->FgetBool();
-	iei = fio->FgetBool();
-	intr_bit = fio->FgetUint32();
+	p1_out = state_fio->FgetUint8();
+	p1_in = state_fio->FgetUint8();
+	p2_out = state_fio->FgetUint8();
+	p2_in = state_fio->FgetUint8();
+	portc = state_fio->FgetUint8();
+	tape_play = state_fio->FgetBool();
+	tape_rec = state_fio->FgetBool();
+	tape_eot = state_fio->FgetBool();
+	tape_apss = state_fio->FgetBool();
+	intr = state_fio->FgetBool();
+	obf = state_fio->FgetBool();
+	iei = state_fio->FgetBool();
+	intr_bit = state_fio->FgetUint32();
 	return true;
 }
 

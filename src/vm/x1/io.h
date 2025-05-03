@@ -89,8 +89,8 @@ public:
 	uint32 read_io8w(uint32 addr, int* wait);
 	void write_dma_io8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_dma_io8w(uint32 addr, int* wait);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device)

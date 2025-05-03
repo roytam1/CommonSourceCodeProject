@@ -16,14 +16,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x1000 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x1000 * (i - sb); \
 		} \
 	} \
@@ -51,8 +49,7 @@ void MEMORY::initialize()
 		
 		// 8255 Port A, bit1 = 0 (fdc rom exists)
 		d_pio->write_signal(SIG_I8255_PORT_A, 0, 2);
-	}
-	else {
+	} else {
 		// 8255 Port A, bit1 = 1 (fdc rom does not exist)
 		d_pio->write_signal(SIG_I8255_PORT_A, 2, 2);
 	}
@@ -132,8 +129,7 @@ void MEMORY::update_map()
 	if(map1 & 0x20) {
 		SET_BANK(0x0000, 0x7fff, ram0, ram0);
 		SET_BANK(0x8000, 0xffff, ram1, ram1);
-	}
-	else {
+	} else {
 		SET_BANK(0x0000, 0x7fff, wdmy, rom);
 		if(map2 & 1) {
 			SET_BANK(0x6000, 0x6fff, wdmy, fdc);

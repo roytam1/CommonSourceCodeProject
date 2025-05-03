@@ -104,36 +104,31 @@ uint32 UPD71071::read_io8(uint32 addr)
 	case 0x02:
 		if(base) {
 			return dma[selch].bcreg & 0xff;
-		}
-		else {
+		} else {
 			return dma[selch].creg & 0xff;
 		}
 	case 0x03:
 		if(base) {
 			return (dma[selch].bcreg >> 8) & 0xff;
-		}
-		else {
+		} else {
 			return (dma[selch].creg >> 8) & 0xff;
 		}
 	case 0x04:
 		if(base) {
 			return dma[selch].bareg & 0xff;
-		}
-		else {
+		} else {
 			return dma[selch].areg & 0xff;
 		}
 	case 0x05:
 		if(base) {
 			return (dma[selch].bareg >> 8) & 0xff;
-		}
-		else {
+		} else {
 			return (dma[selch].areg >> 8) & 0xff;
 		}
 	case 0x06:
 		if(base) {
 			return (dma[selch].bareg >> 16) & 0xff;
-		}
-		else {
+		} else {
 			return (dma[selch].areg >> 16) & 0xff;
 		}
 	case 0x08:
@@ -169,8 +164,7 @@ void UPD71071::write_signal(int id, uint32 data, uint32 mask)
 			do_dma();
 #endif
 		}
-	}
-	else {
+	} else {
 		req &= ~bit;
 	}
 }
@@ -196,8 +190,7 @@ void UPD71071::do_dma()
 					d_mem->write_dma_data8(dma[c].areg, val);
 					// update temporary register
 					tmp = (tmp >> 8) | (val << 8);
-				}
-				else if((dma[c].mode & 0x0c) == 8) {
+				} else if((dma[c].mode & 0x0c) == 8) {
 					// memory -> io
 					uint32 val = d_mem->read_dma_data8(dma[c].areg);
 					dma[c].dev->write_dma_io8(0, val);
@@ -206,8 +199,7 @@ void UPD71071::do_dma()
 				}
 				if(dma[c].mode & 0x20) {
 					dma[c].areg = (dma[c].areg - 1) & 0xffffff;
-				}
-				else {
+				} else {
 					dma[c].areg = (dma[c].areg + 1) & 0xffffff;
 				}
 				if(dma[c].creg-- == 0) {
@@ -216,8 +208,7 @@ void UPD71071::do_dma()
 						// auto initialize
 						dma[c].areg = dma[c].bareg;
 						dma[c].creg = dma[c].bcreg;
-					}
-					else {
+					} else {
 						mask |= bit;
 					}
 					req &= ~bit;
@@ -225,13 +216,12 @@ void UPD71071::do_dma()
 					tc |= bit;
 					
 					write_signals(&outputs_tc, 0xffffffff);
-				}
 #ifdef SINGLE_MODE_DMA
-				else if((dma[c].mode & 0xc0) == 0x40) {
+				} else if((dma[c].mode & 0xc0) == 0x40) {
 					// single mode
 					break;
-				}
 #endif
+				}
 			}
 		}
 	}

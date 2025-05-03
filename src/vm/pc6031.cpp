@@ -217,11 +217,9 @@ unsigned char PC6031::FddCntIn60(void)
 	} else if (mdisk.ATN) {
 		mdisk.RFD = 1;
 		mdisk.command = WAIT;
-	}
-	else if (mdisk.DAC) {
+	} else if (mdisk.DAC) {
 		mdisk.DAV = 0;
-	}
-	else if (mdisk.RFD) {
+	} else if (mdisk.RFD) {
 		mdisk.DAV = 1;
 	}	
 	old_D2H = io_D2H;

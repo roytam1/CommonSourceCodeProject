@@ -558,55 +558,55 @@ void QUICKDISK::release_disk()
 
 #define STATE_VERSION	1
 
-void QUICKDISK::save_state(FILEIO* fio)
+void QUICKDISK::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	fio->Fwrite(file_path, sizeof(file_path), 1);
-	fio->FputBool(insert);
-	fio->FputBool(protect);
-	fio->FputBool(home);
-	fio->FputBool(modified);
-	fio->FputBool(accessed);
-	fio->Fwrite(buffer, sizeof(buffer), 1);
-	fio->FputInt32(buffer_ptr);
-	fio->FputInt32(write_ptr);
-	fio->FputBool(first_data);
-	fio->FputBool(send_break);
-	fio->FputBool(wrga);
-	fio->FputBool(mton);
-	fio->FputBool(sync);
-	fio->FputBool(motor_on);
-	fio->FputInt32(restore_id);
-	fio->FputInt32(end_id);
+	state_fio->Fwrite(file_path, sizeof(file_path), 1);
+	state_fio->FputBool(insert);
+	state_fio->FputBool(protect);
+	state_fio->FputBool(home);
+	state_fio->FputBool(modified);
+	state_fio->FputBool(accessed);
+	state_fio->Fwrite(buffer, sizeof(buffer), 1);
+	state_fio->FputInt32(buffer_ptr);
+	state_fio->FputInt32(write_ptr);
+	state_fio->FputBool(first_data);
+	state_fio->FputBool(send_break);
+	state_fio->FputBool(wrga);
+	state_fio->FputBool(mton);
+	state_fio->FputBool(sync);
+	state_fio->FputBool(motor_on);
+	state_fio->FputInt32(restore_id);
+	state_fio->FputInt32(end_id);
 }
 
-bool QUICKDISK::load_state(FILEIO* fio)
+bool QUICKDISK::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	fio->Fread(file_path, sizeof(file_path), 1);
-	insert = fio->FgetBool();
-	protect = fio->FgetBool();
-	home = fio->FgetBool();
-	modified = fio->FgetBool();
-	accessed = fio->FgetBool();
-	fio->Fread(buffer, sizeof(buffer), 1);
-	buffer_ptr = fio->FgetInt32();
-	write_ptr = fio->FgetInt32();
-	first_data = fio->FgetBool();
-	send_break = fio->FgetBool();
-	wrga = fio->FgetBool();
-	mton = fio->FgetBool();
-	sync = fio->FgetBool();
-	motor_on = fio->FgetBool();
-	restore_id = fio->FgetInt32();
-	end_id = fio->FgetInt32();
+	state_fio->Fread(file_path, sizeof(file_path), 1);
+	insert = state_fio->FgetBool();
+	protect = state_fio->FgetBool();
+	home = state_fio->FgetBool();
+	modified = state_fio->FgetBool();
+	accessed = state_fio->FgetBool();
+	state_fio->Fread(buffer, sizeof(buffer), 1);
+	buffer_ptr = state_fio->FgetInt32();
+	write_ptr = state_fio->FgetInt32();
+	first_data = state_fio->FgetBool();
+	send_break = state_fio->FgetBool();
+	wrga = state_fio->FgetBool();
+	mton = state_fio->FgetBool();
+	sync = state_fio->FgetBool();
+	motor_on = state_fio->FgetBool();
+	restore_id = state_fio->FgetInt32();
+	end_id = state_fio->FgetInt32();
 	return true;
 }
 

@@ -272,47 +272,47 @@ void RP5C01::write_to_cur_time()
 
 #define STATE_VERSION	1
 
-void RP5C01::save_state(FILEIO* fio)
+void RP5C01::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	cur_time.save_state((void *)fio);
-	fio->FputInt32(register_id);
-	fio->Fwrite(regs, sizeof(regs), 1);
-	fio->Fwrite(time, sizeof(time), 1);
+	cur_time.save_state((void *)state_fio);
+	state_fio->FputInt32(register_id);
+	state_fio->Fwrite(regs, sizeof(regs), 1);
+	state_fio->Fwrite(time, sizeof(time), 1);
 #ifndef HAS_RP5C15
-	fio->Fwrite(ram, sizeof(ram), 1);
-	fio->FputBool(modified);
+	state_fio->Fwrite(ram, sizeof(ram), 1);
+	state_fio->FputBool(modified);
 #endif
-	fio->FputBool(alarm);
-	fio->FputBool(pulse_1hz);
-	fio->FputBool(pulse_16hz);
-	fio->FputInt32(count_16hz);
+	state_fio->FputBool(alarm);
+	state_fio->FputBool(pulse_1hz);
+	state_fio->FputBool(pulse_16hz);
+	state_fio->FputInt32(count_16hz);
 }
 
-bool RP5C01::load_state(FILEIO* fio)
+bool RP5C01::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)fio)) {
+	if(!cur_time.load_state((void *)state_fio)) {
 		return false;
 	}
-	register_id = fio->FgetInt32();
-	fio->Fread(regs, sizeof(regs), 1);
-	fio->Fread(time, sizeof(time), 1);
+	register_id = state_fio->FgetInt32();
+	state_fio->Fread(regs, sizeof(regs), 1);
+	state_fio->Fread(time, sizeof(time), 1);
 #ifndef HAS_RP5C15
-	fio->Fread(ram, sizeof(ram), 1);
-	modified = fio->FgetBool();
+	state_fio->Fread(ram, sizeof(ram), 1);
+	modified = state_fio->FgetBool();
 #endif
-	alarm = fio->FgetBool();
-	pulse_1hz = fio->FgetBool();
-	pulse_16hz = fio->FgetBool();
-	count_16hz = fio->FgetInt32();
+	alarm = state_fio->FgetBool();
+	pulse_1hz = state_fio->FgetBool();
+	pulse_16hz = state_fio->FgetBool();
+	count_16hz = state_fio->FgetInt32();
 	return true;
 }
 

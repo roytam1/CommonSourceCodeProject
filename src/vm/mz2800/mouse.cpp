@@ -20,8 +20,7 @@ void MOUSE::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MOUSE_SEL) {
 		select = ((data & mask) != 0);
-	}
-	else if(id == SIG_MOUSE_DTR) {
+	} else if(id == SIG_MOUSE_DTR) {
 		if(!select || (data & mask)) {
 			return;
 		}

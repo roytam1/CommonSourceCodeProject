@@ -47,11 +47,9 @@ void KEYBOARD::key_up(int code)
 		// key break
 		if(code == 0x10) {
 			d_sio->write_signal(SIG_Z80SIO_RECV_CH0, 0x86, 0xff);	// shift break
-		}
-		else if(code == 0x11) {
+		} else if(code == 0x11) {
 			d_sio->write_signal(SIG_Z80SIO_RECV_CH0, 0x8a, 0xff);	// ctrl break
-		}
-		else if(code == 0x12) {
+		} else if(code == 0x12) {
 			d_sio->write_signal(SIG_Z80SIO_RECV_CH0, 0x8c, 0xff);	// graph break
 		}
 	}

@@ -26,8 +26,7 @@ uint32 ROMPACK::read_io8(uint32 addr)
 {
 	if(addr < 0x8000) {
 		return rom[addr];
-	}
-	else if(0xff00 <= addr && addr < 0xff80) {
+	} else if(0xff00 <= addr && addr < 0xff80) {
 		return 0x00; // device id
 	}
 	return 0xff;

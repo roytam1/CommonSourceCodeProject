@@ -778,77 +778,77 @@ uint16 PSUB::get_key(int code, bool repeat)
 
 #define STATE_VERSION	1
 
-void PSUB::save_state(FILEIO* fio)
+void PSUB::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
-	cur_time.save_state((void *)fio);
-	fio->FputInt32(time_register_id);
-	fio->Fwrite(databuf, sizeof(databuf), 1);
-	fio->FputInt32((int)(datap - &databuf[0][0]));
-	fio->FputUint8(mode);
-	fio->FputUint8(inbuf);
-	fio->FputUint8(outbuf);
-	fio->FputBool(ibf);
-	fio->FputBool(obf);
-	fio->FputInt32(cmdlen);
-	fio->FputInt32(datalen);
-	key_buf->save_state((void *)fio);
-	fio->FputInt32(key_prev);
-	fio->FputInt32(key_break);
-	fio->FputBool(key_shift);
-	fio->FputBool(key_ctrl);
-	fio->FputBool(key_graph);
-	fio->FputBool(key_caps_locked);
-	fio->FputBool(key_kana_locked);
-	fio->FputInt32(key_register_id);
-	fio->FputBool(play);
-	fio->FputBool(rec);
-	fio->FputBool(eot);
-	fio->FputBool(iei);
-	fio->FputBool(intr);
-	fio->FputUint32(intr_bit);
+	cur_time.save_state((void *)state_fio);
+	state_fio->FputInt32(time_register_id);
+	state_fio->Fwrite(databuf, sizeof(databuf), 1);
+	state_fio->FputInt32((int)(datap - &databuf[0][0]));
+	state_fio->FputUint8(mode);
+	state_fio->FputUint8(inbuf);
+	state_fio->FputUint8(outbuf);
+	state_fio->FputBool(ibf);
+	state_fio->FputBool(obf);
+	state_fio->FputInt32(cmdlen);
+	state_fio->FputInt32(datalen);
+	key_buf->save_state((void *)state_fio);
+	state_fio->FputInt32(key_prev);
+	state_fio->FputInt32(key_break);
+	state_fio->FputBool(key_shift);
+	state_fio->FputBool(key_ctrl);
+	state_fio->FputBool(key_graph);
+	state_fio->FputBool(key_caps_locked);
+	state_fio->FputBool(key_kana_locked);
+	state_fio->FputInt32(key_register_id);
+	state_fio->FputBool(play);
+	state_fio->FputBool(rec);
+	state_fio->FputBool(eot);
+	state_fio->FputBool(iei);
+	state_fio->FputBool(intr);
+	state_fio->FputUint32(intr_bit);
 }
 
-bool PSUB::load_state(FILEIO* fio)
+bool PSUB::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)fio)) {
+	if(!cur_time.load_state((void *)state_fio)) {
 		return false;
 	}
-	time_register_id = fio->FgetInt32();
-	fio->Fread(databuf, sizeof(databuf), 1);
-	datap = &databuf[0][0] + fio->FgetInt32();
-	mode = fio->FgetUint8();
-	inbuf = fio->FgetUint8();
-	outbuf = fio->FgetUint8();
-	ibf = fio->FgetBool();
-	obf = fio->FgetBool();
-	cmdlen = fio->FgetInt32();
-	datalen = fio->FgetInt32();
-	if(!key_buf->load_state((void *)fio)) {
+	time_register_id = state_fio->FgetInt32();
+	state_fio->Fread(databuf, sizeof(databuf), 1);
+	datap = &databuf[0][0] + state_fio->FgetInt32();
+	mode = state_fio->FgetUint8();
+	inbuf = state_fio->FgetUint8();
+	outbuf = state_fio->FgetUint8();
+	ibf = state_fio->FgetBool();
+	obf = state_fio->FgetBool();
+	cmdlen = state_fio->FgetInt32();
+	datalen = state_fio->FgetInt32();
+	if(!key_buf->load_state((void *)state_fio)) {
 		return false;
 	}
-	key_prev = fio->FgetInt32();
-	key_break = fio->FgetInt32();
-	key_shift = fio->FgetBool();
-	key_ctrl = fio->FgetBool();
-	key_graph = fio->FgetBool();
-	key_caps_locked = fio->FgetBool();
-	key_kana_locked = fio->FgetBool();
-	key_register_id = fio->FgetInt32();
-	play = fio->FgetBool();
-	rec = fio->FgetBool();
-	eot = fio->FgetBool();
-	iei = fio->FgetBool();
-	intr = fio->FgetBool();
-	intr_bit = fio->FgetUint32();
+	key_prev = state_fio->FgetInt32();
+	key_break = state_fio->FgetInt32();
+	key_shift = state_fio->FgetBool();
+	key_ctrl = state_fio->FgetBool();
+	key_graph = state_fio->FgetBool();
+	key_caps_locked = state_fio->FgetBool();
+	key_kana_locked = state_fio->FgetBool();
+	key_register_id = state_fio->FgetInt32();
+	play = state_fio->FgetBool();
+	rec = state_fio->FgetBool();
+	eot = state_fio->FgetBool();
+	iei = state_fio->FgetBool();
+	intr = state_fio->FgetBool();
+	intr_bit = state_fio->FgetUint32();
 	return true;
 }
 

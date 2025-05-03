@@ -60,25 +60,21 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 			if(bankreg_num == 7 && (bankreg[7] & 0x80) != (data & 0x80)) {
 				if(data & 0x80) {
 					// open kanji rom
-				}
-				else {
+				} else {
 					// close kanji rom
 				}
-			}
-			else if(bankreg_num == 10 && (bankreg[10] & 0x80) != (data & 0x80)) {
+			} else if(bankreg_num == 10 && (bankreg[10] & 0x80) != (data & 0x80)) {
 				if(data & 0x80) {
 					// open ext-vram
 					d_mem->set_memory_rw(0xa0000, 0xaffff, extvram);
-				}
-				else {
+				} else {
 					// close ext-vram
 					d_mem->set_memory_r(0xa0000, 0xaffff, kanji + 0x20000);
 					d_mem->unset_memory_w(0xa0000, 0xaffff);
 				}
 			}
 			bankreg[bankreg_num] = data;
-		}
-		else {
+		} else {
 			bankreg_num = data;
 		}
 		break;
@@ -86,12 +82,10 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 		if(vgarray_num == -1) {
 			vgarray_num = data & 0x1f;
 			break;
-		}
-		else {
+		} else {
 			if(vgarray_num < 0x10) {
 				vgarray[vgarray_num] = data;
-			}
-			else {
+			} else {
 				palette[vgarray_num & 0x0f] = data & 0x0f;
 			}
 			vgarray_num = -1;
@@ -133,16 +127,13 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_ENABLE) {
 		if(data & mask) {
 			status |= 0x11;
-		}
-		else {
+		} else {
 			status &= ~0x11;
 		}
-	}
-	else if(id == SIG_DISPLAY_VBLANK) {
+	} else if(id == SIG_DISPLAY_VBLANK) {
 		if(data & mask) {
 			status &= ~0x08;
-		}
-		else {
+		} else {
 			status |= 0x08;
 		}
 	}
@@ -165,8 +156,7 @@ void DISPLAY::draw_screen()
 	if((hires_mode & 3) == 1) {
 		screen_width = width = 640;
 		screen_height = 400;
-	}
-	else {
+	} else {
 		screen_width = width = 720;
 		screen_height = 512;
 	}
@@ -191,11 +181,9 @@ void DISPLAY::draw_screen()
 		case 0x0a:
 			if((mode1 & 4) && (mode2 & 8)) {
 				draw_graph_640x200_2col();
-			}
-			else if((page & 0xc0) == 0xc0) {
+			} else if((page & 0xc0) == 0xc0) {
 				draw_graph_640x200_4col();
-			}
-			else {
+			} else {
 				draw_graph_320x200_4col();
 				width = 320;
 			}
@@ -204,15 +192,13 @@ void DISPLAY::draw_screen()
 			if(mode1 & 1) {
 				draw_graph_320x200_16col();
 				width = 320;
-			}
-			else {
+			} else {
 				draw_graph_160x200_16col();
 				width = 160;
 			}
 			break;
 		}
-	}
-	else {
+	} else {
 		switch(hires_mode & 3) {
 		case 0:
 			if(!(mode1 & 1)) {
@@ -242,27 +228,23 @@ void DISPLAY::draw_screen()
 				for(int x = 0; x < 640; x++) {
 					dest0[x] = palette_pc[src[x]];
 				}
-			}
-			else if(width == 320) {
+			} else if(width == 320) {
 				for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 					dest0[x2] = dest0[x2 + 1] = palette_pc[src[x]];
 				}
-			}
-			else if(width == 160) {
+			} else if(width == 160) {
 				for(int x = 0, x4 = 0; x < 160; x++, x4 += 4) {
 					dest0[x4] = dest0[x4 + 1] = dest0[x4 + 2] = dest0[x4 + 3] = palette_pc[src[x]];
 				}
 			}
 			if(!scanline) {
 				memcpy(dest1, dest0, 640 * sizeof(scrntype));
-			}
-			else {
+			} else {
 				memset(dest1, 0, 640 * sizeof(scrntype));
 			}
 		}
 		emu->screen_skip_line = true;
-	}
-	else {
+	} else {
 		for(int y = 0; y < 512; y++) {
 			scrntype* dest = emu->screen_buffer(y);
 			uint8 *src = screen[y];
@@ -271,8 +253,7 @@ void DISPLAY::draw_screen()
 				for(int x = 0; x < 720; x++) {
 					dest[x] = palette_pc[src[x]];
 				}
-			}
-			else if(width == 360) {
+			} else if(width == 360) {
 				for(int x = 0, x2 = 0; x < 360; x++, x2 += 2) {
 					dest[x2] = dest[x2 + 1] = palette_pc[src[x]];
 				}
@@ -326,8 +307,7 @@ void DISPLAY::draw_alpha()
 					lo = code;
 					prev_code = 0;
 					lr = 1;
-				}
-				else {
+				} else {
 					// left side
 					hi = code;
 					lo = vram_ptr[src & 0x3fff];
@@ -338,8 +318,7 @@ void DISPLAY::draw_alpha()
 				code = (hi << 8) | lo;
 				if(code < 0x9900) {
 					code &= 0x1fff;
-				}
-				else {
+				} else {
 					code &= 0x1ff;
 					code |= 0x400;
 				}
@@ -348,8 +327,7 @@ void DISPLAY::draw_alpha()
 			uint8 *pattern;
 			if(ch_height < 16) {
 				pattern = &font[code * 8];
-			}
-			else {
+			} else {
 				pattern = &kanji[code * 32];
 			}
 			

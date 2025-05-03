@@ -66,12 +66,10 @@ void TIMER::write_signal(int id, uint32 data, uint32 mask)
 			tmout0 = true;
 		}
 		update_intr();
-	}
-	else if(id == SIG_TIMER_CH1) {
+	} else if(id == SIG_TIMER_CH1) {
 		tmout1 = ((data & mask) != 0);
 		update_intr();
-	}
-	else if(id == SIG_TIMER_RTC) {
+	} else if(id == SIG_TIMER_RTC) {
 		rtc_data = (data & mask) | (rtc_data & ~mask);
 	}
 }

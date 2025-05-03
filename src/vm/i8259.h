@@ -67,8 +67,8 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int id);
 	void event_callback(int event_id, int err);
-	void save_state(FILEIO* fio);
-	bool load_state(FILEIO* fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// interrupt common functions
 	void set_intr_line(bool line, bool pending, uint32 bit)

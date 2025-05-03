@@ -302,60 +302,60 @@ void save_config()
 
 void save_config_state(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	fio->FputUint32(STATE_VERSION);
+	state_fio->FputUint32(STATE_VERSION);
 	
 #ifdef USE_BOOT_MODE
-	fio->FputInt32(config.boot_mode);
+	state_fio->FputInt32(config.boot_mode);
 #endif
 #ifdef USE_CPU_TYPE
-	fio->FputInt32(config.cpu_type);
+	state_fio->FputInt32(config.cpu_type);
 #endif
 #ifdef USE_DIPSWITCH
-	fio->FputUint32(config.dipswitch);
+	state_fio->FputUint32(config.dipswitch);
 #endif
 #ifdef USE_DEVICE_TYPE
-	fio->FputInt32(config.device_type);
+	state_fio->FputInt32(config.device_type);
 #endif
 #ifdef USE_FD1
-	fio->FputBool(config.ignore_crc);
+	state_fio->FputBool(config.ignore_crc);
 #endif
 #ifdef USE_MONITOR_TYPE
-	fio->FputInt32(config.monitor_type);
+	state_fio->FputInt32(config.monitor_type);
 #endif
 #ifdef USE_SOUND_DEVICE_TYPE
-	fio->FputInt32(config.sound_device_type);
+	state_fio->FputInt32(config.sound_device_type);
 #endif
 }
 
 bool load_config_state(void *f)
 {
-	FILEIO *fio = (FILEIO *)f;
+	FILEIO *state_fio = (FILEIO *)f;
 	
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
 #ifdef USE_BOOT_MODE
-	config.boot_mode = fio->FgetInt32();
+	config.boot_mode = state_fio->FgetInt32();
 #endif
 #ifdef USE_CPU_TYPE
-	config.cpu_type = fio->FgetInt32();
+	config.cpu_type = state_fio->FgetInt32();
 #endif
 #ifdef USE_DIPSWITCH
-	config.dipswitch = fio->FgetUint32();
+	config.dipswitch = state_fio->FgetUint32();
 #endif
 #ifdef USE_DEVICE_TYPE
-	config.device_type = fio->FgetInt32();
+	config.device_type = state_fio->FgetInt32();
 #endif
 #ifdef USE_FD1
-	config.ignore_crc = fio->FgetBool();
+	config.ignore_crc = state_fio->FgetBool();
 #endif
 #ifdef USE_MONITOR_TYPE
-	config.monitor_type = fio->FgetInt32();
+	config.monitor_type = state_fio->FgetInt32();
 #endif
 #ifdef USE_SOUND_DEVICE_TYPE
-	config.sound_device_type = fio->FgetInt32();
+	config.sound_device_type = state_fio->FgetInt32();
 #endif
 	return true;
 }

@@ -34,8 +34,7 @@ void MC6820::write_io8(uint32 addr, uint32 data)
 				port[ch].wreg = data;
 				port[ch].first = false;
 			}
-		}
-		else {
+		} else {
 			port[ch].ddr = data;
 		}
 		break;
@@ -60,8 +59,7 @@ uint32 MC6820::read_io8(uint32 addr)
 			write_signals(&port[ch].outputs_irq, 0);
 			port[ch].ctrl &= ~0xc0;
 			return (port[ch].rreg & ~port[ch].ddr) | (port[ch].wreg & port[ch].ddr);
-		}
-		else {
+		} else {
 			return port[ch].ddr;
 		}
 	case 1:

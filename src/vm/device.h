@@ -53,8 +53,8 @@ public:
 	virtual void release() {}
 	
 	virtual void update_config() {}
-	virtual void save_state(FILEIO* fio) {}
-	virtual bool load_state(FILEIO* fio)
+	virtual void save_state(FILEIO* state_fio) {}
+	virtual bool load_state(FILEIO* state_fio)
 	{
 		return true;
 	}

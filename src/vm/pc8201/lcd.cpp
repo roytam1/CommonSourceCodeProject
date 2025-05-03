@@ -27,16 +27,14 @@ void LCD::write_io8(uint32 addr, uint32 data)
 					if(++seg[b].ofs > 49) {
 						seg[b].ofs = 0;
 					}
-				}
-				else {
+				} else {
 					if(--seg[b].ofs < 0) {
 						seg[b].ofs = 49;
 					}
 				}
 			}
 		}
-	}
-	else {
+	} else {
 		for(int b = 0; b < 10; b++) {
 			if(sel & (1 << b)) {
 				// command
@@ -90,16 +88,14 @@ uint32 LCD::read_io8(uint32 addr)
 					if(++seg[b].ofs > 49) {
 						seg[b].ofs = 0;
 					}
-				}
-				else {
+				} else {
 					if(--seg[b].ofs < 0) {
 						seg[b].ofs = 49;
 					}
 				}
 			}
 		}
-	}
-	else {
+	} else {
 		// status
 		for(int b = 0; b < 10; b++) {
 			if(sel & (1 << b)) {
@@ -114,8 +110,7 @@ void LCD::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_LCD_CHIPSEL_L) {
 		sel = (sel & 0x300) | (data);
-	}
-	else if(id == SIG_LCD_CHIPSEL_H) {
+	} else if(id == SIG_LCD_CHIPSEL_H) {
 		sel = (sel & 0xff) | ((data & 3) << 8);
 	}
 }

@@ -16,14 +16,12 @@
 	for(int i = sb; i <= eb; i++) { \
 		if((w) == wdmy) { \
 			wbank[i] = wdmy; \
-		} \
-		else { \
+		} else { \
 			wbank[i] = (w) + 0x800 * (i - sb); \
 		} \
 		if((r) == rdmy) { \
 			rbank[i] = rdmy; \
-		} \
-		else { \
+		} else { \
 			rbank[i] = (r) + 0x800 * (i - sb); \
 		} \
 	} \
@@ -80,8 +78,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 #ifdef _MAP1010
 	if(0x7800 <= addr && addr < 0x7860) {
 		return d_kbd->read_io8(addr);
-	}
-	else if(0x7860 <= addr && addr < 0x8000) {
+	} else if(0x7860 <= addr && addr < 0x8000) {
 		// memory mapped i/o
 		return 0xff;
 	}

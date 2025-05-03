@@ -233,34 +233,34 @@ uint32 I8255::read_signal(int id)
 
 #define STATE_VERSION	1
 
-void I8255::save_state(FILEIO* fio)
+void I8255::save_state(FILEIO* state_fio)
 {
-	fio->FputUint32(STATE_VERSION);
-	fio->FputInt32(this_device_id);
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
 	
 	for(int i = 0; i < 3; i++) {
-		fio->FputUint8(port[i].wreg);
-		fio->FputUint8(port[i].rreg);
-		fio->FputUint8(port[i].rmask);
-		fio->FputUint8(port[i].mode);
-		fio->FputBool(port[i].first);
+		state_fio->FputUint8(port[i].wreg);
+		state_fio->FputUint8(port[i].rreg);
+		state_fio->FputUint8(port[i].rmask);
+		state_fio->FputUint8(port[i].mode);
+		state_fio->FputBool(port[i].first);
 	}
 }
 
-bool I8255::load_state(FILEIO* fio)
+bool I8255::load_state(FILEIO* state_fio)
 {
-	if(fio->FgetUint32() != STATE_VERSION) {
+	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
-	if(fio->FgetInt32() != this_device_id) {
+	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
 	for(int i = 0; i < 3; i++) {
-		port[i].wreg = fio->FgetUint8();
-		port[i].rreg = fio->FgetUint8();
-		port[i].rmask = fio->FgetUint8();
-		port[i].mode = fio->FgetUint8();
-		port[i].first = fio->FgetBool();
+		port[i].wreg = state_fio->FgetUint8();
+		port[i].rreg = state_fio->FgetUint8();
+		port[i].rmask = state_fio->FgetUint8();
+		port[i].mode = state_fio->FgetUint8();
+		port[i].first = state_fio->FgetBool();
 	}
 	return true;
 }

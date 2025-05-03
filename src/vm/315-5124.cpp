@@ -768,8 +768,7 @@ void _315_5124::draw_sprites()
 		}
 		if(y > 208) {
 			y = -(~y & 0xff);
-		}
-		else {
+		} else {
 			y++;
 		}
 		int x = *attrib_ptr++;
@@ -792,8 +791,7 @@ void _315_5124::draw_sprites()
 					if(yy < illegal_sprite_line) {
 						illegal_sprite_line = yy;
 						illegal_sprite = p;
-					}
-					else if(illegal_sprite_line == yy) {
+					} else if(illegal_sprite_line == yy) {
 						if(illegal_sprite > p) {
 							illegal_sprite = p;
 						}
@@ -801,8 +799,7 @@ void _315_5124::draw_sprites()
 #ifdef _315_5124_LIMIT_SPRITES
 					continue;
 #endif
-				}
-				else {
+				} else {
 					limit[yy]--;
 				}
 				uint16 line = pattern_ptr[yy - y] * 256 + pattern_ptr[yy - y + 16];
@@ -811,8 +808,7 @@ void _315_5124::draw_sprites()
 						if(0 <= xx && xx < 256) {
 							if(collision[yy][xx]) {
 								status_reg |= 0x20;
-							}
-							else {
+							} else {
 								collision[yy][xx] = 1;
 							}
 							if(c && !(collision[yy][xx] & 2)) {
@@ -824,8 +820,7 @@ void _315_5124::draw_sprites()
 					line *= 2;
 				}
 			}
-		}
-		else {
+		} else {
 			// draw enlarged sprite
 			for(int i = 0; i < size; i++) {
 				int yy = y + i * 2;
@@ -837,8 +832,7 @@ void _315_5124::draw_sprites()
 							if(yy < illegal_sprite_line) {
 								illegal_sprite_line = yy;
 								 illegal_sprite = p;
-							}
-							else if(illegal_sprite_line == yy) {
+							} else if(illegal_sprite_line == yy) {
 								if(illegal_sprite > p) {
 									illegal_sprite = p;
 								}
@@ -846,8 +840,7 @@ void _315_5124::draw_sprites()
 #ifdef _315_5124_LIMIT_SPRITES
 							continue;
 #endif
-						}
-						else {
+						} else {
 							limit[yy]--;
 						}
 						uint16 line = line2;
@@ -856,8 +849,7 @@ void _315_5124::draw_sprites()
 								if(0 <= xx && xx < 256) {
 									if(collision[yy][xx]) {
 										status_reg |= 0x20;
-									}
-									else {
+									} else {
 										collision[yy][xx] = 1;
 									}
 									if(c && !(collision[yy][xx] & 2)) {
@@ -868,8 +860,7 @@ void _315_5124::draw_sprites()
 								if(0 <= xx + 1 && xx + 1 < 256) {
 									if(collision[yy][xx + 1]) {
 										status_reg |= 0x20;
-									}
-									else {
+									} else {
 										collision[yy][xx + 1] = 1;
 									}
 									if(c && !(collision[yy][xx + 1] & 2)) {
@@ -888,8 +879,7 @@ void _315_5124::draw_sprites()
 	}
 	if(illegal_sprite_line == 255) {
 		status_reg |= (p > 31) ? 31 : p;
-	}
-	else {
+	} else {
 		status_reg |= 0x40 + illegal_sprite;
 	}
 }

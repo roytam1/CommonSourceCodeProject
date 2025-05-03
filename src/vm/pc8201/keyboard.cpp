@@ -67,8 +67,7 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_KEYBOARD_COLUMN_L) {
 		column = (column & 0xff00) | (data & mask);
-	}
-	else if(id == SIG_KEYBOARD_COLUMN_H) {
+	} else if(id == SIG_KEYBOARD_COLUMN_H) {
 		column = (column & 0xff) | ((data & mask) << 8);
 	}
 }
@@ -77,8 +76,7 @@ void KEYBOARD::key_down(int code)
 {
 	if(code == 0x14) {
 		caps = !caps;
-	}
-	else if(code == 0x15) {
+	} else if(code == 0x15) {
 		kana = !kana;
 	}
 }

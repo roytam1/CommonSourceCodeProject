@@ -123,41 +123,34 @@ void RTC::event_callback(int event_id, int err)
 		// 1sec interrupt
 		rtdsr |= 4;
 		update_intr();
-	}
-	else if(event_id == EVENT_32HZ) {
+	} else if(event_id == EVENT_32HZ) {
 		// update tcnt
 		regs[TCNT]++;
-	}
-	else if(event_id == EVENT_DONE) {
+	} else if(event_id == EVENT_DONE) {
 		int ch = (rtadr >> 1) & 0x3f;
 		if(rtadr & 1) {
 			// invalid address
-		}
-		else if(rtadr & 0x80) {
+		} else if(rtadr & 0x80) {
 			// write
 			if(ch <= 6) {
 				regs[ch] = (uint8)rtobr;
 				write_to_cur_time();
-			}
-			else if(ch == POWON) {
+			} else if(ch == POWON) {
 				regs[ch] = (regs[ch] & 0xe0) | (rtobr & 0x1f);
 				if((rtobr & 0xe0) == 0xc0) {
 					// reipl
 					regs[ch] = (regs[ch] & 0x1f) | 0xc0;
 					vm->reset();
-				}
-				else if((rtobr & 0xe0) == 0xe0) {
+				} else if((rtobr & 0xe0) == 0xe0) {
 					// power off
 					emu->power_off();
 				}
 				update_checksum();
-			}
-			else if(7 <= ch && ch < 32) {
+			} else if(7 <= ch && ch < 32) {
 				regs[ch] = (uint8)rtobr;
 				update_checksum();
 			}
-		}
-		else {
+		} else {
 			// read
 			if(ch < 40) {
 				rtibr = regs[ch];

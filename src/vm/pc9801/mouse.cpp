@@ -12,6 +12,7 @@
 #include "mouse.h"
 #include "../i8255.h"
 #include "../i8259.h"
+#include "../../fileio.h"
 
 #define EVENT_TIMER	0
 
@@ -61,15 +62,13 @@ void MOUSE::event_frame()
 	dx += status[0];
 	if(dx > 64) {
 		dx = 64;
-	}
-	else if(dx < -64) {
+	} else if(dx < -64) {
 		dx = -64;
 	}
 	dy += status[1];
 	if(dy > 64) {
 		dy = 64;
-	}
-	else if(dy < -64) {
+	} else if(dy < -64) {
 		dy = -64;
 	}
 	update_mouse();
@@ -105,5 +104,41 @@ void MOUSE::update_mouse()
 	case 0xe0: val |= (ly >> 4) & 0x0f; break;
 	}
 	d_pio->write_signal(SIG_I8255_PORT_A, val, 0xff);
+}
+
+#define STATE_VERSION	1
+
+void MOUSE::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputInt32(ctrlreg);
+	state_fio->FputInt32(freq);
+	state_fio->FputInt32(cur_freq);
+	state_fio->FputInt32(dx);
+	state_fio->FputInt32(dy);
+	state_fio->FputInt32(lx);
+	state_fio->FputInt32(ly);
+	state_fio->FputInt32(register_id);
+}
+
+bool MOUSE::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	ctrlreg = state_fio->FgetInt32();
+	freq = state_fio->FgetInt32();
+	cur_freq = state_fio->FgetInt32();
+	dx = state_fio->FgetInt32();
+	dy = state_fio->FgetInt32();
+	lx = state_fio->FgetInt32();
+	ly = state_fio->FgetInt32();
+	register_id = state_fio->FgetInt32();
+	return true;
 }
 

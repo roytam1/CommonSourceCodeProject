@@ -32,24 +32,14 @@ public:
 	~LS244() {}
 	
 	// common functions
-	void initialize()
-	{
-		din = 0xff;
-	}
-	void write_io8(uint32 addr, uint32 data)
-	{
-		write_signals(&outputs, data);
-	}
-	uint32 read_io8(uint32 addr)
-	{
-		return din;
-	}
-	void write_signal(int id, uint32 data, uint32 mask)
-	{
-		din = (din & ~mask) | (data & mask);
-	}
+	void initialize();
+	void write_io8(uint32 addr, uint32 data);
+	uint32 read_io8(uint32 addr);
+	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
-	// unique functions
+	// unique function
 	void set_context_output(DEVICE* device, int id, uint32 mask, int shift)
 	{
 		register_output_signal(&outputs, device, id, mask, shift);
