@@ -558,6 +558,9 @@ uint32 PC88::fetch_op(uint32 addr, int *wait)
 void PC88::write_io8(uint32 addr, uint32 data)
 {
 	addr &= 0xff;
+#ifdef _IO_DEBUG_LOG
+	emu->out_debug_log(_T("%6x\tOUT8\t%02x,%02x\n"), d_cpu->get_pc(), addr, data);
+#endif
 #ifdef NIPPY_PATCH
 	// dirty patch for NIPPY
 	static bool nippy_patch = false;
@@ -904,6 +907,15 @@ void PC88::write_io8(uint32 addr, uint32 data)
 }
 
 uint32 PC88::read_io8(uint32 addr)
+#ifdef _IO_DEBUG_LOG
+{
+	uint32 val = read_io8_debug(addr);
+	emu->out_debug_log(_T("%06x\tIN8\t%02x = %02x\n"), d_cpu->get_pc(), addr & 0xff, val);
+	return val;
+}
+
+uint32 PC88::read_io8_debug(uint32 addr)
+#endif
 {
 	uint32 val = 0xff;
 	

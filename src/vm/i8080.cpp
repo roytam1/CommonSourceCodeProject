@@ -489,19 +489,6 @@ int I8080::run(int clock)
 {
 	// return now if BUSREQ
 	if(BUSREQ) {
-#ifdef USE_DEBUGGER
-		if(d_debugger->now_debugging) {
-			if(d_debugger->now_suspended) {
-				emu->mute_sound();
-				while(d_debugger->now_debugging && d_debugger->now_suspended) {
-					Sleep(10);
-				}
-			}
-			if(d_debugger->now_debugging && !d_debugger->now_going) {
-				d_debugger->now_suspended = true;
-			}
-		}
-#endif
 		count = 0;
 		return 1;
 	}

@@ -202,6 +202,8 @@ void EMU::set_display_size(int width, int height, bool window_mode)
 RETRY:
 	bool display_size_changed = false;
 	bool stretch_changed = false;
+	int prev_stretched_width = stretched_width;
+	int prev_stretched_height = stretched_height;
 	
 	if(width != -1 && (display_width != width || display_height != height)) {
 		display_width = width;
@@ -240,8 +242,7 @@ RETRY:
 		source_height_aspect = screen_width_aspect;
 		
 		render_to_d3d9Buffer = false;
-	}
-	else {
+	} else {
 #endif
 		hdcDibSource = hdcDib;
 		lpBmpSource = lpBmp;
@@ -261,29 +262,26 @@ RETRY:
 	}
 #endif
 	
-	if(config.stretch_screen && !window_mode) {
-		// fit to full screen
+	if(config.stretch_type == 1 && !window_mode) {
+		// fit to full screen (aspect)
 		stretched_width = (display_height * source_width_aspect) / source_height_aspect;
 		stretched_height = display_height;
 		if(stretched_width > display_width) {
 			stretched_width = display_width;
 			stretched_height = (display_width * source_height_aspect) / source_width_aspect;
 		}
-		if(display_width == 1920 && display_height == 1080) {
-			if((source_width_aspect == 640 && source_height_aspect == 400) || (source_width_aspect == 320 && source_height_aspect == 200)) {
-				stretched_width = 1920;
-				stretched_height = 1080;
-			}
-		}
-	}
-	else {
+	} else if(config.stretch_type == 2 && !window_mode) {
+		// fit to full screen (fill)
+		stretched_width = display_width;
+		stretched_height = display_height;
+	} else {
+		// dot by dot
 		int tmp_pow_x = display_width / source_width_aspect;
 		int tmp_pow_y = display_height / source_height_aspect;
 		int tmp_pow = 1;
 		if(tmp_pow_y >= tmp_pow_x && tmp_pow_x > 1) {
 			tmp_pow = tmp_pow_x;
-		}
-		else if(tmp_pow_x >= tmp_pow_y && tmp_pow_y > 1) {
+		} else if(tmp_pow_x >= tmp_pow_y && tmp_pow_y > 1) {
 			tmp_pow = tmp_pow_y;
 		}
 		stretched_width = source_width_aspect * tmp_pow;
@@ -291,6 +289,9 @@ RETRY:
 	}
 	screen_dest_x = (display_width - stretched_width) / 2;
 	screen_dest_y = (display_height - stretched_height) / 2;
+	
+	stretch_changed |= (prev_stretched_width != stretched_width);
+	stretch_changed |= (prev_stretched_height != stretched_height);
 	
 	int new_pow_x = 1, new_pow_y = 1;
 	while(stretched_width > source_width * new_pow_x) {
@@ -337,8 +338,7 @@ RETRY:
 				MessageBox(main_window_handle, _T("Failed to initialize Direct3D9"), _T(DEVICE_NAME), MB_OK | MB_ICONWARNING);
 				config.use_d3d9 = false;
 				goto RETRY;
-			}
-			else {
+			} else {
 				// initialize present params
 				D3DPRESENT_PARAMETERS d3dpp;
 				ZeroMemory(&d3dpp, sizeof(d3dpp));
@@ -376,8 +376,7 @@ RETRY:
 			}
 			if(hr == D3D_OK) {
 				lpd3d9Device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 0.0, 0);
-			}
-			else {
+			} else {
 				MessageBox(main_window_handle, _T("Failed to create a Direct3D9 offscreen surface"), _T(DEVICE_NAME), MB_OK | MB_ICONWARNING);
 				config.use_d3d9 = false;
 				goto RETRY;
@@ -448,8 +447,7 @@ int EMU::draw_screen()
 	D3DLOCKED_RECT pLockedRect;
 	if(use_d3d9 && lpd3d9OffscreenSurface != NULL && lpd3d9OffscreenSurface->LockRect(&pLockedRect, NULL, 0) == D3D_OK) {
 		lpd3d9Buffer = (scrntype *)pLockedRect.pBits;
-	}
-	else {
+	} else {
 		lpd3d9Buffer = NULL;
 	}
 	
@@ -656,8 +654,7 @@ int EMU::draw_screen()
 					}
 					out_tmp += stretch_pow_x;
 				}
-			}
-			else {
+			} else {
 				// faster than memcpy()
 				for(int x = 0; x < source_width; x++) {
 					out[x] = src[x];
@@ -864,15 +861,12 @@ quit:
 				lpd3d9BackSurface->Release();
 				lpd3d9Device->Present(NULL, NULL, NULL, NULL);
 			}
-		}
-		else {
+		} else {
 			if(stretch_screen) {
 				BitBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibStretch2, 0, 0, SRCCOPY);
-			}
-			else if(stretched_width == source_width && stretched_height == source_height) {
+			} else if(stretched_width == source_width && stretched_height == source_height) {
 				BitBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibSource, 0, 0, SRCCOPY);
-			}
-			else {
+			} else {
 				StretchBlt(hdc, screen_dest_x, screen_dest_y, stretched_width, stretched_height, hdcDibSource, 0, 0, source_width, source_height, SRCCOPY);
 			}
 #ifdef USE_ACCESS_LAMP

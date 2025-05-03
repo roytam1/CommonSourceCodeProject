@@ -40,7 +40,7 @@ void init_config()
 	
 #if !(defined(USE_BITMAP) || defined(USE_LED))
 	config.use_d3d9 = true;
-	config.stretch_screen = true;
+	config.stretch_type = 1;	// Stretch (Aspect)
 #endif
 	config.sound_frequency = 6;	// 48KHz
 	config.sound_latency = 1;	// 100msec
@@ -163,7 +163,7 @@ void load_config()
 	config.window_mode = GetPrivateProfileInt(_T("Screen"), _T("WindowMode"), config.window_mode, config_path);
 	config.use_d3d9 = GetPrivateProfileBool(_T("Screen"), _T("UseD3D9"), config.use_d3d9, config_path);
 	config.wait_vsync = GetPrivateProfileBool(_T("Screen"), _T("WaitVSync"), config.wait_vsync, config_path);
-	config.stretch_screen = GetPrivateProfileBool(_T("Screen"), _T("StretchScreen"), config.stretch_screen, config_path);
+	config.stretch_type = GetPrivateProfileInt(_T("Screen"), _T("StretchType"), config.stretch_type, config_path);
 #endif
 #ifdef USE_MONITOR_TYPE
 	config.monitor_type = GetPrivateProfileInt(_T("Screen"), _T("MonitorType"), config.monitor_type, config_path);
@@ -277,7 +277,7 @@ void save_config()
 	WritePrivateProfileInt(_T("Screen"), _T("WindowMode"), config.window_mode, config_path);
 	WritePrivateProfileBool(_T("Screen"), _T("UseD3D9"), config.use_d3d9, config_path);
 	WritePrivateProfileBool(_T("Screen"), _T("WaitVSync"), config.wait_vsync, config_path);
-	WritePrivateProfileBool(_T("Screen"), _T("StretchScreen"), config.stretch_screen, config_path);
+	WritePrivateProfileInt(_T("Screen"), _T("StretchType"), config.stretch_type, config_path);
 #endif
 #ifdef USE_MONITOR_TYPE
 	WritePrivateProfileInt(_T("Screen"), _T("MonitorType"), config.monitor_type, config_path);

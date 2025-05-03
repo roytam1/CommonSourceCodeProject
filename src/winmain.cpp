@@ -86,8 +86,7 @@ void get_long_full_path_name(_TCHAR* src, _TCHAR* dst)
 	
 	if(GetFullPathName(src, _MAX_PATH, tmp, NULL) == 0) {
 		_tcscpy(dst, src);
-	}
-	else if(GetLongPathName(tmp, dst, _MAX_PATH) == 0) {
+	} else if(GetLongPathName(tmp, dst, _MAX_PATH) == 0) {
 		_tcscpy(dst, tmp);
 	}
 }
@@ -117,8 +116,7 @@ _TCHAR* get_open_file_name(HWND hWnd, _TCHAR* filter, _TCHAR* title, _TCHAR* dir
 	OpenFileName.lpstrTitle = title;
 	if(dir[0]) {
 		OpenFileName.lpstrInitialDir = dir;
-	}
-	else {
+	} else {
 		_TCHAR app[_MAX_PATH];
 		GetModuleFileName(NULL, app, _MAX_PATH);
 		OpenFileName.lpstrInitialDir = get_parent_dir(app);
@@ -308,11 +306,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	// restore screen mode
 	if(config.window_mode >= 0 && config.window_mode < MAX_WINDOW) {
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW1 + config.window_mode, 0L);
-	}
-	else if(config.window_mode >= MAX_WINDOW && config.window_mode < screen_mode_count + MAX_WINDOW) {
+	} else if(config.window_mode >= MAX_WINDOW && config.window_mode < screen_mode_count + MAX_WINDOW) {
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_FULLSCREEN1 + config.window_mode - MAX_WINDOW, 0L);
-	}
-	else {
+	} else {
 		config.window_mode = 0;
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW1, 0L);
 	}
@@ -365,8 +361,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
-		}
-		else if(emu) {
+		} else if(emu) {
 			// drive machine
 			int run_frames = emu->run();
 			total_frames += run_frames;
@@ -396,8 +391,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 				if((int)(next_time - current_time) >= 10) {
 					sleep_period = next_time - current_time;
 				}
-			}
-			else if(++skip_frames > MAX_SKIP_FRAMES) {
+			} else if(++skip_frames > MAX_SKIP_FRAMES) {
 				// update window at least once per 10 frames
 				draw_frames += emu->draw_screen();
 				skip_frames = 0;
@@ -591,8 +585,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			POINTS p = MAKEPOINTS(lParam);
 			if(p.y == 0) {
 				show_menu_bar(hWnd);
-			}
-			else if(p.y > 32) {
+			} else if(p.y > 32) {
 				hide_menu_bar(hWnd);
 			}
 		}
@@ -601,8 +594,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		if(emu) {
 			if(now_fullscreen) {
 				emu->set_display_size(-1, -1, false);
-			}
-			else {
+			} else {
 				set_window(hWnd, config.window_mode);
 			}
 		}
@@ -1180,8 +1172,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->set_display_size(-1, -1, !now_fullscreen);
 			}
 			break;
-		case ID_SCREEN_STRETCH:
-			config.stretch_screen = !config.stretch_screen;
+		case ID_SCREEN_STRETCH_DOT:
+		case ID_SCREEN_STRETCH_ASPECT:
+		case ID_SCREEN_STRETCH_FILL:
+			config.stretch_type = LOWORD(wParam) - ID_SCREEN_STRETCH_DOT;
 			if(emu) {
 				emu->set_display_size(-1, -1, !now_fullscreen);
 			}
@@ -1213,8 +1207,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #ifdef USE_SCREEN_ROTATE
 				if(now_fullscreen) {
 					emu->set_display_size(-1, -1, false);
-				}
-				else {
+				} else {
 					set_window(hWnd, prev_window_mode);
 				}
 #endif
@@ -1668,20 +1661,18 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 				SetMenuItemInfo(hMenu, ID_SCREEN_FULLSCREEN1 + i, FALSE, &info);
 				EnableMenuItem(hMenu, ID_SCREEN_FULLSCREEN1 + i, now_fullscreen ? MF_GRAYED : MF_ENABLED);
 				last = ID_SCREEN_FULLSCREEN1 + i;
-			}
-			else {
+			} else {
 				DeleteMenu(hMenu, ID_SCREEN_FULLSCREEN1 + i, MF_BYCOMMAND);
 			}
 		}
 		if(config.window_mode >= 0 && config.window_mode < MAX_WINDOW) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_WINDOW1 + config.window_mode, MF_BYCOMMAND);
-		}
-		else if(config.window_mode >= MAX_WINDOW && config.window_mode < screen_mode_count + MAX_WINDOW) {
+		} else if(config.window_mode >= MAX_WINDOW && config.window_mode < screen_mode_count + MAX_WINDOW) {
 			CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW1, last, ID_SCREEN_FULLSCREEN1 + config.window_mode - MAX_WINDOW, MF_BYCOMMAND);
 		}
 		CheckMenuItem(hMenu, ID_SCREEN_USE_D3D9, config.use_d3d9 ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_SCREEN_WAIT_VSYNC, config.wait_vsync ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_SCREEN_STRETCH, config.stretch_screen ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuRadioItem(hMenu, ID_SCREEN_STRETCH_DOT, ID_SCREEN_STRETCH_FILL, ID_SCREEN_STRETCH_DOT + config.stretch_type, MF_BYCOMMAND);
 		
 #ifdef USE_MONITOR_TYPE
 		if(config.monitor_type >= 0 && config.monitor_type < USE_MONITOR_TYPE) {
@@ -1901,8 +1892,7 @@ void open_tape_dialog(HWND hWnd, bool play)
 		_tcscpy(config.initial_tape_dir, get_parent_dir(path));
 		if(play) {
 			emu->play_tape(path);
-		}
-		else {
+		} else {
 			emu->rec_tape(path);
 		}
 	}
@@ -1944,8 +1934,7 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 		_tcscpy(config.initial_binary_dir, get_parent_dir(path));
 		if(load) {
 			emu->load_binary(drv, path);
-		}
-		else {
+		} else {
 			emu->save_binary(drv, path);
 		}
 	}
@@ -2042,8 +2031,7 @@ void set_window(HWND hWnd, int mode)
 			
 			// show menu
 			show_menu_bar(hWnd);
-		}
-		else {
+		} else {
 			SetWindowPos(hWnd, NULL, dest_x, dest_y, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
 		}
 		
@@ -2059,8 +2047,7 @@ void set_window(HWND hWnd, int mode)
 		
 		// set screen size to emu class
 		emu->set_display_size(width, height, true);
-	}
-	else if(!now_fullscreen) {
+	} else if(!now_fullscreen) {
 		// fullscreen
 		int width = (mode == -1) ? desktop_width : screen_mode_width[mode - MAX_WINDOW];
 		int height = (mode == -1) ? desktop_height : screen_mode_height[mode - MAX_WINDOW];

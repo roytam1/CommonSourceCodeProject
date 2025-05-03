@@ -220,7 +220,9 @@
 #define ID_SCREEN_FULLSCREEN32          41052
 #define ID_SCREEN_USE_D3D9              41053
 #define ID_SCREEN_WAIT_VSYNC            41054
-#define ID_SCREEN_STRETCH               41055
+#define ID_SCREEN_STRETCH_DOT           41055
+#define ID_SCREEN_STRETCH_ASPECT        41056
+#define ID_SCREEN_STRETCH_FILL          41057
 
 #define ID_SCREEN_MONITOR_TYPE0         41061
 #define ID_SCREEN_MONITOR_TYPE1         41062

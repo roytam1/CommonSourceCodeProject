@@ -108,7 +108,7 @@ typedef struct {
 	int window_mode;
 	bool use_d3d9;
 	bool wait_vsync;
-	bool stretch_screen;
+	int stretch_type;
 #ifdef USE_MONITOR_TYPE
 	int monitor_type;
 #endif

@@ -40,8 +40,7 @@ void EMU::initialize_input()
 	if(fio->Fopen(bios_path(_T("keycode.cfg")), FILEIO_READ_BINARY)) {
 		fio->Fread(keycode_conv, sizeof(keycode_conv), 1);
 		fio->Fclose();
-	}
-	else {
+	} else {
 		for(int i = 0; i < 256; i++) {
 			keycode_conv[i] = i;
 		}
@@ -90,8 +89,7 @@ void EMU::update_input()
 			vm->key_down(VK_SHIFT, false);
 #endif
 		}
-	}
-	else if(!key_shift_pressed && key_shift_released) {
+	} else if(!key_shift_pressed && key_shift_released) {
 		if(key_status[VK_SHIFT] != 0) {
 			// shift key is newly released
 			key_status[VK_SHIFT] = 0;
@@ -123,8 +121,7 @@ void EMU::update_input()
 #endif
 			}
 		}
-	}
-	else {
+	} else {
 		for(int i = 0; i < 256; i++) {
 			if(key_status[i] & 0x7f) {
 				key_status[i] = (key_status[i] & 0x80) | ((key_status[i] & 0x7f) - 1);
@@ -214,8 +211,7 @@ void EMU::update_input()
 			int shift = autokey_buffer->read_not_remove(0) & 0x100;
 			if(shift && !autokey_shift) {
 				key_down(VK_SHIFT, false);
-			}
-			else if(!shift && autokey_shift) {
+			} else if(!shift && autokey_shift) {
 				key_up(VK_SHIFT);
 			}
 			autokey_shift = shift;
@@ -245,8 +241,7 @@ void EMU::update_input()
 	case 30:
 		if(autokey_buffer && !autokey_buffer->empty()) {
 			autokey_phase = 1;
-		}
-		else {
+		} else {
 			stop_auto_key();
 		}
 		break;
@@ -288,26 +283,21 @@ void EMU::key_down(int code, bool repeat)
 		if(GetAsyncKeyState(VK_LSHIFT) & 0x8000) key_status[VK_LSHIFT] = 0x80;
 		if(GetAsyncKeyState(VK_RSHIFT) & 0x8000) key_status[VK_RSHIFT] = 0x80;
 		if(!(key_status[VK_LSHIFT] || key_status[VK_RSHIFT])) key_status[VK_LSHIFT] = 0x80;
-	}
-	else if(code == VK_CONTROL) {
+	} else if(code == VK_CONTROL) {
 		if(GetAsyncKeyState(VK_LCONTROL) & 0x8000) key_status[VK_LCONTROL] = 0x80;
 		if(GetAsyncKeyState(VK_RCONTROL) & 0x8000) key_status[VK_RCONTROL] = 0x80;
 		if(!(key_status[VK_LCONTROL] || key_status[VK_RCONTROL])) key_status[VK_LCONTROL] = 0x80;
-	}
-	else if(code == VK_MENU) {
+	} else if(code == VK_MENU) {
 		if(GetAsyncKeyState(VK_LMENU) & 0x8000) key_status[VK_LMENU] = 0x80;
 		if(GetAsyncKeyState(VK_RMENU) & 0x8000) key_status[VK_RMENU] = 0x80;
 		if(!(key_status[VK_LMENU] || key_status[VK_RMENU])) key_status[VK_LMENU] = 0x80;
-	}
-	else if(code == 0xf0) {
+	} else if(code == 0xf0) {
 		code = VK_CAPITAL;
 		keep_frames = true;
-	}
-	else if(code == 0xf2) {
+	} else if(code == 0xf2) {
 		code = VK_KANA;
 		keep_frames = true;
-	}
-	else if(code == 0xf3 || code == 0xf4) {
+	} else if(code == 0xf3 || code == 0xf4) {
 		code = VK_KANJI;
 		keep_frames = true;
 	}
@@ -315,8 +305,7 @@ void EMU::key_down(int code, bool repeat)
 	if(code == VK_SHIFT) {
 		key_shift_pressed = true;
 		return;
-	}
-	else if(numpad_table[code] != 0) {
+	} else if(numpad_table[code] != 0) {
 		if(key_shift_pressed || key_shift_released) {
 			key_converted[code] = 1;
 			key_shift_pressed = true;
@@ -331,8 +320,7 @@ void EMU::key_down(int code, bool repeat)
 #ifdef DONT_KEEEP_KEY_PRESSED
 	if(!(code == VK_SHIFT || code == VK_CONTROL || code == VK_MENU)) {
 		key_status[code] = KEY_KEEP_FRAMES;
-	}
-	else
+	} else
 #endif
 	key_status[code] = keep_frames ? KEY_KEEP_FRAMES : 0x80;
 #ifdef NOTIFY_KEY_DOWN
@@ -350,12 +338,10 @@ void EMU::key_up(int code)
 		if(!(GetAsyncKeyState(VK_LSHIFT) & 0x8000)) key_status[VK_LSHIFT] &= 0x7f;
 		if(!(GetAsyncKeyState(VK_RSHIFT) & 0x8000)) key_status[VK_RSHIFT] &= 0x7f;
 #endif
-	}
-	else if(code == VK_CONTROL) {
+	} else if(code == VK_CONTROL) {
 		if(!(GetAsyncKeyState(VK_LCONTROL) & 0x8000)) key_status[VK_LCONTROL] &= 0x7f;
 		if(!(GetAsyncKeyState(VK_RCONTROL) & 0x8000)) key_status[VK_RCONTROL] &= 0x7f;
-	}
-	else if(code == VK_MENU) {
+	} else if(code == VK_MENU) {
 		if(!(GetAsyncKeyState(VK_LMENU) & 0x8000)) key_status[VK_LMENU] &= 0x7f;
 		if(!(GetAsyncKeyState(VK_RMENU) & 0x8000)) key_status[VK_RMENU] &= 0x7f;
 	}
@@ -364,8 +350,7 @@ void EMU::key_up(int code)
 		key_shift_pressed = false;
 		key_shift_released = true;
 		return;
-	}
-	else if(key_converted[code] != 0) {
+	} else if(key_converted[code] != 0) {
 		key_converted[code] = 0;
 		code = numpad_table[code];
 	}
@@ -391,8 +376,7 @@ void EMU::press_button(int num)
 	if(code) {
 		key_down(code, false);
 		key_status[code] = KEY_KEEP_FRAMES;
-	}
-	else {
+	} else {
 		// code=0: reset virtual machine
 		vm->reset();
 	}
@@ -429,8 +413,7 @@ void EMU::toggle_mouse()
 	// toggle mouse enable / disenable
 	if(mouse_enabled) {
 		disenable_mouse();
-	}
-	else {
+	} else {
 		enable_mouse();
 	}
 }
@@ -476,8 +459,7 @@ void EMU::start_auto_key()
 				if((0x81 <= code && code <= 0x9f) || 0xe0 <= code) {
 					i++;	// kanji ?
 					continue;
-				}
-				else if(code == 0xa) {
+				} else if(code == 0xa) {
 					continue;	// cr-lf
 				}
 				if((code = autokey_table[code]) != 0) {
@@ -494,8 +476,7 @@ void EMU::start_auto_key()
 					if(code & (0x100 | 0x400)) {
 #endif
 						autokey_buffer->write((code & 0xff) | 0x100);
-					}
-					else {
+					} else {
 						autokey_buffer->write(code & 0xff);
 					}
 				}

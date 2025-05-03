@@ -1,3 +1,14 @@
+11/22/2014
+
+[WIN32/SCREEN] support two screen stretch modes keep aspect and fill screen
+
+[VM/I8080] fix debugger trace issue in busreq status
+[VM/I86] fix debugger trace issue in busreq status
+[VM/I286] fix debugger trace issue in busreq status
+[VM/I386] fix debugger trace issue in busreq status
+[VM/Z80] fix debugger trace issue in busreq status
+
+
 11/21/2014
 
 [PC8801MA/PC88] fix to support multi blocks tape images

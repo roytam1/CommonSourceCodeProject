@@ -192,9 +192,12 @@ BEGIN
         MENUITEM "Fullscreen 31",               ID_SCREEN_FULLSCREEN31
         MENUITEM "Fullscreen 32",               ID_SCREEN_FULLSCREEN32
         MENUITEM SEPARATOR
+        MENUITEM "Dot By Dot",                  ID_SCREEN_STRETCH_DOT
+        MENUITEM "Stretch (Aspect)",            ID_SCREEN_STRETCH_ASPECT
+        MENUITEM "Stretch (Fill)",              ID_SCREEN_STRETCH_FILL
+        MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
-        MENUITEM "Stretch Screen",              ID_SCREEN_STRETCH
         MENUITEM SEPARATOR
         MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE

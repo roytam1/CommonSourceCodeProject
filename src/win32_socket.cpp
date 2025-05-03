@@ -70,14 +70,12 @@ void EMU::update_socket()
 			
 			if(size <= size0) {
 				memcpy(buf0, src, size);
-			}
-			else {
+			} else {
 				memcpy(buf0, src, size0);
 				memcpy(buf1, src + size0, size - size0);
 			}
 			vm->inc_recvbuffer_ptr(i, size);
-		}
-		else if(socket_delay[i] != 0) {
+		} else if(socket_delay[i] != 0) {
 			if(--socket_delay[i] == 0) {
 				vm->network_disconnected(i);
 			}
@@ -191,8 +189,7 @@ void EMU::send_data(int ch)
 				}
 				return;
 			}
-		}
-		else {
+		} else {
 			if((size = sendto(soc[ch], (char *)buf, size, 0, (struct sockaddr *)&udpaddr[ch], sizeof(udpaddr[ch]))) == SOCKET_ERROR) {
 				// if WSAEWOULDBLOCK, WM_SOCKET* and FD_WRITE will come later
 				if(WSAGetLastError() != WSAEWOULDBLOCK) {
@@ -217,8 +214,7 @@ void EMU::recv_data(int ch)
 			return;
 		}
 		recv_w_ptr[ch] += size;
-	}
-	else {
+	} else {
 		SOCKADDR_IN addr;
 		int len = sizeof(addr);
 		int size = SOCKET_BUFFER_MAX - recv_w_ptr[ch];

@@ -3137,19 +3137,6 @@ static CPU_EXECUTE( i386 )
 
 	if (cpustate->halted || cpustate->busreq)
 	{
-#ifdef USE_DEBUGGER
-		if(cpustate->debugger->now_debugging) {
-			if(cpustate->debugger->now_suspended) {
-				cpustate->emu->mute_sound();
-				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
-					Sleep(10);
-				}
-			}
-			if(cpustate->debugger->now_debugging && !cpustate->debugger->now_going) {
-				cpustate->debugger->now_suspended = true;
-			}
-		}
-#endif
 #ifdef SINGLE_MODE_DMA
 		if(cpustate->dma != NULL) {
 			cpustate->dma->do_dma();

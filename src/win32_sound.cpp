@@ -135,8 +135,7 @@ void EMU::update_sound(int* extra_frames)
 				return;
 			}
 			offset = 0;
-		}
-		else {
+		} else {
 			if(play_c >= DSOUND_BUFFER_HALF) {
 				return;
 			}
@@ -237,8 +236,7 @@ void EMU::start_rec_sound()
 			rec_bytes = 0;
 			rec_buffer_ptr = vm->sound_buffer_ptr();
 			now_rec_sound = true;
-		}
-		else {
+		} else {
 			// failed to open the wave file
 			delete rec;
 		}

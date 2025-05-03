@@ -235,6 +235,9 @@ public:
 	uint32 fetch_op(uint32 addr, int *wait);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+#ifdef _IO_DEBUG_LOG
+	uint32 read_io8_debug(uint32 addr);
+#endif
 	
 	uint32 read_dma_data8(uint32 addr);
 	void write_dma_io8(uint32 addr, uint32 data);
