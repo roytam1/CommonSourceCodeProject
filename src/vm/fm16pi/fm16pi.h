@@ -1,51 +1,43 @@
 /*
-	FUJITSU FMR-50 Emulator 'eFMR-50'
+	FUJITSU FM-16pi Emulator 'eFM-16pi'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.04.28 -
+	Date   : 2008.10.10 -
 
 	[ virtual machine ]
 */
 
-#ifndef _FMR50_H_
-#define _FMR50_H_
+#ifndef _FM16PI_H_
+#define _FM16PI_H_
 
 // device informations for win32
-#define DEVICE_NAME		"FUJITSU FMR-50"
-#define CONFIG_NAME		"fmr50"
+#define DEVICE_NAME		"FUJITSU FM-16pi"
+#define CONFIG_NAME		"fm16pi"
 #define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
+#define WINDOW_HEIGHT1		200
 #define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
+#define WINDOW_HEIGHT2		200
 
-//#define USE_IPL_RESET
 #define USE_FD1
-#define USE_FD2
-#define USE_FD3
-#define USE_FD4
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
-#define USE_SCANLINE
-#define USE_MONITOR_TYPE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
-#define LINES_PER_FRAME 	440
+#define LINES_PER_FRAME 	262
 #define CHARS_PER_LINE		108
-#define CPU_CLOCKS		8000000
+#define CPU_CLOCKS		4915200
 #define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		400
+#define SCREEN_HEIGHT		200
 #define MAX_DRIVE		4
-#define MAX_SCSI		0
-#define I286
-#define X86_BIOS_CALL
-#define I8259_MAX_CHIPS		2
+#define I86
+#define I8259_MAX_CHIPS		1
 #define IO8_ADDR_MAX		0x10000
 
 #include "../../common.h"
@@ -55,27 +47,22 @@ class DEVICE;
 class EVENT;
 
 class BEEP;
-class HD46505;
-class I8251;
 class I8253;
 class I8259;
 class IO8;
+class LS393;
 class MB8877;
 class RTC58321;
-class UPD71071;
 class X86;
 
-class BIOS;
-class CMOS;
-class FLOPPY;
+class DISPLAY;
 class KEYBOARD;
 class MEMORY;
-//class SERIAL;
-//class SCSI;
-class TIMER;
 
 class VM
 {
+	// define friend
+	friend IO8;
 protected:
 	EMU* emu;
 	
@@ -83,25 +70,17 @@ protected:
 	EVENT* event;
 	
 	BEEP* beep;
-	HD46505* crtc;
-	I8251* sio;
-	I8253* pit0;
-	I8253* pit1;
+	I8253* pit;
 	I8259* pic;
 	IO8* io;
+	LS393* ls74;	// 74LS74
 	MB8877* fdc;
 	RTC58321* rtc;
-	UPD71071* dma;
 	X86* cpu;
 	
-	BIOS* bios;
-	CMOS* cmos;
-	FLOPPY* floppy;
+	DISPLAY* display;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
-//	SCSI* scsi;
-//	SERIAL* serial;
-	TIMER* timer;
 	
 public:
 	// ----------------------------------------

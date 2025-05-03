@@ -1,5 +1,5 @@
 /*
-	Fujitsu FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-50 Emulator 'eFMR-50'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -117,6 +117,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_context_cpu(cpu, SIG_X86_A20);
 	memory->set_context_fdc(fdc);
 	memory->set_context_bios(bios);
+	memory->set_context_crtc(crtc);
 	memory->set_chregs_ptr(crtc->get_regs());
 //	scsi->set_context_drq(dma, SIG_UPD71071_CH1, 1);
 //	scsi->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR0, 0xf);
@@ -139,10 +140,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_w(0x42, pit0, 1);
 	io->set_iomap_alias_w(0x44, pit0, 2);
 	io->set_iomap_alias_w(0x46, pit0, 3);
-	io->set_iomap_alias_w(0x50, pit0, 0);
-	io->set_iomap_alias_w(0x52, pit0, 1);
-	io->set_iomap_alias_w(0x54, pit0, 2);
-	io->set_iomap_alias_w(0x56, pit0, 3);
+	io->set_iomap_alias_w(0x50, pit1, 0);
+	io->set_iomap_alias_w(0x52, pit1, 1);
+	io->set_iomap_alias_w(0x54, pit1, 2);
+	io->set_iomap_alias_w(0x56, pit1, 3);
 	io->set_iomap_single_w(0x60, timer);
 	io->set_iomap_alias_w(0x70, rtc, 0);
 	io->set_iomap_alias_w(0x80, rtc, 1);
@@ -153,12 +154,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_w(0x206, fdc, 3);
 	io->set_iomap_single_w(0x208, floppy);
 	io->set_iomap_single_w(0x20c, floppy);
+	io->set_iomap_single_w(0x400, memory);	// crtc
 	io->set_iomap_single_w(0x402, memory);	// crtc
 	io->set_iomap_single_w(0x404, memory);	// crtc
 	io->set_iomap_single_w(0x408, memory);	// crtc
 	io->set_iomap_single_w(0x40a, memory);	// crtc
 	io->set_iomap_single_w(0x40c, memory);	// crtc
 	io->set_iomap_single_w(0x40e, memory);	// crtc
+	io->set_iomap_alias_w(0x500, crtc, 0);
+	io->set_iomap_alias_w(0x502, crtc, 1);
 	io->set_iomap_single_w(0x600, keyboard);
 	io->set_iomap_single_w(0x602, keyboard);
 	io->set_iomap_single_w(0x604, keyboard);
@@ -189,10 +193,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x42, pit0, 1);
 	io->set_iomap_alias_r(0x44, pit0, 2);
 	io->set_iomap_alias_r(0x46, pit0, 3);
-	io->set_iomap_alias_r(0x50, pit0, 0);
-	io->set_iomap_alias_r(0x52, pit0, 1);
-	io->set_iomap_alias_r(0x54, pit0, 2);
-	io->set_iomap_alias_r(0x56, pit0, 3);
+	io->set_iomap_alias_r(0x50, pit1, 0);
+	io->set_iomap_alias_r(0x52, pit1, 1);
+	io->set_iomap_alias_r(0x54, pit1, 2);
+	io->set_iomap_alias_r(0x56, pit1, 3);
 	io->set_iomap_single_r(0x60, timer);
 	io->set_iomap_alias_r(0x70, rtc, 0);
 	io->set_iomap_alias_r(0x80, rtc, 1);
@@ -211,6 +215,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x40a, memory);	// crtc
 	io->set_iomap_single_r(0x40c, memory);	// crtc
 	io->set_iomap_single_r(0x40e, memory);	// crtc
+	io->set_iomap_alias_r(0x500, crtc, 0);
+	io->set_iomap_alias_r(0x502, crtc, 1);
 	io->set_iomap_single_r(0x600, keyboard);
 	io->set_iomap_single_r(0x602, keyboard);
 	io->set_iomap_single_r(0x604, keyboard);

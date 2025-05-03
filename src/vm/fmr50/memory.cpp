@@ -1,5 +1,5 @@
 /*
-	Fujitsu FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-50 Emulator 'eFMR-50'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -30,8 +30,9 @@ void MEMORY::initialize()
 	// init memory
 	_memset(ram, 0, sizeof(ram));
 	_memset(vram, 0, sizeof(vram));
-	_memset(vram, 0, sizeof(cvram));
-	_memset(vram, 0, sizeof(kvram));
+	_memset(cvram, 0, sizeof(cvram));
+	_memset(kvram, 0, sizeof(kvram));
+	_memset(dummy, 0, sizeof(dummy));
 	_memset(ipl, 0xff, sizeof(ipl));
 	_memset(ank8, 0xff, sizeof(ank8));
 	_memset(ank16, 0xff, sizeof(ank16));
@@ -95,8 +96,8 @@ void MEMORY::reset()
 	update_bank();
 	
 	// reset crtc
-	apalsel = cgregsel = 0;
-	outctrl = 0xf;
+	apalsel = 0;
+	outctrl = 0x80;
 	dispctrl = 0x47;
 	mix = 8;
 	accaddr = dispaddr = 0;
@@ -125,6 +126,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			return;
 		}
 		else if(0xcff80 <= addr && addr < 0xcffe0) {
+//			emu->out_debug("MW\t%4x, %2x\n", addr, data);
 			// memory mapped i/o
 			switch(addr & 0xffff)
 			{
@@ -165,11 +167,11 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 				break;
 			case 0xff8e:
 				// crtc addr register
-				cgregsel = data;
+				d_crtc->write_io8(0, data);
 				break;
 			case 0xff8f:
 				// crtc data register
-				cgreg[cgregsel] = data;
+				d_crtc->write_io8(1, data);
 				break;
 			}
 			return;
@@ -185,6 +187,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 	addr &= 0xffffff;
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
+//			emu->out_debug("MR\t%4x\n", addr);
 			// memory mapped i/o
 			switch(addr & 0xffff)
 			{
@@ -199,13 +202,13 @@ uint32 MEMORY::read_data8(uint32 addr)
 				return pagesel;
 			case 0xff86:
 				// status register
-				return (disp ? 0x80 : 0) | (vsync ? 4 : 0);
+				return (disp ? 0x80 : 0) | (vsync ? 4 : 0) | 0x10;
 			case 0xff8e:
 				// crtc addr register
-				return cgregsel;
+				return d_crtc->read_io8(0);
 			case 0xff8f:
 				// crtc data register
-				return cgreg[cgregsel];
+				return d_crtc->read_io8(1);
 			}
 			return 0xff;
 		}
@@ -242,6 +245,10 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		}
 		// protect mode
 		d_cpu->write_signal(did_a20, data, 0x20);
+		break;
+	case 0x400:
+		// video output control
+		outctrl = data;
 		break;
 	case 0x402:
 		// update register
@@ -288,8 +295,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			palette_cg[addr & 7] = RGB_COLOR(data & 2 ? 0x10 : 0, data & 4 ? 0x10 : 0, data & 1 ? 0x10 : 0);
 		break;
 	case 0xfda0:
-		// crt output control register
-		outctrl = data;
+		// select color/green
 		break;
 	case 0xff81:
 		// update register
@@ -399,8 +405,10 @@ void MEMORY::draw_screen()
 	// render screen
 	_memset(screen_txt, 0, sizeof(screen_txt));
 	_memset(screen_cg, 0, sizeof(screen_cg));
-	draw_text();
-	draw_cg();
+//	if(outctrl & 1)
+		draw_text();
+//	if(outctrl & 4)
+		draw_cg();
 	
 	for(int y = 0; y < 400; y++) {
 		uint16* dest = emu->screen_buffer(y);
@@ -426,10 +434,13 @@ void MEMORY::draw_screen()
 
 void MEMORY::draw_text()
 {
-	uint16 src = ((chreg[12] << 9) | (chreg[13] << 1)) & 0xfff;
+	int src = ((chreg[12] << 9) | (chreg[13] << 1)) & 0xfff;
+	int caddr = ((chreg[8] & 0xc0) == 0xc0) ? -1 : (((chreg[14] << 9) | (chreg[15] << 1) | (mix & 0x20 ? 1 : 0)) & 0x7ff);
 	
 	for(int y = 0; y < 25; y++) {
 		for(int x = 0; x < 80; x++) {
+			bool cursor = ((src >> 1) == caddr);
+			int cx = x;
 			uint8 code = cvram[src];
 			uint8 kj_h = kvram[src] & 0x7f;
 			src = (src + 1) & 0xfff;
@@ -499,12 +510,77 @@ void MEMORY::draw_text()
 					d[7] = (pat & 0x01) ? col : 0;
 				}
 			}
+			if(cursor) {
+				int bp = chreg[10] & 0x60;
+				if(bp == 0 || (bp == 0x40 && (blink & 8)) || (bp == 0x60 && (blink & 0x10))) {
+					for(int i = (chreg[10] & 15); i < 15; i++)
+						_memset(&screen_txt[y * 16 + i][cx * 8], 7, 8);
+				}
+			}
 		}
 	}
 }
 
 void MEMORY::draw_cg()
 {
-	
+	if(dispctrl & 0x40) {
+		// 400line
+		int pofs = ((dispctrl >> 3) & 1) * 0x20000;
+		uint8* p0 = (dispctrl & 0x01) ? &vram[pofs | 0x00000] : dummy;
+		uint8* p1 = (dispctrl & 0x02) ? &vram[pofs | 0x08000] : dummy;
+		uint8* p2 = (dispctrl & 0x04) ? &vram[pofs | 0x10000] : dummy;
+		uint8* p3 = (dispctrl & 0x20) ? &vram[pofs | 0x18000] : dummy;	// ???
+		int ptr = dispaddr & 0x7ffe;
+		
+		for(int y = 0; y < 400; y++) {
+			for(int x = 0; x < 640; x += 8) {
+				uint8 r = p0[ptr];
+				uint8 g = p1[ptr];
+				uint8 b = p2[ptr];
+				uint8 i = p3[ptr++];
+				ptr &= 0x7fff;
+				uint8* d = &screen_cg[y][x];
+				
+				d[0] = ((r & 0x80) >> 7) | ((g & 0x80) >> 6) | ((b & 0x80) >> 5) | ((i & 0x80) >> 4);
+				d[1] = ((r & 0x40) >> 6) | ((g & 0x40) >> 5) | ((b & 0x40) >> 4) | ((i & 0x40) >> 3);
+				d[2] = ((r & 0x20) >> 5) | ((g & 0x20) >> 4) | ((b & 0x20) >> 3) | ((i & 0x20) >> 2);
+				d[3] = ((r & 0x10) >> 4) | ((g & 0x10) >> 3) | ((b & 0x10) >> 2) | ((i & 0x10) >> 1);
+				d[4] = ((r & 0x08) >> 3) | ((g & 0x08) >> 2) | ((b & 0x08) >> 1) | ((i & 0x08) >> 0);
+				d[5] = ((r & 0x04) >> 2) | ((g & 0x04) >> 1) | ((b & 0x04) >> 0) | ((i & 0x04) << 1);
+				d[6] = ((r & 0x02) >> 1) | ((g & 0x02) >> 0) | ((b & 0x02) << 1) | ((i & 0x02) << 2);
+				d[7] = ((r & 0x01) >> 0) | ((g & 0x01) << 1) | ((b & 0x01) << 2) | ((i & 0x01) << 3);
+			}
+		}
+	}
+	else {
+		// 200line
+		int pofs = ((dispctrl >> 3) & 3) * 0x10000;
+		uint8* p0 = (dispctrl & 0x01) ? &vram[pofs | 0x0000] : dummy;
+		uint8* p1 = (dispctrl & 0x02) ? &vram[pofs | 0x4000] : dummy;
+		uint8* p2 = (dispctrl & 0x04) ? &vram[pofs | 0x8000] : dummy;
+		uint8* p3 = (dispctrl & 0x20) ? &vram[pofs | 0xc000] : dummy;	// ???
+		int ptr = dispaddr & 0x3ffe;
+		
+		for(int y = 0; y < 400; y += 2) {
+			for(int x = 0; x < 640; x += 8) {
+				uint8 r = p0[ptr];
+				uint8 g = p1[ptr];
+				uint8 b = p2[ptr];
+				uint8 i = p3[ptr++];
+				ptr &= 0x3fff;
+				uint8* d = &screen_cg[y][x];
+				
+				d[0] = ((r & 0x80) >> 7) | ((g & 0x80) >> 6) | ((b & 0x80) >> 5) | ((i & 0x80) >> 4);
+				d[1] = ((r & 0x40) >> 6) | ((g & 0x40) >> 5) | ((b & 0x40) >> 4) | ((i & 0x40) >> 3);
+				d[2] = ((r & 0x20) >> 5) | ((g & 0x20) >> 4) | ((b & 0x20) >> 3) | ((i & 0x20) >> 2);
+				d[3] = ((r & 0x10) >> 4) | ((g & 0x10) >> 3) | ((b & 0x10) >> 2) | ((i & 0x10) >> 1);
+				d[4] = ((r & 0x08) >> 3) | ((g & 0x08) >> 2) | ((b & 0x08) >> 1) | ((i & 0x08) >> 0);
+				d[5] = ((r & 0x04) >> 2) | ((g & 0x04) >> 1) | ((b & 0x04) >> 0) | ((i & 0x04) << 1);
+				d[6] = ((r & 0x02) >> 1) | ((g & 0x02) >> 0) | ((b & 0x02) << 1) | ((i & 0x02) << 2);
+				d[7] = ((r & 0x01) >> 0) | ((g & 0x01) << 1) | ((b & 0x01) << 2) | ((i & 0x01) << 3);
+			}
+			_memcpy(screen_cg[y + 1], screen_cg[y], 640);
+		}
+	}
 }
 

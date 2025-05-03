@@ -1,5 +1,5 @@
 /*
-	Fujitsu FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-50 Emulator 'eFMR-50'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -21,7 +21,7 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_fdc, *d_bios;
+	DEVICE *d_cpu, *d_crtc, *d_fdc, *d_bios;
 	int did_a20;
 	
 	uint8* rbank[8192];	// 16MB / 2KB
@@ -31,6 +31,7 @@ private:
 	
 	uint8 ram[0x400000];	// RAM 4MB
 	uint8 vram[0x40000];	// VRAM 32KB * 8pl
+	uint8 dummy[0x8000];	// dummy plane
 	uint8 cvram[0x1000];
 	uint8 kvram[0x1000];
 	
@@ -47,7 +48,6 @@ private:
 	uint8 mix;
 	uint16 accaddr, dispaddr;
 	uint8* chreg;
-	uint8 cgreg[256], cgregsel;
 	bool disp, vsync;
 	
 	int blink;
@@ -85,6 +85,9 @@ public:
 	}
 	void set_context_bios(DEVICE* device) {
 		d_bios = device;
+	}
+	void set_context_crtc(DEVICE* device) {
+		d_crtc = device;
 	}
 	void set_chregs_ptr(uint8* ptr) {
 		chreg = ptr;

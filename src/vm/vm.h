@@ -10,6 +10,11 @@
 #ifndef _VM_H_
 #define _VM_H_
 
+// FUJITSU FM-16pi
+#ifdef _FM16PI
+#include "fm16pi/fm16pi.h"
+#endif
+
 // FUJITSU FMR-50
 #ifdef _FMR50
 #include "fmr50/fmr50.h"

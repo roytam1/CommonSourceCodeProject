@@ -1,5 +1,5 @@
 /*
-	Fujitsu FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-50 Emulator 'eFMR-50'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -81,7 +81,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 	int drv = AL & 0xf;
 	
 	if(PC == 0xfffc4) {
-		emu->out_debug("BIOSCALL: AH=%2x,AL=%2x,CX=%4x,DH=%2x,DL=%2x,BX=%4x,DS=%2x,DI=%2x\n", AH,AL,CX,DH,DL,BX,DS,DI);
+//		emu->out_debug("BIOSCALL: AH=%2x,AL=%2x,CX=%4x,DH=%2x,DL=%2x,BX=%4x,DS=%2x,DI=%2x\n", AH,AL,CX,DH,DL,BX,DS,DI);
 		if(AH == 5) {
 			// read sectors
 			if((AL & 0xf0) == 0x20) {
@@ -167,7 +167,7 @@ bool BIOS::bios_int(int intnum, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 	int drv = AL & 0xf;
 	
 	if(intnum == 0x93) {
-		emu->out_debug("BIOSINT: AH=%2x,AL=%2x,CX=%4x,DH=%2x,DL=%2x,BX=%4x,DS=%2x,DI=%2x\n", AH,AL,CX,DH,DL,BX,DS,DI);
+//		emu->out_debug("BIOSINT: AH=%2x,AL=%2x,CX=%4x,DH=%2x,DL=%2x,BX=%4x,DS=%2x,DI=%2x\n", AH,AL,CX,DH,DL,BX,DS,DI);
 		// disk bios
 		if(AH == 2) {
 			// drive status

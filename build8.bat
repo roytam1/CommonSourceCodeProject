@@ -2,6 +2,10 @@ echo off
 set path=%path%;"C:\Program Files\Microsoft Visual Studio 8\Common7\IDE"
 mkdir build
 
+devenv.com fm16pi.vcproj /Rebuild Release
+mkdir build\fm16pi
+copy Release\fm16pi.exe build\fm16pi\.
+
 devenv.com fmr50.vcproj /Rebuild Release
 mkdir build\fmr50
 copy Release\fmr50.exe build\fmr50\.

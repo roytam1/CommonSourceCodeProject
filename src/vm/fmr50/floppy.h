@@ -1,5 +1,5 @@
 /*
-	Fujitsu FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-50 Emulator 'eFMR-50'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya

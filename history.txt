@@ -1,3 +1,12 @@
+10/11/2008
+
+[FM16PI] add FUJITSU FM-16pi skelton (not work)
+[FMR50] fix i/o address of pit and crtc
+[FRM50/MEMORY] fix busy status of line renderer
+[FMR50/MEMORY] draw cursor on text screen
+[FMR50/MEMORY] support cg screen
+
+
 10/10/2008
 
 [FMR50/BIOS] support disk bios

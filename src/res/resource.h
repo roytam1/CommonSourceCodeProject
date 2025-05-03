@@ -177,6 +177,14 @@
 
 // menu positions
 
+// FUJITSU FM-16pi
+#ifdef _FM16PI
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // FUJITSU FMR-50
 #ifdef _FMR50
 #define MENU_POS_CONTROL                0
