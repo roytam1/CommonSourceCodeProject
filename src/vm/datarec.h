@@ -34,9 +34,9 @@ private:
 	// data recorder
 	FILEIO* play_fio;
 	FILEIO* rec_fio;
-	_TCHAR rec_file_path[_MAX_PATH];
 	
 	bool play, rec, remote, trigger;
+	_TCHAR rec_file_path[_MAX_PATH];
 	int ff_rew;
 	bool in_signal, out_signal;
 	uint32 prev_clock;
