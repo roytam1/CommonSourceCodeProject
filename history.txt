@@ -1,6 +1,12 @@
+10/28/2014
+
+[PC8801MA/PC88] fix crtc issue that dma underrun never occurs
+[PC8801MA/PC88] fix crtc status
+
+
 10/27/2014
 
-[PC8801MA/PC88] Revirt the uPD5257 fix for CHOBIN
+[PC8801MA/PC88] revirt the uPD5257 fix for CHOBIN
 
 
 10/26/2014

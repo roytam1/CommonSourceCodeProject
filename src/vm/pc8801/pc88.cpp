@@ -976,7 +976,7 @@ uint32 PC88::read_io8(uint32 addr)
 #endif
 		return d_opn->read_io8(addr);
 	case 0x50:
-		return crtc.read_status();
+		return crtc.status;
 	case 0x51:
 		return 0xff;
 	case 0x5c:
@@ -1306,8 +1306,7 @@ void PC88::event_vline(int v, int clock)
 			// dma wait cycles
 			busreq_clocks = (int)((double)(dmac.ch[2].count.sd + 1) * (cpu_clock_low ? 7.0 : 16.0) / (double)disp_line + 0.5);
 		}
-		crtc.clear_buffer();
-		crtc.vblank = false;
+		crtc.start();
 		request_intr(IRQ_VRTC, false);
 		update_gvram_wait();
 	}
@@ -1331,7 +1330,7 @@ void PC88::event_vline(int v, int clock)
 		if(/*(crtc.status & 0x10) && */dmac.ch[2].running) {
 			dmac.finish(2);
 		}
-		crtc.vblank = true;
+		crtc.finish();
 		request_intr(IRQ_VRTC, true);
 		update_gvram_wait();
 	}
@@ -1616,9 +1615,14 @@ void PC88::draw_text()
 		memset(text, 0, sizeof(text));
 		return;
 	}
-	crtc.status &= ~8; // clear dma underrun
-	
-	crtc.expand_buffer(hireso, Port31_400LINE);
+	if(!(crtc.status & 8)) {
+		crtc.expand_buffer(hireso, Port31_400LINE);
+	}
+	if(crtc.status & 8) {
+		// dma underrun occurs !!!
+		memset(text, 0, sizeof(text));
+		return;
+	}
 	
 	int char_height = crtc.char_height;
 	uint8 color_mask = Port30_COLOR ? 0 : 7;
@@ -1678,11 +1682,6 @@ void PC88::draw_text()
 					dest[7] = (pat & 0x01) ? color : 0;
 				}
 			}
-		}
-		if(crtc.status & 8) {
-			// dma underrun occurs !!!
-			memset(text, 0, sizeof(text));
-			break;
 		}
 	}
 }
@@ -2010,6 +2009,7 @@ void pc88_crtc_t::reset(bool hireso)
 	vretrace = hireso ? 3 : 7;
 	timing_changed = false;
 	reverse = 0;
+	irq_mask = 3;
 }
 
 void pc88_crtc_t::write_cmd(uint8 data)
@@ -2017,8 +2017,8 @@ void pc88_crtc_t::write_cmd(uint8 data)
 	cmd = (data >> 5) & 7;
 	cmd_ptr = 0;
 	switch(cmd) {
-	case 0:	// reset CRTC
-		status = 0;
+	case 0:	// reset
+		status &= ~0x16;
 		cursor.x = cursor.y = -1;
 		break;
 	case 1:	// start display
@@ -2027,9 +2027,7 @@ void pc88_crtc_t::write_cmd(uint8 data)
 		status &= ~8;
 		break;
 	case 2:	// set irq mask
-		if(!(data & 1)) {
-			status = 0;
-		}
+		irq_mask = data & 3;
 		break;
 	case 3:	// read light pen
 		status &= ~1;
@@ -2037,10 +2035,11 @@ void pc88_crtc_t::write_cmd(uint8 data)
 	case 4:	// load cursor position ON/OFF
 		cursor.type = (data & 1) ? cursor.mode : -1;
 		break;
-	case 5:	// reset IRQ
+	case 5:	// reset interrupt
+		status &= ~6;
 		break;
 	case 6:	// reset counters
-		status = 0;
+		status &= ~6;
 		break;
 	}
 }
@@ -2094,13 +2093,19 @@ void pc88_crtc_t::write_param(uint8 data)
 	cmd_ptr++;
 }
 
-uint8 pc88_crtc_t::read_status()
+void pc88_crtc_t::start()
 {
-	if(status & 8) {
-		// dma underrun
-		return (status & ~0x10);
+	memset(buffer, 0, sizeof(buffer));
+	buffer_ptr = 0;
+	vblank = false;
+}
+
+void pc88_crtc_t::finish()
+{
+	if((status & 0x10) && !(irq_mask & 1)) {
+		status |= 2;
 	}
-	return status;
+	vblank = true;
 }
 
 void pc88_crtc_t::write_buffer(uint8 data)
@@ -2115,14 +2120,8 @@ uint8 pc88_crtc_t::read_buffer(int ofs)
 	}
 	// dma underrun occurs !!!
 	status |= 8;
-//	status &= ~0x10;
+	status &= ~0x10;
 	return 0;
-}
-
-void pc88_crtc_t::clear_buffer()
-{
-	memset(buffer, 0, sizeof(buffer));
-	buffer_ptr = 0;
 }
 
 void pc88_crtc_t::update_blink()
@@ -2147,14 +2146,14 @@ void pc88_crtc_t::expand_buffer(bool hireso, bool line400)
 	}
 	for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
 		for(int cx = 0; cx < width; cx++) {
-			text.expand[cy][cx] = buffer[ofs + cx];
+			text.expand[cy][cx] = read_buffer(ofs + cx);
 		}
 	}
 	if(mode & 4) {
 		// non transparent
 		for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
 			for(int cx = 0; cx < width; cx += 2) {
-				set_attrib(buffer[ofs + cx + 1]);
+				set_attrib(read_buffer(ofs + cx + 1));
 				attrib.expand[cy][cx] = attrib.expand[cy][cx + 1] = attrib.data & attrib.mask;
 			}
 		}
@@ -2167,11 +2166,11 @@ void pc88_crtc_t::expand_buffer(bool hireso, bool line400)
 				uint8 flags[128];
 				memset(flags, 0, sizeof(flags));
 				for(int i = 2 * (attrib.num - 1); i >= 0; i -= 2) {
-					flags[buffer[ofs + i + 80] & 0x7f] = 1;
+					flags[read_buffer(ofs + i + 80) & 0x7f] = 1;
 				}
 				for(int cx = 0, pos = 0; cx < width; cx++) {
 					if(flags[cx]) {
-						set_attrib(buffer[ofs + pos + 81]);
+						set_attrib(read_buffer(ofs + pos + 81));
 						pos += 2;
 					}
 					attrib.expand[cy][cx] = attrib.data & attrib.mask;
@@ -2223,40 +2222,36 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 	case 2:
 	case 4:
 	case 6:
-//		if(!(mode & (1 << c))) {
-			if(!high_low) {
-				if((mode & 0x80) && c == 2) {
-					ch[3].addr.b.l = data;
-				}
-				ch[c].addr.b.l = data;
-			} else {
-				if((mode & 0x80) && c == 2) {
-					ch[3].addr.b.h = data;
-				}
-				ch[c].addr.b.h = data;
+		if(!high_low) {
+			if((mode & 0x80) && c == 2) {
+				ch[3].addr.b.l = data;
 			}
-//		}
+			ch[c].addr.b.l = data;
+		} else {
+			if((mode & 0x80) && c == 2) {
+				ch[3].addr.b.h = data;
+			}
+			ch[c].addr.b.h = data;
+		}
 		high_low = !high_low;
 		break;
 	case 1:
 	case 3:
 	case 5:
 	case 7:
-//		if(!(mode & (1 << c))) {
-			if(!high_low) {
-				if((mode & 0x80) && c == 2) {
-					ch[3].count.b.l = data;
-				}
-				ch[c].count.b.l = data;
-			} else {
-				if((mode & 0x80) && c == 2) {
-					ch[3].count.b.h = data & 0x3f;
-					ch[3].mode = data & 0xc0;
-				}
-				ch[c].count.b.h = data & 0x3f;
-				ch[c].mode = data & 0xc0;
+		if(!high_low) {
+			if((mode & 0x80) && c == 2) {
+				ch[3].count.b.l = data;
 			}
-//		}
+			ch[c].count.b.l = data;
+		} else {
+			if((mode & 0x80) && c == 2) {
+				ch[3].count.b.h = data & 0x3f;
+				ch[3].mode = data & 0xc0;
+			}
+			ch[c].count.b.h = data & 0x3f;
+			ch[c].mode = data & 0xc0;
+		}
 		high_low = !high_low;
 		break;
 	case 8:
