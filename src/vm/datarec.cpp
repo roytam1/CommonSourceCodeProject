@@ -382,7 +382,7 @@ bool DATAREC::play_tape(_TCHAR* file_path)
 			if((buffer_length = load_mzt_image()) != 0) {
 				buffer = (uint8 *)malloc(buffer_length);
 				load_mzt_image();
-				play = false;
+				play = true;
 			}
 		} else if(check_file_extension(file_path, _T(".mtw"))) {
 			// skip mzt image
