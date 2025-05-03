@@ -1,3 +1,10 @@
+8/24/2015
+
+[VM/DISK] fix to save image in d88 format if solid image is physical formatted
+[VM/DISK] fix to save single side solid image correctly
+[VM/DISK] fix imagedisk converter for single side disk image
+
+
 8/23/2015
 
 [VM/DISK] fix routine to check FM-7 DEATH FORCE
@@ -6,7 +13,7 @@
 8/22/2015-2
 
 [VM/DISK] support solid 1dd 280kb disk image with .img extension
-[VM/MB8877] revirt the fix in 8/22/2015
+[VM/MB8877] revert the fix in 8/22/2015
 
 [SMC777] fix floppy drive speed to 600rpm
 
@@ -685,7 +692,7 @@
 
 10/27/2014
 
-[PC8801MA/PC88] revirt the uPD5257 fix for CHOBIN
+[PC8801MA/PC88] revert the uPD5257 fix for CHOBIN
 
 
 10/26/2014
