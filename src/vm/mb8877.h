@@ -71,6 +71,7 @@ private:
 	// status
 	bool now_search;
 	bool now_seek;
+	bool sector_changed;
 	int no_command;
 	int seektrk;
 	bool seekvct;
@@ -83,6 +84,8 @@ private:
 	
 	int get_cur_position();
 	double get_usec_to_start_trans(bool first_sector);
+	double get_usec_to_next_trans_pos(bool wait_15msec);
+	double get_usec_to_detect_index_hole(int count, bool wait_15msec);
 	
 	// image handler
 	uint8 search_track();

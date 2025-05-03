@@ -64,7 +64,9 @@ void MB8877::register_my_event(int event, double usec)
 void MB8877::register_seek_event()
 {
 	cancel_my_event(EVENT_SEEK);
-	if(disk[drvreg]->drive_type == DRIVE_TYPE_2HD) {
+	if(fdc[drvreg].track == seektrk) {
+		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), 1, false, &register_id[EVENT_SEEK]);
+	} else if(disk[drvreg]->drive_type == DRIVE_TYPE_2HD) {
 		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_hi[cmdreg & 3], false, &register_id[EVENT_SEEK]);
 	} else {
 		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_lo[cmdreg & 3], false, &register_id[EVENT_SEEK]);
@@ -83,11 +85,11 @@ void MB8877::register_drq_event(int bytes)
 		usec = 4;
 	}
 #elif defined(_X1TURBO) || defined(_X1TURBOZ)
-	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1TURBO_ALPHA) {
-		if(usec > 24) {
-			usec = 24;
-		}
-	}
+//	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1TURBO_ALPHA) {
+//		if(usec > 24) {
+//			usec = 24;
+//		}
+//	}
 #endif
 	cancel_my_event(EVENT_DRQ);
 	register_event(this, (EVENT_DRQ << 8) | (cmdtype & 0xff), usec, false, &register_id[EVENT_DRQ]);
@@ -196,7 +198,10 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 				// write or multisector write
 				if(fdc[drvreg].index < disk[drvreg]->sector_size.sd) {
 					if(!disk[drvreg]->write_protected) {
-						disk[drvreg]->sector[fdc[drvreg].index] = datareg;
+						if(disk[drvreg]->sector[fdc[drvreg].index] != datareg) {
+							disk[drvreg]->sector[fdc[drvreg].index] = datareg;
+							sector_changed = true;
+						}
 						// dm, ddm
 						disk[drvreg]->set_deleted((cmdreg & 1) != 0);
 					} else {
@@ -218,6 +223,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 						register_my_event(EVENT_MULTI1, 30);
 						register_my_event(EVENT_MULTI2, 60);
 					}
+					sector_changed = false;
 				} else if(status & FDC_ST_DRQ) {
 					if(fdc[drvreg].index == 0) {
 						register_drq_event(fdc[drvreg].bytes_before_2nd_drq);
@@ -265,7 +271,7 @@ write_id:
 							} else if(fdc[drvreg].sector_found) {
 								// clear data crc error if all sector data are written
 								if(fdc[drvreg].sector_index == fdc[drvreg].sector_length) {
-									disk[drvreg]->clear_data_crc_error();
+									disk[drvreg]->set_data_crc_error(false);
 								}
 								fdc[drvreg].id_written = false;
 							} else {
@@ -554,7 +560,7 @@ void MB8877::event_callback(int event_id, int err)
 	
 	// cancel event if the command is finished or other command is executed
 	if(cmd != cmdtype) {
-		if(event == EVENT_SEEK) {
+		if(event == EVENT_SEEK || event == EVENT_SEEKEND) {
 			now_seek = false;
 		} else if(event == EVENT_SEARCH) {
 			now_search = false;
@@ -575,44 +581,31 @@ void MB8877::event_callback(int event_id, int err)
 		if((cmdreg & 0x10) || ((cmdreg & 0xf0) == 0)) {
 			trkreg = fdc[drvreg].track;
 		}
-		if(seektrk == fdc[drvreg].track) {
-			// auto update
-//			if((cmdreg & 0xf0) == 0) {
-				datareg = seektrk;
-//			}
-			if(cmdreg & 4) {
-				status |= search_track();
-			}
-			now_seek = false;
-			seekend_clock = current_clock();
-			set_irq(true);
-#ifdef _FDC_DEBUG_LOG
-			emu->out_debug_log(_T("FDC\tSEEK\n"));
-#endif
-		} else {
+		if(seektrk != fdc[drvreg].track) {
 			register_seek_event();
+			break;
 		}
-		break;
+		seekend_clock = current_clock();
+		status_tmp = status;
+		if(cmdreg & 4) {
+			// verify
+			status_tmp |= search_track();
+			double time;
+			if(status_tmp & FDC_ST_SEEKERR) {
+				time = get_usec_to_detect_index_hole(5, true);
+			} else {
+				time = get_usec_to_next_trans_pos(true);
+			}
+			register_my_event(EVENT_SEEKEND, time);
+			break;
+		}
 	case EVENT_SEEKEND:
-		if(seektrk == fdc[drvreg].track) {
-			// auto update
-			if((cmdreg & 0x10) || ((cmdreg & 0xf0) == 0)) {
-				trkreg = fdc[drvreg].track;
-			}
-//			if((cmdreg & 0xf0) == 0) {
-				datareg = seektrk;
-//			}
-			if(cmdreg & 4) {
-				status |= search_track();
-			}
-			now_seek = false;
-			seekend_clock = current_clock();
-//			cancel_my_event(EVENT_SEEK);
-			set_irq(true);
+		now_seek = false;
+		status = status_tmp;
+		set_irq(true);
 #ifdef _FDC_DEBUG_LOG
-			emu->out_debug_log(_T("FDC\tSEEK END\n"));
+		//emu->out_debug_log(_T("FDC\tSEEK END\n"));
 #endif
-		}
 		break;
 	case EVENT_SEARCH:
 		now_search = false;
@@ -781,18 +774,12 @@ void MB8877::cmd_restore()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	trkreg = 0xff;
+	datareg = 0;
 	
 	seektrk = 0;
 	seekvct = true;
 	
-	if(fdc[drvreg].track != seektrk) {
-		cancel_my_event(EVENT_SEEKEND);
-		register_seek_event();
-	} else {
-		cancel_my_event(EVENT_SEEK);
-//		register_my_event(EVENT_SEEKEND, 300);
-		register_my_event(EVENT_SEEKEND, 300.0 * 1000.0);
-	}
+	register_seek_event();
 }
 
 void MB8877::cmd_seek()
@@ -801,18 +788,12 @@ void MB8877::cmd_seek()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
+//	seektrk = (uint8)(fdc[drvreg].track + datareg - trkreg);
 	seektrk = datareg;
 	seektrk = (seektrk > 83) ? 83 : (seektrk < 0) ? 0 : seektrk;
 	seekvct = !(datareg > trkreg);
 	
-	if(fdc[drvreg].track != seektrk) {
-		cancel_my_event(EVENT_SEEKEND);
-		register_seek_event();
-	} else {
-		cancel_my_event(EVENT_SEEK);
-//		register_my_event(EVENT_SEEKEND, 300);
-		register_my_event(EVENT_SEEKEND, 300.0 * 1000.0);
-	}
+	register_seek_event();
 }
 
 void MB8877::cmd_step()
@@ -831,17 +812,11 @@ void MB8877::cmd_stepin()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
-	seektrk = (fdc[drvreg].track < 83) ? fdc[drvreg].track + 1 : 83;
+	seektrk = fdc[drvreg].track + 1;
+	seektrk = (seektrk > 83) ? 83 : (seektrk < 0) ? 0 : seektrk;
 	seekvct = false;
 	
-	if(fdc[drvreg].track != seektrk) {
-		cancel_my_event(EVENT_SEEKEND);
-		register_seek_event();
-	} else {
-		cancel_my_event(EVENT_SEEK);
-//		register_my_event(EVENT_SEEKEND, 300);
-		register_my_event(EVENT_SEEKEND, 300.0 * 1000.0);
-	}
+	register_seek_event();
 }
 
 void MB8877::cmd_stepout()
@@ -850,17 +825,11 @@ void MB8877::cmd_stepout()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
-	seektrk = (fdc[drvreg].track > 0) ? fdc[drvreg].track - 1 : 0;
+	seektrk = fdc[drvreg].track - 1;
+	seektrk = (seektrk > 83) ? 83 : (seektrk < 0) ? 0 : seektrk;
 	seekvct = true;
 	
-	if(fdc[drvreg].track != seektrk) {
-		cancel_my_event(EVENT_SEEKEND);
-		register_seek_event();
-	} else {
-		cancel_my_event(EVENT_SEEK);
-//		register_my_event(EVENT_SEEKEND, 300);
-		register_my_event(EVENT_SEEKEND, 300.0 * 1000.0);
-	}
+	register_seek_event();
 }
 
 void MB8877::cmd_readdata(bool first_sector)
@@ -873,8 +842,7 @@ void MB8877::cmd_readdata(bool first_sector)
 	
 	double time;
 	if(status_tmp & FDC_ST_RECNFND) {
-		int bytes = disk[drvreg]->get_track_size() * 5 - get_cur_position();
-		time = disk[drvreg]->get_usec_per_bytes(bytes);
+		time = get_usec_to_detect_index_hole(5, first_sector && ((cmdreg & 4) != 0));
 	} else {
 		time = get_usec_to_start_trans(first_sector);
 	}
@@ -889,11 +857,11 @@ void MB8877::cmd_writedata(bool first_sector)
 	status = FDC_ST_BUSY;
 	status_tmp = search_sector() & ~FDC_ST_RECTYPE;
 	now_search = true;
+	sector_changed = false;
 	
 	double time;
 	if(status_tmp & FDC_ST_RECNFND) {
-		int bytes = disk[drvreg]->get_track_size() * 5 - get_cur_position();
-		time = disk[drvreg]->get_usec_per_bytes(bytes);
+		time = get_usec_to_detect_index_hole(5, first_sector && ((cmdreg & 4) != 0));
 	} else if(status & FDC_ST_WRITEFAULT) {
 		time = (cmdreg & 4) ? 15000 : 1;
 	} else {
@@ -913,8 +881,7 @@ void MB8877::cmd_readaddr()
 	
 	double time;
 	if(status_tmp & FDC_ST_RECNFND) {
-		int bytes = disk[drvreg]->get_track_size() * 5 - get_cur_position();
-		time = disk[drvreg]->get_usec_per_bytes(bytes);
+		time = get_usec_to_detect_index_hole(5, ((cmdreg & 4) != 0));
 	} else {
 		time = get_usec_to_start_trans(true);
 	}
@@ -933,14 +900,8 @@ void MB8877::cmd_readtrack()
 	fdc[drvreg].index = 0;
 	now_search = true;
 	
-	fdc[drvreg].next_trans_position = 0;
-	int bytes = disk[drvreg]->get_track_size() - get_cur_position();
-	double time = disk[drvreg]->get_usec_per_bytes(bytes);
-	
-	// wait at least 15msec before check index hole raise first drq
-	if((cmdreg & 4) && time < 15000) {
-		time += disk[drvreg]->get_usec_per_track();
-	}
+	fdc[drvreg].next_trans_position = 1;
+	double time = get_usec_to_detect_index_hole(1, ((cmdreg & 4) != 0));
 	register_my_event(EVENT_SEARCH, time);
 	cancel_my_event(EVENT_LOST);
 }
@@ -983,7 +944,25 @@ void MB8877::cmd_writetrack()
 void MB8877::cmd_forceint()
 {
 	// type-4 force interrupt
-	if(cmdtype == FDC_CMD_WR_TRK) {
+	if(cmdtype == FDC_CMD_TYPE1) {
+		// abort restore/seek/step command
+		if(now_seek) {
+			if(seektrk > fdc[drvreg].track) {
+				fdc[drvreg].track++;
+			} else if(seektrk < fdc[drvreg].track) {
+				fdc[drvreg].track--;
+			}
+			if((cmdreg_tmp & 0x10) || ((cmdreg_tmp & 0xf0) == 0)) {
+				trkreg = fdc[drvreg].track;
+			}
+		}
+	} else if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
+		// abort write sector command
+		if(sector_changed) {
+			disk[drvreg]->set_data_crc_error(false);
+		}
+	} else if(cmdtype == FDC_CMD_WR_TRK) {
+		// abort write track command
 		if(!disk[drvreg]->write_protected) {
 			if(fdc[drvreg].id_written && !fdc[drvreg].sector_found) {
 				// data mark of last sector is not written
@@ -992,6 +971,8 @@ void MB8877::cmd_forceint()
 			disk[drvreg]->sync_buffer();
 		}
 	}
+	now_search = now_seek = sector_changed = false;
+	
 	if(cmdtype == 0 || !(status & FDC_ST_BUSY)) {
 		cmdtype = FDC_CMD_TYPE1;
 		status = FDC_ST_HEADENG;
@@ -1002,25 +983,6 @@ void MB8877::cmd_forceint()
 	if(cmdreg & 0x0f) {
 		set_irq(true);
 	}
-	
-	// finish current seeking
-	if(now_seek) {
-		if(seektrk > fdc[drvreg].track) {
-			fdc[drvreg].track++;
-		} else if(seektrk < fdc[drvreg].track) {
-			fdc[drvreg].track--;
-		}
-		if((cmdreg_tmp & 0x10) || ((cmdreg_tmp & 0xf0) == 0)) {
-			trkreg = fdc[drvreg].track;
-		}
-		if(seektrk == fdc[drvreg].track) {
-			// auto update
-			if((cmdreg_tmp & 0xf0) == 0) {
-				datareg = 0;
-			}
-		}
-	}
-	now_search = now_seek = false;
 	
 	cancel_my_event(EVENT_SEEK);
 	cancel_my_event(EVENT_SEEKEND);
@@ -1047,6 +1009,8 @@ uint8 MB8877::search_track()
 		for(int i = 0; i < disk[drvreg]->sector_num.sd; i++) {
 			disk[drvreg]->get_sector(-1, -1, i);
 			if(disk[drvreg]->id[0] == trkreg) {
+				fdc[drvreg].next_trans_position = disk[drvreg]->id_position[i] + 4 + 2;
+				fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[i];
 				return 0;
 			}
 		}
@@ -1054,6 +1018,8 @@ uint8 MB8877::search_track()
 		for(int i = 0; i < disk[drvreg]->sector_num.sd; i++) {
 			disk[drvreg]->get_sector(-1, -1, i);
 			if(disk[drvreg]->id[0] == trkreg && !disk[drvreg]->addr_crc_error) {
+				fdc[drvreg].next_trans_position = disk[drvreg]->id_position[i] + 4 + 2;
+				fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[i];
 				return 0;
 			}
 		}
@@ -1128,7 +1094,7 @@ uint8 MB8877::search_sector()
 			fdc[drvreg].next_trans_position = disk[drvreg]->id_position[i] + 4 + 2;
 			fdc[drvreg].bytes_before_2nd_drq = disk[drvreg]->data_position[i] - fdc[drvreg].next_trans_position;
 		} else {
-			fdc[drvreg].next_trans_position = disk[drvreg]->data_position[i];
+			fdc[drvreg].next_trans_position = disk[drvreg]->data_position[i] + 1;
 		}
 		fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[i];
 		fdc[drvreg].index = 0;
@@ -1173,7 +1139,7 @@ uint8 MB8877::search_addr()
 	
 	// get sector
 	if(disk[drvreg]->get_sector(-1, -1, first_sector)) {
-		fdc[drvreg].next_trans_position = disk[drvreg]->id_position[first_sector];
+		fdc[drvreg].next_trans_position = disk[drvreg]->id_position[first_sector] + 1;
 		fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[first_sector];
 		fdc[drvreg].index = 0;
 		secreg = disk[drvreg]->id[0];
@@ -1198,9 +1164,9 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 {
 #if defined(_X1TURBO) || defined(_X1TURBOZ)
 	// FIXME: ugly patch for X1turbo ALPHA
-	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1TURBO_ALPHA) {
-		return 100;
-	} else
+//	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1TURBO_ALPHA) {
+//		return 100;
+//	} else
 #endif
 	if(disk[drvreg]->no_skew && !disk[drvreg]->correct_timing()) {
 		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
@@ -1209,22 +1175,43 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 	}
 	
 	// get time from current position
+	double time = get_usec_to_next_trans_pos(first_sector && ((cmdreg & 4) != 0));
+	if(first_sector && time < 60000 - passed_usec(seekend_clock)) {
+		time += disk[drvreg]->get_usec_per_track();
+	}
+	return time;
+}
+
+double MB8877::get_usec_to_next_trans_pos(bool wait_15msec)
+{
 	int position = get_cur_position();
+	if(wait_15msec) {
+		position = (position + disk[drvreg]->get_bytes_per_usec(15000)) % disk[drvreg]->get_track_size();
+	}
 	int bytes = fdc[drvreg].next_trans_position - position;
 	if(fdc[drvreg].next_sync_position < position || bytes < 0) {
 		bytes += disk[drvreg]->get_track_size();
 	}
 	double time = disk[drvreg]->get_usec_per_bytes(bytes);
-	
-	if(first_sector) {
-		// wait at least 15msec before search target sector and rqise first drq
-		if((cmdreg & 4) && time < 15000) {
-			time += disk[drvreg]->get_usec_per_track();
-		}
-		// wait at least 60msec before search target sector and rqise first drq just after seek command is done or drive register is written
-		if(time < 60000 - passed_usec(seekend_clock)) {
-			time += disk[drvreg]->get_usec_per_track();
-		}
+	if(wait_15msec) {
+		time += 15000;
+	}
+	return time;
+}
+
+double MB8877::get_usec_to_detect_index_hole(int count, bool wait_15msec)
+{
+	int position = get_cur_position();
+	if(wait_15msec) {
+		position = (position + disk[drvreg]->get_bytes_per_usec(15000)) % disk[drvreg]->get_track_size();
+	}
+	int bytes = disk[drvreg]->get_track_size() * count - position;
+//	if(bytes < 0) {
+//		bytes += disk[drvreg]->get_track_size();
+//	}
+	double time = disk[drvreg]->get_usec_per_bytes(bytes);
+	if(wait_15msec) {
+		time += 15000;
 	}
 	return time;
 }
@@ -1324,7 +1311,7 @@ uint8 MB8877::fdc_status()
 #endif
 }
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 void MB8877::save_state(FILEIO* state_fio)
 {
@@ -1348,6 +1335,7 @@ void MB8877::save_state(FILEIO* state_fio)
 	state_fio->Fwrite(register_id, sizeof(register_id), 1);
 	state_fio->FputBool(now_search);
 	state_fio->FputBool(now_seek);
+	state_fio->FputBool(sector_changed);
 	state_fio->FputInt32(no_command);
 	state_fio->FputInt32(seektrk);
 	state_fio->FputBool(seekvct);
@@ -1384,6 +1372,7 @@ bool MB8877::load_state(FILEIO* state_fio)
 	state_fio->Fread(register_id, sizeof(register_id), 1);
 	now_search = state_fio->FgetBool();
 	now_seek = state_fio->FgetBool();
+	sector_changed = state_fio->FgetBool();
 	no_command = state_fio->FgetInt32();
 	seektrk = state_fio->FgetInt32();
 	seekvct = state_fio->FgetBool();
