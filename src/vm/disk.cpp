@@ -99,7 +99,7 @@ typedef struct fd_format {
 static const fd_format fd_formats[] = {
 	{ MEDIA_TYPE_2D,  40, 1, 16,  256 },	// 1D   160KB
 	{ MEDIA_TYPE_2D , 40, 2, 16,  256 },	// 2D   320KB
-#ifdef _MZ2500
+#if defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200) || defined(_MZ2500)
 	{ MEDIA_TYPE_2DD, 80, 2, 16,  256 },	// 2DD  640KB (MZ-2500)
 #else
 	{ MEDIA_TYPE_2DD, 80, 2,  8,  512 },	// 2DD  640KB

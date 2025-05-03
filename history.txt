@@ -1,3 +1,8 @@
+1/1/2015
+
+[PC8801MA/PC88] fix to mask bit4-7 of extended ram bank register
+
+
 12/29/2014
 
 [VM/SN76489AN] support save/load state

@@ -91,7 +91,11 @@
 #define PortE2_RDEN	(port[0xe2] & 0x01)
 #define PortE2_WREN	(port[0xe2] & 0x10)
 
+#ifdef PC88_IODATA_EXRAM
 #define PortE3_ERAMSL	port[0xe3]
+#else
+#define PortE3_ERAMSL	(port[0xe3] & 0x0f)
+#endif
 
 #define PortE8E9_KANJI1	(port[0xe8] | (port[0xe9] << 8))
 #define PortECED_KANJI2	(port[0xec] | (port[0xed] << 8))
@@ -1046,7 +1050,11 @@ uint32 PC88::read_io8_debug(uint32 addr)
 	case 0xe2:
 		return (~port[0xe2]) | 0xee;
 	case 0xe3:
+#ifdef PC88_IODATA_EXRAM
 		return port[0xe3];
+#else
+		return port[0xe3] | 0xf0;
+#endif
 	case 0xe8:
 		return kanji1[PortE8E9_KANJI1 * 2 + 1];
 	case 0xe9:
