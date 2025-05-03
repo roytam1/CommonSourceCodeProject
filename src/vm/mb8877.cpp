@@ -5,7 +5,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.12.06 -
 
-	[ MB8877 / MB8876 ]
+	[ MB8877 / MB8876 / MB8866 ]
 */
 
 #include "mb8877.h"
@@ -44,8 +44,10 @@
 
 #define DRIVE_MASK		(MAX_DRIVE - 1)
 
-static const int seek_wait_hi[4] = {3000,  6000, 10000, 16000};
-static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};
+#define DELAY_TIME		(disk[drvreg]->drive_type == DRIVE_TYPE_2HD ? 15000 : 30000)
+
+static const int seek_wait_hi[4] = {3000,  6000, 10000, 16000};	// 2MHz
+static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};	// 1MHz
 
 void MB8877::cancel_my_event(int event)
 {
@@ -150,7 +152,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 	case 0:
 		// command reg
 		cmdreg_tmp = cmdreg;
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		cmdreg = (~data) & 0xff;
 #else
 		cmdreg = data;
@@ -160,7 +162,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		break;
 	case 1:
 		// track reg
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		trkreg = (~data) & 0xff;
 #else
 		trkreg = data;
@@ -174,7 +176,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		break;
 	case 2:
 		// sector reg
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		secreg = (~data) & 0xff;
 #else
 		secreg = data;
@@ -188,7 +190,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		break;
 	case 3:
 		// data reg
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		datareg = (~data) & 0xff;
 #else
 		datareg = data;
@@ -350,8 +352,12 @@ uint32 MB8877::read_io8(uint32 addr)
 				status &= ~FDC_ST_NOTREADY;
 			}
 			// write protected
-			if(disk[drvreg]->inserted && disk[drvreg]->write_protected) {
-				status |= FDC_ST_WRITEP;
+			if(cmdtype == FDC_CMD_TYPE1 || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC || cmdtype == FDC_CMD_WR_TRK) {
+				if(disk[drvreg]->inserted && disk[drvreg]->write_protected) {
+					status |= FDC_ST_WRITEP;
+				} else {
+					status &= ~FDC_ST_WRITEP;
+				}
 			} else {
 				status &= ~FDC_ST_WRITEP;
 			}
@@ -396,21 +402,21 @@ uint32 MB8877::read_io8(uint32 addr)
 #ifdef _FDC_DEBUG_LOG
 		emu->out_debug_log(_T("FDC\tSTATUS=%2x\n"), val);
 #endif
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		return (~val) & 0xff;
 #else
 		return val;
 #endif
 	case 1:
 		// track reg
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		return (~trkreg) & 0xff;
 #else
 		return trkreg;
 #endif
 	case 2:
 		// sector reg
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		return (~secreg) & 0xff;
 #else
 		return secreg;
@@ -504,7 +510,7 @@ uint32 MB8877::read_io8(uint32 addr)
 #ifdef _FDC_DEBUG_LOG
 		emu->out_debug_log(_T("FDC\tDATA=%2x\n"), datareg);
 #endif
-#ifdef HAS_MB8876
+#if defined(HAS_MB8866) || defined(HAS_MB8876)
 		return (~datareg) & 0xff;
 #else
 		return datareg;
@@ -863,7 +869,7 @@ void MB8877::cmd_writedata(bool first_sector)
 	if(status_tmp & FDC_ST_RECNFND) {
 		time = get_usec_to_detect_index_hole(5, first_sector && ((cmdreg & 4) != 0));
 	} else if(status & FDC_ST_WRITEFAULT) {
-		time = (cmdreg & 4) ? 15000 : 1;
+		time = (cmdreg & 4) ? DELAY_TIME : 1;
 	} else {
 		time = get_usec_to_start_trans(first_sector);
 	}
@@ -920,12 +926,12 @@ void MB8877::cmd_writetrack()
 	double time;
 	if(disk[drvreg]->write_protected) {
 		status_tmp = FDC_ST_WRITEFAULT;
-		time = (cmdreg & 4) ? 15000 : 1;
+		time = (cmdreg & 4) ? DELAY_TIME : 1;
 	} else {
 		if(cmdreg & 4) {
 			// wait 15msec before raise first drq
-			fdc[drvreg].next_trans_position = (get_cur_position() + disk[drvreg]->get_bytes_per_usec(15000)) % disk[drvreg]->get_track_size();
-			time = 15000;
+			fdc[drvreg].next_trans_position = (get_cur_position() + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
+			time = DELAY_TIME;
 		} else {
 			// raise first drq soon
 			fdc[drvreg].next_trans_position = (get_cur_position() + 1) % disk[drvreg]->get_track_size();
@@ -1074,9 +1080,11 @@ uint8 MB8877::search_sector()
 //		if(disk[drvreg]->id[0] != trkreg) {
 //			continue;
 //		}
+#if !defined(HAS_MB8866)
 		if((cmdreg & 2) && (disk[drvreg]->id[1] & 1) != ((cmdreg >> 3) & 1)) {
 			continue;
 		}
+#endif
 		if(disk[drvreg]->id[2] != secreg) {
 			continue;
 		}
@@ -1182,36 +1190,36 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 	return time;
 }
 
-double MB8877::get_usec_to_next_trans_pos(bool wait_15msec)
+double MB8877::get_usec_to_next_trans_pos(bool delay)
 {
 	int position = get_cur_position();
-	if(wait_15msec) {
-		position = (position + disk[drvreg]->get_bytes_per_usec(15000)) % disk[drvreg]->get_track_size();
+	if(delay) {
+		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
 	}
 	int bytes = fdc[drvreg].next_trans_position - position;
 	if(fdc[drvreg].next_sync_position < position || bytes < 0) {
 		bytes += disk[drvreg]->get_track_size();
 	}
 	double time = disk[drvreg]->get_usec_per_bytes(bytes);
-	if(wait_15msec) {
-		time += 15000;
+	if(delay) {
+		time += DELAY_TIME;
 	}
 	return time;
 }
 
-double MB8877::get_usec_to_detect_index_hole(int count, bool wait_15msec)
+double MB8877::get_usec_to_detect_index_hole(int count, bool delay)
 {
 	int position = get_cur_position();
-	if(wait_15msec) {
-		position = (position + disk[drvreg]->get_bytes_per_usec(15000)) % disk[drvreg]->get_track_size();
+	if(delay) {
+		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
 	}
 	int bytes = disk[drvreg]->get_track_size() * count - position;
 //	if(bytes < 0) {
 //		bytes += disk[drvreg]->get_track_size();
 //	}
 	double time = disk[drvreg]->get_usec_per_bytes(bytes);
-	if(wait_15msec) {
-		time += 15000;
+	if(delay) {
+		time += DELAY_TIME;
 	}
 	return time;
 }
