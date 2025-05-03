@@ -27,7 +27,7 @@ int FLOPPY::Seek88(int drvno, int trackno, int sectno)
 		cur_pos[drvno] = 0;
 		
 		if(disk[drvno]->get_track(trackno >> 1, trackno & 1)) {
-			for(int i = 0; i < disk[drvno]->sector_num; i++) {
+			for(int i = 0; i < disk[drvno]->sector_num.sd; i++) {
 				if(disk[drvno]->get_sector(trackno >> 1, 0/*trackno & 1*/, i)) {
 					if(disk[drvno]->id[2] == sectno) {
 						return 1;
@@ -42,7 +42,7 @@ int FLOPPY::Seek88(int drvno, int trackno, int sectno)
 unsigned char FLOPPY::Getc88(int drvno)
 {
 	if(drvno < 2 && disk[drvno]->sector != NULL) {
-		if(cur_pos[drvno] >= disk[drvno]->sector_size) {
+		if(cur_pos[drvno] >= disk[drvno]->sector_size.sd) {
 			cur_sct[drvno]++;
 			if(!Seek88(drvno, cur_trk[drvno], cur_sct[drvno])) {
 //				cur_trk[drvno]++;
@@ -62,7 +62,7 @@ unsigned char FLOPPY::Getc88(int drvno)
 int FLOPPY::Putc88(int drvno, unsigned char dat)
 {
 	if(drvno < 2 && disk[drvno]->sector != NULL) {
-		if(cur_pos[drvno] >= disk[drvno]->sector_size) {
+		if(cur_pos[drvno] >= disk[drvno]->sector_size.sd) {
 			cur_sct[drvno]++;
 			if(!Seek88(drvno, cur_trk[drvno], cur_sct[drvno])) {
 //				cur_trk[drvno]++;
@@ -522,10 +522,10 @@ uint32 FLOPPY::read_signal(int ch)
 	return stat;
 }
 
-void FLOPPY::open_disk(int drv, _TCHAR path[], int offset)
+void FLOPPY::open_disk(int drv, _TCHAR path[], int bank)
 {
 	if(drv < 2) {
-		disk[drv]->open(path, offset);
+		disk[drv]->open(path, bank);
 		Seek88(drv, 0, 1);
 	}
 }

@@ -376,7 +376,7 @@ private:
 	typedef struct {
 		_TCHAR path[_MAX_PATH];
 		bool play;
-		int offset;
+		int bank;
 		int wait_count;
 	} media_status_t;
 	
@@ -513,7 +513,7 @@ public:
 		_TCHAR path[_MAX_PATH];
 		struct {
 			_TCHAR name[18];
-			int offset;
+//			int offset;
 		} bank[MAX_D88_BANKS];
 		int bank_num;
 		int cur_bank;
@@ -527,7 +527,7 @@ public:
 	bool cart_inserted(int drv);
 #endif
 #ifdef USE_FD1
-	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void open_disk(int drv, _TCHAR* file_path, int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 #endif

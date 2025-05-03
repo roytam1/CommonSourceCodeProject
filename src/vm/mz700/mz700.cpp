@@ -506,9 +506,9 @@ bool VM::quickdisk_inserted(int drv)
 	}
 }
 
-void VM::open_disk(int drv, _TCHAR* file_path, int offset)
+void VM::open_disk(int drv, _TCHAR* file_path, int bank)
 {
-	fdc->open_disk(drv, file_path, offset);
+	fdc->open_disk(drv, file_path, bank);
 }
 
 void VM::close_disk(int drv)

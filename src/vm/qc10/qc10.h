@@ -33,7 +33,7 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define I8259_MAX_CHIPS		2
-#define UPD7201
+#define HAS_UPD7201
 #define UPD7220_FIXED_PITCH
 #define UPD765A_DMA_MODE
 //#define SINGLE_MODE_DMA
@@ -144,7 +144,7 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void open_disk(int drv, _TCHAR* file_path, int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 	bool now_skip();

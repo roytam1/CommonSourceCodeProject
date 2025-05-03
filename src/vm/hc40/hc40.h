@@ -46,7 +46,7 @@ class EVENT;
 
 class BEEP;
 class DATAREC;
-class TF20;
+class PTF20;
 class Z80;
 
 class IO;
@@ -62,7 +62,7 @@ protected:
 	
 	BEEP* beep;
 	DATAREC* drec;
-	TF20* tf20;
+	PTF20* tf20;
 	Z80* cpu;
 	
 	IO* io;
@@ -104,7 +104,7 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void open_disk(int drv, _TCHAR* file_path, int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 	void play_tape(_TCHAR* file_path);

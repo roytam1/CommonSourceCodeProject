@@ -79,7 +79,7 @@ static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};
 	double usec = disk[drvreg]->get_usec_per_bytes(1) - passed_usec(prev_drq_clock); \
 	if(usec < 4) { \
 		usec = 4; \
-	} else if(usec > 24 && disk[drvreg]->is_alpha) { \
+	} else if(usec > 24 && disk[drvreg]->is_special_disk == SPECIAL_DISK_X1_ALPHA) { \
 		usec = 24; \
 	} \
 	if(register_id[EVENT_DRQ] != -1) { \
@@ -198,11 +198,11 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 		if(motor_on && (status & FDC_ST_DRQ) && !now_search) {
 			if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
 				// write or multisector write
-				if(fdc[drvreg].index < disk[drvreg]->sector_size) {
+				if(fdc[drvreg].index < disk[drvreg]->sector_size.sd) {
 					if(!disk[drvreg]->write_protected) {
 						disk[drvreg]->sector[fdc[drvreg].index] = datareg;
 						// dm, ddm
-						disk[drvreg]->deleted = (cmdreg & 1) ? 0x10 : 0;
+						disk[drvreg]->set_deleted((cmdreg & 1) != 0);
 					} else {
 						status |= FDC_ST_WRITEFAULT;
 						status &= ~FDC_ST_BUSY;
@@ -211,7 +211,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 					}
 					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg].index >= disk[drvreg]->sector_size) {
+				if(fdc[drvreg].index >= disk[drvreg]->sector_size.sd) {
 					if(cmdtype == FDC_CMD_WR_SEC) {
 						// single sector
 						status &= ~FDC_ST_BUSY;
@@ -227,9 +227,57 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 				}
 				status &= ~FDC_ST_DRQ;
 			} else if(cmdtype == FDC_CMD_WR_TRK) {
-				// read track
+				// write track
 				if(fdc[drvreg].index < disk[drvreg]->get_track_size()) {
 					if(!disk[drvreg]->write_protected) {
+						if(fdc[drvreg].index == 0) {
+							disk[drvreg]->format_track(fdc[drvreg].track, sidereg);
+							fdc[drvreg].id_written = false;
+							fdc[drvreg].side = sidereg;
+							fdc[drvreg].side_changed = false;
+						}
+						if(fdc[drvreg].side != sidereg) {
+							fdc[drvreg].side_changed = true;
+						}
+						if(fdc[drvreg].side_changed) {
+							// abort write track because disk side is changed
+						} else if(datareg == 0xf5) {
+							// write a1h in missing clock
+						} else if(datareg == 0xf6) {
+							// write c2h in missing clock
+						} else if(datareg == 0xf7) {
+							// write crc
+							if(!fdc[drvreg].id_written) {
+								// insert new sector with crc error
+								fdc[drvreg].id_written = true;
+								fdc[drvreg].sector_found = false;
+								uint8 c = disk[drvreg]->track[fdc[drvreg].index - 4];
+								uint8 h = disk[drvreg]->track[fdc[drvreg].index - 3];
+								uint8 r = disk[drvreg]->track[fdc[drvreg].index - 2];
+								uint8 n = disk[drvreg]->track[fdc[drvreg].index - 1];
+								fdc[drvreg].sector_length = 0x80 << (n & 3);
+								fdc[drvreg].sector_index = 0;
+								disk[drvreg]->insert_sector(c, h, r, n, false, true, 0xe5, fdc[drvreg].sector_length);
+							} else {
+								// clear crc error if all sector data are written
+								if(fdc[drvreg].sector_found && fdc[drvreg].sector_index == fdc[drvreg].sector_length) {
+									disk[drvreg]->set_crc_error(false);
+								}
+								fdc[drvreg].id_written = false;
+							}
+						} else if(fdc[drvreg].id_written) {
+							if(fdc[drvreg].sector_found) {
+								// sector data
+								if(fdc[drvreg].sector_index < fdc[drvreg].sector_length) {
+									disk[drvreg]->sector[fdc[drvreg].sector_index] = datareg;
+								}
+								fdc[drvreg].sector_index++;
+							} else if(datareg == 0xf8 || datareg == 0xfb) {
+								// data mark
+								disk[drvreg]->set_deleted(datareg == 0xf8);
+								fdc[drvreg].sector_found = true;
+							}
+						}
 						disk[drvreg]->track[fdc[drvreg].index] = datareg;
 					} else {
 						status |= FDC_ST_WRITEFAULT;
@@ -356,11 +404,11 @@ uint32 MB8877::read_io8(uint32 addr)
 		if(motor_on && (status & FDC_ST_DRQ) && !now_search) {
 			if(cmdtype == FDC_CMD_RD_SEC || cmdtype == FDC_CMD_RD_MSEC) {
 				// read or multisector read
-				if(fdc[drvreg].index < disk[drvreg]->sector_size) {
+				if(fdc[drvreg].index < disk[drvreg]->sector_size.sd) {
 					datareg = disk[drvreg]->sector[fdc[drvreg].index];
 					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg].index >= disk[drvreg]->sector_size) {
+				if(fdc[drvreg].index >= disk[drvreg]->sector_size.sd) {
 					if(cmdtype == FDC_CMD_RD_SEC) {
 						// single sector
 #ifdef _FDC_DEBUG_LOG
@@ -535,7 +583,7 @@ void MB8877::event_callback(int event_id, int err)
 		} else {
 #if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
 			// for SHARP X1 Batten Tanuki
-			if(disk[drvreg]->is_batten && drive_sel) {
+			if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1_BATTEN && drive_sel) {
 				status_tmp &= ~FDC_ST_RECNFND;
 			}
 #endif
@@ -879,7 +927,7 @@ uint8 MB8877::search_track()
 	if(!(cmdreg & 4)) {
 		return 0;
 	}
-	for(int i = 0; i < disk[drvreg]->sector_num; i++) {
+	for(int i = 0; i < disk[drvreg]->sector_num.sd; i++) {
 		disk[drvreg]->get_sector(trk, sidereg, i);
 		if(disk[drvreg]->id[0] == trkreg) {
 			return 0;
@@ -897,7 +945,7 @@ uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 	}
 	
 	// get current position
-	int sector_num = disk[drvreg]->sector_num;
+	int sector_num = disk[drvreg]->sector_num.sd;
 	int position = get_cur_position();
 	
 	if(position > disk[drvreg]->sync_position[sector_num - 1]) {
@@ -931,11 +979,11 @@ uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 		fdc[drvreg].next_trans_position = disk[drvreg]->data_position[i];
 		fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[i];
 		fdc[drvreg].index = 0;
-		return (disk[drvreg]->deleted ? FDC_ST_RECTYPE : 0) | ((disk[drvreg]->status && !ignore_crc) ? FDC_ST_CRCERR : 0);
+		return (disk[drvreg]->deleted ? FDC_ST_RECTYPE : 0) | ((disk[drvreg]->crc_error && !ignore_crc) ? FDC_ST_CRCERR : 0);
 	}
 	
 	// sector not found
-	disk[drvreg]->sector_size = 0;
+	disk[drvreg]->sector_size.sd = 0;
 	set_irq(true);
 	return FDC_ST_RECNFND;
 }
@@ -951,7 +999,7 @@ uint8 MB8877::search_addr()
 	}
 	
 	// get current position
-	int sector_num = disk[drvreg]->sector_num;
+	int sector_num = disk[drvreg]->sector_num.sd;
 	int position = get_cur_position();
 	
 	if(position > disk[drvreg]->sync_position[sector_num - 1]) {
@@ -973,11 +1021,11 @@ uint8 MB8877::search_addr()
 		fdc[drvreg].next_sync_position = disk[drvreg]->sync_position[first_sector];
 		fdc[drvreg].index = 0;
 		secreg = disk[drvreg]->id[0];
-		return (disk[drvreg]->status && !ignore_crc) ? FDC_ST_CRCERR : 0;
+		return (disk[drvreg]->crc_error && !ignore_crc) ? FDC_ST_CRCERR : 0;
 	}
 	
 	// sector not found
-	disk[drvreg]->sector_size = 0;
+	disk[drvreg]->sector_size.sd = 0;
 	set_irq(true);
 	return FDC_ST_RECNFND;
 }
@@ -995,7 +1043,7 @@ double MB8877::get_usec_to_start_trans()
 {
 #if defined(_X1TURBO) || defined(_X1TURBOZ)
 	// FIXME: ugly patch for X1turbo ALPHA
-	if(disk[drvreg]->is_alpha) {
+	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1_ALPHA) {
 		return 100;
 	} else
 #endif
@@ -1040,10 +1088,10 @@ void MB8877::set_drq(bool val)
 // user interface
 // ----------------------------------------------------------------------------
 
-void MB8877::open_disk(int drv, _TCHAR path[], int offset)
+void MB8877::open_disk(int drv, _TCHAR path[], int bank)
 {
 	if(drv < MAX_DRIVE) {
-		disk[drv]->open(path, offset);
+		disk[drv]->open(path, bank);
 	}
 }
 
@@ -1102,7 +1150,7 @@ uint8 MB8877::fdc_status()
 #endif
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void MB8877::save_state(FILEIO* state_fio)
 {

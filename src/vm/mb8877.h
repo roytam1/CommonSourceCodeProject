@@ -36,6 +36,13 @@ private:
 		int track;
 		int index;
 		bool access;
+		// write track
+		bool id_written;
+		bool sector_found;
+		int sector_length;
+		int sector_index;
+		int side;
+		bool side_changed;
 		// timing
 		int cur_position;
 		int next_trans_position;
@@ -132,7 +139,7 @@ public:
 	{
 		return disk[drv];
 	}
-	void open_disk(int drv, _TCHAR path[], int offset);
+	void open_disk(int drv, _TCHAR path[], int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 	void set_drive_type(int drv, uint8 type);

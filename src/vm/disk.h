@@ -26,9 +26,12 @@
 #define DRIVE_TYPE_144	MEDIA_TYPE_144
 #define DRIVE_TYPE_UNK	MEDIA_TYPE_UNK
 
+#define SPECIAL_DISK_X1_ALPHA	1
+#define SPECIAL_DISK_X1_BATTEN	2
+
 // d88 constant
-#define DISK_BUFFER_SIZE	0x180000	// 1.5MB
-#define TRACK_BUFFER_SIZE	0x8000		// 32KB
+#define DISK_BUFFER_SIZE	0x380000	// 3.5MB
+#define TRACK_BUFFER_SIZE	0x080000	// 0.5MB
 
 // teledisk decoder constant
 #define STRING_BUFFER_SIZE	4096
@@ -47,16 +50,19 @@ protected:
 	EMU* emu;
 private:
 	FILEIO* fi;
-	uint8 buffer[DISK_BUFFER_SIZE];
+	uint8 buffer[DISK_BUFFER_SIZE + TRACK_BUFFER_SIZE];
 	_TCHAR orig_path[_MAX_PATH];
 	_TCHAR dest_path[_MAX_PATH];
 	_TCHAR temp_path[_MAX_PATH];
-	int file_size;
-	int file_offset;
+	pair file_size;
+	int file_bank;
 	uint32 crc32;
+	bool trim_required;
 	bool temporary;
 	uint8 fdi_header[4096];
 	
+	void set_sector_info(uint8 *t);
+	void trim_buffer();
 	bool check_media_type();
 	
 	// teledisk image decoder (td0)
@@ -143,8 +149,8 @@ public:
 	DISK(EMU* parent_emu) : emu(parent_emu)
 	{
 		inserted = ejected = write_protected = changed = false;
-		file_size = 0;
-		sector_size = sector_num = 0;
+		file_size.d = 0;
+		sector_size.sd = sector_num.sd = 0;
 		sector = NULL;
 		drive_type = DRIVE_TYPE_UNK;
 		drive_rpm = 0;
@@ -159,11 +165,16 @@ public:
 		}
 	}
 	
-	void open(_TCHAR path[], int offset);
+	void open(_TCHAR path[], int bank);
 	void close();
 	bool get_track(int trk, int side);
 	bool make_track(int trk, int side);
 	bool get_sector(int trk, int side, int index);
+	void set_deleted(bool value);
+	void set_crc_error(bool value);
+	
+	bool format_track(int trk, int side);
+	void insert_sector(uint8 c, uint8 h, uint8 r, uint8 n, bool deleted, bool crc_error, uint8 fill_data, int length);
 	
 	int get_rpm();
 	int get_track_size();
@@ -176,12 +187,11 @@ public:
 	uint8 media_type;
 	bool is_standard_image;
 	bool is_fdi_image;
-	bool is_alpha;
-	bool is_batten;
+	int is_special_disk;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];
-	int sector_num;
+	pair sector_num;
 	int data_size_shift;
 	bool too_many_sectors;
 	bool no_skew;
@@ -192,11 +202,11 @@ public:
 	
 	// sector
 	uint8* sector;
-	int sector_size;
+	pair sector_size;
 	uint8 id[6];
 	uint8 density;
-	uint8 deleted;
-	uint8 status;
+	bool deleted;
+	bool crc_error;
 	
 	// drive
 	uint8 drive_type;

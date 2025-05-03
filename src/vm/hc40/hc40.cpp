@@ -14,7 +14,7 @@
 
 #include "../beep.h"
 #include "../datarec.h"
-#include "../tf20.h"
+#include "../ptf20.h"
 #include "../z80.h"
 
 #ifdef USE_DEBUGGER
@@ -37,7 +37,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	beep = new BEEP(this, emu);
 	drec = new DATAREC(this, emu);
-	tf20 = new TF20(this, emu);
+	tf20 = new PTF20(this, emu);
 	cpu = new Z80(this, emu);
 	
 	io = new IO(this, emu);
@@ -187,9 +187,9 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(int drv, _TCHAR* file_path, int offset)
+void VM::open_disk(int drv, _TCHAR* file_path, int bank)
 {
-	tf20->open_disk(drv, file_path, offset);
+	tf20->open_disk(drv, file_path, bank);
 }
 
 void VM::close_disk(int drv)

@@ -204,7 +204,7 @@ public:
 	void open_quickdisk(int drv, _TCHAR* file_path);
 	void close_quickdisk(int drv);
 	bool quickdisk_inserted(int drv);
-	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void open_disk(int drv, _TCHAR* file_path, int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 #endif
