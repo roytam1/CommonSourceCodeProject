@@ -12,7 +12,6 @@
 
 #define USE_TAPE
 //#define USE_TAPE_PTR
-#define USE_SOUND_DEVICE_TYPE 8
 #define USE_SCANLINE
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
@@ -94,7 +93,7 @@
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
-#define USE_DRIVE_TYPE		2
+#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40)
@@ -103,7 +102,7 @@
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE		2
+#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 
@@ -114,7 +113,7 @@
 #define HAS_MMR
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE		2
+#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40EX)
@@ -123,7 +122,7 @@
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE		2
+#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 
@@ -133,12 +132,21 @@
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE		2
+#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 
 #endif
 
+#if !defined(_FM8)
+#define USE_DEVICE_TYPE		3
+#define USE_SOUND_DEVICE_TYPE   8
+//# ifdef _FM77AV_VARIANTS
+//#  define USE_MULTIPLE_SOUNDCARDS 3
+//# else
+//#  define USE_MULTIPLE_SOUNDCARDS 4
+//# endif
+#endif
 
 #ifdef _FM77AV_VARIANTS
 

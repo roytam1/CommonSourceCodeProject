@@ -67,7 +67,9 @@ void init_config()
 	config.device_type = DEVICE_TYPE_DEFAULT;
 #endif
 #if defined(USE_FD1) && defined(IGNORE_CRC_DEFAULT)
-	config.ignore_crc = IGNORE_CRC_DEFAULT;
+	for(int drv = 0; drv < MAX_FD; drv++) {
+		config.ignore_crc[drv] = IGNORE_CRC_DEFAULT;
+	}
 #endif
 #if defined(USE_SOUND_DEVICE_TYPE) && defined(SOUND_DEVICE_TYPE_DEFAULT)
 	config.sound_device_type = SOUND_DEVICE_TYPE_DEFAULT;
@@ -106,7 +108,11 @@ void load_config()
 	config.drive_type = GetPrivateProfileInt(_T("Control"), _T("DriveType"), config.drive_type, config_path);
 #endif
 #ifdef USE_FD1
-	config.ignore_crc = GetPrivateProfileBool(_T("Control"), _T("IgnoreCRC"), config.ignore_crc, config_path);
+	for(int drv = 0; drv < MAX_FD; drv++) {
+		_TCHAR name[64];
+		_stprintf_s(name, 64, _T("IgnoreCRC%d"), drv + 1);
+		config.ignore_crc[drv] = GetPrivateProfileBool(_T("Control"), name, config.ignore_crc[drv], config_path);
+	}
 #endif
 #ifdef USE_TAPE
 	config.tape_sound = GetPrivateProfileBool(_T("Control"), _T("TapeSound"), config.tape_sound, config_path);
@@ -231,7 +237,11 @@ void save_config()
 	WritePrivateProfileInt(_T("Control"), _T("DriveType"), config.drive_type, config_path);
 #endif
 #ifdef USE_FD1
-	WritePrivateProfileBool(_T("Control"), _T("IgnoreCRC"), config.ignore_crc, config_path);
+	for(int drv = 0; drv < MAX_FD; drv++) {
+		_TCHAR name[64];
+		_stprintf_s(name, 64, _T("IgnoreCRC%d"), drv + 1);
+		WritePrivateProfileBool(_T("Control"), name, config.ignore_crc[drv], config_path);
+	}
 #endif
 #ifdef USE_TAPE
 	WritePrivateProfileBool(_T("Control"), _T("TapeSound"), config.tape_sound, config_path);
@@ -326,7 +336,7 @@ void save_config()
 #endif
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void save_config_state(void *f)
 {
@@ -350,7 +360,9 @@ void save_config_state(void *f)
 	state_fio->FputInt32(config.drive_type);
 #endif
 #ifdef USE_FD1
-	state_fio->FputBool(config.ignore_crc);
+	for(int drv = 0; drv < MAX_FD; drv++) {
+		state_fio->FputBool(config.ignore_crc[drv]);
+	}
 #endif
 #ifdef USE_MONITOR_TYPE
 	state_fio->FputInt32(config.monitor_type);
@@ -383,7 +395,9 @@ bool load_config_state(void *f)
 	config.drive_type = state_fio->FgetInt32();
 #endif
 #ifdef USE_FD1
-	config.ignore_crc = state_fio->FgetBool();
+	for(int drv = 0; drv < MAX_FD; drv++) {
+		config.ignore_crc[drv] = state_fio->FgetBool();
+	}
 #endif
 #ifdef USE_MONITOR_TYPE
 	config.monitor_type = state_fio->FgetInt32();

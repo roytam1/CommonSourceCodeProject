@@ -15,9 +15,11 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_MB8877_DRIVEREG	0
-#define SIG_MB8877_SIDEREG	1
-#define SIG_MB8877_MOTOR	2
+#define SIG_MB8877_DRIVEREG		0
+#define SIG_MB8877_SIDEREG		1
+#define SIG_MB8877_MOTOR		2
+#define SIG_MB8877_CMDPHASE		3
+#define SIG_MB8877_READ_DRIVE_REG	4
 
 class DISK;
 

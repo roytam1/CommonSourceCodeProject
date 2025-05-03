@@ -22,12 +22,12 @@
 #include "debugger.h"
 #endif
 
-#define OP_HANDLER(_name) inline void MC6809::_name (void)
+#define OP_HANDLER(_name) void MC6809::_name (void)
 
 /* macros for branch instructions */
 inline void MC6809::BRANCH(bool cond)
 {
-	volatile uint8 t;
+	uint8 t;
 	IMMBYTE(t);
 	if(!cond) return;
 	PC = PC + SIGNED(t);
@@ -113,14 +113,14 @@ static const int index_cycle_em[256] = {	/* Index Loopup cycle counts */
 /* 0x5X */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 /* 0x6X */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 /* 0x7X */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 0x8X */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 5,
-/* 0x9X */ 5, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 8,
-/* 0xAX */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 5,
-/* 0xBX */ 5, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 8,
-/* 0xCX */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 3,
-/* 0xDX */ 5, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 8,
-/* 0xEX */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 5,
-/* 0xFX */ 4, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 8
+/* 0x8X */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 2,
+/* 0x9X */ 5, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 3,
+/* 0xAX */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 2,
+/* 0xBX */ 5, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 5,
+/* 0xCX */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 2,
+/* 0xDX */ 5, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 5,
+/* 0xEX */ 2, 3, 2, 3, 0, 1, 1, 1, 1, 4, 0, 4, 1, 5, 0, 2,
+/* 0xFX */ 4, 6, 5, 6, 3, 4, 4, 4, 4, 7, 3, 7, 4, 8, 3, 5
 };
 
 /* timings for 1-byte opcodes */
@@ -235,7 +235,7 @@ static void (MC6809::*m6809_main[0x100]) (void) = {
 void MC6809::reset()
 {
 	icount = 0;
-	int_state &= ~MC6809_HALT_BIT;
+	int_state &= MC6809_HALT_BIT;
 	extra_icount = 0;
 	//busreq = false;
    
@@ -469,7 +469,7 @@ void MC6809::run_one_opecode()
 		if(d_debugger->now_suspended) {
 			emu->mute_sound();
 			while(d_debugger->now_debugging && d_debugger->now_suspended) {
-				emu->sleep(10);
+			  Sleep(10);
 			}
 		}
 		if(d_debugger->now_debugging) {
@@ -588,8 +588,9 @@ bool MC6809::debug_write_reg(_TCHAR *reg, uint32 data)
 void MC6809::debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	snprintf(buffer, buffer_len,
-		 _T("PC = %04x INTR=[%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x"),
-		 PCD,
+		 _T("PC = %04x PPC = %04x INTR=[%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x"),
+		 PC,
+		 PPC,
 		 ((int_state & MC6809_IRQ_BIT) == 0)   ? "----" : " IRQ",
 		 ((int_state & MC6809_FIRQ_BIT) == 0)  ? "----" : "FIRQ",
 		 ((int_state & MC6809_NMI_BIT) == 0)   ? "----" : " NMI",
@@ -1013,13 +1014,15 @@ static const _TCHAR *const m6809_regs_te[16] =
 	_T("A"), _T("B"), _T("CC"), _T("DP"), _T("inv"), _T("inv"), _T("inv"), _T("inv")
 };
 
-uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, const uint8 *opram)
+uint32 MC6809::cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, const uint8 *opram)
 {
 	uint8 opcode, mode, pb, pbm, reg;
 	const uint8 *operandarray;
 	unsigned int ea;//, flags;
-	int numoperands, offset, indirect;
-	int i, p = 0, page = 0, opcode_found = FALSE;
+	int numoperands, offset;
+	int i, p = 0, page = 0;
+	bool opcode_found = false;
+	bool indirect;
 
 	do {
 		opcode = oprom[p++];
@@ -1029,7 +1032,7 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 				break;
 
 		if (i < m6809_numops[page])
-			opcode_found = TRUE;
+			opcode_found = true;
 		else
 		{
 			_stprintf(buffer, _T("Illegal Opcode %02X"), opcode);
@@ -1039,7 +1042,7 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 		if (m6809_pgpointers[page][i].mode >= PG1)
 		{
 			page = m6809_pgpointers[page][i].mode - PG1 + 1;
-			opcode_found = FALSE;
+			opcode_found = false;
 		}
 	} while (!opcode_found);
 
@@ -1131,7 +1134,7 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 		pb = operandarray[0];
 		reg = (pb >> 5) & 3;
 		pbm = pb & 0x8f;
-		indirect = ((pb & 0x90) == 0x90 )? TRUE : FALSE;
+		indirect = ((pb & 0x90) == 0x90 )? true : false;
 
 		// open brackets if indirect
 		if (indirect && pbm != 0x80 && pbm != 0x82)
@@ -1329,7 +1332,7 @@ inline void MC6809::fetch_effective_address_IDX(uint8 upper, uint8 lower)
 {
 	bool indirect = false;
 	uint16 *reg;
-	uint8 bx;
+	uint8 bx_p;
 	pair pp;
 	
 	indirect = ((upper & 0x01) != 0) ? true : false;
@@ -1381,8 +1384,8 @@ inline void MC6809::fetch_effective_address_IDX(uint8 upper, uint8 lower)
 			EA = *reg + SIGNED(A);
 			break;
 		case 8:	// $xx,r
-			IMMBYTE(bx);
-			EA = *reg + SIGNED(bx);
+			IMMBYTE(bx_p);
+			EA = *reg + SIGNED(bx_p);
 			break;
 		case 9:	// $xxxx, r
 			IMMWORD(EAP);
@@ -1397,8 +1400,8 @@ inline void MC6809::fetch_effective_address_IDX(uint8 upper, uint8 lower)
 			EA = *reg + D;
 			break;
 		case 0x0c:	// xx,pc
-			IMMBYTE(bx);
-			EA = PC + SIGNED(bx);
+			IMMBYTE(bx_p);
+			EA = PC + SIGNED(bx_p);
 			break;
 		case 0x0d:	// xxxx,pc
 			IMMWORD(EAP);
@@ -1411,6 +1414,7 @@ inline void MC6809::fetch_effective_address_IDX(uint8 upper, uint8 lower)
 			IMMWORD(EAP);
 			break;
 	}
+	EAP.w.h = 0x0000;
 	// $9x,$bx,$dx,$fx = INDIRECT
 	if (indirect) {
 		pp = EAP;
@@ -1448,28 +1452,18 @@ inline pair MC6809::GET_INDEXED_DATA16(void)
 inline void MC6809::NEG_MEM(uint8 a_neg)
 {							
 	uint16 r_neg;					
-	r_neg = 0 - a_neg;
-	//r_neg = ~a_neg + 1;
+	r_neg = 0 - (uint16)a_neg;
 	CLR_NZVC;
-	//SET_NZ8(r_neg);
-	// H is undefined
-	//if(a_neg != 0) SEC;
-	SET_V8(0, a_neg, r_neg);
-	SET_HNZVC8(0, a_neg, r_neg);
+	SET_FLAGS8(0, a_neg, r_neg);
 	WM(EAD, r_neg);					
 }
 
 inline uint8 MC6809::NEG_REG(uint8 a_neg)
 {
 	uint16 r_neg;
-	r_neg = 0 - a_neg;
-	//r_neg = ~a_neg + 1;
+	r_neg = 0 - (uint16)a_neg;
 	CLR_NZVC;
-	//SET_NZ8(r_neg);
-	// H is undefined
-	//if(a_neg != 0) SEC;
-	//SET_V8(0, a_neg, r_neg);			
-	SET_HNZVC8(0, a_neg, r_neg);
+	SET_FLAGS8(0, a_neg, r_neg);
 	return (uint8)r_neg;
 }
 
@@ -1500,7 +1494,6 @@ inline void MC6809::LSR_MEM(uint8 t)
 	CC = CC | (t & CC_C);
 	t >>= 1;
 	SET_NZ8(t);
-	//SET_Z8(t);
 	WM(EAD, t);
 }
 
@@ -1510,7 +1503,6 @@ inline uint8 MC6809::LSR_REG(uint8 r)
 	CC |= (r & CC_C);
 	r >>= 1;
 	SET_NZ8(r);
-	//SET_Z8(r);
 	return r;
 }
 
@@ -1547,7 +1539,7 @@ inline void MC6809::ASR_MEM(uint8 t)
 	r = (t & 0x80) | (t >> 1);
 	// H is undefined
 	SET_NZ8(r);
-	SET_H(t, t, r);
+	//SET_H(t, t, r);
 	WM(EAD, r);
 }
 
@@ -1559,7 +1551,7 @@ inline uint8 MC6809::ASR_REG(uint8 t)
 	r = (t & 0x80) | (t >> 1);
 	// H is undefined
 	SET_NZ8(r);
-	SET_H(t, t, r);
+	//SET_H(t, t, r);
 	return r;
 }
 
@@ -1569,16 +1561,8 @@ inline void MC6809::ASL_MEM(uint8 t)
 	tt = (uint16)t & 0x00ff;
 	r = tt << 1;
 	CLR_NZVC;
-	//SET_NZ8(r);
-	// H is undefined
-	//if(t & 0x80) {
-	//	SEC;
-	//	if((r & 0x80) == 0)SEV;
-	//} else {
-	//	if((r & 0x80) != 0) SEV;
-	//}	  
 	SET_FLAGS8(tt, tt, r);
-	SET_H(tt, tt, r);
+	//SET_H(tt, tt, r);
 	WM(EAD, (uint8)r);
 }
 
@@ -1588,16 +1572,8 @@ inline uint8 MC6809::ASL_REG(uint8 t)
 	tt = (uint16)t & 0x00ff;
 	r = tt << 1;
 	CLR_NZVC;
-	//SET_NZ8(r);
-	// H is undefined
-	//if(t & 0x80) {
-	//	SEC;
-	//	if((r & 0x80) == 0)SEV;
-	//} else {
-	//	if((r & 0x80) != 0) SEV;
-	//}	  
 	SET_FLAGS8(tt, tt, r);
-	SET_H(tt, tt, r);
+	//SET_H(tt, tt, r);
 	return (uint8)r;
 }
 
@@ -1738,10 +1714,9 @@ inline uint8 MC6809::SUB8_REG(uint8 reg, uint8 data)
 {
 	uint16 r;
 	r = (uint16)reg - (uint16)data;
-	CLR_NZVC;
+	CLR_HNZVC;
 	// H is undefined
-	//SET_FLAGS8(reg, data, r);
-	SET_HNZVC8(reg, data, r);
+	SET_FLAGS8(reg, data, r);
 	return (uint8)r;
 }
 
@@ -1751,8 +1726,7 @@ inline uint8 MC6809::CMP8_REG(uint8 reg, uint8 data)
 	r = (uint16)reg - (uint16)data;
 	CLR_NZVC;
 	// H is undefined
-	//SET_FLAGS8(reg, data, r);
-	SET_HNZVC8(reg, data, r);
+	SET_FLAGS8(reg, data, r);
 	return reg;
 }
 
@@ -1762,7 +1736,7 @@ inline uint8 MC6809::SBC8_REG(uint8 reg, uint8 data)
 	uint8 cc_c = CC & CC_C;
 	r = (uint16)reg - (uint16)data - (uint16)cc_c;
 	CLR_HNZVC;
-	SET_FLAGS8(reg, data + cc_c, r);
+	SET_FLAGS8(reg, data + cc_c , r);
 	return (uint8)r;
 }
 
@@ -2005,25 +1979,7 @@ OP_HANDLER(nop) {
 /* $13 SYNC inherent ----- */
 OP_HANDLER(sync_09)	// Rename 20101110
 {
-#if 0
-  	if ((int_state & MC6809_SYNC_IN) == 0) {
-		// SYNC命令初めて
-		int_state |= MC6809_SYNC_IN;
-		int_state &= ~MC6809_SYNC_OUT;
-		PC -= 1;	// 次のサイクルも同じ命令
-		return;
-	} else {
-	// SYNC実行中
-		if ((int_state & MC6809_SYNC_OUT) != 0) {
-			// 割込が来たのでSYNC抜ける
-			int_state &= ~(MC6809_SYNC_OUT | MC6809_SYNC_IN);
-			return;
-		}
-		PC -= 1;	// 割込こないと次のサイクルも同じ命令
-	}
-#else
 	int_state |= MC6809_SYNC_IN;
-#endif
 }
 
 
@@ -2032,7 +1988,7 @@ OP_HANDLER(sync_09)	// Rename 20101110
 OP_HANDLER(trap) {
 	int_state |= MC6809_INSN_HALT;	// HALTフラグ
 	// Debug: トラップ要因
-	printf("INSN: TRAP @%04x %02x %02x\n", PC - 1, RM(PC - 1), RM(PC));
+	emu->out_debug_log("MC6809 : TRAP(HALT) @%04x %02x %02x\n", PC - 1, RM(PC - 1), RM(PC));
 }
 
 /* $15 trap */
