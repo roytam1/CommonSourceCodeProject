@@ -944,7 +944,8 @@ void UPD765A::read_diagnostic()
 		return;
 	}
 	
-	// read from the 1st sector data
+	// FIXME: we need to consider the case that the first sector does not have a data field
+	// start reading at the first sector data
 	memcpy(buffer, disk[drv]->track + disk[drv]->data_position[0], disk[drv]->get_track_size() - disk[drv]->data_position[0]);
 	memcpy(buffer + disk[drv]->get_track_size() - disk[drv]->data_position[0], disk[drv]->track, disk[drv]->data_position[0]);
 	fdc[drv].next_trans_position = disk[drv]->data_position[0];
@@ -984,6 +985,9 @@ uint32 UPD765A::read_sector()
 #else
 		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[2] != id[2] || disk[drv]->id[3] != id[3]) {
 #endif
+			continue;
+		}
+		if(disk[drv]->sector_size.sd == 0) {
 			continue;
 		}
 		// sector number is matched
@@ -1043,6 +1047,9 @@ uint32 UPD765A::write_sector(bool deleted)
 		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[2] != id[2] /*|| disk[drv]->id[3] != id[3]*/) {
 			continue;
 		}
+		if(disk[drv]->sector_size.sd == 0) {
+			continue;
+		}
 		// sector number is matched
 		int size = 0x80 << (id[3] & 7);
 		memcpy(disk[drv]->sector, buffer, __min(size, disk[drv]->sector_size.sd));
@@ -1080,6 +1087,9 @@ uint32 UPD765A::find_id()
 		}
 		cy = disk[drv]->id[0];
 		if(disk[drv]->id[0] != id[0] || disk[drv]->id[1] != id[1] || disk[drv]->id[2] != id[2] /*|| disk[drv]->id[3] != id[3]*/) {
+			continue;
+		}
+		if(disk[drv]->sector_size.sd == 0) {
 			continue;
 		}
 		// sector number is matched

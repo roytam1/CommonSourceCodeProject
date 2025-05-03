@@ -24,6 +24,20 @@
 #define BIT_SYNC1	1
 #define BIT_SYNC2	2
 
+#define GET_NEXT_TXCLK_TIME() (1000000.0 / (double)port[ch].tx_clock)
+
+#define REGISTER_FIRST_SEND_EVENT(ch) { \
+	if(port[ch].tx_clock != 0) { \
+		if(port[ch].send_id == -1) { \
+			register_event(this, EVENT_SEND + ch, GET_NEXT_TXCLK_TIME() / 2.0, false, &port[ch].send_id); \
+		} \
+	} else { \
+		if(port[ch].tx_bits_x2_remain == 0) { \
+			port[ch].tx_bits_x2_remain = port[ch].tx_bits_x2; \
+		} \
+	} \
+}
+
 #define REGISTER_SEND_EVENT(ch) { \
 	if(port[ch].tx_clock != 0) { \
 		if(port[ch].send_id == -1) { \
@@ -150,15 +164,13 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 	bool update_intr_required = false;
 	bool update_tx_timing_required = false;
 	bool update_rx_timing_required = false;
+	bool async_send_waiting;
 	
 	switch(addr & 3) {
 	case 0:
 	case 2:
 		// send data
-		port[ch].send->write(data);
-#ifdef UPD7210
-		port[ch].tx_count++;
-#endif
+		async_send_waiting = ((port[ch].wr[4] & 0x0c) != 0 && port[ch].send->empty());
 		if(port[ch].send_intr) {
 			port[ch].send_intr = false;
 			update_intr();
@@ -182,8 +194,17 @@ void Z80SIO::write_io8(uint32 addr, uint32 data)
 				port[ch].tx_data_bits = tx_data_bits;
 				update_tx_timing(ch);
 			}
-			REGISTER_SEND_EVENT(ch);
+			if(async_send_waiting) {
+				port[ch].send->write(-1); // dummy write for load timming
+				REGISTER_FIRST_SEND_EVENT(ch);
+			} else {
+				REGISTER_SEND_EVENT(ch);
+			}
 		}
+		port[ch].send->write(data);
+#ifdef HAS_UPD7201
+		port[ch].tx_count++;
+#endif
 		break;
 	case 1:
 	case 3:
@@ -535,9 +556,12 @@ void Z80SIO::event_callback(int event_id, int err)
 				}
 			}
 		} else {
-			uint32 data = port[ch].send->read();
-			write_signals(&port[ch].outputs_send, data);
+			int data = port[ch].send->read();
+			if(data != -1) {
+				write_signals(&port[ch].outputs_send, data);
+			}
 		}
+//		if(port[ch].send->count() <= 1) {
 		if(port[ch].send->empty()) {
 			// transmitter interrupt
 			if(!port[ch].send_intr) {
@@ -546,7 +570,6 @@ void Z80SIO::event_callback(int event_id, int err)
 			}
 			write_signals(&port[ch].outputs_txdone, 0xffffffff);
 		}
-		// register next event
 		REGISTER_SEND_EVENT(ch);
 	} else if(event_id & EVENT_RECV) {
 		// recv

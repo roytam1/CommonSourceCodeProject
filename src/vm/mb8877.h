@@ -43,6 +43,7 @@ private:
 		// timing
 		int cur_position;
 		int next_trans_position;
+		int bytes_before_2nd_drq;
 		int next_sync_position;
 		uint32 prev_clock;
 	} fdc[MAX_DRIVE];
@@ -63,7 +64,7 @@ private:
 	
 	// status
 	bool now_search;
-	bool now_seek, after_seek;
+	bool now_seek;
 	int no_command;
 	int seektrk;
 	bool seekvct;
@@ -72,6 +73,7 @@ private:
 	
 	// timing
 	uint32 prev_drq_clock;
+	uint32 seekend_clock;
 	
 	int get_cur_position();
 	double get_usec_to_start_trans();

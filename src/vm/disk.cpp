@@ -491,8 +491,11 @@ bool DISK::get_track(int trk, int side)
 	
 	for(int i = 0; i < sector_num.sd; i++) {
 		data_size.read_2bytes_le_from(t + 14);
-		total += sync_size + (am_size + 1) + (4 + 2) + gap2_size + sync_size + (am_size + 1);
-		total += data_size.sd + 2;
+		total += sync_size + (am_size + 1) + (4 + 2) + gap2_size;
+		if(data_size.sd > 0) {
+			total += sync_size + (am_size + 1);
+			total += data_size.sd + 2;
+		}
 		if(t[2] != i + 1) {
 			no_skew = false;
 		}
@@ -525,9 +528,15 @@ bool DISK::get_track(int trk, int side)
 		sync_position[i] = total;
 		total += sync_size + (am_size + 1);
 		id_position[i] = total;
-		total += (4 + 2) + gap2_size + sync_size + (am_size + 1);
-		data_position[i] = total;
-		total += data_size.sd + 2 + gap3_size;
+		total += (4 + 2) + gap2_size;
+		if(data_size.sd > 0) {
+			total += sync_size + (am_size + 1);
+			data_position[i] = total;
+			total += data_size.sd + 2;
+		} else {
+			data_position[i] = total; // FIXME
+		}
+		total += gap3_size;
 		t += data_size.sd + 0x10;
 	}
 	return true;
@@ -598,24 +607,26 @@ bool DISK::make_track(int trk, int side)
 		for(int j = 0; j < gap2_size; j++) {
 			if(p < track_size) track[p++] = gap_data;
 		}
-		// sync
-		for(int j = 0; j < sync_size; j++) {
-			if(p < track_size) track[p++] = 0x00;
+		// data field
+		if(data_size.sd > 0) {
+			// sync
+			for(int j = 0; j < sync_size; j++) {
+				if(p < track_size) track[p++] = 0x00;
+			}
+			// am2
+			for(int j = 0; j < am_size; j++) {
+				if(p < track_size) track[p++] = 0xa1;
+			}
+			if(p < track_size) track[p++] = (t[7] != 0) ? 0xf8 : 0xfb;
+			// data
+			crc = 0;
+			for(int j = 0; j < data_size.sd; j++) {
+				if(p < track_size) track[p++] = t[0x10 + j];
+				crc = (uint16)((crc << 8) ^ crc_table[(uint8)(crc >> 8) ^ t[0x10 + j]]);
+			}
+			if(p < track_size) track[p++] = (crc >> 8) & 0xff;
+			if(p < track_size) track[p++] = (crc >> 0) & 0xff;
 		}
-		// am2
-		for(int j = 0; j < am_size; j++) {
-			if(p < track_size) track[p++] = 0xa1;
-		}
-		if(p < track_size) track[p++] = (t[7] != 0) ? 0xf8 : 0xfb;
-		// data
-		crc = 0;
-		for(int j = 0; j < data_size.sd; j++) {
-			if(p < track_size) track[p++] = t[0x10 + j];
-			crc = (uint16)((crc << 8) ^ crc_table[(uint8)(crc >> 8) ^ t[0x10 + j]]);
-		}
-		if(p < track_size) track[p++] = (crc >> 8) & 0xff;
-		if(p < track_size) track[p++] = (crc >> 0) & 0xff;
-		
 		t += data_size.sd + 0x10;
 	}
 	return true;
