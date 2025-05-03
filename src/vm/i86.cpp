@@ -8,9 +8,9 @@
 	[ i86/v30 ]
 */
 
-// disable warnings C4146 for microsoft visual c++ 2005
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #pragma warning( disable : 4146 )
+#pragma warning( disable : 4996 )
 #endif
 
 #include "i86.h"
@@ -796,15 +796,16 @@ bool I86::debug_write_reg(_TCHAR *reg, uint32 data)
 	return true;
 }
 
-void I86::debug_regs_info(_TCHAR *buffer)
+void I86::debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
-	_stprintf(buffer, _T("AX=%04X  BX=%04X CX=%04X DX=%04X SP=%04X  BP=%04X  SI=%04X  DI=%04X\nDS=%04X  ES=%04X SS=%04X CS=%04X IP=%04X  FLAG=[%c%c%c%c%c%c%c%c%c]"),
+	_stprintf_s(buffer, buffer_len,
+	_T("AX=%04X  BX=%04X CX=%04X DX=%04X SP=%04X  BP=%04X  SI=%04X  DI=%04X\nDS=%04X  ES=%04X SS=%04X CS=%04X IP=%04X  FLAG=[%c%c%c%c%c%c%c%c%c]"),
 	regs.w[AX], regs.w[BX], regs.w[CX], regs.w[DX], regs.w[SP], regs.w[BP], regs.w[SI], regs.w[DI], sregs[DS], sregs[ES], sregs[SS], sregs[CS], (uint16)(pc - base[CS]),
 	OF ? _T('O') : _T('-'), DF ? _T('D') : _T('-'), IF ? _T('I') : _T('-'), TF ? _T('T') : _T('-'),
 	SF ? _T('S') : _T('-'), ZF ? _T('Z') : _T('-'), AF ? _T('A') : _T('-'), PF ? _T('P') : _T('-'), CF ? _T('C') : _T('-'));
 }
 
-int I86::debug_dasm(uint32 pc, _TCHAR *buffer)
+int I86::debug_dasm(uint32 pc, _TCHAR *buffer, size_t buffer_len)
 {
 	UINT32 eip = (UINT32)(uint16)(pc - base[CS]);
 	UINT8 ops[16];

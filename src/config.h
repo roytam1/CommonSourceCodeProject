@@ -10,7 +10,6 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#include <tchar.h>
 #include "vm/vm.h"
 
 #define MAX_HISTORY	8

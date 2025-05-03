@@ -1,5 +1,18 @@
+1/14/2015
+
+[COMMON] fix to use secure string functions
+[COMMON] add substitutes for _TCHAR and secure string functions
+
+[VM/I386] improve i386 core again based on MAME 0.157
+
+[MZ80A] support MZ-80AIF and floppy drives (thanks Mr.Suga)
+
+
 1/11/2015
 
+[VM/MC6820] fix mc6820 build error (thanks Mr.Artane.)
+
+[PC8801MA/PC88] fix RGB to COLOR_RGB macro (thanks Mr.Artane.)
 [PHC25] fix issue that cmt tape igam can not be correctly loaded
 
 

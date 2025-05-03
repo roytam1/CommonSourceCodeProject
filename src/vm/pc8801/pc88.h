@@ -216,7 +216,7 @@ private:
 	
 	// data recorder
 	FILEIO *cmt_fio;
-	_TCHAR rec_file_path[MAX_PATH];
+	_TCHAR rec_file_path[_MAX_PATH];
 	int cmt_bufptr, cmt_bufcnt;
 	uint8 cmt_buffer[CMT_BUFFER_SIZE];
 	int cmt_data_carrier[1024], cmt_data_carrier_cnt;

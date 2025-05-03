@@ -231,7 +231,7 @@ void EMU::notify_power_off()
 _TCHAR* EMU::bios_path(_TCHAR* file_name)
 {
 	static _TCHAR file_path[_MAX_PATH];
-	_stprintf(file_path, _T("%s%s"), app_path, file_name);
+	_stprintf_s(file_path, _MAX_PATH, _T("%s%s"), app_path, file_name);
 	return file_path;
 }
 
@@ -302,7 +302,7 @@ void EMU::open_printer_file()
 {
 	cur_time_t time;
 	get_host_time(&time);
-	_stprintf(prn_file_name, _T("prn_%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.txt"), time.year, time.month, time.day, time.hour, time.minute, time.second);
+	_stprintf_s(prn_file_name, _MAX_PATH, _T("prn_%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.txt"), time.year, time.month, time.day, time.hour, time.minute, time.second);
 	prn_fio->Fopen(bios_path(prn_file_name), FILEIO_WRITE_BINARY);
 }
 
@@ -352,7 +352,9 @@ void EMU::printer_strobe(bool value)
 #ifdef _DEBUG_LOG
 void EMU::initialize_debug_log()
 {
-	debug_log = _tfopen(_T("d:\\debug.log"), _T("w"));
+	if(_tfopen_s(&debug_log, _T("d:\\debug.log"), _T("w")) != 0) {
+		debug_log = NULL;
+	}
 }
 
 void EMU::release_debug_log()
@@ -371,13 +373,13 @@ void EMU::out_debug_log(const _TCHAR* format, ...)
 	static _TCHAR prev_buffer[1024] = {0};
 	
 	va_start(ap, format);
-	_vstprintf(buffer, format, ap);
+	_vstprintf_s(buffer, 1024, format, ap);
 	va_end(ap);
 	
 	if(_tcscmp(prev_buffer, buffer) == 0) {
 		return;
 	}
-	_tcscpy(prev_buffer, buffer);
+	_tcscpy_s(prev_buffer, 1024, buffer);
 	
 	if(debug_log) {
 		_ftprintf(debug_log, _T("%s"), buffer);
@@ -385,9 +387,11 @@ void EMU::out_debug_log(const _TCHAR* format, ...)
 		if((size += _tcslen(buffer)) > 0x8000000) { // 128MB
 			static int index = 1;
 			TCHAR path[_MAX_PATH];
-			_stprintf(path, _T("d:\\debug_#%d.log"), ++index);
+			_stprintf_s(path, _MAX_PATH, _T("d:\\debug_#%d.log"), ++index);
 			fclose(debug_log);
-			debug_log = _tfopen(path, _T("w"));
+			if(_tfopen_s(&debug_log, path, _T("w")) != 0) {
+				debug_log = NULL;
+			}
 			size = 0;
 		}
 	}
@@ -398,7 +402,7 @@ void EMU::out_message(const _TCHAR* format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	_vstprintf(message, format, ap);
+	_vstprintf_s(message, 1024, format, ap);
 	va_end(ap);
 	message_count = 4; // 4sec
 }
@@ -506,7 +510,7 @@ void EMU::open_cart(int drv, _TCHAR* file_path)
 {
 	if(drv < MAX_CART) {
 		vm->open_cart(drv, file_path);
-		_tcscpy(cart_status[drv].path, file_path);
+		_tcscpy_s(cart_status[drv].path, _MAX_PATH, file_path);
 		out_message(_T("Cart%d: %s"), drv + 1, file_path);
 		
 		// restart recording
@@ -559,7 +563,7 @@ void EMU::open_disk(int drv, _TCHAR* file_path, int offset)
 			vm->open_disk(drv, file_path, offset);
 			out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, file_path);
 		}
-		_tcscpy(disk_status[drv].path, file_path);
+		_tcscpy_s(disk_status[drv].path, _MAX_PATH, file_path);
 		disk_status[drv].offset = offset;
 	}
 }
@@ -600,7 +604,7 @@ void EMU::open_quickdisk(int drv, _TCHAR* file_path)
 			vm->open_quickdisk(drv, file_path);
 			out_message(_T("QD%d: %s"), drv + QD_BASE_NUMBER, file_path);
 		}
-		_tcscpy(quickdisk_status[drv].path, file_path);
+		_tcscpy_s(quickdisk_status[drv].path, _MAX_PATH, file_path);
 	}
 }
 
@@ -639,7 +643,7 @@ void EMU::play_tape(_TCHAR* file_path)
 		vm->play_tape(file_path);
 		out_message(_T("CMT: %s"), file_path);
 	}
-	_tcscpy(tape_status.path, file_path);
+	_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
 	tape_status.play = true;
 }
 
@@ -658,7 +662,7 @@ void EMU::rec_tape(_TCHAR* file_path)
 		vm->rec_tape(file_path);
 		out_message(_T("CMT: %s"), file_path);
 	}
-	_tcscpy(tape_status.path, file_path);
+	_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
 	tape_status.play = false;
 }
 
@@ -691,7 +695,7 @@ void EMU::open_laser_disc(_TCHAR* file_path)
 		vm->open_laser_disc(file_path);
 		out_message(_T("LD: %s"), file_path);
 	}
-	_tcscpy(laser_disc_status.path, file_path);
+	_tcscpy_s(laser_disc_status.path, _MAX_PATH, file_path);
 }
 
 void EMU::close_laser_disc()
@@ -757,14 +761,14 @@ void EMU::update_config()
 void EMU::save_state()
 {
 	_TCHAR file_name[_MAX_PATH];
-	_stprintf(file_name, _T("%s.sta"), _T(CONFIG_NAME));
+	_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
 	save_state_tmp(bios_path(file_name));
 }
 
 void EMU::load_state()
 {
 	_TCHAR file_name[_MAX_PATH];
-	_stprintf(file_name, _T("%s.sta"), _T(CONFIG_NAME));
+	_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
 	if(FILEIO::IsFileExists(bios_path(file_name))) {
 		save_state_tmp(bios_path(_T("$temp$.sta")));
 		if(!load_state_tmp(bios_path(file_name))) {

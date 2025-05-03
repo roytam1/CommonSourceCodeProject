@@ -39,21 +39,21 @@ bool FILEIO::Fopen(_TCHAR *filename, int mode)
 	
 	switch(mode) {
 	case FILEIO_READ_BINARY:
-		return ((fp = _tfopen(filename, _T("rb"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("rb")) == 0);
 	case FILEIO_WRITE_BINARY:
-		return ((fp = _tfopen(filename, _T("wb"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("wb")) == 0);
 	case FILEIO_READ_WRITE_BINARY:
-		return ((fp = _tfopen(filename, _T("r+b"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("r+b")) == 0);
 	case FILEIO_READ_WRITE_NEW_BINARY:
-		return ((fp = _tfopen(filename, _T("w+b"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("w+b")) == 0);
 	case FILEIO_READ_ASCII:
-		return ((fp = _tfopen(filename, _T("r"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("r")) == 0);
 	case FILEIO_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("w"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("w")) == 0);
 	case FILEIO_READ_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("r+"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("r+")) == 0);
 	case FILEIO_READ_WRITE_NEW_ASCII:
-		return ((fp = _tfopen(filename, _T("w+"))) != NULL);
+		return (_tfopen_s(&fp, filename, _T("w+")) == 0);
 	}
 	return false;
 }

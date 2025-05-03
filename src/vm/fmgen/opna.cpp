@@ -1491,20 +1491,20 @@ bool OPNA::LoadRhythmSample(const _TCHAR* path)
 	{
 		FileIO file;
 		uint32 fsize;
-		_TCHAR buf[MAX_PATH] = _T("");
+		_TCHAR buf[_MAX_PATH] = _T("");
 		if (path)
-			_tcsncpy(buf, path, MAX_PATH);
-		_tcsncat(buf, _T("2608_"), MAX_PATH);
-		_tcsncat(buf, rhythmname[i], MAX_PATH);
-		_tcsncat(buf, _T(".WAV"), MAX_PATH);
+			_tcsncpy(buf, path, _MAX_PATH);
+		_tcsncat(buf, _T("2608_"), _MAX_PATH);
+		_tcsncat(buf, rhythmname[i], _MAX_PATH);
+		_tcsncat(buf, _T(".WAV"), _MAX_PATH);
 
 		if (!file.Open(buf, FileIO::readonly))
 		{
 			if (i != 5)
 				break;
 			if (path)
-				_tcsncpy(buf, path, MAX_PATH);
-			_tcsncpy(buf, _T("2608_RYM.WAV"), MAX_PATH);
+				_tcsncpy(buf, path, _MAX_PATH);
+			_tcsncpy(buf, _T("2608_RYM.WAV"), _MAX_PATH);
 			if (!file.Open(buf, FileIO::readonly))
 				break;
 		}

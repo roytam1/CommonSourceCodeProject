@@ -443,7 +443,7 @@ bool DATAREC::rec_tape(_TCHAR* file_path)
 	close_tape();
 	
 	if(rec_fio->Fopen(file_path, FILEIO_READ_WRITE_NEW_BINARY)) {
-		_tcscpy(rec_file_path, file_path);
+		_tcscpy_s(rec_file_path, _MAX_PATH, file_path);
 		sample_rate = 48000;
 		buffer_length = 1024 * 1024;
 		buffer = (uint8 *)malloc(buffer_length);

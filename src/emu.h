@@ -416,7 +416,7 @@ private:
 	void open_printer_file();
 	void close_printer_file();
 	
-	_TCHAR prn_file_name[MAX_PATH];
+	_TCHAR prn_file_name[_MAX_PATH];
 	FILEIO *prn_fio;
 	int prn_data, prn_wait_frames;
 	bool prn_strobe;

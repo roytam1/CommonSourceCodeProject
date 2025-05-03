@@ -10,7 +10,17 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+#define SUPPORT_TCHAR_TYPE
+#endif
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#define SUPPORT_SECURE_FUNCTIONS
+#endif
+
+#ifdef SUPPORT_TCHAR_TYPE
 #include <tchar.h>
+#endif
+#include <stdio.h>
 
 // variable scope of 'for' loop for Microsoft Visual C++ 6.0
 #if defined(_MSC_VER) && (_MSC_VER == 1200)
@@ -20,8 +30,8 @@
 // disable warnings for Microsoft Visual C++ 2005 or later
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #pragma warning( disable : 4819 )
-#pragma warning( disable : 4995 )
-#pragma warning( disable : 4996 )
+//#pragma warning( disable : 4995 )
+//#pragma warning( disable : 4996 )
 #endif
 
 // endian
@@ -122,6 +132,37 @@ typedef uint16 scrntype;
 #elif defined(_RGB888)
 #define RGB_COLOR(r, g, b) (((uint32)(r) << 16) | ((uint32)(g) << 8) | ((uint32)(b) << 0))
 typedef uint32 scrntype;
+#endif
+
+// _TCHAR
+#ifndef SUPPORT_TCHAR_TYPE
+typedef char _TCHAR;
+#define _T(s) (s)
+#define _tfopen fopen
+#define _tcscmp strcmp
+#define _tcscpy strcpy
+#define _tcsicmp stricmp
+#define _tcslen strlen
+#define _tcsncat strncat
+#define _tcsncpy strncpy
+#define _tcsncicmp strnicmp
+#define _tcsstr strstr
+#define _tcstok strtok
+#define _tcstol strtol
+#define _stprintf sprintf
+#define _vstprintf vsprintf
+#endif
+
+// secture functions
+#ifndef SUPPORT_SECURE_FUNCTIONS
+errno_t _tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode);
+errno_t _strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource);
+errno_t _tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
+_TCHAR *_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context);
+int _stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...);
+int _vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr);
+#else
+#define _strcpy_s strcpy_s
 #endif
 
 // misc

@@ -130,9 +130,9 @@ void DISK::open(_TCHAR path[], int offset)
 	if(fi->Fopen(path, FILEIO_READ_BINARY)) {
 		bool converted = false;
 		
-		_tcscpy(orig_path, path);
-		_tcscpy(dest_path, path);
-		_stprintf(temp_path, _T("%s.$$$"), path);
+		_tcscpy_s(orig_path, _MAX_PATH, path);
+		_tcscpy_s(dest_path, _MAX_PATH, path);
+		_stprintf_s(temp_path, _MAX_PATH, _T("%s.$$$"), path);
 		temporary = false;
 		
 		// check if file protected
@@ -196,7 +196,7 @@ void DISK::open(_TCHAR path[], int offset)
 				inserted = changed = true;
 				goto file_loaded;
 			}
-			_stprintf(dest_path, _T("%s.D88"), path);
+			_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), path);
 			
 			// check file header
 			try {
@@ -671,7 +671,7 @@ bool DISK::teledisk_to_d88()
 	
 	// create d88 header
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	strcpy(d88_hdr.title, "TELEDISK");
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "TELEDISK");
 	d88_hdr.protect = 0; // non-protected
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
@@ -1005,7 +1005,7 @@ bool DISK::imagedisk_to_d88()
 	
 	// create d88 header
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	strcpy(d88_hdr.title, "IMAGEDISK");
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "IMAGEDISK");
 	d88_hdr.protect = 0; // non-protected
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
@@ -1106,7 +1106,7 @@ bool DISK::cpdread_to_d88(int extended)
 	
 	// create d88 header
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	strcpy(d88_hdr.title, "CPDRead");
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "CPDRead");
 	d88_hdr.protect = 0; // non-protected
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
@@ -1182,7 +1182,7 @@ bool DISK::standard_to_d88(int type, int ncyl, int nside, int nsec, int size)
 	
 	// create d88 header
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	strcpy(d88_hdr.title, "STANDARD");
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "STANDARD");
 	d88_hdr.protect = 0; // non-protected
 	d88_hdr.type = (type == MEDIA_TYPE_144) ? MEDIA_TYPE_2HD : type;
 	media_type = type;

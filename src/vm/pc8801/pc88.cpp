@@ -1478,7 +1478,7 @@ void PC88::rec_tape(_TCHAR* file_path)
 	close_tape();
 	
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_WRITE_NEW_BINARY)) {
-		_tcscpy(rec_file_path, file_path);
+		_tcscpy_s(rec_file_path, _MAX_PATH, file_path);
 		cmt_bufptr = 0;
 		cmt_rec = true;
 	}

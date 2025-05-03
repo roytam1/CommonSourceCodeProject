@@ -26,6 +26,10 @@
 #define CONFIG_NAME		"mz80k"
 #endif
 
+#ifdef _MZ80A
+#define SUPPORT_MZ80AIF
+#endif
+
 // device informations for virtual machine
 #define FRAMES_PER_SEC		60
 #define LINES_PER_FRAME		262
@@ -34,6 +38,10 @@
 #define SCREEN_HEIGHT		200
 #define PCM1BIT_HIGH_QUALITY
 //#define LOW_PASS_FILTER
+#ifdef SUPPORT_MZ80AIF
+#define HAS_MB8876
+#define MAX_DRIVE		4
+#endif
 
 // device informations for win32
 #define USE_TAPE
@@ -45,6 +53,13 @@
 #define USE_AUTO_KEY_NO_CAPS
 #define USE_DEBUGGER
 #define USE_STATE
+#ifdef SUPPORT_MZ80AIF
+#define USE_FD1
+#define USE_FD2
+#define USE_FD3
+#define USE_FD4
+#define USE_ACCESS_LAMP
+#endif
 
 #include "../../common.h"
 
@@ -65,6 +80,12 @@ class Z80;
 class DISPLAY;
 class KEYBOARD;
 class MEMORY;
+
+#ifdef SUPPORT_MZ80AIF
+class MB8877;
+class FLOPPY;
+class IO;
+#endif
 
 class FILEIO;
 
@@ -90,6 +111,12 @@ protected:
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	
+#ifdef SUPPORT_MZ80AIF
+	MB8877* fdc;
+	FLOPPY* floppy;
+	IO* io;
+#endif
+	
 public:
 	// ----------------------------------------
 	// initialize
@@ -113,6 +140,9 @@ public:
 	
 	// draw screen
 	void draw_screen();
+#ifdef SUPPORT_MZ80AIF
+	int access_lamp();
+#endif
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
@@ -120,6 +150,11 @@ public:
 	int sound_buffer_ptr();
 	
 	// user interface
+#ifdef SUPPORT_MZ80AIF
+	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void close_disk(int drv);
+	bool disk_inserted(int drv);
+#endif
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();

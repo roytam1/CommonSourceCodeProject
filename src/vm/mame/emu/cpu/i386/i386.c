@@ -846,7 +846,7 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 				newESP = i386_get_stack_ptr(cpustate,DPL);
 				if(type & 0x08) // 32-bit gate
 				{
-					if(newESP < (V8086_MODE?36:20))
+					if(((newESP < (V8086_MODE?36:20)) && !(stack.flags & 0x4)) || ((~stack.limit < (~(newESP - 1) + (V8086_MODE?36:20))) && (stack.flags & 0x4)))
 					{
 						logerror("IRQ: New stack has no space for return addresses.\n");
 						FAULT_EXP(FAULT_SS,0)
@@ -855,7 +855,7 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 				else // 16-bit gate
 				{
 					newESP &= 0xffff;
-					if(newESP < (V8086_MODE?18:10))
+					if(((newESP < (V8086_MODE?18:10)) && !(stack.flags & 0x4)) || ((~stack.limit < (~(newESP - 1) + (V8086_MODE?18:10))) && (stack.flags & 0x4)))
 					{
 						logerror("IRQ: New stack has no space for return addresses.\n");
 						FAULT_EXP(FAULT_SS,0)
@@ -922,7 +922,7 @@ static void i386_trap(i386_state *cpustate,int irq, int irq_gate, int trap_level
 				if((desc.flags & 0x0004) || (DPL == CPL))
 				{
 					/* IRQ to same privilege */
-					if(V8086_MODE)
+					if(V8086_MODE && !cpustate->ext)
 					{
 						logerror("IRQ: Gate to same privilege from VM86 mode.\n");
 						FAULT_EXP(FAULT_GP,segment & ~0x03);
@@ -1128,7 +1128,7 @@ static void i286_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 	}
 	CHANGE_PC(cpustate,cpustate->eip);
 
-	cpustate->CPL = cpustate->sreg[CS].selector & 0x03;
+	cpustate->CPL = (cpustate->sreg[SS].flags >> 5) & 3;
 //  printf("286 Task Switch from selector %04x to %04x\n",old_task,selector);
 }
 
@@ -1246,7 +1246,7 @@ static void i386_task_switch(i386_state *cpustate, UINT16 selector, UINT8 nested
 
 	CHANGE_PC(cpustate,cpustate->eip);
 
-	cpustate->CPL = cpustate->sreg[CS].selector & 0x03;
+	cpustate->CPL = (cpustate->sreg[SS].flags >> 5) & 3;
 //  printf("386 Task Switch from selector %04x to %04x\n",old_task,selector);
 }
 
@@ -3066,6 +3066,7 @@ static CPU_RESET( i386 )
 	cpustate->sreg[CS].selector = 0xf000;
 	cpustate->sreg[CS].base     = 0xffff0000;
 	cpustate->sreg[CS].limit    = 0xffff;
+	cpustate->sreg[CS].flags    = 0x9b;
 	cpustate->sreg[CS].valid    = true;
 
 	cpustate->sreg[DS].base = cpustate->sreg[ES].base = cpustate->sreg[FS].base = cpustate->sreg[GS].base = cpustate->sreg[SS].base = 0x00000000;

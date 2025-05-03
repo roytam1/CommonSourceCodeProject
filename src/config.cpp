@@ -18,14 +18,14 @@ config_t config;
 BOOL WritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int Value, LPCTSTR lpFileName)
 {
 	_TCHAR String[32];
-	_stprintf(String, _T("%d"), Value);
+	_stprintf_s(String, 32, _T("%d"), Value);
 	return WritePrivateProfileString(lpAppName, lpKeyName, String, lpFileName);
 }
 
 BOOL WritePrivateProfileBool(LPCTSTR lpAppName, LPCTSTR lpKeyName, bool Value, LPCTSTR lpFileName)
 {
 	_TCHAR String[32];
-	_stprintf(String, _T("%d"), Value ? 1 : 0);
+	_stprintf_s(String, 32, _T("%d"), Value ? 1 : 0);
 	return WritePrivateProfileString(lpAppName, lpKeyName, String, lpFileName);
 }
 
@@ -78,7 +78,7 @@ void load_config()
 	GetModuleFileName(NULL, config_path, _MAX_PATH);
 	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
 	*ptr = _T('\0');
-	_stprintf(config_path, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
+	_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
 #ifdef USE_BOOT_MODE
@@ -107,7 +107,7 @@ void load_config()
 	for(int drv = 0; drv < MAX_CART; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentCartPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentCartPath%d_%d"), drv + 1, i + 1);
 			GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_cart_path[drv][i], _MAX_PATH, config_path);
 		}
 	}
@@ -117,7 +117,7 @@ void load_config()
 	for(int drv = 0; drv < MAX_FD; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentDiskPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentDiskPath%d_%d"), drv + 1, i + 1);
 			GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_disk_path[drv][i], _MAX_PATH, config_path);
 		}
 	}
@@ -127,7 +127,7 @@ void load_config()
 	for(int drv = 0; drv < MAX_QD; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentQuickDiskPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentQuickDiskPath%d_%d"), drv + 1, i + 1);
 			GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_quickdisk_path[drv][i], _MAX_PATH, config_path);
 		}
 	}
@@ -136,7 +136,7 @@ void load_config()
 	GetPrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), _T(""), config.initial_tape_dir, _MAX_PATH, config_path);
 	for(int i = 0; i < MAX_HISTORY; i++) {
 		_TCHAR name[64];
-		_stprintf(name, _T("RecentTapePath1_%d"), i + 1);
+		_stprintf_s(name, 64, _T("RecentTapePath1_%d"), i + 1);
 		GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_tape_path[i], _MAX_PATH, config_path);
 	}
 #endif
@@ -144,7 +144,7 @@ void load_config()
 	GetPrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), _T(""), config.initial_laser_disc_dir, _MAX_PATH, config_path);
 	for(int i = 0; i < MAX_HISTORY; i++) {
 		_TCHAR name[64];
-		_stprintf(name, _T("RecentLaserDiscPath1_%d"), i + 1);
+		_stprintf_s(name, 64, _T("RecentLaserDiscPath1_%d"), i + 1);
 		GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_laser_disc_path[i], _MAX_PATH, config_path);
 	}
 #endif
@@ -153,7 +153,7 @@ void load_config()
 	for(int drv = 0; drv < MAX_BINARY; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentBinaryPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentBinaryPath%d_%d"), drv + 1, i + 1);
 			GetPrivateProfileString(_T("RecentFiles"), name, _T(""), config.recent_binary_path[drv][i], _MAX_PATH, config_path);
 		}
 	}
@@ -192,7 +192,7 @@ void save_config()
 	GetModuleFileName(NULL, config_path, _MAX_PATH);
 	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
 	*ptr = _T('\0');
-	_stprintf(config_path, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
+	_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
 #ifdef USE_BOOT_MODE
@@ -221,7 +221,7 @@ void save_config()
 	for(int drv = 0; drv < MAX_CART; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentCartPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentCartPath%d_%d"), drv + 1, i + 1);
 			WritePrivateProfileString(_T("RecentFiles"), name, config.recent_cart_path[drv][i], config_path);
 		}
 	}
@@ -231,7 +231,7 @@ void save_config()
 	for(int drv = 0; drv < MAX_FD; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentDiskPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentDiskPath%d_%d"), drv + 1, i + 1);
 			WritePrivateProfileString(_T("RecentFiles"), name, config.recent_disk_path[drv][i], config_path);
 		}
 	}
@@ -241,7 +241,7 @@ void save_config()
 	for(int drv = 0; drv < MAX_QD; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentQuickDiskPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentQuickDiskPath%d_%d"), drv + 1, i + 1);
 			WritePrivateProfileString(_T("RecentFiles"), name, config.recent_quickdisk_path[drv][i], config_path);
 		}
 	}
@@ -250,7 +250,7 @@ void save_config()
 	WritePrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), config.initial_tape_dir, config_path);
 	for(int i = 0; i < MAX_HISTORY; i++) {
 		_TCHAR name[64];
-		_stprintf(name, _T("RecentTapePath1_%d"), i + 1);
+		_stprintf_s(name, 64, _T("RecentTapePath1_%d"), i + 1);
 		WritePrivateProfileString(_T("RecentFiles"), name, config.recent_tape_path[i], config_path);
 	}
 #endif
@@ -258,7 +258,7 @@ void save_config()
 	WritePrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), config.initial_laser_disc_dir, config_path);
 	for(int i = 0; i < MAX_HISTORY; i++) {
 		_TCHAR name[64];
-		_stprintf(name, _T("RecentLaserDiscPath1_%d"), i + 1);
+		_stprintf_s(name, 64, _T("RecentLaserDiscPath1_%d"), i + 1);
 		WritePrivateProfileString(_T("RecentFiles"), name, config.recent_laser_disc_path[i], config_path);
 	}
 #endif
@@ -267,7 +267,7 @@ void save_config()
 	for(int drv = 0; drv < MAX_BINARY; drv++) {
 		for(int i = 0; i < MAX_HISTORY; i++) {
 			_TCHAR name[64];
-			_stprintf(name, _T("RecentBinaryPath%d_%d"), drv + 1, i + 1);
+			_stprintf_s(name, 64, _T("RecentBinaryPath%d_%d"), drv + 1, i + 1);
 			WritePrivateProfileString(_T("RecentFiles"), name, config.recent_binary_path[drv][i], config_path);
 		}
 	}

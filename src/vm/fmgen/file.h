@@ -3,7 +3,7 @@
 #if !defined(win32_file_h)
 #define win32_file_h
 
-#include <tchar.h>
+#include "../../common.h"
 #include "types.h"
 
 // ---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ private:
 	uint flags;
 	uint32 lorigin;
 	Error error;
-	_TCHAR path[MAX_PATH];
+	_TCHAR path[_MAX_PATH];
 	
 	FileIO(const FileIO&);
 	const FileIO& operator=(const FileIO&);
