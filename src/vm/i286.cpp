@@ -401,7 +401,7 @@ int I286::get_shutdown_flag()
 }
 #endif
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void I286::save_state(FILEIO* state_fio)
 {
