@@ -19,7 +19,7 @@ void VDP::initialize()
 	create_bg();
 	
 	// regist event to interrupt
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
 void VDP::write_io8(uint32 addr, uint32 data)
@@ -65,7 +65,7 @@ void VDP::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-void VDP::event_vsync(int v, int clock)
+void VDP::event_vline(int v, int clock)
 {
 	// vsync interrupt (not pending ???)
 	if(v == 184)

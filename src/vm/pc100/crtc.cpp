@@ -21,10 +21,10 @@ void CRTC::initialize()
 	update_palette(0);
 	
 	// regist events
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
-void CRTC::event_vsync(int v, int clock)
+void CRTC::event_vline(int v, int clock)
 {
 	if(v == 512)
 		d_pic->write_signal(did_pic, 1, 1);

@@ -307,7 +307,7 @@ public:
 	void release();
 	void reset();
 	void event_frame();
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);

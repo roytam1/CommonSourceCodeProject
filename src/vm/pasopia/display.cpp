@@ -83,38 +83,42 @@ void DISPLAY::event_frame()
 
 void DISPLAY::draw_screen()
 {
-	uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
-	if((regs[8] & 0xc0) == 0xc0)
-		cursor = -1;
-	else
-		cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
-	
-	// create screen
-	_memset(screen, mode & 7, sizeof(screen));
-	
-	switch(mode & 0xe0)
-	{
-	case 0x00:	// screen 0, wide
-		draw_screen0_wide(src);
-		break;
-	case 0x20:	// screen 0, normal
-		draw_screen0_normal(src);
-		break;
-	case 0x40:	// screen 1, wide
-		draw_screen1_wide(src);
-		break;
-	case 0x60:	// screen 1, normal
-		draw_screen1_normal(src);
-		break;
-	case 0x80:	// screen 2, wide
-	case 0xc0:
-		draw_screen2_wide(src);
-		break;
-	case 0xa0:	// screen 2, normal
-	case 0xe0:
-		draw_screen2_normal(src);
-		break;
+	if((regs[8] & 0x30) != 0x30) {
+		uint16 src = ((regs[12] << 8) | regs[13]) & 0x7ff;
+		if((regs[8] & 0xc0) == 0xc0)
+			cursor = -1;
+		else
+			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
+		
+		// render screen
+		_memset(screen, mode & 7, sizeof(screen));
+		
+		switch(mode & 0xe0)
+		{
+		case 0x00:	// screen 0, wide
+			draw_screen0_wide(src);
+			break;
+		case 0x20:	// screen 0, normal
+			draw_screen0_normal(src);
+			break;
+		case 0x40:	// screen 1, wide
+			draw_screen1_wide(src);
+			break;
+		case 0x60:	// screen 1, normal
+			draw_screen1_normal(src);
+			break;
+		case 0x80:	// screen 2, wide
+		case 0xc0:
+			draw_screen2_wide(src);
+			break;
+		case 0xa0:	// screen 2, normal
+		case 0xe0:
+			draw_screen2_normal(src);
+			break;
+		}
 	}
+	else
+		_memset(screen, 0, sizeof(screen));
 	
 	// copy to real screen
 	uint16 bcol = palette_pc[mode & 7];

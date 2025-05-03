@@ -169,7 +169,8 @@ void I86::reset()
 	gdtr_base = idtr_base = ldtr_base = tr_base = 0;
 	gdtr_limit = idtr_limit = ldtr_limit = tr_limit = 0;
 	ldtr_sel = tr_sel = 0;
-	AuxVal = OverVal = SignVal = ZeroVal = CarryVal = DirVal = 0;
+	AuxVal = OverVal = SignVal = ZeroVal = CarryVal = 0;
+	DirVal = 1;
 	ParityVal = TF = IF = MF = 0;
 	halt = false;
 	intstat = busy = 0;
@@ -2644,8 +2645,6 @@ inline void I86::_insw()	// Opcode 0x6d
 {
 #if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.ins16;
-//	WM8(ES, regs.w[DI], IN8(regs.w[DX]));
-//	WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
 	WM16(ES, regs.w[DI], IN16(regs.w[DX]));
 	regs.w[DI] += 2 * DirVal;
 #else
@@ -2668,8 +2667,7 @@ inline void I86::_outsw()	// Opcode 0x6f
 {
 #if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.outs16;
-	OUT8(regs.w[DX], RM8(DS, regs.w[SI]));
-	OUT8(regs.w[DX] + 1, RM8(DS, regs.w[SI] + 1));
+	OUT16(regs.w[DX], RM16(DS, regs.w[SI]));
 	regs.w[SI] += 2 * DirVal;
 #else
 	_invalid();
@@ -3891,8 +3889,6 @@ inline void I86::_inax()	// Opcode 0xe5
 {
 	unsigned port = FETCH8();
 	count -= cycles.in_imm16;
-//	regs.b[AL] = IN8(port);
-//	regs.b[AH] = IN8(port + 1);
 	regs.w[AX] = IN16(port);
 }
 
@@ -3907,8 +3903,7 @@ inline void I86::_outax()	// Opcode 0xe7
 {
 	unsigned port = FETCH8();
 	count -= cycles.out_imm16;
-	OUT8(port, regs.b[AL]);
-	OUT8(port + 1, regs.b[AH]);
+	OUT16(port, regs.w[AX]);
 }
 
 inline void I86::_call_d16()	// Opcode 0xe8
@@ -3968,8 +3963,6 @@ inline void I86::_inaxdx()	// Opcode 0xed
 {
 	unsigned port = regs.w[DX];
 	count -= cycles.in_dx16;
-//	regs.b[AL] = IN8(port);
-//	regs.b[AH] = IN8(port + 1);
 	regs.w[AX] = IN16(port);
 }
 
@@ -3983,8 +3976,7 @@ inline void I86::_outdxax()	// Opcode 0xef
 {
 	unsigned port = regs.w[DX];
 	count -= cycles.out_dx16;
-	OUT8(port, regs.b[AL]);
-	OUT8(port + 1, regs.b[AH]);
+	OUT16(port, regs.w[AX]);
 }
 
 inline void I86::_lock()	// Opcode 0xf0
@@ -4037,8 +4029,6 @@ inline void I86::_rep(int flagval)
 	case 0x6d:	// REP INSW
 		count -= cycles.rep_ins16_base;
 		for(; cnt > 0; cnt--) {
-//			WM8(ES, regs.w[DI], IN8(regs.w[DX]));
-//			WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
 			WM16(ES, regs.w[DI], IN16(regs.w[DX]));
 			regs.w[DI] += 2 * DirVal;
 			count -= cycles.rep_ins16_count;
@@ -4057,8 +4047,7 @@ inline void I86::_rep(int flagval)
 	case 0x6f:	// REP OUTSW
 		count -= cycles.rep_outs16_base;
 		for(; cnt > 0; cnt--) {
-			OUT8(regs.w[DX], RM8(DS, regs.w[SI]));
-			OUT8(regs.w[DX] + 1, RM8(DS, regs.w[SI] + 1));
+			OUT16(regs.w[DX], RM16(DS, regs.w[SI]));
 			regs.w[SI] += 2 * DirVal;
 			count -= cycles.rep_outs16_count;
 		}
@@ -4123,8 +4112,7 @@ inline void I86::_rep(int flagval)
 	case 0xab:	// REP STOSW
 		count -= cycles.rep_stos16_base;
 		for(; cnt > 0; cnt--) {
-			WM8(ES, regs.w[DI], regs.b[AL]);
-			WM8(ES, regs.w[DI] + 1, regs.b[AH]);
+			WM16(ES, regs.w[DI], regs.w[AX]);
 			regs.w[DI] += 2 * DirVal;
 			count -= cycles.rep_stos16_count;
 		}

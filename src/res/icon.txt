@@ -21,6 +21,7 @@ PYUTA
 RX78
 SCV
 X07
+X1TWIN
 	by Mr.Tenmaru
 	http://homepage2.nifty.com/tenpurako/
 

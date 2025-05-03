@@ -1300,10 +1300,18 @@ void open_cart(HWND hWnd)
 	_memset(&OpenFileName, 0, sizeof(OpenFileName));
 	OpenFileName.lStructSize = sizeof(OPENFILENAME);
 	OpenFileName.hwndOwner = hWnd;
+#ifdef _X1TWIN
+	OpenFileName.lpstrFilter = _T("HuCARD (*.pce)\0*.pce\0All Files (*.*)\0*.*\0\0");
+#else
 	OpenFileName.lpstrFilter = _T("Game Cartridge (*.rom)\0*.rom\0All Files (*.*)\0*.*\0\0");
+#endif
 	OpenFileName.lpstrFile = szFile;
 	OpenFileName.nMaxFile = _MAX_PATH;
+#ifdef _X1TWIN
+	OpenFileName.lpstrTitle = _T("HuCARD");
+#else
 	OpenFileName.lpstrTitle = _T("Game Cartridge");
+#endif
 	
 	if(GetOpenFileName(&OpenFileName)) {
 		_TCHAR long_path[_MAX_PATH];
@@ -1578,8 +1586,11 @@ void set_window(HWND hwnd, int mode)
 		else if(width <= 800 && height <= 600) {
 			width = 800; height = 600;
 		}
-		else {
+		else if(width <= 1024 && height <= 768) {
 			width = 1024; height = 768;
+		}
+		else {
+			width = 1280; height = 1024;
 		}
 #endif
 		DEVMODE dev;

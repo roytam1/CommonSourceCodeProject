@@ -294,12 +294,12 @@ void I8155::set_signal(bool signal)
 	if(prev_signal && !signal) {
 		// H->L
 		for(int i = 0; i < dcount_timer; i++)
-			d_timer[i]->write_signal(did_timer[i], 0, 0xffffffff);
+			d_timer[i]->write_signal(did_timer[i], 0, dmask_timer[i]);
 	}
 	else if(!prev_signal && signal) {
 		// L->H
 		for(int i = 0; i < dcount_timer; i++)
-			d_timer[i]->write_signal(did_timer[i], 1, 0xffffffff);
+			d_timer[i]->write_signal(did_timer[i], 0xffffffff, dmask_timer[i]);
 	}
 	prev_signal = signal;
 }

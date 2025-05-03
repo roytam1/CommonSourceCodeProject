@@ -205,6 +205,17 @@
 #define MENU_POS_SOUND                  6
 #endif
 
+// FUJITSU FMR-60
+#ifdef _FMR60
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
 // EPSON HC-40
 #ifdef _HC40
 #define MENU_POS_CONTROL                0
@@ -422,6 +433,16 @@
 #define MENU_POS_DATAREC                1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
+#endif
+
+// SHARP X1twin
+#ifdef _X1TWIN
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_CART                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
 #endif
 
 // Next default values for new objects

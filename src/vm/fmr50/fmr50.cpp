@@ -1,5 +1,6 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-60 Emulator 'eFMR-60'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -15,6 +16,9 @@
 
 #include "../beep.h"
 #include "../hd46505.h"
+#ifdef _FMR60
+#include "../hd63484.h"
+#endif
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8259.h"
@@ -49,6 +53,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	beep = new BEEP(this, emu);
 	crtc = new HD46505(this, emu);
+#ifdef _FMR60
+	acrtc = new HD63484(this, emu);
+#endif
 	sio = new I8251(this, emu);
 	pit0 = new I8253(this, emu);
 	pit1 = new I8253(this, emu);
@@ -96,9 +103,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 */
 	crtc->set_context_disp(memory, SIG_MEMORY_DISP, 1);
 	crtc->set_context_vsync(memory, SIG_MEMORY_VSYNC, 1);
-	pit0->set_context_ch0(timer, SIG_TIMER_CH0);
-	pit0->set_context_ch1(timer, SIG_TIMER_CH1);
-	pit0->set_context_ch2(beep, SIG_BEEP_PULSE);
+#ifdef _FMR60
+	acrtc->set_vram_ptr((uint16*)memory->get_vram(), 0x80000);
+#endif
+	pit0->set_context_ch0(timer, SIG_TIMER_CH0, 1);
+	pit0->set_context_ch1(timer, SIG_TIMER_CH1, 1);
+	pit0->set_context_ch2(beep, SIG_BEEP_PULSE, 1);
 	pit0->set_constant_clock(0, 307200);
 	pit0->set_constant_clock(1, 307200);
 	pit0->set_constant_clock(2, 307200);
@@ -115,7 +125,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	bios->set_cmos_ptr(cmos->get_cmos());
 	bios->set_vram_ptr(memory->get_vram());
 	bios->set_cvram_ptr(memory->get_cvram());
+#ifdef _FMR60
+	bios->set_avram_ptr(memory->get_avram());
+#else
 	bios->set_kvram_ptr(memory->get_kvram());
+#endif
 	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
 	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
 	keyboard->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
@@ -168,6 +182,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x40e, memory);	// crtc
 	io->set_iomap_alias_w(0x500, crtc, 0);
 	io->set_iomap_alias_w(0x502, crtc, 1);
+#ifdef _FMR60
+	io->set_iomap_range_w(0x520, 0x523, acrtc);
+#endif
 	io->set_iomap_single_w(0x600, keyboard);
 	io->set_iomap_single_w(0x602, keyboard);
 	io->set_iomap_single_w(0x604, keyboard);
@@ -177,10 +194,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0xc30, scsi);
 	io->set_iomap_single_w(0xc32, scsi);
 	io->set_iomap_range_w(0x3000, 0x3fff, cmos);
-//	io->set_iomap_single_w(0xfd90, memory);	// crtc
-//	io->set_iomap_single_w(0xfd92, memory);	// crtc
-//	io->set_iomap_single_w(0xfd94, memory);	// crtc
-//	io->set_iomap_single_w(0xfd96, memory);	// crtc
+	io->set_iomap_single_w(0xfd90, memory);	// crtc
+	io->set_iomap_single_w(0xfd92, memory);	// crtc
+	io->set_iomap_single_w(0xfd94, memory);	// crtc
+	io->set_iomap_single_w(0xfd96, memory);	// crtc
 	io->set_iomap_range_w(0xfd98, 0xfd9f, memory);	// crtc
 	io->set_iomap_single_w(0xfda0, memory);	// crtc
 	
@@ -219,6 +236,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0x40e, memory);	// crtc
 	io->set_iomap_alias_r(0x500, crtc, 0);
 	io->set_iomap_alias_r(0x502, crtc, 1);
+#ifdef _FMR60
+	io->set_iomap_range_r(0x520, 0x523, acrtc);
+#endif
 	io->set_iomap_single_r(0x600, keyboard);
 	io->set_iomap_single_r(0x602, keyboard);
 	io->set_iomap_single_r(0x604, keyboard);
@@ -229,9 +249,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0xc30, scsi);
 	io->set_iomap_single_r(0xc32, scsi);
 	io->set_iomap_range_r(0x3000, 0x3fff, cmos);
-//	io->set_iomap_single_r(0xfd92, memory);	// crtc
-//	io->set_iomap_single_r(0xfd94, memory);	// crtc
-//	io->set_iomap_single_r(0xfd96, memory);	// crtc
+	io->set_iomap_single_r(0xfd92, memory);	// crtc
+	io->set_iomap_single_r(0xfd94, memory);	// crtc
+	io->set_iomap_single_r(0xfd96, memory);	// crtc
 	io->set_iomap_range_r(0xfd98, 0xfd9f, memory);	// crtc
 	io->set_iomap_single_r(0xfda0, memory);	// crtc
 	
@@ -307,14 +327,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

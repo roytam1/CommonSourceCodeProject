@@ -119,7 +119,7 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_callback(int event_id, int err);
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	void update_config();
 	
 	// unique function

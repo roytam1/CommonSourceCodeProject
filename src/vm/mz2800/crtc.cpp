@@ -69,7 +69,7 @@ void CRTC::initialize()
 	blank = hblank = vblank = false;
 	
 	// regist events
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 	int id;
 	vm->regist_event(this, EVENT_BLINK, 500000, true, &id);
 }
@@ -336,7 +336,7 @@ void CRTC::event_callback(int event_id, int err)
 		set_hsync(event_id);
 }
 
-void CRTC::event_vsync(int v, int clock)
+void CRTC::event_vline(int v, int clock)
 {
 	// vblank
 	bool next = (GDEVS <= v && v < GDEVE) ? false : true;

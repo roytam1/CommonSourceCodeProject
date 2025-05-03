@@ -1,5 +1,7 @@
 /*
+	FUJITSU FMR-30 Emulator 'eFMR-30'
 	FUJITSU FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-60 Emulator 'eFMR-60'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -207,7 +209,12 @@ private:
 	DISK *disk[MAX_DRIVE];
 	
 	// pseudo bios
-	uint8 *cmos, *vram, *cvram, *kvram;
+	uint8 *cmos, *vram, *cvram;
+#ifdef _FMR60
+	uint8 *avram;
+#else
+	uint8 *kvram;
+#endif
 	int secnum, timeout;
 	
 	// disk bios
@@ -255,9 +262,15 @@ public:
 	void set_cvram_ptr(uint8* ptr) {
 		cvram = ptr;
 	}
+#ifdef _FMR60
+	void set_avram_ptr(uint8* ptr) {
+		avram = ptr;
+	}
+#else
 	void set_kvram_ptr(uint8* ptr) {
 		kvram = ptr;
 	}
+#endif
 };
 
 #endif

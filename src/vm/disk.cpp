@@ -12,7 +12,7 @@
 
 DISK::DISK()
 {
-	insert = protect = false;
+	insert = protect = change = false;
 	file_size = 0;
 	track_size = 0x1800;
 	sector_size = sector_num = 0;
@@ -46,7 +46,7 @@ void DISK::open(_TCHAR path[])
 		// check file size
 		if(0 < file_size && file_size <= DISK_BUFFER_SIZE) {
 			fi->Fread(buffer, file_size, 1);
-			insert = true;
+			insert = change = true;
 			
 			// check file format
 			if((buffer[0] == 'T' && buffer[1] == 'D') || (buffer[0] == 't' && buffer[1] == 'd')) {

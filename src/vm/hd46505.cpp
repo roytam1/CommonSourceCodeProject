@@ -12,8 +12,8 @@
 void HD46505::initialize()
 {
 	// initialize
-	hsync = vsync = true;
 	display = false;
+	vblank = vsync = hsync = true;
 	
 	_memset(regs, 0, sizeof(regs));
 	ch = 0;
@@ -26,7 +26,7 @@ void HD46505::initialize()
 	dhec = (int)(CPU_CLOCKS * dhe / FRAMES_PER_SEC / LINES_PER_FRAME / CHARS_PER_LINE + 0.5);
 	
 	// regist event
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
 void HD46505::write_io8(uint32 addr, uint32 data)
@@ -62,25 +62,26 @@ uint32 HD46505::read_io8(uint32 addr)
 		return ch;
 }
 
-void HD46505::event_vsync(int v, int clock)
+void HD46505::event_vline(int v, int clock)
 {
 	// display
-	bool disp = (v < dve) ? true : false;
-	set_display(disp);
 	if(dcount_disp) {
-		if(disp && dhe < CHARS_PER_LINE) {
+		set_display(v < dve);
+		if(v < dve && dhe < CHARS_PER_LINE) {
 			int id;
 			vm->regist_event_by_clock(this, EVENT_DISPLAY, dhec, false, &id);
 		}
 	}
 	
+	// vblank
+	set_vblank(v < dve);	// active low
+	
 	// vsync
-	bool sync = (vs <= v && v <= ve) ? true : false;
-	set_vsync(sync);
+	set_vsync(vs <= v && v <= ve);
 	
 	// hsync
-	set_hsync(false);
 	if(dcount_hsync) {
+		set_hsync(false);
 		if(hs < CHARS_PER_LINE) {
 			int id;
 			vm->regist_event_by_clock(this, EVENT_HSYNC_S, hsc, false, &id);
@@ -102,30 +103,39 @@ void HD46505::event_callback(int event_id, int err)
 		set_hsync(false);
 }
 
-void HD46505::set_display(bool disp)
+void HD46505::set_display(bool val)
 {
-	if(display != disp) {
+	if(display != val) {
 		for(int i = 0; i < dcount_disp; i++)
-			d_disp[i]->write_signal(did_disp[i], disp ? 0xffffffff : 0, dmask_disp[i]);
-		display = disp;
+			d_disp[i]->write_signal(did_disp[i], val ? 0xffffffff : 0, dmask_disp[i]);
+		display = val;
 	}
 }
 
-void HD46505::set_vsync(bool sync)
+void HD46505::set_vblank(bool val)
 {
-	if(vsync != sync) {
+	if(vblank != val) {
+		for(int i = 0; i < dcount_vblank; i++)
+			d_vblank[i]->write_signal(did_vblank[i], val ? 0xffffffff : 0, dmask_vblank[i]);
+		vblank = val;
+	}
+}
+
+void HD46505::set_vsync(bool val)
+{
+	if(vsync != val) {
 		for(int i = 0; i < dcount_vsync; i++)
-			d_vsync[i]->write_signal(did_vsync[i], sync ? 0xffffffff : 0, dmask_vsync[i]);
-		vsync = sync;
+			d_vsync[i]->write_signal(did_vsync[i], val ? 0xffffffff : 0, dmask_vsync[i]);
+		vsync = val;
 	}
 }
 
-void HD46505::set_hsync(bool sync)
+void HD46505::set_hsync(bool val)
 {
-	if(hsync != sync) {
+	if(hsync != val) {
 		for(int i = 0; i < dcount_hsync; i++)
-			d_hsync[i]->write_signal(did_hsync[i], sync ? 0xffffffff : 0, dmask_hsync[i]);
-		hsync = sync;
+			d_hsync[i]->write_signal(did_hsync[i], val ? 0xffffffff : 0, dmask_hsync[i]);
+		hsync = val;
 	}
 }
 

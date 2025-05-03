@@ -15,7 +15,7 @@ void JOYSTICK::initialize()
 	mode = 0xf;
 	full_auto = 0;
 	joy_stat = emu->joy_buffer();
-	vm->regist_vsync_event(this);
+	vm->regist_frame_event(this);
 }
 
 void JOYSTICK::write_io8(uint32 addr, uint32 data)
@@ -59,7 +59,7 @@ uint32 JOYSTICK::read_io8(uint32 addr)
 	return val;
 }
 
-void JOYSTICK::event_vsync(int v, int clock)
+void JOYSTICK::event_frame()
 {
 	// synch to vsync
 	full_auto = (full_auto + 1) & 3;

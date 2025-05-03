@@ -25,6 +25,11 @@
 #include "fmr50/fmr50.h"
 #endif
 
+// FUJITSU FMR-60
+#ifdef _FMR60
+#include "fmr50/fmr50.h"
+#endif
+
 // EPSON HC-40
 #ifdef _HC40
 #include "hc40/hc40.h"
@@ -148,6 +153,11 @@
 // CANON X-07
 #ifdef _X07
 #include "x07/x07.h"
+#endif
+
+// SHARP X1twin
+#ifdef _X1TWIN
+#include "x1twin/x1twin.h"
 #endif
 
 #endif

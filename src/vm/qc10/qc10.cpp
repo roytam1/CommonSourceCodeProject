@@ -72,13 +72,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma0->set_context_ch0(fdc);
 	dma0->set_context_ch1(gdc);
 	dma1->set_context_memory(memory);
-	pit0->set_context_ch0(memory, SIG_MEMORY_BEEP);
-	pit0->set_context_ch1(pic, SIG_I8259_IR5 | SIG_I8259_CHIP1);
-	pit0->set_context_ch2(pic, SIG_I8259_IR1 | SIG_I8259_CHIP0);
+	pit0->set_context_ch0(memory, SIG_MEMORY_BEEP, 1);
+	pit0->set_context_ch1(pic, SIG_I8259_IR5 | SIG_I8259_CHIP1, 1);
+	pit0->set_context_ch2(pic, SIG_I8259_IR1 | SIG_I8259_CHIP0, 1);
 	pit0->set_constant_clock(2, CPU_CLOCKS >> 1);	// 1.9968MHz
-	pit1->set_context_ch0(beep, SIG_BEEP_PULSE);
-	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_0);
-	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_1);
+	pit1->set_context_ch0(beep, SIG_BEEP_PULSE, 1);
+	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_0, 1);
+	pit1->set_context_ch1(pit0, SIG_I8253_CLOCK_1, 1);
 	pit1->set_constant_clock(0, CPU_CLOCKS >> 1);	// 1.9968MHz
 	pit1->set_constant_clock(1, CPU_CLOCKS >> 1);	// 1.9968MHz
 	pit1->set_constant_clock(2, CPU_CLOCKS >> 1);	// 1.9968MHz
@@ -221,14 +221,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

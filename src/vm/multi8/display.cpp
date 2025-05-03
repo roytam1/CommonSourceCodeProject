@@ -109,19 +109,26 @@ void DISPLAY::event_frame()
 
 void DISPLAY::draw_screen()
 {
-	if((regs[8] & 0xc0) == 0xc0)
-		cursor = -1;
+	if((regs[8] & 0x30) != 0x30) {
+		if((regs[8] & 0xc0) == 0xc0)
+			cursor = -1;
+		else
+			cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
+		
+		// render screen
+		if(graph_color)
+			draw_graph_color();
+		else
+			draw_graph_mono();
+		if(text_wide)
+			draw_text_wide();
+		else
+			draw_text_normal();
+	}
 	else
-		cursor = ((regs[14] << 8) | regs[15]) & 0x7ff;
-	if(graph_color)
-		draw_graph_color();
-	else
-		draw_graph_mono();
-	if(text_wide)
-		draw_text_wide();
-	else
-		draw_text_normal();
+		_memset(screen, 0, sizeof(screen));
 	
+	// copy to real screen
 	for(int y = 0; y < 200; y++) {
 		scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
 		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);

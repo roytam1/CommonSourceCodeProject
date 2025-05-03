@@ -16,7 +16,7 @@
 void TMS9918A::initialize()
 {
 	// regist event
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
 void TMS9918A::reset()
@@ -144,7 +144,7 @@ void TMS9918A::draw_screen()
 	}
 }
 
-void TMS9918A::event_vsync(int v, int clock)
+void TMS9918A::event_vline(int v, int clock)
 {
 	if(v == 192) {
 		// create virtual screen

@@ -54,7 +54,7 @@ void MEMORY::initialize()
 	delete fio;
 	
 	// regist event
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 	int id;
 	vm->regist_event_by_clock(this, EVENT_TEMPO, CPU_CLOCKS / 64, true, &id);	// 32hz * 2
 	vm->regist_event_by_clock(this, EVENT_BLINK, CPU_CLOCKS / 3, true, &id);	// 1.5hz * 2
@@ -71,7 +71,7 @@ void MEMORY::reset()
 	emm_ptr = 0;
 }
 
-void MEMORY::event_vsync(int v, int clock)
+void MEMORY::event_vline(int v, int clock)
 {
 	// vblank
 	if(v == 0)

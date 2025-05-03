@@ -58,9 +58,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
 //	drec->set_context_out(pcm1, SIG_PCM1BIT_SIGNAL, 1);
 	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
-	ctc->set_context_ch0(pcm0, SIG_PCM1BIT_SIGNAL);
-	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2);
-	ctc->set_context_ch2(interrupt, SIG_INTERRUPT_CLOCK);
+	ctc->set_context_ch0(pcm0, SIG_PCM1BIT_SIGNAL, 1);
+	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2, 1);
+	ctc->set_context_ch2(interrupt, SIG_INTERRUPT_CLOCK, 1);
 	ctc->set_constant_clock(0, CPU_CLOCKS >> 2);
 	ctc->set_constant_clock(1, 16000);
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x7f, 0);
@@ -154,14 +154,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

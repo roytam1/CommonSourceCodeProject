@@ -13,7 +13,7 @@ void YM2203::initialize()
 {
 	opn = new FM::OPN;
 	usec = (int)(1000000. / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 	irq = mute = false;
 }
 
@@ -79,10 +79,10 @@ void YM2203::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_YM2203_PORT_B)
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
 	else if(id == SIG_YM2203_MUTE)
-		mute = (data & mask) ? true : false;
+		mute = ((data & mask) != 0);
 }
 
-void YM2203::event_vsync(int v, int clock)
+void YM2203::event_vline(int v, int clock)
 {
 	bool next = opn->Count(usec);
 	if(irq != next) {

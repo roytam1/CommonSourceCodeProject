@@ -55,8 +55,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 //	event->set_context_sound(beep);
 	
-	pit->set_context_ch0(ls74, SIG_LS393_CLK);
-//	pit->set_context_ch2(beep, SIG_BEEP_PULSE);
+	pit->set_context_ch0(ls74, SIG_LS393_CLK, 1);
+//	pit->set_context_ch2(beep, SIG_BEEP_PULSE, 1);
 	pit->set_constant_clock(0, 307200);
 	pit->set_constant_clock(1, 307200);
 	pit->set_constant_clock(2, 307200);
@@ -156,14 +156,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

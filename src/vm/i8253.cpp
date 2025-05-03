@@ -362,12 +362,12 @@ void I8253::set_signal(int ch, bool signal)
 	if(prev && !signal) {
 		// H->L
 		for(int i = 0; i < dcount[ch]; i++)
-			dev[ch][i]->write_signal(did[ch][i], 0, 0xffffffff);
+			dev[ch][i]->write_signal(did[ch][i], 0, dmask[ch][i]);
 	}
 	else if(!prev && signal) {
 		// L->H
 		for(int i = 0; i < dcount[ch]; i++)
-			dev[ch][i]->write_signal(did[ch][i], 1, 0xffffffff);
+			dev[ch][i]->write_signal(did[ch][i], 0xffffffff, dmask[ch][i]);
 	}
 }
 

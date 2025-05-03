@@ -73,26 +73,29 @@ void DISPLAY::event_frame()
 
 void DISPLAY::draw_screen()
 {
-#ifdef _LCD
-	uint16 src = ((regs[12] << 11) | (regs[13] << 3)) & 0x3ff8;
-	if((regs[8] & 0xc0) == 0xc0)
-		cursor = -1;
-	else
-		cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
-	
 	// clear screen buffer
 	_memset(screen, 0, sizeof(screen));
 	
-	switch(mode & 0xa0)
-	{
-	case 0x00:	// text, wide
-	case 0x20:	// text, normal
-		draw_text_lcd(src);
-		break;
-	case 0x80:	// fine graph, wide
-	case 0xa0:	// fine graph, normal
-		draw_fine_lcd(src);
-		break;
+#ifdef _LCD
+	if((regs[8] & 0x30) != 0x30) {
+		// render screen
+		uint16 src = ((regs[12] << 11) | (regs[13] << 3)) & 0x3ff8;
+		if((regs[8] & 0xc0) == 0xc0)
+			cursor = -1;
+		else
+			cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
+		
+		switch(mode & 0xa0)
+		{
+		case 0x00:	// text, wide
+		case 0x20:	// text, normal
+			draw_text_lcd(src);
+			break;
+		case 0x80:	// fine graph, wide
+		case 0xa0:	// fine graph, normal
+			draw_fine_lcd(src);
+			break;
+		}
 	}
 	
 	// copy to real screen
@@ -123,51 +126,51 @@ void DISPLAY::draw_screen()
 		}
 	}
 #else
-	// sync check
-	uint16 flash = 0;
-	if(mode & 0x20) {
-		if(regs[0] < 106 || 118 < regs[0] || 113 < regs[2])
+	if((regs[8] & 0x30) != 0x30) {
+		// sync check
+		uint16 flash = 0;
+		if(mode & 0x20) {
+			if(regs[0] < 106 || 118 < regs[0] || 113 < regs[2])
+				flash = 0xffff;
+			flash_cnt -= 320;
+		}
+		else {
+			if(regs[0] < 53 || 58 < regs[0] || 56 < regs[2])
+				flash = 0xffff;
+			flash_cnt -= 160;
+		}
+		if(regs[4] < 27 || 32 < regs[4] || 16 < regs[5] || 32 < regs[7])
 			flash = 0xffff;
-		flash_cnt -= 320;
-	}
-	else {
-		if(regs[0] < 53 || 58 < regs[0] || 56 < regs[2])
+		if((regs[8] & 3) == 3 || (regs[9] != 7 && regs[9] != 6))
 			flash = 0xffff;
-		flash_cnt -= 160;
-	}
-	if(regs[4] < 27 || 32 < regs[4] || 16 < regs[5] || 32 < regs[7])
-		flash = 0xffff;
-	if((regs[8] & 3) == 3 || (regs[9] != 7 && regs[9] != 6))
-		flash = 0xffff;
-	uint16 src = (((regs[12] << 11) | (regs[13] << 3)) + (flash_cnt & flash)) & 0x3ff8;
-	if((regs[8] & 0xc0) == 0xc0)
-		cursor = -1;
-	else
-		cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
-	
-	// create screen
-	_memset(screen, 0, sizeof(screen));
-	
-	if((flash != 0) || (regs[8] & 0x30) != 0x30) {
-		switch(mode & 0xa0)
-		{
-		case 0x00:
-			// text, wide
-			draw_text_wide(src);
-			flash_cnt += 40;
-			break;
-		case 0x20:
-			// text, normal
-			draw_text_normal(src);
-			break;
-		case 0x80:
-			// fine graph, wide
-			draw_fine_wide(src);
-			break;
-		case 0xa0:
-			// fine graph, normal
-			draw_fine_normal(src);
-			break;
+		uint16 src = (((regs[12] << 11) | (regs[13] << 3)) + (flash_cnt & flash)) & 0x3ff8;
+		if((regs[8] & 0xc0) == 0xc0)
+			cursor = -1;
+		else
+			cursor = ((regs[14] << 11) | (regs[15] << 3)) & 0x3ff8;
+		
+		// render screen
+		if((flash != 0) || (regs[8] & 0x30) != 0x30) {
+			switch(mode & 0xa0)
+			{
+			case 0x00:
+				// text, wide
+				draw_text_wide(src);
+				flash_cnt += 40;
+				break;
+			case 0x20:
+				// text, normal
+				draw_text_normal(src);
+				break;
+			case 0x80:
+				// fine graph, wide
+				draw_fine_wide(src);
+				break;
+			case 0xa0:
+				// fine graph, normal
+				draw_fine_normal(src);
+				break;
+			}
 		}
 	}
 	

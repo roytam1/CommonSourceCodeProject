@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								1/16/2009
+								4/1/2009
 
 --- What's this ?
 
@@ -18,6 +18,7 @@ This archive includes the all source codes of:
 	eFM-16pi	FUJITSU FM-16pi emulator
 	eFMR-30		FUJITSU FMR-30 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
+	eFMR-60		FUJITSU FMR-60 emulator
 	eHANDY98	NEC PC-98HA emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
@@ -31,6 +32,7 @@ This archive includes the all source codes of:
 	eSCV		EPOCH Super Cassette Vision emulator
 	eTK-80BS	NEC TK-80BS (COMPO BS/80) emulator
 	eX-07		CANON X-07 emulator
+	eX1twin		SHARP X1twin
 
 You can compile them with:
 
@@ -50,6 +52,10 @@ under the GNU GENERAL PUBLIC LICENSE.
 	XM6
 - vm/fmgen/*
 	M88/fmgen
+- vm/hd63484.*
+	MAME HD63484 core
+- vm/huc6260.*
+	Ootake CPU core
 - vm/i8259.*
 	Neko Project 2 and MESS 8259 core
 - vm/mb8877.*
@@ -77,7 +83,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/z80.*
 	MAME Z80 core
 - vm/fmr50/bios.*
-	FM-TOWNs emulator on bochs
+	FM-TOWNS emulator on bochs
+	UNZ pseudo BIOS
 - vm/hc40/*
 	Mr.Fred Han Kraan for EPSON HC-40/PX-4 hardware design info
 - vm/hc80/*
@@ -102,6 +109,11 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Enri and Mr.333 for Epoch Super Cassette Vision hardware info
 - vm/x07/io.*
 	x07_emul by Mr.Jacques Brigaud
+- vm/x1twin/pce.*
+	Ootake (Joypad and Timer)
+	xpce (PSG and VDC)
+- vm/x1twin/sub.*
+	X millenium T-tune
 - win32_sound.cpp
 	XM7 for DirectSound implement
 	M88 for wavOut API implement

@@ -18,22 +18,16 @@ void EVENT::initialize()
 	power = config.cpu_power;
 	
 	// generate clocks per line and char
-	int sum = (int)((float)CPU_CLOCKS / (float)FRAMES_PER_SEC + 0.5);
+	int sum = (int)((float)cpu_clocks / frames_per_sec + 0.5);
 	int remain = sum;
-	int* tmp = &hclocks[0][0];
 	
-	for(int i = 0; i < LINES_PER_FRAME * CHARS_PER_LINE; i++) {
-		tmp[i] = (int)(sum / LINES_PER_FRAME / CHARS_PER_LINE);
-		remain -= tmp[i];
+	for(int i = 0; i < lines_per_frame; i++) {
+		vclocks[i] = (int)(sum / lines_per_frame);
+		remain -= vclocks[i];
 	}
 	for(int i = 0; i < remain; i++) {
-		int index = (int)((float)LINES_PER_FRAME * (float)CHARS_PER_LINE * (float)i / (float)remain);
-		tmp[index]++;
-	}
-	for(int i = 0; i < LINES_PER_FRAME; i++) {
-		vclocks[i] = 0;
-		for(int j = 0; j < CHARS_PER_LINE; j++)
-			vclocks[i] += hclocks[i][j];
+		int index = (int)((float)lines_per_frame * (float)i / (float)remain);
+		vclocks[index]++;
 	}
 	accum = 0;
 	
@@ -42,14 +36,18 @@ void EVENT::initialize()
 		event[i].enable = false;
 	next_id = NO_EVENT;
 	next = past = 0;
-	event_cnt = frame_event_cnt = vsync_event_cnt = hsync_event_cnt = 0;
+	event_cnt = frame_event_cnt = vline_event_cnt = 0;
+	
+	// initialize sound buffer
+	sound_buffer = NULL;
+	sound_tmp = NULL;
 }
 
 void EVENT::initialize_sound(int rate, int samples)
 {
 	// initialize sound
 	sound_samples = samples;
-	update_samples = (int)(1024. * rate / FRAMES_PER_SEC / LINES_PER_FRAME + 0.5);
+	update_samples = (int)(1024. * rate / frames_per_sec / lines_per_frame + 0.5);
 	
 	sound_buffer = (uint16*)malloc(samples * sizeof(uint16));
 	_memset(sound_buffer, 0, samples * sizeof(uint16));
@@ -97,27 +95,12 @@ void EVENT::drive()
 	// run virtual machine for 1 frame period
 	for(int i = 0; i < frame_event_cnt; i++)
 		frame_event[i]->event_frame();
-	if(hsync_event_cnt) {
-		// run virtual machine per character
-		for(int v = 0; v < LINES_PER_FRAME; v++) {
-			for(int i = 0; i < vsync_event_cnt; i++)
-				vsync_event[i]->event_vsync(v, vclocks[v]);
-			for(int h = 0; h < CHARS_PER_LINE; h++) {
-				for(int i = 0; i < hsync_event_cnt; i++)
-					hsync_event[i]->event_hsync(v, h, hclocks[v][h]);
-				update_event(hclocks[v][h]);
-			}
-			update_sound();
-		}
-	}
-	else {
+	for(int v = 0; v < lines_per_frame; v++) {
 		// run virtual machine per line
-		for(int v = 0; v < LINES_PER_FRAME; v++) {
-			for(int i = 0; i < vsync_event_cnt; i++)
-				vsync_event[i]->event_vsync(v, vclocks[v]);
-			update_event(vclocks[v]);
-			update_sound();
-		}
+		for(int i = 0; i < vline_event_cnt; i++)
+			vline_event[i]->event_vline(v, vclocks[v]);
+		update_event(vclocks[v]);
+		update_sound();
 	}
 }
 
@@ -196,7 +179,7 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 		if(!event[i].enable) {
 			if(event_cnt < i + 1)
 				event_cnt = i + 1;
-			int clock = (int)(CPU_CLOCKS / 1000000. * usec + 0.5);
+			int clock = (int)(cpu_clocks / 1000000. * usec + 0.5);
 			event[i].enable = true;
 			event[i].device = dev;
 			event[i].event_id = event_id;
@@ -278,14 +261,9 @@ void EVENT::regist_frame_event(DEVICE* dev)
 	frame_event[frame_event_cnt++] = dev;
 }
 
-void EVENT::regist_vsync_event(DEVICE* dev)
+void EVENT::regist_vline_event(DEVICE* dev)
 {
-	vsync_event[vsync_event_cnt++] = dev;
-}
-
-void EVENT::regist_hsync_event(DEVICE* dev)
-{
-	hsync_event[hsync_event_cnt++] = dev;
+	vline_event[vline_event_cnt++] = dev;
 }
 
 uint16* EVENT::create_sound(int samples, bool fill)

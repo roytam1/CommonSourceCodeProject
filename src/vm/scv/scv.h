@@ -105,8 +105,7 @@ public:
 	void regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
 	void cancel_event(int regist_id);
 	void regist_frame_event(DEVICE* dev);
-	void regist_vsync_event(DEVICE* dev);
-	void regist_hsync_event(DEVICE* dev);
+	void regist_vline_event(DEVICE* dev);
 	
 	// clock
 	uint32 current_clock();

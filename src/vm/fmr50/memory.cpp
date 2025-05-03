@@ -1,5 +1,6 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-60 Emulator 'eFMR-60'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -31,16 +32,31 @@ void MEMORY::initialize()
 	_memset(ram, 0, sizeof(ram));
 	_memset(vram, 0, sizeof(vram));
 	_memset(cvram, 0, sizeof(cvram));
+#ifdef _FMR60
+	_memset(avram, 0, sizeof(avram));
+#else
 	_memset(kvram, 0, sizeof(kvram));
 	_memset(dummy, 0, sizeof(dummy));
+#endif
 	_memset(ipl, 0xff, sizeof(ipl));
+#ifdef _FMR60
+	_memset(ank24, 0xff, sizeof(ank24));
+	_memset(kanji24, 0xff, sizeof(kanji24));
+#else
 	_memset(ank8, 0xff, sizeof(ank8));
 	_memset(ank16, 0xff, sizeof(ank16));
 	_memset(kanji16, 0xff, sizeof(kanji16));
+#endif
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// init machine id (FMR-50/LT3)
-	id[0] = 0xd8;
+#ifdef _FMR60
+	// init machine id
+	id[0] = 0xe0;	// FMR-60HX
+#else
+	// init machine id
+	id[0] = 0xf8;	// FMR-50HD
+//	id[0] = 0xd8;	// FMR-50/LT3
+#endif
 	id[1] = 0xff;
 	
 	// load rom image
@@ -58,6 +74,18 @@ void MEMORY::initialize()
 		_memcpy(ipl + 0x0000, bios1, sizeof(bios1));
 		_memcpy(ipl + 0x3ff0, bios2, sizeof(bios2));
 	}
+#ifdef _FMR60
+	_stprintf(file_path, _T("%sANK24.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(ank24, sizeof(ank24), 1);
+		fio->Fclose();
+	}
+	_stprintf(file_path, _T("%sKANJI24.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(kanji24, sizeof(kanji24), 1);
+		fio->Fclose();
+	}
+#else
 	_stprintf(file_path, _T("%sANK8.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(ank8, sizeof(ank8), 1);
@@ -73,6 +101,7 @@ void MEMORY::initialize()
 		fio->Fread(kanji16, sizeof(kanji16), 1);
 		fio->Fclose();
 	}
+#endif
 	_stprintf(file_path, _T("%sMACHINE.ID"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(id, sizeof(id), 1);
@@ -83,6 +112,10 @@ void MEMORY::initialize()
 	// set memory
 	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
 	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
+#ifdef _FMR60
+	SET_BANK(0xff8000, 0xff9fff, cvram, cvram);
+	SET_BANK(0xffa000, 0xffbfff, avram, avram);
+#endif
 	SET_BANK(0xffc000, 0xffffff, wdmy, ipl);
 	
 	// set palette
@@ -100,31 +133,52 @@ void MEMORY::initialize()
 	vm->regist_frame_event(this);
 }
 
+void MEMORY::release()
+{
+	FILE* fp = fopen("d:\\mem.bin","wb");
+	fwrite(ram, 0x10000, 1, fp);
+	fclose(fp);
+}
+
 void MEMORY::reset()
 {
 	// reset memory
 	protect = rst = 0;
-	mainmem = rplane = wplane = pagesel = ankcg = 0;
+	mainmem = rplane = wplane = 0;
+#ifdef _FMR50
+	pagesel = ankcg = 0;
+#endif
 	update_bank();
 	
 	// reset crtc
+	blink = 0;
 	apalsel = 0;
 	outctrl = 0xf;
+#ifdef _FMR50
 	dispctrl = 0x47;
 	mix = 8;
 	accaddr = dispaddr = 0;
 	kj_l = kj_h = kj_ofs = kj_row = 0;
-	blink = 0;
 	
 	// reset logical operation
 	cmdreg = maskreg = compbit = bankdis = 0;
 	_memset(compreg, sizeof(compreg), 0xff);
+#endif
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffffff;
 	if(!mainmem) {
+#ifdef _FMR60
+		if(0xc0000 <= addr && addr < 0xe0000) {
+			addr &= 0x1ffff;
+			for(int pl = 0; pl < 4; pl++) {
+				if(wplane & (1 << pl))
+					vram[addr + 0x20000 * pl] = data;
+			}
+		}
+#else
 		if(0xc0000 <= addr && addr < 0xc8000) {
 			// vram
 			uint32 page;
@@ -200,7 +254,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 		}
 		else if(0xcff80 <= addr && addr < 0xcffe0) {
 #ifdef _DEBUG_LOG
-			emu->out_debug("MW\t%4x, %2x\n", addr, data);
+//			emu->out_debug(_T("MW\t%4x, %2x\n"), addr, data);
 #endif
 			// memory mapped i/o
 			switch(addr & 0xffff)
@@ -341,6 +395,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			}
 			return;
 		}
+#endif
 	}
 	if((addr & ~3) == 8 && (protect & 0x80))
 		return;
@@ -350,10 +405,11 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffffff;
+#ifdef _FMR50
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
 #ifdef _DEBUG_LOG
-			emu->out_debug("MR\t%4x\n", addr);
+			emu->out_debug(_T("MR\t%4x\n"), addr);
 #endif
 			// memory mapped i/o
 			switch(addr & 0xffff)
@@ -396,6 +452,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 			return 0xff;
 		}
 	}
+#endif
 	return rbank[addr >> 11][addr & 0x7ff];
 }
 
@@ -523,8 +580,12 @@ uint32 MEMORY::read_io8(uint32 addr)
 		return id[1];
 	case 0x400:
 		// system status register
+#ifdef _FMR60
+		return 0xff;
+#else
 		return 0xfe;
 //		return 0xf6;
+#endif
 	case 0x402:
 		// update register
 		return wplane | 0xf0;
@@ -582,7 +643,11 @@ void MEMORY::event_frame()
 void MEMORY::update_bank()
 {
 	if(!mainmem) {
-		SET_BANK(0xc0000, 0xeffff, wdmy, rdmy);
+#ifdef _FMR60
+		int ofs = rplane * 0x20000;
+		SET_BANK(0xc0000, 0xdffff, vram + ofs, vram + ofs);
+		SET_BANK(0xe0000, 0xeffff, wdmy, rdmy);
+#else
 		if(dispctrl & 0x40) {
 			// 400 line
 			int ofs = (rplane | ((pagesel >> 2) & 4)) * 0x8000;
@@ -606,19 +671,26 @@ void MEMORY::update_bank()
 			SET_BANK(0xcb000, 0xcbfff, wdmy, rdmy);
 		}
 		SET_BANK(0xcc000, 0xeffff, wdmy, rdmy);
+#endif
 	}
 	else {
 		SET_BANK(0xc0000, 0xeffff, ram + 0xc0000, ram + 0xc0000);
 	}
 	if(!(protect & 0x20)) {
-		SET_BANK(0xf8000, 0xfbfff, ram + 0xf8000, rdmy);
-		SET_BANK(0xfc000, 0xfffff, ram + 0xfc000, ipl);
+#ifdef _FMR60
+		SET_BANK(0xf8000, 0xf9fff, cvram, cvram);
+		SET_BANK(0xfa000, 0xfbfff, avram, avram);
+#else
+		SET_BANK(0xf8000, 0xfbfff, wdmy, rdmy);
+#endif
+		SET_BANK(0xfc000, 0xfffff, wdmy, ipl);
 	}
 	else {
 		SET_BANK(0xf8000, 0xfffff, ram + 0xf8000, ram + 0xf8000);
 	}
 }
 
+#ifdef _FMR50
 void MEMORY::point(int x, int y, int col)
 {
 	if(x < 640 && y < 400) {
@@ -672,6 +744,7 @@ void MEMORY::line()
 	}
 //	point(lex, ley, (lsty & (0x8000 >> (c++ & 15))) ? imgcol : 0);
 }
+#endif
 
 void MEMORY::draw_screen()
 {
@@ -679,20 +752,24 @@ void MEMORY::draw_screen()
 	_memset(screen_txt, 0, sizeof(screen_txt));
 	_memset(screen_cg, 0, sizeof(screen_cg));
 	if(outctrl & 1) {
+#ifdef _FMR60
+		draw_text();
+#else
 		if(mix & 8)
 			draw_text80();
 		else
 			draw_text40();
+#endif
 	}
 	if(outctrl & 4)
 		draw_cg();
 	
-	for(int y = 0; y < 400; y++) {
+	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		scrntype* dest = emu->screen_buffer(y);
 		uint8* txt = screen_txt[y];
 		uint8* cg = screen_cg[y];
 		
-		for(int x = 0; x < 640; x++)
+		for(int x = 0; x < SCREEN_WIDTH; x++)
 			dest[x] = txt[x] ? palette_txt[txt[x]] : palette_cg[cg[x]];
 	}
 	
@@ -702,14 +779,125 @@ void MEMORY::draw_screen()
 		scrntype col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 255) :
 		               (stat_f & (1 | 4)) ? RGB_COLOR(255, 0, 0) :
 		               (stat_f & (2 | 8)) ? RGB_COLOR(0, 255, 0) : 0;
-		for(int y = 400 - 8; y < 400; y++) {
+		for(int y = SCREEN_HEIGHT - 8; y < SCREEN_HEIGHT; y++) {
 			scrntype *dest = emu->screen_buffer(y);
-			for(int x = 640 - 8; x < 640; x++)
+			for(int x = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++)
 				dest[x] = col;
 		}
 	}
 }
 
+#ifdef _FMR60
+void MEMORY::draw_text()
+{
+	int src = ((chreg[12] << 9) | (chreg[13] << 1)) & 0x1fff;
+	int caddr = ((chreg[8] & 0xc0) == 0xc0) ? -1 : (((chreg[14] << 9) | (chreg[15] << 1)) & 0x1fff);
+	int ymax = (chreg[6] > 0) ? chreg[6] : 25;
+	int yofs = 750 / ymax;
+	
+	for(int y = 0; y < 25; y++) {
+		for(int x = 0; x < 80; x++) {
+			bool cursor = ((src >> 1) == caddr);
+			int cx = x;
+			uint8 codel = cvram[src];
+			uint8 attrl = avram[src];
+			src = (src + 1) & 0x1ffff;
+			uint8 codeh = cvram[src];
+			uint8 attrh = avram[src];
+			src = (src + 1) & 0x1ffff;
+			uint8 col = attrl & 15;
+			bool blnk = (attrh & 0x40) || ((blink & 32) && (attrh & 0x10));
+			bool rev = ((attrh & 8) != 0);
+			
+			if(codeh & 0x80) {
+				// kanji
+				int ofs = (codel | ((codeh & 0x7f) << 8)) * 72;
+				for(int l = 3; l < 27 && l < yofs; l++) {
+					uint8 pat0 = kanji24[ofs++];
+					uint8 pat1 = kanji24[ofs++];
+					uint8 pat2 = kanji24[ofs++];
+					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
+					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
+					pat2 = blnk ? 0 : rev ? ~pat2 : pat2;
+					int yy = y * yofs + l;
+					if(yy >= 750)
+						break;
+					uint8* d = &screen_txt[yy][x * 14];
+					
+					d[ 2] = (pat0 & 0x80) ? col : 0;
+					d[ 3] = (pat0 & 0x40) ? col : 0;
+					d[ 4] = (pat0 & 0x20) ? col : 0;
+					d[ 5] = (pat0 & 0x10) ? col : 0;
+					d[ 6] = (pat0 & 0x08) ? col : 0;
+					d[ 7] = (pat0 & 0x04) ? col : 0;
+					d[ 8] = (pat0 & 0x02) ? col : 0;
+					d[ 9] = (pat0 & 0x01) ? col : 0;
+					d[10] = (pat1 & 0x80) ? col : 0;
+					d[11] = (pat1 & 0x40) ? col : 0;
+					d[12] = (pat1 & 0x20) ? col : 0;
+					d[13] = (pat1 & 0x10) ? col : 0;
+					d[14] = (pat1 & 0x08) ? col : 0;
+					d[15] = (pat1 & 0x04) ? col : 0;
+					d[16] = (pat1 & 0x02) ? col : 0;
+					d[17] = (pat1 & 0x01) ? col : 0;
+					d[18] = (pat2 & 0x80) ? col : 0;
+					d[19] = (pat2 & 0x40) ? col : 0;
+					d[20] = (pat2 & 0x20) ? col : 0;
+					d[21] = (pat2 & 0x10) ? col : 0;
+					d[22] = (pat2 & 0x08) ? col : 0;
+					d[23] = (pat2 & 0x04) ? col : 0;
+					d[24] = (pat2 & 0x02) ? col : 0;
+					d[25] = (pat2 & 0x01) ? col : 0;
+				}
+				src = (src + 2) & 0x1fff;
+				x++;
+			}
+			else if(codeh) {
+			}
+			else {
+				// ank
+				int ofs = codel * 48;
+				for(int l = 3; l < 27 && l < yofs; l++) {
+					uint8 pat0 = ank24[ofs++];
+					uint8 pat1 = ank24[ofs++];
+					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
+					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
+					int yy = y * yofs + l;
+					if(yy >= 750)
+						break;
+					uint8* d = &screen_txt[yy][x * 14];
+					
+					d[ 0] = (pat0 & 0x80) ? col : 0;
+					d[ 1] = (pat0 & 0x40) ? col : 0;
+					d[ 2] = (pat0 & 0x20) ? col : 0;
+					d[ 3] = (pat0 & 0x10) ? col : 0;
+					d[ 4] = (pat0 & 0x08) ? col : 0;
+					d[ 5] = (pat0 & 0x04) ? col : 0;
+					d[ 6] = (pat0 & 0x02) ? col : 0;
+					d[ 7] = (pat0 & 0x01) ? col : 0;
+					d[ 8] = (pat1 & 0x80) ? col : 0;
+					d[ 9] = (pat1 & 0x40) ? col : 0;
+					d[10] = (pat1 & 0x20) ? col : 0;
+					d[11] = (pat1 & 0x10) ? col : 0;
+					d[12] = (pat1 & 0x08) ? col : 0;
+					d[13] = (pat1 & 0x04) ? col : 0;
+				}
+			}
+/*
+			if(cursor) {
+				int bp = chreg[10] & 0x60;
+				if(bp == 0 || (bp == 0x40 && (blink & 8)) || (bp == 0x60 && (blink & 0x10))) {
+					int st = chreg[10] & 15;
+					int ed = chreg[11] & 15;
+					for(int i = st; i < ed && i < yofs; i++)
+						_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+				}
+			}
+*/
+		}
+	}
+}
+#else
 void MEMORY::draw_text40()
 {
 	int src = ((chreg[12] << 9) | (chreg[13] << 1)) & 0xfff;
@@ -895,9 +1083,37 @@ void MEMORY::draw_text80()
 		}
 	}
 }
+#endif
 
 void MEMORY::draw_cg()
 {
+#ifdef _FMR60
+	uint8* p0 = &vram[0x00000];
+	uint8* p1 = &vram[0x20000];
+	uint8* p2 = &vram[0x40000];
+	uint8* p3 = &vram[0x60000];
+	int ptr = 0;
+	
+	for(int y = 0; y < 750; y++) {
+		for(int x = 0; x < 1120; x += 8) {
+			uint8 r = p0[ptr];
+			uint8 g = p1[ptr];
+			uint8 b = p2[ptr];
+			uint8 i = p3[ptr++];
+			ptr &= 0x1ffff;
+			uint8* d = &screen_cg[y][x];
+			
+			d[0] = ((r & 0x80) >> 7) | ((g & 0x80) >> 6) | ((b & 0x80) >> 5) | ((i & 0x80) >> 4);
+			d[1] = ((r & 0x40) >> 6) | ((g & 0x40) >> 5) | ((b & 0x40) >> 4) | ((i & 0x40) >> 3);
+			d[2] = ((r & 0x20) >> 5) | ((g & 0x20) >> 4) | ((b & 0x20) >> 3) | ((i & 0x20) >> 2);
+			d[3] = ((r & 0x10) >> 4) | ((g & 0x10) >> 3) | ((b & 0x10) >> 2) | ((i & 0x10) >> 1);
+			d[4] = ((r & 0x08) >> 3) | ((g & 0x08) >> 2) | ((b & 0x08) >> 1) | ((i & 0x08) >> 0);
+			d[5] = ((r & 0x04) >> 2) | ((g & 0x04) >> 1) | ((b & 0x04) >> 0) | ((i & 0x04) << 1);
+			d[6] = ((r & 0x02) >> 1) | ((g & 0x02) >> 0) | ((b & 0x02) << 1) | ((i & 0x02) << 2);
+			d[7] = ((r & 0x01) >> 0) | ((g & 0x01) << 1) | ((b & 0x01) << 2) | ((i & 0x01) << 3);
+		}
+	}
+#else
 	if(dispctrl & 0x40) {
 		// 400line
 		int pofs = ((dispctrl >> 3) & 1) * 0x20000;
@@ -957,5 +1173,6 @@ void MEMORY::draw_cg()
 			_memcpy(screen_cg[y + 1], screen_cg[y], 640);
 		}
 	}
+#endif
 }
 

@@ -10,6 +10,36 @@
 
 #include "z80.h"
 
+#define AF	regs[0].w
+#define BC	regs[1].w
+#define DE 	regs[2].w
+#define HL	regs[3].w
+#define IX	regs[4].w
+#define IY	regs[5].w
+
+#define _F	regs[0].b[0]
+#define _A	regs[0].b[1]
+#define _C	regs[1].b[0]
+#define _B	regs[1].b[1]
+#define _E	regs[2].b[0]
+#define _D	regs[2].b[1]
+#define _L	regs[3].b[0]
+#define _H	regs[3].b[1]
+#define _XL	regs[4].b[0]
+#define _XH	regs[4].b[1]
+#define _YL	regs[5].b[0]
+#define _YH	regs[5].b[1]
+
+#define CF	0x01
+#define NF	0x02
+#define PF	0x04
+#define VF	0x04
+#define XF	0x08
+#define HF	0x10
+#define YF	0x20
+#define ZF	0x40
+#define SF	0x80
+
 // opecode definitions
 
 #define EAX() { \

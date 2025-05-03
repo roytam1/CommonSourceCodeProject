@@ -67,10 +67,20 @@ public:
 		return 0xff;
 	}
 	virtual void write_data16(uint32 addr, uint32 data) {
-		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+		write_data8(addr, data & 0xff);
+		write_data8(addr + 1, data >> 8);
 	}
 	virtual uint32 read_data16(uint32 addr) {
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
+	virtual void write_data32(uint32 addr, uint32 data) {
+		write_data8(addr, data & 0xff);
+		write_data8(addr + 1, (data >> 8) & 0xff);
+		write_data8(addr + 2, (data >> 16) & 0xff);
+		write_data8(addr + 3, (data >> 24) & 0xff);
+	}
+	virtual uint32 read_data32(uint32 addr) {
+		return read_data8(addr) | (read_data8(addr + 1) << 8) | (read_data8(addr + 2) << 16) | (read_data8(addr + 3) << 24);
 	}
 	virtual void write_data8w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
@@ -81,11 +91,23 @@ public:
 	}
 	virtual void write_data16w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
-		write_data8(addr, data & 0xff); write_data8(addr + 1, data >> 8);
+		write_data8(addr, data & 0xff);
+		write_data8(addr + 1, data >> 8);
 	}
 	virtual uint32 read_data16w(uint32 addr, int* wait) {
 		*wait = 0;
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
+	}
+	virtual void write_data32w(uint32 addr, uint32 data, int* wait) {
+		*wait = 0;
+		write_data8(addr, data & 0xff);
+		write_data8(addr + 1, (data >> 8) & 0xff);
+		write_data8(addr + 2, (data >> 16) & 0xff);
+		write_data8(addr + 3, (data >> 24) & 0xff);
+	}
+	virtual uint32 read_data32w(uint32 addr, int* wait) {
+		*wait = 0;
+		return read_data8(addr) | (read_data8(addr + 1) << 8) | (read_data8(addr + 2) << 16) | (read_data8(addr + 3) << 24);
 	}
 	virtual void write_dma8(uint32 addr, uint32 data) {
 		write_data8(addr, data);
@@ -172,7 +194,7 @@ public:
 	// event callback
 	virtual void event_callback(int event_id, int err) {}
 	virtual void event_frame() {}
-	virtual void event_vsync(int v, int clock) {}
+	virtual void event_vline(int v, int clock) {}
 	virtual void event_hsync(int v, int h, int clock) {}
 	
 	DEVICE* prev_device;

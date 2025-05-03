@@ -30,10 +30,10 @@ void DISPLAY::initialize()
 		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
 	
 	// regist event
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
-void DISPLAY::event_vsync(int v, int clock)
+void DISPLAY::event_vline(int v, int clock)
 {
 	if(0 <= v && v < 200) {
 		// draw one line

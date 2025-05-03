@@ -88,9 +88,9 @@ public:
 		int c = dcount_pio[2]++;
 		d_pio[2][c] = device; did_pio[2][c] = id; dmask_pio[2][c] = mask; dshift_pio[2][c] = shift;
 	}
-	void set_context_timer(DEVICE* device, int id) {
+	void set_context_timer(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_timer++;
-		d_timer[c] = device; did_timer[c] = id;
+		d_timer[c] = device; did_timer[c] = id; dmask_timer[c] = mask;
 	}
 	void set_constant_clock(uint32 hz) {
 		freq = hz;

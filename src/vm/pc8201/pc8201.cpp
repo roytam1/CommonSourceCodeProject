@@ -3,25 +3,23 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2009.01.05 -
+	Date   : 2009.03.31-
 
 	[ virtual machine ]
 */
 
-#include "mz700.h"
+#include "pc8201.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
 #include "../datarec.h"
-#include "../i8253.h"
-#include "../i8255.h"
+#include "../i8080.h"
+#include "../i8155.h"
 #include "../io.h"
 #include "../pcm1bit.h"
-#include "../z80.h"
+#include "../upd1990a.h"
 
-#include "display.h"
-#include "interrupt.h"
 #include "keyboard.h"
 #include "memory.h"
 
@@ -37,55 +35,49 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	drec = new DATAREC(this, emu);
-	ctc = new I8253(this, emu);
-	pio = new I8255(this, emu);
+	cpu = new I8080(this, emu);
+	pio = new I8155(this, emu);
 	io = new IO(this, emu);
-	pcm0 = new PCM1BIT(this, emu);
-//	pcm1 = new PCM1BIT(this, emu);
-	cpu = new Z80(this, emu);
+	buzzer = new PCM1BIT(this, emu);
+	rtc = new UPD1990A(this, emu);
 	
-	display = new DISPLAY(this, emu);
-	interrupt = new INTERRUPT(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(pcm0);
-//	event->set_context_sound(pcm1);
+	event->set_context_sound(buzzer);
 	
-	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
-//	drec->set_context_out(pcm1, SIG_PCM1BIT_SIGNAL, 1);
-	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
-	ctc->set_context_ch0(pcm0, SIG_PCM1BIT_SIGNAL);
-	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2);
-	ctc->set_context_ch2(interrupt, SIG_INTERRUPT_CLOCK);
-	ctc->set_constant_clock(0, CPU_CLOCKS >> 2);
-	ctc->set_constant_clock(1, 16000);
-	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x7f, 0);
-	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
-	pio->set_context_port_c(interrupt, SIG_INTERRUPT_INTMASK, 4, 0);
-	pio->set_context_port_c(drec, SIG_DATAREC_TRIG, 8, 0);
-	// pc3: motor rotate control
+
+	pio->set_context_port_a(rtc, SIG_UPD1990A_C0, 1, 0)
+	pio->set_context_port_a(rtc, SIG_UPD1990A_C1, 2, 0)
+	pio->set_context_port_a(rtc, SIG_UPD1990A_C2, 4, 0)
+	pio->set_context_port_a(rtc, SIG_UPD1990A_CLK, 8, 0)
+	pio->set_context_port_a(rtc, SIG_UPD1990A_DIN, 0x10, 0)
+	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN_L, 0xff, 0)
+	pio->set_context_port_b(keyboard, SIG_KEYBOARD_COLUMN_H, 1, 0)
+	pio->set_context_port_b(buzzer, SIG_PCM1BIT_MUTE, 0x20, 0)
+	pio->set_context_timer(buzzer, SIG_PCM1BIT_SIGNAL, 1);
+	pio->set_constant_clock(CPU_CLOCKS);
+
+	rtc->set_countext_dout(pio, SIG_I8155_PORT_C, 1);
+	rtc->set_countext_tp(cpu, SIG_I8085_RST7, 1);
 	
-	display->set_vram_ptr(memory->get_vram());
-	interrupt->set_context_cpu(cpu);
-	keyboard->set_context_pio(pio, SIG_I8255_PORT_B);
-	memory->set_context_cpu(cpu);
-	memory->set_context_ctc(ctc, SIG_I8253_GATE_0);
-	memory->set_context_pio(pio, SIG_I8255_PORT_C);
-	
+	memory->set_context_rtc(rtc, SIG_UPD1990A_STB);
+
+
+
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-//	cpu->set_context_io(memory);
-	cpu->set_context_intr(interrupt);
 	
 	// i/o bus
-	io->set_iomap_range_r(0, 3, memory);	// EMM
-	io->set_iomap_range_w(0, 3, memory);	// EMM
-	io->set_iomap_range_w(0xe0, 0xe6, memory);
+	io->set_iomap_single_w(0x90, memory);
+	io->set_iomap_single_w(0xa1, memory);
+	io->set_iomap_range_w(0xb8, 0xbd, pio);
+	
+	io->set_iomap_single_r(0xa0, memory);
+	io->set_iomap_range_r(0xb8, 0xbd, pio);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -154,14 +146,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()
@@ -199,8 +186,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	pcm0->init(rate, 8000);
-//	pcm1->init(rate, 2000);	// data recorder noise
+	pcm->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -212,46 +198,9 @@ uint16* VM::create_sound(int samples, bool fill)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_mzt(_TCHAR* filename)
-{
-	memory->open_mzt(filename);
-}
-
-void VM::play_datarec(_TCHAR* filename)
-{
-	drec->play_datarec(filename);
-	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
-}
-
-void VM::rec_datarec(_TCHAR* filename)
-{
-	drec->rec_datarec(filename);
-	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
-}
-
-void VM::close_datarec()
-{
-	drec->close_datarec();
-	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
-}
-
-void VM::push_play()
-{
-	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
-}
-
-void VM::push_stop()
-{
-	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
-}
-
 bool VM::now_skip()
 {
-#ifdef _TINYIMAS
 	return false;
-#else
-	return drec->skip();
-#endif
 }
 
 void VM::update_config()

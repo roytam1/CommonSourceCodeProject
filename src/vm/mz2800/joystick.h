@@ -29,7 +29,7 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_vsync(int v, int clock);
+	void event_frame();
 };
 
 #endif

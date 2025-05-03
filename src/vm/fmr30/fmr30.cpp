@@ -85,8 +85,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio_ch1->set_context_txrdy(serial, SIG_SERIAL_TXRDY_CH1, 1);
 	sio_ch2->set_context_rxrdy(serial, SIG_SERIAL_RXRDY_CH2, 1);
 	sio_ch2->set_context_txrdy(serial, SIG_SERIAL_TXRDY_CH2, 1);
-	pit->set_context_ch0(timer, SIG_TIMER_CH0);
-	pit->set_context_ch1(timer, SIG_TIMER_CH1);
+	pit->set_context_ch0(timer, SIG_TIMER_CH0, 1);
+	pit->set_context_ch1(timer, SIG_TIMER_CH1, 1);
 	pit->set_constant_clock(0, 1000000);
 	pit->set_constant_clock(1, 1000000);
 	pic->set_context(cpu);
@@ -252,14 +252,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

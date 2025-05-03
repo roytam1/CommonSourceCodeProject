@@ -60,7 +60,7 @@ public:
 	void reset();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	
 	// unique function
 	void set_context(DEVICE* device, int id, uint32 mask) {

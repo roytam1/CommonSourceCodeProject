@@ -30,7 +30,7 @@ public:
 	
 	// common functions
 	void initialize();
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	
 	// unique function
 	void set_vram_ptr(uint8* ptr) {

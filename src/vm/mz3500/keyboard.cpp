@@ -39,7 +39,7 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 	drive();
 }
 
-void KEYBOARD::event_vsync(int v, int clock)
+void KEYBOARD::event_vline(int v, int clock)
 {
 }
 

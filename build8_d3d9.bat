@@ -10,6 +10,10 @@ devenv.com fmr50.vcproj /Rebuild Release_d3d9
 mkdir build\fmr50
 copy Release_d3d9\fmr50.exe build\fmr50\.
 
+devenv.com fmr60.vcproj /Rebuild Release_d3d9
+mkdir build\fmr60
+copy Release_d3d9\fmr60.exe build\fmr60\.
+
 devenv.com hc40.vcproj /Rebuild Release_d3d9
 mkdir build\hc40
 copy Release_d3d9\hc40.exe build\hc40\.
@@ -37,10 +41,6 @@ copy Release_d3d9\mz2500.exe build\mz2500\.
 devenv.com mz2800.vcproj /Rebuild Release_d3d9
 mkdir build\mz2800
 copy Release_d3d9\mz2800.exe build\mz2800\.
-
-devenv.com mz3500.vcproj /Rebuild Release_d3d9
-mkdir build\mz3500
-copy Release_d3d9\mz3500.exe build\mz3500\.
 
 devenv.com mz5500.vcproj /Rebuild Release_d3d9
 mkdir build\mz5500
@@ -105,6 +105,10 @@ copy Release_d3d9\tk80bs.exe build\tk80bs_lv2\.
 devenv.com x07.vcproj /Rebuild Release_d3d9
 mkdir build\x07
 copy Release_d3d9\x07.exe build\x07\.
+
+devenv.com x1twin.vcproj /Rebuild Release_d3d9
+mkdir build\x1twin
+copy Release_d3d9\x1twin.exe build\x1twin\.
 
 pause
 echo on

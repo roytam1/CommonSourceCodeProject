@@ -52,7 +52,7 @@ void IO::initialize()
 	
 	// video
 	vm->regist_frame_event(this);
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
 void IO::release()
@@ -111,7 +111,7 @@ void IO::event_frame()
 	cursor_blink++;
 }
 
-void IO::event_vsync(int v, int clock)
+void IO::event_vline(int v, int clock)
 {
 	vblank = !(v < 192);
 }

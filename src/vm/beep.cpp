@@ -50,7 +50,7 @@ void BEEP::write_signal(int id, uint32 data, uint32 mask)
 
 #define mydiff(p, q) ((p) > (q) ? (p) - (q) : (q) - (p))
 
-void BEEP::event_vsync(int v, int clock)
+void BEEP::event_vline(int v, int clock)
 {
 	if(++lines == LINES_PER_FRAME * DELAY_FRAMES) {
 		if(change == 1) {
@@ -98,7 +98,7 @@ void BEEP::init(int rate, int frequency, int divide, int volume)
 		constant = 16 * rate / FRAMES_PER_SEC * DELAY_FRAMES
 */
 		constant = (long)((256.0 * 16.0 * DELAY_FRAMES * rate * divide) / FRAMES_PER_SEC + 0.5);
-		vm->regist_vsync_event(this);
+		vm->regist_vline_event(this);
 	}
 	gen_rate = rate;
 	gen_vol = volume;

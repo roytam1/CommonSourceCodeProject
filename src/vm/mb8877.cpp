@@ -857,7 +857,7 @@ bool MB8877::disk_inserted(int drv)
 uint8 MB8877::fdc_status()
 {
 	// for each virtual machines
-#ifdef _FMR50
+#if defined(_FMR50) || defined(_FMR60)
 	return disk[drvreg]->insert ? 2 : 0;
 #else
 	return 0;

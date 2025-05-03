@@ -46,7 +46,7 @@ public:
 	void initialize();
 	void reset();
 	void write_signal(int id, uint32 data, uint32 mask);
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	
 	// unique function
 	void set_context_dk(DEVICE* device, int id, uint32 mask) {

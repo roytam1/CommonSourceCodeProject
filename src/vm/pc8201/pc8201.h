@@ -3,7 +3,7 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2009.01.05 -
+	Date   : 2009.03.31-
 
 	[ virtual machine ]
 */
@@ -16,14 +16,11 @@
 #define CONFIG_NAME		"pc8201"
 #define CONFIG_VERSION		0x01
 
-#define WINDOW_WIDTH1		320
-#define WINDOW_HEIGHT1		200
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
+#define WINDOW_WIDTH1		240
+#define WINDOW_HEIGHT1		64
+#define WINDOW_WIDTH2		480
+#define WINDOW_HEIGHT2		128
 
-#define USE_DATAREC
-#define USE_DATAREC_BUTTON
-#define USE_MZT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -33,17 +30,14 @@
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
-#define LINES_PER_FRAME		262
+#define LINES_PER_FRAME		64
 #define CHARS_PER_LINE		1
-#define CPU_CLOCKS		3584160
-#define SCREEN_WIDTH		320
-#define SCREEN_HEIGHT		200
+#define CPU_CLOCKS		2400000
+#define SCREEN_WIDTH		240
+#define SCREEN_HEIGHT		46
 #define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
-//#define EVENT_PRECISE		4
-
-// memory wait
-#define CPU_MEMORY_WAIT
+#define HAS_I8085
 
 #include "../../common.h"
 
@@ -51,16 +45,12 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class DATAREC;
-class I8253;
-class I8255;
+class I8080;
+class I8155;
 class IO;
 class PCM1BIT;
-class Z80;
+class UPD1990A;
 
-class DISPLAY;
-class INTERRUPT;
-class KEYBOARD;
 class MEMORY;
 
 class VM
@@ -71,17 +61,12 @@ protected:
 	// devices
 	EVENT* event;
 	
-	DATAREC* drec;
-	I8253* ctc;
-	I8255* pio;
+	I8080* cpu;
+	I8155* pio;
 	IO* io;
-	PCM1BIT* pcm0;
-//	PCM1BIT* pcm1;
-	Z80* cpu;
+	PCM1BIT* buzzer;
+	UPD1990A* rtc;
 	
-	DISPLAY* display;
-	INTERRUPT* interrupt;
-	KEYBOARD* keyboard;
 	MEMORY* memory;
 	
 public:
@@ -108,14 +93,7 @@ public:
 	uint16* create_sound(int samples, bool fill);
 	
 	// user interface
-	void open_mzt(_TCHAR* filename);
-	void play_datarec(_TCHAR* filename);
-	void rec_datarec(_TCHAR* filename);
-	void close_datarec();
-	void push_play();
-	void push_stop();
 	bool now_skip();
-	
 	void update_config();
 	
 	// ----------------------------------------
@@ -127,8 +105,7 @@ public:
 	void regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
 	void cancel_event(int regist_id);
 	void regist_frame_event(DEVICE* dev);
-	void regist_vsync_event(DEVICE* dev);
-	void regist_hsync_event(DEVICE* dev);
+	void regist_vline_event(DEVICE* dev);
 	
 	// clock
 	uint32 current_clock();

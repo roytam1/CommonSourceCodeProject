@@ -13,7 +13,7 @@
 void VDP::initialize()
 {
 	// regist event to interrupt
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
 void VDP::write_io8(uint32 addr, uint32 data)
@@ -39,7 +39,7 @@ void VDP::event_callback(int event_id, int err)
 	d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
 }
 
-void VDP::event_vsync(int v, int clock)
+void VDP::event_vline(int v, int clock)
 {
 	if(v < LINES_PER_HBLANK) {
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);

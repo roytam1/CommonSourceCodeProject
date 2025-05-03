@@ -153,7 +153,7 @@ public:
 	uint32 read_dma8(uint32 addr);
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	
 	// unique functions

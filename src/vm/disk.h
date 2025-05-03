@@ -185,6 +185,7 @@ public:
 	
 	bool insert;
 	bool protect;
+	bool change;
 	
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];

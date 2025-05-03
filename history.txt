@@ -1,3 +1,30 @@
+4/1/2009
+
+[COMMON] define uint64 and int64
+[EMU/WIN32] support 1024x768 and 1280x1024 full-screen mode
+[VM/DEVICE] support 32bit memory bus
+[VM/DISK] detect disk is changed
+[VM/EVENT] remove hsync event
+[VM/EVENT] initialize sound buffer before reset
+[VM/EVENT] multi instance free
+[VM/HD46505] support vblank signal
+[VM/HD63484] support HD63484 (based on MAME HD63484 core)
+[VM/HUC6260] support HuC6260 (based on Ootake cpu core)
+[VM/I8155] add mask bit for output signal
+[VM/I8253] add mask bit for output signal
+[VM/I86] fix to refer 16bit i/o bus
+[VM/UPD1990A] support TP signal
+[VM/YM2151] support YM2151 (use fmgen core by Mr.CISC)
+
+[MULTI8/DISPLAY] check R8:DISPTMG on HD46505
+[MZ2500/JOYSTICK] fix full-auto timing
+[MZ2800/JOYSTICK] fix full-auto timing
+[PASOPIA/DISPLAY] check R8:DISPTMG on HD46505
+[PASOPIA7/DISPLAY] check R8:DISPTMG on HD46505
+[FMR60] support FUJITSU FMR-60
+[X1TWIN] support SHARP X1twin
+
+
 2/8/2009
 
 [EMU/WIN32] support window minimize button

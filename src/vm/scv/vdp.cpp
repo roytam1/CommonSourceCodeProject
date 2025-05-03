@@ -33,10 +33,10 @@ void VDP::initialize()
 	_memcpy(font[0xb], font[0x60], 8);	// copyright mark
 	
 	// regist event to interrupt
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
-void VDP::event_vsync(int v, int clock)
+void VDP::event_vline(int v, int clock)
 {
 	if(v == 239)
 		d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);

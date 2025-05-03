@@ -84,8 +84,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ctc->set_constant_clock(1, 2450000);	// 2.45MHz
 	ctc->set_constant_clock(2, 2450000);	// 2.45MHz
 	// OUT0 -> TXC,RXC of 8251
-	ctc->set_context_ch1(beep, SIG_BEEP_PULSE);
-	ctc->set_context_ch2(ctc, SIG_I8253_GATE_1);
+	ctc->set_context_ch1(beep, SIG_BEEP_PULSE, 1);
+	ctc->set_context_ch2(ctc, SIG_I8253_GATE_1, 1);
 	pio->set_context_port_b(rtc, SIG_UPD1990A_STB, 1, 0);
 	pio->set_context_port_b(rtc, SIG_UPD1990A_C0, 2, 0);
 	pio->set_context_port_b(rtc, SIG_UPD1990A_C1, 4, 0);
@@ -222,14 +222,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

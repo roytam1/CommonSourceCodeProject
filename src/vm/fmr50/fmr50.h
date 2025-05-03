@@ -1,5 +1,6 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
+	FUJITSU FMR-60 Emulator 'eFMR-60'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -12,14 +13,26 @@
 #define _FMR50_H_
 
 // device informations for win32
+#ifdef _FMR60
+#define DEVICE_NAME		"FUJITSU FMR-60"
+#define CONFIG_NAME		"fmr60"
+#else
 #define DEVICE_NAME		"FUJITSU FMR-50"
 #define CONFIG_NAME		"fmr50"
+#endif
 #define CONFIG_VERSION		0x01
 
+#ifdef _FMR60
+#define WINDOW_WIDTH1		1120
+#define WINDOW_HEIGHT1		750
+#define WINDOW_WIDTH2		1120
+#define WINDOW_HEIGHT2		750
+#else
 #define WINDOW_WIDTH1		640
 #define WINDOW_HEIGHT1		400
 #define WINDOW_WIDTH2		640
 #define WINDOW_HEIGHT2		400
+#endif
 
 //#define USE_IPL_RESET
 #define USE_FD1
@@ -34,11 +47,21 @@
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
+#ifdef _FMR60
+#define LINES_PER_FRAME 	812
+#define CHARS_PER_LINE		108
+#else
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		108
+#endif
 #define CPU_CLOCKS		8000000
+#ifdef _FMR60
+#define SCREEN_WIDTH		1120
+#define SCREEN_HEIGHT		750
+#else
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#endif
 #define MAX_DRIVE		4
 #define MAX_SCSI		8
 #define MAX_MEMCARD		2
@@ -55,6 +78,9 @@ class EVENT;
 
 class BEEP;
 class HD46505;
+#ifdef _FMR60
+class HD63484;
+#endif
 class I8251;
 class I8253;
 class I8259;
@@ -83,6 +109,9 @@ protected:
 	
 	BEEP* beep;
 	HD46505* crtc;
+#ifdef _FMR60
+	HD63484* acrtc;
+#endif
 	I8251* sio;
 	I8253* pit0;
 	I8253* pit1;
@@ -145,8 +174,7 @@ public:
 	void regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
 	void cancel_event(int regist_id);
 	void regist_frame_event(DEVICE* dev);
-	void regist_vsync_event(DEVICE* dev);
-	void regist_hsync_event(DEVICE* dev);
+	void regist_vline_event(DEVICE* dev);
 	
 	// clock
 	uint32 current_clock();

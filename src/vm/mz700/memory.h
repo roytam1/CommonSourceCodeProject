@@ -57,7 +57,7 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
 	
 	void write_data8(uint32 addr, uint32 data);

@@ -27,7 +27,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		if(pic[c].icw2_r) {
 			// icw2
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: icw2 = %d\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: icw2 = %2x\n"), c, data);
 #endif
 			pic[c].icw2 = data;
 			pic[c].icw2_r = 0;
@@ -35,7 +35,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		else if(pic[c].icw3_r) {
 			// icw3
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: icw3 = %d\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: icw3 = %2x\n"), c, data);
 #endif
 			pic[c].icw3 = data;
 			pic[c].icw3_r = 0;
@@ -43,7 +43,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		else if(pic[c].icw4_r) {
 			// icw4
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: icw4 = %d\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: icw4 = %2x\n"), c, data);
 #endif
 			pic[c].icw4 = data;
 			pic[c].icw4_r = 0;
@@ -51,7 +51,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		else {
 			// ocw1
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: imr = %2x\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: imr = %2x\n"), c, data);
 #endif
 			pic[c].imr = data;
 		}
@@ -60,7 +60,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		if(data & 0x10) {
 			// icw1
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: icw1 = %2x\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: icw1 = %2x\n"), c, data);
 #endif
 			pic[c].icw1 = data;
 			pic[c].icw2_r = 1;
@@ -78,7 +78,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		else if(data & 8) {
 			// ocw3
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: ocw3 = %d\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: ocw3 = %2x\n"), c, data);
 #endif
 			if(!(data & 2))
 				data = (data & ~1) | (pic[c].ocw3 & 1);
@@ -89,7 +89,7 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		else {
 			// ocw2
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: ocw2 = %d\n"), c, data);
+			emu->out_debug(_T("I8259[%d]: ocw2 = %2x\n"), c, data);
 #endif
 			int level = 0;
 			if(data & 0x40)
@@ -120,10 +120,18 @@ uint32 I8259::read_io8(uint32 addr)
 		// polling mode is not supported...
 		//if(pic[c].ocw3 & 4)
 		//	return ???;
-		if(pic[c].ocw3 & 1)
+		if(pic[c].ocw3 & 1) {
+#ifdef _DEBUG_LOG
+			emu->out_debug(_T("I8259[%d]: isr = %2x\n"), c, pic[c].isr);
+#endif
 			return pic[c].isr;
-		else
+		}
+		else {
+#ifdef _DEBUG_LOG
+			emu->out_debug(_T("I8259[%d]: irr = %2x\n"), c, pic[c].irr);
+#endif
 			return pic[c].irr;
+		}
 	}
 }
 
@@ -181,7 +189,7 @@ void I8259::update_intr()
 		req_bit = bit;
 		intr = true;
 #ifdef _DEBUG_LOG
-//		emu->out_debug(_T("I8259[%d]: req level = %d\n"), c, level);
+		emu->out_debug(_T("I8259[%d]: req level = %d\n"), c, level);
 #endif
 		break;
 	}
@@ -220,7 +228,7 @@ uint32 I8259::intr_ack()
 		pic[req_chip].isr &= ~req_bit;
 	}
 #ifdef _DEBUG_LOG
-//	emu->out_debug(_T("I8259[%d]: ack vector = %2x\n"), req_chip, vector);
+	emu->out_debug(_T("I8259[%d]: ack vector = %2x\n"), req_chip, vector);
 #endif
 	return vector;
 }

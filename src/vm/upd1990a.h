@@ -24,18 +24,19 @@
 class UPD1990A : public DEVICE
 {
 private:
-	DEVICE *dev[MAX_OUTPUT];
-	int did[MAX_OUTPUT];
-	uint32 dmask[MAX_OUTPUT];
-	int dcount;
+	DEVICE *d_dout[MAX_OUTPUT], *d_tp[MAX_OUTPUT];
+	int did_dout[MAX_OUTPUT], did_tp[MAX_OUTPUT];
+	uint32 dmask_dout[MAX_OUTPUT], dmask_tp[MAX_OUTPUT];
+	int dcount_dout, dcount_tp;
 	
-	uint8 cmd, mode;
+	uint8 cmd, mode, tpmode;
+	int event_id;
 	uint32 srl, srh;
-	bool clk, stb, din;
+	bool clk, stb, din, tp;
 	
 public:
 	UPD1990A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount = 0;
+		dcount_dout = dcount_tp = 0;
 	}
 	~UPD1990A() {}
 	
@@ -43,11 +44,16 @@ public:
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void event_callback(int event_id, int err);
 	
 	// unique functions
 	void set_context_dout(DEVICE* device, int id, uint32 mask) {
-		int c = dcount++;
-		dev[c] = device; did[c] = id; dmask[c] = mask;
+		int c = dcount_dout++;
+		d_dout[c] = device; did_dout[c] = id; dmask_dout[c] = mask;
+	}
+	void set_context_tp(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_tp++;
+		d_tp[c] = device; did_tp[c] = id; dmask_tp[c] = mask;
 	}
 };
 

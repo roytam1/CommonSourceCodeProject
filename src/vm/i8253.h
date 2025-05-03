@@ -54,6 +54,7 @@ private:
 	
 	DEVICE* dev[3][MAX_OUTPUT];
 	int did[3][MAX_OUTPUT], dcount[3];
+	uint32 dmask[3][MAX_OUTPUT];
 	
 	void input_clock(int ch, int clock);
 	void input_gate(int ch, bool signal);
@@ -78,17 +79,17 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions
-	void set_context_ch0(DEVICE* device, int id) {
+	void set_context_ch0(DEVICE* device, int id, uint32 mask) {
 		int c = dcount[0]++;
-		dev[0][c] = device; did[0][c] = id;
+		dev[0][c] = device; did[0][c] = id; dmask[0][c] = mask;
 	}
-	void set_context_ch1(DEVICE* device, int id) {
+	void set_context_ch1(DEVICE* device, int id, uint32 mask) {
 		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id;
+		dev[1][c] = device; did[1][c] = id; dmask[0][c] = mask;
 	}
-	void set_context_ch2(DEVICE* device, int id) {
+	void set_context_ch2(DEVICE* device, int id, uint32 mask) {
 		int c = dcount[2]++;
-		dev[2][c] = device; did[2][c] = id;
+		dev[2][c] = device; did[2][c] = id; dmask[0][c] = mask;
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;

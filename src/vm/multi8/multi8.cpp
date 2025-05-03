@@ -65,9 +65,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_A, 0x20);
 	sio->set_context_out(cmt, SIG_CMT_OUT);
-	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2);
-	pit->set_context_ch1(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5);
-	pit->set_context_ch2(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
+	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
+	pit->set_context_ch1(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5, 1);
+	pit->set_context_ch2(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6, 1);
 	pit->set_constant_clock(0, CPU_CLOCKS >> 1);
 	pit->set_constant_clock(1, CPU_CLOCKS >> 1);
 	pio->set_context_port_b(display, SIG_DISPLAY_I8255_B, 0xff, 0);
@@ -192,14 +192,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

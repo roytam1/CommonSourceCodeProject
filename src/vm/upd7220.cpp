@@ -36,7 +36,7 @@ void UPD7220::initialize()
 	for(int i = 0; i <= RT_TABLEMAX; i++)
 		rt[i] = (int)((double)(1 << RT_MULBIT) * (1 - sqrt(1 - pow((0.70710678118654 * i) / RT_TABLEMAX, 2))));
 	
-	vm->regist_vsync_event(this);
+	vm->regist_vline_event(this);
 }
 
 void UPD7220::release()
@@ -163,7 +163,7 @@ uint32 UPD7220::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void UPD7220::event_vsync(int v, int clock)
+void UPD7220::event_vline(int v, int clock)
 {
 	bool next = (v < vs);
 	if(vsync != next) {

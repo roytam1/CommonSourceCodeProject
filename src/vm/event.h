@@ -16,6 +16,7 @@
 
 #define MAX_CPU		8
 #define MAX_SOUND	8
+#define MAX_LINES	1024
 #define MAX_EVENT	64
 #define NO_EVENT	-1
 //#ifndef EVENT_PRECISE
@@ -29,9 +30,13 @@ private:
 	DEVICE* d_sound[MAX_SOUND];
 	int dcount_cpu, dcount_sound;
 	
+	// machine setting
+	int cpu_clocks;
+	double frames_per_sec;
+	int lines_per_frame;
+	
 	// cpu clock
-	int hclocks[LINES_PER_FRAME][CHARS_PER_LINE];
-	int vclocks[LINES_PER_FRAME];
+	int vclocks[MAX_LINES];
 	int power;
 	uint32 accum;
 	
@@ -45,10 +50,9 @@ private:
 	} event_t;
 	event_t event[MAX_EVENT];
 	DEVICE* frame_event[MAX_EVENT];
-	DEVICE* vsync_event[MAX_EVENT];
-	DEVICE* hsync_event[MAX_EVENT];
+	DEVICE* vline_event[MAX_EVENT];
 	int next, past, next_id;
-	int event_cnt, frame_event_cnt, vsync_event_cnt, hsync_event_cnt;
+	int event_cnt, frame_event_cnt, vline_event_cnt;
 	bool get_nextevent;
 	void update_event(int clock);
 	
@@ -64,6 +68,9 @@ public:
 	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_cpu = dcount_sound = 0;
 		get_nextevent = true;
+		cpu_clocks = CPU_CLOCKS;
+		frames_per_sec = FRAMES_PER_SEC;
+		lines_per_frame = LINES_PER_FRAME;
 	}
 	~EVENT() {}
 	
@@ -80,8 +87,7 @@ public:
 	void regist_event_by_clock(DEVICE* device, int event_id, int clock, bool loop, int* regist_id);
 	void cancel_event(int regist_id);
 	void regist_frame_event(DEVICE* dev);
-	void regist_vsync_event(DEVICE* dev);
-	void regist_hsync_event(DEVICE* dev);
+	void regist_vline_event(DEVICE* dev);
 	
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int samples, bool fill);
@@ -91,6 +97,15 @@ public:
 	}
 	void set_context_sound(DEVICE* device) {
 		d_sound[dcount_sound++] = device;
+	}
+	void set_cpu_clocks(int clocks) {
+		cpu_clocks = clocks;
+	}
+	void set_frames_per_sec(int frames) {
+		frames_per_sec = frames;
+	}
+	void set_lines_per_frame(int lines) {
+		lines_per_frame = lines;
 	}
 };
 

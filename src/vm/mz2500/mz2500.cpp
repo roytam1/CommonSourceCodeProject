@@ -94,9 +94,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(opn);
 	event->set_context_sound(pcm);
 	
-	pit->set_context_ch0(interrupt, SIG_INTERRUPT_I8253);
-	pit->set_context_ch0(pit, SIG_I8253_CLOCK_1);
-	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2);
+	pit->set_context_ch0(interrupt, SIG_INTERRUPT_I8253, 1);
+	pit->set_context_ch0(pit, SIG_I8253_CLOCK_1, 1);
+	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2, 1);
 #ifdef TIMER_FREQ
 	pit->set_constant_clock(0, 31250);
 #endif
@@ -276,14 +276,9 @@ void VM::regist_frame_event(DEVICE* dev)
 	event->regist_frame_event(dev);
 }
 
-void VM::regist_vsync_event(DEVICE* dev)
+void VM::regist_vline_event(DEVICE* dev)
 {
-	event->regist_vsync_event(dev);
-}
-
-void VM::regist_hsync_event(DEVICE* dev)
-{
-	event->regist_hsync_event(dev);
+	event->regist_vline_event(dev);
 }
 
 uint32 VM::current_clock()

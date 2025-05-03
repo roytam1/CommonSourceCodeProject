@@ -37,7 +37,7 @@ public:
 	// common functions
 	void initialize();
 	void write_io8(uint32 addr, uint32 data);
-	void event_vsync(int v, int clock);
+	void event_vline(int v, int clock);
 	
 	// unique function
 	void set_context(DEVICE* device) {

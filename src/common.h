@@ -33,6 +33,11 @@ typedef unsigned short uint16;
 #ifndef uint32
 typedef unsigned int uint32;
 #endif
+#ifndef _WIN32_WCE
+#ifndef uint64
+typedef unsigned long long uint64;
+#endif
+#endif
 
 #ifndef int8
 typedef signed char int8;
@@ -42,6 +47,11 @@ typedef signed short int16;
 #endif
 #ifndef int32
 typedef signed int int32;
+#endif
+#ifndef _WIN32_WCE
+#ifndef int64
+typedef signed long long int64;
+#endif
 #endif
 
 // memory functions
@@ -70,7 +80,7 @@ typedef uint16 scrntype;
 #define RGB_COLOR(r, g, b) ((uint16)(((uint16)(r) & 0xf8) << 8) | (uint16)(((uint16)(g) & 0xfc) << 3) | (uint16)(((uint16)(b) & 0xf8) >> 3))
 typedef uint16 scrntype;
 #elif defined(_RGB888)
-#define RGB_COLOR(r, g, b) (((uint16)(r) << 16) | ((uint16)(g) << 8) | ((uint16)(b) << 0))
+#define RGB_COLOR(r, g, b) (((uint32)(r) << 16) | ((uint32)(g) << 8) | ((uint32)(b) << 0))
 typedef uint32 scrntype;
 #endif
 
