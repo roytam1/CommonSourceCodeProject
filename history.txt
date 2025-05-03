@@ -1,5 +1,16 @@
+4/9/2009
+
+[COMMON] modify definition of uint64 and int64
+[VM/DEVICE] support 32bit i/o bus
+[VM/IO] support 32bit i/o bus
+
+[PC8201] support PC-8201A (by Mr.apaslothy)
+[PC8201/LCD] support command $3a,$3b,$3e,$3f,$7e,$be and $fe (by Mr.apaslothy)
+
+
 4/5/2009
 
+[COMMON] define pair struct
 [VM/I8155] fix build error
 [VM/UPD1990A] fix shift register
 

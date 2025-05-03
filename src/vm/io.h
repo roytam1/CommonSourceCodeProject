@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2008.12.29 -
 
-	[ 8/16bit i/o bus ]
+	[ i/o bus ]
 */
 
 #ifndef _IO_H_
@@ -51,10 +51,14 @@ public:
 	uint32 read_io8(uint32 addr);
 	void write_io16(uint32 addr, uint32 data);
 	uint32 read_io16(uint32 addr);
+	void write_io32(uint32 addr, uint32 data);
+	uint32 read_io32(uint32 addr);
 	void write_io8w(uint32 addr, uint32 data, int* wait);
 	uint32 read_io8w(uint32 addr, int* wait);
 	void write_io16w(uint32 addr, uint32 data, int* wait);
 	uint32 read_io16w(uint32 addr, int* wait);
+	void write_io32w(uint32 addr, uint32 data, int* wait);
+	uint32 read_io32w(uint32 addr, int* wait);
 	
 	// unique functions
 	void set_iomap_single_w(uint32 addr, DEVICE* device) {

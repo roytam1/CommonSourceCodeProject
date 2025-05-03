@@ -74,6 +74,10 @@ evc pc8201ce.vcp /MAKE "pc8201ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CEC
 mkdir build\pc8201
 copy GDI_WAVEOUT\pc8201ce.exe build\pc8201\.
 
+evc pc8201ace.vcp /MAKE "pc8201ace - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\pc8201a
+copy GDI_WAVEOUT\pc8201ace.exe build\pc8201a\.
+
 evc pv2000ce.vcp /MAKE "pv2000ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\pv2000
 copy GDI_WAVEOUT\pv2000ce.exe build\pv2000\.

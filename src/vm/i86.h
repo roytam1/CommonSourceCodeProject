@@ -15,8 +15,8 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_I86_TEST	0x10
-#define SIG_I86_A20	0x11
+#define SIG_I86_TEST	0
+#define SIG_I86_A20	1
 
 #define INT_REQ_BIT	1
 #define NMI_REQ_BIT	2

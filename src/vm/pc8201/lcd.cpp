@@ -49,9 +49,17 @@ void LCD::write_io8(uint32 addr, uint32 data)
 				case 0x39:
 					seg[b].disp = data & 1;
 					break;
+				case 0x3a:
+				case 0x3b:
+					seg[b].updown = (data ^ 1) & 1;
+					break;
+				case 0x3e:
 				case 0x3f:
+				case 0x7e:
 				case 0x7f:
+				case 0xbe:
 				case 0xbf:
+				case 0xfe:
 				case 0xff:
 					seg[b].spg = data >> 6;
 					break;

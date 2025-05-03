@@ -105,6 +105,11 @@
 #include "pc8201/pc8201.h"
 #endif
 
+// NEC PC-8201A
+#ifdef _PC8201A
+#include "pc8201/pc8201.h"
+#endif
+
 // NEC PC-98HA
 #ifdef _PC98HA
 #include "pc98ha/pc98ha.h"

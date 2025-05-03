@@ -12,8 +12,13 @@
 #define _PC8201_H_
 
 // device informations for win32
+#ifdef _PC8201A
+#define DEVICE_NAME		"NEC PC-8201A"
+#define CONFIG_NAME		"pc8201a"
+#else
 #define DEVICE_NAME		"NEC PC-8201"
 #define CONFIG_NAME		"pc8201"
+#endif
 #define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		240

@@ -33,8 +33,10 @@ typedef unsigned short uint16;
 #ifndef uint32
 typedef unsigned int uint32;
 #endif
-#ifndef _WIN32_WCE
 #ifndef uint64
+#ifdef _MSC_VER
+typedef unsigned __int64 uint64;
+#else
 typedef unsigned long long uint64;
 #endif
 #endif
@@ -48,8 +50,10 @@ typedef signed short int16;
 #ifndef int32
 typedef signed int int32;
 #endif
-#ifndef _WIN32_WCE
 #ifndef int64
+#ifdef _MSC_VER
+typedef signed __int64 int64;
+#else
 typedef signed long long int64;
 #endif
 #endif

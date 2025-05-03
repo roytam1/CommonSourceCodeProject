@@ -126,10 +126,20 @@ public:
 #endif
 	}
 	virtual void write_io16(uint32 addr, uint32 data) {
-		write_io8(addr, data & 0xff); write_io8(addr + 1, data >> 8);
+		write_io8(addr, data & 0xff);
+		write_io8(addr + 1, data >> 8);
 	}
 	virtual uint32 read_io16(uint32 addr) {
 		return read_io8(addr) | (read_io8(addr + 1) << 8);
+	}
+	virtual void write_io32(uint32 addr, uint32 data) {
+		write_io8(addr, data & 0xff);
+		write_io8(addr + 1, (data >> 8) & 0xff);
+		write_io8(addr + 2, (data >> 16) & 0xff);
+		write_io8(addr + 3, (data >> 24) & 0xff);
+	}
+	virtual uint32 read_io32(uint32 addr) {
+		return read_io8(addr) | (read_io8(addr + 1) << 8) | (read_io8(addr + 2) << 16) | (read_io8(addr + 3) << 24);
 	}
 	virtual void write_io8w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
@@ -144,11 +154,23 @@ public:
 	}
 	virtual void write_io16w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
-		write_io8(addr, data & 0xff); write_io8(addr + 1, data >> 8);
+		write_io8(addr, data & 0xff);
+		write_io8(addr + 1, data >> 8);
 	}
 	virtual uint32 read_io16w(uint32 addr, int* wait) {
 		*wait = 0;
 		return read_io8(addr) | (read_io8(addr + 1) << 8);
+	}
+	virtual void write_io32w(uint32 addr, uint32 data, int* wait) {
+		*wait = 0;
+		write_io8(addr, data & 0xff);
+		write_io8(addr + 1, (data >> 8) & 0xff);
+		write_io8(addr + 2, (data >> 16) & 0xff);
+		write_io8(addr + 3, (data >> 24) & 0xff);
+	}
+	virtual uint32 read_io32w(uint32 addr, int* wait) {
+		*wait = 0;
+		return read_io8(addr) | (read_io8(addr + 1) << 8) | (read_io8(addr + 2) << 16) | (read_io8(addr + 3) << 24);
 	}
 	
 	// device to device
