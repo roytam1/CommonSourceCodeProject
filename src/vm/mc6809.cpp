@@ -367,7 +367,7 @@ void MC6809::reset()
 	U = 0;
 	S = 0;
 	EA = 0;
-#if defined(_FM7) || defined(_FM8) || defined(_FM77) ||	defined(_FM77L2) || defined(_FM77L4) ||	defined(_FM77_VARIANTS)
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	clr_used = false;
 	write_signals(&outputs_bus_clr, 0x00000000);
 #endif
@@ -589,7 +589,7 @@ void MC6809::run_one_opecode()
 
 void MC6809::op(uint8 ireg)
 {
-#if defined(_FM7) || defined(_FM8) || defined(_FM77) ||	defined(_FM77L2) || defined(_FM77L4) ||	defined(_FM77_VARIANTS)
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	if(ireg == 0x0f) { // clr_di()
 		write_signals(&outputs_bus_clr, 0x00000001);
 		clr_used = true;
@@ -652,7 +652,7 @@ inline void MC6809::fetch_effective_address_IDX(uint8 upper, uint8 lower)
 	bool indirect = false;
 	uint16 *reg;
 	uint8 bx;
-	if ((upper & 0x08) != 0) }
+	if ((upper & 0x08) != 0) {
 		indirect = ((upper & 0x01) != 0);
 	}
 	

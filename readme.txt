@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/21/2015
+								3/28/2015
 
 --- What's this ?
 
@@ -25,6 +25,7 @@ This archive includes the all source codes of emulators listed below:
 		eHC-80		HC-80/PX-8/Geneva
 		eQC-10		QC-10/QX-10
 	FUJITSU
+		eFM7		FM-7 (by Mr.Artane.)
 		eFM16pi		FM16pi
 		eFMR-30		FMR-30
 		eFMR-50		FMR-50
@@ -143,7 +144,7 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/mc6800.*
 	MAME mc6800 core
 - vm/mc6809.*
-	MAME mc6809 core
+	MAME mc6809 core and improved by Mr.Artane.
 - vm/mc6847.*
 	MAME mc6847 core
 - vm/pc6031.*
@@ -176,6 +177,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	MAME Z80DMA core
 - vm/familybasic
 	nester
+- vm/fm7/*.*
+	eFM7 by Mr.Artane.
 - vm/fmr50/bios.*
 	FM-TOWNS emulator on bochs
 	UNZ pseudo BIOS

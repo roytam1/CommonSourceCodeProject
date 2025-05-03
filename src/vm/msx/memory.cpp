@@ -627,9 +627,9 @@ uint32 MEMORY::fetch_op(uint32 addr, int* wait)
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 #if !defined(_PX7)
-	if(d_map[3] == d_slot[3]) {
+//	if(d_map[3] == d_slot[3]) {
 		d_slot[3]->write_io8(addr, data);
-	}
+//	}
 #endif
 }
 

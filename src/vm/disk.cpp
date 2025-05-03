@@ -680,7 +680,7 @@ void DISK::set_crc_error(bool value)
 {
 	if(sector != NULL) {
 		uint8 *t = sector - 0x10;
-		t[8] = value ? 0xb0 : t[7]; // FIXME; always data crc error ?
+		t[8] = value ? 0xb0 : t[7]; // FIXME: always data crc error ?
 	}
 	crc_error = value;
 }
@@ -733,7 +733,7 @@ void DISK::insert_sector(uint8 c, uint8 h, uint8 r, uint8 n, bool deleted, bool 
 	t[5] = sector_num.b.h;
 	t[6] = drive_mfm ? 0 : 0x40;
 	t[7] = deleted ? 0x10 : 0;
-	t[8] = crc_error ? 0xb0 : t[7];
+	t[8] = crc_error ? 0xb0 : t[7]; // FIXME: always data crc error ?
 	t[14] = (length >> 0) & 0xff;
 	t[15] = (length >> 8) & 0xff;
 	memset(t + 16, fill_data, length);

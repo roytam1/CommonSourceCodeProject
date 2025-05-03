@@ -1,3 +1,8 @@
+3/28/2015
+
+[FM7] add eFM7 codes (thanks Mr.Artane.)
+
+
 3/26/2015
 
 [VM/MB8877] fix not to return error status when seek to unformatted track (thanks Mr.Artane.)

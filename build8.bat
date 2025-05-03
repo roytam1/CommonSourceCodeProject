@@ -15,6 +15,10 @@ devenv.com familybasic.vcproj /Rebuild Release
 mkdir build\familybasic
 copy Release\familybasic.exe build\familybasic\.
 
+devenv.com fm7.vcproj /Rebuild Release
+mkdir build\fm7
+copy Release\fm7.exe build\fm7\.
+
 devenv.com fm16pi.vcproj /Rebuild Release
 mkdir build\fm16pi
 copy Release\fm16pi.exe build\fm16pi\.
