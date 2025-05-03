@@ -14,8 +14,8 @@
 #define CONFIG_NAME		"mz2500"
 
 // device informations for virtual machine
-#define FRAMES_PER_SEC		55.4
-#define LINES_PER_FRAME 	440
+#define FRAMES_PER_SEC		55.49
+#define LINES_PER_FRAME 	448
 #define CHARS_PER_LINE		108
 #define CPU_CLOCKS		6000000
 #define SCREEN_WIDTH		640
@@ -24,6 +24,7 @@
 #define HAS_MB8876
 #define HAS_RP5C15
 #define DATAREC_SOUND
+#define SUPPORT_VARIABLE_TIMING
 
 // memory wait
 #define Z80_MEMORY_WAIT
@@ -140,6 +141,7 @@ public:
 	void reset();
 	void special_reset();
 	void run();
+	double frame_rate();
 	
 #ifdef USE_DEBUGGER
 	// debugger

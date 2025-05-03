@@ -80,61 +80,60 @@
 #define HAS_CYCLESTEAL
 #define HAS_400LINECARD
 //#define CAPABLE_KANJI_CLASS2
-#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
 
 #elif defined(_FM77AV)
-#define DEVICE_NAME		"FUJITSU FM-77AV"
+#define DEVICE_NAME		"FUJITSU FM77AV"
 #define CONFIG_NAME		"fm77av"
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM-77AV20"
+#define DEVICE_NAME		"FUJITSU FM77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
-#define USE_DRIVE_TYPE
+#define USE_DRIVE_TYPE		2
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM-77AV40"
+#define DEVICE_NAME		"FUJITSU FM77AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE
+#define USE_DRIVE_TYPE		2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 
 #elif defined(_FM77AV20EX)
-#define DEVICE_NAME		"FUJITSU FM-77AV20EX"
+#define DEVICE_NAME		"FUJITSU FM77AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE
+#define USE_DRIVE_TYPE		2
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40EX)
-#define DEVICE_NAME		"FUJITSU FM-77AV40EX"
+#define DEVICE_NAME		"FUJITSU FM77AV40EX"
 #define CONFIG_NAME		"fm77av40ex"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE
+#define USE_DRIVE_TYPE		2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 
 #elif defined(_FM77AV40SX)
-#define DEVICE_NAME		"FUJITSU FM-77AV40SX"
+#define DEVICE_NAME		"FUJITSU FM77AV40SX"
 #define CONFIG_NAME		"fm77av40sx"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE
+#define USE_DRIVE_TYPE		2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 
