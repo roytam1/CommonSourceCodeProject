@@ -119,10 +119,24 @@ private:
 	// tf20
 	FIFO *tf20_buf;
 	
+	// ramdisk
+	int ramdisk_type;
+	
 	// externam ram disk
 	uint8 ext[0x40000];
 	uint32 extar;
 	uint8 extcr;
+	
+	// intelligent ram disk
+	void iramdisk_write_data(uint8 val);
+	void iramdisk_write_cmd(uint8 val);
+	uint8 iramdisk_read_data();
+	uint8 iramdisk_read_stat();
+	uint8 iramdisk_sectors[15][64][128];
+	uint8 iramdisk_cmd;
+	int iramdisk_count,iramdisk_dest;
+	uint8 iramdisk_buf[130];
+	uint8 *iramdisk_ptr;
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

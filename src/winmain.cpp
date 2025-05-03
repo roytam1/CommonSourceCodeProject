@@ -22,6 +22,13 @@
 #define timeGetTime() GetTickCount()
 #endif
 
+DWORD GetLongFullPathName(_TCHAR* src, _TCHAR* dst)
+{
+	_TCHAR tmp[_MAX_PATH];
+	GetFullPathName(src, _MAX_PATH, tmp, NULL);
+	return GetLongPathName(tmp, dst, _MAX_PATH);
+}
+
 // config
 extern config_t config;
 
@@ -39,15 +46,19 @@ BOOL commandbar_show, sip_on;
 void update_menu(HMENU hMenu, int pos);
 #ifdef USE_CART
 void open_cart(HWND hWnd);
+void update_cart_history(_TCHAR* path);
 #endif
 #ifdef USE_FD1
 void open_disk(HWND hWnd, int drv);
+void update_disk_history(_TCHAR* path, int drv);
 #endif
 #ifdef USE_DATAREC
 void open_datarec(HWND hWnd, BOOL play);
+void update_datarec_history(_TCHAR* path);
 #endif
 #ifdef USE_MEDIA
 void open_media(HWND hWnd);
+void update_media_history(_TCHAR* path);
 #endif
 void set_window(HWND hwnd, int mode);
 BOOL fullscreen_now = FALSE;
@@ -139,10 +150,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	if(config.window_mode == 1)
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW2, 0L);
-	else if(config.window_mode == 2 || config.window_mode == 3)
+	else if(config.window_mode == 2)
 		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_FULLSCREEN, 0L);
-	else
+	else {
 		config.window_mode = 0;
+		PostMessage(hWnd, WM_COMMAND, ID_SCREEN_WINDOW1, 0L);
+	}
+	
 	// accelerator
 	HACCEL hAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
 #endif
@@ -157,6 +171,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 #else
 	emu->set_window_size(WINDOW_WIDTH1, WINDOW_HEIGHT1);
 #endif
+	
+	// open command line path
+	if(szCmdLine[0]) {
+		if(szCmdLine[0] == _T('"')) {
+			int len = _tcslen(szCmdLine);
+			szCmdLine[len - 1] = _T('\0');
+			szCmdLine++;
+		}
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(szCmdLine, long_path);
+#ifdef USE_CART
+		update_cart_history(long_path);
+		emu->open_cart(long_path);
+#elif defined(USE_FD1)
+		update_disk_history(long_path, 0);
+		emu->open_disk(long_path, 0);
+#endif
+	}
 	
 	// timing control
 	int remain = 1000;
@@ -428,6 +460,11 @@ socket:
 				case ID_DIPSWITCH7: config.dipswitch ^= 0x40; break;
 				case ID_DIPSWITCH8: config.dipswitch ^= 0x80; break;
 #endif
+#ifdef _HC80
+				case ID_HC80_RAMDISK0: config.ramdisk_type = 0; break;
+				case ID_HC80_RAMDISK1: config.ramdisk_type = 1; break;
+				case ID_HC80_RAMDISK2: config.ramdisk_type = 2; break;
+#endif
 				case ID_CPU_POWER0: no = 0; goto cpu_power;
 				case ID_CPU_POWER1: no = 1; goto cpu_power;
 				case ID_CPU_POWER2: no = 2; goto cpu_power;
@@ -673,9 +710,8 @@ record_video:
 				case ID_SCREEN_DEVICE_HARDWARE_TNL: config.d3d9_device = 1; goto d3d9_params;
 				case ID_SCREEN_DEVICE_HARDWARE:     config.d3d9_device = 2; goto d3d9_params;
 				case ID_SCREEN_DEVICE_SOFTWARE:     config.d3d9_device = 3; goto d3d9_params;
-				case ID_SCREEN_FILTER_DEFAULT:      config.d3d9_filter = 0; goto d3d9_params;
-				case ID_SCREEN_FILTER_POINT:        config.d3d9_filter = 1; goto d3d9_params;
-				case ID_SCREEN_FILTER_LINEAR:       config.d3d9_filter = 2; goto d3d9_params;
+				case ID_SCREEN_FILTER_POINT:        config.d3d9_filter = 0; goto d3d9_params;
+				case ID_SCREEN_FILTER_LINEAR:       config.d3d9_filter = 1; goto d3d9_params;
 				case ID_SCREEN_PRESENT_INTERVAL:
 					if(config.d3d9_interval)
 						config.d3d9_interval = 0;
@@ -700,14 +736,32 @@ d3d9_params:
 					break;
 #endif
 #ifdef USE_MONITOR_TYPE
-				case ID_SCREEN_A400L: no = 0; goto monitor_type;
-				case ID_SCREEN_D400L: no = 1; goto monitor_type;
-				case ID_SCREEN_A200L: no = 2; goto monitor_type;
-				case ID_SCREEN_D200L: no = 3;
+				case ID_SCREEN_MONITOR_TYPE0: no = 0; goto monitor_type;
+				case ID_SCREEN_MONITOR_TYPE1: no = 1; goto monitor_type;
+				case ID_SCREEN_MONITOR_TYPE2: no = 2; goto monitor_type;
+				case ID_SCREEN_MONITOR_TYPE3: no = 3;
 monitor_type:
 					config.monitor_type = no;
 					if(emu)
 						emu->update_config();
+					break;
+#endif
+#ifdef USE_SCREEN_ROTATE
+				case ID_SCREEN_MONITOR_TYPE0: no = 0; goto screen_rotate;
+				case ID_SCREEN_MONITOR_TYPE1: no = 1;
+screen_rotate:
+					config.monitor_type = no;
+					if(emu) {
+						emu->update_config();
+#ifdef _WIN32_WCE
+						emu->set_window_size(-1, -1);
+#else
+						if(fullscreen_now)
+							emu->set_window_size(-1, -1);
+						else
+							set_window(hWnd, 0);
+#endif
+					}
 					break;
 #endif
 #ifdef USE_SCANLINE
@@ -796,6 +850,16 @@ void update_menu(HMENU hMenu, int pos)
 		CheckMenuItem(hMenu, ID_DIPSWITCH6, !(config.dipswitch & 0x20) ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_DIPSWITCH7, !(config.dipswitch & 0x40) ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_DIPSWITCH8, !(config.dipswitch & 0x80) ? MF_CHECKED : MF_UNCHECKED);
+#endif
+#ifdef _HC80
+		if(config.ramdisk_type == 0)
+			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0, MF_BYCOMMAND);
+		else if(config.ramdisk_type == 1)
+			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK1, MF_BYCOMMAND);
+		else if(config.ramdisk_type == 2)
+			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK2, MF_BYCOMMAND);
+		else
+			CheckMenuRadioItem(hMenu, ID_HC80_RAMDISK0, ID_HC80_RAMDISK2, ID_HC80_RAMDISK0, MF_BYCOMMAND);
 #endif
 		if(config.cpu_power == 0)
 			CheckMenuRadioItem(hMenu, ID_CPU_POWER0, ID_CPU_POWER4, ID_CPU_POWER0, MF_BYCOMMAND);
@@ -1011,18 +1075,15 @@ void update_menu(HMENU hMenu, int pos)
 		else
 			CheckMenuRadioItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, ID_SCREEN_DEVICE_SOFTWARE, ID_SCREEN_DEVICE_SOFTWARE, MF_BYCOMMAND);
 		if(config.d3d9_filter == 0)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_DEFAULT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_DEFAULT, MF_BYCOMMAND);
-		else if(config.d3d9_filter == 1)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_DEFAULT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_POINT, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_POINT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_POINT, MF_BYCOMMAND);
 		else
-			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_DEFAULT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_LINEAR, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_FILTER_POINT, ID_SCREEN_FILTER_LINEAR, ID_SCREEN_FILTER_LINEAR, MF_BYCOMMAND);
 		CheckMenuItem(hMenu, ID_SCREEN_PRESENT_INTERVAL, config.d3d9_interval ? MF_CHECKED : MF_UNCHECKED);
 #else
 		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_DEFAULT, MF_GRAYED);
 		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_HARDWARE_TNL, MF_GRAYED);
 		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_HARDWARE, MF_GRAYED);
 		EnableMenuItem(hMenu, ID_SCREEN_DEVICE_SOFTWARE, MF_GRAYED);
-		EnableMenuItem(hMenu, ID_SCREEN_FILTER_DEFAULT, MF_GRAYED);
 		EnableMenuItem(hMenu, ID_SCREEN_FILTER_POINT, MF_GRAYED);
 		EnableMenuItem(hMenu, ID_SCREEN_FILTER_LINEAR, MF_GRAYED);
 		EnableMenuItem(hMenu, ID_SCREEN_PRESENT_INTERVAL, MF_GRAYED);
@@ -1030,13 +1091,19 @@ void update_menu(HMENU hMenu, int pos)
 #ifdef USE_MONITOR_TYPE
 		// mz2500 monitor type
 		if(config.monitor_type == 0)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_A400L, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE3, ID_SCREEN_MONITOR_TYPE0, MF_BYCOMMAND);
 		else if(config.monitor_type == 1)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_D400L, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE3, ID_SCREEN_MONITOR_TYPE1, MF_BYCOMMAND);
 		else if(config.monitor_type == 2)
-			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_A200L, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE3, ID_SCREEN_MONITOR_TYPE2, MF_BYCOMMAND);
 		else
-			CheckMenuRadioItem(hMenu, ID_SCREEN_A400L, ID_SCREEN_D200L, ID_SCREEN_D200L, MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE3, ID_SCREEN_MONITOR_TYPE3, MF_BYCOMMAND);
+#elif defined(USE_SCREEN_ROTATE)
+		// pc100 monitor type
+		if(config.monitor_type == 0)
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE1, ID_SCREEN_MONITOR_TYPE0, MF_BYCOMMAND);
+		else
+			CheckMenuRadioItem(hMenu, ID_SCREEN_MONITOR_TYPE0, ID_SCREEN_MONITOR_TYPE1, ID_SCREEN_MONITOR_TYPE1, MF_BYCOMMAND);
 #endif
 #ifdef USE_SCANLINE
 		// scanline
@@ -1121,21 +1188,26 @@ void open_cart(HWND hWnd)
 	OpenFileName.lpstrTitle = _T("Game Cartridge");
 	
 	if(GetOpenFileName(&OpenFileName)) {
-		// update history
-		int no = 7;
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_cart[i], OpenFileName.lpstrFile) == 0) {
-				no = i;
-				break;
-			}
-		}
-		for(int i = no; i > 0; i--)
-			_tcscpy(config.recent_cart[i], config.recent_cart[i - 1]);
-		_tcscpy(config.recent_cart[0], OpenFileName.lpstrFile);
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(OpenFileName.lpstrFile, long_path);
 		
-		// open
-		emu->open_cart(OpenFileName.lpstrFile);
+		update_cart_history(long_path);
+		emu->open_cart(long_path);
 	}
+}
+
+void update_cart_history(_TCHAR* path)
+{
+	int no = 7;
+	for(int i = 0; i < 8; i++) {
+		if(_tcscmp(config.recent_cart[i], path) == 0) {
+			no = i;
+			break;
+		}
+	}
+	for(int i = no; i > 0; i--)
+		_tcscpy(config.recent_cart[i], config.recent_cart[i - 1]);
+	_tcscpy(config.recent_cart[0], path);
 }
 #endif
 
@@ -1153,21 +1225,26 @@ void open_disk(HWND hWnd, int drv)
 	OpenFileName.lpstrTitle = _T("Floppy Disk");
 	
 	if(GetOpenFileName(&OpenFileName)) {
-		// update history
-		int no = 7;
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_disk[drv][i], OpenFileName.lpstrFile) == 0) {
-				no = i;
-				break;
-			}
-		}
-		for(int i = no; i > 0; i--)
-			_tcscpy(config.recent_disk[drv][i], config.recent_disk[drv][i - 1]);
-		_tcscpy(config.recent_disk[drv][0], OpenFileName.lpstrFile);
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(OpenFileName.lpstrFile, long_path);
 		
-		// open
-		emu->open_disk(OpenFileName.lpstrFile, drv);
+		update_disk_history(long_path, drv);
+		emu->open_disk(long_path, drv);
 	}
+}
+
+void update_disk_history(_TCHAR* path, int drv)
+{
+	int no = 7;
+	for(int i = 0; i < 8; i++) {
+		if(_tcscmp(config.recent_disk[drv][i], path) == 0) {
+			no = i;
+			break;
+		}
+	}
+	for(int i = no; i > 0; i--)
+		_tcscpy(config.recent_disk[drv][i], config.recent_disk[drv][i - 1]);
+	_tcscpy(config.recent_disk[drv][0], path);
 }
 #endif
 
@@ -1189,24 +1266,29 @@ void open_datarec(HWND hWnd, BOOL play)
 	OpenFileName.lpstrTitle = _T("Data Recorder Tape");
 	
 	if(GetOpenFileName(&OpenFileName)) {
-		// update history
-		int no = 7;
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_datarec[i], OpenFileName.lpstrFile) == 0) {
-				no = i;
-				break;
-			}
-		}
-		for(int i = no; i > 0; i--)
-			_tcscpy(config.recent_datarec[i], config.recent_datarec[i - 1]);
-		_tcscpy(config.recent_datarec[0], OpenFileName.lpstrFile);
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(OpenFileName.lpstrFile, long_path);
 		
-		// open
+		update_datarec_history(long_path);
 		if(play)
-			emu->play_datarec(OpenFileName.lpstrFile);
+			emu->play_datarec(long_path);
 		else
-			emu->rec_datarec(OpenFileName.lpstrFile);
+			emu->rec_datarec(long_path);
 	}
+}
+
+void update_datarec_history(_TCHAR* path)
+{
+	int no = 7;
+	for(int i = 0; i < 8; i++) {
+		if(_tcscmp(config.recent_datarec[i], path) == 0) {
+			no = i;
+			break;
+		}
+	}
+	for(int i = no; i > 0; i--)
+		_tcscpy(config.recent_datarec[i], config.recent_datarec[i - 1]);
+	_tcscpy(config.recent_datarec[0], path);
 }
 #endif
 
@@ -1224,21 +1306,26 @@ void open_media(HWND hWnd)
 	OpenFileName.lpstrTitle = _T("Sound Cassette");
 	
 	if(GetOpenFileName(&OpenFileName)) {
-		// update history
-		int no = 7;
-		for(int i = 0; i < 8; i++) {
-			if(_tcscmp(config.recent_media[i], OpenFileName.lpstrFile) == 0) {
-				no = i;
-				break;
-			}
-		}
-		for(int i = no; i > 0; i--)
-			_tcscpy(config.recent_media[i], config.recent_media[i - 1]);
-		_tcscpy(config.recent_media[0], OpenFileName.lpstrFile);
+		_TCHAR long_path[_MAX_PATH];
+		GetLongFullPathName(OpenFileName.lpstrFile, long_path);
 		
-		// open
-		emu->open_media(OpenFileName.lpstrFile);
+		update_media_history(long_path);
+		emu->open_media(long_path);
 	}
+}
+
+void update_media_history(_TCHAR* path)
+{
+	int no = 7;
+	for(int i = 0; i < 8; i++) {
+		if(_tcscmp(config.recent_media[i], path) == 0) {
+			no = i;
+			break;
+		}
+	}
+	for(int i = no; i > 0; i--)
+		_tcscpy(config.recent_media[i], config.recent_media[i - 1]);
+	_tcscpy(config.recent_media[0], path);
 }
 #endif
 
@@ -1288,7 +1375,17 @@ void set_window(HWND hwnd, int mode)
 #ifdef _USE_D3D9
 		int width = sw, height = sh;
 #else
-		int width = 640, height = 480;
+		int width = emu->get_window_width(mode);
+		int height = emu->get_window_height(mode);
+		if(width <= 640 && height <= 480) {
+			width = 640; height = 480;
+		}
+		else if(width <= 800 && height <= 600) {
+			width = 800; height = 600;
+		}
+		else {
+			width = 1024; height = 768;
+		}
 #endif
 		DEVMODE dev;
 		ZeroMemory(&dev, sizeof(dev));

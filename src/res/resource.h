@@ -101,10 +101,10 @@
 #define ID_SCREEN_FILTER_POINT          40092
 #define ID_SCREEN_FILTER_LINEAR         40093
 #define ID_SCREEN_PRESENT_INTERVAL      40094
-#define ID_SCREEN_A400L                 40095
-#define ID_SCREEN_D400L                 40096
-#define ID_SCREEN_A200L                 40097
-#define ID_SCREEN_D200L                 40098
+#define ID_SCREEN_MONITOR_TYPE0         40095
+#define ID_SCREEN_MONITOR_TYPE1         40096
+#define ID_SCREEN_MONITOR_TYPE2         40097
+#define ID_SCREEN_MONITOR_TYPE3         40098
 #define ID_SCREEN_SCANLINE              40099
 #define ID_SOUND_REC                    40100
 #define ID_SOUND_STOP                   40101
@@ -149,8 +149,22 @@
 #define ID_DIPSWITCH6                   40140
 #define ID_DIPSWITCH7                   40141
 #define ID_DIPSWITCH8                   40142
+#define ID_HC80_RAMDISK0                40143
+#define ID_HC80_RAMDISK1                40144
+#define ID_HC80_RAMDISK2                40145
 
 // menu positions
+
+// FUJITSU FMR-50
+#ifdef _FMR50
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
 
 // EPSON HC-40
 #ifdef _HC40
@@ -194,6 +208,14 @@
 #define MENU_POS_SOUND                  5
 #endif
 
+// SHARP MZ-700
+#ifdef _MZ700
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // SHARP MZ-2500
 #ifdef _MZ2500
 #define MENU_POS_CONTROL                0
@@ -209,6 +231,17 @@
 
 // SHARP MZ-2800
 #ifdef _MZ2800
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_FD3                    3
+#define MENU_POS_FD4                    4
+#define MENU_POS_SCREEN                 5
+#define MENU_POS_SOUND                  6
+#endif
+
+// SHARP MZ-3500
+#ifdef _MZ3500
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2
@@ -239,6 +272,33 @@
 
 // TOSHIBA PASOPIA7
 #ifdef _PASOPIA7
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_DATAREC                3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
+// NEC PC-98HA
+#ifdef _PC98HA
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
+// NEC PC-100
+#ifdef _PC100
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
+// SHARP PC-3200
+#ifdef _PC3200
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
 #define MENU_POS_FD2                    2

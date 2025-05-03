@@ -59,7 +59,7 @@ void INTERRUPT::write_signal(int id, uint32 data, uint32 mask)
 		}
 	}
 	else if(id == SIG_INTERRUPT_I8253) {
-		bool next = ((data & mask) == 0);
+		bool next = ((data & mask) != 0);
 		if(next != irq[1].req_intr) {
 			irq[1].req_intr = next;
 			update_intr();

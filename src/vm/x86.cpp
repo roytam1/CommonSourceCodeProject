@@ -707,6 +707,7 @@ void X86::i286_code_descriptor(uint16 selector, uint16 offset)
 void X86::op(uint8 code)
 {
 	prvPC = PC - 1;
+//emu->out_debug("%5x\n",prvPC);
 	
 	switch(code)
 	{
@@ -1101,23 +1102,26 @@ inline void X86::_op0f()
 			if(!PM)
 				interrupt(ILLEGAL_INSTRUCTION);
 			PutRMWord(ModRM, ldtr_sel);
+			count -= 2;
 			break;
 		case 8:	// str
 			if(!PM)
 				interrupt(ILLEGAL_INSTRUCTION);
 			PutRMWord(ModRM, tr_sel);
+			count -= 2;
 			break;
 		case 0x10:	// lldt
 			if(!PM)
 				interrupt(ILLEGAL_INSTRUCTION);
-			if(PM && (CPL!= 0))
+			if(PM && (CPL != 0))
 				interrupt(GENERAL_PROTECTION_FAULT);
 			ldtr_sel = GetRMWord(ModRM);
-			if((ldtr_sel & ~7)>= gdtr_limit)
+			if((ldtr_sel & ~7) >= gdtr_limit)
 				interrupt(GENERAL_PROTECTION_FAULT);
 			ldtr_limit = RM16(gdtr_base + (ldtr_sel & ~7));
 			ldtr_base = RM16(gdtr_base + (ldtr_sel & ~7) + 2) | (RM16(gdtr_base + (ldtr_sel & ~7) + 4) << 16);
 			ldtr_base &= 0xffffff;
+			count -= 24;
 			break;
 		case 0x18:	// ltr
 			if(!PM)
@@ -1130,6 +1134,7 @@ inline void X86::_op0f()
 			tr_limit = RM16(gdtr_base + (tr_sel & ~7));
 			tr_base = RM16(gdtr_base + (tr_sel & ~7) + 2) | (RM16(gdtr_base + (tr_sel & ~7) + 4) << 16);
 			tr_base &= 0xffffff;
+			count -= 27;
 			break;
 		case 0x20:	// verr
 			if(!PM)
@@ -1139,6 +1144,7 @@ inline void X86::_op0f()
 				ZeroVal = (((tmp & ~7) < ldtr_limit) && READABLE(RM8(ldtr_base + (tmp & ~7) + 5)));
 			else
 				ZeroVal = (((tmp & ~7) < gdtr_limit) && READABLE(RM8(gdtr_base + (tmp & ~7) + 5)));
+			count -= 11;
 			break;
 		case 0x28: // verw
 			if(!PM)
@@ -1148,6 +1154,7 @@ inline void X86::_op0f()
 				ZeroVal = (((tmp & ~7) < ldtr_limit) && WRITEABLE(RM8(ldtr_base + (tmp & ~7) + 5)));
 			else
 				ZeroVal = (((tmp & ~7) < gdtr_limit) && WRITEABLE(RM8(gdtr_base + (tmp & ~7) + 5)));
+			count -= 16;
 			break;
 		default:
 			interrupt(ILLEGAL_INSTRUCTION);
@@ -1162,11 +1169,13 @@ inline void X86::_op0f()
 			PutRMWord(ModRM, gdtr_limit);
 			PutRMWordOfs(2, gdtr_base & 0xffff);
 			PutRMByteOfs(4, gdtr_base >> 16);
+			count -= 9;
 			break;
 		case 8:	// sidt
 			PutRMWord(ModRM, idtr_limit);
 			PutRMWordOfs(2, idtr_base & 0xffff);
 			PutRMByteOfs(4, idtr_base >> 16);
+			count -= 9;
 			break;
 		case 0x10:	// lgdt
 			if(PM && (CPL!= 0))
@@ -1179,14 +1188,17 @@ inline void X86::_op0f()
 				interrupt(GENERAL_PROTECTION_FAULT);
 			idtr_limit = GetRMWord(ModRM);
 			idtr_base = GetRMWordOfs(2) | (GetRMByteOfs(4) << 16);
+			count -= 11;
 			break;
 		case 0x20:	// smsw
 			PutRMWord(ModRM, msw);
+			count -= 16;
 			break;
 		case 0x30:	// lmsw
 			if(PM && (CPL!= 0))
 				interrupt(GENERAL_PROTECTION_FAULT);
 			msw = (msw & 1) | GetRMWord(ModRM);
+			count -= 13;
 			break;
 		default:
 			interrupt(ILLEGAL_INSTRUCTION);
@@ -1199,6 +1211,7 @@ inline void X86::_op0f()
 		ZeroVal = i286_selector_okay(tmp);
 		if(ZeroVal)
 			RegWord(ModRM) = tmp;
+		count -= 16;
 		break;
 	case 3:	// LSL
 		if(!PM)
@@ -1213,11 +1226,13 @@ inline void X86::_op0f()
 				addr = gdtr_base + (tmp & ~7);
 			RegWord(ModRM) = RM16(addr);
 		}
+		count -= 26;
 		break;
 	case 6:	// clts
 		if(PM && (CPL!= 0))
 			interrupt(GENERAL_PROTECTION_FAULT);
 		msw = ~8;
+		count -= 5;
 		break;
 	default:
 		interrupt(ILLEGAL_INSTRUCTION);
@@ -2409,6 +2424,7 @@ inline void X86::_arpl()	// Opcode 0x63
 		ZeroVal = i286_selector_okay(RegWord(ModRM)) && i286_selector_okay(RegWord(ModRM)) && ((tmp & 3) < (RegWord(ModRM) & 3));
 		if(ZeroVal)
 			PutbackRMWord(ModRM, (tmp & ~3) | (RegWord(ModRM) & 3));
+		count -= 21;
 	}
 	else
 		interrupt(ILLEGAL_INSTRUCTION);
@@ -4123,6 +4139,7 @@ inline void X86::_hlt()	// Opcode 0xf4
 {
 	PC--;
 	halt = true;
+	count -= 2;
 }
 
 inline void X86::_cmc()	// Opcode 0xf5
@@ -4426,6 +4443,9 @@ inline void X86::_opff()	// Opcode 0xff
 		count -= (ModRM >= 0xc0) ? cycles.push_r16 : cycles.push_m16;
 		tmp1 = GetRMWord(ModRM);
 		PUSH16(tmp1);
+		break;
+	case 0x38:	// invalid ???
+		count -= 10;
 		break;
 	}
 }

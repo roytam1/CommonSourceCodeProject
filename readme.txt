@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								4/12/2008
+								7/12/2008
 
 --- What's this ?
 
@@ -10,11 +10,17 @@ This archive includes the all source codes of:
 	EmuLTI8		MITSUBISHI Elec. MULTI8 emulator
 	EmuPIA		TOSHIBA PASOPIA emulator
 	EmuPIA7		TOSHIBA PASOPIA7 emulator
+	EmuZ-700	SHARP MZ-700 emulator
 	EmuZ-2500	SHARP MZ-2500 emulator
 	EmuZ-2800	SHARP MZ-2800 emulator
+	EmuZ-3500	SHARP MZ-3500 emulator
 	EmuZ-5500	SHARP MZ-5500 emulator
+	eFMR-50		FUJITSU FMR-50 emulator
+	eHANDY98	NEC PC-98HA (HANDY98) emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
+	ePC-100		NEC PC-100 emulator
+	ePC-3200	SHARP PC-3200 emulator
 	ePV-1000	CASIO PV-1000 emulator
 	ePyuTa		TOMY PyuTa and PyuTa Jr. emulator
 	eQC-10		EPSON QC-10/QX-10 emulator
@@ -70,6 +76,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Fred Han Kraan for EPSON HC-40/PX-4 hardware design info
 - vm/hc80/*
 	Mr.Fred Han Kraan for EPSON HC-80/PX-8/Geneva hardware design info
+- vm/hc80/io.*
+	Mr.Dennis Heynlein for intelligent ram disk unit
 - vm/m5/*
 	MESS sord driver
 	Mr.Moriya for Sord M5 hardware design info

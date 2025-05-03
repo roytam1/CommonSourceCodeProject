@@ -37,13 +37,13 @@ void DATAREC::release()
 void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_DATAREC_OUT) {
-		bool signal = (data & mask) ? true : false;
+		bool signal = ((data & mask) != 0);
 		if(rec && remote && signal != out)
 			change = true;
 		out = signal;
 	}
 	else if(id == SIG_DATAREC_REMOTE) {
-		remote = (data & mask) ? true : false;
+		remote = ((data & mask) != 0);
 		update_event();
 	}
 }
@@ -52,7 +52,7 @@ void DATAREC::event_callback(int event_id, int err)
 {
 	if(play && remote) {
 		// get the next signal
-		bool signal = (buffer[bufcnt] & 0x80) ? true : false;
+		bool signal = ((buffer[bufcnt] & 0x80) != 0);
 		if(is_wave) {
 			// inc pointer
 			if(++bufcnt >= BUFFER_SIZE) {
@@ -72,7 +72,7 @@ void DATAREC::event_callback(int event_id, int err)
 					fio->Fread(buffer, sizeof(buffer), 1);
 					bufcnt = 0;
 				}
-				signal = (buffer[bufcnt] & 0x80) ? true : false;
+				signal = ((buffer[bufcnt] & 0x80) != 0);
 				if(remain)
 					remain--;
 				update_event();
@@ -101,7 +101,7 @@ void DATAREC::event_callback(int event_id, int err)
 		}
 		else {
 			// inc pointer
-			bool prv = (buffer[bufcnt] & 0x80) ? true : false;
+			bool prv = ((buffer[bufcnt] & 0x80) != 0);
 			if(prv != out || (buffer[bufcnt] & 0x7f) == 0x7f) {
 				if(++bufcnt >= BUFFER_SIZE) {
 					fio->Fwrite(buffer, sizeof(buffer), 1);
@@ -140,7 +140,7 @@ void DATAREC::play_datarec(_TCHAR* filename)
 		}
 		bufcnt = samples = 0;
 		// get the first signal
-		bool signal = (buffer[0] & 0x80) ? true : false;
+		bool signal = ((buffer[0] & 0x80) != 0);
 		// notify the signal is changed
 		if(signal != in) {
 			for(int i = 0; i < dcount; i++)
@@ -205,6 +205,11 @@ void DATAREC::close_datarec()
 		fio->Fclose();
 	play = rec = false;
 	update_event();
+	
+	// no sounds
+	for(int i = 0; i < dcount; i++)
+		dev[i]->write_signal(did[i], 0, dmask[i]);
+	in = false;
 }
 
 void DATAREC::update_event()

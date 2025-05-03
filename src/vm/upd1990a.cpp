@@ -4,10 +4,10 @@
 	Author : Takeda.Toshiya
 	Date   : 2008.04.19-
 
-	[ uPD1990AC ]
+	[ uPD1990A ]
 */
 
-#include "upd1990ac.h"
+#include "upd1990a.h"
 
 #define YEAR		time[0]
 #define MONTH		time[1]
@@ -17,16 +17,16 @@
 #define MINUTE		time[5]
 #define SECOND		time[6]
 
-void UPD1990AC::initialize()
+void UPD1990A::initialize()
 {
 	cmd = mode = 0;
 	srl = srh = 0;
 	clk = stb = din = true;
 }
 
-void UPD1990AC::write_signal(int id, uint32 data, uint32 mask)
+void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_UPD1990AC_CLK) {
+	if(id == SIG_UPD1990A_CLK) {
 		bool next = ((data & mask) != 0);
 		if(!clk && next) {
 			int dout = srl & 1;
@@ -39,7 +39,7 @@ void UPD1990AC::write_signal(int id, uint32 data, uint32 mask)
 		}
 		clk = next;
 	}
-	else if(id == SIG_UPD1990AC_STB) {
+	else if(id == SIG_UPD1990A_STB) {
 		bool next = ((data & mask) != 0);
 		if(!stb && next) {
 			if((mode = cmd) == 3) {
@@ -59,13 +59,13 @@ void UPD1990AC::write_signal(int id, uint32 data, uint32 mask)
 		}
 		stb = next;
 	}
-	else if(id == SIG_UPD1990AC_C0)
+	else if(id == SIG_UPD1990A_C0)
 		cmd = (cmd & ~1) | (data & mask ? 1 : 0);
-	else if(id == SIG_UPD1990AC_C1)
+	else if(id == SIG_UPD1990A_C1)
 		cmd = (cmd & ~2) | (data & mask ? 2 : 0);
-	else if(id == SIG_UPD1990AC_C2)
+	else if(id == SIG_UPD1990A_C2)
 		cmd = (cmd & ~4) | (data & mask ? 4 : 0);
-	else if(id == SIG_UPD1990AC_DIN)
+	else if(id == SIG_UPD1990A_DIN)
 		din = ((data & mask) != 0);
 }
 

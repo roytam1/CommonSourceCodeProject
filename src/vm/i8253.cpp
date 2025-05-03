@@ -12,7 +12,8 @@
 void I8253::initialize()
 {
 	for(int ch = 0; ch < 3; ch++) {
-		counter[ch].signal = true;
+		counter[ch].prev_out = true;
+		counter[ch].prev_in = false;
 		counter[ch].count = 0x10000;
 		counter[ch].count_reg = 0;
 		counter[ch].ctrl_reg = 0x34;
@@ -104,17 +105,17 @@ void I8253::write_io8(uint32 addr, uint32 data)
 			
 			if(counter[ch].regist_id != -1) {
 				// update counter
-				int passed = vm->passed_clock(counter[ch].prev);
+				int passed = vm->passed_clock(counter[ch].prev_clk);
 				uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
-				if(counter[ch].input <= input)
-					input = counter[ch].input - 1;
+				if(counter[ch].input_clk <= input)
+					input = counter[ch].input_clk - 1;
 				if(input > 0) {
 					input_clock(ch, input);
 					// cancel and re-regist event
 					vm->cancel_event(counter[ch].regist_id);
-					counter[ch].input -= input;
+					counter[ch].input_clk -= input;
 					counter[ch].period -= passed;
-					counter[ch].prev = vm->current_clock();
+					counter[ch].prev_clk = vm->current_clock();
 					vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
 				}
 			}
@@ -152,17 +153,17 @@ uint32 I8253::read_io8(uint32 addr)
 			// not latched (through current count)
 			if(counter[ch].regist_id != -1) {
 				// update counter
-				int passed = vm->passed_clock(counter[ch].prev);
+				int passed = vm->passed_clock(counter[ch].prev_clk);
 				uint32 input = counter[ch].freq * passed / CPU_CLOCKS;
-				if(counter[ch].input <= input)
-					input = counter[ch].input - 1;
+				if(counter[ch].input_clk <= input)
+					input = counter[ch].input_clk - 1;
 				if(input > 0) {
 					input_clock(ch, input);
 					// cancel and re-regist event
 					vm->cancel_event(counter[ch].regist_id);
-					counter[ch].input -= input;
+					counter[ch].input_clk -= input;
 					counter[ch].period -= passed;
-					counter[ch].prev = vm->current_clock();
+					counter[ch].prev_clk = vm->current_clock();
 					vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
 				}
 			}
@@ -195,38 +196,46 @@ void I8253::event_callback(int event_id, int err)
 {
 	int ch = event_id;
 	counter[ch].regist_id = -1;
-	input_clock(ch, counter[ch].input);
+	input_clock(ch, counter[ch].input_clk);
 	
 	// regist next event
 	if(counter[ch].freq && counter[ch].start) {
-		counter[ch].input = counter[ch].delay ? 1 : get_next_count(ch);
-		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input + err;
-		counter[ch].prev = vm->current_clock() + err;
+		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
+		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk + err;
+		counter[ch].prev_clk = vm->current_clock() + err;
 		vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
 	}
 }
 
 void I8253::write_signal(int id, uint32 data, uint32 mask)
 {
+	bool next = ((data & mask) != 0);
+	
 	switch(id)
 	{
 	case SIG_I8253_CLOCK_0:
-		input_clock(0, data & mask);
+		if(counter[0].prev_in && !next)
+			input_clock(0, 1);
+		counter[0].prev_in = next;
 		break;
 	case SIG_I8253_CLOCK_1:
-		input_clock(1, data & mask);
+		if(counter[1].prev_in && !next)
+			input_clock(1, 1);
+		counter[1].prev_in = next;
 		break;
 	case SIG_I8253_CLOCK_2:
-		input_clock(2, data & mask);
+		if(counter[2].prev_in && !next)
+			input_clock(2, 1);
+		counter[2].prev_in = next;
 		break;
 	case SIG_I8253_GATE_0:
-		input_gate(0, (data & mask) ? true : false);
+		input_gate(0, next);
 		break;
 	case SIG_I8253_GATE_1:
-		input_gate(1, (data & mask) ? true : false);
+		input_gate(1, next);
 		break;
 	case SIG_I8253_GATE_2:
-		input_gate(2, (data & mask) ? true : false);
+		input_gate(2, next);
 		break;
 	}
 }
@@ -290,9 +299,9 @@ void I8253::start_count(int ch)
 	
 	// regist event
 	if(counter[ch].freq) {
-		counter[ch].input = counter[ch].delay ? 1 : get_next_count(ch);
-		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input;
-		counter[ch].prev = vm->current_clock();
+		counter[ch].input_clk = counter[ch].delay ? 1 : get_next_count(ch);
+		counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input_clk;
+		counter[ch].prev_clk = vm->current_clock();
 		vm->regist_event_by_clock(this, ch, counter[ch].period, false, &counter[ch].regist_id);
 	}
 }
@@ -309,18 +318,18 @@ void I8253::stop_count(int ch)
 
 void I8253::set_signal(int ch, bool signal)
 {
-	bool prev = counter[ch].signal;
-	counter[ch].signal = signal;
+	bool prev = counter[ch].prev_out;
+	counter[ch].prev_out = signal;
 	
 	if(prev && !signal) {
 		// H->L
 		for(int i = 0; i < dcount[ch]; i++)
-			dev[ch][i]->write_signal(did[ch][i], 1, 0xffffffff);
+			dev[ch][i]->write_signal(did[ch][i], 0, 0xffffffff);
 	}
 	else if(!prev && signal) {
 		// L->H
 		for(int i = 0; i < dcount[ch]; i++)
-			dev[ch][i]->write_signal(did[ch][i], 0, 0xffffffff);
+			dev[ch][i]->write_signal(did[ch][i], 1, 0xffffffff);
 	}
 }
 

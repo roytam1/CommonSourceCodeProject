@@ -17,6 +17,7 @@
 
 #define SIG_MB8877_DRIVEREG	0
 #define SIG_MB8877_SIDEREG	1
+#define SIG_MB8877_MOTOR	2
 
 #define FDC_ST_BUSY		0x01	// busy
 #define FDC_ST_INDEX		0x02	// index hole
@@ -99,6 +100,7 @@ private:
 	bool seekvct;
 	int indexcnt;
 	int sectorcnt;
+	bool motor;
 	
 	// image handler
 	uint8 search_track();
@@ -155,6 +157,7 @@ public:
 	void open_disk(_TCHAR path[], int drv);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
+	uint8 fdc_status();
 };
 
 #endif

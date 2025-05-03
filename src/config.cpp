@@ -41,11 +41,14 @@ void init_config()
 #ifdef USE_SCANLINE
 	config.scan_line = false;
 #endif
-#ifdef USE_MONITOR_TYPE
+#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
 	config.monitor_type = 0;
 #endif
 #ifdef USE_DIPSWITCH
 	config.dipswitch = DIPSWITCH_DEFAULT;
+#endif
+#ifdef _HC80
+	config.ramdisk_type = 2;	// default = Nonintelligent ram disk
 #endif
 #ifdef _WIN32_WCE
 	config.window_mode = 0;

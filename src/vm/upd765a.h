@@ -17,58 +17,7 @@
 
 #define SIG_UPD765A_TC		0
 #define SIG_UPD765A_MOTOR	1
-
-#define EVENT_PHASE	0
-#define EVENT_SEEK	1
-#define EVENT_LOST	2
-
-#define PHASE_IDLE	0
-#define PHASE_CMD	1
-#define PHASE_EXEC	2
-#define PHASE_READ	3
-#define PHASE_WRITE	4
-#define PHASE_SCAN	5
-#define PHASE_TC	6
-#define PHASE_TIMER	7
-#define PHASE_RESULT	8
-
-#define S_D0B	0x01
-#define S_D1B	0x02
-#define S_D2B	0x04
-#define S_D3B	0x08
-#define S_CB	0x10
-#define S_NDM	0x20
-#define S_DIO	0x40
-#define S_RQM	0x80
-
-#define ST0_NR	0x000008
-#define ST0_EC	0x000010
-#define ST0_SE	0x000020
-#define ST0_AT	0x000040
-#define ST0_IC	0x000080
-#define ST0_AI	0x0000c0
-
-#define ST1_MA	0x000100
-#define ST1_NW	0x000200
-#define ST1_ND	0x000400
-#define ST1_OR	0x001000
-#define ST1_DE	0x002000
-#define ST1_EN	0x008000
-
-#define ST2_MD	0x010000
-#define ST2_BC	0x020000
-#define ST2_SN	0x040000
-#define ST2_SH	0x080000
-#define ST2_NC	0x100000
-#define ST2_DD	0x200000
-#define ST2_CM	0x400000
-
-#define ST3_HD	0x04
-#define ST3_TS	0x08
-#define ST3_T0	0x10
-#define ST3_RY	0x20
-#define ST3_WP	0x40
-#define ST3_FT	0x80
+#define SIG_UPD765A_SELECT	2
 
 #define DRIVE_MASK	(MAX_DRIVE - 1)
 
@@ -96,13 +45,14 @@ private:
 	int phase, prevphase;
 	uint8 status, seekstat, command;
 	uint32 result;
-	bool acctc, intr, motor;
+	bool acctc, intr, drq, motor, index;
+	int sel;	// external drive select
 	
 	uint8* bufptr;
 	uint8 buffer[0x4000];
 	int count;
 	int event_phase, event_drv;
-	int phase_id, seek_id, lost_id;
+	int phase_id, seek_id, drq_id, lost_id;
 #ifdef UPD765A_DMA_MODE
 	bool dma_done;
 #endif

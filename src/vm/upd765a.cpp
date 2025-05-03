@@ -11,6 +11,59 @@
 #include "upd765a.h"
 #include "disk.h"
 
+#define EVENT_PHASE	0
+#define EVENT_SEEK	1
+#define EVENT_DRQ	2
+#define EVENT_LOST	3
+
+#define PHASE_IDLE	0
+#define PHASE_CMD	1
+#define PHASE_EXEC	2
+#define PHASE_READ	3
+#define PHASE_WRITE	4
+#define PHASE_SCAN	5
+#define PHASE_TC	6
+#define PHASE_TIMER	7
+#define PHASE_RESULT	8
+
+#define S_D0B	0x01
+#define S_D1B	0x02
+#define S_D2B	0x04
+#define S_D3B	0x08
+#define S_CB	0x10
+#define S_NDM	0x20
+#define S_DIO	0x40
+#define S_RQM	0x80
+
+#define ST0_NR	0x000008
+#define ST0_EC	0x000010
+#define ST0_SE	0x000020
+#define ST0_AT	0x000040
+#define ST0_IC	0x000080
+#define ST0_AI	0x0000c0
+
+#define ST1_MA	0x000100
+#define ST1_NW	0x000200
+#define ST1_ND	0x000400
+#define ST1_OR	0x001000
+#define ST1_DE	0x002000
+#define ST1_EN	0x008000
+
+#define ST2_MD	0x010000
+#define ST2_BC	0x020000
+#define ST2_SN	0x040000
+#define ST2_SH	0x080000
+#define ST2_NC	0x100000
+#define ST2_DD	0x200000
+#define ST2_CM	0x400000
+
+#define ST3_HD	0x04
+#define ST3_TS	0x08
+#define ST3_T0	0x10
+#define ST3_RY	0x20
+#define ST3_WP	0x40
+#define ST3_FT	0x80
+
 #define REGIST_EVENT(phs, usec) { \
 	if(phase_id != -1) \
 		vm->cancel_event(phase_id); \
@@ -23,9 +76,11 @@
 		vm->cancel_event(phase_id); \
 	if(seek_id != -1) \
 		vm->cancel_event(seek_id); \
+	if(drq_id != -1) \
+		vm->cancel_event(drq_id); \
 	if(lost_id != -1) \
 		vm->cancel_event(lost_id); \
-	phase_id = seek_id = lost_id = -1; \
+	phase_id = seek_id = drq_id = lost_id = -1; \
 }
 
 #define CANCEL_LOST() { \
@@ -52,7 +107,7 @@ void UPD765A::initialize()
 	status = S_RQM;
 	seekstat = 0;
 	bufptr = buffer; // temporary
-	phase_id = seek_id = lost_id = -1;
+	phase_id = seek_id = drq_id = lost_id = -1;
 	motor = false;	// motor off
 	
 	set_intr(false);
@@ -99,7 +154,7 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 	// fdc data
 	if((status & (S_RQM | S_DIO)) == S_RQM) {
 		status &= ~S_RQM;
-		req_intr_ndma(false);
+//		req_intr_ndma(false);
 		
 		switch(phase)
 		{
@@ -118,13 +173,14 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 			
 		case PHASE_WRITE:
 			*bufptr++ = data;
+			set_drq(false);
 			if(--count) {
 				status |= S_RQM;
-				req_intr_ndma(true);
+//				req_intr_ndma(true);
+				vm->regist_event(this, EVENT_DRQ, 100, false, &drq_id);
 				CANCEL_LOST();
 			}
 			else {
-				set_drq(false);
 				status &= ~S_NDM;
 				process_cmd(command & 0x1f);
 			}
@@ -139,13 +195,14 @@ void UPD765A::write_io8(uint32 addr, uint32 data)
 					result &= ~ST2_SH;
 			}
 			bufptr++;
+			set_drq(false);
 			if(--count) {
 				status |= S_RQM;
-				req_intr_ndma(true);
+//				req_intr_ndma(true);
+				vm->regist_event(this, EVENT_DRQ, 100, false, &drq_id);
 				CANCEL_LOST();
 			}
 			else {
-				set_drq(false);
 				status &= ~S_NDM;
 				cmd_scan();
 			}
@@ -162,7 +219,7 @@ uint32 UPD765A::read_io8(uint32 addr)
 		if((status & (S_RQM | S_DIO)) == (S_RQM | S_DIO)) {
 			uint8 data;
 			status &= ~S_RQM;
-			req_intr_ndma(false);
+//			req_intr_ndma(false);
 			
 			switch(phase)
 			{
@@ -176,13 +233,15 @@ uint32 UPD765A::read_io8(uint32 addr)
 				
 			case PHASE_READ:
 				data = *bufptr++;
+				set_drq(false);
 				if(--count) {
 					status |= S_RQM;
-					req_intr_ndma(true);
+//					req_intr_ndma(true);
+					vm->regist_event(this, EVENT_DRQ, 100, false, &drq_id);
 					CANCEL_LOST();
 				}
 				else {
-					set_drq(false);
+emu->out_debug("FDC END OF SECTOR\n");
 					status &= ~S_NDM;
 					process_cmd(command & 0x1f);
 				}
@@ -212,7 +271,9 @@ void UPD765A::write_signal(int id, uint32 data, uint32 mask)
 		}
 	}
 	else if(id == SIG_UPD765A_MOTOR)
-		motor = (data & mask) ? true : false;
+		motor = ((data & mask) != 0);
+	else if(id == SIG_UPD765A_SELECT)
+		sel = data & DRIVE_MASK;
 }
 
 uint32 UPD765A::read_signal(int ch)
@@ -238,6 +299,10 @@ void UPD765A::event_callback(int event_id, int err)
 		seek_event(event_drv);
 		seek_id = -1;
 	}
+	else if(event_id == EVENT_DRQ) {
+		set_drq(true);
+		drq_id = -1;
+	}
 	else if(event_id == EVENT_LOST) {
 		result = ST1_OR;
 		shift_to_result7();
@@ -254,6 +319,7 @@ void UPD765A::set_intr(bool val)
 
 void UPD765A::req_intr(bool val)
 {
+emu->out_debug("FDC IRQ=%d\n", val?1:0);
 	for(int i = 0; i < dcount_intr; i++)
 		d_intr[i]->write_signal(did_intr[i], val ? 0xffffffff : 0, dmask_intr[i]);
 }
@@ -268,6 +334,7 @@ void UPD765A::req_intr_ndma(bool val)
 
 void UPD765A::set_drq(bool val)
 {
+emu->out_debug("FDC DRQ=%d\n", val?1:0);
 #ifdef UPD765A_DMA_MODE
 	if(val) {
 		dma_done = false;
@@ -289,6 +356,7 @@ void UPD765A::set_drq(bool val)
 	for(int i = 0; i < dcount_drq; i++)
 		d_drq[i]->write_signal(did_drq[i], val ? 0xffffffff : 0, dmask_drq[i]);
 #endif
+	drq = val;
 }
 
 void UPD765A::set_hdu(uint8 val)
@@ -390,7 +458,8 @@ void UPD765A::cmd_sence_intstat()
 		}
 		if(!intr)
 			set_intr(intr);
-		shift_to_result(2);
+//		shift_to_result(2);
+		shift_to_result(1);//PC100
 	}
 	else {
 		buffer[0] = (uint8)ST0_IC;
@@ -1010,7 +1079,7 @@ void UPD765A::shift_to_read(int length)
 	set_acctc(true);
 	bufptr = buffer;
 	count = length;
-	req_intr_ndma(true);
+//	req_intr_ndma(true);
 	set_drq(true);
 }
 
@@ -1021,7 +1090,7 @@ void UPD765A::shift_to_write(int length)
 	set_acctc(true);
 	bufptr = buffer;
 	count = length;
-	req_intr_ndma(true);
+//	req_intr_ndma(true);
 	set_drq(true);
 }
 
@@ -1033,7 +1102,7 @@ void UPD765A::shift_to_scan(int length)
 	result = ST2_SH;
 	bufptr = buffer;
 	count = length;
-	req_intr_ndma(true);
+//	req_intr_ndma(true);
 	set_drq(true);
 }
 
@@ -1085,6 +1154,14 @@ bool UPD765A::disk_inserted(int drv)
 
 uint8 UPD765A::fdc_status()
 {
+	// for each virtual machines
+#ifdef _QC10
 	int drv = hdu & DRIVE_MASK;
 	return (disk[drv]->insert ? 8 : 0) | (motor ? 0 : 2) | (intr ? 1 : 0);
+#elif defined(_MZ3500)
+	index = (disk[sel]->insert) ? !index : true;
+	return (motor ? 4 : 0) | (index ? 2 : 0) | (drq ? 1 : 0);
+#else
+	return 0;
+#endif
 }

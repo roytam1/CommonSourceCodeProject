@@ -10,6 +10,11 @@
 #ifndef _VM_H_
 #define _VM_H_
 
+// FUJITSU FMR-50
+#ifdef _FMR50
+#include "fmr50/fmr50.h"
+#endif
+
 // EPSON HC-40
 #ifdef _HC40
 #include "hc40/hc40.h"
@@ -30,6 +35,11 @@
 #include "multi8/multi8.h"
 #endif
 
+// SHARP MZ-700
+#ifdef _MZ700
+#include "mz700/mz700.h"
+#endif
+
 // SHARP MZ-2500
 #ifdef _MZ2500
 #include "mz2500/mz2500.h"
@@ -42,7 +52,7 @@
 
 // SHARP MZ-3500
 #ifdef _MZ3500
-//#include "mz3500/mz3500.h"
+#include "mz3500/mz3500.h"
 #endif
 
 // SHARP MZ-5500
@@ -58,6 +68,21 @@
 // TOSHIBA PASOPIA 7
 #ifdef _PASOPIA7
 #include "pasopia7/pasopia7.h"
+#endif
+
+// NEC PC-98HA
+#ifdef _PC98HA
+#include "pc98ha/pc98ha.h"
+#endif
+
+// NEC PC-100
+#ifdef _PC100
+#include "pc100/pc100.h"
+#endif
+
+// SHARP PC-3200
+#ifdef _PC3200
+#include "pc3200/pc3200.h"
 #endif
 
 // CASIO PV-1000

@@ -22,7 +22,7 @@ class FLOPPY : public DEVICE
 private:
 	DEVICE* d_cpu;
 	DEVICE* d_fdc;
-	int did0_fdc, did1_fdc;
+	int did_drv, did_side, did_motor;
 	
 	bool reverse;
 	bool laydock;
@@ -40,8 +40,8 @@ public:
 	void set_context_cpu(DEVICE* device) {
 		d_cpu = device;
 	}
-	void set_context_fdc(DEVICE* device, int id0, int id1) {
-		d_fdc = device; did0_fdc = id0; did1_fdc = id1;
+	void set_context_fdc(DEVICE* device, int id_drv, int id_side, int id_motor) {
+		d_fdc = device; did_drv = id_drv; did_side = id_side; did_motor = id_motor;
 	}
 };
 

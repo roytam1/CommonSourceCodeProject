@@ -50,11 +50,8 @@ void MB8877::initialize()
 	seekvct = true;
 	indexcnt = sectorcnt = 0;
 	status = cmdreg = trkreg = secreg = datareg = sidereg = cmdtype = 0;
-#ifdef MB8877_MOTOR_ON
-	drvreg = 0x84;
-#else
-	drvreg = 4;
-#endif
+	drvreg = 0;
+	motor = false;	// motor off
 	
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		fdc[i].track = 0;
@@ -112,7 +109,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 #else
 		trkreg = data;
 #endif
-		if((status & FDC_ST_BUSY) && (fdc[drvreg & DRIVE_MASK].index == 0)) {
+		if((status & FDC_ST_BUSY) && (fdc[drvreg].index == 0)) {
 			// track reg is written after command starts
 			if(cmdtype == FDC_CMD_RD_SEC || cmdtype == FDC_CMD_RD_MSEC || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC)
 				process_cmd();
@@ -125,7 +122,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 #else
 		secreg = data;
 #endif
-		if((status & FDC_ST_BUSY) && (fdc[drvreg & DRIVE_MASK].index == 0)) {
+		if((status & FDC_ST_BUSY) && (fdc[drvreg].index == 0)) {
 			// sector reg is written after command starts
 			if(cmdtype == FDC_CMD_RD_SEC || cmdtype == FDC_CMD_RD_MSEC || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC)
 				process_cmd();
@@ -138,14 +135,14 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 #else
 		datareg = data;
 #endif
-		if((drvreg & 0x80) && (status & FDC_ST_DRQ) && !now_search) {
+		if(motor && (status & FDC_ST_DRQ) && !now_search) {
 			if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
 				// write or multisector write
-				if(fdc[drvreg & DRIVE_MASK].index < disk[drvreg & DRIVE_MASK]->sector_size) {
-					if(!disk[drvreg & DRIVE_MASK]->protect) {
-						disk[drvreg & DRIVE_MASK]->sector[fdc[drvreg & DRIVE_MASK].index] = datareg;
+				if(fdc[drvreg].index < disk[drvreg]->sector_size) {
+					if(!disk[drvreg]->protect) {
+						disk[drvreg]->sector[fdc[drvreg].index] = datareg;
 						// dm, ddm
-						disk[drvreg & DRIVE_MASK]->deleted = (cmdreg & 1) ? 0x10 : 0;
+						disk[drvreg]->deleted = (cmdreg & 1) ? 0x10 : 0;
 					}
 					else {
 						status |= FDC_ST_WRITEFAULT;
@@ -154,9 +151,9 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 						cmdtype = 0;
 						set_irq(true);
 					}
-					fdc[drvreg & DRIVE_MASK].index++;
+					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg & DRIVE_MASK].index >= disk[drvreg & DRIVE_MASK]->sector_size) {
+				if(fdc[drvreg].index >= disk[drvreg]->sector_size) {
 					if(cmdtype == FDC_CMD_WR_SEC) {
 						// single sector
 						status &= ~FDC_ST_BUSY;
@@ -170,13 +167,13 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 					}
 					status &= ~FDC_ST_DRQ;
 				}
-				fdc[drvreg & DRIVE_MASK].access = true;
+				fdc[drvreg].access = true;
 			}
 			else if(cmdtype == FDC_CMD_WR_TRK) {
 				// read track
-				if(fdc[drvreg & DRIVE_MASK].index < disk[drvreg & DRIVE_MASK]->track_size) {
-					if(!disk[drvreg & DRIVE_MASK]->protect)
-						disk[drvreg & DRIVE_MASK]->track[fdc[drvreg & DRIVE_MASK].index] = datareg;
+				if(fdc[drvreg].index < disk[drvreg]->track_size) {
+					if(!disk[drvreg]->protect)
+						disk[drvreg]->track[fdc[drvreg].index] = datareg;
 					else {
 						status |= FDC_ST_WRITEFAULT;
 						status &= ~FDC_ST_BUSY;
@@ -184,15 +181,15 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 						cmdtype = 0;
 						set_irq(true);
 					}
-					fdc[drvreg & DRIVE_MASK].index++;
+					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg & DRIVE_MASK].index >= disk[drvreg & DRIVE_MASK]->track_size) {
+				if(fdc[drvreg].index >= disk[drvreg]->track_size) {
 					status &= ~FDC_ST_BUSY;
 					status &= ~FDC_ST_DRQ;
 					cmdtype = 0;
 					set_irq(true);
 				}
-				fdc[drvreg & DRIVE_MASK].access = true;
+				fdc[drvreg].access = true;
 			}
 			if(!(status & FDC_ST_DRQ))
 				set_drq(false);
@@ -213,7 +210,7 @@ uint32 MB8877::read_io8(uint32 addr)
 		// now force interrupt
 		if(cmdtype == FDC_CMD_TYPE4) {
 			// MZ-2500 RELICS invites STATUS = 0
-			if(!disk[drvreg & DRIVE_MASK]->insert || !(drvreg & 0x80))
+			if(!disk[drvreg]->insert || !motor)
 				status = FDC_ST_NOTREADY;
 			else
 				status = 0;
@@ -231,13 +228,13 @@ uint32 MB8877::read_io8(uint32 addr)
 			return FDC_ST_BUSY;
 #endif
 		// disk not inserted, motor stop
-		if(!disk[drvreg & DRIVE_MASK]->insert || !(drvreg & 0x80))
+		if(!disk[drvreg]->insert || !motor)
 			status |= FDC_ST_NOTREADY;
 		else
 			status &= ~FDC_ST_NOTREADY;
 		// write protect
 		if(cmdtype == FDC_CMD_TYPE1 || cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC || cmdtype == FDC_CMD_WR_TRK) {
-			if(disk[drvreg & DRIVE_MASK]->insert && disk[drvreg & DRIVE_MASK]->protect)
+			if(disk[drvreg]->insert && disk[drvreg]->protect)
 				status |= FDC_ST_WRITEP;
 			else
 				status &= ~FDC_ST_WRITEP;
@@ -247,7 +244,7 @@ uint32 MB8877::read_io8(uint32 addr)
 		
 		// track0, index hole
 		if(cmdtype == FDC_CMD_TYPE1) {
-			if(fdc[drvreg & DRIVE_MASK].track == 0)
+			if(fdc[drvreg].track == 0)
 				status |= FDC_ST_TRACK00;
 			else
 				status &= ~FDC_ST_TRACK00;
@@ -256,7 +253,7 @@ uint32 MB8877::read_io8(uint32 addr)
 					status |= FDC_ST_INDEX;
 				else
 					status &= ~FDC_ST_INDEX;
-				if(++indexcnt >= ((disk[drvreg & DRIVE_MASK]->sector_num == 0) ? 16 : disk[drvreg & DRIVE_MASK]->sector_num))
+				if(++indexcnt >= ((disk[drvreg]->sector_num == 0) ? 16 : disk[drvreg]->sector_num))
 					indexcnt = 0;
 			}
 		}
@@ -286,14 +283,14 @@ uint32 MB8877::read_io8(uint32 addr)
 #endif
 	case 3:
 		// data reg
-		if((drvreg & 0x80) && (status & FDC_ST_DRQ) && !now_search) {
+		if(motor && (status & FDC_ST_DRQ) && !now_search) {
 			if(cmdtype == FDC_CMD_RD_SEC || cmdtype == FDC_CMD_RD_MSEC) {
 				// read or multisector read
-				if(fdc[drvreg & DRIVE_MASK].index < disk[drvreg & DRIVE_MASK]->sector_size) {
-					datareg = disk[drvreg & DRIVE_MASK]->sector[fdc[drvreg & DRIVE_MASK].index];
-					fdc[drvreg & DRIVE_MASK].index++;
+				if(fdc[drvreg].index < disk[drvreg]->sector_size) {
+					datareg = disk[drvreg]->sector[fdc[drvreg].index];
+					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg & DRIVE_MASK].index >= disk[drvreg & DRIVE_MASK]->sector_size) {
+				if(fdc[drvreg].index >= disk[drvreg]->sector_size) {
 					if(cmdtype == FDC_CMD_RD_SEC) {
 						// single sector
 						status &= ~FDC_ST_BUSY;
@@ -307,36 +304,36 @@ uint32 MB8877::read_io8(uint32 addr)
 					}
 					status &= ~FDC_ST_DRQ;
 				}
-				fdc[drvreg & DRIVE_MASK].access = true;
+				fdc[drvreg].access = true;
 			}
 			else if(cmdtype == FDC_CMD_RD_ADDR) {
 				// read address
-				if(fdc[drvreg & DRIVE_MASK].index < 6) {
-					datareg = disk[drvreg & DRIVE_MASK]->id[fdc[drvreg & DRIVE_MASK].index];
-					fdc[drvreg & DRIVE_MASK].index++;
+				if(fdc[drvreg].index < 6) {
+					datareg = disk[drvreg]->id[fdc[drvreg].index];
+					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg & DRIVE_MASK].index >= 6) {
+				if(fdc[drvreg].index >= 6) {
 					status &= ~FDC_ST_BUSY;
 					status &= ~FDC_ST_DRQ;
 					cmdtype = 0;
 					set_irq(true);
 				}
-				fdc[drvreg & DRIVE_MASK].access = true;
+				fdc[drvreg].access = true;
 			}
 			else if(cmdtype == FDC_CMD_RD_TRK) {
 				// read track
-				if(fdc[drvreg & DRIVE_MASK].index < disk[drvreg & DRIVE_MASK]->track_size) {
-					datareg = disk[drvreg & DRIVE_MASK]->track[fdc[drvreg & DRIVE_MASK].index];
-					fdc[drvreg & DRIVE_MASK].index++;
+				if(fdc[drvreg].index < disk[drvreg]->track_size) {
+					datareg = disk[drvreg]->track[fdc[drvreg].index];
+					fdc[drvreg].index++;
 				}
-				if(fdc[drvreg & DRIVE_MASK].index >= disk[drvreg & DRIVE_MASK]->track_size) {
+				if(fdc[drvreg].index >= disk[drvreg]->track_size) {
 					status &= ~FDC_ST_BUSY;
 					status &= ~FDC_ST_DRQ;
 					status |= FDC_ST_LOSTDATA;
 					cmdtype = 0;
 					set_irq(true);
 				}
-				fdc[drvreg & DRIVE_MASK].access = true;
+				fdc[drvreg].access = true;
 			}
 			if(!(status & FDC_ST_DRQ))
 				set_drq(false);
@@ -352,15 +349,12 @@ uint32 MB8877::read_io8(uint32 addr)
 
 void MB8877::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_MB8877_DRIVEREG) {
-#ifdef MB8877_MOTOR_ON
-		drvreg = (data & mask) | 0x80;
-#else
-		drvreg = data & mask;
-#endif
-	}
+	if(id == SIG_MB8877_DRIVEREG)
+		drvreg = data & DRIVE_MASK;
 	else if(id == SIG_MB8877_SIDEREG)
-		sidereg = data & mask;
+		sidereg = (data & mask) ? 1 : 0;
+	else if(id == SIG_MB8877_MOTOR)
+		motor = ((data & mask) != 0);
 }
 
 uint32 MB8877::read_signal(int ch)
@@ -393,18 +387,18 @@ void MB8877::event_callback(int event_id, int err)
 	switch(event)
 	{
 	case EVENT_SEEK:
-		if(seektrk > fdc[drvreg & DRIVE_MASK].track)
-			fdc[drvreg & DRIVE_MASK].track++;
-		else if(seektrk < fdc[drvreg & DRIVE_MASK].track)
-			fdc[drvreg & DRIVE_MASK].track--;
+		if(seektrk > fdc[drvreg].track)
+			fdc[drvreg].track++;
+		else if(seektrk < fdc[drvreg].track)
+			fdc[drvreg].track--;
 		if(cmdreg & 0x10)
-			trkreg = fdc[drvreg & DRIVE_MASK].track;
+			trkreg = fdc[drvreg].track;
 		else if((cmdreg & 0xf0) == 0)
 			trkreg--;
-		if(seektrk == fdc[drvreg & DRIVE_MASK].track) {
+		if(seektrk == fdc[drvreg].track) {
 			// auto update
 			if((cmdreg & 0x10) || ((cmdreg & 0xf0) == 0))
-				trkreg = fdc[drvreg & DRIVE_MASK].track;
+				trkreg = fdc[drvreg].track;
 			if((cmdreg & 0xf0) == 0)
 				datareg = 0;
 			status |= search_track();
@@ -416,10 +410,10 @@ void MB8877::event_callback(int event_id, int err)
 		}
 		break;
 	case EVENT_SEEKEND:
-		if(seektrk == fdc[drvreg & DRIVE_MASK].track) {
+		if(seektrk == fdc[drvreg].track) {
 			// auto update
 			if((cmdreg & 0x10) || ((cmdreg & 0xf0) == 0))
-				trkreg = fdc[drvreg & DRIVE_MASK].track;
+				trkreg = fdc[drvreg].track;
 			if((cmdreg & 0xf0) == 0)
 				datareg = 0;
 			status |= search_track();
@@ -536,7 +530,7 @@ void MB8877::cmd_seek()
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
 #if 0
-	seektrk = fdc[drvreg & DRIVE_MASK].track + datareg - trkreg;
+	seektrk = fdc[drvreg].track + datareg - trkreg;
 #else
 	seektrk = datareg;
 #endif
@@ -562,7 +556,7 @@ void MB8877::cmd_stepin()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
-	seektrk = (fdc[drvreg & DRIVE_MASK].track < 83) ? fdc[drvreg & DRIVE_MASK].track + 1 : 83;
+	seektrk = (fdc[drvreg].track < 83) ? fdc[drvreg].track + 1 : 83;
 	seekvct = false;
 	
 	REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
@@ -575,7 +569,7 @@ void MB8877::cmd_stepout()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
-	seektrk = (fdc[drvreg & DRIVE_MASK].track > 0) ? fdc[drvreg & DRIVE_MASK].track - 1 : 0;
+	seektrk = (fdc[drvreg].track > 0) ? fdc[drvreg].track - 1 : 0;
 	seekvct = true;
 	
 	REGIST_EVENT(EVENT_SEEK, seek_wait[cmdreg & 3]);
@@ -587,9 +581,9 @@ void MB8877::cmd_readdata()
 	// type-2 read data
 	cmdtype = (cmdreg & 0x10) ? FDC_CMD_RD_MSEC : FDC_CMD_RD_SEC;
 	if(cmdreg & 2)
-		status = search_sector(fdc[drvreg & DRIVE_MASK].track, ((cmdreg & 8) ? 1 : 0), secreg, true);
+		status = search_sector(fdc[drvreg].track, ((cmdreg & 8) ? 1 : 0), secreg, true);
 	else
-		status = search_sector(fdc[drvreg & DRIVE_MASK].track, sidereg & 1, secreg, false);
+		status = search_sector(fdc[drvreg].track, sidereg, secreg, false);
 	if(!(status & FDC_ST_RECNFND))
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
 	REGIST_EVENT(EVENT_SEARCH, 200);
@@ -604,9 +598,9 @@ void MB8877::cmd_writedata()
 	// type-2 write data
 	cmdtype = (cmdreg & 0x10) ? FDC_CMD_WR_MSEC : FDC_CMD_WR_SEC;
 	if(cmdreg & 2)
-		status = search_sector(fdc[drvreg & DRIVE_MASK].track, ((cmdreg & 8) ? 1 : 0), secreg, true);
+		status = search_sector(fdc[drvreg].track, ((cmdreg & 8) ? 1 : 0), secreg, true);
 	else
-		status = search_sector(fdc[drvreg & DRIVE_MASK].track, sidereg & 1, secreg, false);
+		status = search_sector(fdc[drvreg].track, sidereg, secreg, false);
 	status &= ~FDC_ST_RECTYPE;
 	if(!(status & FDC_ST_RECNFND))
 		status |= FDC_ST_DRQ | FDC_ST_BUSY;
@@ -651,8 +645,8 @@ void MB8877::cmd_writetrack()
 	cmdtype = FDC_CMD_WR_TRK;
 	status = FDC_ST_BUSY | FDC_ST_DRQ;
 	
-	disk[drvreg & DRIVE_MASK]->track_size = 0x1800;
-	fdc[drvreg & DRIVE_MASK].index = 0;
+	disk[drvreg]->track_size = 0x1800;
+	fdc[drvreg].index = 0;
 	
 	REGIST_EVENT(EVENT_SEARCH, 200);
 	REGIST_EVENT(EVENT_LOST, 150000);
@@ -662,7 +656,7 @@ void MB8877::cmd_forceint()
 {
 	// type-4 force interrupt
 #if 0
-	if(!disk[drvreg & DRIVE_MASK]->insert || !(drvreg & 0x80))
+	if(!disk[drvreg]->insert || !motor)
 		status = FDC_ST_NOTREADY | FDC_ST_HEADENG;
 	else
 		status = FDC_ST_HEADENG;
@@ -697,18 +691,16 @@ void MB8877::cmd_forceint()
 
 uint8 MB8877::search_track()
 {
-	int drv = drvreg & DRIVE_MASK;
-	int trk = fdc[drv].track;
-	int side = sidereg & 1;
+	int trk = fdc[drvreg].track;
 	
-	if(!disk[drv]->get_track(trk, side))
+	if(!disk[drvreg]->get_track(trk, sidereg))
 		return FDC_ST_SEEKERR;
 	
 	// verify track number
 	if(!(cmdreg & 4))
 		return 0;
-	for(int i = 0; i < disk[drv]->sector_num; i++) {
-		if(disk[drv]->verify[i] == trkreg)
+	for(int i = 0; i < disk[drvreg]->sector_num; i++) {
+		if(disk[drvreg]->verify[i] == trkreg)
 			return 0;
 	}
 	return FDC_ST_SEEKERR;
@@ -716,16 +708,14 @@ uint8 MB8877::search_track()
 
 uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 {
-	int drv = drvreg & DRIVE_MASK;
-	
 	// get track
-	if(!disk[drv]->get_track(trk, side)) {
+	if(!disk[drvreg]->get_track(trk, side)) {
 		set_irq(true);
 		return FDC_ST_RECNFND;
 	}
 	
 	// first scanned sector
-	int sector_num = disk[drv]->sector_num;
+	int sector_num = disk[drvreg]->sector_num;
 	if(sectorcnt >= sector_num)
 		sectorcnt = 0;
 	
@@ -735,13 +725,13 @@ uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 		int index = sectorcnt + i;
 		if(index >= sector_num)
 			index -= sector_num;
-		disk[drv]->get_sector(trk, side, index);
+		disk[drvreg]->get_sector(trk, side, index);
 		
 		// check id
-		if(disk[drv]->id[2] != sct)
+		if(disk[drvreg]->id[2] != sct)
 			continue;
 		// check density
-		if(disk[drv]->density)
+		if(disk[drvreg]->density)
 			continue;
 		
 		// sector found
@@ -749,52 +739,48 @@ uint8 MB8877::search_sector(int trk, int side, int sct, bool compare)
 		if(sectorcnt >= sector_num)
 			sectorcnt -= sector_num;
 		
-		fdc[drv].index = 0;
-		return (disk[drv]->deleted ? FDC_ST_RECTYPE : 0) | ((disk[drv]->status && !ignore_crc) ? FDC_ST_CRCERR : 0);
+		fdc[drvreg].index = 0;
+		return (disk[drvreg]->deleted ? FDC_ST_RECTYPE : 0) | ((disk[drvreg]->status && !ignore_crc) ? FDC_ST_CRCERR : 0);
 	}
 	
 	// sector not found
-	disk[drv]->sector_size = 0;
+	disk[drvreg]->sector_size = 0;
 	set_irq(true);
 	return FDC_ST_RECNFND;
 }
 
 uint8 MB8877::search_addr()
 {
-	int drv = drvreg & DRIVE_MASK;
-	int trk = fdc[drv].track;
-	int side = sidereg & 1;
+	int trk = fdc[drvreg].track;
 	
 	// get track
-	if(!disk[drv]->get_track(trk, side)) {
+	if(!disk[drvreg]->get_track(trk, sidereg)) {
 		set_irq(true);
 		return FDC_ST_RECNFND;
 	}
 	
 	// get sector
-	if(sectorcnt >= disk[drv]->sector_num)
+	if(sectorcnt >= disk[drvreg]->sector_num)
 		sectorcnt = 0;
-	if(disk[drv]->get_sector(trk, side, sectorcnt)) {
+	if(disk[drvreg]->get_sector(trk, sidereg, sectorcnt)) {
 		sectorcnt++;
 		
-		fdc[drv].index = 0;
-		secreg = disk[drv]->id[0];
-		return (disk[drv]->status && !ignore_crc) ? FDC_ST_CRCERR : 0;
+		fdc[drvreg].index = 0;
+		secreg = disk[drvreg]->id[0];
+		return (disk[drvreg]->status && !ignore_crc) ? FDC_ST_CRCERR : 0;
 	}
 	
 	// sector not found
-	disk[drv]->sector_size = 0;
+	disk[drvreg]->sector_size = 0;
 	set_irq(true);
 	return FDC_ST_RECNFND;
 }
 
 bool MB8877::make_track()
 {
-	int drv = drvreg & DRIVE_MASK;
-	int trk = fdc[drv].track;
-	int side = sidereg & 1;
+	int trk = fdc[drvreg].track;
 	
-	return disk[drv]->make_track(trk, side);
+	return disk[drvreg]->make_track(trk, sidereg);
 }
 
 // ----------------------------------------------------------------------------
@@ -838,3 +824,12 @@ bool MB8877::disk_inserted(int drv)
 	return false;
 }
 
+uint8 MB8877::fdc_status()
+{
+	// for each virtual machines
+#ifdef _FMR50
+	return disk[drvreg]->insert && motor ? 2 : 0;
+#else
+	return 0;
+#endif
+}

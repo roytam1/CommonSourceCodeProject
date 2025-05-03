@@ -26,38 +26,14 @@ void EMU::initialize_screen()
 	
 	// create dib section for render
 	HDC hdc = GetDC(main_window_handle);
-	lpBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
-	lpDib = (LPBITMAPINFO)lpBuf;
-	lpDib->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	lpDib->bmiHeader.biWidth = SCREEN_BUFFER_WIDTH;
-	lpDib->bmiHeader.biHeight = SCREEN_BUFFER_HEIGHT;
-	lpDib->bmiHeader.biPlanes = 1;
-	lpDib->bmiHeader.biBitCount = 16;
-#ifdef _WIN32_WCE
-	// RGB565
-	lpDib->bmiHeader.biCompression = BI_BITFIELDS;
-	LPDWORD lpBf = (LPDWORD)lpDib->bmiColors;
-	lpBf[0] = 0x1f << 11;
-	lpBf[1] = 0x3f << 5;
-	lpBf[2] = 0x1f << 0;
-#else
-	lpDib->bmiHeader.biCompression = BI_RGB;
-#endif
-	lpDib->bmiHeader.biSizeImage = 0;
-	lpDib->bmiHeader.biXPelsPerMeter = 0;
-	lpDib->bmiHeader.biYPelsPerMeter = 0;
-	lpDib->bmiHeader.biClrUsed = 0;
-	lpDib->bmiHeader.biClrImportant = 0;
-	hBmp = CreateDIBSection(hdc, lpDib, DIB_RGB_COLORS, (PVOID*)&lpBmp, NULL, 0);
-	hdcDib = CreateCompatibleDC(hdc);
-	SelectObject(hdcDib, hBmp);
-#ifdef STRETCH_SCREEN
-	// create dib section for stretch
+	create_screen_buffer(hdc);
+#ifdef USE_SECOND_BUFFER
+	// create dib section for 2nd buffer
 	lpBufOut = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
 	lpDibOut = (LPBITMAPINFO)lpBufOut;
 	lpDibOut->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	lpDibOut->bmiHeader.biWidth = STRETCH_WIDTH;
-	lpDibOut->bmiHeader.biHeight = STRETCH_HEIGHT;
+	lpDibOut->bmiHeader.biWidth = SECOND_BUFFER_WIDTH;
+	lpDibOut->bmiHeader.biHeight = SECOND_BUFFER_HEIGHT;
 	lpDibOut->bmiHeader.biPlanes = 1;
 	lpDibOut->bmiHeader.biBitCount = 16;
 #ifdef _WIN32_WCE
@@ -119,10 +95,8 @@ void EMU::initialize_screen()
 void EMU::release_screen()
 {
 	// release dib sections
-	DeleteDC(hdcDib);
-	DeleteObject(hBmp);
-	GlobalFree(lpBuf);
-#ifdef STRETCH_SCREEN
+	release_screen_buffer();
+#ifdef USE_SECOND_BUFFER
 	DeleteDC(hdcDibOut);
 	DeleteObject(hBmpOut);
 	GlobalFree(lpBufOut);
@@ -135,12 +109,85 @@ void EMU::release_screen()
 	stop_rec_video();
 }
 
+void EMU::create_screen_buffer(HDC hdc)
+{
+	lpBuf = (LPBYTE)GlobalAlloc(GPTR, sizeof(BITMAPINFO));
+	lpDib = (LPBITMAPINFO)lpBuf;
+	lpDib->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	lpDib->bmiHeader.biWidth = screen_width;
+	lpDib->bmiHeader.biHeight = screen_height;
+	lpDib->bmiHeader.biPlanes = 1;
+	lpDib->bmiHeader.biBitCount = 16;
+#ifdef _WIN32_WCE
+	// RGB565
+	lpDib->bmiHeader.biCompression = BI_BITFIELDS;
+	LPDWORD lpBf = (LPDWORD)lpDib->bmiColors;
+	lpBf[0] = 0x1f << 11;
+	lpBf[1] = 0x3f << 5;
+	lpBf[2] = 0x1f << 0;
+#else
+	lpDib->bmiHeader.biCompression = BI_RGB;
+#endif
+	lpDib->bmiHeader.biSizeImage = 0;
+	lpDib->bmiHeader.biXPelsPerMeter = 0;
+	lpDib->bmiHeader.biYPelsPerMeter = 0;
+	lpDib->bmiHeader.biClrUsed = 0;
+	lpDib->bmiHeader.biClrImportant = 0;
+	hBmp = CreateDIBSection(hdc, lpDib, DIB_RGB_COLORS, (PVOID*)&lpBmp, NULL, 0);
+	hdcDib = CreateCompatibleDC(hdc);
+	SelectObject(hdcDib, hBmp);
+}
+
+void EMU::release_screen_buffer()
+{
+	DeleteDC(hdcDib);
+	DeleteObject(hBmp);
+	GlobalFree(lpBuf);
+}
+
+int EMU::get_window_width(int mode)
+{
+#ifdef USE_SCREEN_ROTATE
+	return config.monitor_type ? window_width2 : window_width1;
+#else
+	return mode ? window_width2 : window_width1;
+#endif
+}
+
+int EMU::get_window_height(int mode) {
+#ifdef USE_SCREEN_ROTATE
+	return config.monitor_type ? window_height2 : window_height1;
+#else
+	return mode ? window_height2 : window_height1;
+#endif
+}
+
 void EMU::set_window_size(int width, int height)
 {
 	if(width != -1) {
 		window_width = width;
 		window_height = height;
 	}
+#ifdef USE_SCREEN_X2
+	bool use_scree_buffer_size = ((window_width > SECOND_BUFFER_WIDTH) || (window_height > SECOND_BUFFER_HEIGHT));
+	int stretch_width = use_scree_buffer_size ? SECOND_BUFFER_WIDTH : window_width;
+	int stretch_height = use_scree_buffer_size ? SECOND_BUFFER_HEIGHT : window_height;
+	stretch_x = stretch_width / screen_width_aspect; if(stretch_x < 1) stretch_x = 1;
+	stretch_y = stretch_height / screen_height; if(stretch_y < 1) stretch_y = 1;
+	if(stretch_x < stretch_y) stretch_y = stretch_x; else stretch_x = stretch_y;
+	stretch_x = stretch_x * screen_width_aspect / screen_width;
+	buffer_x = screen_width * stretch_x;
+	buffer_y = screen_height * stretch_y;
+#elif defined(USE_SCREEN_ROTATE)
+	now_rotate = (config.monitor_type != 0);
+	buffer_x = now_rotate ? screen_height : screen_width;
+	buffer_y = now_rotate ? screen_width : screen_height;
+#else
+	buffer_x = screen_width;
+	buffer_y = screen_height;
+#endif
+	dest_x = (window_width - buffer_x) >> 1;
+	dest_y = (window_height - buffer_y) >> 1;
 #ifdef _USE_D3D9
 	// release and init d3d9 again
 	RELEASE_D3D9();
@@ -174,11 +221,11 @@ void EMU::set_window_size(int width, int height)
 			hr = lpd3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, main_window_handle, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &lpd3d9dev);
 		// create surface
 		if(hr == D3D_OK) {
-			hr = lpd3d9dev->CreateOffscreenPlainSurface(screen_width, screen_height, D3DFMT_X1R5G5B5, D3DPOOL_DEFAULT, &lpSurface, NULL);
+			hr = lpd3d9dev->CreateOffscreenPlainSurface(buffer_x, buffer_y, D3DFMT_X1R5G5B5, D3DPOOL_DEFAULT, &lpSurface, NULL);
 			if(hr != D3D_OK) {
-				hr = lpd3d9dev->CreateOffscreenPlainSurface(screen_width, screen_height, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &lpSurface, NULL);
+				hr = lpd3d9dev->CreateOffscreenPlainSurface(buffer_x, buffer_y, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &lpSurface, NULL);
 				if(hr != D3D_OK)
-					hr = lpd3d9dev->CreateOffscreenPlainSurface(screen_width, screen_height, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &lpSurface, NULL);
+					hr = lpd3d9dev->CreateOffscreenPlainSurface(buffer_x, buffer_y, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &lpSurface, NULL);
 			}
 			hr = lpd3d9dev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &lpDDSBack);
 			if(hr == D3D_OK) {
@@ -186,42 +233,20 @@ void EMU::set_window_size(int width, int height)
 				D3DSURFACE_DESC d3dsd;
 				ZeroMemory(&d3dsd, sizeof(d3dsd));
 				lpDDSBack->GetDesc(&d3dsd);
-				UINT rect_w = d3dsd.Width, w = (d3dsd.Height  * WINDOW_WIDTH1) / WINDOW_HEIGHT1;
-				UINT rect_h = d3dsd.Height, h = (d3dsd.Width * WINDOW_HEIGHT1) / WINDOW_WIDTH1;
+				UINT rect_w = d3dsd.Width, w = (d3dsd.Height  * buffer_x) / buffer_y;
+				UINT rect_h = d3dsd.Height, h = (d3dsd.Width * buffer_y) / buffer_x;
 				if(w < d3dsd.Width) rect_w = w;
 				if(h < d3dsd.Height) rect_h = h;
 				UINT rect_l = (d3dsd.Width - rect_w) >> 1;
 				UINT rect_t = (d3dsd.Height - rect_h) >> 1;
 				SetRect(&DstRect, rect_l, rect_t, rect_l + rect_w, rect_t +rect_h);
-				if(config.d3d9_filter == 0) {
-					if(screen_width >= 640)
-						filter = (width == WINDOW_WIDTH1) ? D3DTEXF_POINT : D3DTEXF_LINEAR;
-					else if(screen_width != screen_width_aspect)
-						filter = (width == WINDOW_WIDTH1) ? D3DTEXF_LINEAR : D3DTEXF_POINT;
-					else
-						filter = D3DTEXF_POINT;
-				}
-				else if(config.d3d9_filter == 1)
-					filter = D3DTEXF_POINT;
-				else
+				if(config.d3d9_filter == 0)
 					filter = D3DTEXF_LINEAR;
+				else
+					filter = D3DTEXF_POINT;
 			}
 		}
 	}
-#else
-#ifdef STRETCH_SCREEN
-	int stretch_width = window_width > STRETCH_WIDTH ? STRETCH_WIDTH : window_width;
-	int stretch_height = window_height > STRETCH_HEIGHT ? STRETCH_HEIGHT : window_height;
-	stretch_x = stretch_width / screen_width_aspect; if(stretch_x < 1) stretch_x = 1;
-	stretch_y = stretch_height / screen_height; if(stretch_y < 1) stretch_y = 1;
-	if(stretch_x < stretch_y) stretch_y = stretch_x; else stretch_x = stretch_y;
-	stretch_x = stretch_x * screen_width_aspect / screen_width;
-	dest_x = (window_width - screen_width * stretch_x) >> 1;
-	dest_y = (window_height - screen_height * stretch_y) >> 1;
-#else
-	dest_x = (window_width - screen_width) >> 1;
-	dest_y = (window_height - screen_height) >> 1;
-#endif
 #endif
 }
 
@@ -230,26 +255,14 @@ void EMU::draw_screen()
 	// draw screen
 	vm->draw_screen();
 	
-#ifdef _USE_D3D9
-	// update screen
-	if(lpd3d9dev && lpSurface && lpDDSBack) {
-		lpd3d9dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0, 0);
-		lpd3d9dev->BeginScene();
-		HDC hdc;
-		lpSurface->GetDC(&hdc);
-		BitBlt(hdc, 0, 0, screen_width, screen_height, hdcDib, 0, 0, SRCCOPY);
-		lpSurface->ReleaseDC(hdc);
-		lpd3d9dev->StretchRect(lpSurface, NULL, lpDDSBack, &DstRect, filter);
-		lpd3d9dev->EndScene();
-		lpd3d9dev->Present(NULL, NULL, NULL, NULL);
-	}
-#else
-#ifdef STRETCH_SCREEN
+#ifdef USE_SECOND_BUFFER
+	use_buffer = false;
+#ifdef USE_SCREEN_X2
 	// stretch screen
 	if(!(stretch_x == 1 && stretch_y == 1)) {
 		for(int y = 0; y < screen_height; y++) {
-			uint16* src = lpBmp + SCREEN_BUFFER_WIDTH * (SCREEN_BUFFER_HEIGHT - y - 1);
-			uint16* out = lpBmpOut + STRETCH_WIDTH * (STRETCH_HEIGHT - y * stretch_y - 1);
+			uint16* src = lpBmp + screen_width * (screen_height - y - 1);
+			uint16* out = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - 1);
 			if(stretch_x > 1) {
 				uint16* outx = out;
 				for(int x = 0; x < screen_width; x++) {
@@ -261,12 +274,45 @@ void EMU::draw_screen()
 			else
 				_memcpy(out, src, screen_width * 2);
 			for(int py = 1; py < stretch_y; py++) {
-				uint16* outy = lpBmpOut + STRETCH_WIDTH * (STRETCH_HEIGHT - y * stretch_y - py - 1);
+				uint16* outy = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - y * stretch_y - py - 1);
 				_memcpy(outy, out, screen_width * stretch_x * 2);
 			}
 		}
+		use_buffer = true;
+	}
+#elif defined(USE_SCREEN_ROTATE)
+	// rotate screen
+	if(now_rotate) {
+		for(int y = 0; y < screen_height; y++) {
+			uint16* src = lpBmp + screen_width * (screen_height - y - 1);
+			uint16* out = lpBmpOut + SECOND_BUFFER_WIDTH * (SECOND_BUFFER_HEIGHT - 1) + (screen_height - y - 1);
+			for(int x = 0; x < screen_width; x++) {
+				*out = src[x];
+				out -= SECOND_BUFFER_WIDTH;
+			}
+		}
+		use_buffer = true;
 	}
 #endif
+#endif
+#ifdef _USE_D3D9
+	// update screen
+	if(lpd3d9dev && lpSurface && lpDDSBack) {
+		lpd3d9dev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0, 0);
+		lpd3d9dev->BeginScene();
+		HDC hdc;
+		lpSurface->GetDC(&hdc);
+#ifdef USE_SECOND_BUFFER
+		BitBlt(hdc, 0, 0, buffer_x, buffer_y, use_buffer ? hdcDibOut : hdcDib, 0, 0, SRCCOPY);
+#else
+		BitBlt(hdc, 0, 0, buffer_x, buffer_y, hdcDib, 0, 0, SRCCOPY);
+#endif
+		lpSurface->ReleaseDC(hdc);
+		lpd3d9dev->StretchRect(lpSurface, NULL, lpDDSBack, &DstRect, filter);
+		lpd3d9dev->EndScene();
+		lpd3d9dev->Present(NULL, NULL, NULL, NULL);
+	}
+#else
 	// invalidate window
 	InvalidateRect(main_window_handle, NULL, FALSE);
 	UpdateWindow(main_window_handle);
@@ -274,7 +320,7 @@ void EMU::draw_screen()
 #ifdef SUPPORT_VFW
 	// record picture
 	if(now_recv) {
-		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, SCREEN_BUFFER_WIDTH * SCREEN_BUFFER_HEIGHT * 2, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK)
+		if(AVIStreamWrite(pAVICompressed, rec_frames++, 1, (LPBYTE)lpBmp, screen_width * screen_height * 2, AVIIF_KEYFRAME, NULL, NULL) != AVIERR_OK)
 			stop_rec_video();
 	}
 #endif
@@ -283,26 +329,23 @@ void EMU::draw_screen()
 void EMU::update_screen(HDC hdc)
 {
 #ifndef _USE_D3D9
-#ifdef STRETCH_SCREEN
-	if(stretch_x == 1 && stretch_y == 1)
-		BitBlt(hdc, dest_x, dest_y, screen_width, screen_height, hdcDib, 0, 0, SRCCOPY);
-	else
-		BitBlt(hdc, dest_x, dest_y, screen_width * stretch_x, screen_height * stretch_y, hdcDibOut, 0, 0, SRCCOPY);
+#ifdef USE_SECOND_BUFFER
+	BitBlt(hdc, dest_x, dest_y, buffer_x, buffer_y, use_buffer ? hdcDibOut : hdcDib, 0, 0, SRCCOPY);
 #else
-	BitBlt(hdc, dest_x, dest_y, screen_width, screen_height, hdcDib, 0, 0, SRCCOPY);
+	BitBlt(hdc, dest_x, dest_y, buffer_x, buffer_y, hdcDib, 0, 0, SRCCOPY);
 #endif
 #endif
 }
 
 uint16* EMU::screen_buffer(int y)
 {
-	return lpBmp + SCREEN_BUFFER_WIDTH * (SCREEN_BUFFER_HEIGHT - y - 1);
+	return lpBmp + screen_width * (screen_height - y - 1);
 }
 
 void EMU::change_screen_size(int sw, int sh, int swa, int ww1, int wh1, int ww2, int wh2)
 {
 	// virtual machine changes the screen size
-	if(screen_width != sw && screen_height != sh) {
+	if(screen_width != sw || screen_height != sh) {
 		screen_width = sw;
 		screen_height = sh;
 		screen_width_aspect = (swa > 0) ? swa : sw;
@@ -310,6 +353,17 @@ void EMU::change_screen_size(int sw, int sh, int swa, int ww1, int wh1, int ww2,
 		window_height1 = wh1;
 		window_width2 = ww2;
 		window_height2 = wh2;
+		
+		// stop recording
+		if(now_recv) {
+			stop_rec_video();
+			stop_rec_sound();
+		}
+		// recreate the screen buffer
+		release_screen_buffer();
+		HDC hdc = GetDC(main_window_handle);
+		create_screen_buffer(hdc);
+		// change the window size
 		PostMessage(main_window_handle, WM_RESIZE, 0L, 0L);
 	}
 }
@@ -333,8 +387,8 @@ void EMU::start_rec_video(int fps, bool show_dialog)
 	strhdr.fccHandler = 0;
 	strhdr.dwScale = 1;
 	strhdr.dwRate = fps;
-	strhdr.dwSuggestedBufferSize = SCREEN_BUFFER_WIDTH * SCREEN_BUFFER_HEIGHT * 2;
-	SetRect(&strhdr.rcFrame, 0, 0, SCREEN_BUFFER_WIDTH, SCREEN_BUFFER_HEIGHT);
+	strhdr.dwSuggestedBufferSize = screen_width * screen_height * 2;
+	SetRect(&strhdr.rcFrame, 0, 0, screen_width, screen_height);
 	if(AVIFileCreateStream(pAVIFile, &pAVIStream, &strhdr) != AVIERR_OK) {
 		stop_rec_video();
 		return;

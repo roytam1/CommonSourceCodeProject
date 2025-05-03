@@ -22,10 +22,10 @@ class FIFO;
 class I8251 : public DEVICE
 {
 private:
-	DEVICE *d_sio[MAX_OUTPUT], *d_rxrdy[MAX_OUTPUT];
-	int did_sio[MAX_OUTPUT], did_rxrdy[MAX_OUTPUT];
+	DEVICE *d_out[MAX_OUTPUT], *d_rxrdy[MAX_OUTPUT];
+	int did_out[MAX_OUTPUT], did_rxrdy[MAX_OUTPUT];
 	uint32 dmask_rxrdy[MAX_OUTPUT];
-	int dcount_sio, dcount_rxrdy;
+	int dcount_out, dcount_rxrdy;
 	
 	// i8251
 	uint8 recv, status, mode;
@@ -36,7 +36,7 @@ private:
 	
 public:
 	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_sio = dcount_rxrdy = 0;
+		dcount_out = dcount_rxrdy = 0;
 	}
 	~I8251() {}
 	
@@ -50,9 +50,9 @@ public:
 	void event_callback(int event_id, int err);
 	
 	// unique functions
-	void set_context_sio(DEVICE* device, int id) {
-		int c = dcount_sio++;
-		d_sio[c] = device; did_sio[c] = id;
+	void set_context_out(DEVICE* device, int id) {
+		int c = dcount_out++;
+		d_out[c] = device; did_out[c] = id;
 	}
 	void set_context_rxrdy(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_rxrdy++;

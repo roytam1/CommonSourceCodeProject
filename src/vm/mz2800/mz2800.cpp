@@ -119,7 +119,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_tvram_ptr(memory->get_tvram());
 	crtc->set_kanji_ptr(memory->get_kanji());
 	crtc->set_pcg_ptr(memory->get_pcg());
-	floppy->set_context(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG);
+	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
 	keyboard->set_context_pio0(pio0, SIG_I8255_PORT_B);
 	keyboard->set_context_pio1(pio1, SIG_Z80PIO_PORT_B);
 	memory->set_context(crtc);
@@ -308,7 +308,7 @@ void VM::initialize_sound(int rate, int samples)
 	
 	// init sound gen
 	opn->init(rate, 2000000, samples, 0, -8);
-	pcm->init(4096);
+	pcm->init(rate, 4096);
 }
 
 uint16* VM::create_sound(int samples, bool fill)

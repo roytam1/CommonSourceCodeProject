@@ -16,7 +16,7 @@
 //#define DIRECT3D_VERSION 0x900
 
 // for debug
-//#define _DEBUG_LOG
+#define _DEBUG_LOG
 
 #include <windows.h>
 #include <windowsx.h>
@@ -31,16 +31,10 @@
 #define WM_SOCKET2 (WM_USER + 4)
 #define WM_SOCKET3 (WM_USER + 5)
 
-#if !defined(_USE_D3D9) && defined(USE_SCREEN_X2)
-#define STRETCH_SCREEN
-#define STRETCH_WIDTH	1024
-#define STRETCH_HEIGHT	480
-#endif
-#ifndef SCREEN_BUFFER_WIDTH
-#define SCREEN_BUFFER_WIDTH SCREEN_WIDTH
-#endif
-#ifndef SCREEN_BUFFER_HEIGHT
-#define SCREEN_BUFFER_HEIGHT SCREEN_HEIGHT
+#if defined(USE_SCREEN_X2) || defined(USE_SCREEN_ROTATE)
+#define USE_SECOND_BUFFER
+#define SECOND_BUFFER_WIDTH 1024
+#define SECOND_BUFFER_HEIGHT 768
 #endif
 #ifndef SCREEN_WIDTH_ASPECT
 #define SCREEN_WIDTH_ASPECT SCREEN_WIDTH
@@ -178,6 +172,8 @@ private:
 	// ----------------------------------------
 	void initialize_screen();
 	void release_screen();
+	void create_screen_buffer(HDC hdc);
+	void release_screen_buffer();
 	
 	HWND main_window_handle;
 	int screen_width, screen_height;
@@ -185,10 +181,17 @@ private:
 	int window_width1, window_height1;
 	int window_width2, window_height2;
 	int window_width, window_height;
-#ifdef STRETCH_SCREEN
-	int stretch_x, stretch_y;
-#endif
+	
+	int buffer_x, buffer_y;
 	int dest_x, dest_y;
+#ifdef USE_SECOND_BUFFER
+#ifdef USE_SCREEN_X2
+	int stretch_x, stretch_y;
+#elif defined(USE_SCREEN_ROTATE)
+	bool now_rotate;
+#endif
+	bool use_buffer;
+#endif
 	
 	// for render
 	HDC hdcDib;
@@ -196,8 +199,7 @@ private:
 	LPBYTE lpBuf;
 	LPWORD lpBmp;
 	LPBITMAPINFO lpDib;
-#ifdef STRETCH_SCREEN
-	// for stretch
+#ifdef USE_SECOND_BUFFER
 	HDC hdcDibOut;
 	HBITMAP hBmpOut;
 	LPBYTE lpBufOut;
@@ -432,8 +434,8 @@ public:
 #endif
 	
 	// screen
-	int get_window_width(int mode) { return mode ? window_width2 : window_width1; }
-	int get_window_height(int mode) { return mode ? window_height2 : window_height1; }
+	int get_window_width(int mode);
+	int get_window_height(int mode);
 	void set_window_size(int width, int height);
 	void draw_screen();
 	void update_screen(HDC hdc);

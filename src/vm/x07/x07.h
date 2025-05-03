@@ -44,8 +44,6 @@
 #define SCREEN_HEIGHT		32
 #define TV_SCREEN_WIDTH		256
 #define TV_SCREEN_HEIGHT	192
-#define SCREEN_BUFFER_WIDTH	256
-#define SCREEN_BUFFER_HEIGHT	192
 #define NSC800
 
 #include "../../common.h"

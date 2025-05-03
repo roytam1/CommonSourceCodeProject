@@ -25,11 +25,12 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 			laydock = true;
 		if(laydock)
 			data &= 0xfc;
-		d_fdc->write_signal(did0_fdc, data, 0xff);
+		d_fdc->write_signal(did_drv, data, 3);
+		d_fdc->write_signal(did_motor, data, 0x80);
 		break;
 	case 0xdd:
 		// side reg
-		d_fdc->write_signal(did1_fdc, data, 0xff);
+		d_fdc->write_signal(did_side, data, 1);
 		break;
 	}
 }
@@ -37,6 +38,6 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 void FLOPPY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_FLOPPY_REVERSE)
-		reverse = (data & mask) ? true : false;
+		reverse = ((data & mask) != 0);
 }
 

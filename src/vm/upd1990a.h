@@ -4,24 +4,24 @@
 	Author : Takeda.Toshiya
 	Date   : 2008.04.19-
 
-	[ uPD1990AC ]
+	[ uPD1990A ]
 */
 
-#ifndef _UPD1990AC_H_
-#define _UPD1990AC_H_
+#ifndef _UPD1990A_H_
+#define _UPD1990A_H_
 
-#define SIG_UPD1990AC_CLK	0
-#define SIG_UPD1990AC_STB	1
-#define SIG_UPD1990AC_C0	2
-#define SIG_UPD1990AC_C1	3
-#define SIG_UPD1990AC_C2	4
-#define SIG_UPD1990AC_DIN	5
+#define SIG_UPD1990A_CLK	0
+#define SIG_UPD1990A_STB	1
+#define SIG_UPD1990A_C0	2
+#define SIG_UPD1990A_C1	3
+#define SIG_UPD1990A_C2	4
+#define SIG_UPD1990A_DIN	5
 
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"
 
-class UPD1990AC : public DEVICE
+class UPD1990A : public DEVICE
 {
 private:
 	DEVICE *dev[MAX_OUTPUT];
@@ -34,10 +34,10 @@ private:
 	bool clk, stb, din;
 	
 public:
-	UPD1990AC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	UPD1990A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount = 0;
 	}
-	~UPD1990AC() {}
+	~UPD1990A() {}
 	
 	// common functions
 	void initialize();

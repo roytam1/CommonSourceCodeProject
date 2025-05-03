@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.20-
 
-	[ NOT ]
+	[ not gate ]
 */
 
 #ifndef _NOT_H_

@@ -2,6 +2,10 @@ echo off
 set path=%path%;"C:\Program Files\Microsoft Visual Studio 8\Common7\IDE"
 mkdir build
 
+devenv.com fmr50.vcproj /Rebuild Release_d3d9
+mkdir build\fmr50
+copy Release_d3d9\fmr50.exe build\fmr50\.
+
 devenv.com hc40.vcproj /Rebuild Release_d3d9
 mkdir build\hc40
 copy Release_d3d9\hc40.exe build\hc40\.
@@ -18,6 +22,10 @@ devenv.com multi8.vcproj /Rebuild Release_d3d9
 mkdir build\multi8
 copy Release_d3d9\multi8.exe build\multi8\.
 
+devenv.com mz700.vcproj /Rebuild Release_d3d9
+mkdir build\mz700
+copy Release_d3d9\mz700.exe build\mz700\.
+
 devenv.com mz2500.vcproj /Rebuild Release_d3d9
 mkdir build\mz2500
 copy Release_d3d9\mz2500.exe build\mz2500\.
@@ -25,6 +33,10 @@ copy Release_d3d9\mz2500.exe build\mz2500\.
 devenv.com mz2800.vcproj /Rebuild Release_d3d9
 mkdir build\mz2800
 copy Release_d3d9\mz2800.exe build\mz2800\.
+
+devenv.com mz3500.vcproj /Rebuild Release_d3d9
+mkdir build\mz3500
+copy Release_d3d9\mz3500.exe build\mz3500\.
 
 devenv.com mz5500.vcproj /Rebuild Release_d3d9
 mkdir build\mz5500
@@ -41,6 +53,18 @@ devenv.com pasopia7lcd.vcproj /Rebuild Release_d3d9
 mkdir build\pasopia7
 copy Release_d3d9\pasopia7.exe build\pasopia7\.
 copy Release_d3d9\pasopia7lcd.exe build\pasopia7\.
+
+devenv.com pc98ha.vcproj /Rebuild Release_d3d9
+mkdir build\pc98ha
+copy Release_d3d9\pc98ha.exe build\pc98ha\.
+
+devenv.com pc100.vcproj /Rebuild Release_d3d9
+mkdir build\pc100
+copy Release_d3d9\pc100.exe build\pc100\.
+
+devenv.com pc3200.vcproj /Rebuild Release_d3d9
+mkdir build\pc3200
+copy Release_d3d9\pc3200.exe build\pc3200\.
 
 devenv.com pv1000.vcproj /Rebuild Release_d3d9
 mkdir build\pv1000

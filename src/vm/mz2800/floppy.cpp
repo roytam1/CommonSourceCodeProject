@@ -16,11 +16,12 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	{
 	case 0xdc:
 		// drive reg
-		dev->write_signal(did0, data, 0xff);
+		d_fdc->write_signal(did_drv, data, 3);
+		d_fdc->write_signal(did_motor, data, 0x80);
 		break;
 	case 0xdd:
 		// side reg
-		dev->write_signal(did1, data, 0xff);
+		d_fdc->write_signal(did_side, data, 1);
 		break;
 	}
 }

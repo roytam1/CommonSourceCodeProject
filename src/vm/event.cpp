@@ -28,8 +28,10 @@ void EVENT::initialize()
 		tmp[i] = (int)(sum / LINES_PER_FRAME / CHARS_PER_LINE);
 		remain -= tmp[i];
 	}
-	for(int i = 0; i < remain; i++)
-		tmp[(int)(LINES_PER_FRAME  * CHARS_PER_LINE * i / remain)]++;
+	for(int i = 0; i < remain; i++) {
+		int index = (int)((float)LINES_PER_FRAME * (float)CHARS_PER_LINE * (float)i / (float)remain);
+		tmp[index]++;
+	}
 	for(int i = 0; i < LINES_PER_FRAME; i++) {
 		vclocks[i] = 0;
 		for(int j = 0; j < CHARS_PER_LINE; j++)

@@ -10,6 +10,9 @@
 
 #include "io.h"
 #include "../fifo.h"
+#include "../../config.h"
+
+extern config_t config;
 
 //#define OUT_CMD_LOG
 
@@ -51,8 +54,16 @@
 #define EOT		0x04
 #define ACK		0x06
 
+// intelligent ram disk
+#define IRAMDISK_WAIT	1
+#define IRAMDISK_IN	0
+#define IRAMDISK_OUT	1
+
 void IO::initialize()
 {
+	// config
+	ramdisk_type = config.ramdisk_type;
+	
 	// init ram and external ram disk
 	_memset(ram, 0, sizeof(ram));
 	_memset(ext, 0, 0x20000);
@@ -87,6 +98,11 @@ void IO::initialize()
 	_stprintf(file_path, _T("%sEXTRAM.BIN"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(ext, 0x20000, 1);
+		fio->Fclose();
+	}
+	_stprintf(file_path, _T("%sINTRAM.BIN"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(iramdisk_sectors, sizeof(iramdisk_sectors), 1);
 		fio->Fclose();
 	}
 	_stprintf(file_path, _T("%sEXT.ROM"), app_path);
@@ -144,6 +160,11 @@ void IO::release()
 		fio->Fwrite(ext, 0x20000, 1);
 		fio->Fclose();
 	}
+	_stprintf(file_path, _T("%sINTRAM.BIN"), app_path);
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		fio->Fwrite(iramdisk_sectors, sizeof(iramdisk_sectors), 1);
+		fio->Fclose();
+	}
 	delete fio;
 }
 
@@ -170,6 +191,10 @@ void IO::reset()
 	_memset(udgc, 0, sizeof(udgc));
 	wnd_ptr_x = wnd_ptr_y = 0;
 	blink = 0;
+	
+	// reset intelligent ram disk
+	iramdisk_count = 0;
+	iramdisk_ptr = iramdisk_buf;
 }
 
 void IO::sysreset()
@@ -298,27 +323,41 @@ void IO::write_io8(uint32 addr, uint32 data)
 		emu->out_debug(_T("\n%4x\tCMD %2x\n"), d_cpu->get_prv_pc(), data);
 #endif
 		break;
+	case 0x80:
+		if(ramdisk_type == 1)
+			iramdisk_write_data(data);
+		break;
+	case 0x81:
+		if(ramdisk_type == 1)
+			iramdisk_write_cmd(data);
+		break;
 	case 0x90:
 		// EXTAR
-		extar = (extar & 0xffff00) | data;
+		if(ramdisk_type == 2)
+			extar = (extar & 0xffff00) | data;
 		break;
 	case 0x91:
 		// EXTAR
-		extar = (extar & 0xff00ff) | (data << 8);
+		if(ramdisk_type == 2)
+			extar = (extar & 0xff00ff) | (data << 8);
 		break;
 	case 0x92:
 		// EXTAR
-		extar = (extar & 0x00ffff) | ((data & 7) << 16);
+		if(ramdisk_type == 2)
+			extar = (extar & 0x00ffff) | ((data & 7) << 16);
 		break;
 	case 0x93:
 		// EXTOR
-		if(extar < 0x20000)
-			ext[extar] = data;
-		extar = (extar & 0xffff00) | ((extar + 1) & 0xff);
+		if(ramdisk_type == 2) {
+			if(extar < 0x20000)
+				ext[extar] = data;
+			extar = (extar & 0xffff00) | ((extar + 1) & 0xff);
+		}
 		break;
 	case 0x94:
 		// EXTCR
-		extcr = data;
+		if(ramdisk_type == 2)
+			extcr = data;
 		break;
 	}
 }
@@ -375,15 +414,28 @@ uint32 IO::read_io8(uint32 addr)
 		emu->out_debug(_T("%4x\tRCV %2x\n"), d_cpu->get_prv_pc(), val);
 #endif
 		return val;
+	case 0x80:
+		if(ramdisk_type == 1)
+			return iramdisk_read_data();
+		return 0xff;
+	case 0x81:
+		if(ramdisk_type == 1)
+			return iramdisk_read_stat();
+		return 0xff;
 	case 0x93:
 		// EXTIR
-		if(extar < 0x40000)
-			val = ext[extar];
-		extar = (extar & 0xffff00) | ((extar + 1) & 0xff);
-		return val;
+		if(ramdisk_type == 2) {
+			if(extar < 0x40000)
+				val = ext[extar];
+			extar = (extar & 0xffff00) | ((extar + 1) & 0xff);
+			return val;
+		}
+		return 0xff;
 	case 0x94:
 		// EXTSR
-		return extcr & ~0x80;
+		if(ramdisk_type == 2)
+			return extcr & ~0x80;
+		return 0xff;
 	}
 	return 0xff;
 }
@@ -1499,6 +1551,143 @@ void IO::draw_line(int sx, int sy, int ex, int ey, uint16 ope)
 		}
 	}
 	draw_point(ex, ey, ope & 0x8000);
+}
+
+// ----------------------------------------------------------------------------
+// intelligent ram disk by Mr.Dennis Heynlein
+// ----------------------------------------------------------------------------
+
+/*
+0x81 (W)	CommandByte c to RAMDisk
+0x81 (R)	Statusbyte	
+		Bit 0 : Readable DataByte on 0x81 is pending
+		Bit 1 : Receive of Data/Command is busy
+		Bit 7 and 6 = 0 (ident the RAMdisc)
+
+0x80 (R/W)	DataByte d
+
+Commands:	RESET 		-	input:	c(00)
+					output:	d(SWITCHSTATE)		
+
+		READSECTOR	-	input:	c(01) d(TRACK) d(SECTOR)
+					output:	d(ERRORSTATE) d(SECTORBYTE)*128
+		
+		READMEMDIRECT	-	input:	c(02) d(BANK) d(HIGHBYTE) d(LOWBYTE)
+					output:	d(ERRORSTATE) d(BYTE)
+
+		WRITESECTOR	-	input:	c(03) d(TRACK) d(SECTOR) d(SECTORBYTE)*128
+					output:	d(ERRORSTATE)
+
+		WRITEMEMDIRECT	-	input:	c(04) d(HIGHBYTE) d(LOWBYTE) d(BYTE)
+					output:	d(ERRORSTATE)
+
+		INIT_BITMAP	-	input:	c(05)
+					output:	d(ERRORSTATE)
+
+ERRORSTATE:	Bit 0 = Ramdiscsize
+		Bit 1 = Geometric
+		Bit 2 = Writeprotect
+
+HIGHBYTE:	0 - 0xef
+LOWBYTE:	0-255
+TRACK:		0-14
+SECTOR:		0-63
+BANK:		1 or 2
+*/
+
+void IO::iramdisk_write_data(uint8 val)
+{
+	if(iramdisk_dest == IRAMDISK_IN && iramdisk_count) {
+		*(iramdisk_ptr++) = val;
+		iramdisk_count--;
+	}
+	if(!iramdisk_count) {
+		iramdisk_dest = IRAMDISK_OUT;
+		iramdisk_ptr = iramdisk_buf;
+		int track = iramdisk_buf[0];
+		int sector = iramdisk_buf[1];
+		
+		switch(iramdisk_cmd)
+		{
+		case 1: //READSECTOR
+			if(track > 14 || sector > 63)
+				iramdisk_buf[0] = 2;
+			else {
+				iramdisk_buf[0] = 0;
+				for(int t = 0;t < 128; t++)
+					iramdisk_buf[t + 1] = iramdisk_sectors[track][sector][t];
+			}
+			iramdisk_count = 129; //ERRORCODE + 128 Bytes
+			break;
+		case 3: //WRITESECTOR
+			if(track > 14 || sector > 63)
+				iramdisk_buf[0] = 2;
+			else {
+				iramdisk_buf[0] = 0;
+				for(int t = 0; t < 128; t++)
+					iramdisk_sectors[track][sector][t] = iramdisk_buf[t+2];
+			}
+			iramdisk_count = 1; //ERRORCODE
+			break;
+		case 2: //READMEMDIRECT
+			iramdisk_count = 2; //ERRORCODE + 1 Byte
+			break;
+		case 4: //WRITEMEMDIRECT
+			iramdisk_count = 1; //ERRORCODE
+			break;
+		}
+	}
+}
+
+void IO::iramdisk_write_cmd(uint8 val)
+{
+	iramdisk_cmd = val;
+	iramdisk_count = 0;
+	iramdisk_ptr = iramdisk_buf;
+	iramdisk_dest = IRAMDISK_IN;
+	
+	switch(iramdisk_cmd)
+	{
+	case 1:
+		iramdisk_count = 2;
+		break;
+	case 2:
+	case 4:
+		iramdisk_count = 3;
+		break;
+	case 3:
+		iramdisk_count = 130;
+		break;
+	default:
+		//PROCESS-1-BYTE_CMDs
+		iramdisk_count = 1;
+		iramdisk_dest = IRAMDISK_OUT;
+		if(iramdisk_cmd == 0)
+			iramdisk_buf[0] = 1;	// RESET
+		else
+			iramdisk_buf[0] = 0;	//INIT
+	}
+}
+
+uint8 IO::iramdisk_read_data()
+{
+	if(iramdisk_dest == IRAMDISK_OUT) {
+		if(iramdisk_count) {
+			iramdisk_count--;
+			if(!iramdisk_count)
+				iramdisk_dest = IRAMDISK_IN;
+			return *(iramdisk_ptr++);
+		}
+	}
+	return 0;
+}
+
+uint8 IO::iramdisk_read_stat()
+{
+	if(iramdisk_dest == IRAMDISK_OUT)
+		return IRAMDISK_WAIT;
+	else
+		return 0;
 }
 
 // ----------------------------------------------------------------------------

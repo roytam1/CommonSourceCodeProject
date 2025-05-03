@@ -14,7 +14,7 @@
 // device informations for win32
 #define DEVICE_NAME		"EPSON HC-80"
 #define CONFIG_NAME		"hc80"
-#define CONFIG_VERSION		0x02
+#define CONFIG_VERSION		0x03
 
 #define WINDOW_WIDTH1		480
 #define WINDOW_HEIGHT1		64

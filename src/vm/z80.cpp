@@ -526,9 +526,12 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_CPU_NMI)
 		intr_req_bit = (data & mask) ? (intr_req_bit | NMI_REQ_BIT) : (intr_req_bit & ~NMI_REQ_BIT);
 	else if(id == SIG_CPU_BUSREQ) {
-		busreq = (data & mask) ? true : false;
+		busreq = ((data & mask) != 0);
 		if(busreq)
 			count = first = 0;
+		// busack
+		for(int i = 0; i < dcount; i++)
+			d_busack[i]->write_signal(did[i], busreq ? 0xffffffff : 0, dmask[i]);
 	}
 #ifdef NSC800
 	else if(id == SIG_NSC800_INT)

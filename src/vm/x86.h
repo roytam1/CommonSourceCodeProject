@@ -404,27 +404,25 @@ private:
 		return d_mem->read_data8((DefaultBase(seg) + ofs) & AMASK);
 	}
 	inline uint16 RM16(uint32 seg, uint32 ofs) {
-		return (uint16)RM8(seg, ofs) + (uint16)(RM8(seg, ofs + 1) << 8);
+		return d_mem->read_data16((DefaultBase(seg) + ofs) & AMASK);
 	}
 	inline void WM8(uint32 seg, uint32 ofs, uint8 val) {
 		d_mem->write_data8((DefaultBase(seg) + ofs) & AMASK, val);
 	}
 	inline void WM16(uint32 seg, uint32 ofs, uint16 val) {
-		WM8(seg, ofs, val & 0xff);
-		WM8(seg, ofs + 1, (val >> 8) & 0xff);
+		d_mem->write_data16((DefaultBase(seg) + ofs) & AMASK, val);
 	}
 	inline uint8 RM8(uint32 addr) {
 		return d_mem->read_data8(addr & AMASK);
 	}
 	inline uint16 RM16(uint32 addr) {
-		return (uint16)RM8(addr) + (uint16)(RM8(addr + 1) << 8);
+		return d_mem->read_data16(addr & AMASK);
 	}
 	inline void WM8(uint32 addr, uint8 val) {
 		d_mem->write_data8(addr & AMASK, val);
 	}
 	inline void WM16(uint32 addr, uint16 val) {
-		WM8(addr, val & 0xff);
-		WM8(addr + 1, (val >> 8) & 0xff);
+		d_mem->write_data16(addr & AMASK, val);
 	}
 	inline uint8 FETCHOP() {
 		return d_mem->read_data8(PC++);
@@ -449,6 +447,7 @@ private:
 	
 	// i/o
 	inline uint8 IN8(uint32 addr) {
+//emu->out_debug("%5x\n",prvPC);
 		return d_io->read_io8(addr);
 	}
 	inline void OUT8(uint32 addr, uint8 val) {

@@ -1,7 +1,29 @@
+6/11/2008
+
+[EMU/WIN32] open command line as cart or disk file path
+[EMU/WIN32] convert file path to full and long file path
+
+[AND/OR/NAND/NOR] support and/or/nand/nor gates
+[DATAREC] output low signal when the tape is closed
+[MB8876] support motor on/off signal
+[PCM1BIT] support on/off signal
+[PCM1BIT] support high quality sound
+[RTC58321] support RTC58321
+[UPD4991A] support uPD4991A
+[UPD765A] fdc status patch for MZ-3500
+[X86] fix freeze problem that some opecodes did not decrease the clock
+[Z80] return busack signal whe busreq occurs
+
+[FMR50] support FUJITSU FMR-50 (not work)
+[MZ700] support SHARP MZ-700
+[MZ3500] support SHARP MZ-3500 (not work)
+[HC80/IO] support intelligent ram disk (by Mr.Dennis Heynlein)
+
+
 4/22/2008
 
 [VM/LS244] support 74LS244/245
-[VM/UPD1990AC] support uPD1990AC
+[VM/UPD1990A] support uPD1990A
 [VM/X86] fix hlt
 [VM/X86] support busreq
 [VM/Z80] don't reset busreq in reset()
@@ -22,7 +44,6 @@
 [MZ5500/DISPLAY] support plane priority
 [MZ5500/KEYBOARD] support algo key
 [MZ5500/SYSPORT] support nmi reset
-
 [QC10/DISPLAY] support floppy drive access lamp
 
 
@@ -39,7 +60,7 @@
 [VM/UPD7220] notify vsync
 [VM/UPD765A] check sector id strictly
 
-[MZ5500] support MZ-5500
+[MZ5500] support SHARP MZ-5500
 
 
 4/7/2008

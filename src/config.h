@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "vm/vm.h"
 
-#define FILE_VERSION	0x21
+#define FILE_VERSION	0x22
 
 void init_config();
 void load_config();
@@ -45,19 +45,24 @@ typedef struct {
 #ifdef USE_SCANLINE
 	bool scan_line;
 #endif
-#ifdef USE_MONITOR_TYPE
+#if defined(USE_MONITOR_TYPE) || defined(USE_SCREEN_ROTATE)
 	int monitor_type;
 #endif;
 	int window_mode;
 	// sound
 	int sound_frequency;	// 0=2000Hz, 1=4000Hz, 2=8000Hz, 3=11025Hz, 4=22050Hz, 5=44100Hz, 6=48000Hz
 	int sound_latency;	// 0=100msec, 1=200msec, 2=300msec, 3=400msec
+	// virtual machine
 #ifdef USE_DIPSWITCH
 	uint8 dipswitch;
 #endif
+#ifdef _HC80
+	int ramdisk_type;	// 0=None, 1=Intelligent ram disk, 2=Nonintelligent ram disk
+#endif
+	// direct3d
 	int d3d9_interval;	// 0=Don't wait vsync, 1=Wait vsync
 	int d3d9_device;	// 0=Default, 1=Hardware TnL, 2=Hardware, 3=Software
-	int d3d9_filter;	// 0=Default, 1=Point, 1=Linear
+	int d3d9_filter;	// 0==Point, 1=Linear
 } config_t;
 
 #endif

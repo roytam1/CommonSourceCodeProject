@@ -64,7 +64,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(opn);
 	
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_A, 0x20);
-	sio->set_context_sio(cmt, SIG_CMT_OUT);
+	sio->set_context_out(cmt, SIG_CMT_OUT);
 	pit->set_context_ch1(pit, SIG_I8253_CLOCK_2);
 	pit->set_context_ch1(pic, SIG_I8259_CHIP0 | SIG_I8259_IR5);
 	pit->set_context_ch2(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);

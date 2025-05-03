@@ -122,8 +122,7 @@ BEGIN
         MENUITEM "Hardware"                     ID_SCREEN_DEVICE_HARDWARE
         MENUITEM "Software"                     ID_SCREEN_DEVICE_SOFTWARE
         MENUITEM SEPARATOR
-        MENUITEM "D3D9 Filter Default"          ID_SCREEN_FILTER_DEFAULT
-        MENUITEM "Point"                        ID_SCREEN_FILTER_POINT
+        MENUITEM "D3D9 Filter Point"            ID_SCREEN_FILTER_POINT
         MENUITEM "Linear"                       ID_SCREEN_FILTER_LINEAR
         MENUITEM SEPARATOR
         MENUITEM "D3D9 Wait VSync"              ID_SCREEN_PRESENT_INTERVAL

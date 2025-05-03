@@ -364,6 +364,9 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	DEVICE *d_mem, *d_io, *d_pic;
+	DEVICE *d_busack[MAX_OUTPUT];
+	int did[MAX_OUTPUT], dcount;
+	uint32 dmask[MAX_OUTPUT];
 	
 	/* ---------------------------------------------------------------------------
 	registers
@@ -544,6 +547,7 @@ public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		count = first = 0;	// passed_clock must be zero at initialize
 		busreq = false;
+		dcount = 0;
 	}
 	~Z80() {}
 	
@@ -572,6 +576,10 @@ public:
 	}
 	void set_context_intr(DEVICE* device) {
 		d_pic = device;
+	}
+	void set_context_busack(DEVICE* device, int id, uint32 mask) {
+		int c = dcount++;
+		d_busack[c] = device; did[c] = id; dmask[c] = mask;
 	}
 };
 

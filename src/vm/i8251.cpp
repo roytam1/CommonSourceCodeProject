@@ -86,8 +86,8 @@ void I8251::write_io8(uint32 addr, uint32 data)
 	}
 	else {
 		if(txen) {
-			for(int i = 0; i < dcount_sio; i++)
-				d_sio[i]->write_signal(did_sio[i], data, 0xff);
+			for(int i = 0; i < dcount_out; i++)
+				d_out[i]->write_signal(did_out[i], data, 0xff);
 		}
 	}
 }

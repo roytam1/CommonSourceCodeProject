@@ -25,7 +25,8 @@ class I8253 : public DEVICE
 {
 private:
 	typedef struct {
-		bool signal;
+		bool prev_out;
+		bool prev_in;
 		bool gate;
 		int32 count;
 		uint16 latch;
@@ -39,9 +40,9 @@ private:
 		// constant clock
 		uint32 freq;
 		int regist_id;
-		uint32 input;
+		uint32 input_clk;
 		int period;
-		uint32 prev;
+		uint32 prev_clk;
 	} counter_t;
 	counter_t counter[3];
 	

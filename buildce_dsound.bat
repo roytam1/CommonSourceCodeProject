@@ -18,6 +18,10 @@ evc multi8ce.vcp /MAKE "multi8ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECO
 mkdir build\multi8
 copy GDI_DSOUND\multi8ce.exe build\multi8\.
 
+evc mz700ce.vcp /MAKE "mz700ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\mz700
+copy GDI_DSOUND\mz700ce.exe build\mz700\.
+
 evc mz2500ce.vcp /MAKE "mz2500ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\mz2500
 copy GDI_DSOUND\mz2500ce.exe build\mz2500\.
@@ -25,6 +29,10 @@ copy GDI_DSOUND\mz2500ce.exe build\mz2500\.
 evc mz2800ce.vcp /MAKE "mz2800ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\mz2800
 copy GDI_DSOUND\mz2800ce.exe build\mz2800\.
+
+evc mz3500ce.vcp /MAKE "mz3500ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\mz3500
+copy GDI_DSOUND\mz3500ce.exe build\mz3500\.
 
 evc mz5500ce.vcp /MAKE "mz5500ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\mz5500
