@@ -103,7 +103,7 @@ void MB8877::initialize()
 	
 	// initialize d88 handler
 	for(int i = 0; i < MAX_DRIVE; i++) {
-		disk[i] = new DISK();
+		disk[i] = new DISK(emu);
 	}
 	
 	// initialize timing
@@ -533,12 +533,12 @@ void MB8877::event_callback(int event_id, int err)
 			set_drq(true);
 			drive_sel = false;
 		} else {
-//#if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
+#if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
 			// for SHARP X1 Batten Tanuki
-			if(drive_sel) {
+			if(disk[drvreg]->is_batten && drive_sel) {
 				status_tmp &= ~FDC_ST_RECNFND;
 			}
-//#endif
+#endif
 			status = status_tmp & ~(FDC_ST_BUSY | FDC_ST_DRQ);
 		}
 		break;

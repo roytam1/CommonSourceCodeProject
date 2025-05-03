@@ -71,6 +71,9 @@ typedef struct {
 #ifdef USE_DEVICE_TYPE
 	int device_type;
 #endif
+#ifdef USE_DRIVE_TYPE
+	int drive_type;
+#endif
 #ifdef USE_FD1
 	bool ignore_crc;
 #endif
