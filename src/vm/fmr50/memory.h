@@ -70,7 +70,6 @@ private:
 	uint8 kvram[0x1000];
 	uint8 dummy[0x8000];	// dummy plane
 #endif
-	
 	uint8 ipl[0x4000];	// IPL 16KB
 #ifdef _FMR60
 	uint8 ank24[0x3000];		// ANK(14x24)

@@ -115,7 +115,7 @@ LINK32=link.exe
 # ADD RSC /l 0x411 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "UNICODE" /d "_UNICODE" /d "NDEBUG" /d "$(CePlatform)" /d "THUMB" /d "_THUMB_" /d "ARM" /d "_ARM_" /d "ARMV4I" /r
 # ADD BASE CPP /nologo /W3 /Oxt /Ob2 /I ".\WinCE" /D _WIN32_WCE=$(CEVersion) /D "ARM" /D "_ARM_" /D "$(CePlatform)" /D "ARMV4I" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_MYCOMZ80A" /FR /QRarch4T /QRinterwork-return /M$(CECrtMT) /c
 # SUBTRACT BASE CPP /u /YX
-# ADD CPP /nologo /W3 /Oxt /Ob2 /I ".\WinCE" /D _WIN32_WCE=$(CEVersion) /D "ARM" /D "_ARM_" /D "$(CePlatform)" /D "ARMV4I" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_MYCOMZ80A" /FR /QRarch4T /QRinterwork-return /M$(CECrtMT) /c
+# ADD CPP /nologo /W3 /Od /Ob2 /I ".\WinCE" /D _WIN32_WCE=$(CEVersion) /D "ARM" /D "_ARM_" /D "$(CePlatform)" /D "ARMV4I" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_MYCOMZ80A" /FR /QRarch4T /QRinterwork-return /M$(CECrtMT) /c
 # SUBTRACT CPP /u /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
@@ -148,7 +148,7 @@ LINK32=link.exe
 # ADD RSC /l 0x411 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "UNICODE" /d "_UNICODE" /d "NDEBUG" /d "$(CePlatform)" /d "THUMB" /d "_THUMB_" /d "ARM" /d "_ARM_" /d "ARMV4I" /r
 # ADD BASE CPP /nologo /W3 /Oxt /Ob2 /I ".\WinCE" /D _WIN32_WCE=$(CEVersion) /D "ARM" /D "_ARM_" /D "$(CePlatform)" /D "ARMV4I" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_MYCOMZ80A" /D "_USE_WAVEOUT" /FR /QRarch4T /QRinterwork-return /M$(CECrtMT) /c
 # SUBTRACT BASE CPP /u /YX
-# ADD CPP /nologo /W3 /Oxt /Ob2 /I ".\WinCE" /D _WIN32_WCE=$(CEVersion) /D "ARM" /D "_ARM_" /D "$(CePlatform)" /D "ARMV4I" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_MYCOMZ80A" /D "_USE_WAVEOUT" /FR /QRarch4T /QRinterwork-return /M$(CECrtMT) /c
+# ADD CPP /nologo /W3 /Od /Ob2 /I ".\WinCE" /D _WIN32_WCE=$(CEVersion) /D "ARM" /D "_ARM_" /D "$(CePlatform)" /D "ARMV4I" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_MYCOMZ80A" /D "_USE_WAVEOUT" /FR /QRarch4T /QRinterwork-return /M$(CECrtMT) /c
 # SUBTRACT CPP /u /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
@@ -229,7 +229,6 @@ SOURCE=.\src\vm\sn76489an.cpp
 
 SOURCE=.\src\vm\z80.cpp
 # ADD CPP /Oxt /Ob0
-
 # End Source File
 # End Group
 # Begin Group "VM Driver Source Files"

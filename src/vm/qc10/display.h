@@ -36,7 +36,7 @@ private:
 	scrntype palette_pc[16];	// normal, intensify
 #endif
 	uint8 screen[400][640];
-	uint16 tmp[640];
+	scrntype tmp[640];
 	
 	uint8 *sync, *zoom, *ra, *cs;
 	int* ead;

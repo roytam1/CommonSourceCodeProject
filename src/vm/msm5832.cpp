@@ -19,7 +19,7 @@
 
 #define EVENT_1024HZ	0
 #define EVENT_3600HZ	1
-#define EVENT_PULSE	2
+#define EVENT_PULSE_OFF	2
 
 #define BIT_1024HZ	1
 #define BIT_1HZ		2
@@ -102,14 +102,14 @@ void MSM5832::event_callback(int event_id, int err)
 				output();
 			// regist event
 			int id;
-			vm->regist_event_by_clock(this, EVENT_PULSE, CPU_CLOCKS / 8192, false, &id);
+			vm->regist_event_by_clock(this, EVENT_PULSE_OFF, CPU_CLOCKS / 8192, false, &id);
 		}
 		if(++cnt1 == 60)
 			cnt1 = 0;
 		if(++cnt2 == 3600)
 			cnt2 = 0;
 	}
-	else if(event_id == EVENT_PULSE) {
+	else if(event_id == EVENT_PULSE_OFF) {
 		// 122.1usec (1/8192sec)
 		if(!hold) {
 			regs[15] |= (BIT_1HZ | BIT_60HZ);

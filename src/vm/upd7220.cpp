@@ -666,10 +666,10 @@ void UPD7220::vectreset()
 	vect[ 4] = 0x00;
 	vect[ 5] = 0x08;
 	vect[ 6] = 0x00;
-	vect[ 7] = 0xff;
-	vect[ 8] = 0xff;
-	vect[ 9] = 0xff;
-	vect[10] = 0xff;
+	vect[ 7] = 0x00;//0xff;
+	vect[ 8] = 0x00;//0xff;
+	vect[ 9] = 0x00;//0xff;
+	vect[10] = 0x00;//0xff;
 	UPDATE_VECT();
 }
 

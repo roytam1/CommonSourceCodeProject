@@ -176,7 +176,7 @@ void MEMORY::reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffffff;//amask;
-//if(0xa0000<=addr&&addr<0xfc000&&!(addr&0xff))emu->out_debug("WR %5x,%2x\n",addr,data);
+//	if(0xe0000<=addr&&addr<0xfc000&&!(addr&0xff))emu->out_debug("WR %5x,%2x\n",addr,data);
 	if(!mainmem) {
 #ifdef _FMR60
 		if(0xc0000 <= addr && addr < 0xe0000) {
@@ -413,7 +413,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffffff;//amask;
-//if(0xa0000<=addr&&addr<0xfc000&&!(addr&0xff))emu->out_debug("RD %5x\n",addr);
+//	if(0xe0000<=addr&&addr<0xfc000)emu->out_debug("RD %5x\n",addr);
 #ifdef _FMR50
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {

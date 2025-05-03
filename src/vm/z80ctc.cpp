@@ -88,14 +88,14 @@ uint32 Z80CTC::read_io8(uint32 addr)
 	}
 	else if(counter[ch].sysclock_id != -1) {
 		int passed = vm->passed_clock(counter[ch].prev);
-		uint32 input = passed;
+		uint32 input = sysclock * passed / CPU_CLOCKS;
 		if(counter[ch].input <= input)
 			input = counter[ch].input - 1;
 		if(input > 0) {
 			input_sysclock(ch, input);
 			// cancel and re-regist event
 			vm->cancel_event(counter[ch].sysclock_id);
-			counter[ch].input -= passed;
+			counter[ch].input -= input;
 			counter[ch].period -= passed;
 			counter[ch].prev = vm->current_clock();
 			vm->regist_event_by_clock(this, EVENT_TIMER + ch, counter[ch].period, false, &counter[ch].sysclock_id);
@@ -204,7 +204,7 @@ void Z80CTC::update_event(int ch, int err)
 		}
 		if(counter[ch].clock_id == -1 && counter[ch].freq) {
 			counter[ch].input = counter[ch].count;
-			counter[ch].period = CPU_CLOCKS / counter[ch].freq * counter[ch].input + err;
+			counter[ch].period = CPU_CLOCKS * counter[ch].input / counter[ch].freq + err;
 			counter[ch].prev = vm->current_clock() + err;
 			vm->regist_event_by_clock(this, EVENT_COUNTER + ch, counter[ch].period, false, &counter[ch].clock_id);
 		}
@@ -223,7 +223,7 @@ void Z80CTC::update_event(int ch, int err)
 		}
 		if(counter[ch].sysclock_id == -1) {
 			counter[ch].input = counter[ch].count * counter[ch].prescaler - counter[ch].clocks;
-			counter[ch].period = counter[ch].input + err;
+			counter[ch].period = CPU_CLOCKS * counter[ch].input / sysclock + err;
 			counter[ch].prev = vm->current_clock() + err;
 			vm->regist_event_by_clock(this, EVENT_TIMER + ch, counter[ch].period, false, &counter[ch].sysclock_id);
 		}
