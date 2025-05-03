@@ -80,6 +80,7 @@ typedef struct {
 static const fd_format_t fd_formats[] = {
 	{ MEDIA_TYPE_2D,  40, 1, 16,  256 },	// 1D   160KB
 #if defined(SUPPORT_MEDIA_TYPE_1DD)
+	{ MEDIA_TYPE_2DD, 70, 1, 16,  256 },	// 1DD  280KB (SMC-777)
 	{ MEDIA_TYPE_2DD, 80, 1, 16,  256 },	// 1DD  320KB
 	{ MEDIA_TYPE_2DD, 80, 1,  9,  512 },	// 1DD  360KB
 #else

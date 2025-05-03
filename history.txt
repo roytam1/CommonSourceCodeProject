@@ -1,3 +1,11 @@
+8/22/2015-2
+
+[VM/DISK] support solid 1dd 280kb disk image with .img extension
+[VM/MB8877] revirt the fix in 8/22/2015
+
+[SMC777] fix floppy drive speed to 600rpm
+
+
 8/22/2015
 
 [COMMON] replace many _TCHAR* to const _TCHAR* mainly for file path

@@ -1007,13 +1007,13 @@ uint8 MB8877::search_track()
 {
 	// get track
 	int track = fdc[drvreg].track;
-	if(disk[drvreg]->media_type == MEDIA_TYPE_2D) {
-		if((disk[drvreg]->drive_type == DRIVE_TYPE_2DD) ||
-		   (disk[drvreg]->drive_type == DRIVE_TYPE_2HD) ||
-		   (disk[drvreg]->drive_type == DRIVE_TYPE_144)) {
-			track >>= 1;
-		}
-	}
+//	if(disk[drvreg]->media_type == MEDIA_TYPE_2D) {
+//		if((disk[drvreg]->drive_type == DRIVE_TYPE_2DD) ||
+//		   (disk[drvreg]->drive_type == DRIVE_TYPE_2HD) ||
+//		   (disk[drvreg]->drive_type == DRIVE_TYPE_144)) {
+//			track >>= 1;
+//		}
+//	}
 	if(!disk[drvreg]->get_track(track, sidereg)){
 		return FDC_ST_SEEKERR;
 	}
@@ -1058,13 +1058,13 @@ uint8 MB8877::search_sector()
 	
 	// get track
 	int track = fdc[drvreg].track;
-	if(disk[drvreg]->media_type == MEDIA_TYPE_2D) {
-		if((disk[drvreg]->drive_type == DRIVE_TYPE_2DD) ||
-		   (disk[drvreg]->drive_type == DRIVE_TYPE_2HD) ||
-		   (disk[drvreg]->drive_type == DRIVE_TYPE_144)) {
-			track >>= 1;
-		}
-	}
+//	if(disk[drvreg]->media_type == MEDIA_TYPE_2D) {
+//		if((disk[drvreg]->drive_type == DRIVE_TYPE_2DD) ||
+//		   (disk[drvreg]->drive_type == DRIVE_TYPE_2HD) ||
+//		   (disk[drvreg]->drive_type == DRIVE_TYPE_144)) {
+//			track >>= 1;
+//		}
+//	}
 	if(!disk[drvreg]->get_track(track, sidereg)) {
 		return FDC_ST_RECNFND;
 	}
@@ -1141,13 +1141,13 @@ uint8 MB8877::search_addr()
 {
 	// get track
 	int track = fdc[drvreg].track;
-	if(disk[drvreg]->media_type == MEDIA_TYPE_2D) {
-		if((disk[drvreg]->drive_type == DRIVE_TYPE_2DD) ||
-		   (disk[drvreg]->drive_type == DRIVE_TYPE_2HD) ||
-		   (disk[drvreg]->drive_type == DRIVE_TYPE_144)) {
-			track >>= 1;
-		}
-	}
+//	if(disk[drvreg]->media_type == MEDIA_TYPE_2D) {
+//		if((disk[drvreg]->drive_type == DRIVE_TYPE_2DD) ||
+//		   (disk[drvreg]->drive_type == DRIVE_TYPE_2HD) ||
+//		   (disk[drvreg]->drive_type == DRIVE_TYPE_144)) {
+//			track >>= 1;
+//		}
+//	}
 	if(!disk[drvreg]->get_track(track, sidereg)) {
 		return FDC_ST_RECNFND;
 	}

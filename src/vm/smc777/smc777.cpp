@@ -79,6 +79,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		fdc->set_drive_type(i, DRIVE_TYPE_2DD); // 1DD
+		fdc->set_drive_rpm(i, 600);
 	}
 	fdc->write_signal(SIG_MB8877_MOTOR, 1, 1);
 }

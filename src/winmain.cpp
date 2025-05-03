@@ -1897,7 +1897,7 @@ void open_disk_dialog(HWND hWnd, int drv)
 {
 	_TCHAR* path = get_open_file_name(
 		hWnd,
-		_T("Supported Files (*.d88;*.d77;*.1dd;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7)\0*.d88;*.d77;*.1dd;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.sf7\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.d88;*.d77;*.1dd;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.img;*.sf7)\0*.d88;*.d77;*.1dd;*.td0;*.imd;*.dsk;*.fdi;*.hdm;*.tfd;*.xdf;*.2d;*.img;*.sf7\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
 		config.initial_disk_dir, _MAX_PATH
 	);
@@ -2090,6 +2090,7 @@ void open_any_file(const _TCHAR* path)
 	   check_file_extension(path, _T(".tfd")) || 
 	   check_file_extension(path, _T(".xdf")) || 
 	   check_file_extension(path, _T(".2d" )) || 
+	   check_file_extension(path, _T(".img")) || 
 	   check_file_extension(path, _T(".sf7"))) {
 		UPDATE_HISTORY(path, config.recent_disk_path[0]);
 		_tcscpy_s(config.initial_disk_dir, _MAX_PATH, get_parent_dir(path));
