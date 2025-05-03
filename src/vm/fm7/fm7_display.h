@@ -9,13 +9,12 @@
 #define _CSP_FM7_DISPLAY_H
 
 #include "../device.h"
-#include "../memory.h"
+#include "../device.h"
 #include "../mc6809.h"
 #include "fm7_common.h"
 
 
 class DEVICE;
-class MEMORY;
 class MC6809;
 
 class DISPLAY: public DEVICE
@@ -24,10 +23,6 @@ class DISPLAY: public DEVICE
 	EMU *p_emu;
 	VM *p_vm;
 
-	int nmi_count;
-	int irq_count;
-	int firq_count;
-	int halt_count;
 	int clr_count;
    
 	void go_subcpu();
@@ -55,8 +50,10 @@ class DISPLAY: public DEVICE
 	void reset_vramaccess(void);
 	uint8 reset_subbusy(void);
 	void set_subbusy(void);
+	void reset_cpuonly(void);
+   
 #if defined(_FM77AV_VARIANTS)
-	void alu_write_cmdreg(uint8 val);
+	void alu_write_cmdreg(uint32 val);
 	void alu_write_logical_color(uint8 val);
 	void alu_write_mask_reg(uint8 val);
 	void alu_write_cmpdata_reg(int addr, uint8 val);
@@ -67,6 +64,7 @@ class DISPLAY: public DEVICE
 	void alu_write_linepattern_hi(uint8 val);
 	void alu_write_linepattern_lo(uint8 val);
 	void alu_write_line_position(int addr, uint8 val);
+	
 	void select_sub_bank(uint8 val);
 	void select_vram_bank_av40(uint8 val);
 	uint8 get_miscreg(void);
@@ -77,10 +75,6 @@ class DISPLAY: public DEVICE
 	void set_apalette_b(uint8 val);
 	void set_apalette_r(uint8 val);
 	void set_apalette_g(uint8 val);
-	uint8 get_key_encoder(void);
-	void put_key_encoder(uint8 data);
-	uint8 get_key_encoder_status(void);
-
 #endif // _FM77AV_VARIANTS
 
  private:
@@ -88,39 +82,36 @@ class DISPLAY: public DEVICE
 	bool firq_mask;
 	bool sub_busy_bak;
 	bool do_attention; 
-	uint32  disp_mode;
 	bool vblank;
 	bool vsync;
 	bool hblank;
 	bool irq_backup;
-	bool clock_fast;
-	uint32 displine;
-	int vblank_count;
-	
-	bool subcpu_resetreq;
-	bool power_on_reset;
 	bool cancel_request;
 	bool cancel_bak;
 	bool key_firq_req;
-#if defined(_FM77AV_VARIANTS)
-	bool key_rxrdy;
-	bool key_ack;
-#endif	
-	DEVICE *ins_led;
-	DEVICE *kana_led;
-	DEVICE *caps_led;
-
+	bool clock_fast;
+	int display_mode;
+	bool halt_flag;
+	int active_page;
+	uint32 prev_clock;
+	
 	// Event handler
 	int nmi_event_id;
+
+#if defined(_FM77AV_VARIANTS)
+	uint32 displine;
+	int vblank_count;
+	bool subcpu_resetreq;
+	bool power_on_reset;
+	
 	int hblank_event_id;
 	int hdisp_event_id;
 	int vsync_event_id;
 	int vstart_event_id;
-	int halt_event_id;
-	int display_mode;
-	bool halt_flag;
-	uint32 prev_clock;
-
+#endif	
+	DEVICE *ins_led;
+	DEVICE *kana_led;
+	DEVICE *caps_led;
 #if defined(_FM77_VARIANTS)
 	bool mode400line;
 	bool kanjisub;
@@ -132,9 +123,24 @@ class DISPLAY: public DEVICE
 #endif
 	bool mode320;
 	int display_page;
-	int active_page;
 	int cgrom_bank;
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)	
 	int vram_bank;
+	bool vram_page;
+   
+	uint8 monitor_ram_bank;
+	uint8 console_ram_bank;
+
+	uint8 vram_active_block;
+	uint8 vram_display_block;
+	
+	uint16 window_low;
+	uint16 window_high;
+	uint16 window_xbegin;
+	uint16 window_xend;
+
+	bool window_opened;
+#endif	
 	bool nmi_enable;
 	bool diag_load_subrom_a;
 	bool diag_load_subrom_b;
@@ -155,18 +161,12 @@ class DISPLAY: public DEVICE
 #else
 	uint8 io_w_latch[0x10];
 #endif
-	int window_low;
-	int window_high;
-	int window_xbegin;
-	int window_xend;
-	bool window_opened;
-
 	uint8 multimode_accessmask;
 	uint8 multimode_dispmask;
    
 	uint32 offset_point;
-	pair tmp_offset_point;
-	bool offset_changed;
+	pair tmp_offset_point[2];
+	bool offset_changed[2];
 	bool offset_77av;
    
 #if defined(_FM77AV_VARIANTS)
@@ -176,6 +176,7 @@ class DISPLAY: public DEVICE
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	bool monitor_ram;
 	bool monitor_ram_using;
+	bool ram_protect;
 #endif
 #endif	
 
@@ -195,20 +196,24 @@ class DISPLAY: public DEVICE
 	uint8 subsys_a[0x2000];
 	uint8 subsys_b[0x2000];
 	uint8 subsys_cg[0x2000];
-	uint8 subsys_ram[0x2000];
+	uint8 submem_hidden[0x300];
 #endif
 
 	bool sub_run;
 	bool crt_flag;
 	bool vram_accessflag;
-	bool vram_wait;
 	bool is_cyclesteal;
 	pair kanji1_addr;
-	MEMORY *kanjiclass1;
+	DEVICE *kanjiclass1;
 #if defined(_FM77AV40) || defined(_FM77AV40SX)|| defined(_FM77AV40SX)	
+	uint8 submem_cgram[0x4000];
+	uint8 submem_console_av40[0x2000];
+	uint8 subsys_ram[0x2000];
+	uint32 cgram_bank;
+   
 	bool kanji_level2;
 	pair kanji2_addr;
-	MEMORY *kanjiclass2;
+	DEVICE *kanjiclass2;
 #endif
 #if defined(_FM77AV_VARIANTS)
 	bool use_alu;
@@ -220,9 +225,22 @@ class DISPLAY: public DEVICE
 	bool vram_wrote;
 	inline void GETVRAM_8_200L(int yoff, scrntype *p, uint32 rgbmask);
 	inline void GETVRAM_4096(int yoff, scrntype *p, uint32 rgbmask);
+   
+	uint8 read_vram_8_200l(uint32 addr, uint32 offset);
+	uint8 read_vram_8_400l(uint32 addr, uint32 offset);
+	uint8 read_vram_l4_400l(uint32 addr, uint32 offset);
+	uint8 read_vram_4096(uint32 addr, uint32 offset);
+	uint8 read_vram_256k(uint32 addr, uint32 offset);
+	uint8 read_mmio(uint32 addr);
+	
+	void write_vram_8_200l(uint32 addr, uint32 offset, uint32 data);
+	void write_vram_8_400l(uint32 addr, uint32 offset, uint32 data);
+	void write_vram_l4_400l(uint32 addr, uint32 offset, uint32 data);
+	void write_vram_4096(uint32 addr, uint32 offset, uint32 data);
+	void write_vram_256k(uint32 addr, uint32 offset, uint32 data);
+	void write_mmio(uint32 addr, uint32 data);
+   
 	uint32 read_bios(const char *name, uint8 *ptr, uint32 size);
-	void proc_sync_to_main(void);
-	void do_sync_main_sub(void);
   public:
 	DISPLAY(VM *parent_vm, EMU *parent_emu);
 	~DISPLAY();
@@ -239,6 +257,8 @@ class DISPLAY: public DEVICE
 	void draw_screen();
 	void event_frame();
 	void event_vline(int v, int clock);
+	void save_state(FILEIO *state_fio);
+	bool load_state(FILEIO *state_fio);
 
 	uint32 read_io8(uint32 addr) { // This is only for debug.
 #if defined(_FM77AV_VARIANTS) // Really?
@@ -248,13 +268,13 @@ class DISPLAY: public DEVICE
 #endif
 	}
    
-	void set_context_kanjiclass1(MEMORY *p)	{
+	void set_context_kanjiclass1(DEVICE *p)	{
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS) // Really?
 		kanji1_addr.d = 0;
 		kanjiclass1 = p;
 #endif
 	}
-	void set_context_kanjiclass2(MEMORY *p)	{
+	void set_context_kanjiclass2(DEVICE *p)	{
 #if defined(_FM77AV40) || defined(_FM77AV40SX)|| defined(_FM77AV40SX)
 		kanji2_addr.d = 0;
 		kanjiclass2 = p;

@@ -90,7 +90,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
-	pc88event->set_context_cpu(pc88cpu, (config.cpu_type != 0) ? 3993624 : 7987248);
+	pc88event->set_context_cpu(pc88cpu, (config.cpu_type != 0) ? 3993624 : 7981350); // thanks Mr.PI.
+//	pc88event->set_context_cpu(pc88cpu, (config.cpu_type != 0) ? 3993624 : 7987248);
 #else
 	pc88event->set_context_cpu(pc88cpu, 3993624);
 #endif

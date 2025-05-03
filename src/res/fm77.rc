@@ -66,7 +66,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
     VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
@@ -82,14 +81,12 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "N88-V1(S) mode"               ID_BOOT_MODE0
-        MENUITEM "N88-V1(H) mode"               ID_BOOT_MODE1
-        MENUITEM "N88-V2 mode"                  ID_BOOT_MODE2
-        MENUITEM "N mode"                       ID_BOOT_MODE3
+        MENUITEM "BASIC"                        ID_BOOT_MODE0
+        MENUITEM "DOS"                          ID_BOOT_MODE1
+        MENUITEM "MMR"                          ID_BOOT_MODE2
         MENUITEM SEPARATOR
-        MENUITEM "CPU 8MHz",                    ID_CPU_TYPE0
-        MENUITEM "CPU 4MHz",                    ID_CPU_TYPE1
-        MENUITEM "CPU 8MHz (FE2/MC)",           ID_CPU_TYPE2
+        MENUITEM "CPU 2.0MHz",                  ID_CPU_TYPE0
+        MENUITEM "CPU 1.2MHz",                  ID_CPU_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -97,10 +94,7 @@ BEGIN
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
         MENUITEM SEPARATOR
-        MENUITEM "Memory Wait",                 ID_DIPSWITCH0
-        MENUITEM SEPARATOR
-        MENUITEM "Joystick"                     ID_DEVICE_TYPE0
-        MENUITEM "Bus Mouse"                    ID_DEVICE_TYPE1
+        MENUITEM "Cycle Steal",                 ID_DIPSWITCH0
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -133,6 +127,9 @@ BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
         MENUITEM "Eject",                       ID_CLOSE_TAPE
+        MENUITEM SEPARATOR
+        MENUITEM "Play Tape Sound",             ID_PLAY_TAPE_SOUND
+        MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE
     END
@@ -194,9 +191,6 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
-        MENUITEM SEPARATOR
-        MENUITEM "High Resolution",             ID_SCREEN_MONITOR_TYPE0
-        MENUITEM "Standard",                    ID_SCREEN_MONITOR_TYPE1
     END
     POPUP "Sound"
     BEGIN
@@ -209,7 +203,7 @@ BEGIN
         MENUITEM "11025Hz",                     ID_SOUND_FREQ3
         MENUITEM "22050Hz",                     ID_SOUND_FREQ4
         MENUITEM "44100Hz",                     ID_SOUND_FREQ5
-        MENUITEM "55467Hz",                     ID_SOUND_FREQ6
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
         MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
         MENUITEM "50msec",                      ID_SOUND_LATE0
@@ -218,8 +212,14 @@ BEGIN
         MENUITEM "300msec",                     ID_SOUND_LATE3
         MENUITEM "400msec",                     ID_SOUND_LATE4
         MENUITEM SEPARATOR
-        MENUITEM "PC-8801-23 (OPNA)",           ID_SOUND_DEVICE_TYPE0
-        MENUITEM "PC-8801-11 (OPN)",            ID_SOUND_DEVICE_TYPE1
+        MENUITEM "PSG",                         ID_SOUND_DEVICE_TYPE0
+        MENUITEM "PSG+OPN",                     ID_SOUND_DEVICE_TYPE1
+        MENUITEM "PSG+WHG",                     ID_SOUND_DEVICE_TYPE2
+        MENUITEM "PSG+OPN+WHG",                 ID_SOUND_DEVICE_TYPE3
+        MENUITEM "PSG+THG",                     ID_SOUND_DEVICE_TYPE4
+        MENUITEM "PSG+OPN+THG",                 ID_SOUND_DEVICE_TYPE5
+        MENUITEM "PSG+WHG+THG",                 ID_SOUND_DEVICE_TYPE6
+        MENUITEM "PSG+OPN+WHG+THG",             ID_SOUND_DEVICE_TYPE7
     END
 END
 
@@ -231,7 +231,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "pc8801ma.ico"
+IDI_ICON1               ICON    DISCARDABLE     "fm77.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

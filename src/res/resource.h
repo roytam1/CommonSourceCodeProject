@@ -322,6 +322,16 @@
 #define MENU_POS_SOUND                  5
 #endif
 
+// FUJITSU FM-77
+#ifdef _FM77
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_TAPE                   3
+#define MENU_POS_SCREEN                 4
+#define MENU_POS_SOUND                  5
+#endif
+
 // FUJITSU FM-77AV
 #ifdef _FM77AV
 #define MENU_POS_CONTROL                0

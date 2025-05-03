@@ -15,14 +15,18 @@
 #define USE_SOUND_DEVICE_TYPE 8
 #define USE_SCANLINE
 #define USE_DIPSWITCH
-#define USE_CPU_TYPE          2
+#define USE_CPU_TYPE 2
 #define USE_SPECIAL_RESET
+
 //#undef  HAS_YM2608
 //#define SUPPORT_YM2203_PORT
 //#define HAS_AY_3_8910
 // 4:3
-//#define SCREEN_WIDTH_ASPECT 640 
-//#define SCREEN_HEIGHT_ASPECT 480
+#define SCREEN_WIDTH_ASPECT 640 
+#define SCREEN_HEIGHT_ASPECT 400
+#define WINDOW_WIDTH_ASPECT 640 
+//#define WINDOW_HEIGHT_ASPECT 480
+#define WINDOW_HEIGHT_ASPECT 400
 
 #define NOTIFY_KEY_DOWN
 #define NOTIFY_KEY_UP
@@ -52,28 +56,33 @@
 #define CONFIG_NAME		"fmnew7"
 #define CAPABLE_Z80
 
-#elif defined(_FM77) || defined(_FM77L2)
-# if defined(_FM77)
+#elif defined(_FM77)
 #define DEVICE_NAME		"FUJITSU FM-77"
 #define CONFIG_NAME		"fm77"
-# else
-#define DEVICE_NAME		"FUJITSU FM-77L2"
-#define CONFIG_NAME		"fm77l2"
-# endif
 //#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
+#define CAPABLE_Z80
+#define FM77_EXRAM_BANKS	3
+
+#elif defined(_FM77L2)
+#define DEVICE_NAME		"FUJITSU FM-77L2"
+#define CONFIG_NAME		"fm77l2"
+//#define USE_DRIVE_TYPE
+#define _FM77_VARIANTS
+#define CAPABLE_Z80
 
 #elif defined(_FM77L4)
 #define DEVICE_NAME		"FUJITSU FM-77L4"
 #define CONFIG_NAME		"fm77l4"
 #define HAS_MMR
-#define HAS_400LINECARD
 #define HAS_TEXTVRAM
 #define HAS_2HD
 #define HAS_CYCLESTEAL
+#define HAS_400LINECARD
 //#define CAPABLE_KANJI_CLASS2
 #define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
+#define CAPABLE_Z80
 
 #elif defined(_FM77AV)
 #define DEVICE_NAME		"FUJITSU FM-77AV"
@@ -81,7 +90,7 @@
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM-77 AV20"
+#define DEVICE_NAME		"FUJITSU FM-77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -90,15 +99,47 @@
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM-77 AV40"
+#define DEVICE_NAME		"FUJITSU FM-77AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
 #define USE_DRIVE_TYPE
 #define CAPABLE_DICTROM
+#define HAS_400LINE_AV
+
+#elif defined(_FM77AV20EX)
+#define DEVICE_NAME		"FUJITSU FM-77AV20EX"
+#define CONFIG_NAME		"fm77av20ex"
+#define _FM77AV_VARIANTS
+#define HAS_MMR
+#define HAS_2DD_2D
+#define HAS_DMA
+#define USE_DRIVE_TYPE
+#define CAPABLE_DICTROM
+
+#elif defined(_FM77AV40EX)
+#define DEVICE_NAME		"FUJITSU FM-77AV40EX"
+#define CONFIG_NAME		"fm77av40ex"
+#define _FM77AV_VARIANTS
+#define HAS_2DD_2D
+#define HAS_DMA
+#define USE_DRIVE_TYPE
+#define CAPABLE_DICTROM
+#define HAS_400LINE_AV
+
+#elif defined(_FM77AV40SX)
+#define DEVICE_NAME		"FUJITSU FM-77AV40SX"
+#define CONFIG_NAME		"fm77av40sx"
+#define _FM77AV_VARIANTS
+#define HAS_2DD_2D
+#define HAS_DMA
+#define USE_DRIVE_TYPE
+#define CAPABLE_DICTROM
+#define HAS_400LINE_AV
 
 #endif
+
 
 #ifdef _FM77AV_VARIANTS
 
@@ -106,7 +147,7 @@
 #define HAS_MMR
 #define HAS_CYCLESTEAL
 
-#elif _FM77_VARIANTS
+#elif defined(_FM77_VARIANTS)
 
 #define HAS_MMR
 #define HAS_CYCLESTEAL
@@ -114,6 +155,10 @@
 #endif
 
 #if defined(_FM77_VARIANTS)
+//#define USE_BOOT_MODE         4
+//#elif defined(_FM8)
+//#define USE_BOOT_MODE         4
+//#elif defined(_FM7) || defined(_FMNEW7)
 #define USE_BOOT_MODE         3
 #else
 #define USE_BOOT_MODE         2
@@ -141,7 +186,7 @@
 // device informations for virtual machine
 
 // TODO: check refresh rate
-#define FRAMES_PER_SEC		60
+#define FRAMES_PER_SEC		59.94
 #define LINES_PER_FRAME 	400
 #define CPU_CLOCKS		2000000
 #define SCREEN_WIDTH		640
@@ -228,6 +273,7 @@ class FM7_MAINMEM;
 class FM7_MAINIO;
 class KEYBOARD;
 class KANJIROM;
+class JOYSTICK;
 
 #if WITH_Z80
 class Z80;
@@ -250,7 +296,8 @@ protected:
         //BEEP* beep;
         PCM1BIT* pcm1bit;
 	DATAREC *drec;
-   
+	JOYSTICK *joystick;
+	
 #ifdef  WITH_Z80
         Z80* z80cpu;
 #endif
@@ -260,7 +307,6 @@ protected:
    
 	DEVICE *dummycpu;
 	MC6809* subcpu;
-        MEMORY* submem;
 #if defined(_FM77AV_VARIANTS)
 	MB61VH010 *alu;
 #endif

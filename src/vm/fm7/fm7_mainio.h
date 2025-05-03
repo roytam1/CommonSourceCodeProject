@@ -12,12 +12,12 @@
 #define _VM_FM7_MAINIO_H_
 
 #include "../device.h"
-#include "../memory.h"
 #include "../mc6809.h"
 #include "../z80.h"
 #include "../ym2203.h"
 
 #include "fm7_common.h"
+#include "./joystick.h"
 
 
 class FM7_MAINIO : public DEVICE {
@@ -32,9 +32,8 @@ class FM7_MAINIO : public DEVICE {
 	VM* p_vm;
 	EMU* p_emu;
 
-	int nmi_count;
-	bool irqstat_bak;
-	bool firqstat_bak;
+	//bool irqstat_bak;
+	//bool firqstat_bak;
 	uint8 io_w_latch[0x100];
    
 	/* FD00: R */
@@ -42,8 +41,6 @@ class FM7_MAINIO : public DEVICE {
 	/* FD00: W */
 	bool lpt_strobe;  // bit6 : maybe dummy entry
 	bool lpt_slctin;  // bit7 : maybe dummy entry
-	bool key_irq_req;
-	bool key_irq_bak;
 	/* FD01: W */
 	uint8 lpt_outdata; // maybe dummy.
 
@@ -62,9 +59,12 @@ class FM7_MAINIO : public DEVICE {
 	// 2 : TIMER
 	// 1 : PRINTER
 	// 0 : KEYBOARD
-	bool irqmask_mfd; // bit4: "0" = mask.
-	bool irqmask_timer; // bit2: "0" = mask.
-	bool irqmask_printer; // bit1: "0" = mask.
+	bool irqmask_syndet;   // bit7: "0" = mask.
+	bool irqmask_rxrdy;    // bit6: "0" = mask.
+	bool irqmask_txrdy;    // bit5: "0" = mask.
+	bool irqmask_mfd;      // bit4: "0" = mask.
+	bool irqmask_timer;    // bit2: "0" = mask.
+	bool irqmask_printer;  // bit1: "0" = mask.
 	bool irqmask_keyboard; // bit0: "0" = mask.
   
 	/* FD03: R */
@@ -87,7 +87,9 @@ class FM7_MAINIO : public DEVICE {
 	bool firq_sub_attention_bak; // bit0, ON = '0'.
 	/* FD04 : W */
 	bool intmode_fdc; // bit2, '0' = normal, '1' = SFD.
-
+#if defined(_FM77AV_VARIANTS)
+	bool hotreset;
+#endif	
 	/* FD05 : R */
 	bool extdet_neg; // bit0 : '1' = none , '0' = exists.
 	bool sub_busy;
@@ -96,8 +98,9 @@ class FM7_MAINIO : public DEVICE {
 	bool sub_cancel; // bit6 : '1' Cancel req.
 	bool sub_halt_bak; // bit7 : shadow.
 	bool sub_cancel_bak; // bit6 : shadow.
+#if defined(WITH_Z80)	
 	bool z80_sel;    // bit0 : '1' = Z80. Maybe only FM-7/77.
-
+#endif
 	/* FD06 : R/W : RS-232C */
 	/* FD07 : R/W : RS-232C */
 	bool intstat_syndet;
@@ -107,22 +110,15 @@ class FM7_MAINIO : public DEVICE {
 	/* FD09 : Grafic pen, not implemented */
 	/* FD0A : Grafic pen, not implemented */
 	/* FD0B : R */
-	bool stat_bootsw_basic; // bit0 : '0' = BASIC '1' = DOS. Only 77AV/20/40.
 	uint32 bootmode;
 	/* FD0D : W */
-	uint8 psg_cmdreg; // PSG Register, Only bit 0-1 at FM-7/77 , 3-0 at FM-77AV series. Maybe dummy.
-
 	/* FD0E : R */
-	uint8 psg_statreg; // PSG data. maybe dummy.
-	uint32 psg_address;
-	uint32 psg_data;
-	bool  psg_bus_high; // true when bus = high inpedance.
   
 	/* FD0F : R/W */
 	bool stat_romrammode; // R(true) = ROM, W(false) = RAM.
 #if defined(_FM77AV_VARIANTS)
 	/* FD12 : R/W*/
-	bool mode320; // bit6 : true = 320, false = 640
+	//bool mode320; // bit6 : true = 320, false = 640
 	/* FD13 : WO */
 	uint8 sub_monitor_type; // bit 2 - 0: default = 0.
 	uint8 sub_monitor_bak; // bit 2 - 0: default = 0.
@@ -132,7 +128,7 @@ class FM7_MAINIO : public DEVICE {
 	bool connect_opn; // [0]
 	bool connect_whg; // [1]
 	bool connect_thg; // [2]
-	bool psg_shared_opn;
+
 	uint32 opn_address[4];
 	uint32 opn_data[4];
 	uint32 opn_stat[4];
@@ -175,7 +171,13 @@ class FM7_MAINIO : public DEVICE {
 	/* FD1D : R/W */
 	bool fdc_motor; // bit7 : '1' = ON, '0' = OFF
 	uint8 fdc_drvsel; // bit 1-0
-	
+#if defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV40) || \
+  defined(_FM77AV40EX) || defined(FM77AV40SX)
+	bool fdc_2dd;
+	// FD1E
+	uint8 fdc_drvindex[4];
+	uint8 fdc_miscreg;
+#endif	
 	/* FD1F : R */
 	uint8 irqreg_fdc;
 	bool irqstat_fdc;
@@ -190,8 +192,6 @@ class FM7_MAINIO : public DEVICE {
 	/* FD20, FD21 : R */
 	
 	/* FD37 : W */
-	uint8 multipage_disp;   // bit6-4 : to display : GRB. '1' = disable, '0' = enable.
-	uint8 multipage_access; // bit2-0 : to access  : GRB. '1' = disable, '0' = enable.
 #ifdef HAS_MMR
 	bool mmr_enabled;
 	bool mmr_fast;
@@ -206,7 +206,9 @@ class FM7_MAINIO : public DEVICE {
 	/* FD10: bit1 */
 	bool enable_initiator;
 #endif	
-	
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20) || defined(_FM77AV20EX)
+	bool intstat_dma;
+#endif	
 	void set_clockmode(uint8 flags);
 	uint8 get_clockmode(void);
 	void set_cmt_motor(uint8 flag);
@@ -227,6 +229,10 @@ class FM7_MAINIO : public DEVICE {
 	void set_fdc_motor(bool flag);
 	
 	void do_irq(void);
+	void set_irq_syndet(bool flag);
+	void set_irq_rxrdy(bool flag);
+	void set_irq_txrdy(bool flag);
+	
 	void set_irq_timer(bool flag);
 	void set_irq_printer(bool flag);
 	void set_irq_keyboard(bool flag);
@@ -276,7 +282,6 @@ class FM7_MAINIO : public DEVICE {
   
 	uint8 get_extirq_whg(void);
 	uint8 get_extirq_thg(void);
-	uint32 update_joystatus(int index);
 	
 	void write_kanjiaddr_lo(uint8 addr);
 	void write_kanjiaddr_hi(uint8 addr);
@@ -296,39 +301,42 @@ class FM7_MAINIO : public DEVICE {
 	virtual uint8 get_fdc_track(void);
 
 	uint8 get_fdc_motor(void);
-	  
 	void set_fdc_sector(uint8 val);
-
 	uint8 get_fdc_sector(void);
 	  
 	void set_fdc_data(uint8 val);
 	uint8 get_fdc_data(void);
+	
+	void set_fdc_misc(uint8 val);
+	uint8 get_fdc_misc(void);
 	/* Signal Handlers */
 	void set_beep_oneshot(void);
 	
 	/* Event Handlers */
 	void event_beep_off(void);
 	void event_beep_cycle(void);
-	void proc_sync_to_sub(void);
-	void do_sync_main_sub(void);
 	/* Devices */
 	YM2203* opn[4]; // 0=OPN 1=WHG 2=THG 3=PSG
 	
 	DEVICE* drec;
         DEVICE* pcm1bit;
+	DEVICE* joystick;
+	
         //DEVICE* beep;
 	DEVICE* fdc;
 	//FM7_PRINTER *printer;
 	//FM7_RS232C *rs232c;
 	/* */
-	MEMORY *kanjiclass1;
-	MEMORY *kanjiclass2;
+	DEVICE *kanjiclass1;
+	DEVICE *kanjiclass2;
 	DEVICE *display;
 	DEVICE *keyboard;
 	MC6809 *maincpu;
-	MEMORY *mainmem;
+	DEVICE *mainmem;
 	MC6809 *subcpu;
+#ifdef WITH_Z80
 	Z80 *z80;
+#endif	
  public:
 	FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
@@ -338,7 +346,6 @@ class FM7_MAINIO : public DEVICE {
 		kanjiclass1 = NULL;
 		kanjiclass2 = NULL;
 		opn_psg_77av = false;
-		nmi_count = 0;
 		// FD00
 		clock_fast = true;
 		lpt_strobe = false;
@@ -364,20 +371,16 @@ class FM7_MAINIO : public DEVICE {
 		intmode_fdc = false; // bit2, '0' = normal, '1' = SFD.
 		// FD05
 		extdet_neg = false;
+#ifdef WITH_Z80
 		z80_sel = false;    // bit0 : '1' = Z80. Maybe only FM-7/77.
+#endif
 		// FD06,07
 		intstat_syndet = false;
 		intstat_rxrdy = false;
 		intstat_txrdy = false;
 		// FD0B
-		stat_bootsw_basic = true; // bit0 : '0' = BASIC '1' = DOS. Only 77AV/20/40.
 		bootmode = 0x00;
 		// FD0D
-		psg_cmdreg = 0;
-		psg_statreg = 0x00;
-		psg_address = 0x00;
-		psg_data = 0x00;
-		psg_bus_high = false;
 		// FD0F
 		stat_romrammode = true; // ROM ON
 		
@@ -385,7 +388,6 @@ class FM7_MAINIO : public DEVICE {
 		connect_opn = false;
 		connect_whg = false;
 		connect_thg = false;
-		psg_shared_opn = false;
 		
 		for(i = 0; i < 3; i++) {
 			opn_address[i] = 0x00;
@@ -448,24 +450,26 @@ class FM7_MAINIO : public DEVICE {
 	   return 0xff;
 	}
    
-	   
-   
 	void initialize();
+
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 
 	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 read_signal(uint32 addr);
+	uint32 read_signal(int id);
+
 	void event_callback(int event_id, int err);
 	void reset();
 	void update_config();
+	void save_state(FILEIO *state_fio);
+	bool load_state(FILEIO *state_fio);
 
-	void set_context_kanjirom_class1(MEMORY *p)
+	void set_context_kanjirom_class1(DEVICE *p)
 	{
 		kanjiclass1 = p;
 		if(p != NULL) connect_kanjiroml1 = true;
 	}
-	void set_context_kanjirom_class2(MEMORY *p)
+	void set_context_kanjirom_class2(DEVICE *p)
 	{
 #if defined(_FM77AV_VARIANTS)
 		kanjiclass2 = p;
@@ -521,13 +525,13 @@ class FM7_MAINIO : public DEVICE {
 		if(connect_fdc) {
 			extdet_neg = true;
 		}
-		emu->out_debug_log("FDC: connect=%d\n", connect_fdc);
+		emu->out_debug_log("FDC: connect=%d", connect_fdc);
 		fdc = p;
 	}
 	void set_context_maincpu(MC6809 *p){
 		maincpu = p;
 	}
-	void set_context_mainmem(MEMORY *p){
+	void set_context_mainmem(DEVICE *p){
 		mainmem = p;
 	}
 	void set_context_subcpu(MC6809 *p){
@@ -539,8 +543,13 @@ class FM7_MAINIO : public DEVICE {
 	void set_context_keyboard(DEVICE *p){
 		keyboard = p;
 	}
+	void set_context_joystick(DEVICE *p){
+		joystick = p;
+	}
 	void set_context_z80cpu(Z80 *p){
+#ifdef WITH_Z80
 		z80 = p;
+#endif
 	}
 
 };

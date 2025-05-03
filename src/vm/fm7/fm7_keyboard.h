@@ -33,6 +33,7 @@ class KEYBOARD : public DEVICE {
 	outputs_t key_ack;
 #endif
 	outputs_t break_line;
+	outputs_t int_line;
 	
 	uint32 keycode_7;
 	int keymode;
@@ -103,8 +104,6 @@ class KEYBOARD : public DEVICE {
 	FIFO *cmd_fifo;
 	FIFO *data_fifo;
 	
-	DEVICE *display;
-	DEVICE *mainio;
  public:
 	KEYBOARD(VM *parent_vm, EMU *parent_emu);
 	~KEYBOARD();
@@ -113,17 +112,13 @@ class KEYBOARD : public DEVICE {
 	void key_down(uint32 vk);
 	void event_callback(int event_id, int err);
 	void write_signal(int id, uint32 data, uint32 mask);
+	uint32 read_signal(int id);
+
 	uint32 read_data8(uint32 addr);
 	void write_data8(uint32 addr, uint32 data);
 	void reset(void);
 	void release(void);
 	
-	void set_context_display(DEVICE *p) {
-		display = p;
-	}
-	void set_context_mainio(DEVICE *p) {
-		mainio = p;
-	}
 	void set_context_rxrdy(DEVICE *p, int id, uint32 mask) {
 #if defined(_FM77AV_VARIANTS)  
 		register_output_signal(&rxrdy, p, id, mask);
@@ -146,7 +141,9 @@ class KEYBOARD : public DEVICE {
 	void set_context_break_line(DEVICE *p, int id, uint32 mask) {
 		register_output_signal(&break_line, p, id, mask);
 	}
-   
+	void set_context_int_line(DEVICE *p, int id, uint32 mask) {
+		register_output_signal(&int_line, p, id, mask);
+	}
 };
 
 

@@ -35,6 +35,7 @@
 #include "./fm7_mainmem.h"
 #include "./fm7_display.h"
 #include "./fm7_keyboard.h"
+#include "./joystick.h"
 
 #include "./kanjirom.h"
 
@@ -51,16 +52,12 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	dummycpu = new DEVICE(this, emu);
-	// basic devices
-	mainmem = new FM7_MAINMEM(this, emu);
-	mainio  = new FM7_MAINIO(this, emu);
+	kanjiclass1 = new KANJIROM(this, emu, false);
+#ifdef CAPABLE_KANJI_CLASS2
+	kanjiclass2 = new KANJIROM(this, emu, true);
+#endif
+	joystick  = new JOYSTICK(this, emu);
 	
-	display = new DISPLAY(this, emu);
-	keyboard = new KEYBOARD(this, emu);
-#if defined(_FM77AV_VARIANTS)
-	alu = new MB61VH010(this, emu);
-#endif	
-
 	// I/Os
 	drec = new DATAREC(this, emu);
 	pcm1bit = new PCM1BIT(this, emu);
@@ -73,15 +70,20 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #if !defined(_FM77AV_VARIANTS)
 	psg = new YM2203(this, emu);
 #endif
-	kanjiclass1 = new KANJIROM(this, emu, false);
-#ifdef CAPABLE_KANJI_CLASS2
-	kanjiclass2 = new KANJIROM(this, emu, true);
-#endif
-	maincpu = new MC6809(this, emu);
+	display = new DISPLAY(this, emu);
+	mainio  = new FM7_MAINIO(this, emu);
+	mainmem = new FM7_MAINMEM(this, emu);
+	keyboard = new KEYBOARD(this, emu);
+#if defined(_FM77AV_VARIANTS)
+	alu = new MB61VH010(this, emu);
+#endif	
+		
+	// basic devices
 	subcpu = new MC6809(this, emu);
 #ifdef WITH_Z80
 	z80cpu = new Z80(this, emu);
 #endif
+	maincpu = new MC6809(this, emu);
 	connect_bus();
 	initialize();
 }
@@ -116,15 +118,16 @@ void VM::initialize(void)
 	cycle_steal = true;
 #endif
 	clock_low = false;
+	
 }
 
 
 void VM::connect_bus(void)
 {
-	int i;
-	uint32 subclock;
 	uint32 mainclock;
-	
+	uint32 subclock;
+	int i;
+
 	/*
 	 * CLASS CONSTRUCTION
 	 *
@@ -145,7 +148,12 @@ void VM::connect_bus(void)
 	 */
 	event->set_frames_per_sec(60.00);
 	event->set_lines_per_frame(400);
-	event->set_context_cpu(dummycpu, MAINCLOCK_FAST_MMR * 3);
+#if defined(_FM77AV40) || defined(_FM77AV20)
+	event->set_context_cpu(dummycpu, MAINCLOCK_FAST_MMR * 2);
+#else
+	event->set_context_cpu(dummycpu, SUBCLOCK_NORMAL * 2);
+#endif
+	
 #if defined(_FM8)
 	mainclock = MAINCLOCK_SLOW;
 	subclock = SUBCLOCK_SLOW;
@@ -160,7 +168,11 @@ void VM::connect_bus(void)
 		subclock = SUBCLOCK_SLOW;
 	}
 #endif
+#if defined(_FM77AV40) || defined(_FM77AV20)
 	event->set_context_cpu(maincpu, MAINCLOCK_FAST_MMR);
+#else
+	event->set_context_cpu(maincpu, MAINCLOCK_NORMAL);
+#endif	
 	event->set_context_cpu(subcpu,  SUBCLOCK_NORMAL);
    
 #ifdef WITH_Z80
@@ -168,7 +180,6 @@ void VM::connect_bus(void)
 	z80cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 #endif
 
-//	event->set_context_sound(beep);
 	event->set_context_sound(pcm1bit);
 #if !defined(_FM77AV_VARIANTS)
 	mainio->set_context_psg(psg);
@@ -179,28 +190,29 @@ void VM::connect_bus(void)
 	event->set_context_sound(opn[2]);
 	event->set_context_sound(drec);
 	//event->register_vline_event(display);
+	event->register_frame_event(display);
 	//event->register_vline_event(mainio);
    
 	mainio->set_context_maincpu(maincpu);
 	mainio->set_context_subcpu(subcpu);
 	
 	mainio->set_context_display(display);
-        mainio->set_context_kanjirom_class1(kanjiclass1);
-        mainio->set_context_mainmem(mainmem);
-        mainio->set_context_keyboard(keyboard);
+	mainio->set_context_kanjirom_class1(kanjiclass1);
+	mainio->set_context_mainmem(mainmem);
+	mainio->set_context_keyboard(keyboard);
    
 #if defined(CAPABLE_KANJI_CLASS2)
         mainio->set_context_kanjirom_class2(kanjiclass2);
 #endif
 
 	keyboard->set_context_break_line(mainio, FM7_MAINIO_PUSH_BREAK, 0xffffffff);
-	keyboard->set_context_mainio(mainio);
-	keyboard->set_context_display(display);
+	keyboard->set_context_int_line(mainio, FM7_MAINIO_KEYBOARDIRQ, 0xffffffff);
+	keyboard->set_context_int_line(display, SIG_FM7_SUB_KEY_FIRQ, 0xffffffff);
 	
-	keyboard->set_context_rxrdy(keyboard, SIG_FM7KEY_RXRDY, 0x01);
+	//keyboard->set_context_rxrdy(keyboard, SIG_FM7KEY_RXRDY, 0x01);
 	keyboard->set_context_rxrdy(display, SIG_FM7KEY_RXRDY, 0x01);
 	
-	keyboard->set_context_key_ack(keyboard, SIG_FM7KEY_ACK, 0x01);
+	//keyboard->set_context_key_ack(keyboard, SIG_FM7KEY_ACK, 0x01);
 	keyboard->set_context_key_ack(display, SIG_FM7KEY_ACK, 0x01);
    
 	drec->set_context_out(mainio, FM7_MAINIO_CMT_RECV, 0xffffffff);
@@ -214,10 +226,11 @@ void VM::connect_bus(void)
 	display->set_context_subcpu(subcpu);
 	display->set_context_keyboard(keyboard);
 	subcpu->set_context_bus_halt(display, SIG_FM7_SUB_HALT, 0xffffffff);
+	subcpu->set_context_bus_halt(mainmem, SIG_FM7_SUB_HALT, 0xffffffff);
 
-        display->set_context_kanjiclass1(kanjiclass1);
+	display->set_context_kanjiclass1(kanjiclass1);
 #if defined(CAPABLE_KANJI_CLASS2)
-        display->set_context_kanjiclass2(kanjiclass2);
+	display->set_context_kanjiclass2(kanjiclass2);
 #endif   
 #if defined(_FM77AV_VARIANTS)
 	display->set_context_alu(alu);
@@ -235,15 +248,16 @@ void VM::connect_bus(void)
 	//mainio->set_context_beep(beep);
 	
 	opn[0]->set_context_irq(mainio, FM7_MAINIO_OPN_IRQ, 0xffffffff);
-	//opn[0]->set_context_port_a(mainio, FM7_MAINIO_OPNPORTA_CHANGED, 0xff, 0);
-	//opn[0]->set_context_port_b(mainio, FM7_MAINIO_OPNPORTB_CHANGED, 0xff, 0);
 	mainio->set_context_opn(opn[0], 0);
+	joystick->set_context_opn(opn[0]);
+	mainio->set_context_joystick(joystick);
+	
 	opn[1]->set_context_irq(mainio, FM7_MAINIO_WHG_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[1], 1);
 	opn[2]->set_context_irq(mainio, FM7_MAINIO_THG_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[2], 2);
    
-	subcpu->set_context_bus_halt(mainmem, SIG_FM7_SUB_HALT, 0xffffffff);
+	subcpu->set_context_bus_halt(display, SIG_FM7_SUB_HALT, 0xffffffff);
 	subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
    
 	maincpu->set_context_mem(mainmem);
@@ -252,12 +266,12 @@ void VM::connect_bus(void)
 	maincpu->set_context_debugger(new DEBUGGER(this, emu));
 	subcpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
-
+	event->register_frame_event(joystick);
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
-	maincpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
-	subcpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
+	//maincpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+	//subcpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
    
 	for(int i = 0; i < 2; i++) {
 #if defined(_FM77AV20) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
@@ -265,7 +279,7 @@ void VM::connect_bus(void)
 #else
 		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 #endif
-		fdc->set_drive_rpm(i, 300);
+		fdc->set_drive_rpm(i, 360);
 		fdc->set_drive_mfm(i, true);
 	}
 #if defined(_FM77) || defined(_FM77L4)
@@ -280,8 +294,6 @@ void VM::connect_bus(void)
 
 void VM::update_config()
 {
-   uint32 subclock;
-
 #if !defined(_FM8)
 	switch(config.cpu_type){
 		case 0:
@@ -301,8 +313,6 @@ void VM::update_config()
 
 void VM::reset()
 {
-	int i, j;
-	uint8 data;
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
@@ -329,8 +339,12 @@ void VM::special_reset()
 	// BREAK + RESET
 	mainio->write_signal(FM7_MAINIO_PUSH_BREAK, 1, 1);
 	mainio->reset();
+	mainmem->reset();
+	
+#if defined(FM77AV_VARIANTS)	
+	mainio->write_signal(FM7_MAINIO_HOT_RESET, 1, 1);
+#endif	
 	display->reset();
-	subcpu->reset();   
 	maincpu->reset();
 	mainio->write_signal(FM7_MAINIO_PUSH_BREAK, 1, 1);
 	event->register_event(mainio, EVENT_UP_BREAK, 10000.0 * 1000.0, false, NULL);
@@ -394,7 +408,6 @@ void VM::initialize_sound(int rate, int samples)
 	psg->init(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
 #endif   
 	pcm1bit->init(rate, 2000);
-	//beep->init(rate, 1200, 2000);
 	//drec->init_pcm(rate, 0);
 }
 

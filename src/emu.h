@@ -760,6 +760,9 @@ public:
 	void out_message(const _TCHAR* format, ...);
 	int message_count;
 	_TCHAR message[1024];
+	
+	// misc
+	void sleep(uint32 ms);
 };
 
 #endif

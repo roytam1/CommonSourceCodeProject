@@ -44,11 +44,10 @@ private:
 	uint8 cc;
 	pair ea;	/* effective address */
 	
-	uint8 int_state;
+	uint32 int_state;
 	bool busreq;
 	int icount;
 	int extra_icount;
-	inline uint32 RM16(uint32 Addr);
 	inline void WM16(uint32 Addr, pair *p);
 	void cpu_irq(void);
 	void cpu_firq(void);
