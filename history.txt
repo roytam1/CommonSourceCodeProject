@@ -1,3 +1,11 @@
+8/25/2015
+
+[WIN32/SCREEN] improve crt filter for non stretched screen
+[WIN32/SCREEN] fix not to lock Direct3D9 offscreen surface for a long period
+
+[PC8801/PC88] import Mr.PI.'s fixes from XM8 version 1.30
+
+
 8/24/2015
 
 [VM/DISK] fix to save image in d88 format if solid image is physical formatted

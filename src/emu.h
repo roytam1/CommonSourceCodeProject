@@ -288,8 +288,6 @@ private:
 	LPDIRECT3DDEVICE9 lpd3d9Device;
 	LPDIRECT3DSURFACE9 lpd3d9Surface;
 	LPDIRECT3DSURFACE9 lpd3d9OffscreenSurface;
-	scrntype *lpd3d9Buffer;
-	bool render_to_d3d9Buffer;
 	bool use_d3d9;
 	bool wait_vsync;
 	
