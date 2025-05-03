@@ -1,3 +1,8 @@
+10/26/2014
+
+[WINMAIN] fix frame rate issue again
+
+
 10/25/2014
 
 [WINMAIN] fix frame rate issue (thanks Mr.Rednow)

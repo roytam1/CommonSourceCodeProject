@@ -137,7 +137,7 @@ void EMU::update_sound(int* extra_frames)
 			offset = 0;
 		}
 		else {
-			if(play_c > DSOUND_BUFFER_HALF) {
+			if(play_c >= DSOUND_BUFFER_HALF) {
 				return;
 			}
 			offset = DSOUND_BUFFER_HALF;
