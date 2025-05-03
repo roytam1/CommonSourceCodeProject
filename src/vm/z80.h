@@ -370,6 +370,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int count, first;
+	bool busreq, halt;
 	
 	union REGTYPE {
 		uint8 b[2];
@@ -378,7 +379,6 @@ private:
 	
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
 	uint16 SP, PC, prvPC, exAF, exBC, exDE, exHL, EA;
-	bool busreq, halt;
 	uint32 intr_req_bit, intr_pend_bit;
 	
 	/* ---------------------------------------------------------------------------
@@ -543,6 +543,7 @@ private:
 public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		count = first = 0;	// passed_clock must be zero at initialize
+		busreq = false;
 	}
 	~Z80() {}
 	

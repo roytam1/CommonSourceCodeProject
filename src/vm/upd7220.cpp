@@ -25,6 +25,7 @@ void UPD7220::initialize()
 	ra[0] = ra[1] = ra[2] = 0; ra[3] = 0x19;
 	cs[0] = cs[1] = cs[2] = 0;
 	ead = dad = 0;
+	pitch = 40;	// 640dot
 	maskl = maskh = 0xff;
 	mod = 0;
 	vsync = hblank = start = false;
@@ -417,7 +418,11 @@ void UPD7220::cmd_csrform()
 
 void UPD7220::cmd_pitch()
 {
+#ifdef UPD7220_FIXED_PITCH
+	fi->read();
+#else
 	pitch = fi->read();
+#endif
 	cmdreg = -1;
 }
 
@@ -431,7 +436,7 @@ void UPD7220::cmd_lpen()
 
 #define UPDATE_VECT() { \
 	dir = vect[0] & 7; \
-	dif = vectdir[dir][0] + vectdir[dir][1] * 40; \
+	dif = vectdir[dir][0] + vectdir[dir][1] * pitch; \
 	sl = vect[0] & 0x80; \
 	dc = (vect[1] | (vect[ 2] << 8)) & 0x3fff; \
 	d  = (vect[3] | (vect[ 4] << 8)) & 0x3fff; \
@@ -442,18 +447,24 @@ void UPD7220::cmd_lpen()
 
 void UPD7220::cmd_vectw()
 {
-	for(int i = 0; i < 11 && !ft->empty(); i++)
+	for(int i = 0; i < 11 && !ft->empty(); i++) {
 		vect[i] = ft->read();
+//		emu->out_debug("\tVECT[%d] = %2x\n", i, vect[i]);
+	}
 	UPDATE_VECT();
 	cmdreg = -1;
 }
 
 void UPD7220::cmd_vecte()
 {
-	dx = ((ead %  40) << 4) | (dad & 0xf);
-	dy = ead / 40;
+	dx = ((ead %  pitch) << 4) | (dad & 0xf);
+	dy = ead / pitch;
 	
 	// execute command
+	if(!(vect[0] & 0x78)) {
+		pattern = ra[8] | (ra[9] << 8);
+		pset(dx, dy);
+	}
 	if(vect[0] & 0x08)
 		draw_vectl();
 	if(vect[0] & 0x10)
@@ -469,10 +480,14 @@ void UPD7220::cmd_vecte()
 
 void UPD7220::cmd_texte()
 {
-	dx = ((ead % 40) << 4) | (dad & 0xf);
-	dy = ead / 40;
+	dx = ((ead % pitch) << 4) | (dad & 0xf);
+	dy = ead / pitch;
 	
 	// execute command
+	if(!(vect[0] & 0x78)) {
+		pattern = ra[8] | (ra[9] << 8);
+		pset(dx, dy);
+	}
 	if(vect[0] & 0x08)
 		draw_vectl();
 	if(vect[0] & 0x10)
@@ -493,7 +508,7 @@ void UPD7220::cmd_csrw()
 	ead |= ft->read() << 16;
 	dad = (ead >> 20) & 0xf;
 	ead &= 0x3ffff;
-//	emu->out_debug("\tCSRW: X=%d,Y=%d,DOT=%d\n",ead%40,(int)(ead/40),dad);
+//	emu->out_debug("\tCSRW: X=%d,Y=%d,DOT=%d\n", ead % pitch, (int)(ead / pitch), dad);
 	cmdreg = -1;
 }
 
@@ -767,7 +782,7 @@ void UPD7220::draw_vectt()
 		dx += vx2;
 		dy += vy2;
 	}
-	ead = (dx >> 4) + dy * 40;
+	ead = (dx >> 4) + dy * pitch;
 	dad = dx & 0xf;
 }
 
@@ -868,7 +883,7 @@ void UPD7220::draw_vectr()
 		dx -= vx2;
 		dy -= vy2;
 	}
-	ead = (dx >> 4) + dy * 40;
+	ead = (dx >> 4) + dy * pitch;
 	dad = dx & 0xf;
 }
 
@@ -878,15 +893,15 @@ void UPD7220::draw_text()
 	int vx1 = vectdir[dir2][0], vy1 = vectdir[dir2][1];
 	int vx2 = vectdir[dir2][2], vy2 = vectdir[dir2][3];
 	int sx = d, sy = dc + 1;
+#ifdef _QC10
 	if(dir == 0 && sy == 40) sy = 640;	// patch
-//	emu->out_debug("\tTEXT: dx=%d,dy=%d,sx=%d,sy=%d\n",dx,dy,sx,sy);
+#endif
+//	emu->out_debug("\tTEXT: dx=%d,dy=%d,sx=%d,sy=%d\n", dx, dy, sx, sy);
 	int index = 15;
 	
 	while(sy--) {
 		int muly = zw + 1;
 		while(muly--) {
-			while(dx < 0) dx += 640;
-			while(dx >= 640) dx -= 640;
 			int cx = dx, cy = dy;
 			uint8 bit = ra[index];
 			int xrem = sx;
@@ -895,8 +910,6 @@ void UPD7220::draw_text()
 				bit = (bit >> 1) | ((bit & 1) ? 0x80 : 0);
 				int mulx = zw + 1;
 				while(mulx--) {
-					while(cx < 0) cx += 640;
-					while(cx >= 640) cx -= 640;
 					pset(cx, cy);
 					cx += vx1;
 					cy += vy1;
@@ -907,7 +920,7 @@ void UPD7220::draw_text()
 		}
 		index = ((index - 1) & 7) | 8;
 	}
-	ead = (dx >> 4) + dy * 40;
+	ead = (dx >> 4) + dy * pitch;
 	dad = dx & 0xf;
 }
 
@@ -916,29 +929,27 @@ void UPD7220::pset(int x, int y)
 	uint16 dot = pattern & 1;
 	pattern = (pattern >> 1) | (dot << 15);
 	uint32 addr = (y * 80 + (x >> 3)) & ADDR_MASK;
+	uint8 bit = 1 << (x & 7);
+	uint8 cur = vram[addr];
 	
-//	if(!(y < 0 || x < 0 || 640 <= x)) {
-		uint8 bit = 1 << (x & 7);
-		uint8 cur = vram[addr];
-		switch(mod)
-		{
-		case 0:
-			// replace
-			vram[addr] = (cur & ~bit) | (dot ? bit : 0);
-			break;
-		case 1:
-			// complement
-			vram[addr] = (cur & ~bit) | ((cur ^ (dot ? 0xff : 0)) & bit);
-			break;
-		case 2:
-			// reset
-			vram[addr] &= dot ? ~bit : 0xff;
-			break;
-		case 3:
-			// set
-			vram[addr] |= dot ? bit : 0;
-			break;
-		}
-//	}
+	switch(mod)
+	{
+	case 0:
+		// replace
+		vram[addr] = (cur & ~bit) | (dot ? bit : 0);
+		break;
+	case 1:
+		// complement
+		vram[addr] = (cur & ~bit) | ((cur ^ (dot ? 0xff : 0)) & bit);
+		break;
+	case 2:
+		// reset
+		vram[addr] &= dot ? ~bit : 0xff;
+		break;
+	case 3:
+		// set
+		vram[addr] |= dot ? bit : 0;
+		break;
+	}
 }
 

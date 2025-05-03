@@ -162,6 +162,9 @@ void I8259::update_intr()
 		req_level = level;
 		req_bit = bit;
 		intr = true;
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: req level = %d\n"), c, level);
+#endif
 		break;
 	}
 	if(d_cpu)
@@ -198,5 +201,8 @@ uint32 I8259::intr_ack()
 		// auto eoi
 		pic[req_chip].isr &= ~req_bit;
 	}
+#ifdef _DEBUG_LOG
+//	emu->out_debug(_T("I8259[%d]: ack vector = %2x\n"), req_chip, vector);
+#endif
 	return vector;
 }

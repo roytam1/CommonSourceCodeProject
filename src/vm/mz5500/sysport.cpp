@@ -10,6 +10,12 @@
 
 #include "sysport.h"
 
+void SYSPORT::initialize()
+{
+	rst = 0;
+	vm->regist_frame_event(this);
+}
+
 void SYSPORT::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0x3f0)
@@ -33,7 +39,7 @@ uint32 SYSPORT::read_io8(uint32 addr)
 	{
 	case 0x60:
 		// port-a
-		return 0xff;
+		return rst ? 0xfd : 0xff;
 	case 0x240:
 		// z80ctc vector
 		return d_ctc->intr_ack();

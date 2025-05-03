@@ -20,12 +20,14 @@
 class MEMORY : public DEVICE
 {
 private:
+	DEVICE* d_cpu;
+	
 	uint8* rbank[64];	// 1MB / 16KB
 	uint8* wbank[64];
 	uint8 wdmy[0x4000];
 	uint8 rdmy[0x4000];
 	uint8 ram[0x80000];	// Main RAM 512KB
-	uint8 vram[0x40000];	// VRAM 192KB + 1024B + padding
+	uint8 vram[0x80000];	// VRAM 192KB + 1024B + padding
 	uint8 ipl[0x4000];	// IPL 16KB
 	uint8 kanji[0x40000];	// Kanji ROM 256KB
 	uint8 dic[0x40000];	// Dictionary ROM 256KB
@@ -46,6 +48,9 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	
 	// unitque function
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
+	}
 	uint8* get_vram() {
 		return vram;
 	}

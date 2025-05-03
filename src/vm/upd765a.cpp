@@ -888,7 +888,7 @@ void UPD765A::cmd_read_id()
 		break;
 	case PHASE_CMD:
 		set_hdu(buffer[0]);
-		break;	// memo
+//		break;
 	case PHASE_EXEC:
 		if(check_cond(false) & ST1_MA) {
 			REGIST_EVENT(PHASE_EXEC, 1000000);

@@ -206,6 +206,10 @@ void EVENT::regist_event(DEVICE* dev, int event_id, int usec, bool loop, int* re
 			break;
 		}
 	}
+#ifdef _DEBUG_LOG
+	if(*regist_id == -1)
+		emu->out_debug(_T("EVENT: too many events !!!\n"));
+#endif
 	
 	// get next event clock
 	if(get_nextevent) {
@@ -236,6 +240,10 @@ void EVENT::regist_event_by_clock(DEVICE* dev, int event_id, int clock, bool loo
 			break;
 		}
 	}
+#ifdef _DEBUG_LOG
+	if(*regist_id == -1)
+		emu->out_debug(_T("EVENT: too many events !!!\n"));
+#endif
 	
 	// get next event clock
 	if(get_nextevent) {

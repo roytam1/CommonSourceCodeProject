@@ -49,8 +49,10 @@
 #define MAX_DRIVE		4
 #define I8259_MAX_CHIPS		2
 #define UPD7201
+#define UPD7220_FIXED_PITCH
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
+//#define UPD765A_STRICT_ID
 
 #include "../../common.h"
 

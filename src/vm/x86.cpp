@@ -171,6 +171,7 @@ void X86::reset()
 	ldtr_sel = tr_sel = 0;
 	AuxVal = OverVal = SignVal = ZeroVal = CarryVal = DirVal = 0;
 	ParityVal = TF = IF = MF = 0;
+	halt = false;
 	intstat = busy = 0;
 	
 	sregs[CS] = 0xf000;
@@ -193,6 +194,12 @@ void X86::reset()
 
 void X86::run(int clock)
 {
+	// return now if BUSREQ
+	if(busreq) {
+		count = extra_count = first = 0;
+		return;
+	}
+	
 	// run cpu while given clocks
 	count += clock;
 	first = count;
@@ -205,6 +212,10 @@ void X86::run(int clock)
 		seg_prefix = false;
 		op(FETCHOP());
 		if(intstat) {
+			if(halt) {
+				PC++;
+				halt = false;
+			}
 			unsigned intnum;
 			if(intstat & NMI_REQ_BIT)
 				intnum = NMI_INT_VECTOR;
@@ -226,6 +237,11 @@ void X86::write_signal(int id, uint32 data, uint32 mask)
 			intstat |= NMI_REQ_BIT;
 		else
 			intstat &= ~NMI_REQ_BIT;
+	}
+	else if(id == SIG_CPU_BUSREQ) {
+		busreq = (data & mask) ? true : false;
+		if(busreq)
+			count = extra_count = first = 0;
 	}
 	else if(id == SIG_X86_TEST)
 		busy = (data & mask) ? 1 : 0;
@@ -4106,7 +4122,7 @@ inline void X86::_rep(int flagval)
 inline void X86::_hlt()	// Opcode 0xf4
 {
 	PC--;
-	count = 0;
+	halt = true;
 }
 
 inline void X86::_cmc()	// Opcode 0xf5

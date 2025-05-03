@@ -70,7 +70,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	dma->set_context_memory(memory);
 	dma->set_context_ch1(fdc);
-	// pio
+	pio->set_context_port_c(keyboard, SIG_KEYBOARD_INPUT, 3, 0);
 	pic->set_context(cpu);
 	div->set_context_2qb(ctc0, SIG_Z80CTC_TRIG_3);
 #if defined(_MZ6500) || defined(_MZ6550)
@@ -80,7 +80,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	div->set_context_2qd(ctc1, SIG_Z80CTC_TRIG_3);
 #endif
 	rtc->set_context_alarm(pic, SIG_I8259_IR0 | SIG_I8259_CHIP1, 1);
-	gdc->set_vram_ptr(memory->get_vram(), 0x40000);
+	gdc->set_vram_ptr(memory->get_vram(), 0x80000);
 	gdc->set_context_vsync(pic, SIG_I8259_IR0 | SIG_I8259_CHIP0, 1);
 	fdc->set_context_intr(pic, SIG_I8259_IR1 | SIG_I8259_CHIP1, 1);
 	fdc->set_context_drq(dma, SIG_I8237_CH1, 1);
@@ -95,13 +95,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	sio->set_context_intr(pic, SIG_I8259_IR1 | SIG_I8259_CHIP0);
 	
-	//keyboard
 	display->set_context_fdc(fdc);
 	display->set_vram_ptr(memory->get_vram());
 	display->set_sync_ptr(gdc->get_sync());
 	display->set_ra_ptr(gdc->get_ra());
 	display->set_cs_ptr(gdc->get_cs());
 	display->set_ead_ptr(gdc->get_ead());
+	keyboard->set_context_pio(pio, SIG_I8255_PORT_B);
+	keyboard->set_context_pic(pic, SIG_I8259_IR3 | SIG_I8259_CHIP0);
+	memory->set_context_cpu(cpu);
 	sysport->set_context_fdc(fdc);
 	sysport->set_context_ctc(ctc0);
 	sysport->set_context_sio(sio);
@@ -123,7 +125,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_w(0x70, 0x7f, sysport);
 	for(int i = 0x100; i < 0x10f; i += 2)
 		io->set_iomap_alias_w(i, gdc, (i >> 1) & 1);
-	io->set_iomap_range_w(0x110, 0x16f, display);
+	io->set_iomap_range_w(0x110, 0x17f, display);
 	io->set_iomap_range_w(0x200, 0x20f, sio);
 	io->set_iomap_range_w(0x210, 0x21f, ctc0);
 	io->set_iomap_range_w(0x220, 0x22f, rtc);
@@ -140,7 +142,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_r(0x60, 0x6f, sysport);
 	for(int i = 0x100; i < 0x10f; i += 2)
 		io->set_iomap_alias_r(i, gdc, (i >> 1) & 1);
-	io->set_iomap_range_r(0x110, 0x16f, display);
+	io->set_iomap_range_r(0x110, 0x17f, display);
 	io->set_iomap_range_r(0x200, 0x20f, sio);
 	io->set_iomap_range_r(0x210, 0x21f, ctc0);
 	io->set_iomap_range_r(0x220, 0x22f, rtc);
@@ -185,6 +187,13 @@ void VM::reset()
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device)
 		device->reset();
+}
+
+void VM::ipl_reset()
+{
+	// nmi
+	cpu->write_signal(SIG_CPU_NMI, 1, 1);
+	sysport->nmi_reset();
 }
 
 void VM::run()
@@ -256,7 +265,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	psg->init(rate, 2000000, samples, 0, -8);
+	psg->init(rate, 4000000, samples, 0, 0);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -275,7 +284,7 @@ void VM::key_down(int code)
 
 void VM::key_up(int code)
 {
-	keyboard->key_up(code);
+//	keyboard->key_up(code);
 }
 
 // ----------------------------------------------------------------------------

@@ -1,3 +1,36 @@
+4/22/2008
+
+[VM/LS244] support 74LS244/245
+[VM/UPD1990AC] support uPD1990AC
+[VM/X86] fix hlt
+[VM/X86] support busreq
+[VM/Z80] don't reset busreq in reset()
+
+[MZ5500/KEYBOARD] support communication timeout
+
+
+4/16/2008
+
+[VM/UPD7220] support pitch command
+[VM/UPD7220] fix vecte command in the case R=C=T=L=0 (pset)
+[VM/UPD765A] fix read id command
+
+[MZ5500/DISPLAY] support window controller
+[MZ5500/DISPLAY] support 320x200, 320x400, 640x200 mode
+[MZ5500/DISPLAY] support color palette
+[MZ5500/DISPLAY] support b/w mode
+[MZ5500/DISPLAY] support plane priority
+[MZ5500/KEYBOARD] support algo key
+[MZ5500/SYSPORT] support nmi reset
+
+[QC10/DISPLAY] support floppy drive access lamp
+
+
+4/14/2008
+
+[MZ5500/KEYBOARD] support keyboard and mouse
+
+
 4/12/2008
 
 [VM/LS393] support 74LS393

@@ -517,7 +517,7 @@ void Z80::reset()
 	PC = _I = _R = 0;
 //	AF = SP = 0xffff;
 	IM = IFF1 = IFF2 = ICR = 0;
-	busreq = halt = false;
+	halt = false;
 	intr_req_bit = intr_pend_bit = 0;
 }
 
@@ -525,6 +525,11 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CPU_NMI)
 		intr_req_bit = (data & mask) ? (intr_req_bit | NMI_REQ_BIT) : (intr_req_bit & ~NMI_REQ_BIT);
+	else if(id == SIG_CPU_BUSREQ) {
+		busreq = (data & mask) ? true : false;
+		if(busreq)
+			count = first = 0;
+	}
 #ifdef NSC800
 	else if(id == SIG_NSC800_INT)
 		intr_req_bit = (data & mask) ? (intr_req_bit | 1) : (intr_req_bit & ~1);
@@ -535,11 +540,6 @@ void Z80::write_signal(int id, uint32 data, uint32 mask)
 	else if(id == SIG_NSC800_RSTC)
 		intr_req_bit = (data & mask) ? (intr_req_bit | 2) : (intr_req_bit & ~2);
 #endif
-	else if(id == SIG_CPU_BUSREQ) {
-		busreq = (data & mask) ? true : false;
-		if(busreq)
-			count = first = 0;
-	}
 }
 
 void Z80::run(int clock)

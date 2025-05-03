@@ -40,6 +40,11 @@
 #include "mz2800/mz2800.h"
 #endif
 
+// SHARP MZ-3500
+#ifdef _MZ3500
+//#include "mz3500/mz3500.h"
+#endif
+
 // SHARP MZ-5500
 #ifdef _MZ5500
 #include "mz5500/mz5500.h"

@@ -19,14 +19,19 @@ class SYSPORT : public DEVICE
 {
 private:
 	DEVICE *d_fdc, *d_ctc, *d_sio;
+	int rst;
 	
 public:
 	SYSPORT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~SYSPORT() {}
 	
 	// common functions
+	void initialize();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
+	void event_frame() {
+		if(rst) rst--;
+	}
 	
 	// unique function
 	void set_context_fdc(DEVICE* device) {
@@ -37,6 +42,9 @@ public:
 	}
 	void set_context_sio(DEVICE* device) {
 		d_sio = device;
+	}
+	void nmi_reset() {
+		rst = 20;
 	}
 };
 

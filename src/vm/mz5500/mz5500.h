@@ -22,17 +22,23 @@
 #define DEVICE_NAME		"SHARP MZ-6550"
 #define CONFIG_NAME		"mz6550"
 #endif
-#define CONFIG_VERSION		0x01
+#define CONFIG_VERSION		0x02
 
 #define WINDOW_WIDTH1		640
 #define WINDOW_HEIGHT1		400
 #define WINDOW_WIDTH2		640
 #define WINDOW_HEIGHT2		400
 
+#define USE_IPL_RESET
 #define USE_FD1
 #define USE_FD2
+#define USE_FD3
+#define USE_FD4
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
+#define USE_AUTO_KEY		5
+#define USE_AUTO_KEY_RELEASE	6
+#define USE_SCANLINE
 
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
@@ -41,7 +47,7 @@
 #define CHARS_PER_LINE		108
 #ifdef _MZ5500
 #define CPU_CLOCKS		4915200
-#elif defined(_MZ6500)
+#elif defined(_MZ6500) || defined(_MZ6550)
 #define CPU_CLOCKS		8000000
 #endif
 #define SCREEN_WIDTH		640
@@ -127,6 +133,7 @@ public:
 	
 	// drive virtual machine
 	void reset();
+	void ipl_reset();
 	void run();
 	
 	// draw screen

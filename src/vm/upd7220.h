@@ -87,7 +87,7 @@ private:
 	uint8 zoom, zr, zw;	// zoom
 	uint8 ra[16];		// scroll, textw
 	uint8 cs[3];		// cursor
-	uint8 pitch;		// pitch
+	int pitch;		// pitch
 	uint32 lad;		// lpen
 	uint8 vect[11];		// vectw
 	int ead, dad;		// csrw, csrr

@@ -364,6 +364,7 @@ private:
 	
 	// clocks
 	int count, extra_count, first;
+	bool busreq, halt;
 	
 	// regs
 	union REGTYPE {
@@ -725,6 +726,7 @@ private:
 public:
 	X86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		count = extra_count = first = 0;	// passed_clock must be zero at initialize
+		busreq = false;
 	}
 	~X86() {}
 	

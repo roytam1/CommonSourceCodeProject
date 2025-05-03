@@ -72,24 +72,32 @@ void MEMORY::initialize()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xfffff;
+//	if((0x80000 <= addr && addr < 0xa0000) || (0xf0000 <= addr && addr < 0xfc000))
+//		d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 	wbank[addr >> 14][addr & 0x3fff] = data;
 }
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xfffff;
+//	if((0x80000 <= addr && addr < 0xa0000) || (0xf0000 <= addr && addr < 0xfc000))
+//		d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 	return rbank[addr >> 14][addr & 0x3fff];
 }
 
 void MEMORY::write_dma8(uint32 addr, uint32 data)
 {
 	addr = (addr & 0xffff) | haddr;
+//	if((0x80000 <= addr && addr < 0xa0000) || (0xf0000 <= addr && addr < 0xfc000))
+//		d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 	wbank[addr >> 14][addr & 0x3fff] = data;
 }
 
 uint32 MEMORY::read_dma8(uint32 addr)
 {
 	addr = (addr & 0xffff) | haddr;
+//	if((0x80000 <= addr && addr < 0xa0000) || (0xf0000 <= addr && addr < 0xfc000))
+//		d_cpu->write_signal(SIG_CPU_NMI, 1, 1);
 	return rbank[addr >> 14][addr & 0x3fff];
 }
 

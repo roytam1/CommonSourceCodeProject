@@ -17,6 +17,13 @@
 
 #define VRAM_SIZE	0x20000
 
+static const int plane_priority[8][8] = {
+	{0, 1, 2, 3, 0, 1, 2, 3}, {0, 1, 2, 3, 4, 1, 2, 3},
+	{0, 1, 2, 3, 4, 4, 2, 3}, {0, 1, 2, 3, 4, 4, 4, 3},
+	{0, 1, 2, 3, 4, 4, 4, 4}, {0, 1, 2, 3, 4, 4, 4, 4},
+	{0, 1, 2, 3, 4, 4, 4, 4}, {0, 1, 2, 3, 4, 4, 4, 4}
+};
+
 class UPD7220;
 
 class DISPLAY : public DEVICE
@@ -24,13 +31,27 @@ class DISPLAY : public DEVICE
 private:
 	DEVICE *d_fdc;
 	
-	uint16 palette_pc[16];	// normal, intensify
 	uint8 screen[400][640];
 	uint16 tmp[640];
+	uint16 palette_pc_base[8];
+	uint16 palette_pc[8];
+	bool scanline;
 	
 	uint8 *vram_b, *vram_r, *vram_g, *mapram;
 	uint8 *sync, *ra, *cs;
 	int* ead;
+	
+	uint8 palette[8];
+	uint8 back[5], reverse[5];
+	uint8 rno, wregs[16];
+	int pri[16];
+	int vma[5];
+	uint8 vds[5];
+	uint8 mode_r, mode_c, mode_p;
+	
+	void draw_640dot_screen(int ymax);
+	void draw_320dot_screen(int ymax);
+	void update_palette();
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -38,6 +59,8 @@ public:
 	
 	// common functions
 	void initialize();
+	void update_config();
+	
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	
@@ -49,7 +72,7 @@ public:
 		vram_b = ptr + 0x00000;
 		vram_r = ptr + 0x10000;
 		vram_g = ptr + 0x20000;
-		mapram = ptr + 0x30000;
+		mapram = ptr + 0x60000;
 	}
 	void set_sync_ptr(uint8* ptr) {
 		sync = ptr;
