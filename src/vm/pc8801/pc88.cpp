@@ -551,9 +551,21 @@ uint32 PC88::fetch_op(uint32 addr, int *wait)
 	return data;
 }
 
+#if !defined(_PC8001SR)
+#define NIPPY_PATCH
+#endif
+
 void PC88::write_io8(uint32 addr, uint32 data)
 {
 	addr &= 0xff;
+#ifdef NIPPY_PATCH
+	// dirty patch for NIPPY
+	static bool nippy_patch = false;
+	if(addr == 0x31 && data == 0x3f && d_cpu->get_pc() == 0xaa4f && nippy_patch) {
+		data = 0x39; // select n88rom
+	}
+	// poke &haa4e, &h39
+#endif
 	uint8 mod = port[addr] ^ data;
 	port[addr] = data;
 	
@@ -627,13 +639,22 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		if(mod & 0x08) {
 			if(Port30_MTON) {
 				// start motor
-				if(cmt_play) {
-					// detect the data carrier at the top of tape
-					usart_dcd = true;
+				if(cmt_play && cmt_bufptr < cmt_bufcnt) {
+					// skip to the top of next block
+					int tmp = cmt_bufptr;
+					while(cmt_bufptr < cmt_bufcnt) {
+						if(check_data_carrier()) {
+							break;
+						}
+						cmt_bufptr++;
+					}
+					if(cmt_bufptr == cmt_bufcnt) {
+						cmt_bufptr = tmp;
+					}
 					if(cmt_register_id != -1) {
 						cancel_event(this, cmt_register_id);
 					}
-					register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
+					register_event(this, EVENT_CMT_SEND, 5000, false, &cmt_register_id);
 				}
 			} else {
 				// stop motor
@@ -641,7 +662,7 @@ void PC88::write_io8(uint32 addr, uint32 data)
 					cancel_event(this, cmt_register_id);
 					cmt_register_id = -1;
 				}
-				usart_dcd = false;
+				usart_dcd = true; // for Jackie Chan no Spartan X
 			}
 		}
 		break;
@@ -686,7 +707,9 @@ void PC88::write_io8(uint32 addr, uint32 data)
 			update_timing();
 			update_palette = true;
 		}
-		
+#ifdef NIPPY_PATCH
+		nippy_patch = (data == 0x37 && d_cpu->get_pc() == 0xaa32);
+#endif
 		break;
 	case 0x32:
 		if(mod & 0x03) {
@@ -1244,20 +1267,23 @@ void PC88::event_callback(int event_id, int err)
 		// check data carrier
 		if(cmt_play && cmt_bufptr < cmt_bufcnt && Port30_MTON) {
 			// detect the data carrier at the top of next block
-			if(check_data_carrier(&cmt_buffer[cmt_bufptr])) {
-//				usart_dcd = true;
+			if(check_data_carrier()) {
 				register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
+				usart_dcd = true;
 				break;
 			}
 		}
 	case EVENT_CMT_DCD:
 		// send data to sio
-//		usart_dcd = false;
-		d_sio->write_signal(SIG_I8251_RECV, cmt_buffer[cmt_bufptr++], 0xff);
-		if(cmt_bufptr < cmt_bufcnt) {
-			register_event(this, EVENT_CMT_SEND, 5000, false, &cmt_register_id);
-			break;
+		usart_dcd = false;
+		if(cmt_play && cmt_bufptr < cmt_bufcnt && Port30_MTON) {
+			d_sio->write_signal(SIG_I8251_RECV, cmt_buffer[cmt_bufptr++], 0xff);
+			if(cmt_bufptr < cmt_bufcnt) {
+				register_event(this, EVENT_CMT_SEND, 5000, false, &cmt_register_id);
+				break;
+			}
 		}
+		usart_dcd = true; // Jackie Chan no Spartan X
 		cmt_register_id = -1;
 		break;
 	}
@@ -1362,13 +1388,14 @@ void PC88::play_tape(_TCHAR* file_path)
 		cmt_fio->Fseek(0, FILEIO_SEEK_END);
 		cmt_bufcnt = cmt_fio->Ftell();
 		cmt_bufptr = 0;
+		cmt_data_carrier_cnt = 0;
 		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
 		memset(cmt_buffer, 0, sizeof(cmt_buffer));
 		cmt_fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
 		
 		if(strncmp((char *)cmt_buffer, "PC-8801 Tape Image(T88)", 23) == 0) {
 			// this is t88 format
-			int ptr = 24, tag = -1, len = 0;
+			int ptr = 24, tag = -1, len = 0, prev_bufptr = 0;
 			while(!(tag == 0 && len == 0)) {
 				tag = cmt_buffer[ptr + 0] | (cmt_buffer[ptr + 1] << 8);
 				len = cmt_buffer[ptr + 2] | (cmt_buffer[ptr + 3] << 8);
@@ -1381,6 +1408,9 @@ void PC88::play_tape(_TCHAR* file_path)
 					}
 				} else if(tag == 0x0102 || tag == 0x0103) {
 					// data carrier
+					if(prev_bufptr != cmt_bufptr) {
+						cmt_data_carrier[cmt_data_carrier_cnt++] = prev_bufptr = cmt_bufptr;
+					}
 				}
 				ptr += len;
 			}
@@ -1391,11 +1421,10 @@ void PC88::play_tape(_TCHAR* file_path)
 		
 		if(cmt_play && Port30_MTON) {
 			// start motor and detect the data carrier at the top of tape
-			usart_dcd = true;
 			if(cmt_register_id != -1) {
 				cancel_event(this, cmt_register_id);
 			}
-			register_event(this, EVENT_CMT_DCD, 1000000, false, &cmt_register_id);
+			register_event(this, EVENT_CMT_SEND, 5000, false, &cmt_register_id);
 		}
 	}
 }
@@ -1436,18 +1465,26 @@ bool PC88::now_skip()
 	return (cmt_play && cmt_bufptr < cmt_bufcnt && Port30_MTON);
 }
 
-bool PC88::check_data_carrier(uint8 *p)
+bool PC88::check_data_carrier()
 {
-	if(p[0] == 0xd3) {
+	if(cmt_bufptr == 0) {
+		return true;
+	} else if(cmt_data_carrier_cnt) {
+		for(int i = 0; i < cmt_data_carrier_cnt; i++) {
+			if(cmt_data_carrier[i] == cmt_bufptr) {
+				return true;
+			}
+		}
+	} else if(cmt_buffer[cmt_bufptr] == 0xd3) {
 		for(int i = 1; i < 10; i++) {
-			if(p[i] != p[0]) {
+			if(cmt_buffer[cmt_bufptr + i] != cmt_buffer[cmt_bufptr]) {
 				return false;
 			}
 		}
 		return true;
-	} else if(p[0] == 0x9c) {
+	} else if(cmt_buffer[cmt_bufptr] == 0x9c) {
 		for(int i = 1; i < 6; i++) {
-			if(p[i] != p[0]) {
+			if(cmt_buffer[cmt_bufptr + i] != cmt_buffer[cmt_bufptr]) {
 				return false;
 			}
 		}

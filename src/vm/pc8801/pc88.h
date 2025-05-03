@@ -207,11 +207,12 @@ private:
 	FILEIO *cmt_fio;
 	int cmt_bufptr, cmt_bufcnt;
 	uint8 cmt_buffer[CMT_BUFFER_SIZE];
+	int cmt_data_carrier[1024], cmt_data_carrier_cnt;
 	bool cmt_play, cmt_rec;
 	int cmt_register_id;
 	
 	void release_tape();
-	bool check_data_carrier(uint8* p);
+	bool check_data_carrier();
 	
 #ifdef SUPPORT_PC88_PCG8100
 	// pcg

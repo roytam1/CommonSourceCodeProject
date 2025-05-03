@@ -1,3 +1,9 @@
+11/21/2014
+
+[PC8801MA/PC88] fix to support multi blocks tape images
+[PC8801MA/PC88] add dirty patch for NIPPY
+
+
 10/29/2014
 
 [PC8801MA/PC88] fix to check dma underrun in every frames
