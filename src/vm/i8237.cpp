@@ -119,16 +119,21 @@ uint32 I8237::read_io8(uint32 addr)
 
 void I8237::write_signal(int id, uint32 data, uint32 mask)
 {
-	uint8 bit = 1 << (id & 3);
-	
-	if(data & mask) {
-		if(!(req & bit)) {
-			req |= bit;
-			do_dma();
+	if(SIG_I8237_CH0 <= id && id <= SIG_I8237_CH3) {
+		uint8 bit = 1 << (id & 3);
+		if(data & mask) {
+			if(!(req & bit)) {
+				req |= bit;
+				do_dma();
+			}
 		}
+		else
+			req &= ~bit;
 	}
-	else
-		req &= ~bit;
+	else if(SIG_I8237_BANK0 <= id && id <= SIG_I8237_BANK3) {
+		// external bank registers
+		dma[id & 3].bankreg = data & mask;
+	}
 }
 
 void I8237::do_dma()
@@ -144,11 +149,11 @@ void I8237::do_dma()
 				else if((dma[ch].mode & 0xc) == 4) {
 					// io -> memory
 					tmp = dma[ch].dev->read_dma8(0);
-					d_mem->write_dma8(dma[ch].areg, tmp);
+					d_mem->write_dma8(dma[ch].areg | (dma[ch].bankreg << 8), tmp);
 				}
 				else if((dma[ch].mode & 0xc) == 8) {
 					// memory -> io
-					tmp = d_mem->read_dma8(dma[ch].areg);
+					tmp = d_mem->read_dma8(dma[ch].areg | (dma[ch].bankreg << 8));
 					dma[ch].dev->write_dma8(0, tmp);
 				}
 				if(dma[ch].mode & 0x20)

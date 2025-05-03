@@ -66,7 +66,7 @@ class I8237;
 class I8253;
 class I8255;
 class I8259;
-class IO8;
+class IO;
 class UPD7220;
 class UPD765A;
 class Z80;
@@ -80,8 +80,6 @@ class MFONT;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
@@ -96,7 +94,7 @@ protected:
 	I8253* pit1;
 	I8255* pio;
 	I8259* pic;	// includes 2chips
-	IO8* io;
+	IO* io;
 	UPD7220* gdc;
 	UPD765A* fdc;
 	Z80* cpu;

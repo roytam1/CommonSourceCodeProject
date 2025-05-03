@@ -17,7 +17,7 @@
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8255.h"
-#include "../io8.h"
+#include "../io.h"
 #include "../ls244.h"
 #include "../upd1990a.h"
 #include "../upd7220.h"
@@ -43,7 +43,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	// main
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);
 	
@@ -55,7 +55,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio = new I8251(this, emu);
 	ctc = new I8253(this, emu);
 	pio = new I8255(this, emu);
-	subio = new IO8(this, emu);
+	subio = new IO(this, emu);
 	ls244 = new LS244(this, emu);
 	rtc = new UPD1990A(this, emu);
 	gdc_chr = new UPD7220(this, emu);

@@ -27,9 +27,8 @@ private:
 	DEVICE *d_pic;
 	int did_pic;
 	
-	int drvreg, drvsel, changed[4];
-	
-	bool irq, irqmsk;
+	int drvreg, drvsel;
+	bool irq, irqmsk, changed[4];
 	void update_intr();
 	
 public:
@@ -50,7 +49,7 @@ public:
 		d_pic = device; did_pic = id;
 	}
 	void change_disk(int drv) {
-		changed[drv] = 1;
+		changed[drv] = true;
 	}
 };
 

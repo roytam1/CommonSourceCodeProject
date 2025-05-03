@@ -628,7 +628,29 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\io8.cpp"
+					RelativePath="src\vm\i86.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\io.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -695,28 +717,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\upd765a.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\i86.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -920,7 +920,11 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\io8.h"
+					RelativePath="src\vm\i86.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\io.h"
 					>
 				</File>
 				<File
@@ -937,10 +941,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\vm.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\i86.h"
 					>
 				</File>
 			</Filter>
@@ -975,7 +975,7 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\PC100.ico"
+				RelativePath="src\res\pc100.ico"
 				>
 			</File>
 			<File

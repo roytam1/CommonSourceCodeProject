@@ -16,13 +16,13 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../io8.h"
+#include "../i86.h"
+#include "../io.h"
 #include "../mb8877.h"
 #include "../pcm1bit.h"
 #include "../rp5c15.h"
 //#include "../sasi.h"
 #include "../upd71071.h"
-#include "../i86.h"
 #include "../ym2203.h"
 #include "../z80pio.h"
 #include "../z80sio.h"
@@ -55,13 +55,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit = new I8253(this, emu);
 	pio0 = new I8255(this, emu);
 	pic = new I8259(this, emu);
-	io = new IO8(this, emu);
+	cpu = new I86(this, emu);
+	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	rtc = new RP5C15(this, emu);
 //	sasi = new SASI(this, emu);
 	dma = new UPD71071(this, emu);
-	cpu = new I86(this, emu);
 	opn = new YM2203(this, emu);
 	pio1 = new Z80PIO(this, emu);
 	sio = new Z80SIO(this, emu);

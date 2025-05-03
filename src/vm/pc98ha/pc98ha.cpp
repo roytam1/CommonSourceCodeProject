@@ -19,7 +19,8 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../io8.h"
+#include "../i86.h"
+#include "../io.h"
 #ifdef _PC98HA
 #include "../upd4991a.h"
 #else
@@ -27,7 +28,6 @@
 #endif
 #include "../upd71071.h"
 #include "../upd765a.h"
-#include "../i86.h"
 
 #ifdef _PC98HA
 #include "calendar.h"
@@ -57,7 +57,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_s = new I8255(this, emu);	// for system port
 	pio_p = new I8255(this, emu);	// for printer
 	pic = new I8259(this, emu);	// V50 internal
-	io = new IO8(this, emu);
+	cpu = new I86(this, emu);	// V50
+	io = new IO(this, emu);
 #ifdef _PC98HA
 	rtc = new UPD4991A(this, emu);
 #else
@@ -65,7 +66,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	dma = new UPD71071(this, emu);	// V50 internal
 	fdc = new UPD765A(this, emu);
-	cpu = new I86(this, emu);	// V50
 	
 #ifdef _PC98HA
 	calendar = new CALENDAR(this, emu);

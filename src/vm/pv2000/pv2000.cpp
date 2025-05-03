@@ -13,7 +13,7 @@
 #include "../device.h"
 #include "../event.h"
 
-#include "../io8.h"
+#include "../io.h"
 #include "../sn76489an.h"
 #include "../tms9918a.h"
 #include "../z80.h"
@@ -35,7 +35,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	psg = new SN76489AN(this, emu);
 	vdp = new TMS9918A(this, emu);
 	cpu = new Z80(this, emu);

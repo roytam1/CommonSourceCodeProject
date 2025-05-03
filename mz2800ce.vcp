@@ -243,7 +243,13 @@ SOURCE=.\src\vm\i8259.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.cpp
+SOURCE=.\src\vm\i86.cpp
+# ADD CPP /Oxt /Ob0
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\io.cpp
 # End Source File
 # Begin Source File
 
@@ -260,12 +266,6 @@ SOURCE=.\src\vm\rp5c15.cpp
 # Begin Source File
 
 SOURCE=.\src\vm\upd71071.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\i86.cpp
-# ADD CPP /Oxt /Ob0
-
 # End Source File
 # Begin Source File
 
@@ -425,7 +425,11 @@ SOURCE=.\src\vm\i8259.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.h
+SOURCE=.\src\vm\i86.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\io.h
 # End Source File
 # Begin Source File
 
@@ -446,10 +450,6 @@ SOURCE=.\src\vm\upd71071.h
 # Begin Source File
 
 SOURCE=.\src\vm\vm.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\i86.h
 # End Source File
 # Begin Source File
 
@@ -534,7 +534,7 @@ SOURCE=.\src\fileio.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\src\res\MZ2800.ico
+SOURCE=.\src\res\mz2800.ico
 # End Source File
 # Begin Source File
 

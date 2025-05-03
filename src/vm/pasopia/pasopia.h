@@ -79,7 +79,7 @@ class BEEP;
 class DATAREC;
 class HD46505;
 class I8255;
-class IO8;
+class IO;
 class NOT;
 class Z80;
 class Z80CTC;
@@ -104,7 +104,7 @@ protected:
 	I8255* pio0;
 	I8255* pio1;
 	I8255* pio2;
-	IO8* io;
+	IO* io;
 	NOT* not;
 	Z80* cpu;
 	Z80CTC* ctc;

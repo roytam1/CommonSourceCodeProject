@@ -26,7 +26,7 @@
 
 #include "floppy.h"
 #include "display.h"
-#include "io8.h"
+#include "io.h"
 #include "iotrap.h"
 #include "keyboard.h"
 #include "memory.h"
@@ -60,7 +60,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	floppy = new FLOPPY(this, emu);
 	display = new DISPLAY(this, emu);
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	iotrap = new IOTRAP(this, emu);
 	key = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
@@ -107,7 +107,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	iotrap->set_context_cpu(cpu);
 	iotrap->set_context_pio2(pio2, SIG_I8255_PORT_B);
 	key->set_context(pio, SIG_Z80PIO_PORT_B);
-	memory->set_context_io(io, SIG_IO8_MIO);
+	memory->set_context_io(io, SIG_IO_MIO);
 	memory->set_context_pio0(pio0, SIG_I8255_PORT_B);
 	memory->set_context_pio2(pio2, SIG_I8255_PORT_C);
 	

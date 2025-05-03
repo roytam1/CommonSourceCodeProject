@@ -15,6 +15,11 @@
 #include "fm16pi/fm16pi.h"
 #endif
 
+// FUJITSU FMR-30
+#ifdef _FMR30
+#include "fmr30/fmr30.h"
+#endif
+
 // FUJITSU FMR-50
 #ifdef _FMR50
 #include "fmr50/fmr50.h"

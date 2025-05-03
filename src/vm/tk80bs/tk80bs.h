@@ -41,7 +41,7 @@
 #define HAS_I8080
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		164
-//#define IO8_ADDR_MAX		8
+//#define IO_ADDR_MAX		8
 
 #include "../../common.h"
 

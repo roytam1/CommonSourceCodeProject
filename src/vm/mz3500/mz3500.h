@@ -43,7 +43,7 @@
 #define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
-#define IO8_ADDR_MAX		0x100
+#define IO_ADDR_MAX		0x100
 
 #include "../../common.h"
 
@@ -55,7 +55,7 @@ class BEEP;
 class I8251;
 class I8253;
 class I8255;
-class IO8;
+class IO;
 class LS244;
 class UPD1990A;
 class UPD7220;
@@ -70,15 +70,13 @@ class SUBMEMORY;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
 	// devices
 	EVENT* event;
 	
-	IO8* io;
+	IO* io;
 	UPD765A* fdc;
 	Z80* cpu;
 	
@@ -89,7 +87,7 @@ protected:
 	I8251* sio;
 	I8253* ctc;
 	I8255* pio;
-	IO8* subio;
+	IO* subio;
 	LS244* ls244;
 	UPD1990A* rtc;
 	UPD7220* gdc_chr;

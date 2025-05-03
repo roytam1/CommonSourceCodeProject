@@ -499,6 +499,9 @@ public:
 	// for virtual machine
 	// ----------------------------------------
 	
+	// power off
+	void power_off() { PostMessage(main_window_handle, WM_CLOSE, 0, 0L); }
+	
 	// input device
 	uint8* key_buffer() { return key_status; }
 	uint8* joy_buffer() { return joy_status; }

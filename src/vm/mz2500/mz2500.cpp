@@ -15,7 +15,7 @@
 
 #include "../i8253.h"
 #include "../i8255.h"
-#include "../io8.h"
+#include "../io.h"
 #include "../mb8877.h"
 #include "../pcm1bit.h"
 #include "../rp5c15.h"
@@ -61,7 +61,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	pit = new I8253(this, emu);
 	pio0 = new I8255(this, emu);
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	rtc = new RP5C15(this, emu);

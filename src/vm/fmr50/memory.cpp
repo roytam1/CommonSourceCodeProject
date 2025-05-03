@@ -282,7 +282,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		update_bank();
 		if(data & 0x40) {
 			// power off
-//			emu->power_off();
+			emu->power_off();
 		}
 		if(data & 1) {
 			// software reset
@@ -599,7 +599,7 @@ void MEMORY::draw_text()
 				int bp = chreg[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (blink & 8)) || (bp == 0x60 && (blink & 0x10))) {
 					for(int i = (chreg[10] & 15); i < 15; i++)
-						_memset(&screen_txt[y * 16 + i][cx * 8], 7, 8);
+						_memset(&screen_txt[y * 16 + i][cx << 3], 7, 8);
 				}
 			}
 		}

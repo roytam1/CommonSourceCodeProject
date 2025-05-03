@@ -742,7 +742,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\pasopia7\io8.cpp"
+					RelativePath="src\vm\pasopia7\io.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1022,7 +1022,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\pasopia7\io8.h"
+					RelativePath="src\vm\pasopia7\io.h"
 					>
 				</File>
 				<File
@@ -1072,7 +1072,7 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\PASOPIA7.ico"
+				RelativePath="src\res\pasopia7.ico"
 				>
 			</File>
 			<File

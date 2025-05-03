@@ -328,7 +328,7 @@ SOURCE=.\src\res\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\res\SCV.ico
+SOURCE=.\src\res\scv.ico
 # End Source File
 # Begin Source File
 

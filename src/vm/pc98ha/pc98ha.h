@@ -51,7 +51,7 @@
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
-#define IO8_ADDR_MAX		0x10000
+#define IO_ADDR_MAX		0x10000
 #define IOBUS_RETURN_ADDR
 #define EVENT_PRECISE	40
 
@@ -68,7 +68,8 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
-class IO8;
+class I86;
+class IO;
 #ifdef _PC98HA
 class UPD4991A;
 #else
@@ -76,7 +77,6 @@ class UPD1990A;
 #endif
 class UPD71071;
 class UPD765A;
-class I86;
 
 #ifdef _PC98HA
 class CALENDAR;
@@ -89,8 +89,6 @@ class NOTE;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
@@ -104,7 +102,8 @@ protected:
 	I8255* pio_s;
 	I8255* pio_p;
 	I8259* pic;
-	IO8* io;
+	I86* cpu;
+	IO* io;
 #ifdef _PC98HA
 	UPD4991A* rtc;
 #else
@@ -112,7 +111,6 @@ protected:
 #endif
 	UPD71071* dma;
 	UPD765A* fdc;
-	I86* cpu;
 	
 #ifdef _PC98HA
 	CALENDAR* calendar;

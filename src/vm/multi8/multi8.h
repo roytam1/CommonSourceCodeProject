@@ -57,7 +57,7 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
-class IO8;
+class IO;
 class UPD765A;
 class YM2203;
 class Z80;
@@ -82,7 +82,7 @@ protected:
 	I8253* pit;
 	I8255* pio;
 	I8259* pic;
-	IO8* io;
+	IO* io;
 	UPD765A* fdc;
 	YM2203* opn;
 	Z80* cpu;

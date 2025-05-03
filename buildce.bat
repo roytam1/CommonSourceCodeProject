@@ -2,6 +2,10 @@ echo off
 set path=%path%;"C:\Program Files\Microsoft eMbedded C++ 4.0\Common\EVC\Bin"
 mkdir build
 
+evc fmr30ce.vcp /MAKE "fmr30ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\fmr30
+copy GDI_WAVEOUT\fmr30ce.exe build\fmr30\.
+
 evc fmr50ce.vcp /MAKE "fmr50ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\fmr50
 copy GDI_WAVEOUT\fmr50ce.exe build\fmr50\.

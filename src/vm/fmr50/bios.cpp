@@ -46,15 +46,26 @@
 #define DS	sregs[3]
 
 // error
-#define FDD_ERR_NOTREADY	1
-#define FDD_ERR_PROTECTED	2
-#define FDD_ERR_DELETED		4
-#define FDD_ERR_NOTFOUND	8
-#define FDD_ERR_CRCERROR	0x10
+#define ERR_FDD_NOTREADY	1
+#define ERR_FDD_PROTECTED	2
+#define ERR_FDD_DELETED		4
+#define ERR_FDD_NOTFOUND	8
+#define ERR_FDD_CRCERROR	0x10
+#define ERR_SCSI_NOTREADY	1
+#define ERR_SCSI_PARAMERROR	2
+#define ERR_SCSI_NOTCONNECTED	4
 
-#define SCSI_ERR_NOTREADY	1
-#define SCSI_ERR_PARAMERROR	2
-#define SCSI_ERR_NOTCONNECTED	4
+#ifdef _FMR30
+#define CMOS_SIZE	0x2000
+#define VRAM_SIZE	0x20000
+#define IPL_SIZE	0x10000
+#define IPL_ID		'2'
+#else
+#define CMOS_SIZE	0x800
+#define VRAM_SIZE	0x40000
+#define IPL_SIZE	0x4000
+#define IPL_ID		'1'
+#endif
 
 void BIOS::initialize()
 {
@@ -63,36 +74,37 @@ void BIOS::initialize()
 	emu->application_path(app_path);
 	FILEIO* fio = new FILEIO();
 	
+	disk_pc1 = disk_pc2 = cmos_pc = wait_pc = -1;
 	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(buffer, sizeof(buffer), 1);
 		fio->Fclose();
 		
-		disk_pc1 = disk_pc2 = cmos_pc = wait_pc = -1;
 		uint32 addr = 0xfffc4;
-		if(buffer[addr & 0x3fff] == 0xea) {
-			int ofs = buffer[++addr & 0x3fff];
-			ofs |= buffer[++addr & 0x3fff] << 8;
-			int seg = buffer[++addr & 0x3fff];
-			seg |= buffer[++addr & 0x3fff] << 8;
+		if(buffer[addr & (IPL_SIZE - 1)] == 0xea) {
+			int ofs = buffer[++addr & (IPL_SIZE - 1)];
+			ofs |= buffer[++addr & (IPL_SIZE - 1)] << 8;
+			int seg = buffer[++addr & (IPL_SIZE - 1)];
+			seg |= buffer[++addr & (IPL_SIZE - 1)] << 8;
 			disk_pc1 = addr = ofs + (seg << 4);
 		}
-		if(buffer[addr & 0x3fff] == 0xea) {
-			int ofs = buffer[++addr & 0x3fff];
-			ofs |= buffer[++addr & 0x3fff] << 8;
-			int seg = buffer[++addr & 0x3fff];
-			seg |= buffer[++addr & 0x3fff] << 8;
+		if(buffer[addr & (IPL_SIZE - 1)] == 0xea) {
+			int ofs = buffer[++addr & (IPL_SIZE - 1)];
+			ofs |= buffer[++addr & (IPL_SIZE - 1)] << 8;
+			int seg = buffer[++addr & (IPL_SIZE - 1)];
+			seg |= buffer[++addr & (IPL_SIZE - 1)] << 8;
 			disk_pc2 = ofs + (seg << 4);
 		}
-//		cmos_pc = 0xfffc9;
-//		wait_pc = 0xfffd3;
 	}
 	else {
 		// use pseudo ipl
-		disk_pc1 = disk_pc2 = -1;
 		cmos_pc = 0xfffc9;
 		wait_pc = 0xfffd3;
+		
+		// regist event
+		vm->regist_frame_event(this);
 	}
+	
 	// init scsi
 	_memset(scsi_blocks, 0, sizeof(scsi_blocks));
 	for(int i = 0; i < MAX_SCSI; i++) {
@@ -104,9 +116,6 @@ void BIOS::initialize()
 		}
 	}
 	delete fio;
-	
-	// regist event
-	vm->regist_frame_event(this);
 }
 
 void BIOS::reset()
@@ -139,7 +148,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -155,7 +164,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// scsi
 				if(!(drv < MAX_SCSI && scsi_blocks[drv])) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTCONNECTED;
+					CX = ERR_SCSI_NOTCONNECTED;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -177,7 +186,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -190,7 +199,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// scsi
 				if(!(drv < MAX_SCSI && scsi_blocks[drv])) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTCONNECTED;
+					CX = ERR_SCSI_NOTCONNECTED;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -209,7 +218,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -225,14 +234,14 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					secnum = sct;
 					if(!disk[drv]->get_sector(trk, hed, sct - 1)) {
 						AH = 0x80;
-						CX = FDD_ERR_NOTFOUND;
+						CX = ERR_FDD_NOTFOUND;
 						*CarryFlag = 1;
 						return true;
 					}
 					// check deleted mark
 					if(disk[drv]->deleted) {
 						AH = 0x80;
-						CX = FDD_ERR_DELETED;
+						CX = ERR_FDD_DELETED;
 						*CarryFlag = 1;
 						return true;
 					}
@@ -243,7 +252,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					// check crc error
 					if(disk[drv]->status) {
 						AH = 0x80;
-						CX = FDD_ERR_CRCERROR;
+						CX = ERR_FDD_CRCERROR;
 						*CarryFlag = 1;
 						return true;
 					}
@@ -265,14 +274,14 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// scsi
 				if(!(drv < MAX_SCSI && scsi_blocks[drv])) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTCONNECTED;
+					CX = ERR_SCSI_NOTCONNECTED;
 					*CarryFlag = 1;
 					return true;
 				}
 				FILEIO* fio = new FILEIO();
 				if(!fio->Fopen(scsi_path[drv], FILEIO_READ_BINARY)) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTREADY;
+					CX = ERR_SCSI_NOTREADY;
 					*CarryFlag = 1;
 					delete fio;
 					return true;
@@ -286,7 +295,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					access_scsi = true;
 					if(!(block++ < scsi_blocks[drv])) {
 						AH = 0x80;
-						CX = SCSI_ERR_PARAMERROR;
+						CX = ERR_SCSI_PARAMERROR;
 						*CarryFlag = 1;
 						fio->Fclose();
 						delete fio;
@@ -315,13 +324,13 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
 				if(disk[drv]->protect) {
 					AH = 0x80;
-					CX = FDD_ERR_PROTECTED;
+					CX = ERR_FDD_PROTECTED;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -337,7 +346,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					secnum = sct;
 					if(!disk[drv]->get_sector(trk, hed, sct - 1)) {
 						AH = 0x80;
-						CX = FDD_ERR_NOTFOUND;
+						CX = ERR_FDD_NOTFOUND;
 						*CarryFlag = 1;
 						return true;
 					}
@@ -366,14 +375,14 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// scsi
 				if(!(drv < MAX_SCSI && scsi_blocks[drv])) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTCONNECTED;
+					CX = ERR_SCSI_NOTCONNECTED;
 					*CarryFlag = 1;
 					return true;
 				}
 				FILEIO* fio = new FILEIO();
 				if(!fio->Fopen(scsi_path[drv], FILEIO_READ_WRITE_BINARY)) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTREADY;
+					CX = ERR_SCSI_NOTREADY;
 					*CarryFlag = 1;
 					delete fio;
 					return true;
@@ -387,7 +396,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					access_scsi = true;
 					if(!(block++ < scsi_blocks[drv])) {
 						AH = 0x80;
-						CX = SCSI_ERR_PARAMERROR;
+						CX = ERR_SCSI_PARAMERROR;
 						*CarryFlag = 1;
 						fio->Fclose();
 						delete fio;
@@ -416,7 +425,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -431,7 +440,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					secnum = sct;
 					if(!disk[drv]->get_sector(trk, hed, sct - 1)) {
 						AH = 0x80;
-						CX = FDD_ERR_NOTFOUND;
+						CX = ERR_FDD_NOTFOUND;
 						*CarryFlag = 1;
 						return true;
 					}
@@ -439,7 +448,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					// check crc error
 					if(disk[drv]->status) {
 						AH = 0x80;
-						CX = FDD_ERR_CRCERROR;
+						CX = ERR_FDD_CRCERROR;
 						*CarryFlag = 1;
 						return true;
 					}
@@ -461,7 +470,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// scsi
 				if(!(drv < MAX_SCSI && scsi_blocks[drv])) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTCONNECTED;
+					CX = ERR_SCSI_NOTCONNECTED;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -472,7 +481,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					access_scsi = true;
 					if(!(block++ < scsi_blocks[drv])) {
 						AH = 0x80;
-						CX = SCSI_ERR_PARAMERROR;
+						CX = ERR_SCSI_PARAMERROR;
 						*CarryFlag = 1;
 						return true;
 					}
@@ -500,7 +509,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -515,7 +524,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 					secnum = 1;
 				if(!disk[drv]->get_sector(trk, hed, secnum - 1)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTFOUND;
+					CX = ERR_FDD_NOTFOUND;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -536,7 +545,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				// floppy
 				if(!(drv < MAX_DRIVE && disk[drv]->insert)) {
 					AH = 0x80;
-					CX = FDD_ERR_NOTREADY;
+					CX = ERR_FDD_NOTREADY;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -575,7 +584,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 				int ofs = DS * 16 + DI;
 				if(!(drv < MAX_SCSI && scsi_blocks[drv])) {
 					AH = 0x80;
-					CX = SCSI_ERR_NOTCONNECTED;
+					CX = ERR_SCSI_NOTCONNECTED;
 					*CarryFlag = 1;
 					return true;
 				}
@@ -588,38 +597,53 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 		}
 		else if(AH == 0xfa) {
 			// unknown
-//			if((AL & 0xf0) == 0xb0) {
-				// scsi
 #if 0
-				AH = 0x80;
-				*CarryFlag = 1;
+			AH = 0x80;
+			*CarryFlag = 1;
 #else
-				AH = 0;
-				BL = 0;//x80;
-				CX = 0;
-				*CarryFlag = 0;
+			AH = 0;
+			BL = 0x80;
+//			BL = 0;
+			CX = 0;
+			*CarryFlag = 0;
 #endif
-				return true;
-//			}
+			return true;
+		}
+		else if(AH == 0xfd) {
+			// unknown
+#if 1
+			AH = 0x80;
+			*CarryFlag = 1;
+#else
+			AH = 0;
+			BL = 0x80;
+//			BL = 0;
+			CX = 0;
+			*CarryFlag = 0;
+#endif
+			return true;
 		}
 		// for pseudo bios
 		else if(AH == 0x80) {
 			// pseudo bios: init i/o
-			for(int i = 0; i < 66; i++)
+			for(int i = 0;; i++) {
+				if(iotable[i][0] < 0)
+					break;
 				d_io->write_io8(iotable[i][0], iotable[i][1]);
+			}
 			// init cmos
-			_memset(cmos, 0, 0x800);
-			_memcpy(cmos + 0x000, cmos_t, sizeof(cmos_t));
-			_memcpy(cmos + 0x7d1, cmos_b, sizeof(cmos_b));
+			_memset(cmos, 0, CMOS_SIZE);
+			_memcpy(cmos, cmos_t, sizeof(cmos_t));
+			_memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
 			// init int vector
 			for(int i = 0, ofs = 0; i < 256; i++) {
-				d_mem->write_data8(ofs++, 0x08);
-				d_mem->write_data8(ofs++, 0x00);
-				d_mem->write_data8(ofs++, 0xff);
-				d_mem->write_data8(ofs++, 0xff);
+				// int vector = ffff:0008
+				d_mem->write_data16(ofs + 0, 0x0008);
+				d_mem->write_data16(ofs + 2, 0xffff);
+				ofs += 4;
 			}
 			// init screen
-			_memset(vram, 0, 0x40000);
+			_memset(vram, 0, VRAM_SIZE);
 			_memset(cvram, 0, 0x1000);
 			_memset(kvram, 0, 0x1000);
 			_memcpy(cvram + 0xf00, msg_c, sizeof(msg_c));
@@ -644,7 +668,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			for(int i = 0; i < disk[0]->sector_size; i++)
 				buffer[i] = disk[0]->sector[i];
 			// check ipl
-			if(!(buffer[0] == 'I' && buffer[1] == 'P' && buffer[2] == 'L' && buffer[3] == '1')) {
+			if(!(buffer[0] == 'I' && buffer[1] == 'P' && buffer[2] == 'L' && buffer[3] == IPL_ID)) {
 				*CarryFlag = 1;
 				return true;
 			}
@@ -654,8 +678,6 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// clear screen
 			_memset(cvram, 0, 0x1000);
 			_memset(kvram, 0, 0x1000);
-			// set cmos
-//			_memcpy(cmos + 0xa8, cmos_f, sizeof(cmos_f));
 			// set result
 			AX = 0xff;
 			CX = 0;
@@ -683,7 +705,7 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			fio->Fclose();
 			delete fio;
 			// check ipl
-			if(!(buffer[0] == 'I' && buffer[1] == 'P' && buffer[2] == 'L' && buffer[3] == '1')) {
+			if(!(buffer[0] == 'I' && buffer[1] == 'P' && buffer[2] == 'L' && buffer[3] == IPL_ID)) {
 				*CarryFlag = 1;
 				return true;
 			}
@@ -693,8 +715,6 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 			// clear screen
 			_memset(cvram, 0, 0x1000);
 			_memset(kvram, 0, 0x1000);
-			// set cmos
-//			_memcpy(cmos + 0xa8, cmos_s, sizeof(cmos_s));
 			// set result
 			AX = 0xffff;
 			CX = 0;
@@ -711,8 +731,8 @@ bool BIOS::bios_call(uint32 PC, uint16 regs[], uint16 sregs[], int32* ZeroFlag, 
 #endif
 		if(AH == 0) {
 			// init cmos
-			_memcpy(cmos + 0x000, cmos_t, sizeof(cmos_t));
-			_memcpy(cmos + 0x7d1, cmos_b, sizeof(cmos_b));
+			_memcpy(cmos, cmos_t, sizeof(cmos_t));
+			_memcpy(cmos + CMOS_SIZE - sizeof(cmos_b), cmos_b, sizeof(cmos_b));
 		}
 		else if(AH == 5) {
 			// get $a2

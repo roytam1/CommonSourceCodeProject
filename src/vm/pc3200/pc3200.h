@@ -51,7 +51,7 @@ class EVENT;
 
 class DATAREC;
 class I8255;
-class IO8;
+class IO;
 class UPD1990A;
 class UPD765A;
 class Z80;
@@ -71,7 +71,7 @@ protected:
 	
 	DATAREC* drec;
 	I8255* pio;
-	IO8* io;
+	IO* io;
 	UPD1990A* rtc;
 	UPD765A* fdc;
 	Z80* cpu;

@@ -47,7 +47,7 @@ class DEVICE;
 class EVENT;
 
 class DATAREC;
-class IO8;
+class IO;
 class SN76489AN;
 class TMS9918A;
 class Z80;
@@ -66,7 +66,7 @@ protected:
 	EVENT* event;
 	
 	DATAREC* drec;
-	IO8* io;
+	IO* io;
 	SN76489AN* psg;
 	TMS9918A* vdp;
 	Z80* cpu;

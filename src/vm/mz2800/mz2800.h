@@ -43,7 +43,7 @@
 #define MAX_DRIVE		4
 #define HAS_I286
 #define I8259_MAX_CHIPS		2
-#define IO8_ADDR_MAX		0x8000
+#define IO_ADDR_MAX		0x8000
 
 #include "../../common.h"
 
@@ -54,13 +54,13 @@ class EVENT;
 class I8253;
 class I8255;
 class I8259;
-class IO8;
+class I86;
+class IO;
 class MB8877;
 class PCM1BIT;
 class RP5C15;
 //class SASI;
 class UPD71071;
-class I86;
 class YM2203;
 class Z80PIO;
 class Z80SIO;
@@ -87,13 +87,13 @@ protected:
 	I8253* pit;
 	I8255* pio0;
 	I8259* pic;
-	IO8* io;
+	I86* cpu;
+	IO* io;
 	MB8877* fdc;
 	PCM1BIT* pcm;
 	RP5C15* rtc;
 //	SASI* sasi;
 	UPD71071* dma;
-	I86* cpu;
 	YM2203* opn;
 	Z80PIO* pio1;
 	Z80SIO* sio;

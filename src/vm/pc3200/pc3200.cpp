@@ -15,7 +15,7 @@
 
 #include "../datarec.h"
 #include "../i8255.h"
-#include "../io8.h"
+#include "../io.h"
 #include "../upd1990a.h"
 #include "../upd765a.h"
 #include "../z80.h"
@@ -38,7 +38,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	drec = new DATAREC(this, emu);
 	pio = new I8255(this, emu);
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	rtc = new UPD1990A(this, emu);
 	fdc = new UPD765A(this, emu);
 	cpu = new Z80(this, emu);

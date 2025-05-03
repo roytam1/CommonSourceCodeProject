@@ -207,7 +207,7 @@ SOURCE=.\src\vm\event.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.cpp
+SOURCE=.\src\vm\io.cpp
 # End Source File
 # Begin Source File
 
@@ -289,7 +289,7 @@ SOURCE=.\src\vm\event.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.h
+SOURCE=.\src\vm\io.h
 # End Source File
 # Begin Source File
 
@@ -358,7 +358,7 @@ SOURCE=.\src\res\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\res\RX78.ico
+SOURCE=.\src\res\rx78.ico
 # End Source File
 # Begin Source File
 

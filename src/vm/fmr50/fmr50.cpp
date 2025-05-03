@@ -18,11 +18,11 @@
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8259.h"
-#include "../io8.h"
+#include "../i86.h"
+#include "../io.h"
 #include "../mb8877.h"
 #include "../rtc58321.h"
 #include "../upd71071.h"
-#include "../i86.h"
 
 #include "bios.h"
 #include "cmos.h"
@@ -53,11 +53,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0 = new I8253(this, emu);
 	pit1 = new I8253(this, emu);
 	pic = new I8259(this, emu);
-	io = new IO8(this, emu);
+	cpu = new I86(this, emu);
+	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	rtc = new RTC58321(this, emu);
 	dma = new UPD71071(this, emu);
-	cpu = new I86(this, emu);
 	
 	bios = new BIOS(this, emu);
 	cmos = new CMOS(this, emu);
@@ -237,7 +237,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_r(0xfda0, memory);	// crtc
 	io->set_iomap_single_r(0xff81, memory);	// crtc
 	
-	// initialize and ipl reset all devices
+	// initialize and reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(device->this_device_id != event->this_device_id)
 			device->initialize();

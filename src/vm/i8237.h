@@ -19,6 +19,10 @@
 #define SIG_I8237_CH1	1
 #define SIG_I8237_CH2	2
 #define SIG_I8237_CH3	3
+#define SIG_I8237_BANK0	4
+#define SIG_I8237_BANK1	5
+#define SIG_I8237_BANK2	6
+#define SIG_I8237_BANK3	7
 
 class I8237 : public DEVICE
 {
@@ -32,6 +36,8 @@ private:
 		uint16 bareg;
 		uint16 bcreg;
 		uint8 mode;
+		// external bank
+		uint16 bankreg;
 	} dma_t;
 	dma_t dma[4];
 	
@@ -46,7 +52,10 @@ private:
 	
 public:
 	I8237(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dma[0].dev = dma[1].dev = dma[2].dev = dma[3].dev = vm->dummy;
+		for(int i = 0; i < 4; i++) {
+			dma[i].dev = vm->dummy;
+			dma[i].bankreg = 0;
+		}
 	}
 	~I8237() {}
 	

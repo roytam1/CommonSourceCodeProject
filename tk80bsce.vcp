@@ -346,7 +346,7 @@ SOURCE=.\src\fileio.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\src\res\TK80BS.ico
+SOURCE=.\src\res\tk80bs.ico
 # End Source File
 # Begin Source File
 

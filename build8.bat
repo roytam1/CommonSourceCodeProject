@@ -2,9 +2,9 @@ echo off
 set path=%path%;"C:\Program Files\Microsoft Visual Studio 8\Common7\IDE"
 mkdir build
 
-devenv.com fm16pi.vcproj /Rebuild Release
-mkdir build\fm16pi
-copy Release\fm16pi.exe build\fm16pi\.
+devenv.com fmr30.vcproj /Rebuild Release
+mkdir build\fmr30
+copy Release\fmr30.exe build\fmr30\.
 
 devenv.com fmr50.vcproj /Rebuild Release
 mkdir build\fmr50
@@ -69,10 +69,6 @@ copy Release\pc98lt.exe build\pc98lt\.
 devenv.com pc100.vcproj /Rebuild Release
 mkdir build\pc100
 copy Release\pc100.exe build\pc100\.
-
-devenv.com pc3200.vcproj /Rebuild Release
-mkdir build\pc3200
-copy Release\pc3200.exe build\pc3200\.
 
 devenv.com pv1000.vcproj /Rebuild Release
 mkdir build\pv1000

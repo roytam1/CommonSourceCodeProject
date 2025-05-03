@@ -223,7 +223,7 @@ SOURCE=.\src\vm\i8255.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.cpp
+SOURCE=.\src\vm\io.cpp
 # End Source File
 # Begin Source File
 
@@ -329,7 +329,7 @@ SOURCE=.\src\vm\i8255.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.h
+SOURCE=.\src\vm\io.h
 # End Source File
 # Begin Source File
 
@@ -406,7 +406,7 @@ SOURCE=.\src\fileio.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\src\res\MZ3500.ico
+SOURCE=.\src\res\mz3500.ico
 # End Source File
 # Begin Source File
 

@@ -17,7 +17,7 @@
 #include "../datarec.h"
 #include "../hd46505.h"
 #include "../i8255.h"
-#include "../io8.h"
+#include "../io.h"
 #include "../not.h"
 #include "../z80.h"
 #include "../z80ctc.h"
@@ -46,7 +46,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0 = new I8255(this, emu);
 	pio1 = new I8255(this, emu);
 	pio2 = new I8255(this, emu);
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	not = new NOT(this, emu);
 	cpu = new Z80(this, emu);
 	ctc = new Z80CTC(this, emu);

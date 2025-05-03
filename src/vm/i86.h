@@ -425,22 +425,22 @@ private:
 		d_mem->write_data16(addr & AMASK, val);
 	}
 	inline uint8 FETCHOP() {
-		return d_mem->read_data8(PC++);
+		return d_mem->read_data8(PC++ & AMASK);
 	}
 	inline uint8 FETCH8() {
-		return d_mem->read_data8(PC++);
+		return d_mem->read_data8(PC++ & AMASK);
 	}
 	inline uint16 FETCH16() {
-		uint16 val = d_mem->read_data16(PC);
+		uint16 val = d_mem->read_data16(PC & AMASK);
 		PC += 2;
 		return val;
 	}
 	inline void PUSH16(uint16 val) {
 		regs.w[SP] -= 2;
-		WM16((base[SS] + regs.w[SP]) & AMASK, val);
+		d_mem->write_data16((base[SS] + regs.w[SP]) & AMASK, val);
 	}
 	inline uint16 POP16() {
-		uint16 var = RM16((base[SS] + regs.w[SP]) & AMASK);
+		uint16 var = d_mem->read_data16((base[SS] + regs.w[SP]) & AMASK);
 		regs.w[SP] += 2;
 		return var;
 	}
@@ -451,6 +451,12 @@ private:
 	}
 	inline void OUT8(uint32 addr, uint8 val) {
 		d_io->write_io8(addr, val);
+	}
+	inline uint16 IN16(uint32 addr) {
+		return d_io->read_io16(addr);
+	}
+	inline void OUT16(uint32 addr, uint16 val) {
+		d_io->write_io16(addr, val);
 	}
 	
 	// interrupt

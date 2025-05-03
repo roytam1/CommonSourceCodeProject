@@ -168,8 +168,6 @@ BEGIN
         MENUITEM "Linear"                       ID_SCREEN_FILTER_LINEAR
         MENUITEM SEPARATOR
         MENUITEM "D3D9 Wait VSync"              ID_SCREEN_PRESENT_INTERVAL
-        MENUITEM SEPARATOR
-        MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
     END
     POPUP "Sound"
     BEGIN
@@ -200,7 +198,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "FMR50.ico"
+IDI_ICON1               ICON    DISCARDABLE     "fmr50.ico"
 #endif    // âpåÍ (±“ÿ∂) resources
 /////////////////////////////////////////////////////////////////////////////
 

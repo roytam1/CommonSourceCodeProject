@@ -342,7 +342,7 @@ SOURCE=.\src\res\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\res\HC40.ico
+SOURCE=.\src\res\hc40.ico
 # End Source File
 # Begin Source File
 

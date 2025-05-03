@@ -62,7 +62,7 @@
 #define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
-#define IO8_ADDR_MAX		0x400
+#define IO_ADDR_MAX		0x400
 
 #include "../../common.h"
 
@@ -73,12 +73,12 @@ class EVENT;
 class I8237;
 class I8255;
 class I8259;
-class IO8;
+class I86;
+class IO;
 class LS393;
 class RP5C01;
 class UPD7220;
 class UPD765A;
-class I86;
 class YM2203;
 class Z80CTC;
 class Z80SIO;
@@ -90,8 +90,6 @@ class SYSPORT;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
@@ -101,12 +99,12 @@ protected:
 	I8237* dma;
 	I8255* pio;
 	I8259* pic;	// includes 2chips
-	IO8* io;
+	I86* cpu;
+	IO* io;
 	LS393* div;
 	RP5C01* rtc;
 	UPD7220* gdc;
 	UPD765A* fdc;
-	I86* cpu;
 	YM2203* psg;
 	Z80CTC* ctc0;
 #if defined(_MZ6500) || defined(_MZ6550)

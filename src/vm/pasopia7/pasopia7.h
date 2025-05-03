@@ -87,7 +87,7 @@ class Z80PIO;
 
 class FLOPPY;
 class DISPLAY;
-class IO8;
+class IO;
 class IOTRAP;
 class KEYBOARD;
 class MEMORY;
@@ -117,7 +117,7 @@ protected:
 	
 	FLOPPY* floppy;
 	DISPLAY* display;
-	IO8* io;
+	IO* io;
 	IOTRAP* iotrap;
 	KEYBOARD* key;
 	MEMORY* memory;

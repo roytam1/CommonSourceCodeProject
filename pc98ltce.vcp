@@ -227,7 +227,13 @@ SOURCE=.\src\vm\i8259.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.cpp
+SOURCE=.\src\vm\i86.cpp
+# ADD CPP /Oxt /Ob0
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\io.cpp
 # End Source File
 # Begin Source File
 
@@ -240,12 +246,6 @@ SOURCE=.\src\vm\upd71071.cpp
 # Begin Source File
 
 SOURCE=.\src\vm\upd765a.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\i86.cpp
-# ADD CPP /Oxt /Ob0
-
 # End Source File
 # End Group
 # Begin Group "VM Driver Source Files"
@@ -333,7 +333,11 @@ SOURCE=.\src\vm\i8259.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.h
+SOURCE=.\src\vm\i86.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\io.h
 # End Source File
 # Begin Source File
 
@@ -350,10 +354,6 @@ SOURCE=.\src\vm\upd765a.h
 # Begin Source File
 
 SOURCE=.\src\vm\vm.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\i86.h
 # End Source File
 # End Group
 # Begin Group "VM Driver Header Files"
@@ -406,7 +406,7 @@ SOURCE=.\src\fileio.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\src\res\PC98LT.ico
+SOURCE=.\src\res\pc98lt.ico
 # End Source File
 # Begin Source File
 

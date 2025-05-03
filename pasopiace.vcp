@@ -219,7 +219,7 @@ SOURCE=.\src\vm\i8255.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.cpp
+SOURCE=.\src\vm\io.cpp
 # End Source File
 # Begin Source File
 
@@ -317,7 +317,7 @@ SOURCE=.\src\vm\i8255.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\io8.h
+SOURCE=.\src\vm\io.h
 # End Source File
 # Begin Source File
 
@@ -398,7 +398,7 @@ SOURCE=.\src\res\pasopia.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\res\PASOPIA5.ico
+SOURCE=.\src\res\pasopia5.ico
 # End Source File
 # Begin Source File
 

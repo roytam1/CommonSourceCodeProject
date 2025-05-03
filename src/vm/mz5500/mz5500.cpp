@@ -16,12 +16,12 @@
 #include "../i8237.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../io8.h"
+#include "../i86.h"
+#include "../io.h"
 #include "../ls393.h"
 #include "../rp5c01.h"
 #include "../upd7220.h"
 #include "../upd765a.h"
-#include "../i86.h"
 #include "../ym2203.h"
 #include "../z80ctc.h"
 #include "../z80sio.h"
@@ -46,12 +46,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma = new I8237(this, emu);
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
-	io = new IO8(this, emu);
+	cpu = new I86(this, emu);
+	io = new IO(this, emu);
 	div = new LS393(this, emu);
 	rtc = new RP5C01(this, emu);
 	gdc = new UPD7220(this, emu);
 	fdc = new UPD765A(this, emu);
-	cpu = new I86(this, emu);
 	psg = new YM2203(this, emu);	// AY-3-8912
 	ctc0 = new Z80CTC(this, emu);
 #if defined(_MZ6500) || defined(_MZ6550)

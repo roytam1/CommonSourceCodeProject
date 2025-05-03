@@ -517,7 +517,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\io8.cpp"
+					RelativePath="src\vm\io.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -749,7 +749,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\io8.h"
+					RelativePath="src\vm\io.h"
 					>
 				</File>
 				<File
@@ -804,7 +804,7 @@
 				>
 			</File>
 			<File
-				RelativePath="src\res\RX78.ico"
+				RelativePath="src\res\rx78.ico"
 				>
 			</File>
 			<File

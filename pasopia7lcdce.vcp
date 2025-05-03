@@ -257,7 +257,7 @@ SOURCE=.\src\vm\pasopia7\floppy.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\pasopia7\io8.cpp
+SOURCE=.\src\vm\pasopia7\io.cpp
 # End Source File
 # Begin Source File
 
@@ -385,7 +385,7 @@ SOURCE=.\src\vm\pasopia7\floppy.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\pasopia7\io8.h
+SOURCE=.\src\vm\pasopia7\io.h
 # End Source File
 # Begin Source File
 
@@ -446,7 +446,7 @@ SOURCE=.\src\fileio.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\src\res\PASOPIA7.ico
+SOURCE=.\src\res\pasopia7.ico
 # End Source File
 # Begin Source File
 

@@ -54,7 +54,7 @@ class EVENT;
 class DATAREC;
 class I8253;
 class I8255;
-class IO8;
+class IO;
 class PCM1BIT;
 class Z80;
 
@@ -74,7 +74,7 @@ protected:
 	DATAREC* drec;
 	I8253* ctc;
 	I8255* pio;
-	IO8* io;
+	IO* io;
 	PCM1BIT* pcm0;
 //	PCM1BIT* pcm1;
 	Z80* cpu;

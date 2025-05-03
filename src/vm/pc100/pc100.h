@@ -46,7 +46,7 @@
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
 #define UPD765A_NO_DISK_ST0_AT
-#define IO8_ADDR_MAX		0x10000
+#define IO_ADDR_MAX		0x10000
 
 #include "../../common.h"
 
@@ -59,11 +59,11 @@ class BEEP;
 class I8251;
 class I8255;
 class I8259;
-class IO8;
+class I86;
+class IO;
 class PCM1BIT;
 class RTC58321;
 class UPD765A;
-class I86;
 
 class CRTC;
 class IOCTRL;
@@ -72,8 +72,6 @@ class MEMORY;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
@@ -86,11 +84,11 @@ protected:
 	I8255* pio0;
 	I8255* pio1;
 	I8259* pic;	// includes 2chips
-	IO8* io;
+	I86* cpu;
+	IO* io;
 	PCM1BIT* pcm;
 	RTC58321* rtc;
 	UPD765A* fdc;
-	I86* cpu;
 	
 	CRTC* crtc;
 	IOCTRL* ioctrl;

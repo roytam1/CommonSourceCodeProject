@@ -43,7 +43,7 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class IO8;
+class IO;
 class Z80;
 
 class JOYSTICK;
@@ -59,7 +59,7 @@ protected:
 	// devices
 	EVENT* event;
 	
-	IO8* io;
+	IO* io;
 	Z80* cpu;
 	
 	JOYSTICK* joystick;

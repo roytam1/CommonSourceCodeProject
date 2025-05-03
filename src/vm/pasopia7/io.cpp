@@ -8,9 +8,9 @@
 	[ 8bit i/o bus ]
 */
 
-#include "io8.h"
+#include "io.h"
 
-void IO8::write_io8(uint32 addr, uint32 data)
+void IO::write_io8(uint32 addr, uint32 data)
 {
 	if(mio) {
 		mio = false;
@@ -22,7 +22,7 @@ void IO8::write_io8(uint32 addr, uint32 data)
 	wdev[laddr]->write_io8(haddr | waddr[laddr], data);
 }
 
-uint32 IO8::read_io8(uint32 addr)
+uint32 IO::read_io8(uint32 addr)
 {
 	if(mio) {
 		mio = false;
@@ -34,9 +34,9 @@ uint32 IO8::read_io8(uint32 addr)
 	return val;
 }
 
-void IO8::write_signal(int id, uint32 data, uint32 mask)
+void IO::write_signal(int id, uint32 data, uint32 mask)
 {
-	if(id == SIG_IO8_MIO)
+	if(id == SIG_IO_MIO)
 		mio = (data & mask) ? true : false;
 }
 

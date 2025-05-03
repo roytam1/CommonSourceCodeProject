@@ -16,7 +16,7 @@
 #include "../datarec.h"
 #include "../i8253.h"
 #include "../i8255.h"
-#include "../io8.h"
+#include "../io.h"
 #include "../pcm1bit.h"
 #include "../z80.h"
 
@@ -40,7 +40,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	drec = new DATAREC(this, emu);
 	ctc = new I8253(this, emu);
 	pio = new I8255(this, emu);
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	pcm0 = new PCM1BIT(this, emu);
 //	pcm1 = new PCM1BIT(this, emu);
 	cpu = new Z80(this, emu);

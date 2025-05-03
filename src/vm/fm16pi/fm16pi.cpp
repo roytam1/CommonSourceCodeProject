@@ -16,11 +16,11 @@
 #include "../beep.h"
 #include "../i8253.h"
 #include "../i8259.h"
-#include "../io8.h"
+#include "../i86.h"
+#include "../io.h"
 #include "../ls393.h"
 #include "../mb8877.h"
 #include "../rtc58321.h"
-#include "../i86.h"
 
 #include "display.h"
 #include "keyboard.h"
@@ -41,11 +41,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	beep = new BEEP(this, emu);
 	pit = new I8253(this, emu);
 	pic = new I8259(this, emu);
-	io = new IO8(this, emu);
+	cpu = new I86(this, emu);
+	io = new IO(this, emu);
 	ls74 = new LS393(this, emu);	// 74LS74
 	fdc = new MB8877(this, emu);
 	rtc = new RTC58321(this, emu);
-	cpu = new I86(this, emu);
 	
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);

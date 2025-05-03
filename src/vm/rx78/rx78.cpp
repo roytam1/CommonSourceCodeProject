@@ -14,7 +14,7 @@
 #include "../event.h"
 
 #include "../datarec.h"
-#include "../io8.h"
+#include "../io.h"
 #include "../sn76489an.h"
 #include "../z80.h"
 
@@ -37,7 +37,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->initialize();		// must be initialized first
 	
 	drec = new DATAREC(this, emu);
-	io = new IO8(this, emu);
+	io = new IO(this, emu);
 	psg = new SN76489AN(this, emu);
 	cpu = new Z80(this, emu);
 	

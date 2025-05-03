@@ -2303,7 +2303,11 @@ inline void I86::_push_bx()	// Opcode 0x53
 inline void I86::_push_sp()	// Opcode 0x54
 {
 	count -= cycles.push_r16;
+#ifdef HAS_I286
 	PUSH16(regs.w[SP]);
+#else
+	PUSH16(regs.w[SP] - 2);
+#endif
 }
 
 inline void I86::_push_bp()	// Opcode 0x55
@@ -2640,8 +2644,9 @@ inline void I86::_insw()	// Opcode 0x6d
 {
 #if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.ins16;
-	WM8(ES, regs.w[DI], IN8(regs.w[DX]));
-	WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
+//	WM8(ES, regs.w[DI], IN8(regs.w[DX]));
+//	WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
+	WM16(ES, regs.w[DI], IN16(regs.w[DX]));
 	regs.w[DI] += 2 * DirVal;
 #else
 	_invalid();
@@ -3886,8 +3891,9 @@ inline void I86::_inax()	// Opcode 0xe5
 {
 	unsigned port = FETCH8();
 	count -= cycles.in_imm16;
-	regs.b[AL] = IN8(port);
-	regs.b[AH] = IN8(port + 1);
+//	regs.b[AL] = IN8(port);
+//	regs.b[AH] = IN8(port + 1);
+	regs.w[AX] = IN16(port);
 }
 
 inline void I86::_outal()	// Opcode 0xe6
@@ -3962,8 +3968,9 @@ inline void I86::_inaxdx()	// Opcode 0xed
 {
 	unsigned port = regs.w[DX];
 	count -= cycles.in_dx16;
-	regs.b[AL] = IN8(port);
-	regs.b[AH] = IN8(port + 1);
+//	regs.b[AL] = IN8(port);
+//	regs.b[AH] = IN8(port + 1);
+	regs.w[AX] = IN16(port);
 }
 
 inline void I86::_outdxal()	// Opcode 0xee
@@ -4030,8 +4037,9 @@ inline void I86::_rep(int flagval)
 	case 0x6d:	// REP INSW
 		count -= cycles.rep_ins16_base;
 		for(; cnt > 0; cnt--) {
-			WM8(ES, regs.w[DI], IN8(regs.w[DX]));
-			WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
+//			WM8(ES, regs.w[DI], IN8(regs.w[DX]));
+//			WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
+			WM16(ES, regs.w[DI], IN16(regs.w[DX]));
 			regs.w[DI] += 2 * DirVal;
 			count -= cycles.rep_ins16_count;
 		}

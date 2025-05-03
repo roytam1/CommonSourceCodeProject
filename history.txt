@@ -1,3 +1,21 @@
+1/2/2009
+
+[EMU/WIN32] support power off requested by vm
+[VM/I8237] support external bank register
+[VM/I8251] support txrdy/txempty/dsr/dtr signals
+[VM/I8251] support loop back
+[VM/I8251] don't reset dsr bit of status register
+[VM/I8253] don't latch count before previously latched count is not read
+[VM/I8254] support i8254 based on i8253
+[VM/I86] fix push sp in 8086 mode
+[VM/I86] fix a20 line in fetch functions
+[VM/IO] change class name from IO8 to IO
+[VM/IO] support 16bit i/o bus
+
+[FMR30] support FUJITSU FMR-30
+[FMR50/MEMORY] support power off bit on $20
+
+
 12/26/2008
 
 [EMU/WIN32] support kana-characters on auto key function

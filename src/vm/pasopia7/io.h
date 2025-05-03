@@ -8,16 +8,16 @@
 	[ 8bit i/o bus ]
 */
 
-#ifndef _IO8_H_
-#define _IO8_H_
+#ifndef _IO_H_
+#define _IO_H_
 
 #include "../vm.h"
 #include "../../emu.h"
 #include "../device.h"
 
-#define SIG_IO8_MIO	0
+#define SIG_IO_MIO	0
 
-class IO8 : public DEVICE
+class IO : public DEVICE
 {
 private:
 	// i/o map
@@ -31,14 +31,14 @@ private:
 	bool mio;
 	
 public:
-	IO8(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		// vm->dummy must be generated first !
 		for(uint32 i = 0; i < 256; i++) {
 			wdev[i & 0xff] = rdev[i & 0xff] = vm->dummy;
 			waddr[i & 0xff] = raddr[i & 0xff] = i & 0xff;
 		}
 	}
-	~IO8() {}
+	~IO() {}
 	
 	// common functions
 	void write_io8(uint32 addr, uint32 data);

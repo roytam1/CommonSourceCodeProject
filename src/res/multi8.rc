@@ -186,7 +186,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "MULTI8.ico"
+IDI_ICON1               ICON    DISCARDABLE     "multi8.ico"
 #endif    // âpåÍ (±“ÿ∂) resources
 /////////////////////////////////////////////////////////////////////////////
 

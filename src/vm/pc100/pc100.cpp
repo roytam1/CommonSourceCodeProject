@@ -18,11 +18,11 @@
 #include "../i8251.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../io8.h"
+#include "../i86.h"
+#include "../io.h"
 #include "../pcm1bit.h"
 #include "../rtc58321.h"
 #include "../upd765a.h"
-#include "../i86.h"
 
 #include "crtc.h"
 #include "ioctrl.h"
@@ -47,11 +47,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio0 = new I8255(this, emu);
 	pio1 = new I8255(this, emu);
 	pic = new I8259(this, emu);
-	io = new IO8(this, emu);
+	cpu = new I86(this, emu);
+	io = new IO(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	rtc = new RTC58321(this, emu);
 	fdc = new UPD765A(this, emu);
-	cpu = new I86(this, emu);
 	
 	crtc = new CRTC(this, emu);
 	ioctrl = new IOCTRL(this, emu);

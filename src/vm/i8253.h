@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.14 -
 
-	[ i8253 ]
+	[ i8253/i8254 ]
 */
 
 #ifndef _I8253_H_
@@ -30,13 +30,19 @@ private:
 		bool gate;
 		int32 count;
 		uint16 latch;
-		uint8 ctrl_reg;
 		uint16 count_reg;
+		uint8 ctrl_reg;
+		bool count_latched;
+		bool low_read, high_read;
+		bool low_write, high_write;
 		int mode;
-		int r_cnt;
-		int w_cnt;
 		bool delay;
 		bool start;
+#ifdef HAS_I8254
+		bool null_count;
+		bool status_latched;
+		uint8 status;
+#endif
 		// constant clock
 		uint32 freq;
 		int regist_id;
@@ -53,6 +59,7 @@ private:
 	void input_gate(int ch, bool signal);
 	void start_count(int ch);
 	void stop_count(int ch);
+	void latch_count(int ch);
 	void set_signal(int ch, bool signal);
 	int get_next_count(int ch);
 	

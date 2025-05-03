@@ -38,7 +38,7 @@
 #define MAX_DRIVE		4
 #define HAS_I86
 #define I8259_MAX_CHIPS		1
-#define IO8_ADDR_MAX		0x10000
+#define IO_ADDR_MAX		0x10000
 
 #include "../../common.h"
 
@@ -49,11 +49,11 @@ class EVENT;
 class BEEP;
 class I8253;
 class I8259;
-class IO8;
+class I86;
+class IO;
 class LS393;
 class MB8877;
 class RTC58321;
-class I86;
 
 class DISPLAY;
 class KEYBOARD;
@@ -61,8 +61,6 @@ class MEMORY;
 
 class VM
 {
-	// define friend
-	friend IO8;
 protected:
 	EMU* emu;
 	
@@ -72,11 +70,11 @@ protected:
 	BEEP* beep;
 	I8253* pit;
 	I8259* pic;
-	IO8* io;
+	I86* cpu;
+	IO* io;
 	LS393* ls74;	// 74LS74
 	MB8877* fdc;
 	RTC58321* rtc;
-	I86* cpu;
 	
 	DISPLAY* display;
 	KEYBOARD* keyboard;

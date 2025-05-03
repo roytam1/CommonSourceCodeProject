@@ -13,9 +13,9 @@
 
 void FLOPPY::initialize()
 {
-	_memset(changed, 0, sizeof(changed));
 	drvreg = drvsel = 0;
 	irq = irqmsk = false;
+	changed[0] = changed[1] = changed[2] = changed[3] = false;
 }
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
@@ -59,7 +59,7 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	case 0x20e:
 		// drive change register
 		if(changed[drvsel]) {
-			changed[drvsel] = 0;
+			changed[drvsel] = false;
 			return 1;
 		}
 		return 0;
