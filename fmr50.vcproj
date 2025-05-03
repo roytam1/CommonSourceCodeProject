@@ -765,6 +765,28 @@
 				Filter="cpp"
 				>
 				<File
+					RelativePath="src\vm\fmr50\bios.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\fmr50\cmos.cpp"
 					>
 					<FileConfiguration
@@ -1014,6 +1036,10 @@
 				Name="VM Driver Header Files"
 				Filter="h"
 				>
+				<File
+					RelativePath="src\vm\fmr50\bios.h"
+					>
+				</File>
 				<File
 					RelativePath="src\vm\fmr50\cmos.h"
 					>

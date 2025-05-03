@@ -21,7 +21,7 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_fdc;
+	DEVICE *d_cpu, *d_fdc, *d_bios;
 	int did_a20;
 	
 	uint8* rbank[8192];	// 16MB / 2KB
@@ -29,7 +29,7 @@ private:
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	
-	uint8 ram[0x100000];	// RAM 1MB
+	uint8 ram[0x400000];	// RAM 4MB
 	uint8 vram[0x40000];	// VRAM 32KB * 8pl
 	uint8 cvram[0x1000];
 	uint8 kvram[0x1000];
@@ -38,6 +38,7 @@ private:
 	uint8 ank8[0x800];	// ANK(8x8) 2KB
 	uint8 ank16[0x1000];	// ANK(8x16) 4KB
 	uint8 kanji16[0x40000];	// KANJI(16x16) 256KB
+	uint8 id[2];		// MACHINE ID
 	
 	uint8 protect, rst;
 	uint8 mainmem, rplane, wplane, pagesel, ankcg;
@@ -81,6 +82,9 @@ public:
 	}
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;
+	}
+	void set_context_bios(DEVICE* device) {
+		d_bios = device;
 	}
 	void set_chregs_ptr(uint8* ptr) {
 		chreg = ptr;

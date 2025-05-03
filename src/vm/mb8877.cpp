@@ -12,6 +12,38 @@
 #include "disk.h"
 #include "../config.h"
 
+#define FDC_ST_BUSY		0x01	// busy
+#define FDC_ST_INDEX		0x02	// index hole
+#define FDC_ST_DRQ		0x02	// data request
+#define FDC_ST_TRACK00		0x04	// track0
+#define FDC_ST_LOSTDATA		0x04	// data lost
+#define FDC_ST_CRCERR		0x08	// crc error
+#define FDC_ST_SEEKERR		0x10	// seek error
+#define FDC_ST_RECNFND		0x10	// sector not found
+#define FDC_ST_HEADENG		0x20	// head engage
+#define FDC_ST_RECTYPE		0x20	// record type
+#define FDC_ST_WRITEFAULT	0x20	// write fault
+#define FDC_ST_WRITEP		0x40	// write protect
+#define FDC_ST_NOTREADY		0x80	// media not inserted
+
+#define FDC_CMD_TYPE1		1
+#define FDC_CMD_RD_SEC		2
+#define FDC_CMD_RD_MSEC		3
+#define FDC_CMD_WR_SEC		4
+#define FDC_CMD_WR_MSEC		5
+#define FDC_CMD_RD_ADDR		6
+#define FDC_CMD_RD_TRK		7
+#define FDC_CMD_WR_TRK		8
+#define FDC_CMD_TYPE4		0x80
+
+#define EVENT_SEEK		0
+#define EVENT_SEEKEND		1
+#define EVENT_SEARCH		2
+#define EVENT_TYPE4		3
+#define EVENT_MULTI1		4
+#define EVENT_MULTI2		5
+#define EVENT_LOST		6
+
 #define CANCEL_EVENT(event) { \
 	if(regist_id[event] != -1) { \
 		vm->cancel_event(regist_id[event]); \

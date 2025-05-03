@@ -26,6 +26,7 @@
 #define USE_FD2
 #define USE_FD3
 #define USE_FD4
+#define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -41,7 +42,9 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
+#define MAX_SCSI		0
 #define I286
+#define X86_BIOS_CALL
 #define I8259_MAX_CHIPS		2
 #define IO8_ADDR_MAX		0x10000
 
@@ -62,12 +65,13 @@ class RTC58321;
 class UPD71071;
 class X86;
 
+class BIOS;
 class CMOS;
 class FLOPPY;
 class KEYBOARD;
 class MEMORY;
 //class SERIAL;
-class SCSI;
+//class SCSI;
 class TIMER;
 
 class VM
@@ -90,11 +94,12 @@ protected:
 	UPD71071* dma;
 	X86* cpu;
 	
+	BIOS* bios;
 	CMOS* cmos;
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
-	SCSI* scsi;
+//	SCSI* scsi;
 //	SERIAL* serial;
 	TIMER* timer;
 	
@@ -120,6 +125,10 @@ public:
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int samples, bool fill);
+	
+	// notify key
+	void key_down(int code);
+	void key_up(int code);
 	
 	// user interface
 	void open_disk(_TCHAR* filename, int drv);

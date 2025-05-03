@@ -1,3 +1,10 @@
+10/10/2008
+
+[FMR50/BIOS] support disk bios
+[FMR50/KEYBOARD] support keyboard
+[MZ700/MEMORY] change EMM memory size for Windows CE
+
+
 10/6/2008
 
 [EMU/WIN32] fix the problem when new file path is specified
@@ -18,6 +25,7 @@
 [TK80BS] support 2ch sound (PC1 and PC2 of 8255)
 [TK80BS/MEMORY] support save/load ram image
 [TK80BS/MEMORY] fix interrupt address
+[TK80BS/KEYBOARD] fix key map for kana chars
 
 
 8/27/2008

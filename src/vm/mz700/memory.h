@@ -19,9 +19,13 @@
 #define EVENT_TEMPO	1
 #define EVENT_BLINK	2
 
+#ifdef _WIN32_WCE
+#define EMM_SIZE	0x100000
+#else
 #define EMM_SIZE	0x1000000
+#endif
 #define EMM_MASK	(EMM_SIZE - 1)
-#define MZT_SIZE	0x20000
+#define MZT_SIZE	0x10000
 #define MZT_MASK	(MZT_SIZE - 1)
 
 class MEMORY : public DEVICE

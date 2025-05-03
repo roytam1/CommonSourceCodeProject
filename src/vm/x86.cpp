@@ -258,10 +258,12 @@ void X86::write_signal(int id, uint32 data, uint32 mask)
 
 void X86::interrupt(unsigned num)
 {
+#ifdef X86_BIOS_CALL
 	if(d_bios && d_bios->bios_int(num, regs.w, sregs, &ZeroVal, &CarryVal)) {
 		// bios call
 		return;
 	}
+#endif
 #ifdef I286
 	if(PM) {
 		if((num << 3) >= idtr_limit) // go into shutdown mode
@@ -3274,6 +3276,7 @@ inline void X86::_call_far()
 	base[CS] = SegBase(CS);
 	PC = (base[CS] + (uint16)tmp1) & AMASK;
 #endif
+#ifdef X86_BIOS_CALL
 	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 		// bios call
 		POP16();
@@ -3282,6 +3285,7 @@ inline void X86::_call_far()
 		base[CS] = SegBase(CS);
 		PC = pc;
 	}
+#endif
 	count -= cycles.call_far;
 }
 
@@ -3914,6 +3918,7 @@ inline void X86::_call_d16()	// Opcode 0xe8
 	PUSH16(ip);
 	ip += tmp;
 	PC = (ip + base[CS]) & AMASK;
+#ifdef X86_BIOS_CALL
 	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 		// bios call
 		POP16();
@@ -3921,6 +3926,7 @@ inline void X86::_call_d16()	// Opcode 0xe8
 		base[CS] = SegBase(CS);
 		PC = pc;
 	}
+#endif
 	count -= cycles.call_near;
 }
 
@@ -4449,6 +4455,7 @@ inline void X86::_opff()	// Opcode 0xff
 		ip = PC - base[CS];
 		PUSH16(ip);
 		PC = (base[CS] + (uint16)tmp1) & AMASK;
+#ifdef X86_BIOS_CALL
 		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 			// bios call
 			POP16();
@@ -4456,6 +4463,7 @@ inline void X86::_opff()	// Opcode 0xff
 			base[CS] = SegBase(CS);
 			PC = pc;
 		}
+#endif
 		break;
 	case 0x18:	// CALL FAR ea
 		count -= cycles.call_m32;
@@ -4473,6 +4481,7 @@ inline void X86::_opff()	// Opcode 0xff
 		base[CS] = SegBase(CS);
 		PC = (base[CS] + tmp2) & AMASK;
 #endif
+#ifdef X86_BIOS_CALL
 		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 			// bios call
 			POP16();
@@ -4481,6 +4490,7 @@ inline void X86::_opff()	// Opcode 0xff
 			base[CS] = SegBase(CS);
 			PC = pc;
 		}
+#endif
 		break;
 	case 0x20:	// JMP ea
 		count -= (ModRM >= 0xc0) ? cycles.jmp_r16 : cycles.jmp_m16;

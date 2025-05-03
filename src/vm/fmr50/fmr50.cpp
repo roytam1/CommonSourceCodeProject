@@ -24,11 +24,12 @@
 #include "../upd71071.h"
 #include "../x86.h"
 
+#include "bios.h"
 #include "cmos.h"
 #include "floppy.h"
 #include "keyboard.h"
 #include "memory.h"
-#include "scsi.h"
+//#include "scsi.h"
 //#include "serial.h"
 #include "timer.h"
 
@@ -58,11 +59,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dma = new UPD71071(this, emu);
 	cpu = new X86(this, emu);
 	
+	bios = new BIOS(this, emu);
 	cmos = new CMOS(this, emu);
 	floppy = new FLOPPY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
-	scsi = new SCSI(this, emu);
+//	scsi = new SCSI(this, emu);
 //	serial = new SERIAL(this, emu);
 	timer = new TIMER(this, emu);
 	
@@ -106,15 +108,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	dma->set_context_memory(memory);
 	dma->set_context_ch0(fdc);
-	dma->set_context_ch1(scsi);
+//	dma->set_context_ch1(scsi);
 	
+	bios->set_context_mem(memory);
 	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
 	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
+	keyboard->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
 	memory->set_context_cpu(cpu, SIG_X86_A20);
 	memory->set_context_fdc(fdc);
+	memory->set_context_bios(bios);
 	memory->set_chregs_ptr(crtc->get_regs());
-	scsi->set_context_drq(dma, SIG_UPD71071_CH1, 1);
-	scsi->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR0, 0xf);
+//	scsi->set_context_drq(dma, SIG_UPD71071_CH1, 1);
+//	scsi->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR0, 0xf);
 	timer->set_context_beep(beep, SIG_BEEP_ON);
 	timer->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0);
 	
@@ -122,20 +127,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+	cpu->set_context_bios(bios);
 	
-
-/*
-IN	 550
-IN	  30 = d8
-IN	  31 = ff
-
-IN	 20e = ff
-
-IN	  78 = ff
-20	7c
-IN	  21 = ff
-IN	  21 = ff
-*/
 	// i/o bus
 	io->set_iomap_alias_w(0x00, pic, 0);
 	io->set_iomap_alias_w(0x02, pic, 1);
@@ -172,8 +165,8 @@ IN	  21 = ff
 	io->set_iomap_alias_w(0xa00, sio, 0);
 	io->set_iomap_alias_w(0xa02, sio, 1);
 //	io->set_iomap_single_w(0xa08, serial);
-	io->set_iomap_single_w(0xc30, scsi);
-	io->set_iomap_single_w(0xc32, scsi);
+//	io->set_iomap_single_w(0xc30, scsi);
+//	io->set_iomap_single_w(0xc32, scsi);
 	io->set_iomap_range_w(0x3000, 0x3fff, cmos);
 	io->set_iomap_single_w(0xfd98, memory);	// crtc
 	io->set_iomap_single_w(0xfd99, memory);	// crtc
@@ -190,8 +183,8 @@ IN	  21 = ff
 	io->set_iomap_alias_r(0x02, pic, 1);
 	io->set_iomap_alias_r(0x10, pic, 2);
 	io->set_iomap_alias_r(0x12, pic, 3);
-	io->set_iomap_single_r(0x20, memory);	// reset
-	io->set_iomap_single_r(0x30, memory);	// cpu id
+	io->set_iomap_single_r(0x20, memory);		// reset
+	io->set_iomap_range_r(0x30, 0x31, memory);	// cpu id
 	io->set_iomap_alias_r(0x40, pit0, 0);
 	io->set_iomap_alias_r(0x42, pit0, 1);
 	io->set_iomap_alias_r(0x44, pit0, 2);
@@ -204,12 +197,14 @@ IN	  21 = ff
 	io->set_iomap_alias_r(0x70, rtc, 0);
 	io->set_iomap_alias_r(0x80, rtc, 1);
 	io->set_iomap_range_r(0xa0, 0xaf, dma);
+	io->set_iomap_single_r(0x200, bios);
+	io->set_iomap_single_r(0x202, bios);
 	io->set_iomap_alias_r(0x200, fdc, 0);
 	io->set_iomap_alias_r(0x202, fdc, 1);
 	io->set_iomap_alias_r(0x204, fdc, 2);
 	io->set_iomap_alias_r(0x206, fdc, 3);
 	io->set_iomap_single_r(0x208, floppy);
-//	io->set_iomap_single_r(0x20e, floppy);
+	io->set_iomap_single_r(0x20e, floppy);
 	io->set_iomap_single_r(0x400, memory);	// crtc
 	io->set_iomap_single_r(0x402, memory);	// crtc
 	io->set_iomap_single_r(0x404, memory);	// crtc
@@ -223,8 +218,8 @@ IN	  21 = ff
 	io->set_iomap_alias_r(0xa02, sio, 1);
 //	io->set_iomap_single_r(0xa04, serial);
 //	io->set_iomap_single_r(0xa06, serial);
-	io->set_iomap_single_r(0xc30, scsi);
-	io->set_iomap_single_r(0xc32, scsi);
+//	io->set_iomap_single_r(0xc30, scsi);
+//	io->set_iomap_single_r(0xc32, scsi);
 	io->set_iomap_range_r(0x3000, 0x3fff, cmos);
 	io->set_iomap_single_r(0xfd98, memory);	// crtc
 	io->set_iomap_single_r(0xfd99, memory);	// crtc
@@ -244,6 +239,8 @@ IN	  21 = ff
 		if(device->this_device_id != event->this_device_id)
 			device->reset();
 	}
+	for(int i = 0; i < MAX_DRIVE; i++)
+		bios->set_disk_handler(i, fdc->get_disk_handler(i));
 }
 
 VM::~VM()
@@ -354,6 +351,20 @@ uint16* VM::create_sound(int samples, bool fill)
 }
 
 // ----------------------------------------------------------------------------
+// notify key
+// ----------------------------------------------------------------------------
+
+void VM::key_down(int code)
+{
+	keyboard->key_down(code);
+}
+
+void VM::key_up(int code)
+{
+	keyboard->key_up(code);
+}
+
+// ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
 
@@ -365,12 +376,6 @@ void VM::open_disk(_TCHAR* filename, int drv)
 void VM::close_disk(int drv)
 {
 	fdc->close_disk(drv);
-
-FILE* fp=fopen("d:\\scsi.bin","wb");
-for(int i = 0; i < 0x8000; i++)
-fputc(memory->read_data8(i),fp);
-fclose(fp);
-
 }
 
 bool VM::now_skip()

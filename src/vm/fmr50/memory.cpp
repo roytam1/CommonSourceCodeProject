@@ -38,6 +38,10 @@ void MEMORY::initialize()
 	_memset(kanji16, 0xff, sizeof(kanji16));
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
+	// init machine id (FMR-50/LT3)
+	id[0] = 0xd8;
+	id[1] = 0xff;
+	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -61,6 +65,11 @@ void MEMORY::initialize()
 	_stprintf(file_path, _T("%sKANJI16.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(kanji16, sizeof(kanji16), 1);
+		fio->Fclose();
+	}
+	_stprintf(file_path, _T("%sMACHINE.ID"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(id, sizeof(id), 1);
 		fio->Fclose();
 	}
 	delete fio;
@@ -303,8 +312,11 @@ uint32 MEMORY::read_io8(uint32 addr)
 		rst &= ~3;
 		return val | 0x7c;
 	case 0x30:
-		// cpu id
-		return 0xd8;
+		// machine & cpu id
+		return id[0];
+	case 0x31:
+		// machine id
+		return id[1];
 	case 0x400:
 		// system status register
 		return 0xfe;
@@ -358,8 +370,8 @@ void MEMORY::event_frame()
 
 void MEMORY::update_bank()
 {
-	SET_BANK(0x000000, 0x0fffff, ram, ram);
-	SET_BANK(0x100000, 0xffffff, wdmy, rdmy);
+	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
+	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 	if(!mainmem) {
 		SET_BANK(0x0c0000, 0x0effff, wdmy, rdmy);
 		int ofs = (rplane | (pagesel & 0x10 ? 4 : 0)) * 0x8000;
@@ -400,7 +412,7 @@ void MEMORY::draw_screen()
 	}
 	
 	// access lamp
-	uint32 stat_f = d_fdc->read_signal(0);
+	uint32 stat_f = d_fdc->read_signal(0) | d_bios->read_signal(0);
 	if(stat_f) {
 		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
 		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
