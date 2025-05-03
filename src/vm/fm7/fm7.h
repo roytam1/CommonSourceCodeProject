@@ -11,27 +11,32 @@
 #define _FM7_H_
 
 #define USE_TAPE
+//#define USE_TAPE_PTR
 #define USE_SOUND_DEVICE_TYPE 8
 #define USE_SCANLINE
 #define USE_DIPSWITCH
+#if defined(_FM77_VARIANTS)
 #define USE_BOOT_MODE         3
+#else
+#define USE_BOOT_MODE         2
+#endif
 #define USE_CPU_TYPE          2
 #define USE_SPECIAL_RESET
 //#undef  HAS_YM2608
 //#define SUPPORT_YM2203_PORT
 //#define HAS_AY_3_8910
 // 4:3
-#define SCREEN_WIDTH_ASPECT 640 
-#define SCREEN_HEIGHT_ASPECT 480
+//#define SCREEN_WIDTH_ASPECT 640 
+//#define SCREEN_HEIGHT_ASPECT 480
 
 #define NOTIFY_KEY_DOWN
 #define NOTIFY_KEY_UP
-#define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
-#define USE_SOUND_DEVICE_TYPE	8
+//#define USE_DISK_WRITE_PROTECT
 //#define USE_DEBUGGER
 //#define _DEBUG_LOG
 //#define _FDC_DEBUG_LOG
@@ -47,45 +52,71 @@
 #define CONFIG_NAME		"fm7"
 #define CAPABLE_Z80
 
+#elif defined(_FMNEW7)
+#define DEVICE_NAME		"FUJITSU FM-NEW7"
+#define CONFIG_NAME		"fmnew7"
+#define CAPABLE_Z80
+
+#elif defined(_FM77)
+#define DEVICE_NAME		"FUJITSU FM-77"
+#define CONFIG_NAME		"fm77"
+//#define USE_DRIVE_TYPE
+#define _FM77_VARIANTS
+
+#elif defined(_FM77L2)
+#define DEVICE_NAME		"FUJITSU FM-77L2"
+#define CONFIG_NAME		"fm77l2"
+//#define USE_DRIVE_TYPE
+#define _FM77_VARIANTS
+
 #elif defined(_FM77L4)
 #define DEVICE_NAME		"FUJITSU FM-77L4"
 #define CONFIG_NAME		"fm77l4"
-#define _FM77_VARIANTS
 #define HAS_MMR
 #define HAS_400LINECARD
 #define HAS_TEXTVRAM
 #define HAS_2HD
 #define HAS_CYCLESTEAL
-#define CAPABLE_Z80
-#define CAPABLE_KANJI_CLASS2
+//#define CAPABLE_KANJI_CLASS2
 #define USE_DRIVE_TYPE
+#define _FM77_VARIANTS
 
 #elif defined(_FM77AV)
 #define DEVICE_NAME		"FUJITSU FM-77AV"
 #define CONFIG_NAME		"fm77av"
 #define _FM77AV_VARIANTS
-#define HAS_MMR
-#define HAS_CYCLESTEAL
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM-77AV"
+#define DEVICE_NAME		"FUJITSU FM-77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
-#define HAS_CYCLESTEAL
 #define USE_DRIVE_TYPE
+#define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM-77AV"
+#define DEVICE_NAME		"FUJITSU FM-77AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
-#define HAS_MMR
 #define HAS_2DD_2D
-#define HAS_CYCLESTEAL
-#define CAPABLE_KANJI_CLASS2
+#define HAS_DMA
 #define USE_DRIVE_TYPE
+#define CAPABLE_DICTROM
 
+#endif
+
+#ifdef _FM77AV_VARIANTS
+
+//#define CAPABLE_KANJI_CLASS2
+#define HAS_MMR
+#define HAS_CYCLESTEAL
+
+#elif _FM77_VARIANTS
+
+#define HAS_MMR
+#define HAS_CYCLESTEAL
+#define CAPABLE_Z80
 #endif
 
 // device informations for virtual machine
@@ -120,6 +151,37 @@
 # endif
 #endif
 
+// DIP Switch description
+#define SWITCH_CYCLESTEAL 0x00000001
+#if defined(_FM8)
+#define SWITCH_URA_RAM    0x00000002
+#else
+#define SWITCH_URA_RAM    0x00000000
+#endif
+#define SWITCH_INVERT_CMT 0x00000004
+
+// Belows are optional Hardwares.
+#if !defined(_FM77_VARIANTS) && !defined(_FM77AV_VARIANTS)
+#define SWITCH_FDC 0x00010000
+#else
+#define SWITCH_FDC 0x00000000
+#endif
+#if !defined(_FM77_VARIANTS) && !defined(_FM77AV_VARIANTS)
+#define SWITCH_Z80 0x00020000
+#else
+#define SWITCH_Z80 0x00000000
+#endif
+#if defined(_FM77_VARIANTS)
+#define SWITCH_DICTCARD 0x00040000
+#else
+#define SWITCH_DICTCARD 0x00000000
+#endif
+#if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
+#define SWITCH_EXTRA_RAM 0x00080000
+#else
+#define SWITCH_EXTRA_RAM 0x00000000
+#endif
+
 //#define ENABLE_OPENCL // If OpenCL renderer is enabled, define here.
 
 //#include "../../config.h"
@@ -132,7 +194,7 @@ class EVENT;
 class FILEIO;
 
 class BEEP;
-//class PCM1BIT;
+class PCM1BIT;
 class MC6809;
 class YM2203;
 class MB8877;
@@ -140,7 +202,9 @@ class MEMORY;
 class DATAREC;
 
 class DISPLAY;
-
+#if defined(_FM77AV_VARIANTS)
+class MB61VH010;
+#endif
 class FM7_MAINMEM;
 class FM7_MAINIO;
 class KEYBOARD;
@@ -175,10 +239,12 @@ protected:
         DEVICE* mouse_opn;
 	DEVICE* inteli_mouse; 
    
-	//DEVICE *dummycpu;
+	DEVICE *dummycpu;
 	MC6809* subcpu;
         MEMORY* submem;
-
+#if defined(_FM77AV_VARIANTS)
+	MB61VH010 *alu;
+#endif
         DISPLAY* display;
         KEYBOARD* keyboard;
    
@@ -252,16 +318,20 @@ public:
 	void open_disk(int drv, _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
-//	void write_protect_fd(int drv, bool flag);
-//	bool is_write_protect_fd(int drv);
+#ifdef USE_DISK_WRITE_PROTECT
+	void write_protect_fd(int drv, bool flag);
+	bool is_write_protect_fd(int drv);
+#endif
 	
 	void play_tape(_TCHAR* file_path);
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
 	bool now_skip();
-//        int get_tape_ptr(void);
-   
+#ifdef USE_TAPE_PTR
+	int get_tape_ptr(void);
+#endif
+	
 	void update_config();
 	//void save_state(FILEIO* state_fio);
 	//bool load_state(FILEIO* state_fio);

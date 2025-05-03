@@ -23,6 +23,9 @@
 #include "../beep.h"
 //#include "../pcm1bit.h"
 #include "../ym2203.h"
+#if defined(_FM77AV_VARIANTS)
+#include "./mb61vh010.h"
+#endif
 
 #include "./fm7_mainio.h"
 #include "./fm7_mainmem.h"
@@ -43,7 +46,7 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
-//	dummycpu = new DEVICE(this, emu);
+	dummycpu = new DEVICE(this, emu);
 	maincpu = new MC6809(this, emu);
 	subcpu = new MC6809(this, emu);
 #ifdef WITH_Z80
@@ -55,6 +58,9 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
+#if defined(_FM77AV_VARIANTS)
+	alu = new MB61VH010(this, emu);
+#endif	
 
 	// I/Os
 	drec = new DATAREC(this, emu);
@@ -65,7 +71,6 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	opn[0] = new YM2203(this, emu); // OPN
 	opn[1] = new YM2203(this, emu); // WHG
 	opn[2] = new YM2203(this, emu); // THG
-   
 #if !defined(_FM77AV_VARIANTS)
 	psg = new YM2203(this, emu);
 #endif
@@ -107,7 +112,6 @@ void VM::initialize(void)
 	cycle_steal = true;
 #endif
 	clock_low = false;
-
 }
 
 
@@ -137,8 +141,7 @@ void VM::connect_bus(void)
 	 */
 	event->set_frames_per_sec(60.00);
 	event->set_lines_per_frame(400);
-//	event->set_context_cpu(dummycpu, MAINCLOCK_FAST_MMR * 3);
-	event->set_context_cpu(dummy, MAINCLOCK_FAST_MMR * 3);
+	event->set_context_cpu(dummycpu, MAINCLOCK_FAST_MMR * 3);
 #if defined(_FM8)
 	mainclock = MAINCLOCK_SLOW;
 	subclock = SUBCLOCK_SLOW;
@@ -154,7 +157,6 @@ void VM::connect_bus(void)
 	}
 #endif
 	event->set_context_cpu(maincpu, MAINCLOCK_FAST_MMR);
-	//if((config.dipswitch & 0x01) == 0) subclock = subclock / 3;
 	event->set_context_cpu(subcpu,  SUBCLOCK_NORMAL);
    
 #ifdef WITH_Z80
@@ -165,19 +167,15 @@ void VM::connect_bus(void)
 	event->set_context_sound(beep);
 //	event->set_context_sound(pcm1bit);
 #if !defined(_FM77AV_VARIANTS)
-	//if(psg != NULL) {
-	//psg->set_context_event_manager(mainio);
 	mainio->set_context_psg(psg);
-	//psg->is_ym2608 = false; 
 	event->set_context_sound(psg);
-	//}
 #endif
 	event->set_context_sound(opn[0]);
 	event->set_context_sound(opn[1]);
 	event->set_context_sound(opn[2]);
-//#ifdef DATAREC_SOUND
+#ifdef DATAREC_SOUND
 	event->set_context_sound(drec);
-//#endif
+#endif
    
 	mainio->set_context_maincpu(maincpu);
 	mainio->set_context_subcpu(subcpu);
@@ -186,17 +184,22 @@ void VM::connect_bus(void)
         mainio->set_context_kanjirom_class1(kanjiclass1);
         mainio->set_context_mainmem(mainmem);
    
-#if defined(_FM77AV_VARIANTS)
+#if defined(CAPABLE_KANJI_CLASS2)
         mainio->set_context_kanjirom_class2(kanjiclass2);
 #endif
 
 	keyboard->set_context_break_line(mainio, FM7_MAINIO_PUSH_BREAK, 0xffffffff);
 	keyboard->set_context_mainio(mainio);
 	keyboard->set_context_display(display);
+	keyboard->set_context_rxrdy(keyboard, SIG_FM7KEY_RXRDY, 0x01);
+	keyboard->set_context_key_ack(keyboard, SIG_FM7KEY_ACK, 0x01);
    
 	drec->set_context_out(mainio, FM7_MAINIO_CMT_RECV, 0xffffffff);
 	//drec->set_context_remote(mainio, FM7_MAINIO_CMT_REMOTE, 0xffffffff);
 	mainio->set_context_datarec(drec);
+	mainmem->set_context_mainio(mainio);
+	mainmem->set_context_display(display);
+	mainmem->set_context_maincpu(maincpu);
   
 	display->set_context_mainio(mainio);
 	display->set_context_subcpu(subcpu);
@@ -204,9 +207,13 @@ void VM::connect_bus(void)
 	subcpu->set_context_bus_halt(display, SIG_FM7_SUB_HALT, 0xffffffff);
 
         display->set_context_kanjiclass1(kanjiclass1);
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+#if defined(CAPABLE_KANJI_CLASS2)
         display->set_context_kanjiclass2(kanjiclass2);
 #endif   
+#if defined(_FM77AV_VARIANTS)
+	display->set_context_alu(alu);
+	alu->set_context_memory(display);
+#endif	
 	// Palette, VSYNC, HSYNC, Multi-page, display mode. 
 	mainio->set_context_display(display);
 	
@@ -227,9 +234,6 @@ void VM::connect_bus(void)
 	opn[2]->set_context_irq(mainio, FM7_MAINIO_THG_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[2], 2);
    
-	mainmem->set_context_mainio(mainio);
-	mainmem->set_context_display(display);
-	mainmem->set_context_maincpu(maincpu);
 	
 	subcpu->set_context_bus_halt(mainmem, SIG_FM7_SUB_HALT, 0xffffffff);
 	subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
@@ -291,71 +295,12 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-	//opn[0]->SetReg(0x2e, 0);	// set prescaler
-	//opn[1]->SetReg(0x2e, 0);	// set prescaler
-	//opn[2]->SetReg(0x2e, 0);	// set prescaler
+	opn[0]->SetReg(0x2e, 0);	// set prescaler
+	opn[1]->SetReg(0x2e, 0);	// set prescaler
+	opn[2]->SetReg(0x2e, 0);	// set prescaler
 
 	// Init OPN/PSG.
 	// Parameters from XM7.
-#if 0
-	if(psg != NULL) {
-		for(i = 0; i < 0x0e; i++) {
-			data = (i == 7) ? 0xff : 0x00;
-			psg->SetReg(i, data);
-		}
-	}
-	for(i = 0; i < 0x0e; i++) {
-		data = (i == 7) ? 0xff : 0x00;
-		for(j = 0; j < 3; j++) {
-			opn[j]->SetReg(i, data);
-		}
-	}
-	for(i = 0x30; i < 0x40; i++) {
-		if((i & 0x03) < 3) {
-			for(j = 0; j < 3; j++) {
-				opn[j]->SetReg(i, 0x00);
-			}
-		}
-	}
-	for(i = 0x40; i < 0x50; i++) {
-		if((i & 0x03) < 3) {
-			for(j = 0; j < 3; j++) {
-				opn[j]->SetReg(i, 0x7f);
-			}
-		}
-	}
-	for(i = 0x50; i < 0x60; i++) {
-		if((i & 0x03) < 3) {
-			for(j = 0; j < 3; j++) {
-				opn[j]->SetReg(i, 0x1f);
-			}
-		}
-	}
-	for(i = 0x60; i < 0xb4; i++) {
-		if((i & 0x03) < 3) {
-			for(j = 0; j < 3; j++) {
-				opn[j]->SetReg(i, 0x00);
-			}
-		}
-	}
-	for(i = 0x80; i < 0x90; i++) {
-		if((i & 0x03) < 3) {
-			for(j = 0; j < 3; j++) {
-				opn[j]->SetReg(i, 0xff);
-			}
-		}
-	}
-	for(i = 0; i < 3; i++) {
-		for(j = 0; j < 3; j++) {
-			opn[j]->SetReg(0x28, i);
-		}
-	}
-	for(j = 0; j < 3; j++) {
-		opn[j]->SetReg(0x27, 0);
-		mainio->opn_regs[j][0x27] = 0x0;
-	}
-	mainio->opn_regs[3][0x27] = 0x0;
-#endif
 	opn[0]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
 	opn[1]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
 	opn[2]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
@@ -365,11 +310,6 @@ void VM::reset()
 	psg->SetReg(0x2e, 0);	// set prescaler
 	psg->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
 #endif	
-	//   	for(i = 0; i < 3; i++) {
-	//	opn_data[i] = 0;
-   	//	opn_cmdreg[i] = 0;
-   	//	opn_address[i] = 0x27;
-	//}
 }
 
 void VM::special_reset()
@@ -493,15 +433,17 @@ bool VM::disk_inserted(int drv)
 	return fdc->disk_inserted(drv);
 }
  
-//void VM::write_protect_fd(int drv, bool flag)
-//{
-//	fdc->write_protect_fd(drv, flag);
-//}
+#ifdef USE_DISK_WRITE_PROTECT
+void VM::write_protect_fd(int drv, bool flag)
+{
+	fdc->write_protect_fd(drv, flag);
+}
 
-//bool VM::is_write_protect_fd(int drv)
-//{
-//        return fdc->is_write_protect_fd(drv);
-//}
+bool VM::is_write_protect_fd(int drv)
+{
+        return fdc->is_write_protect_fd(drv);
+}
+#endif
 
 void VM::play_tape(_TCHAR* file_path)
 {
@@ -523,10 +465,12 @@ bool VM::tape_inserted()
 	return drec->tape_inserted();
 }
 
-//int VM::get_tape_ptr(void)
-//{
-//        return drec->get_tape_ptr();
-//}
+#ifdef USE_TAPE_PTR
+int VM::get_tape_ptr(void)
+{
+        return drec->get_tape_ptr();
+}
+#endif
 
 bool VM::now_skip()
 {

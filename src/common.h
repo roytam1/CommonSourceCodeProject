@@ -154,6 +154,14 @@ typedef union {
 
 } pair;
 
+// max/min from WinDef.h
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 // rgb color
 #define _RGB888
 

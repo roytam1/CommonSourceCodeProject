@@ -20,9 +20,14 @@
 
 void FM7_MAINIO::reset_sound(void)
 {
-	int i, j;
+	int i, j, k;
 
-	for(i = 0; i < 4; i++) {
+#if defined(_FM77AV_VARIANTS)
+	k = 3;
+#else
+	k = 4;
+#endif
+	for(i = 0; i < k; i++) {
 		opn_data[i]= 0;
 		opn_cmdreg[i] = 0;
 		opn_address[i] = 0;
@@ -106,6 +111,7 @@ uint8 FM7_MAINIO::get_psg(void)
  */
 void FM7_MAINIO::set_psg_cmd(uint8 cmd)
 {
+	cmd = cmd & 0x03;
 	if(opn_psg_77av) {
 		set_opn_cmd(0, cmd);
 		return;
@@ -197,14 +203,15 @@ uint32 FM7_MAINIO::update_joystatus(int index)
 
 uint8 FM7_MAINIO::get_opn(int index)
 {
-	uint8 val = 0xff;
-	if((index > 2) || (index < 0)) return 0xff;
-	if((index == 0) && (!connect_opn)) return 0xff;
-	if((index == 1) && (!connect_whg)) return 0xff;
-	if((index == 2) && (!connect_thg)) return 0xff;
-	if((index == 3) && (opn_psg_77av)) return 0xff;
+//	uint8 val = 0xff;
+	uint8 val = 0x00;
+	if((index > 2) || (index < 0)) return 0x00;
+	if((index == 0) && (!connect_opn)) return 0x00;
+	if((index == 1) && (!connect_whg)) return 0x00;
+	if((index == 2) && (!connect_thg)) return 0x00;
+	if((index == 3) && (opn_psg_77av)) return 0x00;
 	   
-	if(opn[index] == NULL) return 0xff;
+	if(opn[index] == NULL) return 0x00;
 	switch(opn_cmdreg[index]) {
 		case 0:
 			//val = 0xff;
@@ -218,7 +225,6 @@ uint8 FM7_MAINIO::get_opn(int index)
 			opn_stat[index] = opn[index]->read_io8(0) & 0x03;
 			if(index != 3) val = opn_stat[index];
 	   		break;
-//	case 0b00001001:
 	case 0x09:
 	   	if(index != 0) return 0x00;
 	        if(opn_address[0] == 0x0e) {
@@ -254,7 +260,6 @@ void FM7_MAINIO::set_opn_cmd(int index, uint8 cmd)
 		0x1f, 0x1f, 0x1f, 0xff,
 		0xff, 0x0f, 0xff, 0xff
 	};
-//	opn_cmdreg[index] = cmd & 0b00001111;
 	opn_cmdreg[index] = cmd & 0x0f;
 	uint8 val = opn_data[index];
         switch(opn_cmdreg[index]) {
@@ -317,7 +322,6 @@ void FM7_MAINIO::opn_note_on(int index)
 		opn[index]->write_io8(0, 0x27);
 		opn[index]->write_io8(1, opn_ch3mode[index] & 0xc0);
 	}
-	//p_emu->out_debug_log("OPN #%d Interrupted\n", index);
 }
 
 
@@ -325,7 +329,6 @@ void FM7_MAINIO::set_beep(uint32 data) // fd03
 {
 	bool flag = ((data & 0xc0) != 0);
 	//pcm1bit->write_signal(SIG_PCM1BIT_MUTE, ~data, 0b00000001);
-//	beep->write_signal(SIG_BEEP_MUTE, ~data, 0b00000001);
 	beep->write_signal(SIG_BEEP_MUTE, ~data, 0x01);
 	if(flag != beep_flag) {
 		if(flag) {

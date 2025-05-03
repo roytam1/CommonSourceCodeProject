@@ -16,7 +16,18 @@ void FM7_MAINMEM::reset()
 	sub_halted = false;
 	first_pass = true;
 	flag_debug = false;
+#if defined(_FM77AV_VARIANTS)	
+	if((config.boot_mode & 3) == 0) {
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1800], 0x200 * sizeof(uint8));
+	} else {
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1a00], 0x200 * sizeof(uint8));
+	}
+	fm7_bootram[0x1fe] = 0xfe; // Set reset vector.
+	fm7_bootram[0x1ff] = 0x00; //
+#endif	
 }
+
+
 
 void FM7_MAINMEM::wait()
 {
@@ -50,14 +61,15 @@ int FM7_MAINMEM::window_convert(uint32 addr, uint32 *realaddr)
 {
 	uint32 raddr = addr;
 #ifdef HAS_MMR
-	if((addr < 0x8000) && (addr >= 0x7c00) && (window_enabled)) {
-		addr &= 0x03ff;
-		raddr = ((window_offset << 8) + addr) & 0xffff;
+	if((addr < 0x8000) && (addr >= 0x7c00)) {
+		raddr = ((mainio->read_data8(FM7_MAINIO_WINDOW_OFFSET) * 256) + addr) & 0xffff;
 		*realaddr = raddr;
 #ifdef _FM77AV_VARIANTS
-		return FM7_MAINMEM_MMRBANK_0; // 0x20000 - 0x2ffff
+		//printf("TWR hit %04x -> %04x\n", addr, raddr);
+		return FM7_MAINMEM_AV_PAGE0; // 0x00000 - 0x0ffff
 #else // FM77(L4 or others)
-		return FM7_MAINMEM_MMRBANK_2; // 0x20000 - 0x2ffff
+		*realaddr |= 0x20000;
+		return FM7_MAINMEM_EXTRAM; // 0x20000 - 0x2ffff
 #endif
 	}
 	// Window not hit.
@@ -68,22 +80,28 @@ int FM7_MAINMEM::window_convert(uint32 addr, uint32 *realaddr)
 int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 {
 	uint32 raddr = 0;
-	uint8  mmr_segment;
-	uint8  mmr_bank;
+	uint32  mmr_segment;
+	uint32  mmr_bank;
+	
+	//#ifdef _FM77AV_VARIANTS   
 #ifdef HAS_MMR
-	if(addr >= 0xfc00) return -1;
-	mmr_segment = mainio->read_data8(FM7_MAINIO_MMR_SEGMENT);
-	mmr_bank = mainio->read_data8(FM7_MAINIO_MMR_BANK + mmr_segment * 16 + ((addr >> 12) & 0x000f));
+	//mmr_segment = mainio->read_data8(FM7_MAINIO_MMR_SEGMENT);
+	mmr_bank = mainio->read_data8(FM7_MAINIO_MMR_BANK + ((addr >> 12) & 0x000f));
 	// Out of EXTRAM : 77AV20/40.
 	
 #if !defined(_FM77AV_VARIANTS)
-	mmr_bank &= 0x3f;
+	if(addr >= 0xfc00) return -1;
+	mmr_bank = mmr_bank & 0x3f;
+#else
+	if(addr >= 0xfc00) return -1;
+	mmr_bank = mmr_bank & 0x3f;
+	//	mmr_bank &= 0xff;
 #endif
 	// Reallocated by MMR
 	raddr = addr & 0x0fff;
 	// Bank 3x : Standard memories.
 	if((mmr_bank < 0x3f) && (mmr_bank >= 0x30)) {
-		raddr = (((uint32)mmr_bank & 0x0f) << 12) | raddr;
+		raddr = ((mmr_bank << 12) | raddr) & 0xffff;
 		return nonmmr_convert(raddr, realaddr);
 	}
   
@@ -92,6 +110,10 @@ int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 		if((raddr >= 0xd80) && (raddr <= 0xd97)) { // MMR AREA
 			*realaddr = 0;
 			return FM7_MAINMEM_NULL;
+		} else {
+			raddr = raddr | 0xf000;
+			//printf("HIT: %04x\n", raddr);
+			return nonmmr_convert(raddr, realaddr); // Access I/O, Bootrom, even via MMR.
 		}
 	}
 #else
@@ -108,21 +130,27 @@ int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 	
 #ifdef _FM77AV_VARIANTS
 	if((mmr_bank & 0xf0) == 0x00) { // PAGE 0
-		*realaddr = (((uint32)mmr_bank & 0x0f) << 12) | raddr;
-		return FM7_MAINMEM_77AV_PAGE0;
+		*realaddr = ((mmr_bank << 12) | raddr) & 0xffff;
+		return FM7_MAINMEM_AV_PAGE0;
 	}
 	if((mmr_bank & 0xf0) == 0x10) { // PAGE 1
-		*realaddr = (((uint32)mmr_bank & 0x0f) << 12) | raddr;
-		return FM7_MAIMEM_DIRECTACCESS;
+		*realaddr = ((mmr_bank << 12) | raddr) & 0xffff;
+		return FM7_MAINMEM_AV_DIRECTACCESS;
 	}
 	if((mmr_bank & 0xf0) == 0x20) { // PAGE 2
-		uint32 dbank = mainio->read_data8(FM7_MAINIO_EXTBANK);
+		if(use_page2_extram) {
+			*realaddr = ((mmr_bank << 12) | raddr) & 0xffff;
+			return FM7_MAINMEM_AV_PAGE2;
+		}
+       
+#if 0
+	        uint32 dbank = mainio->read_data8(FM7_MAINIO_EXTBANK);
 		switch(mmr_bank) {
 	  		case 0x28:
 	  		case 0x29: // Backuped RAM
 				if(((dbank & 0x80) != 0) && (dictrom_connected)){ // Battery backuped RAM
 					raddr =  raddr & 0x1ff;
-					*readladdr = raddr;
+					*realaddr = raddr;
 					return FM7_MAINMEM_BACKUPED_RAM;
 				}
 				break;
@@ -133,7 +161,7 @@ int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 					if(extrom == 0) { // Dictionary selected.
 						dbank = dbank << 12;
 						*realaddr = raddr | dbank;
-						return FM7_MAINMEM_77AV40_DICTROM;
+						return FM7_MAINMEM_DICTROM;
 					} else if(dbank <= 0x1f) { // KANJI
 						*realaddr = (dbank << 12) | raddr;
 						return FM7_MAINMEM_KANJI_LEVEL1;
@@ -155,10 +183,16 @@ int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 				}
 				break;
 		}
-	  	// RAM
 		*realaddr = (raddr | (mmr_bank << 12)) & 0x0ffff;
-		return FM7_MAINMEM_77AV_PAGE2;
+		return FM7_MAINMEM_AV_PAGE2;
+#else
+		*realaddr = (raddr | (mmr_bank << 12)) & 0x0ffff;
+		return FM7_MAINMEM_NULL;
+
+#endif
+	  	// RAM
 	}
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20)
 	if(extram_connected) { // PAGE 4-
 		if((mmr_bank >> 4) >= (extram_pages + 4)) {
 			*realaddr = 0;
@@ -174,6 +208,7 @@ int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 			return FM7_MAINMEM_NULL;
 		}
 	}
+#endif
 #else // 77
 	// page 0 or 1 or 2.
 	if(extram_connected) {
@@ -194,13 +229,14 @@ int FM7_MAINMEM::mmr_convert(uint32 addr, uint32 *realaddr)
 int FM7_MAINMEM::nonmmr_convert(uint32 addr, uint32 *realaddr)
 {
 	addr &= 0x0ffff;
-#ifdef _FM77AV_VARIANTS   
+#ifdef _FM77AV_VARIANTS
 	if(mainio->read_data8(FM7_MAINIO_INITROM_ENABLED) != 0) {
 		if((addr >= 0x6000) && (addr < 0x8000)) {
 			*realaddr = addr - 0x6000;
 			return FM7_MAINMEM_INITROM;
 		}
 		if(addr >= 0xfffe) {
+		  //printf("HIT %02x\n", read_table[FM7_MAINMEM_INITROM].memory[addr - 0xe000]);
 			*realaddr = addr - 0xe000;
 			return FM7_MAINMEM_INITROM;
 		}
@@ -229,6 +265,9 @@ int FM7_MAINMEM::nonmmr_convert(uint32 addr, uint32 *realaddr)
 	}else if(addr < 0xffe0){
 		wait();
 		*realaddr = addr - 0xfe00;
+#if defined(_FM77AV_VARIANTS)
+		return FM7_MAINMEM_BOOTROM_RAM;
+#else
 		switch(mainio->read_data8(FM7_MAINIO_BOOTMODE)) {
 			case 0:
 				return FM7_MAINMEM_BOOTROM_BAS;
@@ -247,15 +286,11 @@ int FM7_MAINMEM::nonmmr_convert(uint32 addr, uint32 *realaddr)
 				return FM7_MAINMEM_BOOTROM_BAS; // Really?
 				break;
 		}
+#endif
 	} else if(addr < 0xfffe) { // VECTOR
-		//printf("Main: VECTOR\n");
 		*realaddr = addr - 0xffe0;
 		return FM7_MAINMEM_VECTOR;
 	} else if(addr < 0x10000) {
-		if(mainio->read_data8(FM7_MAINIO_BOOTMODE) == 4) {
-			*realaddr = addr - 0xfe00;
-			return FM7_MAINMEM_BOOTROM_RAM;
-		}
 		*realaddr = addr - 0xfffe;
 		return FM7_MAINMEM_RESET_VECTOR;
 	}
@@ -274,6 +309,7 @@ int FM7_MAINMEM::getbank(uint32 addr, uint32 *realaddr)
 		int stat;
 		uint32 raddr;
 		stat = window_convert(addr, &raddr);
+		//if(stat >= 0) printf("WINDOW CONVERT: %04x to %04x, bank = %02x\n", addr, raddr, stat);
 		if(stat >= 0) {
 			*realaddr = raddr;
 			return stat;
@@ -284,6 +320,7 @@ int FM7_MAINMEM::getbank(uint32 addr, uint32 *realaddr)
 		uint32 raddr;
 		stat = mmr_convert(addr, &raddr);
 		if(stat >= 0) {
+		  //printf("MMR CONVERT: %04x to %05x, bank = %02x\n", addr, raddr, stat);
 			*realaddr = raddr;
 			return stat;
 		}
@@ -324,58 +361,16 @@ uint32 FM7_MAINMEM::read_data8(uint32 addr)
 //		return mainio->read_data8(addr);
 	}
 #if defined(_FM77AV_VARIANTS)
-	else if(bank == FM7_MAINMEM_77AV_DIRECTACCESS) {
-       		if(!sub_halted) return 0xff; // Not halt
+	else if(bank == FM7_MAINMEM_AV_DIRECTACCESS) {
+	  if(display->read_signal(SIG_DISPLAY_HALT) != 0) return 0xff; // Not halt
+		//printf("READ MMR : %04x to %05x\n", addr, realaddr);
 		return display->read_data8(realaddr); // Okay?
 	}
 #endif
 	else if(read_table[bank].memory != NULL) {
-	if(bank == FM7_MAINMEM_BOOTROM_BAS) {
-#if 0
-		uint32 i;
-		uint32 pc;
-		uint32 ix;
-		uint32 us;
-		uint32 ss;
-		pc = maincpu->get_pc();
-		if(pc == 0xfe02) {
-	  		ix = maincpu->get_ix();
-			ss = maincpu->get_sstack();
-			printf("IPL: SEEK PC=%04x S=%04x X=%04x RCB=", pc, ss, ix);
-			for(i = 0; i < 12; i++) printf("%02x ", read_data8(i + ix));
-			printf("\n");
-		} else if((pc == 0xfe05) || (pc == 0xfe08)){
-			ix = maincpu->get_ix();
-			us = maincpu->get_ustack();
-			ss = maincpu->get_sstack();
-			printf("IPL: READ WRITE PC=%04x S=%04x X=%04x U=%04x RCB=", pc, ss, ix, us);
-			for(i = 0; i < 12; i++) printf("%02x ", read_data8(i + ix));
-			printf("\n");
-			printf("STACK DUMP: ");
-			for(i = 0; i < 32; i++) printf("%02x ", read_data8((ss + i) & 0xffff));
-			printf("\n");
-		}
-#endif
-	} else {
-		uint32 pc = maincpu->get_pc();
-		uint32 ss = maincpu->get_sstack();
-		uint32 i;
-		//if(pc == 0x4afb) {
-		//	if(flag_debug != true) {
-		//		flag_debug = true;
-		//		for(i = 0; i < 64; i++) printf("%04x : %02x\n", i + pc, read_data8((pc + i) & 0xffff));
-		//	}
-		//}
-		//if((pc >= 0x1900) && (pc <= 0xfcff)){
-		  //if(flag_debug != true) {
-		  //		flag_debug = true;
-		  //		printf("PC=%04x \n", pc);
-				//	}
-		  //}
-	}
-			//printf("READ: %04x is bank %d, %04x data=%02x\n", addr, bank, realaddr, read_table[bank].memory[realaddr]);
-			//if(bank == FM7_MAINMEM_VECTOR) printf("VECTOR: ADDR = %04x, data = %02x\n", addr, read_table[bank].memory[realaddr]);
-	   		return read_table[bank].memory[realaddr];
+	  //if(bank == FM7_MAINMEM_BOOTROM_RAM) printf("Boot RAM: ADDR=%04x data=%02x\n",
+	  //					   addr, read_table[bank].memory[realaddr]);
+		return read_table[bank].memory[realaddr];
 	}
 	return 0xff; // Dummy
 }
@@ -394,7 +389,6 @@ void FM7_MAINMEM::write_data8(uint32 addr, uint32 data)
    
         if(bank == FM7_MAINMEM_SHAREDRAM) {
        		if(!sub_halted) return; // Not halt
-		//printf("WRITE SHARED RAM ADDR=%04x DATA=%02x\n", realaddr, data);
 		display->write_data8((realaddr & 0x7f) + 0xd380, data); // Okay?
 		return;
 	} else if(bank == FM7_MAINMEM_MMIO) {
@@ -403,10 +397,18 @@ void FM7_MAINMEM::write_data8(uint32 addr, uint32 data)
 		return;
 	}
 #if defined(_FM77AV_VARIANTS)
-	else if(bank == FM7_MAINMEM_77AV_DIRECTACCESS) {
-       		if(!sub_halted) return; // Not halt
+	else if(bank == FM7_MAINMEM_AV_DIRECTACCESS) {
+       		if(display->read_signal(SIG_DISPLAY_HALT) != 0) return; // Not halt
+		//printf("WRITE MMR : %04x to %05x\n", addr, realaddr);
 		display->write_data8(realaddr, data); // Okay?
 		return;
+	}
+#endif
+#if defined(HAS_MMR)	
+	else if(bank == FM7_MAINMEM_BOOTROM_RAM) {
+	  //printf("BOOTRAM : %d\n", mainio->read_data8(FM7_MAINIO_BOOTMODE));
+		if(mainio->read_data8(FM7_MAINIO_BOOTMODE) != 4) return;
+		write_table[bank].memory[realaddr] = (uint8)(data & 0x000000ff);
 	}
 #endif
        	else if(write_table[bank].memory != NULL) {
@@ -496,21 +498,49 @@ uint32 FM7_MAINMEM::read_bios(const char *name, uint8 *ptr, uint32 size)
 	return blocks * size;
 }
 
+uint32 FM7_MAINMEM::write_bios(const char *name, uint8 *ptr, uint32 size)
+{
+	FILEIO fio;
+	uint32 blocks;
+	_TCHAR *s;
+  
+	if((name == NULL) || (ptr == NULL))  return 0;
+	s = emu->bios_path((_TCHAR *)name);
+	if(s == NULL) return 0;
+  
+	fio.Fopen(s, FILEIO_WRITE_BINARY);
+	blocks = fio.Fwrite(ptr, size, 1);
+	fio.Fclose();
+
+	return blocks * size;
+}
+
 FM7_MAINMEM::FM7_MAINMEM(VM* parent_vm, EMU* parent_emu) : MEMORY(parent_vm, parent_emu)
 {
 	int i;
 	p_vm = parent_vm;
 	p_emu = parent_emu;
+#if !defined(_FM77AV_VARIANTS)
 	for(i = 0; i < 4; i++) fm7_bootroms[i] = (uint8 *)malloc(0x200);
+#endif	
+	mainio = NULL;
+	display = NULL;
+	maincpu = NULL;
+	kanjiclass1 = NULL;
+	kanjiclass2 = NULL;
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20)
+	fm7_mainmem_extram = NULL;
+	extram_pages = config.extram_pages;
+	if(extram_pages > 12) extram_pages = 12;
+#endif
+#if defined(_FM77_VARIANTS)
+	extram_pages = config.extram_pages;
+	if(extram_pages > 3) extram_pages = 3;
+#endif	
 }
 
 FM7_MAINMEM::~FM7_MAINMEM()
 {
-	int i;
-	for(i = 0; i < 4; i++) {
-		if(fm7_bootroms[i] != NULL) free(fm7_bootroms[i]);
-		fm7_bootroms[i] = NULL;
-	}
 }
 
 void FM7_MAINMEM::initialize(void)
@@ -520,8 +550,10 @@ void FM7_MAINMEM::initialize(void)
 	diag_load_bootrom_bas = false;
 	diag_load_bootrom_dos = false;
 	diag_load_bootrom_mmr = false;
-
-
+#if defined(_FM77AV_VARIANTS)
+	dictrom_connected = false;
+	use_page2_extram = ((config.dipswitch & FM7_DIPSW_EXTRAM_AV) != 0) ? true : false;
+#endif
 	// Initialize table
 	// $0000-$7FFF
 	memset(read_table, 0x00, sizeof(read_table));
@@ -537,155 +569,146 @@ void FM7_MAINMEM::initialize(void)
 	read_table[i].memory = fm7_mainmem_ura;
 	write_table[i].memory = fm7_mainmem_ura;
 
-#if defined(_FM77AV_VARIANTS)
-	i = FM7_MAINMEM_MMRBANK_0;
-	memset(fm7_mainmem_mmrbank_0, 0xff, 0x10000 * sizeof(uint8));
-	read_table[i].memory = fm7_mainmem_mmrbank_0;
-	write_table[i].memory = fm7_mainmem_mmrbank_0;
-	
-	i = FM7_MAINMEM_MMRBANK_2;
-	memset(fm7_mainmem_mmrbank_2, 0xff, 0x10000 * sizeof(uint8));
-	read_table[i].memory = fm7_mainmem_mmrbank_0;
-	write_table[i].memory = fm7_mainmem_mmrbank_0;
 	
 	i = FM7_MAINMEM_VECTOR;
 	memset(fm7_mainmem_bootrom_vector, 0x00, 0x1e);
 	read_table[i].memory = fm7_mainmem_bootrom_vector;
 	write_table[i].memory = fm7_mainmem_bootrom_vector;
 	
-	i = FM7_MAINMEM_KANJI_LEVEL1;
-	read_table[i].dev = kanjiclass1;
-	write_table[i].dev = kanjiclass1;
-				   
-#if defined(_FM77AV_VARIANTS)
-	diag_load_initrom = false;
+#if defined(CAPABLE_DICTROM)
 	diag_load_dictrom = false;
-	i = FM7_MAINMEM_KANJI_LEVEL2;
-	read_table[i].dev = kanjiclass2;
-	write_table[i].dev = kanjiclass2;
-
-
+	i = FM7_MAINMEM_DICTROM;
+	memset(fm7_mainmem_extrarom, 0xff, 0x40000 * sizeof(uint8));
+	read_table[i].memory = fm7_mainmem_dictrom;
+	write_table[i].memory = NULL;
+	if(read_bios("DICROM.ROM", fm7_mainmem_dictrom, 0x40000) == 0x40000) diag_load_dictrom = true;
+	emu->out_debug_log("DICTIONARY ROM READING : %s\n", diag_load_dictrom ? "OK" : "NG");
+	dictrom_connected = diag_load_dictrom;
+	
+	i = FM7_MAINMEM_BACKUPED_RAM;
+	diag_load_learndata = false;
+	memset(fm7_mainmem_learndata, 0x00, 0x2000 * sizeof(uint8));
+	read_table[i].memory = fm7_mainmem_learndata;
+	write_table[i].memory = fm7_mainmem_learndata;
+	if(read_bios("USERDIC.DAT", read_table[i].memory, 0x2000) == 0x2000) diag_load_learndata = true;
+	emu->out_debug_log("DICTIONARY ROM READING : %s\n", diag_load_learndata ? "OK" : "NG");
+	if(!diag_load_learndata) write_bios("USERDIC.DAT", fm7_mainmem_learndata, 0x2000);
+#endif
+	
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20)
 	i = FM7_MAINMEM_77AV40_EXTRAROM;
+	diag_load_extrarom = false;
+	memset(fm7_mainmem_extrarom, 0xff, 0x20000 * sizeof(uint8));
+	read_table[i].memory = fm7_mainmem_extrarom;
+	write_table[i].memory = NULL;
+	if(read_bios("EXTSUB.ROM", read_table[i].memory, 0xc000) >= 0xc000) diag_load_extrarom = true;
+	emu->out_debug_log("AV40 EXTRA ROM READING : %s\n", diag_load_extrarom ? "OK" : "NG");
+#endif
+	
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20) || (_FM77_VARIANTS)
+	if(extram_pages > 0) {
+		i = FM7_MAINMEM_EXTRAM;
+		fm7_mainmem_extram = malloc(extram_pages * 0x10000);
+		if(fm7_mainmem_extram != NULL) {
+			memset(fm7_mainmem_extram, 0x00, extram_pages * 0x10000);
+			read_table[i].memory = fm7_mainmem_extram;
+			write_table[i].memory = fm7_mainmem_extram;
+		}
+	}
+#endif	
+#if !defined(_FM77AV_VARIANTS)	
+	for(i = FM7_MAINMEM_BOOTROM_BAS; i <= FM7_MAINMEM_BOOTROM_EXTRA; i++) {
+		 memset(fm7_bootroms[i - FM7_MAINMEM_BOOTROM_BAS], 0xff, 0x200);
+		 read_table[i].memory = fm7_bootroms[i - FM7_MAINMEM_BOOTROM_BAS];
+		 write_table[i].memory = NULL;
+	}
+#endif	
+#if defined(_FM8)
+	if(read_bios("BOOT_BAS8.ROM", fm7_bootroms[0], 0x200) >= 0x1e0) {
+		diag_load_bootrom_bas = true;
+	} else {
+		diag_load_bootrom_bas = false;
+	}
+	if(read_bios("BOOT_DOS8.ROM", fm7_bootroms[1], 0x200) >= 0x1e0) {
+		diag_load_bootrom_dos = true;
+	} else {
+		diag_load_bootrom_dos = false;
+	}
+	diag_load_bootrom_mmr = false;
+# elif defined(_FM7) || defined(_FMNEW7)
+	if(read_bios("BOOT_BAS.ROM", fm7_bootroms[0], 0x200) >= 0x1e0) {
+		diag_load_bootrom_bas = true;
+	} else {
+		diag_load_bootrom_bas = false;
+	}
+	if(read_bios("BOOT_DOS.ROM", fm7_bootroms[1], 0x200) >= 0x1e0) {
+		diag_load_bootrom_dos = true;
+	} else {
+		diag_load_bootrom_dos = false;
+	}
+	// FM-7/8
+	diag_load_bootrom_mmr = false;
+# elif defined(_FM77AV_VARIANTS)
+	i = FM7_MAINMEM_AV_PAGE0;
+	memset(fm7_mainmem_mmrbank_0, 0x00, 0x10000 * sizeof(uint8));
+	read_table[i].memory = fm7_mainmem_mmrbank_0;
+	write_table[i].memory = fm7_mainmem_mmrbank_0;
+	
+	i = FM7_MAINMEM_AV_PAGE2;
+	memset(fm7_mainmem_mmrbank_0, 0x00, 0x10000 * sizeof(uint8));
+	if(use_page2_extram) { 
+		read_table[i].memory = fm7_mainmem_mmrbank_2;
+		write_table[i].memory = fm7_mainmem_mmrbank_2;
+	} else {
+		read_table[i].memory = NULL;
+		write_table[i].memory = NULL;
+	}
+	
+	i = FM7_MAINMEM_INITROM;
+	diag_load_initrom = false;
 	memset(fm7_mainmem_initrom, 0xff, 0x2000 * sizeof(uint8));
 	read_table[i].memory = fm7_mainmem_initrom;
 	write_table[i].memory = NULL;
 	if(read_bios("INITIATE.ROM", read_table[i].memory, 0x2000) >= 0x2000) diag_load_initrom = true;
 	emu->out_debug_log("77AV INITIATOR ROM READING : %s\n", diag_load_initrom ? "OK" : "NG");
 
-#endif
-# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20)
-	diag_load_extrarom = false;
-   
-	i = FM7_MAINMEM_77AV40_DICTROM;
-	memset(fm7_mainmem_extrarom, 0xff, 0x40000 * sizeof(uint8));
-	read_table[i].memory = fm7_mainmem_dictrom;
-	write_table[i].memory = NULL;
-	if(read_bios("DICROM.ROM", read_table[i].memory, 0x40000) == 0x40000) diag_load_dictrom = true;
-	emu->out_debug_log("DICTIONARY ROM READING : %s\n", diag_load_dictrom ? "OK" : "NG");
-	
-	i = FM7_MAINMEM_77AV40_EXTRAROM;
-	memset(fm7_mainmem_extrarom, 0xff, 0x20000 * sizeof(uint8));
-	read_table[i].memory = fm7_mainmem_extrarom;
-	write_table[i].memory = NULL;
-	if(read_bios("EXTSUB.ROM", read_table[i].memory, 0xc000) >= 0xc000) diag_load_extrarom = true;
-	emu->out_debug_log("AV40 EXTRA ROM READING : %s\n", diag_load_extrarom ? "OK" : "NG");
-	
-	if(config.extram_pages > 0) {
-		i = FM7_MAINMEM_EXTRAM;
-		extram_pages = config.extram_pages;
-		if(extram_pages >= 12) extram_pages = 12;
-		fm7_mainmem_extram = malloc(extram_pages * 0x10000);
-		if(fm7_mainmem_extram != NULL) {
-			memset(fm7_mainmem_extram, 0x00, extram_pages * 0x10000);
-			read_table[i].memory = fm7_mainmem_extram;
-			write_table[i].memory = fm7_mainmem_extram;
-		}
-	}
-# else
-	// 77AV Only
-# endif
-	// Both 77AV and AV40
-	for(i = FM7_MAINMEM_BOOTROM_BAS; i <= FM7_MAINMEM_BOOTROM_RAM; i++) {
-		read_table[i].memory = fm7_bootroms[i - FM7_MAINMEM_BOOTROM_BAS];
-		write_table[i].memory = NULL;
-	}
-	memcpy(fm7_bootroms[0], &fm7_mainmem_initiate[0x1800], 0x200 * sizeof(uint8));
-	memcpy(fm7_bootroms[1], &fm7_mainmem_initiate[0x1a00], 0x200 * sizeof(uint8));
+	read_table[FM7_MAINMEM_BOOTROM_BAS].memory = NULL; // Not connected.
+	read_table[FM7_MAINMEM_BOOTROM_DOS].memory = NULL; // Not connected.
 	read_table[FM7_MAINMEM_BOOTROM_MMR].memory = NULL; // Not connected.
-	
-	memset(fm7_bootroms[3], 0x00, 0x200 * sizeof(uint8)); // RAM
-	if(diag_load_extrom) diag_load_bootrom_bas = true;
-	if(diag_load_extrom) diag_load_bootrom_dos = true;
-	write_table[FM7_BAINMEM_BOOTRAM].memory = read_table[FM7_BAINMEM_BOOTROM_RAM].memory; // Write enabled on BOOTRAM.
-#else
-	// FM-7/77
-	if(read_bios("BOOT_BAS.ROM", fm7_bootroms[0], 0x200) >= 0x1e0) {
-		diag_load_bootrom_bas = true;
+
+	i = FM7_MAINMEM_BOOTROM_RAM;
+	memset(fm7_bootram, 0x00, 0x200 * sizeof(uint8)); // RAM
+	read_table[i].memory = fm7_bootram;
+	write_table[i].memory = fm7_bootram;
+	if(diag_load_initrom) diag_load_bootrom_bas = true;
+	if(diag_load_initrom) diag_load_bootrom_dos = true;
+	if((config.boot_mode & 0x03) == 0) {
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1800], 0x200 * sizeof(uint8));
 	} else {
-		diag_load_bootrom_bas = false;
-		//memset(fm7_bootroms[0], 0xff, 0x200);
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1a00], 0x200 * sizeof(uint8));
 	}
-	if(read_bios("BOOT_DOS.ROM", fm7_bootroms[1], 0x200) >= 0x1e0) {
-		diag_load_bootrom_dos = true;
-	} else {
-		diag_load_bootrom_dos = false;
-		//memset(fm7_bootroms[1], 0xff, 0x200);
-	}
+	fm7_bootram[0x1fe] = 0xfe; // Set reset vector.
+	fm7_bootram[0x1ff] = 0x00; //
+	// FM-7
+#endif
 	emu->out_debug_log("BOOT ROM (basic mode) READING : %s\n", diag_load_bootrom_bas ? "OK" : "NG");
 	emu->out_debug_log("BOOT ROM (DOS   mode) READING : %s\n", diag_load_bootrom_dos ? "OK" : "NG");
-	
-# if defined(_FM77_VARIANTS)
-	if(read_bios("BOOT_MMR.ROM", fm7_bootroms[2], 0x200) >= 0x1e0) {
-		diag_load_bootrom_mmr = true;
-	} else {
-		diag_load_bootrom_mmr = false;
-		//memset(fm7_bootroms[2], 0xff, 0x200);
-	}
+#if defined(_FM77_VARIANTS)
 	emu->out_debug_log("BOOT ROM (MMR   mode) READING : %s\n", diag_load_bootrom_mmr ? "OK" : "NG");
-	
-	if(config.extram_pages > 0) {
-		i = FM7_MAINMEM_EXTRAM;
-		extram_pages = config.extram_pages;
-		if(extram_pages >= 3) pages = 3;
-		fm7_mainmem_extram = malloc(extram_pages * 0x10000);
-		if(fm7_mainmem_extram != NULL) {
-			memset(fm7_mainmem_extram, 0x00, extram_pages * 0x10000);
-			read_table[i].memory = fm7_mainmem_extram;
-			write_table[i].memory = fm7_mainmem_extram;
-		}
-	}
-#else
-	// FM-7
-	diag_load_bootrom_mmr = false;
-	memset(fm7_bootroms[2], 0xff, 0x200);
 #endif
 
-#if defined(_FM77_VARIANTS)
-	for(i = FM7_MAINMEM_BOOTROM_BAS; i <= FM7_MAINMEM_BOOTRAM; i++) {
-	    read_table[i].memory = fm7_bootroms[i - FM7_MAINMEM_BOOTROM_BAS];
-	    write_table[i].memory = NULL;
-	}
-	memset(fm7_bootroms[3], 0x00, 0x200 * sizeof(uint8)); // RAM
-	write_table[FM7_BAINMEM_BOOTRAM].memory = read_table[FM7_BAINMEM_BOOTROM_RAM].memory; // Write enabled on BOOTRAM.
-#else	
-	// FM-7/8
-	for(i = FM7_MAINMEM_BOOTROM_BAS; i <= FM7_MAINMEM_BOOTROM_DOS; i++) {
-		read_table[i].memory = fm7_bootroms[i - FM7_MAINMEM_BOOTROM_BAS];
-		write_table[i].memory = NULL;
-	}
-#endif
-	
 	i = FM7_MAINMEM_VECTOR;
 	memset(fm7_mainmem_bootrom_vector, 0x00, 0x1e);
 	read_table[i].memory = fm7_mainmem_bootrom_vector;
 	write_table[i].memory = fm7_mainmem_bootrom_vector;
-#endif 
+
+#if !defined(_FM77AV_VARIANTS)
 	for(i = 0; i <= 3; i++) {
 		uint8 *p = fm7_bootroms[i];
 		p[0x1fe] = 0xfe; // Set reset vector.
 		p[0x1ff] = 0x00; //
 	}
-	
+#endif	
 	i = FM7_MAINMEM_RESET_VECTOR;
 	fm7_mainmem_reset_vector[0] = 0xfe;
 	fm7_mainmem_reset_vector[1] = 0x00;
@@ -699,7 +722,11 @@ void FM7_MAINMEM::initialize(void)
 	read_table[i].memory = fm7_mainmem_basicrom;
 	write_table[i].dev = NULL;
 	write_table[i].memory = NULL;
+#if !defined(_FM8)
 	if(read_bios("FBASIC30.ROM", fm7_mainmem_basicrom, 0x7c00) == 0x7c00) diag_load_basicrom = true;
+#else // FM8
+	if(read_bios("FBASIC10.ROM", fm7_mainmem_basicrom, 0x7c00) == 0x7c00) diag_load_basicrom = true;
+#endif	
 	emu->out_debug_log("BASIC ROM READING : %s\n", diag_load_basicrom ? "OK" : "NG");
    
 	i = FM7_MAINMEM_BIOSWORK;
@@ -708,14 +735,19 @@ void FM7_MAINMEM::initialize(void)
 	read_table[i].memory = fm7_mainmem_bioswork;
 	write_table[i].dev = NULL;
 	write_table[i].memory = fm7_mainmem_bioswork;
-	
-	i = FM7_MAINMEM_SHAREDRAM;
-	read_table[i].dev = display;
-	write_table[i].dev = display;
-	
-#if defined(_FM77AV_VARIANTS)
-	i = FM7_MAINMEM_DIRECTACCESS;
-	read_table[i].dev = display;
-	write_table[i].dev = display;
+}
+
+void FM7_MAINMEM::release()
+{
+	int i;
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20) || defined(_FM77_VARIANTS)
+	if(fm7_mainmem_extram != NULL) free(fm7_mainmem_extram);
+#endif  
+#if !defined(_FM77AV_VARIANTS)
+	for(i = 0; i < 4; i++) {
+		if(fm7_bootroms[i] != NULL) free(fm7_bootroms[i]);
+		fm7_bootroms[i] = NULL;
+	}
 #endif
+	MEMORY::release();
 }
