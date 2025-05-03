@@ -798,11 +798,12 @@ void DISPLAY::draw_text(int y)
 				ofs += 16; // right
 			}
 			pattern_b = pattern_r = pattern_g = &kanji[ofs];
-			shift = hireso ? 0 : -1;
+			shift = hireso ? ((ch_height >= 32) ? 1 : 0) : ((ch_height >= 16) ? 0 : -1);
 		}
 		else if(hireso || (mode1 & 4)) {
 			// ank 8x16 or kanji
 			pattern_b = pattern_r = pattern_g = &kanji[code << 4];
+			shift = hireso ? ((ch_height >= 32) ? 1 : 0) : ((ch_height >= 16) ? 0 : -1);
 		}
 #endif
 		else {
