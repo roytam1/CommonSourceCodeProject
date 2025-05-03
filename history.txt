@@ -1,3 +1,8 @@
+10/27/2014
+
+[PC8801MA/PC88] Revirt the uPD5257 fix for CHOBIN
+
+
 10/26/2014
 
 [WINMAIN] fix frame rate issue again

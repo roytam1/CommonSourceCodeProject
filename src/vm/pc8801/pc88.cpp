@@ -2223,7 +2223,7 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 	case 2:
 	case 4:
 	case 6:
-		if(!(mode & (1 << c))) {
+//		if(!(mode & (1 << c))) {
 			if(!high_low) {
 				if((mode & 0x80) && c == 2) {
 					ch[3].addr.b.l = data;
@@ -2235,14 +2235,14 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 				}
 				ch[c].addr.b.h = data;
 			}
-		}
+//		}
 		high_low = !high_low;
 		break;
 	case 1:
 	case 3:
 	case 5:
 	case 7:
-		if(!(mode & (1 << c))) {
+//		if(!(mode & (1 << c))) {
 			if(!high_low) {
 				if((mode & 0x80) && c == 2) {
 					ch[3].count.b.l = data;
@@ -2256,7 +2256,7 @@ void pc88_dmac_t::write_io8(uint32 addr, uint32 data)
 				ch[c].count.b.h = data & 0x3f;
 				ch[c].mode = data & 0xc0;
 			}
-		}
+//		}
 		high_low = !high_low;
 		break;
 	case 8:
