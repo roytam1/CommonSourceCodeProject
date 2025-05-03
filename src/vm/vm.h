@@ -130,6 +130,11 @@
 #include "hc80/hc80.h"
 #endif
 
+// National JR-100
+#ifdef _JR100
+#include "jr100/jr100.h"
+#endif
+
 // TOSHIBA J-3100GT
 #ifdef _J3100GT
 #include "j3100/j3100.h"

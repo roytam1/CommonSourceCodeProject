@@ -486,6 +486,15 @@
 #define MENU_POS_INPUT                  7
 #endif
 
+// National JR-100
+#ifdef _JR100
+#define MENU_POS_CONTROL                0
+#define MENU_POS_TAPE                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
+#endif
+
 // TOSHIBA J-3100GT
 #ifdef _J3100GT
 #define MENU_POS_CONTROL                0

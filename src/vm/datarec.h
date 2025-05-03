@@ -14,7 +14,7 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_DATAREC_OUT		0
+#define SIG_DATAREC_MIC		0
 #define SIG_DATAREC_REMOTE	1
 #define SIG_DATAREC_TRIG	2
 
@@ -24,7 +24,7 @@ class DATAREC : public DEVICE
 {
 private:
 	// output signals
-	outputs_t outputs_out;
+	outputs_t outputs_ear;
 	outputs_t outputs_remote;
 	outputs_t outputs_rotate;
 	outputs_t outputs_end;
@@ -80,7 +80,7 @@ private:
 public:
 	DATAREC(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
-		init_output_signals(&outputs_out);
+		init_output_signals(&outputs_ear);
 		init_output_signals(&outputs_remote);
 		init_output_signals(&outputs_rotate);
 		init_output_signals(&outputs_end);
@@ -114,9 +114,9 @@ public:
 	{
 		pcm_max_vol = volume;
 	}
-	void set_context_out(DEVICE* device, int id, uint32 mask)
+	void set_context_ear(DEVICE* device, int id, uint32 mask)
 	{
-		register_output_signal(&outputs_out, device, id, mask);
+		register_output_signal(&outputs_ear, device, id, mask);
 	}
 	void set_context_remote(DEVICE* device, int id, uint32 mask)
 	{

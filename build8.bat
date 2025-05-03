@@ -71,6 +71,10 @@ devenv.com hc80.vcproj /Rebuild Release
 mkdir build\hc80
 copy Release\hc80.exe build\hc80\.
 
+devenv.com jr100.vcproj /Rebuild Release
+mkdir build\jr100
+copy Release\jr100.exe build\jr100\.
+
 devenv.com jx.vcproj /Rebuild Release
 mkdir build\jx
 copy Release\jx.exe build\jx\.

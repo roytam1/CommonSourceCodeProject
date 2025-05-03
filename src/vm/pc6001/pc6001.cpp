@@ -123,7 +123,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		sub->set_context_drec(drec);
 		sub->set_context_timer(timer);
 		pio_sub->set_context_port_c(cpu_sub, SIG_CPU_IRQ, 0x80, 0);
-		drec->set_context_out(sub, SIG_SUB_DATAREC, 1);
+		drec->set_context_ear(sub, SIG_SUB_DATAREC, 1);
 		timer->set_context_sub(sub);
 	} else {
 		psub = new PSUB(this, emu);

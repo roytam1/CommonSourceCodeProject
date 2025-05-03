@@ -1,3 +1,17 @@
+8/28/2015
+
+[WIN32/SCREEN] improve and simplify crt filter
+
+[VM/DATAREC] rename SIG_DATAREC_OUT to SIG_DATAREC_MIC
+[VM/DATAREC] rename set_context_out() to set_context_ear()
+[VM/DEVICE] add virtual functions to get remaining time until event is expired
+[VM/DEVICE] add functions to get remaining time until event is expired
+[VM/MC6800] fix build error for MB8861
+[VM/YS6552] support YS6522 based on MAME 0.164
+
+[JR100] support National JR-100
+
+
 8/25/2015
 
 [WIN32/SCREEN] improve crt filter for non stretched screen

@@ -62,7 +62,7 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 {
 	bool signal = ((data & mask) != 0);
 	
-	if(id == SIG_DATAREC_OUT) {
+	if(id == SIG_DATAREC_MIC) {
 		if(out_signal != signal) {
 			if(rec && remote) {
 				if(out_signal) {
@@ -189,7 +189,7 @@ void DATAREC::event_callback(int event_id, int err)
 				pcm_changed = 2;
 				in_signal = signal;
 				signal_changed++;
-				write_signals(&outputs_out, in_signal ? 0xffffffff : 0);
+				write_signals(&outputs_ear, in_signal ? 0xffffffff : 0);
 			}
 			// chek apss state
 			if(apss_buffer != NULL) {
@@ -430,7 +430,7 @@ bool DATAREC::play_tape(const _TCHAR* file_path)
 		// get the first signal
 		bool signal = ((buffer[0] & 0x80) != 0);
 		if(signal != in_signal) {
-			write_signals(&outputs_out, signal ? 0xffffffff : 0);
+			write_signals(&outputs_ear, signal ? 0xffffffff : 0);
 			in_signal = signal;
 		}
 		
@@ -482,7 +482,7 @@ void DATAREC::close_tape()
 	update_event();
 	
 	// no sounds
-	write_signals(&outputs_out, 0);
+	write_signals(&outputs_ear, 0);
 	in_signal = false;
 }
 

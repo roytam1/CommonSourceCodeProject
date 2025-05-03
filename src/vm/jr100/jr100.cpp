@@ -1,31 +1,27 @@
 /*
-	NEC PC-8201 Emulator 'ePC-8201'
+	National JR-100 Emulator 'eJR-100'
 
 	Author : Takeda.Toshiya
-	Date   : 2009.03.31-
+	Date   : 2015.08.27-
 
 	[ virtual machine ]
 */
 
-#include "pc8201.h"
+#include "jr100.h"
 #include "../../emu.h"
 #include "../device.h"
 #include "../event.h"
 
 #include "../datarec.h"
-#include "../i8080.h"
-#include "../i8155.h"
-#include "../io.h"
+#include "../mc6800.h"
+#include "../not.h"
 #include "../pcm1bit.h"
-#include "../upd1990a.h"
+#include "../sy6552.h"
 
 #ifdef USE_DEBUGGER
 #include "../debugger.h"
 #endif
 
-#include "cmt.h"
-#include "keyboard.h"
-#include "lcd.h"
 #include "memory.h"
 
 // ----------------------------------------------------------------------------
@@ -40,15 +36,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	drec = new DATAREC(this, emu);
-	cpu = new I8080(this, emu);
-	pio = new I8155(this, emu);
-	io = new IO(this, emu);
+	cpu = new MC6800(this, emu);	// MB8861N
+	not_mic = new NOT(this, emu);
+	not_ear = new NOT(this, emu);
 	pcm = new PCM1BIT(this, emu);
-	rtc = new UPD1990A(this, emu);
+	via = new SY6552(this, emu);
 	
-	cmt = new CMT(this, emu);
-	keyboard = new KEYBOARD(this, emu);
-	lcd = new LCD(this, emu);
 	memory = new MEMORY(this, emu);
 	
 	// set contexts
@@ -56,47 +49,29 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(pcm);
 	event->set_context_sound(drec);
 	
-	drec->set_context_ear(cpu, SIG_I8085_SID, 1);
-	cpu->set_context_sod(cmt, SIG_CMT_SOD, 1);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C0, 1, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C1, 2, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C2, 4, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_CLK, 8, 0);
-	pio->set_context_port_a(rtc, SIG_UPD1990A_DIN, 0x10, 0);
-	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN_L, 0xff, 0);
-	pio->set_context_port_a(lcd, SIG_LCD_CHIPSEL_L, 0xff, 0);
-	pio->set_context_port_b(keyboard, SIG_KEYBOARD_COLUMN_H, 1, 0);
-	pio->set_context_port_b(lcd, SIG_LCD_CHIPSEL_H, 3, 0);
-	pio->set_context_port_b(pcm, SIG_PCM1BIT_MUTE, 0x20, 0);
-	pio->set_context_timer(pcm, SIG_PCM1BIT_SIGNAL, 1);
-	pio->set_constant_clock(CPU_CLOCKS);
-	rtc->set_context_dout(pio, SIG_I8155_PORT_C, 1);
-	rtc->set_context_tp(cpu, SIG_I8085_RST7, 1);
+	via->set_context_port_a(memory, SIG_MEMORY_VIA_PORT_A, 0xff, 0);
+	via->set_context_port_b(memory, SIG_MEMORY_VIA_PORT_B, 0xff, 0);
+	via->set_context_port_b(pcm, SIG_PCM1BIT_SIGNAL, 0x80, 0);	// PB7 -> Speaker
+	via->set_context_port_b(via, SIG_MEMORY_VIA_PORT_B, 0x80, -1);	// PB7 -> PB6
+	via->set_context_cb2(not_mic, SIG_NOT_INPUT, 1);		// CB2 -> NOT -> MIC
+	via->set_constant_clock(CPU_CLOCKS >> 2);
+	not_mic->set_context_out(drec, SIG_DATAREC_MIC, 1);
+	drec->set_context_ear(not_ear, SIG_NOT_INPUT, 1);		// EAR -> NOT -> CA1,CB1
+	not_ear->set_context_out(via, SIG_SY6552_PORT_CA1, 1);
+	not_ear->set_context_out(via, SIG_SY6552_PORT_CB1, 1);
 	
-	memory->set_context_cmt(cmt);
-	memory->set_context_drec(drec);
-	memory->set_context_rtc(rtc);
+	memory->set_context_via(via);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_intr(io);
 #ifdef USE_DEBUGGER
 	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
-	
-	// i/o bus
-	io->set_iomap_range_w(0x90, 0x9f, memory);
-	io->set_iomap_range_rw(0xa0, 0xaf, memory);
-	io->set_iomap_range_rw(0xb0, 0xbf, pio);
-	io->set_iomap_range_r(0xe0, 0xef, keyboard);
-	io->set_iomap_range_rw(0xf0, 0xff, lcd);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
-	rtc->write_signal(SIG_UPD1990A_STB, 0, 0);
 }
 
 VM::~VM()
@@ -132,9 +107,22 @@ void VM::reset()
 	}
 }
 
+void VM::special_reset()
+{
+	// reset all devices
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->reset();
+	}
+}
+
 void VM::run()
 {
 	event->drive();
+}
+
+double VM::frame_rate()
+{
+	return event->frame_rate();
 }
 
 // ----------------------------------------------------------------------------
@@ -157,7 +145,7 @@ DEVICE *VM::get_cpu(int index)
 
 void VM::draw_screen()
 {
-	lcd->draw_screen();
+	memory->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -170,7 +158,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	pcm->init(rate, 8000);
+	pcm->init(rate, 5000);
 }
 
 uint16* VM::create_sound(int* extra_frames)
@@ -184,43 +172,53 @@ int VM::sound_buffer_ptr()
 }
 
 // ----------------------------------------------------------------------------
-// notify key
-// ----------------------------------------------------------------------------
-
-void VM::key_down(int code, bool repeat)
-{
-	keyboard->key_down(code);
-}
-
-void VM::key_up(int code)
-{
-}
-
-// ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
 
 void VM::play_tape(const _TCHAR* file_path)
 {
-	cmt->close_tape();
 	drec->play_tape(file_path);
+	push_play();
 }
 
 void VM::rec_tape(const _TCHAR* file_path)
 {
-	drec->close_tape();
-	cmt->rec_tape(file_path);
+	drec->rec_tape(file_path);
+	push_play();
 }
 
 void VM::close_tape()
 {
+	push_stop();
 	drec->close_tape();
-	cmt->close_tape();
 }
 
 bool VM::tape_inserted()
 {
-	return drec->tape_inserted() || cmt->tape_inserted();
+	return drec->tape_inserted();
+}
+
+void VM::push_play()
+{
+	drec->set_ff_rew(0);
+	drec->set_remote(true);
+}
+
+void VM::push_stop()
+{
+	drec->set_remote(false);
+}
+
+void VM::push_fast_forward()
+{
+	drec->set_ff_rew(1);
+	drec->set_remote(true);
+}
+
+void VM::push_fast_rewind()
+{
+	drec->set_ff_rew(-1);
+	drec->set_remote(true);
 }
 
 bool VM::now_skip()

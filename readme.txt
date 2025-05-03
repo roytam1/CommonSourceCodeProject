@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/24/2015
+								8/28/2015
 
 --- What's this ?
 
@@ -44,6 +44,8 @@ This archive includes the all source codes of emulators listed below:
 		eMYCOMZ-80A	MYCOMZ-80A
 	MITSUBISHI Electric
 		EmuLTI8		MULTI8
+	National
+		eJR-100		JR-100
 	NEC
 		yaPC-6001	PC-6001 (by Mr.tanam)
 		yaPC-6201	PC-6001mkII (by Mr.tanam)
@@ -179,6 +181,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Zodiac V99x8 core, converted to c++ class by Mr.umaiboux
 - vm/w3100a.*
 	Mr.Oh!Ishi for the chip specification info
+- vm/ys6552.*
+	MAME Rockwell 6522 VIA by Mr.Peter Trauner and Mr.Mathis Rosenhauer
 - vm/z80.*
 	MAME Z80 core
 - vm/z80dma.*

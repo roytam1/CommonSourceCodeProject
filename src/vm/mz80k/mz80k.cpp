@@ -82,7 +82,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	and->set_context_out(cpu, SIG_CPU_IRQ, 1);
 	and->set_mask(SIG_AND_BIT_0 | SIG_AND_BIT_1);
 #endif
-	drec->set_context_out(pio, SIG_I8255_PORT_C, 0x20);
+	drec->set_context_ear(pio, SIG_I8255_PORT_C, 0x20);
 	drec->set_context_remote(pio, SIG_I8255_PORT_C, 0x10);
 	ctc->set_context_ch0(counter, SIG_LS393_CLK, 1);
 	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2, 1);
@@ -95,7 +95,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ctc->set_constant_clock(1, 31250);
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x0f, 0);
 	pio->set_context_port_c(display, SIG_DISPLAY_VGATE, 1, 0);
-	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
+	pio->set_context_port_c(drec, SIG_DATAREC_MIC, 2, 0);
 #if defined(_MZ1200) || defined(_MZ80A)
 	pio->set_context_port_c(and, SIG_AND_BIT_1, 4, 0);
 #endif
