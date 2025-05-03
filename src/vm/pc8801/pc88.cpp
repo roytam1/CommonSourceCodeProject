@@ -976,9 +976,9 @@ uint32 PC88::read_io8(uint32 addr)
 #endif
 		return d_opn->read_io8(addr);
 	case 0x50:
-		return crtc.status;
+		return crtc.read_param();
 	case 0x51:
-		return 0xff;
+		return crtc.status;
 	case 0x5c:
 		return gvram_plane | 0xf8;
 	case 0x60:
@@ -1043,8 +1043,6 @@ void PC88::update_timing()
 	
 	set_frames_per_sec(frames_per_sec);
 	set_lines_per_frame(lines_per_frame);
-	
-	emu->out_debug_log("H=%d,V=%d,CH=%d,SKIP=%d\n",crtc.height,crtc.vretrace,crtc.char_height,crtc.skip_line);
 }
 
 void PC88::update_mem_wait()
@@ -1329,6 +1327,7 @@ void PC88::event_vline(int v, int clock)
 	} else if(v == disp_line) {
 		if(/*(crtc.status & 0x10) && */dmac.ch[2].running) {
 			dmac.finish(2);
+			crtc.expand_buffer(hireso, Port31_400LINE);
 		}
 		crtc.finish();
 		request_intr(IRQ_VRTC, true);
@@ -1611,15 +1610,7 @@ void PC88::draw_screen()
 
 void PC88::draw_text()
 {
-	if(!(crtc.status & 0x10) || Port53_TEXTDS) {
-		memset(text, 0, sizeof(text));
-		return;
-	}
-	if(!(crtc.status & 8)) {
-		crtc.expand_buffer(hireso, Port31_400LINE);
-	}
-	if(crtc.status & 8) {
-		// dma underrun occurs !!!
+	if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
 		memset(text, 0, sizeof(text));
 		return;
 	}
@@ -2009,7 +2000,7 @@ void pc88_crtc_t::reset(bool hireso)
 	vretrace = hireso ? 3 : 7;
 	timing_changed = false;
 	reverse = 0;
-	irq_mask = 3;
+	intr_mask = 3;
 }
 
 void pc88_crtc_t::write_cmd(uint8 data)
@@ -2026,8 +2017,8 @@ void pc88_crtc_t::write_cmd(uint8 data)
 		status |= 0x10;
 		status &= ~8;
 		break;
-	case 2:	// set irq mask
-		irq_mask = data & 3;
+	case 2:	// set interrupt mask
+		intr_mask = data & 3;
 		break;
 	case 3:	// read light pen
 		status &= ~1;
@@ -2093,6 +2084,26 @@ void pc88_crtc_t::write_param(uint8 data)
 	cmd_ptr++;
 }
 
+uint32 pc88_crtc_t::read_param()
+{
+	uint32 val = 0xff;
+	
+	switch(cmd) {
+	case 3:	// read light pen
+		switch(cmd_ptr) {
+		case 0:
+			val = 0; // fix me
+			break;
+		case 1:
+			val = 0; // fix me
+			break;
+		}
+		break;
+	}
+	cmd_ptr++;
+	return val;
+}
+
 void pc88_crtc_t::start()
 {
 	memset(buffer, 0, sizeof(buffer));
@@ -2102,7 +2113,7 @@ void pc88_crtc_t::start()
 
 void pc88_crtc_t::finish()
 {
-	if((status & 0x10) && !(irq_mask & 1)) {
+	if((status & 0x10) && !(intr_mask & 1)) {
 		status |= 2;
 	}
 	vblank = true;

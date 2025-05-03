@@ -1,3 +1,10 @@
+10/29/2014
+
+[PC8801MA/PC88] fix to check dma underrun in every frames
+[PC8801MA/PC88] fix port number of crtc status
+[PC8801MA/PC88] add function to read crtc parameters
+
+
 10/28/2014
 
 [PC8801MA/PC88] fix crtc issue that dma underrun never occurs
