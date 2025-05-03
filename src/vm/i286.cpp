@@ -33,15 +33,67 @@
 	#define CPU_MODEL i80286
 #endif
 
+#ifndef __BIG_ENDIAN__
+#define LSB_FIRST
+#endif
+
 #ifndef INLINE
 #define INLINE inline
 #endif
 
-#ifndef _BIG_ENDIAN
-#define LSB_FIRST
-#endif
+#define logerror(...)
 
-#define offs_t UINT32
+/*****************************************************************************/
+/* src/emu/devcpu.h */
+
+// CPU interface functions
+#define CPU_INIT_NAME(name)			cpu_init_##name
+#define CPU_INIT(name)				void* CPU_INIT_NAME(name)()
+#define CPU_INIT_CALL(name)			CPU_INIT_NAME(name)()
+
+#define CPU_RESET_NAME(name)			cpu_reset_##name
+#define CPU_RESET(name)				void CPU_RESET_NAME(name)(cpu_state *cpustate)
+#define CPU_RESET_CALL(name)			CPU_RESET_NAME(name)(cpustate)
+
+#define CPU_EXECUTE_NAME(name)			cpu_execute_##name
+#define CPU_EXECUTE(name)			int CPU_EXECUTE_NAME(name)(cpu_state *cpustate, int icount)
+#define CPU_EXECUTE_CALL(name)			CPU_EXECUTE_NAME(name)(cpustate, icount)
+
+#define CPU_DISASSEMBLE_NAME(name)		cpu_disassemble_##name
+#define CPU_DISASSEMBLE(name)			int CPU_DISASSEMBLE_NAME(name)(char *buffer, offs_t eip, const UINT8 *oprom)
+#define CPU_DISASSEMBLE_CALL(name)		CPU_DISASSEMBLE_NAME(name)(buffer, eip, oprom)
+
+/*****************************************************************************/
+/* src/emu/didisasm.h */
+
+// Disassembler constants
+const UINT32 DASMFLAG_SUPPORTED     = 0x80000000;   // are disassembly flags supported?
+const UINT32 DASMFLAG_STEP_OUT      = 0x40000000;   // this instruction should be the end of a step out sequence
+const UINT32 DASMFLAG_STEP_OVER     = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
+const UINT32 DASMFLAG_OVERINSTMASK  = 0x18000000;   // number of extra instructions to skip when stepping over
+const UINT32 DASMFLAG_OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
+const UINT32 DASMFLAG_LENGTHMASK    = 0x0000ffff;   // the low 16-bits contain the actual length
+
+/*****************************************************************************/
+/* src/emu/diexec.h */
+
+// I/O line states
+enum line_state
+{
+	CLEAR_LINE = 0,				// clear (a fired or held) line
+	ASSERT_LINE,				// assert an interrupt immediately
+	HOLD_LINE,				// hold interrupt line until acknowledged
+	PULSE_LINE				// pulse interrupt line instantaneously (only for NMI, RESET)
+};
+
+enum
+{
+	INPUT_LINE_IRQ = 0,
+	INPUT_LINE_NMI
+};
+
+/*****************************************************************************/
+/* src/emu/emucore.h */
 
 // constants for expression endianness
 enum endianness_t
@@ -63,58 +115,27 @@ const endianness_t ENDIANNESS_NATIVE = ENDIANNESS_BIG;
 // endian-based value: first value is if 'endian' matches native, second is if 'endian' doesn't match native
 #define ENDIAN_VALUE_NE_NNE(endian,leval,beval)	(((endian) == ENDIANNESS_NATIVE) ? (neval) : (nneval))
 
-// Disassembler constants
-const UINT32 DASMFLAG_SUPPORTED     = 0x80000000;   // are disassembly flags supported?
-const UINT32 DASMFLAG_STEP_OUT      = 0x40000000;   // this instruction should be the end of a step out sequence
-const UINT32 DASMFLAG_STEP_OVER     = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
-const UINT32 DASMFLAG_OVERINSTMASK  = 0x18000000;   // number of extra instructions to skip when stepping over
-const UINT32 DASMFLAG_OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
-const UINT32 DASMFLAG_LENGTHMASK    = 0x0000ffff;   // the low 16-bits contain the actual length
+/*****************************************************************************/
+/* src/emu/memory.h */
+
+// offsets and addresses are 32-bit (for now...)
+typedef UINT32	offs_t;
+
+/*****************************************************************************/
+/* src/osd/osdcomm.h */
 
 /* Highly useful macro for compile-time knowledge of an array size */
 #define ARRAY_LENGTH(x)     (sizeof(x) / sizeof(x[0]))
 
-enum line_state
-{
-	CLEAR_LINE = 0,				// clear (a fired or held) line
-	ASSERT_LINE,				// assert an interrupt immediately
-	HOLD_LINE,				// hold interrupt line until acknowledged
-	PULSE_LINE				// pulse interrupt line instantaneously (only for NMI, RESET)
-};
-
-enum
-{
-	INPUT_LINE_IRQ = 0,
-	INPUT_LINE_NMI
-};
-
-#define CPU_INIT_NAME(name)			cpu_init_##name
-#define CPU_INIT(name)				void* CPU_INIT_NAME(name)()
-#define CPU_INIT_CALL(name)			CPU_INIT_NAME(name)()
-
-#define CPU_RESET_NAME(name)			cpu_reset_##name
-#define CPU_RESET(name)				void CPU_RESET_NAME(name)(cpu_state *cpustate)
-#define CPU_RESET_CALL(name)			CPU_RESET_NAME(name)(cpustate)
-
-#define CPU_EXECUTE_NAME(name)			cpu_execute_##name
-#define CPU_EXECUTE(name)			int CPU_EXECUTE_NAME(name)(cpu_state *cpustate, int icount)
-#define CPU_EXECUTE_CALL(name)			CPU_EXECUTE_NAME(name)(cpustate, icount)
-
-#define CPU_DISASSEMBLE_NAME(name)		cpu_disassemble_##name
-#define CPU_DISASSEMBLE(name)			int CPU_DISASSEMBLE_NAME(name)(char *buffer, offs_t eip, const UINT8 *oprom)
-#define CPU_DISASSEMBLE_CALL(name)		CPU_DISASSEMBLE_NAME(name)(buffer, eip, oprom)
-
-#define logerror(...)
-
 #if defined(HAS_I86) || defined(HAS_I88) || defined(HAS_I186)
-	#define cpu_state i8086_state
-	#include "mame/i86/i86.c"
+#define cpu_state i8086_state
+#include "mame/emu/cpu/i86/i86.c"
 #elif defined(HAS_I286)
-	#define cpu_state i80286_state
-	#include "mame/i86/i286.c"
+#define cpu_state i80286_state
+#include "mame/emu/cpu/i86/i286.c"
 #endif
 #ifdef USE_DEBUGGER
-#include "mame/i386/i386dasm.c"
+#include "mame/emu/cpu/i386/i386dasm.c"
 #endif
 
 void I286::initialize()

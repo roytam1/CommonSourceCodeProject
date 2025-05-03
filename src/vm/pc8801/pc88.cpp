@@ -779,12 +779,16 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x44:
 	case 0x45:
-#ifdef HAS_YM2608
-	case 0x46:
-	case 0x47:
-#endif
 		d_opn->write_io8(addr, data);
 		break;
+#ifdef SUPPORT_PC88_OPNA
+	case 0x46:
+	case 0x47:
+		if(d_opn->is_ym2608) {
+			d_opn->write_io8(addr, data);
+		}
+		break;
+#endif
 	case 0x50:
 		crtc.write_param(data);
 		if(crtc.timing_changed) {
@@ -1016,11 +1020,15 @@ uint32 PC88::read_io8_debug(uint32 addr)
 #endif
 			return 0xff;
 		}
-#ifdef HAS_YM2608
+		return d_opn->read_io8(addr);
+#ifdef SUPPORT_PC88_OPNA
 	case 0x46:
 	case 0x47:
+		if(d_opn->is_ym2608) {
+			return d_opn->read_io8(addr);
+		}
+		break;
 #endif
-		return d_opn->read_io8(addr);
 	case 0x50:
 		return crtc.read_param();
 	case 0x51:

@@ -12,16 +12,35 @@
 
 #include <tchar.h>
 
-// variable scope of 'for' loop for microsoft visual c++ 6.0 and embedded visual c++ 4.0
+// variable scope of 'for' loop for Microsoft Visual C++ 6.0
 #if defined(_MSC_VER) && (_MSC_VER == 1200)
 #define for if(0);else for
 #endif
 
-// disable warnings C4189, C4995 and C4996 for microsoft visual c++ 2005
+// disable warnings for Microsoft Visual C++ 2005 or later
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #pragma warning( disable : 4819 )
 #pragma warning( disable : 4995 )
 #pragma warning( disable : 4996 )
+#endif
+
+// endian
+#if !defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)
+	#if defined(__BYTE_ORDER) && (defined(__LITTLE_ENDIAN) || defined(__BIG_ENDIAN))
+		#if __BYTE_ORDER == __LITTLE_ENDIAN
+			#define __LITTLE_ENDIAN__
+		#elif __BYTE_ORDER == __BIG_ENDIAN
+			#define __BIG_ENDIAN__
+		#endif
+	#elif defined(WORDS_LITTLEENDIAN)
+		#define __LITTLE_ENDIAN__
+	#elif defined(WORDS_BIGENDIAN)
+		#define __BIG_ENDIAN__
+	#endif
+#endif
+#if !defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)
+	// Microsoft Visual C++
+	#define __LITTLE_ENDIAN__
 #endif
 
 // type definition
@@ -60,7 +79,7 @@ typedef signed long long int64;
 #endif
 
 typedef union {
-#ifdef _BIG_ENDIAN
+#ifdef __BIG_ENDIAN__
 	struct {
 		uint8 h3, h2, h, l;
 	} b;

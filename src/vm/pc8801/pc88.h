@@ -30,6 +30,7 @@
 #define NIPPY_PATCH
 #endif
 
+class YM2203;
 class Z80;
 
 typedef struct pc88_crtc_t {
@@ -96,8 +97,9 @@ typedef struct pc88_dmac_t {
 class PC88 : public DEVICE
 {
 private:
+	YM2203 *d_opn;
 	Z80 *d_cpu;
-	DEVICE *d_beep, *d_opn, *d_pcm, *d_pio, *d_rtc, *d_sio;
+	DEVICE *d_beep, *d_pcm, *d_pio, *d_rtc, *d_sio;
 #ifdef SUPPORT_PC88_PCG8100
 	DEVICE *d_pcg_pit, *d_pcg_pcm0, *d_pcg_pcm1, *d_pcg_pcm2;
 #endif
@@ -275,7 +277,7 @@ public:
 	{
 		d_cpu = device;
 	}
-	void set_context_opn(DEVICE* device)
+	void set_context_opn(YM2203* device)
 	{
 		d_opn = device;
 	}

@@ -33,7 +33,7 @@ typedef enum { ES, CS, SS, DS } SREGS;
 typedef enum { AX, CX, DX, BX, SP, BP, SI, DI } WREGS;
 
 typedef enum {
-#ifdef _BIG_ENDIAN
+#ifdef __BIG_ENDIAN__
 	 AH,  AL,  CH,  CL,  DH,  DL,  BH,  BL,
 	SPH, SPL, BPH, BPL, SIH, SIL, DIH, DIL,
 #else

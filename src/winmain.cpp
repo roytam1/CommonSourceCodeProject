@@ -1856,7 +1856,7 @@ void open_tape_dialog(HWND hWnd, bool play)
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 #if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6001MK2SR) || defined(_PC6601) || defined(_PC6601SR)
-		_T("Supported Files (*.wav;*.p6;*.cas)\0*.wav;*.p6;*.cas\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.wav;*.p6;*.p6t;*.cas)\0*.wav;*.p6;*.p6t;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_PC8001SR) || defined(_PC8801MA) || defined(_PC98DO)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
@@ -1970,6 +1970,7 @@ void open_any_file(_TCHAR* path)
 	if(check_file_extension(path, _T(".wav")) || 
 	   check_file_extension(path, _T(".cas")) || 
 	   check_file_extension(path, _T(".p6" )) || 
+	   check_file_extension(path, _T(".p6t")) || 
 	   check_file_extension(path, _T(".cmt")) || 
 	   check_file_extension(path, _T(".n80")) || 
 	   check_file_extension(path, _T(".t88")) || 

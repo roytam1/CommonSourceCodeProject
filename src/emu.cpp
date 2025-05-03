@@ -765,11 +765,14 @@ void EMU::load_state()
 {
 	_TCHAR file_name[_MAX_PATH];
 	_stprintf(file_name, _T("%s.sta"), _T(CONFIG_NAME));
-	save_state_tmp(bios_path(_T("$temp$.sta")));
-	if(!load_state_tmp(bios_path(file_name))) {
-		load_state_tmp(bios_path(_T("$temp$.sta")));
+	if(FILEIO::IsFileExists(bios_path(file_name))) {
+		save_state_tmp(bios_path(_T("$temp$.sta")));
+		if(!load_state_tmp(bios_path(file_name))) {
+			out_debug_log("failed to load state file\n");
+			load_state_tmp(bios_path(_T("$temp$.sta")));
+		}
+		DeleteFile(bios_path(_T("$temp$.sta")));
 	}
-	DeleteFile(bios_path(_T("$temp$.sta")));
 }
 
 void EMU::save_state_tmp(_TCHAR* file_path)
