@@ -79,6 +79,7 @@
 #define USE_STATE
 
 #include "../../common.h"
+#include "../../fileio.h"
 
 class EMU;
 class DEVICE;
@@ -113,8 +114,6 @@ class PSG;
 #endif
 class QUICKDISK;
 #endif
-
-class FILEIO;
 
 class VM
 {

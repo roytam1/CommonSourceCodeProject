@@ -10,7 +10,6 @@
 #include "pc80s31k.h"
 #include "disk.h"
 #include "upd765a.h"
-#include "../fileio.h"
 
 //#define _DEBUG_PC80S31K
 

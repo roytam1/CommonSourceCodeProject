@@ -72,6 +72,7 @@
 #define USE_STATE
 
 #include "../../common.h"
+#include "../../fileio.h"
 
 class EMU;
 class DEVICE;
@@ -104,8 +105,6 @@ class I286;
 class I8259;
 class MZ1M01;
 #endif
-
-class FILEIO;
 
 class VM
 {

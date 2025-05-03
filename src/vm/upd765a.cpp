@@ -10,7 +10,6 @@
 
 #include "upd765a.h"
 #include "disk.h"
-#include "../fileio.h"
 
 #define EVENT_PHASE	0
 #define EVENT_DRQ	1

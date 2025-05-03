@@ -16,7 +16,6 @@
 #include "../hd46505.h"
 #endif
 #include "../i8255.h"
-#include "../../fileio.h"
 
 #ifdef _X1TURBOZ
 #define AEN	((zmode1 & 0x80) != 0)

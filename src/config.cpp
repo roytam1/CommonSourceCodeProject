@@ -39,6 +39,9 @@ void init_config()
 	// initial settings
 	memset(&config, 0, sizeof(config_t));
 	
+	config.use_direct_input = true;
+	config.disable_dwm = false;
+	
 #if !(defined(USE_BITMAP) || defined(USE_LED))
 	config.use_d3d9 = true;
 	config.stretch_type = 1;	// Stretch (Aspect)
@@ -82,6 +85,9 @@ void load_config()
 	_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
+	config.use_direct_input = GetPrivateProfileBool(_T("Control"), _T("UseDirectInput"), config.use_direct_input, config_path);
+	config.disable_dwm = GetPrivateProfileBool(_T("Control"), _T("DisableDwm"), config.disable_dwm, config_path);
+	
 #ifdef USE_BOOT_MODE
 	config.boot_mode = GetPrivateProfileInt(_T("Control"), _T("BootMode"), config.boot_mode, config_path);
 #endif
@@ -204,6 +210,9 @@ void save_config()
 	_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
+	WritePrivateProfileBool(_T("Control"), _T("UseDirectInput"), config.use_direct_input, config_path);
+	WritePrivateProfileBool(_T("Control"), _T("DisableDwm"), config.disable_dwm, config_path);
+	
 #ifdef USE_BOOT_MODE
 	WritePrivateProfileInt(_T("Control"), _T("BootMode"), config.boot_mode, config_path);
 #endif

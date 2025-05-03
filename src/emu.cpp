@@ -34,6 +34,12 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 	main_window_handle = hwnd;
 	instance_handle = hinst;
 	
+	// check os version
+	OSVERSIONINFO os_info;
+	os_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx(&os_info);
+	vista_or_later = (os_info.dwPlatformId == 2 && os_info.dwMajorVersion >= 6);
+	
 	// get module path
 	_TCHAR tmp_path[_MAX_PATH], *ptr;
 	GetModuleFileName(NULL, tmp_path, _MAX_PATH);

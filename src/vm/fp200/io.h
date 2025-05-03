@@ -32,10 +32,7 @@ private:
 	uint8 font[8*256];
 	
 	struct {
-		struct {
-			uint8 data;
-			bool is_text;
-		} ram[0x400];
+		uint8 ram[0x400];
 		int offset, cursor;
 	} lcd[2];
 	

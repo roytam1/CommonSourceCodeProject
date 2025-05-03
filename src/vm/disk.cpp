@@ -8,7 +8,6 @@
 */
 
 #include "disk.h"
-#include "../fileio.h"
 
 // crc table
 static const uint16 crc_table[256] = {

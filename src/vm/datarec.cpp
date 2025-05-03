@@ -9,7 +9,6 @@
 
 #include "datarec.h"
 #include "event.h"
-#include "../fileio.h"
 
 #define EVENT_SIGNAL	0
 #define EVENT_SOUND	1
@@ -1251,6 +1250,8 @@ int DATAREC::load_mzt_image()
 
 void DATAREC::mix(int32* buffer, int cnt)
 {
+	int32* buffer_tmp = buffer;
+	
 	if(config.tape_sound && pcm_changed && remote && (play || rec) && ff_rew == 0) {
 		bool signal = ((play && in_signal) || (rec && out_signal));
 		if(signal) {
@@ -1282,9 +1283,10 @@ void DATAREC::mix(int32* buffer, int cnt)
 	pcm_positive_clocks = pcm_negative_clocks = 0;
 	
 #ifdef DATAREC_SOUND
+	buffer = buffer_tmp; // restore
 	for(int i = 0; i < cnt; i++) {
-		*buffer += sound_sample;
-		*buffer += sound_sample;
+		*buffer += sound_sample; // L
+		*buffer += sound_sample; // R
 	}
 #endif
 }

@@ -10,7 +10,6 @@
 #include "io.h"
 #include "../datarec.h"
 #include "../i8080.h"
-#include "../../fileio.h"
 
 #define EVENT_CMT_READY	0
 #define EVENT_CMT_CLOCK	1
@@ -234,6 +233,8 @@ void IO::reset()
 	update_sid();
 }
 
+#define REVERSE(v) (((v) & 0x80) >> 7) | (((v) & 0x40) >> 5) | (((v) & 0x20) >> 3) | (((v) & 0x10) >> 1) | (((v) & 0x08) << 1) | (((v) & 0x04) << 3) | (((v) & 0x02) << 5) | (((v) & 0x01) << 7)
+
 void IO::write_io8(uint32 addr, uint32 data)
 {
 #ifdef _IO_DEBUG_LOG
@@ -245,20 +246,21 @@ void IO::write_io8(uint32 addr, uint32 data)
 		case 0x01:
 		case 0x02:
 			if(lcd_status == 0xb0) {
-				if(data == 0) {
-					lcd[ addr & 1].cursor = lcd_addr & 0x3ff;
-					lcd[~addr & 1].cursor = -1;
-				} else if(data == 0x40) {
+				if(data == 0x40) {
 					lcd_text = false;
 				} else if(data == 0x50) {
 					lcd[addr & 1].offset = lcd_addr & 0x3ff;
-				} else if(data == 0x60) {
+				} else {
 					lcd_text = true;
 				}
-			} else {
-				lcd[addr & 1].ram[lcd_addr & 0x3ff].data = data;
-				// 0x38f means the first raster of this character
-				lcd[addr & 1].ram[lcd_addr & 0x38f].is_text = lcd_text;
+			} else if(lcd_status == 0x10) {
+				if(lcd_text) {
+					for(int l = 0; l < 8; l++) {
+						lcd[addr & 1].ram[(lcd_addr + 16 * l) & 0x3ff] = REVERSE(font[data * 8 + l]);
+					}
+				} else {
+					lcd[addr & 1].ram[lcd_addr & 0x3ff] = data;
+				}
 			}
 			break;
 		case 0x08:
@@ -316,7 +318,7 @@ uint32 IO::read_io8(uint32 addr)
 		switch(addr & 0xff) {
 		case 0x01:
 		case 0x02:
-			value = lcd[addr & 1].ram[lcd_addr & 0x3ff].data;
+			value = lcd[addr & 1].ram[lcd_addr & 0x3ff];
 			break;
 		case 0x08:
 			value = ((lcd_addr >> 8) & 0x0f) | lcd_status;
@@ -567,38 +569,20 @@ void IO::draw_screen()
 	// render screen
 	for(int y = 0; y < 8; y++) {
 		for(int x = 0; x < 20; x++) {
-			int addr = (y * 0x80 + (x % 10) + lcd[x < 10].offset) & 0x3ff;
-			if(lcd[x < 10].ram[addr].is_text) {
-				uint8 code = lcd[x < 10].ram[addr].data;
-				for(int l = 0; l < 8; l++) {
-					uint8 pat = (lcd[x < 10].cursor == addr) ? 0xff : font[(code << 3) + l];
-					addr += 0x10;
-					uint8* d = &screen[y * 8 + l][x * 8];
-					
-					d[0] = pat & 0x80;
-					d[1] = pat & 0x40;
-					d[2] = pat & 0x20;
-					d[3] = pat & 0x10;
-					d[4] = pat & 0x08;
-					d[5] = pat & 0x04;
-					d[6] = pat & 0x02;
-					d[7] = pat & 0x01;
-				}
-			} else {
-				for(int l = 0; l < 8; l++) {
-					uint8 pat = lcd[x < 10].ram[addr].data;
-					addr += 0x10;
-					uint8* d = &screen[y * 8 + l][x * 8];
-					
-					d[0] = pat & 0x01;
-					d[1] = pat & 0x02;
-					d[2] = pat & 0x04;
-					d[3] = pat & 0x08;
-					d[4] = pat & 0x10;
-					d[5] = pat & 0x20;
-					d[6] = pat & 0x40;
-					d[7] = pat & 0x80;
-				}
+			int addr = y * 0x80 + (x % 10) + lcd[x < 10].offset;
+			for(int l = 0; l < 8; l++) {
+				uint8 pat = lcd[x < 10].ram[addr & 0x3ff];
+				addr += 0x10;
+				uint8* d = &screen[y * 8 + l][x * 8];
+				
+				d[0] = pat & 0x01;
+				d[1] = pat & 0x02;
+				d[2] = pat & 0x04;
+				d[3] = pat & 0x08;
+				d[4] = pat & 0x10;
+				d[5] = pat & 0x20;
+				d[6] = pat & 0x40;
+				d[7] = pat & 0x80;
 			}
 		}
 	}
@@ -616,7 +600,7 @@ void IO::draw_screen()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void IO::save_state(FILEIO* state_fio)
 {

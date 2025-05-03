@@ -16,7 +16,6 @@
 #include "../datarec.h"
 #include "../i8255.h"
 #include "../mcs48.h"
-#include "../../fileio.h"
 
 #define EVENT_PLAY	0
 #define EVENT_STOP	1

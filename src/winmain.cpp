@@ -14,6 +14,7 @@
 #include <commctrl.h>
 #include <mmsystem.h>
 #include <stdio.h>
+#include <dwmapi.h>
 #include "res/resource.h"
 #include "emu.h"
 #include "fileio.h"
@@ -414,6 +415,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	
 	switch(iMsg) {
 	case WM_CREATE:
+		// XXX: no gui to change config.disable_dwm, so we need to modify *.ini file manually
+		if(config.disable_dwm) {
+			// disable dwm
+			HMODULE hLibrary = LoadLibrary(_T("dwmapi.dll"));
+			if(hLibrary) {
+				typedef HRESULT (WINAPI *DwmEnableCompositionFunction)(__in UINT uCompositionAction);
+				DwmEnableCompositionFunction lpfnDwmEnableComposition;
+				lpfnDwmEnableComposition = reinterpret_cast<DwmEnableCompositionFunction>(::GetProcAddress(hLibrary, "DwmEnableComposition"));
+				if(lpfnDwmEnableComposition) {
+					lpfnDwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
+				}
+				FreeLibrary(hLibrary);
+			}
+		}
 #ifdef USE_BUTTON
 		memset(hFont, 0, sizeof(hFont));
 		for(int i = 0; i < MAX_BUTTONS; i++) {

@@ -11,8 +11,9 @@
 #define _EMU_H_
 
 // DirectX
-#define DIRECTSOUND_VERSION 0x900
-#define DIRECT3D_VERSION 0x900
+#define DIRECTSOUND_VERSION	0x900
+#define DIRECT3D_VERSION	0x900
+#define DIRECTINPUT_VERSION	0x500
 
 // for debug
 //#define _DEBUG_LOG
@@ -67,6 +68,10 @@
 
 #include <dsound.h>
 #include <vfw.h>
+
+#pragma comment(lib, "dinput.lib")
+#pragma comment(lib, "dxguid.lib")
+#include <dinput.h>
 
 #ifdef USE_DIRECT_SHOW
 #pragma comment(lib, "strmiids.lib")
@@ -187,6 +192,14 @@ private:
 	void initialize_input();
 	void release_input();
 	void update_input();
+	void key_down_sub(int code, bool repeat);
+	void key_up_sub(int code);
+	
+	LPDIRECTINPUT lpdi;
+	LPDIRECTINPUTDEVICE lpdikey;
+//	LPDIRECTINPUTDEVICE lpdijoy;
+	bool dinput_key_ok;
+//	bool dinput_joy_ok;
 	
 	uint8 keycode_conv[256];
 	uint8 key_status[256];	// windows key code mapping
@@ -494,6 +507,7 @@ public:
 	// ----------------------------------------
 	HWND main_window_handle;
 	HINSTANCE instance_handle;
+	bool vista_or_later;
 	
 	// drive virtual machine
 	int frame_interval();

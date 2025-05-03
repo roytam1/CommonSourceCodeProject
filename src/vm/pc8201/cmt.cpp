@@ -8,7 +8,6 @@
 */
 
 #include "cmt.h"
-#include "../../fileio.h"
 
 #define SAMPLE_RATE 48000
 

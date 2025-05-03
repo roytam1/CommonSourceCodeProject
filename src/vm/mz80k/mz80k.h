@@ -60,6 +60,7 @@
 #endif
 
 #include "../../common.h"
+#include "../../fileio.h"
 
 class EMU;
 class DEVICE;
@@ -84,8 +85,6 @@ class MB8877;
 class FLOPPY;
 class IO;
 #endif
-
-class FILEIO;
 
 class VM
 {

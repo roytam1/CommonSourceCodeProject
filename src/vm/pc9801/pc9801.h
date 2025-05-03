@@ -148,6 +148,7 @@
 #define USE_STATE
 
 #include "../../common.h"
+#include "../../fileio.h"
 
 class EMU;
 class DEVICE;
@@ -202,8 +203,6 @@ class PC80S31K;
 class PC88;
 class Z80;
 #endif
-
-class FILEIO;
 
 class VM
 {
