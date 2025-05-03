@@ -14,18 +14,34 @@
 
 #include "../device.h"
 
+class EMU;
+class VM;
+
 enum {
 	HD6844_EVENT_START_TRANSFER = 0,
+	HD6844_EVENT_DO_TRANSFER = 4,
 };
 
 enum {
 	HD6844_TRANSFER_START = 1,
 	HD6844_DO_TRANSFER,
+	HD6844_ADDR_REG_0 = 4,
+	HD6844_ADDR_REG_1,
+	HD6844_ADDR_REG_2,
+	HD6844_ADDR_REG_3,
+	HD6844_WORDS_REG_0,
+	HD6844_WORDS_REG_1,
+	HD6844_WORDS_REG_2,
+	HD6844_WORDS_REG_3,
 	HD6844_SRC_FIXED_ADDR_CH0 = 16,
 	HD6844_SRC_FIXED_ADDR_CH1,
 	HD6844_SRC_FIXED_ADDR_CH2,
 	HD6844_SRC_FIXED_ADDR_CH3,
 	HD6844_SET_CONST_OFFSET,
+	HD6844_IS_TRANSFER_0 = 24,
+	HD6844_IS_TRANSFER_1,
+	HD6844_IS_TRANSFER_2,
+	HD6844_IS_TRANSFER_3,
 };
 
 class HD6844: public DEVICE {
@@ -39,6 +55,7 @@ class HD6844: public DEVICE {
 	DEVICE *dest[4];
 
 	outputs_t interrupt_line;
+	outputs_t halt_line;
 	// Registers
 
 	uint32 addr_reg[4];
@@ -52,11 +69,14 @@ class HD6844: public DEVICE {
 	uint32 addr_offset;
 	
 	bool transfering[4];
-	bool burst;
+	bool first_transfer[4];
+	bool cycle_steal;
    
 	uint32 fixed_addr[4];
 	uint8 data_reg[4];
 	int event_dmac[4];
+
+	void do_transfer(int ch);
  public:
 	HD6844(VM *parent_vm, EMU *parent_emu);
 	~HD6844();
@@ -65,7 +85,7 @@ class HD6844: public DEVICE {
 	void write_data8(uint32 id, uint32 data);
 	uint32 read_data8(uint32 addr);
 	
-	//uint32 read_signal(int id); 
+	uint32 read_signal(int id); 
 	void write_signal(int id, uint32 data, uint32 mask);
 	void initialize(void);
 	void reset(void);
@@ -73,6 +93,9 @@ class HD6844: public DEVICE {
 	
 	void set_context_int_line(DEVICE *p, int id, uint32 mask) {
 		register_output_signal(&interrupt_line, p, id, mask);
+	}
+	void set_context_halt_line(DEVICE *p, int id, uint32 mask) {
+		register_output_signal(&halt_line, p, id, mask);
 	}
 	void set_context_src(DEVICE *p, uint32 ch) {
 		src[ch & 3]  = p;

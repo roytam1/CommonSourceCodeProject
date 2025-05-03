@@ -104,11 +104,11 @@ static const fd_format_t fd_formats[] = {
 
 #define IS_VALID_TRACK(offset) ((offset) >= 0x20 && (offset) < sizeof(buffer))
 
-void DISK::open(_TCHAR path[], int bank)
+void DISK::open(const _TCHAR* file_path, int bank)
 {
 	// check current disk image
 	if(inserted) {
-		if(_tcsicmp(orig_path, path) == 0 && file_bank == bank) {
+		if(_tcsicmp(orig_path, file_path) == 0 && file_bank == bank) {
 			return;
 		}
 		close();
@@ -120,18 +120,18 @@ void DISK::open(_TCHAR path[], int bank)
 	
 	// open disk image
 	fi = new FILEIO();
-	if(fi->Fopen(path, FILEIO_READ_BINARY)) {
+	if(fi->Fopen(file_path, FILEIO_READ_BINARY)) {
 		bool converted = false;
 		
-		_tcscpy_s(orig_path, _MAX_PATH, path);
-		_tcscpy_s(dest_path, _MAX_PATH, path);
-		_stprintf_s(temp_path, _MAX_PATH, _T("%s.$$$"), path);
+		_tcscpy_s(orig_path, _MAX_PATH, file_path);
+		_tcscpy_s(dest_path, _MAX_PATH, file_path);
+		_stprintf_s(temp_path, _MAX_PATH, _T("%s.$$$"), file_path);
 		
 		temporary = false;
-		write_protected = false; //FILEIO::IsFileProtected(path);
+		write_protected = false; //FILEIO::IsFileProtected(file_path);
 		
 		// is this d88 format ?
-		if(check_file_extension(path, _T(".d88")) || check_file_extension(path, _T(".d77")) || check_file_extension(path, _T(".1dd"))) {
+		if(check_file_extension(file_path, _T(".d88")) || check_file_extension(file_path, _T(".d77")) || check_file_extension(file_path, _T(".1dd"))) {
 			uint32 offset = 0;
 			for(int i = 0; i < bank; i++) {
 				fi->Fseek(offset + 0x1c, SEEK_SET);
@@ -143,7 +143,7 @@ void DISK::open(_TCHAR path[], int bank)
 			fi->Fread(buffer, file_size.d, 1);
 			file_bank = bank;
 			inserted = changed = true;
-			is_1dd_image = check_file_extension(path, _T(".1dd"));
+			is_1dd_image = check_file_extension(file_path, _T(".1dd"));
 //			trim_required = true;
 			
 			// fix sector number from big endian to little endian
@@ -180,7 +180,7 @@ void DISK::open(_TCHAR path[], int bank)
 		
 #if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
 		// is this 2d format ?
-		if(check_file_extension(path, _T(".2d"))) {
+		if(check_file_extension(file_path, _T(".2d"))) {
 			if(solid_to_d88(MEDIA_TYPE_2D, 40, 2, 16, 256)) {
 				inserted = changed = is_solid_image = true;
 				goto file_loaded;
@@ -217,7 +217,7 @@ void DISK::open(_TCHAR path[], int bank)
 				inserted = changed = true;
 				goto file_loaded;
 			}
-			_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), path);
+			_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), file_path);
 			
 			// check file header
 			try {
@@ -289,13 +289,13 @@ file_loaded:
 		}
 		is_special_disk = 0;
 #if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
-		// FIXME: ugly patch for FM-7 Gambler Jiko Chuushin Ha
+		// FIXME: ugly patch for FM-7 Gambler Jiko Chuushin Ha and DEATH FORCE
 		if(media_type == MEDIA_TYPE_2D) {
 			// check first track
 			pair offset, sector_num, data_size;
 			offset.read_4bytes_le_from(buffer + 0x20);
 			if(IS_VALID_TRACK(offset.d)) {
-				// check the sector (c,h,r,n)=(0,0,7,1)
+				// check the sector (c,h,r,n) = (0,0,7,1) or (0,0,f7,2)
 				uint8* t = buffer + offset.d;
 				sector_num.read_2bytes_le_from(t + 4);
 				for(int i = 0; i < sector_num.sd; i++) {
@@ -304,6 +304,19 @@ file_loaded:
 						static const uint8 gambler[] = {0xb7, 0xde, 0xad, 0xdc, 0xdd, 0xcc, 0xde, 0xd7, 0xb1, 0x20, 0xbc, 0xde, 0xba, 0xc1, 0xad, 0xb3, 0xbc, 0xdd, 0xca};
 						if(memcmp((void *)(t + 0x30), gambler, sizeof(gambler)) == 0) {
 							is_special_disk = SPECIAL_DISK_FM7_GAMBLER;
+						}
+						break;
+					} else if(data_size.sd == 0x200 && t[0] == 0 && t[1] == 0 && t[2] == 0xf7 && t[3] == 0x02) {
+						//"DEATHFORCE/77AV" + $f7*17 + $00 + $00
+						static const uint8 deathforce[] ={
+							0x44, 0x45, 0x41, 0x54, 0x48, 0x46, 0x4f, 0x52,
+							0x43, 0x45, 0x2f, 0x37, 0x37, 0x41, 0x56, 0xf7,
+							0xf7, 0xf7, 0xf7, 0xf7, 0xf7, 0xf7, 0xf7, 0xf7,
+							0xf7, 0xf7, 0xf7, 0xf7, 0xf7, 0xf7, 0xf7, 0xf7,
+							0x00, 0x00
+						};
+						if(memcmp((void *)(t + 0x10), deathforce, sizeof(deathforce)) == 0) {
+							is_special_disk = SPECIAL_DISK_FM7_DEATHFORCE;
 						}
 						break;
 					}
@@ -869,7 +882,8 @@ void DISK::trim_buffer()
 	file_size.write_4bytes_le_to(tmp_buffer + 0x1c);
 	
 	memset(buffer, 0, sizeof(buffer));
-	memcpy(buffer, tmp_buffer, file_size.d);
+//	memcpy(buffer, tmp_buffer, file_size.d);
+	memcpy(buffer, tmp_buffer, min(sizeof(buffer), file_size.d));
 }
 
 int DISK::get_rpm()
@@ -886,6 +900,11 @@ int DISK::get_rpm()
 int DISK::get_track_size()
 {
 	if(inserted) {
+#if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
+		if(is_special_disk == SPECIAL_DISK_FM7_DEATHFORCE) {
+			return 6300;
+		}
+#endif
 		return media_type == MEDIA_TYPE_144 ? 12500 : media_type == MEDIA_TYPE_2HD ? 10410 : drive_mfm ? 6250 : 3100;
 	} else {
 		return drive_type == DRIVE_TYPE_144 ? 12500 : drive_type == DRIVE_TYPE_2HD ? 10410 : drive_mfm ? 6250 : 3100;

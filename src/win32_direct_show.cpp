@@ -187,9 +187,9 @@ void EMU::mute_direct_show_dev(bool l, bool r)
 }
 
 #ifdef USE_LASER_DISC
-bool EMU::open_movie_file(_TCHAR* file_path)
+bool EMU::open_movie_file(const _TCHAR* file_path)
 {
-	WCHAR	wFile[_MAX_PATH];
+	WCHAR wFile[_MAX_PATH];
 	MultiByteToWideChar(CP_ACP, 0, file_path, -1, wFile, _MAX_PATH);
 	
 	AM_MEDIA_TYPE video_mt;

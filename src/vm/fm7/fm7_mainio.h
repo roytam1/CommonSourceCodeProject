@@ -20,6 +20,11 @@
 #include "./joystick.h"
 
 
+class MB8877;
+#if defined(HAS_DMA)
+class HD6844;
+#endif
+
 class FM7_MAINIO : public DEVICE {
  private:
 	bool opn_psg_77av;
@@ -78,6 +83,9 @@ class FM7_MAINIO : public DEVICE {
 	bool irqstat_printer;
 	bool irqstat_keyboard;
    
+	bool irqreq_timer;
+	bool irqreq_printer;
+	bool irqreq_keyboard;
 
 	/* FD04 : R */
 	bool stat_fdmode_2hd; //  R/W : bit6, '0' = 2HD, '1' = 2DD. FM-77 Only.
@@ -108,7 +116,9 @@ class FM7_MAINIO : public DEVICE {
 	bool intstat_syndet;
 	bool intstat_rxrdy;
 	bool intstat_txrdy;
-	/* FD08 : Grafic pen, not implemented */
+	bool irqreq_syndet;
+	bool irqreq_rxrdy;
+	bool irqreq_txrdy;	/* FD08 : Grafic pen, not implemented */
 	/* FD09 : Grafic pen, not implemented */
 	/* FD0A : Grafic pen, not implemented */
 	/* FD0B : R */
@@ -174,16 +184,17 @@ class FM7_MAINIO : public DEVICE {
 	/* FD1D : R/W */
 	bool fdc_motor; // bit7 : '1' = ON, '0' = OFF
 	uint8 fdc_drvsel; // bit 1-0
-#if defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV40) || \
-  defined(_FM77AV40EX) || defined(FM77AV40SX)
-	bool fdc_2dd;
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+	//bool fdc_2dd;
 	// FD1E
-	uint8 fdc_drvindex[4];
-	uint8 fdc_miscreg;
+	uint8 fdc_drive_table[4];
+	uint8 fdc_reg_fd1e;
 #endif	
 	/* FD1F : R */
 	uint8 irqreg_fdc;
 	bool irqstat_fdc;
+	bool irqreq_fdc;
    
 	/* FD20,FD21 : W */
 	bool connect_kanjiroml1;
@@ -198,8 +209,8 @@ class FM7_MAINIO : public DEVICE {
 #ifdef HAS_MMR
 	bool mmr_enabled;
 	bool mmr_fast;
-	uint8 mmr_segment;
-	uint8 mmr_table[8 * 16];
+	//uint8 mmr_segment;
+	//uint8 mmr_table[8 * 16];
 	bool window_enabled;
 	uint32 window_offset;
 #endif	
@@ -209,8 +220,9 @@ class FM7_MAINIO : public DEVICE {
 	/* FD10: bit1 */
 	bool enable_initiator;
 #endif	
-#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20) || defined(_FM77AV20EX)
+#if defined(HAS_DMA)
 	bool intstat_dma;
+	uint32 dma_addr;
 #endif	
 	void set_clockmode(uint8 flags);
 	uint8 get_clockmode(void);
@@ -289,6 +301,9 @@ class FM7_MAINIO : public DEVICE {
 	void set_fdc_fd1c(uint8 val);
 	void set_fdc_fd1d(uint8 val);
 	
+	uint8 get_fdc_fd1e(void);
+	void set_fdc_fd1e(uint8 val);
+	
 	uint8 get_fdc_stat(void);
 	void set_fdc_cmd(uint8 val);
 	uint8 fdc_getdrqirq(void);
@@ -319,7 +334,10 @@ class FM7_MAINIO : public DEVICE {
 	DEVICE* joystick;
 	
         //DEVICE* beep;
-	DEVICE* fdc;
+	MB8877* fdc;
+#if defined(HAS_DMA)
+	HD6844* dmac;
+#endif
 	//FM7_PRINTER *printer;
 	//FM7_RS232C *rs232c;
 	/* */
@@ -344,7 +362,12 @@ class FM7_MAINIO : public DEVICE {
 	void initialize();
 
 	void write_data8(uint32 addr, uint32 data);
+	void write_dma_data8(uint32 addr, uint32 data);
+	void write_dma_io8(uint32 addr, uint32 data);
+   
 	uint32 read_data8(uint32 addr);
+	uint32 read_dma_data8(uint32 addr);
+	uint32 read_dma_io8(uint32 addr);
 
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(int id);
@@ -407,7 +430,7 @@ class FM7_MAINIO : public DEVICE {
 	{
 		opn[3] = p;
 	}
-	void set_context_fdc(DEVICE *p){
+	void set_context_fdc(MB8877 *p){
 		if(p == NULL) {
 	  		connect_fdc = false;
 		} else {
@@ -442,6 +465,10 @@ class FM7_MAINIO : public DEVICE {
 		z80 = p;
 #endif
 	}
-
+#if defined(HAS_DMA)
+	void set_context_dmac(HD6844 *p){
+		dmac = p;
+	}
+#endif
 };
 #endif

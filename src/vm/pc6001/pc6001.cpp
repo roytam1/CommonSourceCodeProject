@@ -353,7 +353,7 @@ int VM::sound_buffer_ptr()
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_cart(int drv, _TCHAR* file_path)
+void VM::open_cart(int drv, const _TCHAR* file_path)
 {
 	if(drv == 0) {
 		memory->open_cart(file_path);
@@ -392,7 +392,7 @@ int VM::access_lamp()
 	return status;
 }
 
-void VM::open_disk(int drv, _TCHAR* file_path, int bank)
+void VM::open_disk(int drv, const _TCHAR* file_path, int bank)
 {
 #if defined(_PC6601) || defined(_PC6601SR)
 	if(drv < 2) {
@@ -475,7 +475,7 @@ bool VM::get_disk_protected(int drv)
 	}
 }
 
-void VM::play_tape(_TCHAR* file_path)
+void VM::play_tape(const _TCHAR* file_path)
 {
 	if(support_sub_cpu) {
 		// support both p6/p6t and wav
@@ -486,7 +486,7 @@ void VM::play_tape(_TCHAR* file_path)
 	}
 }
 
-void VM::rec_tape(_TCHAR* file_path)
+void VM::rec_tape(const _TCHAR* file_path)
 {
 	if(support_sub_cpu) {
 		// support both p6/p6t and wav

@@ -735,7 +735,7 @@ void MEMORY::send_to_main(uint8 val)
 	d_cpu->write_signal(SIG_MC6801_SIO_RECV, val, 0xff);
 }
 
-void MEMORY::play_tape(_TCHAR* file_path)
+void MEMORY::play_tape(const _TCHAR* file_path)
 {
 	close_tape();
 	
@@ -748,7 +748,7 @@ void MEMORY::play_tape(_TCHAR* file_path)
 	}
 }
 
-void MEMORY::rec_tape(_TCHAR* file_path)
+void MEMORY::rec_tape(const _TCHAR* file_path)
 {
 	close_tape();
 	

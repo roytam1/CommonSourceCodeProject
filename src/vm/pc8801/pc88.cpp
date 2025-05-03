@@ -1719,7 +1719,7 @@ void PC88::key_down(int code, bool repeat)
 	}
 }
 
-void PC88::play_tape(_TCHAR* file_path)
+void PC88::play_tape(const _TCHAR* file_path)
 {
 	close_tape();
 	
@@ -1777,7 +1777,7 @@ void PC88::play_tape(_TCHAR* file_path)
 	}
 }
 
-void PC88::rec_tape(_TCHAR* file_path)
+void PC88::rec_tape(const _TCHAR* file_path)
 {
 	close_tape();
 	

@@ -19,7 +19,7 @@ FILEIO::~FILEIO(void)
 	Fclose();
 }
 
-bool FILEIO::IsFileExists(_TCHAR *filename)
+bool FILEIO::IsFileExists(const _TCHAR *filename)
 {
 	DWORD attr = GetFileAttributes(filename);
 	if(attr == -1) {
@@ -28,18 +28,18 @@ bool FILEIO::IsFileExists(_TCHAR *filename)
 	return ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
 }
 
-bool FILEIO::IsFileProtected(_TCHAR *filename)
+bool FILEIO::IsFileProtected(const _TCHAR *filename)
 {
 	return ((GetFileAttributes(filename) & FILE_ATTRIBUTE_READONLY) != 0);
 }
 
-void FILEIO::RemoveFile(_TCHAR *filename)
+void FILEIO::RemoveFile(const _TCHAR *filename)
 {
 	DeleteFile(filename);
 //	_tremove(filename);	// not supported on wince
 }
 
-bool FILEIO::Fopen(_TCHAR *filename, int mode)
+bool FILEIO::Fopen(const _TCHAR *filename, int mode)
 {
 	Fclose();
 	
@@ -495,6 +495,18 @@ int FILEIO::Fputc(int c)
 char *FILEIO::Fgets(char *str, int n)
 {
 	return fgets(str, n, fp);
+}
+
+int FILEIO::Fprintf(const char* format, ...)
+{
+	va_list ap;
+	char buffer[1024];
+	
+	va_start(ap, format);
+	vsprintf_s(buffer, 1024, format, ap);
+	va_end(ap);
+	
+	return fprintf_s(fp, "%s", buffer);
 }
 
 uint32 FILEIO::Fread(void* buffer, uint32 size, uint32 count)

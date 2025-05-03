@@ -56,7 +56,7 @@ int _vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, 
 }
 #endif
 
-bool check_file_extension(_TCHAR* file_path, _TCHAR* ext)
+bool check_file_extension(const _TCHAR* file_path, const _TCHAR* ext)
 {
 	int nam_len = _tcslen(file_path);
 	int ext_len = _tcslen(ext);
@@ -64,7 +64,7 @@ bool check_file_extension(_TCHAR* file_path, _TCHAR* ext)
 	return (nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0);
 }
 
-_TCHAR *get_file_path_without_extensiton(_TCHAR* file_path)
+_TCHAR *get_file_path_without_extensiton(const _TCHAR* file_path)
 {
 	static _TCHAR path[_MAX_PATH];
 	

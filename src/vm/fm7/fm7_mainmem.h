@@ -87,7 +87,8 @@ class FM7_MAINMEM : public DEVICE
 	uint8 fm7_mainmem_dictrom[0x40000]; // $20000-$2ffff, banked
 	uint8 fm7_mainmem_learndata[0x2000];
 #  endif	
-#  if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV20)
+#  if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
+      defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 	int extram_pages;
 	uint8 *fm7_mainmem_extram; // $40000- : MAX 768KB ($c0000)
 #  endif
@@ -119,12 +120,20 @@ class FM7_MAINMEM : public DEVICE
  public:
 	FM7_MAINMEM(VM* parent_vm, EMU* parent_emu);
 	~FM7_MAINMEM();
-	virtual uint32 read_data8(uint32 addr);
-	virtual void write_data8(uint32 addr, uint32 data);
+	uint32 read_data8(uint32 addr);
+	uint32 read_dma_data8(uint32 addr);
+	uint32 read_dma_io8(uint32 addr);
+   
+	void write_data8(uint32 addr, uint32 data);
+	void write_dma_data8(uint32 addr, uint32 data);
+	void write_dma_io8(uint32 addr, uint32 data);
+   
 	virtual uint32 read_data16(uint32 addr);
 	virtual void write_data16(uint32 addr, uint32 data);
+   
 	virtual uint32 read_data32(uint32 addr);
 	virtual void write_data32(uint32 addr, uint32 data);
+   
 	void initialize(void);
 	void wait(void);
 	void reset(void);
@@ -163,6 +172,7 @@ class FM7_MAINMEM : public DEVICE
 		
 	}
 	void write_signal(int sigid, uint32 data, uint32 mask);
+	uint32 read_signal(int sigid);
 	uint32 read_io8(uint32 addr) {
 		return mainio->read_io8(addr);
 	}

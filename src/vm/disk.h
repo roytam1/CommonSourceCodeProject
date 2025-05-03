@@ -31,6 +31,7 @@
 #define SPECIAL_DISK_X1TURBO_ALPHA	 1
 #define SPECIAL_DISK_X1_BATTEN		 2
 #define SPECIAL_DISK_FM7_GAMBLER	11
+#define SPECIAL_DISK_FM7_DEATHFORCE	12
 
 // d88 constant
 #define DISK_BUFFER_SIZE	0x380000	// 3.5MB
@@ -120,7 +121,7 @@ public:
 		}
 	}
 	
-	void open(_TCHAR path[], int bank);
+	void open(const _TCHAR* file_path, int bank);
 	void close();
 	bool get_track(int trk, int side);
 	bool make_track(int trk, int side);

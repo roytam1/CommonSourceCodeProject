@@ -201,7 +201,7 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-bool SUB::rec_tape(_TCHAR* file_path)
+bool SUB::rec_tape(const _TCHAR* file_path)
 {
 	close_tape();
 	

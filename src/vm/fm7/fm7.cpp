@@ -28,13 +28,15 @@
 
 #include "../mc6809.h"
 #include "../z80.h"
-#include "../ym2203.h"
 #include "../mb8877.h"
 
 #include "../pcm1bit.h"
 #include "../ym2203.h"
 #if defined(_FM77AV_VARIANTS)
 #include "mb61vh010.h"
+#endif
+#if defined(HAS_DMA)
+#include "hd6844.h"
 #endif
 
 #include "./fm7_mainio.h"
@@ -69,10 +71,13 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	drec = new DATAREC(this, emu);
 	pcm1bit = new PCM1BIT(this, emu);
 	fdc  = new MB8877(this, emu);
-	
+#if defined(HAS_DMA)
+	dmac = new HD6844(this, emu);
+#endif   
 	opn[0] = new YM2203(this, emu); // OPN
 	opn[1] = new YM2203(this, emu); // WHG
 	opn[2] = new YM2203(this, emu); // THG
+   
 #if !defined(_FM77AV_VARIANTS)
 	psg = new YM2203(this, emu);
 #endif
@@ -81,14 +86,14 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	alu = new MB61VH010(this, emu);
 #endif	
 	display = new DISPLAY(this, emu);
-	mainmem = new FM7_MAINMEM(this, emu);
 	mainio  = new FM7_MAINIO(this, emu);
+	mainmem = new FM7_MAINMEM(this, emu);
+
 #if defined(SUPPORT_DUMMY_DEVICE_LED)
 	led_terminate = new DUMMYDEVICE(this, emu);
 #else
 	led_terminate = new DEVICE(this, emu);
 #endif
-	
 	maincpu = new MC6809(this, emu);
 	subcpu = new MC6809(this, emu);
 #ifdef WITH_Z80
@@ -172,13 +177,10 @@ void VM::connect_bus(void)
 	 *  KEYBOARD : R/W
 	 *
 	 */
-	event->set_frames_per_sec(60.00);
-	event->set_lines_per_frame(400);
-#if defined(_FM77AV40) || defined(_FM77AV20)
-	event->set_context_cpu(dummycpu, MAINCLOCK_FAST_MMR * 2);
-#else
-	event->set_context_cpu(dummycpu, SUBCLOCK_NORMAL * 2);
-#endif
+	event->set_frames_per_sec(FRAMES_PER_SEC);
+	event->set_lines_per_frame(LINES_PER_FRAME);
+	event->set_context_cpu(dummycpu, (CPU_CLOCKS * 3) / 8); // MAYBE FIX With eFM77AV40/20.
+	//event->set_context_cpu(dummycpu, (int)(4.9152 * 1000.0 * 1000.0 / 4.0));
 	
 #if defined(_FM8)
 	mainclock = MAINCLOCK_SLOW;
@@ -194,11 +196,7 @@ void VM::connect_bus(void)
 		subclock = SUBCLOCK_SLOW;
 	}
 #endif
-#if defined(_FM77AV40) || defined(_FM77AV20)
 	event->set_context_cpu(maincpu, mainclock);
-#else
-	event->set_context_cpu(maincpu, mainclock);
-#endif	
 	event->set_context_cpu(subcpu,  subclock);
    
 #ifdef WITH_Z80
@@ -288,7 +286,13 @@ void VM::connect_bus(void)
 	subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
    
 	event->register_frame_event(joystick);
-		
+#if defined(HAS_DMA)
+	dmac->set_context_src(fdc, 0);
+	dmac->set_context_dst(mainmem, 0);
+	dmac->set_context_int_line(mainio, FM7_MAINIO_DMA_INT, 0xffffffff);
+	dmac->set_context_halt_line(maincpu, SIG_CPU_BUSREQ, 0xffffffff);
+	mainio->set_context_dmac(dmac);
+#endif
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
@@ -298,8 +302,11 @@ void VM::connect_bus(void)
 #else
 		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 #endif
-		//fdc->set_drive_rpm(i, 380);
-		fdc->set_drive_rpm(i, 0);
+#if defined(_FM77AV_VARIANTS)
+		fdc->set_drive_rpm(i, 600);
+#else		
+		fdc->set_drive_rpm(i, 360);
+#endif		
 		fdc->set_drive_mfm(i, true);
 	}
 #if defined(_FM77) || defined(_FM77L4)
@@ -329,7 +336,7 @@ void VM::update_config()
 
 #if defined(SIG_YM2203_LVOLUME) && defined(SIG_YM2203_RVOLUME)
 # if defined(USE_MULTIPLE_SOUNDCARDS)
-	i_limit = USE_MULTIPLE_SOUNDCARDS;
+	i_limit = USE_MULTIPLE_SOUNDCARDS - 1;
 # else
 #  if !defined(_FM77AV_VARIANTS) && !defined(_FM8)
 	i_limit = 4;
@@ -375,7 +382,9 @@ void VM::update_config()
 		opn[ii]->write_signal(SIG_YM2203_RVOLUME, vol2, 0xffffffff); // OPN: RIGHT
 	}
 #endif   
-
+#if defined(USE_MULTIPLE_SOUNDCARDS) && defined(DATAREC_SOUND)
+	drec->write_signal(SIG_DATAREC_VOLUME, (config.sound_device_level[USE_MULTIPLE_SOUNDCARDS - 1] + 32768) >> 3, 0xffffffff); 
+#endif
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
 	}
@@ -440,6 +449,7 @@ uint32 VM::get_led_status()
 	return led_terminate->read_signal(SIG_DUMMYDEVICE_READWRITE);
 }
 #endif // SUPPORT_DUMMY_DEVICE_LED
+
 
 // ----------------------------------------------------------------------------
 // debugger
@@ -524,7 +534,7 @@ void VM::key_up(int code)
 // user interface
 // ----------------------------------------------------------------------------
 
-void VM::open_disk(int drv, _TCHAR* file_path, int bank)
+void VM::open_disk(int drv, const _TCHAR* file_path, int bank)
 {
 	fdc->open_disk(drv, file_path, bank);
 }
@@ -549,12 +559,12 @@ bool VM::get_disk_protected(int drv)
 	return fdc->get_disk_protected(drv);
 }
 
-void VM::play_tape(_TCHAR* file_path)
+void VM::play_tape(const _TCHAR* file_path)
 {
 	bool value = drec->play_tape(file_path);
 }
 
-void VM::rec_tape(_TCHAR* file_path)
+void VM::rec_tape(const _TCHAR* file_path)
 {
 	bool value = drec->rec_tape(file_path);
 }

@@ -89,7 +89,7 @@
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM77AV20"
+#define DEVICE_NAME		"FUJITSU FM77 AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -98,7 +98,7 @@
 #define USE_DRIVE_TYPE 2
 
 #elif defined(_FM77AV20EX)
-#define DEVICE_NAME		"FUJITSU FM77AV20EX"
+#define DEVICE_NAME		"FUJITSU FM77 AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -108,7 +108,7 @@
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM77AV40"
+#define DEVICE_NAME		"FUJITSU FM77 AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
@@ -143,9 +143,11 @@
 #define USE_DEVICE_TYPE		3
 #define USE_SOUND_DEVICE_TYPE   8
 //# ifdef _FM77AV_VARIANTS
-//#  define USE_MULTIPLE_SOUNDCARDS 3
-//# else
 //#  define USE_MULTIPLE_SOUNDCARDS 4
+//# elif defined(_FM8)
+//#  define USE_MULTIPLE_SOUNDCARDS 2
+//# else // 7,77
+//#  define USE_MULTIPLE_SOUNDCARDS 5
 //# endif
 #endif
 
@@ -195,8 +197,21 @@
 
 // TODO: check refresh rate
 #define FRAMES_PER_SEC		59.94
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || defined(_FM77L4)
 #define LINES_PER_FRAME 	400
+#else
+#define LINES_PER_FRAME 	200
+#endif
+
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+#define CPU_CLOCKS		2016000
+#elif defined(_FM8)
+#define CPU_CLOCKS		1095000
+#else
 #define CPU_CLOCKS		2000000
+#endif
+
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
@@ -280,6 +295,11 @@ class DISPLAY;
 #if defined(_FM77AV_VARIANTS)
 class MB61VH010;
 #endif
+//#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+//    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(HAS_DMA)
+class HD6844;
+#endif
 class FM7_MAINMEM;
 class FM7_MAINIO;
 class KEYBOARD;
@@ -306,10 +326,10 @@ protected:
 	DEVICE* led_terminate;
 #endif
 	MB8877* fdc;
-        YM2203* opn[3];
-        YM2203* psg; // Is right? AY-3-8910 is right device.
-        //BEEP* beep;
-        PCM1BIT* pcm1bit;
+	YM2203* opn[3];
+	YM2203* psg; // Is right? AY-3-8910 is right device.
+	//BEEP* beep;
+	PCM1BIT* pcm1bit;
 	DATAREC *drec;
 	JOYSTICK *joystick;
 	
@@ -325,6 +345,9 @@ protected:
 #if defined(_FM77AV_VARIANTS)
 	MB61VH010 *alu;
 #endif
+#if defined(HAS_DMA)
+	HD6844 *dmac;
+#endif   
         DISPLAY* display;
         KEYBOARD* keyboard;
    
@@ -398,14 +421,14 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(int drv, _TCHAR* file_path, int offset);
+	void open_disk(int drv, const _TCHAR* file_path, int offset);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);
 	void set_disk_protected(int drv, bool value);
 	bool get_disk_protected(int drv);
 	
-	void play_tape(_TCHAR* file_path);
-	void rec_tape(_TCHAR* file_path);
+	void play_tape(const _TCHAR* file_path);
+	void rec_tape(const _TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
 	bool now_skip();
