@@ -203,6 +203,10 @@ public:
 	bool tape_inserted();
 	void push_play();
 	void push_stop();
+	void push_fast_forward();
+	void push_fast_rewind();
+	void push_apss_forward() {}
+	void push_apss_rewind() {}
 #if defined(_MZ800) || defined(_MZ1500)
 	void open_quickdisk(int drv, _TCHAR* file_path);
 	void close_quickdisk(int drv);

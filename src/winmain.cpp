@@ -386,6 +386,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 				if(emu->message_count > 0) {
 					_stprintf_s(buf, 256, _T("%s - %s"), _T(DEVICE_NAME), emu->message);
 					emu->message_count--;
+				} else if(now_skip) {
+					_stprintf_s(buf, 256, _T("%s - Skip Frames"), _T(DEVICE_NAME));
 				} else {
 					_stprintf_s(buf, 256, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
 				}
@@ -985,6 +987,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				emu->close_tape();
 			}
 			break;
+		case ID_PLAY_TAPE_SOUND:
+			config.tape_sound = !config.tape_sound;
+			break;
 		case ID_USE_WAVE_SHAPER:
 			config.wave_shaper = !config.wave_shaper;
 			break;
@@ -1019,6 +1024,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_STOP_BUTTON:
 			if(emu) {
 				emu->push_stop();
+			}
+			break;
+		case ID_FAST_FORWARD:
+			if(emu) {
+				emu->push_fast_forward();
+			}
+			break;
+		case ID_FAST_REWIND:
+			if(emu) {
+				emu->push_fast_rewind();
+			}
+			break;
+		case ID_APSS_FORWARD:
+			if(emu) {
+				emu->push_apss_forward();
+			}
+			break;
+		case ID_APSS_REWIND:
+			if(emu) {
+				emu->push_apss_rewind();
 			}
 			break;
 #endif
@@ -1588,7 +1613,12 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 #ifdef USE_TAPE_BUTTON
 		EnableMenuItem(hMenu, ID_PLAY_BUTTON, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
 		EnableMenuItem(hMenu, ID_STOP_BUTTON, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_FAST_FORWARD, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_FAST_REWIND, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_APSS_FORWARD, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
+		EnableMenuItem(hMenu, ID_APSS_REWIND, emu->tape_inserted() ? MF_ENABLED : MF_GRAYED);
 #endif
+		CheckMenuItem(hMenu, ID_PLAY_TAPE_SOUND, config.tape_sound ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_USE_WAVE_SHAPER, config.wave_shaper ? MF_CHECKED : MF_UNCHECKED);
 		CheckMenuItem(hMenu, ID_DIRECT_LOAD_MZT, config.direct_load_mzt ? MF_CHECKED : MF_UNCHECKED);
 #ifdef USE_TAPE_BAUD
@@ -1884,7 +1914,7 @@ void open_tape_dialog(HWND hWnd, bool play)
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 #if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6001MK2SR) || defined(_PC6601) || defined(_PC6601SR)
-		_T("Supported Files (*.wav;*.p6;*.p6t;*.cas)\0*.wav;*.p6;*.p6t;*.cas\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.wav;*.cas;*.p6;*.p6t)\0*.wav;*.cas;*.p6;*.p6t\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_PC8001SR) || defined(_PC8801MA) || defined(_PC98DO)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
@@ -1897,6 +1927,8 @@ void open_tape_dialog(HWND hWnd, bool play)
 #elif defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
 		play ? _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+#elif defined(_FM7)
+		_T("Supported Files (*.wav;*.cas;*.t77)\0*.wav;*.cas;*.t77\0All Files (*.*)\0*.*\0\0"),
 #elif defined(TAPE_BINARY_ONLY)
 		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #else
@@ -2006,7 +2038,8 @@ void open_any_file(_TCHAR* path)
 	   check_file_extension(path, _T(".m12")) || 
 	   check_file_extension(path, _T(".mti")) || 
 	   check_file_extension(path, _T(".mtw")) || 
-	   check_file_extension(path, _T(".tap"))) {
+	   check_file_extension(path, _T(".tap")) || 
+	   check_file_extension(path, _T(".t77"))) {
 		UPDATE_HISTORY(path, config.recent_tape_path);
 		_tcscpy_s(config.initial_tape_dir, _MAX_PATH, get_parent_dir(path));
 		emu->play_tape(path);

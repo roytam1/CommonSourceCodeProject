@@ -129,6 +129,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		event->set_context_sound(opm2);
 	}
 	event->set_context_sound(psg);
+	event->set_context_sound(drec);
 	
 	drec->set_context_out(pio, SIG_I8255_PORT_B, 0x02);
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
@@ -626,6 +627,39 @@ void VM::close_tape()
 bool VM::tape_inserted()
 {
 	return drec->tape_inserted();
+}
+
+void VM::push_play()
+{
+	drec->set_ff_rew(0);
+	drec->set_remote(true);
+}
+
+void VM::push_stop()
+{
+	drec->set_remote(false);
+}
+
+void VM::push_fast_forward()
+{
+	drec->set_ff_rew(1);
+	drec->set_remote(true);
+}
+
+void VM::push_fast_rewind()
+{
+	drec->set_ff_rew(-1);
+	drec->set_remote(true);
+}
+
+void VM::push_apss_forward()
+{
+	drec->do_apss(1);
+}
+
+void VM::push_apss_rewind()
+{
+	drec->do_apss(-1);
 }
 
 bool VM::now_skip()

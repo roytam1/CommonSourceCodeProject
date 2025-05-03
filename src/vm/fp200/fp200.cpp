@@ -12,6 +12,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../datarec.h"
 #include "../i8080.h"
 #include "../memory.h"
 #include "../rp5c01.h"
@@ -35,6 +36,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
 	
+	drec = new DATAREC(this, emu);
 	cpu = new I8080(this, emu);	// i8085
 	memory = new MEMORY(this, emu);
 	rtc = new RP5C01(this, emu);
@@ -43,10 +45,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu);
+	event->set_context_sound(drec);
 	
+	drec->set_context_out(io, SIG_IO_CMT, 1);
 	cpu->set_context_sod(io, SIG_IO_SOD, 1);
 	
 	io->set_context_cpu(cpu);
+	io->set_context_drec(drec);
 	io->set_context_rtc(rtc);
 	
 	// cpu bus
@@ -72,6 +77,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	memory->set_memory_r(0x0000, 0x7fff, rom);
 	memory->set_memory_rw(0x8000, 0xffff, ram);
+	memory->set_wait_rw(0x0000, 0xffff, 1);
 	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -189,22 +195,25 @@ void VM::key_up(int code)
 
 void VM::play_tape(_TCHAR* file_path)
 {
-	io->play_tape(file_path);
+	io->close_tape();
+	drec->play_tape(file_path);
 }
 
 void VM::rec_tape(_TCHAR* file_path)
 {
+	drec->close_tape();
 	io->rec_tape(file_path);
 }
 
 void VM::close_tape()
 {
+	drec->close_tape();
 	io->close_tape();
 }
 
 bool VM::tape_inserted()
 {
-	return io->tape_inserted();
+	return drec->tape_inserted() || io->tape_inserted();
 }
 
 bool VM::now_skip()
@@ -217,5 +226,31 @@ void VM::update_config()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
 	}
+}
+
+#define STATE_VERSION	1
+
+void VM::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		device->save_state(state_fio);
+	}
+	state_fio->Fwrite(ram, sizeof(ram), 1);
+}
+
+bool VM::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	for(DEVICE* device = first_device; device; device = device->next_device) {
+		if(!device->load_state(state_fio)) {
+			return false;
+		}
+	}
+	state_fio->Fread(ram, sizeof(ram), 1);
+	return true;
 }
 

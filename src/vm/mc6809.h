@@ -14,6 +14,7 @@
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"
+#include "../fileio.h"
 
 class MC6809 : public DEVICE
 {
@@ -31,8 +32,9 @@ private:
 	uint8 cc;
 	pair ea;	/* effective address */
 	
-	uint8 int_state;
+	uint32 int_state;
 	int icount;
+	int extra_icount;
 	
 	inline uint32 RM16(uint32 Addr);
 	inline void WM16(uint32 Addr, pair *p);
@@ -73,6 +75,7 @@ private:
 	inline void andcc();
 	inline void asla();
 	inline void aslb();
+	inline void aslcc_in();
 	inline void asl_di();
 	inline void asl_ex();
 	inline void asl_ix();
@@ -106,6 +109,8 @@ private:
 	inline void bsr();
 	inline void bvc();
 	inline void bvs();
+	inline void clca();
+	inline void clcb();
 	inline void clra();
 	inline void clrb();
 	inline void clr_di();
@@ -146,6 +151,11 @@ private:
 	inline void com_ix();
 	inline void cwai();
 	inline void daa();
+	inline void dcca();
+	inline void dccb();
+	inline void dcc_di();
+	inline void dcc_ex();
+	inline void dcc_ix();
 	inline void deca();
 	inline void decb();
 	inline void dec_di();
@@ -160,6 +170,8 @@ private:
 	inline void eorb_im();
 	inline void eorb_ix();
 	inline void exg();
+	inline void flag8_im();
+	inline void flag16_im();
 	inline void illegal();
 	inline void inca();
 	inline void incb();
@@ -232,6 +244,11 @@ private:
 	inline void neg_di();
 	inline void neg_ex();
 	inline void neg_ix();
+	inline void ngca();
+	inline void ngcb();
+	inline void ngc_di();
+	inline void ngc_ex();
+	inline void ngc_ix();
 	inline void nop();
 	inline void ora_di();
 	inline void ora_ex();
@@ -258,6 +275,7 @@ private:
 	inline void ror_di();
 	inline void ror_ex();
 	inline void ror_ix();
+	inline void rst();
 	inline void rti();
 	inline void rts();
 	inline void sbca_di();
@@ -314,6 +332,7 @@ private:
 	inline void swi();
 	inline void sync();
 	inline void tfr();
+	inline void trap();
 	inline void tsta();
 	inline void tstb();
 	inline void tst_di();
@@ -328,6 +347,16 @@ public:
 	void reset();
 	int run(int clock);
 	void write_signal(int id, uint32 data, uint32 mask);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
+	void set_extra_clock(int clock)
+	{
+		extra_icount += clock;
+	}
+	int get_extra_clock()
+	{
+		return extra_icount;
+	}
 	uint32 get_pc()
 	{
 		return ppc.w.l;

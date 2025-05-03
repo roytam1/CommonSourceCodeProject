@@ -88,6 +88,7 @@
 #define USE_FD2
 #define FD_BASE_NUMBER		0
 #define USE_TAPE
+#define USE_TAPE_BUTTON
 #ifdef _X1TWIN
 #define USE_CART1
 #endif
@@ -244,6 +245,12 @@ public:
 	void rec_tape(_TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
+	void push_play();
+	void push_stop();
+	void push_fast_forward();
+	void push_fast_rewind();
+	void push_apss_forward();
+	void push_apss_rewind();
 	bool now_skip();
 #ifdef _X1TWIN
 	void open_cart(int drv, _TCHAR* file_path);

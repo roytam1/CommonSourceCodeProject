@@ -718,6 +718,26 @@ void EMU::push_stop()
 {
 	vm->push_stop();
 }
+
+void EMU::push_fast_forward()
+{
+	vm->push_fast_forward();
+}
+
+void EMU::push_fast_rewind()
+{
+	vm->push_fast_rewind();
+}
+
+void EMU::push_apss_forward()
+{
+	vm->push_apss_forward();
+}
+
+void EMU::push_apss_rewind()
+{
+	vm->push_apss_rewind();
+}
 #endif
 
 #ifdef USE_BINARY_FILE1

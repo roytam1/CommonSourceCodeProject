@@ -67,6 +67,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg);
 	event->set_context_sound(pcm);
 	event->set_context_sound(ldp);
+	event->set_context_sound(drec);
 	
 	drec->set_context_out(psg, SIG_YM2203_PORT_A, 0x80);
 	pio->set_context_port_a(memory, SIG_MEMORY_SEL, 0xff, 0);

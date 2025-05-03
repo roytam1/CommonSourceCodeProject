@@ -45,6 +45,7 @@ private:
 	int register_id;
 	
 	int sample_rate;
+	double sample_usec;
 	int buffer_ptr, buffer_length;
 	uint8 *buffer, *buffer_bak;
 #ifdef DATAREC_SOUND
@@ -58,6 +59,11 @@ private:
 	int apss_ptr, apss_count, apss_remain;
 	bool apss_signals;
 	
+	int pcm_changed;
+	uint32 pcm_prev_clock;
+	int pcm_positive_clocks, pcm_negative_clocks;
+	int pcm_max_vol, pcm_last_vol;
+	
 	void update_event();
 	void close_file();
 	
@@ -67,6 +73,7 @@ private:
 	int load_m5_cas_image();
 	int load_p6_image(bool is_p6t);
 	int load_tap_image();
+	int load_t77_image();
 	int load_mzt_image();
 	
 public:
@@ -78,6 +85,11 @@ public:
 		init_output_signals(&outputs_end);
 		init_output_signals(&outputs_top);
 		init_output_signals(&outputs_apss);
+#ifdef DATAREC_PCM_VOLUME
+		pcm_max_vol = DATAREC_PCM_VOLUME;
+#else
+		pcm_max_vol = 8000;
+#endif
 	}
 	~DATAREC() {}
 	
@@ -92,13 +104,15 @@ public:
 	}
 	void event_frame();
 	void event_callback(int event_id, int err);
-#ifdef DATAREC_SOUND
 	void mix(int32* buffer, int cnt);
-#endif
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
+	void init_pcm(int rate, int volume)
+	{
+		pcm_max_vol = volume;
+	}
 	void set_context_out(DEVICE* device, int id, uint32 mask)
 	{
 		register_output_signal(&outputs_out, device, id, mask);

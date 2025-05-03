@@ -101,6 +101,7 @@ void load_config()
 	config.ignore_crc = GetPrivateProfileBool(_T("Control"), _T("IgnoreCRC"), config.ignore_crc, config_path);
 #endif
 #ifdef USE_TAPE
+	config.tape_sound = GetPrivateProfileBool(_T("Control"), _T("TapeSound"), config.tape_sound, config_path);
 	config.wave_shaper = GetPrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
 	config.direct_load_mzt = GetPrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
 	config.baud_high = GetPrivateProfileBool(_T("Control"), _T("BaudHigh"), config.baud_high, config_path);
@@ -222,6 +223,7 @@ void save_config()
 	WritePrivateProfileBool(_T("Control"), _T("IgnoreCRC"), config.ignore_crc, config_path);
 #endif
 #ifdef USE_TAPE
+	WritePrivateProfileBool(_T("Control"), _T("TapeSound"), config.tape_sound, config_path);
 	WritePrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
 	WritePrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
 	WritePrivateProfileBool(_T("Control"), _T("BaudHigh"), config.baud_high, config_path);

@@ -542,6 +542,10 @@ public:
 #ifdef USE_TAPE_BUTTON
 	void push_play();
 	void push_stop();
+	void push_fast_forward();
+	void push_fast_rewind();
+	void push_apss_forward();
+	void push_apss_rewind();
 #endif
 #ifdef USE_LASER_DISC
 	void open_laser_disc(_TCHAR* file_path);

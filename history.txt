@@ -1,3 +1,22 @@
+3/12/2015
+
+[VM/DATAREC] support to play tape sound
+[VM/DATAREC] support FUJITSU FM-7/77 t77 format tape image (thanks Mr.Artane.)
+[VM/EVENT] suppot to change secondary cpu clock (thanks Mr.Artane.)
+[VM/MC6809] improve mc6809 instructions (thanks Mr.Artane.)
+[VM/MEMORY] support memory wait
+[VM/PTF20] support save/load state
+[VM/UPD765A] fix not to write sector because of tc if no data transfered
+
+[FP200] support save/load state
+[FP200] support memory and io wait
+[HC20] support save/load state
+[HC40] support save/load state
+[HC80] support save/load state
+[X07] support save/load state
+[X1TURBO] support cmt control buttons
+
+
 3/4/2015
 
 [VM/I8255] fix save/load state

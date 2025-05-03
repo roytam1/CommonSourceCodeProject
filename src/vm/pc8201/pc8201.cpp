@@ -56,6 +56,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(pcm);
+	event->set_context_sound(drec);
 	
 	drec->set_context_out(cpu, SIG_I8085_SID, 1);
 	cpu->set_context_sod(cmt, SIG_CMT_SOD, 1);

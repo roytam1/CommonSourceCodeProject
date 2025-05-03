@@ -94,6 +94,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu_16, 5000000);
 #endif
 	event->set_context_sound(pcm);
+	event->set_context_sound(drec);
 	
 	drec->set_context_out(cmt, SIG_CMT_OUT, 1);
 	drec->set_context_remote(cmt, SIG_CMT_REMOTE, 1);
@@ -412,12 +413,25 @@ bool VM::tape_inserted()
 
 void VM::push_play()
 {
-	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+	drec->set_ff_rew(0);
+	drec->set_remote(true);
 }
 
 void VM::push_stop()
 {
-	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+	drec->set_remote(false);
+}
+
+void VM::push_fast_forward()
+{
+	drec->set_ff_rew(1);
+	drec->set_remote(true);
+}
+
+void VM::push_fast_rewind()
+{
+	drec->set_ff_rew(-1);
+	drec->set_remote(true);
 }
 
 bool VM::now_skip()

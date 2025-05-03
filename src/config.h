@@ -78,6 +78,7 @@ typedef struct {
 	bool ignore_crc;
 #endif
 #ifdef USE_TAPE
+	bool tape_sound;
 	bool wave_shaper;
 	bool direct_load_mzt;
 	bool baud_high;
