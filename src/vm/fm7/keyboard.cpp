@@ -695,7 +695,7 @@ const struct key_tbl_t kana_shift_key[] = {
 uint8 KEYBOARD::get_keycode_high(void)
 {
 	uint8 data = 0x00;
-	if((keycode_7 & 0x0100) != 0) data |= 0x01;
+	if((keycode_7 & 0x0100) != 0) data = 0x80;
 	return data;
 }
 
@@ -902,7 +902,7 @@ void KEYBOARD::key_up(uint32 vk)
 		if(code_7 < 0x200) {   
 			code_7 = scancode | 0x80;
 			keycode_7 = code_7;
-			mainio->write_signal(FM7_MAINIO_PUSH_KEYBOARD, code_7, 0x0ff);
+			//mainio->write_signal(FM7_MAINIO_PUSH_KEYBOARD, code_7, 0x0ff);
 			mainio->write_signal(FM7_MAINIO_KEYBOARDIRQ, 1, 1);
 			display->write_signal(SIG_FM7_SUB_KEY_FIRQ, 1, 1);
 		}
@@ -935,7 +935,7 @@ void KEYBOARD::key_down(uint32 vk)
 	if(key_pressed_flag[scancode] != false) return;
 	if(code_7 < 0x200) {
 		keycode_7 = code_7;
-		mainio->write_signal(FM7_MAINIO_PUSH_KEYBOARD, code_7, 0x1ff);
+		//mainio->write_signal(FM7_MAINIO_PUSH_KEYBOARD, code_7, 0x1ff);
 		mainio->write_signal(FM7_MAINIO_KEYBOARDIRQ, 1, 1);
 		display->write_signal(SIG_FM7_SUB_KEY_FIRQ, 1, 1);
 		key_pressed_flag[scancode] = true;
@@ -994,7 +994,7 @@ void KEYBOARD::do_repeatkey(uint16 scancode)
 	code_7 = scan2fmkeycode(scancode);
 	if(code_7 < 0x200) {
 		keycode_7 = code_7;
-		mainio->write_signal(FM7_MAINIO_PUSH_KEYBOARD, code_7, 0x1ff);
+		//mainio->write_signal(FM7_MAINIO_PUSH_KEYBOARD, code_7, 0x1ff);
 		mainio->write_signal(FM7_MAINIO_KEYBOARDIRQ, 1, 1);
 		display->write_signal(SIG_FM7_SUB_KEY_FIRQ, 1, 1);
 	}
@@ -1099,15 +1099,13 @@ void KEYBOARD::reset(void)
 uint8 KEYBOARD::read_data_reg(void)
 {
 #if 1
-	//if(rxrdy_status) {
-		if(!data_fifo->empty()) {
-			datareg = data_fifo->read() & 0xff;
-		}
-	//}
+	if(!data_fifo->empty()) {
+		datareg = data_fifo->read() & 0xff;
+	}
 	if(data_fifo->empty()) {
 		write_signals(&rxrdy, 0x00);
 	} else {
-		//write_signals(&rxrdy, 0xff);
+		write_signals(&rxrdy, 0xff);
 	}
 	return datareg;
 #endif
@@ -1453,6 +1451,7 @@ void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
 		register_event(this, ID_KEYBOARD_ACK, 5, false, NULL); // Delay 5us until ACK is up.
 	} else if(id == SIG_FM7KEY_RXRDY) {
 		rxrdy_status = ((data & mask) != 0);
+		
 	} else if(id == SIG_FM7KEY_ACK) {
 		key_ack_status = ((data & mask) != 0);
 	}
@@ -1465,10 +1464,10 @@ uint32 KEYBOARD::read_data8(uint32 addr)
 	uint32 retval = 0xff;
 	switch(addr) {
 		case 0x00:
-			retval = (keycode_7 >> 1) & 0x80;
+			retval = get_keycode_high();
 			break;
 		case 0x01:
-			retval = keycode_7 & 0xff;
+			retval = get_keycode_low();
 			break;
 #if defined(_FM77AV_VARIANTS)			
 		case 0x31:

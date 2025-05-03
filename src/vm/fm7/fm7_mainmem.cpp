@@ -13,14 +13,15 @@ void FM7_MAINMEM::reset()
    	waitfactor = 0;
 	waitcount = 0;
 	ioaccess_wait = false;
-	sub_halted = false;
+	sub_halted = (display->read_signal(SIG_DISPLAY_HALT) == 0) ? false : true;
 	first_pass = true;
 	flag_debug = false;
-#if defined(_FM77AV_VARIANTS)	
+#if defined(_FM77AV_VARIANTS)
+	memset(fm7_bootram, 0x00, 0x1e0);
 	if((config.boot_mode & 3) == 0) {
-		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1800], 0x200 * sizeof(uint8));
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1800], 0x1e0 * sizeof(uint8));
 	} else {
-		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1a00], 0x200 * sizeof(uint8));
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1a00], 0x1e0 * sizeof(uint8));
 	}
 	fm7_bootram[0x1fe] = 0xfe; // Set reset vector.
 	fm7_bootram[0x1ff] = 0x00; //
@@ -362,7 +363,8 @@ uint32 FM7_MAINMEM::read_data8(uint32 addr)
 	}
 #if defined(_FM77AV_VARIANTS)
 	else if(bank == FM7_MAINMEM_AV_DIRECTACCESS) {
-	  if(display->read_signal(SIG_DISPLAY_HALT) != 0) return 0xff; // Not halt
+	   	if(!sub_halted) return 0xff; // Not halt
+	  //if(display->read_signal(SIG_DISPLAY_HALT) != 0) return 0xff; // Not halt
 		//printf("READ MMR : %04x to %05x\n", addr, realaddr);
 		return display->read_data8(realaddr); // Okay?
 	}
@@ -398,7 +400,8 @@ void FM7_MAINMEM::write_data8(uint32 addr, uint32 data)
 	}
 #if defined(_FM77AV_VARIANTS)
 	else if(bank == FM7_MAINMEM_AV_DIRECTACCESS) {
-       		if(display->read_signal(SIG_DISPLAY_HALT) != 0) return; // Not halt
+       		if(!sub_halted) return; // Not halt
+       		//if(display->read_signal(SIG_DISPLAY_HALT) != 0) return; // Not halt
 		//printf("WRITE MMR : %04x to %05x\n", addr, realaddr);
 		display->write_data8(realaddr, data); // Okay?
 		return;
@@ -683,9 +686,9 @@ void FM7_MAINMEM::initialize(void)
 	if(diag_load_initrom) diag_load_bootrom_bas = true;
 	if(diag_load_initrom) diag_load_bootrom_dos = true;
 	if((config.boot_mode & 0x03) == 0) {
-		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1800], 0x200 * sizeof(uint8));
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1800], 0x1e0 * sizeof(uint8));
 	} else {
-		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1a00], 0x200 * sizeof(uint8));
+		memcpy(fm7_bootram, &fm7_mainmem_initrom[0x1a00], 0x1e0 * sizeof(uint8));
 	}
 	fm7_bootram[0x1fe] = 0xfe; // Set reset vector.
 	fm7_bootram[0x1ff] = 0x00; //

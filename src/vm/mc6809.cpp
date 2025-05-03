@@ -66,7 +66,7 @@
 
 /* macros to access memory */
 #define IMMBYTE(b)	b = ROP_ARG(PCD); PC++
-#define IMMWORD(w)	w.d = (ROP_ARG(PCD) << 8) | ROP_ARG((PCD + 1) & 0xffff); PC += 2
+#define IMMWORD(w)	w.b.h = ROP_ARG(PCD) ; w.b.l = ROP_ARG((PCD + 1) & 0xffff); PC += 2
 
 #define PUSHBYTE(b)	--S; WM(SD,b)
 #define PUSHWORD(w)	--S; WM(SD, w.b.l); --S; WM(SD, w.b.h)
@@ -107,8 +107,8 @@
 #define SET_FLAGS8D(a)		{CC |= flags8d[a & 0xff];}
 
 /* combos */
-#define SET_NZ8(a)		{SET_N8(a); SET_Z(a);}
-#define SET_NZ16(a)		{SET_N16(a); SET_Z(a);}
+#define SET_NZ8(a)		{SET_N8(a); SET_Z8(a);}
+#define SET_NZ16(a)		{SET_N16(a); SET_Z16(a);}
 #define SET_FLAGS8(a,b,r)	{SET_N8(r); SET_Z8(r); SET_V8(a, b, r); SET_C8(r);}
 #define SET_FLAGS16(a,b,r)	{SET_N16(r); SET_Z16(r); SET_V16(a, b, r); SET_C16(r);}
 #define SET_HNZVC8(a,b,r)	{SET_H(a,b,r);SET_N8(r);SET_Z8(r);SET_V8(a,b,r);SET_C8(r);}
@@ -127,7 +127,7 @@
     tmpea.d = 0;				\
     tmpea.b.h = DP;				\
     IMMBYTE(tmpea.b.l);				\
-    EAP = tmpea; }
+    EAD = tmpea.w.l; }
 
 #define IMM8		EAD = PCD; PC++
 #define IMM16		EAD = PCD; PC += 2
@@ -156,15 +156,15 @@
 /* macros for branch instructions */
 inline void MC6809::BRANCH(bool cond)
 {
-	uint8 t;
+	volatile uint8 t;
 	IMMBYTE(t);
 	if(!cond) return;
-	//if(t >= 0x80) {
-	//	PC = PC - 0x0100 + t;
-	//} else {
-	//	PC = PC + t;
-	//}
-	PC = PC + SIGNED(t);
+	if(t >= 0x80) {
+		PC = PC - 0x0100 + t;
+	} else {
+		PC = PC + t;
+	}
+	//PC = PC + SIGNED(t);
 	PC = PC & 0xffff;
 }
 
@@ -618,7 +618,7 @@ void MC6809::run_one_opecode()
 		if(d_debugger->now_suspended) {
 			emu->mute_sound();
 			while(d_debugger->now_debugging && d_debugger->now_suspended) {
-				Sleep(10);
+			  Sleep(10);
 			}
 		}
 		if(d_debugger->now_debugging) {
@@ -692,6 +692,17 @@ uint32 MC6809::debug_read_data8(uint32 addr)
 	return d_mem_stored->read_data8(addr);
 }
 
+void MC6809::debug_write_io8(uint32 addr, uint32 data)
+{
+		
+}
+
+uint32 MC6809::debug_read_io8(uint32 addr)
+{
+	uint8 val = d_mem_stored->read_io8(addr);
+	return val;
+}
+
 bool MC6809::debug_write_reg(_TCHAR *reg, uint32 data)
 {
 	if(_tcsicmp(reg, _T("PC")) == 0) {
@@ -723,16 +734,25 @@ bool MC6809::debug_write_reg(_TCHAR *reg, uint32 data)
 void MC6809::debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	_stprintf_s(buffer, buffer_len,
-		 _T("PC = %04X  CC = [%c%c%c%c%c%c%c%c]\nA = %02X  B = %02X  DP = %02X  X = %04X  Y = %04X  U = %04X  S = %04X  EA = %04X"),
+		 _T("PC = %04x INTR=[%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x"),
 		 PCD,
-		 ((CC & CC_E ) == 0) ? '-' : 'E', 
+		 ((int_state & MC6809_IRQ_BIT) == 0)   ? "----" : " IRQ",
+		 ((int_state & MC6809_FIRQ_BIT) == 0)  ? "----" : "FIRQ",
+		 ((int_state & MC6809_NMI_BIT) == 0)   ? "----" : " NMI",
+		 ((int_state & MC6809_HALT_BIT) == 0)  ? "----" : "HALT",
+		 ((int_state & MC6809_CWAI_IN) == 0)   ? "--" : "CI",
+		 ((int_state & MC6809_CWAI_OUT) == 0)  ? "--" : "CO",
+		 ((int_state & MC6809_SYNC_IN) == 0)   ? "--" : "SI",
+		 ((int_state & MC6809_SYNC_OUT) == 0)  ? "--" : "SO",
+		 ((int_state & MC6809_INSN_HALT) == 0) ? "----" : "TRAP",
+		 ((CC & CC_E) == 0)  ? '-' : 'E', 
 		 ((CC & CC_IF) == 0) ? '-' : 'F', 
-		 ((CC & CC_H ) == 0) ? '-' : 'H', 
+		 ((CC & CC_H) == 0)  ? '-' : 'H', 
 		 ((CC & CC_II) == 0) ? '-' : 'I', 
-		 ((CC & CC_N ) == 0) ? '-' : 'N', 
-		 ((CC & CC_Z ) == 0) ? '-' : 'Z', 
-		 ((CC & CC_V ) == 0) ? '-' : 'V', 
-		 ((CC & CC_C ) == 0) ? '-' : 'C',
+		 ((CC & CC_N) == 0)  ? '-' : 'N', 
+		 ((CC & CC_Z) == 0)  ? '-' : 'Z', 
+		 ((CC & CC_V) == 0)  ? '-' : 'V', 
+		 ((CC & CC_C) == 0)  ? '-' : 'C',
 		 A, B, DP,
 		 X, Y, U, S,
 		 EAD
@@ -786,13 +806,17 @@ enum m6809_addressing_modes
 static const opcodeinfo m6809_pg0opcodes[] =
 {
 	{ 0x00, 2, _T("NEG"),   DIR    },
+	{ 0x01, 2, _T("NEG"),   DIR    },
+	{ 0x02, 2, _T("NGC"),   DIR    },
 	{ 0x03, 2, _T("COM"),   DIR    },
 	{ 0x04, 2, _T("LSR"),   DIR    },
+	{ 0x05, 2, _T("LSR"),   DIR    },
 	{ 0x06, 2, _T("ROR"),   DIR    },
 	{ 0x07, 2, _T("ASR"),   DIR    },
 	{ 0x08, 2, _T("ASL"),   DIR    },
 	{ 0x09, 2, _T("ROL"),   DIR    },
 	{ 0x0A, 2, _T("DEC"),   DIR    },
+	{ 0x0B, 2, _T("DCC"),   DIR    },
 	{ 0x0C, 2, _T("INC"),   DIR    },
 	{ 0x0D, 2, _T("TST"),   DIR    },
 	{ 0x0E, 2, _T("JMP"),   DIR    },
@@ -802,10 +826,14 @@ static const opcodeinfo m6809_pg0opcodes[] =
 	{ 0x11, 1, _T("page2"), PG2    },
 	{ 0x12, 1, _T("NOP"),   INH    },
 	{ 0x13, 1, _T("SYNC"),  INH    },
+	{ 0x14, 1, _T("HALT"),  INH    },
+	{ 0x15, 1, _T("HALT"),  INH    },
 	{ 0x16, 3, _T("LBRA"),  LREL   },
 	{ 0x17, 3, _T("LBSR"),  LREL   },
+	{ 0x18, 1, _T("ASLCC"), INH    },
 	{ 0x19, 1, _T("DAA"),   INH    },
 	{ 0x1A, 2, _T("ORCC"),  IMM    },
+	{ 0x1B, 1, _T("NOP"),   INH    },
 	{ 0x1C, 2, _T("ANDCC"), IMM    },
 	{ 0x1D, 1, _T("SEX"),   INH    },
 	{ 0x1E, 2, _T("EXG"),   IMM_RR },
@@ -836,6 +864,7 @@ static const opcodeinfo m6809_pg0opcodes[] =
 	{ 0x35, 2, _T("PULS"),  INH    },
 	{ 0x36, 2, _T("PSHU"),  INH    },
 	{ 0x37, 2, _T("PULU"),  INH    },
+	{ 0x38, 2, _T("ANDCC"), IMM    },
 	{ 0x39, 1, _T("RTS"),   INH    },
 	{ 0x3A, 1, _T("ABX"),   INH    },
 	{ 0x3B, 1, _T("RTI"),   INH    },
@@ -844,50 +873,68 @@ static const opcodeinfo m6809_pg0opcodes[] =
 	{ 0x3F, 1, _T("SWI"),   INH    },
 
 	{ 0x40, 1, _T("NEGA"),  INH    },
+	{ 0x41, 1, _T("NEGA"),  INH    },
+	{ 0x42, 1, _T("NGGA"),  INH    },
 	{ 0x43, 1, _T("COMA"),  INH    },
 	{ 0x44, 1, _T("LSRA"),  INH    },
+	{ 0x45, 1, _T("LSRA"),  INH    },
 	{ 0x46, 1, _T("RORA"),  INH    },
 	{ 0x47, 1, _T("ASRA"),  INH    },
 	{ 0x48, 1, _T("ASLA"),  INH    },
 	{ 0x49, 1, _T("ROLA"),  INH    },
 	{ 0x4A, 1, _T("DECA"),  INH    },
+	{ 0x4B, 1, _T("DCCA"),  INH    },
 	{ 0x4C, 1, _T("INCA"),  INH    },
 	{ 0x4D, 1, _T("TSTA"),  INH    },
+	{ 0x4E, 1, _T("CLCA"),  INH    },
 	{ 0x4F, 1, _T("CLRA"),  INH    },
 
 	{ 0x50, 1, _T("NEGB"),  INH    },
+	{ 0x51, 1, _T("NEGB"),  INH    },
+	{ 0x52, 1, _T("NGGB"),  INH    },
 	{ 0x53, 1, _T("COMB"),  INH    },
 	{ 0x54, 1, _T("LSRB"),  INH    },
+	{ 0x55, 1, _T("LSRB"),  INH    },
 	{ 0x56, 1, _T("RORB"),  INH    },
 	{ 0x57, 1, _T("ASRB"),  INH    },
 	{ 0x58, 1, _T("ASLB"),  INH    },
 	{ 0x59, 1, _T("ROLB"),  INH    },
 	{ 0x5A, 1, _T("DECB"),  INH    },
+	{ 0x5B, 1, _T("DCCB"),  INH    },
 	{ 0x5C, 1, _T("INCB"),  INH    },
 	{ 0x5D, 1, _T("TSTB"),  INH    },
+	{ 0x5E, 1, _T("CLCB"),  INH    },
 	{ 0x5F, 1, _T("CLRB"),  INH    },
 
 	{ 0x60, 2, _T("NEG"),   IND    },
+	{ 0x61, 2, _T("NEG"),   IND    },
+	{ 0x62, 2, _T("NGC"),   IND    },
 	{ 0x63, 2, _T("COM"),   IND    },
 	{ 0x64, 2, _T("LSR"),   IND    },
+	{ 0x65, 2, _T("LSR"),   IND    },
 	{ 0x66, 2, _T("ROR"),   IND    },
 	{ 0x67, 2, _T("ASR"),   IND    },
 	{ 0x68, 2, _T("ASL"),   IND    },
 	{ 0x69, 2, _T("ROL"),   IND    },
 	{ 0x6A, 2, _T("DEC"),   IND    },
+	{ 0x6B, 2, _T("DCC"),   IND    },
 	{ 0x6C, 2, _T("INC"),   IND    },
 	{ 0x6D, 2, _T("TST"),   IND    },
 	{ 0x6E, 2, _T("JMP"),   IND    },
 	{ 0x6F, 2, _T("CLR"),   IND    },
 
 	{ 0x70, 3, _T("NEG"),   EXT    },
+	{ 0x71, 3, _T("NEG"),   EXT    },
+	{ 0x72, 3, _T("NGC"),   EXT    },
 	{ 0x73, 3, _T("COM"),   EXT    },
 	{ 0x74, 3, _T("LSR"),   EXT    },
+	{ 0x75, 3, _T("LSR"),   EXT    },
 	{ 0x76, 3, _T("ROR"),   EXT    },
 	{ 0x77, 3, _T("ASR"),   EXT    },
 	{ 0x78, 3, _T("ASL"),   EXT    },
 	{ 0x79, 3, _T("ROL"),   EXT    },
 	{ 0x7A, 3, _T("DEC"),   EXT    },
+	{ 0x7B, 3, _T("DCC"),   EXT    },
 	{ 0x7C, 3, _T("INC"),   EXT    },
 	{ 0x7D, 3, _T("TST"),   EXT    },
 	{ 0x7E, 3, _T("JMP"),   EXT    },
@@ -900,6 +947,7 @@ static const opcodeinfo m6809_pg0opcodes[] =
 	{ 0x84, 2, _T("ANDA"),  IMM    },
 	{ 0x85, 2, _T("BITA"),  IMM    },
 	{ 0x86, 2, _T("LDA"),   IMM    },
+	{ 0x87, 2, _T("FLAG"),  IMM    },
 	{ 0x88, 2, _T("EORA"),  IMM    },
 	{ 0x89, 2, _T("ADCA"),  IMM    },
 	{ 0x8A, 2, _T("ORA"),   IMM    },
@@ -907,6 +955,7 @@ static const opcodeinfo m6809_pg0opcodes[] =
 	{ 0x8C, 3, _T("CMPX"),  IMM    },
 	{ 0x8D, 2, _T("BSR"),   REL    },
 	{ 0x8E, 3, _T("LDX"),   IMM    },
+	{ 0x8F, 3, _T("FLAG"),  IMM    },
 
 	{ 0x90, 2, _T("SUBA"),  DIR    },
 	{ 0x91, 2, _T("CMPA"),  DIR    },
@@ -966,12 +1015,15 @@ static const opcodeinfo m6809_pg0opcodes[] =
 	{ 0xC4, 2, _T("ANDB"),  IMM    },
 	{ 0xC5, 2, _T("BITB"),  IMM    },
 	{ 0xC6, 2, _T("LDB"),   IMM    },
+	{ 0xC7, 2, _T("FLAG"),  IMM    },
 	{ 0xC8, 2, _T("EORB"),  IMM    },
 	{ 0xC9, 2, _T("ADCB"),  IMM    },
 	{ 0xCA, 2, _T("ORB"),   IMM    },
 	{ 0xCB, 2, _T("ADDB"),  IMM    },
 	{ 0xCC, 3, _T("LDD"),   IMM    },
+	{ 0xCD, 1, _T("HALT"),  INH    },
 	{ 0xCE, 3, _T("LDU"),   IMM    },
+	{ 0xCF, 3, _T("FLAG"),  IMM    },
 
 	{ 0xD0, 2, _T("SUBB"),  DIR    },
 	{ 0xD1, 2, _T("CMPB"),  DIR    },
@@ -1028,6 +1080,7 @@ static const opcodeinfo m6809_pg0opcodes[] =
 // Page 1 opcodes (0x10 0x..)
 static const opcodeinfo m6809_pg1opcodes[] =
 {
+	{ 0x20, 4, _T("LBRA"),  LREL   },
 	{ 0x21, 4, _T("LBRN"),  LREL   },
 	{ 0x22, 4, _T("LBHI"),  LREL   },
 	{ 0x23, 4, _T("LBLS"),  LREL   },
@@ -1046,6 +1099,7 @@ static const opcodeinfo m6809_pg1opcodes[] =
 	{ 0x3F, 2, _T("SWI2"),  INH    },
 	{ 0x83, 4, _T("CMPD"),  IMM    },
 	{ 0x8C, 4, _T("CMPY"),  IMM    },
+	{ 0x8D, 4, _T("LBSR"),  LREL   },
 	{ 0x8E, 4, _T("LDY"),   IMM    },
 	{ 0x93, 3, _T("CMPD"),  DIR    },
 	{ 0x9C, 3, _T("CMPY"),  DIR    },
@@ -1110,8 +1164,7 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 	int numoperands, offset, indirect;
 	int i, p = 0, page = 0, opcode_found = FALSE;
 
-	do
-	{
+	do {
 		opcode = oprom[p++];
 
 		for (i = 0; i < m6809_numops[page]; i++)
@@ -1241,9 +1294,9 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 			break;
 
 		case 0x82:  // ,-R
-			if (indirect)
-				_tcscpy(buffer, _T("Illegal Postbyte"));
-			else
+		  //if (indirect)
+		  //	_tcscpy(buffer, _T("Illegal Postbyte"));
+		  //	else
 				buffer += _stprintf(buffer, _T(",-%s"), m6809_regs[reg]);
 			break;
 
@@ -1263,9 +1316,12 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 			buffer += _stprintf(buffer, _T("A,%s"), m6809_regs[reg]);
 			break;
 
-		case 0x87:
-			_tcscpy(buffer, _T("Illegal Postbyte"));
+		case 0x87:  // (+/- A),R // Also 0x*6.
+			buffer += _stprintf(buffer, _T("A,%s"), m6809_regs[reg]);
 			break;
+			//case 0x87:
+			//_tcscpy(buffer, _T("Illegal Postbyte"));
+			//break;
 
 		case 0x88:  // (+/- 7 bit offset),R
 			offset = (INT8)opram[p++];
@@ -1303,8 +1359,11 @@ uint32 cpu_disassemble_m6809(_TCHAR *buffer, uint32 pc, const uint8 *oprom, cons
 			buffer += _stprintf(buffer, _T("$%04X,PC"), (offset < 0) ? -offset : offset);
 			break;
 
-		case 0x8e:
-			_tcscpy(buffer, _T("Illegal Postbyte"));
+		case 0x8e: // $FFFFF
+		  //_tcscpy(buffer, _T("Illegal Postbyte"));
+			offset = (INT16)0xffff;
+			//p += 2;
+			buffer += _stprintf(buffer, _T("$%04X"), offset);
 			break;
 
 		case 0x8f:  // address
@@ -1363,6 +1422,8 @@ int MC6809::debug_dasm(uint32 pc, _TCHAR *buffer, size_t buffer_len)
 	return length;
 }
 #endif
+
+
 
 
 inline void MC6809::fetch_effective_address()
@@ -1529,7 +1590,8 @@ inline pair MC6809::GET_INDEXED_DATA16(void)
 inline void MC6809::NEG_MEM(uint8 a_neg)
 {							
 	uint16 r_neg;					
-	r_neg = -a_neg;					
+	r_neg = a_neg;
+	r_neg = -a_neg;
 	CLR_NZVC;						
 	SET_FLAGS8(0, a_neg, r_neg);			
 	WM(EAD, r_neg);					
@@ -1673,9 +1735,7 @@ inline void MC6809::DEC_MEM(uint8 t)
 	uint8 tt;
 	tt = t - 1;
 	CLR_NZV;
-	SET_NZ8(tt);
-	SET_V8(t, 1, tt);
-	//	SET_FLAGS8D(tt);
+	SET_FLAGS8D(tt);
 	WM(EAD, tt);
 }
 
@@ -1684,9 +1744,7 @@ inline uint8 MC6809::DEC_REG(uint8 t)
 	uint8 tt;
 	tt = t - 1;
 	CLR_NZV;
-	SET_NZ8(tt);
-	SET_V8(t, 1, tt);
-	//SET_FLAGS8D(tt);
+	SET_FLAGS8D(tt);
 	return tt;
 }
 
@@ -1722,9 +1780,7 @@ inline void MC6809::INC_MEM(uint8 t)
 {
 	uint8 tt = t + 1;
 	CLR_NZV;
-	//SET_FLAGS8I(tt);
-	SET_NZ8(tt);
-	SET_V8(t, 1, tt);
+	SET_FLAGS8I(tt);
 	WM(EAD, tt);
 }
 
@@ -1732,9 +1788,7 @@ inline uint8 MC6809::INC_REG(uint8 t)
 {
 	uint8 tt = t + 1;
 	CLR_NZV;
-	//SET_FLAGS8I(tt);
-	SET_NZ8(tt);
-	SET_V8(t, 1, tt);
+	SET_FLAGS8I(tt);
 	return tt;
 }
 
@@ -1742,12 +1796,14 @@ inline void MC6809::TST_MEM(uint8 t)
 {
 	CLR_NZV;
 	SET_NZ8(t);
+	//SET_V8(0, t, t);
 }
 
 inline uint8 MC6809::TST_REG(uint8 t)
 {
 	CLR_NZV;
 	SET_NZ8(t);
+	//SET_V8(0, t, t);
 	return t;
 }
 
@@ -1756,7 +1812,6 @@ inline uint8 MC6809::CLC_REG(uint8 t)
 	uint8 r;
 	r = 0;
 	CLR_NZV;
-	//SET_Z8(r);
 	SEZ;
 	return r;
 }
@@ -1799,7 +1854,7 @@ inline uint8 MC6809::SBC8_REG(uint8 reg, uint8 data)
 	uint16 r;
 	r = (uint16)reg - (uint16)data - (uint16)(CC & CC_C);
 	CLR_HNZVC;
-	SET_FLAGS8(reg, data, r);
+	SET_FLAGS8(reg, (data + (uint16)(CC & CC_C)) & 0xff, r);
 	return (uint8)r;
 }
 
@@ -1818,7 +1873,8 @@ inline uint8 MC6809::BIT8_REG(uint8 reg, uint8 data)
 	r = reg & data;
 	CLR_NZV;
 	SET_NZ8(r);
-	//SET_V8(B, data, r);
+	//SET_V8(0, reg, r);
+	SET_V8(reg, data, r);
 	return reg;
 }
 
@@ -1858,7 +1914,7 @@ inline uint8 MC6809::ADC8_REG(uint8 reg, uint8 data)
 	t &= 0x00ff;
 	r = reg + t + (CC & CC_C);
 	CLR_HNZVC;
-	SET_HNZVC8(reg, t, r);
+	SET_HNZVC8(reg, (t + (uint16)(CC & CC_C)) & 0xff, r);
 	return (uint8)r;
 }	
 
@@ -2011,6 +2067,7 @@ OP_HANDLER(inc_di) {
 OP_HANDLER(tst_di) {
 	uint8 t;
 	DIRBYTE(t);
+	t = RM(EAD);
 	TST_MEM(t);
 }
 
@@ -3672,10 +3729,10 @@ OP_HANDLER(cmps_ix) {
 
 /* $aD JSR indexed ----- */
 OP_HANDLER(jsr_ix) {
-		fetch_effective_address();
-		PUSHWORD(pPC);
-		PCD = EAD;
-	}
+	fetch_effective_address();
+	PUSHWORD(pPC);
+	PCD = EAD;
+}
 
 /* $aE LDX (LDY) indexed -**0- */
 OP_HANDLER(ldx_ix) {
@@ -4272,8 +4329,9 @@ OP_HANDLER(bitb_ex) {
 
 /* $f6 LDB extended -**0- */
 OP_HANDLER(ldb_ex) {
-	EXTBYTE(B);
-	B = LOAD8_REG(B);
+	uint8 t;
+	EXTBYTE(t);
+	B = LOAD8_REG(t);
 }
 
 /* $f7 STB extended -**0- */
@@ -4516,6 +4574,7 @@ OP_HANDLER(pref10) {
 			icount -= 7;
 			break;
 		default:
+			PC--;
 			IIError();
 			break;
 	}
@@ -4568,6 +4627,7 @@ OP_HANDLER(pref11) {
 				break;
 
 			default:
+				PC--;
 				IIError();
 				break;
 		}

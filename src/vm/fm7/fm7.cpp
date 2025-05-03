@@ -12,6 +12,10 @@
 #include "../device.h"
 #include "../event.h"
 #include "../memory.h"
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
+#endif
+
 
 #include "../datarec.h"
 #include "../disk.h"
@@ -20,14 +24,9 @@
 #include "../z80.h"
 #include "../ym2203.h"
 #include "../mb8877.h"
-#include "../beep.h"
-//#include "../pcm1bit.h"
+//#include "../beep.h"
+#include "../pcm1bit.h"
 #include "../ym2203.h"
-
-#ifdef USE_DEBUGGER
-#include "../debugger.h"
-#endif
-
 #if defined(_FM77AV_VARIANTS)
 #include "./mb61vh010.h"
 #endif
@@ -52,11 +51,6 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	dummycpu = new DEVICE(this, emu);
-	maincpu = new MC6809(this, emu);
-	subcpu = new MC6809(this, emu);
-#ifdef WITH_Z80
-	z80cpu = new Z80(this, emu);
-#endif
 	// basic devices
 	mainmem = new FM7_MAINMEM(this, emu);
 	mainio  = new FM7_MAINIO(this, emu);
@@ -69,8 +63,8 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 
 	// I/Os
 	drec = new DATAREC(this, emu);
-//	pcm1bit = new PCM1BIT(this, emu);
-	beep = new BEEP(this, emu);
+	pcm1bit = new PCM1BIT(this, emu);
+//	beep = new BEEP(this, emu);
 	fdc  = new MB8877(this, emu);
 	
 	opn[0] = new YM2203(this, emu); // OPN
@@ -82,6 +76,11 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	kanjiclass1 = new KANJIROM(this, emu, false);
 #ifdef CAPABLE_KANJI_CLASS2
 	kanjiclass2 = new KANJIROM(this, emu, true);
+#endif
+	maincpu = new MC6809(this, emu);
+	subcpu = new MC6809(this, emu);
+#ifdef WITH_Z80
+	z80cpu = new Z80(this, emu);
 #endif
 	connect_bus();
 	initialize();
@@ -169,8 +168,8 @@ void VM::connect_bus(void)
 	z80cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 #endif
 
-	event->set_context_sound(beep);
-//	event->set_context_sound(pcm1bit);
+//	event->set_context_sound(beep);
+	event->set_context_sound(pcm1bit);
 #if !defined(_FM77AV_VARIANTS)
 	mainio->set_context_psg(psg);
 	event->set_context_sound(psg);
@@ -178,9 +177,9 @@ void VM::connect_bus(void)
 	event->set_context_sound(opn[0]);
 	event->set_context_sound(opn[1]);
 	event->set_context_sound(opn[2]);
-//#ifdef DATAREC_SOUND
 	event->set_context_sound(drec);
-//#endif
+	//event->register_vline_event(display);
+	//event->register_vline_event(mainio);
    
 	mainio->set_context_maincpu(maincpu);
 	mainio->set_context_subcpu(subcpu);
@@ -188,6 +187,7 @@ void VM::connect_bus(void)
 	mainio->set_context_display(display);
         mainio->set_context_kanjirom_class1(kanjiclass1);
         mainio->set_context_mainmem(mainmem);
+        mainio->set_context_keyboard(keyboard);
    
 #if defined(CAPABLE_KANJI_CLASS2)
         mainio->set_context_kanjirom_class2(kanjiclass2);
@@ -227,8 +227,8 @@ void VM::connect_bus(void)
 	fdc->set_context_irq(mainio, FM7_MAINIO_FDC_IRQ, 0x1);
 	fdc->set_context_drq(mainio, FM7_MAINIO_FDC_DRQ, 0x1);
 	// SOUND
-	//mainio->set_context_beep(pcm1bit);
-	mainio->set_context_beep(beep);
+	mainio->set_context_beep(pcm1bit);
+	//mainio->set_context_beep(beep);
 	
 	opn[0]->set_context_irq(mainio, FM7_MAINIO_OPN_IRQ, 0xffffffff);
 	//opn[0]->set_context_port_a(mainio, FM7_MAINIO_OPNPORTA_CHANGED, 0xff, 0);
@@ -239,13 +239,11 @@ void VM::connect_bus(void)
 	opn[2]->set_context_irq(mainio, FM7_MAINIO_THG_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[2], 2);
    
-	
 	subcpu->set_context_bus_halt(mainmem, SIG_FM7_SUB_HALT, 0xffffffff);
 	subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
    
 	maincpu->set_context_mem(mainmem);
 	subcpu->set_context_mem(display);
-	
 #ifdef USE_DEBUGGER
 	maincpu->set_context_debugger(new DEBUGGER(this, emu));
 	subcpu->set_context_debugger(new DEBUGGER(this, emu));
@@ -391,8 +389,8 @@ void VM::initialize_sound(int rate, int samples)
 #if !defined(_FM77AV_VARIANTS)   
 	psg->init(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
 #endif   
-//	pcm1bit->init(rate, 2000);
-	beep->init(rate, 1200, 2000);
+	pcm1bit->init(rate, 2000);
+	//beep->init(rate, 1200, 2000);
 	//drec->init_pcm(rate, 0);
 }
 

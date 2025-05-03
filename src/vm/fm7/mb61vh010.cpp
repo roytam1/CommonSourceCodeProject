@@ -32,11 +32,13 @@ uint8 MB61VH010::do_read(uint32 addr, uint32 bank)
 	
 	if(is_400line) {
 		if((addr & 0xffff) < 0x8000) {
-			raddr = (addr & 0x7fff) | (0x8000 * bank);
+			//raddr = ((addr + (line_addr_offset.w.l << 1)) & 0x7fff) | (0x8000 * bank);
+			raddr = (addr  & 0x7fff) | (0x8000 * bank);
 			return target->read_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS);
 		}
 		return 0xff;
 	} else {
+		//raddr = ((addr + (line_addr_offset.w.l << 1)) & 0x3fff) | (0x4000 * bank);
 		raddr = (addr & 0x3fff) | (0x4000 * bank);
 		return target->read_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS);
 	}
@@ -66,10 +68,12 @@ uint8 MB61VH010::do_write(uint32 addr, uint32 bank, uint8 data)
 	}
 	if(is_400line) {
 		if((addr & 0xffff) < 0x8000) {
+			//raddr = ((addr + (line_addr_offset.w.l << 1)) & 0x7fff) | (0x8000 * bank);
 			raddr = (addr & 0x7fff) | (0x8000 * bank);
 			target->write_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS, readdata);
 		}
 	} else {
+		//raddr = ((addr + (line_addr_offset.w.l << 1)) & 0x3fff) | (0x4000 * bank);
 		raddr = (addr & 0x3fff) | (0x4000 * bank);
 		target->write_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS, readdata);
 	}
@@ -375,18 +379,21 @@ void MB61VH010::do_line(void)
 	int x_end = line_xend.w.l;
 	int y_begin = line_ybegin.w.l;
 	int y_end = line_yend.w.l;
-	uint32 addr;
 	int cpx_t = x_begin;
 	int cpy_t = y_begin;
 	int ax = x_end - x_begin;
 	int ay = y_end - y_begin;
-	int diff;
+	int diff = 0;
 	int count = 0;
+	int xcount;
+	int ycount;
 	uint8 mask_bak = mask_reg;
+	uint16 tmp8a;
+	uint8 vmask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 	//printf("Line: (%d,%d) - (%d,%d) CMD=%02x\n", x_begin, y_begin, x_end, y_end, command_reg);  
 	double usec;
 	bool lastflag = false;
-
+	
 	is_400line = (target->read_signal(SIG_DISPLAY_MODE_IS_400LINE) != 0) ? true : false;
 	planes = target->read_signal(SIG_DISPLAY_PLANES) & 0x07;
 	screen_width = target->read_signal(SIG_DISPLAY_X_WIDTH) * 8;
@@ -398,24 +405,31 @@ void MB61VH010::do_line(void)
 
 	
 	line_style = line_pattern;
-	oldaddr = 0xffff;
 	busy_flag = true;
 	total_bytes = 1;
 	
 	//mask_reg = 0xff & ~vmask[x_begin & 7];
 	mask_reg = 0xff;
-	// Got from HD63484.cpp .
-	if(abs(ax) >= abs(ay)) {
-		if(ax != 0) {
-			diff = ((abs(ay) + 1) * 1024) / abs(ax);
-			for(; cpx_t != x_end; ) {
+	if((line_style.b.h & 0x80) != 0) {
+	  	mask_reg &= ~vmask[cpx_t & 7];
+        }
+	tmp8a = (line_style.w.l & 0x8000) >> 15;
+	line_style.w.l = (line_style.w.l << 1) | tmp8a;
+	xcount = abs(ax);
+	ycount = abs(ay);
+	if(xcount >= ycount) {
+		if(xcount != 0) {
+			//if(ycount != 0) {
+				diff = ((ycount  + 1) * 1024) / xcount;
+			//}
+			for(; xcount >= 0; xcount-- ) {
 				lastflag = put_dot(cpx_t, cpy_t);
 				count += diff;
-				if(count >= 1024) {
-					if(ax > 0) {
-						lastflag = put_dot(cpx_t + 1, cpy_t);
+				if(count > 1024) {
+					if(ay > 0) {
+						lastflag = put_dot(cpx_t, cpy_t + 1);
 					} else if(ax < 0) {
-						lastflag = put_dot(cpx_t - 1, cpy_t);
+						lastflag = put_dot(cpx_t, cpy_t - 1);
 					}
 					if(ay < 0) {
 						cpy_t--;
@@ -430,21 +444,22 @@ void MB61VH010::do_line(void)
 					cpx_t--;
 				}
 			}
-			lastflag = put_dot(cpx_t, cpy_t);
 		} else { // ax = ay = 0
 			lastflag = put_dot(cpx_t, cpy_t);
 			total_bytes++;
 		}
-	} else { // (abs(ax) < abs(ay) 
-		diff = ((abs(ax) + 1) * 1024) / abs(ay);
-		for(; cpy_t != y_end; ) {
+	} else { // (abs(ax) < abs(ay)
+		//if(xcount != 0) {
+			diff = ((xcount + 1) * 1024) / ycount;
+		//}
+		for(; ycount >= 0; ycount--) {
 			lastflag = put_dot(cpx_t, cpy_t);
 			count += diff;
-			if(count >= 1024) {
-				if(ay > 0) {
-					lastflag = put_dot(cpx_t, cpy_t + 1);
+			if(count > 1024) {
+				if(ax > 0) {
+					lastflag = put_dot(cpx_t + 1, cpy_t);
 				} else if(ay < 0) {
-					lastflag = put_dot(cpx_t, cpy_t - 1);
+					lastflag = put_dot(cpx_t - 1, cpy_t);
 				} 				  
 				if(ax < 0) {
 					cpx_t--;
@@ -452,23 +467,26 @@ void MB61VH010::do_line(void)
 					cpx_t++;
 				}
 				count -= 1024;
+				total_bytes++;
 			}
 			if(ay > 0) {
 				cpy_t++;
 			} else {
 				cpy_t--;
 			}
+			total_bytes++;
 		}
-		lastflag = put_dot(cpx_t, cpy_t);
 	}
+
+	if(!lastflag) total_bytes++;
 	do_alucmds(alu_addr);
 
-	usec = (double)total_bytes / 16.0;
-	//if(usec >= 1.0) { // 1MHz
-	register_event(this, EVENT_MB61VH010_BUSY_OFF, usec, false, &eventid_busy) ;
-		//} else {
-       		//busy_flag = false;
-		//}
+	if(total_bytes > 8) { // Over 0.5us
+		usec = (double)total_bytes / 16.0;
+		register_event(this, EVENT_MB61VH010_BUSY_OFF, usec, false, &eventid_busy) ;
+	} else {
+		busy_flag = false;
+	}
 	mask_reg = mask_bak;
 	line_pattern = line_style;
 }
@@ -670,6 +688,7 @@ void MB61VH010::reset(void)
 	oldaddr = 0xffffffff;
 	
 	planes = target->read_signal(SIG_DISPLAY_PLANES) & 0x07;
+	if(planes >= 4) planes = 4;
 	is_400line = (target->read_signal(SIG_DISPLAY_MODE_IS_400LINE) != 0) ? true : false;
 	
 	screen_width = target->read_signal(SIG_DISPLAY_X_WIDTH) * 8;

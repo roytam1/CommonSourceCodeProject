@@ -15,11 +15,6 @@
 #define USE_SOUND_DEVICE_TYPE 8
 #define USE_SCANLINE
 #define USE_DIPSWITCH
-#if defined(_FM77_VARIANTS)
-#define USE_BOOT_MODE         3
-#else
-#define USE_BOOT_MODE         2
-#endif
 #define USE_CPU_TYPE          2
 #define USE_SPECIAL_RESET
 //#undef  HAS_YM2608
@@ -57,15 +52,14 @@
 #define CONFIG_NAME		"fmnew7"
 #define CAPABLE_Z80
 
-#elif defined(_FM77)
+#elif defined(_FM77) || defined(_FM77L2)
+# if defined(_FM77)
 #define DEVICE_NAME		"FUJITSU FM-77"
 #define CONFIG_NAME		"fm77"
-//#define USE_DRIVE_TYPE
-#define _FM77_VARIANTS
-
-#elif defined(_FM77L2)
+# else
 #define DEVICE_NAME		"FUJITSU FM-77L2"
 #define CONFIG_NAME		"fm77l2"
+# endif
 //#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
 
@@ -87,7 +81,7 @@
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM-77AV20"
+#define DEVICE_NAME		"FUJITSU FM-77 AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -96,7 +90,7 @@
 #define CAPABLE_DICTROM
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM-77AV40"
+#define DEVICE_NAME		"FUJITSU FM-77 AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
@@ -119,6 +113,12 @@
 #define CAPABLE_Z80
 #endif
 
+#if defined(_FM77_VARIANTS)
+#define USE_BOOT_MODE         3
+#else
+#define USE_BOOT_MODE         2
+#endif
+
 // 0 = PSG or NONE
 // 1 = OPN (+PSG)
 // 2 = WHG (+PSG)
@@ -138,7 +138,6 @@
 #define SOUND_DEVICE_TYPE_DEFAULT	1
 #endif
 #define IGNORE_CRC_DEFAULT			true
-
 // device informations for virtual machine
 
 // TODO: check refresh rate
@@ -248,8 +247,8 @@ protected:
 	MB8877* fdc;
         YM2203* opn[3];
         YM2203* psg; // Is right? AY-3-8910 is right device.
-        BEEP* beep;
-        //PCM1BIT* pcm1bit;
+        //BEEP* beep;
+        PCM1BIT* pcm1bit;
 	DATAREC *drec;
    
 #ifdef  WITH_Z80

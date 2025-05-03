@@ -26,6 +26,7 @@ class FM7_MAINIO : public DEVICE {
 	bool beep_flag;
 	bool beep_snd;
 	int event_beep;  
+	int event_beep_oneshot;  
 	int event_timerirq;  
  protected:
 	VM* p_vm;
@@ -34,16 +35,15 @@ class FM7_MAINIO : public DEVICE {
 	int nmi_count;
 	bool irqstat_bak;
 	bool firqstat_bak;
+	uint8 io_w_latch[0x100];
    
 	/* FD00: R */
 	bool clock_fast; // bit0 : maybe dummy
-	uint8 kbd_bit8;  // bit7
 	/* FD00: W */
 	bool lpt_strobe;  // bit6 : maybe dummy entry
 	bool lpt_slctin;  // bit7 : maybe dummy entry
-
-	/* FD01 : R */
-	uint8 kbd_bit7_0;
+	bool key_irq_req;
+	bool key_irq_bak;
 	/* FD01: W */
 	uint8 lpt_outdata; // maybe dummy.
 
@@ -84,13 +84,18 @@ class FM7_MAINIO : public DEVICE {
 	bool stat_400linemode; // R/W : bit3, '0' = 400line, '1' = 200line.
 	bool firq_break_key; // bit1, ON = '0'.
 	bool firq_sub_attention; // bit0, ON = '0'.
+	bool firq_sub_attention_bak; // bit0, ON = '0'.
 	/* FD04 : W */
 	bool intmode_fdc; // bit2, '0' = normal, '1' = SFD.
 
 	/* FD05 : R */
 	bool extdet_neg; // bit0 : '1' = none , '0' = exists.
+	bool sub_busy;
 	/* FD05 : W */
+	bool sub_halt; // bit7 : '1' Halt req.
 	bool sub_cancel; // bit6 : '1' Cancel req.
+	bool sub_halt_bak; // bit7 : shadow.
+	bool sub_cancel_bak; // bit6 : shadow.
 	bool z80_sel;    // bit0 : '1' = Z80. Maybe only FM-7/77.
 
 	/* FD06 : R/W : RS-232C */
@@ -120,6 +125,7 @@ class FM7_MAINIO : public DEVICE {
 	bool mode320; // bit6 : true = 320, false = 640
 	/* FD13 : WO */
 	uint8 sub_monitor_type; // bit 2 - 0: default = 0.
+	uint8 sub_monitor_bak; // bit 2 - 0: default = 0.
 #endif
 	
 	/* FD15 / FD46 / FD51 : W */
@@ -208,7 +214,6 @@ class FM7_MAINIO : public DEVICE {
 	
 	virtual uint8 get_port_fd00(void);
 	virtual void  set_port_fd00(uint8 data);
-	virtual uint32 get_keyboard(void); // FD01
 	virtual uint8 get_port_fd02(void);
 	virtual void set_port_fd02(uint8 val);
 	virtual uint8 get_irqstat_fd03(void);
@@ -221,17 +226,16 @@ class FM7_MAINIO : public DEVICE {
 	void reset_fdc(void);
 	void set_fdc_motor(bool flag);
 	
-	void do_irq(bool flag);
+	void do_irq(void);
 	void set_irq_timer(bool flag);
 	void set_irq_printer(bool flag);
 	void set_irq_keyboard(bool flag);
 	void set_irq_opn(bool flag);
 	void set_irq_mfd(bool flag);
 	void set_drq_mfd(bool flag);
-	void set_keyboard(uint32 data);  
 
 	// FD04
-	void do_firq(bool flag);
+	void do_firq(void);
 	void do_nmi(bool flag);
 	  
 	void set_break_key(bool pressed);
@@ -305,13 +309,14 @@ class FM7_MAINIO : public DEVICE {
 	/* Event Handlers */
 	void event_beep_off(void);
 	void event_beep_cycle(void);
+	void proc_sync_to_sub(void);
 
 	/* Devices */
 	YM2203* opn[4]; // 0=OPN 1=WHG 2=THG 3=PSG
 	
 	DEVICE* drec;
-        //DEVICE* pcm1bit;
-        DEVICE* beep;
+        DEVICE* pcm1bit;
+        //DEVICE* beep;
 	DEVICE* fdc;
 	//FM7_PRINTER *printer;
 	//FM7_RS232C *rs232c;
@@ -319,6 +324,7 @@ class FM7_MAINIO : public DEVICE {
 	MEMORY *kanjiclass1;
 	MEMORY *kanjiclass2;
 	DEVICE *display;
+	DEVICE *keyboard;
 	MC6809 *maincpu;
 	MEMORY *mainmem;
 	MC6809 *subcpu;
@@ -335,11 +341,9 @@ class FM7_MAINIO : public DEVICE {
 		nmi_count = 0;
 		// FD00
 		clock_fast = true;
-		kbd_bit8 = 0;  // bit7
 		lpt_strobe = false;
 		lpt_slctin = false;
 		// FD01
-		kbd_bit7_0 = 0x00;
 		lpt_outdata = 0x00;
 		// FD02
 		cmt_indat = false; // bit7
@@ -418,19 +422,43 @@ class FM7_MAINIO : public DEVICE {
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 		boot_ram = false;
 #endif		
+		memset(io_w_latch, 0x00, 0x100);
 	}
 	~FM7_MAINIO(){}
+	void event_vline(int v, int clock);
+
 	uint8  opn_regs[4][0x100];
-	
-	void initialize(void);
+	uint32 read_io8(uint32 addr) { // This is only for debug.
+		addr = addr & 0xfff;
+		if(addr < 0x100) {
+			return io_w_latch[addr];
+		} else if(addr < 0x500) {
+			uint32 ofset = addr & 0xff;
+			uint opnbank = (addr - 0x100) >> 8;
+			return opn_regs[opnbank][ofset];
+		} else if(addr < 0x600) {
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX)
+			return mmr_table[addr & 0xff];
+#elif defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
+			return mmr_table[addr & 0x3f];
+#else		   
+			return 0xff;
+#endif
+		}
+	   return 0xff;
+	}
+   
+	   
+   
+	void initialize();
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 read_signal(uint32 addr);
 	void event_callback(int event_id, int err);
-	void reset(void);
-	void update_config(void);
+	void reset();
+	void update_config();
 
 	void set_context_kanjirom_class1(MEMORY *p)
 	{
@@ -446,8 +474,8 @@ class FM7_MAINIO : public DEVICE {
 	}
 	void set_context_beep(DEVICE *p)
 	{
-		//pcm1bit = p;
-		beep = p;
+		pcm1bit = p;
+		//beep = p;
 	}
 	void set_context_datarec(DEVICE *p)
 	{
@@ -507,6 +535,9 @@ class FM7_MAINIO : public DEVICE {
 	}
 	void set_context_display(DEVICE *p){
 		display = p;
+	}
+	void set_context_keyboard(DEVICE *p){
+		keyboard = p;
 	}
 	void set_context_z80cpu(Z80 *p){
 		z80 = p;

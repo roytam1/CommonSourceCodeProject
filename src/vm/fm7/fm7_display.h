@@ -18,7 +18,7 @@ class DEVICE;
 class MEMORY;
 class MC6809;
 
-class DISPLAY: public MEMORY
+class DISPLAY: public DEVICE
 {
  protected:
 	EMU *p_emu;
@@ -74,7 +74,6 @@ class DISPLAY: public MEMORY
 	void set_monitor_bank(uint8 var);
 	void set_apalette_index_hi(uint8 val);
 	void set_apalette_index_lo(uint8 val);
-	void calc_apalette(uint32 index);
 	void set_apalette_b(uint8 val);
 	void set_apalette_r(uint8 val);
 	void set_apalette_g(uint8 val);
@@ -86,6 +85,8 @@ class DISPLAY: public MEMORY
 
  private:
 	bool sub_busy;
+	bool sub_busy_bak;
+	bool do_attention; 
 	uint32  disp_mode;
 	bool vblank;
 	bool vsync;
@@ -94,10 +95,14 @@ class DISPLAY: public MEMORY
 	bool firq_backup;
 	bool clock_fast;
 	uint32 displine;
-
+	int vblank_count;
+	
 	bool subcpu_resetreq;
 	bool power_on_reset;
 	bool cancel_request;
+	bool cancel_bak;
+	bool key_firq_req;
+	bool key_firq_bak;
 
 	DEVICE *ins_led;
 	DEVICE *kana_led;
@@ -142,8 +147,12 @@ class DISPLAY: public MEMORY
 	uint8 analog_palette_r[4096];
 	uint8 analog_palette_g[4096];
 	uint8 analog_palette_b[4096];
-	scrntype apalette_pixel[4096];
 #endif // FM77AV etc...
+#if defined(_FM77AV_VARIANTS)
+	uint8 io_w_latch[0x40];
+#else
+	uint8 io_w_latch[0x10];
+#endif
 	int window_low;
 	int window_high;
 	int window_xbegin;
@@ -154,7 +163,7 @@ class DISPLAY: public MEMORY
 	uint8 multimode_dispmask;
    
 	uint32 offset_point;
-	uint32 tmp_offset_point;
+	pair tmp_offset_point;
 	bool offset_changed;
 	bool offset_77av;
    
@@ -175,7 +184,6 @@ class DISPLAY: public MEMORY
 #else
 	uint8 gvram[0x4000 * 3];
 #endif
-
 	uint8 console_ram[0x1000];
 	uint8 work_ram[0x380];
 	uint8 shared_ram[0x80];
@@ -208,8 +216,10 @@ class DISPLAY: public MEMORY
 	DEVICE *subcpu;
 	DEVICE *keyboard;
 	bool vram_wrote;
-	inline int GETVRAM_8_200L(int yoff, scrntype *p, uint32 rgbmask);
-	inline int GETVRAM_4096(int yoff, scrntype *p, uint32 rgbmask);
+	inline void GETVRAM_8_200L(int yoff, scrntype *p, uint32 rgbmask);
+	inline void GETVRAM_4096(int yoff, scrntype *p, uint32 rgbmask);
+	uint32 read_bios(const char *name, uint8 *ptr, uint32 size);
+	void proc_sync_to_main(void);
  public:
 	DISPLAY(VM *parent_vm, EMU *parent_emu);
 	~DISPLAY();
@@ -218,16 +228,23 @@ class DISPLAY: public MEMORY
 	uint32 read_signal(int id); 
 	uint32 read_data8(uint32 addr);
 	void write_data8(uint32 addr, uint32 data);
-	void initialize(void);
-	void release(void);
-	void reset(void);
-	void update_config(void);
+	void initialize();
+	void release();
+	void reset();
+	void update_config();
 	
-	void draw_screen(void);
-	void event_frame(void);
+	void draw_screen();
+	void event_frame();
 	void event_vline(int v, int clock);
 
-
+	uint32 read_io8(uint32 addr) { // This is only for debug.
+#if defined(_FM77AV_VARIANTS) // Really?
+		return io_w_latch[addr & 0x3f];
+#else
+		return io_w_latch[addr & 0x0f];
+#endif
+	}
+   
 	void set_context_kanjiclass1(MEMORY *p)	{
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS) // Really?
 		kanji1_addr.d = 0;

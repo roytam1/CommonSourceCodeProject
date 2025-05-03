@@ -18,10 +18,11 @@
 // TEST
 //#include <SDL2/SDL.h>
 
-void FM7_MAINIO::initialize(void)
+void FM7_MAINIO::initialize()
 {
 	int i;
 	event_beep = -1;
+	event_beep_oneshot = -1;
 	event_timerirq = -1;
 	bootmode = config.boot_mode & 3;
 #if defined(_FM77AV_VARIANTS)
@@ -43,7 +44,7 @@ void FM7_MAINIO::initialize(void)
 	mmr_segment = 0x00;
 	for(i = 0x00; i < 0x80; i++) mmr_table[i] = 0;
 	//	for(i = 0x00; i < 0x10; i++) mmr_table[i] = 0x30 + i;
-#endif	
+#endif
 	switch(config.cpu_type){
 		case 0:
 			clock_fast = true;
@@ -53,17 +54,22 @@ void FM7_MAINIO::initialize(void)
 			break;
 	}
 	this->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
+	sub_busy = false;
 }
 
-void FM7_MAINIO::reset(void)
+void FM7_MAINIO::reset()
 {
 	int i, j;
 	uint8 data;
-	//if(event_beep >= 0) cancel_event(this, event_beep);
-	if(event_timerirq >= 0) cancel_event(this, event_timerirq);
+	if(event_beep >= 0) cancel_event(this, event_beep);
 	event_beep = -1;
+	if(event_beep_oneshot >= 0) cancel_event(this, event_beep_oneshot);
+	event_beep_oneshot = -1;
+	if(event_timerirq >= 0) cancel_event(this, event_timerirq);
 	beep_snd = true;
 	beep_flag = false;
+	if(event_beep < 0) register_event(this, EVENT_BEEP_CYCLE, (1000.0 * 1000.0) / (1200.0 * 2.0), true, &event_beep);
+   
 	extdet_neg = false;
    
 	stat_romrammode = true;
@@ -80,6 +86,8 @@ void FM7_MAINIO::reset(void)
 #if defined(_FM77AV_VARIANTS)
 	mode320 = false;
 	sub_monitor_type = 0x00;
+	sub_monitor_bak = sub_monitor_type;
+	display->write_signal(SIG_FM7_SUB_BANK, sub_monitor_type, 0x07);
 #endif
 	
 #ifdef HAS_MMR
@@ -91,6 +99,8 @@ void FM7_MAINIO::reset(void)
 	if(config.cpu_type == 0) clock_fast = true;
    
 	reset_sound();
+	key_irq_req = false;
+	key_irq_bak = key_irq_req;   
 	
 	irqmask_reg0 = 0x00;
 	irqstat_bak = false;
@@ -108,15 +118,21 @@ void FM7_MAINIO::reset(void)
 	// FD04
 	//firq_break_key = false; // bit1, ON = '0'.
 	firq_sub_attention = false; // bit0, ON = '0'.
+	firq_sub_attention_bak = false; // bit0, ON = '0'.
 	// FD05
 	extdet_neg = false;
 	sub_cancel = false; // bit6 : '1' Cancel req.
-
+	sub_halt = false; // bit6 : '1' Cancel req.
+	sub_cancel_bak = !sub_cancel; // bit6 : '1' Cancel req.
+	sub_halt_bak = !sub_halt; // bit6 : '1' Cancel req.
 	nmi_count = 0;
 	reset_fdc();
    
 	register_event(this, EVENT_TIMERIRQ_ON, 10000.0 / 4.9152, true, &event_timerirq); // TIMER IRQ
 	mainmem->reset();
+	memset(io_w_latch, 0x00, 0x100);
+	sub_busy = (read_signal(SIG_DISPLAY_BUSY) == 0) ? false : true;  
+	//register_event_by_clock(this, EVENT_FM7SUB_PROC, 16, true, NULL); // 2uS / 8MHz 
 	//maincpu->reset();
 }
 
@@ -144,7 +160,7 @@ uint8 FM7_MAINIO::get_clockmode(void)
 uint8 FM7_MAINIO::get_port_fd00(void)
 {
 	uint8 ret           = 0x7e; //0b01111110;
-	if(kbd_bit8)   ret |= 0x80; //0b10000000;
+	if(keyboard->read_data8(0) != 0) ret |= 0x80; // High bit.
 	if(clock_fast) ret |= 0x01; //0b00000001;
 	return ret;
 }
@@ -214,34 +230,23 @@ void FM7_MAINIO::set_port_fd02(uint8 val)
 		display->write_signal(SIG_FM7_SUB_KEY_FIRQ, flag ? 1 : 0, 1);
 		//printf("KEYBOARD: Interrupted %d\n", flag);
 		irqmask_keyboard = flag;
-		do_irq(flag);
+		do_irq();
 	}
    
 	return;
 }
 
-
-uint32 FM7_MAINIO::get_keyboard(void)
-{
-	uint32 kbd_data = (uint32) kbd_bit7_0;
-	kbd_data &= 0x0ff;
-	if(kbd_bit8) kbd_data |= 0x0100;
-	return kbd_data;
-}
-
-
-
 void FM7_MAINIO::set_irq_timer(bool flag)
 {
 	uint8 backup = irqstat_reg0;
 	if(flag && !(irqmask_timer)) {
-		irqstat_reg0 &= ~0x04;
+		irqstat_reg0 &= 0xfb; //~0x04;
 		irqstat_timer = true;	   
-		if(backup != irqstat_reg0) do_irq(true);
+		if(backup != irqstat_reg0) do_irq();
 	} else {
 		irqstat_reg0 |= 0x04;
 		irqstat_timer = false;	   
-		if(backup != irqstat_reg0) do_irq(false);
+		if(backup != irqstat_reg0) do_irq();
 	}
 	//printf("IRQ TIMER: %02x MASK=%d\n", irqstat_reg0, irqmask_timer);
 }
@@ -252,13 +257,13 @@ void FM7_MAINIO::set_irq_printer(bool flag)
 	if(flag && !(irqmask_printer)) {
 		irqstat_reg0 &= ~0x02;
 		irqstat_printer = true;	   
-		if(backup != irqstat_reg0) do_irq(true);
+		if(backup != irqstat_reg0) do_irq();
 	} else {
 		irqstat_reg0 |= 0x02;
 		irqstat_printer = false;	   
-		if(backup != irqstat_reg0) do_irq(false);
+		if(backup != irqstat_reg0) do_irq();
 	}
-//	if(!irqmask_printer || !flag) do_irq(flag);
+//	if(!irqmask_printer || !flag) do_irq();
 }
 
 void FM7_MAINIO::set_irq_keyboard(bool flag)
@@ -266,30 +271,20 @@ void FM7_MAINIO::set_irq_keyboard(bool flag)
 	uint8 backup = irqstat_reg0;
 	if(irqmask_keyboard) return;
 	if(flag) {
-		irqstat_reg0 &= ~0x01;
+		irqstat_reg0 &= 0xfe;
 		irqstat_keyboard = true;
-		if(backup != irqstat_reg0) do_irq(true);
+		if(backup != irqstat_reg0) do_irq();
 	} else {
 		//irqstat_reg0 &= 0b11111110;
 		irqstat_reg0 |= 0x01;
 		irqstat_keyboard = false;	   
-		if(backup != irqstat_reg0) do_irq(false);
+		if(backup != irqstat_reg0) do_irq();
 	}
    	//printf("MAIN: KEYBOARD: IRQ=%d\n", flag && !(irqmask_keyboard));
 }
 
-void FM7_MAINIO::set_keyboard(uint32 data)
-{
-	if((data & 0x100) != 0){
-		kbd_bit8 = true;
-	} else {
-		kbd_bit8 = false;
-	}
-	kbd_bit7_0 = (data & 0xff);
-}
 
-
-void FM7_MAINIO::do_irq(bool flag)
+void FM7_MAINIO::do_irq(void)
 {
 	bool intstat;
 	intstat = irqstat_timer | irqstat_keyboard | irqstat_printer;
@@ -307,12 +302,12 @@ void FM7_MAINIO::do_irq(bool flag)
 	irqstat_bak = intstat;
 }
 
-void FM7_MAINIO::do_firq(bool flag)
+void FM7_MAINIO::do_firq(void)
 {
 	bool firq_stat;
-	firq_stat = firq_break_key || firq_sub_attention; 
+	firq_stat = firq_break_key | firq_sub_attention; 
 	//printf("%08d : FIRQ: break=%d attn=%d stat = %d\n", SDL_GetTicks(), firq_break_key, firq_sub_attention, firq_stat);
-	//if(firqstat_bak == firq_stat) return;
+	if(firqstat_bak == firq_stat) return;
 	if(firq_stat) {
 		maincpu->write_signal(SIG_CPU_FIRQ, 1, 1);
 	} else {
@@ -344,19 +339,21 @@ void FM7_MAINIO::do_nmi(bool flag)
 void FM7_MAINIO::set_break_key(bool pressed)
 {
 	firq_break_key = pressed;
-	do_firq(pressed);
+	do_firq();
 }
 
 void FM7_MAINIO::set_sub_attention(bool flag)
 {
 	firq_sub_attention = flag;
-	do_firq(flag); 
+	register_event_by_clock(this, EVENT_FM7SUB_PROC, 8, false, NULL); // 1uS / 8MHz 
+//	do_firq(); 
 }
   
 
 uint8 FM7_MAINIO::get_fd04(void)
 {
-	uint8 val = display->read_signal(SIG_DISPLAY_BUSY) | ~0x83;
+	uint8 val = 0x7c;
+	if(sub_busy) val |= 0x80;
 	if(!firq_break_key)     val |= 0x02;
 	if(!firq_sub_attention) {
 		val |= 0x01;
@@ -376,15 +373,22 @@ void FM7_MAINIO::set_fd04(uint8 val)
   // FD05
  uint8 FM7_MAINIO::get_fd05(void)
 {
-	uint8 val = display->read_signal(SIG_DISPLAY_BUSY) | ~0x81;
+	uint8 val;
+	val = (sub_busy) ? 0xfe : 0x7e;
 	if(!extdet_neg) val |= 0x01;
+	//printf("FD05: READ: %d VAL=%02x\n", SDL_GetTicks(), val);
 	return val;
 }
 
  void FM7_MAINIO::set_fd05(uint8 val)
 {
-	display->write_signal(SIG_FM7_SUB_CANCEL, val, 0x40); // HACK
-	display->write_signal(SIG_DISPLAY_HALT,   val, 0x80);
+	sub_cancel = ((val & 0x40) != 0) ? true : false;
+	sub_halt   = ((val & 0x80) != 0) ? true : false;
+	register_event_by_clock(this, EVENT_FM7SUB_PROC, 8, false, NULL); // 1uS / 8MHz 
+	if(sub_cancel != sub_cancel_bak) {
+		display->write_signal(SIG_FM7_SUB_CANCEL, (sub_cancel) ? 0xff : 0x00, 0xff); // HACK
+	}
+	sub_cancel_bak = sub_cancel;
 #ifdef WITH_Z80
 	if((val & 0x01) != 0) {
 		//maincpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
@@ -498,6 +502,9 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 	val_b = ((data & mask) != 0);
   
 	switch(id) {
+		case FM7_MAINIO_SUB_BUSY:
+			sub_busy = val_b;
+			break;
 		case FM7_MAINIO_CLOCKMODE: // fd00
 			if(val_b) {
 				clock_fast = true;
@@ -553,21 +560,17 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 			set_irq_printer(val_b);
 			break;
 		case FM7_MAINIO_KEYBOARDIRQ: //
-			set_irq_keyboard(val_b);
-			break;
-		case FM7_MAINIO_PUSH_KEYBOARD:
-			set_keyboard(data & 0x1ff);
+			key_irq_req = val_b;
+			register_event_by_clock(this, EVENT_FM7SUB_PROC, 8, false, NULL); // 2uS / 8MHz 
 			break;
 			// FD04
 		case FM7_MAINIO_PUSH_BREAK:
 			set_break_key(val_b);
 			break;
 		case FM7_MAINIO_SUB_ATTENTION:
-			set_sub_attention(val_b);
+			if(val_b) set_sub_attention(true);
 			break;
 			// FD05
-		case FM7_MAINIO_SUB_BUSY:
-			break;
 		case FM7_MAINIO_EXTDET:
 			extdet_neg = !val_b;
 			break;
@@ -585,17 +588,17 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 		case FM7_MAINIO_OPN_IRQ:
 			if(!connect_opn) break;
 			intstat_opn = val_b;
-			do_irq(val_b);
+			do_irq();
        			break;
 		case FM7_MAINIO_WHG_IRQ:
 			if(!connect_whg) break;
 			intstat_whg = val_b;
-			do_irq(val_b);
+			do_irq();
        			break;
 		case FM7_MAINIO_THG_IRQ:
 			if(!connect_thg) break;
 			intstat_thg = val_b;
-			do_irq(val_b);
+			do_irq();
        			break;
 		case FM7_MAINIO_FDC_DRQ:
 			set_drq_mfd(val_b);
@@ -763,9 +766,7 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 			retval = (uint32) get_port_fd00();
 			break;
 		case 0x01: // FD01
-			display->write_signal(SIG_FM7_SUB_KEY_FIRQ, 0, 1);
-			set_irq_keyboard(false);
-			retval = (uint32) kbd_bit7_0;
+			retval = (uint32) keyboard->read_data8(0x01);
 			break;
 		case 0x02: // FD02
 			retval = (uint32) get_port_fd02();
@@ -907,6 +908,7 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 	
 	data = data & 0xff;
 	addr = addr & 0xff;
+	io_w_latch[addr] = data;
 #if defined(HAS_MMR)
         if((addr < 0x90) && (addr >= 0x80)) {
 #if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX)
@@ -971,7 +973,8 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			display->write_signal(SIG_DISPLAY_MODE320, data,  0x40);
 			break;
 		case 0x13:
-			display->write_signal(SIG_FM7_SUB_BANK, data, 0x07);
+			sub_monitor_type = data & 0x07;
+			register_event_by_clock(this, EVENT_FM7SUB_PROC, 8, false, NULL); // 1uS / 8MHz 
 			break;
 #endif
 		case 0x15: // OPN CMD
@@ -1043,7 +1046,7 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			break;
 #endif
 		case 0x37: // Multi page
-			display->write_signal(SIG_FM7_SUB_MULTIPAGE, data, 0x00ff);
+			display->write_signal(SIG_DISPLAY_MULTIPAGE, data, 0x00ff);
 			break;
 		case 0x45: // WHG CMD
 			set_opn_cmd(1, data);
@@ -1134,13 +1137,16 @@ void FM7_MAINIO::event_callback(int event_id, int err)
 		case EVENT_FD_MOTOR_OFF:
 			set_fdc_motor(false);
 			break;
+		case EVENT_FM7SUB_PROC:
+			proc_sync_to_sub();
+			break;
 		default:
 			break;
 	}
 }
 
 
-void FM7_MAINIO::update_config(void)
+void FM7_MAINIO::update_config()
 {
 	switch(config.cpu_type){
 		case 0:
@@ -1152,3 +1158,33 @@ void FM7_MAINIO::update_config(void)
 	}
 	//	this->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
 }
+
+void FM7_MAINIO::event_vline(int v, int clock)
+{
+}
+
+
+void FM7_MAINIO::proc_sync_to_sub(void)
+{
+	if(sub_halt != sub_halt_bak) {
+		display->write_signal(SIG_DISPLAY_HALT,  (sub_halt) ? 0xff : 0x00, 0xff);
+	}
+	sub_halt_bak = sub_halt;
+	if(firq_sub_attention != firq_sub_attention_bak){
+     		do_firq();
+	}
+	firq_sub_attention_bak = firq_sub_attention;
+	//sub_cancel_bak = sub_cancel;
+	if(key_irq_req != key_irq_bak) {
+		set_irq_keyboard(key_irq_req);
+	}
+	key_irq_bak = key_irq_req;   
+#if defined(_FM77AV_VARIANTS)
+	if(sub_monitor_type != sub_monitor_bak) {
+		display->write_signal(SIG_FM7_SUB_BANK, sub_monitor_type, 0x07);
+	}
+	sub_monitor_bak = sub_monitor_type;
+#endif
+}
+
+	
