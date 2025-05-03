@@ -440,4 +440,9 @@
 #include "ys6464a/ys6464a.h"
 #endif
 
+// Homebrew Z80 TV GAME SYSTEM
+#ifdef _Z80TVGAME
+#include "z80tvgame/z80tvgame.h"
+#endif
+
 #endif

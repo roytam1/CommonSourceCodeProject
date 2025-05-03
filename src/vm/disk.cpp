@@ -243,7 +243,7 @@ file_loaded:
 			fi->Fclose();
 		}
 		if(temporary) {
-			fi->Remove(temp_path);
+			FILEIO::Remove(temp_path);
 		}
 		if(inserted) {
 #if 0
