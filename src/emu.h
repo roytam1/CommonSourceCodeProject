@@ -16,7 +16,7 @@
 //#define DIRECT3D_VERSION 0x900
 
 // for debug
-#define _DEBUG_LOG
+//#define _DEBUG_LOG
 
 #include <windows.h>
 #include <windowsx.h>

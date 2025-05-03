@@ -20,9 +20,13 @@ void TIMER::initialize()
 
 void TIMER::write_io8(uint32 addr, uint32 data)
 {
-	// input gate signal to i8253 ch0 and ch1
-	dev->write_signal(did0, 1, 0xffffffff);
-	dev->write_signal(did1, 1, 0xffffffff);
+	// input gate signal H->L->H to i8253 ch0 and ch1
+	dev->write_signal(did0, 1, 1);
+	dev->write_signal(did1, 1, 1);
+	dev->write_signal(did0, 0, 1);
+	dev->write_signal(did1, 0, 1);
+	dev->write_signal(did0, 1, 1);
+	dev->write_signal(did1, 1, 1);
 }
 
 void TIMER::event_callback(int event_id, int err)

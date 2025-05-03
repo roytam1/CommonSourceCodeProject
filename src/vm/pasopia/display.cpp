@@ -12,8 +12,6 @@
 #include "../../fileio.h"
 #include "../../config.h"
 
-extern config_t config;
-
 void DISPLAY::initialize()
 {
 	scanline = config.scan_line;

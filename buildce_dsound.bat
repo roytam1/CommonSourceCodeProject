@@ -54,6 +54,14 @@ evc rx78ce.vcp /MAKE "rx78ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG
 mkdir build\rx78
 copy GDI_DSOUND\rx78ce.exe build\rx78\.
 
+evc pc98hace.vcp /MAKE "pc98hace - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\pc98ha
+copy GDI_DSOUND\pc98hace.exe build\pc98ha\.
+
+evc pc98ltce.vcp /MAKE "pc98ltce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\pc98lt
+copy GDI_DSOUND\pc98ltce.exe build\pc98lt\.
+
 evc pv2000ce.vcp /MAKE "pv2000ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\pv2000
 copy GDI_DSOUND\pv2000ce.exe build\pv2000\.
@@ -71,6 +79,10 @@ copy GDI_DSOUND\qc10cmsce.exe build\qc10\.
 evc scvce.vcp /MAKE "scvce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\scv
 copy GDI_DSOUND\scvce.exe build\scv\.
+
+evc tk80bsce.vcp /MAKE "tk80bsce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\tk80bs
+copy GDI_DSOUND\tk80bsce.exe build\tk80bs\.
 
 evc x07ce.vcp /MAKE "x07ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\x07

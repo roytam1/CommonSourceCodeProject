@@ -19,8 +19,6 @@
 #define SIG_BEEP_PULSE	2
 #define SIG_BEEP_FREQ	3
 
-#define DELAY_FRAMES	3
-
 class BEEP : public DEVICE
 {
 private:

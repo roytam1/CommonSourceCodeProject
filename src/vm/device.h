@@ -97,14 +97,22 @@ public:
 	// i/o bus
 	virtual void write_io8(uint32 addr, uint32 data) {}
 	virtual uint32 read_io8(uint32 addr) {
+#ifdef IOBUS_RETURN_ADDR
+		return (addr & 1 ? addr >> 8 : addr) & 0xff;
+#else
 		return 0xff;
+#endif
 	}
 	virtual void write_io8w(uint32 addr, uint32 data, int* wait) {
 		*wait = 0;
 	}
 	virtual uint32 read_io8w(uint32 addr, int* wait) {
 		*wait = 0;
+#ifdef IOBUS_RETURN_ADDR
+		return (addr & 1 ? addr >> 8 : addr) & 0xff;
+#else
 		return 0xff;
+#endif
 	}
 	
 	// device to device

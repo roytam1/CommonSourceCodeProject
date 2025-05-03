@@ -1,5 +1,6 @@
 /*
-	NEC PC-98HA Emulator 'eHandy98'
+	NEC PC-98LT Emulator 'ePC-98LT'
+	NEC PC-98HA Emulator 'eHANDY98'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -9,37 +10,6 @@
 */
 
 #include "display.h"
-
-void DISPLAY::initialize()
-{
-	ch = 0;
-	_memset(regs, 0, sizeof(regs));
-}
-
-void DISPLAY::write_io8(uint32 addr, uint32 data)
-{
-	switch(addr & 0xffff)
-	{
-	case 0x810:
-		regs[ch & 0xf] = data;
-		break;
-	case 0x812:
-		ch = data;
-		break;
-	}
-}
-
-uint32 DISPLAY::read_io8(uint32 addr)
-{
-	switch(addr & 0xffff)
-	{
-	case 0x810:
-		return regs[ch & 0xf];
-	case 0x812:
-		return ch;
-	}
-	return 0xff;
-}
 
 void DISPLAY::draw_screen()
 {

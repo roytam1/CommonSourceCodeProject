@@ -60,6 +60,16 @@
 #include "mz5500/mz5500.h"
 #endif
 
+// SHARP MZ-6500
+#ifdef _MZ6500
+#include "mz5500/mz5500.h"
+#endif
+
+// SHARP MZ-6550
+#ifdef _MZ6550
+#include "mz5500/mz5500.h"
+#endif
+
 // TOSHIBA PASOPIA
 #ifdef _PASOPIA
 #include "pasopia/pasopia.h"
@@ -72,6 +82,11 @@
 
 // NEC PC-98HA
 #ifdef _PC98HA
+#include "pc98ha/pc98ha.h"
+#endif
+
+// NEC PC-98LT
+#ifdef _PC98LT
 #include "pc98ha/pc98ha.h"
 #endif
 
@@ -113,6 +128,11 @@
 // EPOCH Super Cassette Vision
 #ifdef _SCV
 #include "scv/scv.h"
+#endif
+
+// NEC TK-80BS (COMPO BS/80)
+#ifdef _TK80BS
+#include "tk80bs/tk80bs.h"
 #endif
 
 // CANON X-07

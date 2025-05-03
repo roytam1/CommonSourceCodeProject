@@ -34,6 +34,9 @@ void MEMORY::initialize()
 	_memset(vram + 0x800, 0x71, 0x800);
 	_memset(ipl, 0xff, sizeof(ipl));
 	_memset(rdmy, 0xff, sizeof(rdmy));
+#ifdef _TINYIMAS
+	_memset(emm, 0x20, sizeof(emm));
+#endif
 	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
@@ -45,6 +48,13 @@ void MEMORY::initialize()
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
+#ifdef _TINYIMAS
+	_stprintf(file_path, _T("%sEMM.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(emm, sizeof(emm), 1);
+		fio->Fclose();
+	}
+#endif
 	delete fio;
 	
 	// regist event
@@ -62,6 +72,9 @@ void MEMORY::reset()
 	blink = false;
 	// motor is always rotating...
 	d_pio->write_signal(did_pio, 0xff, 0x10);
+#ifdef _TINYIMAS
+	emm_ptr = 0;
+#endif
 }
 
 void MEMORY::event_vsync(int v, int clock)
@@ -148,6 +161,24 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xff)
 	{
+#ifdef _TINYIMAS
+	case 0:
+		emm_ptr = (emm_ptr & 0xffff00) | data;
+		emm_ptr &= EMM_MASK;
+		break;
+	case 1:
+		emm_ptr = (emm_ptr & 0xff00ff) | (data << 8);
+		emm_ptr &= EMM_MASK;
+		break;
+	case 2:
+		emm_ptr = (emm_ptr & 0x00ffff) | (data << 16);
+		emm_ptr &= EMM_MASK;
+		break;
+	case 3:
+		emm[emm_ptr++] = data;
+		emm_ptr &= EMM_MASK;
+		break;
+#endif
 	case 0xe0:
 		inh &= ~1;
 		update_map();
@@ -177,6 +208,28 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		break;
 	}
 }
+
+#ifdef _TINYIMAS
+uint32 MEMORY::read_io8(uint32 addr)
+{
+	uint32 val;
+	
+	switch(addr & 0xff)
+	{
+	case 0:
+		return emm_ptr & 0xff;
+	case 1:
+		return (emm_ptr >> 8) & 0xff;
+	case 2:
+		return (emm_ptr >> 16) & 0xff;
+	case 3:
+		val = emm[emm_ptr++];
+		emm_ptr &= EMM_MASK;
+		return val;
+	}
+	return 0xff;
+}
+#endif
 
 void MEMORY::update_map()
 {

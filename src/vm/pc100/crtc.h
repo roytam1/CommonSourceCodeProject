@@ -35,7 +35,6 @@ public:
 	
 	// common functions
 	void initialize();
-	void update_config();
 	void event_vsync(int v, int clock);
 	
 	void write_io8(uint32 addr, uint32 data);

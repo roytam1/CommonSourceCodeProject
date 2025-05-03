@@ -11,8 +11,6 @@
 #include "vm/vm.h"
 #include "config.h"
 
-extern config_t config;
-
 void EMU::initialize_screen()
 {
 	// init screen and window size

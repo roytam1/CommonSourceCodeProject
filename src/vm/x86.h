@@ -447,7 +447,6 @@ private:
 	
 	// i/o
 	inline uint8 IN8(uint32 addr) {
-//emu->out_debug("%5x\n",prvPC);
 		return d_io->read_io8(addr);
 	}
 	inline void OUT8(uint32 addr, uint8 val) {

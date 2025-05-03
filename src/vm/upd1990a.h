@@ -12,9 +12,9 @@
 
 #define SIG_UPD1990A_CLK	0
 #define SIG_UPD1990A_STB	1
-#define SIG_UPD1990A_C0	2
-#define SIG_UPD1990A_C1	3
-#define SIG_UPD1990A_C2	4
+#define SIG_UPD1990A_C0		2
+#define SIG_UPD1990A_C1		3
+#define SIG_UPD1990A_C2		4
 #define SIG_UPD1990A_DIN	5
 
 #include "vm.h"
@@ -41,6 +41,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void write_io8(uint32 addr, uint32 data);
 	void write_signal(int id, uint32 data, uint32 mask);
 	
 	// unique functions

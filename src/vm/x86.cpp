@@ -211,17 +211,22 @@ void X86::run(int clock)
 	while(count > 0) {
 		seg_prefix = false;
 		op(FETCHOP());
-		if(intstat) {
+		if(intstat & NMI_REQ_BIT) {
 			if(halt) {
 				PC++;
 				halt = false;
 			}
-			unsigned intnum;
-			if(intstat & NMI_REQ_BIT)
-				intnum = NMI_INT_VECTOR;
-			else
-				intnum = ACK_INTR() & 0xff;
-			intstat = 0;
+			unsigned intnum = NMI_INT_VECTOR;
+			intstat &= ~NMI_REQ_BIT;
+			interrupt(intnum);
+		}
+		else if((intstat & INT_REQ_BIT) && IF) {
+			if(halt) {
+				PC++;
+				halt = false;
+			}
+			unsigned intnum = ACK_INTR() & 0xff;
+			intstat &= ~INT_REQ_BIT;
 			interrupt(intnum);
 		}
 	}
@@ -707,7 +712,6 @@ void X86::i286_code_descriptor(uint16 selector, uint16 offset)
 void X86::op(uint8 code)
 {
 	prvPC = PC - 1;
-//emu->out_debug("%5x\n",prvPC);
 	
 	switch(code)
 	{
@@ -1026,8 +1030,13 @@ inline void X86::_push_es()	// Opcode 0x06
 
 inline void X86::_pop_es()	// Opcode 0x07
 {
+#ifdef I286
+	uint16 tmp = POP16();
+	i286_data_descriptor(ES, tmp);
+#else
 	sregs[ES] = POP16();
 	base[ES] = SegBase(ES);
+#endif
 	count -= cycles.pop_seg;
 }
 
@@ -3275,7 +3284,7 @@ inline void X86::_pushf()	// Opcode 0x9c
 	unsigned tmp = CompressFlags();
 	count -= cycles.pushf;
 #ifdef I286
-	PUSH16(tmp &= ~0xf000);
+	PUSH16(tmp & ~0xf000);
 #else
 	PUSH16(tmp | 0xf000);
 #endif
@@ -3289,6 +3298,11 @@ inline void X86::_popf()	// Opcode 0x9d
 	if(TF) {
 		op(FETCHOP());
 		interrupt(1);
+	}
+	if(IF && (intstat & INT_REQ_BIT)) {
+		unsigned intnum = ACK_INTR() & 0xff;
+		intstat &= ~INT_REQ_BIT;
+		interrupt(intnum);
 	}
 }
 
@@ -4341,6 +4355,11 @@ inline void X86::_sti()	// Opcode 0xfb
 	count -= cycles.flag_ops;
 	SetIF(1);
 	op(FETCHOP());
+	if(IF && (intstat & INT_REQ_BIT)) {
+		unsigned intnum = ACK_INTR() & 0xff;
+		intstat &= ~INT_REQ_BIT;
+		interrupt(intnum);
+	}
 }
 
 inline void X86::_cld()	// Opcode 0xfc

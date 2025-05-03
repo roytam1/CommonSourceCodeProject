@@ -288,6 +288,14 @@
 #define MENU_POS_SOUND                  3
 #endif
 
+// NEC PC-98LT
+#ifdef _PC98LT
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
 // NEC PC-100
 #ifdef _PC100
 #define MENU_POS_CONTROL                0
@@ -355,6 +363,14 @@
 #ifdef _SCV
 #define MENU_POS_CONTROL                0
 #define MENU_POS_CART                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#endif
+
+// NEC TK-80BS (COMPO BS/80)
+#ifdef _TK80BS
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
 #define MENU_POS_SCREEN                 2
 #define MENU_POS_SOUND                  3
 #endif

@@ -98,13 +98,13 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		e1 = data;
 		update_intr();
 		// set or reset busreq of sub cpu
-		emu->out_debug("e1=%2x, ms=%2x\n",e1,ms);
+//		emu->out_debug("e1=%2x, ms=%2x\n",e1,ms);
 		if(!(e1 & 2) && (ms & 0x80)) {
-			emu->out_debug(_T("SUB BUSREQ=OFF\n"));
+//			emu->out_debug(_T("SUB BUSREQ=OFF\n"));
 			d_sub->write_signal(SIG_CPU_BUSREQ, 0, 1);
 		}
 		else {
-			emu->out_debug(_T("SUB BUSREQ=ON\n"));
+//			emu->out_debug(_T("SUB BUSREQ=ON\n"));
 			d_sub->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		}
 		break;
@@ -112,18 +112,18 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		ms = data;
 		update_bank();
 		// reset sub cpu
-		emu->out_debug("e1=%2x, ms=%2x\n",e1,ms);
+//		emu->out_debug("e1=%2x, ms=%2x\n",e1,ms);
 		if(!(data & 0x80)) {
-			emu->out_debug(_T("SUB RESET\n"));
+//			emu->out_debug(_T("SUB RESET\n"));
 			d_sub->reset();
 		}
 		// set or reset busreq of sub cpu
 		if(!(e1 & 2) && (ms & 0x80)) {
-			emu->out_debug(_T("SUB BUSREQ=OFF\n"));
+//			emu->out_debug(_T("SUB BUSREQ=OFF\n"));
 			d_sub->write_signal(SIG_CPU_BUSREQ, 0, 1);
 		}
 		else {
-			emu->out_debug(_T("SUB BUSREQ=ON\n"));
+//			emu->out_debug(_T("SUB BUSREQ=ON\n"));
 			d_sub->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		}
 		break;
@@ -167,10 +167,10 @@ void MEMORY::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_MEMORY_SRDY) {
 		srdy = ((data & mask) != 0);
-if(srdy)
-emu->out_debug("\tSRDY = ON\n");
-else
-emu->out_debug("\tSRDY = OFF\n");
+//		if(srdy)
+//			emu->out_debug("\tSRDY = ON\n");
+//		else
+//			emu->out_debug("\tSRDY = OFF\n");
 		return;
 	}
 	else if(id == SIG_MEMORY_SACK) {
@@ -179,14 +179,13 @@ emu->out_debug("\tSRDY = OFF\n");
 	}
 	else if(id == SIG_MEMORY_INTMFD)
 		intmfd = ((data & mask) != 0);
-	else if(id == SIG_MEMORY_INT0)
-{
+	else if(id == SIG_MEMORY_INT0) {
 		int0 = ((data & mask) != 0);
-if(int0)
-emu->out_debug("\tINT0 = ON\n");
-else
-emu->out_debug("\tINT0 = OFF\n");
-}
+//		if(int0)
+//			emu->out_debug("\tINT0 = ON\n");
+//		else
+//			emu->out_debug("\tINT0 = OFF\n");
+	}
 	else if(id == SIG_MEMORY_INT1)
 		int1 = ((data & mask) != 0);
 	else if(id == SIG_MEMORY_INT2)

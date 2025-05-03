@@ -124,8 +124,6 @@ void I8251::event_callback(int event_id, int err)
 	if(rxen && !(status & RXRDY)) {
 		if(!fifo->empty())
 			recv = fifo->read();
-		if(fifo->empty())
-			status |= PE;
 		status |= RXRDY;
 		// notidy rxrdy
 		for(int i = 0; i < dcount_rxrdy; i++)

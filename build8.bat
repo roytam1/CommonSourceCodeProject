@@ -58,6 +58,10 @@ devenv.com pc98ha.vcproj /Rebuild Release
 mkdir build\pc98ha
 copy Release\pc98ha.exe build\pc98ha\.
 
+devenv.com pc98lt.vcproj /Rebuild Release
+mkdir build\pc98lt
+copy Release\pc98lt.exe build\pc98lt\.
+
 devenv.com pc100.vcproj /Rebuild Release
 mkdir build\pc100
 copy Release\pc100.exe build\pc100\.
@@ -91,6 +95,10 @@ copy Release\rx78.exe build\rx78\.
 devenv.com scv.vcproj /Rebuild Release
 mkdir build\scv
 copy Release\scv.exe build\scv\.
+
+devenv.com tk80bs.vcproj /Rebuild Release
+mkdir build\tk80bs
+copy Release\tk80bs.exe build\tk80bs\.
 
 devenv.com x07.vcproj /Rebuild Release
 mkdir build\x07

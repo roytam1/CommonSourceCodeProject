@@ -11,7 +11,6 @@
 #include "vm/vm.h"
 
 #include "config.h"
-extern config_t config;
 
 // ----------------------------------------------------------------------------
 // initialize

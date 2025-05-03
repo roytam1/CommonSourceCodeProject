@@ -29,6 +29,7 @@ private:
 		uint8 wreg;
 		uint8 rreg;
 		uint8 rmask;
+		uint8 mode;
 		bool first;
 	} port_t;
 	port_t port[3];

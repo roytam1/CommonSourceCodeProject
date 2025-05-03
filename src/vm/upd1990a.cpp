@@ -24,6 +24,15 @@ void UPD1990A::initialize()
 	clk = stb = din = true;
 }
 
+void UPD1990A::write_io8(uint32 addr, uint32 data)
+{
+	// for NEC PC-98x1 $20
+	cmd = data & 7;
+	din = ((data & 0x20) != 0);
+	write_signal(SIG_UPD1990A_STB, data, 8);
+	write_signal(SIG_UPD1990A_CLK, data, 0x10);
+}
+
 void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_UPD1990A_CLK) {

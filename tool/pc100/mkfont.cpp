@@ -123,15 +123,6 @@ void main()
 	}
 	fclose(fp);
 	
-	// 1/2, 1/4 fonts
-	fp = fopen("pc98font.bin", "rb");
-	if(fp != NULL) {
-		fread(buf + 0x1000, 0x800, 1, fp);
-//		fseek(fp, 0x800, SEEK_SET);
-		fread(buf, 0x1000, 1, fp);
-		fclose(fp);
-	}
-	
 	// output
 	fp = fopen("kanji.rom", "wb");
 	fwrite(buf, sizeof(buf), 1, fp);

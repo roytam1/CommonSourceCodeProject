@@ -11,8 +11,6 @@
 #include "crtc.h"
 #include "../../config.h"
 
-extern config_t config;
-
 void CRTC::initialize()
 {
 	// config

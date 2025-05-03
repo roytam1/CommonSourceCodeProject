@@ -12,8 +12,6 @@
 #include "../fifo.h"
 #include "../../config.h"
 
-extern config_t config;
-
 //#define OUT_CMD_LOG
 
 // interrupt bits

@@ -116,8 +116,6 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 			return;
 		}
 		else if(0xcff80 <= addr && addr < 0xcffe0) {
-		emu->out_debug("MEMOUT\t%4x,%2x\n", addr, data);
-
 			// memory mapped i/o
 			switch(addr & 0xffff)
 			{
@@ -178,7 +176,6 @@ uint32 MEMORY::read_data8(uint32 addr)
 	addr &= 0xffffff;
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
-		emu->out_debug("MEMIN\t%4x\n", addr);
 			// memory mapped i/o
 			switch(addr & 0xffff)
 			{

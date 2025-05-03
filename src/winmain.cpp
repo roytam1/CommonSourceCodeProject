@@ -24,13 +24,16 @@
 
 DWORD GetLongFullPathName(_TCHAR* src, _TCHAR* dst)
 {
+#ifdef _WIN32_WCE
+	// do nothing...
+	_tcscpy(dst, src);
+	return 0;
+#else
 	_TCHAR tmp[_MAX_PATH];
 	GetFullPathName(src, _MAX_PATH, tmp, NULL);
 	return GetLongPathName(tmp, dst, _MAX_PATH);
+#endif
 }
-
-// config
-extern config_t config;
 
 // emulation core
 EMU* emu;
@@ -170,7 +173,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	emu->set_window_size(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 #else
 	emu->set_window_size(WINDOW_WIDTH1, WINDOW_HEIGHT1);
-#endif
 	
 	// open command line path
 	if(szCmdLine[0]) {
@@ -189,6 +191,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 		emu->open_disk(long_path, 0);
 #endif
 	}
+#endif
 	
 	// timing control
 	int remain = 1000;

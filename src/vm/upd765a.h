@@ -54,7 +54,7 @@ private:
 	int event_phase, event_drv;
 	int phase_id, seek_id, drq_id, lost_id;
 #ifdef UPD765A_DMA_MODE
-	bool dma_done;
+	bool dma_data_lost;
 #endif
 	
 	// update status

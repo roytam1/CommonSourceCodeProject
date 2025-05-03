@@ -31,16 +31,16 @@
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	600
 #define FRAMES_PER_SEC		60
-#define LINES_PER_FRAME		256
+#define LINES_PER_FRAME		262
 #define CHARS_PER_LINE		1
-#define CPU_CLOCKS		3500000
+#define CPU_CLOCKS		3579525
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
 #define USE_PCM1BIT
 #define PCM1BIT_HIGH_QUALITY
 
 // for Tiny iM@s opening demo
-//#define _TINYIMAS
+#define _TINYIMAS
 
 #include "../../common.h"
 

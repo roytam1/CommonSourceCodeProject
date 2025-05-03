@@ -18,7 +18,7 @@ class UPD4991A : public DEVICE
 {
 private:
 	uint8 cur[13], tp1[13], tp2[13];
-	uint8 ch, ctrl1, ctrl2, mode;
+	uint8 ctrl1, ctrl2, mode;
 	int time[8];
 	
 public:

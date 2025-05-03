@@ -9,9 +9,6 @@
 */
 
 #include "crtc.h"
-#include "../../config.h"
-
-extern config_t config;
 
 void CRTC::initialize()
 {
@@ -25,13 +22,6 @@ void CRTC::initialize()
 	
 	// regist events
 	vm->regist_vsync_event(this);
-}
-
-void CRTC::update_config()
-{
-	//memo: how to request the display size changing
-//	emu->change_screen_size(SCREEN_WIDTH, SCREEN_HEIGHT, 0, WINDOW_WIDTH1, WINDOW_HEIGHT1, WINDOW_WIDTH2, WINDOW_HEIGHT2);	// horiz
-//	emu->change_screen_size(SCREEN_HEIGHT, SCREEN_WIDTH, 0, WINDOW_HEIGHT1, WINDOW_WIDTH1, WINDOW_HEIGHT2, WINDOW_WIDTH2);	// virt
 }
 
 void CRTC::event_vsync(int v, int clock)
@@ -72,8 +62,8 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 	case 0x5a:
 	case 0x5c:
 	case 0x5e:
-		palette[addr & 0xf] = (palette[addr & 0xf] & 0xff00) | data;
-		update_palette(addr & 0xf);
+		palette[(addr >> 1) & 0xf] = (palette[(addr >> 1) & 0xf] & 0xff00) | data;
+		update_palette((addr >> 1) & 0xf);
 		break;
 	case 0x41:
 	case 0x43:
@@ -91,8 +81,8 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 	case 0x5b:
 	case 0x5d:
 	case 0x5f:
-		palette[addr & 0xf] = (palette[addr & 0xf] & 0xff) | (data << 8);
-		update_palette(addr & 0xf);
+		palette[(addr >> 1) & 0xf] = (palette[(addr >> 1) & 0xf] & 0xff) | (data << 8);
+		update_palette((addr >> 1) & 0xf);
 		break;
 	case 0x60:
 		cmd = (cmd & 0xff00) | data;
@@ -133,7 +123,7 @@ uint32 CRTC::read_io8(uint32 addr)
 	case 0x5a:
 	case 0x5c:
 	case 0x5e:
-		return palette[addr & 0xf] & 0xff;
+		return palette[(addr >> 1) & 0xf] & 0xff;
 	case 0x41:
 	case 0x43:
 	case 0x45:
@@ -150,7 +140,7 @@ uint32 CRTC::read_io8(uint32 addr)
 	case 0x5b:
 	case 0x5d:
 	case 0x5f:
-		return palette[addr & 0xf] >> 8;
+		return palette[(addr >> 1) & 0xf] >> 8;
 	case 0x60:
 		return cmd & 0xff;
 	case 0x61:
@@ -170,26 +160,52 @@ void CRTC::draw_screen()
 	int sa = (hs + hd + 1) * 2 + (vs_tmp + vd) * 0x80;
 //	int sa = (hs + hd + 1) * 2 + ((vs & 0x3ff) + vd) * 0x80;
 	
-	for(int y = 0; y < 512; y++) {
-		int ptr = sa & 0x1ffff;
-		sa += 0x80;
-		uint16 *dest = emu->screen_buffer(y);
-		
-		for(int x = 0; x < 720; x += 8) {
-			uint8 p0 = vram0[ptr];
-			uint8 p1 = vram1[ptr];
-			uint8 p2 = vram2[ptr];
-			uint8 p3 = vram3[ptr++];
-			ptr &= 0x1ffff;
+	if(cmd != 0xffff) {
+		// mono
+		uint16 col = RGB_COLOR(31, 31, 31);
+		for(int y = 0; y < 512; y++) {
+			int ptr = sa & 0x1ffff;
+			sa += 0x80;
+			uint16 *dest = emu->screen_buffer(y);
 			
-			dest[x + 0] = palette_pc[((p0 & 0x01) << 0) | ((p1 & 0x01) << 1) | ((p2 & 0x01) << 2) | ((p3 & 0x01) << 3)];
-			dest[x + 1] = palette_pc[((p0 & 0x02) >> 1) | ((p1 & 0x02) << 0) | ((p2 & 0x02) << 1) | ((p3 & 0x02) << 2)];
-			dest[x + 2] = palette_pc[((p0 & 0x04) >> 2) | ((p1 & 0x04) >> 1) | ((p2 & 0x04) << 0) | ((p3 & 0x04) << 1)];
-			dest[x + 3] = palette_pc[((p0 & 0x08) >> 3) | ((p1 & 0x08) >> 2) | ((p2 & 0x08) >> 1) | ((p3 & 0x08) << 0)];
-			dest[x + 4] = palette_pc[((p0 & 0x10) >> 4) | ((p1 & 0x10) >> 3) | ((p2 & 0x10) >> 2) | ((p3 & 0x10) >> 1)];
-			dest[x + 5] = palette_pc[((p0 & 0x20) >> 5) | ((p1 & 0x20) >> 4) | ((p2 & 0x20) >> 3) | ((p3 & 0x20) >> 2)];
-			dest[x + 6] = palette_pc[((p0 & 0x40) >> 6) | ((p1 & 0x40) >> 5) | ((p2 & 0x40) >> 4) | ((p3 & 0x40) >> 3)];
-			dest[x + 7] = palette_pc[((p0 & 0x80) >> 7) | ((p1 & 0x80) >> 6) | ((p2 & 0x80) >> 5) | ((p3 & 0x80) >> 4)];
+			for(int x = 0; x < 720; x += 8) {
+				uint8 pat = vram0[ptr++];
+				ptr &= 0x1ffff;
+				
+				dest[x + 0] = pat & 0x01 ? col : 0;
+				dest[x + 1] = pat & 0x02 ? col : 0;
+				dest[x + 2] = pat & 0x04 ? col : 0;
+				dest[x + 3] = pat & 0x08 ? col : 0;
+				dest[x + 4] = pat & 0x10 ? col : 0;
+				dest[x + 5] = pat & 0x20 ? col : 0;
+				dest[x + 6] = pat & 0x40 ? col : 0;
+				dest[x + 7] = pat & 0x80 ? col : 0;
+			}
+		}
+	}
+	else {
+		// color
+		for(int y = 0; y < 512; y++) {
+			int ptr = sa & 0x1ffff;
+			sa += 0x80;
+			uint16 *dest = emu->screen_buffer(y);
+			
+			for(int x = 0; x < 720; x += 8) {
+				uint8 p0 = vram0[ptr];
+				uint8 p1 = vram1[ptr];
+				uint8 p2 = vram2[ptr];
+				uint8 p3 = vram3[ptr++];
+				ptr &= 0x1ffff;
+				
+				dest[x + 0] = palette_pc[((p0 & 0x01) << 0) | ((p1 & 0x01) << 1) | ((p2 & 0x01) << 2) | ((p3 & 0x01) << 3)];
+				dest[x + 1] = palette_pc[((p0 & 0x02) >> 1) | ((p1 & 0x02) << 0) | ((p2 & 0x02) << 1) | ((p3 & 0x02) << 2)];
+				dest[x + 2] = palette_pc[((p0 & 0x04) >> 2) | ((p1 & 0x04) >> 1) | ((p2 & 0x04) << 0) | ((p3 & 0x04) << 1)];
+				dest[x + 3] = palette_pc[((p0 & 0x08) >> 3) | ((p1 & 0x08) >> 2) | ((p2 & 0x08) >> 1) | ((p3 & 0x08) << 0)];
+				dest[x + 4] = palette_pc[((p0 & 0x10) >> 4) | ((p1 & 0x10) >> 3) | ((p2 & 0x10) >> 2) | ((p3 & 0x10) >> 1)];
+				dest[x + 5] = palette_pc[((p0 & 0x20) >> 5) | ((p1 & 0x20) >> 4) | ((p2 & 0x20) >> 3) | ((p3 & 0x20) >> 2)];
+				dest[x + 6] = palette_pc[((p0 & 0x40) >> 6) | ((p1 & 0x40) >> 5) | ((p2 & 0x40) >> 4) | ((p3 & 0x40) >> 3)];
+				dest[x + 7] = palette_pc[((p0 & 0x80) >> 7) | ((p1 & 0x80) >> 6) | ((p2 & 0x80) >> 5) | ((p3 & 0x80) >> 4)];
+			}
 		}
 	}
 	

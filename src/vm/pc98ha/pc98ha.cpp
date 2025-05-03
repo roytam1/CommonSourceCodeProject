@@ -1,5 +1,6 @@
 /*
-	NEC PC-98HA Emulator 'eHandy98'
+	NEC PC-98LT Emulator 'ePC-98LT'
+	NEC PC-98HA Emulator 'eHANDY98'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -19,15 +20,23 @@
 #include "../i8255.h"
 #include "../i8259.h"
 #include "../io8.h"
+#ifdef _PC98HA
 #include "../upd4991a.h"
+#else
+#include "../upd1990a.h"
+#endif
 #include "../upd71071.h"
 #include "../upd765a.h"
 #include "../x86.h"
 
+#ifdef _PC98HA
+#include "calendar.h"
+#endif
 #include "display.h"
 #include "floppy.h"
 #include "keyboard.h"
 #include "memory.h"
+#include "note.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -49,96 +58,62 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_p = new I8255(this, emu);	// for printer
 	pic = new I8259(this, emu);	// V50 internal
 	io = new IO8(this, emu);
+#ifdef _PC98HA
 	rtc = new UPD4991A(this, emu);
+#else
+	rtc = new UPD1990A(this, emu);
+#endif
 	dma = new UPD71071(this, emu);	// V50 internal
 	fdc = new UPD765A(this, emu);
 	cpu = new X86(this, emu);	// V50
 	
+#ifdef _PC98HA
+	calendar = new CALENDAR(this, emu);
+#endif
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
+	note = new NOTE(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
 	
-/*
-	IR0	timer ch0
-	IR1	key 8251a
-	IR2	timer ch1
-	IR3	-
-	IR4	rs232c 8251a
-	IR5	-
-	IR6	fdc
-	IR7	pic•sŠ®‘SŠ„‚İ
-
-MEMMAP
-	0E8E
-	1E8E
-
-0812	ch=dat;
-0810	reg[ch]=dat;
-
-0F8E
-	memcard‚È‚µ	04
-	memcard‚ ‚è	0e
-
-
-8810
-	40
-
-be
-
-
-1F8E
-4810
-8810
-C810
-
-OUT	c810, 0
-OUT	4810, 0
-OUT	2f8e, 1
-IN	 f8e =  0	4
-OUT	4810, 0
-OUT	 f8e, 0
-IN	 f8e =  0
-IN	  be = ff
-OUT	  be, 3
-IN	 f8e =  0
-IN	  be = ff
-OUT	1e8e,81
-OUT	 e8e,50
-OUT	1e8e,81
-IN	c810 = ff
-OUT	 e8e,50
-OUT	1e8e,80
-IN	  be = ff
-IN	 f8e =  0
-IN	  be = ff
-IN	 f8e =  0
-*/
-	sio_r->set_context_rxrdy(pic, SIG_I8259_IR4, 1);
+//???	sio_r->set_context_rxrdy(pic, SIG_I8259_IR4, 1);
 	sio_k->set_context_rxrdy(pic, SIG_I8259_IR1, 1);
-	sio_k->set_context_out(keyboard, SIG_KEYBOARD_RECV);
+//	sio_k->set_context_out(keyboard, SIG_KEYBOARD_RECV);
 	pit->set_context_ch0(pic, SIG_I8259_IR0);
 	pit->set_context_ch1(pic, SIG_I8259_IR2);
+#ifdef _PC98HA
+	pit->set_constant_clock(0, 2457600);
+	pit->set_constant_clock(1, 2457600);
+	pit->set_constant_clock(2, 2457600);
+#else
 	pit->set_constant_clock(0, 1996800);
-	pit->set_constant_clock(1, 1996800);
+	pit->set_constant_clock(1, 300);	// ???
 	pit->set_constant_clock(2, 1996800);
+#endif
 	pio_s->set_context_port_c(beep, SIG_BEEP_MUTE, 8, 0);
 	pic->set_context(cpu);
+#ifdef _PC98LT
+	rtc->set_context_dout(pio_s, SIG_I8255_PORT_B, 0);
+#endif
 	dma->set_context_memory(memory);
 	dma->set_context_ch2(fdc);	// 1MB
 	dma->set_context_ch3(fdc);	// 640KB
 	fdc->set_context_intr(pic, SIG_I8259_IR6, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
 	
+#ifdef _PC98HA
+	calendar->set_context_rtc(rtc);
+#endif
 	display->set_context_fdc(fdc);
 	display->set_vram_ptr(memory->get_vram());
 	floppy->set_context_fdc(fdc);
 	floppy->set_context_dma(dma, SIG_UPD71071_CH2, SIG_UPD71071_CH3);
 	keyboard->set_context_sio(sio_k, SIG_I8251_RECV);
+	note->set_context_pic(pic, SIG_I8259_IR5);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -148,7 +123,11 @@ IN	 f8e =  0
 	// i/o bus
 	io->set_iomap_alias_w(0x00, pic, 0);
 	io->set_iomap_alias_w(0x02, pic, 1);
-	io->set_iomap_range_w(0x22, 0x23, rtc);
+#ifdef _PC98HA
+	io->set_iomap_range_w(0x22, 0x23, calendar);
+#else
+	io->set_iomap_single_w(0x20, rtc);
+#endif
 	io->set_iomap_alias_w(0x30, sio_r, 0);
 	io->set_iomap_alias_w(0x32, sio_r, 1);
 	io->set_iomap_alias_w(0x31, pio_s, 0);
@@ -165,27 +144,34 @@ IN	 f8e =  0
 	io->set_iomap_alias_w(0x73, pit, 1);
 	io->set_iomap_alias_w(0x75, pit, 2);
 	io->set_iomap_alias_w(0x77, pit, 3);
-//	io->set_iomap_alias_w(0x92, fdc, 1);
-//	io->set_iomap_single_w(0x94, floppy);
-//	io->set_iomap_alias_w(0xca, fdc, 1);
-//	io->set_iomap_single_w(0xcc, floppy);
-//	io->set_iomap_single_w(0xbe, floppy);
+#ifdef DOCKING_STATION
+	io->set_iomap_single_w(0x92, floppy);
+	io->set_iomap_single_w(0x94, floppy);
+	io->set_iomap_single_w(0xca, floppy);
+	io->set_iomap_single_w(0xcc, floppy);
+	io->set_iomap_single_w(0xbe, floppy);
+#endif
 	io->set_iomap_range_w(0xe0, 0xef, dma);
-	io->set_iomap_single_w(0x0810, display);
-	io->set_iomap_single_w(0x0812, display);
+	io->set_iomap_single_w(0x0810, note);
+	io->set_iomap_single_w(0x0812, note);
+	io->set_iomap_single_w(0x8e1, memory);
+	io->set_iomap_single_w(0x8e3, memory);
+	io->set_iomap_single_w(0x8e5, memory);
+	io->set_iomap_single_w(0x8e7, memory);
 	io->set_iomap_single_w(0x0c10, memory);
 	io->set_iomap_single_w(0x0e8e, memory);
 	io->set_iomap_single_w(0x1e8e, memory);
 	io->set_iomap_single_w(0x4c10, memory);
-	io->set_iomap_single_w(0x6e8e, memory);
-	io->set_iomap_single_w(0x7e8e, memory);
-	io->set_iomap_single_w(0x8810, memory);
+	io->set_iomap_single_w(0x8810, note);
 	io->set_iomap_single_w(0x8c10, memory);
+	io->set_iomap_single_w(0xc810, note);
 	io->set_iomap_single_w(0xcc10, memory);
 	
 	io->set_iomap_alias_r(0x00, pic, 0);
 	io->set_iomap_alias_r(0x02, pic, 1);
-	io->set_iomap_single_r(0x23, rtc);
+#ifdef _PC98HA
+	io->set_iomap_single_r(0x23, calendar);
+#endif
 	io->set_iomap_alias_r(0x30, sio_r, 0);
 	io->set_iomap_alias_r(0x32, sio_r, 1);
 	io->set_iomap_alias_r(0x31, pio_s, 0);
@@ -201,29 +187,24 @@ IN	 f8e =  0
 	io->set_iomap_alias_r(0x71, pit, 0);
 	io->set_iomap_alias_r(0x73, pit, 1);
 	io->set_iomap_alias_r(0x75, pit, 2);
-//	io->set_iomap_alias_r(0x90, fdc, 0);
-//	io->set_iomap_alias_r(0x92, fdc, 1);
+#ifdef DOCKING_STATION
 	io->set_iomap_single_r(0x90, floppy);
 	io->set_iomap_single_r(0x92, floppy);
 	io->set_iomap_single_r(0x94, floppy);
-//	io->set_iomap_alias_r(0xc8, fdc, 0);
-//	io->set_iomap_alias_r(0xca, fdc, 1);
 	io->set_iomap_single_r(0xc8, floppy);
 	io->set_iomap_single_r(0xca, floppy);
 	io->set_iomap_single_r(0xcc, floppy);
 	io->set_iomap_single_r(0xbe, floppy);
+#endif
 	io->set_iomap_range_r(0xe0, 0xef, dma);
-	io->set_iomap_single_r(0x0810, display);
-	io->set_iomap_single_r(0x0812, display);
+	io->set_iomap_single_r(0x0810, note);
+	io->set_iomap_single_r(0x0812, note);
 	io->set_iomap_single_r(0x0c10, memory);
-	io->set_iomap_single_r(0x0e8e, memory);
-	io->set_iomap_single_r(0x0f8e, memory);
-	io->set_iomap_single_r(0x1e8e, memory);
-	io->set_iomap_single_r(0x1f8e, memory);
+	io->set_iomap_single_r(0x0f8e, note);
 	io->set_iomap_single_r(0x4c10, memory);
-	io->set_iomap_single_r(0x8810, memory);
+	io->set_iomap_single_r(0x5e8e, note);
+	io->set_iomap_single_r(0x8810, note);
 	io->set_iomap_single_r(0x8c10, memory);
-	io->set_iomap_single_r(0xc810, memory);
 	io->set_iomap_single_r(0xcc10, memory);
 	
 	// initialize and reset all devices except the event manager
@@ -239,10 +220,11 @@ IN	 f8e =  0
 	// initial device settings
 	pio_s->write_signal(SIG_I8255_PORT_A, 0xe3, 0xff);
 	pio_s->write_signal(SIG_I8255_PORT_B, 0xe0, 0xff);
-	pio_s->write_signal(SIG_I8255_PORT_C, 0x18, 0xff);	//18 or 98
+#ifdef _PC98HA
 	pio_p->write_signal(SIG_I8255_PORT_B, 0xde, 0xff);
-	pio_p->write_signal(SIG_I8255_PORT_C, 0x80, 0xff);
-	
+#else
+	pio_p->write_signal(SIG_I8255_PORT_B, 0xfc, 0xff);
+#endif
 	beep->write_signal(SIG_BEEP_ON, 1, 1);
 	beep->write_signal(SIG_BEEP_MUTE, 1, 1);
 }
@@ -343,7 +325,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	beep->init(rate, 1000, 2, 8000);
+	beep->init(rate, 2400, 2, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)

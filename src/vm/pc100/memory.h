@@ -41,7 +41,6 @@ public:
 	
 	// common functions
 	void initialize();
-	
 	void write_data8(uint32 addr, uint32 data);
 	uint32 read_data8(uint32 addr);
 	void write_data16(uint32 addr, uint32 data);

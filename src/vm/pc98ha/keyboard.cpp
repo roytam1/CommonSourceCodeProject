@@ -1,5 +1,6 @@
 /*
-	NEC PC-98HA Emulator 'eHandy98'
+	NEC PC-98LT Emulator 'ePC-98LT'
+	NEC PC-98HA Emulator 'eHANDY98'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -9,34 +10,30 @@
 */
 
 #include "keyboard.h"
-#include "../fifo.h"
 
 void KEYBOARD::initialize()
 {
-	
-}
-
-void KEYBOARD::reset()
-{
-	// self check result ???
-//	d_sio->write_signal(did_sio, 0x60, 0xff);
-}
-
-void KEYBOARD::write_signal(int id, uint32 data, uint32 mask)
-{
-	// receive command
-	emu->out_debug("RECV %2x\n", data & mask);
+	_memset(flag, 0, sizeof(flag));
 }
 
 void KEYBOARD::key_down(int code)
 {
-	if(key_table[code & 0xff] != -1)
-		d_sio->write_signal(did_sio, key_table[code & 0xff] | 0x80, 0xff);
+	if((code = key_table[code & 0xff]) != -1) {
+		if(flag[code])
+			d_sio->write_signal(did_sio, code | 0x80, 0xff);
+		d_sio->write_signal(did_sio, code, 0xff);
+//		if(!flag[code])
+//			d_sio->write_signal(did_sio, code, 0xff);
+		flag[code] = 1;
+	}
 }
 
 void KEYBOARD::key_up(int code)
 {
-	if(key_table[code & 0xff] != -1)
-		d_sio->write_signal(did_sio, key_table[code & 0xff] & ~0x80, 0xff);
+	if((code = key_table[code & 0xff]) != -1) {
+		if(flag[code])
+			d_sio->write_signal(did_sio, code | 0x80, 0xff);
+		flag[code] = 0;
+	}
 }
 

@@ -29,6 +29,7 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 
 uint32 FLOPPY::read_io8(uint32 addr)
 {
+//	return 0xff;
 	return acctc ? 0xff : 0x7f;
 //	return drdy ? 0xff : 0x7f;
 }

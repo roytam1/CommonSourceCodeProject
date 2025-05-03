@@ -1,5 +1,6 @@
 /*
-	NEC PC-98HA Emulator 'eHandy98'
+	NEC PC-98LT Emulator 'ePC-98LT'
+	NEC PC-98HA Emulator 'eHANDY98'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -19,18 +20,13 @@ class DISPLAY : public DEVICE
 {
 private:
 	DEVICE *d_fdc;
-	
 	uint8 *vram;
-	uint8 ch, regs[16];
 	
 public:
 	DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~DISPLAY() {}
 	
 	// common functions
-	void initialize();
-	void write_io8(uint32 addr, uint32 data);
-	uint32 read_io8(uint32 addr);
 	
 	// unique functions
 	void set_context_fdc(DEVICE* device) {

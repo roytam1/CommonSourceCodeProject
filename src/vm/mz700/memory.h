@@ -19,6 +19,9 @@
 #define EVENT_TEMPO	1
 #define EVENT_BLINK	2
 
+#define EMM_SIZE	0x1000000
+#define EMM_MASK	(EMM_SIZE - 1)
+
 class MEMORY : public DEVICE
 {
 private:
@@ -32,6 +35,10 @@ private:
 	uint8 ram[0x10000];	// Main RAM 64KB
 	uint8 vram[0x1000];	// VRAM 4KB
 	uint8 ipl[0x1000];	// IPL 4KB
+#ifdef _TINYIMAS
+	uint8 emm[EMM_SIZE];
+	uint32 emm_ptr;
+#endif
 	
 	uint8 inh, inhbak;
 	uint8 hblank, tempo;
@@ -57,6 +64,9 @@ public:
 		return read_data8(addr) | (read_data8(addr + 1) << 8);
 	}
 	void write_io8(uint32 addr, uint32 data);
+#ifdef _TINYIMAS
+	uint32 read_io8(uint32 addr);
+#endif
 	
 	// unitque function
 	void set_context_cpu(DEVICE* device) {

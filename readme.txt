@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								7/12/2008
+								8/27/2008
 
 --- What's this ?
 
@@ -16,9 +16,10 @@ This archive includes the all source codes of:
 	EmuZ-3500	SHARP MZ-3500 emulator
 	EmuZ-5500	SHARP MZ-5500 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
-	eHANDY98	NEC PC-98HA (HANDY98) emulator
+	eHANDY98	NEC PC-98HA emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
+	ePC-98LT	NEC PC-98LT emulator
 	ePC-100		NEC PC-100 emulator
 	ePC-3200	SHARP PC-3200 emulator
 	ePV-1000	CASIO PV-1000 emulator
@@ -26,6 +27,7 @@ This archive includes the all source codes of:
 	eQC-10		EPSON QC-10/QX-10 emulator
 	eRX-78		BANDAI RX-78 emulator
 	eSCV		EPOCH Super Cassette Vision emulator
+	eTK-80BS	NEC TK-80BS (COMPO BS/80) emulator
 	eX-07		CANON X-07 emulator
 
 You can compile them with:

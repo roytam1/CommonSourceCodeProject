@@ -73,18 +73,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	ctc->set_context_ch1(ctc, SIG_I8253_CLOCK_2);
 	ctc->set_context_ch2(interrupt, SIG_INTERRUPT_CLOCK);
-#ifndef _TINYIMAS
 	ctc->set_constant_clock(0, 895000);
-#endif
 	ctc->set_constant_clock(1, 16000);
 	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN, 0x7f, 0);
-#ifdef USE_PCM1BIT
-#ifndef _TINYIMAS
-	pio->set_context_port_c(pcm, SIG_PCM1BIT_ON, 1, 0);
-#endif
-#else
-	pio->set_context_port_c(beep, SIG_BEEP_ON, 1, 0);
-#endif
 	pio->set_context_port_c(drec, SIG_DATAREC_OUT, 2, 0);
 	pio->set_context_port_c(interrupt, SIG_INTERRUPT_INTMASK, 4, 0);
 	// pc3: motor rotate control
@@ -103,6 +94,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_intr(interrupt);
 	
 	// i/o bus
+#ifdef _TINYIMAS
+	io->set_iomap_range_r(0, 3, memory);	// EMM
+	io->set_iomap_range_w(0, 3, memory);	// EMM
+#endif
 	io->set_iomap_range_w(0xe0, 0xe6, memory);
 	
 	// initialize and reset all devices except the event manager
@@ -116,6 +111,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 #ifdef _TINYIMAS
 	skip_frames = -1;
+#endif
+	// initial device settings
+#ifdef USE_PCM1BIT
+	pcm->write_signal(SIG_PCM1BIT_ON, 1, 1);
+#else
+	beep->write_signal(SIG_BEEP_ON, 1, 1);
 #endif
 }
 
@@ -262,11 +263,11 @@ void VM::close_datarec()
 
 bool VM::now_skip()
 {
-#ifdef _TINYIMAS
-	return (skip_frames > 0);
-#else
+//#ifdef _TINYIMAS
+//	return (skip_frames > 0);
+//#else
 	return false; //drec->skip();
-#endif
+//#endif
 }
 
 void VM::update_config()

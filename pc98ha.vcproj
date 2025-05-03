@@ -722,6 +722,26 @@
 				Filter="cpp"
 				>
 				<File
+					RelativePath="src\vm\pc98ha\calendar.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\pc98ha\display.cpp"
 					>
 					<FileConfiguration
@@ -783,6 +803,26 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc98ha\memory.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="src\vm\pc98ha\note.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -918,6 +958,10 @@
 				Filter="h"
 				>
 				<File
+					RelativePath="src\vm\pc98ha\calendar.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\pc98ha\display.h"
 					>
 				</File>
@@ -931,6 +975,10 @@
 				</File>
 				<File
 					RelativePath="src\vm\pc98ha\memory.h"
+					>
+				</File>
+				<File
+					RelativePath="src\vm\pc98ha\note.h"
 					>
 				</File>
 				<File

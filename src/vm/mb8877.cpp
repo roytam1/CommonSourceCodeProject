@@ -12,8 +12,6 @@
 #include "disk.h"
 #include "../config.h"
 
-extern config_t config;
-
 #define CANCEL_EVENT(event) { \
 	if(regist_id[event] != -1) { \
 		vm->cancel_event(regist_id[event]); \

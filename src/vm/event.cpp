@@ -10,8 +10,6 @@
 #include "event.h"
 #include "../config.h"
 
-extern config_t config;
-
 void EVENT::initialize()
 {
 	// load config

@@ -54,6 +54,14 @@ evc rx78ce.vcp /MAKE "rx78ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFI
 mkdir build\rx78
 copy GDI_WAVEOUT\rx78ce.exe build\rx78\.
 
+evc pc98hace.vcp /MAKE "pc98hace - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\pc98ha
+copy GDI_WAVEOUT\pc98hace.exe build\pc98ha\.
+
+evc pc98ltce.vcp /MAKE "pc98ltce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\pc98lt
+copy GDI_WAVEOUT\pc98ltce.exe build\pc98lt\.
+
 evc pv2000ce.vcp /MAKE "pv2000ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\pv2000
 copy GDI_WAVEOUT\pv2000ce.exe build\pv2000\.
@@ -71,6 +79,10 @@ copy GDI_WAVEOUT\qc10cmsce.exe build\qc10\.
 evc scvce.vcp /MAKE "scvce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\scv
 copy GDI_WAVEOUT\scvce.exe build\scv\.
+
+evc tk80bsce.vcp /MAKE "tk80bsce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\tk80bs
+copy GDI_WAVEOUT\tk80bsce.exe build\tk80bs\.
 
 evc x07ce.vcp /MAKE "x07ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\x07

@@ -13,8 +13,6 @@
 #include "../../fileio.h"
 #include "../../config.h"
 
-extern config_t config;
-
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 11, eb = (e) >> 11; \
 	for(int i = sb; i <= eb; i++) { \
@@ -127,7 +125,6 @@ uint32 MEMORY::read_io8(uint32 addr)
 	----
 	0000-1FFF	: IPL
 	8000-87FF	: CMOS
-
 */
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)

@@ -1,5 +1,6 @@
 /*
-	NEC PC-98HA Emulator 'eHandy98'
+	NEC PC-98LT Emulator 'ePC-98LT'
+	NEC PC-98HA Emulator 'eHANDY98'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -12,8 +13,13 @@
 #define _PC98HA_H_
 
 // device informations for win32
+#ifdef _PC98HA
 #define DEVICE_NAME		"NEC PC-98HA"
 #define CONFIG_NAME		"pc98ha"
+#else
+#define DEVICE_NAME		"NEC PC-98LT"
+#define CONFIG_NAME		"pc98lt"
+#endif
 #define CONFIG_VERSION		0x01
 
 #define WINDOW_WIDTH1		640
@@ -32,17 +38,24 @@
 #define FRAMES_PER_SEC		55.4
 #define LINES_PER_FRAME 	440
 #define CHARS_PER_LINE		108
-#define CPU_CLOCKS		7987200
+#ifdef _PC98HA
+#define CPU_CLOCKS		10000000
+#else
+#define CPU_CLOCKS		8000000
+#endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #define V30
 #define I8259_MAX_CHIPS		1
 #define UPD765A_DMA_MODE
-#define UPD765A_WAIT_SEEK
+//#define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
 #define IO8_ADDR_MAX		0x10000
+#define IOBUS_RETURN_ADDR
 #define EVENT_PRECISE	40
+
+//#define DOCKING_STATION
 
 #include "../../common.h"
 
@@ -56,15 +69,23 @@ class I8253;
 class I8255;
 class I8259;
 class IO8;
+#ifdef _PC98HA
 class UPD4991A;
+#else
+class UPD1990A;
+#endif
 class UPD71071;
 class UPD765A;
 class X86;
 
+#ifdef _PC98HA
+class CALENDAR;
+#endif
 class DISPLAY;
 class FLOPPY;
 class KEYBOARD;
 class MEMORY;
+class NOTE;
 
 class VM
 {
@@ -84,15 +105,23 @@ protected:
 	I8255* pio_p;
 	I8259* pic;
 	IO8* io;
+#ifdef _PC98HA
 	UPD4991A* rtc;
+#else
+	UPD1990A* rtc;
+#endif
 	UPD71071* dma;
 	UPD765A* fdc;
 	X86* cpu;
 	
+#ifdef _PC98HA
+	CALENDAR* calendar;
+#endif
 	DISPLAY* display;
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
+	NOTE* note;
 	
 public:
 	// ----------------------------------------

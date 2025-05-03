@@ -14,6 +14,7 @@ void I8253::initialize()
 	for(int ch = 0; ch < 3; ch++) {
 		counter[ch].prev_out = true;
 		counter[ch].prev_in = false;
+		counter[ch].gate = true;
 		counter[ch].count = 0x10000;
 		counter[ch].count_reg = 0;
 		counter[ch].ctrl_reg = 0x34;
@@ -280,20 +281,34 @@ loop:
 
 void I8253::input_gate(int ch, bool signal)
 {
-	// set signal
-	if(counter[ch].mode == 1)
-		set_signal(ch, false);
-	// start/restart count
-	if(!(counter[ch].mode == 0 || counter[ch].mode == 4)) {
+	bool prev = counter[ch].gate;
+	counter[ch].gate = signal;
+	
+	if(prev && !signal) {
+		// stop count
+		if(!(counter[ch].mode == 1 || counter[ch].mode == 5))
+			stop_count(ch);
+		// set output signal
+		if(counter[ch].mode == 2 || counter[ch].mode == 3)
+			set_signal(ch, true);
+	}
+	else if(!prev && signal) {
+		// restart count
 		stop_count(ch);
-		counter[ch].delay = true;
+		if(!(counter[ch].mode == 0 || counter[ch].mode == 4))
+			counter[ch].delay = true;
 		start_count(ch);
+		// set output signal
+		if(counter[ch].mode == 1)
+			set_signal(ch, false);
 	}
 }
 
 void I8253::start_count(int ch)
 {
 	if(counter[ch].w_cnt)
+		return;
+	if(!counter[ch].gate)
 		return;
 	counter[ch].start = true;
 	

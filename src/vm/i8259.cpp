@@ -26,27 +26,42 @@ void I8259::write_io8(uint32 addr, uint32 data)
 	if(addr & 1) {
 		if(pic[c].icw2_r) {
 			// icw2
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: icw2 = %d\n"), c, data);
+#endif
 			pic[c].icw2 = data;
 			pic[c].icw2_r = 0;
 		}
 		else if(pic[c].icw3_r) {
 			// icw3
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: icw3 = %d\n"), c, data);
+#endif
 			pic[c].icw3 = data;
 			pic[c].icw3_r = 0;
 		}
 		else if(pic[c].icw4_r) {
 			// icw4
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: icw4 = %d\n"), c, data);
+#endif
 			pic[c].icw4 = data;
 			pic[c].icw4_r = 0;
 		}
 		else {
 			// ocw1
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: imr = %2x\n"), c, data);
+#endif
 			pic[c].imr = data;
 		}
 	}
 	else {
 		if(data & 0x10) {
 			// icw1
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: icw1 = %2x\n"), c, data);
+#endif
 			pic[c].icw1 = data;
 			pic[c].icw2_r = 1;
 			pic[c].icw3_r = (data & 2) ? 0 : 1;
@@ -62,6 +77,9 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		}
 		else if(data & 8) {
 			// ocw3
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: ocw3 = %d\n"), c, data);
+#endif
 			if(!(data & 2))
 				data = (data & ~1) | (pic[c].ocw3 & 1);
 			if(!(data & 0x40))
@@ -70,6 +88,9 @@ void I8259::write_io8(uint32 addr, uint32 data)
 		}
 		else {
 			// ocw2
+#ifdef _DEBUG_LOG
+//		emu->out_debug(_T("I8259[%d]: ocw2 = %d\n"), c, data);
+#endif
 			int level = 0;
 			if(data & 0x40)
 				level = data & 7;
@@ -113,11 +134,8 @@ void I8259::write_signal(int id, uint32 data, uint32 mask)
 		update_intr();
 	}
 	else {
-		// clear irr if the level trigger mode
-		if(pic[id >> 3].icw1 & 8) {
-			pic[id >> 3].irr &= ~(1 << (id & 7));
-			update_intr();
-		}
+		pic[id >> 3].irr &= ~(1 << (id & 7));
+		update_intr();
 	}
 }
 

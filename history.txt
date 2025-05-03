@@ -1,18 +1,72 @@
+8/27/2008
+
+[EMU/WIN32] fix build problem for Windows CE
+
+[VM/I8255] support mode1
+[VM/I8259] clear irr bit if the request signal is changed to low level
+[VM/UPD1990A] support i/o coonection interface
+[VM/X86] fix interrup status
+[VM/X86] fix pop es on 80286
+
+[MZ700] fix vsync/hsnyc timing
+[MZ700/MEMORY] support 16MB EMM board
+[PC98HA] support PC-98LT
+[TK80BS] support TK-80BS (COMPO BS/80)
+
+
+8/19/2008
+
+[VM/UPD765A] fix the problem that data lost occurs after the result phase
+[VM/UPD765A] fix CB bit in the status register in sence intstat command
+[VM/UPD765A] fix AT bit in the result of seek command
+
+[PC100/CTRC] support monochrome screen mode
+[PC100/CRTC] fix palette registers
+[PC100/IOCTRL] fix keyboard event
+[PC100/IOCTRL] support keyboard reset
+[PC100/IOCTRL] fix keyboard initialize data
+
+
+8/16/2008
+
+[EMU/WIN32] support rotate screen
+[EMU/WIN32] fix build problem for Windows CE
+
+[VM/BEEP] more clear beep generation for the constant frequency
+[VM/BEEP] fix mute logic
+[VM/DEVICE] return address for unassigned I/O port
+[VM/EVENT] fix crash problem in the initialization
+[VM/I8251] fix PE bit in the status register
+[VM/I8253] check edge of the input signal
+[VM/I8253] fix gate signal
+[VM/RTC58321] support i/o coonection interface
+[VM/UPD4991A] modify i/o connection interface
+[VM/UPD4991A] fix year data
+[VM/UPD765A] support drq line delay
+
+[PC98HA] support NEC PC-98HA
+[PC100] support NEC PC-100 (not work)
+[PC3200] add SHARP PC-3200 skelton (not work)
+[MZ700] fix sound noise problem
+[MZ700/MEMORY] support EMM memory
+[MZ2500/TIMER] modify 8253 gate control
+
+
 6/11/2008
 
 [EMU/WIN32] open command line as cart or disk file path
 [EMU/WIN32] convert file path to full and long file path
 
-[AND/OR/NAND/NOR] support and/or/nand/nor gates
-[DATAREC] output low signal when the tape is closed
-[MB8876] support motor on/off signal
-[PCM1BIT] support on/off signal
-[PCM1BIT] support high quality sound
-[RTC58321] support RTC58321
-[UPD4991A] support uPD4991A
-[UPD765A] fdc status patch for MZ-3500
-[X86] fix freeze problem that some opecodes did not decrease the clock
-[Z80] return busack signal whe busreq occurs
+[VM/AND/OR/NAND/NOR] support and/or/nand/nor gates
+[VM/DATAREC] output low signal when the tape is closed
+[VM/MB8876] support motor on/off signal
+[VM/PCM1BIT] support on/off signal
+[VM/PCM1BIT] support high quality sound
+[VM/RTC58321] support RTC58321
+[VM/UPD4991A] support uPD4991A
+[VM/UPD765A] fdc status patch for MZ-3500
+[VM/X86] fix freeze problem that some opecodes did not decrease the clock
+[VM/Z80] return busack signal whe busreq occurs
 
 [FMR50] support FUJITSU FMR-50 (not work)
 [MZ700] support SHARP MZ-700

@@ -2697,7 +2697,7 @@ void Z80::OP_ED()
 	case 0x76: // IM 1
 		IM = 1;
 		break;
-	case 0x78: // IN E, (C)
+	case 0x78: // IN A, (C)
 		_A = IN8(_C, _B);
 		_F = (_F & CF) | SZP[_A];
 		break;

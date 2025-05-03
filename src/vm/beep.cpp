@@ -9,6 +9,8 @@
 
 #include "beep.h"
 
+#define DELAY_FRAMES	3
+
 void BEEP::reset()
 {
 	signal = true;
@@ -21,8 +23,8 @@ void BEEP::reset()
 void BEEP::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_BEEP_ON) {
-		bool next = (data & mask) ? true : false;
-		if(!on && next) {
+		bool next = ((data & mask) != 0);
+		if(!on && next && !mute) {
 			count = 0;
 			pulse = lines = 0;
 			change = constant ? 2 : 0;
@@ -30,11 +32,11 @@ void BEEP::write_signal(int id, uint32 data, uint32 mask)
 		on = next;
 	}
 	else if(id == SIG_BEEP_MUTE) {
-		bool next = (data & mask) ? true : false;
-		if(mute && !next) {
+		bool next = ((data & mask) != 0);
+		if(mute && !next && on) {
 			count = 0;
 			pulse = lines = 0;
-			change = 2;
+			change = constant ? 2 : 0;
 		}
 		mute = next;
 	}
@@ -69,21 +71,22 @@ void BEEP::event_vsync(int v, int clock)
 
 void BEEP::mix(int32* buffer, int cnt)
 {
-	if(!on || mute || change || diff < 32)
-		return;
-	for(int i = 0; i < cnt; i++) {
-		if((count -= 32) < 0) {
-			count += diff;
-			signal = !signal;
+	if(on && !mute && !change && diff >= 32) {
+		for(int i = 0; i < cnt; i++) {
+			if((count -= 32) < 0) {
+				count += diff;
+				signal = !signal;
+			}
+			buffer[i] += signal ? gen_vol : -gen_vol;
 		}
-		buffer[i] += signal ? gen_vol : -gen_vol;
 	}
 }
 
 void BEEP::init(int rate, int frequency, int divide, int volume)
 {
 	if(frequency != -1) {
-		diff = (int)(32.0 * rate / frequency / 2.0 + 0.5);	// constant frequency
+//		diff = (int)(32.0 * rate / frequency / 2.0 + 0.5);	// constant frequency
+		diff = 32 * (int)(rate / frequency / 2.0 + 0.5);	// constant frequency
 		constant = 0;
 	}
 	else {

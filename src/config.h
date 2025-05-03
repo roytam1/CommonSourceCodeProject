@@ -65,5 +65,7 @@ typedef struct {
 	int d3d9_filter;	// 0==Point, 1=Linear
 } config_t;
 
+extern config_t config;
+
 #endif
 
