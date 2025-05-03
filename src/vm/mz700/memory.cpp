@@ -1139,6 +1139,7 @@ bool MEMORY::load_state(FILEIO* state_fio)
 #endif
 	state_fio->Fread(palette_pc, sizeof(palette_pc), 1);
 	
+	// post process
 	update_map_low();
 	update_map_middle();
 	update_map_high();

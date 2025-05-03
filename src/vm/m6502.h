@@ -54,8 +54,10 @@ public:
 	{
 		return prev_pc;
 	}
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
-	// unique function
+	// unique functions
 	void set_context_mem(DEVICE* device)
 	{
 		d_mem = device;

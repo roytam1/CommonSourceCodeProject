@@ -462,7 +462,9 @@ bool YM2203::load_state(FILEIO* state_fio)
 	clock_const = state_fio->FgetUint32();
 	clock_busy = state_fio->FgetUint32();
 	busy = state_fio->FgetBool();
+	
 #ifdef SUPPORT_MAME_FM_DLL
+	// post process
 	if(dllchip) {
 		for(int i = 0; i < 0x200; i++) {
 			if(port_log[i].written) {
