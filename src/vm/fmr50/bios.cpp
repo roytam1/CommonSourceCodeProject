@@ -66,13 +66,13 @@
 #define VRAM_SIZE	0x20000
 #define IPL_SIZE	0x10000
 #define IPL_ID		'2'
-#elif defined(_FMR50)
-// FMR-50
+#elif defined(_FMR50) || defined(_FMRCARD) || defined(_OASYS30) || defined(_OASYSPOCKET3)
+// FMR-50, FMR-CARD, OASYS 30, OASYS Pocket3
 #define CMOS_SIZE	0x800
 #define VRAM_SIZE	0x40000
 #define IPL_SIZE	0x4000
 #define IPL_ID		'1'
-#else
+#elif defined(_FMR60)
 // FMR-60
 #define CMOS_SIZE	0x800
 #define VRAM_SIZE	0x80000

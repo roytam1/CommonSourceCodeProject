@@ -1,3 +1,26 @@
+12/28/2009
+
+[EMU/WIN32] support artwork, buttons and leds for one-board micro computers
+[VM/I386] reimplement 80386 (based on MAME i386 core)
+[VM/I8237] support increment mask of bank register
+[VM/I8251] check number of sync characters
+[VM/I8253] fix mask bit for output signal
+[VM/UPD7220] check vram pointer is not null
+[VM/Z80CTC] fix issue in the case sysclock is same as cpu clock
+
+[BABBAGE2ND] support Gijutsu Hyron Sha Babbage-2nd
+[N5200] support NEC N5200 (not work)
+[FMR50] check crc32 of bios and set machine id
+[FMR50] select cpu core i286/i386 refering machine id
+[FMR50/MEMORY] support 32bit memory address
+[MULTI8/DISPLAY] fix cursor end line
+[PASOPIA/VM] fix order of z80family's daisy chain
+[PASOPIA7/VM] fix order of z80family's daisy chain
+[MYCOMZ80A/DISPLAY] fix semi graphics mode
+[MYCOMZ80A/DISPLAY] fix cursor end line
+[MYCOMZ80A/KEYBOARD] add key buffer
+
+
 5/25/2009
 
 [VM/UPD7220] fix initial vect params
@@ -19,7 +42,7 @@
 
 5/17/2009
 
-[VM/I386] support 80386
+[VM/I386] support 80386 (based on PCemu i386 core)
 [VM/LS393] refine implements of output signal
 [VM/MSM5832] support MSM5832
 [VM/SN76489AN] support cs/we/data signal to be controlled without i/o bus

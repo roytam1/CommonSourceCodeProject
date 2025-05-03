@@ -50,18 +50,6 @@ void MEMORY::initialize()
 #endif
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
-	// init machine id
-#ifdef _FMRCARD
-	id[0] = 0x70;
-#else
-	id[0] = 0xf8;	// FMR-50FD/HD, FMR-60FD/HD
-//	id[0] = 0xe0;	// FMR-50FX/HX, FMR-60FX/HX
-//	id[0] = 0xd8;	// FMR-50/LT3
-//	id[0] = 0x0a;	// FMR-50NE/T2
-//	id[0] = 0xba;	// OASYS 30 AX 401
-#endif
-	id[1] = 0xff;
-	
 	// load rom image
 	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
 	emu->application_path(app_path);
@@ -114,14 +102,9 @@ void MEMORY::initialize()
 		fio->Fclose();
 	}
 #endif
-	_stprintf(file_path, _T("%sMACHINE.ID"), app_path);
-	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
-		fio->Fread(id, sizeof(id), 1);
-		fio->Fclose();
-	}
-	delete fio;
 	
 	// set memory
+	amask = 0xffffff;
 	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
 	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 #ifdef _FMR60
@@ -129,8 +112,6 @@ void MEMORY::initialize()
 	SET_BANK(0xffa000, 0xffbfff, avram, avram);
 #endif
 	SET_BANK(0xffc000, 0xffffff, wdmy, ipl);
-	
-	amask = 0xffffff;
 	
 	// set palette
 	for(int i = 0; i < 8; i++)
@@ -152,7 +133,7 @@ void MEMORY::reset()
 	// reset memory
 	protect = rst = 0;
 	mainmem = rplane = wplane = 0;
-#ifdef _FMR50
+#ifndef _FMR60
 	pagesel = ankcg = 0;
 #endif
 	update_bank();
@@ -161,7 +142,7 @@ void MEMORY::reset()
 	blink = 0;
 	apalsel = 0;
 	outctrl = 0xf;
-#ifdef _FMR50
+#ifndef _FMR60
 	dispctrl = 0x47;
 	mix = 8;
 	accaddr = dispaddr = 0;
@@ -175,8 +156,11 @@ void MEMORY::reset()
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
-	addr &= 0xffffff;//amask;
-//	if(0xe0000<=addr&&addr<0xfc000&&!(addr&0xff))emu->out_debug("WR %5x,%2x\n",addr,data);
+	addr &= amask;
+	if(addr & 0xff000000) {
+		// > 16MB
+		return;
+	}
 	if(!mainmem) {
 #ifdef _FMR60
 		if(0xc0000 <= addr && addr < 0xe0000) {
@@ -412,13 +396,18 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 
 uint32 MEMORY::read_data8(uint32 addr)
 {
-	addr &= 0xffffff;//amask;
-//	if(0xe0000<=addr&&addr<0xfc000)emu->out_debug("RD %5x\n",addr);
-#ifdef _FMR50
+	addr &= amask;
+	if(addr & 0xff000000) {
+		// > 16MB
+		if(addr >= 0xffffc000)
+			return ipl[addr & 0x3fff];
+		return 0xff;
+	}
+#ifndef _FMR60
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
 #ifdef _DEBUG_LOG
-			emu->out_debug(_T("MR\t%4x\n"), addr);
+//			emu->out_debug(_T("MR\t%4x\n"), addr);
 #endif
 			// memory mapped i/o
 			switch(addr & 0xffff)
@@ -493,18 +482,21 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			d_cpu->reset();
 		}
 		// protect mode
-		d_cpu->write_signal(did_a20, data, 0x20);
-		switch(data & 0x30)
-		{
-		case 0x00:	// 20bit
-			amask = 0xfffff;
-			break;
-		case 0x20:	// 24bit
-			amask = 0xffffff;
-			break;
-		case 0x30:	// 32bit
-			amask = 0xffffffff;
-			break;
+		if(is_i286)
+			d_cpu->write_signal(did_a20, data, 0x20);
+		else {
+			switch(data & 0x30)
+			{
+			case 0x00:	// 20bit
+				amask = 0xfffff;
+				break;
+			case 0x20:	// 24bit
+				amask = 0xffffff;
+				break;
+			case 0x30:	// 32bit
+				amask = 0xffffffff;
+				break;
+			}
 		}
 		break;
 	case 0x400:
@@ -595,10 +587,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 		return 0xff;
 	case 0x30:
 		// machine & cpu id
-		return id[0];
-	case 0x31:
-		// machine id
-		return id[1];
+		return machine_id;
 	case 0x400:
 		// system status register
 #ifdef _FMR60
@@ -711,7 +700,7 @@ void MEMORY::update_bank()
 	}
 }
 
-#ifdef _FMR50
+#ifndef _FMR60
 void MEMORY::point(int x, int y, int col)
 {
 	if(x < 640 && y < 400) {

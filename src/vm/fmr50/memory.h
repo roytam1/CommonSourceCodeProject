@@ -79,12 +79,13 @@ private:
 	uint8 ank16[0x1000];	// ANK(8x16) 4KB
 	uint8 kanji16[0x40000];	// KANJI(16x16) 256KB
 #endif
-	uint8 id[2];		// MACHINE ID
+	uint8 machine_id;	// MACHINE ID
 	
 	// memory
 	uint8 protect, rst;
 	uint8 mainmem, rplane, wplane;
 	uint32 amask;
+	bool is_i286;
 	
 	// crtc
 	uint8* chreg;
@@ -95,7 +96,7 @@ private:
 	uint8 apal[16][3], apalsel, dpal[8];
 	uint8 outctrl;
 	
-#ifdef _FMR50
+#ifndef _FMR60
 	// 16bit card
 	uint8 pagesel, ankcg;
 	uint8 dispctrl;
@@ -147,6 +148,9 @@ public:
 	// unitque function
 	void set_context_cpu(DEVICE* device, int id) {
 		d_cpu = device; did_a20 = id;
+	}
+	void set_machine_id(uint8 id) {
+		machine_id = id; is_i286 = ((id & 7) == 0);
 	}
 	void set_context_fdc(DEVICE* device) {
 		d_fdc = device;

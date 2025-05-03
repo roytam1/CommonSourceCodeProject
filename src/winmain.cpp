@@ -44,10 +44,17 @@ EMU* emu;
 
 // command bar
 #ifdef _WIN32_WCE
-HINSTANCE hInst;
 HWND hCmdBar;
 BOOL commandbar_show, sip_on;
 #endif
+
+// buttons
+#ifdef USE_BUTTON
+HWND hButton[MAX_BUTTONS];
+WNDPROC buttonWndProc[MAX_BUTTONS];
+#endif
+
+HINSTANCE hInst;
 
 // uif
 void update_menu(HMENU hMenu, int pos);
@@ -81,6 +88,9 @@ BOOL fullscreen_now = FALSE;
 // windows main
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+#ifdef USE_BUTTON
+LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
+#endif
 
 // timing control
 int intervals[FRAMES_PER_10SECS];
@@ -129,9 +139,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	wndclass.lpszClassName = _T("CWINDOW");
 	RegisterClass(&wndclass);
 	
+	hInst = hInstance;
+	
 #ifdef _WIN32_WCE
 	// show window
-	hInst = hInstance;
 	HWND hWnd = CreateWindow(_T("CWINDOW"), _T(DEVICE_NAME), WS_VISIBLE,
 	                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
 	ShowWindow(hWnd, iCmdShow);
@@ -180,7 +191,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	ImmAssociateContext(hWnd, 0);
 	
 	// initialize emulation core
-	emu = new EMU(hWnd);
+	emu = new EMU(hWnd, hInstance);
 #ifdef _WIN32_WCE
 	emu->set_window_size(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 #else
@@ -313,6 +324,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	return 0;
 }
 
+#ifdef USE_BUTTON
+LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	for(int i = 0; i < MAX_BUTTONS; i++) {
+		if(hWnd == hButton[i]) {
+			switch(iMsg)
+			{
+				case WM_KEYDOWN:
+				case WM_SYSKEYDOWN:
+					if(emu)
+						emu->key_down(LOBYTE(wParam));
+					return 0;
+				case WM_KEYUP:
+				case WM_SYSKEYUP:
+					if(emu)
+						emu->key_up(LOBYTE(wParam));
+					return 0;
+			}
+			return CallWindowProc(buttonWndProc[i], hWnd, iMsg, wParam, lParam);
+		}
+	}
+	return 0;
+}
+#endif
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	_TCHAR path[_MAX_PATH];
@@ -320,13 +356,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	
 	switch(iMsg)
 	{
-#ifdef _WIN32_WCE
 		case WM_CREATE:
+#ifdef _WIN32_WCE
 			hCmdBar = CommandBar_Create(hInst, hWnd, 1);
 			CommandBar_InsertMenubar(hCmdBar, hInst, IDR_MENU1, 0);
 			CommandBar_AddAdornments(hCmdBar, 0, 0);
-			break;
 #endif
+#ifdef USE_BUTTON
+			for(int i = 0; i < MAX_BUTTONS; i++) {
+				hButton[i] = CreateWindow(_T("BUTTON"), buttons[i].caption,
+				                          WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+				                          buttons[i].x, buttons[i].y,
+				                          buttons[i].width, buttons[i].height,
+				                          hWnd, (HMENU)(ID_BUTTON + i), hInst, NULL);
+				buttonWndProc[i] = (WNDPROC)(LONG_PTR)GetWindowLong(hButton[i], GWL_WNDPROC);
+				SetWindowLong(hButton[i], GWL_WNDPROC, (LONG)(LONG_PTR)ButtonWndProc);
+			}
+#endif
+			break;
 		case WM_CLOSE:
 			// release emulation core
 			if(emu)
@@ -349,6 +396,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
+#ifdef USE_BITMAP
+		case WM_SIZE:
+			if(emu)
+				emu->reload_bitmap();
+			break;
+#endif
 		case WM_PAINT:
 #ifdef _USE_D3D9
 			ValidateRect(hWnd, 0);
@@ -902,6 +955,44 @@ sound_latency:
 capture_device:
 					if(emu)
 						emu->connect_capture_device(no, false);
+					break;
+#endif
+#ifdef USE_BUTTON
+				case ID_BUTTON +  0: no =  0; goto button;
+				case ID_BUTTON +  1: no =  1; goto button;
+				case ID_BUTTON +  2: no =  2; goto button;
+				case ID_BUTTON +  3: no =  3; goto button;
+				case ID_BUTTON +  4: no =  4; goto button;
+				case ID_BUTTON +  5: no =  5; goto button;
+				case ID_BUTTON +  6: no =  6; goto button;
+				case ID_BUTTON +  7: no =  7; goto button;
+				case ID_BUTTON +  8: no =  8; goto button;
+				case ID_BUTTON +  9: no =  9; goto button;
+				case ID_BUTTON + 10: no = 10; goto button;
+				case ID_BUTTON + 11: no = 11; goto button;
+				case ID_BUTTON + 12: no = 12; goto button;
+				case ID_BUTTON + 13: no = 13; goto button;
+				case ID_BUTTON + 14: no = 14; goto button;
+				case ID_BUTTON + 15: no = 15; goto button;
+				case ID_BUTTON + 16: no = 16; goto button;
+				case ID_BUTTON + 17: no = 17; goto button;
+				case ID_BUTTON + 18: no = 18; goto button;
+				case ID_BUTTON + 19: no = 19; goto button;
+				case ID_BUTTON + 20: no = 20; goto button;
+				case ID_BUTTON + 21: no = 21; goto button;
+				case ID_BUTTON + 22: no = 22; goto button;
+				case ID_BUTTON + 23: no = 23; goto button;
+				case ID_BUTTON + 24: no = 24; goto button;
+				case ID_BUTTON + 25: no = 25; goto button;
+				case ID_BUTTON + 26: no = 26; goto button;
+				case ID_BUTTON + 27: no = 27; goto button;
+				case ID_BUTTON + 28: no = 28; goto button;
+				case ID_BUTTON + 29: no = 29; goto button;
+				case ID_BUTTON + 30: no = 30; goto button;
+				case ID_BUTTON + 31: no = 31; goto button;
+button:
+					if(emu)
+						emu->press_button(no);
 					break;
 #endif
 			}

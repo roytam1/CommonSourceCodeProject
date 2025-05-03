@@ -632,30 +632,34 @@ void UPD7220::cmd_dmar()
 
 void UPD7220::cmd_write_sub(uint32 addr, uint8 data)
 {
-	switch(mod)
-	{
-	case 0:
-		// replace
-		vram[addr & ADDR_MASK] = data;
-		break;
-	case 1:
-		// complement
-		vram[addr & ADDR_MASK] ^= data;
-		break;
-	case 2:
-		// reset
-		vram[addr & ADDR_MASK] &= ~data;
-		break;
-	case 3:
-		// set
-		vram[addr & ADDR_MASK] |= data;
-		break;
+	if(vram) {
+		switch(mod)
+		{
+		case 0:
+			// replace
+			vram[addr & ADDR_MASK] = data;
+			break;
+		case 1:
+			// complement
+			vram[addr & ADDR_MASK] ^= data;
+			break;
+		case 2:
+			// reset
+			vram[addr & ADDR_MASK] &= ~data;
+			break;
+		case 3:
+			// set
+			vram[addr & ADDR_MASK] |= data;
+			break;
+		}
 	}
 }
 
 uint8 UPD7220::cmd_read_sub(uint32 addr)
 {
-	return vram[addr & ADDR_MASK];
+	if(vram)
+		return vram[addr & ADDR_MASK];
+	return 0xff;
 }
 
 void UPD7220::vectreset()
@@ -926,30 +930,32 @@ void UPD7220::draw_text()
 
 void UPD7220::pset(int x, int y)
 {
-	uint16 dot = pattern & 1;
-	pattern = (pattern >> 1) | (dot << 15);
-	uint32 addr = (y * 80 + (x >> 3)) & ADDR_MASK;
-	uint8 bit = 1 << (x & 7);
-	uint8 cur = vram[addr];
-	
-	switch(mod)
-	{
-	case 0:
-		// replace
-		vram[addr] = (cur & ~bit) | (dot ? bit : 0);
-		break;
-	case 1:
-		// complement
-		vram[addr] = (cur & ~bit) | ((cur ^ (dot ? 0xff : 0)) & bit);
-		break;
-	case 2:
-		// reset
-		vram[addr] &= dot ? ~bit : 0xff;
-		break;
-	case 3:
-		// set
-		vram[addr] |= dot ? bit : 0;
-		break;
+	if(vram) {
+		uint16 dot = pattern & 1;
+		pattern = (pattern >> 1) | (dot << 15);
+		uint32 addr = (y * 80 + (x >> 3)) & ADDR_MASK;
+		uint8 bit = 1 << (x & 7);
+		uint8 cur = vram[addr];
+		
+		switch(mod)
+		{
+		case 0:
+			// replace
+			vram[addr] = (cur & ~bit) | (dot ? bit : 0);
+			break;
+		case 1:
+			// complement
+			vram[addr] = (cur & ~bit) | ((cur ^ (dot ? 0xff : 0)) & bit);
+			break;
+		case 2:
+			// reset
+			vram[addr] &= dot ? ~bit : 0xff;
+			break;
+		case 3:
+			// set
+			vram[addr] |= dot ? bit : 0;
+			break;
+		}
 	}
 }
 

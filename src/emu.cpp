@@ -16,13 +16,14 @@
 // initialize
 // ----------------------------------------------------------------------------
 
-EMU::EMU(HWND hwnd)
+EMU::EMU(HWND hwnd, HINSTANCE hinst)
 {
 	// open debug logfile
 	open_debug();
 	
 	// store main window handle
 	main_window_handle = hwnd;
+	instance_handle = hinst;
 	
 	// get module path
 	GetModuleFileName(NULL, app_path, _MAX_PATH);

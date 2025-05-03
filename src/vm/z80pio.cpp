@@ -134,6 +134,7 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 	// port[].dir 0=output, 1=input
 	if(id == SIG_Z80PIO_PORT_A) {
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
+		// note: we need to check astb is changed l->h
 		if((port[0].mode & 0xc0) == 0x40 || (port[0].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio recieved the data sent by other chip
 			port[0].req_intr = true;
@@ -144,6 +145,7 @@ void Z80PIO::write_signal(int id, uint32 data, uint32 mask)
 	}
 	else if(id == SIG_Z80PIO_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
+		// note: we need to check bstb is changed l->h
 		if((port[1].mode & 0xc0) == 0x40 || (port[1].mode & 0xc0) == 0x80) {
 			// mode1/2 z80pio recieved the data sent by other chip
 			port[1].req_intr = true;
@@ -239,7 +241,6 @@ uint32 Z80PIO::intr_ack()
 			}
 		}
 		// invalid interrupt status
-//		emu->out_debug(_T("Z80PIO : intr_ack()\n"));
 		return 0xff;
 	}
 	if(d_child)

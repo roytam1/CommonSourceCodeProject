@@ -1402,7 +1402,7 @@ plot(int x, int y, char dot)
 	char bit, dat;
 	
 	adr = (x >> 1) + (y >> 2) * 80;
-	bit = ((y & 3) << 1) | (x & 1);
+	bit = ((x & 1) * 4) + (y & 3);
 	bit = 1 << bit;
 	dat = getvram(adr);
 	if(dot) {

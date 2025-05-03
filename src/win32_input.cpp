@@ -256,6 +256,16 @@ void EMU::key_up(int code)
 	}
 }
 
+#ifdef USE_BUTTON
+void EMU::press_button(int num)
+{
+	int code = buttons[num].code;
+	
+	key_down(code);
+	key_status[code] = KEY_KEEP_FRAMES;
+}
+#endif
+
 void EMU::enable_mouse()
 {
 	// enable mouse emulation

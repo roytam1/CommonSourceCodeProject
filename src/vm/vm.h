@@ -10,6 +10,11 @@
 #ifndef _VM_H_
 #define _VM_H_
 
+// GIJUTSU-HYORON-SHA Babbase-2nd
+#ifdef _BABBAGE2ND
+#include "babbage2nd/babbage2nd.h"
+#endif
+
 // FUJITSU FM-16pi
 #ifdef _FM16PI
 #include "fm16pi/fm16pi.h"
@@ -89,6 +94,11 @@
 // SHARP MZ-6550
 #ifdef _MZ6550
 #include "mz5500/mz5500.h"
+#endif
+
+// NEC N5200
+#ifdef _N5200
+#include "n5200/n5200.h"
 #endif
 
 // TOSHIBA PASOPIA

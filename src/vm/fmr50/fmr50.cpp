@@ -24,7 +24,7 @@
 #include "../i8253.h"
 #include "../i8259.h"
 #include "../i86.h"
-//#include "../i386.h"
+#include "../i386.h"
 #include "../io.h"
 #include "../mb8877.h"
 #include "../rtc58321.h"
@@ -39,6 +39,7 @@
 //#include "serial.h"
 #include "timer.h"
 
+#include "../../fileio.h"
 #include "../../config.h"
 
 // ----------------------------------------------------------------------------
@@ -47,6 +48,42 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
+	// check ipl
+	uint8 machine_id = 0;
+	_TCHAR app_path[_MAX_PATH], file_path[_MAX_PATH];
+	emu->application_path(app_path);
+	FILEIO* fio = new FILEIO();
+	
+	_stprintf(file_path, _T("%sIPL.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		uint8 ipl[0x4000];
+		fio->Fread(ipl, sizeof(ipl), 1);
+		fio->Fclose();
+		uint32 crc32 = emu->getcrc32(ipl, sizeof(ipl));
+		for(int i = 0;; i++) {
+			if(machine_ids[i][0] == -1)
+				break;
+			if(machine_ids[i][0] == crc32) {
+				machine_id = machine_ids[i][1];
+				break;
+			}
+		}
+	}
+#ifdef _FMRCARD
+	machine_id = 0x70;
+#else
+	if(!machine_id) {
+		_stprintf(file_path, _T("%sMACHINE.ID"), app_path);
+		if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+			machine_id = fio->Fgetc();
+			fio->Fclose();
+		}
+		else
+			machine_id = 0xf8;
+	}
+#endif
+	is_i286 = ((machine_id & 7) == 0);
+	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -62,8 +99,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0 = new I8253(this, emu);
 	pit1 = new I8253(this, emu);
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
-//	cpu = new I386(this, emu);
+	if(is_i286)
+		i286 = new I86(this, emu);
+	else
+		i386 = new I386(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	rtc = new RTC58321(this, emu);
@@ -79,7 +118,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	timer = new TIMER(this, emu);
 	
 	// set contexts
-	event->set_context_cpu(cpu);
+	if(is_i286)
+		event->set_context_cpu(i286);
+	else
+		event->set_context_cpu(i386);
 	event->set_context_sound(beep);
 	
 /*	pic	0	timer
@@ -116,7 +158,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pit0->set_constant_clock(1, 307200);
 	pit0->set_constant_clock(2, 307200);
 	pit1->set_constant_clock(1, 1228800);
-	pic->set_context(cpu);
+	if(is_i286)
+		pic->set_context(i286);
+	else
+		pic->set_context(i386);
 	fdc->set_context_drq(dma, SIG_UPD71071_CH0, 1);
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	dma->set_context_memory(memory);
@@ -136,8 +181,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
 	floppy->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR6);
 	keyboard->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1);
-	memory->set_context_cpu(cpu, SIG_I86_A20);
-//	memory->set_context_cpu(cpu, SIG_I386_A20);
+	if(is_i286)
+		memory->set_context_cpu(i286, SIG_I86_A20);
+	else
+		memory->set_context_cpu(i386, SIG_I386_A20);
+	memory->set_machine_id(machine_id);
 	memory->set_context_fdc(fdc);
 	memory->set_context_bios(bios);
 	memory->set_context_crtc(crtc);
@@ -148,10 +196,18 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	timer->set_context_pic(pic, SIG_I8259_CHIP0 | SIG_I8259_IR0);
 	
 	// cpu bus
-	cpu->set_context_mem(memory);
-	cpu->set_context_io(io);
-	cpu->set_context_intr(pic);
-	cpu->set_context_bios(bios);
+	if(is_i286) {
+		i286->set_context_mem(memory);
+		i286->set_context_io(io);
+		i286->set_context_intr(pic);
+		i286->set_context_bios(bios);
+	}
+	else {
+		i386->set_context_mem(memory);
+		i386->set_context_io(io);
+		i386->set_context_intr(pic);
+		i386->set_context_bios(bios);
+	}
 	
 	// i/o bus
 	io->set_iomap_alias_w(0x00, pic, 0);
@@ -212,9 +268,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x02, pic, 1);
 	io->set_iomap_alias_r(0x10, pic, 2);
 	io->set_iomap_alias_r(0x12, pic, 3);
-	io->set_iomap_single_r(0x20, memory);		// reset
-	io->set_iomap_single_r(0x21, memory);		// cpu misc
-	io->set_iomap_range_r(0x30, 0x31, memory);	// cpu id
+	io->set_iomap_single_r(0x20, memory);	// reset
+	io->set_iomap_single_r(0x21, memory);	// cpu misc
+	io->set_iomap_single_r(0x30, memory);	// cpu id
 	io->set_iomap_alias_r(0x40, pit0, 0);
 	io->set_iomap_alias_r(0x42, pit0, 1);
 	io->set_iomap_alias_r(0x44, pit0, 2);
@@ -352,7 +408,10 @@ uint32 VM::passed_clock(uint32 prev)
 
 uint32 VM::get_prv_pc()
 {
-	return cpu->get_prv_pc();
+	if(is_i286)
+		return i286->get_prv_pc();
+	else
+		return i386->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

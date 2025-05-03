@@ -30,10 +30,10 @@ void DISPLAY::initialize()
 	
 	// create cg pattern
 	for(int i = 0; i < 256; i++) {
-		cg[i * 8 + 0] = cg[i * 8 + 1] = ((i & 0x01) ? 0xf0 : 0) | ((i & 0x02) ? 0xf : 0);
-		cg[i * 8 + 2] = cg[i * 8 + 3] = ((i & 0x04) ? 0xf0 : 0) | ((i & 0x08) ? 0xf : 0);
-		cg[i * 8 + 4] = cg[i * 8 + 5] = ((i & 0x10) ? 0xf0 : 0) | ((i & 0x20) ? 0xf : 0);
-		cg[i * 8 + 6] = cg[i * 8 + 7] = ((i & 0x40) ? 0xf0 : 0) | ((i & 0x80) ? 0xf : 0);
+		cg[i * 8 + 0] = cg[i * 8 + 1] = ((i & 1) ? 0xf0 : 0) | ((i & 0x10) ? 0xf : 0);
+		cg[i * 8 + 2] = cg[i * 8 + 3] = ((i & 2) ? 0xf0 : 0) | ((i & 0x20) ? 0xf : 0);
+		cg[i * 8 + 4] = cg[i * 8 + 5] = ((i & 4) ? 0xf0 : 0) | ((i & 0x40) ? 0xf : 0);
+		cg[i * 8 + 6] = cg[i * 8 + 7] = ((i & 8) ? 0xf0 : 0) | ((i & 0x80) ? 0xf : 0);
 	}
 	
 	// initialize
@@ -145,7 +145,7 @@ void DISPLAY::draw_40column()
 				int s = regs[10] & 0x1f;
 				int e = regs[11] & 0x1f;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int l = s; l < e && l < ht; l++) {
+					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200)
 							_memset(&screen[yy][x << 4], 1, 16);
@@ -191,7 +191,7 @@ void DISPLAY::draw_80column()
 				int s = regs[10] & 0x1f;
 				int e = regs[11] & 0x1f;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int l = s; l < e && l < ht; l++) {
+					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200)
 							_memset(&screen[yy][x << 3], 1, 8);

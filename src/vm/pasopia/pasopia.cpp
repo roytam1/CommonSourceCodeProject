@@ -92,12 +92,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
-	cpu->set_context_intr(pio);
+	cpu->set_context_intr(ctc);
 	
 	// z80 family daisy chain
-	pio->set_context_intr(cpu, 0);
-	pio->set_context_child(ctc);
-	ctc->set_context_intr(cpu, 1);
+	ctc->set_context_intr(cpu, 0);
+	ctc->set_context_child(pio);
+	pio->set_context_intr(cpu, 1);
 /*
 pio0	0	8255	vram laddr
 	1	8255	vram data

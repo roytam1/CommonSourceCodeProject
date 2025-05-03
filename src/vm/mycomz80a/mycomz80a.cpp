@@ -269,16 +269,19 @@ void VM::key_up(int code)
 void VM::play_datarec(_TCHAR* filename)
 {
 	drec->play_datarec(filename);
+//	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
 void VM::rec_datarec(_TCHAR* filename)
 {
 	drec->rec_datarec(filename);
+//	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
 }
 
 void VM::close_datarec()
 {
 	drec->close_datarec();
+//	drec->write_signal(SIG_DATAREC_REMOTE, 0, 1);
 }
 
 bool VM::now_skip()

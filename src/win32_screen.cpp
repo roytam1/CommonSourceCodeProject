@@ -70,6 +70,8 @@ void EMU::initialize_screen()
 	pAVICompressed = NULL;
 	pAVIFile = NULL;
 #endif
+	first_invalidate = true;
+	self_invalidate = false;
 }
 
 #ifdef _USE_D3D9
@@ -318,6 +320,7 @@ void EMU::draw_screen()
 	}
 #else
 	// invalidate window
+	self_invalidate = true;
 	InvalidateRect(main_window_handle, NULL, FALSE);
 	UpdateWindow(main_window_handle);
 #endif
@@ -332,11 +335,36 @@ void EMU::draw_screen()
 
 void EMU::update_screen(HDC hdc)
 {
+#ifdef USE_BITMAP
+	if(first_invalidate || !self_invalidate) {
+		HBITMAP hBitmap = LoadBitmap(instance_handle, _T("IDI_BITMAP1"));
+		BITMAP bmp;
+		GetObject(hBitmap, sizeof(BITMAP), &bmp);
+		int w = (int)bmp.bmWidth;
+		int h = (int)bmp.bmHeight;
+		HDC hmdc = CreateCompatibleDC(hdc);
+		SelectObject(hmdc, hBitmap);
+		BitBlt(hdc, 0, 0, w, h, hmdc, 0, 0, SRCCOPY);
+		DeleteDC(hmdc);
+		DeleteObject(hBitmap);
+	}
+	first_invalidate = self_invalidate = false;
+#endif
 #ifndef _USE_D3D9
+#ifdef USE_LED
+	for(int i = 0; i < MAX_LEDS; i++) {
+		int x = leds[i].x;
+		int y = leds[i].y;
+		int w = leds[i].width;
+		int h = leds[i].height;
+		BitBlt(hdc, x, y, w, h, hdcDib, x, y, SRCCOPY);
+	}
+#else
 #ifdef USE_SECOND_BUFFER
 	BitBlt(hdc, dest_x, dest_y, buffer_x, buffer_y, use_buffer ? hdcDibOut : hdcDib, 0, 0, SRCCOPY);
 #else
 	BitBlt(hdc, dest_x, dest_y, buffer_x, buffer_y, hdcDib, 0, 0, SRCCOPY);
+#endif
 #endif
 #endif
 }

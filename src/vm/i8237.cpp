@@ -134,6 +134,10 @@ void I8237::write_signal(int id, uint32 data, uint32 mask)
 		// external bank registers
 		dma[id & 3].bankreg = data & mask;
 	}
+	else if(SIG_I8237_MASK0 <= id && id <= SIG_I8237_MASK3) {
+		// external bank registers
+		dma[id & 3].incmask = data & mask;
+	}
 }
 
 void I8237::do_dma()
@@ -156,10 +160,16 @@ void I8237::do_dma()
 					tmp = d_mem->read_dma8(dma[ch].areg | (dma[ch].bankreg << 8));
 					dma[ch].dev->write_dma8(0, tmp);
 				}
-				if(dma[ch].mode & 0x20)
+				if(dma[ch].mode & 0x20) {
 					dma[ch].areg--;
-				else
+					if(dma[ch].areg == 0xffff)
+						dma[ch].bankreg = (dma[ch].bankreg & ~dma[ch].incmask) | ((dma[ch].bankreg - 1) & dma[ch].incmask);
+				}
+				else {
 					dma[ch].areg++;
+					if(dma[ch].areg == 0)
+						dma[ch].bankreg = (dma[ch].bankreg & ~dma[ch].incmask) | ((dma[ch].bankreg + 1) & dma[ch].incmask);
+				}
 				
 				// check dma condition
 				if(dma[ch].creg-- == 0) {

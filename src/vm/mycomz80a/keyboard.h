@@ -88,15 +88,19 @@ static const int keycode_ks[256] = {	// kana shift
 	0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000
 };
 
+class FIFO;
+
 class KEYBOARD : public DEVICE
 {
 private:
 	DEVICE *d_cpu, *d_pio1, *d_pio2;
 	int did_cpu, did_pio1_pb, did_pio1_pc, did_pio2_pa;
 	
+	FIFO* key_buf;
 	uint8* key_stat;
-	int key_prev;
+	int key_code;
 	bool kana;
+	int event_cnt;
 	
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
@@ -105,6 +109,7 @@ public:
 	// common functions
 	void initialize();
 	void reset();
+	void event_frame();
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device, uint32 id) {

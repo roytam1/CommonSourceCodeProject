@@ -69,8 +69,10 @@ void I8251::write_io8(uint32 addr, uint32 data)
 		case MODE_CLEAR:
 			if(data & 3)
 				mode = MODE_ASYNC;
+			else if(data & 0x80)
+				mode = MODE_SYNC2;	// 1char
 			else
-				mode = MODE_SYNC1;
+				mode = MODE_SYNC1;	// 2chars
 			break;
 		case MODE_SYNC1:
 			mode = MODE_SYNC2;
@@ -89,6 +91,9 @@ void I8251::write_io8(uint32 addr, uint32 data)
 			// dtr
 			for(int i = 0; i < dcount_dtr; i++)
 				d_dtr[i]->write_signal(did_dtr[i], (data & 2) ? 0xffffffff : 0, dmask_dtr[i]);
+			// rst
+			for(int i = 0; i < dcount_rst; i++)
+				d_rst[i]->write_signal(did_rst[i], (data & 8) ? 0xffffffff : 0, dmask_rst[i]);
 			// rxen
 			rxen = ((data & 4) != 0);
 			if(rxen && !recv_buffer->empty() && recv_id == -1)

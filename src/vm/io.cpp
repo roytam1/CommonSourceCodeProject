@@ -30,13 +30,13 @@ uint32 IO::read_io8(uint32 addr)
 	uint32 laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32 val = rdev[laddr]->read_io8(haddr | raddr[laddr]);
 #ifdef _DEBUG_LOG
-//	if(!(prv_raddr == addr && prv_rdata == val)) {
+	if(!(prv_raddr == addr && prv_rdata == val)) {
 		if(!rdev[laddr]->this_device_id)
 			emu->out_debug("UNKNOWN:\t");
 		emu->out_debug("%6x\tIN8\t%4x = %2x\n", vm->get_prv_pc(), laddr | haddr, val);
 		prv_raddr = addr;
 		prv_rdata = val;
-//	}
+	}
 	prv_waddr = -1;
 #endif
 	return val;

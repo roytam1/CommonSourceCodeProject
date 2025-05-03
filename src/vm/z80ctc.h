@@ -29,7 +29,6 @@ private:
 	int did_zc[4][MAX_OUTPUT], dcount_zc[4];
 	uint8 dmask_zc[4][MAX_OUTPUT];
 	int eventclock;
-	uint32 sysclock;
 	
 	typedef struct {
 		uint8 control;
@@ -48,7 +47,7 @@ private:
 		int clock_id;
 		int sysclock_id;
 		uint32 input;
-		int period;
+		uint32 period;
 		uint32 prev;
 		// interrupt
 		bool req_intr;
@@ -72,7 +71,6 @@ public:
 		d_cpu = d_child = NULL;
 		counter[0].freq = counter[1].freq = counter[2].freq = counter[3].freq = 0;
 		counter[0].prev_in = counter[1].prev_in = counter[2].prev_in = counter[3].prev_in = false;
-		sysclock = CPU_CLOCKS;
 	}
 	~Z80CTC() {}
 	
@@ -110,9 +108,6 @@ public:
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;
-	}
-	void set_sysclock(uint32 hz) {
-		sysclock = hz;
 	}
 };
 

@@ -219,6 +219,12 @@ SOURCE=.\src\vm\hd63484.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\i386.cpp
+# ADD CPP /Oxt /Ob0
+
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\i8251.cpp
 # End Source File
 # Begin Source File
@@ -338,6 +344,10 @@ SOURCE=.\src\vm\hd46505.h
 # Begin Source File
 
 SOURCE=.\src\vm\hd63484.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\vm\i386.h
 # End Source File
 # Begin Source File
 

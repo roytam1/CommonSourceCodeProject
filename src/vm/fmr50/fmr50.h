@@ -14,30 +14,39 @@
 #define _FMR50_H_
 
 // device informations for win32
-#ifdef _FMR50
-#ifdef _FMRCARD
-#define DEVICE_NAME		"FUJITSU FMR-CARD"
-#define CONFIG_NAME		"fmrcard"
-#else
+#if defined(_FMR50)
 #define DEVICE_NAME		"FUJITSU FMR-50"
 #define CONFIG_NAME		"fmr50"
-#endif
-#else
+#elif defined(_FMR60)
 #define DEVICE_NAME		"FUJITSU FMR-60"
 #define CONFIG_NAME		"fmr60"
+#elif defined(_FMRCARD)
+#define DEVICE_NAME		"FUJITSU FMR-CARD"
+#define CONFIG_NAME		"fmrcard"
+#elif defined(_OASYS30)
+#define DEVICE_NAME		"FUJITSU OASYS 30"
+#define CONFIG_NAME		"oasys30"
+#elif defined(_OASYSPOCKET3)
+#define DEVICE_NAME		"FUJITSU OASYS Pocket3"
+#define CONFIG_NAME		"oasyspocket3"
 #endif
 #define CONFIG_VERSION		0x01
 
-#ifdef _FMR50
-#define WINDOW_WIDTH1		640
-#define WINDOW_HEIGHT1		400
-#define WINDOW_WIDTH2		640
-#define WINDOW_HEIGHT2		400
-#else
+#if defined(_FMR60)
 #define WINDOW_WIDTH1		1120
 #define WINDOW_HEIGHT1		750
 #define WINDOW_WIDTH2		1120
 #define WINDOW_HEIGHT2		750
+#elif defined(_OASYSPOCKET3)
+#define WINDOW_WIDTH1		640
+#define WINDOW_HEIGHT1		200
+#define WINDOW_WIDTH2		640
+#define WINDOW_HEIGHT2		200
+#else
+#define WINDOW_WIDTH1		640
+#define WINDOW_HEIGHT1		400
+#define WINDOW_WIDTH2		640
+#define WINDOW_HEIGHT2		400
 #endif
 
 //#define USE_IPL_RESET
@@ -53,32 +62,56 @@
 // device informations for virtual machine
 #define FRAMES_PER_10SECS	554
 #define FRAMES_PER_SEC		55.4
-#ifdef _FMR50
-#define LINES_PER_FRAME 	440
-#define CHARS_PER_LINE		108
-#else
+#if defined(_FMR60)
 #define LINES_PER_FRAME 	812
 #define CHARS_PER_LINE		108
-#endif
-#define CPU_CLOCKS		8000000
-#ifdef _FMR50
-#define SCREEN_WIDTH		640
-#define SCREEN_HEIGHT		400
 #else
+#define LINES_PER_FRAME 	440
+#define CHARS_PER_LINE		108
+#endif
+
+//#if defined(_FMRCARD) || defined(_OASYS30) || defined(_OASYSPOCKET3)
+#define CPU_CLOCKS		8000000
+//#else
+//#define CPU_CLOCKS		12000000
+//#endif
+#if defined(_FMR60)
 #define SCREEN_WIDTH		1120
 #define SCREEN_HEIGHT		750
+#elif defined(_OASYSPOCKET3)
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		200
+#else
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		400
 #endif
 #define MAX_DRIVE		4
 #define MAX_SCSI		8
 #define MAX_MEMCARD		2
 #define HAS_I286
 #define I86_BIOS_CALL
-//#define HAS_I386
-//#define I386_BIOS_CALL
+#define HAS_I386
+#define I386_BIOS_CALL
 #define I8259_MAX_CHIPS		2
 #define IO_ADDR_MAX		0x10000
 
 #include "../../common.h"
+
+static uint32 machine_ids[][2] = {
+	{0x6a868423, 0xf8},	// FMR-50FD/HD		87/05/22 V12 L10
+	{0xb6e51659, 0xf8},	// FMR-60FD/HD		87/01/27 V12 L09
+	{0x3777a7cb, 0xe0},	// FMR-50FX/HX		89/01/24 V12 L12
+				// FMR-60FX/HX		
+	{0xde3044c7, 0xd8},	// FMR-50LT5/LT6	88/10/04 V40 L12
+	{0x6eaeaef1, 0x0a},	// FMR-50NE/T3		94/12/01 V70 L01
+	{0xafc9606e, 0xf8},	// Panacom M500HD	89/04/14 V12 L12
+	{0x78a920e9, 0x70},	// FMR-CARD		92/02/10 V63 L13
+//	{0x86072415, 0x0a},	// FMR-250L4		94/10/20 V90 L12
+//	{0xe77c3518, 0x0a}.	// FMR-250N/T3		96/04/10 V69 L15
+//	{0x06b44c36, 0xba},	// OASYS 30AX401	92/10/20
+//	{0x7cf02e08, 0xba},	// OASYS Pocket 3	??/??/??
+	{-1, -1}
+};
 
 class EMU;
 class DEVICE;
@@ -93,7 +126,7 @@ class I8251;
 class I8253;
 class I8259;
 class I86;
-//class I386;
+class I386;
 class IO;
 class MB8877;
 class RTC58321;
@@ -118,15 +151,15 @@ protected:
 	
 	BEEP* beep;
 	HD46505* crtc;
-#ifdef _FMR60
+#if defined(_FMR60)
 	HD63484* acrtc;
 #endif
 	I8251* sio;
 	I8253* pit0;
 	I8253* pit1;
 	I8259* pic;
-	I86* cpu;
-//	I386* cpu;
+	I86* i286;
+	I386* i386;
 	IO* io;
 	MB8877* fdc;
 	RTC58321* rtc;
@@ -140,6 +173,9 @@ protected:
 	SCSI* scsi;
 //	SERIAL* serial;
 	TIMER* timer;
+	
+private:
+	bool is_i286;
 	
 public:
 	// ----------------------------------------

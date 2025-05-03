@@ -97,8 +97,8 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_I8255_B) {
 		data &= mask;
 		graph_page = data & 7;
-		text_color = (data & 0x80) ? false : true;
-		text_wide = (data & 0x40) ? false : true;
+		text_color = ((data & 0x80) == 0);
+		text_wide = ((data & 0x40) == 0);
 	}
 }
 
@@ -223,8 +223,8 @@ void DISPLAY::draw_text_wide()
 			uint8 attr = vram_a[src];
 			
 			// check attribute
-			bool secret = ((attr & 8) || ((attr & 0x10) && blink)) ? true : false;
-			bool reverse = (attr & 0x20) ? true : false;
+			bool secret = ((attr & 8) || ((attr & 0x10) && blink));
+			bool reverse = ((attr & 0x20) != 0);
 			uint8 col = text_color ? (attr & 7) : 7;
 			
 			// draw pattern
@@ -255,8 +255,10 @@ void DISPLAY::draw_text_wide()
 			}
 			// draw cursor
 			if(src == cursor) {
+				int s = regs[10] & 0x1f;
+				int e = regs[11] & 0x1f;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int l = (regs[10] & 7); l < ht; l++) {
+					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200)
 							_memset(&screen[yy][x << 3], 7, 16);
@@ -282,8 +284,8 @@ void DISPLAY::draw_text_normal()
 			uint8 attr = vram_a[src];
 			
 			// check attribute
-			bool secret = ((attr & 8) || ((attr & 0x10) && blink)) ? true : false;
-			bool reverse = (attr & 0x20) ? true : false;
+			bool secret = ((attr & 8) || ((attr & 0x10) && blink));
+			bool reverse = ((attr & 0x20) != 0);
 			uint8 col = text_color ? (attr & 7) : 7;
 			
 			// draw pattern
@@ -306,8 +308,10 @@ void DISPLAY::draw_text_normal()
 			}
 			// draw cursor
 			if(src == cursor) {
+				int s = regs[10] & 0x1f;
+				int e = regs[11] & 0x1f;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int l = (regs[10] & 7); l < ht; l++) {
+					for(int l = s; l <= e && l < ht; l++) {
 						int yy = y * ht + l;
 						if(yy < 200)
 							_memset(&screen[yy][x << 3], 7, 8);

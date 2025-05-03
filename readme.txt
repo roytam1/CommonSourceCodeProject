@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								5/20/2009
+								12/28/2009
 
 --- What's this ?
 
@@ -16,6 +16,7 @@ This archive includes the all source codes of:
 	EmuZ-3500	SHARP MZ-3500 emulator
 	EmuZ-5500	SHARP MZ-5500 emulator
 	EmuZ-6500	SHARP MZ-6500 emulator
+	eBabbage-2nd	Gijutsu Hyoron Sha Babbage-2nd
 	eFMR-30		FUJITSU FMR-30 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
 	eFMR-60		FUJITSU FMR-60 emulator
@@ -23,6 +24,7 @@ This archive includes the all source codes of:
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
 	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A emulator
+	eN5200		NEC N5200 emulator
 	ePC-8201	NEC PC-8201/PC-8201A emulator
 	ePC-98LT	NEC PC-98LT emulator
 	ePC-100		NEC PC-100 emulator
@@ -57,6 +59,10 @@ under the GNU GENERAL PUBLIC LICENSE.
 	MAME HD63484 core
 - vm/huc6260.*
 	Ootake CPU core
+- vm/i86.*
+	MAME i86 core
+- vm/i386.*
+	MAME i386 core
 - vm/i8259.*
 	Neko Project 2 and MESS 8259 core
 - vm/mb8877.*
@@ -77,8 +83,6 @@ under the GNU GENERAL PUBLIC LICENSE.
 	M88 fdc/fdu core
 - vm/upd7801.*
 	MAME uPD7810 core
-- vm/x86.*
-	MAME x86 ore
 - vm/w3100a.*
 	Mr.Oh!Ishi for the chip specification info
 - vm/z80.*

@@ -175,6 +175,7 @@ private:
 	void release_screen_buffer();
 	
 	HWND main_window_handle;
+	HINSTANCE instance_handle;
 	int screen_width, screen_height;
 	int screen_width_aspect;
 	int window_width1, window_height1;
@@ -191,6 +192,8 @@ private:
 #endif
 	bool use_buffer;
 #endif
+	bool first_invalidate;
+	bool self_invalidate;
 	
 	// for render
 	HDC hdcDib;
@@ -361,7 +364,7 @@ public:
 	// ----------------------------------------
 	// initialize
 	// ----------------------------------------
-	EMU(HWND hwnd);
+	EMU(HWND hwnd, HINSTANCE hinst);
 	~EMU();
 	
 	void application_path(_TCHAR* path);
@@ -428,6 +431,9 @@ public:
 	// input device
 	void key_down(int code);
 	void key_up(int code);
+#ifdef USE_BUTTON
+	void press_button(int num);
+#endif
 	
 	void enable_mouse();
 	void disenable_mouse();
@@ -449,6 +455,9 @@ public:
 	void set_window_size(int width, int height);
 	void draw_screen();
 	void update_screen(HDC hdc);
+#ifdef USE_BITMAP
+	void reload_bitmap() { first_invalidate = true; }
+#endif
 	
 	// sound
 #ifdef _USE_WAVEOUT
@@ -498,6 +507,24 @@ public:
 	// ----------------------------------------
 	// for virtual machine
 	// ----------------------------------------
+	
+	uint32 getcrc32(uint8 data[], int size) {
+		uint32 c, table[256];
+		for(int i = 0; i < 256; i++) {
+			uint32 c = i;
+			for(int j = 0; j < 8; j++) {
+				if(c & 1)
+					c = (c >> 1) ^ 0xedb88320;
+				else
+					c >>= 1;
+			}
+			table[i] = c;
+		}
+		c = ~0;
+		for(int i = 0; i < size; i++)
+			c = table[(c ^ data[i]) & 0xff] ^ (c >> 8);
+		return ~c;
+	}
 	
 	// power off
 	void power_off() { PostMessage(main_window_handle, WM_CLOSE, 0, 0L); }

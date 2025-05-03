@@ -24,10 +24,10 @@ class FIFO;
 class I8251 : public DEVICE
 {
 private:
-	DEVICE *d_out[MAX_OUTPUT], *d_rxrdy[MAX_OUTPUT], *d_txrdy[MAX_OUTPUT], *d_txe[MAX_OUTPUT], *d_dtr[MAX_OUTPUT];
-	int did_out[MAX_OUTPUT], did_rxrdy[MAX_OUTPUT], did_txrdy[MAX_OUTPUT], did_txe[MAX_OUTPUT], did_dtr[MAX_OUTPUT];
-	uint32 dmask_rxrdy[MAX_OUTPUT], dmask_txrdy[MAX_OUTPUT], dmask_txe[MAX_OUTPUT], dmask_dtr[MAX_OUTPUT];
-	int dcount_out, dcount_rxrdy, dcount_txrdy, dcount_txe, dcount_dtr;
+	DEVICE *d_out[MAX_OUTPUT], *d_rxrdy[MAX_OUTPUT], *d_txrdy[MAX_OUTPUT], *d_txe[MAX_OUTPUT], *d_dtr[MAX_OUTPUT], *d_rst[MAX_OUTPUT];
+	int did_out[MAX_OUTPUT], did_rxrdy[MAX_OUTPUT], did_txrdy[MAX_OUTPUT], did_txe[MAX_OUTPUT], did_dtr[MAX_OUTPUT], did_rst[MAX_OUTPUT];
+	uint32 dmask_rxrdy[MAX_OUTPUT], dmask_txrdy[MAX_OUTPUT], dmask_txe[MAX_OUTPUT], dmask_dtr[MAX_OUTPUT], dmask_rst[MAX_OUTPUT];
+	int dcount_out, dcount_rxrdy, dcount_txrdy, dcount_txe, dcount_dtr, dcount_rst;
 	
 	// i8251
 	uint8 recv, status, mode;
@@ -40,7 +40,7 @@ private:
 	
 public:
 	I8251(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
-		dcount_out = dcount_rxrdy = dcount_txrdy = dcount_txe = dcount_dtr = 0;
+		dcount_out = dcount_rxrdy = dcount_txrdy = dcount_txe = dcount_dtr = dcount_rst = 0;
 	}
 	~I8251() {}
 	
@@ -73,6 +73,10 @@ public:
 	void set_context_dtr(DEVICE* device, int id, uint32 mask) {
 		int c = dcount_dtr++;
 		d_dtr[c] = device; did_dtr[c] = id; dmask_dtr[c] = mask;
+	}
+	void set_context_rst(DEVICE* device, int id, uint32 mask) {
+		int c = dcount_rst++;
+		d_rst[c] = device; did_rst[c] = id; dmask_rst[c] = mask;
 	}
 };
 

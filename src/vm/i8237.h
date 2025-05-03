@@ -23,6 +23,10 @@
 #define SIG_I8237_BANK1	5
 #define SIG_I8237_BANK2	6
 #define SIG_I8237_BANK3	7
+#define SIG_I8237_MASK0	8
+#define SIG_I8237_MASK1	9
+#define SIG_I8237_MASK2	10
+#define SIG_I8237_MASK3	11
 
 class I8237 : public DEVICE
 {
@@ -38,6 +42,7 @@ private:
 		uint8 mode;
 		// external bank
 		uint16 bankreg;
+		uint16 incmask;
 	} dma_t;
 	dma_t dma[4];
 	
@@ -54,7 +59,7 @@ public:
 	I8237(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		for(int i = 0; i < 4; i++) {
 			dma[i].dev = vm->dummy;
-			dma[i].bankreg = 0;
+			dma[i].bankreg = dma[i].incmask = 0;
 		}
 	}
 	~I8237() {}

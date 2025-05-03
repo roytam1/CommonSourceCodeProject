@@ -62,6 +62,7 @@
 #define UPD765A_DMA_MODE
 #define UPD765A_WAIT_SEEK
 #define UPD765A_STRICT_ID
+#define Z80CTC_CLOCKS		2457600
 #define IO_ADDR_MAX		0x400
 
 #include "../../common.h"

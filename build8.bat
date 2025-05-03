@@ -2,6 +2,10 @@ echo off
 set path=%path%;"C:\Program Files\Microsoft Visual Studio 9.0\Common7\IDE"
 mkdir build
 
+devenv.com babbage2nd.vcproj /Rebuild Release
+mkdir build\babbage2nd
+copy Release\babbage2nd.exe build\babbage2nd\.
+
 devenv.com fmr30.vcproj /Rebuild Release
 mkdir build\fmr30
 copy Release\fmr30.exe build\fmr30\.
@@ -57,6 +61,10 @@ copy Release\mz5500.exe build\mz5500\.
 devenv.com mz6500.vcproj /Rebuild Release
 mkdir build\mz6500
 copy Release\mz6500.exe build\mz6500\.
+
+devenv.com n5200.vcproj /Rebuild Release
+mkdir build\n5200
+copy Release\n5200.exe build\n5200\.
 
 devenv.com pasopia.vcproj /Rebuild Release
 mkdir build\pasopia_t

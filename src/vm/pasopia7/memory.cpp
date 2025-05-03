@@ -123,7 +123,7 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 	}
 	SET_BANK(0xc000, 0xffff, ram + 0xc000, ram + 0xc000);
 	
-	vram_sel = (data & 4) ? true : false;
+	vram_sel = ((data & 4) != 0);
 	// I/O memory access
 	if(data & 8)
 		d_io->write_signal(did_io, 0xffffffff, 1);

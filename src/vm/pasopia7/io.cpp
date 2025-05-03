@@ -18,7 +18,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		return;
 	}
 	uint32 laddr = addr & 0xff, haddr = addr & 0xff00;
-//	emu->out_debug("OUT\t%2x,%2x\n", laddr, data);
+//	emu->out_debug(_T("OUT\t%2x,%2x\n"), laddr, data);
 	wdev[laddr]->write_io8(haddr | waddr[laddr], data);
 }
 
@@ -30,7 +30,7 @@ uint32 IO::read_io8(uint32 addr)
 	}
 	uint32 laddr = addr & 0xff, haddr = addr & 0xff00;
 	uint32 val = rdev[laddr]->read_io8(haddr | raddr[laddr]);
-//	emu->out_debug("IN\t%2x = %2x\n", laddr, val);
+//	emu->out_debug(_T("IN\t%2x = %2x\n"), laddr, val);
 	return val;
 }
 

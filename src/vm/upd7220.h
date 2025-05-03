@@ -143,6 +143,8 @@ private:
 public:
 	UPD7220(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		dcount_drq = dcount_vsync = 0;
+		vram = NULL;
+		vram_size = 0;
 	}
 	~UPD7220() {}
 	

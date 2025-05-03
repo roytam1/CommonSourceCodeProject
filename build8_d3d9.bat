@@ -58,6 +58,10 @@ devenv.com mz6500.vcproj /Rebuild Release_d3d9
 mkdir build\mz6500
 copy Release_d3d9\mz6500.exe build\mz6500\.
 
+devenv.com n5200.vcproj /Rebuild Release_d3d9
+mkdir build\n5200
+copy Release_d3d9\n5200.exe build\n5200\.
+
 devenv.com pasopia.vcproj /Rebuild Release_d3d9
 mkdir build\pasopia_t
 mkdir build\pasopia_oa

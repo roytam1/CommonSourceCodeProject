@@ -7,6 +7,8 @@
 #define IDR_ACCELERATOR1                103
 #define ID_ACCEL_SCREEN                 104
 #define ID_ACCEL_MOUSE                  105
+#define ID_BITMAP1                      106
+#define ID_BUTTON                       1000
 #define ID_RESET                        40001
 #define ID_IPL_RESET                    40002
 #define ID_CPU_POWER0                   40003
@@ -177,6 +179,13 @@
 
 // menu positions
 
+// GIJUTSU-HYORON-SHA Babbase-2nd
+#ifdef _BABBAGE2ND
+#define MENU_POS_CONTROL                0
+#define MENU_POS_RAM                    1
+#define MENU_POS_SCREEN                 2
+#endif
+
 // FUJITSU FM-16pi
 #ifdef _FM16PI
 #define MENU_POS_CONTROL                0
@@ -344,6 +353,15 @@
 #define MENU_POS_SOUND                  6
 #endif
 
+// NEC N5200
+#ifdef _N5200
+#define MENU_POS_CONTROL                0
+#define MENU_POS_FD1                    1
+#define MENU_POS_FD2                    2
+#define MENU_POS_SCREEN                 3
+#define MENU_POS_SOUND                  4
+#endif
+
 // TOSHIBA PASOPIA
 #ifdef _PASOPIA
 #define MENU_POS_CONTROL                0
@@ -496,9 +514,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        106
+#define _APS_NEXT_RESOURCE_VALUE        107
 #define _APS_NEXT_COMMAND_VALUE         40168
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

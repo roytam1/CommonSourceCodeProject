@@ -3267,7 +3267,7 @@ inline void I86::_cwd()	// Opcode 0x99
 	regs.w[DX] = (regs.b[AH] & 0x80) ? 0xffff : 0;
 }
 
-inline void I86::_call_far()
+inline void I86::_call_far()	// Opcode 0x9a
 {
 	unsigned tmp1 = FETCH8();
 	tmp1 += FETCH8() << 8;

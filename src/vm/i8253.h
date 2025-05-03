@@ -85,11 +85,11 @@ public:
 	}
 	void set_context_ch1(DEVICE* device, int id, uint32 mask) {
 		int c = dcount[1]++;
-		dev[1][c] = device; did[1][c] = id; dmask[0][c] = mask;
+		dev[1][c] = device; did[1][c] = id; dmask[1][c] = mask;
 	}
 	void set_context_ch2(DEVICE* device, int id, uint32 mask) {
 		int c = dcount[2]++;
-		dev[2][c] = device; did[2][c] = id; dmask[0][c] = mask;
+		dev[2][c] = device; did[2][c] = id; dmask[2][c] = mask;
 	}
 	void set_constant_clock(int ch, uint32 hz) {
 		counter[ch].freq = hz;
