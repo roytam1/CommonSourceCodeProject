@@ -192,7 +192,7 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 	case SIG_SUB_INT2:
 		// from main pcb
 		d_cpu->write_signal(SIG_UPD7801_INTF2, data, mask);
-		// ugly patch for boot
+		// FIXME: ugly patch for boot
 		if(data & mask) {
 			d_main->write_signal(SIG_MAIN_COMM, 0, 0xff);
 		}
@@ -200,7 +200,7 @@ void SUB::write_signal(int id, uint32 data, uint32 mask)
 	case SIG_SUB_COMM:
 		// from main pcb
 		comm_data = data & 0xff;
-		// ugly patch for command
+		// FIXME: ugly patch for command
 		if(get_cpu_pc(1) == 0x10e || get_cpu_pc(1) == 0x110) {
 			d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);
 		}

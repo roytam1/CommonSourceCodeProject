@@ -66,6 +66,7 @@ typedef struct {
 	void write_cmd(uint8 data);
 	void write_param(uint8 data);
 	uint32 read_param();
+	uint32 read_status();
 	void start();
 	void finish();
 	void write_buffer(uint8 data);

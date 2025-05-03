@@ -807,7 +807,6 @@ void PC88::write_io8(uint32 addr, uint32 data)
 		update_palette = true;
 		break;
 #endif
-	case 0x53:
 	case 0x54:
 	case 0x55:
 	case 0x56:
@@ -1032,7 +1031,7 @@ uint32 PC88::read_io8_debug(uint32 addr)
 	case 0x50:
 		return crtc.read_param();
 	case 0x51:
-		return crtc.status;
+		return crtc.read_status();
 	case 0x5c:
 		return gvram_plane | 0xf8;
 	case 0x60:
@@ -1368,7 +1367,9 @@ void PC88::event_vline(int v, int clock)
 			if(!dmac.ch[2].running) {
 				// dma underrun occurs !!!
 				crtc.status |= 8;
-				crtc.status &= ~0x10;
+//				crtc.status &= ~0x10;
+			} else {
+				crtc.status &= ~8;
 			}
 			// dma wait cycles
 			busreq_clocks = (int)((double)(dmac.ch[2].count.sd + 1) * (cpu_clock_low ? 7.0 : 16.0) / (double)disp_line + 0.5);
@@ -1545,7 +1546,7 @@ void PC88::draw_screen()
 	
 	// render graph screen
 	scrntype *palette_pc = palette_graph_pc;
-	bool disp_color_graph = false;
+	bool disp_color_graph = true;
 #if defined(_PC8001SR)
 	if(config.boot_mode != MODE_PC80_V2) {
 		if(Port31_V1_320x200) {
@@ -1599,9 +1600,6 @@ void PC88::draw_screen()
 					palette_graph_pc[i] = RGB_COLOR(pex[r], pex[g], pex[b]);
 				}
 				palette_graph_pc[3] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
-				if(!disp_color_graph) {
-					palette_graph_pc[0] = 0;
-				}
 			} else if(Port31_V1_MONO) {
 				palette_graph_pc[0] = 0;
 				palette_graph_pc[1] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
@@ -1616,32 +1614,33 @@ void PC88::draw_screen()
 					uint8 g = (port[0x54 + i] & 4) ? 7 : 0;
 					palette_graph_pc[i] = RGB_COLOR(pex[r], pex[g], pex[b]);
 				}
-				if(!disp_color_graph) {
-					palette_graph_pc[0] = 0;
-				} else {
-					back_color = palette_graph_pc[0];
-				}
+				back_color = palette_graph_pc[0];
 			} else {
 				back_color = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			}
 		}
 #else
-		back_color = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 		if(Port31_HCOLOR) {
 			for(int i = 0; i < 8; i++) {
 				palette_graph_pc[i] = RGB_COLOR(pex[palette[i].r], pex[palette[i].g], pex[palette[i].b]);
-			}
-			if(!disp_color_graph) {
-				palette_graph_pc[0] = back_color =0;
 			}
 		} else if(!Port31_400LINE) {
 			palette_graph_pc[0] = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 			palette_graph_pc[1] = RGB_COLOR(255, 255, 255);
 		}
+		back_color = RGB_COLOR(pex[palette[8].r], pex[palette[8].g], pex[palette[8].b]);
 #endif
 		// back color for attrib mode
 		palette_text_pc[0] = back_color;
 		update_palette = false;
+	}
+	
+	// set back color to black if cg screen is off in color mode
+	scrntype palette_text_back = palette_text_pc[0];
+	scrntype palette_graph_back = palette_graph_pc[0];
+	
+	if(!disp_color_graph) {
+		palette_text_pc[0] = palette_graph_pc[0] = 0;
 	}
 	
 	// copy to screen buffer
@@ -1693,6 +1692,10 @@ void PC88::draw_screen()
 		emu->screen_skip_line = false;
 	}
 #endif
+	
+	// restore back color palette
+	palette_text_pc[0] = palette_text_back;
+	palette_graph_pc[0] = palette_graph_back;
 }
 
 /*
@@ -2162,6 +2165,9 @@ void pc88_crtc_t::write_cmd(uint8 data)
 		status &= ~8;
 		break;
 	case 2:	// set interrupt mask
+		if(!(data & 1)) {
+			status = 0; // from M88
+		}
 		intr_mask = data & 3;
 		break;
 	case 3:	// read light pen
@@ -2248,6 +2254,15 @@ uint32 pc88_crtc_t::read_param()
 	return val;
 }
 
+uint32 pc88_crtc_t::read_status()
+{
+	if(status & 8) {
+		return status & ~0x10;
+	} else {
+		return status;
+	}
+}
+
 void pc88_crtc_t::start()
 {
 	memset(buffer, 0, sizeof(buffer));
@@ -2275,7 +2290,7 @@ uint8 pc88_crtc_t::read_buffer(int ofs)
 	}
 	// dma underrun occurs !!!
 	status |= 8;
-	status &= ~0x10;
+//	status &= ~0x10;
 	return 0;
 }
 

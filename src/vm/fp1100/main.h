@@ -42,7 +42,8 @@ private:
 	bool rom_sel;
 	uint8 slot_sel;
 	uint8 intr_mask;
-	uint8 intr_req;
+	uint8 intr_request;
+	uint8 intr_in_service;
 	
 	void update_memory_map();
 	void update_intr();
@@ -50,7 +51,7 @@ private:
 public:
 	MAIN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
-		intr_mask = intr_req = 0;
+		intr_mask = intr_request = intr_in_service = 0;
 	}
 	~MAIN() {}
 	
@@ -64,6 +65,7 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 intr_ack();
 	void intr_reti();
+	void intr_ei();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	

@@ -76,14 +76,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	main->set_context_cpu(cpu);
 	main->set_context_sub(sub);
-	main->set_context_slot(0, rampack1);
-	main->set_context_slot(1, rampack2);
-	main->set_context_slot(2, rampack3);
-	main->set_context_slot(3, rampack4);
-	main->set_context_slot(4, rampack5);
-	main->set_context_slot(5, rampack6);
-	main->set_context_slot(6, rompack);
-	main->set_context_slot(7, fdcpack);
+	main->set_context_slot(0, fdcpack);
+	main->set_context_slot(1, rampack1);
+	main->set_context_slot(2, rampack2);
+	main->set_context_slot(3, rampack3);
+	main->set_context_slot(4, rampack4);
+	main->set_context_slot(5, rampack5);
+	main->set_context_slot(6, rampack6);
+	main->set_context_slot(7, rompack);
 	
 	sub->set_context_cpu(subcpu);
 	sub->set_context_main(main);

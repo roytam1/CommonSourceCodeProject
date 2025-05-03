@@ -54,7 +54,7 @@ void MAIN::reset()
 	rom_sel = true;
 	update_memory_map();
 	slot_sel = 0;
-	intr_mask = intr_req = 0;
+	intr_mask = intr_request = intr_in_service = 0;
 }
 
 void MAIN::write_data8(uint32 addr, uint32 data)
@@ -71,6 +71,9 @@ uint32 MAIN::read_data8(uint32 addr)
 
 void MAIN::write_io8(uint32 addr, uint32 data)
 {
+#ifdef _IO_DEBUG_LOG
+	emu->out_debug_log(_T("%06x\tOUT8\t%04x,%02x\n"), get_cpu_pc(0), addr, data);
+#endif
 	switch(addr & 0xffe0) {
 	case 0xff00:
 	case 0xff20:
@@ -79,12 +82,15 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 		slot_sel = (slot_sel & 1) | ((data << 1) & 6);
 		break;
 	case 0xff80:
-		if((intr_mask & 0x80) != (data & 0x80)) {
-			intr_mask = (intr_mask & (~0x80)) | (data & 0x80);
-			d_sub->write_signal(SIG_SUB_INT2, data, 0x80);
-		}
-		if((intr_mask & 0x1f) != (data & 0x1f)) {
-			intr_mask = (intr_mask & (~0x1f)) | (data & 0x1f);
+		if(intr_mask != data) {
+			if(!(intr_mask & 0x80) && (data & 0x80)) {
+				d_sub->write_signal(SIG_SUB_INT2, 1, 1);
+				// FIXME: ugly patch for floppy drives
+				intr_request &= ~0x10;
+			} else if((intr_mask & 0x80) && !(data & 0x80)) {
+				d_sub->write_signal(SIG_SUB_INT2, 0, 1);
+			}
+			intr_mask = data;
 			update_intr();
 		}
 		break;
@@ -106,18 +112,25 @@ void MAIN::write_io8(uint32 addr, uint32 data)
 
 uint32 MAIN::read_io8(uint32 addr)
 {
+	uint32 val = 0xff;
 	switch(addr & 0xffe0) {
 	case 0xff80:
 	case 0xffa0:
 	case 0xffc0:
 	case 0xffe0:
-		return comm_data;
+		val = comm_data;
+		break;
 	default:
-		return d_slot[slot_sel & 7]->read_io8(addr);
+		val = d_slot[slot_sel & 7]->read_io8(addr);
+		break;
 	}
+#ifdef _IO_DEBUG_LOG
+	emu->out_debug_log(_T("%06x\tIN8\t%04x = %02x\n"), get_cpu_pc(0), addr, val);
+#endif
+	return val;
 }
 
-static const uint8 priority[5] = {
+static const uint8 bits[5] = {
 	0x10, 0x01, 0x02, 0x04, 0x08
 };
 static const uint32 vector[5] = {
@@ -133,13 +146,13 @@ void MAIN::write_signal(int id, uint32 data, uint32 mask)
 	case SIG_MAIN_INTC:
 	case SIG_MAIN_INTD:
 		if(data & mask) {
-			if(!(intr_req & priority[id])) {
-				intr_req |= priority[id];
+			if(!(intr_request & bits[id])) {
+				intr_request |= bits[id];
 				update_intr();
 			}
 		} else {
-			if(intr_req & priority[id]) {
-				intr_req &= ~priority[id];
+			if(intr_request & bits[id]) {
+				intr_request &= ~bits[id];
 				update_intr();
 			}
 		}
@@ -162,7 +175,7 @@ void MAIN::update_memory_map()
 void MAIN::update_intr()
 {
 	for(int i = 0; i < 5; i++) {
-		if((intr_req & priority[i]) && (intr_mask & priority[i])) {
+		if((intr_request & bits[i]) && (intr_mask & bits[i]) && !(intr_in_service & bits[i])) {
 			d_cpu->set_intr_line(true, true, 0);
 			return;
 		}
@@ -173,8 +186,9 @@ void MAIN::update_intr()
 uint32 MAIN::intr_ack()
 {
 	for(int i = 0; i < 5; i++) {
-		if((intr_req & priority[i]) && (intr_mask & priority[i])) {
-			intr_req &= ~priority[i];
+		if((intr_request & bits[i]) && (intr_mask & bits[i]) && !(intr_in_service & bits[i])) {
+			intr_request &= ~bits[i];
+			intr_in_service |= bits[i];
 			return vector[i];
 		}
 	}
@@ -184,9 +198,22 @@ uint32 MAIN::intr_ack()
 
 void MAIN::intr_reti()
 {
+	intr_ei();
 }
 
-#define STATE_VERSION	1
+void MAIN::intr_ei()
+{
+	// FP-1100 uses EI and RET to leave interrupt routine
+	for(int i = 0; i < 5; i++) {
+		if(intr_in_service & bits[i]) {
+			intr_in_service &= ~bits[i];
+			update_intr();
+			break;
+		}
+	}
+}
+
+#define STATE_VERSION	2
 
 void MAIN::save_state(FILEIO* state_fio)
 {
@@ -198,7 +225,8 @@ void MAIN::save_state(FILEIO* state_fio)
 	state_fio->FputBool(rom_sel);
 	state_fio->FputUint8(slot_sel);
 	state_fio->FputUint8(intr_mask);
-	state_fio->FputUint8(intr_req);
+	state_fio->FputUint8(intr_request);
+	state_fio->FputUint8(intr_in_service);
 }
 
 bool MAIN::load_state(FILEIO* state_fio)
@@ -214,7 +242,8 @@ bool MAIN::load_state(FILEIO* state_fio)
 	rom_sel = state_fio->FgetBool();
 	slot_sel = state_fio->FgetUint8();
 	intr_mask = state_fio->FgetUint8();
-	intr_req = state_fio->FgetUint8();
+	intr_request = state_fio->FgetUint8();
+	intr_in_service = state_fio->FgetUint8();
 	
 	// post process
 	update_memory_map();

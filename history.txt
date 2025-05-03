@@ -1,3 +1,15 @@
+2/13/2015
+
+[VM/UPD765A] add ugly patch for PC-8801 Kimochi Disk 2
+
+[FP1100] change slot indices to support floppy drives
+[FP1100/MAIN] fix to clear irq from sub cpu when raise irq to sub cpu
+[PC8801MA/PC88] fix routine to set back color to black in color mode
+[PC8801MA/PC88] fix crtc to clear status in set interrupt mask (thanks Mr.cisc)
+[PC8801MA/PC88] fix crtc to restart when dma underrun does not occur
+[PC8801MA/PC88] fix out port 0x53 (thanks Mr.Redart)
+
+
 2/1/2015
 
 [VM/DISK] fix condition to check if the track offset is valid
