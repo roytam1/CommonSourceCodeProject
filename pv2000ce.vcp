@@ -334,6 +334,10 @@ SOURCE=.\src\config.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\fifo.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\fileio.h
 # End Source File
 # End Group

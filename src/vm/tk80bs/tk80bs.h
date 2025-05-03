@@ -28,7 +28,7 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
-#define USE_AUTO_KEY_CAPS
+#define USE_AUTO_KEY_NO_CAPS
 #define USE_SCREEN_X2
 
 // device informations for virtual machine
@@ -38,6 +38,7 @@
 #define CHARS_PER_LINE		1
 #define CPU_CLOCKS		2048000
 //#define CPU_START_ADDR		0xf000
+#define HAS_I8080
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		164
 //#define IO8_ADDR_MAX		8
@@ -51,7 +52,7 @@ class EVENT;
 class I8251;
 class I8255;
 class PCM1BIT;
-class Z80;
+class I8080;
 
 class CMT;
 class DISPLAY;
@@ -71,7 +72,7 @@ protected:
 	I8255* pio_t;
 	PCM1BIT* pcm0;
 	PCM1BIT* pcm1;
-	Z80* cpu;
+	I8080* cpu;
 	
 	CMT* cmt;
 	DISPLAY* display;
@@ -130,6 +131,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

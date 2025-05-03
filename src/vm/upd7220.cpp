@@ -10,7 +10,7 @@
 
 #include <math.h>
 #include "upd7220.h"
-#include "fifo.h"
+#include "../fifo.h"
 
 void UPD7220::initialize()
 {

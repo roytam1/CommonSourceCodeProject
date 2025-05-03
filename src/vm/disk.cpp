@@ -51,7 +51,12 @@ void DISK::open(_TCHAR path[])
 			// check file format
 			if((buffer[0] == 'T' && buffer[1] == 'D') || (buffer[0] == 't' && buffer[1] == 'd')) {
 				// this is teledisk image and must be converted to d88
-				insert = t2d();
+				insert = td2d();
+				_stprintf(file_path, _T("%s.D88"), path);
+			}
+			else if(buffer[0] == 'I' && buffer[1] == 'M' && buffer[2] == 'D') {
+				// this is imagedisk image and must be converted to d88
+				insert = imd2d();
 				_stprintf(file_path, _T("%s.D88"), path);
 			}
 		}
@@ -284,19 +289,19 @@ bool DISK::get_sector(int trk, int side, int index)
 	file_size += (size); \
 }
 
-bool DISK::t2d()
+bool DISK::td2d()
 {
-	struct hdr_t hdr;
-	struct cmt_t cmt;
-	struct trk_t trk;
-	struct sct_t sct;
-	struct d88hdr_t d88hdr;
-	struct d88sct_t d88sct;
+	struct td_hdr_t hdr;
+	struct td_cmt_t cmt;
+	struct td_trk_t trk;
+	struct td_sct_t sct;
+	struct d88_hdr_t d88_hdr;
+	struct d88_sct_t d88_sct;
 	uint8 obuf[512];
 	
 	// check teledisk header
 	fi->Fseek(0, FILEIO_SEEK_SET);
-	fi->Fread(&hdr, sizeof(hdr_t), 1);
+	fi->Fread(&hdr, sizeof(td_hdr_t), 1);
 	if(hdr.sig[0] == 't' && hdr.sig[1] == 'd') {
 		// decompress to the temporary file
 		FILEIO* fo = new FILEIO();
@@ -322,7 +327,7 @@ bool DISK::t2d()
 	}
 	if(hdr.flag & 0x80) {
 		// skip comment
-		fi->Fread(&cmt, sizeof(cmt_t), 1);
+		fi->Fread(&cmt, sizeof(td_cmt_t), 1);
 		fi->Fseek(cmt.len, FILEIO_SEEK_CUR);
 	}
 	
@@ -330,17 +335,17 @@ bool DISK::t2d()
 	file_size = 0;
 	
 	// create d88 header
-	_memset(&d88hdr, 0, sizeof(d88hdr_t));
-	strcpy(d88hdr.title, "TELEDISK");
-	d88hdr.protect = 0; // non-protected
-	d88hdr.type = 0; // 2d
-	COPYBUFFER(&d88hdr, sizeof(d88hdr_t));
+	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
+	strcpy(d88_hdr.title, "TELEDISK");
+	d88_hdr.protect = 0; // non-protected
+	d88_hdr.type = 0; // 2d
+	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
-	int trkcnt = 0, trkptr = sizeof(d88hdr_t);
-	fi->Fread(&trk, sizeof(trk_t), 1);
+	int trkcnt = 0, trkptr = sizeof(d88_hdr_t);
+	fi->Fread(&trk, sizeof(td_trk_t), 1);
 	while(trk.nsec != 0xff) {
-		d88hdr.trkptr[trkcnt++] = trkptr;
+		d88_hdr.trkptr[trkcnt++] = trkptr;
 		
 		// read sectors in this track
 		for(int i = 0; i < trk.nsec; i++) {
@@ -349,19 +354,19 @@ bool DISK::t2d()
 			_memset(dst, 0, sizeof(dst));
 			
 			// read sector header
-			fi->Fread(&sct, sizeof(sct_t), 1);
+			fi->Fread(&sct, sizeof(td_sct_t), 1);
 			
 			// create d88 sector header
-			_memset(&d88sct, 0, sizeof(d88sct_t));
-			d88sct.c = sct.c;
-			d88sct.h = sct.h;
-			d88sct.r = sct.r;
-			d88sct.n = sct.n;
-			d88sct.nsec = trk.nsec;
-			d88sct.dens = 0; // ”{–§“x
-			d88sct.del = (sct.ctrl & 4) ? 0x10 : 0;
-			d88sct.stat = (sct.ctrl & 2) ? 0x10 : 0; // crc?
-			d88sct.size = secsize[sct.n & 3];
+			_memset(&d88_sct, 0, sizeof(d88_sct_t));
+			d88_sct.c = sct.c;
+			d88_sct.h = sct.h;
+			d88_sct.r = sct.r;
+			d88_sct.n = sct.n;
+			d88_sct.nsec = trk.nsec;
+			d88_sct.dens = 0; // ”{–§“x
+			d88_sct.del = (sct.ctrl & 4) ? 0x10 : 0;
+			d88_sct.stat = (sct.ctrl & 2) ? 0x10 : 0; // crc?
+			d88_sct.size = secsize[sct.n & 3];
 			
 			// create sector image
 			if(sct.ctrl != 0x10) {
@@ -409,18 +414,18 @@ bool DISK::t2d()
 					break; // unknown flag
 			}
 			else
-				d88sct.size = 0;
+				d88_sct.size = 0;
 			
 			// copy to d88
-			COPYBUFFER(&d88sct, sizeof(d88sct_t));
-			COPYBUFFER(dst, d88sct.size);
-			trkptr += sizeof(d88sct_t) + d88sct.size;
+			COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
+			COPYBUFFER(dst, d88_sct.size);
+			trkptr += sizeof(d88_sct_t) + d88_sct.size;
 		}
 		// read next track
-		fi->Fread(&trk, sizeof(trk_t), 1);
+		fi->Fread(&trk, sizeof(td_trk_t), 1);
 	}
-	d88hdr.size = trkptr;
-	_memcpy(buffer, &d88hdr, sizeof(d88hdr_t));
+	d88_hdr.size = trkptr;
+	_memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
 	return true;
 }
 
@@ -624,5 +629,100 @@ int DISK::decode(uint8 *buf, int len)
 		}
 	}
 	return count;
+}
+
+// imd image decoder
+
+bool DISK::imd2d()
+{
+	struct imd_trk_t trk;
+	struct d88_hdr_t d88_hdr;
+	struct d88_sct_t d88_sct;
+	
+	// skip comment
+	fi->Fseek(0, FILEIO_SEEK_SET);
+	int tmp;
+	while((tmp = fi->Fgetc()) != 0x1a) {
+		if(tmp == EOF)
+			return false;
+	}
+	
+	// create d88 image
+	file_size = 0;
+	
+	// create d88 header
+	_memset(&d88_hdr, 0, sizeof(d88_hdr_t));
+	strcpy(d88_hdr.title, "IMAGEDISK");
+	d88_hdr.protect = 0; // non-protected
+	d88_hdr.type = 0x20; // 2hd
+	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
+	
+	// create tracks
+	int trkptr = sizeof(d88_hdr_t);
+	for(int t = 0; t < 164; t++) {
+		// check end of file
+		if(fi->Fread(&trk, sizeof(imd_trk_t), 1) != 1)
+			break;
+		// check track header
+		if(trk.mode > 5 || trk.size > 6)
+			return false;
+		if(!trk.nsec)
+			continue;
+		d88_hdr.trkptr[t] = trkptr;
+		
+		// setup sector id
+		uint8 c[64], h[64], r[64];
+		fi->Fread(r, trk.nsec, 1);
+		if(trk.head & 0x80)
+			fi->Fread(c, trk.nsec, 1);
+		else
+			_memset(c, trk.cyl, sizeof(c));
+		if(trk.head & 0x40)
+			fi->Fread(h, trk.nsec, 1);
+		else
+			_memset(h, trk.head & 1, sizeof(h));
+		
+		// read sectors in this track
+		for(int i = 0; i < trk.nsec; i++) {
+			// create d88 sector header
+			static uint8 del[] = {0, 0, 0, 0x10, 0x10, 0, 0, 0x10, 0x10};
+			static uint8 err[] = {0, 0, 0, 0, 0, 0x10, 0x10, 0x10, 0x10};
+			int sectype = fi->Fgetc();
+			if(sectype > 8)
+				return false;
+			_memset(&d88_sct, 0, sizeof(d88_sct_t));
+			d88_sct.c = c[i];
+			d88_sct.h = h[i];
+			d88_sct.r = r[i];
+			d88_sct.n = trk.size;
+			d88_sct.nsec = trk.nsec;
+			d88_sct.dens = (trk.mode < 3) ? 0x40 : 0;
+			d88_sct.del = del[sectype];
+			d88_sct.stat = err[sectype];
+			d88_sct.size = secsize[trk.size];
+			
+			// create sector image
+			uint8 dst[8192];
+			if(sectype == 1 || sectype == 3 || sectype == 5 || sectype == 7) {
+				// uncompressed
+				fi->Fread(dst, d88_sct.size, 1);
+			}
+			else if(sectype == 2 || sectype == 4 || sectype == 6 || sectype == 8) {
+				// compressed
+				int tmp = fi->Fgetc();
+				_memset(dst, tmp, d88_sct.size);
+			}
+			else
+				d88_sct.size = 0;
+			
+			// copy to d88
+			COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
+			COPYBUFFER(dst, d88_sct.size);
+			trkptr += sizeof(d88_sct_t) + d88_sct.size;
+		}
+	}
+	d88_hdr.size = trkptr;
+	_memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
+	return true;
 }
 

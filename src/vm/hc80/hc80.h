@@ -124,6 +124,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

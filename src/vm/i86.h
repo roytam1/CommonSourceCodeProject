@@ -8,15 +8,15 @@
 	[ 80x86 ]
 */
 
-#ifndef _X86_H_ 
-#define _X86_H_
+#ifndef _I86_H_ 
+#define _I86_H_
 
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_X86_TEST	0x10
-#define SIG_X86_A20	0x11
+#define SIG_I86_TEST	0x10
+#define SIG_I86_A20	0x11
 
 #define INT_REQ_BIT	1
 #define NMI_REQ_BIT	2
@@ -55,7 +55,7 @@
 #define DS	3
 
 // address mask
-#ifndef I286
+#ifndef HAS_I286
 #define AMASK	0xfffff
 #endif
 
@@ -155,7 +155,7 @@ static const uint8 mod_rm16[256] = {
 };
 
 // v30
-#ifdef V30
+#ifdef HAS_V30
 static const uint16 bytes[] = {
 	   1,    2,    4,    8,
 	  16,   32,   64,  128,
@@ -228,7 +228,7 @@ struct x86_cycles {
 	uint8 bound;						// (80186) BOUND
 };
 
-#ifdef I286
+#ifdef HAS_I286
 // for 80286
 static const struct x86_cycles cycles = {
 	23,17,			// exception, IRET
@@ -349,7 +349,7 @@ static const struct x86_cycles cycles = {
 };
 #endif
 
-class X86 : public DEVICE
+class I86 : public DEVICE
 {
 private:
 	/* ---------------------------------------------------------------------------
@@ -387,7 +387,7 @@ private:
 	
 	// addr
 	uint32 PC, prvPC;
-#ifdef I286
+#ifdef HAS_I286
 	uint32 AMASK;
 #endif
 	
@@ -467,7 +467,7 @@ private:
 	unsigned GetEA(unsigned ModRM);
 	void rotate_shift_byte(unsigned ModRM, unsigned cnt);
 	void rotate_shift_word(unsigned ModRM, unsigned cnt);
-#ifdef I286
+#ifdef HAS_I286
 	int i286_selector_okay(uint16 selector);
 	void i286_data_descriptor(int reg, uint16 selector);
 	void i286_code_descriptor(uint16 selector, uint16 offset);
@@ -722,12 +722,12 @@ private:
 	inline void _invalid();
 	
 public:
-	X86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
+	I86(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {
 		d_bios = NULL;
 		count = extra_count = first = 0;	// passed_clock must be zero at initialize
 		busreq = false;
 	}
-	~X86() {}
+	~I86() {}
 	
 	// common functions
 	void initialize();

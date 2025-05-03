@@ -54,9 +54,9 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
 #ifdef _MZ6550
-#define I286
+#define HAS_I286
 #else
-#define I86
+#define HAS_I86
 #endif
 #define I8259_MAX_CHIPS		2
 #define UPD765A_DMA_MODE
@@ -78,7 +78,7 @@ class LS393;
 class RP5C01;
 class UPD7220;
 class UPD765A;
-class X86;
+class I86;
 class YM2203;
 class Z80CTC;
 class Z80SIO;
@@ -106,7 +106,7 @@ protected:
 	RP5C01* rtc;
 	UPD7220* gdc;
 	UPD765A* fdc;
-	X86* cpu;
+	I86* cpu;
 	YM2203* psg;
 	Z80CTC* ctc0;
 #if defined(_MZ6500) || defined(_MZ6550)
@@ -169,6 +169,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

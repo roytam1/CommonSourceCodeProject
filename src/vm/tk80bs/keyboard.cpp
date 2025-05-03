@@ -34,11 +34,11 @@ void KEYBOARD::key_down(int code)
 {
 	// get special key
 	bool hit_type = (key_stat[0x1b] && !prev_type);	// ESC
-	bool hit_brk = (key_stat[0xa2] && !prev_brk);	// LCTRL
-	bool hit_kana = (key_stat[0xa3] && !prev_kana);	// RCTRL
+	bool hit_brk = (key_stat[0x13] && !prev_brk);	// PAUSE/BREAK
+	bool hit_kana = (key_stat[0x15] && !prev_kana);	// KANA
 	prev_type = key_stat[0x1b];
-	prev_brk = key_stat[0xa2];
-	prev_kana = key_stat[0xa3];
+	prev_brk = key_stat[0x13];
+	prev_kana = key_stat[0x15];
 	
 	// check keyboard focus
 	if(hit_type) {
@@ -60,21 +60,17 @@ void KEYBOARD::key_down(int code)
 			kana_lock = !kana_lock;
 		
 		// send keycode
-		if(key_stat[0xa0]) {
-			// LSHIFT: EI KIGOU
-			code = matrix_s[code & 0xff];
-		}
-		else if(key_stat[0xa1]) {
-			// RSHIFT: KANA KIGOU
-			code = matrix_ks[code & 0xff];
-		}
-		else if(kana_lock) {
-			// kana lock
-			code = matrix_k[code & 0xff];
+		if(kana_lock) {
+			if(key_stat[0x10])
+				code = matrix_ks[code & 0xff];
+			else
+				code = matrix_k[code & 0xff];
 		}
 		else {
-			// non shifted
-			code = matrix[code & 0xff];
+			if(key_stat[0x10])
+				code = matrix_s[code & 0xff];
+			else
+				code = matrix[code & 0xff];
 		}
 		if(code)
 			d_pio_b->write_signal(did_pio_b, code, 0xff);
@@ -87,8 +83,8 @@ void KEYBOARD::key_down(int code)
 void KEYBOARD::key_up(int code)
 {
 	prev_type = key_stat[0x1b];
-	prev_brk = key_stat[0xa2];
-	prev_kana = key_stat[0xa3];
+	prev_brk = key_stat[0x13];
+	prev_kana = key_stat[0x15];
 	
 	// update TK-80 keyboard
 	update_tk80();

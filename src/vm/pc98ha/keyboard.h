@@ -34,7 +34,7 @@ static int key_table[256] = {
 	0x1a,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
 	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,0x1b,0x0d,0x28,0x0c,  -1,
 	  -1,  -1,0x33,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-	0x71,  -1,0x72,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1
+	  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1
 };
 
 class KEYBOARD : public DEVICE
@@ -43,6 +43,7 @@ private:
 	DEVICE *d_sio;
 	int did_sio;
 	
+	bool kana, caps;
 	uint8 flag[256];
 	
 public:
@@ -51,6 +52,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void reset();
 	
 	// unique function
 	void set_context_sio(DEVICE* device, int id) {

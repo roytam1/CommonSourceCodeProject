@@ -36,7 +36,7 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		200
 #define MAX_DRIVE		4
-#define I86
+#define HAS_I86
 #define I8259_MAX_CHIPS		1
 #define IO8_ADDR_MAX		0x10000
 
@@ -53,7 +53,7 @@ class IO8;
 class LS393;
 class MB8877;
 class RTC58321;
-class X86;
+class I86;
 
 class DISPLAY;
 class KEYBOARD;
@@ -76,7 +76,7 @@ protected:
 	LS393* ls74;	// 74LS74
 	MB8877* fdc;
 	RTC58321* rtc;
-	X86* cpu;
+	I86* cpu;
 	
 	DISPLAY* display;
 	KEYBOARD* keyboard;
@@ -131,6 +131,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

@@ -71,7 +71,8 @@ void DISPLAY::draw_screen()
 		}
 	}
 	// draw leds
-	uint16 col_on = RGB_COLOR(31, 0, 0);
+	uint16 col_red = RGB_COLOR(31, 0, 0);
+	uint16 col_on = RGB_COLOR(31, 1, 9);
 	uint16 col_off = RGB_COLOR(7, 0, 0);
 	uint16 col[10];
 	
@@ -88,7 +89,7 @@ void DISPLAY::draw_screen()
 			col[6] = pat & 0x20 ? col_on : col_off;
 			col[7] = pat & 0x40 ? col_on : col_off;
 			col[8] = pat & 0x80 ? col_on : col_off;
-			col[9] = col_on;
+			col[9] = col_red;
 			for(int y = 0; y < 35; y++) {
 				uint16 *dest = &screen[y + 1][dest_x[i]];
 				for(int x = 0; x < 24; x++)
@@ -97,8 +98,8 @@ void DISPLAY::draw_screen()
 		}
 	}
 	// draw kb type
-	col[1] = d_key->read_signal(0) & 1 ? col_on : col_off;
-	col[2] = d_key->read_signal(0) & 2 ? col_on : col_off;
+	col[1] = d_key->read_signal(0) & 1 ? col_red : col_off;
+	col[2] = d_key->read_signal(0) & 2 ? col_red : col_off;
 	
 	for(int y = 0; y < 31; y++) {
 		uint16 *dest = &screen[y + 3][210];

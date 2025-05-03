@@ -24,7 +24,7 @@ static const uint8 plane[4] = {0, 1, 2, 4};
 class VDP : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_cpu;
 	
 	uint8 bg[192][256];
 	uint8* vram;
@@ -46,8 +46,8 @@ public:
 	void event_vsync(int v, int clock);
 	
 	// unique function
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
 	}
 	void set_memory_ptr(uint8* ptr) {
 		base = ptr;

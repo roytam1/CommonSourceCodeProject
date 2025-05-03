@@ -42,9 +42,9 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-#define MAX_SCSI		0
-#define I286
-#define X86_BIOS_CALL
+#define MAX_SCSI		8
+#define HAS_I286
+#define I86_BIOS_CALL
 #define I8259_MAX_CHIPS		2
 #define IO8_ADDR_MAX		0x10000
 
@@ -63,7 +63,7 @@ class IO8;
 class MB8877;
 class RTC58321;
 class UPD71071;
-class X86;
+class I86;
 
 class BIOS;
 class CMOS;
@@ -71,7 +71,7 @@ class FLOPPY;
 class KEYBOARD;
 class MEMORY;
 //class SERIAL;
-//class SCSI;
+class SCSI;
 class TIMER;
 
 class VM
@@ -92,14 +92,14 @@ protected:
 	MB8877* fdc;
 	RTC58321* rtc;
 	UPD71071* dma;
-	X86* cpu;
+	I86* cpu;
 	
 	BIOS* bios;
 	CMOS* cmos;
 	FLOPPY* floppy;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
-//	SCSI* scsi;
+	SCSI* scsi;
 //	SERIAL* serial;
 	TIMER* timer;
 	
@@ -152,6 +152,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

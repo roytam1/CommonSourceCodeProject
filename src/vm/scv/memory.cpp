@@ -71,7 +71,7 @@ void MEMORY::reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	if(addr == 0x3600)
-		dev->write_data8(addr, data);
+		d_sound->write_data8(addr, data);
 	if((addr & 0xfe00) == 0x3400)
 		wbank[0x68][addr & 3] = data;
 	else

@@ -1337,7 +1337,7 @@ void open_disk(HWND hWnd, int drv)
 	_memset(&OpenFileName, 0, sizeof(OpenFileName));
 	OpenFileName.lStructSize = sizeof(OPENFILENAME);
 	OpenFileName.hwndOwner = hWnd;
-	OpenFileName.lpstrFilter = _T("D88 Floppy Disk Files (*.d88)\0*.d88\0TeleDisk Floppy Disk Files (*.td0)\0*.td0\0All Files (*.*)\0*.*\0\0");
+	OpenFileName.lpstrFilter = _T("D88 Floppy Disk Files (*.d88)\0*.d88\0TeleDisk Floppy Disk Files (*.td0)\0*.td0\0ImageDisk Floppy Disk Files (*.imd)\0*.imd\0All Files (*.*)\0*.*\0\0");
 	OpenFileName.lpstrFile = szFile;
 	OpenFileName.nMaxFile = _MAX_PATH;
 	OpenFileName.lpstrTitle = _T("Floppy Disk");

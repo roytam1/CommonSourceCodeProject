@@ -263,7 +263,7 @@ SOURCE=.\src\vm\upd71071.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\x86.cpp
+SOURCE=.\src\vm\i86.cpp
 # ADD CPP /Oxt /Ob0
 
 # End Source File
@@ -413,10 +413,6 @@ SOURCE=.\src\vm\event.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\fifo.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\vm\i8253.h
 # End Source File
 # Begin Source File
@@ -453,7 +449,7 @@ SOURCE=.\src\vm\vm.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\x86.h
+SOURCE=.\src\vm\i86.h
 # End Source File
 # Begin Source File
 
@@ -523,6 +519,10 @@ SOURCE=.\src\common.h
 # Begin Source File
 
 SOURCE=.\src\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\fifo.h
 # End Source File
 # Begin Source File
 

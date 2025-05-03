@@ -9,7 +9,7 @@
 */
 
 #include "io.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 #include "../../config.h"
 
 //#define OUT_CMD_LOG
@@ -310,7 +310,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		cmd6303_buf->write(data);
 		psr |= BIT_OBF;
 #ifdef OUT_CMD_LOG
-		emu->out_debug(_T("%4x\tDAT %2x\n"), d_cpu->get_prv_pc(), data);
+		emu->out_debug(_T("%4x\tDAT %2x\n"), vm->get_prv_pc(), data);
 #endif
 		break;
 	case 0x0f:
@@ -318,7 +318,7 @@ void IO::write_io8(uint32 addr, uint32 data)
 		cmd6303 = data;
 		psr |= BIT_OBF;
 #ifdef OUT_CMD_LOG
-		emu->out_debug(_T("\n%4x\tCMD %2x\n"), d_cpu->get_prv_pc(), data);
+		emu->out_debug(_T("\n%4x\tCMD %2x\n"), vm->get_prv_pc(), data);
 #endif
 		break;
 	case 0x80:
@@ -409,7 +409,7 @@ uint32 IO::read_io8(uint32 addr)
 		if(!rsp6303_buf->empty())
 			psr &= ~BIT_F1;
 #ifdef OUT_CMD_LOG
-		emu->out_debug(_T("%4x\tRCV %2x\n"), d_cpu->get_prv_pc(), val);
+		emu->out_debug(_T("%4x\tRCV %2x\n"), vm->get_prv_pc(), val);
 #endif
 		return val;
 	case 0x80:
@@ -705,10 +705,11 @@ uint8 IO::rec_from_7508()
 
 void IO::key_down(int code)
 {
-	if(code == 0xf0) {
+	if(code == 0x14) {
 		// toggle caps lock
 		kb_caps = !kb_caps;
 		update_key(kb_caps ? 0xb4 : 0xa4);
+		update_key(kb_caps ? 0xa4 : 0xb4);
 	}
 	else
 		update_key(key_tbl[code & 0xff]);

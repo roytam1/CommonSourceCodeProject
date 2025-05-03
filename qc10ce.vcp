@@ -325,10 +325,6 @@ SOURCE=.\src\vm\event.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\fifo.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\vm\hd146818p.h
 # End Source File
 # Begin Source File
@@ -407,6 +403,10 @@ SOURCE=.\src\common.h
 # Begin Source File
 
 SOURCE=.\src\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\fifo.h
 # End Source File
 # Begin Source File
 

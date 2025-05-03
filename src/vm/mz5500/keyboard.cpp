@@ -9,7 +9,7 @@
 */
 
 #include "keyboard.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 
 #define BIT_DK	8
 #define BIT_SRK	0x10
@@ -117,12 +117,12 @@ void KEYBOARD::key_down(int code)
 		}
 		return;
 	}
-	else if(code == 0xf0) {
+	else if(code == 0x14) {
 		// caps
 		caps = !caps;
 		return;
 	}
-	else if(code == 0xf2) {
+	else if(code == 0x15) {
 		// kana
 		if(kana)
 			kana = false;

@@ -13,11 +13,15 @@
 
 void FLOPPY::initialize()
 {
+	_memset(changed, 0, sizeof(changed));
+	drvreg = drvsel = 0;
 	irq = irqmsk = false;
 }
 
 void FLOPPY::write_io8(uint32 addr, uint32 data)
 {
+	int nextdrv = drvsel;
+	
 	switch(addr & 0xffff)
 	{
 	case 0x208:
@@ -30,13 +34,16 @@ void FLOPPY::write_io8(uint32 addr, uint32 data)
 	case 0x20c:
 		// drive select register
 		if(data & 1)
-			d_fdc->write_signal(did_drv, 0, 3);
+			nextdrv = 0;
 		else if(data & 2)
-			d_fdc->write_signal(did_drv, 1, 3);
+			nextdrv = 1;
 		else if(data & 4)
-			d_fdc->write_signal(did_drv, 2, 3);
+			nextdrv = 2;
 		else if(data & 8)
-			d_fdc->write_signal(did_drv, 3, 3);
+			nextdrv = 3;
+		if(drvsel != nextdrv)
+			d_fdc->write_signal(did_drv, drvsel = nextdrv, 3);
+		drvreg = data;
 		break;
 	}
 }
@@ -46,10 +53,16 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	switch(addr & 0xffff)
 	{
 	case 0x208:
-		return d_fdc->fdc_status() | 0x60;
+		return d_fdc->fdc_status();
+	case 0x20c:
+		return drvreg;
 	case 0x20e:
 		// drive change register
-		return 0;	// 1 if changed
+		if(changed[drvsel]) {
+			changed[drvsel] = 0;
+			return 1;
+		}
+		return 0;
 	}
 	return 0xff;
 }

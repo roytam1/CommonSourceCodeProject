@@ -637,7 +637,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\vm\x86.cpp"
+					RelativePath="src\vm\i86.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -756,6 +756,10 @@
 				>
 			</File>
 			<File
+				RelativePath="src\fifo.h"
+				>
+			</File>
+			<File
 				RelativePath="src\fileio.h"
 				>
 			</File>
@@ -789,10 +793,6 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\fifo.h"
-					>
-				</File>
-				<File
 					RelativePath="src\vm\i8253.h"
 					>
 				</File>
@@ -821,7 +821,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\x86.h"
+					RelativePath="src\vm\i86.h"
 					>
 				</File>
 			</Filter>

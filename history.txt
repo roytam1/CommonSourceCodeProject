@@ -1,3 +1,37 @@
+12/26/2008
+
+[EMU/WIN32] support kana-characters on auto key function
+[VM/DISK] support ImageDisk floppy disk image
+[VM/I8085] support 8080/8085 (based on MAME 8080/8085 core)
+[VM/I86] change class name from X86 to I86
+
+[MULTI8/KEYBOARD] fix the problem that cannot input the kana-character "¨"
+[TK80] change cpu core from z80 to 8080
+[TK80/MEMORY] change user-defined rom address to $0c00-$7dff
+
+
+10/17/2008
+
+[EMU/WIN32] fix key notification for caps/kana/kanji
+[VM/X86] optimize the pseudo bios call by interrupt
+
+[FMR50/BIOS] support scsi hard drive
+[FMR50/BIOS] support pseudo bios
+[FMR50/BIOS] support disk bios $FA
+[FMR50/BIOS] support cmos/wait bios call
+[FMR50/FLOPPY] support disk change register
+[FMR50/KEYBOARD] support key repeat
+[FMR50/MEMORY] fix vram bank switch in 200line screen mode
+[FMR50/MEMORY] support reading ank/kanji rom
+[HC40/IO] fix caps toggle problem
+[HC80/IO] fix caps toggle problem
+[PC98HA/KEYBOARD] fix kana toggle problem
+[TK80/DISPLAY] change 8-seg LED color
+[TK80/KEYBOARD] change key assign
+[TK80/MEMORY] change rom size for COMPO BS/80
+[TK80/MEMORY] support user-defined rom for $0800-$7dff
+
+
 10/11/2008
 
 [FM16PI] add FUJITSU FM-16pi skelton (not work)

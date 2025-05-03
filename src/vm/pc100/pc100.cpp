@@ -22,7 +22,7 @@
 #include "../pcm1bit.h"
 #include "../rtc58321.h"
 #include "../upd765a.h"
-#include "../x86.h"
+#include "../i86.h"
 
 #include "crtc.h"
 #include "ioctrl.h"
@@ -51,7 +51,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pcm = new PCM1BIT(this, emu);
 	rtc = new RTC58321(this, emu);
 	fdc = new UPD765A(this, emu);
-	cpu = new X86(this, emu);
+	cpu = new I86(this, emu);
 	
 	crtc = new CRTC(this, emu);
 	ioctrl = new IOCTRL(this, emu);
@@ -236,6 +236,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

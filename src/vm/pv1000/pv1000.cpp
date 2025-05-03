@@ -45,7 +45,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	
-	vdp->set_context(cpu);
+	vdp->set_context_cpu(cpu);
 	vdp->set_memory_ptr(memory->get_memory());
 	
 	// cpu bus
@@ -142,6 +142,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

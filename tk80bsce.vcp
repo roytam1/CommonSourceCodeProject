@@ -203,6 +203,12 @@ SOURCE=.\src\vm\event.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\vm\i8080.cpp
+# ADD CPP /Oxt /Ob0
+
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\vm\i8251.cpp
 # End Source File
 # Begin Source File
@@ -212,12 +218,6 @@ SOURCE=.\src\vm\i8255.cpp
 # Begin Source File
 
 SOURCE=.\src\vm\pcm1bit.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\z80.cpp
-# ADD CPP /Oxt /Ob0
-
 # End Source File
 # End Group
 # Begin Group "VM Driver Source Files"
@@ -281,7 +281,7 @@ SOURCE=.\src\vm\event.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\vm\fifo.h
+SOURCE=.\src\vm\i8080.h
 # End Source File
 # Begin Source File
 
@@ -298,10 +298,6 @@ SOURCE=.\src\vm\pcm1bit.h
 # Begin Source File
 
 SOURCE=.\src\vm\vm.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\vm\z80.h
 # End Source File
 # End Group
 # Begin Group "VM Driver Header Files"
@@ -335,6 +331,10 @@ SOURCE=.\src\common.h
 # Begin Source File
 
 SOURCE=.\src\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\fifo.h
 # End Source File
 # Begin Source File
 

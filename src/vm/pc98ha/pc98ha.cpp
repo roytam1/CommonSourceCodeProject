@@ -27,7 +27,7 @@
 #endif
 #include "../upd71071.h"
 #include "../upd765a.h"
-#include "../x86.h"
+#include "../i86.h"
 
 #ifdef _PC98HA
 #include "calendar.h"
@@ -65,7 +65,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	dma = new UPD71071(this, emu);	// V50 internal
 	fdc = new UPD765A(this, emu);
-	cpu = new X86(this, emu);	// V50
+	cpu = new I86(this, emu);	// V50
 	
 #ifdef _PC98HA
 	calendar = new CALENDAR(this, emu);
@@ -304,6 +304,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

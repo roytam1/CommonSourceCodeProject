@@ -22,7 +22,7 @@
 #include "../rp5c15.h"
 //#include "../sasi.h"
 #include "../upd71071.h"
-#include "../x86.h"
+#include "../i86.h"
 #include "../ym2203.h"
 #include "../z80pio.h"
 #include "../z80sio.h"
@@ -61,7 +61,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc = new RP5C15(this, emu);
 //	sasi = new SASI(this, emu);
 	dma = new UPD71071(this, emu);
-	cpu = new X86(this, emu);
+	cpu = new I86(this, emu);
 	opn = new YM2203(this, emu);
 	pio1 = new Z80PIO(this, emu);
 	sio = new Z80SIO(this, emu);
@@ -284,6 +284,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

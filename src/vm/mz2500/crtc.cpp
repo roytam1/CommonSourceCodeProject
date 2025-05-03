@@ -423,7 +423,7 @@ void CRTC::write_io8(uint32 addr, uint32 data)
 			update256 = true;
 		}
 		// kugyokuden 400line patch
-		if(d_cpu->get_prv_pc() == 0xc27e && !monitor_200line) {
+		if(vm->get_prv_pc() == 0xc27e && !monitor_200line) {
 			if(textreg[3] == 0x26 && textreg[5] == 0xee) {
 				textreg[3] = 0x11;
 				textreg[5] = 0xd9;

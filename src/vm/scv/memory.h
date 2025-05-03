@@ -18,7 +18,7 @@
 class MEMORY : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_sound;
 	
 	// memory
 	_TCHAR save_path[_MAX_PATH];
@@ -69,8 +69,8 @@ public:
 	// unique functions
 	void open_cart(_TCHAR* filename);
 	void close_cart();
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_sound(DEVICE* device) {
+		d_sound = device;
 	}
 	uint8* get_font() {
 		return bios + 0x200;

@@ -39,9 +39,9 @@ void VDP::initialize()
 void VDP::event_vsync(int v, int clock)
 {
 	if(v == 239)
-		dev->write_signal(SIG_UPD7801_INTF2, 1, 1);
+		d_cpu->write_signal(SIG_UPD7801_INTF2, 1, 1);
 	else if(v == 261)
-		dev->write_signal(SIG_UPD7801_INTF2, 0, 1);
+		d_cpu->write_signal(SIG_UPD7801_INTF2, 0, 1);
 }
 
 void VDP::draw_screen()

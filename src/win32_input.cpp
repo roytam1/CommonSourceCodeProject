@@ -9,6 +9,7 @@
 
 #include "emu.h"
 #include "vm/vm.h"
+#include "fifo.h"
 
 #define KEY_KEEP_FRAMES 3
 
@@ -46,9 +47,9 @@ void EMU::initialize_input()
 	
 #ifdef SUPPORT_AUTO_KEY
 	// initialize autokey
-	cb_phase = cb_code = 0;
-	cb_shift = false;
-	clipboard = NULL;
+	autokey_buffer = new FIFO(65536);
+	autokey_buffer->clear();
+	autokey_phase = autokey_shift = 0;
 #endif
 }
 
@@ -60,8 +61,8 @@ void EMU::release_input()
 	
 #ifdef SUPPORT_AUTO_KEY
 	// release autokey buffer
-	if(clipboard)
-		free(clipboard);
+	if(autokey_buffer)
+		delete autokey_buffer;
 #endif
 }
 
@@ -69,8 +70,13 @@ void EMU::update_input()
 {
 	// update key status
 	for(int i = 0; i < 256; i++) {
-		if(key_status[i] & 0x7f)
+		if(key_status[i] & 0x7f) {
 			key_status[i] = (key_status[i] & 0x80) | ((key_status[i] & 0x7f) - 1);
+#ifdef NOTIFY_KEY_DOWN
+			if(!key_status[i])
+				vm->key_up(i);
+#endif
+		}
 	}
 	
 	// update joystick status
@@ -134,52 +140,47 @@ void EMU::update_input()
 #endif
 #ifdef SUPPORT_AUTO_KEY
 	// auto key
-	switch(cb_phase)
+	switch(autokey_phase)
 	{
-	case 1: {
-		int c = clipboard[cb_ptr++];
-		if((0x81 <= c && c <= 0x9f) || 0xe0 <= c)
-			cb_ptr++;	// kanji ?
-		else if(c == 0xd && clipboard[cb_ptr] == 0xa)
-			cb_ptr++;	// cr-lf
-		cb_code = autokey_table[c];
-#ifdef USE_AUTO_KEY_CAPS
-		bool shift = (cb_code & (0x100 | 0x800)) ? true : false;
-#else
-		bool shift = (cb_code & (0x100 | 0x400)) ? true : false;
-#endif
-		if(!cb_shift && shift)
-			key_down(VK_SHIFT);
-		else if(cb_shift && !shift)
-			key_up(VK_SHIFT);
-		cb_shift = shift;
-		cb_phase++;
-		break;
-	}
-	case 2:
-		if(cb_code & 0xff)
-			key_down(cb_code & 0xff);
-		cb_phase++;
-		break;
-	case USE_AUTO_KEY:
-		if(cb_code & 0xff)
-			key_up(cb_code & 0xff);
-		cb_phase++;
-		break;
-	case USE_AUTO_KEY_RELEASE:
-		if(cb_code == 0xd) {
-			cb_phase++;
+	case 1:
+		if(autokey_buffer && !autokey_buffer->empty()) {
+			// update shift key status
+			int shift = autokey_buffer->read_not_remove(0) & 0x100;
+			if(shift && !autokey_shift)
+				key_down(VK_SHIFT);
+			else if(!shift && autokey_shift)
+				key_up(VK_SHIFT);
+			autokey_shift = shift;
+			autokey_phase++;
 			break;
 		}
+	case 3:
+		if(autokey_buffer && !autokey_buffer->empty())
+			key_down(autokey_buffer->read_not_remove(0) & 0xff);
+		autokey_phase++;
+		break;
+	case USE_AUTO_KEY:
+		if(autokey_buffer && !autokey_buffer->empty())
+			key_up(autokey_buffer->read_not_remove(0) & 0xff);
+		autokey_phase++;
+		break;
+	case USE_AUTO_KEY_RELEASE:
+		if(autokey_buffer && !autokey_buffer->empty()) {
+			// wait enough while vm analyzes one line
+			if(autokey_buffer->read() == 0xd) {
+				autokey_phase++;
+				break;
+			}
+		}
 	case 30:
-		if(cb_ptr < cb_size)
-			cb_phase = 1;
+		if(autokey_buffer && !autokey_buffer->empty())
+			autokey_phase = 1;
 		else
 			stop_auto_key();
 		break;
 	default:
-		if(cb_phase)
-			cb_phase++;
+		if(autokey_phase)
+			autokey_phase++;
 	}
 #endif
 }
@@ -211,11 +212,11 @@ void EMU::key_down(int code)
 		if(!(key_status[VK_LMENU] || key_status[VK_RMENU])) key_status[VK_LMENU] = 0x80;
 	}
 	if(code == 0xf0) // CAPS
-		key_status[VK_CAPITAL] = KEY_KEEP_FRAMES;
+		key_status[code = VK_CAPITAL] = KEY_KEEP_FRAMES;
 	else if(code == 0xf2) // KANA
-		key_status[VK_KANA] = KEY_KEEP_FRAMES;
+		key_status[code = VK_KANA] = KEY_KEEP_FRAMES;
 	else if(code == 0xf3 || code == 0xf4) // KANJI
-		key_status[VK_KANJI] = KEY_KEEP_FRAMES;
+		key_status[code = VK_KANJI] = KEY_KEEP_FRAMES;
 	else
 #ifdef _WIN32_WCE
 		// keep pressed for some frames
@@ -246,10 +247,13 @@ void EMU::key_up(int code)
 		if(!(GetAsyncKeyState(VK_LMENU) & 0x8000)) key_status[VK_LMENU] &= 0x7f;
 		if(!(GetAsyncKeyState(VK_RMENU) & 0x8000)) key_status[VK_RMENU] &= 0x7f;
 	}
-	key_status[code] &= 0x7f;
+	if(key_status[code]) {
+		key_status[code] &= 0x7f;
 #ifdef NOTIFY_KEY_DOWN
-	vm->key_up(code);
+		if(!key_status[code])
+			vm->key_up(code);
 #endif
+	}
 }
 
 void EMU::enable_mouse()
@@ -293,15 +297,40 @@ void EMU::start_auto_key()
 	if(OpenClipboard(NULL)) {
 		HANDLE hClip = GetClipboardData(CF_TEXT);
 		if(hClip) {
+			autokey_buffer->clear();
 			char* buf = (char*)GlobalLock(hClip);
-			cb_size = strlen(buf);
-			clipboard = (char*)malloc(cb_size + 1);
-			memcpy(clipboard, buf, cb_size + 1);
+			int size = strlen(buf), prev_kana = 0;
+			for(int i = 0; i < size; i++) {
+				int code = buf[i] & 0xff;
+				if((0x81 <= code && code <= 0x9f) || 0xe0 <= code) {
+					i++;	// kanji ?
+					continue;
+				}
+				else if(code == 0xa)
+					continue;	// cr-lf
+				if((code = autokey_table[code]) != 0) {
+					int kana = code & 0x200;
+					if(prev_kana != kana)
+						autokey_buffer->write(0xf2);
+					prev_kana = kana;
+#if defined(USE_AUTO_KEY_NO_CAPS)
+					if((code & 0x100) && !(code & (0x400 | 0x800)))
+#elif defined(USE_AUTO_KEY_CAPS)
+					if(code & (0x100 | 0x800))
+#else
+					if(code & (0x100 | 0x400))
+#endif
+						autokey_buffer->write((code & 0xff) | 0x100);
+					else
+						autokey_buffer->write(code & 0xff);
+				}
+			}
+			if(prev_kana)
+				autokey_buffer->write(0xf2);
 			GlobalUnlock(hClip);
 			
-			cb_phase = 1;
-			cb_ptr = 0;
-			cb_shift = false;
+			autokey_phase = 1;
+			autokey_shift = 0;
 		}
 		CloseClipboard();
 	}
@@ -309,15 +338,8 @@ void EMU::start_auto_key()
 
 void EMU::stop_auto_key()
 {
-	if(clipboard) {
-		free(clipboard);
-		clipboard = NULL;
-	}
-	if(cb_shift)
+	if(autokey_shift)
 		key_up(VK_SHIFT);
-	if(cb_code & 0xff)
-		key_up(cb_code & 0xff);
-	cb_phase = cb_code = 0;
-	cb_shift = false;
+	autokey_phase = autokey_shift = 0;
 }
 #endif

@@ -20,7 +20,7 @@ void KEYBOARD::initialize()
 
 void KEYBOARD::write_io8(uint32 addr, uint32 data)
 {
-	intr_enb = (data == 0xf) ? true : false;
+	intr_enb = (data == 0xf);
 	key_no = data & 0xf;
 }
 

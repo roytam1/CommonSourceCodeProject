@@ -858,7 +858,7 @@ uint8 MB8877::fdc_status()
 {
 	// for each virtual machines
 #ifdef _FMR50
-	return disk[drvreg]->insert && motor ? 2 : 0;
+	return disk[drvreg]->insert ? 7 : 1;
 #else
 	return 0;
 #endif

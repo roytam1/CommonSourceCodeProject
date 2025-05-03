@@ -53,6 +53,11 @@ void MEMORY::initialize()
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
 	}
+	else {
+		// load pseudo ipl
+		_memcpy(ipl + 0x0000, bios1, sizeof(bios1));
+		_memcpy(ipl + 0x3ff0, bios2, sizeof(bios2));
+	}
 	_stprintf(file_path, _T("%sANK8.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(ank8, sizeof(ank8), 1);
@@ -76,6 +81,8 @@ void MEMORY::initialize()
 	delete fio;
 	
 	// set palette
+	for(int i = 0; i < 8; i++)
+		dpal[i] = i;
 	for(int i = 0; i < 16; i++) {
 		if(i & 8)
 			palette_cg[i] = RGB_COLOR(i & 2 ? 0x1f : 0, i & 4 ? 0x1f : 0, i & 1 ? 0x1f : 0);
@@ -97,10 +104,11 @@ void MEMORY::reset()
 	
 	// reset crtc
 	apalsel = 0;
-	outctrl = 0x80;
+	outctrl = 0xf;
 	dispctrl = 0x47;
 	mix = 8;
 	accaddr = dispaddr = 0;
+	kj_l = kj_h = kj_ofs = kj_row = 0;
 	blink = 0;
 }
 
@@ -110,23 +118,29 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	if(!mainmem) {
 		if(0xc0000 <= addr && addr < 0xc8000) {
 			// vram
-			uint32 ofs = addr & 0x7fff;
-			if(pagesel & 0x10) {
-				if(wplane & 1) vram[ofs | 0x20000] = data;
-				if(wplane & 2) vram[ofs | 0x28000] = data;
-				if(wplane & 4) vram[ofs | 0x30000] = data;
-				if(wplane & 8) vram[ofs | 0x38000] = data;
-			}
-			else {
+			if(dispctrl & 0x40) {
+				// 400 line
+//				uint32 ofs = (((pagesel >> 4) & 1) * 0x20000) | (addr & 0x7fff);
+				uint32 ofs = ((pagesel & 0x10) << 13) | (addr & 0x7fff);
 				if(wplane & 1) vram[ofs | 0x00000] = data;
 				if(wplane & 2) vram[ofs | 0x08000] = data;
 				if(wplane & 4) vram[ofs | 0x10000] = data;
 				if(wplane & 8) vram[ofs | 0x18000] = data;
 			}
+			else {
+//				uint32 ofs = (((pagesel >> 3) & 3) * 0x10000) | (addr & 0x7fff);
+				uint32 ofs = ((pagesel & 0x18) << 13) | (addr & 0x3fff);
+				if(wplane & 1) vram[ofs | 0x00000] = data;
+				if(wplane & 2) vram[ofs | 0x04000] = data;
+				if(wplane & 4) vram[ofs | 0x08000] = data;
+				if(wplane & 8) vram[ofs | 0x10000] = data;
+			}
 			return;
 		}
 		else if(0xcff80 <= addr && addr < 0xcffe0) {
-//			emu->out_debug("MW\t%4x, %2x\n", addr, data);
+#ifdef _DEBUG_LOG
+			emu->out_debug("MW\t%4x, %2x\n", addr, data);
+#endif
 			// memory mapped i/o
 			switch(addr & 0xffff)
 			{
@@ -136,13 +150,14 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 				break;
 			case 0xff81:
 				// update register
-				wplane = data & 0xf;
+				wplane = data & 7;
 				rplane = (data >> 6) & 3;
 				update_bank();
 				break;
 			case 0xff82:
 				// display ctrl register
 				dispctrl = data;
+				update_bank();
 				break;
 			case 0xff83:
 				// page select register
@@ -173,6 +188,29 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 				// crtc data register
 				d_crtc->write_io8(1, data);
 				break;
+			case 0xff94:
+				kj_h = data & 0x7f;
+				break;
+			case 0xff95:
+				kj_l = data & 0x7f;
+				kj_row = 0;
+				if(kj_h < 0x30)
+					kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10);
+				else if(kj_h < 0x70)
+					kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) + (((kj_l - 0x20) & 0x60) <<  9) + (((kj_h - 0x00) & 0x0f) << 10) + (((kj_h - 0x30) & 0x70) * 0xc00) + 0x08000;
+				else
+					kj_ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10) | 0x38000;
+				break;
+			case 0xff96:
+				kanji16[(kj_ofs | ((kj_row & 0xf) << 1)) & 0x3ffff] = data;
+				break;
+			case 0xff97:
+				kanji16[(kj_ofs | ((kj_row++ & 0xf) << 1) | 1) & 0x3ffff] = data;
+				break;
+			case 0xff99:
+				ankcg = data;
+				update_bank();
+				break;
 			}
 			return;
 		}
@@ -187,7 +225,9 @@ uint32 MEMORY::read_data8(uint32 addr)
 	addr &= 0xffffff;
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {
-//			emu->out_debug("MR\t%4x\n", addr);
+#ifdef _DEBUG_LOG
+			emu->out_debug("MR\t%4x\n", addr);
+#endif
 			// memory mapped i/o
 			switch(addr & 0xffff)
 			{
@@ -209,6 +249,12 @@ uint32 MEMORY::read_data8(uint32 addr)
 			case 0xff8f:
 				// crtc data register
 				return d_crtc->read_io8(1);
+			case 0xff94:
+				return 0x80;	// ???
+			case 0xff96:
+				return kanji16[(kj_ofs | ((kj_row & 0xf) << 1)) & 0x3ffff];
+			case 0xff97:
+				return kanji16[(kj_ofs | ((kj_row++ & 0xf) << 1) | 1) & 0x3ffff];
 			}
 			return 0xff;
 		}
@@ -248,7 +294,6 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0x400:
 		// video output control
-		outctrl = data;
 		break;
 	case 0x402:
 		// update register
@@ -279,6 +324,25 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		apal[apalsel][2] = data & 0xf0;
 		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
 		break;
+	case 0xfd90:
+		// palette code register
+		apalsel = data & 0xf;
+		break;
+	case 0xfd92:
+		// blue level register
+		apal[apalsel][0] = data;
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		break;
+	case 0xfd94:
+		// red level register
+		apal[apalsel][1] = data;
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		break;
+	case 0xfd96:
+		// green level register
+		apal[apalsel][2] = data;
+		palette_cg[apalsel] = RGB_COLOR(apal[apalsel][1] >> 3, apal[apalsel][2] >> 3, apal[apalsel][0] >> 3);
+		break;
 	case 0xfd98:
 	case 0xfd99:
 	case 0xfd9a:
@@ -295,7 +359,8 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			palette_cg[addr & 7] = RGB_COLOR(data & 2 ? 0x10 : 0, data & 4 ? 0x10 : 0, data & 1 ? 0x10 : 0);
 		break;
 	case 0xfda0:
-		// select color/green
+		// video output control
+		outctrl = data;
 		break;
 	case 0xff81:
 		// update register
@@ -326,6 +391,7 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0x400:
 		// system status register
 		return 0xfe;
+//		return 0xf6;
 	case 0x402:
 		// update register
 		return wplane | 0xf0;
@@ -341,6 +407,15 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0x40e:
 		// green level register
 		return apal[apalsel][2] | 0xf;
+	case 0xfd92:
+		// blue level register
+		return apal[apalsel][0];
+	case 0xfd94:
+		// red level register
+		return apal[apalsel][1];
+	case 0xfd96:
+		// green level register
+		return apal[apalsel][2];
 	case 0xfd98:
 	case 0xfd99:
 	case 0xfd9a:
@@ -380,8 +455,17 @@ void MEMORY::update_bank()
 	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 	if(!mainmem) {
 		SET_BANK(0x0c0000, 0x0effff, wdmy, rdmy);
-		int ofs = (rplane | (pagesel & 0x10 ? 4 : 0)) * 0x8000;
-		SET_BANK(0x0c0000, 0x0c7fff, vram + ofs, vram + ofs);
+		if(dispctrl & 0x40) {
+			// 400 line
+			int ofs = (rplane | ((pagesel >> 2) & 4)) * 0x8000;
+			SET_BANK(0x0c0000, 0x0c7fff, vram + ofs, vram + ofs);
+		}
+		else {
+			// 200 line
+			int ofs = (rplane | ((pagesel >> 1) & 0xc)) * 0x4000;
+			SET_BANK(0x0c0000, 0x0c3fff, vram + ofs, vram + ofs);
+			SET_BANK(0x0c4000, 0x0c7fff, vram + ofs, vram + ofs);
+		}
 		SET_BANK(0x0c8000, 0x0c8fff, cvram, cvram);
 		if(ankcg & 1) {
 			SET_BANK(0x0ca000, 0x0ca7ff, wdmy, ank8);
@@ -405,9 +489,9 @@ void MEMORY::draw_screen()
 	// render screen
 	_memset(screen_txt, 0, sizeof(screen_txt));
 	_memset(screen_cg, 0, sizeof(screen_cg));
-//	if(outctrl & 1)
+	if(outctrl & 1)
 		draw_text();
-//	if(outctrl & 4)
+	if(outctrl & 4)
 		draw_cg();
 	
 	for(int y = 0; y < 400; y++) {
@@ -422,7 +506,8 @@ void MEMORY::draw_screen()
 	// access lamp
 	uint32 stat_f = d_fdc->read_signal(0) | d_bios->read_signal(0);
 	if(stat_f) {
-		uint16 col = (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
+		uint16 col = (stat_f & 0x10   ) ? RGB_COLOR(0, 0, 31) :
+		             (stat_f & (1 | 4)) ? RGB_COLOR(31, 0, 0) :
 		             (stat_f & (2 | 8)) ? RGB_COLOR(0, 31, 0) : 0;
 		for(int y = 400 - 8; y < 400; y++) {
 			uint16 *dest = emu->screen_buffer(y);
@@ -442,10 +527,10 @@ void MEMORY::draw_text()
 			bool cursor = ((src >> 1) == caddr);
 			int cx = x;
 			uint8 code = cvram[src];
-			uint8 kj_h = kvram[src] & 0x7f;
+			uint8 h = kvram[src] & 0x7f;
 			src = (src + 1) & 0xfff;
 			uint8 attr = cvram[src];
-			uint8 kj_l = kvram[src] & 0x7f;
+			uint8 l = kvram[src] & 0x7f;
 			src = (src + 1) & 0xfff;
 			uint8 col = ((attr & 0x20) >> 2) | (attr & 7);
 			bool blnk = (blink & 32) && (attr & 0x10);
@@ -454,12 +539,12 @@ void MEMORY::draw_text()
 			if(attr & 0x40) {
 				// kanji
 				int ofs;
-				if(kj_h < 0x30)
-					ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10) | 0x00000;
-				else if(kj_h < 0x70)
-					ofs = (((kj_l - 0x00) & 0x1f) <<  5) + (((kj_l - 0x20) & 0x60) <<  9) + (((kj_h - 0x00) & 0x0f) << 10) + (((kj_h - 0x30) & 0x70) * 0xc00) + 0x08000;
+				if(h < 0x30)
+					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10);
+				else if(h < 0x70)
+					ofs = (((l - 0x00) & 0x1f) <<  5) + (((l - 0x20) & 0x60) <<  9) + (((h - 0x00) & 0x0f) << 10) + (((h - 0x30) & 0x70) * 0xc00) + 0x08000;
 				else
-					ofs = (((kj_l - 0x00) & 0x1f) <<  5) | (((kj_l - 0x20) & 0x20) <<  9) | (((kj_l - 0x20) & 0x40) <<  7) | (((kj_h - 0x00) & 0x07) << 10) | 0x38000;
+					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
 				
 				for(int l = 0; l < 16; l++) {
 					uint8 pat0 = kanji16[ofs + (l << 1) + 0];

@@ -9,7 +9,7 @@
 */
 
 #include "io.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 
 // interrupt bits
 #define BIT_7508	0x01
@@ -580,10 +580,11 @@ uint8 IO::rec_from_7508()
 
 void IO::key_down(int code)
 {
-	if(code == 0xf0) {
+	if(code == 0x14) {
 		// toggle caps lock
 		kb_caps = !kb_caps;
 		update_key(kb_caps ? 0xb4 : 0xa4);
+		update_key(kb_caps ? 0xa4 : 0xb4);
 	}
 	else
 		update_key(key_tbl[code & 0xff]);

@@ -21,7 +21,7 @@
 #include "../rp5c01.h"
 #include "../upd7220.h"
 #include "../upd765a.h"
-#include "../x86.h"
+#include "../i86.h"
 #include "../ym2203.h"
 #include "../z80ctc.h"
 #include "../z80sio.h"
@@ -51,7 +51,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc = new RP5C01(this, emu);
 	gdc = new UPD7220(this, emu);
 	fdc = new UPD765A(this, emu);
-	cpu = new X86(this, emu);
+	cpu = new I86(this, emu);
 	psg = new YM2203(this, emu);	// AY-3-8912
 	ctc0 = new Z80CTC(this, emu);
 #if defined(_MZ6500) || defined(_MZ6550)
@@ -244,6 +244,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

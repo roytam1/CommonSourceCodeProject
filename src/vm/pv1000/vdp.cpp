@@ -25,7 +25,7 @@ void VDP::write_io8(uint32 addr, uint32 data)
 		pcg = base + (data << 8) + 0x400;
 		break;
 	case 0xff:
-		if(dev->get_prv_pc() == 0x000f && data == 4) {
+		if(vm->get_prv_pc() == 0x000f && data == 4) {
 			// space panic ???
 			data = 0;
 		}
@@ -36,19 +36,19 @@ void VDP::write_io8(uint32 addr, uint32 data)
 
 void VDP::event_callback(int event_id, int err)
 {
-	dev->write_signal(SIG_CPU_BUSREQ, 0, 1);
+	d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
 }
 
 void VDP::event_vsync(int v, int clock)
 {
 	if(v < LINES_PER_HBLANK) {
-		dev->write_signal(SIG_CPU_BUSREQ, 1, 1);
+		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		int id;
 		vm->regist_event_by_clock(this, 0, 800, false, &id);
 	}
 	else {
 		// vsync interrupt (not pending ???)
-		dev->set_intr_line(true, false, 0);
+		d_cpu->set_intr_line(true, false, 0);
 	}
 }
 

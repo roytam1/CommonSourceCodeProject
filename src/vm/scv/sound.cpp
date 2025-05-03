@@ -43,7 +43,7 @@ void SOUND::write_data8(uint32 addr, uint32 data)
 		else if(data == 0x1f)		// pcm
 			param_cnt = MAX_PARAM;
 		param_ptr = 0;
-		cmd_addr = dev->get_prv_pc();
+		cmd_addr = vm->get_prv_pc();
 #ifdef SOUND_DEBUG
 		emu->out_debug(_T("PC=%4x\tSOUND\t"), cmd_addr);
 #endif
@@ -92,7 +92,7 @@ void SOUND::write_io8(uint32 addr, uint32 data)
 		
 		if(cmd_addr == 0x8402) {
 			// y2 monster land
-			bool pause = (dev->get_prv_pc() == 0x96c) ? true : false;
+			bool pause = (vm->get_prv_pc() == 0x96c) ? true : false;
 			if(pause || !(params[0] == 0x1f && param_ptr > 5)) {
 				// terminate command
 				if(regist_id != -1)
@@ -130,7 +130,7 @@ void SOUND::event_callback(int event_id, int err)
 		vm->regist_event(this, 0, ACK_WAIT, false, &regist_id);
 		return;
 	}
-	dev->write_signal(SIG_UPD7801_INTF1, 1, 1);
+	d_cpu->write_signal(SIG_UPD7801_INTF1, 1, 1);
 	regist_id = -1;
 }
 

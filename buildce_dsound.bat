@@ -2,6 +2,10 @@ echo off
 set path=%path%;"C:\Program Files\Microsoft eMbedded C++ 4.0\Common\EVC\Bin"
 mkdir build
 
+evc fmr50ce.vcp /MAKE "fmr50ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\fmr50
+copy GDI_DSOUND\fmr50ce.exe build\fmr50\.
+
 evc hc40ce.vcp /MAKE "hc40ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\hc40
 copy GDI_DSOUND\hc40ce.exe build\hc40\.
@@ -81,8 +85,10 @@ mkdir build\scv
 copy GDI_DSOUND\scvce.exe build\scv\.
 
 evc tk80bsce.vcp /MAKE "tk80bsce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
-mkdir build\tk80bs
-copy GDI_DSOUND\tk80bsce.exe build\tk80bs\.
+mkdir build\tk80bs_lv1
+mkdir build\tk80bs_lv2
+copy GDI_DSOUND\tk80bsce.exe build\tk80bs_lv1\.
+copy GDI_DSOUND\tk80bsce.exe build\tk80bs_lv2\.
 
 evc x07ce.vcp /MAKE "x07ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\x07

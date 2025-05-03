@@ -20,7 +20,7 @@
 #include "../ls393.h"
 #include "../mb8877.h"
 #include "../rtc58321.h"
-#include "../x86.h"
+#include "../i86.h"
 
 #include "display.h"
 #include "keyboard.h"
@@ -45,7 +45,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ls74 = new LS393(this, emu);	// 74LS74
 	fdc = new MB8877(this, emu);
 	rtc = new RTC58321(this, emu);
-	cpu = new X86(this, emu);
+	cpu = new I86(this, emu);
 	
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
@@ -175,6 +175,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

@@ -83,8 +83,8 @@ static const uint8 d_len[256] = {
 	0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
 };
-static const int secsize[4] = {
-	128, 256, 512, 1024
+static const int secsize[7] = {
+	128, 256, 512, 1024, 2048, 4096, 8192
 };
 
 class FILEIO;
@@ -100,7 +100,7 @@ private:
 	bool temporary;
 	
 	// teledisk decoder
-	bool t2d();
+	bool td2d();
 	int next_word();
 	int get_bit();
 	int get_byte();
@@ -111,6 +111,9 @@ private:
 	short decode_position();
 	void init_decode();
 	int decode(uint8 *buf, int len);
+	
+	// imagedisk decoder
+	bool imd2d();
 	
 	uint8 text_buf[STRING_BUFFER_SIZE + LOOKAHEAD_BUFFER_SIZE - 1];
 	uint16 ptr;
@@ -123,9 +126,9 @@ private:
 	uint16 getbuf;
 	uint8 getlen;
 	
-	struct hdr_t {
+	struct td_hdr_t {
 		char sig[3];
-		uint8 unkwn;
+		uint8 unknown;
 		uint8 ver;
 		uint8 dens;
 		uint8 type;
@@ -134,21 +137,28 @@ private:
 		uint8 sides;
 		uint16 crc;
 	};
-	struct cmt_t {
+	struct td_cmt_t {
 		uint16 crc;
 		uint16 len;
 		uint8 ymd[3];
 		uint8 hms[3];
 	};
-	struct trk_t {
+	struct td_trk_t {
 		uint8 nsec, trk, head;
 		uint8 crc;
 	};
-	struct sct_t {
+	struct td_sct_t {
 		uint8 c, h, r, n;
 		uint8 ctrl, crc;
 	};
-	struct d88hdr_t {
+	struct imd_trk_t {
+		uint8 mode;
+		uint8 cyl;
+		uint8 head;
+		uint8 nsec;
+		uint8 size;
+	};
+	struct d88_hdr_t {
 		char title[17];
 		uint8 rsrv[9];
 		uint8 protect;
@@ -156,7 +166,7 @@ private:
 		uint32 size;
 		uint32 trkptr[164];
 	};
-	struct d88sct_t {
+	struct d88_sct_t {
 		uint8 c, h, r, n;
 		uint16 nsec;
 		uint8 dens, del, stat;

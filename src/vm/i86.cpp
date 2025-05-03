@@ -8,7 +8,7 @@
 	[ 80x86 ]
 */
 
-#include "x86.h"
+#include "i86.h"
 
 // interrupt vector
 #define NMI_INT_VECTOR			2
@@ -148,16 +148,16 @@
 	unsigned dst = regs.w[AX]; \
 	src += (FETCH8() << 8)
 
-void X86::initialize()
+void I86::initialize()
 {
-#ifdef I286
+#ifdef HAS_I286
 	AMASK = 0xfffff;
 #endif
 	prefix_base = 0;	// ???
 	seg_prefix = false;
 }
 
-void X86::reset()
+void I86::reset()
 {
 	for(int i = 0; i < 8; i++)
 		regs.w[i] = 0;
@@ -178,7 +178,7 @@ void X86::reset()
 	limit[CS] = limit[SS] = limit[DS] = limit[ES] = 0xffff;
 	base[CS] = SegBase(CS);
 	idtr_limit = 0x3ff;
-#ifdef I286
+#ifdef HAS_I286
 	PC = 0xffff0;
 	msw = 0xfff0;
 	flags = 2;
@@ -187,12 +187,12 @@ void X86::reset()
 	msw = flags = 0;
 #endif
 	ExpandFlags(flags);
-#ifdef V30
+#ifdef HAS_V30
 	SetMD(1);
 #endif
 }
 
-void X86::run(int clock)
+void I86::run(int clock)
 {
 	// return now if BUSREQ
 	if(busreq) {
@@ -235,7 +235,7 @@ void X86::run(int clock)
 	first = count;
 }
 
-void X86::write_signal(int id, uint32 data, uint32 mask)
+void I86::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_CPU_NMI) {
 		if(data & mask)
@@ -248,23 +248,17 @@ void X86::write_signal(int id, uint32 data, uint32 mask)
 		if(busreq)
 			count = extra_count = first = 0;
 	}
-	else if(id == SIG_X86_TEST)
+	else if(id == SIG_I86_TEST)
 		busy = (data & mask) ? 1 : 0;
-#ifdef I286
-	else if(id == SIG_X86_A20)
+#ifdef HAS_I286
+	else if(id == SIG_I86_A20)
 		AMASK = (data & mask) ? 0xffffff : 0xfffff;
 #endif
 }
 
-void X86::interrupt(unsigned num)
+void I86::interrupt(unsigned num)
 {
-#ifdef X86_BIOS_CALL
-	if(d_bios && d_bios->bios_int(num, regs.w, sregs, &ZeroVal, &CarryVal)) {
-		// bios call
-		return;
-	}
-#endif
-#ifdef I286
+#ifdef HAS_I286
 	if(PM) {
 		if((num << 3) >= idtr_limit) // go into shutdown mode
 			return;
@@ -303,13 +297,13 @@ void X86::interrupt(unsigned num)
 		sregs[CS] = (uint16)seg;
 		base[CS] = SegBase(CS);
 		PC = (base[CS] + ofs) & AMASK;
-#ifdef I286
+#ifdef HAS_I286
 	}
 #endif
 	extra_count += cycles.exception;
 }
 
-unsigned X86::GetEA(unsigned ModRM)
+unsigned I86::GetEA(unsigned ModRM)
 {
 	switch(ModRM)
 	{
@@ -368,7 +362,7 @@ unsigned X86::GetEA(unsigned ModRM)
 #define WRITEABLE(a) (((a) & 0xa) == 2)
 #define READABLE(a) ((((a) & 0xa) == 0xa) || (((a) & 8) == 0))
 
-void X86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
+void I86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
 {
 	unsigned src = GetRMByte(ModRM);
 	unsigned dst = src;
@@ -493,7 +487,7 @@ void X86::rotate_shift_byte(unsigned ModRM, unsigned cnt)
 	}
 }
 
-void X86::rotate_shift_word(unsigned ModRM, unsigned cnt)
+void I86::rotate_shift_word(unsigned ModRM, unsigned cnt)
 {
 	unsigned src = GetRMWord(ModRM);
 	unsigned dst = src;
@@ -619,8 +613,8 @@ void X86::rotate_shift_word(unsigned ModRM, unsigned cnt)
 	}
 }
 
-#ifdef I286
-int X86::i286_selector_okay(uint16 selector)
+#ifdef HAS_I286
+int I86::i286_selector_okay(uint16 selector)
 {
 	if(selector & 4)
 		return (selector & ~7) < ldtr_limit;
@@ -628,7 +622,7 @@ int X86::i286_selector_okay(uint16 selector)
 		return (selector & ~7) < gdtr_limit;
 }
 
-void X86::i286_data_descriptor(int reg, uint16 selector)
+void I86::i286_data_descriptor(int reg, uint16 selector)
 {
 	if(PM) {
 		if(selector & 4) {
@@ -657,7 +651,7 @@ void X86::i286_data_descriptor(int reg, uint16 selector)
 	}
 }
 
-void X86::i286_code_descriptor(uint16 selector, uint16 offset)
+void I86::i286_code_descriptor(uint16 selector, uint16 offset)
 {
 	if(PM) {
 		uint16 word1, word2, word3;
@@ -715,7 +709,7 @@ void X86::i286_code_descriptor(uint16 selector, uint16 offset)
 }
 #endif
 
-void X86::op(uint8 code)
+void I86::op(uint8 code)
 {
 	prvPC = PC - 1;
 	
@@ -980,7 +974,7 @@ void X86::op(uint8 code)
 	}
 };
 
-inline void X86::_add_br8()	// Opcode 0x00
+inline void I86::_add_br8()	// Opcode 0x00
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -988,7 +982,7 @@ inline void X86::_add_br8()	// Opcode 0x00
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_add_wr16()	// Opcode 0x01
+inline void I86::_add_wr16()	// Opcode 0x01
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -996,7 +990,7 @@ inline void X86::_add_wr16()	// Opcode 0x01
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_add_r8b()	// Opcode 0x02
+inline void I86::_add_r8b()	// Opcode 0x02
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -1004,7 +998,7 @@ inline void X86::_add_r8b()	// Opcode 0x02
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_add_r16w()	// Opcode 0x03
+inline void I86::_add_r16w()	// Opcode 0x03
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -1012,7 +1006,7 @@ inline void X86::_add_r16w()	// Opcode 0x03
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_add_ald8()	// Opcode 0x04
+inline void I86::_add_ald8()	// Opcode 0x04
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -1020,7 +1014,7 @@ inline void X86::_add_ald8()	// Opcode 0x04
 	regs.b[AL] = dst;
 }
 
-inline void X86::_add_axd16()	// Opcode 0x05
+inline void I86::_add_axd16()	// Opcode 0x05
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -1028,15 +1022,15 @@ inline void X86::_add_axd16()	// Opcode 0x05
 	regs.w[AX] = dst;
 }
 
-inline void X86::_push_es()	// Opcode 0x06
+inline void I86::_push_es()	// Opcode 0x06
 {
 	count -= cycles.push_seg;
 	PUSH16(sregs[ES]);
 }
 
-inline void X86::_pop_es()	// Opcode 0x07
+inline void I86::_pop_es()	// Opcode 0x07
 {
-#ifdef I286
+#ifdef HAS_I286
 	uint16 tmp = POP16();
 	i286_data_descriptor(ES, tmp);
 #else
@@ -1046,7 +1040,7 @@ inline void X86::_pop_es()	// Opcode 0x07
 	count -= cycles.pop_seg;
 }
 
-inline void X86::_or_br8()	// Opcode 0x08
+inline void I86::_or_br8()	// Opcode 0x08
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -1054,7 +1048,7 @@ inline void X86::_or_br8()	// Opcode 0x08
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_or_wr16()	// Opcode 0x09
+inline void I86::_or_wr16()	// Opcode 0x09
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -1062,7 +1056,7 @@ inline void X86::_or_wr16()	// Opcode 0x09
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_or_r8b()	// Opcode 0x0a
+inline void I86::_or_r8b()	// Opcode 0x0a
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -1070,7 +1064,7 @@ inline void X86::_or_r8b()	// Opcode 0x0a
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_or_r16w()	// Opcode 0x0b
+inline void I86::_or_r16w()	// Opcode 0x0b
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -1078,7 +1072,7 @@ inline void X86::_or_r16w()	// Opcode 0x0b
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_or_ald8()	// Opcode 0x0c
+inline void I86::_or_ald8()	// Opcode 0x0c
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -1086,7 +1080,7 @@ inline void X86::_or_ald8()	// Opcode 0x0c
 	regs.b[AL] = dst;
 }
 
-inline void X86::_or_axd16()	// Opcode 0x0d
+inline void I86::_or_axd16()	// Opcode 0x0d
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -1094,15 +1088,15 @@ inline void X86::_or_axd16()	// Opcode 0x0d
 	regs.w[AX] = dst;
 }
 
-inline void X86::_push_cs()	// Opcode 0x0e
+inline void I86::_push_cs()	// Opcode 0x0e
 {
 	count -= cycles.push_seg;
 	PUSH16(sregs[CS]);
 }
 
-inline void X86::_op0f()
+inline void I86::_op0f()
 {
-#ifdef I286
+#ifdef HAS_I286
 	unsigned next = FETCHOP();
 	uint16 ModRM, tmp;
 	uint32 addr;
@@ -1253,7 +1247,7 @@ inline void X86::_op0f()
 		interrupt(ILLEGAL_INSTRUCTION);
 		break;
 	}
-#elif defined(V30)
+#elif defined(HAS_V30)
 	unsigned code = FETCH8();
 	unsigned ModRM, tmp1, tmp2;
 	
@@ -1748,7 +1742,7 @@ inline void X86::_op0f()
 #endif
 }
 
-inline void X86::_adc_br8()	// Opcode 0x10
+inline void I86::_adc_br8()	// Opcode 0x10
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -1757,7 +1751,7 @@ inline void X86::_adc_br8()	// Opcode 0x10
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_adc_wr16()	// Opcode 0x11
+inline void I86::_adc_wr16()	// Opcode 0x11
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -1766,7 +1760,7 @@ inline void X86::_adc_wr16()	// Opcode 0x11
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_adc_r8b()	// Opcode 0x12
+inline void I86::_adc_r8b()	// Opcode 0x12
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -1775,7 +1769,7 @@ inline void X86::_adc_r8b()	// Opcode 0x12
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_adc_r16w()	// Opcode 0x13
+inline void I86::_adc_r16w()	// Opcode 0x13
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -1784,7 +1778,7 @@ inline void X86::_adc_r16w()	// Opcode 0x13
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_adc_ald8()	// Opcode 0x14
+inline void I86::_adc_ald8()	// Opcode 0x14
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -1793,7 +1787,7 @@ inline void X86::_adc_ald8()	// Opcode 0x14
 	regs.b[AL] = dst;
 }
 
-inline void X86::_adc_axd16()	// Opcode 0x15
+inline void I86::_adc_axd16()	// Opcode 0x15
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -1802,15 +1796,15 @@ inline void X86::_adc_axd16()	// Opcode 0x15
 	regs.w[AX] = dst;
 }
 
-inline void X86::_push_ss()	// Opcode 0x16
+inline void I86::_push_ss()	// Opcode 0x16
 {
 	PUSH16(sregs[SS]);
 	count -= cycles.push_seg;
 }
 
-inline void X86::_pop_ss()	// Opcode 0x17
+inline void I86::_pop_ss()	// Opcode 0x17
 {
-#ifdef I286
+#ifdef HAS_I286
 	uint16 tmp = POP16();
 	i286_data_descriptor(SS, tmp);
 #else
@@ -1821,7 +1815,7 @@ inline void X86::_pop_ss()	// Opcode 0x17
 	op(FETCHOP());
 }
 
-inline void X86::_sbb_br8()	// Opcode 0x18
+inline void I86::_sbb_br8()	// Opcode 0x18
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -1830,7 +1824,7 @@ inline void X86::_sbb_br8()	// Opcode 0x18
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_sbb_wr16()	// Opcode 0x19
+inline void I86::_sbb_wr16()	// Opcode 0x19
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -1839,7 +1833,7 @@ inline void X86::_sbb_wr16()	// Opcode 0x19
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_sbb_r8b()	// Opcode 0x1a
+inline void I86::_sbb_r8b()	// Opcode 0x1a
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -1848,7 +1842,7 @@ inline void X86::_sbb_r8b()	// Opcode 0x1a
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_sbb_r16w()	// Opcode 0x1b
+inline void I86::_sbb_r16w()	// Opcode 0x1b
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -1857,7 +1851,7 @@ inline void X86::_sbb_r16w()	// Opcode 0x1b
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_sbb_ald8()	// Opcode 0x1c
+inline void I86::_sbb_ald8()	// Opcode 0x1c
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -1866,7 +1860,7 @@ inline void X86::_sbb_ald8()	// Opcode 0x1c
 	regs.b[AL] = dst;
 }
 
-inline void X86::_sbb_axd16()	// Opcode 0x1d
+inline void I86::_sbb_axd16()	// Opcode 0x1d
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -1875,15 +1869,15 @@ inline void X86::_sbb_axd16()	// Opcode 0x1d
 	regs.w[AX] = dst;
 }
 
-inline void X86::_push_ds()	// Opcode 0x1e
+inline void I86::_push_ds()	// Opcode 0x1e
 {
 	PUSH16(sregs[DS]);
 	count -= cycles.push_seg;
 }
 
-inline void X86::_pop_ds()	// Opcode 0x1f
+inline void I86::_pop_ds()	// Opcode 0x1f
 {
-#ifdef I286
+#ifdef HAS_I286
 	uint16 tmp = POP16();
 	i286_data_descriptor(DS, tmp);
 #else
@@ -1893,7 +1887,7 @@ inline void X86::_pop_ds()	// Opcode 0x1f
 	count -= cycles.push_seg;
 }
 
-inline void X86::_and_br8()	// Opcode 0x20
+inline void I86::_and_br8()	// Opcode 0x20
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -1901,7 +1895,7 @@ inline void X86::_and_br8()	// Opcode 0x20
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_and_wr16()	// Opcode 0x21
+inline void I86::_and_wr16()	// Opcode 0x21
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -1909,7 +1903,7 @@ inline void X86::_and_wr16()	// Opcode 0x21
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_and_r8b()	// Opcode 0x22
+inline void I86::_and_r8b()	// Opcode 0x22
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -1917,7 +1911,7 @@ inline void X86::_and_r8b()	// Opcode 0x22
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_and_r16w()	// Opcode 0x23
+inline void I86::_and_r16w()	// Opcode 0x23
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -1925,7 +1919,7 @@ inline void X86::_and_r16w()	// Opcode 0x23
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_and_ald8()	// Opcode 0x24
+inline void I86::_and_ald8()	// Opcode 0x24
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -1933,7 +1927,7 @@ inline void X86::_and_ald8()	// Opcode 0x24
 	regs.b[AL] = dst;
 }
 
-inline void X86::_and_axd16()	// Opcode 0x25
+inline void I86::_and_axd16()	// Opcode 0x25
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -1941,7 +1935,7 @@ inline void X86::_and_axd16()	// Opcode 0x25
 	regs.w[AX] = dst;
 }
 
-inline void X86::_es()	// Opcode 0x26
+inline void I86::_es()	// Opcode 0x26
 {
 	seg_prefix = true;
 	prefix_base = base[ES];
@@ -1949,7 +1943,7 @@ inline void X86::_es()	// Opcode 0x26
 	op(FETCHOP());
 }
 
-inline void X86::_daa()	// Opcode 0x27
+inline void I86::_daa()	// Opcode 0x27
 {
 	if(AF || ((regs.b[AL] & 0xf) > 9)) {
 		int tmp = regs.b[AL] + 6;
@@ -1965,7 +1959,7 @@ inline void X86::_daa()	// Opcode 0x27
 	count -= cycles.daa;
 }
 
-inline void X86::_sub_br8()	// Opcode 0x28
+inline void I86::_sub_br8()	// Opcode 0x28
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -1973,7 +1967,7 @@ inline void X86::_sub_br8()	// Opcode 0x28
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_sub_wr16()	// Opcode 0x29
+inline void I86::_sub_wr16()	// Opcode 0x29
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -1981,7 +1975,7 @@ inline void X86::_sub_wr16()	// Opcode 0x29
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_sub_r8b()	// Opcode 0x2a
+inline void I86::_sub_r8b()	// Opcode 0x2a
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -1989,7 +1983,7 @@ inline void X86::_sub_r8b()	// Opcode 0x2a
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_sub_r16w()	// Opcode 0x2b
+inline void I86::_sub_r16w()	// Opcode 0x2b
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -1997,7 +1991,7 @@ inline void X86::_sub_r16w()	// Opcode 0x2b
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_sub_ald8()	// Opcode 0x2c
+inline void I86::_sub_ald8()	// Opcode 0x2c
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -2005,7 +1999,7 @@ inline void X86::_sub_ald8()	// Opcode 0x2c
 	regs.b[AL] = dst;
 }
 
-inline void X86::_sub_axd16()	// Opcode 0x2d
+inline void I86::_sub_axd16()	// Opcode 0x2d
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -2013,7 +2007,7 @@ inline void X86::_sub_axd16()	// Opcode 0x2d
 	regs.w[AX] = dst;
 }
 
-inline void X86::_cs()	// Opcode 0x2e
+inline void I86::_cs()	// Opcode 0x2e
 {
 	seg_prefix = true;
 	prefix_base = base[CS];
@@ -2021,7 +2015,7 @@ inline void X86::_cs()	// Opcode 0x2e
 	op(FETCHOP());
 }
 
-inline void X86::_das()	// Opcode 0x2f
+inline void I86::_das()	// Opcode 0x2f
 {
 	uint8 tmpAL = regs.b[AL];
 	if(AF || ((regs.b[AL] & 0xf) > 9)) {
@@ -2038,7 +2032,7 @@ inline void X86::_das()	// Opcode 0x2f
 	count -= cycles.das;
 }
 
-inline void X86::_xor_br8()	// Opcode 0x30
+inline void I86::_xor_br8()	// Opcode 0x30
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_mr8;
@@ -2046,7 +2040,7 @@ inline void X86::_xor_br8()	// Opcode 0x30
 	PutbackRMByte(ModRM, dst);
 }
 
-inline void X86::_xor_wr16()	// Opcode 0x31
+inline void I86::_xor_wr16()	// Opcode 0x31
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_mr16;
@@ -2054,7 +2048,7 @@ inline void X86::_xor_wr16()	// Opcode 0x31
 	PutbackRMWord(ModRM, dst);
 }
 
-inline void X86::_xor_r8b()	// Opcode 0x32
+inline void I86::_xor_r8b()	// Opcode 0x32
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
@@ -2062,7 +2056,7 @@ inline void X86::_xor_r8b()	// Opcode 0x32
 	RegByte(ModRM) = dst;
 }
 
-inline void X86::_xor_r16w()	// Opcode 0x33
+inline void I86::_xor_r16w()	// Opcode 0x33
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
@@ -2070,7 +2064,7 @@ inline void X86::_xor_r16w()	// Opcode 0x33
 	RegWord(ModRM) = dst;
 }
 
-inline void X86::_xor_ald8()	// Opcode 0x34
+inline void I86::_xor_ald8()	// Opcode 0x34
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
@@ -2078,7 +2072,7 @@ inline void X86::_xor_ald8()	// Opcode 0x34
 	regs.b[AL] = dst;
 }
 
-inline void X86::_xor_axd16()	// Opcode 0x35
+inline void I86::_xor_axd16()	// Opcode 0x35
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
@@ -2086,7 +2080,7 @@ inline void X86::_xor_axd16()	// Opcode 0x35
 	regs.w[AX] = dst;
 }
 
-inline void X86::_ss()	// Opcode 0x36
+inline void I86::_ss()	// Opcode 0x36
 {
 	seg_prefix = true;
 	prefix_base = base[SS];
@@ -2094,7 +2088,7 @@ inline void X86::_ss()	// Opcode 0x36
 	op(FETCHOP());
 }
 
-inline void X86::_aaa()	// Opcode 0x37
+inline void I86::_aaa()	// Opcode 0x37
 {
 	uint8 ALcarry = 1;
 	if(regs.b[AL]>0xf9)
@@ -2113,49 +2107,49 @@ inline void X86::_aaa()	// Opcode 0x37
 	count -= cycles.aaa;
 }
 
-inline void X86::_cmp_br8()	// Opcode 0x38
+inline void I86::_cmp_br8()	// Opcode 0x38
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
 	SUBB(dst, src);
 }
 
-inline void X86::_cmp_wr16()	// Opcode 0x39
+inline void I86::_cmp_wr16()	// Opcode 0x39
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
 	SUBW(dst, src);
 }
 
-inline void X86::_cmp_r8b()	// Opcode 0x3a
+inline void I86::_cmp_r8b()	// Opcode 0x3a
 {
 	DEF_r8b(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
 	SUBB(dst, src);
 }
 
-inline void X86::_cmp_r16w()	// Opcode 0x3b
+inline void I86::_cmp_r16w()	// Opcode 0x3b
 {
 	DEF_r16w(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
 	SUBW(dst, src);
 }
 
-inline void X86::_cmp_ald8()	// Opcode 0x3c
+inline void I86::_cmp_ald8()	// Opcode 0x3c
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
 	SUBB(dst, src);
 }
 
-inline void X86::_cmp_axd16()	// Opcode 0x3d
+inline void I86::_cmp_axd16()	// Opcode 0x3d
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
 	SUBW(dst, src);
 }
 
-inline void X86::_ds()	// Opcode 0x3e
+inline void I86::_ds()	// Opcode 0x3e
 {
 	seg_prefix = true;
 	prefix_base = base[DS];
@@ -2163,7 +2157,7 @@ inline void X86::_ds()	// Opcode 0x3e
 	op(FETCHOP());
 }
 
-inline void X86::_aas()	// Opcode 0x3f
+inline void I86::_aas()	// Opcode 0x3f
 {
 	uint8 ALcarry = 1;
 	if(regs.b[AL]>0xf9)
@@ -2192,42 +2186,42 @@ inline void X86::_aas()	// Opcode 0x3f
 	count -= cycles.incdec_r16; \
 }
 
-inline void X86::_inc_ax()	// Opcode 0x40
+inline void I86::_inc_ax()	// Opcode 0x40
 {
 	IncWordReg(AX);
 }
 
-inline void X86::_inc_cx()	// Opcode 0x41
+inline void I86::_inc_cx()	// Opcode 0x41
 {
 	IncWordReg(CX);
 }
 
-inline void X86::_inc_dx()	// Opcode 0x42
+inline void I86::_inc_dx()	// Opcode 0x42
 {
 	IncWordReg(DX);
 }
 
-inline void X86::_inc_bx()	// Opcode 0x43
+inline void I86::_inc_bx()	// Opcode 0x43
 {
 	IncWordReg(BX);
 }
 
-inline void X86::_inc_sp()	// Opcode 0x44
+inline void I86::_inc_sp()	// Opcode 0x44
 {
 	IncWordReg(SP);
 }
 
-inline void X86::_inc_bp()	// Opcode 0x45
+inline void I86::_inc_bp()	// Opcode 0x45
 {
 	IncWordReg(BP);
 }
 
-inline void X86::_inc_si()	// Opcode 0x46
+inline void I86::_inc_si()	// Opcode 0x46
 {
 	IncWordReg(SI);
 }
 
-inline void X86::_inc_di()	// Opcode 0x47
+inline void I86::_inc_di()	// Opcode 0x47
 {
 	IncWordReg(DI);
 }
@@ -2242,145 +2236,145 @@ inline void X86::_inc_di()	// Opcode 0x47
 	count -= cycles.incdec_r16; \
 }
 
-inline void X86::_dec_ax()	// Opcode 0x48
+inline void I86::_dec_ax()	// Opcode 0x48
 {
 	DecWordReg(AX);
 }
 
-inline void X86::_dec_cx()	// Opcode 0x49
+inline void I86::_dec_cx()	// Opcode 0x49
 {
 	DecWordReg(CX);
 }
 
-inline void X86::_dec_dx()	// Opcode 0x4a
+inline void I86::_dec_dx()	// Opcode 0x4a
 {
 	DecWordReg(DX);
 }
 
-inline void X86::_dec_bx()	// Opcode 0x4b
+inline void I86::_dec_bx()	// Opcode 0x4b
 {
 	DecWordReg(BX);
 }
 
-inline void X86::_dec_sp()	// Opcode 0x4c
+inline void I86::_dec_sp()	// Opcode 0x4c
 {
 	DecWordReg(SP);
 }
 
-inline void X86::_dec_bp()	// Opcode 0x4d
+inline void I86::_dec_bp()	// Opcode 0x4d
 {
 	DecWordReg(BP);
 }
 
-inline void X86::_dec_si()	// Opcode 0x4e
+inline void I86::_dec_si()	// Opcode 0x4e
 {
 	DecWordReg(SI);
 }
 
-inline void X86::_dec_di()	// Opcode 0x4f
+inline void I86::_dec_di()	// Opcode 0x4f
 {
 	DecWordReg(DI);
 }
 
-inline void X86::_push_ax()	// Opcode 0x50
+inline void I86::_push_ax()	// Opcode 0x50
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[AX]);
 }
 
-inline void X86::_push_cx()	// Opcode 0x51
+inline void I86::_push_cx()	// Opcode 0x51
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[CX]);
 }
 
-inline void X86::_push_dx()	// Opcode 0x52
+inline void I86::_push_dx()	// Opcode 0x52
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[DX]);
 }
 
-inline void X86::_push_bx()	// Opcode 0x53
+inline void I86::_push_bx()	// Opcode 0x53
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[BX]);
 }
 
-inline void X86::_push_sp()	// Opcode 0x54
+inline void I86::_push_sp()	// Opcode 0x54
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[SP]);
 }
 
-inline void X86::_push_bp()	// Opcode 0x55
+inline void I86::_push_bp()	// Opcode 0x55
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[BP]);
 }
 
-inline void X86::_push_si()	// Opcode 0x56
+inline void I86::_push_si()	// Opcode 0x56
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[SI]);
 }
 
-inline void X86::_push_di()	// Opcode 0x57
+inline void I86::_push_di()	// Opcode 0x57
 {
 	count -= cycles.push_r16;
 	PUSH16(regs.w[DI]);
 }
 
-inline void X86::_pop_ax()	// Opcode 0x58
+inline void I86::_pop_ax()	// Opcode 0x58
 {
 	count -= cycles.pop_r16;
 	regs.w[AX] = POP16();
 }
 
-inline void X86::_pop_cx()	// Opcode 0x59
+inline void I86::_pop_cx()	// Opcode 0x59
 {
 	count -= cycles.pop_r16;
 	regs.w[CX] = POP16();
 }
 
-inline void X86::_pop_dx()	// Opcode 0x5a
+inline void I86::_pop_dx()	// Opcode 0x5a
 {
 	count -= cycles.pop_r16;
 	regs.w[DX] = POP16();
 }
 
-inline void X86::_pop_bx()	// Opcode 0x5b
+inline void I86::_pop_bx()	// Opcode 0x5b
 {
 	count -= cycles.pop_r16;
 	regs.w[BX] = POP16();
 }
 
-inline void X86::_pop_sp()	// Opcode 0x5c
+inline void I86::_pop_sp()	// Opcode 0x5c
 {
 	count -= cycles.pop_r16;
 	regs.w[SP] = POP16();
 }
 
-inline void X86::_pop_bp()	// Opcode 0x5d
+inline void I86::_pop_bp()	// Opcode 0x5d
 {
 	count -= cycles.pop_r16;
 	regs.w[BP] = POP16();
 }
 
-inline void X86::_pop_si()	// Opcode 0x5e
+inline void I86::_pop_si()	// Opcode 0x5e
 {
 	count -= cycles.pop_r16;
 	regs.w[SI] = POP16();
 }
 
-inline void X86::_pop_di()	// Opcode 0x5f
+inline void I86::_pop_di()	// Opcode 0x5f
 {
 	count -= cycles.pop_r16;
 	regs.w[DI] = POP16();
 }
 
-inline void X86::_pusha()	// Opcode 0x60
+inline void I86::_pusha()	// Opcode 0x60
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned tmp = regs.w[SP];
 	count -= cycles.pusha;
 	PUSH16(regs.w[AX]);
@@ -2396,9 +2390,9 @@ inline void X86::_pusha()	// Opcode 0x60
 #endif
 }
 
-inline void X86::_popa()	// Opcode 0x61
+inline void I86::_popa()	// Opcode 0x61
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.popa;
 	regs.w[DI] = POP16();
 	regs.w[SI] = POP16();
@@ -2413,9 +2407,9 @@ inline void X86::_popa()	// Opcode 0x61
 #endif
 }
 
-inline void X86::_bound()	// Opcode 0x62
+inline void I86::_bound()	// Opcode 0x62
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned ModRM = FETCHOP();
 	int low = (int16)GetRMWord(ModRM);
 	int high = (int16)GetNextRMWord();
@@ -2430,9 +2424,9 @@ inline void X86::_bound()	// Opcode 0x62
 #endif
 }
 
-inline void X86::_arpl()	// Opcode 0x63
+inline void I86::_arpl()	// Opcode 0x63
 {
-#ifdef I286
+#ifdef HAS_I286
 	if(PM) {
 		uint16 ModRM = FETCHOP();
 		uint16 tmp = GetRMWord(ModRM);
@@ -2449,15 +2443,15 @@ inline void X86::_arpl()	// Opcode 0x63
 }
 
 #if 0
-inline void X86::_brkn()	// Opcode 0x63 BRKN - Break to Native Mode
+inline void I86::_brkn()	// Opcode 0x63 BRKN - Break to Native Mode
 {
 	unsigned vector = FETCH8();
 }
 #endif
 
-inline void X86::_repc(int flagval)
+inline void I86::_repc(int flagval)
 {
-#ifdef V30
+#ifdef HAS_V30
 	unsigned next = FETCHOP();
 	unsigned cnt = regs.w[CX];
 	
@@ -2579,9 +2573,9 @@ inline void X86::_repc(int flagval)
 #endif
 }
 
-inline void X86::_push_d16()	// Opcode 0x68
+inline void I86::_push_d16()	// Opcode 0x68
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned tmp = FETCH8();
 	count -= cycles.push_imm;
 	tmp += FETCH8() << 8;
@@ -2591,9 +2585,9 @@ inline void X86::_push_d16()	// Opcode 0x68
 #endif
 }
 
-inline void X86::_imul_d16()	// Opcode 0x69
+inline void I86::_imul_d16()	// Opcode 0x69
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	DEF_r16w(dst, src);
 	unsigned src2 = FETCH8();
 	src += (FETCH8() << 8);
@@ -2606,9 +2600,9 @@ inline void X86::_imul_d16()	// Opcode 0x69
 #endif
 }
 
-inline void X86::_push_d8()	// Opcode 0x6a
+inline void I86::_push_d8()	// Opcode 0x6a
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned tmp = (uint16)((int16)((int8)FETCH8()));
 	count -= cycles.push_imm;
 	PUSH16(tmp);
@@ -2617,9 +2611,9 @@ inline void X86::_push_d8()	// Opcode 0x6a
 #endif
 }
 
-inline void X86::_imul_d8()	// Opcode 0x6b
+inline void I86::_imul_d8()	// Opcode 0x6b
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	DEF_r16w(dst, src);
 	unsigned src2 = (uint16)((int16)((int8)FETCH8()));
 	count -= (ModRM >= 0xc0) ? cycles.imul_rri8 : cycles.imul_rmi8;
@@ -2631,9 +2625,9 @@ inline void X86::_imul_d8()	// Opcode 0x6b
 #endif
 }
 
-inline void X86::_insb()	// Opcode 0x6c
+inline void I86::_insb()	// Opcode 0x6c
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.ins8;
 	WM8(ES, regs.w[DI], IN8(regs.w[DX]));
 	regs.w[DI] += DirVal;
@@ -2642,9 +2636,9 @@ inline void X86::_insb()	// Opcode 0x6c
 #endif
 }
 
-inline void X86::_insw()	// Opcode 0x6d
+inline void I86::_insw()	// Opcode 0x6d
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.ins16;
 	WM8(ES, regs.w[DI], IN8(regs.w[DX]));
 	WM8(ES, regs.w[DI] + 1, IN8(regs.w[DX] + 1));
@@ -2654,9 +2648,9 @@ inline void X86::_insw()	// Opcode 0x6d
 #endif
 }
 
-inline void X86::_outsb()	// Opcode 0x6e
+inline void I86::_outsb()	// Opcode 0x6e
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.outs8;
 	OUT8(regs.w[DX], RM8(DS, regs.w[SI]));
 	regs.w[SI] += DirVal; // GOL 11/27/01
@@ -2665,9 +2659,9 @@ inline void X86::_outsb()	// Opcode 0x6e
 #endif
 }
 
-inline void X86::_outsw()	// Opcode 0x6f
+inline void I86::_outsw()	// Opcode 0x6f
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.outs16;
 	OUT8(regs.w[DX], RM8(DS, regs.w[SI]));
 	OUT8(regs.w[DX] + 1, RM8(DS, regs.w[SI] + 1));
@@ -2677,7 +2671,7 @@ inline void X86::_outsw()	// Opcode 0x6f
 #endif
 }
 
-inline void X86::_jo()	// Opcode 0x70
+inline void I86::_jo()	// Opcode 0x70
 {
 	int tmp = (int)((int8)FETCH8());
 	if(OF) {
@@ -2688,7 +2682,7 @@ inline void X86::_jo()	// Opcode 0x70
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jno()	// Opcode 0x71
+inline void I86::_jno()	// Opcode 0x71
 {
 	int tmp = (int)((int8)FETCH8());
 	if(!OF) {
@@ -2699,7 +2693,7 @@ inline void X86::_jno()	// Opcode 0x71
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jb()	// Opcode 0x72
+inline void I86::_jb()	// Opcode 0x72
 {
 	int tmp = (int)((int8)FETCH8());
 	if(CF) {
@@ -2710,7 +2704,7 @@ inline void X86::_jb()	// Opcode 0x72
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jnb()	// Opcode 0x73
+inline void I86::_jnb()	// Opcode 0x73
 {
 	int tmp = (int)((int8)FETCH8());
 	if(!CF) {
@@ -2721,7 +2715,7 @@ inline void X86::_jnb()	// Opcode 0x73
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jz()	// Opcode 0x74
+inline void I86::_jz()	// Opcode 0x74
 {
 	int tmp = (int)((int8)FETCH8());
 	if(ZF) {
@@ -2732,7 +2726,7 @@ inline void X86::_jz()	// Opcode 0x74
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jnz()	// Opcode 0x75
+inline void I86::_jnz()	// Opcode 0x75
 {
 	int tmp = (int)((int8)FETCH8());
 	if(!ZF) {
@@ -2743,7 +2737,7 @@ inline void X86::_jnz()	// Opcode 0x75
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jbe()	// Opcode 0x76
+inline void I86::_jbe()	// Opcode 0x76
 {
 	int tmp = (int)((int8)FETCH8());
 	if(CF || ZF) {
@@ -2754,7 +2748,7 @@ inline void X86::_jbe()	// Opcode 0x76
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jnbe()	// Opcode 0x77
+inline void I86::_jnbe()	// Opcode 0x77
 {
 	int tmp = (int)((int8)FETCH8());
 	if(!(CF || ZF)) {
@@ -2765,7 +2759,7 @@ inline void X86::_jnbe()	// Opcode 0x77
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_js()	// Opcode 0x78
+inline void I86::_js()	// Opcode 0x78
 {
 	int tmp = (int)((int8)FETCH8());
 	if(SF) {
@@ -2776,7 +2770,7 @@ inline void X86::_js()	// Opcode 0x78
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jns()	// Opcode 0x79
+inline void I86::_jns()	// Opcode 0x79
 {
 	int tmp = (int)((int8)FETCH8());
 	if(!SF) {
@@ -2787,7 +2781,7 @@ inline void X86::_jns()	// Opcode 0x79
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jp()	// Opcode 0x7a
+inline void I86::_jp()	// Opcode 0x7a
 {
 	int tmp = (int)((int8)FETCH8());
 	if(PF) {
@@ -2798,7 +2792,7 @@ inline void X86::_jp()	// Opcode 0x7a
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jnp()	// Opcode 0x7b
+inline void I86::_jnp()	// Opcode 0x7b
 {
 	int tmp = (int)((int8)FETCH8());
 	if(!PF) {
@@ -2809,7 +2803,7 @@ inline void X86::_jnp()	// Opcode 0x7b
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jl()	// Opcode 0x7c
+inline void I86::_jl()	// Opcode 0x7c
 {
 	int tmp = (int)((int8)FETCH8());
 	if((SF!= OF) && !ZF) {
@@ -2820,7 +2814,7 @@ inline void X86::_jl()	// Opcode 0x7c
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jnl()	// Opcode 0x7d
+inline void I86::_jnl()	// Opcode 0x7d
 {
 	int tmp = (int)((int8)FETCH8());
 	if(ZF || (SF == OF)) {
@@ -2831,7 +2825,7 @@ inline void X86::_jnl()	// Opcode 0x7d
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jle()	// Opcode 0x7e
+inline void I86::_jle()	// Opcode 0x7e
 {
 	int tmp = (int)((int8)FETCH8());
 	if(ZF || (SF!= OF)) {
@@ -2842,7 +2836,7 @@ inline void X86::_jle()	// Opcode 0x7e
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_jnle()	// Opcode 0x7f
+inline void I86::_jnle()	// Opcode 0x7f
 {
 	int tmp = (int)((int8)FETCH8());
 	if((SF == OF) && !ZF) {
@@ -2853,7 +2847,7 @@ inline void X86::_jnle()	// Opcode 0x7f
 		count -= cycles.jcc_nt;
 }
 
-inline void X86::_op80()	// Opcode 0x80
+inline void I86::_op80()	// Opcode 0x80
 {
 	unsigned ModRM = FETCHOP();
 	unsigned dst = GetRMByte(ModRM);
@@ -2905,7 +2899,7 @@ inline void X86::_op80()	// Opcode 0x80
 	}
 }
 
-inline void X86::_op81()	// Opcode 0x81
+inline void I86::_op81()	// Opcode 0x81
 {
 	unsigned ModRM = FETCH8();
 	unsigned dst = GetRMWord(ModRM);
@@ -2958,7 +2952,7 @@ inline void X86::_op81()	// Opcode 0x81
 	}
 }
 
-inline void X86::_op82()	// Opcode 0x82
+inline void I86::_op82()	// Opcode 0x82
 {
 	unsigned ModRM = FETCH8();
 	unsigned dst = GetRMByte(ModRM);
@@ -3010,7 +3004,7 @@ inline void X86::_op82()	// Opcode 0x82
 	}
 }
 
-inline void X86::_op83()	// Opcode 0x83
+inline void I86::_op83()	// Opcode 0x83
 {
 	unsigned ModRM = FETCH8();
 	unsigned dst = GetRMWord(ModRM);
@@ -3062,21 +3056,21 @@ inline void X86::_op83()	// Opcode 0x83
 	}
 }
 
-inline void X86::_test_br8()	// Opcode 0x84
+inline void I86::_test_br8()	// Opcode 0x84
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr8 : cycles.alu_rm8;
 	ANDB(dst, src);
 }
 
-inline void X86::_test_wr16()	// Opcode 0x85
+inline void I86::_test_wr16()	// Opcode 0x85
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.alu_rr16 : cycles.alu_rm16;
 	ANDW(dst, src);
 }
 
-inline void X86::_xchg_br8()	// Opcode 0x86
+inline void I86::_xchg_br8()	// Opcode 0x86
 {
 	DEF_br8(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.xchg_rr8 : cycles.xchg_rm8;
@@ -3084,7 +3078,7 @@ inline void X86::_xchg_br8()	// Opcode 0x86
 	PutbackRMByte(ModRM, src);
 }
 
-inline void X86::_xchg_wr16()	// Opcode 0x87
+inline void I86::_xchg_wr16()	// Opcode 0x87
 {
 	DEF_wr16(dst, src);
 	count -= (ModRM >= 0xc0) ? cycles.xchg_rr16 : cycles.xchg_rm16;
@@ -3092,7 +3086,7 @@ inline void X86::_xchg_wr16()	// Opcode 0x87
 	PutbackRMWord(ModRM, src);
 }
 
-inline void X86::_mov_br8()	// Opcode 0x88
+inline void I86::_mov_br8()	// Opcode 0x88
 {
 	unsigned ModRM = FETCH8();
 	uint8 src = RegByte(ModRM);
@@ -3100,7 +3094,7 @@ inline void X86::_mov_br8()	// Opcode 0x88
 	PutRMByte(ModRM, src);
 }
 
-inline void X86::_mov_wr16()	// Opcode 0x89
+inline void I86::_mov_wr16()	// Opcode 0x89
 {
 	unsigned ModRM = FETCH8();
 	uint16 src = RegWord(ModRM);
@@ -3108,7 +3102,7 @@ inline void X86::_mov_wr16()	// Opcode 0x89
 	PutRMWord(ModRM, src);
 }
 
-inline void X86::_mov_r8b()	// Opcode 0x8a
+inline void I86::_mov_r8b()	// Opcode 0x8a
 {
 	unsigned ModRM = FETCH8();
 	uint8 src = GetRMByte(ModRM);
@@ -3116,7 +3110,7 @@ inline void X86::_mov_r8b()	// Opcode 0x8a
 	RegByte(ModRM) = src;
 }
 
-inline void X86::_mov_r16w()	// Opcode 0x8b
+inline void I86::_mov_r16w()	// Opcode 0x8b
 {
 	unsigned ModRM = FETCH8();
 	uint16 src = GetRMWord(ModRM);
@@ -3124,11 +3118,11 @@ inline void X86::_mov_r16w()	// Opcode 0x8b
 	RegWord(ModRM) = src;
 }
 
-inline void X86::_mov_wsreg()	// Opcode 0x8c
+inline void I86::_mov_wsreg()	// Opcode 0x8c
 {
 	unsigned ModRM = FETCH8();
 	count -= (ModRM >= 0xc0) ? cycles.mov_rs : cycles.mov_ms;
-#ifdef I286
+#ifdef HAS_I286
 	if(ModRM & 0x20) {
 		interrupt(ILLEGAL_INSTRUCTION);
 		return;
@@ -3140,7 +3134,7 @@ inline void X86::_mov_wsreg()	// Opcode 0x8c
 	PutRMWord(ModRM, sregs[(ModRM & 0x38) >> 3]);
 }
 
-inline void X86::_lea()	// Opcode 0x8d
+inline void I86::_lea()	// Opcode 0x8d
 {
 	unsigned ModRM = FETCH8();
 	count -= cycles.lea;
@@ -3148,13 +3142,13 @@ inline void X86::_lea()	// Opcode 0x8d
 	RegWord(ModRM) = EO;
 }
 
-inline void X86::_mov_sregw()	// Opcode 0x8e
+inline void I86::_mov_sregw()	// Opcode 0x8e
 {
 	unsigned ModRM = FETCH8();
 	uint16 src = GetRMWord(ModRM);
 	
 	count -= (ModRM >= 0xc0) ? cycles.mov_sr : cycles.mov_sm;
-#ifdef I286
+#ifdef HAS_I286
 	switch(ModRM & 0x38)
 	{
 	case 0x00:	// mov es, ew
@@ -3192,7 +3186,7 @@ inline void X86::_mov_sregw()	// Opcode 0x8e
 #endif
 }
 
-inline void X86::_popw()	// Opcode 0x8f
+inline void I86::_popw()	// Opcode 0x8f
 {
 	unsigned ModRM = FETCH8();
 	uint16 tmp = POP16();
@@ -3207,107 +3201,102 @@ inline void X86::_popw()	// Opcode 0x8f
 	count -= cycles.xchg_ar16; \
 }
 
-inline void X86::_nop()	// Opcode 0x90
+inline void I86::_nop()	// Opcode 0x90
 {
 	count -= cycles.nop;
 }
 
-inline void X86::_xchg_axcx()	// Opcode 0x91
+inline void I86::_xchg_axcx()	// Opcode 0x91
 {
 	XchgAXReg(CX);
 }
 
-inline void X86::_xchg_axdx()	// Opcode 0x92
+inline void I86::_xchg_axdx()	// Opcode 0x92
 {
 	XchgAXReg(DX);
 }
 
-inline void X86::_xchg_axbx()	// Opcode 0x93
+inline void I86::_xchg_axbx()	// Opcode 0x93
 {
 	XchgAXReg(BX);
 }
 
-inline void X86::_xchg_axsp()	// Opcode 0x94
+inline void I86::_xchg_axsp()	// Opcode 0x94
 {
 	XchgAXReg(SP);
 }
 
-inline void X86::_xchg_axbp()	// Opcode 0x95
+inline void I86::_xchg_axbp()	// Opcode 0x95
 {
 	XchgAXReg(BP);
 }
 
-inline void X86::_xchg_axsi()	// Opcode 0x96
+inline void I86::_xchg_axsi()	// Opcode 0x96
 {
 	XchgAXReg(SI);
 }
 
-inline void X86::_xchg_axdi()	// Opcode 0x97
+inline void I86::_xchg_axdi()	// Opcode 0x97
 {
 	XchgAXReg(DI);
 }
 
-inline void X86::_cbw()	// Opcode 0x98
+inline void I86::_cbw()	// Opcode 0x98
 {
 	count -= cycles.cbw;
 	regs.b[AH] = (regs.b[AL] & 0x80) ? 0xff : 0;
 }
 
-inline void X86::_cwd()	// Opcode 0x99
+inline void I86::_cwd()	// Opcode 0x99
 {
 	count -= cycles.cwd;
 	regs.w[DX] = (regs.b[AH] & 0x80) ? 0xffff : 0;
 }
 
-inline void X86::_call_far()
+inline void I86::_call_far()
 {
 	unsigned tmp1 = FETCH8();
 	tmp1 += FETCH8() << 8;
 	unsigned tmp2 = FETCH8();
 	tmp2 += FETCH8() << 8;
-	uint16 cs = sregs[CS], ip = PC - base[CS];
-	uint32 pc = PC;
+	uint16 ip = PC - base[CS];
 	PUSH16(sregs[CS]);
 	PUSH16(ip);
-#ifdef I286
+#ifdef HAS_I286
 	i286_code_descriptor(tmp2, tmp1);
 #else
 	sregs[CS] = (uint16)tmp2;
 	base[CS] = SegBase(CS);
 	PC = (base[CS] + (uint16)tmp1) & AMASK;
 #endif
-#ifdef X86_BIOS_CALL
+#ifdef I86_BIOS_CALL
 	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 		// bios call
-		POP16();
-		POP16();
-		sregs[CS] = cs;
-		base[CS] = SegBase(CS);
-		PC = pc;
+		_retf();
 	}
 #endif
 	count -= cycles.call_far;
 }
 
-inline void X86::_wait()	// Opcode 0x9b
+inline void I86::_wait()	// Opcode 0x9b
 {
 	if(busy)
 		PC--;
 	count -= cycles.wait;
 }
 
-inline void X86::_pushf()	// Opcode 0x9c
+inline void I86::_pushf()	// Opcode 0x9c
 {
 	unsigned tmp = CompressFlags();
 	count -= cycles.pushf;
-#ifdef I286
+#ifdef HAS_I286
 	PUSH16(tmp & ~0xf000);
 #else
 	PUSH16(tmp | 0xf000);
 #endif
 }
 
-inline void X86::_popf()	// Opcode 0x9d
+inline void I86::_popf()	// Opcode 0x9d
 {
 	unsigned tmp = POP16();
 	count -= cycles.popf;
@@ -3323,20 +3312,20 @@ inline void X86::_popf()	// Opcode 0x9d
 	}
 }
 
-inline void X86::_sahf()	// Opcode 0x9e
+inline void I86::_sahf()	// Opcode 0x9e
 {
 	unsigned tmp = (CompressFlags() & 0xff00) | (regs.b[AH] & 0xd5);
 	count -= cycles.sahf;
 	ExpandFlags(tmp);
 }
 
-inline void X86::_lahf()	// Opcode 0x9f
+inline void I86::_lahf()	// Opcode 0x9f
 {
 	regs.b[AH] = CompressFlags() & 0xff;
 	count -= cycles.lahf;
 }
 
-inline void X86::_mov_aldisp()	// Opcode 0xa0
+inline void I86::_mov_aldisp()	// Opcode 0xa0
 {
 	unsigned addr = FETCH8();
 	addr += FETCH8() << 8;
@@ -3344,7 +3333,7 @@ inline void X86::_mov_aldisp()	// Opcode 0xa0
 	regs.b[AL] = RM8(DS, addr);
 }
 
-inline void X86::_mov_axdisp()	// Opcode 0xa1
+inline void I86::_mov_axdisp()	// Opcode 0xa1
 {
 	unsigned addr = FETCH8();
 	addr += FETCH8() << 8;
@@ -3353,7 +3342,7 @@ inline void X86::_mov_axdisp()	// Opcode 0xa1
 	regs.b[AH] = RM8(DS, addr + 1);
 }
 
-inline void X86::_mov_dispal()	// Opcode 0xa2
+inline void I86::_mov_dispal()	// Opcode 0xa2
 {
 	unsigned addr = FETCH8();
 	addr += FETCH8() << 8;
@@ -3361,7 +3350,7 @@ inline void X86::_mov_dispal()	// Opcode 0xa2
 	WM8(DS, addr, regs.b[AL]);
 }
 
-inline void X86::_mov_dispax()	// Opcode 0xa3
+inline void I86::_mov_dispax()	// Opcode 0xa3
 {
 	unsigned addr = FETCH8();
 	addr += FETCH8() << 8;
@@ -3370,7 +3359,7 @@ inline void X86::_mov_dispax()	// Opcode 0xa3
 	WM8(DS, addr + 1, regs.b[AH]);
 }
 
-inline void X86::_movsb()	// Opcode 0xa4
+inline void I86::_movsb()	// Opcode 0xa4
 {
 	uint8 tmp = RM8(DS, regs.w[SI]);
 	WM8(ES, regs.w[DI], tmp);
@@ -3379,7 +3368,7 @@ inline void X86::_movsb()	// Opcode 0xa4
 	count -= cycles.movs8;
 }
 
-inline void X86::_movsw()	// Opcode 0xa5
+inline void I86::_movsw()	// Opcode 0xa5
 {
 	uint16 tmp = RM16(DS, regs.w[SI]);
 	WM16(ES, regs.w[DI], tmp);
@@ -3388,7 +3377,7 @@ inline void X86::_movsw()	// Opcode 0xa5
 	count -= cycles.movs16;
 }
 
-inline void X86::_cmpsb()	// Opcode 0xa6
+inline void I86::_cmpsb()	// Opcode 0xa6
 {
 	unsigned dst = RM8(ES, regs.w[DI]);
 	unsigned src = RM8(DS, regs.w[SI]);
@@ -3398,7 +3387,7 @@ inline void X86::_cmpsb()	// Opcode 0xa6
 	count -= cycles.cmps8;
 }
 
-inline void X86::_cmpsw()	// Opcode 0xa7
+inline void I86::_cmpsw()	// Opcode 0xa7
 {
 	unsigned dst = RM16(ES, regs.w[DI]);
 	unsigned src = RM16(DS, regs.w[SI]);
@@ -3408,28 +3397,28 @@ inline void X86::_cmpsw()	// Opcode 0xa7
 	count -= cycles.cmps16;
 }
 
-inline void X86::_test_ald8()	// Opcode 0xa8
+inline void I86::_test_ald8()	// Opcode 0xa8
 {
 	DEF_ald8(dst, src);
 	count -= cycles.alu_ri8;
 	ANDB(dst, src);
 }
 
-inline void X86::_test_axd16()	// Opcode 0xa9
+inline void I86::_test_axd16()	// Opcode 0xa9
 {
 	DEF_axd16(dst, src);
 	count -= cycles.alu_ri16;
 	ANDW(dst, src);
 }
 
-inline void X86::_stosb()	// Opcode 0xaa
+inline void I86::_stosb()	// Opcode 0xaa
 {
 	WM8(ES, regs.w[DI], regs.b[AL]);
 	regs.w[DI] += DirVal;
 	count -= cycles.stos8;
 }
 
-inline void X86::_stosw()	// Opcode 0xab
+inline void I86::_stosw()	// Opcode 0xab
 {
 	WM8(ES, regs.w[DI], regs.b[AL]);
 	WM8(ES, regs.w[DI] + 1, regs.b[AH]);
@@ -3437,21 +3426,21 @@ inline void X86::_stosw()	// Opcode 0xab
 	count -= cycles.stos16;
 }
 
-inline void X86::_lodsb()	// Opcode 0xac
+inline void I86::_lodsb()	// Opcode 0xac
 {
 	regs.b[AL] = RM8(DS, regs.w[SI]);
 	regs.w[SI] += DirVal;
 	count -= cycles.lods8;
 }
 
-inline void X86::_lodsw()	// Opcode 0xad
+inline void I86::_lodsw()	// Opcode 0xad
 {
 	regs.w[AX] = RM16(DS, regs.w[SI]);
 	regs.w[SI] += 2 * DirVal;
 	count -= cycles.lods16;
 }
 
-inline void X86::_scasb()	// Opcode 0xae
+inline void I86::_scasb()	// Opcode 0xae
 {
 	unsigned src = RM8(ES, regs.w[DI]);
 	unsigned dst = regs.b[AL];
@@ -3460,7 +3449,7 @@ inline void X86::_scasb()	// Opcode 0xae
 	count -= cycles.scas8;
 }
 
-inline void X86::_scasw()	// Opcode 0xaf
+inline void I86::_scasw()	// Opcode 0xaf
 {
 	unsigned src = RM16(ES, regs.w[DI]);
 	unsigned dst = regs.w[AX];
@@ -3469,113 +3458,113 @@ inline void X86::_scasw()	// Opcode 0xaf
 	count -= cycles.scas16;
 }
 
-inline void X86::_mov_ald8()	// Opcode 0xb0
+inline void I86::_mov_ald8()	// Opcode 0xb0
 {
 	regs.b[AL] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_cld8()	// Opcode 0xb1
+inline void I86::_mov_cld8()	// Opcode 0xb1
 {
 	regs.b[CL] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_dld8()	// Opcode 0xb2
+inline void I86::_mov_dld8()	// Opcode 0xb2
 {
 	regs.b[DL] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_bld8()	// Opcode 0xb3
+inline void I86::_mov_bld8()	// Opcode 0xb3
 {
 	regs.b[BL] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_ahd8()	// Opcode 0xb4
+inline void I86::_mov_ahd8()	// Opcode 0xb4
 {
 	regs.b[AH] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_chd8()	// Opcode 0xb5
+inline void I86::_mov_chd8()	// Opcode 0xb5
 {
 	regs.b[CH] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_dhd8()	// Opcode 0xb6
+inline void I86::_mov_dhd8()	// Opcode 0xb6
 {
 	regs.b[DH] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_bhd8()	// Opcode 0xb7
+inline void I86::_mov_bhd8()	// Opcode 0xb7
 {
 	regs.b[BH] = FETCH8();
 	count -= cycles.mov_ri8;
 }
 
-inline void X86::_mov_axd16()	// Opcode 0xb8
+inline void I86::_mov_axd16()	// Opcode 0xb8
 {
 	regs.b[AL] = FETCH8();
 	regs.b[AH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_cxd16()	// Opcode 0xb9
+inline void I86::_mov_cxd16()	// Opcode 0xb9
 {
 	regs.b[CL] = FETCH8();
 	regs.b[CH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_dxd16()	// Opcode 0xba
+inline void I86::_mov_dxd16()	// Opcode 0xba
 {
 	regs.b[DL] = FETCH8();
 	regs.b[DH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_bxd16()	// Opcode 0xbb
+inline void I86::_mov_bxd16()	// Opcode 0xbb
 {
 	regs.b[BL] = FETCH8();
 	regs.b[BH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_spd16()	// Opcode 0xbc
+inline void I86::_mov_spd16()	// Opcode 0xbc
 {
 	regs.b[SPL] = FETCH8();
 	regs.b[SPH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_bpd16()	// Opcode 0xbd
+inline void I86::_mov_bpd16()	// Opcode 0xbd
 {
 	regs.b[BPL] = FETCH8();
 	regs.b[BPH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_sid16()	// Opcode 0xbe
+inline void I86::_mov_sid16()	// Opcode 0xbe
 {
 	regs.b[SIL] = FETCH8();
 	regs.b[SIH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_mov_did16()	// Opcode 0xbf
+inline void I86::_mov_did16()	// Opcode 0xbf
 {
 	regs.b[DIL] = FETCH8();
 	regs.b[DIH] = FETCH8();
 	count -= cycles.mov_ri16;
 }
 
-inline void X86::_rotshft_bd8()	// Opcode 0xc0
+inline void I86::_rotshft_bd8()	// Opcode 0xc0
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned ModRM = FETCH8();
 	unsigned cnt = FETCH8();
 	rotate_shift_byte(ModRM, cnt);
@@ -3584,9 +3573,9 @@ inline void X86::_rotshft_bd8()	// Opcode 0xc0
 #endif
 }
 
-inline void X86::_rotshft_wd8()	// Opcode 0xc1
+inline void I86::_rotshft_wd8()	// Opcode 0xc1
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned ModRM = FETCH8();
 	unsigned cnt = FETCH8();
 	rotate_shift_word(ModRM, cnt);
@@ -3595,7 +3584,7 @@ inline void X86::_rotshft_wd8()	// Opcode 0xc1
 #endif
 }
 
-inline void X86::_ret_d16()	// Opcode 0xc2
+inline void I86::_ret_d16()	// Opcode 0xc2
 {
 	unsigned cnt = FETCH8();
 	cnt += FETCH8() << 8;
@@ -3605,19 +3594,19 @@ inline void X86::_ret_d16()	// Opcode 0xc2
 	count -= cycles.ret_near_imm;
 }
 
-inline void X86::_ret()	// Opcode 0xc3
+inline void I86::_ret()	// Opcode 0xc3
 {
 	PC = POP16();
 	PC = (PC + base[CS]) & AMASK;
 	count -= cycles.ret_near;
 }
 
-inline void X86::_les_dw()	// Opcode 0xc4
+inline void I86::_les_dw()	// Opcode 0xc4
 {
 	unsigned ModRM = FETCH8();
 	uint16 tmp = GetRMWord(ModRM);
 	RegWord(ModRM) = tmp;
-#ifdef I286
+#ifdef HAS_I286
 	i286_data_descriptor(ES, GetNextRMWord());
 #else
 	sregs[ES] = GetNextRMWord();
@@ -3626,12 +3615,12 @@ inline void X86::_les_dw()	// Opcode 0xc4
 	count -= cycles.load_ptr;
 }
 
-inline void X86::_lds_dw()	// Opcode 0xc5
+inline void I86::_lds_dw()	// Opcode 0xc5
 {
 	unsigned ModRM = FETCH8();
 	uint16 tmp = GetRMWord(ModRM);
 	RegWord(ModRM) = tmp;
-#ifdef I286
+#ifdef HAS_I286
 	i286_data_descriptor(DS, GetNextRMWord());
 #else
 	sregs[DS] = GetNextRMWord();
@@ -3640,23 +3629,23 @@ inline void X86::_lds_dw()	// Opcode 0xc5
 	count -= cycles.load_ptr;
 }
 
-inline void X86::_mov_bd8()	// Opcode 0xc6
+inline void I86::_mov_bd8()	// Opcode 0xc6
 {
 	unsigned ModRM = FETCH8();
 	count -= (ModRM >= 0xc0) ? cycles.mov_ri8 : cycles.mov_mi8;
 	PutImmRMByte(ModRM);
 }
 
-inline void X86::_mov_wd16()	// Opcode 0xc7
+inline void I86::_mov_wd16()	// Opcode 0xc7
 {
 	unsigned ModRM = FETCH8();
 	count -= (ModRM >= 0xc0) ? cycles.mov_ri16 : cycles.mov_mi16;
 	PutImmRMWord(ModRM);
 }
 
-inline void X86::_enter()	// Opcode 0xc8
+inline void I86::_enter()	// Opcode 0xc8
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	unsigned nb = FETCH8();
 	nb += FETCH8() << 8;
 	unsigned level = FETCH8();
@@ -3673,9 +3662,9 @@ inline void X86::_enter()	// Opcode 0xc8
 #endif
 }
 
-inline void X86::_leav()	// Opcode 0xc9
+inline void I86::_leav()	// Opcode 0xc9
 {
-#if defined(I286) || defined(V30)
+#if defined(HAS_I286) || defined(HAS_V30)
 	count -= cycles.leave;
 	regs.w[SP] = regs.w[BP];
 	regs.w[BP] = POP16();
@@ -3684,11 +3673,11 @@ inline void X86::_leav()	// Opcode 0xc9
 #endif
 }
 
-inline void X86::_retf_d16()	// Opcode 0xca
+inline void I86::_retf_d16()	// Opcode 0xca
 {
 	unsigned cnt = FETCH8();
 	cnt += FETCH8() << 8;
-#ifdef I286
+#ifdef HAS_I286
 	{
 		int tmp1 = POP16();
 		int tmp2 = POP16();
@@ -3704,9 +3693,9 @@ inline void X86::_retf_d16()	// Opcode 0xca
 	count -= cycles.ret_far_imm;
 }
 
-inline void X86::_retf()	// Opcode 0xcb
+inline void I86::_retf()	// Opcode 0xcb
 {
-#ifdef I286
+#ifdef HAS_I286
 	{
 		int tmp1 = POP16();
 		int tmp2 = POP16();
@@ -3721,20 +3710,26 @@ inline void X86::_retf()	// Opcode 0xcb
 	count -= cycles.ret_far;
 }
 
-inline void X86::_int3()	// Opcode 0xcc
+inline void I86::_int3()	// Opcode 0xcc
 {
 	count -= cycles.int3;
 	interrupt(3);
 }
 
-inline void X86::_int()	// Opcode 0xcd
+inline void I86::_int()	// Opcode 0xcd
 {
 	unsigned num = FETCH8();
 	count -= cycles.int_imm;
+#ifdef I86_BIOS_CALL
+	if(d_bios && d_bios->bios_int(num, regs.w, sregs, &ZeroVal, &CarryVal)) {
+		// bios call
+		return;
+	}
+#endif
 	interrupt(num);
 }
 
-inline void X86::_into()	// Opcode 0xce
+inline void I86::_into()	// Opcode 0xce
 {
 	if(OF) {
 		count -= cycles.into_t;
@@ -3744,10 +3739,10 @@ inline void X86::_into()	// Opcode 0xce
 		count -= cycles.into_nt;
 }
 
-inline void X86::_iret()	// Opcode 0xcf
+inline void I86::_iret()	// Opcode 0xcf
 {
 	count -= cycles.iret;
-#ifdef I286
+#ifdef HAS_I286
 	{
 		int tmp1 = POP16();
 		int tmp2 = POP16();
@@ -3762,27 +3757,27 @@ inline void X86::_iret()	// Opcode 0xcf
 	_popf();
 }
 
-inline void X86::_rotshft_b()	// Opcode 0xd0
+inline void I86::_rotshft_b()	// Opcode 0xd0
 {
 	rotate_shift_byte(FETCHOP(), 1);
 }
 
-inline void X86::_rotshft_w()	// Opcode 0xd1
+inline void I86::_rotshft_w()	// Opcode 0xd1
 {
 	rotate_shift_word(FETCHOP(), 1);
 }
 
-inline void X86::_rotshft_bcl()	// Opcode 0xd2
+inline void I86::_rotshft_bcl()	// Opcode 0xd2
 {
 	rotate_shift_byte(FETCHOP(), regs.b[CL]);
 }
 
-inline void X86::_rotshft_wcl()	// Opcode 0xd3
+inline void I86::_rotshft_wcl()	// Opcode 0xd3
 {
 	rotate_shift_word(FETCHOP(), regs.b[CL]);
 }
 
-inline void X86::_aam()	// Opcode 0xd4
+inline void I86::_aam()	// Opcode 0xd4
 {
 	unsigned mult = FETCH8();
 	count -= cycles.aam;
@@ -3795,7 +3790,7 @@ inline void X86::_aam()	// Opcode 0xd4
 	}
 }
 
-inline void X86::_aad()	// Opcode 0xd5
+inline void I86::_aad()	// Opcode 0xd5
 {
 	unsigned mult = FETCH8();
 	count -= cycles.aad;
@@ -3806,9 +3801,9 @@ inline void X86::_aad()	// Opcode 0xd5
 	SignVal = 0;
 }
 
-inline void X86::_setalc()	// Opcode 0xd6
+inline void I86::_setalc()	// Opcode 0xd6
 {
-#ifdef V30
+#ifdef HAS_V30
 	regs.b[AL] = (CF) ? 0xff : 0x00;
 	count -= 3;
 #else
@@ -3816,21 +3811,21 @@ inline void X86::_setalc()	// Opcode 0xd6
 #endif
 }
 
-inline void X86::_xlat()	// Opcode 0xd7
+inline void I86::_xlat()	// Opcode 0xd7
 {
 	unsigned dest = regs.w[BX] + regs.b[AL];
 	count -= cycles.xlat;
 	regs.b[AL] = RM8(DS, dest);
 }
 
-inline void X86::_escape()	// Opcodes 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde and 0xdf
+inline void I86::_escape()	// Opcodes 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde and 0xdf
 {
 	unsigned ModRM = FETCH8();
 	count -= cycles.nop;
 	GetRMByte(ModRM);
 }
 
-inline void X86::_loopne()	// Opcode 0xe0
+inline void I86::_loopne()	// Opcode 0xe0
 {
 	int disp = (int)((int8)FETCH8());
 	unsigned tmp = regs.w[CX] - 1;
@@ -3843,7 +3838,7 @@ inline void X86::_loopne()	// Opcode 0xe0
 		count -= cycles.loop_nt;
 }
 
-inline void X86::_loope()	// Opcode 0xe1
+inline void I86::_loope()	// Opcode 0xe1
 {
 	int disp = (int)((int8)FETCH8());
 	unsigned tmp = regs.w[CX] - 1;
@@ -3856,7 +3851,7 @@ inline void X86::_loope()	// Opcode 0xe1
 		count -= cycles.loope_nt;
 }
 
-inline void X86::_loop()	// Opcode 0xe2
+inline void I86::_loop()	// Opcode 0xe2
 {
 	int disp = (int)((int8)FETCH8());
 	unsigned tmp = regs.w[CX] - 1;
@@ -3869,7 +3864,7 @@ inline void X86::_loop()	// Opcode 0xe2
 		count -= cycles.loop_nt;
 }
 
-inline void X86::_jcxz()	// Opcode 0xe3
+inline void I86::_jcxz()	// Opcode 0xe3
 {
 	int disp = (int)((int8)FETCH8());
 	if(regs.w[CX] == 0) {
@@ -3880,14 +3875,14 @@ inline void X86::_jcxz()	// Opcode 0xe3
 		count -= cycles.jcxz_nt;
 }
 
-inline void X86::_inal()	// Opcode 0xe4
+inline void I86::_inal()	// Opcode 0xe4
 {
 	unsigned port = FETCH8();
 	count -= cycles.in_imm8;
 	regs.b[AL] = IN8(port);
 }
 
-inline void X86::_inax()	// Opcode 0xe5
+inline void I86::_inax()	// Opcode 0xe5
 {
 	unsigned port = FETCH8();
 	count -= cycles.in_imm16;
@@ -3895,14 +3890,14 @@ inline void X86::_inax()	// Opcode 0xe5
 	regs.b[AH] = IN8(port + 1);
 }
 
-inline void X86::_outal()	// Opcode 0xe6
+inline void I86::_outal()	// Opcode 0xe6
 {
 	unsigned port = FETCH8();
 	count -= cycles.out_imm8;
 	OUT8(port, regs.b[AL]);
 }
 
-inline void X86::_outax()	// Opcode 0xe7
+inline void I86::_outax()	// Opcode 0xe7
 {
 	unsigned port = FETCH8();
 	count -= cycles.out_imm16;
@@ -3910,27 +3905,23 @@ inline void X86::_outax()	// Opcode 0xe7
 	OUT8(port + 1, regs.b[AH]);
 }
 
-inline void X86::_call_d16()	// Opcode 0xe8
+inline void I86::_call_d16()	// Opcode 0xe8
 {
 	uint16 tmp = FETCH16();
-	uint16 cs = sregs[CS], ip = PC - base[CS];
-	uint32 pc = PC;
+	uint16 ip = PC - base[CS];
 	PUSH16(ip);
 	ip += tmp;
 	PC = (ip + base[CS]) & AMASK;
-#ifdef X86_BIOS_CALL
+#ifdef I86_BIOS_CALL
 	if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 		// bios call
-		POP16();
-		sregs[CS] = cs;
-		base[CS] = SegBase(CS);
-		PC = pc;
+		_ret();
 	}
 #endif
 	count -= cycles.call_near;
 }
 
-inline void X86::_jmp_d16()	// Opcode 0xe9
+inline void I86::_jmp_d16()	// Opcode 0xe9
 {
 	uint16 tmp = FETCH16();
 	uint16 ip = PC - base[CS] + tmp;
@@ -3938,13 +3929,13 @@ inline void X86::_jmp_d16()	// Opcode 0xe9
 	count -= cycles.jmp_near;
 }
 
-inline void X86::_jmp_far()	// Opcode 0xea
+inline void I86::_jmp_far()	// Opcode 0xea
 {
 	unsigned tmp1 = FETCH8();
 	tmp1 += FETCH8() << 8;
 	unsigned tmp2 = FETCH8();
 	tmp2 += FETCH8() << 8;
-#ifdef I286
+#ifdef HAS_I286
 	i286_code_descriptor(tmp2, tmp1);
 #else
 	sregs[CS] = (uint16)tmp2;
@@ -3954,20 +3945,20 @@ inline void X86::_jmp_far()	// Opcode 0xea
 	count -= cycles.jmp_far;
 }
 
-inline void X86::_jmp_d8()	// Opcode 0xeb
+inline void I86::_jmp_d8()	// Opcode 0xeb
 {
 	int tmp = (int)((int8)FETCH8());
 	PC += tmp;
 	count -= cycles.jmp_short;
 }
 
-inline void X86::_inaldx()	// Opcode 0xec
+inline void I86::_inaldx()	// Opcode 0xec
 {
 	count -= cycles.in_dx8;
 	regs.b[AL] = IN8(regs.w[DX]);
 }
 
-inline void X86::_inaxdx()	// Opcode 0xed
+inline void I86::_inaxdx()	// Opcode 0xed
 {
 	unsigned port = regs.w[DX];
 	count -= cycles.in_dx16;
@@ -3975,13 +3966,13 @@ inline void X86::_inaxdx()	// Opcode 0xed
 	regs.b[AH] = IN8(port + 1);
 }
 
-inline void X86::_outdxal()	// Opcode 0xee
+inline void I86::_outdxal()	// Opcode 0xee
 {
 	count -= cycles.out_dx8;
 	OUT8(regs.w[DX], regs.b[AL]);
 }
 
-inline void X86::_outdxax()	// Opcode 0xef
+inline void I86::_outdxax()	// Opcode 0xef
 {
 	unsigned port = regs.w[DX];
 	count -= cycles.out_dx16;
@@ -3989,13 +3980,13 @@ inline void X86::_outdxax()	// Opcode 0xef
 	OUT8(port + 1, regs.b[AH]);
 }
 
-inline void X86::_lock()	// Opcode 0xf0
+inline void I86::_lock()	// Opcode 0xf0
 {
 	count -= cycles.nop;
 	op(FETCHOP());
 }
 
-inline void X86::_rep(int flagval)
+inline void I86::_rep(int flagval)
 {
 	unsigned next = FETCHOP();
 	unsigned cnt = regs.w[CX];
@@ -4026,7 +4017,7 @@ inline void X86::_rep(int flagval)
 		count -= cycles.override;
 		_rep(flagval);
 		break;
-#ifndef I86
+#ifndef HAS_I86
 	case 0x6c:	// REP INSB
 		count -= cycles.rep_ins8_base;
 		for(; cnt > 0; cnt--) {
@@ -4176,20 +4167,20 @@ inline void X86::_rep(int flagval)
 	}
 }
 
-inline void X86::_hlt()	// Opcode 0xf4
+inline void I86::_hlt()	// Opcode 0xf4
 {
 	PC--;
 	halt = true;
 	count -= 2;
 }
 
-inline void X86::_cmc()	// Opcode 0xf5
+inline void I86::_cmc()	// Opcode 0xf5
 {
 	count -= cycles.flag_ops;
 	CarryVal = !CF;
 }
 
-inline void X86::_opf6()	// Opecode 0xf6
+inline void I86::_opf6()	// Opecode 0xf6
 {
 	unsigned ModRM = FETCH8();
 	unsigned tmp1 = (unsigned)GetRMByte(ModRM), tmp2;
@@ -4269,7 +4260,7 @@ inline void X86::_opf6()	// Opecode 0xf6
 	}
 }
 
-inline void X86::_opf7()
+inline void I86::_opf7()
 {
 	// Opcode 0xf7
 	unsigned ModRM = FETCH8();
@@ -4359,25 +4350,25 @@ inline void X86::_opf7()
 	}
 }
 
-inline void X86::_clc()	// Opcode 0xf8
+inline void I86::_clc()	// Opcode 0xf8
 {
 	count -= cycles.flag_ops;
 	CarryVal = 0;
 }
 
-inline void X86::_stc()	// Opcode 0xf9
+inline void I86::_stc()	// Opcode 0xf9
 {
 	count -= cycles.flag_ops;
 	CarryVal = 1;
 }
 
-inline void X86::_cli()	// Opcode 0xfa
+inline void I86::_cli()	// Opcode 0xfa
 {
 	count -= cycles.flag_ops;
 	SetIF(0);
 }
 
-inline void X86::_sti()	// Opcode 0xfb
+inline void I86::_sti()	// Opcode 0xfb
 {
 	count -= cycles.flag_ops;
 	SetIF(1);
@@ -4389,19 +4380,19 @@ inline void X86::_sti()	// Opcode 0xfb
 	}
 }
 
-inline void X86::_cld()	// Opcode 0xfc
+inline void I86::_cld()	// Opcode 0xfc
 {
 	count -= cycles.flag_ops;
 	SetDF(0);
 }
 
-inline void X86::_std()	// Opcode 0xfd
+inline void I86::_std()	// Opcode 0xfd
 {
 	count -= cycles.flag_ops;
 	SetDF(1);
 }
 
-inline void X86::_opfe()	// Opcode 0xfe
+inline void I86::_opfe()	// Opcode 0xfe
 {
 	unsigned ModRM = FETCH8();
 	unsigned tmp1 = GetRMByte(ModRM), tmp2;
@@ -4421,11 +4412,10 @@ inline void X86::_opfe()	// Opcode 0xfe
 	PutbackRMByte(ModRM, (uint8)tmp2);
 }
 
-inline void X86::_opff()	// Opcode 0xff
+inline void I86::_opff()	// Opcode 0xff
 {
 	unsigned ModRM = FETCHOP(), tmp1, tmp2;
-	uint16 cs, ip;
-	uint32 pc;
+	uint16 ip;
 	
 	switch(ModRM & 0x38)
 	{
@@ -4450,18 +4440,13 @@ inline void X86::_opff()	// Opcode 0xff
 	case 0x10:	// CALL ew
 		count -= (ModRM >= 0xc0) ? cycles.call_r16 : cycles.call_m16;
 		tmp1 = GetRMWord(ModRM);
-		cs = sregs[CS];
-		pc = PC;
 		ip = PC - base[CS];
 		PUSH16(ip);
 		PC = (base[CS] + (uint16)tmp1) & AMASK;
-#ifdef X86_BIOS_CALL
+#ifdef I86_BIOS_CALL
 		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 			// bios call
-			POP16();
-			sregs[CS] = cs;
-			base[CS] = SegBase(CS);
-			PC = pc;
+			_ret();
 		}
 #endif
 		break;
@@ -4469,26 +4454,20 @@ inline void X86::_opff()	// Opcode 0xff
 		count -= cycles.call_m32;
 		tmp1 = sregs[CS];
 		tmp2 = GetRMWord(ModRM);
-		cs = sregs[CS];
-		pc = PC;
 		ip = PC - base[CS];
 		PUSH16(tmp1);
 		PUSH16(ip);
-#ifdef I286
+#ifdef HAS_I286
 		i286_code_descriptor(GetNextRMWord(), tmp2);
 #else
 		sregs[CS] = GetNextRMWord();
 		base[CS] = SegBase(CS);
 		PC = (base[CS] + tmp2) & AMASK;
 #endif
-#ifdef X86_BIOS_CALL
+#ifdef I86_BIOS_CALL
 		if(d_bios && d_bios->bios_call(PC, regs.w, sregs, &ZeroVal, &CarryVal)) {
 			// bios call
-			POP16();
-			POP16();
-			sregs[CS] = cs;
-			base[CS] = SegBase(CS);
-			PC = pc;
+			_retf();
 		}
 #endif
 		break;
@@ -4499,7 +4478,7 @@ inline void X86::_opff()	// Opcode 0xff
 		break;
 	case 0x28:	// JMP FAR ea
 		count -= cycles.jmp_m32;
-#ifdef I286
+#ifdef HAS_I286
 		tmp1 = GetRMWord(ModRM);
 		i286_code_descriptor(GetNextRMWord(), tmp1);
 #else
@@ -4520,9 +4499,9 @@ inline void X86::_opff()	// Opcode 0xff
 	}
 }
 
-inline void X86::_invalid()
+inline void I86::_invalid()
 {
-#ifdef I286
+#ifdef HAS_I286
 	interrupt(ILLEGAL_INSTRUCTION);
 #else
 	PC--;

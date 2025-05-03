@@ -249,6 +249,11 @@ uint32 VM::passed_clock(uint32 prev)
 	return (current > prev) ? current - prev : current + (uint32)~prev + 1;
 }
 
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
+}
+
 // ----------------------------------------------------------------------------
 // draw screen
 // ----------------------------------------------------------------------------

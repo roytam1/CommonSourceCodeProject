@@ -8,7 +8,7 @@
 */
 
 #include "i8251.h"
-#include "fifo.h"
+#include "../fifo.h"
 
 // max 256kbytes
 #define BUFFER_SIZE	0x40000

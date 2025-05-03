@@ -21,7 +21,8 @@ private:
 	DEVICE *d_sio, *d_pio;
 	
 	// memory
-	uint8 mon[0x400];
+	uint8 mon[0x800];
+	uint8 ext[0x7000];
 	uint8 basic[0x2000];
 	uint8 bsmon[0x1000];
 	uint8 ram[0x5000];	// with TK-M20K

@@ -46,7 +46,7 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-#define V30
+#define HAS_V30
 #define I8259_MAX_CHIPS		1
 #define UPD765A_DMA_MODE
 //#define UPD765A_WAIT_SEEK
@@ -76,7 +76,7 @@ class UPD1990A;
 #endif
 class UPD71071;
 class UPD765A;
-class X86;
+class I86;
 
 #ifdef _PC98HA
 class CALENDAR;
@@ -112,7 +112,7 @@ protected:
 #endif
 	UPD71071* dma;
 	UPD765A* fdc;
-	X86* cpu;
+	I86* cpu;
 	
 #ifdef _PC98HA
 	CALENDAR* calendar;
@@ -172,6 +172,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

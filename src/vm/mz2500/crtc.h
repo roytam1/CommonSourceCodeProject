@@ -28,7 +28,7 @@
 class CRTC : public DEVICE
 {
 private:
-	DEVICE *d_cpu, *d_mem, *d_vblank, *d_pio, *d_fdc;
+	DEVICE *d_mem, *d_vblank, *d_pio, *d_fdc;
 	int did0_mem, did1_mem, did_vblank, did_pio;
 	
 	// config
@@ -123,9 +123,6 @@ public:
 	void update_config();
 	
 	// unique function
-	void set_context_cpu(DEVICE* device) {
-		d_cpu = device;
-	}
 	void set_context_mem(DEVICE* device, int id0, int id1) {
 		d_mem = device; did0_mem = id0; did1_mem = id1;
 	}

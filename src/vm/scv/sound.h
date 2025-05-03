@@ -28,7 +28,7 @@
 class SOUND : public DEVICE
 {
 private:
-	DEVICE* dev;
+	DEVICE* d_cpu;
 	
 	// sound gen
 	typedef struct {
@@ -74,8 +74,8 @@ public:
 	void mix(int32* buffer, int cnt);
 	
 	// unique function
-	void set_context(DEVICE* device) {
-		dev = device;
+	void set_context_cpu(DEVICE* device) {
+		d_cpu = device;
 	}
 	void init(int rate);
 };

@@ -497,6 +497,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\i8080.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\i8251.cpp"
 					>
 					<FileConfiguration
@@ -538,26 +558,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\pcm1bit.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="src\vm\z80.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -696,6 +696,10 @@
 				>
 			</File>
 			<File
+				RelativePath="src\fifo.h"
+				>
+			</File>
+			<File
 				RelativePath="src\fileio.h"
 				>
 			</File>
@@ -721,7 +725,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\vm\fifo.h"
+					RelativePath="src\vm\i8080.h"
 					>
 				</File>
 				<File
@@ -738,10 +742,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\vm.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\z80.h"
 					>
 				</File>
 			</Filter>

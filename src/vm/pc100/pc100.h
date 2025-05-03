@@ -39,7 +39,7 @@
 #define SCREEN_HEIGHT		512
 //720
 #define MAX_DRIVE		4
-#define I86
+#define HAS_I86
 #define I8259_MAX_CHIPS		1
 //#define PCM1BIT_HIGH_QUALITY
 #define UPD765A_DRQ_DELAY
@@ -63,7 +63,7 @@ class IO8;
 class PCM1BIT;
 class RTC58321;
 class UPD765A;
-class X86;
+class I86;
 
 class CRTC;
 class IOCTRL;
@@ -90,7 +90,7 @@ protected:
 	PCM1BIT* pcm;
 	RTC58321* rtc;
 	UPD765A* fdc;
-	X86* cpu;
+	I86* cpu;
 	
 	CRTC* crtc;
 	IOCTRL* ioctrl;
@@ -146,6 +146,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

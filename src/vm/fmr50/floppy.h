@@ -27,6 +27,8 @@ private:
 	DEVICE *d_pic;
 	int did_pic;
 	
+	int drvreg, drvsel, changed[4];
+	
 	bool irq, irqmsk;
 	void update_intr();
 	
@@ -46,6 +48,9 @@ public:
 	}
 	void set_context_pic(DEVICE* device, int id) {
 		d_pic = device; did_pic = id;
+	}
+	void change_disk(int drv) {
+		changed[drv] = 1;
 	}
 };
 

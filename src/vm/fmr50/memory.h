@@ -18,6 +18,35 @@
 #define SIG_MEMORY_DISP		0
 #define SIG_MEMORY_VSYNC	1
 
+static uint8 bios1[] = {
+	0xFA,				// cli
+	0xDB,0xE3,			// fninit
+	0xB8,0xA0,0xF7,			// mov	ax,F7A0
+	0x8E,0xD0,			// mov	ss,ax
+	0xBC,0x7E,0x05,			// mov	sp,057E
+	// init i/o
+	0xB4,0x80,			// mov	ah,80
+	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
+	// boot from fdd
+	0xB4,0x81,			// mov	ah,81
+	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
+	0x73,0x0B,			// jnb	$+11
+	0x74,0xF5,			// jz	$-11
+	// boot from scsi-hdd
+	0xB4,0x82,			// mov	ah,82
+	0x9A,0x14,0x00,0xFB,0xFF,	// call	far FFFB:0014
+	0x72,0xEC,			// jb	$-20
+	// goto ipl
+	0x9A,0x04,0x00,0x00,0xB0,	// call	far B000:0004
+	0xEB,0xE7			// jmp $-25
+};
+
+static uint8 bios2[] = {
+	0xEA,0x00,0x00,0x00,0xFC,	// jmp	FC00:0000
+	0x00,0x00,0x00,
+	0xcf				// iret
+};
+
 class MEMORY : public DEVICE
 {
 private:
@@ -29,7 +58,7 @@ private:
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	
-	uint8 ram[0x400000];	// RAM 4MB
+	uint8 ram[0x500000];	// RAM 1+4MB
 	uint8 vram[0x40000];	// VRAM 32KB * 8pl
 	uint8 dummy[0x8000];	// dummy plane
 	uint8 cvram[0x1000];
@@ -47,6 +76,7 @@ private:
 	uint8 outctrl, dispctrl;
 	uint8 mix;
 	uint16 accaddr, dispaddr;
+	int kj_h, kj_l, kj_ofs, kj_row;
 	uint8* chreg;
 	bool disp, vsync;
 	
@@ -91,6 +121,15 @@ public:
 	}
 	void set_chregs_ptr(uint8* ptr) {
 		chreg = ptr;
+	}
+	uint8* get_vram() {
+		return vram;
+	}
+	uint8* get_cvram() {
+		return cvram;
+	}
+	uint8* get_kvram() {
+		return kvram;
 	}
 	void draw_screen();
 };

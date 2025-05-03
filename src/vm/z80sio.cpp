@@ -8,7 +8,7 @@
 */
 
 #include "z80sio.h"
-#include "fifo.h"
+#include "../fifo.h"
 
 void Z80SIO::initialize()
 {

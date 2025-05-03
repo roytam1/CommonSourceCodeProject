@@ -11,7 +11,7 @@
 
 #include <math.h>
 #include "io.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 
 //memo: how to request the display size changing
 //emu->change_screen_size(TV_SCREEN_WIDTH, TV_SCREEN_HEIGHT, 0, TV_WINDOW_WIDTH1, TV_WINDOW_HEIGHT1, TV_WINDOW_WIDTH2, TV_WINDOW_HEIGHT2);
@@ -441,6 +441,12 @@ void IO::key_down(int code)
 		brk = true;
 		update_intr();
 		break;
+	case 0x15:
+		if(kana)
+			graph = kana = false;
+		else
+			kana = true;
+		break;
 	case 0x20:
 		strig1 = 0;
 		goto strig_key;
@@ -512,12 +518,6 @@ fkey:
 		}
 		if(!key_buf->empty())
 			update_intr();
-		break;
-	case 0xf2:
-		if(kana)
-			graph = kana = false;
-		else
-			kana = true;
 		break;
 	default:
 		if(!key_buf->full()) {

@@ -9,7 +9,7 @@
 */
 
 #include "keyboard.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 
 void KEYBOARD::initialize()
 {
@@ -73,24 +73,24 @@ void KEYBOARD::event_frame()
 
 void KEYBOARD::key_down(int code)
 {
-	if(!table[code]) {
+//	if(!table[code]) {
 		table[code] = 1;
 		if(code = key_table[code]) {
 			// $11:CTRL, $10:SHIFT
 			key_buf->write(0xa0 | (table[0x11] ? 8 : 0) | (table[0x10] ? 4 : 0));
 			key_buf->write(code);
 		}
-	}
+//	}
 }
 
 void KEYBOARD::key_up(int code)
 {
-	if(table[code]) {
+//	if(table[code]) {
 		table[code] = 0;
 		if(code = key_table[code]) {
 			key_buf->write(0xb0);
 			key_buf->write(code);
 		}
-	}
+//	}
 }
 

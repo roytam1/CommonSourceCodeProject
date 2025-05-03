@@ -29,6 +29,7 @@ void MEMORY::initialize()
 {
 	// init memory
 	_memset(mon, 0xff, sizeof(mon));
+	_memset(ext, 0xff, sizeof(ext));
 	_memset(basic, 0xff, sizeof(basic));
 	_memset(bsmon, 0xff, sizeof(bsmon));
 	_memset(ram, 0, sizeof(ram));
@@ -52,6 +53,11 @@ void MEMORY::initialize()
 		_memcpy(mon, top, 3);
 		_memcpy(mon + 0x38, rst, 3);
 	}
+	_stprintf(file_path, _T("%sEXT.ROM"), app_path);
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		fio->Fread(ext, sizeof(ext), 1);
+		fio->Fclose();
+	}
 	_stprintf(file_path, _T("%sLV1BASIC.ROM"), app_path);
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(basic + 0x1000, 0x1000, 1);
@@ -73,7 +79,9 @@ void MEMORY::initialize()
 	
 	// memory map
 	SET_BANK(0x0000, 0xffff, wdmy, rdmy);
-	SET_BANK(0x0000, 0x03ff, wdmy, mon);
+	SET_BANK(0x0000, 0x07ff, wdmy, mon);
+	SET_BANK(0x0c00, 0x7bff, wdmy, ext);
+	// $7c00-$7dff: memory mapped I/O
 	SET_BANK(0x7e00, 0x7fff, vram, vram);
 	SET_BANK(0x8000, 0xcfff, ram, ram);
 	SET_BANK(0xd000, 0xefff, wdmy, basic);

@@ -13,10 +13,10 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../i8080.h"
 #include "../i8251.h"
 #include "../i8255.h"
 #include "../pcm1bit.h"
-#include "../z80.h"
 
 #include "cmt.h"
 #include "display.h"
@@ -40,7 +40,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_t = new I8255(this, emu);	// on TK-80
 	pcm0 = new PCM1BIT(this, emu);
 	pcm1 = new PCM1BIT(this, emu);
-	cpu = new Z80(this, emu);	// 8080
+	cpu = new I8080(this, emu);
 	
 	cmt = new CMT(this, emu);
 	display = new DISPLAY(this, emu);
@@ -178,6 +178,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

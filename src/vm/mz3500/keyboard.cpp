@@ -9,7 +9,7 @@
 */
 
 #include "keyboard.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 
 #define PHASE_IDLE	0
 

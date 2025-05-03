@@ -101,8 +101,10 @@ mkdir build\scv
 copy Release\scv.exe build\scv\.
 
 devenv.com tk80bs.vcproj /Rebuild Release
-mkdir build\tk80bs
-copy Release\tk80bs.exe build\tk80bs\.
+mkdir build\tk80bs_lv1
+mkdir build\tk80bs_lv2
+copy Release\tk80bs.exe build\tk80bs_lv1\.
+copy Release\tk80bs.exe build\tk80bs_lv2\.
 
 devenv.com x07.vcproj /Rebuild Release
 mkdir build\x07

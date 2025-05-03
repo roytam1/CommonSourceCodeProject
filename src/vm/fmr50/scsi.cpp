@@ -47,10 +47,6 @@ void SCSI::initialize()
 	ctrlreg = datareg = statreg = 0;
 }
 
-void SCSI::release()
-{
-}
-
 void SCSI::write_io8(uint32 addr, uint32 data)
 {
 	switch(addr & 0xffff)
@@ -61,13 +57,14 @@ void SCSI::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0xc32:
 		// control register
-		if(data & CTRL_RST) {
+		if((ctrlreg & CTRL_RST) && ~(data & CTRL_RST)) {
 			// reset
+			statreg = 0;
 		}
-		if(data & CTRL_SEL) {
+		if(~(ctrlreg & CTRL_SEL) && (data & CTRL_SEL)) {
 			// sel
-			statreg |= 8;
-			statreg |= 0x40;
+//			statreg |= 8;
+//			datareg = 0x80;
 		}
 		ctrlreg = data;
 		break;
@@ -76,7 +73,7 @@ void SCSI::write_io8(uint32 addr, uint32 data)
 
 uint32 SCSI::read_io8(uint32 addr)
 {
-	uint32 val;
+//	uint32 val;
 	
 	switch(addr & 0xffff)
 	{
@@ -85,9 +82,10 @@ uint32 SCSI::read_io8(uint32 addr)
 		return 0;
 	case 0xc32:
 		// status register
-		val = statreg;
-		statreg &= ~8;
-		return val;
+		return 0;
+//		val = statreg;
+//		statreg &= ~8;
+//		return val;
 	}
 	return 0xff;
 }

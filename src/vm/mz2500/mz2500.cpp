@@ -114,7 +114,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	calendar->set_context(rtc);
 	cassette->set_context(pio0, SIG_I8255_PORT_B);
-	crtc->set_context_cpu(cpu);
 	crtc->set_context_mem(memory, SIG_MEMORY_HBLANK, SIG_MEMORY_VBLANK);
 	crtc->set_context_vblank(interrupt, SIG_INTERRUPT_CRTC);
 	crtc->set_context_pio(pio0, SIG_I8255_PORT_B);
@@ -123,7 +122,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	crtc->set_tvram_ptr(memory->get_tvram());
 	crtc->set_kanji_ptr(memory->get_kanji());
 	crtc->set_pcg_ptr(memory->get_pcg());
-	floppy->set_context_cpu(cpu);
 	floppy->set_context_fdc(fdc, SIG_MB8877_DRIVEREG, SIG_MB8877_SIDEREG, SIG_MB8877_MOTOR);
 	keyboard->set_context_pio0(pio0, SIG_I8255_PORT_B);
 	keyboard->set_context_pio1(pio1, SIG_Z80PIO_PORT_B);
@@ -297,6 +295,11 @@ uint32 VM::passed_clock(uint32 prev)
 {
 	uint32 current = event->current_clock();
 	return (current > prev) ? current - prev : current + (0xffffffff - prev) + 1;
+}
+
+uint32 VM::get_prv_pc()
+{
+	return cpu->get_prv_pc();
 }
 
 // ----------------------------------------------------------------------------

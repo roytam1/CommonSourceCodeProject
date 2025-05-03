@@ -616,6 +616,10 @@
 				>
 			</File>
 			<File
+				RelativePath="src\fifo.h"
+				>
+			</File>
+			<File
 				RelativePath="src\fileio.h"
 				>
 			</File>
@@ -642,10 +646,6 @@
 				</File>
 				<File
 					RelativePath="src\vm\event.h"
-					>
-				</File>
-				<File
-					RelativePath="src\vm\fifo.h"
 					>
 				</File>
 				<File

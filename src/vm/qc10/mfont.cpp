@@ -9,7 +9,7 @@
 */
 
 #include "mfont.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 
 #define BIT_IBF	0x80
 #define BIT_ERR	2

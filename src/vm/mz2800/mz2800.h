@@ -41,7 +41,7 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		4
-#define I286
+#define HAS_I286
 #define I8259_MAX_CHIPS		2
 #define IO8_ADDR_MAX		0x8000
 
@@ -60,7 +60,7 @@ class PCM1BIT;
 class RP5C15;
 //class SASI;
 class UPD71071;
-class X86;
+class I86;
 class YM2203;
 class Z80PIO;
 class Z80SIO;
@@ -93,7 +93,7 @@ protected:
 	RP5C15* rtc;
 //	SASI* sasi;
 	UPD71071* dma;
-	X86* cpu;
+	I86* cpu;
 	YM2203* opn;
 	Z80PIO* pio1;
 	Z80SIO* sio;
@@ -155,6 +155,7 @@ public:
 	// clock
 	uint32 current_clock();
 	uint32 passed_clock(uint32 prev);
+	uint32 get_prv_pc();
 	
 	// devices
 	DEVICE* get_device(int id);

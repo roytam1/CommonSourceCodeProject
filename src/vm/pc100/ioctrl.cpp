@@ -9,7 +9,7 @@
 */
 
 #include "ioctrl.h"
-#include "../fifo.h"
+#include "../../fifo.h"
 #include "../../config.h"
 
 #define EVENT_KEY	0
@@ -150,9 +150,9 @@ void IOCTRL::write_signal(int id, uint32 data, uint32 mask)
 
 void IOCTRL::key_down(int code)
 {
-	if(code == 0xf0)
+	if(code == 0x14)
 		caps = !caps;
-	else if(code == 0xf2)
+	else if(code == 0x15)
 		kana = !kana;
 	else if((code = key_table[code & 0xff]) != -1) {
 		code |= 0x80;

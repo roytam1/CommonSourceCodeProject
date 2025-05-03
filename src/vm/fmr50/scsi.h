@@ -18,9 +18,8 @@
 class SCSI : public DEVICE
 {
 private:
-	DEVICE *d_drq, *d_irq;
-	int did_drq, did_irq;
-	uint32 dmask_drq, dmask_irq;
+	DEVICE *d_dma, *d_pic;
+	int did_dma, did_pic;
 	
 	int phase;
 	uint8 ctrlreg, datareg, statreg;
@@ -31,18 +30,17 @@ public:
 	
 	// common functions
 	void initialize();
-	void release();
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void write_dma8(uint32 addr, uint32 data);
 	uint32 read_dma8(uint32 addr);
 	
 	// unique function
-	void set_context_drq(DEVICE* device, int id, uint32 mask) {
-		d_drq = device; did_drq = id; dmask_drq = mask;
+	void set_context_dma(DEVICE* device, int id) {
+		d_dma = device; did_dma = id;
 	}
-	void set_context_irq(DEVICE* device, int id, uint32 mask) {
-		d_irq = device; did_irq = id; dmask_irq = mask;
+	void set_context_pic(DEVICE* device, int id) {
+		d_pic = device; did_pic = id;
 	}
 };
 
