@@ -19,7 +19,7 @@ class MEMORY : public DEVICE
 {
 private:
 	DEVICE *d_cmt, *d_rtc;
-	DEVICE did_cmt, did_rtc;
+	int did_cmt, did_rtc;
 	
 	uint8 ipl[0x8000];	// rom #0
 	uint8 ext[0x8000];	// rom #1
@@ -29,7 +29,7 @@ private:
 	uint8* wbank[16];
 	uint8* rbank[16];
 	
-	uint8 bank;
+	uint8 sio, bank;
 	void update_bank();
 	
 public:
@@ -38,6 +38,7 @@ public:
 	
 	// common functions
 	void initialize();
+	void release();
 	void reset();
 	
 	void write_data8(uint32 addr, uint32 data);

@@ -95,6 +95,16 @@
 #include "pasopia7/pasopia7.h"
 #endif
 
+// SHARP PC-3200
+#ifdef _PC3200
+#include "pc3200/pc3200.h"
+#endif
+
+// NEC PC-8201
+#ifdef _PC8201
+#include "pc8201/pc8201.h"
+#endif
+
 // NEC PC-98HA
 #ifdef _PC98HA
 #include "pc98ha/pc98ha.h"
@@ -108,11 +118,6 @@
 // NEC PC-100
 #ifdef _PC100
 #include "pc100/pc100.h"
-#endif
-
-// SHARP PC-3200
-#ifdef _PC3200
-#include "pc3200/pc3200.h"
 #endif
 
 // CASIO PV-1000

@@ -26,14 +26,14 @@
 #define DE 	regs[2].w
 #define HL	regs[3].w
 
-#define _V	regs[0].b[1]
-#define _A	regs[0].b[0]
-#define _B	regs[1].b[1]
-#define _C	regs[1].b[0]
-#define _D	regs[2].b[1]
-#define _E	regs[2].b[0]
-#define _H	regs[3].b[1]
-#define _L	regs[3].b[0]
+#define _V	regs[0].b.h
+#define _A	regs[0].b.l
+#define _B	regs[1].b.h
+#define _C	regs[1].b.l
+#define _D	regs[2].b.h
+#define _E	regs[2].b.l
+#define _H	regs[3].b.h
+#define _L	regs[3].b.l
 
 #define F_CY	0x01
 #define F_L0	0x04
@@ -229,10 +229,7 @@ private:
 	
 	int count, first, period, scount, tcount;
 	
-	union REGTYPE {
-		uint8 b[2];
-		uint16 w;
-	} regs[4];
+	pair regs[4];
 	uint16 SP, PC, prvPC, altVA, altBC, altDE, altHL;
 	uint8 PSW, IRR, IFF, SIRQ, HALT, MK, MB, MC, TM0, TM1, SR;
 	// for port c

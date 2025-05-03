@@ -1,3 +1,13 @@
+4/5/2009
+
+[VM/I8155] fix build error
+[VM/UPD1990A] fix shift register
+
+[PC98LT] fix signal connection from upd1990a to i8255
+[X1TWIN] fix key matrix
+[PC8201] support NEC PC-8201
+
+
 4/1/2009
 
 [COMMON] define uint64 and int64

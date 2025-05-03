@@ -133,13 +133,6 @@ void MEMORY::initialize()
 	vm->regist_frame_event(this);
 }
 
-void MEMORY::release()
-{
-	FILE* fp = fopen("d:\\mem.bin","wb");
-	fwrite(ram, 0x10000, 1, fp);
-	fclose(fp);
-}
-
 void MEMORY::reset()
 {
 	// reset memory

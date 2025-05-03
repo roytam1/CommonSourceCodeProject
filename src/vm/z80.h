@@ -348,12 +348,7 @@ private:
 	
 	int count, first;
 	bool busreq, halt;
-	
-	union REGTYPE {
-		uint8 b[2];
-		uint16 w;
-	} regs[6];
-	
+	pair regs[6];
 	uint8 _I, _R, IM, IFF1, IFF2, ICR;
 	uint16 SP, PC, prvPC, exAF, exBC, exDE, exHL, EA;
 	uint32 intr_req_bit, intr_pend_bit;

@@ -366,6 +366,14 @@
 #define MENU_POS_SOUND                  5
 #endif
 
+// NEC PC-8201
+#ifdef _PC8201
+#define MENU_POS_CONTROL                0
+//#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 1
+#define MENU_POS_SOUND                  2
+#endif
+
 // CASIO PV-1000
 #ifdef _PV1000
 #define MENU_POS_CONTROL                0

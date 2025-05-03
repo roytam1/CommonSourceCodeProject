@@ -29,9 +29,6 @@ void MEMORY::initialize()
 {
 	// init memory
 	_memset(ram, 0, sizeof(ram));
-	_memset(ram2, 0, sizeof(ram2));
-	_memset(ram3, 0, sizeof(ram3));
-//	_memset(vram, 0, sizeof(vram));
 	_memset(ipl, 0xff, sizeof(ipl));
 	_memset(ext, 0xff, sizeof(ext));
 	_memset(rdmy, 0xff, sizeof(rdmy));
@@ -92,7 +89,7 @@ uint32 MEMORY::read_data8(uint32 addr)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	switch(addr & 0xff)
+	switch(addr & 0xf0)
 	{
 	case 0x90:
 		// system control
@@ -102,23 +99,18 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 			d_rtc->write_signal(did_rtc, data, 0x10);
 		sio = data;
 		break;
-	case 0xa1:
+	case 0xa0:
+		// bank control
 		bank = data;
+		update_bank();
 		break;
 	}
 }
 
 uint32 MEMORY::read_io8(uint32 addr)
 {
-	switch(addr & 0xff)
-	{
-
-
-	case 0xa0:
-		return (sio & 0xc0) | (bank & 0xf);
-		break;
-	}
-	return 0xff;
+	// $A0: bank status
+	return (sio & 0xc0) | (bank & 0xf);
 }
 
 void MEMORY::update_bank()

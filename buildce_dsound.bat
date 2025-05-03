@@ -70,6 +70,10 @@ evc pc98ltce.vcp /MAKE "pc98ltce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECO
 mkdir build\pc98lt
 copy GDI_DSOUND\pc98ltce.exe build\pc98lt\.
 
+evc pc8201ce.vcp /MAKE "pc8201ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\pc8201
+copy GDI_DSOUND\pc8201ce.exe build\pc8201\.
+
 evc pv2000ce.vcp /MAKE "pv2000ce - Win32 (WCE ARMV4I) GDI_DSOUND" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\pv2000
 copy GDI_DSOUND\pv2000ce.exe build\pv2000\.

@@ -21,6 +21,7 @@
 #include "../upd1990a.h"
 
 #include "keyboard.h"
+#include "lcd.h"
 #include "memory.h"
 
 // ----------------------------------------------------------------------------
@@ -35,6 +36,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	event->initialize();		// must be initialized first
 	
+//	cmt = new DATAREC(this, emu);
 	cpu = new I8080(this, emu);
 	pio = new I8155(this, emu);
 	io = new IO(this, emu);
@@ -42,42 +44,47 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtc = new UPD1990A(this, emu);
 	
 	keyboard = new KEYBOARD(this, emu);
+	lcd = new LCD(this, emu);
 	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(buzzer);
 	
-
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C0, 1, 0)
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C1, 2, 0)
-	pio->set_context_port_a(rtc, SIG_UPD1990A_C2, 4, 0)
-	pio->set_context_port_a(rtc, SIG_UPD1990A_CLK, 8, 0)
-	pio->set_context_port_a(rtc, SIG_UPD1990A_DIN, 0x10, 0)
-	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN_L, 0xff, 0)
-	pio->set_context_port_b(keyboard, SIG_KEYBOARD_COLUMN_H, 1, 0)
-	pio->set_context_port_b(buzzer, SIG_PCM1BIT_MUTE, 0x20, 0)
+//	cmt->set_context_out(cpu, SIG_I8085_SID, 1);
+//	cpu->set_context_sod(cmt, SIG_DATAREC_OUT, 1);
+	pio->set_context_port_a(rtc, SIG_UPD1990A_C0, 1, 0);
+	pio->set_context_port_a(rtc, SIG_UPD1990A_C1, 2, 0);
+	pio->set_context_port_a(rtc, SIG_UPD1990A_C2, 4, 0);
+	pio->set_context_port_a(rtc, SIG_UPD1990A_CLK, 8, 0);
+	pio->set_context_port_a(rtc, SIG_UPD1990A_DIN, 0x10, 0);
+	pio->set_context_port_a(keyboard, SIG_KEYBOARD_COLUMN_L, 0xff, 0);
+	pio->set_context_port_a(lcd, SIG_LCD_CHIPSEL_L, 0xff, 0);
+	pio->set_context_port_b(keyboard, SIG_KEYBOARD_COLUMN_H, 1, 0);
+	pio->set_context_port_b(lcd, SIG_LCD_CHIPSEL_H, 3, 0);
+	pio->set_context_port_b(buzzer, SIG_PCM1BIT_MUTE, 0x20, 0);
 	pio->set_context_timer(buzzer, SIG_PCM1BIT_SIGNAL, 1);
 	pio->set_constant_clock(CPU_CLOCKS);
-
-	rtc->set_countext_dout(pio, SIG_I8155_PORT_C, 1);
-	rtc->set_countext_tp(cpu, SIG_I8085_RST7, 1);
+	rtc->set_context_dout(pio, SIG_I8155_PORT_C, 1);
+	rtc->set_context_tp(cpu, SIG_I8085_RST7, 1);
 	
+//	memory->set_context_cmt(cmt, SIG_DATAREC_REMOTE);
 	memory->set_context_rtc(rtc, SIG_UPD1990A_STB);
-
-
-
+	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	
 	// i/o bus
-	io->set_iomap_single_w(0x90, memory);
-	io->set_iomap_single_w(0xa1, memory);
-	io->set_iomap_range_w(0xb8, 0xbd, pio);
+	io->set_iomap_range_w(0x90, 0x9f, memory);
+	io->set_iomap_range_w(0xa0, 0xaf, memory);
+	io->set_iomap_range_w(0xb0, 0xbf, pio);
+	io->set_iomap_range_w(0xf0, 0xff, lcd);
 	
-	io->set_iomap_single_r(0xa0, memory);
-	io->set_iomap_range_r(0xb8, 0xbd, pio);
+	io->set_iomap_range_r(0xa0, 0xaf, memory);
+	io->set_iomap_range_r(0xb0, 0xbf, pio);
+	io->set_iomap_range_r(0xe0, 0xef, keyboard);
+	io->set_iomap_range_r(0xf0, 0xff, lcd);
 	
 	// initialize and reset all devices except the event manager
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -173,7 +180,7 @@ uint32 VM::get_prv_pc()
 
 void VM::draw_screen()
 {
-	display->draw_screen();
+	lcd->draw_screen();
 }
 
 // ----------------------------------------------------------------------------
@@ -186,7 +193,7 @@ void VM::initialize_sound(int rate, int samples)
 	event->initialize_sound(rate, samples);
 	
 	// init sound gen
-	pcm->init(rate, 8000);
+	buzzer->init(rate, 8000);
 }
 
 uint16* VM::create_sound(int samples, bool fill)
@@ -195,12 +202,40 @@ uint16* VM::create_sound(int samples, bool fill)
 }
 
 // ----------------------------------------------------------------------------
+// notify key
+// ----------------------------------------------------------------------------
+
+void VM::key_down(int code)
+{
+	keyboard->key_down(code);
+}
+
+void VM::key_up(int code)
+{
+}
+
+// ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
 
+void VM::play_datarec(_TCHAR* filename)
+{
+//	cmt->play_datarec(filename);
+}
+
+void VM::rec_datarec(_TCHAR* filename)
+{
+//	cmt->rec_datarec(filename);
+}
+
+void VM::close_datarec()
+{
+//	cmt->close_datarec();
+}
+
 bool VM::now_skip()
 {
-	return false;
+	return false;//cmt->skip();
 }
 
 void VM::update_config()

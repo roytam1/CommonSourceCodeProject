@@ -54,6 +54,18 @@ typedef signed long long int64;
 #endif
 #endif
 
+typedef union {
+	uint32 l;
+	uint16 w;
+	struct {
+#ifdef _BIG_ENDIAN
+		uint8 h, l;
+#else
+		uint8 l, h;
+#endif
+	} b;
+} pair;
+
 // memory functions
 //#ifdef _WIN32_WCE
 //#define _memcpy(dest, src, length) CopyMemory((dest), (src), (length))

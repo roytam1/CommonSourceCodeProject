@@ -232,12 +232,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	int count, first;
-	
-	union REGTYPE {
-		uint8 b[2];
-		uint16 w;
-	} regs[4];
-	
+	pair regs[4];
 	uint16 SP, PC, prvPC;
 	uint16 IM, RIM_IEN;
 	bool HALT, BUSREQ, SID;

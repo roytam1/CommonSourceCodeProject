@@ -17,18 +17,18 @@
 #define IX	regs[4].w
 #define IY	regs[5].w
 
-#define _F	regs[0].b[0]
-#define _A	regs[0].b[1]
-#define _C	regs[1].b[0]
-#define _B	regs[1].b[1]
-#define _E	regs[2].b[0]
-#define _D	regs[2].b[1]
-#define _L	regs[3].b[0]
-#define _H	regs[3].b[1]
-#define _XL	regs[4].b[0]
-#define _XH	regs[4].b[1]
-#define _YL	regs[5].b[0]
-#define _YH	regs[5].b[1]
+#define _F	regs[0].b.l
+#define _A	regs[0].b.h
+#define _C	regs[1].b.l
+#define _B	regs[1].b.h
+#define _E	regs[2].b.l
+#define _D	regs[2].b.h
+#define _L	regs[3].b.l
+#define _H	regs[3].b.h
+#define _XL	regs[4].b.l
+#define _XH	regs[4].b.h
+#define _YL	regs[5].b.l
+#define _YH	regs[5].b.h
 
 #define CF	0x01
 #define NF	0x02

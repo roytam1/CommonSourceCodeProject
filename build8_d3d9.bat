@@ -70,6 +70,10 @@ devenv.com pc100.vcproj /Rebuild Release_d3d9
 mkdir build\pc100
 copy Release_d3d9\pc100.exe build\pc100\.
 
+devenv.com pc8201.vcproj /Rebuild Release_d3d9
+mkdir build\pc8201
+copy Release_d3d9\pc8201.exe build\pc8201\.
+
 devenv.com pv1000.vcproj /Rebuild Release_d3d9
 mkdir build\pv1000
 copy Release_d3d9\pv1000.exe build\pv1000\.

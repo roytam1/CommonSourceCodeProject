@@ -220,9 +220,9 @@ loop:
 		set_signal(count > (tmp >> 1));
 	else
 		set_signal(count > 1);
-	if(counter[ch].count <= 0) {
+	if(count <= 0) {
 		statreg |= STA_INTR_T;
-		if(!stop_tc) |
+		if(!stop_tc) {
 			set_signal(true);
 			count += tmp;
 			goto loop;
@@ -269,18 +269,18 @@ void I8155::update_count()
 		if(input_clk <= input)
 			input = input_clk - 1;
 		if(input > 0) {
-			input_clock(ch, input);
+			input_clock(input);
 			// cancel and re-regist event
 			vm->cancel_event(regist_id);
 			input_clk -= input;
 			period -= passed;
 			prev_clk = vm->current_clock();
-			vm->regist_event_by_clock(this, ch, period, false, &regist_id);
+			vm->regist_event_by_clock(this, 0, period, false, &regist_id);
 		}
 	}
 }
 
-int I8253::get_next_clock()
+int I8155::get_next_clock()
 {
 	if(half) {
 		int32 tmp = COUNT_VALUE >> 1;
@@ -291,17 +291,17 @@ int I8253::get_next_clock()
 
 void I8155::set_signal(bool signal)
 {
-	if(prev_signal && !signal) {
+	if(prev_out && !signal) {
 		// H->L
 		for(int i = 0; i < dcount_timer; i++)
 			d_timer[i]->write_signal(did_timer[i], 0, dmask_timer[i]);
 	}
-	else if(!prev_signal && signal) {
+	else if(!prev_out && signal) {
 		// L->H
 		for(int i = 0; i < dcount_timer; i++)
 			d_timer[i]->write_signal(did_timer[i], 0xffffffff, dmask_timer[i]);
 	}
-	prev_signal = signal;
+	prev_out = signal;
 }
 
 void I8155::set_pio(int ch, uint8 data)

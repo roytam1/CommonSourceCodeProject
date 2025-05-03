@@ -431,7 +431,7 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 				prv_scroll_y = vdc[VDC_BYR].w;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
-			vdc[VDC_BYR].b[0] = data;
+			vdc[VDC_BYR].b.l = data;
 			vdc_scroll = true;
 			vdc_scroll_ydiff = vdc_scanline - 1;
 			return;
@@ -441,11 +441,11 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 				prv_scroll_y = vdc[VDC_BYR].w;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
-			vdc[VDC_BXR].b[0] = data;
+			vdc[VDC_BXR].b.l = data;
 			vdc_scroll = true;
 			return;
 		}
-		vdc[vdc_ch].b[0] = data;
+		vdc[vdc_ch].b.l = data;
 		break;
 	case 3:
 		switch(vdc_ch)
@@ -459,12 +459,12 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 			vdc_ratch = 0;
 			return;
 		case VDC_VDW:
-			vdc[VDC_VDW].b[1] = data;
+			vdc[VDC_VDW].b.h = data;
 			vdc_screen_h = (vdc[VDC_VDW].w & 0x1ff) + 1;
 			vdc_maxline = vdc_screen_h - 1;
 			return;
 		case VDC_LENR:
-			vdc[VDC_LENR].b[1] = data;
+			vdc[VDC_LENR].b.h = data;
 			// vram to vram
 			_memcpy(&vram[vdc[VDC_DISTR].w * 2], &vram[vdc[VDC_SOUR].w * 2], (vdc[VDC_LENR].w + 1) * 2);
 			_memset(&vchange[vdc[VDC_DISTR].w >> 4], 1, (vdc[VDC_LENR].w + 1) >> 4);
@@ -484,12 +484,12 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 				prv_scroll_y = vdc[VDC_BYR].w;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
-			vdc[VDC_BYR].b[1] = data & 1;
+			vdc[VDC_BYR].b.h = data & 1;
 			vdc_scroll = true;
 			vdc_scroll_ydiff = vdc_scanline - 1;
 			return;
 		case VDC_SATB:
-			vdc[VDC_SATB].b[1] = data;
+			vdc[VDC_SATB].b.h = data;
 			vdc_satb = true;
 			vdc_status &= ~VDC_STAT_DS;
 			return;
@@ -499,11 +499,11 @@ void PCE::vdc_write(uint16 addr, uint8 data)
 				prv_scroll_y = vdc[VDC_BYR].w;
 				prv_scroll_ydiff = vdc_scroll_ydiff;
 			}
-			vdc[VDC_BXR].b[1] = data & 3;
+			vdc[VDC_BXR].b.h = data & 3;
 			vdc_scroll = true;
 			return;
 		}
-		vdc[vdc_ch].b[1] = data;
+		vdc[vdc_ch].b.h = data;
 		break;
 	}
 }
@@ -524,7 +524,7 @@ uint8 PCE::vdc_read(uint16 addr)
 		if(vdc_ch == VDC_VRR)
 			return vram[vdc[VDC_MARR].w * 2];
 		else
-			return vdc[vdc_ch].b[0];
+			return vdc[vdc_ch].b.l;
 	case 3:
 		if(vdc_ch == VDC_VRR) {
 			val = vram[vdc[VDC_MARR].w * 2 + 1];
@@ -532,7 +532,7 @@ uint8 PCE::vdc_read(uint16 addr)
 			return val;
 		}
 		else
-			return vdc[vdc_ch].b[1];
+			return vdc[vdc_ch].b.h;
 	}
 	return 0xff;
 }
@@ -542,17 +542,17 @@ void PCE::vce_write(uint16 addr, uint8 data)
 	switch(addr & 7)
 	{
 	case 2:
-		vce_reg.b[0] = data;
+		vce_reg.b.l = data;
 		break;
 	case 3:
-		vce_reg.b[1] = data & 1;
+		vce_reg.b.h = data & 1;
 		break;
 	case 4:
-		vce[vce_reg.w].b[0] = data;
+		vce[vce_reg.w].b.l = data;
 		vce_update_pal(vce_reg.w);
 		break;
 	case 5:
-		vce[vce_reg.w].b[1] = data;
+		vce[vce_reg.w].b.h = data;
 		vce_update_pal(vce_reg.w);
 		vce_reg.w = (vce_reg.w + 1) & 0x1ff;
 		break;
@@ -566,9 +566,9 @@ uint8 PCE::vce_read(uint16 addr)
 	switch(addr & 7)
 	{
 	case 4:
-		return vce[vce_reg.w & 0x1ff].b[0];
+		return vce[vce_reg.w & 0x1ff].b.l;
 	case 5:
-		val = vce[vce_reg.w].b[1];
+		val = vce[vce_reg.w].b.h;
 		vce_reg.w = (vce_reg.w + 1) & 0x1ff;
 		return val;
 	}

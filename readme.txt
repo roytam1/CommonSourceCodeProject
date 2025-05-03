@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								4/1/2009
+								4/5/2009
 
 --- What's this ?
 
@@ -15,16 +15,15 @@ This archive includes the all source codes of:
 	EmuZ-2800	SHARP MZ-2800 emulator
 	EmuZ-3500	SHARP MZ-3500 emulator
 	EmuZ-5500	SHARP MZ-5500 emulator
-	eFM-16pi	FUJITSU FM-16pi emulator
 	eFMR-30		FUJITSU FMR-30 emulator
 	eFMR-50		FUJITSU FMR-50 emulator
 	eFMR-60		FUJITSU FMR-60 emulator
 	eHANDY98	NEC PC-98HA emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
+	ePC-8201	NEC PC-8201 emulator
 	ePC-98LT	NEC PC-98LT emulator
 	ePC-100		NEC PC-100 emulator
-	ePC-3200	SHARP PC-3200 emulator
 	ePV-1000	CASIO PV-1000 emulator
 	ePyuTa		TOMY PyuTa and PyuTa Jr. emulator
 	eQC-10		EPSON QC-10/QX-10 emulator
@@ -32,7 +31,7 @@ This archive includes the all source codes of:
 	eSCV		EPOCH Super Cassette Vision emulator
 	eTK-80BS	NEC TK-80BS (COMPO BS/80) emulator
 	eX-07		CANON X-07 emulator
-	eX1twin		SHARP X1twin
+	eX1twin		SHARP X1twin emulator
 
 You can compile them with:
 

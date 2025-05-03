@@ -32,16 +32,12 @@ private:
 	uint8 buffer;
 	
 	// vdc
-	union pair {
-		uint8 b[2];
-		uint16 w;
-	};
 	typedef struct {
 		int16 y, x, no, atr;
 	} sprtype;
-	union pair vdc[32];
-	union pair vce[0x200];
-	union pair vce_reg;
+	pair vdc[32];
+	pair vce[0x200];
+	pair vce_reg;
 	uint16 vdc_inc, vdc_raster_count;
 	uint8 vdc_ch, vdc_status, vdc_ratch, vce_ratch;
 	bool vdc_satb;

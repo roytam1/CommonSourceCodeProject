@@ -97,7 +97,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_s->set_context_port_c(beep, SIG_BEEP_MUTE, 8, 0);
 	pic->set_context(cpu);
 #ifdef _PC98LT
-	rtc->set_context_dout(pio_s, SIG_I8255_PORT_B, 0);
+	rtc->set_context_dout(pio_s, SIG_I8255_PORT_B, 1);
 #endif
 	dma->set_context_memory(memory);
 	dma->set_context_ch2(fdc);	// 1MB

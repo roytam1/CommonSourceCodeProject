@@ -20,39 +20,39 @@
 void UPD1990A::initialize()
 {
 	cmd = mode = 0;
-	tpmode = 7;
-	event_id = -1;
+	tpmode = 5;
+	vm->regist_event_by_clock(this, 0, CPU_CLOCKS / 512, true, &event_id);
+//	event_id = -1;
 	srl = srh = 0;
-	clk = stb = din = tp = true;
+	clk = din = tp = true;
+	stb = false;
 }
 
 void UPD1990A::write_io8(uint32 addr, uint32 data)
 {
 	// for NEC PC-98x1 $20
-	cmd = data & 7;
-	din = ((data & 0x20) != 0);
 	write_signal(SIG_UPD1990A_STB, data, 8);
 	write_signal(SIG_UPD1990A_CLK, data, 0x10);
+	cmd = data & 7;
+	din = ((data & 0x20) != 0);
 }
 
 void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 {
 	if(id == SIG_UPD1990A_CLK) {
 		bool next = ((data & mask) != 0);
-		if(!clk && next) {
-			int dout = srl & 1;
-			if(mode == 1) {
-				srl = (srl >> 1) | ((srh & 1) << 19);
-				srh = (srh >> 1) | ((din ? 1 : 0) << 19);
-			}
+		if(!clk && next && mode == 1) {
+			srl = (srl >> 1) | ((srh & 1) << 19);
+			srh = (srh >> 1) | ((din ? 1 : 0) << 19);
+			// output LSB
 			for(int i = 0; i < dcount_dout; i++)
-				d_dout[i]->write_signal(did_dout[i], dout ? 0xffffffff : 0, dmask_dout[i]);
+				d_dout[i]->write_signal(did_dout[i], (srl & 1) ? 0xffffffff : 0, dmask_dout[i]);
 		}
 		clk = next;
 	}
 	else if(id == SIG_UPD1990A_STB) {
 		bool next = ((data & mask) != 0);
-		if(!stb && next) {
+		if(stb && !next && !clk) {
 			if(cmd & 4) {
 				// group 1
 				if(cmd != tpmode) {
@@ -91,6 +91,9 @@ void UPD1990A::write_signal(int id, uint32 data, uint32 mask)
 					srh |= (int)(DAY / 10) << 8;
 					srh |= DAY_OF_WEEK << 12;
 					srh |= MONTH << 16;
+					// output LSB
+					for(int i = 0; i < dcount_dout; i++)
+						d_dout[i]->write_signal(did_dout[i], (srl & 1) ? 0xffffffff : 0, dmask_dout[i]);
 				}
 			}
 		}

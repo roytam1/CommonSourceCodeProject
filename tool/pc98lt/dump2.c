@@ -1,13 +1,11 @@
 /*
-	DUMP PC-98HA ROM DRIVE
+	DUMP PC-98LT ROM DRIVE
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <farstr.h>
 #include <dos.h>
-#include <memory.h>
 
 void main()
 {
@@ -18,8 +16,8 @@ void main()
 	
 	/* ROM DRIVE */
 	fp = fopen("ROMDRV.ROM", "wb");
-	for(page = 0; page < 16; page++) {
-		printf("page=%d/16\n", page);
+	for(page = 0; page < 8; page++) {
+		printf("page=%d/8\n", page);
 		outp(0xcc10, page);
 		src = MK_FP(0xe000, 0);
 		far_memcpy(tmp, src, 0x8000);
