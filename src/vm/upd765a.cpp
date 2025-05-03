@@ -175,7 +175,9 @@ void UPD765A::release()
 void UPD765A::reset()
 {
 	shift_to_idle();
-	CANCEL_EVENT();
+//	CANCEL_EVENT();
+	phase_id = drq_id = lost_id = result7_id = -1;
+	seek_id[0] = seek_id[1] = seek_id[2] = seek_id[3] = -1;
 	
 	set_irq(false);
 	set_drq(false);

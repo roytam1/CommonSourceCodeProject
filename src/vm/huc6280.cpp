@@ -9,6 +9,7 @@
 */
 
 #include "huc6280.h"
+#include "../fileio.h"
 
 /* ----------------------------------------------------------------------------
 	MAME h6280
@@ -121,3 +122,30 @@ void HUC6280::timer_w(uint16 offset, uint8 data)
 	h6280_timer_w(cpustate, offset, data);
 }
 
+#define STATE_VERSION	1
+
+void HUC6280::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->Fwrite(opaque, sizeof(h6280_Regs), 1);
+
+}
+
+bool HUC6280::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	fio->Fread(opaque, sizeof(h6280_Regs), 1);
+	
+	h6280_Regs *cpustate = (h6280_Regs *)opaque;
+	cpustate->program = d_mem;
+	cpustate->io = d_io;
+	
+	return true;
+}

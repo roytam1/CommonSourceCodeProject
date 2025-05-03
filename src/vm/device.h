@@ -55,7 +55,10 @@ public:
 	
 	virtual void update_config() {}
 	virtual void save_state(FILEIO* fio) {}
-	virtual void load_state(FILEIO* fio) {}
+	virtual bool load_state(FILEIO* fio)
+	{
+		return true;
+	}
 	
 	// control
 	virtual void reset() {}

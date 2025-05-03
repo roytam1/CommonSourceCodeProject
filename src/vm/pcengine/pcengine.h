@@ -24,6 +24,7 @@
 
 // device informations for win32
 #define USE_CART1
+#define USE_STATE
 
 #include "../../common.h"
 
@@ -33,6 +34,8 @@ class EVENT;
 
 class HUC6280;
 class PCE;
+
+class FILEIO;
 
 class VM
 {
@@ -79,6 +82,8 @@ public:
 		return false;
 	}
 	void update_config();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// ----------------------------------------
 	// for each device

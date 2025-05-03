@@ -19,6 +19,7 @@
 #define EVENT_STOP	3
 #define EVENT_EJECT	4
 #define EVENT_APSS	5
+#define EVENT_IPL	6
 
 #define PERIOD_IPL_SIGNAL	100
 //#define PERIOD_CMT_SIGNAL	300000
@@ -29,7 +30,6 @@ void CMT::initialize()
 	pa = pc = 0xff;
 	play = rec = false;
 	now_play = now_rewind = false;
-	prev_clock_ipl = 0;
 }
 
 void CMT::reset()
@@ -43,6 +43,7 @@ void CMT::reset()
 	register_id_apss = -1;
 	now_apss = false;
 #endif
+	register_id_ipl = -1;
 	close_tape();
 }
 
@@ -179,10 +180,13 @@ void CMT::write_signal(int id, uint32 data, uint32 mask)
 			vm->special_reset();
 		}
 		if((pc & 8) && !(data & 8)) {
-			prev_clock_ipl = current_clock();
+//			if(register_id_ipl == -1) {
+				register_event(this, EVENT_IPL, PERIOD_IPL_SIGNAL, false, &register_id_ipl);
+//			}
 		} else if(!(pc & 8) && (data & 8)) {
-			if(passed_usec(prev_clock_ipl) > PERIOD_IPL_SIGNAL) {
-				vm->reset();
+			if(register_id_ipl != -1) {
+				cancel_event(this, register_id_ipl);
+				register_id_ipl = -1;
 			}
 		}
 		if((pc & 0x10) && !(data & 0x10)) {
@@ -272,6 +276,9 @@ void CMT::event_callback(int event_id, int err)
 		d_pio->write_signal(SIG_I8255_PORT_B, 0, 0x40);
 		register_id_apss = -1;
 #endif
+	} else if(event_id == EVENT_IPL) {
+		vm->reset();
+		register_id_ipl = -1;
 	}
 }
 

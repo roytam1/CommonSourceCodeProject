@@ -1,3 +1,18 @@
+12/18/2014
+
+[EMU/WIN32] support save/load state
+[EMU/WIN32] support get/put functions for several types in file i/o class
+
+[VM/EVENT] support save/load state functions
+[VM/HUC6280] support save/load state functions
+[VM/I8155] fix to clear event register id in reset()
+[VM/I8253] fix to clear event register id in reset()
+[VM/UPD765A] fix to clear event register id in reset()
+
+[MZ2500/CMT] fix to check the pulse width of ipl reset signal
+[PCENGINE] support save/load state
+
+
 12/16/2014
 
 [VM/MB8877] fix to show not ready status a moment when no command is running

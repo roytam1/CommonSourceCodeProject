@@ -44,7 +44,7 @@ private:
 	bool now_apss;
 	bool now_apss_tmp;
 #endif
-	uint32 prev_clock_ipl;
+	int register_id_ipl;
 	
 	void fast_forward();
 	void fast_rewind();

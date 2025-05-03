@@ -29,6 +29,12 @@ void I8253::initialize()
 		counter[ch].null_count = true;
 		counter[ch].status_latched = false;
 #endif
+	}
+}
+
+void I8253::reset()
+{
+	for(int ch = 0; ch < 3; ch++) {
 		counter[ch].register_id = -1;
 	}
 }

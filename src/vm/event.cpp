@@ -8,6 +8,7 @@
 */
 
 #include "event.h"
+#include "../fileio.h"
 
 #ifndef EVENT_CONTINUOUS_SOUND
 //#ifdef PCM1BIT_HIGH_QUALITY
@@ -488,4 +489,98 @@ void EVENT::update_config()
 		power = config.cpu_power;
 		cpu_accum = 0;
 	}
+}
+
+#define STATE_VERSION	1
+
+void EVENT::save_state(FILEIO* fio)
+{
+	fio->FputUint32(STATE_VERSION);
+	fio->FputInt32(this_device_id);
+	
+	fio->FputInt32(dcount_cpu);
+	for(int i = 0; i < dcount_cpu; i++) {
+		fio->FputInt32(d_cpu[i].cpu_clocks);
+		fio->FputInt32(d_cpu[i].update_clocks);
+		fio->FputInt32(d_cpu[i].accum_clocks);
+	}
+	fio->Fwrite(vclocks, sizeof(vclocks), 1);
+	fio->FputInt32(event_remain);
+	fio->FputInt32(cpu_remain);
+	fio->FputInt32(cpu_accum);
+	fio->FputInt32(cpu_done);
+	fio->FputUint64(event_clocks);
+	for(int i = 0; i < MAX_EVENT; i++) {
+		fio->FputInt32(event[i].device != NULL ? event[i].device->this_device_id : -1);
+		fio->FputInt32(event[i].event_id);
+		fio->FputUint64(event[i].expired_clock);
+		fio->FputUint32(event[i].loop_clock);
+		fio->FputBool(event[i].active);
+		fio->FputInt32(event[i].next != NULL ? event[i].next->index : -1);
+		fio->FputInt32(event[i].prev != NULL ? event[i].prev->index : -1);
+	}
+	fio->FputInt32(first_free_event != NULL ? first_free_event->index : -1);
+	fio->FputInt32(first_fire_event != NULL ? first_fire_event->index : -1);
+	fio->FputDouble(frames_per_sec);
+	fio->FputDouble(next_frames_per_sec);
+	fio->FputInt32(lines_per_frame);
+	fio->FputInt32(next_lines_per_frame);
+}
+
+bool EVENT::load_state(FILEIO* fio)
+{
+	if(fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	if(fio->FgetInt32() != dcount_cpu) {
+		return false;
+	}
+	for(int i = 0; i < dcount_cpu; i++) {
+		d_cpu[i].cpu_clocks = fio->FgetInt32();
+		d_cpu[i].update_clocks = fio->FgetInt32();
+		d_cpu[i].accum_clocks = fio->FgetInt32();
+	}
+	fio->Fread(vclocks, sizeof(vclocks), 1);
+	event_remain = fio->FgetInt32();
+	cpu_remain = fio->FgetInt32();
+	cpu_accum = fio->FgetInt32();
+	cpu_done = fio->FgetInt32();
+	event_clocks = fio->FgetUint64();
+	for(int i = 0; i < MAX_EVENT; i++) {
+		event[i].device = vm->get_device(fio->FgetInt32());
+		event[i].event_id = fio->FgetInt32();
+		event[i].expired_clock = fio->FgetUint64();
+		event[i].loop_clock = fio->FgetUint32();
+		event[i].active = fio->FgetBool();
+		event[i].next = (event_t *)get_event(fio->FgetInt32());
+		event[i].prev = (event_t *)get_event(fio->FgetInt32());
+	}
+	first_free_event = (event_t *)get_event(fio->FgetInt32());
+	first_fire_event = (event_t *)get_event(fio->FgetInt32());
+	frames_per_sec = fio->FgetDouble();
+	next_frames_per_sec = fio->FgetDouble();
+	lines_per_frame = fio->FgetInt32();
+	next_lines_per_frame = fio->FgetInt32();
+	
+	// clear sound buffer
+	if(sound_buffer) {
+		memset(sound_buffer, 0, sound_samples * sizeof(uint16) * 2);
+	}
+	if(sound_tmp) {
+		memset(sound_tmp, 0, sound_tmp_samples * sizeof(int32) * 2);
+	}
+	buffer_ptr = accum_samples = 0;
+	
+	return true;
+}
+
+void* EVENT::get_event(int index)
+{
+	if(index >= 0 && index < MAX_EVENT) {
+		return &event[index];
+	}
+	return NULL;
 }

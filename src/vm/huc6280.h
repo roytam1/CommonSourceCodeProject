@@ -32,6 +32,8 @@ public:
 	int run(int icount);
 	void write_signal(int id, uint32 data, uint32 mask);
 	uint32 get_pc();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// unique function
 	void set_context_mem(DEVICE* device)

@@ -658,6 +658,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 #endif
+#ifdef USE_STATE
+		case ID_SAVE_STATE:
+			if(emu) {
+				emu->save_state();
+			}
+			break;
+		case ID_LOAD_STATE:
+			if(emu) {
+				emu->load_state();
+			}
+			break;
+#endif
 #ifdef USE_BOOT_MODE
 		case ID_BOOT_MODE0:
 		case ID_BOOT_MODE1:

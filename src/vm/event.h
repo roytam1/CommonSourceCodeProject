@@ -81,6 +81,7 @@ private:
 	
 	void mix_sound(int samples);
 	void update_sound();
+	void* get_event(int index);
 	
 #ifdef _DEBUG_LOG
 	bool initialize_done;
@@ -93,6 +94,7 @@ public:
 		frame_event_count = vline_event_count = 0;
 		
 		// initialize event
+		memset(event, 0, sizeof(event));
 		for(int i = 0; i < MAX_EVENT; i++) {
 			event[i].active = false;
 			event[i].index = i;
@@ -120,6 +122,8 @@ public:
 	void release();
 	void reset();
 	void update_config();
+	void save_state(FILEIO* fio);
+	bool load_state(FILEIO* fio);
 	
 	// common event functions
 	int event_manager_id()

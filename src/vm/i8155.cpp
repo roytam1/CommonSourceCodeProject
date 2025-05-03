@@ -36,7 +36,6 @@ void I8155::initialize()
 	prev_in = false;
 	now_count = stop_tc = false;
 	half = true;
-	register_id = -1;
 	
 	// clear ram
 	memset(ram, 0, sizeof(ram));
@@ -52,6 +51,7 @@ void I8155::reset()
 		pio[i].first = true;
 	}
 	statreg = cmdreg = 0;
+	register_id = -1;
 	
 	// stop count but don't reset timer
 	stop_count();

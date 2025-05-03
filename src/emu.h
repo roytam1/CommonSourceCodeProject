@@ -449,6 +449,14 @@ private:
 	FILE* debug_log;
 #endif
 	
+#ifdef USE_STATE
+	// ----------------------------------------
+	// state
+	// ----------------------------------------
+	void save_state_tmp(_TCHAR* file_path);
+	bool load_state_tmp(_TCHAR* file_path);
+#endif
+	
 	// ----------------------------------------
 	// misc
 	// ----------------------------------------
@@ -538,6 +546,11 @@ public:
 	bool now_rec_video;
 	
 	void update_config();
+	
+#ifdef USE_STATE
+	void save_state();
+	void load_state();
+#endif
 	
 	// input device
 	void key_down(int code, bool repeat);

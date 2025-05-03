@@ -717,3 +717,115 @@ void EMU::update_config()
 	vm->update_config();
 }
 
+#ifdef USE_STATE
+// ----------------------------------------------------------------------------
+// state
+// ----------------------------------------------------------------------------
+
+#define STATE_VERSION	1
+
+void EMU::save_state()
+{
+	_TCHAR file_name[_MAX_PATH];
+	_stprintf(file_name, _T("%s.sta"), _T(CONFIG_NAME));
+	save_state_tmp(bios_path(file_name));
+}
+
+void EMU::load_state()
+{
+	_TCHAR file_name[_MAX_PATH];
+	_stprintf(file_name, _T("%s.sta"), _T(CONFIG_NAME));
+	save_state_tmp(bios_path(_T("$temp$.sta")));
+	if(!load_state_tmp(bios_path(file_name))) {
+		load_state_tmp(bios_path(_T("$temp$.sta")));
+	}
+	DeleteFile(bios_path(_T("$temp$.sta")));
+}
+
+void EMU::save_state_tmp(_TCHAR* file_path)
+{
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		// save state file version
+		fio->FputUint32(STATE_VERSION);
+		// save inserted medias
+#ifdef USE_CART1
+		fio->Fwrite(&cart_status, sizeof(cart_status), 1);
+#endif
+#ifdef USE_FD1
+		fio->Fwrite(disk_status, sizeof(disk_status), 1);
+#endif
+#ifdef USE_QD1
+		fio->Fwrite(&quickdisk_status, sizeof(quickdisk_status), 1);
+#endif
+#ifdef USE_TAPE
+		fio->Fwrite(&tape_status, sizeof(tape_status), 1);
+#endif
+#ifdef USE_LASER_DISC
+		fio->Fwrite(&laser_disc_status, sizeof(laser_disc_status), 1);
+#endif
+#ifdef USE_CPU_TYPE
+		fio->FputInt32(config.cpu_type);
+#endif
+		// save vm state
+		vm->save_state(fio);
+		// end of state file
+		fio->FputInt32(-1);
+		fio->Fclose();
+	}
+	delete fio;
+}
+
+bool EMU::load_state_tmp(_TCHAR* file_path)
+{
+	bool result = false;
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
+		// check state file version
+		if(fio->FgetUint32() == STATE_VERSION) {
+			// load inserted medias
+#ifdef USE_CART1
+			fio->Fread(&cart_status, sizeof(cart_status), 1);
+#endif
+#ifdef USE_FD1
+			fio->Fread(disk_status, sizeof(disk_status), 1);
+#endif
+#ifdef USE_QD1
+			fio->Fread(&quickdisk_status, sizeof(quickdisk_status), 1);
+#endif
+#ifdef USE_TAPE
+			fio->Fread(&tape_status, sizeof(tape_status), 1);
+#endif
+#ifdef USE_LASER_DISC
+			fio->Fread(&laser_disc_status, sizeof(laser_disc_status), 1);
+#endif
+#ifdef USE_CPU_TYPE
+			if((config.cpu_type = fio->FgetInt32()) != cpu_type) {
+				// stop sound
+				if(sound_ok && sound_started) {
+					lpdsb->Stop();
+					sound_started = false;
+				}
+				// reinitialize virtual machine
+				delete vm;
+				vm = new VM(this);
+				vm->initialize_sound(sound_rate, sound_samples);
+				vm->reset();
+				cpu_type = config.cpu_type;
+			}
+#endif
+			// restore inserted medias
+			restore_media();
+			// load vm state
+			if(vm->load_state(fio)) {
+				// check end of state
+				result = (fio->FgetInt32() == -1);
+			}
+		}
+		fio->Fclose();
+	}
+	delete fio;
+	return result;
+}
+#endif
+
