@@ -290,6 +290,9 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 				if(fdc[drvreg].index >= disk[drvreg]->get_track_size()) {
 					status &= ~FDC_ST_BUSY;
 					cmdtype = 0;
+					if(!disk[drvreg]->write_protected) {
+						disk[drvreg]->sync_buffer();
+					}
 					set_irq(true);
 				} else if(status & FDC_ST_DRQ) {
 					REGISTER_DRQ_EVENT();
@@ -917,12 +920,17 @@ void MB8877::cmd_forceint()
 uint8 MB8877::search_track()
 {
 	int trk = fdc[drvreg].track;
+	int trkside = trk * 2 + (sidereg & 1);
 	
-	if(!disk[drvreg]->get_track(trk, sidereg)) {
+	if(!(disk[drvreg]->inserted && disk[drvreg]->check_media_type())) {
+		return FDC_ST_SEEKERR;
+	}
+	if(!(0 <= trkside && trkside < 164)) {
 		return FDC_ST_SEEKERR;
 	}
 	
 	// verify track number
+	disk[drvreg]->get_track(trk, sidereg);
 	if(!(cmdreg & 4)) {
 		return 0;
 	}

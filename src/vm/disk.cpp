@@ -741,6 +741,14 @@ void DISK::insert_sector(uint8 c, uint8 h, uint8 r, uint8 n, bool deleted, bool 
 	set_sector_info(t);
 }
 
+void DISK::sync_buffer()
+{
+	if(trim_required) {
+		trim_buffer();
+		trim_required = false;
+	}
+}
+
 void DISK::trim_buffer()
 {
 	int max_tracks = 164;

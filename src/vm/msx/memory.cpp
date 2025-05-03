@@ -134,8 +134,9 @@ static bool load_cart(_TCHAR *file_path, uint8 *rom)
 void SLOT0::initialize()
 {
 	memset(rom, 0xff, sizeof(rom));
+#if defined(_PX7)
 	memset(ram, 0, sizeof(ram));
-	
+#endif
 	FILEIO* fio = new FILEIO();
 #if defined(_MSX2)
 	if(fio->Fopen(emu->bios_path(_T("MSX2J.ROM")), FILEIO_READ_BINARY) ||
@@ -151,7 +152,11 @@ void SLOT0::initialize()
 	delete fio;
 	
 	SET_BANK(0x0000, 0x7fff, wdmy, rom);
+#if defined(_PX7)
 	SET_BANK(0x8000, 0xffff, ram, ram);
+#else
+	SET_BANK(0x8000, 0xffff, wdmy, rdmy);
+#endif
 }
 
 void SLOT0::write_data8(uint32 addr, uint32 data)
@@ -171,7 +176,9 @@ void SLOT0::save_state(FILEIO* state_fio)
 	state_fio->FputUint32(SLOT0_STATE_VERSION);
 	state_fio->FputInt32(this_device_id);
 	
+#if defined(_PX7)
 	state_fio->Fwrite(ram, sizeof(ram), 1);
+#endif
 }
 
 bool SLOT0::load_state(FILEIO* state_fio)
@@ -182,7 +189,9 @@ bool SLOT0::load_state(FILEIO* state_fio)
 	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
+#if defined(_PX7)
 	state_fio->Fread(ram, sizeof(ram), 1);
+#endif
 	return true;
 }
 
@@ -617,7 +626,11 @@ uint32 MEMORY::fetch_op(uint32 addr, int* wait)
 
 void MEMORY::write_io8(uint32 addr, uint32 data)
 {
-	d_map[addr >> 14]->write_io8(addr, data);
+#if !defined(_PX7)
+	if(d_map[3] == d_slot[3]) {
+		d_slot[3]->write_io8(addr, data);
+	}
+#endif
 }
 
 void MEMORY::write_signal(int id, uint32 data, uint32 mask)

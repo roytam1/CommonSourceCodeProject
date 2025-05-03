@@ -39,8 +39,9 @@ private:
 	uint8* wbank[8];
 	uint8* rbank[8];
 	uint8 rom[0x8000];
+#if defined(_PX7)
 	uint8 ram[0x8000];
-	
+#endif	
 public:
 	SLOT0(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
 	~SLOT0() {}

@@ -63,7 +63,6 @@ private:
 	
 	void set_sector_info(uint8 *t);
 	void trim_buffer();
-	bool check_media_type();
 	
 	// teledisk image decoder (td0)
 	bool teledisk_to_d88();
@@ -175,10 +174,12 @@ public:
 	
 	bool format_track(int trk, int side);
 	void insert_sector(uint8 c, uint8 h, uint8 r, uint8 n, bool deleted, bool crc_error, uint8 fill_data, int length);
+	void sync_buffer();
 	
 	int get_rpm();
 	int get_track_size();
 	double get_usec_per_bytes(int bytes);
+	bool check_media_type();
 	
 	bool inserted;
 	bool ejected;

@@ -1,3 +1,13 @@
+3/26/2015
+
+[VM/MB8877] fix not to return error status when seek to unformatted track (thanks Mr.Artane.)
+[VM/MC6809] improve mc6809 instructions (thanks Mr.Artane.)
+[VM/YM2151] support mamefm.dll
+[VM/YM2203] fix to check SUPPORT_MULTIPLE flag of mamefm.dll
+
+[MSX2/MEMORY] import Mr.tanam's fixes
+
+
 3/21/2015-2
 
 [MSX2] import Mr.umaiboux's patches posted on Mr.tanam's blog

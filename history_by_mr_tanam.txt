@@ -1,3 +1,6 @@
+03/22/2015
+[MSX2] Fix MSX-DOS2 support
+
 02/14/2015
 [MSX2] MSXDOS2.ROM support
 
