@@ -1,4 +1,13 @@
-4/17/2009
+5/20/2009
+
+[VM/MSM5832] fix build error
+
+[MYCOMZ80A] support Japan Electronics College MYCOMZ-80A (my 30th emulator!)
+[FMR50/CMOS] add experimental codes for FMR-CARD
+[FMR50/MEMORY] add experimental codes for FMR-CARD
+
+
+5/17/2009
 
 [VM/I386] support 80386
 [VM/LS393] refine implements of output signal
@@ -6,7 +15,7 @@
 [VM/SN76489AN] support cs/we/data signal to be controlled without i/o bus
 [VM/Z80CTC] refine implements of output signal
 
-[MZ5500/VM] fix ay-3-8912 address
+[MZ5500] fix ay-3-8912 address
 [MZ6500] support SHARP MZ-6500
 [FMR50/MEMORY] support address mask 20/24/32bit
 [PC8201/KEYBOARD] support kana key (thanks Mr.apaslothy)

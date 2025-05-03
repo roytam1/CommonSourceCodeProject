@@ -37,8 +37,8 @@ void MSM5832::initialize()
 	
 	// regist event
 	int id;
-	vm->regist_event_by_clock(this, EVENT_1024HZ, CPU_CLOCKS / 2048, true, &id):
-	vm->regist_event_by_clock(this, EVENT_3600HZ, CPU_CLOCKS / 3600, true, &id):
+	vm->regist_event_by_clock(this, EVENT_1024HZ, CPU_CLOCKS / 2048, true, &id);
+	vm->regist_event_by_clock(this, EVENT_3600HZ, CPU_CLOCKS / 3600, true, &id);
 }
 
 void MSM5832::write_io8(uint32 addr, uint32 data)
@@ -74,10 +74,10 @@ void MSM5832::event_callback(int event_id, int err)
 			regs[15] |= BIT_3600HZ;
 			// 60Hz
 			if(!cnt1)
-				regs[15] &= ~BIT_60HZ:
+				regs[15] &= ~BIT_60HZ;
 			// 1Hz
 			if(!cnt2) {
-				regs[15] &= ~BIT_1HZ:
+				regs[15] &= ~BIT_1HZ;
 				
 				// update clock
 				emu->get_timer(time);
@@ -102,7 +102,7 @@ void MSM5832::event_callback(int event_id, int err)
 				output();
 			// regist event
 			int id;
-			vm->regist_event_by_clock(this, EVENT_PULSE, CPU_CLOCKS / 8192, false, &id):
+			vm->regist_event_by_clock(this, EVENT_PULSE, CPU_CLOCKS / 8192, false, &id);
 		}
 		if(++cnt1 == 60)
 			cnt1 = 0;

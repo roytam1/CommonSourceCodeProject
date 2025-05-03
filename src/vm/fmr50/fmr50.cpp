@@ -1,6 +1,7 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
 	FUJITSU FMR-60 Emulator 'eFMR-60'
+	FUJITSU FMR-CARD Emulator 'eFMR-CARD'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -169,6 +170,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_w(0x60, timer);
 	io->set_iomap_alias_w(0x70, rtc, 0);
 	io->set_iomap_alias_w(0x80, rtc, 1);
+#ifdef _FMRCARD
+	io->set_iomap_single_w(0x90, cmos);
+#endif
 	io->set_iomap_range_w(0xa0, 0xaf, dma);
 	io->set_iomap_alias_w(0x200, fdc, 0);
 	io->set_iomap_alias_w(0x202, fdc, 1);

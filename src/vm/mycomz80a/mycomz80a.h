@@ -1,82 +1,43 @@
 /*
-	FUJITSU FMR-50 Emulator 'eFMR-50'
-	FUJITSU FMR-60 Emulator 'eFMR-60'
-	FUJITSU FMR-CARD Emulator 'eFMR-CARD'
+	Japan Electronics College MYCOMZ-80A Emulator 'eMYCOMZ-80A'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2008.04.28 -
+	Date   : 2009.05.13-
 
 	[ virtual machine ]
 */
 
-#ifndef _FMR50_H_
-#define _FMR50_H_
+#ifndef _MYCOMZ80A_H_
+#define _MYCOMZ80A_H_
 
 // device informations for win32
-#ifdef _FMR50
-#ifdef _FMRCARD
-#define DEVICE_NAME		"FUJITSU FMR-CARD"
-#define CONFIG_NAME		"fmrcard"
-#else
-#define DEVICE_NAME		"FUJITSU FMR-50"
-#define CONFIG_NAME		"fmr50"
-#endif
-#else
-#define DEVICE_NAME		"FUJITSU FMR-60"
-#define CONFIG_NAME		"fmr60"
-#endif
+#define DEVICE_NAME		"Japan Electronics College MYCOMZ-80A"
+#define CONFIG_NAME		"mycomz80a"
 #define CONFIG_VERSION		0x01
 
-#ifdef _FMR50
 #define WINDOW_WIDTH1		640
 #define WINDOW_HEIGHT1		400
 #define WINDOW_WIDTH2		640
 #define WINDOW_HEIGHT2		400
-#else
-#define WINDOW_WIDTH1		1120
-#define WINDOW_HEIGHT1		750
-#define WINDOW_WIDTH2		1120
-#define WINDOW_HEIGHT2		750
-#endif
 
-//#define USE_IPL_RESET
-#define USE_FD1
-#define USE_FD2
-#define USE_FD3
-#define USE_FD4
+#define USE_DATAREC
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_AUTO_KEY_CAPS
+#define USE_SCANLINE
 
 // device informations for virtual machine
-#define FRAMES_PER_10SECS	554
-#define FRAMES_PER_SEC		55.4
-#ifdef _FMR50
-#define LINES_PER_FRAME 	440
-#define CHARS_PER_LINE		108
-#else
-#define LINES_PER_FRAME 	812
-#define CHARS_PER_LINE		108
-#endif
-#define CPU_CLOCKS		8000000
-#ifdef _FMR50
+#define FRAMES_PER_10SECS	600
+#define FRAMES_PER_SEC		60
+#define LINES_PER_FRAME 	262
+#define CHARS_PER_LINE		114
+#define CPU_CLOCKS		2500000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
-#else
-#define SCREEN_WIDTH		1120
-#define SCREEN_HEIGHT		750
-#endif
-#define MAX_DRIVE		4
-#define MAX_SCSI		8
-#define MAX_MEMCARD		2
-#define HAS_I286
-#define I86_BIOS_CALL
-//#define HAS_I386
-//#define I386_BIOS_CALL
-#define I8259_MAX_CHIPS		2
-#define IO_ADDR_MAX		0x10000
+//#define EVENT_PRECISE		4
 
 #include "../../common.h"
 
@@ -84,29 +45,17 @@ class EMU;
 class DEVICE;
 class EVENT;
 
-class BEEP;
+class DATAREC;
 class HD46505;
-#ifdef _FMR60
-class HD63484;
-#endif
-class I8251;
-class I8253;
-class I8259;
-class I86;
-//class I386;
+class I8255;
 class IO;
-class MB8877;
-class RTC58321;
-class UPD71071;
+class MSM5832;
+class SN76489AN;
+class Z80;
 
-class BIOS;
-class CMOS;
-class FLOPPY;
+class DISPLAY;
 class KEYBOARD;
 class MEMORY;
-//class SERIAL;
-class SCSI;
-class TIMER;
 
 class VM
 {
@@ -116,30 +65,19 @@ protected:
 	// devices
 	EVENT* event;
 	
-	BEEP* beep;
+	DATAREC* drec;
 	HD46505* crtc;
-#ifdef _FMR60
-	HD63484* acrtc;
-#endif
-	I8251* sio;
-	I8253* pit0;
-	I8253* pit1;
-	I8259* pic;
-	I86* cpu;
-//	I386* cpu;
+	I8255* pio1;
+	I8255* pio2;
+	I8255* pio3;
 	IO* io;
-	MB8877* fdc;
-	RTC58321* rtc;
-	UPD71071* dma;
+	MSM5832* rtc;
+	SN76489AN* psg;
+	Z80* cpu;
 	
-	BIOS* bios;
-	CMOS* cmos;
-	FLOPPY* floppy;
+	DISPLAY* display;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
-	SCSI* scsi;
-//	SERIAL* serial;
-	TIMER* timer;
 	
 public:
 	// ----------------------------------------
@@ -169,8 +107,9 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(_TCHAR* filename, int drv);
-	void close_disk(int drv);
+	void play_datarec(_TCHAR* filename);
+	void rec_datarec(_TCHAR* filename);
+	void close_datarec();
 	bool now_skip();
 	
 	void update_config();

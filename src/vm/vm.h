@@ -21,6 +21,7 @@
 #endif
 
 // FUJITSU FMR-50
+// FUJITSU FMR-CARD
 #ifdef _FMR50
 #include "fmr50/fmr50.h"
 #endif
@@ -48,6 +49,11 @@
 // MITSUBISHI Elec. MULTI8
 #ifdef _MULTI8
 #include "multi8/multi8.h"
+#endif
+
+// Japan Electronics College MYCOMZ-80A
+#ifdef _MYCOMZ80A
+#include "mycomz80a/mycomz80a.h"
 #endif
 
 // SHARP MZ-700

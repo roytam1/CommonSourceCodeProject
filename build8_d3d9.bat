@@ -14,6 +14,10 @@ devenv.com fmr60.vcproj /Rebuild Release_d3d9
 mkdir build\fmr60
 copy Release_d3d9\fmr60.exe build\fmr60\.
 
+devenv.com fmrcard.vcproj /Rebuild Release_d3d9
+mkdir build\fmrcard
+copy Release_d3d9\fmrcard.exe build\fmrcard\.
+
 devenv.com hc40.vcproj /Rebuild Release_d3d9
 mkdir build\hc40
 copy Release_d3d9\hc40.exe build\hc40\.
@@ -29,6 +33,10 @@ copy Release_d3d9\m5.exe build\m5\.
 devenv.com multi8.vcproj /Rebuild Release_d3d9
 mkdir build\multi8
 copy Release_d3d9\multi8.exe build\multi8\.
+
+devenv.com mycomz80a.vcproj /Rebuild Release_d3d9
+mkdir build\mycomz80a
+copy Release_d3d9\mycomz80a.exe build\mycomz80a\.
 
 devenv.com mz700.vcproj /Rebuild Release_d3d9
 mkdir build\mz700

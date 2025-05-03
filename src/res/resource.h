@@ -195,6 +195,7 @@
 #endif
 
 // FUJITSU FMR-50
+// FUJITSU FMR-CARD
 #ifdef _FMR50
 #define MENU_POS_CONTROL                0
 #define MENU_POS_FD1                    1
@@ -256,6 +257,14 @@
 #define MENU_POS_DATAREC                3
 #define MENU_POS_SCREEN                 4
 #define MENU_POS_SOUND                  5
+#endif
+
+// Japan Electronics College MYCOMZ-80A
+#ifdef _MYCOMZ80A
+#define MENU_POS_CONTROL                0
+#define MENU_POS_DATAREC                1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
 #endif
 
 // SHARP MZ-700

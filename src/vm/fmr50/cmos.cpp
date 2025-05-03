@@ -1,6 +1,7 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
 	FUJITSU FMR-60 Emulator 'eFMR-60'
+	FUJITSU FMR-CARD Emulator 'eFMR-CARD'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -43,16 +44,29 @@ void CMOS::release()
 	delete fio;
 }
 
+void CMOS::reset()
+{
+	bank = 0;
+}
+
 void CMOS::write_io8(uint32 addr, uint32 data)
 {
-	if(!(addr & 1))
-		cmos[(addr >> 1) & 0x7ff] = data;
+	switch(addr)
+	{
+	case 0x90:
+		bank = data & 3;
+		break;
+	default:
+		if(!(addr & 1))
+			cmos[bank][(addr >> 1) & 0x7ff] = data;
+		break;
+	}
 }
 
 uint32 CMOS::read_io8(uint32 addr)
 {
 	if(!(addr & 1))
-		return cmos[(addr >> 1) & 0x7ff];
+		return cmos[bank][(addr >> 1) & 0x7ff];
 	return 0xff;
 }
 

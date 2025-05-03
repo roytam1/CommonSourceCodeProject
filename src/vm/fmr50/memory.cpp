@@ -1,6 +1,7 @@
 /*
 	FUJITSU FMR-50 Emulator 'eFMR-50'
 	FUJITSU FMR-60 Emulator 'eFMR-60'
+	FUJITSU FMR-CARD Emulator 'eFMR-CARD'
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
@@ -50,11 +51,15 @@ void MEMORY::initialize()
 	_memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// init machine id
+#ifdef _FMRCARD
+	id[0] = 0x70;
+#else
 	id[0] = 0xf8;	// FMR-50FD/HD, FMR-60FD/HD
 //	id[0] = 0xe0;	// FMR-50FX/HX, FMR-60FX/HX
 //	id[0] = 0xd8;	// FMR-50/LT3
 //	id[0] = 0x0a;	// FMR-50NE/T2
 //	id[0] = 0xba;	// OASYS 30 AX 401
+#endif
 	id[1] = 0xff;
 	
 	// load rom image
@@ -66,6 +71,15 @@ void MEMORY::initialize()
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		fio->Fread(ipl, sizeof(ipl), 1);
 		fio->Fclose();
+#ifdef _FMRCARD
+		// skip keyboard check...
+		char ver[] = "FMR-CARD        V3.2L31D92/02/10";
+		char tmp[33];
+		_memset(tmp, 0, sizeof(tmp));
+		_memcpy(tmp, ipl, 32);
+		if(strcmp(tmp, ver) == 0)
+			_memset(ipl + 0x214f, 0x90, 14);
+#endif
 	}
 	else {
 		// load pseudo ipl
@@ -162,6 +176,7 @@ void MEMORY::reset()
 void MEMORY::write_data8(uint32 addr, uint32 data)
 {
 	addr &= 0xffffff;//amask;
+//if(0xa0000<=addr&&addr<0xfc000&&!(addr&0xff))emu->out_debug("WR %5x,%2x\n",addr,data);
 	if(!mainmem) {
 #ifdef _FMR60
 		if(0xc0000 <= addr && addr < 0xe0000) {
@@ -398,6 +413,7 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 uint32 MEMORY::read_data8(uint32 addr)
 {
 	addr &= 0xffffff;//amask;
+//if(0xa0000<=addr&&addr<0xfc000&&!(addr&0xff))emu->out_debug("RD %5x\n",addr);
 #ifdef _FMR50
 	if(!mainmem) {
 		if(0xcff80 <= addr && addr < 0xcffe0) {

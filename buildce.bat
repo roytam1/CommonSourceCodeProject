@@ -14,6 +14,10 @@ evc fmr60ce.vcp /MAKE "fmr60ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECON
 mkdir build\fmr60
 copy GDI_WAVEOUT\fmr60ce.exe build\fmr60\.
 
+evc fmrcardce.vcp /MAKE "fmrcardce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\fmrcard
+copy GDI_WAVEOUT\fmrcardce.exe build\fmrcard\.
+
 evc hc40ce.vcp /MAKE "hc40ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\hc40
 copy GDI_WAVEOUT\hc40ce.exe build\hc40\.
@@ -29,6 +33,10 @@ copy GDI_WAVEOUT\m5ce.exe build\m5\.
 evc multi8ce.vcp /MAKE "multi8ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\multi8
 copy GDI_WAVEOUT\multi8ce.exe build\multi8\.
+
+evc mycomz80ace.vcp /MAKE "mycomz80ace - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
+mkdir build\mycomz80a
+copy GDI_WAVEOUT\mycomz80ace.exe build\mycomz80a\.
 
 evc mz700ce.vcp /MAKE "mz700ce - Win32 (WCE ARMV4I) GDI_WAVEOUT" /REBUILD /CECONFIG="STANDARDSDK"
 mkdir build\mz700

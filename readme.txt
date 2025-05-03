@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								5/17/2009
+								5/20/2009
 
 --- What's this ?
 
@@ -22,6 +22,7 @@ This archive includes the all source codes of:
 	eHANDY98	NEC PC-98HA emulator
 	eHC-40		EPSON HC-40/PX-4 emulator
 	eHC-80		EPSON HC-80/PX-8/Geneva emulator
+	eMYCOMZ-80A	Japan Electronics College MYCOMZ-80A emulator
 	ePC-8201	NEC PC-8201/PC-8201A emulator
 	ePC-98LT	NEC PC-98LT emulator
 	ePC-100		NEC PC-100 emulator
@@ -94,6 +95,8 @@ under the GNU GENERAL PUBLIC LICENSE.
 - vm/m5/*
 	MESS sord driver
 	Mr.Moriya for Sord M5 hardware design info
+- vm/mycomz80a/mon.c
+	Based on MON80 by Mr.Tesuya Suzuki
 - vm/mz2500/sasi.*
 	X millenium
 - vm/pv1000/*
