@@ -1,3 +1,8 @@
+1/11/2015
+
+[PHC25] fix issue that cmt tape igam can not be correctly loaded
+
+
 1/10/2015
 
 [VM/DATAREC] support NEC PC-6001 p6t format tape image (temporary)

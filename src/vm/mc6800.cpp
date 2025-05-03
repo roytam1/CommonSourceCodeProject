@@ -1600,7 +1600,9 @@ void MC6800::insn(uint8 code)
 #endif
 	case 0xfe: ldx_ex(); break;
 	case 0xff: stx_ex(); break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default: __assume(0);
+#endif
 	}
 }
 

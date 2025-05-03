@@ -1532,8 +1532,10 @@ void I8080::OP(uint8 code)
 	case 0xff: // RST 7
 		RST(7);
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 

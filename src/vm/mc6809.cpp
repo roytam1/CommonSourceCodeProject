@@ -643,7 +643,9 @@ void MC6809::op(uint8 ireg)
 	case 0xfd: std_ex(); break;
 	case 0xfe: ldu_ex(); break;
 	case 0xff: stu_ex(); break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default: __assume(0);
+#endif
 	}
 };
 
@@ -909,7 +911,9 @@ inline void MC6809::fetch_effective_address()
 	case 0xfd: IMMWORD(EAP); EA += PC; EAD = RM16(EAD); break;
 	case 0xfe: EA = 0; break; /*ILLEGAL*/
 	case 0xff: IMMWORD(EAP); EAD = RM16(EAD); break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default: __assume(0);
+#endif
 	}
 	icount -= index_cycle_em[postbyte];
 }

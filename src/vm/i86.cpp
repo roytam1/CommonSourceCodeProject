@@ -961,8 +961,10 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Byte(dst);
 			break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 		default:
 			__assume(0);
+#endif
 		}
 	} else {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m8_bit;
@@ -1021,8 +1023,10 @@ void I86::rotate_shift_byte(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			PutbackRMByte(ModRM, (uint8)dst);
 			break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 		default:
 			__assume(0);
+#endif
 		}
 	}
 }
@@ -1087,8 +1091,10 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			SetSZPF_Word(dst);
 			break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 		default:
 			__assume(0);
+#endif
 		}
 	} else {
 		icount -= (ModRM >= 0xc0) ? timing.rot_reg_base + timing.rot_reg_bit : timing.rot_m8_base + timing.rot_m16_bit;
@@ -1147,8 +1153,10 @@ void I86::rotate_shift_word(unsigned ModRM, unsigned count)
 			AuxVal = 1;
 			PutbackRMWord(ModRM, dst);
 			break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 		default:
 			__assume(0);
+#endif
 		}
 	}
 }
@@ -1454,7 +1462,9 @@ void I86::instruction(uint8 code)
 	case 0xfd: _std(); break;
 	case 0xfe: _fepre(); break;
 	case 0xff: _ffpre(); break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default: __assume(0);
+#endif
 	}
 }
 
@@ -3136,8 +3146,10 @@ inline void I86::_80pre()    /* Opcode 0x80 */
 		SUBB(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -3190,8 +3202,10 @@ inline void I86::_81pre()    /* Opcode 0x81 */
 		SUBW(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri16 : timing.alu_mi16_ro;
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -3243,8 +3257,10 @@ inline void I86::_82pre()    /* Opcode 0x82 */
 		SUBB(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_ri8 : timing.alu_mi8_ro;
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -3296,8 +3312,10 @@ inline void I86::_83pre()    /* Opcode 0x83 */
 		SUBW(dst, src);
 		icount -= (ModRM >= 0xc0) ? timing.alu_r16i8 : timing.alu_m16i8_ro;
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -3408,8 +3426,10 @@ inline void I86::_mov_sregw()    /* Opcode 0x8e */
 	case 6:
 	case 7:
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -4508,8 +4528,10 @@ inline void I86::_f6pre()    /* Opcode 0xf6 */
 		}
 		break;
 		
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -4632,8 +4654,10 @@ inline void I86::_f7pre()    /* Opcode 0xf7 */
 		}
 		break;
 		
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 
@@ -4776,8 +4800,10 @@ inline void I86::_ffpre()    /* Opcode 0xff */
 	case 7:  /* invalid ??? */
 		icount -= 10;
 		break;
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
 	default:
 		__assume(0);
+#endif
 	}
 }
 

@@ -60,7 +60,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	vdp->load_font_image(emu->bios_path(_T("FONT.ROM")));
 	vdp->set_vram_ptr(memory->get_vram(), 0x1800);
-	vdp->set_context_cpu(cpu);
+//	vdp->set_context_cpu(cpu);
 	vdp->set_context_vsync(not, SIG_NOT_INPUT, 1);
 	not->set_context_out(cpu, SIG_CPU_IRQ, 1);
 	
