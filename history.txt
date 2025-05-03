@@ -1,3 +1,19 @@
+2/8/2009
+
+[EMU/WIN32] support window minimize button
+
+[FMR30/MEMORY] optimize memory bank switch
+[FRM50/BIOS] fix disk bios $fa
+[FMR50/BIOS] support memcard
+[FRM50/BIOS] support power management bios
+[FMR50/FLOPPY] fix disk status register
+[FMR50/KEYBOARD] fix kbint register
+[FMR50/MEMORY] support line/logical operations circuit
+[FMR50/MEMORY] support 40chars/20lines text screen mode
+[FMR50/MEMORY] refer cursor end line register on hd46505
+[FMR50/TIMER] fix timer interrupt cause register
+
+
 1/16/2009
 
 [EMU/WIN32] change screen buffer type from uint16 to user-defined type

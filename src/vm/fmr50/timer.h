@@ -24,8 +24,8 @@ private:
 	DEVICE *d_beep, *d_pic;
 	int did_beep, did_pic;
 	
+	uint8 ctrl;
 	bool tmout0, tmout1;
-	bool tm0msk, tm1msk;
 	void update_intr();
 	
 public:

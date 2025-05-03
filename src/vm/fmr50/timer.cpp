@@ -12,8 +12,8 @@
 
 void TIMER::initialize()
 {
+	ctrl = 0;
 	tmout0 = tmout1 = false;
-	tm0msk = tm1msk = false;
 }
 
 void TIMER::write_io8(uint32 addr, uint32 data)
@@ -21,8 +21,7 @@ void TIMER::write_io8(uint32 addr, uint32 data)
 	// $60: interrupt ctrl register
 	if(data & 0x80)
 		tmout0 = false;
-	tm0msk = ((data & 1) != 0);
-	tm1msk = ((data & 2) != 0);
+	ctrl = data;
 	update_intr();
 	d_beep->write_signal(did_beep, data, 4);
 }
@@ -30,7 +29,7 @@ void TIMER::write_io8(uint32 addr, uint32 data)
 uint32 TIMER::read_io8(uint32 addr)
 {
 	// $60: interrupt cause register
-	return 0xe4 | (tmout0 ? 1 : 0) | (tmout1 ? 2 : 0);
+	return (tmout0 ? 1 : 0) | (tmout1 ? 2 : 0) | ((ctrl & 7) << 2) | 0xe0;
 }
 
 void TIMER::write_signal(int id, uint32 data, uint32 mask)
@@ -48,6 +47,6 @@ void TIMER::write_signal(int id, uint32 data, uint32 mask)
 
 void TIMER::update_intr()
 {
-	d_pic->write_signal(did_pic, (tmout0 && tm0msk) || (tmout1 && tm1msk) ? 1 : 0, 1);
+	d_pic->write_signal(did_pic, (tmout0 && (ctrl & 1)) || (tmout1 && (ctrl & 2)) ? 1 : 0, 1);
 }
 

@@ -39,6 +39,7 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
 #define MAX_SCSI		8
+#define MAX_MEMCARD		2
 //#define HAS_I286
 #define HAS_I86
 #define I86_BIOS_CALL

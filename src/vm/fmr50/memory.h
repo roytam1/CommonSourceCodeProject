@@ -58,7 +58,7 @@ private:
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	
-	uint8 ram[0x500000];	// RAM 1+4MB
+	uint8 ram[0x200000];	// RAM 1+1MB
 	uint8 vram[0x40000];	// VRAM 32KB * 8pl
 	uint8 dummy[0x8000];	// dummy plane
 	uint8 cvram[0x1000];
@@ -76,9 +76,19 @@ private:
 	uint8 outctrl, dispctrl;
 	uint8 mix;
 	uint16 accaddr, dispaddr;
-	int kj_h, kj_l, kj_ofs, kj_row;
+	
+	// crtc
 	uint8* chreg;
 	bool disp, vsync;
+	
+	// kanji
+	int kj_h, kj_l, kj_ofs, kj_row;
+	
+	// logical operation
+	uint8 cmdreg, imgcol, maskreg, compreg[8], compbit, bankdis, tilereg[3];
+	uint16 lofs, lsty, lsx, lsy, lex, ley;
+	void point(int x, int y, int col);
+	void line();
 	
 	int blink;
 	uint8 screen_txt[400][648];
@@ -87,7 +97,8 @@ private:
 	scrntype palette_cg[16];
 	
 	void update_bank();
-	void draw_text();
+	void draw_text40();
+	void draw_text80();
 	void draw_cg();
 	
 public:

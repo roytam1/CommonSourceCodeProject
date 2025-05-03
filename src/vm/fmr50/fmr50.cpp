@@ -183,13 +183,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	io->set_iomap_single_w(0xfd96, memory);	// crtc
 	io->set_iomap_range_w(0xfd98, 0xfd9f, memory);	// crtc
 	io->set_iomap_single_w(0xfda0, memory);	// crtc
-	io->set_iomap_single_w(0xff81, memory);	// crtc
 	
 	io->set_iomap_alias_r(0x00, pic, 0);
 	io->set_iomap_alias_r(0x02, pic, 1);
 	io->set_iomap_alias_r(0x10, pic, 2);
 	io->set_iomap_alias_r(0x12, pic, 3);
 	io->set_iomap_single_r(0x20, memory);		// reset
+	io->set_iomap_single_r(0x21, memory);		// cpu misc
 	io->set_iomap_range_r(0x30, 0x31, memory);	// cpu id
 	io->set_iomap_alias_r(0x40, pit0, 0);
 	io->set_iomap_alias_r(0x42, pit0, 1);
@@ -211,7 +211,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_alias_r(0x206, fdc, 3);
 	io->set_iomap_single_r(0x208, floppy);
 	io->set_iomap_single_r(0x20c, floppy);
-	io->set_iomap_single_r(0x20e, floppy);
 	io->set_iomap_single_r(0x400, memory);	// crtc
 	io->set_iomap_single_r(0x402, memory);	// crtc
 	io->set_iomap_single_r(0x404, memory);	// crtc
@@ -235,7 +234,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	io->set_iomap_single_r(0xfd96, memory);	// crtc
 	io->set_iomap_range_r(0xfd98, 0xfd9f, memory);	// crtc
 	io->set_iomap_single_r(0xfda0, memory);	// crtc
-	io->set_iomap_single_r(0xff81, memory);	// crtc
 	
 	// initialize and reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {

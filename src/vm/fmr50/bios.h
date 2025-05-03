@@ -206,13 +206,22 @@ private:
 	DEVICE *d_mem, *d_io;
 	DISK *disk[MAX_DRIVE];
 	
+	// pseudo bios
 	uint8 *cmos, *vram, *cvram, *kvram;
 	int secnum, timeout;
 	
+	// disk bios
 	bool access_fdd[MAX_DRIVE], access_scsi;
 	int scsi_blocks[MAX_SCSI];
 	_TCHAR scsi_path[MAX_SCSI][_MAX_PATH];
+	int memcard_blocks[MAX_MEMCARD];
+	bool memcard_protected[MAX_MEMCARD];
+	_TCHAR memcard_path[MAX_SCSI][_MAX_PATH];
 	uint8 buffer[0x10000];
+	
+	// power management
+	uint8 powmode;
+	
 	uint32 disk_pc1, disk_pc2, cmos_pc, wait_pc;
 	
 public:

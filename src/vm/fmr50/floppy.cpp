@@ -53,16 +53,14 @@ uint32 FLOPPY::read_io8(uint32 addr)
 	switch(addr & 0xffff)
 	{
 	case 0x208:
-		return d_fdc->fdc_status();
-	case 0x20c:
-		return drvreg;
-	case 0x20e:
-		// drive change register
 		if(changed[drvsel]) {
 			changed[drvsel] = false;
-			return 1;
+			return d_fdc->fdc_status() | 0xe1;	// fdd*2
 		}
-		return 0;
+//		return d_fdc->fdc_status() | 0x60;	// fdd*1
+		return d_fdc->fdc_status() | 0xe0;	// fdd*2
+	case 0x20c:
+		return drvreg;
 	}
 	return 0xff;
 }

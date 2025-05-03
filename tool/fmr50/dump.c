@@ -4,10 +4,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <farstr.h>
 #include <dos.h>
-#include <memory.h>
 
 void main()
 {

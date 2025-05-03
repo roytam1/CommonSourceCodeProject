@@ -115,4 +115,4 @@ under the GNU GENERAL PUBLIC LICENSE.
 ----------------------------------------
 TAKEDA, toshiya
 t-takeda@m1.interq.or.jp
-http://www1.interq.or.jp/~t-takeda/top.html
+http://homepage3.nifty.com/takeda-toshiya/

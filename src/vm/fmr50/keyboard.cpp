@@ -53,7 +53,7 @@ uint32 KEYBOARD::read_io8(uint32 addr)
 	case 0x602:
 		return kbstat;
 	case 0x604:
-		return kbint;
+		return kbint | 0xfc;
 	}
 	return 0;
 }

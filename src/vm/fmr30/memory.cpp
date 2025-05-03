@@ -70,6 +70,11 @@ void MEMORY::initialize()
 	}
 	delete fio;
 	
+	// set memory
+	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
+	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
+	SET_BANK(0xff0000, 0xffffff, wdmy, ipl);
+	
 	// regist event
 	vm->regist_frame_event(this);
 }
@@ -227,8 +232,6 @@ void MEMORY::event_frame()
 
 void MEMORY::update_bank()
 {
-	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
-	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
 	if(!(mcr2 & 1)) {
 		// $c0000-$cffff: vram
 		SET_BANK(0xc0000, 0xcffff, wdmy, rdmy);
@@ -237,12 +240,16 @@ void MEMORY::update_bank()
 		SET_BANK(0xc8000, 0xc8fff, cvram, cvram);
 		SET_BANK(0xca000, 0xcafff, kvram, kvram);
 	}
+	else {
+		SET_BANK(0xc0000, 0xcffff, ram + 0xc0000, ram + 0xc0000);
+	}
 	if(!(mcr1 & 1)) {
 		// $f000-$ffff: rom
 		SET_BANK(0xf0000, 0xfffff, wdmy, ipl);
-//		SET_BANK(0xf0000, 0xfffff, ram + 0xf0000, ipl);
 	}
-	SET_BANK(0xff0000, 0xffffff, wdmy, ipl);
+	else {
+		SET_BANK(0xf0000, 0xfffff, ram + 0xf0000, ram + 0xf0000);
+	}
 }
 
 void MEMORY::draw_screen()

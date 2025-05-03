@@ -115,6 +115,10 @@ void MEMORY::reset()
 	accaddr = dispaddr = 0;
 	kj_l = kj_h = kj_ofs = kj_row = 0;
 	blink = 0;
+	
+	// reset logical operation
+	cmdreg = maskreg = compbit = bankdis = 0;
+	_memset(compreg, sizeof(compreg), 0xff);
 }
 
 void MEMORY::write_data8(uint32 addr, uint32 data)
@@ -123,22 +127,74 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 	if(!mainmem) {
 		if(0xc0000 <= addr && addr < 0xc8000) {
 			// vram
+			uint32 page;
 			if(dispctrl & 0x40) {
 				// 400 line
-//				uint32 ofs = (((pagesel >> 4) & 1) * 0x20000) | (addr & 0x7fff);
-				uint32 ofs = ((pagesel & 0x10) << 13) | (addr & 0x7fff);
-				if(wplane & 1) vram[ofs | 0x00000] = data;
-				if(wplane & 2) vram[ofs | 0x08000] = data;
-				if(wplane & 4) vram[ofs | 0x10000] = data;
-				if(wplane & 8) vram[ofs | 0x18000] = data;
+				addr = ((pagesel & 0x10) << 13) | (addr & 0x7fff);
+				page = 0x8000;
 			}
 			else {
-//				uint32 ofs = (((pagesel >> 3) & 3) * 0x10000) | (addr & 0x7fff);
-				uint32 ofs = ((pagesel & 0x18) << 13) | (addr & 0x3fff);
-				if(wplane & 1) vram[ofs | 0x00000] = data;
-				if(wplane & 2) vram[ofs | 0x04000] = data;
-				if(wplane & 4) vram[ofs | 0x08000] = data;
-				if(wplane & 8) vram[ofs | 0x10000] = data;
+				// 200 line
+				addr = ((pagesel & 0x18) << 13) | (addr & 0x3fff);
+				page = 0x4000;
+			}
+			if(cmdreg & 0x80) {
+				// logical operations
+				if((cmdreg & 7) == 7) {
+					// compare
+					compbit = 0;
+					for(uint8 bit = 1; bit <= 0x80; bit <<= 1) {
+						uint8 val = 0;
+						for(int pl = 0; pl < 4; pl++) {
+							if(vram[addr + page * pl] & bit)
+								val |= 1 << pl;
+						}
+						for(int i = 0; i < 8; i++) {
+							if((compreg[i] & 0x80) && (compreg[i] & 0xf) == val)
+								compbit |= bit;
+						}
+					}
+				}
+				else {
+					uint8 mask = maskreg | ~data, val[4];
+					for(int pl = 0; pl < 4; pl++)
+						val[pl] = (imgcol & (1 << pl)) ? 0xff : 0;
+					switch(cmdreg & 7)
+					{
+					case 2:	// or
+						for(int pl = 0; pl < 4; pl++)
+							val[pl] |= vram[addr + page * pl];
+						break;
+					case 3:	// and
+						for(int pl = 0; pl < 4; pl++)
+							val[pl] &= vram[addr + page * pl];
+						break;
+					case 4:	// xor
+						for(int pl = 0; pl < 4; pl++)
+							val[pl] ^= vram[addr + page * pl];
+						break;
+					case 5:	// not
+						for(int pl = 0; pl < 4; pl++)
+							val[pl] = ~vram[addr + page * pl];
+						break;
+					case 6:	// tile
+						for(int pl = 0; pl < 4; pl++)
+							val[pl] = tilereg[pl];
+						break;
+					}
+					for(int pl = 0; pl < 4; pl++) {
+						if(!(bankdis & (1 << pl))) {
+							vram[addr + page * pl] &= mask;
+							vram[addr + page * pl] |= val[pl] & ~mask;
+						}
+					}
+				}
+			}
+			else {
+				for(int pl = 0; pl < 4; pl++) {
+					if(wplane & (1 << pl))
+						vram[addr + page * pl] = data;
+				}
 			}
 			return;
 		}
@@ -216,6 +272,72 @@ void MEMORY::write_data8(uint32 addr, uint32 data)
 				ankcg = data;
 				update_bank();
 				break;
+			case 0xffa0:
+				cmdreg = data;
+				break;
+			case 0xffa1:
+				imgcol = data;
+				break;
+			case 0xffa2:
+				maskreg = data;
+				break;
+			case 0xffa3:
+			case 0xffa4:
+			case 0xffa5:
+			case 0xffa6:
+			case 0xffa7:
+			case 0xffa8:
+			case 0xffa9:
+			case 0xffaa:
+				compreg[addr & 7] = data;
+				break;
+			case 0xffab:
+				bankdis = data;
+				break;
+			case 0xffac:
+			case 0xffad:
+			case 0xffae:
+			case 0xffaf:
+				tilereg[addr & 3] = data;
+				break;
+			case 0xffb0:
+				lofs = (lofs & 0xff) | (data << 8);
+				break;
+			case 0xffb1:
+				lofs = (lofs & 0xff00) | data;
+				break;
+			case 0xffb2:
+				lsty = (lsty & 0xff) | (data << 8);
+				break;
+			case 0xffb3:
+				lsty = (lsty & 0xff00) | data;
+				break;
+			case 0xffb4:
+				lsx = (lsx & 0xff) | (data << 8);
+				break;
+			case 0xffb5:
+				lsx = (lsx & 0xff00) | data;
+				break;
+			case 0xffb6:
+				lsy = (lsy & 0xff) | (data << 8);
+				break;
+			case 0xffb7:
+				lsy = (lsy & 0xff00) | data;
+				break;
+			case 0xffb8:
+				lex = (lex & 0xff) | (data << 8);
+				break;
+			case 0xffb9:
+				lex = (lex & 0xff00) | data;
+				break;
+			case 0xffba:
+				ley = (ley & 0xff) | (data << 8);
+				break;
+			case 0xffbb:
+				ley = (ley & 0xff00) | data;
+				// start drawing line
+				line();
+				break;
 			}
 			return;
 		}
@@ -260,6 +382,16 @@ uint32 MEMORY::read_data8(uint32 addr)
 				return kanji16[(kj_ofs | ((kj_row & 0xf) << 1)) & 0x3ffff];
 			case 0xff97:
 				return kanji16[(kj_ofs | ((kj_row++ & 0xf) << 1) | 1) & 0x3ffff];
+			case 0xffa0:
+				return cmdreg;
+			case 0xffa1:
+				return imgcol | 0xf0;
+			case 0xffa2:
+				return maskreg;
+			case 0xffa3:
+				return compbit;
+			case 0xffab:
+				return bankdis & 0xf;
 			}
 			return 0xff;
 		}
@@ -367,12 +499,6 @@ void MEMORY::write_io8(uint32 addr, uint32 data)
 		// video output control
 		outctrl = data;
 		break;
-	case 0xff81:
-		// update register
-		wplane = data & 0xf;
-		rplane = (data >> 6) & 3;
-		update_bank();
-		break;
 	}
 }
 
@@ -387,6 +513,8 @@ uint32 MEMORY::read_io8(uint32 addr)
 		val = rst;
 		rst &= ~3;
 		return val | 0x7c;
+	case 0x21:
+		return 0xff;
 	case 0x30:
 		// machine & cpu id
 		return id[0];
@@ -434,9 +562,6 @@ uint32 MEMORY::read_io8(uint32 addr)
 	case 0xfda0:
 		// status register
 		return (disp ? 2 : 0) | (vsync ? 1 : 0) | 0xfc;
-	case 0xff81:
-		// update register
-		return wplane | (rplane << 6);
 	}
 	return 0xff;
 }
@@ -494,13 +619,71 @@ void MEMORY::update_bank()
 	}
 }
 
+void MEMORY::point(int x, int y, int col)
+{
+	if(x < 640 && y < 400) {
+		int ofs = ((lofs & 0x3fff) + (x >> 3) + y * 80) & 0x7fff;
+		uint8 bit = 0x80 >> (x & 7);
+		for(int pl = 0; pl < 4; pl++) {
+			uint8 pbit = 1 << pl;
+			if(!(bankdis & pbit)) {
+				if(col & pbit)
+					vram[0x8000 * pl + ofs] |= bit;
+				else
+					vram[0x8000 * pl + ofs] &= ~bit;
+			}
+		}
+	}
+}
+
+void MEMORY::line()
+{
+	int nx = lsx, ny = lsy;
+	int dx = abs(lex - lsx) * 2;
+	int dy = abs(ley - lsy) * 2;
+	int sx = (lex < lsx) ? -1 : 1;
+	int sy = (ley < lsy) ? -1 : 1;
+	int c = 0;
+	
+	point(lsx, lsy, (lsty & (0x8000 >> (c++ & 15))) ? imgcol : 0);
+	if(dx > dy) {
+		int frac = dy - dx / 2;
+		while(nx != lex) {
+			if(frac >= 0) {
+				ny += sy;
+				frac -= dx;
+			}
+			nx += sx;
+			frac += dy;
+			point(nx, ny, (lsty & (0x8000 >> (c++ & 15))) ? imgcol : 0);
+		}
+	}
+	else {
+		int frac = dx - dy / 2;
+		while(ny != ley) {
+			if(frac >= 0) {
+				nx += sx;
+				frac -= dy;
+			}
+			ny += sy;
+			frac += dx;
+			point(nx, ny, (lsty & (0x8000 >> (c++ & 15))) ? imgcol : 0);
+		}
+	}
+//	point(lex, ley, (lsty & (0x8000 >> (c++ & 15))) ? imgcol : 0);
+}
+
 void MEMORY::draw_screen()
 {
 	// render screen
 	_memset(screen_txt, 0, sizeof(screen_txt));
 	_memset(screen_cg, 0, sizeof(screen_cg));
-	if(outctrl & 1)
-		draw_text();
+	if(outctrl & 1) {
+		if(mix & 8)
+			draw_text80();
+		else
+			draw_text40();
+	}
 	if(outctrl & 4)
 		draw_cg();
 	
@@ -527,10 +710,105 @@ void MEMORY::draw_screen()
 	}
 }
 
-void MEMORY::draw_text()
+void MEMORY::draw_text40()
 {
 	int src = ((chreg[12] << 9) | (chreg[13] << 1)) & 0xfff;
 	int caddr = ((chreg[8] & 0xc0) == 0xc0) ? -1 : (((chreg[14] << 9) | (chreg[15] << 1) | (mix & 0x20 ? 1 : 0)) & 0x7ff);
+	int ymax = (chreg[6] > 0) ? chreg[6] : 25;
+	int yofs = 400 / ymax;
+	
+	for(int y = 0; y < ymax; y++) {
+		for(int x = 0; x < 40; x++) {
+			bool cursor = ((src >> 1) == caddr);
+			int cx = x;
+			uint8 code = cvram[src];
+			uint8 h = kvram[src] & 0x7f;
+			src = (src + 1) & 0xfff;
+			uint8 attr = cvram[src];
+			uint8 l = kvram[src] & 0x7f;
+			src = (src + 1) & 0xfff;
+			uint8 col = ((attr & 0x20) >> 2) | (attr & 7);
+			bool blnk = (blink & 32) && (attr & 0x10);
+			bool rev = ((attr & 8) != 0);
+			
+			if(attr & 0x40) {
+				// kanji
+				int ofs;
+				if(h < 0x30)
+					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10);
+				else if(h < 0x70)
+					ofs = (((l - 0x00) & 0x1f) <<  5) + (((l - 0x20) & 0x60) <<  9) + (((h - 0x00) & 0x0f) << 10) + (((h - 0x30) & 0x70) * 0xc00) + 0x08000;
+				else
+					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
+				
+				for(int l = 0; l < 16 && l < yofs; l++) {
+					uint8 pat0 = kanji16[ofs + (l << 1) + 0];
+					uint8 pat1 = kanji16[ofs + (l << 1) + 1];
+					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
+					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
+					int yy = y * yofs + l;
+					if(yy >= 400)
+						break;
+					uint8* d = &screen_txt[yy][x << 4];
+					
+					d[ 0] = d[ 1] = (pat0 & 0x80) ? col : 0;
+					d[ 2] = d[ 3] = (pat0 & 0x40) ? col : 0;
+					d[ 4] = d[ 5] = (pat0 & 0x20) ? col : 0;
+					d[ 6] = d[ 7] = (pat0 & 0x10) ? col : 0;
+					d[ 8] = d[ 9] = (pat0 & 0x08) ? col : 0;
+					d[10] = d[11] = (pat0 & 0x04) ? col : 0;
+					d[12] = d[13] = (pat0 & 0x02) ? col : 0;
+					d[14] = d[15] = (pat0 & 0x01) ? col : 0;
+					d[16] = d[17] = (pat1 & 0x80) ? col : 0;
+					d[18] = d[19] = (pat1 & 0x40) ? col : 0;
+					d[20] = d[21] = (pat1 & 0x20) ? col : 0;
+					d[22] = d[23] = (pat1 & 0x10) ? col : 0;
+					d[24] = d[25] = (pat1 & 0x08) ? col : 0;
+					d[26] = d[27] = (pat1 & 0x04) ? col : 0;
+					d[28] = d[29] = (pat1 & 0x02) ? col : 0;
+					d[30] = d[31] = (pat1 & 0x01) ? col : 0;
+				}
+				src = (src + 2) & 0xfff;
+				x++;
+			}
+			else {
+				for(int l = 0; l < 16 && l < yofs; l++) {
+					uint8 pat = ank16[(code << 4) + l];
+					pat = blnk ? 0 : rev ? ~pat : pat;
+					int yy = y * yofs + l;
+					if(yy >= 400)
+						break;
+					uint8* d = &screen_txt[yy][x << 4];
+					
+					d[ 0] = d[ 1] = (pat & 0x80) ? col : 0;
+					d[ 2] = d[ 3] = (pat & 0x40) ? col : 0;
+					d[ 4] = d[ 5] = (pat & 0x20) ? col : 0;
+					d[ 6] = d[ 7] = (pat & 0x10) ? col : 0;
+					d[ 8] = d[ 9] = (pat & 0x08) ? col : 0;
+					d[10] = d[11] = (pat & 0x04) ? col : 0;
+					d[12] = d[13] = (pat & 0x02) ? col : 0;
+					d[14] = d[15] = (pat & 0x01) ? col : 0;
+				}
+			}
+			if(cursor) {
+				int bp = chreg[10] & 0x60;
+				if(bp == 0 || (bp == 0x40 && (blink & 8)) || (bp == 0x60 && (blink & 0x10))) {
+					int st = chreg[10] & 15;
+					int ed = chreg[11] & 15;
+					for(int i = st; i < ed && i < yofs; i++)
+						_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
+				}
+			}
+		}
+	}
+}
+
+void MEMORY::draw_text80()
+{
+	int src = ((chreg[12] << 9) | (chreg[13] << 1)) & 0xfff;
+	int caddr = ((chreg[8] & 0xc0) == 0xc0) ? -1 : (((chreg[14] << 9) | (chreg[15] << 1) | (mix & 0x20 ? 1 : 0)) & 0x7ff);
+	int ymax = (chreg[6] > 0) ? chreg[6] : 25;
+	int yofs = 400 / ymax;
 	
 	for(int y = 0; y < 25; y++) {
 		for(int x = 0; x < 80; x++) {
@@ -556,12 +834,12 @@ void MEMORY::draw_text()
 				else
 					ofs = (((l - 0x00) & 0x1f) <<  5) | (((l - 0x20) & 0x20) <<  9) | (((l - 0x20) & 0x40) <<  7) | (((h - 0x00) & 0x07) << 10) | 0x38000;
 				
-				for(int l = 0; l < 16; l++) {
+				for(int l = 0; l < 16 && l < yofs; l++) {
 					uint8 pat0 = kanji16[ofs + (l << 1) + 0];
 					uint8 pat1 = kanji16[ofs + (l << 1) + 1];
 					pat0 = blnk ? 0 : rev ? ~pat0 : pat0;
 					pat1 = blnk ? 0 : rev ? ~pat1 : pat1;
-					int yy = (y << 4) + l;
+					int yy = y * yofs + l;
 					if(yy >= 400)
 						break;
 					uint8* d = &screen_txt[yy][x << 3];
@@ -587,10 +865,10 @@ void MEMORY::draw_text()
 				x++;
 			}
 			else {
-				for(int l = 0; l < 16; l++) {
+				for(int l = 0; l < 16 && l < yofs; l++) {
 					uint8 pat = ank16[(code << 4) + l];
 					pat = blnk ? 0 : rev ? ~pat : pat;
-					int yy = (y << 4) + l;
+					int yy = y * yofs + l;
 					if(yy >= 400)
 						break;
 					uint8* d = &screen_txt[yy][x << 3];
@@ -608,8 +886,10 @@ void MEMORY::draw_text()
 			if(cursor) {
 				int bp = chreg[10] & 0x60;
 				if(bp == 0 || (bp == 0x40 && (blink & 8)) || (bp == 0x60 && (blink & 0x10))) {
-					for(int i = (chreg[10] & 15); i < 15; i++)
-						_memset(&screen_txt[y * 16 + i][cx << 3], 7, 8);
+					int st = chreg[10] & 15;
+					int ed = chreg[11] & 15;
+					for(int i = st; i < ed && i < yofs; i++)
+						_memset(&screen_txt[y * yofs + i][cx << 3], 7, 8);
 				}
 			}
 		}
