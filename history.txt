@@ -1,3 +1,9 @@
+1/21/2015
+
+[MZ2500/SERIAL] fix port 0xcd for specifying Z80SIO TX/RX clock frequency
+[MZ2800/SERIAL] fix port 0xcd for specifying Z80SIO TX/RX clock frequency
+
+
 1/19/2015
 
 [VM/HD146818P] support save/load state

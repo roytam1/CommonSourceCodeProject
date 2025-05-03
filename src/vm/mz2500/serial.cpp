@@ -37,10 +37,10 @@ void SERIAL::write_io8(uint32 addr, uint32 data)
 		break;
 	case 0xcd:
 		addr_a0 = ((data & 0x80) == 0);
-		d_sio->set_tx_clock(0, (4000000.0 / 13.0) / (1 << ((data >> 0) & 7)));
-		d_sio->set_rx_clock(0, (4000000.0 / 13.0) / (1 << ((data >> 0) & 7)));
-		d_sio->set_tx_clock(1, (4000000.0 / 13.0) / (1 << ((data >> 3) & 7)));
-		d_sio->set_rx_clock(1, (4000000.0 / 13.0) / (1 << ((data >> 3) & 7)));
+		d_sio->set_tx_clock(0, (4000000.0 / 13.0) / (1 << ((data >> 3) & 7)));
+		d_sio->set_rx_clock(0, (4000000.0 / 13.0) / (1 << ((data >> 3) & 7)));
+		d_sio->set_tx_clock(1, (4000000.0 / 13.0) / (1 << ((data >> 0) & 7)));
+		d_sio->set_rx_clock(1, (4000000.0 / 13.0) / (1 << ((data >> 0) & 7)));
 		break;
 	}
 }
