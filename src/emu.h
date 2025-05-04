@@ -15,6 +15,8 @@
 #ifdef _DEBUG_LOG
 	// output fdc debug log
 //	#define _FDC_DEBUG_LOG
+	// output scsi debug log
+//	#define _SCSI_DEBUG_LOG
 	// output i/o debug log
 //	#define _IO_DEBUG_LOG
 #endif
@@ -358,6 +360,7 @@ public:
 	
 	// debug log
 	void out_debug_log(const _TCHAR* format, ...);
+	void force_out_debug_log(const _TCHAR* format, ...);
 	
 	void out_message(const _TCHAR* format, ...);
 	int message_count;

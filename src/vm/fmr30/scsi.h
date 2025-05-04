@@ -1,9 +1,8 @@
 /*
-	FUJITSU FMR-50 Emulator 'eFMR-50'
-	FUJITSU FMR-60 Emulator 'eFMR-60'
+	FUJITSU FMR-30 Emulator 'eFMR-30'
 
 	Author : Takeda.Toshiya
-	Date   : 2016.03.03-
+	Date   : 2016.03.04-
 
 	[ scsi ]
 */
@@ -17,14 +16,15 @@
 
 #define SIG_SCSI_IRQ	0
 #define SIG_SCSI_DRQ	1
+#define SIG_SCSI_TC	2
 
 class SCSI : public DEVICE
 {
 private:
 	DEVICE *d_dma, *d_pic, *d_host;
 	
-	uint8_t ctrl_reg;
-	bool irq_status;
+	uint8_t ctrl_reg, intm_reg;
+	bool phase_status, eop_status;
 	
 public:
 	SCSI(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
