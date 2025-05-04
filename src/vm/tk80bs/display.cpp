@@ -69,7 +69,7 @@ void DISPLAY::initialize()
 	delete fio;
 	
 	mode = 2;
-	dma = 0x80;
+	dma = true;
 }
 
 void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
@@ -79,7 +79,7 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 		mode = data & mask;
 	} else if(id == SIG_DISPLAY_DMA) {
 		// 8255 PC on TK-80
-		dma = data & mask;
+		dma = ((data & mask) != 0);
 	}
 }
 
@@ -149,5 +149,29 @@ void DISPLAY::draw_screen()
 			}
 		}
 	}
+}
+
+#define STATE_VERSION	1
+
+void DISPLAY::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputInt32(mode);
+	state_fio->FputBool(dma);
+}
+
+bool DISPLAY::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	mode = state_fio->FgetInt32();
+	dma = state_fio->FgetBool();
+	return true;
 }
 

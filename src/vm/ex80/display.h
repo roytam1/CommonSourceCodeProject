@@ -38,6 +38,8 @@ public:
 	void event_frame();
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int err);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device)

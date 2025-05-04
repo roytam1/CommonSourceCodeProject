@@ -27,8 +27,11 @@ private:
 	uint8 recv_data;
 	
 	int kbic_cmd, kbsc_cmd;
-	FIFO* cmd_param
+	FIFO* cmd_param;
+	uint8 cmd_byte;
 	uint8 kbic_status;
+	
+	void process_cmd();
 	
 public:
 	KEYBOARD(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

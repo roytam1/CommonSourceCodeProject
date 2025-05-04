@@ -7,7 +7,6 @@
 	[ config ]
 */
 
-#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
@@ -88,17 +87,10 @@ void init_config()
 #endif
 }
 
-void load_config()
+void load_config(const _TCHAR* config_path)
 {
 	// initial settings
 	init_config();
-	
-	// get config path
-	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH], *ptr;
-	GetModuleFileName(NULL, config_path, _MAX_PATH);
-	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
-	*ptr = _T('\0');
-	my_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
 	
 	// control
 #ifdef USE_BOOT_MODE
@@ -228,15 +220,8 @@ void load_config()
 	config.swap_joy_buttons = MyGetPrivateProfileBool(_T("Input"), _T("SwapJoyButtons"), config.swap_joy_buttons, config_path);
 }
 
-void save_config()
+void save_config(const _TCHAR* config_path)
 {
-	// get config path
-	_TCHAR app_path[_MAX_PATH], config_path[_MAX_PATH], *ptr;
-	GetModuleFileName(NULL, config_path, _MAX_PATH);
-	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
-	*ptr = _T('\0');
-	my_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
-	
 	// control
 #ifdef USE_BOOT_MODE
 	MyWritePrivateProfileInt(_T("Control"), _T("BootMode"), config.boot_mode, config_path);

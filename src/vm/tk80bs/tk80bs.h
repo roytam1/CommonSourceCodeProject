@@ -30,6 +30,8 @@
 #define MAX_BUTTONS		25
 //#define MAX_DRAW_RANGES		9
 #define USE_BOOT_MODE		2
+//#define USE_DIPSWITCH
+//#define DIPSWITCH_DEFAULT	0
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
 #define USE_BINARY_FILE1
@@ -39,6 +41,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NO_CAPS
 #define USE_DEBUGGER
+#define USE_STATE
 
 #include "../../common.h"
 #include "../../fileio.h"
@@ -182,6 +185,8 @@ public:
 	bool now_skip();
 	
 	void update_config();
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// ----------------------------------------
 	// for each device

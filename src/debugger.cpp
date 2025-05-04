@@ -115,7 +115,7 @@ break_point_t *get_break_point(DEBUGGER *debugger, const _TCHAR *command)
 	return NULL;
 }
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 unsigned __stdcall debugger_thread(void *lpx)
 #else
 void* debugger_thread(void *lpx)
@@ -859,7 +859,7 @@ void* debugger_thread(void *lpx)
 	p->osd->close_console();
 	
 	p->running = false;
-#ifdef _MSC_VER
+#ifdef _WIN32
 	_endthreadex(0);
 	return 0;
 #else
@@ -888,7 +888,7 @@ void EMU::open_debugger(int cpu_index)
 			debugger_thread_param.vm = vm;
 			debugger_thread_param.cpu_index = cpu_index;
 			debugger_thread_param.request_terminate = false;
-#ifdef _MSC_VER
+#ifdef _WIN32
 			if((hDebuggerThread = (HANDLE)_beginthreadex(NULL, 0, debugger_thread, &debugger_thread_param, 0, NULL)) != (HANDLE)0) {
 #else
 			if(pthread_create(&debugger_thread_id, NULL, debugger_thread, &debugger_thread_param) == 0) {
@@ -907,7 +907,7 @@ void EMU::close_debugger()
 		if(debugger_thread_param.running) {
 			debugger_thread_param.request_terminate = true;
 		}
-#ifdef _MSC_VER
+#ifdef _WIN32
 		WaitForSingleObject(hDebuggerThread, INFINITE);
 		CloseHandle(hDebuggerThread);
 #else

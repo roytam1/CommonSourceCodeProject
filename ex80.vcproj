@@ -768,6 +768,10 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\f9368.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\i8080.h"
 					>
 				</File>

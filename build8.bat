@@ -15,13 +15,13 @@ devenv.com bmjr.vcproj /Rebuild Release
 mkdir build_xp\bmjr
 copy Release\bmjr.exe build_xp\bmjr\.
 
-devenv.com familybasic.vcproj /Rebuild Release
-mkdir build_xp\familybasic
-copy Release\familybasic.exe build_xp\familybasic\.
-
 devenv.com ex80.vcproj /Rebuild Release
 mkdir build_xp\ex80
 copy Release\ex80.exe build_xp\ex80\.
+
+devenv.com familybasic.vcproj /Rebuild Release
+mkdir build_xp\familybasic
+copy Release\familybasic.exe build_xp\familybasic\.
 
 devenv.com fm7.vcproj /Rebuild Release
 devenv.com fm77.vcproj /Rebuild Release

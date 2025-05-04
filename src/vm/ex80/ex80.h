@@ -47,6 +47,7 @@ SW3-1/2	ON ,ON  = 8000H-81FFH
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NO_CAPS
 #define USE_DEBUGGER
+#define USE_STATE
 
 #include "../../common.h"
 #include "../../fileio.h"
@@ -176,6 +177,8 @@ public:
 	bool now_skip();
 	
 	void update_config();
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 	
 	// ----------------------------------------
 	// for each device

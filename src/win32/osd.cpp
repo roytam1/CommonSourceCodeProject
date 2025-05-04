@@ -21,7 +21,7 @@ void OSD::initialize(int rate, int samples)
 	OSVERSIONINFO os_info;
 	os_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&os_info);
-	vista_or_later = (os_info.dwPlatformId == 2 && os_info.dwMajorVersion >= 6);
+	vista_or_later = (os_info.dwPlatformId == 2 && (os_info.dwMajorVersion > 6 || (os_info.dwMajorVersion == 6 && os_info.dwMinorVersion >= 2)));
 	
 #ifdef ONE_BOARD_MICRO_COMPUTER
 	GdiplusStartup(&gdiToken, &gdiSI, NULL);
@@ -80,6 +80,23 @@ void OSD::restore()
 		play_movie();
 	}
 #endif
+}
+
+void OSD::lock_vm()
+{
+	lock_count++;
+}
+
+void OSD::unlock_vm()
+{
+	if(--lock_count <= 0) {
+		force_unlock_vm();
+	}
+}
+
+void OSD::force_unlock_vm()
+{
+	lock_count = 0;
 }
 
 _TCHAR* OSD::bios_path(const _TCHAR* file_name)

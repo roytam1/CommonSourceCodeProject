@@ -22,7 +22,9 @@
 // initialize
 // ----------------------------------------------------------------------------
 
-#ifdef OSD_WIN32
+#if defined(OSD_QT)
+EMU::EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst)
+#elif defined(OSD_WIN32)
 EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #else
 EMU::EMU()
@@ -68,7 +70,11 @@ EMU::EMU()
 	
 	// initialize
 	osd = new OSD();
-#ifdef OSD_WIN32
+#if defined(OSD_QT)
+	osd->main_window_handle = hwnd;
+	osd->glv = hinst;
+	osd->host_cpus = 4;
+#elif defined(OSD_WIN32)
 	osd->main_window_handle = hwnd;
 	osd->instance_handle = hinst;
 #endif
@@ -95,6 +101,29 @@ EMU::~EMU()
 	release_debug_log();
 #endif
 }
+
+#ifdef OSD_QT
+EmuThreadClass *EMU::get_parent_handler()
+{
+	return osd->get_parent_handler();
+}
+
+void EMU::set_parent_handler(EmuThreadClass *p, DrawThreadClass *q)
+{
+	osd->set_parent_thread(p);
+	osd->set_draw_thread(q);
+}
+
+void EMU::set_host_cpus(int v)
+{
+	osd->host_cpus = (v <= 0) ? 1 : v;
+}
+
+int EMU::get_host_cpus()
+{
+	return osd->host_cpus;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // drive machine
@@ -236,9 +265,21 @@ void EMU::unlock_vm()
 	osd->unlock_vm();
 }
 
+void EMU::force_unlock_vm()
+{
+	osd->force_unlock_vm();
+}
+
 // ----------------------------------------------------------------------------
 // input
 // ----------------------------------------------------------------------------
+
+#ifdef OSD_QT
+void EMU::key_modifiers(uint32 mod)
+{
+	osd->key_modifiers(mod);
+}
+#endif
 
 void EMU::key_down(int code, bool repeat)
 {
@@ -335,6 +376,13 @@ void EMU::set_vm_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
 {
 	osd->set_vm_screen_size(sw, sh, swa, sha, ww, wh);
 }
+
+#if defined(USE_MINIMUM_RENDERING)
+bool EMU::screen_changed()
+{
+	return vm->screen_changed();
+}
+#endif
 
 int EMU::draw_screen()
 {
@@ -1216,6 +1264,7 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 {
 	bool result = false;
 	FILEIO* fio = new FILEIO();
+	osd->lock_vm();
 	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		// check state file version
 		if(fio->FgetUint32() == STATE_VERSION) {
@@ -1252,12 +1301,12 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 					// stop sound
 					osd->stop_sound();
 					// reinitialize virtual machine
-					osd->lock_vm();
+//					osd->lock_vm();
 					delete vm;
 					osd->vm = vm = new VM(this);
 					vm->initialize_sound(sound_rate, sound_samples);
 					vm->reset();
-					osd->unlock_vm();
+//					osd->unlock_vm();
 				}
 				// restore inserted medias
 				restore_media();
@@ -1270,6 +1319,7 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 		}
 		fio->Fclose();
 	}
+	osd->unlock_vm();
 	delete fio;
 	return result;
 }

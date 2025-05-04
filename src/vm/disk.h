@@ -14,7 +14,6 @@
 #include "vm.h"
 #include "../emu.h"
 #else
-#include <windows.h>
 #include "../common.h"
 #endif
 

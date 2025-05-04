@@ -7,12 +7,8 @@
 	[ common ]
 */
 
-#include <windows.h>
-#include <shlwapi.h>
 #include "common.h"
 #include "fileio.h"
-
-#pragma comment(lib, "shlwapi.lib")
 
 inline uint32 EndianToLittle_DWORD(uint32 x)
 {
@@ -94,6 +90,18 @@ errno_t my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHA
 	return 0;
 }
 
+errno_t my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count)
+{
+	strncpy(strDestination, strSource, count);
+	return 0;
+}
+
+errno_t my_tcsncpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource, size_t count)
+{
+	_tcsncpy(strDestination, strSource, count);
+	return 0;
+}
+
 char *my_strtok_s(char *strToken, const char *strDelimit, char **context)
 {
 	return strtok(strToken, strDelimit);
@@ -133,14 +141,14 @@ int my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format
 }
 #endif
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpString, LPCTSTR lpFileName)
 {
 	BOOL result = FALSE;
 	FILEIO* fio_i = new FILEIO();
 	if(fio_i->Fopen(lpFileName, FILEIO_READ_ASCII)) {
-		char tmp_path[MAX_PATH];
-		my_sprintf_s(tmp_path, MAX_PATH, "%s.$$$", lpFileName);
+		char tmp_path[_MAX_PATH];
+		my_sprintf_s(tmp_path, _MAX_PATH, "%s.$$$", lpFileName);
 		FILEIO* fio_o = new FILEIO();
 		if(fio_o->Fopen(tmp_path, FILEIO_WRITE_ASCII)) {
 			bool in_section = false;
@@ -224,7 +232,7 @@ DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lp
 			} else if(in_section && (equal = strstr(line, "=")) != NULL) {
 				*equal = '\0';
 				if(strcmp(line, lpKeyName) == 0) {
-					strcpy_s(lpReturnedString, nSize, equal + 1);
+					my_strcpy_s(lpReturnedString, nSize, equal + 1);
 					break;
 				}
 			}
@@ -329,7 +337,14 @@ _TCHAR *get_file_path_without_extensiton(const _TCHAR* file_path)
 	static _TCHAR path[_MAX_PATH];
 	
 	my_tcscpy_s(path, _MAX_PATH, file_path);
+#ifdef _WIN32
 	PathRemoveExtension(path);
+#else
+	_TCHAR *p = _tcsrchr(path, _T('.'));
+	if(p != NULL) {
+		*p = _T('\0');
+	}
+#endif
 	return path;
 }
 

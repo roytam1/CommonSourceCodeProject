@@ -76,7 +76,7 @@ protected:
 	// devices
 	EVENT* event;
 	
-	AND* and;
+	AND* and_drq;
 	BEEP* beep;
 	I8251* sio;
 	I8255* pio0;

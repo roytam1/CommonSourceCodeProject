@@ -447,7 +447,7 @@ void LD700::open_disc(const _TCHAR* file_path)
 			for(int i = 0; i <= MAX_TRACKS; i++) {
 				_TCHAR name[64];
 				my_stprintf_s(name, 64, _T("chapter%d"), i);
-				int value = GetPrivateProfileInt(_T("Location"), name, -1, ini_path);
+				int value = MyGetPrivateProfileInt(_T("Location"), name, -1, ini_path);
 				if(value < 0) {
 					break;
 				} else {
@@ -458,7 +458,7 @@ void LD700::open_disc(const _TCHAR* file_path)
 			for(int i = 0; i < MAX_PAUSES; i++) {
 				_TCHAR name[64];
 				my_stprintf_s(name, 64, _T("stop%d"), i);
-				int value = GetPrivateProfileInt(_T("Location"), name, -1, ini_path);
+				int value = MyGetPrivateProfileInt(_T("Location"), name, -1, ini_path);
 				if(value < 0) {
 					break;
 				} else {

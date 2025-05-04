@@ -26,15 +26,25 @@
 #include "config.h"
 #include "vm/vm.h"
 
-#if defined(_MSC_VER)
+#if defined(_USE_QT)
+#define OSD_QT
+#elif defined(_USE_SDL)
+#define OSD_SDL
+#elif defined(_WIN32)
 #define OSD_WIN32
+#else
+// oops!
 #endif
-#if defined(OSD_WIN32)
-#include "win32/osd.h"
-#elif defined(OSD_QT)
+
+// OS dependent header files should be included in each osd.h
+// Please do not include them in emu.h
+
+#if defined(OSD_QT)
 #include "qt/osd.h"
 #elif defined(OSD_SDL)
 #include "sdl/osd.h"
+#elif defined(OSD_WIN32)
+#include "win32/osd.h"
 #endif
 
 #ifdef USE_FD1
@@ -60,14 +70,14 @@ class EMU
 {
 protected:
 	VM* vm;
-private:
 	OSD* osd;
 	
+private:
 	// debugger
 #ifdef USE_DEBUGGER
 	void initialize_debugger();
 	void release_debugger();
-#ifdef _MSC_VER
+#ifdef _WIN32
 	HANDLE hDebuggerThread;
 #else
 	int debugger_thread_id;
@@ -133,12 +143,26 @@ private:
 #endif
 	
 public:
-#ifdef OSD_WIN32
+#if defined(OSD_QT)
+	EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst)
+#elif defined(OSD_WIN32)
 	EMU(HWND hwnd, HINSTANCE hinst);
 #else
 	EMU();
 #endif
 	~EMU();
+	
+#ifdef OSD_QT
+	// qt dependent
+	EmuThreadClass *get_parent_handler();
+	void set_parent_handler(EmuThreadClass *p, DrawThreadClass *q);
+	VM *get_vm()
+	{
+		return vm:
+	}
+	void set_host_cpus(int v);
+	int get_host_cpus();
+#endif
 	
 	// drive machine
 	int frame_interval();
@@ -155,8 +179,12 @@ public:
 	void suspend();
 	void lock_vm();
 	void unlock_vm();
+	void force_unlock_vm();
 	
 	// input
+#ifdef OSD_QT
+	void key_modifiers(uint32 mod);
+#endif
 	void key_down(int code, bool repeat);
 	void key_up(int code);
 	void key_lost_focus();
@@ -181,6 +209,9 @@ public:
 	int get_window_height(int mode);
 	void set_window_size(int width, int height, bool window_mode);
 	void set_vm_screen_size(int sw, int sh, int swa, int sha, int ww, int wh);
+#if defined(USE_MINIMUM_RENDERING)
+	bool screen_changed();
+#endif
 	int draw_screen();
 	scrntype* screen_buffer(int y);
 #ifdef USE_CRT_FILTER

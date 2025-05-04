@@ -60,3 +60,25 @@ void KEYBOARD::event_frame()
 	d_pio->write_signal(SIG_I8255_PORT_A, val, 0xff);
 }
 
+#define STATE_VERSION	1
+
+void KEYBOARD::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputUint32(column);
+}
+
+bool KEYBOARD::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	column = state_fio->FgetUint32();
+	return true;
+}
+

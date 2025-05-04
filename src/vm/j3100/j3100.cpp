@@ -196,7 +196,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		0x2e8, 0x42e8, 0x82e8, 0xc2e8,
 #endif
 	};
-	for(int i = 0; i < _countof(ems_addr); i++) {
+	for(int i = 0; i < array_length(ems_addr); i++) {
 		io->set_iomap_single_rw(ems_addr[i], memory);
 #ifdef TYPE_SL
 		io->set_iomap_single_w(ems_addr[i] + 1, memory);

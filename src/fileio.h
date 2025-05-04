@@ -10,7 +10,6 @@
 #ifndef _FILEIO_H_
 #define _FILEIO_H_
 
-#include <windows.h>
 #include <stdio.h>
 #include "common.h"
 

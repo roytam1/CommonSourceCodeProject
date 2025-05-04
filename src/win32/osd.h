@@ -159,6 +159,7 @@ class FILEIO;
 class OSD
 {
 private:
+	int lock_count;
 	_TCHAR app_path[_MAX_PATH];
 	
 	// console
@@ -350,7 +351,10 @@ private:
 #endif
 	
 public:
-	OSD() {}
+	OSD()
+	{
+		lock_count = 0;
+	}
 	~OSD() {}
 	
 	// common
@@ -361,8 +365,9 @@ public:
 	void power_off();
 	void suspend();
 	void restore();
-	void lock_vm() {}
-	void unlock_vm() {}
+	void lock_vm();
+	void unlock_vm();
+	void force_unlock_vm();
 	_TCHAR* application_path()
 	{
 		return app_path;

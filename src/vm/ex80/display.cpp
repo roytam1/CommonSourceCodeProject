@@ -8,6 +8,7 @@
 */
 
 #include "display.h"
+#include "../f9368.h"
 
 #define EVENT_HBLANK 0
 
@@ -291,28 +292,10 @@ void DISPLAY::draw_screen()
 	color_led[0] = RGB_COLOR(38, 8, 0);
 	
 	for(int i = 0; i < 8; i++) {
-		static const uint8 led[16][8] = {
-			{1,2,3,4,5,6,0,0},	// 0
-			{0,2,3,0,0,0,0,0},	// 1
-			{1,2,0,4,5,0,7,0},	// 2
-			{1,2,3,4,0,0,7,0},	// 3
-			{0,2,3,0,0,6,7,0},	// 4
-			{1,0,3,4,0,6,7,0},	// 5
-			{1,0,3,4,5,6,7,0},	// 6
-			{1,2,3,0,0,6,0,0},	// 7
-			{1,2,3,4,5,6,7,0},	// 8
-			{1,2,3,4,0,6,7,0},	// 9
-			{1,2,3,0,4,5,6,0},	// A
-			{0,0,3,4,5,6,7,0},	// b
-			{1,0,0,4,5,6,0,0},	// C
-			{0,2,3,4,5,0,7,0},	// d
-			{1,0,0,4,5,6,7,0},	// E
-			{1,0,0,0,5,6,7,0},	// F
-		};
 		uint8 val = (base[i >> 1] >> ((i & 1) ? 0 : 4)) & 0x0f;
 		
 		for(int b = 0; b < 8; b++) {
-			color_led[b + 1] = (dma && led[val][b]) ? color_on : color_off;
+			color_led[b + 1] = (dma && f9368[val][b]) ? color_on : color_off;
 		}
 		for(int y = 0; y < LED_HEIGHT; y++) {
 			scrntype* dest = emu->screen_buffer(ranges[i].y + y) + ranges[i].x;
@@ -321,5 +304,29 @@ void DISPLAY::draw_screen()
 			}
 		}
 	}
+}
+
+#define STATE_VERSION	1
+
+void DISPLAY::save_state(FILEIO* state_fio)
+{
+	state_fio->FputUint32(STATE_VERSION);
+	state_fio->FputInt32(this_device_id);
+	
+	state_fio->FputInt32(odd_even);
+	state_fio->FputBool(dma);
+}
+
+bool DISPLAY::load_state(FILEIO* state_fio)
+{
+	if(state_fio->FgetUint32() != STATE_VERSION) {
+		return false;
+	}
+	if(state_fio->FgetInt32() != this_device_id) {
+		return false;
+	}
+	odd_even = state_fio->FgetInt32();
+	dma = state_fio->FgetBool();
+	return true;
 }
 

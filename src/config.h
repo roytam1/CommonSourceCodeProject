@@ -51,8 +51,8 @@
 #endif
 
 void init_config();
-void load_config();
-void save_config();
+void load_config(const _TCHAR* config_path);
+void save_config(const _TCHAR* config_path);
 void save_config_state(void *f);
 bool load_config_state(void *f);
 

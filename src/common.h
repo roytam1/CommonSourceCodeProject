@@ -10,21 +10,32 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#ifdef _MSC_VER
-	#if _MSC_VER == 1200
-		// variable scope of 'for' loop for Microsoft Visual C++ 6.0
-		#define for if(0);else for
-	#endif
-	#if _MSC_VER >= 1200
+#ifdef _WIN32
+	#ifdef _MSC_VER
+		#if _MSC_VER == 1200
+			// variable scope of 'for' loop for Microsoft Visual C++ 6.0
+			#define for if(0);else for
+		#endif
+		#if _MSC_VER >= 1200
+			#define SUPPORT_TCHAR_TYPE
+		#endif
+		#if _MSC_VER >= 1400
+			#define SUPPORT_SECURE_FUNCTIONS
+			// disable warnings for Microsoft Visual C++ 2005 or later
+			#pragma warning( disable : 4819 )
+			//#pragma warning( disable : 4995 )
+			#pragma warning( disable : 4996 )
+		#endif
+	#else
+		// Windows, but not VC++
 		#define SUPPORT_TCHAR_TYPE
+//		#define SUPPORT_SECURE_FUNCTIONS
 	#endif
-	#if _MSC_VER >= 1400
-		#define SUPPORT_SECURE_FUNCTIONS
-		// disable warnings for Microsoft Visual C++ 2005 or later
-		#pragma warning( disable : 4819 )
-		//#pragma warning( disable : 4995 )
-		#pragma warning( disable : 4996 )
-	#endif
+#endif
+
+// secure functions need tchar type
+#ifndef SUPPORT_TCHAR_TYPE
+#undef SUPPORT_SECURE_FUNCTIONS
 #endif
 
 #ifdef SUPPORT_TCHAR_TYPE
@@ -32,13 +43,16 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <windows.h>
 #include <windowsx.h>
 #include <mmsystem.h>
 #include <process.h>
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
 #endif
 
 #ifdef _USE_QT
@@ -73,11 +87,19 @@
 	#endif
 #endif
 #if !defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)
-	// Microsoft Visual C++
+	// may be Microsoft Visual C++
 	#define __LITTLE_ENDIAN__
 #endif
 
 // type definition
+#ifndef _MSC_VER
+	#ifndef boolean
+		typedef bool boolean;
+	#endif
+	#ifndef byte
+		typedef unsigned char byte;
+	#endif
+#endif
 #ifndef uchar
 	typedef unsigned char uchar;
 #endif
@@ -208,7 +230,7 @@
 	#endif
 #endif
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 	#ifndef LPTSTR
 		typedef _TCHAR* LPTSTR;
 	#endif
@@ -420,6 +442,12 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 	#ifndef _tcsncicmp
 		#define _tcsncicmp strnicmp
 	#endif
+	#ifndef _tcschr
+		#define _tcschr strchr
+	#endif
+	#ifndef _tcsrchr
+		#define _tcsrchr strrchr
+	#endif
 	#ifndef _tcsstr
 		#define _tcsstr strstr
 	#endif
@@ -459,6 +487,8 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 //	errno_t my_tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode);
 	errno_t my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource);
 	errno_t my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
+	errno_t my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count);
+	errno_t my_tcsncpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource, size_t count);
 	char *my_strtok_s(char *strToken, const char *strDelimit, char **context);
 	_TCHAR *my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context);
 	#define my_fprintf_s fprintf
@@ -470,6 +500,8 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 //	#define my_tfopen_s _tfopen_s
 	#define my_strcpy_s strcpy_s
 	#define my_tcscpy_s _tcscpy_s
+	#define my_strncpy_s strncpy_s
+	#define my_tcsncpy_s _tcsncpy_s
 	#define my_strtok_s strtok_s
 	#define my_tcstok_s _tcstok_s
 	#define my_fprintf_s fprintf_s
@@ -479,21 +511,18 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 	#define my_vstprintf_s _vstprintf_s
 #endif
 
-// ini file parser
-#ifndef _MSC_VER
+// win32 api
+#ifndef _WIN32
 	BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpString, LPCTSTR lpFileName);
 	DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName);
 	UINT MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, LPCTSTR lpFileName);
+	// used only in winmain and win32 osd class
+//	#define ZeroMemory(p,s) memset(p,0x00,s)
+//	#define CopyMemory(t,f,s) memcpy(t,f,s)
 #else
 	#define MyWritePrivateProfileString WritePrivateProfileString
 	#define MyGetPrivateProfileString GetPrivateProfileString
 	#define MyGetPrivateProfileInt GetPrivateProfileInt
-#endif
-
-// win32 api
-#ifndef _MSC_VER
-	#define ZeroMemory(p,s) memset(p,0x00,s)
-	#define CopyMemory(t,f,s) memcpy(t,f,s)
 #endif
 
 // rgb color

@@ -118,5 +118,6 @@ bool MEMORY::load_state(FILEIO* state_fio)
 		return false;
 	}
 	state_fio->Fread(ram, sizeof(ram), 1);
+	return true;
 }
 
