@@ -95,6 +95,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	int pit_clocks = pit_clock_8mhz ? 1996812 : 2457600;
 	
+	sound_device_type = config.sound_device_type;
+	
 	// create devices
 	first_device = last_device = NULL;
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -142,15 +144,20 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	gdc_chr = new UPD7220(this, emu);
 	gdc_gfx = new UPD7220(this, emu);
-	opn = new YM2203(this, emu);
+	
+	if(sound_device_type == 0 || sound_device_type == 1) {
+		opn = new YM2203(this, emu);
+		fmsound = new FMSOUND(this, emu);
+		joystick = new JOYSTICK(this, emu);
+	} else if(sound_device_type == 2) {
+		// TODO: PC-9801-14
+	}
 	
 #if defined(SUPPORT_CMT_IF)
 	cmt = new CMT(this, emu);
 #endif
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
-	fmsound = new FMSOUND(this, emu);
-	joystick = new JOYSTICK(this, emu);
 	keyboard = new KEYBOARD(this, emu);
 	mouse = new MOUSE(this, emu);
 	printer = new PRINTER(this, emu);
@@ -187,7 +194,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu_sub, 4000000);
 #endif
 	event->set_context_sound(beep);
-	event->set_context_sound(opn);
+	if(sound_device_type == 0 || sound_device_type == 1) {
+		event->set_context_sound(opn);
+	} else if(sound_device_type == 2) {
+		// TODO: PC-9801-14
+	}
 	
 	dma->set_context_memory(memory);
 	// dma ch.0: sasi
@@ -241,14 +252,19 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	rtcreg->set_context_output(rtc, SIG_UPD1990A_CLK, 0x10, 0);
 	pic->set_context_cpu(cpu);
 	rtc->set_context_dout(pio_sys, SIG_I8255_PORT_B, 1);
-	opn->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR4, 1);
-	opn->set_context_port_b(joystick, SIG_JOYSTICK_SELECT, 0xc0, 0);
+	
+	if(sound_device_type == 0 || sound_device_type == 1) {
+		opn->set_context_irq(pic, SIG_I8259_CHIP1 | SIG_I8259_IR4, 1);
+		opn->set_context_port_b(joystick, SIG_JOYSTICK_SELECT, 0xc0, 0);
+		fmsound->set_context_opn(opn);
+		joystick->set_context_opn(opn);
+	} else if(sound_device_type == 2) {
+		// TODO: PC-9801-14
+	}
 	
 	display->set_context_pic(pic);
 	display->set_context_gdc_chr(gdc_chr, gdc_chr->get_ra());
 	display->set_context_gdc_gfx(gdc_gfx, gdc_gfx->get_ra(), gdc_gfx->get_cs());
-	fmsound->set_context_opn(opn);
-	joystick->set_context_opn(opn);
 	keyboard->set_context_sio(sio_kbd);
 	mouse->set_context_pic(pic);
 	mouse->set_context_pio(pio_mouse);
@@ -327,7 +343,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 	memory->read_bios(_T("IPL.ROM"), ipl, sizeof(ipl));
-	int sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
+	int sound_bios_ok = 0;
+	if(sound_device_type == 0) {
+		sound_bios_ok = memory->read_bios(_T("SOUND.ROM"), sound_bios, sizeof(sound_bios));
+	}
 #if defined(_PC9801) || defined(_PC9801E)
 	memory->read_bios(_T("2HDIF.ROM"), fd_bios_2hd, sizeof(fd_bios_2hd));
 	memory->read_bios(_T("2DDIF.ROM"), fd_bios_2dd, sizeof(fd_bios_2dd));
@@ -339,7 +358,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	memory->set_memory_mapped_io_rw(0xa0000, 0xa3fff, display);
 	// A8000h - BFFFFh: VRAM
 	memory->set_memory_mapped_io_rw(0xa8000, 0xbffff, display);
-	memory->set_memory_r(0xcc000, 0xcffff, sound_bios);
+	if(sound_device_type == 0) {
+		memory->set_memory_r(0xcc000, 0xcffff, sound_bios);
+	}
 #if defined(_PC9801) || defined(_PC9801E)
 	memory->set_memory_r(0xd6000, 0xd6fff, fd_bios_2dd);
 	memory->set_memory_r(0xd7000, 0xd7fff, fd_bios_2hd);
@@ -470,13 +491,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_single_rw(0xca, floppy);
 	io->set_iomap_single_rw(0xcc, floppy);
 	
-	io->set_iomap_single_rw(0x188, fmsound);
-	io->set_iomap_single_rw(0x18a, fmsound);
+	if(sound_device_type == 0 || sound_device_type == 1) {
+		io->set_iomap_single_rw(0x188, fmsound);
+		io->set_iomap_single_rw(0x18a, fmsound);
 #ifdef HAS_YM2608
-	io->set_iomap_single_rw(0x18c, fmsound);
-	io->set_iomap_single_rw(0x18e, fmsound);
-	io->set_iomap_single_rw(0xa460, fmsound);
+		io->set_iomap_single_rw(0x18c, fmsound);
+		io->set_iomap_single_rw(0x18e, fmsound);
+		io->set_iomap_single_rw(0xa460, fmsound);
 #endif
+	} else if(sound_device_type == 2) {
+		// TODO: PC-9801-14
+	}
 	
 #if !defined(SUPPORT_OLD_BUZZER)
 	io->set_iomap_alias_rw(0x3fd9, pit, 0);
@@ -671,7 +696,9 @@ void VM::reset()
 	fdc_2dd->write_signal(SIG_UPD765A_FREADY, 1, 1);	// 2DD FDC RDY is pulluped
 #endif
 	
-	opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// PC-9801-26(K) IRQ=12
+	if(sound_device_type == 0 || sound_device_type == 1) {
+		opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// PC-9801-26(K) IRQ=12
+	}
 	
 #if defined(SUPPORT_OLD_BUZZER)
 	beep->write_signal(SIG_BEEP_ON, 1, 1);
@@ -782,11 +809,15 @@ void VM::initialize_sound(int rate, int samples)
 #else
 	beep->init(rate, 8000);
 #endif
+	if(sound_device_type == 0 || sound_device_type == 1) {
 #ifdef HAS_YM2608
-	opn->init(rate, 7987248, samples, 0, 0);
+		opn->init(rate, 7987248, samples, 0, 0);
 #else
-	opn->init(rate, 3993624, samples, 0, 0);
+		opn->init(rate, 3993624, samples, 0, 0);
 #endif
+	} else if(sound_device_type == 2) {
+		// TODO: PC-9801-14
+	}
 	
 #if defined(_PC98DO)
 	// init sound manager
@@ -1050,7 +1081,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void VM::save_state(FILEIO* state_fio)
 {
@@ -1064,6 +1095,7 @@ void VM::save_state(FILEIO* state_fio)
 #if defined(_PC98DO)
 	state_fio->FputInt32(boot_mode);
 #endif
+	state_fio->FputInt32(sound_device_type);
 }
 
 bool VM::load_state(FILEIO* state_fio)
@@ -1081,6 +1113,7 @@ bool VM::load_state(FILEIO* state_fio)
 #if defined(_PC98DO)
 	boot_mode = state_fio->FgetInt32();
 #endif
+	sound_device_type = state_fio->FgetInt32();
 	return true;
 }
 

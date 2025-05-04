@@ -51,6 +51,8 @@ void MAIN::initialize()
 		fio->Fclose();
 	}
 	delete fio;
+	
+	crt_400line = (config.monitor_type == 0 || config.monitor_type == 1);
 }
 
 void MAIN::reset()
@@ -214,13 +216,13 @@ uint32 MAIN::read_io8(uint32 addr)
 		// bit3: sw3=on,  select hiresolution crt
 		// bit2: sw2=off, select MZ-1P02
 		// bit1: sw1=on
-		// bit0: sec=on,  select a period for a decimal point
-		return 0xe4;
+		// bit0: sec=on,  select double side mini floppy
+		return 0xe0 | (((~config.dipswitch) & 0x0b) << 1) | (crt_400line ? 0 : 8);
 	case 0xff:	// mz3500sm p.23,85-86
 		// bit7: fd3=off, select double side mini floppy
-		// bit6: fd2=off
+		// bit6: fd2=off, select double side mini floppy
 		// bit5: fd1=off, normally small letter and in capital letter when shifted
-		return 0xe0 | (srdy ? 0x10 : 0) | (sack ? 0 : 8) | (inp & 7);
+		return 0xc0 | ((config.dipswitch & 0x80) ? 0 : 0x20) | (srdy ? 0x10 : 0) | (sack ? 0 : 8) | (inp & 7);
 	}
 	return 0xff;
 }
@@ -387,7 +389,7 @@ void MAIN::update_bank()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void MAIN::save_state(FILEIO* state_fio)
 {
@@ -417,6 +419,7 @@ void MAIN::save_state(FILEIO* state_fio)
 	state_fio->FputBool(motor);
 	state_fio->FputBool(drq);
 	state_fio->FputBool(index);
+	state_fio->FputBool(crt_400line);
 }
 
 bool MAIN::load_state(FILEIO* state_fio)
@@ -450,6 +453,7 @@ bool MAIN::load_state(FILEIO* state_fio)
 	motor = state_fio->FgetBool();
 	drq = state_fio->FgetBool();
 	index = state_fio->FgetBool();
+	crt_400line = state_fio->FgetBool();
 	
 	// post process
 	 update_bank();

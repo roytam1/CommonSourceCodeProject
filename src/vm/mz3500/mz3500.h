@@ -22,12 +22,14 @@
 #define MAX_DRIVE		4
 #define UPD765A_WAIT_RESULT7
 #define UPD765A_EXT_DRVSEL
-#define UPD7220_HORIZ_FREQ	20860
+#define UPD7220_HORIZ_FREQ	20920
 #define IO_ADDR_MAX		0x100
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_SPECIAL_RESET
+#define USE_DIPSWITCH
+#define DIPSWITCH_DEFAULT	0x1fd
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -37,7 +39,9 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
+#define USE_MONITOR_TYPE	4
 #define USE_CRT_FILTER
+#define USE_SCANLINE
 #define USE_ACCESS_LAMP
 #define USE_DEBUGGER
 #define USE_STATE

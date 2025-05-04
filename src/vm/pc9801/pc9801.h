@@ -147,6 +147,7 @@
 #endif
 #define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
+#define USE_SOUND_DEVICE_TYPE	4
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -283,6 +284,9 @@ protected:
 	uint8 fd_bios_2dd[0x1000];
 #endif
 	bool pit_clock_8mhz;
+	
+	// sound
+	int sound_device_type;
 	
 #if defined(_PC98DO)
 	EVENT* pc88event;

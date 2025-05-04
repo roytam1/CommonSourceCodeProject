@@ -58,7 +58,7 @@ class DISPLAY: public DEVICE
 	void alu_write_mask_reg(uint8 val);
 	void alu_write_cmpdata_reg(int addr, uint8 val);
 	void alu_write_disable_reg(uint8 val);
-	void alu_write_tilepaint_data(int addr, uint8 val);
+	void alu_write_tilepaint_data(uint32 addr, uint8 val);
 	void alu_write_offsetreg_hi(uint8 val);
 	void alu_write_offsetreg_lo(uint8 val);
 	void alu_write_linepattern_hi(uint8 val);
@@ -110,15 +110,20 @@ class DISPLAY: public DEVICE
 	DEVICE *kana_led;
 	DEVICE *caps_led;
 #if defined(_FM77_VARIANTS)
+# if defined(_FM77L4)
 	bool mode400line;
+	bool stat_400linecard;
+# endif	
 	bool kanjisub;
+	pair kanjiaddr;
 #elif defined(_FM77AV_VARIANTS)
 	bool kanjisub;
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
+	pair kanjiaddr;
+# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 	bool mode400line;
 	bool mode256k;
-#endif
+# endif
 	bool mode320;
 	int display_page;
 	int cgrom_bank;
@@ -132,12 +137,14 @@ class DISPLAY: public DEVICE
 	uint8 vram_active_block;
 	uint8 vram_display_block;
 	
+# if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	uint16 window_low;
 	uint16 window_high;
 	uint16 window_xbegin;
 	uint16 window_xend;
 
 	bool window_opened;
+# endif	
 #endif	
 	bool nmi_enable;
 	bool diag_load_subrom_a;
@@ -172,19 +179,19 @@ class DISPLAY: public DEVICE
 	uint8 subrom_bank;
 	uint8 subrom_bank_using;
 	uint32 offset_point_bank1;
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	bool monitor_ram;
 	bool monitor_ram_using;
 	bool ram_protect;
 #endif
 #endif	
 
-#if defined(_FM77AV_VARIANTS)
+#if defined(_FM77AV40EX) || defined(_FM77AV40SX)
+	uint8 gvram[0x8000 * 6];
+#elif defined(_FM77AV40)
+	uint8 gvram[0x2000 * 18];
+#elif defined(_FM77AV_VARIANTS)
 	uint8 gvram[0x2000 * 12];
-#elif defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40SX)|| \
-      defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
-	uint8 gvram[0x4000 * 6];
 #else
 	uint8 gvram[0x4000 * 3];
 #endif
@@ -203,19 +210,18 @@ class DISPLAY: public DEVICE
 	bool crt_flag;
 	bool vram_accessflag;
 	bool is_cyclesteal;
-	pair kanji1_addr;
-	DEVICE *kanjiclass1;
-#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	uint8 submem_cgram[0x4000];
 	uint8 submem_console_av40[0x2000];
 	uint8 subsys_ram[0x2000];
 	uint8 cgram_bank;
-   
 	bool kanji_level2;
-	pair kanji2_addr;
+	DEVICE *kanjiclass1;
 	DEVICE *kanjiclass2;
+#elif defined(_FM77_VARIANTS)
+	DEVICE *kanjiclass1;
 #endif
+	
 #if defined(_FM77AV_VARIANTS)
 	bool use_alu;
 	DEVICE *alu;
@@ -224,11 +230,11 @@ class DISPLAY: public DEVICE
 	DEVICE *subcpu;
 	DEVICE *keyboard;
 	bool vram_wrote;
-	inline void GETVRAM_8_200L(int yoff, scrntype *p, uint32 rgbmask);
-	inline void GETVRAM_4096(int yoff, scrntype *p, uint32 rgbmask);
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
-	inline void GETVRAM_8_400L(int yoff, scrntype *p, uint32 mask);
+	inline void GETVRAM_8_200L(int yoff, scrntype *p, uint32 rgbmask, bool window_inv);
+	inline void GETVRAM_4096(int yoff, scrntype *p, uint32 rgbmask, bool window_inv);
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+	inline void GETVRAM_8_400L(int yoff, scrntype *p, uint32 mask, bool window_inv);
+	inline void GETVRAM_256k(int yoff, scrntype *p, uint32 mask);
 #endif   
 	uint8 read_vram_8_200l(uint32 addr, uint32 offset);
 	uint8 read_vram_8_400l(uint32 addr, uint32 offset);
@@ -275,15 +281,15 @@ class DISPLAY: public DEVICE
 	}
    
 	void set_context_kanjiclass1(DEVICE *p)	{
-#if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS) // Really?
-		kanji1_addr.d = 0;
+#if defined(_FM77_VARIANTS) || \
+	defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+	defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 		kanjiclass1 = p;
 #endif
 	}
 	void set_context_kanjiclass2(DEVICE *p)	{
-#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40SX)|| \
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
-		kanji2_addr.d = 0;
 		kanjiclass2 = p;
 		if(p != NULL) kanji_level2 = true;
 #endif

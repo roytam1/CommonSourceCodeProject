@@ -180,8 +180,7 @@ void KEYBOARD::initialize()
 	key_stat = emu->key_buffer();
 	key_buf = new FIFO(64);
 	
-	caps = true;
-	kana = false;
+	caps = kana = false;
 	pro_mode = true;
 	
 	register_frame_event(this);

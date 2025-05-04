@@ -66,7 +66,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
     VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
@@ -82,14 +81,11 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "PC-98"                        ID_BOOT_MODE0
-        MENUITEM "PC-88 V1(S)"                  ID_BOOT_MODE1
-        MENUITEM "PC-88 V1(H)"                  ID_BOOT_MODE2
-        MENUITEM "PC-88 V2"                     ID_BOOT_MODE3
-        MENUITEM "PC-88 N"                      ID_BOOT_MODE4
+        MENUITEM "BASIC"                        ID_BOOT_MODE0
+        MENUITEM "DOS"                          ID_BOOT_MODE1
         MENUITEM SEPARATOR
-        MENUITEM "CPU 10/8MHz",                 ID_CPU_TYPE0
-        MENUITEM "CPU 8/4MHz",                  ID_CPU_TYPE1
+        MENUITEM "CPU 2.0MHz",                  ID_CPU_TYPE0
+        MENUITEM "CPU 1.2MHz",                  ID_CPU_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
@@ -97,7 +93,12 @@ BEGIN
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
         MENUITEM SEPARATOR
-        MENUITEM "PC-88 Memory Wait",           ID_DIPSWITCH0
+        MENUITEM "Cycle Steal",                 ID_DIPSWITCH0
+        MENUITEM "Extra RAM",                   ID_DIPSWITCH1
+        MENUITEM SEPARATOR
+        MENUITEM "None",                        ID_DEVICE_TYPE0
+        MENUITEM "Mouse JS-Port1",              ID_DEVICE_TYPE1
+        MENUITEM "Mouse JS-Port2",              ID_DEVICE_TYPE2
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -105,14 +106,13 @@ BEGIN
         MENUITEM "Save State",                  ID_SAVE_STATE
         MENUITEM "Load State",                  ID_LOAD_STATE
         MENUITEM SEPARATOR
-        MENUITEM "Debug PC-98 Main CPU",        ID_OPEN_DEBUGGER0
-        MENUITEM "Debug PC-88 Main CPU",        ID_OPEN_DEBUGGER1
-        MENUITEM "Debug PC-88 Sub CPU",         ID_OPEN_DEBUGGER2
+        MENUITEM "Debug Main CPU",              ID_OPEN_DEBUGGER0
+        MENUITEM "Debug Sub CPU",               ID_OPEN_DEBUGGER1
         MENUITEM "Close Debugger",              ID_CLOSE_DEBUGGER
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
     END
-    POPUP "PC98-FD1"
+    POPUP "FD1"
     BEGIN
         MENUITEM "Insert",                      ID_OPEN_FD1
         MENUITEM "Eject",                       ID_CLOSE_FD1
@@ -134,33 +134,14 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_FD2
     END
-    POPUP "PC88-FD1"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD3
-        MENUITEM "Eject",                       ID_CLOSE_FD3
-        MENUITEM SEPARATOR
-        MENUITEM "Write Protected",             ID_WRITE_PROTECT_FD3
-        MENUITEM "Correct Timing",              ID_CORRECT_TIMING_FD3
-        MENUITEM "Ignore CRC Errors",           ID_IGNORE_CRC_FD3
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD3
-    END
-    POPUP "FD2"
-    BEGIN
-        MENUITEM "Insert",                      ID_OPEN_FD4
-        MENUITEM "Eject",                       ID_CLOSE_FD4
-        MENUITEM SEPARATOR
-        MENUITEM "Write Protected",             ID_WRITE_PROTECT_FD4
-        MENUITEM "Correct Timing",              ID_CORRECT_TIMING_FD4
-        MENUITEM "Ignore CRC Errors",           ID_IGNORE_CRC_FD4
-        MENUITEM SEPARATOR
-        MENUITEM "Recent",                      ID_RECENT_FD4
-    END
-    POPUP "PC88-CMT"
+    POPUP "CMT"
     BEGIN
         MENUITEM "Play",                        ID_PLAY_TAPE
         MENUITEM "Rec",                         ID_REC_TAPE
         MENUITEM "Eject",                       ID_CLOSE_TAPE
+        MENUITEM SEPARATOR
+        MENUITEM "Play Tape Sound",             ID_PLAY_TAPE_SOUND
+        MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
         MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE
     END
@@ -234,7 +215,7 @@ BEGIN
         MENUITEM "11025Hz",                     ID_SOUND_FREQ3
         MENUITEM "22050Hz",                     ID_SOUND_FREQ4
         MENUITEM "44100Hz",                     ID_SOUND_FREQ5
-        MENUITEM "55467Hz",                     ID_SOUND_FREQ6
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
         MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
         MENUITEM "50msec",                      ID_SOUND_LATE0
@@ -243,10 +224,10 @@ BEGIN
         MENUITEM "300msec",                     ID_SOUND_LATE3
         MENUITEM "400msec",                     ID_SOUND_LATE4
         MENUITEM SEPARATOR
-        MENUITEM "PC-9801-26 (BIOS Enabled)",   ID_SOUND_DEVICE_TYPE0
-        MENUITEM "PC-9801-26 (BIOS Disabled)",  ID_SOUND_DEVICE_TYPE1
-//        MENUITEM "PC-9801-14",                  ID_SOUND_DEVICE_TYPE2
-        MENUITEM "None",                        ID_SOUND_DEVICE_TYPE3
+        MENUITEM "OPN",                         ID_SOUND_DEVICE_TYPE1
+        MENUITEM "OPN+WHG",                     ID_SOUND_DEVICE_TYPE3
+        MENUITEM "OPN+THG",                     ID_SOUND_DEVICE_TYPE5
+        MENUITEM "OPN+WHG+THG",                 ID_SOUND_DEVICE_TYPE7
     END
     POPUP "Input"
     BEGIN
@@ -264,7 +245,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "pc98do.ico"
+IDI_ICON1               ICON    DISCARDABLE     "fm77av40ex.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

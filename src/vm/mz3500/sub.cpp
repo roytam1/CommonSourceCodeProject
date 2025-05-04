@@ -39,29 +39,29 @@ void SUB::initialize()
 	if(fio->Fopen(emu->bios_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(kanji, sizeof(kanji), 1);
 		fio->Fclose();
-	}
-	if(fio->Fopen(emu->bios_path(_T("MB83256-019.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(kanji + 0x00000, 0x8000, 1);
-		fio->Fclose();
-	}
-	if(fio->Fopen(emu->bios_path(_T("MB83256-020.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(kanji + 0x08000, 0x8000, 1);
-		fio->Fclose();
-	}
-	if(fio->Fopen(emu->bios_path(_T("MB83256-021.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(kanji + 0x10000, 0x8000, 1);
-		fio->Fclose();
-	}
-	if(fio->Fopen(emu->bios_path(_T("MB83256-022.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(kanji + 0x18000, 0x8000, 1);
-		fio->Fclose();
+	} else {
+		if(fio->Fopen(emu->bios_path(_T("MB83256-019.ROM")), FILEIO_READ_BINARY)) {
+			fio->Fread(kanji + 0x00000, 0x8000, 1);
+			fio->Fclose();
+		}
+		if(fio->Fopen(emu->bios_path(_T("MB83256-020.ROM")), FILEIO_READ_BINARY)) {
+			fio->Fread(kanji + 0x08000, 0x8000, 1);
+			fio->Fclose();
+		}
+		if(fio->Fopen(emu->bios_path(_T("MB83256-021.ROM")), FILEIO_READ_BINARY)) {
+			fio->Fread(kanji + 0x10000, 0x8000, 1);
+			fio->Fclose();
+		}
+		if(fio->Fopen(emu->bios_path(_T("MB83256-022.ROM")), FILEIO_READ_BINARY)) {
+			fio->Fread(kanji + 0x18000, 0x8000, 1);
+			fio->Fclose();
+		}
 	}
 	delete fio;
 	
 	// create pc palette
-	for(int i = 0; i < 8; i++) {
-		palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
-	}
+	update_config();
+	crt_400line = (config.monitor_type == 0 || config.monitor_type == 1);
 	
 	// init memory
 	memset(ram, 0, sizeof(ram));
@@ -130,14 +130,18 @@ void SUB::event_frame()
 	cblink++;
 }
 
-void SUB::write_signal(int id, uint32 data, uint32 mask)
+// display
+
+void SUB::update_config()
 {
-	if(id == SIG_SUB_PIO_PM) {
-		pm = ((data & mask) != 0);
+	for(int i = 0; i < 8; i++) {
+		if(config.monitor_type == 0 || config.monitor_type == 2) {
+			palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+		} else {
+			palette_pc[i] = RGB_COLOR(0, (i != 0) ? 255 : 0, 0);
+		}
 	}
 }
-
-// display
 
 void SUB::draw_screen()
 {
@@ -146,27 +150,56 @@ void SUB::draw_screen()
 	
 	// mz3500sm p.28
 	if(disp[0] & 1) {
-		draw_chr();
+		if(crt_400line) {
+			draw_chr_400line();
+		} else {
+			draw_chr_200line();
+		}
 	}
 	if(disp[1] & 7) {
-		draw_gfx();
+		if(crt_400line) {
+			draw_gfx_400line();
+		} else if(disp[5] & 1) {
+			draw_gfx_200line_16bit();
+		} else {
+			draw_gfx_200line_8bit();
+		}
 	}
 	uint8 back = disp[3] & 7;
 	
 	// copy to pc screen
-	for(int y = 0; y <400; y++) {
-		scrntype* dest = emu->screen_buffer(y);
-		uint8* src_chr = screen_chr[y];
-		uint8* src_gfx = screen_gfx[y];
-		
-		for(int x = 0; x < 640; x++) {
-			dest[x] = palette_pc[(src_chr[x] ? (src_chr[x] & 7) : src_gfx[x] ? (src_gfx[x] & 7) : back)];
+	if(crt_400line) {
+		for(int y = 0; y <400; y++) {
+			scrntype* dest = emu->screen_buffer(y);
+			uint8* src_chr = screen_chr[y];
+			uint8* src_gfx = screen_gfx[y];
+			
+			for(int x = 0; x < 640; x++) {
+				dest[x] = palette_pc[(src_chr[x] ? (src_chr[x] & 7) : src_gfx[x] ? (src_gfx[x] & 7) : back)];
+			}
 		}
+		emu->screen_skip_line = false;
+	} else {
+		for(int y = 0; y < 400; y += 2) {
+			scrntype* dest0 = emu->screen_buffer(y + 0);
+			scrntype* dest1 = emu->screen_buffer(y + 1);
+			uint8* src_chr = screen_chr[y];
+			uint8* src_gfx = screen_gfx[y];
+			
+			for(int x = 0; x < 640; x++) {
+				dest0[x] = palette_pc[(src_chr[x] ? (src_chr[x] & 7) : src_gfx[x] ? (src_gfx[x] & 7) : back)];
+			}
+			if(config.scan_line) {
+				memset(dest1, 0, 640 * sizeof(scrntype));
+			} else {
+				memcpy(dest1, dest0, 640 * sizeof(scrntype));
+			}
+		}
+		emu->screen_skip_line = true;
 	}
-	emu->screen_skip_line = false;
 }
 
-void SUB::draw_chr()
+void SUB::draw_chr_400line()
 {
 	// mz3500sm p.28
 	int width = (disp[5] & 2) ? 1 : 2;	// 80/40 columns
@@ -266,10 +299,108 @@ void SUB::draw_chr()
 	}
 }
 
-void SUB::draw_gfx()
+void SUB::draw_chr_200line()
 {
-	int ymax = (disp[5] & 1) ? 400 : 200;
+	// mz3500sm p.28
+	int width = (disp[5] & 2) ? 1 : 2;	// 80/40 columns
+	int height = (disp[7] & 1) ? 10 : 8;	// 20/16 dots/ine
+	int ymax = (disp[7] & 1) ? 20 : 25;	// 20/25 lines
 	
+	for(int i = 0, ytop = 0; i < 4; i++) {
+		uint32 ra = ra_chr[4 * i];
+		ra |= ra_chr[4 * i + 1] << 8;
+		ra |= ra_chr[4 * i + 2] << 16;
+		ra |= ra_chr[4 * i + 3] << 24;
+		int src = ra & 0x1fff;
+		int len = ((ra >> 20) & 0x3ff) / height;
+		int caddr = ((cs_chr[0] & 0x80) && ((cs_chr[1] & 0x20) || !(cblink & 0x10))) ? (*ead_chr & 0x1fff) : -1;
+		
+		for(int y = ytop; y < (ytop + len) && y < ymax; y++) {
+			for(int x = 0; x < 80; x += width) {
+				bool cursor = (src == caddr);
+				uint32 code = vram_chr[(src * 2 + 0) & 0xfff];	// low byte  : code
+				uint8 attr = vram_chr[(src * 2 + 1) & 0xfff];	// high byte : attr
+				uint32 knji = vram_chr[((src* 2 + 0) & 0xfff) | 0x1000];
+				src++;
+				uint8 *pattern;
+				
+				if(!(knji & 0x20)) {
+					pattern = &kanji[((code << 4) | (knji << 12)) & 0x1ffff];
+				} else {
+					pattern = &font[(code << 4) + ((config.dipswitch & 0x100) ? 0 : 8)];
+				}
+				
+				// mz3500sm p.31
+				// bit3: blink
+				// bit2: reverse or green
+				// bit1: vertical line or red
+				// bit0: horizontal line or blue
+				
+				uint8 color;
+				bool reverse, blink;
+				
+				if(disp[4] & 1) {
+					// color
+					color = (attr & 7) | 8;
+					reverse = false;
+				} else {
+					// monocrhome
+					color = 7;
+					reverse = ((attr & 4) != 0);
+				}
+				blink = ((attr & 8) != 0 && (cblink & 0x10) != 0);
+				reverse = (reverse != blink);
+				
+				// NOTE: need to consider 200 line mode
+				
+				for(int l = 0; l < 8; l++) {
+					int yy = (y * height + l) * 2;
+					if(yy >= 400) {
+						break;
+					}
+					uint8 pat = reverse ? ~pattern[l] : pattern[l];
+					uint8 *dest = &screen_chr[yy][x << 3];
+					
+					if(width == 1) {
+						// 8dots (80columns)
+						dest[0] = (pat & 0x80) ? color : 0;
+						dest[1] = (pat & 0x40) ? color : 0;
+						dest[2] = (pat & 0x20) ? color : 0;
+						dest[3] = (pat & 0x10) ? color : 0;
+						dest[4] = (pat & 0x08) ? color : 0;
+						dest[5] = (pat & 0x04) ? color : 0;
+						dest[6] = (pat & 0x02) ? color : 0;
+						dest[7] = (pat & 0x01) ? color : 0;
+					} else {
+						// 16dots (40columns)
+						dest[ 0] = dest[ 1] = (pat & 0x80) ? color : 0;
+						dest[ 2] = dest[ 3] = (pat & 0x40) ? color : 0;
+						dest[ 4] = dest[ 5] = (pat & 0x20) ? color : 0;
+						dest[ 6] = dest[ 7] = (pat & 0x10) ? color : 0;
+						dest[ 8] = dest[ 9] = (pat & 0x08) ? color : 0;
+						dest[10] = dest[11] = (pat & 0x04) ? color : 0;
+						dest[12] = dest[13] = (pat & 0x02) ? color : 0;
+						dest[14] = dest[15] = (pat & 0x01) ? color : 0;
+					}
+				}
+				if(cursor) {
+					int top = cs_chr[1] & 0x1f, bottom = cs_chr[2] >> 3;
+					for(int l = top; l < bottom && l < height; l++) {
+						int yy = (y * height + l) * 2;
+						if(yy >= 400) {
+							break;
+						}
+						memset(&screen_chr[yy][x << 3], 7, width * 8);	// always white ???
+					}
+				}
+			}
+		}
+		ytop += len;
+	}
+}
+
+void SUB::draw_gfx_400line()
+{
 	for(int i = 0, ytop = 0; i < 4; i++) {
 		uint32 ra = ra_gfx[4 * i];
 		ra |= ra_gfx[4 * i + 1] << 8;
@@ -314,7 +445,88 @@ void SUB::draw_gfx()
 	}
 }
 
-#define STATE_VERSION	1
+void SUB::draw_gfx_200line_16bit()
+{
+	for(int i = 0, ytop = 0; i < 4; i++) {
+		uint32 ra = ra_gfx[4 * i];
+		ra |= ra_gfx[4 * i + 1] << 8;
+		ra |= ra_gfx[4 * i + 2] << 16;
+		ra |= ra_gfx[4 * i + 3] << 24;
+		int src = ra & 0x1fff;
+		int len = (ra >> 20) & 0x3ff;
+		
+		for(int y = ytop; y < (ytop + len) && y < 200; y++) {
+			if(y >= 200) {
+				break;
+			}
+			for(int x = 0; x < 40; x++) {
+				uint8 lo_b = (disp[1] & 1) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x00000] : 0;
+				uint8 hi_b = (disp[1] & 1) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x00000] : 0;
+				uint8 lo_r = (disp[1] & 2) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x08000] : 0;
+				uint8 hi_r = (disp[1] & 2) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x08000] : 0;
+				uint8 lo_g = (disp[1] & 4) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x10000] : 0;
+				uint8 hi_g = (disp[1] & 4) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x10000] : 0;
+				src++;
+				
+				uint8 *dest = &screen_gfx[y * 2][x * 16];
+				dest[ 0] = ((lo_b & 0x01)     ) | ((lo_r & 0x01) << 1) | ((lo_g & 0x01) << 2);
+				dest[ 1] = ((lo_b & 0x02) >> 1) | ((lo_r & 0x02)     ) | ((lo_g & 0x02) << 1);
+				dest[ 2] = ((lo_b & 0x04) >> 2) | ((lo_r & 0x04) >> 1) | ((lo_g & 0x04)     );
+				dest[ 3] = ((lo_b & 0x08) >> 3) | ((lo_r & 0x08) >> 2) | ((lo_g & 0x08) >> 1);
+				dest[ 4] = ((lo_b & 0x10) >> 4) | ((lo_r & 0x10) >> 3) | ((lo_g & 0x10) >> 2);
+				dest[ 5] = ((lo_b & 0x20) >> 5) | ((lo_r & 0x20) >> 4) | ((lo_g & 0x20) >> 3);
+				dest[ 6] = ((lo_b & 0x40) >> 6) | ((lo_r & 0x40) >> 5) | ((lo_g & 0x40) >> 4);
+				dest[ 7] = ((lo_b & 0x80) >> 7) | ((lo_r & 0x80) >> 6) | ((lo_g & 0x80) >> 5);
+				dest[ 8] = ((hi_b & 0x01)     ) | ((hi_r & 0x01) << 1) | ((hi_g & 0x01) << 2);
+				dest[ 9] = ((hi_b & 0x02) >> 1) | ((hi_r & 0x02)     ) | ((hi_g & 0x02) << 1);
+				dest[10] = ((hi_b & 0x04) >> 2) | ((hi_r & 0x04) >> 1) | ((hi_g & 0x04)     );
+				dest[11] = ((hi_b & 0x08) >> 3) | ((hi_r & 0x08) >> 2) | ((hi_g & 0x08) >> 1);
+				dest[12] = ((hi_b & 0x10) >> 4) | ((hi_r & 0x10) >> 3) | ((hi_g & 0x10) >> 2);
+				dest[13] = ((hi_b & 0x20) >> 5) | ((hi_r & 0x20) >> 4) | ((hi_g & 0x20) >> 3);
+				dest[14] = ((hi_b & 0x40) >> 6) | ((hi_r & 0x40) >> 5) | ((hi_g & 0x40) >> 4);
+				dest[15] = ((hi_b & 0x80) >> 7) | ((hi_r & 0x80) >> 6) | ((hi_g & 0x80) >> 5);
+			}
+		}
+		ytop += len;
+	}
+}
+
+void SUB::draw_gfx_200line_8bit()
+{
+	for(int i = 0, ytop = 0; i < 4; i++) {
+		uint32 ra = ra_gfx[4 * i];
+		ra |= ra_gfx[4 * i + 1] << 8;
+		ra |= ra_gfx[4 * i + 2] << 16;
+		ra |= ra_gfx[4 * i + 3] << 24;
+		int src = ra & 0x1fff;
+		int len = (ra >> 20) & 0x3ff;
+		
+		for(int y = ytop; y < (ytop + len) && y < 200; y++) {
+			if(y >= 200) {
+				break;
+			}
+			for(int x = 0; x < 80; x++) {
+				uint8 b = (disp[1] & 1) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x00000] : 0;
+				uint8 r = (disp[1] & 2) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x00000] : 0;
+				uint8 g = (disp[1] & 4) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x10000] : 0;
+				src++;
+				
+				uint8 *dest = &screen_gfx[y * 2][x * 8];
+				dest[0] = ((b & 0x01)     ) | ((r & 0x01) << 1) | ((g & 0x01) << 2);
+				dest[1] = ((b & 0x02) >> 1) | ((r & 0x02)     ) | ((g & 0x02) << 1);
+				dest[2] = ((b & 0x04) >> 2) | ((r & 0x04) >> 1) | ((g & 0x04)     );
+				dest[3] = ((b & 0x08) >> 3) | ((r & 0x08) >> 2) | ((g & 0x08) >> 1);
+				dest[4] = ((b & 0x10) >> 4) | ((r & 0x10) >> 3) | ((g & 0x10) >> 2);
+				dest[5] = ((b & 0x20) >> 5) | ((r & 0x20) >> 4) | ((g & 0x20) >> 3);
+				dest[6] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
+				dest[7] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
+			}
+		}
+		ytop += len;
+	}
+}
+
+#define STATE_VERSION	2
 
 void SUB::save_state(FILEIO* state_fio)
 {
@@ -325,8 +537,8 @@ void SUB::save_state(FILEIO* state_fio)
 	state_fio->Fwrite(vram_chr, sizeof(vram_chr), 1);
 	state_fio->Fwrite(vram_gfx, sizeof(vram_gfx), 1);
 	state_fio->Fwrite(disp, sizeof(disp), 1);
-	state_fio->FputBool(pm);
 	state_fio->FputInt32(cblink);
+	state_fio->FputBool(crt_400line);
 }
 
 bool SUB::load_state(FILEIO* state_fio)
@@ -341,8 +553,8 @@ bool SUB::load_state(FILEIO* state_fio)
 	state_fio->Fread(vram_chr, sizeof(vram_chr), 1);
 	state_fio->Fread(vram_gfx, sizeof(vram_gfx), 1);
 	state_fio->Fread(disp, sizeof(disp), 1);
-	pm = state_fio->FgetBool();
 	cblink = state_fio->FgetInt32();
+	crt_400line = state_fio->FgetBool();
 	return true;
 }
 

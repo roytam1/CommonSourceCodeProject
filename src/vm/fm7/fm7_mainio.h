@@ -88,13 +88,18 @@ class FM7_MAINIO : public DEVICE {
 	bool irqreq_keyboard;
 
 	/* FD04 : R */
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+	defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
+	bool stat_kanjirom;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
+	bool stat_400linemode; // R/W : bit3, '0' = 400line, '1' = 200line.
+#elif defined(_FM77_VARIANTS)	
 	bool stat_fdmode_2hd; //  R/W : bit6, '0' = 2HD, '1' = 2DD. FM-77 Only.
 	bool stat_kanjirom;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 	bool stat_400linecard;//  R/W : bit4, '0' = connected. FM-77 Only.
-	bool stat_400linemode; // R/W : bit3, '0' = 400line, '1' = 200line.
+	//bool stat_400linemode; // R/W : bit3, '0' = 400line, '1' = 200line.
+#endif	
 	bool firq_break_key; // bit1, ON = '0'.
 	bool firq_sub_attention; // bit0, ON = '0'.
-	bool firq_sub_attention_bak; // bit0, ON = '0'.
 	/* FD04 : W */
 	bool intmode_fdc; // bit2, '0' = normal, '1' = SFD.
 #if defined(_FM77AV_VARIANTS)
@@ -198,22 +203,12 @@ class FM7_MAINIO : public DEVICE {
    
 	/* FD20,FD21 : W */
 	bool connect_kanjiroml1;
-	pair kaddress; // FD20 : ADDRESS OF HIGH.
 #ifdef _FM77AV_VARIANTS
 	bool connect_kanjiroml2;
-	pair kaddress_l2; // FD20 : ADDRESS OF HIGH.
 #endif	
 	/* FD20, FD21 : R */
 	
 	/* FD37 : W */
-#ifdef HAS_MMR
-	bool mmr_enabled;
-	bool mmr_fast;
-	//uint8 mmr_segment;
-	//uint8 mmr_table[8 * 16];
-	bool window_enabled;
-	uint32 window_offset;
-#endif	
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	/* FD93: bit0 */
 	bool boot_ram;
@@ -295,7 +290,12 @@ class FM7_MAINIO : public DEVICE {
 	void write_kanjiaddr_hi(uint8 addr);
 	uint8 read_kanjidata_left(void);
 	uint8 read_kanjidata_right(void);
-	  
+#if defined(CAPABLE_KANJI_CLASS2)
+	void write_kanjiaddr_lo_l2(uint8 addr);
+	void write_kanjiaddr_hi_l2(uint8 addr);
+	uint8 read_kanjidata_left_l2(void);
+	uint8 read_kanjidata_right_l2(void);
+#endif	
 	  // FDC
 	uint8 get_fdc_fd1c(void);
 	void set_fdc_fd1c(uint8 val);

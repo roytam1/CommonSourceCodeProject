@@ -93,7 +93,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_b(rtc, SIG_UPD1990A_DIN, 0x10, 0);
 	pio->set_context_port_b(rtc, SIG_UPD1990A_CLK, 0x20, 0);
 	pio->set_context_port_b(main, SIG_MAIN_SRDY, 0x40, 0);
-	pio->set_context_port_b(sub, SIG_SUB_PIO_PM, 0x80, 0);	// P/M: CG Selection
+//	pio->set_context_port_b(sub, SIG_SUB_PIO_PM, 0x80, 0);	// P/M: CG Selection
 	pio->set_context_port_c(kbd, SIG_KEYBOARD_DC, 0x01, 0);
 	pio->set_context_port_c(kbd, SIG_KEYBOARD_STC, 0x02, 0);
 	pio->set_context_port_c(kbd, SIG_KEYBOARD_ACKC, 0x04, 0);
@@ -169,6 +169,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 	for(int i = 0; i < 4; i++) {
 		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
+	}
+	// GDC clock mz3500sm p.33,34
+	if(config.monitor_type == 0 || config.monitor_type == 1) {
+		gdc_chr->set_horiz_freq(20920);
+		gdc_gfx->set_horiz_freq(20920);
+	} else {
+		gdc_chr->set_horiz_freq(15870);
+		gdc_gfx->set_horiz_freq(15870);
 	}
 }
 

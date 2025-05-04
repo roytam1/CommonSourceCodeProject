@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="fm77av"
+	Name="fm77av40"
 	ProjectGUID="{19644030-FB96-4EE0-8819-86D8D13C25A7}"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,17 +42,17 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/fm77av.tlb"
+				TypeLibraryName=".\Debug/fm77av40.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_FM77AV"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_FM77AV40"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/fm77av.pch"
+				PrecompiledHeaderFile=".\Debug/fm77av40.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -75,11 +75,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Debug/fm77av.exe"
+				OutputFile=".\Debug/fm77av40.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/fm77av.pdb"
+				ProgramDatabaseFile=".\Debug/fm77av40.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/fm77av.bsc"
+				OutputFile=".\Debug/fm77av40.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -137,19 +137,19 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/fm77av.tlb"
+				TypeLibraryName=".\Release/fm77av40.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_FM77AV"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_FM77AV40"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="2"
-				PrecompiledHeaderFile=".\Release/fm77av.pch"
+				PrecompiledHeaderFile=".\Release/fm77av40.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -171,10 +171,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib winmm.lib dsound.lib imm32.lib vfw32.lib"
-				OutputFile=".\Release/fm77av.exe"
+				OutputFile=".\Release/fm77av40.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/fm77av.pdb"
+				ProgramDatabaseFile=".\Release/fm77av40.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -192,7 +192,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/fm77av.bsc"
+				OutputFile=".\Release/fm77av40.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -832,6 +832,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="src\vm\fm7\hd6844.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="src\vm\fm7\joystick.cpp"
 					>
 					<FileConfiguration
@@ -1096,6 +1116,10 @@
 					>
 				</File>
 				<File
+					RelativePath="src\vm\fm7\hd6844.h"
+					>
+				</File>
+				<File
 					RelativePath="src\vm\fm7\joystick.h"
 					>
 				</File>
@@ -1114,11 +1138,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="src\res\fm77av.ico"
+				RelativePath="src\res\fm77av40.ico"
 				>
 			</File>
 			<File
-				RelativePath="src\res\fm77av.rc"
+				RelativePath="src\res\fm77av40.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

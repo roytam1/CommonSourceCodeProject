@@ -50,6 +50,8 @@ private:
 	uint8 inp;
 	bool motor, drq, index;
 	
+	bool crt_400line;
+	
 	void update_irq();
 	void update_bank();
 	

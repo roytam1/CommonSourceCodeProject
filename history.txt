@@ -1,3 +1,17 @@
+9/29/2015
+
+[EMU/WIN32] fix terrible mistakes (thanks Mr.Artane.)
+
+[VM/DISK] import Mr.Artane.'s fixes for FM-7 PSY-O-BLADE
+[VM/MB8877] import Mr.Artane.'s fixes for FM-7 series
+
+[FM77AV] add eFM77AV40/40EX codes (thanks Mr.Artane.)
+[FM77AV] import Mr.Artane.'s fixes (from SNAPSHOT 20150926)
+[MZ3500/MAIN] support some dip switches
+[MZ3500/SUB] support middle resolution monitor and green monitor
+[PC9801] support to enable/disable sound board and sound bios
+
+
 9/26/2015
 
 [MZ3500/SUB] fix kanji character renderer

@@ -70,6 +70,7 @@
 //#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
+#define FM77_EXRAM_BANKS	3
 
 #elif defined(_FM77L4)
 #define DEVICE_NAME		"FUJITSU FM-77L4"
@@ -82,6 +83,7 @@
 //#define CAPABLE_KANJI_CLASS2
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
+#define FM77_EXRAM_BANKS	3
 
 #elif defined(_FM77AV)
 #define DEVICE_NAME		"FUJITSU FM77AV"
@@ -89,33 +91,37 @@
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM77 AV20"
+#define DEVICE_NAME		"FUJITSU FM77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
+//#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
-#define USE_DRIVE_TYPE 2
+#define CAPABLE_KANJI_CLASS2
 
 #elif defined(_FM77AV20EX)
-#define DEVICE_NAME		"FUJITSU FM77 AV20EX"
+#define DEVICE_NAME		"FUJITSU FM77AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE 2
+//#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
+#define CAPABLE_KANJI_CLASS2
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM77 AV40"
+#define DEVICE_NAME		"FUJITSU FM77AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE 2
+//#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
+#define CAPABLE_KANJI_CLASS2
+#define FM77_EXRAM_BANKS	12
 
 #elif defined(_FM77AV40EX)
 #define DEVICE_NAME		"FUJITSU FM77AV40EX"
@@ -123,9 +129,11 @@
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE 2
+//#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
+#define CAPABLE_KANJI_CLASS2
+#define FM77_EXRAM_BANKS	12
 
 #elif defined(_FM77AV40SX)
 #define DEVICE_NAME		"FUJITSU FM77AV40SX"
@@ -133,22 +141,24 @@
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
 #define HAS_DMA
-#define USE_DRIVE_TYPE 2
+//#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
+#define CAPABLE_KANJI_CLASS2
+#define FM77_EXRAM_BANKS	12
 
 #endif
 
 #if !defined(_FM8)
 #define USE_DEVICE_TYPE		3
 #define USE_SOUND_DEVICE_TYPE   8
-//# ifdef _FM77AV_VARIANTS
-//#  define USE_MULTIPLE_SOUNDCARDS 4
-//# elif defined(_FM8)
-//#  define USE_MULTIPLE_SOUNDCARDS 2
-//# else // 7,77
-//#  define USE_MULTIPLE_SOUNDCARDS 5
-//# endif
+# ifdef _FM77AV_VARIANTS
+#  define USE_MULTIPLE_SOUNDCARDS 4
+# else // 7,77
+#  define USE_MULTIPLE_SOUNDCARDS 5
+# endif
+#elif defined(_FM8)
+#  define USE_MULTIPLE_SOUNDCARDS 2
 #endif
 
 #ifdef _FM77AV_VARIANTS
@@ -165,10 +175,10 @@
 #endif
 
 #if defined(_FM77_VARIANTS)
-//#define USE_BOOT_MODE         4
-//#elif defined(_FM8)
-//#define USE_BOOT_MODE         4
-//#elif defined(_FM7) || defined(_FMNEW7)
+#define USE_BOOT_MODE         4
+#elif defined(_FM8)
+#define USE_BOOT_MODE         4
+#elif defined(_FM7) || defined(_FMNEW7)
 #define USE_BOOT_MODE         3
 #else
 #define USE_BOOT_MODE         2
@@ -280,7 +290,9 @@ class DEVICE;
 class EVENT;
 class FILEIO;
 
+#if defined(_FM77AV_VARIANTS)
 class BEEP;
+#endif
 class PCM1BIT;
 class MC6809;
 class YM2203;
@@ -295,9 +307,8 @@ class DISPLAY;
 #if defined(_FM77AV_VARIANTS)
 class MB61VH010;
 #endif
-//#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-//    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
-#if defined(HAS_DMA)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 class HD6844;
 #endif
 class FM7_MAINMEM;
@@ -327,7 +338,9 @@ protected:
 #endif
 	MB8877* fdc;
 	YM2203* opn[3];
+#if !defined(_FM77AV_VARIANTS)
 	YM2203* psg; // Is right? AY-3-8910 is right device.
+#endif   
 	//BEEP* beep;
 	PCM1BIT* pcm1bit;
 	DATAREC *drec;
@@ -344,6 +357,7 @@ protected:
 	MC6809* subcpu;
 #if defined(_FM77AV_VARIANTS)
 	MB61VH010 *alu;
+	BEEP *keyboard_beep;
 #endif
 #if defined(HAS_DMA)
 	HD6844 *dmac;
@@ -358,7 +372,6 @@ protected:
 	int machine_version; // 0 = FM8 / 1 = FM7 / 2 = FM77AV / 3 = FM77AV40, etc...
         uint32 bootmode;   
         uint32 connected_opns;
-        bool cycle_steal;
         bool clock_low;
         int mainfreq_type;
         uint32 mainfreq_low;

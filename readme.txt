@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/25/2015
+								9/29/2015
 
 --- What's this ?
 
@@ -28,6 +28,8 @@ This archive includes the all source codes of emulators listed below:
 		eFM7		FM-7 (by Mr.Artane.)
 		eFM77		FM-77 (by Mr.Artane.)
 		eFM77AV		FM77AV (by Mr.Artane.)
+		eFM77AV40	FM77AV40 (by Mr.Artane.)
+		eFM77AV40EX	FM77AV40EX (by Mr.Artane.)
 		eFM16pi		FM16pi
 		eFMR-30		FMR-30
 		eFMR-50		FMR-50

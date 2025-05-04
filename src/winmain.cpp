@@ -99,7 +99,9 @@ _TCHAR* get_parent_dir(const _TCHAR* file)
 	_TCHAR *ptr;
 	
 	GetFullPathName(file, _MAX_PATH, path, &ptr);
-	*ptr = _T('\0');
+	if(ptr != NULL) {
+		*ptr = _T('\0');
+	}
 	return path;
 }
 

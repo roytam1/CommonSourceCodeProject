@@ -95,6 +95,7 @@ BEGIN
         MENUITEM "CPU x16",                     ID_CPU_POWER4
         MENUITEM SEPARATOR
         MENUITEM "Cycle Steal",                 ID_DIPSWITCH0
+        MENUITEM "Extra RAM",                   ID_DIPSWITCH1
         MENUITEM SEPARATOR
         MENUITEM "None",                        ID_DEVICE_TYPE0
         MENUITEM "Mouse JS-Port1",              ID_DEVICE_TYPE1

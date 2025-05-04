@@ -34,8 +34,11 @@ class FM7_MAINMEM : public DEVICE
 	// V2
 #ifdef HAS_MMR
 	bool window_enabled;
+	bool window_fast;
 	bool mmr_enabled;
 	bool mmr_fast;
+	bool mmr_extend;
+	bool refresh_fast;
 	uint16 window_offset;
 	uint8 mmr_segment;
 	uint8 mmr_map_data[0x80];
@@ -46,7 +49,7 @@ class FM7_MAINMEM : public DEVICE
 	uint32 bootmode;
 #ifdef _FM77AV_VARIANTS
 	uint32 extcard_bank;
-	uint32 extrom_bank;
+	bool extrom_bank;
 	bool initiator_enabled;
 #endif
 #if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
@@ -76,19 +79,23 @@ class FM7_MAINMEM : public DEVICE
 	bool diag_load_dictrom;
 	bool diag_load_learndata;
 	bool dictrom_connected;
-
+	bool dictrom_enabled;
+	bool dictram_enabled;
+	
 	bool use_page2_extram;
 	uint8 fm7_mainmem_initrom[0x2000]; // $00000-$0ffff
+	uint8 fm77av_hidden_bootmmr[0x200];
 	uint8 fm7_mainmem_mmrbank_0[0x10000]; // $00000-$0ffff
 	uint8 fm7_mainmem_mmrbank_2[0x10000]; // $20000-$2ffff
 #  if defined(CAPABLE_DICTROM)
-	bool diag_load_extrarom;
-	uint8 fm7_mainmem_extrarom[0x20000]; // $20000-$2ffff, banked
-	uint8 fm7_mainmem_dictrom[0x40000]; // $20000-$2ffff, banked
+	uint8 fm7_mainmem_dictrom[0x40000]; // $00000-$3ffff, banked
 	uint8 fm7_mainmem_learndata[0x2000];
+#  endif
+#  if defined(_FM77AV40SX) || defined(_FM77AV40EX)
+	bool diag_load_extrarom;
+	uint8 fm7_mainmem_extrarom[0x10000]; // $20000-$2bfff, banked
 #  endif	
-#  if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
-      defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#  if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX)
 	int extram_pages;
 	uint8 *fm7_mainmem_extram; // $40000- : MAX 768KB ($c0000)
 #  endif
@@ -99,8 +106,10 @@ class FM7_MAINMEM : public DEVICE
 	uint8 fm77_shadowram[0x200];
 # endif
 #endif
-	KANJIROM *kanjiclass1;
-	KANJIROM *kanjiclass2;
+#if defined(CAPABLE_DICTROM)
+	DEVICE *kanjiclass1;
+	//KANJIROM *kanjiclass2;
+#endif	
 	MC6809 *maincpu;
 	DEVICE *mainio;
 	DEVICE *display;
@@ -109,13 +118,17 @@ class FM7_MAINMEM : public DEVICE
 	bool diag_load_bootrom_bas;
 	bool diag_load_bootrom_dos;
 	bool diag_load_bootrom_mmr;
+	bool write_state;
 
 	int getbank(uint32 addr, uint32 *realaddr);
+	int check_extrom(uint32 raddr, uint32 *realaddr);
+	
 	int window_convert(uint32 addr, uint32 *realaddr);
 	int mmr_convert(uint32 addr, uint32 *realaddr);
 	int nonmmr_convert(uint32 addr, uint32 *realaddr);
 	uint32 read_bios(const char *name, uint8 *ptr, uint32 size);
 	uint32 write_bios(const char *name, uint8 *ptr, uint32 size);
+	void setclock(int mode);
 
  public:
 	FM7_MAINMEM(VM* parent_vm, EMU* parent_emu);
@@ -143,6 +156,7 @@ class FM7_MAINMEM : public DEVICE
 	bool get_loadstat_bootrom_bas(void);
 	bool get_loadstat_bootrom_dos(void);
 	void save_state(FILEIO *state_fio);
+	void update_config();
 	bool load_state(FILEIO *state_fio);
 
 	void set_context_display(DEVICE *p){
@@ -171,6 +185,11 @@ class FM7_MAINMEM : public DEVICE
 		write_table[i].memory = NULL;
 		
 	}
+#if defined(CAPABLE_DICTROM)
+	void set_context_kanjirom_class1(DEVICE *p){
+		kanjiclass1 = p;
+	}
+#endif	
 	void write_signal(int sigid, uint32 data, uint32 mask);
 	uint32 read_signal(int sigid);
 	uint32 read_io8(uint32 addr) {

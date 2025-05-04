@@ -417,7 +417,7 @@ void EMU::out_message(const _TCHAR* format, ...)
 static uint8 hex2uint8(char *value)
 {
 	char tmp[3];
-	memset(tmp, sizeof(tmp), 0);
+	memset(tmp, 0, sizeof(tmp));
 	memcpy(tmp, value, 2);
 	return (uint8)strtoul(tmp, NULL, 16);
 }
@@ -425,7 +425,7 @@ static uint8 hex2uint8(char *value)
 static uint16 hex2uint16(char *value)
 {
 	char tmp[5];
-	memset(tmp, sizeof(tmp), 0);
+	memset(tmp, 0, sizeof(tmp));
 	memcpy(tmp, value, 4);
 	return (uint16)strtoul(tmp, NULL, 16);
 }
@@ -438,7 +438,7 @@ static bool hex2bin(const _TCHAR* file_path, const _TCHAR* dest_path)
 		int length = 0;
 		char line[1024];
 		uint8 buffer[0x10000];
-		memset(buffer, sizeof(buffer), 0xff);
+		memset(buffer, 0xff, sizeof(buffer));
 		while(fio_s->Fgets(line, sizeof(line)) != NULL) {
 			if(line[0] != ':') continue;
 			int bytes = hex2uint8(line + 1);
