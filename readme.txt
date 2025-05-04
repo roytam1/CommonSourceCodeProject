@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/17/2015
+								9/23/2015
 
 --- What's this ?
 
@@ -247,6 +247,9 @@ under the GNU GENERAL PUBLIC LICENSE.
 	Mr.Enri for SHARP MZ-80FIO and MZ-80FD hardware design info
 - vm/mz2500/sasi.*
 	X millenium by Mr.Punyu
+- vm/mz3500/keyboard.*
+	The keycode tables are from Martinuv 8-bitovy blog
+	http://www.8bity.cz/2013/adapter-pro-pripojeni-ps2-klavesnice-k-sharp-mz-3500/
 - vm/pc6001/*
 	yaPC-6001/yaPC-6201/yaPC-6601 by Mr.tanam
 - vm/pc8801/pc88.*

@@ -33,7 +33,7 @@ private:
 	uint8 recv_data;
 	bool recv_ok;
 	bool stc, dc;
-	bool caps;
+	bool caps, kana;
 	
 	void drive();
 	void set_stk(bool value);

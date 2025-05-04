@@ -1,3 +1,8 @@
+9/23/2015-2
+
+[MZ3500/KEYBOARD] support kana key
+
+
 9/23/2015
 
 [VM/UPD765A] fix index hole signal width to 5msec (thanks Mr.Sato)
