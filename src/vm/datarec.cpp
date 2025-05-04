@@ -496,6 +496,13 @@ bool DATAREC::play_tape(const _TCHAR* file_path)
 				load_p6_image(true);
 				play = is_wav = true;
 			}
+		} else if(check_file_extension(file_path, _T(".bin"))) {
+			// HITACH BASIC Master Jr tape image (bm2)
+			if((buffer_length = load_bmjr_image()) != 0) {
+				buffer = (uint8_t *)malloc(buffer_length);
+				load_bmjr_image();
+				play = is_wav = true;
+			}
 		} else if(check_file_extension(file_path, _T(".cas"))) {
 			// standard cas image for my emulator
 			if((buffer_length = load_cas_image()) != 0) {
@@ -706,9 +713,9 @@ int DATAREC::load_wav_image(int offset)
 		}
 		
 #ifdef DATAREC_SOUND
-		if(!config.wave_shaper || header.channels > 1) {
+		if(!config.wave_shaper[drive_num] || header.channels > 1) {
 #else
-		if(!config.wave_shaper) {
+		if(!config.wave_shaper[drive_num]) {
 #endif
 			// load samples
 #ifdef DATAREC_SOUND
@@ -1341,6 +1348,56 @@ int DATAREC::load_p6_image(bool is_p6t)
 		P6_PUT_2400HZ_X2();
 	}
 #endif
+	return ptr;
+}
+
+// HITACH BASIC Master Jr tape image (bm2)
+
+#define BMJR_PUT_1200HZ_X4() { \
+	if(buffer != NULL) { \
+		for(int k = 0; k < 4; k++) { \
+			for(int p = 0; p < 20; p++) buffer[ptr++] = 0xff; \
+			for(int p = 0; p < 20; p++) buffer[ptr++] = 0x00; \
+		} \
+	} else { \
+		ptr += 40 * 4; \
+	} \
+}
+
+#define BMJR_PUT_2400HZ_X8() { \
+	if(buffer != NULL) { \
+		for(int k = 0; k < 8; k++) { \
+			for(int p = 0; p < 10; p++) buffer[ptr++] = 0xff; \
+			for(int p = 0; p < 10; p++) buffer[ptr++] = 0x00; \
+		} \
+	} else { \
+		ptr += 20 * 8; \
+	} \
+}
+
+int DATAREC::load_bmjr_image()
+{
+	sample_rate = 48000;
+	sample_usec = 1000000. / sample_rate;
+	
+	play_fio->Fseek(0, FILEIO_SEEK_SET);
+	
+	int ptr = 0, data;
+	while((data = play_fio->Fgetc()) != EOF) {
+		// start bit = 0
+		BMJR_PUT_1200HZ_X4();
+		// data bits
+		for(int j = 0; j < 8; j++) {
+			if(data & (1 << j)) {
+				BMJR_PUT_2400HZ_X8();
+			} else {
+				BMJR_PUT_1200HZ_X4();
+			}
+		}
+		// stop bits = 1,1
+		BMJR_PUT_2400HZ_X8();
+		BMJR_PUT_2400HZ_X8();
+	}
 	return ptr;
 }
 

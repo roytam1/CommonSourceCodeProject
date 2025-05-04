@@ -62,9 +62,9 @@
 #endif
 #define USE_DIPSWITCH
 #define DIPSWITCH_DEFAULT	0
-#define USE_TAPE
+#define USE_TAPE1
 #if defined(_TK80BS)
-#define TAPE_BINARY_ONLY
+#define USE_TAPE2
 #endif
 #define USE_BINARY_FILE1
 #define NOTIFY_KEY_DOWN
@@ -72,11 +72,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NO_CAPS
-#if defined(_TK80BS)
-#define USE_SOUND_VOLUME	2
-#elif defined(_TK80) || defined(_TK85)
 #define USE_SOUND_VOLUME	4
-#endif
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -85,10 +81,7 @@
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-	_T("Beep #1"), _T("Beep #2"),
-#if defined(_TK80) || defined(_TK85)
-	_T("CMT (Signal)"), _T("Noise (CMT)"),
-#endif
+	_T("Beep #1"), _T("Beep #2"), _T("CMT (Signal)"), _T("Noise (CMT)"),
 };
 #endif
 
@@ -186,12 +179,11 @@ class EMU;
 class DEVICE;
 class EVENT;
 
+class DATAREC;
 class I8080;
 #if defined(_TK80BS)
 class I8251;
 class IO;
-#elif defined(_TK80) || defined(_TK85)
-class DATAREC;
 #endif
 class I8255;
 //class MEMORY;
@@ -212,13 +204,12 @@ protected:
 	// devices
 	EVENT* event;
 	
+	DATAREC* drec;
 	I8080* cpu;
 #if defined(_TK80BS)
 	I8251* sio_b;
 	I8255* pio_b;
 	IO* memio;
-#elif defined(_TK80) || defined(_TK85)
-	DATAREC* drec;
 #endif
 	I8255* pio_t;
 //	MEMORY* memory;
@@ -286,16 +277,14 @@ public:
 	// user interface
 	void load_binary(int drv, const _TCHAR* file_path);
 	void save_binary(int drv, const _TCHAR* file_path);
-	void play_tape(const _TCHAR* file_path);
-	void rec_tape(const _TCHAR* file_path);
-	void close_tape();
-	bool is_tape_inserted();
-#if defined(_TK80) || defined(_TK85)
-	bool is_tape_playing();
-	bool is_tape_recording();
-	int get_tape_position();
-	const _TCHAR* get_tape_message();
-#endif
+	void play_tape(int drv, const _TCHAR* file_path);
+	void rec_tape(int drv, const _TCHAR* file_path);
+	void close_tape(int drv);
+	bool is_tape_inserted(int drv);
+	bool is_tape_playing(int drv);
+	bool is_tape_recording(int drv);
+	int get_tape_position(int drv);
+	const _TCHAR* get_tape_message(int drv);
 	bool is_frame_skippable();
 	
 	void update_config();

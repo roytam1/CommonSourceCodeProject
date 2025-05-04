@@ -66,10 +66,12 @@ void initialize_config()
 #endif
 	}
 #endif
-#if defined(USE_TAPE)
-	config.wave_shaper = true;
-	config.direct_load_mzt = true;
-	config.baud_high = true;
+#if defined(USE_TAPE1)
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		config.wave_shaper[drv] = true;
+		config.direct_load_mzt[drv] = true;
+		config.baud_high[drv] = true;
+	}
 #endif
 	
 	// screen
@@ -100,7 +102,7 @@ void initialize_config()
 #if defined(USE_FD1)
 	config.sound_noise_fdd = true;
 #endif
-#if defined(USE_TAPE)
+#if defined(USE_TAPE1)
 	config.sound_noise_cmt = true;
 	config.sound_play_tape = true;
 #endif
@@ -151,10 +153,12 @@ void load_config(const _TCHAR* config_path)
 		config.ignore_disk_crc[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("IgnoreDiskCRC%d"), drv + 1), config.ignore_disk_crc[drv], config_path);
 	}
 #endif
-#ifdef USE_TAPE
-	config.wave_shaper = MyGetPrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
-	config.direct_load_mzt = MyGetPrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
-	config.baud_high = MyGetPrivateProfileBool(_T("Control"), _T("BaudHigh"), config.baud_high, config_path);
+#ifdef USE_TAPE1
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		config.wave_shaper[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("WaveShaper%d"), drv + 1), config.wave_shaper[drv], config_path);
+		config.direct_load_mzt[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("DirectLoadMZT%d"), drv + 1), config.direct_load_mzt[drv], config_path);
+		config.baud_high[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("BaudHigh%d"), drv + 1), config.baud_high[drv], config_path);
+	}
 #endif
 	
 	// recent files
@@ -182,10 +186,12 @@ void load_config(const _TCHAR* config_path)
 		}
 	}
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 	MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), _T(""), config.initial_tape_dir, _MAX_PATH, config_path);
-	for(int i = 0; i < MAX_HISTORY; i++) {
-		MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath1_%d"), i + 1), _T(""), config.recent_tape_path[i], _MAX_PATH, config_path);
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		for(int i = 0; i < MAX_HISTORY; i++) {
+			MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath%d_%d"), drv + 1, i + 1), _T(""), config.recent_tape_path[drv][i], _MAX_PATH, config_path);
+		}
 	}
 #endif
 #ifdef USE_COMPACT_DISC
@@ -263,7 +269,7 @@ void load_config(const _TCHAR* config_path)
 #ifdef USE_FD1
 	config.sound_noise_fdd = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseFDD"), config.sound_noise_fdd, config_path);;
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 	config.sound_noise_cmt = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);;
 	config.sound_play_tape = MyGetPrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
 #endif
@@ -332,10 +338,12 @@ void save_config(const _TCHAR* config_path)
 		MyWritePrivateProfileBool(_T("Control"), create_string(_T("IgnoreDiskCRC%d"), drv + 1), config.ignore_disk_crc[drv], config_path);
 	}
 #endif
-#ifdef USE_TAPE
-	MyWritePrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
-	MyWritePrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
-	MyWritePrivateProfileBool(_T("Control"), _T("BaudHigh"), config.baud_high, config_path);
+#ifdef USE_TAPE1
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		MyWritePrivateProfileBool(_T("Control"), create_string(_T("WaveShaper%d"), drv + 1), config.wave_shaper[drv], config_path);
+		MyWritePrivateProfileBool(_T("Control"), create_string(_T("DirectLoadMZT%d"), drv + 1), config.direct_load_mzt[drv], config_path);
+		MyWritePrivateProfileBool(_T("Control"), create_string(_T("BaudHigh%d"), drv + 1), config.baud_high[drv], config_path);
+	}
 #endif
 	
 	// recent files
@@ -363,10 +371,12 @@ void save_config(const _TCHAR* config_path)
 		}
 	}
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 	MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), config.initial_tape_dir, config_path);
-	for(int i = 0; i < MAX_HISTORY; i++) {
-		MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath1_%d"), i + 1), config.recent_tape_path[i], config_path);
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		for(int i = 0; i < MAX_HISTORY; i++) {
+			MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath%d_%d"), drv + 1, i + 1), config.recent_tape_path[drv][i], config_path);
+		}
 	}
 #endif
 #ifdef USE_COMPACT_DISC
@@ -441,7 +451,7 @@ void save_config(const _TCHAR* config_path)
 #ifdef USE_FD1
 	MyWritePrivateProfileBool(_T("Sound"), _T("NoiseFDD"), config.sound_noise_fdd, config_path);
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 	MyWritePrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);
 	MyWritePrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
 #endif

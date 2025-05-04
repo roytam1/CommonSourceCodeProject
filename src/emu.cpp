@@ -15,13 +15,6 @@
 #include "fifo.h"
 #include "fileio.h"
 
-#ifndef FD_BASE_NUMBER
-#define FD_BASE_NUMBER 1
-#endif
-#ifndef QD_BASE_NUMBER
-#define QD_BASE_NUMBER 1
-#endif
-
 #if defined(_USE_QT)
 extern CSP_Logger *csp_logger;
 #endif
@@ -1122,7 +1115,7 @@ void EMU::initialize_media()
 #ifdef USE_QD1
 	memset(&quick_disk_status, 0, sizeof(quick_disk_status));
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 	memset(&tape_status, 0, sizeof(tape_status));
 #endif
 #ifdef USE_COMPACT_DISC
@@ -1147,18 +1140,28 @@ void EMU::update_media()
 	for(int drv = 0; drv < MAX_QD; drv++) {
 		if(quick_disk_status[drv].wait_count != 0 && --quick_disk_status[drv].wait_count == 0) {
 			vm->open_quick_disk(drv, quick_disk_status[drv].path);
+#if MAX_QD > 1
 			out_message(_T("QD%d: %s"), drv + QD_BASE_NUMBER, quick_disk_status[drv].path);
+#else
+			out_message(_T("QD: %s"), quick_disk_status[drv].path);
+#endif
 		}
 	}
 #endif
-#ifdef USE_TAPE
-	if(tape_status.wait_count != 0 && --tape_status.wait_count == 0) {
-		if(tape_status.play) {
-			vm->play_tape(tape_status.path);
-		} else {
-			vm->rec_tape(tape_status.path);
+#ifdef USE_TAPE1
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		if(tape_status[drv].wait_count != 0 && --tape_status[drv].wait_count == 0) {
+			if(tape_status[drv].play) {
+				vm->play_tape(drv, tape_status[drv].path);
+			} else {
+				vm->rec_tape(drv, tape_status[drv].path);
+			}
+#if MAX_TAPE > 1
+			out_message(_T("CMT%d: %s"), drv + TAPE_BASE_NUMBER, tape_status[drv].path);
+#else
+			out_message(_T("CMT: %s"), tape_status[drv].path);
+#endif
 		}
-		out_message(_T("CMT: %s"), tape_status.path);
 	}
 #endif
 #ifdef USE_COMPACT_DISC
@@ -1177,7 +1180,11 @@ void EMU::update_media()
 	for(int drv = 0; drv < MAX_BUBBLE; drv++) {
 		if(bubble_casette_status[drv].wait_count != 0 && --bubble_casette_status[drv].wait_count == 0) {
 			vm->open_bubble_casette(drv, bubble_casette_status[drv].path, bubble_casette_status[drv].bank);
-			out_message(_T("Bubble%d: %s"), drv, bubble_casette_status[drv].path);
+#if MAX_BUBBLE > 1
+			out_message(_T("Bubble%d: %s"), drv + BUBBLE_BASE_NUMBER, bubble_casette_status[drv].path);
+#else
+			out_message(_T("Bubble: %s"), bubble_casette_status[drv].path);
+#endif
 		}
 	}
 #endif
@@ -1211,12 +1218,14 @@ void EMU::restore_media()
 		}
 	}
 #endif
-#ifdef USE_TAPE
-	if(tape_status.path[0] != _T('\0')) {
-		if(tape_status.play) {
-			vm->play_tape(tape_status.path);
-		} else {
-			tape_status.path[0] = _T('\0');
+#ifdef USE_TAPE1
+	for(int drv = 0; drv < MAX_TAPE; drv++) {
+		if(tape_status[drv].path[0] != _T('\0')) {
+			if(tape_status[drv].play) {
+				vm->play_tape(drv, tape_status[drv].path);
+			} else {
+				tape_status[drv].path[0] = _T('\0');
+			}
 		}
 	}
 #endif
@@ -1250,8 +1259,11 @@ void EMU::open_cart(int drv, const _TCHAR* file_path)
 			vm->open_cart(drv, file_path);
 		}
 		my_tcscpy_s(cart_status[drv].path, _MAX_PATH, file_path);
-		out_message(_T("Cart%d: %s"), drv + 1, file_path);
-		
+#if MAX_CART > 1
+		out_message(_T("Cart%d: %s"), drv + CART_BASE_NUMBER, file_path);
+#else
+		out_message(_T("Cart: %s"), file_path);
+#endif
 #if !defined(_USE_QT) // Temporally
 		// restart recording
 		bool s = osd->now_record_sound;
@@ -1269,8 +1281,11 @@ void EMU::close_cart(int drv)
 	if(drv < MAX_CART) {
 		vm->close_cart(drv);
 		clear_media_status(&cart_status[drv]);
-		out_message(_T("Cart%d: Ejected"), drv + 1);
-		
+#if MAX_CART > 1
+		out_message(_T("Cart%d: Ejected"), drv + CART_BASE_NUMBER);
+#else
+		out_message(_T("Cart: Ejected"));
+#endif
 #if !defined(_USE_QT) // Temporally
 		// stop recording
 		stop_record_video();
@@ -1363,10 +1378,18 @@ void EMU::open_quick_disk(int drv, const _TCHAR* file_path)
 #else
 			quick_disk_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
+#if MAX_QD > 1
 			out_message(_T("QD%d: Ejected"), drv + QD_BASE_NUMBER);
+#else
+			out_message(_T("QD: Ejected"));
+#endif
 		} else if(quick_disk_status[drv].wait_count == 0) {
 			vm->open_quick_disk(drv, file_path);
+#if MAX_QD > 1
 			out_message(_T("QD%d: %s"), drv + QD_BASE_NUMBER, file_path);
+#else
+			out_message(_T("QD: %s"), file_path);
+#endif
 		}
 		my_tcscpy_s(quick_disk_status[drv].path, _MAX_PATH, file_path);
 	}
@@ -1377,7 +1400,11 @@ void EMU::close_quick_disk(int drv)
 	if(drv < MAX_QD) {
 		vm->close_quick_disk(drv);
 		clear_media_status(&quick_disk_status[drv]);
+#if MAX_QD > 1
 		out_message(_T("QD%d: Ejected"), drv + QD_BASE_NUMBER);
+#else
+		out_message(_T("QD: Ejected"));
+#endif
 	}
 }
 
@@ -1396,108 +1423,166 @@ uint32_t EMU::is_quick_disk_accessed()
 }
 #endif
 
-#ifdef USE_TAPE
-void EMU::play_tape(const _TCHAR* file_path)
+#ifdef USE_TAPE1
+void EMU::play_tape(int drv, const _TCHAR* file_path)
 {
-	if(vm->is_tape_inserted()) {
-		vm->close_tape();
-		// wait 0.5sec
+	if(drv < MAX_TAPE) {
+		if(vm->is_tape_inserted(drv)) {
+			vm->close_tape(drv);
+			// wait 0.5sec
 #ifdef SUPPORT_VARIABLE_TIMING
-		tape_status.wait_count = (int)(vm->get_frame_rate() / 2);
+			tape_status[drv].wait_count = (int)(vm->get_frame_rate() / 2);
 #else
-		tape_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+			tape_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
-		out_message(_T("CMT: Ejected"));
-	} else if(tape_status.wait_count == 0) {
-		vm->play_tape(file_path);
-		out_message(_T("CMT: %s"), file_path);
+#if MAX_TAPE > 1
+			out_message(_T("CMT%d: Ejected"), drv + TAPE_BASE_NUMBER);
+#else
+			out_message(_T("CMT: Ejected"));
+#endif
+		} else if(tape_status[drv].wait_count == 0) {
+			vm->play_tape(drv, file_path);
+#if MAX_TAPE > 1
+			out_message(_T("CMT%d: %s"), drv + TAPE_BASE_NUMBER, file_path);
+#else
+			out_message(_T("CMT: %s"), file_path);
+#endif
+		}
+		my_tcscpy_s(tape_status[drv].path, _MAX_PATH, file_path);
+		tape_status[drv].play = true;
 	}
-	my_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
-	tape_status.play = true;
 }
 
-void EMU::rec_tape(const _TCHAR* file_path)
+void EMU::rec_tape(int drv, const _TCHAR* file_path)
 {
-	if(vm->is_tape_inserted()) {
-		vm->close_tape();
-		// wait 0.5sec
+	if(drv < MAX_TAPE) {
+		if(vm->is_tape_inserted(drv)) {
+			vm->close_tape(drv);
+			// wait 0.5sec
 #ifdef SUPPORT_VARIABLE_TIMING
-		tape_status.wait_count = (int)(vm->get_frame_rate() / 2);
+			tape_status[drv].wait_count = (int)(vm->get_frame_rate() / 2);
 #else
-		tape_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+			tape_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
-		out_message(_T("CMT: Ejected"));
-	} else if(tape_status.wait_count == 0) {
-		vm->rec_tape(file_path);
-		out_message(_T("CMT: %s"), file_path);
+#if MAX_TAPE > 1
+			out_message(_T("CMT%d: Ejected"), drv + TAPE_BASE_NUMBER);
+#else
+			out_message(_T("CMT: Ejected"));
+#endif
+		} else if(tape_status[drv].wait_count == 0) {
+			vm->rec_tape(drv, file_path);
+#if MAX_TAPE > 1
+			out_message(_T("CMT%d: %s"), drv + TAPE_BASE_NUMBER, file_path);
+#else
+			out_message(_T("CMT: %s"), file_path);
+#endif
+		}
+		my_tcscpy_s(tape_status[drv].path, _MAX_PATH, file_path);
+		tape_status[drv].play = false;
 	}
-	my_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
-	tape_status.play = false;
 }
 
-void EMU::close_tape()
+void EMU::close_tape(int drv)
 {
-	vm->close_tape();
-	clear_media_status(&tape_status);
-	out_message(_T("CMT: Ejected"));
+	if(drv < MAX_TAPE) {
+		vm->close_tape(drv);
+		clear_media_status(&tape_status[drv]);
+#if MAX_TAPE > 1
+		out_message(_T("CMT%d: Ejected"), drv + TAPE_BASE_NUMBER);
+#else
+		out_message(_T("CMT: Ejected"));
+#endif
+	}
 }
 
-bool EMU::is_tape_inserted()
+bool EMU::is_tape_inserted(int drv)
 {
-	return vm->is_tape_inserted();
+	if(drv < MAX_TAPE) {
+		return vm->is_tape_inserted(drv);
+	} else {
+		return false;
+	}
 }
 
 #ifndef TAPE_BINARY_ONLY
-bool EMU::is_tape_playing()
+bool EMU::is_tape_playing(int drv)
 {
-	return vm->is_tape_playing();
+	if(drv < MAX_TAPE) {
+		return vm->is_tape_playing(drv);
+	} else {
+		return false;
+	}
 }
 
-bool EMU::is_tape_recording()
+bool EMU::is_tape_recording(int drv)
 {
-	return vm->is_tape_recording();
+	if(drv < MAX_TAPE) {
+		return vm->is_tape_recording(drv);
+	} else {
+		return false;
+	}
 }
 
-int EMU::get_tape_position()
+int EMU::get_tape_position(int drv)
 {
-	return vm->get_tape_position();
+	if(drv < MAX_TAPE) {
+		return vm->get_tape_position(drv);
+	} else {
+		return 0;
+	}
 }
 
-const _TCHAR* EMU::get_tape_message()
+const _TCHAR* EMU::get_tape_message(int drv)
 {
-	return vm->get_tape_message();
+	if(drv < MAX_TAPE) {
+		return vm->get_tape_message(drv);
+	} else {
+		return NULL;
+	}
 }
 #endif
 
 #ifdef USE_TAPE_BUTTON
-void EMU::push_play()
+void EMU::push_play(int drv)
 {
-	vm->push_play();
+	if(drv < MAX_TAPE) {
+		vm->push_play(drv);
+	}
 }
 
-void EMU::push_stop()
+void EMU::push_stop(int drv)
 {
-	vm->push_stop();
+	if(drv < MAX_TAPE) {
+		vm->push_stop(drv);
+	}
 }
 
-void EMU::push_fast_forward()
+void EMU::push_fast_forward(int drv)
 {
-	vm->push_fast_forward();
+	if(drv < MAX_TAPE) {
+		vm->push_fast_forward(drv);
+	}
 }
 
-void EMU::push_fast_rewind()
+void EMU::push_fast_rewind(int drv)
 {
-	vm->push_fast_rewind();
+	if(drv < MAX_TAPE) {
+		vm->push_fast_rewind(drv);
+	}
 }
 
-void EMU::push_apss_forward()
+void EMU::push_apss_forward(int drv)
 {
-	vm->push_apss_forward();
+	if(drv < MAX_TAPE) {
+		vm->push_apss_forward(drv);
+	}
 }
 
-void EMU::push_apss_rewind()
+void EMU::push_apss_rewind(int drv)
 {
-	vm->push_apss_rewind();
+	if(drv < MAX_TAPE) {
+		vm->push_apss_rewind(drv);
+	}
 }
 #endif
 #endif
@@ -1611,10 +1696,18 @@ void EMU::open_bubble_casette(int drv, const _TCHAR* file_path, int bank)
 #else
 			bubble_casette_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
 #endif
-			out_message(_T("Bubble%d: Ejected"), drv + 1);
+#if MAX_BUBBLE > 1
+			out_message(_T("Bubble%d: Ejected"), drv + BUBBLE_BASE_NUMBER);
+#else
+			out_message(_T("Bubble: Ejected"));
+#endif
 		} else if(bubble_casette_status[drv].wait_count == 0) {
 			vm->open_bubble_casette(drv, file_path, bank);
-			out_message(_T("Bubble%d: %s"), drv + 1, file_path);
+#if MAX_BUBBLE > 1
+			out_message(_T("Bubble%d: %s"), drv + BUBBLE_BASE_NUMBER, file_path);
+#else
+			out_message(_T("Bubble: %s"), file_path);
+#endif
 		}
 		my_tcscpy_s(bubble_casette_status[drv].path, _MAX_PATH, file_path);
 		bubble_casette_status[drv].bank = bank;
@@ -1626,7 +1719,11 @@ void EMU::close_bubble_casette(int drv)
 	if(drv < MAX_BUBBLE) {
 		vm->close_bubble_casette(drv);
 		clear_media_status(&bubble_casette_status[drv]);
-		out_message(_T("Bubble%d: Ejected"), drv + 1);
+#if MAX_BUBBLE > 1
+		out_message(_T("Bubble%d: Ejected"), drv + BUBBLE_BASE_NUMBER);
+#else
+		out_message(_T("Bubble: Ejected"));
+#endif
 	}
 }
 
@@ -1726,7 +1823,7 @@ void EMU::save_state_tmp(const _TCHAR* file_path)
 #ifdef USE_QD1
 		fio->Fwrite(&quick_disk_status, sizeof(quick_disk_status), 1);
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 		fio->Fwrite(&tape_status, sizeof(tape_status), 1);
 #endif
 #ifdef USE_COMPACT_DISC
@@ -1766,7 +1863,7 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 #ifdef USE_QD1
 				fio->Fread(&quick_disk_status, sizeof(quick_disk_status), 1);
 #endif
-#ifdef USE_TAPE
+#ifdef USE_TAPE1
 				fio->Fread(&tape_status, sizeof(tape_status), 1);
 #endif
 #ifdef USE_COMPACT_DISC

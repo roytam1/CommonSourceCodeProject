@@ -89,6 +89,7 @@ private:
 	int load_tap_image();
 	int load_mzt_image();
 	int load_p6_image(bool is_p6t);
+	int load_bmjr_image();
 	int load_cas_image();
 	int load_m5_cas_image();
 	int load_msx_cas_image();
@@ -115,6 +116,7 @@ public:
 		sound_volume_l = sound_volume_r = 1024;
 #endif
 		my_tcscpy_s(message, _T("Stop"));
+		drive_num = 0;
 		set_device_name(_T("Data Recorder"));
 	}
 	~DATAREC() {}
@@ -225,6 +227,7 @@ public:
 	void set_ff_rew(int value);
 	bool do_apss(int value);
 	double get_ave_hi_freq();
+	int drive_num;
 };
 
 #endif
