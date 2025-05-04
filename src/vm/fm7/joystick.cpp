@@ -10,6 +10,7 @@
  */
 #include "../vm.h"
 #include "fm7_mainio.h"
+#include "../ym2203.h"
 #include "./joystick.h"
 #include "../../config.h"
 #include "../../emu.h"
@@ -21,6 +22,7 @@ JOYSTICK::JOYSTICK(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 	rawdata = NULL;
 	mouse_state = NULL;
 	lpt_type = 0;
+	opn = NULL;
 	set_device_name(_T("JOYSTICK"));
 }
 
@@ -41,6 +43,8 @@ void JOYSTICK::initialize()
 	lpmask = 0x00;
 	lpt_type = config.printer_type;
 	port_b_val = 0;
+	register_frame_event(this);
+	//register_vline_event(this);
 }
 
 void JOYSTICK::reset()
@@ -69,6 +73,9 @@ void JOYSTICK::reset()
 	}
 	mouse_state = p_emu->get_mouse_buffer();
 #endif	
+	if(opn != NULL) {
+		opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);
+	}
 }
 
 void JOYSTICK::event_frame()
@@ -80,8 +87,8 @@ void JOYSTICK::event_frame()
 #if !defined(_FM8)
 	mouse_state = p_emu->get_mouse_buffer();
 	if(mouse_state != NULL) {
-		dx += (mouse_state[0] / 2);
-		dy += (mouse_state[1] / 2);
+		dx += mouse_state[0];
+		dy += mouse_state[1];
 		if(dx < -127) {
 			dx = -127;
 		} else if(dx > 127) {
@@ -92,11 +99,13 @@ void JOYSTICK::event_frame()
 		} else if(dy > 127) {
 			dy = 127;
 		}
-		stat = mouse_state[2];
 	}		
-	mouse_button = 0x00;
-	if((stat & 0x01) == 0) mouse_button |= 0x10; // left
-	if((stat & 0x02) == 0) mouse_button |= 0x20; // right
+	if(mouse_state != NULL) {
+		stat = mouse_state[2];
+		mouse_button = 0x00;
+		if((stat & 0x01) == 0) mouse_button |= 0x10; // left
+		if((stat & 0x02) == 0) mouse_button |= 0x20; // right
+	}
 #endif	
 	rawdata = p_emu->get_joy_buffer();
 	if(rawdata == NULL) return;
@@ -139,7 +148,6 @@ uint32_t JOYSTICK::update_mouse(uint32_t mask)
 				mouse_data = (ly >> 4) & 0x0f;
 				break;
 	}
-	//mouse_button = 0x00;
 	return (mouse_data | (mask & button) | 0xc0);
 #else
 	return 0x00;
@@ -165,15 +173,20 @@ void JOYSTICK::update_strobe(bool flag)
 {
 	if(mouse_strobe != flag) {
 		mouse_strobe = flag;
-		if(mouse_phase == 0) {
+		if((mouse_phase == 0)) {
 			lx = -dx;
 			ly = -dy;
 			dx = 0;
 			dy = 0;
 			register_event(this, EVENT_MOUSE_TIMEOUT, 2000.0, false, &mouse_timeout_event);
 		}
-		mouse_phase++;
-		if(mouse_phase >= 4) mouse_phase = 0;
+		{
+			mouse_phase++;
+			if(mouse_phase >= 4) {
+				mouse_phase = 0;
+				//cancel_event(this, mouse_timeout_event);
+			}
+		}
 	}
 }
 

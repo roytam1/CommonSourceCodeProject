@@ -351,6 +351,7 @@ void PCE::draw_screen()
 		}
 		prev_width = vdc[0].physical_width;
 	}
+	emu->set_vm_screen_lines(240);
 #endif
 	for(int y = 0; y < 240; y++, dy++) {
 		scrntype_t* src = &vce.bmp[y + 17][86];
@@ -1847,6 +1848,7 @@ void PCE::cdrom_initialize()
 
 void PCE::cdrom_reset()
 {
+	touch_sound();
 	memset(cdrom_regs, 0, sizeof(cdrom_regs));
 	cdrom_regs[0x0c] |= PCE_CD_ADPCM_STOP_FLAG;
 	cdrom_regs[0x0c] &= ~PCE_CD_ADPCM_PLAY_FLAG;
@@ -1873,6 +1875,7 @@ void PCE::cdrom_reset()
 
 void PCE::cdrom_write(uint16_t addr, uint8_t data)
 {
+	touch_sound();
 	switch(addr & 0x0f) {
 	case 0x00:  /* CDC status */
 		d_scsi_host->write_signal(SIG_SCSI_SEL, 1, 1);
@@ -2190,6 +2193,7 @@ void PCE::adpcm_do_dma()
 
 void PCE::adpcm_play()
 {
+	touch_sound();
 	cdrom_regs[0x0c] &= ~PCE_CD_ADPCM_STOP_FLAG;
 	cdrom_regs[0x0c] |= PCE_CD_ADPCM_PLAY_FLAG;
 	set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_FULL_PLAY, CLEAR_LINE);
@@ -2199,6 +2203,7 @@ void PCE::adpcm_play()
 
 void PCE::adpcm_stop()
 {
+	touch_sound();
 	cdrom_regs[0x0c] |= PCE_CD_ADPCM_STOP_FLAG;
 	cdrom_regs[0x0c] &= ~PCE_CD_ADPCM_PLAY_FLAG;
 	cdrom_regs[0x0d] &= ~0x60;
@@ -2337,6 +2342,7 @@ void PCE::write_signal(int id, uint32_t data, uint32_t mask)
 		
 	case SIG_PCE_CDDA_DONE:
 		if(data & mask) {
+			touch_sound();
 			set_cdrom_irq_line(PCE_CD_IRQ_TRANSFER_DONE, ASSERT_LINE);
 		}
 		break;

@@ -29,9 +29,6 @@ class KEYBOARD : public DEVICE {
 	void turn_on_ins_led(void);
 	void turn_off_ins_led(void);
 	
-	outputs_t caps_led;
-	outputs_t kana_led;
-	outputs_t ins_led;
 #if defined(_FM77AV_VARIANTS)  
 	outputs_t rxrdy;
 	outputs_t key_ack;
@@ -50,19 +47,24 @@ private:
 	bool caps_pressed;
 	bool kana_pressed;
 	bool break_pressed;
+
+	bool ins_led_status;
+	bool kana_led_status;
+	bool caps_led_status;
 	uint8_t read_data_reg(void);
 	uint8_t read_stat_reg(void);
 	
 	int event_keyrepeat;
 	int event_key_rtc;
 	
-	bool key_pressed_flag[0x70];
 	uint8_t scancode;
 	uint8_t autokey_backup;
 	uint8_t repeat_keycode;
 	
 	uint8_t datareg;
 	uint32_t older_vk;
+	bool override_break_key;
+	
 #if defined(_FM77AV_VARIANTS)
 	dll_cur_time_t cur_time; 
 	uint8_t rtc_yy;
@@ -153,15 +155,6 @@ private:
 #if defined(_FM77AV_VARIANTS)  
 		register_output_signal(&key_ack, p, id, mask);
 #endif
-	}
-	void set_context_caps_led(DEVICE *p, int id, uint32_t mask) {
-		register_output_signal(&caps_led, p, id, mask);
-	}
-	void set_context_kana_led(DEVICE *p, int id, uint32_t mask) {
-		register_output_signal(&kana_led, p, id, mask);
-	}
-	void set_context_ins_led(DEVICE *p, int id, uint32_t mask) {
-		register_output_signal(&ins_led, p, id, mask);
 	}
 	void set_context_break_line(DEVICE *p, int id, uint32_t mask) {
 		register_output_signal(&break_line, p, id, mask);

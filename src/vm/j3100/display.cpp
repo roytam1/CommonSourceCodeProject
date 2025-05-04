@@ -123,6 +123,8 @@ void DISPLAY::draw_screen()
 	}
 	
 	// copy to real screen
+	emu->set_vm_screen_lines(height);
+	
 	if(height == 200) {
 		// 320x200 or 640x200
 		for(int y = 0; y < 200; y++) {
@@ -139,7 +141,7 @@ void DISPLAY::draw_screen()
 					dest0[x] = palette_pc[src[x]];
 				}
 			}
-			memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
+			my_memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 		}
 	} else {
 		// 640x400

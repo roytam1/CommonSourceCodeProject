@@ -21,39 +21,53 @@ KANJIROM::KANJIROM(VM *parent_vm, EMU* parent_emu, bool type_2std): DEVICE(paren
 	memset(data_table, 0xff, 0x20000); 
 	//	read_table[0].memory = data_table;
 	p_emu = parent_emu;
+
 	if(type_2std) {
 		class2 = true;
-		if(fio->Fopen(create_local_path(_T("KANJI2.ROM")), FILEIO_READ_BINARY)) {
+		if(fio->Fopen(create_local_path(_T(ROM_KANJI_CLASS2)), FILEIO_READ_BINARY)) {
 		  fio->Fread(data_table, 0x20000, 1);
 			fio->Fclose();
 			read_ok = true;
 		}
 	} else {
 		class2 = false;
-		if(fio->Fopen(create_local_path(_T("KANJI1.ROM")), FILEIO_READ_BINARY)) {
+		if(fio->Fopen(create_local_path(_T(ROM_KANJI_CLASS1)), FILEIO_READ_BINARY)) {
 		  fio->Fread(data_table, 0x20000, 1);
 			fio->Fclose();
 			read_ok = true;
-		} else if(fio->Fopen(create_local_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
+		} else if(fio->Fopen(create_local_path(_T(ROM_KANJI_CLASS1_FALLBACK)), FILEIO_READ_BINARY)) {
 		  fio->Fread(data_table, 0x20000, 1);
 			fio->Fclose();
 			read_ok = true;
-		} 
+		}
+		
 	}
 	if(class2) {
 		set_device_name(_T("FM7_KANJI_CLASS2"));
 	} else {
 		set_device_name(_T("FM7_KANJI_CLASS1"));
 	}
+	if(class2) {
+		set_device_name(_T("FM7_KANJI_CLASS2"));
+	} else {
+		set_device_name(_T("FM7_KANJI_CLASS1"));
+	}
+	this->out_debug_log(_T("KANJIROM READ %s."), read_ok ? "OK" : "FAILED");
+	
 	kanjiaddr.d = 0;
 	delete fio;
 	return;
+}
+
+KANJIROM::~KANJIROM()
+{
 }
 
 void KANJIROM::reset(void)
 {
 	kanjiaddr.d = 0;
 }
+
 
 void KANJIROM::write_data8(uint32_t addr, uint32_t data)
 {
@@ -91,7 +105,7 @@ void KANJIROM::release()
 {
 }
 
-#define STATE_VERSION 2
+#define STATE_VERSION 4
 void KANJIROM::save_state(FILEIO *state_fio)
 {
 	state_fio->FputUint32_BE(STATE_VERSION);
@@ -102,6 +116,7 @@ void KANJIROM::save_state(FILEIO *state_fio)
 	state_fio->FputBool(read_ok);
 	state_fio->Fwrite(data_table, sizeof(data_table), 1);
 	state_fio->FputUint16_BE(kanjiaddr.w.l);
+
 }
 
 bool KANJIROM::load_state(FILEIO *state_fio)
@@ -120,7 +135,7 @@ bool KANJIROM::load_state(FILEIO *state_fio)
 	if(version >= 2) {
 		kanjiaddr.d = 0;
 		kanjiaddr.w.l = state_fio->FgetUint16_BE();
-		if(version == 2) return true;
+		if(version >= 2) return true;
 	}
 	return false;
 }

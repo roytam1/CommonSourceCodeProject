@@ -41,6 +41,7 @@
 #define SPECIAL_DISK_FM7_TAIYOU2	15
 #define SPECIAL_DISK_FM7_XANADU2_D	16
 #define SPECIAL_DISK_FM7_RIGLAS		17
+#define SPECIAL_DISK_FM7_FLEX		18
 
 // d88 constant
 #define DISK_BUFFER_SIZE	0x380000	// 3.5MB
@@ -104,6 +105,7 @@ public:
 #endif
 	{
 		inserted = ejected = write_protected = changed = false;
+		is_special_disk = 0;
 		file_size.d = 0;
 		sector_size.sd = sector_num.sd = 0;
 		sector = NULL;

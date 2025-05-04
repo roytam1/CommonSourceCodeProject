@@ -23,7 +23,7 @@
 #define HAS_MC6800
 
 // device informations for win32
-#define USE_TAPE1
+#define USE_TAPE		1
 #define USE_TAPE_BUTTON
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY

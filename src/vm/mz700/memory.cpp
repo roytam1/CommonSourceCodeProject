@@ -902,6 +902,8 @@ void MEMORY::draw_line(int v)
 void MEMORY::draw_screen()
 {
 	// copy to real screen
+	emu->set_vm_screen_lines(200);
+	
 	for(int y = 0; y < 200; y++) {
 		scrntype_t* dest0 = emu->get_screen_buffer(2 * y);
 		scrntype_t* dest1 = emu->get_screen_buffer(2 * y + 1);
@@ -915,7 +917,7 @@ void MEMORY::draw_screen()
 #endif
 		}
 		if(!config.scan_line) {
-			memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
+			my_memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 		} else {
 			memset(dest1, 0, 640 * sizeof(scrntype_t));
 		}
@@ -1039,6 +1041,8 @@ void MEMORY::draw_line_mz700(int v)
 void MEMORY::draw_screen()
 {
 	// copy to real screen
+	emu->set_vm_screen_lines(200);
+	
 	for(int y = 0; y < 200; y++) {
 		scrntype_t* dest0 = emu->get_screen_buffer(2 * y);
 		scrntype_t* dest1 = emu->get_screen_buffer(2 * y + 1);
@@ -1061,7 +1065,7 @@ void MEMORY::draw_screen()
 			}
 		}
 		if(!config.scan_line) {
-			memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
+			my_memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 		} else {
 			memset(dest1, 0, 640 * sizeof(scrntype_t));
 		}

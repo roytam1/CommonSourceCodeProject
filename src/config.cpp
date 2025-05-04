@@ -74,8 +74,8 @@ void initialize_config()
 	#if defined(USE_PRINTER_TYPE) && defined(PRINTER_TYPE_DEFAULT)
 		config.printer_type = PRINTER_TYPE_DEFAULT;
 	#endif
-	#if defined(USE_FD1)
-		for(int drv = 0; drv < MAX_FD; drv++) {
+	#if defined(USE_FLOPPY_DISK)
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			#if defined(CORRECT_DISK_TIMING_DEFAULT)
 				config.correct_disk_timing[drv] = CORRECT_DISK_TIMING_DEFAULT;
 			#else
@@ -86,8 +86,8 @@ void initialize_config()
 			#endif
 		}
 	#endif
-	#if defined(USE_TAPE1)
-		for(int drv = 0; drv < MAX_TAPE; drv++) {
+	#if defined(USE_TAPE)
+		for(int drv = 0; drv < USE_TAPE; drv++) {
 			config.wave_shaper[drv] = true;
 			config.direct_load_mzt[drv] = true;
 			config.baud_high[drv] = true;
@@ -108,10 +108,10 @@ void initialize_config()
 	#endif
 	config.sound_latency = 1;	// 100msec
 	config.sound_strict_rendering = true;
-	#ifdef USE_FD1
+	#ifdef USE_FLOPPY_DISK
 		config.sound_noise_fdd = true;
 	#endif
-	#ifdef USE_TAPE1
+	#ifdef USE_TAPE
 		config.sound_noise_cmt = true;
 		config.sound_play_tape = true;
 	#endif
@@ -185,14 +185,14 @@ void load_config(const _TCHAR* config_path)
 	#ifdef USE_PRINTER
 		config.printer_type = MyGetPrivateProfileInt(_T("Control"), _T("PrinterType"), config.printer_type, config_path);
 	#endif
-	#ifdef USE_FD1
-		for(int drv = 0; drv < MAX_FD; drv++) {
+	#ifdef USE_FLOPPY_DISK
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			config.correct_disk_timing[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("CorrectDiskTiming%d"), drv + 1), config.correct_disk_timing[drv], config_path);
 			config.ignore_disk_crc[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("IgnoreDiskCRC%d"), drv + 1), config.ignore_disk_crc[drv], config_path);
 		}
 	#endif
-	#ifdef USE_TAPE1
-		for(int drv = 0; drv < MAX_TAPE; drv++) {
+	#ifdef USE_TAPE
+		for(int drv = 0; drv < USE_TAPE; drv++) {
 			config.wave_shaper[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("WaveShaper%d"), drv + 1), config.wave_shaper[drv], config_path);
 			config.direct_load_mzt[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("DirectLoadMZT%d"), drv + 1), config.direct_load_mzt[drv], config_path);
 			config.baud_high[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("BaudHigh%d"), drv + 1), config.baud_high[drv], config_path);
@@ -201,33 +201,41 @@ void load_config(const _TCHAR* config_path)
 	config.compress_state = MyGetPrivateProfileBool(_T("Control"), _T("CompressState"), config.compress_state, config_path);
 	
 	// recent files
-	#ifdef USE_CART1
+	#ifdef USE_CART
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialCartDir"), _T(""), config.initial_cart_dir, _MAX_PATH, config_path);
-		for(int drv = 0; drv < MAX_CART; drv++) {
+		for(int drv = 0; drv < USE_CART; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCartPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_cart_path[drv][i], _MAX_PATH, config_path);
 			}
 		}
 	#endif
-	#ifdef USE_FD1
+	#ifdef USE_FLOPPY_DISK
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialDiskDir"), _T(""), config.initial_floppy_disk_dir, _MAX_PATH, config_path);
-		for(int drv = 0; drv < MAX_FD; drv++) {
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentDiskPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_floppy_disk_path[drv][i], _MAX_PATH, config_path);
 			}
 		}
 	#endif
-	#ifdef USE_QD1
+	#ifdef USE_QUICK_DISK
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialQuickDiskDir"), _T(""), config.initial_quick_disk_dir, _MAX_PATH, config_path);
-		for(int drv = 0; drv < MAX_QD; drv++) {
+		for(int drv = 0; drv < USE_QUICK_DISK; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentQuickDiskPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_quick_disk_path[drv][i], _MAX_PATH, config_path);
 			}
 		}
 	#endif
-	#ifdef USE_TAPE1
+	#ifdef USE_HARD_DISK
+		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialHardDiskDir"), _T(""), config.initial_hard_disk_dir, _MAX_PATH, config_path);
+		for(int drv = 0; drv < USE_HARD_DISK; drv++) {
+			for(int i = 0; i < MAX_HISTORY; i++) {
+				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentHardDiskPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_hard_disk_path[drv][i], _MAX_PATH, config_path);
+			}
+		}
+	#endif
+	#ifdef USE_TAPE
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), _T(""), config.initial_tape_dir, _MAX_PATH, config_path);
-		for(int drv = 0; drv < MAX_TAPE; drv++) {
+		for(int drv = 0; drv < USE_TAPE; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath%d_%d"), drv + 1, i + 1), _T(""), config.recent_tape_path[drv][i], _MAX_PATH, config_path);
 			}
@@ -235,27 +243,31 @@ void load_config(const _TCHAR* config_path)
 	#endif
 	#ifdef USE_COMPACT_DISC
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialCompactDiscDir"), _T(""), config.initial_compact_disc_dir, _MAX_PATH, config_path);
-		for(int i = 0; i < MAX_HISTORY; i++) {
-			MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCompactDiscPath1_%d"), i + 1), _T(""), config.recent_compact_disc_path[i], _MAX_PATH, config_path);
+		for(int drv = 0; drv < USE_COMPACT_DISC; drv++) {
+			for(int i = 0; i < MAX_HISTORY; i++) {
+				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCompactDiscPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_compact_disc_path[drv][i], _MAX_PATH, config_path);
+			}
 		}
 	#endif
 	#ifdef USE_LASER_DISC
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), _T(""), config.initial_laser_disc_dir, _MAX_PATH, config_path);
-		for(int i = 0; i < MAX_HISTORY; i++) {
-			MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentLaserDiscPath1_%d"), i + 1), _T(""), config.recent_laser_disc_path[i], _MAX_PATH, config_path);
+		for(int drv = 0; drv < USE_LASER_DISC; drv++) {
+			for(int i = 0; i < MAX_HISTORY; i++) {
+				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentLaserDiscPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_laser_disc_path[drv][i], _MAX_PATH, config_path);
+			}
 		}
 	#endif
-	#ifdef USE_BINARY_FILE1
+	#ifdef USE_BINARY_FILE
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialBinaryDir"), _T(""), config.initial_binary_dir, _MAX_PATH, config_path);
-		for(int drv = 0; drv < MAX_BINARY; drv++) {
+		for(int drv = 0; drv < USE_BINARY_FILE; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentBinaryPath%d_%d"), drv + 1, i + 1), _T(""), config.recent_binary_path[drv][i], _MAX_PATH, config_path);
 			}
 		}
 	#endif
-	#ifdef USE_BUBBLE1
+	#ifdef USE_BUBBLE
 		MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialBubbleDir"), _T(""), config.initial_bubble_casette_dir, _MAX_PATH, config_path);
-		for(int drv = 0; drv < MAX_BUBBLE; drv++) {
+		for(int drv = 0; drv < USE_BUBBLE; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentBubblePath%d_%d"), drv + 1, i + 1), _T(""), config.recent_bubble_casette_path[drv][i], _MAX_PATH, config_path);
 			}
@@ -281,10 +293,10 @@ void load_config(const _TCHAR* config_path)
 	config.sound_frequency = MyGetPrivateProfileInt(_T("Sound"), _T("Frequency"), config.sound_frequency, config_path);
 	config.sound_latency = MyGetPrivateProfileInt(_T("Sound"), _T("Latency"), config.sound_latency, config_path);
 	config.sound_strict_rendering = MyGetPrivateProfileBool(_T("Sound"), _T("StrictRendering"), config.sound_strict_rendering, config_path);
-	#ifdef USE_FD1
+	#ifdef USE_FLOPPY_DISK
 		config.sound_noise_fdd = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseFDD"), config.sound_noise_fdd, config_path);;
 	#endif
-	#ifdef USE_TAPE1
+	#ifdef USE_TAPE
 		config.sound_noise_cmt = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);;
 		config.sound_play_tape = MyGetPrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
 	#endif
@@ -387,14 +399,14 @@ void save_config(const _TCHAR* config_path)
 	#ifdef USE_PRINTER
 		MyWritePrivateProfileInt(_T("Control"), _T("PrinterType"), config.printer_type, config_path);
 	#endif
-	#ifdef USE_FD1
-		for(int drv = 0; drv < MAX_FD; drv++) {
+	#ifdef USE_FLOPPY_DISK
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			MyWritePrivateProfileBool(_T("Control"), create_string(_T("CorrectDiskTiming%d"), drv + 1), config.correct_disk_timing[drv], config_path);
 			MyWritePrivateProfileBool(_T("Control"), create_string(_T("IgnoreDiskCRC%d"), drv + 1), config.ignore_disk_crc[drv], config_path);
 		}
 	#endif
-	#ifdef USE_TAPE1
-		for(int drv = 0; drv < MAX_TAPE; drv++) {
+	#ifdef USE_TAPE
+		for(int drv = 0; drv < USE_TAPE; drv++) {
 			MyWritePrivateProfileBool(_T("Control"), create_string(_T("WaveShaper%d"), drv + 1), config.wave_shaper[drv], config_path);
 			MyWritePrivateProfileBool(_T("Control"), create_string(_T("DirectLoadMZT%d"), drv + 1), config.direct_load_mzt[drv], config_path);
 			MyWritePrivateProfileBool(_T("Control"), create_string(_T("BaudHigh%d"), drv + 1), config.baud_high[drv], config_path);
@@ -403,33 +415,41 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileBool(_T("Control"), _T("CompressState"), config.compress_state, config_path);
 	
 	// recent files
-	#ifdef USE_CART1
+	#ifdef USE_CART
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialCartDir"), config.initial_cart_dir, config_path);
-		for(int drv = 0; drv < MAX_CART; drv++) {
+		for(int drv = 0; drv < USE_CART; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCartPath%d_%d"), drv + 1, i + 1), config.recent_cart_path[drv][i], config_path);
 			}
 		}
 	#endif
-	#ifdef USE_FD1
+	#ifdef USE_FLOPPY_DISK
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialDiskDir"), config.initial_floppy_disk_dir, config_path);
-		for(int drv = 0; drv < MAX_FD; drv++) {
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentDiskPath%d_%d"), drv + 1, i + 1), config.recent_floppy_disk_path[drv][i], config_path);
 			}
 		}
 	#endif
-	#ifdef USE_QD1
+	#ifdef USE_QUICK_DISK
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialQuickDiskDir"), config.initial_quick_disk_dir, config_path);
-		for(int drv = 0; drv < MAX_QD; drv++) {
+		for(int drv = 0; drv < USE_QUICK_DISK; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentQuickDiskPath%d_%d"), drv + 1, i + 1), config.recent_quick_disk_path[drv][i], config_path);
 			}
 		}
 	#endif
-	#ifdef USE_TAPE1
+	#ifdef USE_HARD_DISK
+		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialHardDiskDir"), config.initial_hard_disk_dir, config_path);
+		for(int drv = 0; drv < USE_HARD_DISK; drv++) {
+			for(int i = 0; i < MAX_HISTORY; i++) {
+				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentHardDiskPath%d_%d"), drv + 1, i + 1), config.recent_hard_disk_path[drv][i], config_path);
+			}
+		}
+	#endif
+	#ifdef USE_TAPE
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), config.initial_tape_dir, config_path);
-		for(int drv = 0; drv < MAX_TAPE; drv++) {
+		for(int drv = 0; drv < USE_TAPE; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath%d_%d"), drv + 1, i + 1), config.recent_tape_path[drv][i], config_path);
 			}
@@ -437,27 +457,31 @@ void save_config(const _TCHAR* config_path)
 	#endif
 	#ifdef USE_COMPACT_DISC
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialCompactDiscDir"), config.initial_compact_disc_dir, config_path);
-		for(int i = 0; i < MAX_HISTORY; i++) {
-			MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCompactDiscPath1_%d"), i + 1), config.recent_compact_disc_path[i], config_path);
+		for(int drv = 0; drv < USE_COMPACT_DISC; drv++) {
+			for(int i = 0; i < MAX_HISTORY; i++) {
+				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCompactDiscPath%d_%d"), drv + 1, i + 1), config.recent_compact_disc_path[drv][i], config_path);
+			}
 		}
 	#endif
 	#ifdef USE_LASER_DISC
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), config.initial_laser_disc_dir, config_path);
-		for(int i = 0; i < MAX_HISTORY; i++) {
-			MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentLaserDiscPath1_%d"), i + 1), config.recent_laser_disc_path[i], config_path);
+		for(int drv = 0; drv < USE_LASER_DISC; drv++) {
+			for(int i = 0; i < MAX_HISTORY; i++) {
+				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentLaserDiscPath%d_%d"), drv + 1, i + 1), config.recent_laser_disc_path[drv][i], config_path);
+			}
 		}
 	#endif
-	#ifdef USE_BINARY_FILE1
+	#ifdef USE_BINARY_FILE
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialBinaryDir"), config.initial_binary_dir, config_path);
-		for(int drv = 0; drv < MAX_BINARY; drv++) {
+		for(int drv = 0; drv < USE_BINARY_FILE; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentBinaryPath%d_%d"), drv + 1, i + 1), config.recent_binary_path[drv][i], config_path);
 			}
 		}
 	#endif
-	#ifdef USE_BUBBLE1
+	#ifdef USE_BUBBLE
 		MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialBubbleDir"), config.initial_bubble_casette_dir, config_path);
-		for(int drv = 0; drv < MAX_BUBBLE; drv++) {
+		for(int drv = 0; drv < USE_BUBBLE; drv++) {
 			for(int i = 0; i < MAX_HISTORY; i++) {
 				MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentBubblePath%d_%d"), drv + 1, i + 1), config.recent_bubble_casette_path[drv][i], config_path);
 			}
@@ -483,10 +507,10 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileInt(_T("Sound"), _T("Frequency"), config.sound_frequency, config_path);
 	MyWritePrivateProfileInt(_T("Sound"), _T("Latency"), config.sound_latency, config_path);
 	MyWritePrivateProfileBool(_T("Sound"), _T("StrictRendering"), config.sound_strict_rendering, config_path);
-	#ifdef USE_FD1
+	#ifdef USE_FLOPPY_DISK
 		MyWritePrivateProfileBool(_T("Sound"), _T("NoiseFDD"), config.sound_noise_fdd, config_path);
 	#endif
-	#ifdef USE_TAPE1
+	#ifdef USE_TAPE
 		MyWritePrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);
 		MyWritePrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
 	#endif
@@ -573,8 +597,8 @@ void save_config_state(void *f)
 	#ifdef USE_PRINTER_TYPE
 		state_fio->FputInt32(config.printer_type);
 	#endif
-	#ifdef USE_FD1
-		for(int drv = 0; drv < MAX_FD; drv++) {
+	#ifdef USE_FLOPPY_DISK
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			state_fio->FputBool(config.correct_disk_timing[drv]);
 			state_fio->FputBool(config.ignore_disk_crc[drv]);
 		}
@@ -623,8 +647,8 @@ bool load_config_state(void *f)
 	#ifdef USE_PRINTER_TYPE
 		config.printer_type = state_fio->FgetInt32();
 	#endif
-	#ifdef USE_FD1
-		for(int drv = 0; drv < MAX_FD; drv++) {
+	#ifdef USE_FLOPPY_DISK
+		for(int drv = 0; drv < USE_FLOPPY_DISK; drv++) {
 			config.correct_disk_timing[drv] = state_fio->FgetBool();
 			config.ignore_disk_crc[drv] = state_fio->FgetBool();
 		}

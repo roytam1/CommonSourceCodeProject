@@ -49,6 +49,7 @@ void MEMORY::draw_screen()
 			else RefreshScr62();
 		} else RefreshScr61();
 		// copy to screen
+		emu->set_vm_screen_lines(200);
 		if (bitmap) {
 			for(int y = 0; y < 200; y++) {
 				scrntype_t* dest = emu->get_screen_buffer(y*2);
@@ -59,7 +60,7 @@ void MEMORY::draw_screen()
 				if(config.scan_line) {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				} else {
-					memcpy(dest1, dest, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest, 640 * sizeof(scrntype_t));
 				}
 			}
 		} else if (cols==40) {
@@ -72,7 +73,7 @@ void MEMORY::draw_screen()
 				if(config.scan_line) {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				} else {
-					memcpy(dest1, dest, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest, 640 * sizeof(scrntype_t));
 				}
 			}
 		} else {
@@ -85,7 +86,7 @@ void MEMORY::draw_screen()
 				if(config.scan_line) {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				} else {
-					memcpy(dest1, dest, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest, 640 * sizeof(scrntype_t));
 				}
 			}
 		}
@@ -97,6 +98,7 @@ void MEMORY::draw_screen()
 				else RefreshScr53();
 			else RefreshScr51();
 			// copy to screen
+			emu->set_vm_screen_lines(200);
 			for(int y = 0; y < 200; y++) {
 				scrntype_t* dest = emu->get_screen_buffer(y*2);
 				scrntype_t* dest1 = emu->get_screen_buffer(y*2+1);
@@ -106,12 +108,13 @@ void MEMORY::draw_screen()
 				if(config.scan_line) {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				} else {
-					memcpy(dest1, dest, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest, 640 * sizeof(scrntype_t));
 				}
 			}
 		} else {
 			RefreshScr10();
 			// copy to screen
+			emu->set_vm_screen_lines(200);
 			for(int y = 0; y < 200; y++) {
 				scrntype_t* dest = emu->get_screen_buffer(y*2);
 				scrntype_t* dest1 = emu->get_screen_buffer(y*2+1);
@@ -125,7 +128,7 @@ void MEMORY::draw_screen()
 				if(config.scan_line) {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				} else {
-					memcpy(dest1, dest, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest, 640 * sizeof(scrntype_t));
 				}
 			}
 		}

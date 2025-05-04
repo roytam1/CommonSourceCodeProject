@@ -13,23 +13,45 @@
 #include "../device.h"
 #include "../mc6809.h"
 
+# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+#define ADDRESS_SPACE 0x100000
+#elif defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
+#define ADDRESS_SPACE 0x40000
+#else
+#define ADDRESS_SPACE 0x10000
+#endif
+
 class DEVICE;
 class MEMORY;
 class FM7_MAINIO;
+class KANJIROM;
+class DISPLAY;
 
 class FM7_MAINMEM : public DEVICE
 {
  private:
 	typedef struct {
-		DEVICE* dev;
-		uint8_t* memory;
-		int wait;
-	} bank_t;
-	bank_t read_table[FM7_MAINMEM_END];
-	bank_t write_table[FM7_MAINMEM_END];
+		uint8_t *read_data;
+		uint8_t (FM7_MAINMEM::*read_func)(uint32_t, bool);
+		uint8_t *write_data;
+		void (FM7_MAINMEM::*write_func)(uint32_t, uint32_t, bool);
+	} data_func_table_t;
+	
+	data_func_table_t data_table[ADDRESS_SPACE / 0x80];
+#if defined(HAS_MMR)
+# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)	
+	data_func_table_t mmr_update_table_ext[(0x80 * 0x1000) / 0x80];
+	uint32_t mmr_baseaddr_table_ext[(0x80 * 0x1000) / 0x80];
+# endif
+	data_func_table_t mmr_update_table_nor[(0x80 * 0x1000) / 0x80];
+	uint32_t mmr_bank_table[(0x80 * 0x1000) / 0x80];
+	uint32_t mmr_baseaddr_table_nor[(0x80 * 0x1000) / 0x80];
+#endif
 	bool ioaccess_wait;
 	int waitfactor;
 	int waitcount;
+	int cpu_clocks;
+	
 	bool sub_halted;
 	// V2
 #ifdef HAS_MMR
@@ -63,8 +85,8 @@ class FM7_MAINMEM : public DEVICE
 	uint8_t fm7_mainmem_ura[0x7c00];
 	uint8_t fm7_mainmem_basicrom[0x7c00];
   	uint8_t fm7_mainmem_bioswork[0x80];
-#if !defined(_FM77AV_VARIANTS)
-	uint8_t *fm7_bootroms[4];
+#if !defined(_FM77AV)
+	uint8_t *fm7_bootroms[8];
 #endif	
 	uint8_t fm7_mainmem_bootrom_vector[0x1e]; // Without
 	uint8_t fm7_mainmem_reset_vector[2]; // Without
@@ -72,9 +94,19 @@ class FM7_MAINMEM : public DEVICE
 #if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
 	uint8_t fm7_bootram[0x200]; // $00000-$0ffff
 #endif
+# if defined(_FM8)
+	bool diag_load_sm11_14;
+	bool diag_load_sm11_15;
+# elif defined(_FM77_VARIANTS)
+	bool diag_load_wb11_12;
+# elif defined(_FM7) || defined(_FMNEW7)
+	bool diag_load_tl11_11;
+	bool diag_load_tl11_12;
+#endif
 #ifdef HAS_MMR
 	bool extram_connected;
-# ifdef _FM77AV_VARIANTS
+
+# if defined(_FM77AV_VARIANTS)
 	bool diag_load_initrom;
 	bool diag_load_dictrom;
 	bool diag_load_learndata;
@@ -91,11 +123,9 @@ class FM7_MAINMEM : public DEVICE
 	uint8_t fm7_mainmem_dictrom[0x40000]; // $00000-$3ffff, banked
 	uint8_t fm7_mainmem_learndata[0x2000];
 #  endif
-#  if defined(_FM77AV40EX) || defined(_FM77AV40SX)
+#  if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) 
 	bool diag_load_extrarom;
 	uint8_t fm7_mainmem_extrarom[0x10000]; // $20000-$2bfff, banked
-#  endif	
-#  if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	int extram_pages;
 	uint8_t *fm7_mainmem_extram; // $40000- : MAX 768KB ($c0000)
 #  endif
@@ -107,28 +137,91 @@ class FM7_MAINMEM : public DEVICE
 # endif
 #endif
 #if defined(CAPABLE_DICTROM)
-	DEVICE *kanjiclass1;
+	KANJIROM *kanjiclass1;
 	//KANJIROM *kanjiclass2;
 #endif	
 	MC6809 *maincpu;
-	DEVICE *mainio;
-	DEVICE *display;
+	FM7_MAINIO *mainio;
+	DISPLAY *display;
 	
 	bool diag_load_basicrom;
 	bool diag_load_bootrom_bas;
 	bool diag_load_bootrom_dos;
 	bool diag_load_bootrom_mmr;
+	bool diag_load_bootrom_bubble;
+	bool diag_load_bootrom_bubble_128k;
+	bool diag_load_bootrom_sfd8;
+	bool diag_load_bootrom_2hd;
 
-	int getbank(uint32_t addr, uint32_t *realaddr, bool write_state, bool dmamode);
+	uint32_t mem_waitfactor;
+	uint32_t mem_waitcount;
+
 	int check_extrom(uint32_t raddr, uint32_t *realaddr);
 	
 	int window_convert(uint32_t addr, uint32_t *realaddr);
-	int mmr_convert(uint32_t addr, uint32_t *realaddr, bool write_state, bool dmamode);
-	int nonmmr_convert(uint32_t addr, uint32_t *realaddr);
 	uint32_t read_bios(const _TCHAR *name, uint8_t *ptr, uint32_t size);
 	uint32_t write_bios(const _TCHAR *name, uint8_t *ptr, uint32_t size);
 	void setclock(int mode);
+	
+	uint8_t read_shared_ram(uint32_t realaddr, bool dmamode);
+	void write_shared_ram(uint32_t realaddr, uint32_t data, bool dmamode);
+	uint8_t read_direct_access(uint32_t realaddr, bool dmamode);
+	void write_direct_access(uint32_t realaddr, uint32_t data, bool dmamode);
+	uint8_t read_kanjirom_level1(uint32_t realaddr, bool dmamode);
+	uint8_t read_kanji_dummyaddr(uint32_t realaddr, bool dmamode);
+	uint8_t read_ura_basicrom(uint32_t addr, bool dmamode);
+	void write_ura_basicrom(uint32_t addr, uint32_t data, bool dmamode);
+	uint8_t read_mmio(uint32_t addr, bool dmamode);
+	void write_mmio(uint32_t addr, uint32_t data, bool dmamode);
+	uint8_t read_bootrom(uint32_t addr, bool dmamode);
+	void write_bootrom(uint32_t addr, uint32_t data, bool dmamode);
+	uint8_t read_page2(uint32_t addr, bool dmamode);
+	void write_page2(uint32_t addr, uint32_t data, bool dmamode);
+	int check_page2(uint32_t addr, uint32_t *realaddr, bool write_state, bool dmamode);
+	
+	void init_data_table(void);
+	uint8_t read_data(uint32_t addr, bool dmamode);
+	void write_data(uint32_t addr, uint32_t data, bool dmamode);
+	uint8_t read_data_tbl(uint32_t addr, bool dmamode);
+	void write_data_tbl(uint32_t addr, uint32_t data, bool dmamode);
 
+	void update_mmr_jumptable(uint32_t pos);
+	void update_all_mmr_jumptable(void);
+	uint8_t read_segment_3f(uint32_t addr, bool dmamode);
+	void write_segment_3f(uint32_t addr, uint32_t data, bool dmamode);
+	uint8_t read_with_mmr(uint32_t addr, uint32_t segment, uint32_t dmamode);
+	void write_with_mmr(uint32_t addr, uint32_t segment, uint32_t data, uint32_t dmamode);
+
+	template <class T>
+	void call_write_signal(T *np, int id, uint32_t data, uint32_t mask)
+	{
+		//T *nnp = static_cast<T *>(np);
+		static_cast<T *>(np)->write_signal(id, data, mask);
+	}
+	template <class T>
+		void call_write_data8(T *np, uint32_t addr, uint32_t data)
+	{
+		//T *nnp = static_cast<T *>(np);
+		static_cast<T *>(np)->write_data8(addr, data);
+	}
+	template <class T>
+		uint32_t call_read_data8(T *np, uint32_t addr)
+	{
+		//T *nnp = static_cast<T *>(np);
+		return static_cast<T *>(np)->read_data8(addr);
+	}
+	template <class T>
+		void call_write_dma_data8(T *np, uint32_t addr, uint32_t data)
+	{
+		//T *nnp = static_cast<T *>(np);
+		static_cast<T *>(np)->write_dma_data8(addr, data);
+	}
+	template <class T>
+		uint32_t call_read_dma_data8(T *np, uint32_t addr)
+	{
+		//T *nnp = static_cast<T *>(np);
+		return static_cast<T *>(np)->read_dma_data8(addr);
+	}
  public:
 	FM7_MAINMEM(VM* parent_vm, EMU* parent_emu);
 	~FM7_MAINMEM();
@@ -136,7 +229,7 @@ class FM7_MAINMEM : public DEVICE
 	uint32_t read_dma_data8(uint32_t addr);
 	uint32_t read_dma_io8(uint32_t addr);
 	uint32_t read_data8_main(uint32_t addr, bool dmamode);
-   
+
 	void write_data8(uint32_t addr, uint32_t data);
 	void write_dma_data8(uint32_t addr, uint32_t data);
 	void write_dma_io8(uint32_t addr, uint32_t data);
@@ -149,7 +242,8 @@ class FM7_MAINMEM : public DEVICE
 	virtual void write_data32(uint32_t addr, uint32_t data);
    
 	void initialize(void);
-	void wait(void);
+	void iowait(void);
+	void dram_refresh(void);
 	void reset(void);
 	void release(void);
 
@@ -161,41 +255,23 @@ class FM7_MAINMEM : public DEVICE
 	bool load_state(FILEIO *state_fio);
 
 	void set_context_display(DEVICE *p){
-		int i;  
-		display = p;
-		i = FM7_MAINMEM_SHAREDRAM;
-		read_table[i].dev = display;
-		write_table[i].dev = display;
-	
-#if defined(_FM77AV_VARIANTS)
-		i = FM7_MAINMEM_AV_DIRECTACCESS;
-		read_table[i].dev = display;
-		write_table[i].dev = display;
-#endif
+		display = (DISPLAY *)p;
 	}
 	void set_context_maincpu(MC6809 *p){
-		maincpu = p;
+		maincpu = (MC6809 *)p;
 	}
 	void set_context_mainio(DEVICE *p){
-		int i;
-		mainio = p;
-		i = FM7_MAINMEM_MMIO;
-		read_table[i].dev = mainio;
-		read_table[i].memory = NULL;
-		write_table[i].dev = mainio;
-		write_table[i].memory = NULL;
-		
+		mainio = (FM7_MAINIO *)p;
 	}
 #if defined(CAPABLE_DICTROM)
 	void set_context_kanjirom_class1(DEVICE *p){
-		kanjiclass1 = p;
+		kanjiclass1 = (KANJIROM *)p;
 	}
 #endif	
 	void write_signal(int sigid, uint32_t data, uint32_t mask);
 	uint32_t read_signal(int sigid);
-	uint32_t read_io8(uint32_t addr) {
-		return mainio->read_io8(addr);
-	}
+	uint32_t read_io8(uint32_t addr);
+	void write_io8(uint32_t addr, uint32_t data);
 };
 
 #endif

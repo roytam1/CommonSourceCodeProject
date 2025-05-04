@@ -1865,6 +1865,7 @@ void PC88::draw_screen()
 		} else {
 			draw_640x200_attrib_graph();
 		}
+		emu->set_vm_screen_lines(200);
 	} else {
 		if(Port31_HCOLOR) {
 			if(Port31_320x200) {
@@ -1872,23 +1873,28 @@ void PC88::draw_screen()
 			} else {
 				disp_color_graph = draw_640x200_color_graph();
 			}
+			emu->set_vm_screen_lines(200);
 		} else {
 			if(Port31_320x200) {
 				draw_320x200_attrib_graph();
 			} else {
 				draw_640x200_attrib_graph();
 			}
+			emu->set_vm_screen_lines(200);
 		}
 	}
 #else
 	if(Port31_HCOLOR) {
 		disp_color_graph = draw_640x200_color_graph();
+		emu->set_vm_screen_lines(200);
 	} else if(!Port31_400LINE) {
 		draw_640x200_attrib_graph();
 //		draw_640x200_mono_graph();
+		emu->set_vm_screen_lines(200);
 	} else {
 		draw_640x400_attrib_graph();
 //		draw_640x400_mono_graph();
+		emu->set_vm_screen_lines(400);
 	}
 #endif
 	
@@ -2755,7 +2761,6 @@ void pc88_crtc_t::expand_buffer(bool hireso, bool line400)
 		if(mode & 1) {
 			memset(attrib.expand, 0xe0, sizeof(attrib.expand));
 		} else {
-			
 			for(int cy = 0, ytop = 0, ofs = 0; cy < height && ytop < 200; cy++, ytop += char_height_tmp, ofs += 80 + attrib.num * 2) {
 				uint8_t flags[128];
 				memset(flags, 0, sizeof(flags));

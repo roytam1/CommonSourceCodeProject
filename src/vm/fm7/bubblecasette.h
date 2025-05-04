@@ -54,7 +54,7 @@ protected:
 	bool header_changed; // if change header: e.g:change write protection flag.
 	bool read_access;
 	bool write_access;
-	bool write_protect;
+
 	uint8_t offset_reg;
 	// FD10(RW)
 	uint8_t data_reg;
@@ -65,6 +65,9 @@ protected:
 	bool cmd_error;  // bit7 : Command error
 	bool stat_tdra;  // bit6: Ready to write.
 	bool stat_rda;   // bit5: Ready to read.
+	bool not_ready;  // bit4: Not Ready(Slot empty).
+	// bit3 : NOOP
+	bool write_protect; // bit2
 	bool stat_error; // bit 1
 	bool stat_busy;  // bit 0
 
@@ -111,7 +114,7 @@ public:
 	
 	uint32_t read_signal(int id);
 	void write_signal(int id, uint32_t data, uint32_t mask);
-	void open(const _TCHAR* file_path, int bank);
+	void open(_TCHAR* file_path, int bank);
 	void close();
 	void event_callback(int event_id, int err);
 	void save_state(FILEIO* state_fio);
@@ -126,8 +129,10 @@ public:
 	}
 	void set_bubble_protect(bool flag)
 	{
-		write_protect = flag;
-		header_changed = true;
+		if(write_protect != flag) {
+			write_protect = flag;
+			header_changed = true;
+		}
 	}
 	bool get_access_lamp()
 	{

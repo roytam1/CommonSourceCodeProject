@@ -2,6 +2,7 @@
 	SHARP X1 Emulator 'eX1'
 	SHARP X1twin Emulator 'eX1twin'
 	SHARP X1turbo Emulator 'eX1turbo'
+	SHARP X1turboZ Emulator 'eX1turboZ'
 
 	Origin : X1EMU by KM (kanji rom)
 	         X-millenium by Yui (ank16 patch)
@@ -743,6 +744,8 @@ void DISPLAY::draw_screen()
 #ifdef _X1TURBO_FEATURE
 	if(hireso) {
 		// 400 lines
+		emu->set_vm_screen_lines(400);
+		
 		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 400; y++) {
@@ -806,6 +809,8 @@ void DISPLAY::draw_screen()
 	} else {
 #endif
 		// 200 lines
+		emu->set_vm_screen_lines(200);
+		
 		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 200; y++) {
@@ -846,7 +851,7 @@ void DISPLAY::draw_screen()
 				}
 #endif
 				if(!config.scan_line) {
-					memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 				} else {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				}
@@ -881,7 +886,7 @@ void DISPLAY::draw_screen()
 				}
 #endif
 				if(!config.scan_line) {
-					memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
+					my_memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 				} else {
 					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				}
@@ -1083,7 +1088,7 @@ void DISPLAY::draw_cg(int line, int plane)
 			if(column40) {
 				if(C64 && !(zpriority & 0x10)) {
 					if(plane) {
-						memcpy(zcg[plane][1], zcg[plane][0], sizeof(uint16_t) * 640);
+						my_memcpy(zcg[plane][1], zcg[plane][0], sizeof(uint16_t) * 640);
 						return;
 					}
 				} else {

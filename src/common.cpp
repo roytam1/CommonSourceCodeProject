@@ -23,6 +23,7 @@
 	#include <algorithm>
 	#include <cctype>
 	#include <QDir>
+	#include <QFileInfo>
 #elif defined(_WIN32)
 	#include <shlwapi.h>
 	#pragma comment(lib, "shlwapi.lib")
@@ -147,7 +148,7 @@ char *DLL_PREFIX my_strtok_s(char *strToken, const char *strDelimit, char **cont
 	return strtok(strToken, strDelimit);
 }
 
-_TCHAR DLL_PREFIX *my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context)
+_TCHAR *DLL_PREFIX my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context)
 {
 	return _tcstok(strToken, strDelimit);
 }
@@ -187,6 +188,397 @@ int DLL_PREFIX my_vsprintf_s(char *buffer, size_t numberOfElements, const char *
 int DLL_PREFIX my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr)
 {
 	return _vstprintf(buffer, format, argptr);
+}
+#endif
+
+#ifndef _MSC_VER
+void DLL_PREFIX *my_memcpy(void *dst, void *src, size_t len)
+{
+	size_t len1;
+	register size_t len2;
+	register uint32_t s_align = (uint32_t)(((size_t)src) & 0x1f);
+	register uint32_t d_align = (uint32_t)(((size_t)dst) & 0x1f);
+	int i;
+	
+	if(len == 0) return dst;
+	if(len < 8) {
+		return memcpy(dst, src, len);
+	}
+	len1 = len;
+	
+#if defined(WITHOUT_UNALIGNED_SIMD)
+	// Using SIMD without un-aligned instructions.
+	switch(s_align) {
+	case 0: // Align 256
+		{
+			uint64_t b64[4];
+			register uint64_t *s64 = (uint64_t *)src;
+			register uint64_t *d64 = (uint64_t *)dst;
+			switch(d_align) {
+			case 0: // 256 vs 256
+				{
+					len2 = len1 >> 5;
+					while(len2 > 0) {
+						for(i = 0; i < 4; i++) b64[i] = s64[i];
+						for(i = 0; i < 4; i++) d64[i] = b64[i];
+						s64 += 4;
+						d64 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x1f;
+					if(len1 != 0) return memcpy(d64, s64, len1);
+					return dst;
+				}
+				break;
+			case 0x10: // 256 vs 128
+				{
+					len2 = len1 >> 5;
+					while(len2 > 0) {
+						for(i = 0; i < 4; i++) b64[i] = s64[i];
+						for(i = 0; i < 2; i++) d64[i] = b64[i];
+						d64 += 2;
+						for(i = 2; i < 4; i++) d64[i - 2] = b64[i];
+						d64 += 2;
+						s64 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x1f;
+					if(len1 != 0) return memcpy(d64, s64, len1);
+					return dst;
+				}
+				break;
+			case 0x08:
+			case 0x18: // 256 vs 64
+				{
+					len2 = len1 >> 5;
+					while(len2 > 0) {
+						for(i = 0; i < 4; ++i) b64[i] = s64[i];
+						for(i = 0; i < 4; ++i) {
+							*d64 = b64[i];
+							++d64;
+						}
+						s64 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x1f;
+					if(len1 != 0) return memcpy(d64, s64, len1);
+					return dst;
+				}
+				break;
+			case 0x04:
+			case 0x0c: 
+			case 0x14:
+			case 0x1c: // 256 vs 32
+				{
+					uint32_t b32[8];
+					register uint32_t *s32 = (uint32_t *)src;
+					register uint32_t *d32 = (uint32_t *)dst;
+					len2 = len1 >> 5;
+					while(len2 > 0) {
+						for(i = 0; i < 8; ++i) b32[i] = s32[i];
+						*d32 = b32[0];
+						++d32;
+						*d32 = b32[1];
+						++d32;
+						*d32 = b32[2];
+						++d32;
+						*d32 = b32[3];
+						++d32;
+						*d32 = b32[4];
+						++d32;
+						*d32 = b32[5];
+						++d32;
+						*d32 = b32[6];
+						++d32;
+						*d32 = b32[7];
+						++d32;
+						s32 += 8;
+						--len2;
+					}
+					len1 = len1 & 0x1f;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			default:
+				return memcpy(dst, src, len1);
+				break;
+			}
+		}
+		break;
+	case 0x10: // Src alignn to 16.
+		{
+			uint32_t b32[4];
+			register uint32_t *s32 = (uint32_t *)src;
+			register uint32_t *d32 = (uint32_t *)dst;
+			switch(d_align) {
+			case 0: // 128 vs 256/128
+			case 0x10:
+				{
+					len2 = len1 >> 4;
+					while(len2 > 0) {
+						for(i = 0; i < 4; i++) b32[i] = s32[i];
+						for(i = 0; i < 4; i++) d32[i] = b32[i];
+						s32 += 4;
+						d32 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x0f;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			case 0x08:
+			case 0x18: // 128 vs 64
+				{
+					len2 = len1 >> 4;
+					while(len2 > 0) {
+						for(i = 0; i < 4; ++i) b32[i] = s32[i];
+						for(i = 0; i < 2; ++i) {
+							d32[i] = b32[i];
+						}
+						d32 += 2;
+						for(i = 2; i < 4; ++i) {
+							d32[i - 2] = b32[i];
+						}
+						d32 += 2;
+						s32 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x0f;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			case 0x04:
+			case 0x0c:
+			case 0x14:
+			case 0x1c: // 128 vs 32
+				{
+					len2 = len1 >> 4;
+					while(len2 > 0) {
+						for(i = 0; i < 4; ++i) b32[i] = s32[i];
+						*d32 = b32[0];
+						++d32;
+						*d32 = b32[1];
+						++d32;
+						*d32 = b32[2];
+						++d32;
+						*d32 = b32[3];
+						++d32;
+						s32 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x0f;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			default:
+				return memcpy(dst, src, len1);
+				break;
+			}
+		}
+		break;
+	case 0x08:
+	case 0x18: // Src alignn to 64.
+		{
+			register uint32_t *s32 = (uint32_t *)src;
+			register uint32_t *d32 = (uint32_t *)dst;
+			register uint64_t *s64 = (uint64_t *)src;
+			register uint64_t *d64 = (uint64_t *)dst;
+			switch(d_align) {
+			case 0:
+			case 0x10: // 64 vs 128
+				{
+					uint64_t b128[2];
+					len2 = len1 >> 4;
+					while(len2 > 0) {
+						b128[0] = *s64;
+						++s64;
+						b128[1] = *s64;
+						++s64;
+						for(i = 0; i < 2; i++) d64[i] = b128[i];
+						d64 += 2;
+						--len2;
+					}
+					len1 = len1 & 0x0f;
+					if(len1 != 0) return memcpy(d64, s64, len1);
+					return dst;
+				}
+				break;
+			case 0x08:
+			case 0x18: // 64 vs 64
+				{
+					len2 = len1 >> 3;
+					while(len2 > 0) {
+						*d64 = *s64;
+						++s64;
+						++d64;
+						--len2;
+					}
+					len1 = len1 & 0x07;
+					if(len1 != 0) return memcpy(d64, s64, len1);
+					return dst;
+				}
+				break;
+			case 0x04:
+			case 0x0c: // 64 vs 32
+			case 0x14:
+			case 0x1c: // 64 vs 32
+				{
+					uint32_t b32[2];
+					len2 = len1 >> 3;
+					while(len2 > 0) {
+						for(i = 0; i < 2; ++i) b32[i] = s32[i];
+						d32[0] = b32[0];
+						d32[1] = b32[1];
+						s32 += 2;
+						d32 += 2;
+						--len2;
+					}
+					len1 = len1 & 0x07;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			default:
+				return memcpy(dst, src, len1);
+				break;
+			}
+		}
+	case 0x04:
+	case 0x0c:
+	case 0x14:
+	case 0x1c:  // Src align 32
+		{
+			register uint32_t *s32 = (uint32_t *)src;
+			register uint32_t *d32 = (uint32_t *)dst;
+			register uint64_t *d64 = (uint64_t *)dst;
+			switch(d_align) {
+			case 0:
+			case 0x10: // 32 vs 128
+				{
+					uint32_t b128[4];
+					len2 = len1 >> 4;
+					while(len2 > 0) {
+						b128[0] = *s32;
+						++s32;
+						b128[1] = *s32;
+						++s32;
+						b128[3] = *s32;
+						++s32;
+						b128[4] = *s32;
+						++s32;
+						for(i = 0; i < 4; i++) d32[i] = b128[i];
+						d32 += 4;
+						--len2;
+					}
+					len1 = len1 & 0x0f;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			case 0x08:
+			case 0x18: // 32 vs 64
+				{
+					uint32_t b64[2];
+					len2 = len1 >> 3;
+					while(len2 > 0) {
+						b64[0] = *s32;
+						++s32;
+						b64[1] = *s32;
+						++s32;
+
+						for(i = 0; i < 2; i++) d32[i] = b64[i];
+						d32 += 2;
+						--len2;
+					}
+					len1 = len1 & 0x07;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			case 0x04:
+			case 0x0c: 
+			case 0x14:
+			case 0x1c: // 32 vs 32
+				{
+					len2 = len1 >> 2;
+					while(len2 > 0) {
+						*d32 = *s32;
+						++s32;
+						++d32;
+						--len2;
+					}
+					len1 = len1 & 0x03;
+					if(len1 != 0) return memcpy(d32, s32, len1);
+					return dst;
+				}
+				break;
+			default:
+				return memcpy(dst, src, len1);
+				break;
+			}
+		}
+		break;
+	default:
+		if(len1 != 0) return memcpy(dst, src, len1);
+		break;
+	}
+#else
+	// Using SIMD *with* un-aligned instructions.
+	register uint32_t *s32 = (uint32_t *)src;
+	register uint32_t *d32 = (uint32_t *)dst;
+	if(((s_align & 0x07) != 0x0) && ((d_align & 0x07) != 0x0)) { // None align.
+		return memcpy(dst, src, len);
+	}
+	if((s_align == 0x0) || (d_align == 0x0)) { // Align to 256bit
+		uint32_t b256[8];
+		len2 = len1 >> 5;
+		while(len2 > 0) {
+			for(i = 0; i < 8; i++) b256[i] = s32[i];
+			for(i = 0; i < 8; i++) d32[i] = b256[i];
+			s32 += 8;
+			d32 += 8;
+			--len2;
+		}
+		len1 = len1 & 0x1f;
+		if(len1 != 0) return memcpy(d32, s32, len1);
+		return dst;
+	}
+	if(((s_align & 0x0f) == 0x0) || ((d_align & 0x0f) == 0x0)) { // Align to 128bit
+		uint32_t b128[4];
+		len2 = len1 >> 4;
+		while(len2 > 0) {
+			for(i = 0; i < 4; i++) b128[i] = s32[i];
+			for(i = 0; i < 4; i++) d32[i] = b128[i];
+			s32 += 4;
+			d32 += 4;
+			--len2;
+		}
+		len1 = len1 & 0x0f;
+		if(len1 != 0) return memcpy(d32, s32, len1);
+		return dst;
+	}		
+	if(((s_align & 0x07) == 0x0) || ((d_align & 0x07) == 0x0)) { // Align to 64bit
+		uint32_t b64[2];
+		len2 = len1 >> 3;
+		while(len2 > 0) {
+			for(i = 0; i < 2; i++) b64[i] = s32[i];
+			for(i = 0; i < 2; i++) d32[i] = b64[i];
+			s32 += 2;
+			d32 += 2;
+			--len2;
+		}
+		len1 = len1 & 0x07;
+		if(len1 != 0) return memcpy(d32, s32, len1);
+		return dst;
+	}		
+	//if(len1 != 0) return memcpy(dst, src, len1);
+#endif
+	// Trap
+	return dst;
 }
 #endif
 
@@ -404,7 +796,7 @@ uint8_t DLL_PREFIX B_OF_COLOR(scrntype_t c)
 	return (uint8_t)c;
 }
 
-uint8_t A_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX A_OF_COLOR(scrntype_t c)
 {
 	return 0;
 }
@@ -455,6 +847,28 @@ struct to_upper {  // Refer from documentation of libstdc++, GCC5.
 };
 #endif
 
+#if defined(_USE_QT)
+static void _my_mkdir(std::string t_dir)
+{
+	struct stat st;
+//#if !defined(__WIN32) && !defined(__WIN64)
+//	if(fstatat(AT_FDCWD, csppath.c_str(), &st, 0) != 0) {
+//		mkdirat(AT_FDCWD, t_dir.c_str(), 0700); // Not found
+//	}
+#if defined(_USE_QT)
+	if(stat(t_dir.c_str(), &st) != 0) {
+		QDir dir = QDir::current();
+		dir.mkdir(QString::fromStdString(t_dir));
+		//dir.mkpath(QString::fromUtf8(app_path));
+	}
+#else
+	if(stat(csppath.c_str(), &st) != 0) {
+		_mkdir(t_dir.c_str()); // Not found
+	}
+#endif
+}
+#endif
+
 const _TCHAR *DLL_PREFIX get_application_path()
 {
 	static _TCHAR app_path[_MAX_PATH];
@@ -474,25 +888,12 @@ const _TCHAR *DLL_PREFIX get_application_path()
 #else
 		std::string delim = "/";
 #endif
-		std::string cpath = cpp_homedir + my_procname + delim;
+		std::string csppath = cpp_homedir + "CommonSourceCodeProject" + delim ;
+		_my_mkdir(csppath);
+		
+		std::string cpath = csppath + my_procname + delim;
+		_my_mkdir(cpath);
 		strncpy(app_path, cpath.c_str(), _MAX_PATH);
-		{
-			struct stat st;
-#if !defined(__WIN32) && !defined(__WIN64)
-			if(fstatat(AT_FDCWD, app_path, &st, 0) != 0) {
-				mkdirat(AT_FDCWD, app_path, 0700); // Not found
-			}
-#elif defined(_USE_QT)
-			if(stat(app_path, &st) != 0) {
-				QDir dir = QDir::current();
-				dir.mkdir(QString::fromUtf8(app_path));
-			}
-#else
-			if(stat(app_path, &st) != 0) {
-				_mkdir(app_path); // Not found
-			}
-#endif
-		}
 #endif
 		initialized = true;
 	}
@@ -535,7 +936,7 @@ bool DLL_PREFIX is_absolute_path(const _TCHAR *file_path)
 	return (_tcslen(file_path) > 1 && (file_path[0] == _T('/') || file_path[0] == _T('\\')));
 }
 
-const _TCHAR *create_absolute_path(const _TCHAR *file_name)
+const _TCHAR *DLL_PREFIX create_absolute_path(const _TCHAR *file_name)
 {
 	static _TCHAR file_path[8][_MAX_PATH];
 	static unsigned int table_index = 0;
@@ -554,7 +955,7 @@ void DLL_PREFIX create_absolute_path(_TCHAR *file_path, int length, const _TCHAR
 	my_tcscpy_s(file_path, length, create_absolute_path(file_name));
 }
 
-const _TCHAR *create_date_file_path(const _TCHAR *extension)
+const _TCHAR *DLL_PREFIX create_date_file_path(const _TCHAR *extension)
 {
 	cur_time_t cur_time;
 	
@@ -596,6 +997,17 @@ const _TCHAR *DLL_PREFIX get_file_path_without_extensiton(const _TCHAR *file_pat
 	my_tcscpy_s(path[output_index], _MAX_PATH, file_path);
 #if defined(_WIN32) && defined(_MSC_VER)
 	PathRemoveExtension(path[output_index]);
+#elif defined(_USE_QT)
+	QString delim;
+	delim = QString::fromUtf8(".");
+	QString tmp_path = QString::fromUtf8(file_path);
+	int n = tmp_path.lastIndexOf(delim);
+	if(n > 0) {
+		tmp_path = tmp_path.left(n);
+	}
+	//printf("%s\n", tmp_path.toUtf8().constData());
+	memset(path[output_index], 0x00, sizeof(_TCHAR) * _MAX_PATH);
+	strncpy(path[output_index], tmp_path.toUtf8().constData(), _MAX_PATH - 1);
 #else
 	_TCHAR *p = _tcsrchr(path[output_index], _T('.'));
 	if(p != NULL) {
@@ -614,12 +1026,16 @@ void DLL_PREFIX get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t d
 	} else if(GetLongPathName(tmp, dst, _MAX_PATH) == 0) {
 		my_tcscpy_s(dst, dst_len, tmp);
 	}
+#elif defined(_USE_QT)
+	QString tmp_path = QString::fromUtf8(src);
+	QFileInfo info(tmp_path);
+	my_tcscpy_s(dst, dst_len, info.absoluteFilePath().toLocal8Bit().constData());
 #else
 	// write code for your environment
 #endif
 }
 
-const _TCHAR* DLL_PREFIX get_parent_dir(const _TCHAR* file)
+const _TCHAR *DLL_PREFIX get_parent_dir(const _TCHAR* file)
 {
 	static _TCHAR path[8][_MAX_PATH];
 	static unsigned int table_index = 0;
@@ -631,6 +1047,22 @@ const _TCHAR* DLL_PREFIX get_parent_dir(const _TCHAR* file)
 	if(ptr != NULL) {
 		*ptr = _T('\0');
 	}
+#elif defined(_USE_QT)
+	QString delim;
+#if defined(Q_OS_WIN)
+	delim = QString::fromUtf8("\\");
+#else
+	delim = QString::fromUtf8("/");
+#endif
+	QString tmp_path = QString::fromUtf8(file);
+	int n = tmp_path.lastIndexOf(delim);
+	if(n > 0) {
+		tmp_path = tmp_path.left(n);
+		tmp_path.append(delim);
+	}
+	//printf("%s\n", tmp_path.toUtf8().constData());
+	memset(path[output_index], 0x00, sizeof(_TCHAR) * _MAX_PATH);
+	strncpy(path[output_index], tmp_path.toUtf8().constData(), _MAX_PATH - 1);
 #else
 	// write code for your environment
 #endif
@@ -642,7 +1074,7 @@ const wchar_t *DLL_PREFIX char_to_wchar(const char *cs)
 	// char to wchar_t
 	static wchar_t ws[4096];
 	
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_USE_QT)
 	mbstowcs(ws, cs, strlen(cs));
 #else
 	// write code for your environment
@@ -655,7 +1087,7 @@ const char *DLL_PREFIX wchar_to_char(const wchar_t *ws)
 	// wchar_t to char
 	static char cs[4096];
 	
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_USE_QT)
 	wcstombs(cs, ws, wcslen(ws));
 #else
 	// write code for your environment
@@ -943,7 +1375,7 @@ bool DLL_PREFIX cur_time_t::load_state(void *f)
 	return true;
 }
 
-const _TCHAR *get_symbol(symbol_t *first_symbol, uint32_t addr)
+const _TCHAR *DLL_PREFIX get_symbol(symbol_t *first_symbol, uint32_t addr)
 {
 	static _TCHAR name[8][1024];
 	static unsigned int table_index = 0;
@@ -960,7 +1392,7 @@ const _TCHAR *get_symbol(symbol_t *first_symbol, uint32_t addr)
 	return NULL;
 }
 
-const _TCHAR *get_value_or_symbol(symbol_t *first_symbol, const _TCHAR *format, uint32_t addr)
+const _TCHAR *DLL_PREFIX get_value_or_symbol(symbol_t *first_symbol, const _TCHAR *format, uint32_t addr)
 {
 	static _TCHAR name[8][1024];
 	static unsigned int table_index = 0;
@@ -978,7 +1410,7 @@ const _TCHAR *get_value_or_symbol(symbol_t *first_symbol, const _TCHAR *format, 
 	return name[output_index];
 }
 
-const _TCHAR *get_value_and_symbol(symbol_t *first_symbol, const _TCHAR *format, uint32_t addr)
+const _TCHAR *DLL_PREFIX get_value_and_symbol(symbol_t *first_symbol, const _TCHAR *format, uint32_t addr)
 {
 	static _TCHAR name[8][1024];
 	static unsigned int table_index = 0;

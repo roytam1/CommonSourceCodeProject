@@ -21,6 +21,7 @@ private:
 	bool read_ok;
 	bool class2;
 	pair_t kanjiaddr;
+
 public:
 	KANJIROM(VM *parent_vm, EMU* parent_emu, bool type_2std);
 	~KANJIROM();

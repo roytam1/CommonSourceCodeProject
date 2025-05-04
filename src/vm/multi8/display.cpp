@@ -119,6 +119,8 @@ void DISPLAY::draw_screen()
 	}
 	
 	// copy to real screen
+	emu->set_vm_screen_lines(200);
+	
 	for(int y = 0; y < 200; y++) {
 		scrntype_t* dest0 = emu->get_screen_buffer(y * 2 + 0);
 		scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
@@ -133,7 +135,7 @@ void DISPLAY::draw_screen()
 //			}
 			memset(dest1, 0, 640 * sizeof(scrntype_t));
 		} else {
-			memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
+			my_memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 		}
 	}
 	emu->screen_skip_line(true);

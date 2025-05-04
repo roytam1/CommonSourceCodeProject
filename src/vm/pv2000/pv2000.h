@@ -25,8 +25,8 @@
 #define MEMORY_BANK_SIZE	0x1000
 
 // device informations for win32
-#define USE_CART1
-#define USE_TAPE1
+#define USE_CART		1
+#define USE_TAPE		1
 #define TAPE_BINARY_ONLY
 #define NOTIFY_KEY_DOWN
 #define USE_ALT_F10_KEY

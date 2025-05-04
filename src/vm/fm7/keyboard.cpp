@@ -58,13 +58,13 @@ uint8_t KEYBOARD::get_keycode_low(void)
 // 0xd40d : R
 void KEYBOARD::turn_on_ins_led(void)
 {
-	this->write_signals(&ins_led, 0xff);
+	ins_led_status = true;
 }
 
 // 0xd40d : W
 void KEYBOARD::turn_off_ins_led(void)
 {
-	this->write_signals(&ins_led, 0x00);
+	ins_led_status = false;
 }
 
 // UI Handler. 
@@ -111,7 +111,7 @@ void KEYBOARD::set_modifiers(uint8_t sc, bool flag)
 			} else {
 				caps_pressed = true;
 			}
-			if(keymode == KEYMODE_STANDARD) this->write_signals(&caps_led, caps_pressed ? 0xff : 0x00);
+			if(keymode == KEYMODE_STANDARD) caps_led_status = caps_pressed;
 		}
 	} else if(sc == 0x5a) { // KANA
 		// Toggle on press.
@@ -121,10 +121,12 @@ void KEYBOARD::set_modifiers(uint8_t sc, bool flag)
 			} else {
 				kana_pressed = true;
 			}
-			if(keymode == KEYMODE_STANDARD) this->write_signals(&kana_led, kana_pressed ? 0xff : 0x00);
+			if(keymode == KEYMODE_STANDARD) kana_led_status = kana_pressed;
 		}
 	} else if(sc == 0x5c) { // Break
-		break_pressed = flag;
+		if(!override_break_key) {
+			break_pressed = flag;
+		}
 	}
 }
 
@@ -607,11 +609,15 @@ void KEYBOARD::reset_unchange_mode(void)
 	graph_pressed = false;
 	kana_pressed = false;
 	caps_pressed = false;
-	//	ins_pressed = false;
+	ins_led_status = false;
+	kana_led_status = false;
+	caps_led_status = false;
 	datareg = 0x00;
 	repeat_keycode = 0x00;
 	autokey_backup = 0x00;
 
+	if(override_break_key) write_signals(&break_line, (break_pressed) ? 0xff : 0);
+	key_fifo->clear();
 #if defined(_FM77AV_VARIANTS)
 	cmd_fifo->clear();
 	data_fifo->clear();
@@ -636,9 +642,6 @@ void KEYBOARD::reset_unchange_mode(void)
 	this->write_signals(&rxrdy, 0x00);		  
 	this->write_signals(&key_ack, 0xff);		  
 #endif
-	this->write_signals(&kana_led, 0x00);		  
-	this->write_signals(&caps_led, 0x00);		  
-	this->write_signals(&ins_led, 0x00);
 }
 
 
@@ -648,19 +651,22 @@ void KEYBOARD::reset(void)
 	scancode = 0x00;
 
 	keycode_7 = 0xffffffff; 
+	//keycode_7 = 0; 
 	reset_unchange_mode();
 	this->write_signals(&int_line, 0x00000000);
-	key_fifo->clear();
+
 #if defined(_FM77AV_VARIANTS)  
 	adjust_rtc();
 	did_hidden_message_av_1 = false;
 	beep_phase = 0;
 #endif
-	
+
+	if(override_break_key) write_signals(&break_line, (break_pressed) ? 0xff : 0);
+
 	if(event_int >= 0) cancel_event(this, event_int);
 	register_event(this,
-		       ID_KEYBOARD_INT,
-		       20000.0, true, &event_int);
+				   ID_KEYBOARD_INT,
+				   20000.0, true, &event_int);
 }
 
 
@@ -743,11 +749,11 @@ void KEYBOARD::set_leds(void)
 		if((ledvar & 0x02) != 0) {
 			// Kana
 			kana_pressed = ((ledvar & 0x01) == 0);
-			write_signals(&kana_led, kana_pressed);
+			kana_led_status = kana_pressed;
 		} else {
 			// Caps
 			caps_pressed = ((ledvar & 0x01) == 0);
-			write_signals(&caps_led, caps_pressed);
+			caps_led_status = caps_pressed;
 		}
 	}
 	cmd_fifo->clear();
@@ -960,6 +966,12 @@ uint32_t KEYBOARD::read_signal(int id)
 {
 	if(id == SIG_FM7KEY_BREAK_KEY) {
 		return break_pressed ? 0xfffffff : 0x00000000;
+	} else if(id == SIG_FM7KEY_LED_STATUS) {
+		uint32_t _l;
+		_l  = (ins_led_status) ? 0x00000001 : 0;
+		_l |= (kana_led_status) ? 0x00000002 : 0;
+		_l |= (caps_led_status) ? 0x00000004 : 0;
+		return _l;
 	}
 	return 0;
 }
@@ -968,7 +980,9 @@ uint32_t KEYBOARD::read_signal(int id)
 void KEYBOARD::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	if(id == SIG_FM7KEY_SET_INSLED) {
-		write_signals(&ins_led, data & mask);
+		ins_led_status = ((data & mask) != 0);
+	} else if(id == SIG_FM7KEY_OVERRIDE_PRESS_BREAK) {
+		override_break_key = ((data & mask) != 0);
 	}
 #if defined(_FM77AV_VARIANTS)  
 	 else if(id == SIG_FM7KEY_PUSH_TO_ENCODER) {
@@ -1159,6 +1173,7 @@ KEYBOARD::KEYBOARD(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 	autokey_backup = 0x00;
 
 	keymode = KEYMODE_STANDARD;
+	override_break_key = false;
 #if defined(_FM77AV_VARIANTS)
 	cmd_fifo = new FIFO(16);
 	data_fifo = new FIFO(16);
@@ -1188,9 +1203,9 @@ KEYBOARD::KEYBOARD(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 	initialize_output_signals(&break_line);
 	initialize_output_signals(&int_line);
 	
-	initialize_output_signals(&kana_led);
-	initialize_output_signals(&caps_led);
-	initialize_output_signals(&ins_led);
+	ins_led_status = false;
+	kana_led_status = false;
+	caps_led_status = false;
 	set_device_name(_T("KEYBOARD SUBSYSTEM"));
 }
 
@@ -1212,7 +1227,7 @@ KEYBOARD::~KEYBOARD()
 {
 }
 
-#define STATE_VERSION 4
+#define STATE_VERSION 6
 #if defined(Q_OS_WIN)
 DLL_PREFIX_I struct cur_time_s cur_time;
 #endif
@@ -1291,6 +1306,12 @@ void KEYBOARD::save_state(FILEIO *state_fio)
 	}
 	// Version 4
 	state_fio->FputUint8(autokey_backup);
+	// Version 5
+	state_fio->FputBool(ins_led_status);
+	state_fio->FputBool(kana_led_status);
+	state_fio->FputBool(caps_led_status);
+	// Version 6
+	state_fio->FputBool(override_break_key);
 }
 
 bool KEYBOARD::load_state(FILEIO *state_fio)
@@ -1369,6 +1390,13 @@ bool KEYBOARD::load_state(FILEIO *state_fio)
 	}
 	// Version 4
 	autokey_backup = state_fio->FgetUint8();
+	// Version 5
+	ins_led_status = state_fio->FgetBool();
+	kana_led_status = state_fio->FgetBool();
+	caps_led_status = state_fio->FgetBool();
+	// Version 6
+	override_break_key = state_fio->FgetBool();
+	
 	if(version == STATE_VERSION) {
 		return true;
 	}

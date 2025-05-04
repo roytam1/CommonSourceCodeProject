@@ -1912,7 +1912,7 @@ void v99x8_device::refresh_16(int line)
 	}
 
 	if (double_lines)
-		memcpy(ln2, ln, (512 + 32) * sizeof(scrntype_t));
+		my_memcpy(ln2, ln, (512 + 32) * sizeof(scrntype_t));
 }
 
 void v99x8_device::refresh_line(int line)
@@ -3118,7 +3118,7 @@ void v99x8_device::draw_screen()
 	int y;
 	for(y=0; y<SCREEN_HEIGHT; y++) {
 		if((dst = emu->get_screen_buffer(y)) != NULL) {
-			memcpy(dst, screen+(y+18)*LONG_WIDTH+2, SCREEN_WIDTH*sizeof(scrntype_t));
+			my_memcpy(dst, screen+(y+18)*LONG_WIDTH+2, SCREEN_WIDTH*sizeof(scrntype_t));
 		}
 	}
 }

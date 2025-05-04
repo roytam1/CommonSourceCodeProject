@@ -42,6 +42,7 @@ void SCSI_CDROM::release()
 
 void SCSI_CDROM::reset()
 {
+	touch_sound();
 	SCSI_DEV::reset();
 	set_cdda_status(CDDA_OFF);
 }
@@ -134,7 +135,7 @@ void SCSI_CDROM::reset_device()
 
 bool SCSI_CDROM::is_device_ready()
 {
-	return is_disc_inserted();
+	return mounted();
 }
 
 int SCSI_CDROM::get_command_length(int value)
@@ -168,8 +169,8 @@ double SCSI_CDROM::get_seek_time(uint32_t lba)
 {
 	if(fio_img->IsOpened()) {
 		uint32_t cur_position = (int)fio_img->Ftell();
-		int distance = abs((int)(lba * physical_block_size) - (int)cur_position);
-		double ratio = (double)distance / 333000 / physical_block_size; // 333000: sectors in media
+		int distance = abs((int)(lba * physical_block_size()) - (int)cur_position);
+		double ratio = (double)distance / 333000 / physical_block_size(); // 333000: sectors in media
 		return max(10, (int)(400000 * 2 * ratio));
 	} else {
 		return 400000; // 400msec
@@ -197,6 +198,8 @@ uint32_t lba_to_msf_alt(uint32_t lba)
 
 void SCSI_CDROM::start_command()
 {
+	touch_sound();
+	
 	switch(command[0]) {
 	case SCSI_CMD_READ6:
 		seek_time = 10;//get_seek_time((command[1] & 0x1f) * 0x10000 + command[2] * 0x100 + command[3]);
@@ -238,7 +241,7 @@ void SCSI_CDROM::start_command()
 						
 						if(cdda_start_frame < toc_table[track].index1) {
 							cdda_start_frame = toc_table[track].index1; // don't play pregap
-						} else if(cdda_start_frame > (max_logical_block_addr + 1)) {
+						} else if(cdda_start_frame > max_logical_block) {
 							cdda_start_frame = 0;
 						}
 					}
@@ -500,11 +503,11 @@ int hexatoi(const char *string)
 	return value;
 }
 
-void SCSI_CDROM::open_disc(const _TCHAR* file_path)
+void SCSI_CDROM::open(const _TCHAR* file_path)
 {
 	_TCHAR img_file_path[_MAX_PATH];
 	
-	close_disc();
+	close();
 	
 	if(check_file_extension(file_path, _T(".cue"))) {
 		// get image file name
@@ -523,10 +526,7 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 		}
 		if(fio_img->Fopen(img_file_path, FILEIO_READ_BINARY)) {
 			// get image file size
-			if((max_logical_block_addr = fio_img->FileLength() / 2352) > 0) {
-				max_logical_block_addr--;
-			}
-			if(max_logical_block_addr > 0) {
+			if((max_logical_block = fio_img->FileLength() / 2352) > 0) {
 				// read cue file
 				FILEIO* fio = new FILEIO();
 				if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
@@ -581,7 +581,7 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 							}
 						}
 						toc_table[0].index0 = toc_table[0].index1 = toc_table[0].pregap = 0;
-						toc_table[track_num].index0 = toc_table[track_num].index1 = max_logical_block_addr + 1;
+						toc_table[track_num].index0 = toc_table[track_num].index1 = max_logical_block;
 					} else {
 						fio_img->Fclose();
 					}
@@ -601,10 +601,7 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 		}
 		if(fio_img->Fopen(img_file_path, FILEIO_READ_BINARY)) {
 			// get image file size
-			if((max_logical_block_addr = fio_img->FileLength() / 2352) > 0) {
-				max_logical_block_addr--;
-			}
-			if(max_logical_block_addr > 0) {
+			if((max_logical_block = fio_img->FileLength() / 2352) > 0) {
 				// read cue file
 				FILEIO* fio = new FILEIO();
 				if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
@@ -638,7 +635,7 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 							toc_table[i].index0 = toc_table[i].index1 - toc_table[i].pregap;
 						}
 						toc_table[0].index0 = toc_table[0].index1 = toc_table[0].pregap = 0;
-						toc_table[track_num].index0 = toc_table[track_num].index1 = max_logical_block_addr + 1;
+						toc_table[track_num].index0 = toc_table[track_num].index1 = max_logical_block;
 					} else {
 						fio_img->Fclose();
 					}
@@ -649,7 +646,7 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 		}
 	}
 #ifdef _SCSI_DEBUG_LOG
-	if(is_disc_inserted()) {
+	if(mounted()) {
 		for(int i = 0; i < track_num + 1; i++) {
 			uint32_t idx0_msf = lba_to_msf(toc_table[i].index0);
 			uint32_t idx1_msf = lba_to_msf(toc_table[i].index1);
@@ -663,19 +660,27 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 #endif
 }
 
-void SCSI_CDROM::close_disc()
+void SCSI_CDROM::close()
 {
 	if(fio_img->IsOpened()) {
 		fio_img->Fclose();
 	}
 	memset(toc_table, 0, sizeof(toc_table));
 	track_num = 0;
+	max_logical_block = 0;
 	set_cdda_status(CDDA_OFF);
 }
 
-bool SCSI_CDROM::is_disc_inserted()
+bool SCSI_CDROM::mounted()
 {
 	return fio_img->IsOpened();
+}
+
+bool SCSI_CDROM::accessed()
+{
+	bool value = access;
+	access = false;
+	return value;
 }
 
 void SCSI_CDROM::mix(int32_t* buffer, int cnt)

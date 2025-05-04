@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								5/6/2018
+								5/24/2018
 
 --- What's this ?
 
@@ -125,6 +125,8 @@ This archive includes the all source codes of emulators listed below:
 		eSMC-777	SMC-777
 	SORD
 		Emu5		m5
+	Systems Formulate
+		eBUBCOM80	BUBCOM80
 	TOMY
 		ePyuTa		PyuTa/PyuTa Jr.
 	TOSHIBA

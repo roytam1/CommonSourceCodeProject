@@ -6,6 +6,7 @@
 	NEC PC-9801VM Emulator 'ePC-9801VM'
 	NEC PC-9801VX Emulator 'ePC-9801VX'
 	NEC PC-9801RA Emulator 'ePC-9801RA'
+	NEC PC-98XA Emulator 'ePC-98XA'
 	NEC PC-98XL Emulator 'ePC-98XL'
 	NEC PC-98RL Emulator 'ePC-98RL'
 	NEC PC-98DO Emulator 'ePC-98DO'
@@ -2273,6 +2274,7 @@ void DISPLAY::draw_screen()
 			memset(dest, 0, SCREEN_WIDTH * sizeof(scrntype_t));
 		}
 	}
+	emu->set_vm_screen_lines(SCREEN_HEIGHT);
 	emu->screen_skip_line(false);
 }
 
@@ -2387,14 +2389,14 @@ void DISPLAY::draw_chr_screen()
 			}
 			last = offset;
 			
-			for(int l = 0; l < cl && l < FONT_HEIGHT; l++) {
+			for(int l = 0; l < bl; l++) {
 				int yy = y + l + pl;
 				if(yy >= ytop && yy < SCREEN_HEIGHT) {
 					uint8_t *dest = &screen_chr[yy][x];
 #if !defined(SUPPORT_HIRESO)
-					uint8_t pattern = font[offset + l];
+					uint8_t pattern = (l < cl && l < FONT_HEIGHT) ? font[offset + l] : 0;
 #else
-					uint16_t pattern = *(uint16_t *)(&font[offset + l * 2]);
+					uint16_t pattern = (l < cl && l < FONT_HEIGHT) ? *(uint16_t *)(&font[offset + l * 2]) : 0;
 #endif
 					if(!(attr & ATTR_ST)) {
 						pattern = 0;
@@ -2527,9 +2529,13 @@ void DISPLAY::draw_gfx_screen()
 		if((cs_gfx[0] & 0x1f) == 1) {
 			// 200 line
 			if(modereg1[MODE1_200LINE]) {
-				memset(dest, 0, SCREEN_WIDTH);
+				if(config.scan_line) {
+					memset(dest, 0, SCREEN_WIDTH);
+				} else {
+					my_memcpy(dest, dest - SCREEN_WIDTH, SCREEN_WIDTH);
+				}
 			} else {
-				memcpy(dest, dest - SCREEN_WIDTH, SCREEN_WIDTH);
+				my_memcpy(dest, dest - SCREEN_WIDTH, SCREEN_WIDTH);
 			}
 			dest += SCREEN_WIDTH;
 			y++;

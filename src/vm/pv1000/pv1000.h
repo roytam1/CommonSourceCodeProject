@@ -25,7 +25,7 @@
 #define MEMORY_BANK_SIZE	0x800
 
 // device informations for win32
-#define USE_CART1
+#define USE_CART		1
 #define USE_SOUND_VOLUME	1
 #define USE_JOYSTICK
 #define USE_JOY_BUTTON_CAPTIONS

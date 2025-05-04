@@ -709,6 +709,8 @@ void CRTC::draw_screen()
 	int he = (GDEHS <= GDEHE && GDEHE < 80) ? (GDEHE << 3) : 640;
 	
 	// mix screens
+	emu->set_vm_screen_lines(ve);
+	
 	if(screen_mask) {
 		// screen is masked
 		for(int y = 0; y < 400; y++) {

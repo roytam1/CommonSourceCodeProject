@@ -10,14 +10,14 @@
 #ifndef _FM7_H_
 #define _FM7_H_
 
-#define USE_TAPE1
+#define USE_TAPE		1
 #define USE_TAPE_PTR
 #define USE_TAPE_BUTTON
 #define USE_SCANLINE
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
 #define USE_SPECIAL_RESET
-#define USE_LED_DEVICE 3
+#define USE_EXTRA_LEDS 3
 #define USE_MINIMUM_RENDERING 1
 #define USE_MOUSE
 #define USE_JOYSTICK
@@ -25,7 +25,9 @@
 #define USE_PRINTER
 #define USE_PRINTER_TYPE 4
 #define USE_AY_3_8910_AS_PSG
+#define SUPPORT_VARIABLE_TIMING
 
+#define INDEPENDENT_CAPS_KANA_LED
 #define NOTIFY_KEY_DOWN
 //#define NOTIFY_KEY_UP
 #define NOTIFY_KEY_DOWN_LR_SHIFT
@@ -40,35 +42,47 @@
 #define USE_DEBUGGER
 #define DATAREC_SOUND
 #define USE_DIG_RESOLUTION
-#define SUPPORT_ROMA_KANA_CONVERSION
+
+#define CPU_TYPE_DEFAULT 0
 
 #if defined(_FM8)
 #define DEVICE_NAME		"FUJITSU FM-8"
 #define CONFIG_NAME		"fm8"
 #define CAPABLE_Z80
 #define DIPSWITCH_DEFAULT 0x00000000 
-#define USE_BUBBLE1
-#define USE_BUBBLE2
-#define MAX_BUBBLE 2
+#define USE_BUBBLE		2
+#define MAX_DRIVE		4
+
+#undef CPU_TYPE_DEFAULT
+#define CPU_TYPE_DEFAULT 1
+#define USE_GREEN_DISPLAY
+#define USE_MONITOR_TYPE 2
 
 #elif defined(_FM7)
 #define DEVICE_NAME		"FUJITSU FM-7"
 #define CONFIG_NAME		"fm7"
 #define CAPABLE_Z80
 #define DIPSWITCH_DEFAULT 0x000000000 
+#define MAX_DRIVE  4
+#define CAPABLE_JCOMMCARD 1
+#define USE_GREEN_DISPLAY
+#define USE_MONITOR_TYPE 2
 
 #elif defined(_FMNEW7)
 #define DEVICE_NAME		"FUJITSU FM-NEW7"
 #define CONFIG_NAME		"fmnew7"
 #define CAPABLE_Z80
 #define DIPSWITCH_DEFAULT 0x000000000 
+#define MAX_DRIVE  4
+#define CAPABLE_JCOMMCARD 1
+#define USE_GREEN_DISPLAY
+#define USE_MONITOR_TYPE 2
 
 #elif defined(_FM77) || defined(_FM77L2)
 # if defined(_FM77)
 #define DEVICE_NAME		"FUJITSU FM-77"
 #define CONFIG_NAME		"fm77"
 #define DIPSWITCH_DEFAULT 0x00000001
-
 # else
 #define DEVICE_NAME		"FUJITSU FM-77L2"
 #define CONFIG_NAME		"fm77l2"
@@ -80,51 +94,62 @@
 # ifndef FM77_EXRAM_BANKS
 #   define FM77_EXRAM_BANKS	3
 # endif
+#define MAX_DRIVE  4
+#define CAPABLE_JCOMMCARD 1
+#define HAS_2HD
+#define USE_GREEN_DISPLAY
+#define USE_MONITOR_TYPE 2
 
 #elif defined(_FM77L4)
 #define DEVICE_NAME		"FUJITSU FM-77L4"
 #define CONFIG_NAME		"fm77l4"
-#define HAS_MMR
 #define HAS_TEXTVRAM
 #define HAS_2HD
 #define HAS_CYCLESTEAL
 #define HAS_400LINECARD
 //#define CAPABLE_KANJI_CLASS2
 #define _FM77_VARIANTS
-#define CAPABLE_Z80
+# define CAPABLE_Z80
 # ifndef FM77_EXRAM_BANKS
 #  define FM77_EXRAM_BANKS	3
 # endif
 #define DIPSWITCH_DEFAULT 0x00000003 
+#define MAX_DRIVE  4
+#define CAPABLE_JCOMMCARD 1
+#define USE_GREEN_DISPLAY
+#define USE_MONITOR_TYPE 2
 
 #elif defined(_FM77AV)
 #define DEVICE_NAME		"FUJITSU FM77AV"
 #define CONFIG_NAME		"fm77av"
 #define _FM77AV_VARIANTS
 #define DIPSWITCH_DEFAULT 0x80000001 
+#define MAX_DRIVE  2
+#define CAPABLE_JCOMMCARD 1
+#define CAPABLE_DICTROM
 
 #elif defined(_FM77AV20)
 #define DEVICE_NAME		"FUJITSU FM77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
-#define HAS_MMR
 #define HAS_2DD_2D
 #define CAPABLE_DICTROM
 //#define USE_DRIVE_TYPE 2
 #define CAPABLE_KANJI_CLASS2
 #define DIPSWITCH_DEFAULT 0x80000001 
+#define MAX_DRIVE  2
 
 #elif defined(_FM77AV20EX)
 #define DEVICE_NAME		"FUJITSU FM77AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
-#define HAS_MMR
 #define HAS_2DD_2D
 #define HAS_DMA
 //#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define CAPABLE_KANJI_CLASS2
 #define DIPSWITCH_DEFAULT 0x80000001 
+#define MAX_DRIVE  4
 
 #elif defined(_FM77AV40)
 #define DEVICE_NAME		"FUJITSU FM77AV40"
@@ -136,10 +161,11 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
-# ifndef FM77_EXRAM_BANKS
-#  define FM77_EXRAM_BANKS	12
-# endif
+#ifndef FM77_EXRAM_BANKS
+#define FM77_EXRAM_BANKS	12
+#endif
 #define DIPSWITCH_DEFAULT 0x8000000d 
+#define MAX_DRIVE  4
 
 #elif defined(_FM77AV40EX)
 #define DEVICE_NAME		"FUJITSU FM77AV40EX"
@@ -151,10 +177,11 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
-# ifndef FM77_EXRAM_BANKS
-#  define FM77_EXRAM_BANKS	12
-# endif
+#ifndef FM77_EXRAM_BANKS
+#define FM77_EXRAM_BANKS	12
+#endif
 #define DIPSWITCH_DEFAULT 0x8000000d 
+#define MAX_DRIVE  4
 
 #elif defined(_FM77AV40SX)
 #define DEVICE_NAME		"FUJITSU FM77AV40SX"
@@ -170,6 +197,7 @@
 #  define FM77_EXRAM_BANKS	12
 # endif
 #define DIPSWITCH_DEFAULT 0x8000000d 
+#define MAX_DRIVE  4
 
 #endif
 
@@ -181,27 +209,15 @@
 #endif
 
 #ifdef _FM77AV_VARIANTS
-
-//#define CAPABLE_KANJI_CLASS2
 #define HAS_MMR
 #define HAS_CYCLESTEAL
-
 #elif defined(_FM77_VARIANTS)
-
 #define HAS_MMR
 #define HAS_CYCLESTEAL
 #define CAPABLE_Z80
 #endif
 
-#if defined(_FM77_VARIANTS)
-#define USE_BOOT_MODE         4
-#elif defined(_FM8)
-#define USE_BOOT_MODE         4
-#elif defined(_FM7) || defined(_FMNEW7)
-#define USE_BOOT_MODE         3
-#else
-#define USE_BOOT_MODE         2
-#endif
+#define USE_BOOT_MODE         8
 
 // 0 = PSG or NONE
 // 1 = OPN (+PSG)
@@ -233,7 +249,8 @@
 // device informations for virtual machine
 
 // TODO: check refresh rate
-#define FRAMES_PER_SEC		59.94
+//#define FRAMES_PER_SEC		60.0962 /* Related to display.cpp */ 
+#define FRAMES_PER_SEC		59.94 /* Related to display.cpp */ 
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || defined(_FM77L4)
 #define LINES_PER_FRAME 	400
 #else
@@ -241,24 +258,40 @@
 #endif
 
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
-#define CPU_CLOCKS		2016000
-#elif defined(_FM8)
-#define CPU_CLOCKS		1095000
+  defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+#define CPU_CLOCKS		2016000 /* 2016 */
 #else
-#define CPU_CLOCKS		2000000
+#define CPU_CLOCKS      1798000   /* FM8,7 - 77AV/20? */
 #endif
 
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || defined(_FM77L4)
+
+/*
+ * If you wish to use software-scanline, define below.
+ * If not, undef.
+ */
+#define FIXED_FRAMEBUFFER_SIZE
+
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || defined(_FM77L4)
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #undef SCREEN_FAKE_WIDTH
 #undef SCREEN_FAKE_HEIGHT
-#else
+#else /* Not have 400 line */
+
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		200
-#define SCREEN_FAKE_WIDTH   640
-#define SCREEN_FAKE_HEIGHT  400
+# if defined(FIXED_FRAMEBUFFER_SIZE)
+#  define SCREEN_FAKE_WIDTH   640
+#  define SCREEN_FAKE_HEIGHT  400
+# else
+#  define SCREEN_FAKE_WIDTH   640
+#  define SCREEN_FAKE_HEIGHT  200
+# endif
+
+# if !defined(FIXED_FRAMEBUFFER_SIZE)
+#  define SCREEN_Y_ZOOM       2.0
+# endif
+
 #endif
 #define WINDOW_HEIGHT_ASPECT 480
 #define HAS_MC6809              
@@ -266,20 +299,11 @@
 //#define IO_ADDR_MAX		0x10000
 
 // device informations for win32
-#define USE_FD1
-#define USE_FD2
-#define MAX_FD 2
-#define MAX_DRIVE 4
-
 #if defined(HAS_2HD)
-#define USE_FD3
-#define USE_FD4
-#undef  MAX_FD
-#undef  MAX_DRIVE
-#define MAX_FD 6
-#define MAX_DRIVE 8
+#define USE_FLOPPY_DISK		4
+#else
+#define USE_FLOPPY_DISK		2
 #endif
-
 
 #ifdef BUILD_Z80
 # ifdef CAPABLE_Z80
@@ -331,7 +355,7 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PSG(Hack)"),
 	_T("Beep"),
 	_T("CMT (Signal)"),
-	_T("Noise (FDD)"),
+	_T("Noise (320KB FDD)"),
 	_T("Noise (CMT)"),
 #else
 # if !defined(_FM77AV_VARIANTS)
@@ -342,7 +366,11 @@ static const _TCHAR *sound_device_caption[] = {
 # if defined(_FM77AV_VARIANTS)
 	_T("Keyboard"),
 # endif
-	_T("Noise (FDD)"), _T("Noise (CMT)"),
+	_T("Noise (320KB FDD)"),
+# if defined(HAS_2HD)
+	_T("Noise (1MB FDD/2HD)"),
+# endif
+	_T("Noise (CMT)"),
 #endif	
 };
 #endif
@@ -359,6 +387,18 @@ static const _TCHAR *joy_button_captions[] = {
 };
 #endif
 
+/*
+ * NOTE:
+ * Below defines are for EVENT::run_cpu().
+ * Please see event.cpp for details.
+ * 20180317 -- K.Ohta.
+ */
+
+#define USE_CPU_MC6809
+#if defined(WITH_Z80)
+#define USE_CPU_Z80
+#endif
+
 class EMU;
 class DEVICE;
 class EVENT;
@@ -367,22 +407,22 @@ class FILEIO;
 #if defined(_FM77AV_VARIANTS)
 class BEEP;
 #endif
+#if defined(_FM77L4)
+class HD46505;
+#endif
 class PCM1BIT;
 class MC6809;
 class YM2203;
 class MB8877;
 class MEMORY;
 class DATAREC;
+class I8251;
 #if defined(USE_AY_3_8910_AS_PSG) && !defined(_FM77AV_VARIANTS)
 class AY_3_891X;
 #endif
 #if defined(_FM8)
 class BUBBLECASETTE;
 #endif
-#if defined(USE_LED_DEVICE)
-class DUMMYDEVICE;
-#endif
-
 class DISPLAY;
 #if defined(_FM77AV_VARIANTS)
 class MB61VH010;
@@ -391,15 +431,26 @@ class MB61VH010;
     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 class HD6844;
 #endif
+class AND;
 class FM7_MAINMEM;
+#if defined(_FM8)
+class FM8_MAINIO;
+#else
 class FM7_MAINIO;
+#endif
+
 class KEYBOARD;
 class KANJIROM;
 class JOYSTICK;
 
-#if WITH_Z80
+#ifdef WITH_Z80
 class Z80;
+class OR;
 #endif
+#ifdef CAPABLE_JCOMMCARD
+class FM7_JCOMMCARD;
+#endif
+
 class VM {
 protected:
 	EMU* emu;
@@ -407,15 +458,18 @@ protected:
 	// devices
 	EVENT* event;
 	
+	DEVICE* dummycpu;
 	MC6809* maincpu;
 	FM7_MAINMEM* mainmem;
-	FM7_MAINIO* mainio;
-#if defined(USE_LED_DEVICE)
-	DUMMYDEVICE* led_terminate;
+#if defined(_FM8)
+	FM8_MAINIO* mainio;
 #else
-	DEVICE* led_terminate;
+	FM7_MAINIO* mainio;
 #endif
 	MB8877* fdc;
+#if defined(HAS_2HD)
+	MB8877 *fdc_2HD;
+#endif
 #if defined(_FM8)
 	// FM8
 # if defined(USE_AY_3_8910_AS_PSG)
@@ -437,6 +491,11 @@ protected:
 #if defined(_FM8)
 	BUBBLECASETTE *bubble_casette[2];
 #endif
+	I8251 *uart[3];
+# if defined(_FM77AV20) || defined(_FM77AV40) || defined(_FM77AV20EX) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+	AND *g_rs232c_dtr;
+#endif
+	
 	//BEEP* beep;
 	PCM1BIT* pcm1bit;
 	DATAREC *drec;
@@ -444,11 +503,18 @@ protected:
 	
 #ifdef  WITH_Z80
 	Z80* z80cpu;
+	AND *g_nmi;
+	OR *g_intr;
+	AND *g_intr_irq;
+	AND *g_intr_firq;
+	AND *g_mainstat;
 #endif
+	AND *g_substat_display;
+	AND *g_substat_mainhalt;
+	
 	DEVICE* printer;
 	DEVICE* inteli_mouse; 
    
-	DEVICE *dummycpu;
 	MC6809* subcpu;
 #if defined(_FM77AV_VARIANTS)
 	MB61VH010 *alu;
@@ -463,6 +529,14 @@ protected:
 	KANJIROM *kanjiclass1;
 #ifdef CAPABLE_KANJI_CLASS2
 	KANJIROM *kanjiclass2;
+#endif
+#if defined(CAPABLE_JCOMMCARD)
+	MC6809 *jsubcpu;
+	FM7_JCOMMCARD *jcommcard;
+	AND *g_jsubhalt;
+#endif
+#if defined(_FM77L4)
+	HD46505 *l4crtc;
 #endif
 	bool connect_320kfdc;
 	bool connect_1Mfdc;
@@ -483,9 +557,6 @@ public:
 	void special_reset();
 	void run();
 	double get_frame_rate();
-#if defined(USE_LED_DEVICE)
-	uint32_t get_led_status();
-#endif
 	
 #ifdef USE_DEBUGGER
 	// debugger
@@ -505,12 +576,14 @@ public:
 #ifdef USE_SOUND_VOLUME
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
+	void set_vm_frame_rate(double fps);
 	
 	// notify key
 	void key_down(int code, bool repeat);
 	void key_up(int code);
 	bool get_caps_locked();
 	bool get_kana_locked();
+	uint32_t get_extra_leds(); 
 	
 	// user interface
 	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
@@ -539,12 +612,12 @@ public:
 	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-#if defined(USE_BUBBLE1)
+#if defined(USE_BUBBLE)
 	void open_bubble_casette(int drv, const _TCHAR *path, int bank);
 	void close_bubble_casette(int drv);
 	bool is_bubble_casette_inserted(int drv);
-	void is_bubble_casette_protected(int drv, bool flag);
 	bool is_bubble_casette_protected(int drv);
+	void is_bubble_casette_protected(int drv, bool flag);
 #endif
 #if defined(USE_DIG_RESOLUTION)
 	void get_screen_resolution(int *w, int *h);

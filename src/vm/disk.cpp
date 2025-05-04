@@ -484,8 +484,30 @@ void DISK::open(const _TCHAR* file_path, int bank)
 				for(int i = 0; i < sector_num.sd; i++) {
 					data_size.read_2bytes_le_from(t + 14);
 					if(data_size.sd == 0x100 && t[0] == 0 && t[1] == 0 && t[2] == 7 && t[3] == 1) {
-						static const uint8_t gambler[] = {0xb7, 0xde, 0xad, 0xdc, 0xdd, 0xcc, 0xde, 0xd7, 0xb1, 0x20, 0xbc, 0xde, 0xba, 0xc1, 0xad, 0xb3, 0xbc, 0xdd, 0xca};
-						if(memcmp((void *)(t + 0x30), gambler, sizeof(gambler)) == 0) {
+						/* Type 1: Sec07, +$50- "1989/09/12 ... "*/
+						static const uint8_t gamblerfm_1[] = {
+							0x31, 0x39, 0x38, 0x39, 0x2f, 0x30, 0x39, 0x2f,
+							0x31, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+							0x28, 0x43, 0x29, 0x47, 0x41, 0x4d, 0x45, 0x41,
+							0x52, 0x54, 0x53, 0x00, 0x00, 0x00, 0x00, 0x00,
+							0x20, 0x20, 0x20, 0x59, 0x45, 0x4c, 0x4c, 0x4f,
+							0x57, 0x48, 0x4f, 0x52, 0x4e, 0x00, 0x00, 0x00,
+							0x20, 0x20, 0x20, 0x4b, 0x4f, 0x55, 0x44, 0x41,
+							0x4e, 0x53, 0x59, 0x41, 0x20, 0x59, 0x4f, 0x55,
+							0x4e, 0x47, 0x2d, 0x4d, 0x41, 0x47, 0x41, 0x5a,
+							0x49, 0x4e, 0x45, 0x00 
+						};
+						/* Type 2: Sec07, +$30- */
+						static const uint8_t gamblerfm_2[] = {
+							0xb7, 0xde, 0xad, 0xdc, 0xdd, 0xcc, 0xde, 0xd7,
+							0xb1, 0x20, 0xbc, 0xde, 0xba, 0xc1, 0xad, 0xb3,
+							0xbc, 0xdd, 0xca
+						};
+						if(memcmp((void *)(t + 0x50), gamblerfm_1, sizeof(gamblerfm_1)) == 0) {
+							is_special_disk = SPECIAL_DISK_FM7_GAMBLER;
+							break;
+						}
+						if(memcmp((void *)(t + 0x30), gamblerfm_2, sizeof(gamblerfm_2)) == 0) {
 							is_special_disk = SPECIAL_DISK_FM7_GAMBLER;
 							break;
 						}
@@ -529,8 +551,8 @@ void DISK::open(const _TCHAR* file_path, int bank)
 						if(memcmp((void *)(t + 0x10 + 0x60), xanadu2fm_d_1, sizeof(xanadu2fm_d_1)) == 0) {
 							if(memcmp((void *)(t + 0x10 + 0x70), xanadu2fm_d_2, sizeof(xanadu2fm_d_2)) == 0) {
 								is_special_disk = SPECIAL_DISK_FM7_XANADU2_D;
+								break;
 							}
-							break;
 						}
 					} else if(data_size.sd == 0x100 && t[0] == 0 && t[1] == 0 && t[2] == 8 && t[3] == 1) {
 						// Xanadu 1
@@ -557,8 +579,8 @@ void DISK::open(const _TCHAR* file_path, int bank)
 						if(memcmp((void *)(t + 0x10 + 0), xanadu1fm_d_1, sizeof(xanadu1fm_d_1)) == 0) {
 							if(memcmp((void *)(t + 0x10 + 0xb0), xanadu1fm_d_2, sizeof(xanadu1fm_d_2)) == 0) {
 								is_special_disk = SPECIAL_DISK_FM7_XANADU2_D; // Same issue as Xanadu2.
+								break;
 							}
-							break;
 						}
 					} else if(data_size.sd == 0x100 && t[0] == 0 && t[1] == 0 && t[2] == 1 && t[3] == 1) {
 						//$03 + $2D + "PSY-O-BLADE   Copyright 1988 by T&E SOFT Inc." + $B6 + $FD + $05
@@ -831,9 +853,9 @@ void DISK::save_as_d88(const _TCHAR* file_path)
 bool DISK::get_track(int trk, int side)
 {
 	if(media_type == MEDIA_TYPE_2D && drive_type == DRIVE_TYPE_2DD) {
-		trk >>= 1;
+		if(trk >= 0) trk >>= 1;
 	} else if(media_type == MEDIA_TYPE_2DD && drive_type == DRIVE_TYPE_2D) {
-		trk <<= 1;
+		if(trk >= 0) trk <<= 1;
 	}
 	return get_track_tmp(trk, side);
 }
@@ -987,9 +1009,9 @@ bool DISK::get_track_tmp(int trk, int side)
 bool DISK::make_track(int trk, int side)
 {
 	if(media_type == MEDIA_TYPE_2D && drive_type == DRIVE_TYPE_2DD) {
-		trk >>= 1;
+		if(trk >= 0) trk >>= 1;
 	} else if(media_type == MEDIA_TYPE_2DD && drive_type == DRIVE_TYPE_2D) {
-		trk <<= 1;
+		if(trk >= 0) trk <<= 1;
 	}
 	return make_track_tmp(trk, side);
 }
@@ -1092,9 +1114,9 @@ bool DISK::make_track_tmp(int trk, int side)
 bool DISK::get_sector(int trk, int side, int index)
 {
 	if(media_type == MEDIA_TYPE_2D && drive_type == DRIVE_TYPE_2DD) {
-		trk >>= 1;
+		if(trk >= 0) trk >>= 1;
 	} else if(media_type == MEDIA_TYPE_2DD && drive_type == DRIVE_TYPE_2D) {
-		trk <<= 1;
+		if(trk >= 0) trk <<= 1;
 	}
 	return get_sector_tmp(trk, side, index);
 }
@@ -1214,9 +1236,9 @@ void DISK::set_data_mark_missing()
 bool DISK::format_track(int trk, int side)
 {
 	if(media_type == MEDIA_TYPE_2D && drive_type == DRIVE_TYPE_2DD) {
-		trk >>= 1;
+		if(trk >= 0) trk >>= 1;
 	} else if(media_type == MEDIA_TYPE_2DD && drive_type == DRIVE_TYPE_2D) {
-		trk <<= 1;
+		if(trk >= 0) trk <<= 1;
 	}
 	return format_track_tmp(trk, side);
 }
@@ -1362,7 +1384,7 @@ int DISK::get_max_tracks()
 	if(drive_type != DRIVE_TYPE_UNK) {
 		return (drive_type != DRIVE_TYPE_2D) ? 84 : 42;
 	} else if(inserted) {
-		return (drive_type != MEDIA_TYPE_2D) ? 84 : 42;
+		return (media_type != MEDIA_TYPE_2D) ? 84 : 42;
 	} else {
 		return 84; // 2DD or 2HD
 	}

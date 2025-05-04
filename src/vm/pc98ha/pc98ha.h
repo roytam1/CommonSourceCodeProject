@@ -42,7 +42,7 @@
 #endif
 
 // device informations for win32
-#define USE_FD1
+#define USE_FLOPPY_DISK		1
 #define NOTIFY_KEY_DOWN
 #define USE_KEY_LOCKED
 #define USE_SHIFT_NUMPAD_KEY
@@ -50,7 +50,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NUMPAD
-#define USE_SOUND_VOLUME	1
+#define USE_SOUND_VOLUME	2
 #define USE_PRINTER
 #define USE_PRINTER_TYPE	3
 #define USE_DEBUGGER
