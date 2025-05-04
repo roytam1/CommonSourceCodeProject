@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/16/2016
+								3/17/2016
 
 --- What's this ?
 
@@ -139,6 +139,11 @@ the Windows SDK for Windows 8.1 is also required to get the mt.exe utility.
 The mt.exe is used to merge a manifest file for Windows Vista or later.
 
 https://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
+
+When you use the Microsoft Visual C++ 2013 with Update 5, the system
+environment variables WindowsSDK_IncludePath, WindowsSDK_LibraryPath_x86,
+and DXSDK_DIR shoud be defined and should specifies the install directories
+of the Windows SDK and the DirectX 9.0 SDK.
 
 
 --- License

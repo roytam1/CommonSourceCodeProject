@@ -196,10 +196,11 @@ private:
 	void set_cdrom_irq_line(int num, int state);
 	
 	uint8_t adpcm_ram[0x10000];
-	int adpcm_read_ptr, adpcm_write_ptr, adpcm_length, adpcm_clock_divider;
+	int adpcm_read_ptr, adpcm_write_ptr, adpcm_written;
+	int adpcm_length, adpcm_clock_divider;
 	uint8_t adpcm_read_buf, adpcm_write_buf;
 	bool adpcm_dma_enabled;
-	uint32_t msm_start_addr, msm_end_addr, msm_half_addr;
+	int msm_start_addr, msm_end_addr, msm_half_addr;
 	uint8_t msm_nibble, msm_idle;
 	
 	void reset_adpcm();

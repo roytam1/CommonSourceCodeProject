@@ -21,6 +21,13 @@ void SCSI_CDROM::initialize()
 {
 	SCSI_DEV::initialize();
 	fio_img = new FILEIO();
+	
+	if(44100 % emu->get_sound_rate() == 0) {
+		mix_loop_num = 44100 / emu->get_sound_rate();
+	} else {
+		mix_loop_num = 0;
+	}
+	event_cdda = -1;
 }
 
 void SCSI_CDROM::release()
@@ -35,7 +42,6 @@ void SCSI_CDROM::release()
 void SCSI_CDROM::reset()
 {
 	SCSI_DEV::reset();
-	event_cdda = -1;
 	set_cdda_status(CDDA_OFF);
 }
 
@@ -95,8 +101,10 @@ void SCSI_CDROM::event_callback(int event_id, int err)
 void SCSI_CDROM::set_cdda_status(uint8_t status)
 {
 	if(status == CDDA_PLAYING) {
-		if(event_cdda == -1) {
-			register_event(this, EVENT_CDDA, 1000000.0 / 44100.0, true, &event_cdda);
+		if(mix_loop_num == 0) {
+			if(event_cdda == -1) {
+				register_event(this, EVENT_CDDA, 1000000.0 / 44100.0, true, &event_cdda);
+			}
 		}
 	} else {
 		if(event_cdda != -1) {
@@ -645,11 +653,20 @@ bool SCSI_CDROM::is_disc_inserted()
 void SCSI_CDROM::mix(int32_t* buffer, int cnt)
 {
 	if(cdda_status == CDDA_PLAYING) {
+		if(mix_loop_num != 0) {
+			int tmp_l = 0, tmp_r = 0;
+			for(int i = 0; i < mix_loop_num; i++) {
+				event_callback(EVENT_CDDA, 0);
+				tmp_l += cdda_sample_l;
+				tmp_r += cdda_sample_r;
+			}
+			cdda_sample_l = tmp_l / mix_loop_num;
+			cdda_sample_r = tmp_r / mix_loop_num;
+		}
 		int32_t val_l = apply_volume(apply_volume(cdda_sample_l, volume_m), volume_l);
 		int32_t val_r = apply_volume(apply_volume(cdda_sample_r, volume_m), volume_r);
 		
-		for(int i = 0; i < cnt; i++)
-		{
+		for(int i = 0; i < cnt; i++) {
 			*buffer++ += val_l; // L
 			*buffer++ += val_r; // R
 		}
@@ -667,7 +684,7 @@ void SCSI_CDROM::set_volume(int volume)
 	volume_m = (int)(1024.0 * (max(0, min(100, volume)) / 100.0));
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void SCSI_CDROM::save_state(FILEIO* state_fio)
 {
@@ -685,6 +702,7 @@ void SCSI_CDROM::save_state(FILEIO* state_fio)
 	state_fio->FputInt32(cdda_sample_l);
 	state_fio->FputInt32(cdda_sample_r);
 	state_fio->FputInt32(event_cdda);
+//	state_fio->FputInt32(mix_loop_num);
 	state_fio->FputInt32(volume_m);
 	if(fio_img->IsOpened()) {
 		state_fio->FputUint32(fio_img->Ftell());
@@ -713,6 +731,7 @@ bool SCSI_CDROM::load_state(FILEIO* state_fio)
 	cdda_sample_l = state_fio->FgetInt32();
 	cdda_sample_r = state_fio->FgetInt32();
 	event_cdda = state_fio->FgetInt32();
+//	mix_loop_num = state_fio->FgetInt32();
 	volume_m = state_fio->FgetInt32();
 	uint32_t offset = state_fio->FgetUint32();
 	

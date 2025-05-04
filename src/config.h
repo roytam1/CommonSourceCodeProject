@@ -10,7 +10,11 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+#if defined(_USE_AGAR) || defined(_USE_QT)
+#include <string>
+#endif
 #include "vm/vm.h"
+#include "fileio.h"
 
 #define MAX_HISTORY	8
 
@@ -135,6 +139,13 @@ typedef struct {
 #ifdef USE_SCREEN_ROTATE
 	int rotate_type;
 #endif
+#if defined(USE_QT)
+	bool use_opengl_scanline;
+	bool opengl_scanline_vert;
+	bool opengl_scanline_horiz;
+	bool use_opengl_filters;
+	int opengl_filter_num;
+#endif	
 	
 	// sound
 	int sound_frequency;
@@ -146,7 +157,9 @@ typedef struct {
 	int sound_volume_l[USE_SOUND_VOLUME];
 	int sound_volume_r[USE_SOUND_VOLUME];
 #endif
+#ifdef _WIN32
 	_TCHAR fmgen_dll_path[_MAX_PATH];
+#endif
 	
 	// input
 #ifdef _WIN32

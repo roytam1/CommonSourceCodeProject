@@ -10,7 +10,6 @@
 #ifndef _YM2203_H_
 #define _YM2203_H_
 
-
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"

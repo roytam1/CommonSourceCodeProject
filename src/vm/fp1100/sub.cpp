@@ -7,8 +7,8 @@
 	[ sub pcb ]
 */
 
-#include "sub.h"
-#include "main.h"
+#include "./sub.h"
+#include "./main.h"
 #include "../beep.h"
 #include "../datarec.h"
 #include "../hd46505.h"

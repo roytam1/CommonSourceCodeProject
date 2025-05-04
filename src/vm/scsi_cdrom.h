@@ -36,7 +36,7 @@ private:
 	uint8_t cdda_buffer[2352 * 75];
 	int cdda_buffer_ptr;
 	int cdda_sample_l, cdda_sample_r;
-	int event_cdda;
+	int event_cdda, mix_loop_num;
 	
 	void set_cdda_status(uint8_t status);
 	int get_track(uint32_t lba);

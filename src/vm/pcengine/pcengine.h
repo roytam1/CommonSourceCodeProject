@@ -28,6 +28,7 @@
 #define SCSI_DEV_IMMEDIATE_SELECT
 
 // device informations for win32
+#define SOUND_RATE_DEFAULT	5	// 44100Hz
 #define USE_DEVICE_TYPE		4
 #define DEVICE_TYPE_DEFAULT	0
 #define USE_CART1

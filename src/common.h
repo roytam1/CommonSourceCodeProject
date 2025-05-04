@@ -10,6 +10,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+// check environemnt/language
 #ifdef _WIN32
 	#ifdef _MSC_VER
 		// Microsoft Visual C++
@@ -38,6 +39,24 @@
 //		#define SUPPORT_SECURE_FUNCTIONS
 	#endif
 #endif
+#ifdef __GNUC__
+	#if defined(Q_OS_CYGWIN) 
+		#define CSP_OS_GCC_CYGWIN
+		#define CSP_OS_WINDOWS
+	#elif defined(Q_OS_WIN) || defined(__WIN32) || defined(__WIN64)
+		#define CSP_OS_GCC_WINDOWS
+		#define CSP_OS_WINDOWS
+	#else
+		#define CSP_OS_GCC_GENERIC
+		#define CSP_OS_GENERIC
+	#endif
+	#if defined(__clang__)
+		#define __CSP_COMPILER_CLANG
+	#else
+		#define __CSP_COMPILER_GCC
+	#endif
+	#define SUPPORT_CPLUSPLUS_11
+#endif
 #ifndef SUPPORT_CPLUSPLUS_11
 	#if defined(__cplusplus) && (__cplusplus > 199711L)
 		#define SUPPORT_CPLUSPLUS_11
@@ -48,33 +67,46 @@
 	#undef SUPPORT_SECURE_FUNCTIONS
 #endif
 
+// include common header files
 #ifdef SUPPORT_TCHAR_TYPE
-#include <tchar.h>
+	#include <tchar.h>
 #endif
 #ifdef SUPPORT_CPLUSPLUS_11
-#include <stdint.h>
+	#include <stdint.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
+// include environment/language dependent header files
 #ifdef _WIN32
-#include <windows.h>
-#include <windowsx.h>
-#include <mmsystem.h>
-#include <process.h>
+	#include <windows.h>
+	#include <windowsx.h>
+	#include <winuser.h>
+	#include <mmsystem.h>
+	#include <process.h>
 #endif
-
+#ifdef __GNUC__
+	#include <stdarg.h>
+#endif
 #ifdef _USE_QT
-#ifdef _USE_QT5
-#include <QString>
-#include <QFile>
-#include <QtEndian>
-#else
-#include <QtCore/QString>
-#include <QtCore/QFile>
+	#ifdef _USE_QT5
+		#include <QString>
+		#include <QFile>
+		#include <QtEndian>
+		#if defined(__MINGW32__) || (__MINGW64__)
+			#include <windows.h>
+			#include <winbase.h>
+		#endif
+	#else
+		#include <QtCore/QString>
+		#include <QtCore/QFile>
+	#endif
+	#include <sys/param.h>
 #endif
+#ifndef _MAX_PATH
+	#define _MAX_PATH 2048
 #endif
 
 // endian
@@ -187,6 +219,12 @@
 	#endif
 	#ifndef UINT64
 		typedef uint64_t UINT64;
+	#endif
+	#ifndef INT
+		typedef int INT;
+	#endif
+	#ifndef UINT
+		typedef unsigned int UINT;
 	#endif
 #endif
 

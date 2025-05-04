@@ -1937,10 +1937,11 @@ void PCE::cdrom_write(uint16_t addr, uint8_t data)
 			
 			if(d_scsi_cdrom->get_cur_command() == SCSI_CMD_READ6 &&
 			   d_scsi_host->read_signal(SIG_SCSI_BSY) != 0 &&
+			   d_scsi_host->read_signal(SIG_SCSI_REQ) != 0 &&
 			   d_scsi_host->read_signal(SIG_SCSI_CD ) == 0 &&
 			   d_scsi_host->read_signal(SIG_SCSI_MSG) == 0 &&
 			   d_scsi_host->read_signal(SIG_SCSI_IO ) != 0) {
-				// already data in phase, read first byte
+				// already data is received, read first byte
 				adpcm_do_dma();
 			} else {
 				cdrom_regs[0x0c] |= 0x04;
@@ -1960,6 +1961,7 @@ void PCE::cdrom_write(uint16_t addr, uint8_t data)
 			// ADPCM set write address
 			adpcm_write_ptr = (cdrom_regs[0x09] << 8) | cdrom_regs[0x08];
 			adpcm_write_buf = data & 1;
+			adpcm_written = 0;
 		}
 		if(data & 0x08) {
 			// ADPCM set read address
@@ -1972,9 +1974,10 @@ void PCE::cdrom_write(uint16_t addr, uint8_t data)
 		}
 		if((data & 0x40) && ((cdrom_regs[0x0D] & 0x40) == 0)) {
 			// ADPCM play
-			msm_start_addr = (adpcm_read_ptr);
+			msm_start_addr = (adpcm_read_ptr) & 0xffff;
 			msm_end_addr = (adpcm_read_ptr + adpcm_length) & 0xffff;
 			msm_half_addr = (adpcm_read_ptr + (adpcm_length / 2)) & 0xffff;
+			adpcm_write_ptr &= 0xffff;
 			msm_nibble = 0;
 			adpcm_play();
 			d_msm->reset_w(0);
@@ -2064,6 +2067,7 @@ uint8_t PCE::cdrom_read(uint16_t addr)
 			bool read6_data_in = false;
 			if(d_scsi_cdrom->get_cur_command() == SCSI_CMD_READ6 &&
 			   d_scsi_host->read_signal(SIG_SCSI_BSY) != 0 &&
+			   d_scsi_host->read_signal(SIG_SCSI_REQ) != 0 &&
 			   d_scsi_host->read_signal(SIG_SCSI_CD ) == 0 &&
 			   d_scsi_host->read_signal(SIG_SCSI_MSG) == 0 &&
 			   d_scsi_host->read_signal(SIG_SCSI_IO ) != 0) {
@@ -2162,20 +2166,18 @@ void PCE::reset_adpcm()
 
 void PCE::write_adpcm_ram(uint8_t data)
 {
-	adpcm_ram[adpcm_write_ptr] = data;
-	adpcm_write_ptr = (adpcm_write_ptr + 1) & 0xffff;
+	adpcm_ram[(adpcm_write_ptr++) & 0xffff] = data;
 }
 
 uint8_t PCE::read_adpcm_ram()
 {
-	uint8_t data = adpcm_ram[adpcm_read_ptr];
-	adpcm_read_ptr = (adpcm_read_ptr + 1) & 0xffff;
-	return data;
+	return adpcm_ram[(adpcm_read_ptr++) & 0xffff];
 }
 
 void PCE::adpcm_do_dma()
 {
 	write_adpcm_ram(read_cdrom_data());
+	adpcm_written++;
 	set_ack();
 	cdrom_regs[0x0c] &= ~0x04;
 }
@@ -2296,7 +2298,11 @@ void PCE::write_signal(int id, uint32_t data, uint32_t mask)
 				d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 1);
 				
 				if(adpcm_dma_enabled) {
-					adpcm_do_dma();
+					if(!msm_idle && adpcm_write_ptr >= msm_start_addr) {
+						// now streaming, wait dma not to overwrite buffer before it is played
+					} else {
+						adpcm_do_dma();
+					}
 				}
 			}
 		} else {
@@ -2335,20 +2341,50 @@ void PCE::write_signal(int id, uint32_t data, uint32_t mask)
 		// the MSM5205. Currently we can only use static clocks for the
 		// MSM5205.
 		if(!msm_idle) {
-			uint8_t msm_data = (msm_nibble) ? (adpcm_ram[msm_start_addr] & 0x0f) : ((adpcm_ram[msm_start_addr] & 0xf0) >> 4);
+			uint8_t msm_data = (msm_nibble) ? (adpcm_ram[msm_start_addr & 0xffff] & 0x0f) : ((adpcm_ram[msm_start_addr & 0xffff] & 0xf0) >> 4);
 			d_msm->data_w(msm_data);
 			msm_nibble ^= 1;
 			
 			if(msm_nibble == 0) {
-				msm_start_addr++;
-				if(msm_start_addr == msm_half_addr) {
-					set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_FULL_PLAY, CLEAR_LINE);
-					set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_HALF_PLAY, ASSERT_LINE);
-				} else if(msm_start_addr > msm_end_addr) {
+				adpcm_written--;
+				if(adpcm_dma_enabled && adpcm_written == 0) {
+					// finish streaming when all samples are played
 					set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_HALF_PLAY, CLEAR_LINE);
 					set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_FULL_PLAY, ASSERT_LINE);
 					adpcm_stop();
 					d_msm->reset_w(1);
+				} else if((msm_start_addr & 0xffff) == msm_half_addr) {
+					// reached to half address
+					set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_FULL_PLAY, CLEAR_LINE);
+					set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_HALF_PLAY, ASSERT_LINE);
+				} else if((msm_start_addr & 0xffff) == msm_end_addr) {
+					// reached to end address
+					if(adpcm_dma_enabled) {
+						// restart streaming
+						set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_HALF_PLAY, CLEAR_LINE);
+						set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_FULL_PLAY, CLEAR_LINE);
+					} else {
+						// stop playing adpcm
+						set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_HALF_PLAY, CLEAR_LINE);
+						set_cdrom_irq_line(PCE_CD_IRQ_SAMPLE_FULL_PLAY, ASSERT_LINE);
+						adpcm_stop();
+						d_msm->reset_w(1);
+					}
+				}
+				msm_start_addr++;
+				
+				if(adpcm_dma_enabled) {
+					if(!msm_idle && adpcm_write_ptr < msm_start_addr) {
+						if(d_scsi_cdrom->get_cur_command() == SCSI_CMD_READ6 &&
+						   d_scsi_host->read_signal(SIG_SCSI_BSY) != 0 &&
+						   d_scsi_host->read_signal(SIG_SCSI_REQ) != 0 &&
+						   d_scsi_host->read_signal(SIG_SCSI_CD ) == 0 &&
+						   d_scsi_host->read_signal(SIG_SCSI_MSG) == 0 &&
+						   d_scsi_host->read_signal(SIG_SCSI_IO ) != 0) {
+							// already data is received, read next byte
+							adpcm_do_dma();
+						}
+					}
 				}
 			}
 		}
@@ -2398,7 +2434,7 @@ void PCE::event_callback(int event_id, int err)
 }
 #endif
 
-#define STATE_VERSION	3
+#define STATE_VERSION	4
 
 void PCE::save_state(FILEIO* state_fio)
 {
@@ -2443,14 +2479,15 @@ void PCE::save_state(FILEIO* state_fio)
 	state_fio->Fwrite(adpcm_ram, sizeof(adpcm_ram), 1);
 	state_fio->FputInt32(adpcm_read_ptr);
 	state_fio->FputInt32(adpcm_write_ptr);
+	state_fio->FputInt32(adpcm_written);
 	state_fio->FputInt32(adpcm_length);
 	state_fio->FputInt32(adpcm_clock_divider);
 	state_fio->FputUint8(adpcm_read_buf);
 	state_fio->FputUint8(adpcm_write_buf);
 	state_fio->FputBool(adpcm_dma_enabled);
-	state_fio->FputUint32(msm_start_addr);
-	state_fio->FputUint32(msm_end_addr);
-	state_fio->FputUint32(msm_half_addr);
+	state_fio->FputInt32(msm_start_addr);
+	state_fio->FputInt32(msm_end_addr);
+	state_fio->FputInt32(msm_half_addr);
 	state_fio->FputUint8(msm_nibble);
 	state_fio->FputUint8(msm_idle);
 	state_fio->FputDouble(cdda_volume);
@@ -2506,14 +2543,15 @@ bool PCE::load_state(FILEIO* state_fio)
 	state_fio->Fread(adpcm_ram, sizeof(adpcm_ram), 1);
 	adpcm_read_ptr = state_fio->FgetInt32();
 	adpcm_write_ptr = state_fio->FgetInt32();
+	adpcm_written = state_fio->FgetInt32();
 	adpcm_length = state_fio->FgetInt32();
 	adpcm_clock_divider = state_fio->FgetInt32();
 	adpcm_read_buf = state_fio->FgetUint8();
 	adpcm_write_buf = state_fio->FgetUint8();
 	adpcm_dma_enabled = state_fio->FgetBool();
-	msm_start_addr = state_fio->FgetUint32();
-	msm_end_addr = state_fio->FgetUint32();
-	msm_half_addr = state_fio->FgetUint32();
+	msm_start_addr = state_fio->FgetInt32();
+	msm_end_addr = state_fio->FgetInt32();
+	msm_half_addr = state_fio->FgetInt32();
 	msm_nibble = state_fio->FgetUint8();
 	msm_idle = state_fio->FgetUint8();
 	cdda_volume = state_fio->FgetDouble();

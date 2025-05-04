@@ -9,10 +9,14 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "common.h"
 #include "config.h"
-#include "fileio.h"
 
 config_t config;
+
+#ifndef CONFIG_NAME
+#define CONFIG_NAME "conf"
+#endif
 
 BOOL MyWritePrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, int Value, LPCTSTR lpFileName)
 {
@@ -77,7 +81,11 @@ void initialize_config()
 #endif
 	
 	// sound
+#if defined(SOUND_RATE_DEFAULT)
+	config.sound_frequency = SOUND_RATE_DEFAULT;
+#else
 	config.sound_frequency = 6;	// 48KHz
+#endif
 	config.sound_latency = 1;	// 100msec
 #if defined(USE_SOUND_DEVICE_TYPE) && defined(SOUND_DEVICE_TYPE_DEFAULT)
 	config.sound_device_type = SOUND_DEVICE_TYPE_DEFAULT;
@@ -208,6 +216,13 @@ void load_config(const _TCHAR* config_path)
 #ifdef USE_SCREEN_ROTATE
 	config.rotate_type = MyGetPrivateProfileInt(_T("Screen"), _T("RotateType"), config.rotate_type, config_path);
 #endif
+#if defined(_USE_QT)
+	config.use_opengl_scanline = MyGetPrivateProfileBool(_T("Screen"), _T("UseOpenGLScanLine"), config.use_opengl_scanline, config_path);
+	config.opengl_scanline_vert = MyGetPrivateProfileBool(_T("Screen"), _T("OpenGLScanLineVert"), config.opengl_scanline_vert, config_path);;
+	config.opengl_scanline_horiz = MyGetPrivateProfileBool(_T("Screen"), _T("OpenGLScanLineHoriz"), config.opengl_scanline_horiz, config_path);;
+	config.use_opengl_filters = MyGetPrivateProfileBool(_T("Screen"), _T("UseOpenGLFilters"), config.use_opengl_filters, config_path);
+	config.opengl_filter_num = MyGetPrivateProfileInt(_T("Screen"), _T("OpenGLFilterNum"), config.opengl_filter_num, config_path);
+#endif
 	
 	// sound
 	config.sound_frequency = MyGetPrivateProfileInt(_T("Sound"), _T("Frequency"), config.sound_frequency, config_path);
@@ -223,7 +238,9 @@ void load_config(const _TCHAR* config_path)
 		config.sound_volume_r[i] = max(-40, min(0, tmp_r));
 	}
 #endif
+#ifdef _WIN32
 	MyGetPrivateProfileString(_T("Sound"), _T("FMGenDll"), _T("mamefm.dll"), config.fmgen_dll_path, _MAX_PATH, config_path);
+#endif
 	
 	// input
 #ifdef _WIN32
@@ -347,6 +364,13 @@ void save_config(const _TCHAR* config_path)
 #endif
 #ifdef USE_SCREEN_ROTATE
 	MyWritePrivateProfileInt(_T("Screen"), _T("RotateType"), config.rotate_type, config_path);
+#endif
+#if defined(_USE_QT)
+	MyWritePrivateProfileBool(_T("Screen"), _T("UseOpenGLScanLine"), config.use_opengl_scanline, config_path);
+	MyWritePrivateProfileBool(_T("Screen"), _T("OpenGLScanLineVert"), config.opengl_scanline_vert, config_path);;
+	MyWritePrivateProfileBool(_T("Screen"), _T("OpenGLScanLineHoriz"), config.opengl_scanline_horiz, config_path);;
+	MyWritePrivateProfileBool(_T("Screen"), _T("UseOpenGLFilters"), config.use_opengl_filters, config_path);
+	MyWritePrivateProfileInt(_T("Screen"), _T("OpenGLFilterNum"), config.opengl_filter_num, config_path);
 #endif
 	
 	// sound

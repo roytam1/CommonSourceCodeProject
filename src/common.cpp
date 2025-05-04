@@ -7,15 +7,39 @@
 	[ common ]
 */
 
-#ifdef _WIN32
-#include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
+#if defined(_USE_QT)
+	#include <string.h>
+	#include <fcntl.h>
+	#if !defined(__WIN32) && !defined(__WIN64)
+		#include <unistd.h>
+	#else
+		#include <io.h>
+		#include <direct.h>
+	#endif
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include "agar_logger.h"
+	#include <string>
+	#include <algorithm>
+	#include <cctype>
+	#include <QDir>
+#elif defined(_WIN32)
+	#include <shlwapi.h>
+	#pragma comment(lib, "shlwapi.lib")
 #else
-#include <time.h>
+	#include <time.h>
 #endif
 #include <math.h>
 #include "common.h"
 #include "fileio.h"
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+	extern DWORD GetLongPathName(LPCTSTR lpszShortPath, LPTSTR lpszLongPath, DWORD cchBuffer);
+#endif
+#if defined(_USE_QT)
+	extern std::string cpp_homedir;
+	extern std::string my_procname;
+#endif
 
 uint32_t EndianToLittle_DWORD(uint32_t x)
 {
@@ -217,12 +241,68 @@ BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR l
 	return result;
 }
 
+static std::string MyGetPrivateProfileStr(const _TCHAR *lpAppName, const _TCHAR *lpKeyName, _TCHAR *lpFileName)
+{
+	std::string key;
+	char ibuf[4096 + 102];
+	int64_t i;
+	int l_len;
+	int c = '\0';
+	std::string::size_type  pos;
+	std::string key_str;
+	std::string got_str;
+	FILEIO *pf = new FILEIO;
+	
+	key = lpAppName;
+	key = key + ".";
+	key = key + lpKeyName;
+	got_str = "";
+	if(pf->Fopen(lpFileName, FILEIO_READ_ASCII) != true) {
+		delete pf;
+		return got_str;
+	}
+	AGAR_DebugLog(AGAR_LOG_DEBUG, "Try App: %s Key: %s", lpAppName, lpKeyName);
+	pf->Fseek(0, FILEIO_SEEK_SET);
+	do {
+		key_str = key;
+		ibuf[0] = '\0';
+		i = 0;
+		l_len = 0;
+		while(1) {
+			if(l_len > (4096 + 100)) { // Too long, read dummy.
+				c = (char)pf->Fgetc();
+				if((c != EOF) && (c != '\n') && (c != '\0')) continue;
+				break;
+			}
+			c = (char)pf->Fgetc();
+			if((c == EOF) || (c == '\n') || (c == '\0')) break;
+			ibuf[i] = (char)c;
+			i++;
+			l_len++;
+		}
+		l_len = 0;
+		ibuf[i] = '\0';
+		got_str = ibuf;
+		key_str = key_str + "=";
+		pos = got_str.find(key_str);
+		if(pos != std::string::npos) break;
+		if(c == EOF) return "";
+	} while(c != EOF);
+	pf->Fclose();
+	delete pf;
+	
+	got_str.erase(0, pos + key_str.length());
+	AGAR_DebugLog(AGAR_LOG_DEBUG, "Got: %s Length: %d", got_str.c_str(), got_str.length());
+	return got_str;
+}
+
 DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName)
 {
+	_TCHAR *lpp = (_TCHAR *)lpReturnedString;
 	if(lpDefault != NULL) {
-		my_strcpy_s(lpReturnedString, nSize, lpDefault);
+		my_strcpy_s(lpp, nSize, lpDefault);
 	} else {
-		lpReturnedString[0] = '\0';
+		lpp[0] = '\0';
 	}
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(lpFileName, FILEIO_READ_ASCII)) {
@@ -242,7 +322,7 @@ DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lp
 			} else if(in_section && (equal = strstr(line, "=")) != NULL) {
 				*equal = '\0';
 				if(strcmp(line, lpKeyName) == 0) {
-					my_strcpy_s(lpReturnedString, nSize, equal + 1);
+					my_strcpy_s(lpp, nSize, equal + 1);
 					break;
 				}
 			}
@@ -250,17 +330,28 @@ DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lp
 		fio->Fclose();
 	}
 	delete fio;
-	return strlen(lpReturnedString);
+	return strlen(lpp);
 }
 
 UINT MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, LPCTSTR lpFileName)
 {
-	char default_value[32], ret_value[32];
-	my_sprintf_s(default_value, 32, "%d", nDefault);
-	if(MyGetPrivateProfileString(lpAppName, lpKeyName, default_value, ret_value, 32, lpFileName) != 0) {
-		return atoi(ret_value);
+	int i;
+	char sstr[128];
+	char sval[128];
+	std::string s;
+	memset(sstr, 0x00, sizeof(sstr));
+	memset(sval, 0x00, sizeof(sval));
+	snprintf(sval, 128, "%d", nDefault); 
+	MyGetPrivateProfileString(lpAppName,lpKeyName, sval, sstr, 128, lpFileName);
+	s = sstr;
+	
+	if(s.empty()) {
+		i = nDefault;
+	} else {
+		i = strtol(s.c_str(), NULL, 10);
 	}
-	return nDefault;
+	//AGAR_DebugLog(AGAR_LOG_DEBUG, "Got Int: %d\n", i);
+	return i;
 }
 #endif
 
@@ -344,6 +435,12 @@ uint8_t A_OF_COLOR(scrntype_t c)
 }
 #endif
 
+#ifndef _WIN32
+struct to_upper {  // Refer from documentation of libstdc++, GCC5.
+	char operator() (char c) const { return std::toupper(c); }
+};
+#endif
+
 const _TCHAR *get_application_path()
 {
 	static _TCHAR app_path[_MAX_PATH];
@@ -358,7 +455,30 @@ const _TCHAR *get_application_path()
 			my_tcscpy_s(app_path, _MAX_PATH, _T(".\\"));
 		}
 #else
-		// write code for your environment
+#if defined(Q_OS_WIN)
+		std::string delim = "\\";
+#else
+		std::string delim = "/";
+#endif
+		std::string cpath = cpp_homedir + my_procname + delim;
+		strncpy(app_path, cpath.c_str(), _MAX_PATH);
+		{
+			struct stat st;
+#if !defined(__WIN32) && !defined(__WIN64)
+			if(fstatat(AT_FDCWD, app_path, &st, 0) != 0) {
+				mkdirat(AT_FDCWD, app_path, 0700); // Not found
+			}
+#elif defined(_USE_QT)
+			if(stat(app_path, &st) != 0) {
+				QDir dir = QDir::current();
+				dir.mkdir(QString::fromUtf8(app_path));
+			}
+#else
+			if(stat(app_path, &st) != 0) {
+				_mkdir(app_path); // Not found
+			}
+#endif
+		}
 #endif
 		initialized = true;
 	}
@@ -406,10 +526,23 @@ void create_date_file_path(_TCHAR *file_path, int length, const _TCHAR *extensio
 
 bool check_file_extension(const _TCHAR *file_path, const _TCHAR *ext)
 {
+#if defined(_USE_QT)
+	std::string s_fpath = file_path;
+	std::string s_ext = ext;
+	bool f = false;
+	int pos;
+	std::transform(s_fpath.begin(), s_fpath.end(), s_fpath.begin(), to_upper());
+	std::transform(s_ext.begin(), s_ext.end(), s_ext.begin(), to_upper());
+	if(s_fpath.length() < s_ext.length()) return false;
+	pos = s_fpath.rfind(s_ext.c_str(), s_fpath.length());
+	if((pos != std::string::npos) && (pos >= (s_fpath.length() - s_ext.length()))) return true; 
+	return false;
+#else
 	int nam_len = _tcslen(file_path);
 	int ext_len = _tcslen(ext);
 	
 	return (nam_len >= ext_len && _tcsncicmp(&file_path[nam_len - ext_len], ext, ext_len) == 0);
+#endif
 }
 
 const _TCHAR *get_file_path_without_extensiton(const _TCHAR *file_path)

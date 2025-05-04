@@ -1005,7 +1005,7 @@ void M6502::reset()
 int M6502::run(int clock)
 {
 	if(clock == -1) {
-		if(BUSREQ) {
+		if (busreq) {
 			// don't run cpu!
 			return 1;
 		} else {

@@ -189,9 +189,11 @@ public:
 	}
 	void set_host_cpus(int v);
 	int get_host_cpus();
+#ifdef USE_MOUSE
 	void set_mouse_pointer(int x, int y);
 	void set_mouse_button(int button);
 	int get_mouse_button();
+#endif
 #endif
 	
 	// drive machine
@@ -277,6 +279,10 @@ public:
 	bool is_video_recording();
 	
 	// sound
+	int get_sound_rate()
+	{
+		return sound_rate;
+	}
 	void mute_sound();
 	void start_record_sound();
 	void stop_record_sound();
