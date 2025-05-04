@@ -134,7 +134,7 @@ void* debugger_thread(void *lpx)
 	
 	debugger->now_going = false;
 	debugger->now_debugging = true;
-	while(!debugger->now_suspended) {
+	while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
 		p->osd->sleep(10);
 	}
 	
@@ -751,7 +751,7 @@ void* debugger_thread(void *lpx)
 #endif
 					// break cpu
 					debugger->now_going = false;
-					while(!p->request_terminate && !debugger->now_suspended) {
+					while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
 						p->osd->sleep(10);
 					}
 					dasm_addr = cpu->get_next_pc();
@@ -811,7 +811,7 @@ void* debugger_thread(void *lpx)
 					for(int i = 0; i < steps; i++) {
 						debugger->now_going = false;
 						debugger->now_suspended = false;
-						while(!p->request_terminate && !debugger->now_suspended) {
+						while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
 							p->osd->sleep(10);
 						}
 						dasm_addr = cpu->get_next_pc();
@@ -974,7 +974,7 @@ void* debugger_thread(void *lpx)
 	
 	// stop debugger
 	try {
-		debugger->now_debugging = debugger->now_going = debugger->now_suspended = false;
+		debugger->now_debugging = debugger->now_going = debugger->now_suspended = debugger->now_waiting = false;
 	} catch(...) {
 	}
 	

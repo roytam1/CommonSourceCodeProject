@@ -73,6 +73,7 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NO_CAPS
+#define USE_AUTO_KEY_NUMPAD
 #define USE_SOUND_VOLUME	4
 #define USE_DEBUGGER
 #define USE_STATE

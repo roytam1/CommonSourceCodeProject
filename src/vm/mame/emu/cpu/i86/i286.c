@@ -278,9 +278,11 @@ static CPU_EXECUTE( i80286 )
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
 				cpustate->emu->mute_sound();
+				cpustate->debugger->now_waiting = true;
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
 					cpustate->emu->sleep(10);
 				}
+				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
 				cpustate->program = cpustate->io = cpustate->debugger;
@@ -300,6 +302,11 @@ static CPU_EXECUTE( i80286 )
 			{
 				i80286_trap2(cpustate,e);
 			}
+#ifdef SINGLE_MODE_DMA
+			if (cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
 			if(now_debugging) {
 				if(!cpustate->debugger->now_going) {
 					cpustate->debugger->now_suspended = true;
@@ -322,12 +329,12 @@ static CPU_EXECUTE( i80286 )
 			{
 				i80286_trap2(cpustate,e);
 			}
-#ifdef USE_DEBUGGER
-		}
-#endif
 #ifdef SINGLE_MODE_DMA
-		if (cpustate->dma != NULL) {
-			cpustate->dma->do_dma();
+			if (cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
+#ifdef USE_DEBUGGER
 		}
 #endif
 		/* adjust for any interrupts that came in */

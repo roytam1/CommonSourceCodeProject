@@ -73,10 +73,11 @@ void UPD7220::initialize()
 	v1 = 16;
 	v2 = vtotal - v1;
 #ifdef CHARS_PER_LINE
-	h1 = (CHARS_PER_LINE > 80) ? 80 : 40;	// CHARS_PER_LINE > 40 ???
+//	h1 = (CHARS_PER_LINE > 80) ? 80 : 40;	// CHARS_PER_LINE > 40 ???
+	h1 = (CHARS_PER_LINE > width) ? width : (width >> 2);
 	h2 = CHARS_PER_LINE - h1;
 #else
-	h1 = 80;
+	h1 = width;
 	h2 = 29;
 #endif
 	
@@ -862,16 +863,24 @@ void UPD7220::cmd_write_sub(uint32_t addr, uint8_t data)
 
 void UPD7220::write_vram(uint32_t addr, uint8_t data)
 {
-	if(vram != NULL && addr < vram_size) {
-		vram[addr] = data;
+	if(addr < vram_size) {
+		if(vram != NULL) {
+			vram[addr] = data;
+		} else if(d_vram_bus != NULL) {
+			d_vram_bus->write_dma_io8(addr, data);
+		}
 	}
 }
 
 uint8_t UPD7220::read_vram(uint32_t addr)
 {
-	if(vram != NULL && addr < vram_size) {
+	if(addr < vram_size) {
 		uint8_t mask = (addr & 1) ? (vram_data_mask >> 8) : (vram_data_mask & 0xff);
-		return (vram[addr] & mask) | ~mask;
+		if(vram != NULL) {
+			return (vram[addr] & mask) | ~mask;
+		} else if(d_vram_bus != NULL) {
+			return (d_vram_bus->read_dma_io8(addr) & mask) | ~mask;
+		}
 	}
 	return 0xff;
 }
@@ -1167,7 +1176,7 @@ void UPD7220::draw_pset(int x, int y)
 {
 	uint16_t dot = pattern & 1;
 	pattern = (pattern >> 1) | (dot << 15);
-	uint32_t addr = y * 80 + (x >> 3);
+	uint32_t addr = y * width + (x >> 3);
 #ifdef UPD7220_MSB_FIRST
 	uint8_t bit = 0x80 >> (x & 7);
 #else

@@ -182,9 +182,11 @@ static CPU_EXECUTE( h6280 )
 			cpustate->debugger->check_break_points(cpustate->pc.w.l);
 			if(cpustate->debugger->now_suspended) {
 				cpustate->emu->mute_sound();
+				cpustate->debugger->now_waiting = true;
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
 					cpustate->emu->sleep(10);
 				}
+				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
 				cpustate->program = cpustate->io = cpustate->debugger;
@@ -198,6 +200,30 @@ static CPU_EXECUTE( h6280 )
 			in=RDOP();
 			PCW++;
 			insnh6280[in](cpustate);
+			
+			if ( cpustate->irq_pending ) {
+				if ( cpustate->irq_pending == 1 ) {
+					if ( !(P & _fI) ) {
+						cpustate->irq_pending--;
+						CHECK_AND_TAKE_IRQ_LINES;
+					}
+				} else {
+					cpustate->irq_pending--;
+				}
+			}
+			
+			/* Check internal timer */
+			if(cpustate->timer_status)
+			{
+				if(cpustate->timer_value<=0)
+				{
+					if ( ! cpustate->irq_pending )
+						cpustate->irq_pending = 1;
+					while( cpustate->timer_value <= 0 )
+						cpustate->timer_value += cpustate->timer_load;
+					set_irq_line(cpustate, 2,ASSERT_LINE);
+				}
+			}
 			
 			if(now_debugging) {
 				if(!cpustate->debugger->now_going) {
@@ -214,33 +240,33 @@ static CPU_EXECUTE( h6280 )
 			in=RDOP();
 			PCW++;
 			insnh6280[in](cpustate);
+			
+			if ( cpustate->irq_pending ) {
+				if ( cpustate->irq_pending == 1 ) {
+					if ( !(P & _fI) ) {
+						cpustate->irq_pending--;
+						CHECK_AND_TAKE_IRQ_LINES;
+					}
+				} else {
+					cpustate->irq_pending--;
+				}
+			}
+			
+			/* Check internal timer */
+			if(cpustate->timer_status)
+			{
+				if(cpustate->timer_value<=0)
+				{
+					if ( ! cpustate->irq_pending )
+						cpustate->irq_pending = 1;
+					while( cpustate->timer_value <= 0 )
+						cpustate->timer_value += cpustate->timer_load;
+					set_irq_line(cpustate, 2,ASSERT_LINE);
+				}
+			}
 #ifdef USE_DEBUGGER
 		}
 #endif
-
-		if ( cpustate->irq_pending ) {
-			if ( cpustate->irq_pending == 1 ) {
-				if ( !(P & _fI) ) {
-					cpustate->irq_pending--;
-					CHECK_AND_TAKE_IRQ_LINES;
-				}
-			} else {
-				cpustate->irq_pending--;
-			}
-		}
-
-		/* Check internal timer */
-		if(cpustate->timer_status)
-		{
-			if(cpustate->timer_value<=0)
-			{
-				if ( ! cpustate->irq_pending )
-					cpustate->irq_pending = 1;
-				while( cpustate->timer_value <= 0 )
-					cpustate->timer_value += cpustate->timer_load;
-				set_irq_line(cpustate, 2,ASSERT_LINE);
-			}
-		}
 //	} while (cpustate->ICount > 0);
 	return -cpustate->ICount;
 }

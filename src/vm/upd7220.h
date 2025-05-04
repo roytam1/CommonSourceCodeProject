@@ -33,6 +33,7 @@ private:
 	outputs_t outputs_vsync;
 	
 	// vram
+	DEVICE* d_vram_bus;
 	uint8_t* vram;
 	uint32_t vram_size;
 	uint16_t vram_data_mask;
@@ -62,6 +63,7 @@ private:
 	int blink_rate;
 	bool low_high;
 	bool cmd_write_done;
+	int width;
 	
 	int cpu_clocks;
 #ifdef UPD7220_HORIZ_FREQ
@@ -126,9 +128,10 @@ public:
 	{
 		initialize_output_signals(&outputs_drq);
 		initialize_output_signals(&outputs_vsync);
+		d_vram_bus = NULL;
 		vram = NULL;
-		vram_size = 0;
 		vram_data_mask = 0xffff;
+		width = 80;
 		set_device_name(_T("uPD7220 GDC"));
 	}
 	~UPD7220() {}
@@ -165,9 +168,22 @@ public:
 	}
 	void set_vram_ptr(uint8_t* ptr, uint32_t size, uint16_t mask)
 	{
-		vram = ptr;
-		vram_size = size;
+		set_vram_ptr(ptr, size);
 		vram_data_mask = mask;
+	}
+	void set_vram_bus_ptr(DEVICE* device, uint32_t size)
+	{
+		d_vram_bus = device;
+		vram_size = size;
+	}
+	void set_vram_bus_ptr(DEVICE* device, uint32_t size, uint16_t mask)
+	{
+		set_vram_bus_ptr(device, size);
+		vram_data_mask = mask;
+	}
+	void set_screen_width(int value)
+	{
+		width = value;
 	}
 #ifdef UPD7220_HORIZ_FREQ
 	void set_horiz_freq(int freq)

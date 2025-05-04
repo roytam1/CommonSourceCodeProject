@@ -53,7 +53,7 @@ private:
 	pair_t regs[4];
 	uint16_t SP, PC, prevPC;
 	uint16_t IM, RIM_IEN;
-	bool HALT, BUSREQ, SID, afterEI;
+	bool afterHALT, BUSREQ, SID, afterEI;
 	
 	/* ---------------------------------------------------------------------------
 	virtual machine interfaces
@@ -193,6 +193,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 	void run_one_opecode();
+	void check_interrupt();
 	void OP(uint8_t code);
 	
 public:

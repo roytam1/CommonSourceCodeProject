@@ -58,7 +58,7 @@ private:
 	uint8_t I, R, R2;
 	uint32_t ea;
 	
-	bool busreq, halt;
+	bool busreq, after_halt;
 	uint8_t im, iff1, iff2, icr;
 	bool after_ei, after_ldair;
 	uint32_t intr_req_bit, intr_pend_bit;
@@ -95,6 +95,7 @@ private:
 	void OP_ED(uint8_t code);
 	void OP(uint8_t code);
 	void run_one_opecode();
+	void check_interrupt();
 	
 	/* ---------------------------------------------------------------------------
 	debug

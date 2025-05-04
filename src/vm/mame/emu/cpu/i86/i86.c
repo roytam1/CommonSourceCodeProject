@@ -282,9 +282,11 @@ static CPU_EXECUTE( i8086 )
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
 				cpustate->emu->mute_sound();
+				cpustate->debugger->now_waiting = true;
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
 					cpustate->emu->sleep(10);
 				}
+				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
 				cpustate->program = cpustate->io = cpustate->debugger;
@@ -294,6 +296,11 @@ static CPU_EXECUTE( i8086 )
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
 			TABLE86;
+#ifdef SINGLE_MODE_DMA
+			if(cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
 			if(now_debugging) {
 				if(!cpustate->debugger->now_going) {
 					cpustate->debugger->now_suspended = true;
@@ -306,12 +313,12 @@ static CPU_EXECUTE( i8086 )
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
 			TABLE86;
-#ifdef USE_DEBUGGER
-		}
-#endif
 #ifdef SINGLE_MODE_DMA
-		if(cpustate->dma != NULL) {
-			cpustate->dma->do_dma();
+			if(cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
+#ifdef USE_DEBUGGER
 		}
 #endif
 		/* adjust for any interrupts that came in */
@@ -399,9 +406,11 @@ static CPU_EXECUTE( i80186 )
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
 				cpustate->emu->mute_sound();
+				cpustate->debugger->now_waiting = true;
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
 					cpustate->emu->sleep(10);
 				}
+				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
 				cpustate->program = cpustate->io = cpustate->debugger;
@@ -411,6 +420,11 @@ static CPU_EXECUTE( i80186 )
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
 			TABLE186;
+#ifdef SINGLE_MODE_DMA
+			if (cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
 			if(now_debugging) {
 				if(!cpustate->debugger->now_going) {
 					cpustate->debugger->now_suspended = true;
@@ -423,12 +437,12 @@ static CPU_EXECUTE( i80186 )
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
 			TABLE186;
-#ifdef USE_DEBUGGER
-		}
-#endif
 #ifdef SINGLE_MODE_DMA
-		if (cpustate->dma != NULL) {
-			cpustate->dma->do_dma();
+			if (cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
+#ifdef USE_DEBUGGER
 		}
 #endif
 		/* adjust for any interrupts that came in */
@@ -511,9 +525,11 @@ static CPU_EXECUTE( v30 )
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
 				cpustate->emu->mute_sound();
+				cpustate->debugger->now_waiting = true;
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
 					cpustate->emu->sleep(10);
 				}
+				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
 				cpustate->program = cpustate->io = cpustate->debugger;
@@ -523,6 +539,11 @@ static CPU_EXECUTE( v30 )
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
 			TABLEV30;
+#ifdef SINGLE_MODE_DMA
+			if (cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
 			if(now_debugging) {
 				if(!cpustate->debugger->now_going) {
 					cpustate->debugger->now_suspended = true;
@@ -535,12 +556,12 @@ static CPU_EXECUTE( v30 )
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
 			TABLEV30;
-#ifdef USE_DEBUGGER
-		}
-#endif
 #ifdef SINGLE_MODE_DMA
-		if (cpustate->dma != NULL) {
-			cpustate->dma->do_dma();
+			if (cpustate->dma != NULL) {
+				cpustate->dma->do_dma();
+			}
+#endif
+#ifdef USE_DEBUGGER
 		}
 #endif
 		/* adjust for any interrupts that came in */
