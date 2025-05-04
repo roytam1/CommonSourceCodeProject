@@ -1,3 +1,8 @@
+9/9/2015
+
+[COMMON] add batch file to merge manifest file for Windows Vista or later
+
+
 9/8/2015
 
 [VM/DISK] fix for single density disk in double density drive
