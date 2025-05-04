@@ -217,13 +217,20 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 				if((fdc[drvreg].index + 1) >= disk[drvreg]->sector_size.sd) {
 					if(cmdtype == FDC_CMD_WR_SEC) {
 						// single sector
+#ifdef _FDC_DEBUG_LOG
+						emu->out_debug_log(_T("FDC\tEND OF SECTOR\n"));
+#endif
 						status &= ~FDC_ST_BUSY;
 						cmdtype = 0;
 						set_irq(true);
 					} else {
 						// multisector
-						register_my_event(EVENT_MULTI1, 30);
-						register_my_event(EVENT_MULTI2, 60);
+#ifdef _FDC_DEBUG_LOG
+						emu->out_debug_log(_T("FDC\tEND OF SECTOR (SEARCH NEXT)\n"));
+#endif
+						// 2HD: 360rpm, 10410bytes/track -> 0.06246bytes/us
+						register_my_event(EVENT_MULTI1, 30); // 0.06246bytes/us * 30us = 1.8738bytes < GAP3
+						register_my_event(EVENT_MULTI2, 60); // 0.06246bytes/us * 60us = 3.7476bytes < GAP3
 					}
 					sector_changed = false;
 				} else if(status & FDC_ST_DRQ) {
@@ -1110,12 +1117,12 @@ uint8 MB8877::search_sector()
 		
 		// sector found
 		if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
-			fdc[drvreg].next_trans_position = disk[drvreg]->id_position[i] + 4 + 2;
-			fdc[drvreg].bytes_before_2nd_drq = disk[drvreg]->data_position[i] - fdc[drvreg].next_trans_position;
+			fdc[drvreg].next_trans_position = disk[drvreg]->id_position[index] + 4 + 2;
+			fdc[drvreg].bytes_before_2nd_drq = disk[drvreg]->data_position[index] - fdc[drvreg].next_trans_position;
 		} else {
-			fdc[drvreg].next_trans_position = disk[drvreg]->data_position[i] + 1;
+			fdc[drvreg].next_trans_position = disk[drvreg]->data_position[index] + 1;
 		}
-		fdc[drvreg].next_am1_position = disk[drvreg]->am1_position[i];
+		fdc[drvreg].next_am1_position = disk[drvreg]->am1_position[index];
 		fdc[drvreg].index = 0;
 #ifdef _FDC_DEBUG_LOG
 		emu->out_debug_log(_T("FDC\tSECTOR FOUND SIZE=$%04x ID=%02x %02x %02x %02x CRC=%02x %02x CRC_ERROR=%d\n"),
@@ -1197,12 +1204,6 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 //		return 100;
 //	} else
 #endif
-	if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
-		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
-		// so use the constant period to search the target sector
-		return 50000;
-	}
-	
 	// get time from current position
 	double time = get_usec_to_next_trans_pos(first_sector && ((cmdreg & 4) != 0));
 	if(first_sector && time < 60000 - passed_usec(seekend_clock)) {
@@ -1214,6 +1215,31 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 double MB8877::get_usec_to_next_trans_pos(bool delay)
 {
 	int position = get_cur_position();
+	
+	if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
+		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
+		// so use the period to search the next sector from the current position
+		int sector_num = disk[drvreg]->sector_num.sd;
+		int bytes = disk[drvreg]->gap3_size; // temporary
+		
+		if(position > disk[drvreg]->am1_position[sector_num - 1]) {
+			position -= disk[drvreg]->get_track_size();
+		}
+		for(int i = 0; i < sector_num; i++) {
+			if(position < disk[drvreg]->am1_position[i]) {
+				if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
+					bytes = (disk[drvreg]->id_position[i] + 4 + 2) - position;
+				} else {
+					bytes = (disk[drvreg]->data_position[i] + 1) - position;
+				}
+				if(bytes < 0) {
+					bytes += disk[drvreg]->get_track_size(); // to make sure
+				}
+				break;
+			}
+		}
+		return disk[drvreg]->get_usec_per_bytes(bytes);
+	}
 	if(delay) {
 		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
 	}

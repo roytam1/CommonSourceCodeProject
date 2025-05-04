@@ -151,6 +151,7 @@ public:
 	int am1_position[256];
 	int id_position[256];
 	int data_position[256];
+	int gap3_size;
 	
 	// sector
 	uint8* sector;

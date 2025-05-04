@@ -1,3 +1,11 @@
+2/11/2015
+
+[VM/DISK] fix to allow fdc class to get gap3 size
+[VM/MB8877] improve timing to start read/write sector
+[VM/T3444A] improve timing to start read/write sector
+[VM/T3444A] fix to wait 100usec for tnd signal after sector is finshed
+
+
 2/10/2015
 
 [COMMON] improve routine to apply volume to sound samples

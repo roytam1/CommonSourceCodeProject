@@ -117,6 +117,7 @@ void DISK::open(const _TCHAR* file_path, int bank)
 	file_bank = 0;
 	write_protected = false;
 	media_type = MEDIA_TYPE_UNK;
+	is_special_disk = 0;
 	is_solid_image = is_fdi_image = is_1dd_image = false;
 	trim_required = false;
 	track_mfm = drive_mfm;
@@ -256,15 +257,15 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		if(fio->IsOpened()) {
 			fio->Fclose();
 		}
-		if(inserted) {
-			if(buffer[0x1a] != 0) {
-				buffer[0x1a] = 0x10;
-				write_protected = true;
-			}
-			crc32 = getcrc32(buffer, file_size.d);
-		}
+	}
+	delete fio;
+	
+	// check loaded image
+	if(inserted) {
+		// check media type
 		if(media_type == MEDIA_TYPE_UNK) {
 			if((media_type = buffer[0x1b]) == MEDIA_TYPE_2HD) {
+				// check 1.2MB or 1.44MB
 				for(int trkside = 0; trkside < 164; trkside++) {
 					pair offset;
 					offset.read_4bytes_le_from(buffer + 0x20 + trkside * 4);
@@ -285,7 +286,17 @@ void DISK::open(const _TCHAR* file_path, int bank)
 				}
 			}
 		}
-		is_special_disk = 0;
+		
+		// fix write protect flag
+		if(buffer[0x1a] != 0) {
+			buffer[0x1a] = 0x10;
+			write_protected = true;
+		}
+		
+		// get crc32 for midification check
+		crc32 = getcrc32(buffer, file_size.d);
+		
+		// check special disk image
 #if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 		// FIXME: ugly patch for FM-7 Gambler Jiko Chuushin Ha, DEATH FORCE and Psy-O-Blade
 		if(media_type == MEDIA_TYPE_2D) {
@@ -377,7 +388,6 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		}
 #endif
 	}
-	delete fio;
 }
 
 void DISK::close()
@@ -594,7 +604,9 @@ bool DISK::get_track(int trk, int side)
 	int gap0_size = track_mfm ? 80 : 40;
 	int gap1_size = track_mfm ? 50 : 26;
 	int gap2_size = track_mfm ? 22 : 11;
-	int gap3_size = 0, gap4_size;
+//	int gap3_size = 0, gap4_size;
+	gap3_size = 0;
+	int gap4_size;
 	
 	if(media_type == MEDIA_TYPE_144 || media_type == MEDIA_TYPE_2HD) {
 		if(track_mfm) {
@@ -1019,7 +1031,7 @@ int DISK::get_track_size()
 	if(inserted) {
 #if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 		if(is_special_disk == SPECIAL_DISK_FM7_DEATHFORCE) {
-			return media_type == MEDIA_TYPE_144 ? 12500 : media_type == MEDIA_TYPE_2HD ? 10410 : drive_mfm ? 6300 : 3100;
+			return 6300;
 		}
 #endif
 		return media_type == MEDIA_TYPE_144 ? 12500 : media_type == MEDIA_TYPE_2HD ? 10410 : track_mfm ? 6250 : 3100;
@@ -1928,7 +1940,7 @@ bool DISK::solid_to_d88(FILEIO *fio, int type, int ncyl, int nside, int nsec, in
 	return true;
 }
 
-#define STATE_VERSION	10
+#define STATE_VERSION	11
 
 void DISK::save_state(FILEIO* state_fio)
 {
@@ -1965,6 +1977,7 @@ void DISK::save_state(FILEIO* state_fio)
 	state_fio->Fwrite(am1_position, sizeof(am1_position), 1);
 	state_fio->Fwrite(id_position, sizeof(id_position), 1);
 	state_fio->Fwrite(data_position, sizeof(data_position), 1);
+	state_fio->FputInt32(gap3_size);
 	state_fio->FputInt32(sector ? (int)(sector - buffer) : -1);
 	state_fio->FputInt32(sector_size.sd);
 	state_fio->Fwrite(id, sizeof(id), 1);
@@ -2013,6 +2026,7 @@ bool DISK::load_state(FILEIO* state_fio)
 	state_fio->Fread(am1_position, sizeof(am1_position), 1);
 	state_fio->Fread(id_position, sizeof(id_position), 1);
 	state_fio->Fread(data_position, sizeof(data_position), 1);
+	gap3_size = state_fio->FgetInt32();
 	int offset = state_fio->FgetInt32();
 	sector = (offset != -1) ? buffer + offset : NULL;
 	sector_size.sd = state_fio->FgetInt32();
