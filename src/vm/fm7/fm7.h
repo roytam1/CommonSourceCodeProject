@@ -11,12 +11,10 @@
 #define _FM7_H_
 
 #define USE_TAPE
-//#define USE_TAPE_PTR
 #define USE_TAPE_BUTTON
 #define USE_SCANLINE
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
-#define NOTIFY_KEY_DOWN
 #define USE_SPECIAL_RESET
 //#define SUPPORT_DUMMY_DEVICE_LED 3
 
@@ -41,7 +39,9 @@
 //#define USE_DISK_WRITE_PROTECT
 #define USE_STATE
 #define USE_DEBUGGER
+//#define USE_DIG_RESOLUTION 1
 //#define _DEBUG_LOG
+
 //#define _FDC_DEBUG_LOG
 
 
@@ -92,7 +92,7 @@
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM77 AV20"
+#define DEVICE_NAME		"FUJITSU FM77AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -102,7 +102,7 @@
 #define CAPABLE_KANJI_CLASS2
 
 #elif defined(_FM77AV20EX)
-#define DEVICE_NAME		"FUJITSU FM77 AV20EX"
+#define DEVICE_NAME		"FUJITSU FM77AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -113,7 +113,7 @@
 #define CAPABLE_KANJI_CLASS2
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM77 AV40"
+#define DEVICE_NAME		"FUJITSU FM77AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
@@ -428,12 +428,11 @@ public:
 	void rec_tape(const _TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
+	bool tape_playing();
+	bool tape_recording();
+	int tape_position();
 	bool now_skip();
-#if defined(USE_TAPE_PTR)
-	int get_tape_ptr(void);
-#endif
 	void push_play();
-//	bool get_tape_play();
 	void push_stop();
 	void push_fast_forward();
 	void push_fast_rewind();
@@ -443,6 +442,9 @@ public:
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 
+#if defined(USE_DIG_RESOLUTION)
+	void get_screen_resolution(int *w, int *h);
+#endif	
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------

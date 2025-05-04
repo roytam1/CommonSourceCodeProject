@@ -145,6 +145,27 @@ public:
 	{
 		return (play || rec);
 	}
+	bool tape_playing()
+	{
+		return (remote && play);
+	}
+	bool tape_recording()
+	{
+		return (remote && rec);
+	}
+	int tape_position()
+	{
+		if(play && buffer_length > 0) {
+			if(buffer_ptr >= buffer_length) {
+				return 100;
+			} else if(buffer_ptr <= 0) {
+				return 0;
+			} else {
+				return (int)(((double)buffer_ptr / (double)buffer_length) * 100.0);
+			}
+		}
+		return 0;
+	}
 	void set_remote(bool value);
 	void set_ff_rew(int value);
 	bool do_apss(int value);

@@ -303,6 +303,21 @@ bool VM::tape_inserted()
 	return drec->tape_inserted();
 }
 
+bool VM::tape_playing()
+{
+	return drec->tape_playing();
+}
+
+bool VM::tape_recording()
+{
+	return drec->tape_recording();
+}
+
+int VM::tape_position()
+{
+	return drec->tape_position();
+}
+
 #if defined(_PX7)
 void VM::open_laser_disc(const _TCHAR* file_path)
 {

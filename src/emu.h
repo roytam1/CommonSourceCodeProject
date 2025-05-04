@@ -570,6 +570,10 @@ public:
 	void rec_tape(const _TCHAR* file_path);
 	void close_tape();
 	bool tape_inserted();
+#ifndef TAPE_BINARY_ONLY
+	bool tape_playing();
+	bool tape_recording();
+	int tape_position();
 #endif
 #ifdef USE_TAPE_BUTTON
 	void push_play();
@@ -578,6 +582,7 @@ public:
 	void push_fast_rewind();
 	void push_apss_forward();
 	void push_apss_rewind();
+#endif
 #endif
 #ifdef USE_LASER_DISC
 	void open_laser_disc(const _TCHAR* file_path);

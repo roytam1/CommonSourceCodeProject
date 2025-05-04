@@ -520,6 +520,33 @@ bool VM::tape_inserted()
 	}
 }
 
+bool VM::tape_playing()
+{
+	if(support_sub_cpu) {
+		return drec->tape_playing();
+	} else {
+		return false;
+	}
+}
+
+bool VM::tape_recording()
+{
+	if(support_sub_cpu) {
+		return drec->tape_recording();
+	} else {
+		return false;
+	}
+}
+
+int VM::tape_position()
+{
+	if(support_sub_cpu) {
+		return drec->tape_position();
+	} else {
+		return 0;
+	}
+}
+
 bool VM::now_skip()
 {
 	return event->now_skip();

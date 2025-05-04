@@ -111,23 +111,11 @@ void DATAREC::event_callback(int event_id, int err)
 	if(event_id == EVENT_SIGNAL) {
 		if(play) {
 			if(ff_rew > 0) {
-				if(buffer_ptr < buffer_length) {
-					emu->out_message(_T("CMT: Fast Forward (%d %%)"), 100 * buffer_ptr / buffer_length);
-				} else {
-					emu->out_message(_T("CMT: Fast Forward"));
-				}
+				emu->out_message(_T("CMT: Fast Forward (%d %%)"), tape_position());
 			} else if(ff_rew < 0) {
-				if(buffer_ptr < buffer_length) {
-					emu->out_message(_T("CMT: Fast Rewind (%d %%)"), 100 * buffer_ptr / buffer_length);
-				} else {
-					emu->out_message(_T("CMT: Fast Rewind"));
-				}
+				emu->out_message(_T("CMT: Fast Rewind (%d %%)"), tape_position());
 			} else {
-				if(buffer_ptr < buffer_length) {
-					emu->out_message(_T("CMT: Play (%d %%)"), 100 * buffer_ptr / buffer_length);
-				} else {
-					emu->out_message(_T("CMT: Play"));
-				}
+				emu->out_message(_T("CMT: Play (%d %%)"), tape_position());
 			}
 			bool signal = in_signal;
 			if(is_wav) {
@@ -310,14 +298,14 @@ bool DATAREC::do_apss(int value)
 	set_ff_rew(0);
 	
 	if(value > 0) {
-		if(buffer_ptr < buffer_length) {
-			emu->out_message(_T("CMT: APSS Forward (%d %%)"), 100 * buffer_ptr / buffer_length);
+		if(play) {
+			emu->out_message(_T("CMT: APSS Forward (%d %%)"), tape_position());
 		} else {
 			emu->out_message(_T("CMT: APSS Forward"));
 		}
 	} else {
-		if(buffer_ptr < buffer_length) {
-			emu->out_message(_T("CMT: APSS Rewind (%d %%)"), 100 * buffer_ptr / buffer_length);
+		if(play) {
+			emu->out_message(_T("CMT: APSS Rewind (%d %%)"), tape_position());
 		} else {
 			emu->out_message(_T("CMT: APSS Rewind"));
 		}
@@ -344,12 +332,14 @@ void DATAREC::update_event()
 		if(register_id != -1) {
 			cancel_event(this, register_id);
 			register_id = -1;
-			if(buffer_ptr == buffer_length) {
-				emu->out_message(_T("CMT: Stop (End-of-Tape)"));
-			} else if(buffer_ptr == 0) {
-				emu->out_message(_T("CMT: Stop (Beginning-of-Tape)"));
-			} else if(buffer_ptr < buffer_length) {
-				emu->out_message(_T("CMT: Stop (%d %%)"), 100 * buffer_ptr / buffer_length);
+			if(play) {
+				if(buffer_ptr >= buffer_length) {
+					emu->out_message(_T("CMT: Stop (End-of-Tape)"));
+				} else if(buffer_ptr <= 0) {
+					emu->out_message(_T("CMT: Stop (Beginning-of-Tape)"));
+				} else {
+					emu->out_message(_T("CMT: Stop (%d %%)"), tape_position());
+				}
 			} else {
 				emu->out_message(_T("CMT: Stop"));
 			}

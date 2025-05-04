@@ -110,6 +110,9 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		}
 		close();
 	}
+	if(bank < 0) {
+		return;
+	}
 	memset(buffer, 0, sizeof(buffer));
 	file_bank = 0;
 	write_protected = false;
