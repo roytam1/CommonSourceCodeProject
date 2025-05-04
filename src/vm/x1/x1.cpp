@@ -164,6 +164,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	drec->set_context_ear(pio, SIG_I8255_PORT_B, 0x02);
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
+	crtc->set_context_disp(display, SIG_DISPLAY_DISP, 1);
 	crtc->set_context_vblank(pio, SIG_I8255_PORT_B, 0x80);
 	crtc->set_context_vsync(pio, SIG_I8255_PORT_B, 0x04);
 	pio->set_context_port_a(printer, SIG_PRINTER_DATA, 0xff, 0);

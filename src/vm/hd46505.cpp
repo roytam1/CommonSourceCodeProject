@@ -156,8 +156,14 @@ void HD46505::event_frame()
 
 void HD46505::event_vline(int v, int clock)
 {
-	// if vt_disp == 0, raise vblank for one line
-	bool new_vblank = ((v < vt_disp) || (v == 0 && vt_disp == 0));
+	bool new_vblank;
+	
+	if((regs[8] & 0x30) != 0x30) {
+		// if vt_disp == 0, raise vblank for one line
+		new_vblank = ((v < vt_disp) || (v == 0 && vt_disp == 0));
+	} else {
+		new_vblank = false;
+	}
 	
 	// display
 	if(outputs_disp.count) {
