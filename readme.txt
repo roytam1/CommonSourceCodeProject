@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/29/2015
+								9/30/2015
 
 --- What's this ?
 
@@ -186,6 +186,8 @@ See also COPYING.txt for more details about the license.
 - vm/tf20.*
 	vfloppy 1.4 by Mr.Justin Mitchell and Mr.Fred Jan Kraan
 	Mr.Fred Han Kraan for EPSON TF-20 hardware design info
+- vm/tms3631.*
+	Neko Project 2 by Mr.Yui
 - vm/tms9918a.*
 	MAME TMS9928 core
 - vm/tms9995.*

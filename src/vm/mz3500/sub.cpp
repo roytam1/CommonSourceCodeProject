@@ -59,10 +59,6 @@ void SUB::initialize()
 	}
 	delete fio;
 	
-	// create pc palette
-	update_config();
-	crt_400line = (config.monitor_type == 0 || config.monitor_type == 1);
-	
 	// init memory
 	memset(ram, 0, sizeof(ram));
 	memset(vram_chr, 0, sizeof(vram_chr));
@@ -73,6 +69,8 @@ void SUB::initialize()
 	SET_BANK(0x2800, 0x3fff, wdmy, rdmy);
 	SET_BANK(0x4000, 0x7fff, ram, ram);
 	SET_BANK(0x8000, 0xffff, wdmy, rdmy);
+	
+	crt_400line = (config.monitor_type == 0 || config.monitor_type == 1);
 	
 	register_frame_event(this);
 }
@@ -132,17 +130,6 @@ void SUB::event_frame()
 
 // display
 
-void SUB::update_config()
-{
-	for(int i = 0; i < 8; i++) {
-		if(config.monitor_type == 0 || config.monitor_type == 2) {
-			palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
-		} else {
-			palette_pc[i] = RGB_COLOR(0, (i != 0) ? 255 : 0, 0);
-		}
-	}
-}
-
 void SUB::draw_screen()
 {
 	memset(screen_chr, 0, sizeof(screen_chr));
@@ -166,6 +153,22 @@ void SUB::draw_screen()
 		}
 	}
 	uint8 back = disp[3] & 7;
+	
+	// create pc palette
+	scrntype palette_pc[8];
+	
+	for(int i = 0; i < 8; i++) {
+		if(config.monitor_type == 1 || config.monitor_type == 3) {
+			// green monitor
+			palette_pc[i] = RGB_COLOR(0, (i != 0) ? 255 : 0, 0);
+		} else if(!(disp[4] & 1)) {
+			// monochrome mode
+			palette_pc[i] = RGB_COLOR((i != 0) ? 255 : 0, (i != 0) ? 255 : 0, (i != 0) ? 255 : 0);
+		} else {
+			// color mode
+			palette_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);
+		}
+	}
 	
 	// copy to pc screen
 	if(crt_400line) {
@@ -233,19 +236,21 @@ void SUB::draw_chr_400line()
 				// mz3500sm p.31
 				// bit3: blink
 				// bit2: reverse or green
-				// bit1: vertical line or red
-				// bit0: horizontal line or blue
+				// bit1: horizontal line or red
+				// bit0: vertical line or blue
 				
 				uint8 color;
-				bool reverse, blink;
+				bool vline, hline, reverse, blink;
 				
 				if(disp[4] & 1) {
-					// color
-					color = (attr & 7) | 8;
-					reverse = false;
+					// color mode
+					color = (attr & 7) ? (attr & 7) : 7;
+					vline = hline = reverse = false;
 				} else {
-					// monocrhome
+					// monocrhome mode
 					color = 7;
+					vline = ((attr & 1) != 0);
+					hline = ((attr & 2) != 0);
 					reverse = ((attr & 4) != 0);
 				}
 				blink = ((attr & 8) != 0 && (cblink & 0x10) != 0);
@@ -281,6 +286,21 @@ void SUB::draw_chr_400line()
 						dest[10] = dest[11] = (pat & 0x04) ? color : 0;
 						dest[12] = dest[13] = (pat & 0x02) ? color : 0;
 						dest[14] = dest[15] = (pat & 0x01) ? color : 0;
+					}
+				}
+				if(vline) {
+					for(int l = 0; l < ((height == 16) ? 16 : 18); l++) {
+						int yy = y * height + l;
+						if(yy >= 400) {
+							break;
+						}
+						screen_chr[yy][(x << 3) + (width * 8 - 1)] = color;
+					}
+				}
+				if(hline) {
+					int yy = y * height + ((height == 16) ? 15 : 17);
+					if(!(yy >= 400)) {
+						memset(&screen_chr[yy][x << 3], color, width * 8);
 					}
 				}
 				if(cursor) {
@@ -333,19 +353,21 @@ void SUB::draw_chr_200line()
 				// mz3500sm p.31
 				// bit3: blink
 				// bit2: reverse or green
-				// bit1: vertical line or red
-				// bit0: horizontal line or blue
+				// bit1: horizontal line or red
+				// bit0: vertical line or blue
 				
 				uint8 color;
-				bool reverse, blink;
+				bool vline, hline, reverse, blink;
 				
 				if(disp[4] & 1) {
-					// color
-					color = (attr & 7) | 8;
-					reverse = false;
+					// color mode
+					color = (attr & 7) ? (attr & 7) : 7;
+					vline = hline = reverse = false;
 				} else {
-					// monocrhome
+					// monocrhome mode
 					color = 7;
+					vline = ((attr & 1) != 0);
+					hline = ((attr & 2) != 0);
 					reverse = ((attr & 4) != 0);
 				}
 				blink = ((attr & 8) != 0 && (cblink & 0x10) != 0);
@@ -381,6 +403,21 @@ void SUB::draw_chr_200line()
 						dest[10] = dest[11] = (pat & 0x04) ? color : 0;
 						dest[12] = dest[13] = (pat & 0x02) ? color : 0;
 						dest[14] = dest[15] = (pat & 0x01) ? color : 0;
+					}
+				}
+				if(vline) {
+					for(int l = 0; l < ((height == 8) ? 8 : 9); l++) {
+						int yy = (y * height + l) * 2;
+						if(yy >= 400) {
+							break;
+						}
+						screen_chr[yy][(x << 3) + (width * 8 - 1)] = color;
+					}
+				}
+				if(hline) {
+					int yy = (y * height + ((height == 8) ? 7 : 8)) * 2;
+					if(!(yy >= 400)) {
+						memset(&screen_chr[yy][x << 3], color, width * 8);
 					}
 				}
 				if(cursor) {

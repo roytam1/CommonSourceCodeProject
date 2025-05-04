@@ -1,3 +1,16 @@
+9/30/2015
+
+[EMU/WIN32] fix eFM77AV40/EX menu issues
+
+[VM/TMS3631] add TMS3631 based on Neko Project 2
+
+[MZ3500/SUB] support monochrome mode
+[MZ3500/SUB] support vertical/horizontal line
+[MZ3500/SUB] fix character color in the case color number is zero
+[PC9801] fix PC-9801-26(K) irq number on YM2203 port A
+[PC9801] support PC-9801-14
+
+
 9/29/2015
 
 [EMU/WIN32] fix terrible mistakes (thanks Mr.Artane.)

@@ -41,7 +41,6 @@ private:
 	uint8 screen_chr[400][640];
 	uint8 screen_gfx[400][640];
 	uint8 font[0x2000];
-	scrntype palette_pc[8];
 	int cblink;
 	bool crt_400line;
 	
@@ -63,7 +62,6 @@ public:
 	void write_io8(uint32 addr, uint32 data);
 	uint32 read_io8(uint32 addr);
 	void event_frame();
-	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	

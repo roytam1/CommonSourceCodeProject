@@ -176,6 +176,7 @@ class NOT;
 #if !defined(SUPPORT_OLD_BUZZER)
 class PCM1BIT;
 #endif
+class TMS3631;
 class UPD1990A;
 class UPD7220;
 class UPD765A;
@@ -266,6 +267,12 @@ protected:
 	KEYBOARD* keyboard;
 	MOUSE* mouse;
 	PRINTER* printer;
+	
+	// PC-9801-14
+	TMS3631* tms3631;
+	I8253* pit_14;
+	I8255* pio_14;
+	LS244* maskreg_14;
 	
 #if defined(SUPPORT_320KB_FDD_IF)
 	// 320kb fdd drives

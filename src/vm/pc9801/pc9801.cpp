@@ -33,6 +33,7 @@
 #if !defined(SUPPORT_OLD_BUZZER)
 #include "../pcm1bit.h"
 #endif
+#include "../tms3631.h"
 #include "../upd1990a.h"
 #include "../upd7220.h"
 #include "../upd765a.h"
@@ -150,7 +151,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		fmsound = new FMSOUND(this, emu);
 		joystick = new JOYSTICK(this, emu);
 	} else if(sound_device_type == 2) {
-		// TODO: PC-9801-14
+		tms3631 = new TMS3631(this, emu);
+		pit_14 = new I8253(this, emu);
+		pio_14 = new I8255(this, emu);
+		maskreg_14 = new LS244(this, emu);
 	}
 	
 #if defined(SUPPORT_CMT_IF)
@@ -173,17 +177,17 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	/* IRQ	0  PIT
 		1  KEYBOARD
 		2  CRTV
-		3  
+		3  (INT0)
 		4  RS-232C
-		5  
-		6  
+		5  (INT1)
+		6  (INT2)
 		7  SLAVE PIC
 		8  PRINTER
-		9  
-		10 FDC (640KB I/F)
-		11 FDC (1MB I/F)
-		12 PC-9801-26(K)
-		13 MOUSE
+		9  (INT3)
+		10 (INT41) FDC (640KB I/F)
+		11 (INT42) FDC (1MB I/F)
+		12 (INT5) PC-9801-26(K) or PC-9801-14
+		13 (INT6) MOUSE
 		14 
 		15 (RESERVED)
 	*/
@@ -197,7 +201,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	if(sound_device_type == 0 || sound_device_type == 1) {
 		event->set_context_sound(opn);
 	} else if(sound_device_type == 2) {
-		// TODO: PC-9801-14
+		event->set_context_sound(tms3631);
 	}
 	
 	dma->set_context_memory(memory);
@@ -259,7 +263,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		fmsound->set_context_opn(opn);
 		joystick->set_context_opn(opn);
 	} else if(sound_device_type == 2) {
-		// TODO: PC-9801-14
+		pio_14->set_context_port_a(tms3631, SIG_TMS3631_ENVELOP1, 0xff, 0);
+		pio_14->set_context_port_b(tms3631, SIG_TMS3631_ENVELOP2, 0xff, 0);
+		pio_14->set_context_port_c(tms3631, SIG_TMS3631_DATAREG, 0xff, 0);
+		maskreg_14->set_context_output(tms3631, SIG_TMS3631_MASKREG, 0xff, 0);
+		pit_14->set_constant_clock(2, 1996800 / 8);
+		pit_14->set_context_ch2(pic, SIG_I8259_CHIP1 | SIG_I8259_IR4, 1);
 	}
 	
 	display->set_context_pic(pic);
@@ -500,7 +509,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		io->set_iomap_single_rw(0xa460, fmsound);
 #endif
 	} else if(sound_device_type == 2) {
-		// TODO: PC-9801-14
+		io->set_iomap_alias_rw(0x88, pio_14, 0);
+		io->set_iomap_alias_rw(0x8a, pio_14, 1);
+		io->set_iomap_alias_rw(0x8c, pio_14, 2);
+		io->set_iomap_alias_w(0x8e, pio_14, 3);
+		io->set_iovalue_single_r(0x8e, 0x08);
+		io->set_iomap_single_w(0x188, maskreg_14);
+		io->set_iomap_single_w(0x18a, maskreg_14);
+		io->set_iomap_alias_rw(0x18c, pit_14, 2);
+		io->set_iomap_alias_w(0x18e, pit_14, 3);
+		io->set_iovalue_single_r(0x18e, 0x80); // INT5
 	}
 	
 #if !defined(SUPPORT_OLD_BUZZER)
@@ -697,7 +715,7 @@ void VM::reset()
 #endif
 	
 	if(sound_device_type == 0 || sound_device_type == 1) {
-		opn->write_signal(SIG_YM2203_PORT_A, 0xff, 0xff);	// PC-9801-26(K) IRQ=12
+		opn->write_signal(SIG_YM2203_PORT_A, 0xbf, 0xff);	// PC-9801-26(K) INT5
 	}
 	
 #if defined(SUPPORT_OLD_BUZZER)
@@ -816,7 +834,7 @@ void VM::initialize_sound(int rate, int samples)
 		opn->init(rate, 3993624, samples, 0, 0);
 #endif
 	} else if(sound_device_type == 2) {
-		// TODO: PC-9801-14
+		tms3631->init(rate, 8000);
 	}
 	
 #if defined(_PC98DO)
