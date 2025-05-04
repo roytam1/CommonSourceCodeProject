@@ -128,7 +128,7 @@ typedef struct {
 	bool scan_line;
 #endif
 #ifdef USE_SCREEN_ROTATE
-	bool rotate_type; // FIXME: wanna support +90deg, +180deg and +270deg
+	int rotate_type;
 #endif
 	
 	// sound

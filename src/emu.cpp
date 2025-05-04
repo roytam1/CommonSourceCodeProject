@@ -22,29 +22,16 @@
 // initialize
 // ----------------------------------------------------------------------------
 
+#ifdef OSD_WIN32
 EMU::EMU(HWND hwnd, HINSTANCE hinst)
+#else
+EMU::EMU()
+#endif
 {
 #ifdef _DEBUG_LOG
-	// open debug logfile
 	initialize_debug_log();
 #endif
 	message_count = 0;
-	
-	// store main window handle
-	main_window_handle = hwnd;
-	instance_handle = hinst;
-	
-	// check os version
-	OSVERSIONINFO os_info;
-	os_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx(&os_info);
-	vista_or_later = (os_info.dwPlatformId == 2 && os_info.dwMajorVersion >= 6);
-	
-	// get module path
-	_TCHAR tmp_path[_MAX_PATH], *ptr;
-	GetModuleFileName(NULL, tmp_path, _MAX_PATH);
-	GetFullPathName(tmp_path, _MAX_PATH, app_path, &ptr);
-	*ptr = _T('\0');
 	
 #ifdef USE_FD1
 	// initialize d88 file info
@@ -80,22 +67,17 @@ EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #endif
 	
 	// initialize
-	vm = new VM(this);
+	osd = new OSD();
+#ifdef OSD_WIN32
+	osd->main_window_handle = hwnd;
+	osd->instance_handle = hinst;
+#endif
+	osd->initialize(sound_rate, sound_samples);
+	osd->vm = vm = new VM(this);
 #ifdef USE_DEBUGGER
 	initialize_debugger();
 #endif
-	initialize_input();
-	initialize_screen();
-	initialize_sound();
 	initialize_media();
-	initialize_printer();
-#ifdef USE_SOCKET
-	initialize_socket();
-#endif
-#ifdef USE_DIRECT_SHOW
-	CoInitialize(NULL);
-	initialize_direct_show();
-#endif
 	vm->initialize_sound(sound_rate, sound_samples);
 	vm->reset();
 	now_suspended = false;
@@ -106,17 +88,8 @@ EMU::~EMU()
 #ifdef USE_DEBUGGER
 	release_debugger();
 #endif
-	release_input();
-	release_screen();
-	release_sound();
-	release_printer();
-#ifdef USE_SOCKET
-	release_socket();
-#endif
-#ifdef USE_DIRECT_SHOW
-	release_direct_show();
-	CoInitialize(NULL);
-#endif
+	osd->release();
+	delete osd;
 	delete vm;
 #ifdef _DEBUG_LOG
 	release_debug_log();
@@ -143,34 +116,37 @@ int EMU::frame_interval()
 #endif
 }
 
+bool EMU::now_skip()
+{
+	return vm->now_skip();
+}
+
 int EMU::run()
 {
 	if(now_suspended) {
-#ifdef USE_LASER_DISC
-		if(now_movie_play && !now_movie_pause) {
-			play_movie();
-		}
-#endif
+		osd->restore();
 		now_suspended = false;
 	}
 	
-	update_input();
-	update_media();
-	update_printer();
+	osd->update_input();
+	osd->update_printer();
 #ifdef USE_SOCKET
-	update_socket();
+	osd->update_socket();
 #endif
+	update_media();
 	
 	// virtual machine may be driven to fill sound buffer
 	int extra_frames = 0;
-	update_sound(&extra_frames);
+	osd->update_sound(&extra_frames);
 	
 	// drive virtual machine
 	if(extra_frames == 0) {
+		osd->lock_vm();
 		vm->run();
 		extra_frames = 1;
+		osd->unlock_vm();
 	}
-	rec_video_run_frames += extra_frames;
+	osd->add_extra_frames(extra_frames);
 	return extra_frames;
 }
 
@@ -188,168 +164,442 @@ void EMU::reset()
 #endif
 	if(reinitialize) {
 		// stop sound
-		if(sound_ok && sound_started) {
-			lpdsb->Stop();
-			sound_started = false;
-		}
+		osd->stop_sound();
 		// reinitialize virtual machine
+		osd->lock_vm();
 		delete vm;
-		vm = new VM(this);
+		osd->vm = vm = new VM(this);
 		vm->initialize_sound(sound_rate, sound_samples);
 		vm->reset();
+		osd->unlock_vm();
 		// restore inserted medias
 		restore_media();
 	} else {
 		// reset virtual machine
+		osd->lock_vm();
 		vm->reset();
+		osd->unlock_vm();
 	}
 	
 	// reset printer
-	reset_printer();
+	osd->reset_printer();
 	
 	// restart recording
-	restart_rec_sound();
-	restart_rec_video();
+	osd->restart_rec_sound();
+	osd->restart_rec_video();
 }
 
 #ifdef USE_SPECIAL_RESET
 void EMU::special_reset()
 {
 	// reset virtual machine
+	osd->lock_vm();
 	vm->special_reset();
+	osd->unlock_vm();
 	
 	// reset printer
-	reset_printer();
+	osd->reset_printer();
 	
 	// restart recording
-	restart_rec_sound();
-	restart_rec_video();
+	osd->restart_rec_sound();
+	osd->restart_rec_video();
 }
 #endif
 
-#ifdef USE_POWER_OFF
+#ifdef USE_NOTIFY_POWER_OFF
 void EMU::notify_power_off()
 {
 	vm->notify_power_off();
 }
 #endif
 
-_TCHAR* EMU::bios_path(const _TCHAR* file_name)
+void EMU::power_off()
 {
-	static _TCHAR file_path[_MAX_PATH];
-	_stprintf_s(file_path, _MAX_PATH, _T("%s%s"), app_path, file_name);
-	return file_path;
+	osd->power_off();
 }
 
 void EMU::suspend()
 {
 	if(!now_suspended) {
-#ifdef USE_LASER_DISC
-		if(now_movie_play && !now_movie_pause) {
-			pause_movie();
-			now_movie_pause = false;
-		}
-#endif
-		mute_sound();
+		osd->suspend();
 		now_suspended = true;
 	}
 }
 
+void EMU::lock_vm()
+{
+	osd->lock_vm();
+}
+
+void EMU::unlock_vm()
+{
+	osd->unlock_vm();
+}
+
 // ----------------------------------------------------------------------------
-// timer
+// input
 // ----------------------------------------------------------------------------
 
-void EMU::get_host_time(cur_time_t* time)
+void EMU::key_down(int code, bool repeat)
 {
-	SYSTEMTIME sTime;
-	GetLocalTime(&sTime);
-	
-	time->year = sTime.wYear;
-	time->month = sTime.wMonth;
-	time->day = sTime.wDay;
-	time->day_of_week = sTime.wDayOfWeek;
-	time->hour = sTime.wHour;
-	time->minute = sTime.wMinute;
-	time->second = sTime.wSecond;
+	osd->key_down(code, repeat);
 }
+
+void EMU::key_up(int code)
+{
+	osd->key_up(code);
+}
+
+void EMU::key_lost_focus()
+{
+	osd->key_lost_focus();
+}
+
+#ifdef ONE_BOARD_MICRO_COMPUTER
+void EMU::press_button(int num)
+{
+	osd->press_button(num);
+}
+#endif
+
+void EMU::enable_mouse()
+{
+	osd->enable_mouse();
+}
+
+void EMU::disenable_mouse()
+{
+	osd->disenable_mouse();
+}
+
+void EMU::toggle_mouse()
+{
+	osd->toggle_mouse();
+}
+
+bool EMU::get_mouse_enabled()
+{
+	return osd->get_mouse_enabled();
+}
+
+#ifdef USE_AUTO_KEY
+void EMU::start_auto_key()
+{
+	osd->start_auto_key();
+}
+
+void EMU::stop_auto_key()
+{
+	osd->stop_auto_key();
+}
+
+bool EMU::now_auto_key()
+{
+	return osd->now_auto_key();
+}
+#endif
+
+uint8* EMU::key_buffer()
+{
+	return osd->key_buffer();
+}
+uint32* EMU::joy_buffer()
+{
+	return osd->joy_buffer();
+}
+int* EMU::mouse_buffer()
+{
+	return osd->mouse_buffer();
+}
+
+// ----------------------------------------------------------------------------
+// screen
+// ----------------------------------------------------------------------------
+
+int EMU::get_window_width(int mode)
+{
+	return osd->get_window_width(mode);
+}
+
+int EMU::get_window_height(int mode)
+{
+	return osd->get_window_height(mode);
+}
+
+void EMU::set_window_size(int width, int height, bool window_mode)
+{
+	osd->set_window_size(width, height, window_mode);
+}
+
+void EMU::set_vm_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
+{
+	osd->set_vm_screen_size(sw, sh, swa, sha, ww, wh);
+}
+
+int EMU::draw_screen()
+{
+	return osd->draw_screen();
+}
+
+scrntype* EMU::screen_buffer(int y)
+{
+	return osd->get_vm_screen_buffer(y);
+}
+
+#ifdef USE_CRT_FILTER
+void EMU::screen_skip_line(bool skip_line)
+{
+	osd->screen_skip_line = skip_line;
+}
+#endif
+
+#ifdef ONE_BOARD_MICRO_COMPUTER
+void EMU::reload_bitmap()
+{
+	osd->reload_bitmap();
+}
+#endif
+
+#ifdef OSD_WIN32
+void EMU::update_screen(HDC hdc)
+{
+	osd->update_screen(hdc);
+}
+#endif
+
+void EMU::capture_screen()
+{
+	osd->capture_screen();
+}
+
+bool EMU::start_rec_video(int fps)
+{
+	return osd->start_rec_video(fps);
+}
+
+void EMU::stop_rec_video()
+{
+	osd->stop_rec_video();
+}
+
+bool EMU::now_rec_video()
+{
+	return osd->now_rec_video;
+}
+
+// ----------------------------------------------------------------------------
+// sound
+// ----------------------------------------------------------------------------
+
+void EMU::mute_sound()
+{
+	osd->mute_sound();
+}
+
+void EMU::start_rec_sound()
+{
+	osd->start_rec_sound();
+}
+
+void EMU::stop_rec_sound()
+{
+	osd->stop_rec_sound();
+}
+
+bool EMU::now_rec_sound()
+{
+	return osd->now_rec_sound;
+}
+
+// ----------------------------------------------------------------------------
+// video
+// ----------------------------------------------------------------------------
+
+#if defined(USE_MOVIE_PLAYER) || defined(USE_VIDEO_CAPTURE)
+void EMU::get_video_buffer()
+{
+	osd->get_video_buffer();
+}
+
+void EMU::mute_video_dev(bool l, bool r)
+{
+	osd->mute_video_dev(l, r);
+}
+#endif
+
+#ifdef USE_MOVIE_PLAYER
+bool EMU::open_movie_file(const _TCHAR* file_path)
+{
+	return osd->open_movie_file(file_path);
+}
+
+void EMU::close_movie_file()
+{
+	osd->close_movie_file();
+}
+
+void EMU::play_movie()
+{
+	osd->play_movie();
+}
+
+void EMU::stop_movie()
+{
+	osd->stop_movie();
+}
+
+void EMU::pause_movie()
+{
+	osd->pause_movie();
+}
+
+double EMU::get_movie_frame_rate()
+{
+	return osd->get_movie_frame_rate();
+}
+
+int EMU::get_movie_sound_rate()
+{
+	return osd->get_movie_sound_rate();
+}
+
+void EMU::set_cur_movie_frame(int frame, bool relative)
+{
+	osd->set_cur_movie_frame(frame, relative);
+}
+
+uint32 EMU::get_cur_movie_frame()
+{
+	return osd->get_cur_movie_frame();
+}
+#endif
+
+#ifdef USE_VIDEO_CAPTURE
+int EMU::get_cur_capture_dev_index()
+{
+	return osd->get_cur_capture_dev_index();
+}
+
+int EMU::get_num_capture_devs()
+{
+	return osd->get_num_capture_devs();
+}
+
+_TCHAR* EMU::get_capture_dev_name(int index)
+{
+	return osd->get_capture_dev_name(index);
+}
+
+void EMU::open_capture_dev(int index, bool pin)
+{
+	osd->open_capture_dev(index, pin);
+}
+
+void EMU::close_capture_dev()
+{
+	osd->close_capture_dev();
+}
+
+void EMU::show_capture_dev_filter()
+{
+	osd->show_capture_dev_filter();
+}
+
+void EMU::show_capture_dev_pin()
+{
+	osd->show_capture_dev_pin();
+}
+
+void EMU::show_capture_dev_source()
+{
+	osd->show_capture_dev_source();
+}
+
+void EMU::set_capture_dev_channel(int ch)
+{
+	osd->set_capture_dev_channel(ch);
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // printer
 // ----------------------------------------------------------------------------
 
-void EMU::initialize_printer()
-{
-	prn_fio = new FILEIO();
-	prn_data = -1;
-	prn_strobe = false;
-}
-
-void EMU::release_printer()
-{
-	close_printer_file();
-	delete prn_fio;
-}
-
-void EMU::reset_printer()
-{
-	close_printer_file();
-	prn_data = -1;
-	prn_strobe = false;
-}
-
-void EMU::update_printer()
-{
-	if(prn_fio->IsOpened() && --prn_wait_frames == 0) {
-		close_printer_file();
-	}
-}
-
-void EMU::open_printer_file()
-{
-	cur_time_t time;
-	get_host_time(&time);
-	_stprintf_s(prn_file_name, _MAX_PATH, _T("prn_%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.txt"), time.year, time.month, time.day, time.hour, time.minute, time.second);
-	prn_fio->Fopen(bios_path(prn_file_name), FILEIO_WRITE_BINARY);
-}
-
-void EMU::close_printer_file()
-{
-	if(prn_fio->IsOpened()) {
-		// remove if the file size is less than 2 bytes
-		bool remove = (prn_fio->Ftell() < 2);
-		prn_fio->Fclose();
-		if(remove) {
-			FILEIO::RemoveFile(bios_path(prn_file_name));
-		}
-	}
-}
-
 void EMU::printer_out(uint8 value)
 {
-	prn_data = value;
+	osd->printer_out(value);
 }
 
 void EMU::printer_strobe(bool value)
 {
-	bool falling = (prn_strobe && !value);
-	prn_strobe = value;
-	
-	if(falling) {
-		if(!prn_fio->IsOpened()) {
-			if(prn_data == -1) {
-				return;
-			}
-			open_printer_file();
-		}
-		prn_fio->Fputc(prn_data);
-		// wait 10sec
-#ifdef SUPPORT_VARIABLE_TIMING
-		prn_wait_frames = (int)(vm->frame_rate() * 10.0 + 0.5);
-#else
-		prn_wait_frames = (int)(FRAMES_PER_SEC * 10.0 + 0.5);
-#endif
-	}
+	osd->printer_strobe(value);
 }
+
+// ----------------------------------------------------------------------------
+// socket
+// ----------------------------------------------------------------------------
+
+#ifdef USE_SOCKET
+int EMU::get_socket(int ch)
+{
+	return osd->get_socket(ch);
+}
+
+void EMU::socket_connected(int ch)
+{
+	osd->socket_connected(ch);
+}
+
+void EMU::socket_disconnected(int ch)
+{
+	osd->socket_disconnected(ch);
+}
+
+bool EMU::init_socket_tcp(int ch)
+{
+	return osd->init_socket_tcp(ch);
+}
+
+bool EMU::init_socket_udp(int ch)
+{
+	return osd->init_socket_udp(ch);
+}
+
+bool EMU::connect_socket(int ch, uint32 ipaddr, int port)
+{
+	return osd->connect_socket(ch, ipaddr, port);
+}
+
+void EMU::disconnect_socket(int ch)
+{
+	osd->disconnect_socket(ch);
+}
+
+bool EMU::listen_socket(int ch)
+{
+	return osd->listen_socket(ch);
+}
+
+void EMU::send_data_tcp(int ch)
+{
+	osd->send_data_tcp(ch);
+}
+
+void EMU::send_data_udp(int ch, uint32 ipaddr, int port)
+{
+	osd->send_data_udp(ch, ipaddr, port);
+}
+
+void EMU::send_data(int ch)
+{
+	osd->send_data(ch);
+}
+
+void EMU::recv_data(int ch)
+{
+	osd->recv_data(ch);
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // debug log
@@ -358,7 +608,9 @@ void EMU::printer_strobe(bool value)
 #ifdef _DEBUG_LOG
 void EMU::initialize_debug_log()
 {
-	debug_log = _tfopen(_T("d:\\debug.log"), _T("w"));
+	TCHAR path[_MAX_PATH];
+	osd->create_date_file_name(path, _MAX_PATH, _T("log"));
+	debug_log = _tfopen(path, _T("w"));
 }
 
 void EMU::release_debug_log()
@@ -378,21 +630,20 @@ void EMU::out_debug_log(const _TCHAR* format, ...)
 	static _TCHAR prev_buffer[1024] = {0};
 	
 	va_start(ap, format);
-	_vstprintf_s(buffer, 1024, format, ap);
+	my_vstprintf_s(buffer, 1024, format, ap);
 	va_end(ap);
 	
 	if(_tcscmp(prev_buffer, buffer) == 0) {
 		return;
 	}
-	_tcscpy_s(prev_buffer, 1024, buffer);
+	my_tcscpy_s(prev_buffer, 1024, buffer);
 	
 	if(debug_log) {
 		_ftprintf(debug_log, _T("%s"), buffer);
 		static int size = 0;
 		if((size += _tcslen(buffer)) > 0x8000000) { // 128MB
-			static int index = 1;
 			TCHAR path[_MAX_PATH];
-			_stprintf_s(path, _MAX_PATH, _T("d:\\debug_#%d.log"), ++index);
+			osd->create_date_file_name(path, _MAX_PATH, _T("log"));
 			fclose(debug_log);
 			debug_log = _tfopen(path, _T("w"));
 			size = 0;
@@ -405,9 +656,33 @@ void EMU::out_message(const _TCHAR* format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	_vstprintf_s(message, 1024, format, ap);
+	my_vstprintf_s(message, 1024, format, ap);
 	va_end(ap);
 	message_count = 4; // 4sec
+}
+
+// ----------------------------------------------------------------------------
+// misc
+// ----------------------------------------------------------------------------
+
+_TCHAR* EMU::application_path()
+{
+	return osd->application_path();
+}
+
+_TCHAR* EMU::bios_path(const _TCHAR* file_name)
+{
+	return osd->bios_path(file_name);
+}
+
+void EMU::sleep(uint32 ms)
+{
+	osd->sleep(ms);
+}
+
+void EMU::get_host_time(cur_time_t* time)
+{
+	osd->get_host_time(time);
 }
 
 // ----------------------------------------------------------------------------
@@ -530,9 +805,9 @@ void EMU::restore_media()
 #ifdef USE_CART1
 	for(int drv = 0; drv < MAX_CART; drv++) {
 		if(cart_status[drv].path[0] != _T('\0')) {
-			if(check_file_extension(cart_status[drv].path, _T(".hex")) && hex2bin(cart_status[drv].path, bios_path(_T("hex2bin.$$$")))) {
-				vm->open_cart(drv, bios_path(_T("hex2bin.$$$")));
-				FILEIO::RemoveFile(bios_path(_T("hex2bin.$$$")));
+			if(check_file_extension(cart_status[drv].path, _T(".hex")) && hex2bin(cart_status[drv].path, osd->bios_path(_T("hex2bin.$$$")))) {
+				vm->open_cart(drv, osd->bios_path(_T("hex2bin.$$$")));
+				FILEIO::RemoveFile(osd->bios_path(_T("hex2bin.$$$")));
 			} else {
 				vm->open_cart(drv, cart_status[drv].path);
 			}
@@ -573,22 +848,22 @@ void EMU::restore_media()
 void EMU::open_cart(int drv, const _TCHAR* file_path)
 {
 	if(drv < MAX_CART) {
-		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, bios_path(_T("hex2bin.$$$")))) {
-			vm->open_cart(drv, bios_path(_T("hex2bin.$$$")));
-			FILEIO::RemoveFile(bios_path(_T("hex2bin.$$$")));
+		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, osd->bios_path(_T("hex2bin.$$$")))) {
+			vm->open_cart(drv, osd->bios_path(_T("hex2bin.$$$")));
+			FILEIO::RemoveFile(osd->bios_path(_T("hex2bin.$$$")));
 		} else {
 			vm->open_cart(drv, file_path);
 		}
-		_tcscpy_s(cart_status[drv].path, _MAX_PATH, file_path);
+		my_tcscpy_s(cart_status[drv].path, _MAX_PATH, file_path);
 		out_message(_T("Cart%d: %s"), drv + 1, file_path);
 		
 		// restart recording
-		bool s = now_rec_sound;
-		bool v = now_rec_video;
+		bool s = osd->now_rec_sound;
+		bool v = osd->now_rec_video;
 		stop_rec_sound();
 		stop_rec_video();
-		if(s) start_rec_sound();
-		if(v) start_rec_video(-1);
+		if(s) osd->start_rec_sound();
+		if(v) osd->start_rec_video(-1);
 	}
 }
 
@@ -632,7 +907,7 @@ void EMU::open_disk(int drv, const _TCHAR* file_path, int bank)
 			vm->open_disk(drv, file_path, bank);
 			out_message(_T("FD%d: %s"), drv + FD_BASE_NUMBER, file_path);
 		}
-		_tcscpy_s(disk_status[drv].path, _MAX_PATH, file_path);
+		my_tcscpy_s(disk_status[drv].path, _MAX_PATH, file_path);
 		disk_status[drv].bank = bank;
 	}
 }
@@ -689,7 +964,7 @@ void EMU::open_quickdisk(int drv, const _TCHAR* file_path)
 			vm->open_quickdisk(drv, file_path);
 			out_message(_T("QD%d: %s"), drv + QD_BASE_NUMBER, file_path);
 		}
-		_tcscpy_s(quickdisk_status[drv].path, _MAX_PATH, file_path);
+		my_tcscpy_s(quickdisk_status[drv].path, _MAX_PATH, file_path);
 	}
 }
 
@@ -728,7 +1003,7 @@ void EMU::play_tape(const _TCHAR* file_path)
 		vm->play_tape(file_path);
 		out_message(_T("CMT: %s"), file_path);
 	}
-	_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
+	my_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
 	tape_status.play = true;
 }
 
@@ -747,7 +1022,7 @@ void EMU::rec_tape(const _TCHAR* file_path)
 		vm->rec_tape(file_path);
 		out_message(_T("CMT: %s"), file_path);
 	}
-	_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
+	my_tcscpy_s(tape_status.path, _MAX_PATH, file_path);
 	tape_status.play = false;
 }
 
@@ -829,7 +1104,7 @@ void EMU::open_laser_disc(const _TCHAR* file_path)
 		vm->open_laser_disc(file_path);
 		out_message(_T("LD: %s"), file_path);
 	}
-	_tcscpy_s(laser_disc_status.path, _MAX_PATH, file_path);
+	my_tcscpy_s(laser_disc_status.path, _MAX_PATH, file_path);
 }
 
 void EMU::close_laser_disc()
@@ -849,9 +1124,9 @@ bool EMU::laser_disc_inserted()
 void EMU::load_binary(int drv, const _TCHAR* file_path)
 {
 	if(drv < MAX_BINARY) {
-		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, bios_path(_T("hex2bin.$$$")))) {
-			vm->load_binary(drv, bios_path(_T("hex2bin.$$$")));
-			FILEIO::RemoveFile(bios_path(_T("hex2bin.$$$")));
+		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, osd->bios_path(_T("hex2bin.$$$")))) {
+			vm->load_binary(drv, osd->bios_path(_T("hex2bin.$$$")));
+			FILEIO::RemoveFile(osd->bios_path(_T("hex2bin.$$$")));
 		} else {
 			vm->load_binary(drv, file_path);
 		}
@@ -868,56 +1143,43 @@ void EMU::save_binary(int drv, const _TCHAR* file_path)
 }
 #endif
 
-bool EMU::now_skip()
-{
-	return vm->now_skip();
-}
-
 void EMU::update_config()
 {
 	vm->update_config();
 }
 
 // ----------------------------------------------------------------------------
-// misc
-// ----------------------------------------------------------------------------
-
-void EMU::sleep(uint32 ms)
-{
-	Sleep(ms);
-}
-
-#ifdef USE_STATE
-// ----------------------------------------------------------------------------
 // state
 // ----------------------------------------------------------------------------
 
+#ifdef USE_STATE
 #define STATE_VERSION	2
 
 void EMU::save_state()
 {
 	_TCHAR file_name[_MAX_PATH];
-	_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
-	save_state_tmp(bios_path(file_name));
+	my_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
+	save_state_tmp(osd->bios_path(file_name));
 }
 
 void EMU::load_state()
 {
 	_TCHAR file_name[_MAX_PATH];
-	_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
-	if(FILEIO::IsFileExists(bios_path(file_name))) {
-		save_state_tmp(bios_path(_T("$temp$.sta")));
-		if(!load_state_tmp(bios_path(file_name))) {
+	my_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
+	if(FILEIO::IsFileExists(osd->bios_path(file_name))) {
+		save_state_tmp(osd->bios_path(_T("$temp$.sta")));
+		if(!load_state_tmp(osd->bios_path(file_name))) {
 			out_debug_log("failed to load state file\n");
-			load_state_tmp(bios_path(_T("$temp$.sta")));
+			load_state_tmp(osd->bios_path(_T("$temp$.sta")));
 		}
-		DeleteFile(bios_path(_T("$temp$.sta")));
+		DeleteFile(osd->bios_path(_T("$temp$.sta")));
 	}
 }
 
 void EMU::save_state_tmp(const _TCHAR* file_path)
 {
 	FILEIO* fio = new FILEIO();
+	osd->lock_vm();
 	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
 		// save state file version
 		fio->FputUint32(STATE_VERSION);
@@ -946,6 +1208,7 @@ void EMU::save_state_tmp(const _TCHAR* file_path)
 		fio->FputInt32(-1);
 		fio->Fclose();
 	}
+	osd->unlock_vm();
 	delete fio;
 }
 
@@ -987,15 +1250,14 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 #endif
 				if(reinitialize) {
 					// stop sound
-					if(sound_ok && sound_started) {
-						lpdsb->Stop();
-						sound_started = false;
-					}
+					osd->stop_sound();
 					// reinitialize virtual machine
+					osd->lock_vm();
 					delete vm;
-					vm = new VM(this);
+					osd->vm = vm = new VM(this);
 					vm->initialize_sound(sound_rate, sound_samples);
 					vm->reset();
+					osd->unlock_vm();
 				}
 				// restore inserted medias
 				restore_media();

@@ -14,8 +14,46 @@
 
 #pragma comment(lib, "shlwapi.lib")
 
+#ifdef MAX_MACRO_NOT_DEFINED
+inline int max(int a, int b)
+{
+	if(a > b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+inline unsigned int max(unsigned int a, unsigned int b)
+{
+	if(a > b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+#endif
+
+#ifdef MIN_MACRO_NOT_DEFINED
+inline int min(int a, int b)
+{
+	if(a < b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+inline unsigned int min(unsigned int a, unsigned int b)
+{
+	if(a < b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+#endif
+
 #ifndef SUPPORT_SECURE_FUNCTIONS
-//errno_t _tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode)
+//errno_t my_tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode)
 //{
 //	if((*pFile = _tfopen(filename, mode)) != NULL) {
 //		return 0;
@@ -24,24 +62,38 @@
 //	}
 //}
 
-errno_t _strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource)
+errno_t my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource)
 {
 	strcpy(strDestination, strSource);
 	return 0;
 }
 
-errno_t _tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource)
+errno_t my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource)
 {
 	_tcscpy(strDestination, strSource);
 	return 0;
 }
 
-_TCHAR *_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context)
+char *my_strtok_s(char *strToken, const char *strDelimit, char **context)
+{
+	return strtok(strToken, strDelimit);
+}
+
+_TCHAR *my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context)
 {
 	return _tcstok(strToken, strDelimit);
 }
 
-int _stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...)
+int my_sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	int result = vsprintf(buffer, format, ap);
+	va_end(ap);
+	return result;
+}
+
+int my_stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -50,9 +102,197 @@ int _stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...)
 	return result;
 }
 
-int _vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr)
+int my_vsprintf_s(char *buffer, size_t numberOfElements, const char *format, va_list argptr)
+{
+	return vsprintf(buffer, format, argptr);
+}
+
+int my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr)
 {
 	return _vstprintf(buffer, format, argptr);
+}
+#endif
+
+#ifndef _MSC_VER
+BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpString, LPCTSTR lpFileName)
+{
+	BOOL result = FALSE;
+	FILEIO* fio_i = new FILEIO();
+	if(fio_i->Fopen(lpFileName, FILEIO_READ_ASCII)) {
+		char tmp_path[MAX_PATH];
+		my_sprintf_s(tmp_path, MAX_PATH, "%s.$$$", lpFileName);
+		FILEIO* fio_o = new FILEIO();
+		if(fio_o->Fopen(tmp_path, FILEIO_WRITE_ASCII)) {
+			bool in_section = false;
+			char section[1024], line[1024], *equal;
+			my_sprintf_s(section, 1024, "[%s]", lpAppName);
+			while(fio_i->Fgets(line, 1024) != NULL && strlen(line) > 0) {
+				if(line[strlen(line) - 1] == '\n') {
+					line[strlen(line) - 1] = '\0';
+				}
+				if(!result) {
+					if(line[0] == '[') {
+						if(in_section) {
+							fio_o->Fprintf("%s=%s\n", lpKeyName, lpString);
+							result = TRUE;
+						} else if(strcmp(line, section) == 0) {
+							in_section = true;
+						}
+					} else if(in_section && (equal = strstr(line, "=")) != NULL) {
+						*equal = '\0';
+						if(strcmp(line, lpKeyName) == 0) {
+							fio_o->Fprintf("%s=%s\n", lpKeyName, lpString);
+							result = TRUE;
+							continue;
+						}
+						*equal = '=';
+					}
+				}
+				fio_o->Fprintf("%s\n", line);
+			}
+			if(!result) {
+				if(!in_section) {
+					fio_o->Fprintf("[%s]\n", lpAppName);
+				}
+				fio_o->Fprintf("%s=%s\n", lpKeyName, lpString);
+				result = TRUE;
+			}
+			fio_o->Fclose();
+		}
+		delete fio_o;
+		fio_i->Fclose();
+		if(result) {
+			if(!(FILEIO::RemoveFile(lpFileName) && FILEIO::RenameFile(tmp_path, lpFileName))) {
+				result = FALSE;
+			}
+		}
+	} else {
+		FILEIO* fio_o = new FILEIO();
+		if(fio_o->Fopen(lpFileName, FILEIO_WRITE_ASCII)) {
+			fio_o->Fprintf("[%s]\n", lpAppName);
+			fio_o->Fprintf("%s=%s\n", lpKeyName, lpString);
+			fio_o->Fclose();
+		}
+		delete fio_o;
+	}
+	delete fio_i;
+	return result;
+}
+
+DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName)
+{
+	if(lpDefault != NULL) {
+		my_strcpy_s(lpReturnedString, nSize, lpDefault);
+	} else {
+		lpReturnedString[0] = '\0';
+	}
+	FILEIO* fio = new FILEIO();
+	if(fio->Fopen(lpFileName, FILEIO_READ_ASCII)) {
+		bool in_section = false;
+		char section[1024], line[1024], *equal;
+		my_sprintf_s(section, 1024, "[%s]", lpAppName);
+		while(fio->Fgets(line, 1024) != NULL && strlen(line) > 0) {
+			if(line[strlen(line) - 1] == '\n') {
+				line[strlen(line) - 1] = '\0';
+			}
+			if(line[0] == '[') {
+				if(in_section) {
+					break;
+				} else if(strcmp(line, section) == 0) {
+					in_section = true;
+				}
+			} else if(in_section && (equal = strstr(line, "=")) != NULL) {
+				*equal = '\0';
+				if(strcmp(line, lpKeyName) == 0) {
+					strcpy_s(lpReturnedString, nSize, equal + 1);
+					break;
+				}
+			}
+		}
+		fio->Fclose();
+	}
+	delete fio;
+	return strlen(lpReturnedString);
+}
+
+UINT MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, LPCTSTR lpFileName)
+{
+	char default_value[32], ret_value[32];
+	my_sprintf_s(default_value, 32, "%d", nDefault);
+	if(MyGetPrivateProfileString(lpAppName, lpKeyName, default_value, ret_value, 32, lpFileName) != 0) {
+		return atoi(ret_value);
+	}
+	return nDefault;
+}
+#endif
+
+#if defined(_RGB555)
+scrntype RGB_COLOR(uint r, uint g, uint b)
+{
+	scrntype rr = ((scrntype)r * 0x1f) / 0xff;
+	scrntype gg = ((scrntype)g * 0x1f) / 0xff;
+	scrntype bb = ((scrntype)b * 0x1f) / 0xff;
+	return (rr << 10) | (gg << 5) | bb;
+}
+scrntype RGBA_COLOR(uint r, uint g, uint b, uint a)
+{
+	return RGB_COLOR(r, g, b);
+}
+uint8 R_OF_COLOR(scrntype c)
+{
+	c = (c >> 10) & 0x1f;
+	c = (c * 0xff) / 0x1f;
+	return (uint8)c;
+}
+uint8 G_OF_COLOR(scrntype c)
+{
+	c = (c >>  5) & 0x1f;
+	c = (c * 0xff) / 0x1f;
+	return (uint8)c;
+}
+uint8 B_OF_COLOR(scrntype c)
+{
+	c = (c >>  0) & 0x1f;
+	c = (c * 0xff) / 0x1f;
+	return (uint8)c;
+}
+uint8 A_OF_COLOR(scrntype c)
+{
+	return 0;
+}
+#elif defined(_RGB565)
+scrntype RGB_COLOR(uint r, uint g, uint b)
+{
+	scrntype rr = ((scrntype)r * 0x1f) / 0xff;
+	scrntype gg = ((scrntype)g * 0x3f) / 0xff;
+	scrntype bb = ((scrntype)b * 0x1f) / 0xff;
+	return (rr << 11) | (gg << 5) | bb;
+}
+scrntype RGBA_COLOR(uint r, uint g, uint b, uint a)
+{
+	return RGB_COLOR(r, g, b);
+}
+uint8 R_OF_COLOR(scrntype c)
+{
+	c = (c >> 11) & 0x1f;
+	c = (c * 0xff) / 0x1f;
+	return (uint8)c;
+}
+uint8 G_OF_COLOR(scrntype c)
+{
+	c = (c >>  5) & 0x3f;
+	c = (c * 0xff) / 0x3f;
+	return (uint8)c;
+}
+uint8 B_OF_COLOR(scrntype c)
+{
+	c = (c >>  0) & 0x1f;
+	c = (c * 0xff) / 0x1f;
+	return (uint8)c;
+}
+uint8 A_OF_COLOR(scrntype c)
+{
+	return 0;
 }
 #endif
 
@@ -68,7 +308,7 @@ _TCHAR *get_file_path_without_extensiton(const _TCHAR* file_path)
 {
 	static _TCHAR path[_MAX_PATH];
 	
-	_tcscpy_s(path, _MAX_PATH, file_path);
+	my_tcscpy_s(path, _MAX_PATH, file_path);
 	PathRemoveExtension(path);
 	return path;
 }

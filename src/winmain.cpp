@@ -23,7 +23,7 @@
 EMU* emu;
 
 // buttons
-#ifdef USE_BUTTON
+#ifdef ONE_BOARD_MICRO_COMPUTER
 #define MAX_FONT_SIZE 32
 HFONT hFont[MAX_FONT_SIZE];
 HWND hButton[MAX_BUTTONS];
@@ -87,9 +87,9 @@ void get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t dst_len)
 	_TCHAR tmp[_MAX_PATH];
 	
 	if(GetFullPathName(src, _MAX_PATH, tmp, NULL) == 0) {
-		_tcscpy_s(dst, dst_len, src);
+		my_tcscpy_s(dst, dst_len, src);
 	} else if(GetLongPathName(tmp, dst, _MAX_PATH) == 0) {
-		_tcscpy_s(dst, dst_len, tmp);
+		my_tcscpy_s(dst, dst_len, tmp);
 	}
 }
 
@@ -127,7 +127,7 @@ _TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title,
 	}
 	if(GetOpenFileName(&OpenFileName)) {
 		get_long_full_path_name(OpenFileName.lpstrFile, path, _MAX_PATH);
-		_tcscpy_s(dir, dir_len, get_parent_dir(path));
+		my_tcscpy_s(dir, dir_len, get_parent_dir(path));
 		return path;
 	}
 	return NULL;
@@ -142,9 +142,9 @@ _TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title,
 		} \
 	} \
 	for(int i = no; i > 0; i--) { \
-		_tcscpy_s(recent[i], _MAX_PATH, recent[i - 1]); \
+		my_tcscpy_s(recent[i], _MAX_PATH, recent[i - 1]); \
 	} \
-	_tcscpy_s(recent[0], _MAX_PATH, path); \
+	my_tcscpy_s(recent[0], _MAX_PATH, path); \
 }
 
 // screen
@@ -185,7 +185,7 @@ OSVERSIONINFO osvi;
 // windows main
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
-#ifdef USE_BUTTON
+#ifdef ONE_BOARD_MICRO_COMPUTER
 LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 #endif
 
@@ -314,7 +314,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	
 	// initialize emulation core
 	emu = new EMU(hWnd, hInstance);
-	emu->set_display_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
+	emu->set_window_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
 	
 #ifdef SUPPORT_DRAG_DROP
 	// open command line path
@@ -365,7 +365,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 //			for(int i = 0; i < run_frames; i++) {
 				interval += get_interval();
 //			}
-			bool now_skip = emu->now_skip() && !emu->now_rec_video;
+			bool now_skip = emu->now_skip() && !emu->now_rec_video();
 			
 			if((prev_skip && !now_skip) || next_time == 0) {
 				next_time = timeGetTime();
@@ -399,12 +399,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 				_TCHAR buf[256];
 				int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
 				if(emu->message_count > 0) {
-					_stprintf_s(buf, 256, _T("%s - %s"), _T(DEVICE_NAME), emu->message);
+					my_stprintf_s(buf, 256, _T("%s - %s"), _T(DEVICE_NAME), emu->message);
 					emu->message_count--;
 				} else if(now_skip) {
-					_stprintf_s(buf, 256, _T("%s - Skip Frames"), _T(DEVICE_NAME));
+					my_stprintf_s(buf, 256, _T("%s - Skip Frames"), _T(DEVICE_NAME));
 				} else {
-					_stprintf_s(buf, 256, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
+					my_stprintf_s(buf, 256, _T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio);
 				}
 				SetWindowText(hWnd, buf);
 				
@@ -456,7 +456,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				FreeLibrary(hLibrary);
 			}
 		}
-#ifdef USE_BUTTON
+#ifdef ONE_BOARD_MICRO_COMPUTER
 		memset(hFont, 0, sizeof(hFont));
 		for(int i = 0; i < MAX_BUTTONS; i++) {
 			hButton[i] = CreateWindow(_T("BUTTON"), buttons[i].caption,
@@ -480,7 +480,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				logfont.lfClipPrecision = CLIP_DEFAULT_PRECIS;
 				logfont.lfQuality = DEFAULT_QUALITY;
 				logfont.lfPitchAndFamily = FIXED_PITCH | FF_DONTCARE;
-				_tcscpy_s(logfont.lfFaceName, LF_FACESIZE, _T("Arial"));
+				my_tcscpy_s(logfont.lfFaceName, LF_FACESIZE, _T("Arial"));
 				logfont.lfHeight = buttons[i].font_size;
 				logfont.lfWidth = buttons[i].font_size >> 1;
 				hFont[buttons[i].font_size] = CreateFontIndirect(&logfont);
@@ -493,7 +493,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 #endif
 		break;
 	case WM_CLOSE:
-#ifdef USE_POWER_OFF
+#ifdef USE_NOTIFY_POWER_OFF
 		// notify power off
 		if(emu) {
 			static int notified = 0;
@@ -509,7 +509,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			ChangeDisplaySettings(NULL, 0);
 		}
 		now_fullscreen = false;
-#ifdef USE_BUTTON
+#ifdef ONE_BOARD_MICRO_COMPUTER
 		for(int i = 0; i < MAX_FONT_SIZE; i++) {
 			if(hFont[i]) {
 				DeleteObject(hFont[i]);
@@ -530,7 +530,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
-#ifdef USE_BITMAP
+#ifdef ONE_BOARD_MICRO_COMPUTER
 	case WM_SIZE:
 		if(emu) {
 			emu->reload_bitmap();
@@ -616,7 +616,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_RESIZE:
 		if(emu) {
 			if(now_fullscreen) {
-				emu->set_display_size(-1, -1, false);
+				emu->set_window_size(-1, -1, false);
 			} else {
 				set_window(hWnd, config.window_mode);
 			}
@@ -841,11 +841,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_RECENT_CART + 6: \
 		case ID_RECENT_CART + 7: \
 			no = LOWORD(wParam) - ID_RECENT_CART; \
-			_tcscpy_s(path, _MAX_PATH, config.recent_cart_path[drv][no]); \
+			my_tcscpy_s(path, _MAX_PATH, config.recent_cart_path[drv][no]); \
 			for(int i = no; i > 0; i--) { \
-				_tcscpy_s(config.recent_cart_path[drv][i], _MAX_PATH, config.recent_cart_path[drv][i - 1]); \
+				my_tcscpy_s(config.recent_cart_path[drv][i], _MAX_PATH, config.recent_cart_path[drv][i - 1]); \
 			} \
-			_tcscpy_s(config.recent_cart_path[drv][0], _MAX_PATH, path); \
+			my_tcscpy_s(config.recent_cart_path[drv][0], _MAX_PATH, path); \
 			if(emu) { \
 				emu->open_cart(drv, path); \
 			} \
@@ -887,11 +887,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_RECENT_FD + 6: \
 		case ID_RECENT_FD + 7: \
 			no = LOWORD(wParam) - ID_RECENT_FD; \
-			_tcscpy_s(path, _MAX_PATH, config.recent_disk_path[drv][no]); \
+			my_tcscpy_s(path, _MAX_PATH, config.recent_disk_path[drv][no]); \
 			for(int i = no; i > 0; i--) { \
-				_tcscpy_s(config.recent_disk_path[drv][i], _MAX_PATH, config.recent_disk_path[drv][i - 1]); \
+				my_tcscpy_s(config.recent_disk_path[drv][i], _MAX_PATH, config.recent_disk_path[drv][i - 1]); \
 			} \
-			_tcscpy_s(config.recent_disk_path[drv][0], _MAX_PATH, path); \
+			my_tcscpy_s(config.recent_disk_path[drv][0], _MAX_PATH, path); \
 			if(emu) { \
 				open_disk(drv, path, 0); \
 			} \
@@ -1016,11 +1016,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_RECENT_QD + 6: \
 		case ID_RECENT_QD + 7: \
 			no = LOWORD(wParam) - ID_RECENT_QD; \
-			_tcscpy_s(path, _MAX_PATH, config.recent_quickdisk_path[drv][no]); \
+			my_tcscpy_s(path, _MAX_PATH, config.recent_quickdisk_path[drv][no]); \
 			for(int i = no; i > 0; i--) { \
-				_tcscpy_s(config.recent_quickdisk_path[drv][i], _MAX_PATH, config.recent_quickdisk_path[drv][i - 1]); \
+				my_tcscpy_s(config.recent_quickdisk_path[drv][i], _MAX_PATH, config.recent_quickdisk_path[drv][i - 1]); \
 			} \
-			_tcscpy_s(config.recent_quickdisk_path[drv][0], _MAX_PATH, path); \
+			my_tcscpy_s(config.recent_quickdisk_path[drv][0], _MAX_PATH, path); \
 			if(emu) { \
 				emu->open_quickdisk(drv, path); \
 			} \
@@ -1064,11 +1064,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_RECENT_TAPE + 6:
 		case ID_RECENT_TAPE + 7:
 			no = LOWORD(wParam) - ID_RECENT_TAPE;
-			_tcscpy_s(path, _MAX_PATH, config.recent_tape_path[no]);
+			my_tcscpy_s(path, _MAX_PATH, config.recent_tape_path[no]);
 			for(int i = no; i > 0; i--) {
-				_tcscpy_s(config.recent_tape_path[i], _MAX_PATH, config.recent_tape_path[i - 1]);
+				my_tcscpy_s(config.recent_tape_path[i], _MAX_PATH, config.recent_tape_path[i - 1]);
 			}
-			_tcscpy_s(config.recent_tape_path[0], _MAX_PATH, path);
+			my_tcscpy_s(config.recent_tape_path[0], _MAX_PATH, path);
 			if(emu) {
 				emu->play_tape(path);
 			}
@@ -1134,11 +1134,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_RECENT_LASER_DISC + 6:
 		case ID_RECENT_LASER_DISC + 7:
 			no = LOWORD(wParam) - ID_RECENT_LASER_DISC;
-			_tcscpy_s(path, _MAX_PATH, config.recent_laser_disc_path[no]);
+			my_tcscpy_s(path, _MAX_PATH, config.recent_laser_disc_path[no]);
 			for(int i = no; i > 0; i--) {
-				_tcscpy_s(config.recent_laser_disc_path[i], _MAX_PATH, config.recent_laser_disc_path[i - 1]);
+				my_tcscpy_s(config.recent_laser_disc_path[i], _MAX_PATH, config.recent_laser_disc_path[i - 1]);
 			}
-			_tcscpy_s(config.recent_laser_disc_path[0], _MAX_PATH, path);
+			my_tcscpy_s(config.recent_laser_disc_path[0], _MAX_PATH, path);
 			if(emu) {
 				emu->open_laser_disc(path);
 			}
@@ -1165,11 +1165,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_RECENT_BINARY + 6: \
 		case ID_RECENT_BINARY + 7: \
 			no = LOWORD(wParam) - ID_RECENT_BINARY; \
-			_tcscpy_s(path, _MAX_PATH, config.recent_binary_path[drv][no]); \
+			my_tcscpy_s(path, _MAX_PATH, config.recent_binary_path[drv][no]); \
 			for(int i = no; i > 0; i--) { \
-				_tcscpy_s(config.recent_binary_path[drv][i], _MAX_PATH, config.recent_binary_path[drv][i - 1]); \
+				my_tcscpy_s(config.recent_binary_path[drv][i], _MAX_PATH, config.recent_binary_path[drv][i - 1]); \
 			} \
-			_tcscpy_s(config.recent_binary_path[drv][0], _MAX_PATH, path); \
+			my_tcscpy_s(config.recent_binary_path[drv][0], _MAX_PATH, path); \
 			if(emu) { \
 				emu->load_binary(drv, path); \
 			} \
@@ -1253,13 +1253,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_USE_D3D9:
 			config.use_d3d9 = !config.use_d3d9;
 			if(emu) {
-				emu->set_display_size(-1, -1, !now_fullscreen);
+				emu->set_window_size(-1, -1, !now_fullscreen);
 			}
 			break;
 		case ID_SCREEN_WAIT_VSYNC:
 			config.wait_vsync = !config.wait_vsync;
 			if(emu) {
-				emu->set_display_size(-1, -1, !now_fullscreen);
+				emu->set_window_size(-1, -1, !now_fullscreen);
 			}
 			break;
 		case ID_SCREEN_STRETCH_DOT:
@@ -1267,7 +1267,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SCREEN_STRETCH_FILL:
 			config.stretch_type = LOWORD(wParam) - ID_SCREEN_STRETCH_DOT;
 			if(emu) {
-				emu->set_display_size(-1, -1, !now_fullscreen);
+				emu->set_window_size(-1, -1, !now_fullscreen);
 			}
 			break;
 		// accelerator
@@ -1311,11 +1311,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 #endif
 #ifdef USE_SCREEN_ROTATE
-		case ID_SCREEN_ROTATE:
-			config.rotate_type = !config.rotate_type;
+		case ID_SCREEN_ROTATE_0:
+		case ID_SCREEN_ROTATE_90:
+		case ID_SCREEN_ROTATE_180:
+		case ID_SCREEN_ROTATE_270:
+			config.rotate_type = LOWORD(wParam) - ID_SCREEN_ROTATE_0;
 			if(emu) {
 				if(now_fullscreen) {
-					emu->set_display_size(-1, -1, false);
+					emu->set_window_size(-1, -1, false);
 				} else {
 					set_window(hWnd, prev_window_mode);
 				}
@@ -1414,7 +1417,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_INPUT_SWAP_JOY_BUTTONS:
 			config.swap_joy_buttons = !config.swap_joy_buttons;
 			break;
-#ifdef USE_BUTTON
+#ifdef ONE_BOARD_MICRO_COMPUTER
 		case ID_BUTTON +  0:
 		case ID_BUTTON +  1:
 		case ID_BUTTON +  2:
@@ -1458,7 +1461,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, iMsg, wParam, lParam) ;
 }
 
-#ifdef USE_BUTTON
+#ifdef ONE_BOARD_MICRO_COMPUTER
 LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	for(int i = 0; i < MAX_BUTTONS; i++) {
@@ -1583,7 +1586,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 			AppendMenu(hMenu, MF_STRING | MF_DISABLED, ID_D88_FILE_PATH, emu->d88_file[drv].path); \
 			for(int i = 0; i < emu->d88_file[drv].bank_num; i++) { \
 				_TCHAR tmp[32]; \
-				_stprintf_s(tmp, 32, _T("%d: %s"), i + 1, emu->d88_file[drv].disk_name[i]); \
+				my_stprintf_s(tmp, 32, _T("%d: %s"), i + 1, emu->d88_file[drv].disk_name[i]); \
 				AppendMenu(hMenu, MF_STRING | (emu->d88_file[drv].cur_bank == i ? MF_CHECKED : 0), ID_SELECT_D88_BANK + i, tmp); \
 			} \
 			AppendMenu(hMenu, MF_STRING | (emu->d88_file[drv].cur_bank == -1 ? MF_CHECKED : 0), ID_EJECT_D88_BANK, _T("0: (Disk Ejected)")); \
@@ -1759,7 +1762,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// recording
 		bool now_rec = true, now_stop = true;
 		if(emu) {
-			now_rec = emu->now_rec_video;
+			now_rec = emu->now_rec_video();
 			now_stop = !now_rec;
 		}
 		EnableMenuItem(hMenu, ID_SCREEN_REC60, now_rec ? MF_GRAYED : MF_ENABLED);
@@ -1775,7 +1778,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		for(int i = 1; i < MAX_WINDOW; i++) {
 			if(emu && emu->get_window_width(i) <= desktop_width && emu->get_window_height(i) <= desktop_height) {
 				_TCHAR buf[16];
-				_stprintf_s(buf, 16, _T("Window x%d"), i + 1);
+				my_stprintf_s(buf, 16, _T("Window x%d"), i + 1);
 				InsertMenu(hMenu, ID_SCREEN_FULLSCREEN1, MF_BYCOMMAND | MF_STRING, ID_SCREEN_WINDOW1 + i, buf);
 				last = ID_SCREEN_WINDOW1 + i;
 			}
@@ -1786,7 +1789,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 				ZeroMemory(&info, sizeof(info));
 				info.cbSize = sizeof(info);
 				_TCHAR buf[64];
-				_stprintf_s(buf, 64, _T("Fullscreen %dx%d"), screen_mode_width[i], screen_mode_height[i]);
+				my_stprintf_s(buf, 64, _T("Fullscreen %dx%d"), screen_mode_width[i], screen_mode_height[i]);
 				info.fMask = MIIM_TYPE;
 				info.fType = MFT_STRING;
 				info.dwTypeData = buf;
@@ -1818,7 +1821,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		CheckMenuItem(hMenu, ID_SCREEN_SCANLINE, config.scan_line ? MF_CHECKED : MF_UNCHECKED);
 #endif
 #ifdef USE_SCREEN_ROTATE
-		CheckMenuItem(hMenu, ID_SCREEN_ROTATE, config.rotate_type ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuRadioItem(hMenu, ID_SCREEN_ROTATE_0, ID_SCREEN_ROTATE_270, ID_SCREEN_ROTATE_0 + config.rotate_type, MF_BYCOMMAND);
 #endif
 	}
 #endif
@@ -1827,7 +1830,7 @@ void update_menu(HWND hWnd, HMENU hMenu, int pos)
 		// sound menu
 		bool now_rec = false, now_stop = false;
 		if(emu) {
-			now_rec = emu->now_rec_sound;
+			now_rec = emu->now_rec_sound();
 			now_stop = !now_rec;
 		}
 		EnableMenuItem(hMenu, ID_SOUND_REC, now_rec ? MF_GRAYED : MF_ENABLED);
@@ -1909,7 +1912,7 @@ void open_cart_dialog(HWND hWnd, int drv)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_cart_path[drv]);
-		_tcscpy_s(config.initial_cart_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_cart_dir, _MAX_PATH, get_parent_dir(path));
 		emu->open_cart(drv, path);
 	}
 }
@@ -1926,7 +1929,7 @@ void open_disk_dialog(HWND hWnd, int drv)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_disk_path[drv]);
-		_tcscpy_s(config.initial_disk_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_disk_dir, _MAX_PATH, get_parent_dir(path));
 		open_disk(drv, path, 0);
 	}
 }
@@ -1957,7 +1960,7 @@ void open_disk(int drv, const _TCHAR* path, int bank)
 					file_offset += fio->FgetUint32_LE();
 					emu->d88_file[drv].bank_num++;
 				}
-				_tcscpy_s(emu->d88_file[drv].path, _MAX_PATH, path);
+				my_tcscpy_s(emu->d88_file[drv].path, _MAX_PATH, path);
 				emu->d88_file[drv].cur_bank = bank;
 			} catch(...) {
 				emu->d88_file[drv].bank_num = 0;
@@ -1994,7 +1997,7 @@ void open_quickdisk_dialog(HWND hWnd, int drv)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_quickdisk_path[drv]);
-		_tcscpy_s(config.initial_quickdisk_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_quickdisk_dir, _MAX_PATH, get_parent_dir(path));
 		emu->open_quickdisk(drv, path);
 	}
 }
@@ -2030,7 +2033,7 @@ void open_tape_dialog(HWND hWnd, bool play)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_tape_path);
-		_tcscpy_s(config.initial_tape_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_tape_dir, _MAX_PATH, get_parent_dir(path));
 		if(play) {
 			emu->play_tape(path);
 		} else {
@@ -2051,7 +2054,7 @@ void open_laser_disc_dialog(HWND hWnd)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_laser_disc_path);
-		_tcscpy_s(config.initial_laser_disc_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_laser_disc_dir, _MAX_PATH, get_parent_dir(path));
 		emu->open_laser_disc(path);
 	}
 }
@@ -2072,7 +2075,7 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 	);
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_binary_path[drv]);
-		_tcscpy_s(config.initial_binary_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_binary_dir, _MAX_PATH, get_parent_dir(path));
 		if(load) {
 			emu->load_binary(drv, path);
 		} else {
@@ -2095,7 +2098,7 @@ void open_any_file(const _TCHAR* path)
 	   check_file_extension(path, _T(".60" )) || 
 	   check_file_extension(path, _T(".pce"))) {
 		UPDATE_HISTORY(path, config.recent_cart_path[0]);
-		_tcscpy_s(config.initial_cart_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_cart_dir, _MAX_PATH, get_parent_dir(path));
 		emu->open_cart(0, path);
 		return;
 	}
@@ -2117,7 +2120,7 @@ void open_any_file(const _TCHAR* path)
 	   check_file_extension(path, _T(".ima")) || 
 	   check_file_extension(path, _T(".vfd"))) {
 		UPDATE_HISTORY(path, config.recent_disk_path[0]);
-		_tcscpy_s(config.initial_disk_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_disk_dir, _MAX_PATH, get_parent_dir(path));
 		open_disk(0, path, 0);
 		return;
 	}
@@ -2137,7 +2140,7 @@ void open_any_file(const _TCHAR* path)
 	   check_file_extension(path, _T(".tap")) || 
 	   check_file_extension(path, _T(".t77"))) {
 		UPDATE_HISTORY(path, config.recent_tape_path);
-		_tcscpy_s(config.initial_tape_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_tape_dir, _MAX_PATH, get_parent_dir(path));
 		emu->play_tape(path);
 		return;
 	}
@@ -2147,7 +2150,7 @@ void open_any_file(const _TCHAR* path)
 	   check_file_extension(path, _T(".bin")) || 
 	   check_file_extension(path, _T(".hex"))) {
 		UPDATE_HISTORY(path, config.recent_binary_path[0]);
-		_tcscpy_s(config.initial_binary_dir, _MAX_PATH, get_parent_dir(path));
+		my_tcscpy_s(config.initial_binary_dir, _MAX_PATH, get_parent_dir(path));
 		emu->load_binary(0, path);
 		return;
 	}
@@ -2195,7 +2198,7 @@ void set_window(HWND hWnd, int mode)
 		config.window_mode = prev_window_mode = mode;
 		
 		// set screen size to emu class
-		emu->set_display_size(width, height, true);
+		emu->set_window_size(width, height, true);
 	} else if(!now_fullscreen) {
 		// fullscreen
 		int width = (mode == -1) ? desktop_width : screen_mode_width[mode - MAX_WINDOW];
@@ -2231,7 +2234,7 @@ void set_window(HWND hWnd, int mode)
 			hide_menu_bar(hWnd);
 			
 			// set screen size to emu class
-			emu->set_display_size(width, height, false);
+			emu->set_window_size(width, height, false);
 		}
 	}
 }

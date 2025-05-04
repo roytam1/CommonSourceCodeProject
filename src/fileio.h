@@ -22,6 +22,8 @@
 #define FILEIO_WRITE_ASCII		6
 #define FILEIO_READ_WRITE_ASCII		7
 #define FILEIO_READ_WRITE_NEW_ASCII	8
+#define FILEIO_WRITE_APPEND_ASCII	9
+#define FILEIO_READ_WRITE_APPEND_ASCII	10
 #define FILEIO_SEEK_SET			0
 #define FILEIO_SEEK_CUR			1
 #define FILEIO_SEEK_END			2
@@ -35,11 +37,12 @@ public:
 	FILEIO();
 	~FILEIO();
 
-	static bool IsFileExists(const _TCHAR *filename);
-	static bool IsFileProtected(const _TCHAR *filename);
-	static void RemoveFile(const _TCHAR *filename);
-
-	bool Fopen(const _TCHAR *filename, int mode);
+	static bool IsFileExists(const _TCHAR *file_path);
+	static bool IsFileProtected(const _TCHAR *file_path);
+	static bool RemoveFile(const _TCHAR *file_path);
+	static bool RenameFile(const _TCHAR *existing_file_path, const _TCHAR *new_file_path);
+	
+	bool Fopen(const _TCHAR *file_path, int mode);
 	void Fclose();
 	bool IsOpened() { return (fp != NULL); }
 	uint32 FileLength();

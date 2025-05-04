@@ -605,6 +605,7 @@ void VM::push_play()
 	drec->set_remote(true);
 }
 
+
 void VM::push_stop()
 {
 	drec->set_remote(false);
@@ -716,3 +717,13 @@ void VM::get_screen_resolution(int *w, int *h)
 	}
 }
 #endif
+
+bool VM::screen_changed()
+{
+	bool f = true;
+#if defined(USE_MINIMUM_RENDERING)
+	f = display->screen_update();
+	display->reset_screen_update();
+#endif	
+	return f;
+}

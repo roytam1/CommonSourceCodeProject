@@ -184,7 +184,7 @@ void LD700::event_frame()
 			break;
 		case 0x17:
 			if(status != STATUS_EJECT && status != STATUS_PLAY) {
-				emu->mute_direct_show_dev(true, true);
+				emu->mute_video_dev(true, true);
 				emu->play_movie();
 				set_status(STATUS_PLAY);
 				emu->out_debug_log("LD700: PLAY\n");
@@ -244,7 +244,7 @@ void LD700::event_frame()
 						set_cur_frame(seek_num, false);
 					}
 					if(status == STATUS_PAUSE) {
-						emu->mute_direct_show_dev(true, true);
+						emu->mute_video_dev(true, true);
 						emu->play_movie();
 						set_status(STATUS_PLAY);
 						emu->out_debug_log("LD700: PLAY\n");
@@ -441,12 +441,12 @@ void LD700::open_disc(const _TCHAR* file_path)
 			delete fio;
 		} else {
 			_TCHAR ini_path[_MAX_PATH];
-			_stprintf_s(ini_path, _MAX_PATH, _T("%s.ini"), get_file_path_without_extensiton(file_path));
+			my_stprintf_s(ini_path, _MAX_PATH, _T("%s.ini"), get_file_path_without_extensiton(file_path));
 			emu->out_debug_log("LD700: OPEN INI PATH=%s\n", ini_path);
 			
 			for(int i = 0; i <= MAX_TRACKS; i++) {
 				_TCHAR name[64];
-				_stprintf_s(name, 64, _T("chapter%d"), i);
+				my_stprintf_s(name, 64, _T("chapter%d"), i);
 				int value = GetPrivateProfileInt(_T("Location"), name, -1, ini_path);
 				if(value < 0) {
 					break;
@@ -457,7 +457,7 @@ void LD700::open_disc(const _TCHAR* file_path)
 			}
 			for(int i = 0; i < MAX_PAUSES; i++) {
 				_TCHAR name[64];
-				_stprintf_s(name, 64, _T("stop%d"), i);
+				my_stprintf_s(name, 64, _T("stop%d"), i);
 				int value = GetPrivateProfileInt(_T("Location"), name, -1, ini_path);
 				if(value < 0) {
 					break;

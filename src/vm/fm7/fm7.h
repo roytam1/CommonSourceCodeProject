@@ -17,12 +17,16 @@
 #define USE_CPU_TYPE 2
 #define USE_SPECIAL_RESET
 //#define SUPPORT_DUMMY_DEVICE_LED 3
+#define USE_MINIMUM_RENDERING 1
 
 //#undef  HAS_YM2608
 //#define SUPPORT_YM2203_PORT
 //#define HAS_AY_3_8910
 // 4:3
-#define SCREEN_WIDTH_ASPECT 640 
+
+#define SCREEN_WIDTH 640 
+#define SCREEN_HEIGHT 400
+//#define SCREEN_HEIGHT_ASPECT 480
 #define SCREEN_HEIGHT_ASPECT 400
 #define WINDOW_WIDTH_ASPECT 640 
 //#define WINDOW_HEIGHT_ASPECT 480
@@ -431,6 +435,7 @@ public:
 	bool tape_playing();
 	bool tape_recording();
 	int tape_position();
+	
 	bool now_skip();
 	void push_play();
 	void push_stop();
@@ -444,6 +449,9 @@ public:
 
 #if defined(USE_DIG_RESOLUTION)
 	void get_screen_resolution(int *w, int *h);
+#endif
+#if defined(USE_MINIMUM_RENDERING)	
+	bool screen_changed(void);
 #endif	
 	// ----------------------------------------
 	// for each device

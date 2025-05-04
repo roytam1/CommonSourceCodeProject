@@ -306,7 +306,7 @@ void PC88::initialize()
 	
 	// initialize text palette
 	for(int i = 0; i < 9; i++) {
-		palette_text_pc[i] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0) | 0xff000000; // 0xff000000 is a flag for crt filter
+		palette_text_pc[i] = RGBA_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0, 255); // A is a flag for crt filter
 	}
 	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
@@ -1780,7 +1780,7 @@ void PC88::rec_tape(const _TCHAR* file_path)
 	close_tape();
 	
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_WRITE_NEW_BINARY)) {
-		_tcscpy_s(rec_file_path, _MAX_PATH, file_path);
+		my_tcscpy_s(rec_file_path, _MAX_PATH, file_path);
 		cmt_bufptr = 0;
 		cmt_rec = true;
 	}
@@ -1955,8 +1955,8 @@ void PC88::draw_screen()
 					while(y < 200) {
 						scrntype* dest0 = emu->screen_buffer(y * 2);
 						scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
-						memset(dest0, 0, 640);
-						memset(dest1, 0, 640);
+						memset(dest0, 0, sizeof(scrntype) * 640);
+						memset(dest1, 0, sizeof(scrntype) * 640);
 						y++;
 					}
 					break;
@@ -1990,7 +1990,7 @@ void PC88::draw_screen()
 				}
 			}
 		}
-		emu->screen_skip_line = true;
+		emu->screen_skip_line(true);
 #if !defined(_PC8001SR)
 	} else {
 		for(int y = 0; y < 400; y++) {
@@ -2003,7 +2003,7 @@ void PC88::draw_screen()
 				dest[x] = t ? palette_text_pc[t] : palette_pc[src_g[x]];
 			}
 		}
-		emu->screen_skip_line = false;
+		emu->screen_skip_line(false);
 	}
 #endif
 	

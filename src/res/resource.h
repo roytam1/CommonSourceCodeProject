@@ -277,7 +277,10 @@
 
 #define ID_SCREEN_CRT_FILTER            41071
 #define ID_SCREEN_SCANLINE              41072
-#define ID_SCREEN_ROTATE                41073
+#define ID_SCREEN_ROTATE_0              41073
+#define ID_SCREEN_ROTATE_90             41074
+#define ID_SCREEN_ROTATE_180            41075
+#define ID_SCREEN_ROTATE_270            41076
 
 #define ID_SOUND_REC                    41101
 #define ID_SOUND_STOP                   41102
@@ -1175,9 +1178,7 @@
 #define MENU_POS_CONTROL                0
 #define MENU_POS_BINARY1                1
 #define MENU_POS_TAPE                   2
-#define MENU_POS_SCREEN                 3
-#define MENU_POS_SOUND                  4
-#define MENU_POS_INPUT                  5
+#define MENU_POS_SOUND                  3
 #endif
 
 // CANON X-07

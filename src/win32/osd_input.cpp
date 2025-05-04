@@ -2,15 +2,13 @@
 	Skelton for retropc emulator
 
 	Author : Takeda.Toshiya
-	Date   : 2006.08.18 -
+	Date   : 2015.11.26-
 
 	[ win32 input ]
 */
 
-#include "emu.h"
-#include "vm/vm.h"
-#include "fifo.h"
-#include "fileio.h"
+#include "osd.h"
+#include "../fifo.h"
 
 #ifdef NOTIFY_KEY_DOWN_LR_SHIFT
 #define VK_SHIFT_TEMP	VK_LSHIFT
@@ -279,7 +277,7 @@ static const int autokey_table_base[][2] = {
 };
 #endif
 
-void EMU::initialize_input()
+void OSD::initialize_input()
 {
 	// initialize status
 	memset(key_status, 0, sizeof(key_status));
@@ -360,7 +358,7 @@ void EMU::initialize_input()
 	lost_focus = false;
 }
 
-void EMU::release_input()
+void OSD::release_input()
 {
 	// release mouse
 	if(mouse_enabled) {
@@ -387,7 +385,7 @@ void EMU::release_input()
 	}
 }
 
-void EMU::update_input()
+void OSD::update_input()
 {
 	if(dinput_key_ok) {
 		// direct input
@@ -572,15 +570,15 @@ void EMU::update_input()
 		POINT pt;
 		GetCursorPos(&pt);
 		ScreenToClient(main_window_handle, &pt);
-		mouse_status[0]  = pt.x - display_width / 2;
-		mouse_status[1]  = pt.y - display_height / 2;
+		mouse_status[0]  = pt.x - host_window_width / 2;
+		mouse_status[1]  = pt.y - host_window_height / 2;
 		mouse_status[2]  = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) ? 1 : 0;
 		mouse_status[2] |= (GetAsyncKeyState(VK_RBUTTON) & 0x8000) ? 2 : 0;
 		mouse_status[2] |= (GetAsyncKeyState(VK_MBUTTON) & 0x8000) ? 4 : 0;
 		// move mouse cursor to the center of window
 		if(!(mouse_status[0] == 0 && mouse_status[1] == 0)) {
-			pt.x = display_width / 2;
-			pt.y = display_height / 2;
+			pt.x = host_window_width / 2;
+			pt.y = host_window_height / 2;
 			ClientToScreen(main_window_handle, &pt);
 			SetCursorPos(pt.x, pt.y);
 		}
@@ -640,7 +638,7 @@ void EMU::update_input()
 #endif
 }
 
-void EMU::key_down(int code, bool repeat)
+void OSD::key_down(int code, bool repeat)
 {
 	if(!dinput_key_ok) {
 		if(code == VK_SHIFT) {
@@ -689,7 +687,7 @@ void EMU::key_down(int code, bool repeat)
 	}
 }
 
-void EMU::key_up(int code)
+void OSD::key_up(int code)
 {
 	if(!dinput_key_ok) {
 		if(code == VK_SHIFT) {
@@ -731,7 +729,7 @@ void EMU::key_up(int code)
 	}
 }
 
-void EMU::key_down_sub(int code, bool repeat)
+void OSD::key_down_sub(int code, bool repeat)
 {
 	bool keep_frames = false;
 	
@@ -803,7 +801,7 @@ void EMU::key_down_sub(int code, bool repeat)
 #endif
 }
 
-void EMU::key_up_sub(int code)
+void OSD::key_up_sub(int code)
 {
 	if(!(code == VK_LSHIFT || code == VK_RSHIFT || code == VK_LCONTROL || code == VK_RCONTROL || code == VK_LMENU || code == VK_RMENU)) {
 		code = keycode_conv[code];
@@ -859,8 +857,8 @@ void EMU::key_up_sub(int code)
 #endif
 }
 
-#ifdef USE_BUTTON
-void EMU::press_button(int num)
+#ifdef ONE_BOARD_MICRO_COMPUTER
+void OSD::press_button(int num)
 {
 	int code = buttons[num].code;
 	
@@ -874,7 +872,7 @@ void EMU::press_button(int num)
 }
 #endif
 
-void EMU::enable_mouse()
+void OSD::enable_mouse()
 {
 	// enable mouse emulation
 	if(!mouse_enabled) {
@@ -882,15 +880,15 @@ void EMU::enable_mouse()
 		ShowCursor(FALSE);
 		// move mouse cursor to the center of window
 		POINT pt;
-		pt.x = display_width / 2;
-		pt.y = display_height / 2;
+		pt.x = host_window_width / 2;
+		pt.y = host_window_height / 2;
 		ClientToScreen(main_window_handle, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
 	mouse_enabled = true;
 }
 
-void EMU::disenable_mouse()
+void OSD::disenable_mouse()
 {
 	// disenable mouse emulation
 	if(mouse_enabled) {
@@ -899,7 +897,7 @@ void EMU::disenable_mouse()
 	mouse_enabled = false;
 }
 
-void EMU::toggle_mouse()
+void OSD::toggle_mouse()
 {
 	// toggle mouse enable / disenable
 	if(mouse_enabled) {
@@ -910,7 +908,7 @@ void EMU::toggle_mouse()
 }
 
 #ifdef USE_AUTO_KEY
-void EMU::start_auto_key()
+void OSD::start_auto_key()
 {
 	stop_auto_key();
 	
@@ -959,7 +957,7 @@ void EMU::start_auto_key()
 	}
 }
 
-void EMU::stop_auto_key()
+void OSD::stop_auto_key()
 {
 	if(autokey_shift) {
 		key_up_sub(VK_LSHIFT);

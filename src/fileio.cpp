@@ -19,47 +19,71 @@ FILEIO::~FILEIO(void)
 	Fclose();
 }
 
-bool FILEIO::IsFileExists(const _TCHAR *filename)
+bool FILEIO::IsFileExists(const _TCHAR *file_path)
 {
-	DWORD attr = GetFileAttributes(filename);
+#ifdef _MSC_VER
+	DWORD attr = GetFileAttributes(file_path);
 	if(attr == -1) {
 		return false;
 	}
 	return ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0);
+#else
+	return (_taccess(file_path, 0) == 0);
+#endif
 }
 
-bool FILEIO::IsFileProtected(const _TCHAR *filename)
+bool FILEIO::IsFileProtected(const _TCHAR *file_path)
 {
-	return ((GetFileAttributes(filename) & FILE_ATTRIBUTE_READONLY) != 0);
+#ifdef _MSC_VER
+	return ((GetFileAttributes(file_path) & FILE_ATTRIBUTE_READONLY) != 0);
+#else
+	return (_taccess(file_path, 2) != 0);
+#endif
 }
 
-void FILEIO::RemoveFile(const _TCHAR *filename)
+bool FILEIO::RemoveFile(const _TCHAR *file_path)
 {
-	DeleteFile(filename);
-//	_tremove(filename);	// not supported on wince
+#ifdef _MSC_VER
+	return (DeleteFile(file_path) != 0);
+#else
+	return (_tremove(file_path) == 0);
+#endif
 }
 
-bool FILEIO::Fopen(const _TCHAR *filename, int mode)
+bool FILEIO::RenameFile(const _TCHAR *existing_file_path, const _TCHAR *new_file_path)
+{
+#ifdef _MSC_VER
+	return (MoveFile(existing_file_path, new_file_path) != 0);
+#else
+	return (_trename(existing_file_path, new_file_path) == 0);
+#endif
+}
+
+bool FILEIO::Fopen(const _TCHAR *file_path, int mode)
 {
 	Fclose();
 	
 	switch(mode) {
 	case FILEIO_READ_BINARY:
-		return ((fp = _tfopen(filename, _T("rb"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("rb"))) != NULL);
 	case FILEIO_WRITE_BINARY:
-		return ((fp = _tfopen(filename, _T("wb"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("wb"))) != NULL);
 	case FILEIO_READ_WRITE_BINARY:
-		return ((fp = _tfopen(filename, _T("r+b"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("r+b"))) != NULL);
 	case FILEIO_READ_WRITE_NEW_BINARY:
-		return ((fp = _tfopen(filename, _T("w+b"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("w+b"))) != NULL);
 	case FILEIO_READ_ASCII:
-		return ((fp = _tfopen(filename, _T("r"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("r"))) != NULL);
 	case FILEIO_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("w"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("w"))) != NULL);
+	case FILEIO_WRITE_APPEND_ASCII:
+		return ((fp = _tfopen(file_path, _T("a"))) != NULL);
 	case FILEIO_READ_WRITE_ASCII:
-		return ((fp = _tfopen(filename, _T("r+"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("r+"))) != NULL);
 	case FILEIO_READ_WRITE_NEW_ASCII:
-		return ((fp = _tfopen(filename, _T("w+"))) != NULL);
+		return ((fp = _tfopen(file_path, _T("w+"))) != NULL);
+	case FILEIO_READ_WRITE_APPEND_ASCII:
+		return ((fp = _tfopen(file_path, _T("a+"))) != NULL);
 	}
 	return false;
 }
@@ -512,10 +536,10 @@ int FILEIO::Fprintf(const char* format, ...)
 	char buffer[1024];
 	
 	va_start(ap, format);
-	vsprintf_s(buffer, 1024, format, ap);
+	my_vsprintf_s(buffer, 1024, format, ap);
 	va_end(ap);
 	
-	return fprintf_s(fp, "%s", buffer);
+	return my_fprintf_s(fp, "%s", buffer);
 }
 
 uint32 FILEIO::Fread(void* buffer, uint32 size, uint32 count)

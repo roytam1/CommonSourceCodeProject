@@ -59,6 +59,7 @@ inline void DISPLAY::GETVRAM_8_200L(int yoff, scrntype *p, uint32 mask, bool win
 #if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	int dpage = vram_display_block;
 #endif
+	if(p == NULL) return;
 #if defined(_FM77AV_VARIANTS)
 	if(display_page == 1) { // Is this dirty?
 		yoff_d = offset_point_bank1_bak;
@@ -123,7 +124,7 @@ inline void DISPLAY::GETVRAM_8_400L(int yoff, scrntype *p, uint32 mask, bool win
 # if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	int dpage = vram_display_block;
 # endif
-	
+	if(p == NULL) return;
 	if(display_page == 1) { // Is this dirty?
 		yoff_d = offset_point_bank1_bak;
 	} else {
@@ -176,6 +177,7 @@ inline void DISPLAY::GETVRAM_256k(int yoff, scrntype *p, uint32 mask)
 	uint32 _bit;
 	int _shift;
 	int cp;
+	if(p == NULL) return;
 	
 	r3 = g3 = b3 = 0;
 	r4 = g4 = b4 = 0;
@@ -242,8 +244,8 @@ inline void DISPLAY::GETVRAM_256k(int yoff, scrntype *p, uint32 mask)
 	
 		pixel = RGB_COLOR(r, g, b);
 		p[cp] = pixel;
-		p[cp + 1] = pixel;
-		cp += 2;
+		//p[cp + 1] = pixel;
+		cp += 1;
 	}
 	
 }
@@ -260,6 +262,7 @@ inline void DISPLAY::GETVRAM_4096(int yoff, scrntype *p, uint32 mask, bool windo
 # if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	int dpage = vram_display_block;
 # endif
+	if(p == NULL) return;
 	
 	yoff_d1 = offset_point_bak;
 	yoff_d2 = offset_point_bank1_bak;
@@ -302,94 +305,71 @@ inline void DISPLAY::GETVRAM_4096(int yoff, scrntype *p, uint32 mask, bool windo
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
 	p[0] = pixel;
-	p[1] = pixel;
+	//p[1] = pixel;
 
 	g = ((g3 & (0x40 << 24)) >> 19) | ((g3 & (0x40 << 16)) >> 12) | ((g3 & (0x40 << 8)) >> 5)  | ((g3 & 0x40) << 2);
 	r = ((r3 & (0x40 << 24)) >> 23) | ((r3 & (0x40 << 16)) >> 16) | ((r3 & (0x40 << 8)) >> 9)  | ((r3 & 0x40) >> 2);
 	b = ((b3 & (0x40 << 24)) >> 27) | ((b3 & (0x40 << 16)) >> 20) | ((b3 & (0x40 << 8)) >> 13) | ((b3 & 0x40) >> 6);
 	
-	//g = ((g3 & (0x40 << 24)) ? 0x800 : 0) | ((g3 & (0x40 << 16)) ? 0x400 : 0) | ((g3 & (0x40 << 8)) ? 0x200 : 0) | ((g3 & 0x40) ? 0x100 : 0);
-	//r = ((r3 & (0x40 << 24)) ? 0x80  : 0) | ((r3 & (0x40 << 16)) ? 0x40  : 0) | ((r3 & (0x40 << 8)) ? 0x20  : 0) | ((r3 & 0x40) ? 0x10  : 0);
-	//b = ((b3 & (0x40 << 24)) ? 0x8   : 0) | ((b3 & (0x40 << 16)) ? 0x4   : 0) | ((b3 & (0x40 << 8)) ? 0x2   : 0) | ((b3 & 0x40) ? 0x1   : 0);
-	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[2] = pixel;
-	p[3] = pixel;
+	p[1] = pixel;
+	//p[3] = pixel;
 
-//	g = ((g3 & (0x20 << 24)) ? 0x800 : 0) | ((g3 & (0x20 << 16)) ? 0x400 : 0) | ((g3 & (0x20 << 8)) ? 0x200 : 0) | ((g3 & 0x20) ? 0x100 : 0);
-//	r = ((r3 & (0x20 << 24)) ? 0x80  : 0) | ((r3 & (0x20 << 16)) ? 0x40  : 0) | ((r3 & (0x20 << 8)) ? 0x20  : 0) | ((r3 & 0x20) ? 0x10  : 0);
-//	b = ((b3 & (0x20 << 24)) ? 0x8   : 0) | ((b3 & (0x20 << 16)) ? 0x4   : 0) | ((b3 & (0x20 << 8)) ? 0x2   : 0) | ((b3 & 0x20) ? 0x1   : 0);
 	g = ((g3 & (0x20 << 24)) >> 18) | ((g3 & (0x20 << 16)) >> 11) | ((g3 & (0x20 << 8)) >> 4)  | ((g3 & 0x20) << 3);
 	r = ((r3 & (0x20 << 24)) >> 22) | ((r3 & (0x20 << 16)) >> 15) | ((r3 & (0x20 << 8)) >> 8)  | ((r3 & 0x20) >> 1);
 	b = ((b3 & (0x20 << 24)) >> 26) | ((b3 & (0x20 << 16)) >> 19) | ((b3 & (0x20 << 8)) >> 12) | ((b3 & 0x20) >> 5);
 	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[4] = pixel;
-	p[5] = pixel;
+	p[2] = pixel;
+	//p[5] = pixel;
 
-	//g = ((g3 & (0x10 << 24)) ? 0x800 : 0) | ((g3 & (0x10 << 16)) ? 0x400 : 0) | ((g3 & (0x10 << 8)) ? 0x200 : 0) | ((g3 & 0x10) ? 0x100 : 0);
-	//r = ((r3 & (0x10 << 24)) ? 0x80  : 0) | ((r3 & (0x10 << 16)) ? 0x40  : 0) | ((r3 & (0x10 << 8)) ? 0x20  : 0) | ((r3 & 0x10) ? 0x10  : 0);
-	//b = ((b3 & (0x10 << 24)) ? 0x8   : 0) | ((b3 & (0x10 << 16)) ? 0x4   : 0) | ((b3 & (0x10 << 8)) ? 0x2   : 0) | ((b3 & 0x10) ? 0x1   : 0);
 	g = ((g3 & (0x10 << 24)) >> 17) | ((g3 & (0x10 << 16)) >> 10) | ((g3 & (0x10 << 8)) >> 3)  | ((g3 & 0x10) << 4);
 	r = ((r3 & (0x10 << 24)) >> 21) | ((r3 & (0x10 << 16)) >> 14) | ((r3 & (0x10 << 8)) >> 7)  | ((r3 & 0x10) >> 0);
 	b = ((b3 & (0x10 << 24)) >> 25) | ((b3 & (0x10 << 16)) >> 18) | ((b3 & (0x10 << 8)) >> 11) | ((b3 & 0x10) >> 4);
 	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[6] = pixel;
-	p[7] = pixel;
+	p[3] = pixel;
+	//p[7] = pixel;
 
-
-	//g = ((g3 & (0x8 << 24)) ? 0x800 : 0) | ((g3 & (0x8 << 16)) ? 0x400 : 0) | ((g3 & (0x8 << 8)) ? 0x200 : 0) | ((g3 & 0x8) ? 0x100 : 0);
-	//r = ((r3 & (0x8 << 24)) ? 0x80  : 0) | ((r3 & (0x8 << 16)) ? 0x40  : 0) | ((r3 & (0x8 << 8)) ? 0x20  : 0) | ((r3 & 0x8) ? 0x10  : 0);
-	//b = ((b3 & (0x8 << 24)) ? 0x8   : 0) | ((b3 & (0x8 << 16)) ? 0x4   : 0) | ((b3 & (0x8 << 8)) ? 0x2   : 0) | ((b3 & 0x8) ? 0x1   : 0);
 	g = ((g3 & (0x8 << 24)) >> 16) | ((g3 & (0x8 << 16)) >> 9)  | ((g3 & (0x8 << 8)) >> 2)  | ((g3 & 0x8) << 5);
 	r = ((r3 & (0x8 << 24)) >> 20) | ((r3 & (0x8 << 16)) >> 13) | ((r3 & (0x8 << 8)) >> 6)  | ((r3 & 0x8) << 1);
 	b = ((b3 & (0x8 << 24)) >> 24) | ((b3 & (0x8 << 16)) >> 17) | ((b3 & (0x8 << 8)) >> 10) | ((b3 & 0x8) >> 3);
 	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[8] = pixel;
-	p[9] = pixel;
+	p[4] = pixel;
+	//p[9] = pixel;
 
 	
-	//g = ((g3 & (0x4 << 24)) ? 0x800 : 0) | ((g3 & (0x4 << 16)) ? 0x400 : 0) | ((g3 & (0x4 << 8)) ? 0x200 : 0) | ((g3 & 0x4) ? 0x100 : 0);
-	//r = ((r3 & (0x4 << 24)) ? 0x80  : 0) | ((r3 & (0x4 << 16)) ? 0x40  : 0) | ((r3 & (0x4 << 8)) ? 0x20  : 0) | ((r3 & 0x4) ? 0x10  : 0);
-	//b = ((b3 & (0x4 << 24)) ? 0x8   : 0) | ((b3 & (0x4 << 16)) ? 0x4   : 0) | ((b3 & (0x4 << 8)) ? 0x2   : 0) | ((b3 & 0x4) ? 0x1   : 0);
 	g = ((g3 & (0x4 << 24)) >> 15) | ((g3 & (0x4 << 16)) >> 8)  | ((g3 & (0x4 << 8)) >> 1) | ((g3 & 0x4) << 6);
 	r = ((r3 & (0x4 << 24)) >> 19) | ((r3 & (0x4 << 16)) >> 12) | ((r3 & (0x4 << 8)) >> 5) | ((r3 & 0x4) << 2);
 	b = ((b3 & (0x4 << 24)) >> 23) | ((b3 & (0x4 << 16)) >> 16) | ((b3 & (0x4 << 8)) >> 9) | ((b3 & 0x4) >> 2);
 	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[10] = pixel;
-	p[11] = pixel;
+	p[5] = pixel;
+	//p[11] = pixel;
 
-	//g = ((g3 & (0x2 << 24)) ? 0x800 : 0) | ((g3 & (0x2 << 16)) ? 0x400 : 0) | ((g3 & (0x2 << 8)) ? 0x200 : 0) | ((g3 & 0x2) ? 0x100 : 0);
-	//r = ((r3 & (0x2 << 24)) ? 0x80  : 0) | ((r3 & (0x2 << 16)) ? 0x40  : 0) | ((r3 & (0x2 << 8)) ? 0x20  : 0) | ((r3 & 0x2) ? 0x10  : 0);
-	//b = ((b3 & (0x2 << 24)) ? 0x8   : 0) | ((b3 & (0x2 << 16)) ? 0x4   : 0) | ((b3 & (0x2 << 8)) ? 0x2   : 0) | ((b3 & 0x2) ? 0x1   : 0);
 	g = ((g3 & (0x2 << 24)) >> 14) | ((g3 & (0x2 << 16)) >> 7)  | ((g3 & (0x2 << 8)) >> 0) | ((g3 & 0x2) << 7);
 	r = ((r3 & (0x2 << 24)) >> 18) | ((r3 & (0x2 << 16)) >> 11) | ((r3 & (0x2 << 8)) >> 4) | ((r3 & 0x2) << 3);
 	b = ((b3 & (0x2 << 24)) >> 22) | ((b3 & (0x2 << 16)) >> 15) | ((b3 & (0x2 << 8)) >> 8) | ((b3 & 0x2) >> 1);
 	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[12] = pixel;
-	p[13] = pixel;
+	p[6] = pixel;
+	//p[13] = pixel;
 
-	//g = ((g3 & (0x1 << 24)) ? 0x800 : 0) | ((g3 & (0x1 << 16)) ? 0x400 : 0) | ((g3 & (0x1 << 8)) ? 0x200 : 0) | ((g3 & 0x1) ? 0x100 : 0);
-	//r = ((r3 & (0x1 << 24)) ? 0x80  : 0) | ((r3 & (0x1 << 16)) ? 0x40  : 0) | ((r3 & (0x1 << 8)) ? 0x20  : 0) | ((r3 & 0x1) ? 0x10  : 0);
-	//b = ((b3 & (0x1 << 24)) ? 0x8   : 0) | ((b3 & (0x1 << 16)) ? 0x4   : 0) | ((b3 & (0x1 << 8)) ? 0x2   : 0) | ((b3 & 0x1) ? 0x1   : 0);
 	g = ((g3 & (0x1 << 24)) >> 13) | ((g3 & (0x1 << 16)) >> 6)  | ((g3 & (0x1 << 8)) << 1) | ((g3 & 0x1) << 8);
 	r = ((r3 & (0x1 << 24)) >> 17) | ((r3 & (0x1 << 16)) >> 10) | ((r3 & (0x1 << 8)) >> 3) | ((r3 & 0x1) << 4);
 	b = ((b3 & (0x1 << 24)) >> 21) | ((b3 & (0x1 << 16)) >> 14) | ((b3 & (0x1 << 8)) >> 7) | ((b3 & 0x1) >> 0);
 	   
 	idx = (g  | b | r ) & mask;
 	pixel = analog_palette_pixel[idx];
-	p[14] = pixel;
-	p[15] = pixel;
+	p[7] = pixel;
+	//p[15] = pixel;
 }
 #endif
 
@@ -431,23 +411,52 @@ void DISPLAY::draw_screen()
 		frame_skip_count = 0;
 	}
 #endif
+#ifdef USE_CRT_FILTER
+	emu->screen_skip_line(false);
+#endif
 	  // Set blank
 	if(!crt_flag) {
-		for(y = 0; y < 400; y++) {
-			memset(emu->screen_buffer(y), 0x00, 640 * sizeof(scrntype));
+		if(crt_flag_bak) {
+			scrntype *ppp;
+			if(display_mode == DISPLAY_MODE_8_200L) {
+				emu->set_vm_screen_size(640, 200, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
+				for(y = 0; y < 200; y++) {
+					ppp = emu->screen_buffer(y);
+					if(ppp != NULL) memset(ppp, 0x00, 640 * sizeof(scrntype));
+				}
+			} else if(display_mode == DISPLAY_MODE_8_400L) {
+				emu->set_vm_screen_size(640, 400, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
+				for(y = 0; y < 400; y++) {
+					ppp = emu->screen_buffer(y);
+					if(ppp != NULL) memset(ppp, 0x00, 640 * sizeof(scrntype));
+				}
+			} else { // 320x200
+				emu->set_vm_screen_size(320, 200, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
+				for(y = 0; y < 200; y++) {
+					ppp = emu->screen_buffer(y);
+					if(ppp != NULL) memset(ppp, 0x00, 320 * sizeof(scrntype));
+				}
+			}
 		}
+		crt_flag_bak = crt_flag;
 		return;
 	}
+	crt_flag_bak = crt_flag;
 # if defined(_FM77AV_VARIANTS)
 	if(!vram_wrote_shadow) return;
-# endif	
+# endif
 	if(display_mode == DISPLAY_MODE_8_200L) {
+		emu->set_vm_screen_size(640, 200, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 		yoff = 0;
 		rgbmask = ~multimode_dispmask;
-		for(y = 0; y < 400; y += 2) {
+		for(y = 0; y < 200; y ++) {
 			p = emu->screen_buffer(y);
+			if(p == NULL) continue;
 			pp = p;
-			yoff = (y / 2) * 80;
+			yoff = y  * 80;
+# if defined(_FM77AV_VARIANTS)
+			vram_draw_table[y] = false;	
+# endif			
 # if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 			if(window_opened && (wy_low <= y) && (wy_high > y)) {
 					for(x = 0; x < 80; x++) {
@@ -489,29 +498,34 @@ void DISPLAY::draw_screen()
 					yoff += 8;
 				}
 			}
-			if(config.scan_line == 0) {
-				memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
-			} else {
-				memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
-			}
+			//if(config.scan_line == 0) {
+			//	memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
+			//} else {
+			//	memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
+			//}
 		}
 # if defined(_FM77AV_VARIANTS)
-			vram_wrote_shadow = false;
+		vram_wrote_shadow = false;
 # endif		
 		return;
 	}
 # if defined(_FM77AV_VARIANTS)
 	if(display_mode == DISPLAY_MODE_4096) {
+		emu->set_vm_screen_size(320, 200, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 		uint32 mask = 0;
 		yoff = 0;
 		rgbmask = multimode_dispmask;
 		if((rgbmask & 0x01) == 0) mask = 0x00f;
 		if((rgbmask & 0x02) == 0) mask = mask | 0x0f0;
 		if((rgbmask & 0x04) == 0) mask = mask | 0xf00;
-		for(y = 0; y < 400; y += 2) {
+		for(y = 0; y < 200; y ++) {
 			p = emu->screen_buffer(y);
+			if(p == NULL) continue;
 			pp = p;
-			yoff = y * (40 / 2);
+			yoff = y * 40;
+# if defined(_FM77AV_VARIANTS)
+			vram_draw_table[y] = false;	
+# endif			
 #  if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 			if(window_opened && (wy_low <= y) && (wy_high > y)) {
 					for(x = 0; x < 40; x++) {
@@ -520,7 +534,7 @@ void DISPLAY::draw_screen()
 						} else {
 							GETVRAM_4096(yoff, p, mask, false);
 						}
-						p += 16;
+						p += 8;
 						yoff++;
 					}
 			} else
@@ -528,50 +542,53 @@ void DISPLAY::draw_screen()
 			{
 				for(x = 0; x < 5; x++) {
 					GETVRAM_4096(yoff + 0, p, mask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_4096(yoff + 1, p, mask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_4096(yoff + 2, p, mask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_4096(yoff + 3, p, mask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_4096(yoff + 4, p, mask);
-					p += 16;
+					p += 8;
 			  
 					GETVRAM_4096(yoff + 5, p, mask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_4096(yoff + 6, p, mask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_4096(yoff + 7, p, mask);
-					p += 16;
+					p += 8;
 					yoff += 8;
 				}
 			}
-			if(config.scan_line == 0) {
-				memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
-			} else {
-				memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
-			}
+			//if(config.scan_line == 0) {
+			//	memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
+			//} else {
+			//	memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
+			//}
 		}
-# if defined(_FM77AV_VARIANTS)
 		vram_wrote_shadow = false;
-# endif		
 		return;
 	}
 #  if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	else if(display_mode == DISPLAY_MODE_8_400L) {
+		emu->set_vm_screen_size(640, 400, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 		yoff = 0;
 		rgbmask = ~multimode_dispmask;
 		for(y = 0; y < 400; y++) {
 			p = emu->screen_buffer(y);
+			if(p == NULL) continue;
 			pp = p;
 			yoff = y  * 80;
+# if defined(_FM77AV_VARIANTS)
+			vram_draw_table[y] = false;	
+# endif			
 #    if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 			if(window_opened && (wy_low <= y) && (wy_high  > y)) {
 				for(x = 0; x < 80; x++) {
@@ -586,87 +603,92 @@ void DISPLAY::draw_screen()
 			} else
 #    endif
 			for(x = 0; x < 10; x++) {
-			  GETVRAM_8_400L(yoff + 0, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 0, p, rgbmask);
+				p += 8;
 			  
-			  GETVRAM_8_400L(yoff + 1, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 1, p, rgbmask);
+				p += 8;
 
-  			  GETVRAM_8_400L(yoff + 2, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 2, p, rgbmask);
+				p += 8;
 
-			  GETVRAM_8_400L(yoff + 3, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 3, p, rgbmask);
+				p += 8;
 
-			  GETVRAM_8_400L(yoff + 4, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 4, p, rgbmask);
+				p += 8;
 			  
-			  GETVRAM_8_400L(yoff + 5, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 5, p, rgbmask);
+				p += 8;
 			  
-			  GETVRAM_8_400L(yoff + 6, p, rgbmask);
-			  p += 8;
+				GETVRAM_8_400L(yoff + 6, p, rgbmask);
+				p += 8;
 			  
-			  GETVRAM_8_400L(yoff + 7, p, rgbmask);
-			  p += 8;
-			  yoff += 8;
+				GETVRAM_8_400L(yoff + 7, p, rgbmask);
+				p += 8;
+				yoff += 8;
 			}
 		}
-# if defined(_FM77AV_VARIANTS)
 		vram_wrote_shadow = false;
-# endif		
 		return;
 	} else if(display_mode == DISPLAY_MODE_256k) {
+		emu->set_vm_screen_size(320, 200, SCREEN_WIDTH, SCREEN_HEIGHT_ASPECT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 		rgbmask = ~multimode_dispmask;
-		for(y = 0; y < 400; y += 2) {
+		for(y = 0; y < 200; y++) {
 # if defined(_FM77AV_VARIANTS)
-			//if(!vram_wrote_shadow && !vram_draw_table[y >> 1]) continue;
-			vram_draw_table[y >> 1] = false;	
+			vram_draw_table[y] = false;	
 # endif			
 			p = emu->screen_buffer(y);
+			if(p == NULL) continue;
 			pp = p;
-			yoff = y * (40 / 2);
+			yoff = y * 40;
 			{
 				for(x = 0; x < 5; x++) {
 					GETVRAM_256k(yoff + 0, p, rgbmask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_256k(yoff + 1, p, rgbmask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_256k(yoff + 2, p, rgbmask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_256k(yoff + 3, p, rgbmask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_256k(yoff + 4, p, rgbmask);
-					p += 16;
+					p += 8;
 			  
 					GETVRAM_256k(yoff + 5, p, rgbmask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_256k(yoff + 6, p, rgbmask);
-					p += 16;
+					p += 8;
 					
 					GETVRAM_256k(yoff + 7, p, rgbmask);
-					p += 16;
+					p += 8;
 					yoff += 8;
 				}
 			}
-			if(config.scan_line == 0) {
-				memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
-			} else {
-				memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
-			}
+			//if(config.scan_line == 0) {
+			//	memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
+			//} else {
+			//	memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
+			//}
 		}
-# if defined(_FM77AV_VARIANTS)
 		vram_wrote_shadow = false;
-# endif		
 		return;
 	}
 #  endif // _FM77AV40
 # endif //_FM77AV_VARIANTS
-
 }
 
+bool DISPLAY::screen_update(void)
+{
+	return screen_update_flag;
+}
+
+void DISPLAY::reset_screen_update(void)
+{
+	screen_update_flag = false;
+}

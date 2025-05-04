@@ -234,8 +234,8 @@ static const int key_tbl_c[256] = {
 };
 
 //memo: how to request the display size changing
-//emu->change_screen_size(TV_SCREEN_WIDTH, TV_SCREEN_HEIGHT, -1, -1, TV_WINDOW_WIDTH, TV_WINDOW_HEIGHT);
-//emu->change_screen_size(SCREEN_WIDTH, SCREEN_HEIGHT, -1, -1, WINDOW_WIDTH, WINDOW_HEIGHT);
+//emu->set_vm_screen_size(TV_SCREEN_WIDTH, TV_SCREEN_HEIGHT, -1, -1, TV_WINDOW_WIDTH, TV_WINDOW_HEIGHT);
+//emu->set_vm_screen_size(SCREEN_WIDTH, SCREEN_HEIGHT, -1, -1, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 void IO::initialize()
 {
@@ -852,7 +852,7 @@ void IO::rec_tape(const _TCHAR* file_path)
 {
 	close_tape();
 	if(cmt_fio->Fopen(file_path, FILEIO_READ_WRITE_NEW_BINARY)) {
-		_tcscpy_s(rec_file_path, _MAX_PATH, file_path);
+		my_tcscpy_s(rec_file_path, _MAX_PATH, file_path);
 		cmt_ptr = 0;
 		cmt_rec = true;
 	}

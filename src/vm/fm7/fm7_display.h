@@ -24,7 +24,9 @@ class DISPLAY: public DEVICE
 	VM *p_vm;
 
 	int clr_count;
-   
+	bool screen_update_flag;
+	bool crt_flag_bak;
+	
 	void go_subcpu();
 	void halt_subcpu();
    
@@ -293,6 +295,12 @@ class DISPLAY: public DEVICE
 #else
 		return io_w_latch[addr & 0x0f];
 #endif
+	}
+	bool screen_update(void);
+	void reset_screen_update(void);
+	const _TCHAR *get_device_name(void)
+	{
+		return "FM7_DISPLAY";
 	}
    
 	void set_context_kanjiclass1(DEVICE *p)	{
