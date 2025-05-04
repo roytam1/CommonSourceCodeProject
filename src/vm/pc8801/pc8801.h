@@ -80,6 +80,7 @@
 #define USE_TAPE1
 #define TAPE_BINARY_ONLY
 #define NOTIFY_KEY_DOWN
+#define USE_KEY_LOCKED
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 // slow enough for N88-“ú–{ŒêBASIC
@@ -234,6 +235,8 @@ public:
 	// notify key
 	void key_down(int code, bool repeat);
 	void key_up(int code);
+	bool get_caps_locked();
+	bool get_kana_locked();
 	
 	// user interface
 	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);

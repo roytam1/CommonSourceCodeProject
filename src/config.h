@@ -182,6 +182,9 @@ typedef struct {
 	#if defined(USE_SHARED_DLL) || defined(USE_JOYSTICK)
 		int joy_buttons[8][16];
 	#endif
+	#if defined(USE_SHARED_DLL) || defined(USE_AUTO_KEY)
+		bool romaji_to_kana;
+	#endif
 	
 	// printer
 	#if defined(USE_SHARED_DLL) || defined(USE_PRINTER)

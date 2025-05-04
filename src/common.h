@@ -415,7 +415,7 @@ uint16_t DLL_PREFIX EndianToLittle_WORD(uint16_t x);
 		typedef int errno_t;
 	#endif
 //	errno_t DLL_PREFIX my_tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode);
-	errno_T DLL_PREFIX my_tcscat_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
+	errno_t DLL_PREFIX my_tcscat_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
 	errno_t DLL_PREFIX my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource);
 	errno_t DLL_PREFIX my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
 	errno_t DLL_PREFIX my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count);

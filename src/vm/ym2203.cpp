@@ -446,9 +446,22 @@ void YM2203::set_reg(uint32_t addr, uint32_t data)
 #ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->SetReg(addr, data);
-	} else
+	} else {
 #endif
-	opn->SetReg(addr, data);
+		if((addr & 0xf0) == 0x10) {
+			return;
+		}
+		if(addr == 0x22) {
+			data = 0x00;
+		} else if(addr == 0x29) {
+			data = 0x03;
+		} else if(addr >= 0xb4) {
+			data = 0xc0;
+		}
+		opn->SetReg(addr, data);
+#ifdef HAS_YM2608
+	}
+#endif
 #ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->SetReg(dllchip, addr, data);
@@ -569,6 +582,14 @@ bool YM2203::load_state(FILEIO* state_fio)
 				fmdll->SetReg(dllchip, ch, port_log[ch].data);
 			}
 		}
+#ifdef HAS_YM2608
+		if(is_ym2608) {
+			BYTE *dest = fmdll->GetADPCMBuffer(dllchip);
+			if(dest != NULL) {
+				memcpy(dest, opna->GetADPCMBuffer(), 0x40000);
+			}
+		}
+#endif
 	}
 #endif
 	return true;
