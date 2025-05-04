@@ -98,6 +98,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Bank Protect ($FD0F/Hack)",   ID_DIPSWITCH4
         MENUITEM "Kanji ROM",                   ID_DIPSWITCH5
+        MENUITEM "320KB FDD",                   ID_DIPSWITCH6
+        MENUITEM "1MB FDD",                     ID_DIPSWITCH7
         MENUITEM SEPARATOR
         MENUITEM "None",                        ID_DEVICE_TYPE0
         MENUITEM "Mouse JS-Port1",              ID_DEVICE_TYPE1

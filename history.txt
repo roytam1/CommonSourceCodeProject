@@ -1,3 +1,16 @@
+3/20/2017
+
+[COMMON] suport to read ascii/binary file compressed by gzip
+[RESOURCE] fix fm8/fm7/fm77 dipswitch menu items
+[WINMAIN] fix to update status bar twice/second to supress flickar
+
+[VM/SCSI_CDROM] support CD-ROM bin/img file compressed by gzip
+[VM/DATAREC] support tape image file compressed by gzip
+[VM/DATAREC] support to save FUJITSU FM-7/77 t77 format tape image
+
+[BMJR/MEMORY] fix sound mixer not to clear previously mixed sound
+
+
 3/18/2017
 
 [WINMAIN] support multiple data recorder

@@ -289,8 +289,9 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdL
 	// main loop
 	int total_frames = 0, draw_frames = 0, skip_frames = 0;
 	DWORD next_time = 0;
-	DWORD update_fps_time = 0;
 	bool prev_skip = false;
+	DWORD update_fps_time = 0;
+	DWORD update_status_bar_time = 0;
 	DWORD disable_screen_saver_time = 0;
 	MSG msg;
 	
@@ -344,29 +345,34 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdL
 				skip_frames = 0;
 				next_time = timeGetTime();
 			}
-			if(hStatus != NULL && status_bar_visible) {
-				// update status bar
-				SendMessage(hStatus, SB_SETTEXT, (WPARAM)0 | SBT_OWNERDRAW, (LPARAM)NULL);
-			}
 			Sleep(sleep_period);
 			
 			// calc frame rate
 			DWORD current_time = timeGetTime();
-			if(update_fps_time <= current_time && update_fps_time != 0) {
-				int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
-				if(emu->message_count > 0) {
-					SetWindowText(hWnd, create_string(_T("%s - %s"), _T(DEVICE_NAME), emu->message));
-					emu->message_count--;
-				} else if(now_skip) {
-					SetWindowText(hWnd, create_string(_T("%s - Skip Frames"), _T(DEVICE_NAME)));
-				} else {
-					SetWindowText(hWnd, create_string(_T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio));
-				}
-				update_fps_time += 1000;
-				total_frames = draw_frames = 0;
-			}
 			if(update_fps_time <= current_time) {
+				if(update_fps_time != 0) {
+					int ratio = (int)(100.0 * (double)draw_frames / (double)total_frames + 0.5);
+					if(emu->message_count > 0) {
+						SetWindowText(hWnd, create_string(_T("%s - %s"), _T(DEVICE_NAME), emu->message));
+						emu->message_count--;
+					} else if(now_skip) {
+						SetWindowText(hWnd, create_string(_T("%s - Skip Frames"), _T(DEVICE_NAME)));
+					} else {
+						SetWindowText(hWnd, create_string(_T("%s - %d fps (%d %%)"), _T(DEVICE_NAME), draw_frames, ratio));
+					}
+					update_fps_time += 1000;
+					total_frames = draw_frames = 0;
+				}
 				update_fps_time = current_time + 1000;
+			}
+			
+			// update status bar
+			if(update_status_bar_time <= current_time) {
+				if(hStatus != NULL && status_bar_visible) {
+					SendMessage(hStatus, SB_SETTEXT, (WPARAM)0 | SBT_OWNERDRAW, (LPARAM)NULL);
+//					InvalidateRect(hStatus, NULL, FALSE);
+				}
+				update_status_bar_time = current_time + 500;
 			}
 			
 			// disable screen saver
@@ -1782,6 +1788,7 @@ void show_status_bar(HWND hWnd)
 	if(hStatus == NULL) {
 		InitCommonControls();
 		hStatus = CreateStatusWindow(WS_CHILD | WS_VISIBLE | CCS_BOTTOM, NULL, hWnd, ID_STATUS);
+		SendMessage(hStatus, SB_SETTEXT, (WPARAM)0 | SBT_OWNERDRAW, (LPARAM)NULL);
 	}
 	ShowWindow(hStatus, SW_SHOW);
 #endif
@@ -2118,30 +2125,35 @@ void open_tape_dialog(HWND hWnd, int drv, bool play)
 	_TCHAR* path = get_open_file_name(
 		hWnd,
 #if defined(_PC6001) || defined(_PC6001MK2) || defined(_PC6001MK2SR) || defined(_PC6601) || defined(_PC6601SR)
-		_T("Supported Files (*.wav;*.cas;*.p6;*.p6t)\0*.wav;*.cas;*.p6;*.p6t\0All Files (*.*)\0*.*\0\0"),
+		play ? _T("Supported Files (*.wav;*.cas;*.p6;*.p6t;*.gz)\0*.wav;*.cas;*.p6;*.p6t;*.gz\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas;*.p6;*.p6t)\0*.wav;*.cas;*.p6;*.p6t\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_PC8001SR) || defined(_PC8801MA) || defined(_PC98DO)
 		play ? _T("Supported Files (*.cas;*.cmt;*.n80;*.t88)\0*.cas;*.cmt;*.n80;*.t88\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_MZ80A) || defined(_MZ80K) || defined(_MZ1200) || defined(_MZ700) || defined(_MZ800) || defined(_MZ1500)
-		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mzf;*.m12)\0*.wav;*.cas;*.mzt;*.mzf;*.m12\0All Files (*.*)\0*.*\0\0")
+		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mzf;*.m12;*.gz)\0*.wav;*.cas;*.mzt;*.mzf;*.m12;*.gz\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200)
-		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mzf;*.mti;*.mtw;*.dat)\0*.wav;*.cas;*.mzt;*.mzf;*.mti;*.mtw;*.dat\0All Files (*.*)\0*.*\0\0")
+		play ? _T("Supported Files (*.wav;*.cas;*.mzt;*.mzf;*.mti;*.mtw;*.dat;*.gz)\0*.wav;*.cas;*.mzt;*.mzf;*.mti;*.mtw;*.dat;*.gz\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
-		_T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0"),
+		play ? _T("Supported Files (*.wav;*.cas;*.tap;*.gz)\0*.wav;*.cas;*.tap;*.gz\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas;*.tap)\0*.wav;*.cas;*.tap\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_FM8) || defined(_FM7) || defined(_FMNEW7) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
-		_T("Supported Files (*.wav;*.cas;*.t77)\0*.wav;*.cas;*.t77\0All Files (*.*)\0*.*\0\0"),
+		play ? _T("Supported Files (*.wav;*.cas;*.t77;*.gz)\0*.wav;*.cas;*.t77;*.gz\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas;*.t77)\0*.wav;*.cas;*.t77\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_BMJR)
-		play ? _T("Supported Files (*.wav;*.cas;*.bin)\0*.wav;*.cas;*.bin\0All Files (*.*)\0*.*\0\0")
+		play ? _T("Supported Files (*.wav;*.cas;*.bin;*.gz)\0*.wav;*.cas;*.bin;*.gz\0All Files (*.*)\0*.*\0\0")
 		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #elif defined(_TK80BS)
 		drv == 1 ? _T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0")
+		: play   ? _T("Supported Files (*.wav;*.cas;*.gz)\0*.wav;*.cas;*.gz\0All Files (*.*)\0*.*\0\0")
 		         : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
-#elif defined(TAPE_BINARY_ONLY)
-		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
+#elif !defined(TAPE_BINARY_ONLY)
+		play ? _T("Supported Files (*.wav;*.cas;*.gz)\0*.wav;*.cas;*.gz\0All Files (*.*)\0*.*\0\0")
+		     : _T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
 #else
-		_T("Supported Files (*.wav;*.cas)\0*.wav;*.cas\0All Files (*.*)\0*.*\0\0"),
+		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #endif
 		play ? _T("Data Recorder Tape [Play]") : _T("Data Recorder Tape [Rec]"),
 		config.initial_tape_dir, _MAX_PATH
