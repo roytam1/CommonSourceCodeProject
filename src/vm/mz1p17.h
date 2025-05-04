@@ -32,12 +32,14 @@ private:
 	bool strobe;
 	
 	bitmap_t bitmap_paper;
-	bitmap_t bitmap_line;
+	bitmap_t bitmap_line[4];
 	font_t font;
 	int space_left, space_top;
 	
 	bool ank[256][16][8];
-	bool gaiji[3][94][24][24]; // 0x78-0x7a,0x21-0x7e
+	bool hiragana[0x38][48][24];		// 0xa6-0xdd
+	bool hiragana_bold[0x38][48][24];	// 0xa6-0xdd
+	bool gaiji[3][94][24][24];		// 0x78-0x7a,0x21-0x7e
 	bool htab[1440 * DOT_SCALE];
 	
 	FIFO *fifo;
@@ -46,14 +48,15 @@ private:
 	int margin_left, margin_right;
 	int pitch_mode;
 	int script_mode;
-	bool kanji_mode, kanji_half;
-	bool bold, underline, hiragana, reverse, vertical;
+	bool kanji_mode, kanji_half, hiragana_mode;
+	bool bold, underline, reverse, vertical;
 	
 	bool ank_double_x, ank_double_y;
 	bool kanji_double_x, kanji_double_y;
 	int kanji_pitch, kanji_half_pitch;
 	
 	int dest_line_x, dest_paper_y;
+	int color_mode;
 	bool double_y_printed;
 	bool line_printed, paper_printed;
 	int paper_index;
@@ -61,6 +64,7 @@ private:
 	
 	void process();
 	void draw_char(uint16 code);
+	void scroll(int value);
 	void finish();
 	void finish_line();
 	void finish_paper();

@@ -22,14 +22,50 @@
 
 void MZ1P17::initialize()
 {
-	// load 8x16 non-ank font image
+	// initialize bitmap
+	int width = (int)(PIXEL_PER_INCH * 8.27);
+	int height = (int)(PIXEL_PER_INCH * 11.69);
+	
+	if(width % 4) {
+		width = (width >> 2) * 4 + 4;	// multiples of four
+	}
+	if(height % 4) {
+		height = (height >> 2) * 4 + 4;	// multiples of four
+	}
+	emu->create_bitmap(&bitmap_paper, width, height);
+	emu->create_bitmap(&bitmap_line[0], PIXEL_PER_INCH * 8, (48 + 2) * DOT_SCALE);
+	emu->create_bitmap(&bitmap_line[1], PIXEL_PER_INCH * 8, (48 + 2) * DOT_SCALE);
+	emu->create_bitmap(&bitmap_line[2], PIXEL_PER_INCH * 8, (48 + 2) * DOT_SCALE);
+	emu->create_bitmap(&bitmap_line[3], PIXEL_PER_INCH * 8, (48 + 2) * DOT_SCALE);
+//	emu->create_font(&font, _T("Mincho"), 12 * DOT_SCALE, 24 * DOT_SCALE, 0, false, false);
+	space_left = (bitmap_paper.width - PIXEL_PER_INCH * 8) / 2;
+	space_top = (bitmap_paper.height - PIXEL_PER_INCH * 11) / 2;
+	
+	// initialize non ank font
 	memset(ank, 0, sizeof(ank));
 	FILEIO *fio = new FILEIO();
-#if defined(_MZ2500) || defined(_MZ2800)
+#if defined(_MZ1500) || defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200)
+	if(fio->Fopen(create_local_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
+		for(int i = 0; i < 256; i++) {
+			for(int j = 0; j < 16; j += 2) {
+				uint8 p = fio->FgetUint8();
+				ank[i][j][0] = ank[i][j + 1][0] = ((p & 0x80) != 0);
+				ank[i][j][1] = ank[i][j + 1][1] = ((p & 0x40) != 0);
+				ank[i][j][2] = ank[i][j + 1][2] = ((p & 0x20) != 0);
+				ank[i][j][3] = ank[i][j + 1][3] = ((p & 0x10) != 0);
+				ank[i][j][4] = ank[i][j + 1][4] = ((p & 0x08) != 0);
+				ank[i][j][5] = ank[i][j + 1][5] = ((p & 0x04) != 0);
+				ank[i][j][6] = ank[i][j + 1][6] = ((p & 0x02) != 0);
+				ank[i][j][7] = ank[i][j + 1][7] = ((p & 0x01) != 0);
+			}
+		}
+		fio->Fclose();
+	}
+#elif defined(_MZ2500) || defined(_MZ2800)
 	if(fio->Fopen(create_local_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
 		for(int i = 0; i < 256; i++) {
 			fio->Fseek(0x6000 + 32 * i, FILEIO_SEEK_SET);
-			for(int j = 0; j< 16; j++) {
+			for(int j = 0; j < 16; j++) {
 				uint8 p = fio->FgetUint8();
 				ank[i][j][0] = ((p & 0x80) != 0);
 				ank[i][j][1] = ((p & 0x40) != 0);
@@ -43,32 +79,131 @@ void MZ1P17::initialize()
 		}
 		fio->Fclose();
 	}
+#elif defined(_MZ3500)
+	if(fio->Fopen(create_local_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fseek(0x1000, FILEIO_SEEK_SET);
+		for(int i = 0; i < 256; i++) {
+			for(int j = 0; j < 16; j++) {
+				uint8 p = fio->FgetUint8();
+				ank[i][j][0] = ((p & 0x80) != 0);
+				ank[i][j][1] = ((p & 0x40) != 0);
+				ank[i][j][2] = ((p & 0x20) != 0);
+				ank[i][j][3] = ((p & 0x10) != 0);
+				ank[i][j][4] = ((p & 0x08) != 0);
+				ank[i][j][5] = ((p & 0x04) != 0);
+				ank[i][j][6] = ((p & 0x02) != 0);
+				ank[i][j][7] = ((p & 0x01) != 0);
+			}
+		}
+		fio->Fclose();
+	}
+#elif defined(_MZ5500) || defined(_MZ6500) || defined(_MZ6550)
+	if(fio->Fopen(create_local_path(_T("IPL.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fseek(0x800, FILEIO_SEEK_SET);
+		for(int i = 0; i < 256; i++) {
+			for(int j = 15; j >= 0; j--) {
+				uint8 p = fio->FgetUint8();
+				ank[i][j][0] = ((p & 0x80) != 0);
+				ank[i][j][1] = ((p & 0x40) != 0);
+				ank[i][j][2] = ((p & 0x20) != 0);
+				ank[i][j][3] = ((p & 0x10) != 0);
+				ank[i][j][4] = ((p & 0x08) != 0);
+				ank[i][j][5] = ((p & 0x04) != 0);
+				ank[i][j][6] = ((p & 0x02) != 0);
+				ank[i][j][7] = ((p & 0x01) != 0);
+			}
+		}
+		fio->Fclose();
+	}
+#elif defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
+	if(fio->Fopen(create_local_path(_T("ANK16.ROM")), FILEIO_READ_BINARY) ||
+	   fio->Fopen(create_local_path(_T("FNT0816.X1")), FILEIO_READ_BINARY)) {
+		uint8 font[0x1000];
+		fio->Fread(font, sizeof(font), 1);
+		fio->Fclose();
+		memcpy(font + 0x7f * 16, ANKFONT7f_9f, sizeof(ANKFONT7f_9f));
+		memcpy(font + 0xe0 * 16, ANKFONTe0_ff, sizeof(ANKFONTe0_ff));
+		
+		for(int i = 0; i < 256; i++) {
+			for(int j = 0; j < 16; j++) {
+				uint8 p = font[i * 16 + j];
+				ank[i][j][0] = ((p & 0x80) != 0);
+				ank[i][j][1] = ((p & 0x40) != 0);
+				ank[i][j][2] = ((p & 0x20) != 0);
+				ank[i][j][3] = ((p & 0x10) != 0);
+				ank[i][j][4] = ((p & 0x08) != 0);
+				ank[i][j][5] = ((p & 0x04) != 0);
+				ank[i][j][6] = ((p & 0x02) != 0);
+				ank[i][j][7] = ((p & 0x01) != 0);
+			}
+		}
+	}
 #endif
 	delete fio;
 	
-	int width = (int)(PIXEL_PER_INCH * 8.27);
-	int height = (int)(PIXEL_PER_INCH * 11.69);
-	
-	if(width % 4) {
-		width = (width >> 2) * 4 + 4;	// multiples of four
+	// initialize hiragana font
+	static const uint16 hiragana_sjis[] = {
+		0x82f0,					// ‚ð
+		0x829f, 0x82a1, 0x82a3, 0x82a5, 0x82a7,	// ‚Ÿ‚¡‚£‚¥‚§
+		0x82e1, 0x82e3, 0x82e5, 0x82c1,		// ‚á‚ã‚å‚Á
+		0,					// 
+		0x82a0, 0x82a2, 0x82a4, 0x82a6, 0x82a8,	// ‚ ‚¢‚¤‚¦‚¨
+		0x82a9, 0x82ab, 0x82ad, 0x82af, 0x82b1,	// ‚©‚«‚­‚¯‚±
+		0x82b3, 0x82b5, 0x82b7, 0x82b9, 0x82bb,	// ‚³‚µ‚·‚¹‚»
+		0x82bd, 0x82bf, 0x82c2, 0x82c4, 0x82c6,	// ‚½‚¿‚Â‚Ä‚Æ
+		0x82c8, 0x82c9, 0x82ca, 0x82cb, 0x82cc,	// ‚È‚É‚Ê‚Ë‚Ì
+		0x82cd, 0x82d0, 0x82d3, 0x82d6, 0x82d9,	// ‚Í‚Ð‚Ó‚Ö‚Ù
+		0x82dc, 0x82dd, 0x82de, 0x82df, 0x82e0,	// ‚Ü‚Ý‚Þ‚ß‚à
+		0x82e2, 0x82e4, 0x82e6,			// ‚â‚ä‚æ
+		0x82e7, 0x82e8, 0x82e9, 0x82ea, 0x82eb,	// ‚ç‚è‚é‚ê‚ë
+		0x82ed, 0x82f1,				// ‚í‚ñ
+	};
+	memset(hiragana, 0, sizeof(hiragana));
+	memset(hiragana_bold, 0, sizeof(hiragana_bold));
+	emu->create_font(&font, _T("Mincho"), 12, 48, 0, false, false);
+	for(int i = 0; i < array_length(hiragana_sjis); i++) {
+		if(hiragana_sjis[i] != 0) {
+			char tmp[3];
+			tmp[0] = hiragana_sjis[i] >> 8;
+			tmp[1] = hiragana_sjis[i] & 0xff;
+			tmp[2] = 0;
+			emu->draw_rectangle_to_bitmap(&bitmap_paper, 0, 0, 24, 48, 0, 0, 0);
+			emu->draw_text_to_bitmap(&bitmap_paper, &font, 0, 0, tmp, 255, 255, 255);
+			for(int y = 0; y < 48; y++) {
+				scrntype *p = bitmap_paper.get_buffer(y);
+				for(int x = 0; x < 24; x++) {
+					hiragana[i][y][x] = (p[x] != 0);
+				}
+			}
+		}
 	}
-	if(height % 4) {
-		height = (height >> 2) * 4 + 4;	// multiples of four
+	emu->release_font(&font);
+	emu->create_font(&font, _T("Mincho"), 12, 48, 0, true, false);
+	for(int i = 0; i < array_length(hiragana_sjis); i++) {
+		if(hiragana_sjis[i] != 0) {
+			char tmp[3];
+			tmp[0] = hiragana_sjis[i] >> 8;
+			tmp[1] = hiragana_sjis[i] & 0xff;
+			tmp[2] = 0;
+			emu->draw_rectangle_to_bitmap(&bitmap_paper, 0, 0, 24, 48, 0, 0, 0);
+			emu->draw_text_to_bitmap(&bitmap_paper, &font, 0, 0, tmp, 255, 255, 255);
+			for(int y = 0; y < 48; y++) {
+				scrntype *p = bitmap_paper.get_buffer(y);
+				for(int x = 0; x < 24; x++) {
+					hiragana_bold[i][y][x] = (p[x] != 0);
+				}
+			}
+		}
 	}
-	emu->create_bitmap(&bitmap_paper, width, height);
-	emu->create_bitmap(&bitmap_line, PIXEL_PER_INCH * 8, 48 * DOT_SCALE);
-	memset(&font, 0, sizeof(font_t));
-//	emu->create_font(&font, _T("Mincho"), 12 * DOT_SCALE, 24 * DOT_SCALE, 0, false, false);
-	space_left = (bitmap_paper.width - PIXEL_PER_INCH * 8) / 2;
-	space_top = (bitmap_paper.height - PIXEL_PER_INCH * 11) / 2;
+	emu->release_font(&font);
 	
 	fifo = new FIFO(65536);
-	
 	line_printed = paper_printed = false;
 	paper_index = 0;
 	
 	value = wait_frames = -1;
 	strobe = false;
+	
 	register_frame_event(this);
 }
 
@@ -77,7 +212,10 @@ void MZ1P17::release()
 	finish();
 	
 	emu->release_font(&font);
-	emu->release_bitmap(&bitmap_line);
+	emu->release_bitmap(&bitmap_line[0]);
+	emu->release_bitmap(&bitmap_line[1]);
+	emu->release_bitmap(&bitmap_line[2]);
+	emu->release_bitmap(&bitmap_line[3]);
 	emu->release_bitmap(&bitmap_paper);
 	
 	fifo->release();
@@ -89,7 +227,7 @@ void MZ1P17::reset()
 	finish();
 	
 	emu->clear_bitmap(&bitmap_paper, 255, 255, 255);
-	emu->clear_bitmap(&bitmap_line, 255, 255, 255);
+	emu->clear_bitmap(&bitmap_line[0], 255, 255, 255);
 	
 	memset(gaiji, 0, sizeof(gaiji));
 	memset(htab, 0, sizeof(htab));
@@ -100,8 +238,8 @@ void MZ1P17::reset()
 	margin_left = margin_right = 0;
 	pitch_mode = PICA;
 	script_mode = 0;
-	kanji_mode = kanji_half = false;
-	bold = underline = hiragana = reverse = vertical = false;
+	kanji_mode = kanji_half = hiragana_mode = false;
+	bold = underline = reverse = vertical = false;
 	
 	ank_double_x = ank_double_y = false;
 	kanji_double_x = kanji_double_y = false;
@@ -109,6 +247,7 @@ void MZ1P17::reset()
 	kanji_half_pitch = 18;
 	
 	dest_line_x = dest_paper_y = 0;
+	color_mode = 0;
 	double_y_printed = false;
 	line_printed = paper_printed = false;
 	paper_index = 0;
@@ -204,7 +343,7 @@ void MZ1P17::process()
 		// LF
 		int next_lf_pitch = lf_pitch + (double_y_printed ? 24 * DOT_SCALE : 0);
 		finish_line();
-		dest_paper_y += next_lf_pitch;
+		scroll(next_lf_pitch);
 		fifo->clear();
 	} else if(fifo->read_not_remove(0) == 0x0c) {
 		// FF
@@ -216,9 +355,13 @@ void MZ1P17::process()
 #ifdef MZ1P17_AUTO_LF
 		int next_lf_pitch = lf_pitch + (double_y_printed ? 24 * DOT_SCALE : 0);
 		finish_line();
-		dest_paper_y += next_lf_pitch;
+		scroll(next_lf_pitch);
 #else
-		dest_line_x = margin_left;
+		if(color_mode) {
+			finish_line();
+		} else {
+			dest_line_x = margin_left;
+		}
 #endif
 		fifo->clear();
 	} else if(fifo->read_not_remove(0) == 0x0e) {
@@ -242,12 +385,16 @@ void MZ1P17::process()
 					if(p >= 1 && p <= 99) {
 						int next_lf_pitch = lf_pitch * p + (double_y_printed ? 24 * DOT_SCALE : 0);
 						finish_line();
-						dest_paper_y += next_lf_pitch;
+						scroll(next_lf_pitch);
 					}
 					fifo->clear();
 				}
 			} else if(fifo->read_not_remove(1) == 0x19) {
-				// ESC EM (not supported: set color mode)
+				// ESC EM
+				emu->clear_bitmap(&bitmap_line[1], 0, 0, 0);
+				emu->clear_bitmap(&bitmap_line[2], 0, 0, 0);
+				emu->clear_bitmap(&bitmap_line[3], 0, 0, 0);
+				color_mode = 3;
 				fifo->clear();
 			} else if(fifo->read_not_remove(1) == 0x21) {
 				// ESC !
@@ -274,40 +421,39 @@ void MZ1P17::process()
 						if(fifo->count() >= 5) {
 							int n = fifo->read_not_remove(3) * 256 + fifo->read_not_remove(4);
 							if(fifo->count() == n * 3 + 5) {
-								uint8 r = 0, g = 0, b = 0;
+								uint8 c = (reverse != (color_mode != 0)) ? 255 : 0;
 								for(int i = 0; i < n; i++) {
-									if(dest_line_x + DOT_SCALE < 1440 * DOT_SCALE) {
+									if(dest_line_x < 1440 * DOT_SCALE) {
 										if(reverse) {
-											emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, 0, DOT_SCALE, bitmap_line.height, 0, 0, 0);
-											r = g = b = 255;
+											emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, 0, DOT_SCALE, 48 * DOT_SCALE, ~c, ~c, ~c);
 										}
 										int d1 = fifo->read_not_remove(5 + i * 3 + 0);
 										int d2 = fifo->read_not_remove(5 + i * 3 + 1);
 										int d3 = fifo->read_not_remove(5 + i * 3 + 2);
-										if(d1 & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  0) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  1) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  2) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  3) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  4) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  5) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  6) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d1 & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  7) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  8) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 +  9) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 10) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 11) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 12) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 13) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 14) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d2 & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 15) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 16) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 17) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 18) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 19) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 20) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 21) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 22) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
-										if(d3 & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 23) * DOT_SCALE, DOT_SCALE, DOT_SCALE, r, g, b);
+										if(d1 & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  0) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  1) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  2) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  3) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  4) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  5) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  6) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d1 & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  7) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  8) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 +  9) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 10) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 11) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 12) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 13) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 14) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d2 & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 15) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 16) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 17) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 18) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 19) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 20) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 21) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 22) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
+										if(d3 & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 23) * DOT_SCALE, DOT_SCALE, DOT_SCALE, c, c, c);
 										dest_line_x += DOT_SCALE;
 										line_printed = true;
 									}
@@ -318,7 +464,24 @@ void MZ1P17::process()
 					} else if(fifo->read_not_remove(2) == 0x33) {
 						// ESC % 3 n1 n2
 						if(fifo->count() == 5) {
-							dest_line_x += fifo->read_not_remove(3) * 256 + fifo->read_not_remove(4);
+							int n = fifo->read_not_remove(3) * 256 + fifo->read_not_remove(4);
+							uint8 c = (reverse != (color_mode != 0)) ? 255 : 0;
+							for(int i = 0; i < n; i++) {
+								if(dest_line_x < PIXEL_PER_INCH * 8 - margin_right) {
+									if(reverse) {
+										emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, 0, DOT_SCALE, bitmap_line[color_mode].height, ~c, ~c, ~c);
+									}
+									if(underline) {
+										if(color_mode) {
+											emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (48 + 1) * DOT_SCALE, DOT_SCALE, DOT_SCALE, 255, 255, 255);
+										} else {
+											emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (48 + 1) * DOT_SCALE, DOT_SCALE, DOT_SCALE, 0, 0, 0);
+										}
+									}
+									dest_line_x += DOT_SCALE;
+									line_printed = true;
+								}
+							}
 							fifo->clear();
 						}
 					} else if(fifo->read_not_remove(2) == 0x35) {
@@ -326,7 +489,7 @@ void MZ1P17::process()
 						if(fifo->count() == 4) {
 							if(fifo->read_not_remove(3) != 0) {
 								finish_line();
-								dest_paper_y += PIXEL_PER_INCH * fifo->read_not_remove(3) / 120;
+								scroll(PIXEL_PER_INCH * fifo->read_not_remove(3) / 120);
 							}
 							fifo->clear();
 						}
@@ -350,11 +513,11 @@ void MZ1P17::process()
 				}
 			} else if(fifo->read_not_remove(1) == 0x26) {
 				// ESC &
-				hiragana = true;
+				hiragana_mode = true;
 				fifo->clear();
 			} else if(fifo->read_not_remove(1) == 0x27) {
 				// ESC '
-				hiragana = false;
+				hiragana_mode = false;
 				fifo->clear();
 			} else if(fifo->read_not_remove(1) == 0x28) {
 				if(fifo->count() >= 3) {
@@ -479,22 +642,21 @@ void MZ1P17::process()
 				if(fifo->count() >= 4) {
 					int n = fifo->read_not_remove(2) * 256 + fifo->read_not_remove(3);
 					if(fifo->count() == n + 4) {
-						uint8 r = 0, g = 0, b = 0;
+						uint8 c = (reverse != (color_mode != 0)) ? 255 : 0;
 						for(int i = 0; i < n; i++) {
-							if(dest_line_x + 2 * DOT_SCALE < 1280 * DOT_SCALE) {
+							if(dest_line_x < 1280 * DOT_SCALE) {
 								if(reverse) {
-									emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, 0, 2 * DOT_SCALE, bitmap_line.height, 0, 0, 0);
-									r = g = b = 255;
+									emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, 0, 2 * DOT_SCALE, 48 * DOT_SCALE, ~c, ~c, ~c);
 								}
 								int d = fifo->read_not_remove(4 + i);
-								if(d & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 0) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 1) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 2) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 3) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 4) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 5) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 6) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
-								if(d & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, (24 + 3 * 7) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, r, g, b);
+								if(d & 0x01) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 0) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x02) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 1) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x04) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 2) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x08) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 3) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x10) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 4) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x20) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 5) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x40) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 6) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
+								if(d & 0x80) emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, (24 + 3 * 7) * DOT_SCALE, 2 * DOT_SCALE, 3 * DOT_SCALE, c, c, c);
 								dest_line_x += 2 * DOT_SCALE;
 								line_printed = true;
 							}
@@ -520,6 +682,14 @@ void MZ1P17::process()
 			} else if(fifo->read_not_remove(1) == 0x55) {
 				// ESC U
 				ank_double_x = true;
+				fifo->clear();
+			} else if(fifo->read_not_remove(1) == 0x58) {
+				// ESC X
+				underline = true;
+				fifo->clear();
+			} else if(fifo->read_not_remove(1) == 0x59) {
+				// ESC Y
+				underline = false;
 				fifo->clear();
 			} else if(fifo->read_not_remove(1) == 0x67) {
 				// ESC g
@@ -601,14 +771,6 @@ void MZ1P17::process()
 				// CEX Q
 				script_mode = 0;
 				fifo->clear();
-			} else if(fifo->read_not_remove(1) == 0x58) {
-				// CEX X
-				underline = true;
-				fifo->clear();
-			} else if(fifo->read_not_remove(1) == 0x59) {
-				// CEX Y
-				underline = false;
-				fifo->clear();
 			} else if(fifo->read_not_remove(1) == 0x5d) {
 				// CEX ]
 				reset();
@@ -663,6 +825,8 @@ void MZ1P17::process()
 	((c >= 0x00 && c <= 0xff) || (c >= 0x2800 && c <= 0x28ff))
 #define IS_NOT_ANK(c) \
 	((c >= 0x00 && c <= 0x1f) || (c >= 0x7f && c <= 0xa0) || (c >= 0xe0 && c <= 0xff) || (c >= 0x2800 && c <= 0x281f) || (c >= 0x287f && c <= 0x28a0) || (c >= 0x28e0 && c <= 0x28ff))
+#define IS_KANA(c) \
+	((c >= 0xa6 && c <= 0xdd && c != 0xb0) || (c >= 0x28a6 && c <= 0x28dd && c != 0x28b0))
 #define IS_GAIJI(c) \
 	((c >= 0x7821 && c <= 0x787e) || (c >= 0x7921 && c <= 0x797e) || (c >= 0x7a21 && c <= 0x7a2b))
 #define IS_NOT_VERTICAL(c) \
@@ -678,7 +842,7 @@ void MZ1P17::draw_char(uint16 code)
 	int gap_p1, gap_p2;
 	int dest_line_y = 24 * DOT_SCALE;
 	bool double_x, double_y;
-	uint8 r = 0, g = 0, b = 0;
+	uint8 c = (reverse != (color_mode != 0)) ? 255 : 0;
 	char tmp[3];
 	
 	if(kanji_mode) {
@@ -766,30 +930,44 @@ void MZ1P17::draw_char(uint16 code)
 	if(code & 0xff00) {
 		font_width *= 2;
 	} else if(proportional) {
-		if(IS_NOT_ANK(code)) {
+		if(IS_NOT_ANK(code) || (IS_KANA(code) && hiragana_mode)) {
 			// use internal font
 		} else {
-			font_width = emu->get_text_width(&bitmap_line, &font, tmp);
+			font_width = emu->get_text_width(&bitmap_line[color_mode], &font, tmp);
 		}
 	}
 	if(dest_line_x + gap_p1 + font_width + gap_p2 > PIXEL_PER_INCH * 8 - margin_right) {
 		int next_lf_pitch = lf_pitch + (double_y_printed ? 24 * DOT_SCALE : 0);
 		finish_line();
-		dest_paper_y += next_lf_pitch;
+		scroll(next_lf_pitch);
 	}
 	if(dest_line_y == 0) {
 		double_y_printed = true;
 	}
 	if(reverse) {
-		emu->draw_rectangle_to_bitmap(&bitmap_line, dest_line_x, 0, gap_p1 + font_width + gap_p2, bitmap_line.height, 0, 0, 0);
-		r = g = b = 255;
+		emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x, 0, gap_p1 + font_width + gap_p2, 48 * DOT_SCALE, ~c, ~c, ~c);
 	}
 	if(IS_NOT_ANK(code)) {
 		// use internal font
 		for(int y = 0; y < font_height; y++) {
 			for(int x = 0; x < font_width; x++) {
 				if(ank[code & 0xff][16 * y / font_height][8 * x / font_width]) {
-					emu->draw_point_to_bitmap(&bitmap_line, dest_line_x + gap_p1 + x, dest_line_y +  y, r, g, b);
+					emu->draw_point_to_bitmap(&bitmap_line[color_mode], dest_line_x + gap_p1 + x, dest_line_y +  y, c, c, c);
+				}
+			}
+		}
+	} else if(IS_KANA(code) && hiragana_mode) {
+		// use internal font
+		for(int y = 0; y < font_height; y++) {
+			for(int x = 0; x < font_width; x++) {
+				if(bold) {
+					if(hiragana_bold[(code & 0xff) - 0xa6][48 * y / font_height][24 * x / font_width]) {
+						emu->draw_point_to_bitmap(&bitmap_line[color_mode], dest_line_x + gap_p1 + x, dest_line_y +  y, c, c, c);
+					}
+				} else {
+					if(hiragana[(code & 0xff) - 0xa6][48 * y / font_height][24 * x / font_width]) {
+						emu->draw_point_to_bitmap(&bitmap_line[color_mode], dest_line_x + gap_p1 + x, dest_line_y +  y, c, c, c);
+					}
 				}
 			}
 		}
@@ -800,7 +978,7 @@ void MZ1P17::draw_char(uint16 code)
 		for(int y = 0; y < font_height; y++) {
 			for(int x = 0; x < font_width; x++) {
 				if(gaiji[n1][n2][24 * y / font_height][24 * x / font_width]) {
-					emu->draw_point_to_bitmap(&bitmap_line, dest_line_x + gap_p1 + x, dest_line_y +  y, r, g, b);
+					emu->draw_point_to_bitmap(&bitmap_line[color_mode], dest_line_x + gap_p1 + x, dest_line_y +  y, c, c, c);
 				}
 			}
 		}
@@ -808,10 +986,27 @@ void MZ1P17::draw_char(uint16 code)
 		if(font_rotate == 900) {
 			dest_line_y += font_width;
 		}
-		emu->draw_text_to_bitmap(&bitmap_line, &font, dest_line_x + gap_p1, dest_line_y, tmp, r, g, b);
+		emu->draw_text_to_bitmap(&bitmap_line[color_mode], &font, dest_line_x + gap_p1, dest_line_y, tmp, c, c, c);
+	}
+	if(underline) {
+		for(int x = 0; x < gap_p1 + font_width + gap_p2; x++) {
+			if(dest_line_x + x < PIXEL_PER_INCH * 8 - margin_right) {
+				if(color_mode) {
+					emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x + x, (48 + 1) * DOT_SCALE, 1, DOT_SCALE, 255, 255, 255);
+				} else {
+					emu->draw_rectangle_to_bitmap(&bitmap_line[color_mode], dest_line_x + x, (48 + 1) * DOT_SCALE, 1, DOT_SCALE, 0, 0, 0);
+				}
+			}
+		}
 	}
 	dest_line_x += gap_p1 + font_width + gap_p2;
 	line_printed = true;
+}
+
+void MZ1P17::scroll(int value)
+{
+	dest_paper_y += value;
+//	emu->clear_bitmap(&bitmap_line[0], 255, 255, 255);
 }
 
 void MZ1P17::finish()
@@ -825,19 +1020,35 @@ void MZ1P17::finish_line()
 {
 	if(line_printed) {
 		int source_y = (double_y_printed ? 0 : 24) * DOT_SCALE;
-		int height = bitmap_line.height - source_y;
+		int height = bitmap_line[0].height - source_y;
 		
 		if(dest_paper_y + height > PIXEL_PER_INCH * 11) {
 			finish_paper();
 		}
-		emu->stretch_bitmap(&bitmap_paper, space_left, space_top + dest_paper_y, bitmap_line.width, height, &bitmap_line, 0, source_y, bitmap_line.width, height);
-		emu->clear_bitmap(&bitmap_line, 255, 255, 255);
+		if(color_mode) {
+			for(int y = 0; y < bitmap_line[0].height; y++) {
+				scrntype *d  = bitmap_line[0].get_buffer(y);
+				scrntype *p1 = bitmap_line[1].get_buffer(y);	// cyan
+				scrntype *p2 = bitmap_line[2].get_buffer(y);	// magenta
+				scrntype *p3 = bitmap_line[3].get_buffer(y);	// yellow
+				
+				for(int x = 0; x < bitmap_line[0].width; x++) {
+					uint8 r = ~R_OF_COLOR(p1[x]);
+					uint8 g = ~R_OF_COLOR(p2[x]);
+					uint8 b = ~R_OF_COLOR(p3[x]);
+					d[x] = RGB_COLOR(r, g, b);
+				}
+			}
+			color_mode--;
+		}
+		emu->stretch_bitmap(&bitmap_paper, space_left, space_top + dest_paper_y, bitmap_line[0].width, height, &bitmap_line[0], 0, source_y, bitmap_line[0].width, height);
+		emu->clear_bitmap(&bitmap_line[0], 255, 255, 255);
 		paper_printed = true;
 	}
 //	int next_lf_pitch = lf_pitch + (double_y_printed ? 24 * DOT_SCALE : 0);
 	line_printed = double_y_printed = false;
 	dest_line_x = margin_left;
-//	dest_paper_y += next_lf_pitch; // we should not do line feed here
+//	scroll(next_lf_pitch); // we should not do line feed here
 }
 
 void MZ1P17::finish_paper()
@@ -853,7 +1064,7 @@ void MZ1P17::finish_paper()
 	dest_paper_y = 0;
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void MZ1P17::save_state(FILEIO* state_fio)
 {
@@ -874,7 +1085,7 @@ void MZ1P17::save_state(FILEIO* state_fio)
 	state_fio->FputBool(kanji_half);
 	state_fio->FputBool(bold);
 	state_fio->FputBool(underline);
-	state_fio->FputBool(hiragana);
+	state_fio->FputBool(hiragana_mode);
 	state_fio->FputBool(reverse);
 	state_fio->FputBool(vertical);
 	state_fio->FputBool(ank_double_x);
@@ -885,11 +1096,14 @@ void MZ1P17::save_state(FILEIO* state_fio)
 	state_fio->FputInt32(kanji_half_pitch);
 	state_fio->FputInt32(dest_line_x);
 	state_fio->FputInt32(dest_paper_y);
+	state_fio->FputInt32(color_mode);
 	state_fio->FputBool(double_y_printed);
 }
 
 bool MZ1P17::load_state(FILEIO* state_fio)
 {
+	finish();
+	
 	if(state_fio->FgetUint32() != STATE_VERSION) {
 		return false;
 	}
@@ -912,7 +1126,7 @@ bool MZ1P17::load_state(FILEIO* state_fio)
 	kanji_half = state_fio->FgetBool();
 	bold = state_fio->FgetBool();
 	underline = state_fio->FgetBool();
-	hiragana = state_fio->FgetBool();
+	hiragana_mode = state_fio->FgetBool();
 	reverse = state_fio->FgetBool();
 	vertical = state_fio->FgetBool();
 	ank_double_x = state_fio->FgetBool();
@@ -923,9 +1137,15 @@ bool MZ1P17::load_state(FILEIO* state_fio)
 	kanji_half_pitch = state_fio->FgetInt32();
 	dest_line_x = state_fio->FgetInt32();
 	dest_paper_y = state_fio->FgetInt32();
+	color_mode = state_fio->FgetInt32();
 	double_y_printed = state_fio->FgetBool();
 	
 	// post process
+	emu->clear_bitmap(&bitmap_paper, 255, 255, 255);
+	emu->clear_bitmap(&bitmap_line[0], 255, 255, 255);
+	emu->clear_bitmap(&bitmap_line[1], 0, 0, 0);
+	emu->clear_bitmap(&bitmap_line[2], 0, 0, 0);
+	emu->clear_bitmap(&bitmap_line[3], 0, 0, 0);
 	wait_frames = -1;
 	line_printed = paper_printed = false;
 	paper_index = 0;
