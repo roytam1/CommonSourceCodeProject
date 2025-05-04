@@ -96,11 +96,13 @@ void initialize_config()
 	config.use_direct_input = true;
 	config.disable_dwm = false;
 #endif
+#ifdef USE_JOYSTICK
 	for(int i = 0; i < 4; i++) {
 		for(int j = 0; j < 16; j++) {
 			config.joy_buttons[i][j] = (i << 4) | j;
 		}
 	}
+#endif
 	
 	// printer
 #if defined(USE_PRINTER) && defined(PRINTER_DEVICE_TYPE_DEFAULT)
@@ -247,11 +249,13 @@ void load_config(const _TCHAR* config_path)
 	config.use_direct_input = MyGetPrivateProfileBool(_T("Input"), _T("UseDirectInput"), config.use_direct_input, config_path);
 	config.disable_dwm = MyGetPrivateProfileBool(_T("Input"), _T("DisableDwm"), config.disable_dwm, config_path);
 #endif
+#ifdef USE_JOYSTICK
 	for(int i = 0; i < 4; i++) {
 		for(int j = 0; j < 16; j++) {
 			config.joy_buttons[i][j] = MyGetPrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
 		}
 	}
+#endif
 	
 	// printer
 #ifdef USE_PRINTER
@@ -391,11 +395,13 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileBool(_T("Input"), _T("UseDirectInput"), config.use_direct_input, config_path);
 	MyWritePrivateProfileBool(_T("Input"), _T("DisableDwm"), config.disable_dwm, config_path);
 #endif
+#ifdef USE_JOYSTICK
 	for(int i = 0; i < 4; i++) {
 		for(int j = 0; j < 16; j++) {
 			MyWritePrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
 		}
 	}
+#endif
 	
 	// printer
 #ifdef USE_PRINTER

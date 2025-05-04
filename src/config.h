@@ -166,7 +166,9 @@ typedef struct {
 	bool use_direct_input;
 	bool disable_dwm;
 #endif
+#ifdef USE_JOYSTICK
 	int joy_buttons[4][16];
+#endif
 	
 	// printer
 #ifdef USE_PRINTER

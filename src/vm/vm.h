@@ -480,6 +480,11 @@
 #include "x1/x1.h"
 #endif
 
+// Yuasa Kyouiku System YALKY
+#ifdef _YALKY
+#include "yalky/yalky.h"
+#endif
+
 // SHINKO SANGYO YS-6464A
 #ifdef _YS6464A
 #include "ys6464a/ys6464a.h"
