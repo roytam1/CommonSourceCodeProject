@@ -40,12 +40,12 @@ private:
 	DEVICE *d_mem_stored;
 #endif
 	
-	pair_t pc;
+	pair32_t pc;
 	uint16_t prevpc;
-	pair_t sp;
-	pair_t ix;
-	pair_t acc_d;
-	pair_t ea;
+	pair32_t sp;
+	pair32_t ix;
+	pair32_t acc_d;
+	pair32_t ea;
 	
 	uint8_t cc;
 	int wai_state;
@@ -61,7 +61,7 @@ private:
 	uint32_t RM(uint32_t Addr);
 	void WM(uint32_t Addr, uint32_t Value);
 	uint32_t RM16(uint32_t Addr);
-	void WM16(uint32_t Addr, pair_t *p);
+	void WM16(uint32_t Addr, pair32_t *p);
 	
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 	// data
@@ -82,9 +82,9 @@ private:
 	bool sc2_state;
 	
 	// timer
-	pair_t counter;
-	pair_t output_compare;
-	pair_t timer_over;
+	pair32_t counter;
+	pair32_t output_compare;
+	pair32_t timer_over;
 	uint8_t tcsr;
 	uint8_t pending_tcsr;
 	uint16_t input_capture;
@@ -364,7 +364,7 @@ private:
 	void cpx_ix();
 	
 public:
-	MC6800(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MC6800(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #ifdef USE_DEBUGGER
 		total_icount = prev_total_icount = 0;

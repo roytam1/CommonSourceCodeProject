@@ -27,12 +27,12 @@
 #define MAX_BUTTONS		21
 #define MAX_DRAW_RANGES		14
 #define USE_BINARY_FILE		1
-#define NOTIFY_KEY_DOWN
 #define USE_DEBUGGER
 #define USE_STATE
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 const struct {
 	int x, y;
@@ -94,10 +94,10 @@ class Z80PIO;
 class DISPLAY;
 class KEYBOARD;
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -131,6 +131,10 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	double get_frame_rate()
+	{
+		return FRAMES_PER_SEC;
+	}
 	
 #ifdef USE_DEBUGGER
 	// debugger
@@ -163,9 +167,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

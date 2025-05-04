@@ -233,7 +233,6 @@
 #define I8259_MAX_CHIPS		2
 #define SINGLE_MODE_DMA
 #define OVERRIDE_SOUND_FREQ_48000HZ	55467
-#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #if defined(_PC9801) || defined(_PC9801E)
@@ -252,10 +251,7 @@
 #define USE_TAPE		1
 #define TAPE_BINARY_ONLY
 #endif
-#define NOTIFY_KEY_DOWN
 #define USE_KEY_LOCKED
-#define USE_SHIFT_NUMPAD_KEY
-#define USE_ALT_F10_KEY
 #if defined(_PC98DO) || defined(_PC98DOPLUS)
 // slow enough for N88-“ú–{ŒêBASIC
 #define USE_AUTO_KEY		8
@@ -295,6 +291,7 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -396,10 +393,10 @@ class PC88;
 class Z80;
 #endif
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -599,9 +596,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

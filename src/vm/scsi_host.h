@@ -35,7 +35,7 @@ private:
 	void set_drq(bool value);
 	
 public:
-	SCSI_HOST(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	SCSI_HOST(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		initialize_output_signals(&outputs_irq);
 		initialize_output_signals(&outputs_drq);

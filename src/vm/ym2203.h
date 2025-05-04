@@ -76,7 +76,7 @@ private:
 	void update_interrupt();
 	
 public:
-	YM2203(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	YM2203(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		for(int i = 0; i < 2; i++) {
 			initialize_output_signals(&port[i].outputs);

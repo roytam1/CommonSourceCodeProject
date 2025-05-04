@@ -111,7 +111,7 @@ private:
 	uint8_t *iramdisk_ptr;
 	
 public:
-	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	IO(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		set_device_name(_T("I/O Bus"));
 	}

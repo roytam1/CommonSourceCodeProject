@@ -40,7 +40,7 @@ private:
 	uint8_t req, sreq, mask, tc;
 	
 public:
-	UPD71071(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	UPD71071(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		for(int i = 0; i < 4; i++) {
 			dma[i].dev = vm->dummy;

@@ -26,17 +26,13 @@
 #define UPD7220_HORIZ_FREQ	20920
 #define IO_ADDR_MAX		0x100
 #define PRINTER_STROBE_RISING_EDGE
-#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_SPECIAL_RESET
 #define USE_DIPSWITCH
 #define DIPSWITCH_DEFAULT	0x1fd
 #define USE_FLOPPY_DISK		4
-#define NOTIFY_KEY_DOWN
 #define USE_KEY_LOCKED
-#define USE_SHIFT_NUMPAD_KEY
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NUMPAD
@@ -51,6 +47,7 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -78,10 +75,10 @@ class MAIN;
 class SUB;
 class KEYBOARD;
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -176,9 +173,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

@@ -30,7 +30,7 @@ private:
 	DEVICE *d_mem_stored;
 #endif
 	
-	pair_t pc, sp, zp, ea;
+	pair32_t pc, sp, zp, ea;
 	uint16_t prev_pc;
 	uint8_t a, x, y, p;
 	bool pending_irq, after_cli;
@@ -47,7 +47,7 @@ private:
 	void update_irq();
 	
 public:
-	M6502(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	M6502(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #ifdef USE_DEBUGGER
 		total_icount = prev_total_icount = 0;

@@ -50,17 +50,13 @@
 #define WINDOW_HEIGHT_ASPECT	480
 #endif
 #define MAX_DRIVE		4
-#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_BOOT_MODE		5
 #define USE_DEVICE_TYPE		3
 #define USE_TAPE		1
-#define USE_TAPE_BUTTON
 #define USE_FLOPPY_DISK		2
 #define USE_BINARY_FILE		1
-#define USE_SHIFT_NUMPAD_KEY
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NUMPAD
@@ -73,6 +69,7 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -102,10 +99,10 @@ class KEYBOARD;
 class MEMORY;
 class PAC2;
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -199,9 +196,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

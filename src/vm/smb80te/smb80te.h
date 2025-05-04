@@ -19,7 +19,6 @@
 #define CPU_CLOCKS		2457600
 #define SCREEN_WIDTH		768
 #define SCREEN_HEIGHT		512
-#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define ONE_BOARD_MICRO_COMPUTER
@@ -28,15 +27,14 @@
 #define USE_DIPSWITCH
 #define DIPSWITCH_DEFAULT	0x01
 #define USE_TAPE		1
-#define USE_TAPE_BUTTON
 #define USE_BINARY_FILE		1
-#define NOTIFY_KEY_DOWN
 #define USE_SOUND_VOLUME	2
 #define USE_DEBUGGER
 #define USE_STATE
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -104,10 +102,10 @@ class Z80PIO;
 
 class MEMORY;
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -186,9 +184,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

@@ -562,7 +562,7 @@ void* debugger_thread(void *lpx)
 				} else if(num <= 3) {
 					int steps = 128;
 					if(num >= 2) {
-						steps = min(my_hexatoi(target, params[1]), MAX_CPU_TRACE);
+						steps = min((int)my_hexatoi(target, params[1]), MAX_CPU_TRACE);
 					}
 					for(int i = MAX_CPU_TRACE - steps; i < MAX_CPU_TRACE; i++) {
 						int index = (target_debugger->cpu_trace_ptr + i) & (MAX_CPU_TRACE - 1);
@@ -1118,16 +1118,10 @@ RESTART_GO:
 						if(num == 4) {
 							msec = my_hexatoi(target, params[3]);
 						}
-#ifdef SUPPORT_VARIABLE_TIMING
 						int frames = (int)(p->vm->get_frame_rate() * (double)msec / 1000.0 + 0.5);
-#else
-						int frames = (int)(FRAMES_PER_SEC * (double)msec / 1000.0 + 0.5);
-#endif
 						p->osd->get_key_buffer()[code] &= 0x7f;
 						p->osd->get_key_buffer()[code] |= max(1, min(127, frames));
-#ifdef NOTIFY_KEY_DOWN
 						p->vm->key_down(code, false);
-#endif
 					} else {
 						my_printf(p->osd, _T("invalid parameter number\n"));
 					}

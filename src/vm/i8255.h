@@ -32,7 +32,7 @@ private:
 	} port[3];
 	
 public:
-	I8255(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	I8255(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		for(int i = 0; i < 3; i++) {
 			initialize_output_signals(&port[i].outputs);

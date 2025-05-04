@@ -12,7 +12,6 @@
 
 #define USE_TAPE 1
 #define USE_TAPE_PTR
-#define USE_TAPE_BUTTON
 #define USE_SCANLINE
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
@@ -25,15 +24,9 @@
 #define USE_PRINTER
 #define USE_PRINTER_TYPE 4
 #define USE_AY_3_8910_AS_PSG
-#define SUPPORT_VARIABLE_TIMING
 
 #define INDEPENDENT_CAPS_KANA_LED
-#define NOTIFY_KEY_DOWN
-//#define NOTIFY_KEY_UP
-#define NOTIFY_KEY_DOWN_LR_SHIFT
-#define NOTIFY_KEY_DOWN_LR_MENU
 #define USE_KEY_LOCKED
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NUMPAD
@@ -350,6 +343,7 @@
 //#include "../../config.h"
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -453,9 +447,10 @@ class OR;
 class FM7_JCOMMCARD;
 #endif
 
-class VM {
+class VM : public VM_TEMPLATE
+{
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -631,9 +626,9 @@ public:
 	void set_cpu_clock(DEVICE *cpu, uint32_t clocks);
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

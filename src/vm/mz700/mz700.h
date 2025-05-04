@@ -54,13 +54,10 @@
 #define USE_BOOT_MODE		2
 #endif
 #define USE_TAPE		1
-#define USE_TAPE_BUTTON
 #if defined(_MZ800) || defined(_MZ1500)
 #define USE_FLOPPY_DISK		2
 #define USE_QUICK_DISK		1
 #endif
-#define USE_SHIFT_NUMPAD_KEY
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_CAPS
@@ -159,6 +156,7 @@ static const int vm_auto_key_table_base[][2] = {
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -207,10 +205,10 @@ class PSG;
 class QUICKDISK;
 #endif
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -273,6 +271,10 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	double get_frame_rate()
+	{
+		return FRAMES_PER_SEC;
+	}
 	
 #ifdef USE_DEBUGGER
 	// debugger
@@ -328,9 +330,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

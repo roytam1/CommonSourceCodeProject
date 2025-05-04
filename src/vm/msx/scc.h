@@ -83,7 +83,7 @@ private:
 	void save_load_state(FILEIO* state_fio, bool is_save);
 
 public:
-	SCC(VM* parent_vm, EMU* parent_emu);
+	SCC(VM_TEMPLATE* parent_vm, EMU* parent_emu);
 	~SCC() {}
 	
 	// common functions

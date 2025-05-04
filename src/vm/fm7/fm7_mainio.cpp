@@ -31,11 +31,9 @@
 #include "./jcommcard.h"
 #endif
 
-FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+FM7_MAINIO::FM7_MAINIO(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 {
 	int i;
-	p_vm = parent_vm;
-	p_emu = parent_emu;
 	for(i = 0; i < 3; i++) {
 		opn[i] = NULL;
 	}

@@ -20,7 +20,7 @@ private:
    
 	uint8_t n_bank;
 	uint8_t rcb_address;
-	pair_t kanji_address;
+	pair32_t kanji_address;
 	
 	bool diag_dictrom_load;
 	
@@ -34,7 +34,7 @@ private:
 	uint8_t p_ram[0x2000];
 	
 public:
-	FM7_JCOMMCARD(VM *parent_vm, EMU *parent_emu);
+	FM7_JCOMMCARD(VM_TEMPLATE* parent_vm, EMU *parent_emu);
 	~FM7_JCOMMCARD();
 	void initialize(void);
 	void release(void);

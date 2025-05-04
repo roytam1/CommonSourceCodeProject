@@ -61,7 +61,6 @@
 #define DATAREC_FAST_REW_SPEED	16
 #define PRINTER_STROBE_RISING_EDGE
 #define SCSI_HOST_AUTO_ACK
-#define SUPPORT_VARIABLE_TIMING
 
 #ifdef _X1TURBO_FEATURE
 #define IPL_ROM_FILE_SIZE	0x8000
@@ -96,14 +95,10 @@
 #define BASE_FLOPPY_DISK_NUM	0
 #define USE_HARD_DISK		4
 #define USE_TAPE		1
-#define USE_TAPE_BUTTON
 #ifdef _X1TWIN
 #define USE_CART		1
 #endif
-#define NOTIFY_KEY_DOWN
 #define USE_KEY_LOCKED
-#define USE_SHIFT_NUMPAD_KEY
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		8
 #define USE_AUTO_KEY_RELEASE	10
 #define USE_AUTO_KEY_NUMPAD
@@ -132,6 +127,7 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -276,10 +272,10 @@ class HUC6280;
 class PCE;
 #endif
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices for x1
 	EVENT* event;
@@ -418,9 +414,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

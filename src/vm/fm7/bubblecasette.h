@@ -37,16 +37,13 @@ enum {
 
 typedef struct {
 	_TCHAR filename[16];
-	pair_t size;
-	pair_t offset;
+	pair32_t size;
+	pair32_t offset;
 	uint8_t misc[8];
 } bbl_header_t;
 
 class BUBBLECASETTE: public DEVICE {
 protected:
-	EMU *p_emu;
-	VM *p_vm;
-
 	FILEIO* fio;
 	
 	bool is_wrote;
@@ -81,9 +78,9 @@ protected:
 	bool undefined_cmd_error; // bit0
 
 	//FD14-FD15: Page address register
-	pair_t page_address; // 16bit, Big ENDIAN
+	pair32_t page_address; // 16bit, Big ENDIAN
 	// FD16-FD17: Page Count Resister
-	pair_t page_count;   // 16bit, Big ENDIAN
+	pair32_t page_count;   // 16bit, Big ENDIAN
 private:
 	bool bubble_inserted;
 	int bubble_type;
@@ -103,7 +100,7 @@ private:
 	bool read_one_page(void);
 	bool write_one_page(void);
 public:
-	BUBBLECASETTE(VM* parent_vm, EMU* parent_emu);
+	BUBBLECASETTE(VM_TEMPLATE* parent_vm, EMU* parent_emu);
 	~BUBBLECASETTE();
 
 	void initialize();

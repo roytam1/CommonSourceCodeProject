@@ -57,7 +57,7 @@ private:
 	void draw_alpha();
 	
 public:
-	MC6847(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MC6847(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		d_cpu = NULL;
 		ag = as = intext = css = inv = false;

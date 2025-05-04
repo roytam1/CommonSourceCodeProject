@@ -40,7 +40,7 @@ private:
 	inline void count_up_or_down();
 	
 public:
-	HD44102(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	HD44102(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		set_device_name(_T("HD44102 LCD Controller"));
 	}

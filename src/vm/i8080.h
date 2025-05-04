@@ -54,7 +54,7 @@ private:
 	uint64_t prev_total_count;
 #endif
 	int count;
-	pair_t regs[4];
+	pair32_t regs[4];
 	uint16_t SP, PC, prevPC;
 	uint16_t IM, RIM_IEN;
 	bool afterHALT, BUSREQ, SID, afterEI;
@@ -201,7 +201,7 @@ private:
 	void OP(uint8_t code);
 	
 public:
-	I8080(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	I8080(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #ifdef USE_DEBUGGER
 		total_count = prev_total_count = 0;

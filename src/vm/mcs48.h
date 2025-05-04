@@ -32,7 +32,7 @@ class MCS48MEM : public DEVICE
 private:
 	uint8_t ram[0x100];
 public:
-	MCS48MEM(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MCS48MEM(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		memset(ram, 0, sizeof(ram));
 		set_device_name(_T("MCS48 Memory Bus"));
@@ -74,7 +74,7 @@ private:
 #endif
 	
 public:
-	MCS48(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MCS48(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		d_mem = d_io = d_intr = NULL;
 #ifdef USE_DEBUGGER

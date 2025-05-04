@@ -45,7 +45,7 @@ private:
 	int run_one_opecode();
 	
 public:
-	UPD7810(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	UPD7810(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #ifdef USE_DEBUGGER
 		total_icount = prev_total_icount = 0;

@@ -26,15 +26,12 @@
 #define MAX_DRIVE		4
 #define UPD765A_DONT_WAIT_SEEK
 #define HAS_AY_3_8912
-#define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
 #define USE_TAPE		1
 #define TAPE_BINARY_ONLY
 #define USE_FLOPPY_DISK		2
 #define USE_KEY_LOCKED
-#define USE_SHIFT_NUMPAD_KEY
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_CAPS
@@ -47,6 +44,7 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -77,10 +75,10 @@ class KANJI;
 class KEYBOARD;
 class MEMORY;
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -163,9 +161,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

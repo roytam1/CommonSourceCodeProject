@@ -65,7 +65,7 @@ private:
 	uint32_t read_io(int ch);
 	
 public:
-	I8237(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	I8237(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		for(int i = 0; i < 4; i++) {
 			dma[i].dev = vm->dummy;

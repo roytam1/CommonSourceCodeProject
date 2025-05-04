@@ -20,10 +20,8 @@
 #include "./fm7_keyboard.h"
 #include "./kanjirom.h"
 
-DISPLAY::DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+DISPLAY::DISPLAY(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 {
-	p_vm = parent_vm;
-	p_emu = parent_emu;
 	ins_led = NULL;
 	kana_led = NULL;
 	caps_led = NULL;
@@ -134,10 +132,10 @@ void DISPLAY::reset_some_devices()
 #endif
 	if((display_mode == DISPLAY_MODE_8_400L) || (display_mode == DISPLAY_MODE_1_400L)) {
 		usec = 0.33 * 1000.0; 
-		p_vm->set_vm_frame_rate(55.40);
+		vm->set_vm_frame_rate(55.40);
 	} else {
 		usec = 0.51 * 1000.0;
-		p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+		vm->set_vm_frame_rate(FRAMES_PER_SEC);
 	}
 	//usec = 16.0;
 	//register_event(this, EVENT_FM7SUB_VSTART, usec, false, &vstart_event_id); // NEXT CYCLE_
@@ -530,7 +528,7 @@ void DISPLAY::enter_display(void)
 		subclock = subclock / 3;
 	}
 	if(prev_clock != subclock) {
-		p_vm->set_cpu_clock(subcpu, subclock);
+		vm->set_cpu_clock(subcpu, subclock);
 	}
 	prev_clock = subclock;
 }
@@ -640,7 +638,7 @@ void DISPLAY::setup_400linemode(uint8_t val)
 				}
 			} else { // 200Line
 				
-				p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+				vm->set_vm_frame_rate(FRAMES_PER_SEC);
 #if !defined(FIXED_FRAMEBUFFER_SIZE)
 				emu->set_vm_screen_size(640, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 				for(int y = 0; y < 200; y++) {
@@ -1927,7 +1925,7 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 				if(oldmode != display_mode) {
 					scrntype_t *pp;
 					if(mode320 || mode256k) {
-						if(oldmode == DISPLAY_MODE_8_400L) p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+						if(oldmode == DISPLAY_MODE_8_400L) vm->set_vm_frame_rate(FRAMES_PER_SEC);
 #if !defined(FIXED_FRAMEBUFFER_SIZE)
 						emu->set_vm_screen_size(320, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 						for(y = 0; y < 200; y++) {
@@ -1943,13 +1941,13 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 						//emu->set_vm_screen_lines(200);
 					} else if(display_mode == DISPLAY_MODE_8_400L) {
 						emu->set_vm_screen_size(640, 400, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
-						if(oldmode != DISPLAY_MODE_8_400L) p_vm->set_vm_frame_rate(55.40);
+						if(oldmode != DISPLAY_MODE_8_400L) vm->set_vm_frame_rate(55.40);
 						for(y = 0; y < 400; y++) {
 							pp = emu->get_screen_buffer(y);
 							if(pp != NULL) memset(pp, 0x00, 640 * sizeof(scrntype_t));
 						}
 					} else {
-						if(oldmode == DISPLAY_MODE_8_400L) p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+						if(oldmode == DISPLAY_MODE_8_400L) vm->set_vm_frame_rate(FRAMES_PER_SEC);
 #if !defined(FIXED_FRAMEBUFFER_SIZE)
 						emu->set_vm_screen_size(640, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 						for(y = 0; y < 200; y++) {
@@ -2011,7 +2009,7 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 						}
 					} else { // 200Line
 				
-						p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+						vm->set_vm_frame_rate(FRAMES_PER_SEC);
 #if !defined(FIXED_FRAMEBUFFER_SIZE)
 						emu->set_vm_screen_size(640, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 						for(int y = 0; y < 200; y++) {
@@ -2053,7 +2051,7 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 				if(oldmode != display_mode) {
 					scrntype_t *pp;
 					if(mode320 || mode256k) {
-						if(oldmode == DISPLAY_MODE_8_400L) p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+						if(oldmode == DISPLAY_MODE_8_400L) vm->set_vm_frame_rate(FRAMES_PER_SEC);
 #if !defined(FIXED_FRAMEBUFFER_SIZE)
 						emu->set_vm_screen_size(320, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 						for(y = 0; y < 200; y++) {
@@ -2069,9 +2067,9 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 						//emu->set_vm_screen_lines(200);
 					} else { // 200 lines, 8 colors.
 						if(display_mode == DISPLAY_MODE_8_400L) {
-							if(oldmode != DISPLAY_MODE_8_400L) p_vm->set_vm_frame_rate(55.40);
+							if(oldmode != DISPLAY_MODE_8_400L) vm->set_vm_frame_rate(55.40);
 						} else {
-							if(oldmode == DISPLAY_MODE_8_400L) p_vm->set_vm_frame_rate(FRAMES_PER_SEC);
+							if(oldmode == DISPLAY_MODE_8_400L) vm->set_vm_frame_rate(FRAMES_PER_SEC);
 						}
 #if !defined(FIXED_FRAMEBUFFER_SIZE)
 						int ymax = 	(display_mode == DISPLAY_MODE_8_400L) ? 400 : 200;
@@ -2749,7 +2747,7 @@ void DISPLAY::write_mmio(uint32_t addr, uint8_t data)
 {
 	uint8_t rval = 0;
 	uint8_t active_block_old;
-	pair_t tmpvar;
+	pair32_t tmpvar;
 	if(addr < 0xd400) return;
 	
 #if !defined(_FM77AV_VARIANTS)

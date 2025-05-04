@@ -41,7 +41,7 @@ private:
 	int volume_l, volume_r;
 	
 public:
-	SN76489AN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	SN76489AN(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		volume_l = volume_r = 1024;
 #ifdef HAS_SN76489

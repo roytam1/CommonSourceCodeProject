@@ -47,7 +47,7 @@ private:
 	void set_busy(bool val);
 	
 public:
-	MSM58321(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MSM58321(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		initialize_output_signals(&outputs_data);
 #ifndef HAS_MSM5832

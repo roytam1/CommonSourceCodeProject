@@ -11,9 +11,9 @@
 #define _COMMON_H_
 
 // move shared codes to DLL???
-#ifdef _USE_QT
-	#define USE_SHARED_DLL
-#endif
+//#ifdef _USE_QT
+//	#define USE_SHARED_DLL
+//#endif
 
 // use zlib to decompress gzip file???
 #ifdef _WIN32
@@ -47,6 +47,7 @@
 			// Microsoft Visual C++ 12.0 (2013) or later
 			#define SUPPORT_CPLUSPLUS_11
 		#endif
+		#define CSP_OS_WINDOWS
 	#else
 		// Win32, but not Microsoft Visual C++
 		#define SUPPORT_TCHAR_TYPE
@@ -67,6 +68,8 @@
 	#else
 		#define CSP_OS_GCC_GENERIC
 		#define CSP_OS_GENERIC
+		#define DLL_PREFIX
+		#define DLL_PREFIX_I
 	#endif
 	#if defined(__clang__)
 		#define __CSP_COMPILER_CLANG
@@ -74,6 +77,9 @@
 		#define __CSP_COMPILER_GCC
 	#endif
 	#define SUPPORT_CPLUSPLUS_11
+#else
+	#define DLL_PREFIX
+	#define DLL_PREFIX_I
 #endif
 #ifndef SUPPORT_CPLUSPLUS_11
 	#if defined(__cplusplus) && (__cplusplus > 199711L)
@@ -261,6 +267,87 @@
 typedef union {
 	struct {
 #ifdef __BIG_ENDIAN__
+		uint8_t h, l;
+#else
+		uint8_t l, h;
+#endif
+	} b;
+	struct {
+#ifdef __BIG_ENDIAN__
+		int8_t h, l;
+#else
+		int8_t l, h;
+#endif
+	} sb;
+	uint16_t w;
+	int16_t sw;
+//	float16_t hf; // half float
+	
+	inline void read_2bytes_le_from(uint8_t *t)
+	{
+		b.l = t[0]; b.h = t[1];
+	}
+	inline void write_2bytes_le_to(uint8_t *t)
+	{
+		t[0] = b.l; t[1] = b.h;
+	}
+	inline void read_2bytes_be_from(uint8_t *t)
+	{
+		b.h = t[0]; b.l = t[1];
+	}
+	inline void write_2bytes_be_to(uint8_t *t)
+	{
+		t[0] = b.h; t[1] = b.l;
+	}
+	inline void set_2bytes_be_from(uint16_t n)
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t h, l;
+			}b;
+		} bigv;
+		bigv.w = n;
+		b.l = bigv.b.l; b.h = bigv.b.h;
+	}
+	inline void set_2bytes_le_from(uint16_t n)
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t l, h;
+			}b;
+		} littlev;
+		littlev.w = n;
+		b.l = littlev.b.l; b.h = littlev.b.h;
+	}
+	inline uint16_t get_2bytes_be_to()
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t h, l;
+			}b;
+		} bigv;
+		bigv.b.l = b.l; bigv.b.h = b.h;
+		return bigv.w;
+	}
+	inline uint16_t get_2bytes_le_to()
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t l, h;
+			}b;
+		} littlev;
+		littlev.b.l = b.l; littlev.b.h = b.h;
+		return littlev.w;
+	}
+} pair16_t;
+
+typedef union {
+	struct {
+#ifdef __BIG_ENDIAN__
 		uint8_t h3, h2, h, l;
 #else
 		uint8_t l, h, h2, h3;
@@ -289,6 +376,8 @@ typedef union {
 	} sw;
 	uint32_t d;
 	int32_t sd;
+	float f; // single float
+	
 	inline void read_2bytes_le_from(uint8_t *t)
 	{
 		b.l = t[0]; b.h = t[1]; b.h2 = b.h3 = 0;
@@ -321,18 +410,387 @@ typedef union {
 	{
 		t[0] = b.h3; t[1] = b.h2; t[2] = b.h; t[3] = b.l;
 	}
-} pair_t;
+	inline void set_2bytes_be_from(uint16_t n)
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t h, l;
+			}b;
+		} bigv;
+		bigv.w = n;
+		b.l = bigv.b.l; b.h = bigv.b.h;
+		b.h2 = 0; b.h3 = 0;
+	}
+	inline void set_2bytes_le_from(uint16_t n)
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t l, h;
+			}b;
+		} littlev;
+		littlev.w = n;
+		b.l = littlev.b.l; b.h = littlev.b.h;
+		b.h2 = 0; b.h3 = 0;
+	}
+	inline uint16_t get_2bytes_be_to()
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t h, l;
+			}b;
+		} bigv;
+		bigv.b.l = b.l; bigv.b.h = b.h;
+		return bigv.w;
+	}
+	inline uint16_t get_2bytes_le_to()
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t l, h;
+			}b;
+		} littlev;
+		littlev.b.l = b.l; littlev.b.h = b.h;
+		return littlev.w;
+	}
+	inline void set_4bytes_be_from(uint32_t n)
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t h3, h2, h, l;
+			}b;
+		} bigv;
+		bigv.dw = n;
+		b.l = bigv.b.l; b.h = bigv.b.h; b.h2 = bigv.b.h2; b.h3 = bigv.b.h3;
+	}
+	inline void set_4bytes_le_from(uint32_t n)
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t l, h, h2, h3;
+			}b;
+		} littlev;
+		littlev.dw = n;
+		b.l = littlev.b.l; b.h = littlev.b.h; b.h2 = littlev.b.h2; b.h3 = littlev.b.h3;
+	}
+	inline uint32_t get_4bytes_be_to()
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t h3, h2, h, l;
+			}b;
+		} bigv;
+		bigv.b.l = b.l; bigv.b.h = b.h; bigv.b.h2 = b.h2; bigv.b.h3 = b.h3;
+		return bigv.dw;
+	}
+	inline uint32_t get_4bytes_le_to()
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t l, h, h2, h3;
+			}b;
+		} littlev;
+		littlev.b.l = b.l; littlev.b.h = b.h; littlev.b.h2 = b.h2; littlev.b.h3 = b.h3;
+		return littlev.dw;
+	}
+} pair32_t;
+
+typedef union {
+	struct {
+#ifdef __BIG_ENDIAN__
+		uint8_t h7, h6, h5, h4, h3, h2, h, l;
+#else
+		uint8_t l, h, h2, h3, h4, h5, h6, h7;
+#endif
+	} b;
+	struct {
+#ifdef __BIG_ENDIAN__
+		int8_t h7, h6, h5, h4, h3, h2, h, l;
+#else
+		int8_t l, h, h2, h3, h4, h5, h6, h7;
+#endif
+	} sb;
+	struct {
+#ifdef __BIG_ENDIAN__
+		uint16_t h3, h2, h, l;
+#else
+		uint16_t l, h, h2, h3;
+#endif
+	} w;
+	struct {
+#ifdef __BIG_ENDIAN__
+		int16_t h3, h2, h, l;
+#else
+		int16_t l, h, h2, h3;
+#endif
+	} sw;
+	struct {
+#ifdef __BIG_ENDIAN__
+		pair16_t h3, h2, h, l;
+#else
+		pair16_t l, h, h2, h3;
+#endif
+	} p16;
+	struct {
+#ifdef __BIG_ENDIAN__
+		uint32_t h, l;
+#else
+		uint32_t l, h;
+#endif
+	} d;
+	struct {
+#ifdef __BIG_ENDIAN__
+		int32_t h, l;
+#else
+		int32_t l, h;
+#endif
+	} sd;
+	struct {
+#ifdef __BIG_ENDIAN__
+		pair32_t h, l;
+#else
+		pair32_t l, h;
+#endif
+	} p32;
+	uint64_t q;
+	int64_t sq;
+	double df; // double float
+	
+	inline void read_2bytes_le_from(uint8_t *t)
+	{
+		b.l = t[0]; b.h = t[1]; b.h2 = b.h3 = 0;
+		b.h4 = 0; b.h5 = 0; b.h6 = 0; b.h7 = 0;
+	}
+	inline void write_2bytes_le_to(uint8_t *t)
+	{
+		t[0] = b.l; t[1] = b.h;
+	}
+	inline void read_2bytes_be_from(uint8_t *t)
+	{
+		b.h3 = b.h2 = 0; b.h = t[0]; b.l = t[1];
+		b.h4 = 0; b.h5 = 0; b.h6 = 0; b.h7 = 0;
+	}
+	inline void write_2bytes_be_to(uint8_t *t)
+	{
+		t[0] = b.h; t[1] = b.l;
+	}
+	inline void read_4bytes_le_from(uint8_t *t)
+	{
+		b.l = t[0]; b.h = t[1]; b.h2 = t[2]; b.h3 = t[3];
+		b.h4 = 0; b.h5 = 0; b.h6 = 0; b.h7 = 0;
+	}
+	inline void write_4bytes_le_to(uint8_t *t)
+	{
+		t[0] = b.l; t[1] = b.h; t[2] = b.h2; t[3] = b.h3;
+	}
+	inline void read_4bytes_be_from(uint8_t *t)
+	{
+		b.h3 = t[0]; b.h2 = t[1]; b.h = t[2]; b.l = t[3];
+		b.h4 = 0; b.h5 = 0; b.h6 = 0; b.h7 = 0;
+	}
+	inline void write_4bytes_be_to(uint8_t *t)
+	{
+		t[0] = b.h3; t[1] = b.h2; t[2] = b.h; t[3] = b.l;
+	}
+	inline void read_8bytes_le_from(uint8_t *t)
+	{
+		b.l = t[0];  b.h = t[1];  b.h2 = t[2]; b.h3 = t[3];
+		b.h4 = t[4]; b.h5 = t[5]; b.h6 = t[6]; b.h7 = t[7];
+	}
+	inline void write_8bytes_le_to(uint8_t *t)
+	{
+		t[0] = b.l;  t[1] = b.h;  t[2] = b.h2; t[3] = b.h3;
+		t[4] = b.h4; t[5] = b.h5; t[6] = b.h6; t[7] = b.h7;
+	}
+	inline void read_8bytes_be_from(uint8_t *t)
+	{
+		b.h7 = t[0]; b.h6 = t[1]; b.h5 = t[2]; b.h4 = t[3];
+		b.h3 = t[4]; b.h2 = t[5]; b.h = t[6];  b.l = t[7];
+	}
+	inline void write_8bytes_be_to(uint8_t *t)
+	{
+		t[0] = b.h7; t[1] = b.h6; t[2] = b.h5; t[3] = b.h4;
+		t[4] = b.h3; t[5] = b.h2; t[6] = b.h;  t[7] = b.l;
+	}
+	inline void set_2bytes_be_from(uint16_t n)
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t h, l;
+			}b;
+		} bigv;
+		bigv.w = n;
+		b.l = bigv.b.l; b.h = bigv.b.h;
+		b.h2 = 0; b.h3 = 0;
+		b.h4 = 0; b.h5 = 0; b.h6 = 0; b.h7 = 0;
+	}
+	inline void set_2bytes_le_from(uint16_t n)
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t l, h;
+			}b;
+		} littlev;
+		littlev.w = n;
+		b.l = littlev.b.l; b.h = littlev.b.h;
+		b.h2 = 0; b.h3 = 0;
+		b.h4 = 0; b.h5 = 0; b.h6 = 0; b.h7 = 0;
+	}
+	inline uint16_t get_2bytes_be_to()
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t h, l;
+			}b;
+		} bigv;
+		bigv.b.l = b.l; bigv.b.h = b.h;
+		return bigv.w;
+	}
+	inline uint16_t get_2bytes_le_to()
+	{
+		union {
+			uint16_t w;
+			struct {
+				uint8_t l, h;
+			}b;
+		} littlev;
+		littlev.b.l = b.l; littlev.b.h = b.h;
+		return littlev.w;
+	}
+	inline void set_4bytes_be_from(uint32_t n)
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t h3, h2, h, l;
+			}b;
+		} bigv;
+		bigv.dw = n;
+		b.l = bigv.b.l; b.h = bigv.b.h; b.h2 = bigv.b.h2; b.h3 = bigv.b.h3;
+		b.h4 = 0;       b.h5 = 0;       b.h6 = 0;         b.h7 = 0;
+	}
+	inline void set_4bytes_le_from(uint32_t n)
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t l, h, h2, h3;
+			}b;
+		} littlev;
+		littlev.dw = n;
+		b.l = littlev.b.l; b.h = littlev.b.h; b.h2 = littlev.b.h2; b.h3 = littlev.b.h3;
+		b.h4 = 0;          b.h5 = 0;          b.h6 = 0;            b.h7 = 0;
+	}
+	inline uint32_t get_4bytes_be_to()
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t h3, h2, h, l;
+			}b;
+		} bigv;
+		bigv.b.l = b.l; bigv.b.h = b.h; bigv.b.h2 = b.h2; bigv.b.h3 = b.h3;
+		return bigv.dw;
+	}
+	inline uint32_t get_4bytes_le_to()
+	{
+		union {
+			uint32_t dw;
+			struct {
+				uint8_t l, h, h2, h3;
+			}b;
+		} littlev;
+		littlev.b.l = b.l; littlev.b.h = b.h; littlev.b.h2 = b.h2; littlev.b.h3 = b.h3;
+		return littlev.dw;
+	}
+	inline void set_8bytes_be_from(uint64_t n)
+	{
+		union {
+			uint64_t qw;
+			struct {
+				uint8_t h7, h6, h5, h4, h3, h2, h, l;
+			}b;
+		} bigv;
+		bigv.qw = n;
+		b.l = bigv.b.l;   b.h = bigv.b.h;   b.h2 = bigv.b.h2; b.h3 = bigv.b.h3;
+		b.h4 = bigv.b.h4; b.h5 = bigv.b.h5; b.h6 = bigv.b.h6; b.h7 = bigv.b.h7;
+	}
+	inline void set_8bytes_le_from(uint64_t n)
+	{
+		union {
+			uint64_t qw;
+			struct {
+				uint8_t l, h, h2, h3, h4, h5, h6, h7;
+			}b;
+		} littlev;
+		littlev.qw = n;
+		b.l = littlev.b.l;   b.h = littlev.b.h;   b.h2 = littlev.b.h2; b.h3 = littlev.b.h3;
+		b.h4 = littlev.b.h4; b.h5 = littlev.b.h5; b.h6 = littlev.b.h6; b.h7 = littlev.b.h7;
+	}
+	inline uint64_t get_8bytes_be_to()
+	{
+		union {
+			uint64_t qw;
+			struct {
+				uint8_t h7, h6, h5, h4, h3, h2, h, l;
+			}b;
+		} bigv;
+		bigv.b.l = b.l;   bigv.b.h = b.h;   bigv.b.h2 = b.h2; bigv.b.h3 = b.h3;
+		bigv.b.h4 = b.h4; bigv.b.h5 = b.h5; bigv.b.h6 = b.h6; bigv.b.h7 = b.h7;
+		return bigv.qw;
+	}
+	inline uint64_t get_8bytes_le_to()
+	{
+		union {
+			uint64_t qw;
+			struct {
+				uint8_t l, h, h2, h3, h4, h5, h6, h7;
+			}b;
+		} littlev;
+		littlev.b.l = b.l;   littlev.b.h = b.h;   littlev.b.h2 = b.h2; littlev.b.h3 = b.h3;
+		littlev.b.h4 = b.h4; littlev.b.h5 = b.h5; littlev.b.h6 = b.h6; littlev.b.h7 = b.h7;
+		return littlev.qw;
+	}
+} pair64_t;
 
 uint32_t DLL_PREFIX EndianToLittle_DWORD(uint32_t x);
 uint16_t DLL_PREFIX EndianToLittle_WORD(uint16_t x);
+uint32_t DLL_PREFIX EndianFromLittle_DWORD(uint32_t x);
+uint16_t DLL_PREFIX EndianFromLittle_WORD(uint16_t x);
+
+uint32_t DLL_PREFIX EndianToBig_DWORD(uint32_t x);
+uint16_t DLL_PREFIX EndianToBig_WORD(uint16_t x);
+uint32_t DLL_PREFIX EndianFromBig_DWORD(uint32_t x);
+uint16_t DLL_PREFIX EndianFromBig_WORD(uint16_t x);
+
+uint64_t DLL_PREFIX ExchangeEndianU64(uint64_t x);
+int64_t DLL_PREFIX ExchangeEndianS64(uint64_t x);
+uint32_t DLL_PREFIX ExchangeEndianU32(uint32_t x);
+int32_t DLL_PREFIX ExchangeEndianS32(uint32_t x);
+uint16_t DLL_PREFIX ExchangeEndianU16(uint16_t x);
+int16_t DLL_PREFIX ExchangeEndianS16(uint16_t x);
 
 // max/min
 #ifndef _MSC_VER
 	#undef max
 	#undef min
 	int DLL_PREFIX max(int a, int b);
+	unsigned int DLL_PREFIX max(int a, unsigned int b);
+	unsigned int DLL_PREFIX max(unsigned int a, int b);
 	unsigned int DLL_PREFIX max(unsigned int a, unsigned int b);
 	int DLL_PREFIX min(int a, int b);
+	int DLL_PREFIX min(unsigned int a, int b);
+	int DLL_PREFIX min(int a, unsigned int b);
 	unsigned int DLL_PREFIX min(unsigned int a, unsigned int b);
 #endif
 
@@ -475,7 +933,8 @@ uint16_t DLL_PREFIX EndianToLittle_WORD(uint16_t x);
 	#define my_isfinite _finite
 	#define my_log2(v) (log((double)(v)) / log(2.0))
 #else
-	#define my_isfinite isfinite
+	#include <cmath>
+	#define my_isfinite std::isfinite
 	#define my_log2 log2
 #endif
 
@@ -561,7 +1020,7 @@ const _TCHAR *DLL_PREFIX wchar_to_tchar(const wchar_t *ws);
 const wchar_t *DLL_PREFIX tchar_to_wchar(const _TCHAR *ts);
 
 // misc
-void common_initialize();
+void DLL_PREFIX common_initialize();
 
 int32_t DLL_PREFIX muldiv_s32(int32_t nNumber, int32_t nNumerator, int32_t nDenominator);
 uint32_t DLL_PREFIX muldiv_u32(uint32_t nNumber, uint32_t nNumerator, uint32_t nDenominator);

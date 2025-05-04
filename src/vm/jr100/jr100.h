@@ -23,8 +23,6 @@
 
 // device informations for win32
 #define USE_TAPE		1
-#define USE_TAPE_BUTTON
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		8
 #define USE_AUTO_KEY_RELEASE	10
 #define USE_VM_AUTO_KEY_TABLE
@@ -102,6 +100,7 @@ static const int vm_auto_key_table_base[][2] = {
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -121,10 +120,10 @@ class SY6522;
 
 class MEMORY;
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -172,10 +171,6 @@ public:
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	
-	// notify key
-	void key_down(int code, bool repeat);
-	void key_up(int code);
-	
 	// user interface
 	void play_tape(int drv, const _TCHAR* file_path);
 	void rec_tape(int drv, const _TCHAR* file_path);
@@ -202,9 +197,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

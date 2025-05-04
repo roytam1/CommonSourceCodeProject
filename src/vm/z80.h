@@ -57,8 +57,8 @@ private:
 	int icount;
 	int extra_icount;
 	uint16_t prevpc;
-	pair_t pc, sp, af, bc, de, hl, ix, iy, wz;
-	pair_t af2, bc2, de2, hl2;
+	pair32_t pc, sp, af, bc, de, hl, ix, iy, wz;
+	pair32_t af2, bc2, de2, hl2;
 	uint8_t I, R, R2;
 	uint32_t ea;
 	
@@ -69,8 +69,8 @@ private:
 	
 	inline uint8_t RM8(uint32_t addr);
 	inline void WM8(uint32_t addr, uint8_t val);
-	inline void RM16(uint32_t addr, pair_t *r);
-	inline void WM16(uint32_t addr, pair_t *r);
+	inline void RM16(uint32_t addr, pair32_t *r);
+	inline void WM16(uint32_t addr, pair32_t *r);
 	inline uint8_t FETCHOP();
 	inline uint8_t FETCH8();
 	inline uint32_t FETCH16();
@@ -106,7 +106,7 @@ private:
 	--------------------------------------------------------------------------- */
 	
 public:
-	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	Z80(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #ifdef USE_DEBUGGER
 		total_icount = prev_total_icount = 0;

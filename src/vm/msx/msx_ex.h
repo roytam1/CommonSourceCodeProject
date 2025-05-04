@@ -174,7 +174,6 @@
 // device informations for win32
 #define USE_CART		2
 #define USE_TAPE		1
-#define USE_TAPE_BUTTON
 #if defined(LDC_SLOT)
 #define USE_LASER_DISC		1
 #define USE_MOVIE_PLAYER
@@ -182,7 +181,6 @@
 #if defined(FDD_PATCH_SLOT)
 #define USE_FLOPPY_DISK		2
 #endif
-#define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
 #if defined(_PX7)
@@ -201,6 +199,7 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+#include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
@@ -277,10 +276,10 @@ class SLOT_MSXMUSIC;
 #endif
 
 
-class VM
+class VM : public VM_TEMPLATE
 {
 protected:
-	EMU* emu;
+//	EMU* emu;
 	
 	// devices
 	EVENT* event;
@@ -363,6 +362,10 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	double get_frame_rate()
+	{
+		return FRAMES_PER_SEC;
+	}
 	
 #ifdef USE_DEBUGGER
 	// debugger
@@ -426,9 +429,9 @@ public:
 	
 	// devices
 	DEVICE* get_device(int id);
-	DEVICE* dummy;
-	DEVICE* first_device;
-	DEVICE* last_device;
+//	DEVICE* dummy;
+//	DEVICE* first_device;
+//	DEVICE* last_device;
 };
 
 #endif

@@ -94,7 +94,7 @@ private:
 #endif
 	
 public:
-	EVENT(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	EVENT(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		dcount_cpu = dcount_sound = 0;
 		frame_event_count = vline_event_count = 0;

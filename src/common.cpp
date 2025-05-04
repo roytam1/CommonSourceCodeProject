@@ -40,10 +40,12 @@
 #if defined(_USE_QT)
 	std::string DLL_PREFIX cpp_homedir;
 	std::string DLL_PREFIX my_procname;
+	std::string DLL_PREFIX sRssDir;
 #endif
 
-void common_initialize()
+void DLL_PREFIX common_initialize()
 {
+	// get the initial current path when the software starts
 	get_initial_current_path();
 }
 
@@ -70,6 +72,145 @@ uint16_t DLL_PREFIX EndianToLittle_WORD(uint16_t x)
 #endif
 }
 
+uint32_t DLL_PREFIX EndianFromLittle_DWORD(uint32_t x)
+{
+#if defined(__LITTLE_ENDIAN__)
+	return x;
+#else
+	uint32_t y;
+	y = ((x & 0x000000ff) << 24) | ((x & 0x0000ff00) << 8) |
+	    ((x & 0x00ff0000) >> 8)  | ((x & 0xff000000) >> 24);
+	return y;
+#endif
+}
+
+uint16_t DLL_PREFIX EndianFromLittle_WORD(uint16_t x)
+{
+#if defined(__LITTLE_ENDIAN__)
+	return x;
+#else
+	uint16_t y;
+	y = ((x & 0x00ff) << 8) | ((x & 0xff00) >> 8);
+	return y;
+#endif
+}
+
+uint32_t DLL_PREFIX EndianToBig_DWORD(uint32_t x)
+{
+#if defined(__BIG_ENDIAN__)
+	return x;
+#else
+	uint32_t y;
+	y = ((x & 0x000000ff) << 24) | ((x & 0x0000ff00) << 8) |
+	    ((x & 0x00ff0000) >> 8)  | ((x & 0xff000000) >> 24);
+	return y;
+#endif
+}
+
+uint16_t DLL_PREFIX EndianToBig_WORD(uint16_t x)
+{
+#if defined(__BIG_ENDIAN__)
+	return x;
+#else
+	uint16_t y;
+	y = ((x & 0x00ff) << 8) | ((x & 0xff00) >> 8);
+	return y;
+#endif
+}
+
+uint32_t DLL_PREFIX EndianFromBig_DWORD(uint32_t x)
+{
+#if defined(__BIG_ENDIAN__)
+	return x;
+#else
+	uint32_t y;
+	y = ((x & 0x000000ff) << 24) | ((x & 0x0000ff00) << 8) |
+	    ((x & 0x00ff0000) >> 8)  | ((x & 0xff000000) >> 24);
+	return y;
+#endif
+}
+
+uint16_t DLL_PREFIX EndianFromBig_WORD(uint16_t x)
+{
+#if defined(__BIG_ENDIAN__)
+	return x;
+#else
+	uint16_t y;
+	y = ((x & 0x00ff) << 8) | ((x & 0xff00) >> 8);
+	return y;
+#endif
+}
+
+uint64_t DLL_PREFIX ExchangeEndianU64(uint64_t x)
+{
+	pair64_t __i, __o;
+	__i.q = x;
+	__o.b.h7  = __i.b.l;
+	__o.b.h6  = __i.b.h;
+	__o.b.h5  = __i.b.h2;
+	__o.b.h4  = __i.b.h3;
+	__o.b.h3  = __i.b.h4;
+	__o.b.h2  = __i.b.h5;
+	__o.b.h   = __i.b.h6;
+	__o.b.l   = __i.b.h7;
+	return __o.q;
+}
+
+int64_t DLL_PREFIX ExchangeEndianS64(uint64_t x)
+{
+	pair64_t __i, __o;
+	__i.q = x;
+	__o.b.h7  = __i.b.l;
+	__o.b.h6  = __i.b.h;
+	__o.b.h5  = __i.b.h2;
+	__o.b.h4  = __i.b.h3;
+	__o.b.h3  = __i.b.h4;
+	__o.b.h2  = __i.b.h5;
+	__o.b.h   = __i.b.h6;
+	__o.b.l   = __i.b.h7;
+	return __o.sq;
+}
+
+uint32_t DLL_PREFIX ExchangeEndianU32(uint32_t x)
+{
+	pair32_t __i, __o;
+	__i.d = x;
+	__o.b.h3 = __i.b.l;
+	__o.b.h2 = __i.b.h;
+	__o.b.h  = __i.b.h2;
+	__o.b.l  = __i.b.h3;
+	return __o.d;
+}
+
+int32_t DLL_PREFIX ExchangeEndianS32(uint32_t x)
+{
+	pair32_t __i, __o;
+	__i.d = x;
+	__o.b.h3 = __i.b.l;
+	__o.b.h2 = __i.b.h;
+	__o.b.h  = __i.b.h2;
+	__o.b.l  = __i.b.h3;
+	return __o.sd;
+}
+
+uint16_t DLL_PREFIX ExchangeEndianU16(uint16_t x)
+{
+	pair16_t __i, __o;
+	__i.w = x;
+	__o.b.h = __i.b.l;
+	__o.b.l  = __i.b.h;
+	return __o.w;
+}
+
+int16_t DLL_PREFIX ExchangeEndianS16(uint16_t x)
+{
+	pair16_t __i, __o;
+	__i.w = x;
+	__o.b.h = __i.b.l;
+	__o.b.l = __i.b.h;
+	return __o.sw;
+}
+
 #ifndef _MSC_VER
 int DLL_PREFIX max(int a, int b)
 {
@@ -89,12 +230,56 @@ unsigned DLL_PREFIX int max(unsigned int a, unsigned int b)
 	}
 }
 
+unsigned DLL_PREFIX int max(unsigned int a, int b)
+{
+	if(b < 0) return a;
+	if(a > (unsigned int)b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+
+unsigned DLL_PREFIX int max(int a, unsigned int b)
+{
+	if(a < 0) return b;
+	if((unsigned int)a > b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+
 int DLL_PREFIX min(int a, int b)
 {
 	if(a < b) {
 		return a;
 	} else {
 		return b;
+	}
+}
+
+int DLL_PREFIX min(unsigned int a, int b)
+{
+	if(b < 0) return b;
+	if(a > INT_MAX) return b;
+	
+	if((int)a < b) {
+		return (int)a;
+	} else {
+		return b;
+	}
+}
+
+int DLL_PREFIX min(int a, unsigned int b)
+{
+	if(a < 0) return a;
+	if(b > INT_MAX) return a;
+	
+	if(a < (int)b) {
+		return a;
+	} else {
+		return (int)b;
 	}
 }
 
@@ -653,61 +838,6 @@ BOOL DLL_PREFIX MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName
 	return result;
 }
 
-#if 0
-static std::string MyGetPrivateProfileStr(const _TCHAR *lpAppName, const _TCHAR *lpKeyName, _TCHAR *lpFileName)
-{
-	std::string key;
-	char ibuf[4096 + 102];
-	int64_t i;
-	int l_len;
-	int c = '\0';
-	std::string::size_type  pos;
-	std::string key_str;
-	std::string got_str;
-	FILEIO *pf = new FILEIO;
-	
-	key = lpAppName;
-	key = key + ".";
-	key = key + lpKeyName;
-	got_str = "";
-	if(pf->Fopen(lpFileName, FILEIO_READ_ASCII) != true) {
-		delete pf;
-		return got_str;
-	}
-	pf->Fseek(0, FILEIO_SEEK_SET);
-	do {
-		key_str = key;
-		ibuf[0] = '\0';
-		i = 0;
-		l_len = 0;
-		while(1) {
-			if(l_len > (4096 + 100)) { // Too long, read dummy.
-				c = (char)pf->Fgetc();
-				if((c != EOF) && (c != '\n') && (c != '\0')) continue;
-				break;
-			}
-			c = (char)pf->Fgetc();
-			if((c == EOF) || (c == '\n') || (c == '\0')) break;
-			ibuf[i] = (char)c;
-			i++;
-			l_len++;
-		}
-		l_len = 0;
-		ibuf[i] = '\0';
-		got_str = ibuf;
-		key_str = key_str + "=";
-		pos = got_str.find(key_str);
-		if(pos != std::string::npos) break;
-		if(c == EOF) return "";
-	} while(c != EOF);
-	pf->Fclose();
-	delete pf;
-	
-	got_str.erase(0, pos + key_str.length());
-	return got_str;
-}
-#endif
-
 DWORD DLL_PREFIX MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName)
 {
 	_TCHAR *lpp = (_TCHAR *)lpReturnedString;
@@ -898,7 +1028,7 @@ const _TCHAR *DLL_PREFIX get_application_path()
 		
 		std::string cpath = csppath + my_procname + delim;
 		_my_mkdir(cpath);
-		strncpy(app_path, cpath.c_str(), _MAX_PATH);
+		strncpy(app_path, cpath.c_str(), _MAX_PATH - 1);
 #endif
 		initialized = true;
 	}
@@ -1231,7 +1361,7 @@ uint32_t DLL_PREFIX get_crc32(uint8_t data[], int size)
 
 uint16_t DLL_PREFIX jis_to_sjis(uint16_t jis)
 {
-	pair_t tmp;
+	pair32_t tmp;
 	
 	tmp.w.l = jis - 0x2121;
 	if(tmp.w.l & 0x100) {

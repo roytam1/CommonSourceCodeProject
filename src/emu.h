@@ -28,8 +28,10 @@
 #include "vm/vm.h"
 
 #if defined(_USE_QT)
+#include <pthread.h>
 #define OSD_QT
 #elif defined(_USE_SDL)
+#include <pthread.h>
 #define OSD_SDL
 #elif defined(_WIN32)
 #define OSD_WIN32
@@ -61,9 +63,13 @@ class FIFO;
 class FILEIO;
 
 #ifdef USE_DEBUGGER
+#if defined(OSD_QT)
+class CSP_Debugger;
+class CSP_DebuggerThread;
+#endif
 typedef struct {
 	OSD *osd;
-	VM *vm;
+	VM_TEMPLATE *vm;
 	int cpu_index;
 	bool running;
 	bool request_terminate;
@@ -71,9 +77,6 @@ typedef struct {
 #endif
 
 #if defined(OSD_QT)
-#if defined(USE_DEBUGGER)
-class CSP_Debugger;
-#endif
 class USING_FLAGS;
 class GLDrawClass;
 class EmuThreadClass;
@@ -83,7 +86,7 @@ class DrawThreadClass;
 class EMU
 {
 protected:
-	VM* vm;
+	VM_TEMPLATE* vm;
 	OSD* osd;
 	
 private:
@@ -192,7 +195,7 @@ public:
 	// qt dependent
 	EmuThreadClass *get_parent_handler();
 	void set_parent_handler(EmuThreadClass *p, DrawThreadClass *q);
-	VM *get_vm()
+	VM_TEMPLATE *get_vm()
 	{
 		return vm;
 	}
@@ -202,11 +205,6 @@ public:
 	}
 	void set_host_cpus(int v);
 	int get_host_cpus();
-#ifdef USE_MOUSE
-	void set_mouse_pointer(int x, int y);
-	void set_mouse_button(int button);
-	int get_mouse_button();
-#endif
 #endif
 	
 	// drive machine
@@ -229,9 +227,6 @@ public:
 	bool is_vm_locked();
 	
 	// input
-#ifdef OSD_QT
-	void key_modifiers(uint32_t mod);
-#endif
 	void key_down(int code, bool extended, bool repeat);
 	void key_up(int code, bool extended);
 	void key_char(char code);
@@ -491,6 +486,11 @@ public:
 #ifdef USE_STATE
 	void save_state(const _TCHAR* file_path);
 	void load_state(const _TCHAR* file_path);
+#endif
+#ifdef OSD_QT
+	// New APIs
+	void load_sound_file(int id, const _TCHAR *name, int16_t **data, int *dst_size);
+	void free_sound_file(int id, int16_t **data);
 #endif
 };
 

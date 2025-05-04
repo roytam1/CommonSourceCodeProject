@@ -81,7 +81,7 @@ typedef struct {
 
 typedef struct {
 	struct {
-		pair_t addr, count;
+		pair32_t addr, count;
 		uint8_t mode;
 		int nbytes;
 		DEVICE *io;
@@ -261,7 +261,7 @@ private:
 #endif
 	
 public:
-	PC88(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	PC88(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #if defined(_PC8001SR)
 		set_device_name(_T("PC-8001 Core"));

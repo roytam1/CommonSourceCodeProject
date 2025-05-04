@@ -26,8 +26,8 @@ private:
 	
 	struct {
 		DEVICE *device;
-		pair_t address_reg;
-		pair_t byte_count_reg;
+		pair32_t address_reg;
+		pair32_t byte_count_reg;
 		uint8_t channel_ctrl_reg;
 	} dma[4];
 	
@@ -41,7 +41,7 @@ private:
 	void update_irq();
 	
 public:
-	MC6844(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MC6844(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		for(int i = 0; i < 4; i++) {
 			dma[i].device = vm->dummy;

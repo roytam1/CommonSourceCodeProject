@@ -109,7 +109,7 @@ private:
 	void set_rqm(bool val);
 	
 public:
-	T3444A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	T3444A(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		initialize_output_signals(&outputs_rqm);
 		d_noise_seek = NULL;

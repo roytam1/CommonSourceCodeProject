@@ -48,7 +48,7 @@ private:
 	int volume_l, volume_r;
 	
 public:
-	SCSI_CDROM(VM* parent_vm, EMU* parent_emu) : SCSI_DEV(parent_vm, parent_emu) 
+	SCSI_CDROM(VM_TEMPLATE* parent_vm, EMU* parent_emu) : SCSI_DEV(parent_vm, parent_emu) 
 	{
 		initialize_output_signals(&outputs_done);
 		
