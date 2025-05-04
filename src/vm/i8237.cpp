@@ -125,10 +125,11 @@ uint32_t I8237::read_io8(uint32_t addr)
 void I8237::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	if(SIG_I8237_CH0 <= id && id <= SIG_I8237_CH3) {
-		uint8_t bit = 1 << (id & 3);
+		int ch = id - SIG_I8237_CH0;
+		uint8_t bit = 1 << ch;
 		if(data & mask) {
 			if(!(req & bit)) {
-				write_signals(&dma[id & 3].outputs_tc, 0);
+				write_signals(&dma[ch].outputs_tc, 0);
 				req |= bit;
 #ifndef SINGLE_MODE_DMA
 				do_dma();
@@ -139,10 +140,12 @@ void I8237::write_signal(int id, uint32_t data, uint32_t mask)
 		}
 	} else if(SIG_I8237_BANK0 <= id && id <= SIG_I8237_BANK3) {
 		// external bank registers
-		dma[id & 3].bankreg = data & mask;
+		int ch = id - SIG_I8237_BANK0;
+		dma[ch].bankreg = data & mask;
 	} else if(SIG_I8237_MASK0 <= id && id <= SIG_I8237_MASK3) {
 		// external bank registers
-		dma[id & 3].incmask = data & mask;
+		int ch = id - SIG_I8237_MASK0;
+		dma[ch].incmask = data & mask;
 	}
 }
 
@@ -210,18 +213,18 @@ void I8237::do_dma()
 void I8237::write_mem(uint32_t addr, uint32_t data)
 {
 	if(mode_word) {
-		d_mem->write_dma_data16(addr << 1, data);
+		d_mem->write_dma_data16((addr << 1) & addr_mask, data);
 	} else {
-		d_mem->write_dma_data8(addr, data);
+		d_mem->write_dma_data8(addr & addr_mask, data);
 	}
 }
 
 uint32_t I8237::read_mem(uint32_t addr)
 {
 	if(mode_word) {
-		return d_mem->read_dma_data16(addr << 1);
+		return d_mem->read_dma_data16((addr << 1) & addr_mask);
 	} else {
-		return d_mem->read_dma_data8(addr);
+		return d_mem->read_dma_data8(addr & addr_mask);
 	}
 }
 
@@ -243,7 +246,7 @@ uint32_t I8237::read_io(int ch)
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void I8237::save_state(FILEIO* state_fio)
 {
@@ -266,6 +269,7 @@ void I8237::save_state(FILEIO* state_fio)
 	state_fio->FputUint8(tc);
 	state_fio->FputUint32(tmp);
 	state_fio->FputBool(mode_word);
+	state_fio->FputUint32(addr_mask);
 }
 
 bool I8237::load_state(FILEIO* state_fio)
@@ -292,6 +296,7 @@ bool I8237::load_state(FILEIO* state_fio)
 	tc = state_fio->FgetUint8();
 	tmp = state_fio->FgetUint32();
 	mode_word = state_fio->FgetBool();
+	addr_mask = state_fio->FgetUint32();
 	return true;
 }
 
