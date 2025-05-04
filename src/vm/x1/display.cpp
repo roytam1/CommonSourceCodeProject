@@ -811,11 +811,11 @@ void DISPLAY::draw_screen()
 				uint8_t* src_cg = cg[y];
 				
 				for(int x = 0; x < 640; x++) {
-//#ifdef _X1TURBOZ
-//					dest[x] = zpalette_pc[pri_line[y][src_cg[x]][src_text[x]]];
-//#else
+#ifdef _X1TURBOZ
+					dest[x] = zpalette_pc[pri_line[y][src_cg[x]][src_text[x]]];
+#else
 					dest[x] =  palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
-//#endif
+#endif
 				}
 			}
 		}
