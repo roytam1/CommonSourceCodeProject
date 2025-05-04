@@ -332,6 +332,15 @@
 #define MENU_POS_BINARY1                1
 #endif
 
+// HITACHI BASIC Master Jr
+#ifdef _BMJR
+#define MENU_POS_CONTROL                0
+#define MENU_POS_TAPE                   1
+#define MENU_POS_SCREEN                 2
+#define MENU_POS_SOUND                  3
+#define MENU_POS_INPUT                  4
+#endif
+
 // Nintendo Family BASIC
 #ifdef _FAMILYBASIC
 #define MENU_POS_CONTROL                0
@@ -629,9 +638,13 @@
 #ifdef _MZ80K
 #define MENU_POS_CONTROL                0
 #define MENU_POS_TAPE                   1
-#define MENU_POS_SCREEN                 2
-#define MENU_POS_SOUND                  3
-#define MENU_POS_INPUT                  4
+#define MENU_POS_FD1                    2
+#define MENU_POS_FD2                    3
+#define MENU_POS_FD3                    4
+#define MENU_POS_FD4                    5
+#define MENU_POS_SCREEN                 6
+#define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // SHARP MZ-700
@@ -659,9 +672,13 @@
 #ifdef _MZ1200
 #define MENU_POS_CONTROL                0
 #define MENU_POS_TAPE                   1
-#define MENU_POS_SCREEN                 2
-#define MENU_POS_SOUND                  3
-#define MENU_POS_INPUT                  4
+#define MENU_POS_FD1                    2
+#define MENU_POS_FD2                    3
+#define MENU_POS_FD3                    4
+#define MENU_POS_FD4                    5
+#define MENU_POS_SCREEN                 6
+#define MENU_POS_SOUND                  7
+#define MENU_POS_INPUT                  8
 #endif
 
 // SHARP MZ-1500

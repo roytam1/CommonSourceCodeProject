@@ -1,3 +1,14 @@
+9/8/2015
+
+[VM/DISK] fix for single density disk in double density drive
+[VM/T3444A] support T3444A/T3444M
+
+[BMJR] support HITACHI BASIC Master Jr
+[MZ80K/MZ80FIO] support MZ-80FIO
+[MZ80K/KEYBOARD] fix eisuu/kana key to toggle with kana key
+[PC6001] fix signal connections between i8255 and PC-80S31K
+
+
 8/28/2015
 
 [WIN32/SCREEN] improve and simplify crt filter

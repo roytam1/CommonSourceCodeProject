@@ -126,6 +126,7 @@ public:
 	// track
 	uint8 track[TRACK_BUFFER_SIZE];
 	pair sector_num;
+	bool track_mfm;
 	bool invalid_format;
 	bool no_skew;
 	int cur_track, cur_side;

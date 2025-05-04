@@ -28,6 +28,8 @@
 
 #ifdef _MZ80A
 #define SUPPORT_MZ80AIF
+#else
+#define SUPPORT_MZ80FIO
 #endif
 
 // device informations for virtual machine
@@ -36,14 +38,18 @@
 #define CPU_CLOCKS		2000000
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
-#ifdef SUPPORT_MZ80AIF
+#if defined(SUPPORT_MZ80AIF)
 #define HAS_MB8866
+#define MAX_DRIVE		4
+#elif defined(SUPPORT_MZ80FIO)
+#define HAS_T3444M
 #define MAX_DRIVE		4
 #endif
 
 // device informations for win32
 #define USE_TAPE
 #define USE_TAPE_BUTTON
+#define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
@@ -51,7 +57,7 @@
 #define USE_AUTO_KEY_NO_CAPS
 #define USE_DEBUGGER
 #define USE_STATE
-#ifdef SUPPORT_MZ80AIF
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -80,10 +86,14 @@ class DISPLAY;
 class KEYBOARD;
 class MEMORY;
 
-#ifdef SUPPORT_MZ80AIF
+#if defined(SUPPORT_MZ80AIF)
 class MB8877;
-class FLOPPY;
 class IO;
+class MZ80AIF;
+#elif defined(SUPPORT_MZ80FIO)
+class T3444A;
+class IO;
+class MZ80FIO;
 #endif
 
 class VM
@@ -108,10 +118,14 @@ protected:
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	
-#ifdef SUPPORT_MZ80AIF
+#if defined(SUPPORT_MZ80AIF)
 	MB8877* fdc;
-	FLOPPY* floppy;
 	IO* io;
+	MZ80AIF* mz80aif;
+#elif defined(SUPPORT_MZ80FIO)
+	T3444A* fdc;
+	IO* io;
+	MZ80FIO* mz80fio;
 #endif
 	
 public:
@@ -137,7 +151,7 @@ public:
 	
 	// draw screen
 	void draw_screen();
-#ifdef SUPPORT_MZ80AIF
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
 	int access_lamp();
 #endif
 	
@@ -146,8 +160,12 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 	
+	// notify key
+	void key_down(int code, bool repeat);
+	void key_up(int code);
+	
 	// user interface
-#ifdef SUPPORT_MZ80AIF
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
 	void open_disk(int drv, const _TCHAR* file_path, int bank);
 	void close_disk(int drv);
 	bool disk_inserted(int drv);

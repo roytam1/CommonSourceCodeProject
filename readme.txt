@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/28/2015
+								9/8/2015
 
 --- What's this ?
 
@@ -36,6 +36,8 @@ This archive includes the all source codes of emulators listed below:
 		eFMR-80		FMR-80
 	Gijutsu Hyoron Sha
 		eBabbage-2nd	Babbage-2nd
+	HITACHI
+		eBASICMasterJr	BASIC Master Jr
 	Homebrew
 		eZ80TVGAME	Homebrew Z80 TV GAME SYSTEM
 	IBM Japan Ltd

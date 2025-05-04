@@ -15,6 +15,11 @@
 #include "babbage2nd/babbage2nd.h"
 #endif
 
+// HITACHI BASIC Master Jr
+#ifdef _BMJR
+#include "bmjr/bmjr.h"
+#endif
+
 // Nintendo Family BASIC
 #ifdef _FAMILYBASIC
 #include "familybasic/familybasic.h"

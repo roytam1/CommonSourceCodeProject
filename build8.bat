@@ -11,6 +11,10 @@ devenv.com babbage2nd.vcproj /Rebuild Release
 mkdir build\babbage2nd
 copy Release\babbage2nd.exe build\babbage2nd\.
 
+devenv.com bmjr.vcproj /Rebuild Release
+mkdir build\bmjr
+copy Release\bmjr.exe build\bmjr\.
+
 devenv.com familybasic.vcproj /Rebuild Release
 mkdir build\familybasic
 copy Release\familybasic.exe build\familybasic\.

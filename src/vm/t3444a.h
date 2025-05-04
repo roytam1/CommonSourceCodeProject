@@ -1,123 +1,113 @@
 /*
 	Skelton for retropc emulator
 
-	Origin : XM7
 	Author : Takeda.Toshiya
-	Date   : 2006.12.06 -
+	Date   : 2015.09.03-
 
-	[ MB8877 / MB8876 / MB8866 ]
+	[ T3444A / T3444M ]
 */
 
-#ifndef _MB8877_H_ 
-#define _MB8877_H_
+#ifndef _T3444A_H_ 
+#define _T3444A_H_
 
 #include "vm.h"
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_MB8877_DRIVEREG		0
-#define SIG_MB8877_SIDEREG		1
-#define SIG_MB8877_MOTOR		2
+#define SIG_T3444A_DRIVE	0
+#define SIG_T3444A_TND		1
+#define SIG_T3444A_MOTOR	2
+
+// for reading signal
+#define SIG_T3444A_DRDY		4
+#define SIG_T3444A_CRDY		5
+#define SIG_T3444A_RQM		6
+
+#ifdef HAS_T3444M
+#define SECTORS_IN_TRACK	16
+#else
+#define SECTORS_IN_TRACK	26
+#endif
 
 class DISK;
 
-class MB8877 : public DEVICE
+class T3444A : public DEVICE
 {
 private:
 	// output signals
-	outputs_t outputs_irq;
-	outputs_t outputs_drq;
+	outputs_t outputs_rqm;
 	
 	// drive info
 	struct {
 		int track;
 		int index;
 		bool access;
-		// write track
-		bool id_written;
-		bool sector_found;
-		int sector_length;
-		int sector_index;
-		int side;
-		bool side_changed;
 		// timing
 		int cur_position;
 		int next_trans_position;
-		int bytes_before_2nd_drq;
+		int bytes_before_2nd_rqm;
 		int next_sync_position;
 		uint32 prev_clock;
-	} fdc[MAX_DRIVE];
-	DISK* disk[MAX_DRIVE];
+	} fdc[4];
+	DISK* disk[4];
 	
-	// registor
-	uint8 status, status_tmp;
-	uint8 cmdreg, cmdreg_tmp;
+	// register
+	uint8 status;
+	uint8 cmdreg;
 	uint8 trkreg;
 	uint8 secreg;
 	uint8 datareg;
 	uint8 drvreg;
 	uint8 sidereg;
-	uint8 cmdtype;
+	bool timerflag;
+	uint8 sector_id[SECTORS_IN_TRACK * 4];
 	
 	// event
-	int register_id[8];
+	int register_id[5];
 	
 	void cancel_my_event(int event);
 	void register_my_event(int event, double usec);
 	void register_seek_event();
-	void register_drq_event(int bytes);
+	void register_rqm_event(int bytes);
 	void register_lost_event(int bytes);
 	
 	// status
 	bool now_search;
-	bool now_seek;
-	bool sector_changed;
-	int no_command;
 	int seektrk;
-	bool seekvct;
+	bool rqm;
+	bool tnd;
 	bool motor_on;
-	bool drive_sel;
 	
 	// timing
-	uint32 prev_drq_clock;
-	uint32 seekend_clock;
+	uint32 prev_rqm_clock;
 	
 	int get_cur_position();
-	double get_usec_to_start_trans(bool first_sector);
-	double get_usec_to_next_trans_pos(bool delay);
-	double get_usec_to_detect_index_hole(int count, bool delay);
+	double get_usec_to_start_trans();
+	double get_usec_to_next_trans_pos();
+	double get_usec_to_detect_index_hole(int count);
 	
 	// image handler
-	uint8 search_track();
 	uint8 search_sector();
-	uint8 search_addr();
 	
 	// command
 	void process_cmd();
-	void cmd_restore();
+	void cmd_seek_zero();
 	void cmd_seek();
-	void cmd_step();
-	void cmd_stepin();
-	void cmd_stepout();
-	void cmd_readdata(bool first_sector);
-	void cmd_writedata(bool first_sector);
-	void cmd_readaddr();
-	void cmd_readtrack();
-	void cmd_writetrack();
-	void cmd_forceint();
+	void cmd_read_write();
+	void cmd_write_id();
+	void cmd_sence();
 	
-	// irq/dma
-	void set_irq(bool val);
-	void set_drq(bool val);
+	// rqm
+	void set_rqm(bool val);
 	
 public:
-	MB8877(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	T3444A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
-		init_output_signals(&outputs_irq);
-		init_output_signals(&outputs_drq);
+		init_output_signals(&outputs_rqm);
+		tnd = true;
 		motor_on = false;
 	}
-	~MB8877() {}
+	~T3444A() {}
 	
 	// common functions
 	void initialize();
@@ -134,13 +124,9 @@ public:
 	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
-	void set_context_irq(DEVICE* device, int id, uint32 mask)
+	void set_context_rqm(DEVICE* device, int id, uint32 mask)
 	{
-		register_output_signal(&outputs_irq, device, id, mask);
-	}
-	void set_context_drq(DEVICE* device, int id, uint32 mask)
-	{
-		register_output_signal(&outputs_drq, device, id, mask);
+		register_output_signal(&outputs_rqm, device, id, mask);
 	}
 	DISK* get_disk_handler(int drv)
 	{
@@ -155,7 +141,6 @@ public:
 	uint8 get_drive_type(int drv);
 	void set_drive_rpm(int drv, int rpm);
 	void set_drive_mfm(int drv, bool mfm);
-	uint8 fdc_status();
 };
 
 #endif

@@ -62,6 +62,8 @@ private:
 	uint8 fdif[0x800];	// FD IF ROM 2KB
 	bool fdc_irq, fdc_drq;
 	void update_fdif_rom_bank();
+#elif defined(SUPPORT_MZ80FIO)
+	uint8 fdif[0x400];	// FD IF ROM 1KB
 #endif
 	
 public:

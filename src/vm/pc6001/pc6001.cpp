@@ -143,7 +143,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		pc80s31k->set_context_cpu(cpu_pc80s31k);
 		pc80s31k->set_context_fdc(fdc_pc80s31k);
 		pc80s31k->set_context_pio(pio_pc80s31k);
-		pio_fdd->set_context_port_a(pio_pc80s31k, SIG_I8255_PORT_A, 0xff, 0);
+		pio_fdd->set_context_port_a(pio_pc80s31k, SIG_I8255_PORT_B, 0xff, 0);
 		pio_fdd->set_context_port_b(pio_pc80s31k, SIG_I8255_PORT_A, 0xff, 0);
 		pio_fdd->set_context_port_c(pio_pc80s31k, SIG_I8255_PORT_C, 0x0f, 4);
 		pio_fdd->set_context_port_c(pio_pc80s31k, SIG_I8255_PORT_C, 0xf0, -4);
