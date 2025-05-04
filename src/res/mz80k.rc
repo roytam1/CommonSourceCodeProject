@@ -213,6 +213,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
         MENUITEM "Wait Vsync",                  ID_SCREEN_WAIT_VSYNC
+        MENUITEM SEPARATOR
+        MENUITEM "White",                       ID_SCREEN_MONITOR_TYPE0
+        MENUITEM "Green",                       ID_SCREEN_MONITOR_TYPE1
     END
     POPUP "Sound"
     BEGIN

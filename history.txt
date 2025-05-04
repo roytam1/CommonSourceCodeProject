@@ -1,3 +1,23 @@
+9/17/2015
+
+[TOOL/ANY2D88] support to convert solid image to 1dd
+[TOOL/ANY2D88] support to convert solid image with sector size 256bytes
+
+[WINMAIN] improve to inhibit starting screen saver
+
+[VM/DISK] fix issue in the case that file extension of solid image is *.dsk
+[VM/DISK] update physical disk format table
+[VM/DISK] improve fdi converter
+[VM/DISK] support to get am1 position in id field
+[VM/MB8877] improve timing to start read/write sector
+[VM/MB8877] fix to use const time to search sector in incorrect timing setting
+[VM/T3444A] fix to use const time to search sector in incorrect timing setting
+[VM/UPD765A] fix to use const time to search sector in incorrect timing setting
+
+[MZ80K/DISPLAY] support green monitor for MZ-80C
+[X1TURBO/DISPLAY] fix issue in the case that char raster is greater than 8/16
+
+
 9/15/2015
 
 [TOOL/ANY2D88] add new utility any2d88 that converts any format image to d88

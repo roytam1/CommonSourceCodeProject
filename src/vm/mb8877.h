@@ -44,7 +44,7 @@ private:
 		int cur_position;
 		int next_trans_position;
 		int bytes_before_2nd_drq;
-		int next_sync_position;
+		int next_am1_position;
 		uint32 prev_clock;
 	} fdc[MAX_DRIVE];
 	DISK* disk[MAX_DRIVE];

@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/9/2015
+								9/17/2015
 
 --- What's this ?
 
@@ -86,7 +86,7 @@ This archive includes the all source codes of emulators listed below:
 	SHARP
 		EmuZ-80A	MZ-80A (by Mr.Suga)
 		EmuZ-80B	MZ-80B
-		EmuZ-80K	MZ-80K
+		EmuZ-80K	MZ-80K/C
 		EmuZ-700	MZ-700
 		EmuZ-800	MZ-800
 		EmuZ-1200	MZ-1200

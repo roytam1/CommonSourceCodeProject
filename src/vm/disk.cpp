@@ -42,36 +42,60 @@ static const int secsize[8] = {
 
 static uint8 tmp_buffer[DISK_BUFFER_SIZE];
 
+// physical format table for solid image
 typedef struct {
 	int type;
 	int ncyl, nside, nsec, size;
 	bool mfm;
 } fd_format_t;
 
+#define FM	false
+#define MFM	true
+
 static const fd_format_t fd_formats[] = {
-	{ MEDIA_TYPE_2D,  40, 1, 16,  256, true },	// 1D   160KB
-#if defined(SUPPORT_MEDIA_TYPE_1DD)
-	{ MEDIA_TYPE_2DD, 70, 1, 16,  256, true },	// 1DD  280KB (SMC-777)
-	{ MEDIA_TYPE_2DD, 80, 1, 16,  256, true },	// 1DD  320KB
-	{ MEDIA_TYPE_2DD, 80, 1,  9,  512, true },	// 1DD  360KB
-#else
-	{ MEDIA_TYPE_2D , 35, 2, 16,  256, true },	// 2D   280KB
-	{ MEDIA_TYPE_2D , 40, 2, 16,  256, true },	// 2D   320KB
-	{ MEDIA_TYPE_2D,  40, 2,  9,  512, true },	// 2D   360KB
+#if defined(_SC3000)
+	{ MEDIA_TYPE_2D,  40, 1, 16,  256, MFM },	// 1D	160KB
+#elif defined(_SMC70) || defined(_SMC777)
+	{ MEDIA_TYPE_2DD, 70, 1, 16,  256, MFM },	// 1DD	280KB
+#elif defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
+	{ MEDIA_TYPE_2D,  40, 2, 16,  256, MFM },	// 2D	320KB
+#elif defined(_M5)
+	{ MEDIA_TYPE_2D,  40, 2, 18,  256, MFM },	// 2D	360KB
+#elif defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200) || defined(_MZ2500)
+	{ MEDIA_TYPE_2DD, 80, 2, 16,  256, MFM },	// 2DD	640KB
 #endif
-#if defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200) || defined(_MZ2500)
-	{ MEDIA_TYPE_2DD, 80, 2, 16,  256, true },	// 2DD  640KB (MZ-2500)
-#else
-	{ MEDIA_TYPE_2DD, 80, 2,  8,  512, true },	// 2DD  640KB
-#endif
-	{ MEDIA_TYPE_2DD, 80, 2,  9,  512, true },	// 2DD  720KB
-//#if defined(_PX7) || defined(_MSX1) || defined(_MSX2)
-	{ MEDIA_TYPE_2DD, 81, 2,  9,  512, true },	// 2DD  729KB
+	{ MEDIA_TYPE_2D,  35, 1, 16,  128, FM  },	// 1S	70KB
+	{ MEDIA_TYPE_2D,  35, 2, 16,  128, FM  },	// 2S	140KB
+	{ MEDIA_TYPE_2DD, 77, 1, 26,  128, FM  },	// 1S	250KB
+	{ MEDIA_TYPE_2D,  40, 1,  8,  512, MFM },	// 1D	160KB
+	{ MEDIA_TYPE_2D,  40, 1,  9,  512, MFM },	// 1D	180KB
+	{ MEDIA_TYPE_2D,  40, 1, 10,  512, MFM },	// 1D	200KB
+//#if defined(SUPPORT_MEDIA_TYPE_1DD)
+//	{ MEDIA_TYPE_2DD, 70, 1,  8,  512, MFM },	// 1DD	280KB
+//	{ MEDIA_TYPE_2DD, 70, 1,  9,  512, MFM },	// 1DD	315KB
+//	{ MEDIA_TYPE_2DD, 70, 1, 10,  512, MFM },	// 1DD	350KB
+//	{ MEDIA_TYPE_2DD, 80, 1,  8,  512, MFM },	// 1DD	320KB
+//	{ MEDIA_TYPE_2DD, 80, 1,  9,  512, MFM },	// 1DD	360KB
+//	{ MEDIA_TYPE_2DD, 80, 1, 10,  512, MFM },	// 1DD	400KB
+//#else
+	{ MEDIA_TYPE_2D,  35, 2,  8,  512, MFM },	// 2D	280KB
+	{ MEDIA_TYPE_2D,  35, 2,  9,  512, MFM },	// 2D	315KB
+	{ MEDIA_TYPE_2D,  35, 2, 10,  512, MFM },	// 2D	350KB
+	{ MEDIA_TYPE_2D,  40, 2,  8,  512, MFM },	// 2D	320KB
+	{ MEDIA_TYPE_2D,  40, 2,  9,  512, MFM },	// 2D	360KB
+	{ MEDIA_TYPE_2D,  40, 2, 10,  512, MFM },	// 2D	400KB
 //#endif
-	{ MEDIA_TYPE_2HD, 80, 2, 15,  512, true },	// 2HC 1.20MB
-	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024, true },	// 2HD 1.25MB
-	{ MEDIA_TYPE_144, 80, 2, 18,  512, true },	// 2HD 1.44MB
-	{ MEDIA_TYPE_144, 80, 2, 36,  512, true },	// 2ED 2.88MB
+	{ MEDIA_TYPE_2DD, 80, 2,  8,  512, MFM },	// 2DD	640KB
+	{ MEDIA_TYPE_2DD, 80, 2,  9,  512, MFM },	// 2DD	720KB
+	{ MEDIA_TYPE_2DD, 81, 2,  9,  512, MFM },	// 2DD	729KB, ASCII MSX
+	{ MEDIA_TYPE_2DD, 80, 2, 10,  512, MFM },	// 2DD	800KB
+	{ MEDIA_TYPE_2HD, 77, 2, 26,  256, MFM },	// 2HD	1001KB, MITSUBISHI/IBM
+	{ MEDIA_TYPE_2HD, 80, 2, 15,  512, MFM },	// 2HC	1200KB, TOSHIBA/IBM
+	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024, MFM },	// 2HD	1232KB, NEC
+	{ MEDIA_TYPE_144, 80, 2, 18,  512, MFM },	// 2HD	1440KB
+	{ MEDIA_TYPE_144, 80, 2, 21,  512, MFM },	// 2HD	1680KB
+	{ MEDIA_TYPE_144, 82, 2, 21,  512, MFM },	// 2HD	1722KB
+	{ MEDIA_TYPE_144, 80, 2, 36,  512, MFM },	// 2ED	2880KB
 	{ -1, 0, 0, 0, 0 },
 };
 
@@ -101,6 +125,7 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		_tcscpy_s(dest_path, _MAX_PATH, file_path);
 		
 		file_size.d = fio->FileLength();
+		fio->Fseek(0, FILEIO_SEEK_SET);
 		
 		if(check_file_extension(file_path, _T(".d88")) || check_file_extension(file_path, _T(".d77")) || check_file_extension(file_path, _T(".1dd"))) {
 			// d88 image
@@ -172,12 +197,16 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		} else if(check_file_extension(file_path, _T(".2d"))  && file_size.d == 40 * 2 * 16 * 256) {
 			// 2d image for SHARP X1 series
 			inserted = changed = is_solid_image = solid_to_d88(fio, MEDIA_TYPE_2D, 40, 2, 16, 256, true);
+		} else if(check_file_extension(file_path, _T(".img"))  && file_size.d == 70 * 1 * 16 * 256) {
+			// img image for SONY SMC-70/777 series
+			inserted = changed = is_solid_image = solid_to_d88(fio, MEDIA_TYPE_2DD, 70, 1, 16, 256, true);
 		} else if(check_file_extension(file_path, _T(".sf7")) && file_size.d == 40 * 1 * 16 * 256) {
 			// sf7 image for SEGA SC-3000 + SF-7000
 			inserted = changed = is_solid_image = solid_to_d88(fio, MEDIA_TYPE_2D, 40, 1, 16, 256, true);
 		}
 		if(!inserted) {
 			// check solid image file format
+			bool is_fdi_tmp = check_file_extension(file_path, _T(".fdi"));
 			for(int i = 0;; i++) {
 				const fd_format_t *p = &fd_formats[i];
 				if(p->type == -1) {
@@ -185,12 +214,36 @@ void DISK::open(const _TCHAR* file_path, int bank)
 				}
 				int len = p->ncyl * p->nside * p->nsec * p->size;
 				// 4096 bytes: FDI header ???
-				if(file_size.d == len || (file_size.d == (len + 4096) && (len == 655360 || len == 1261568))) {
-					if(file_size.d == len + 4096) {
+				if(file_size.d == len + (is_fdi_tmp ? 4096 : 0)) {
+					fio->Fseek(0, FILEIO_SEEK_SET);
+					if(is_fdi_tmp) {
 						is_fdi_image = true;
 						fio->Fread(fdi_header, 4096, 1);
 					}
-					if(solid_to_d88(fio, p->type, p->ncyl, p->nside, p->nsec, p->size, p->mfm)) {
+					int type = p->type;
+					int ncyl = p->ncyl;
+					int nside = p->nside;
+					int nsec = p->nsec;
+					int size = p->size;
+#if defined(SUPPORT_MEDIA_TYPE_1DD)
+					if(type == MEDIA_TYPE_2D && nside == 2 && p->mfm) {
+						type = MEDIA_TYPE_2DD;
+						nside = 1;
+						ncyl *= 2;
+					}
+#elif defined(_ANY2D88)
+					if(open_as_1dd && type == MEDIA_TYPE_2D && nside == 2 && p->mfm) {
+						type = MEDIA_TYPE_2DD;
+						nside = 1;
+						ncyl *= 2;
+					}
+					if(open_as_256 && (size == 512 || size == 1024)) {
+						nsec *= size / 256;
+						size = 256;
+					}
+#endif
+//					if(solid_to_d88(fio, p->type, p->ncyl, p->nside, p->nsec, p->size, p->mfm)) {
+					if(solid_to_d88(fio, type, ncyl, nside, nsec, size, p->mfm)) {
 						inserted = changed = is_solid_image = true;
 						break;
 					}
@@ -456,7 +509,7 @@ bool DISK::get_track(int trk, int side)
 {
 	sector_size.sd = sector_num.sd = 0;
 	invalid_format = false;
-	no_skew = true;
+//	no_skew = true;
 	
 	// disk not inserted or invalid media type
 	if(!(inserted && check_media_type())) {
@@ -539,9 +592,9 @@ bool DISK::get_track(int trk, int side)
 			total += sync_size + (am_size + 1);
 			total += data_size.sd + 2;
 		}
-		if(t[2] != i + 1) {
-			no_skew = false;
-		}
+//		if(t[2] != i + 1) {
+//			no_skew = false;
+//		}
 		t += data_size.sd + 0x10;
 	}
 	if(gap3_size == 0) {
@@ -569,7 +622,9 @@ bool DISK::get_track(int trk, int side)
 			total = preamble_size + (get_track_size() - preamble_size - gap4_size) * i / sector_num.sd;
 		}
 		sync_position[i] = total;
-		total += sync_size + (am_size + 1);
+		total += sync_size;
+		am1_position[i] = total;
+		total += am_size + 1;
 		id_position[i] = total;
 		total += (4 + 2) + gap2_size;
 		if(data_size.sd > 0) {
@@ -1828,7 +1883,7 @@ bool DISK::solid_to_d88(FILEIO *fio, int type, int ncyl, int nside, int nsec, in
 	return true;
 }
 
-#define STATE_VERSION	9
+#define STATE_VERSION	10
 
 void DISK::save_state(FILEIO* state_fio)
 {
@@ -1860,8 +1915,9 @@ void DISK::save_state(FILEIO* state_fio)
 	state_fio->FputInt32(sector_num.sd);
 	state_fio->FputBool(track_mfm);
 	state_fio->FputBool(invalid_format);
-	state_fio->FputBool(no_skew);
+//	state_fio->FputBool(no_skew);
 	state_fio->Fwrite(sync_position, sizeof(sync_position), 1);
+	state_fio->Fwrite(am1_position, sizeof(am1_position), 1);
 	state_fio->Fwrite(id_position, sizeof(id_position), 1);
 	state_fio->Fwrite(data_position, sizeof(data_position), 1);
 	state_fio->FputInt32(sector ? (int)(sector - buffer) : -1);
@@ -1907,8 +1963,9 @@ bool DISK::load_state(FILEIO* state_fio)
 	sector_num.sd = state_fio->FgetInt32();
 	track_mfm = state_fio->FgetBool();
 	invalid_format = state_fio->FgetBool();
-	no_skew = state_fio->FgetBool();
+//	no_skew = state_fio->FgetBool();
 	state_fio->Fread(sync_position, sizeof(sync_position), 1);
+	state_fio->Fread(am1_position, sizeof(am1_position), 1);
 	state_fio->Fread(id_position, sizeof(id_position), 1);
 	state_fio->Fread(data_position, sizeof(data_position), 1);
 	int offset = state_fio->FgetInt32();

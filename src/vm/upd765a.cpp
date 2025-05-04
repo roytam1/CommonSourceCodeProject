@@ -1425,7 +1425,7 @@ double UPD765A::get_usec_to_exec_phase()
 	int trk = fdc[drv].track;
 	int side = (hdu >> 2) & 1;
 	
-	if(disk[drv]->no_skew && !disk[drv]->correct_timing()) {
+	if(/*disk[drv]->no_skew &&*/ !disk[drv]->correct_timing()) {
 		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
 		// so use the constant period to go to exec phase
 		return 100;

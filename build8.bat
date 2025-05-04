@@ -314,5 +314,10 @@ copy Release\z80tvgame_z80pio.exe build_xp\z80tvgame\.
 mkdir binary_xp
 copy Release\*.exe binary_xp\.
 
+devenv.com tool\any2d88\any2d88.vcproj /Rebuild Release
+
+mkdir binary_utility
+copy tool\any2d88\Release\any2d88.exe binary_utility\.
+
 pause
 echo on

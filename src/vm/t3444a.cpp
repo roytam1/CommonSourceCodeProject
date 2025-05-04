@@ -602,7 +602,7 @@ int T3444A::get_cur_position()
 
 double T3444A::get_usec_to_start_trans()
 {
-	if(disk[drvreg]->no_skew && !disk[drvreg]->correct_timing()) {
+	if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
 		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
 		// so use the constant period to search the target sector
 		return 50000;

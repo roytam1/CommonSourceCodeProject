@@ -1,5 +1,5 @@
 /*
-	SHARP MZ-80K Emulator 'EmuZ-80K'
+	SHARP MZ-80K/C Emulator 'EmuZ-80K'
 	SHARP MZ-1200 Emulator 'EmuZ-1200'
 
 	Author : Takeda.Toshiya
@@ -22,7 +22,7 @@
 #define DEVICE_NAME		"SHARP MZ-80A"
 #define CONFIG_NAME		"mz80a"
 #else
-#define DEVICE_NAME		"SHARP MZ-80K"
+#define DEVICE_NAME		"SHARP MZ-80K/C"
 #define CONFIG_NAME		"mz80k"
 #endif
 
@@ -63,6 +63,9 @@
 #define USE_FD3
 #define USE_FD4
 #define USE_ACCESS_LAMP
+#endif
+#if defined(_MZ80K)
+#define USE_MONITOR_TYPE	2
 #endif
 
 #include "../../common.h"

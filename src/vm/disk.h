@@ -110,6 +110,8 @@ public:
 	void open(const _TCHAR* file_path, int bank);
 	void close();
 #ifdef _ANY2D88
+	bool open_as_1dd;
+	bool open_as_256;
 	void save_as_d88(const _TCHAR* file_path);
 #endif
 	bool get_track(int trk, int side);
@@ -142,10 +144,11 @@ public:
 	pair sector_num;
 	bool track_mfm;
 	bool invalid_format;
-	bool no_skew;
+//	bool no_skew;
 	int cur_track, cur_side;
 	
 	int sync_position[256];
+	int am1_position[256];
 	int id_position[256];
 	int data_position[256];
 	
