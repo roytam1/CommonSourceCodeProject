@@ -396,17 +396,17 @@ typedef union {
 
 } pair;
 
-inline uint32 EndianToLittle_DWORD(uint32 x);
-inline uint16 EndianToLittle_WORD(uint16 x);
+uint32 EndianToLittle_DWORD(uint32 x);
+uint16 EndianToLittle_WORD(uint16 x);
 
 // max/min
 #ifndef _MSC_VER
 	#undef max
 	#undef min
-	inline int max(int a, int b);
-	inline unsigned int max(unsigned int a, unsigned int b);
-	inline int min(int a, int b);
-	inline unsigned int min(unsigned int a, unsigned int b);
+	int max(int a, int b);
+	unsigned int max(unsigned int a, unsigned int b);
+	int min(int a, int b);
+	unsigned int min(unsigned int a, unsigned int b);
 #endif
 
 // string
@@ -582,6 +582,9 @@ _TCHAR *get_file_path_without_extensiton(const _TCHAR *file_path);
 
 uint32 getcrc32(uint8 data[], int size);
 uint16 jis_to_sjis(uint16 jis);
+
+int decibel_to_volume(int decibel);
+int apply_volume(int sample, int volume);
 
 #define array_length(array) (sizeof(array) / sizeof(array[0]))
 

@@ -54,6 +54,9 @@ void hide_menu_bar(HWND hWnd)
 }
 
 // dialog
+#ifdef USE_SOUND_VOLUME
+BOOL CALLBACK VolumeWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
+#endif
 #ifdef USE_CART1
 void open_cart_dialog(HWND hWnd, int drv);
 #endif
@@ -1380,6 +1383,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			//}
 			break;
 #endif
+#ifdef USE_SOUND_VOLUME
+		case ID_SOUND_VOLUME:
+			DialogBoxParam((HINSTANCE)GetModuleHandle(0), MAKEINTRESOURCE(IDD_SOUND_DEVICE_VOLUME), hWnd, VolumeWndProc, 0);
+			break;
+#endif
 #ifdef USE_VIDEO_CAPTURE
 		case ID_CAPTURE_FILTER:
 			if(emu) {
@@ -1467,6 +1475,58 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	}
 	return DefWindowProc(hWnd, iMsg, wParam, lParam) ;
 }
+
+#ifdef USE_SOUND_VOLUME
+BOOL CALLBACK VolumeWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(iMsg) {
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
+		break;
+	case WM_INITDIALOG:
+		for(int i = 0; i < USE_SOUND_VOLUME; i++) {
+			_TCHAR buffer[128];
+			bool mono = false;
+			emu->get_sound_device_info(i, buffer, 128, &mono);
+			
+			SetDlgItemText(hDlg, IDC_SOUND_DEVICE_NAME0 + i, buffer);
+			SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_L0 + i * 2, TBM_SETTICFREQ, 5, 0);
+			SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_R0 + i * 2, TBM_SETTICFREQ, 5, 0);
+			SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_L0 + i * 2, TBM_SETRANGE, TRUE, MAKELPARAM(-40, 40));
+			SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_R0 + i * 2, TBM_SETRANGE, TRUE, MAKELPARAM(-40, 40));
+			SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_L0 + i * 2, TBM_SETPOS, TRUE, config.sound_volume_l[i]);
+			SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_R0 + i * 2, TBM_SETPOS, TRUE, config.sound_volume_r[i]);
+			EnableWindow(GetDlgItem(hDlg, IDC_SOUND_DEVICE_NAME0 + i), TRUE);
+			EnableWindow(GetDlgItem(hDlg, IDC_SOUND_DEVICE_VOLUME_L0 + i * 2), TRUE);
+			EnableWindow(GetDlgItem(hDlg, IDC_SOUND_DEVICE_VOLUME_R0 + i * 2), (BOOL)(!mono));
+		}
+		break;
+	case WM_COMMAND:
+		switch(LOWORD(wParam)) {
+		case IDOK:
+			for(int i = 0; i < USE_SOUND_VOLUME; i++) {
+				config.sound_volume_l[i] = SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_L0 + i * 2, TBM_GETPOS, 0, 0);
+				config.sound_volume_r[i] = SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_R0 + i * 2, TBM_GETPOS, 0, 0);
+				emu->set_sound_device_volume(i, config.sound_volume_l[i], config.sound_volume_r[i]);
+			}
+			EndDialog(hDlg, IDOK);
+			break;
+		case IDC_SOUND_DEVICE_RESET:
+			for(int i = 0; i < 10; i++) {
+				SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_L0 + i * 2, TBM_SETPOS, TRUE, 0);
+				SendDlgItemMessage(hDlg, IDC_SOUND_DEVICE_VOLUME_R0 + i * 2, TBM_SETPOS, TRUE, 0);
+			}
+			break;
+		default:
+			return FALSE;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+#endif
 
 #ifdef ONE_BOARD_MICRO_COMPUTER
 LRESULT CALLBACK ButtonWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)

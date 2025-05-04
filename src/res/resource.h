@@ -8,6 +8,38 @@
 #define ID_ACCEL_SCREEN                 104
 #define ID_ACCEL_MOUSE                  105
 #define ID_BITMAP1                      106
+#define IDD_SOUND_DEVICE_VOLUME         107
+#define IDC_SOUND_DEVICE_NAME0          108
+#define IDC_SOUND_DEVICE_NAME1          109
+#define IDC_SOUND_DEVICE_NAME2          110
+#define IDC_SOUND_DEVICE_NAME3          111
+#define IDC_SOUND_DEVICE_NAME4          112
+#define IDC_SOUND_DEVICE_NAME5          113
+#define IDC_SOUND_DEVICE_NAME6          114
+#define IDC_SOUND_DEVICE_NAME7          115
+#define IDC_SOUND_DEVICE_NAME8          116
+#define IDC_SOUND_DEVICE_NAME9          117
+#define IDC_SOUND_DEVICE_VOLUME_L0      118
+#define IDC_SOUND_DEVICE_VOLUME_R0      119
+#define IDC_SOUND_DEVICE_VOLUME_L1      120
+#define IDC_SOUND_DEVICE_VOLUME_R1      121
+#define IDC_SOUND_DEVICE_VOLUME_L2      122
+#define IDC_SOUND_DEVICE_VOLUME_R2      123
+#define IDC_SOUND_DEVICE_VOLUME_L3      124
+#define IDC_SOUND_DEVICE_VOLUME_R3      125
+#define IDC_SOUND_DEVICE_VOLUME_L4      126
+#define IDC_SOUND_DEVICE_VOLUME_R4      127
+#define IDC_SOUND_DEVICE_VOLUME_L5      128
+#define IDC_SOUND_DEVICE_VOLUME_R5      129
+#define IDC_SOUND_DEVICE_VOLUME_L6      130
+#define IDC_SOUND_DEVICE_VOLUME_R6      131
+#define IDC_SOUND_DEVICE_VOLUME_L7      132
+#define IDC_SOUND_DEVICE_VOLUME_R7      133
+#define IDC_SOUND_DEVICE_VOLUME_L8      134
+#define IDC_SOUND_DEVICE_VOLUME_R8      135
+#define IDC_SOUND_DEVICE_VOLUME_L9      136
+#define IDC_SOUND_DEVICE_VOLUME_R9      137
+#define IDC_SOUND_DEVICE_RESET          138
 #define ID_BUTTON                       1000
 
 #define ID_RESET                        40001
@@ -311,6 +343,8 @@
 #define ID_SOUND_DEVICE_TYPE5           41136
 #define ID_SOUND_DEVICE_TYPE6           41137
 #define ID_SOUND_DEVICE_TYPE7           41138
+
+#define ID_SOUND_VOLUME                 41141
 
 #define ID_CAPTURE_FILTER               41201
 #define ID_CAPTURE_PIN                  41202

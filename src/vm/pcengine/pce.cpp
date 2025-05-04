@@ -1576,10 +1576,10 @@ void PCE::mix(int32* buffer, int cnt)
 			int32 wav = ((int32)psg[ch].wav[0] - 16) * 702;
 			int32 vol = max((psg_vol >> 3) & 0x1e, (psg_vol << 1) & 0x1e) + (psg[ch].regs[4] & 0x1f) + max((psg[ch].regs[5] >> 3) & 0x1e, (psg[ch].regs[5] << 1) & 0x1e) - 60;
 			vol = (vol < 0) ? 0 : (vol > 31) ? 31 : vol;
-			vol = wav * vol_tbl[vol] / 16384;
+			int32 outvol = wav * vol_tbl[vol] / 16384;
 			for(int i = 0, j = 0; i < cnt; i++, j += 2) {
-				buffer[j    ] += vol; // L
-				buffer[j + 1] += vol; // R
+				buffer[j    ] += apply_volume(outvol, volume_l); // L
+				buffer[j + 1] += apply_volume(outvol, volume_r); // R
 			}
 		}
 		else if(ch >= 4 && (psg[ch].regs[7] & 0x80)) {
@@ -1603,8 +1603,8 @@ void PCE::mix(int32* buffer, int cnt)
 					psg[ch].remain -= sample_rate * t;
 				}
 				int32 outvol = (int32)((psg[ch].noise ? 10 * 702 : -10 * 702) * vol / 16384);
-				buffer[j    ] += outvol; // L
-				buffer[j + 1] += outvol; // R
+				buffer[j    ] += apply_volume(outvol, volume_l); // L
+				buffer[j + 1] += apply_volume(outvol, volume_r); // R
 			}
 		}
 		else {
@@ -1619,8 +1619,8 @@ void PCE::mix(int32* buffer, int cnt)
 				vol = vol_tbl[vol];
 				for(int i = 0, j = 0; i < cnt; i++, j += 2) {
 					int32 outvol = wav[psg[ch].genptr] * vol / 16384;
-					buffer[j    ] += outvol; // L
-					buffer[j + 1] += outvol; // R
+					buffer[j    ] += apply_volume(outvol, volume_l); // L
+					buffer[j + 1] += apply_volume(outvol, volume_r); // R
 					psg[ch].remain += 32 * 1118608 / freq;
 					uint32 t = psg[ch].remain / (10 * sample_rate);
 					psg[ch].genptr = (psg[ch].genptr + t) & 0x1f;
@@ -1629,6 +1629,12 @@ void PCE::mix(int32* buffer, int cnt)
 			}
 		}
 	}
+}
+
+void PCE::set_volume(int ch, int decibel_l, int decibel_r)
+{
+	volume_l = decibel_to_volume(decibel_l);
+	volume_r = decibel_to_volume(decibel_r);
 }
 
 // joypad (non multipad)

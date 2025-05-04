@@ -55,9 +55,13 @@ private:
 	double sound_accum;
 	uint32 sound_clock;
 	uint32 sound_mix_clock;
+	int volume_l, volume_r;
 	
 public:
-	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		volume_l = volume_r = 1024;
+	}
 	~MEMORY() {}
 	
 	// common functions
@@ -68,6 +72,7 @@ public:
 	void write_signal(int id, uint32 data, uint32 mask);
 	void event_frame();
 	void mix(int32* buffer, int cnt);
+	void set_volume(int ch, int decibel_l, int decibel_r);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	

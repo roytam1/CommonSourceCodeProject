@@ -250,6 +250,41 @@ void VM::movie_sound_callback(uint8 *buffer, long size)
 }
 #endif
 
+#ifdef USE_SOUND_VOLUME
+void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
+{
+	if(ch == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("PSG"));
+		*mono = true;
+	} else if(ch == 1) {
+		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
+	} else if(ch == 2) {
+		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
+#if defined(_PX7)
+	} else if(ch == 3) {
+		my_tcscpy_s(buffer, buffer_len, _T("LD-700"));
+#endif
+	} else {
+		buffer[0] = _T('\0');
+	}
+}
+
+void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
+{
+	if(ch == 0) {
+		psg->set_volume(1, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		pcm->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 2) {
+		drec->set_volume(0, decibel_l, decibel_r);
+#if defined(_PX7)
+	} else if(ch == 3) {
+		ldp->set_volume(0, decibel_l, decibel_r);
+#endif
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------

@@ -13,11 +13,11 @@
 #else
 #include <time.h>
 #endif
-
+#include <math.h>
 #include "common.h"
 #include "fileio.h"
 
-inline uint32 EndianToLittle_DWORD(uint32 x)
+uint32 EndianToLittle_DWORD(uint32 x)
 {
 #if defined(__LITTLE_ENDIAN__)
 	return x;
@@ -29,7 +29,7 @@ inline uint32 EndianToLittle_DWORD(uint32 x)
 #endif
 }
 
-inline uint16 EndianToLittle_WORD(uint16 x)
+uint16 EndianToLittle_WORD(uint16 x)
 {
 #if defined(__LITTLE_ENDIAN__)
 	return x;
@@ -41,7 +41,7 @@ inline uint16 EndianToLittle_WORD(uint16 x)
 }
 
 #ifndef _MSC_VER
-inline int max(int a, int b)
+int max(int a, int b)
 {
 	if(a > b) {
 		return a;
@@ -50,7 +50,7 @@ inline int max(int a, int b)
 	}
 }
 
-inline unsigned int max(unsigned int a, unsigned int b)
+unsigned int max(unsigned int a, unsigned int b)
 {
 	if(a > b) {
 		return a;
@@ -59,7 +59,7 @@ inline unsigned int max(unsigned int a, unsigned int b)
 	}
 }
 
-inline int min(int a, int b)
+int min(int a, int b)
 {
 	if(a < b) {
 		return a;
@@ -68,7 +68,7 @@ inline int min(int a, int b)
 	}
 }
 
-inline unsigned int min(unsigned int a, unsigned int b)
+unsigned int min(unsigned int a, unsigned int b)
 {
 	if(a < b) {
 		return a;
@@ -475,6 +475,26 @@ uint16 jis_to_sjis(uint16 jis)
 		tmp.w.l += 0x4000;
 	}
 	return tmp.w.l;
+}
+
+int decibel_to_volume(int decibel)
+{
+	// +1 equals +0.5dB (same as fmgen)
+	return (int)(1024.0 * pow(10.0, decibel / 40.0) + 0.5);
+}
+
+int apply_volume(int sample, int volume)
+{
+	if(sample < 0) {
+		sample = -sample;
+		sample *= volume;
+		sample >>= 10;
+		return -sample;
+	} else {
+		sample *= volume;
+		sample >>= 10;
+		return sample;
+	}
 }
 
 void get_host_time(cur_time_t* cur_time)

@@ -37,7 +37,7 @@ void DATAREC::initialize()
 	is_wav = is_tap = false;
 	
 	pcm_changed = 0;
-	pcm_last_vol = 0;
+	pcm_last_vol_l = pcm_last_vol_r = 0;
 	
 	// skip frames
 	signal_changed = 0;
@@ -1368,35 +1368,58 @@ void DATAREC::mix(int32* buffer, int cnt)
 			pcm_negative_clocks += passed_clock(pcm_prev_clock);
 		}
 		int clocks = pcm_positive_clocks + pcm_negative_clocks;
-		pcm_last_vol = clocks ? (pcm_max_vol * pcm_positive_clocks - pcm_max_vol * pcm_negative_clocks) / clocks : signal ? pcm_max_vol : -pcm_max_vol;
+		int sample = clocks ? (pcm_max_vol * pcm_positive_clocks - pcm_max_vol * pcm_negative_clocks) / clocks : signal ? pcm_max_vol : -pcm_max_vol;
+		
+		pcm_last_vol_l = apply_volume(sample, pcm_volume_l);
+		pcm_last_vol_r = apply_volume(sample, pcm_volume_r);
 		
 		for(int i = 0; i < cnt; i++) {
-			*buffer++ += pcm_last_vol; // L
-			*buffer++ += pcm_last_vol; // R
+			*buffer++ += pcm_last_vol_l; // L
+			*buffer++ += pcm_last_vol_r; // R
 		}
-	} else if(pcm_last_vol > 0) {
+	} else {
 		// suppress petite noise when go to mute
-		for(int i = 0; i < cnt && pcm_last_vol != 0; i++, pcm_last_vol--) {
-			*buffer++ += pcm_last_vol; // L
-			*buffer++ += pcm_last_vol; // R
-		}
-	} else if(pcm_last_vol < 0) {
-		// suppress petite noise when go to mute
-		for(int i = 0; i < cnt && pcm_last_vol != 0; i++, pcm_last_vol++) {
-			*buffer++ += pcm_last_vol; // L
-			*buffer++ += pcm_last_vol; // R
+		for(int i = 0; i < cnt; i++) {
+			*buffer++ += pcm_last_vol_l; // L
+			*buffer++ += pcm_last_vol_r; // R
+			
+			if(pcm_last_vol_l > 0) {
+				pcm_last_vol_l--;
+			} else if(pcm_last_vol_l < 0) {
+				pcm_last_vol_l++;
+			}
+			if(pcm_last_vol_r > 0) {
+				pcm_last_vol_r--;
+			} else if(pcm_last_vol_r < 0) {
+				pcm_last_vol_r++;
+			}
 		}
 	}
 	pcm_prev_clock = current_clock();
 	pcm_positive_clocks = pcm_negative_clocks = 0;
 	
 #ifdef DATAREC_SOUND
+	int32 sound_vol_l = apply_volume(sound_sample, sound_volume_l);
+	int32 sound_vol_r = apply_volume(sound_sample, sound_volume_r);
 	buffer = buffer_tmp; // restore
 	for(int i = 0; i < cnt; i++) {
-		*buffer += sound_sample; // L
-		*buffer += sound_sample; // R
+		*buffer += sound_vol_l; // L
+		*buffer += sound_vol_r; // R
 	}
 #endif
+}
+
+void DATAREC::set_volume(int ch, int decibel_l, int decibel_r)
+{
+	if(ch == 0) {
+		pcm_volume_l = decibel_to_volume(decibel_l);
+		pcm_volume_r = decibel_to_volume(decibel_r);
+#ifdef DATAREC_SOUND
+	} else if(ch == 1) {
+		sound_volume_l = decibel_to_volume(decibel_l);
+		sound_volume_r = decibel_to_volume(decibel_r);
+#endif
+	}
 }
 
 #define STATE_VERSION	6
@@ -1545,7 +1568,7 @@ bool DATAREC::load_state(FILEIO* state_fio)
 	pcm_negative_clocks = state_fio->FgetInt32();
 	
 	// post process
-	pcm_last_vol = 0;
+	pcm_last_vol_l = pcm_last_vol_r = 0;
 	return true;
 }
 

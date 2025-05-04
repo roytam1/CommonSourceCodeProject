@@ -328,6 +328,102 @@ int VM::sound_buffer_ptr()
 	return pc88event->sound_buffer_ptr();
 }
 
+#ifdef USE_SOUND_VOLUME
+void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
+{
+#ifdef SUPPORT_PC88_OPNA
+	if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPNA (FM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPNA (PSG)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPNA (ADPCM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPNA (Rhythm)"));
+		*mono = true;
+#else
+	if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPN (FM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPN (PSG)"));
+		*mono = true;
+#endif
+#ifdef SUPPORT_PC88_SB2
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("SB2 (FM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("SB2 (PSG)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("SB2 (ADPCM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("SB2 (Rhythm)"));
+		*mono = true;
+#endif
+#ifdef SUPPORT_PC88_PCG8100
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("PCG-8100"));
+#endif
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
+	} else {
+		buffer[0] = _T('\0');
+	}
+}
+
+void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
+{
+#ifdef SUPPORT_PC88_OPNA
+	if(ch-- == 0) {
+		pc88opn->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		pc88opn->set_volume(1, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		pc88opn->set_volume(2, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		pc88opn->set_volume(3, decibel_l, decibel_r);
+#else
+	if(ch-- == 0) {
+		pc88opn->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		pc88opn->set_volume(1, decibel_l, decibel_r);
+#endif
+#ifdef SUPPORT_PC88_SB2
+	} else if(ch-- == 0) {
+		if(pc88sb2 != NULL) {
+			pc88sb2->set_volume(0, decibel_l, decibel_r);
+		}
+	} else if(ch-- == 0) {
+		if(pc88sb2 != NULL) {
+			pc88sb2->set_volume(1, decibel_l, decibel_r);
+		}
+	} else if(ch-- == 0) {
+		if(pc88sb2 != NULL) {
+			pc88sb2->set_volume(2, decibel_l, decibel_r);
+		}
+	} else if(ch-- == 0) {
+		if(pc88sb2 != NULL) {
+			pc88sb2->set_volume(3, decibel_l, decibel_r);
+		}
+#endif
+#ifdef SUPPORT_PC88_PCG8100
+	} else if(ch-- == 0) {
+		pc88pcm0->set_volume(0, decibel_l, decibel_r);
+		pc88pcm1->set_volume(0, decibel_l, decibel_r);
+		pc88pcm2->set_volume(0, decibel_l, decibel_r);
+#endif
+	} else if(ch-- == 0) {
+		pc88pcm->set_volume(0, decibel_l, decibel_r);
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // notify key
 // ----------------------------------------------------------------------------

@@ -557,6 +557,51 @@ int VM::sound_buffer_ptr()
 	return event->sound_buffer_ptr();
 }
 
+#ifdef USE_SOUND_VOLUME
+void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
+{
+	if(ch == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("PSG"));
+		*mono = true;
+	} else if(ch == 1) {
+		my_tcscpy_s(buffer, buffer_len, _T("CZ-8BS1 #1"));
+		*mono = true;
+	} else if(ch == 2) {
+		my_tcscpy_s(buffer, buffer_len, _T("CZ-8BS1 #2"));
+		*mono = true;
+	} else if(ch == 3) {
+		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
+#if defined(_X1TWIN)
+	} else if(ch == 4) {
+		my_tcscpy_s(buffer, buffer_len, _T("PC-Engine PSG"));
+#endif
+	} else {
+		buffer[0] = _T('\0');
+	}
+}
+
+void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
+{
+	if(ch == 0) {
+		psg->set_volume(1, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		if(sound_device_type >= 1) {
+			opm1->set_volume(0, decibel_l, decibel_r);
+		}
+	} else if(ch == 2) {
+		if(sound_device_type >= 2) {
+			opm2->set_volume(0, decibel_l, decibel_r);
+		}
+	} else if(ch == 3) {
+		drec->set_volume(0, decibel_l, decibel_r);
+#if defined(_X1TWIN)
+	} else if(ch == 4) {
+		pce->set_volume(0, decibel_l, decibel_r);
+#endif
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // notify key
 // ----------------------------------------------------------------------------

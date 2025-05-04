@@ -363,21 +363,52 @@ void YM2203::mix(int32* buffer, int cnt)
 	}
 }
 
-void YM2203::init(int rate, int clock, int samples, int volf, int volp)
+void YM2203::set_volume(int ch, int decibel_l, int decibel_r)
+{
+	if(ch == 0) {
+#ifdef HAS_YM2608
+		if(is_ym2608) {
+			opna->SetVolumeFM(base_decibel_fm + decibel_l);
+		} else
+#endif
+		opn->SetVolumeFM(base_decibel_fm + decibel_l);
+	} else if(ch == 1) {
+#ifdef HAS_YM2608
+		if(is_ym2608) {
+			opna->SetVolumePSG(base_decibel_psg + decibel_l);
+		} else
+#endif
+		opn->SetVolumePSG(base_decibel_psg + decibel_l);
+#ifdef HAS_YM2608
+	} else if(ch == 2) {
+		if(is_ym2608) {
+			opna->SetVolumeADPCM(decibel_l);
+		}
+	} else if(ch == 3) {
+		if(is_ym2608) {
+			opna->SetVolumeRhythmTotal(decibel_l);
+		}
+#endif
+	}
+}
+
+void YM2203::init(int rate, int clock, int samples, int decibel_fm, int decibel_psg)
 {
 #ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->Init(clock, rate, false, application_path());
-		opna->SetVolumeFM(volf);
-		opna->SetVolumePSG(volp);
+		opna->SetVolumeFM(decibel_fm);
+		opna->SetVolumePSG(decibel_psg);
 	} else {
 #endif
 		opn->Init(clock, rate, false, NULL);
-		opn->SetVolumeFM(volf);
-		opn->SetVolumePSG(volp);
+		opn->SetVolumeFM(decibel_fm);
+		opn->SetVolumePSG(decibel_psg);
 #ifdef HAS_YM2608
 	}
 #endif
+	base_decibel_fm = decibel_fm;
+	base_decibel_psg = decibel_psg;
 	
 #ifdef SUPPORT_MAME_FM_DLL
 	if(!dont_create_multiple_chips) {
@@ -388,8 +419,8 @@ void YM2203::init(int rate, int clock, int samples, int volf, int volp)
 #endif
 		fmdll->Create((LPVOID*)&dllchip, clock * 2, rate);
 		if(dllchip) {
-			fmdll->SetVolumeFM(dllchip, volf);
-			fmdll->SetVolumePSG(dllchip, volp);
+			fmdll->SetVolumeFM(dllchip, decibel_fm);
+			fmdll->SetVolumePSG(dllchip, decibel_psg);
 			
 			DWORD mask = 0;
 			DWORD dwCaps = fmdll->GetCaps(dllchip);

@@ -60,6 +60,7 @@ private:
 		uint8 data;
 	} port_log[0x200];
 #endif
+	int base_decibel_fm, base_decibel_psg;
 	
 	uint8 ch;
 	uint8 fnum2;
@@ -113,6 +114,7 @@ public:
 #ifdef HAS_YM2608
 		is_ym2608 = true;
 #endif
+		base_decibel_fm = base_decibel_psg = 0;
 	}
 	~YM2203() {}
 	
@@ -126,6 +128,7 @@ public:
 	void event_vline(int v, int clock);
 	void event_callback(int event_id, int error);
 	void mix(int32* buffer, int cnt);
+	void set_volume(int ch, int decibel_l, int decibel_r);
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
@@ -149,7 +152,7 @@ public:
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
 #endif
-	void init(int rate, int clock, int samples, int volf, int volp);
+	void init(int rate, int clock, int samples, int decibel_fm, int decibel_psg);
 	void SetReg(uint addr, uint data); // for patch
 #ifdef HAS_YM2608
 	bool is_ym2608;

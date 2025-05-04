@@ -192,6 +192,8 @@ BEGIN
         MENUITEM "200msec",                     ID_SOUND_LATE2
         MENUITEM "300msec",                     ID_SOUND_LATE3
         MENUITEM "400msec",                     ID_SOUND_LATE4
+        MENUITEM SEPARATOR
+        MENUITEM "Volume",                      ID_SOUND_VOLUME
     END
     POPUP "Input"
     BEGIN
@@ -212,6 +214,27 @@ END
 IDI_ICON1               ICON    DISCARDABLE     "m5.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SOUND_DEVICE_VOLUME DIALOG DISCARDABLE  0, 0, 250, 90
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Volume"
+FONT 9, "MS PGothic"
+BEGIN
+    LTEXT           "Sound Device #1",IDC_SOUND_DEVICE_NAME0,6,6,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L0,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,6,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R0,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,21,175,12
+    LTEXT           "Sound Device #2",IDC_SOUND_DEVICE_NAME1,6,36,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L1,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,36,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R1,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,51,175,12
+    DEFPUSHBUTTON   "OK",IDOK,70,70,50,14
+    DEFPUSHBUTTON   "Reset",IDC_SOUND_DEVICE_RESET,130,70,50,14
+END
 
 
 

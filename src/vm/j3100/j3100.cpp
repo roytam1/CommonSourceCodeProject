@@ -310,6 +310,24 @@ int VM::sound_buffer_ptr()
 	return event->sound_buffer_ptr();
 }
 
+#ifdef USE_SOUND_VOLUME
+void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
+{
+	if(ch == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
+	} else {
+		buffer[0] = _T('\0');
+	}
+}
+
+void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
+{
+	if(ch == 0) {
+		pcm->set_volume(0, decibel_l, decibel_r);
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // notify key
 // ----------------------------------------------------------------------------

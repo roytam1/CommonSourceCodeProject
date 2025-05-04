@@ -213,6 +213,16 @@ void load_config(const _TCHAR* config_path)
 #ifdef USE_SOUND_DEVICE_TYPE
 	config.sound_device_type = MyGetPrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
 #endif
+#ifdef USE_SOUND_VOLUME
+	for(int i = 0; i < USE_SOUND_VOLUME; i++) {
+		_TCHAR name[64];
+		my_stprintf_s(name, 64, _T("VolumeLeft%d"), i + 1);
+		config.sound_volume_l[i] = MyGetPrivateProfileInt(_T("Sound"), name, config.sound_volume_l[i], config_path);
+		my_stprintf_s(name, 64, _T("VolumeRight%d"), i + 1);
+		config.sound_volume_r[i] = MyGetPrivateProfileInt(_T("Sound"), name, config.sound_volume_r[i], config_path);
+	}
+
+#endif
 	MyGetPrivateProfileString(_T("Sound"), _T("FMGenDll"), _T("mamefm.dll"), config.fmgen_dll_path, _MAX_PATH, config_path);
 	
 	// input
@@ -348,6 +358,15 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileInt(_T("Sound"), _T("Latency"), config.sound_latency, config_path);
 #ifdef USE_SOUND_DEVICE_TYPE
 	MyWritePrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
+#endif
+#ifdef USE_SOUND_VOLUME
+	for(int i = 0; i < USE_SOUND_VOLUME; i++) {
+		_TCHAR name[64];
+		my_stprintf_s(name, 64, _T("VolumeLeft%d"), i + 1);
+		MyWritePrivateProfileInt(_T("Sound"), name, config.sound_volume_l[i], config_path);
+		my_stprintf_s(name, 64, _T("VolumeRight%d"), i + 1);
+		MyWritePrivateProfileInt(_T("Sound"), name, config.sound_volume_r[i], config_path);
+	}
 #endif
 	
 	// input

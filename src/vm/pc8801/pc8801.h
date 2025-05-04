@@ -52,7 +52,7 @@
 #if defined(_PC8801MA)
 #define PC80S31K_NO_WAIT
 #endif
-#ifdef SUPPORT_PC88_OPNA
+#if defined(SUPPORT_PC88_OPNA) || defined(SUPPORT_PC88_SB2)
 #define HAS_YM2608
 #endif
 #define Z80_MEMORY_WAIT
@@ -95,6 +95,23 @@
 #else
 #define USE_SOUND_DEVICE_TYPE	2
 #endif
+#endif
+#if    defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(4 + 4 + 1 + 1)
+#elif  defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(4 + 4 + 0 + 1)
+#elif  defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(4 + 0 + 1 + 1)
+#elif  defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(4 + 0 + 0 + 1)
+#elif !defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(2 + 4 + 1 + 1)
+#elif !defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(2 + 4 + 0 + 1)
+#elif !defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(2 + 0 + 1 + 1)
+#elif !defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
+#define USE_SOUND_VOLUME	(2 + 0 + 0 + 1)
 #endif
 #define USE_PRINTER
 #define USE_PRINTER_TYPE	4
@@ -189,6 +206,10 @@ public:
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
+#ifdef USE_SOUND_VOLUME
+	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
+	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
+#endif
 	
 	// notify key
 	void key_down(int code, bool repeat);

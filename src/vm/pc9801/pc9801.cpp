@@ -903,6 +903,70 @@ int VM::sound_buffer_ptr()
 	return event->sound_buffer_ptr();
 }
 
+#ifdef USE_SOUND_VOLUME
+void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
+{
+	if(ch == 0) {
+#ifdef HAS_YM2608
+		my_tcscpy_s(buffer, buffer_len, _T("PC-9801-86 (FM)"));
+#else
+		my_tcscpy_s(buffer, buffer_len, _T("PC-9801-26 (FM)"));
+#endif
+		*mono = true;
+	} else if(ch == 1) {
+#ifdef HAS_YM2608
+		my_tcscpy_s(buffer, buffer_len, _T("PC-9801-86 (PSG)"));
+#else
+		my_tcscpy_s(buffer, buffer_len, _T("PC-9801-26 (PSG)"));
+#endif
+		*mono = true;
+	} else if(ch == 2) {
+		my_tcscpy_s(buffer, buffer_len, _T("PC-9801-14"));
+	} else if(ch == 3) {
+		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
+#if defined(_PC98DO)
+	} else if(ch == 4) {
+		my_tcscpy_s(buffer, buffer_len, _T("PC-88 OPN (FM)"));
+		*mono = true;
+	} else if(ch == 5) {
+		my_tcscpy_s(buffer, buffer_len, _T("PC-88 OPN (PSG)"));
+		*mono = true;
+	} else if(ch == 6) {
+		my_tcscpy_s(buffer, buffer_len, _T("PC-88 Beep"));
+#endif
+	} else {
+		buffer[0] = _T('\0');
+	}
+}
+
+void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
+{
+	if(ch == 0) {
+		if(sound_device_type == 0 || sound_device_type == 1) {
+			opn->set_volume(0, decibel_l, decibel_r);
+		}
+	} else if(ch == 1) {
+		if(sound_device_type == 0 || sound_device_type == 1) {
+			opn->set_volume(1, decibel_l, decibel_r);
+		}
+	} else if(ch == 2) {
+		if(sound_device_type == 2 || sound_device_type == 3) {
+			tms3631->set_volume(0, decibel_l, decibel_r);
+		}
+	} else if(ch == 3) {
+		beep->set_volume(0, decibel_l, decibel_r);
+#if defined(_PC98DO)
+	} else if(ch == 4) {
+		pc88opn->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 5) {
+		pc88opn->set_volume(1, decibel_l, decibel_r);
+	} else if(ch == 6) {
+		pc88pcm->set_volume(0, decibel_l, decibel_r);
+#endif
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // notify key
 // ----------------------------------------------------------------------------

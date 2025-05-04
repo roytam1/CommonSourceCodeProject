@@ -64,6 +64,11 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		6
 #define USE_AUTO_KEY_RELEASE	10
+#if defined(_PX7)
+#define USE_SOUND_VOLUME	4
+#else
+#define USE_SOUND_VOLUME	3
+#endif
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -168,6 +173,10 @@ public:
 	int sound_buffer_ptr();
 #if defined(_PX7)
 	void movie_sound_callback(uint8 *buffer, long size);
+#endif
+#ifdef USE_SOUND_VOLUME
+	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
+	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	
 	// user interface

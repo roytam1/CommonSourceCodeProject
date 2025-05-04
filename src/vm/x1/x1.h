@@ -107,6 +107,11 @@
 #define USE_SOUND_DEVICE_TYPE		3
 // CZ-8BS1 x1
 #define SOUND_DEVICE_TYPE_DEFAULT	1
+#if defined(_X1TWIN)
+#define USE_SOUND_VOLUME	5
+#else
+#define USE_SOUND_VOLUME	4
+#endif
 #define USE_PRINTER
 #define USE_PRINTER_TYPE	4
 #define USE_DEBUGGER
@@ -313,6 +318,10 @@ public:
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
+#ifdef USE_SOUND_VOLUME
+	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
+	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
+#endif
 	
 	// notify key
 	void key_down(int code, bool repeat);

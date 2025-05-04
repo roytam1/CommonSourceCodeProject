@@ -234,6 +234,8 @@ BEGIN
         MENUITEM "OPN+WHG",                     ID_SOUND_DEVICE_TYPE3
         MENUITEM "OPN+THG",                     ID_SOUND_DEVICE_TYPE5
         MENUITEM "OPN+WHG+THG",                 ID_SOUND_DEVICE_TYPE7
+        MENUITEM SEPARATOR
+        MENUITEM "Volume",                      ID_SOUND_VOLUME
     END
     POPUP "Input"
     BEGIN
@@ -254,6 +256,45 @@ END
 IDI_ICON1               ICON    DISCARDABLE     "fm77av.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SOUND_DEVICE_VOLUME DIALOG DISCARDABLE  0, 0, 250, 270
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Volume"
+FONT 9, "MS PGothic"
+BEGIN
+    LTEXT           "Sound Device #1",IDC_SOUND_DEVICE_NAME0,6,6,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L0,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,6,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R0,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,21,175,12
+    LTEXT           "Sound Device #2",IDC_SOUND_DEVICE_NAME1,6,36,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L1,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,36,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R1,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,51,175,12
+    LTEXT           "Sound Device #3",IDC_SOUND_DEVICE_NAME2,6,66,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L2,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,66,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R2,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,81,175,12
+    LTEXT           "Sound Device #4",IDC_SOUND_DEVICE_NAME3,6,96,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L3,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,96,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R3,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,111,175,12
+    LTEXT           "Sound Device #5",IDC_SOUND_DEVICE_NAME4,6,126,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L4,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,126,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R4,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,141,175,12
+    LTEXT           "Sound Device #6",IDC_SOUND_DEVICE_NAME5,6,156,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L5,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,156,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R5,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,171,175,12
+    LTEXT           "Sound Device #7",IDC_SOUND_DEVICE_NAME6,6,186,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L6,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,186,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R6,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,201,175,12
+    LTEXT           "Sound Device #8",IDC_SOUND_DEVICE_NAME7,6,216,60,8
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_L7,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,216,175,12
+    CONTROL         "",IDC_SOUND_DEVICE_VOLUME_R7,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,70,231,175,12
+    DEFPUSHBUTTON   "OK",IDOK,70,250,50,14
+    DEFPUSHBUTTON   "Reset",IDC_SOUND_DEVICE_RESET,130,250,50,14
+END
 
 
 

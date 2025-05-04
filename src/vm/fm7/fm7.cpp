@@ -519,6 +519,69 @@ int VM::sound_buffer_ptr()
 	return pos; 
 }
 
+#ifdef USE_SOUND_VOLUME
+void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
+{
+#if !defined(_FM77AV_VARIANTS)
+	if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("PSG"));
+		*mono = true;
+	} else
+#endif
+	if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPN (FM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("OPN (PSG)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("WHG (FM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("WHG (PSG)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("THG (FM)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("THG (PSG)"));
+		*mono = true;
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
+	} else if(ch-- == 0) {
+		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
+	} else {
+		buffer[0] = _T('\0');
+	}
+}
+
+void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
+{
+#if !defined(_FM77AV_VARIANTS)
+	if(ch-- == 0) {
+		psg->set_volume(0, decibel_l, decibel_r);
+	} else
+#endif
+	if(ch-- == 0) {
+		opn[0]->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		opn[0]->set_volume(1, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		opn[1]->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		opn[1]->set_volume(1, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		opn[2]->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		opn[2]->set_volume(1, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		pcm1bit->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		drec->set_volume(0, decibel_l, decibel_r);
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // notify key
 // ----------------------------------------------------------------------------

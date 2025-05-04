@@ -1,3 +1,29 @@
+2/7/2015
+
+[WINMAIN] add dialog to set sound device volumes
+[EMU] support to get sound device info
+[EMU] support to set left/right volumes
+
+[VM/BEEP] support to set left/right volumes
+[VM/DATAREC] support to set left/right volumes
+[VM/DEVICE] add virtual function to set left/right volumes
+[VM/LD700] support to set left/right volumes
+[VM/PCM1BIT] support to set left/right volumes
+[VM/SN76489AN] support to set left/right volumes
+[VM/TMS3631] support to set left/right volumes
+[VM/UPD7552] support to set left/right volumes
+[VM/YM2151] support to set volume
+[VM/YM2203] support to set volume
+[VM/YM2413] support to set left/right volumes
+[VM/YM2413] fix memory leak issue
+
+[BMJR/MEMORY] support to set left/right volumes
+[FAMILYBASIC/APU] support to set left/right volumes
+[MULTI8] support beep sound
+[PV1000/PSG] support to set left/right volumes
+[SCV/SOUND] support to set left/right volumes
+
+
 2/4/2015
 
 [VM/TMS9995] support debugger
