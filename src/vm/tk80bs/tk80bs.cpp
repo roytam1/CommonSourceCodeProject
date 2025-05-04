@@ -172,8 +172,12 @@ void VM::reset()
 		boot_mode = config.boot_mode;
 		
 		memset(ram, 0, sizeof(ram));
-		memset(vram, 0x20, sizeof(vram));
 	}
+	
+	// initialize screen
+	emu->reload_bitmap();
+	memset(vram, 0x20, sizeof(vram));
+	draw_ranges = 8;
 	
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
@@ -211,6 +215,11 @@ DEVICE *VM::get_cpu(int index)
 void VM::draw_screen()
 {
 	display->draw_screen();
+}
+
+int VM::max_draw_ranges()
+{
+	return draw_ranges;
 }
 
 // ----------------------------------------------------------------------------

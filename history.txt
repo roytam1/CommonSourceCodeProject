@@ -1,3 +1,14 @@
+12/15/2015
+
+[WINMAIN] fix to check if button caption is multi-line or not
+
+[VM/I8080] fix to use fetch_op() function to fetch opecode
+[VM/I8080] support to read interrupt enabled status
+
+[EX80] support TOSHIBA EX-80
+[TK80BS] improve screen
+
+
 12/10/2015
 
 [COMMON] improve common.h for other environments

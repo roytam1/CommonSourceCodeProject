@@ -460,7 +460,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		memset(hFont, 0, sizeof(hFont));
 		for(int i = 0; i < MAX_BUTTONS; i++) {
 			hButton[i] = CreateWindow(_T("BUTTON"), buttons[i].caption,
-			                          WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_MULTILINE,
+			                          WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | (strstr(buttons[i].caption, "\n") ? BS_MULTILINE : 0),
 			                          buttons[i].x, buttons[i].y,
 			                          buttons[i].width, buttons[i].height,
 			                          hWnd, (HMENU)(ID_BUTTON + i), (HINSTANCE)GetModuleHandle(0), NULL);

@@ -353,7 +353,11 @@ void OSD::update_screen(HDC hdc)
 	}
 	if(first_draw_screen) {
 		// 7-seg LEDs
+#ifdef MAX_DRAW_RANGES
 		for(int i = 0; i < MAX_DRAW_RANGES; i++) {
+#else
+		for(int i = 0; i < vm->max_draw_ranges(); i++) { // for TK-80BS
+#endif
 			int x = ranges[i].x;
 			int y = ranges[i].y;
 			int w = ranges[i].width;
