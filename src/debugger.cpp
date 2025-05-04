@@ -31,6 +31,7 @@
 #endif
 
 static FILEIO* logfile = NULL;
+static FILEIO* cmdfile = NULL;
 
 void my_printf(OSD *osd, const _TCHAR *format, ...)
 {
@@ -154,8 +155,9 @@ void* debugger_thread(void *lpx)
 	my_printf(p->osd, _T("next\t%08X  %s\n"), cpu->get_next_pc(), buffer);
 	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 	
-	// initialize logfile
+	// initialize files
 	logfile = NULL;
+	cmdfile = NULL;
 	
 	#define MAX_COMMAND_LEN	64
 	
@@ -172,38 +174,54 @@ void* debugger_thread(void *lpx)
 		bool enter_done = false;
 		
 		while(!p->request_terminate && !enter_done) {
-			_TCHAR ir[16];
-			int count = p->osd->read_console_input(ir);
-			
-			for(int i = 0; i < count; i++) {
-				_TCHAR chr = ir[i];
-				
-				if(chr == 0x0d || chr == 0x0a) {
-					if(ptr == 0 && prev_command[0] != _T('\0')) {
-						memcpy(command, prev_command, sizeof(command));
+			if(cmdfile != NULL) {
+				if(cmdfile->Fgets(command, array_length(command)) != NULL) {
+					while(_tcslen(command) > 0 && (command[_tcslen(command) - 1] == 0x0d || command[_tcslen(command) - 1] == 0x0a)) {
+						command[_tcslen(command) - 1] = _T('\0');
+					}
+					if(_tcslen(command) > 0) {
 						my_printf(p->osd, _T("%s\n"), command);
 						enter_done = true;
-						break;
-					} else if(ptr > 0) {
-						command[ptr] = _T('\0');
-						memcpy(prev_command, command, sizeof(command));
-						my_printf(p->osd, _T("\n"));
-						enter_done = true;
-						break;
 					}
-				} else if(chr == 0x08) {
-					if(ptr > 0) {
-						ptr--;
-						my_putch(p->osd, chr);
-						my_putch(p->osd, _T(' '));
-						my_putch(p->osd, chr);
-					}
-				} else if(chr >= 0x20 && chr <= 0x7e && ptr < MAX_COMMAND_LEN && !(chr == 0x20 && ptr == 0)) {
-					command[ptr++] = chr;
-					my_putch(p->osd, chr);
+				} else {
+					cmdfile->Fclose();
+					delete cmdfile;
+					cmdfile = NULL;
 				}
+			} else {
+				_TCHAR ir[16];
+				int count = p->osd->read_console_input(ir);
+				
+				for(int i = 0; i < count; i++) {
+					_TCHAR chr = ir[i];
+					
+					if(chr == 0x0d || chr == 0x0a) {
+						if(ptr == 0 && prev_command[0] != _T('\0')) {
+							memcpy(command, prev_command, sizeof(command));
+							my_printf(p->osd, _T("%s\n"), command);
+							enter_done = true;
+							break;
+						} else if(ptr > 0) {
+							command[ptr] = _T('\0');
+							memcpy(prev_command, command, sizeof(command));
+							my_printf(p->osd, _T("\n"));
+							enter_done = true;
+							break;
+						}
+					} else if(chr == 0x08) {
+						if(ptr > 0) {
+							ptr--;
+							my_putch(p->osd, chr);
+							my_putch(p->osd, _T(' '));
+							my_putch(p->osd, chr);
+						}
+					} else if(chr >= 0x20 && chr <= 0x7e && ptr < MAX_COMMAND_LEN && !(chr == 0x20 && ptr == 0)) {
+						command[ptr++] = chr;
+						my_putch(p->osd, chr);
+					}
+				}
+				p->osd->sleep(10);
 			}
-			p->osd->sleep(10);
 		}
 		
 		// process command
@@ -770,6 +788,20 @@ void* debugger_thread(void *lpx)
 				} else {
 					my_printf(p->osd, _T("invalid parameter number\n"));
 				}
+			} else if(_tcsicmp(params[0], _T("<")) == 0) {
+				if(num == 2) {
+					if(cmdfile != NULL) {
+						if(cmdfile->IsOpened()) {
+							cmdfile->Fclose();
+						}
+						delete cmdfile;
+						cmdfile = NULL;
+					}
+					cmdfile = new FILEIO();
+					cmdfile->Fopen(params[1], FILEIO_READ_ASCII);
+				} else {
+					my_printf(p->osd, _T("invalid parameter number\n"));
+				}
 			} else if(_tcsicmp(params[0], _T("!")) == 0) {
 				if(num == 1) {
 					my_printf(p->osd, _T("invalid parameter number\n"));
@@ -838,6 +870,7 @@ void* debugger_thread(void *lpx)
 				my_printf(p->osd, _T("Q - quit\n"));
 				
 				my_printf(p->osd, _T("> <filename> - output logfile\n"));
+				my_printf(p->osd, _T("< <filename> - input commands from file\n"));
 				
 				my_printf(p->osd, _T("! reset [cpu] - reset\n"));
 				my_printf(p->osd, _T("! key <code> [<msec>] - press key\n"));
@@ -855,13 +888,20 @@ void* debugger_thread(void *lpx)
 	} catch(...) {
 	}
 	
-	// release logfile
+	// release files
 	if(logfile != NULL) {
 		if(logfile->IsOpened()) {
 			logfile->Fclose();
 		}
 		delete logfile;
 		logfile = NULL;
+	}
+	if(cmdfile != NULL) {
+		if(cmdfile->IsOpened()) {
+			cmdfile->Fclose();
+		}
+		delete cmdfile;
+		cmdfile = NULL;
 	}
 	
 	// release console
