@@ -751,67 +751,37 @@ void Z80DMA::notify_intr_reti()
 
 #define STATE_VERSION	1
 
-void Z80DMA::save_state(FILEIO* state_fio)
+bool Z80DMA::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(&regs, sizeof(regs), 1);
-	state_fio->FputUint8(status);
-	state_fio->Fwrite(wr_tmp, sizeof(wr_tmp), 1);
-	state_fio->FputInt32(wr_num);
-	state_fio->FputInt32(wr_ptr);
-	state_fio->Fwrite(rr_tmp, sizeof(rr_tmp), 1);
-	state_fio->FputInt32(rr_num);
-	state_fio->FputInt32(rr_ptr);
-	state_fio->FputBool(enabled);
-	state_fio->FputUint32(ready);
-	state_fio->FputBool(force_ready);
-	state_fio->FputUint16(addr_a);
-	state_fio->FputUint16(addr_b);
-	state_fio->FputInt32(upcount);
-	state_fio->FputInt32(blocklen);
-	state_fio->FputBool(dma_stop);
-	state_fio->FputBool(bus_master);
-	state_fio->FputBool(req_intr);
-	state_fio->FputBool(in_service);
-	state_fio->FputUint8(vector);
-	state_fio->FputBool(iei);
-	state_fio->FputBool(oei);
-	state_fio->FputUint32(intr_bit);
-}
-
-bool Z80DMA::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(&regs, sizeof(regs), 1);
-	status = state_fio->FgetUint8();
-	state_fio->Fread(wr_tmp, sizeof(wr_tmp), 1);
-	wr_num = state_fio->FgetInt32();
-	wr_ptr = state_fio->FgetInt32();
-	state_fio->Fread(rr_tmp, sizeof(rr_tmp), 1);
-	rr_num = state_fio->FgetInt32();
-	rr_ptr = state_fio->FgetInt32();
-	enabled = state_fio->FgetBool();
-	ready = state_fio->FgetUint32();
-	force_ready = state_fio->FgetBool();
-	addr_a = state_fio->FgetUint16();
-	addr_b = state_fio->FgetUint16();
-	upcount = state_fio->FgetInt32();
-	blocklen = state_fio->FgetInt32();
-	dma_stop = state_fio->FgetBool();
-	bus_master = state_fio->FgetBool();
-	req_intr = state_fio->FgetBool();
-	in_service = state_fio->FgetBool();
-	vector = state_fio->FgetUint8();
-	iei = state_fio->FgetBool();
-	oei = state_fio->FgetBool();
-	intr_bit = state_fio->FgetUint32();
+	state_fio->StateBuffer(&regs, sizeof(regs), 1);
+	state_fio->StateUint8(status);
+	state_fio->StateBuffer(wr_tmp, sizeof(wr_tmp), 1);
+	state_fio->StateInt32(wr_num);
+	state_fio->StateInt32(wr_ptr);
+	state_fio->StateBuffer(rr_tmp, sizeof(rr_tmp), 1);
+	state_fio->StateInt32(rr_num);
+	state_fio->StateInt32(rr_ptr);
+	state_fio->StateBool(enabled);
+	state_fio->StateUint32(ready);
+	state_fio->StateBool(force_ready);
+	state_fio->StateUint16(addr_a);
+	state_fio->StateUint16(addr_b);
+	state_fio->StateInt32(upcount);
+	state_fio->StateInt32(blocklen);
+	state_fio->StateBool(dma_stop);
+	state_fio->StateBool(bus_master);
+	state_fio->StateBool(req_intr);
+	state_fio->StateBool(in_service);
+	state_fio->StateUint8(vector);
+	state_fio->StateBool(iei);
+	state_fio->StateBool(oei);
+	state_fio->StateUint32(intr_bit);
 	return true;
 }
 

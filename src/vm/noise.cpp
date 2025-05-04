@@ -174,33 +174,20 @@ void NOISE::get_sample()
 
 #define STATE_VERSION	1
 
-void NOISE::save_state(FILEIO* state_fio)
+bool NOISE::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(register_id);
-	state_fio->FputInt32(ptr);
-	state_fio->FputInt32(sample_l);
-	state_fio->FputInt32(sample_r);
-	state_fio->FputBool(loop);
-	state_fio->FputBool(mute);
-}
-
-bool NOISE::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	register_id = state_fio->FgetInt32();
-	ptr = state_fio->FgetInt32();
-	sample_l = state_fio->FgetInt32();
-	sample_r = state_fio->FgetInt32();
-	loop = state_fio->FgetBool();
-	mute = state_fio->FgetBool();
+	state_fio->StateInt32(register_id);
+	state_fio->StateInt32(ptr);
+	state_fio->StateInt32(sample_l);
+	state_fio->StateInt32(sample_r);
+	state_fio->StateBool(loop);
+	state_fio->StateBool(mute);
 	return true;
 }
 

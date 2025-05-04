@@ -92,8 +92,7 @@ namespace FM
 		void	dbgStopPG() { pg_diff_ = 0; pg_diff_lfo_ = 0; }
 		
 	protected:
-		void SaveState(void *f);
-		bool LoadState(void *f);
+		bool ProcessState(void *f, bool loading);
 		
 	private:
 		typedef uint32 Counter;
@@ -219,8 +218,7 @@ namespace FM
 
 		void dbgStopPG() { for (int i=0; i<4; i++) op[i].dbgStopPG(); }
 		
-		void SaveState(void *f);
-		bool LoadState(void *f);
+		bool ProcessState(void *f, bool loading);
 		
 	private:
 		static const uint8 fbtable[8];
@@ -258,8 +256,7 @@ namespace FM
 		int		GetPMV() { return pmv_; }
 		uint	GetRatio() { return ratio_; }
 
-		void SaveState(void *f);
-		bool LoadState(void *f);
+		bool ProcessState(void *f, bool loading);
 		
 	private:
 		void	MakeTable();

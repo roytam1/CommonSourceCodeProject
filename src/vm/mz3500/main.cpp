@@ -391,72 +391,43 @@ void MAIN::update_bank()
 
 #define STATE_VERSION	2
 
-void MAIN::save_state(FILEIO* state_fio)
+bool MAIN::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(common, sizeof(common), 1);
-	state_fio->FputUint8(ma);
-	state_fio->FputUint8(ms);
-	state_fio->FputUint8(mo);
-	state_fio->FputBool(me1);
-	state_fio->FputBool(me2);
-	state_fio->FputUint8(srqb);
-	state_fio->FputUint8(sres);
-	state_fio->FputBool(sack);
-	state_fio->FputBool(srdy);
-	state_fio->FputBool(intfd);
-	state_fio->FputBool(int0);
-	state_fio->FputBool(int1);
-	state_fio->FputBool(int2);
-	state_fio->FputBool(int3);
-	state_fio->FputBool(int4);
-	state_fio->FputBool(me);
-	state_fio->FputBool(e1);
-	state_fio->FputUint8(inp);
-	state_fio->FputBool(motor);
-	state_fio->FputBool(drq);
-	state_fio->FputBool(index);
-	state_fio->FputBool(crt_400line);
-}
-
-bool MAIN::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(common, sizeof(common), 1);
-	ma = state_fio->FgetUint8();
-	ms = state_fio->FgetUint8();
-	mo = state_fio->FgetUint8();
-	me1 = state_fio->FgetBool();
-	me2 = state_fio->FgetBool();
-	srqb = state_fio->FgetUint8();
-	sres = state_fio->FgetUint8();
-	sack = state_fio->FgetBool();
-	srdy = state_fio->FgetBool();
-	intfd = state_fio->FgetBool();
-	int0 = state_fio->FgetBool();
-	int1 = state_fio->FgetBool();
-	int2 = state_fio->FgetBool();
-	int3 = state_fio->FgetBool();
-	int4 = state_fio->FgetBool();
-	me = state_fio->FgetBool();
-	e1 = state_fio->FgetBool();
-	inp = state_fio->FgetUint8();
-	motor = state_fio->FgetBool();
-	drq = state_fio->FgetBool();
-	index = state_fio->FgetBool();
-	crt_400line = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(common, sizeof(common), 1);
+	state_fio->StateUint8(ma);
+	state_fio->StateUint8(ms);
+	state_fio->StateUint8(mo);
+	state_fio->StateBool(me1);
+	state_fio->StateBool(me2);
+	state_fio->StateUint8(srqb);
+	state_fio->StateUint8(sres);
+	state_fio->StateBool(sack);
+	state_fio->StateBool(srdy);
+	state_fio->StateBool(intfd);
+	state_fio->StateBool(int0);
+	state_fio->StateBool(int1);
+	state_fio->StateBool(int2);
+	state_fio->StateBool(int3);
+	state_fio->StateBool(int4);
+	state_fio->StateBool(me);
+	state_fio->StateBool(e1);
+	state_fio->StateUint8(inp);
+	state_fio->StateBool(motor);
+	state_fio->StateBool(drq);
+	state_fio->StateBool(index);
+	state_fio->StateBool(crt_400line);
 	
 	// post process
-	 update_bank();
+	if(loading) {
+		 update_bank();
+	}
 	return true;
 }
 

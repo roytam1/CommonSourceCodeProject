@@ -91,34 +91,28 @@ void MEMORY::close_cart()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputBool(inserted);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	inserted = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBool(inserted);
 	
 	// post process
-	if(inserted) {
-		SET_BANK(0x8000, 0xffff, wdmy, cart);
-	} else {
-		SET_BANK(0x0000, 0x1fff, wdmy, ipl);
-		SET_BANK(0x2000, 0x5fff, wdmy, rdmy);
-		SET_BANK(0x6000, 0x7fff, ram,  ram);
-		SET_BANK(0x8000, 0xffff, wdmy, cart);
+	if(loading) {
+		if(inserted) {
+			SET_BANK(0x8000, 0xffff, wdmy, cart);
+		} else {
+			SET_BANK(0x0000, 0x1fff, wdmy, ipl);
+			SET_BANK(0x2000, 0x5fff, wdmy, rdmy);
+			SET_BANK(0x6000, 0x7fff, ram,  ram);
+			SET_BANK(0x8000, 0xffff, wdmy, cart);
+		}
 	}
 	return true;
 }
+

@@ -81,8 +81,7 @@ public:
 	}
 	void get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
 #endif
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
 	void set_context_irq(DEVICE* device, int id, uint32_t mask)

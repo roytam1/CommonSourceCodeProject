@@ -876,103 +876,67 @@ void MEMORY::vrc7_hsync(int v)
 
 #define STATE_VERSION	2
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(save_file_name, sizeof(save_file_name), 1);
-	state_fio->Fwrite(&header, sizeof(header), 1);
-	state_fio->FputUint32(rom_size);
-//	state_fio->FputUint32(rom_mask);
-	state_fio->Fwrite(rom, rom_size, 1);
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(save_ram, sizeof(save_ram), 1);
-	state_fio->FputUint32(save_ram_crc32);
-	state_fio->Fwrite(banks, sizeof(banks), 1);
-	state_fio->FputUint16(dma_addr);
-	state_fio->FputUint8(frame_irq_enabled);
-	state_fio->Fwrite(mmc5_wram_bank, sizeof(mmc5_wram_bank), 1);
-	state_fio->Fwrite(mmc5_chr_reg, sizeof(mmc5_chr_reg), 1);
-	state_fio->FputUint32(mmc5_value0);
-	state_fio->FputUint32(mmc5_value0);
-	state_fio->FputUint8(mmc5_wram_protect0);
-	state_fio->FputUint8(mmc5_wram_protect1);
-	state_fio->FputUint8(mmc5_prg_size);
-	state_fio->FputUint8(mmc5_chr_size);
-	state_fio->FputUint8(mmc5_gfx_mode);
-//	state_fio->FputUint8(mmc5_split_control);
-//	state_fio->FputUint8(mmc5_split_bank);
-	state_fio->FputUint8(mmc5_irq_enabled);
-	state_fio->FputUint8(mmc5_irq_status);
-	state_fio->FputUint32(mmc5_irq_line);
-	state_fio->FputUint8(vrc7_irq_enabled);
-	state_fio->FputUint8(vrc7_irq_counter);
-	state_fio->FputUint8(vrc7_irq_latch);
-	state_fio->FputBool(pad_strobe);
-	state_fio->FputUint8(pad1_bits);
-	state_fio->FputUint8(pad2_bits);
-	state_fio->FputBool(kb_out);
-	state_fio->FputUint8(kb_scan);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(save_file_name, sizeof(save_file_name), 1);
-	state_fio->Fread(&header, sizeof(header), 1);
-	rom_size = state_fio->FgetUint32();
-//	rom_mask = state_fio->FgetUint32();
-	rom_mask = (rom_size / 0x2000) - 1;
-	if(rom != NULL) {
-		free(rom);
+	state_fio->StateBuffer(save_file_name, sizeof(save_file_name), 1);
+	state_fio->StateBuffer(&header, sizeof(header), 1);
+	state_fio->StateUint32(rom_size);
+//	state_fio->StateUint32(rom_mask);
+	if(loading) {
+		rom_mask = (rom_size / 0x2000) - 1;
+		if(rom != NULL) {
+			free(rom);
+		}
+		rom = (uint8_t *)malloc(rom_size);
 	}
-	rom = (uint8_t *)malloc(rom_size);
-	state_fio->Fread(rom, rom_size, 1);
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(save_ram, sizeof(save_ram), 1);
-	save_ram_crc32 = state_fio->FgetUint32();
-	state_fio->Fread(banks, sizeof(banks), 1);
-	dma_addr = state_fio->FgetUint16();
-	frame_irq_enabled = state_fio->FgetUint8();
-	state_fio->Fread(mmc5_wram_bank, sizeof(mmc5_wram_bank), 1);
-	state_fio->Fread(mmc5_chr_reg, sizeof(mmc5_chr_reg), 1);
-	mmc5_value0 = state_fio->FgetUint32();
-	mmc5_value0 = state_fio->FgetUint32();
-	mmc5_wram_protect0 = state_fio->FgetUint8();
-	mmc5_wram_protect1 = state_fio->FgetUint8();
-	mmc5_prg_size = state_fio->FgetUint8();
-	mmc5_chr_size = state_fio->FgetUint8();
-	mmc5_gfx_mode = state_fio->FgetUint8();
-//	mmc5_split_control = state_fio->FgetUint8();
-//	mmc5_split_bank = state_fio->FgetUint8();
-	mmc5_irq_enabled = state_fio->FgetUint8();
-	mmc5_irq_status = state_fio->FgetUint8();
-	mmc5_irq_line = state_fio->FgetUint32();
-	vrc7_irq_enabled = state_fio->FgetUint8();
-	vrc7_irq_counter = state_fio->FgetUint8();
-	vrc7_irq_latch = state_fio->FgetUint8();
-	pad_strobe = state_fio->FgetBool();
-	pad1_bits = state_fio->FgetUint8();
-	pad2_bits = state_fio->FgetUint8();
-	kb_out = state_fio->FgetBool();
-	kb_scan = state_fio->FgetUint8();
+	state_fio->StateBuffer(rom, rom_size, 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(save_ram, sizeof(save_ram), 1);
+	state_fio->StateUint32(save_ram_crc32);
+	state_fio->StateBuffer(banks, sizeof(banks), 1);
+	state_fio->StateUint16(dma_addr);
+	state_fio->StateUint8(frame_irq_enabled);
+	state_fio->StateBuffer(mmc5_wram_bank, sizeof(mmc5_wram_bank), 1);
+	state_fio->StateBuffer(mmc5_chr_reg, sizeof(mmc5_chr_reg), 1);
+	state_fio->StateUint32(mmc5_value0);
+	state_fio->StateUint32(mmc5_value0);
+	state_fio->StateUint8(mmc5_wram_protect0);
+	state_fio->StateUint8(mmc5_wram_protect1);
+	state_fio->StateUint8(mmc5_prg_size);
+	state_fio->StateUint8(mmc5_chr_size);
+	state_fio->StateUint8(mmc5_gfx_mode);
+//	state_fio->StateUint8(mmc5_split_control);
+//	state_fio->StateUint8(mmc5_split_bank);
+	state_fio->StateUint8(mmc5_irq_enabled);
+	state_fio->StateUint8(mmc5_irq_status);
+	state_fio->StateUint32(mmc5_irq_line);
+	state_fio->StateUint8(vrc7_irq_enabled);
+	state_fio->StateUint8(vrc7_irq_counter);
+	state_fio->StateUint8(vrc7_irq_latch);
+	state_fio->StateBool(pad_strobe);
+	state_fio->StateUint8(pad1_bits);
+	state_fio->StateUint8(pad2_bits);
+	state_fio->StateBool(kb_out);
+	state_fio->StateUint8(kb_scan);
 	
 	// post process
-	if(header.mapper() == 5) {
-		for(int i = 3; i < 8; i++) {
-			mmc5_set_wram_bank(i, mmc5_wram_bank[i]);
+	if(loading) {
+		if(header.mapper() == 5) {
+			for(int i = 3; i < 8; i++) {
+				mmc5_set_wram_bank(i, mmc5_wram_bank[i]);
+			}
+		} else {
+			for(int i = 4; i < 8; i++) {
+				set_rom_bank(i, banks[i]);
+			}
+			bank_ptr[3] = save_ram;
 		}
-	} else {
-		for(int i = 4; i < 8; i++) {
-			set_rom_bank(i, banks[i]);
-		}
-		bank_ptr[3] = save_ram;
 	}
 	return true;
 }

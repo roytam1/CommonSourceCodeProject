@@ -106,30 +106,22 @@ void MEMORY::update_memory_map()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint32(addr_mask);
-	state_fio->FputBool(rom_sel);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	addr_mask = state_fio->FgetUint32();
-	rom_sel = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint32(addr_mask);
+	state_fio->StateBool(rom_sel);
 	
 	// post process
-	update_memory_map();
+	if(loading) {
+		update_memory_map();
+	}
 	return true;
 }
 

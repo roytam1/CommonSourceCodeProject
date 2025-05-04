@@ -2518,104 +2518,59 @@ bool DISK::solid_to_d88(FILEIO *fio, int type, int ncyl, int nside, int nsec, in
 
 #define STATE_VERSION	13
 
-void DISK::save_state(FILEIO* state_fio)
+bool DISK::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	
-	state_fio->Fwrite(buffer, sizeof(buffer), 1);
-	state_fio->Fwrite(orig_path, sizeof(orig_path), 1);
-	state_fio->Fwrite(dest_path, sizeof(dest_path), 1);
-	state_fio->FputUint32(file_size.d);
-	state_fio->FputInt32(file_bank);
-	state_fio->FputUint32(orig_file_size);
-	state_fio->FputUint32(orig_crc32);
-	state_fio->FputBool(trim_required);
-	state_fio->FputBool(is_1dd_image);
-	state_fio->FputBool(is_solid_image);
-	state_fio->FputBool(is_fdi_image);
-	state_fio->Fwrite(fdi_header, sizeof(fdi_header), 1);
-	state_fio->FputInt32(solid_ncyl);
-	state_fio->FputInt32(solid_nside);
-	state_fio->FputInt32(solid_nsec);
-	state_fio->FputInt32(solid_size);
-	state_fio->FputBool(solid_mfm);
-	state_fio->FputBool(inserted);
-	state_fio->FputBool(ejected);
-	state_fio->FputBool(write_protected);
-	state_fio->FputBool(changed);
-	state_fio->FputUint8(media_type);
-	state_fio->FputInt32(is_special_disk);
-	state_fio->Fwrite(track, sizeof(track), 1);
-	state_fio->FputInt32(sector_num.sd);
-	state_fio->FputBool(track_mfm);
-	state_fio->FputBool(invalid_format);
-//	state_fio->FputBool(no_skew);
-	state_fio->Fwrite(sync_position, sizeof(sync_position), 1);
-	state_fio->Fwrite(am1_position, sizeof(am1_position), 1);
-	state_fio->Fwrite(id_position, sizeof(id_position), 1);
-	state_fio->Fwrite(data_position, sizeof(data_position), 1);
-//	state_fio->FputInt32(gap3_size);
-	state_fio->FputInt32(sector ? (int)(sector - buffer) : -1);
-	state_fio->FputInt32(sector_size.sd);
-	state_fio->Fwrite(id, sizeof(id), 1);
-	state_fio->FputUint8(density);
-	state_fio->FputBool(deleted);
-	state_fio->FputBool(addr_crc_error);
-	state_fio->FputBool(data_crc_error);
-	state_fio->FputUint8(drive_type);
-	state_fio->FputInt32(drive_rpm);
-	state_fio->FputBool(drive_mfm);
-}
-
-bool DISK::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	state_fio->Fread(buffer, sizeof(buffer), 1);
-	state_fio->Fread(orig_path, sizeof(orig_path), 1);
-	state_fio->Fread(dest_path, sizeof(dest_path), 1);
-	file_size.d = state_fio->FgetUint32();
-	file_bank = state_fio->FgetInt32();
-	orig_file_size = state_fio->FgetUint32();
-	orig_crc32 = state_fio->FgetUint32();
-	trim_required = state_fio->FgetBool();
-	is_1dd_image = state_fio->FgetBool();
-	is_solid_image = state_fio->FgetBool();
-	is_fdi_image = state_fio->FgetBool();
-	state_fio->Fread(fdi_header, sizeof(fdi_header), 1);
-	solid_ncyl = state_fio->FgetInt32();
-	solid_nside = state_fio->FgetInt32();
-	solid_nsec = state_fio->FgetInt32();
-	solid_size = state_fio->FgetInt32();
-	solid_mfm = state_fio->FgetBool();
-	inserted = state_fio->FgetBool();
-	ejected = state_fio->FgetBool();
-	write_protected = state_fio->FgetBool();
-	changed = state_fio->FgetBool();
-	media_type = state_fio->FgetUint8();
-	is_special_disk = state_fio->FgetInt32();
-	state_fio->Fread(track, sizeof(track), 1);
-	sector_num.sd = state_fio->FgetInt32();
-	track_mfm = state_fio->FgetBool();
-	invalid_format = state_fio->FgetBool();
-//	no_skew = state_fio->FgetBool();
-	state_fio->Fread(sync_position, sizeof(sync_position), 1);
-	state_fio->Fread(am1_position, sizeof(am1_position), 1);
-	state_fio->Fread(id_position, sizeof(id_position), 1);
-	state_fio->Fread(data_position, sizeof(data_position), 1);
-//	gap3_size = state_fio->FgetInt32();
-	int offset = state_fio->FgetInt32();
-	sector = (offset != -1) ? buffer + offset : NULL;
-	sector_size.sd = state_fio->FgetInt32();
-	state_fio->Fread(id, sizeof(id), 1);
-	density = state_fio->FgetUint8();
-	deleted = state_fio->FgetBool();
-	addr_crc_error = state_fio->FgetBool();
-	data_crc_error = state_fio->FgetBool();
-	drive_type = state_fio->FgetUint8();
-	drive_rpm = state_fio->FgetInt32();
-	drive_mfm = state_fio->FgetBool();
+	state_fio->StateBuffer(buffer, sizeof(buffer), 1);
+	state_fio->StateBuffer(orig_path, sizeof(orig_path), 1);
+	state_fio->StateBuffer(dest_path, sizeof(dest_path), 1);
+	state_fio->StateUint32(file_size.d);
+	state_fio->StateInt32(file_bank);
+	state_fio->StateUint32(orig_file_size);
+	state_fio->StateUint32(orig_crc32);
+	state_fio->StateBool(trim_required);
+	state_fio->StateBool(is_1dd_image);
+	state_fio->StateBool(is_solid_image);
+	state_fio->StateBool(is_fdi_image);
+	state_fio->StateBuffer(fdi_header, sizeof(fdi_header), 1);
+	state_fio->StateInt32(solid_ncyl);
+	state_fio->StateInt32(solid_nside);
+	state_fio->StateInt32(solid_nsec);
+	state_fio->StateInt32(solid_size);
+	state_fio->StateBool(solid_mfm);
+	state_fio->StateBool(inserted);
+	state_fio->StateBool(ejected);
+	state_fio->StateBool(write_protected);
+	state_fio->StateBool(changed);
+	state_fio->StateUint8(media_type);
+	state_fio->StateInt32(is_special_disk);
+	state_fio->StateBuffer(track, sizeof(track), 1);
+	state_fio->StateInt32(sector_num.sd);
+	state_fio->StateBool(track_mfm);
+	state_fio->StateBool(invalid_format);
+//	state_fio->StateBool(no_skew);
+	state_fio->StateBuffer(sync_position, sizeof(sync_position), 1);
+	state_fio->StateBuffer(am1_position, sizeof(am1_position), 1);
+	state_fio->StateBuffer(id_position, sizeof(id_position), 1);
+	state_fio->StateBuffer(data_position, sizeof(data_position), 1);
+//	state_fio->StateInt32(gap3_size);
+	if(loading) {
+		int offset = state_fio->FgetInt32_LE();
+		sector = (offset != -1) ? buffer + offset : NULL;
+	} else {
+		state_fio->FputInt32_LE(sector ? (int)(sector - buffer) : -1);
+	}
+	state_fio->StateInt32(sector_size.sd);
+	state_fio->StateBuffer(id, sizeof(id), 1);
+	state_fio->StateUint8(density);
+	state_fio->StateBool(deleted);
+	state_fio->StateBool(addr_crc_error);
+	state_fio->StateBool(data_crc_error);
+	state_fio->StateUint8(drive_type);
+	state_fio->StateInt32(drive_rpm);
+	state_fio->StateBool(drive_mfm);
 	return true;
 }
 

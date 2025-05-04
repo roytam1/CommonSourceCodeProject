@@ -189,35 +189,21 @@ void SCSI_HOST::set_drq(bool value)
 
 #define STATE_VERSION	2
 
-void SCSI_HOST::save_state(FILEIO* state_fio)
+bool SCSI_HOST::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint32(data_reg);
-	state_fio->FputUint32(bsy_status);
-	state_fio->FputUint32(cd_status);
-	state_fio->FputUint32(io_status);
-	state_fio->FputUint32(msg_status);
-	state_fio->FputUint32(req_status);
-	state_fio->FputUint32(ack_status);
-}
-
-bool SCSI_HOST::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	data_reg = state_fio->FgetUint32();
-	bsy_status = state_fio->FgetUint32();
-	cd_status  = state_fio->FgetUint32();
-	io_status  = state_fio->FgetUint32();
-	msg_status = state_fio->FgetUint32();
-	req_status = state_fio->FgetUint32();
-	ack_status = state_fio->FgetUint32();
+	state_fio->StateUint32(data_reg);
+	state_fio->StateUint32(bsy_status);
+	state_fio->StateUint32(cd_status);
+	state_fio->StateUint32(io_status);
+	state_fio->StateUint32(msg_status);
+	state_fio->StateUint32(req_status);
+	state_fio->StateUint32(ack_status);
 	return true;
 }
 

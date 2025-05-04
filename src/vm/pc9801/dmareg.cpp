@@ -82,19 +82,12 @@ uint32_t DMAREG::read_io8(uint32_t addr)
 /*
 #define STATE_VERSION	1
 
-void DMAREG::save_state(FILEIO* state_fio)
+bool DMAREG::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-}
-
-bool DMAREG::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	return true;

@@ -723,112 +723,64 @@ void IO::draw_screen()
 
 #define STATE_VERSION	1
 
-void IO::save_state(FILEIO* state_fio)
+bool IO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint32(cur_clock);
-	state_fio->FputUint8(bcr);
-	state_fio->FputUint8(slbcr);
-	state_fio->FputUint8(isr);
-	state_fio->FputUint8(ier);
-	state_fio->FputUint8(bankr);
-	state_fio->FputUint8(ioctlr);
-	state_fio->FputUint32(icrc);
-	state_fio->FputUint32(icrb);
-	state_fio->FputBool(ear);
-	state_fio->FputUint8(vadr);
-	state_fio->FputUint8(yoff);
-	cmd_buf->save_state((void *)state_fio);
-	rsp_buf->save_state((void *)state_fio);
-	cur_time.save_state((void *)state_fio);
-	state_fio->FputInt32(register_id_1sec);
-	state_fio->FputBool(onesec_intr);
-	state_fio->FputBool(onesec_intr_enb);
-	state_fio->FputBool(alarm_intr);
-	state_fio->FputBool(alarm_intr_enb);
-	state_fio->Fwrite(alarm, sizeof(alarm), 1);
-	key_buf->save_state((void *)state_fio);
-	state_fio->FputBool(kb_intr_enb);
-	state_fio->FputBool(kb_rep_enb);
-	state_fio->FputBool(kb_caps);
-	state_fio->FputUint8(kb_rep_spd1);
-	state_fio->FputUint8(kb_rep_spd2);
-	art_buf->save_state((void *)state_fio);
-	state_fio->FputUint8(artsr);
-	state_fio->FputUint8(artdir);
-	state_fio->FputBool(txen);
-	state_fio->FputBool(rxen);
-	state_fio->FputBool(dsr);
-	state_fio->FputInt32(register_id_art);
-	state_fio->FputBool(beep);
-	state_fio->FputBool(res_z80);
-	state_fio->FputBool(res_7508);
-	state_fio->Fwrite(ext, sizeof(ext), 1);
-	state_fio->FputUint32(extar);
-	state_fio->FputUint8(extcr);
-}
-
-bool IO::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	cur_clock = state_fio->FgetUint32();
-	bcr = state_fio->FgetUint8();
-	slbcr = state_fio->FgetUint8();
-	isr = state_fio->FgetUint8();
-	ier = state_fio->FgetUint8();
-	bankr = state_fio->FgetUint8();
-	ioctlr = state_fio->FgetUint8();
-	icrc = state_fio->FgetUint32();
-	icrb = state_fio->FgetUint32();
-	ear = state_fio->FgetBool();
-	vadr = state_fio->FgetUint8();
-	yoff = state_fio->FgetUint8();
-	if(!cmd_buf->load_state((void *)state_fio)) {
+	state_fio->StateUint32(cur_clock);
+	state_fio->StateUint8(bcr);
+	state_fio->StateUint8(slbcr);
+	state_fio->StateUint8(isr);
+	state_fio->StateUint8(ier);
+	state_fio->StateUint8(bankr);
+	state_fio->StateUint8(ioctlr);
+	state_fio->StateUint32(icrc);
+	state_fio->StateUint32(icrb);
+	state_fio->StateBool(ear);
+	state_fio->StateUint8(vadr);
+	state_fio->StateUint8(yoff);
+	if(!cmd_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	if(!rsp_buf->load_state((void *)state_fio)) {
+	if(!rsp_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)state_fio)) {
+	if(!cur_time.process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	
-	register_id_1sec = state_fio->FgetInt32();
-	onesec_intr = state_fio->FgetBool();
-	onesec_intr_enb = state_fio->FgetBool();
-	alarm_intr = state_fio->FgetBool();
-	alarm_intr_enb = state_fio->FgetBool();
-	state_fio->Fread(alarm, sizeof(alarm), 1);
-	if(!key_buf->load_state((void *)state_fio)) {
+	state_fio->StateInt32(register_id_1sec);
+	state_fio->StateBool(onesec_intr);
+	state_fio->StateBool(onesec_intr_enb);
+	state_fio->StateBool(alarm_intr);
+	state_fio->StateBool(alarm_intr_enb);
+	state_fio->StateBuffer(alarm, sizeof(alarm), 1);
+	if(!key_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	kb_intr_enb = state_fio->FgetBool();
-	kb_rep_enb = state_fio->FgetBool();
-	kb_caps = state_fio->FgetBool();
-	kb_rep_spd1 = state_fio->FgetUint8();
-	kb_rep_spd2 = state_fio->FgetUint8();
-	if(!art_buf->load_state((void *)state_fio)) {
+	state_fio->StateBool(kb_intr_enb);
+	state_fio->StateBool(kb_rep_enb);
+	state_fio->StateBool(kb_caps);
+	state_fio->StateUint8(kb_rep_spd1);
+	state_fio->StateUint8(kb_rep_spd2);
+	if(!art_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	artsr = state_fio->FgetUint8();
-	artdir = state_fio->FgetUint8();
-	txen = state_fio->FgetBool();
-	rxen = state_fio->FgetBool();
-	dsr = state_fio->FgetBool();
-	register_id_art = state_fio->FgetInt32();
-	beep = state_fio->FgetBool();
-	res_z80 = state_fio->FgetBool();
-	res_7508 = state_fio->FgetBool();
-	state_fio->Fread(ext, sizeof(ext), 1);
-	extar = state_fio->FgetUint32();
-	extcr = state_fio->FgetUint8();
+	state_fio->StateUint8(artsr);
+	state_fio->StateUint8(artdir);
+	state_fio->StateBool(txen);
+	state_fio->StateBool(rxen);
+	state_fio->StateBool(dsr);
+	state_fio->StateInt32(register_id_art);
+	state_fio->StateBool(beep);
+	state_fio->StateBool(res_z80);
+	state_fio->StateBool(res_7508);
+	state_fio->StateBuffer(ext, sizeof(ext), 1);
+	state_fio->StateUint32(extar);
+	state_fio->StateUint8(extcr);
 	return true;
 }
 

@@ -492,37 +492,23 @@ bool PTF20::is_disk_protected(int drv)
 
 #define STATE_VERSION	1
 
-void PTF20::save_state(FILEIO* state_fio)
+bool PTF20::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		disk[i]->save_state(state_fio);
-	}
-	state_fio->Fwrite(bufr, sizeof(bufr), 1);
-	state_fio->Fwrite(bufs, sizeof(bufs), 1);
-	state_fio->FputInt32(buflen);
-	state_fio->FputInt32(phase);
-}
-
-bool PTF20::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < MAX_DRIVE; i++) {
-		if(!disk[i]->load_state(state_fio)) {
+		if(!disk[i]->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	state_fio->Fread(bufr, sizeof(bufr), 1);
-	state_fio->Fread(bufs, sizeof(bufs), 1);
-	buflen = state_fio->FgetInt32();
-	phase = state_fio->FgetInt32();
+	state_fio->StateBuffer(bufr, sizeof(bufr), 1);
+	state_fio->StateBuffer(bufs, sizeof(bufs), 1);
+	state_fio->StateInt32(buflen);
+	state_fio->StateInt32(phase);
 	return true;
 }
 

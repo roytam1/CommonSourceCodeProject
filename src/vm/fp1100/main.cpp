@@ -248,40 +248,27 @@ void MAIN::notify_intr_ei()
 
 #define STATE_VERSION	3
 
-void MAIN::save_state(FILEIO* state_fio)
+bool MAIN::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint8(comm_data);
-	state_fio->FputBool(rom_sel);
-	state_fio->FputUint8(slot_sel);
-	state_fio->Fwrite(slot_exp, sizeof(slot_exp), 1);
-	state_fio->FputUint8(intr_mask);
-	state_fio->FputUint8(intr_request);
-	state_fio->FputUint8(intr_in_service);
-}
-
-bool MAIN::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	comm_data = state_fio->FgetUint8();
-	rom_sel = state_fio->FgetBool();
-	slot_sel = state_fio->FgetUint8();
-	state_fio->Fread(slot_exp, sizeof(slot_exp), 1);
-	intr_mask = state_fio->FgetUint8();
-	intr_request = state_fio->FgetUint8();
-	intr_in_service = state_fio->FgetUint8();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint8(comm_data);
+	state_fio->StateBool(rom_sel);
+	state_fio->StateUint8(slot_sel);
+	state_fio->StateBuffer(slot_exp, sizeof(slot_exp), 1);
+	state_fio->StateUint8(intr_mask);
+	state_fio->StateUint8(intr_request);
+	state_fio->StateUint8(intr_in_service);
 	
 	// post process
-	update_memory_map();
+	if(loading) {
+		update_memory_map();
+	}
 	return true;
 }
 

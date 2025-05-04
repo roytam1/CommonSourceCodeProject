@@ -113,31 +113,19 @@ void FLOPPY::update_intr()
 
 #define STATE_VERSION	1
 
-void FLOPPY::save_state(FILEIO* state_fio)
+bool FLOPPY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(drvreg);
-	state_fio->FputInt32(drvsel);
-	state_fio->FputBool(irq);
-	state_fio->FputBool(irqmsk);
-	state_fio->Fwrite(changed, sizeof(changed), 1);
-}
-
-bool FLOPPY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	drvreg = state_fio->FgetInt32();
-	drvsel = state_fio->FgetInt32();
-	irq = state_fio->FgetBool();
-	irqmsk = state_fio->FgetBool();
-	state_fio->Fread(changed, sizeof(changed), 1);
+	state_fio->StateInt32(drvreg);
+	state_fio->StateInt32(drvsel);
+	state_fio->StateBool(irq);
+	state_fio->StateBool(irqmsk);
+	state_fio->StateBuffer(changed, sizeof(changed), 1);
 	return true;
 }
 

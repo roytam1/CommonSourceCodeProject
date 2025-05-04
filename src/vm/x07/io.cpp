@@ -1240,138 +1240,92 @@ void IO::process_sub()
 
 #define STATE_VERSION	1
 
-void IO::save_state(FILEIO* state_fio)
+bool IO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(rregs, sizeof(rregs), 1);
-	state_fio->Fwrite(wregs, sizeof(wregs), 1);
-	cur_time.save_state((void *)state_fio);
-	state_fio->FputInt32(register_id_1sec);
-	cmd_buf->save_state((void *)state_fio);
-	rsp_buf->save_state((void *)state_fio);
-	state_fio->FputUint8(sub_int);
-	state_fio->Fwrite(wram, sizeof(wram), 1);
-	state_fio->Fwrite(alarm, sizeof(alarm), 1);
-	key_buf->save_state((void *)state_fio);
-	state_fio->FputBool(ctrl);
-	state_fio->FputBool(shift);
-	state_fio->FputBool(kana);
-	state_fio->FputBool(graph);
-	state_fio->FputBool(brk);
-	state_fio->FputUint8(stick);
-	state_fio->FputUint8(strig);
-	state_fio->FputUint8(strig1);
-	state_fio->FputBool(cmt_play);
-	state_fio->FputBool(cmt_rec);
-	state_fio->FputBool(cmt_mode);
-	state_fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
-	if(cmt_rec && cmt_fio->IsOpened()) {
-		int length_tmp = (int)cmt_fio->Ftell();
-		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
-		state_fio->FputInt32(length_tmp);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			cmt_fio->Fread(buffer_tmp, length_rw, 1);
-			state_fio->Fwrite(buffer_tmp, length_rw, 1);
-			length_tmp -= length_rw;
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	state_fio->StateBuffer(rregs, sizeof(rregs), 1);
+	state_fio->StateBuffer(wregs, sizeof(wregs), 1);
+	if(!cur_time.process_state((void *)state_fio, loading)) {
+		return false;
+	}
+	state_fio->StateInt32(register_id_1sec);
+	if(!cmd_buf->process_state((void *)state_fio, loading)) {
+		return false;
+	}
+	if(!rsp_buf->process_state((void *)state_fio, loading)) {
+		return false;
+	}
+	state_fio->StateUint8(sub_int);
+	state_fio->StateBuffer(wram, sizeof(wram), 1);
+	state_fio->StateBuffer(alarm, sizeof(alarm), 1);
+	if(!key_buf->process_state((void *)state_fio, loading)) {
+		return false;
+	}
+	state_fio->StateBool(ctrl);
+	state_fio->StateBool(shift);
+	state_fio->StateBool(kana);
+	state_fio->StateBool(graph);
+	state_fio->StateBool(brk);
+	state_fio->StateUint8(stick);
+	state_fio->StateUint8(strig);
+	state_fio->StateUint8(strig1);
+	state_fio->StateBool(cmt_play);
+	state_fio->StateBool(cmt_rec);
+	state_fio->StateBool(cmt_mode);
+	state_fio->StateBuffer(rec_file_path, sizeof(rec_file_path), 1);
+	if(loading) {
+		int length_tmp = state_fio->FgetInt32_LE();
+		if(cmt_rec) {
+			cmt_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				state_fio->Fread(buffer_tmp, length_rw, 1);
+				if(cmt_fio->IsOpened()) {
+					cmt_fio->Fwrite(buffer_tmp, length_rw, 1);
+				}
+				length_tmp -= length_rw;
+			}
 		}
 	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(cmt_len);
-	state_fio->FputInt32(cmt_ptr);
-	state_fio->Fwrite(cmt_buf, sizeof(cmt_buf), 1);
-	state_fio->FputBool(vblank);
-	state_fio->FputUint8(font_code);
-	state_fio->Fwrite(udc, sizeof(udc), 1);
-	state_fio->Fwrite(lcd, sizeof(lcd), 1);
-	state_fio->FputBool(locate_on);
-	state_fio->FputBool(cursor_on);
-	state_fio->FputBool(udk_on);
-	state_fio->FputInt32(locate_x);
-	state_fio->FputInt32(locate_y);
-	state_fio->FputInt32(cursor_x);
-	state_fio->FputInt32(cursor_y);
-	state_fio->FputInt32(cursor_blink);
-	state_fio->FputInt32(scroll_min);
-	state_fio->FputInt32(scroll_max);
-	state_fio->FputInt32(register_id_beep);
-}
-
-bool IO::load_state(FILEIO* state_fio)
-{
-	close_tape();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	state_fio->Fread(rregs, sizeof(rregs), 1);
-	state_fio->Fread(wregs, sizeof(wregs), 1);
-	if(!cur_time.load_state((void *)state_fio)) {
-		return false;
-	}
-	register_id_1sec = state_fio->FgetInt32();
-	if(!cmd_buf->load_state((void *)state_fio)) {
-		return false;
-	}
-	if(!rsp_buf->load_state((void *)state_fio)) {
-		return false;
-	}
-	sub_int = state_fio->FgetUint8();
-	state_fio->Fread(wram, sizeof(wram), 1);
-	state_fio->Fread(alarm, sizeof(alarm), 1);
-	if(!key_buf->load_state((void *)state_fio)) {
-		return false;
-	}
-	ctrl = state_fio->FgetBool();
-	shift = state_fio->FgetBool();
-	kana = state_fio->FgetBool();
-	graph = state_fio->FgetBool();
-	brk = state_fio->FgetBool();
-	stick = state_fio->FgetUint8();
-	strig = state_fio->FgetUint8();
-	strig1 = state_fio->FgetUint8();
-	cmt_play = state_fio->FgetBool();
-	cmt_rec = state_fio->FgetBool();
-	cmt_mode = state_fio->FgetBool();
-	state_fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
-	int length_tmp = state_fio->FgetInt32();
-	if(cmt_rec) {
-		cmt_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			state_fio->Fread(buffer_tmp, length_rw, 1);
-			if(cmt_fio->IsOpened()) {
-				cmt_fio->Fwrite(buffer_tmp, length_rw, 1);
+		if(cmt_rec && cmt_fio->IsOpened()) {
+			int length_tmp = (int)cmt_fio->Ftell();
+			cmt_fio->Fseek(0, FILEIO_SEEK_SET);
+			state_fio->FputInt32_LE(length_tmp);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				cmt_fio->Fread(buffer_tmp, length_rw, 1);
+				state_fio->Fwrite(buffer_tmp, length_rw, 1);
+				length_tmp -= length_rw;
 			}
-			length_tmp -= length_rw;
+		} else {
+			state_fio->FputInt32_LE(0);
 		}
 	}
-	cmt_len = state_fio->FgetInt32();
-	cmt_ptr = state_fio->FgetInt32();
-	state_fio->Fread(cmt_buf, sizeof(cmt_buf), 1);
-	vblank = state_fio->FgetBool();
-	font_code = state_fio->FgetUint8();
-	state_fio->Fread(udc, sizeof(udc), 1);
-	state_fio->Fread(lcd, sizeof(lcd), 1);
-	locate_on = state_fio->FgetBool();
-	cursor_on = state_fio->FgetBool();
-	udk_on = state_fio->FgetBool();
-	locate_x = state_fio->FgetInt32();
-	locate_y = state_fio->FgetInt32();
-	cursor_x = state_fio->FgetInt32();
-	cursor_y = state_fio->FgetInt32();
-	cursor_blink = state_fio->FgetInt32();
-	scroll_min = state_fio->FgetInt32();
-	scroll_max = state_fio->FgetInt32();
-	register_id_beep = state_fio->FgetInt32();
+	state_fio->StateInt32(cmt_len);
+	state_fio->StateInt32(cmt_ptr);
+	state_fio->StateBuffer(cmt_buf, sizeof(cmt_buf), 1);
+	state_fio->StateBool(vblank);
+	state_fio->StateUint8(font_code);
+	state_fio->StateBuffer(udc, sizeof(udc), 1);
+	state_fio->StateBuffer(lcd, sizeof(lcd), 1);
+	state_fio->StateBool(locate_on);
+	state_fio->StateBool(cursor_on);
+	state_fio->StateBool(udk_on);
+	state_fio->StateInt32(locate_x);
+	state_fio->StateInt32(locate_y);
+	state_fio->StateInt32(cursor_x);
+	state_fio->StateInt32(cursor_y);
+	state_fio->StateInt32(cursor_blink);
+	state_fio->StateInt32(scroll_min);
+	state_fio->StateInt32(scroll_max);
+	state_fio->StateInt32(register_id_beep);
 	return true;
 }
 

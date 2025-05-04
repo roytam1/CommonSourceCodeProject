@@ -65,29 +65,18 @@ void BEEP::set_frequency(double frequency)
 
 #define STATE_VERSION	1
 
-void BEEP::save_state(FILEIO* state_fio)
+bool BEEP::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(signal);
-	state_fio->FputInt32(count);
-	state_fio->FputBool(on);
-	state_fio->FputBool(mute);
-}
-
-bool BEEP::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	signal = state_fio->FgetBool();
-	count = state_fio->FgetInt32();
-	on = state_fio->FgetBool();
-	mute = state_fio->FgetBool();
+	state_fio->StateBool(signal);
+	state_fio->StateInt32(count);
+	state_fio->StateBool(on);
+	state_fio->StateBool(mute);
 	return true;
 }
 

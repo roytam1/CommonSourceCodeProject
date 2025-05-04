@@ -1639,73 +1639,40 @@ void MB8877::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	5
 
-void MB8877::save_state(FILEIO* state_fio)
+bool MB8877::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(fdc, sizeof(fdc), 1);
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		disk[i]->save_state(state_fio);
-	}
-	state_fio->FputUint8(status);
-	state_fio->FputUint8(status_tmp);
-	state_fio->FputUint8(cmdreg);
-	state_fio->FputUint8(cmdreg_tmp);
-	state_fio->FputUint8(trkreg);
-	state_fio->FputUint8(secreg);
-	state_fio->FputUint8(datareg);
-	state_fio->FputUint8(drvreg);
-	state_fio->FputUint8(sidereg);
-	state_fio->FputUint8(cmdtype);
-	state_fio->Fwrite(register_id, sizeof(register_id), 1);
-	state_fio->FputBool(now_search);
-	state_fio->FputBool(now_seek);
-	state_fio->FputBool(sector_changed);
-	state_fio->FputInt32(no_command);
-	state_fio->FputInt32(seektrk);
-	state_fio->FputBool(seekvct);
-	state_fio->FputBool(motor_on);
-	state_fio->FputBool(drive_sel);
-	state_fio->FputUint32(prev_drq_clock);
-	state_fio->FputUint32(seekend_clock);
-}
-
-bool MB8877::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(fdc, sizeof(fdc), 1);
+	state_fio->StateBuffer(fdc, sizeof(fdc), 1);
 	for(int i = 0; i < MAX_DRIVE; i++) {
-		if(!disk[i]->load_state(state_fio)) {
+		if(!disk[i]->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	status = state_fio->FgetUint8();
-	status_tmp = state_fio->FgetUint8();
-	cmdreg = state_fio->FgetUint8();
-	cmdreg_tmp = state_fio->FgetUint8();
-	trkreg = state_fio->FgetUint8();
-	secreg = state_fio->FgetUint8();
-	datareg = state_fio->FgetUint8();
-	drvreg = state_fio->FgetUint8();
-	sidereg = state_fio->FgetUint8();
-	cmdtype = state_fio->FgetUint8();
-	state_fio->Fread(register_id, sizeof(register_id), 1);
-	now_search = state_fio->FgetBool();
-	now_seek = state_fio->FgetBool();
-	sector_changed = state_fio->FgetBool();
-	no_command = state_fio->FgetInt32();
-	seektrk = state_fio->FgetInt32();
-	seekvct = state_fio->FgetBool();
-	motor_on = state_fio->FgetBool();
-	drive_sel = state_fio->FgetBool();
-	prev_drq_clock = state_fio->FgetUint32();
-	seekend_clock = state_fio->FgetUint32();
+	state_fio->StateUint8(status);
+	state_fio->StateUint8(status_tmp);
+	state_fio->StateUint8(cmdreg);
+	state_fio->StateUint8(cmdreg_tmp);
+	state_fio->StateUint8(trkreg);
+	state_fio->StateUint8(secreg);
+	state_fio->StateUint8(datareg);
+	state_fio->StateUint8(drvreg);
+	state_fio->StateUint8(sidereg);
+	state_fio->StateUint8(cmdtype);
+	state_fio->StateBuffer(register_id, sizeof(register_id), 1);
+	state_fio->StateBool(now_search);
+	state_fio->StateBool(now_seek);
+	state_fio->StateBool(sector_changed);
+	state_fio->StateInt32(no_command);
+	state_fio->StateInt32(seektrk);
+	state_fio->StateBool(seekvct);
+	state_fio->StateBool(motor_on);
+	state_fio->StateBool(drive_sel);
+	state_fio->StateUint32(prev_drq_clock);
+	state_fio->StateUint32(seekend_clock);
 	return true;
 }
-

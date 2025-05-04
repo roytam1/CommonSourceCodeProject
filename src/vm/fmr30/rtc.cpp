@@ -212,39 +212,24 @@ void RTC::update_intr()
 
 #define STATE_VERSION	1
 
-void RTC::save_state(FILEIO* state_fio)
+bool RTC::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	cur_time.save_state((void *)state_fio);
-	state_fio->FputInt32(register_id);
-	state_fio->FputUint16(rtcmr);
-	state_fio->FputUint16(rtdsr);
-	state_fio->FputUint16(rtadr);
-	state_fio->FputUint16(rtobr);
-	state_fio->FputUint16(rtibr);
-	state_fio->Fwrite(regs, sizeof(regs), 1);
-}
-
-bool RTC::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)state_fio)) {
+	if(!cur_time.process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	register_id = state_fio->FgetInt32();
-	rtcmr = state_fio->FgetUint16();
-	rtdsr = state_fio->FgetUint16();
-	rtadr = state_fio->FgetUint16();
-	rtobr = state_fio->FgetUint16();
-	rtibr = state_fio->FgetUint16();
-	state_fio->Fread(regs, sizeof(regs), 1);
+	state_fio->StateInt32(register_id);
+	state_fio->StateUint16(rtcmr);
+	state_fio->StateUint16(rtdsr);
+	state_fio->StateUint16(rtadr);
+	state_fio->StateUint16(rtobr);
+	state_fio->StateUint16(rtibr);
+	state_fio->StateBuffer(regs, sizeof(regs), 1);
 	return true;
 }
 

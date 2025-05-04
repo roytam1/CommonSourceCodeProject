@@ -332,43 +332,25 @@ void MSM5205::set_volume(int ch, int decibel_l, int decibel_r)
 
 #define STATE_VERSION	1
 
-void MSM5205::save_state(FILEIO* state_fio)
+bool MSM5205::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(m_mod_clock);
-	state_fio->FputInt32(m_timer);
-	state_fio->FputInt32(m_data);
-	state_fio->FputInt32(m_vclk);
-	state_fio->FputInt32(m_reset);
-	state_fio->FputInt32(m_prescaler);
-	state_fio->FputInt32(m_bitwidth);
-	state_fio->FputInt32(m_signal);
-	state_fio->FputInt32(m_step);
-	state_fio->FputInt32(m_select);
-	state_fio->FputInt32(volume_m);
-}
-
-bool MSM5205::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	m_mod_clock = state_fio->FgetInt32();
-	m_timer = state_fio->FgetInt32();
-	m_data = state_fio->FgetInt32();
-	m_vclk = state_fio->FgetInt32();
-	m_reset = state_fio->FgetInt32();
-	m_prescaler = state_fio->FgetInt32();
-	m_bitwidth = state_fio->FgetInt32();
-	m_signal = state_fio->FgetInt32();
-	m_step = state_fio->FgetInt32();
-	m_select = state_fio->FgetInt32();
-	volume_m = state_fio->FgetInt32();
+	state_fio->StateInt32(m_mod_clock);
+	state_fio->StateInt32(m_timer);
+	state_fio->StateInt32(m_data);
+	state_fio->StateInt32(m_vclk);
+	state_fio->StateInt32(m_reset);
+	state_fio->StateInt32(m_prescaler);
+	state_fio->StateInt32(m_bitwidth);
+	state_fio->StateInt32(m_signal);
+	state_fio->StateInt32(m_step);
+	state_fio->StateInt32(m_select);
+	state_fio->StateInt32(volume_m);
 	return true;
 }
 

@@ -1690,129 +1690,68 @@ void CRTC::create_addr_map(int xmax, int ymax)
 
 #define STATE_VERSION	1
 
-void CRTC::save_state(FILEIO* state_fio)
+bool CRTC::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(scan_line);
-	state_fio->FputBool(scan_tmp);
-	state_fio->FputBool(monitor_200line);
-	state_fio->FputBool(monitor_digital);
-	state_fio->FputBool(monitor_tmp);
-	state_fio->FputUint8(textreg_num);
-	state_fio->Fwrite(textreg, sizeof(textreg), 1);
-	state_fio->FputUint8(cgreg_num);
-	state_fio->Fwrite(cgreg, sizeof(cgreg), 1);
-	state_fio->FputUint8(scrn_size);
-	state_fio->FputUint8(cg_mask);
-	state_fio->FputUint8(cg_mask256);
-	state_fio->FputBool(cg_mask256_init);
-	state_fio->FputBool(font_size);
-	state_fio->FputBool(column_size);
-	state_fio->Fwrite(latch, sizeof(latch), 1);
-	state_fio->FputUint16(GDEVS);
-	state_fio->FputUint16(GDEVE);
-	state_fio->FputUint8(GDEHS);
-	state_fio->FputUint8(GDEHE);
-	state_fio->FputInt32(GDEHSC);
-	state_fio->FputInt32(GDEHEC);
-	state_fio->FputBool(hblank);
-	state_fio->FputBool(vblank);
-	state_fio->FputBool(blink);
-	state_fio->FputUint8(clear_flag);
-	state_fio->Fwrite(palette_reg, sizeof(palette_reg), 1);
-	state_fio->FputBool(pal_select);
-	state_fio->FputBool(screen_mask);
-	state_fio->Fwrite(priority16, sizeof(priority16), 1);
-	state_fio->Fwrite(palette16, sizeof(palette16), 1);
-	state_fio->Fwrite(palette4096, sizeof(palette4096), 1);
-	state_fio->Fwrite(palette4096r, sizeof(palette4096r), 1);
-	state_fio->Fwrite(palette4096g, sizeof(palette4096g), 1);
-	state_fio->Fwrite(palette4096b, sizeof(palette4096b), 1);
-	state_fio->Fwrite(palette16txt, sizeof(palette16txt), 1);
-	state_fio->Fwrite(palette4096txt, sizeof(palette4096txt), 1);
-	state_fio->Fwrite(palette16pri, sizeof(palette16pri), 1);
-	state_fio->Fwrite(palette4096pri, sizeof(palette4096pri), 1);
-	state_fio->FputUint8(prev16);
-	state_fio->FputBool(update16);
-	state_fio->Fwrite(priority256, sizeof(priority256), 1);
-	state_fio->Fwrite(palette256, sizeof(palette256), 1);
-	state_fio->Fwrite(palette256txt, sizeof(palette256txt), 1);
-	state_fio->Fwrite(palette256pri, sizeof(palette256pri), 1);
-	state_fio->FputUint32((uint32_t)prev256);
-	state_fio->FputBool(update256);
-	state_fio->Fwrite(map_addr, sizeof(map_addr), 1);
-	state_fio->Fwrite(map_hdsc, sizeof(map_hdsc), 1);
-	state_fio->Fwrite(text_matrix, sizeof(text_matrix), 1);
-	state_fio->Fwrite(text_matrixw, sizeof(text_matrixw), 1);
-	state_fio->FputUint8(trans_color);
-	state_fio->FputBool(map_init);
-	state_fio->FputBool(trans_init);
-}
-
-bool CRTC::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	scan_line = state_fio->FgetBool();
-	scan_tmp = state_fio->FgetBool();
-	monitor_200line = state_fio->FgetBool();
-	monitor_digital = state_fio->FgetBool();
-	monitor_tmp = state_fio->FgetBool();
-	textreg_num = state_fio->FgetUint8();
-	state_fio->Fread(textreg, sizeof(textreg), 1);
-	cgreg_num = state_fio->FgetUint8();
-	state_fio->Fread(cgreg, sizeof(cgreg), 1);
-	scrn_size = state_fio->FgetUint8();
-	cg_mask = state_fio->FgetUint8();
-	cg_mask256 = state_fio->FgetUint8();
-	cg_mask256_init = state_fio->FgetBool();
-	font_size = state_fio->FgetBool();
-	column_size = state_fio->FgetBool();
-	state_fio->Fread(latch, sizeof(latch), 1);
-	GDEVS = state_fio->FgetUint16();
-	GDEVE = state_fio->FgetUint16();
-	GDEHS = state_fio->FgetUint8();
-	GDEHE = state_fio->FgetUint8();
-	GDEHSC = state_fio->FgetInt32();
-	GDEHEC = state_fio->FgetInt32();
-	hblank = state_fio->FgetBool();
-	vblank = state_fio->FgetBool();
-	blink = state_fio->FgetBool();
-	clear_flag = state_fio->FgetUint8();
-	state_fio->Fread(palette_reg, sizeof(palette_reg), 1);
-	pal_select = state_fio->FgetBool();
-	screen_mask = state_fio->FgetBool();
-	state_fio->Fread(priority16, sizeof(priority16), 1);
-	state_fio->Fread(palette16, sizeof(palette16), 1);
-	state_fio->Fread(palette4096, sizeof(palette4096), 1);
-	state_fio->Fread(palette4096r, sizeof(palette4096r), 1);
-	state_fio->Fread(palette4096g, sizeof(palette4096g), 1);
-	state_fio->Fread(palette4096b, sizeof(palette4096b), 1);
-	state_fio->Fread(palette16txt, sizeof(palette16txt), 1);
-	state_fio->Fread(palette4096txt, sizeof(palette4096txt), 1);
-	state_fio->Fread(palette16pri, sizeof(palette16pri), 1);
-	state_fio->Fread(palette4096pri, sizeof(palette4096pri), 1);
-	prev16 = state_fio->FgetUint8();
-	update16 = state_fio->FgetBool();
-	state_fio->Fread(priority256, sizeof(priority256), 1);
-	state_fio->Fread(palette256, sizeof(palette256), 1);
-	state_fio->Fread(palette256txt, sizeof(palette256txt), 1);
-	state_fio->Fread(palette256pri, sizeof(palette256pri), 1);
-	prev256 = (scrntype_t)state_fio->FgetUint32();
-	update256 = state_fio->FgetBool();
-	state_fio->Fread(map_addr, sizeof(map_addr), 1);
-	state_fio->Fread(map_hdsc, sizeof(map_hdsc), 1);
-	state_fio->Fread(text_matrix, sizeof(text_matrix), 1);
-	state_fio->Fread(text_matrixw, sizeof(text_matrixw), 1);
-	trans_color = state_fio->FgetUint8();
-	map_init = state_fio->FgetBool();
-	trans_init = state_fio->FgetBool();
+	state_fio->StateBool(scan_line);
+	state_fio->StateBool(scan_tmp);
+	state_fio->StateBool(monitor_200line);
+	state_fio->StateBool(monitor_digital);
+	state_fio->StateBool(monitor_tmp);
+	state_fio->StateUint8(textreg_num);
+	state_fio->StateBuffer(textreg, sizeof(textreg), 1);
+	state_fio->StateUint8(cgreg_num);
+	state_fio->StateBuffer(cgreg, sizeof(cgreg), 1);
+	state_fio->StateUint8(scrn_size);
+	state_fio->StateUint8(cg_mask);
+	state_fio->StateUint8(cg_mask256);
+	state_fio->StateBool(cg_mask256_init);
+	state_fio->StateBool(font_size);
+	state_fio->StateBool(column_size);
+	state_fio->StateBuffer(latch, sizeof(latch), 1);
+	state_fio->StateUint16(GDEVS);
+	state_fio->StateUint16(GDEVE);
+	state_fio->StateUint8(GDEHS);
+	state_fio->StateUint8(GDEHE);
+	state_fio->StateInt32(GDEHSC);
+	state_fio->StateInt32(GDEHEC);
+	state_fio->StateBool(hblank);
+	state_fio->StateBool(vblank);
+	state_fio->StateBool(blink);
+	state_fio->StateUint8(clear_flag);
+	state_fio->StateBuffer(palette_reg, sizeof(palette_reg), 1);
+	state_fio->StateBool(pal_select);
+	state_fio->StateBool(screen_mask);
+	state_fio->StateBuffer(priority16, sizeof(priority16), 1);
+	state_fio->StateBuffer(palette16, sizeof(palette16), 1);
+	state_fio->StateBuffer(palette4096, sizeof(palette4096), 1);
+	state_fio->StateBuffer(palette4096r, sizeof(palette4096r), 1);
+	state_fio->StateBuffer(palette4096g, sizeof(palette4096g), 1);
+	state_fio->StateBuffer(palette4096b, sizeof(palette4096b), 1);
+	state_fio->StateBuffer(palette16txt, sizeof(palette16txt), 1);
+	state_fio->StateBuffer(palette4096txt, sizeof(palette4096txt), 1);
+	state_fio->StateBuffer(palette16pri, sizeof(palette16pri), 1);
+	state_fio->StateBuffer(palette4096pri, sizeof(palette4096pri), 1);
+	state_fio->StateUint8(prev16);
+	state_fio->StateBool(update16);
+	state_fio->StateBuffer(priority256, sizeof(priority256), 1);
+	state_fio->StateBuffer(palette256, sizeof(palette256), 1);
+	state_fio->StateBuffer(palette256txt, sizeof(palette256txt), 1);
+	state_fio->StateBuffer(palette256pri, sizeof(palette256pri), 1);
+	state_fio->StateUint32((uint32_t)prev256);
+	state_fio->StateBool(update256);
+	state_fio->StateBuffer(map_addr, sizeof(map_addr), 1);
+	state_fio->StateBuffer(map_hdsc, sizeof(map_hdsc), 1);
+	state_fio->StateBuffer(text_matrix, sizeof(text_matrix), 1);
+	state_fio->StateBuffer(text_matrixw, sizeof(text_matrixw), 1);
+	state_fio->StateUint8(trans_color);
+	state_fio->StateBool(map_init);
+	state_fio->StateBool(trans_init);
 	return true;
 }
 

@@ -1227,180 +1227,117 @@ KEYBOARD::~KEYBOARD()
 {
 }
 
-#define STATE_VERSION 6
-#if defined(Q_OS_WIN)
-DLL_PREFIX_I struct cur_time_s cur_time;
+#define STATE_VERSION 9
+//#if defined(Q_OS_WIN)
+//DLL_PREFIX_I struct cur_time_s cur_time;
+//#endif
+
+bool KEYBOARD::decl_state(FILEIO *state_fio, bool loading)
+{
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	
+	state_fio->StateUint32(keycode_7);
+	state_fio->StateInt32(keymode);
+	   
+	state_fio->StateBool(ctrl_pressed);
+	state_fio->StateBool(lshift_pressed);
+	state_fio->StateBool(rshift_pressed);
+	state_fio->StateBool(shift_pressed);
+	state_fio->StateBool(graph_pressed);
+	state_fio->StateBool(caps_pressed);
+	state_fio->StateBool(kana_pressed);
+	state_fio->StateBool(break_pressed);
+
+	state_fio->StateInt32(event_keyrepeat);
+	   
+	state_fio->StateUint8(scancode); // After V.4, uint8_t
+	state_fio->StateUint8(datareg);
+	state_fio->StateUint32(older_vk);
+	   
+	state_fio->StateBool(repeat_mode);
+	state_fio->StateInt32(repeat_time_short);
+	state_fio->StateInt32(repeat_time_long);
+	state_fio->StateUint8(repeat_keycode);
+	   
+#if defined(_FM77AV_VARIANTS)
+	state_fio->StateInt32(event_key_rtc);
+  
+	state_fio->StateUint8(rtc_yy);
+	state_fio->StateUint8(rtc_mm);
+	state_fio->StateUint8(rtc_dd);
+	state_fio->StateUint8(rtc_dayofweek);
+	state_fio->StateUint8(rtc_hour);
+	state_fio->StateUint8(rtc_minute);
+	state_fio->StateUint8(rtc_sec);
+
+	state_fio->StateBool(rtc_count24h);
+	state_fio->StateBool(rtc_ispm);
+
+	state_fio->StateBool(rtc_set);
+	state_fio->StateBool(rtc_set_flag);
+	state_fio->StateBool(rxrdy_status);
+	state_fio->StateBool(key_ack_status);
+		
+	state_fio->StateBool(did_hidden_message_av_1);
+	state_fio->StateInt32(event_hidden1_av);
+
+	state_fio->StateInt32(cmd_phase);
+	state_fio->StateUint16(hidden1_ptr);
+	state_fio->StateInt32(beep_phase);
+	//cmd_fifo->save_state((void *)state_fio);
+	//data_fifo->save_state((void *)state_fio);
+	//cur_time.save_state((void *)state_fio);
 #endif
+#if defined(_FM77AV_VARIANTS)
+	if(!cmd_fifo->process_state(state_fio, loading)) {
+		return false;
+	}
+	if(!data_fifo->process_state(state_fio, loading)) {
+		return false;
+	}
+	if(!cur_time.process_state(state_fio, loading)) {
+		return false;
+	}
+#endif
+	if(!key_fifo->process_state(state_fio, loading)) {
+		return false;
+	}
+	state_fio->StateInt32(event_int);
+	//key_fifo->save_state((void *)state_fio);
+	state_fio->StateUint8(autokey_backup);
+	// Version 5
+	state_fio->StateBool(ins_led_status);
+	state_fio->StateBool(kana_led_status);
+	state_fio->StateBool(caps_led_status);
+	// Version 6
+	state_fio->StateBool(override_break_key);
+
+	return true;
+}
+
 void KEYBOARD::save_state(FILEIO *state_fio)
 {
-	state_fio->FputUint32_BE(STATE_VERSION);
-	state_fio->FputInt32_BE(this_device_id);
+	decl_state(state_fio, false);
+	//state_fio->FputUint32_BE(STATE_VERSION);
+	//state_fio->FputInt32_BE(this_device_id);
 	this->out_debug_log(_T("Save State: KEYBOARD: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
-
-	// Version 1
-	{
-		state_fio->FputUint32_BE(keycode_7);
-		state_fio->FputInt32_BE(keymode);
-	   
-		state_fio->FputBool(ctrl_pressed);
-		state_fio->FputBool(lshift_pressed);
-		state_fio->FputBool(rshift_pressed);
-		state_fio->FputBool(shift_pressed);
-		state_fio->FputBool(graph_pressed);
-		state_fio->FputBool(caps_pressed);
-		state_fio->FputBool(kana_pressed);
-		state_fio->FputBool(break_pressed);
-
-		state_fio->FputInt32_BE(event_keyrepeat);
-	   
-		state_fio->FputUint8(scancode); // After V.4, uint8_t
-		state_fio->FputUint8(datareg);
-		state_fio->FputUint32(older_vk);
-	   
-		state_fio->FputBool(repeat_mode);
-		state_fio->FputInt32_BE(repeat_time_short);
-		state_fio->FputInt32_BE(repeat_time_long);
-		state_fio->FputUint8(repeat_keycode);
-	   
-#if defined(_FM77AV_VARIANTS)
-		state_fio->FputInt32_BE(event_key_rtc);
-  
-		state_fio->FputUint8(rtc_yy);
-		state_fio->FputUint8(rtc_mm);
-		state_fio->FputUint8(rtc_dd);
-		state_fio->FputUint8(rtc_dayofweek);
-		state_fio->FputUint8(rtc_hour);
-		state_fio->FputUint8(rtc_minute);
-		state_fio->FputUint8(rtc_sec);
-
-		state_fio->FputBool(rtc_count24h);
-		state_fio->FputBool(rtc_ispm);
-
-		state_fio->FputBool(rtc_set);
-		state_fio->FputBool(rtc_set_flag);
-		state_fio->FputBool(rxrdy_status);
-		state_fio->FputBool(key_ack_status);
-		state_fio->FputInt32_BE(cmd_phase);
-
-		state_fio->FputInt32_BE(event_hidden1_av);
-		state_fio->FputUint16_BE(hidden1_ptr);
-
-		cmd_fifo->save_state((void *)state_fio);
-		data_fifo->save_state((void *)state_fio);
-		cur_time.save_state((void *)state_fio);
-#endif
-		state_fio->FputInt32_BE(event_int);
-		key_fifo->save_state((void *)state_fio);
-	}
-	// Version 2
-	{
-#if defined(_FM77AV_VARIANTS)
-		state_fio->FputBool(did_hidden_message_av_1);
-#endif
-	}
-	// Version 3
-	{
-#if defined(_FM77AV_VARIANTS)
-		state_fio->FputInt32_BE(beep_phase);
-#endif
-	}
-	// Version 4
-	state_fio->FputUint8(autokey_backup);
-	// Version 5
-	state_fio->FputBool(ins_led_status);
-	state_fio->FputBool(kana_led_status);
-	state_fio->FputBool(caps_led_status);
-	// Version 6
-	state_fio->FputBool(override_break_key);
 }
 
 bool KEYBOARD::load_state(FILEIO *state_fio)
 {
 	uint32_t version;
 	
-	version = state_fio->FgetUint32_BE();
-	if(this_device_id != state_fio->FgetInt32_BE()) return false;
-	this->out_debug_log(_T("Load State: KEYBOARD: id=%d ver=%d\n"), this_device_id, version);
-
-	if(version >= 1) {
-		keycode_7 = state_fio->FgetUint32_BE();
-		keymode = state_fio->FgetInt32_BE();
-	   
-		ctrl_pressed = state_fio->FgetBool();
-		lshift_pressed = state_fio->FgetBool();
-		rshift_pressed = state_fio->FgetBool();
-		shift_pressed = state_fio->FgetBool();
-		graph_pressed = state_fio->FgetBool();
-		caps_pressed = state_fio->FgetBool();
-		kana_pressed = state_fio->FgetBool();
-		break_pressed = state_fio->FgetBool();
-
-		event_keyrepeat = state_fio->FgetInt32_BE();
-	   
-		scancode = state_fio->FgetUint8();
-		datareg = state_fio->FgetUint8();
-		older_vk = state_fio->FgetUint32();
-	   
-		repeat_mode = state_fio->FgetBool();
-		repeat_time_short = state_fio->FgetInt32_BE();
-		repeat_time_long = state_fio->FgetInt32_BE();
-		repeat_keycode = state_fio->FgetUint8();
-	   
-#if defined(_FM77AV_VARIANTS)
-		event_key_rtc = state_fio->FgetInt32_BE();
-		rtc_yy = state_fio->FgetUint8();
-		rtc_mm = state_fio->FgetUint8();
-		rtc_dd = state_fio->FgetUint8();
-		rtc_dayofweek = state_fio->FgetUint8();
-		rtc_hour = state_fio->FgetUint8();
-		rtc_minute = state_fio->FgetUint8();
-		rtc_sec = state_fio->FgetUint8();
-
-		rtc_count24h = state_fio->FgetBool();
-		rtc_ispm = state_fio->FgetBool();
-
-		rtc_set = state_fio->FgetBool();
-		rtc_set_flag = state_fio->FgetBool();
-		rxrdy_status = state_fio->FgetBool();
-		key_ack_status = state_fio->FgetBool();
-		cmd_phase = state_fio->FgetInt32_BE();
-
-		event_hidden1_av = state_fio->FgetInt32_BE();
-		hidden1_ptr = state_fio->FgetUint16_BE();
-
-		cmd_fifo->load_state((void *)state_fio);
-		data_fifo->load_state((void *)state_fio);
-		cur_time.load_state((void *)state_fio);
-#endif
-		event_int = state_fio->FgetInt32_BE();
-		key_fifo->load_state((void *)state_fio);
-		if(version == 1) return true;
-	}
-	// Version 2
-	{
-#if defined(_FM77AV_VARIANTS)
-		did_hidden_message_av_1 = state_fio->FgetBool();
-#endif
-	}
-	// Version 3
-	{
-#if defined(_FM77AV_VARIANTS)
-		beep_phase = state_fio->FgetInt32_BE();
-#endif
-	}
-	// Version 4
-	autokey_backup = state_fio->FgetUint8();
-	// Version 5
-	ins_led_status = state_fio->FgetBool();
-	kana_led_status = state_fio->FgetBool();
-	caps_led_status = state_fio->FgetBool();
-	// Version 6
-	override_break_key = state_fio->FgetBool();
-	
-	if(version == STATE_VERSION) {
-		return true;
-	}
-	return false;
+	//version = state_fio->FgetUint32_BE();
+	//if(this_device_id != state_fio->FgetInt32_BE()) return false;
+	//this->out_debug_log(_T("Load State: KEYBOARD: id=%d ver=%d\n"), this_device_id, version);
+	bool mb = decl_state(state_fio, true);
+	if(!mb) return false;
+	return true;
 }
 
    

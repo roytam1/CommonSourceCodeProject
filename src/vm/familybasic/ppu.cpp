@@ -661,74 +661,49 @@ void PPU::set_mirroring(uint32_t nt0, uint32_t nt1, uint32_t nt2, uint32_t nt3)
 
 #define STATE_VERSION	2
 
-void PPU::save_state(FILEIO* state_fio)
+bool PPU::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(palette_pc, sizeof(palette_pc), 1);
-	state_fio->Fwrite(solid_buf, sizeof(solid_buf), 1);
-	state_fio->Fwrite(&header, sizeof(header), 1);
-	state_fio->Fwrite(banks, sizeof(banks), 1);
-	state_fio->FputInt32(chr_rom_size);
-//	state_fio->FputInt32(chr_rom_mask);
-	state_fio->Fwrite(chr_rom, chr_rom_size, 1);
-	state_fio->Fwrite(name_tables, sizeof(name_tables), 1);
-	state_fio->Fwrite(spr_ram, sizeof(spr_ram), 1);
-	state_fio->Fwrite(bg_pal, sizeof(bg_pal), 1);
-	state_fio->Fwrite(spr_pal, sizeof(spr_pal), 1);
-	state_fio->FputUint8(spr_ram_rw_ptr);
-	state_fio->Fwrite(regs, sizeof(regs), 1);
-	state_fio->FputUint16(bg_pattern_table_addr);
-	state_fio->FputUint16(spr_pattern_table_addr);
-	state_fio->FputUint16(ppu_addr_inc);
-	state_fio->FputUint8(rgb_bak);
-	state_fio->FputBool(toggle_2005_2006);
-	state_fio->FputUint8(read_2007_buffer);
-	state_fio->FputUint16(loopy_v);
-	state_fio->FputUint16(loopy_t);
-	state_fio->FputUint8(loopy_x);
-}
-
-bool PPU::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(palette_pc, sizeof(palette_pc), 1);
-	state_fio->Fread(solid_buf, sizeof(solid_buf), 1);
-	state_fio->Fread(&header, sizeof(header), 1);
-	state_fio->Fread(banks, sizeof(banks), 1);
-	chr_rom_size = state_fio->FgetUint32();
-//	chr_rom_mask = state_fio->FgetUint32();
-	chr_rom_mask = (chr_rom_size / 0x400) - 1;
-	if(chr_rom != NULL) {
-		free(chr_rom);
+	state_fio->StateBuffer(palette_pc, sizeof(palette_pc), 1);
+	state_fio->StateBuffer(solid_buf, sizeof(solid_buf), 1);
+	state_fio->StateBuffer(&header, sizeof(header), 1);
+	state_fio->StateBuffer(banks, sizeof(banks), 1);
+	state_fio->StateUint32(chr_rom_size);
+//	state_fio->StateInt32(chr_rom_mask);
+	if(loading) {
+		chr_rom_mask = (chr_rom_size / 0x400) - 1;
+		if(chr_rom != NULL) {
+			free(chr_rom);
+		}
+		chr_rom = (uint8_t *)malloc(chr_rom_size);
 	}
-	chr_rom = (uint8_t *)malloc(chr_rom_size);
-	state_fio->Fread(chr_rom, chr_rom_size, 1);
-	state_fio->Fread(name_tables, sizeof(name_tables), 1);
-	state_fio->Fread(spr_ram, sizeof(spr_ram), 1);
-	state_fio->Fread(bg_pal, sizeof(bg_pal), 1);
-	state_fio->Fread(spr_pal, sizeof(spr_pal), 1);
-	spr_ram_rw_ptr = state_fio->FgetUint8();
-	state_fio->Fread(regs, sizeof(regs), 1);
-	bg_pattern_table_addr = state_fio->FgetUint16();
-	spr_pattern_table_addr = state_fio->FgetUint16();
-	ppu_addr_inc = state_fio->FgetUint16();
-	rgb_bak = state_fio->FgetUint8();
-	toggle_2005_2006 = state_fio->FgetBool();
-	read_2007_buffer = state_fio->FgetUint8();
-	loopy_v = state_fio->FgetUint16();
-	loopy_t = state_fio->FgetUint16();
-	loopy_x = state_fio->FgetUint8();
+	state_fio->StateBuffer(chr_rom, chr_rom_size, 1);
+	state_fio->StateBuffer(name_tables, sizeof(name_tables), 1);
+	state_fio->StateBuffer(spr_ram, sizeof(spr_ram), 1);
+	state_fio->StateBuffer(bg_pal, sizeof(bg_pal), 1);
+	state_fio->StateBuffer(spr_pal, sizeof(spr_pal), 1);
+	state_fio->StateUint8(spr_ram_rw_ptr);
+	state_fio->StateBuffer(regs, sizeof(regs), 1);
+	state_fio->StateUint16(bg_pattern_table_addr);
+	state_fio->StateUint16(spr_pattern_table_addr);
+	state_fio->StateUint16(ppu_addr_inc);
+	state_fio->StateUint8(rgb_bak);
+	state_fio->StateBool(toggle_2005_2006);
+	state_fio->StateUint8(read_2007_buffer);
+	state_fio->StateUint16(loopy_v);
+	state_fio->StateUint16(loopy_t);
+	state_fio->StateUint8(loopy_x);
 	
 	// post process
-	for(int i = 0; i < 12; i++) {
-		set_ppu_bank(i, banks[i]);
+	if(loading) {
+		for(int i = 0; i < 12; i++) {
+			set_ppu_bank(i, banks[i]);
+		}
 	}
 	return true;
 }

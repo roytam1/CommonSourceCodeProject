@@ -70,35 +70,21 @@ void CMT::write_signal(int id, uint32_t data, uint32_t mask)
 
 #define STATE_VERSION	1
 
-void CMT::save_state(FILEIO* state_fio)
+bool CMT::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(in);
-	state_fio->FputBool(out);
-	state_fio->FputBool(remote);
-	state_fio->FputBool(eot);
-	state_fio->FputUint8(pout);
-	state_fio->FputBool(strobe);
-	state_fio->FputBool(busy);
-}
-
-bool CMT::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	in = state_fio->FgetBool();
-	out = state_fio->FgetBool();
-	remote = state_fio->FgetBool();
-	eot = state_fio->FgetBool();
-	pout = state_fio->FgetUint8();
-	strobe = state_fio->FgetBool();
-	busy = state_fio->FgetBool();
+	state_fio->StateBool(in);
+	state_fio->StateBool(out);
+	state_fio->StateBool(remote);
+	state_fio->StateBool(eot);
+	state_fio->StateUint8(pout);
+	state_fio->StateBool(strobe);
+	state_fio->StateBool(busy);
 	return true;
 }
 

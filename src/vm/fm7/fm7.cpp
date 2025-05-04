@@ -130,11 +130,12 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	if((config.dipswitch & FM7_DIPSW_MIDI_ON) != 0) uart[2] = new I8251(this, emu);
 
 		
+#if defined(_FM77AV_VARIANTS)
+	alu = new MB61VH010(this, emu);
+	keyboard_beep = new BEEP(this, emu);
+#endif	
 	// basic devices
 	// I/Os
-#if defined(HAS_DMA)
-	dmac = new HD6844(this, emu);
-#endif   
 #if defined(_FM8)
 #  if defined(USE_AY_3_8910_AS_PSG)
 	psg = new AY_3_891X(this, emu);
@@ -153,6 +154,10 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #  endif
 # endif	
 #endif
+
+#if defined(HAS_DMA)
+	dmac = new HD6844(this, emu);
+#endif   
 #if defined(_FM8)
 	for(int i = 0; i < 2; i++) bubble_casette[i] = new BUBBLECASETTE(this, emu);
 #endif
@@ -201,18 +206,6 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #if defined(_FM77L4)
 	l4crtc = new HD46505(this, emu);;
 #endif
-#if defined(_FM77AV_VARIANTS)
-	alu = new MB61VH010(this, emu);
-	keyboard_beep = new BEEP(this, emu);
-#endif	
-	keyboard = new KEYBOARD(this, emu);
-	display = new DISPLAY(this, emu);	
-#if defined(_FM8)
-	mainio  = new FM8_MAINIO(this, emu);
-#else
-	mainio  = new FM7_MAINIO(this, emu);
-#endif
-	mainmem = new FM7_MAINMEM(this, emu);
 
 #if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
 	if((config.dipswitch & FM7_DIPSW_CONNECT_KANJIROM) != 0) {
@@ -226,6 +219,17 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #ifdef CAPABLE_KANJI_CLASS2
 	kanjiclass2 = new KANJIROM(this, emu, true);
 #endif
+
+	keyboard = new KEYBOARD(this, emu);
+	//display = new DISPLAY(this, emu);
+#if defined(_FM8)
+	mainio  = new FM8_MAINIO(this, emu);
+#else
+	mainio  = new FM7_MAINIO(this, emu);
+#endif
+	mainmem = new FM7_MAINMEM(this, emu);
+	display = new DISPLAY(this, emu);
+
 
 # if defined(_FM77AV20) || defined(_FM77AV40) || defined(_FM77AV20EX) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	g_rs232c_dtr = new AND(this, emu);
@@ -615,7 +619,7 @@ void VM::connect_bus(void)
 	opn[2]->set_context_irq(mainio, FM7_MAINIO_THG_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[2], 2);
 #endif   
-	subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
+	//subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
    
 	event->register_frame_event(joystick);
 #if defined(HAS_DMA)
@@ -650,6 +654,10 @@ void VM::connect_bus(void)
 		jsubcpu->set_context_debugger(new DEBUGGER(this, emu));
 	}
 # endif
+#endif
+
+#if defined(__GIT_REPO_VERSION)
+	strncpy(_git_revision, __GIT_REPO_VERSION, sizeof(_git_revision) - 1);
 #endif
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
@@ -723,6 +731,7 @@ void VM::reset()
 		opn[i]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
 	}
 #endif
+	//display->reset(); // 20180618 K.O for RELICS
 }
 
 void VM::special_reset()
@@ -820,7 +829,7 @@ void VM::initialize_sound(int rate, int samples)
 	keyboard_beep->initialize_sound(rate, 2400.0, 512);
 # endif
 #endif	
-	pcm1bit->initialize_sound(rate, 2000);
+	pcm1bit->initialize_sound(rate, 6000);
 	//drec->initialize_sound(rate, 0);
 }
 
@@ -923,7 +932,7 @@ bool VM::get_kana_locked()
 }
 
 // Get INS status.Important with FM-7 series (^_^;
-uint32_t VM::get_extra_leds()
+uint32_t VM::get_led_status()
 {
 	return keyboard->read_signal(SIG_FM7KEY_LED_STATUS);
 }
@@ -1215,54 +1224,34 @@ void VM::set_vm_frame_rate(double fps)
 }
 
 
-#define STATE_VERSION	8
-void VM::save_state(FILEIO* state_fio)
-{
-	state_fio->FputUint32_BE(STATE_VERSION);
-	state_fio->FputBool(connect_320kfdc);
-	state_fio->FputBool(connect_1Mfdc);
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		const char *name = typeid(*device).name() + 6; // skip "class "
-		int _len = strlen(name);
-		if(_len <= 0) _len = 1;
-		if(_len >= 128) _len = 128;
-		state_fio->FputInt32(_len);
-		state_fio->Fwrite(name, _len, 1);
-		//printf("SAVE State: DEVID=%d NAME=%s\n", device->this_device_id, name);
-		device->save_state(state_fio);
-	}
-}
+#define STATE_VERSION	11
 
-bool VM::load_state(FILEIO* state_fio)
+bool VM::process_state(FILEIO* state_fio, bool loading)
 {
-	uint32_t version = state_fio->FgetUint32_BE();
-	if(version != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	connect_320kfdc = state_fio->FgetBool();
-	connect_1Mfdc = state_fio->FgetBool();
+	state_fio->StateBool(connect_320kfdc);
+	state_fio->StateBool(connect_1Mfdc);
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		const char *name = typeid(*device).name() + 6; // skip "class "
-		char nr_data[130];
-		int _len;
-		bool b_stat = false;
-		_len = state_fio->FgetInt32();
-		if(_len > 0) {
-			if(_len >= 128) _len = 128;
-			memset(nr_data, 0x00, sizeof(nr_data));
-			state_fio->Fread(nr_data, _len, 1);
-			int stat = strncmp(name, nr_data, _len);
-			if(stat == 0) b_stat = true;
-		} 
-		if(!b_stat) {
-			//printf("Load Error: DEVID=%d NAME=%s\n", device->this_device_id, name);
+		int len = strlen(name);
+		
+		if(!state_fio->StateCheckInt32(len)) {
 			return false;
 		}
-		if(!device->load_state(state_fio)) {
-			//printf("Load Error: DEVID=%d\n", device->this_device_id);
+		if(!state_fio->StateCheckBuffer(name, len, 1)) {
+			return false;
+		}
+		if(!device->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
+	if(loading) {
+		update_config();
+	}
+	//mainio->restore_opn();
+
 	return true;
 }
 

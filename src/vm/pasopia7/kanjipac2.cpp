@@ -47,19 +47,12 @@ uint32_t KANJIPAC2::read_io8(uint32_t addr)
 
 #define STATE_VERSION	1
 
-void KANJIPAC2::save_state(FILEIO* state_fio)
+bool KANJIPAC2::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	
-	state_fio->FputUint32(ptr);
-}
-
-bool KANJIPAC2::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	ptr = state_fio->FgetUint32();
+	state_fio->StateUint32(ptr);
 	return true;
 }
 

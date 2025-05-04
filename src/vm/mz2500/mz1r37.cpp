@@ -54,25 +54,16 @@ uint32_t MZ1R37::read_io8(uint32_t addr)
 
 #define STATE_VERSION	1
 
-void MZ1R37::save_state(FILEIO* state_fio)
+bool MZ1R37::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(buffer, EMM_SIZE, 1);
-	state_fio->FputUint32(address);
-}
-
-bool MZ1R37::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(buffer, EMM_SIZE, 1);
-	address = state_fio->FgetUint32();
+	state_fio->StateBuffer(buffer, EMM_SIZE, 1);
+	state_fio->StateUint32(address);
 	return true;
 }
 

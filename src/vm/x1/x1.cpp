@@ -940,42 +940,33 @@ void VM::update_dipswitch()
 
 #define STATE_VERSION	9
 
-void VM::save_state(FILEIO* state_fio)
+bool VM::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		const char *name = typeid(*device).name() + 6; // skip "class "
-		
-		state_fio->FputInt32(strlen(name));
-		state_fio->Fwrite(name, strlen(name), 1);
-		device->save_state(state_fio);
-	}
-	state_fio->FputBool(pseudo_sub_cpu);
-	state_fio->FputInt32(sound_type);
-}
-
-bool VM::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		const char *name = typeid(*device).name() + 6; // skip "class "
+		int len = strlen(name);
 		
-		if(!(state_fio->FgetInt32() == strlen(name) && state_fio->Fcompare(name, strlen(name)))) {
+		if(!state_fio->StateCheckInt32(len)) {
 			return false;
 		}
-		if(!device->load_state(state_fio)) {
+		if(!state_fio->StateCheckBuffer(name, len, 1)) {
+			return false;
+		}
+		if(!device->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	pseudo_sub_cpu = state_fio->FgetBool();
-	sound_type = state_fio->FgetInt32();
+	state_fio->StateBool(pseudo_sub_cpu);
+	state_fio->StateInt32(sound_type);
 	
 #ifdef _X1TURBO_FEATURE
 	// post process
-	update_dipswitch();
+	if(loading) {
+		update_dipswitch();
+	}
 #endif
 	return true;
 }

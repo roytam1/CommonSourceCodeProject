@@ -462,45 +462,27 @@ void KEYBOARD::set_dk(bool value)
 
 #define STATE_VERSION	3
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	key_buf->save_state((void *)state_fio);
-	state_fio->FputInt32(phase);
-	state_fio->FputUint16(send_data);
-	state_fio->FputUint32(stc_clock);
-	state_fio->FputUint8(recv_data);
-	state_fio->FputBool(recv_ok);
-	state_fio->FputBool(stc);
-	state_fio->FputBool(dc);
-	state_fio->FputBool(caps);
-	state_fio->FputBool(kana);
-	state_fio->FputBool(pro_mode);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!key_buf->load_state((void *)state_fio)) {
+	if(!key_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	phase = state_fio->FgetInt32();
-	send_data = state_fio->FgetUint16();
-	stc_clock = state_fio->FgetUint32();
-	recv_data = state_fio->FgetUint8();
-	recv_ok = state_fio->FgetBool();
-	stc = state_fio->FgetBool();
-	dc = state_fio->FgetBool();
-	caps = state_fio->FgetBool();
-	kana = state_fio->FgetBool();
-	pro_mode = state_fio->FgetBool();
+	state_fio->StateInt32(phase);
+	state_fio->StateUint16(send_data);
+	state_fio->StateUint32(stc_clock);
+	state_fio->StateUint8(recv_data);
+	state_fio->StateBool(recv_ok);
+	state_fio->StateBool(stc);
+	state_fio->StateBool(dc);
+	state_fio->StateBool(caps);
+	state_fio->StateBool(kana);
+	state_fio->StateBool(pro_mode);
 	return true;
 }
 

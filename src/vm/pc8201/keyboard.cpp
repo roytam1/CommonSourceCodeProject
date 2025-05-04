@@ -83,27 +83,17 @@ void KEYBOARD::key_down(int code)
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint16(column);
-	state_fio->FputBool(caps);
-	state_fio->FputBool(kana);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	column = state_fio->FgetUint16();
-	caps = state_fio->FgetBool();
-	kana = state_fio->FgetBool();
+	state_fio->StateUint16(column);
+	state_fio->StateBool(caps);
+	state_fio->StateBool(kana);
 	return true;
 }
 

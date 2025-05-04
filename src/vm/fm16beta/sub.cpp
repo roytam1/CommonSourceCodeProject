@@ -933,25 +933,14 @@ void SUB::draw_cg()
 
 #define STATE_VERSION	1
 
-void SUB::save_state(FILEIO* state_fio)
+bool SUB::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	MEMORY::save_state(state_fio);
-}
-
-bool SUB::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!MEMORY::load_state(state_fio)) {
-		return false;
-	}
-	return true;
+	return MEMORY::process_state(state_fio, loading);
 }
 

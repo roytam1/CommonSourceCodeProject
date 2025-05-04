@@ -170,39 +170,25 @@ void MC6850::update_irq()
 
 #define STATE_VERSION	1
 
-void MC6850::save_state(FILEIO* state_fio)
+bool MC6850::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(recv);
-	state_fio->FputUint8(status);
-	state_fio->FputUint8(ctrl);
-	recv_buffer->save_state((void *)state_fio);
-	send_buffer->save_state((void *)state_fio);
-	state_fio->FputInt32(recv_id);
-	state_fio->FputInt32(send_id);
-}
-
-bool MC6850::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	recv = state_fio->FgetUint8();
-	status = state_fio->FgetUint8();
-	ctrl = state_fio->FgetUint8();
-	if(!recv_buffer->load_state((void *)state_fio)) {
+	state_fio->StateUint8(recv);
+	state_fio->StateUint8(status);
+	state_fio->StateUint8(ctrl);
+	if(!recv_buffer->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	if(!send_buffer->load_state((void *)state_fio)) {
+	if(!send_buffer->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	recv_id = state_fio->FgetInt32();
-	send_id = state_fio->FgetInt32();
+	state_fio->StateInt32(recv_id);
+	state_fio->StateInt32(send_id);
 	return true;
 }
 

@@ -79,33 +79,25 @@ void MEMBUS::update_bank()
 
 #define STATE_VERSION	1
 
-void MEMBUS::save_state(FILEIO* state_fio)
+bool MEMBUS::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	MEMORY::save_state(state_fio);
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint32(basic_addr.d);
-	state_fio->FputBool(ram_selected);
-}
-
-bool MEMBUS::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!MEMORY::load_state(state_fio)) {
+	if(!MEMORY::process_state(state_fio, loading)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	basic_addr.d = state_fio->FgetUint32();
-	ram_selected = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint32(basic_addr.d);
+	state_fio->StateBool(ram_selected);
 	
 	// post process
-	update_bank();
+	if(loading) {
+		update_bank();
+	}
 	return true;
 }
+

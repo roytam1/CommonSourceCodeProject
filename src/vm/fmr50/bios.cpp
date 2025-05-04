@@ -1131,39 +1131,24 @@ uint32_t BIOS::read_signal(int ch)
 
 #define STATE_VERSION	4
 
-void BIOS::save_state(FILEIO* state_fio)
+bool BIOS::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		disk[i]->save_state(state_fio);
-	}
-	state_fio->FputInt32(secnum);
-	state_fio->FputInt32(timeout);
-	state_fio->Fwrite(drive_mode1, sizeof(drive_mode1), 1);
-	state_fio->Fwrite(drive_mode2, sizeof(drive_mode2), 1);
-	state_fio->Fwrite(scsi_blocks, sizeof(scsi_blocks), 1);
-}
-
-bool BIOS::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < MAX_DRIVE; i++) {
-		if(!disk[i]->load_state(state_fio)) {
+		if(!disk[i]->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	secnum = state_fio->FgetInt32();
-	timeout = state_fio->FgetInt32();
-	state_fio->Fread(drive_mode1, sizeof(drive_mode1), 1);
-	state_fio->Fread(drive_mode2, sizeof(drive_mode2), 1);
-	state_fio->Fread(scsi_blocks, sizeof(scsi_blocks), 1);
+	state_fio->StateInt32(secnum);
+	state_fio->StateInt32(timeout);
+	state_fio->StateBuffer(drive_mode1, sizeof(drive_mode1), 1);
+	state_fio->StateBuffer(drive_mode2, sizeof(drive_mode2), 1);
+	state_fio->StateBuffer(scsi_blocks, sizeof(scsi_blocks), 1);
 	return true;
 }
 

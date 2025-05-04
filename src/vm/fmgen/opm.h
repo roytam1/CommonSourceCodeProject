@@ -92,8 +92,7 @@ namespace FM
 		void	SetVolume(int db_l, int db_r);
 		void	SetChannelMask(uint mask);
 		
-		void SaveState(void *f);
-		bool LoadState(void *f);
+		bool ProcessState(void *f, bool loading);
 		
 	private:
 		void	Intr(bool value);

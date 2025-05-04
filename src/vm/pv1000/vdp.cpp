@@ -130,29 +130,24 @@ void VDP::draw_pcg(int x8, int y8, uint16_t top)
 
 #define STATE_VERSION	1
 
-void VDP::save_state(FILEIO* state_fio)
+bool VDP::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32((int)(vram - base));
-	state_fio->FputInt32((int)(pcg - base));
-	state_fio->FputInt32((int)(pattern - base));
-	state_fio->FputBool(force_pattern);
-}
-
-bool VDP::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	vram = base + state_fio->FgetInt32();
-	pcg = base + state_fio->FgetInt32();
-	pattern = base + state_fio->FgetInt32();
-	force_pattern = state_fio->FgetBool();
+	if(loading) {
+		vram = base + state_fio->FgetInt32_LE();
+		pcg = base + state_fio->FgetInt32_LE();
+		pattern = base + state_fio->FgetInt32_LE();
+	} else {
+		state_fio->FputInt32_LE((int)(vram - base));
+		state_fio->FputInt32_LE((int)(pcg - base));
+		state_fio->FputInt32_LE((int)(pattern - base));
+	}
+	state_fio->StateBool(force_pattern);
 	return true;
 }
 

@@ -18,7 +18,7 @@ class SCSI_HDD : public SCSI_DEV
 {
 private:
 	HARDDISK* disk[8];
-	_TCHAR image_path[8][MAX_PATH];
+	_TCHAR image_path[8][_MAX_PATH];
 	int sector_size[8];
 	
 public:
@@ -39,9 +39,8 @@ public:
 	}
 	~SCSI_HDD() {}
 	
-	// common functions
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	// common function
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// virtual scsi functions
 	void release();
@@ -83,7 +82,6 @@ public:
 	~SASI_HDD() {}
 	
 	// virtual scsi functions
-	int get_command_length(int value);
 	void start_command();
 };
 

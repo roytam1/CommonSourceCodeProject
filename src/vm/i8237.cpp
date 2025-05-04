@@ -269,55 +269,31 @@ uint32_t I8237::read_io(int ch)
 
 #define STATE_VERSION	2
 
-void I8237::save_state(FILEIO* state_fio)
+bool I8237::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < 4; i++) {
-		state_fio->FputUint16(dma[i].areg);
-		state_fio->FputUint16(dma[i].creg);
-		state_fio->FputUint16(dma[i].bareg);
-		state_fio->FputUint16(dma[i].bcreg);
-		state_fio->FputUint8(dma[i].mode);
-		state_fio->FputUint16(dma[i].bankreg);
-		state_fio->FputUint16(dma[i].incmask);
-	}
-	state_fio->FputBool(low_high);
-	state_fio->FputUint8(cmd);
-	state_fio->FputUint8(req);
-	state_fio->FputUint8(mask);
-	state_fio->FputUint8(tc);
-	state_fio->FputUint32(tmp);
-	state_fio->FputBool(mode_word);
-	state_fio->FputUint32(addr_mask);
-}
-
-bool I8237::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < 4; i++) {
-		dma[i].areg = state_fio->FgetUint16();
-		dma[i].creg = state_fio->FgetUint16();
-		dma[i].bareg = state_fio->FgetUint16();
-		dma[i].bcreg = state_fio->FgetUint16();
-		dma[i].mode = state_fio->FgetUint8();
-		dma[i].bankreg = state_fio->FgetUint16();
-		dma[i].incmask = state_fio->FgetUint16();
+		state_fio->StateUint16(dma[i].areg);
+		state_fio->StateUint16(dma[i].creg);
+		state_fio->StateUint16(dma[i].bareg);
+		state_fio->StateUint16(dma[i].bcreg);
+		state_fio->StateUint8(dma[i].mode);
+		state_fio->StateUint16(dma[i].bankreg);
+		state_fio->StateUint16(dma[i].incmask);
 	}
-	low_high = state_fio->FgetBool();
-	cmd = state_fio->FgetUint8();
-	req = state_fio->FgetUint8();
-	mask = state_fio->FgetUint8();
-	tc = state_fio->FgetUint8();
-	tmp = state_fio->FgetUint32();
-	mode_word = state_fio->FgetBool();
-	addr_mask = state_fio->FgetUint32();
+	state_fio->StateBool(low_high);
+	state_fio->StateUint8(cmd);
+	state_fio->StateUint8(req);
+	state_fio->StateUint8(mask);
+	state_fio->StateUint8(tc);
+	state_fio->StateUint32(tmp);
+	state_fio->StateBool(mode_word);
+	state_fio->StateUint32(addr_mask);
 	return true;
 }
 

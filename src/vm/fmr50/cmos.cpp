@@ -68,27 +68,17 @@ uint32_t CMOS::read_io8(uint32_t addr)
 
 #define STATE_VERSION	1
 
-void CMOS::save_state(FILEIO* state_fio)
+bool CMOS::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(cmos, sizeof(cmos), 1);
-	state_fio->FputBool(modified);
-	state_fio->FputUint8(bank);
-}
-
-bool CMOS::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(cmos, sizeof(cmos), 1);
-	modified = state_fio->FgetBool();
-	bank = state_fio->FgetUint8();
+	state_fio->StateBuffer(cmos, sizeof(cmos), 1);
+	state_fio->StateBool(modified);
+	state_fio->StateUint8(bank);
 	return true;
 }
 

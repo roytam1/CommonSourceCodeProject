@@ -163,25 +163,16 @@ void LCD::draw_screen()
 
 #define STATE_VERSION	1
 
-void LCD::save_state(FILEIO* state_fio)
+bool LCD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(seg, sizeof(seg), 1);
-	state_fio->FputUint16(sel);
-}
-
-bool LCD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(seg, sizeof(seg), 1);
-	sel = state_fio->FgetUint16();
+	state_fio->StateBuffer(seg, sizeof(seg), 1);
+	state_fio->StateUint16(sel);
 	return true;
 }
 

@@ -210,33 +210,20 @@ void DISPLAY::draw_80column()
 
 #define STATE_VERSION	1
 
-void DISPLAY::save_state(FILEIO* state_fio)
+bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(chr);
-	state_fio->FputBool(wide);
-	state_fio->FputUint16(cursor);
-	state_fio->FputUint16(cblink);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->FputUint16(vram_addr);
-}
-
-bool DISPLAY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	chr = state_fio->FgetBool();
-	wide = state_fio->FgetBool();
-	cursor = state_fio->FgetUint16();
-	cblink = state_fio->FgetUint16();
-	state_fio->Fread(vram, sizeof(vram), 1);
-	vram_addr = state_fio->FgetUint16();
+	state_fio->StateBool(chr);
+	state_fio->StateBool(wide);
+	state_fio->StateUint16(cursor);
+	state_fio->StateUint16(cblink);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateUint16(vram_addr);
 	return true;
 }
 

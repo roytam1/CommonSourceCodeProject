@@ -40,29 +40,18 @@ uint32_t PRINTER::read_io8(uint32_t addr)
 
 #define STATE_VERSION	1
 
-void PRINTER::save_state(FILEIO* state_fio)
+bool PRINTER::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(out);
-	state_fio->FputUint8(ctrl0);
-	state_fio->FputUint8(ctrl1);
-	state_fio->FputBool(busy);
-}
-
-bool PRINTER::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	out = state_fio->FgetUint8();
-	ctrl0 = state_fio->FgetUint8();
-	ctrl1 = state_fio->FgetUint8();
-	busy = state_fio->FgetBool();
+	state_fio->StateUint8(out);
+	state_fio->StateUint8(ctrl0);
+	state_fio->StateUint8(ctrl1);
+	state_fio->StateBool(busy);
 	return true;
 }
 

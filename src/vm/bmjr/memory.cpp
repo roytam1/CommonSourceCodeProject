@@ -404,62 +404,38 @@ void MEMORY::draw_screen()
 
 #define STATE_VERSION	2
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint8(memory_bank);
-	state_fio->Fwrite(color_table, sizeof(color_table), 1);
-	state_fio->FputUint8(char_color);
-	state_fio->FputUint8(back_color);
-	state_fio->FputUint8(mp1710_enb);
-	state_fio->FputUint8(screen_mode);
-	state_fio->FputBool(screen_reversed);
-	state_fio->FputBool(drec_bit);
-	state_fio->FputBool(drec_in);
-	state_fio->FputUint32(drec_clock);
-	state_fio->FputUint8(key_column);
-	state_fio->FputUint8(key_data);
-	state_fio->FputBool(nmi_enb);
-	state_fio->FputBool(break_pressed);
-	state_fio->FputUint8(sound_sample);
-	state_fio->FputDouble(sound_accum);
-	state_fio->FputUint32(sound_clock);
-	state_fio->FputUint32(sound_mix_clock);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	memory_bank = state_fio->FgetUint8();
-	state_fio->Fread(color_table, sizeof(color_table), 1);
-	char_color = state_fio->FgetUint8();
-	back_color = state_fio->FgetUint8();
-	mp1710_enb = state_fio->FgetUint8();
-	screen_mode = state_fio->FgetUint8();
-	screen_reversed = state_fio->FgetBool();
-	drec_bit = state_fio->FgetBool();
-	drec_in = state_fio->FgetBool();
-	drec_clock = state_fio->FgetUint32();
-	key_column = state_fio->FgetUint8();
-	key_data = state_fio->FgetUint8();
-	nmi_enb = state_fio->FgetBool();
-	break_pressed = state_fio->FgetBool();
-	sound_sample = state_fio->FgetUint8();
-	sound_accum = state_fio->FgetDouble();
-	sound_clock = state_fio->FgetUint32();
-	sound_mix_clock = state_fio->FgetUint32();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint8(memory_bank);
+	state_fio->StateBuffer(color_table, sizeof(color_table), 1);
+	state_fio->StateUint8(char_color);
+	state_fio->StateUint8(back_color);
+	state_fio->StateUint8(mp1710_enb);
+	state_fio->StateUint8(screen_mode);
+	state_fio->StateBool(screen_reversed);
+	state_fio->StateBool(drec_bit);
+	state_fio->StateBool(drec_in);
+	state_fio->StateUint32(drec_clock);
+	state_fio->StateUint8(key_column);
+	state_fio->StateUint8(key_data);
+	state_fio->StateBool(nmi_enb);
+	state_fio->StateBool(break_pressed);
+	state_fio->StateUint8(sound_sample);
+	state_fio->StateDouble(sound_accum);
+	state_fio->StateUint32(sound_clock);
+	state_fio->StateUint32(sound_mix_clock);
 	
 	// post process
-	update_bank();
+	if(loading) {
+		update_bank();
+	}
 	return true;
 }
 

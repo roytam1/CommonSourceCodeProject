@@ -79,6 +79,15 @@ public:
 	{
 		return true;
 	}
+	virtual bool process_state(FILEIO* state_fio, bool loading)
+	{
+		if(loading) {
+			return load_state(state_fio);
+		} else {
+			save_state(state_fio);
+			return true;
+		}
+	}
 	
 	// control
 	virtual void reset() {}

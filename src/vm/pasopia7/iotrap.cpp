@@ -79,25 +79,16 @@ void IOTRAP::do_reset()
 
 #define STATE_VERSION	1
 
-void IOTRAP::save_state(FILEIO* state_fio)
+bool IOTRAP::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(nmi_mask);
-	state_fio->FputBool(pasopia);
-}
-
-bool IOTRAP::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	nmi_mask = state_fio->FgetBool();
-	pasopia = state_fio->FgetBool();
+	state_fio->StateBool(nmi_mask);
+	state_fio->StateBool(pasopia);
 	return true;
 }
 

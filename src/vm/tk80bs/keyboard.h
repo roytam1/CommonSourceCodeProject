@@ -54,8 +54,7 @@ public:
 		return kb_type & 3;
 	}
 #endif
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
 #if defined(_TK80BS)

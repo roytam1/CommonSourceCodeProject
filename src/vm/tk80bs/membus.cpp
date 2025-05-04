@@ -51,29 +51,18 @@ void MEMBUS::write_signal(int id, uint32_t data, uint32_t mask)
 
 #define STATE_VERSION	1
 
-void MEMBUS::save_state(FILEIO* state_fio)
+bool MEMBUS::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
 #if defined(_TK85)
-	state_fio->FputUint32(pc7);
-	state_fio->FputUint32(count);
+	state_fio->StateUint32(pc7);
+	state_fio->StateUint32(count);
 #endif
-	MEMORY::save_state(state_fio);
+	return MEMORY::process_state(state_fio, loading);
 }
 
-bool MEMBUS::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-#if defined(_TK85)
-	pc7 = state_fio->FgetUint32();
-	count = state_fio->FgetUint32();
-#endif
-	return MEMORY::load_state(state_fio);
-}

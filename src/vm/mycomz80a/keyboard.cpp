@@ -219,31 +219,20 @@ void KEYBOARD::event_frame()
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	key_buf->save_state((void *)state_fio);
-	state_fio->FputInt32(key_code);
-	state_fio->FputBool(kana);
-	state_fio->FputInt32(event_cnt);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!key_buf->load_state((void *)state_fio)) {
+	if(!key_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	key_code = state_fio->FgetInt32();
-	kana = state_fio->FgetBool();
-	event_cnt = state_fio->FgetInt32();
+	state_fio->StateInt32(key_code);
+	state_fio->StateBool(kana);
+	state_fio->StateInt32(event_cnt);
 	return true;
 }
 

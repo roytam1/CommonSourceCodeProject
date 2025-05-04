@@ -110,27 +110,17 @@ void KEYBOARD::key_up(int code)
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(key_stat, sizeof(key_stat), 1);
-	state_fio->FputInt32(key_no);
-	state_fio->FputBool(intr_enb);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(key_stat, sizeof(key_stat), 1);
-	key_no = state_fio->FgetInt32();
-	intr_enb = state_fio->FgetBool();
+	state_fio->StateBuffer(key_stat, sizeof(key_stat), 1);
+	state_fio->StateInt32(key_no);
+	state_fio->StateBool(intr_enb);
 	return true;
 }
 

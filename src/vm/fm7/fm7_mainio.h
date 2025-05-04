@@ -174,12 +174,13 @@ class FM7_MAINIO : public DEVICE {
 	bool connect_whg; // [1]
 	bool connect_thg; // [2]
 //#endif
-	uint32_t opn_address[4];
-	uint32_t opn_data[4];
-	uint32_t opn_stat[4];
+	uint8_t opn_address[4];
+	uint8_t opn_data[4];
+	uint8_t opn_stat[4];
 	uint8_t  opn_cmdreg[4]; // OPN register, bit 3-0, maybe dummy.
 	uint8_t  opn_ch3mode[4];
-
+	uint8_t  opn_prescaler_type[4];
+	
 	/* FD47 */
 	bool intstat_whg;   // bit3 : OPN interrupt. '0' = happened.
 	/* FD53 */
@@ -269,7 +270,7 @@ class FM7_MAINIO : public DEVICE {
 #endif	
 #if defined(HAS_DMA)
 	bool intstat_dma;
-	uint32_t dma_addr;
+	uint8_t dma_addr;
 #endif	
 	void set_clockmode(uint8_t flags);
 	uint8_t get_clockmode(void);
@@ -336,7 +337,6 @@ class FM7_MAINIO : public DEVICE {
 	uint8_t subsystem_read_status(void);
 #endif   
 	// OPN
-	virtual void opn_note_on(int index);
 	virtual void set_opn(int index, uint8_t val);
 	virtual uint8_t get_opn(int index);
 	virtual void set_opn_cmd(int index, uint8_t cmd);
@@ -497,6 +497,7 @@ class FM7_MAINIO : public DEVICE {
 		//T *nnp = static_cast<T *>(np);
 		return static_cast<T *>(np)->read_dma_data8(addr);
 	}
+	bool decl_state_opn(FILEIO *state_fio, bool loading);
 public:
 	FM7_MAINIO(VM* parent_vm, EMU* parent_emu);
 	~FM7_MAINIO();
@@ -517,14 +518,13 @@ public:
 
 	virtual void write_signal(int id, uint32_t data, uint32_t mask);
 	virtual uint32_t read_signal(int id);
-
+	
 	virtual void event_callback(int event_id, int err);
 	virtual void reset();
 	virtual void update_config();
 	virtual void save_state(FILEIO *state_fio);
 	virtual bool load_state(FILEIO *state_fio);
-	void save_state_main(FILEIO *state_fio);
-	bool load_state_main(FILEIO *state_fio, uint32_t version);
+	virtual bool decl_state(FILEIO *state_fio, bool loading);
 	
 	void set_context_printer(DEVICE *p)
 	{

@@ -824,77 +824,47 @@ uint16_t PSUB::get_key(int code, bool repeat)
 
 #define STATE_VERSION	1
 
-void PSUB::save_state(FILEIO* state_fio)
+bool PSUB::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	cur_time.save_state((void *)state_fio);
-	state_fio->FputInt32(time_register_id);
-	state_fio->Fwrite(databuf, sizeof(databuf), 1);
-	state_fio->FputInt32((int)(datap - &databuf[0][0]));
-	state_fio->FputUint8(mode);
-	state_fio->FputUint8(inbuf);
-	state_fio->FputUint8(outbuf);
-	state_fio->FputBool(ibf);
-	state_fio->FputBool(obf);
-	state_fio->FputInt32(cmdlen);
-	state_fio->FputInt32(datalen);
-	key_buf->save_state((void *)state_fio);
-	state_fio->FputInt32(key_prev);
-	state_fio->FputInt32(key_break);
-	state_fio->FputBool(key_shift);
-	state_fio->FputBool(key_ctrl);
-	state_fio->FputBool(key_graph);
-	state_fio->FputBool(key_caps_locked);
-	state_fio->FputBool(key_kana_locked);
-	state_fio->FputInt32(key_register_id);
-	state_fio->FputBool(play);
-	state_fio->FputBool(rec);
-	state_fio->FputBool(eot);
-	state_fio->FputBool(iei);
-	state_fio->FputBool(intr);
-	state_fio->FputUint32(intr_bit);
-}
-
-bool PSUB::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)state_fio)) {
+	if(!cur_time.process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	time_register_id = state_fio->FgetInt32();
-	state_fio->Fread(databuf, sizeof(databuf), 1);
-	datap = &databuf[0][0] + state_fio->FgetInt32();
-	mode = state_fio->FgetUint8();
-	inbuf = state_fio->FgetUint8();
-	outbuf = state_fio->FgetUint8();
-	ibf = state_fio->FgetBool();
-	obf = state_fio->FgetBool();
-	cmdlen = state_fio->FgetInt32();
-	datalen = state_fio->FgetInt32();
-	if(!key_buf->load_state((void *)state_fio)) {
+	state_fio->StateInt32(time_register_id);
+	state_fio->StateBuffer(databuf, sizeof(databuf), 1);
+	if(loading) {
+		datap = &databuf[0][0] + state_fio->FgetInt32_LE();
+	} else {
+		state_fio->FputInt32_LE((int)(datap - &databuf[0][0]));
+	}
+	state_fio->StateUint8(mode);
+	state_fio->StateUint8(inbuf);
+	state_fio->StateUint8(outbuf);
+	state_fio->StateBool(ibf);
+	state_fio->StateBool(obf);
+	state_fio->StateInt32(cmdlen);
+	state_fio->StateInt32(datalen);
+	if(!key_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	key_prev = state_fio->FgetInt32();
-	key_break = state_fio->FgetInt32();
-	key_shift = state_fio->FgetBool();
-	key_ctrl = state_fio->FgetBool();
-	key_graph = state_fio->FgetBool();
-	key_caps_locked = state_fio->FgetBool();
-	key_kana_locked = state_fio->FgetBool();
-	key_register_id = state_fio->FgetInt32();
-	play = state_fio->FgetBool();
-	rec = state_fio->FgetBool();
-	eot = state_fio->FgetBool();
-	iei = state_fio->FgetBool();
-	intr = state_fio->FgetBool();
-	intr_bit = state_fio->FgetUint32();
+	state_fio->StateInt32(key_prev);
+	state_fio->StateInt32(key_break);
+	state_fio->StateBool(key_shift);
+	state_fio->StateBool(key_ctrl);
+	state_fio->StateBool(key_graph);
+	state_fio->StateBool(key_caps_locked);
+	state_fio->StateBool(key_kana_locked);
+	state_fio->StateInt32(key_register_id);
+	state_fio->StateBool(play);
+	state_fio->StateBool(rec);
+	state_fio->StateBool(eot);
+	state_fio->StateBool(iei);
+	state_fio->StateBool(intr);
+	state_fio->StateUint32(intr_bit);
 	return true;
 }
-

@@ -342,27 +342,7 @@ void SOUND::set_volume(int ch, int decibel_l, int decibel_r)
 
 #define STATE_VERSION	1
 
-void SOUND::save_state(FILEIO* state_fio)
-{
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(&tone, sizeof(tone), 1);
-	state_fio->Fwrite(&noise, sizeof(noise), 1);
-	state_fio->Fwrite(&square1, sizeof(square1), 1);
-	state_fio->Fwrite(&square2, sizeof(square2), 1);
-	state_fio->Fwrite(&square3, sizeof(square3), 1);
-	state_fio->Fwrite(&pcm, sizeof(pcm), 1);
-	state_fio->Fwrite(pcm_table, sizeof(pcm_table), 1);
-	state_fio->FputUint32(cmd_addr);
-	state_fio->FputInt32(pcm_len);
-	state_fio->FputInt32(param_cnt);
-	state_fio->FputInt32(param_ptr);
-	state_fio->FputInt32(register_id);
-	state_fio->Fwrite(params, sizeof(params), 1);
-}
-
-bool SOUND::load_state(FILEIO* state_fio)
+bool SOUND::process_state(FILEIO* state_fio, bool loading)
 {
 	// pre process
 	int tone_diff = tone.diff;
@@ -372,33 +352,35 @@ bool SOUND::load_state(FILEIO* state_fio)
 	int square3_diff = square3.diff;
 	int pcm_diff = pcm.diff;
 	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(&tone, sizeof(tone), 1);
-	state_fio->Fread(&noise, sizeof(noise), 1);
-	state_fio->Fread(&square1, sizeof(square1), 1);
-	state_fio->Fread(&square2, sizeof(square2), 1);
-	state_fio->Fread(&square3, sizeof(square3), 1);
-	state_fio->Fread(&pcm, sizeof(pcm), 1);
-	state_fio->Fread(pcm_table, sizeof(pcm_table), 1);
-	cmd_addr = state_fio->FgetUint32();
-	pcm_len = state_fio->FgetInt32();
-	param_cnt = state_fio->FgetInt32();
-	param_ptr = state_fio->FgetInt32();
-	register_id = state_fio->FgetInt32();
-	state_fio->Fread(params, sizeof(params), 1);
+	state_fio->StateBuffer(&tone, sizeof(tone), 1);
+	state_fio->StateBuffer(&noise, sizeof(noise), 1);
+	state_fio->StateBuffer(&square1, sizeof(square1), 1);
+	state_fio->StateBuffer(&square2, sizeof(square2), 1);
+	state_fio->StateBuffer(&square3, sizeof(square3), 1);
+	state_fio->StateBuffer(&pcm, sizeof(pcm), 1);
+	state_fio->StateBuffer(pcm_table, sizeof(pcm_table), 1);
+	state_fio->StateUint32(cmd_addr);
+	state_fio->StateInt32(pcm_len);
+	state_fio->StateInt32(param_cnt);
+	state_fio->StateInt32(param_ptr);
+	state_fio->StateInt32(register_id);
+	state_fio->StateBuffer(params, sizeof(params), 1);
 	
 	// post process
-	tone.diff = tone_diff;
-	noise.diff = noise_diff;
-	square1.diff = square1_diff;
-	square2.diff = square2_diff;
-	square3.diff = square3_diff;
-	pcm.diff = pcm_diff;
+	if(loading) {
+		tone.diff = tone_diff;
+		noise.diff = noise_diff;
+		square1.diff = square1_diff;
+		square2.diff = square2_diff;
+		square3.diff = square3_diff;
+		pcm.diff = pcm_diff;
+	}
 	return true;
 }
 

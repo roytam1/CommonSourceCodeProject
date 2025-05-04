@@ -526,67 +526,37 @@ void SUB::draw_screen()
 
 #define STATE_VERSION	2
 
-void SUB::save_state(FILEIO* state_fio)
+bool SUB::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(vram_b, sizeof(vram_b), 1);
-	state_fio->Fwrite(vram_r, sizeof(vram_r), 1);
-	state_fio->Fwrite(vram_g, sizeof(vram_g), 1);
-	state_fio->FputUint8(pa);
-	state_fio->FputUint8(pb);
-	state_fio->FputUint8(pc);
-	state_fio->FputUint8(comm_data);
-	state_fio->FputBool(so);
-	state_fio->FputUint8(clock);
-	state_fio->Fwrite(&b16_1, sizeof(b16_1), 1);
-	state_fio->Fwrite(&b16_2, sizeof(b16_2), 1);
-	state_fio->Fwrite(&g21_1, sizeof(g21_1), 1);
-	state_fio->Fwrite(&g21_2, sizeof(g21_2), 1);
-	state_fio->Fwrite(&c15, sizeof(c15), 1);
-	state_fio->Fwrite(&c16, sizeof(c16), 1);
-	state_fio->Fwrite(&f21, sizeof(f21), 1);
-	state_fio->FputUint8(key_sel);
-	state_fio->FputUint8(key_data);
-	state_fio->FputUint8(color_reg);
-	state_fio->FputBool(hsync);
-	state_fio->FputBool(wait);
-	state_fio->FputUint8(cblink);
-}
-
-bool SUB::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(vram_b, sizeof(vram_b), 1);
-	state_fio->Fread(vram_r, sizeof(vram_r), 1);
-	state_fio->Fread(vram_g, sizeof(vram_g), 1);
-	pa = state_fio->FgetUint8();
-	pb = state_fio->FgetUint8();
-	pc = state_fio->FgetUint8();
-	comm_data = state_fio->FgetUint8();
-	so = state_fio->FgetBool();
-	clock = state_fio->FgetUint8();
-	state_fio->Fread(&b16_1, sizeof(b16_1), 1);
-	state_fio->Fread(&b16_2, sizeof(b16_2), 1);
-	state_fio->Fread(&g21_1, sizeof(g21_1), 1);
-	state_fio->Fread(&g21_2, sizeof(g21_2), 1);
-	state_fio->Fread(&c15, sizeof(c15), 1);
-	state_fio->Fread(&c16, sizeof(c16), 1);
-	state_fio->Fread(&f21, sizeof(f21), 1);
-	key_sel = state_fio->FgetUint8();
-	key_data = state_fio->FgetUint8();
-	color_reg = state_fio->FgetUint8();
-	hsync = state_fio->FgetBool();
-	wait = state_fio->FgetBool();
-	cblink = state_fio->FgetUint8();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(vram_b, sizeof(vram_b), 1);
+	state_fio->StateBuffer(vram_r, sizeof(vram_r), 1);
+	state_fio->StateBuffer(vram_g, sizeof(vram_g), 1);
+	state_fio->StateUint8(pa);
+	state_fio->StateUint8(pb);
+	state_fio->StateUint8(pc);
+	state_fio->StateUint8(comm_data);
+	state_fio->StateBool(so);
+	state_fio->StateUint8(clock);
+	state_fio->StateBuffer(&b16_1, sizeof(b16_1), 1);
+	state_fio->StateBuffer(&b16_2, sizeof(b16_2), 1);
+	state_fio->StateBuffer(&g21_1, sizeof(g21_1), 1);
+	state_fio->StateBuffer(&g21_2, sizeof(g21_2), 1);
+	state_fio->StateBuffer(&c15, sizeof(c15), 1);
+	state_fio->StateBuffer(&c16, sizeof(c16), 1);
+	state_fio->StateBuffer(&f21, sizeof(f21), 1);
+	state_fio->StateUint8(key_sel);
+	state_fio->StateUint8(key_data);
+	state_fio->StateUint8(color_reg);
+	state_fio->StateBool(hsync);
+	state_fio->StateBool(wait);
+	state_fio->StateUint8(cblink);
 	return true;
 }
 

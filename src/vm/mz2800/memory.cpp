@@ -177,61 +177,47 @@ uint32_t MEMORY::read_io8(uint32_t addr)
 
 #define STATE_VERSION	2
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(ext, sizeof(ext), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->Fwrite(tvram, sizeof(tvram), 1);
-	state_fio->Fwrite(pcg, sizeof(pcg), 1);
-	state_fio->FputUint32(mem_window);
-	state_fio->FputUint8(vram_bank);
-	state_fio->FputUint8(dic_bank);
-	state_fio->FputUint8(kanji_bank);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(ext, sizeof(ext), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	state_fio->Fread(tvram, sizeof(tvram), 1);
-	state_fio->Fread(pcg, sizeof(pcg), 1);
-	mem_window = state_fio->FgetUint32();
-	vram_bank = state_fio->FgetUint8();
-	dic_bank = state_fio->FgetUint8();
-	kanji_bank = state_fio->FgetUint8();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(ext, sizeof(ext), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateBuffer(tvram, sizeof(tvram), 1);
+	state_fio->StateBuffer(pcg, sizeof(pcg), 1);
+	state_fio->StateUint32(mem_window);
+	state_fio->StateUint8(vram_bank);
+	state_fio->StateUint8(dic_bank);
+	state_fio->StateUint8(kanji_bank);
 	
 	// post process
-	if(vram_bank == 4) {
-		SET_BANK(0x0c0000, 0x0dffff, vram + 0x00000, vram + 0x00000);
-	} else if(vram_bank == 5) {
-		SET_BANK(0x0c0000, 0x0dffff, vram + 0x20000, vram + 0x20000);
-	} else if(vram_bank == 6) {
-		SET_BANK(0x0c0000, 0x0dffff, vram + 0x40000, vram + 0x40000);
-	} else if(vram_bank == 7) {
-		SET_BANK(0x0c0000, 0x0dffff, vram + 0x60000, vram + 0x60000);
-	} else {
-		SET_BANK(0x0c0000, 0x0dffff, vram + 0x00000, vram + 0x00000);
+	if(loading) {
+		if(vram_bank == 4) {
+			SET_BANK(0x0c0000, 0x0dffff, vram + 0x00000, vram + 0x00000);
+		} else if(vram_bank == 5) {
+			SET_BANK(0x0c0000, 0x0dffff, vram + 0x20000, vram + 0x20000);
+		} else if(vram_bank == 6) {
+			SET_BANK(0x0c0000, 0x0dffff, vram + 0x40000, vram + 0x40000);
+		} else if(vram_bank == 7) {
+			SET_BANK(0x0c0000, 0x0dffff, vram + 0x60000, vram + 0x60000);
+		} else {
+			SET_BANK(0x0c0000, 0x0dffff, vram + 0x00000, vram + 0x00000);
+		}
+		SET_BANK(0x0e0000, 0x0effff, wdmy, dic + ((dic_bank & 0x18) >> 3) * 0x10000);
+		if(kanji_bank & 0x80) {
+			SET_BANK(0x0f0000, 0x0f0fff, wdmy, kanji + 0x1000 * (kanji_bank & 0x7f));
+		} else {
+			SET_BANK(0x0f0000, 0x0f0fff, pcg, pcg);
+		}
+		SET_BANK(0x0f1000, 0x0f3fff, pcg + 0x1000, pcg + 0x1000);
+		SET_BANK(0x0f4000, 0x0f5fff, tvram, tvram);
+		SET_BANK(0x0f6000, 0x0f7fff, tvram, tvram);
 	}
-	SET_BANK(0x0e0000, 0x0effff, wdmy, dic + ((dic_bank & 0x18) >> 3) * 0x10000);
-	if(kanji_bank & 0x80) {
-		SET_BANK(0x0f0000, 0x0f0fff, wdmy, kanji + 0x1000 * (kanji_bank & 0x7f));
-	} else {
-		SET_BANK(0x0f0000, 0x0f0fff, pcg, pcg);
-	}
-	SET_BANK(0x0f1000, 0x0f3fff, pcg + 0x1000, pcg + 0x1000);
-	SET_BANK(0x0f4000, 0x0f5fff, tvram, tvram);
-	SET_BANK(0x0f6000, 0x0f7fff, tvram, tvram);
 	return true;
 }
 

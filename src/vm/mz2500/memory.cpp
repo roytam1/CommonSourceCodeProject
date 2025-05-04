@@ -330,53 +330,36 @@ void MEMORY::set_map(uint8_t data)
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->Fwrite(tvram, sizeof(tvram), 1);
-	state_fio->Fwrite(pcg, sizeof(pcg), 1);
-	state_fio->FputUint8(bank);
-	state_fio->Fwrite(page, sizeof(page), 1);
-	state_fio->FputUint8(dic_bank);
-	state_fio->FputUint8(kanji_bank);
-	state_fio->FputBool(blank);
-	state_fio->FputBool(hblank);
-	state_fio->FputBool(vblank);
-	state_fio->FputBool(busreq);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	state_fio->Fread(tvram, sizeof(tvram), 1);
-	state_fio->Fread(pcg, sizeof(pcg), 1);
-	bank = state_fio->FgetUint8();
-	state_fio->Fread(page, sizeof(page), 1);
-	dic_bank = state_fio->FgetUint8();
-	kanji_bank = state_fio->FgetUint8();
-	blank = state_fio->FgetBool();
-	hblank = state_fio->FgetBool();
-	vblank = state_fio->FgetBool();
-	busreq = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateBuffer(tvram, sizeof(tvram), 1);
+	state_fio->StateBuffer(pcg, sizeof(pcg), 1);
+	state_fio->StateUint8(bank);
+	state_fio->StateBuffer(page, sizeof(page), 1);
+	state_fio->StateUint8(dic_bank);
+	state_fio->StateUint8(kanji_bank);
+	state_fio->StateBool(blank);
+	state_fio->StateBool(hblank);
+	state_fio->StateBool(vblank);
+	state_fio->StateBool(busreq);
 	
 	// post process
-	uint8_t bank_tmp = bank;
-	bank = 0;
-	for(int i = 0; i < 8; i++) {
-		set_map(page[i]);
+	if(loading) {
+		uint8_t bank_tmp = bank;
+		bank = 0;
+		for(int i = 0; i < 8; i++) {
+			set_map(page[i]);
+		}
+		bank = bank_tmp;
 	}
-	bank = bank_tmp;
 	return true;
 }
 

@@ -105,38 +105,34 @@ void KANJIROM::release()
 {
 }
 
-#define STATE_VERSION 4
+#define STATE_VERSION 5
+
+bool KANJIROM::decl_state(FILEIO *state_fio, bool loading)
+{
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	
+	state_fio->StateBool(class2);
+	state_fio->StateBool(read_ok);
+	state_fio->StateBuffer(data_table, sizeof(data_table), 1);
+	state_fio->StateUint32(kanjiaddr.d);
+
+	return true;
+}
 void KANJIROM::save_state(FILEIO *state_fio)
 {
-	state_fio->FputUint32_BE(STATE_VERSION);
-	state_fio->FputInt32_BE(this_device_id);
-	this->out_debug_log(_T("Save State: KANJIROM: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
-
-	state_fio->FputBool(class2);
-	state_fio->FputBool(read_ok);
-	state_fio->Fwrite(data_table, sizeof(data_table), 1);
-	state_fio->FputUint16_BE(kanjiaddr.w.l);
-
+	decl_state(state_fio, false);
 }
 
 bool KANJIROM::load_state(FILEIO *state_fio)
 {
-	uint32_t version;
-	version = state_fio->FgetUint32_BE();
-	if(this_device_id != state_fio->FgetInt32_BE()) return false;
-	this->out_debug_log(_T("Load State: KANJIROM: id=%d ver=%d\n"), this_device_id, version);
-
-	if(version >= 1) {
-		class2 = state_fio->FgetBool();
-		read_ok = state_fio->FgetBool();
-		state_fio->Fread(data_table, sizeof(data_table), 1);
-		if(version == 1) return true;
-	}
-	if(version >= 2) {
-		kanjiaddr.d = 0;
-		kanjiaddr.w.l = state_fio->FgetUint16_BE();
-		if(version >= 2) return true;
-	}
-	return false;
+	bool mb = decl_state(state_fio, true);
+	if(!mb) return false;
+	kanjiaddr.w.h = 0;
+	return true;
 }
 

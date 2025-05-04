@@ -137,33 +137,20 @@ void MEMORY::close_cart()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(ext, sizeof(ext), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->FputInt32(rpage);
-	state_fio->FputInt32(wpage);
-	state_fio->FputBool(inserted);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(ext, sizeof(ext), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	rpage = state_fio->FgetInt32();
-	wpage = state_fio->FgetInt32();
-	inserted = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(ext, sizeof(ext), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateInt32(rpage);
+	state_fio->StateInt32(wpage);
+	state_fio->StateBool(inserted);
 	return true;
 }
 

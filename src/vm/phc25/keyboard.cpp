@@ -120,30 +120,18 @@ void KEYBOARD::event_frame()
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-#ifdef _MAP1010
-	state_fio->FputInt32(kana_pressed);
-#else
-	state_fio->Fwrite(status, sizeof(status), 1);
-#endif
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 #ifdef _MAP1010
-	kana_pressed = state_fio->FgetInt32();
+	state_fio->StateInt32(kana_pressed);
 #else
-	state_fio->Fread(status, sizeof(status), 1);
+	state_fio->StateBuffer(status, sizeof(status), 1);
 #endif
 	return true;
 }

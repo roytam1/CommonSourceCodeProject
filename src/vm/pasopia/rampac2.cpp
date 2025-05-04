@@ -96,25 +96,15 @@ void RAMPAC2::open_file(const _TCHAR* file_path)
 
 #define STATE_VERSION	1
 
-void RAMPAC2::save_state(FILEIO* state_fio)
+bool RAMPAC2::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint32(ptr);
-	state_fio->FputBool(opened);
-	state_fio->FputBool(modified);
-}
-
-bool RAMPAC2::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	ptr = state_fio->FgetUint32();
-	opened = state_fio->FgetBool();
-	modified = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint32(ptr);
+	state_fio->StateBool(opened);
+	state_fio->StateBool(modified);
 	return true;
 }
 

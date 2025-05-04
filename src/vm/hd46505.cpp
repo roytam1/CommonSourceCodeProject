@@ -228,82 +228,49 @@ void HD46505::set_hsync(bool val)
 
 #define STATE_VERSION	3
 
-void HD46505::save_state(FILEIO* state_fio)
+bool HD46505::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(regs, sizeof(regs), 1);
-	state_fio->Fwrite(regs_written, sizeof(regs_written), 1);
-	state_fio->FputInt32(ch);
-	state_fio->FputBool(timing_changed);
-	state_fio->FputInt32(cpu_clocks);
-#if defined(HD46505_CHAR_CLOCK)
-	state_fio->FputDouble(char_clock);
-	state_fio->FputDouble(next_char_clock);
-#elif defined(HD46505_HORIZ_FREQ)
-	state_fio->FputDouble(horiz_freq);
-	state_fio->FputDouble(next_horiz_freq);
-#endif
-	state_fio->FputDouble(frames_per_sec);
-	state_fio->FputInt32(hz_total);
-	state_fio->FputInt32(hz_disp);
-	state_fio->FputInt32(hs_start);
-	state_fio->FputInt32(hs_end);
-	state_fio->FputInt32(vt_total);
-	state_fio->FputInt32(vt_disp);
-	state_fio->FputInt32(vs_start);
-	state_fio->FputInt32(vs_end);
-	state_fio->FputInt32(disp_end_clock);
-	state_fio->FputInt32(hs_start_clock);
-	state_fio->FputInt32(hs_end_clock);
-	state_fio->FputBool(display);
-	state_fio->FputBool(vblank);
-	state_fio->FputBool(vsync);
-	state_fio->FputBool(hsync);
-}
-
-bool HD46505::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(regs, sizeof(regs), 1);
-	state_fio->Fread(regs_written, sizeof(regs_written), 1);
-	ch = state_fio->FgetInt32();
-	timing_changed = state_fio->FgetBool();
-	cpu_clocks = state_fio->FgetInt32();
+	state_fio->StateBuffer(regs, sizeof(regs), 1);
+	state_fio->StateBuffer(regs_written, sizeof(regs_written), 1);
+	state_fio->StateInt32(ch);
+	state_fio->StateBool(timing_changed);
+	state_fio->StateInt32(cpu_clocks);
 #if defined(HD46505_CHAR_CLOCK)
-	char_clock = state_fio->FgetDouble();
-	next_char_clock = state_fio->FgetDouble();
+	state_fio->StateDouble(char_clock);
+	state_fio->StateDouble(next_char_clock);
 #elif defined(HD46505_HORIZ_FREQ)
-	horiz_freq = state_fio->FgetDouble();
-	next_horiz_freq = state_fio->FgetDouble();
+	state_fio->StateDouble(horiz_freq);
+	state_fio->StateDouble(next_horiz_freq);
 #endif
-	frames_per_sec = state_fio->FgetDouble();
-	hz_total = state_fio->FgetInt32();
-	hz_disp = state_fio->FgetInt32();
-	hs_start = state_fio->FgetInt32();
-	hs_end = state_fio->FgetInt32();
-	vt_total = state_fio->FgetInt32();
-	vt_disp = state_fio->FgetInt32();
-	vs_start = state_fio->FgetInt32();
-	vs_end = state_fio->FgetInt32();
-	disp_end_clock = state_fio->FgetInt32();
-	hs_start_clock = state_fio->FgetInt32();
-	hs_end_clock = state_fio->FgetInt32();
-	display = state_fio->FgetBool();
-	vblank = state_fio->FgetBool();
-	vsync = state_fio->FgetBool();
-	hsync = state_fio->FgetBool();
+	state_fio->StateDouble(frames_per_sec);
+	state_fio->StateInt32(hz_total);
+	state_fio->StateInt32(hz_disp);
+	state_fio->StateInt32(hs_start);
+	state_fio->StateInt32(hs_end);
+	state_fio->StateInt32(vt_total);
+	state_fio->StateInt32(vt_disp);
+	state_fio->StateInt32(vs_start);
+	state_fio->StateInt32(vs_end);
+	state_fio->StateInt32(disp_end_clock);
+	state_fio->StateInt32(hs_start_clock);
+	state_fio->StateInt32(hs_end_clock);
+	state_fio->StateBool(display);
+	state_fio->StateBool(vblank);
+	state_fio->StateBool(vsync);
+	state_fio->StateBool(hsync);
 	
 	// post process
-	if(regs_written[0] && regs_written[1] && regs_written[2] && regs_written[3] && regs_written[4] && regs_written[5] && regs_written[6] && regs_written[7] && regs_written[9]) {
-		// force update timing
-		timing_changed = true;
+	if(loading) {
+		if(regs_written[0] && regs_written[1] && regs_written[2] && regs_written[3] && regs_written[4] && regs_written[5] && regs_written[6] && regs_written[7] && regs_written[9]) {
+			// force update timing
+			timing_changed = true;
+		}
 	}
 	return true;
 }

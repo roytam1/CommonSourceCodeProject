@@ -133,8 +133,7 @@ public:
 	uint32_t read_signal(int ch);
 	void event_callback(int event_id, int err);
 	void update_config();
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
 	void set_context_rqm(DEVICE* device, int id, uint32_t mask)

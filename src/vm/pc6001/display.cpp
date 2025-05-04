@@ -46,23 +46,19 @@ void DISPLAY::draw_screen()
 
 #define STATE_VERSION	1
 
-void DISPLAY::save_state(FILEIO* state_fio)
+bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32((int)(vram_ptr - ram_ptr));
-}
-
-bool DISPLAY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	vram_ptr = ram_ptr + state_fio->FgetInt32();
+	if(loading) {
+		vram_ptr = ram_ptr + state_fio->FgetInt32_LE();
+	} else {
+		state_fio->FputInt32_LE((int)(vram_ptr - ram_ptr));
+	}
 	return true;
 }
 

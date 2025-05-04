@@ -695,36 +695,26 @@ void VM::update_config()
 
 #define STATE_VERSION	6
 
-void VM::save_state(FILEIO* state_fio)
+bool VM::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		const char *name = typeid(*device).name() + 6; // skip "class "
-		
-		state_fio->FputInt32(strlen(name));
-		state_fio->Fwrite(name, strlen(name), 1);
-		device->save_state(state_fio);
-	}
-	state_fio->FputInt32(sr_mode);
-}
-
-bool VM::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		const char *name = typeid(*device).name() + 6; // skip "class "
+		int len = strlen(name);
 		
-		if(!(state_fio->FgetInt32() == strlen(name) && state_fio->Fcompare(name, strlen(name)))) {
+		if(!state_fio->StateCheckInt32(len)) {
 			return false;
 		}
-		if(!device->load_state(state_fio)) {
+		if(!state_fio->StateCheckBuffer(name, len, 1)) {
+			return false;
+		}
+		if(!device->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	sr_mode = state_fio->FgetInt32();
+	state_fio->StateInt32(sr_mode);
 	return true;
 }
 

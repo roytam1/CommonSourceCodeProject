@@ -283,37 +283,22 @@ void KEYBOARD::update_tk80()
 
 #define STATE_VERSION	2
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-#if defined(_TK80BS)
-	state_fio->FputUint8(prev_type);
-	state_fio->FputUint8(prev_brk);
-	state_fio->FputUint8(prev_kana);
-	state_fio->FputBool(kana_lock);
-	state_fio->FputUint32(kb_type);
-#endif
-	state_fio->FputUint32(column);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 #if defined(_TK80BS)
-	prev_type = state_fio->FgetUint8();
-	prev_brk = state_fio->FgetUint8();
-	prev_kana = state_fio->FgetUint8();
-	kana_lock = state_fio->FgetBool();
-	kb_type = state_fio->FgetUint32();
+	state_fio->StateUint8(prev_type);
+	state_fio->StateUint8(prev_brk);
+	state_fio->StateUint8(prev_kana);
+	state_fio->StateBool(kana_lock);
+	state_fio->StateUint32(kb_type);
 #endif
-	column = state_fio->FgetUint32();
+	state_fio->StateUint32(column);
 	return true;
 }
 

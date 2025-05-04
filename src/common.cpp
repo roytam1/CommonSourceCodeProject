@@ -1353,37 +1353,21 @@ void DLL_PREFIX cur_time_t::update_day_of_week()
 
 #define STATE_VERSION	1
 
-void DLL_PREFIX cur_time_t::save_state(void *f)
+bool DLL_PREFIX cur_time_t::process_state(void *f, bool loading)
 {
 	FILEIO *state_fio = (FILEIO *)f;
 	
-	state_fio->FputUint32(STATE_VERSION);
-	
-	state_fio->FputInt32(year);
-	state_fio->FputInt32(month);
-	state_fio->FputInt32(day);
-	state_fio->FputInt32(day_of_week);
-	state_fio->FputInt32(hour);
-	state_fio->FputInt32(minute);
-	state_fio->FputInt32(second);
-	state_fio->FputBool(initialized);
-}
-
-bool DLL_PREFIX cur_time_t::load_state(void *f)
-{
-	FILEIO *state_fio = (FILEIO *)f;
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	year = state_fio->FgetInt32();
-	month = state_fio->FgetInt32();
-	day = state_fio->FgetInt32();
-	day_of_week = state_fio->FgetInt32();
-	hour = state_fio->FgetInt32();
-	minute = state_fio->FgetInt32();
-	second = state_fio->FgetInt32();
-	initialized = state_fio->FgetBool();
+	state_fio->StateInt32(year);
+	state_fio->StateInt32(month);
+	state_fio->StateInt32(day);
+	state_fio->StateInt32(day_of_week);
+	state_fio->StateInt32(hour);
+	state_fio->StateInt32(minute);
+	state_fio->StateInt32(second);
+	state_fio->StateBool(initialized);
 	return true;
 }
 

@@ -516,56 +516,35 @@ void MEMORY::draw_cg()
 
 #define STATE_VERSION	2
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->Fwrite(cvram, sizeof(cvram), 1);
-	state_fio->Fwrite(kvram, sizeof(kvram), 1);
-	state_fio->FputUint8(mcr1);
-	state_fio->FputUint8(mcr2);
-	state_fio->FputUint8(a20);
-	state_fio->FputUint8(lcdadr);
-	state_fio->Fwrite(lcdreg, sizeof(lcdreg), 1);
-	state_fio->FputUint16(dcr1);
-	state_fio->FputUint16(dcr2);
-	state_fio->FputInt32(kj_h);
-	state_fio->FputInt32(kj_l);
-	state_fio->FputInt32(kj_ofs);
-	state_fio->FputInt32(kj_row);
-	state_fio->FputInt32(blinkcnt);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	state_fio->Fread(cvram, sizeof(cvram), 1);
-	state_fio->Fread(kvram, sizeof(kvram), 1);
-	mcr1 = state_fio->FgetUint8();
-	mcr2 = state_fio->FgetUint8();
-	a20 = state_fio->FgetUint8();
-	lcdadr = state_fio->FgetUint8();
-	state_fio->Fread(lcdreg, sizeof(lcdreg), 1);
-	dcr1 = state_fio->FgetUint16();
-	dcr2 = state_fio->FgetUint16();
-	kj_h = state_fio->FgetInt32();
-	kj_l = state_fio->FgetInt32();
-	kj_ofs = state_fio->FgetInt32();
-	kj_row = state_fio->FgetInt32();
-	blinkcnt = state_fio->FgetInt32();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateBuffer(cvram, sizeof(cvram), 1);
+	state_fio->StateBuffer(kvram, sizeof(kvram), 1);
+	state_fio->StateUint8(mcr1);
+	state_fio->StateUint8(mcr2);
+	state_fio->StateUint8(a20);
+	state_fio->StateUint8(lcdadr);
+	state_fio->StateBuffer(lcdreg, sizeof(lcdreg), 1);
+	state_fio->StateUint16(dcr1);
+	state_fio->StateUint16(dcr2);
+	state_fio->StateInt32(kj_h);
+	state_fio->StateInt32(kj_l);
+	state_fio->StateInt32(kj_ofs);
+	state_fio->StateInt32(kj_row);
+	state_fio->StateInt32(blinkcnt);
 	
 	// post process
-	update_bank();
+	if(loading) {
+		update_bank();
+	}
 	return true;
 }
 

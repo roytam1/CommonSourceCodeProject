@@ -3759,103 +3759,62 @@ void MZ1P17::finish_paper()
 
 #define STATE_VERSION	3
 
-void MZ1P17::save_state(FILEIO* state_fio)
+bool MZ1P17::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(value);
-	state_fio->FputInt32(busy_id);
-	state_fio->FputInt32(ack_id);
-	state_fio->FputBool(strobe);
-	state_fio->FputBool(res);
-	state_fio->FputBool(busy);
-	state_fio->FputBool(ack);
-	state_fio->Fwrite(gaiji, sizeof(gaiji), 1);
-	state_fio->Fwrite(htab, sizeof(htab), 1);
-	state_fio->Fwrite(vtab, sizeof(vtab), 1);
-	fifo->save_state((void *)state_fio);
-	state_fio->FputInt32(lf_pitch);
-	state_fio->FputBool(prev_esc_6);
-	state_fio->FputInt32(margin_left);
-	state_fio->FputInt32(margin_right);
-	state_fio->FputInt32(pitch_mode);
-	state_fio->FputInt32(script_mode);
-	state_fio->FputBool(kanji_mode);
-	state_fio->FputBool(kanji_half);
-	state_fio->FputBool(bold);
-	state_fio->FputBool(underline);
-	state_fio->FputBool(hiragana_mode);
-	state_fio->FputBool(reverse);
-	state_fio->FputBool(vertical);
-	state_fio->FputBool(ank_double_x);
-	state_fio->FputBool(ank_double_y);
-	state_fio->FputBool(kanji_double_x);
-	state_fio->FputBool(kanji_double_y);
-	state_fio->FputInt32(kanji_pitch);
-	state_fio->FputInt32(kanji_half_pitch);
-	state_fio->FputInt32(dest_line_x);
-	state_fio->FputInt32(dest_paper_y);
-	state_fio->FputInt32(color_mode);
-	state_fio->FputBool(double_y_printed);
-}
-
-bool MZ1P17::load_state(FILEIO* state_fio)
-{
-	finish();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	value = state_fio->FgetInt32();
-	busy_id = state_fio->FgetInt32();
-	ack_id = state_fio->FgetInt32();
-	strobe = state_fio->FgetBool();
-	res = state_fio->FgetBool();
-	busy = state_fio->FgetBool();
-	ack = state_fio->FgetBool();
-	state_fio->Fread(gaiji, sizeof(gaiji), 1);
-	state_fio->Fread(htab, sizeof(htab), 1);
-	state_fio->Fread(vtab, sizeof(vtab), 1);
-	if(!fifo->load_state((void *)state_fio)) {
+	state_fio->StateInt32(value);
+	state_fio->StateInt32(busy_id);
+	state_fio->StateInt32(ack_id);
+	state_fio->StateBool(strobe);
+	state_fio->StateBool(res);
+	state_fio->StateBool(busy);
+	state_fio->StateBool(ack);
+	state_fio->StateBuffer(gaiji, sizeof(gaiji), 1);
+	state_fio->StateBuffer(htab, sizeof(htab), 1);
+	state_fio->StateBuffer(vtab, sizeof(vtab), 1);
+	if(!fifo->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	lf_pitch = state_fio->FgetInt32();
-	prev_esc_6 = state_fio->FgetBool();
-	margin_left = state_fio->FgetInt32();
-	margin_right = state_fio->FgetInt32();
-	pitch_mode = state_fio->FgetInt32();
-	script_mode = state_fio->FgetInt32();
-	kanji_mode = state_fio->FgetBool();
-	kanji_half = state_fio->FgetBool();
-	bold = state_fio->FgetBool();
-	underline = state_fio->FgetBool();
-	hiragana_mode = state_fio->FgetBool();
-	reverse = state_fio->FgetBool();
-	vertical = state_fio->FgetBool();
-	ank_double_x = state_fio->FgetBool();
-	ank_double_y = state_fio->FgetBool();
-	kanji_double_x = state_fio->FgetBool();
-	kanji_double_y = state_fio->FgetBool();
-	kanji_pitch = state_fio->FgetInt32();
-	kanji_half_pitch = state_fio->FgetInt32();
-	dest_line_x = state_fio->FgetInt32();
-	dest_paper_y = state_fio->FgetInt32();
-	color_mode = state_fio->FgetInt32();
-	double_y_printed = state_fio->FgetBool();
+	state_fio->StateInt32(lf_pitch);
+	state_fio->StateBool(prev_esc_6);
+	state_fio->StateInt32(margin_left);
+	state_fio->StateInt32(margin_right);
+	state_fio->StateInt32(pitch_mode);
+	state_fio->StateInt32(script_mode);
+	state_fio->StateBool(kanji_mode);
+	state_fio->StateBool(kanji_half);
+	state_fio->StateBool(bold);
+	state_fio->StateBool(underline);
+	state_fio->StateBool(hiragana_mode);
+	state_fio->StateBool(reverse);
+	state_fio->StateBool(vertical);
+	state_fio->StateBool(ank_double_x);
+	state_fio->StateBool(ank_double_y);
+	state_fio->StateBool(kanji_double_x);
+	state_fio->StateBool(kanji_double_y);
+	state_fio->StateInt32(kanji_pitch);
+	state_fio->StateInt32(kanji_half_pitch);
+	state_fio->StateInt32(dest_line_x);
+	state_fio->StateInt32(dest_paper_y);
+	state_fio->StateInt32(color_mode);
+	state_fio->StateBool(double_y_printed);
 	
 	// post process
-	emu->clear_bitmap(&bitmap_paper, 255, 255, 255);
-	emu->clear_bitmap(&bitmap_line[0], 0, 0, 0);
-	emu->clear_bitmap(&bitmap_line[1], 0, 0, 0);
-	emu->clear_bitmap(&bitmap_line[2], 0, 0, 0);
-	emu->clear_bitmap(&bitmap_line[3], 0, 0, 0);
-	wait_frames = -1;
-	line_printed = paper_printed = false;
-	paper_index = written_length = 0;
+	if(loading) {
+		emu->clear_bitmap(&bitmap_paper, 255, 255, 255);
+		emu->clear_bitmap(&bitmap_line[0], 0, 0, 0);
+		emu->clear_bitmap(&bitmap_line[1], 0, 0, 0);
+		emu->clear_bitmap(&bitmap_line[2], 0, 0, 0);
+		emu->clear_bitmap(&bitmap_line[3], 0, 0, 0);
+		wait_frames = -1;
+		line_printed = paper_printed = false;
+		paper_index = written_length = 0;
+	}
 	return true;
 }
 

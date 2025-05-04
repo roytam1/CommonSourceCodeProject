@@ -275,33 +275,20 @@ bool IO::key_hit(int code)
 
 #define STATE_VERSION	2
 
-void IO::save_state(FILEIO* state_fio)
+bool IO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(port_a);
-	state_fio->FputUint8(port_b);
-	state_fio->FputUint8(port_s);
-	state_fio->FputBool(drec_in);
-	state_fio->FputBool(rtc_in);
-	state_fio->FputUint16(key_strobe);
-}
-
-bool IO::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	port_a = state_fio->FgetUint8();
-	port_b = state_fio->FgetUint8();
-	port_s = state_fio->FgetUint8();
-	drec_in = state_fio->FgetBool();
-	rtc_in = state_fio->FgetBool();
-	key_strobe = state_fio->FgetUint16();
+	state_fio->StateUint8(port_a);
+	state_fio->StateUint8(port_b);
+	state_fio->StateUint8(port_s);
+	state_fio->StateBool(drec_in);
+	state_fio->StateBool(rtc_in);
+	state_fio->StateUint16(key_strobe);
 	return true;
 }
 

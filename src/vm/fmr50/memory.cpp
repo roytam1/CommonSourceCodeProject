@@ -1212,124 +1212,69 @@ void MEMORY::draw_cg()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->Fwrite(cvram, sizeof(cvram), 1);
-#ifdef _FMR60
-	state_fio->Fwrite(avram, sizeof(avram), 1);
-#else
-	state_fio->Fwrite(kvram, sizeof(kvram), 1);
-#endif
-	state_fio->FputUint8(machine_id);
-	state_fio->FputUint8(protect);
-	state_fio->FputUint8(rst);
-	state_fio->FputUint8(mainmem);
-	state_fio->FputUint8(rplane);
-	state_fio->FputUint8(wplane);
-	state_fio->FputUint8(dma_addr_reg);
-	state_fio->FputUint8(dma_wrap_reg);
-	state_fio->FputUint32(dma_addr_mask);
-	state_fio->FputBool(disp);
-	state_fio->FputBool(vsync);
-	state_fio->FputInt32(blink);
-	state_fio->Fwrite(apal, sizeof(apal), 1);
-	state_fio->FputUint8(apalsel);
-	state_fio->Fwrite(dpal, sizeof(dpal), 1);
-	state_fio->FputUint8(outctrl);
-#ifndef _FMR60
-	state_fio->FputUint8(pagesel);
-	state_fio->FputUint8(ankcg);
-	state_fio->FputUint8(dispctrl);
-	state_fio->FputUint8(mix);
-	state_fio->FputUint16(accaddr);
-	state_fio->FputUint16(dispaddr);
-	state_fio->FputInt32(kj_h);
-	state_fio->FputInt32(kj_l);
-	state_fio->FputInt32(kj_ofs);
-	state_fio->FputInt32(kj_row);
-	state_fio->FputUint8(cmdreg);
-	state_fio->FputUint8(imgcol);
-	state_fio->FputUint8(maskreg);
-	state_fio->Fwrite(compreg, sizeof(compreg), 1);
-	state_fio->FputUint8(compbit);
-	state_fio->FputUint8(bankdis);
-	state_fio->Fwrite(tilereg, sizeof(tilereg), 1);
-	state_fio->FputUint16(lofs);
-	state_fio->FputUint16(lsty);
-	state_fio->FputUint16(lsx);
-	state_fio->FputUint16(lsy);
-	state_fio->FputUint16(lex);
-	state_fio->FputUint16(ley);
-#endif
-	state_fio->Fwrite(palette_cg, sizeof(palette_cg), 1);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	state_fio->Fread(cvram, sizeof(cvram), 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateBuffer(cvram, sizeof(cvram), 1);
 #ifdef _FMR60
-	state_fio->Fread(avram, sizeof(avram), 1);
+	state_fio->StateBuffer(avram, sizeof(avram), 1);
 #else
-	state_fio->Fread(kvram, sizeof(kvram), 1);
+	state_fio->StateBuffer(kvram, sizeof(kvram), 1);
 #endif
-	machine_id = state_fio->FgetUint8();
-	protect = state_fio->FgetUint8();
-	rst = state_fio->FgetUint8();
-	mainmem = state_fio->FgetUint8();
-	rplane = state_fio->FgetUint8();
-	wplane = state_fio->FgetUint8();
-	dma_addr_reg = state_fio->FgetUint8();
-	dma_wrap_reg = state_fio->FgetUint8();
-	dma_addr_mask = state_fio->FgetUint32();
-	disp = state_fio->FgetBool();
-	vsync = state_fio->FgetBool();
-	blink = state_fio->FgetInt32();
-	state_fio->Fread(apal, sizeof(apal), 1);
-	apalsel = state_fio->FgetUint8();
-	state_fio->Fread(dpal, sizeof(dpal), 1);
-	outctrl = state_fio->FgetUint8();
+	state_fio->StateUint8(machine_id);
+	state_fio->StateUint8(protect);
+	state_fio->StateUint8(rst);
+	state_fio->StateUint8(mainmem);
+	state_fio->StateUint8(rplane);
+	state_fio->StateUint8(wplane);
+	state_fio->StateUint8(dma_addr_reg);
+	state_fio->StateUint8(dma_wrap_reg);
+	state_fio->StateUint32(dma_addr_mask);
+	state_fio->StateBool(disp);
+	state_fio->StateBool(vsync);
+	state_fio->StateInt32(blink);
+	state_fio->StateBuffer(apal, sizeof(apal), 1);
+	state_fio->StateUint8(apalsel);
+	state_fio->StateBuffer(dpal, sizeof(dpal), 1);
+	state_fio->StateUint8(outctrl);
 #ifndef _FMR60
-	pagesel = state_fio->FgetUint8();
-	ankcg = state_fio->FgetUint8();
-	dispctrl = state_fio->FgetUint8();
-	mix = state_fio->FgetUint8();
-	accaddr = state_fio->FgetUint16();
-	dispaddr = state_fio->FgetUint16();
-	kj_h = state_fio->FgetInt32();
-	kj_l = state_fio->FgetInt32();
-	kj_ofs = state_fio->FgetInt32();
-	kj_row = state_fio->FgetInt32();
-	cmdreg = state_fio->FgetUint8();
-	imgcol = state_fio->FgetUint8();
-	maskreg = state_fio->FgetUint8();
-	state_fio->Fread(compreg, sizeof(compreg), 1);
-	compbit = state_fio->FgetUint8();
-	bankdis = state_fio->FgetUint8();
-	state_fio->Fread(tilereg, sizeof(tilereg), 1);
-	lofs = state_fio->FgetUint16();
-	lsty = state_fio->FgetUint16();
-	lsx = state_fio->FgetUint16();
-	lsy = state_fio->FgetUint16();
-	lex = state_fio->FgetUint16();
-	ley = state_fio->FgetUint16();
+	state_fio->StateUint8(pagesel);
+	state_fio->StateUint8(ankcg);
+	state_fio->StateUint8(dispctrl);
+	state_fio->StateUint8(mix);
+	state_fio->StateUint16(accaddr);
+	state_fio->StateUint16(dispaddr);
+	state_fio->StateInt32(kj_h);
+	state_fio->StateInt32(kj_l);
+	state_fio->StateInt32(kj_ofs);
+	state_fio->StateInt32(kj_row);
+	state_fio->StateUint8(cmdreg);
+	state_fio->StateUint8(imgcol);
+	state_fio->StateUint8(maskreg);
+	state_fio->StateBuffer(compreg, sizeof(compreg), 1);
+	state_fio->StateUint8(compbit);
+	state_fio->StateUint8(bankdis);
+	state_fio->StateBuffer(tilereg, sizeof(tilereg), 1);
+	state_fio->StateUint16(lofs);
+	state_fio->StateUint16(lsty);
+	state_fio->StateUint16(lsx);
+	state_fio->StateUint16(lsy);
+	state_fio->StateUint16(lex);
+	state_fio->StateUint16(ley);
 #endif
-	state_fio->Fread(palette_cg, sizeof(palette_cg), 1);
+	state_fio->StateBuffer(palette_cg, sizeof(palette_cg), 1);
 	
 	// post process
-	update_bank();
+	if(loading) {
+		update_bank();
+	}
 	return true;
 }
 

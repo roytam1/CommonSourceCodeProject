@@ -383,26 +383,16 @@ void IO::set_iowait_range_rw(uint32_t s, uint32_t e, int wait)
 
 #define STATE_VERSION	1
 
-void IO::save_state(FILEIO* state_fio)
+bool IO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < addr_max; i++) {
-		state_fio->FputUint32(rd_table[i].value);
-	}
-}
-
-bool IO::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < addr_max; i++) {
-		rd_table[i].value = state_fio->FgetUint32();
+		state_fio->StateUint32(rd_table[i].value);
 	}
 	return true;
 }

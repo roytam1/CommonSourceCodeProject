@@ -30,7 +30,8 @@ public:
 	void release();
 	void reset(void);
 	bool get_readstat(void);
-	
+
+	bool decl_state(FILEIO *state_fio, bool loading);
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
 };

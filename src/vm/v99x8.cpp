@@ -2999,81 +2999,53 @@ void cmdtime_chk(void)
 
 #define STATE_VERSION	1
 
-void V99X8::save_state(FILEIO* state_fio)
+bool V99X8::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(&v99x8, sizeof(v99x8), 1);
-#ifdef USE_CMDTIME
-	state_fio->FputInt32(cmdtime_t);
-	state_fio->FputInt32(cmdtime_m);
-#endif
-	state_fio->FputInt32(latch1);
-	state_fio->FputInt32(latch2);
-	state_fio->FputInt32(vram_addr);
-	state_fio->FputInt32(vram_page);
-	state_fio->FputBool(f_out3);
-	state_fio->FputBool(f_mode);
-	state_fio->FputBool(flag_frame);
-	state_fio->Fwrite(&vcom, sizeof(vcom), 1);
-	state_fio->FputInt32((int)(vcom.src - vram));
-	state_fio->FputInt32((int)(vcom.dst - vram));
-	state_fio->Fwrite(&r44, sizeof(r44), 1);
-	state_fio->Fwrite(&pixmask, sizeof(pixmask), 1);
-	state_fio->Fwrite(&v99x8_refresh, sizeof(v99x8_refresh), 1);
-	state_fio->Fwrite(pal, sizeof(pal), 1);
-	state_fio->Fwrite(pal_8, sizeof(pal_8), 1);
-	state_fio->Fwrite(pal_m, sizeof(pal_m), 1);
-	state_fio->FputInt32(col_bg);
-	state_fio->Fwrite(tbl_yjk_b, sizeof(tbl_yjk_b), 1);
-	state_fio->Fwrite(tbl_yjk_rg, sizeof(tbl_yjk_rg), 1);
-	state_fio->Fwrite(blackbuf, sizeof(blackbuf), 1);
-	state_fio->Fwrite(sbuf, sizeof(sbuf), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->FputBool(intstat);
-}
-
-bool V99X8::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(&v99x8, sizeof(v99x8), 1);
+	state_fio->StateBuffer(&v99x8, sizeof(v99x8), 1);
 #ifdef USE_CMDTIME
-	cmdtime_t = state_fio->FgetInt32();
-	cmdtime_m = state_fio->FgetInt32();
+	state_fio->StateInt32(cmdtime_t);
+	state_fio->StateInt32(cmdtime_m);
 #endif
-	latch1 = state_fio->FgetInt32();
-	latch2 = state_fio->FgetInt32();
-	vram_addr = state_fio->FgetInt32();
-	vram_page = state_fio->FgetInt32();
-	f_out3 = state_fio->FgetBool();
-	f_mode = state_fio->FgetBool();
-	flag_frame = state_fio->FgetBool();
-	state_fio->Fread(&vcom, sizeof(vcom), 1);
-	vcom.src = vram + state_fio->FgetInt32();
-	vcom.dst = vram + state_fio->FgetInt32();
-	state_fio->Fread(&r44, sizeof(r44), 1);
-	state_fio->Fread(&pixmask, sizeof(pixmask), 1);
-	state_fio->Fread(&v99x8_refresh, sizeof(v99x8_refresh), 1);
-	state_fio->Fread(pal, sizeof(pal), 1);
-	state_fio->Fread(pal_8, sizeof(pal_8), 1);
-	state_fio->Fread(pal_m, sizeof(pal_m), 1);
-	col_bg = state_fio->FgetInt32();
-	state_fio->Fread(tbl_yjk_b, sizeof(tbl_yjk_b), 1);
-	state_fio->Fread(tbl_yjk_rg, sizeof(tbl_yjk_rg), 1);
-	state_fio->Fread(blackbuf, sizeof(blackbuf), 1);
-	state_fio->Fread(sbuf, sizeof(sbuf), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	intstat = state_fio->FgetBool();
+	state_fio->StateInt32(latch1);
+	state_fio->StateInt32(latch2);
+	state_fio->StateInt32(vram_addr);
+	state_fio->StateInt32(vram_page);
+	state_fio->StateBool(f_out3);
+	state_fio->StateBool(f_mode);
+	state_fio->StateBool(flag_frame);
+	state_fio->StateBuffer(&vcom, sizeof(vcom), 1);
+	if(loading) {
+		vcom.src = vram + state_fio->FgetInt32_LE();
+		vcom.dst = vram + state_fio->FgetInt32_LE();
+	} else {
+		state_fio->FputInt32_LE((int)(vcom.src - vram));
+		state_fio->FputInt32_LE((int)(vcom.dst - vram));
+	}
+	state_fio->StateBuffer(&r44, sizeof(r44), 1);
+	state_fio->StateBuffer(&pixmask, sizeof(pixmask), 1);
+	state_fio->StateBuffer(&v99x8_refresh, sizeof(v99x8_refresh), 1);
+	state_fio->StateBuffer(pal, sizeof(pal), 1);
+	state_fio->StateBuffer(pal_8, sizeof(pal_8), 1);
+	state_fio->StateBuffer(pal_m, sizeof(pal_m), 1);
+	state_fio->StateInt32(col_bg);
+	state_fio->StateBuffer(tbl_yjk_b, sizeof(tbl_yjk_b), 1);
+	state_fio->StateBuffer(tbl_yjk_rg, sizeof(tbl_yjk_rg), 1);
+	state_fio->StateBuffer(blackbuf, sizeof(blackbuf), 1);
+	state_fio->StateBuffer(sbuf, sizeof(sbuf), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateBool(intstat);
 	
 	// post process
-	v99x8.vram = vram;
-	f_scr = true;
+	if(loading) {
+		v99x8.vram = vram;
+		f_scr = true;
+	}
 	return true;
 }
 

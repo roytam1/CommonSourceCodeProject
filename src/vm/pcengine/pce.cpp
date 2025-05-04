@@ -2448,128 +2448,67 @@ void PCE::event_callback(int event_id, int err)
 
 #define STATE_VERSION	4
 
-void PCE::save_state(FILEIO* state_fio)
+bool PCE::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(support_6btn_pad);
-	state_fio->FputBool(support_multi_tap);
-#ifdef SUPPORT_SUPER_GFX
-	state_fio->FputBool(support_sgfx);
-#endif
-#ifdef SUPPORT_CDROM
-	state_fio->FputBool(support_cdrom);
-#endif
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(cart + 0x80000, 0x80000, 1);
-#ifdef SUPPORT_BACKUP_RAM
-	state_fio->Fwrite(backup, sizeof(backup), 1);
-	state_fio->FputUint32(backup_crc32);
-#endif
-	state_fio->FputUint32(bank);
-	state_fio->FputUint8(buffer);
-	state_fio->FputInt32(prev_width);
-	state_fio->FputBool(inserted);
-	state_fio->Fwrite(vdc, sizeof(vdc), 1);
-	state_fio->Fwrite(&vce, sizeof(vce), 1);
-	state_fio->Fwrite(&vpc, sizeof(vpc), 1);
-	state_fio->Fwrite(psg, sizeof(psg), 1);
-	state_fio->FputUint8(psg_ch);
-	state_fio->FputUint8(psg_vol);
-	state_fio->FputUint8(psg_lfo_freq);
-	state_fio->FputUint8(psg_lfo_ctrl);
-	state_fio->FputUint8(joy_counter);
-	state_fio->FputBool(joy_high_nibble);
-	state_fio->FputBool(joy_second_byte);
-#ifdef SUPPORT_CDROM
-	state_fio->Fwrite(cdrom_ram, sizeof(cdrom_ram), 1);
-	state_fio->Fwrite(cdrom_regs, sizeof(cdrom_regs), 1);
-	state_fio->FputBool(backup_locked);
-	state_fio->FputBool(irq_status);
-	state_fio->FputBool(drq_status);
-	state_fio->Fwrite(adpcm_ram, sizeof(adpcm_ram), 1);
-	state_fio->FputInt32(adpcm_read_ptr);
-	state_fio->FputInt32(adpcm_write_ptr);
-	state_fio->FputInt32(adpcm_written);
-	state_fio->FputInt32(adpcm_length);
-	state_fio->FputInt32(adpcm_clock_divider);
-	state_fio->FputUint8(adpcm_read_buf);
-	state_fio->FputUint8(adpcm_write_buf);
-	state_fio->FputBool(adpcm_dma_enabled);
-	state_fio->FputInt32(msm_start_addr);
-	state_fio->FputInt32(msm_end_addr);
-	state_fio->FputInt32(msm_half_addr);
-	state_fio->FputUint8(msm_nibble);
-	state_fio->FputUint8(msm_idle);
-	state_fio->FputDouble(cdda_volume);
-	state_fio->FputDouble(adpcm_volume);
-	state_fio->FputInt32(event_cdda_fader);
-	state_fio->FputInt32(event_adpcm_fader);
-#endif
-}
-
-bool PCE::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	support_6btn_pad = state_fio->FgetBool();
-	support_multi_tap = state_fio->FgetBool();
+	state_fio->StateBool(support_6btn_pad);
+	state_fio->StateBool(support_multi_tap);
 #ifdef SUPPORT_SUPER_GFX
-	support_sgfx = state_fio->FgetBool();
+	state_fio->StateBool(support_sgfx);
 #endif
 #ifdef SUPPORT_CDROM
-	support_cdrom = state_fio->FgetBool();
+	state_fio->StateBool(support_cdrom);
 #endif
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(cart + 0x80000, 0x80000, 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(cart + 0x80000, 0x80000, 1);
 #ifdef SUPPORT_BACKUP_RAM
-	state_fio->Fread(backup, sizeof(backup), 1);
-	backup_crc32 = state_fio->FgetUint32();
+	state_fio->StateBuffer(backup, sizeof(backup), 1);
+	state_fio->StateUint32(backup_crc32);
 #endif
-	bank = state_fio->FgetUint32();
-	buffer = state_fio->FgetUint8();
-	prev_width = state_fio->FgetInt32();
-	inserted = state_fio->FgetBool();
-	state_fio->Fread(vdc, sizeof(vdc), 1);
-	state_fio->Fread(&vce, sizeof(vce), 1);
-	state_fio->Fread(&vpc, sizeof(vpc), 1);
-	state_fio->Fread(psg, sizeof(psg), 1);
-	psg_ch = state_fio->FgetUint8();
-	psg_vol = state_fio->FgetUint8();
-	psg_lfo_freq = state_fio->FgetUint8();
-	psg_lfo_ctrl = state_fio->FgetUint8();
-	joy_counter = state_fio->FgetUint8();
-	joy_high_nibble = state_fio->FgetBool();
-	joy_second_byte = state_fio->FgetBool();
+	state_fio->StateUint32(bank);
+	state_fio->StateUint8(buffer);
+	state_fio->StateInt32(prev_width);
+	state_fio->StateBool(inserted);
+	state_fio->StateBuffer(vdc, sizeof(vdc), 1);
+	state_fio->StateBuffer(&vce, sizeof(vce), 1);
+	state_fio->StateBuffer(&vpc, sizeof(vpc), 1);
+	state_fio->StateBuffer(psg, sizeof(psg), 1);
+	state_fio->StateUint8(psg_ch);
+	state_fio->StateUint8(psg_vol);
+	state_fio->StateUint8(psg_lfo_freq);
+	state_fio->StateUint8(psg_lfo_ctrl);
+	state_fio->StateUint8(joy_counter);
+	state_fio->StateBool(joy_high_nibble);
+	state_fio->StateBool(joy_second_byte);
 #ifdef SUPPORT_CDROM
-	state_fio->Fread(cdrom_ram, sizeof(cdrom_ram), 1);
-	state_fio->Fread(cdrom_regs, sizeof(cdrom_regs), 1);
-	backup_locked = state_fio->FgetBool();
-	irq_status = state_fio->FgetBool();
-	drq_status = state_fio->FgetBool();
-	state_fio->Fread(adpcm_ram, sizeof(adpcm_ram), 1);
-	adpcm_read_ptr = state_fio->FgetInt32();
-	adpcm_write_ptr = state_fio->FgetInt32();
-	adpcm_written = state_fio->FgetInt32();
-	adpcm_length = state_fio->FgetInt32();
-	adpcm_clock_divider = state_fio->FgetInt32();
-	adpcm_read_buf = state_fio->FgetUint8();
-	adpcm_write_buf = state_fio->FgetUint8();
-	adpcm_dma_enabled = state_fio->FgetBool();
-	msm_start_addr = state_fio->FgetInt32();
-	msm_end_addr = state_fio->FgetInt32();
-	msm_half_addr = state_fio->FgetInt32();
-	msm_nibble = state_fio->FgetUint8();
-	msm_idle = state_fio->FgetUint8();
-	cdda_volume = state_fio->FgetDouble();
-	adpcm_volume = state_fio->FgetDouble();
-	event_cdda_fader = state_fio->FgetInt32();
-	event_adpcm_fader = state_fio->FgetInt32();
+	state_fio->StateBuffer(cdrom_ram, sizeof(cdrom_ram), 1);
+	state_fio->StateBuffer(cdrom_regs, sizeof(cdrom_regs), 1);
+	state_fio->StateBool(backup_locked);
+	state_fio->StateBool(irq_status);
+	state_fio->StateBool(drq_status);
+	state_fio->StateBuffer(adpcm_ram, sizeof(adpcm_ram), 1);
+	state_fio->StateInt32(adpcm_read_ptr);
+	state_fio->StateInt32(adpcm_write_ptr);
+	state_fio->StateInt32(adpcm_written);
+	state_fio->StateInt32(adpcm_length);
+	state_fio->StateInt32(adpcm_clock_divider);
+	state_fio->StateUint8(adpcm_read_buf);
+	state_fio->StateUint8(adpcm_write_buf);
+	state_fio->StateBool(adpcm_dma_enabled);
+	state_fio->StateInt32(msm_start_addr);
+	state_fio->StateInt32(msm_end_addr);
+	state_fio->StateInt32(msm_half_addr);
+	state_fio->StateUint8(msm_nibble);
+	state_fio->StateUint8(msm_idle);
+	state_fio->StateDouble(cdda_volume);
+	state_fio->StateDouble(adpcm_volume);
+	state_fio->StateInt32(event_cdda_fader);
+	state_fio->StateInt32(event_adpcm_fader);
 #endif
 	return true;
 }

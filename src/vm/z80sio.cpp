@@ -910,117 +910,65 @@ void Z80SIO::notify_intr_reti()
 
 #define STATE_VERSION	3
 
-void Z80SIO::save_state(FILEIO* state_fio)
+bool Z80SIO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < 2; i++) {
-		state_fio->FputInt32(port[i].pointer);
-		state_fio->Fwrite(port[i].wr, sizeof(port[i].wr), 1);
-		state_fio->FputUint8(port[i].vector);
-		state_fio->FputUint8(port[i].affect);
-		state_fio->FputBool(port[i].nextrecv_intr);
-		state_fio->FputBool(port[i].first_data);
-		state_fio->FputBool(port[i].over_flow);
-		state_fio->FputBool(port[i].under_run);
-		state_fio->FputBool(port[i].abort);
-		state_fio->FputBool(port[i].sync);
-		state_fio->FputUint8(port[i].sync_bit);
-#ifdef HAS_UPD7201
-		state_fio->FputUint16(port[i].tx_count);
-		state_fio->FputUint8(port[i].tx_count_hi);
-#endif
-		state_fio->FputDouble(port[i].tx_clock);
-		state_fio->FputDouble(port[i].tx_interval);
-		state_fio->FputDouble(port[i].rx_clock);
-		state_fio->FputDouble(port[i].rx_interval);
-		state_fio->FputInt32(port[i].tx_data_bits);
-		state_fio->FputInt32(port[i].tx_bits_x2);
-		state_fio->FputInt32(port[i].tx_bits_x2_remain);
-		state_fio->FputInt32(port[i].rx_bits_x2);
-		state_fio->FputInt32(port[i].rx_bits_x2_remain);
-		state_fio->FputBool(port[i].prev_tx_clock_signal);
-		state_fio->FputBool(port[i].prev_rx_clock_signal);
-		port[i].send->save_state((void *)state_fio);
-		port[i].recv->save_state((void *)state_fio);
-		port[i].rtmp->save_state((void *)state_fio);
-		state_fio->FputInt32(port[i].shift_reg);
-		state_fio->FputInt32(port[i].send_id);
-		state_fio->FputInt32(port[i].recv_id);
-		state_fio->FputBool(port[i].err_intr);
-		state_fio->FputInt32(port[i].recv_intr);
-		state_fio->FputBool(port[i].stat_intr);
-		state_fio->FputBool(port[i].send_intr);
-		state_fio->FputBool(port[i].req_intr);
-		state_fio->FputBool(port[i].in_service);
-		state_fio->FputBool(port[i].dcd);
-		state_fio->FputBool(port[i].cts);
-	}
-	state_fio->FputBool(iei);
-	state_fio->FputBool(oei);
-	state_fio->FputUint32(intr_bit);
-}
-
-bool Z80SIO::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < 2; i++) {
-		port[i].pointer = state_fio->FgetInt32();
-		state_fio->Fread(port[i].wr, sizeof(port[i].wr), 1);
-		port[i].vector = state_fio->FgetUint8();
-		port[i].affect = state_fio->FgetUint8();
-		port[i].nextrecv_intr = state_fio->FgetBool();
-		port[i].first_data = state_fio->FgetBool();
-		port[i].over_flow = state_fio->FgetBool();
-		port[i].under_run = state_fio->FgetBool();
-		port[i].abort = state_fio->FgetBool();
-		port[i].sync = state_fio->FgetBool();
-		port[i].sync_bit = state_fio->FgetUint8();
+		state_fio->StateInt32(port[i].pointer);
+		state_fio->StateBuffer(port[i].wr, sizeof(port[i].wr), 1);
+		state_fio->StateUint8(port[i].vector);
+		state_fio->StateUint8(port[i].affect);
+		state_fio->StateBool(port[i].nextrecv_intr);
+		state_fio->StateBool(port[i].first_data);
+		state_fio->StateBool(port[i].over_flow);
+		state_fio->StateBool(port[i].under_run);
+		state_fio->StateBool(port[i].abort);
+		state_fio->StateBool(port[i].sync);
+		state_fio->StateUint8(port[i].sync_bit);
 #ifdef HAS_UPD7201
-		port[i].tx_count = state_fio->FgetUint16();
-		port[i].tx_count_hi = state_fio->FgetUint8();
+		state_fio->StateUint16(port[i].tx_count);
+		state_fio->StateUint8(port[i].tx_count_hi);
 #endif
-		port[i].tx_clock = state_fio->FgetDouble();
-		port[i].tx_interval = state_fio->FgetDouble();
-		port[i].rx_clock = state_fio->FgetDouble();
-		port[i].rx_interval = state_fio->FgetDouble();
-		port[i].tx_data_bits = state_fio->FgetInt32();
-		port[i].tx_bits_x2 = state_fio->FgetInt32();
-		port[i].tx_bits_x2_remain = state_fio->FgetInt32();
-		port[i].rx_bits_x2 = state_fio->FgetInt32();
-		port[i].rx_bits_x2_remain = state_fio->FgetInt32();
-		port[i].prev_tx_clock_signal = state_fio->FgetBool();
-		port[i].prev_rx_clock_signal = state_fio->FgetBool();
-		if(!port[i].send->load_state((void *)state_fio)) {
+		state_fio->StateDouble(port[i].tx_clock);
+		state_fio->StateDouble(port[i].tx_interval);
+		state_fio->StateDouble(port[i].rx_clock);
+		state_fio->StateDouble(port[i].rx_interval);
+		state_fio->StateInt32(port[i].tx_data_bits);
+		state_fio->StateInt32(port[i].tx_bits_x2);
+		state_fio->StateInt32(port[i].tx_bits_x2_remain);
+		state_fio->StateInt32(port[i].rx_bits_x2);
+		state_fio->StateInt32(port[i].rx_bits_x2_remain);
+		state_fio->StateBool(port[i].prev_tx_clock_signal);
+		state_fio->StateBool(port[i].prev_rx_clock_signal);
+		if(!port[i].send->process_state((void *)state_fio, loading)) {
 			return false;
 		}
-		if(!port[i].recv->load_state((void *)state_fio)) {
+		if(!port[i].recv->process_state((void *)state_fio, loading)) {
 			return false;
 		}
-		if(!port[i].rtmp->load_state((void *)state_fio)) {
+		if(!port[i].rtmp->process_state((void *)state_fio, loading)) {
 			return false;
 		}
-		port[i].shift_reg = state_fio->FgetInt32();
-		port[i].send_id = state_fio->FgetInt32();
-		port[i].recv_id = state_fio->FgetInt32();
-		port[i].err_intr = state_fio->FgetBool();
-		port[i].recv_intr = state_fio->FgetInt32();
-		port[i].stat_intr = state_fio->FgetBool();
-		port[i].send_intr = state_fio->FgetBool();
-		port[i].req_intr = state_fio->FgetBool();
-		port[i].in_service = state_fio->FgetBool();
-		port[i].dcd = state_fio->FgetBool();
-		port[i].cts = state_fio->FgetBool();
+		state_fio->StateInt32(port[i].shift_reg);
+		state_fio->StateInt32(port[i].send_id);
+		state_fio->StateInt32(port[i].recv_id);
+		state_fio->StateBool(port[i].err_intr);
+		state_fio->StateInt32(port[i].recv_intr);
+		state_fio->StateBool(port[i].stat_intr);
+		state_fio->StateBool(port[i].send_intr);
+		state_fio->StateBool(port[i].req_intr);
+		state_fio->StateBool(port[i].in_service);
+		state_fio->StateBool(port[i].dcd);
+		state_fio->StateBool(port[i].cts);
 	}
-	iei = state_fio->FgetBool();
-	oei = state_fio->FgetBool();
-	intr_bit = state_fio->FgetUint32();
+	state_fio->StateBool(iei);
+	state_fio->StateBool(oei);
+	state_fio->StateUint32(intr_bit);
 	return true;
 }
 

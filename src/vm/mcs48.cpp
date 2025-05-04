@@ -1309,55 +1309,41 @@ int MCS48::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	2
 
-void MCS48MEM::save_state(FILEIO* state_fio)
+bool MCS48MEM::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-}
-
-bool MCS48MEM::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
 	return true;
 }
 
-void MCS48::save_state(FILEIO* state_fio)
+bool MCS48::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-#ifdef USE_DEBUGGER
-	state_fio->FputUint64(total_icount);
-#endif
-	state_fio->Fwrite(opaque, sizeof(mcs48_state), 1);
-}
-
-bool MCS48::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 #ifdef USE_DEBUGGER
-	total_icount = prev_total_icount = state_fio->FgetUint64();
+	state_fio->StateUint64(total_icount);
 #endif
-	state_fio->Fread(opaque, sizeof(mcs48_state), 1);
+	state_fio->StateBuffer(opaque, sizeof(mcs48_state), 1);
 	
 	// post process
-	mcs48_state *cpustate = (mcs48_state *)opaque;
-	cpustate->mem = d_mem;
-	cpustate->io = d_io;
-	cpustate->intr = d_intr;
+	if(loading) {
+		mcs48_state *cpustate = (mcs48_state *)opaque;
+		cpustate->mem = d_mem;
+		cpustate->io = d_io;
+		cpustate->intr = d_intr;
+#ifdef USE_DEBUGGER
+		prev_total_icount = total_icount;
+#endif
+	}
 	return true;
 }
 

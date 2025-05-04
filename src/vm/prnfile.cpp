@@ -167,40 +167,26 @@ void PRNFILE::close_file()
 
 #define STATE_VERSION	2
 
-void PRNFILE::save_state(FILEIO* state_fio)
+bool PRNFILE::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(value);
-	state_fio->FputInt32(busy_id);
-	state_fio->FputInt32(ack_id);
-	state_fio->FputBool(strobe);
-	state_fio->FputBool(res);
-	state_fio->FputBool(busy);
-	state_fio->FputBool(ack);
-}
-
-bool PRNFILE::load_state(FILEIO* state_fio)
-{
-	close_file();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	value = state_fio->FgetInt32();
-	busy_id = state_fio->FgetInt32();
-	ack_id = state_fio->FgetInt32();
-	strobe = state_fio->FgetBool();
-	res = state_fio->FgetBool();
-	busy = state_fio->FgetBool();
-	ack = state_fio->FgetBool();
+	state_fio->StateInt32(value);
+	state_fio->StateInt32(busy_id);
+	state_fio->StateInt32(ack_id);
+	state_fio->StateBool(strobe);
+	state_fio->StateBool(res);
+	state_fio->StateBool(busy);
+	state_fio->StateBool(ack);
 	
 	// post process
-	wait_frames = -1;
+	if(loading) {
+		wait_frames = -1;
+	}
 	return true;
 }
 

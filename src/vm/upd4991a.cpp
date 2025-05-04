@@ -128,35 +128,22 @@ void UPD4991A::write_to_cur_time()
 
 #define STATE_VERSION	1
 
-void UPD4991A::save_state(FILEIO* state_fio)
+bool UPD4991A::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	cur_time.save_state((void *)state_fio);
-	state_fio->FputInt32(register_id);
-	state_fio->Fwrite(regs, sizeof(regs), 1);
-	state_fio->FputUint8(ctrl1);
-	state_fio->FputUint8(ctrl2);
-	state_fio->FputUint8(mode);
-}
-
-bool UPD4991A::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!cur_time.load_state((void *)state_fio)) {
+	if(!cur_time.process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	register_id = state_fio->FgetInt32();
-	state_fio->Fread(regs, sizeof(regs), 1);
-	ctrl1 = state_fio->FgetUint8();
-	ctrl2 = state_fio->FgetUint8();
-	mode = state_fio->FgetUint8();
+	state_fio->StateInt32(register_id);
+	state_fio->StateBuffer(regs, sizeof(regs), 1);
+	state_fio->StateUint8(ctrl1);
+	state_fio->StateUint8(ctrl2);
+	state_fio->StateUint8(mode);
 	return true;
 }
 

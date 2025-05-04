@@ -314,37 +314,27 @@ void MEMORY::close_cart()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(cmt_signal);
-	state_fio->FputBool(cmt_remote);
-	state_fio->FputBool(has_extrom);
-	state_fio->FputBool(cart_enabled);
-	state_fio->FputInt32(ctype);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	cmt_signal = state_fio->FgetBool();
-	cmt_remote = state_fio->FgetBool();
-	has_extrom = state_fio->FgetBool();
-	cart_enabled = state_fio->FgetBool();
-	ctype = state_fio->FgetInt32();
+	state_fio->StateBool(cmt_signal);
+	state_fio->StateBool(cmt_remote);
+	state_fio->StateBool(has_extrom);
+	state_fio->StateBool(cart_enabled);
+	state_fio->StateInt32(ctype);
 	
 	// post process
-	if(cart_enabled) {
-		ENABLE_CART();
-	} else {
-		DISABLE_CART();
+	if(loading) {
+		if(cart_enabled) {
+			ENABLE_CART();
+		} else {
+			DISABLE_CART();
+		}
 	}
 	return true;
 }

@@ -93,33 +93,18 @@ bool FIFO::empty()
 
 #define STATE_VERSION	1
 
-void FIFO::save_state(void *f)
+bool FIFO::process_state(void *f, bool loading)
 {
 	FILEIO *state_fio = (FILEIO *)f;
 	
-	state_fio->FputUint32(STATE_VERSION);
-	
-	state_fio->FputInt32(size);
-	state_fio->Fwrite(buf, size * sizeof(int), 1);
-	state_fio->FputInt32(cnt);
-	state_fio->FputInt32(rpt);
-	state_fio->FputInt32(wpt);
-}
-
-bool FIFO::load_state(void *f)
-{
-	FILEIO *state_fio = (FILEIO *)f;
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != size) {
-		return false;
-	}
-	state_fio->Fread(buf, size * sizeof(int), 1);
-	cnt = state_fio->FgetInt32();
-	rpt = state_fio->FgetInt32();
-	wpt = state_fio->FgetInt32();
+	state_fio->StateInt32(size);
+	state_fio->StateBuffer(buf, size * sizeof(int), 1);
+	state_fio->StateInt32(cnt);
+	state_fio->StateInt32(rpt);
+	state_fio->StateInt32(wpt);
 	return true;
 }
 

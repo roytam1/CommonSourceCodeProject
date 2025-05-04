@@ -27,24 +27,20 @@ void FM7_MAINIO::reset_sound(void)
 		opn_cmdreg[i] = 0;
 		opn_address[i] = 0;
 		opn_stat[i] = 0;
-		opn_ch3mode[i] = 0x00;
+		opn_prescaler_type[i] = 1;
+		memset(opn_regs[i], 0x00, 0x100 * sizeof(uint8_t));
 		if(opn[i] != NULL) {
 			opn[i]->reset();
-			opn[i]->write_data8(0, 0x2e);
-			opn[i]->write_data8(1, 0);	// set prescaler
-			opn[i]->write_data8(0, 0x27);
-			opn[i]->write_data8(1, 0x00);
-			for(j = 0; j < 3; j++) {
-				opn[i]->set_reg(0x28, j | 0xfe);
-			}
-//			opn[i]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
+			write_opn_reg(i, 0x2e, 0);
+			write_opn_reg(i, 0x27, 0);
 		}
-	   
 	}
 //#endif
 #if !defined(_FM77AV_VARIANTS)
 	if(psg != NULL) {
 		psg->reset();
+		write_opn_reg(3, 0x2e, 0);
+		write_opn_reg(3, 0x27, 0);
 	}
 #endif
  #if defined(_FM77AV_VARIANTS)
@@ -140,23 +136,64 @@ void FM7_MAINIO::set_psg_cmd(uint8_t cmd)
 // Write to FD16, same as 
 void FM7_MAINIO::write_opn_reg(int index, uint32_t addr, uint32_t data)
 {
-# if !defined(_FM77AV_VARIANTS)
+	//out_debug_log("OPN_WRITE: #%d REG=%02x VAL=%02x\n", index, addr, data);
+	static const uint32_t mask[16] = { // Parameter is related by XM7. Thanks Ryu.
+		0xff, 0x0f, 0xff, 0x0f,
+		0xff, 0x0f, 0x1f, 0xff,
+		0x1f, 0x1f, 0x1f, 0xff,
+		0xff, 0x0f, 0xff, 0xff
+	};
+#if 1
+#  if !defined(_FM77AV_VARIANTS)
 	if(index == 3) { // PSG
+		data = data & mask[addr & 0x0f];
 	  	psg->write_io8(0, addr & 0x0f);
 		psg->write_io8(1, data);
+		opn_regs[index][addr & 0x0f] = data;
 		return;
 	}
-# endif
-	if((addr >= 0x2d) && (addr < 0x30)) {
-		opn[index]->write_io8(0, addr);
+#  endif
+	if(addr < 0x10) { // PSG part
+		data = data & mask[addr]; // Right?
+	} else	if((addr >= 0x2d) && (addr < 0x30)) {  // Prescaler
+		switch(addr) {
+		case 0x2d:
+			if(opn_prescaler_type[index] != 1) {
+				opn_prescaler_type[index] = 0;
+				opn[index]->write_io8(0, addr);
+				for(int ii = 0x2d; ii <= 0x2f; ii++) opn_regs[index][ii] = 0;
+				opn_regs[index][addr] = 0xff;
+			}
+			break;
+		default: // 0x2e, 0x2f
+			opn_prescaler_type[index] = addr - 0x2d;
+			opn[index]->write_io8(0, addr);
+			for(int ii = 0x2d; ii <= 0x2f; ii++) opn_regs[index][ii] = 0;
+			opn_regs[index][addr] = 0xff;
+			break;
+		}			
 		return;
-	}
-	if(addr == 0x27) {
-		opn_ch3mode[index] = data & 0xc0;
-	}
+	}/* else if(addr == 0xff) { // Check : from XM7.
+		if((opn_regs[index][0x27] & 0xc0) != 0x80) {
+			opn_regs[index][addr] = data;
+			return;
+		}
+		}*/
+
 	opn[index]->write_io8(0, addr);
 	opn[index]->write_io8(1, data);
 	opn_regs[index][addr] = data;
+#else
+#  if !defined(_FM77AV_VARIANTS)
+	if(index == 3) {
+		if(psg != NULL) psg->set_reg(addr & 0x0f, data);
+	} else
+#  endif
+	{
+		if(opn[index] != NULL) opn[index]->set_reg(addr, data);
+	}
+	opn_regs[index][addr] = data;
+#endif	
 	return;
 }
 
@@ -177,25 +214,20 @@ void FM7_MAINIO::set_opn(int index, uint8_t val)
 	}
 
 	opn_data[index] = val;
-	switch(opn_cmdreg[index]){
-		case 0: // High inpedance
-		case 1: // Read Data
-			break;
-		case 2: // Write Data
+	switch(opn_cmdreg[index]) {
+		case 2: // Write data
 			write_opn_reg(index, opn_address[index], opn_data[index]);
-			break;
+	 		break;
 		case 3: // Register address
+# if !defined(_FM77AV_VARIANTS)
 			if(index == 3) {
 				opn_address[index] = val & 0x0f;
-			} else {
+				if(psg != NULL) psg->write_io8(0, opn_address[index]);
+			} else
+# endif
+			{
 				opn_address[index] = val;
-//#if !defined(_FM8)
-				if((val > 0x2c) && (val < 0x30)) {
-					opn_data[index] = 0;
-					opn[index]->write_io8(0, val);
-					opn[index]->write_io8(1, 0);
-				}
-//#endif
+				if(opn[index] != NULL) opn[index]->write_io8(0, opn_address[index]);
 			}
 			break;
 		default:
@@ -217,22 +249,45 @@ uint8_t FM7_MAINIO::get_opn(int index)
 	} else
 # endif
 		if(opn[index] == NULL) {
-		return val;
-	}
-
+			return val;
+		}
+	if(index == 3) opn_cmdreg[index] = opn_cmdreg[index] & 0x03;
 	switch(opn_cmdreg[index]) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
+		case 0: // Unavailable
+			val = 0xff;
+			break;
+		case 1: // read from
+//			val = opn_data[index];
+			if((opn_address[index] == 14) || (opn_address[index] == 15)) {
+				if(index != 3) {
+					val = opn_data[index]; // OK?
+				}
+			} else {
+# if !defined(_FM77AV_VARIANTS)
+				if(index == 3) {
+					val = psg->read_io8(1);
+				} else
+# endif
+				{
+					val = opn[index]->read_io8(1);
+				}
+			}
+			break;
+		case 2: // Write address
+			val = opn_data[index];
+			break;
+		case 3: // Write to reg
 			val = opn_data[index];
 			break;
 //#if !defined(_FM8)
-		case 4:
-			opn_stat[index] = opn[index]->read_io8(0) & 0x03;
-			if(index != 3) val = opn_stat[index];
+		case 4: // STATUS
+			if(index != 3) {
+				//opn_stat[index] = opn[index]->read_io8(0) & 0x03;
+				opn_stat[index] = opn[index]->read_io8(0);
+				val = opn_stat[index];
+			}
 	   		break;
-		case 0x09:
+		case 0x09: // Joystick
 			if(index != 0) return 0xff;
 			if(opn_address[0] == 0x0e) {
 				//return opn[0]->read_signal(SIG_YM2203_PORT_A);
@@ -244,6 +299,7 @@ uint8_t FM7_MAINIO::get_opn(int index)
 		default:
 	 		break;
 		}
+	
 		return val;
 }
   /*
@@ -261,57 +317,30 @@ void FM7_MAINIO::set_opn_cmd(int index, uint8_t cmd)
 		if(psg == NULL) return;
 	}
 # endif
-	uint32_t mask[16] = { // Parameter is related by XM7. Thanks Ryu.
-		0xff, 0x0f, 0xff, 0x0f,
-		0xff, 0x0f, 0x1f, 0xff,
-		0x1f, 0x1f, 0x1f, 0xff,
-		0xff, 0x0f, 0xff, 0xff
-	};
 	opn_cmdreg[index] = cmd & 0x0f;
+	if(index == 3) opn_cmdreg[index] = opn_cmdreg[index] & 0x03;
+
 	uint8_t val = opn_data[index];
-        switch(opn_cmdreg[index]) {
-		case 0:
+	switch(opn_cmdreg[index]) {
+		case 0: // Inactive
+		case 1: // Read
 			break;
-		case 1:
-#if !defined(_FM77AV_VARIANTS)	
-			if(index == 3) {
-				psg->write_io8(0, opn_address[index]);
-				opn_data[index] = psg->read_io8(1);
-			} else {
-				opn[index]->write_io8(0, opn_address[index]);
-				opn_data[index] = opn[index]->read_io8(1);
-			}				
-#else
-			opn[index]->write_io8(0, opn_address[index]);
-			opn_data[index] = opn[index]->read_io8(1);
-#endif
-			if(opn_address[index] <= 0x0f) {
-				opn_data[index] &= mask[opn_address[index]];
-			}
-			break;
-		case 2:
+		case 2: // Write data
 			write_opn_reg(index, opn_address[index], opn_data[index]);
 	 		break;
 		case 3: // Register address
+# if !defined(_FM77AV_VARIANTS)
 			if(index == 3) {
 				opn_address[index] = val & 0x0f;
-			} else {
+				if(psg != NULL) psg->write_io8(0, opn_address[index]);
+			} else
+# endif
+			{
 				opn_address[index] = val;
-//#if !defined(_FM8)
-				if((val > 0x2c) && (val < 0x30)) {
-					opn_data[index] = 0;
-					opn[index]->write_io8(0, val);
-					opn[index]->write_io8(1, 0);
-				}
-//#endif
+				if(opn[index] != NULL) opn[index]->write_io8(0, opn_address[index]);
 			}
 
 			break;
-//#if !defined(_FM8)
-		case 4:
-			opn_stat[index] = opn[index]->read_io8(0) & 0x03;
-	   		break;
-//#endif
 	 	default:
 	   		break;
 	}
@@ -332,44 +361,32 @@ uint8_t FM7_MAINIO::get_extirq_thg(void)
 	return val;
 }
 
-void FM7_MAINIO::opn_note_on(int index)
-{
-	uint8_t r;
-//#if !defined(_FM8)
-	if((index < 0) || (index >= 2)) return;
-	// Not on for CSM mode. From XM7. Thanks, Ryu.
-	r = opn_ch3mode[index];
-	if ((r & 0xc0) == 0x80) {
-		opn[index]->write_io8(0, 0x27);
-		opn[index]->write_io8(1, opn_ch3mode[index] & 0xc0);
-	}
-//#endif	
-}
-
 
 void FM7_MAINIO::set_beep(uint32_t data) // fd03
 {
 	bool flag = ((data & 0xc0) != 0);
 	pcm1bit->write_signal(SIG_PCM1BIT_MUTE, ~data, 0x01);
+#if 0	
 	if(flag != beep_flag) {
 		if(flag) {
 			beep_snd = true;
 			pcm1bit->write_signal(SIG_PCM1BIT_SIGNAL, 1, 1);
 			pcm1bit->write_signal(SIG_PCM1BIT_ON, 1, 1);
-			//if(event_beep <= -1) {
-			//	register_event(this, EVENT_BEEP_CYCLE, (1000.0 * 1000.0) / (1200.0 * 2.0), true, &event_beep);
-			//}		
 		} else {
 			beep_snd = false;
 			pcm1bit->write_signal(SIG_PCM1BIT_SIGNAL, 0, 1);
 			pcm1bit->write_signal(SIG_PCM1BIT_ON, 0, 1);
-			//if(event_beep > -1) {
-			//	cancel_event(this, event_beep);
-			//	event_beep = -1;
-			//}		
 		}
 		beep_flag = flag;
 	}
+#else
+	if(flag != beep_flag) {
+		beep_snd = flag;
+		beep_flag = flag;
+		pcm1bit->write_signal(SIG_PCM1BIT_SIGNAL, data, 0xc0);
+		pcm1bit->write_signal(SIG_PCM1BIT_ON, data, 0xc0);
+	}
+#endif
 	if((data & 0x40) != 0) {
 		// BEEP ON, after 205ms, BEEP OFF.  
 		set_beep_oneshot();
@@ -396,8 +413,6 @@ void FM7_MAINIO::event_beep_off(void)
 	beep_snd = false;
 	pcm1bit->write_signal(SIG_PCM1BIT_ON, 0, 1);
 	event_beep_oneshot = -1;
-	//if(event_beep >= 0) cancel_event(this, event_beep);
-	//event_beep = -1;
 }
 
 // EVENT_BEEP_CYCLE
@@ -407,4 +422,21 @@ void FM7_MAINIO::event_beep_cycle(void)
 	if(beep_flag) {
 		pcm1bit->write_signal(SIG_PCM1BIT_SIGNAL, beep_snd ? 1 : 0, 1);
 	}
+}
+
+bool FM7_MAINIO::decl_state_opn(FILEIO *state_fio, bool loading)
+{
+	state_fio->StateBool(connect_opn);
+	state_fio->StateBool(connect_whg);
+	state_fio->StateBool(connect_thg);
+
+	state_fio->StateBool(opn_psg_77av);
+	state_fio->StateBuffer(opn_address, sizeof(opn_address), 1);
+	state_fio->StateBuffer(opn_data, sizeof(opn_data), 1);
+	state_fio->StateBuffer(opn_stat, sizeof(opn_stat), 1);
+	state_fio->StateBuffer(opn_cmdreg, sizeof(opn_cmdreg), 1);
+	state_fio->StateBuffer(opn_prescaler_type, sizeof(opn_prescaler_type), 1);
+	state_fio->StateBuffer(opn_regs, sizeof(opn_regs), 1);
+
+	return true;
 }

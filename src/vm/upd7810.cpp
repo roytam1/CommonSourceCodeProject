@@ -366,45 +366,56 @@ int UPD7810::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	4
 
-void UPD7810::save_state(FILEIO* state_fio)
+bool UPD7810::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
+	upd7810_state *cpustate = (upd7810_state *)opaque;
+	const struct opcode_s *opXX = cpustate->opXX;
+	const struct opcode_s *op48 = cpustate->op48;
+	const struct opcode_s *op4C = cpustate->op4C;
+	const struct opcode_s *op4D = cpustate->op4D;
+	const struct opcode_s *op60 = cpustate->op60;
+	const struct opcode_s *op64 = cpustate->op64;
+	const struct opcode_s *op70 = cpustate->op70;
+	const struct opcode_s *op74 = cpustate->op74;
+	void(*handle_timers)(upd7810_state *cpustate, int cycles) = cpustate->handle_timers;
 	
-	state_fio->Fwrite(opaque, sizeof(upd7810_state), 1);
-#ifdef USE_DEBUGGER
-	state_fio->FputUint64(total_icount);
-#endif
-	state_fio->FputInt32(icount);
-	state_fio->FputBool(busreq);
-}
-
-bool UPD7810::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(opaque, sizeof(upd7810_state), 1);
+	state_fio->StateBuffer(opaque, sizeof(upd7810_state), 1);
 #ifdef USE_DEBUGGER
-	total_icount = prev_total_icount = state_fio->FgetUint64();
+	state_fio->StateUint64(total_icount);
 #endif
-	icount = state_fio->FgetInt32();
-	busreq = state_fio->FgetBool();
+	state_fio->StateInt32(icount);
+	state_fio->StateBool(busreq);
 	
 	// post process
-	upd7810_state *cpustate = (upd7810_state *)opaque;
-	cpustate->program = d_mem;
-	cpustate->io = d_io;
-	cpustate->outputs_to = (void*)&outputs_to;
-	cpustate->outputs_txd = (void*)&outputs_txd;
+	if(loading) {
+		cpustate->opXX = opXX;
+		cpustate->op48 = op48;
+		cpustate->op4C = op4C;
+		cpustate->op4D = op4D;
+		cpustate->op60 = op60;
+		cpustate->op64 = op64;
+		cpustate->op70 = op70;
+		cpustate->op74 = op74;
+		cpustate->handle_timers = handle_timers;
+
+		cpustate->program = d_mem;
+		cpustate->io = d_io;
+		cpustate->outputs_to = (void*)&outputs_to;
+		cpustate->outputs_txd = (void*)&outputs_txd;
 #ifdef USE_DEBUGGER
-	cpustate->emu = emu;
-	cpustate->debugger = d_debugger;
-	cpustate->program_stored = d_mem;
-	cpustate->io_stored = d_io;
+		cpustate->emu = emu;
+		cpustate->debugger = d_debugger;
+		cpustate->program_stored = d_mem;
+		cpustate->io_stored = d_io;
+		prev_total_icount = total_icount;
 #endif
+	}
 	return true;
 }
+

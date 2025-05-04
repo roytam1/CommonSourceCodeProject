@@ -1696,69 +1696,45 @@ int TMS9995::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	2
 
-void TMS9995::save_state(FILEIO* state_fio)
+bool TMS9995::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+#ifdef USE_DEBUGGER
+	state_fio->StateUint64(total_count);
+#endif
+	state_fio->StateInt32(count);
+	state_fio->StateInt32(period);
+	state_fio->StateUint16(WP);
+	state_fio->StateUint16(PC);
+	state_fio->StateUint16(prevPC);
+	state_fio->StateUint16(ST);
+	state_fio->StateBuffer(RAM, sizeof(RAM), 1);
+	state_fio->StateUint8(irq_level);
+	state_fio->StateUint8(int_state);
+	state_fio->StateUint8(int_latch);
+	state_fio->StateBool(int_pending);
+	state_fio->StateBool(int_enabled);
+	state_fio->StateUint16(dec_count);
+	state_fio->StateUint16(dec_interval);
+	state_fio->StateInt32(dec_timer);
+	state_fio->StateBool(dec_enabled);
+	state_fio->StateUint16(mode);
+	state_fio->StateUint8(lastparity);
+	state_fio->StateBool(nmi);
+	state_fio->StateBool(mid);
+	state_fio->StateBool(idle);
 	
 #ifdef USE_DEBUGGER
-	state_fio->FputUint64(total_count);
-#endif
-	state_fio->FputInt32(count);
-	state_fio->FputInt32(period);
-	state_fio->FputUint16(WP);
-	state_fio->FputUint16(PC);
-	state_fio->FputUint16(prevPC);
-	state_fio->FputUint16(ST);
-	state_fio->Fwrite(RAM, sizeof(RAM), 1);
-	state_fio->FputUint8(irq_level);
-	state_fio->FputUint8(int_state);
-	state_fio->FputUint8(int_latch);
-	state_fio->FputBool(int_pending);
-	state_fio->FputBool(int_enabled);
-	state_fio->FputUint16(dec_count);
-	state_fio->FputUint16(dec_interval);
-	state_fio->FputInt32(dec_timer);
-	state_fio->FputBool(dec_enabled);
-	state_fio->FputUint16(mode);
-	state_fio->FputUint8(lastparity);
-	state_fio->FputBool(nmi);
-	state_fio->FputBool(mid);
-	state_fio->FputBool(idle);
-}
-
-bool TMS9995::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
+	// post process
+	if(loading) {
+		prev_total_count = total_count;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-#ifdef USE_DEBUGGER
-	total_count = prev_total_count = state_fio->FgetUint64();
 #endif
-	count = state_fio->FgetInt32();
-	period = state_fio->FgetInt32();
-	WP = state_fio->FgetUint16();
-	PC = state_fio->FgetUint16();
-	prevPC = state_fio->FgetUint16();
-	ST = state_fio->FgetUint16();
-	state_fio->Fread(RAM, sizeof(RAM), 1);
-	irq_level = state_fio->FgetUint8();
-	int_state = state_fio->FgetUint8();
-	int_latch = state_fio->FgetUint8();
-	int_pending = state_fio->FgetBool();
-	int_enabled = state_fio->FgetBool();
-	dec_count = state_fio->FgetUint16();
-	dec_interval = state_fio->FgetUint16();
-	dec_timer = state_fio->FgetInt32();
-	dec_enabled = state_fio->FgetBool();
-	mode = state_fio->FgetUint16();
-	lastparity = state_fio->FgetUint8();
-	nmi = state_fio->FgetBool();
-	mid = state_fio->FgetBool();
-	idle = state_fio->FgetBool();
 	return true;
 }
 

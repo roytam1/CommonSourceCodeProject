@@ -602,98 +602,71 @@ void IO::draw_screen()
 
 #define STATE_VERSION	2
 
-void IO::save_state(FILEIO* state_fio)
+bool IO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(lcd, sizeof(lcd), 1);
-	state_fio->FputInt32(lcd_status);
-	state_fio->FputInt32(lcd_addr);
-	state_fio->FputBool(lcd_text);
-	state_fio->FputBool(cmt_selected);
-	state_fio->FputUint8(cmt_mode);
-	state_fio->FputBool(cmt_play_ready);
-	state_fio->FputBool(cmt_play_signal);
-	state_fio->FputBool(cmt_rec_ready);
-	state_fio->FputBool(cmt_rec);
-	state_fio->FputBool(cmt_is_wav);
-	state_fio->Fwrite(cmt_rec_file_path, sizeof(cmt_rec_file_path), 1);
-	if(cmt_rec && cmt_fio->IsOpened()) {
-		int length_tmp = (int)cmt_fio->Ftell();
-		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
-		state_fio->FputInt32(length_tmp);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			cmt_fio->Fread(buffer_tmp, length_rw, 1);
-			state_fio->Fwrite(buffer_tmp, length_rw, 1);
-			length_tmp -= length_rw;
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	// pre process
+	if(loading) {
+		close_tape();
+	}
+	state_fio->StateBuffer(lcd, sizeof(lcd), 1);
+	state_fio->StateInt32(lcd_status);
+	state_fio->StateInt32(lcd_addr);
+	state_fio->StateBool(lcd_text);
+	state_fio->StateBool(cmt_selected);
+	state_fio->StateUint8(cmt_mode);
+	state_fio->StateBool(cmt_play_ready);
+	state_fio->StateBool(cmt_play_signal);
+	state_fio->StateBool(cmt_rec_ready);
+	state_fio->StateBool(cmt_rec);
+	state_fio->StateBool(cmt_is_wav);
+	state_fio->StateBuffer(cmt_rec_file_path, sizeof(cmt_rec_file_path), 1);
+	if(loading) {
+		int length_tmp = state_fio->FgetInt32_LE();
+		if(cmt_rec) {
+			cmt_fio->Fopen(cmt_rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				state_fio->Fread(buffer_tmp, length_rw, 1);
+				if(cmt_fio->IsOpened()) {
+					cmt_fio->Fwrite(buffer_tmp, length_rw, 1);
+				}
+				length_tmp -= length_rw;
+			}
 		}
 	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(cmt_bufcnt);
-	state_fio->Fwrite(cmt_buffer, cmt_bufcnt, 1);
-	state_fio->FputUint8(cmt_clock);
-	state_fio->Fwrite(&b16_1, sizeof(b16_1), 1);
-	state_fio->Fwrite(&b16_2, sizeof(b16_2), 1);
-	state_fio->Fwrite(&g21_1, sizeof(g21_1), 1);
-	state_fio->Fwrite(&g21_2, sizeof(g21_2), 1);
-	state_fio->Fwrite(&c15, sizeof(c15), 1);
-	state_fio->Fwrite(&c16, sizeof(c16), 1);
-	state_fio->Fwrite(&f21, sizeof(f21), 1);
-	state_fio->FputUint8(key_column);
-}
-
-bool IO::load_state(FILEIO* state_fio)
-{
-	close_tape();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	state_fio->Fread(lcd, sizeof(lcd), 1);
-	lcd_status = state_fio->FgetInt32();
-	lcd_addr = state_fio->FgetInt32();
-	lcd_text = state_fio->FgetBool();
-	cmt_selected = state_fio->FgetBool();
-	cmt_mode = state_fio->FgetUint8();
-	cmt_play_ready = state_fio->FgetBool();
-	cmt_play_signal = state_fio->FgetBool();
-	cmt_rec_ready = state_fio->FgetBool();
-	cmt_rec = state_fio->FgetBool();
-	cmt_is_wav = state_fio->FgetBool();
-	state_fio->Fread(cmt_rec_file_path, sizeof(cmt_rec_file_path), 1);
-	int length_tmp = state_fio->FgetInt32();
-	if(cmt_rec) {
-		cmt_fio->Fopen(cmt_rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			state_fio->Fread(buffer_tmp, length_rw, 1);
-			if(cmt_fio->IsOpened()) {
-				cmt_fio->Fwrite(buffer_tmp, length_rw, 1);
+		if(cmt_rec && cmt_fio->IsOpened()) {
+			int length_tmp = (int)cmt_fio->Ftell();
+			cmt_fio->Fseek(0, FILEIO_SEEK_SET);
+			state_fio->FputInt32_LE(length_tmp);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				cmt_fio->Fread(buffer_tmp, length_rw, 1);
+				state_fio->Fwrite(buffer_tmp, length_rw, 1);
+				length_tmp -= length_rw;
 			}
-			length_tmp -= length_rw;
+		} else {
+			state_fio->FputInt32_LE(0);
 		}
 	}
-	cmt_bufcnt = state_fio->FgetInt32();
-	if(cmt_bufcnt) {
-		state_fio->Fread(cmt_buffer, cmt_bufcnt, 1);
-	}
-	cmt_clock = state_fio->FgetUint8();
-	state_fio->Fread(&b16_1, sizeof(b16_1), 1);
-	state_fio->Fread(&b16_2, sizeof(b16_2), 1);
-	state_fio->Fread(&g21_1, sizeof(g21_1), 1);
-	state_fio->Fread(&g21_2, sizeof(g21_2), 1);
-	state_fio->Fread(&c15, sizeof(c15), 1);
-	state_fio->Fread(&c16, sizeof(c16), 1);
-	state_fio->Fread(&f21, sizeof(f21), 1);
-	key_column = state_fio->FgetUint8();
+	state_fio->StateInt32(cmt_bufcnt);
+	state_fio->StateBuffer(cmt_buffer, cmt_bufcnt, 1);
+	state_fio->StateUint8(cmt_clock);
+	state_fio->StateBuffer(&b16_1, sizeof(b16_1), 1);
+	state_fio->StateBuffer(&b16_2, sizeof(b16_2), 1);
+	state_fio->StateBuffer(&g21_1, sizeof(g21_1), 1);
+	state_fio->StateBuffer(&g21_2, sizeof(g21_2), 1);
+	state_fio->StateBuffer(&c15, sizeof(c15), 1);
+	state_fio->StateBuffer(&c16, sizeof(c16), 1);
+	state_fio->StateBuffer(&f21, sizeof(f21), 1);
+	state_fio->StateUint8(key_column);
 	return true;
 }
 

@@ -90,33 +90,22 @@ void PAC2::open_rampac2(int drv, const _TCHAR* file_path)
 
 #define STATE_VERSION	1
 
-void PAC2::save_state(FILEIO* state_fio)
+bool PAC2::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(sel);
-	rampac2[0]->save_state(state_fio);
-	rampac2[1]->save_state(state_fio);
-	kanji->save_state(state_fio);
-}
-
-bool PAC2::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	sel = state_fio->FgetInt32();
-	if(!rampac2[0]->load_state(state_fio)) {
+	state_fio->StateInt32(sel);
+	if(!rampac2[0]->process_state(state_fio, loading)) {
 		return false;
 	}
-	if(!rampac2[1]->load_state(state_fio)) {
+	if(!rampac2[1]->process_state(state_fio, loading)) {
 		return false;
 	}
-	if(!kanji->load_state(state_fio)) {
+	if(!kanji->process_state(state_fio, loading)) {
 		return false;
 	}
 	return true;

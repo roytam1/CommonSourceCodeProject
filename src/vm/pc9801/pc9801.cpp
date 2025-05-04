@@ -1556,50 +1556,30 @@ void VM::update_config()
 
 #define STATE_VERSION	13
 
-void VM::save_state(FILEIO* state_fio)
+bool VM::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	
-	for(DEVICE* device = first_device; device; device = device->next_device) {
-		const char *name = typeid(*device).name() + 6; // skip "class "
-		
-		state_fio->FputInt32(strlen(name));
-		state_fio->Fwrite(name, strlen(name), 1);
-		device->save_state(state_fio);
-	}
-	state_fio->FputBool(pit_clock_8mhz);
-#if defined(_PC98DO) || defined(_PC98DOPLUS)
-	state_fio->FputInt32(boot_mode);
-#endif
-	state_fio->FputInt32(sound_type);
-#if defined(USE_HARD_DISK) && defined(OPEN_HARD_DISK_IN_RESET)
-	state_fio->Fwrite(hd_file_path, sizeof(hd_file_path), 1);
-#endif
-}
-
-bool VM::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		const char *name = typeid(*device).name() + 6; // skip "class "
+		int len = strlen(name);
 		
-		if(!(state_fio->FgetInt32() == strlen(name) && state_fio->Fcompare(name, strlen(name)))) {
+		if(!state_fio->StateCheckInt32(len)) {
 			return false;
 		}
-		if(!device->load_state(state_fio)) {
+		if(!state_fio->StateCheckBuffer(name, len, 1)) {
+			return false;
+		}
+		if(!device->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	pit_clock_8mhz = state_fio->FgetBool();
+	state_fio->StateBool(pit_clock_8mhz);
 #if defined(_PC98DO) || defined(_PC98DOPLUS)
-	boot_mode = state_fio->FgetInt32();
+	state_fio->StateInt32(boot_mode);
 #endif
-	sound_type = state_fio->FgetInt32();
-#if defined(USE_HARD_DISK) && defined(OPEN_HARD_DISK_IN_RESET)
-	state_fio->Fread(hd_file_path, sizeof(hd_file_path), 1);
-#endif
+	state_fio->StateInt32(sound_type);
 	return true;
 }
 

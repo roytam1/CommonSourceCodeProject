@@ -187,37 +187,22 @@ void SN76489AN::initialize_sound(int rate, int clock, int volume)
 
 #define STATE_VERSION	1
 
-void SN76489AN::save_state(FILEIO* state_fio)
+bool SN76489AN::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(regs, sizeof(regs), 1);
-	state_fio->FputInt32(index);
-	state_fio->Fwrite(ch, sizeof(ch), 1);
-	state_fio->FputUint32(noise_gen);
-	state_fio->FputBool(mute);
-	state_fio->FputBool(cs);
-	state_fio->FputBool(we);
-	state_fio->FputUint8(val);
-}
-
-bool SN76489AN::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(regs, sizeof(regs), 1);
-	index = state_fio->FgetInt32();
-	state_fio->Fread(ch, sizeof(ch), 1);
-	noise_gen = state_fio->FgetUint32();
-	mute = state_fio->FgetBool();
-	cs = state_fio->FgetBool();
-	we = state_fio->FgetBool();
-	val = state_fio->FgetUint8();
+	state_fio->StateBuffer(regs, sizeof(regs), 1);
+	state_fio->StateInt32(index);
+	state_fio->StateBuffer(ch, sizeof(ch), 1);
+	state_fio->StateUint32(noise_gen);
+	state_fio->StateBool(mute);
+	state_fio->StateBool(cs);
+	state_fio->StateBool(we);
+	state_fio->StateUint8(val);
 	return true;
 }
 

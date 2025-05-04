@@ -219,43 +219,26 @@ void IOCTRL::update_key()
 
 #define STATE_VERSION	1
 
-void IOCTRL::save_state(FILEIO* state_fio)
+bool IOCTRL::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(caps);
-	state_fio->FputBool(kana);
-	key_buf->save_state((void *)state_fio);
-	state_fio->FputUint32(key_val);
-	state_fio->FputUint32(key_mouse);
-	state_fio->FputInt32(key_prev);
-	state_fio->FputBool(key_res);
-	state_fio->FputBool(key_done);
-	state_fio->FputInt32(register_id);
-	state_fio->FputUint8(ts);
-}
-
-bool IOCTRL::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	caps = state_fio->FgetBool();
-	kana = state_fio->FgetBool();
-	if(!key_buf->load_state((void *)state_fio)) {
+	state_fio->StateBool(caps);
+	state_fio->StateBool(kana);
+	if(!key_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	key_val = state_fio->FgetUint32();
-	key_mouse = state_fio->FgetUint32();
-	key_prev = state_fio->FgetInt32();
-	key_res = state_fio->FgetBool();
-	key_done = state_fio->FgetBool();
-	register_id = state_fio->FgetInt32();
-	ts = state_fio->FgetUint8();
+	state_fio->StateUint32(key_val);
+	state_fio->StateUint32(key_mouse);
+	state_fio->StateInt32(key_prev);
+	state_fio->StateBool(key_res);
+	state_fio->StateBool(key_done);
+	state_fio->StateInt32(register_id);
+	state_fio->StateUint8(ts);
 	return true;
 }
 

@@ -94,29 +94,19 @@ uint32_t MFONT::read_io8(uint32_t addr)
 
 #define STATE_VERSION	1
 
-void MFONT::save_state(FILEIO* state_fio)
+bool MFONT::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(status);
-	cmd->save_state((void *)state_fio);
-	res->save_state((void *)state_fio);
-}
-
-bool MFONT::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	status = state_fio->FgetUint8();
-	if(!cmd->load_state((void *)state_fio)) {
+	state_fio->StateUint8(status);
+	if(!cmd->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	if(!res->load_state((void *)state_fio)) {
+	if(!res->process_state((void *)state_fio, loading)) {
 		return false;
 	}
 	return true;

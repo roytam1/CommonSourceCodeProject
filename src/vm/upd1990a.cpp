@@ -210,56 +210,32 @@ void UPD1990A::event_callback(int event_id, int err)
 
 #define STATE_VERSION	2
 
-void UPD1990A::save_state(FILEIO* state_fio)
+bool UPD1990A::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	cur_time.save_state((void *)state_fio);
-	state_fio->FputInt32(register_id_1sec);
-	state_fio->FputUint8(cmd);
-	state_fio->FputUint8(mode);
-	state_fio->FputUint8(tpmode);
-	state_fio->FputUint64(shift_data);
-	state_fio->FputBool(clk);
-	state_fio->FputBool(stb);
-	state_fio->FputBool(din);
-	state_fio->FputBool(hold);
-	state_fio->FputBool(tp);
-	state_fio->FputUint32(dout);
-	state_fio->FputBool(dout_changed);
-	state_fio->FputInt32(register_id_tp);
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	if(!cur_time.process_state((void *)state_fio, loading)) {
+		return false;
+	}
+	state_fio->StateInt32(register_id_1sec);
+	state_fio->StateUint8(cmd);
+	state_fio->StateUint8(mode);
+	state_fio->StateUint8(tpmode);
+	state_fio->StateUint64(shift_data);
+	state_fio->StateBool(clk);
+	state_fio->StateBool(stb);
+	state_fio->StateBool(din);
+	state_fio->StateBool(hold);
+	state_fio->StateBool(tp);
+	state_fio->StateUint32(dout);
+	state_fio->StateBool(dout_changed);
+	state_fio->StateInt32(register_id_tp);
 #ifdef HAS_UPD4990A
-	state_fio->FputUint8(shift_cmd);
-#endif
-}
-
-bool UPD1990A::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	if(!cur_time.load_state((void *)state_fio)) {
-		return false;
-	}
-	register_id_1sec = state_fio->FgetInt32();
-	cmd = state_fio->FgetUint8();
-	mode = state_fio->FgetUint8();
-	tpmode = state_fio->FgetUint8();
-	shift_data = state_fio->FgetUint64();
-	clk = state_fio->FgetBool();
-	stb = state_fio->FgetBool();
-	din = state_fio->FgetBool();
-	hold = state_fio->FgetBool();
-	tp = state_fio->FgetBool();
-	dout = state_fio->FgetUint32();
-	dout_changed = state_fio->FgetBool();
-	register_id_tp = state_fio->FgetInt32();
-#ifdef HAS_UPD4990A
-	shift_cmd = state_fio->FgetUint8();
+	state_fio->StateUint8(shift_cmd);
 #endif
 	return true;
 }

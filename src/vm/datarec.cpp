@@ -1740,158 +1740,139 @@ void DATAREC::update_config()
 
 #define STATE_VERSION	8
 
-void DATAREC::save_state(FILEIO* state_fio)
+bool DATAREC::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
+	int length_tmp;
 	
-	state_fio->FputBool(play);
-	state_fio->FputBool(rec);
-	state_fio->FputBool(remote);
-	state_fio->FputBool(trigger);
-	state_fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
-	if(rec && rec_fio->IsOpened()) {
-		int length_tmp = (int)rec_fio->Ftell();
-		rec_fio->Fseek(0, FILEIO_SEEK_SET);
-		state_fio->FputInt32(length_tmp);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			rec_fio->Fread(buffer_tmp, length_rw, 1);
-			state_fio->Fwrite(buffer_tmp, length_rw, 1);
-			length_tmp -= length_rw;
-		}
-	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(ff_rew);
-	state_fio->FputBool(in_signal);
-	state_fio->FputBool(out_signal);
-	state_fio->FputUint32(prev_clock);
-	state_fio->FputInt32(positive_clocks);
-	state_fio->FputInt32(negative_clocks);
-	state_fio->FputInt32(signal_changed);
-	state_fio->FputInt32(register_id);
-	state_fio->FputBool(realtime);
-	state_fio->FputInt32(sample_rate);
-	state_fio->FputDouble(sample_usec);
-	state_fio->FputInt32(buffer_ptr);
-	if(buffer) {
-		state_fio->FputInt32(buffer_length);
-		state_fio->Fwrite(buffer, buffer_length, 1);
-	} else {
-		state_fio->FputInt32(0);
-	}
-	if(buffer_bak) {
-		state_fio->FputInt32(buffer_length);
-		state_fio->Fwrite(buffer_bak, buffer_length, 1);
-	} else {
-		state_fio->FputInt32(0);
-	}
-#ifdef DATAREC_SOUND
-	if(sound_buffer) {
-		state_fio->FputInt32(sound_buffer_length);
-		state_fio->Fwrite(sound_buffer, sound_buffer_length, 1);
-	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt16(sound_sample);
-#endif
-	state_fio->FputBool(is_wav);
-	state_fio->FputBool(is_tap);
-	state_fio->FputBool(is_t77);
-	if(apss_buffer) {
-		state_fio->FputInt32(apss_buffer_length);
-		state_fio->Fwrite(apss_buffer, apss_buffer_length, 1);
-	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(apss_ptr);
-	state_fio->FputInt32(apss_count);
-	state_fio->FputInt32(apss_remain);
-	state_fio->FputBool(apss_signals);
-	state_fio->FputInt32(pcm_changed);
-	state_fio->FputUint32(pcm_prev_clock);
-	state_fio->FputInt32(pcm_positive_clocks);
-	state_fio->FputInt32(pcm_negative_clocks);
-}
-
-bool DATAREC::load_state(FILEIO* state_fio)
-{
-	close_file();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	play = state_fio->FgetBool();
-	rec = state_fio->FgetBool();
-	remote = state_fio->FgetBool();
-	trigger = state_fio->FgetBool();
-	state_fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
-	int length_tmp = state_fio->FgetInt32();
-	if(rec) {
-		rec_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			state_fio->Fread(buffer_tmp, length_rw, 1);
-			if(rec_fio->IsOpened()) {
-				rec_fio->Fwrite(buffer_tmp, length_rw, 1);
+	// pre process
+	if(loading) {
+		close_file();
+	}
+	state_fio->StateBool(play);
+	state_fio->StateBool(rec);
+	state_fio->StateBool(remote);
+	state_fio->StateBool(trigger);
+	state_fio->StateBuffer(rec_file_path, sizeof(rec_file_path), 1);
+	if(loading) {
+		length_tmp = state_fio->FgetInt32_LE();
+		if(rec) {
+			rec_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				state_fio->Fread(buffer_tmp, length_rw, 1);
+				if(rec_fio->IsOpened()) {
+					rec_fio->Fwrite(buffer_tmp, length_rw, 1);
+				}
+				length_tmp -= length_rw;
 			}
-			length_tmp -= length_rw;
+		}
+	} else {
+		if(rec && rec_fio->IsOpened()) {
+			length_tmp = (int)rec_fio->Ftell();
+			rec_fio->Fseek(0, FILEIO_SEEK_SET);
+			state_fio->FputInt32_LE(length_tmp);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				rec_fio->Fread(buffer_tmp, length_rw, 1);
+				state_fio->Fwrite(buffer_tmp, length_rw, 1);
+				length_tmp -= length_rw;
+			}
+		} else {
+			state_fio->FputInt32_LE(0);
 		}
 	}
-	ff_rew = state_fio->FgetInt32();
-	in_signal = state_fio->FgetBool();
-	out_signal = state_fio->FgetBool();
-	prev_clock = state_fio->FgetUint32();
-	positive_clocks = state_fio->FgetInt32();
-	negative_clocks = state_fio->FgetInt32();
-	signal_changed = state_fio->FgetInt32();
-	register_id = state_fio->FgetInt32();
-	realtime = state_fio->FgetBool();
-	sample_rate = state_fio->FgetInt32();
-	sample_usec = state_fio->FgetDouble();
-	buffer_ptr = state_fio->FgetInt32();
-	if((buffer_length = state_fio->FgetInt32()) != 0) {
-		buffer = (uint8_t *)malloc(buffer_length);
-		state_fio->Fread(buffer, buffer_length, 1);
-	}
-	if((length_tmp = state_fio->FgetInt32()) != 0) {
-		buffer_bak = (uint8_t *)malloc(length_tmp);
-		state_fio->Fread(buffer_bak, length_tmp, 1);
+	state_fio->StateInt32(ff_rew);
+	state_fio->StateBool(in_signal);
+	state_fio->StateBool(out_signal);
+	state_fio->StateUint32(prev_clock);
+	state_fio->StateInt32(positive_clocks);
+	state_fio->StateInt32(negative_clocks);
+	state_fio->StateInt32(signal_changed);
+	state_fio->StateInt32(register_id);
+	state_fio->StateBool(realtime);
+	state_fio->StateInt32(sample_rate);
+	state_fio->StateDouble(sample_usec);
+	state_fio->StateInt32(buffer_ptr);
+	if(loading) {
+		if((buffer_length = state_fio->FgetInt32_LE()) != 0) {
+			buffer = (uint8_t *)malloc(buffer_length);
+			state_fio->Fread(buffer, buffer_length, 1);
+		}
+		if((length_tmp = state_fio->FgetInt32_LE()) != 0) {
+			buffer_bak = (uint8_t *)malloc(length_tmp);
+			state_fio->Fread(buffer_bak, length_tmp, 1);
+		}
+#ifdef DATAREC_SOUND
+		if((sound_buffer_length = state_fio->FgetInt32_LE()) != 0) {
+			sound_buffer = (int16_t *)malloc(sound_buffer_length);
+			state_fio->Fread(sound_buffer, sound_buffer_length, 1);
+		}
+#endif
+	} else {
+		if(buffer) {
+			state_fio->FputInt32_LE(buffer_length);
+			state_fio->Fwrite(buffer, buffer_length, 1);
+		} else {
+			state_fio->FputInt32_LE(0);
+		}
+		if(buffer_bak) {
+			state_fio->FputInt32_LE(buffer_length);
+			state_fio->Fwrite(buffer_bak, buffer_length, 1);
+		} else {
+			state_fio->FputInt32_LE(0);
+		}
+#ifdef DATAREC_SOUND
+		if(sound_buffer) {
+			state_fio->FputInt32_LE(sound_buffer_length);
+			state_fio->Fwrite(sound_buffer, sound_buffer_length, 1);
+		} else {
+			state_fio->FputInt32_LE(0);
+		}
+#endif
 	}
 #ifdef DATAREC_SOUND
-	if((sound_buffer_length = state_fio->FgetInt32()) != 0) {
-		sound_buffer = (int16_t *)malloc(sound_buffer_length);
-		state_fio->Fread(sound_buffer, sound_buffer_length, 1);
-	}
-	sound_sample = state_fio->FgetInt16();
+	state_fio->StateInt16(sound_sample);
 #endif
-	is_wav = state_fio->FgetBool();
-	is_tap = state_fio->FgetBool();
-	is_t77 = state_fio->FgetBool();
-	if((apss_buffer_length = state_fio->FgetInt32()) != 0) {
-		apss_buffer = (bool *)malloc(apss_buffer_length);
-		state_fio->Fread(apss_buffer, apss_buffer_length, 1);
+	state_fio->StateBool(is_wav);
+	state_fio->StateBool(is_tap);
+	state_fio->StateBool(is_t77);
+	if(loading) {
+		if((apss_buffer_length = state_fio->FgetInt32_LE()) != 0) {
+			apss_buffer = (bool *)malloc(apss_buffer_length);
+			state_fio->Fread(apss_buffer, apss_buffer_length, 1);
+		}
+	} else {
+		if(apss_buffer) {
+			state_fio->FputInt32_LE(apss_buffer_length);
+			state_fio->Fwrite(apss_buffer, apss_buffer_length, 1);
+		} else {
+			state_fio->FputInt32_LE(0);
+		}
 	}
-	apss_ptr = state_fio->FgetInt32();
-	apss_count = state_fio->FgetInt32();
-	apss_remain = state_fio->FgetInt32();
-	apss_signals = state_fio->FgetBool();
-	pcm_changed = state_fio->FgetInt32();
-	pcm_prev_clock = state_fio->FgetUint32();
-	pcm_positive_clocks = state_fio->FgetInt32();
-	pcm_negative_clocks = state_fio->FgetInt32();
+	state_fio->StateInt32(apss_ptr);
+	state_fio->StateInt32(apss_count);
+	state_fio->StateInt32(apss_remain);
+	state_fio->StateBool(apss_signals);
+	state_fio->StateInt32(pcm_changed);
+	state_fio->StateUint32(pcm_prev_clock);
+	state_fio->StateInt32(pcm_positive_clocks);
+	state_fio->StateInt32(pcm_negative_clocks);
 	
 	// post process
-	pcm_last_vol_l = pcm_last_vol_r = 0;
+	if(loading) {
+		pcm_last_vol_l = pcm_last_vol_r = 0;
 #ifdef DATAREC_SOUND
-	sound_last_vol_l = sound_last_vol_r = 0;
+		sound_last_vol_l = sound_last_vol_r = 0;
 #endif
+	}
 	return true;
 }
 

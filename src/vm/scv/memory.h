@@ -62,8 +62,7 @@ public:
 	void write_data8w(uint32_t addr, uint32_t data, int* wait);
 	uint32_t read_data8w(uint32_t addr, int* wait);
 	void write_io8(uint32_t addr, uint32_t data);
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
 	void open_cart(const _TCHAR* file_path);

@@ -29,8 +29,7 @@ public:
 	int count();
 	bool full();
 	bool empty();
-	void save_state(void *f);
-	bool load_state(void *f);
+	bool process_state(void *f, bool loading);
 };
 
 #endif

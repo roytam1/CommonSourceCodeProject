@@ -108,27 +108,17 @@ uint32_t IO::read_io8(uint32_t addr)
 
 #define STATE_VERSION	2
 
-void IO::save_state(FILEIO* state_fio)
+bool IO::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(pa);
-	state_fio->FputUint8(pb);
-	state_fio->FputUint8(pc);
-}
-
-bool IO::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	pa = state_fio->FgetUint8();
-	pb = state_fio->FgetUint8();
-	pc = state_fio->FgetUint8();
+	state_fio->StateUint8(pa);
+	state_fio->StateUint8(pb);
+	state_fio->StateUint8(pc);
 	return true;
 }
 

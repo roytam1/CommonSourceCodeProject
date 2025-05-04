@@ -124,40 +124,27 @@ void PCM1BIT::initialize_sound(int rate, int volume)
 
 #define STATE_VERSION	3
 
-void PCM1BIT::save_state(FILEIO* state_fio)
+bool PCM1BIT::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(signal);
-	state_fio->FputBool(on);
-	state_fio->FputBool(mute);
-	state_fio->FputBool(realtime);
-	state_fio->FputInt32(changed);
-	state_fio->FputUint32(prev_clock);
-	state_fio->FputInt32(positive_clocks);
-	state_fio->FputInt32(negative_clocks);
-}
-
-bool PCM1BIT::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	signal = state_fio->FgetBool();
-	on = state_fio->FgetBool();
-	mute = state_fio->FgetBool();
-	realtime = state_fio->FgetBool();
-	changed = state_fio->FgetInt32();
-	prev_clock = state_fio->FgetUint32();
-	positive_clocks = state_fio->FgetInt32();
-	negative_clocks = state_fio->FgetInt32();
+	state_fio->StateBool(signal);
+	state_fio->StateBool(on);
+	state_fio->StateBool(mute);
+	state_fio->StateBool(realtime);
+	state_fio->StateInt32(changed);
+	state_fio->StateUint32(prev_clock);
+	state_fio->StateInt32(positive_clocks);
+	state_fio->StateInt32(negative_clocks);
 	
 	// post process
-	last_vol_l = last_vol_r = 0;
+	if(loading) {
+		last_vol_l = last_vol_r = 0;
+	}
 	return true;
 }
 

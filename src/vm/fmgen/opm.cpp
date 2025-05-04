@@ -529,87 +529,48 @@ void OPM::Mix(Sample* buffer, int nsamples)
 //
 #define OPM_STATE_VERSION	3
 
-void OPM::SaveState(void *f)
+bool OPM::ProcessState(void *f, bool loading)
 {
 	FILEIO *state_fio = (FILEIO *)f;
 	
-	state_fio->FputUint32(OPM_STATE_VERSION);
-	
-	Timer::SaveState(f);
-	state_fio->FputInt32(fmvolume_l);
-	state_fio->FputInt32(fmvolume_r);
-	state_fio->FputUint32(clock);
-	state_fio->FputUint32(rate);
-	state_fio->FputUint32(pcmrate);
-	state_fio->FputUint32(pmd);
-	state_fio->FputUint32(amd);
-	state_fio->FputUint32(lfocount);
-	state_fio->FputUint32(lfodcount);
-	state_fio->FputUint32(lfo_count_);
-	state_fio->FputUint32(lfo_count_diff_);
-	state_fio->FputUint32(lfo_step_);
-	state_fio->FputUint32(lfo_count_prev_);
-	state_fio->FputUint32(lfowaveform);
-	state_fio->FputUint32(rateratio);
-	state_fio->FputUint32(noise);
-	state_fio->FputInt32(noisecount);
-	state_fio->FputUint32(noisedelta);
-	state_fio->FputBool(interpolation);
-	state_fio->FputUint8(lfofreq);
-	state_fio->FputUint8(status);
-	state_fio->FputBool(interrupt);
-	state_fio->FputUint8(reg01);
-	state_fio->Fwrite(kc, sizeof(kc), 1);
-	state_fio->Fwrite(kf, sizeof(kf), 1);
-	state_fio->Fwrite(pan, sizeof(pan), 1);
-	for(int i = 0; i < 8; i++) {
-		ch[i].SaveState(f);
-	}
-	chip.SaveState(f);
-}
-
-bool OPM::LoadState(void *f)
-{
-	FILEIO *state_fio = (FILEIO *)f;
-	
-	if(state_fio->FgetUint32() != OPM_STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(OPM_STATE_VERSION)) {
 		return false;
 	}
-	if(!Timer::LoadState(f)) {
+	if(!Timer::ProcessState(f, loading)) {
 		return false;
 	}
-	fmvolume_l = state_fio->FgetInt32();
-	fmvolume_r = state_fio->FgetInt32();
-	clock = state_fio->FgetUint32();
-	rate = state_fio->FgetUint32();
-	pcmrate = state_fio->FgetUint32();
-	pmd = state_fio->FgetUint32();
-	amd = state_fio->FgetUint32();
-	lfocount = state_fio->FgetUint32();
-	lfodcount = state_fio->FgetUint32();
-	lfo_count_ = state_fio->FgetUint32();
-	lfo_count_diff_ = state_fio->FgetUint32();
-	lfo_step_ = state_fio->FgetUint32();
-	lfo_count_prev_ = state_fio->FgetUint32();
-	lfowaveform = state_fio->FgetUint32();
-	rateratio = state_fio->FgetUint32();
-	noise = state_fio->FgetUint32();
-	noisecount = state_fio->FgetInt32();
-	noisedelta = state_fio->FgetUint32();
-	interpolation = state_fio->FgetBool();
-	lfofreq = state_fio->FgetUint8();
-	status = state_fio->FgetUint8();
-	interrupt = state_fio->FgetBool();
-	reg01 = state_fio->FgetUint8();
-	state_fio->Fread(kc, sizeof(kc), 1);
-	state_fio->Fread(kf, sizeof(kf), 1);
-	state_fio->Fread(pan, sizeof(pan), 1);
+	state_fio->StateInt32(fmvolume_l);
+	state_fio->StateInt32(fmvolume_r);
+	state_fio->StateUint32(clock);
+	state_fio->StateUint32(rate);
+	state_fio->StateUint32(pcmrate);
+	state_fio->StateUint32(pmd);
+	state_fio->StateUint32(amd);
+	state_fio->StateUint32(lfocount);
+	state_fio->StateUint32(lfodcount);
+	state_fio->StateUint32(lfo_count_);
+	state_fio->StateUint32(lfo_count_diff_);
+	state_fio->StateUint32(lfo_step_);
+	state_fio->StateUint32(lfo_count_prev_);
+	state_fio->StateUint32(lfowaveform);
+	state_fio->StateUint32(rateratio);
+	state_fio->StateUint32(noise);
+	state_fio->StateInt32(noisecount);
+	state_fio->StateUint32(noisedelta);
+	state_fio->StateBool(interpolation);
+	state_fio->StateUint8(lfofreq);
+	state_fio->StateUint8(status);
+	state_fio->StateBool(interrupt);
+	state_fio->StateUint8(reg01);
+	state_fio->StateBuffer(kc, sizeof(kc), 1);
+	state_fio->StateBuffer(kf, sizeof(kf), 1);
+	state_fio->StateBuffer(pan, sizeof(pan), 1);
 	for(int i = 0; i < 8; i++) {
-		if(!ch[i].LoadState(f)) {
+		if(!ch[i].ProcessState(f, loading)) {
 			return false;
 		}
 	}
-	if(!chip.LoadState(f)) {
+	if(!chip.ProcessState(f, loading)) {
 		return false;
 	}
 	return true;

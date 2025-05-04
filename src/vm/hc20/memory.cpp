@@ -801,113 +801,88 @@ void MEMORY::draw_screen()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
+	bool wr = false;
+	bool rd = false;
 	
-	state_fio->FputBool(wbank[0x8000 >> 13] == ext);
-	state_fio->FputBool(rbank[0x8000 >> 13] == ext);
-	state_fio->Fwrite(rom, sizeof(rom), 1);
-	state_fio->Fwrite(ext, sizeof(ext), 1);
-	cmd_buf->save_state((void *)state_fio);
-	state_fio->FputBool(sio_select);
-	state_fio->FputBool(special_cmd_masked);
-	state_fio->Fwrite(slave_mem, sizeof(slave_mem), 1);
-	state_fio->Fwrite(sound, sizeof(sound), 1);
-	state_fio->FputInt32(sound_ptr);
-	state_fio->FputInt32(sound_count);
-	state_fio->FputUint8(sound_reply);
-	state_fio->FputDouble(sound_freq);
-	state_fio->Fwrite(key_stat, sizeof(key_stat), 1);
-	state_fio->Fwrite(key_flag, sizeof(key_flag), 1);
-	state_fio->FputInt32(key_data);
-	state_fio->FputInt32(key_strobe);
-	state_fio->FputInt32(key_intmask);
-	state_fio->FputBool(cmt_play);
-	state_fio->FputBool(cmt_rec);
-	state_fio->Fwrite(cmt_file_path, sizeof(cmt_file_path), 1);
-	if(cmt_rec && cmt_fio->IsOpened()) {
-		int length_tmp = (int)cmt_fio->Ftell();
-		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
-		state_fio->FputInt32(length_tmp);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			cmt_fio->Fread(buffer_tmp, length_rw, 1);
-			state_fio->Fwrite(buffer_tmp, length_rw, 1);
-			length_tmp -= length_rw;
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	if(loading) {
+		wr = state_fio->FgetBool();
+		rd = state_fio->FgetBool();
+	} else {
+		state_fio->FputBool(wbank[0x8000 >> 13] == ext);
+		state_fio->FputBool(rbank[0x8000 >> 13] == ext);
+	}
+	state_fio->StateBuffer(rom, sizeof(rom), 1);
+	state_fio->StateBuffer(ext, sizeof(ext), 1);
+	if(!cmd_buf->process_state((void *)state_fio, loading)) {
+		return false;
+	}
+	state_fio->StateBool(sio_select);
+	state_fio->StateBool(special_cmd_masked);
+	state_fio->StateBuffer(slave_mem, sizeof(slave_mem), 1);
+	state_fio->StateBuffer(sound, sizeof(sound), 1);
+	state_fio->StateInt32(sound_ptr);
+	state_fio->StateInt32(sound_count);
+	state_fio->StateUint8(sound_reply);
+	state_fio->StateDouble(sound_freq);
+	state_fio->StateBuffer(key_stat, sizeof(key_stat), 1);
+	state_fio->StateBuffer(key_flag, sizeof(key_flag), 1);
+	state_fio->StateInt32(key_data);
+	state_fio->StateInt32(key_strobe);
+	state_fio->StateInt32(key_intmask);
+	state_fio->StateBool(cmt_play);
+	state_fio->StateBool(cmt_rec);
+	state_fio->StateBuffer(cmt_file_path, sizeof(cmt_file_path), 1);
+	if(loading) {
+		int length_tmp = state_fio->FgetInt32_LE();
+		if(cmt_rec) {
+			cmt_fio->Fopen(cmt_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				state_fio->Fread(buffer_tmp, length_rw, 1);
+				if(cmt_fio->IsOpened()) {
+					cmt_fio->Fwrite(buffer_tmp, length_rw, 1);
+				}
+				length_tmp -= length_rw;
+			}
 		}
 	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(cmt_count);
-	state_fio->Fwrite(cmt_buffer, sizeof(cmt_buffer), 1);
-	state_fio->Fwrite(lcd, sizeof(lcd), 1);
-	state_fio->FputUint8(lcd_select);
-	state_fio->FputUint8(lcd_data);
-	state_fio->FputInt32(lcd_clock);
-	state_fio->FputInt32(int_status);
-	state_fio->FputInt32(int_mask);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	close_tape();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	bool wr = state_fio->FgetBool();
-	bool rd = state_fio->FgetBool();
-	state_fio->Fread(rom, sizeof(rom), 1);
-	state_fio->Fread(ext, sizeof(ext), 1);
-	if(!cmd_buf->load_state((void *)state_fio)) {
-		return false;
-	}
-	sio_select = state_fio->FgetBool();
-	special_cmd_masked = state_fio->FgetBool();
-	state_fio->Fread(slave_mem, sizeof(slave_mem), 1);
-	state_fio->Fread(sound, sizeof(sound), 1);
-	sound_ptr = state_fio->FgetInt32();
-	sound_count = state_fio->FgetInt32();
-	sound_reply = state_fio->FgetUint8();
-	sound_freq = state_fio->FgetDouble();
-	state_fio->Fread(key_stat, sizeof(key_stat), 1);
-	state_fio->Fread(key_flag, sizeof(key_flag), 1);
-	key_data = state_fio->FgetInt32();
-	key_strobe = state_fio->FgetInt32();
-	key_intmask = state_fio->FgetInt32();
-	cmt_play = state_fio->FgetBool();
-	cmt_rec = state_fio->FgetBool();
-	state_fio->Fread(cmt_file_path, sizeof(cmt_file_path), 1);
-	int length_tmp = state_fio->FgetInt32();
-	if(cmt_rec) {
-		cmt_fio->Fopen(cmt_file_path, FILEIO_READ_WRITE_NEW_BINARY);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			state_fio->Fread(buffer_tmp, length_rw, 1);
-			if(cmt_fio->IsOpened()) {
+		if(cmt_rec && cmt_fio->IsOpened()) {
+			int length_tmp = (int)cmt_fio->Ftell();
+			cmt_fio->Fseek(0, FILEIO_SEEK_SET);
+			state_fio->FputInt32_LE(length_tmp);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
 				cmt_fio->Fread(buffer_tmp, length_rw, 1);
+				state_fio->Fwrite(buffer_tmp, length_rw, 1);
+				length_tmp -= length_rw;
 			}
-			length_tmp -= length_rw;
+		} else {
+			state_fio->FputInt32_LE(0);
 		}
 	}
-	cmt_count = state_fio->FgetInt32();
-	state_fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
-	state_fio->Fread(lcd, sizeof(lcd), 1);
-	lcd_select = state_fio->FgetUint8();
-	lcd_data = state_fio->FgetUint8();
-	lcd_clock = state_fio->FgetInt32();
-	int_status = state_fio->FgetInt32();
-	int_mask = state_fio->FgetInt32();
+	state_fio->StateInt32(cmt_count);
+	state_fio->StateBuffer(cmt_buffer, sizeof(cmt_buffer), 1);
+	state_fio->StateBuffer(lcd, sizeof(lcd), 1);
+	state_fio->StateUint8(lcd_select);
+	state_fio->StateUint8(lcd_data);
+	state_fio->StateInt32(lcd_clock);
+	state_fio->StateInt32(int_status);
+	state_fio->StateInt32(int_mask);
 	
 	// post process
-	SET_BANK(0x8000, 0xbfff, wr ? ext : wdmy, rd ? ext : rom);
+	if(loading) {
+		SET_BANK(0x8000, 0xbfff, wr ? ext : wdmy, rd ? ext : rom);
+	}
 	return true;
 }
 

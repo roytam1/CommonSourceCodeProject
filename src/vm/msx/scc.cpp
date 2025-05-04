@@ -559,25 +559,15 @@ void SCC::set_volume(int ch, int decibel_l, int decibel_r)
 
 #define STATE_VERSION	1
 
-void SCC::save_state(FILEIO* state_fio)
+bool SCC::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-
-	save_load_state(state_fio, true);
-}
-
-bool SCC::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-
-	save_load_state(state_fio, false);
-
+	save_load_state(state_fio, !loading);
 	return true;
 }
 

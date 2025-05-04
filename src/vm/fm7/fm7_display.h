@@ -54,7 +54,7 @@ protected:
 	void (DISPLAY::*write_cpu_func_table[512])(uint32_t, uint8_t);
 	void (DISPLAY::*write_dma_func_table[512])(uint32_t, uint8_t);
 	
-	int clr_count;
+	bool delay_busy;
 	bool screen_update_flag;
 	bool crt_flag_bak;
 	
@@ -441,7 +441,8 @@ public:
 	void event_vline(int v, int clock);
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
-
+	bool decl_state(FILEIO *state_fio, bool loading);
+	
 	int get_screen_mode(void) {
 		return display_mode;
 	}

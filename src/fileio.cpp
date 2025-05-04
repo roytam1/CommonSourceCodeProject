@@ -150,6 +150,7 @@ bool FILEIO::Fopen(const _TCHAR *file_path, int mode)
 	
 	// store file path
 	my_tcscpy_s(path, _MAX_PATH, file_path);
+	open_mode = mode;
 	
 #ifdef USE_ZLIB
 	if(check_file_extension(file_path, _T(".gz"))) {
@@ -185,6 +186,10 @@ bool FILEIO::Fopen(const _TCHAR *file_path, int mode)
 bool FILEIO::Gzopen(const _TCHAR *file_path, int mode)
 {
 	gz_size = 0;
+	
+	// store file path
+	my_tcscpy_s(path, _MAX_PATH, file_path);
+	open_mode = mode;
 	
 	switch(mode) {
 	case FILEIO_READ_BINARY:
@@ -414,6 +419,7 @@ typedef union {
 	} b;
 	uint32_t u32;
 	int32_t s32;
+	float f32;
 } pair32_t;
 
 typedef union {
@@ -426,6 +432,7 @@ typedef union {
 	} b;
 	uint64_t u64;
 	int64_t s64;
+	double d64;
 } pair64_t;
 
 uint16_t FILEIO::FgetUint16_LE()
@@ -556,6 +563,54 @@ void FILEIO::FputInt64_LE(int64_t val)
 	FputUint8(tmp.b.h7);
 }
 
+float FILEIO::FgetFloat_LE()
+{
+	pair32_t tmp;
+	tmp.b.l  = FgetUint8();
+	tmp.b.h  = FgetUint8();
+	tmp.b.h2 = FgetUint8();
+	tmp.b.h3 = FgetUint8();
+	return tmp.f32;
+}
+
+void FILEIO::FputFloat_LE(float val)
+{
+	pair32_t tmp;
+	tmp.f32 = val;
+	FputUint8(tmp.b.l);
+	FputUint8(tmp.b.h);
+	FputUint8(tmp.b.h2);
+	FputUint8(tmp.b.h3);
+}
+
+double FILEIO::FgetDouble_LE()
+{
+	pair64_t tmp;
+	tmp.b.l  = FgetUint8();
+	tmp.b.h  = FgetUint8();
+	tmp.b.h2 = FgetUint8();
+	tmp.b.h3 = FgetUint8();
+	tmp.b.h4 = FgetUint8();
+	tmp.b.h5 = FgetUint8();
+	tmp.b.h6 = FgetUint8();
+	tmp.b.h7 = FgetUint8();
+	return tmp.d64;
+}
+
+void FILEIO::FputDouble_LE(double val)
+{
+	pair64_t tmp;
+	tmp.d64 = val;
+	FputUint8(tmp.b.l);
+	FputUint8(tmp.b.h);
+	FputUint8(tmp.b.h2);
+	FputUint8(tmp.b.h3);
+	FputUint8(tmp.b.h4);
+	FputUint8(tmp.b.h5);
+	FputUint8(tmp.b.h6);
+	FputUint8(tmp.b.h7);
+}
+
 uint16_t FILEIO::FgetUint16_BE()
 {
 	pair16_t tmp;
@@ -674,6 +729,54 @@ void FILEIO::FputInt64_BE(int64_t val)
 {
 	pair64_t tmp;
 	tmp.s64 = val;
+	FputUint8(tmp.b.h7);
+	FputUint8(tmp.b.h6);
+	FputUint8(tmp.b.h5);
+	FputUint8(tmp.b.h4);
+	FputUint8(tmp.b.h3);
+	FputUint8(tmp.b.h2);
+	FputUint8(tmp.b.h);
+	FputUint8(tmp.b.l);
+}
+
+float FILEIO::FgetFloat_BE()
+{
+	pair32_t tmp;
+	tmp.b.h3 = FgetUint8();
+	tmp.b.h2 = FgetUint8();
+	tmp.b.h  = FgetUint8();
+	tmp.b.l  = FgetUint8();
+	return tmp.f32;
+}
+
+void FILEIO::FputFloat_BE(float val)
+{
+	pair32_t tmp;
+	tmp.f32 = val;
+	FputUint8(tmp.b.h3);
+	FputUint8(tmp.b.h2);
+	FputUint8(tmp.b.h);
+	FputUint8(tmp.b.l);
+}
+
+double FILEIO::FgetDouble_BE()
+{
+	pair64_t tmp;
+	tmp.b.h7 = FgetUint8();
+	tmp.b.h6 = FgetUint8();
+	tmp.b.h5 = FgetUint8();
+	tmp.b.h4 = FgetUint8();
+	tmp.b.h3 = FgetUint8();
+	tmp.b.h2 = FgetUint8();
+	tmp.b.h  = FgetUint8();
+	tmp.b.l  = FgetUint8();
+	return tmp.d64;
+}
+
+void FILEIO::FputDouble_BE(double val)
+{
+	pair64_t tmp;
+	tmp.d64 = val;
 	FputUint8(tmp.b.h7);
 	FputUint8(tmp.b.h6);
 	FputUint8(tmp.b.h5);
@@ -852,12 +955,162 @@ long FILEIO::Ftell()
 
 bool FILEIO::Fcompare(const void* buffer, size_t size)
 {
-	bool result = false;
+	return Fcompare(buffer, size, 1);
+}
+
+bool FILEIO::Fcompare(const void* buffer, size_t size, size_t count)
+{
+	bool result = true;
 	void *tmp = malloc(size);
 	
-	if(Fread(tmp, size, 1) == 1) {
-		result = (memcmp(buffer, tmp, size) == 0);
+	for(size_t i = 0; i < count; i++) {
+		if(Fread(tmp, size, 1) != 1) {
+			result = false;
+			break;
+		}
+		if(memcmp(buffer, tmp, size) != 0) {
+			result = false;
+			break;
+		}
 	}
 	free(tmp);
 	return result;
+}
+
+bool FILEIO::StateCheckUint32(uint32_t val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		return (val == FgetUint32_LE());
+	} else {
+		FputUint32_LE(val);
+		return true;
+	}
+}
+
+bool FILEIO::StateCheckInt32(int32_t val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		return (val == FgetInt32_LE());
+	} else {
+		FputInt32_LE(val);
+		return true;
+	}
+}
+
+bool FILEIO::StateCheckBuffer(const void *buffer, size_t size, size_t count)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		return Fcompare(buffer, size, count);
+	} else {
+		Fwrite(buffer, size, count);
+		return true;
+	}
+}
+
+void FILEIO::StateBool(bool &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetBool();
+	} else {
+		FputBool(val);
+	}
+}
+
+void FILEIO::StateUint8(uint8_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetUint8();
+	} else {
+		FputUint8(val);
+	}
+}
+
+void FILEIO::StateUint16(uint16_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetUint16_LE();
+	} else {
+		FputUint16_LE(val);
+	}
+}
+
+void FILEIO::StateUint32(uint32_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetUint32_LE();
+	} else {
+		FputUint32_LE(val);
+	}
+}
+
+void FILEIO::StateUint64(uint64_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetUint64_LE();
+	} else {
+		FputUint64_LE(val);
+	}
+}
+
+void FILEIO::StateInt8(int8_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetInt8();
+	} else {
+		FputInt8(val);
+	}
+}
+
+void FILEIO::StateInt16(int16_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetInt16_LE();
+	} else {
+		FputInt16_LE(val);
+	}
+}
+
+void FILEIO::StateInt32(int32_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetInt32_LE();
+	} else {
+		FputInt32_LE(val);
+	}
+}
+
+void FILEIO::StateInt64(int64_t &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetInt64_LE();
+	} else {
+		FputInt64_LE(val);
+	}
+}
+
+void FILEIO::StateFloat(float &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetFloat_LE();
+	} else {
+		FputFloat_LE(val);
+	}
+}
+
+void FILEIO::StateDouble(double &val)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		val = FgetDouble_LE();
+	} else {
+		FputDouble_LE(val);
+	}
+}
+
+void FILEIO::StateBuffer(void *buffer, size_t size, size_t count)
+{
+	if(open_mode == FILEIO_READ_BINARY) {
+		Fread(buffer, size, count);
+	} else {
+		Fwrite(buffer, size, count);
+	}
 }

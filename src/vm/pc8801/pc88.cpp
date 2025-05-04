@@ -2960,209 +2960,130 @@ void pc88_dmac_t::finish(int c)
 
 #define STATE_VERSION	7
 
-void PC88::save_state(FILEIO* state_fio)
+bool PC88::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
 #if defined(PC88_EXRAM_BANKS)
-	state_fio->Fwrite(exram, sizeof(exram), 1);
+	state_fio->StateBuffer(exram, sizeof(exram), 1);
 #endif
-	state_fio->Fwrite(gvram, sizeof(gvram), 1);
-	state_fio->Fwrite(tvram, sizeof(tvram), 1);
-	state_fio->Fwrite(port, sizeof(port), 1);
-	state_fio->Fwrite(&crtc, sizeof(crtc), 1);
-	state_fio->Fwrite(&dmac, sizeof(dmac), 1);
-	state_fio->Fwrite(alu_reg, sizeof(alu_reg), 1);
-	state_fio->FputUint8(gvram_plane);
-	state_fio->FputUint8(gvram_sel);
-	state_fio->FputBool(cpu_clock_low);
+	state_fio->StateBuffer(gvram, sizeof(gvram), 1);
+	state_fio->StateBuffer(tvram, sizeof(tvram), 1);
+	state_fio->StateBuffer(port, sizeof(port), 1);
+	state_fio->StateBuffer(&crtc, sizeof(crtc), 1);
+	state_fio->StateBuffer(&dmac, sizeof(dmac), 1);
+	state_fio->StateBuffer(alu_reg, sizeof(alu_reg), 1);
+	state_fio->StateUint8(gvram_plane);
+	state_fio->StateUint8(gvram_sel);
+	state_fio->StateBool(cpu_clock_low);
 #if defined(SUPPORT_PC88_HIGH_CLOCK)
-	state_fio->FputBool(cpu_clock_high_fe2);
+	state_fio->StateBool(cpu_clock_high_fe2);
 #endif
-	state_fio->FputBool(mem_wait_on);
-	state_fio->FputInt32(m1_wait_clocks);
-	state_fio->FputInt32(f000_m1_wait_clocks);
-	state_fio->FputInt32(mem_wait_clocks_r);
-	state_fio->FputInt32(mem_wait_clocks_w);
-	state_fio->FputInt32(tvram_wait_clocks_r);
-	state_fio->FputInt32(tvram_wait_clocks_w);
-	state_fio->FputInt32(gvram_wait_clocks_r);
-	state_fio->FputInt32(gvram_wait_clocks_w);
-	state_fio->FputInt32(busreq_clocks);
-	state_fio->Fwrite(palette, sizeof(palette), 1);
-	state_fio->FputBool(update_palette);
-	state_fio->FputBool(hireso);
-	state_fio->Fwrite(text, sizeof(text), 1);
-	state_fio->Fwrite(graph, sizeof(graph), 1);
-	state_fio->Fwrite(palette_text_pc, sizeof(palette_text_pc), 1);
-	state_fio->Fwrite(palette_graph_pc, sizeof(palette_graph_pc), 1);
-	state_fio->FputBool(usart_dcd);
-	state_fio->FputBool(opn_busy);
-	state_fio->FputUint8(key_caps);
-	state_fio->FputUint8(key_kana);
+	state_fio->StateBool(mem_wait_on);
+	state_fio->StateInt32(m1_wait_clocks);
+	state_fio->StateInt32(f000_m1_wait_clocks);
+	state_fio->StateInt32(mem_wait_clocks_r);
+	state_fio->StateInt32(mem_wait_clocks_w);
+	state_fio->StateInt32(tvram_wait_clocks_r);
+	state_fio->StateInt32(tvram_wait_clocks_w);
+	state_fio->StateInt32(gvram_wait_clocks_r);
+	state_fio->StateInt32(gvram_wait_clocks_w);
+	state_fio->StateInt32(busreq_clocks);
+	state_fio->StateBuffer(palette, sizeof(palette), 1);
+	state_fio->StateBool(update_palette);
+	state_fio->StateBool(hireso);
+	state_fio->StateBuffer(text, sizeof(text), 1);
+	state_fio->StateBuffer(graph, sizeof(graph), 1);
+	state_fio->StateBuffer(palette_text_pc, sizeof(palette_text_pc), 1);
+	state_fio->StateBuffer(palette_graph_pc, sizeof(palette_graph_pc), 1);
+	state_fio->StateBool(usart_dcd);
+	state_fio->StateBool(opn_busy);
+	state_fio->StateUint8(key_caps);
+	state_fio->StateUint8(key_kana);
 #ifdef SUPPORT_PC88_JOYSTICK
-	state_fio->FputUint32(mouse_strobe_clock);
-	state_fio->FputUint32(mouse_strobe_clock_lim);
-	state_fio->FputInt32(mouse_phase);
-	state_fio->FputInt32(mouse_dx);
-	state_fio->FputInt32(mouse_dy);
-	state_fio->FputInt32(mouse_lx);
-	state_fio->FputInt32(mouse_ly);
+	state_fio->StateUint32(mouse_strobe_clock);
+	state_fio->StateUint32(mouse_strobe_clock_lim);
+	state_fio->StateInt32(mouse_phase);
+	state_fio->StateInt32(mouse_dx);
+	state_fio->StateInt32(mouse_dy);
+	state_fio->StateInt32(mouse_lx);
+	state_fio->StateInt32(mouse_ly);
 #endif
-	state_fio->FputUint8(intr_req);
-	state_fio->FputBool(intr_req_sound);
+	state_fio->StateUint8(intr_req);
+	state_fio->StateBool(intr_req_sound);
 #ifdef SUPPORT_PC88_SB2
-	state_fio->FputBool(intr_req_sb2);
+	state_fio->StateBool(intr_req_sb2);
 #endif
-	state_fio->FputUint8(intr_mask1);
-	state_fio->FputUint8(intr_mask2);
-	state_fio->FputBool(cmt_play);
-	state_fio->FputBool(cmt_rec);
-	state_fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
-	if(cmt_rec && cmt_fio->IsOpened()) {
-		int length_tmp = (int)cmt_fio->Ftell();
-		cmt_fio->Fseek(0, FILEIO_SEEK_SET);
-		state_fio->FputInt32(length_tmp);
-		while(length_tmp != 0) {
-			uint8_t buffer[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer));
-			cmt_fio->Fread(buffer, length_rw, 1);
-			state_fio->Fwrite(buffer, length_rw, 1);
-			length_tmp -= length_rw;
+	state_fio->StateUint8(intr_mask1);
+	state_fio->StateUint8(intr_mask2);
+	state_fio->StateBool(cmt_play);
+	state_fio->StateBool(cmt_rec);
+	state_fio->StateBuffer(rec_file_path, sizeof(rec_file_path), 1);
+	if(loading) {
+		int length_tmp = state_fio->FgetInt32_LE();
+		if(cmt_rec) {
+			cmt_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+			while(length_tmp != 0) {
+				uint8_t buffer[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer));
+				state_fio->Fread(buffer, length_rw, 1);
+				if(cmt_fio->IsOpened()) {
+					cmt_fio->Fwrite(buffer, length_rw, 1);
+				}
+				length_tmp -= length_rw;
+			}
 		}
 	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(cmt_bufptr);
-	state_fio->FputInt32(cmt_bufcnt);
-	state_fio->Fwrite(cmt_buffer, sizeof(cmt_buffer), 1);
-	state_fio->Fwrite(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
-	state_fio->FputInt32(cmt_data_carrier_cnt);
-	state_fio->FputInt32(cmt_register_id);
-	state_fio->FputBool(beep_on);
-	state_fio->FputBool(beep_signal);
-	state_fio->FputBool(sing_signal);
-#ifdef SUPPORT_PC88_PCG8100
-	state_fio->FputUint16(pcg_addr);
-	state_fio->FputUint8(pcg_data);
-	state_fio->FputUint8(pcg_ctrl);
-	state_fio->Fwrite(pcg_pattern, sizeof(pcg_pattern), 1);
-#endif
-#ifdef NIPPY_PATCH
-	state_fio->FputBool(nippy_patch);
-#endif
-}
-
-bool PC88::load_state(FILEIO* state_fio)
-{
-	release_tape();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-#if defined(PC88_EXRAM_BANKS)
-	state_fio->Fread(exram, sizeof(exram), 1);
-#endif
-	state_fio->Fread(gvram, sizeof(gvram), 1);
-	state_fio->Fread(tvram, sizeof(tvram), 1);
-	state_fio->Fread(port, sizeof(port), 1);
-	state_fio->Fread(&crtc, sizeof(crtc), 1);
-	state_fio->Fread(&dmac, sizeof(dmac), 1);
-	state_fio->Fread(alu_reg, sizeof(alu_reg), 1);
-	gvram_plane = state_fio->FgetUint8();
-	gvram_sel = state_fio->FgetUint8();
-	cpu_clock_low = state_fio->FgetBool();
-#if defined(SUPPORT_PC88_HIGH_CLOCK)
-	cpu_clock_high_fe2 = state_fio->FgetBool();
-#endif
-	mem_wait_on = state_fio->FgetBool();
-	m1_wait_clocks = state_fio->FgetInt32();
-	f000_m1_wait_clocks = state_fio->FgetInt32();
-	mem_wait_clocks_r = state_fio->FgetInt32();
-	mem_wait_clocks_w = state_fio->FgetInt32();
-	tvram_wait_clocks_r = state_fio->FgetInt32();
-	tvram_wait_clocks_w = state_fio->FgetInt32();
-	gvram_wait_clocks_r = state_fio->FgetInt32();
-	gvram_wait_clocks_w = state_fio->FgetInt32();
-	busreq_clocks = state_fio->FgetInt32();
-	state_fio->Fread(palette, sizeof(palette), 1);
-	update_palette = state_fio->FgetBool();
-	hireso = state_fio->FgetBool();
-	state_fio->Fread(text, sizeof(text), 1);
-	state_fio->Fread(graph, sizeof(graph), 1);
-	state_fio->Fread(palette_text_pc, sizeof(palette_text_pc), 1);
-	state_fio->Fread(palette_graph_pc, sizeof(palette_graph_pc), 1);
-	usart_dcd = state_fio->FgetBool();
-	opn_busy = state_fio->FgetBool();
-	key_caps = state_fio->FgetUint8();
-	key_kana = state_fio->FgetUint8();
-#ifdef SUPPORT_PC88_JOYSTICK
-	mouse_strobe_clock = state_fio->FgetUint32();
-	mouse_strobe_clock_lim = state_fio->FgetUint32();
-	mouse_phase = state_fio->FgetInt32();
-	mouse_dx = state_fio->FgetInt32();
-	mouse_dy = state_fio->FgetInt32();
-	mouse_lx = state_fio->FgetInt32();
-	mouse_ly = state_fio->FgetInt32();
-#endif
-	intr_req = state_fio->FgetUint8();
-	intr_req_sound = state_fio->FgetBool();
-#ifdef SUPPORT_PC88_SB2
-	intr_req_sb2 = state_fio->FgetBool();
-#endif
-	intr_mask1 = state_fio->FgetUint8();
-	intr_mask2 = state_fio->FgetUint8();
-	cmt_play = state_fio->FgetBool();
-	cmt_rec = state_fio->FgetBool();
-	state_fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
-	int length_tmp = state_fio->FgetInt32();
-	if(cmt_rec) {
-		cmt_fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
-		while(length_tmp != 0) {
-			uint8_t buffer[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer));
-			state_fio->Fread(buffer, length_rw, 1);
-			if(cmt_fio->IsOpened()) {
-				cmt_fio->Fwrite(buffer, length_rw, 1);
+		if(cmt_rec && cmt_fio->IsOpened()) {
+			int length_tmp = (int)cmt_fio->Ftell();
+			cmt_fio->Fseek(0, FILEIO_SEEK_SET);
+			state_fio->FputInt32_LE(length_tmp);
+			while(length_tmp != 0) {
+				uint8_t buffer[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer));
+				cmt_fio->Fread(buffer, length_rw, 1);
+				state_fio->Fwrite(buffer, length_rw, 1);
+				length_tmp -= length_rw;
 			}
-			length_tmp -= length_rw;
+		} else {
+			state_fio->FputInt32_LE(0);
 		}
 	}
-	cmt_bufptr = state_fio->FgetInt32();
-	cmt_bufcnt = state_fio->FgetInt32();
-	state_fio->Fread(cmt_buffer, sizeof(cmt_buffer), 1);
-	state_fio->Fread(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
-	cmt_data_carrier_cnt = state_fio->FgetInt32();
-	cmt_register_id = state_fio->FgetInt32();
-	beep_on = state_fio->FgetBool();
-	beep_signal = state_fio->FgetBool();
-	sing_signal = state_fio->FgetBool();
+	state_fio->StateInt32(cmt_bufptr);
+	state_fio->StateInt32(cmt_bufcnt);
+	state_fio->StateBuffer(cmt_buffer, sizeof(cmt_buffer), 1);
+	state_fio->StateBuffer(cmt_data_carrier, sizeof(cmt_data_carrier), 1);
+	state_fio->StateInt32(cmt_data_carrier_cnt);
+	state_fio->StateInt32(cmt_register_id);
+	state_fio->StateBool(beep_on);
+	state_fio->StateBool(beep_signal);
+	state_fio->StateBool(sing_signal);
 #ifdef SUPPORT_PC88_PCG8100
-	pcg_addr = state_fio->FgetUint16();
-	pcg_data = state_fio->FgetUint8();
-	pcg_ctrl = state_fio->FgetUint8();
-	state_fio->Fread(pcg_pattern, sizeof(pcg_pattern), 1);
+	state_fio->StateUint16(pcg_addr);
+	state_fio->StateUint8(pcg_data);
+	state_fio->StateUint8(pcg_ctrl);
+	state_fio->StateBuffer(pcg_pattern, sizeof(pcg_pattern), 1);
 #endif
 #ifdef NIPPY_PATCH
-	nippy_patch = state_fio->FgetBool();
+	state_fio->StateBool(nippy_patch);
 #endif
 	
 	// post process
-	dmac.mem = dmac.ch[2].io = this;
-	dmac.ch[0].io = dmac.ch[1].io = dmac.ch[3].io = vm->dummy;
+	if(loading) {
+		dmac.mem = dmac.ch[2].io = this;
+		dmac.ch[0].io = dmac.ch[1].io = dmac.ch[3].io = vm->dummy;
 #if defined(_PC8001SR)
-	update_n80_write();
-	update_n80_read();
+		update_n80_write();
+		update_n80_read();
 #else
-	update_low_memmap();
-	update_tvram_memmap();
+		update_low_memmap();
+		update_tvram_memmap();
 #endif
+	}
 	return true;
 }
-

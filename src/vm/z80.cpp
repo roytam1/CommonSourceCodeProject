@@ -3939,87 +3939,54 @@ void dasm_fdcb(uint32_t pc, _TCHAR *buffer, size_t buffer_len, symbol_t *first_s
 
 #define STATE_VERSION	2
 
-void Z80::save_state(FILEIO* state_fio)
+bool Z80::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+#ifdef USE_DEBUGGER
+	state_fio->StateUint64(total_icount);
+#endif
+	state_fio->StateInt32(icount);
+	state_fio->StateInt32(extra_icount);
+	state_fio->StateUint16(prevpc);
+	state_fio->StateUint32(pc.d);
+	state_fio->StateUint32(sp.d);
+	state_fio->StateUint32(af.d);
+	state_fio->StateUint32(bc.d);
+	state_fio->StateUint32(de.d);
+	state_fio->StateUint32(hl.d);
+	state_fio->StateUint32(ix.d);
+	state_fio->StateUint32(iy.d);
+	state_fio->StateUint32(wz.d);
+	state_fio->StateUint32(af2.d);
+	state_fio->StateUint32(bc2.d);
+	state_fio->StateUint32(de2.d);
+	state_fio->StateUint32(hl2.d);
+	state_fio->StateUint8(I);
+	state_fio->StateUint8(R);
+	state_fio->StateUint8(R2);
+	state_fio->StateUint32(ea);
+	state_fio->StateBool(busreq);
+	state_fio->StateBool(after_halt);
+	state_fio->StateUint8(im);
+	state_fio->StateUint8(iff1);
+	state_fio->StateUint8(iff2);
+	state_fio->StateUint8(icr);
+	state_fio->StateBool(after_ei);
+	state_fio->StateBool(after_ldair);
+	state_fio->StateUint32(intr_req_bit);
+	state_fio->StateUint32(intr_pend_bit);
 	
 #ifdef USE_DEBUGGER
-	state_fio->FputUint64(total_icount);
-#endif
-	state_fio->FputInt32(icount);
-	state_fio->FputInt32(extra_icount);
-	state_fio->FputUint16(prevpc);
-	state_fio->FputUint32(pc.d);
-	state_fio->FputUint32(sp.d);
-	state_fio->FputUint32(af.d);
-	state_fio->FputUint32(bc.d);
-	state_fio->FputUint32(de.d);
-	state_fio->FputUint32(hl.d);
-	state_fio->FputUint32(ix.d);
-	state_fio->FputUint32(iy.d);
-	state_fio->FputUint32(wz.d);
-	state_fio->FputUint32(af2.d);
-	state_fio->FputUint32(bc2.d);
-	state_fio->FputUint32(de2.d);
-	state_fio->FputUint32(hl2.d);
-	state_fio->FputUint8(I);
-	state_fio->FputUint8(R);
-	state_fio->FputUint8(R2);
-	state_fio->FputUint32(ea);
-	state_fio->FputBool(busreq);
-	state_fio->FputBool(after_halt);
-	state_fio->FputUint8(im);
-	state_fio->FputUint8(iff1);
-	state_fio->FputUint8(iff2);
-	state_fio->FputUint8(icr);
-	state_fio->FputBool(after_ei);
-	state_fio->FputBool(after_ldair);
-	state_fio->FputUint32(intr_req_bit);
-	state_fio->FputUint32(intr_pend_bit);
-}
-
-bool Z80::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
+	// post process
+	if(loading) {
+		prev_total_icount = total_icount;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-#ifdef USE_DEBUGGER
-	total_icount = prev_total_icount = state_fio->FgetUint64();
 #endif
-	icount = state_fio->FgetInt32();
-	extra_icount = state_fio->FgetInt32();
-	prevpc = state_fio->FgetUint16();
-	pc.d = state_fio->FgetUint32();
-	sp.d = state_fio->FgetUint32();
-	af.d = state_fio->FgetUint32();
-	bc.d = state_fio->FgetUint32();
-	de.d = state_fio->FgetUint32();
-	hl.d = state_fio->FgetUint32();
-	ix.d = state_fio->FgetUint32();
-	iy.d = state_fio->FgetUint32();
-	wz.d = state_fio->FgetUint32();
-	af2.d = state_fio->FgetUint32();
-	bc2.d = state_fio->FgetUint32();
-	de2.d = state_fio->FgetUint32();
-	hl2.d = state_fio->FgetUint32();
-	I = state_fio->FgetUint8();
-	R = state_fio->FgetUint8();
-	R2 = state_fio->FgetUint8();
-	ea = state_fio->FgetUint32();
-	busreq = state_fio->FgetBool();
-	after_halt = state_fio->FgetBool();
-	im = state_fio->FgetUint8();
-	iff1 = state_fio->FgetUint8();
-	iff2 = state_fio->FgetUint8();
-	icr = state_fio->FgetUint8();
-	after_ei = state_fio->FgetBool();
-	after_ldair = state_fio->FgetBool();
-	intr_req_bit = state_fio->FgetUint32();
-	intr_pend_bit = state_fio->FgetUint32();
 	return true;
 }
 

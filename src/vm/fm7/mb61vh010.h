@@ -62,7 +62,7 @@ class EMU;
 class MB61VH010: public DEVICE {
  protected:
 	DEVICE *target;
-	
+
 	// Registers
 	uint8_t command_reg;        // D410 (RW)
 	uint8_t color_reg;          // D411 (RW)
@@ -122,6 +122,8 @@ class MB61VH010: public DEVICE {
 
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
+	bool decl_state(FILEIO *state_fio, bool loading);
+	
 	void event_callback(int event_id, int err);
 	void write_data8(uint32_t id, uint32_t data);
 	uint32_t read_data8(uint32_t addr);

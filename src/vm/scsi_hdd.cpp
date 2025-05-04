@@ -175,48 +175,29 @@ bool SCSI_HDD::write_buffer(int length)
 
 #define STATE_VERSION	2
 
-void SCSI_HDD::save_state(FILEIO* state_fio)
+bool SCSI_HDD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-/*
-	for(int drv = 0; drv < 8; drv++) {
-		if(disk[drv] != NULL) {
-			disk[drv]->save_state(state_fio);
-		}
-	}
-*/
-	state_fio->Fwrite(image_path, sizeof(image_path), 1);
-	state_fio->Fwrite(sector_size, sizeof(sector_size), 1);
-	SCSI_DEV::save_state(state_fio);
-}
-
-bool SCSI_HDD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 /*
 	for(int drv = 0; drv < 8; drv++) {
 		if(disk[drv] != NULL) {
-			if(!disk[drv]->load_state(state_fio)) {
+			if(!disk[drv]->process_state(state_fio, loading)) {
 				return false;
 			}
 		}
 	}
 */
-	state_fio->Fread(image_path, sizeof(image_path), 1);
-	state_fio->Fread(sector_size, sizeof(sector_size), 1);
-	return SCSI_DEV::load_state(state_fio);
+	state_fio->StateBuffer(image_path, sizeof(image_path), 1);
+	state_fio->StateBuffer(sector_size, sizeof(sector_size), 1);
+	return SCSI_DEV::process_state(state_fio, loading);
 }
 
-int SASI_HDD::get_command_length(int value)
-{
-	return SCSI_HDD::get_command_length(value);
-}
+// SASI hard disk drive
 
 void SASI_HDD::start_command()
 {

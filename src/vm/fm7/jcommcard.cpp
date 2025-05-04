@@ -215,46 +215,71 @@ void FM7_JCOMMCARD::reset(void)
 	}
 }
 
-#define STATE_VERSION 3
+#define STATE_VERSION 4
+
+bool FM7_JCOMMCARD::decl_state(FILEIO *state_fio, bool loading)
+{
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+ 
+	state_fio->StateUint8(n_bank);
+	state_fio->StateUint8(rcb_address);
+	state_fio->StateUint32(kanji_address.d);
+	state_fio->StateBool(halted);
+
+	state_fio->StateBuffer(prog_rom, sizeof(prog_rom), 1);
+	state_fio->StateBuffer(dict_rom, sizeof(dict_rom), 1);
+	state_fio->StateBuffer(p_ram, sizeof(p_ram), 1);
+	state_fio->StateBool(firmware_ok);
+
+	return true;
+}
 
 void FM7_JCOMMCARD::save_state(FILEIO *state_fio)
 {
-	state_fio->FputUint32_BE(STATE_VERSION);
-	state_fio->FputInt32_BE(this_device_id);
+	//state_fio->FputUint32_BE(STATE_VERSION);
+	//state_fio->FputInt32_BE(this_device_id);
 	this->out_debug_log(_T("Save State: JCOMM CARD: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
 
-	state_fio->FputUint8(n_bank & 0x3f);
-	state_fio->FputUint8(rcb_address);
-	state_fio->FputUint32_BE(kanji_address.d);
+	decl_state(state_fio, false);
+	//state_fio->FputUint8(n_bank & 0x3f);
+	//state_fio->FputUint8(rcb_address);
+	//state_fio->FputUint32_BE(kanji_address.d);
 
-	state_fio->FputBool(halted);
+	//state_fio->FputBool(halted);
 
-	state_fio->Fwrite(prog_rom, sizeof(prog_rom), 1);
-	state_fio->Fwrite(dict_rom, sizeof(dict_rom), 1);
-	state_fio->Fwrite(p_ram, sizeof(p_ram), 1);
-	state_fio->FputBool(firmware_ok);
+	//state_fio->Fwrite(prog_rom, sizeof(prog_rom), 1);
+	//state_fio->Fwrite(dict_rom, sizeof(dict_rom), 1);
+	//state_fio->Fwrite(p_ram, sizeof(p_ram), 1);
+	//state_fio->FputBool(firmware_ok);
 
 }
 
 bool FM7_JCOMMCARD::load_state(FILEIO *state_fio)
 {
-	uint32_t version;
-	version = state_fio->FgetUint32_BE();
-	if(this_device_id != state_fio->FgetInt32_BE()) return false;
+	//uint32_t version;
+	//version = state_fio->FgetUint32_BE();
+	//if(this_device_id != state_fio->FgetInt32_BE()) return false;
 	this->out_debug_log(_T("Load State: JCOMM CARD: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
-
-	if(version >= 1) {
-		n_bank = state_fio->FgetUint8() & 0x3f;
-		rcb_address = state_fio->FgetUint8();
-		kanji_address.d = state_fio->FgetUint32_BE();
-
-		halted = state_fio->FgetBool();
-
-		state_fio->Fread(prog_rom, sizeof(prog_rom), 1);
-		state_fio->Fread(dict_rom, sizeof(dict_rom), 1);
-		state_fio->Fread(p_ram, sizeof(p_ram), 1);
-		firmware_ok = state_fio->FgetBool();
-		//modified = true;
+	if(!decl_state(state_fio, true)) {
+		return false;
 	}
+	n_bank &= 0x3f;
+
+	//if(version >= 1) {
+	//	n_bank = state_fio->FgetUint8() & 0x3f;
+	//	rcb_address = state_fio->FgetUint8();
+	//	kanji_address.d = state_fio->FgetUint32_BE();
+	//	halted = state_fio->FgetBool();
+	//	state_fio->Fread(prog_rom, sizeof(prog_rom), 1);
+	//	state_fio->Fread(dict_rom, sizeof(dict_rom), 1);
+	//	state_fio->Fread(p_ram, sizeof(p_ram), 1);
+	//	firmware_ok = state_fio->FgetBool();
+	//modified = true; // Abondoned
+	//}
 	return true;
 }

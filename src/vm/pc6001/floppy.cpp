@@ -599,60 +599,34 @@ void FLOPPY::update_config()
 
 #define STATE_VERSION	1
 
-void FLOPPY::save_state(FILEIO* state_fio)
+bool FLOPPY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(io_B1H);
-	for(int i = 0; i < 2; i++) {
-		disk[i]->save_state(state_fio);
-	}
-	state_fio->Fwrite(cur_trk, sizeof(cur_trk), 1);
-	state_fio->Fwrite(cur_sct, sizeof(cur_sct), 1);
-	state_fio->Fwrite(cur_pos, sizeof(cur_pos), 1);
-	state_fio->Fwrite(access, sizeof(access), 1);
-	state_fio->Fwrite(Data, sizeof(Data), 1);
-	state_fio->Fwrite(Index, sizeof(Index), 1);
-	state_fio->Fwrite(&CmdIn, sizeof(CmdBuffer), 1);
-	state_fio->Fwrite(&CmdOut, sizeof(CmdBuffer), 1);
-
-	state_fio->FputUint8(SeekST0);
-	state_fio->FputUint8(LastCylinder);
-	state_fio->FputInt32(SeekEnd);
-	state_fio->FputUint8(SendSectors);
-	state_fio->FputInt32(DIO);
-	state_fio->FputUint8(Status);
-}
-
-bool FLOPPY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	io_B1H = state_fio->FgetUint8();
+	state_fio->StateUint8(io_B1H);
 	for(int i = 0; i < 2; i++) {
-		if(!disk[i]->load_state(state_fio)) {
+		if(!disk[i]->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	state_fio->Fread(cur_trk, sizeof(cur_trk), 1);
-	state_fio->Fread(cur_sct, sizeof(cur_sct), 1);
-	state_fio->Fread(cur_pos, sizeof(cur_pos), 1);
-	state_fio->Fread(access, sizeof(access), 1);
-	state_fio->Fread(Data, sizeof(Data), 1);
-	state_fio->Fread(Index, sizeof(Index), 1);
-	state_fio->Fread(&CmdIn, sizeof(CmdBuffer), 1);
-	state_fio->Fread(&CmdOut, sizeof(CmdBuffer), 1);
-	SeekST0 = state_fio->FgetUint8();
-	LastCylinder = state_fio->FgetUint8();
-	SeekEnd = state_fio->FgetInt32();
-	SendSectors = state_fio->FgetUint8();
-	DIO = state_fio->FgetInt32();
-	Status = state_fio->FgetUint8();
+	state_fio->StateBuffer(cur_trk, sizeof(cur_trk), 1);
+	state_fio->StateBuffer(cur_sct, sizeof(cur_sct), 1);
+	state_fio->StateBuffer(cur_pos, sizeof(cur_pos), 1);
+	state_fio->StateBuffer(access, sizeof(access), 1);
+	state_fio->StateBuffer(Data, sizeof(Data), 1);
+	state_fio->StateBuffer(Index, sizeof(Index), 1);
+	state_fio->StateBuffer(&CmdIn, sizeof(CmdBuffer), 1);
+	state_fio->StateBuffer(&CmdOut, sizeof(CmdBuffer), 1);
+	state_fio->StateUint8(SeekST0);
+	state_fio->StateUint8(LastCylinder);
+	state_fio->StateInt32(SeekEnd);
+	state_fio->StateUint8(SendSectors);
+	state_fio->StateInt32(DIO);
+	state_fio->StateUint8(Status);
 	return true;
 }
 

@@ -162,40 +162,27 @@ void MEMORY::update_map()
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint8(romsel);
-#ifdef _X1TURBO_FEATURE
-	state_fio->Fwrite(extram, sizeof(extram), 1);
-	state_fio->FputUint8(bank);
-#else
-	state_fio->FputInt32(m1_cycle);
-#endif
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	romsel = state_fio->FgetUint8();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint8(romsel);
 #ifdef _X1TURBO_FEATURE
-	state_fio->Fread(extram, sizeof(extram), 1);
-	bank = state_fio->FgetUint8();
+	state_fio->StateBuffer(extram, sizeof(extram), 1);
+	state_fio->StateUint8(bank);
 #else
-	m1_cycle = state_fio->FgetInt32();
+	state_fio->StateInt32(m1_cycle);
 #endif
 	
 	// post process
-	update_map();
+	if(loading) {
+		update_map();
+	}
 	return true;
 }
 

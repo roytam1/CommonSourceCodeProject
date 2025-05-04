@@ -812,38 +812,24 @@ void dmac_t::run(int c)
 
 #define STATE_VERSION	1
 
-void DISPLAY::save_state(FILEIO* state_fio)
+bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(font, sizeof(font), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->FputInt32(busreq_clocks);
-	state_fio->FputBool(color);
-	state_fio->FputBool(width40);
-	state_fio->FputUint8(mode);
-	state_fio->Fwrite(&crtc, sizeof(crtc), 1);
-	state_fio->Fwrite(&dmac, sizeof(dmac), 1);
-}
-
-bool DISPLAY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(font, sizeof(font), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	busreq_clocks = state_fio->FgetInt32();
-	color = state_fio->FgetBool();
-	width40 = state_fio->FgetBool();
-	mode = state_fio->FgetUint8();
-	state_fio->Fread(&crtc, sizeof(crtc), 1);
+	state_fio->StateBuffer(font, sizeof(font), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateInt32(busreq_clocks);
+	state_fio->StateBool(color);
+	state_fio->StateBool(width40);
+	state_fio->StateUint8(mode);
+	state_fio->StateBuffer(&crtc, sizeof(crtc), 1);
 	STORE_DMAC_CONTEXTS();
-	state_fio->Fread(&dmac, sizeof(dmac), 1);
+	state_fio->StateBuffer(&dmac, sizeof(dmac), 1);
 	RESTORE_DMAC_CONTEXTS();
 	return true;
 }
+

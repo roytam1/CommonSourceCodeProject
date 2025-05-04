@@ -98,8 +98,7 @@ public:
 #if defined(_MZ80K)
 	void update_config();
 #endif
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
 	void set_context_ctc(DEVICE* device)

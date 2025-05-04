@@ -53,23 +53,15 @@ uint32_t JOYSTICK::read_io8(uint32_t addr)
 
 #define STATE_VERSION	2
 
-void JOYSTICK::save_state(FILEIO* state_fio)
+bool JOYSTICK::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint32(mode);
-}
-
-bool JOYSTICK::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	mode = state_fio->FgetUint32();
+	state_fio->StateUint32(mode);
 	return true;
 }
 

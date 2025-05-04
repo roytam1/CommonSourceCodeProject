@@ -244,41 +244,24 @@ void KEYBOARD::event_frame()
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(init);
-	state_fio->FputUint8(code);
-	state_fio->FputUint8(code_prev);
-	state_fio->FputUint8(stat);
-	state_fio->FputBool(caps);
-	state_fio->FputBool(caps_prev);
-	state_fio->FputBool(graph);
-	state_fio->FputBool(graph_prev);
-	state_fio->FputBool(kana);
-	state_fio->FputBool(kana_prev);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	init = state_fio->FgetInt32();
-	code = state_fio->FgetUint8();
-	code_prev = state_fio->FgetUint8();
-	stat = state_fio->FgetUint8();
-	caps = state_fio->FgetBool();
-	caps_prev = state_fio->FgetBool();
-	graph = state_fio->FgetBool();
-	graph_prev = state_fio->FgetBool();
-	kana = state_fio->FgetBool();
-	kana_prev = state_fio->FgetBool();
+	state_fio->StateInt32(init);
+	state_fio->StateUint8(code);
+	state_fio->StateUint8(code_prev);
+	state_fio->StateUint8(stat);
+	state_fio->StateBool(caps);
+	state_fio->StateBool(caps_prev);
+	state_fio->StateBool(graph);
+	state_fio->StateBool(graph_prev);
+	state_fio->StateBool(kana);
+	state_fio->StateBool(kana_prev);
 	return true;
 }
 

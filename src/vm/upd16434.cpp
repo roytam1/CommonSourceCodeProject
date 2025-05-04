@@ -455,27 +455,17 @@ void UPD16434::draw(int xoffset)
 
 #define STATE_VERSION	1
 
-void UPD16434::save_state(FILEIO* state_fio)
+bool UPD16434::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(pointer);
-	state_fio->FputUint8(mode);
-	state_fio->Fwrite(imem, sizeof(imem), 1);
-}
-
-bool UPD16434::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	pointer = state_fio->FgetUint8();
-	mode = state_fio->FgetUint8();
-	state_fio->Fread(imem, sizeof(imem), 1);
+	state_fio->StateUint8(pointer);
+	state_fio->StateUint8(mode);
+	state_fio->StateBuffer(imem, sizeof(imem), 1);
 	return true;
 }
 

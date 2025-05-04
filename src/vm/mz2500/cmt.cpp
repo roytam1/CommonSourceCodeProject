@@ -317,55 +317,31 @@ void CMT::close_tape()
 
 #define STATE_VERSION	1
 
-void CMT::save_state(FILEIO* state_fio)
+bool CMT::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(pa);
-	state_fio->FputUint8(pc);
-	state_fio->FputBool(play);
-	state_fio->FputBool(rec);
-	state_fio->FputBool(now_play);
-	state_fio->FputBool(now_rewind);
-	state_fio->FputInt32(register_id_frew);
-	state_fio->FputInt32(register_id_ffwd);
-	state_fio->FputInt32(register_id_fwd);
-	state_fio->FputInt32(register_id_stop);
-	state_fio->FputInt32(register_id_eject);
-#ifndef _MZ80B
-	state_fio->FputInt32(register_id_apss);
-	state_fio->FputBool(now_apss);
-	state_fio->FputBool(now_apss_tmp);
-#endif
-	state_fio->FputInt32(register_id_ipl);
-}
-
-bool CMT::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	pa = state_fio->FgetUint8();
-	pc = state_fio->FgetUint8();
-	play = state_fio->FgetBool();
-	rec = state_fio->FgetBool();
-	now_play = state_fio->FgetBool();
-	now_rewind = state_fio->FgetBool();
-	register_id_frew = state_fio->FgetInt32();
-	register_id_ffwd = state_fio->FgetInt32();
-	register_id_fwd = state_fio->FgetInt32();
-	register_id_stop = state_fio->FgetInt32();
-	register_id_eject = state_fio->FgetInt32();
+	state_fio->StateUint8(pa);
+	state_fio->StateUint8(pc);
+	state_fio->StateBool(play);
+	state_fio->StateBool(rec);
+	state_fio->StateBool(now_play);
+	state_fio->StateBool(now_rewind);
+	state_fio->StateInt32(register_id_frew);
+	state_fio->StateInt32(register_id_ffwd);
+	state_fio->StateInt32(register_id_fwd);
+	state_fio->StateInt32(register_id_stop);
+	state_fio->StateInt32(register_id_eject);
 #ifndef _MZ80B
-	register_id_apss = state_fio->FgetInt32();
-	now_apss = state_fio->FgetBool();
-	now_apss_tmp = state_fio->FgetBool();
+	state_fio->StateInt32(register_id_apss);
+	state_fio->StateBool(now_apss);
+	state_fio->StateBool(now_apss_tmp);
 #endif
-	register_id_ipl = state_fio->FgetInt32();
+	state_fio->StateInt32(register_id_ipl);
 	return true;
 }
 

@@ -183,37 +183,22 @@ void MC6844::update_irq()
 
 #define STATE_VERSION	1
 
-void MC6844::save_state(FILEIO* state_fio)
+bool MC6844::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < 4; i++) {
-		state_fio->FputUint32(dma[i].address_reg.d);
-		state_fio->FputUint32(dma[i].byte_count_reg.d);
-		state_fio->FputUint8(dma[i].channel_ctrl_reg);
-	}
-	state_fio->FputUint8(priority_ctrl_reg);
-	state_fio->FputUint8(interrupt_ctrl_reg);
-	state_fio->FputUint8(data_chain_reg);
-}
-
-bool MC6844::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < 4; i++) {
-		dma[i].address_reg.d = state_fio->FgetUint32();
-		dma[i].byte_count_reg.d = state_fio->FgetUint32();
-		dma[i].channel_ctrl_reg = state_fio->FgetUint8();
+		state_fio->StateUint32(dma[i].address_reg.d);
+		state_fio->StateUint32(dma[i].byte_count_reg.d);
+		state_fio->StateUint8(dma[i].channel_ctrl_reg);
 	}
-	priority_ctrl_reg = state_fio->FgetUint8();
-	interrupt_ctrl_reg = state_fio->FgetUint8();
-	data_chain_reg = state_fio->FgetUint8();
+	state_fio->StateUint8(priority_ctrl_reg);
+	state_fio->StateUint8(interrupt_ctrl_reg);
+	state_fio->StateUint8(data_chain_reg);
 	return true;
 }
 

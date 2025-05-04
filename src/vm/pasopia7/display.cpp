@@ -759,35 +759,21 @@ void DISPLAY::draw_fine_lcd(uint16_t src)
 
 #define STATE_VERSION	1
 
-void DISPLAY::save_state(FILEIO* state_fio)
+bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(mode);
-	state_fio->FputUint8(text_page);
-	state_fio->FputUint16(cursor);
-	state_fio->FputUint16(cblink);
-	state_fio->FputUint16(flash_cnt);
-	state_fio->FputBool(blink);
-	state_fio->FputBool(pal_dis);
-}
-
-bool DISPLAY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	mode = state_fio->FgetUint8();
-	text_page = state_fio->FgetUint8();
-	cursor = state_fio->FgetUint16();
-	cblink = state_fio->FgetUint16();
-	flash_cnt = state_fio->FgetUint16();
-	blink = state_fio->FgetBool();
-	pal_dis = state_fio->FgetBool();
+	state_fio->StateUint8(mode);
+	state_fio->StateUint8(text_page);
+	state_fio->StateUint16(cursor);
+	state_fio->StateUint16(cblink);
+	state_fio->StateUint16(flash_cnt);
+	state_fio->StateBool(blink);
+	state_fio->StateBool(pal_dis);
 	return true;
 }
 

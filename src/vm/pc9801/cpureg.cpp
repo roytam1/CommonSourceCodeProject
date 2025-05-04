@@ -106,23 +106,15 @@ uint32_t CPUREG::read_io8(uint32_t addr)
 
 #define STATE_VERSION	1
 
-void CPUREG::save_state(FILEIO* state_fio)
+bool CPUREG::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(nmi_enabled);
-}
-
-bool CPUREG::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	nmi_enabled = state_fio->FgetBool();
+	state_fio->StateBool(nmi_enabled);
 	return true;
 }
 

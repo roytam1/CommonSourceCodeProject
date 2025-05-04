@@ -101,34 +101,25 @@ void MAPPER::update_bank(int num)
 
 #define STATE_VERSION	1
 
-void MAPPER::save_state(FILEIO* state_fio)
+bool MAPPER::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint8(mapper_reg);
-	state_fio->Fwrite(bank_reg, sizeof(bank_reg), 1);
-//	state_fio->Fwrite(cur_bank, sizeof(cur_bank), 1);
-}
-
-bool MAPPER::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	mapper_reg = state_fio->FgetUint8();
-	state_fio->Fread(bank_reg, sizeof(bank_reg), 1);
-//	state_fio->Fread(cur_bank, sizeof(cur_bank), 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint8(mapper_reg);
+	state_fio->StateBuffer(bank_reg, sizeof(bank_reg), 1);
+//	state_fio->StateBuffer(cur_bank, sizeof(cur_bank), 1);
 	
 	// post process
-	for(int i = 0; i < 15; i++) {
-		cur_bank[i] = -1;
-		update_bank(i);
+	if(loading) {
+		for(int i = 0; i < 15; i++) {
+			cur_bank[i] = -1;
+			update_bank(i);
+		}
 	}
 	return true;
 }

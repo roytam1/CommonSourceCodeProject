@@ -278,33 +278,20 @@ void MEMORY::save_ram(const _TCHAR* file_path)
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->FputUint8(pio1_pa);
-	state_fio->FputUint8(pio1_pb);
-	state_fio->FputUint8(shift_reg);
-	state_fio->FputUint32(a15_mask);
-	state_fio->FputBool(led);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	pio1_pa = state_fio->FgetUint8();
-	pio1_pb = state_fio->FgetUint8();
-	shift_reg = state_fio->FgetUint8();
-	a15_mask = state_fio->FgetUint32();
-	led = state_fio->FgetBool();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateUint8(pio1_pa);
+	state_fio->StateUint8(pio1_pb);
+	state_fio->StateUint8(shift_reg);
+	state_fio->StateUint32(a15_mask);
+	state_fio->StateBool(led);
 	return true;
 }
 

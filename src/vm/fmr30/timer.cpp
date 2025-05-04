@@ -62,25 +62,16 @@ void TIMER::update_intr()
 
 #define STATE_VERSION	1
 
-void TIMER::save_state(FILEIO* state_fio)
+bool TIMER::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(ctrl);
-	state_fio->FputUint8(status);
-}
-
-bool TIMER::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	ctrl = state_fio->FgetUint8();
-	status = state_fio->FgetUint8();
+	state_fio->StateUint8(ctrl);
+	state_fio->StateUint8(status);
 	return true;
 }
 

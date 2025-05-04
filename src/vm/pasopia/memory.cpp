@@ -141,39 +141,28 @@ void MEMORY::write_signal(int id, uint32_t data, uint32_t mask)
 
 #define STATE_VERSION	1
 
-void MEMORY::save_state(FILEIO* state_fio)
+bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(vram, sizeof(vram), 1);
-	state_fio->Fwrite(attr, sizeof(attr), 1);
-	state_fio->FputUint16(vram_ptr);
-	state_fio->FputUint8(vram_data);
-	state_fio->FputUint8(mem_map);
-}
-
-bool MEMORY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(vram, sizeof(vram), 1);
-	state_fio->Fread(attr, sizeof(attr), 1);
-	vram_ptr = state_fio->FgetUint16();
-	vram_data = state_fio->FgetUint8();
-	mem_map = state_fio->FgetUint8();
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(vram, sizeof(vram), 1);
+	state_fio->StateBuffer(attr, sizeof(attr), 1);
+	state_fio->StateUint16(vram_ptr);
+	state_fio->StateUint8(vram_data);
+	state_fio->StateUint8(mem_map);
 	
 	// post process
-	if(mem_map & 2) {
-		SET_BANK(0x0000, 0x7fff, ram, ram);
-	} else {
-		SET_BANK(0x0000, 0x7fff, ram, rom);
+	if(loading) {
+		if(mem_map & 2) {
+			SET_BANK(0x0000, 0x7fff, ram, ram);
+		} else {
+			SET_BANK(0x0000, 0x7fff, ram, rom);
+		}
 	}
 	return true;
 }

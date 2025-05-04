@@ -43,23 +43,15 @@ void IOBUS::write_signal(int id, uint32_t data, uint32_t mask)
 
 #define STATE_VERSION	1
 
-void IOBUS::save_state(FILEIO* state_fio)
+bool IOBUS::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(mio);
-}
-
-bool IOBUS::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	mio = state_fio->FgetBool();
+	state_fio->StateBool(mio);
 	return true;
 }
 

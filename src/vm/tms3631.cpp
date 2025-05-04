@@ -121,35 +121,21 @@ void TMS3631::initialize_sound(int rate, int volume)
 
 #define STATE_VERSION	1
 
-void TMS3631::save_state(FILEIO* state_fio)
+bool TMS3631::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(envelop1);
-	state_fio->FputUint8(envelop2);
-	state_fio->FputUint8(datareg);
-	state_fio->FputUint8(maskreg);
-	state_fio->Fwrite(ch, sizeof(ch), 1);
-	state_fio->FputUint8(channel);
-	state_fio->FputBool(set_key);
-}
-
-bool TMS3631::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	envelop1 = state_fio->FgetUint8();
-	envelop2 = state_fio->FgetUint8();
-	datareg = state_fio->FgetUint8();
-	maskreg = state_fio->FgetUint8();
-	state_fio->Fread(ch, sizeof(ch), 1);
-	channel = state_fio->FgetUint8();
-	set_key = state_fio->FgetBool();
+	state_fio->StateUint8(envelop1);
+	state_fio->StateUint8(envelop2);
+	state_fio->StateUint8(datareg);
+	state_fio->StateUint8(maskreg);
+	state_fio->StateBuffer(ch, sizeof(ch), 1);
+	state_fio->StateUint8(channel);
+	state_fio->StateBool(set_key);
 	return true;
 }
 

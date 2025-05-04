@@ -466,51 +466,31 @@ void KEYBOARD::process(int cmd)
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	key_buf->save_state((void *)state_fio);
-	rsp_buf->save_state((void *)state_fio);
-	state_fio->FputBool(caps);
-	state_fio->FputBool(kana);
-	state_fio->FputBool(graph);
-	state_fio->FputInt32(dk);
-	state_fio->FputInt32(srk);
-	state_fio->FputInt32(dc);
-	state_fio->FputInt32(stc);
-	state_fio->FputInt32(send);
-	state_fio->FputInt32(recv);
-	state_fio->FputInt32(phase);
-	state_fio->FputInt32(timeout);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	if(!key_buf->load_state((void *)state_fio)) {
+	if(!key_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	if(!rsp_buf->load_state((void *)state_fio)) {
+	if(!rsp_buf->process_state((void *)state_fio, loading)) {
 		return false;
 	}
-	caps = state_fio->FgetBool();
-	kana = state_fio->FgetBool();
-	graph = state_fio->FgetBool();
-	dk = state_fio->FgetInt32();
-	srk = state_fio->FgetInt32();
-	dc = state_fio->FgetInt32();
-	stc = state_fio->FgetInt32();
-	send = state_fio->FgetInt32();
-	recv = state_fio->FgetInt32();
-	phase = state_fio->FgetInt32();
-	timeout = state_fio->FgetInt32();
+	state_fio->StateBool(caps);
+	state_fio->StateBool(kana);
+	state_fio->StateBool(graph);
+	state_fio->StateInt32(dk);
+	state_fio->StateInt32(srk);
+	state_fio->StateInt32(dc);
+	state_fio->StateInt32(stc);
+	state_fio->StateInt32(send);
+	state_fio->StateInt32(recv);
+	state_fio->StateInt32(phase);
+	state_fio->StateInt32(timeout);
 	return true;
 }
 

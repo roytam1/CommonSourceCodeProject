@@ -158,31 +158,19 @@ void VDP::create_bg()
 
 #define STATE_VERSION	1
 
-void VDP::save_state(FILEIO* state_fio)
+bool VDP::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(palette_pc, sizeof(palette_pc), 1);
-	state_fio->Fwrite(reg, sizeof(reg), 1);
-	state_fio->FputUint8(bg);
-	state_fio->FputUint8(cmask);
-	state_fio->FputUint8(pmask);
-}
-
-bool VDP::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(palette_pc, sizeof(palette_pc), 1);
-	state_fio->Fread(reg, sizeof(reg), 1);
-	bg = state_fio->FgetUint8();
-	cmask = state_fio->FgetUint8();
-	pmask = state_fio->FgetUint8();
+	state_fio->StateBuffer(palette_pc, sizeof(palette_pc), 1);
+	state_fio->StateBuffer(reg, sizeof(reg), 1);
+	state_fio->StateUint8(bg);
+	state_fio->StateUint8(cmask);
+	state_fio->StateUint8(pmask);
 	return true;
 }
 

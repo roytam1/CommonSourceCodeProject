@@ -55,23 +55,15 @@ uint32_t CALENDAR::read_io8(uint32_t addr)
 #ifdef _PC98HA
 #define STATE_VERSION	1
 
-void CALENDAR::save_state(FILEIO* state_fio)
+bool CALENDAR::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputUint8(ch);
-}
-
-bool CALENDAR::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	ch = state_fio->FgetUint8();
+	state_fio->StateUint8(ch);
 	return true;
 }
 #endif

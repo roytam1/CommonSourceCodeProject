@@ -41,6 +41,7 @@ private:
 #endif
 	FILE* fp;
 	_TCHAR path[_MAX_PATH];
+	int open_mode;
 	
 public:
 	FILEIO();
@@ -106,6 +107,10 @@ public:
 	void FputInt32_LE(int32_t val);
 	int64_t FgetInt64_LE();
 	void FputInt64_LE(int64_t val);
+	float FgetFloat_LE();
+	void FputFloat_LE(float val);
+	double FgetDouble_LE();
+	void FputDouble_LE(double val);
 	
 	uint16_t FgetUint16_BE();
 	void FputUint16_BE(uint16_t val);
@@ -119,6 +124,10 @@ public:
 	void FputInt32_BE(int32_t val);
 	int64_t FgetInt64_BE();
 	void FputInt64_BE(int64_t val);
+	float FgetFloat_BE();
+	void FputFloat_BE(float val);
+	double FgetDouble_BE();
+	void FputDouble_BE(double val);
 	
 	int Fgetc();
 	int Fputc(int c);
@@ -132,6 +141,24 @@ public:
 	int Fseek(long offset, int origin);
 	long Ftell();
 	bool Fcompare(const void* buffer, size_t size);
+	bool Fcompare(const void* buffer, size_t size, size_t count);
+	
+	bool StateCheckUint32(uint32_t val);
+	bool StateCheckInt32(int32_t val);
+	bool StateCheckBuffer(const void *buffer, size_t size, size_t count);
+	
+	void StateBool(bool &val);
+	void StateUint8(uint8_t &val);
+	void StateUint16(uint16_t &val);
+	void StateUint32(uint32_t &val);
+	void StateUint64(uint64_t &val);
+	void StateInt8(int8_t &val);
+	void StateInt16(int16_t &val);
+	void StateInt32(int32_t &val);
+	void StateInt64(int64_t &val);
+	void StateFloat(float &val);
+	void StateDouble(double &val);
+	void StateBuffer(void *buffer, size_t size, size_t count);
 };
 
 #endif

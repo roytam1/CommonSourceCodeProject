@@ -295,43 +295,34 @@ int HUC6280::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	4
 
-void HUC6280::save_state(FILEIO* state_fio)
+bool HUC6280::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(opaque, sizeof(h6280_Regs), 1);
-#ifdef USE_DEBUGGER
-	state_fio->FputUint64(total_icount);
-#endif
-	state_fio->FputInt32(icount);
-	state_fio->FputBool(busreq);
-}
-
-bool HUC6280::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(opaque, sizeof(h6280_Regs), 1);
+	state_fio->StateBuffer(opaque, sizeof(h6280_Regs), 1);
 #ifdef USE_DEBUGGER
-	total_icount = prev_total_icount = state_fio->FgetUint64();
+	state_fio->StateUint64(total_icount);
 #endif
-	icount = state_fio->FgetInt32();
-	busreq = state_fio->FgetBool();
+	state_fio->StateInt32(icount);
+	state_fio->StateBool(busreq);
 	
 	// post process
-	h6280_Regs *cpustate = (h6280_Regs *)opaque;
-	cpustate->program = d_mem;
-	cpustate->io = d_io;
+	if(loading) {
+		h6280_Regs *cpustate = (h6280_Regs *)opaque;
+		cpustate->program = d_mem;
+		cpustate->io = d_io;
 #ifdef USE_DEBUGGER
-	cpustate->emu = emu;
-	cpustate->debugger = d_debugger;
-	cpustate->program_stored = d_mem;
-	cpustate->io_stored = d_io;
+		cpustate->emu = emu;
+		cpustate->debugger = d_debugger;
+		cpustate->program_stored = d_mem;
+		cpustate->io_stored = d_io;
+		prev_total_icount = total_icount;
 #endif
+	}
 	return true;
 }
+

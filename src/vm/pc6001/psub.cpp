@@ -1077,96 +1077,71 @@ void PSUB::key_up(int code)
 
 #define STATE_VERSION	1
 
-void PSUB::save_state(FILEIO* state_fio)
+bool PSUB::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputBool(play);
-	state_fio->FputBool(rec);
-	state_fio->FputBool(is_wav);
-	state_fio->FputBool(is_p6t);
-	state_fio->Fwrite(rec_file_path, sizeof(rec_file_path), 1);
-	if(rec && fio->IsOpened()) {
-		int length_tmp = (int)fio->Ftell();
-		fio->Fseek(0, FILEIO_SEEK_SET);
-		state_fio->FputInt32(length_tmp);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			fio->Fread(buffer_tmp, length_rw, 1);
-			state_fio->Fwrite(buffer_tmp, length_rw, 1);
-			length_tmp -= length_rw;
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	// pre process
+	if(loading) {
+		close_tape();
+	}
+	state_fio->StateBool(play);
+	state_fio->StateBool(rec);
+	state_fio->StateBool(is_wav);
+	state_fio->StateBool(is_p6t);
+	state_fio->StateBuffer(rec_file_path, sizeof(rec_file_path), 1);
+	if(loading) {
+		int length_tmp = state_fio->FgetInt32_LE();
+		if(rec) {
+			fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				state_fio->Fread(buffer_tmp, length_rw, 1);
+				if(fio->IsOpened()) {
+					fio->Fwrite(buffer_tmp, length_rw, 1);
+				}
+				length_tmp -= length_rw;
+			}
 		}
 	} else {
-		state_fio->FputInt32(0);
-	}
-	state_fio->FputInt32(CasIntFlag);
-	state_fio->FputInt32(CasIndex);
-	state_fio->FputInt32(CasRecv);
-	state_fio->FputInt32(CasMode);
-	state_fio->FputInt32(CasBaud);
-	state_fio->FputInt32(FileBaud);
-	state_fio->Fwrite(CasData, sizeof(CasData), 1);
-	state_fio->FputInt32(CasLength);
-	state_fio->FputInt32(CasSkipFlag);
-	state_fio->FputInt32(kbFlagFunc);
-	state_fio->FputInt32(kbFlagGraph);
-	state_fio->FputInt32(kbFlagCtrl);
-	state_fio->FputInt32(kanaMode);
-	state_fio->FputInt32(katakana);
-	state_fio->FputInt32(p6key);
-	state_fio->FputInt32(stick0);
-	state_fio->FputInt32(StrigIntFlag);
-	state_fio->FputInt32(StrigEventID);
-}
-
-bool PSUB::load_state(FILEIO* state_fio)
-{
-	close_tape();
-	
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
-	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	play = state_fio->FgetBool();
-	rec = state_fio->FgetBool();
-	is_wav = state_fio->FgetBool();
-	is_p6t = state_fio->FgetBool();
-	state_fio->Fread(rec_file_path, sizeof(rec_file_path), 1);
-	int length_tmp = state_fio->FgetInt32();
-	if(rec) {
-		fio->Fopen(rec_file_path, FILEIO_READ_WRITE_NEW_BINARY);
-		while(length_tmp != 0) {
-			uint8_t buffer_tmp[1024];
-			int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
-			state_fio->Fread(buffer_tmp, length_rw, 1);
-			if(fio->IsOpened()) {
-				fio->Fwrite(buffer_tmp, length_rw, 1);
+		if(rec && fio->IsOpened()) {
+			int length_tmp = (int)fio->Ftell();
+			fio->Fseek(0, FILEIO_SEEK_SET);
+			state_fio->FputInt32_LE(length_tmp);
+			while(length_tmp != 0) {
+				uint8_t buffer_tmp[1024];
+				int length_rw = min(length_tmp, (int)sizeof(buffer_tmp));
+				fio->Fread(buffer_tmp, length_rw, 1);
+				state_fio->Fwrite(buffer_tmp, length_rw, 1);
+				length_tmp -= length_rw;
 			}
-			length_tmp -= length_rw;
+		} else {
+			state_fio->FputInt32_LE(0);
 		}
 	}
-	CasIntFlag = state_fio->FgetInt32();
-	CasIndex = state_fio->FgetInt32();
-	CasRecv = state_fio->FgetInt32();
-	CasMode = state_fio->FgetInt32();
-	CasBaud = state_fio->FgetInt32();
-	FileBaud = state_fio->FgetInt32();
-	state_fio->Fread(CasData, sizeof(CasData), 1);
-	CasLength = state_fio->FgetInt32();
-	CasSkipFlag = state_fio->FgetInt32();
-	kbFlagFunc = state_fio->FgetInt32();
-	kbFlagGraph = state_fio->FgetInt32();
-	kbFlagCtrl = state_fio->FgetInt32();
-	kanaMode = state_fio->FgetInt32();
-	katakana = state_fio->FgetInt32();
-	p6key = state_fio->FgetInt32();
-	stick0 = state_fio->FgetInt32();
-	StrigIntFlag = state_fio->FgetInt32();
-	StrigEventID = state_fio->FgetInt32();
+	state_fio->StateInt32(CasIntFlag);
+	state_fio->StateInt32(CasIndex);
+	state_fio->StateInt32(CasRecv);
+	state_fio->StateInt32(CasMode);
+	state_fio->StateInt32(CasBaud);
+	state_fio->StateInt32(FileBaud);
+	state_fio->StateBuffer(CasData, sizeof(CasData), 1);
+	state_fio->StateInt32(CasLength);
+	state_fio->StateInt32(CasSkipFlag);
+	state_fio->StateInt32(kbFlagFunc);
+	state_fio->StateInt32(kbFlagGraph);
+	state_fio->StateInt32(kbFlagCtrl);
+	state_fio->StateInt32(kanaMode);
+	state_fio->StateInt32(katakana);
+	state_fio->StateInt32(p6key);
+	state_fio->StateInt32(stick0);
+	state_fio->StateInt32(StrigIntFlag);
+	state_fio->StateInt32(StrigEventID);
 	return true;
 }
 

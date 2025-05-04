@@ -332,73 +332,40 @@ void Z80CTC::notify_intr_reti()
 
 #define STATE_VERSION	1
 
-void Z80CTC::save_state(FILEIO* state_fio)
+bool Z80CTC::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < 4; i++) {
-		state_fio->FputUint8(counter[i].control);
-		state_fio->FputBool(counter[i].slope);
-		state_fio->FputUint16(counter[i].count);
-		state_fio->FputUint16(counter[i].constant);
-		state_fio->FputUint8(counter[i].vector);
-		state_fio->FputInt32(counter[i].clocks);
-		state_fio->FputInt32(counter[i].prescaler);
-		state_fio->FputBool(counter[i].freeze);
-		state_fio->FputBool(counter[i].start);
-		state_fio->FputBool(counter[i].latch);
-		state_fio->FputBool(counter[i].prev_in);
-		state_fio->FputBool(counter[i].first_constant);
-		state_fio->FputUint64(counter[i].freq);
-		state_fio->FputInt32(counter[i].clock_id);
-		state_fio->FputInt32(counter[i].sysclock_id);
-		state_fio->FputUint32(counter[i].input);
-		state_fio->FputUint32(counter[i].period);
-		state_fio->FputUint32(counter[i].prev);
-		state_fio->FputBool(counter[i].req_intr);
-		state_fio->FputBool(counter[i].in_service);
-	}
-	state_fio->FputUint64(cpu_clocks);
-	state_fio->FputBool(iei);
-	state_fio->FputBool(oei);
-	state_fio->FputUint32(intr_bit);
-}
-
-bool Z80CTC::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < 4; i++) {
-		counter[i].control = state_fio->FgetUint8();
-		counter[i].slope = state_fio->FgetBool();
-		counter[i].count = state_fio->FgetUint16();
-		counter[i].constant = state_fio->FgetUint16();
-		counter[i].vector = state_fio->FgetUint8();
-		counter[i].clocks = state_fio->FgetInt32();
-		counter[i].prescaler = state_fio->FgetInt32();
-		counter[i].freeze = state_fio->FgetBool();
-		counter[i].start = state_fio->FgetBool();
-		counter[i].latch = state_fio->FgetBool();
-		counter[i].prev_in = state_fio->FgetBool();
-		counter[i].first_constant = state_fio->FgetBool();
-		counter[i].freq = state_fio->FgetUint64();
-		counter[i].clock_id = state_fio->FgetInt32();
-		counter[i].sysclock_id = state_fio->FgetInt32();
-		counter[i].input = state_fio->FgetUint32();
-		counter[i].period = state_fio->FgetUint32();
-		counter[i].prev = state_fio->FgetUint32();
-		counter[i].req_intr = state_fio->FgetBool();
-		counter[i].in_service = state_fio->FgetBool();
+		state_fio->StateUint8(counter[i].control);
+		state_fio->StateBool(counter[i].slope);
+		state_fio->StateUint16(counter[i].count);
+		state_fio->StateUint16(counter[i].constant);
+		state_fio->StateUint8(counter[i].vector);
+		state_fio->StateInt32(counter[i].clocks);
+		state_fio->StateInt32(counter[i].prescaler);
+		state_fio->StateBool(counter[i].freeze);
+		state_fio->StateBool(counter[i].start);
+		state_fio->StateBool(counter[i].latch);
+		state_fio->StateBool(counter[i].prev_in);
+		state_fio->StateBool(counter[i].first_constant);
+		state_fio->StateUint64(counter[i].freq);
+		state_fio->StateInt32(counter[i].clock_id);
+		state_fio->StateInt32(counter[i].sysclock_id);
+		state_fio->StateUint32(counter[i].input);
+		state_fio->StateUint32(counter[i].period);
+		state_fio->StateUint32(counter[i].prev);
+		state_fio->StateBool(counter[i].req_intr);
+		state_fio->StateBool(counter[i].in_service);
 	}
-	cpu_clocks = state_fio->FgetUint64();
-	iei = state_fio->FgetBool();
-	oei = state_fio->FgetBool();
-	intr_bit = state_fio->FgetUint32();
+	state_fio->StateUint64(cpu_clocks);
+	state_fio->StateBool(iei);
+	state_fio->StateBool(oei);
+	state_fio->StateUint32(intr_bit);
 	return true;
 }
 

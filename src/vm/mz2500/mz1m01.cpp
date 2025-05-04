@@ -113,25 +113,16 @@ void MZ1M01::write_signal(int id, uint32_t data, uint32_t mask)
 
 #define STATE_VERSION	1
 
-void MZ1M01::save_state(FILEIO* state_fio)
+bool MZ1M01::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-	state_fio->Fwrite(port, sizeof(port), 1);
-}
-
-bool MZ1M01::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
-	state_fio->Fread(port, sizeof(port), 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(port, sizeof(port), 1);
 	return true;
 }
 

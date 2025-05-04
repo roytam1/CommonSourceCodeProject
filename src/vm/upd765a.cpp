@@ -1774,103 +1774,60 @@ void UPD765A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	2
 
-void UPD765A::save_state(FILEIO* state_fio)
+bool UPD765A::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(fdc, sizeof(fdc), 1);
-	for(int i = 0; i < 4; i++) {
-		disk[i]->save_state(state_fio);
-	}
-	state_fio->FputUint8(hdu);
-	state_fio->FputUint8(hdue);
-	state_fio->Fwrite(id, sizeof(id), 1);
-	state_fio->FputUint8(eot);
-	state_fio->FputUint8(gpl);
-	state_fio->FputUint8(dtl);
-	state_fio->FputInt32(phase);
-	state_fio->FputInt32(prevphase);
-	state_fio->FputUint8(status);
-	state_fio->FputUint8(seekstat);
-	state_fio->FputUint8(command);
-	state_fio->FputUint32(result);
-	state_fio->FputInt32(step_rate_time);
-	state_fio->FputInt32(head_unload_time);
-	state_fio->FputBool(no_dma_mode);
-	state_fio->FputBool(motor_on);
-#ifdef UPD765A_DMA_MODE
-	state_fio->FputBool(dma_data_lost);
-#endif
-	state_fio->FputBool(irq_masked);
-	state_fio->FputBool(drq_masked);
-	state_fio->FputInt32((int)(bufptr - buffer));
-	state_fio->Fwrite(buffer, sizeof(buffer), 1);
-	state_fio->FputInt32(count);
-	state_fio->FputInt32(event_phase);
-	state_fio->FputInt32(phase_id);
-	state_fio->FputInt32(drq_id);
-	state_fio->FputInt32(lost_id);
-	state_fio->FputInt32(result7_id);
-	state_fio->Fwrite(seek_step_id, sizeof(seek_step_id), 1);
-	state_fio->Fwrite(seek_end_id, sizeof(seek_end_id), 1);
-	state_fio->Fwrite(head_unload_id, sizeof(head_unload_id), 1);
-	state_fio->FputBool(force_ready);
-	state_fio->FputBool(reset_signal);
-	state_fio->FputBool(prev_index);
-	state_fio->FputUint32(prev_drq_clock);
-}
-
-bool UPD765A::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(fdc, sizeof(fdc), 1);
+	state_fio->StateBuffer(fdc, sizeof(fdc), 1);
 	for(int i = 0; i < 4; i++) {
-		if(!disk[i]->load_state(state_fio)) {
+		if(!disk[i]->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	hdu = state_fio->FgetUint8();
-	hdue = state_fio->FgetUint8();
-	state_fio->Fread(id, sizeof(id), 1);
-	eot = state_fio->FgetUint8();
-	gpl = state_fio->FgetUint8();
-	dtl = state_fio->FgetUint8();
-	phase = state_fio->FgetInt32();
-	prevphase = state_fio->FgetInt32();
-	status = state_fio->FgetUint8();
-	seekstat = state_fio->FgetUint8();
-	command = state_fio->FgetUint8();
-	result = state_fio->FgetUint32();
-	step_rate_time = state_fio->FgetInt32();
-	head_unload_time = state_fio->FgetInt32();
-	no_dma_mode = state_fio->FgetBool();
-	motor_on = state_fio->FgetBool();
+	state_fio->StateUint8(hdu);
+	state_fio->StateUint8(hdue);
+	state_fio->StateBuffer(id, sizeof(id), 1);
+	state_fio->StateUint8(eot);
+	state_fio->StateUint8(gpl);
+	state_fio->StateUint8(dtl);
+	state_fio->StateInt32(phase);
+	state_fio->StateInt32(prevphase);
+	state_fio->StateUint8(status);
+	state_fio->StateUint8(seekstat);
+	state_fio->StateUint8(command);
+	state_fio->StateUint32(result);
+	state_fio->StateInt32(step_rate_time);
+	state_fio->StateInt32(head_unload_time);
+	state_fio->StateBool(no_dma_mode);
+	state_fio->StateBool(motor_on);
 #ifdef UPD765A_DMA_MODE
-	dma_data_lost = state_fio->FgetBool();
+	state_fio->StateBool(dma_data_lost);
 #endif
-	irq_masked = state_fio->FgetBool();
-	drq_masked = state_fio->FgetBool();
-	bufptr = buffer + state_fio->FgetInt32();
-	state_fio->Fread(buffer, sizeof(buffer), 1);
-	count = state_fio->FgetInt32();
-	event_phase = state_fio->FgetInt32();
-	phase_id = state_fio->FgetInt32();
-	drq_id = state_fio->FgetInt32();
-	lost_id = state_fio->FgetInt32();
-	result7_id = state_fio->FgetInt32();
-	state_fio->Fread(seek_step_id, sizeof(seek_step_id), 1);
-	state_fio->Fread(seek_end_id, sizeof(seek_end_id), 1);
-	state_fio->Fread(head_unload_id, sizeof(head_unload_id), 1);
-	force_ready = state_fio->FgetBool();
-	reset_signal = state_fio->FgetBool();
-	prev_index = state_fio->FgetBool();
-	prev_drq_clock = state_fio->FgetUint32();
+	state_fio->StateBool(irq_masked);
+	state_fio->StateBool(drq_masked);
+	if(loading) {
+		bufptr = buffer + state_fio->FgetInt32_LE();
+	} else {
+		state_fio->FputInt32_LE((int)(bufptr - buffer));
+	}
+	state_fio->StateBuffer(buffer, sizeof(buffer), 1);
+	state_fio->StateInt32(count);
+	state_fio->StateInt32(event_phase);
+	state_fio->StateInt32(phase_id);
+	state_fio->StateInt32(drq_id);
+	state_fio->StateInt32(lost_id);
+	state_fio->StateInt32(result7_id);
+	state_fio->StateBuffer(seek_step_id, sizeof(seek_step_id), 1);
+	state_fio->StateBuffer(seek_end_id, sizeof(seek_end_id), 1);
+	state_fio->StateBuffer(head_unload_id, sizeof(head_unload_id), 1);
+	state_fio->StateBool(force_ready);
+	state_fio->StateBool(reset_signal);
+	state_fio->StateBool(prev_index);
+	state_fio->StateUint32(prev_drq_clock);
 	return true;
 }
 

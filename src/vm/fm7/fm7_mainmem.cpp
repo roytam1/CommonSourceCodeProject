@@ -49,8 +49,8 @@ void FM7_MAINMEM::reset()
 	mem_waitfactor = 0;
 	mem_waitcount = 0;
 	ioaccess_wait = false;
-	//sub_halted = (display->read_signal(SIG_DISPLAY_HALT) == 0) ? false : true;
-	sub_halted = false;
+	sub_halted = (display->read_signal(SIG_DISPLAY_HALT) == 0) ? false : true;
+	//sub_halted = false;
 	memset(fm7_mainmem_bootrom_vector, 0x00, 0x10); // Clear without vector
 
 #if defined(_FM77AV_VARIANTS)
@@ -520,264 +520,158 @@ void FM7_MAINMEM::update_config()
 	setclock(config.cpu_type);
 }
 
-#define STATE_VERSION 7
-void FM7_MAINMEM::save_state(FILEIO *state_fio)
+#define STATE_VERSION 8
+
+bool FM7_MAINMEM::decl_state(FILEIO *state_fio, bool loading)
 {
-	state_fio->FputUint32_BE(STATE_VERSION);
-	state_fio->FputInt32_BE(this_device_id);
-	out_debug_log(_T("Save State: MAINMEM: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
-
-	// V1
-	state_fio->FputBool(ioaccess_wait);
-	state_fio->FputInt32_BE(waitfactor);
-	state_fio->FputInt32_BE(waitcount);
-	state_fio->FputBool(sub_halted);
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
 	
-	state_fio->FputBool(diag_load_basicrom);
-	state_fio->FputBool(diag_load_bootrom_bas);
-	state_fio->FputBool(diag_load_bootrom_dos);
-	state_fio->FputBool(diag_load_bootrom_mmr);
-	state_fio->FputBool(diag_load_bootrom_bubble);
-	state_fio->FputBool(diag_load_bootrom_bubble_128k);
-	state_fio->FputBool(diag_load_bootrom_sfd8);
-	state_fio->FputBool(diag_load_bootrom_2hd);
-
-	state_fio->Fwrite(fm7_mainmem_omote, sizeof(fm7_mainmem_omote), 1);
-	state_fio->Fwrite(fm7_mainmem_ura, sizeof(fm7_mainmem_ura), 1);
-	state_fio->Fwrite(fm7_mainmem_basicrom, sizeof(fm7_mainmem_basicrom), 1);
-	state_fio->Fwrite(fm7_mainmem_bioswork, sizeof(fm7_mainmem_bioswork), 1);
-	state_fio->Fwrite(fm7_mainmem_bootrom_vector, sizeof(fm7_mainmem_bootrom_vector), 1);
-	state_fio->Fwrite(fm7_mainmem_reset_vector, sizeof(fm7_mainmem_reset_vector), 1);
+	state_fio->StateBool(ioaccess_wait);
+	state_fio->StateInt32(waitfactor);
+	state_fio->StateInt32(waitcount);
+	state_fio->StateBool(sub_halted);
 	
-	state_fio->Fwrite(fm7_mainmem_null, sizeof(fm7_mainmem_null), 1);
+	state_fio->StateBool(diag_load_basicrom);
+	state_fio->StateBool(diag_load_bootrom_bas);
+	state_fio->StateBool(diag_load_bootrom_dos);
+	state_fio->StateBool(diag_load_bootrom_mmr);
+	state_fio->StateBool(diag_load_bootrom_bubble);
+	state_fio->StateBool(diag_load_bootrom_bubble_128k);
+	state_fio->StateBool(diag_load_bootrom_sfd8);
+	state_fio->StateBool(diag_load_bootrom_2hd);
+
+	state_fio->StateBuffer(fm7_mainmem_omote, sizeof(fm7_mainmem_omote), 1);
+	state_fio->StateBuffer(fm7_mainmem_ura, sizeof(fm7_mainmem_ura), 1);
+	state_fio->StateBuffer(fm7_mainmem_basicrom, sizeof(fm7_mainmem_basicrom), 1);
+	state_fio->StateBuffer(fm7_mainmem_bioswork, sizeof(fm7_mainmem_bioswork), 1);
+	state_fio->StateBuffer(fm7_mainmem_bootrom_vector, sizeof(fm7_mainmem_bootrom_vector), 1);
+	state_fio->StateBuffer(fm7_mainmem_reset_vector, sizeof(fm7_mainmem_reset_vector), 1);
+	
+	state_fio->StateBuffer(fm7_mainmem_null, sizeof(fm7_mainmem_null), 1);
+
 #if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
-	state_fio->Fwrite(fm7_bootram, sizeof(fm7_bootram), 1);
+	state_fio->StateBuffer(fm7_bootram, sizeof(fm7_bootram), 1);
 #endif	
 #if defined(_FM77_VARIANTS) || defined(_FM8)
-	for(int i = 0; i < 8; i++) state_fio->Fwrite(fm7_bootroms[i], sizeof(0x200), 1);
+	for(int i = 0; i < 8; i++) state_fio->StateBuffer(fm7_bootroms[i], 0x200, 1);
 #elif defined(_FM7) || defined(_FMNEW7)
-	for(int i = 0; i < 4; i++) state_fio->Fwrite(fm7_bootroms[i], sizeof(0x200), 1);
+	for(int i = 0; i < 4; i++) state_fio->StateBuffer(fm7_bootroms[i], 0x200, 1);
 #endif	
+
 #if defined(_FM8)
-	state_fio->FputBool(diag_load_sm11_14);
-	state_fio->FputBool(diag_load_sm11_15);
+	state_fio->StateBool(diag_load_sm11_14);
+	state_fio->StateBool(diag_load_sm11_15);
 #elif defined(_FM77_VARIANTS)
-	state_fio->FputBool(diag_load_wb11_12);
+	state_fio->StateBool(diag_load_wb11_12);
 #elif defined(_FM7) || defined(_FMNEW7)
-	state_fio->FputBool(diag_load_tl11_11);
+	state_fio->StateBool(diag_load_tl11_11);
 #  if defined(_FMNEW7)
-	state_fio->FputBool(diag_load_tl11_12);
+	state_fio->StateBool(diag_load_tl11_12);
 #  endif	
 #elif defined(_FM77AV_VARIANTS)
-	state_fio->FputBool(dictrom_connected);
-	state_fio->FputBool(use_page2_extram);
+	state_fio->StateBool(dictrom_connected);
+	state_fio->StateBool(use_page2_extram);
 	
-	state_fio->FputBool(diag_load_initrom);
-	state_fio->FputBool(diag_load_dictrom);
-	state_fio->FputBool(diag_load_learndata);
-	state_fio->Fwrite(fm7_mainmem_initrom, sizeof(fm7_mainmem_initrom), 1);
-	state_fio->Fwrite(fm77av_hidden_bootmmr, sizeof(fm77av_hidden_bootmmr), 1);
+	state_fio->StateBool(diag_load_initrom);
+	state_fio->StateBool(diag_load_dictrom);
+	state_fio->StateBool(diag_load_learndata);
+	state_fio->StateBuffer(fm7_mainmem_initrom, sizeof(fm7_mainmem_initrom), 1);
+	state_fio->StateBuffer(fm77av_hidden_bootmmr, sizeof(fm77av_hidden_bootmmr), 1);
 	
-	state_fio->Fwrite(fm7_mainmem_mmrbank_0, sizeof(fm7_mainmem_mmrbank_0), 1);
-	state_fio->Fwrite(fm7_mainmem_mmrbank_2, sizeof(fm7_mainmem_mmrbank_2), 1);
+	state_fio->StateBuffer(fm7_mainmem_mmrbank_0, sizeof(fm7_mainmem_mmrbank_0), 1);
+	state_fio->StateBuffer(fm7_mainmem_mmrbank_2, sizeof(fm7_mainmem_mmrbank_2), 1);
 	
 # if defined(_FM77AV40EX) || defined(_FM77AV40SX)
-	state_fio->FputBool(diag_load_extrarom);
-	state_fio->Fwrite(fm7_mainmem_extrarom, sizeof(fm7_mainmem_extrarom), 1);
+	state_fio->StateBool(diag_load_extrarom);
+	state_fio->StateBuffer(fm7_mainmem_extrarom, sizeof(fm7_mainmem_extrarom), 1);
 # endif
 # if defined(CAPABLE_DICTROM)
-	state_fio->Fwrite(fm7_mainmem_dictrom, sizeof(fm7_mainmem_dictrom), 1);
-	state_fio->Fwrite(fm7_mainmem_learndata, sizeof(fm7_mainmem_learndata), 1);
+	state_fio->StateBuffer(fm7_mainmem_dictrom, sizeof(fm7_mainmem_dictrom), 1);
+	state_fio->StateBuffer(fm7_mainmem_learndata, sizeof(fm7_mainmem_learndata), 1);
 # endif
 #endif
-	
+
 #ifdef HAS_MMR
-	state_fio->FputBool(extram_connected);
+	state_fio->StateBool(extram_connected);
 # if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
 	 defined(_FM77_VARIANTS)
-	int pages;
-	state_fio->FputInt32_BE(extram_pages);
-	pages = extram_pages;
+	state_fio->StateInt32(extram_pages);
+	state_fio->StateBuffer(fm7_mainmem_extram, extram_size, 1);
 #  if defined(_FM77_VARIANTS)
-	if(pages > 3) pages = 3;
-#  else
-	if(pages > 12) pages = 12;
-#  endif	
-	if(pages > 0) state_fio->Fwrite(fm7_mainmem_extram, pages * 0x10000, 1);
-#  if defined(_FM77_VARIANTS)
-	state_fio->Fwrite(fm77_shadowram, sizeof(fm77_shadowram), 1);
+	state_fio->StateBuffer(fm77_shadowram, sizeof(fm77_shadowram), 1);
 #  endif
 # endif
 #endif
-	
+							  
 	{ // V2;
-		state_fio->FputBool(is_basicrom);
-		state_fio->FputBool(clockmode);
-		state_fio->FputBool(basicrom_fd0f);
-		state_fio->FputUint32_BE(bootmode);
+		state_fio->StateBool(is_basicrom);
+		state_fio->StateBool(clockmode);
+		state_fio->StateBool(basicrom_fd0f);
+		state_fio->StateUint32(bootmode);
 #if defined(_FM77AV_VARIANTS)
-		state_fio->FputUint32_BE(extcard_bank);
-		state_fio->FputBool(extrom_bank);
-		state_fio->FputBool(initiator_enabled);
-		state_fio->FputBool(dictrom_enabled);
-		state_fio->FputBool(dictram_enabled);
+		state_fio->StateUint32(extcard_bank);
+		state_fio->StateBool(extrom_bank);
+		state_fio->StateBool(initiator_enabled);
+		state_fio->StateBool(dictrom_enabled);
+		state_fio->StateBool(dictram_enabled);
 #endif
 #if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
-		state_fio->FputBool(boot_ram_write);
+		state_fio->StateBool(boot_ram_write);
 #endif		
 #if defined(HAS_MMR)
-		state_fio->FputBool(window_enabled);
-		state_fio->FputBool(mmr_enabled);
-		state_fio->FputBool(mmr_fast);
-		state_fio->FputBool(mmr_extend);
+		state_fio->StateBool(window_enabled);
+		state_fio->StateBool(mmr_enabled);
+		state_fio->StateBool(mmr_fast);
+		state_fio->StateBool(mmr_extend);
 		
-		state_fio->FputUint16_BE(window_offset);
-		state_fio->FputBool(window_fast);
-		state_fio->FputBool(refresh_fast);
-		state_fio->FputUint8(mmr_segment);
-		state_fio->Fwrite(mmr_map_data, sizeof(mmr_map_data), 1);
+		state_fio->StateUint16(window_offset);
+		state_fio->StateBool(window_fast);
+		state_fio->StateBool(refresh_fast);
+		state_fio->StateUint8(mmr_segment);
+		state_fio->StateBuffer(mmr_map_data, sizeof(mmr_map_data), 1);
 #endif
 	}
-	state_fio->FputUint32_BE(mem_waitfactor); // OK?
-	state_fio->FputUint32_BE(mem_waitcount); // OK?
+	state_fio->StateUint32(mem_waitfactor); // OK?
+	state_fio->StateUint32(mem_waitcount); // OK?
 
-	state_fio->FputUint32_BE(cpu_clocks); // OK?
+	state_fio->StateInt32(cpu_clocks); // OK?
+
+	return true;
+}
+
+void FM7_MAINMEM::save_state(FILEIO *state_fio)
+{
+	decl_state(state_fio, false);
+#if defined(HAS_MMR)
+#  if defined(_FM77_VARIANTS)
+	if(extram_pages > 3) extram_pages = 3;
+#  elif defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) 
+	if(extram_pages > 12) extram_pages = 12;
+#  endif
+#endif
+	//extram_size = extram_pages * 0x10000;
 }
 
 bool FM7_MAINMEM::load_state(FILEIO *state_fio)
 {
-	uint32_t version;
-	version = state_fio->FgetUint32_BE();
-	if(this_device_id != state_fio->FgetInt32_BE()) return false;
-	out_debug_log(_T("Load State: MAINMEM: id=%d ver=%d\n"), this_device_id, version);
-	if(version >= 1) {
-		// V1
-		ioaccess_wait = state_fio->FgetBool();
-		waitfactor = state_fio->FgetInt32_BE();
-		waitcount = state_fio->FgetInt32_BE();
-
-		sub_halted = state_fio->FgetBool();
+	bool mb = decl_state(state_fio, true);
+	this->out_debug_log(_T("Load State: MAINIO: id=%d stat=%s\n"), this_device_id, (mb) ? _T("OK") : _T("NG"));
+	if(!mb) return false;
 	
-		diag_load_basicrom = state_fio->FgetBool();
-		diag_load_bootrom_bas = state_fio->FgetBool();
-		diag_load_bootrom_dos = state_fio->FgetBool();
-		diag_load_bootrom_mmr = state_fio->FgetBool();
-		diag_load_bootrom_bubble = state_fio->FgetBool();
-		diag_load_bootrom_bubble_128k = state_fio->FgetBool();
-		diag_load_bootrom_sfd8 = state_fio->FgetBool();
-		diag_load_bootrom_2hd = state_fio->FgetBool();
-		
-		state_fio->Fread(fm7_mainmem_omote, sizeof(fm7_mainmem_omote), 1);
-		state_fio->Fread(fm7_mainmem_ura, sizeof(fm7_mainmem_ura), 1);
-		state_fio->Fread(fm7_mainmem_basicrom, sizeof(fm7_mainmem_basicrom), 1);
-		state_fio->Fread(fm7_mainmem_bioswork, sizeof(fm7_mainmem_bioswork), 1);
-		state_fio->Fread(fm7_mainmem_bootrom_vector, sizeof(fm7_mainmem_bootrom_vector), 1);
-		state_fio->Fread(fm7_mainmem_reset_vector, sizeof(fm7_mainmem_reset_vector), 1);
-	
-		state_fio->Fread(fm7_mainmem_null, sizeof(fm7_mainmem_null), 1);
-#if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
-		state_fio->Fread(fm7_bootram, sizeof(fm7_bootram), 1);
-#endif	
-#if defined(_FM77_VARIANTS) || defined(_FM8)
-	for(int i = 0; i < 8; i++) state_fio->Fread(fm7_bootroms[i], sizeof(0x200), 1);
-#elif defined(_FM7) || defined(_FMNEW7)
-	for(int i = 0; i < 4; i++) state_fio->Fread(fm7_bootroms[i], sizeof(0x200), 1);
-#endif	
-#if defined(_FM8)
-	diag_load_sm11_14 = state_fio->FgetBool();
-	diag_load_sm11_15 = state_fio->FgetBool();
-#elif defined(_FM77_VARIANTS)
-	diag_load_wb11_12 = state_fio->FgetBool();
-#elif defined(_FM7) || defined(_FMNEW7)
-	diag_load_tl11_11 = state_fio->FgetBool();
-#  if defined(_FMNEW7)
-	diag_load_tl11_12 = state_fio->FgetBool();
-#  endif	
-#elif defined(_FM77AV_VARIANTS)
-		dictrom_connected = state_fio->FgetBool();
-		use_page2_extram = state_fio->FgetBool();
-	
-		diag_load_initrom = state_fio->FgetBool();
-		diag_load_dictrom = state_fio->FgetBool();
-		diag_load_learndata = state_fio->FgetBool();
-		state_fio->Fread(fm7_mainmem_initrom, sizeof(fm7_mainmem_initrom), 1);
-		state_fio->Fread(fm77av_hidden_bootmmr, sizeof(fm77av_hidden_bootmmr), 1);
-		
-		state_fio->Fread(fm7_mainmem_mmrbank_0, sizeof(fm7_mainmem_mmrbank_0), 1);
-		state_fio->Fread(fm7_mainmem_mmrbank_2, sizeof(fm7_mainmem_mmrbank_2), 1);
-	
-# if defined(_FM77AV40EX) || defined(_FM77AV40SX)
-		diag_load_extrarom = state_fio->FgetBool();
-		state_fio->Fread(fm7_mainmem_extrarom, sizeof(fm7_mainmem_extrarom), 1);
-# endif		
-# if defined(CAPABLE_DICTROM)
-		state_fio->Fread(fm7_mainmem_dictrom, sizeof(fm7_mainmem_dictrom), 1);
-		state_fio->Fread(fm7_mainmem_learndata, sizeof(fm7_mainmem_learndata), 1);
-# endif
-#endif
-	
-#ifdef HAS_MMR
-		extram_connected = state_fio->FgetBool();
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-	 defined(_FM77_VARIANTS)
-		int pages;
-		extram_pages = state_fio->FgetInt32_BE();
-		pages = extram_pages;
-#  if defined(_FM77_VARIANTS)
-		if(pages > 3) pages = 3;
-#  else
-		if(pages > 12) pages = 12;
-#  endif	
-		if(fm7_mainmem_extram != NULL) {
-			free(fm7_mainmem_extram);
-			fm7_mainmem_extram = NULL;
-		}
-		if(pages > 0) {
-			fm7_mainmem_extram = (uint8_t *)malloc(pages * 0x10000);
-			state_fio->Fread(fm7_mainmem_extram, pages * 0x10000, 1);
-		}
-#  if defined(_FM77_VARIANTS)
-		state_fio->Fread(fm77_shadowram, sizeof(fm77_shadowram), 1);
-#  endif
-# endif
-#endif
-		if(version == 1) return true;
-	}
-	{ // V2;
-		is_basicrom = state_fio->FgetBool();
-		clockmode = state_fio->FgetBool();
-		basicrom_fd0f = state_fio->FgetBool();
-		bootmode = state_fio->FgetUint32_BE();
-#if defined(_FM77AV_VARIANTS)
-		extcard_bank = state_fio->FgetUint32_BE();
-		extrom_bank = state_fio->FgetBool();
-		initiator_enabled = state_fio->FgetBool();
-		dictrom_enabled = state_fio->FgetBool();
-		dictram_enabled = state_fio->FgetBool();
-#endif
-#if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
-		boot_ram_write = state_fio->FgetBool();
-#endif		
 #if defined(HAS_MMR)
-		window_enabled = state_fio->FgetBool();
-		mmr_enabled = state_fio->FgetBool();
-		mmr_fast = state_fio->FgetBool();
-		mmr_extend = state_fio->FgetBool();
-		
-		window_offset = state_fio->FgetUint16_BE();
-		window_fast = state_fio->FgetBool();
-		refresh_fast = state_fio->FgetBool();
-		mmr_segment = state_fio->FgetUint8();
-		state_fio->Fread(mmr_map_data, sizeof(mmr_map_data), 1);
+#  if defined(_FM77_VARIANTS)
+	if(extram_pages > 3) extram_pages = 3;
+#  elif defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) 
+	if(extram_pages > 12) extram_pages = 12;
+#  endif
 #endif
-	}
-	mem_waitfactor = state_fio->FgetUint32_BE();
-	mem_waitcount = state_fio->FgetUint32_BE();
-
-	cpu_clocks = state_fio->FgetUint32_BE();
-	
+	//extram_size = extram_pages * 0x10000;
 	init_data_table();
 	update_all_mmr_jumptable();
-	if(version != STATE_VERSION) return false;
 	return true;
 }

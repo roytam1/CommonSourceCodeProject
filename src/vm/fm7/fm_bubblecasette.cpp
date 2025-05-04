@@ -366,7 +366,7 @@ void BUBBLECASETTE::write_signal(int id, uint32_t data, uint32_t mask)
 {
 }
 
-void BUBBLECASETTE::open(_TCHAR* file_path, int bank)
+bool BUBBLECASETTE::open(_TCHAR* file_path, int bank)
 {
 	int i;
 	int contain_medias = 0;
@@ -394,7 +394,7 @@ void BUBBLECASETTE::open(_TCHAR* file_path, int bank)
 		close();
 	} else {
 		fio = new FILEIO;
-		if(fio == NULL) return;
+		if(fio == NULL) return false;
 	}
 	memset(image_path, 0x00, _MAX_PATH * sizeof(_TCHAR));
 	_tcsncpy(image_path, file_path, _MAX_PATH);
@@ -402,7 +402,7 @@ void BUBBLECASETTE::open(_TCHAR* file_path, int bank)
 	if(fio->IsFileExisting(file_path)) {
 		fio->Fopen(file_path, FILEIO_READ_WRITE_BINARY);
 		file_length = fio->FileLength();
-		if(file_length == 0) return;
+		if(file_length == 0) return false;
 		//printf("Size=%d\n", file_length);
 		if(file_length == 0x8000) { // 32KB
 			bubble_type = BUBBLE_TYPE_32KB;
@@ -415,19 +415,20 @@ void BUBBLECASETTE::open(_TCHAR* file_path, int bank)
 		}
 		
 		if(bubble_type != BUBBLE_TYPE_B77) {
-			if(bubble_type < 0) return;
+			if(bubble_type < 0) return false;
 			write_protect = false;
 			not_ready = false;
 			switch(bubble_type) {
 			case BUBBLE_TYPE_32KB:
-				fio->Fread(bubble_data, 0x8000, 1);
+				if(fio->Fread(bubble_data, 0x8000, 1) != 1) return false;
 				break;
 			case BUBBLE_TYPE_128KB:
-				fio->Fread(bubble_data, 0x20000, 1);
+				if(fio->Fread(bubble_data, 0x20000, 1) != 1) return false;
 				break;
 			}
 			media_num = 0;
 			bubble_inserted = true;
+			return true;
 		} else { // b77
 			int remain;
 			do {
@@ -436,7 +437,8 @@ void BUBBLECASETTE::open(_TCHAR* file_path, int bank)
 				if(!this->read_header()) break;
 				if(contain_medias != bank) {
 					fio->Fseek(media_offset_new , FILEIO_SEEK_SET); // Skip
-					if(fio->Ftell() >= file_length) return; // Error
+					if(fio->Ftell() >= file_length) return false; // Error
+					contain_medias++;
 				} else { // Image found
 					if(bubble_type == BUBBLE_TYPE_32KB) {
 						if(bbl_header.offset.d > 0x20) fio->Fseek(media_offset, FILEIO_SEEK_SET);
@@ -461,14 +463,17 @@ void BUBBLECASETTE::open(_TCHAR* file_path, int bank)
 					bubble_inserted = true;
 					media_num = (uint32_t)bank;
 					contain_medias++;
-					return;
 				}
-				contain_medias++;
+				//contain_medias++;
 			} while(contain_medias <= 16);
+			if(contain_medias > 0) return true;
+			return false;
 		}
 	} else {
 		not_ready = true;
+		return false;
 	}
+	return false;
 }
 
 bool BUBBLECASETTE::read_header()
@@ -677,54 +682,70 @@ void BUBBLECASETTE::event_callback(int event_id, int err)
 {
 }
 
-#define STATE_VERSION 2
+#define STATE_VERSION 5
+
+bool BUBBLECASETTE::decl_state(FILEIO *state_fio, bool loading)
+{
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	
+	state_fio->StateBool(is_wrote);
+	state_fio->StateBool(is_b77);
+	state_fio->StateBool(header_changed);
+	state_fio->StateBool(read_access);
+	state_fio->StateBool(write_access);
+
+	state_fio->StateUint8(offset_reg);
+	state_fio->StateUint8(data_reg);
+	state_fio->StateUint8(cmd_reg);
+
+	state_fio->StateBool(cmd_error);  
+	state_fio->StateBool(stat_tdra);  
+	state_fio->StateBool(stat_rda);   
+	state_fio->StateBool(not_ready);  
+	state_fio->StateBool(write_protect); 
+	state_fio->StateBool(stat_error); 
+	state_fio->StateBool(stat_busy);  
+
+	state_fio->StateBool(eject_error);         
+	state_fio->StateBool(povr_error);          
+	state_fio->StateBool(crc_error);           
+	state_fio->StateBool(transfer_error);      
+	state_fio->StateBool(bad_loop_over_error); 
+	state_fio->StateBool(no_marker_error);     
+	state_fio->StateBool(undefined_cmd_error); 
+	
+	state_fio->StateUint32(page_address.d);
+	state_fio->StateUint32(page_count.d);
+	state_fio->StateBool(bubble_inserted);
+	state_fio->StateInt32(bubble_type);
+	state_fio->StateInt32(media_num);
+	// Header
+	state_fio->StateBuffer(image_path, sizeof(image_path), 1);
+	state_fio->StateBuffer((bbl_header.filename), sizeof(bbl_header.filename), 1);
+	state_fio->StateUint32((bbl_header.size.d));
+	state_fio->StateUint32((bbl_header.offset.d));
+	state_fio->StateBuffer((bbl_header.misc), sizeof(bbl_header.misc), 1);
+
+
+	state_fio->StateUint32(media_offset);
+	state_fio->StateUint32(media_offset_new);
+	state_fio->StateUint32(media_size);
+	state_fio->StateUint32(file_length);
+	state_fio->StateBuffer(bubble_data, sizeof(bubble_data), 1);
+
+	return true;
+}
 void BUBBLECASETTE::save_state(FILEIO *state_fio)
 {
-	int i, j;
-	state_fio->FputUint32_BE(STATE_VERSION);
-	state_fio->FputInt32_BE(this_device_id);
-	this->out_debug_log(_T("Save State: BUBBLE: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
-
-	// Attributes
-	state_fio->FputUint32_BE(file_length);
-	state_fio->FputBool(bubble_inserted);
-	state_fio->FputInt32_BE(bubble_type);
-	state_fio->FputInt32_BE(media_num);
-	state_fio->FputUint32_BE(media_offset);
-	state_fio->FputUint32_BE(media_offset_new);
-	state_fio->FputUint32_BE(media_size);
-	// Data reg
-	state_fio->FputUint8(data_reg);
-	// Command reg
-	state_fio->FputUint8(cmd_reg);
-	// Status reg
-	state_fio->FputBool(stat_busy);
-	state_fio->FputBool(stat_tdra);
-	state_fio->FputBool(stat_rda);
-	state_fio->FputBool(cmd_error);
-	state_fio->FputBool(stat_error);
-	state_fio->FputBool(not_ready);
-	// Error reg
-	state_fio->FputBool(eject_error);
-	state_fio->FputBool(povr_error);
-	state_fio->FputBool(crc_error);
-	state_fio->FputBool(transfer_error);
-	state_fio->FputBool(bad_loop_over_error);
-	state_fio->FputBool(no_marker_error);
-	state_fio->FputBool(undefined_cmd_error);
-	// Page address
-	state_fio->FputUint32_BE(page_address.d);
-	//Page Count
-	state_fio->FputUint32_BE(page_count.d);
-	// Misc flags
-	state_fio->FputBool(is_b77);
-	state_fio->FputBool(read_access);
-	state_fio->FputBool(write_access);
-	state_fio->FputBool(write_protect);
-	state_fio->FputUint8(offset_reg);
-
+	//int i, j;
+	decl_state(state_fio, false);
 	
-	state_fio->Fwrite(image_path, _MAX_PATH * sizeof(_TCHAR), 1);
+#if 0
 	if(fio != NULL) {
 		if(fio->IsOpened()) {
 			if(is_wrote) write_one_page();
@@ -736,59 +757,76 @@ void BUBBLECASETTE::save_state(FILEIO *state_fio)
 			}
 		}
 	}
+#endif
 }
 
 bool BUBBLECASETTE::load_state(FILEIO *state_fio)
 {
-	int i, j;
-	if(state_fio->FgetUint32_BE() != STATE_VERSION) return false;
-	if(state_fio->FgetInt32_BE() != this_device_id) return false;
-	this->out_debug_log(_T("Load State: BUBBLE: id=%d ver=%d\n"), this_device_id, STATE_VERSION);
-
-	// Attributes
-	file_length = state_fio->FgetUint32_BE();
-	bubble_inserted = state_fio->FgetBool();
-	bubble_type = state_fio->FgetInt32_BE();
-	media_num = state_fio->FgetInt32_BE();
-	media_offset = state_fio->FgetInt32_BE();
-	media_offset_new = state_fio->FgetInt32_BE();
-	media_size = state_fio->FgetInt32_BE();
-	// Data reg
-	data_reg = state_fio->FgetUint8();
-	// Command reg
-	cmd_reg = state_fio->FgetUint8();
-	// Status reg
-	stat_busy = state_fio->FgetBool();
-	stat_tdra = state_fio->FgetBool();
-	stat_rda = state_fio->FgetBool();
-	cmd_error = state_fio->FgetBool();
-	stat_error = state_fio->FgetBool();
-	not_ready = state_fio->FgetBool();
-	// Error reg
-	eject_error = state_fio->FgetBool();
-	povr_error = state_fio->FgetBool();
-	crc_error = state_fio->FgetBool();
-	transfer_error = state_fio->FgetBool();
-	bad_loop_over_error = state_fio->FgetBool();
-	no_marker_error = state_fio->FgetBool();
-	undefined_cmd_error = state_fio->FgetBool();
-	// Page address
-	page_address.d = state_fio->FgetUint32_BE();
-	//Page Count
-	page_count.d = state_fio->FgetUint32_BE();
-	// Misc flags
-	is_b77 = state_fio->FgetBool();
-	read_access = state_fio->FgetBool();
-	write_access = state_fio->FgetBool();
-	write_protect = state_fio->FgetBool();
-	offset_reg = state_fio->FgetUint8();
+	//int i, j;
+	//if(state_fio->FgetUint32_BE() != STATE_VERSION) return false;
+	//if(state_fio->FgetInt32_BE() != this_device_id) return false;
+	bool mb = decl_state(state_fio, true);
+	out_debug_log(_T("Load State: BUBBLE: id=%d status=%s"), this_device_id, (mb) ? _T("OK") : _T("NG"));
+	if(!mb) return false;
+	
+#if 0
 	is_wrote = false;
 	header_changed = false;
-	
-	if(state_fio->Fread(image_path, _MAX_PATH * sizeof(_TCHAR), 1) != (_MAX_PATH * sizeof(_TCHAR))) return false;
+
+
 	if(_tcslen(image_path) > 0) {
-		this->open(image_path, (int)media_num);
+		bool is_wrote_bak = is_wrote;
+		bool header_changed_bak = header_changed;
+		bool is_b77_bak = is_b77;
+		uint32_t media_offset_bak = media_offset;
+		uint32_t media_offset_new_bak = media_offset_new;
+		uint32_t file_length_bak = file_length;
+		bool bubble_inserted_bak = bubble_inserted;
+		bool not_ready_bak = not_ready;
+		bool cmd_error_bak = cmd_error;
+		bool stat_tdra_bak = stat_tdra;
+		bool stat_rda_bak = stat_rda;
+		bool stat_error_bak = stat_error; // OK?
+		bool stat_busy_bak = stat_busy;
+		int bubble_type_bak = bubble_type;
+		uint32_t media_size_bak = media_size;
+		bool write_protect_bak = write_protect;
+		bool not_ready_bak = not_ready;
+		uint32_t media_num_bak = media_num;
+		
+		bbl_header_t bbl_header_bak;
+		uint8_t bubble_data_bak[0x20000];
+		_TCHAR image_path_bak[_MAX_PATH];
+		memcpy(&bbl_header_bak, &bbl_header, sizeof(bbl_header_t));
+		memcpy(bubble_data_bak, bubble_data, 0x20000);
+		memcpy(image_path_bak, image_path, _MAXPATH * sizeof(_TCHAR));
+		if(!open(image_path, (int)media_num)) {
+			// Revert loaded status
+			is_wrote = is_wrote_bak;
+			header_changed = header_changed_bak;
+			is_b77 = is_b77_bak;
+			media_offset = media_offset_bak;
+			media_offset_new = media_offset_new_bak;
+			file_length = file_length_bak;
+			bubble_inserted = bubble_inserted_bak;
+			not_ready = not_ready_bak;
+			cmd_error = cmd_error_bak;
+			stat_tdra = stat_tdra_bak;
+			stat_rda = stat_rda_bak;
+			stat_error = stat_error_bak; // OK?
+			stat_busy = stat_busy_bak;
+			bubble_type = bubble_type_bak;
+			media_size = media_size_bak;
+			write_protect = write_protect_bak;
+			not_ready = not_ready_bak;
+			media_num = media_num_bak;
+			memcpy(&bbl_header, &bbl_header_bak, sizeof(bbl_header_t));
+			memcpy(bubble_data, bubble_data_bak, 0x20000);
+			memcpy(image_path, image_path_bak, _MAXPATH * sizeof(_TCHAR));
+			return true;
+		}
 	}
+#endif
 	return true;
 }
 

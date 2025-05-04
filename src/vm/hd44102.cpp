@@ -241,35 +241,21 @@ void HD44102::screen_update(int m_sx, int m_sy, bool reverse)
 
 #define STATE_VERSION	1
 
-void HD44102::save_state(FILEIO* state_fio)
+bool HD44102::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(m_ram, sizeof(m_ram), 1);
-	state_fio->FputUint8(m_status);
-	state_fio->FputUint8(m_output);
-//	state_fio->FputInt32(m_cs2);
-	state_fio->FputInt32(m_page);
-	state_fio->FputInt32(m_x);
-	state_fio->FputInt32(m_y);
-}
-
-bool HD44102::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(m_ram, sizeof(m_ram), 1);
-	m_status = state_fio->FgetUint8();
-	m_output = state_fio->FgetUint8();
-//	m_cs2 = state_fio->FgetInt32();
-	m_page = state_fio->FgetInt32();
-	m_x = state_fio->FgetInt32();
-	m_y = state_fio->FgetInt32();
+	state_fio->StateBuffer(m_ram, sizeof(m_ram), 1);
+	state_fio->StateUint8(m_status);
+	state_fio->StateUint8(m_output);
+//	state_fio->StateInt32(m_cs2);
+	state_fio->StateInt32(m_page);
+	state_fio->StateInt32(m_x);
+	state_fio->StateInt32(m_y);
 	return true;
 }
 

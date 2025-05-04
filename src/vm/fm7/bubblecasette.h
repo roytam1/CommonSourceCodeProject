@@ -114,11 +114,13 @@ public:
 	
 	uint32_t read_signal(int id);
 	void write_signal(int id, uint32_t data, uint32_t mask);
-	void open(_TCHAR* file_path, int bank);
+	bool open(_TCHAR* file_path, int bank);
 	void close();
 	void event_callback(int event_id, int err);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
+	bool decl_state(FILEIO *state_fio, bool loading);
+	
 	bool is_bubble_inserted()
 	{
 		return bubble_inserted;

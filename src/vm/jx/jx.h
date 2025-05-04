@@ -43,6 +43,7 @@
 #define USE_SCANLINE
 #define USE_SOUND_VOLUME	2
 #define USE_DEBUGGER
+#define USE_STATE
 
 #define KEYBOARD_HACK
 #define TIMER_HACK
@@ -155,6 +156,7 @@ public:
 	bool is_frame_skippable();
 	
 	void update_config();
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// ----------------------------------------
 	// for each device

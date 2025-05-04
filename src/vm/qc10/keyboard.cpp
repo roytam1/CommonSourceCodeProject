@@ -148,27 +148,17 @@ void KEYBOARD::process_cmd(uint8_t val)
 
 #define STATE_VERSION	1
 
-void KEYBOARD::save_state(FILEIO* state_fio)
+bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(led, sizeof(led), 1);
-	state_fio->FputBool(repeat);
-	state_fio->FputBool(enable);
-}
-
-bool KEYBOARD::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(led, sizeof(led), 1);
-	repeat = state_fio->FgetBool();
-	enable = state_fio->FgetBool();
+	state_fio->StateBuffer(led, sizeof(led), 1);
+	state_fio->StateBool(repeat);
+	state_fio->StateBool(enable);
 	return true;
 }
 

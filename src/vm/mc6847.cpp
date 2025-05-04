@@ -458,47 +458,27 @@ void MC6847::draw_alpha()
 
 #define STATE_VERSION	1
 
-void MC6847::save_state(FILEIO* state_fio)
+bool MC6847::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(sg4, sizeof(sg4), 1);
-	state_fio->Fwrite(sg6, sizeof(sg6), 1);
-	state_fio->FputBool(ag);
-	state_fio->FputBool(as);
-	state_fio->FputBool(intext);
-	state_fio->FputUint8(gm);
-	state_fio->FputBool(css);
-	state_fio->FputBool(inv);
-	state_fio->FputBool(vsync);
-	state_fio->FputBool(hsync);
-	state_fio->FputBool(disp);
-	state_fio->FputInt32(tWHS);
-	state_fio->FputBool(disabled);
-}
-
-bool MC6847::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(sg4, sizeof(sg4), 1);
-	state_fio->Fread(sg6, sizeof(sg6), 1);
-	ag = state_fio->FgetBool();
-	as = state_fio->FgetBool();
-	intext = state_fio->FgetBool();
-	gm = state_fio->FgetUint8();
-	css = state_fio->FgetBool();
-	inv = state_fio->FgetBool();
-	vsync = state_fio->FgetBool();
-	hsync = state_fio->FgetBool();
-	disp = state_fio->FgetBool();
-	tWHS = state_fio->FgetInt32();
-	disabled = state_fio->FgetBool();
+	state_fio->StateBuffer(sg4, sizeof(sg4), 1);
+	state_fio->StateBuffer(sg6, sizeof(sg6), 1);
+	state_fio->StateBool(ag);
+	state_fio->StateBool(as);
+	state_fio->StateBool(intext);
+	state_fio->StateUint8(gm);
+	state_fio->StateBool(css);
+	state_fio->StateBool(inv);
+	state_fio->StateBool(vsync);
+	state_fio->StateBool(hsync);
+	state_fio->StateBool(disp);
+	state_fio->StateInt32(tWHS);
+	state_fio->StateBool(disabled);
 	return true;
 }
 

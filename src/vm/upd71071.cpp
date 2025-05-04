@@ -279,53 +279,30 @@ void UPD71071::do_dma()
 
 #define STATE_VERSION	1
 
-void UPD71071::save_state(FILEIO* state_fio)
+bool UPD71071::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	for(int i = 0; i < 4; i++) {
-		state_fio->FputUint32(dma[i].areg);
-		state_fio->FputUint32(dma[i].bareg);
-		state_fio->FputUint16(dma[i].creg);
-		state_fio->FputUint16(dma[i].bcreg);
-		state_fio->FputUint8(dma[i].mode);
-	}
-	state_fio->FputUint8(b16);
-	state_fio->FputUint8(selch);
-	state_fio->FputUint8(base);
-	state_fio->FputUint16(cmd);
-	state_fio->FputUint16(tmp);
-	state_fio->FputUint8(req);
-	state_fio->FputUint8(sreq);
-	state_fio->FputUint8(mask);
-	state_fio->FputUint8(tc);
-}
-
-bool UPD71071::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
 	for(int i = 0; i < 4; i++) {
-		dma[i].areg = state_fio->FgetUint32();
-		dma[i].bareg = state_fio->FgetUint32();
-		dma[i].creg = state_fio->FgetUint16();
-		dma[i].bcreg = state_fio->FgetUint16();
-		dma[i].mode = state_fio->FgetUint8();
+		state_fio->StateUint32(dma[i].areg);
+		state_fio->StateUint32(dma[i].bareg);
+		state_fio->StateUint16(dma[i].creg);
+		state_fio->StateUint16(dma[i].bcreg);
+		state_fio->StateUint8(dma[i].mode);
 	}
-	b16 = state_fio->FgetUint8();
-	selch = state_fio->FgetUint8();
-	base = state_fio->FgetUint8();
-	cmd = state_fio->FgetUint16();
-	tmp = state_fio->FgetUint16();
-	req = state_fio->FgetUint8();
-	sreq = state_fio->FgetUint8();
-	mask = state_fio->FgetUint8();
-	tc = state_fio->FgetUint8();
+	state_fio->StateUint8(b16);
+	state_fio->StateUint8(selch);
+	state_fio->StateUint8(base);
+	state_fio->StateUint16(cmd);
+	state_fio->StateUint16(tmp);
+	state_fio->StateUint8(req);
+	state_fio->StateUint8(sreq);
+	state_fio->StateUint8(mask);
+	state_fio->StateUint8(tc);
 	return true;
 }
 

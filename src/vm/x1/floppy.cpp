@@ -96,27 +96,17 @@ void FLOPPY::event_callback(int event_id, int err)
 
 #define STATE_VERSION	3
 
-void FLOPPY::save_state(FILEIO* state_fio)
+bool FLOPPY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->FputInt32(prev);
-	state_fio->FputBool(motor_on);
-	state_fio->FputInt32(register_id);
-}
-
-bool FLOPPY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	prev = state_fio->FgetInt32();
-	motor_on = state_fio->FgetBool();
-	register_id = state_fio->FgetInt32();
+	state_fio->StateInt32(prev);
+	state_fio->StateBool(motor_on);
+	state_fio->StateInt32(register_id);
 	return true;
 }
 

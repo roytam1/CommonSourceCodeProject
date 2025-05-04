@@ -312,43 +312,25 @@ void DISPLAY::draw_text_normal()
 
 #define STATE_VERSION	1
 
-void DISPLAY::save_state(FILEIO* state_fio)
+bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(pal, sizeof(pal), 1);
-	state_fio->FputBool(text_wide);
-	state_fio->FputBool(text_color);
-	state_fio->FputUint8(graph_color);
-	state_fio->FputUint8(graph_page);
-	state_fio->FputUint16(cursor);
-	state_fio->FputUint16(cblink);
-	state_fio->FputBool(hsync);
-	state_fio->FputBool(vsync);
-	state_fio->FputBool(display);
-	state_fio->FputBool(blink);
-}
-
-bool DISPLAY::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(pal, sizeof(pal), 1);
-	text_wide = state_fio->FgetBool();
-	text_color = state_fio->FgetBool();
-	graph_color = state_fio->FgetUint8();
-	graph_page = state_fio->FgetUint8();
-	cursor = state_fio->FgetUint16();
-	cblink = state_fio->FgetUint16();
-	hsync = state_fio->FgetBool();
-	vsync = state_fio->FgetBool();
-	display = state_fio->FgetBool();
-	blink = state_fio->FgetBool();
+	state_fio->StateBuffer(pal, sizeof(pal), 1);
+	state_fio->StateBool(text_wide);
+	state_fio->StateBool(text_color);
+	state_fio->StateUint8(graph_color);
+	state_fio->StateUint8(graph_page);
+	state_fio->StateUint16(cursor);
+	state_fio->StateUint16(cblink);
+	state_fio->StateBool(hsync);
+	state_fio->StateBool(vsync);
+	state_fio->StateBool(display);
+	state_fio->StateBool(blink);
 	return true;
 }
 

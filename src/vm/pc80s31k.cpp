@@ -200,23 +200,15 @@ uint32_t PC80S31K::get_intr_ack()
 
 #define STATE_VERSION	1
 
-void PC80S31K::save_state(FILEIO* state_fio)
+bool PC80S31K::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
-	
-	state_fio->Fwrite(ram, sizeof(ram), 1);
-}
-
-bool PC80S31K::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
+	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->Fread(ram, sizeof(ram), 1);
+	state_fio->StateBuffer(ram, sizeof(ram), 1);
 	return true;
 }
 

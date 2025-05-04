@@ -294,8 +294,7 @@ public:
 	void event_vline(int v, int clock);
 	uint32_t get_intr_ack();
 	void notify_intr_ei();
-	void save_state(FILEIO* state_fio);
-	bool load_state(FILEIO* state_fio);
+	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
 	bool is_sr_mr()

@@ -1251,59 +1251,40 @@ int M6502::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 
 #define STATE_VERSION	2
 
-void M6502::save_state(FILEIO* state_fio)
+bool M6502::process_state(FILEIO* state_fio, bool loading)
 {
-	state_fio->FputUint32(STATE_VERSION);
-	state_fio->FputInt32(this_device_id);
+	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
+		return false;
+	}
+	if(!state_fio->StateCheckInt32(this_device_id)) {
+		return false;
+	}
+	state_fio->StateUint32(pc.d);
+	state_fio->StateUint32(sp.d);
+	state_fio->StateUint32(zp.d);
+	state_fio->StateUint32(ea.d);
+	state_fio->StateUint16(prev_pc);
+	state_fio->StateUint8(a);
+	state_fio->StateUint8(x);
+	state_fio->StateUint8(y);
+	state_fio->StateUint8(p);
+	state_fio->StateBool(pending_irq);
+	state_fio->StateBool(after_cli);
+	state_fio->StateBool(nmi_state);
+	state_fio->StateBool(irq_state);
+	state_fio->StateBool(so_state);
+#ifdef USE_DEBUGGER
+	state_fio->StateUint64(total_icount);
+#endif
+	state_fio->StateInt32(icount);
+	state_fio->StateBool(busreq);
 	
-	state_fio->FputUint32(pc.d);
-	state_fio->FputUint32(sp.d);
-	state_fio->FputUint32(zp.d);
-	state_fio->FputUint32(ea.d);
-	state_fio->FputUint16(prev_pc);
-	state_fio->FputUint8(a);
-	state_fio->FputUint8(x);
-	state_fio->FputUint8(y);
-	state_fio->FputUint8(p);
-	state_fio->FputBool(pending_irq);
-	state_fio->FputBool(after_cli);
-	state_fio->FputBool(nmi_state);
-	state_fio->FputBool(irq_state);
-	state_fio->FputBool(so_state);
 #ifdef USE_DEBUGGER
-	state_fio->FputUint64(total_icount);
-#endif
-	state_fio->FputInt32(icount);
-	state_fio->FputBool(busreq);
-}
-
-bool M6502::load_state(FILEIO* state_fio)
-{
-	if(state_fio->FgetUint32() != STATE_VERSION) {
-		return false;
+	// post process
+	if(loading) {
+		prev_total_icount = total_icount;
 	}
-	if(state_fio->FgetInt32() != this_device_id) {
-		return false;
-	}
-	pc.d = state_fio->FgetUint32();
-	sp.d = state_fio->FgetUint32();
-	zp.d = state_fio->FgetUint32();
-	ea.d = state_fio->FgetUint32();
-	prev_pc = state_fio->FgetUint16();
-	a = state_fio->FgetUint8();
-	x = state_fio->FgetUint8();
-	y = state_fio->FgetUint8();
-	p = state_fio->FgetUint8();
-	pending_irq = state_fio->FgetBool();
-	after_cli = state_fio->FgetBool();
-	nmi_state = state_fio->FgetBool();
-	irq_state = state_fio->FgetBool();
-	so_state = state_fio->FgetBool();
-#ifdef USE_DEBUGGER
-	total_icount = prev_total_icount = state_fio->FgetUint64();
 #endif
-	icount = state_fio->FgetInt32();
-	busreq = state_fio->FgetBool();
 	return true;
 }
 
