@@ -115,9 +115,9 @@ private:
 	uint8_t font_line;
 //	uint16_t font_lr;
 	
-	uint8_t screen_chr[400][641];
-	uint8_t screen_gfx[400][640];
-	uint32_t gdc_addr[480][80];
+	uint8_t screen_chr[SCREEN_HEIGHT][SCREEN_WIDTH + 1];
+	uint8_t screen_gfx[SCREEN_HEIGHT][SCREEN_WIDTH];
+	uint32_t gdc_addr[SCREEN_HEIGHT][SCREEN_WIDTH >> 3];
 	
 	void kanji_copy(uint8_t *dst, uint8_t *src, int from, int to);
 #if defined(SUPPORT_GRCG)

@@ -1,3 +1,13 @@
+2/28/2018
+
+[VM/I286] fix not to clear cycles in reset()
+[VM/I386] fix not to clear cycles in reset()
+[VM/I386] improve mov_r16_rm16 instruction to check limit
+[VM/I386] fix debugger
+
+[PC9801RA] support NEC PC-9801RA
+
+
 2/27/2018
 
 [VM/I8237] fix bank register and inc mask register

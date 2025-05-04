@@ -27,7 +27,6 @@ void MEMBUS::initialize()
 	memset(itf, 0xff, sizeof(itf));
 	read_bios(_T("ITF.ROM"), itf, sizeof(itf));
 #endif
-	
 }
 
 void MEMBUS::reset()

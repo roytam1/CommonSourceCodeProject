@@ -2365,7 +2365,7 @@ void DISPLAY::draw_gfx_screen()
 		int len = (ra >> 20) & 0x3ff;
 		
 		for(int y = ytop; y < (ytop + len) && y < SCREEN_HEIGHT; y++) {
-			for(int x = 0; x < 80; x++) {
+			for(int x = 0; x < (SCREEN_WIDTH >> 3); x++) {
 				gdc_addr[y][x] = sad;
 				sad = (sad + 1) & VRAM_PLANE_ADDR_MASK;
 			}

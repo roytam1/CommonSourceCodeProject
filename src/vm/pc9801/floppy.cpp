@@ -181,8 +181,8 @@ uint32_t FLOPPY::read_io8(uint32_t addr)
 #if !defined(SUPPORT_HIRESO)
 	case 0x00c8:
 		if(((addr >> 4) & 1) == (modereg & 1))
-		{
 #endif
+		{
 			return d_fdc->read_io8(0);
 		}
 		break;
@@ -190,8 +190,8 @@ uint32_t FLOPPY::read_io8(uint32_t addr)
 #if !defined(SUPPORT_HIRESO)
 	case 0x00ca:
 		if(((addr >> 4) & 1) == (modereg & 1))
-		{
 #endif
+		{
 			return d_fdc->read_io8(1);
 		}
 		break;
