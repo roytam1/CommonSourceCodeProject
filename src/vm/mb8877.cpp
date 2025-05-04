@@ -1556,7 +1556,7 @@ bool MB8877::is_disk_protected(int drv)
 	return false;
 }
 
-uint8_t MB8877::media_type(int drv)
+uint8_t MB8877::get_media_type(int drv)
 {
 	if(drv < MAX_DRIVE) {
 		if(disk[drv]->inserted) {

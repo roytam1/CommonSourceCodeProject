@@ -1707,7 +1707,7 @@ bool UPD765A::is_disk_protected(int drv)
 	return false;
 }
 
-uint8_t UPD765A::media_type(int drv)
+uint8_t UPD765A::get_media_type(int drv)
 {
 	if(drv < MAX_DRIVE && disk[drv]->inserted) {
 		return disk[drv]->media_type;

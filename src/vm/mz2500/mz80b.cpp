@@ -245,6 +245,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
+	for(int drv = 0; drv < MAX_DRIVE; drv++) {
+//		if(config.drive_type) {
+//			fdc->set_drive_type(drv, DRIVE_TYPE_2D);
+//		} else {
+			fdc->set_drive_type(drv, DRIVE_TYPE_2DD);
+//		}
+	}
 }
 
 VM::~VM()
@@ -277,13 +284,6 @@ void VM::reset()
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
-	}
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		if(config.drive_type) {
-			fdc->set_drive_type(i, DRIVE_TYPE_2DD);
-		} else {
-			fdc->set_drive_type(i, DRIVE_TYPE_2D);
-		}
 	}
 }
 
@@ -384,6 +384,16 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 void VM::open_floppy_disk(int drv, const _TCHAR* file_path, int bank)
 {
 	fdc->open_disk(drv, file_path, bank);
+	
+	if(fdc->get_media_type(drv) == MEDIA_TYPE_2DD) {
+		if(fdc->get_drive_type(drv) == DRIVE_TYPE_2D) {
+			fdc->set_drive_type(drv, DRIVE_TYPE_2DD);
+		}
+	} else if(fdc->get_media_type(drv) == MEDIA_TYPE_2D) {
+		if(fdc->get_drive_type(drv) == DRIVE_TYPE_2DD) {
+			fdc->set_drive_type(drv, DRIVE_TYPE_2D);
+		}
+	}
 }
 
 void VM::close_floppy_disk(int drv)

@@ -533,7 +533,7 @@ void MEMBUS::update_nec_ems()
 #endif
 #endif
 
-#define STATE_VERSION	3
+#define STATE_VERSION	4
 
 void MEMBUS::save_state(FILEIO* state_fio)
 {
@@ -574,8 +574,8 @@ void MEMBUS::save_state(FILEIO* state_fio)
 #endif
 #if defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)
 	state_fio->FputUint8(dma_access_ctrl);
-	state_fio->FputInt32(window_80000h);
-	state_fio->FputInt32(window_a0000h);
+	state_fio->FputUint32(window_80000h);
+	state_fio->FputUint32(window_a0000h);
 #endif
 	MEMORY::save_state(state_fio);
 }
@@ -590,7 +590,7 @@ bool MEMBUS::load_state(FILEIO* state_fio)
 	}
 	state_fio->Fread(ram, sizeof(ram), 1);
 #if defined(SUPPORT_BIOS_RAM)
-	state_fio->Fwrite(bios_ram, sizeof(bios_ram), 1);
+	state_fio->Fread(bios_ram, sizeof(bios_ram), 1);
 	bios_ram_selected = state_fio->FgetBool();
 #endif
 #if defined(SUPPORT_ITF_ROM)
@@ -625,6 +625,9 @@ bool MEMBUS::load_state(FILEIO* state_fio)
 	window_80000h = state_fio->FgetUint32();
 	window_a0000h = state_fio->FgetUint32();
 #endif
+	if(!MEMORY::load_state(state_fio)) {
+		return false;
+	}
 	
 	// post process
 	update_bios();
@@ -643,5 +646,5 @@ bool MEMBUS::load_state(FILEIO* state_fio)
 	update_nec_ems();
 #endif
 #endif
-	return MEMORY::load_state(state_fio);
+	return true;
 }

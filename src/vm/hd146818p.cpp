@@ -150,7 +150,7 @@ void HD146818P::event_callback(int event_id, int err)
 		update_intr();
 	} else if(event_id == EVENT_SQW) {
 		// periodic interrupt
-		if(sqw = !sqw) {
+		if((sqw = !sqw) == true) {
 			regs[0x0c] |= 0x40;
 			update_intr();
 		}
