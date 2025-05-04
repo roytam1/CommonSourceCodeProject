@@ -1,3 +1,8 @@
+12/30/2016
+
+[COLECOVISION] support COLECO ColecoVision (thanks Mr.tanam)
+
+
 12/29/2016
 
 [RESOURCE] recompress png files in https://tinypng.com/
