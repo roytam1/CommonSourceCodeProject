@@ -76,6 +76,7 @@ class DISPLAY: public DEVICE
 	void set_apalette_r(uint8 val);
 	void set_apalette_g(uint8 val);
 	void calc_apalette(uint16 idx);
+
 #endif // _FM77AV_VARIANTS
 
  private:
@@ -91,7 +92,7 @@ class DISPLAY: public DEVICE
 	bool halt_flag;
 	int active_page;
 	uint32 prev_clock;
-	
+	uint32 frame_skip_count;
 	// Event handler
 	int nmi_event_id;
 
@@ -179,6 +180,8 @@ class DISPLAY: public DEVICE
 	uint8 subrom_bank;
 	uint8 subrom_bank_using;
 	uint32 offset_point_bank1;
+	uint32 offset_point_bak;
+	uint32 offset_point_bank1_bak;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	bool monitor_ram;
 	bool monitor_ram_using;
@@ -188,10 +191,13 @@ class DISPLAY: public DEVICE
 
 #if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	uint8 gvram[0x8000 * 6];
+	uint8 gvram_shadow[0x8000 * 6];
 #elif defined(_FM77AV40)
 	uint8 gvram[0x2000 * 18];
+	uint8 gvram_shadow[0x2000 * 18];
 #elif defined(_FM77AV_VARIANTS)
 	uint8 gvram[0x2000 * 12];
+	uint8 gvram_shadow[0x2000 * 12];
 #else
 	uint8 gvram[0x4000 * 3];
 #endif
@@ -225,6 +231,9 @@ class DISPLAY: public DEVICE
 #if defined(_FM77AV_VARIANTS)
 	bool use_alu;
 	DEVICE *alu;
+	bool vram_wrote_shadow;
+	bool vram_wrote_table[411];
+	bool vram_draw_table[411];
 #endif	
 	DEVICE *mainio;
 	DEVICE *subcpu;

@@ -126,7 +126,6 @@ FM7_MAINIO::~FM7_MAINIO()
 
 void FM7_MAINIO::initialize()
 {
-	int i;
 	event_beep = -1;
 	event_beep_oneshot = -1;
 	event_timerirq = -1;
@@ -142,18 +141,36 @@ void FM7_MAINIO::initialize()
 #  endif	
 # endif	
 #endif
-#ifdef HAS_MMR
-	//mmr_segment = 0x00;
-	//for(i = 0x00; i < 0x80; i++) {
-	//	mmr_table[i] = 0;
-	//}
-#endif	
-	keycode_7 = 0x00;
+	irqmask_syndet = true;
+	irqmask_rxrdy = true;
+	irqmask_txrdy = true;
+	irqmask_mfd = true;
+	irqmask_timer = true;
+	irqmask_printer = true;
+	irqmask_keyboard = true;
+	irqstat_reg0 = 0xff;
+	
+	intstat_syndet = false;
+	intstat_rxrdy = false;
+	intstat_txrdy = false;
+	irqstat_timer = false;
+	irqstat_printer = false;
+	irqstat_keyboard = false;
+  
+	irqreq_syndet = false;
+	irqreq_rxrdy = false;
+	irqreq_txrdy = false;
+	irqreq_timer = false;
+	irqreq_printer = false;
+	irqreq_keyboard = false;
+#if defined(_FM77AV_VARIANTS)
+	reg_fd12 = 0x00;
+#endif		
+
 }
 
 void FM7_MAINIO::reset()
 {
-	int i;
 	if(event_beep >= 0) cancel_event(this, event_beep);
 	event_beep = -1;
 	if(event_beep_oneshot >= 0) cancel_event(this, event_beep_oneshot);
@@ -224,10 +241,8 @@ void FM7_MAINIO::reset()
 	irqmask_timer = true;
 	irqmask_printer = true;
 	irqmask_keyboard = true;
-	
-	irqmask_reg0 = 0x00;
-   
 	irqstat_reg0 = 0xff;
+	
 	intstat_syndet = false;
 	intstat_rxrdy = false;
 	intstat_txrdy = false;
@@ -264,6 +279,9 @@ void FM7_MAINIO::reset()
 	intstat_dma = false;
 	dma_addr = 0;
 #endif
+#if defined(_FM77AV_VARIANTS)
+	reg_fd12 = 0x00;
+#endif		
 	register_event(this, EVENT_TIMERIRQ_ON, 10000.0 / 4.9152, true, &event_timerirq); // TIMER IRQ
 	memset(io_w_latch, 0xff, 0x100);
 }
@@ -294,7 +312,6 @@ uint8 FM7_MAINIO::get_port_fd00(void)
 {
 	uint8 ret           = 0x7e; //0b01111110;
 	if(keyboard->read_data8(0x00) != 0) ret |= 0x80; // High bit.
-	//if((keycode_7 & 0x100)  != 0) ret |= 0x80; // High bit.
 	if(clock_fast) ret |= 0x01; //0b00000001;
 	return ret;
 }
@@ -472,7 +489,7 @@ void FM7_MAINIO::set_irq_printer(bool flag)
 
 void FM7_MAINIO::set_irq_keyboard(bool flag)
 {
-	uint8 backup = irqstat_reg0;
+	//uint8 backup = irqstat_reg0;
    	//printf("MAIN: KEYBOARD: IRQ=%d MASK=%d\n", flag ,irqmask_keyboard);
 	irqreq_keyboard = flag;
 	if(flag && !irqmask_keyboard) {
@@ -678,8 +695,6 @@ uint8 FM7_MAINIO::read_kanjidata_left(void)
 
 uint8 FM7_MAINIO::read_kanjidata_right(void)
 {
-	uint32 addr;
-    
 	if(!connect_kanjiroml1) return 0xff;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
@@ -820,9 +835,6 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 		case FM7_MAINIO_KEYBOARDIRQ: //
 			set_irq_keyboard(val_b);
 			break;
-		case SIG_FM7KEY_PUSH_DATA: //
-			keycode_7 = data & 0x1ff;
-			break;
 			// FD04
 		case FM7_MAINIO_PUSH_BREAK:
 			set_break_key(val_b);
@@ -876,19 +888,44 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 			intstat_dma = val_b;
 			do_irq();
 			break;
+#endif
+#if defined(_FM77AV_VARIANTS)
+		case SIG_DISPLAY_DISPLAY:
+			if(val_b) {
+				reg_fd12 |= 0x02;
+			} else {
+				reg_fd12 &= ~0x02;
+			}
+			break;
+		case SIG_DISPLAY_VSYNC:
+			if(val_b) {
+				reg_fd12 |= 0x01;
+			} else {
+				reg_fd12 &= ~0x01;
+			}
+			break;
+		case SIG_DISPLAY_MODE320:
+			if(val_b) {
+				reg_fd12 |= 0x40;
+			} else {
+				reg_fd12 &= ~0x40;
+			}
+			break;
 #endif			
 	}
-	
 }
 
 
  uint8 FM7_MAINIO::get_irqstat_fd03(void)
 {
 	uint8 val;
-	bool extirq = false;
+	bool extirq;
 	
 	extirq = irqstat_fdc | intstat_opn | intstat_whg | intstat_thg;
 	extirq = extirq | intstat_syndet | intstat_rxrdy | intstat_txrdy;
+#if defined(HAS_DMA)
+	extirq = extirq | intstat_dma;
+#endif   
 	if(extirq) {
 		irqstat_reg0 &= ~0x08;
 	} else {
@@ -922,11 +959,7 @@ void FM7_MAINIO::set_ext_fd17(uint8 data)
 // FD12
 uint8 FM7_MAINIO::subsystem_read_status(void)
 {
-	uint8 retval = 0xBC;
-	retval  = display->read_signal(SIG_DISPLAY_MODE320);
-	retval |= display->read_signal(SIG_DISPLAY_VSYNC);
-	retval |= display->read_signal(SIG_DISPLAY_DISPLAY);
-	return retval;
+	return reg_fd12;
 }
 #endif
 
@@ -982,8 +1015,6 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 			break;
 		case 0x01: // FD01
 			retval = keyboard->read_data8(0x01) & 0xff;
-			//retval = keycode_7 & 0xff;
-			//set_irq_keyboard(false);
 			break;
 		case 0x02: // FD02
 			retval = (uint32) get_port_fd02();
@@ -1231,6 +1262,8 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			break;
 		case 0x12:
 			display->write_signal(SIG_DISPLAY_MODE320, data,  0x40);
+			reg_fd12 &= ~0x40;
+			reg_fd12 |= (data & 0x40);
 			break;
 		case 0x13:
 			sub_monitor_type = data & 0x07;
@@ -1598,6 +1631,9 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 		state_fio->FputBool(intstat_dma);
 		state_fio->FputUint8(dma_addr & 0x1f);
 #endif			
+#if defined(_FM77AV_VARIANTS)
+		state_fio->FputUint8(reg_fd12);
+#endif		
 	}		
 }
 
@@ -1605,7 +1641,7 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 {
 	int ch;
 	int addr;
-	bool stat = false;
+	//bool stat = false;
 	uint32 version;
 	
 	version = state_fio->FgetUint32_BE();
@@ -1747,6 +1783,9 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 		intstat_dma = state_fio->FgetBool();
 		dma_addr = (uint32)(state_fio->FgetUint8() & 0x1f);
 #endif			
+#if defined(_FM77AV_VARIANTS)
+		reg_fd12 = state_fio->FgetUint8();
+#endif		
 	}		
 	return true;
 }

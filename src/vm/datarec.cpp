@@ -1170,7 +1170,7 @@ int DATAREC::load_tap_image()
 	int remain = len; \
 	while(remain > 0) { \
 		if(buffer != NULL) { \
-			buffer[ptr++] = signal ? 0xff : 0x7f; \
+			buffer[ptr++] = (signal) ? 0xff : 0x7f; \
 		} else { \
 			ptr++; \
 		} \

@@ -10,7 +10,6 @@
 
 void FM7_MAINMEM::reset()
 {
-	int i;
    	waitfactor = 0;
 	waitcount = 0;
 	ioaccess_wait = false;
@@ -57,6 +56,7 @@ void FM7_MAINMEM::reset()
 	clockmode = (config.cpu_type == 0) ? true : false;
 	is_basicrom = ((bootmode & 0x03) == 0) ? true : false;
 	write_state = false;
+	maincpu->reset();
 }
 
 void FM7_MAINMEM::setclock(int mode)
@@ -163,7 +163,7 @@ int FM7_MAINMEM::check_extrom(uint32 raddr, uint32 *realaddr)
 	if(extrom_bank) { // Extra ROM selected.
 		uint32 dbank = extcard_bank & 0x3f;
 		if(dbank < 0x20) { // KANJI
-			if((dbank == 0x07) && (dbank == 0x06)) {
+			if((dbank == 0x07) || (dbank == 0x06)) {
 				// NOT KANJI AS IS.Thanks Ryu.
 				*realaddr = raddr & 0x01;
 				return FM7_MAINMEM_KANJI_DUMMYADDR;
@@ -182,7 +182,7 @@ int FM7_MAINMEM::check_extrom(uint32 raddr, uint32 *realaddr)
 			if((raddr >= 0x8000)  && (raddr < 0xfc00)) {
 				*realaddr = raddr - 0x8000;
 				return FM7_MAINMEM_BASICROM;
-			} else if((raddr >= 0xfe00) || (raddr < 0xffe0)) {
+			} else if((raddr >= 0xfe00) && (raddr < 0xffe0)) {
 				*realaddr = raddr - 0xfe00;
 				return FM7_MAINMEM_BOOTROM_MMR;
 			} else if(raddr >= 0xfffe) {
@@ -766,12 +766,11 @@ void FM7_MAINMEM::write_data8(uint32 addr, uint32 data)
 			window_offset = data;
 			break;
 		case FM7_MAINIO_MMR_SEGMENT:
-# if !defined(_FM77AV20) && !defined(_FM77AV20EX) && !defined(_FM77AV20SX) && \
-     !defined(_FM77AV40) && !defined(_FM77AV40EX) && !defined(_FM77AV40SX)
-			mmr_segment = data & 0x03;
-# else		   
-			mmr_segment = data & 0x07;
-# endif		   
+			if(mmr_extend) {
+				mmr_segment = data & 0x07;
+			} else {
+				mmr_segment = data & 0x03;
+			}
 			break;
 		default:
 			if((addr >= FM7_MAINIO_MMR_BANK) && (addr < (FM7_MAINIO_MMR_BANK + 0x80))){
@@ -1317,7 +1316,6 @@ void FM7_MAINMEM::save_state(FILEIO *state_fio)
 
 bool FM7_MAINMEM::load_state(FILEIO *state_fio)
 {
-	bool stat = false;
 	uint32 version;
 	version = state_fio->FgetUint32_BE();
 	if(this_device_id != state_fio->FgetInt32_BE()) return false;

@@ -147,6 +147,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	subio->set_iomap_range_rw(0x50, 0x5f, sub);	// crt control i/o
 	subio->set_iomap_range_rw(0x60, 0x6f, gdc_gfx);
 	subio->set_iomap_range_rw(0x70, 0x7f, gdc_chr);
+#ifdef _IO_DEBUG_LOG
+	subio->cpu_index = 1;
+#endif
 	
 	// cpu bus
 	cpu->set_context_mem(main);

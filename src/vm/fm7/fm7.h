@@ -12,9 +12,11 @@
 
 #define USE_TAPE
 //#define USE_TAPE_PTR
+#define USE_TAPE_BUTTON
 #define USE_SCANLINE
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
+#define NOTIFY_KEY_DOWN
 #define USE_SPECIAL_RESET
 //#define SUPPORT_DUMMY_DEVICE_LED 3
 
@@ -56,17 +58,14 @@
 #define CONFIG_NAME		"fmnew7"
 #define CAPABLE_Z80
 
-#elif defined(_FM77)
+#elif defined(_FM77) || defined(_FM77L2)
+# if defined(_FM77)
 #define DEVICE_NAME		"FUJITSU FM-77"
 #define CONFIG_NAME		"fm77"
-//#define USE_DRIVE_TYPE
-#define _FM77_VARIANTS
-#define CAPABLE_Z80
-#define FM77_EXRAM_BANKS	3
-
-#elif defined(_FM77L2)
+# else
 #define DEVICE_NAME		"FUJITSU FM-77L2"
 #define CONFIG_NAME		"fm77l2"
+# endif
 //#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
@@ -91,17 +90,17 @@
 #define _FM77AV_VARIANTS
 
 #elif defined(_FM77AV20)
-#define DEVICE_NAME		"FUJITSU FM77AV20"
+#define DEVICE_NAME		"FUJITSU FM77 AV20"
 #define CONFIG_NAME		"fm77av20"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
 #define HAS_2DD_2D
-//#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
+//#define USE_DRIVE_TYPE 2
 #define CAPABLE_KANJI_CLASS2
 
 #elif defined(_FM77AV20EX)
-#define DEVICE_NAME		"FUJITSU FM77AV20EX"
+#define DEVICE_NAME		"FUJITSU FM77 AV20EX"
 #define CONFIG_NAME		"fm77av20ex"
 #define _FM77AV_VARIANTS
 #define HAS_MMR
@@ -112,7 +111,7 @@
 #define CAPABLE_KANJI_CLASS2
 
 #elif defined(_FM77AV40)
-#define DEVICE_NAME		"FUJITSU FM77AV40"
+#define DEVICE_NAME		"FUJITSU FM77 AV40"
 #define CONFIG_NAME		"fm77av40"
 #define _FM77AV_VARIANTS
 #define HAS_2DD_2D
@@ -350,7 +349,6 @@ protected:
         Z80* z80cpu;
 #endif
         DEVICE* printer;
-        DEVICE* mouse_opn;
 	DEVICE* inteli_mouse; 
    
 	DEVICE *dummycpu;
@@ -369,24 +367,8 @@ protected:
 #ifdef CAPABLE_KANJI_CLASS2
 	KANJIROM *kanjiclass2;
 #endif
-	int machine_version; // 0 = FM8 / 1 = FM7 / 2 = FM77AV / 3 = FM77AV40, etc...
-        uint32 bootmode;   
-        uint32 connected_opns;
-        bool clock_low;
-        int mainfreq_type;
-        uint32 mainfreq_low;
-        uint32 mainfreq_high;
-        uint32 mainfreq_mmr;
-        uint32 mainfreq_high_mmr;
- 
-        uint32 fdd_type[MAX_DRIVE];
-        bool   fdd_connect[MAX_DRIVE];
-
-        FILEIO* cmt_fileio;
-        bool cmt_enabled; // 77AV40SX is disabled.
-        bool cmt_play;
-        bool cmt_rec;
-        uint32 cmt_bufptr;
+	uint32 connected_opns;
+	bool clock_low;
 	bool connect_opn;
 	bool connect_whg;
 	bool connect_thg;
@@ -446,8 +428,15 @@ public:
 	bool tape_inserted();
 	bool now_skip();
 #if defined(USE_TAPE_PTR)
-        int get_tape_ptr(void);
+	int get_tape_ptr(void);
 #endif
+	void push_play();
+//	bool get_tape_play();
+	void push_stop();
+	void push_fast_forward();
+	void push_fast_rewind();
+	void push_apss_forward();
+	void push_apss_rewind();
 	void update_config();
 	//void save_state(FILEIO* state_fio);
 	//bool load_state(FILEIO* state_fio);

@@ -1,3 +1,11 @@
+10/7/2015
+
+[VM/DISK] import Mr.Artane.'s fixes for FM-7 PSY-O-BLADE
+[VM/IO] improve debug log for second cpu
+
+[FM77AV] import Mr.Artane.'s fixes (Commits on Oct 2, 2015)
+
+
 10/6/2015
 
 [WIN32/DEBUGGER] add > command to output the logfile

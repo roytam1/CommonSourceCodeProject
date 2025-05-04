@@ -64,6 +64,11 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	dummycpu = new DEVICE(this, emu);
+	maincpu = new MC6809(this, emu);
+	subcpu = new MC6809(this, emu);
+#ifdef WITH_Z80
+	z80cpu = new Z80(this, emu);
+#endif
 	// basic devices
 	kanjiclass1 = new KANJIROM(this, emu, false);
 #ifdef CAPABLE_KANJI_CLASS2
@@ -99,10 +104,10 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #else
 	led_terminate = new DEVICE(this, emu);
 #endif
-	maincpu = new MC6809(this, emu);
-	subcpu = new MC6809(this, emu);
+	//maincpu = new MC6809(this, emu);
+	//subcpu = new MC6809(this, emu);
 #ifdef WITH_Z80
-	z80cpu = new Z80(this, emu);
+	//z80cpu = new Z80(this, emu);
 #endif
 	// MEMORIES must set before initialize().
 	maincpu->set_context_mem(mainmem);
@@ -113,14 +118,10 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #ifdef USE_DEBUGGER
 	maincpu->set_context_debugger(new DEBUGGER(this, emu));
 	subcpu->set_context_debugger(new DEBUGGER(this, emu));
-#ifdef WITH_Z80
+# ifdef WITH_Z80
 	z80cpu->set_context_debugger(new DEBUGGER(this, emu));
+# endif
 #endif
-#endif
-
-	//for(DEVICE* device = first_device; device; device = device->next_device) {
-	//	device->initialize();
-	//}
 	connect_bus();
 	initialize();
 }
@@ -219,8 +220,8 @@ void VM::connect_bus(void)
 #endif
    
 	event->register_frame_event(display);
-	event->register_vline_event(display);
-	event->register_vline_event(mainio);
+	//event->register_vline_event(display);
+	//event->register_vline_event(mainio);
    
 	mainio->set_context_maincpu(maincpu);
 	mainio->set_context_subcpu(subcpu);
@@ -565,12 +566,12 @@ bool VM::get_disk_protected(int drv)
 
 void VM::play_tape(const _TCHAR* file_path)
 {
-	bool value = drec->play_tape(file_path);
+	drec->play_tape(file_path);
 }
 
 void VM::rec_tape(const _TCHAR* file_path)
 {
-	bool value = drec->rec_tape(file_path);
+	drec->rec_tape(file_path);
 }
 
 void VM::close_tape()
@@ -586,9 +587,46 @@ bool VM::tape_inserted()
 #if defined(USE_TAPE_PTR)
 int VM::get_tape_ptr(void)
 {
-        return drec->get_tape_ptr();
+	return drec->get_tape_ptr();
 }
 #endif
+void VM::push_play()
+{
+	drec->set_ff_rew(0);
+	drec->set_remote(true);
+}
+
+//bool VM::get_tape_play(void)
+//{
+//	return drec->get_tape_play();
+//}
+
+void VM::push_stop()
+{
+	drec->set_remote(false);
+}
+
+void VM::push_fast_forward()
+{
+	drec->set_ff_rew(1);
+	drec->set_remote(true);
+}
+
+void VM::push_fast_rewind()
+{
+	drec->set_ff_rew(-1);
+	drec->set_remote(true);
+}
+
+void VM::push_apss_forward()
+{
+	drec->do_apss(1);
+}
+
+void VM::push_apss_rewind()
+{
+	drec->do_apss(-1);
+}
 
 bool VM::now_skip()
 {
