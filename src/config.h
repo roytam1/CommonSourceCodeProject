@@ -110,6 +110,7 @@ typedef struct {
 		bool baud_high[MAX_TAPE_TMP];
 	#endif
 	int cpu_power;
+	bool full_speed;
 	
 	// recent files
 	#if defined(USE_SHARED_DLL) || defined(USE_CART1)
