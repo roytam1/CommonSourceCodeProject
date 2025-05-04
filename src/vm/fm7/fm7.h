@@ -31,13 +31,15 @@
 #define WINDOW_HEIGHT_ASPECT 400
 
 #define NOTIFY_KEY_DOWN
-#define NOTIFY_KEY_UP
+//#define NOTIFY_KEY_UP
+#define NOTIFY_KEY_DOWN_LR_SHIFT
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
 //#define USE_DISK_WRITE_PROTECT
+#define USE_STATE
 #define USE_DEBUGGER
 //#define _DEBUG_LOG
 //#define _FDC_DEBUG_LOG
@@ -438,8 +440,8 @@ public:
 	void push_apss_forward();
 	void push_apss_rewind();
 	void update_config();
-	//void save_state(FILEIO* state_fio);
-	//bool load_state(FILEIO* state_fio);
+	void save_state(FILEIO* state_fio);
+	bool load_state(FILEIO* state_fio);
 
 	// ----------------------------------------
 	// for each device
