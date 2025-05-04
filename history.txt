@@ -1,3 +1,15 @@
+10/6/2015
+
+[WIN32/DEBUGGER] add > command to output the logfile
+
+[VM/UPD7220] support vram data mask to support 12bit vram for MZ-3500
+[VM/Z80] improve disassembler for DD/ED/FD opecodes
+
+[MZ3500/SUB] fix character vram bit width
+[MZ3500/SUB] fix graphic vram size
+[MZ3500/SUB] fix to negate color palette number of kanji character screen
+
+
 9/30/2015
 
 [EMU/WIN32] fix eFM77AV40/EX menu issues

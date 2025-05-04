@@ -33,7 +33,7 @@ private:
 	uint8 vram_chr[0x2000];
 	uint8 *sync_chr, *ra_chr, *cs_chr;
 	int* ead_chr;
-	uint8 vram_gfx[0x20000];
+	uint8 vram_gfx[0x18000];
 	uint8 *sync_gfx, *ra_gfx, *cs_gfx;
 	int* ead_gfx;
 	uint8 disp[16];

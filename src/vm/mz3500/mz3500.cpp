@@ -106,13 +106,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// mz3500sm p.80,81
 	rtc->set_context_dout(ls244, SIG_LS244_INPUT, 0x01);
 	
-	gdc_chr->set_vram_ptr(sub->get_vram_chr(), 0x2000);
+	gdc_chr->set_vram_ptr(sub->get_vram_chr(), 0x2000, 0xfff);
 	sub->set_sync_ptr_chr(gdc_chr->get_sync());
 	sub->set_ra_ptr_chr(gdc_chr->get_ra());
 	sub->set_cs_ptr_chr(gdc_chr->get_cs());
 	sub->set_ead_ptr_chr(gdc_chr->get_ead());
 	
-	gdc_gfx->set_vram_ptr(sub->get_vram_gfx(), 0x20000);
+	gdc_gfx->set_vram_ptr(sub->get_vram_gfx(), 0x18000);
 	sub->set_sync_ptr_gfx(gdc_gfx->get_sync());
 	sub->set_ra_ptr_gfx(gdc_gfx->get_ra());
 	sub->set_cs_ptr_gfx(gdc_gfx->get_cs());

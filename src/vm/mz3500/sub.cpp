@@ -244,7 +244,11 @@ void SUB::draw_chr_400line()
 				
 				if(disp[4] & 1) {
 					// color mode
-					color = (attr & 7) ? (attr & 7) : 7;
+					if(!(knji & 0x20)) {
+						color = (~attr & 7) | 8;
+					} else {
+						color = (attr & 7) | 8;
+					}
 					vline = hline = reverse = false;
 				} else {
 					// monocrhome mode
@@ -563,7 +567,7 @@ void SUB::draw_gfx_200line_8bit()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void SUB::save_state(FILEIO* state_fio)
 {
