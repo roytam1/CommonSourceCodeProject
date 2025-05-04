@@ -47,7 +47,7 @@ public:
 	bool load_state(FILEIO* state_fio);
 	
 	// unique function
-	void init(int rate, double frequency, int volume);
+	void initialize_sound(int rate, double frequency, int volume);
 	void set_frequency(double frequency);
 };
 

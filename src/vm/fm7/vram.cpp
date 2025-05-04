@@ -418,19 +418,19 @@ void DISPLAY::draw_screen()
 			if(display_mode == DISPLAY_MODE_8_200L) {
 				emu->set_vm_screen_size(640, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 				for(y = 0; y < 200; y++) {
-					ppp = emu->screen_buffer(y);
+					ppp = emu->get_screen_buffer(y);
 					if(ppp != NULL) memset(ppp, 0x00, 640 * sizeof(scrntype));
 				}
 			} else if(display_mode == DISPLAY_MODE_8_400L) {
 				emu->set_vm_screen_size(640, 400, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 				for(y = 0; y < 400; y++) {
-					ppp = emu->screen_buffer(y);
+					ppp = emu->get_screen_buffer(y);
 					if(ppp != NULL) memset(ppp, 0x00, 640 * sizeof(scrntype));
 				}
 			} else { // 320x200
 				emu->set_vm_screen_size(320, 200, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH_ASPECT, WINDOW_HEIGHT_ASPECT);
 				for(y = 0; y < 200; y++) {
-					ppp = emu->screen_buffer(y);
+					ppp = emu->get_screen_buffer(y);
 					if(ppp != NULL) memset(ppp, 0x00, 320 * sizeof(scrntype));
 				}
 			}
@@ -447,7 +447,7 @@ void DISPLAY::draw_screen()
 		yoff = 0;
 		rgbmask = ~multimode_dispmask;
 		for(y = 0; y < 200; y ++) {
-			p = emu->screen_buffer(y);
+			p = emu->get_screen_buffer(y);
 			if(p == NULL) continue;
 			pp = p;
 			yoff = y  * 80;
@@ -496,9 +496,9 @@ void DISPLAY::draw_screen()
 				}
 			}
 			//if(config.scan_line == 0) {
-			//	memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
+			//	memcpy((void *)emu->get_screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
 			//} else {
-			//	memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
+			//	memset((void *)emu->get_screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
 			//}
 		}
 # if defined(_FM77AV_VARIANTS)
@@ -516,7 +516,7 @@ void DISPLAY::draw_screen()
 		if((rgbmask & 0x02) == 0) mask = mask | 0x0f0;
 		if((rgbmask & 0x04) == 0) mask = mask | 0xf00;
 		for(y = 0; y < 200; y ++) {
-			p = emu->screen_buffer(y);
+			p = emu->get_screen_buffer(y);
 			if(p == NULL) continue;
 			pp = p;
 			yoff = y * 40;
@@ -565,9 +565,9 @@ void DISPLAY::draw_screen()
 				}
 			}
 			//if(config.scan_line == 0) {
-			//	memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
+			//	memcpy((void *)emu->get_screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
 			//} else {
-			//	memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
+			//	memset((void *)emu->get_screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
 			//}
 		}
 		vram_wrote_shadow = false;
@@ -579,7 +579,7 @@ void DISPLAY::draw_screen()
 		yoff = 0;
 		rgbmask = ~multimode_dispmask;
 		for(y = 0; y < 400; y++) {
-			p = emu->screen_buffer(y);
+			p = emu->get_screen_buffer(y);
 			if(p == NULL) continue;
 			pp = p;
 			yoff = y  * 80;
@@ -635,7 +635,7 @@ void DISPLAY::draw_screen()
 # if defined(_FM77AV_VARIANTS)
 			vram_draw_table[y] = false;	
 # endif			
-			p = emu->screen_buffer(y);
+			p = emu->get_screen_buffer(y);
 			if(p == NULL) continue;
 			pp = p;
 			yoff = y * 40;
@@ -668,9 +668,9 @@ void DISPLAY::draw_screen()
 				}
 			}
 			//if(config.scan_line == 0) {
-			//	memcpy((void *)emu->screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
+			//	memcpy((void *)emu->get_screen_buffer(y + 1), pp, 640 * sizeof(scrntype));
 			//} else {
-			//	memset((void *)emu->screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
+			//	memset((void *)emu->get_screen_buffer(y + 1), 0x00, 640 * sizeof(scrntype));
 			//}
 		}
 		vram_wrote_shadow = false;

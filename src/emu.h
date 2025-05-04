@@ -105,6 +105,17 @@ private:
 #endif
 	bool now_suspended;
 	
+	// input
+#ifdef USE_AUTO_KEY
+	FIFO* auto_key_buffer;
+	int auto_key_phase, auto_key_shift;
+	void initialize_auto_key();
+	void release_auto_key();
+	void update_auto_key();
+#endif
+	uint32 joy_status[4];
+	void update_joystick();
+	
 	// media
 	typedef struct {
 		_TCHAR path[_MAX_PATH];
@@ -117,10 +128,10 @@ private:
 	media_status_t cart_status[MAX_CART];
 #endif
 #ifdef USE_FD1
-	media_status_t disk_status[MAX_FD];
+	media_status_t floppy_disk_status[MAX_FD];
 #endif
 #ifdef USE_QD1
-	media_status_t quickdisk_status[MAX_QD];
+	media_status_t quick_disk_status[MAX_QD];
 #endif
 #ifdef USE_TAPE
 	media_status_t tape_status;
@@ -168,8 +179,8 @@ public:
 #endif
 	
 	// drive machine
-	int frame_interval();
-	bool now_skip();
+	int get_frame_interval();
+	bool is_frame_skippable();
 	int run();
 	void reset();
 #ifdef USE_SPECIAL_RESET
@@ -183,6 +194,7 @@ public:
 	void lock_vm();
 	void unlock_vm();
 	void force_unlock_vm();
+	bool is_vm_locked();
 	
 	// input
 #ifdef OSD_QT
@@ -197,15 +209,22 @@ public:
 	void enable_mouse();
 	void disenable_mouse();
 	void toggle_mouse();
-	bool get_mouse_enabled();
+	bool is_mouse_enabled();
 #ifdef USE_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
-	bool now_auto_key();
+	bool is_auto_key_running()
+	{
+		return (auto_key_phase != 0);
+	}
+	FIFO* get_auto_key_buffer()
+	{
+		return auto_key_buffer;
+	}
 #endif
-	const uint8* key_buffer();
-	const uint32* joy_buffer();
-	const int* mouse_buffer();
+	const uint8* get_key_buffer();
+	const uint32* get_joy_buffer();
+	const int* get_mouse_buffer();
 	
 	// screen
 	int get_window_width(int mode);
@@ -217,10 +236,10 @@ public:
 	int get_vm_window_width_aspect();
 	int get_vm_window_height_aspect();
 #if defined(USE_MINIMUM_RENDERING)
-	bool screen_changed();
+	bool is_screen_changed();
 #endif
 	int draw_screen();
-	scrntype* screen_buffer(int y);
+	scrntype* get_screen_buffer(int y);
 #ifdef USE_CRT_FILTER
 	void screen_skip_line(bool skip_line);
 #endif
@@ -231,15 +250,15 @@ public:
 	void update_screen(HDC hdc);
 #endif
 	void capture_screen();
-	bool start_rec_video(int fps);
-	void stop_rec_video();
-	bool now_rec_video();
+	bool start_record_video(int fps);
+	void stop_record_video();
+	bool is_video_recording();
 	
 	// sound
 	void mute_sound();
-	void start_rec_sound();
-	void stop_rec_sound();
-	bool now_rec_sound();
+	void start_record_sound();
+	void stop_record_sound();
+	bool is_sound_recording();
 	
 	// video device
 #if defined(USE_MOVIE_PLAYER) || defined(USE_VIDEO_CAPTURE)
@@ -290,24 +309,24 @@ public:
 	// socket
 #ifdef USE_SOCKET
 	int get_socket(int ch);
-	void socket_connected(int ch);
-	void socket_disconnected(int ch);
-	bool init_socket_tcp(int ch);
-	bool init_socket_udp(int ch);
+	void notify_socket_connected(int ch);
+	void notify_socket_disconnected(int ch);
+	bool initialize_socket_tcp(int ch);
+	bool initialize_socket_udp(int ch);
 	bool connect_socket(int ch, uint32 ipaddr, int port);
 	void disconnect_socket(int ch);
 	bool listen_socket(int ch);
-	void send_data_tcp(int ch);
-	void send_data_udp(int ch, uint32 ipaddr, int port);
-	void send_data(int ch);
-	void recv_data(int ch);
+	void send_socket_data_tcp(int ch);
+	void send_socket_data_udp(int ch, uint32 ipaddr, int port);
+	void send_socket_data(int ch);
+	void recv_socket_data(int ch);
 #endif
 	
 	// debugger
 #ifdef USE_DEBUGGER
 	void open_debugger(int cpu_index);
 	void close_debugger();
-	bool debugger_enabled(int cpu_index);
+	bool is_debugger_enabled(int cpu_index);
 	bool now_debugging;
 #endif
 	
@@ -335,29 +354,29 @@ public:
 #ifdef USE_CART1
 	void open_cart(int drv, const _TCHAR* file_path);
 	void close_cart(int drv);
-	bool cart_inserted(int drv);
+	bool is_cart_inserted(int drv);
 #endif
 #ifdef USE_FD1
-	void open_disk(int drv, const _TCHAR* file_path, int bank);
-	void close_disk(int drv);
-	bool disk_inserted(int drv);
-	void set_disk_protected(int drv, bool value);
-	bool get_disk_protected(int drv);
+	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
+	void close_floppy_disk(int drv);
+	bool is_floppy_disk_inserted(int drv);
+	void is_floppy_disk_protected(int drv, bool value);
+	bool is_floppy_disk_protected(int drv);
 #endif
 #ifdef USE_QD1
-	void open_quickdisk(int drv, const _TCHAR* file_path);
-	void close_quickdisk(int drv);
-	bool quickdisk_inserted(int drv);
+	void open_quick_disk(int drv, const _TCHAR* file_path);
+	void close_quick_disk(int drv);
+	bool is_quick_disk_inserted(int drv);
 #endif
 #ifdef USE_TAPE
 	void play_tape(const _TCHAR* file_path);
 	void rec_tape(const _TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted();
+	bool is_tape_inserted();
 #ifndef TAPE_BINARY_ONLY
-	bool tape_playing();
-	bool tape_recording();
-	int tape_position();
+	bool is_tape_playing();
+	bool is_tape_recording();
+	int get_tape_position();
 #endif
 #ifdef USE_TAPE_BUTTON
 	void push_play();
@@ -371,7 +390,7 @@ public:
 #ifdef USE_LASER_DISC
 	void open_laser_disc(const _TCHAR* file_path);
 	void close_laser_disc();
-	bool laser_disc_inserted();
+	bool is_laser_disc_inserted();
 #endif
 #ifdef USE_BINARY_FILE1
 	void load_binary(int drv, const _TCHAR* file_path);

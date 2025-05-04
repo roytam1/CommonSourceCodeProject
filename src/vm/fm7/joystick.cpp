@@ -26,8 +26,8 @@ JOYSTICK::~JOYSTICK()
 
 void JOYSTICK::initialize()
 {
-	rawdata = p_emu->joy_buffer();
-	mouse_state = p_emu->mouse_buffer();
+	rawdata = p_emu->get_joy_buffer();
+	mouse_state = p_emu->get_mouse_buffer();
 	emulate_mouse[0] = emulate_mouse[1] = false;
 	joydata[0] = joydata[1] = 0xff;
 	dx = dy = 0;
@@ -48,7 +48,7 @@ void JOYSTICK::reset()
 	mouse_type = config.device_type;
 	if(mouse_type == 1) emulate_mouse[0] = true;
 	if(mouse_type == 2) emulate_mouse[1] = true;
-	mouse_state = p_emu->mouse_buffer();
+	mouse_state = p_emu->get_mouse_buffer();
 }
 
 void JOYSTICK::event_frame()
@@ -76,7 +76,7 @@ void JOYSTICK::event_frame()
 	mouse_button = 0x00;
 	if((stat & 0x01) == 0) mouse_button |= 0x10; // left
 	if((stat & 0x02) == 0) mouse_button |= 0x20; // right
-	rawdata = p_emu->joy_buffer();
+	rawdata = p_emu->get_joy_buffer();
 	if(rawdata == NULL) return;
    
 	for(ch = 0; ch < 2; ch++) {

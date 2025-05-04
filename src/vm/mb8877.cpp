@@ -78,7 +78,7 @@ void MB8877::register_seek_event()
 
 void MB8877::register_drq_event(int bytes)
 {
-	double usec = disk[drvreg]->get_usec_per_bytes(bytes) - passed_usec(prev_drq_clock);
+	double usec = disk[drvreg]->get_usec_per_bytes(bytes) - get_passed_usec(prev_drq_clock);
 	if(usec < 4) {
 		usec = 4;
 	}
@@ -535,7 +535,7 @@ void MB8877::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_MB8877_DRIVEREG) {
 		drvreg = data & DRIVE_MASK;
 		drive_sel = true;
-		seekend_clock = current_clock();
+		seekend_clock = get_current_clock();
 	} else if(id == SIG_MB8877_SIDEREG) {
 		sidereg = (data & mask) ? 1 : 0;
 	} else if(id == SIG_MB8877_MOTOR) {
@@ -592,7 +592,7 @@ void MB8877::event_callback(int event_id, int err)
 			register_seek_event();
 			break;
 		}
-		seekend_clock = current_clock();
+		seekend_clock = get_current_clock();
 		status_tmp = status;
 		if(cmdreg & 4) {
 			// verify
@@ -646,7 +646,7 @@ void MB8877::event_callback(int event_id, int err)
 				register_lost_event(1);
 			}
 			fdc[drvreg].cur_position = fdc[drvreg].next_trans_position;
-			fdc[drvreg].prev_clock = prev_drq_clock = current_clock();
+			fdc[drvreg].prev_clock = prev_drq_clock = get_current_clock();
 			set_drq(true);
 			drive_sel = false;
 #ifdef _FDC_DEBUG_LOG
@@ -669,7 +669,7 @@ void MB8877::event_callback(int event_id, int err)
 			   cmdtype == FDC_CMD_RD_ADDR) {
 				fdc[drvreg].index++;
 			}
-			fdc[drvreg].prev_clock = prev_drq_clock = current_clock();
+			fdc[drvreg].prev_clock = prev_drq_clock = get_current_clock();
 			set_drq(true);
 #ifdef _FDC_DEBUG_LOG
 			//emu->out_debug_log(_T("FDC\tDRQ!\n"));
@@ -1187,14 +1187,14 @@ uint8 MB8877::search_addr()
 
 int MB8877::get_cur_position()
 {
-	return (fdc[drvreg].cur_position + disk[drvreg]->get_bytes_per_usec(passed_usec(fdc[drvreg].prev_clock))) % disk[drvreg]->get_track_size();
+	return (fdc[drvreg].cur_position + disk[drvreg]->get_bytes_per_usec(get_passed_usec(fdc[drvreg].prev_clock))) % disk[drvreg]->get_track_size();
 }
 
 double MB8877::get_usec_to_start_trans(bool first_sector)
 {
 	// get time from current position
 	double time = get_usec_to_next_trans_pos(first_sector && ((cmdreg & 4) != 0));
-	if(first_sector && time < 60000 - passed_usec(seekend_clock)) {
+	if(first_sector && time < 60000 - get_passed_usec(seekend_clock)) {
 		time += disk[drvreg]->get_usec_per_track();
 	}
 	return time;
@@ -1296,7 +1296,7 @@ void MB8877::close_disk(int drv)
 	}
 }
 
-bool MB8877::disk_inserted(int drv)
+bool MB8877::is_disk_inserted(int drv)
 {
 	if(drv < MAX_DRIVE) {
 		return disk[drv]->inserted;
@@ -1304,14 +1304,14 @@ bool MB8877::disk_inserted(int drv)
 	return false;
 }
 
-void MB8877::set_disk_protected(int drv, bool value)
+void MB8877::is_disk_protected(int drv, bool value)
 {
 	if(drv < MAX_DRIVE) {
 		disk[drv]->write_protected = value;
 	}
 }
 
-bool MB8877::get_disk_protected(int drv)
+bool MB8877::is_disk_protected(int drv)
 {
 	if(drv < MAX_DRIVE) {
 		return disk[drv]->write_protected;

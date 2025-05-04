@@ -53,35 +53,35 @@
 #define USE_DEBUGGER
 #define USE_STATE
 
-static const int vm_autokey_table_base[][2] = {
+static const int vm_auto_key_table_base[][2] = {
 	// 0x100: shift
 	// 0x200: kana
 	{0xa1,	0x300 | 0xbf},	// ' -> '/'
 	{0xa2,	0x300 | 0xba},	// ' -> ':'
 	{0xa3,	0x300 | 0xdd},	// ' -> ']'
 	{0xa4,	0x300 | 0xbe},	// ' -> '.'
-	{0xa5,	0x300 | 0xe2},	// '¥' -> '_'
-	{0xa6,	0x200 | 0xbf},	// '¦' -> '/'
-	{0xa7,	0x300 | 0x31},	// '§' -> '1'
-	{0xa8,	0x300 | 0x32},	// '¨' -> '2'
-	{0xa9,	0x300 | 0x33},	// '©' -> '3'
-	{0xaa,	0x300 | 0x34},	// 'ª' -> '4'
-	{0xab,	0x300 | 0x35},	// '«' -> '5'
-	{0xac,	0x300 | 0x4e},	// '¬' -> 'N'
-	{0xad,	0x300 | 0x4d},	// '­' -> 'M'
-	{0xae,	0x300 | 0xbc},	// '®' -> ','
-	{0xaf,	0x300 | 0x43},	// '¯' -> 'C'
-	{0xb0,	0x300 | 0xdb},	// '°' -> '['
-	{0xb1,	0x200 | 0x31},	// '±' -> '1'
-	{0xb2,	0x200 | 0x32},	// '²' -> '2'
-	{0xb3,	0x200 | 0x33},	// '³' -> '3'
-	{0xb4,	0x200 | 0x34},	// '´' -> '4'
-	{0xb5,	0x200 | 0x35},	// 'µ' -> '5'
-	{0xb6,	0x200 | 0x51},	// '¶' -> 'Q'
-	{0xb7,	0x200 | 0x57},	// '·' -> 'W'
-	{0xb8,	0x200 | 0x45},	// '¸' -> 'E'
-	{0xb9,	0x200 | 0x52},	// '¹' -> 'R'
-	{0xba,	0x200 | 0x54},	// 'º' -> 'T'
+	{0xa5,	0x300 | 0xe2},	// ' -> '_'
+	{0xa6,	0x200 | 0xbf},	// ' -> '/'
+	{0xa7,	0x300 | 0x31},	// ' -> '1'
+	{0xa8,	0x300 | 0x32},	// ' -> '2'
+	{0xa9,	0x300 | 0x33},	// ' -> '3'
+	{0xaa,	0x300 | 0x34},	// ' -> '4'
+	{0xab,	0x300 | 0x35},	// ' -> '5'
+	{0xac,	0x300 | 0x4e},	// ' -> 'N'
+	{0xad,	0x300 | 0x4d},	// ' -> 'M'
+	{0xae,	0x300 | 0xbc},	// ' -> ','
+	{0xaf,	0x300 | 0x43},	// ' -> 'C'
+	{0xb0,	0x300 | 0xdb},	// ' -> '['
+	{0xb1,	0x200 | 0x31},	// ' -> '1'
+	{0xb2,	0x200 | 0x32},	// ' -> '2'
+	{0xb3,	0x200 | 0x33},	// ' -> '3'
+	{0xb4,	0x200 | 0x34},	// ' -> '4'
+	{0xb5,	0x200 | 0x35},	// ' -> '5'
+	{0xb6,	0x200 | 0x51},	// ' -> 'Q'
+	{0xb7,	0x200 | 0x57},	// ' -> 'W'
+	{0xb8,	0x200 | 0x45},	// ' -> 'E'
+	{0xb9,	0x200 | 0x52},	// ' -> 'R'
+	{0xba,	0x200 | 0x54},	// ' -> 'T'
 	{0xbb,	0x200 | 0x41},	// '»' -> 'A'
 	{0xbc,	0x200 | 0x53},	// '¼' -> 'S'
 	{0xbd,	0x200 | 0x44},	// '½' -> 'D'
@@ -177,7 +177,7 @@ public:
 	void reset();
 	void special_reset();
 	void run();
-	double frame_rate();
+	double get_frame_rate();
 	
 #ifdef USE_DEBUGGER
 	// debugger
@@ -186,12 +186,12 @@ public:
 	
 	// draw screen
 	void draw_screen();
-	int access_lamp();
+	int get_access_lamp_status();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
 	uint16* create_sound(int* extra_frames);
-	int sound_buffer_ptr();
+	int get_sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
@@ -201,25 +201,25 @@ public:
 	void key_up(int code);
 	
 	// user interface
-	void open_disk(int drv, const _TCHAR* file_path, int bank);
-	void close_disk(int drv);
-	bool disk_inserted(int drv);
-	void set_disk_protected(int drv, bool value);
-	bool get_disk_protected(int drv);
+	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
+	void close_floppy_disk(int drv);
+	bool is_floppy_disk_inserted(int drv);
+	void is_floppy_disk_protected(int drv, bool value);
+	bool is_floppy_disk_protected(int drv);
 	void play_tape(const _TCHAR* file_path);
 	void rec_tape(const _TCHAR* file_path);
 	void close_tape();
-	bool tape_inserted();
-	bool tape_playing();
-	bool tape_recording();
-	int tape_position();
+	bool is_tape_inserted();
+	bool is_tape_playing();
+	bool is_tape_recording();
+	int get_tape_position();
 	void push_play();
 	void push_stop();
 	void push_fast_forward();
 	void push_fast_rewind();
 	void push_apss_forward() {}
 	void push_apss_rewind() {}
-	bool now_skip();
+	bool is_frame_skippable();
 	
 	void update_config();
 	void save_state(FILEIO* state_fio);

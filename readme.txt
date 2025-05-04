@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								12/15/2015
+								2/19/2016
 
 --- What's this ?
 
@@ -122,16 +122,18 @@ This archive includes the all source codes of emulators listed below:
 
 --- How to build
 
-Build the projects with Microsoft Visual C++ 2008 SP1 and DirectX 9.0 SDK.
+Build the projects with the Microsoft Visual C++ 2008 with Service Pack 1 or
+the Microsoft Visual C++ 2013 with Update 5.
+
+The DirectX 9.0 SDK is required.
 I recommend the DirectX 9.0 SDK Update (December 2004),
 and dinput.lib included in the DirectX 9.0 SDK Update (October 2004).
 
-Windows SDK for Windows 8.1 is required to get the mt.exe utility.
-The mt.exe is used to merge the manifest file for Windows Vista or later.
+When you use the Microsoft Visual C++ 2008 with Service Pack 1,
+the Windows SDK for Windows 8.1 is also required to get the mt.exe utility.
+The mt.exe is used to merge a manifest file for Windows Vista or later.
 
 https://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
-
-See source\build8.bat and source\manifest.bat for more details.
 
 
 --- License

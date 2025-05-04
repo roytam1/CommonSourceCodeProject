@@ -486,4 +486,8 @@
 #define WINDOW_HEIGHT_ASPECT WINDOW_HEIGHT
 #endif
 
+#ifndef KEY_KEEP_FRAMES
+#define KEY_KEEP_FRAMES 3
+#endif
+
 #endif

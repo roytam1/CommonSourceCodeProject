@@ -193,15 +193,8 @@ void MEMORY::event_callback(int event_id, int err)
 
 void MEMORY::update_green_palette()
 {
-	if(reverse) {
-		for(int i = 0; i < 8; i++) {
-			palette_green[i] = RGB_COLOR(0, i ? 0 : 255, 0);
-		}
-	} else {
-		for(int i = 0; i < 8; i++) {
-			palette_green[i] = RGB_COLOR(0, i ? 255 : 0, 0);
-		}
-	}
+	palette_green[reverse ? 1 : 0] = RGB_COLOR(0, 0, 0);
+	palette_green[reverse ? 0 : 1] = RGB_COLOR(0, 255, 0);
 }
 
 void MEMORY::update_vram_map()
@@ -378,8 +371,8 @@ void MEMORY::draw_screen()
 		// color monitor
 		int offset = (config.monitor_type == MONITOR_TYPE_GREEN_COLOR) ? 640 : 0;
 		for(int y = 0; y < 200; y++) {
-			scrntype* dest0 = emu->screen_buffer(y * 2 + 0) + offset;
-			scrntype* dest1 = emu->screen_buffer(y * 2 + 1) + offset;
+			scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0) + offset;
+			scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1) + offset;
 			uint8* src_txt = screen_txt[y];
 			uint8* src_gra = screen_gra[y];
 			
@@ -409,8 +402,8 @@ void MEMORY::draw_screen()
 		if(vram_mask & 8) {
 			// text only
 			for(int y = 0; y < 200; y++) {
-				scrntype* dest0 = emu->screen_buffer(y * 2 + 0) + offset;
-				scrntype* dest1 = emu->screen_buffer(y * 2 + 1) + offset;
+				scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0) + offset;
+				scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1) + offset;
 				uint8* src_txt = screen_txt[y];
 				
 				for(int x = 0; x < 640; x++) {
@@ -426,14 +419,14 @@ void MEMORY::draw_screen()
 		} else {
 			// both text and graphic
 			for(int y = 0; y < 200; y++) {
-				scrntype* dest0 = emu->screen_buffer(y * 2 + 0) + offset;
-				scrntype* dest1 = emu->screen_buffer(y * 2 + 1) + offset;
+				scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0) + offset;
+				scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1) + offset;
 				uint8* src_txt = screen_txt[y];
 				uint8* src_gra = screen_gra[y];
 				
 				for(int x = 0; x < 640; x++) {
 					uint8 txt = src_txt[width80 ? x : (x >> 1)], gra = src_gra[x];
-					dest0[x] = palette_color[(txt || gra) ? 1 : 0];
+					dest0[x] = palette_green[(txt || gra) ? 1 : 0];
 				}
 				if(config.scan_line) {
 					memset(dest1, 0, 640 * sizeof(scrntype));
@@ -446,20 +439,20 @@ void MEMORY::draw_screen()
 	emu->screen_skip_line(true);
 #else
 	for(int y = 0; y < 200; y++) {
-		scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
-		scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
+		scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0);
+		scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1);
 		uint8* src_txt = screen_txt[y];
 		uint8* src_gra = screen_gra[y];
 		
 		if(width80) {
 			for(int x = 0; x < 640; x++) {
 				uint8 txt = src_txt[x], gra = src_gra[x >> 1];
-				dest0[x] = palette_green[txt | gra];
+				dest0[x] = palette_green[(txt || gra) ? 1 : 0];
 			}
 		} else {
 			for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 				uint8 txt = src_txt[x], gra = src_gra[x];
-				dest0[x2] = dest0[x2 + 1] = palette_green[txt | gra];
+				dest0[x2] = dest0[x2 + 1] = palette_green[(txt || gra) ? 1 : 0];
 			}
 		}
 		if(config.scan_line) {

@@ -1,4 +1,21 @@
-2/17/2015
+2/19/2016
+
+[ALL] add VC++2013 project files
+[ALL] change many public method names according to common naming convention
+
+[COMMON] add create_string() function
+[WINMAIN] copy codes to read clipboard for auto key from osd class
+[EMU] copy codes for auto key and joystick mapping from osd class
+[EMU/OSD] remove codes for auto key and joystick mapping
+
+[VM/PRNFILE] fix not to register ack event in initialize() for debug build
+[VM/MZ1P17] fix not to register ack event in initialize() for debug build
+[VM/MZ1P17] fix font rom loader for MZ-80B/2000/2200
+
+[MZ2200/MEMORY80B] fix green monitor color
+
+
+2/17/2016
 
 [EMU] improve screen stretch modes
 [EMU/OSD] improve screen stretch modes
@@ -12,7 +29,7 @@
 [MZ2200/MEMORY80B] support to swap left/right side of color and green monitors
 
 
-2/13/2015
+2/13/2016
 
 [VM/DISK] fix routine to calculate sector position for invalid format track
 [VM/DISK] increase max sector number from 256 to 512
@@ -24,7 +41,7 @@
 [MZ2200/MEMORY80B] support dual (color and green) monitors
 
 
-2/11/2015
+2/11/2016
 
 [VM/DISK] fix to allow fdc class to get gap3 size
 [VM/MB8877] improve timing to start read/write sector
@@ -32,7 +49,7 @@
 [VM/T3444A] fix to wait 100usec for tnd signal after sector is finshed
 
 
-2/10/2015
+2/10/2016
 
 [COMMON] improve routine to apply volume to sound samples
 [WINMAIN] improve volume dialog
@@ -47,7 +64,7 @@
 [X1/KEYBOARD] fix for constant keyboatd data pointer
 
 
-2/7/2015
+2/7/2016
 
 [WINMAIN] add dialog to set sound device volumes
 [EMU] support to get sound device info
@@ -73,12 +90,12 @@
 [SCV/SOUND] support to set left/right volumes
 
 
-2/4/2015
+2/4/2016
 
 [VM/TMS9995] support debugger
 
 
-1/10/2015
+1/10/2016
 
 [VM/MZ1P17] support ESC % 2 in MZ-1 mode
 [VM/MZ1P17] support MZ-2/3/X1 mode

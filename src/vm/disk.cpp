@@ -294,7 +294,7 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		}
 		
 		// get crc32 for midification check
-		crc32 = getcrc32(buffer, file_size.d);
+		crc32 = get_crc32(buffer, file_size.d);
 		
 		// check special disk image
 #if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
@@ -400,7 +400,7 @@ void DISK::close()
 		}
 		buffer[0x1a] = write_protected ? 0x10 : 0; // mey be changed
 		
-		if(/*!write_protected &&*/ file_size.d && getcrc32(buffer, file_size.d) != crc32) {
+		if(/*!write_protected &&*/ file_size.d && get_crc32(buffer, file_size.d) != crc32) {
 			// write image
 			FILEIO* fio = new FILEIO();
 			int pre_size = 0, post_size = 0;
@@ -476,9 +476,7 @@ void DISK::close()
 			}
 			
 			if((FILEIO::IsFileExists(dest_path) && FILEIO::IsFileProtected(dest_path)) || !fio->Fopen(dest_path, FILEIO_WRITE_BINARY)) {
-				_TCHAR tmp_path[_MAX_PATH];
-				my_stprintf_s(tmp_path, _MAX_PATH, _T("temporary_saved_floppy_disk_#%d.d88"), drive_num);
-				fio->Fopen(local_path(tmp_path), FILEIO_WRITE_BINARY);
+				fio->Fopen(local_path(create_string(_T("temporary_saved_floppy_disk_#%d.d88"), drive_num)), FILEIO_WRITE_BINARY);
 			}
 			if(fio->IsOpened()) {
 				if(pre_buffer) {

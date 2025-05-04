@@ -498,14 +498,14 @@ void IO::draw_screen()
 			int px = x * 6;
 			if(cursor_on && (cursor_blink & 0x20) && cursor_x == x && cursor_y == y) {
 				for(int l = 0; l < 8; l++) {
-					scrntype* dest = emu->screen_buffer(py + l);
+					scrntype* dest = emu->get_screen_buffer(py + l);
 					dest += px;
 					dest[0] = dest[1] = dest[2] = dest[3] = dest[4] = dest[5] = (l < 7) ? cb : cd;
 				}
 			} else {
 				for(int l = 0; l < 8; l++) {
 					uint8* src = &lcd[py + l][px];
-					scrntype* dest = emu->screen_buffer(py + l);
+					scrntype* dest = emu->get_screen_buffer(py + l);
 					dest += px;
 					dest[0] = src[0] ? cd : cb;
 					dest[1] = src[1] ? cd : cb;

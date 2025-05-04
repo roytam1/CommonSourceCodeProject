@@ -50,7 +50,7 @@ private:
 #ifndef _MZ80B
 	scrntype palette_color[8];
 #endif
-	scrntype palette_green[8];
+	scrntype palette_green[2];
 	uint8 font[0x800];
 	uint8 screen_txt[200][640];
 	uint8 screen_gra[200][640];

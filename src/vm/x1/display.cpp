@@ -413,13 +413,13 @@ void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
 	if(id == SIG_DISPLAY_VBLANK) {
 		if(!(data & mask)) {
 			// enter vblank
-			vblank_clock = current_clock();
+			vblank_clock = get_current_clock();
 		}
 	} else if(id == SIG_DISPLAY_COLUMN40) {
 		column40 = ((data & mask) != 0);
 	} else if(id == SIG_DISPLAY_DETECT_VBLANK) {
 		// hack: cpu detects vblank
-		vblank_clock = current_clock();
+		vblank_clock = get_current_clock();
 	}
 }
 
@@ -566,7 +566,7 @@ void DISPLAY::get_cur_code_line()
 //#else
 	#define ht_clock 250
 //#endif
-	int clock = passed_clock(vblank_clock);
+	int clock = get_passed_clock(vblank_clock);
 	int vt_line = vt_disp * ch_height + (int)(clock / ht_clock);
 	
 	int addr = (hz_total * (clock % ht_clock)) / ht_clock;
@@ -608,7 +608,7 @@ void DISPLAY::draw_screen()
 		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 400; y++) {
-				scrntype* dest = emu->screen_buffer(y);
+				scrntype* dest = emu->get_screen_buffer(y);
 				uint8* src_text = text[y];
 				uint8* src_cg = cg[y];
 				
@@ -619,7 +619,7 @@ void DISPLAY::draw_screen()
 		} else {
 			// 80 columns
 			for(int y = 0; y < 400; y++) {
-				scrntype* dest = emu->screen_buffer(y);
+				scrntype* dest = emu->get_screen_buffer(y);
 				uint8* src_text = text[y];
 				uint8* src_cg = cg[y];
 				
@@ -635,8 +635,8 @@ void DISPLAY::draw_screen()
 		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 200; y++) {
-				scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
-				scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
+				scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0);
+				scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1);
 				uint8* src_text = text[y];
 				uint8* src_cg = cg[y];
 				
@@ -652,8 +652,8 @@ void DISPLAY::draw_screen()
 		} else {
 			// 80 columns
 			for(int y = 0; y < 200; y++) {
-				scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
-				scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
+				scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0);
+				scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1);
 				uint8* src_text = text[y];
 				uint8* src_cg = cg[y];
 				

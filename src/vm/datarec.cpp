@@ -47,7 +47,7 @@ void DATAREC::initialize()
 void DATAREC::reset()
 {
 	close_tape();
-	pcm_prev_clock = current_clock();
+	pcm_prev_clock = get_current_clock();
 	pcm_positive_clocks = pcm_negative_clocks = 0;
 }
 
@@ -66,21 +66,21 @@ void DATAREC::write_signal(int id, uint32 data, uint32 mask)
 		if(out_signal != signal) {
 			if(rec && remote) {
 				if(out_signal) {
-					pcm_positive_clocks += passed_clock(pcm_prev_clock);
+					pcm_positive_clocks += get_passed_clock(pcm_prev_clock);
 				} else {
-					pcm_negative_clocks += passed_clock(pcm_prev_clock);
+					pcm_negative_clocks += get_passed_clock(pcm_prev_clock);
 				}
-				pcm_prev_clock = current_clock();
+				pcm_prev_clock = get_current_clock();
 				pcm_changed = 2;
 				signal_changed++;
 			}
 			if(prev_clock != 0) {
 				if(out_signal) {
-					positive_clocks += passed_clock(prev_clock);
+					positive_clocks += get_passed_clock(prev_clock);
 				} else {
-					negative_clocks += passed_clock(prev_clock);
+					negative_clocks += get_passed_clock(prev_clock);
 				}
-				prev_clock = current_clock();
+				prev_clock = get_current_clock();
 			}
 			out_signal = signal;
 		}
@@ -111,11 +111,11 @@ void DATAREC::event_callback(int event_id, int err)
 	if(event_id == EVENT_SIGNAL) {
 		if(play) {
 			if(ff_rew > 0) {
-				emu->out_message(_T("CMT: Fast Forward (%d %%)"), tape_position());
+				emu->out_message(_T("CMT: Fast Forward (%d %%)"), get_tape_position());
 			} else if(ff_rew < 0) {
-				emu->out_message(_T("CMT: Fast Rewind (%d %%)"), tape_position());
+				emu->out_message(_T("CMT: Fast Rewind (%d %%)"), get_tape_position());
 			} else {
-				emu->out_message(_T("CMT: Play (%d %%)"), tape_position());
+				emu->out_message(_T("CMT: Play (%d %%)"), get_tape_position());
 			}
 			bool signal = in_signal;
 			if(is_wav) {
@@ -169,11 +169,11 @@ void DATAREC::event_callback(int event_id, int err)
 			// notify the signal is changed
 			if(signal != in_signal) {
 				if(in_signal) {
-					pcm_positive_clocks += passed_clock(pcm_prev_clock);
+					pcm_positive_clocks += get_passed_clock(pcm_prev_clock);
 				} else {
-					pcm_negative_clocks += passed_clock(pcm_prev_clock);
+					pcm_negative_clocks += get_passed_clock(pcm_prev_clock);
 				}
-				pcm_prev_clock = current_clock();
+				pcm_prev_clock = get_current_clock();
 				pcm_changed = 2;
 				in_signal = signal;
 				signal_changed++;
@@ -212,9 +212,9 @@ void DATAREC::event_callback(int event_id, int err)
 			}
 		} else if(rec) {
 			if(out_signal) {
-				positive_clocks += passed_clock(prev_clock);
+				positive_clocks += get_passed_clock(prev_clock);
 			} else {
-				negative_clocks += passed_clock(prev_clock);
+				negative_clocks += get_passed_clock(prev_clock);
 			}
 			if(is_wav) {
 				if(positive_clocks != 0 || negative_clocks != 0) {
@@ -250,7 +250,7 @@ void DATAREC::event_callback(int event_id, int err)
 				}
 				buffer[buffer_ptr]++;
 			}
-			prev_clock = current_clock();
+			prev_clock = get_current_clock();
 			positive_clocks = negative_clocks = 0;
 		}
 	}
@@ -299,13 +299,13 @@ bool DATAREC::do_apss(int value)
 	
 	if(value > 0) {
 		if(play) {
-			emu->out_message(_T("CMT: APSS Forward (%d %%)"), tape_position());
+			emu->out_message(_T("CMT: APSS Forward (%d %%)"), get_tape_position());
 		} else {
 			emu->out_message(_T("CMT: APSS Forward"));
 		}
 	} else {
 		if(play) {
-			emu->out_message(_T("CMT: APSS Rewind (%d %%)"), tape_position());
+			emu->out_message(_T("CMT: APSS Rewind (%d %%)"), get_tape_position());
 		} else {
 			emu->out_message(_T("CMT: APSS Rewind"));
 		}
@@ -325,7 +325,7 @@ void DATAREC::update_event()
 				}
 				register_event(this, EVENT_SIGNAL, sample_usec, true, &register_id);
 			}
-			prev_clock = current_clock();
+			prev_clock = get_current_clock();
 			positive_clocks = negative_clocks = 0;
 		}
 	} else {
@@ -338,7 +338,7 @@ void DATAREC::update_event()
 				} else if(buffer_ptr <= 0) {
 					emu->out_message(_T("CMT: Stop (Beginning-of-Tape)"));
 				} else {
-					emu->out_message(_T("CMT: Stop (%d %%)"), tape_position());
+					emu->out_message(_T("CMT: Stop (%d %%)"), get_tape_position());
 				}
 			} else {
 				emu->out_message(_T("CMT: Stop"));
@@ -1363,9 +1363,9 @@ void DATAREC::mix(int32* buffer, int cnt)
 	if(config.tape_sound && pcm_changed && remote && (play || rec) && ff_rew == 0) {
 		bool signal = ((play && in_signal) || (rec && out_signal));
 		if(signal) {
-			pcm_positive_clocks += passed_clock(pcm_prev_clock);
+			pcm_positive_clocks += get_passed_clock(pcm_prev_clock);
 		} else {
-			pcm_negative_clocks += passed_clock(pcm_prev_clock);
+			pcm_negative_clocks += get_passed_clock(pcm_prev_clock);
 		}
 		int clocks = pcm_positive_clocks + pcm_negative_clocks;
 		int sample = clocks ? (pcm_max_vol * pcm_positive_clocks - pcm_max_vol * pcm_negative_clocks) / clocks : signal ? pcm_max_vol : -pcm_max_vol;
@@ -1395,7 +1395,7 @@ void DATAREC::mix(int32* buffer, int cnt)
 			}
 		}
 	}
-	pcm_prev_clock = current_clock();
+	pcm_prev_clock = get_current_clock();
 	pcm_positive_clocks = pcm_negative_clocks = 0;
 	
 #ifdef DATAREC_SOUND

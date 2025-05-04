@@ -43,7 +43,7 @@ void OSD::initialize_screen()
 	lpd3d9Surface = NULL;
 	lpd3d9OffscreenSurface = NULL;
 	
-	now_rec_video = false;
+	now_record_video = false;
 	pAVIStream = NULL;
 	pAVICompressed = NULL;
 	pAVIFile = NULL;
@@ -55,7 +55,7 @@ void OSD::initialize_screen()
 
 void OSD::release_screen()
 {
-	stop_rec_video();
+	stop_record_video();
 	
 	release_d3d9();
 	release_screen_buffer(&vm_screen_buffer);
@@ -131,9 +131,9 @@ void OSD::set_vm_screen_size(int screen_width, int screen_height, int window_wid
 		PostMessage(main_window_handle, WM_RESIZE, 0L, 0L);
 	}
 	if(vm_screen_buffer.width != vm_screen_width || vm_screen_buffer.height != vm_screen_height) {
-		if(now_rec_video) {
-			stop_rec_video();
-//			stop_rec_sound();
+		if(now_record_video) {
+			stop_record_video();
+//			stop_record_sound();
 		}
 		initialize_screen_buffer(&vm_screen_buffer, vm_screen_width, vm_screen_height, COLORONCOLOR);
 	}
@@ -147,15 +147,15 @@ scrntype* OSD::get_vm_screen_buffer(int y)
 int OSD::draw_screen()
 {
 	// check avi file recording timing
-	if(now_rec_video && rec_video_run_frames <= 0) {
+	if(now_record_video && rec_video_run_frames <= 0) {
 		return 0;
 	}
 	
 	// draw screen
 	if(vm_screen_buffer.width != vm_screen_width || vm_screen_buffer.height != vm_screen_height) {
-		if(now_rec_video) {
-			stop_rec_video();
-//			stop_rec_sound();
+		if(now_record_video) {
+			stop_record_video();
+//			stop_record_sound();
 		}
 		initialize_screen_buffer(&vm_screen_buffer, vm_screen_width, vm_screen_height, COLORONCOLOR);
 	}
@@ -315,7 +315,7 @@ int OSD::draw_screen()
 	first_draw_screen = self_invalidate = true;
 	
 	// record avi file
-	if(now_rec_video) {
+	if(now_record_video) {
 		return add_video_frames();
 	} else {
 		return 1;
@@ -381,10 +381,10 @@ void OSD::update_screen(HDC hdc)
 #else
 		for(int i = 0; i < vm->max_draw_ranges(); i++) { // for TK-80BS
 #endif
-			int x = ranges[i].x;
-			int y = ranges[i].y;
-			int w = ranges[i].width;
-			int h = ranges[i].height;
+			int x = vm_ranges[i].x;
+			int y = vm_ranges[i].y;
+			int w = vm_ranges[i].width;
+			int h = vm_ranges[i].height;
 			BitBlt(hdc, x, y, w, h, vm_screen_buffer.hdcDib, x, y, SRCCOPY);
 		}
 		first_invalidate = self_invalidate = false;
@@ -395,7 +395,7 @@ void OSD::update_screen(HDC hdc)
 		int dest_y = (host_window_height - draw_screen_height) / 2;
 #ifdef USE_ACCESS_LAMP
 		// get access lamps status of drives
-		int status = vm->access_lamp() & 7;
+		int status = vm->get_access_lamp_status() & 7;
 		static int prev_status = 0;
 		bool render_in = (status != 0);
 		bool render_out = (prev_status != status);
@@ -1136,7 +1136,7 @@ void OSD::capture_screen()
 	write_bitmap_to_file(&vm_screen_buffer, create_date_file_path(_T("png")));
 }
 
-bool OSD::start_rec_video(int fps)
+bool OSD::start_record_video(int fps)
 {
 	if(fps > 0) {
 		rec_video_fps = fps;
@@ -1164,7 +1164,7 @@ bool OSD::start_rec_video(int fps)
 	strhdr.dwSuggestedBufferSize = video_screen_buffer.lpDib->bmiHeader.biSizeImage;
 	SetRect(&strhdr.rcFrame, 0, 0, video_screen_buffer.width, video_screen_buffer.height);
 	if(AVIFileCreateStream(pAVIFile, &pAVIStream, &strhdr) != AVIERR_OK) {
-		stop_rec_video();
+		stop_record_video();
 		return false;
 	}
 	
@@ -1173,15 +1173,15 @@ bool OSD::start_rec_video(int fps)
 	pOpts[0] = &AVIOpts;
 	if(show_dialog && !AVISaveOptions(main_window_handle, ICMF_CHOOSE_KEYFRAME | ICMF_CHOOSE_DATARATE, 1, &pAVIStream, (LPAVICOMPRESSOPTIONS FAR *)&pOpts)) {
 		AVISaveOptionsFree(1, (LPAVICOMPRESSOPTIONS FAR *)&pOpts);
-		stop_rec_video();
+		stop_record_video();
 		return false;
 	}
 	if(AVIMakeCompressedStream(&pAVICompressed, pAVIStream, &AVIOpts, NULL) != AVIERR_OK) {
-		stop_rec_video();
+		stop_record_video();
 		return false;
 	}
 	if(AVIStreamSetFormat(pAVICompressed, 0, &video_screen_buffer.lpDib->bmiHeader, video_screen_buffer.lpDib->bmiHeader.biSize + video_screen_buffer.lpDib->bmiHeader.biClrUsed * sizeof(RGBQUAD)) != AVIERR_OK) {
-		stop_rec_video();
+		stop_record_video();
 		return false;
 	}
 	dwAVIFileSize = 0;
@@ -1196,11 +1196,11 @@ bool OSD::start_rec_video(int fps)
 	rec_video_thread_param.frames = 0;
 	rec_video_thread_param.result = 0;
 	
-	now_rec_video = true;
+	now_record_video = true;
 	return true;
 }
 
-void OSD::stop_rec_video()
+void OSD::stop_record_video()
 {
 	// release thread
 	if(hVideoThread != (HANDLE)0) {
@@ -1224,7 +1224,7 @@ void OSD::stop_rec_video()
 	pAVIFile = NULL;
 	
 	// repair header
-	if(now_rec_video) {
+	if(now_record_video) {
 		FILE* fp = NULL;
 		if((fp = _tfopen(video_file_path, _T("r+b"))) != NULL) {
 			// copy fccHandler
@@ -1238,15 +1238,15 @@ void OSD::stop_rec_video()
 			fclose(fp);
 		}
 	}
-	now_rec_video = false;
+	now_record_video = false;
 }
 
-void OSD::restart_rec_video()
+void OSD::restart_record_video()
 {
-	bool tmp = now_rec_video;
-	stop_rec_video();
+	bool tmp = now_record_video;
+	stop_record_video();
 	if(tmp) {
-		start_rec_video(-1);
+		start_record_video(-1);
 	}
 }
 
@@ -1287,7 +1287,7 @@ int OSD::add_video_frames()
 	
 #ifdef SUPPORT_VARIABLE_TIMING
 	static double prev_vm_fps = -1;
-	double vm_fps = vm->frame_rate();
+	double vm_fps = vm->get_frame_rate();
 	
 	if(prev_video_fps != rec_video_fps || prev_vm_fps != vm_fps) {
 		prev_video_fps = rec_video_fps;
@@ -1313,12 +1313,12 @@ int OSD::add_video_frames()
 			hVideoThread = (HANDLE)0;
 			
 			if(rec_video_thread_param.result == REC_VIDEO_FULL) {
-				stop_rec_video();
-				if(!start_rec_video(-1)) {
+				stop_record_video();
+				if(!start_record_video(-1)) {
 					return 0;
 				}
 			} else if(rec_video_thread_param.result == REC_VIDEO_ERROR) {
-				stop_rec_video();
+				stop_record_video();
 				return 0;
 			}
 		}
@@ -1328,7 +1328,7 @@ int OSD::add_video_frames()
 		rec_video_thread_param.frames += counter;
 		rec_video_thread_param.result = 0;
 		if((hVideoThread = (HANDLE)_beginthreadex(NULL, 0, rec_video_thread, &rec_video_thread_param, 0, NULL)) == (HANDLE)0) {
-			stop_rec_video();
+			stop_record_video();
 			return 0;
 		}
 	}

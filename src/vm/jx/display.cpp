@@ -215,8 +215,8 @@ void DISPLAY::draw_screen()
 	// copy to real screen
 	if((hires_mode & 3) == 1) {
 		for(int y = 0; y < 200; y++) {
-			scrntype* dest0 = emu->screen_buffer(y * 2 + 0);
-			scrntype* dest1 = emu->screen_buffer(y * 2 + 1);
+			scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0);
+			scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1);
 			uint8 *src = screen[y];
 			
 			if(width == 640) {
@@ -241,7 +241,7 @@ void DISPLAY::draw_screen()
 		emu->screen_skip_line(true);
 	} else {
 		for(int y = 0; y < 512; y++) {
-			scrntype* dest = emu->screen_buffer(y);
+			scrntype* dest = emu->get_screen_buffer(y);
 			uint8 *src = screen[y];
 			
 			if(width == 720) {
