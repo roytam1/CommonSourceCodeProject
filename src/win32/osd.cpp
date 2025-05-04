@@ -27,7 +27,6 @@ void OSD::initialize(int rate, int samples)
 	CoInitialize(NULL);
 	initialize_video();
 #endif
-	initialize_printer();
 #ifdef USE_SOCKET
 	initialize_socket();
 #endif
@@ -42,7 +41,6 @@ void OSD::release()
 	release_video();
 	CoUninitialize();
 #endif
-	release_printer();
 #ifdef USE_SOCKET
 	release_socket();
 #endif

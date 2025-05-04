@@ -106,7 +106,7 @@ private:
 	YM2203 *d_sb2;
 #endif
 	Z80 *d_cpu;
-	DEVICE *d_pcm, *d_pio, *d_rtc, *d_sio;
+	DEVICE *d_pcm, *d_pio, *d_prn, *d_rtc, *d_sio;
 #ifdef SUPPORT_PC88_PCG8100
 	DEVICE *d_pcg_pit, *d_pcg_pcm0, *d_pcg_pcm1, *d_pcg_pcm2;
 #endif
@@ -318,6 +318,10 @@ public:
 	void set_context_pio(DEVICE* device)
 	{
 		d_pio = device;
+	}
+	void set_context_prn(DEVICE* device)
+	{
+		d_prn = device;
 	}
 	void set_context_rtc(DEVICE* device)
 	{

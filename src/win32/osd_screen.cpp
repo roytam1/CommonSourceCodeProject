@@ -24,17 +24,17 @@ void OSD::initialize_screen()
 	vm_screen_width_aspect = SCREEN_WIDTH_ASPECT;
 	vm_screen_height_aspect = SCREEN_HEIGHT_ASPECT;
 	
-	memset(&vm_screen_buffer, 0, sizeof(screen_buffer_t));
+	memset(&vm_screen_buffer, 0, sizeof(bitmap_t));
 #ifdef USE_CRT_FILTER
-	memset(&filtered_screen_buffer, 0, sizeof(screen_buffer_t));
-	memset(&tmp_filtered_screen_buffer, 0, sizeof(screen_buffer_t));
+	memset(&filtered_screen_buffer, 0, sizeof(bitmap_t));
+	memset(&tmp_filtered_screen_buffer, 0, sizeof(bitmap_t));
 #endif
 #ifdef USE_SCREEN_ROTATE
-	memset(&rotated_screen_buffer, 0, sizeof(screen_buffer_t));
+	memset(&rotated_screen_buffer, 0, sizeof(bitmap_t));
 #endif
-	memset(&stretched_screen_buffer, 0, sizeof(screen_buffer_t));
-	memset(&shrinked_screen_buffer, 0, sizeof(screen_buffer_t));
-	memset(&video_screen_buffer, 0, sizeof(screen_buffer_t));
+	memset(&stretched_screen_buffer, 0, sizeof(bitmap_t));
+	memset(&shrinked_screen_buffer, 0, sizeof(bitmap_t));
+	memset(&video_screen_buffer, 0, sizeof(bitmap_t));
 	
 	lpd3d9 = NULL;
 	lpd3d9Device = NULL;
@@ -434,7 +434,7 @@ quit:
 #endif
 }
 
-void OSD::initialize_screen_buffer(screen_buffer_t *buffer, int width, int height, int mode)
+void OSD::initialize_screen_buffer(bitmap_t *buffer, int width, int height, int mode)
 {
 	release_screen_buffer(buffer);
 	
@@ -477,7 +477,7 @@ void OSD::initialize_screen_buffer(screen_buffer_t *buffer, int width, int heigh
 	buffer->height = height;
 }
 
-void OSD::release_screen_buffer(screen_buffer_t *buffer)
+void OSD::release_screen_buffer(bitmap_t *buffer)
 {
 	if(!(buffer->width == 0 && buffer->height == 0)) {
 		if(buffer->hdcDib != NULL && buffer->hOldBmp != NULL) {
@@ -496,7 +496,7 @@ void OSD::release_screen_buffer(screen_buffer_t *buffer)
 			buffer->hdcDib = NULL;
 		}
 	}
-	memset(buffer, 0, sizeof(screen_buffer_t));
+	memset(buffer, 0, sizeof(bitmap_t));
 }
 
 #ifdef USE_CRT_FILTER
@@ -507,7 +507,7 @@ void OSD::release_screen_buffer(screen_buffer_t *buffer)
 static uint8 r0[2048], g0[2048], b0[2048], t0[2048];
 static uint8 r1[2048], g1[2048], b1[2048];
 
-void OSD::apply_crt_fileter_to_screen_buffer(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::apply_crt_fileter_to_screen_buffer(bitmap_t *source, bitmap_t *dest)
 {
 	if(source->width * 6 == dest->width && source->height * 6 == dest->height) {
 		// FM-77AV: 320x200 -> 640x400 -> 1920x1200
@@ -561,7 +561,7 @@ void OSD::apply_crt_fileter_to_screen_buffer(screen_buffer_t *source, screen_buf
 	}
 }
 
-void OSD::apply_crt_filter_x3_y3(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::apply_crt_filter_x3_y3(bitmap_t *source, bitmap_t *dest)
 {
 	if(!screen_skip_line) {
 		for(int y = 0, yy = 0; y < source->height; y++, yy += 3) {
@@ -639,7 +639,7 @@ void OSD::apply_crt_filter_x3_y3(screen_buffer_t *source, screen_buffer_t *dest)
 	}
 }
 
-void OSD::apply_crt_filter_x3_y2(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::apply_crt_filter_x3_y2(bitmap_t *source, bitmap_t *dest)
 {
 	if(!screen_skip_line) {
 		for(int y = 0, yy = 0; y < source->height; y++, yy += 2) {
@@ -714,7 +714,7 @@ void OSD::apply_crt_filter_x3_y2(screen_buffer_t *source, screen_buffer_t *dest)
 	}
 }
 
-void OSD::apply_crt_filter_x2_y3(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::apply_crt_filter_x2_y3(bitmap_t *source, bitmap_t *dest)
 {
 	if(!screen_skip_line) {
 		for(int y = 0, yy = 0; y < source->height; y++, yy += 3) {
@@ -786,7 +786,7 @@ void OSD::apply_crt_filter_x2_y3(screen_buffer_t *source, screen_buffer_t *dest)
 	}
 }
 
-void OSD::apply_crt_filter_x2_y2(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::apply_crt_filter_x2_y2(bitmap_t *source, bitmap_t *dest)
 {
 	if(!screen_skip_line) {
 		for(int y = 0, yy = 0; y < source->height; y++, yy += 2) {
@@ -855,7 +855,7 @@ void OSD::apply_crt_filter_x2_y2(screen_buffer_t *source, screen_buffer_t *dest)
 	}
 }
 
-void OSD::apply_crt_filter_x1_y1(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::apply_crt_filter_x1_y1(bitmap_t *source, bitmap_t *dest)
 {
 	if(!screen_skip_line) {
 		for(int y = 0; y < source->height; y++) {
@@ -911,7 +911,7 @@ void OSD::apply_crt_filter_x1_y1(screen_buffer_t *source, screen_buffer_t *dest)
 #endif
 
 #ifdef USE_SCREEN_ROTATE
-void OSD::rotate_screen_buffer(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::rotate_screen_buffer(bitmap_t *source, bitmap_t *dest)
 {
 	if(config.rotate_type == 1) {
 		// turn right 90deg
@@ -954,7 +954,7 @@ void OSD::rotate_screen_buffer(screen_buffer_t *source, screen_buffer_t *dest)
 }
 #endif
 
-void OSD::stretch_screen_buffer(screen_buffer_t *source, screen_buffer_t *dest)
+void OSD::stretch_screen_buffer(bitmap_t *source, bitmap_t *dest)
 {
 	if((dest->width % source->width) == 0 && (dest->height % source->height) == 0) {
 		// faster than StretchBlt()
@@ -1038,7 +1038,7 @@ bool OSD::initialize_d3d9()
 	return false;
 }
 
-bool OSD::initialize_d3d9_surface(screen_buffer_t *buffer)
+bool OSD::initialize_d3d9_surface(bitmap_t *buffer)
 {
 	release_d3d9_surface();
 	
@@ -1083,7 +1083,7 @@ void OSD::release_d3d9_surface()
 	}
 }
 
-void OSD::copy_to_d3d9_surface(screen_buffer_t *buffer)
+void OSD::copy_to_d3d9_surface(bitmap_t *buffer)
 {
 	if(lpd3d9OffscreenSurface != NULL) {
 		// lock offscreen surface
@@ -1105,21 +1105,6 @@ void OSD::copy_to_d3d9_surface(screen_buffer_t *buffer)
 		}
 	}
 	
-}
-
-void OSD::capture_screen()
-{
-	// create bitmap
-	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
-	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-	bmFileHeader.bfSize = bmFileHeader.bfOffBits + vm_screen_buffer.lpDib->bmiHeader.biSizeImage;
-	
-	DWORD dwSize;
-	HANDLE hFile = CreateFile(create_date_file_path(_T("bmp")), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwSize, NULL);
-	WriteFile(hFile, vm_screen_buffer.lpDib, sizeof(BITMAPINFOHEADER), &dwSize, NULL);
-	WriteFile(hFile, vm_screen_buffer.lpBmp, vm_screen_buffer.lpDib->bmiHeader.biSizeImage, &dwSize, NULL);
-	CloseHandle(hFile);
 }
 
 bool OSD::start_rec_video(int fps)
@@ -1319,5 +1304,86 @@ int OSD::add_video_frames()
 		}
 	}
 	return counter;
+}
+
+#ifdef USE_PRINTER
+void OSD::create_font(font_t *font, const _TCHAR *family, int width, int height, bool bold, bool italic)
+{
+	LOGFONT logfont;
+	logfont.lfEscapement = 0;
+	logfont.lfOrientation = 0;
+	logfont.lfWeight = (font->bold = bold) ? FW_BOLD : FW_NORMAL;
+	logfont.lfItalic = (font->italic = italic) ? TRUE : FALSE;
+	logfont.lfUnderline = FALSE;
+	logfont.lfStrikeOut = FALSE;
+	logfont.lfCharSet = SHIFTJIS_CHARSET;
+	logfont.lfOutPrecision = OUT_TT_PRECIS;
+	logfont.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+	logfont.lfQuality = DEFAULT_QUALITY; 
+	logfont.lfPitchAndFamily = FIXED_PITCH | FF_DONTCARE;
+	if(_tcsicmp(family, _T("Gothic")) == 0) {
+		my_strcpy_s(logfont.lfFaceName, LF_FACESIZE, "MS Gothic");
+		my_tcscpy_s(font->family, 64, _T("Gothic"));
+	} else if(_tcsicmp(family, _T("Mincho")) == 0) {
+		my_strcpy_s(logfont.lfFaceName, LF_FACESIZE, "MS Mincho");
+		my_tcscpy_s(font->family, 64, _T("Mincho"));
+	} else {
+		my_strcpy_s(logfont.lfFaceName, LF_FACESIZE, "MS Gothic");
+		my_tcscpy_s(font->family, 64, _T("Gothic"));
+	}
+	logfont.lfHeight = font->height = height;
+	logfont.lfWidth = font->width = width;
+	font->hFont = CreateFontIndirect(&logfont);
+}
+
+void OSD::release_font(font_t *font)
+{
+	DeleteObject(font->hFont);
+}
+
+void OSD::create_pen(pen_t *pen, int width, uint8 r, uint8 g, uint8 b)
+{
+	pen->hPen = CreatePen(PS_SOLID, (pen->width = width), RGB((pen->r = r), (pen->g = g), (pen->b = b)));
+}
+
+void OSD::release_pen(pen_t *pen)
+{
+	DeleteObject(pen->hPen);
+}
+
+void OSD::draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length)
+{
+	HFONT hFontOld = (HFONT)SelectObject(bitmap->hdcDib, font->hFont);
+	ExtTextOut(bitmap->hdcDib, x, y, NULL, NULL, text, length, NULL);
+	SelectObject(bitmap->hdcDib, hFontOld);
+}
+
+void OSD::draw_line_to_bitmap(bitmap_t *bitmap, pen_t *pen, int sx, int sy, int ex, int ey)
+{
+	HPEN hPenOld = (HPEN)SelectObject(bitmap->hdcDib, pen->hPen);
+	MoveToEx(bitmap->hdcDib, sx, sy, NULL);
+	LineTo(bitmap->hdcDib, ex, ey);
+	SelectObject(bitmap->hdcDib, hPenOld);
+}
+
+void OSD::stretch_bitmap(bitmap_t *source, bitmap_t *dest)
+{
+	StretchBlt(dest->hdcDib, 0, 0, dest->width, dest->height, source->hdcDib, 0, 0, source->width, source->height, SRCCOPY);
+}
+#endif
+
+void OSD::write_bitmap_to_file(bitmap_t *bitmap)
+{
+	// create bitmap
+	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
+	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+	bmFileHeader.bfSize = bmFileHeader.bfOffBits + bitmap->lpDib->bmiHeader.biSizeImage;
+	
+	DWORD dwSize;
+	HANDLE hFile = CreateFile(create_date_file_path(_T("bmp")), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwSize, NULL);
+	WriteFile(hFile, bitmap->lpDib, sizeof(BITMAPINFOHEADER), &dwSize, NULL);
+	WriteFile(hFile, bitmap->lpBmp, bitmap->lpDib->bmiHeader.biSizeImage, &dwSize, NULL);
+	CloseHandle(hFile);
 }
 

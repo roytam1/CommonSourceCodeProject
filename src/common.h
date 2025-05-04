@@ -524,7 +524,9 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 #endif
 
 // rgb color
-#define _RGB888
+#if !defined(_RGB555) && !defined(_RGB565) && !defined(_RGB888)
+	#define _RGB888
+#endif
 
 #if defined(_RGB555) || defined(_RGB565)
 	typedef uint16 scrntype;

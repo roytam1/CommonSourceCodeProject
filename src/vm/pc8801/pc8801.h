@@ -96,6 +96,7 @@
 #define USE_SOUND_DEVICE_TYPE	2
 #endif
 #endif
+#define USE_PRINTER
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -130,6 +131,7 @@ protected:
 	// devices
 	EVENT* pc88event;
 	
+	DEVICE* pc88prn;
 	I8251* pc88sio;
 	I8255* pc88pio;
 	PCM1BIT* pc88pcm;

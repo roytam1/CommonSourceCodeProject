@@ -91,6 +91,7 @@
 #define USE_SCANLINE
 #endif
 #define USE_ACCESS_LAMP
+#define USE_PRINTER
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -125,7 +126,6 @@ class FLOPPY;
 #endif
 class JOYSTICK;
 class MEMORY;
-class PRINTER;
 class PSUB;
 class SUB;
 class TIMER;
@@ -139,6 +139,7 @@ protected:
 	// devices
 	EVENT* event;
 	
+	DEVICE* printer;
 	I8255* pio_sub;
 	IO* io;
 	YM2203* psg;
@@ -154,7 +155,6 @@ protected:
 #endif
 	JOYSTICK* joystick;
 	MEMORY* memory;
-	PRINTER *printer;
 	PSUB* psub;
 	TIMER* timer;
 	

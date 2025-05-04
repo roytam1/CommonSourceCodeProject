@@ -47,6 +47,7 @@
 #endif
 
 // device informations for win32
+#define USE_DIPSWITCH
 #define USE_TAPE
 #define USE_TAPE_BUTTON
 #define NOTIFY_KEY_DOWN
@@ -85,7 +86,6 @@ class LS393;
 class PCM1BIT;
 class Z80;
 
-class DISPLAY;
 class KEYBOARD;
 class MEMORY;
 
@@ -117,7 +117,6 @@ protected:
 	PCM1BIT* pcm;
 	Z80* cpu;
 	
-	DISPLAY* display;
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	

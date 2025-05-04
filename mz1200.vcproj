@@ -421,26 +421,6 @@
 						</FileConfiguration>
 					</File>
 					<File
-						RelativePath="src\win32\osd_printer.cpp"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions=""
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								PreprocessorDefinitions=""
-							/>
-						</FileConfiguration>
-					</File>
-					<File
 						RelativePath="src\win32\osd_screen.cpp"
 						>
 						<FileConfiguration
@@ -712,26 +692,6 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\vm\mz80k\display.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="src\vm\mz80k\keyboard.cpp"
 					>
 					<FileConfiguration
@@ -916,10 +876,6 @@
 				Name="VM Driver Header Files"
 				Filter="h"
 				>
-				<File
-					RelativePath="src\vm\mz80k\display.h"
-					>
-				</File>
 				<File
 					RelativePath="src\vm\mz80k\keyboard.h"
 					>
