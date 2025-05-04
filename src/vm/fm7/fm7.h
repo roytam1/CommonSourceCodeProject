@@ -26,6 +26,7 @@
 
 #define SCREEN_WIDTH 640 
 #define SCREEN_HEIGHT 400
+#define SCREEN_WIDTH_ASPECT 640 
 //#define SCREEN_HEIGHT_ASPECT 480
 #define SCREEN_HEIGHT_ASPECT 400
 #define WINDOW_WIDTH_ASPECT 640 
@@ -75,7 +76,9 @@
 //#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
+#ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	3
+#endif
 
 #elif defined(_FM77L4)
 #define DEVICE_NAME		"FUJITSU FM-77L4"
@@ -88,7 +91,9 @@
 //#define CAPABLE_KANJI_CLASS2
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
+#ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	3
+#endif
 
 #elif defined(_FM77AV)
 #define DEVICE_NAME		"FUJITSU FM77AV"
@@ -126,7 +131,9 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
+#ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	12
+#endif
 
 #elif defined(_FM77AV40EX)
 #define DEVICE_NAME		"FUJITSU FM77AV40EX"
@@ -138,7 +145,9 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
+#ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	12
+#endif
 
 #elif defined(_FM77AV40SX)
 #define DEVICE_NAME		"FUJITSU FM77AV40SX"
@@ -150,7 +159,9 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
+#ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	12
+#endif
 
 #endif
 

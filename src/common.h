@@ -19,7 +19,7 @@
 		#define SUPPORT_TCHAR_TYPE
 	#endif
 	#if _MSC_VER >= 1400
-//		#define SUPPORT_SECURE_FUNCTIONS
+		#define SUPPORT_SECURE_FUNCTIONS
 		// disable warnings for Microsoft Visual C++ 2005 or later
 		#pragma warning( disable : 4819 )
 		//#pragma warning( disable : 4995 )
@@ -27,17 +27,30 @@
 	#endif
 #endif
 
+#ifdef SUPPORT_TCHAR_TYPE
+#include <tchar.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
 #ifdef _MSC_VER
 #include <windows.h>
 #include <windowsx.h>
 #include <mmsystem.h>
 #include <process.h>
 #endif
-#ifdef SUPPORT_TCHAR_TYPE
-#include <tchar.h>
+
+#ifdef _USE_QT
+#ifdef _USE_QT5
+#include <QString>
+#include <QFile>
+#include <QtEndian>
+#else
+#include <QtCore/QString>
+#include <QtCore/QFile>
 #endif
-#include <stdio.h>
-#include <errno.h>
+#endif
 
 // endian
 #if !defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)
@@ -205,6 +218,12 @@
 	#ifndef BOOL
 		typedef int BOOL;
 	#endif
+	#ifndef TRUE
+		#define TRUE 1
+	#endif
+	#ifndef FALSE
+		#define FALSE 0
+	#endif
 	#ifndef BYTE
 		#if defined(uint8_t)
 			typedef uint8_t BYTE;
@@ -357,19 +376,25 @@ typedef union {
 
 } pair;
 
-// max/min from WinDef.h
-#ifndef max
-	#define MAX_MACRO_NOT_DEFINED
+inline uint32 EndianToLittle_DWORD(uint32 x);
+inline uint16 EndianToLittle_WORD(uint16 x);
+
+// max/min
+#ifndef _MSC_VER
+	#undef max
+	#undef min
 	inline int max(int a, int b);
 	inline unsigned int max(unsigned int a, unsigned int b);
-#endif
-#ifndef min
-	#define MIN_MACRO_NOT_DEFINED
 	inline int min(int a, int b);
 	inline unsigned int min(unsigned int a, unsigned int b);
 #endif
 
-// _TCHAR
+// string
+#if defined(__GNUC__) || defined(__CYGWIN__) || defined(Q_OS_CYGWIN)
+	#define stricmp(a,b) strcasecmp(a,b)
+	#define strnicmp(a,b,n) strncasecmp(a,b,n)
+#endif
+
 #ifndef SUPPORT_TCHAR_TYPE
 	#ifndef _tfopen
 		#define _tfopen fopen
@@ -427,7 +452,6 @@ typedef union {
 	#define _TEXT(x) __T(x)
 #endif
 
-// secture functions
 #ifndef SUPPORT_SECURE_FUNCTIONS
 	#ifndef errno_t
 		typedef int errno_t;
@@ -455,6 +479,7 @@ typedef union {
 	#define my_vstprintf_s _vstprintf_s
 #endif
 
+// ini file parser
 #ifndef _MSC_VER
 	BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpString, LPCTSTR lpFileName);
 	DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName);
@@ -463,6 +488,12 @@ typedef union {
 	#define MyWritePrivateProfileString WritePrivateProfileString
 	#define MyGetPrivateProfileString GetPrivateProfileString
 	#define MyGetPrivateProfileInt GetPrivateProfileInt
+#endif
+
+// win32 api
+#ifndef _MSC_VER
+	#define ZeroMemory(p,s) memset(p,0x00,s)
+	#define CopyMemory(t,f,s) memcpy(t,f,s)
 #endif
 
 // rgb color

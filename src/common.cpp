@@ -14,7 +14,30 @@
 
 #pragma comment(lib, "shlwapi.lib")
 
-#ifdef MAX_MACRO_NOT_DEFINED
+inline uint32 EndianToLittle_DWORD(uint32 x)
+{
+#if defined(__LITTLE_ENDIAN__)
+	return x;
+#else
+	uint32 y;
+	y = ((x & 0x000000ff) << 24) | ((x & 0x0000ff00) << 8) |
+	    ((x & 0x00ff0000) >> 8)  | ((x & 0xff000000) >> 24);
+	return y;
+#endif
+}
+
+inline uint16 EndianToLittle_WORD(uint16 x)
+{
+#if defined(__LITTLE_ENDIAN__)
+	return x;
+#else
+	uint16 y;
+	y = ((x & 0x00ff) << 8) | ((x & 0xff00) >> 8);
+	return y;
+#endif
+}
+
+#ifndef _MSC_VER
 inline int max(int a, int b)
 {
 	if(a > b) {
@@ -31,9 +54,6 @@ inline unsigned int max(unsigned int a, unsigned int b)
 		return b;
 	}
 }
-#endif
-
-#ifdef MIN_MACRO_NOT_DEFINED
 inline int min(int a, int b)
 {
 	if(a < b) {

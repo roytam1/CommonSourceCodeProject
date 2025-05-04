@@ -225,6 +225,7 @@ private:
 	screen_buffer_t vm_screen_buffer;
 #ifdef USE_CRT_FILTER
 	screen_buffer_t filtered_screen_buffer;
+	screen_buffer_t tmp_filtered_screen_buffer;
 #endif
 #ifdef USE_SCREEN_ROTATE
 	screen_buffer_t rotated_screen_buffer;
