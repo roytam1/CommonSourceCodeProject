@@ -35,6 +35,7 @@
 #define USE_SOUND_VOLUME	4
 #define USE_JOYSTICK
 #define USE_JOY_BUTTON_CAPTIONS
+#define USE_DEBUGGER
 #define USE_STATE
 
 #include "../../common.h"
@@ -126,6 +127,11 @@ public:
 	// drive virtual machine
 	void reset();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();
