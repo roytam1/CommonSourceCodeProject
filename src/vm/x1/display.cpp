@@ -59,7 +59,7 @@ void DISPLAY::initialize()
 	}
 	for(int ofs = 0x1000; ofs < 0x4bc00; ofs += 32) {
 		// LRLR.. -> LL..RR..
-		uint8 buf[32];
+		uint8_t buf[32];
 		for(int i = 0; i < 16; i++) {
 			buf[i     ] = kanji[ofs + i * 2    ];
 			buf[i + 16] = kanji[ofs + i * 2 + 1];
@@ -134,7 +134,7 @@ void DISPLAY::reset()
 	kanji_ptr = &kanji[0];
 }
 
-void DISPLAY::write_io8(uint32 addr, uint32 data)
+void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr & 0xff00) {
 	case 0x0e00:
@@ -299,7 +299,7 @@ void DISPLAY::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-uint32 DISPLAY::read_io8(uint32 addr)
+uint32_t DISPLAY::read_io8(uint32_t addr)
 {
 	switch(addr & 0xff00) {
 	case 0x0e00:
@@ -404,7 +404,7 @@ uint32 DISPLAY::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void DISPLAY::write_signal(int id, uint32 data, uint32 mask)
+void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	if(id == SIG_DISPLAY_VBLANK) {
 		if(!(data & mask)) {
@@ -475,9 +475,9 @@ void DISPLAY::update_crtc()
 
 void DISPLAY::update_pal()
 {
-	uint8 pal2[8];
+	uint8_t pal2[8];
 	for(int i = 0; i < 8; i++) {
-		uint8 bit = 1 << i;
+		uint8_t bit = 1 << i;
 		pal2[i] = ((pal[0] & bit) ? 1 : 0) | ((pal[1] & bit) ? 2 : 0) | ((pal[2] & bit) ? 4 : 0) | 8;
 	}
 #ifdef _X1TURBO_FEATURE
@@ -501,7 +501,7 @@ void DISPLAY::update_pal()
 	}
 }
 
-uint8 DISPLAY::get_cur_font(uint32 addr)
+uint8_t DISPLAY::get_cur_font(uint32_t addr)
 {
 #ifdef _X1TURBO_FEATURE
 	if(mode1 & 0x20) {
@@ -509,7 +509,7 @@ uint8 DISPLAY::get_cur_font(uint32 addr)
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		
 		// from X1EMU
-		uint16 vaddr;
+		uint16_t vaddr;
 		if(!(vram_a[0x7ff] & 0x20)) {
 			vaddr = 0x7ff;
 		} else if(!(vram_a[0x3ff] & 0x20)) {
@@ -521,11 +521,11 @@ uint8 DISPLAY::get_cur_font(uint32 addr)
 		} else {
 			vaddr = 0x3ff;
 		}
-		uint16 ank = vram_t[vaddr];
-		uint16 knj = vram_k[vaddr];
+		uint16_t ank = vram_t[vaddr];
+		uint16_t knj = vram_k[vaddr];
 		
 		if(knj & 0x80) {
-			uint32 ofs = adr2knj_x1t((knj << 8) | ank);
+			uint32_t ofs = adr2knj_x1t((knj << 8) | ank);
 			if(knj & 0x40) {
 				ofs += 16; // right
 			}
@@ -541,7 +541,7 @@ uint8 DISPLAY::get_cur_font(uint32 addr)
 	return font[(cur_code << 3) | (cur_line & 7)];
 }
 
-void DISPLAY::get_cur_pcg(uint32 addr)
+void DISPLAY::get_cur_pcg(uint32_t addr)
 {
 #ifdef _X1TURBO_FEATURE
 	if(mode1 & 0x20) {
@@ -549,7 +549,7 @@ void DISPLAY::get_cur_pcg(uint32 addr)
 		d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 		
 		// from X1EMU
-		uint16 vaddr;
+		uint16_t vaddr;
 		if(vram_a[0x7ff] & 0x20) {
 			vaddr = 0x7ff;
 		} else if(vram_a[0x3ff] & 0x20) {
@@ -622,9 +622,9 @@ void DISPLAY::draw_screen()
 		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 400; y++) {
-				scrntype* dest = emu->get_screen_buffer(y);
-				uint8* src_text = text[y];
-				uint8* src_cg = cg[y];
+				scrntype_t* dest = emu->get_screen_buffer(y);
+				uint8_t* src_text = text[y];
+				uint8_t* src_cg = cg[y];
 				
 				for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 					dest[x2] = dest[x2 + 1] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
@@ -633,9 +633,9 @@ void DISPLAY::draw_screen()
 		} else {
 			// 80 columns
 			for(int y = 0; y < 400; y++) {
-				scrntype* dest = emu->get_screen_buffer(y);
-				uint8* src_text = text[y];
-				uint8* src_cg = cg[y];
+				scrntype_t* dest = emu->get_screen_buffer(y);
+				uint8_t* src_text = text[y];
+				uint8_t* src_cg = cg[y];
 				
 				for(int x = 0; x < 640; x++) {
 					dest[x] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
@@ -649,35 +649,35 @@ void DISPLAY::draw_screen()
 		if(column40) {
 			// 40 columns
 			for(int y = 0; y < 200; y++) {
-				scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0);
-				scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1);
-				uint8* src_text = text[y];
-				uint8* src_cg = cg[y];
+				scrntype_t* dest0 = emu->get_screen_buffer(y * 2 + 0);
+				scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
+				uint8_t* src_text = text[y];
+				uint8_t* src_cg = cg[y];
 				
 				for(int x = 0, x2 = 0; x < 320; x++, x2 += 2) {
 					dest0[x2] = dest0[x2 + 1] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
 				}
 				if(!config.scan_line) {
-					memcpy(dest1, dest0, 640 * sizeof(scrntype));
+					memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 				} else {
-					memset(dest1, 0, 640 * sizeof(scrntype));
+					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				}
 			}
 		} else {
 			// 80 columns
 			for(int y = 0; y < 200; y++) {
-				scrntype* dest0 = emu->get_screen_buffer(y * 2 + 0);
-				scrntype* dest1 = emu->get_screen_buffer(y * 2 + 1);
-				uint8* src_text = text[y];
-				uint8* src_cg = cg[y];
+				scrntype_t* dest0 = emu->get_screen_buffer(y * 2 + 0);
+				scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
+				uint8_t* src_text = text[y];
+				uint8_t* src_cg = cg[y];
 				
 				for(int x = 0; x < 640; x++) {
 					dest0[x] = palette_pc[pri_line[y][src_cg[x]][src_text[x]]];
 				}
 				if(!config.scan_line) {
-					memcpy(dest1, dest0, 640 * sizeof(scrntype));
+					memcpy(dest1, dest0, 640 * sizeof(scrntype_t));
 				} else {
-					memset(dest1, 0, 640 * sizeof(scrntype));
+					memset(dest1, 0, 640 * sizeof(scrntype_t));
 				}
 			}
 		}
@@ -690,27 +690,27 @@ void DISPLAY::draw_screen()
 void DISPLAY::draw_text(int y)
 {
 	int width = column40 ? 40 : 80;
-	uint16 src = st_addr + hz_disp * y;
+	uint16_t src = st_addr + hz_disp * y;
 	
 	bool cur_vert_double = true;
-	uint8 prev_attr = 0, prev_pattern_b[32], prev_pattern_r[32], prev_pattern_g[32];
+	uint8_t prev_attr = 0, prev_pattern_b[32], prev_pattern_r[32], prev_pattern_g[32];
 	
 	for(int x = 0; x < hz_disp && x < width; x++) {
 		src &= 0x7ff;
-		uint8 code = vram_t[src];
+		uint8_t code = vram_t[src];
 #ifdef _X1TURBO_FEATURE
-		uint8 knj = vram_k[src];
+		uint8_t knj = vram_k[src];
 #endif
-		uint8 attr = vram_a[src];
+		uint8_t attr = vram_a[src];
 		src++;
 		
-		uint8 col = attr & 7;
+		uint8_t col = attr & 7;
 		bool reverse = ((attr & 8) != 0);
 		bool blink = ((attr & 0x10) && (cblink & 0x20));
 		reverse = (reverse != blink);
 		
 		// select pcg or ank
-		const uint8 *pattern_b, *pattern_r, *pattern_g;
+		const uint8_t *pattern_b, *pattern_r, *pattern_g;
 #ifdef _X1TURBO_FEATURE
 		int shift = 0;
 		int max_line = 8;
@@ -736,7 +736,7 @@ void DISPLAY::draw_text(int y)
 #endif
 #ifdef _X1TURBO_FEATURE
 		} else if(knj & 0x80) {
-			uint32 ofs = adr2knj_x1t((knj << 8) | code);
+			uint32_t ofs = adr2knj_x1t((knj << 8) | code);
 			if(knj & 0x40) {
 				ofs += 16; // right
 			}
@@ -761,7 +761,7 @@ void DISPLAY::draw_text(int y)
 		
 		// render character
 		for(int l = 0; l < ch_height; l++) {
-			uint8 b, r, g;
+			uint8_t b, r, g;
 			int line = cur_vert_double ? raster + (l >> 1) : l;
 #ifdef _X1TURBO_FEATURE
 			if(shift == 1) {
@@ -804,7 +804,7 @@ void DISPLAY::draw_text(int y)
 #endif
 				break;
 			}
-			uint8* d = &text[yy][x << 3];
+			uint8_t* d = &text[yy][x << 3];
 			
 			if(attr & 0x80) {
 				// horizontal doubled char
@@ -862,10 +862,10 @@ void DISPLAY::draw_cg(int line)
 	
 	for(int x = 0; x < hz_disp && x < width; x++) {
 		src &= 0x7ff;
-		uint8 b = vram_ptr[ofs_b | src];
-		uint8 r = vram_ptr[ofs_r | src];
-		uint8 g = vram_ptr[ofs_g | src++];
-		uint8* d = &cg[line][x << 3];
+		uint8_t b = vram_ptr[ofs_b | src];
+		uint8_t r = vram_ptr[ofs_r | src];
+		uint8_t g = vram_ptr[ofs_g | src++];
+		uint8_t* d = &cg[line][x << 3];
 		
 		d[0] = ((b & 0x80) >> 7) | ((r & 0x80) >> 6) | ((g & 0x80) >> 5);
 		d[1] = ((b & 0x40) >> 6) | ((r & 0x40) >> 5) | ((g & 0x40) >> 4);
@@ -880,7 +880,7 @@ void DISPLAY::draw_cg(int line)
 
 // kanji rom (from X1EMU by KM)
 
-void DISPLAY::write_kanji(uint32 addr, uint32 data)
+void DISPLAY::write_kanji(uint32_t addr, uint32_t data)
 {
 	switch(addr) {
 	case 0xe80:
@@ -896,12 +896,12 @@ void DISPLAY::write_kanji(uint32 addr, uint32 data)
 	}
 }
 
-uint32 DISPLAY::read_kanji(uint32 addr)
+uint32_t DISPLAY::read_kanji(uint32_t addr)
 {
 	switch(addr) {
 	case 0xe80:
 		if(kaddr & 0xff00) {
-			uint32 val = kanji_ptr[kofs];
+			uint32_t val = kanji_ptr[kofs];
 			kflag |= 1;
 			if(kflag == 3) {
 				kofs = (kofs + 1) & 15;
@@ -912,7 +912,7 @@ uint32 DISPLAY::read_kanji(uint32 addr)
 		return jis2adr_x1(kaddr << 8) >> 8;
 	case 0xe81:
 		if(kaddr & 0xff00) {
-			uint32 val = kanji_ptr[kofs + 16];
+			uint32_t val = kanji_ptr[kofs + 16];
 			kflag |= 2;
 			if(kflag == 3) {
 				kofs = (kofs + 1) & 15;
@@ -925,9 +925,9 @@ uint32 DISPLAY::read_kanji(uint32 addr)
 	return 0xff;
 }
 
-uint16 DISPLAY::jis2adr_x1(uint16 jis)
+uint16_t DISPLAY::jis2adr_x1(uint16_t jis)
 {
-	uint16 jh, jl, adr;
+	uint16_t jh, jl, adr;
 	
 	jh = jis >> 8;
 	jl = jis & 0xff;
@@ -942,9 +942,9 @@ uint16 DISPLAY::jis2adr_x1(uint16 jis)
 	return adr;
 }
 
-uint32 DISPLAY::adr2knj_x1(uint16 adr)
+uint32_t DISPLAY::adr2knj_x1(uint16_t adr)
 {
-	uint16 jh, jl, jis;
+	uint16_t jh, jl, jis;
 	
 	if(adr < 0x4000) {
 		jh = adr - 0x0100;
@@ -968,11 +968,11 @@ uint32 DISPLAY::adr2knj_x1(uint16 adr)
 }
 
 #ifdef _X1TURBO_FEATURE
-uint32 DISPLAY::adr2knj_x1t(uint16 adr)
+uint32_t DISPLAY::adr2knj_x1t(uint16_t adr)
 {
-	uint16 j1, j2;
-	uint16 rl, rh;
-	uint16 jis;
+	uint16_t j1, j2;
+	uint16_t rl, rh;
+	uint16_t jis;
 	
 	rh = adr >> 8;
 	rl = adr & 0xff;
@@ -1013,9 +1013,9 @@ uint32 DISPLAY::adr2knj_x1t(uint16 adr)
 }
 #endif
 
-uint32 DISPLAY::jis2knj(uint16 jis)
+uint32_t DISPLAY::jis2knj(uint16_t jis)
 {
-	uint32 sjis = jis2sjis(jis);
+	uint32_t sjis = jis2sjis(jis);
 	
 	if(sjis < 0x100) {
 		return sjis * 16;
@@ -1030,9 +1030,9 @@ uint32 DISPLAY::jis2knj(uint16 jis)
 	}
 }
 
-uint16 DISPLAY::jis2sjis(uint16 jis)
+uint16_t DISPLAY::jis2sjis(uint16_t jis)
 {
-	uint16 c1, c2;
+	uint16_t c1, c2;
 	
 	if(!jis) {
 		return 0;

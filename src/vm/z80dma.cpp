@@ -134,7 +134,7 @@ void Z80DMA::reset()
 	bus_master = false;
 }
 
-void Z80DMA::write_io8(uint32 addr, uint32 data)
+void Z80DMA::write_io8(uint32_t addr, uint32_t data)
 {
 	if(wr_num == 0) {
 		if((data & 0x87) == 0) {
@@ -334,13 +334,13 @@ void Z80DMA::write_io8(uint32 addr, uint32 data)
 	}
 }
 
-uint32 Z80DMA::read_io8(uint32 addr)
+uint32_t Z80DMA::read_io8(uint32_t addr)
 {
 	// return status if read buffer is empty (from Xmillenium)
 	if(rr_num == 0) {
 		return status | (now_ready() ? 0 : 2) | (req_intr ? 0 : 8);
 	}
-	uint32 data = rr_tmp[rr_ptr];
+	uint32_t data = rr_tmp[rr_ptr];
 	
 #ifdef DMA_DEBUG
 	emu->out_debug_log(_T("Z80DMA: RR[%d]=%2x\n"), rr_ptr, data);
@@ -351,7 +351,7 @@ uint32 Z80DMA::read_io8(uint32 addr)
 	return data;
 }
 
-void Z80DMA::write_signal(int id, uint32 data, uint32 mask)
+void Z80DMA::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	// ready signal (wired-or)
 	bool prev_ready = now_ready();
@@ -431,6 +431,11 @@ void Z80DMA::do_dma()
 		blocklen = BLOCKLEN + 1;
 	}
 	
+	// Workaround of MinGW's (older) GCC.
+	// messages: crosses initialization of 'int wait_w' etc.
+	uint32_t data = 0;
+	int wait_r = 0, wait_w = 0;
+	
 #ifndef SINGLE_MODE_DMA
 restart:
 #endif
@@ -447,8 +452,8 @@ restart:
 		request_bus();
 		
 		// read
-		uint32 data = 0;
-		int wait_r = 0, wait_w = 0;
+		data = 0;
+		wait_r = wait_w = 0;
 		
 		if(PORTA_IS_SOURCE) {
 			if(PORTA_MEMORY) {
@@ -666,9 +671,9 @@ void Z80DMA::request_intr(int level)
 		req_intr = true;
 		
 		if(STATUS_AFFECTS_VECTOR) {
-			vector = (uint8)((INTERRUPT_VECTOR & 0xf9) | (level << 1));
+			vector = (uint8_t)((INTERRUPT_VECTOR & 0xf9) | (level << 1));
 		} else {
-			vector = (uint8)INTERRUPT_VECTOR;
+			vector = (uint8_t)INTERRUPT_VECTOR;
 		}
 		update_intr();
 	}
@@ -712,7 +717,7 @@ void Z80DMA::update_intr()
 	}
 }
 
-uint32 Z80DMA::get_intr_ack()
+uint32_t Z80DMA::get_intr_ack()
 {
 	// ack (M1=IORQ=L)
 	if(in_service) {

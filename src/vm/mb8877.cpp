@@ -83,7 +83,8 @@ void MB8877::register_drq_event(int bytes)
 		usec = 4;
 	}
 #if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
-	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_FM7_GAMBLER) {
+	if((disk[drvreg]->is_special_disk == SPECIAL_DISK_FM7_GAMBLER) ||
+	   (disk[drvreg]->is_special_disk == SPECIAL_DISK_FM77AV_PSYOBLADE)) {
 		usec = 4;
 	}
 #endif
@@ -140,7 +141,7 @@ void MB8877::reset()
 	no_command = 0;
 }
 
-void MB8877::write_io8(uint32 addr, uint32 data)
+void MB8877::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr & 3) {
 	case 0:
@@ -259,7 +260,7 @@ void MB8877::write_io8(uint32 addr, uint32 data)
 							if(!fdc[drvreg].id_written) {
 								// insert new sector with data crc error
 write_id:
-								uint8 c = 0, h = 0, r = 0, n = 0;
+								uint8_t c = 0, h = 0, r = 0, n = 0;
 								fdc[drvreg].id_written = true;
 								fdc[drvreg].sector_found = false;
 								if(fdc[drvreg].index >= 4) {
@@ -335,9 +336,9 @@ write_id:
 	}
 }
 
-uint32 MB8877::read_io8(uint32 addr)
+uint32_t MB8877::read_io8(uint32_t addr)
 {
-	uint32 val;
+	uint32_t val;
 	
 	switch(addr & 3) {
 	case 0:
@@ -520,17 +521,17 @@ uint32 MB8877::read_io8(uint32 addr)
 	return 0xff;
 }
 
-void MB8877::write_dma_io8(uint32 addr, uint32 data)
+void MB8877::write_dma_io8(uint32_t addr, uint32_t data)
 {
 	write_io8(3, data);
 }
 
-uint32 MB8877::read_dma_io8(uint32 addr)
+uint32_t MB8877::read_dma_io8(uint32_t addr)
 {
 	return read_io8(3);
 }
 
-void MB8877::write_signal(int id, uint32 data, uint32 mask)
+void MB8877::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	if(id == SIG_MB8877_DRIVEREG) {
 		drvreg = data & DRIVE_MASK;
@@ -543,10 +544,10 @@ void MB8877::write_signal(int id, uint32 data, uint32 mask)
 	}
 }
 
-uint32 MB8877::read_signal(int ch)
+uint32_t MB8877::read_signal(int ch)
 {
 	// get access status
-	uint32 stat = 0;
+	uint32_t stat = 0;
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		if(fdc[i].access) {
 			stat |= 1 << i;
@@ -795,7 +796,7 @@ void MB8877::cmd_seek()
 	cmdtype = FDC_CMD_TYPE1;
 	status = FDC_ST_HEADENG | FDC_ST_BUSY;
 	
-//	seektrk = (uint8)(fdc[drvreg].track + datareg - trkreg);
+//	seektrk = (uint8_t)(fdc[drvreg].track + datareg - trkreg);
 	seektrk = datareg;
 	seektrk = (seektrk > 83) ? 83 : (seektrk < 0) ? 0 : seektrk;
 	seekvct = !(datareg > trkreg);
@@ -1004,7 +1005,7 @@ void MB8877::cmd_forceint()
 // media handler
 // ----------------------------------------------------------------------------
 
-uint8 MB8877::search_track()
+uint8_t MB8877::search_track()
 {
 	// get track
 	int track = fdc[drvreg].track;
@@ -1041,7 +1042,7 @@ uint8 MB8877::search_track()
 	return FDC_ST_SEEKERR;
 }
 
-uint8 MB8877::search_sector()
+uint8_t MB8877::search_sector()
 {
 	// write protect
 	if(cmdtype == FDC_CMD_WR_SEC || cmdtype == FDC_CMD_WR_MSEC) {
@@ -1133,7 +1134,7 @@ uint8 MB8877::search_sector()
 	return FDC_ST_RECNFND;
 }
 
-uint8 MB8877::search_addr()
+uint8_t MB8877::search_addr()
 {
 	// get track
 	int track = fdc[drvreg].track;
@@ -1322,14 +1323,14 @@ bool MB8877::is_disk_protected(int drv)
 	return false;
 }
 
-void MB8877::set_drive_type(int drv, uint8 type)
+void MB8877::set_drive_type(int drv, uint8_t type)
 {
 	if(drv < MAX_DRIVE) {
 		disk[drv]->drive_type = type;
 	}
 }
 
-uint8 MB8877::get_drive_type(int drv)
+uint8_t MB8877::get_drive_type(int drv)
 {
 	if(drv < MAX_DRIVE) {
 		return disk[drv]->drive_type;
@@ -1351,7 +1352,7 @@ void MB8877::set_drive_mfm(int drv, bool mfm)
 	}
 }
 
-uint8 MB8877::fdc_status()
+uint8_t MB8877::fdc_status()
 {
 	// for each virtual machines
 #if defined(_FMR50) || defined(_FMR60)

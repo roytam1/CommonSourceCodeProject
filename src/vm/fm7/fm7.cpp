@@ -1,4 +1,3 @@
-
 /*
  * FM7 -> VM
  * (C) 2015 K.Ohta <whatisthis.sowhat _at_ gmail.com>
@@ -12,15 +11,10 @@
 #include "../device.h"
 #include "../event.h"
 #include "../memory.h"
+#include "../prnfile.h"
+
 #ifdef USE_DEBUGGER
 #include "../debugger.h"
-#endif
-#if defined(SUPPORT_DUMMY_DEVICE_LED)
-#include "../dummydevice.h"
-#else
-#define SIG_DUMMYDEVICE_BIT0 0
-#define SIG_DUMMYDEVICE_BIT1 1
-#define SIG_DUMMYDEVICE_BIT2 2
 #endif
 
 #include "../datarec.h"
@@ -40,6 +34,14 @@
 #include "hd6844.h"
 #endif
 
+#if defined(USE_LED_DEVICE)
+#include "./dummydevice.h"
+#else
+#define SIG_DUMMYDEVICE_BIT0 0
+#define SIG_DUMMYDEVICE_BIT1 1
+#define SIG_DUMMYDEVICE_BIT2 2
+#endif
+
 #include "./fm7_mainio.h"
 #include "./fm7_mainmem.h"
 #include "./fm7_display.h"
@@ -52,13 +54,14 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 {
 	
 	first_device = last_device = NULL;
-	connect_opn = false;
-	connect_whg = false;
-	connect_thg = false;
-#if defined(_FM77AV_VARIANTS)
-	opn[0] = opn[1] = opn[2] = NULL; 
-#else   
+#if defined(_FM8)
+	psg = NULL;
+#else	
+# if defined(_FM77AV_VARIANTS)
+	opn[0] = opn[1] = opn[2] = NULL;
+# else   
 	opn[0] = opn[1] = opn[2] = psg = NULL; 
+# endif
 #endif
 	dummy = new DEVICE(this, emu);	// must be 1st device
 	event = new EVENT(this, emu);	// must be 2nd device
@@ -70,7 +73,13 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	z80cpu = new Z80(this, emu);
 #endif
 	// basic devices
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
+	if((config.dipswitch & FM7_DIPSW_CONNECT_KANJIROM) != 0) {
+		kanjiclass1 = new KANJIROM(this, emu, false);
+	}
+#else
 	kanjiclass1 = new KANJIROM(this, emu, false);
+#endif	
 #ifdef CAPABLE_KANJI_CLASS2
 	kanjiclass2 = new KANJIROM(this, emu, true);
 #endif
@@ -83,31 +92,30 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #if defined(HAS_DMA)
 	dmac = new HD6844(this, emu);
 #endif   
+#if defined(_FM8)
+	psg = new YM2203(this, emu);
+#else	
 	opn[0] = new YM2203(this, emu); // OPN
 	opn[1] = new YM2203(this, emu); // WHG
 	opn[2] = new YM2203(this, emu); // THG
-   
-#if !defined(_FM77AV_VARIANTS)
+# if !defined(_FM77AV_VARIANTS)
 	psg = new YM2203(this, emu);
+# endif
 #endif
 #if defined(_FM77AV_VARIANTS)
 	alu = new MB61VH010(this, emu);
 	keyboard_beep = new BEEP(this, emu);
 #endif	
-	keyboard = new KEYBOARD(this, emu);
-	display = new DISPLAY(this, emu);
+	display = new DISPLAY(this, emu);	
+	printer = new PRNFILE(this, emu);
 	mainio  = new FM7_MAINIO(this, emu);
 	mainmem = new FM7_MAINMEM(this, emu);
+	keyboard = new KEYBOARD(this, emu);
 
-#if defined(SUPPORT_DUMMY_DEVICE_LED)
+#if defined(USE_LED_DEVICE)
 	led_terminate = new DUMMYDEVICE(this, emu);
 #else
 	led_terminate = new DEVICE(this, emu);
-#endif
-	//maincpu = new MC6809(this, emu);
-	//subcpu = new MC6809(this, emu);
-#ifdef WITH_Z80
-	//z80cpu = new Z80(this, emu);
 #endif
 	// MEMORIES must set before initialize().
 	maincpu->set_context_mem(mainmem);
@@ -157,8 +165,8 @@ void VM::initialize(void)
 
 void VM::connect_bus(void)
 {
-	uint32 mainclock;
-	uint32 subclock;
+	uint32_t mainclock;
+	uint32_t subclock;
 
 	/*
 	 * CLASS CONSTRUCTION
@@ -207,32 +215,41 @@ void VM::connect_bus(void)
 #endif
 
 	event->set_context_sound(pcm1bit);
-#if !defined(_FM77AV_VARIANTS)
-	mainio->set_context_psg(psg);
+#if defined(_FM8)
 	event->set_context_sound(psg);
-#endif
+	event->set_context_sound(drec);
+#else
 	event->set_context_sound(opn[0]);
 	event->set_context_sound(opn[1]);
 	event->set_context_sound(opn[2]);
+# if !defined(_FM77AV_VARIANTS)
+	event->set_context_sound(psg);
+# endif
 	event->set_context_sound(drec);
-#if defined(_FM77AV_VARIANTS)
+# if defined(_FM77AV_VARIANTS)
 	event->set_context_sound(keyboard_beep);
-#endif
-   
+# endif
+#endif   
+#if !defined(_FM77AV_VARIANTS) && !defined(_FM77L4)
 	event->register_frame_event(display);
-	//event->register_vline_event(display);
-	//event->register_vline_event(mainio);
-   
+#endif	
 	mainio->set_context_maincpu(maincpu);
 	mainio->set_context_subcpu(subcpu);
 	
 	mainio->set_context_display(display);
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
+	if((config.dipswitch & FM7_DIPSW_CONNECT_KANJIROM) != 0) {
+		mainio->set_context_kanjirom_class1(kanjiclass1);
+	}
+#else
 	mainio->set_context_kanjirom_class1(kanjiclass1);
+#endif	
 	mainio->set_context_mainmem(mainmem);
 	mainio->set_context_keyboard(keyboard);
-   
+	mainio->set_context_printer(printer);
+	mainio->set_context_printer_reset(printer, SIG_PRINTER_RESET, 0xffffffff); 
 #if defined(CAPABLE_KANJI_CLASS2)
-        mainio->set_context_kanjirom_class2(kanjiclass2);
+	mainio->set_context_kanjirom_class2(kanjiclass2);
 #endif
 
 	keyboard->set_context_break_line(mainio, FM7_MAINIO_PUSH_BREAK, 0xffffffff);
@@ -250,6 +267,7 @@ void VM::connect_bus(void)
 	drec->set_context_ear(mainio, FM7_MAINIO_CMT_RECV, 0xffffffff);
 	//drec->set_context_remote(mainio, FM7_MAINIO_CMT_REMOTE, 0xffffffff);
 	mainio->set_context_datarec(drec);
+	
 	mainmem->set_context_mainio(mainio);
 	mainmem->set_context_display(display);
 	mainmem->set_context_maincpu(maincpu);
@@ -259,10 +277,16 @@ void VM::connect_bus(void)
 	display->set_context_mainio(mainio);
 	display->set_context_subcpu(subcpu);
 	display->set_context_keyboard(keyboard);
+
+	mainio->set_context_clock_status(mainmem, FM7_MAINIO_CLOCKMODE, 0xffffffff);
+	mainio->set_context_clock_status(display, SIG_DISPLAY_CLOCK, 0xffffffff);
+	
 	subcpu->set_context_bus_halt(display, SIG_FM7_SUB_HALT, 0xffffffff);
 	subcpu->set_context_bus_halt(mainmem, SIG_FM7_SUB_HALT, 0xffffffff);
 
+#if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	display->set_context_kanjiclass1(kanjiclass1);
+#endif	
 #if defined(CAPABLE_KANJI_CLASS2)
 	display->set_context_kanjiclass2(kanjiclass2);
 #endif   
@@ -279,7 +303,12 @@ void VM::connect_bus(void)
 	fdc->set_context_drq(mainio, FM7_MAINIO_FDC_DRQ, 0x1);
 	// SOUND
 	mainio->set_context_beep(pcm1bit);
-	
+#if defined(_FM8)	
+	mainio->set_context_psg(psg);
+#else
+# if !defined(_FM77AV_VARIANTS)
+	mainio->set_context_psg(psg);
+# endif
 	opn[0]->set_context_irq(mainio, FM7_MAINIO_OPN_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[0], 0);
 	//joystick->set_context_opn(opn[0]);
@@ -290,7 +319,7 @@ void VM::connect_bus(void)
 	mainio->set_context_opn(opn[1], 1);
 	opn[2]->set_context_irq(mainio, FM7_MAINIO_THG_IRQ, 0xffffffff);
 	mainio->set_context_opn(opn[2], 2);
-   
+#endif   
 	subcpu->set_context_bus_halt(display, SIG_FM7_SUB_HALT, 0xffffffff);
 	subcpu->set_context_bus_clr(display, SIG_FM7_SUB_USE_CLR, 0x0000000f);
    
@@ -306,7 +335,7 @@ void VM::connect_bus(void)
 		device->initialize();
 	}
 	for(int i = 0; i < 2; i++) {
-#if defined(_FM77AV20) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
 #else
 		fdc->set_drive_type(i, DRIVE_TYPE_2D);
@@ -330,62 +359,6 @@ void VM::connect_bus(void)
 
 void VM::update_config()
 {
-	uint32 vol1, vol2, tmpv;
-	int ii, i_limit;
-
-#if defined(SIG_YM2203_LVOLUME) && defined(SIG_YM2203_RVOLUME)
-# if defined(USE_MULTIPLE_SOUNDCARDS)
-	i_limit = USE_MULTIPLE_SOUNDCARDS - 1;
-# else
-#  if !defined(_FM77AV_VARIANTS) && !defined(_FM8)
-	i_limit = 4;
-#  elif defined(_FM8)
-	i_limit = 1; // PSG Only
-#  else
-	i_limit = 3;
-#  endif
-# endif
-
-	for(ii = 0; ii < i_limit; ii++) {
-		if(config.multiple_speakers) { //
-# if defined(USE_MULTIPLE_SOUNDCARDS)
-			vol1 = (config.sound_device_level[ii] + 32768) >> 8;
-# else
-			vol1 = 256;
-# endif //
-
-			vol2 = vol1 >> 2;
-		} else {
-# if defined(USE_MULTIPLE_SOUNDCARDS)
-			vol1 = vol2 = (config.sound_device_level[ii] + 32768) >> 8;
-# else
-			vol1 = vol2 = 256;
-# endif
-		}
-		switch(ii) {
-		case 0: // OPN
-			break;
-		case 1: // WHG
-		case 3: // PSG
-			tmpv = vol1;
-			vol1 = vol2;
-			vol2 = tmpv;
-			break;
-		case 2: // THG
-			vol2 = vol1;
-			break;
-		default:
-			break;
-		}
-		if(ii < i_limit) {
-			opn[ii]->write_signal(SIG_YM2203_LVOLUME, vol1, 0xffffffff); // OPN: LEFT
-			opn[ii]->write_signal(SIG_YM2203_RVOLUME, vol2, 0xffffffff); // OPN: RIGHT
-		}
-	}
-#endif   
-#if defined(USE_MULTIPLE_SOUNDCARDS) && defined(DATAREC_SOUND)
-	drec->write_signal(SIG_DATAREC_VOLUME, (config.sound_device_level[USE_MULTIPLE_SOUNDCARDS - 1] + 32768) >> 3, 0xffffffff); 
-#endif
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->update_config();
 	}
@@ -398,24 +371,18 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-	//subcpu->reset();
-	//maincpu->reset();
-	
-	opn[0]->SetReg(0x2e, 0);	// set prescaler
-	opn[1]->SetReg(0x2e, 0);	// set prescaler
-	opn[2]->SetReg(0x2e, 0);	// set prescaler
-
-	// Init OPN/PSG.
-	// Parameters from XM7.
-	opn[0]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
-	opn[1]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
-	opn[2]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
-
-#if !defined(_FM77AV_VARIANTS)
-	psg->SetReg(0x27, 0); // stop timer
-	psg->SetReg(0x2e, 0);	// set prescaler
+#if !defined(_FM77AV_VARIANTS) || defined(_FM8)
+	psg->set_reg(0x27, 0); // stop timer
+	psg->set_reg(0x2e, 0);	// set prescaler
 	psg->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
-#endif	
+#endif
+#if !defined(_FM8)
+	for(int i = 0; i < 3; i++) {
+		opn[i]->set_reg(0x27, 0); // stop timer
+		opn[i]->set_reg(0x2e, 0);	// set prescaler
+		opn[i]->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
+	}
+#endif
 }
 
 void VM::special_reset()
@@ -445,12 +412,12 @@ double VM::get_frame_rate()
 	return event->get_frame_rate();
 }
 
-#if defined(SUPPORT_DUMMY_DEVICE_LED)
-uint32 VM::get_led_status()
+#if defined(USE_LED_DEVICE)
+uint32_t VM::get_led_status()
 {
 	return led_terminate->read_signal(SIG_DUMMYDEVICE_READWRITE);
 }
-#endif // SUPPORT_DUMMY_DEVICE_LED
+#endif // USE_LED_DEVICE
 
 
 // ----------------------------------------------------------------------------
@@ -483,9 +450,9 @@ void VM::draw_screen()
 	display->draw_screen();
 }
 
-int VM::get_access_lamp_status()
+uint32_t VM::get_access_lamp_status()
 {
-	uint32 status = fdc->read_signal(0);
+	uint32_t status = fdc->read_signal(0);
 	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 
@@ -494,22 +461,25 @@ void VM::initialize_sound(int rate, int samples)
 	// init sound manager
 	event->initialize_sound(rate, samples);
 	// init sound gen
+#if defined(_FM8)
+	psg->initialize_sound(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
+#else	
 	opn[0]->initialize_sound(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
 	opn[1]->initialize_sound(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
 	opn[2]->initialize_sound(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
-#if !defined(_FM77AV_VARIANTS)   
+# if !defined(_FM77AV_VARIANTS)   
 	psg->initialize_sound(rate, (int)(4.9152 * 1000.0 * 1000.0 / 4.0), samples, 0, 0);
-#endif
-#if defined(_FM77AV_VARIANTS)
+# endif
+# if defined(_FM77AV_VARIANTS)
 	keyboard_beep->initialize_sound(rate, 2400.0, 512);
-#endif
+# endif
+#endif	
 	pcm1bit->initialize_sound(rate, 2000);
-	//drec->init_pcm(rate, 0);
 }
 
-uint16* VM::create_sound(int* extra_frames)
+uint16_t* VM::create_sound(int* extra_frames)
 {
-	uint16* p = event->create_sound(extra_frames);
+	uint16_t* p = event->create_sound(extra_frames);
 	return p;
 }
 
@@ -525,8 +495,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 #if !defined(_FM77AV_VARIANTS)
 	if(ch-- == 0) {
 		psg->set_volume(0, decibel_l, decibel_r);
+		psg->set_volume(1, decibel_l, decibel_r);
 	} else
 #endif
+#if !defined(_FM8)		
 	if(ch-- == 0) {
 		opn[0]->set_volume(0, decibel_l, decibel_r);
 	} else if(ch-- == 0) {
@@ -539,7 +511,9 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		opn[2]->set_volume(0, decibel_l, decibel_r);
 	} else if(ch-- == 0) {
 		opn[2]->set_volume(1, decibel_l, decibel_r);
-	} else if(ch-- == 0) {
+	} else
+#endif	
+	if(ch-- == 0) {
 		pcm1bit->set_volume(0, decibel_l, decibel_r);
 	} else if(ch-- == 0) {
 		drec->set_volume(0, decibel_l, decibel_r);
@@ -673,12 +647,11 @@ void VM::update_dipswitch()
   //	io->set_iovalue_single_r(0x1ff0, (config.monitor_type & 1) | ((config.drive_type & 1) << 2));
 }
 
-void VM::set_cpu_clock(DEVICE *cpu, uint32 clocks) {
+void VM::set_cpu_clock(DEVICE *cpu, uint32_t clocks) {
 	event->set_secondary_cpu_clock(cpu, clocks);
 }
 
-#define STATE_VERSION	1
-
+#define STATE_VERSION	2
 void VM::save_state(FILEIO* state_fio)
 {
 	state_fio->FputUint32_BE(STATE_VERSION);
@@ -687,17 +660,13 @@ void VM::save_state(FILEIO* state_fio)
 		device->save_state(state_fio);
 	}
 	{ // V1
-		state_fio->FputUint32_BE(connected_opns);
-		state_fio->FputBool(connect_opn);
-		state_fio->FputBool(connect_whg);
-		state_fio->FputBool(connect_thg);
 		state_fio->FputBool(clock_low);
 	}
 }
 
 bool VM::load_state(FILEIO* state_fio)
 {
-	uint32 version = state_fio->FgetUint32_BE();
+	uint32_t version = state_fio->FgetUint32_BE();
 	int i = 1;
 	if(version > STATE_VERSION) {
 		return false;
@@ -709,12 +678,8 @@ bool VM::load_state(FILEIO* state_fio)
 		}
 	}
 	if(version >= 1) {// V1 
-		connected_opns = state_fio->FgetUint32_BE();
-		connect_opn = state_fio->FgetBool();
-		connect_whg = state_fio->FgetBool();
-		connect_thg = state_fio->FgetBool();
 		clock_low   = state_fio->FgetBool();
-		if(version == 1) return true;
+		if(version == 2) return true;
 	}
 	return false;
 }

@@ -16,17 +16,12 @@
 #define USE_DIPSWITCH
 #define USE_CPU_TYPE 2
 #define USE_SPECIAL_RESET
-//#define SUPPORT_DUMMY_DEVICE_LED 3
+#define USE_LED_DEVICE 3
 #define USE_MINIMUM_RENDERING 1
-
-//#undef  HAS_YM2608
-//#define SUPPORT_YM2203_PORT
-//#define HAS_AY_3_8910
-// 4:3
-
-#define SCREEN_WIDTH 640 
-#define SCREEN_HEIGHT 400
-#define WINDOW_HEIGHT_ASPECT 480
+#define USE_JOYSTICK
+#define USE_MOUSE
+#define USE_PRINTER
+#define USE_PRINTER_TYPE 4
 
 #define NOTIFY_KEY_DOWN
 //#define NOTIFY_KEY_UP
@@ -36,44 +31,45 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
-//#define USE_DISK_WRITE_PROTECT
 #define USE_STATE
 #define USE_DEBUGGER
-//#define USE_DIG_RESOLUTION 1
-//#define _DEBUG_LOG
-
-//#define _FDC_DEBUG_LOG
 
 
 #if defined(_FM8)
 #define DEVICE_NAME		"FUJITSU FM-8"
 #define CONFIG_NAME		"fm8"
 #define CAPABLE_Z80
+#define DIPSWITCH_DEFAULT 0x00000000 
 
 #elif defined(_FM7)
 #define DEVICE_NAME		"FUJITSU FM-7"
 #define CONFIG_NAME		"fm7"
 #define CAPABLE_Z80
+#define DIPSWITCH_DEFAULT 0x000000000 
 
 #elif defined(_FMNEW7)
 #define DEVICE_NAME		"FUJITSU FM-NEW7"
 #define CONFIG_NAME		"fmnew7"
 #define CAPABLE_Z80
+#define DIPSWITCH_DEFAULT 0x000000000 
 
 #elif defined(_FM77) || defined(_FM77L2)
 # if defined(_FM77)
 #define DEVICE_NAME		"FUJITSU FM-77"
 #define CONFIG_NAME		"fm77"
+#define DIPSWITCH_DEFAULT 0x00000001
+
 # else
 #define DEVICE_NAME		"FUJITSU FM-77L2"
 #define CONFIG_NAME		"fm77l2"
+#define DIPSWITCH_DEFAULT 0x00000003 
 # endif
 //#define USE_DRIVE_TYPE
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
-#ifndef FM77_EXRAM_BANKS
-#define FM77_EXRAM_BANKS	3
-#endif
+# ifndef FM77_EXRAM_BANKS
+#   define FM77_EXRAM_BANKS	3
+# endif
 
 #elif defined(_FM77L4)
 #define DEVICE_NAME		"FUJITSU FM-77L4"
@@ -86,14 +82,16 @@
 //#define CAPABLE_KANJI_CLASS2
 #define _FM77_VARIANTS
 #define CAPABLE_Z80
-#ifndef FM77_EXRAM_BANKS
-#define FM77_EXRAM_BANKS	3
-#endif
+# ifndef FM77_EXRAM_BANKS
+#  define FM77_EXRAM_BANKS	3
+# endif
+#define DIPSWITCH_DEFAULT 0x00000003 
 
 #elif defined(_FM77AV)
 #define DEVICE_NAME		"FUJITSU FM77AV"
 #define CONFIG_NAME		"fm77av"
 #define _FM77AV_VARIANTS
+#define DIPSWITCH_DEFAULT 0x80000001 
 
 #elif defined(_FM77AV20)
 #define DEVICE_NAME		"FUJITSU FM77AV20"
@@ -104,6 +102,7 @@
 #define CAPABLE_DICTROM
 //#define USE_DRIVE_TYPE 2
 #define CAPABLE_KANJI_CLASS2
+#define DIPSWITCH_DEFAULT 0x80000001 
 
 #elif defined(_FM77AV20EX)
 #define DEVICE_NAME		"FUJITSU FM77AV20EX"
@@ -115,6 +114,7 @@
 //#define USE_DRIVE_TYPE 2
 #define CAPABLE_DICTROM
 #define CAPABLE_KANJI_CLASS2
+#define DIPSWITCH_DEFAULT 0x80000001 
 
 #elif defined(_FM77AV40)
 #define DEVICE_NAME		"FUJITSU FM77AV40"
@@ -129,6 +129,7 @@
 #ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	12
 #endif
+#define DIPSWITCH_DEFAULT 0x8000000d 
 
 #elif defined(_FM77AV40EX)
 #define DEVICE_NAME		"FUJITSU FM77AV40EX"
@@ -143,6 +144,7 @@
 #ifndef FM77_EXRAM_BANKS
 #define FM77_EXRAM_BANKS	12
 #endif
+#define DIPSWITCH_DEFAULT 0x8000000d 
 
 #elif defined(_FM77AV40SX)
 #define DEVICE_NAME		"FUJITSU FM77AV40SX"
@@ -154,22 +156,18 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
-#ifndef FM77_EXRAM_BANKS
-#define FM77_EXRAM_BANKS	12
-#endif
+# ifndef FM77_EXRAM_BANKS
+#  define FM77_EXRAM_BANKS	12
+# endif
+#define DIPSWITCH_DEFAULT 0x8000000d 
 
 #endif
 
-#if !defined(_FM8)
+#if defined(_FM8)
+#define USE_SOUND_DEVICE_TYPE   2
+#else
 #define USE_DEVICE_TYPE		3
 #define USE_SOUND_DEVICE_TYPE   8
-# ifdef _FM77AV_VARIANTS
-#  define USE_MULTIPLE_SOUNDCARDS 4
-# else // 7,77
-#  define USE_MULTIPLE_SOUNDCARDS 5
-# endif
-#elif defined(_FM8)
-#  define USE_MULTIPLE_SOUNDCARDS 2
 #endif
 
 #ifdef _FM77AV_VARIANTS
@@ -240,6 +238,7 @@
 
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
 #define HAS_MC6809              
 #define MB8877_MAX_CHIPS	1
@@ -303,10 +302,17 @@
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-#if !defined(_FM77AV_VARIANTS)
+#if defined(_FM8)
+	_T("PSG(Hack)"),
+	_T("Beep"),
+	_T("CMT"),
+#else
+# if !defined(_FM77AV_VARIANTS)
 	_T("PSG"),
-#endif
-	_T("OPN (FM)"), _T("OPN (PSG)"), _T("WHG (FM)"), _T("WHG (PSG)"), _T("THG (FM)"), _T("THG (PSG)"), _T("Beep"), _T("CMT"),
+# endif
+	_T("OPN (FM)"), _T("OPN (PSG)"), _T("WHG (FM)"), _T("WHG (PSG)"), _T("THG (FM)"), _T("THG (PSG)"),
+	_T("Beep"), _T("CMT"),
+#endif	
 };
 #endif
 
@@ -324,7 +330,7 @@ class YM2203;
 class MB8877;
 class MEMORY;
 class DATAREC;
-#if defined(SUPPORT_DUMMY_DEVICE_LED)
+#if defined(USE_LED_DEVICE)
 class DUMMYDEVICE;
 #endif
 
@@ -332,8 +338,8 @@ class DISPLAY;
 #if defined(_FM77AV_VARIANTS)
 class MB61VH010;
 #endif
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 class HD6844;
 #endif
 class FM7_MAINMEM;
@@ -356,25 +362,29 @@ protected:
 	MC6809* maincpu;
 	FM7_MAINMEM* mainmem;
 	FM7_MAINIO* mainio;
-#if defined(SUPPORT_DUMMY_DEVICE_LED)
+#if defined(USE_LED_DEVICE)
 	DUMMYDEVICE* led_terminate;
 #else
 	DEVICE* led_terminate;
 #endif
 	MB8877* fdc;
+#if defined(_FM8)
+	YM2203 *psg;
+#else	
 	YM2203* opn[3];
-#if !defined(_FM77AV_VARIANTS)
+# if !defined(_FM77AV_VARIANTS)
 	YM2203* psg; // Is right? AY-3-8910 is right device.
-#endif   
+# endif
+#endif
 	//BEEP* beep;
 	PCM1BIT* pcm1bit;
 	DATAREC *drec;
 	JOYSTICK *joystick;
 	
 #ifdef  WITH_Z80
-        Z80* z80cpu;
+	Z80* z80cpu;
 #endif
-        DEVICE* printer;
+	DEVICE* printer;
 	DEVICE* inteli_mouse; 
    
 	DEVICE *dummycpu;
@@ -386,19 +396,14 @@ protected:
 #if defined(HAS_DMA)
 	HD6844 *dmac;
 #endif   
-        DISPLAY* display;
-        KEYBOARD* keyboard;
+	DISPLAY* display;
+	KEYBOARD* keyboard;
    
 	KANJIROM *kanjiclass1;
 #ifdef CAPABLE_KANJI_CLASS2
 	KANJIROM *kanjiclass2;
 #endif
-	uint32 connected_opns;
 	bool clock_low;
-	bool connect_opn;
-	bool connect_whg;
-	bool connect_thg;
-   
 public:
 	// ----------------------------------------
 	// initialize
@@ -416,8 +421,8 @@ public:
 	void special_reset();
 	void run();
 	double get_frame_rate();
-#if defined(SUPPORT_DUMMY_DEVICE_LED)
-	uint32 get_led_status();
+#if defined(USE_LED_DEVICE)
+	uint32_t get_led_status();
 #endif
 	
 #ifdef USE_DEBUGGER
@@ -430,11 +435,11 @@ public:
 	void update_dipswitch(void);
 	// draw screen
 	void draw_screen();
-	int get_access_lamp_status();
+	uint32_t get_access_lamp_status();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
-	uint16* create_sound(int* extra_frames);
+	uint16_t* create_sound(int* extra_frames);
 	int get_sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
@@ -479,7 +484,7 @@ public:
 	// ----------------------------------------
 	// for each device
 	// ----------------------------------------
-	void set_cpu_clock(DEVICE *cpu, uint32 clocks);
+	void set_cpu_clock(DEVICE *cpu, uint32_t clocks);
 	// devices
 	DEVICE* get_device(int id);
 	DEVICE* dummy;

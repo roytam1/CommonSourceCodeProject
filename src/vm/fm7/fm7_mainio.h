@@ -34,34 +34,40 @@ class FM7_MAINIO : public DEVICE {
 	int event_beep_oneshot;  
 	int event_timerirq;  
 	int event_fdc_motor;  
+	outputs_t clock_status;
+	outputs_t printer_reset_bus;
+	outputs_t printer_strobe_bus;
+	outputs_t printer_select_bus;
  protected:
 	VM* p_vm;
 	EMU* p_emu;
 
 	//bool irqstat_bak;
 	//bool firqstat_bak;
-	uint8 io_w_latch[0x100];
+	uint8_t io_w_latch[0x100];
    
 	/* FD00: R */
 	bool clock_fast; // bit0 : maybe dummy
-	uint16 keycode_7;
+	uint16_t keycode_7;
 	/* FD00: W */
 	bool lpt_strobe;  // bit6 : maybe dummy entry
 	bool lpt_slctin;  // bit7 : maybe dummy entry
 	/* FD01: W */
-	uint8 lpt_outdata; // maybe dummy.
+	uint8_t lpt_outdata; // maybe dummy.
 
 	/* FD02 : R */
-	bool cmt_indat; // bit7
-	bool cmt_invert; // Invert signal
-	bool lpt_det2; // bit5 : maybe dummy.
-	bool lpt_det1; // bit4 : maybe dummy.
-	bool lpt_pe;   // bit3 : maybe dummy.
-	bool lpt_ackng_inv; // bit2 : maybe dummy.
-	bool lpt_error_inv; // bit1 : maybe dummy.
-	bool lpt_busy; // bit0 : maybe dummy.
+	bool cmt_indat;     // bit7 : Data of casette.
+	bool cmt_invert;    // Invert signal
+	bool lpt_det2;      // bit5 : DET2(Normally high).
+	bool lpt_det1;      // bit4 : DET1(Normally high).
+	bool lpt_pe;        // bit3 : PAPER EMPTY.
+	bool lpt_ackng_inv; // bit2 : ACK
+	bool lpt_error_inv; // bit1 : ERROR
+	bool lpt_busy;      // bit0 : BUSY.
+
+	int lpt_type;
 	/* FD02 : W */
-	uint8 irqmask_reg0; // bit7-4, bit2-0 , '1' is enable.  '0' is disable.
+	uint8_t irqmask_reg0; // bit7-4, bit2-0 , '1' is enable.  '0' is disable.
 	// 7-4 :  RS232C / SYNDET,RXRDY,TXRDY,MFD
 	// 2 : TIMER
 	// 1 : PRINTER
@@ -75,7 +81,7 @@ class FM7_MAINIO : public DEVICE {
 	bool irqmask_keyboard; // bit0: "0" = mask.
   
 	/* FD03: R */
-	uint8 irqstat_reg0; // bit 3-0, '0' is happened, '1' is not happened.
+	uint8_t irqstat_reg0; // bit 3-0, '0' is happened, '1' is not happened.
 	// bit3 : extended interrupt
 	// bit2-0: Same as FD02 : W .
 	/* FD03 : W , '1' = ON*/
@@ -83,13 +89,12 @@ class FM7_MAINIO : public DEVICE {
 	bool irqstat_printer;
 	bool irqstat_keyboard;
    
-	bool irqreq_timer;
 	bool irqreq_printer;
 	bool irqreq_keyboard;
 
 	/* FD04 : R */
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-	defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
 	bool stat_kanjirom;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 	bool stat_400linemode; // R/W : bit3, '0' = 400line, '1' = 200line.
 #elif defined(_FM77_VARIANTS)	
@@ -127,7 +132,7 @@ class FM7_MAINIO : public DEVICE {
 	/* FD09 : Grafic pen, not implemented */
 	/* FD0A : Grafic pen, not implemented */
 	/* FD0B : R */
-	uint32 bootmode;
+	uint32_t bootmode;
 	/* FD0D : W */
 	/* FD0E : R */
   
@@ -135,25 +140,25 @@ class FM7_MAINIO : public DEVICE {
 	bool stat_romrammode; // R(true) = ROM, W(false) = RAM.
 #if defined(_FM77AV_VARIANTS)
 	/* FD12 : R/W*/
-	uint8 reg_fd12;
+	uint8_t reg_fd12;
 	/* FD13 : WO */
-	uint8 sub_monitor_type; // bit 2 - 0: default = 0.
-	uint8 sub_monitor_bak; // bit 2 - 0: default = 0.
+	uint8_t sub_monitor_type; // bit 2 - 0: default = 0.
+	uint8_t sub_monitor_bak; // bit 2 - 0: default = 0.
 #endif
 	
 	/* FD15 / FD46 / FD51 : W */
+#if defined(_FM8)
+	bool connect_psg; // [0]
+#else	
 	bool connect_opn; // [0]
 	bool connect_whg; // [1]
 	bool connect_thg; // [2]
-
-	uint32 opn_address[4];
-	uint32 opn_data[4];
-	uint32 opn_stat[4];
-	uint8  opn_cmdreg[4]; // OPN register, bit 3-0, maybe dummy.
-	uint8  opn_ch3mode[4];
-	/* OPN Joystick */
-	uint32 joyport_a;
-	uint32 joyport_b;
+#endif
+	uint32_t opn_address[4];
+	uint32_t opn_data[4];
+	uint32_t opn_stat[4];
+	uint8_t  opn_cmdreg[4]; // OPN register, bit 3-0, maybe dummy.
+	uint8_t  opn_ch3mode[4];
 
 	/* FD47 */
 	bool intstat_whg;   // bit3 : OPN interrupt. '0' = happened.
@@ -169,35 +174,35 @@ class FM7_MAINIO : public DEVICE {
 	
 	/* FD18 : R */
 	bool connect_fdc;
-	uint8 fdc_statreg;
+	uint8_t fdc_statreg;
 	/* FD18 : W */
-	uint8 fdc_cmdreg;
+	uint8_t fdc_cmdreg;
 	bool fdc_cmd_type1;
    
 	/* FD19 : R/W */
-	uint8 fdc_trackreg;
+	uint8_t fdc_trackreg;
 	
 	/* FD1A : R/W */
-	uint8 fdc_sectreg;
+	uint8_t fdc_sectreg;
 	
 	/* FD1B : R/W */
-	uint8 fdc_datareg;
+	uint8_t fdc_datareg;
 	
 	/* FD1C : R/W */
-	uint8 fdc_headreg; // bit0, '0' = side0, '1' = side1
+	uint8_t fdc_headreg; // bit0, '0' = side0, '1' = side1
 	
 	/* FD1D : R/W */
 	bool fdc_motor; // bit7 : '1' = ON, '0' = OFF
-	uint8 fdc_drvsel; // bit 1-0
+	uint8_t fdc_drvsel; // bit 1-0
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 	//bool fdc_2dd;
 	// FD1E
-	uint8 fdc_drive_table[4];
-	uint8 fdc_reg_fd1e;
+	uint8_t fdc_drive_table[4];
+	uint8_t fdc_reg_fd1e;
 #endif	
 	/* FD1F : R */
-	uint8 irqreg_fdc;
+	uint8_t irqreg_fdc;
 	bool irqstat_fdc;
 	bool irqreq_fdc;
    
@@ -217,23 +222,24 @@ class FM7_MAINIO : public DEVICE {
 #endif	
 #if defined(HAS_DMA)
 	bool intstat_dma;
-	uint32 dma_addr;
+	uint32_t dma_addr;
 #endif	
-	void set_clockmode(uint8 flags);
-	uint8 get_clockmode(void);
-	void set_cmt_motor(uint8 flag);
+	void set_clockmode(uint8_t flags);
+	uint8_t get_clockmode(void);
+	void set_cmt_motor(uint8_t flag);
 	bool get_cmt_motor(void);
 	
-	virtual uint8 get_port_fd00(void);
-	virtual void  set_port_fd00(uint8 data);
-	virtual uint8 get_port_fd02(void);
-	virtual void set_port_fd02(uint8 val);
-	virtual uint8 get_irqstat_fd03(void);
-	virtual uint8 get_extirq_fd17(void);
-	virtual void set_ext_fd17(uint8 data);
+	virtual uint8_t get_port_fd00(void);
+	virtual void  set_port_fd00(uint8_t data);
+	virtual uint8_t get_port_fd02(void);
+	virtual void set_port_fd02(uint8_t val);
+	virtual uint8_t get_irqstat_fd03(void);
+	virtual uint8_t get_extirq_fd17(void);
+	virtual void set_ext_fd17(uint8_t data);
 
-	void set_beep(uint32 data); // fd03
+	void set_beep(uint32_t data); // fd03
 	void reset_sound(void);
+	void reset_printer(void);
 	
 	void reset_fdc(void);
 	void set_fdc_motor(bool flag);
@@ -257,69 +263,69 @@ class FM7_MAINIO : public DEVICE {
 	void set_break_key(bool pressed);
 	void set_sub_attention(bool flag);
 	  
-	uint8 get_fd04(void);
-	void  set_fd04(uint8 val);
-	uint8 get_fd05(void);
-	void  set_fd05(uint8 val);
+	uint8_t get_fd04(void);
+	void  set_fd04(uint8_t val);
+	uint8_t get_fd05(void);
+	void  set_fd05(uint8_t val);
 	
 	virtual void set_extdet(bool flag);
 	// FD0D
-	void set_psg(uint8 val);
-	uint8 get_psg(void);
+	void set_psg(uint8_t val);
+	uint8_t get_psg(void);
 	// FD0E
-	void set_psg_cmd(uint8 cmd);
+	void set_psg_cmd(uint8_t cmd);
 	
 	void write_fd0f(void);
-	uint8 read_fd0f(void);
+	uint8_t read_fd0f(void);
 	bool get_rommode_fd0f(void);
 #if defined(_FM77AV_VARIANTS)
 	// FD12
-	uint8 subsystem_read_status(void);
+	uint8_t subsystem_read_status(void);
 #endif   
 	// OPN
 	void opn_note_on(int index);
-	void set_opn(int index, uint8 val);
-	uint8 get_opn(int index);
-	void set_opn_cmd(int index, uint8 cmd);
-	void write_opn_reg(int index, uint32 addr, uint32 data);
+	void set_opn(int index, uint8_t val);
+	uint8_t get_opn(int index);
+	void set_opn_cmd(int index, uint8_t cmd);
+	void write_opn_reg(int index, uint32_t addr, uint32_t data);
   
-	uint8 get_extirq_whg(void);
-	uint8 get_extirq_thg(void);
+	uint8_t get_extirq_whg(void);
+	uint8_t get_extirq_thg(void);
 	
-	void write_kanjiaddr_lo(uint8 addr);
-	void write_kanjiaddr_hi(uint8 addr);
-	uint8 read_kanjidata_left(void);
-	uint8 read_kanjidata_right(void);
+	void write_kanjiaddr_lo(uint8_t addr);
+	void write_kanjiaddr_hi(uint8_t addr);
+	uint8_t read_kanjidata_left(void);
+	uint8_t read_kanjidata_right(void);
 #if defined(CAPABLE_KANJI_CLASS2)
-	void write_kanjiaddr_lo_l2(uint8 addr);
-	void write_kanjiaddr_hi_l2(uint8 addr);
-	uint8 read_kanjidata_left_l2(void);
-	uint8 read_kanjidata_right_l2(void);
+	void write_kanjiaddr_lo_l2(uint8_t addr);
+	void write_kanjiaddr_hi_l2(uint8_t addr);
+	uint8_t read_kanjidata_left_l2(void);
+	uint8_t read_kanjidata_right_l2(void);
 #endif	
 	  // FDC
-	uint8 get_fdc_fd1c(void);
-	void set_fdc_fd1c(uint8 val);
-	void set_fdc_fd1d(uint8 val);
+	uint8_t get_fdc_fd1c(void);
+	void set_fdc_fd1c(uint8_t val);
+	void set_fdc_fd1d(uint8_t val);
 	
-	uint8 get_fdc_fd1e(void);
-	void set_fdc_fd1e(uint8 val);
+	uint8_t get_fdc_fd1e(void);
+	void set_fdc_fd1e(uint8_t val);
 	
-	uint8 get_fdc_stat(void);
-	void set_fdc_cmd(uint8 val);
-	uint8 fdc_getdrqirq(void);
+	uint8_t get_fdc_stat(void);
+	void set_fdc_cmd(uint8_t val);
+	uint8_t fdc_getdrqirq(void);
 
-	virtual void set_fdc_track(uint8 val);
-	virtual uint8 get_fdc_track(void);
+	virtual void set_fdc_track(uint8_t val);
+	virtual uint8_t get_fdc_track(void);
 
-	uint8 get_fdc_motor(void);
-	void set_fdc_sector(uint8 val);
-	uint8 get_fdc_sector(void);
+	uint8_t get_fdc_motor(void);
+	void set_fdc_sector(uint8_t val);
+	uint8_t get_fdc_sector(void);
 	  
-	void set_fdc_data(uint8 val);
-	uint8 get_fdc_data(void);
+	void set_fdc_data(uint8_t val);
+	uint8_t get_fdc_data(void);
 	
-	void set_fdc_misc(uint8 val);
-	uint8 get_fdc_misc(void);
+	void set_fdc_misc(uint8_t val);
+	uint8_t get_fdc_misc(void);
 	/* Signal Handlers */
 	void set_beep_oneshot(void);
 	
@@ -327,10 +333,13 @@ class FM7_MAINIO : public DEVICE {
 	void event_beep_off(void);
 	void event_beep_cycle(void);
 	/* Devices */
+#if defined(_FM8)
+	YM2203* opn[1]; // Optional PSG.
+#else	
 	YM2203* opn[4]; // 0=OPN 1=WHG 2=THG 3=PSG
-	
+#endif
 	DEVICE* drec;
-        DEVICE* pcm1bit;
+	DEVICE* pcm1bit;
 	DEVICE* joystick;
 	
         //DEVICE* beep;
@@ -338,7 +347,7 @@ class FM7_MAINIO : public DEVICE {
 #if defined(HAS_DMA)
 	HD6844* dmac;
 #endif
-	//FM7_PRINTER *printer;
+	DEVICE *printer;
 	//FM7_RS232C *rs232c;
 	/* */
 	DEVICE *kanjiclass1;
@@ -356,32 +365,36 @@ class FM7_MAINIO : public DEVICE {
 	~FM7_MAINIO();
 	void event_vline(int v, int clock);
 
-	uint8  opn_regs[4][0x100];
-	uint32 read_io8(uint32 addr); // This is only for debug.
+	uint8_t  opn_regs[4][0x100];
+	uint32_t read_io8(uint32_t addr); // This is only for debug.
   
 	void initialize();
 
-	void write_data8(uint32 addr, uint32 data);
-	void write_dma_data8(uint32 addr, uint32 data);
-	void write_dma_io8(uint32 addr, uint32 data);
+	void write_data8(uint32_t addr, uint32_t data);
+	void write_dma_data8(uint32_t addr, uint32_t data);
+	void write_dma_io8(uint32_t addr, uint32_t data);
    
-	uint32 read_data8(uint32 addr);
-	uint32 read_dma_data8(uint32 addr);
-	uint32 read_dma_io8(uint32 addr);
+	uint32_t read_data8(uint32_t addr);
+	uint32_t read_dma_data8(uint32_t addr);
+	uint32_t read_dma_io8(uint32_t addr);
 
-	void write_signal(int id, uint32 data, uint32 mask);
-	uint32 read_signal(int id);
+	void write_signal(int id, uint32_t data, uint32_t mask);
+	uint32_t read_signal(int id);
 
 	void event_callback(int event_id, int err);
 	void reset();
 	void update_config();
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
-	const _TCHAR *get_device_name(void)
+	const _TCHAR *get_device_name()
 	{
 		return _T("FM7_MAIN_IO");
 	}
 
+	void set_context_printer(DEVICE *p)
+	{
+		printer = p;
+	}
 	void set_context_kanjirom_class1(DEVICE *p)
 	{
 		kanjiclass1 = p;
@@ -403,6 +416,7 @@ class FM7_MAINIO : public DEVICE {
 	{
 		drec = p;
 	}
+#if !defined(_FM8)
 	void set_context_opn(YM2203 *p, int ch)
 	{
 		if((ch < 0) || (ch > 2)) return;
@@ -420,20 +434,20 @@ class FM7_MAINIO : public DEVICE {
 			}
 		}
 		opn[ch] = p;
-		if(connect_opn) {
-			extdet_neg = true;
-		}
-		if(connect_whg) {
-			extdet_neg = true;
-		}
-		if(connect_thg) {
-			extdet_neg = true;
-		}
+		extdet_neg = true;
 	}
+#endif
+#if !defined(_FM77AV_VARIANTS)	
 	void set_context_psg(YM2203 *p)
 	{
+# if defined(_FM8)
+		opn[0] = p;
+		connect_psg = true;
+# else		
 		opn[3] = p;
+# endif		
 	}
+#endif
 	void set_context_fdc(MB8877 *p){
 		if(p == NULL) {
 	  		connect_fdc = false;
@@ -463,6 +477,12 @@ class FM7_MAINIO : public DEVICE {
 	}
 	void set_context_joystick(DEVICE *p){
 		joystick = p;
+	}
+	void set_context_clock_status(DEVICE *p, int id, uint32_t mask) {
+		register_output_signal(&clock_status, p, id, mask);
+	}
+	void set_context_printer_reset(DEVICE *p, int id, uint32_t mask) {
+		register_output_signal(&printer_reset_bus, p, id, mask);
 	}
 	void set_context_z80cpu(Z80 *p){
 #ifdef WITH_Z80

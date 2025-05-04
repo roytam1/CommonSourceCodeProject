@@ -434,9 +434,9 @@ void VM::draw_screen()
 }
 
 #if defined(_MZ800) || defined(_MZ1500)
-int VM::get_access_lamp_status()
+uint32_t VM::get_access_lamp_status()
 {
-	uint32 status = fdc->read_signal(0) | qd->read_signal(0);
+	uint32_t status = fdc->read_signal(0) | qd->read_signal(0);
 	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
 }
 #endif
@@ -460,7 +460,7 @@ void VM::initialize_sound(int rate, int samples)
 #endif
 }
 
-uint16* VM::create_sound(int* extra_frames)
+uint16_t* VM::create_sound(int* extra_frames)
 {
 	return event->create_sound(extra_frames);
 }
@@ -499,19 +499,19 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 void VM::play_tape(const _TCHAR* file_path)
 {
 	drec->play_tape(file_path);
-	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+	drec->set_remote(true);
 }
 
 void VM::rec_tape(const _TCHAR* file_path)
 {
 	drec->rec_tape(file_path);
-	drec->write_signal(SIG_DATAREC_REMOTE, 1, 1);
+	drec->set_remote(true);
 }
 
 void VM::close_tape()
 {
 	drec->close_tape();
-	drec->write_signal(SIG_DATAREC_REMOTE, 0, 0);
+	drec->set_remote(false);
 }
 
 bool VM::is_tape_inserted()

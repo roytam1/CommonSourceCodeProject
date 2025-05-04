@@ -30,7 +30,7 @@ private:
 	
 	FILEIO* fio;
 	int bufcnt;
-	uint8 buffer[BUFFER_SIZE];
+	uint8_t buffer[BUFFER_SIZE];
 	bool play, rec, remote;
 	
 	void release_tape();
@@ -43,8 +43,8 @@ public:
 	void initialize();
 	void release();
 	void reset();
-	void write_io8(uint32 addr, uint32 data);
-	void write_signal(int id, uint32 data, uint32 mask);
+	void write_io8(uint32_t addr, uint32_t data);
+	void write_signal(int id, uint32_t data, uint32_t mask);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	

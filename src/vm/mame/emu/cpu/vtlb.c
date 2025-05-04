@@ -125,6 +125,8 @@ void vtlb_free(vtlb_state *vtlb)
     response to an unmapped access
 -------------------------------------------------*/
 
+static int cpu_translate_i386(void *cpudevice, address_spacenum space, int intention, offs_t *address);
+
 int vtlb_fill(vtlb_state *vtlb, offs_t address, int intention)
 {
 	offs_t tableindex = address >> vtlb->pageshift;

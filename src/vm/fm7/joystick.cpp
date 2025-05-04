@@ -18,6 +18,7 @@ JOYSTICK::JOYSTICK(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 	p_emu = parent_emu;
 	rawdata = NULL;
 	mouse_state = NULL;
+	lpt_type = 0;
 }
 
 JOYSTICK::~JOYSTICK()
@@ -26,7 +27,11 @@ JOYSTICK::~JOYSTICK()
 
 void JOYSTICK::initialize()
 {
+#ifdef _USE_QT
+	rawdata = p_emu->get_osd()->get_joy_buffer();
+#else   
 	rawdata = p_emu->get_joy_buffer();
+#endif   
 	mouse_state = p_emu->get_mouse_buffer();
 	emulate_mouse[0] = emulate_mouse[1] = false;
 	joydata[0] = joydata[1] = 0xff;
@@ -36,28 +41,38 @@ void JOYSTICK::initialize()
 	mouse_timeout_event = -1;
 	port_a_val = 0;
 	port_b_val = 0;
+	lpmask = 0x00;
 }
 
 void JOYSTICK::reset()
 {
+	int i;
 	joydata[0] = joydata[1] = 0xff;
+	lpt_type = config.printer_device_type;
+#if !defined(_FM8)
 	dx = dy = 0;
 	lx = ly = 0;
 	mouse_phase = 0;
 	mouse_strobe = false;
 	mouse_type = config.device_type;
-	if(mouse_type == 1) emulate_mouse[0] = true;
-	if(mouse_type == 2) emulate_mouse[1] = true;
+	for(i = 0; i < 2; i++) {
+		if(mouse_type  == (i + 1)) {
+			emulate_mouse[i] = true;
+		} else {
+			emulate_mouse[i] = false;
+		}
+	}	
 	mouse_state = p_emu->get_mouse_buffer();
+#endif	
 }
 
 void JOYSTICK::event_frame()
 {
 	int ch;
 	int stat = 0x00;
-	uint32 retval = 0xff;
-	uint32 val;
- 
+	uint32_t retval = 0xff;
+	uint32_t val;
+#if !defined(_FM8)
 	if(mouse_state != NULL) {
 		dx += (mouse_state[0] / 2);
 		dy += (mouse_state[1] / 2);
@@ -76,7 +91,12 @@ void JOYSTICK::event_frame()
 	mouse_button = 0x00;
 	if((stat & 0x01) == 0) mouse_button |= 0x10; // left
 	if((stat & 0x02) == 0) mouse_button |= 0x20; // right
+#endif	
+#ifdef _USE_QT
+	rawdata = p_emu->get_osd()->get_joy_buffer();
+#else   
 	rawdata = p_emu->get_joy_buffer();
+#endif 
 	if(rawdata == NULL) return;
    
 	for(ch = 0; ch < 2; ch++) {
@@ -94,15 +114,15 @@ void JOYSTICK::event_frame()
 			retval |= 0xc0;
 			joydata[ch] = retval;
 		} else { // MOUSE
-		   
 		}
 	}
 }
 
 
-uint32 JOYSTICK::update_mouse(uint32 mask)
+uint32_t JOYSTICK::update_mouse(uint32_t mask)
 {
-	uint32 button = mouse_button;
+#if !defined(_FM8)
+	uint32_t button = mouse_button;
 	switch(mouse_phase) {
 			case 1:
 				mouse_data = lx & 0x0f;
@@ -119,10 +139,14 @@ uint32 JOYSTICK::update_mouse(uint32 mask)
 	}
 	//mouse_button = 0x00;
 	return (mouse_data | (mask & button) | 0xc0);
+#else
+	return 0x00;
+#endif	
 }
 
 void JOYSTICK::event_callback(int event_id, int err)
 {
+#if !defined(_FM8)
 	switch(event_id) {
 	case EVENT_MOUSE_TIMEOUT:
 		mouse_phase = 0;
@@ -132,6 +156,7 @@ void JOYSTICK::event_callback(int event_id, int err)
 		mouse_data = ly & 0x0f;
 		break;
 	}
+#endif	
 }
 
 void JOYSTICK::update_strobe(bool flag)
@@ -150,14 +175,15 @@ void JOYSTICK::update_strobe(bool flag)
 	}
 }
 
-uint32 JOYSTICK::read_data8(uint32 addr)
+uint32_t JOYSTICK::read_data8(uint32_t addr)
 {
-	uint32 val = 0xff;
-	uint32 opnval;
+	uint32_t val = 0xff;
+	uint32_t opnval;
 	//if(opn == NULL) return 0xff;
 	
 	switch(addr) {
-		case 0:
+#if !defined(_FM8)		
+	case 0: // OPN
 			//opn->write_io8(0, 0x0f);
 			//opnval = opn->read_io8(1);
 			opnval = port_b_val;
@@ -170,27 +196,48 @@ uint32 JOYSTICK::read_data8(uint32 addr)
 					return update_mouse((opnval & 0x0c) << 2);
 				}
 			}
-			
 			switch(opnval & 0xf0) {
 				case 0x20:
-					val = joydata[0];
+					if(lpt_type != 1) val = joydata[0];
 					break;
 				case 0x50:
-					val = joydata[1];
+					if(lpt_type != 2) val = joydata[1];
 					break;
 			}
 			break;
+#endif			
+	case 2: // Get Printer Joystick (CH0)
+	case 3: // Get Printer Joystick (CH1)
+		int ch = addr - 1;
+		if(lpt_type == ch) {
+			uint8_t raw = rawdata[ch - 1];
+			bool f = false;
+			f |= ((raw & 0x08) && !(lpmask & 0x01));	
+			f |= ((raw & 0x04) && !(lpmask & 0x02));	
+			f |= ((raw & 0x01) && !(lpmask & 0x04));	
+			f |= ((raw & 0x02) && !(lpmask & 0x08));	
+			f |= ((raw & 0x20) && !(lpmask & 0x10));	
+			f |= ((raw & 0x10) && !(lpmask & 0x20));
+			if(f) val = 0x00;
+		}
 	}
 	return val;
 }
 
-void JOYSTICK::write_data8(uint32 addr, uint32 data)
+void JOYSTICK::write_data8(uint32_t addr, uint32_t data)
 {
+	switch(addr & 0x00ff) {
+	case 1: // JOYSTICK PRINTER(ch1)
+		if((lpt_type == 1) || (lpt_type == 2)) {
+	   		lpmask = data & 0x3f;
+		}
+		break;
+	}		
 }
 
-void JOYSTICK::write_signal(int id, uint32 data, uint32 mask)
+void JOYSTICK::write_signal(int id, uint32_t data, uint32_t mask)
 {
-	uint32 val = data & mask;
+	uint32_t val = data & mask;
 	bool val_b = (val != 0);
 	switch(id) {
 		case FM7_JOYSTICK_EMULATE_MOUSE_0:
@@ -207,15 +254,15 @@ void JOYSTICK::write_signal(int id, uint32 data, uint32 mask)
 				update_strobe(((data & 0x20) != 0));
 			}
 			break;
-	   
 	}
 }
 
 void JOYSTICK::update_config(void)
 {
+#if !defined(_FM8)
 	if(mouse_type == config.device_type) return;
 	mouse_type = config.device_type;
-	switch(config.device_type){
+	switch(mouse_type & 0x03){
 	case 1:
 		emulate_mouse[0] = true;
 		emulate_mouse[1] = false;
@@ -232,8 +279,9 @@ void JOYSTICK::update_config(void)
 		this->reset();
 		break;
 	}
+#endif	
 }
-#define STATE_VERSION 2
+#define STATE_VERSION 3
 void JOYSTICK::save_state(FILEIO *state_fio)
 {
 	int ch;
@@ -241,10 +289,13 @@ void JOYSTICK::save_state(FILEIO *state_fio)
 	state_fio->FputInt32_BE(this_device_id);
 	// Version 1
 	for(ch = 0; ch < 2; ch++) {
+#if !defined(_FM8)
 		state_fio->FputBool(emulate_mouse[ch]);
+#endif		
 		state_fio->FputUint32_BE(joydata[ch]);
 	}
 	// After Version2.
+#if !defined(_FM8)
 	state_fio->FputInt32_BE(dx);
 	state_fio->FputInt32_BE(dy);
 	state_fio->FputInt32_BE(lx);
@@ -254,23 +305,28 @@ void JOYSTICK::save_state(FILEIO *state_fio)
 	state_fio->FputUint32_BE(mouse_phase);
 	state_fio->FputUint32_BE(mouse_data);
 	//state_fio->FputInt32(mouse_timeout_event);
+#endif	
 	// Version 3
+	state_fio->FputUint8(lpmask);
 }
 
 bool JOYSTICK::load_state(FILEIO *state_fio)
 {
-	uint32 version = state_fio->FgetUint32_BE();
-	uint32 devid = state_fio->FgetInt32_BE();
+	uint32_t version = state_fio->FgetUint32_BE();
+	uint32_t devid = state_fio->FgetInt32_BE();
 	bool stat = false;
 	int ch;
 	if(devid != this_device_id) return stat;
 	if(version >= 1) {
 		for(ch = 0; ch < 2; ch++) {
+#if !defined(_FM8)
 			emulate_mouse[ch] = state_fio->FgetBool();
+#endif			
 			joydata[ch] = state_fio->FgetUint32_BE();
 		}
 		if(version == 1) stat = true;
 	}
+#if !defined(_FM8)
 	// After version 2.
 	dx = state_fio->FgetInt32_BE();
 	dy = state_fio->FgetInt32_BE();
@@ -281,7 +337,9 @@ bool JOYSTICK::load_state(FILEIO *state_fio)
 	mouse_phase = state_fio->FgetUint32_BE();
 	mouse_data = state_fio->FgetUint32_BE();
 	//mouse_timeout_event = state_fio->FgetInt32();
-	if(version == 2) stat = true; 
+#endif	
+	lpmask = state_fio->FgetUint8();
+	if(version == 3) stat = true; 
 	return stat;
 }
 		

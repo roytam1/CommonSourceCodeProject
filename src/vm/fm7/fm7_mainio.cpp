@@ -27,7 +27,6 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	p_emu = parent_emu;
 	kanjiclass1 = NULL;
 	kanjiclass2 = NULL;
-	opn_psg_77av = false;
 	// FD00
 	clock_fast = true;
 	lpt_strobe = false;
@@ -37,15 +36,16 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	// FD02
 	cmt_indat = false; // bit7
 	cmt_invert = false; // Invert signal
-	lpt_det2 = false;
-	lpt_det1 = false;
-	lpt_pe = false;
-	lpt_ackng_inv = false;
-	lpt_error_inv = false;
-	lpt_busy = false;
+	lpt_det2 = true;
+	lpt_det1 = true;
+	lpt_pe = true;
+	lpt_ackng_inv = true;
+	lpt_error_inv = true;
+	lpt_busy = true;
+	lpt_type = 0;
 	// FD04
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-	defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
 	stat_kanjirom = true;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 #elif defined(_FM77_VARIANTS)
 	stat_fdmode_2hd = false; //  R/W : bit6, '0' = 2HD, '1' = 2DD. FM-77 Only.
@@ -70,6 +70,14 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	stat_romrammode = true; // ROM ON
 	
 	// FD15/ FD46 / FD51
+#if defined(_FM8)
+	connect_psg = false;
+	{
+		opn_address[0] = 0x00;
+		opn_data[0] = 0x00;
+		opn_cmdreg[0] = 0;
+	}
+#else	
 	connect_opn = false;
 	connect_whg = false;
 	connect_thg = false;
@@ -79,15 +87,13 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 		opn_data[i] = 0x00;
 		opn_cmdreg[i] = 0;
 	}
-	joyport_a = 0x00;
-	joyport_b = 0x00;
-		
 	intstat_whg = false;
 	intstat_thg = false;
 	// FD17
 	intstat_opn = false;
 	intstat_mouse = false;
 	mouse_enable = false;
+#endif	
 	// FD18-FD1F
 	connect_fdc = false;
 	fdc_statreg = 0x00;
@@ -112,6 +118,10 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	dmac = NULL;
 #endif	
 	memset(io_w_latch, 0xff, 0x100);
+	initialize_output_signals(&clock_status);
+	initialize_output_signals(&printer_reset_bus);
+	initialize_output_signals(&printer_strobe_bus);
+	initialize_output_signals(&printer_select_bus);
 }
 
 FM7_MAINIO::~FM7_MAINIO()
@@ -126,6 +136,7 @@ void FM7_MAINIO::initialize()
 	event_beep_oneshot = -1;
 	event_timerirq = -1;
 	event_fdc_motor = -1;
+
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	boot_ram = false;
 # if defined(_FM77_VARIANTS)
@@ -156,7 +167,6 @@ void FM7_MAINIO::initialize()
 	irqreq_syndet = false;
 	irqreq_rxrdy = false;
 	irqreq_txrdy = false;
-	irqreq_timer = false;
 	irqreq_printer = false;
 	irqreq_keyboard = false;
 #if defined(_FM77AV_VARIANTS)
@@ -175,23 +185,17 @@ void FM7_MAINIO::reset()
 	beep_snd = true;
 	beep_flag = false;
 	register_event(this, EVENT_BEEP_CYCLE, (1000.0 * 1000.0) / (1200.0 * 2.0), true, &event_beep);
-   
+	// Sound
 #if defined(_FM77AV_VARIANTS)
-	opn_psg_77av = true;
 	hotreset = false;
-#else
-	opn_psg_77av = false;
 #endif
-	connect_opn = false;
-	connect_thg = false;
-	connect_whg = false;
+	// Around boot rom
 #if defined(_FM77_VARIANTS)
-	boot_ram = (mainmem->read_signal(FM7_MAINIO_BOOTRAM_RW) == 0) ? false : true;
-#endif
-#if defined(_FM77AV_VARIANTS)
-	//enable_initiator = true;
-	//mainmem->write_signal(FM7_MAINIO_INITROM_ENABLED, (enable_initiator) ? 0xffffffff : 0 , 0xffffffff);
-	boot_ram = (mainmem->read_signal(FM7_MAINIO_BOOTRAM_RW) == 0) ? false : true;
+	//boot_ram = (mainmem->read_signal(FM7_MAINIO_BOOTRAM_RW) == 0) ? false : true;
+	boot_ram = false;
+#elif defined(_FM77AV_VARIANTS)
+	//boot_ram = (mainmem->read_signal(FM7_MAINIO_BOOTRAM_RW) == 0) ? false : true;
+	boot_ram = true;
 #endif
 	// FD05
 	extdet_neg = false;
@@ -200,23 +204,24 @@ void FM7_MAINIO::reset()
 	sub_cancel_bak = sub_cancel; // bit6 : '1' Cancel req.
 	sub_halt_bak = sub_halt; // bit6 : '1' Cancel req.
 	//sub_busy = false;
-   
-	extdet_neg = false;
-   
+	// FD02
+	cmt_indat = false; // bit7
+	cmt_invert = false; // Invert signal
+	lpt_det2 = true;
+	lpt_det1 = true;
+	lpt_pe = true;
+	lpt_ackng_inv = true;
+	lpt_error_inv = true;
+	lpt_busy = true;
+	lpt_type = config.printer_device_type;
+	reset_printer();
+	
 	//stat_romrammode = true;
 	// IF BASIC BOOT THEN ROM
 	// ELSE RAM
-	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, ((config.boot_mode & 3) == 0) ? 0xffffffff : 0, 0xffffffff);
+	//mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, ((config.boot_mode & 3) == 0) ? 0xffffffff : 0, 0xffffffff);
 #if defined(_FM77AV_VARIANTS)
 	sub_monitor_type = 0x00;
-#endif
-	
-#ifdef HAS_MMR
-	mainmem->write_signal(FM7_MAINIO_WINDOW_ENABLED, 0, 0xffffffff);
-	mainmem->write_data8(FM7_MAINIO_WINDOW_OFFSET, 0x00);
-	mainmem->write_signal(FM7_MAINIO_FASTMMR_ENABLED, 0, 0xffffffff);
-	mainmem->write_signal(FM7_MAINIO_MMR_ENABLED, 0, 0xffffffff);
-	//mainmem->write_data8(FM7_MAINIO_MMR_SEGMENT, mmr_segment);
 #endif
 	switch(config.cpu_type){
 		case 0:
@@ -226,8 +231,7 @@ void FM7_MAINIO::reset()
 			clock_fast = false;
 			break;
 	}
-	this->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
-	//mainmem->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
+	this->write_signals(&clock_status, clock_fast ? 0xffffffff : 0);
    
 	// FD03
 	irqmask_syndet = true;
@@ -244,14 +248,13 @@ void FM7_MAINIO::reset()
 	intstat_txrdy = false;
 	irqstat_timer = false;
 	irqstat_printer = false;
-	irqstat_keyboard = false;
+	//irqstat_keyboard = false;
   
 	irqreq_syndet = false;
 	irqreq_rxrdy = false;
 	irqreq_txrdy = false;
-	irqreq_timer = false;
 	irqreq_printer = false;
-	irqreq_keyboard = false;
+	//irqreq_keyboard = false;
 	// FD00
 	drec->write_signal(SIG_DATAREC_MIC, 0x00, 0x01);
 	drec->write_signal(SIG_DATAREC_REMOTE, 0x00, 0x02);
@@ -262,14 +265,12 @@ void FM7_MAINIO::reset()
 	firq_break_key = (keyboard->read_signal(SIG_FM7KEY_BREAK_KEY) != 0x00000000); // bit1, ON = '0'.
 	set_sub_attention(false);	
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-	defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
 	stat_kanjirom = true;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 #elif defined(_FM77_VARIANTS)
 	stat_fdmode_2hd = false; //  R/W : bit6, '0' = 2HD, '1' = 2DD. FM-77 Only.
 	stat_kanjirom = true;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 #endif	
-	//display->write_signal(SIG_FM7_SUB_KEY_MASK, 1, 1); 
-	//display->write_signal(SIG_FM7_SUB_KEY_FIRQ, 0, 1);
 	maincpu->write_signal(SIG_CPU_FIRQ, 0, 1);
 #if defined(HAS_DMA)
 	intstat_dma = false;
@@ -278,12 +279,26 @@ void FM7_MAINIO::reset()
 #if defined(_FM77AV_VARIANTS)
 	reg_fd12 = 0x00;
 #endif		
+#if !defined(_FM8)
 	register_event(this, EVENT_TIMERIRQ_ON, 10000.0 / 4.9152, true, &event_timerirq); // TIMER IRQ
+#endif	
 	memset(io_w_latch, 0xff, 0x100);
 }
 
+void FM7_MAINIO::reset_printer()
+{
+	lpt_slctin = true;
+	lpt_strobe = false;
+	this->write_signals(&printer_strobe_bus, 0);
+	this->write_signals(&printer_select_bus, 0xffffffff);
+	this->write_signals(&printer_reset_bus, 0xffffffff);
+	register_event(this, EVENT_PRINTER_RESET_COMPLETED, 5.0 * 1000.0, false, NULL);
+	if(lpt_type == 0) {
+		printer->write_signal(SIG_PRINTER_STROBE, 0x00, 0xff);
+	}
+}
 
-void FM7_MAINIO::set_clockmode(uint8 flags)
+void FM7_MAINIO::set_clockmode(uint8_t flags)
 {
 	bool f = clock_fast;
 	if((flags & FM7_MAINCLOCK_SLOW) != 0) {
@@ -297,37 +312,74 @@ void FM7_MAINIO::set_clockmode(uint8 flags)
 	}
 }
 
-uint8 FM7_MAINIO::get_clockmode(void)
+uint8_t FM7_MAINIO::get_clockmode(void)
 {
 	if(!clock_fast) return FM7_MAINCLOCK_SLOW;
 	return FM7_MAINCLOCK_HIGH;
 }
 
 
-uint8 FM7_MAINIO::get_port_fd00(void)
+uint8_t FM7_MAINIO::get_port_fd00(void)
 {
-	uint8 ret           = 0x7e; //0b01111110;
+	uint8_t ret           = 0x7e; //0b01111110;
+#if defined(_FM8)
+	ret = 0xfe;
+#else	
 	if(keyboard->read_data8(0x00) != 0) ret |= 0x80; // High bit.
+#endif	
 	if(clock_fast) ret |= 0x01; //0b00000001;
 	return ret;
 }
   
-void FM7_MAINIO::set_port_fd00(uint8 data)
+void FM7_MAINIO::set_port_fd00(uint8_t data)
 {
        drec->write_signal(SIG_DATAREC_MIC, data, 0x01);
        drec->write_signal(SIG_DATAREC_REMOTE, data, 0x02);
+	   lpt_slctin = ((data & 0x80) == 0);
+	   lpt_strobe = ((data & 0x40) != 0);
+	   this->write_signals(&printer_strobe_bus, lpt_strobe ? 0xffffffff : 0);
+	   this->write_signals(&printer_select_bus, lpt_slctin ? 0xffffffff : 0);
+	   if((lpt_type == 0) && (lpt_slctin)) {
+		   printer->write_signal(SIG_PRINTER_STROBE, lpt_strobe ? 0xff : 0x00, 0xff);
+	   }
 }
    
-uint8 FM7_MAINIO::get_port_fd02(void)
+uint8_t FM7_MAINIO::get_port_fd02(void)
 {
-	uint8 ret;
+	uint8_t ret;
+	bool ack_bak = lpt_ackng_inv;
 	// Still unimplemented printer.
-	ret = (cmt_indat) ? 0xff : 0x7f; // CMT 
+	ret = (cmt_indat) ? 0xff : 0x7f; // CMT
+	
+	if(lpt_type == 0) {
+		lpt_busy = (printer->read_signal(SIG_PRINTER_BUSY) != 0);
+		lpt_error_inv = true;
+		lpt_ackng_inv = (printer->read_signal(SIG_PRINTER_ACK) != 0);
+		lpt_pe = false;
+	} else if((lpt_type == 1) || (lpt_type == 2)) {
+		lpt_pe = (joystick->read_data8(lpt_type + 1) != 0); // check joy port;
+		lpt_busy = true;
+		lpt_error_inv = true;
+		lpt_ackng_inv = true;
+	} else {
+		lpt_busy = true;
+		lpt_error_inv = true;
+		lpt_ackng_inv = true;
+		lpt_pe = true;
+	}
+	ret &= (lpt_busy)      ? 0xff : ~0x01;
+	ret &= (lpt_error_inv) ? 0xff : ~0x02;
+	ret &= (lpt_ackng_inv) ? 0xff : ~0x04;
+	ret &= (lpt_pe)        ? 0xff : ~0x08;
+	ret &= (lpt_det1)      ? 0xff : ~0x10;
+	ret &= (lpt_det2)      ? 0xff : ~0x20;
+	if((lpt_ackng_inv == true) && (ack_bak == false)) set_irq_printer(true);
 	return ret;
 }
 
-void FM7_MAINIO::set_port_fd02(uint8 val)
+void FM7_MAINIO::set_port_fd02(uint8_t val)
 {
+#if !defined(_FM8)	
 	irqmask_reg0 = val;
 	bool syndetirq_bak = irqmask_syndet;
 	bool rxrdyirq_bak = irqmask_rxrdy;
@@ -352,44 +404,44 @@ void FM7_MAINIO::set_port_fd02(uint8 val)
 	} else {
 		irqmask_rxrdy = true;
 	}
-	if(rxrdyirq_bak != irqmask_rxrdy) {
-		set_irq_rxrdy(irqreq_rxrdy);
-	}
+//	if(rxrdyirq_bak != irqmask_rxrdy) {
+//		set_irq_rxrdy(irqreq_rxrdy);
+//	}
 	if((val & 0x20) != 0) {
 		irqmask_txrdy = false;
 	} else {
 		irqmask_txrdy = true;
 	}
-	if(txrdyirq_bak != irqmask_txrdy) {
-   		set_irq_txrdy(irqreq_txrdy);
-	}
+//	if(txrdyirq_bak != irqmask_txrdy) {
+	// 		set_irq_txrdy(irqreq_txrdy);
+//	}
 	
 	if((val & 0x10) != 0) {
 		irqmask_mfd = false;
 	} else {
 		irqmask_mfd = true;
 	}
-	if(mfdirq_bak != irqmask_mfd) {
-   		set_irq_mfd(irqreq_fdc);
-	}
+//	if(mfdirq_bak != irqmask_mfd) {
+//   		set_irq_mfd(irqreq_fdc);
+//	}
 
 	if((val & 0x04) != 0) {
 		irqmask_timer = false;
 	} else {
 		irqmask_timer = true;
 	}
-	if(timerirq_bak != irqmask_timer) {
-   		set_irq_timer(irqreq_timer);
-	}
+//	if(timerirq_bak != irqmask_timer) {
+// 		set_irq_timer(false);
+//	}
 
 	if((val & 0x02) != 0) {
 		irqmask_printer = false;
 	} else {
 		irqmask_printer = true;
 	}
-	if(printerirq_bak != irqmask_printer) {
-   		set_irq_printer(irqreq_printer);
-	}
+//	if(printerirq_bak != irqmask_printer) {
+//   		set_irq_printer(irqreq_printer);
+//	}
    
 	if((val & 0x01) != 0) {
 		irqmask_keyboard = false;
@@ -400,6 +452,7 @@ void FM7_MAINIO::set_port_fd02(uint8 val)
 		display->write_signal(SIG_FM7_SUB_KEY_MASK, irqmask_keyboard ? 1 : 0, 1); 
 		set_irq_keyboard(irqreq_keyboard);
 	}
+#endif	
 	return;
 }
 
@@ -407,6 +460,9 @@ void FM7_MAINIO::set_irq_syndet(bool flag)
 {
 	bool backup = intstat_syndet;
 	irqreq_syndet = flag;
+#if defined(_FM8)
+	intstat_syndet = flag;
+#else	
 	if(flag && !(irqmask_syndet)) {
 	  //irqstat_reg0 &= ~0x80; //~0x20;
 		intstat_syndet = true;	   
@@ -414,8 +470,8 @@ void FM7_MAINIO::set_irq_syndet(bool flag)
 	  //	irqstat_reg0 |= 0x80;
 		intstat_syndet = false;	   
 	}
+#endif	
 	if(backup != intstat_syndet) do_irq();
-	//printf("IRQ TIMER: %02x MASK=%d\n", irqstat_reg0, irqmask_timer);
 }
 
 
@@ -423,6 +479,9 @@ void FM7_MAINIO::set_irq_rxrdy(bool flag)
 {
 	bool backup = intstat_rxrdy;
 	irqreq_rxrdy = flag;
+#if defined(_FM8)
+	intstat_rxrdy = flag;
+#else	
 	if(flag && !(irqmask_rxrdy)) {
 	  //irqstat_reg0 &= ~0x40; //~0x20;
 		intstat_rxrdy = true;	   
@@ -430,8 +489,8 @@ void FM7_MAINIO::set_irq_rxrdy(bool flag)
 	  //irqstat_reg0 |= 0x40;
 		intstat_rxrdy = false;	   
 	}
+#endif	
 	if(backup != intstat_rxrdy) do_irq();
-	//printf("IRQ TIMER: %02x MASK=%d\n", irqstat_reg0, irqmask_timer);
 }
 
 
@@ -440,6 +499,9 @@ void FM7_MAINIO::set_irq_txrdy(bool flag)
 {
 	bool backup = intstat_txrdy;
 	irqreq_txrdy = flag;
+#if defined(_FM8)
+	intstat_txrdy = flag;
+#else	
 	if(flag && !(irqmask_txrdy)) {
 	  //irqstat_reg0 &= ~0x20; //~0x20;
 		intstat_txrdy = true;	   
@@ -447,45 +509,46 @@ void FM7_MAINIO::set_irq_txrdy(bool flag)
 	  //irqstat_reg0 |= 0x20;
 		intstat_txrdy = false;	   
 	}
+#endif	
 	if(backup != intstat_txrdy) do_irq();
-	//printf("IRQ TIMER: %02x MASK=%d\n", irqstat_reg0, irqmask_timer);
 }
 
 
 void FM7_MAINIO::set_irq_timer(bool flag)
 {
-	uint8 backup = irqstat_reg0;
-	irqreq_timer = flag;
-	if(flag && !(irqmask_timer)) {
+#if !defined(_FM8)
+	bool backup = irqstat_timer;
+	if(flag) {
 		irqstat_reg0 &= 0xfb; //~0x04;
 		irqstat_timer = true;	   
 	} else {
 		irqstat_reg0 |= 0x04;
 		irqstat_timer = false;	   
 	}
-	if(backup != irqstat_reg0) do_irq();
-	//printf("IRQ TIMER: %02x MASK=%d\n", irqstat_reg0, irqmask_timer);
+	//if(backup != irqstat_timer) do_irq();
+	do_irq();
+#endif	
 }
 
 void FM7_MAINIO::set_irq_printer(bool flag)
 {
-	uint8 backup = irqstat_reg0;
+#if !defined(_FM8)
+	uint8_t backup = irqstat_reg0;
 	irqreq_printer = flag;
 	if(flag && !(irqmask_printer)) {
 		irqstat_reg0 &= ~0x02;
 		irqstat_printer = true;	   
-		if(backup != irqstat_reg0) do_irq();
 	} else {
 		irqstat_reg0 |= 0x02;
 		irqstat_printer = false;	   
-		if(backup != irqstat_reg0) do_irq();
 	}
-//	if(!irqmask_printer || !flag) do_irq();
+	do_irq();
+#endif	
 }
 
 void FM7_MAINIO::set_irq_keyboard(bool flag)
 {
-	//uint8 backup = irqstat_reg0;
+	//uint8_t backup = irqstat_reg0;
    	//printf("MAIN: KEYBOARD: IRQ=%d MASK=%d\n", flag ,irqmask_keyboard);
 	irqreq_keyboard = flag;
 	if(flag && !irqmask_keyboard) {
@@ -495,7 +558,6 @@ void FM7_MAINIO::set_irq_keyboard(bool flag)
 		irqstat_reg0 |= 0x01;
 		irqstat_keyboard = false;	   
 	}
-	//if(irqstat_reg0 != backup) do_irq();
 	do_irq();
 }
 
@@ -503,14 +565,18 @@ void FM7_MAINIO::set_irq_keyboard(bool flag)
 void FM7_MAINIO::do_irq(void)
 {
 	bool intstat;
+#if defined(_FM8)
+   	intstat = intstat_txrdy | intstat_rxrdy | intstat_syndet;
+#else	
 	intstat = irqstat_timer | irqstat_keyboard | irqstat_printer;
 	intstat = intstat | irqstat_fdc;
 	intstat = intstat | intstat_opn | intstat_whg | intstat_thg;
    	intstat = intstat | intstat_txrdy | intstat_rxrdy | intstat_syndet;
 	intstat = intstat | intstat_mouse;
-#if defined(HAS_DMA)
+# if defined(HAS_DMA)
 	intstat = intstat | intstat_dma;
-#endif
+# endif
+#endif	
 	//printf("%08d : IRQ: REG0=%02x FDC=%02x, stat=%d\n", SDL_GetTicks(), irqstat_reg0, irqstat_fdc, intstat);
 	if(intstat) {
 		maincpu->write_signal(SIG_CPU_IRQ, 1, 1);
@@ -522,12 +588,14 @@ void FM7_MAINIO::do_irq(void)
 void FM7_MAINIO::do_firq(void)
 {
 	bool firq_stat;
-	firq_stat = firq_break_key | firq_sub_attention; 
+	firq_stat = firq_break_key | firq_sub_attention;
 	if(firq_stat) {
 		maincpu->write_signal(SIG_CPU_FIRQ, 1, 1);
 	} else {
 		maincpu->write_signal(SIG_CPU_FIRQ, 0, 1);
 	}
+	p_emu->out_debug_log(_T("IO: do_firq(). BREAK=%d ATTN=%d"), firq_break_key ? 1 : 0, firq_sub_attention ? 1 : 0);
+
 }
 
 void FM7_MAINIO::do_nmi(bool flag)
@@ -549,9 +617,9 @@ void FM7_MAINIO::set_sub_attention(bool flag)
 }
   
 
-uint8 FM7_MAINIO::get_fd04(void)
+uint8_t FM7_MAINIO::get_fd04(void)
 {
-	uint8 val = 0x00;
+	uint8_t val = 0x00;
 	if(display->read_signal(SIG_DISPLAY_BUSY) != 0) val |= 0x80;
 	if(!firq_break_key) val |= 0x02;
 	if(!firq_sub_attention) {
@@ -580,7 +648,7 @@ uint8 FM7_MAINIO::get_fd04(void)
 	return val;
 }
 
-void FM7_MAINIO::set_fd04(uint8 val)
+void FM7_MAINIO::set_fd04(uint8_t val)
 {
 	// NOOP?
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
@@ -595,9 +663,9 @@ void FM7_MAINIO::set_fd04(uint8 val)
 }
 
   // FD05
- uint8 FM7_MAINIO::get_fd05(void)
+ uint8_t FM7_MAINIO::get_fd05(void)
 {
-	uint8 val = 0x7e;
+	uint8_t val = 0x7e;
 	//val = (sub_busy) ? 0xfe : 0x7e;
 	if(display->read_signal(SIG_DISPLAY_BUSY) != 0) val |= 0x80;
 	if(!extdet_neg) val |= 0x01;
@@ -605,7 +673,7 @@ void FM7_MAINIO::set_fd04(uint8 val)
 	return val;
 }
 
- void FM7_MAINIO::set_fd05(uint8 val)
+ void FM7_MAINIO::set_fd05(uint8_t val)
 {
 	sub_cancel = ((val & 0x40) != 0) ? true : false;
 	sub_halt   = ((val & 0x80) != 0) ? true : false;
@@ -636,10 +704,26 @@ void FM7_MAINIO::set_extdet(bool flag)
 
 void FM7_MAINIO::write_fd0f(void)
 {
+#if defined(_FM8)
+	if((config.dipswitch & FM7_DIPSW_FM8_PROTECT_FD0F) != 0) {
+		return;
+	}
+	config.boot_mode = 1; // DOS : Where BUBBLE?
+	mainmem->write_signal(FM7_MAINIO_BOOTMODE, config.boot_mode, 0xffffffff);
+	mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0, 0xffffffff);
+#endif	
 	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, 0, 0xffffffff);
 }
-uint8 FM7_MAINIO::read_fd0f(void)
+uint8_t FM7_MAINIO::read_fd0f(void)
 {
+#if defined(_FM8)
+	if((config.dipswitch & FM7_DIPSW_FM8_PROTECT_FD0F) != 0) {
+		return 0xff;
+	}
+	config.boot_mode = 0; // BASIC
+	mainmem->write_signal(FM7_MAINIO_BOOTMODE, config.boot_mode, 0xffffffff);
+	mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0xffffffff, 0xffffffff);
+#endif	
 	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, 0xffffffff, 0xffffffff);
 	return 0xff;
 }
@@ -651,7 +735,7 @@ bool FM7_MAINIO::get_rommode_fd0f(void)
 
 
 // Kanji ROM, FD20 AND FD21 (or SUBSYSTEM)
-void FM7_MAINIO::write_kanjiaddr_hi(uint8 addr)
+void FM7_MAINIO::write_kanjiaddr_hi(uint8_t addr)
 {
 	if(!connect_kanjiroml1) return;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
@@ -662,7 +746,7 @@ void FM7_MAINIO::write_kanjiaddr_hi(uint8 addr)
 	return;
 }
 
-void FM7_MAINIO::write_kanjiaddr_lo(uint8 addr)
+void FM7_MAINIO::write_kanjiaddr_lo(uint8_t addr)
 {
 	if(!connect_kanjiroml1) return;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
@@ -673,7 +757,7 @@ void FM7_MAINIO::write_kanjiaddr_lo(uint8 addr)
 	return;
 }
 
-uint8 FM7_MAINIO::read_kanjidata_left(void)
+uint8_t FM7_MAINIO::read_kanjidata_left(void)
 {
 	if(!connect_kanjiroml1) return 0xff;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
@@ -688,7 +772,7 @@ uint8 FM7_MAINIO::read_kanjidata_left(void)
 	}
 }
 
-uint8 FM7_MAINIO::read_kanjidata_right(void)
+uint8_t FM7_MAINIO::read_kanjidata_right(void)
 {
 	if(!connect_kanjiroml1) return 0xff;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
@@ -704,7 +788,7 @@ uint8 FM7_MAINIO::read_kanjidata_right(void)
 
 #ifdef CAPABLE_KANJI_CLASS2
 // Kanji ROM, FD20 AND FD21 (or SUBSYSTEM)
-void FM7_MAINIO::write_kanjiaddr_hi_l2(uint8 addr)
+void FM7_MAINIO::write_kanjiaddr_hi_l2(uint8_t addr)
 {
 	if(!connect_kanjiroml2) return;
 	if(!stat_kanjirom) return;
@@ -712,7 +796,7 @@ void FM7_MAINIO::write_kanjiaddr_hi_l2(uint8 addr)
 	return;
 }
 
-void FM7_MAINIO::write_kanjiaddr_lo_l2(uint8 addr)
+void FM7_MAINIO::write_kanjiaddr_lo_l2(uint8_t addr)
 {
 	if(!connect_kanjiroml2) return;
 	if(!stat_kanjirom) return;
@@ -721,7 +805,7 @@ void FM7_MAINIO::write_kanjiaddr_lo_l2(uint8 addr)
 	return;
 }
 
-uint8 FM7_MAINIO::read_kanjidata_left_l2(void)
+uint8_t FM7_MAINIO::read_kanjidata_left_l2(void)
 {
 	if(!connect_kanjiroml2) return 0xff;
 	if(!stat_kanjirom) return 0xff;
@@ -733,7 +817,7 @@ uint8 FM7_MAINIO::read_kanjidata_left_l2(void)
 	}
 }
 
-uint8 FM7_MAINIO::read_kanjidata_right_l2(void)
+uint8_t FM7_MAINIO::read_kanjidata_right_l2(void)
 {
 	if(!connect_kanjiroml2) return 0xff;
 	if(!stat_kanjirom) return 0xff;
@@ -747,9 +831,9 @@ uint8 FM7_MAINIO::read_kanjidata_right_l2(void)
 #endif
 
 
-uint32 FM7_MAINIO::read_signal(int id)
+uint32_t FM7_MAINIO::read_signal(int id)
 {
-	uint32 retval;
+	uint32_t retval;
 	switch(id) {
 		case FM7_MAINIO_KEYBOARDIRQ_MASK:
 			retval = (irqmask_keyboard) ? 0xffffffff : 0x00000000;
@@ -762,7 +846,7 @@ uint32 FM7_MAINIO::read_signal(int id)
 }
 
 
-void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
+void FM7_MAINIO::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	bool val_b;
 	val_b = ((data & mask) != 0);
@@ -777,43 +861,7 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 			} else {
 				clock_fast = false;
 			}
-			{
-#if 0
-				uint32 clocks = 1794000;
-#if defined(_FM77AV_VARIANTS) || defined(_FM77_VARIANTS)
-				if(mainmem->read_signal(FM7_MAINIO_MMR_ENABLED) != 0) {
-					if(mainmem->read_signal(FM7_MAINIO_FASTMMR_ENABLED)) {
-						if(clock_fast) {
-							clocks = 2016000; // Hz
-						} else {
-							clocks = 1230502; // (2016 * 1095 / 1794)[KHz]
-						}
-					} else {
-						if(clock_fast) {
-							clocks = 1565000; // Hz
-						} else {
-							clocks =  955226; // (1565 * 1095 / 1794)[KHz]
-						}
-					}
-				} else {
-					if(clock_fast) {
-						clocks = 1794000; // Hz 
-					} else {
-						clocks = 1095000; // Hz
-					}
-				}
-#else // 7/8
-				if(clock_fast) {
-					clocks = 1794000; // Hz 
-				} else {
-					clocks = 1095000; // Hz
-				}
-#endif
-				p_vm->set_cpu_clock(this->maincpu, clocks);
-#endif			   
-				mainmem->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
-				display->write_signal(SIG_DISPLAY_CLOCK, clock_fast ? 1 : 0, 1);
-			}
+			this->write_signals(&clock_status, clock_fast ? 0xffffffff : 0);
 			break;
 		case FM7_MAINIO_CMT_RECV: // FD02
 			cmt_indat = val_b ^ cmt_invert;
@@ -826,6 +874,28 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 			break;
 		case FM7_MAINIO_LPTIRQ: //
 			set_irq_printer(val_b);
+			break;
+		case FM7_MAINIO_LPT_BUSY:
+			lpt_busy = val_b;
+			break;
+		case FM7_MAINIO_LPT_ERROR:
+			lpt_error_inv = val_b;
+			break;
+		case FM7_MAINIO_LPT_ACK:
+			{
+				bool f = lpt_ackng_inv;
+				lpt_ackng_inv = val_b;
+				if((lpt_ackng_inv == true) && (f == false)) set_irq_printer(true);
+			}
+			break;
+		case FM7_MAINIO_LPT_PAPER_EMPTY:
+			lpt_busy = val_b;
+			break;
+		case FM7_MAINIO_LPT_DET1:
+			lpt_det1 = val_b;
+			break;
+		case FM7_MAINIO_LPT_DET2:
+			lpt_det2 = val_b;
 			break;
 		case FM7_MAINIO_KEYBOARDIRQ: //
 			set_irq_keyboard(val_b);
@@ -849,14 +919,9 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 		case FM7_MAINIO_BEEP:
 			set_beep_oneshot();
 			break;
-		case FM7_MAINIO_JOYPORTA_CHANGED:
-			joyport_a = data & mask;
-			break;
-		case FM7_MAINIO_JOYPORTB_CHANGED:
-			joyport_b = data & mask;
-			break;
 		case FM7_MAINIO_PSG_IRQ:
 			break;
+#if !defined(_FM8)			
 		case FM7_MAINIO_OPN_IRQ:
 			if(!connect_opn) break;
 			intstat_opn = val_b;
@@ -872,6 +937,7 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 			intstat_thg = val_b;
 			do_irq();
 			break;
+#endif			
 		case FM7_MAINIO_FDC_DRQ:
 			set_drq_mfd(val_b);
 			break;
@@ -911,61 +977,71 @@ void FM7_MAINIO::write_signal(int id, uint32 data, uint32 mask)
 }
 
 
- uint8 FM7_MAINIO::get_irqstat_fd03(void)
+ uint8_t FM7_MAINIO::get_irqstat_fd03(void)
 {
-	uint8 val;
+	uint8_t val;
 	bool extirq;
-	
+#if !defined(_FM8)	
 	extirq = irqstat_fdc | intstat_opn | intstat_whg | intstat_thg;
 	extirq = extirq | intstat_syndet | intstat_rxrdy | intstat_txrdy;
-#if defined(HAS_DMA)
+# if defined(HAS_DMA)
 	extirq = extirq | intstat_dma;
-#endif   
+# endif   
 	if(extirq) {
 		irqstat_reg0 &= ~0x08;
 	} else {
 		irqstat_reg0 |= 0x08;
 	}
 	val = irqstat_reg0 | 0xf0;
-	set_irq_timer(false);
-	set_irq_printer(false);
+	// Not call do_irq() twice. 20151221 
+	irqstat_timer = false;
+	irqstat_printer = false;
+	irqstat_reg0 |= 0x06;
+	do_irq();
+	//p_emu->out_debug_log(_T("IO: Check IRQ Status."));
 	return val;
+#else
+	return 0xff;
+#endif
 }
 
-uint8 FM7_MAINIO::get_extirq_fd17(void)
+uint8_t FM7_MAINIO::get_extirq_fd17(void)
 {
-	uint8 val = 0xff;
+	uint8_t val = 0xff;
+#if !defined(_FM8)	
 	if(intstat_opn && connect_opn)   val &= ~0x08;
 	if(intstat_mouse) val &= ~0x04;
-	//if(!intstat_opn && !intstat_mouse) do_irq(false);
+#endif
 	return val;
 }
 
-void FM7_MAINIO::set_ext_fd17(uint8 data)
+void FM7_MAINIO::set_ext_fd17(uint8_t data)
 {
+#if !defined(_FM8)
 	if((data & 0x04) != 0) {
 		mouse_enable = true;
 	} else {
 		mouse_enable = false;
 	}
-   
+#endif
 }
+
 #if defined(_FM77AV_VARIANTS)
 // FD12
-uint8 FM7_MAINIO::subsystem_read_status(void)
+uint8_t FM7_MAINIO::subsystem_read_status(void)
 {
 	return reg_fd12;
 }
 #endif
 
 
-uint32 FM7_MAINIO::read_io8(uint32 addr)
+uint32_t FM7_MAINIO::read_io8(uint32_t addr)
 { // This is only for debug.
 	addr = addr & 0xfff;
 	if(addr < 0x100) {
 		return io_w_latch[addr];
 	} else if(addr < 0x500) {
-		uint32 ofset = addr & 0xff;
+		uint32_t ofset = addr & 0xff;
 		uint opnbank = (addr - 0x100) >> 8;
 		return opn_regs[opnbank][ofset];
 	} else if(addr < 0x600) {
@@ -974,28 +1050,28 @@ uint32 FM7_MAINIO::read_io8(uint32 addr)
 	return 0xff;
 }
 
-uint32 FM7_MAINIO::read_dma_io8(uint32 addr)
+uint32_t FM7_MAINIO::read_dma_io8(uint32_t addr)
 {
 	return this->read_data8(addr & 0xff);
 }
 
-uint32 FM7_MAINIO::read_dma_data8(uint32 addr)
+uint32_t FM7_MAINIO::read_dma_data8(uint32_t addr)
 {
 	return this->read_data8(addr & 0xff);
 }
 
-uint32 FM7_MAINIO::read_data8(uint32 addr)
+uint32_t FM7_MAINIO::read_data8(uint32_t addr)
 {
-	uint32 retval;
-	uint32 mmr_segment;
+	uint32_t retval;
+	uint32_t mmr_segment;
 	if(addr < FM7_MAINIO_IS_BASICROM) {   
 		addr = addr & 0xff;
 		retval = 0xff;
 #if defined(HAS_MMR)
 		if((addr < 0x90) && (addr >= 0x80)) {
 			mmr_segment = mainmem->read_data8(FM7_MAINIO_MMR_SEGMENT);
-# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
-     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 			mmr_segment &= 0x07;
 # else		   
 			mmr_segment &= 0x03;
@@ -1006,22 +1082,26 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 	//	if((addr >= 0x0006) && !(addr == 0x1f) && !(addr == 0x0b)) printf("MAINIO: READ: %08x \n", addr);
 		switch(addr) {
 		case 0x00: // FD00
-			retval = (uint32) get_port_fd00();
+			retval = (uint32_t) get_port_fd00();
 			break;
 		case 0x01: // FD01
+#if !defined(_FM8)			
 			retval = keyboard->read_data8(0x01) & 0xff;
+#endif			
 			break;
 		case 0x02: // FD02
-			retval = (uint32) get_port_fd02();
+			retval = (uint32_t) get_port_fd02();
 			break;
 		case 0x03: // FD03
-			retval = (uint32) get_irqstat_fd03();
+#if !defined(_FM8)
+			retval = (uint32_t) get_irqstat_fd03();
+#endif			
 			break;
 		case 0x04: // FD04
-			retval = (uint32) get_fd04();
+			retval = (uint32_t) get_fd04();
 			break;
 		case 0x05: // FD05
-		        retval = (uint32) get_fd05();
+		        retval = (uint32_t) get_fd05();
 			break;
 		case 0x06: // RS-232C
 		case 0x07:
@@ -1036,7 +1116,7 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 			break;
 #endif			
 		case 0x0e: // PSG DATA
-			retval = (uint32) get_psg();
+			retval = (uint32_t) get_psg();
 			//printf("PSG DATA READ val=%02x\n", retval);
 			break;
 		case 0x0f: // FD0F
@@ -1048,79 +1128,79 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 			retval = subsystem_read_status();  
 			break;
 #endif
-		case 0x15: // OPN CMD
 			//printf("OPN CMD READ \n");
 			break;
 		case 0x16: // OPN DATA
-			retval = (uint32) get_opn(0);
-			//printf("OPN DATA READ val=%02x\n", retval);
+			retval = (uint32_t) get_opn(0);
 			break;
 		case 0x17:
-			retval = (uint32) get_extirq_fd17();
+			retval = (uint32_t) get_extirq_fd17();
 			break;
 		case 0x18: // FDC: STATUS
-		  	retval = (uint32) get_fdc_stat();
+		  	retval = (uint32_t) get_fdc_stat();
 			//printf("FDC: READ STATUS %02x PC=%04x\n", retval, maincpu->get_pc()); 
 			break;
 		case 0x19: // FDC: Track
-			retval = (uint32) get_fdc_track();
+			retval = (uint32_t) get_fdc_track();
 			//printf("FDC: READ TRACK REG %02x\n", retval); 
 			break;
 		case 0x1a: // FDC: Sector
-			retval = (uint32) get_fdc_sector();
+			retval = (uint32_t) get_fdc_sector();
 			//printf("FDC: READ SECTOR REG %02x\n", retval); 
 			break;
 		case 0x1b: // FDC: Data
-			retval = (uint32) get_fdc_data();
+			retval = (uint32_t) get_fdc_data();
 			break;
 		case 0x1c:
-			retval = (uint32) get_fdc_fd1c();
+			retval = (uint32_t) get_fdc_fd1c();
 			//printf("FDC: READ HEAD REG %02x\n", retval); 
 			break;
 		case 0x1d:
-			retval = (uint32) get_fdc_motor();
+			retval = (uint32_t) get_fdc_motor();
 			//printf("FDC: READ MOTOR REG %02x\n", retval); 
 			break;
 		case 0x1e:
-			retval = (uint32) get_fdc_fd1e();
+			retval = (uint32_t) get_fdc_fd1e();
 			//printf("FDC: READ MOTOR REG %02x\n", retval); 
 			break;
 		case 0x1f:
-			retval = (uint32) fdc_getdrqirq();
+			retval = (uint32_t) fdc_getdrqirq();
 			break;
 		case 0x22: // Kanji ROM
-			retval = (uint32) read_kanjidata_left();
+			retval = (uint32_t) read_kanjidata_left();
 			break;
 		case 0x23: // Kanji ROM
-			retval = (uint32) read_kanjidata_right();
+			retval = (uint32_t) read_kanjidata_right();
 			break;
 #if defined(CAPABLE_KANJI_CLASS2)
 		case 0x2e: // Kanji ROM Level2
-			retval = (uint32) read_kanjidata_left_l2();
+			retval = (uint32_t) read_kanjidata_left_l2();
 			break;
 		case 0x2f: // Kanji ROM Level2
-			retval = (uint32) read_kanjidata_right_l2();
+			retval = (uint32_t) read_kanjidata_right_l2();
 			break;
 #endif
+#if !defined(_FM8)			
 		case 0x37: // Multi page
-			//retval = (uint32)display->read_data8(DISPLAY_ADDR_MULTIPAGE);
+			//retval = (uint32_t)display->read_data8(DISPLAY_ADDR_MULTIPAGE);
 			break;
 		case 0x45: // WHG CMD
 			break;
 		case 0x46: // WHG DATA
-			retval = (uint32) get_opn(1);
+			retval = (uint32_t) get_opn(1);
 			break;
 		case 0x47:
-			retval = (uint32) get_extirq_whg();
+			retval = (uint32_t) get_extirq_whg();
 			break;
 		case 0x51: // THG CMD
 			break;
 		case 0x52: // THG DATA
-		        retval = (uint32) get_opn(2);
+		        retval = (uint32_t) get_opn(2);
 			break;
 		case 0x53:
-			retval = (uint32) get_extirq_thg();
+			retval = (uint32_t) get_extirq_thg();
 			break;
+#endif			
 #if defined(HAS_MMR)
 		case 0x93:
 			retval = 0x3e;
@@ -1130,7 +1210,7 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 			if(mainmem->read_signal(FM7_MAINIO_MMR_ENABLED) != 0)    retval |= 0x80;
 			break;
 #endif
-#if defined(_FM77AV40SX) || defined(_FM77AV40EX)
+#if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 		case 0x95:
 			retval = 0x77;
 			if(mainmem->read_signal(FM7_MAINIO_FASTMMR_ENABLED) != 0) retval |= 0x08;
@@ -1143,29 +1223,29 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
 			break;
 		case 0x99:
 			retval = dmac->read_data8(dma_addr);
-			//p_emu->out_debug_log(_T("IO: Read DMA %02x from reg %02x\n"), retval, dma_addr);
 			break;
 #endif			
 		default:
-			//printf("MAIN: Read another I/O Addr=%08x\n", addr); 
 			break;
 		}
+#if !defined(_FM8)			
 		if((addr < 0x40) && (addr >= 0x38)) {
 			addr = (addr - 0x38) + FM7_SUBMEM_OFFSET_DPALETTE;
-			return (uint32) display->read_data8(addr);
+			return (uint32_t) display->read_data8(addr);
 		}
+#endif		
 		// Another:
 		return retval;
 	} else if(addr == FM7_MAINIO_CLOCKMODE) {
-		return (uint32)get_clockmode();
+		return (uint32_t)get_clockmode();
 	}
 #if defined(_FM77AV_VARIANTS)
 	else if(addr == FM7_MAINIO_SUBMONITOR_ROM) {
 		retval = sub_monitor_type & 0x03;
 		return retval;
 	}  else if(addr == FM7_MAINIO_SUBMONITOR_RAM) {
-#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 		retval = ((sub_monitor_type & 0x04) != 0) ? 0xffffffff : 0x00000000;
 #else
 		retval = 0;
@@ -1177,29 +1257,29 @@ uint32 FM7_MAINIO::read_data8(uint32 addr)
    return 0xff;
 }
 
-void FM7_MAINIO::write_dma_io8(uint32 addr, uint32 data)
+void FM7_MAINIO::write_dma_io8(uint32_t addr, uint32_t data)
 {
 	this->write_data8(addr & 0xff, data);
 }
 
-void FM7_MAINIO::write_dma_data8(uint32 addr, uint32 data)
+void FM7_MAINIO::write_dma_data8(uint32_t addr, uint32_t data)
 {
 	this->write_data8(addr & 0xff, data);
 }
 
 
-void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
+void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 {
 	bool flag;
-	uint32 mmr_segment;
+	uint32_t mmr_segment;
 	if(addr < FM7_MAINIO_IS_BASICROM) {
 		addr = addr & 0xff;
 		io_w_latch[addr] = data;
 #if defined(HAS_MMR)
 		if((addr < 0x90) && (addr >= 0x80)) {
 			mmr_segment = mainmem->read_data8(FM7_MAINIO_MMR_SEGMENT);
-# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
-     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 			mmr_segment &= 0x07;
 # else		   
 			mmr_segment &= 0x03;
@@ -1210,14 +1290,22 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 #endif
 		switch(addr) {
 		case 0x00: // FD00
-			set_port_fd00((uint8)data);
+			set_port_fd00((uint8_t)data);
 			return;
 			break;
 		case 0x01: // FD01
-			// set_lptdata_fd01((uint8)data);
+			switch(lpt_type) {
+			case 0: // Write to file
+				printer->write_signal(SIG_PRINTER_DATA, data, 0xff);
+				break;
+			case 1:
+			case 2:
+				joystick->write_data8(0x01, data);
+				break;
+			}
 			break;
 		case 0x02: // FD02
-			set_port_fd02((uint8)data);
+			set_port_fd02((uint8_t)data);
 			break;
 		case 0x03: // FD03
 			set_beep(data);
@@ -1226,7 +1314,7 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			set_fd04(data);
 			break;
 		case 0x05: // FD05
-	  		set_fd05((uint8)data);
+	  		set_fd05((uint8_t)data);
 			break;
 		case 0x06: // RS-232C
 		case 0x07:
@@ -1258,7 +1346,7 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			break;
 		case 0x13:
 			sub_monitor_type = data & 0x07;
-				display->write_signal(SIG_FM7_SUB_BANK, sub_monitor_type, 0x07);
+			display->write_signal(SIG_FM7_SUB_BANK, sub_monitor_type, 0x07);
 			break;
 #endif
 		case 0x15: // OPN CMD
@@ -1270,55 +1358,55 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			set_opn(0, data);
 			break;
 		case 0x17:
-			set_ext_fd17((uint8)data);
+			set_ext_fd17((uint8_t)data);
 			break;
 		case 0x18: // FDC: COMMAND
-			set_fdc_cmd((uint8)data);
+			set_fdc_cmd((uint8_t)data);
 			//printf("FDC: WRITE CMD %02x\n", data); 
 			break;
 		case 0x19: // FDC: Track
-			set_fdc_track((uint8)data);
+			set_fdc_track((uint8_t)data);
 			//printf("FDC: WRITE TRACK REG %02x\n", data); 
 			break;
 		case 0x1a: // FDC: Sector
-			set_fdc_sector((uint8)data);
+			set_fdc_sector((uint8_t)data);
 			//printf("FDC: WRITE SECTOR REG %02x\n", data); 
 			break;
    		case 0x1b: // FDC: Data
-			set_fdc_data((uint8)data);
+			set_fdc_data((uint8_t)data);
 			break;
 		case 0x1c:
-			set_fdc_fd1c((uint8)data);
+			set_fdc_fd1c((uint8_t)data);
 			//printf("FDC: WRITE HEAD REG %02x\n", data); 
 			break;
 		case 0x1d:
-			set_fdc_fd1d((uint8)data);
+			set_fdc_fd1d((uint8_t)data);
 			//printf("FDC: WRITE MOTOR REG %02x\n", data); 
 			break;
 		case 0x1e:
-			set_fdc_fd1e((uint8)data);
+			set_fdc_fd1e((uint8_t)data);
 			break;
 		case 0x1f: // ??
 			return;
 			break;
 		case 0x20: // Kanji ROM
-			write_kanjiaddr_hi((uint8)data);
+			write_kanjiaddr_hi((uint8_t)data);
 			break;
 		case 0x2c: // Kanji ROM(DUP)
 #if defined(CAPABLE_KANJI_CLASS2)
-			write_kanjiaddr_hi_l2((uint8)data);
+			write_kanjiaddr_hi_l2((uint8_t)data);
 #else			
-			write_kanjiaddr_hi((uint8)data);
+			//write_kanjiaddr_hi((uint8_t)data);
 #endif
 			break;
 		case 0x21: // Kanji ROM
-			write_kanjiaddr_lo((uint8)data);
+			write_kanjiaddr_lo((uint8_t)data);
 			break;
 		case 0x2d: // Kanji ROM(DUP)
 #if defined(CAPABLE_KANJI_CLASS2)
-			write_kanjiaddr_lo_l2((uint8)data);
+			write_kanjiaddr_lo_l2((uint8_t)data);
 #else
-			write_kanjiaddr_lo((uint8)data);
+			//write_kanjiaddr_lo((uint8_t)data);
 #endif
 			break;
 #if defined(CAPABLE_DICTROM)
@@ -1343,6 +1431,7 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			display->write_data8(FM7_SUBMEM_OFFSET_APALETTE_G, data);
 			break;
 #endif
+#if !defined(_FM8)			
 		case 0x37: // Multi page
 			display->write_signal(SIG_DISPLAY_MULTIPAGE, data, 0x00ff);
 			break;
@@ -1362,19 +1451,20 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			break;
 		case 0x53:
 			break;
+#endif			
 #if defined(HAS_MMR)
 		case 0x90:
-#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 			mmr_segment = data & 7;
 #else
 			//			printf("MMR SEGMENT: %02x\n", data & 3);
 			mmr_segment = data & 3;
 #endif			
-			mainmem->write_data8(FM7_MAINIO_MMR_SEGMENT, (uint32)mmr_segment);
+			mainmem->write_data8(FM7_MAINIO_MMR_SEGMENT, (uint32_t)mmr_segment);
 			break;
 		case 0x92:
-			mainmem->write_data8(FM7_MAINIO_WINDOW_OFFSET, (uint32)(data & 0x00ff));
+			mainmem->write_data8(FM7_MAINIO_WINDOW_OFFSET, (uint32_t)(data & 0x00ff));
 			break;
 		case 0x93:
    			mainmem->write_signal(FM7_MAINIO_BOOTRAM_RW, data, 0x01);
@@ -1385,15 +1475,15 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			//}
 			break;
 #endif
-#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 		case 0x94:
 			mainmem->write_signal(FM7_MAINIO_MMR_EXTENDED, data, 0x80);
 			mainmem->write_signal(FM7_MAINMEM_REFRESH_FAST, data, 0x04);
 			mainmem->write_signal(FM7_MAINIO_WINDOW_FAST , data, 0x01);
 
 			break;
-# if defined(_FM77AV40SX) || defined(_FM77AV40EX)
+# if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 		case 0x95:
 			mainmem->write_signal(FM7_MAINIO_FASTMMR_ENABLED, data, 0x08);
 			mainmem->write_signal(FM7_MAINIO_EXTROM, data , 0x80);
@@ -1413,14 +1503,16 @@ void FM7_MAINIO::write_data8(uint32 addr, uint32 data)
 			//printf("MAIN: Write I/O Addr=%08x DATA=%02x\n", addr, data); 
 			break;
 		}
+#if !defined(_FM8)			
 		if((addr < 0x40) && (addr >= 0x38)) {
 			addr = (addr - 0x38) | FM7_SUBMEM_OFFSET_DPALETTE;
-			display->write_data8(addr, (uint8)data);
+			display->write_data8(addr, (uint8_t)data);
 			return;
 		}// Another:
+#endif		
 		return;
 	} else if(addr == FM7_MAINIO_CLOCKMODE) {
-		set_clockmode((uint8)data);
+		set_clockmode((uint8_t)data);
 		return;
 	}
 	//if((addr >= 0x0006) && !(addr == 0x1f)) printf("MAINIO: WRITE: %08x DATA=%08x\n", addr, data);
@@ -1439,10 +1531,12 @@ void FM7_MAINIO::event_callback(int event_id, int err)
 		case EVENT_UP_BREAK:
 			set_break_key(false);
 			break;
+#if !defined(_FM8)
 		case EVENT_TIMERIRQ_ON:
 			//if(!irqmask_timer) set_irq_timer(true);
-			set_irq_timer(true);
+			set_irq_timer(!irqmask_timer);
 			break;
+#endif			
 		case EVENT_FD_MOTOR_ON:
 			set_fdc_motor(true);
 			event_fdc_motor = -1;
@@ -1450,6 +1544,9 @@ void FM7_MAINIO::event_callback(int event_id, int err)
 		case EVENT_FD_MOTOR_OFF:
 			set_fdc_motor(false);
 			event_fdc_motor = -1;
+			break;
+		case EVENT_PRINTER_RESET_COMPLETED:			
+			this->write_signals(&printer_reset_bus, 0x00);
 			break;
 		default:
 			break;
@@ -1467,15 +1564,24 @@ void FM7_MAINIO::update_config()
 			clock_fast = false;
 			break;
 	}
-	this->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
-	//mainmem->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
+	this->write_signals(&clock_status, clock_fast ? 0xffffffff : 0);
+#if defined(_FM8)	
+	// BASIC
+	if(config.boot_mode == 0) {
+		mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0xffffffff, 0xffffffff);
+	} else {
+		mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0, 0xffffffff);
+	}
+	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, (config.boot_mode == 0) ? 1 : 0, 0x01);
+	mainmem->write_signal(FM7_MAINIO_BOOTMODE, config.boot_mode, 0xffffffff);
+#endif	
 }
 
 void FM7_MAINIO::event_vline(int v, int clock)
 {
 }
 
-#define STATE_VERSION 3
+#define STATE_VERSION 5
 void FM7_MAINIO::save_state(FILEIO *state_fio)
 {
 	int ch;
@@ -1517,7 +1623,6 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 		state_fio->FputBool(irqreq_rxrdy);
 		state_fio->FputBool(irqreq_txrdy);
 		state_fio->FputBool(irqreq_fdc);
-		state_fio->FputBool(irqreq_timer);
 		state_fio->FputBool(irqreq_printer);
 		state_fio->FputBool(irqreq_keyboard);
 		// FD03
@@ -1557,13 +1662,24 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 
 	// FD0B
 	// FD0F
-	
+#if defined(_FM8)
+		state_fio->FputBool(connect_psg);
+#else	
 		state_fio->FputBool(connect_opn);
 		state_fio->FputBool(connect_whg);
 		state_fio->FputBool(connect_thg);
 		
 		state_fio->FputBool(opn_psg_77av);
-	
+#endif	
+#if defined(_FM8)
+		{
+			state_fio->FputUint32_BE(opn_address[0]);
+			state_fio->FputUint32_BE(opn_data[0]);
+			state_fio->FputUint32_BE(opn_stat[0]);
+			state_fio->FputUint32_BE(opn_cmdreg[0]);
+			state_fio->FputUint32_BE(opn_ch3mode[0]);
+		}
+#else		
 		for(ch = 0; ch < 4; ch++) {
 			state_fio->FputUint32_BE(opn_address[ch]);
 			state_fio->FputUint32_BE(opn_data[ch]);
@@ -1571,8 +1687,7 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 			state_fio->FputUint32_BE(opn_cmdreg[ch]);
 			state_fio->FputUint32_BE(opn_ch3mode[ch]);
 		}
-		state_fio->FputUint32_BE(joyport_a);
-		state_fio->FputUint32_BE(joyport_b);
+#endif		
 
 		state_fio->FputBool(intstat_opn);
 		state_fio->FputBool(intstat_mouse);
@@ -1614,7 +1729,7 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 	{ // V3
 		state_fio->FputInt32_BE(event_fdc_motor);
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 		for(ch = 0; ch < 4; ch++) state_fio->FputUint8(fdc_drive_table[ch]);
 		state_fio->FputUint8(fdc_reg_fd1e);
 #endif	
@@ -1633,7 +1748,7 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 	int ch;
 	int addr;
 	//bool stat = false;
-	uint32 version;
+	uint32_t version;
 	
 	version = state_fio->FgetUint32_BE();
 	if(this_device_id != state_fio->FgetInt32_BE()) return false;
@@ -1671,7 +1786,6 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 		irqreq_rxrdy = state_fio->FgetBool();
 		irqreq_txrdy = state_fio->FgetBool();
 		irqreq_fdc = state_fio->FgetBool();
-		irqreq_timer = state_fio->FgetBool();
 		irqreq_printer = state_fio->FgetBool();
 		irqreq_keyboard = state_fio->FgetBool();
 		// FD03
@@ -1711,12 +1825,24 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 
 		// FD0B
 		// FD0F
+#if defined(_FM8)
+		connect_psg = state_fio->FgetBool();
+#else		
 		connect_opn = state_fio->FgetBool();
 		connect_whg = state_fio->FgetBool();
 		connect_thg = state_fio->FgetBool();
 
 		opn_psg_77av = state_fio->FgetBool();
-	
+#endif
+#if defined(_FM8)
+		{
+			opn_address[0] = state_fio->FgetUint32_BE();
+			opn_data[0] = state_fio->FgetUint32_BE();
+			opn_stat[0] = state_fio->FgetUint32_BE();
+			opn_cmdreg[0] = state_fio->FgetUint32_BE();
+			opn_ch3mode[0] = state_fio->FgetUint32_BE();
+		}
+#else		
 		for(ch = 0; ch < 4; ch++) {
 			opn_address[ch] = state_fio->FgetUint32_BE();
 			opn_data[ch] = state_fio->FgetUint32_BE();
@@ -1724,9 +1850,7 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 			opn_cmdreg[ch] = state_fio->FgetUint32_BE();
 			opn_ch3mode[ch] = state_fio->FgetUint32_BE();
 		}
-		joyport_a = state_fio->FgetUint32_BE();
-		joyport_b = state_fio->FgetUint32_BE();
-
+#endif
 		intstat_opn = state_fio->FgetBool();
 		intstat_mouse = state_fio->FgetBool();
 		mouse_enable = state_fio->FgetBool();
@@ -1765,14 +1889,14 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 	// V2
 	if(version >= 3) { // V3
 		event_fdc_motor = state_fio->FgetInt32_BE();
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 		for(ch = 0; ch < 4; ch++) fdc_drive_table[ch] = state_fio->FgetUint8();
 		fdc_reg_fd1e = state_fio->FgetUint8();
 #endif	
 #if defined(HAS_DMA)
 		intstat_dma = state_fio->FgetBool();
-		dma_addr = (uint32)(state_fio->FgetUint8() & 0x1f);
+		dma_addr = (uint32_t)(state_fio->FgetUint8() & 0x1f);
 #endif			
 #if defined(_FM77AV_VARIANTS)
 		reg_fd12 = state_fio->FgetUint8();

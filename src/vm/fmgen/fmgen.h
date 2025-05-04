@@ -7,8 +7,7 @@
 #ifndef FM_GEN_H
 #define FM_GEN_H
 
-//#include "types.h"
-#include "../../common.h"
+#include "types.h"
 
 // ---------------------------------------------------------------------------
 //	o—ÍƒTƒ“ƒvƒ‹‚ÌŒ^
@@ -186,7 +185,7 @@ namespace FM
 
 	//	friends --------------------------------------------------------------
 		friend class Channel4;
-		friend void __stdcall FM_NextPhase(Operator* op);
+//		friend void __stdcall FM_NextPhase(Operator* op);
 
 	public:
 		int		dbgopout_;

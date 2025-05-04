@@ -19,7 +19,6 @@
 //	#define _IO_DEBUG_LOG
 #endif
 
-#include <process.h>
 #include <stdio.h>
 #include <assert.h>
 #include "common.h"
@@ -66,6 +65,15 @@ typedef struct {
 } debugger_thread_t;
 #endif
 
+#if defined(OSD_QT)
+#if defined(USE_DEBUGGER)
+class CSP_Debugger;
+#endif
+class GLDrawClass;
+class EmuThreadClass;
+class DrawThreadClass;
+#endif
+
 class EMU
 {
 protected:
@@ -77,12 +85,6 @@ private:
 #ifdef USE_DEBUGGER
 	void initialize_debugger();
 	void release_debugger();
-#ifdef _WIN32
-	HANDLE hDebuggerThread;
-#else
-	int debugger_thread_id;
-#endif
-	debugger_thread_t debugger_thread_param;
 #endif
 	
 	// debug log
@@ -113,8 +115,10 @@ private:
 	void release_auto_key();
 	void update_auto_key();
 #endif
-	uint32 joy_status[4];
+#ifdef USE_JOYSTICK
+	uint32_t joy_status[4];
 	void update_joystick();
+#endif
 	
 	// media
 	typedef struct {
@@ -158,7 +162,7 @@ private:
 	
 public:
 #if defined(OSD_QT)
-	EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst)
+	EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst);
 #elif defined(OSD_WIN32)
 	EMU(HWND hwnd, HINSTANCE hinst);
 #else
@@ -172,10 +176,17 @@ public:
 	void set_parent_handler(EmuThreadClass *p, DrawThreadClass *q);
 	VM *get_vm()
 	{
-		return vm:
+		return vm;
+	}
+	OSD *get_osd()
+	{
+		return osd;
 	}
 	void set_host_cpus(int v);
 	int get_host_cpus();
+	void set_mouse_pointer(int x, int y);
+	void set_mouse_button(int button);
+	int get_mouse_button();
 #endif
 	
 	// drive machine
@@ -198,7 +209,7 @@ public:
 	
 	// input
 #ifdef OSD_QT
-	void key_modifiers(uint32 mod);
+	void key_modifiers(uint32_t mod);
 #endif
 	void key_down(int code, bool repeat);
 	void key_up(int code);
@@ -206,10 +217,12 @@ public:
 #ifdef ONE_BOARD_MICRO_COMPUTER
 	void press_button(int num);
 #endif
+#ifdef USE_MOUSE
 	void enable_mouse();
 	void disable_mouse();
 	void toggle_mouse();
 	bool is_mouse_enabled();
+#endif
 #ifdef USE_AUTO_KEY
 	void start_auto_key();
 	void stop_auto_key();
@@ -222,9 +235,13 @@ public:
 		return auto_key_buffer;
 	}
 #endif
-	const uint8* get_key_buffer();
-	const uint32* get_joy_buffer();
-	const int* get_mouse_buffer();
+	const uint8_t* get_key_buffer();
+#ifdef USE_JOYSTICK
+	const uint32_t* get_joy_buffer();
+#endif
+#ifdef USE_MOUSE
+	const int32_t* get_mouse_buffer();
+#endif
 	
 	// screen
 	int get_window_width(int mode);
@@ -239,7 +256,7 @@ public:
 	bool is_screen_changed();
 #endif
 	int draw_screen();
-	scrntype* get_screen_buffer(int y);
+	scrntype_t* get_screen_buffer(int y);
 #ifdef USE_CRT_FILTER
 	void screen_skip_line(bool skip_line);
 #endif
@@ -274,7 +291,7 @@ public:
 	double get_movie_frame_rate();
 	int get_movie_sound_rate();
 	void set_cur_movie_frame(int frame, bool relative);
-	uint32 get_cur_movie_frame();
+	uint32_t get_cur_movie_frame();
 #endif
 #ifdef USE_VIDEO_CAPTURE
 	int get_cur_capture_dev_index();
@@ -294,14 +311,14 @@ public:
 	void release_bitmap(bitmap_t *bitmap);
 	void create_font(font_t *font, const _TCHAR *family, int width, int height, int rotate, bool bold, bool italic);
 	void release_font(font_t *font);
-	void create_pen(pen_t *pen, int width, uint8 r, uint8 g, uint8 b);
+	void create_pen(pen_t *pen, int width, uint8_t r, uint8_t g, uint8_t b);
 	void release_pen(pen_t *pen);
-	void clear_bitmap(bitmap_t *bitmap, uint8 r, uint8 g, uint8 b);
+	void clear_bitmap(bitmap_t *bitmap, uint8_t r, uint8_t g, uint8_t b);
 	int get_text_width(bitmap_t *bitmap, font_t *font, const char *text);
-	void draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const char *text, uint8 r, uint8 g, uint8 b);
+	void draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const char *text, uint8_t r, uint8_t g, uint8_t b);
 	void draw_line_to_bitmap(bitmap_t *bitmap, pen_t *pen, int sx, int sy, int ex, int ey);
-	void draw_rectangle_to_bitmap(bitmap_t *bitmap, int x, int y, int width, int height, uint8 r, uint8 g, uint8 b);
-	void draw_point_to_bitmap(bitmap_t *bitmap, int x, int y, uint8 r, uint8 g, uint8 b);
+	void draw_rectangle_to_bitmap(bitmap_t *bitmap, int x, int y, int width, int height, uint8_t r, uint8_t g, uint8_t b);
+	void draw_point_to_bitmap(bitmap_t *bitmap, int x, int y, uint8_t r, uint8_t g, uint8_t b);
 	void stretch_bitmap(bitmap_t *dest, int dest_x, int dest_y, int dest_width, int dest_height, bitmap_t *source, int source_x, int source_y, int source_width, int source_height);
 	void write_bitmap_to_file(bitmap_t *bitmap, const _TCHAR *file_path);
 #endif
@@ -313,11 +330,11 @@ public:
 	void notify_socket_disconnected(int ch);
 	bool initialize_socket_tcp(int ch);
 	bool initialize_socket_udp(int ch);
-	bool connect_socket(int ch, uint32 ipaddr, int port);
+	bool connect_socket(int ch, uint32_t ipaddr, int port);
 	void disconnect_socket(int ch);
 	bool listen_socket(int ch);
 	void send_socket_data_tcp(int ch);
-	void send_socket_data_udp(int ch, uint32 ipaddr, int port);
+	void send_socket_data_udp(int ch, uint32_t ipaddr, int port);
 	void send_socket_data(int ch);
 	void recv_socket_data(int ch);
 #endif
@@ -328,6 +345,15 @@ public:
 	void close_debugger();
 	bool is_debugger_enabled(int cpu_index);
 	bool now_debugging;
+	debugger_thread_t debugger_thread_param;
+#if defined(OSD_QT)
+	SDL_Thread *debugger_thread_id;
+	CSP_Debugger *hDebugger;
+#elif defined(OSD_WIN32)
+	HANDLE hDebuggerThread;
+#else
+	int debugger_thread_id;
+#endif
 #endif
 	
 	// debug log
@@ -338,17 +364,7 @@ public:
 	_TCHAR message[1024];
 	
 	// misc
-	void sleep(uint32 ms);
-	
-	// media
-#ifdef USE_FD1
-	struct {
-		_TCHAR path[_MAX_PATH];
-		_TCHAR disk_name[MAX_D88_BANKS][18];
-		int bank_num;
-		int cur_bank;
-	} d88_file[MAX_FD];
-#endif
+	void sleep(uint32_t ms);
 	
 	// user interface
 #ifdef USE_CART1
@@ -357,6 +373,12 @@ public:
 	bool is_cart_inserted(int drv);
 #endif
 #ifdef USE_FD1
+	struct {
+		_TCHAR path[_MAX_PATH];
+		_TCHAR disk_name[MAX_D88_BANKS][128];	// may convert to UTF-8
+		int bank_num;
+		int cur_bank;
+	} d88_file[MAX_FD];
 	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
 	void close_floppy_disk(int drv);
 	bool is_floppy_disk_inserted(int drv);
@@ -395,6 +417,12 @@ public:
 #ifdef USE_BINARY_FILE1
 	void load_binary(int drv, const _TCHAR* file_path);
 	void save_binary(int drv, const _TCHAR* file_path);
+#endif
+#ifdef USE_ACCESS_LAMP
+	uint32_t get_access_lamp_status();
+#endif
+#ifdef USE_LED_DEVICE
+	uint32_t get_led_status();
 #endif
 #ifdef USE_SOUND_VOLUME
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
