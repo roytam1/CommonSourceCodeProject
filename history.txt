@@ -1,3 +1,15 @@
+2/13/2015
+
+[VM/DISK] fix routine to calculate sector position for invalid format track
+[VM/DISK] increase max sector number from 256 to 512
+[VM/MB8877] improve timing to start read/write sector for invalid format track
+[VM/MZ1P17] fix initial value of reset signal
+[VM/PRNFILE] fix initial value of reset signal
+[VM/T3444A] improve timing to start read/write sector for invalid format track
+
+[MZ2200/MEMORY80B] support dual (color and green) monitors
+
+
 2/11/2015
 
 [VM/DISK] fix to allow fdc class to get gap3 size

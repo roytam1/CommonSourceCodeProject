@@ -233,8 +233,9 @@ BEGIN
         MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
         MENUITEM SEPARATOR
-        MENUITEM "Color",                       ID_SCREEN_MONITOR_TYPE0
-        MENUITEM "Green",                       ID_SCREEN_MONITOR_TYPE1
+        MENUITEM "Color Monitor",               ID_SCREEN_MONITOR_TYPE0
+        MENUITEM "Green Monitor",               ID_SCREEN_MONITOR_TYPE1
+        MENUITEM "Both Color and Green",        ID_SCREEN_MONITOR_TYPE2
     END
     POPUP "Sound"
     BEGIN

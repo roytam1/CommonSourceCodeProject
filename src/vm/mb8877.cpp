@@ -86,12 +86,6 @@ void MB8877::register_drq_event(int bytes)
 	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_FM7_GAMBLER) {
 		usec = 4;
 	}
-#elif defined(_X1TURBO) || defined(_X1TURBOZ)
-//	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1TURBO_ALPHA) {
-//		if(usec > 24) {
-//			usec = 24;
-//		}
-//	}
 #endif
 	cancel_my_event(EVENT_DRQ);
 	register_event(this, (EVENT_DRQ << 8) | (cmdtype & 0xff), usec, false, &register_id[EVENT_DRQ]);
@@ -1198,12 +1192,6 @@ int MB8877::get_cur_position()
 
 double MB8877::get_usec_to_start_trans(bool first_sector)
 {
-#if defined(_X1TURBO) || defined(_X1TURBOZ)
-	// FIXME: ugly patch for X1turbo ALPHA
-//	if(disk[drvreg]->is_special_disk == SPECIAL_DISK_X1TURBO_ALPHA) {
-//		return 100;
-//	} else
-#endif
 	// get time from current position
 	double time = get_usec_to_next_trans_pos(first_sector && ((cmdreg & 4) != 0));
 	if(first_sector && time < 60000 - passed_usec(seekend_clock)) {
@@ -1216,7 +1204,11 @@ double MB8877::get_usec_to_next_trans_pos(bool delay)
 {
 	int position = get_cur_position();
 	
-	if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
+	if(disk[drvreg]->invalid_format) {
+		// XXX: this track is invalid format and the calculated sector position may be incorrect.
+		// so use the constant period
+		return disk[drvreg]->get_usec_per_bytes(disk[drvreg]->gap3_size);
+	} else if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
 		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
 		// so use the period to search the next sector from the current position
 		int sector_num = disk[drvreg]->sector_num.sd;

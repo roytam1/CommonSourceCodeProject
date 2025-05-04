@@ -64,7 +64,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_CAPS
 #ifndef _MZ80B
-#define USE_MONITOR_TYPE	2
+#define USE_MONITOR_TYPE	3
 #define USE_CRT_FILTER
 #endif
 #define USE_SCANLINE

@@ -612,7 +612,11 @@ double T3444A::get_usec_to_next_trans_pos()
 {
 	int position = get_cur_position();
 	
-	if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
+	if(disk[drvreg]->invalid_format) {
+		// XXX: this track is invalid format and the calculated sector position may be incorrect.
+		// so use the constant period
+		return disk[drvreg]->get_usec_per_bytes(disk[drvreg]->gap3_size);
+	} else if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
 		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
 		// so use the period to search the next sector from the current position
 		int sector_num = disk[drvreg]->sector_num.sd;

@@ -631,35 +631,46 @@ bool DISK::get_track(int trk, int side)
 	}
 	
 	uint8* t = sector;
-	int total = sync_size + (am_size + 1);
+	int total = 0, valid_sector_num = 0;
 	
 	for(int i = 0; i < sector_num.sd; i++) {
 		data_size.read_2bytes_le_from(t + 14);
+		sync_position[i] = total; // for invalid format case
 		total += sync_size + (am_size + 1) + (4 + 2) + gap2_size;
 		if(data_size.sd > 0) {
 			total += sync_size + (am_size + 1);
 			total += data_size.sd + 2;
+			valid_sector_num++;
 		}
 //		if(t[2] != i + 1) {
 //			no_skew = false;
 //		}
 		t += data_size.sd + 0x10;
 	}
+	total += sync_size + (am_size + 1); // sync in preamble
+	
 	if(gap3_size == 0) {
-		gap3_size = (get_track_size() - total - gap0_size - gap1_size) / (sector_num.sd + 1);
+		gap3_size = (get_track_size() - total - gap0_size - gap1_size) / (valid_sector_num + 1);
 	}
-	gap4_size = get_track_size() - total - gap0_size - gap1_size - gap3_size * sector_num.sd;
+	gap4_size = get_track_size() - total - gap0_size - gap1_size - gap3_size * valid_sector_num;
 	
 	if(gap3_size < 8 || gap4_size < 8) {
-		gap0_size = gap1_size = gap3_size = (get_track_size() - total) / (2 + sector_num.sd + 1);
-		gap4_size = get_track_size() - total - gap0_size - gap1_size - gap3_size * sector_num.sd;
+		gap0_size = gap1_size = gap3_size = (get_track_size() - total) / (2 + valid_sector_num + 1);
+		gap4_size = get_track_size() - total - gap0_size - gap1_size - gap3_size * valid_sector_num;
 	}
 	if(gap3_size < 8 || gap4_size < 8) {
-		gap0_size = gap1_size = gap3_size = gap4_size = 32;
+		gap0_size = gap1_size = gap3_size = gap4_size = 8;
 		invalid_format = true;
 	}
 	int preamble_size = gap0_size + sync_size + (am_size + 1) + gap1_size;
 	
+	if(invalid_format) {
+		total -= sync_size + (am_size + 1);
+		for(int i = 0; i < sector_num.sd; i++) {
+			sync_position[i] *= get_track_size() - preamble_size - gap4_size;
+			sync_position[i] /= total;
+		}
+	}
 	t = sector;
 	total = preamble_size;
 	sync_position[array_length(sync_position) - 1] = gap0_size; // sync position in preamble
@@ -667,7 +678,7 @@ bool DISK::get_track(int trk, int side)
 	for(int i = 0; i < sector_num.sd; i++) {
 		data_size.read_2bytes_le_from(t + 14);
 		if(invalid_format) {
-			total = preamble_size + (get_track_size() - preamble_size - gap4_size) * i / sector_num.sd;
+			total = preamble_size + sync_position[i];
 		}
 		sync_position[i] = total;
 		total += sync_size;
@@ -679,10 +690,10 @@ bool DISK::get_track(int trk, int side)
 			total += sync_size + (am_size + 1);
 			data_position[i] = total;
 			total += data_size.sd + 2;
+			total += gap3_size;
 		} else {
 			data_position[i] = total; // FIXME
 		}
-		total += gap3_size;
 		t += data_size.sd + 0x10;
 	}
 	return true;
