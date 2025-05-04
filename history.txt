@@ -1,3 +1,11 @@
+12/15/2017
+
+[COMMON/FILEIO] add Fcompare function
+
+[VM/*] improve save/load status function to check device class name
+[VM/YM2151] fix save/load state function
+
+
 12/14/2017
 
 [RESOURCE] change accelerators for switching full speed and roman/kana input

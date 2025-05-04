@@ -728,7 +728,7 @@ size_t FILEIO::Fread(void* buffer, size_t size, size_t count)
 	return fread(buffer, size, count, fp);
 }
 
-size_t FILEIO::Fwrite(void* buffer, size_t size, size_t count)
+size_t FILEIO::Fwrite(const void* buffer, size_t size, size_t count)
 {
 #ifdef USE_ZLIB
 	if(gz != NULL) {
@@ -771,4 +771,16 @@ long FILEIO::Ftell()
 	} else
 #endif
 	return ftell(fp);
+}
+
+bool FILEIO::Fcompare(const void* buffer, size_t size)
+{
+	bool result = false;
+	void *tmp = malloc(size);
+	
+	if(Fread(tmp, size, 1) == 1) {
+		result = (memcmp(buffer, tmp, size) == 0);
+	}
+	free(tmp);
+	return result;
 }
