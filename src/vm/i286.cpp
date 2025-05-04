@@ -446,38 +446,114 @@ int I286::get_shutdown_flag()
 }
 #endif
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 bool I286::process_state(FILEIO* state_fio, bool loading)
 {
+	cpu_state *cpustate = (cpu_state *)opaque;
+	
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(opaque, sizeof(cpu_state), 1);
+#if defined(HAS_I86) || defined(HAS_I88) || defined(HAS_I186) || defined(HAS_V30)
+	state_fio->StateArray(cpustate->regs.w, sizeof(cpustate->regs.w), 1);
+	state_fio->StateValue(cpustate->pc);
+	state_fio->StateValue(cpustate->prevpc);
+	state_fio->StateArray(cpustate->base, sizeof(cpustate->base), 1);
+	state_fio->StateArray(cpustate->sregs, sizeof(cpustate->sregs), 1);
+	state_fio->StateValue(cpustate->flags);
+	state_fio->StateValue(cpustate->AuxVal);
+	state_fio->StateValue(cpustate->OverVal);
+	state_fio->StateValue(cpustate->SignVal);
+	state_fio->StateValue(cpustate->ZeroVal);
+	state_fio->StateValue(cpustate->CarryVal);
+	state_fio->StateValue(cpustate->DirVal);
+	state_fio->StateValue(cpustate->ParityVal);
+	state_fio->StateValue(cpustate->TF);
+	state_fio->StateValue(cpustate->IF);
+	state_fio->StateValue(cpustate->MF);
+	state_fio->StateValue(cpustate->int_vector);
+	state_fio->StateValue(cpustate->nmi_state);
+	state_fio->StateValue(cpustate->irq_state);
+	state_fio->StateValue(cpustate->test_state);
+	state_fio->StateValue(cpustate->rep_in_progress);
+	state_fio->StateValue(cpustate->extra_cycles);
+	state_fio->StateValue(cpustate->halted);
+	state_fio->StateValue(cpustate->busreq);
+	state_fio->StateValue(cpustate->ip);
+	state_fio->StateValue(cpustate->sp);
+#ifdef USE_DEBUGGER
+	state_fio->StateValue(cpustate->total_icount);
+#endif
+	state_fio->StateValue(cpustate->icount);
+	state_fio->StateValue(cpustate->seg_prefix);
+	state_fio->StateValue(cpustate->prefix_seg);
+	state_fio->StateValue(cpustate->ea);
+	state_fio->StateValue(cpustate->eo);
+	state_fio->StateValue(cpustate->ea_seg);
+#elif defined(HAS_I286)
+	state_fio->StateArray(cpustate->regs.w, sizeof(cpustate->regs.w), 1);
+	state_fio->StateValue(cpustate->amask);
+	state_fio->StateValue(cpustate->pc);
+	state_fio->StateValue(cpustate->prevpc);
+	state_fio->StateValue(cpustate->flags);
+	state_fio->StateValue(cpustate->msw);
+	state_fio->StateArray(cpustate->base, sizeof(cpustate->base), 1);
+	state_fio->StateArray(cpustate->sregs, sizeof(cpustate->sregs), 1);
+	state_fio->StateArray(cpustate->limit, sizeof(cpustate->limit), 1);
+	state_fio->StateArray(cpustate->rights, sizeof(cpustate->rights), 1);
+	state_fio->StateArray(cpustate->valid, sizeof(cpustate->valid), 1);
+	state_fio->StateValue(cpustate->gdtr.base);
+	state_fio->StateValue(cpustate->gdtr.limit);
+	state_fio->StateValue(cpustate->idtr.base);
+	state_fio->StateValue(cpustate->idtr.limit);
+	state_fio->StateValue(cpustate->ldtr.sel);
+	state_fio->StateValue(cpustate->ldtr.base);
+	state_fio->StateValue(cpustate->ldtr.limit);
+	state_fio->StateValue(cpustate->ldtr.rights);
+	state_fio->StateValue(cpustate->tr.sel);
+	state_fio->StateValue(cpustate->tr.base);
+	state_fio->StateValue(cpustate->tr.limit);
+	state_fio->StateValue(cpustate->tr.rights);
+	state_fio->StateValue(cpustate->AuxVal);
+	state_fio->StateValue(cpustate->OverVal);
+	state_fio->StateValue(cpustate->SignVal);
+	state_fio->StateValue(cpustate->ZeroVal);
+	state_fio->StateValue(cpustate->CarryVal);
+	state_fio->StateValue(cpustate->DirVal);
+	state_fio->StateValue(cpustate->ParityVal);
+	state_fio->StateValue(cpustate->TF);
+	state_fio->StateValue(cpustate->IF);
+	state_fio->StateValue(cpustate->MF);
+	state_fio->StateValue(cpustate->nmi_state);
+	state_fio->StateValue(cpustate->irq_state);
+	state_fio->StateValue(cpustate->test_state);
+	state_fio->StateValue(cpustate->rep_in_progress);
+	state_fio->StateValue(cpustate->extra_cycles);
+	state_fio->StateValue(cpustate->halted);
+	state_fio->StateValue(cpustate->busreq);
+	state_fio->StateValue(cpustate->trap_level);
+	state_fio->StateValue(cpustate->shutdown);
+#ifdef USE_DEBUGGER
+	state_fio->StateValue(cpustate->total_icount);
+#endif
+	state_fio->StateValue(cpustate->icount);
+	state_fio->StateValue(cpustate->seg_prefix);
+	state_fio->StateValue(cpustate->prefix_seg);
+	state_fio->StateValue(cpustate->ea);
+	state_fio->StateValue(cpustate->eo);
+	state_fio->StateValue(cpustate->ea_seg);
+#endif
 	
+#ifdef USE_DEBUGGER
 	// post process
 	if(loading) {
-		cpu_state *cpustate = (cpu_state *)opaque;
-		cpustate->pic = d_pic;
-		cpustate->program = d_mem;
-		cpustate->io = d_io;
-#ifdef I86_PSEUDO_BIOS
-		cpustate->bios = d_bios;
-#endif
-#ifdef SINGLE_MODE_DMA
-		cpustate->dma = d_dma;
-#endif
-#ifdef USE_DEBUGGER
-		cpustate->emu = emu;
-		cpustate->debugger = d_debugger;
-		cpustate->program_stored = d_mem;
-		cpustate->io_stored = d_io;
 		cpustate->prev_total_icount = cpustate->total_icount;
-#endif
 	}
+#endif
 	return true;
 }
 

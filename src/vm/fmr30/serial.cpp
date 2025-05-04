@@ -139,7 +139,7 @@ void SERIAL::update_intr(int ch)
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool SERIAL::process_state(FILEIO* state_fio, bool loading)
 {
@@ -149,7 +149,14 @@ bool SERIAL::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(sioctrl, sizeof(sioctrl), 1);
+	for(int i = 0; i < array_length(sioctrl); i++) {
+		state_fio->StateValue(sioctrl[i].baud);
+		state_fio->StateValue(sioctrl[i].ctrl);
+		state_fio->StateValue(sioctrl[i].rxrdy);
+		state_fio->StateValue(sioctrl[i].txrdy);
+		state_fio->StateValue(sioctrl[i].intmask);
+		state_fio->StateValue(sioctrl[i].intstat);
+	}
 	return true;
 }
 

@@ -476,7 +476,7 @@ bool VM::process_state(FILEIO* state_fio, bool loading)
 			return false;
 		}
 	}
-	state_fio->StateUint8(halt);
+	state_fio->StateValue(halt);
 	return true;
 }
 

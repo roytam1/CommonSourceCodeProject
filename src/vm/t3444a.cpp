@@ -788,7 +788,7 @@ void T3444A::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool T3444A::process_state(FILEIO* state_fio, bool loading)
 {
@@ -798,28 +798,38 @@ bool T3444A::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(fdc, sizeof(fdc), 1);
-	for(int i = 0; i < MAX_DRIVE; i++) {
+	for(int i = 0; i < array_length(fdc); i++) {
+		state_fio->StateValue(fdc[i].track);
+		state_fio->StateValue(fdc[i].index);
+		state_fio->StateValue(fdc[i].access);
+		state_fio->StateValue(fdc[i].head_load);
+		state_fio->StateValue(fdc[i].cur_position);
+		state_fio->StateValue(fdc[i].next_trans_position);
+		state_fio->StateValue(fdc[i].bytes_before_2nd_rqm);
+		state_fio->StateValue(fdc[i].next_sync_position);
+		state_fio->StateValue(fdc[i].prev_clock);
+	}
+	for(int i = 0; i < array_length(disk); i++) {
 		if(!disk[i]->process_state(state_fio, loading)) {
 			return false;
 		}
 	}
-	state_fio->StateUint8(status);
-	state_fio->StateUint8(cmdreg);
-	state_fio->StateUint8(trkreg);
-	state_fio->StateUint8(secreg);
-	state_fio->StateUint8(datareg);
-	state_fio->StateUint8(drvreg);
-	state_fio->StateUint8(sidereg);
-	state_fio->StateBool(timerflag);
-	state_fio->StateBuffer(sector_id, sizeof(sector_id), 1);
-	state_fio->StateBuffer(register_id, sizeof(register_id), 1);
-	state_fio->StateBool(now_search);
-	state_fio->StateInt32(seektrk);
-	state_fio->StateBool(rqm);
-	state_fio->StateBool(tnd);
-	state_fio->StateBool(motor_on);
-	state_fio->StateUint32(prev_rqm_clock);
+	state_fio->StateValue(status);
+	state_fio->StateValue(cmdreg);
+	state_fio->StateValue(trkreg);
+	state_fio->StateValue(secreg);
+	state_fio->StateValue(datareg);
+	state_fio->StateValue(drvreg);
+	state_fio->StateValue(sidereg);
+	state_fio->StateValue(timerflag);
+	state_fio->StateArray(sector_id, sizeof(sector_id), 1);
+	state_fio->StateArray(register_id, sizeof(register_id), 1);
+	state_fio->StateValue(now_search);
+	state_fio->StateValue(seektrk);
+	state_fio->StateValue(rqm);
+	state_fio->StateValue(tnd);
+	state_fio->StateValue(motor_on);
+	state_fio->StateValue(prev_rqm_clock);
 	return true;
 }
 

@@ -3007,19 +3007,19 @@ bool V99X8::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(&v99x8, sizeof(v99x8), 1);
+	state_fio->StateArray(&v99x8, sizeof(v99x8), 1);
 #ifdef USE_CMDTIME
-	state_fio->StateInt32(cmdtime_t);
-	state_fio->StateInt32(cmdtime_m);
+	state_fio->StateValue(cmdtime_t);
+	state_fio->StateValue(cmdtime_m);
 #endif
-	state_fio->StateInt32(latch1);
-	state_fio->StateInt32(latch2);
-	state_fio->StateInt32(vram_addr);
-	state_fio->StateInt32(vram_page);
-	state_fio->StateBool(f_out3);
-	state_fio->StateBool(f_mode);
-	state_fio->StateBool(flag_frame);
-	state_fio->StateBuffer(&vcom, sizeof(vcom), 1);
+	state_fio->StateValue(latch1);
+	state_fio->StateValue(latch2);
+	state_fio->StateValue(vram_addr);
+	state_fio->StateValue(vram_page);
+	state_fio->StateValue(f_out3);
+	state_fio->StateValue(f_mode);
+	state_fio->StateValue(flag_frame);
+	state_fio->StateArray(&vcom, sizeof(vcom), 1);
 	if(loading) {
 		vcom.src = vram + state_fio->FgetInt32_LE();
 		vcom.dst = vram + state_fio->FgetInt32_LE();
@@ -3027,19 +3027,19 @@ bool V99X8::process_state(FILEIO* state_fio, bool loading)
 		state_fio->FputInt32_LE((int)(vcom.src - vram));
 		state_fio->FputInt32_LE((int)(vcom.dst - vram));
 	}
-	state_fio->StateBuffer(&r44, sizeof(r44), 1);
-	state_fio->StateBuffer(&pixmask, sizeof(pixmask), 1);
-	state_fio->StateBuffer(&v99x8_refresh, sizeof(v99x8_refresh), 1);
-	state_fio->StateBuffer(pal, sizeof(pal), 1);
-	state_fio->StateBuffer(pal_8, sizeof(pal_8), 1);
-	state_fio->StateBuffer(pal_m, sizeof(pal_m), 1);
-	state_fio->StateInt32(col_bg);
-	state_fio->StateBuffer(tbl_yjk_b, sizeof(tbl_yjk_b), 1);
-	state_fio->StateBuffer(tbl_yjk_rg, sizeof(tbl_yjk_rg), 1);
-	state_fio->StateBuffer(blackbuf, sizeof(blackbuf), 1);
-	state_fio->StateBuffer(sbuf, sizeof(sbuf), 1);
-	state_fio->StateBuffer(vram, sizeof(vram), 1);
-	state_fio->StateBool(intstat);
+	state_fio->StateArray(&r44, sizeof(r44), 1);
+	state_fio->StateArray(&pixmask, sizeof(pixmask), 1);
+	state_fio->StateArray(&v99x8_refresh, sizeof(v99x8_refresh), 1);
+	state_fio->StateArray(pal, sizeof(pal), 1);
+	state_fio->StateArray(pal_8, sizeof(pal_8), 1);
+	state_fio->StateArray(pal_m, sizeof(pal_m), 1);
+	state_fio->StateValue(col_bg);
+	state_fio->StateArray(tbl_yjk_b, sizeof(tbl_yjk_b), 1);
+	state_fio->StateArray(tbl_yjk_rg, sizeof(tbl_yjk_rg), 1);
+	state_fio->StateArray(blackbuf, sizeof(blackbuf), 1);
+	state_fio->StateArray(sbuf, sizeof(sbuf), 1);
+	state_fio->StateArray(vram, sizeof(vram), 1);
+	state_fio->StateValue(intstat);
 	
 	// post process
 	if(loading) {

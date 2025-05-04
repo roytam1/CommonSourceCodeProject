@@ -166,11 +166,11 @@ bool VDP::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(palette_pc, sizeof(palette_pc), 1);
-	state_fio->StateBuffer(reg, sizeof(reg), 1);
-	state_fio->StateUint8(bg);
-	state_fio->StateUint8(cmask);
-	state_fio->StateUint8(pmask);
+	state_fio->StateArray(palette_pc, sizeof(palette_pc), 1);
+	state_fio->StateArray(reg, sizeof(reg), 1);
+	state_fio->StateValue(bg);
+	state_fio->StateValue(cmask);
+	state_fio->StateValue(pmask);
 	return true;
 }
 

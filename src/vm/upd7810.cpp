@@ -364,20 +364,11 @@ int UPD7810::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 }
 #endif
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 bool UPD7810::process_state(FILEIO* state_fio, bool loading)
 {
 	upd7810_state *cpustate = (upd7810_state *)opaque;
-	const struct opcode_s *opXX = cpustate->opXX;
-	const struct opcode_s *op48 = cpustate->op48;
-	const struct opcode_s *op4C = cpustate->op4C;
-	const struct opcode_s *op4D = cpustate->op4D;
-	const struct opcode_s *op60 = cpustate->op60;
-	const struct opcode_s *op64 = cpustate->op64;
-	const struct opcode_s *op70 = cpustate->op70;
-	const struct opcode_s *op74 = cpustate->op74;
-	void(*handle_timers)(upd7810_state *cpustate, int cycles) = cpustate->handle_timers;
 	
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
@@ -385,37 +376,96 @@ bool UPD7810::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(opaque, sizeof(upd7810_state), 1);
+	state_fio->StateValue(cpustate->ppc);
+	state_fio->StateValue(cpustate->pc);
+	state_fio->StateValue(cpustate->sp);
+	state_fio->StateValue(cpustate->op);
+	state_fio->StateValue(cpustate->op2);
+	state_fio->StateValue(cpustate->iff);
+	state_fio->StateValue(cpustate->softi);
+	state_fio->StateValue(cpustate->psw);
+	state_fio->StateValue(cpustate->ea);
+	state_fio->StateValue(cpustate->va);
+	state_fio->StateValue(cpustate->bc);
+	state_fio->StateValue(cpustate->de);
+	state_fio->StateValue(cpustate->hl);
+	state_fio->StateValue(cpustate->ea2);
+	state_fio->StateValue(cpustate->va2);
+	state_fio->StateValue(cpustate->bc2);
+	state_fio->StateValue(cpustate->de2);
+	state_fio->StateValue(cpustate->hl2);
+	state_fio->StateValue(cpustate->cnt);
+	state_fio->StateValue(cpustate->tm);
+	state_fio->StateValue(cpustate->ecnt);
+	state_fio->StateValue(cpustate->etm);
+	state_fio->StateValue(cpustate->ma);
+	state_fio->StateValue(cpustate->mb);
+	state_fio->StateValue(cpustate->mcc);
+	state_fio->StateValue(cpustate->mc);
+	state_fio->StateValue(cpustate->mm);
+	state_fio->StateValue(cpustate->mf);
+	state_fio->StateValue(cpustate->tmm);
+	state_fio->StateValue(cpustate->etmm);
+	state_fio->StateValue(cpustate->eom);
+	state_fio->StateValue(cpustate->sml);
+	state_fio->StateValue(cpustate->smh);
+	state_fio->StateValue(cpustate->anm);
+	state_fio->StateValue(cpustate->mkl);
+	state_fio->StateValue(cpustate->mkh);
+	state_fio->StateValue(cpustate->zcm);
+	state_fio->StateValue(cpustate->pa_in);
+	state_fio->StateValue(cpustate->pb_in);
+	state_fio->StateValue(cpustate->pc_in);
+	state_fio->StateValue(cpustate->pd_in);
+	state_fio->StateValue(cpustate->pf_in);
+	state_fio->StateValue(cpustate->pa_out);
+	state_fio->StateValue(cpustate->pb_out);
+	state_fio->StateValue(cpustate->pc_out);
+	state_fio->StateValue(cpustate->pd_out);
+	state_fio->StateValue(cpustate->pf_out);
+	state_fio->StateValue(cpustate->cr0);
+	state_fio->StateValue(cpustate->cr1);
+	state_fio->StateValue(cpustate->cr2);
+	state_fio->StateValue(cpustate->cr3);
+	state_fio->StateValue(cpustate->txb);
+	state_fio->StateValue(cpustate->rxb);
+	state_fio->StateValue(cpustate->txd);
+	state_fio->StateValue(cpustate->rxd);
+	state_fio->StateValue(cpustate->sck);
+	state_fio->StateValue(cpustate->ti);
+	state_fio->StateValue(cpustate->to);
+	state_fio->StateValue(cpustate->ci);
+	state_fio->StateValue(cpustate->co0);
+	state_fio->StateValue(cpustate->co1);
+	state_fio->StateValue(cpustate->irr);
+	state_fio->StateValue(cpustate->itf);
+	state_fio->StateValue(cpustate->int1);
+	state_fio->StateValue(cpustate->int2);
+	state_fio->StateValue(cpustate->txs);
+	state_fio->StateValue(cpustate->rxs);
+	state_fio->StateValue(cpustate->txcnt);
+	state_fio->StateValue(cpustate->rxcnt);
+	state_fio->StateValue(cpustate->txbuf);
+	state_fio->StateValue(cpustate->ovc0);
+	state_fio->StateValue(cpustate->ovc1);
+	state_fio->StateValue(cpustate->ovce);
+	state_fio->StateValue(cpustate->ovcf);
+	state_fio->StateValue(cpustate->ovcs);
+	state_fio->StateValue(cpustate->ovcsio);
+	state_fio->StateValue(cpustate->edges);
+	state_fio->StateValue(cpustate->icount);
 #ifdef USE_DEBUGGER
-	state_fio->StateUint64(total_icount);
+	state_fio->StateValue(total_icount);
 #endif
-	state_fio->StateInt32(icount);
-	state_fio->StateBool(busreq);
+	state_fio->StateValue(icount);
+	state_fio->StateValue(busreq);
 	
+#ifdef USE_DEBUGGER
 	// post process
 	if(loading) {
-		cpustate->opXX = opXX;
-		cpustate->op48 = op48;
-		cpustate->op4C = op4C;
-		cpustate->op4D = op4D;
-		cpustate->op60 = op60;
-		cpustate->op64 = op64;
-		cpustate->op70 = op70;
-		cpustate->op74 = op74;
-		cpustate->handle_timers = handle_timers;
-
-		cpustate->program = d_mem;
-		cpustate->io = d_io;
-		cpustate->outputs_to = (void*)&outputs_to;
-		cpustate->outputs_txd = (void*)&outputs_txd;
-#ifdef USE_DEBUGGER
-		cpustate->emu = emu;
-		cpustate->debugger = d_debugger;
-		cpustate->program_stored = d_mem;
-		cpustate->io_stored = d_io;
 		prev_total_icount = total_icount;
-#endif
 	}
+#endif
 	return true;
 }
 

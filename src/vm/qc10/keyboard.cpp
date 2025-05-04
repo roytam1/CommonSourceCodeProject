@@ -156,9 +156,9 @@ bool KEYBOARD::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(led, sizeof(led), 1);
-	state_fio->StateBool(repeat);
-	state_fio->StateBool(enable);
+	state_fio->StateArray(led, sizeof(led), 1);
+	state_fio->StateValue(repeat);
+	state_fio->StateValue(enable);
 	return true;
 }
 

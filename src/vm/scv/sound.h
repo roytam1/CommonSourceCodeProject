@@ -27,21 +27,22 @@
 
 #define MAX_PARAM 0x8000
 
+typedef struct {
+	int count;
+	int diff;
+	int period;
+	int timbre;
+	int volume;
+	int output;
+	int ptr;
+} channel_t;
+
 class SOUND : public DEVICE
 {
 private:
 	DEVICE* d_cpu;
 	
 	// sound gen
-	typedef struct {
-		int count;
-		int diff;
-		int period;
-		int timbre;
-		int volume;
-		int output;
-		int ptr;
-	} channel_t;
 	channel_t tone;
 	channel_t noise;
 	channel_t square1;

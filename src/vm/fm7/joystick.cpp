@@ -306,25 +306,25 @@ bool JOYSTICK::decl_state(FILEIO *state_fio, bool loading)
 	}
 
 #if !defined(_FM8)
-	state_fio->StateBuffer(emulate_mouse, sizeof(emulate_mouse), 1);
+	state_fio->StateArray(emulate_mouse, sizeof(emulate_mouse), 1);
 #endif		
-	state_fio->StateBuffer(joydata, sizeof(emulate_mouse), 1);
+	state_fio->StateArray(joydata, sizeof(emulate_mouse), 1);
 
 #if !defined(_FM8)
-	state_fio->StateInt32(dx);
-	state_fio->StateInt32(dy);
-	state_fio->StateInt32(lx);
-	state_fio->StateInt32(ly);
-	state_fio->StateUint32(mouse_button);
-	state_fio->StateBool(mouse_strobe);
-	state_fio->StateInt32(mouse_phase);
-	state_fio->StateUint32(mouse_data);
-	//state_fio->StateInt32(mouse_timeout_event);
+	state_fio->StateValue(dx);
+	state_fio->StateValue(dy);
+	state_fio->StateValue(lx);
+	state_fio->StateValue(ly);
+	state_fio->StateValue(mouse_button);
+	state_fio->StateValue(mouse_strobe);
+	state_fio->StateValue(mouse_phase);
+	state_fio->StateValue(mouse_data);
+	//state_fio->StateValue(mouse_timeout_event);
 #endif	
 	// Version 3
-	state_fio->StateUint8(lpmask);
+	state_fio->StateValue(lpmask);
 	// Version 4
-	state_fio->StateUint8(port_b_val);
+	state_fio->StateValue(port_b_val);
 
 	return true;
 }

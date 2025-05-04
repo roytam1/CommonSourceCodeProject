@@ -467,24 +467,24 @@ bool HD6844::decl_state(FILEIO *state_fio, bool loading)
 		return false;
 	}
 
-	state_fio->StateBuffer(addr_reg, sizeof(addr_reg), 1);
-	state_fio->StateBuffer(words_reg, sizeof(words_reg), 1);
-	state_fio->StateBuffer(channel_control, sizeof(channel_control), 1);
+	state_fio->StateArray(addr_reg, sizeof(addr_reg), 1);
+	state_fio->StateArray(words_reg, sizeof(words_reg), 1);
+	state_fio->StateArray(channel_control, sizeof(channel_control), 1);
 	
-	state_fio->StateUint8(priority_reg);
-	state_fio->StateUint8(interrupt_reg);
-	state_fio->StateUint8(datachain_reg);
-	state_fio->StateUint8(num_reg);
-	state_fio->StateUint32(addr_offset);
+	state_fio->StateValue(priority_reg);
+	state_fio->StateValue(interrupt_reg);
+	state_fio->StateValue(datachain_reg);
+	state_fio->StateValue(num_reg);
+	state_fio->StateValue(addr_offset);
 		
-	state_fio->StateBuffer(transfering, sizeof(transfering), 1);
-	state_fio->StateBuffer(first_transfer, sizeof(first_transfer), 1);
-	state_fio->StateBuffer(cycle_steal, sizeof(cycle_steal), 1);
-	state_fio->StateBuffer(halt_flag, sizeof(halt_flag), 1);
+	state_fio->StateArray(transfering, sizeof(transfering), 1);
+	state_fio->StateArray(first_transfer, sizeof(first_transfer), 1);
+	state_fio->StateArray(cycle_steal, sizeof(cycle_steal), 1);
+	state_fio->StateArray(halt_flag, sizeof(halt_flag), 1);
 		
-	state_fio->StateBuffer(fixed_addr, sizeof(fixed_addr), 1);
-	state_fio->StateBuffer(data_reg, sizeof(data_reg), 1);
-	state_fio->StateBuffer(event_dmac, sizeof(event_dmac), 1);
+	state_fio->StateArray(fixed_addr, sizeof(fixed_addr), 1);
+	state_fio->StateArray(data_reg, sizeof(data_reg), 1);
+	state_fio->StateArray(event_dmac, sizeof(event_dmac), 1);
 
 	return true;
 }

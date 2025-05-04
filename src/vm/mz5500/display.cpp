@@ -508,18 +508,18 @@ bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(palette_pc, sizeof(palette_pc), 1);
-	state_fio->StateBuffer(palette, sizeof(palette), 1);
-	state_fio->StateBuffer(back, sizeof(back), 1);
-	state_fio->StateBuffer(reverse, sizeof(reverse), 1);
-	state_fio->StateUint8(rno);
-	state_fio->StateBuffer(wregs, sizeof(wregs), 1);
-	state_fio->StateBuffer(pri, sizeof(pri), 1);
-	state_fio->StateBuffer(vma, sizeof(vma), 1);
-	state_fio->StateBuffer(vds, sizeof(vds), 1);
-	state_fio->StateUint8(mode_r);
-	state_fio->StateUint8(mode_c);
-	state_fio->StateUint8(mode_p);
+	state_fio->StateArray(palette_pc, sizeof(palette_pc), 1);
+	state_fio->StateArray(palette, sizeof(palette), 1);
+	state_fio->StateArray(back, sizeof(back), 1);
+	state_fio->StateArray(reverse, sizeof(reverse), 1);
+	state_fio->StateValue(rno);
+	state_fio->StateArray(wregs, sizeof(wregs), 1);
+	state_fio->StateArray(pri, sizeof(pri), 1);
+	state_fio->StateArray(vma, sizeof(vma), 1);
+	state_fio->StateArray(vds, sizeof(vds), 1);
+	state_fio->StateValue(mode_r);
+	state_fio->StateValue(mode_c);
+	state_fio->StateValue(mode_p);
 	return true;
 }
 

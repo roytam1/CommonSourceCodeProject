@@ -714,7 +714,7 @@ bool VM::process_state(FILEIO* state_fio, bool loading)
 			return false;
 		}
 	}
-	state_fio->StateInt32(sr_mode);
+	state_fio->StateValue(sr_mode);
 	return true;
 }
 

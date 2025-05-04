@@ -1144,11 +1144,11 @@ bool BIOS::process_state(FILEIO* state_fio, bool loading)
 			return false;
 		}
 	}
-	state_fio->StateInt32(secnum);
-	state_fio->StateInt32(timeout);
-	state_fio->StateBuffer(drive_mode1, sizeof(drive_mode1), 1);
-	state_fio->StateBuffer(drive_mode2, sizeof(drive_mode2), 1);
-	state_fio->StateBuffer(scsi_blocks, sizeof(scsi_blocks), 1);
+	state_fio->StateValue(secnum);
+	state_fio->StateValue(timeout);
+	state_fio->StateArray(drive_mode1, sizeof(drive_mode1), 1);
+	state_fio->StateArray(drive_mode2, sizeof(drive_mode2), 1);
+	state_fio->StateArray(scsi_blocks, sizeof(scsi_blocks), 1);
 	return true;
 }
 

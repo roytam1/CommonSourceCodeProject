@@ -119,7 +119,7 @@ void TMS3631::initialize_sound(int rate, int volume)
 	vol = volume / 8;
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool TMS3631::process_state(FILEIO* state_fio, bool loading)
 {
@@ -129,13 +129,16 @@ bool TMS3631::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateUint8(envelop1);
-	state_fio->StateUint8(envelop2);
-	state_fio->StateUint8(datareg);
-	state_fio->StateUint8(maskreg);
-	state_fio->StateBuffer(ch, sizeof(ch), 1);
-	state_fio->StateUint8(channel);
-	state_fio->StateBool(set_key);
+	state_fio->StateValue(envelop1);
+	state_fio->StateValue(envelop2);
+	state_fio->StateValue(datareg);
+	state_fio->StateValue(maskreg);
+	for(int i = 0; i < array_length(ch); i++) {
+		state_fio->StateValue(ch[i].freq);
+		state_fio->StateValue(ch[i].count);
+	}
+	state_fio->StateValue(channel);
+	state_fio->StateValue(set_key);
 	return true;
 }
 

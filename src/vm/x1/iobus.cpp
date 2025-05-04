@@ -243,9 +243,9 @@ bool IOBUS::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(vram, sizeof(vram), 1);
-	state_fio->StateBool(vram_mode);
-	state_fio->StateBool(signal);
+	state_fio->StateArray(vram, sizeof(vram), 1);
+	state_fio->StateValue(vram_mode);
+	state_fio->StateValue(signal);
 	if(loading) {
 		vram_b = vram + state_fio->FgetInt32_LE();
 		vram_r = vram + state_fio->FgetInt32_LE();
@@ -255,17 +255,17 @@ bool IOBUS::process_state(FILEIO* state_fio, bool loading)
 		state_fio->FputInt32_LE((int)(vram_r - vram));
 		state_fio->FputInt32_LE((int)(vram_g - vram));
 	}
-	state_fio->StateUint8(vdisp);
-	state_fio->StateUint32(prev_clock);
-	state_fio->StateUint32(vram_wait_index);
-	state_fio->StateBool(column40);
+	state_fio->StateValue(vdisp);
+	state_fio->StateValue(prev_clock);
+	state_fio->StateValue(vram_wait_index);
+	state_fio->StateValue(column40);
 #ifdef _X1TURBO_FEATURE
-	state_fio->StateBuffer(crtc_regs, sizeof(crtc_regs), 1);
-	state_fio->StateInt32(crtc_ch);
-	state_fio->StateBool(hireso);
+	state_fio->StateArray(crtc_regs, sizeof(crtc_regs), 1);
+	state_fio->StateValue(crtc_ch);
+	state_fio->StateValue(hireso);
 #ifdef _X1TURBOZ
-	state_fio->StateUint8(zmode1);
-	state_fio->StateUint8(zmode2);
+	state_fio->StateValue(zmode1);
+	state_fio->StateValue(zmode2);
 #endif
 #endif
 	return true;

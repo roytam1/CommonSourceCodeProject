@@ -423,7 +423,7 @@ void PC6031::update_config()
 //	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool PC6031::process_state(FILEIO* state_fio, bool loading)
 {
@@ -438,16 +438,27 @@ bool PC6031::process_state(FILEIO* state_fio, bool loading)
 			return false;
 		}
 	}
-	state_fio->StateBuffer(cur_trk, sizeof(cur_trk), 1);
-	state_fio->StateBuffer(cur_sct, sizeof(cur_sct), 1);
-	state_fio->StateBuffer(cur_pos, sizeof(cur_pos), 1);
-	state_fio->StateBuffer(access, sizeof(access), 1);
-	state_fio->StateBuffer(&mdisk, sizeof(DISK60), 1);
-	state_fio->StateUint8(io_D1H);
-	state_fio->StateUint8(io_D2H);
-	state_fio->StateUint8(old_D2H);
-	state_fio->StateUint8(io_D3H);
-	state_fio->StateInt32(DrvNum);
+	state_fio->StateArray(cur_trk, sizeof(cur_trk), 1);
+	state_fio->StateArray(cur_sct, sizeof(cur_sct), 1);
+	state_fio->StateArray(cur_pos, sizeof(cur_pos), 1);
+	state_fio->StateArray(access, sizeof(access), 1);
+	state_fio->StateValue(mdisk.ATN);
+	state_fio->StateValue(mdisk.DAC);
+	state_fio->StateValue(mdisk.RFD);
+	state_fio->StateValue(mdisk.DAV);
+	state_fio->StateValue(mdisk.command);
+	state_fio->StateValue(mdisk.step);
+	state_fio->StateValue(mdisk.blk);
+	state_fio->StateValue(mdisk.drv);
+	state_fio->StateValue(mdisk.trk);
+	state_fio->StateValue(mdisk.sct);
+	state_fio->StateValue(mdisk.size);
+	state_fio->StateValue(mdisk.retdat);
+	state_fio->StateValue(io_D1H);
+	state_fio->StateValue(io_D2H);
+	state_fio->StateValue(old_D2H);
+	state_fio->StateValue(io_D3H);
+	state_fio->StateValue(DrvNum);
 	return true;
 }
 

@@ -185,7 +185,7 @@ void SN76489AN::initialize_sound(int rate, int clock, int volume)
 	diff = (int)(16.0 * (double)clock / (double)rate + 0.5);
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool SN76489AN::process_state(FILEIO* state_fio, bool loading)
 {
@@ -195,14 +195,19 @@ bool SN76489AN::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(regs, sizeof(regs), 1);
-	state_fio->StateInt32(index);
-	state_fio->StateBuffer(ch, sizeof(ch), 1);
-	state_fio->StateUint32(noise_gen);
-	state_fio->StateBool(mute);
-	state_fio->StateBool(cs);
-	state_fio->StateBool(we);
-	state_fio->StateUint8(val);
+	state_fio->StateArray(regs, sizeof(regs), 1);
+	state_fio->StateValue(index);
+	for(int i = 0; i < array_length(ch); i++) {
+		state_fio->StateValue(ch[i].count);
+		state_fio->StateValue(ch[i].period);
+		state_fio->StateValue(ch[i].volume);
+		state_fio->StateValue(ch[i].signal);
+	}
+	state_fio->StateValue(noise_gen);
+	state_fio->StateValue(mute);
+	state_fio->StateValue(cs);
+	state_fio->StateValue(we);
+	state_fio->StateValue(val);
 	return true;
 }
 

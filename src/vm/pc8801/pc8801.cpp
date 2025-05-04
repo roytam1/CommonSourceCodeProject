@@ -532,7 +532,7 @@ bool VM::process_state(FILEIO* state_fio, bool loading)
 			return false;
 		}
 	}
-	state_fio->StateInt32(boot_mode);
+	state_fio->StateValue(boot_mode);
 	return true;
 }
 

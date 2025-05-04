@@ -161,7 +161,7 @@ void LCD::draw_screen()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool LCD::process_state(FILEIO* state_fio, bool loading)
 {
@@ -171,8 +171,16 @@ bool LCD::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(seg, sizeof(seg), 1);
-	state_fio->StateUint16(sel);
+	for(int i = 0; i < array_length(seg); i++) {
+		state_fio->StateArray(&seg[i].vram[0][0], sizeof(seg[i].vram), 1);
+		state_fio->StateValue(seg[i].updown);
+		state_fio->StateValue(seg[i].disp);
+		state_fio->StateValue(seg[i].spg);
+		state_fio->StateValue(seg[i].page);
+		state_fio->StateValue(seg[i].ofs);
+		state_fio->StateValue(seg[i].ofs2);
+	}
+	state_fio->StateValue(sel);
 	return true;
 }
 

@@ -1231,8 +1231,8 @@ bool VM::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
-	state_fio->StateBool(connect_320kfdc);
-	state_fio->StateBool(connect_1Mfdc);
+	state_fio->StateValue(connect_320kfdc);
+	state_fio->StateValue(connect_1Mfdc);
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		const char *name = typeid(*device).name() + 6; // skip "class "
 		int len = strlen(name);

@@ -1307,7 +1307,7 @@ int MCS48::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 }
 #endif
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 bool MCS48MEM::process_state(FILEIO* state_fio, bool loading)
 {
@@ -1317,12 +1317,14 @@ bool MCS48MEM::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-	state_fio->StateBuffer(ram, sizeof(ram), 1);
+	state_fio->StateArray(ram, sizeof(ram), 1);
 	return true;
 }
 
 bool MCS48::process_state(FILEIO* state_fio, bool loading)
 {
+	mcs48_state *cpustate = (mcs48_state *)opaque;
+	
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
 	}
@@ -1330,9 +1332,31 @@ bool MCS48::process_state(FILEIO* state_fio, bool loading)
 		return false;
 	}
 #ifdef USE_DEBUGGER
-	state_fio->StateUint64(total_icount);
+	state_fio->StateValue(total_icount);
 #endif
-	state_fio->StateBuffer(opaque, sizeof(mcs48_state), 1);
+	state_fio->StateValue(cpustate->prevpc);
+	state_fio->StateValue(cpustate->pc);
+	state_fio->StateValue(cpustate->a);
+	state_fio->StateValue(cpustate->regptr);
+	state_fio->StateValue(cpustate->psw);
+	state_fio->StateValue(cpustate->p1);
+	state_fio->StateValue(cpustate->p2);
+	state_fio->StateValue(cpustate->timer);
+	state_fio->StateValue(cpustate->prescaler);
+	state_fio->StateValue(cpustate->t1_history);
+	state_fio->StateValue(cpustate->sts);
+	state_fio->StateValue(cpustate->int_state);
+	state_fio->StateValue(cpustate->irq_state);
+	state_fio->StateValue(cpustate->irq_in_progress);
+	state_fio->StateValue(cpustate->timer_overflow);
+	state_fio->StateValue(cpustate->timer_flag);
+	state_fio->StateValue(cpustate->tirq_enabled);
+	state_fio->StateValue(cpustate->xirq_enabled);
+	state_fio->StateValue(cpustate->t0_clk_enabled);
+	state_fio->StateValue(cpustate->timecount_enabled);
+	state_fio->StateValue(cpustate->a11);
+	state_fio->StateValue(cpustate->icount);
+//	state_fio->StateArray(cpustate->rom, sizeof(cpustate->rom), 1);
 	
 	// post process
 	if(loading) {
