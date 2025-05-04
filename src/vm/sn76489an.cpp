@@ -43,10 +43,33 @@ void SN76489AN::reset()
 	}
 	noise_gen = NOISE_FB;
 	ch[3].signal = false;
+	prev_clock = get_current_clock();
 }
 
-void SN76489AN::write_io8(uint32_t addr, uint32_t data)
+uint32_t calc_wait_clock(uint32_t passed)
 {
+	if(passed <= 32) {
+		return 32 - passed;
+	} else {
+		uint32_t remain = passed - 32;
+		remain %= 16;
+		return (remain != 0) ? 16 - remain : 0;
+	}
+}
+
+void SN76489AN::write_io8w(uint32_t addr, uint32_t data, int *wait)
+{
+	// wait 32 + 16 * n clock
+	uint32_t passed = get_passed_clock(prev_clock);
+	if(psg_clock == cpu_clock) {
+		*wait = (int)calc_wait_clock(passed);
+	} else {
+		uint32_t psg_passed = muldiv_u32(passed, psg_clock, cpu_clock);	// cpu clock -> psg clock
+		uint32_t psg_wait = calc_wait_clock(psg_passed);
+		*wait = muldiv_u32(psg_wait, cpu_clock, psg_clock);		// psg clock -> cpu clock
+	}
+	prev_clock = get_current_clock() + (uint32_t)*wait;	// clock that this i/o access will be finished
+	
 	if(data & 0x80) {
 		index = (data >> 4) & 7;
 		int c = index >> 1;
@@ -183,9 +206,10 @@ void SN76489AN::initialize_sound(int rate, int clock, int volume)
 	}
 	volume_table[15] = 0;
 	diff = (int)(16.0 * (double)clock / (double)rate + 0.5);
+	psg_clock = (uint32_t)clock;
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void SN76489AN::save_state(FILEIO* state_fio)
 {
@@ -194,6 +218,7 @@ void SN76489AN::save_state(FILEIO* state_fio)
 	
 	state_fio->Fwrite(regs, sizeof(regs), 1);
 	state_fio->FputInt32(index);
+	state_fio->FputUint32(prev_clock);
 	state_fio->Fwrite(ch, sizeof(ch), 1);
 	state_fio->FputUint32(noise_gen);
 	state_fio->FputBool(mute);
@@ -212,6 +237,7 @@ bool SN76489AN::load_state(FILEIO* state_fio)
 	}
 	state_fio->Fread(regs, sizeof(regs), 1);
 	index = state_fio->FgetInt32();
+	prev_clock = state_fio->FgetUint32();
 	state_fio->Fwrite(ch, sizeof(ch), 1);
 	noise_gen = state_fio->FgetUint32();
 	mute = state_fio->FgetBool();

@@ -25,6 +25,9 @@ private:
 	// register
 	uint16_t regs[8];
 	int index;
+	uint32_t psg_clock;
+	uint32_t cpu_clock;
+	uint32_t prev_clock;
 	
 	// sound info
 	struct {
@@ -43,6 +46,7 @@ private:
 public:
 	SN76489AN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+		cpu_clock = CPU_CLOCKS;
 		volume_l = volume_r = 1024;
 #ifdef HAS_SN76489
 		set_device_name(_T("SN76489 PSG"));
@@ -55,14 +59,19 @@ public:
 	// common functions
 	void initialize();
 	void reset();
-	void write_io8(uint32_t addr, uint32_t data);
+	void write_io8w(uint32_t addr, uint32_t data, int *wait);
+//	void write_io8(uint32_t addr, uint32_t data);
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	void mix(int32_t* buffer, int cnt);
 	void set_volume(int ch, int decibel_l, int decibel_r);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
-	// unique function
+	// unique functions
+	void set_cpu_clock(uint32_t clock)
+	{
+		cpu_clock = clock;
+	}
 	void initialize_sound(int rate, int clock, int volume);
 };
 
