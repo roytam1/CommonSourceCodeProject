@@ -29,9 +29,31 @@
 void SUB::initialize()
 {
 	// load rom image
+	memset(kanji, 0xff, sizeof(kanji));
+	
 	FILEIO* fio = new FILEIO();
 	if(fio->Fopen(emu->bios_path(_T("FONT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(font, sizeof(font), 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(emu->bios_path(_T("KANJI.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji, sizeof(kanji), 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(emu->bios_path(_T("MB83256-019.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji + 0x00000, 0x8000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(emu->bios_path(_T("MB83256-020.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji + 0x08000, 0x8000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(emu->bios_path(_T("MB83256-021.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji + 0x10000, 0x8000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(emu->bios_path(_T("MB83256-022.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji + 0x18000, 0x8000, 1);
 		fio->Fclose();
 	}
 	delete fio;
@@ -93,10 +115,6 @@ void SUB::write_io8(uint32 addr, uint32 data)
 uint32 SUB::read_io8(uint32 addr)
 {
 	switch(addr & 0xf0) {
-	case 0x00:	// mz3500sm p.18,77
-//		emu->out_debug_log("SUB->MAIN\tINT0=1\n");
-		d_main->write_signal(SIG_MAIN_INT0, 1, 1);
-		break;
 	case 0x50:	// mz3500sm p.28
 		if((addr & 0x0f) == 0x0d) {
 			return disp[5];
@@ -169,6 +187,7 @@ void SUB::draw_chr()
 				bool cursor = (src == caddr);
 				uint8 code = vram_chr[(src * 2 + 0) & 0xfff];	// low byte  : code
 				uint8 attr = vram_chr[(src * 2 + 1) & 0xfff];	// high byte : attr
+				uint8 knji = vram_chr[((src* 2 + 0) & 0xfff) | 0x1000];
 				src++;
 				
 				// mz3500sm p.31
@@ -193,6 +212,10 @@ void SUB::draw_chr()
 				reverse = (reverse != blink);
 				
 				uint8* pattern = &font[0x1000 | (code << 4)];
+				
+				if(knji != 0 && knji != 0x20) {
+					pattern = &kanji[(code * 16 + knji * 256 * 16) & 0x1ffff];
+				}
 				
 				// NOTE: need to consider 200 line mode
 				
@@ -244,6 +267,50 @@ void SUB::draw_chr()
 
 void SUB::draw_gfx()
 {
+	int ymax = (disp[5] & 1) ? 400 : 200;
+	
+	for(int i = 0, ytop = 0; i < 4; i++) {
+		uint32 ra = ra_gfx[4 * i];
+		ra |= ra_gfx[4 * i + 1] << 8;
+		ra |= ra_gfx[4 * i + 2] << 16;
+		ra |= ra_gfx[4 * i + 3] << 24;
+		int src = ra & 0x1fff;
+		int len = (ra >> 20) & 0x3ff;
+		
+		for(int y = ytop; y < (ytop + len) && y < 400; y++) {
+			if(y >= 400) {
+				break;
+			}
+			for(int x = 0; x < 40; x++) {
+				uint8 lo_b = (disp[1] & 1) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x00000] : 0;
+				uint8 hi_b = (disp[1] & 1) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x00000] : 0;
+				uint8 lo_r = (disp[1] & 2) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x08000] : 0;
+				uint8 hi_r = (disp[1] & 2) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x08000] : 0;
+				uint8 lo_g = (disp[1] & 4) ? vram_gfx[((src * 2 + 0) & 0x7fff) | 0x10000] : 0;
+				uint8 hi_g = (disp[1] & 4) ? vram_gfx[((src * 2 + 1) & 0x7fff) | 0x10000] : 0;
+				src++;
+				
+				uint8 *dest = &screen_gfx[y][x * 16];
+				dest[ 0] = ((lo_b & 0x01)     ) | ((lo_r & 0x01) << 1) | ((lo_g & 0x01) << 2);
+				dest[ 1] = ((lo_b & 0x02) >> 1) | ((lo_r & 0x02)     ) | ((lo_g & 0x02) << 1);
+				dest[ 2] = ((lo_b & 0x04) >> 2) | ((lo_r & 0x04) >> 1) | ((lo_g & 0x04)     );
+				dest[ 3] = ((lo_b & 0x08) >> 3) | ((lo_r & 0x08) >> 2) | ((lo_g & 0x08) >> 1);
+				dest[ 4] = ((lo_b & 0x10) >> 4) | ((lo_r & 0x10) >> 3) | ((lo_g & 0x10) >> 2);
+				dest[ 5] = ((lo_b & 0x20) >> 5) | ((lo_r & 0x20) >> 4) | ((lo_g & 0x20) >> 3);
+				dest[ 6] = ((lo_b & 0x40) >> 6) | ((lo_r & 0x40) >> 5) | ((lo_g & 0x40) >> 4);
+				dest[ 7] = ((lo_b & 0x80) >> 7) | ((lo_r & 0x80) >> 6) | ((lo_g & 0x80) >> 5);
+				dest[ 8] = ((hi_b & 0x01)     ) | ((hi_r & 0x01) << 1) | ((hi_g & 0x01) << 2);
+				dest[ 9] = ((hi_b & 0x02) >> 1) | ((hi_r & 0x02)     ) | ((hi_g & 0x02) << 1);
+				dest[10] = ((hi_b & 0x04) >> 2) | ((hi_r & 0x04) >> 1) | ((hi_g & 0x04)     );
+				dest[11] = ((hi_b & 0x08) >> 3) | ((hi_r & 0x08) >> 2) | ((hi_g & 0x08) >> 1);
+				dest[12] = ((hi_b & 0x10) >> 4) | ((hi_r & 0x10) >> 3) | ((hi_g & 0x10) >> 2);
+				dest[13] = ((hi_b & 0x20) >> 5) | ((hi_r & 0x20) >> 4) | ((hi_g & 0x20) >> 3);
+				dest[14] = ((hi_b & 0x40) >> 6) | ((hi_r & 0x40) >> 5) | ((hi_g & 0x40) >> 4);
+				dest[15] = ((hi_b & 0x80) >> 7) | ((hi_r & 0x80) >> 6) | ((hi_g & 0x80) >> 5);
+			}
+		}
+		ytop += len;
+	}
 }
 
 #define STATE_VERSION	1

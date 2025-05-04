@@ -1,3 +1,16 @@
+9/25/2015
+
+[MZ3500] support HALT button
+[MZ3500/KEYBOARD] support PRO/OP mode switch
+[MZ3500/KEYBOARD] support CL and 00 keys
+[MZ3500/KEYBOARD] change key assign for program control keys
+[MZ3500/MAIN] fix to add one clock wait for each m1 cycle
+[MZ3500/MAIN] fix memory mapper to check me1/me2 signals
+[MZ3500/MAIN] fix memory mapper to update only when register values are changed
+[MZ3500/SUB] support kanji rom and kanji vram
+[MZ3500/SUB] implement graphic screen renderer
+
+
 9/23/2015-2
 
 [MZ3500/KEYBOARD] support kana key

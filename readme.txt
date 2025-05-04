@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								9/23/2015
+								9/25/2015
 
 --- What's this ?
 
@@ -134,7 +134,9 @@ See source\build8.bat and source\manifest.bat for more details.
 --- License
 
 The copyright belongs to the author, but you can use the source codes
-under the GNU GENERAL PUBLIC LICENSE.
+under the GNU GENERAL PUBLIC LICENSE Version 2.
+
+See also COPYING.txt for more details about the license.
 
 
 --- Thanks
@@ -196,7 +198,7 @@ under the GNU GENERAL PUBLIC LICENSE.
 	iP6 by Mr.Nishida
 - vm/upd7801.*
 	MAME uPD7810 core
-	Mr.Komatsh for the chip specification info
+	Mr.Komatsu for the chip specification info
 - vm/v99x8.*
 	Zodiac V99x8 core, converted to C++ class by Mr.umaiboux
 - vm/w3100a.*

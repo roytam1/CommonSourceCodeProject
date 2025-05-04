@@ -27,11 +27,12 @@ private:
 	uint8 wdmy[0x800];
 	uint8 rdmy[0x800];
 	uint8 ram[0x4000];
+	uint8 kanji[0x20000];
 	uint8* ipl;
 	uint8* common;
 	
 	// display
-	uint8 vram_chr[0x1000];
+	uint8 vram_chr[0x2000];
 	uint8 *sync_chr, *ra_chr, *cs_chr;
 	int* ead_chr;
 	uint8 vram_gfx[0x20000];

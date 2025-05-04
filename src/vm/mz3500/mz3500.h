@@ -27,6 +27,7 @@
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
+#define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
 #define USE_FD3
@@ -91,6 +92,8 @@ protected:
 	SUB* sub;
 	KEYBOARD* kbd;
 	
+	uint8 halt;
+	
 public:
 	// ----------------------------------------
 	// initialize
@@ -105,6 +108,7 @@ public:
 	
 	// drive virtual machine
 	void reset();
+	void special_reset();
 	void run();
 	double frame_rate();
 	

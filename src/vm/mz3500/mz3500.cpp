@@ -106,7 +106,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// mz3500sm p.80,81
 	rtc->set_context_dout(ls244, SIG_LS244_INPUT, 0x01);
 	
-	gdc_chr->set_vram_ptr(sub->get_vram_chr(), 0x1000);
+	gdc_chr->set_vram_ptr(sub->get_vram_chr(), 0x2000);
 	sub->set_sync_ptr_chr(gdc_chr->get_sync());
 	sub->set_ra_ptr_chr(gdc_chr->get_ra());
 	sub->set_cs_ptr_chr(gdc_chr->get_cs());
@@ -139,7 +139,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io->set_iomap_range_rw(0xfc, 0xff, main);	// memory mpaper
 	
 	// mz3500sm p.18
-	subio->set_iomap_range_rw(0x00, 0x0f, sub);	// int0 to main (set flipflop)
+	subio->set_iomap_range_w(0x00, 0x0f, sub);	// int0 to main (set flipflop)
 	subio->set_iomap_range_rw(0x10, 0x1f, sio);
 	subio->set_iomap_range_rw(0x20, 0x2f, pit);
 	subio->set_iomap_range_rw(0x30, 0x3f, pio);
@@ -206,11 +206,25 @@ void VM::reset()
 	
 	// set busreq of sub cpu
 	subcpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
+	
+	// halt key is not pressed
+	halt = 0;
 	ls244->write_signal(SIG_LS244_INPUT, 0x80, 0xff);
+}
+
+void VM::special_reset()
+{
+	// halt key is pressed
+	halt = 8;
+	ls244->write_signal(SIG_LS244_INPUT, 0x00, 0x80);
 }
 
 void VM::run()
 {
+	// halt key is released
+	if(halt != 0 && --halt == 0) {
+		ls244->write_signal(SIG_LS244_INPUT, 0x80, 0x80);
+	}
 	event->drive();
 }
 
@@ -328,7 +342,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {
@@ -337,6 +351,7 @@ void VM::save_state(FILEIO* state_fio)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->save_state(state_fio);
 	}
+	state_fio->FputUint8(halt);
 }
 
 bool VM::load_state(FILEIO* state_fio)
@@ -349,6 +364,7 @@ bool VM::load_state(FILEIO* state_fio)
 			return false;
 		}
 	}
+	halt = state_fio->FgetUint8();
 	return true;
 }
 
