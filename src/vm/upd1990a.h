@@ -56,6 +56,9 @@ public:
 		dout_changed = false;
 #ifdef HAS_UPD4990A
 		shift_cmd = 0;
+		set_device_name(_T("uPD4990A RTC"));
+#else
+		set_device_name(_T("uPD1990A RTC"));
 #endif
 	}
 	~UPD1990A() {}
@@ -70,10 +73,6 @@ public:
 	void event_callback(int event_id, int err);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("uPD1990A");
-	}
 	
 	// unique functions
 	void set_context_dout(DEVICE* device, int id, uint32_t mask)

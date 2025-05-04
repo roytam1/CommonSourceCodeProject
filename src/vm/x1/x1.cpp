@@ -24,7 +24,8 @@
 //#include "../pcpr201.h"
 #include "../prnfile.h"
 #include "../ym2151.h"
-#include "../ym2203.h"
+//#include "../ym2203.h"
+#include "../ay_3_891x.h"
 #include "../z80.h"
 #include "../z80ctc.h"
 #include "../z80sio.h"
@@ -75,7 +76,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio = new I8255(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
-	psg = new YM2203(this, emu);
+//	psg = new YM2203(this, emu);
+	psg = new AY_3_891X(this, emu);
 	cpu = new Z80(this, emu);
 	ctc = new Z80CTC(this, emu);
 	sio = new Z80SIO(this, emu);
@@ -670,7 +672,9 @@ void VM::rec_tape(const _TCHAR* file_path)
 
 void VM::close_tape()
 {
+	emu->lock_vm();
 	drec->close_tape();
+	emu->unlock_vm();
 	if(pseudo_sub_cpu) {
 		psub->close_tape();
 	} else {
@@ -789,7 +793,7 @@ void VM::update_dipswitch()
 }
 #endif
 
-#define STATE_VERSION	6
+#define STATE_VERSION	7
 
 void VM::save_state(FILEIO* state_fio)
 {

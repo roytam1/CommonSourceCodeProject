@@ -17,6 +17,8 @@
 
 void SOUND::reset()
 {
+	touch_sound();
+	
 	clear_channel(&tone);
 	clear_channel(&noise);
 	clear_channel(&square1);
@@ -37,6 +39,7 @@ void SOUND::write_data8(uint32_t addr, uint32_t data)
 	}
 	if(!param_cnt) {
 		// new command
+		touch_sound();
 		switch(data) {
 		case 0x00: param_cnt = 1;         break; // note off
 		case 0x01: param_cnt = 10;        break; // noises & square
@@ -46,14 +49,15 @@ void SOUND::write_data8(uint32_t addr, uint32_t data)
 		param_ptr = 0;
 		cmd_addr  = get_cpu_pc(0); // for patch
 #ifdef SOUND_DEBUG
-		emu->out_debug_log(_T("PC=%4x\tSOUND\t"), cmd_addr);
+		this->out_debug_log(_T("PC=%4x\tSOUND\t"), cmd_addr);
 #endif
 	}
 
 #ifdef SOUND_DEBUG
-	emu->out_debug_log(_T("%2x "), data);
+	this->out_debug_log(_T("%2x "), data);
 #endif
 	if(param_cnt) {
+		touch_sound();
 		params[param_ptr++] = data;
 		if(params[0] == 0x1f) {
 			// pcm command
@@ -80,7 +84,7 @@ void SOUND::write_data8(uint32_t addr, uint32_t data)
 		// process command
 		process_cmd();
 #ifdef SOUND_DEBUG
-		emu->out_debug_log(_T("\n"));
+		this->out_debug_log(_T("\n"));
 #endif
 	}
 }
@@ -90,6 +94,7 @@ void SOUND::write_io8(uint32_t addr, uint32_t data)
 	// PC3 : L->H
 	if(data & 0x08) {
 		// note off
+		touch_sound();
 		clear_channel(&tone);
 		clear_channel(&noise);
 		clear_channel(&square1);
@@ -126,7 +131,7 @@ void SOUND::write_io8(uint32_t addr, uint32_t data)
 //			}
 		}
 #ifdef SOUND_DEBUG
-		emu->out_debug_log(_T("PC3\n"));
+		this->out_debug_log(_T("PC3\n"));
 #endif
 	}
 }
@@ -172,6 +177,7 @@ void SOUND::process_cmd()
 {
 	if(params[0] == 0x00) {
 		// note off
+		touch_sound();
 		clear_channel(&tone);
 		clear_channel(&noise);
 		clear_channel(&square1);
@@ -179,6 +185,8 @@ void SOUND::process_cmd()
 		clear_channel(&square3);
 	} else if(params[0] == 0x01) {
 		// noise & square
+		touch_sound();
+		
 		noise.timbre = params[1] >> 5;
 		noise.period = params[2] << 8;
 		noise.volume = (MAX_NOISE * (params[3] > 0x1f ? 0x1f : params[3])) / 0x1f;
@@ -199,6 +207,8 @@ void SOUND::process_cmd()
 		// tone off
 		clear_channel(&tone);
 	} else if(params[0] == 0x02) { // note on : $02, timbre, period, volume ?
+		touch_sound();
+		
 		tone.timbre = params[1] >> 5;
 		tone.period = (params[2] * detune_table[params[1] & 0x1f]);
 		tone.volume = volume_table[params[3] & 0x1f];

@@ -24,10 +24,12 @@
 #define USE_JOY_BUTTON_CAPTIONS
 #define USE_PRINTER
 #define USE_PRINTER_TYPE 4
+#define USE_AY_3_8910_AS_PSG
 
 #define NOTIFY_KEY_DOWN
 //#define NOTIFY_KEY_UP
 #define NOTIFY_KEY_DOWN_LR_SHIFT
+#define NOTIFY_KEY_DOWN_LR_MENU
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
@@ -35,13 +37,23 @@
 #define USE_ACCESS_LAMP
 #define USE_STATE
 #define USE_DEBUGGER
+#define DATAREC_SOUND
+#define USE_DIG_RESOLUTION
+#define SUPPORT_ROMA_KANA_CONVERSION
 
-
+#if defined(_USE_QT)
+#define USE_SOUND_FILES 3
+#define USE_SOUND_FILES_FDD
+#define USE_SOUND_FILES_RELAY
+#endif
 #if defined(_FM8)
 #define DEVICE_NAME		"FUJITSU FM-8"
 #define CONFIG_NAME		"fm8"
 #define CAPABLE_Z80
 #define DIPSWITCH_DEFAULT 0x00000000 
+#define USE_BUBBLE1
+#define USE_BUBBLE2
+#define MAX_BUBBLE 2
 
 #elif defined(_FM7)
 #define DEVICE_NAME		"FUJITSU FM-7"
@@ -128,9 +140,9 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
-#ifndef FM77_EXRAM_BANKS
-#define FM77_EXRAM_BANKS	12
-#endif
+# ifndef FM77_EXRAM_BANKS
+#  define FM77_EXRAM_BANKS	12
+# endif
 #define DIPSWITCH_DEFAULT 0x8000000d 
 
 #elif defined(_FM77AV40EX)
@@ -143,9 +155,9 @@
 #define CAPABLE_DICTROM
 #define HAS_400LINE_AV
 #define CAPABLE_KANJI_CLASS2
-#ifndef FM77_EXRAM_BANKS
-#define FM77_EXRAM_BANKS	12
-#endif
+# ifndef FM77_EXRAM_BANKS
+#  define FM77_EXRAM_BANKS	12
+# endif
 #define DIPSWITCH_DEFAULT 0x8000000d 
 
 #elif defined(_FM77AV40SX)
@@ -213,11 +225,22 @@
 // OPN
 #define SOUND_DEVICE_TYPE_DEFAULT	1
 #endif
-#if !defined(_FM77AV_VARIANTS)
-#define USE_SOUND_VOLUME	9
+
+#if defined(USE_SOUND_FILES)
+# if defined(_FM8)
+#define USE_SOUND_VOLUME	5
+# else
+#define USE_SOUND_VOLUME	11
+# endif
 #else
-#define USE_SOUND_VOLUME	8
+# if defined(_FM8)
+#define USE_SOUND_VOLUME	3
+# else
+#define USE_SOUND_VOLUME	9
+# endif
 #endif
+#define SUPPORT_TV_RENDER
+
 #define IGNORE_DISK_CRC_DEFAULT		true
 // device informations for virtual machine
 
@@ -238,10 +261,18 @@
 #define CPU_CLOCKS		2000000
 #endif
 
+# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || defined(_FM77L4)
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#undef SCREEN_FAKE_WIDTH
+#undef SCREEN_FAKE_HEIGHT
+#else
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		200
+#define SCREEN_FAKE_WIDTH   640
+#define SCREEN_FAKE_HEIGHT  400
+#endif
 #define WINDOW_HEIGHT_ASPECT 480
-#define MAX_DRIVE		4
 #define HAS_MC6809              
 #define MB8877_MAX_CHIPS	1
 //#define IO_ADDR_MAX		0x10000
@@ -250,12 +281,15 @@
 #define USE_FD1
 #define USE_FD2
 #define MAX_FD 2
+#define MAX_DRIVE 4
 
 #if defined(HAS_2HD)
 #define USE_FD3
 #define USE_FD4
 #undef  MAX_FD
-#define MAX_FD 4
+#undef  MAX_DRIVE
+#define MAX_FD 6
+#define MAX_DRIVE 8
 #endif
 
 
@@ -295,7 +329,7 @@
 #else
 #define SWITCH_EXTRA_RAM 0x00000000
 #endif
-//#define MB8877_NO_BUSY_AFTER_SEEK
+#define MB8877_NO_BUSY_AFTER_SEEK
 
 //#define ENABLE_OPENCL // If OpenCL renderer is enabled, define here.
 
@@ -309,12 +343,21 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PSG(Hack)"),
 	_T("Beep"),
 	_T("CMT"),
+# if defined(USE_SOUND_FILES)
+	_T("FDD SEEK"), _T("RELAY"),
+# endif
 #else
 # if !defined(_FM77AV_VARIANTS)
 	_T("PSG"),
 # endif
 	_T("OPN (FM)"), _T("OPN (PSG)"), _T("WHG (FM)"), _T("WHG (PSG)"), _T("THG (FM)"), _T("THG (PSG)"),
 	_T("Beep"), _T("CMT"),
+# if defined(_FM77AV_VARIANTS)
+	_T("Keyboard"),
+# endif
+#if defined(USE_SOUND_FILES)
+	_T("FDD SEEK"), _T("RELAY"),
+#endif
 #endif	
 };
 #endif
@@ -345,6 +388,12 @@ class YM2203;
 class MB8877;
 class MEMORY;
 class DATAREC;
+#if defined(USE_AY_3_8910_AS_PSG) && !defined(_FM77AV_VARIANTS)
+class AY_3_891X;
+#endif
+#if defined(_FM8)
+class BUBBLECASETTE;
+#endif
 #if defined(USE_LED_DEVICE)
 class DUMMYDEVICE;
 #endif
@@ -366,7 +415,6 @@ class JOYSTICK;
 #if WITH_Z80
 class Z80;
 #endif
-
 class VM {
 protected:
 	EMU* emu;
@@ -384,12 +432,25 @@ protected:
 #endif
 	MB8877* fdc;
 #if defined(_FM8)
-	YM2203 *psg;
-#else	
+	// FM8
+# if defined(USE_AY_3_8910_AS_PSG)
+	AY_3_891X *psg;
+# else
+	YM2203* psg;
+# endif
+#else
+	// FM7 -
 	YM2203* opn[3];
 # if !defined(_FM77AV_VARIANTS)
+#  if defined(USE_AY_3_8910_AS_PSG)
+	AY_3_891X *psg;
+#else
 	YM2203* psg; // Is right? AY-3-8910 is right device.
+#  endif
 # endif
+#endif
+#if defined(_FM8)
+	BUBBLECASETTE *bubble_casette[2];
 #endif
 	//BEEP* beep;
 	PCM1BIT* pcm1bit;
@@ -418,6 +479,8 @@ protected:
 #ifdef CAPABLE_KANJI_CLASS2
 	KANJIROM *kanjiclass2;
 #endif
+	bool connect_320kfdc;
+	bool connect_1Mfdc;
 public:
 	// ----------------------------------------
 	// initialize
@@ -488,7 +551,13 @@ public:
 	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-
+#if defined(USE_BUBBLE1)
+	void open_bubble_casette(int drv, const _TCHAR *path, int bank);
+	void close_bubble_casette(int drv);
+	bool is_bubble_casette_inserted(int drv);
+	void is_bubble_casette_protected(int drv, bool flag);
+	bool is_bubble_casette_protected(int drv);
+#endif
 #if defined(USE_DIG_RESOLUTION)
 	void get_screen_resolution(int *w, int *h);
 #endif

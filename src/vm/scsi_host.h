@@ -46,6 +46,8 @@ public:
 		initialize_output_signals(&outputs_atn);
 		initialize_output_signals(&outputs_ack);
 		initialize_output_signals(&outputs_rst);
+		
+		set_device_name(_T("SCSI Base Initiator"));
 	}
 	~SCSI_HOST() {}
 	
@@ -62,10 +64,6 @@ public:
 	uint32_t read_signal(int id);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("SCSI Base Initiator");
-	}
 	
 	// unique functions
 	void set_context_irq(DEVICE* device, int id, uint32_t mask)

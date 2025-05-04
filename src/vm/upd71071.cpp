@@ -192,23 +192,50 @@ void UPD71071::do_dma()
 		if(((req | sreq) & bit) && !(mask & bit)) {
 			// execute dma
 			while((req | sreq) & bit) {
-				if((dma[c].mode & 0x0c) == 4) {
-					// io -> memory
-					uint32_t val = dma[c].dev->read_dma_io8(0);
-					d_mem->write_dma_data8(dma[c].areg, val);
-					// update temporary register
-					tmp = (tmp >> 8) | (val << 8);
-				} else if((dma[c].mode & 0x0c) == 8) {
-					// memory -> io
-					uint32_t val = d_mem->read_dma_data8(dma[c].areg);
-					dma[c].dev->write_dma_io8(0, val);
-					// update temporary register
-					tmp = (tmp >> 8) | (val << 8);
-				}
-				if(dma[c].mode & 0x20) {
-					dma[c].areg = (dma[c].areg - 1) & 0xffffff;
-				} else {
-					dma[c].areg = (dma[c].areg + 1) & 0xffffff;
+				// ToDo: Will check WORD transfer mode for FM-Towns.(mode.bit0 = '1).
+/*
+				if((dma[c].mode & 0x01) == 1) {
+					// 16bit transfer mode
+					if((dma[c].mode & 0x0c) == 4) {
+						// io -> memory
+						uint32_t val = dma[c].dev->read_dma_io16(0);
+						d_mem->write_dma_data16(dma[c].areg, val);
+						// update temporary register
+						tmp = val;
+					} else if((dma[c].mode & 0x0c) == 8) {
+						// memory -> io
+						uint32_t val = d_mem->read_dma_data16(dma[c].areg);
+						dma[c].dev->write_dma_io16(0, val);
+						// update temporary register
+						tmp = val;
+					}
+					if(dma[c].mode & 0x20) {
+						dma[c].areg = (dma[c].areg - 2) & 0xffffff;
+					} else {
+						dma[c].areg = (dma[c].areg + 2) & 0xffffff;
+					}
+				} else
+*/
+				{
+					// 8bit transfer mode
+					if((dma[c].mode & 0x0c) == 4) {
+						// io -> memory
+						uint32_t val = dma[c].dev->read_dma_io8(0);
+						d_mem->write_dma_data8(dma[c].areg, val);
+						// update temporary register
+						tmp = (tmp >> 8) | (val << 8);
+					} else if((dma[c].mode & 0x0c) == 8) {
+						// memory -> io
+						uint32_t val = d_mem->read_dma_data8(dma[c].areg);
+						dma[c].dev->write_dma_io8(0, val);
+						// update temporary register
+						tmp = (tmp >> 8) | (val << 8);
+					}
+					if(dma[c].mode & 0x20) {
+						dma[c].areg = (dma[c].areg - 1) & 0xffffff;
+					} else {
+						dma[c].areg = (dma[c].areg + 1) & 0xffffff;
+					}
 				}
 				if(dma[c].creg-- == 0) {
 					// TC

@@ -51,6 +51,9 @@
 #ifdef USE_FD1
 #define MAX_D88_BANKS 64
 #endif
+#ifdef USE_BUBBLE1
+#define MAX_B77_BANKS 16
+#endif
 
 class EMU;
 class OSD;
@@ -71,6 +74,7 @@ typedef struct {
 #if defined(USE_DEBUGGER)
 class CSP_Debugger;
 #endif
+class USING_FLAGS;
 class GLDrawClass;
 class EmuThreadClass;
 class DrawThreadClass;
@@ -148,6 +152,9 @@ private:
 #ifdef USE_LASER_DISC
 	media_status_t laser_disc_status;
 #endif
+#ifdef USE_BUBBLE1
+	media_status_t bubble_casette_status[MAX_BUBBLE];
+#endif
 	
 	void initialize_media();
 	void update_media();
@@ -167,7 +174,7 @@ private:
 	
 public:
 #if defined(OSD_QT)
-	EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst);
+	EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst, USING_FLAGS *p);
 #elif defined(OSD_WIN32)
 	EMU(HWND hwnd, HINSTANCE hinst);
 #else
@@ -435,6 +442,19 @@ public:
 #ifdef USE_BINARY_FILE1
 	void load_binary(int drv, const _TCHAR* file_path);
 	void save_binary(int drv, const _TCHAR* file_path);
+#endif
+#ifdef USE_BUBBLE1
+	struct {
+		_TCHAR path[_MAX_PATH];
+		_TCHAR bubble_name[MAX_B77_BANKS][128];  // may convert to UTF-8
+		int bank_num;
+		int cur_bank;
+	} b77_file[MAX_BUBBLE];
+	void open_bubble_casette(int drv, const _TCHAR* file_path, int bank);
+	void close_bubble_casette(int drv);
+	bool is_bubble_casette_inserted(int drv);
+	void is_bubble_casette_protected(int drv, bool value);
+	bool is_bubble_casette_protected(int drv);
 #endif
 #ifdef USE_ACCESS_LAMP
 	uint32_t get_access_lamp_status();

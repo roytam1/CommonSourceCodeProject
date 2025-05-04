@@ -15,9 +15,10 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_MB8877_DRIVEREG		0
-#define SIG_MB8877_SIDEREG		1
-#define SIG_MB8877_MOTOR		2
+#define SIG_MB8877_ACCESS	0
+#define SIG_MB8877_DRIVEREG	1
+#define SIG_MB8877_SIDEREG	2
+#define SIG_MB8877_MOTOR	3
 
 class DISK;
 
@@ -124,6 +125,15 @@ public:
 		initialize_output_signals(&outputs_irq);
 		initialize_output_signals(&outputs_drq);
 		motor_on = false;
+#if defined(HAS_MB89311)
+		set_device_name(_T("MB89311 FDC"));
+#elif defined(HAS_MB8866)
+		set_device_name(_T("MB8866 FDC"));
+#elif defined(HAS_MB8876)
+		set_device_name(_T("MB8876 FDC"));
+#else
+		set_device_name(_T("MB8877 FDC"));
+#endif
 	}
 	~MB8877() {}
 	
@@ -140,10 +150,6 @@ public:
 	void event_callback(int event_id, int err);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("MB8877");
-	}
 	
 	// unique functions
 	void set_context_irq(DEVICE* device, int id, uint32_t mask)

@@ -157,6 +157,8 @@ public:
 		initialize_output_signals(&outputs_req);
 		
 		max_logical_block_addr = 0;	// uninitialized
+		
+		set_device_name(_T("SCSI Device"));
 	}
 	~SCSI_DEV() {}
 	
@@ -168,10 +170,6 @@ public:
 	void event_callback(int event_id, int err);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("SCSI Hard Drive");
-	}
 	
 	// unique functions
 	void set_context_interface(DEVICE* device)

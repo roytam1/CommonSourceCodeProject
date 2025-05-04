@@ -18,7 +18,7 @@
 	#endif
 	#include <sys/types.h>
 	#include <sys/stat.h>
-	#include "agar_logger.h"
+	#include "csp_logger.h"
 	#include <string>
 	#include <algorithm>
 	#include <cctype>
@@ -37,8 +37,8 @@
 	extern DWORD GetLongPathName(LPCTSTR lpszShortPath, LPTSTR lpszLongPath, DWORD cchBuffer);
 #endif
 #if defined(_USE_QT)
-	extern std::string cpp_homedir;
-	extern std::string my_procname;
+	std::string cpp_homedir;
+	std::string my_procname;
 #endif
 
 uint32_t EndianToLittle_DWORD(uint32_t x)
@@ -261,7 +261,6 @@ static std::string MyGetPrivateProfileStr(const _TCHAR *lpAppName, const _TCHAR 
 		delete pf;
 		return got_str;
 	}
-	AGAR_DebugLog(AGAR_LOG_DEBUG, "Try App: %s Key: %s", lpAppName, lpKeyName);
 	pf->Fseek(0, FILEIO_SEEK_SET);
 	do {
 		key_str = key;
@@ -292,7 +291,6 @@ static std::string MyGetPrivateProfileStr(const _TCHAR *lpAppName, const _TCHAR 
 	delete pf;
 	
 	got_str.erase(0, pos + key_str.length());
-	AGAR_DebugLog(AGAR_LOG_DEBUG, "Got: %s Length: %d", got_str.c_str(), got_str.length());
 	return got_str;
 }
 
@@ -350,7 +348,6 @@ UINT MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, 
 	} else {
 		i = strtol(s.c_str(), NULL, 10);
 	}
-	//AGAR_DebugLog(AGAR_LOG_DEBUG, "Got Int: %d\n", i);
 	return i;
 }
 #endif
@@ -529,13 +526,12 @@ bool check_file_extension(const _TCHAR *file_path, const _TCHAR *ext)
 #if defined(_USE_QT)
 	std::string s_fpath = file_path;
 	std::string s_ext = ext;
-	bool f = false;
 	int pos;
 	std::transform(s_fpath.begin(), s_fpath.end(), s_fpath.begin(), to_upper());
 	std::transform(s_ext.begin(), s_ext.end(), s_ext.begin(), to_upper());
 	if(s_fpath.length() < s_ext.length()) return false;
 	pos = s_fpath.rfind(s_ext.c_str(), s_fpath.length());
-	if((pos != std::string::npos) && (pos >= (s_fpath.length() - s_ext.length()))) return true; 
+	if((pos != (int)std::string::npos) && (pos >= ((int)s_fpath.length() - (int)s_ext.length()))) return true;
 	return false;
 #else
 	int nam_len = _tcslen(file_path);
@@ -552,7 +548,7 @@ const _TCHAR *get_file_path_without_extensiton(const _TCHAR *file_path)
 	unsigned int output_index = (table_index++) & 7;
 	
 	my_tcscpy_s(path[output_index], _MAX_PATH, file_path);
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
 	PathRemoveExtension(path[output_index]);
 #else
 	_TCHAR *p = _tcsrchr(path[output_index], _T('.'));
@@ -565,9 +561,8 @@ const _TCHAR *get_file_path_without_extensiton(const _TCHAR *file_path)
 
 void get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t dst_len)
 {
-	_TCHAR tmp[_MAX_PATH];
-	
 #ifdef _WIN32
+	_TCHAR tmp[_MAX_PATH];
 	if(GetFullPathName(src, _MAX_PATH, tmp, NULL) == 0) {
 		my_tcscpy_s(dst, dst_len, src);
 	} else if(GetLongPathName(tmp, dst, _MAX_PATH) == 0) {

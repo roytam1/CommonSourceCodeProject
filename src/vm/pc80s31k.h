@@ -31,7 +31,11 @@ private:
 	uint8_t* rbank[8];
 	
 public:
-	PC80S31K(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	PC80S31K(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		set_device_name(_T("PC-80S31K FDD"));
+		
+	}
 	~PC80S31K() {}
 	
 	// common functions
@@ -45,10 +49,6 @@ public:
 	uint32_t get_intr_ack();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("PC-80S31K");
-	}
 	
 	// unique functions
 	void set_context_cpu(DEVICE* device)

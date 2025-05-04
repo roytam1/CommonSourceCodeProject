@@ -18,40 +18,56 @@
 
 #define MAX_HISTORY	8
 
-#if defined(USE_CART2)
-#define MAX_CART	2
-#elif defined(USE_CART1)
-#define MAX_CART	1
+#ifndef MAX_CART
+	#if defined(USE_CART2)
+		#define MAX_CART	2
+	#elif defined(USE_CART1)
+		#define MAX_CART	1
+	#endif
 #endif
 
-#if defined(USE_FD8)
-#define MAX_FD		8
-#elif defined(USE_FD7)
-#define MAX_FD		7
-#elif defined(USE_FD6)
-#define MAX_FD		6
-#elif defined(USE_FD5)
-#define MAX_FD		5
-#elif defined(USE_FD4)
-#define MAX_FD		4
-#elif defined(USE_FD3)
-#define MAX_FD		3
-#elif defined(USE_FD2)
-#define MAX_FD		2
-#elif defined(USE_FD1)
-#define MAX_FD		1
+#ifndef MAX_FD
+	#if defined(USE_FD8)
+		#define MAX_FD		8
+	#elif defined(USE_FD7)
+		#define MAX_FD		7
+	#elif defined(USE_FD6)
+		#define MAX_FD		6
+	#elif defined(USE_FD5)
+		#define MAX_FD		5
+	#elif defined(USE_FD4)
+		#define MAX_FD		4
+	#elif defined(USE_FD3)
+		#define MAX_FD		3
+	#elif defined(USE_FD2)
+		#define MAX_FD		2
+	#elif defined(USE_FD1)
+		#define MAX_FD		1
+	#endif
 #endif
 
-#if defined(USE_QD2)
-#define MAX_QD		2
-#elif defined(USE_QD1)
-#define MAX_QD		1
+#ifndef MAX_QD
+	#if defined(USE_QD2)
+		#define MAX_QD		2
+	#elif defined(USE_QD1)
+		#define MAX_QD		1
+	#endif
 #endif
 
-#if defined(USE_BINARY_FILE2)
-#define MAX_BINARY	2
-#elif defined(USE_BINARY_FILE1)
-#define MAX_BINARY	1
+#ifndef MAX_BINARY
+	#if defined(USE_BINARY_FILE2)
+		#define MAX_BINARY	2
+	#elif defined(USE_BINARY_FILE1)
+		#define MAX_BINARY	1
+	#endif
+#endif
+
+#ifndef MAX_BUBBLE
+	#if defined(USE_BUBBLE2)
+		#define MAX_BUBBLE	2
+	#elif defined(USE_BUBBLE1)
+		#define MAX_BUBBLE	1
+	#endif
 #endif
 
 void initialize_config();
@@ -118,6 +134,10 @@ typedef struct {
 	_TCHAR initial_binary_dir[_MAX_PATH];
 	_TCHAR recent_binary_path[MAX_BINARY][MAX_HISTORY][_MAX_PATH];
 #endif
+#ifdef USE_BUBBLE1
+	_TCHAR initial_bubble_casette_dir[_MAX_PATH];
+	_TCHAR recent_bubble_casette_path[MAX_BUBBLE][MAX_HISTORY][_MAX_PATH];
+#endif
 	
 	// screen
 	int window_mode;
@@ -150,6 +170,7 @@ typedef struct {
 	// sound
 	int sound_frequency;
 	int sound_latency;
+	bool sound_strict_rendering;
 #ifdef USE_SOUND_DEVICE_TYPE
 	int sound_device_type;
 #endif

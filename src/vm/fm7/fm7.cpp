@@ -26,12 +26,17 @@
 
 #include "../pcm1bit.h"
 #include "../ym2203.h"
+#include "../ay_3_891x.h"
+
 #if defined(_FM77AV_VARIANTS)
 #include "mb61vh010.h"
 #include "../beep.h"
 #endif
 #if defined(HAS_DMA)
 #include "hd6844.h"
+#endif
+#if defined(_FM8)
+#include "./bubblecasette.h"
 #endif
 
 #if defined(USE_LED_DEVICE)
@@ -41,7 +46,6 @@
 #define SIG_DUMMYDEVICE_BIT1 1
 #define SIG_DUMMYDEVICE_BIT2 2
 #endif
-
 #include "./fm7_mainio.h"
 #include "./fm7_mainmem.h"
 #include "./fm7_display.h"
@@ -60,7 +64,8 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 # if defined(_FM77AV_VARIANTS)
 	opn[0] = opn[1] = opn[2] = NULL;
 # else   
-	opn[0] = opn[1] = opn[2] = psg = NULL; 
+	opn[0] = opn[1] = opn[2] = NULL;
+	psg = NULL; 
 # endif
 #endif
 	dummy = new DEVICE(this, emu);	// must be 1st device
@@ -78,18 +83,56 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 	dmac = new HD6844(this, emu);
 #endif   
 #if defined(_FM8)
+#  if defined(USE_AY_3_8910_AS_PSG)
+	psg = new AY_3_891X(this, emu);
+#  else
 	psg = new YM2203(this, emu);
+#  endif
 #else	
 	opn[0] = new YM2203(this, emu); // OPN
 	opn[1] = new YM2203(this, emu); // WHG
 	opn[2] = new YM2203(this, emu); // THG
 # if !defined(_FM77AV_VARIANTS)
+#  if defined(USE_AY_3_8910_AS_PSG)
+	psg = new AY_3_891X(this, emu);
+#  else
 	psg = new YM2203(this, emu);
-# endif
+#  endif
+# endif	
 #endif
+#if defined(_FM8)
+	for(int i = 0; i < 2; i++) bubble_casette[i] = new BUBBLECASETTE(this, emu);
+#endif
+	drec = NULL;
 	drec = new DATAREC(this, emu);
 	pcm1bit = new PCM1BIT(this, emu);
-	fdc = new MB8877(this, emu);
+
+	connect_320kfdc = connect_1Mfdc = false;
+	fdc = NULL;
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
+	if(((config.dipswitch & FM7_DIPSW_CONNECT_320KFDC) != 0) ||
+	   ((config.dipswitch & FM7_DIPSW_CONNECT_1MFDC) != 0)) {
+#endif		
+		fdc = new MB8877(this, emu);
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
+		if((config.dipswitch & FM7_DIPSW_CONNECT_320KFDC) != 0) {
+			connect_320kfdc = true;
+		}
+		if((config.dipswitch & FM7_DIPSW_CONNECT_1MFDC) != 0) {
+			connect_1Mfdc = true;
+		}
+#elif defined(_FM77_VARIANTS)
+		connect_320kfdc = true;
+		if((config.dipswitch & FM7_DIPSW_CONNECT_1MFDC) != 0) {
+			connect_1Mfdc = true;
+		}
+#else	// AV or later.
+		connect_320kfdc = true;
+		// 1MFDD??
+#endif		
+#if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
+	}
+#endif	
 	joystick  = new JOYSTICK(this, emu);
 	printer = new PRNFILE(this, emu);
 #if defined(_FM77AV_VARIANTS)
@@ -105,6 +148,8 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #if defined(_FM8) || defined(_FM7) || defined(_FMNEW7)
 	if((config.dipswitch & FM7_DIPSW_CONNECT_KANJIROM) != 0) {
 		kanjiclass1 = new KANJIROM(this, emu, false);
+	} else {
+		kanjiclass1 = NULL;
 	}
 #else
 	kanjiclass1 = new KANJIROM(this, emu, false);
@@ -112,14 +157,49 @@ VM::VM(EMU* parent_emu): emu(parent_emu)
 #ifdef CAPABLE_KANJI_CLASS2
 	kanjiclass2 = new KANJIROM(this, emu, true);
 #endif
-	
-	//mainmem = new FM7_MAINMEM(this, emu);
-
-
 #if defined(USE_LED_DEVICE)
 	led_terminate = new DUMMYDEVICE(this, emu);
 #else
 	led_terminate = new DEVICE(this, emu);
+#endif
+#if defined(_USE_QT)
+	event->set_device_name(_T("EVENT"));
+	dummy->set_device_name(_T("1st Dummy"));
+	
+	maincpu->set_device_name(_T("MAINCPU(MC6809)"));
+	subcpu->set_device_name(_T("SUBCPU(MC6809)"));
+	dummycpu->set_device_name(_T("DUMMY CPU"));
+# ifdef WITH_Z80
+	z80cpu->set_device_name(_T("Z80 CPU"));
+# endif
+	led_terminate->set_device_name(_T("LEDs"));
+	if(fdc != NULL) fdc->set_device_name(_T("MB8877 FDC(320KB)"));
+						
+	// basic devices
+	// I/Os
+# if defined(_FM8)
+	psg->set_device_name(_T("AY-3-8910 PSG"));
+# else	
+	opn[0]->set_device_name(_T("YM2203 OPN"));
+	opn[1]->set_device_name(_T("YM2203 WHG"));
+	opn[2]->set_device_name(_T("YM2203 THG"));
+#  if !defined(_FM77AV_VARIANTS)
+	psg->set_device_name(_T("AY-3-8910 PSG"));
+#  endif
+# endif
+	pcm1bit->set_device_name(_T("BEEP"));
+	printer->set_device_name(_T("PRINTER I/F"));
+# if defined(_FM77AV_VARIANTS)
+	keyboard_beep->set_device_name(_T("BEEP(KEYBOARD)"));
+# endif	
+	if(kanjiclass1 != NULL) kanjiclass1->set_device_name(_T("KANJI ROM CLASS1"));
+# ifdef CAPABLE_KANJI_CLASS2
+	if(kanjiclass2 != NULL) kanjiclass2->set_device_name(_T("KANJI ROM CLASS2"));
+# endif
+# if defined(_FM8)
+	bubble_casette[0]->set_device_name(_T("BUBBLE CASETTE #0"));
+	bubble_casette[1]->set_device_name(_T("BUBBLE CASETTE #1"));
+# endif	
 #endif
 	this->connect_bus();
 	
@@ -202,7 +282,7 @@ void VM::connect_bus(void)
 	event->set_context_sound(pcm1bit);
 #if defined(_FM8)
 	event->set_context_sound(psg);
-	event->set_context_sound(drec);
+	if(drec != NULL) event->set_context_sound(drec);
 #else
 	event->set_context_sound(opn[0]);
 	event->set_context_sound(opn[1]);
@@ -211,11 +291,23 @@ void VM::connect_bus(void)
 	event->set_context_sound(psg);
 # endif
 	event->set_context_sound(drec);
+#if defined(USE_SOUND_FILES)
+	if(fdc != NULL) {
+		if(fdc->load_sound_data(MB8877_SND_TYPE_SEEK, _T("FDDSEEK.WAV"))) {
+			event->set_context_sound(fdc);
+		}
+	}
+	if(drec != NULL) {
+		drec->load_sound_data(DATAREC_SNDFILE_RELAY_ON, _T("RELAY_ON.WAV"));
+		drec->load_sound_data(DATAREC_SNDFILE_RELAY_OFF, _T("RELAYOFF.WAV"));
+	}
+#endif
 # if defined(_FM77AV_VARIANTS)
 	event->set_context_sound(keyboard_beep);
 # endif
 #endif   
 #if !defined(_FM77AV_VARIANTS) && !defined(_FM77L4)
+	event->register_vline_event(display);
 	event->register_frame_event(display);
 #endif	
 	mainio->set_context_maincpu(maincpu);
@@ -238,6 +330,9 @@ void VM::connect_bus(void)
 #if defined(CAPABLE_KANJI_CLASS2)
 	mainio->set_context_kanjirom_class2(kanjiclass2);
 #endif
+#if defined(_FM8)
+	for(int i = 0; i < 2; i++) mainio->set_context_bubble(bubble_casette[i], i);
+#endif	
 	keyboard->set_context_break_line(mainio, FM7_MAINIO_PUSH_BREAK, 0xffffffff);
 	keyboard->set_context_int_line(mainio, FM7_MAINIO_KEYBOARDIRQ, 0xffffffff);
 	keyboard->set_context_int_line(display, SIG_FM7_SUB_KEY_FIRQ, 0xffffffff);
@@ -250,10 +345,11 @@ void VM::connect_bus(void)
 	keyboard->set_context_caps_led(led_terminate, SIG_DUMMYDEVICE_BIT1, 0xffffffff);
 	keyboard->set_context_kana_led(led_terminate, SIG_DUMMYDEVICE_BIT2, 0xffffffff);
    
-	drec->set_context_ear(mainio, FM7_MAINIO_CMT_RECV, 0xffffffff);
-	//drec->set_context_remote(mainio, FM7_MAINIO_CMT_REMOTE, 0xffffffff);
-	mainio->set_context_datarec(drec);
-	
+	if(drec != NULL) {
+		drec->set_context_ear(mainio, FM7_MAINIO_CMT_RECV, 0xffffffff);
+		//drec->set_context_remote(mainio, FM7_MAINIO_CMT_REMOTE, 0xffffffff);
+		mainio->set_context_datarec(drec);
+	}
 	mainmem->set_context_mainio(mainio);
 	mainmem->set_context_display(display);
 	mainmem->set_context_maincpu(maincpu);
@@ -279,14 +375,20 @@ void VM::connect_bus(void)
 #if defined(_FM77AV_VARIANTS)
 	display->set_context_alu(alu);
 	alu->set_context_memory(display);
+	alu->set_direct_access_offset(DISPLAY_VRAM_DIRECT_ACCESS);
 #endif	
 	// Palette, VSYNC, HSYNC, Multi-page, display mode. 
 	mainio->set_context_display(display);
-	
-	//FDC
-	fdc->set_context_irq(mainio, FM7_MAINIO_FDC_IRQ, 0x1);
-	fdc->set_context_drq(mainio, FM7_MAINIO_FDC_DRQ, 0x1);
-	mainio->set_context_fdc(fdc);
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	if(connect_320kfdc || connect_1Mfdc) {
+#endif		
+		//FDC
+		fdc->set_context_irq(mainio, FM7_MAINIO_FDC_IRQ, 0x1);
+		fdc->set_context_drq(mainio, FM7_MAINIO_FDC_DRQ, 0x1);
+		mainio->set_context_fdc(fdc);
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	}
+#endif	
 	// SOUND
 	mainio->set_context_beep(pcm1bit);
 #if defined(_FM8)	
@@ -331,34 +433,42 @@ void VM::connect_bus(void)
 	z80cpu->set_context_debugger(new DEBUGGER(this, emu));
 # endif
 #endif
-
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
 
 	// Disks
-	for(int i = 0; i < 2; i++) {
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	if(connect_320kfdc) {
+#endif		
+		for(int i = 0; i < 4; i++) {
 #if defined(_FM77AV20) || defined(_FM77AV20EX) || \
 	defined(_FM77AV40SX) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
-		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
+			fdc->set_drive_type(i, DRIVE_TYPE_2DD);
 #else
-		fdc->set_drive_type(i, DRIVE_TYPE_2D);
+			fdc->set_drive_type(i, DRIVE_TYPE_2D);
 #endif
-#if defined(_FM77AV_VARIANTS)
-		fdc->set_drive_rpm(i, 360);
-#else		
-		fdc->set_drive_rpm(i, 360);
-#endif		
-		fdc->set_drive_mfm(i, true);
+			fdc->set_drive_rpm(i, 360);
+			fdc->set_drive_mfm(i, true);
+		}
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
 	}
-#if defined(_FM77) || defined(_FM77L4)
-	for(int i = 2; i < 4; i++) {
-		fdc->set_drive_type(i, DRIVE_TYPE_2HD);
-		fdc->set_drive_rpm(i, 360);
-		fdc->set_drive_mfm(i, true);
-	}
-#endif
+#endif	
 	
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	if(connect_1Mfdc) {
+#endif
+// ToDo: Implement another FDC for 1MB (2HD or 8''), this is used by FM-8 to FM-77? Not FM77AV or later? I still know this.
+//#if defined(_FM77) || defined(_FM77L4)
+//		for(int i = 0; i < 4; i++) {
+//			fdc->set_drive_type(i, DRIVE_TYPE_2HD);
+//			fdc->set_drive_rpm(i, 360);
+//			fdc->set_drive_mfm(i, true);
+//		}
+//#endif
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	}
+#endif	
 }  
 
 void VM::update_config()
@@ -376,9 +486,14 @@ void VM::reset()
 		device->reset();
 	}
 #if !defined(_FM77AV_VARIANTS) || defined(_FM8)
+# if defined(USE_AY_3_8910_AS_PSG)
+	psg->set_reg(0x2e, 0);	// set prescaler
+	psg->write_signal(SIG_AY_3_891X_MUTE, 0x00, 0x01); // Okay?
+# else	
 	psg->set_reg(0x27, 0); // stop timer
 	psg->set_reg(0x2e, 0);	// set prescaler
 	psg->write_signal(SIG_YM2203_MUTE, 0x00, 0x01); // Okay?
+#endif
 #endif
 #if !defined(_FM8)
 	for(int i = 0; i < 3; i++) {
@@ -456,8 +571,17 @@ void VM::draw_screen()
 
 uint32_t VM::get_access_lamp_status()
 {
-	uint32_t status = fdc->read_signal(0xff);
-	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
+	// WILLFIX : Multiple FDC for 1M FD.
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	if(connect_320kfdc || connect_1Mfdc) {
+#endif		
+		uint32_t status = fdc->read_signal(0xff);
+		return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
+#if defined(_FM8) || (_FM7) || (_FMNEW7)
+	} else {
+		return 0x00000000;
+	}
+#endif		
 }
 
 void VM::initialize_sound(int rate, int samples)
@@ -479,7 +603,7 @@ void VM::initialize_sound(int rate, int samples)
 # endif
 #endif	
 	pcm1bit->initialize_sound(rate, 2000);
-	drec->initialize_sound(rate, 0);
+	//drec->initialize_sound(rate, 0);
 }
 
 uint16_t* VM::create_sound(int* extra_frames)
@@ -521,8 +645,22 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 	if(ch-- == 0) {
 		pcm1bit->set_volume(0, decibel_l, decibel_r);
 	} else if(ch-- == 0) {
-		drec->set_volume(0, decibel_l, decibel_r);
+	  if(drec != NULL) drec->set_volume(0, decibel_l, decibel_r);
 	}
+#if defined(_FM77AV_VARIANTS)
+	 else if(ch-- == 0) {
+		keyboard_beep->set_volume(0, decibel_l, decibel_r);
+	}
+#endif
+#if defined(USE_SOUND_FILES)
+	 else if(ch-- == 0) {
+		 if(fdc != NULL) fdc->set_volume(0, decibel_l, decibel_r);
+	 } else if(ch-- == 0) {
+		 for(int i = 0; i < DATAREC_SNDFILE_END; i++) {
+			if(drec != NULL) drec->set_volume(i + 2, decibel_l, decibel_r);
+		 }
+	 }
+#endif
 }
 #endif
 
@@ -548,96 +686,136 @@ void VM::key_up(int code)
 
 void VM::open_floppy_disk(int drv, const _TCHAR* file_path, int bank)
 {
-	fdc->open_disk(drv, file_path, bank);
+	if(fdc != NULL) {
+		fdc->open_disk(drv, file_path, bank);
+	}
 }
 
 void VM::close_floppy_disk(int drv)
 {
-	fdc->close_disk(drv);
+	if(fdc != NULL) {
+		fdc->close_disk(drv);
+	}
 }
 
 bool VM::is_floppy_disk_inserted(int drv)
 {
-	return fdc->is_disk_inserted(drv);
+	if(fdc != NULL) {
+		return fdc->is_disk_inserted(drv);
+	} else {
+		return false;
+	}
 }
 
 void VM::is_floppy_disk_protected(int drv, bool value)
 {
-	fdc->is_disk_protected(drv, value);
+	if(fdc != NULL) {
+		fdc->is_disk_protected(drv, value);
+	}
 }
 
 bool VM::is_floppy_disk_protected(int drv)
 {
-	return fdc->is_disk_protected(drv);
+	if(fdc != NULL) {
+		return fdc->is_disk_protected(drv);
+	} else {
+		return false;
+	}
 }
 
 void VM::play_tape(const _TCHAR* file_path)
 {
-	drec->play_tape(file_path);
+	if(drec != NULL) drec->play_tape(file_path);
 }
 
 void VM::rec_tape(const _TCHAR* file_path)
 {
-	drec->rec_tape(file_path);
+	if(drec != NULL) drec->rec_tape(file_path);
 }
 
 void VM::close_tape()
 {
-	drec->close_tape();
+	emu->lock_vm();
+	if(drec != NULL) drec->close_tape();
+	emu->unlock_vm();
 }
 
 bool VM::is_tape_inserted()
 {
-	return drec->is_tape_inserted();
+	if(drec != NULL) {
+		return drec->is_tape_inserted();
+	}
+	return false;
 }
 
 bool VM::is_tape_playing()
 {
-	return drec->is_tape_playing();
+	if(drec != NULL) {
+		return drec->is_tape_playing();
+	}
+	return false;
 }
 
 bool VM::is_tape_recording()
 {
-	return drec->is_tape_recording();
+	if(drec != NULL) {
+		return drec->is_tape_recording();
+	}
+	return false;
 }
 
 int VM::get_tape_position()
 {
-	return drec->get_tape_position();
+	if(drec != NULL) {
+		return drec->get_tape_position();
+	}
+	return 0;
 }
 
 void VM::push_play()
 {
-	drec->set_ff_rew(0);
-	drec->set_remote(true);
+	if(drec != NULL) {
+		drec->set_ff_rew(0);
+		drec->set_remote(true);
+	}
 }
 
 
 void VM::push_stop()
 {
-	drec->set_remote(false);
+	if(drec != NULL) {
+		drec->set_remote(false);
+	}
 }
 
 void VM::push_fast_forward()
 {
-	drec->set_ff_rew(1);
-	drec->set_remote(true);
+	if(drec != NULL) {
+		drec->set_ff_rew(1);
+		drec->set_remote(true);
+	}
 }
 
 void VM::push_fast_rewind()
 {
-	drec->set_ff_rew(-1);
-	drec->set_remote(true);
+	if(drec != NULL) {
+		drec->set_ff_rew(-1);
+		drec->set_remote(true);
+	}
 }
 
 void VM::push_apss_forward()
 {
-	drec->do_apss(1);
+	if(drec != NULL) {
+		drec->do_apss(1);
+	}
 }
 
 void VM::push_apss_rewind()
 {
-	drec->do_apss(-1);
+	if(drec != NULL) {
+		drec->do_apss(-1);
+	}
 }
 
 bool VM::is_frame_skippable()
@@ -656,11 +834,50 @@ void VM::set_cpu_clock(DEVICE *cpu, uint32_t clocks) {
 	event->set_secondary_cpu_clock(cpu, clocks);
 }
 
-#define STATE_VERSION	3
+#if defined(USE_BUBBLE1)
+void VM::open_bubble_casette(int drv, const _TCHAR *path, int bank)
+{
+	if((drv >= 2) || (drv < 0)) return;
+	if(bubble_casette[drv] == NULL) return;
+	bubble_casette[drv]->open(path, bank);
+}
+
+void VM::close_bubble_casette(int drv)
+{
+	if((drv >= 2) || (drv < 0)) return;
+	if(bubble_casette[drv] == NULL) return;
+	bubble_casette[drv]->close();
+}
+
+bool VM::is_bubble_casette_inserted(int drv)
+{
+	if((drv >= 2) || (drv < 0)) return false;
+	if(bubble_casette[drv] == NULL) return false;
+	return bubble_casette[drv]->is_bubble_inserted();
+}
+
+void VM::is_bubble_casette_protected(int drv, bool flag)
+{
+	if((drv >= 2) || (drv < 0)) return;
+	if(bubble_casette[drv] == NULL) return;
+	bubble_casette[drv]->set_bubble_protect(flag);
+}
+
+bool VM::is_bubble_casette_protected(int drv)
+{
+	if((drv >= 2) || (drv < 0)) return false;
+	if(bubble_casette[drv] == NULL) return false;
+	return bubble_casette[drv]->is_bubble_protected();
+}
+#endif
+
+
+#define STATE_VERSION	4
 void VM::save_state(FILEIO* state_fio)
 {
 	state_fio->FputUint32_BE(STATE_VERSION);
-	
+	state_fio->FputBool(connect_320kfdc);
+	state_fio->FputBool(connect_1Mfdc);
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->save_state(state_fio);
 	}
@@ -669,20 +886,18 @@ void VM::save_state(FILEIO* state_fio)
 bool VM::load_state(FILEIO* state_fio)
 {
 	uint32_t version = state_fio->FgetUint32_BE();
-	int i = 1;
-	if(version > STATE_VERSION) {
+	if(version != STATE_VERSION) {
 		return false;
 	}
+	connect_320kfdc = state_fio->FgetBool();
+	connect_1Mfdc = state_fio->FgetBool();
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		if(!device->load_state(state_fio)) {
 			printf("Load Error: DEVID=%d\n", device->this_device_id);
 			return false;
 		}
 	}
-	if(version >= 1) {// V1 
-		if(version == 3) return true;
-	}
-	return false;
+	return true;
 }
 
 #ifdef USE_DIG_RESOLUTION

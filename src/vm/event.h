@@ -14,8 +14,9 @@
 #include "../emu.h"
 #include "device.h"
 
+#define MAX_DEVICE	64
 #define MAX_CPU		8
-#define MAX_SOUND	8
+#define MAX_SOUND	32
 #define MAX_LINES	1024
 #define MAX_EVENT	64
 #define NO_EVENT	-1
@@ -78,6 +79,12 @@ private:
 	bool prev_skip, next_skip;
 	bool sound_changed;
 	
+	int mix_counter;
+	int mix_limit;
+	bool dev_need_mix[MAX_DEVICE];
+	int need_mix;
+	bool sound_touched;
+	
 	void mix_sound(int samples);
 	void* get_event(int index);
 	
@@ -109,9 +116,14 @@ public:
 		next_frames_per_sec = FRAMES_PER_SEC;
 		next_lines_per_frame = LINES_PER_FRAME;
 		
+		// reset before other device may call set_realtime_render()
+		memset(dev_need_mix, 0, sizeof(dev_need_mix));
+		need_mix = 0;
+		
 #ifdef _DEBUG_LOG
 		initialize_done = false;
 #endif
+		set_device_name(_T("Event Manager"));
 	}
 	~EVENT() {}
 	
@@ -123,10 +135,6 @@ public:
 	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("Event Manager");
-	}
 	
 	// common event functions
 	int get_event_manager_id()
@@ -153,6 +161,8 @@ public:
 	double get_passed_usec(uint32_t prev);
 	uint32_t get_cpu_pc(int index);
 	void request_skip_frames();
+	void touch_sound(void);
+	void set_realtime_render(DEVICE* device, bool flag);
 	
 	// unique functions
 	double get_frame_rate()
@@ -167,6 +177,7 @@ public:
 	
 	void set_context_cpu(DEVICE* device, uint32_t clocks)
 	{
+		assert(dcount_cpu < MAX_CPU);
 		int index = dcount_cpu++;
 		d_cpu[index].device = device;
 		d_cpu[index].cpu_clocks = clocks;
@@ -190,6 +201,7 @@ public:
 	}
 	void set_context_sound(DEVICE* device)
 	{
+		assert(dcount_sound < MAX_SOUND);
 		d_sound[dcount_sound++] = device;
 	}
 	bool is_frame_skippable();

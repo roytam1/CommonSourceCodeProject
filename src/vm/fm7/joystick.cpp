@@ -8,9 +8,11 @@
  *   Jun 16, 2015 : Initial, split from sound.cpp.
  *
  */
+#include "../vm.h"
 #include "fm7_mainio.h"
 #include "./joystick.h"
 #include "../../config.h"
+#include "../../emu.h"
 
 JOYSTICK::JOYSTICK(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_emu)
 {
@@ -19,6 +21,7 @@ JOYSTICK::JOYSTICK(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 	rawdata = NULL;
 	mouse_state = NULL;
 	lpt_type = 0;
+	set_device_name(_T("JOYSTICK"));
 }
 
 JOYSTICK::~JOYSTICK()
@@ -27,11 +30,7 @@ JOYSTICK::~JOYSTICK()
 
 void JOYSTICK::initialize()
 {
-#ifdef _USE_QT
-	rawdata = p_emu->get_osd()->get_joy_buffer();
-#else   
 	rawdata = p_emu->get_joy_buffer();
-#endif   
 	mouse_state = p_emu->get_mouse_buffer();
 	emulate_mouse[0] = emulate_mouse[1] = false;
 	joydata[0] = joydata[1] = 0xff;
@@ -39,10 +38,9 @@ void JOYSTICK::initialize()
 	lx = ly = -1;
 	mouse_button = 0x00;
 	mouse_timeout_event = -1;
-	port_a_val = 0;
-	port_b_val = 0;
 	lpmask = 0x00;
 	lpt_type = config.printer_device_type;
+	port_b_val = 0;
 }
 
 void JOYSTICK::reset()
@@ -80,6 +78,7 @@ void JOYSTICK::event_frame()
 	uint32_t retval = 0xff;
 	uint32_t val;
 #if !defined(_FM8)
+	mouse_state = p_emu->get_mouse_buffer();
 	if(mouse_state != NULL) {
 		dx += (mouse_state[0] / 2);
 		dy += (mouse_state[1] / 2);
@@ -99,11 +98,7 @@ void JOYSTICK::event_frame()
 	if((stat & 0x01) == 0) mouse_button |= 0x10; // left
 	if((stat & 0x02) == 0) mouse_button |= 0x20; // right
 #endif	
-#ifdef _USE_QT
-	rawdata = p_emu->get_osd()->get_joy_buffer();
-#else   
 	rawdata = p_emu->get_joy_buffer();
-#endif 
 	if(rawdata == NULL) return;
    
 	for(ch = 0; ch < 2; ch++) {
@@ -193,7 +188,7 @@ uint32_t JOYSTICK::read_data8(uint32_t addr)
 	case 0: // OPN
 			//opn->write_io8(0, 0x0f);
 			//opnval = opn->read_io8(1);
-			opnval = port_b_val;
+			opnval = (uint32_t)port_b_val;
 			if(emulate_mouse[0]) {
 				if((opnval & 0xc0) == 0x00) {
 					return update_mouse((opnval & 0x03) << 4);
@@ -254,7 +249,7 @@ void JOYSTICK::write_signal(int id, uint32_t data, uint32_t mask)
 			emulate_mouse[1] = val_b;
 			break;
 		case FM7_JOYSTICK_MOUSE_STROBE:
-			port_b_val = data;
+			port_b_val = (uint8_t)data;
 			if(emulate_mouse[0]) {
 				update_strobe(((data & 0x10) != 0));
 			} else 	if(emulate_mouse[1]) {
@@ -267,7 +262,7 @@ void JOYSTICK::write_signal(int id, uint32_t data, uint32_t mask)
 void JOYSTICK::update_config(void)
 {
 #if !defined(_FM8)
-	if(mouse_type == config.device_type) return;
+	if(mouse_type == (uint32_t)config.device_type) return;
 	mouse_type = config.device_type;
 	switch(mouse_type & 0x03){
 	case 1:
@@ -288,12 +283,13 @@ void JOYSTICK::update_config(void)
 	}
 #endif	
 }
-#define STATE_VERSION 3
+#define STATE_VERSION 4
 void JOYSTICK::save_state(FILEIO *state_fio)
 {
 	int ch;
 	state_fio->FputUint32_BE(STATE_VERSION);
 	state_fio->FputInt32_BE(this_device_id);
+	this->out_debug_log("Save State: JOYSTICK: id=%d ver=%d\n", this_device_id, STATE_VERSION);
 	// Version 1
 	for(ch = 0; ch < 2; ch++) {
 #if !defined(_FM8)
@@ -315,14 +311,17 @@ void JOYSTICK::save_state(FILEIO *state_fio)
 #endif	
 	// Version 3
 	state_fio->FputUint8(lpmask);
+	// Version 4
+	state_fio->FputUint8(port_b_val);
 }
 
 bool JOYSTICK::load_state(FILEIO *state_fio)
 {
 	uint32_t version = state_fio->FgetUint32_BE();
-	uint32_t devid = state_fio->FgetInt32_BE();
+	int32_t devid = state_fio->FgetInt32_BE();
 	bool stat = false;
 	int ch;
+	this->out_debug_log("Load State: JOYSTICK: id=%d ver=%d\n", devid, version);
 	if(devid != this_device_id) return stat;
 	if(version >= 1) {
 		for(ch = 0; ch < 2; ch++) {
@@ -331,7 +330,7 @@ bool JOYSTICK::load_state(FILEIO *state_fio)
 #endif			
 			joydata[ch] = state_fio->FgetUint32_BE();
 		}
-		if(version == 1) stat = true;
+		//if(version == 1) stat = true;
 	}
 #if !defined(_FM8)
 	// After version 2.
@@ -345,8 +344,12 @@ bool JOYSTICK::load_state(FILEIO *state_fio)
 	mouse_data = state_fio->FgetUint32_BE();
 	//mouse_timeout_event = state_fio->FgetInt32();
 #endif	
+	// V3
 	lpmask = state_fio->FgetUint8();
-	if(version == 3) stat = true; 
+	lpt_type = config.printer_device_type;
+	// V4
+	port_b_val = state_fio->FgetUint8();
+	if(version == STATE_VERSION) stat = true; 
 	return stat;
 }
 		

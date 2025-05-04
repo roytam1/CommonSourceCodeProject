@@ -138,6 +138,9 @@ void UPD765A::initialize()
 	motor_on = false;	// motor off
 	reset_signal = true;
 	irq_masked = drq_masked = false;
+#ifdef UPD765A_DMA_MODE
+	dma_data_lost = false;
+#endif
 	
 	set_irq(false);
 	set_drq(false);
@@ -187,44 +190,44 @@ void UPD765A::write_io8(uint32_t addr, uint32_t data)
 #ifdef _FDC_DEBUG_LOG
 				switch(data & 0x1f) {
 				case 0x02:
-					emu->out_debug_log(_T("FDC: CMD=%2x READ DIAGNOSTIC\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x READ DIAGNOSTIC\n"), data);
 					break;
 				case 0x03:
-					emu->out_debug_log(_T("FDC: CMD=%2x SPECIFY\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x SPECIFY\n"), data);
 					break;
 				case 0x04:
-					emu->out_debug_log(_T("FDC: CMD=%2x SENCE DEVSTAT\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x SENCE DEVSTAT\n"), data);
 					break;
 				case 0x05:
 				case 0x09:
-					emu->out_debug_log(_T("FDC: CMD=%2x WRITE DATA\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x WRITE DATA\n"), data);
 					break;
 				case 0x06:
 				case 0x0c:
-					emu->out_debug_log(_T("FDC: CMD=%2x READ DATA\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x READ DATA\n"), data);
 					break;
 				case 0x07:
-					emu->out_debug_log(_T("FDC: CMD=%2x RECALIB\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x RECALIB\n"), data);
 					break;
 				case 0x08:
-					emu->out_debug_log(_T("FDC: CMD=%2x SENCE INTSTAT\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x SENCE INTSTAT\n"), data);
 					break;
 				case 0x0a:
-					emu->out_debug_log(_T("FDC: CMD=%2x READ ID\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x READ ID\n"), data);
 					break;
 				case 0x0d:
-					emu->out_debug_log(_T("FDC: CMD=%2x WRITE ID\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x WRITE ID\n"), data);
 					break;
 				case 0x0f:
-					emu->out_debug_log(_T("FDC: CMD=%2x SEEK\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x SEEK\n"), data);
 					break;
 				case 0x11:
 				case 0x19:
 				case 0x1d:
-					emu->out_debug_log(_T("FDC: CMD=%2x SCAN\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x SCAN\n"), data);
 					break;
 				default:
-					emu->out_debug_log(_T("FDC: CMD=%2x INVALID\n"), data);
+					this->out_debug_log(_T("FDC: CMD=%2x INVALID\n"), data);
 					break;
 				}
 #endif
@@ -234,7 +237,7 @@ void UPD765A::write_io8(uint32_t addr, uint32_t data)
 				
 			case PHASE_CMD:
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug_log(_T("FDC: PARAM=%2x\n"), data);
+				this->out_debug_log(_T("FDC: PARAM=%2x\n"), data);
 #endif
 				*bufptr++ = data;
 				if(--count) {
@@ -246,7 +249,7 @@ void UPD765A::write_io8(uint32_t addr, uint32_t data)
 				
 			case PHASE_WRITE:
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug_log(_T("FDC: WRITE=%2x\n"), data);
+				this->out_debug_log(_T("FDC: WRITE=%2x\n"), data);
 #endif
 				*bufptr++ = data;
 				set_drq(false);
@@ -292,7 +295,7 @@ uint32_t UPD765A::read_io8(uint32_t addr)
 			case PHASE_RESULT:
 				data = *bufptr++;
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug_log(_T("FDC: RESULT=%2x\n"), data);
+				this->out_debug_log(_T("FDC: RESULT=%2x\n"), data);
 #endif
 				if(--count) {
 					status |= S_RQM;
@@ -317,7 +320,7 @@ uint32_t UPD765A::read_io8(uint32_t addr)
 			case PHASE_READ:
 				data = *bufptr++;
 #ifdef _FDC_DEBUG_LOG
-				emu->out_debug_log(_T("FDC: READ=%2x\n"), data);
+				this->out_debug_log(_T("FDC: READ=%2x\n"), data);
 #endif
 				set_drq(false);
 				if(--count) {
@@ -340,7 +343,7 @@ uint32_t UPD765A::read_io8(uint32_t addr)
 		}
 		// fdc status
 #ifdef _FDC_DEBUG_LOG
-//		emu->out_debug_log(_T("FDC: STATUS=%2x\n"), seekstat | status);
+//		this->out_debug_log(_T("FDC: STATUS=%2x\n"), seekstat | status);
 #endif
 		return seekstat | status;
 	}
@@ -432,7 +435,7 @@ void UPD765A::event_callback(int event_id, int err)
 		set_drq(true);
 	} else if(event_id == EVENT_LOST) {
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug_log(_T("FDC: DATA LOST\n"));
+		this->out_debug_log(_T("FDC: DATA LOST\n"));
 #endif
 		lost_id = -1;
 		result = ST1_OR;
@@ -459,7 +462,7 @@ void UPD765A::event_callback(int event_id, int err)
 void UPD765A::set_irq(bool val)
 {
 #ifdef _FDC_DEBUG_LOG
-//	emu->out_debug_log(_T("FDC: IRQ=%d\n"), val ? 1 : 0);
+//	this->out_debug_log(_T("FDC: IRQ=%d\n"), val ? 1 : 0);
 #endif
 	write_signals(&outputs_irq, (val && !irq_masked) ? 0xffffffff : 0);
 }
@@ -467,7 +470,7 @@ void UPD765A::set_irq(bool val)
 void UPD765A::set_drq(bool val)
 {
 #ifdef _FDC_DEBUG_LOG
-//	emu->out_debug_log(_T("FDC: DRQ=%d\n"), val ? 1 : 0);
+//	this->out_debug_log(_T("FDC: DRQ=%d\n"), val ? 1 : 0);
 #endif
 	// cancel next drq and data lost events
 	if(drq_id != -1) {
@@ -499,7 +502,7 @@ void UPD765A::set_drq(bool val)
 		// EPSON QC-10 CP/M Plus
 		if(val && dma_data_lost) {
 #ifdef _FDC_DEBUG_LOG
-			emu->out_debug_log(_T("FDC: DATA LOST (DMA)\n"));
+			this->out_debug_log(_T("FDC: DATA LOST (DMA)\n"));
 #endif
 			result = ST1_OR;
 			write_signals(&outputs_drq, 0);
@@ -645,11 +648,11 @@ void UPD765A::cmd_recalib()
 void UPD765A::seek(int drv, int trk)
 {
 	// get distance
-	int seektime = 32 - 2 * step_rate_time;
+	int seektime = (32 - 2 * step_rate_time); // msec -> usec
 	if(disk[drv]->drive_type == DRIVE_TYPE_2HD) {
 		seektime /= 2;
 	}
-	seektime = (trk == fdc[drv].track) ? 120 : seektime * abs(trk - fdc[drv].track) + 500; //usec
+	seektime = (trk == fdc[drv].track) ? 120 : seektime * abs(trk - fdc[drv].track) + 500; // usec
 	
 	if(drv >= MAX_DRIVE) {
 		// invalid drive number
@@ -964,14 +967,14 @@ uint32_t UPD765A::read_sector()
 	// get sector counts in the current track
 	if(!disk[drv]->make_track(trk, side)) {
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug_log(_T("FDC: TRACK NOT FOUND (TRK=%d SIDE=%d)\n"), trk, side);
+		this->out_debug_log(_T("FDC: TRACK NOT FOUND (TRK=%d SIDE=%d)\n"), trk, side);
 #endif
 		return ST0_AT | ST1_MA;
 	}
 	int secnum = disk[drv]->sector_num.sd;
 	if(!secnum) {
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug_log(_T("FDC: NO SECTORS IN TRACK (TRK=%d SIDE=%d)\n"), trk, side);
+		this->out_debug_log(_T("FDC: NO SECTORS IN TRACK (TRK=%d SIDE=%d)\n"), trk, side);
 #endif
 		return ST0_AT | ST1_MA;
 	}
@@ -1010,7 +1013,7 @@ uint32_t UPD765A::read_sector()
 		return 0;
 	}
 #ifdef _FDC_DEBUG_LOG
-	emu->out_debug_log(_T("FDC: SECTOR NOT FOUND (TRK=%d SIDE=%d ID=%2x,%2x,%2x,%2x)\n"), trk, side, id[0], id[1], id[2], id[3]);
+	this->out_debug_log(_T("FDC: SECTOR NOT FOUND (TRK=%d SIDE=%d ID=%2x,%2x,%2x,%2x)\n"), trk, side, id[0], id[1], id[2], id[3]);
 #endif
 	if(cy != id[0] && cy != -1) {
 		if(cy == 0xff) {
@@ -1479,7 +1482,7 @@ void UPD765A::open_disk(int drv, const _TCHAR* file_path, int bank)
 		disk[drv]->open(file_path, bank);
 		if(disk[drv]->changed) {
 #ifdef _FDC_DEBUG_LOG
-			emu->out_debug_log(_T("FDC: Disk Changed (Drive=%d)\n"), drv);
+			this->out_debug_log(_T("FDC: Disk Changed (Drive=%d)\n"), drv);
 #endif
 			if(raise_irq_when_media_changed) {
 				fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;
@@ -1494,7 +1497,7 @@ void UPD765A::close_disk(int drv)
 	if(drv < MAX_DRIVE && disk[drv]->inserted) {
 		disk[drv]->close();
 #ifdef _FDC_DEBUG_LOG
-		emu->out_debug_log(_T("FDC: Disk Ejected (Drive=%d)\n"), drv);
+		this->out_debug_log(_T("FDC: Disk Ejected (Drive=%d)\n"), drv);
 #endif
 		if(raise_irq_when_media_changed) {
 			fdc[drv].result = (drv & DRIVE_MASK) | ST0_AI;

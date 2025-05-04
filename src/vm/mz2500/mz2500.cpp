@@ -416,7 +416,9 @@ void VM::rec_tape(const _TCHAR* file_path)
 
 void VM::close_tape()
 {
+	emu->lock_vm();
 	drec->close_tape();
+	emu->unlock_vm();
 	cmt->close_tape();
 }
 

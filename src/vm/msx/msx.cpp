@@ -24,7 +24,8 @@
 #include "../ld700.h"
 #endif
 #include "../not.h"
-#include "../ym2203.h"
+//#include "../ym2203.h"
+#include "../ay_3_891x.h"
 #include "../pcm1bit.h"
 #if defined(_MSX2)
 #include "../rp5c01.h"
@@ -63,7 +64,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	ldp = new LD700(this, emu);
 #endif
 	not_remote = new NOT(this, emu);
-	psg = new YM2203(this, emu);
+//	psg = new YM2203(this, emu);
+	psg = new AY_3_891X(this, emu);
 	pcm = new PCM1BIT(this, emu);
 #if defined(_MSX2)
 	rtc = new RP5C01(this, emu);
@@ -93,7 +95,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(ldp);
 #endif
 	
-	drec->set_context_ear(psg, SIG_YM2203_PORT_A, 0x80);
+	drec->set_context_ear(psg, SIG_AY_3_891X_PORT_A, 0x80);
 	pio->set_context_port_a(memory, SIG_MEMORY_SEL, 0xff, 0);
 	pio->set_context_port_c(keyboard, SIG_KEYBOARD_COLUMN, 0x0f, 0);
 	pio->set_context_port_c(not_remote, SIG_NOT_INPUT, 0x10, 0);
@@ -106,7 +108,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio->set_context_port_c(slot2, SIG_SLOT2_MUTE, 0x10, 0);
 	ldp->set_context_exv(slot2, SIG_SLOT2_EXV, 1);
 	ldp->set_context_ack(slot2, SIG_SLOT2_ACK, 1);
-	ldp->set_context_sound(psg, SIG_YM2203_PORT_A, 0x80);
+	ldp->set_context_sound(psg, SIG_AY_3_891X_PORT_A, 0x80);
 #endif
 	
 	joystick->set_context_psg(psg);
@@ -312,7 +314,9 @@ void VM::rec_tape(const _TCHAR* file_path)
 
 void VM::close_tape()
 {
+	emu->lock_vm();
 	drec->close_tape();
+	emu->unlock_vm();
 }
 
 bool VM::is_tape_inserted()
@@ -389,7 +393,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {

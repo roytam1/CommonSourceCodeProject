@@ -11,17 +11,22 @@
 #ifndef _VM_FM7_MAINIO_H_
 #define _VM_FM7_MAINIO_H_
 
-#include "../device.h"
-#include "../mc6809.h"
-#include "../z80.h"
-#include "../ym2203.h"
-#include "../datarec.h"
-
+#include "./fm7.h"
 #include "fm7_common.h"
-#include "./joystick.h"
 
+#include "../device.h"
 
+class DATAREC;
+class MC6809;
+class Z80;
+class YM2203;
+#if defined(USE_AY_3_8910_AS_PSG) && !defined(_FM77AV_VARIANTS)
+class AY_3_891X;
+#endif
 class MB8877;
+#if defined(_FM8)
+class BUBBLECASETTE;
+#endif
 #if defined(HAS_DMA)
 class HD6844;
 #endif
@@ -328,9 +333,20 @@ class FM7_MAINIO : public DEVICE {
 	void event_beep_cycle(void);
 	/* Devices */
 #if defined(_FM8)
+# if defined(USE_AY_3_8910_AS_PSG)
+	AY_3_891X *psg;
+# else
 	YM2203* opn[1]; // Optional PSG.
+# endif
 #else	
-	YM2203* opn[4]; // 0=OPN 1=WHG 2=THG 3=PSG
+	YM2203* opn[3]; // 0=OPN 1=WHG 2=THG
+# if !defined(_FM77AV_VARIANTS)
+#  if defined(USE_AY_3_8910_AS_PSG)
+	AY_3_891X *psg;
+#  else
+	YM2203* psg; // Optional PSG.
+#  endif
+#endif
 #endif
 	DATAREC* drec;
 	DEVICE* pcm1bit;
@@ -353,8 +369,11 @@ class FM7_MAINIO : public DEVICE {
 	MC6809 *subcpu;
 #ifdef WITH_Z80
 	Z80 *z80;
-#endif	
- public:
+#endif
+#if defined(_FM8)
+	BUBBLECASETTE *bubble_casette[2];
+#endif
+public:
 	FM7_MAINIO(VM* parent_vm, EMU* parent_emu);
 	~FM7_MAINIO();
 	void event_vline(int v, int clock);
@@ -380,11 +399,6 @@ class FM7_MAINIO : public DEVICE {
 	void update_config();
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
-	const _TCHAR *get_device_name(void)
-	{
-		return _T("FM7_MAIN_IO");
-	}
-
 	void set_context_printer(DEVICE *p)
 	{
 		printer = p;
@@ -431,16 +445,24 @@ class FM7_MAINIO : public DEVICE {
 		extdet_neg = true;
 	}
 #endif
-#if !defined(_FM77AV_VARIANTS)	
+#if !defined(_FM77AV_VARIANTS)
+# if defined(USE_AY_3_8910_AS_PSG)
+	void set_context_psg(AY_3_891X *p)
+	{
+		psg = p;
+# if defined(_FM8)
+		connect_psg = true;
+# endif
+	}
+# else
 	void set_context_psg(YM2203 *p)
 	{
+		psg = p;
 # if defined(_FM8)
-		opn[0] = p;
 		connect_psg = true;
-# else		
-		opn[3] = p;
-# endif		
+# endif
 	}
+# endif
 #endif
 	void set_context_fdc(MB8877 *p){
 		if(p == NULL) {
@@ -451,9 +473,9 @@ class FM7_MAINIO : public DEVICE {
 			extdet_neg = true;
 			irqreg_fdc = 0x3f; //0b00111111;
 		}
-		emu->out_debug_log(_T("FDC: connect=%d"), connect_fdc);
+		this->out_debug_log(_T("FDC: connect=%d"), connect_fdc);
 		fdc = p;
-	}
+	}	
 	void set_context_maincpu(MC6809 *p){
 		maincpu = p;
 	}
@@ -484,6 +506,13 @@ class FM7_MAINIO : public DEVICE {
 	void set_context_printer_select(DEVICE *p, int id, uint32_t mask) {
 		register_output_signal(&printer_select_bus, p, id, mask);
 	}
+#if defined(_FM8)
+	void set_context_bubble(BUBBLECASETTE *p, int drive) {
+		if(drive > 2) return;
+		bubble_casette[drive] = p;
+	}
+#endif
+	
 	void set_context_z80cpu(Z80 *p){
 #ifdef WITH_Z80
 		z80 = p;

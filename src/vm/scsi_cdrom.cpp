@@ -28,6 +28,7 @@ void SCSI_CDROM::initialize()
 		mix_loop_num = 0;
 	}
 	event_cdda = -1;
+	cdda_status = CDDA_OFF;
 }
 
 void SCSI_CDROM::release()
@@ -106,10 +107,18 @@ void SCSI_CDROM::set_cdda_status(uint8_t status)
 				register_event(this, EVENT_CDDA, 1000000.0 / 44100.0, true, &event_cdda);
 			}
 		}
+		if(cdda_status != CDDA_PLAYING) {
+			touch_sound();
+			set_realtime_render(this, true);
+		}
 	} else {
 		if(event_cdda != -1) {
 			cancel_event(this, event_cdda);
 			event_cdda = -1;
+		}
+		if(cdda_status == CDDA_PLAYING) {
+			touch_sound();
+			set_realtime_render(this, false);
 		}
 	}
 	cdda_status = status;
@@ -200,7 +209,7 @@ void SCSI_CDROM::start_command()
 		
 	case 0xd8:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Set Audio Playback Start Position\n"), scsi_id);
+			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Set Audio Playback Start Position\n"), scsi_id);
 		#endif
 		if(is_device_ready()) {
 			if(command[2] == 0 && command[3] == 0 && command[4] == 0) {
@@ -273,7 +282,7 @@ void SCSI_CDROM::start_command()
 		
 	case 0xd9:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Set Audio Playback End Position\n"), scsi_id);
+			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Set Audio Playback End Position\n"), scsi_id);
 		#endif
 		if(is_device_ready()) {
 			switch(command[9] & 0xc0) {
@@ -315,7 +324,7 @@ void SCSI_CDROM::start_command()
 		
 	case 0xda:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Pause\n"), scsi_id);
+			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Pause\n"), scsi_id);
 		#endif
 		if(is_device_ready()) {
 			if(cdda_status == CDDA_PLAYING) {
@@ -329,7 +338,7 @@ void SCSI_CDROM::start_command()
 		
 	case 0xdd:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Read Sub Channel Q\n"), scsi_id);
+			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Read Sub Channel Q\n"), scsi_id);
 		#endif
 		if(is_device_ready()) {
 			// create track info
@@ -363,7 +372,7 @@ void SCSI_CDROM::start_command()
 		
 	case 0xde:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Get Dir Info\n"), scsi_id);
+			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Get Dir Info\n"), scsi_id);
 		#endif
 		if(is_device_ready()) {
 			buffer->clear();
@@ -626,7 +635,7 @@ void SCSI_CDROM::open_disc(const _TCHAR* file_path)
 			uint32_t idx0_msf = lba_to_msf(toc_table[i].index0);
 			uint32_t idx1_msf = lba_to_msf(toc_table[i].index1);
 			uint32_t pgap_msf = lba_to_msf(toc_table[i].pregap);
-			emu->out_debug_log(_T("Track%02d: Index0=%02x:%02x:%02x Index1=%02x:%02x:%02x PreGpap=%02x:%02x:%02x\n"), i + 1,
+			this->out_debug_log(_T("Track%02d: Index0=%02x:%02x:%02x Index1=%02x:%02x:%02x PreGpap=%02x:%02x:%02x\n"), i + 1,
 			(idx0_msf >> 16) & 0xff, (idx0_msf >> 8) & 0xff, idx0_msf & 0xff,
 			(idx1_msf >> 16) & 0xff, (idx1_msf >> 8) & 0xff, idx1_msf & 0xff,
 			(pgap_msf >> 16) & 0xff, (pgap_msf >> 8) & 0xff, pgap_msf & 0xff);

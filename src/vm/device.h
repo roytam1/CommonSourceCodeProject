@@ -49,6 +49,8 @@ protected:
 public:
 	DEVICE(VM* parent_vm, EMU* parent_emu) : vm(parent_vm), emu(parent_emu)
 	{
+		my_tcscpy_s(this_device_name, 128, _T("Base Device"));
+		
 		prev_device = vm->last_device;
 		next_device = NULL;
 		if(vm->first_device == NULL) {
@@ -617,6 +619,20 @@ public:
 		}
 		event_manager->set_lines_per_frame(lines);
 	}
+	virtual void touch_sound(void)
+	{
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
+		}
+		event_manager->touch_sound();
+	}
+	virtual void set_realtime_render(DEVICE* device, bool flag)
+	{
+		if(event_manager == NULL) {
+			event_manager = vm->first_device->next_device;
+		}
+		event_manager->set_realtime_render(device, flag);
+	}
 	virtual void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame) {}
 	
 	// event callback
@@ -710,14 +726,46 @@ public:
 #endif
 	
 	// misc
-	virtual const _TCHAR *get_device_name()
+	virtual void out_debug_log(const _TCHAR* format, ...)
 	{
-		return _T("Base Device");
+		va_list ap;
+		_TCHAR buffer[1024];
+		
+		va_start(ap, format);
+		my_vstprintf_s(buffer, 1024, format, ap);
+		va_end(ap);
+		
+		emu->out_debug_log(_T("%s"), buffer);
+	}
+	virtual void force_out_debug_log(const _TCHAR* format, ...)
+	{
+		va_list ap;
+		_TCHAR buffer[1024];
+		
+		va_start(ap, format);
+		my_vstprintf_s(buffer, 1024, format, ap);
+		va_end(ap);
+		
+		emu->force_out_debug_log(_T("%s"), buffer);
+	}
+	void set_device_name(const _TCHAR *name)
+	{
+		if(name != NULL) {
+			my_tcscpy_s(this_device_name, 128, name);
+#ifdef _USE_QT
+			emu->get_osd()->set_vm_node(this_device_id, name);
+#endif
+		}
+	}
+	const _TCHAR *get_device_name()
+	{
+		return (const _TCHAR *)this_device_name;
 	}
 	
 	DEVICE* prev_device;
 	DEVICE* next_device;
 	int this_device_id;
+	_TCHAR this_device_name[128];
 };
 
 #endif

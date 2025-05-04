@@ -11,18 +11,6 @@
 
 #include "mb61vh010.h"
 
-
-MB61VH010::MB61VH010(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_emu)
-{
-	p_emu = parent_emu;
-	p_vm = parent_vm;
-	target = NULL;
-}
-
-MB61VH010::~MB61VH010()
-{
-}
-
 uint8_t MB61VH010::do_read(uint32_t addr, uint32_t bank)
 {
 	uint32_t raddr;
@@ -31,21 +19,21 @@ uint8_t MB61VH010::do_read(uint32_t addr, uint32_t bank)
 	if(is_400line) {
 		if((addr & 0xffff) < 0x8000) {
 			raddr = (addr  & 0x7fff) | (0x8000 * bank);
-			return target->read_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS);
+			return target->read_data8(raddr + direct_access_offset);
 		}
 	} else {
 		raddr = (addr & 0x3fff) | (0x4000 * bank);
-		return target->read_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS);
+		return target->read_data8(raddr + direct_access_offset);
 	}
 	return 0xff;
 }
 
-uint8_t MB61VH010::do_write(uint32_t addr, uint32_t bank, uint8_t data)
+void MB61VH010::do_write(uint32_t addr, uint32_t bank, uint8_t data)
 {
 	uint32_t raddr;
 	uint8_t readdata;
 
-	if(((1 << bank) & multi_page) != 0) return 0xff;
+	if(((1 << bank) & multi_page) != 0) return;
 	if((command_reg & 0x40) != 0) { // Calculate before writing
 	  	readdata = do_read(addr, bank);
 		//readdata = data;
@@ -63,44 +51,53 @@ uint8_t MB61VH010::do_write(uint32_t addr, uint32_t bank, uint8_t data)
 	if(is_400line) {
 		if((addr & 0xffff) < 0x8000) {
 			raddr = (addr & 0x7fff) | (0x8000 * bank);
-			target->write_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS, readdata);
+			target->write_data8(raddr + direct_access_offset, readdata);
 		}
 	} else {
 		raddr = (addr & 0x3fff) | (0x4000 * bank);
-		target->write_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS, readdata);
+		target->write_data8(raddr + direct_access_offset, readdata);
 	}
-	return readdata;
+	return;
 }
 
 
-uint8_t MB61VH010::do_pset(uint32_t addr)
+void MB61VH010::do_pset(uint32_t addr)
 {
 	int i;
 	uint32_t raddr = addr;  // Use banked ram.
-	uint8_t bitmask;
-	uint8_t srcdata;
+	uint8_t bitmask[4] = {0};
+	uint8_t srcdata[4] = {0};
+	uint8_t mask_p[4] = {mask_reg, mask_reg, mask_reg, mask_reg};
 	int planes_b = planes;
+	
 	if(planes_b >= 4) planes_b = 4;
 	for(i = 0; i < planes_b; i++) {
 		if((bank_disable_reg & (1 << i)) != 0) {
 			continue;
 		}
 		if((color_reg & (1 << i)) == 0) {
-			bitmask = 0x00;
+			bitmask[i] = 0x00;
 		} else {
-			bitmask = 0xff;
+			bitmask[i] = ~mask_reg;
 		}
-		
-		srcdata = do_read(addr, i);
-		bitmask = bitmask & (~mask_reg);
-		srcdata = srcdata & mask_reg;
-		srcdata = srcdata | bitmask;
-		do_write(addr, i, srcdata);
+		//srcdata[i] = do_read(addr, i) & mask_reg;
+		srcdata[i] = do_read(addr, i);
 	}
-	return 0xff;
+	srcdata[0] = (srcdata[0] & mask_p[0]) | bitmask[0];
+	srcdata[1] = (srcdata[1] & mask_p[1]) | bitmask[1];
+	srcdata[2] = (srcdata[2] & mask_p[2]) | bitmask[2];
+	srcdata[3] = (srcdata[3] & mask_p[3]) | bitmask[3];
+
+	for(i = 0; i < planes_b; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		do_write(addr, i, srcdata[i]);
+	}
+	return;
 }
 
-uint8_t MB61VH010::do_blank(uint32_t addr)
+void MB61VH010::do_blank(uint32_t addr)
 {
 	uint32_t i;
 	uint8_t srcdata;
@@ -114,123 +111,193 @@ uint8_t MB61VH010::do_blank(uint32_t addr)
 		srcdata = srcdata & mask_reg;
 		do_write(addr, i, srcdata);
 	}
-	return 0xff;
+	return;
 }
 
-uint8_t MB61VH010::do_or(uint32_t addr)
+void MB61VH010::do_or(uint32_t addr)
 {
 	uint32_t i;
-	uint8_t bitmask;
-	uint8_t srcdata;
+	uint8_t bitmask[4] = {0};
+	uint8_t srcdata[4] = {0};
+	uint8_t mask_p[4] = {mask_reg, mask_reg, mask_reg, mask_reg};
+	uint8_t mask_n[4] = {(uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg};
 	
 	if(planes >= 4) planes = 4;
 	for(i = 0; i < planes; i++) {
 		if((bank_disable_reg & (1 << i)) != 0) {
 			continue;
 		}
-		srcdata = do_read(addr, i);
+		srcdata[i] = do_read(addr, i);
 		if((color_reg & (1 << i)) == 0) {
-			bitmask = srcdata; // srcdata | 0x00
+			bitmask[i] = srcdata[i]; // srcdata | 0x00
 		} else {
-			bitmask = 0xff; // srcdata | 0xff
+			bitmask[i] = 0xff; // srcdata | 0xff
 		}
-		bitmask = bitmask & ~mask_reg;
-		srcdata = (srcdata & mask_reg) | bitmask;
-		do_write(addr, i, srcdata);
+		//bitmask = bitmask & ~mask_reg;
+		//srcdata = (srcdata & mask_reg) | bitmask;
+		//do_write(addr, i, srcdata);
 	}
-	return 0xff;
+	srcdata[0] = (srcdata[0] & mask_p[0]) | (bitmask[0] & mask_n[0]);
+	srcdata[1] = (srcdata[1] & mask_p[1]) | (bitmask[1] & mask_n[1]);
+	srcdata[2] = (srcdata[2] & mask_p[2]) | (bitmask[2] & mask_n[2]);
+	srcdata[3] = (srcdata[3] & mask_p[3]) | (bitmask[3] & mask_n[3]);
+	for(i = 0; i < planes; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		do_write(addr, i, srcdata[i]);
+	}
+	return;
 }
 
-uint8_t MB61VH010::do_and(uint32_t addr)
+void MB61VH010::do_and(uint32_t addr)
 {
 	uint32_t i;
-	uint8_t bitmask;
-	uint8_t srcdata;
+	uint8_t bitmask[4] = {0};
+	uint8_t srcdata[4] = {0};
+	uint8_t mask_p[4] = {mask_reg, mask_reg, mask_reg, mask_reg};
+	uint8_t mask_n[4] = {(uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg};
 
 	if(planes >= 4) planes = 4;
 	for(i = 0; i < planes; i++) {
 		if((bank_disable_reg & (1 << i)) != 0) {
 			continue;
 		}
-		srcdata = do_read(addr, i);
+		srcdata[i] = do_read(addr, i);
 		if((color_reg & (1 << i)) == 0) {
-			bitmask = 0x00; // srcdata & 0x00
+			bitmask[i] = 0x00; // srcdata & 0x00
 		} else {
-			bitmask = srcdata; // srcdata & 0xff;
+			bitmask[i] = srcdata[i]; // srcdata & 0xff;
 		}
-		bitmask = bitmask & ~mask_reg;
-		srcdata = (srcdata & mask_reg) | bitmask;
-		do_write(addr, i, srcdata);
+		//bitmask = bitmask & ~mask_reg;
+		//srcdata = (srcdata & mask_reg) | bitmask;
+		//do_write(addr, i, srcdata);
 	}
-	return 0xff;
+	srcdata[0] = (srcdata[0] & mask_p[0]) | (bitmask[0] & mask_n[0]);
+	srcdata[1] = (srcdata[1] & mask_p[1]) | (bitmask[1] & mask_n[1]);
+	srcdata[2] = (srcdata[2] & mask_p[2]) | (bitmask[2] & mask_n[2]);
+	srcdata[3] = (srcdata[3] & mask_p[3]) | (bitmask[3] & mask_n[3]);
+	for(i = 0; i < planes; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		do_write(addr, i, srcdata[i]);
+	}
+	return;
 }
 
-uint8_t MB61VH010::do_xor(uint32_t addr)
+void MB61VH010::do_xor(uint32_t addr)
 {
 	uint32_t i;
-	uint8_t bitmask;
-	uint8_t srcdata;
+	//uint8_t bitmask;
+	//uint8_t srcdata;
+	uint8_t bitmask[4] = {0};
+	uint8_t srcdata[4] = {0};
+	uint8_t mask_p[4] = {mask_reg, mask_reg, mask_reg, mask_reg};
+	uint8_t mask_n[4] = {(uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg};
 
 	if(planes >= 4) planes = 4;
 	for(i = 0; i < planes; i++) {
 		if((bank_disable_reg & (1 << i)) != 0) {
 			continue;
 		}
-		srcdata = do_read(addr, i);
 		if((color_reg & (1 << i)) == 0) {
-			bitmask = srcdata ^ 0x00;
+			bitmask[i] = 0x00;
 		} else {
-			bitmask = srcdata ^ 0xff;
+			bitmask[i] = 0xff;
 		}
-		bitmask = bitmask & ~mask_reg;
-		srcdata = (srcdata & mask_reg) | bitmask;
-		do_write(addr, i, srcdata);
-	}
-	return 0xff;
-}
-
-uint8_t MB61VH010::do_not(uint32_t addr)
-{
-	uint32_t i;
-	uint8_t bitmask;
-	uint8_t srcdata;
-
-	if(planes >= 4) planes = 4;
-	for(i = 0; i < planes; i++) {
-		if((bank_disable_reg & (1 << i)) != 0) {
-			continue;
-		}
-		srcdata = do_read(addr, i);
-		bitmask = ~srcdata;
 		
-		bitmask = bitmask & ~mask_reg;
-		srcdata = (srcdata & mask_reg) | bitmask;
-		do_write(addr, i, srcdata);
+		srcdata[i] = do_read(addr, i);
+		//bitmask = bitmask ^ srcdata;
+		//bitmask = bitmask & (~mask_reg);
+		//srcdata = srcdata & mask_reg;
+		//srcdata = srcdata | bitmask;
+		//do_write(addr, i, srcdata);
 	}
-	return 0xff;
+	bitmask[0] = bitmask[0] ^ srcdata[0];
+	bitmask[1] = bitmask[1] ^ srcdata[1];
+	bitmask[2] = bitmask[2] ^ srcdata[2];
+	bitmask[3] = bitmask[3] ^ srcdata[3];
+	
+	srcdata[0] = (srcdata[0] & mask_p[0]) | (bitmask[0] & mask_n[0]);
+	srcdata[1] = (srcdata[1] & mask_p[1]) | (bitmask[1] & mask_n[1]);
+	srcdata[2] = (srcdata[2] & mask_p[2]) | (bitmask[2] & mask_n[2]);
+	srcdata[3] = (srcdata[3] & mask_p[3]) | (bitmask[3] & mask_n[3]);
+	for(i = 0; i < planes; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		do_write(addr, i, srcdata[i]);
+	}
+	return;
+}
+
+void MB61VH010::do_not(uint32_t addr)
+{
+	uint32_t i;
+	uint8_t bitmask[4] = {0};
+	uint8_t srcdata[4] = {0};
+	uint8_t mask_p[4] = {mask_reg, mask_reg, mask_reg, mask_reg};
+	uint8_t mask_n[4] = {(uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg};
+
+	if(planes >= 4) planes = 4;
+	for(i = 0; i < planes; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		srcdata[i] = do_read(addr, i);
+		bitmask[i] = ~srcdata[i];
+		//bitmask = bitmask & ~mask_reg;
+		//srcdata = (srcdata & mask_reg) | bitmask;
+		//do_write(addr, i, srcdata);
+	}
+	srcdata[0] = (srcdata[0] & mask_p[0]) | (bitmask[0] & mask_n[0]);
+	srcdata[1] = (srcdata[1] & mask_p[1]) | (bitmask[1] & mask_n[1]);
+	srcdata[2] = (srcdata[2] & mask_p[2]) | (bitmask[2] & mask_n[2]);
+	srcdata[3] = (srcdata[3] & mask_p[3]) | (bitmask[3] & mask_n[3]);
+	for(i = 0; i < planes; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		do_write(addr, i, srcdata[i]);
+	}
+	return;
 }
 
 
-uint8_t MB61VH010::do_tilepaint(uint32_t addr)
+void MB61VH010::do_tilepaint(uint32_t addr)
 {
 	uint32_t i;
-	uint8_t bitmask;
-	uint8_t srcdata;
+	uint8_t bitmask[4] = {0};
+	uint8_t srcdata[4] = {0};
+	uint8_t mask_p[4] = {mask_reg, mask_reg, mask_reg, mask_reg};
+	uint8_t mask_n[4] = {(uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg, (uint8_t)~mask_reg};
 
 	if(planes > 4) planes = 4;
 	for(i = 0; i < planes; i++) {
 		if((bank_disable_reg & (1 << i)) != 0) {
 			continue;
 		}
-		srcdata = do_read(addr, i);
-		bitmask = tile_reg[i] & (~mask_reg);
-		srcdata = (srcdata & mask_reg) | bitmask;
-		do_write(addr, i, srcdata);
+		srcdata[i] = do_read(addr, i);
+		bitmask[i] = tile_reg[i];
+		//bitmask = tile_reg[i] & (~mask_reg);
+		//srcdata = (srcdata & mask_reg) | bitmask;
+		//do_write(addr, i, srcdata);
 	}
-	return 0xff;
+	srcdata[0] = (srcdata[0] & mask_p[0]) | (bitmask[0] & mask_n[0]);
+	srcdata[1] = (srcdata[1] & mask_p[1]) | (bitmask[1] & mask_n[1]);
+	srcdata[2] = (srcdata[2] & mask_p[2]) | (bitmask[2] & mask_n[2]);
+	srcdata[3] = (srcdata[3] & mask_p[3]) | (bitmask[3] & mask_n[3]);
+	for(i = 0; i < planes; i++) {
+		if((bank_disable_reg & (1 << i)) != 0) {
+			continue;
+		}
+		do_write(addr, i, srcdata[i]);
+	}
+	return;
 }
 
-uint8_t MB61VH010::do_compare(uint32_t addr)
+void MB61VH010::do_compare(uint32_t addr)
 {
 	uint32_t offset = 0x4000;
 	uint8_t r, g, b;
@@ -252,7 +319,7 @@ uint8_t MB61VH010::do_compare(uint32_t addr)
 		}
 	}
 	cmp_status_reg = 0x00;
-	if(k <= 0) return 0xff;
+	if(k <= 0) return;
 	b = do_read(addr, 0);
 	r = do_read(addr, 1);
 	g = do_read(addr, 2);
@@ -261,7 +328,6 @@ uint8_t MB61VH010::do_compare(uint32_t addr)
 		tmpcol  = (b & 0x80) >> 7;
 		tmpcol  = tmpcol | ((r & 0x80) >> 6);
 		tmpcol  = tmpcol | ((g & 0x80) >> 5);
-		//tmpcol |= ((t & 0x80) != 0) ? 8 : 0;
 		tmpcol = tmpcol & disables;
 		for(j = 0; j < k; j++) {
 			if(cmp_reg_bak[j] == tmpcol) {
@@ -275,7 +341,7 @@ _l0:
 		g <<= 1;
 	}
 	cmp_status_reg = tmp_stat;
-	return 0xff;
+	return;
 }
 
 void MB61VH010::do_alucmds_dmyread(uint32_t addr)
@@ -321,51 +387,48 @@ void MB61VH010::do_alucmds_dmyread(uint32_t addr)
 			do_compare(addr);
 			break;
 	}
-	//printf("ALU DMYREAD ADDR=%04x, CMD=%02x CMP STATUS=%02x\n", addr, command_reg, cmp_status_reg);
+	//printf("ALU DMYREAD ADDR=%04x, CMD=%02x CMP STATUS=%02x DISABLE=%01x\n", addr, command_reg, cmp_status_reg, bank_disable_reg);
 	//if(eventid_busy >= 0) cancel_event(this, eventid_busy) ;
 	//register_event(this, EVENT_MB61VH010_BUSY_OFF, 1.0 / 16.0, false, &eventid_busy) ;
 }  
 
-uint8_t MB61VH010::do_alucmds(uint32_t addr)
+void MB61VH010::do_alucmds(uint32_t addr)
 {
-	if(!is_400line) {
-		addr = addr & 0x3fff;
-	} else {
-		if(addr >= 0x8000) {
-			mask_reg = 0xff;
-			return 0xff;
-		}
-		addr = addr & 0x7fff;
+	if(addr >= 0x8000) {
+		mask_reg = 0xff;
+		return;
 	}
-	//cmp_status_reg = 0x00;
+
+	//cmp_status_reg = 0xff;
 	if((command_reg & 0x40) != 0) do_compare(addr);
 	switch(command_reg & 0x07) {
 		case 0:
-			return do_pset(addr);
+			do_pset(addr);
 			break;
 		case 1:
-			return do_blank(addr);
+			do_blank(addr);
 			break;
 		case 2:
-			return do_or(addr);
+			do_or(addr);
 			break;
 		case 3:
-			return do_and(addr);
+			do_and(addr);
 			break;
 		case 4:
-			return do_xor(addr);
+			do_xor(addr);
 			break;
 		case 5:
-			return do_not(addr);
+			do_not(addr);
 			break;
 		case 6:
-			return do_tilepaint(addr);
+			do_tilepaint(addr);
 			break;
 		case 7:
-			return do_compare(addr);
+			do_compare(addr);
 			break;
 	}
-	return 0xff;
+	//printf("ALU CMDS ADDR=%04x, CMD=%02x CMP STATUS=%02x\n", addr, command_reg, cmp_status_reg);
+	return;
 }
 
 void MB61VH010::do_line(void)
@@ -379,20 +442,16 @@ void MB61VH010::do_line(void)
 	int ax = (int)x_end - (int)x_begin;
 	int ay = (int)y_end - (int)y_begin;
 	int diff = 0;
+	int diff8 = 0;
 	int count = 0;
 	int xcount;
 	int ycount;
-	//uint8_t mask_bak = mask_reg;
+	bool updated = false;
 	uint16_t tmp8a;
 	uint8_t vmask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 	double usec;
-	bool lastflag = false;
-	
-
 	oldaddr = 0xffffffff;
 	alu_addr = 0xffffffff;
-	//if ((x_begin >= screen_width) && (x_end >= screen_width)) return;
-	//if ((y_begin >= screen_height) && (y_end >= screen_height)) return;
 	line_style = line_pattern;
 	busy_flag = true;
 	total_bytes = 0;
@@ -401,153 +460,292 @@ void MB61VH010::do_line(void)
 	if ((line_style.b.h & 0x80) != 0) {
 		mask_reg &= ~vmask[cpx_t & 7];
 	}
-	tmp8a = ((line_style.b.h & 0x80) >> 7) & 0x01;
-	line_style.w.l = (line_style.w.l << 1) | tmp8a;
-   
 	xcount = abs(ax);
 	ycount = abs(ay);
-	//printf("LINE: (%d,%d)-(%d,%d)\n", x_begin, y_begin, x_end , y_end); 
+	//this->out_debug_log("LINE: (%d,%d)-(%d,%d) CMD=%02x STYLE=%04x, \n", x_begin, y_begin, x_end , y_end, command_reg, line_style.w.l); 
 	if(ycount == 0) {
+		if((cpy_t < 0) || (cpy_t >= 512)) goto _finish;
+		if(xcount == 0) {
+			updated = put_dot(cpx_t, cpy_t);
+			goto _finish;
+		}
 		if(ax > 0) {
-			//if((x_end >= screen_width) && (x_begin < screen_width)) x_end = screen_width - 1;
-			//printf("LINE: (%d,%d)-(%d,%d)\n", x_begin, y_begin, x_end , y_end); 
-			for(; cpx_t <= (int)x_end; cpx_t++) {
-				lastflag = put_dot(cpx_t, cpy_t);
+			int left = x_end - cpx_t;
+			if((cpx_t & 0x07) != 7) total_bytes = 1;
+			for(; cpx_t <= (int)x_end;) {
+				if((cpx_t & 7) == 0) {
+					if(left >= 8) {
+						updated = put_dot8(cpx_t, cpy_t);
+						cpx_t += 8;
+						left -= 8;
+						total_bytes++;
+						continue;
+					}
+				}
+				{
+					updated = put_dot(cpx_t, cpy_t);
+					cpx_t++;
+					left--;
+					if((cpx_t & 0x07) == 7) total_bytes++;
+				}
 			}
 		} else {
-			for(; cpx_t >= (int)x_end; cpx_t--) {
-				lastflag = put_dot(cpx_t, cpy_t);
+			int left = cpx_t - x_end;
+			if((cpx_t & 0x07) != 0) total_bytes = 1;
+			for(; cpx_t >= (int)x_end;) {
+				if(cpx_t < 0) break; // Comment out for Amnork.
+				if((cpx_t & 7) == 7) {
+					if(left >= 8) {
+						updated = put_dot8(cpx_t, cpy_t);
+						cpx_t -= 8;
+						left -= 8;
+						total_bytes++;
+						continue;
+					}
+				}
+				{
+					if((cpx_t & 7) == 0) total_bytes++;
+					updated = put_dot(cpx_t, cpy_t);
+					left--;
+					cpx_t--;
+				}
 			}
 		}
 	} else if(xcount == 0) {
+		//if((cpx_t < 0) || (cpx_t >= screen_width)) goto _finish; // Okay?
+		if(cpx_t < 0) goto _finish; // Okay?
 		if(ay > 0) {
-			if((y_end >= screen_height) && (y_begin < screen_height)) y_end = screen_height - 1;
 			for(; cpy_t <= (int)y_end; cpy_t++) {
-				lastflag = put_dot(cpx_t, cpy_t);
+				if(cpy_t >= 512) break;
+				updated = put_dot(cpx_t, cpy_t);
+				total_bytes++;
 			}
 		} else {
 			for(; cpy_t  >= (int)y_end; cpy_t--) {
-				lastflag = put_dot(cpx_t, cpy_t);
+				if(cpy_t < 0) break;
+				updated = put_dot(cpx_t, cpy_t);
+				total_bytes++;
 			}
 		}
-	} else if(xcount >= ycount) {
+	} else if(xcount > ycount) { // (abs(ax) > abs(ay)
 		diff = (ycount * 32768) / xcount;
+		diff8 = diff << 3;
 		if(ax < 0) {
-			//if(x_end == 0) xcount = x_begin;
+			if((cpx_t & 0x07) != 0) total_bytes = 1;
 		} else {
-			if(x_end >= screen_width) xcount = (int)screen_width - (int)x_begin - 1;
+			if((cpx_t & 0x07) == 0) total_bytes = 1;
 		}
-		for(; xcount >= 0; xcount-- ) {
-			lastflag = put_dot(cpx_t, cpy_t);
+		for(; xcount >= 0; ) {
+			if((diff8 + count) <= 16384) {
+				if(ax > 0) {
+					if((cpx_t & 0x07) == 0) {
+						if(xcount >= 8) {
+							updated = put_dot8(cpx_t, cpy_t);
+							total_bytes++;
+							count += diff8;
+							xcount -= 8;
+							cpx_t += 8;
+							continue;
+						}
+					}
+				} else { // ax < 0
+					if((cpx_t & 0x07) == 7) {
+						if(xcount >= 8) {
+							updated = put_dot8(cpx_t, cpy_t);
+							total_bytes++;
+							count += diff8;
+							xcount -= 8;
+							cpx_t -= 8;
+							if(cpx_t < 0) break;
+							continue;
+						}
+					}
+				}
+			}
+			updated = put_dot(cpx_t, cpy_t);
 			count += diff;
 			if(count > 16384) {
 				if(ay < 0) {
-					if(cpy_t > (int)y_end) cpy_t--;
+					cpy_t--;
+					if(cpy_t < 0) break;
 				} else {
-					if(cpy_t < (int)y_end) cpy_t++;
+					cpy_t++;
+					if(cpy_t >= 512) break;
 				}
+				total_bytes++;
 				count -= 32768;
 			}
 			if(ax > 0) {
 				cpx_t++;
+				if((cpx_t & 0x07) == 0) total_bytes++;
 			} else if(ax < 0) {
+				if((cpx_t & 0x07) == 0) total_bytes++;
 				cpx_t--;
+				if(cpx_t < 0) break; // Comment out for Amnork.
 			}
+			xcount--;
 		}
-	} else if(xcount == ycount) {
+	} else if(xcount == ycount) { // (abs(ax) == abs(ay)
+		diff = (ycount * 32768) / xcount;
 		if(ax < 0) {
-			xcount = x_begin;
+			if((cpx_t & 0x07) != 0) total_bytes = 1;
 		} else {
-			if(x_end >= screen_width) xcount = (int)screen_width - (int)x_begin - 1;
+			if((cpx_t & 0x07) == 0) total_bytes = 1;
 		}
 		for(; xcount >= 0; xcount-- ) {
-			lastflag = put_dot(cpx_t, cpy_t);
-		   	if(ay > 0) {
-				cpy_t++;
-			} else {
+			updated = put_dot(cpx_t, cpy_t);
+			if(ay < 0) {
 				cpy_t--;
+				if(cpy_t < 0) break;
+			} else {
+				cpy_t++;
+				if(cpy_t >= 512) break;
 			}
+			total_bytes++;
 			if(ax > 0) {
 				cpx_t++;
 			} else if(ax < 0) {
 				cpx_t--;
+				if(cpx_t < 0) break; // Comment out for Amnork.
 			}
 		}
-	} else { // (abs(ax) <= abs(ay)
+	} else { // (abs(ax) < abs(ay)
 		diff = (xcount  * 32768) / ycount;
-		if(ay < 0) {
-			//if(y_end < 0) ycount = y_begin;
-		} else {
-			if(y_end >= screen_height) ycount = screen_height - y_begin - 1;
-		}
 		for(; ycount >= 0; ycount--) {
-			lastflag = put_dot(cpx_t, cpy_t);
+			updated = put_dot(cpx_t, cpy_t);
+			total_bytes++;
 			count += diff;
 			if(count > 16384) {
 				if(ax < 0) {
-					if(cpx_t > (int)x_end) cpx_t--;
+					cpx_t--;
+					if(cpx_t < 0) break; // Comment out for Amnork.
 				} else if(ax > 0) {
-					if(cpx_t < (int)x_end) cpx_t++;
+					cpx_t++;
 				}
 				count -= 32768;
 			}
 			if(ay > 0) {
 				cpy_t++;
+				if(cpy_t >= 512) {
+					break;
+				}
 			} else {
 				cpy_t--;
+				if(cpy_t < 0) {
+					break;
+				}
 			}
 		}
 	}
-	if(!lastflag) total_bytes++;
-	if(alu_addr != 0xffffffff) do_alucmds(alu_addr);
-	if(total_bytes > 16) { // Over 1.0us
+	// last byte
+	do_alucmds(alu_addr);
+	total_bytes++;
+_finish:   
+	//if(total_bytes == 0) total_bytes = 1;
+	mask_reg = 0xff;
+	if(total_bytes >= 8) { // Only greater than 8bytes.
 		usec = (double)total_bytes / 16.0;
 		if(eventid_busy >= 0) cancel_event(this, eventid_busy) ;
-		register_event(this, EVENT_MB61VH010_BUSY_OFF, usec, false, &eventid_busy) ;
+		register_event(this, EVENT_MB61VH010_BUSY_OFF, usec, false, &eventid_busy);
 	} else {
 		busy_flag = false;
 	}
-	//mask_reg = mask_bak;
 }
 
-bool MB61VH010::put_dot(int x, int y)
+inline bool MB61VH010::put_dot(int x, int y)
 {
 	uint8_t vmask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
-	uint16_t tmp8a;
-	bool flag = false;
+	uint16_t tmp16a;
+	uint8_t tmp8a;
+	uint8_t mask8;
 	
-	if((x < 0) || (y < 0)) return flag;
-	if(y >= (int)screen_height) return flag;
-	//if((command_reg & 0x80) == 0) return false;
+	bool updated;
+   
+	if((command_reg & 0x80) == 0) return false; // Not compare.
+	if((x < 0) || (y < 0)) {
+		return false; // Lower address
+	}
+   
+	//if(y >= (int)screen_height) return; // Workaround of overflow
 	
 	alu_addr = (y * screen_width + x)  >> 3;
 	alu_addr = alu_addr + line_addr_offset.w.l;
-	alu_addr = alu_addr & 0x7fff;
-	if(!is_400line) alu_addr = alu_addr & 0x3fff;
+	if(!is_400line) {
+		alu_addr = alu_addr & 0x3fff;
+	} else {
+		alu_addr = alu_addr & 0x7fff;
+	}
+	
+	mask8 = ~vmask[x & 7];
+	updated = false;
+	tmp8a = line_style.b.h & 0x80;
 	
   	if(oldaddr != alu_addr) {
-		if(oldaddr == 0xffffffff) oldaddr = alu_addr;
-		//printf("** %d %d %04x %04x %02x\n", x, y, line_addr_offset.w, alu_addr, command_reg );
+		if(oldaddr == 0xffffffff) {
+			if(tmp8a != 0) {
+				mask_reg &= mask8;
+			}
+			oldaddr = alu_addr;
+		}
 		do_alucmds(oldaddr);
 		mask_reg = 0xff;
 		oldaddr = alu_addr;
-		flag = true;
-		total_bytes++;
+		updated = true;
 	}
-	//printf("** %d %d %04x %04x %02x\n", x, y, line_addr_offset.w, alu_addr, command_reg );
+	if(tmp8a != 0) {
+	  	mask_reg &= mask8;
+	}
+	line_style.w.l <<= 1;
+	if(tmp8a != 0) line_style.w.l |= 0x01; 
+	return updated;
+}
+
+inline bool MB61VH010::put_dot8(int x, int y)
+{
+	uint8_t vmask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+	uint8_t tmp8a;
+	int xx;
+	uint16_t tmp16a;
+	bool updated;
+   
+	if((command_reg & 0x80) == 0) return false; // Not compare.
+	if((x < 0) || (y < 0)) {
+		return false; // Lower address
+	}
+   
+	//if(y >= (int)screen_height) return; // Workaround of overflow
 	
-	if((line_style.b.h & 0x80) != 0) {
-	  	mask_reg &= ~vmask[x & 7];
+	alu_addr = (y * screen_width + x)  >> 3;
+	alu_addr = alu_addr + line_addr_offset.w.l;
+	if(!is_400line) {
+		alu_addr = alu_addr & 0x3fff;
+	} else {
+		alu_addr = alu_addr & 0x7fff;
 	}
-	//tmp8a = (line_style.w.l & 0x8000) >> 15;
-	tmp8a = ((line_style.b.h & 0x80) >> 7) & 0x01;
-	line_style.w.l = (line_style.w.l << 1) | tmp8a;
-	return flag;
+	updated = false;
+	if(oldaddr != alu_addr) {
+		if(oldaddr == 0xffffffff) {
+			if((line_style.b.h & 0x80) != 0) {
+				mask_reg &= ~vmask[x & 7];
+			}
+			oldaddr = alu_addr;
+		}
+		do_alucmds(oldaddr);
+		mask_reg = 0xff;
+		oldaddr = alu_addr;
+		updated = true;
+	}
+	tmp8a = line_style.b.h;
+	mask_reg = mask_reg & ~tmp8a;
+	tmp8a = line_style.b.l;
+	line_style.b.l = line_style.b.h;
+	line_style.b.h = tmp8a;
+	return updated;
 }
 
 void MB61VH010::write_data8(uint32_t id, uint32_t data)
 {
-	//printf("ALU: ADDR=%02x DATA=%02x\n", id, data);
+	//this->out_debug_log("ALU: ADDR=%02x DATA=%02x\n", id, data);
 	if(id == ALU_CMDREG) {
 		command_reg = data;
 		return;
@@ -658,10 +856,9 @@ uint32_t MB61VH010::read_data8(uint32_t id)
 				} else {
 					raddr = raddr & 0x3fff;
 				}
-				//dmydata = target->read_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS);
 				do_alucmds_dmyread(raddr);
 				raddr = (id - ALU_WRITE_PROXY) % 0xc000;
-				dmydata = target->read_data8(raddr + DISPLAY_VRAM_DIRECT_ACCESS);
+				dmydata = target->read_data8(raddr + direct_access_offset);
 				return dmydata;
 			}
 			return 0xffffffff;
@@ -677,7 +874,7 @@ uint32_t MB61VH010::read_signal(int id)
 			if(busy_flag) val = 0xffffffff;
 			break;
 		case SIG_ALU_ENABLED:
-			val = ((command_reg & 0x80) != 0) ? 0xffffffff : 0;
+			if((command_reg & 0x80) != 0) val = 0xffffffff;
 			break;
 	}
 	return val;
@@ -731,7 +928,6 @@ void MB61VH010::initialize(void)
 	planes = 3;
 	screen_width = 640;
 	screen_height = 200;
-#if 1
   	command_reg = 0;        // D410 (RW)
 	color_reg = 0;          // D411 (RW)
 	mask_reg = 0;           // D412 (RW)
@@ -746,7 +942,6 @@ void MB61VH010::initialize(void)
 	line_ybegin.d = 0;      // D426-D427 (WO)
 	line_xend.d = 0;        // D428-D429 (WO)
 	line_yend.d = 0;        // D42A-D42B (WO)
-#endif	
 }
 
 void MB61VH010::reset(void)
@@ -755,7 +950,6 @@ void MB61VH010::reset(void)
 	busy_flag = false;
 	if(eventid_busy >= 0) cancel_event(this, eventid_busy);
 	eventid_busy = -1;
-#if 1
   	command_reg = 0;        // D410 (RW)
 	color_reg = 0;          // D411 (RW)
 	mask_reg = 0;           // D412 (RW)
@@ -770,7 +964,6 @@ void MB61VH010::reset(void)
 	line_ybegin.d = 0;      // D426-D427 (WO)
 	line_xend.d = 0;        // D428-D429 (WO)
 	line_yend.d = 0;        // D42A-D42B (WO)
-#endif	
 	oldaddr = 0xffffffff;
 	
 	if(planes >= 4) planes = 4;
@@ -782,6 +975,7 @@ void MB61VH010::save_state(FILEIO *state_fio)
 	int i;
 	state_fio->FputUint32(STATE_VERSION);
 	state_fio->FputInt32(this_device_id);
+	this->out_debug_log("Save State: MB61VH010 : id=%d ver=%d\n", this_device_id, STATE_VERSION);
 
 	{ // V1
 		state_fio->FputUint8(command_reg);
@@ -821,7 +1015,7 @@ bool MB61VH010::load_state(FILEIO *state_fio)
 {
 	uint32_t version = state_fio->FgetUint32();
 	int i;
-   
+	this->out_debug_log("Load State: MB61VH010 : id=%d ver=%d\n", this_device_id, version);
 	if(this_device_id != state_fio->FgetInt32()) return false;
 	if(version >= 1) {
 		command_reg = state_fio->FgetUint8();
@@ -861,5 +1055,6 @@ bool MB61VH010::load_state(FILEIO *state_fio)
 		line_style.d = 0;
 		line_style.w.l = state_fio->FgetUint16_BE();
 	}
+	if(version != STATE_VERSION) return false;
 	return true;
 }

@@ -17,7 +17,8 @@
 #include "../io.h"
 #include "../mc6847.h"
 #include "../not.h"
-#include "../ym2203.h"
+//#include "../ym2203.h"
+#include "../ay_3_891x.h"
 #include "../z80.h"
 
 #ifdef USE_DEBUGGER
@@ -44,7 +45,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	vdp = new MC6847(this, emu);
 	not_vsync = new NOT(this, emu);
-	psg = new YM2203(this, emu);
+//	psg = new YM2203(this, emu);
+	psg = new AY_3_891X(this, emu);
 	cpu = new Z80(this, emu);
 	
 	joystick = new JOYSTICK(this, emu);
@@ -210,7 +212,9 @@ void VM::rec_tape(const _TCHAR* file_path)
 
 void VM::close_tape()
 {
+	emu->lock_vm();
 	drec->close_tape();
+	emu->unlock_vm();
 }
 
 bool VM::is_tape_inserted()
@@ -245,7 +249,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {

@@ -29,7 +29,10 @@ private:
 	void process_status(uint16_t addr);
 	
 public:
-	W3100A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	W3100A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		set_device_name(_T("W3100A TCP/IP"));
+	}
 	~W3100A() {}
 	
 	// common functions
@@ -38,10 +41,6 @@ public:
 	uint32_t read_io8(uint32_t addr);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("W3100A");
-	}
 	
 	// unique functions
 	void notify_connected(int ch);

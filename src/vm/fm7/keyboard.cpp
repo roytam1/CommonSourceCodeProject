@@ -6,11 +6,13 @@
  *  Feb 12, 2015 : Initial 
  */
 
+#include "../vm.h"
+#include "../../emu.h"
 #include "../../fifo.h"
 #include "../device.h"
 #include "fm7_keyboard.h"
-
 #include "keyboard_tables.h"
+
 #if defined(_FM77AV_VARIANTS)
 #include "../beep.h"
 #include "fm77av_hidden_message_keyboard.h"
@@ -26,6 +28,11 @@ enum {
 	ID_KEYBOARD_HIDDENMESSAGE_AV,
 	ID_KEYBOARD_HIDDEN_BEEP_ON,
 	ID_KEYBOARD_HIDDEN_BEEP_OFF,
+	ID_KEYBOARD_AUTO_8KEY_START,
+	ID_KEYBOARD_AUTO_8KEY_END,
+	ID_KEYBOARD_AUTO_5KEY_START,
+	ID_KEYBOARD_AUTO_5KEY_END,
+	ID_KEYBOARD_BREAK_ONESHOT,
 };
 
 //
@@ -73,7 +80,7 @@ uint16_t KEYBOARD::vk2scancode(uint32_t vk)
 	return 0x0000;
 }
 
-bool KEYBOARD::isModifier(uint16_t sc)
+bool KEYBOARD::isModifier(uint8_t sc)
 {
 	if(((sc >= 0x52) && (sc <= 0x56)) || // CTRL LSHIFT RSHIFT CAPS GRPH
      		(sc == 0x5a) || (sc == 0x5c)) { // KANA BREAK
@@ -82,7 +89,7 @@ bool KEYBOARD::isModifier(uint16_t sc)
 	return false;
 }
 
-void KEYBOARD::set_modifiers(uint16_t sc, bool flag)
+void KEYBOARD::set_modifiers(uint8_t sc, bool flag)
 {
 	if(sc == 0x52) { // CTRL
 		ctrl_pressed = flag; 
@@ -105,7 +112,6 @@ void KEYBOARD::set_modifiers(uint16_t sc, bool flag)
 				caps_pressed = true;
 			}
 			if(keymode == KEYMODE_STANDARD) this->write_signals(&caps_led, caps_pressed ? 0xff : 0x00);
-			//this->write_signals(&caps_led, caps_pressed ? 0xff : 0x00);
 		}
 	} else if(sc == 0x5a) { // KANA
 		// Toggle on press.
@@ -122,7 +128,7 @@ void KEYBOARD::set_modifiers(uint16_t sc, bool flag)
 	}
 }
 
-uint16_t KEYBOARD::scan2fmkeycode(uint16_t sc)
+uint16_t KEYBOARD::scan2fmkeycode(uint8_t sc)
 {
 	const struct key_tbl_t *keyptr = NULL;
 	bool stdkey = false;
@@ -182,7 +188,7 @@ uint16_t KEYBOARD::scan2fmkeycode(uint16_t sc)
 	  // F10: TV
 	}
 	if(keymode == KEYMODE_SCAN) {
-		retval = sc;
+		retval = (uint16_t)sc;
 		return retval;
 	} else if(keymode == KEYMODE_16BETA) { // Will Implement
 		if(ctrl_pressed) {
@@ -217,7 +223,7 @@ uint16_t KEYBOARD::scan2fmkeycode(uint16_t sc)
 	retval = 0xffff;
 	if (keyptr == NULL) return 0xffff;
 	do {
-		if(keyptr[i].phy == sc) {
+		if(keyptr[i].phy == (uint16_t)sc) {
 			retval = keyptr[i].code;
 			break;
 		}
@@ -238,9 +244,8 @@ uint16_t KEYBOARD::scan2fmkeycode(uint16_t sc)
 	return retval;
 }
 
-void KEYBOARD::key_up(uint32_t vk)
+void KEYBOARD::key_up_main(uint8_t bak_scancode)
 {
-	uint16_t bak_scancode = vk2scancode(vk);
 	bool stat_break = break_pressed;
 	older_vk = 0;
 	if(bak_scancode == 0) return;
@@ -256,15 +261,82 @@ void KEYBOARD::key_up(uint32_t vk)
 				this->write_signals(&break_line, 0x00);
 			}
 		}
+		if((config.dipswitch & FM7_DIPSW_AUTO_5_OR_8KEY) != 0) {
+			if((config.dipswitch & FM7_DIPSW_SELECT_5_OR_8KEY) == 0) { // Auto 8
+				switch(bak_scancode) {
+					case 0x42: // 1
+					case 0x43: // 2
+					case 0x44: // 3
+					case 0x3f: // 5
+					case 0x46: // 0
+						register_event(this,
+									   ID_KEYBOARD_AUTO_8KEY_START,
+									   10.0 * 1000.0, false, NULL);
+						break;
+					default:
+			   			if(autokey_backup != 0) key_fifo->write(scan2fmkeycode(autokey_backup));
+						break;
+				}
+			} else { // Auto 5
+				switch(bak_scancode) {
+					case 0x42: // 1
+					case 0x43: // 2
+					case 0x44: // 3
+					case 0x3e: // 4
+					case 0x40: // 6
+					case 0x3a: // 7
+					case 0x3b: // 8
+					case 0x3c: // 9
+						register_event(this,
+									   ID_KEYBOARD_AUTO_5KEY_START,
+									   10.0 * 1000.0, false, NULL);
+						break;
+					default:
+			   			if(autokey_backup != 0) key_fifo->write(scan2fmkeycode(autokey_backup));
+						break;
+				}
+			}				
+		}
 	} else {
 		//scancode = 0;
-		if((keymode == KEYMODE_SCAN) && (bak_scancode != 0)) { // Notify even key-up, when using SCAN mode.
-			uint32_t code = (bak_scancode & 0x7f) | 0x80;
-			key_fifo->write(code);
-			//keycode_7 = code;
-			scancode = bak_scancode;
+		if(bak_scancode != 0) { // Notify even key-up, when using SCAN mode.
+			uint8_t code = (bak_scancode & 0x7f) | 0x80;
+			if(this->isModifier(bak_scancode)) {
+				set_modifiers(bak_scancode, false);
+			}
+#if defined(_FM77AV_VARIANTS)	   
+			if(bak_scancode != 0x5c) {
+				if(beep_phase == 1) {
+					if(break_pressed) this->write_signals(&break_line, 0x00);
+					break_pressed = false;
+					beep_phase++;
+					bak_scancode = 0x7f;
+					code = 0xff;
+				} else if(beep_phase == 2) {
+					beep_phase = 0;
+					register_event(this,
+								   ID_KEYBOARD_HIDDEN_BEEP_ON,
+								   100.0, false, NULL); // 100.0 us is dummy.
+					bak_scancode = 0x7f;
+					code = 0xff;
+				}
+			} else { // 0x5c : BREAK is up.
+				beep_phase = 0;
+				if(stat_break) this->write_signals(&break_line, 0x00);
+			}
+#endif		   
+			if(code != 0x80) {
+				key_fifo->write(code);
+				scancode = bak_scancode;
+			}
 		}
 	}
+}
+
+void KEYBOARD::key_up(uint32_t vk)
+{
+	uint8_t bak_scancode = (uint8_t)(vk2scancode(vk) & 0x00ff);
+	key_up_main(bak_scancode);
 }
 
 void KEYBOARD::key_down(uint32_t vk)
@@ -272,7 +344,7 @@ void KEYBOARD::key_down(uint32_t vk)
 	if(older_vk == vk) return;
 	older_vk = vk;
 	
-	scancode = vk2scancode(vk);
+	scancode = (uint8_t)vk2scancode(vk);
 #if defined(_FM77AV_VARIANTS)
 	// Below are FM-77AV's hidden message , see :
 	// https://twitter.com/maruan/status/499558392092831745
@@ -291,28 +363,45 @@ void KEYBOARD::key_down(uint32_t vk)
 		}
 	}
 #endif 
-	key_down_main();
+	key_down_main(true);
 }
 
-void KEYBOARD::key_down_main(void)
+void KEYBOARD::key_down_main(bool repeat_auto_key)
 {
 	bool stat_break = break_pressed;
 	uint32_t code;
 	if(scancode == 0) return;
 	if(keymode == KEYMODE_SCAN) {
 		code = scancode & 0x7f;
+		if(this->isModifier(scancode)) {  // modifiers
+			set_modifiers(scancode, true);
+		}
+#if defined(_FM77AV_VARIANTS)
+		if(break_pressed) {
+			if(!stat_break) {
+				beep_phase = 1;
+				// It's dirty hack for AMNORK ; Set dead zone for FIRQ to 0.25sec.
+				// I wish to replace this solution to more simple. 
+				register_event(this,
+							   ID_KEYBOARD_BREAK_ONESHOT,
+							   250.0 * 1000.0, false, NULL);
+			} else if(beep_phase == 1) {
+				if(code != 0x5c) {
+					if(break_pressed) this->write_signals(&break_line, 0x00);
+					break_pressed = false;
+					beep_phase++;
+					code = 0x7f; // Special
+					scancode = 0x7f;	
+				}
+			}
+		}
+#endif
+
 		if(code != 0) {
 			key_fifo->write(code);
-			if(code < 0x5c) {
-				// Overwrite repeat key code.
-				double usec = (double)repeat_time_long * 1000.0;
-				if(event_keyrepeat >= 0) cancel_event(this, event_keyrepeat);
-				event_keyrepeat = -1;
-				repeat_keycode = (uint8_t)code;
-				if(repeat_mode) register_event(this,
-											   ID_KEYBOARD_AUTOREPEAT_FIRST,
-											   usec, false, &event_keyrepeat);
-			}
+			// NOTE: With scan key code mode, auto repeat seems to be not effectable.
+			// See : http://hanabi.2ch.net/test/read.cgi/i4004/1430836648/607
+			// 20160409 K.Ohta
 		}
 	} else {
 		if(this->isModifier(scancode)) {  // modifiers
@@ -320,21 +409,50 @@ void KEYBOARD::key_down_main(void)
 			if(break_pressed != stat_break) { // Break key Down.
 				this->write_signals(&break_line, 0xff);
 			}
-			//printf("DOWN SCAN=%04x break=%d\n", scancode, break_pressed);
 			return;
 		}
 		code = scan2fmkeycode(scancode);
 		if((code > 0x3ff) || (code == 0)) return;
+		if((config.dipswitch & FM7_DIPSW_AUTO_5_OR_8KEY) != 0) {
+			if((config.dipswitch & FM7_DIPSW_SELECT_5_OR_8KEY) == 0) { // Auto 8
+				switch(scancode) {
+					case 0x42: // 1
+					case 0x43: // 2
+					case 0x44: // 3
+					case 0x3f: // 5
+					case 0x46: // 0
+						autokey_backup = scancode;
+						break;
+				}
+			} else { // Auto 5
+				switch(scancode) {
+					case 0x42: // 1
+					case 0x43: // 2
+					case 0x44: // 3
+					case 0x3e: // 4
+					case 0x40: // 6
+					case 0x3a: // 7
+					case 0x3b: // 8
+					case 0x3c: // 9
+						autokey_backup = scancode;
+						break;
+				}
+			}				
+		} else {
+			autokey_backup = 0x00;
+		}
 		if(code != 0) {
 			key_fifo->write(code);
-			if(scancode < 0x5c) {
+			if((scancode < 0x5c) && repeat_auto_key) {
 				double usec = (double)repeat_time_long * 1000.0;
-				if(event_keyrepeat >= 0) cancel_event(this, event_keyrepeat);
-				event_keyrepeat = -1;
-				repeat_keycode = (uint8_t)scancode;
-				if(repeat_mode) register_event(this,
-											   ID_KEYBOARD_AUTOREPEAT_FIRST,
-											   usec, false, &event_keyrepeat);
+				if((repeat_keycode == 0) && repeat_mode) {
+					if(event_keyrepeat >= 0) cancel_event(this, event_keyrepeat);
+					event_keyrepeat = -1;
+					register_event(this,
+								   ID_KEYBOARD_AUTOREPEAT_FIRST,
+								   usec, false, &event_keyrepeat);
+				}
+				repeat_keycode = scancode;
 			}
 		}
 	}
@@ -365,7 +483,7 @@ void KEYBOARD::adjust_rtc(void)
 }
 #endif
 
-void KEYBOARD::do_repeatkey(uint16_t sc)
+void KEYBOARD::do_repeatkey(uint8_t sc)
 {
 	uint16_t code;
 	if((sc == 0) || (sc >= 0x5c)) return; // scancode overrun.
@@ -377,15 +495,13 @@ void KEYBOARD::do_repeatkey(uint16_t sc)
 		return;
 	}
 	if(keymode == KEYMODE_SCAN) {
-		code = sc & 0x7f;
+		code = (uint16_t)(sc & 0x7f);
 		key_fifo->write((uint32_t)code); // Make
-		key_fifo->write((uint32_t)(code | 0x80)); // Break
+		//key_fifo->write((uint32_t)(code | 0x80)); // Break
 	} else {
 		code = scan2fmkeycode(sc);
 		if(code < 0x400) {
 			key_fifo->write((uint32_t)code);
-			//keycode_7 = code;
-			//this->write_signals(&int_line, 0xffffffff);
 		}
 	}
 }
@@ -416,32 +532,32 @@ void KEYBOARD::event_callback(int event_id, int err)
 		beep->write_signal(SIG_BEEP_ON, 1, 1);
 		register_event(this,
 		       ID_KEYBOARD_HIDDEN_BEEP_OFF,
-		       20.0 * 1000.0, false, NULL);
+		       25.0 * 1000.0, false, NULL);
 	} else	if(event_id == ID_KEYBOARD_HIDDEN_BEEP_ON) {
 		beep->write_signal(SIG_BEEP_MUTE, 0, 1);
 		beep->write_signal(SIG_BEEP_ON, 1, 1);
 		register_event(this,
 		       ID_KEYBOARD_HIDDEN_BEEP_OFF,
-		       20.0 * 1000.0, false, NULL);
+		       25.0 * 1000.0, false, NULL);
 
 	} else	if(event_id == ID_KEYBOARD_HIDDEN_BEEP_OFF) {
 		beep->write_signal(SIG_BEEP_MUTE, 0, 1);
 		beep->write_signal(SIG_BEEP_ON, 0, 1);
+	} else if(event_id == ID_KEYBOARD_BREAK_ONESHOT) {
+		if(break_pressed) this->write_signals(&break_line, 0xff);
 	} else
 #endif
 	if(event_id == ID_KEYBOARD_AUTOREPEAT_FIRST) {
-		uint32_t sc = (uint32_t)repeat_keycode;
 		double usec = (double)repeat_time_short * 1000.0;
 
-		//if((sc >= 0x67) || (sc == 0) || (sc == 0x5c)) return;
-		do_repeatkey((uint16_t)sc);
+		do_repeatkey(repeat_keycode);
 		register_event(this,
 			       ID_KEYBOARD_AUTOREPEAT,
 			       usec, true, &event_keyrepeat);
 		// Key repeat.
 	} else if(event_id == ID_KEYBOARD_AUTOREPEAT){
 		if(repeat_keycode != 0) {
-			do_repeatkey((uint16_t)repeat_keycode);
+			do_repeatkey(repeat_keycode);
 		} else {
 			cancel_event(this, event_keyrepeat);
 			event_keyrepeat = -1;
@@ -451,6 +567,28 @@ void KEYBOARD::event_callback(int event_id, int err)
 			keycode_7 = key_fifo->read();
 			this->write_signals(&int_line, 0xffffffff);
 		}
+	} else if(event_id == ID_KEYBOARD_AUTO_8KEY_START) {
+		if(keymode != KEYMODE_SCAN) {
+			scancode = 0x3b; // 8
+			autokey_backup = 0x00;
+			key_down_main(false);
+			register_event(this,
+						   ID_KEYBOARD_AUTO_8KEY_END,
+						   50.0 * 1000.0, false, NULL);
+		}
+	} else if(event_id == ID_KEYBOARD_AUTO_8KEY_END) {
+		key_up_main(0x3b); // 8
+	} else if(event_id == ID_KEYBOARD_AUTO_5KEY_START) {
+		if(keymode != KEYMODE_SCAN) {
+			scancode = 0x3f; // 5
+			autokey_backup = 0x00;
+			key_down_main(false);
+			register_event(this,
+						   ID_KEYBOARD_AUTO_5KEY_END,
+						   50.0 * 1000.0, false, NULL);
+		}
+	} else if(event_id == ID_KEYBOARD_AUTO_5KEY_END) {
+		key_up_main(0x3f); // 5
 	}
 }
 
@@ -472,6 +610,7 @@ void KEYBOARD::reset_unchange_mode(void)
 	//	ins_pressed = false;
 	datareg = 0x00;
 	repeat_keycode = 0x00;
+	autokey_backup = 0x00;
 
 #if defined(_FM77AV_VARIANTS)
 	cmd_fifo->clear();
@@ -515,7 +654,9 @@ void KEYBOARD::reset(void)
 #if defined(_FM77AV_VARIANTS)  
 	adjust_rtc();
 	did_hidden_message_av_1 = false;
+	beep_phase = 0;
 #endif
+	
 	if(event_int >= 0) cancel_event(this, event_int);
 	register_event(this,
 		       ID_KEYBOARD_INT,
@@ -566,7 +707,10 @@ void KEYBOARD::set_mode(void)
 		keymode = mode;
 		//printf("Keymode : %d\n", keymode);
 		//reset_unchange_mode();
-		if(scancode != 0) key_down_main(); 
+		beep_phase = 0;
+		autokey_backup = 0x00;
+		this->write_signals(&break_line, 0x00);
+		if(scancode != 0) key_down_main(true); 
 	}
 	cmd_fifo->clear();
 	data_fifo->clear(); // right?
@@ -657,7 +801,6 @@ void KEYBOARD::set_repeat_time(void)
 	time_high = cmd_fifo->read();
 	if(cmd_fifo->empty()) goto _end;
 	time_low = cmd_fifo->read();
-//	if(cmd_fifo->empty()) goto _end;
 _end:
 	if((time_high == 0) || (time_low == 0)) {
 		repeat_time_long = 700;
@@ -855,7 +998,7 @@ void KEYBOARD::write_signal(int id, uint32_t data, uint32_t mask)
 			case 0: // Set mode
 				if(count >= 2) {
 					set_mode();
-					if(keymode == KEYMODE_SCAN) key_down_main();
+					if(keymode == KEYMODE_SCAN) key_down_main(true);
 					cmd_phase = -1;
 					cmd_fifo->clear();
 				}
@@ -868,7 +1011,7 @@ void KEYBOARD::write_signal(int id, uint32_t data, uint32_t mask)
 			case 2: // Set LED Phase
 				if(count >= 2) {
 					set_leds();
-					if(keymode == KEYMODE_SCAN) key_down_main();
+					if(keymode == KEYMODE_SCAN) key_down_main(true);
 					cmd_phase = -1;
 					cmd_fifo->clear();
 				}
@@ -1013,7 +1156,8 @@ KEYBOARD::KEYBOARD(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 	kana_pressed = false;
 	break_pressed = false;
 	event_keyrepeat = -1;
-   
+	autokey_backup = 0x00;
+
 	keymode = KEYMODE_STANDARD;
 #if defined(_FM77AV_VARIANTS)
 	cmd_fifo = new FIFO(16);
@@ -1040,13 +1184,14 @@ KEYBOARD::KEYBOARD(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_em
 #endif
 	key_fifo = new FIFO(512);
 	event_int = -1;
-
+	
 	initialize_output_signals(&break_line);
 	initialize_output_signals(&int_line);
 	
 	initialize_output_signals(&kana_led);
 	initialize_output_signals(&caps_led);
 	initialize_output_signals(&ins_led);
+	set_device_name(_T("KEYBOARD SUBSYSTEM"));
 }
 
 void KEYBOARD::release(void)
@@ -1067,11 +1212,15 @@ KEYBOARD::~KEYBOARD()
 {
 }
 
-#define STATE_VERSION 2
+#define STATE_VERSION 4
+#if defined(Q_OS_WIN)
+DLL_PREFIX_I struct cur_time_s cur_time;
+#endif
 void KEYBOARD::save_state(FILEIO *state_fio)
 {
 	state_fio->FputUint32_BE(STATE_VERSION);
 	state_fio->FputInt32_BE(this_device_id);
+	this->out_debug_log("Save State: KEYBOARD: id=%d ver=%d\n", this_device_id, STATE_VERSION);
 
 	// Version 1
 	{
@@ -1089,7 +1238,7 @@ void KEYBOARD::save_state(FILEIO *state_fio)
 
 		state_fio->FputInt32_BE(event_keyrepeat);
 	   
-		state_fio->FputUint32(scancode);
+		state_fio->FputUint8(scancode); // After V.4, uint8_t
 		state_fio->FputUint8(datareg);
 		state_fio->FputUint32(older_vk);
 	   
@@ -1134,6 +1283,14 @@ void KEYBOARD::save_state(FILEIO *state_fio)
 		state_fio->FputBool(did_hidden_message_av_1);
 #endif
 	}
+	// Version 3
+	{
+#if defined(_FM77AV_VARIANTS)
+		state_fio->FputInt32_BE(beep_phase);
+#endif
+	}
+	// Version 4
+	state_fio->FputUint8(autokey_backup);
 }
 
 bool KEYBOARD::load_state(FILEIO *state_fio)
@@ -1142,6 +1299,7 @@ bool KEYBOARD::load_state(FILEIO *state_fio)
 	
 	version = state_fio->FgetUint32_BE();
 	if(this_device_id != state_fio->FgetInt32_BE()) return false;
+	this->out_debug_log("Load State: KEYBOARD: id=%d ver=%d\n", this_device_id, version);
 
 	if(version >= 1) {
 		keycode_7 = state_fio->FgetUint32_BE();
@@ -1158,7 +1316,7 @@ bool KEYBOARD::load_state(FILEIO *state_fio)
 
 		event_keyrepeat = state_fio->FgetInt32_BE();
 	   
-		scancode = state_fio->FgetUint32();
+		scancode = state_fio->FgetUint8();
 		datareg = state_fio->FgetUint8();
 		older_vk = state_fio->FgetUint32();
 	   
@@ -1199,13 +1357,20 @@ bool KEYBOARD::load_state(FILEIO *state_fio)
 	}
 	// Version 2
 	{
-		bool flag = true;
 #if defined(_FM77AV_VARIANTS)
 		did_hidden_message_av_1 = state_fio->FgetBool();
 #endif
-		if(version == 2) {
-			return flag;
-		}
+	}
+	// Version 3
+	{
+#if defined(_FM77AV_VARIANTS)
+		beep_phase = state_fio->FgetInt32_BE();
+#endif
+	}
+	// Version 4
+	autokey_backup = state_fio->FgetUint8();
+	if(version == STATE_VERSION) {
+		return true;
 	}
 	return false;
 }

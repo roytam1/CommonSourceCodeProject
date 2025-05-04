@@ -368,6 +368,13 @@ public:
 		}
 		initialize_output_signals(&outputs_sio);
 #endif
+#if defined(HAS_MC6801)
+		set_device_name(_T("MC6801 MPU"));
+#elif defined(HAS_HD6301)
+		set_device_name(_T("HD6301 MPU"));
+#else
+		set_device_name(_T("MC6800 MPU"));
+#endif
 	}
 	~MC6800() {}
 	
@@ -413,10 +420,6 @@ public:
 #endif
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("MC6800");
-	}
 	
 	// unique functions
 	void set_context_mem(DEVICE* device)

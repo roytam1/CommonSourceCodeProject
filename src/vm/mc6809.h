@@ -413,6 +413,7 @@ public:
 	{
 		initialize_output_signals(&outputs_bus_clr);
 		initialize_output_signals(&outputs_bus_halt);
+		set_device_name(_T("MC6809 MPU"));
 	}
 	~MC6809() {}
 	
@@ -489,10 +490,6 @@ public:
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("MC6809");
-	}
 	
 	void set_extra_clock(int clock)
 	{

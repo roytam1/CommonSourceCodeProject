@@ -129,6 +129,7 @@ public:
 		vram = NULL;
 		vram_size = 0;
 		vram_data_mask = 0xffff;
+		set_device_name(_T("uPD7220 GDC"));
 	}
 	~UPD7220() {}
 	
@@ -147,10 +148,6 @@ public:
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("uPD7220");
-	}
 	
 	// unique functions
 	void set_context_drq(DEVICE* device, int id, uint32_t mask)

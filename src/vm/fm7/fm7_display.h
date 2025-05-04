@@ -19,7 +19,17 @@ class MC6809;
 
 class DISPLAY: public DEVICE
 {
- protected:
+private:
+
+	uint16_t bit_trans_table_0[256][8];
+	uint16_t bit_trans_table_1[256][8];
+	uint16_t bit_trans_table_2[256][8];
+	uint16_t bit_trans_table_3[256][8];
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+	uint16_t bit_trans_table_4[256][8];
+	uint16_t bit_trans_table_5[256][8];
+#endif
+protected:
 	EMU *p_emu;
 	VM *p_vm;
 
@@ -78,6 +88,10 @@ class DISPLAY: public DEVICE
 	void calc_apalette(uint16_t idx);
 
 #endif // _FM77AV_VARIANTS
+	
+	void copy_vram_all();
+	void copy_vram_per_line(void);
+	void copy_vram_blank_area(void);
 
  private:
 	bool sub_busy;
@@ -93,6 +107,7 @@ class DISPLAY: public DEVICE
 	int active_page;
 	uint32_t prev_clock;
 	uint32_t frame_skip_count;
+	bool palette_changed;
 	// Event handler
 	int nmi_event_id;
 
@@ -102,13 +117,14 @@ class DISPLAY: public DEVICE
 	int vsync_event_id;
 	int vstart_event_id;
 
-	uint32_t displine;
 	int vblank_count;
 #endif
 #if defined(_FM77AV_VARIANTS)
 	bool subcpu_resetreq;
 	bool power_on_reset;
 #endif	
+	uint32_t displine;
+	
 	DEVICE *ins_led;
 	DEVICE *kana_led;
 	DEVICE *caps_led;
@@ -128,7 +144,8 @@ class DISPLAY: public DEVICE
 	bool mode256k;
 # endif
 	bool mode320;
-	int display_page;
+	int8_t display_page;
+	int8_t display_page_bak;
 	int cgrom_bank;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
@@ -182,8 +199,6 @@ class DISPLAY: public DEVICE
 	uint8_t subrom_bank;
 	uint8_t subrom_bank_using;
 	uint32_t offset_point_bank1;
-	uint32_t offset_point_bak;
-	uint32_t offset_point_bank1_bak;
 # if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	bool monitor_ram;
 	bool ram_protect;
@@ -193,14 +208,17 @@ class DISPLAY: public DEVICE
 #if defined(_FM77AV40EX) || defined(_FM77AV40SX)
 	uint8_t gvram[0x8000 * 6];
 	uint8_t gvram_shadow[0x8000 * 6];
+	//uint8_t gvram_shadow2[0x8000 * 6];
 #elif defined(_FM77AV40)
 	uint8_t gvram[0x2000 * 18];
 	uint8_t gvram_shadow[0x2000 * 18];
+	//uint8_t gvram_shadow2[0x2000 * 18];
 #elif defined(_FM77AV_VARIANTS)
 	uint8_t gvram[0x2000 * 12];
 	uint8_t gvram_shadow[0x2000 * 12];
 #else
 	uint8_t gvram[0x4000 * 3];
+	uint8_t gvram_shadow[0x4000 * 3];
 #endif
 	uint8_t console_ram[0x1000];
 	uint8_t work_ram[0x380];
@@ -229,10 +247,9 @@ class DISPLAY: public DEVICE
 	DEVICE *kanjiclass1;
 #endif
 	bool vram_wrote_shadow;
-#if defined(_FM77AV_VARIANTS) || defined(_FM77L4)
 	bool vram_wrote_table[411];
 	bool vram_draw_table[411];
-#endif	
+
 #if defined(_FM77AV_VARIANTS)
 	bool use_alu;
 	DEVICE *alu;
@@ -241,11 +258,11 @@ class DISPLAY: public DEVICE
 	DEVICE *subcpu;
 	DEVICE *keyboard;
 	bool vram_wrote;
-	inline void GETVRAM_8_200L(int yoff, scrntype_t *p, uint32_t rgbmask, bool window_inv);
-	inline void GETVRAM_4096(int yoff, scrntype_t *p, uint32_t rgbmask, bool window_inv);
+	void GETVRAM_8_200L(int yoff, scrntype_t *p, uint32_t rgbmask, bool window_inv);
+	void GETVRAM_4096(int yoff, scrntype_t *p, uint32_t rgbmask, bool window_inv);
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
-	inline void GETVRAM_8_400L(int yoff, scrntype_t *p, uint32_t mask, bool window_inv);
-	inline void GETVRAM_256k(int yoff, scrntype_t *p, uint32_t mask);
+	void GETVRAM_8_400L(int yoff, scrntype_t *p, uint32_t mask, bool window_inv);
+	void GETVRAM_256k(int yoff, scrntype_t *p, uint32_t mask);
 #endif   
 	uint8_t read_vram_l4_400l(uint32_t addr, uint32_t offset);
 	uint8_t read_mmio(uint32_t addr);
@@ -260,6 +277,7 @@ class DISPLAY: public DEVICE
 	void write_mmio(uint32_t addr, uint32_t data);
    
 	uint32_t read_bios(const _TCHAR *name, uint8_t *ptr, uint32_t size);
+	void draw_screen2();
   public:
 	DISPLAY(VM *parent_vm, EMU *parent_emu);
 	~DISPLAY();
@@ -298,11 +316,6 @@ class DISPLAY: public DEVICE
 	}
 	bool screen_update(void);
 	void reset_screen_update(void);
-	const _TCHAR *get_device_name()
-	{
-		return _T("FM7_DISPLAY");
-	}
-   
 	void set_context_kanjiclass1(DEVICE *p)	{
 #if defined(_FM77_VARIANTS) || \
     defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \

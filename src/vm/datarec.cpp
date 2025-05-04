@@ -30,6 +30,7 @@ void DATAREC::initialize()
 	ff_rew = 0;
 	in_signal = out_signal = false;
 	register_id = -1;
+	realtime = false;
 	
 	buffer = buffer_bak = NULL;
 #ifdef DATAREC_SOUND
@@ -53,6 +54,7 @@ void DATAREC::initialize()
 
 void DATAREC::reset()
 {
+	touch_sound();
 	close_tape();
 	pcm_prev_clock = get_current_clock();
 	pcm_positive_clocks = pcm_negative_clocks = 0;
@@ -71,6 +73,7 @@ void DATAREC::write_signal(int id, uint32_t data, uint32_t mask)
 	
 	if(id == SIG_DATAREC_MIC) {
 		if(out_signal != signal) {
+			touch_sound();
 			if(rec && remote) {
 				if(out_signal) {
 					pcm_positive_clocks += get_passed_clock(pcm_prev_clock);
@@ -92,10 +95,12 @@ void DATAREC::write_signal(int id, uint32_t data, uint32_t mask)
 			out_signal = signal;
 		}
 	} else if(id == SIG_DATAREC_REMOTE) {
+		touch_sound();
 		set_remote(signal);
 	} else if(id == SIG_DATAREC_TRIG) {
 		// L->H: remote signal is switched
 		if(signal && !trigger) {
+			touch_sound();
 			set_remote(!remote);
 		}
 		trigger = signal;
@@ -131,7 +136,11 @@ void DATAREC::event_callback(int event_id, int err)
 			bool signal = in_signal;
 			if(is_wav) {
 				if(buffer_ptr >= 0 && buffer_ptr < buffer_length) {
-					signal = ((buffer[buffer_ptr] & 0x80) != 0);
+					if(buffer != NULL) {
+						signal = ((buffer[buffer_ptr] & 0x80) != 0);
+					} else {
+						signal = false;
+					}
 #ifdef DATAREC_SOUND
 					if(sound_buffer != NULL && ff_rew == 0) {
 						sound_sample = sound_buffer[buffer_ptr];
@@ -154,26 +163,31 @@ void DATAREC::event_callback(int event_id, int err)
 				update_event();
 			} else {
 				if(ff_rew < 0) {
-					if(buffer_bak != NULL) {
+					if((buffer_bak != NULL) && (buffer != NULL)) {
 						memcpy(buffer, buffer_bak, buffer_length);
 					}
 					buffer_ptr = 0;
 					set_remote(false);	// top of tape
 				} else {
-					while(buffer_ptr < buffer_length) {
-						if((buffer[buffer_ptr] & 0x7f) == 0) {
-							if(++buffer_ptr == buffer_length) {
-								set_remote(false);	// end of tape
-								signal = false;
+					if(buffer != NULL) {
+						while(buffer_ptr < buffer_length) {
+							if((buffer[buffer_ptr] & 0x7f) == 0) {
+								if(++buffer_ptr == buffer_length) {
+									set_remote(false);	// end of tape
+									signal = false;
+									break;
+								}
+								signal = ((buffer[buffer_ptr] & 0x80) != 0);
+							} else {
+								signal = ((buffer[buffer_ptr] & 0x80) != 0);
+								uint8_t tmp = buffer[buffer_ptr];
+								buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
 								break;
 							}
-							signal = ((buffer[buffer_ptr] & 0x80) != 0);
-						} else {
-							signal = ((buffer[buffer_ptr] & 0x80) != 0);
-							uint8_t tmp = buffer[buffer_ptr];
-							buffer[buffer_ptr] = (tmp & 0x80) | ((tmp & 0x7f) - 1);
-							break;
 						}
+					} else {
+						set_remote(false);	// end of tape
+						signal = false;
 					}
 				}
 			}
@@ -188,6 +202,7 @@ void DATAREC::event_callback(int event_id, int err)
 				pcm_changed = 2;
 				in_signal = signal;
 				signal_changed++;
+				touch_sound();
 				write_signals(&outputs_ear, in_signal ? 0xffffffff : 0);
 			}
 			// chek apss state
@@ -221,7 +236,7 @@ void DATAREC::event_callback(int event_id, int err)
 					}
 				}
 			}
-		} else if(rec) {
+		} else if(rec && buffer != NULL) {
 			if(out_signal) {
 				positive_clocks += get_passed_clock(prev_clock);
 			} else {
@@ -370,6 +385,18 @@ void DATAREC::update_event()
 	write_signals(&outputs_rotate, (register_id != -1) ? 0xffffffff : 0);
 	write_signals(&outputs_end, (buffer_ptr == buffer_length) ? 0xffffffff : 0);
 	write_signals(&outputs_top, (buffer_ptr == 0) ? 0xffffffff : 0);
+	
+	update_realtime_render();
+}
+
+void DATAREC::update_realtime_render()
+{
+	bool value = (remote && (play || rec) && ff_rew == 0 && config.tape_sound);
+	
+	if(realtime != value) {
+		set_realtime_render(this, value);
+		realtime = value;
+	}
 }
 
 bool DATAREC::play_tape(const _TCHAR* file_path)
@@ -445,6 +472,7 @@ bool DATAREC::play_tape(const _TCHAR* file_path)
 		// get the first signal
 		bool signal = ((buffer[0] & 0x80) != 0);
 		if(signal != in_signal) {
+			touch_sound();
 			write_signals(&outputs_ear, signal ? 0xffffffff : 0);
 			in_signal = signal;
 		}
@@ -494,6 +522,7 @@ bool DATAREC::rec_tape(const _TCHAR* file_path)
 
 void DATAREC::close_tape()
 {
+	touch_sound();
 	close_file();
 	
 	play = rec = is_wav = is_tap = false;
@@ -1567,7 +1596,12 @@ double DATAREC::get_ave_hi_freq()
 	return ave_hi_freq;
 }
 
-#define STATE_VERSION	6
+void DATAREC::update_config()
+{
+	update_realtime_render();
+}
+
+#define STATE_VERSION	7
 
 void DATAREC::save_state(FILEIO* state_fio)
 {
@@ -1601,6 +1635,7 @@ void DATAREC::save_state(FILEIO* state_fio)
 	state_fio->FputInt32(negative_clocks);
 	state_fio->FputInt32(signal_changed);
 	state_fio->FputInt32(register_id);
+	state_fio->FputBool(realtime);
 	state_fio->FputInt32(sample_rate);
 	state_fio->FputDouble(sample_usec);
 	state_fio->FputInt32(buffer_ptr);
@@ -1679,6 +1714,7 @@ bool DATAREC::load_state(FILEIO* state_fio)
 	negative_clocks = state_fio->FgetInt32();
 	signal_changed = state_fio->FgetInt32();
 	register_id = state_fio->FgetInt32();
+	realtime = state_fio->FgetBool();
 	sample_rate = state_fio->FgetInt32();
 	sample_usec = state_fio->FgetDouble();
 	buffer_ptr = state_fio->FgetInt32();

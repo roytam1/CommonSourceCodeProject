@@ -341,6 +341,13 @@ public:
 		d_dma = NULL;
 #endif
 		busreq = false;
+#if defined(HAS_I86)
+		set_device_name(_T("8086 CPU"));
+#elif defined(HAS_I186)
+		set_device_name(_T("80186 CPU"));
+#elif defined(HAS_V30)
+		set_device_name(_T("V30 CPU"));
+#endif
 	}
 	~I86() {}
 	
@@ -393,10 +400,6 @@ public:
 #endif
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("8086");
-	}
 	
 	// unique function
 	void set_context_mem(DEVICE* device)

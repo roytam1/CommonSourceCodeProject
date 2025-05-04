@@ -48,7 +48,10 @@ private:
 	void paint(int sx, int sy, int col);
 	
 public:
-	HD63484(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	HD63484(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		set_device_name(_T("HD63484 ACRTC"));
+	}
 	~HD63484() {}
 	
 	// common functions
@@ -59,10 +62,6 @@ public:
 	void write_io16(uint32_t addr, uint32_t data);
 	uint32_t read_io16(uint32_t addr);
 	void event_vline(int v, int clock);
-	const _TCHAR *get_device_name()
-	{
-		return _T("HD63484");
-	}
 	
 	// unique functions
 	void set_vram_ptr(uint16_t* ptr, uint32_t size)

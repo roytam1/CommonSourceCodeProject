@@ -28,8 +28,7 @@ class JOYSTICK : public DEVICE {
 	uint32_t mouse_data;
 	int mouse_phase;
 	int mouse_timeout_event;
-	uint32_t port_a_val;
-	uint32_t port_b_val;
+	uint8_t port_b_val;
 	uint8_t lpmask;
 	int lpt_type;
  protected:
@@ -56,10 +55,6 @@ class JOYSTICK : public DEVICE {
 	void update_config();
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("FM7_JOYSTICK");
-	}
 	
 	//void set_context_opn(DEVICE *p) {
 	//	opn = p;

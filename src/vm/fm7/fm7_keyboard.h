@@ -41,7 +41,7 @@ class KEYBOARD : public DEVICE {
 
 	uint32_t keycode_7;
 	int keymode;
- private:
+private:
 	bool ctrl_pressed; 
 	bool lshift_pressed; 
 	bool rshift_pressed; 
@@ -55,9 +55,11 @@ class KEYBOARD : public DEVICE {
 	
 	int event_keyrepeat;
 	int event_key_rtc;
-	uint8_t repeat_keycode;
+	
 	bool key_pressed_flag[0x70];
-	uint32_t scancode;
+	uint8_t scancode;
+	uint8_t autokey_backup;
+	uint8_t repeat_keycode;
 	
 	uint8_t datareg;
 	uint32_t older_vk;
@@ -84,17 +86,19 @@ class KEYBOARD : public DEVICE {
 
 	DEVICE *beep;
 	bool did_hidden_message_av_1;
+	int beep_phase;
 #endif
 	FIFO *key_fifo;
 	int event_int;
    
 	uint16_t vk2scancode(uint32_t vk);
-	bool isModifier(uint16_t scancode);
-	void set_modifiers(uint16_t scancode, bool flag);
-	uint16_t scan2fmkeycode(uint16_t scancode);
-	void do_repeatkey(uint16_t scancode);
+	bool isModifier(uint8_t sc);
+	void set_modifiers(uint8_t sc, bool flag);
+	uint16_t scan2fmkeycode(uint8_t sc);
+	void do_repeatkey(uint8_t sc);
 	void reset_unchange_mode(void);
-	void key_down_main(void);
+	void key_down_main(bool repeat_auto_key);
+	void key_up_main(uint8_t bak_scancode);
    
 #if defined(_FM77AV_VARIANTS)   
 	void set_mode(void);
@@ -132,11 +136,6 @@ class KEYBOARD : public DEVICE {
 	void release(void);
 	void save_state(FILEIO *f);
 	bool load_state(FILEIO *f);
-	const _TCHAR *get_device_name()
-	{
-		return _T("FM7_KEYBOARD");
-	}
-
 	void set_context_rxrdy(DEVICE *p, int id, uint32_t mask) {
 #if defined(_FM77AV_VARIANTS)  
 		register_output_signal(&rxrdy, p, id, mask);

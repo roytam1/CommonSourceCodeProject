@@ -44,6 +44,11 @@ public:
 	SN76489AN(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		volume_l = volume_r = 1024;
+#ifdef HAS_SN76489
+		set_device_name(_T("SN76489 PSG"));
+#else
+		set_device_name(_T("SN76489AN PSG"));
+#endif
 	}
 	~SN76489AN() {}
 	
@@ -56,10 +61,6 @@ public:
 	void set_volume(int ch, int decibel_l, int decibel_r);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("SN76489AN");
-	}
 	
 	// unique function
 	void initialize_sound(int rate, int clock, int volume);

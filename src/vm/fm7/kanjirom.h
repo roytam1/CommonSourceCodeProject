@@ -6,16 +6,22 @@
  *  Feb 11, 2015 : Initial
  */
 
-#include "../device.h"
-#include "../mc6809.h"
+#ifndef _FM7_KANJIROM_H_
+#define _FM7_KANJIROM_H_
 
+#include "./fm7.h"
+#include "fm7_common.h"
+#include "../device.h"
+class EMU;
+class VM;
 class KANJIROM: public DEVICE {
 private:
+	EMU *p_emu;
 	uint8_t data_table[0x20000];
 	bool read_ok;
 	bool class2;
 	pair_t kanjiaddr;
- public:
+public:
 	KANJIROM(VM *parent_vm, EMU* parent_emu, bool type_2std);
 	~KANJIROM();
 	void write_data8(uint32_t addr, uint32_t data);
@@ -23,15 +29,8 @@ private:
 	void release();
 	void reset(void);
 	bool get_readstat(void);
-	const _TCHAR *get_device_name()
-	{
-		if(class2) {
-			return _T("FM7_KANJI_CLASS2");
-		} else {
-			return _T("FM7_KANJI_CLASS1");
-		}
-	}
 	
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
 };
+#endif

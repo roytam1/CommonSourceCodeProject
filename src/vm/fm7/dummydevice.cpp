@@ -8,19 +8,8 @@
  *
  */
 
+//#include "emu.h"
 #include "dummydevice.h"
-
-
-DUMMYDEVICE::DUMMYDEVICE(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
-{
-	status = 0x00000000;
-	clear_on_reset = true;
-	clear_with_zero = true;
-}
-
-DUMMYDEVICE::~DUMMYDEVICE()
-{
-}
 
 uint32_t DUMMYDEVICE::read_signal(int id)
 {
@@ -76,6 +65,7 @@ void DUMMYDEVICE::save_state(FILEIO *state_fio)
 {
 	state_fio->FputUint32_BE(STATE_VERSION);
 	state_fio->FputInt32_BE(this_device_id);
+	this->out_debug_log("Save State: id=%d ver=%d\n", this_device_id, STATE_VERSION);
 	// Version 1
 	{
 		state_fio->FputUint32_BE(status);
@@ -88,13 +78,14 @@ bool DUMMYDEVICE::load_state(FILEIO *state_fio)
 {
 	uint32_t version;
 	version = state_fio->FgetUint32_BE();
+	this->out_debug_log("Load State: id=%d ver=%d\n", this_device_id, version);
 	if(this_device_id != state_fio->FgetInt32_BE()) return false;
 	// Version 1
-	if((version < 1) || (version > STATE_VERSION)) return false;
 	{
 		status = state_fio->FgetUint32_BE();
 		clear_on_reset = state_fio->FgetBool();
 		clear_with_zero = state_fio->FgetBool();
 	}
+	if(version != STATE_VERSION) return false;
 	return true;
 }

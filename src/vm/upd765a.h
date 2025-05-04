@@ -128,6 +128,7 @@ public:
 		initialize_output_signals(&outputs_index);
 		force_ready = false;
 		raise_irq_when_media_changed = false;
+		set_device_name(_T("uPD765A FDC"));
 	}
 	~UPD765A() {}
 	
@@ -144,10 +145,6 @@ public:
 	void event_callback(int event_id, int err);
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("uPD765A");
-	}
 	
 	// unique function
 	void set_context_irq(DEVICE* device, int id, uint32_t mask)

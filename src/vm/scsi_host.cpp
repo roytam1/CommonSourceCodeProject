@@ -26,7 +26,7 @@ void SCSI_HOST::write_dma_io8(uint32_t addr, uint32_t data)
 #endif
 {
 	#ifdef _SCSI_DEBUG_LOG
-		emu->force_out_debug_log(_T("[SCSI_HOST] Write %02X\n"), data);
+		this->force_out_debug_log(_T("[SCSI_HOST] Write %02X\n"), data);
 	#endif
 	write_signals(&outputs_dat, data);
 	
@@ -46,7 +46,7 @@ uint32_t SCSI_HOST::read_dma_io8(uint32_t addr)
 {
 	uint32_t value = data_reg;
 	#ifdef _SCSI_DEBUG_LOG
-		emu->force_out_debug_log(_T("[SCSI_HOST] Read %02X\n"), value);
+		this->force_out_debug_log(_T("[SCSI_HOST] Read %02X\n"), value);
 	#endif
 	#ifdef SCSI_HOST_AUTO_ACK
 		// set ack to clear req signal immediately
@@ -63,28 +63,28 @@ void SCSI_HOST::write_signal(int id, uint32_t data, uint32_t mask)
 	// from initiator
 	case SIG_SCSI_SEL:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_HOST] SEL = %d\n"), (data & mask) ? 1 : 0);
+			this->out_debug_log(_T("[SCSI_HOST] SEL = %d\n"), (data & mask) ? 1 : 0);
 		#endif
 		write_signals(&outputs_sel, (data & mask) ? 0xffffffff : 0);
 		break;
 		
 	case SIG_SCSI_ATN:
 		#ifdef _SCSI_DEBUG_LOG
-//			emu->out_debug_log(_T("[SCSI_HOST] ATN = %d\n"), (data & mask) ? 1 : 0);
+//			this->out_debug_log(_T("[SCSI_HOST] ATN = %d\n"), (data & mask) ? 1 : 0);
 		#endif
 		write_signals(&outputs_atn, (data & mask) ? 0xffffffff : 0);
 		break;
 		
 	case SIG_SCSI_ACK:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_HOST] ACK = %d\n"), (data & mask) ? 1 : 0);
+			this->out_debug_log(_T("[SCSI_HOST] ACK = %d\n"), (data & mask) ? 1 : 0);
 		#endif
 		write_signals(&outputs_ack, (data & mask) ? 0xffffffff : 0);
 		break;
 		
 	case SIG_SCSI_RST:
 		#ifdef _SCSI_DEBUG_LOG
-			emu->out_debug_log(_T("[SCSI_HOST] RST = %d\n"), (data & mask) ? 1 : 0);
+			this->out_debug_log(_T("[SCSI_HOST] RST = %d\n"), (data & mask) ? 1 : 0);
 		#endif
 		write_signals(&outputs_rst, (data & mask) ? 0xffffffff : 0);
 		break;

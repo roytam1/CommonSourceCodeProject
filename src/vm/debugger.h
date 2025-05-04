@@ -66,6 +66,7 @@ public:
 		memset(&obp, 0, sizeof(obp));
 		my_tcscpy_s(file_path, _MAX_PATH, _T("debug.bin"));
 		now_debugging = now_going = now_suspended = false;
+		set_device_name(_T("Debugger"));
 	}
 	~DEBUGGER() {}
 	
@@ -194,10 +195,6 @@ public:
 	{
 		check_io_break_points(&ibp, addr);
 		return d_io->read_io32w(addr, wait);
-	}
-	const _TCHAR *get_device_name()
-	{
-		return _T("Debugger");
 	}
 	
 	// unique functions

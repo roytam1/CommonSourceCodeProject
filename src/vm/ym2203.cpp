@@ -4,7 +4,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2006.09.15-
 
-	[ AY-3-8910 / YM2203 / YM2608 ]
+	[ YM2203 / YM2608 ]
 */
 
 #include "ym2203.h"
@@ -51,6 +51,7 @@ void YM2203::release()
 
 void YM2203::reset()
 {
+	touch_sound();
 #ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->Reset();
@@ -72,14 +73,12 @@ void YM2203::reset()
 	timer_event_id = -1;
 	this->set_reg(0x27, 0);
 	
-#ifdef SUPPORT_YM2203_PORT
 	port[0].first = port[1].first = true;
 	port[0].wreg = port[1].wreg = 0;//0xff;
 #ifdef YM2203_PORT_MODE
 	mode = YM2203_PORT_MODE;
 #else
 	mode = 0;
-#endif
 #endif
 	irq_prev = busy = false;
 }
@@ -94,7 +93,6 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr & amask) {
 	case 0:
-#ifdef HAS_YM_SERIES
 		ch = data;
 		// write dummy data for prescaler
 		if(0x2d <= ch && ch <= 0x2f) {
@@ -104,12 +102,8 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 			clock_busy = get_current_clock();
 			busy = true;
 		}
-#else
-		ch = data & 0x0f;
-#endif
 		break;
 	case 1:
-#ifdef SUPPORT_YM2203_PORT
 		if(ch == 7) {
 #ifdef YM2203_PORT_MODE
 			mode = (data & 0x3f) | YM2203_PORT_MODE;
@@ -117,23 +111,18 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 			mode = data;
 #endif
 		} else if(ch == 14) {
-#ifdef SUPPORT_YM2203_PORT_A
 			if(port[0].wreg != data || port[0].first) {
 				write_signals(&port[0].outputs, data);
 				port[0].wreg = data;
 				port[0].first = false;
 			}
-#endif
 		} else if(ch == 15) {
-#ifdef SUPPORT_YM2203_PORT_B
 			if(port[1].wreg != data || port[1].first) {
 				write_signals(&port[1].outputs, data);
 				port[1].wreg = data;
 				port[1].first = false;
 			}
-#endif
 		}
-#endif
 		if(0x2d <= ch && ch <= 0x2f) {
 			// don't write again for prescaler
 		} else if(0xa4 <= ch && ch <= 0xa6) {
@@ -149,11 +138,9 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 			if(ch == 0x27) {
 				update_event();
 			}
-#ifdef HAS_YM_SERIES
 			update_interrupt();
 			clock_busy = get_current_clock();
 			busy = true;
-#endif
 		}
 		break;
 #ifdef HAS_YM2608
@@ -184,7 +171,6 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 uint32_t YM2203::read_io8(uint32_t addr)
 {
 	switch(addr & amask) {
-#ifdef HAS_YM_SERIES
 	case 0:
 		{
 			/* BUSY : x : x : x : x : x : FLAGB : FLAGA */
@@ -211,19 +197,12 @@ uint32_t YM2203::read_io8(uint32_t addr)
 			}
 			return status;
 		}
-#endif
 	case 1:
-#ifdef SUPPORT_YM2203_PORT
 		if(ch == 14) {
-#ifdef SUPPORT_YM2203_PORT_A
 			return (mode & 0x40) ? port[0].wreg : port[0].rreg;
-#endif
 		} else if(ch == 15) {
-#ifdef SUPPORT_YM2203_PORT_B
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
-#endif
 		}
-#endif
 #ifdef HAS_YM2608
 		if(is_ym2608) {
 			return opna->GetReg(ch);
@@ -263,31 +242,23 @@ void YM2203::write_signal(int id, uint32_t data, uint32_t mask)
 {
 	if(id == SIG_YM2203_MUTE) {
 		mute = ((data & mask) != 0);
-#ifdef SUPPORT_YM2203_PORT_A
 	} else if(id == SIG_YM2203_PORT_A) {
 		port[0].rreg = (port[0].rreg & ~mask) | (data & mask);
-#endif
-#ifdef SUPPORT_YM2203_PORT_B
 	} else if(id == SIG_YM2203_PORT_B) {
 		port[1].rreg = (port[1].rreg & ~mask) | (data & mask);
-#endif
 	}
 }
 
 void YM2203::event_vline(int v, int clock)
 {
 	update_count();
-#ifdef HAS_YM_SERIES
 	update_interrupt();
-#endif
 }
 
 void YM2203::event_callback(int event_id, int error)
 {
 	update_count();
-#ifdef HAS_YM_SERIES
 	update_interrupt();
-#endif
 	timer_event_id = -1;
 	update_event();
 }
@@ -333,7 +304,6 @@ void YM2203::update_event()
 	}
 }
 
-#ifdef HAS_YM_SERIES
 void YM2203::update_interrupt()
 {
 	bool irq;
@@ -350,7 +320,6 @@ void YM2203::update_interrupt()
 	}
 	irq_prev = irq;
 }
-#endif
 
 void YM2203::mix(int32_t* buffer, int cnt)
 {
@@ -473,6 +442,7 @@ void YM2203::initialize_sound(int rate, int clock, int samples, int decibel_fm, 
 
 void YM2203::set_reg(uint32_t addr, uint32_t data)
 {
+	touch_sound();
 #ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->SetReg(addr, data);
@@ -501,7 +471,7 @@ void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_li
 	clock_const = (uint32_t)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks + 0.5);
 }
 
-#define STATE_VERSION	3
+#define STATE_VERSION	4
 
 void YM2203::save_state(FILEIO* state_fio)
 {
@@ -524,14 +494,12 @@ void YM2203::save_state(FILEIO* state_fio)
 	state_fio->FputUint8(data1);
 	state_fio->FputUint8(fnum21);
 #endif
-#ifdef SUPPORT_YM2203_PORT
 	for(int i = 0; i < 2; i++) {
 		state_fio->FputUint8(port[i].wreg);
 		state_fio->FputUint8(port[i].rreg);
 		state_fio->FputBool(port[i].first);
 	}
 	state_fio->FputUint8(mode);
-#endif
 	state_fio->FputInt32(chip_clock);
 	state_fio->FputBool(irq_prev);
 	state_fio->FputBool(mute);
@@ -574,14 +542,12 @@ bool YM2203::load_state(FILEIO* state_fio)
 	data1 = state_fio->FgetUint8();
 	fnum21 = state_fio->FgetUint8();
 #endif
-#ifdef SUPPORT_YM2203_PORT
 	for(int i = 0; i < 2; i++) {
 		port[i].wreg = state_fio->FgetUint8();
 		port[i].rreg = state_fio->FgetUint8();
 		port[i].first = state_fio->FgetBool();
 	}
 	mode = state_fio->FgetUint8();
-#endif
 	chip_clock = state_fio->FgetInt32();
 	irq_prev = state_fio->FgetBool();
 	mute = state_fio->FgetBool();

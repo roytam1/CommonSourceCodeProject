@@ -22,12 +22,16 @@
 #define QD_BASE_NUMBER 1
 #endif
 
+#if defined(_USE_QT)
+extern CSP_Logger *csp_logger;
+#endif
+
 // ----------------------------------------------------------------------------
 // initialize
 // ----------------------------------------------------------------------------
 
 #if defined(OSD_QT)
-EMU::EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst)
+EMU::EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst, USING_FLAGS *p)
 #elif defined(OSD_WIN32)
 EMU::EMU(HWND hwnd, HINSTANCE hinst)
 #else
@@ -42,6 +46,10 @@ EMU::EMU()
 #ifdef USE_FD1
 	// initialize d88 file info
 	memset(d88_file, 0, sizeof(d88_file));
+#endif
+#ifdef USE_BUBBLE1
+	// initialize b77 file info
+	memset(b77_file, 0, sizeof(b77_file));
 #endif
 	
 	// load sound config
@@ -76,7 +84,11 @@ EMU::EMU()
 #endif
 	
 	// initialize osd
+#if defined(OSD_QT)
+	osd = new OSD(p, csp_logger);
+#else
 	osd = new OSD();
+#endif
 #if defined(OSD_QT)
 	osd->main_window_handle = hwnd;
 	osd->glv = hinst;
@@ -89,6 +101,19 @@ EMU::EMU()
 	
 	// initialize vm
 	osd->vm = vm = new VM(this);
+#if defined(_USE_QT)
+	osd->reset_vm_node();
+#endif
+#if defined(_FM7) || defined(_FMNEW7) || defined(_FM8) || defined(_FM77_VARIANTS)
+	// Below is temporally workaround. I will fix ASAP (or give up): 20160311 K.Ohta
+	// Problems seem to be resolved. See fm7.cpp. 20160319 K.Ohta
+	// Still not resolved with FM-7/77 :-( 20160407 K.Ohta
+	delete vm;
+	osd->vm = vm = new VM(this);
+# if defined(_USE_QT)
+	osd->reset_vm_node();
+# endif
+#endif
 #ifdef USE_AUTO_KEY
 	initialize_auto_key();
 #endif
@@ -230,6 +255,9 @@ void EMU::reset()
 		osd->lock_vm();
 		delete vm;
 		osd->vm = vm = new VM(this);
+#if defined(_USE_QT)
+		osd->reset_vm_node();
+#endif
 		vm->initialize_sound(sound_rate, sound_samples);
 #ifdef USE_SOUND_VOLUME
 		for(int i = 0; i < USE_SOUND_VOLUME; i++) {
@@ -247,8 +275,8 @@ void EMU::reset()
 		osd->unlock_vm();
 	}
 	
-	// restart recording
 #if !defined(_USE_QT) // Temporally
+	// restart recording
 	osd->restart_record_sound();
 	osd->restart_record_video();
 #endif
@@ -262,8 +290,8 @@ void EMU::special_reset()
 	vm->special_reset();
 	osd->unlock_vm();
 	
-	// restart recording
 #if !defined(_USE_QT) // Temporally
+	// restart recording
 	osd->restart_record_sound();
 	osd->restart_record_video();
 #endif
@@ -963,7 +991,7 @@ void EMU::out_debug_log(const _TCHAR* format, ...)
 	my_tcscpy_s(prev_buffer, 1024, buffer);
 	
 #if defined(_USE_QT) || defined(_USE_AGAR) || defined(_USE_SDL)
-	AGAR_DebugLog(AGAR_LOG_DEBUG, "%s", buffer);
+	csp_logger->debug_log(CSP_LOG_DEBUG, CSP_LOG_TYPE_EMU, "%s", buffer);
 #else
 	if(debug_log) {
 		_ftprintf(debug_log, _T("%s"), buffer);
@@ -990,7 +1018,7 @@ void EMU::force_out_debug_log(const _TCHAR* format, ...)
 	my_tcscpy_s(prev_buffer, 1024, buffer);
 	
 #if defined(_USE_QT) || defined(_USE_AGAR) || defined(_USE_SDL)
-	AGAR_DebugLog(AGAR_LOG_DEBUG, "%s", buffer);
+	csp_logger->debug_log(CSP_LOG_DEBUG, CSP_LOG_TYPE_EMU, "%s", buffer);
 #else
 	if(debug_log) {
 		_ftprintf(debug_log, _T("%s"), buffer);
@@ -1060,8 +1088,8 @@ static bool hex2bin(const _TCHAR* file_path, const _TCHAR* dest_path)
 			if(record_type == 0x01) break;
 			if(record_type != 0x00) continue;
 			for(int i = 0; i < bytes; i++) {
-				if(offset + i < sizeof(buffer)) {
-					if(length < offset + i) {
+				if((offset + i) < (int)sizeof(buffer)) {
+					if(length < (offset + i)) {
 						length = offset + i;
 					}
 					buffer[offset + i] = hex2uint8(line + 9 + 2 * i);
@@ -1145,6 +1173,14 @@ void EMU::update_media()
 		out_message(_T("LD: %s"), laser_disc_status.path);
 	}
 #endif
+#ifdef USE_BUBBLE1
+	for(int drv = 0; drv < MAX_BUBBLE; drv++) {
+		if(bubble_casette_status[drv].wait_count != 0 && --bubble_casette_status[drv].wait_count == 0) {
+			vm->open_bubble_casette(drv, bubble_casette_status[drv].path, bubble_casette_status[drv].bank);
+			out_message(_T("Bubble%d: %s"), drv, bubble_casette_status[drv].path);
+		}
+	}
+#endif
 }
 
 void EMU::restore_media()
@@ -1194,6 +1230,13 @@ void EMU::restore_media()
 		vm->open_laser_disc(laser_disc_status.path);
 	}
 #endif
+#ifdef USE_BUBBLE1
+	for(int drv = 0; drv < MAX_BUBBLE; drv++) {
+		if(bubble_casette_status[drv].path[0] != _T('\0')) {
+			vm->open_bubble_casette(drv, bubble_casette_status[drv].path, bubble_casette_status[drv].bank);
+		}
+	}
+#endif
 }
 
 #ifdef USE_CART1
@@ -1209,6 +1252,7 @@ void EMU::open_cart(int drv, const _TCHAR* file_path)
 		my_tcscpy_s(cart_status[drv].path, _MAX_PATH, file_path);
 		out_message(_T("Cart%d: %s"), drv + 1, file_path);
 		
+#if !defined(_USE_QT) // Temporally
 		// restart recording
 		bool s = osd->now_record_sound;
 		bool v = osd->now_record_video;
@@ -1216,6 +1260,7 @@ void EMU::open_cart(int drv, const _TCHAR* file_path)
 		stop_record_video();
 		if(s) osd->start_record_sound();
 		if(v) osd->start_record_video(-1);
+#endif
 	}
 }
 
@@ -1226,9 +1271,11 @@ void EMU::close_cart(int drv)
 		clear_media_status(&cart_status[drv]);
 		out_message(_T("Cart%d: Ejected"), drv + 1);
 		
+#if !defined(_USE_QT) // Temporally
 		// stop recording
 		stop_record_video();
 		stop_record_sound();
+#endif
 	}
 }
 
@@ -1527,6 +1574,63 @@ void EMU::save_binary(int drv, const _TCHAR* file_path)
 }
 #endif
 
+#ifdef USE_BUBBLE1
+void EMU::open_bubble_casette(int drv, const _TCHAR* file_path, int bank)
+{
+	if(drv < MAX_BUBBLE) {
+		if(vm->is_bubble_casette_inserted(drv)) {
+			vm->close_bubble_casette(drv);
+			// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+			bubble_casette_status[drv].wait_count = (int)(vm->get_frame_rate() / 2);
+#else
+			bubble_casette_status[drv].wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+			out_message(_T("Bubble%d: Ejected"), drv + 1);
+		} else if(bubble_casette_status[drv].wait_count == 0) {
+			vm->open_bubble_casette(drv, file_path, bank);
+			out_message(_T("Bubble%d: %s"), drv + 1, file_path);
+		}
+		my_tcscpy_s(bubble_casette_status[drv].path, _MAX_PATH, file_path);
+		bubble_casette_status[drv].bank = bank;
+	}
+}
+
+void EMU::close_bubble_casette(int drv)
+{
+	if(drv < MAX_BUBBLE) {
+		vm->close_bubble_casette(drv);
+		clear_media_status(&bubble_casette_status[drv]);
+		out_message(_T("Bubble%d: Ejected"), drv + 1);
+	}
+}
+
+bool EMU::is_bubble_casette_inserted(int drv)
+{
+	if(drv < MAX_BUBBLE) {
+		return vm->is_bubble_casette_inserted(drv);
+	} else {
+		return false;
+	}
+}
+
+void EMU::is_bubble_casette_protected(int drv, bool flag)
+{
+	if(drv < MAX_BUBBLE) {
+		vm->is_bubble_casette_protected(drv, flag);
+	}
+}
+
+bool EMU::is_bubble_casette_protected(int drv)
+{
+	if(drv < MAX_BUBBLE) {
+		return vm->is_bubble_casette_protected(drv);
+	} else {
+		return false;
+	}
+}
+#endif
+
 #ifdef USE_ACCESS_LAMP
 uint32_t EMU::get_access_lamp_status()
 {
@@ -1667,6 +1771,9 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 //					osd->lock_vm();
 					delete vm;
 					osd->vm = vm = new VM(this);
+#if defined(_USE_QT)
+					osd->reset_vm_node();
+#endif
 					vm->initialize_sound(sound_rate, sound_samples);
 #ifdef USE_SOUND_VOLUME
 					for(int i = 0; i < USE_SOUND_VOLUME; i++) {

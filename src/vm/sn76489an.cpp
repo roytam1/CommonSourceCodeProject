@@ -30,6 +30,7 @@ void SN76489AN::initialize()
 
 void SN76489AN::reset()
 {
+	touch_sound();
 	for(int i = 0; i < 4; i++) {
 		ch[i].count = 0;
 		ch[i].period = 1;
@@ -53,17 +54,20 @@ void SN76489AN::write_io8(uint32_t addr, uint32_t data)
 		switch(index & 7) {
 		case 0: case 2: case 4:
 			// tone : frequency
+			touch_sound();
 			regs[index] = (regs[index] & 0x3f0) | (data & 0x0f);
 			ch[c].period = regs[index] ? regs[index] : 0x400;
 //			ch[c].count = 0;
 			break;
 		case 1: case 3: case 5: case 7:
 			// tone / noise : volume
+			touch_sound();
 			regs[index] = data & 0x0f;
 			ch[c].volume = volume_table[data & 0x0f];
 			break;
 		case 6:
 			// noise : frequency, mode
+			touch_sound();
 			regs[6] = data;
 			data &= 3;
 			ch[3].period = (data == 3) ? (ch[2].period << 1) : (1 << (data + 5));
@@ -78,6 +82,7 @@ void SN76489AN::write_io8(uint32_t addr, uint32_t data)
 		switch(index & 0x07) {
 		case 0: case 2: case 4:
 			// tone : frequency
+			touch_sound();
 			regs[index] = (regs[index] & 0x0f) | (((uint16_t)data << 4) & 0x3f0);
 			ch[c].period = regs[index] ? regs[index] : 0x400;
 //			ch[c].count = 0;

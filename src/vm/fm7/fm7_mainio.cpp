@@ -18,7 +18,9 @@
 #if defined(HAS_DMA)
 #include "hd6844.h"
 #endif
-
+#if defined(_FM8)
+#include "bubblecasette.h"
+#endif
 
 FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 {
@@ -26,11 +28,14 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	p_vm = parent_vm;
 	p_emu = parent_emu;
 #if defined(_FM8)
-	opn[0] = NULL;
+    psg = NULL;
 #else
-	for(i = 0; i < 4; i++) {
+	for(i = 0; i < 3; i++) {
 		opn[i] = NULL;
 	}
+# if !defined(_FM77AV_VARIANTS)
+	psg = NULL;
+#endif
 #endif
 	drec = NULL;
 	pcm1bit = NULL;
@@ -49,7 +54,10 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 #ifdef WITH_Z80
 	z80 = NULL;
 #endif	
-	
+#if defined(_FM8)
+	bubble_casette[0] = NULL;
+	bubble_casette[1] = NULL;
+#endif	
 	// FD00
 	clock_fast = true;
 	lpt_strobe = false;  // bit6
@@ -160,6 +168,7 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	initialize_output_signals(&printer_reset_bus);
 	initialize_output_signals(&printer_strobe_bus);
 	initialize_output_signals(&printer_select_bus);
+	set_device_name(_T("MAIN I/O"));
 }
 
 FM7_MAINIO::~FM7_MAINIO()
@@ -210,10 +219,8 @@ void FM7_MAINIO::reset()
 #endif
 	// Around boot rom
 #if defined(_FM77_VARIANTS)
-	//boot_ram = (mainmem->read_signal(FM7_MAINIO_BOOTRAM_RW) == 0) ? false : true;
 	boot_ram = false;
 #elif defined(_FM77AV_VARIANTS)
-	//boot_ram = (mainmem->read_signal(FM7_MAINIO_BOOTRAM_RW) == 0) ? false : true;
 	boot_ram = true;
 #endif
 	// FD05
@@ -262,8 +269,10 @@ void FM7_MAINIO::reset()
 	irqreq_printer = false;
 	irqreq_keyboard = false;
 	// FD00
-	drec->write_signal(SIG_DATAREC_MIC, 0x00, 0x01);
-	drec->set_remote(false);
+	if(drec != NULL) {
+		drec->write_signal(SIG_DATAREC_MIC, 0x00, 0x01);
+		drec->write_signal(SIG_DATAREC_REMOTE, 0x00, 0x02);
+	}
 	reset_fdc();
 	reset_sound();
 	
@@ -285,6 +294,12 @@ void FM7_MAINIO::reset()
 #if defined(_FM77AV_VARIANTS)
 	reg_fd12 = 0xbc; // 0b10111100
 #endif		
+//#if defined(_FM8)
+//	bubble_casette[0]->reset();
+//	bubble_casette[1]->reset();
+//#endif	
+
+
 #if !defined(_FM8)
 	register_event(this, EVENT_TIMERIRQ_ON, 10000.0 / 4.9152, true, &event_timerirq); // TIMER IRQ
 #endif
@@ -322,7 +337,6 @@ void FM7_MAINIO::set_clockmode(uint8_t flags)
 	}
 	if(f != clock_fast) {
 		this->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
-		//mainmem->write_signal(FM7_MAINIO_CLOCKMODE, clock_fast ? 1 : 0, 1);
 	}
 }
 
@@ -347,8 +361,10 @@ uint8_t FM7_MAINIO::get_port_fd00(void)
   
 void FM7_MAINIO::set_port_fd00(uint8_t data)
 {
-	drec->write_signal(SIG_DATAREC_MIC, data, 0x01);
-	drec->set_remote(((data & 0x02) != 0));
+	if(drec != NULL) {
+		drec->write_signal(SIG_DATAREC_MIC, data, 0x01);
+		drec->write_signal(SIG_DATAREC_REMOTE, data, 0x02);
+	}	
 	lpt_slctin = ((data & 0x80) == 0);
 	lpt_strobe = ((data & 0x40) != 0);
 	this->write_signals(&printer_strobe_bus, lpt_strobe ? 0xffffffff : 0);
@@ -395,13 +411,13 @@ void FM7_MAINIO::set_port_fd02(uint8_t val)
 #if !defined(_FM8)	
 	irqmask_reg0 = val;
 	bool syndetirq_bak = irqmask_syndet;
-	bool rxrdyirq_bak = irqmask_rxrdy;
-	bool txrdyirq_bak = irqmask_txrdy;
+	//bool rxrdyirq_bak = irqmask_rxrdy;
+	//bool txrdyirq_bak = irqmask_txrdy;
 	
 	bool keyirq_bak = irqmask_keyboard;
-	bool timerirq_bak = irqmask_timer;
-	bool printerirq_bak = irqmask_printer;
-	bool mfdirq_bak = irqmask_mfd;
+	//bool timerirq_bak = irqmask_timer;
+	//bool printerirq_bak = irqmask_printer;
+	//bool mfdirq_bak = irqmask_mfd;
 	
 	//	if((val & 0b00010000) != 0) {
 	if((val & 0x80) != 0) {
@@ -527,7 +543,6 @@ void FM7_MAINIO::set_irq_txrdy(bool flag)
 void FM7_MAINIO::set_irq_timer(bool flag)
 {
 #if !defined(_FM8)
-	bool backup = irqstat_timer;
 	if(flag) {
 		irqstat_reg0 &= 0xfb; //~0x04;
 		irqstat_timer = true;	   
@@ -535,7 +550,6 @@ void FM7_MAINIO::set_irq_timer(bool flag)
 		irqstat_reg0 |= 0x04;
 		irqstat_timer = false;	   
 	}
-	//if(backup != irqstat_timer) do_irq();
 	do_irq();
 #endif	
 }
@@ -543,7 +557,6 @@ void FM7_MAINIO::set_irq_timer(bool flag)
 void FM7_MAINIO::set_irq_printer(bool flag)
 {
 #if !defined(_FM8)
-	uint8_t backup = irqstat_reg0;
 	irqreq_printer = flag;
 	if(flag && !(irqmask_printer)) {
 		irqstat_reg0 &= ~0x02;
@@ -604,8 +617,7 @@ void FM7_MAINIO::do_firq(void)
 	} else {
 		maincpu->write_signal(SIG_CPU_FIRQ, 0, 1);
 	}
-	p_emu->out_debug_log(_T("IO: do_firq(). BREAK=%d ATTN=%d"), firq_break_key ? 1 : 0, firq_sub_attention ? 1 : 0);
-
+	//this->out_debug_log(_T("IO: do_firq(). BREAK=%d ATTN=%d"), firq_break_key ? 1 : 0, firq_sub_attention ? 1 : 0);
 }
 
 void FM7_MAINIO::do_nmi(bool flag)
@@ -630,8 +642,12 @@ void FM7_MAINIO::set_sub_attention(bool flag)
 uint8_t FM7_MAINIO::get_fd04(void)
 {
 	uint8_t val = 0x00;
+	bool f;
 	if(display->read_signal(SIG_DISPLAY_BUSY) != 0) val |= 0x80;
-	if(!firq_break_key) val |= 0x02;
+	
+	//f = keyboard->read_signal(SIG_FM7KEY_BREAK_KEY);
+	f = firq_break_key;
+	if(!f) val |= 0x02;
 	if(!firq_sub_attention) {
 		val |= 0x01;
 	}
@@ -1006,7 +1022,7 @@ void FM7_MAINIO::write_signal(int id, uint32_t data, uint32_t mask)
 	irqstat_printer = false;
 	irqstat_reg0 |= 0x06;
 	do_irq();
-	//p_emu->out_debug_log(_T("IO: Check IRQ Status."));
+	//this->out_debug_log(_T("IO: Check IRQ Status."));
 	return val;
 #else
 	return 0xff;
@@ -1050,7 +1066,7 @@ uint32_t FM7_MAINIO::read_io8(uint32_t addr)
 		return io_w_latch[addr];
 	} else if(addr < 0x500) {
 		uint32_t ofset = addr & 0xff;
-		uint opnbank = (addr - 0x100) >> 8;
+		uint32_t opnbank = (addr - 0x100) >> 8;
 		return opn_regs[opnbank][ofset];
 	} else if(addr < 0x600) {
 		return mainmem->read_data8(addr - 0x500 + FM7_MAINIO_MMR_BANK);
@@ -1131,6 +1147,18 @@ uint32_t FM7_MAINIO::read_data8(uint32_t addr)
 		  	read_fd0f();
 			retval = 0xff;
 			break;
+#if defined(_FM8)
+		case 0x10:
+		case 0x11:
+		case 0x12:
+		case 0x13:
+		case 0x14:
+		case 0x15:
+		case 0x16:
+		case 0x17:
+			retval = bubble_casette[0]->read_data8(addr);
+			break;
+#else			
 #if defined(_FM77AV_VARIANTS)
 		case 0x12:
 			retval = subsystem_read_status();  
@@ -1144,6 +1172,7 @@ uint32_t FM7_MAINIO::read_data8(uint32_t addr)
 		case 0x17:
 			retval = (uint32_t) get_extirq_fd17();
 			break;
+#endif			
 		case 0x18: // FDC: STATUS
 		  	retval = (uint32_t) get_fdc_stat();
 			//printf("FDC: READ STATUS %02x PC=%04x\n", retval, maincpu->get_pc()); 
@@ -1343,6 +1372,18 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 		case 0x0f: // FD0F
 			write_fd0f();
 			break;
+#if defined(_FM8)
+		case 0x10:
+		case 0x11:
+		case 0x12:
+		case 0x13:
+		case 0x14:
+		case 0x15:
+		case 0x16:
+		case 0x17:
+			bubble_casette[0]->write_data8(addr, data);
+			break;
+#else			
 #if defined(_FM77AV_VARIANTS)
 		case 0x10:
 			flag = ((data & 0x02) == 0) ? true : false;
@@ -1369,6 +1410,7 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 		case 0x17:
 			set_ext_fd17((uint8_t)data);
 			break;
+#endif			
 		case 0x18: // FDC: COMMAND
 			set_fdc_cmd((uint8_t)data);
 			//printf("FDC: WRITE CMD %02x\n", data); 
@@ -1505,7 +1547,7 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 			break;
 		case 0x99:
 			dmac->write_data8(dma_addr, data);
-			//p_emu->out_debug_log(_T("IO: Wrote DMA %02x to reg %02x\n"), data, dma_addr);
+			//this->out_debug_log(_T("IO: Wrote DMA %02x to reg %02x\n"), data, dma_addr);
 			break;
 #endif			
 		default:
@@ -1597,6 +1639,7 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 	int addr;
 	state_fio->FputUint32_BE(STATE_VERSION);
 	state_fio->FputInt32_BE(this_device_id);
+	this->out_debug_log("Save State: MAINIO: id=%d ver=%d\n", this_device_id, STATE_VERSION);
 
 	// Version 1
 	{
@@ -1745,7 +1788,7 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 #if defined(_FM77AV_VARIANTS)
 		state_fio->FputUint8(reg_fd12);
 #endif		
-	}		
+	}
 }
 
 bool FM7_MAINIO::load_state(FILEIO *state_fio)
@@ -1757,6 +1800,7 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 	
 	version = state_fio->FgetUint32_BE();
 	if(this_device_id != state_fio->FgetInt32_BE()) return false;
+	this->out_debug_log("Load State: MAINIO: id=%d ver=%d\n", this_device_id, version);
 
 	if(version >= 1) {
 		for(addr = 0; addr < 0x100; addr++) io_w_latch[addr] = state_fio->FgetUint8();

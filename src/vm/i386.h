@@ -45,6 +45,25 @@ public:
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
 #endif
+#if defined(HAS_I386)
+		set_device_name(_T("80386 CPU"));
+#elif defined(HAS_I486)
+		set_device_name(_T("80486 CPU"));
+#elif defined(HAS_PENTIUM)
+		set_device_name(_T("Pentium CPU"));
+#elif defined(HAS_MEDIAGX)
+		set_device_name(_T("Media GX CPU"));
+#elif defined(HAS_PENTIUM_PRO)
+		set_device_name(_T("Pentium Pro CPU"));
+#elif defined(HAS_PENTIUM_MMX)
+		set_device_name(_T("Pentium MMX CPU"));
+#elif defined(HAS_PENTIUM2)
+		set_device_name(_T("Pentium2 CPU"));
+#elif defined(HAS_PENTIUM3)
+		set_device_name(_T("Pentium3 CPU"));
+#elif defined(HAS_PENTIUM4)
+		set_device_name(_T("Pentium4 CPU"));
+#endif
 	}
 	~I386() {}
 	
@@ -90,10 +109,6 @@ public:
 #endif
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("80386");
-	}
 	
 	// unique function
 	void set_context_mem(DEVICE* device)

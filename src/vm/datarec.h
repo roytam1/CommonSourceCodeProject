@@ -43,6 +43,7 @@ private:
 	int positive_clocks, negative_clocks;
 	int signal_changed;
 	int register_id;
+	bool realtime;
 	
 	int sample_rate;
 	double sample_usec;
@@ -72,6 +73,7 @@ private:
 #endif
 	
 	void update_event();
+	void update_realtime_render();
 	void close_file();
 	
 	int load_wav_image(int offset);
@@ -102,6 +104,7 @@ public:
 #ifdef DATAREC_SOUND
 		sound_volume_l = sound_volume_r = 1024;
 #endif
+		set_device_name(_T("Data Recorder"));
 	}
 	~DATAREC() {}
 	
@@ -118,12 +121,9 @@ public:
 	void event_callback(int event_id, int err);
 	void mix(int32_t* buffer, int cnt);
 	void set_volume(int ch, int decibel_l, int decibel_r);
+	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("Data Recorder");
-	}
 	
 	// unique functions
 	void initialize_sound(int rate, int volume)

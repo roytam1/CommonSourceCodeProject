@@ -13,8 +13,8 @@
 
 
 #include "../device.h"
-#include "../memory.h"
-#include "fm7_common.h"
+//#include "../memory.h"
+//#include "fm7_common.h"
 
 enum {
 	ALU_CMDREG = 0,
@@ -57,11 +57,10 @@ enum {
 	EVENT_MB61VH010_BUSY_OFF
 };
 
+class VM;
+class EMU;
 class MB61VH010: public DEVICE {
-
  protected:
-	EMU *p_emu;
-	VM *p_vm;
 	DEVICE *target;
 	
 	// Registers
@@ -73,7 +72,7 @@ class MB61VH010: public DEVICE {
 	uint8_t bank_disable_reg;   // D41B (RW)
 	uint8_t tile_reg[4];        // D41C-D41F (WO)
 	uint8_t multi_page;
-	
+	uint32_t direct_access_offset;	
 	pair_t  line_addr_offset; // D420-D421 (WO)
 	pair_t  line_pattern;     // D422-D423 (WO)
 	pair_t  line_xbegin;      // D424-D425 (WO)
@@ -95,32 +94,33 @@ class MB61VH010: public DEVICE {
 	
 	// ALU COMMANDS
 	uint8_t do_read(uint32_t addr,  uint32_t bank);
-	uint8_t do_write(uint32_t addr, uint32_t bank, uint8_t data);
-	uint8_t do_pset(uint32_t addr);
-	uint8_t do_blank(uint32_t addr);
-	uint8_t do_or(uint32_t addr);
-	uint8_t do_and(uint32_t addr);
-	uint8_t do_xor(uint32_t addr);
-	uint8_t do_not(uint32_t addr);
-	uint8_t do_tilepaint(uint32_t addr);
-	uint8_t do_compare(uint32_t addr);
-	uint8_t do_alucmds(uint32_t addr);
+	void do_write(uint32_t addr, uint32_t bank, uint8_t data);
+	void do_pset(uint32_t addr);
+	void do_blank(uint32_t addr);
+	void do_or(uint32_t addr);
+	void do_and(uint32_t addr);
+	void do_xor(uint32_t addr);
+	void do_not(uint32_t addr);
+	void do_tilepaint(uint32_t addr);
+	void do_compare(uint32_t addr);
+	void do_alucmds(uint32_t addr);
 	void do_alucmds_dmyread(uint32_t addr);
-	bool put_dot(int x, int y);
+	inline bool put_dot(int x, int y);
+	inline bool put_dot8(int x, int y);
 
 	// LINE
 	void do_line(void);
  public:
-	MB61VH010(VM *parent_vm, EMU *parent_emu);
-	~MB61VH010();
+	MB61VH010(VM *parent_vm, EMU *parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		target = NULL;
+		direct_access_offset = 0;
+		set_device_name(_T("MB61VH010 ALU"));
+	}
+	~MB61VH010() {}
 
 	void save_state(FILEIO *state_fio);
 	bool load_state(FILEIO *state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("MB61VH010_ALU");
-	}
-   
 	void event_callback(int event_id, int err);
 	void write_data8(uint32_t id, uint32_t data);
 	uint32_t read_data8(uint32_t addr);
@@ -133,6 +133,10 @@ class MB61VH010: public DEVICE {
 	void set_context_memory(DEVICE *p)
 	{
 		target = p;
+	}
+	void set_direct_access_offset(uint32_t offset)
+	{
+		direct_access_offset = offset;	
 	}
 };	
 

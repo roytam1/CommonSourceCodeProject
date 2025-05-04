@@ -38,6 +38,11 @@ public:
 	M6502(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		busreq = false;
+#ifdef HAS_N2A03
+		set_device_name(_T("N2A03 CPU"));
+#else
+		set_device_name(_T("M6502 CPU"));
+#endif
 	}
 	~M6502() {}
 	
@@ -56,10 +61,6 @@ public:
 	}
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("M6502");
-	}
 	
 	// unique functions
 	void set_context_mem(DEVICE* device)

@@ -39,6 +39,8 @@
 #define SPECIAL_DISK_FM77AV_PSYOBLADE	13
 #define SPECIAL_DISK_FM7_TAIYOU1	14
 #define SPECIAL_DISK_FM7_TAIYOU2	15
+#define SPECIAL_DISK_FM7_XANADU2_D	16
+#define SPECIAL_DISK_FM7_RIGLAS		17
 
 // d88 constant
 #define DISK_BUFFER_SIZE	0x380000	// 3.5MB
@@ -173,11 +175,11 @@ public:
 	{
 #ifndef _ANY2D88
 #if defined(_FM7) || defined(_FM8) || defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
-		if(is_special_disk == SPECIAL_DISK_FM7_TAIYOU1 || is_special_disk == SPECIAL_DISK_FM7_TAIYOU2) {
+		if((is_special_disk == SPECIAL_DISK_FM7_TAIYOU1) || (is_special_disk == SPECIAL_DISK_FM7_TAIYOU2)) {
 			return true;
 		}
 #endif
-		if(drive_num < array_length(config.correct_disk_timing)) {
+		if(drive_num < (int)array_length(config.correct_disk_timing)) {
 			return config.correct_disk_timing[drive_num];
 		}
 #endif
@@ -186,7 +188,7 @@ public:
 	bool ignore_crc()
 	{
 #ifndef _ANY2D88
-		if(drive_num < array_length(config.ignore_disk_crc)) {
+		if(drive_num < (int)array_length(config.ignore_disk_crc)) {
 			return config.ignore_disk_crc[drive_num];
 		}
 #endif

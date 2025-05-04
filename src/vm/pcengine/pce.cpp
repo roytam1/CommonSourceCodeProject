@@ -1544,6 +1544,7 @@ uint8_t PCE::sgx_vdc_r(uint16_t offset)
 
 void PCE::psg_reset()
 {
+	touch_sound();
 	memset(psg, 0, sizeof(psg));
 	for (int i = 0; i < 6; i++) {
 		psg[i].regs[4] = 0x80;
@@ -1558,25 +1559,32 @@ void PCE::psg_write(uint16_t addr, uint8_t data)
 {
 	switch(addr & 0x1f) {
 	case 0:
+		touch_sound();
 		psg_ch = data & 7;
 		break;
 	case 1:
+		touch_sound();
 		psg_vol = data;
 		break;
 	case 2:
+		touch_sound();
 		psg[psg_ch].regs[2] = data;
 		break;
 	case 3:
+		touch_sound();
 //		psg[psg_ch].regs[3] = data & 0x1f;
 		psg[psg_ch].regs[3] = data & 0xf;
 		break;
 	case 4:
+		touch_sound();
 		psg[psg_ch].regs[4] = data;
 		break;
 	case 5:
+		touch_sound();
 		psg[psg_ch].regs[5] = data;
 		break;
 	case 6:
+		touch_sound();
 		if(psg[psg_ch].regs[4] & 0x40) {
 			psg[psg_ch].wav[0] =data & 0x1f;
 		}
@@ -1586,12 +1594,15 @@ void PCE::psg_write(uint16_t addr, uint8_t data)
 		}
 		break;
 	case 7:
+		touch_sound();
 		psg[psg_ch].regs[7] = data;
 		break;
 	case 8:
+		touch_sound();
 		psg_lfo_freq = data;
 		break;
 	case 9:
+		touch_sound();
 		psg_lfo_ctrl = data;
 		break;
 	}

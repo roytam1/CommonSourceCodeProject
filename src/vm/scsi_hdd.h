@@ -26,16 +26,14 @@ public:
 		bytes_per_sec = 0x500000; // 5MB/sec
 		
 		default_drive_size = 0x2800000;	// 40MB
+		
+		set_device_name(_T("SCSI Hard Disk Drive"));
 	}
 	~SCSI_HDD() {}
 	
 	// common functions
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
-	const _TCHAR *get_device_name()
-	{
-		return _T("SCSI Hard Disk Drive");
-	}
 	
 	// virtual scsi functions
 	void read_buffer(int length);
