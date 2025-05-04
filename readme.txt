@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/17/2016
+								3/23/2016
 
 --- What's this ?
 
@@ -194,6 +194,8 @@ See also COPYING.txt for more details about the license.
 	MAME mc6847 core
 - vm/msm5205.*
 	MAME msm5205 core
+- vm/mz1p17.*
+	MZ-80P3 / MZ-80P4 mode by Mr.Suga
 - vm/pc6031.*
 	iP6 by Mr.Nishida
 - vm/scsi_dev.*
@@ -273,6 +275,8 @@ See also COPYING.txt for more details about the license.
 	MZ-80A emulator by Mr.Suga
 - vm/mz80k/mz80fio.*
 	Mr.Enri for SHARP MZ-80FIO and MZ-80FD hardware design info
+- vm/mz80k/printer.*
+	The printer interface by Mr.Suga
 - vm/mz2500/sasi.*
 	X millenium by Mr.Punyu
 - vm/mz3500/keyboard.*

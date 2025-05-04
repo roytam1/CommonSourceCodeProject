@@ -15,6 +15,21 @@ DISPLAY::DISPLAY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 {
 	p_vm = parent_vm;
 	p_emu = parent_emu;
+	ins_led = NULL;
+	kana_led = NULL;
+	caps_led = NULL;
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+	kanjiclass1 = NULL;
+	kanjiclass2 = NULL;
+#elif defined(_FM77_VARIANTS)
+	kanjiclass1 = NULL;
+#endif
+#if defined(_FM77AV_VARIANTS)
+	alu = NULL;
+#endif
+	mainio = NULL;
+	subcpu = NULL;
+	keyboard = NULL;
 }
 
 DISPLAY::~DISPLAY()
@@ -132,8 +147,6 @@ void DISPLAY::reset_cpuonly()
 	stat_400linecard = false;
 # endif	
 #endif
-	//if(nmi_event_id >= 0) cancel_event(this, nmi_event_id);
-	//register_event(this, EVENT_FM7SUB_DISPLAY_NMI, 20000.0, true, &nmi_event_id); // NEXT CYCLE_
 	vram_wrote = true;
 	clr_count = 0;
 	frame_skip_count = 3;
@@ -202,16 +215,8 @@ void DISPLAY::reset()
 void DISPLAY::update_config()
 {
 	vram_wrote = true;
-	switch(config.cpu_type) {
-		case 0:
-			clock_fast = true;
-			break;
-		case 1:
-			clock_fast = false;
-			break;
-	}
 #if !defined(_FM8)
-	is_cyclesteal = ((config.dipswitch & FM7_DIPSW_CYCLESTEAL) != 0) ? true : false;
+	//is_cyclesteal = ((config.dipswitch & FM7_DIPSW_CYCLESTEAL) != 0) ? true : false;
 #endif	
 	enter_display();
 }
@@ -794,8 +799,8 @@ void DISPLAY::event_callback(int event_id, int err)
 						int planes = 1;
 #endif
 						if(vram_wrote_table[displine] || vram_wrote) {
-							uint32_t	baseaddr1 = ((displine) * 80) & 0x3fff;
-							uint32_t	baseaddr2 = baseaddr1 + 0xc000;
+							uint32_t baseaddr1 = ((displine) * 80) & 0x3fff;
+							uint32_t baseaddr2 = baseaddr1 + 0xc000;
 							for(int i = 0; i < planes; i++) {
 							vram_wrote_table[displine] = false;
 								for(int j = 0; j < 3; j++) {
@@ -1089,7 +1094,7 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 			halt_flag = flag;
 			//mainio->write_signal(SIG_FM7_SUB_HALT, data, mask);
 			break;
-       		case SIG_DISPLAY_HALT:
+   		case SIG_DISPLAY_HALT:
 			if(flag) {
 				halt_subsystem();
 			} else {
@@ -1288,7 +1293,7 @@ uint8_t DISPLAY::read_mmio(uint32_t addr)
 			attention_irq();
 			break;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) || defined(_FM77_VARIANTS) // _FM77L4
+     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) || defined(_FM77_VARIANTS) // _FM77L4
 		case 0x06:
 			if(!kanjisub) return 0xff;
 # if !defined(_FM77_VARIANTS)
@@ -1604,14 +1609,14 @@ uint32_t DISPLAY::read_data8_main(uint32_t addr)
 		return subsys_c[addr - 0xd800];
 #else
 		if(addr < 0xe000) {
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX)
 			if(monitor_ram) {
 				return submem_cgram[cgram_bank * 0x0800 + (addr - 0xd800)]; //FIXME
 			}
 #endif		
 			return subsys_cg[(addr - 0xd800) + cgrom_bank * 0x800];
 		} else if(addr < 0x10000) {
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX)
 			if(monitor_ram) {
 				return subsys_ram[addr - 0xe000];
 			}
@@ -1745,7 +1750,7 @@ void DISPLAY::write_mmio(uint32_t addr, uint32_t data)
 			break;
 #endif
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) || defined(_FM77_VARIANTS) // _FM77L4
+     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) || defined(_FM77_VARIANTS) // _FM77L4
 		// KANJI
 		case 0x06:
 			if(!kanjisub) return;
@@ -1975,7 +1980,6 @@ void DISPLAY::write_mmio(uint32_t addr, uint32_t data)
 void DISPLAY::write_data8_main(uint32_t addr, uint8_t data)
 {
 	uint32_t raddr;
-	uint32_t page_offset = 0x0000;
 
 	if(addr < 0xc000) return;
 	
@@ -2009,7 +2013,7 @@ void DISPLAY::write_data8_main(uint32_t addr, uint8_t data)
 		write_mmio(addr, data);
 		return;
 	} else if(addr < 0x10000) {
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX)
 		if(ram_protect) return;
 		if(monitor_ram) {
 			if(addr < 0xe000) {
@@ -2172,7 +2176,7 @@ void DISPLAY::initialize()
    	if(read_bios(_T("SUBSYSCG.ROM"), subsys_cg, 0x2000) >= 0x2000) diag_load_subrom_cg = true;
 	emu->out_debug_log(_T("SUBSYSTEM CG ROM READING : %s"), diag_load_subrom_cg ? "OK" : "NG");
 # if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 	memset(subsys_ram, 0x00, sizeof(subsys_ram));
 	memset(submem_cgram, 0x00, sizeof(submem_cgram));
 	memset(submem_console_av40, 0x00, sizeof(submem_console_av40));
@@ -2301,7 +2305,7 @@ void DISPLAY::save_state(FILEIO *state_fio)
 		state_fio->FputBool(mode320);
 		state_fio->FputInt32_BE(display_page);
 		state_fio->FputInt32_BE(cgrom_bank);
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+#if defined(_FM77AV40) || defined(_FM77AV40SX)|| defined(_FM77AV40SX) || \
     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 		state_fio->FputInt32_BE(vram_bank);
 #endif	
@@ -2458,7 +2462,7 @@ bool DISPLAY::load_state(FILEIO *state_fio)
 		mode320 = state_fio->FgetBool();
 		display_page = state_fio->FgetInt32_BE();
 		cgrom_bank = state_fio->FgetInt32_BE();
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
+#if defined(_FM77AV40) || defined(_FM77AV40SX)|| defined(_FM77AV40SX) || \
     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
 		vram_bank = state_fio->FgetInt32_BE();
 #endif		

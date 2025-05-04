@@ -25,27 +25,45 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	int i;
 	p_vm = parent_vm;
 	p_emu = parent_emu;
+#if defined(_FM8)
+	opn[0] = NULL;
+#else
+	for(i = 0; i < 4; i++) {
+		opn[i] = NULL;
+	}
+#endif
+	drec = NULL;
+	pcm1bit = NULL;
+	joystick = NULL;
+	fdc = NULL;
+	printer = NULL;
+	
 	kanjiclass1 = NULL;
 	kanjiclass2 = NULL;
+
+	display = NULL;
+	keyboard = NULL;
+	maincpu = NULL;
+	mainmem = NULL;
+	subcpu = NULL;
+#ifdef WITH_Z80
+	z80 = NULL;
+#endif	
+	
 	// FD00
 	clock_fast = true;
-	lpt_strobe = false;
-	lpt_slctin = false;
+	lpt_strobe = false;  // bit6
+	lpt_slctin = false;  // bit7
 	// FD01
 	lpt_outdata = 0x00;
 	// FD02
-	cmt_indat = false; // bit7
+	cmt_indat = true; // bit7
 	cmt_invert = false; // Invert signal
-	lpt_det2 = true;
-	lpt_det1 = true;
-	lpt_pe = true;
-	lpt_ackng_inv = true;
-	lpt_error_inv = true;
-	lpt_busy = true;
-	lpt_type = 0;
+	irqstat_reg0 = 0xff;
+	
 	// FD04
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
+	defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
 	stat_kanjirom = true;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 #elif defined(_FM77_VARIANTS)
 	stat_fdmode_2hd = false; //  R/W : bit6, '0' = 2HD, '1' = 2DD. FM-77 Only.
@@ -64,11 +82,12 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	intstat_syndet = false;
 	intstat_rxrdy = false;
 	intstat_txrdy = false;
+	irqstat_timer = false;
+	irqstat_printer = false;
+	irqstat_keyboard = false;
 	// FD0B
 	// FD0D
 	// FD0F
-	stat_romrammode = true; // ROM ON
-	
 	// FD15/ FD46 / FD51
 #if defined(_FM8)
 	connect_psg = false;
@@ -104,7 +123,24 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 	fdc_headreg = 0x00;
 	fdc_drvsel = 0x00;
 	fdc_motor = false;
-	irqstat_fdc = 0;
+	irqstat_fdc = false;
+	irqreg_fdc = 0xff; //0b11111111;
+	irqmask_syndet = true;
+	irqmask_rxrdy = true;
+	irqmask_txrdy = true;
+	irqmask_mfd = true;
+	irqmask_timer = true;
+	irqmask_printer = true;
+	irqmask_keyboard = true;
+	irqstat_reg0 = 0xff;
+	
+  
+	irqreq_syndet = false;
+	irqreq_rxrdy = false;
+	irqreq_txrdy = false;
+	irqreq_printer = false;
+	irqreq_keyboard = false;
+
 	// FD20, FD21, FD22, FD23
 	connect_kanjiroml1 = false;
 #if defined(_FM77AV_VARIANTS)
@@ -114,9 +150,11 @@ FM7_MAINIO::FM7_MAINIO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, paren
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	boot_ram = false;
 #endif
+
 #if defined(HAS_DMA)
 	dmac = NULL;
 #endif	
+	bootmode = config.boot_mode & 3;
 	memset(io_w_latch, 0xff, 0x100);
 	initialize_output_signals(&clock_status);
 	initialize_output_signals(&printer_reset_bus);
@@ -129,14 +167,15 @@ FM7_MAINIO::~FM7_MAINIO()
 }
 
 
-
 void FM7_MAINIO::initialize()
 {
 	event_beep = -1;
 	event_beep_oneshot = -1;
 	event_timerirq = -1;
 	event_fdc_motor = -1;
-
+	lpt_type = config.printer_device_type;
+	fdc_cmdreg = 0x00;
+	
 #if defined(_FM77_VARIANTS) || defined(_FM77AV_VARIANTS)
 	boot_ram = false;
 # if defined(_FM77_VARIANTS)
@@ -148,31 +187,11 @@ void FM7_MAINIO::initialize()
 #  endif	
 # endif	
 #endif
-	irqmask_syndet = true;
-	irqmask_rxrdy = true;
-	irqmask_txrdy = true;
-	irqmask_mfd = true;
-	irqmask_timer = true;
-	irqmask_printer = true;
-	irqmask_keyboard = true;
-	irqstat_reg0 = 0xff;
-	
-	intstat_syndet = false;
-	intstat_rxrdy = false;
-	intstat_txrdy = false;
-	irqstat_timer = false;
-	irqstat_printer = false;
-	irqstat_keyboard = false;
-  
-	irqreq_syndet = false;
-	irqreq_rxrdy = false;
-	irqreq_txrdy = false;
-	irqreq_printer = false;
-	irqreq_keyboard = false;
 #if defined(_FM77AV_VARIANTS)
-	reg_fd12 = 0x00;
+	reg_fd12 = 0xbc; // 0b10111100
 #endif		
-
+	bootmode = config.boot_mode & 3;
+	reset_printer();
 }
 
 void FM7_MAINIO::reset()
@@ -198,38 +217,25 @@ void FM7_MAINIO::reset()
 	boot_ram = true;
 #endif
 	// FD05
-	extdet_neg = false;
 	sub_cancel = false; // bit6 : '1' Cancel req.
 	sub_halt = false; // bit6 : '1' Cancel req.
 	sub_cancel_bak = sub_cancel; // bit6 : '1' Cancel req.
 	sub_halt_bak = sub_halt; // bit6 : '1' Cancel req.
-	//sub_busy = false;
 	// FD02
-	cmt_indat = false; // bit7
+	cmt_indat = true; // bit7
 	cmt_invert = false; // Invert signal
 	lpt_det2 = true;
 	lpt_det1 = true;
-	lpt_pe = true;
-	lpt_ackng_inv = true;
-	lpt_error_inv = true;
-	lpt_busy = true;
 	lpt_type = config.printer_device_type;
 	reset_printer();
 	
-	//stat_romrammode = true;
-	// IF BASIC BOOT THEN ROM
-	// ELSE RAM
-	//mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, ((config.boot_mode & 3) == 0) ? 0xffffffff : 0, 0xffffffff);
 #if defined(_FM77AV_VARIANTS)
 	sub_monitor_type = 0x00;
 #endif
-	switch(config.cpu_type){
-		case 0:
-			clock_fast = true;
-			break;
-		case 1:
-			clock_fast = false;
-			break;
+	if(config.cpu_type == 0) {
+		clock_fast = true;
+	} else {
+		clock_fast = false;
 	}
 	this->write_signals(&clock_status, clock_fast ? 0xffffffff : 0);
    
@@ -248,16 +254,16 @@ void FM7_MAINIO::reset()
 	intstat_txrdy = false;
 	irqstat_timer = false;
 	irqstat_printer = false;
-	//irqstat_keyboard = false;
+	irqstat_keyboard = false;
   
 	irqreq_syndet = false;
 	irqreq_rxrdy = false;
 	irqreq_txrdy = false;
 	irqreq_printer = false;
-	//irqreq_keyboard = false;
+	irqreq_keyboard = false;
 	// FD00
 	drec->write_signal(SIG_DATAREC_MIC, 0x00, 0x01);
-	drec->write_signal(SIG_DATAREC_REMOTE, 0x00, 0x02);
+	drec->set_remote(false);
 	reset_fdc();
 	reset_sound();
 	
@@ -265,7 +271,7 @@ void FM7_MAINIO::reset()
 	firq_break_key = (keyboard->read_signal(SIG_FM7KEY_BREAK_KEY) != 0x00000000); // bit1, ON = '0'.
 	set_sub_attention(false);	
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
+	defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX) 
 	stat_kanjirom = true;    //  R/W : bit5, '0' = sub, '1' = main. FM-77 Only.
 #elif defined(_FM77_VARIANTS)
 	stat_fdmode_2hd = false; //  R/W : bit6, '0' = 2HD, '1' = 2DD. FM-77 Only.
@@ -277,18 +283,21 @@ void FM7_MAINIO::reset()
 	dma_addr = 0;
 #endif
 #if defined(_FM77AV_VARIANTS)
-	reg_fd12 = 0x00;
+	reg_fd12 = 0xbc; // 0b10111100
 #endif		
 #if !defined(_FM8)
 	register_event(this, EVENT_TIMERIRQ_ON, 10000.0 / 4.9152, true, &event_timerirq); // TIMER IRQ
-#endif	
+#endif
+	bootmode = config.boot_mode & 3;
 	memset(io_w_latch, 0xff, 0x100);
 }
 
 void FM7_MAINIO::reset_printer()
 {
-	lpt_slctin = true;
+	lpt_slctin = false;
 	lpt_strobe = false;
+	// FD01
+	lpt_outdata = 0x00;
 	this->write_signals(&printer_strobe_bus, 0);
 	this->write_signals(&printer_select_bus, 0xffffffff);
 	this->write_signals(&printer_reset_bus, 0xffffffff);
@@ -296,6 +305,11 @@ void FM7_MAINIO::reset_printer()
 	if(lpt_type == 0) {
 		printer->write_signal(SIG_PRINTER_STROBE, 0x00, 0xff);
 	}
+	lpt_busy = false;
+	lpt_error_inv = true;
+	lpt_ackng_inv = true;
+	lpt_pe = false;
+
 }
 
 void FM7_MAINIO::set_clockmode(uint8_t flags)
@@ -333,24 +347,23 @@ uint8_t FM7_MAINIO::get_port_fd00(void)
   
 void FM7_MAINIO::set_port_fd00(uint8_t data)
 {
-       drec->write_signal(SIG_DATAREC_MIC, data, 0x01);
-       drec->write_signal(SIG_DATAREC_REMOTE, data, 0x02);
-	   lpt_slctin = ((data & 0x80) == 0);
-	   lpt_strobe = ((data & 0x40) != 0);
-	   this->write_signals(&printer_strobe_bus, lpt_strobe ? 0xffffffff : 0);
-	   this->write_signals(&printer_select_bus, lpt_slctin ? 0xffffffff : 0);
-	   if((lpt_type == 0) && (lpt_slctin)) {
-		   printer->write_signal(SIG_PRINTER_STROBE, lpt_strobe ? 0xff : 0x00, 0xff);
-	   }
+	drec->write_signal(SIG_DATAREC_MIC, data, 0x01);
+	drec->set_remote(((data & 0x02) != 0));
+	lpt_slctin = ((data & 0x80) == 0);
+	lpt_strobe = ((data & 0x40) != 0);
+	this->write_signals(&printer_strobe_bus, lpt_strobe ? 0xffffffff : 0);
+	this->write_signals(&printer_select_bus, lpt_slctin ? 0xffffffff : 0);
+	if((lpt_type == 0) && (lpt_slctin)) {
+		printer->write_signal(SIG_PRINTER_STROBE, lpt_strobe ? 0xff : 0x00, 0xff);
+	}
 }
    
 uint8_t FM7_MAINIO::get_port_fd02(void)
 {
 	uint8_t ret;
 	bool ack_bak = lpt_ackng_inv;
-	// Still unimplemented printer.
+
 	ret = (cmt_indat) ? 0xff : 0x7f; // CMT
-	
 	if(lpt_type == 0) {
 		lpt_busy = (printer->read_signal(SIG_PRINTER_BUSY) != 0);
 		lpt_error_inv = true;
@@ -421,9 +434,6 @@ void FM7_MAINIO::set_port_fd02(uint8_t val)
 	} else {
 		irqmask_mfd = true;
 	}
-//	if(mfdirq_bak != irqmask_mfd) {
-//   		set_irq_mfd(irqreq_fdc);
-//	}
 
 	if((val & 0x04) != 0) {
 		irqmask_timer = false;
@@ -666,10 +676,8 @@ void FM7_MAINIO::set_fd04(uint8_t val)
  uint8_t FM7_MAINIO::get_fd05(void)
 {
 	uint8_t val = 0x7e;
-	//val = (sub_busy) ? 0xfe : 0x7e;
 	if(display->read_signal(SIG_DISPLAY_BUSY) != 0) val |= 0x80;
 	if(!extdet_neg) val |= 0x01;
-	//printf("FD05: READ: %d VAL=%02x\n", SDL_GetTicks(), val);
 	return val;
 }
 
@@ -708,8 +716,8 @@ void FM7_MAINIO::write_fd0f(void)
 	if((config.dipswitch & FM7_DIPSW_FM8_PROTECT_FD0F) != 0) {
 		return;
 	}
-	config.boot_mode = 1; // DOS : Where BUBBLE?
-	mainmem->write_signal(FM7_MAINIO_BOOTMODE, config.boot_mode, 0xffffffff);
+	bootmode = 1; // DOS : Where BUBBLE?
+	mainmem->write_signal(FM7_MAINIO_BOOTMODE, bootmode, 0xffffffff);
 	mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0, 0xffffffff);
 #endif	
 	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, 0, 0xffffffff);
@@ -720,8 +728,8 @@ uint8_t FM7_MAINIO::read_fd0f(void)
 	if((config.dipswitch & FM7_DIPSW_FM8_PROTECT_FD0F) != 0) {
 		return 0xff;
 	}
-	config.boot_mode = 0; // BASIC
-	mainmem->write_signal(FM7_MAINIO_BOOTMODE, config.boot_mode, 0xffffffff);
+	bootmode = 0; // BASIC
+	mainmem->write_signal(FM7_MAINIO_BOOTMODE, bootmode, 0xffffffff);
 	mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0xffffffff, 0xffffffff);
 #endif	
 	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, 0xffffffff, 0xffffffff);
@@ -1070,8 +1078,8 @@ uint32_t FM7_MAINIO::read_data8(uint32_t addr)
 #if defined(HAS_MMR)
 		if((addr < 0x90) && (addr >= 0x80)) {
 			mmr_segment = mainmem->read_data8(FM7_MAINIO_MMR_SEGMENT);
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
+     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 			mmr_segment &= 0x07;
 # else		   
 			mmr_segment &= 0x03;
@@ -1210,7 +1218,7 @@ uint32_t FM7_MAINIO::read_data8(uint32_t addr)
 			if(mainmem->read_signal(FM7_MAINIO_MMR_ENABLED) != 0)    retval |= 0x80;
 			break;
 #endif
-#if defined(_FM77AV40EX) || defined(_FM77AV40SX)
+#if defined(_FM77AV40SX) || defined(_FM77AV40EX)
 		case 0x95:
 			retval = 0x77;
 			if(mainmem->read_signal(FM7_MAINIO_FASTMMR_ENABLED) != 0) retval |= 0x08;
@@ -1244,8 +1252,8 @@ uint32_t FM7_MAINIO::read_data8(uint32_t addr)
 		retval = sub_monitor_type & 0x03;
 		return retval;
 	}  else if(addr == FM7_MAINIO_SUBMONITOR_RAM) {
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 		retval = ((sub_monitor_type & 0x04) != 0) ? 0xffffffff : 0x00000000;
 #else
 		retval = 0;
@@ -1278,8 +1286,8 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 #if defined(HAS_MMR)
 		if((addr < 0x90) && (addr >= 0x80)) {
 			mmr_segment = mainmem->read_data8(FM7_MAINIO_MMR_SEGMENT);
-# if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-     defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+# if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
+     defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 			mmr_segment &= 0x07;
 # else		   
 			mmr_segment &= 0x03;
@@ -1294,6 +1302,7 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 			return;
 			break;
 		case 0x01: // FD01
+			lpt_outdata = (uint8_t)data;
 			switch(lpt_type) {
 			case 0: // Write to file
 				printer->write_signal(SIG_PRINTER_DATA, data, 0xff);
@@ -1454,8 +1463,8 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 #endif			
 #if defined(HAS_MMR)
 		case 0x90:
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 			mmr_segment = data & 7;
 #else
 			//			printf("MMR SEGMENT: %02x\n", data & 3);
@@ -1475,15 +1484,15 @@ void FM7_MAINIO::write_data8(uint32_t addr, uint32_t data)
 			//}
 			break;
 #endif
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+#if defined(_FM77AV40) || defined(_FM77AV40SX) || defined(_FM77AV40EX) || \
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 		case 0x94:
 			mainmem->write_signal(FM7_MAINIO_MMR_EXTENDED, data, 0x80);
 			mainmem->write_signal(FM7_MAINMEM_REFRESH_FAST, data, 0x04);
 			mainmem->write_signal(FM7_MAINIO_WINDOW_FAST , data, 0x01);
 
 			break;
-# if defined(_FM77AV40EX) || defined(_FM77AV40SX)
+# if defined(_FM77AV40SX) || defined(_FM77AV40EX)
 		case 0x95:
 			mainmem->write_signal(FM7_MAINIO_FASTMMR_ENABLED, data, 0x08);
 			mainmem->write_signal(FM7_MAINIO_EXTROM, data , 0x80);
@@ -1573,7 +1582,7 @@ void FM7_MAINIO::update_config()
 		mainmem->write_signal(FM7_MAINIO_IS_BASICROM, 0, 0xffffffff);
 	}
 	mainmem->write_signal(FM7_MAINIO_PUSH_FD0F, (config.boot_mode == 0) ? 1 : 0, 0x01);
-	mainmem->write_signal(FM7_MAINIO_BOOTMODE, config.boot_mode, 0xffffffff);
+	mainmem->write_signal(FM7_MAINIO_BOOTMODE, bootmode, 0xffffffff);
 #endif	
 }
 
@@ -1581,7 +1590,7 @@ void FM7_MAINIO::event_vline(int v, int clock)
 {
 }
 
-#define STATE_VERSION 5
+#define STATE_VERSION 6
 void FM7_MAINIO::save_state(FILEIO *state_fio)
 {
 	int ch;
@@ -1622,7 +1631,6 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 		state_fio->FputBool(irqreq_syndet);
 		state_fio->FputBool(irqreq_rxrdy);
 		state_fio->FputBool(irqreq_txrdy);
-		state_fio->FputBool(irqreq_fdc);
 		state_fio->FputBool(irqreq_printer);
 		state_fio->FputBool(irqreq_keyboard);
 		// FD03
@@ -1647,11 +1655,8 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 		state_fio->FputBool(intmode_fdc);
 		// FD05
 		state_fio->FputBool(extdet_neg);
-		//state_fio->FputBool(sub_busy);
 		state_fio->FputBool(sub_halt);
-		//state_fio->FputBool(sub_halt_bak);
 		state_fio->FputBool(sub_cancel);
-		//state_fio->FputBool(sub_cancel_bak);
 #if defined(WITH_Z80)	
 		state_fio->FputBool(z80_sel);
 #endif	
@@ -1729,7 +1734,7 @@ void FM7_MAINIO::save_state(FILEIO *state_fio)
 	{ // V3
 		state_fio->FputInt32_BE(event_fdc_motor);
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 		for(ch = 0; ch < 4; ch++) state_fio->FputUint8(fdc_drive_table[ch]);
 		state_fio->FputUint8(fdc_reg_fd1e);
 #endif	
@@ -1785,7 +1790,6 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 		irqreq_syndet = state_fio->FgetBool();
 		irqreq_rxrdy = state_fio->FgetBool();
 		irqreq_txrdy = state_fio->FgetBool();
-		irqreq_fdc = state_fio->FgetBool();
 		irqreq_printer = state_fio->FgetBool();
 		irqreq_keyboard = state_fio->FgetBool();
 		// FD03
@@ -1810,11 +1814,8 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 		intmode_fdc = state_fio->FgetBool();
 		// FD05
 		extdet_neg = state_fio->FgetBool();
-		//sub_busy = state_fio->FgetBool();
 		sub_halt = state_fio->FgetBool();
-		//sub_halt_bak = state_fio->FgetBool();
 		sub_cancel = state_fio->FgetBool();
-		//sub_cancel_bak = state_fio->FgetBool();
 #if defined(WITH_Z80)	
 		z80_sel = state_fio->FgetBool();
 #endif	
@@ -1889,8 +1890,8 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 	// V2
 	if(version >= 3) { // V3
 		event_fdc_motor = state_fio->FgetInt32_BE();
-#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX) || \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+#if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 		for(ch = 0; ch < 4; ch++) fdc_drive_table[ch] = state_fio->FgetUint8();
 		fdc_reg_fd1e = state_fio->FgetUint8();
 #endif	
@@ -1901,7 +1902,8 @@ bool FM7_MAINIO::load_state(FILEIO *state_fio)
 #if defined(_FM77AV_VARIANTS)
 		reg_fd12 = state_fio->FgetUint8();
 #endif		
-	}		
+	}
+	if(version != STATE_VERSION) return false;
 	return true;
 }
 	  

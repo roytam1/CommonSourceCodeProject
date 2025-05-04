@@ -131,7 +131,7 @@ class DISPLAY: public DEVICE
 	int display_page;
 	int cgrom_bank;
 #if defined(_FM77AV40) || defined(_FM77AV40EX) || defined(_FM77AV40SX)|| \
-    defined(_FM77AV20) || defined(_FM77AV20EX) || defined(_FM77AV20SX)
+    defined(_FM77AV20) || defined(_FM77AV20SX) || defined(_FM77AV20EX)
 	int vram_bank;
 	bool vram_page;
 	uint8_t console_ram_bank;

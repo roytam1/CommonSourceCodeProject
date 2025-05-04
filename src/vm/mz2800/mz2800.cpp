@@ -127,8 +127,8 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	keyboard->set_context_pio1(pio1);
 	memory->set_context_crtc(crtc);
 	mouse->set_context_sio(sio);
-	if(config.printer_device_type == 0) {  
-		PRNFILE *prnfile = (PRNFILE *)printer;
+	if(config.printer_device_type == 0) {
+		PRNFILE *prnfile = new PRNFILE(this, emu);
 		prnfile->set_context_busy(not_busy, SIG_NOT_INPUT, 1);
 		printer->set_context_prn(prnfile);
 	} else if(config.printer_device_type == 1) {

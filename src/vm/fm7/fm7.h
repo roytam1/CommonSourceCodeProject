@@ -11,6 +11,7 @@
 #define _FM7_H_
 
 #define USE_TAPE
+#define USE_TAPE_PTR
 #define USE_TAPE_BUTTON
 #define USE_SCANLINE
 #define USE_DIPSWITCH
@@ -18,8 +19,9 @@
 #define USE_SPECIAL_RESET
 #define USE_LED_DEVICE 3
 #define USE_MINIMUM_RENDERING 1
-#define USE_JOYSTICK
 #define USE_MOUSE
+#define USE_JOYSTICK
+#define USE_JOY_BUTTON_CAPTIONS
 #define USE_PRINTER
 #define USE_PRINTER_TYPE 4
 
@@ -238,7 +240,7 @@
 
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
-#define WINDOW_HEIGHT_ASPECT	480
+#define WINDOW_HEIGHT_ASPECT 480
 #define MAX_DRIVE		4
 #define HAS_MC6809              
 #define MB8877_MAX_CHIPS	1
@@ -293,6 +295,7 @@
 #else
 #define SWITCH_EXTRA_RAM 0x00000000
 #endif
+//#define MB8877_NO_BUSY_AFTER_SEEK
 
 //#define ENABLE_OPENCL // If OpenCL renderer is enabled, define here.
 
@@ -313,6 +316,18 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("OPN (FM)"), _T("OPN (PSG)"), _T("WHG (FM)"), _T("WHG (PSG)"), _T("THG (FM)"), _T("THG (PSG)"),
 	_T("Beep"), _T("CMT"),
 #endif	
+};
+#endif
+#ifdef USE_JOY_BUTTON_CAPTIONS
+static const _TCHAR *joy_button_captions[] = {
+	_T("Up"),
+	_T("Down"),
+	_T("Left"),
+	_T("Right"),
+	_T("Button #1(1st)"),
+	_T("Button #2(1st)"),
+	_T("Button #1(2nd)"),
+	_T("Button #2(2nd)"),
 };
 #endif
 
@@ -403,7 +418,6 @@ protected:
 #ifdef CAPABLE_KANJI_CLASS2
 	KANJIROM *kanjiclass2;
 #endif
-	bool clock_low;
 public:
 	// ----------------------------------------
 	// initialize

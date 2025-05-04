@@ -42,11 +42,11 @@ void JOYSTICK::initialize()
 	port_a_val = 0;
 	port_b_val = 0;
 	lpmask = 0x00;
+	lpt_type = config.printer_device_type;
 }
 
 void JOYSTICK::reset()
 {
-	int i;
 	joydata[0] = joydata[1] = 0xff;
 	lpt_type = config.printer_device_type;
 #if !defined(_FM8)
@@ -55,13 +55,20 @@ void JOYSTICK::reset()
 	mouse_phase = 0;
 	mouse_strobe = false;
 	mouse_type = config.device_type;
-	for(i = 0; i < 2; i++) {
-		if(mouse_type  == (i + 1)) {
-			emulate_mouse[i] = true;
-		} else {
-			emulate_mouse[i] = false;
-		}
-	}	
+	switch(mouse_type & 0x03){
+	case 1:
+		emulate_mouse[0] = true;
+		emulate_mouse[1] = false;
+		break;
+	case 2:
+		emulate_mouse[0] = false;
+		emulate_mouse[1] = true;
+		break;
+	default:
+		emulate_mouse[0] = false;
+		emulate_mouse[1] = false;
+		break;
+	}
 	mouse_state = p_emu->get_mouse_buffer();
 #endif	
 }
