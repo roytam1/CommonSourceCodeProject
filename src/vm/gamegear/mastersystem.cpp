@@ -17,6 +17,7 @@
 ///#include "../i8251.h"
 #include "../i8255.h"
 #include "../io.h"
+///#include "../noise.h"
 #include "../ym2413.h"
 #include "../sn76489an.h"
 #include "../315-5124.h"
@@ -43,6 +44,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 ///	drec = new DATAREC(this, emu);
+///	drec->set_context_noise_play(new NOISE(this, emu));
+///	drec->set_context_noise_stop(new NOISE(this, emu));
+///	drec->set_context_noise_fast(new NOISE(this, emu));
 ///	sio = new I8251(this, emu);
 	pio_k = new I8255(this, emu);
 	pio_k->set_device_name(_T("8255 PIO (Keyboard)"));
@@ -53,17 +57,26 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fm = new YM2413(this, emu);
 	vdp = new _315_5124(this, emu);
 ///	fdc = new UPD765A(this, emu);
+///	fdc->set_context_noise_seek(new NOISE(this, emu));
+///	fdc->set_context_noise_head_down(new NOISE(this, emu));
+//	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	cpu = new Z80(this, emu);
 	
 	key = new KEYBOARD(this, emu);
 	memory = new MEMORY(this, emu);
 	system = new SYSTEM(this, emu);
-
+	
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	event->set_context_sound(fm);
-
+///	event->set_context_sound(fdc->get_context_noise_seek());
+///	event->set_context_sound(fdc->get_context_noise_head_down());
+///	event->set_context_sound(fdc->get_context_noise_head_up());
+///	event->set_context_sound(drec->get_context_noise_play());
+///	event->set_context_sound(drec->get_context_noise_stop());
+///	event->set_context_sound(drec->get_context_noise_fast());
+	
 ///	drec->set_context_ear(pio_k, SIG_I8255_PORT_B, 0x80);
 	pio_k->set_context_port_c(key, SIG_KEYBOARD_COLUMN, 0x07, 0);
 ///	pio_k->set_context_port_c(drec, SIG_DATAREC_REMOTE, 0x08, 0);
@@ -82,7 +95,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	vdp->set_context_key(key);
 	vdp->set_context_psg(psg);
 ///	vdp->set_context_cpu(cpu);
-
+	
 	// cpu bus
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
@@ -90,7 +103,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #ifdef USE_DEBUGGER
 	cpu->set_context_debugger(new DEBUGGER(this, emu));
 #endif
-
+	
 	// i/o bus
 	io->set_iomap_single_r(0x00, system);		// GG  START
 	io->set_iomap_single_w(0x80, system);		// COL TENKEY
@@ -104,12 +117,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 ///	io->set_iomap_range_rw(0xe4, 0xe7, pio_f);	// SG  FDD
 ///	io->set_iomap_range_rw(0xe8, 0xe9, sio);	// SG  SERIAL
 	io->set_iomap_range_rw(0xf0, 0xf2, fm);		// MS  FM
-
+	
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
-
+	
 	// BIOS
 ///	memory->bios();
 	memory->open_cart(create_local_path(_T("SMS.ROM")));
@@ -216,6 +229,14 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		psg->set_volume(0, decibel_l, decibel_r);
 	} else if(ch == 1) {
 		fm->set_volume(0, decibel_l, decibel_r);
+///	} else if(ch == 2) {
+///		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+///		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+///		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
+///	} else if(ch == 3) {
+///		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+///		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+///		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif

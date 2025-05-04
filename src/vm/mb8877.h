@@ -21,6 +21,7 @@
 #define SIG_MB8877_MOTOR	3
 
 class DISK;
+class NOISE;
 
 class MB8877 : public DEVICE
 {
@@ -29,11 +30,17 @@ private:
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
 	
+	// drive noise
+	NOISE* d_noise_seek;
+	NOISE* d_noise_head_down;
+	NOISE* d_noise_head_up;
+	
 	// drive info
 	struct {
 		int track;
 		int index;
 		bool access;
+		bool head_load;
 		// write track
 		bool id_written;
 		bool sector_found;
@@ -114,6 +121,7 @@ private:
 	void cmd_format();
 #endif
 	void cmd_forceint();
+	void update_head_flag(int drv, bool head_load);
 	
 	// irq/dma
 	void set_irq(bool val);
@@ -124,6 +132,9 @@ public:
 	{
 		initialize_output_signals(&outputs_irq);
 		initialize_output_signals(&outputs_drq);
+		d_noise_seek = NULL;
+		d_noise_head_down = NULL;
+		d_noise_head_up = NULL;
 		motor_on = false;
 #if defined(HAS_MB89311)
 		set_device_name(_T("MB89311 FDC"));
@@ -148,6 +159,7 @@ public:
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	uint32_t read_signal(int ch);
 	void event_callback(int event_id, int err);
+	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
@@ -159,6 +171,30 @@ public:
 	void set_context_drq(DEVICE* device, int id, uint32_t mask)
 	{
 		register_output_signal(&outputs_drq, device, id, mask);
+	}
+	void set_context_noise_seek(NOISE* device)
+	{
+		d_noise_seek = device;
+	}
+	NOISE* get_context_noise_seek()
+	{
+		return d_noise_seek;
+	}
+	void set_context_noise_head_down(NOISE* device)
+	{
+		d_noise_head_down = device;
+	}
+	NOISE* get_context_noise_head_down()
+	{
+		return d_noise_head_down;
+	}
+	void set_context_noise_head_up(NOISE* device)
+	{
+		d_noise_head_up = device;
+	}
+	NOISE* get_context_noise_head_up()
+	{
+		return d_noise_head_up;
 	}
 	DISK* get_disk_handler(int drv)
 	{

@@ -10,6 +10,11 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+// move shared codes to DLL???
+#ifdef _USE_QT
+	#define USE_SHARED_DLL
+#endif
+
 // check environemnt/language
 #ifdef _WIN32
 	#ifdef _MSC_VER
@@ -46,6 +51,10 @@
 	#elif defined(Q_OS_WIN) || defined(__WIN32) || defined(__WIN64)
 		#define CSP_OS_GCC_WINDOWS
 		#define CSP_OS_WINDOWS
+		#ifdef USE_SHARED_DLL
+			#define DLL_PREFIX   __declspec(dllexport)
+			#define DLL_PREFIX_I __declspec(dllimport)
+		#endif
 	#else
 		#define CSP_OS_GCC_GENERIC
 		#define CSP_OS_GENERIC
@@ -65,6 +74,12 @@
 #ifndef SUPPORT_TCHAR_TYPE
 	// secure functions need tchar type
 	#undef SUPPORT_SECURE_FUNCTIONS
+#endif
+#ifndef DLL_PREFIX
+	#define DLL_PREFIX
+#endif
+#ifndef DLL_PREFIX_I
+	#define DLL_PREFIX_I
 #endif
 
 // include common header files
@@ -294,8 +309,8 @@ typedef union {
 	}
 } pair_t;
 
-uint32_t EndianToLittle_DWORD(uint32_t x);
-uint16_t EndianToLittle_WORD(uint16_t x);
+uint32_t DLL_PREFIX EndianToLittle_DWORD(uint32_t x);
+uint16_t DLL_PREFIX EndianToLittle_WORD(uint16_t x);
 
 // max/min
 #ifndef _MSC_VER
@@ -383,18 +398,18 @@ uint16_t EndianToLittle_WORD(uint16_t x);
 	#ifndef errno_t
 		typedef int errno_t;
 	#endif
-//	errno_t my_tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode);
-	errno_t my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource);
-	errno_t my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
-	errno_t my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count);
-	errno_t my_tcsncpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource, size_t count);
-	char *my_strtok_s(char *strToken, const char *strDelimit, char **context);
-	_TCHAR *my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context);
+//	errno_t DLL_PREFIX my_tfopen_s(FILE** pFile, const _TCHAR *filename, const _TCHAR *mode);
+	errno_t DLL_PREFIX my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource);
+	errno_t DLL_PREFIX my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource);
+	errno_t DLL_PREFIX my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count);
+	errno_t DLL_PREFIX my_tcsncpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource, size_t count);
+	char * DLL_PREFIX my_strtok_s(char *strToken, const char *strDelimit, char **context);
+	_TCHAR * DLL_PREFIX my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context);
 	#define my_fprintf_s fprintf
-	int my_sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...);
-	int my_stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...);
-	int my_vsprintf_s(char *buffer, size_t numberOfElements, const char *format, va_list argptr);
-	int my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr);
+	int DLL_PREFIX my_sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...);
+	int DLL_PREFIX my_stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...);
+	int DLL_PREFIX my_vsprintf_s(char *buffer, size_t numberOfElements, const char *format, va_list argptr);
+	int DLL_PREFIX my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr);
 #else
 //	#define my_tfopen_s _tfopen_s
 	#define my_strcpy_s strcpy_s
@@ -481,12 +496,12 @@ void get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t dst_len);
 const _TCHAR* get_parent_dir(const _TCHAR* file);
 
 // misc
-const _TCHAR *create_string(const _TCHAR* format, ...);
-uint32_t get_crc32(uint8_t data[], int size);
-uint16_t jis_to_sjis(uint16_t jis);
+const _TCHAR *DLL_PREFIX create_string(const _TCHAR* format, ...);
+uint32_t DLL_PREFIX get_crc32(uint8_t data[], int size);
+uint16_t DLL_PREFIX jis_to_sjis(uint16_t jis);
 
-int decibel_to_volume(int decibel);
-int32_t apply_volume(int32_t sample, int volume);
+int DLL_PREFIX decibel_to_volume(int decibel);
+int32_t DLL_PREFIX apply_volume(int32_t sample, int volume);
 
 #define array_length(array) (sizeof(array) / sizeof(array[0]))
 
@@ -497,7 +512,9 @@ int32_t apply_volume(int32_t sample, int volume);
 
 #define LEAP_YEAR(y)	(((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
 
-typedef struct cur_time_s {
+#define dll_cur_time_t DLL_PREFIX_I struct cur_time_s
+
+typedef DLL_PREFIX struct cur_time_s {
 	int year, month, day, day_of_week, hour, minute, second;
 	bool initialized;
 	cur_time_s()
@@ -511,6 +528,6 @@ typedef struct cur_time_s {
 	bool load_state(void *f);
 } cur_time_t;
 
-void get_host_time(cur_time_t* cur_time);
+void DLL_PREFIX get_host_time(cur_time_t* cur_time);
 
 #endif

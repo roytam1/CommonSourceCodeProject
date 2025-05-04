@@ -98,21 +98,21 @@
 #endif
 #endif
 #if    defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 4 + 1 + 1)
+#define USE_SOUND_VOLUME	(4 + 4 + 1 + 1 + 1)
 #elif  defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 4 + 0 + 1)
+#define USE_SOUND_VOLUME	(4 + 4 + 0 + 1 + 1)
 #elif  defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 0 + 1 + 1)
+#define USE_SOUND_VOLUME	(4 + 0 + 1 + 1 + 1)
 #elif  defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 0 + 0 + 1)
+#define USE_SOUND_VOLUME	(4 + 0 + 0 + 1 + 1)
 #elif !defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 4 + 1 + 1)
+#define USE_SOUND_VOLUME	(2 + 4 + 1 + 1 + 1)
 #elif !defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 4 + 0 + 1)
+#define USE_SOUND_VOLUME	(2 + 4 + 0 + 1 + 1)
 #elif !defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 0 + 1 + 1)
+#define USE_SOUND_VOLUME	(2 + 0 + 1 + 1 + 1)
 #elif !defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 0 + 0 + 1)
+#define USE_SOUND_VOLUME	(2 + 0 + 0 + 1 + 1)
 #endif
 #define USE_JOYSTICK
 #define USE_MOUSE
@@ -137,7 +137,7 @@ static const _TCHAR *sound_device_caption[] = {
 #ifdef SUPPORT_PC88_PCG8100
 	_T("PCG-8100"),
 #endif
-	_T("Beep"),
+	_T("Beep"), _T("Noise (FDD)"),
 };
 #endif
 
@@ -147,6 +147,7 @@ class EVENT;
 
 class I8251;
 class I8255;
+class NOISE;
 class PCM1BIT;
 class UPD1990A;
 class YM2203;
@@ -183,6 +184,9 @@ protected:
 	PC80S31K* pc88sub;
 	I8255* pc88pio_sub;
 	UPD765A* pc88fdc_sub;
+	NOISE* pc88noise_seek;
+	NOISE* pc88noise_head_down;
+	NOISE* pc88noise_head_up;
 	Z80* pc88cpu_sub;
 	
 #ifdef SUPPORT_PC88_PCG8100

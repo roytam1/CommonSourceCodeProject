@@ -58,7 +58,7 @@
 #define USE_CRT_FILTER
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
-#define USE_SOUND_VOLUME	4
+#define USE_SOUND_VOLUME	6
 #define USE_JOYSTICK
 #define USE_DEBUGGER
 #define USE_STATE
@@ -68,7 +68,7 @@
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-	_T("PSG #1"), _T("PSG #2"), _T("Beep"), _T("CMT"),
+	_T("PSG #1"), _T("PSG #2"), _T("Beep"), _T("CMT (Signal)"), _T("Noise (FDD)"), _T("Noise (CMT)"),
 };
 #endif
 

@@ -20,6 +20,7 @@
 #include "../i8255.h"
 #include "../i8259.h"
 #include "../io.h"
+#include "../noise.h"
 #include "../upd1990a.h"
 #include "../upd7220.h"
 #include "../upd765a.h"
@@ -61,6 +62,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	gdc_g = new UPD7220(this, emu);
 	gdc_g->set_device_name(_T("uPD7220 GDC (Graphics)"));
 	fdc = new UPD765A(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	
 	display = new DISPLAY(this, emu);
 	floppy = new FLOPPY(this, emu);
@@ -71,6 +75,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
 	
 //???	sio_r->set_context_rxrdy(pic, SIG_I8259_CHIP0 | SIG_I8259_IR4, 1);
 	sio_k->set_context_rxrdy(pic, SIG_I8259_CHIP0 | SIG_I8259_IR1, 1);
@@ -320,6 +327,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
 		beep->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif

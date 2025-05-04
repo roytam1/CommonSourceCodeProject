@@ -79,6 +79,12 @@ void initialize_config()
 #endif
 	config.fullscreen_stretch_type = 1;	// Stretch (Aspect)
 #endif
+#if defined(_USE_QT)
+	config.render_platform = CONFIG_RENDER_PLATFORM_OPENGL_MAIN;
+	config.render_major_version = 2; // For crash with some devices.
+	config.render_minor_version = 1;
+	config.rendering_type = CONFIG_RENDER_TYPE_STD;
+#endif
 	
 	// sound
 #if defined(SOUND_RATE_DEFAULT)
@@ -90,6 +96,13 @@ void initialize_config()
 	config.sound_strict_rendering = true;
 #if defined(USE_SOUND_DEVICE_TYPE) && defined(SOUND_DEVICE_TYPE_DEFAULT)
 	config.sound_device_type = SOUND_DEVICE_TYPE_DEFAULT;
+#endif
+#if defined(USE_FD1)
+	config.sound_noise_fdd = true;
+#endif
+#if defined(USE_TAPE)
+	config.sound_noise_cmt = true;
+	config.sound_play_tape = true;
 #endif
 	
 	// input
@@ -139,7 +152,6 @@ void load_config(const _TCHAR* config_path)
 	}
 #endif
 #ifdef USE_TAPE
-	config.tape_sound = MyGetPrivateProfileBool(_T("Control"), _T("TapeSound"), config.tape_sound, config_path);
 	config.wave_shaper = MyGetPrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
 	config.direct_load_mzt = MyGetPrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
 	config.baud_high = MyGetPrivateProfileBool(_T("Control"), _T("BaudHigh"), config.baud_high, config_path);
@@ -233,6 +245,12 @@ void load_config(const _TCHAR* config_path)
 	config.opengl_scanline_horiz = MyGetPrivateProfileBool(_T("Screen"), _T("OpenGLScanLineHoriz"), config.opengl_scanline_horiz, config_path);;
 	config.use_opengl_filters = MyGetPrivateProfileBool(_T("Screen"), _T("UseOpenGLFilters"), config.use_opengl_filters, config_path);
 	config.opengl_filter_num = MyGetPrivateProfileInt(_T("Screen"), _T("OpenGLFilterNum"), config.opengl_filter_num, config_path);
+	config.render_platform = MyGetPrivateProfileInt(_T("Screen"), _T("RenderPlatform"), config.render_platform, config_path);
+	config.render_major_version = MyGetPrivateProfileInt(_T("Screen"), _T("RenderMajorVersion"), config.render_major_version, config_path);
+	config.render_minor_version = MyGetPrivateProfileInt(_T("Screen"), _T("RenderMinorVersion"), config.render_minor_version, config_path);
+	config.rendering_type = MyGetPrivateProfileInt(_T("Screen"), _T("RenderType"), config.rendering_type, config_path);
+	if(config.rendering_type < 0) config.rendering_type = 0;
+	if(config.rendering_type >= CONFIG_RENDER_TYPE_END) config.rendering_type = CONFIG_RENDER_TYPE_END - 1;
 #endif
 	
 	// sound
@@ -242,12 +260,25 @@ void load_config(const _TCHAR* config_path)
 #ifdef USE_SOUND_DEVICE_TYPE
 	config.sound_device_type = MyGetPrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
 #endif
+#ifdef USE_FD1
+	config.sound_noise_fdd = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseFDD"), config.sound_noise_fdd, config_path);;
+#endif
+#ifdef USE_TAPE
+	config.sound_noise_cmt = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);;
+	config.sound_play_tape = MyGetPrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
+#endif
 #ifdef USE_SOUND_VOLUME
 	for(int i = 0; i < USE_SOUND_VOLUME; i++) {
 		int tmp_l = MyGetPrivateProfileInt(_T("Sound"), create_string(_T("VolumeLeft%d"), i + 1), config.sound_volume_l[i], config_path);
 		int tmp_r = MyGetPrivateProfileInt(_T("Sound"), create_string(_T("VolumeRight%d"), i + 1), config.sound_volume_r[i], config_path);
+#if defined(_USE_QT)
+		// Note: when using balance , levels are -40}20db to 0}20db.
+		config.sound_volume_l[i] = max(-60, min(20, tmp_l));
+		config.sound_volume_r[i] = max(-60, min(20, tmp_r));
+#else
 		config.sound_volume_l[i] = max(-40, min(0, tmp_l));
 		config.sound_volume_r[i] = max(-40, min(0, tmp_r));
+#endif
 	}
 #endif
 #ifdef _WIN32
@@ -258,6 +289,9 @@ void load_config(const _TCHAR* config_path)
 #ifdef _WIN32
 	config.use_direct_input = MyGetPrivateProfileBool(_T("Input"), _T("UseDirectInput"), config.use_direct_input, config_path);
 	config.disable_dwm = MyGetPrivateProfileBool(_T("Input"), _T("DisableDwm"), config.disable_dwm, config_path);
+#endif
+#ifdef USE_KEYBOARD_TYPE
+	config.keyboard_type = MyGetPrivateProfileInt(_T("Input"), _T("KeyboardType"), config.keyboard_type, config_path);
 #endif
 #ifdef USE_JOYSTICK
 	for(int i = 0; i < 4; i++) {
@@ -299,7 +333,6 @@ void save_config(const _TCHAR* config_path)
 	}
 #endif
 #ifdef USE_TAPE
-	MyWritePrivateProfileBool(_T("Control"), _T("TapeSound"), config.tape_sound, config_path);
 	MyWritePrivateProfileBool(_T("Control"), _T("WaveShaper"), config.wave_shaper, config_path);
 	MyWritePrivateProfileBool(_T("Control"), _T("DirectLoadMZT"), config.direct_load_mzt, config_path);
 	MyWritePrivateProfileBool(_T("Control"), _T("BaudHigh"), config.baud_high, config_path);
@@ -393,6 +426,9 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileBool(_T("Screen"), _T("OpenGLScanLineHoriz"), config.opengl_scanline_horiz, config_path);;
 	MyWritePrivateProfileBool(_T("Screen"), _T("UseOpenGLFilters"), config.use_opengl_filters, config_path);
 	MyWritePrivateProfileInt(_T("Screen"), _T("OpenGLFilterNum"), config.opengl_filter_num, config_path);
+	MyWritePrivateProfileInt(_T("Screen"), _T("RenderPlatform"), config.render_platform, config_path);
+	MyWritePrivateProfileInt(_T("Screen"), _T("RenderMajorVersion"), config.render_major_version, config_path);
+	MyWritePrivateProfileInt(_T("Screen"), _T("RenderMinorVersion"), config.render_minor_version, config_path);
 #endif
 	
 	// sound
@@ -401,6 +437,13 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileBool(_T("Sound"), _T("StrictRendering"), config.sound_strict_rendering, config_path);
 #ifdef USE_SOUND_DEVICE_TYPE
 	MyWritePrivateProfileInt(_T("Sound"), _T("DeviceType"), config.sound_device_type, config_path);
+#endif
+#ifdef USE_FD1
+	MyWritePrivateProfileBool(_T("Sound"), _T("NoiseFDD"), config.sound_noise_fdd, config_path);
+#endif
+#ifdef USE_TAPE
+	MyWritePrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);
+	MyWritePrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
 #endif
 #ifdef USE_SOUND_VOLUME
 	for(int i = 0; i < USE_SOUND_VOLUME; i++) {
@@ -413,6 +456,9 @@ void save_config(const _TCHAR* config_path)
 #ifdef _WIN32
 	MyWritePrivateProfileBool(_T("Input"), _T("UseDirectInput"), config.use_direct_input, config_path);
 	MyWritePrivateProfileBool(_T("Input"), _T("DisableDwm"), config.disable_dwm, config_path);
+#endif
+#ifdef USE_KEYBOARD_TYPE
+	MyWritePrivateProfileInt(_T("Input"), _T("KeyboardType"), config.keyboard_type, config_path);
 #endif
 #ifdef USE_JOYSTICK
 	for(int i = 0; i < 4; i++) {

@@ -43,7 +43,7 @@ void my_printf(OSD *osd, const _TCHAR *format, ...)
 	va_end(ap);
 	
 	if(logfile != NULL && logfile->IsOpened()) {
-		logfile->Fwrite(buffer, lstrlen(buffer) * sizeof(_TCHAR), 1);
+		logfile->Fwrite(buffer, _tcslen(buffer) * sizeof(_TCHAR), 1);
 	}
 	osd->write_console(buffer, _tcslen(buffer));
 }
@@ -115,7 +115,7 @@ break_point_t *get_break_point(DEBUGGER *debugger, const _TCHAR *command)
 	return NULL;
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 unsigned __stdcall debugger_thread(void *lpx)
 #else
 void* debugger_thread(void *lpx)
@@ -672,12 +672,22 @@ void* debugger_thread(void *lpx)
 					}
 					debugger->now_going = true;
 					debugger->now_suspended = false;
+#if defined(_MSC_VER)
 					while(!p->request_terminate && !debugger->now_suspended) {
 						if(p->osd->is_console_key_pressed(VK_ESCAPE) && p->osd->is_console_active()) {
 							break;
 						}
 						p->osd->sleep(10);
 					}
+#elif defined(OSD_QT)
+					while(!p->request_terminate && !debugger->now_suspended) {
+						if(p->osd->console_input_string() != NULL && p->osd->is_console_active()) {
+							p->osd->clear_console_input_string();
+							break;
+						}
+						p->osd->sleep(10);
+					}
+#endif
 					// break cpu
 					debugger->now_going = false;
 					while(!p->request_terminate && !debugger->now_suspended) {
@@ -908,7 +918,7 @@ void* debugger_thread(void *lpx)
 	p->osd->close_console();
 	
 	p->running = false;
-#ifdef _WIN32
+#ifdef _MSC_VER
 	_endthreadex(0);
 	return 0;
 #else
@@ -937,7 +947,7 @@ void EMU::open_debugger(int cpu_index)
 			debugger_thread_param.vm = vm;
 			debugger_thread_param.cpu_index = cpu_index;
 			debugger_thread_param.request_terminate = false;
-#ifdef _WIN32
+#ifdef _MSC_VER
 			if((hDebuggerThread = (HANDLE)_beginthreadex(NULL, 0, debugger_thread, &debugger_thread_param, 0, NULL)) != (HANDLE)0) {
 #else
 			if(pthread_create(&debugger_thread_id, NULL, debugger_thread, &debugger_thread_param) == 0) {
@@ -956,7 +966,7 @@ void EMU::close_debugger()
 		if(debugger_thread_param.running) {
 			debugger_thread_param.request_terminate = true;
 		}
-#ifdef _WIN32
+#ifdef _MSC_VER
 		WaitForSingleObject(hDebuggerThread, INFINITE);
 		CloseHandle(hDebuggerThread);
 #else

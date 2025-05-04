@@ -25,6 +25,7 @@
 #define SIG_UPD765A_FREADY	7
 
 class DISK;
+class NOISE;
 
 class UPD765A : public DEVICE
 {
@@ -35,11 +36,18 @@ private:
 	outputs_t outputs_hdu;
 	outputs_t outputs_index;
 	
+	// drive noise
+	NOISE* d_noise_seek;
+	NOISE* d_noise_head_down;
+	NOISE* d_noise_head_up;
+	
 	// fdc
 	struct {
 		uint8_t track;
+		uint8_t cur_track;
 		uint8_t result;
 		bool access;
+		bool head_load;
 		// timing
 		int cur_position;
 		int next_trans_position;
@@ -53,6 +61,7 @@ private:
 	uint8_t status, seekstat, command;
 	uint32_t result;
 	int step_rate_time;
+	int head_unload_time;
 	bool no_dma_mode, motor_on;
 #ifdef UPD765A_DMA_MODE
 	bool dma_data_lost;
@@ -63,7 +72,7 @@ private:
 	uint8_t buffer[0x8000];
 	int count;
 	int event_phase;
-	int phase_id, drq_id, lost_id, result7_id, seek_id[4];
+	int phase_id, drq_id, lost_id, result7_id, seek_step_id[4], seek_end_id[4], head_unload_id[4];
 	bool force_ready;
 	bool reset_signal;
 	bool prev_index;
@@ -89,6 +98,8 @@ private:
 	void shift_to_result(int length);
 	void shift_to_result7();
 	void shift_to_result7_event();
+	void start_transfer();
+	void finish_transfer();
 	
 	// command
 	void process_cmd(int cmd);
@@ -118,6 +129,7 @@ private:
 	uint32_t write_id();
 	void cmd_specify();
 	void cmd_invalid();
+	void update_head_flag(int drv, bool head_load);
 	
 public:
 	UPD765A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
@@ -126,6 +138,9 @@ public:
 		initialize_output_signals(&outputs_drq);
 		initialize_output_signals(&outputs_hdu);
 		initialize_output_signals(&outputs_index);
+		d_noise_seek = NULL;
+		d_noise_head_down = NULL;
+		d_noise_head_up = NULL;
 		force_ready = false;
 		raise_irq_when_media_changed = false;
 		set_device_name(_T("uPD765A FDC"));
@@ -143,6 +158,7 @@ public:
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	uint32_t read_signal(int ch);
 	void event_callback(int event_id, int err);
+	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
@@ -162,6 +178,30 @@ public:
 	void set_context_index(DEVICE* device, int id, uint32_t mask)
 	{
 		register_output_signal(&outputs_index, device, id, mask);
+	}
+	void set_context_noise_seek(NOISE* device)
+	{
+		d_noise_seek = device;
+	}
+	NOISE* get_context_noise_seek()
+	{
+		return d_noise_seek;
+	}
+	void set_context_noise_head_down(NOISE* device)
+	{
+		d_noise_head_down = device;
+	}
+	NOISE* get_context_noise_head_down()
+	{
+		return d_noise_head_down;
+	}
+	void set_context_noise_head_up(NOISE* device)
+	{
+		d_noise_head_up = device;
+	}
+	NOISE* get_context_noise_head_up()
+	{
+		return d_noise_head_up;
 	}
 	DISK* get_disk_handler(int drv)
 	{

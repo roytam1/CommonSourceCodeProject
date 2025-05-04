@@ -17,6 +17,7 @@
 #include "../i8255.h"
 #include "../io.h"
 #include "../msm58321.h"
+#include "../noise.h"
 #include "../sn76489an.h"
 #include "../z80.h"
 
@@ -40,6 +41,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	crtc = new HD46505(this, emu);
 	pio1 = new I8255(this, emu);
 	pio1->set_device_name(_T("8255 PIO (VRAM/Keyboard)"));
@@ -60,6 +64,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	event->set_context_sound(drec);
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	//	00	out	system control
 	//	01	in/out	vram data
@@ -239,6 +246,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		psg->set_volume(0, decibel_l, decibel_r);
 	} else if(ch == 1) {
 		drec->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 2) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -313,7 +324,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {

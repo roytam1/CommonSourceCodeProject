@@ -20,6 +20,7 @@
 #include "../i8259.h"
 #include "../i286.h"
 #include "../io.h"
+#include "../noise.h"
 #include "../not.h"
 //#include "../pcpr201.h"
 #include "../prnfile.h"
@@ -74,6 +75,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	dma = new UPD71071(this, emu);	// V50 internal
 	fdc = new UPD765A(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	
 	if(config.printer_device_type == 0) {
 		printer = new PRNFILE(this, emu);
@@ -93,6 +97,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(beep);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
 	
 //???	sio_rs->set_context_rxrdy(pic, SIG_I8259_IR4, 1);
 	sio_kbd->set_context_rxrdy(pic, SIG_I8259_IR1, 1);
@@ -308,6 +315,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
 		beep->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -367,7 +378,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 void VM::save_state(FILEIO* state_fio)
 {

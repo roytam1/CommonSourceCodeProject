@@ -59,7 +59,7 @@
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-	_T("Beep"),
+	_T("Beep"), _T("Noise (FDD)"),
 };
 #endif
 

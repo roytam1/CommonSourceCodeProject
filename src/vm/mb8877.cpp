@@ -10,6 +10,7 @@
 
 #include "mb8877.h"
 #include "disk.h"
+#include "noise.h"
 
 #define FDC_ST_BUSY		0x01	// busy
 #define FDC_ST_INDEX		0x02	// index hole
@@ -104,6 +105,27 @@ void MB8877::initialize()
 	for(int i = 0; i < MAX_DRIVE; i++) {
 		disk[i] = new DISK(emu);
 		disk[i]->set_device_name(_T("%s/Disk #%d"), this_device_name, i + 1);
+	}
+	
+	// initialize noise
+	if(d_noise_seek != NULL) {
+		d_noise_seek->set_device_name(_T("Noise Player (FDD Seek)"));
+		if(!d_noise_seek->load_wav_file(_T("FDDSEEK.WAV"))) {
+			if(!d_noise_seek->load_wav_file(_T("FDDSEEK1.WAV"))) {
+				d_noise_seek->load_wav_file(_T("SEEK.WAV"));
+			}
+		}
+		d_noise_seek->set_mute(!config.sound_noise_fdd);
+	}
+	if(d_noise_head_down != NULL) {
+		d_noise_head_down->set_device_name(_T("Noise Player (FDD Head Load)"));
+		d_noise_head_down->load_wav_file(_T("HEADDOWN.WAV"));
+		d_noise_head_down->set_mute(!config.sound_noise_fdd);
+	}
+	if(d_noise_head_up != NULL) {
+		d_noise_head_up->set_device_name(_T("Noise Player (FDD Head Unload)"));
+		d_noise_head_up->load_wav_file(_T("HEADUP.WAV"));
+		d_noise_head_up->set_mute(!config.sound_noise_fdd);
 	}
 	
 	// initialize timing
@@ -629,8 +651,10 @@ void MB8877::event_callback(int event_id, int err)
 #endif
 		if(seektrk > fdc[drvreg].track) {
 			fdc[drvreg].track++;
+			if(d_noise_seek != NULL) d_noise_seek->play();
 		} else if(seektrk < fdc[drvreg].track) {
 			fdc[drvreg].track--;
+			if(d_noise_seek != NULL) d_noise_seek->play();
 		}
 		if((cmdreg & 0x10) || ((cmdreg & 0xf0) == 0)) {
 			trkreg = fdc[drvreg].track;
@@ -867,40 +891,50 @@ void MB8877::process_cmd()
 	// type-1
 	case 0x00: case 0x08:
 		cmd_restore();
+		update_head_flag(drvreg, (cmdreg & 8) != 0);
 		break;
 	case 0x10: case 0x18:
 		cmd_seek();
+		update_head_flag(drvreg, (cmdreg & 8) != 0);
 		break;
 	case 0x20: case 0x28:
 	case 0x30: case 0x38:
 		cmd_step();
+		update_head_flag(drvreg, (cmdreg & 8) != 0);
 		break;
 	case 0x40: case 0x48:
 	case 0x50: case 0x58:
 		cmd_stepin();
+		update_head_flag(drvreg, (cmdreg & 8) != 0);
 		break;
 	case 0x60: case 0x68:
 	case 0x70: case 0x78:
 		cmd_stepout();
+		update_head_flag(drvreg, (cmdreg & 8) != 0);
 		break;
 	// type-2
 	case 0x80: case 0x88:
 	case 0x90: case 0x98:
 		cmd_readdata(true);
+		update_head_flag(drvreg, true);
 		break;
 	case 0xa0:case 0xa8:
 	case 0xb0: case 0xb8:
 		cmd_writedata(true);
+		update_head_flag(drvreg, true);
 		break;
 	// type-3
 	case 0xc0:
 		cmd_readaddr();
+		update_head_flag(drvreg, true);
 		break;
 	case 0xe0:
 		cmd_readtrack();
+		update_head_flag(drvreg, true);
 		break;
 	case 0xf0:
 		cmd_writetrack();
+		update_head_flag(drvreg, true);
 		break;
 	// type-4
 	case 0xd0: case 0xd8:
@@ -1213,6 +1247,18 @@ void MB8877::cmd_forceint()
 	cancel_my_event(EVENT_LOST);
 }
 
+void MB8877::update_head_flag(int drv, bool head_load)
+{
+	if(fdc[drv].head_load != head_load) {
+		if(head_load) {
+			if(d_noise_head_down != NULL) d_noise_head_down->play();
+		} else {
+			if(d_noise_head_up != NULL) d_noise_head_up->play();
+		}
+		fdc[drv].head_load = head_load;
+	}
+}
+
 // ----------------------------------------------------------------------------
 // media handler
 // ----------------------------------------------------------------------------
@@ -1518,6 +1564,7 @@ void MB8877::close_disk(int drv)
 	if(drv < MAX_DRIVE) {
 		disk[drv]->close();
 		cmdtype = 0;
+		update_head_flag(drvreg, false);
 	}
 }
 
@@ -1581,6 +1628,19 @@ uint8_t MB8877::fdc_status()
 #else
 	return 0;
 #endif
+}
+
+void MB8877::update_config()
+{
+	if(d_noise_seek != NULL) {
+		d_noise_seek->set_mute(!config.sound_noise_fdd);
+	}
+	if(d_noise_head_down != NULL) {
+		d_noise_head_down->set_mute(!config.sound_noise_fdd);
+	}
+	if(d_noise_head_up != NULL) {
+		d_noise_head_up->set_mute(!config.sound_noise_fdd);
+	}
 }
 
 #define STATE_VERSION	5

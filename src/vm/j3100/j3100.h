@@ -57,14 +57,14 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_ACCESS_LAMP
-#define USE_SOUND_VOLUME	1
+#define USE_SOUND_VOLUME	2
 
 #include "../../common.h"
 #include "../../fileio.h"
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-	_T("Beep"),
+	_T("Beep"), _T("Noise (FDD)"),
 };
 #endif
 

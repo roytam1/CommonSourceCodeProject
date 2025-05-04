@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/8/2017
+								3/11/2017
 
 --- What's this ?
 
@@ -257,7 +257,7 @@ See also COPYING.txt for more details about the license.
 - vm/z80.*
 	MAME Z80 core
 - vm/z80dma.*
-	MAME Z80DMA core and improved by Mr Y.S.
+	MAME Z80DMA core and improved by Mr.Y.S.
 - vm/bmjr/*
 	bm2 by Mr.maruhiro
 	Mr.Enri for HITACH BASIC Master Jr hardware design info
@@ -331,7 +331,7 @@ See also COPYING.txt for more details about the license.
 - vm/x07/io.*
 	x07_emul by Mr.Jacques Brigaud
 - vm/x1/*
-	Many advices by Mr Y.S.
+	Many advices by Mr.Y.S.
 - vm/x1/psub.*
 	X millenium T-tune by Mr.Sato
 - vm/x1/display.*

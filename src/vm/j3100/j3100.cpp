@@ -20,6 +20,7 @@
 #include "../i8259.h"
 #include "../i86.h"
 #include "../io.h"
+#include "../noise.h"
 #include "../pcm1bit.h"
 #include "../upd765a.h"
 #ifdef TYPE_SL
@@ -65,6 +66,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	io = new IO(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	fdc = new UPD765A(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 #ifdef TYPE_SL
 	rtc = new RP5C01(this, emu);
 #else
@@ -82,6 +86,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(pcm);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
@@ -315,6 +322,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
 		pcm->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif

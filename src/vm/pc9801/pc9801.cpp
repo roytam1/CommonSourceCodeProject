@@ -27,6 +27,7 @@
 #include "../io.h"
 #include "../ls244.h"
 #include "../memory.h"
+#include "../noise.h"
 #include "../not.h"
 #if !defined(SUPPORT_OLD_BUZZER)
 #include "../pcm1bit.h"
@@ -160,6 +161,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc = new UPD765A(this, emu);
 	fdc->set_device_name(_T("uPD765A FDC (2HD/2DD I/F)"));
 #endif
+	noise_seek = new NOISE(this, emu);
+	noise_head_down = new NOISE(this, emu);
+	noise_head_up = new NOISE(this, emu);
 	gdc_chr = new UPD7220(this, emu);
 	gdc_chr->set_device_name(_T("uPD7220 GDC (Character)"));
 	gdc_gfx = new UPD7220(this, emu);
@@ -239,6 +243,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	} else if(sound_device_type == 2 || sound_device_type == 3) {
 		event->set_context_sound(tms3631);
 	}
+	event->set_context_sound(noise_seek);
+	event->set_context_sound(noise_head_down);
+	event->set_context_sound(noise_head_up);
 	
 	dma->set_context_memory(memory);
 	// dma ch.0: sasi
@@ -325,18 +332,27 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(SUPPORT_2HD_FDD_IF)
 	fdc_2hd->set_context_irq(floppy, SIG_FLOPPY_2HD_IRQ, 1);
 	fdc_2hd->set_context_drq(floppy, SIG_FLOPPY_2HD_DRQ, 1);
+	fdc_2hd->set_context_noise_seek(noise_seek);
+	fdc_2hd->set_context_noise_head_down(noise_head_down);
+	fdc_2hd->set_context_noise_head_up(noise_head_up);
 	fdc_2hd->raise_irq_when_media_changed = true;
 	floppy->set_context_fdc_2hd(fdc_2hd);
 #endif
 #if defined(SUPPORT_2DD_FDD_IF)
 	fdc_2dd->set_context_irq(floppy, SIG_FLOPPY_2DD_IRQ, 1);
 	fdc_2dd->set_context_drq(floppy, SIG_FLOPPY_2DD_DRQ, 1);
+	fdc_2dd->set_context_noise_seek(noise_seek);
+	fdc_2dd->set_context_noise_head_down(noise_head_down);
+	fdc_2dd->set_context_noise_head_up(noise_head_up);
 	fdc_2dd->raise_irq_when_media_changed = true;
 	floppy->set_context_fdc_2dd(fdc_2dd);
 #endif
 #if defined(SUPPORT_2HD_2DD_FDD_IF)
 	fdc->set_context_irq(floppy, SIG_FLOPPY_IRQ, 1);
 	fdc->set_context_drq(floppy, SIG_FLOPPY_DRQ, 1);
+	fdc->set_context_noise_seek(noise_seek);
+	fdc->set_context_noise_head_down(noise_head_down);
+	fdc->set_context_noise_head_up(noise_head_up);
 	fdc->raise_irq_when_media_changed = true;
 	floppy->set_context_fdc(fdc);
 #endif
@@ -378,6 +394,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_sub->set_context_port_c(pio_fdd, SIG_I8255_PORT_C, 0xf0, -4);
 	pio_sub->clear_ports_by_cmdreg = true;
 	fdc_sub->set_context_irq(cpu_sub, SIG_CPU_IRQ, 1);
+	fdc_sub->set_context_noise_seek(noise_seek);
+	fdc_sub->set_context_noise_head_down(noise_head_down);
+	fdc_sub->set_context_noise_head_up(noise_head_up);
 	cpu_sub->set_context_mem(pc80s31k);
 	cpu_sub->set_context_io(pc80s31k);
 	cpu_sub->set_context_intr(pc80s31k);
@@ -635,6 +654,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88fdc_sub = new UPD765A(this, emu);
 	pc88fdc_sub->set_device_name(_T("uPD765A FDC (PC-8801 Sub)"));
 	pc88fdc_sub->set_context_event_manager(pc88event);
+	pc88noise_seek = new NOISE(this, emu);
+	pc88noise_seek->set_context_event_manager(pc88event);
+	pc88noise_head_down = new NOISE(this, emu);
+	pc88noise_head_down->set_context_event_manager(pc88event);
+	pc88noise_head_up = new NOISE(this, emu);
+	pc88noise_head_up->set_context_event_manager(pc88event);
 	pc88cpu_sub = new Z80(this, emu);
 	pc88cpu_sub->set_device_name(_T("Z80 CPU (PC-8801 Sub)"));
 	pc88cpu_sub->set_context_event_manager(pc88event);
@@ -643,6 +668,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88event->set_context_cpu(pc88cpu_sub, 3993624);
 	pc88event->set_context_sound(pc88opn);
 	pc88event->set_context_sound(pc88pcm);
+	pc88event->set_context_sound(pc88noise_seek);
+	pc88event->set_context_sound(pc88noise_head_down);
+	pc88event->set_context_sound(pc88noise_head_up);
 	
 	pc88->set_context_cpu(pc88cpu);
 	pc88->set_context_opn(pc88opn);
@@ -675,6 +703,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88pio_sub->set_context_port_c(pc88pio, SIG_I8255_PORT_C, 0xf0, -4);
 	pc88pio_sub->clear_ports_by_cmdreg = true;
 	pc88fdc_sub->set_context_irq(pc88cpu_sub, SIG_CPU_IRQ, 1);
+	pc88fdc_sub->set_context_noise_seek(pc88noise_seek);
+	pc88fdc_sub->set_context_noise_head_down(pc88noise_head_down);
+	pc88fdc_sub->set_context_noise_head_up(pc88noise_head_up);
 	pc88cpu_sub->set_context_mem(pc88sub);
 	pc88cpu_sub->set_context_io(pc88sub);
 	pc88cpu_sub->set_context_intr(pc88sub);
@@ -990,6 +1021,15 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 	} else if(ch-- == 0) {
 		pc88pcm->set_volume(0, decibel_l, decibel_r);
 #endif
+	} else if(ch-- == 0) {
+		noise_seek->set_volume(0, decibel_l, decibel_r);
+		noise_head_down->set_volume(0, decibel_l, decibel_r);
+		noise_head_up->set_volume(0, decibel_l, decibel_r);
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
+		pc88noise_seek->set_volume(0, decibel_l, decibel_r);
+		pc88noise_head_down->set_volume(0, decibel_l, decibel_r);
+		pc88noise_head_up->set_volume(0, decibel_l, decibel_r);
+#endif
 	}
 }
 #endif
@@ -1222,7 +1262,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	7
+#define STATE_VERSION	8
 
 void VM::save_state(FILEIO* state_fio)
 {

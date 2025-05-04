@@ -16,6 +16,7 @@
 #include "../i8080.h"
 #include "../i8155.h"
 #include "../memory.h"
+#include "../noise.h"
 
 #ifdef USE_DEBUGGER
 #include "../debugger.h"
@@ -29,7 +30,7 @@
 
 VM::VM(EMU* parent_emu) : emu(parent_emu)
 {
-	config.tape_sound = false;
+	config.sound_play_tape = false;
 	config.wave_shaper = false;
 	
 	// create devices
@@ -38,6 +39,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	cpu = new I8080(this, emu);	// 8085
 	pio = new I8155(this, emu);	// 8156
 	memory = new MEMORY(this, emu);
@@ -47,6 +51,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(drec);
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	drec->set_context_ear(io, SIG_IO_DREC_EAR, 1);
 	cpu->set_context_sod(drec, SIG_DATAREC_MIC, 1);
@@ -175,7 +182,13 @@ int VM::get_sound_buffer_ptr()
 #ifdef USE_SOUND_VOLUME
 void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
-	drec->set_volume(0, decibel_l, decibel_r);
+	if(ch == 0) {
+		drec->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
+	}
 }
 #endif
 
@@ -262,7 +275,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void VM::save_state(FILEIO* state_fio)
 {

@@ -30,6 +30,7 @@
 #endif
 
 class DISK;
+class NOISE;
 
 class T3444A : public DEVICE
 {
@@ -37,11 +38,17 @@ private:
 	// output signals
 	outputs_t outputs_rqm;
 	
+	// drive noise
+	NOISE* d_noise_seek;
+	NOISE* d_noise_head_down;
+	NOISE* d_noise_head_up;
+	
 	// drive info
 	struct {
 		int track;
 		int index;
 		bool access;
+		bool head_load;
 		// timing
 		int cur_position;
 		int next_trans_position;
@@ -96,6 +103,7 @@ private:
 	void cmd_read_write();
 	void cmd_write_id();
 	void cmd_sence();
+	void update_head_flag(int drv, bool head_load);
 	
 	// rqm
 	void set_rqm(bool val);
@@ -104,6 +112,9 @@ public:
 	T3444A(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		initialize_output_signals(&outputs_rqm);
+		d_noise_seek = NULL;
+		d_noise_head_down = NULL;
+		d_noise_head_up = NULL;
 		tnd = true;
 		motor_on = false;
 		set_device_name(_T("T3444A FDC"));
@@ -121,6 +132,7 @@ public:
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	uint32_t read_signal(int ch);
 	void event_callback(int event_id, int err);
+	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
@@ -128,6 +140,30 @@ public:
 	void set_context_rqm(DEVICE* device, int id, uint32_t mask)
 	{
 		register_output_signal(&outputs_rqm, device, id, mask);
+	}
+	void set_context_noise_seek(NOISE* device)
+	{
+		d_noise_seek = device;
+	}
+	NOISE* get_context_noise_seek()
+	{
+		return d_noise_seek;
+	}
+	void set_context_noise_head_down(NOISE* device)
+	{
+		d_noise_head_down = device;
+	}
+	NOISE* get_context_noise_head_down()
+	{
+		return d_noise_head_down;
+	}
+	void set_context_noise_head_up(NOISE* device)
+	{
+		d_noise_head_up = device;
+	}
+	NOISE* get_context_noise_head_up()
+	{
+		return d_noise_head_up;
 	}
 	DISK* get_disk_handler(int drv)
 	{

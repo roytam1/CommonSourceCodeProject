@@ -9,6 +9,7 @@
 
 #include "datarec.h"
 #include "event.h"
+#include "noise.h"
 
 #define EVENT_SIGNAL	0
 #define EVENT_SOUND	1
@@ -46,6 +47,24 @@ void DATAREC::initialize()
 #ifdef DATAREC_SOUND
 	sound_last_vol_l = sound_last_vol_r = 0;
 #endif
+	
+	// initialize noise
+	if(d_noise_play != NULL) {
+		d_noise_play->set_device_name(_T("Noise Player (CMT Play)"));
+		d_noise_play->load_wav_file(_T("RELAY_ON.WAV"));
+		d_noise_play->set_mute(!config.sound_noise_cmt);
+	}
+	if(d_noise_stop != NULL) {
+		d_noise_stop->set_device_name(_T("Noise Player (CMT Stop)"));
+		d_noise_stop->load_wav_file(_T("RELAYOFF.WAV"));
+		d_noise_stop->set_mute(!config.sound_noise_cmt);
+	}
+	if(d_noise_fast != NULL) {
+		d_noise_fast->set_device_name(_T("Noise Player (CMT Fast)"));
+		d_noise_fast->load_wav_file(_T("FAST_FWD.WAV"));
+		d_noise_fast->set_loop(true);
+		d_noise_fast->set_mute(!config.sound_noise_cmt);
+	}
 	
 	// skip frames
 	signal_changed = 0;
@@ -113,9 +132,9 @@ void DATAREC::event_frame()
 		pcm_changed--;
 	}
 #ifdef DATAREC_SOUND
-	if(remote && (play || rec) && ff_rew == 0 && signal_changed > 10 && !config.tape_sound && sound_sample == 0) {
+	if(remote && (play || rec) && ff_rew == 0 && signal_changed > 10 && !config.sound_play_tape && sound_sample == 0) {
 #else
-	if(remote && (play || rec) && ff_rew == 0 && signal_changed > 10 && !config.tape_sound) {
+	if(remote && (play || rec) && ff_rew == 0 && signal_changed > 10 && !config.sound_play_tape) {
 #endif
 		request_skip_frames();
 	}
@@ -285,6 +304,21 @@ void DATAREC::event_callback(int event_id, int err)
 void DATAREC::set_remote(bool value)
 {
 	if(remote != value) {
+		if(value) {
+			if(d_noise_play != NULL) {
+				d_noise_play->play();
+			}
+			if(d_noise_fast != NULL && ff_rew != 0) {
+				d_noise_fast->play();
+			}
+		} else {
+			if(d_noise_stop != NULL) {
+				d_noise_stop->play();
+			}
+			if(d_noise_fast != NULL) {
+				d_noise_fast->stop();
+			}
+		}
 		remote = value;
 		update_event();
 	}
@@ -391,7 +425,7 @@ void DATAREC::update_event()
 
 void DATAREC::update_realtime_render()
 {
-	bool value = (remote && (play || rec) && ff_rew == 0 && config.tape_sound);
+	bool value = (remote && (play || rec) && ff_rew == 0 && config.sound_play_tape);
 	
 	if(realtime != value) {
 		set_realtime_render(this, value);
@@ -1476,7 +1510,7 @@ void DATAREC::mix(int32_t* buffer, int cnt)
 {
 	int32_t* buffer_tmp = buffer;
 	
-	if(config.tape_sound && pcm_changed && remote && (play || rec) && ff_rew == 0) {
+	if(config.sound_play_tape && pcm_changed && remote && (play || rec) && ff_rew == 0) {
 		bool signal = ((play && in_signal) || (rec && out_signal));
 		if(signal) {
 			pcm_positive_clocks += get_passed_clock(pcm_prev_clock);
@@ -1515,7 +1549,7 @@ void DATAREC::mix(int32_t* buffer, int cnt)
 	pcm_positive_clocks = pcm_negative_clocks = 0;
 	
 #ifdef DATAREC_SOUND
-	if(/*config.tape_sound && */remote && play && ff_rew == 0) {
+	if(/*config.sound_play_tape && */remote && play && ff_rew == 0) {
 		sound_last_vol_l = apply_volume(sound_sample, sound_volume_l);
 		sound_last_vol_r = apply_volume(sound_sample, sound_volume_r);
 		buffer = buffer_tmp; // restore
@@ -1598,6 +1632,15 @@ double DATAREC::get_ave_hi_freq()
 
 void DATAREC::update_config()
 {
+	if(d_noise_play != NULL) {
+		d_noise_play->set_mute(!config.sound_noise_cmt);
+	}
+	if(d_noise_stop != NULL) {
+		d_noise_stop->set_mute(!config.sound_noise_cmt);
+	}
+	if(d_noise_fast != NULL) {
+		d_noise_fast->set_mute(!config.sound_noise_cmt);
+	}
 	update_realtime_render();
 }
 

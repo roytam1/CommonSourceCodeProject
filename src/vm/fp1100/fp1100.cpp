@@ -16,6 +16,7 @@
 #include "../datarec.h"
 #include "../disk.h"
 #include "../hd46505.h"
+#include "../noise.h"
 #include "../upd765a.h"
 #include "../upd7801.h"
 #include "../z80.h"
@@ -43,8 +44,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	beep = new BEEP(this, emu);
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	crtc = new HD46505(this, emu);
 	fdc = new UPD765A(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	subcpu = new UPD7801(this, emu);
 	maincpu = new Z80(this, emu);
 	
@@ -76,6 +83,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(subcpu, SUB_CPU_CLOCKS);
 	event->set_context_sound(beep);
 	event->set_context_sound(drec);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	drec->set_context_ear(subbus, SIG_SUB_EAR, 1);
 	crtc->set_context_hsync(subbus, SIG_SUB_HSYNC, 1);
@@ -228,6 +241,14 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		beep->set_volume(0, decibel_l, decibel_r);
 	} else if(ch == 1) {
 		drec->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 2) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 3) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -324,7 +345,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void VM::save_state(FILEIO* state_fio)
 {

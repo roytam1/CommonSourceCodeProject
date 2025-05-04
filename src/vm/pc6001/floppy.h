@@ -23,11 +23,15 @@
 #include "../device.h"
 
 class DISK;
+class NOISE;
 
 class FLOPPY : public DEVICE
 {
 private:
 	DEVICE *d_ext;
+	NOISE *d_noise_seek;
+//	NOISE* d_noise_head_down;
+//	NOISE* d_noise_head_up;
 	unsigned char io_B1H;
 	
 	DISK* disk[2];
@@ -99,6 +103,9 @@ private:
 public:
 	FLOPPY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+		d_noise_seek = NULL;
+//		d_noise_head_down = NULL;
+//		d_noise_head_up = NULL;
 		set_device_name(_T("Floppy Drive"));
 	}
 	~FLOPPY() {}
@@ -110,6 +117,7 @@ public:
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	uint32_t read_signal(int ch);
+	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
@@ -118,6 +126,30 @@ public:
 	{
 		d_ext = device;
 	}
+	void set_context_noise_seek(NOISE* device)
+	{
+		d_noise_seek = device;
+	}
+	NOISE* get_context_noise_seek()
+	{
+		return d_noise_seek;
+	}
+//	void set_context_noise_head_down(NOISE* device)
+//	{
+//		d_noise_head_down = device;
+//	}
+//	NOISE* get_context_noise_head_down()
+//	{
+//		return d_noise_head_down;
+//	}
+//	void set_context_noise_head_up(NOISE* device)
+//	{
+//		d_noise_head_up = device;
+//	}
+//	NOISE* get_context_noise_head_up()
+//	{
+//		return d_noise_head_up;
+//	}
 	DISK* get_disk_handler(int drv)
 	{
 		return disk[drv];

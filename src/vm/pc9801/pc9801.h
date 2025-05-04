@@ -167,19 +167,19 @@
 #define USE_SOUND_DEVICE_TYPE	5
 #if defined(_PC98DO) || defined(_PC98DOPLUS)
 #if    defined(SUPPORT_PC98_OPNA) &&  defined(SUPPORT_PC88_OPNA)
-#define USE_SOUND_VOLUME	(4 + 1 + 1 + 4 + 1)
+#define USE_SOUND_VOLUME	(4 + 1 + 1 + 4 + 1 + 1)
 #elif  defined(SUPPORT_PC98_OPNA) && !defined(SUPPORT_PC88_OPNA)
-#define USE_SOUND_VOLUME	(4 + 1 + 1 + 2 + 1)
+#define USE_SOUND_VOLUME	(4 + 1 + 1 + 2 + 1 + 1)
 #elif !defined(SUPPORT_PC98_OPNA) &&  defined(SUPPORT_PC88_OPNA)
-#define USE_SOUND_VOLUME	(2 + 1 + 1 + 4 + 1)
+#define USE_SOUND_VOLUME	(2 + 1 + 1 + 4 + 1 + 1)
 #elif !defined(SUPPORT_PC98_OPNA) && !defined(SUPPORT_PC88_OPNA)
-#define USE_SOUND_VOLUME	(2 + 1 + 1 + 2 + 1)
+#define USE_SOUND_VOLUME	(2 + 1 + 1 + 2 + 1 + 1)
 #endif
 #else
 #if defined(SUPPORT_PC98_OPNA)
-#define USE_SOUND_VOLUME	(4 + 1 + 1)
+#define USE_SOUND_VOLUME	(4 + 1 + 1 + 1)
 #else
-#define USE_SOUND_VOLUME	(2 + 1 + 1)
+#define USE_SOUND_VOLUME	(2 + 1 + 1 + 1)
 #endif
 #endif
 #define USE_JOYSTICK
@@ -208,6 +208,7 @@ static const _TCHAR *sound_device_caption[] = {
 #endif
 	_T("PC-88 Beep"), 
 #endif
+	_T("Noise (FDD)"),
 };
 #endif
 
@@ -227,6 +228,7 @@ class I286;
 class IO;
 class LS244;
 class MEMORY;
+class NOISE;
 class NOT;
 #if !defined(SUPPORT_OLD_BUZZER)
 class PCM1BIT;
@@ -309,6 +311,9 @@ protected:
 #if defined(SUPPORT_2HD_2DD_FDD_IF)
 	UPD765A* fdc;
 #endif
+	NOISE* noise_seek;
+	NOISE* noise_head_down;
+	NOISE* noise_head_up;
 	UPD7220* gdc_chr;
 	UPD7220* gdc_gfx;
 	YM2203* opn;
@@ -365,6 +370,9 @@ protected:
 	PC80S31K* pc88sub;
 	I8255* pc88pio_sub;
 	UPD765A* pc88fdc_sub;
+	NOISE* pc88noise_seek;
+	NOISE* pc88noise_head_down;
+	NOISE* pc88noise_head_up;
 	Z80* pc88cpu_sub;
 	
 	int boot_mode;

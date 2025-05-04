@@ -21,6 +21,7 @@
 #include "../io.h"
 #include "../mb8877.h"
 #include "../mz1p17.h"
+#include "../noise.h"
 //#include "../pcpr201.h"
 #include "../prnfile.h"
 #include "../ym2151.h"
@@ -72,10 +73,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	crtc = new HD46505(this, emu);
 	pio = new I8255(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 //	psg = new YM2203(this, emu);
 	psg = new AY_3_891X(this, emu);
 	cpu = new Z80(this, emu);
@@ -148,6 +155,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 	event->set_context_sound(psg);
 	event->set_context_sound(drec);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	drec->set_context_ear(pio, SIG_I8255_PORT_B, 0x02);
 	crtc->set_context_vblank(display, SIG_DISPLAY_VBLANK, 1);
@@ -400,7 +413,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		uint8_t *rom = cpu_sub->get_rom_ptr();
 		sub->rom_crc32 = get_crc32(rom, 0x800);	// 2KB
 		if(rom[0x23] == 0xb9 && rom[0x24] == 0x35 && rom[0x25] == 0xb1) {
-			cur_time_t cur_time;
+			dll_cur_time_t cur_time;
 			get_host_time(&cur_time);
 			rom[0x26] = TO_BCD(cur_time.year);
 		}
@@ -583,8 +596,16 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		}
 	} else if(ch == 3) {
 		drec->set_volume(0, decibel_l, decibel_r);
-#if defined(_X1TWIN)
 	} else if(ch == 4) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 5) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
+#if defined(_X1TWIN)
+	} else if(ch == 6) {
 		pce->set_volume(0, decibel_l, decibel_r);
 #endif
 	}
@@ -801,7 +822,7 @@ void VM::update_dipswitch()
 }
 #endif
 
-#define STATE_VERSION	7
+#define STATE_VERSION	8
 
 void VM::save_state(FILEIO* state_fio)
 {

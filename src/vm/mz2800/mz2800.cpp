@@ -19,6 +19,7 @@
 #include "../io.h"
 #include "../mb8877.h"
 #include "../mz1p17.h"
+#include "../noise.h"
 #include "../not.h"
 #include "../pcm1bit.h"
 //#include "../pcpr201.h"
@@ -62,6 +63,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pic = new I8259(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	not_busy = new NOT(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	rtc = new RP5C01(this, emu);	// RP-5C15
@@ -86,6 +90,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(opn);
 	event->set_context_sound(pcm);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
 	
 	pit->set_constant_clock(0, 31250);
 	pit->set_constant_clock(2, 31250);
@@ -317,6 +324,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		opn->set_volume(1, decibel_l, decibel_r);
 	} else if(ch == 2) {
 		pcm->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 3) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -362,7 +373,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void VM::save_state(FILEIO* state_fio)
 {

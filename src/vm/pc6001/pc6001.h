@@ -97,9 +97,9 @@
 #endif
 #define USE_ACCESS_LAMP
 #if defined(_PC6001)
-#define USE_SOUND_VOLUME	2
+#define USE_SOUND_VOLUME	4
 #else
-#define USE_SOUND_VOLUME	3
+#define USE_SOUND_VOLUME	5
 #endif
 #define USE_JOYSTICK
 #define USE_PRINTER
@@ -115,7 +115,7 @@ static const _TCHAR *sound_device_caption[] = {
 #if !defined(_PC6001)
 	_T("Voice"),
 #endif
-	_T("CMT"),
+	_T("CMT (Signal)"), _T("Noise (FDD)"), _T("Noise (CMT)"),
 };
 #endif
 
@@ -130,6 +130,7 @@ class MC6847;
 #else
 class UPD7752;
 #endif
+class NOISE;
 class PC6031;
 class PC80S31K;
 class UPD765A;
@@ -167,6 +168,9 @@ protected:
 	DEVICE* printer;
 	I8255* pio_sub;
 	IO* io;
+	NOISE* noise_seek;
+	NOISE* noise_head_down;
+	NOISE* noise_head_up;
 #if defined(_PC6001MK2SR) || defined(_PC6601SR)
 	YM2203* psg;
 #else

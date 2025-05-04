@@ -52,7 +52,7 @@
 #define USE_CRT_FILTER
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
-#define USE_SOUND_VOLUME	5
+#define USE_SOUND_VOLUME	7
 #define USE_JOYSTICK
 #define USE_MOUSE
 #define USE_PRINTER
@@ -65,7 +65,7 @@
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-	_T("OPN (FM)"), _T("OPN (PSG)"), _T("Beep"), _T("CMT (Signal)"), _T("CMT (Voice)"),
+	_T("OPN (FM)"), _T("OPN (PSG)"), _T("Beep"), _T("CMT (Signal)"), _T("CMT (Voice)"), _T("Noise (FDD)"), _T("Noise (CMT)"),
 };
 #endif
 

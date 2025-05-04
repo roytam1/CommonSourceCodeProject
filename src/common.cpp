@@ -37,11 +37,11 @@
 	extern DWORD GetLongPathName(LPCTSTR lpszShortPath, LPTSTR lpszLongPath, DWORD cchBuffer);
 #endif
 #if defined(_USE_QT)
-	std::string cpp_homedir;
-	std::string my_procname;
+	std::string DLL_PREFIX cpp_homedir;
+	std::string DLL_PREFIX my_procname;
 #endif
 
-uint32_t EndianToLittle_DWORD(uint32_t x)
+uint32_t DLL_PREFIX EndianToLittle_DWORD(uint32_t x)
 {
 #if defined(__LITTLE_ENDIAN__)
 	return x;
@@ -53,7 +53,7 @@ uint32_t EndianToLittle_DWORD(uint32_t x)
 #endif
 }
 
-uint16_t EndianToLittle_WORD(uint16_t x)
+uint16_t DLL_PREFIX EndianToLittle_WORD(uint16_t x)
 {
 #if defined(__LITTLE_ENDIAN__)
 	return x;
@@ -65,7 +65,7 @@ uint16_t EndianToLittle_WORD(uint16_t x)
 }
 
 #ifndef _MSC_VER
-int max(int a, int b)
+int DLL_PREFIX max(int a, int b)
 {
 	if(a > b) {
 		return a;
@@ -74,7 +74,7 @@ int max(int a, int b)
 	}
 }
 
-unsigned int max(unsigned int a, unsigned int b)
+unsigned DLL_PREFIX int max(unsigned int a, unsigned int b)
 {
 	if(a > b) {
 		return a;
@@ -83,7 +83,7 @@ unsigned int max(unsigned int a, unsigned int b)
 	}
 }
 
-int min(int a, int b)
+int DLL_PREFIX min(int a, int b)
 {
 	if(a < b) {
 		return a;
@@ -92,7 +92,7 @@ int min(int a, int b)
 	}
 }
 
-unsigned int min(unsigned int a, unsigned int b)
+unsigned int DLL_PREFIX min(unsigned int a, unsigned int b)
 {
 	if(a < b) {
 		return a;
@@ -112,41 +112,41 @@ unsigned int min(unsigned int a, unsigned int b)
 //	}
 //}
 
-errno_t my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource)
+errno_t DLL_PREFIX my_strcpy_s(char *strDestination, size_t numberOfElements, const char *strSource)
 {
 	strcpy(strDestination, strSource);
 	return 0;
 }
 
-errno_t my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource)
+errno_t DLL_PREFIX my_tcscpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource)
 {
 	_tcscpy(strDestination, strSource);
 	return 0;
 }
 
-errno_t my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count)
+errno_t DLL_PREFIX my_strncpy_s(char *strDestination, size_t numberOfElements, const char *strSource, size_t count)
 {
 	strncpy(strDestination, strSource, count);
 	return 0;
 }
 
-errno_t my_tcsncpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource, size_t count)
+errno_t DLL_PREFIX my_tcsncpy_s(_TCHAR *strDestination, size_t numberOfElements, const _TCHAR *strSource, size_t count)
 {
 	_tcsncpy(strDestination, strSource, count);
 	return 0;
 }
 
-char *my_strtok_s(char *strToken, const char *strDelimit, char **context)
+char *DLL_PREFIX my_strtok_s(char *strToken, const char *strDelimit, char **context)
 {
 	return strtok(strToken, strDelimit);
 }
 
-_TCHAR *my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context)
+_TCHAR DLL_PREFIX *my_tcstok_s(_TCHAR *strToken, const char *strDelimit, _TCHAR **context)
 {
 	return _tcstok(strToken, strDelimit);
 }
 
-int my_sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...)
+int DLL_PREFIX my_sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -155,7 +155,7 @@ int my_sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...)
 	return result;
 }
 
-int my_stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...)
+int DLL_PREFIX my_stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -164,19 +164,19 @@ int my_stprintf_s(_TCHAR *buffer, size_t sizeOfBuffer, const _TCHAR *format, ...
 	return result;
 }
 
-int my_vsprintf_s(char *buffer, size_t numberOfElements, const char *format, va_list argptr)
+int DLL_PREFIX my_vsprintf_s(char *buffer, size_t numberOfElements, const char *format, va_list argptr)
 {
 	return vsprintf(buffer, format, argptr);
 }
 
-int my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr)
+int DLL_PREFIX my_vstprintf_s(_TCHAR *buffer, size_t numberOfElements, const _TCHAR *format, va_list argptr)
 {
 	return _vstprintf(buffer, format, argptr);
 }
 #endif
 
 #ifndef _WIN32
-BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpString, LPCTSTR lpFileName)
+BOOL DLL_PREFIX MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpString, LPCTSTR lpFileName)
 {
 	BOOL result = FALSE;
 	FILEIO* fio_i = new FILEIO();
@@ -241,6 +241,7 @@ BOOL MyWritePrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR l
 	return result;
 }
 
+#if 0
 static std::string MyGetPrivateProfileStr(const _TCHAR *lpAppName, const _TCHAR *lpKeyName, _TCHAR *lpFileName)
 {
 	std::string key;
@@ -293,8 +294,9 @@ static std::string MyGetPrivateProfileStr(const _TCHAR *lpAppName, const _TCHAR 
 	got_str.erase(0, pos + key_str.length());
 	return got_str;
 }
+#endif
 
-DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName)
+DWORD DLL_PREFIX MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize, LPCTSTR lpFileName)
 {
 	_TCHAR *lpp = (_TCHAR *)lpReturnedString;
 	if(lpDefault != NULL) {
@@ -331,7 +333,7 @@ DWORD MyGetPrivateProfileString(LPCTSTR lpAppName, LPCTSTR lpKeyName, LPCTSTR lp
 	return strlen(lpp);
 }
 
-UINT MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, LPCTSTR lpFileName)
+UINT DLL_PREFIX MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, LPCTSTR lpFileName)
 {
 	int i;
 	char sstr[128];
@@ -353,7 +355,7 @@ UINT MyGetPrivateProfileInt(LPCTSTR lpAppName, LPCTSTR lpKeyName, INT nDefault, 
 #endif
 
 #if defined(_RGB555)
-scrntype_t RGB_COLOR(uint32_t r, uint32_t g, uint32_t b)
+scrntype_t DLL_PREFIX RGB_COLOR(uint32_t r, uint32_t g, uint32_t b)
 {
 	scrntype_t rr = ((scrntype_t)r * 0x1f) / 0xff;
 	scrntype_t gg = ((scrntype_t)g * 0x1f) / 0xff;
@@ -361,26 +363,26 @@ scrntype_t RGB_COLOR(uint32_t r, uint32_t g, uint32_t b)
 	return (rr << 10) | (gg << 5) | bb;
 }
 
-scrntype_t RGBA_COLOR(uint32_t r, uint32_t g, uint b, uint32_t a)
+scrntype_t DLL_PREFIX RGBA_COLOR(uint32_t r, uint32_t g, uint b, uint32_t a)
 {
 	return RGB_COLOR(r, g, b);
 }
 
-uint8_t R_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX R_OF_COLOR(scrntype_t c)
 {
 	c = (c >> 10) & 0x1f;
 	c = (c * 0xff) / 0x1f;
 	return (uint8_t)c;
 }
 
-uint8_t G_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX G_OF_COLOR(scrntype_t c)
 {
 	c = (c >>  5) & 0x1f;
 	c = (c * 0xff) / 0x1f;
 	return (uint8_t)c;
 }
 
-uint8_t B_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX B_OF_COLOR(scrntype_t c)
 {
 	c = (c >>  0) & 0x1f;
 	c = (c * 0xff) / 0x1f;
@@ -392,7 +394,7 @@ uint8_t A_OF_COLOR(scrntype_t c)
 	return 0;
 }
 #elif defined(_RGB565)
-scrntype_t RGB_COLOR(uint32_t r, uint32_t g, uint32_t b)
+scrntype_t DLL_PREFIX RGB_COLOR(uint32_t r, uint32_t g, uint32_t b)
 {
 	scrntype_t rr = ((scrntype_t)r * 0x1f) / 0xff;
 	scrntype_t gg = ((scrntype_t)g * 0x3f) / 0xff;
@@ -400,33 +402,33 @@ scrntype_t RGB_COLOR(uint32_t r, uint32_t g, uint32_t b)
 	return (rr << 11) | (gg << 5) | bb;
 }
 
-scrntype_t RGBA_COLOR(uint32_t r, uint32_t g, uint32_t b, uint32_t a)
+scrntype_t DLL_PREFIX RGBA_COLOR(uint32_t r, uint32_t g, uint32_t b, uint32_t a)
 {
 	return RGB_COLOR(r, g, b);
 }
 
-uint8_t R_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX R_OF_COLOR(scrntype_t c)
 {
 	c = (c >> 11) & 0x1f;
 	c = (c * 0xff) / 0x1f;
 	return (uint8_t)c;
 }
 
-uint8_t G_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX G_OF_COLOR(scrntype_t c)
 {
 	c = (c >>  5) & 0x3f;
 	c = (c * 0xff) / 0x3f;
 	return (uint8_t)c;
 }
 
-uint8_t B_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX B_OF_COLOR(scrntype_t c)
 {
 	c = (c >>  0) & 0x1f;
 	c = (c * 0xff) / 0x1f;
 	return (uint8_t)c;
 }
 
-uint8_t A_OF_COLOR(scrntype_t c)
+uint8_t DLL_PREFIX A_OF_COLOR(scrntype_t c)
 {
 	return 0;
 }
@@ -438,13 +440,13 @@ struct to_upper {  // Refer from documentation of libstdc++, GCC5.
 };
 #endif
 
-const _TCHAR *get_application_path()
+const _TCHAR *DLL_PREFIX get_application_path()
 {
 	static _TCHAR app_path[_MAX_PATH];
 	static bool initialized = false;
 	
 	if(!initialized) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_USE_QT)
 		_TCHAR tmp_path[_MAX_PATH], *ptr = NULL;
 		if(GetModuleFileName(NULL, tmp_path, _MAX_PATH) != 0 && GetFullPathName(tmp_path, _MAX_PATH, app_path, &ptr) != 0 && ptr != NULL) {
 			*ptr = _T('\0');
@@ -482,7 +484,7 @@ const _TCHAR *get_application_path()
 	return (const _TCHAR *)app_path;
 }
 
-const _TCHAR *create_local_path(const _TCHAR *format, ...)
+const _TCHAR *DLL_PREFIX create_local_path(const _TCHAR *format, ...)
 {
 	static _TCHAR file_path[8][_MAX_PATH];
 	static unsigned int table_index = 0;
@@ -497,7 +499,7 @@ const _TCHAR *create_local_path(const _TCHAR *format, ...)
 	return (const _TCHAR *)file_path[output_index];
 }
 
-void create_local_path(_TCHAR *file_path, int length, const _TCHAR *format, ...)
+void DLL_PREFIX create_local_path(_TCHAR *file_path, int length, const _TCHAR *format, ...)
 {
 	_TCHAR file_name[_MAX_PATH];
 	va_list ap;
@@ -516,12 +518,12 @@ const _TCHAR *create_date_file_path(const _TCHAR *extension)
 	return create_local_path(_T("%d-%0.2d-%0.2d_%0.2d-%0.2d-%0.2d.%s"), cur_time.year, cur_time.month, cur_time.day, cur_time.hour, cur_time.minute, cur_time.second, extension);
 }
 
-void create_date_file_path(_TCHAR *file_path, int length, const _TCHAR *extension)
+void DLL_PREFIX create_date_file_path(_TCHAR *file_path, int length, const _TCHAR *extension)
 {
 	my_tcscpy_s(file_path, length, create_date_file_path(extension));
 }
 
-bool check_file_extension(const _TCHAR *file_path, const _TCHAR *ext)
+bool DLL_PREFIX check_file_extension(const _TCHAR *file_path, const _TCHAR *ext)
 {
 #if defined(_USE_QT)
 	std::string s_fpath = file_path;
@@ -531,7 +533,7 @@ bool check_file_extension(const _TCHAR *file_path, const _TCHAR *ext)
 	std::transform(s_ext.begin(), s_ext.end(), s_ext.begin(), to_upper());
 	if(s_fpath.length() < s_ext.length()) return false;
 	pos = s_fpath.rfind(s_ext.c_str(), s_fpath.length());
-	if((pos != (int)std::string::npos) && (pos >= ((int)s_fpath.length() - (int)s_ext.length()))) return true;
+	if((pos != (int)std::string::npos) && (pos >= ((int)s_fpath.length() - (int)s_ext.length()))) return true; 
 	return false;
 #else
 	int nam_len = _tcslen(file_path);
@@ -541,7 +543,7 @@ bool check_file_extension(const _TCHAR *file_path, const _TCHAR *ext)
 #endif
 }
 
-const _TCHAR *get_file_path_without_extensiton(const _TCHAR *file_path)
+const _TCHAR *DLL_PREFIX get_file_path_without_extensiton(const _TCHAR *file_path)
 {
 	static _TCHAR path[8][_MAX_PATH];
 	static unsigned int table_index = 0;
@@ -559,7 +561,7 @@ const _TCHAR *get_file_path_without_extensiton(const _TCHAR *file_path)
 	return (const _TCHAR *)path[output_index];
 }
 
-void get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t dst_len)
+void DLL_PREFIX get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t dst_len)
 {
 #ifdef _WIN32
 	_TCHAR tmp[_MAX_PATH];
@@ -573,7 +575,7 @@ void get_long_full_path_name(const _TCHAR* src, _TCHAR* dst, size_t dst_len)
 #endif
 }
 
-const _TCHAR* get_parent_dir(const _TCHAR* file)
+const _TCHAR* DLL_PREFIX get_parent_dir(const _TCHAR* file)
 {
 	static _TCHAR path[8][_MAX_PATH];
 	static unsigned int table_index = 0;
@@ -591,7 +593,7 @@ const _TCHAR* get_parent_dir(const _TCHAR* file)
 	return path[output_index];
 }
 
-const _TCHAR *create_string(const _TCHAR* format, ...)
+const _TCHAR *DLL_PREFIX create_string(const _TCHAR* format, ...)
 {
 	static _TCHAR buffer[8][1024];
 	static unsigned int table_index = 0;
@@ -604,7 +606,7 @@ const _TCHAR *create_string(const _TCHAR* format, ...)
 	return (const _TCHAR *)buffer[output_index];
 }
 
-uint32_t get_crc32(uint8_t data[], int size)
+uint32_t DLL_PREFIX get_crc32(uint8_t data[], int size)
 {
 	static bool initialized = false;
 	static uint32_t table[256];
@@ -631,7 +633,7 @@ uint32_t get_crc32(uint8_t data[], int size)
 	return ~c;
 }
 
-uint16_t jis_to_sjis(uint16_t jis)
+uint16_t DLL_PREFIX jis_to_sjis(uint16_t jis)
 {
 	pair_t tmp;
 	
@@ -651,13 +653,13 @@ uint16_t jis_to_sjis(uint16_t jis)
 	return tmp.w.l;
 }
 
-int decibel_to_volume(int decibel)
+int DLL_PREFIX decibel_to_volume(int decibel)
 {
 	// +1 equals +0.5dB (same as fmgen)
 	return (int)(1024.0 * pow(10.0, decibel / 40.0) + 0.5);
 }
 
-int32_t apply_volume(int32_t sample, int volume)
+int32_t DLL_PREFIX apply_volume(int32_t sample, int volume)
 {
 //	int64_t output;
 	int32_t output;
@@ -681,7 +683,7 @@ int32_t apply_volume(int32_t sample, int volume)
 	return output;
 }
 
-void get_host_time(cur_time_t* cur_time)
+void DLL_PREFIX get_host_time(cur_time_t* cur_time)
 {
 #ifdef _WIN32
 	SYSTEMTIME sTime;
@@ -706,7 +708,7 @@ void get_host_time(cur_time_t* cur_time)
 #endif
 }
 
-void cur_time_t::increment()
+void DLL_PREFIX cur_time_t::increment()
 {
 	if(++second >= 60) {
 		second = 0;
@@ -736,7 +738,7 @@ void cur_time_t::increment()
 	}
 }
 
-void cur_time_t::update_year()
+void DLL_PREFIX cur_time_t::update_year()
 {
 	// 1970-2069
 	if(year < 70) {
@@ -746,7 +748,7 @@ void cur_time_t::update_year()
 	}
 }
 
-void cur_time_t::update_day_of_week()
+void DLL_PREFIX cur_time_t::update_day_of_week()
 {
 	static const int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
 	int y = year - (month < 3);
@@ -755,7 +757,7 @@ void cur_time_t::update_day_of_week()
 
 #define STATE_VERSION	1
 
-void cur_time_t::save_state(void *f)
+void DLL_PREFIX cur_time_t::save_state(void *f)
 {
 	FILEIO *state_fio = (FILEIO *)f;
 	
@@ -771,7 +773,7 @@ void cur_time_t::save_state(void *f)
 	state_fio->FputBool(initialized);
 }
 
-bool cur_time_t::load_state(void *f)
+bool DLL_PREFIX cur_time_t::load_state(void *f)
 {
 	FILEIO *state_fio = (FILEIO *)f;
 	

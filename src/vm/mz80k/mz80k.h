@@ -58,7 +58,11 @@
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NO_CAPS
-#define USE_SOUND_VOLUME	2
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
+#define USE_SOUND_VOLUME	4
+#else
+#define USE_SOUND_VOLUME	3
+#endif
 #define USE_PRINTER
 #define USE_PRINTER_TYPE	4
 #define USE_DEBUGGER
@@ -79,7 +83,11 @@
 
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
-	_T("Beep"), _T("CMT"),
+	_T("Beep"), _T("CMT (Signal)"),
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
+	_T("Noise (FDD)"),
+#endif
+	_T("Noise (CMT)"),
 };
 #endif
 

@@ -19,6 +19,7 @@
 #include "../i286.h"
 #include "../io.h"
 #include "../mb8877.h"
+#include "../noise.h"
 #include "../scsi_hdd.h"
 #include "../scsi_host.h"
 #include "../sn76489an.h"
@@ -63,6 +64,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu = new I286(this, emu);
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	scsi_host = new SCSI_HOST(this, emu);
 	for(int i = 0; i < 7; i++) {
 		if(FILEIO::IsFileExisting(create_local_path(_T("SCSI%d.DAT"), i))) {
@@ -93,6 +97,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
 	
 	dma->set_context_memory(memory);
 	dma->set_context_ch0(fdc);
@@ -300,6 +307,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
 		psg->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -360,7 +371,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 void VM::save_state(FILEIO* state_fio)
 {

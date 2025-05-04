@@ -23,6 +23,7 @@
 #if defined(_PX7)
 #include "../ld700.h"
 #endif
+#include "../noise.h"
 #include "../not.h"
 //#include "../ym2203.h"
 #include "../ay_3_891x.h"
@@ -58,6 +59,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	pio = new I8255(this, emu);
 	io = new IO(this, emu);
 #if defined(_PX7)
@@ -94,6 +98,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(_PX7)
 	event->set_context_sound(ldp);
 #endif
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	drec->set_context_ear(psg, SIG_AY_3_891X_PORT_A, 0x80);
 	pio->set_context_port_a(memory, SIG_MEMORY_SEL, 0xff, 0);
@@ -255,16 +262,20 @@ void VM::movie_sound_callback(uint8_t *buffer, long size)
 #ifdef USE_SOUND_VOLUME
 void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
-	if(ch == 0) {
+	if(ch-- == 0) {
 		psg->set_volume(1, decibel_l, decibel_r);
-	} else if(ch == 1) {
+	} else if(ch-- == 0) {
 		pcm->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 2) {
+	} else if(ch-- == 0) {
 		drec->set_volume(0, decibel_l, decibel_r);
 #if defined(_PX7)
-	} else if(ch == 3) {
+	} else if(ch-- == 0) {
 		ldp->set_volume(0, decibel_l, decibel_r);
 #endif
+	} else if(ch-- == 0) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -393,7 +404,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 void VM::save_state(FILEIO* state_fio)
 {

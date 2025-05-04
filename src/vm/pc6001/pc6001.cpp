@@ -25,6 +25,7 @@
 #else
 #include "../upd7752.h"
 #endif
+#include "../noise.h"
 #include "../pc6031.h"
 #include "../pc80s31k.h"
 #include "../prnfile.h"
@@ -72,6 +73,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	pio_sub = new I8255(this, emu);
 	io = new IO(this, emu);
+	noise_seek = new NOISE(this, emu);
+	noise_head_down = new NOISE(this, emu);
+	noise_head_up = new NOISE(this, emu);
 #if defined(_PC6001MK2SR) || defined(_PC6601SR)
 	psg = new YM2203(this, emu);
 #else
@@ -87,6 +91,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 #if defined(_PC6601) || defined(_PC6601SR)
 	floppy = new FLOPPY(this, emu);
+	floppy->set_context_noise_seek(noise_seek);
+//	floppy->set_context_noise_head_down(noise_head_down);
+//	floppy->set_context_noise_head_up(noise_head_up);
 #endif
 	joystick = new JOYSTICK(this, emu);
 	memory = new MEMORY(this, emu);
@@ -95,6 +102,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// set contexts
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
+	event->set_context_sound(noise_seek);
+	event->set_context_sound(noise_head_down);
+	event->set_context_sound(noise_head_up);
 	
 	pio_sub->set_context_port_b(printer, SIG_PRINTER_DATA, 0xff, 0);
 	pio_sub->set_context_port_c(printer, SIG_PRINTER_STROBE, 0x01, 0);
@@ -127,8 +137,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		sub = new SUB(this, emu);
 		drec = new DATAREC(this, emu);
 		drec->set_device_name(_T("Data Recorder (Sub)"));
+		drec->set_context_noise_play(new NOISE(this, emu));
+		drec->set_context_noise_stop(new NOISE(this, emu));
+		drec->set_context_noise_fast(new NOISE(this, emu));
 		event->set_context_cpu(cpu_sub, 8000000);
 		event->set_context_sound(drec);
+		event->set_context_sound(drec->get_context_noise_play());
+		event->set_context_sound(drec->get_context_noise_stop());
+		event->set_context_sound(drec->get_context_noise_fast());
 		cpu_sub->set_context_mem(new MCS48MEM(this, emu));
 		cpu_sub->set_context_io(sub);
 #ifdef USE_DEBUGGER
@@ -160,6 +176,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		cpu_pc80s31k->set_device_name(_T("Z80 CPU (320KB FDD)"));
 		
 		event->set_context_cpu(cpu_pc80s31k, 4000000);
+		
 		pc80s31k->set_context_cpu(cpu_pc80s31k);
 		pc80s31k->set_context_fdc(fdc_pc80s31k);
 		pc80s31k->set_context_pio(pio_pc80s31k);
@@ -174,6 +191,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		pio_pc80s31k->set_context_port_c(pio_fdd, SIG_I8255_PORT_C, 0xf0, -4);
 		pio_pc80s31k->clear_ports_by_cmdreg = true;
 		fdc_pc80s31k->set_context_irq(cpu_pc80s31k, SIG_CPU_IRQ, 1);
+		fdc_pc80s31k->set_context_noise_seek(noise_seek);
+		fdc_pc80s31k->set_context_noise_head_down(noise_head_down);
+		fdc_pc80s31k->set_context_noise_head_up(noise_head_up);
 		cpu_pc80s31k->set_context_mem(pc80s31k);
 		cpu_pc80s31k->set_context_io(pc80s31k);
 		cpu_pc80s31k->set_context_intr(pc80s31k);
@@ -185,6 +205,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	} else {
 		pc6031 = new PC6031(this, emu);
+		pc6031->set_context_noise_seek(noise_seek);
+//		pc6031->set_context_noise_head_down(noise_head_down);
+//		pc6031->set_context_noise_head_up(noise_head_up);
 #if defined(_PC6601) || defined(_PC6601SR)
 		floppy->set_context_ext(pc6031);
 #endif
@@ -381,6 +404,16 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 	} else if(ch-- == 0) {
 		if(support_sub_cpu) {
 			drec->set_volume(0, decibel_l, decibel_r);
+		}
+	} else if(ch-- == 0) {
+		noise_seek->set_volume(0, decibel_l, decibel_r);
+		noise_head_down->set_volume(0, decibel_l, decibel_r);
+		noise_head_up->set_volume(0, decibel_l, decibel_r);
+	} else if(ch-- == 0) {
+		if(support_sub_cpu) {
+			drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+			drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+			drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 		}
 	}
 }
@@ -616,7 +649,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 void VM::save_state(FILEIO* state_fio)
 {

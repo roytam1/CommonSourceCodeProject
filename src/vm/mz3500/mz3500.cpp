@@ -19,6 +19,7 @@
 #include "../io.h"
 #include "../ls244.h"
 #include "../mz1p17.h"
+#include "../noise.h"
 #include "../not.h"
 #include "../pcm1bit.h"
 #include "../prnfile.h"
@@ -50,6 +51,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	mainio = new IO(this, emu);
 	mainio->set_device_name(_T("I/O Bus (Main)"));
 	fdc = new UPD765A(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	maincpu = new Z80(this, emu);
 	maincpu->set_device_name(_T("Z80 CPU (Main)"));
 	mainbus = new MAIN(this, emu);
@@ -101,6 +105,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(maincpu, CPU_CLOCKS);
 	event->set_context_cpu(subcpu, CPU_CLOCKS);
 	event->set_context_sound(pcm);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
 	
 	// mz3500sm p.59
 	fdc->set_context_irq(mainbus, SIG_MAIN_INTFD, 1);
@@ -376,6 +383,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
 		pcm->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -435,7 +446,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	3
+#define STATE_VERSION	4
 
 void VM::save_state(FILEIO* state_fio)
 {

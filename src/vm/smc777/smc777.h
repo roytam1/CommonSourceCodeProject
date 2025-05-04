@@ -55,9 +55,9 @@
 #define USE_SCANLINE
 #define USE_ACCESS_LAMP
 #if defined(_SMC777)
-#define USE_SOUND_VOLUME	3
+#define USE_SOUND_VOLUME	5
 #else
-#define USE_SOUND_VOLUME	2
+#define USE_SOUND_VOLUME	4
 #endif
 #define USE_JOYSTICK
 #define USE_DEBUGGER
@@ -140,7 +140,7 @@ static const _TCHAR *sound_device_caption[] = {
 #if defined(_SMC777)
 	_T("PSG"),
 #endif
-	_T("Beep"), _T("CMT"),
+	_T("Beep"), _T("CMT (Signal)"), _T("Noise (FDD)"), _T("Noise (CMT)"),
 };
 #endif
 

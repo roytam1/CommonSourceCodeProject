@@ -16,6 +16,7 @@
 #include "../hd146818p.h"
 #include "../i8255.h"
 #include "../mc6800.h"
+#include "../noise.h"
 #include "../tf20.h"
 #include "../upd765a.h"
 #include "../z80.h"
@@ -45,6 +46,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	tf20 = new TF20(this, emu);
 	pio_tf20 = new I8255(this, emu);
 	fdc_tf20 = new UPD765A(this, emu);
+	fdc_tf20->set_context_noise_seek(new NOISE(this, emu));
+	fdc_tf20->set_context_noise_head_down(new NOISE(this, emu));
+	fdc_tf20->set_context_noise_head_up(new NOISE(this, emu));
 	cpu_tf20 = new Z80(this, emu);
 	sio_tf20 = new Z80SIO(this, emu);
 	
@@ -54,6 +58,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_cpu(cpu_tf20, 4000000);
 	event->set_context_sound(beep);
+	event->set_context_sound(fdc_tf20->get_context_noise_seek());
+	event->set_context_sound(fdc_tf20->get_context_noise_head_down());
+	event->set_context_sound(fdc_tf20->get_context_noise_head_up());
 	
 /*
 	memory:
@@ -240,6 +247,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
 		beep->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 1) {
+		fdc_tf20->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc_tf20->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc_tf20->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -319,7 +330,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {

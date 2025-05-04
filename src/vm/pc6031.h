@@ -23,11 +23,15 @@
 #include "device.h"
 
 class DISK;
+class NOISE;
 
 class PC6031 : public DEVICE
 {
 private:
 	DISK* disk[2];
+	NOISE* d_noise_seek;
+//	NOISE* d_noise_head_down;
+//	NOISE* d_noise_head_up;
 	
 	int cur_trk[2];
 	int cur_sct[2];
@@ -76,6 +80,9 @@ private:
 public:
 	PC6031(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+		d_noise_seek = NULL;
+//		d_noise_head_down = NULL;
+//		d_noise_head_up = NULL;
 		set_device_name(_T("Pseudo PC-6031 FDD"));
 	}
 	~PC6031() {}
@@ -86,10 +93,35 @@ public:
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	uint32_t read_signal(int ch);
+	void update_config();
 	void save_state(FILEIO* state_fio);
 	bool load_state(FILEIO* state_fio);
 	
 	// unique functions
+	void set_context_noise_seek(NOISE* device)
+	{
+		d_noise_seek = device;
+	}
+	NOISE* get_context_noise_seek()
+	{
+		return d_noise_seek;
+	}
+//	void set_context_noise_head_down(NOISE* device)
+//	{
+//		d_noise_head_down = device;
+//	}
+//	NOISE* get_context_noise_head_down()
+//	{
+//		return d_noise_head_down;
+//	}
+//	void set_context_noise_head_up(NOISE* device)
+//	{
+//		d_noise_head_up = device;
+//	}
+//	NOISE* get_context_noise_head_up()
+//	{
+//		return d_noise_head_up;
+//	}
 	DISK* get_disk_handler(int drv)
 	{
 		return disk[drv];

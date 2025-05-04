@@ -19,6 +19,7 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../io.h"
+#include "../noise.h"
 #include "../pcm1bit.h"
 #include "../z80.h"
 
@@ -67,6 +68,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	and_int = new AND(this, emu);
 	and_int->set_device_name(_T("AND Gate (IRQ)"));
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	pit = new I8253(this, emu);
 	pio = new I8255(this, emu);
 	io = new IO(this, emu);
@@ -84,6 +88,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	and_snd = new AND(this, emu);
 	and_snd->set_device_name(_T("AND Gate (Sound)"));
 	fdc = new MB8877(this, emu);	// mb8876
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 #if defined(_MZ800)
 	not_pit = new NOT(this, emu);
 	not_pit->set_device_name(_T("NOT Gate (PIT)"));
@@ -126,6 +133,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_sound(psg_r);
 #endif
 	event->set_context_sound(drec);
+#if defined(_MZ800) || defined(_MZ1500)
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
+#endif
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	// VRAM/PCG wait
 	memory->set_context_cpu(cpu);
@@ -495,6 +510,16 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		pcm->set_volume(0, decibel_l, decibel_r);
 	} else if(ch-- == 0) {
 		drec->set_volume(0, decibel_l, decibel_r);
+#if defined(_MZ800) || defined(_MZ1500)
+	} else if(ch-- == 0) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
+#endif
+	} else if(ch-- == 0) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -638,7 +663,7 @@ void VM::update_config()
 #endif
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {

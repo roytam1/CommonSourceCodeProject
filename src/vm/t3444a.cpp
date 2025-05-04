@@ -9,6 +9,7 @@
 
 #include "t3444a.h"
 #include "disk.h"
+#include "noise.h"
 
 // TODO: check status in data lost
 #define FDC_STA_FDC_READY	0x08	// 1=Ready, 0=Busy
@@ -85,6 +86,27 @@ void T3444A::initialize()
 	for(int i = 0; i < 4; i++) {
 		disk[i] = new DISK(emu);
 		disk[i]->set_device_name(_T("%s/Disk #%d"), this_device_name, i + 1);
+	}
+	
+	// initialize noise
+	if(d_noise_seek != NULL) {
+		d_noise_seek->set_device_name(_T("Noise Player (FDD Seek)"));
+		if(!d_noise_seek->load_wav_file(_T("FDDSEEK.WAV"))) {
+			if(!d_noise_seek->load_wav_file(_T("FDDSEEK1.WAV"))) {
+				d_noise_seek->load_wav_file(_T("SEEK.WAV"));
+			}
+		}
+		d_noise_seek->set_mute(!config.sound_noise_fdd);
+	}
+	if(d_noise_head_down != NULL) {
+		d_noise_head_down->set_device_name(_T("Noise Player (FDD Head Load)"));
+		d_noise_head_down->load_wav_file(_T("HEADDOWN.WAV"));
+		d_noise_head_down->set_mute(!config.sound_noise_fdd);
+	}
+	if(d_noise_head_up != NULL) {
+		d_noise_head_up->set_device_name(_T("Noise Player (FDD Head Unload)"));
+		d_noise_head_up->load_wav_file(_T("HEADUP.WAV"));
+		d_noise_head_up->set_mute(!config.sound_noise_fdd);
 	}
 	
 	// initialize timing
@@ -294,8 +316,10 @@ void T3444A::event_callback(int event_id, int err)
 	case EVENT_SEEK:
 		if(seektrk > fdc[drvreg].track) {
 			fdc[drvreg].track++;
+			if(d_noise_seek != NULL) d_noise_seek->play();
 		} else if(seektrk < fdc[drvreg].track) {
 			fdc[drvreg].track--;
+			if(d_noise_seek != NULL) d_noise_seek->play();
 		}
 		if(seektrk != fdc[drvreg].track) {
 			register_seek_event();
@@ -406,6 +430,7 @@ void T3444A::process_cmd()
 	switch(cmdreg) {
 	case FDC_CMD_SEEK_ZERO:
 		cmd_seek_zero();
+		update_head_flag(drvreg, false);
 		break;
 	case FDC_CMD_SEEK:
 	case FDC_CMD_SEEK_READ:
@@ -413,14 +438,17 @@ void T3444A::process_cmd()
 	case FDC_CMD_SEEK_WRITE_DDM:
 	case FDC_CMD_SEEK_WRITE_ID:
 		cmd_seek();
+		update_head_flag(drvreg, false);
 		break;
 	case FDC_CMD_READ:
 	case FDC_CMD_WRITE:
 	case FDC_CMD_WRITE_DDM:
 		cmd_read_write();
+		update_head_flag(drvreg, true);
 		break;
 	case FDC_CMD_WRITE_ID:
 		cmd_write_id();
+		update_head_flag(drvreg, true);
 		break;
 	case FDC_CMD_SENCE_DRV_STAT:
 		cmd_sence();
@@ -494,6 +522,18 @@ void T3444A::cmd_sence()
 	} else {
 		trkreg = fdc[drvreg].track;
 		status = FDC_STA_FDC_READY | FDC_STA_SUCCESS;
+	}
+}
+
+void T3444A::update_head_flag(int drv, bool head_load)
+{
+	if(fdc[drv].head_load != head_load) {
+		if(head_load) {
+			if(d_noise_head_down != NULL) d_noise_head_down->play();
+		} else {
+			if(d_noise_head_up != NULL) d_noise_head_up->play();
+		}
+		fdc[drv].head_load = head_load;
 	}
 }
 
@@ -685,6 +725,7 @@ void T3444A::close_disk(int drv)
 {
 	if(drv < 4 && drv < MAX_DRIVE) {
 		disk[drv]->close();
+		update_head_flag(drvreg, false);
 	}
 }
 
@@ -737,6 +778,13 @@ void T3444A::set_drive_mfm(int drv, bool mfm)
 {
 	if(drv < 4 && drv < MAX_DRIVE) {
 		disk[drv]->drive_mfm = mfm;
+	}
+}
+
+void T3444A::update_config()
+{
+	if(d_noise_seek != NULL) {
+		d_noise_seek->set_mute(!config.sound_noise_fdd);
 	}
 }
 

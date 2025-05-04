@@ -619,7 +619,7 @@ public:
 		}
 		event_manager->set_lines_per_frame(lines);
 	}
-	virtual void touch_sound(void)
+	virtual void touch_sound()
 	{
 		if(event_manager == NULL) {
 			event_manager = vm->first_device->next_device;

@@ -17,10 +17,14 @@
 
 #include "floppy.h"
 #include "../disk.h"
+#include "../noise.h"
 
 int FLOPPY::Seek88(int drvno, int trackno, int sectno)
 {
 	if(drvno < 2) {
+		if(cur_trk[drvno] != trackno) {
+			if(d_noise_seek != NULL) d_noise_seek->play();
+		}
 		cur_trk[drvno] = trackno;
 		cur_sct[drvno] = sectno;
 		cur_pos[drvno] = 0;
@@ -332,6 +336,25 @@ void FLOPPY::initialize()
 		disk[i] = new DISK(emu);
 		disk[i]->set_device_name(_T("%s/Disk #%d"), this_device_name, i + 1);
 	}
+	if(d_noise_seek != NULL) {
+		d_noise_seek->set_device_name(_T("Noise Player (FDD Seek)"));
+		if(!d_noise_seek->load_wav_file(_T("FDDSEEK.WAV"))) {
+			if(!d_noise_seek->load_wav_file(_T("FDDSEEK1.WAV"))) {
+				d_noise_seek->load_wav_file(_T("SEEK.WAV"));
+			}
+		}
+		d_noise_seek->set_mute(!config.sound_noise_fdd);
+	}
+//	if(d_noise_head_down != NULL) {
+//		d_noise_head_down->set_device_name(_T("Noise Player (FDD Head Load)"));
+//		d_noise_head_down->load_wav_file(_T("HEADDOWN.WAV"));
+//		d_noise_head_down->set_mute(!config.sound_noise_fdd);
+//	}
+//	if(d_noise_head_up != NULL) {
+//		d_noise_head_up->set_device_name(_T("Noise Player (FDD Head Unload)"));
+//		d_noise_head_up->load_wav_file(_T("HEADUP.WAV"));
+//		d_noise_head_up->set_mute(!config.sound_noise_fdd);
+//	}
 	DiskInit66();
 }
 
@@ -558,6 +581,19 @@ bool FLOPPY::is_disk_protected(int drv)
 		return disk[drv]->write_protected;
 	}
 	return false;
+}
+
+void FLOPPY::update_config()
+{
+	if(d_noise_seek != NULL) {
+		d_noise_seek->set_mute(!config.sound_noise_fdd);
+	}
+//	if(d_noise_head_down != NULL) {
+//		d_noise_head_down->set_mute(!config.sound_noise_fdd);
+//	}
+//	if(d_noise_head_up != NULL) {
+//		d_noise_head_up->set_mute(!config.sound_noise_fdd);
+//	}
 }
 
 #define STATE_VERSION	1

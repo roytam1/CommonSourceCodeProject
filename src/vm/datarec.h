@@ -19,6 +19,7 @@
 #define SIG_DATAREC_TRIG	2
 
 class FILEIO;
+class NOISE;
 
 class DATAREC : public DEVICE
 {
@@ -30,6 +31,11 @@ private:
 	outputs_t outputs_end;
 	outputs_t outputs_top;
 	outputs_t outputs_apss;
+	
+	// cmt noise
+	NOISE* d_noise_play;
+	NOISE* d_noise_stop;
+	NOISE* d_noise_fast;
 	
 	// data recorder
 	FILEIO* play_fio;
@@ -95,6 +101,9 @@ public:
 		initialize_output_signals(&outputs_end);
 		initialize_output_signals(&outputs_top);
 		initialize_output_signals(&outputs_apss);
+		d_noise_play = NULL;
+		d_noise_stop = NULL;
+		d_noise_fast = NULL;
 #ifdef DATAREC_PCM_VOLUME
 		pcm_max_vol = DATAREC_PCM_VOLUME;
 #else
@@ -153,6 +162,30 @@ public:
 	void set_context_apss(DEVICE* device, int id, uint32_t mask)
 	{
 		register_output_signal(&outputs_apss, device, id, mask);
+	}
+	void set_context_noise_play(NOISE* device)
+	{
+		d_noise_play = device;
+	}
+	NOISE* get_context_noise_play()
+	{
+		return d_noise_play;
+	}
+	void set_context_noise_stop(NOISE* device)
+	{
+		d_noise_stop = device;
+	}
+	NOISE* get_context_noise_stop()
+	{
+		return d_noise_stop;
+	}
+	void set_context_noise_fast(NOISE* device)
+	{
+		d_noise_fast = device;
+	}
+	NOISE* get_context_noise_fast()
+	{
+		return d_noise_fast;
 	}
 	bool play_tape(const _TCHAR* file_path);
 	bool rec_tape(const _TCHAR* file_path);

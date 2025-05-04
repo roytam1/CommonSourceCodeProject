@@ -25,6 +25,7 @@
 #include "../i8255.h"
 #include "../ls393.h"
 #include "../mz1p17.h"
+#include "../noise.h"
 #include "../pcm1bit.h"
 #include "../prnfile.h"
 #include "../z80.h"
@@ -64,6 +65,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	and_int = new AND(this, emu);
 #endif
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	ctc = new I8253(this, emu);
 	pio = new I8255(this, emu);
 	counter = new LS393(this, emu);
@@ -77,10 +81,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #if defined(SUPPORT_MZ80AIF)
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);	// mb8866
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	mz80aif = new MZ80AIF(this, emu);
 #elif defined(SUPPORT_MZ80FIO)
 	io = new IO(this, emu);
 	fdc = new T3444A(this, emu);	// t3444m
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	mz80fio = new MZ80FIO(this, emu);
 #endif
 	
@@ -88,6 +98,14 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(pcm);
 	event->set_context_sound(drec);
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
+#endif
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 #if defined(_MZ1200) || defined(_MZ80A)
 	and_int->set_context_out(cpu, SIG_CPU_IRQ, 1);
@@ -272,10 +290,20 @@ int VM::get_sound_buffer_ptr()
 #ifdef USE_SOUND_VOLUME
 void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
-	if(ch == 0) {
+	if(ch-- == 0) {
 		pcm->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 1) {
+	} else if(ch-- == 0) {
 		drec->set_volume(0, decibel_l, decibel_r);
+#if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
+	} else if(ch-- == 0) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
+#endif
+	} else if(ch-- == 0) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -402,7 +430,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	5
+#define STATE_VERSION	6
 
 void VM::save_state(FILEIO* state_fio)
 {

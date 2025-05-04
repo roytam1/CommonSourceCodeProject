@@ -17,6 +17,7 @@
 #include "../i8251.h"
 #include "../i8255.h"
 #include "../io.h"
+#include "../noise.h"
 #include "../sn76489an.h"
 #include "../tms9918a.h"
 #include "../upd765a.h"
@@ -41,6 +42,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	drec = new DATAREC(this, emu);
+	drec->set_context_noise_play(new NOISE(this, emu));
+	drec->set_context_noise_stop(new NOISE(this, emu));
+	drec->set_context_noise_fast(new NOISE(this, emu));
 	sio = new I8251(this, emu);
 	pio_k = new I8255(this, emu);
 	pio_k->set_device_name(_T("8255 PIO (Keyboard)"));
@@ -50,6 +54,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	psg = new SN76489AN(this, emu);
 	vdp = new TMS9918A(this, emu);
 	fdc = new UPD765A(this, emu);
+	fdc->set_context_noise_seek(new NOISE(this, emu));
+	fdc->set_context_noise_head_down(new NOISE(this, emu));
+	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	cpu = new Z80(this, emu);
 	
 	key = new KEYBOARD(this, emu);
@@ -59,6 +66,12 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event->set_context_cpu(cpu);
 	event->set_context_sound(psg);
 	event->set_context_sound(drec);
+	event->set_context_sound(fdc->get_context_noise_seek());
+	event->set_context_sound(fdc->get_context_noise_head_down());
+	event->set_context_sound(fdc->get_context_noise_head_up());
+	event->set_context_sound(drec->get_context_noise_play());
+	event->set_context_sound(drec->get_context_noise_stop());
+	event->set_context_sound(drec->get_context_noise_fast());
 	
 	drec->set_context_ear(pio_k, SIG_I8255_PORT_B, 0x80);
 	pio_k->set_context_port_c(key, SIG_KEYBOARD_COLUMN, 0x07, 0);
@@ -197,6 +210,14 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		psg->set_volume(0, decibel_l, decibel_r);
 	} else if(ch == 1) {
 		drec->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 2) {
+		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
+		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
+	} else if(ch == 3) {
+		drec->get_context_noise_play()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_stop()->set_volume(0, decibel_l, decibel_r);
+		drec->get_context_noise_fast()->set_volume(0, decibel_l, decibel_r);
 	}
 }
 #endif
@@ -304,7 +325,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void VM::save_state(FILEIO* state_fio)
 {
