@@ -185,10 +185,17 @@ void SUB::draw_chr()
 		for(int y = ytop; y < (ytop + len) && y < ymax; y++) {
 			for(int x = 0; x < 80; x += width) {
 				bool cursor = (src == caddr);
-				uint8 code = vram_chr[(src * 2 + 0) & 0xfff];	// low byte  : code
+				uint32 code = vram_chr[(src * 2 + 0) & 0xfff];	// low byte  : code
 				uint8 attr = vram_chr[(src * 2 + 1) & 0xfff];	// high byte : attr
-				uint8 knji = vram_chr[((src* 2 + 0) & 0xfff) | 0x1000];
+				uint32 knji = vram_chr[((src* 2 + 0) & 0xfff) | 0x1000];
 				src++;
+				uint8 *pattern;
+				
+				if(!(knji & 0x20)) {
+					pattern = &kanji[((code << 4) | (knji << 12)) & 0x1ffff];
+				} else {
+					pattern = &font[0x1000 | (code << 4)];
+				}
 				
 				// mz3500sm p.31
 				// bit3: blink
@@ -201,7 +208,7 @@ void SUB::draw_chr()
 				
 				if(disp[4] & 1) {
 					// color
-					color = attr & 7;
+					color = (attr & 7) | 8;
 					reverse = false;
 				} else {
 					// monocrhome
@@ -210,12 +217,6 @@ void SUB::draw_chr()
 				}
 				blink = ((attr & 8) != 0 && (cblink & 0x10) != 0);
 				reverse = (reverse != blink);
-				
-				uint8* pattern = &font[0x1000 | (code << 4)];
-				
-				if(knji != 0 && knji != 0x20) {
-					pattern = &kanji[(code * 16 + knji * 256 * 16) & 0x1ffff];
-				}
 				
 				// NOTE: need to consider 200 line mode
 				
