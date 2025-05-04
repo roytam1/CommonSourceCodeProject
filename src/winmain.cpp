@@ -19,12 +19,6 @@
 #include "emu.h"
 #include "fileio.h"
 
-// os version
-bool vista_or_later = false;
-
-// config path
-_TCHAR config_path[_MAX_PATH];
-
 // emulation core
 EMU* emu;
 
@@ -182,6 +176,9 @@ int get_interval()
 	return interval;
 }
 
+// os version
+bool vista_or_later = false;
+
 // windows main
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLine, int iCmdShow);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
@@ -199,16 +196,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdLin
 	vista_or_later = (osvi.dwPlatformId == 2 && (osvi.dwMajorVersion > 6 || (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 2)));
 	
 	// load config
-	_TCHAR app_path[_MAX_PATH], *ptr = NULL;
-	
-	GetModuleFileName(NULL, config_path, _MAX_PATH);
-	GetFullPathName(config_path, _MAX_PATH, app_path, &ptr);
-	if(ptr != NULL) {
-		*ptr = _T('\0');
-	}
-	my_stprintf_s(config_path, _MAX_PATH, _T("%s%s.ini"), app_path, _T(CONFIG_NAME));
-	
-	load_config(config_path);
+	load_config(create_local_path(_T("%s.ini"), _T(CONFIG_NAME)));
 	
 	// create window
 	WNDCLASS wndclass;
@@ -536,7 +524,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			delete emu;
 			emu = NULL;
 		}
-		save_config(config_path);
+		save_config(create_local_path(_T("%s.ini"), _T(CONFIG_NAME)));
 		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);

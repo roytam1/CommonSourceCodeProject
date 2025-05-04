@@ -35,15 +35,15 @@ void MEMORY::initialize()
 	
 	// load rom image
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("MON.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(create_local_path(_T("MON.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(mon, sizeof(mon), 1);
 		fio->Fclose();
 	}
-	if(fio->Fopen(emu->bios_path(_T("PROM1.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(create_local_path(_T("PROM1.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(prom1, sizeof(prom1), 1);
 		fio->Fclose();
 	}
-	if(fio->Fopen(emu->bios_path(_T("PROM2.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(create_local_path(_T("PROM2.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(prom2, sizeof(prom2), 1);
 		fio->Fclose();
 	}

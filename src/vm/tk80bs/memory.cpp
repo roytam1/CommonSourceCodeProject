@@ -41,7 +41,7 @@ void MEMORY::initialize()
 	static const uint8 rst[3] = {0xc3, 0xdd, 0x83};
 	
 	FILEIO* fio = new FILEIO();
-	if(fio->Fopen(emu->bios_path(_T("TK80.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(create_local_path(_T("TK80.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(mon, sizeof(mon), 1);
 		fio->Fclose();
 	} else {
@@ -49,13 +49,13 @@ void MEMORY::initialize()
 		memcpy(mon, top, sizeof(top));
 		memcpy(mon + 0x38, rst, sizeof(rst));
 	}
-	if(fio->Fopen(emu->bios_path(_T("BSMON.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(create_local_path(_T("BSMON.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(bsmon, sizeof(bsmon), 1);
 		fio->Fclose();
 		// patch
 		memcpy(mon + 0x38, rst, sizeof(rst));
 	}
-	if(fio->Fopen(emu->bios_path(_T("EXT.ROM")), FILEIO_READ_BINARY)) {
+	if(fio->Fopen(create_local_path(_T("EXT.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(ext, sizeof(ext), 1);
 		fio->Fclose();
 	}
@@ -79,12 +79,12 @@ void MEMORY::reset()
 		memset(basic, 0xff, sizeof(basic));
 		FILEIO* fio = new FILEIO();
 		if(config.boot_mode == 0) {
-			if(fio->Fopen(emu->bios_path(_T("LV1BASIC.ROM")), FILEIO_READ_BINARY)) {
+			if(fio->Fopen(create_local_path(_T("LV1BASIC.ROM")), FILEIO_READ_BINARY)) {
 				fio->Fread(basic + 0x1000, 0x1000, 1);
 				fio->Fclose();
 			}
 		} else {
-			if(fio->Fopen(emu->bios_path(_T("LV2BASIC.ROM")), FILEIO_READ_BINARY)) {
+			if(fio->Fopen(create_local_path(_T("LV2BASIC.ROM")), FILEIO_READ_BINARY)) {
 				fio->Fread(basic, sizeof(basic), 1);
 				fio->Fclose();
 			}

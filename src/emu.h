@@ -298,10 +298,7 @@ public:
 	_TCHAR message[1024];
 	
 	// misc
-	_TCHAR* application_path();
-	_TCHAR* bios_path(const _TCHAR* file_name);
 	void sleep(uint32 ms);
-	void get_host_time(cur_time_t* time);
 	
 	// media
 #ifdef USE_FD1

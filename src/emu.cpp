@@ -656,9 +656,7 @@ void EMU::recv_data(int ch)
 #ifdef _DEBUG_LOG
 void EMU::initialize_debug_log()
 {
-	TCHAR path[_MAX_PATH];
-	osd->create_date_file_name(path, _MAX_PATH, _T("log"));
-	debug_log = _tfopen(path, _T("w"));
+	debug_log = _tfopen(create_date_file_path(_T("log")), _T("w"));
 }
 
 void EMU::release_debug_log()
@@ -690,10 +688,8 @@ void EMU::out_debug_log(const _TCHAR* format, ...)
 		_ftprintf(debug_log, _T("%s"), buffer);
 		static int size = 0;
 		if((size += _tcslen(buffer)) > 0x8000000) { // 128MB
-			TCHAR path[_MAX_PATH];
-			osd->create_date_file_name(path, _MAX_PATH, _T("log"));
 			fclose(debug_log);
-			debug_log = _tfopen(path, _T("w"));
+			debug_log = _tfopen(create_date_file_path(_T("log")), _T("w"));
 			size = 0;
 		}
 	}
@@ -713,24 +709,9 @@ void EMU::out_message(const _TCHAR* format, ...)
 // misc
 // ----------------------------------------------------------------------------
 
-_TCHAR* EMU::application_path()
-{
-	return osd->application_path();
-}
-
-_TCHAR* EMU::bios_path(const _TCHAR* file_name)
-{
-	return osd->bios_path(file_name);
-}
-
 void EMU::sleep(uint32 ms)
 {
 	osd->sleep(ms);
-}
-
-void EMU::get_host_time(cur_time_t* time)
-{
-	osd->get_host_time(time);
 }
 
 // ----------------------------------------------------------------------------
@@ -853,9 +834,9 @@ void EMU::restore_media()
 #ifdef USE_CART1
 	for(int drv = 0; drv < MAX_CART; drv++) {
 		if(cart_status[drv].path[0] != _T('\0')) {
-			if(check_file_extension(cart_status[drv].path, _T(".hex")) && hex2bin(cart_status[drv].path, osd->bios_path(_T("hex2bin.$$$")))) {
-				vm->open_cart(drv, osd->bios_path(_T("hex2bin.$$$")));
-				FILEIO::RemoveFile(osd->bios_path(_T("hex2bin.$$$")));
+			if(check_file_extension(cart_status[drv].path, _T(".hex")) && hex2bin(cart_status[drv].path, create_local_path(_T("hex2bin.$$$")))) {
+				vm->open_cart(drv, create_local_path(_T("hex2bin.$$$")));
+				FILEIO::RemoveFile(create_local_path(_T("hex2bin.$$$")));
 			} else {
 				vm->open_cart(drv, cart_status[drv].path);
 			}
@@ -896,9 +877,9 @@ void EMU::restore_media()
 void EMU::open_cart(int drv, const _TCHAR* file_path)
 {
 	if(drv < MAX_CART) {
-		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, osd->bios_path(_T("hex2bin.$$$")))) {
-			vm->open_cart(drv, osd->bios_path(_T("hex2bin.$$$")));
-			FILEIO::RemoveFile(osd->bios_path(_T("hex2bin.$$$")));
+		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, create_local_path(_T("hex2bin.$$$")))) {
+			vm->open_cart(drv, create_local_path(_T("hex2bin.$$$")));
+			FILEIO::RemoveFile(create_local_path(_T("hex2bin.$$$")));
 		} else {
 			vm->open_cart(drv, file_path);
 		}
@@ -1172,9 +1153,9 @@ bool EMU::laser_disc_inserted()
 void EMU::load_binary(int drv, const _TCHAR* file_path)
 {
 	if(drv < MAX_BINARY) {
-		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, osd->bios_path(_T("hex2bin.$$$")))) {
-			vm->load_binary(drv, osd->bios_path(_T("hex2bin.$$$")));
-			FILEIO::RemoveFile(osd->bios_path(_T("hex2bin.$$$")));
+		if(check_file_extension(file_path, _T(".hex")) && hex2bin(file_path, create_local_path(_T("hex2bin.$$$")))) {
+			vm->load_binary(drv, create_local_path(_T("hex2bin.$$$")));
+			FILEIO::RemoveFile(create_local_path(_T("hex2bin.$$$")));
 		} else {
 			vm->load_binary(drv, file_path);
 		}
@@ -1205,22 +1186,19 @@ void EMU::update_config()
 
 void EMU::save_state()
 {
-	_TCHAR file_name[_MAX_PATH];
-	my_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
-	save_state_tmp(osd->bios_path(file_name));
+	save_state_tmp(create_local_path(_T("%s.sta"), _T(CONFIG_NAME)));
 }
 
 void EMU::load_state()
 {
-	_TCHAR file_name[_MAX_PATH];
-	my_stprintf_s(file_name, _MAX_PATH, _T("%s.sta"), _T(CONFIG_NAME));
-	if(FILEIO::IsFileExists(osd->bios_path(file_name))) {
-		save_state_tmp(osd->bios_path(_T("$temp$.sta")));
-		if(!load_state_tmp(osd->bios_path(file_name))) {
+	const _TCHAR *file_name = create_local_path(_T("%s.sta"), _T(CONFIG_NAME));
+	if(FILEIO::IsFileExists(file_name)) {
+		save_state_tmp(create_local_path(_T("$temp$.sta")));
+		if(!load_state_tmp(file_name)) {
 			out_debug_log("failed to load state file\n");
-			load_state_tmp(osd->bios_path(_T("$temp$.sta")));
+			load_state_tmp(create_local_path(_T("$temp$.sta")));
 		}
-		DeleteFile(osd->bios_path(_T("$temp$.sta")));
+		FILEIO::RemoveFile(create_local_path(_T("$temp$.sta")));
 	}
 }
 

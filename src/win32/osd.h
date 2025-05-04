@@ -122,6 +122,8 @@ public:
 #define MAX_CAPTURE_DEVS 8
 #endif
 
+#define SUPPORT_WIN32_DLL
+
 // check memory leaks
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
@@ -160,7 +162,6 @@ class OSD
 {
 private:
 	int lock_count;
-	_TCHAR app_path[_MAX_PATH];
 	
 	// console
 	HANDLE hStdIn, hStdOut;
@@ -253,7 +254,7 @@ private:
 	LPDIRECT3DSURFACE9 lpd3d9Surface;
 	LPDIRECT3DSURFACE9 lpd3d9OffscreenSurface;
 	
-	_TCHAR video_file_name[_MAX_PATH];
+	_TCHAR video_file_path[_MAX_PATH];
 	int rec_video_fps;
 	double rec_video_run_frames;
 	double rec_video_frames;
@@ -283,7 +284,7 @@ private:
 	LPDIRECTSOUNDBUFFER lpdsPrimaryBuffer, lpdsSecondaryBuffer;
 	bool sound_first_half;
 	
-	_TCHAR sound_file_name[_MAX_PATH];
+	_TCHAR sound_file_path[_MAX_PATH];
 	FILEIO* rec_sound_fio;
 	int rec_sound_bytes;
 	int rec_sound_buffer_ptr;
@@ -332,7 +333,7 @@ private:
 	void open_printer_file();
 	void close_printer_file();
 	
-	_TCHAR prn_file_name[_MAX_PATH];
+	_TCHAR prn_file_path[_MAX_PATH];
 	FILEIO *prn_fio;
 	int prn_data, prn_wait_frames;
 	bool prn_strobe;
@@ -368,14 +369,7 @@ public:
 	void lock_vm();
 	void unlock_vm();
 	void force_unlock_vm();
-	_TCHAR* application_path()
-	{
-		return app_path;
-	}
-	_TCHAR* bios_path(const _TCHAR* file_name);
-	void get_host_time(cur_time_t* time);
 	void sleep(uint32 ms);
-	void create_date_file_name(_TCHAR *name, int length, _TCHAR *extension);
 	
 	// common console
 	void open_console(_TCHAR* title);
