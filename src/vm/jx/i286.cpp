@@ -9,7 +9,7 @@
 
 #include "i286.h"
 #ifdef USE_DEBUGGER
-#include "debugger.h"
+#include "../debugger.h"
 #endif
 
 /* ----------------------------------------------------------------------------
@@ -131,16 +131,16 @@ typedef UINT32	offs_t;
 
 #if defined(HAS_I86) || defined(HAS_I88) || defined(HAS_I186) || defined(HAS_V30)
 #define cpu_state i8086_state
-#include "mame/emu/cpu/i86/i86.c"
+#include "../mame/emu/cpu/i86/i86.c"
 #elif defined(HAS_I286)
 #define cpu_state i80286_state
-#include "mame/emu/cpu/i86/i286.c"
+#include "../mame/emu/cpu/i86/i286.c"
 #endif
 #ifdef USE_DEBUGGER
 #ifdef HAS_V30
-#include "mame/emu/cpu/nec/necdasm.c"
+#include "../mame/emu/cpu/nec/necdasm.c"
 #else
-#include "mame/emu/cpu/i386/i386dasm.c"
+#include "../mame/emu/cpu/i386/i386dasm.c"
 #endif
 #endif
 
@@ -202,6 +202,17 @@ void I286::reset()
 int I286::run(int icount)
 {
 	cpu_state *cpustate = (cpu_state *)opaque;
+#ifdef _JX
+	// ugly patch for PC/JX hardware diagnostics :-(
+#ifdef TIMER_HACK
+	if(cpustate->pc == 0xff040) cpustate->pc = 0xff04a;
+	if(cpustate->pc == 0xff17d) cpustate->pc = 0xff18f;
+#endif
+#ifdef KEYBOARD_HACK
+	if(cpustate->pc == 0xfa909) { cpustate->regs.b[BH] = read_port_byte(0xa1); cpustate->pc = 0xfa97c; }
+	if(cpustate->pc == 0xff6e1) { cpustate->regs.b[AL] = 0x0d; cpustate->pc += 2; }
+#endif
+#endif
 	return CPU_EXECUTE_CALL(CPU_MODEL);
 }
 

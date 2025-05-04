@@ -1014,6 +1014,9 @@ int M6502::run(int clock)
 	if(clock == -1) {
 		if (busreq) {
 			// don't run cpu!
+#ifdef USE_DEBUGGER
+			total_icount += 1;
+#endif
 			return 1;
 		} else {
 			// run only one opcode
@@ -1093,6 +1096,9 @@ int M6502::run(int clock)
 		}
 		// if busreq is raised, spin cpu while remained clock
 		if(icount > 0 && busreq) {
+#ifdef USE_DEBUGGER
+			total_icount += icount;
+#endif
 			icount = 0;
 		}
 		return first_icount - icount;
@@ -1101,6 +1107,9 @@ int M6502::run(int clock)
 
 void M6502::run_one_opecode()
 {
+#ifdef USE_DEBUGGER
+	int first_icount = icount;
+#endif
 	// if an irq is pending, take it now
 	if(nmi_state) {
 		EAD = NMI_VEC;
@@ -1115,6 +1124,9 @@ void M6502::run_one_opecode()
 	} else if(pending_irq) {
 		update_irq();
 	}
+#ifdef USE_DEBUGGER
+	d_debugger->add_cpu_trace(PCW);
+#endif
 	prev_pc = PCW;
 	uint8_t code = RDOP();
 	OP(code);
@@ -1128,6 +1140,9 @@ void M6502::run_one_opecode()
 	} else if(pending_irq) {
 		update_irq();
 	}
+#ifdef USE_DEBUGGER
+	total_icount += first_icount - icount;
+#endif
 }
 
 void M6502::write_signal(int id, uint32_t data, uint32_t mask)
@@ -1187,10 +1202,12 @@ bool M6502::write_debug_reg(const _TCHAR *reg, uint32_t data)
 void M6502::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	my_stprintf_s(buffer, buffer_len,
-	_T("PC = %04X  A = %02X  X = %02X  Y = %02X  S = %02X  P = %02X [%c%c%c%c%c%c%c%c]"),
+	_T("PC = %04X  A = %02X  X = %02X  Y = %02X  S = %02X  P = %02X [%c%c%c%c%c%c%c%c]\nTotal CPU Clocks = %llu (%llu)"),
 	PCW, A, X, Y, S, P,
 	(P & F_N) ? _T('N') : _T('-'), (P & F_V) ? _T('V') : _T('-'), (P & F_T) ? _T('T') : _T('-'), (P & F_B) ? _T('B') : _T('-'), 
-	(P & F_D) ? _T('D') : _T('-'), (P & F_I) ? _T('I') : _T('-'), (P & F_Z) ? _T('Z') : _T('-'), (P & F_C) ? _T('C') : _T('-'));
+	(P & F_D) ? _T('D') : _T('-'), (P & F_I) ? _T('I') : _T('-'), (P & F_Z) ? _T('Z') : _T('-'), (P & F_C) ? _T('C') : _T('-'),
+	total_icount, total_icount - prev_total_icount);
+	prev_total_icount = total_icount;
 }
 
 // disassembler
@@ -1231,7 +1248,7 @@ int M6502::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 }
 #endif
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void M6502::save_state(FILEIO* state_fio)
 {
@@ -1252,6 +1269,9 @@ void M6502::save_state(FILEIO* state_fio)
 	state_fio->FputBool(nmi_state);
 	state_fio->FputBool(irq_state);
 	state_fio->FputBool(so_state);
+#ifdef USE_DEBUGGER
+	state_fio->FputUint64(total_icount);
+#endif
 	state_fio->FputInt32(icount);
 	state_fio->FputBool(busreq);
 }
@@ -1278,6 +1298,9 @@ bool M6502::load_state(FILEIO* state_fio)
 	nmi_state = state_fio->FgetBool();
 	irq_state = state_fio->FgetBool();
 	so_state = state_fio->FgetBool();
+#ifdef USE_DEBUGGER
+	total_icount = prev_total_icount = state_fio->FgetUint64();
+#endif
 	icount = state_fio->FgetInt32();
 	busreq = state_fio->FgetBool();
 	return true;

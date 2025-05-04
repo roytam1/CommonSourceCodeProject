@@ -18,7 +18,7 @@
 //#include "../i8250.h"
 #include "../i8253.h"
 #include "../i8259.h"
-#include "../i86.h"
+#include "../i286.h"
 #include "../io.h"
 #include "../noise.h"
 #include "../pcm1bit.h"
@@ -27,6 +27,10 @@
 #include "../rp5c01.h"
 #else
 #include "../hd146818p.h"
+#endif
+
+#ifdef USE_DEBUGGER
+#include "../debugger.h"
 #endif
 
 #include "display.h"
@@ -62,7 +66,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 //	sio = new I8250(this, emu);
 	pit = new I8253(this, emu);	// i8254
 	pic = new I8259(this, emu);
-	cpu = new I86(this, emu);
+	cpu = new I286(this, emu);
 	io = new IO(this, emu);
 	pcm = new PCM1BIT(this, emu);
 	fdc = new UPD765A(this, emu);
@@ -94,6 +98,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu->set_context_mem(memory);
 	cpu->set_context_io(io);
 	cpu->set_context_intr(pic);
+#ifdef USE_DEBUGGER
+	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	// dmac
 	io->set_iomap_range_rw(0x00, 0x0f, dma);
@@ -278,6 +285,20 @@ void VM::run()
 {
 	event->drive();
 }
+
+// ----------------------------------------------------------------------------
+// debugger
+// ----------------------------------------------------------------------------
+
+#ifdef USE_DEBUGGER
+DEVICE *VM::get_cpu(int index)
+{
+	if(index == 0) {
+		return cpu;
+	}
+	return NULL;
+}
+#endif
 
 // ----------------------------------------------------------------------------
 // draw screen

@@ -27,12 +27,21 @@ private:
 	DEBUGGER *d_debugger;
 #endif
 	void *opaque;
+#ifdef USE_DEBUGGER
+	uint64_t total_icount;
+	uint64_t prev_total_icount;
+#endif
 	int icount;
 	bool busreq;
+	
+	int run_one_opecode();
 	
 public:
 	HUC6280(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef USE_DEBUGGER
+		total_icount = prev_total_icount = 0;
+#endif
 		set_device_name(_T("HuC6280 CPU"));
 	}
 	~HUC6280() {}

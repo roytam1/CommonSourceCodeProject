@@ -35,6 +35,10 @@ private:
 	uint8_t a, x, y, p;
 	bool pending_irq, after_cli;
 	bool nmi_state, irq_state, so_state;
+#ifdef USE_DEBUGGER
+	uint64_t total_icount;
+	uint64_t prev_total_icount;
+#endif
 	int icount;
 	bool busreq;
 	
@@ -45,6 +49,9 @@ private:
 public:
 	M6502(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef USE_DEBUGGER
+		total_icount = prev_total_icount = 0;
+#endif
 		busreq = false;
 #ifdef HAS_N2A03
 		set_device_name(_T("N2A03 CPU"));

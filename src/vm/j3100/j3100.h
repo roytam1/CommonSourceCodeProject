@@ -58,6 +58,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_NUMPAD
 #define USE_SOUND_VOLUME	2
+#define USE_DEBUGGER
 
 #include "../../common.h"
 #include "../../fileio.h"
@@ -77,7 +78,7 @@ class I8237;
 //class I8250;
 class I8253;
 class I8259;
-class I86;
+class I286;
 class IO;
 class PCM1BIT;
 class UPD765A;
@@ -108,7 +109,7 @@ protected:
 //	I8250* sio;
 	I8253* pit;
 	I8259* pic;
-	I86* cpu;
+	I286* cpu;
 	IO* io;
 	PCM1BIT* pcm;
 	UPD765A* fdc;
@@ -143,6 +144,11 @@ public:
 	void reset();
 	void notify_power_off();
 	void run();
+	
+#ifdef USE_DEBUGGER
+	// debugger
+	DEVICE *get_cpu(int index);
+#endif
 	
 	// draw screen
 	void draw_screen();

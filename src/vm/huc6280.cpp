@@ -132,10 +132,13 @@ int HUC6280::run(int clock)
 	if(clock == -1) {
 		if(busreq) {
 			// don't run cpu!
+#ifdef USE_DEBUGGER
+			total_icount += 1;
+#endif
 			return 1;
 		} else {
 			// run only one opcode
-			return CPU_EXECUTE_CALL(h6280);
+			return run_one_opecode();
 		}
 	} else {
 		icount += clock;
@@ -143,14 +146,30 @@ int HUC6280::run(int clock)
 		
 		// run cpu while given clocks
 		while(icount > 0 && !busreq) {
-			icount -= CPU_EXECUTE_CALL(h6280);
+			icount -= run_one_opecode();
 		}
 		// if busreq is raised, spin cpu while remained clock
 		if(icount > 0 && busreq) {
+#ifdef USE_DEBUGGER
+			total_icount += icount;
+#endif
 			icount = 0;
 		}
 		return first_icount - icount;
 	}
+}
+
+int HUC6280::run_one_opecode()
+{
+#ifdef USE_DEBUGGER
+	h6280_Regs *cpustate = (h6280_Regs *)opaque;
+	d_debugger->add_cpu_trace(cpustate->pc.w.l);
+#endif
+	int passed_icount = CPU_EXECUTE_CALL(h6280);
+#ifdef USE_DEBUGGER
+	total_icount += passed_icount;
+#endif
+	return passed_icount;
 }
 
 void HUC6280::write_signal(int id, uint32_t data, uint32_t mask)
@@ -252,8 +271,10 @@ void HUC6280::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	h6280_Regs *cpustate = (h6280_Regs *)opaque;
 	my_stprintf_s(buffer, buffer_len,
-	_T("PC = %04X SP = %04X ZP = %04X EA = %04X A = %02X X = %02X Y = %02X P = %02X"),
-	cpustate->pc.w.l, cpustate->sp.w.l, cpustate->zp.w.l, cpustate->ea.w.l, cpustate->a, cpustate->x, cpustate->y, cpustate->p);
+	_T("PC = %04X SP = %04X ZP = %04X EA = %04X A = %02X X = %02X Y = %02X P = %02X\nTotal CPU Clocks = %llu (%llu)"),
+	cpustate->pc.w.l, cpustate->sp.w.l, cpustate->zp.w.l, cpustate->ea.w.l, cpustate->a, cpustate->x, cpustate->y, cpustate->p,
+	total_icount, total_icount - prev_total_icount);
+	prev_total_icount = total_icount;
 }
 
 // disassembler
@@ -271,7 +292,7 @@ int HUC6280::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 }
 #endif
 
-#define STATE_VERSION	3
+#define STATE_VERSION	4
 
 void HUC6280::save_state(FILEIO* state_fio)
 {
@@ -279,6 +300,9 @@ void HUC6280::save_state(FILEIO* state_fio)
 	state_fio->FputInt32(this_device_id);
 	
 	state_fio->Fwrite(opaque, sizeof(h6280_Regs), 1);
+#ifdef USE_DEBUGGER
+	state_fio->FputUint64(total_icount);
+#endif
 	state_fio->FputInt32(icount);
 	state_fio->FputBool(busreq);
 }
@@ -292,6 +316,9 @@ bool HUC6280::load_state(FILEIO* state_fio)
 		return false;
 	}
 	state_fio->Fread(opaque, sizeof(h6280_Regs), 1);
+#ifdef USE_DEBUGGER
+	total_icount = prev_total_icount = state_fio->FgetUint64();
+#endif
 	icount = state_fio->FgetInt32();
 	busreq = state_fio->FgetBool();
 	

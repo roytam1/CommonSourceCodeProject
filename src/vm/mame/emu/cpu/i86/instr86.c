@@ -1987,9 +1987,11 @@ static void PREFIX86(_call_far)(i8086_state *cpustate)
 	tmp2 = FETCH;
 	tmp2 += FETCH << 8;
 
+	ICOUNT -= timing.call_far;
+
 #ifdef I86_PSEUDO_BIOS
-	if(cpustate->bios != NULL && cpustate->bios->bios_call_i86(((tmp2 << 4) + tmp) & AMASK, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
-		ICOUNT -= timing.call_far;
+	if(cpustate->bios != NULL && cpustate->bios->bios_call_far_i86(((tmp2 << 4) + tmp) & AMASK, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
+		ICOUNT -= timing.ret_far;
 		return;
 	}
 #endif
@@ -2006,7 +2008,6 @@ static void PREFIX86(_call_far)(i8086_state *cpustate)
 #endif
 	PUSH(cs);
 	PUSH(ip);
-	ICOUNT -= timing.call_far;
 	CHANGE_PC(cpustate->pc);
 }
 
@@ -2418,6 +2419,7 @@ static void PREFIX86(_int)(i8086_state *cpustate)    /* Opcode 0xcd */
 	ICOUNT -= timing.int_imm;
 #ifdef I86_PSEUDO_BIOS
 	if(cpustate->bios != NULL && cpustate->bios->bios_int_i86(int_num, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
+		ICOUNT -= timing.iret;
 		return;
 	}
 #endif
@@ -2641,12 +2643,6 @@ static void PREFIX86(_call_d16)(i8086_state *cpustate)    /* Opcode 0xe8 */
 	WORD ip, tmp;
 
 	FETCHWORD(tmp);
-#ifdef I86_PSEUDO_BIOS
-	if(cpustate->bios != NULL && cpustate->bios->bios_call_i86((cpustate->pc + tmp) & AMASK, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
-		ICOUNT -= timing.call_near;
-		return;
-	}
-#endif
 	ip = cpustate->pc - cpustate->base[CS];
 	PUSH(ip);
 	ip += tmp;
@@ -3248,12 +3244,6 @@ static void PREFIX86(_ffpre)(i8086_state *cpustate)    /* Opcode 0xff */
 	case 0x10:  /* CALL ew */
 		ICOUNT -= (ModRM >= 0xc0) ? timing.call_r16 : timing.call_m16;
 		tmp = GetRMWord(ModRM);
-#ifdef I86_PSEUDO_BIOS
-		if(cpustate->bios != NULL && cpustate->bios->bios_call_i86((cpustate->base[CS] + (WORD)tmp) & AMASK, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
-			ICOUNT -= timing.call_far;
-			return;
-		}
-#endif
 		ip = cpustate->pc - cpustate->base[CS];
 		PUSH(ip);
 		cpustate->pc = (cpustate->base[CS] + (WORD)tmp) & AMASK;
@@ -3266,7 +3256,8 @@ static void PREFIX86(_ffpre)(i8086_state *cpustate)    /* Opcode 0xff */
 		tmp1 = GetRMWord(ModRM);
 		tmp2 = GetnextRMWord;
 #ifdef I86_PSEUDO_BIOS
-		if(cpustate->bios != NULL && cpustate->bios->bios_call_i86(((tmp2 << 4) + tmp1) & AMASK, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
+		if(cpustate->bios != NULL && cpustate->bios->bios_call_far_i86(((tmp2 << 4) + tmp1) & AMASK, cpustate->regs.w, cpustate->sregs, &cpustate->ZeroVal, &cpustate->CarryVal)) {
+			ICOUNT -= timing.ret_far;
 			return;
 		}
 #endif

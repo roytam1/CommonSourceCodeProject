@@ -376,6 +376,9 @@ int MC6809::run(int clock)
 		extra_icount = 0;
 	   	if(!busreq) write_signals(&outputs_bus_halt, 0xffffffff);
 		busreq = true;
+#ifdef USE_DEBUGGER
+		total_icount += first_icount - icount;
+#endif
 		return first_icount - icount;
 	}
 	if(busreq) write_signals(&outputs_bus_halt, 0x00000000);
@@ -387,6 +390,9 @@ int MC6809::run(int clock)
 		icount -= extra_icount;
 		extra_icount = 0;
 		PC++;
+#ifdef USE_DEBUGGER
+		total_icount += first_icount - icount;
+#endif
 		return first_icount - icount;
 	}
  	/*
@@ -441,6 +447,9 @@ int_cycle:
 	} else {
 		int_state &= ~MC6809_CWAI_IN;
 	}
+#ifdef USE_DEBUGGER
+	total_icount += first_icount - icount;
+#endif
 	return first_icount - icount;
 
 	// run cpu
@@ -451,13 +460,16 @@ check_ok:
 		} else {
 			icount = 0;
 		}
+#ifdef USE_DEBUGGER
+		total_icount += first_icount - icount;
+#endif
 		return first_icount - icount;
 	}
 	if((int_state & MC6809_CWAI_IN) == 0) {
 		if(clock == -1) {
 		// run only one opcode
 			run_one_opecode();
-			return icount;
+			return first_icount - icount;
 		} else {
 			// run cpu while given clocks
 			while(icount > 0) {
@@ -472,6 +484,9 @@ check_ok:
 		else {
 			icount = 0;
 		}
+#ifdef USE_DEBUGGER
+		total_icount += first_icount - icount;
+#endif
 		return first_icount - icount;
 	}
 
@@ -497,6 +512,8 @@ void MC6809::run_one_opecode()
 			now_debugging = false;
 		}
 		
+		d_debugger->add_cpu_trace(PC);
+		int first_icount = icount;
 		pPPC = pPC;
 		uint8_t ireg = ROP(PCD);
 		PC++;
@@ -504,6 +521,7 @@ void MC6809::run_one_opecode()
 		icount -= extra_icount;
 		extra_icount = 0;
 		op(ireg);
+		total_icount += first_icount - icount;
 		
 		if(now_debugging) {
 			if(!d_debugger->now_going) {
@@ -512,6 +530,9 @@ void MC6809::run_one_opecode()
 			d_mem = d_mem_stored;
 		}
 	} else {
+		d_debugger->add_cpu_trace(PC);
+		int first_icount = icount;
+#endif
 		pPPC = pPC;
 		uint8_t ireg = ROP(PCD);
 		PC++;
@@ -519,15 +540,9 @@ void MC6809::run_one_opecode()
 		icount -= extra_icount;
 		extra_icount = 0;
 		op(ireg);
+#ifdef USE_DEBUGGER
+		total_icount += first_icount - icount;
 	}
-#else
-	pPPC = pPC;
-	uint8_t ireg = ROP(PCD);
-	PC++;
-	icount -= cycles1[ireg];
-	icount -= extra_icount;
-	extra_icount = 0;
-	op(ireg);
 #endif
 }
 
@@ -618,7 +633,7 @@ void MC6809::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 #ifdef USE_DEBUGGER
 	my_stprintf_s(buffer, buffer_len,
-		 _T("PC = %04x PPC = %04x INTR=[%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x"),
+		 _T("PC = %04x PPC = %04x\nINTR = [%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x\nTotal CPU Clocks = %llu (%llu)"),
 		 PC,
 		 PPC,
 		 ((int_state & MC6809_IRQ_BIT) == 0)   ? _T("----") : _T(" IRQ"),
@@ -640,8 +655,10 @@ void MC6809::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 		 ((CC & CC_C) == 0)  ? _T('-') : _T('C'),
 		 A, B, DP,
 		 X, Y, U, S,
-		 EAD
+		 EAD,
+		 total_icount, total_icount - prev_total_icount
 	 );
+	prev_total_icount = total_icount;
 #endif
 }  
 
@@ -4541,13 +4558,16 @@ OP_HANDLER(pref11) {
 		}
 	}
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void MC6809::save_state(FILEIO* state_fio)
 {
 	state_fio->FputUint32(STATE_VERSION);
 	state_fio->FputInt32(this_device_id);
 	
+#ifdef USE_DEBUGGER
+	state_fio->FputUint64(total_icount);
+#endif
 	state_fio->FputInt32(icount);
 	state_fio->FputInt32(extra_icount);
 	state_fio->FputUint32(int_state);
@@ -4573,6 +4593,9 @@ bool MC6809::load_state(FILEIO* state_fio)
 		return false;
 	}
 	
+#ifdef USE_DEBUGGER
+	total_icount = prev_total_icount = state_fio->FgetUint64();
+#endif
 	icount = state_fio->FgetInt32();
 	extra_icount = state_fio->FgetInt32();
 	int_state = state_fio->FgetUint32();

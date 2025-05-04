@@ -46,6 +46,10 @@ private:
 	
 	uint32_t int_state;
 	bool busreq;
+#ifdef USE_DEBUGGER
+	uint64_t total_icount;
+	uint64_t prev_total_icount;
+#endif
 	int icount;
 	int extra_icount;
 	void WM16(uint32_t Addr, pair_t *p);
@@ -411,6 +415,9 @@ private:
 public:
 	MC6809(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) 
 	{
+#ifdef USE_DEBUGGER
+		total_icount = prev_total_icount = 0;
+#endif
 		initialize_output_signals(&outputs_bus_clr);
 		initialize_output_signals(&outputs_bus_halt);
 		set_device_name(_T("MC6809 MPU"));

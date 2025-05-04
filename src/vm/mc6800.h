@@ -51,7 +51,12 @@ private:
 	int wai_state;
 	int int_state;
 	
+#ifdef USE_DEBUGGER
+	uint64_t total_icount;
+	uint64_t prev_total_icount;
+#endif
 	int icount;
+	bool one_more_insn;
 	
 	uint32_t RM(uint32_t Addr);
 	void WM(uint32_t Addr, uint32_t Value);
@@ -102,8 +107,8 @@ private:
 	
 	uint32_t mc6801_io_r(uint32_t offset);
 	void mc6801_io_w(uint32_t offset, uint32_t data);
-	void increment_counter(int amount);
 #endif
+	void increment_counter(int amount);
 	
 	void run_one_opecode();
 	void enter_interrupt(uint16_t irq_vector);
@@ -361,6 +366,9 @@ private:
 public:
 	MC6800(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef USE_DEBUGGER
+		total_icount = prev_total_icount = 0;
+#endif
 #if defined(HAS_MC6801) || defined(HAS_HD6301)
 		for(int i = 0; i < 4; i++) {
 			initialize_output_signals(&port[i].outputs);

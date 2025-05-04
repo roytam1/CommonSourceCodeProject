@@ -49,6 +49,10 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
+#ifdef USE_DEBUGGER
+	uint64_t total_count;
+	uint64_t prev_total_count;
+#endif
 	int count;
 	pair_t regs[4];
 	uint16_t SP, PC, prevPC;
@@ -199,6 +203,9 @@ private:
 public:
 	I8080(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef USE_DEBUGGER
+		total_count = prev_total_count = 0;
+#endif
 		BUSREQ = false;
 		SID = true;
 		initialize_output_signals(&outputs_busack);

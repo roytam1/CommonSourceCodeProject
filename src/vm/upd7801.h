@@ -49,6 +49,10 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
+#ifdef USE_DEBUGGER
+	uint64_t total_count;
+	uint64_t prev_total_count;
+#endif
 	int count, period, scount, tcount;
 	bool wait;
 	
@@ -103,6 +107,9 @@ private:
 public:
 	UPD7801(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef USE_DEBUGGER
+		total_count = prev_total_count = 0;
+#endif
 		initialize_output_signals(&outputs_so);
 		SI = SCK = false;
 		set_device_name(_T("uPD7801 CPU"));

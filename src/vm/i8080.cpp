@@ -484,6 +484,9 @@ int I8080::run(int clock)
 	if(clock == -1) {
 		if(BUSREQ) {
 			// don't run cpu!
+#ifdef USE_DEBUGGER
+			total_count += 1;
+#endif
 			return 1;
 		} else {
 			// run only one opcode
@@ -501,6 +504,9 @@ int I8080::run(int clock)
 		}
 		// if busreq is raised, spin cpu while remained clock
 		if(count > 0 && BUSREQ) {
+#ifdef USE_DEBUGGER
+			total_count += count;
+#endif
 			count = 0;
 		}
 		return first_count - count;
@@ -529,7 +535,10 @@ void I8080::run_one_opecode()
 		}
 		
 		afterHALT = afterEI = false;
+		d_debugger->add_cpu_trace(PC);
+		int first_count = count;
 		OP(FETCHOP());
+		total_count += first_count - count;
 		if(!afterEI) {
 			check_interrupt();
 		}
@@ -544,7 +553,14 @@ void I8080::run_one_opecode()
 	} else {
 #endif
 		afterHALT = afterEI = false;
+#ifdef USE_DEBUGGER
+		d_debugger->add_cpu_trace(PC);
+		int first_count = count;
+#endif
 		OP(FETCHOP());
+#ifdef USE_DEBUGGER
+		total_count += first_count - count;
+#endif
 		if(!afterEI) {
 			check_interrupt();
 		}
@@ -573,7 +589,10 @@ void I8080::run_one_opecode()
 			}
 			
 			afterHALT = false;
+			d_debugger->add_cpu_trace(PC);
+			int first_count = count;
 			OP(FETCHOP());
+			total_count += first_count - count;
 			d_pic->notify_intr_ei();
 			check_interrupt();
 			
@@ -587,7 +606,14 @@ void I8080::run_one_opecode()
 		} else {
 #endif
 			afterHALT = false;
+#ifdef USE_DEBUGGER
+			d_debugger->add_cpu_trace(PC);
+			int first_count = count;
+#endif
 			OP(FETCHOP());
+#ifdef USE_DEBUGGER
+			total_count += first_count - count;
+#endif
 			d_pic->notify_intr_ei();
 			check_interrupt();
 #ifdef USE_DEBUGGER
@@ -598,6 +624,9 @@ void I8080::run_one_opecode()
 
 void I8080::check_interrupt()
 {
+#ifdef USE_DEBUGGER
+	int first_count = count;
+#endif
 	// check interrupt
 	if(IM & IM_REQ) {
 		if(IM & IM_NMI) {
@@ -679,6 +708,9 @@ void I8080::check_interrupt()
 			}
 		}
 	}
+#ifdef USE_DEBUGGER
+	total_count += first_count - count;
+#endif
 }
 
 void I8080::OP(uint8_t code)
@@ -1630,16 +1662,19 @@ void I8080::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 /*
 F = [--------]  A = 00  BC = 0000  DE = 0000  HL = 0000  SP = 0000  PC = 0000
 IM= [--------]         (BC)= 0000 (DE)= 0000 (HL)= 0000 (SP)= 0000
+Total CPU Clocks = 0 (0)
 */
 	int wait;
 	my_stprintf_s(buffer, buffer_len,
-	_T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  SP = %04X  PC = %04X\nIM= [%c%c%c%c%c%c%c%c]         (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X"),
+	_T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  SP = %04X  PC = %04X\nIM= [%c%c%c%c%c%c%c%c]         (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X\nTotal CPU Clocks = %llu (%llu)"),
 	(_F & CF) ? _T('C') : _T('-'), (_F & NF) ? _T('N') : _T('-'), (_F & VF) ? _T('V') : _T('-'), (_F & XF) ? _T('X') : _T('-'),
 	(_F & HF) ? _T('H') : _T('-'), (_F & YF) ? _T('Y') : _T('-'), (_F & ZF) ? _T('Z') : _T('-'), (_F & SF) ? _T('S') : _T('-'),
 	_A, BC, DE, HL, SP, PC,
 	(IM & 0x80) ? _T('S') : _T('-'), (IM & 0x40) ? _T('7') : _T('-'), (IM & 0x20) ? _T('6') : _T('-'), (IM & 0x10) ? _T('5') : _T('-'),
 	(IM & 0x08) ? _T('E') : _T('-'), (IM & 0x04) ? _T('7') : _T('-'), (IM & 0x02) ? _T('6') : _T('-'), (IM & 0x01) ? _T('5') : _T('-'),
-	d_mem_stored->read_data16w(BC, &wait), d_mem_stored->read_data16w(DE, &wait), d_mem_stored->read_data16w(HL, &wait), d_mem_stored->read_data16w(SP, &wait));
+	d_mem_stored->read_data16w(BC, &wait), d_mem_stored->read_data16w(DE, &wait), d_mem_stored->read_data16w(HL, &wait), d_mem_stored->read_data16w(SP, &wait),
+	total_count, total_count - prev_total_count);
+	prev_total_count = total_count;
 }
 
 // disassembler
@@ -1916,13 +1951,16 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 }
 #endif
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void I8080::save_state(FILEIO* state_fio)
 {
 	state_fio->FputUint32(STATE_VERSION);
 	state_fio->FputInt32(this_device_id);
 	
+#ifdef USE_DEBUGGER
+	state_fio->FputUint64(total_count);
+#endif
 	state_fio->FputInt32(count);
 	state_fio->Fwrite(regs, sizeof(regs), 1);
 	state_fio->FputUint16(SP);
@@ -1944,6 +1982,9 @@ bool I8080::load_state(FILEIO* state_fio)
 	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
+#ifdef USE_DEBUGGER
+	total_count = prev_total_count = state_fio->FgetUint64();
+#endif
 	count = state_fio->FgetInt32();
 	state_fio->Fread(regs, sizeof(regs), 1);
 	SP = state_fio->FgetUint16();

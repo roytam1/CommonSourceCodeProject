@@ -2316,6 +2316,9 @@ void Z80::run_one_opecode()
 
 void Z80::check_interrupt()
 {
+#ifdef USE_DEBUGGER
+	int first_icount = icount;
+#endif
 	// check interrupt
 	if(intr_req_bit) {
 		if(intr_req_bit & NMI_REQ_BIT) {
@@ -2400,6 +2403,9 @@ void Z80::check_interrupt()
 #endif
 		}
 	}
+#ifdef USE_DEBUGGER
+	total_icount += first_icount - icount;
+#endif
 }
 
 #ifdef USE_DEBUGGER
