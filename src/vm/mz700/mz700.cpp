@@ -471,62 +471,24 @@ int VM::sound_buffer_ptr()
 }
 
 #ifdef USE_SOUND_VOLUME
-void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
-{
-#if defined(_MZ700)
-	if(ch == 0) {
-		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
-	} else if(ch == 1) {
-		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
-#elif defined(_MZ800)
-	if(ch == 0) {
-		my_tcscpy_s(buffer, buffer_len, _T("PSG"));
-	} else if(ch == 1) {
-		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
-	} else if(ch == 2) {
-		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
-#elif defined(_MZ1500)
-	if(ch == 0) {
-		my_tcscpy_s(buffer, buffer_len, _T("PSG #1"));
-	} else if(ch == 1) {
-		my_tcscpy_s(buffer, buffer_len, _T("PSG #2"));
-	} else if(ch == 2) {
-		my_tcscpy_s(buffer, buffer_len, _T("Beep"));
-	} else if(ch == 3) {
-		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
-#endif
-	} else {
-		buffer[0] = _T('\0');
-	}
-}
-
 void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
-#if defined(_MZ700)
-	if(ch == 0) {
-		pcm->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 1) {
-		drec->set_volume(0, decibel_l, decibel_r);
-	}
-#elif defined(_MZ800)
-	if(ch == 0) {
+#if defined(_MZ800)
+	if(ch-- == 0) {
 		psg->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 1) {
-		pcm->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 2) {
-		drec->set_volume(0, decibel_l, decibel_r);
-	}
+	} else
 #elif defined(_MZ1500)
-	if(ch == 0) {
+	if(ch-- == 0) {
 		psg_l->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 1) {
+	} else if(ch-- == 0) {
 		psg_r->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 2) {
+	} else
+#endif
+	if(ch-- == 0) {
 		pcm->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 3) {
+	} else if(ch-- == 0) {
 		drec->set_volume(0, decibel_l, decibel_r);
 	}
-#endif
 }
 #endif
 

@@ -350,15 +350,17 @@ bool EMU::now_auto_key()
 }
 #endif
 
-uint8* EMU::key_buffer()
+const uint8* EMU::key_buffer()
 {
 	return osd->key_buffer();
 }
-uint32* EMU::joy_buffer()
+
+const uint32* EMU::joy_buffer()
 {
 	return osd->joy_buffer();
 }
-int* EMU::mouse_buffer()
+
+const int* EMU::mouse_buffer()
 {
 	return osd->mouse_buffer();
 }
@@ -1245,12 +1247,6 @@ void EMU::save_binary(int drv, const _TCHAR* file_path)
 #endif
 
 #ifdef USE_SOUND_VOLUME
-void EMU::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
-{
-	*mono = false; // default
-	vm->get_sound_device_info(ch, buffer, buffer_len, mono);
-}
-
 void EMU::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	vm->set_sound_device_volume(ch, decibel_l, decibel_r);

@@ -1,3 +1,18 @@
+2/10/2015
+
+[COMMON] improve routine to apply volume to sound samples
+[WINMAIN] improve volume dialog
+[WINMAIN] change volume uppder limit from +20dB to 0dB
+[WINMAIN] support joystick dialog
+[WINMAIN] simplify codes
+[EMU] remove function to get sound device info
+[EMU] change keyboard/joystick/mapper data pointer to const pointer
+
+[MZ80K/KEYBOARD] fix for constant keyboatd data pointer
+[PC6001/PSUB] fix for constant keyboatd data pointer
+[X1/KEYBOARD] fix for constant keyboatd data pointer
+
+
 2/7/2015
 
 [WINMAIN] add dialog to set sound device volumes

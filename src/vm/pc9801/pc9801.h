@@ -30,6 +30,9 @@
 #elif defined(_PC98DO)
 #define DEVICE_NAME		"NEC PC-98DO"
 #define CONFIG_NAME		"pc98do"
+#elif defined(_PC98DOPLUS)
+#define DEVICE_NAME		"NEC PC-98DO+"
+#define CONFIG_NAME		"pc98do+"
 #else
 #endif
 
@@ -52,7 +55,10 @@
 #define SUPPORT_16_COLORS
 #endif
 
-#if defined(_PC98DO)
+// PC-9801-86
+//#define SUPPORT_PC98_OPNA
+
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 #define MODE_PC98	0
 #define MODE_PC88_V1S	1
 #define MODE_PC88_V1H	2
@@ -62,6 +68,10 @@
 #define SUPPORT_PC88_HIGH_CLOCK
 //#define SUPPORT_PC88_JOYSTICK
 #define PC88_EXRAM_BANKS	4
+#endif
+#if defined(_PC98DOPLUS)
+#define SUPPORT_PC88_OPNA
+#define SUPPORT_PC88_SB2
 #endif
 
 // device informations for virtual machine
@@ -73,6 +83,9 @@
 #elif defined(_PC9801E) || defined(_PC9801U) || defined(_PC9801VF)
 #define CPU_CLOCKS		7987248
 #define PIT_CLOCK_8MHZ
+#elif defined(_PC98DOPLUS)
+#define CPU_CLOCKS		15974496
+#define PIT_CLOCK_8MHZ
 #else
 #define CPU_CLOCKS		9984060
 #define PIT_CLOCK_5MHZ
@@ -81,20 +94,24 @@
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		2
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
-#if defined(_PC98DO)
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 #define PC80S31K_NO_WAIT
 #endif
 #define UPD7220_MSB_FIRST
 #define UPD7220_HORIZ_FREQ	24830
 #if defined(_PC9801) || defined(_PC9801E)
 #define HAS_I86
+#elif defined(_PC98DOPLUS)
+#define HAS_V33A
 #else
 #define HAS_V30
 #endif
-#if defined(_PC98DO)
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 #define HAS_UPD4990A
-//#define HAS_YM2608
 #define Z80_MEMORY_WAIT
+#endif
+#if defined(SUPPORT_PC98_OPNA) || defined(SUPPORT_PC88_OPNA)
+#define HAS_YM2608
 #endif
 #define I8259_MAX_CHIPS		2
 #define SINGLE_MODE_DMA
@@ -105,11 +122,11 @@
 #define SUPPORT_VARIABLE_TIMING
 
 // device informations for win32
-#if defined(_PC98DO)
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 #define USE_BOOT_MODE		5
 #define USE_DIPSWITCH
 #endif
-#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO)
+#if defined(_PC9801E) || defined(_PC9801VM) || defined(_PC98DO) || defined(_PC98DOPLUS)
 #define USE_CPU_TYPE		2
 #endif
 #define USE_FD1
@@ -121,19 +138,19 @@
 // for 320KB drives
 #define USE_FD5
 #define USE_FD6
-#elif defined(_PC98DO)
+#elif defined(_PC98DO) || defined(_PC98DOPLUS)
 // for PC-8801 drives
 #define USE_FD3
 #define USE_FD4
 #endif
-#if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
+#if defined(SUPPORT_CMT_IF) || defined(_PC98DO) || defined(_PC98DOPLUS)
 #define USE_TAPE
 #define TAPE_BINARY_ONLY
 #endif
 #define NOTIFY_KEY_DOWN
 #define USE_SHIFT_NUMPAD_KEY
 #define USE_ALT_F10_KEY
-#if defined(_PC98DO)
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 // slow enough for N88-“ú–{ŒêBASIC
 #define USE_AUTO_KEY		8
 #define USE_AUTO_KEY_RELEASE	10
@@ -147,10 +164,22 @@
 #define USE_SCREEN_ROTATE
 #define USE_ACCESS_LAMP
 #define USE_SOUND_DEVICE_TYPE	4
-#if defined(_PC98DO)
-#define USE_SOUND_VOLUME	7
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
+#if    defined(SUPPORT_PC98_OPNA) &&  defined(SUPPORT_PC88_OPNA)
+#define USE_SOUND_VOLUME	(4 + 1 + 1 + 4 + 1)
+#elif  defined(SUPPORT_PC98_OPNA) && !defined(SUPPORT_PC88_OPNA)
+#define USE_SOUND_VOLUME	(4 + 1 + 1 + 2 + 1)
+#elif !defined(SUPPORT_PC98_OPNA) &&  defined(SUPPORT_PC88_OPNA)
+#define USE_SOUND_VOLUME	(2 + 1 + 1 + 4 + 1)
+#elif !defined(SUPPORT_PC98_OPNA) && !defined(SUPPORT_PC88_OPNA)
+#define USE_SOUND_VOLUME	(2 + 1 + 1 + 2 + 1)
+#endif
 #else
-#define USE_SOUND_VOLUME	4
+#if defined(SUPPORT_PC98_OPNA)
+#define USE_SOUND_VOLUME	(4 + 1 + 1)
+#else
+#define USE_SOUND_VOLUME	(2 + 1 + 1)
+#endif
 #endif
 #define USE_PRINTER
 #define USE_PRINTER_TYPE	4
@@ -159,6 +188,41 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+
+#ifdef USE_SOUND_VOLUME
+static const _TCHAR *sound_device_caption[] = {
+#if defined(SUPPORT_PC98_OPNA)
+	_T("PC-9801-86 (FM)"), _T("PC-9801-86 (PSG)"), _T("PC-9801-86 (ADPCM)"), _T("PC-9801-86 (Rhythm)"),
+#else
+	_T("PC-9801-26 (FM)"), _T("PC-9801-26 (PSG)"),
+#endif
+	_T("PC-9801-14"), _T("Beep"),
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
+#if defined(SUPPORT_PC88_OPNA)
+	_T("PC-88 OPNA (FM)"), _T("PC-88 OPNA (PSG)"), _T("PC-88 OPNA (ADPCM)"), _T("PC-88 OPNA (Rhythm)"),
+#else
+	_T("PC-88 OPN (FM)"), _T("PC-88 OPN (PSG)"),
+#endif
+	_T("PC-88 Beep"), 
+#endif
+};
+static const bool sound_device_monophonic[] = {
+#if defined(SUPPORT_PC98_OPNA)
+	true, true, true, true,
+#else
+	true, true,
+#endif
+	false, false,
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
+#if defined(SUPPORT_PC88_OPNA)
+	true, true, true, true,
+#else
+	true, true,
+#endif
+	false,
+#endif
+};
+#endif
 
 class EMU;
 class DEVICE;
@@ -202,7 +266,7 @@ class PC80S31K;
 class Z80;
 #endif
 
-#if defined(_PC98DO)
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 class PC80S31K;
 class PC88;
 class Z80;
@@ -299,7 +363,7 @@ protected:
 	// sound
 	int sound_device_type;
 	
-#if defined(_PC98DO)
+#if defined(_PC98DO) || defined(_PC98DOPLUS)
 	EVENT* pc88event;
 	
 	PC88* pc88;
@@ -350,7 +414,6 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	
@@ -364,7 +427,7 @@ public:
 	bool disk_inserted(int drv);
 	void set_disk_protected(int drv, bool value);
 	bool get_disk_protected(int drv);
-#if defined(SUPPORT_CMT_IF) || defined(_PC98DO)
+#if defined(SUPPORT_CMT_IF) || defined(_PC98DO) || defined(_PC98DOPLUS)
 	void play_tape(const _TCHAR* file_path);
 	void rec_tape(const _TCHAR* file_path);
 	void close_tape();

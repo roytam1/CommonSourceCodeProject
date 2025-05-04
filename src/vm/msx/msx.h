@@ -75,6 +75,21 @@
 #include "../../common.h"
 #include "../../fileio.h"
 
+#ifdef USE_SOUND_VOLUME
+static const _TCHAR *sound_device_caption[] = {
+	_T("PSG"), _T("Beep"), _T("CMT"),
+#if defined(_PX7)
+	_T("LD-700"),
+#endif
+};
+static const bool sound_device_monophonic[] = {
+	true, false, false,
+#if defined(_PX7)
+	false,
+#endif
+};
+#endif
+
 class EMU;
 class DEVICE;
 class EVENT;
@@ -175,7 +190,6 @@ public:
 	void movie_sound_callback(uint8 *buffer, long size);
 #endif
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	

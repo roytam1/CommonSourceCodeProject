@@ -70,7 +70,6 @@ void PCE::initialize()
 {
 	// get context
 	joy_stat = emu->joy_buffer();
-	key_stat = emu->key_buffer();
 	
 	// register event
 	register_vline_event(this);
@@ -1668,22 +1667,8 @@ uint8 PCE::joy_read(uint16 addr)
 	uint8 val = 0xf;
 	uint32 stat = 0;
 	
-	if(joy_count == 0) {
-		stat = joy_stat[0];
-		if(key_stat[0x26]) stat |= 0x001;	// up
-		if(key_stat[0x28]) stat |= 0x002;	// down
-		if(key_stat[0x25]) stat |= 0x004;	// left
-		if(key_stat[0x27]) stat |= 0x008;	// right
-		if(key_stat[0x44]) stat |= 0x010;	// d (1)
-		if(key_stat[0x53]) stat |= 0x020;	// s (2)
-		if(key_stat[0x20]) stat |= 0x040;	// space (select)
-		if(key_stat[0x0d]) stat |= 0x080;	// enter (run)
-		if(key_stat[0x41]) stat |= 0x100;	// a (3)
-		if(key_stat[0x51]) stat |= 0x200;	// q (4)
-		if(key_stat[0x57]) stat |= 0x400;	// w (5)
-		if(key_stat[0x45]) stat |= 0x800;	// e (6)
-	} else if(joy_count == 1) {
-		stat = joy_stat[1];
+	if(joy_count < 4) {
+		stat = joy_stat[joy_count];
 	}
 	if(support_6btn && joy_bank) {
 		if(joy_sel) {

@@ -483,18 +483,28 @@ int decibel_to_volume(int decibel)
 	return (int)(1024.0 * pow(10.0, decibel / 40.0) + 0.5);
 }
 
-int apply_volume(int sample, int volume)
+int32 apply_volume(int32 sample, int volume)
 {
+//	int64 output;
+	int32 output;
 	if(sample < 0) {
-		sample = -sample;
-		sample *= volume;
-		sample >>= 10;
-		return -sample;
+		output = -sample;
+		output *= volume;
+		output >>= 10;
+		output = -output;
 	} else {
-		sample *= volume;
-		sample >>= 10;
-		return sample;
+		output = sample;
+		output *= volume;
+		output >>= 10;
 	}
+//	if(output > 2147483647) {
+//		return 2147483647;
+//	} else if(output < (-2147483647 - 1)) {
+//		return (-2147483647 - 1);
+//	} else {
+//		return (int32)output;
+//	}
+	return output;
 }
 
 void get_host_time(cur_time_t* cur_time)

@@ -355,22 +355,6 @@ int VM::sound_buffer_ptr()
 }
 
 #ifdef USE_SOUND_VOLUME
-void VM::get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono)
-{
-	if(ch-- == 0) {
-		my_tcscpy_s(buffer, buffer_len, _T("PSG"));
-		*mono = true;
-#if !defined(_PC6001)
-	} else if(ch-- == 0) {
-		my_tcscpy_s(buffer, buffer_len, _T("Voice"));
-#endif
-	} else if(ch-- == 0) {
-		my_tcscpy_s(buffer, buffer_len, _T("CMT"));
-	} else {
-		buffer[0] = _T('\0');
-	}
-}
-
 void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch-- == 0) {
@@ -386,6 +370,24 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 	}
 }
 #endif
+
+// ----------------------------------------------------------------------------
+// notify key
+// ----------------------------------------------------------------------------
+
+void VM::key_down(int code, bool repeat)
+{
+	if(!support_sub_cpu) {
+		psub->key_down(code);
+	}
+}
+
+void VM::key_up(int code)
+{
+	if(!support_sub_cpu) {
+		psub->key_up(code);
+	}
+}
 
 // ----------------------------------------------------------------------------
 // user interface

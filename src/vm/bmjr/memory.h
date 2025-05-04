@@ -21,8 +21,7 @@ class MEMORY : public DEVICE
 private:
 	// contexts
 	DEVICE *d_drec, *d_cpu, *d_pia;
-	uint8* key_stat;
-	uint32* joy_stat;
+	const uint8* key_stat;
 	
 	// memory
 	uint8 ram[0x10000];

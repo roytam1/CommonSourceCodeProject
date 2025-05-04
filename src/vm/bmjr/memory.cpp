@@ -88,7 +88,6 @@ void MEMORY::initialize()
 	
 	// initialize inputs
 	key_stat = emu->key_buffer();
-	joy_stat = emu->joy_buffer();
 	
 	// initialize display
 	for(int i = 0; i < 8; i++) {

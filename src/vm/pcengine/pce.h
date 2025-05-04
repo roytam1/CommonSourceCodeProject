@@ -133,8 +133,7 @@ private:
 	uint8 psg_read(uint16 addr);
 	
 	// joypad
-	uint32 *joy_stat;
-	uint8 *key_stat;
+	const uint32 *joy_stat;
 	uint8 joy_sel, joy_clr, joy_count, joy_bank;
 	bool joy_6btn;
 	

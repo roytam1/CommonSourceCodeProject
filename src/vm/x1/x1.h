@@ -112,6 +112,9 @@
 #else
 #define USE_SOUND_VOLUME	4
 #endif
+#ifdef _X1TWIN
+#define USE_JOY_BUTTON_CAPTIONS
+#endif
 #define USE_PRINTER
 #define USE_PRINTER_TYPE	4
 #define USE_DEBUGGER
@@ -119,6 +122,38 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+
+#ifdef USE_SOUND_VOLUME
+static const _TCHAR *sound_device_caption[] = {
+	_T("PSG"), _T("CZ-8BS1 #1"), _T("CZ-8BS1 #2"), _T("CMT"),
+#if defined(_X1TWIN)
+	_T("Voice"),
+#endif
+};
+static const bool sound_device_monophonic[] = {
+	true, true, true, false,
+#if defined(_X1TWIN)
+	false,
+#endif
+};
+#endif
+
+#ifdef USE_JOY_BUTTON_CAPTIONS
+static const _TCHAR *joy_button_captions[] = {
+	_T("Up"),
+	_T("Down"),
+	_T("Left"),
+	_T("Right"),
+	_T("Button #1"),
+	_T("Button #2"),
+	_T("Select"),
+	_T("Run"),
+	_T("Button #3"),
+	_T("Button #4"),
+	_T("Button #5"),
+	_T("Button #6"),
+};
+#endif
 
 // from X-millenium
 
@@ -319,7 +354,6 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	

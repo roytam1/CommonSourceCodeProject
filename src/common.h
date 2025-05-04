@@ -584,7 +584,7 @@ uint32 getcrc32(uint8 data[], int size);
 uint16 jis_to_sjis(uint16 jis);
 
 int decibel_to_volume(int decibel);
-int apply_volume(int sample, int volume);
+int32 apply_volume(int32 sample, int volume);
 
 #define array_length(array) (sizeof(array) / sizeof(array[0]))
 

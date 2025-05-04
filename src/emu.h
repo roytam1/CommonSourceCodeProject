@@ -203,9 +203,9 @@ public:
 	void stop_auto_key();
 	bool now_auto_key();
 #endif
-	uint8* key_buffer();
-	uint32* joy_buffer();
-	int* mouse_buffer();
+	const uint8* key_buffer();
+	const uint32* joy_buffer();
+	const int* mouse_buffer();
 	
 	// screen
 	int get_window_width(int mode);
@@ -374,7 +374,6 @@ public:
 	void save_binary(int drv, const _TCHAR* file_path);
 #endif
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	void update_config();

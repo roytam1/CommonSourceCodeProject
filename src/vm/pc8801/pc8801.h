@@ -121,6 +121,37 @@
 #include "../../common.h"
 #include "../../fileio.h"
 
+#ifdef USE_SOUND_VOLUME
+static const _TCHAR *sound_device_caption[] = {
+#ifdef SUPPORT_PC88_OPNA
+	_T("OPNA (FM)"), _T("OPNA (PSG)"), _T("OPNA (ADPCM)"), _T("OPNA (Rhythm)"),
+#else
+	_T("OPN (FM)"), _T("OPN (PSG)"),
+#endif
+#ifdef SUPPORT_PC88_SB2
+	_T("SB2 (FM)"), _T("SB2 (PSG)"), _T("SB2 (ADPCM)"), _T("SB2 (Rhythm)"),
+#endif
+#ifdef SUPPORT_PC88_PCG8100
+	_T("PCG-8100"),
+#endif
+	_T("Beep"),
+};
+static const bool sound_device_monophonic[] = {
+#ifdef SUPPORT_PC88_OPNA
+	true, true, true, true,
+#else
+	true, true,
+#endif
+#ifdef SUPPORT_PC88_SB2
+	true, true, true, true,
+#endif
+#ifdef SUPPORT_PC88_PCG8100
+	false,
+#endif
+	false,
+};
+#endif
+
 class EMU;
 class DEVICE;
 class EVENT;
@@ -207,7 +238,6 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	

@@ -27,11 +27,6 @@
 #define USE_CART1
 ///#define USE_FD1
 ///#define USE_TAPE
-#define USE_KEY_TO_JOY
-#define KEY_TO_JOY_BUTTON_D	0x5a
-#define KEY_TO_JOY_BUTTON_1	0x58
-#define KEY_TO_JOY_BUTTON_2	0x43
-#define KEY_TO_JOY_BUTTON_3	0x0d
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY			5
 #define USE_AUTO_KEY_RELEASE	8
@@ -42,6 +37,15 @@
 
 #include "../../common.h"
 #include "../../fileio.h"
+
+#ifdef USE_SOUND_VOLUME
+static const _TCHAR *sound_device_caption[] = {
+	_T("PSG"), _T("OPLL"),
+};
+static const bool sound_device_monophonic[] = {
+	false, false,
+};
+#endif
 
 class EMU;
 class DEVICE;
@@ -114,7 +118,6 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	

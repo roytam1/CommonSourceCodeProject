@@ -306,6 +306,21 @@
 #include "../../common.h"
 #include "../../fileio.h"
 
+#ifdef USE_SOUND_VOLUME
+static const _TCHAR *sound_device_caption[] = {
+#if !defined(_FM77AV_VARIANTS)
+	_T("PSG"),
+#endif
+	_T("OPN (FM)"), _T("OPN (PSG)"), _T("WHG (FM)"), _T("WHG (PSG)"), _T("THG (FM)"), _T("THG (PSG)"), _T("Beep"), _T("CMT"),
+};
+static const bool sound_device_monophonic[] = {
+#if !defined(_FM77AV_VARIANTS)
+	true,
+#endif
+	true, true, true, true, true, true, false, false,
+};
+#endif
+
 class EMU;
 class DEVICE;
 class EVENT;
@@ -433,7 +448,6 @@ public:
 	uint16* create_sound(int* extra_frames);
 	int sound_buffer_ptr();
 #ifdef USE_SOUND_VOLUME
-	void get_sound_device_info(int ch, _TCHAR *buffer, size_t buffer_len, bool *mono);
 	void set_sound_device_volume(int ch, int decibel_l, int decibel_r);
 #endif
 	
