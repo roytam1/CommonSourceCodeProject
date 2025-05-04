@@ -31,7 +31,7 @@ public:
 		memset(_git_revision, 0x00, sizeof(_git_revision));
 #endif
 	}
-	~VM_TEMPLATE() {}
+	virtual ~VM_TEMPLATE() {}
 	
 	// drive virtual machine
 	virtual void reset() { }
