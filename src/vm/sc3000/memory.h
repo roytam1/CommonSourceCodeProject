@@ -20,7 +20,7 @@ class MEMORY : public DEVICE
 {
 private:
 	// memory
-	uint8_t cart[0x8000];
+	uint8_t cart[0x20000];
 	uint8_t ipl[0x2000];	// sf7000
 	uint8_t ram[0x10000];
 	
@@ -31,6 +31,9 @@ private:
 	
 	bool inserted;
 	bool ram_selected;
+	uint8_t bank[3];
+	
+	void update_bank();
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

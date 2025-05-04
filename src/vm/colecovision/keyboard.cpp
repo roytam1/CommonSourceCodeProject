@@ -14,7 +14,7 @@ void KEYBOARD::initialize()
 	key_stat = emu->get_key_buffer();
 	joy_stat = emu->get_joy_buffer();
 	// register event to update the key status
-	register_frame_event(this);
+//	register_frame_event(this); // is this needed?
 }
 
 void KEYBOARD::event_frame()
@@ -39,40 +39,37 @@ uint32_t KEYBOARD::read_io8(uint32_t addr)
 {
 	// Controller 1
 	if ((addr & 0x000000ff)==0xfc) {
-		uint8_t button=0xf0;
-		if (joy_stat[0] & 0x10) button=0xb0;			// F2
+		uint32_t button=0x70;//0xf0;
 		if (!tenkey) {
-			uint32_t joystick=0xff;
+			uint32_t joystick=0x7f;//0xff;
 			if (joy_stat[0] & 0x01) joystick &= 0xfe;	// U
 			if (joy_stat[0] & 0x02) joystick &= 0xfb;	// D
-			if (joy_stat[0] & 0x04) {
-				joystick &= 0x67;	// L
-			}
-			if (joy_stat[0] & 0x08) {
-				joystick &= 0x4d;	// R
-			}
+			if (joy_stat[0] & 0x04) joystick &= 0xf7;	// L
+			if (joy_stat[0] & 0x08) joystick &= 0xfd;	// R
 			if (joy_stat[0] & 0x20) joystick &= 0xbf;	// F1
 			return joystick;
 		}
-		if (key_stat[0x31] & 0x80)
+		if (joy_stat[0] & 0x10)
+			button &= 0xbf;         // F2
+		if ((key_stat[0x31] & 0x80) || (key_stat[0x61] & 0x80))
 			return (button | 0x0d); // 1
-		if (key_stat[0x32] & 0x80)
+		if ((key_stat[0x32] & 0x80) || (key_stat[0x62] & 0x80))
 			return (button | 0x07); // 2
-		if (key_stat[0x33] & 0x80)
+		if ((key_stat[0x33] & 0x80) || (key_stat[0x63] & 0x80))
 			return (button | 0x0c); // 3
-		if (key_stat[0x34] & 0x80)
+		if ((key_stat[0x34] & 0x80) || (key_stat[0x64] & 0x80))
 			return (button | 0x02); // 4
-		if (key_stat[0x35] & 0x80)
+		if ((key_stat[0x35] & 0x80) || (key_stat[0x65] & 0x80))
 			return (button | 0x03); // 5
-		if (key_stat[0x36] & 0x80)
+		if ((key_stat[0x36] & 0x80) || (key_stat[0x66] & 0x80))
 			return (button | 0x0e); // 6
-		if (key_stat[0x37] & 0x80)
+		if ((key_stat[0x37] & 0x80) || (key_stat[0x67] & 0x80))
 			return (button | 0x05); // 7
-		if (key_stat[0x38] & 0x80)
+		if ((key_stat[0x38] & 0x80) || (key_stat[0x68] & 0x80))
 			return (button | 0x01); // 8
-		if (key_stat[0x39] & 0x80)
+		if ((key_stat[0x39] & 0x80) || (key_stat[0x69] & 0x80))
 			return (button | 0x0b); // 9
-		if (key_stat[0x30] & 0x80)
+		if ((key_stat[0x30] & 0x80) || (key_stat[0x60] & 0x80))
 			return (button | 0x0a); // 0
 		if (key_stat[0xbd] & 0x80)
 			return (button | 0x09); // * '-'
@@ -86,10 +83,9 @@ uint32_t KEYBOARD::read_io8(uint32_t addr)
 	}
 	// Controller 2
 	if ((addr & 0x000000ff)==0xff) {
-		uint8_t button=0xf0;
-		if (joy_stat[1] & 0x10) button=0xb0;			// F2
+		uint32_t button=0x70;//0xf0;
 		if (!tenkey) {
-			uint32_t joystick=0xff;
+			uint32_t joystick=0x7f;//0xff;
 			if (joy_stat[1] & 0x01) joystick &= 0xfe;	// U
 			if (joy_stat[1] & 0x02) joystick &= 0xfb;	// D
 			if (joy_stat[1] & 0x04) joystick &= 0xf7;	// L
@@ -97,6 +93,8 @@ uint32_t KEYBOARD::read_io8(uint32_t addr)
 			if (joy_stat[1] & 0x20) joystick &= 0xbf;	// F1
 			return joystick;
 		}
+		if (joy_stat[1] & 0x10)
+			button &= 0xbf;         // F2
 		if (key_stat[0x51] & 0x80)
 			return (button | 0x0d); // 1 'q'
 		if (key_stat[0x57] & 0x80)
@@ -130,12 +128,14 @@ uint32_t KEYBOARD::read_io8(uint32_t addr)
 	return 0x0ff;
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void KEYBOARD::save_state(FILEIO* state_fio)
 {
 	state_fio->FputUint32(STATE_VERSION);
 	state_fio->FputInt32(this_device_id);	
+	
+	state_fio->FputBool(tenkey);
 }
 
 bool KEYBOARD::load_state(FILEIO* state_fio)
@@ -146,5 +146,6 @@ bool KEYBOARD::load_state(FILEIO* state_fio)
 	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
+	tenkey = state_fio->FgetBool();
 	return true;
 }
