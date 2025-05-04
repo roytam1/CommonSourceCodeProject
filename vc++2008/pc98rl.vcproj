@@ -508,7 +508,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\src\vm\i286.cpp"
+					RelativePath="..\src\vm\i386.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1218,7 +1218,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\vm\i286.h"
+					RelativePath="..\src\vm\i386.h"
 					>
 				</File>
 				<File

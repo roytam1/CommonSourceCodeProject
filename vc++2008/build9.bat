@@ -283,6 +283,10 @@ devenv.com pc98lt.vcproj /Rebuild Release
 mkdir build_xp\pc98lt
 copy Release\pc98lt.exe build_xp\pc98lt\.
 
+devenv.com pc98rl.vcproj /Rebuild Release
+mkdir build_xp\pc98rl
+copy Release\pc98rl.exe build_xp\pc98rl\.
+
 devenv.com pc100.vcproj /Rebuild Release
 mkdir build_xp\pc100
 copy Release\pc100.exe build_xp\pc100\.

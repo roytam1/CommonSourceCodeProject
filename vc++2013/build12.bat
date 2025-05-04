@@ -359,6 +359,11 @@ call :clean
 mkdir build_vc12\pc98lt
 copy binary_vc12\pc98lt.exe build_vc12\pc98lt\.
 
+devenv.com pc98rl.vcxproj /Rebuild Release
+call :clean
+mkdir build_vc12\pc98rl
+copy binary_vc12\pc98rl.exe build_vc12\pc98rl\.
+
 devenv.com pc100.vcxproj /Rebuild Release
 call :clean
 mkdir build_vc12\pc100
