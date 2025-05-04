@@ -1207,12 +1207,12 @@ double MB8877::get_usec_to_next_trans_pos(bool delay)
 	if(disk[drvreg]->invalid_format) {
 		// XXX: this track is invalid format and the calculated sector position may be incorrect.
 		// so use the constant period
-		return disk[drvreg]->get_usec_per_bytes(disk[drvreg]->gap3_size);
+		return 50000;
 	} else if(/*disk[drvreg]->no_skew &&*/ !disk[drvreg]->correct_timing()) {
 		// XXX: this image may be a standard image or coverted from a standard image and skew may be incorrect,
 		// so use the period to search the next sector from the current position
 		int sector_num = disk[drvreg]->sector_num.sd;
-		int bytes = disk[drvreg]->gap3_size; // temporary
+		int bytes = -1;
 		
 		if(position > disk[drvreg]->am1_position[sector_num - 1]) {
 			position -= disk[drvreg]->get_track_size();
@@ -1230,7 +1230,10 @@ double MB8877::get_usec_to_next_trans_pos(bool delay)
 				break;
 			}
 		}
-		return disk[drvreg]->get_usec_per_bytes(bytes);
+		if(bytes > 0) {
+			return disk[drvreg]->get_usec_per_bytes(bytes);
+		}
+		return 50000;
 	}
 	if(delay) {
 		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();

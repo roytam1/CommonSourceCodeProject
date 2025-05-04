@@ -602,9 +602,7 @@ bool DISK::get_track(int trk, int side)
 	int gap0_size = track_mfm ? 80 : 40;
 	int gap1_size = track_mfm ? 50 : 26;
 	int gap2_size = track_mfm ? 22 : 11;
-//	int gap3_size = 0, gap4_size;
-	gap3_size = 0;
-	int gap4_size;
+	int gap3_size = 0, gap4_size;
 	
 	if(media_type == MEDIA_TYPE_144 || media_type == MEDIA_TYPE_2HD) {
 		if(track_mfm) {
@@ -1949,7 +1947,7 @@ bool DISK::solid_to_d88(FILEIO *fio, int type, int ncyl, int nside, int nsec, in
 	return true;
 }
 
-#define STATE_VERSION	11
+#define STATE_VERSION	12
 
 void DISK::save_state(FILEIO* state_fio)
 {
@@ -1986,7 +1984,7 @@ void DISK::save_state(FILEIO* state_fio)
 	state_fio->Fwrite(am1_position, sizeof(am1_position), 1);
 	state_fio->Fwrite(id_position, sizeof(id_position), 1);
 	state_fio->Fwrite(data_position, sizeof(data_position), 1);
-	state_fio->FputInt32(gap3_size);
+//	state_fio->FputInt32(gap3_size);
 	state_fio->FputInt32(sector ? (int)(sector - buffer) : -1);
 	state_fio->FputInt32(sector_size.sd);
 	state_fio->Fwrite(id, sizeof(id), 1);
@@ -2035,7 +2033,7 @@ bool DISK::load_state(FILEIO* state_fio)
 	state_fio->Fread(am1_position, sizeof(am1_position), 1);
 	state_fio->Fread(id_position, sizeof(id_position), 1);
 	state_fio->Fread(data_position, sizeof(data_position), 1);
-	gap3_size = state_fio->FgetInt32();
+//	gap3_size = state_fio->FgetInt32();
 	int offset = state_fio->FgetInt32();
 	sector = (offset != -1) ? buffer + offset : NULL;
 	sector_size.sd = state_fio->FgetInt32();

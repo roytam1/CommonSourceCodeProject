@@ -1,3 +1,11 @@
+2/21/2016
+
+[VM/MB8877] fix timing to start read/write sector for invalid format track
+[VM/T3444A] fix timing to start read/write sector for invalid format track
+
+[MZ2500/CMT] fix reset signal again for Laydock
+
+
 2/19/2016
 
 [ALL] add VC++2013 project files
