@@ -859,6 +859,7 @@ int MCS48::run(int icount)
 			}
 			
 			/* fetch next opcode */
+			d_debugger->add_cpu_trace(cpustate->pc);
 			cpustate->prevpc = cpustate->pc;
 			unsigned opcode = opcode_fetch(cpustate);
 
@@ -869,6 +870,7 @@ int MCS48::run(int icount)
 			cpustate->icount -= curcycles * 15;
 			if (cpustate->timecount_enabled != 0)
 				burn_cycles(cpustate, curcycles);
+			total_icount += curcycles * 15;
 			
 			if(now_debugging) {
 				if(!d_debugger->now_going) {
@@ -878,8 +880,9 @@ int MCS48::run(int icount)
 				d_io = d_io_stored;
 			}
 		} else {
-#endif
 			/* fetch next opcode */
+			d_debugger->add_cpu_trace(cpustate->pc);
+#endif
 			cpustate->prevpc = cpustate->pc;
 			unsigned opcode = opcode_fetch(cpustate);
 
@@ -891,6 +894,7 @@ int MCS48::run(int icount)
 			if (cpustate->timecount_enabled != 0)
 				burn_cycles(cpustate, curcycles);
 #ifdef USE_DEBUGGER
+			total_icount += curcycles * 15;
 		}
 #endif
 	} while (cpustate->icount > 0);
@@ -980,19 +984,22 @@ void MCS48::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 /*
 R0 = 00  R1 = 00  R2 = 00  R3 = 00 (R0)= 00 (R1)= 00 (SP-1)= 0000  PC = 0000
 R4 = 00  R5 = 00  R6 = 00  R7 = 00  AC = 00  SP = 00 [MB F1 C AC F0 BS]
+Total CPU Clocks = 0 (0)
 */
 	mcs48_state *cpustate = (mcs48_state *)opaque;
 	UINT8 sp = 8 + 2 * (cpustate->psw & 7);
 	UINT8 prev_sp = 8 + 2 * ((cpustate->psw - 1) & 7);
 	
 	my_stprintf_s(buffer, buffer_len,
-	_T("R0 = %02X  R1 = %02X  R2 = %02X  R3 = %02X (R0)= %02X (R1)= %02X (SP-1)= %04X  PC = %04X\nR4 = %02X  R5 = %02X  R6 = %02X  R7 = %02X  AC = %02X  SP = %02X [%s %s %s %s %s %s]"),
+	_T("R0 = %02X  R1 = %02X  R2 = %02X  R3 = %02X (R0)= %02X (R1)= %02X (SP-1)= %04X  PC = %04X\nR4 = %02X  R5 = %02X  R6 = %02X  R7 = %02X  AC = %02X  SP = %02X [%s %s %s %s %s %s]\nTotal CPU Clocks = %llu (%llu)"),
 	reg_r(0), reg_r(1), reg_r(2), reg_r(3), d_mem_stored->read_data8(reg_r(0)), d_mem_stored->read_data8(reg_r(1)),
 	d_mem_stored->read_data8(prev_sp) | (d_mem_stored->read_data8(prev_sp + 1) << 8), cpustate->pc,
 	reg_r(4), reg_r(5), reg_r(6), reg_r(7), cpustate->a, sp,
 	(cpustate->a11 == 0x800) ? _T("MB") : _T("--"), (cpustate->sts & STS_F1) ? _T("F1") : _T("--"),
 	(cpustate->psw & C_FLAG) ? _T("C" ) : _T("-" ), (cpustate->psw & A_FLAG) ? _T("AC") : _T("--"),
-	(cpustate->psw & F_FLAG) ? _T("F0") : _T("--"), (cpustate->psw & B_FLAG) ? _T("BS") : _T("--"));
+	(cpustate->psw & F_FLAG) ? _T("F0") : _T("--"), (cpustate->psw & B_FLAG) ? _T("BS") : _T("--"),
+	total_icount, total_icount - prev_total_icount);
+	prev_total_icount = total_icount;
 }
 
 // license:BSD-3-Clause
@@ -1296,7 +1303,7 @@ int MCS48::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 }
 #endif
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void MCS48MEM::save_state(FILEIO* state_fio)
 {
@@ -1323,6 +1330,9 @@ void MCS48::save_state(FILEIO* state_fio)
 	state_fio->FputUint32(STATE_VERSION);
 	state_fio->FputInt32(this_device_id);
 	
+#ifdef USE_DEBUGGER
+	state_fio->FputUint64(total_icount);
+#endif
 	state_fio->Fwrite(opaque, sizeof(mcs48_state), 1);
 }
 
@@ -1334,6 +1344,9 @@ bool MCS48::load_state(FILEIO* state_fio)
 	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
+#ifdef USE_DEBUGGER
+	total_icount = prev_total_icount = state_fio->FgetUint64();
+#endif
 	state_fio->Fread(opaque, sizeof(mcs48_state), 1);
 	
 	// post process

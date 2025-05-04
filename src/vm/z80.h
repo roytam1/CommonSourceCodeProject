@@ -50,6 +50,10 @@ private:
 	registers
 	--------------------------------------------------------------------------- */
 	
+#ifdef USE_DEBUGGER
+	uint64_t total_icount;
+	uint64_t prev_total_icount;
+#endif
 	int icount;
 	int extra_icount;
 	uint16_t prevpc;
@@ -104,6 +108,9 @@ private:
 public:
 	Z80(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
+#ifdef USE_DEBUGGER
+		total_icount = prev_total_icount = 0;
+#endif
 		busreq = false;
 #ifdef Z80_PSEUDO_BIOS
 		d_bios = NULL;

@@ -44,8 +44,8 @@ private:
 	
 	// params
 	uint8_t sync[16];
-	int vtotal, vs, v1, v2;
-	int hc, h1, h2;
+	int vtotal, vfp, vs, vbp, v1, v2, v3, v4;
+	int hfp, hs, hbp, h1, h2, h3, h4;
 	bool sync_changed;
 	bool master;
 	uint8_t zoom, zr, zw;
@@ -57,7 +57,9 @@ private:
 	int ead, dad;
 	uint8_t maskl, maskh;
 	uint8_t mod;
-	bool hblank, vsync, start;
+	bool hsync, hblank;
+	bool vsync, vblank;
+	bool start;
 	int blink_cursor;
 	int blink_attr;
 	int blink_rate;

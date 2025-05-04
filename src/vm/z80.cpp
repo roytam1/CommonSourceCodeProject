@@ -2094,9 +2094,15 @@ int Z80::run(int clock)
 			int passed_icount = max(1, extra_icount);
 			// this is main cpu, icount is not used
 			/*icount = */extra_icount = 0;
+			#ifdef USE_DEBUGGER
+				total_icount += passed_icount;
+			#endif
 			return passed_icount;
 		} else {
 			// run only one opcode
+			#ifdef USE_DEBUGGER
+				total_icount += extra_icount;
+			#endif
 			icount = -extra_icount;
 			extra_icount = 0;
 			run_one_opecode();
@@ -2105,6 +2111,9 @@ int Z80::run(int clock)
 	} else {
 		icount += clock;
 		int first_icount = icount;
+		#ifdef USE_DEBUGGER
+			total_icount += extra_icount;
+		#endif
 		icount -= extra_icount;
 		extra_icount = 0;
 		
@@ -2123,6 +2132,9 @@ int Z80::run(int clock)
 		}
 		// if busreq is raised, spin cpu while remained clock
 		if(icount > 0 && busreq) {
+			#ifdef USE_DEBUGGER
+				total_icount += icount;
+			#endif
 			icount = 0;
 		}
 		return first_icount - icount;
@@ -2154,7 +2166,12 @@ void Z80::run_one_opecode()
 #if HAS_LDAIR_QUIRK
 		after_ldair = false;
 #endif
+		d_debugger->add_cpu_trace(PC);
+		int first_icount = icount;
 		OP(FETCHOP());
+		icount -= extra_icount;
+		extra_icount = 0;
+		total_icount += first_icount - icount;
 #if HAS_LDAIR_QUIRK
 		if(after_ldair) {
 			F &= ~PF;	// reset parity flag after LD A,I or LD A,R
@@ -2182,7 +2199,16 @@ void Z80::run_one_opecode()
 #if HAS_LDAIR_QUIRK
 		after_ldair = false;
 #endif
+#ifdef USE_DEBUGGER
+		d_debugger->add_cpu_trace(PC);
+		int first_icount = icount;
+#endif
 		OP(FETCHOP());
+#ifdef USE_DEBUGGER
+		icount -= extra_icount;
+		extra_icount = 0;
+		total_icount += first_icount - icount;
+#endif
 #if HAS_LDAIR_QUIRK
 		if(after_ldair) {
 			F &= ~PF;	// reset parity flag after LD A,I or LD A,R
@@ -2224,7 +2250,12 @@ void Z80::run_one_opecode()
 #if HAS_LDAIR_QUIRK
 			after_ldair = false;
 #endif
+			d_debugger->add_cpu_trace(PC);
+			int first_icount = icount;
 			OP(FETCHOP());
+			icount -= extra_icount;
+			extra_icount = 0;
+			total_icount += first_icount - icount;
 #if HAS_LDAIR_QUIRK
 			if(after_ldair) {
 				F &= ~PF;	// reset parity flag after LD A,I or LD A,R
@@ -2251,7 +2282,16 @@ void Z80::run_one_opecode()
 #if HAS_LDAIR_QUIRK
 			after_ldair = false;
 #endif
+#ifdef USE_DEBUGGER
+			d_debugger->add_cpu_trace(PC);
+			int first_icount = icount;
+#endif
 			OP(FETCHOP());
+#ifdef USE_DEBUGGER
+			icount -= extra_icount;
+			extra_icount = 0;
+			total_icount += first_icount - icount;
+#endif
 #if HAS_LDAIR_QUIRK
 			if(after_ldair) {
 				F &= ~PF;	// reset parity flag after LD A,I or LD A,R
@@ -2268,8 +2308,10 @@ void Z80::run_one_opecode()
 		}
 #endif
 	}
+#ifndef USE_DEBUGGER
 	icount -= extra_icount;
 	extra_icount = 0;
+#endif
 }
 
 void Z80::check_interrupt()
@@ -2467,10 +2509,11 @@ void Z80::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 F = [--------]  A = 00  BC = 0000  DE = 0000  HL = 0000  IX = 0000  IY = 0000
 F'= [--------]  A'= 00  BC'= 0000  DE'= 0000  HL'= 0000  SP = 0000  PC = 0000
         I = 00  R = 00 (BC)= 0000 (DE)= 0000 (HL)= 0000 (SP)= 0000  EI:IFF2=0
+Total CPU Clocks = 0 (0)
 */
 	int wait;
 	my_stprintf_s(buffer, buffer_len,
-	_T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  IX = %04X  IY = %04X\nF'= [%c%c%c%c%c%c%c%c]  A'= %02X  BC'= %04X  DE'= %04X  HL'= %04X  SP = %04X  PC = %04X\n        I = %02X  R = %02X (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X  %cI:IFF2=%d"),
+	_T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  IX = %04X  IY = %04X\nF'= [%c%c%c%c%c%c%c%c]  A'= %02X  BC'= %04X  DE'= %04X  HL'= %04X  SP = %04X  PC = %04X\n        I = %02X  R = %02X (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X  %cI:IFF2=%d\nTotal CPU Clocks = %llu (%llu)"),
 	(F & CF) ? _T('C') : _T('-'), (F & NF) ? _T('N') : _T('-'), (F & PF) ? _T('P') : _T('-'), (F & XF) ? _T('X') : _T('-'),
 	(F & HF) ? _T('H') : _T('-'), (F & YF) ? _T('Y') : _T('-'), (F & ZF) ? _T('Z') : _T('-'), (F & SF) ? _T('S') : _T('-'),
 	A, BC, DE, HL, IX, IY,
@@ -2479,7 +2522,9 @@ F'= [--------]  A'= 00  BC'= 0000  DE'= 0000  HL'= 0000  SP = 0000  PC = 0000
 	A2, BC2, DE2, HL2, SP, PC,
 	I, R,
 	d_mem_stored->read_data16w(BC, &wait), d_mem_stored->read_data16w(DE, &wait), d_mem_stored->read_data16w(HL, &wait), d_mem_stored->read_data16w(SP, &wait),
-	iff1 ? _T('E') : _T('D'), iff2);
+	iff1 ? _T('E') : _T('D'), iff2,
+	total_icount, total_icount - prev_total_icount);
+	prev_total_icount = total_icount;
 }
 
 // disassembler
@@ -3885,13 +3930,16 @@ void dasm_fdcb(uint32_t pc, _TCHAR *buffer, size_t buffer_len, symbol_t *first_s
 }
 #endif
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 void Z80::save_state(FILEIO* state_fio)
 {
 	state_fio->FputUint32(STATE_VERSION);
 	state_fio->FputInt32(this_device_id);
 	
+#ifdef USE_DEBUGGER
+	state_fio->FputUint64(total_icount);
+#endif
 	state_fio->FputInt32(icount);
 	state_fio->FputInt32(extra_icount);
 	state_fio->FputUint16(prevpc);
@@ -3932,6 +3980,9 @@ bool Z80::load_state(FILEIO* state_fio)
 	if(state_fio->FgetInt32() != this_device_id) {
 		return false;
 	}
+#ifdef USE_DEBUGGER
+	total_icount = prev_total_icount = state_fio->FgetUint64();
+#endif
 	icount = state_fio->FgetInt32();
 	extra_icount = state_fio->FgetInt32();
 	prevpc = state_fio->FgetUint16();

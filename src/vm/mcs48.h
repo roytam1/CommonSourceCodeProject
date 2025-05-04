@@ -65,10 +65,22 @@ private:
 #endif
 	void *opaque;
 	
+	/* ---------------------------------------------------------------------------
+	registers
+	--------------------------------------------------------------------------- */
+	
+#ifdef USE_DEBUGGER
+	uint64_t total_icount;
+	uint64_t prev_total_icount;
+#endif
+	
 public:
 	MCS48(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 		d_mem = d_io = d_intr = NULL;
+#ifdef USE_DEBUGGER
+		total_icount = prev_total_icount = 0;
+#endif
 		set_device_name(_T("MCS48 MCU"));
 	}
 	~MCS48() {}
