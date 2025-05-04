@@ -109,6 +109,7 @@ typedef struct {
 		bool direct_load_mzt[MAX_TAPE_TMP];
 		bool baud_high[MAX_TAPE_TMP];
 	#endif
+	bool compress_state;
 	int cpu_power;
 	bool full_speed;
 	

@@ -346,7 +346,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\src\res\pc9801vx.ico">
+    <Image Include="..\src\res\pc98xl.ico">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="..\src\res\indicator\access_off.bmp">
@@ -357,7 +357,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\res\pc9801vx.rc">
+    <ResourceCompile Include="..\src\res\pc98xl.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

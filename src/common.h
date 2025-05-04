@@ -522,6 +522,9 @@ typedef struct {
 const _TCHAR *get_application_path();
 const _TCHAR *create_local_path(const _TCHAR *format, ...);
 void create_local_path(_TCHAR *file_path, int length, const _TCHAR *format, ...);
+bool is_absolute_path(const _TCHAR *file_path);
+const _TCHAR *create_absolute_path(const _TCHAR *file_name);
+void create_absolute_path(_TCHAR *file_path, int length, const _TCHAR *file_name);
 const _TCHAR *create_date_file_path(const _TCHAR *extension);
 void create_date_file_path(_TCHAR *file_path, int length, const _TCHAR *extension);
 bool check_file_extension(const _TCHAR *file_path, const _TCHAR *ext);

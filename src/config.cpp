@@ -93,6 +93,7 @@ void initialize_config()
 			config.baud_high[drv] = true;
 		}
 	#endif
+	config.compress_state = true;
 	
 	// screen
 	#ifndef ONE_BOARD_MICRO_COMPUTER
@@ -197,6 +198,7 @@ void load_config(const _TCHAR* config_path)
 			config.baud_high[drv] = MyGetPrivateProfileBool(_T("Control"), create_string(_T("BaudHigh%d"), drv + 1), config.baud_high[drv], config_path);
 		}
 	#endif
+	config.compress_state = MyGetPrivateProfileBool(_T("Control"), _T("CompressState"), config.compress_state, config_path);
 	
 	// recent files
 	#ifdef USE_CART1
@@ -398,6 +400,7 @@ void save_config(const _TCHAR* config_path)
 			MyWritePrivateProfileBool(_T("Control"), create_string(_T("BaudHigh%d"), drv + 1), config.baud_high[drv], config_path);
 		}
 	#endif
+	MyWritePrivateProfileBool(_T("Control"), _T("CompressState"), config.compress_state, config_path);
 	
 	// recent files
 	#ifdef USE_CART1
