@@ -8,6 +8,13 @@
 */
 
 #include "disk.h"
+#include "../fileio.h"
+
+#ifndef _ANY2D88
+#define bios_path(x) emu->bios_path(x)
+#else
+#define bios_path(x) (x)
+#endif
 
 // crc table
 static const uint16 crc_table[256] = {
@@ -38,31 +45,33 @@ static uint8 tmp_buffer[DISK_BUFFER_SIZE];
 typedef struct {
 	int type;
 	int ncyl, nside, nsec, size;
+	bool mfm;
 } fd_format_t;
 
 static const fd_format_t fd_formats[] = {
-	{ MEDIA_TYPE_2D,  40, 1, 16,  256 },	// 1D   160KB
+	{ MEDIA_TYPE_2D,  40, 1, 16,  256, true },	// 1D   160KB
 #if defined(SUPPORT_MEDIA_TYPE_1DD)
-	{ MEDIA_TYPE_2DD, 70, 1, 16,  256 },	// 1DD  280KB (SMC-777)
-	{ MEDIA_TYPE_2DD, 80, 1, 16,  256 },	// 1DD  320KB
-	{ MEDIA_TYPE_2DD, 80, 1,  9,  512 },	// 1DD  360KB
+	{ MEDIA_TYPE_2DD, 70, 1, 16,  256, true },	// 1DD  280KB (SMC-777)
+	{ MEDIA_TYPE_2DD, 80, 1, 16,  256, true },	// 1DD  320KB
+	{ MEDIA_TYPE_2DD, 80, 1,  9,  512, true },	// 1DD  360KB
 #else
-	{ MEDIA_TYPE_2D , 40, 2, 16,  256 },	// 2D   320KB
-	{ MEDIA_TYPE_2D,  40, 2,  9,  512 },	// 2D   360KB
+	{ MEDIA_TYPE_2D , 35, 2, 16,  256, true },	// 2D   280KB
+	{ MEDIA_TYPE_2D , 40, 2, 16,  256, true },	// 2D   320KB
+	{ MEDIA_TYPE_2D,  40, 2,  9,  512, true },	// 2D   360KB
 #endif
 #if defined(_MZ80B) || defined(_MZ2000) || defined(_MZ2200) || defined(_MZ2500)
-	{ MEDIA_TYPE_2DD, 80, 2, 16,  256 },	// 2DD  640KB (MZ-2500)
+	{ MEDIA_TYPE_2DD, 80, 2, 16,  256, true },	// 2DD  640KB (MZ-2500)
 #else
-	{ MEDIA_TYPE_2DD, 80, 2,  8,  512 },	// 2DD  640KB
+	{ MEDIA_TYPE_2DD, 80, 2,  8,  512, true },	// 2DD  640KB
 #endif
-	{ MEDIA_TYPE_2DD, 80, 2,  9,  512 },	// 2DD  720KB
-#if defined(_PX7) || defined(_MSX1) || defined(_MSX2)
-	{ MEDIA_TYPE_2DD, 81, 2,  9,  512 },	// 2DD  729KB
-#endif
-	{ MEDIA_TYPE_2HD, 80, 2, 15,  512 },	// 2HC 1.20MB
-	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024 },	// 2HD 1.25MB
-	{ MEDIA_TYPE_144, 80, 2, 18,  512 },	// 2HD 1.44MB
-	{ MEDIA_TYPE_144, 80, 2, 36,  512 },	// 2ED 2.88MB
+	{ MEDIA_TYPE_2DD, 80, 2,  9,  512, true },	// 2DD  720KB
+//#if defined(_PX7) || defined(_MSX1) || defined(_MSX2)
+	{ MEDIA_TYPE_2DD, 81, 2,  9,  512, true },	// 2DD  729KB
+//#endif
+	{ MEDIA_TYPE_2HD, 80, 2, 15,  512, true },	// 2HC 1.20MB
+	{ MEDIA_TYPE_2HD, 77, 2,  8, 1024, true },	// 2HD 1.25MB
+	{ MEDIA_TYPE_144, 80, 2, 18,  512, true },	// 2HD 1.44MB
+	{ MEDIA_TYPE_144, 80, 2, 36,  512, true },	// 2ED 2.88MB
 	{ -1, 0, 0, 0, 0 },
 };
 
@@ -78,34 +87,32 @@ void DISK::open(const _TCHAR* file_path, int bank)
 		close();
 	}
 	memset(buffer, 0, sizeof(buffer));
+	file_bank = 0;
+	write_protected = false;
 	media_type = MEDIA_TYPE_UNK;
 	is_solid_image = is_fdi_image = is_1dd_image = false;
 	trim_required = false;
 	track_mfm = drive_mfm;
 	
 	// open disk image
-	fi = new FILEIO();
-	if(fi->Fopen(file_path, FILEIO_READ_BINARY)) {
-		bool converted = false;
-		
+	FILEIO *fio = new FILEIO();
+	if(fio->Fopen(file_path, FILEIO_READ_BINARY)) {
 		_tcscpy_s(orig_path, _MAX_PATH, file_path);
 		_tcscpy_s(dest_path, _MAX_PATH, file_path);
-		_stprintf_s(temp_path, _MAX_PATH, _T("%s.$$$"), file_path);
 		
-		temporary = false;
-		write_protected = false; //FILEIO::IsFileProtected(file_path);
+		file_size.d = fio->FileLength();
 		
-		// is this d88 format ?
 		if(check_file_extension(file_path, _T(".d88")) || check_file_extension(file_path, _T(".d77")) || check_file_extension(file_path, _T(".1dd"))) {
+			// d88 image
 			uint32 offset = 0;
 			for(int i = 0; i < bank; i++) {
-				fi->Fseek(offset + 0x1c, SEEK_SET);
-				offset += fi->FgetUint32_LE();
+				fio->Fseek(offset + 0x1c, SEEK_SET);
+				offset += fio->FgetUint32_LE();
 			}
-			fi->Fseek(offset + 0x1c, FILEIO_SEEK_SET);
-			file_size.d = fi->FgetUint32_LE();
-			fi->Fseek(offset, FILEIO_SEEK_SET);
-			fi->Fread(buffer, file_size.d, 1);
+			fio->Fseek(offset + 0x1c, FILEIO_SEEK_SET);
+			file_size.d = fio->FgetUint32_LE();
+			fio->Fseek(offset, FILEIO_SEEK_SET);
+			fio->Fread(buffer, file_size.d, 1);
 			file_bank = bank;
 			if(check_file_extension(file_path, _T(".1dd"))) {
 				is_1dd_image = true;
@@ -138,97 +145,66 @@ void DISK::open(const _TCHAR* file_path, int bank)
 					t += data_size.sd + 0x10;
 				}
 			}
-			goto file_loaded;
-		}
-		
-		fi->Fseek(0, FILEIO_SEEK_END);
-		file_size.d = fi->Ftell();
-		fi->Fseek(0, FILEIO_SEEK_SET);
-		file_bank = 0;
-		
-#if defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
-		// is this 2d format ?
-		if(check_file_extension(file_path, _T(".2d"))) {
-			if(solid_to_d88(MEDIA_TYPE_2D, 40, 2, 16, 256)) {
-				inserted = changed = is_solid_image = true;
-				goto file_loaded;
-			}
-			fi->Fseek(0, FILEIO_SEEK_SET);
-		}
-#endif
-		
-		// check image file format
-		for(int i = 0;; i++) {
-			const fd_format_t *p = &fd_formats[i];
-			if(p->type == -1) {
-				break;
-			}
-			int len = p->ncyl * p->nside * p->nsec * p->size;
-			// 4096 bytes: FDI header ???
-			if(file_size.d == len || (file_size.d == (len + 4096) && (len == 655360 || len == 1261568))) {
-				if(file_size.d == len + 4096) {
-					is_fdi_image = true;
-					fi->Fread(fdi_header, 4096, 1);
-				}
-				if(solid_to_d88(p->type, p->ncyl, p->nside, p->nsec, p->size)) {
-					inserted = changed = is_solid_image = true;
-					goto file_loaded;
-				}
-			}
-		}
-		if(0 < file_size.d && file_size.d <= DISK_BUFFER_SIZE) {
-			memset(buffer, 0, sizeof(buffer));
-			fi->Fread(buffer, file_size.d, 1);
-			
-			// check d88 format (temporary)
-			if(file_size.b.l == buffer[0x1c] && file_size.b.h == buffer[0x1d] && file_size.b.h2 == buffer[0x1e] && file_size.b.h3 == buffer[0x1f]) {
-				inserted = changed = true;
-				goto file_loaded;
-			}
-			_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), file_path);
-			
-			// check file header
+		} else if(check_file_extension(file_path, _T(".td0"))) {
+			// teledisk image
 			try {
-				if(memcmp(buffer, "TD", 2) == 0 || memcmp(buffer, "td", 2) == 0) {
-					// teledisk image file
-					inserted = changed = converted = teledisk_to_d88();
-				} else if(memcmp(buffer, "IMD ", 4) == 0) {
-					// imagedisk image file
-					inserted = changed = converted = imagedisk_to_d88();
-				} else if(memcmp(buffer, "MV - CPC", 8) == 0) {
-					// standard cpdread image file
-					inserted = changed = converted = cpdread_to_d88(0);
-				} else if(memcmp(buffer, "EXTENDED", 8) == 0) {
-					// extended cpdread image file
-					inserted = changed = converted = cpdread_to_d88(1);
-				}
+				inserted = changed = teledisk_to_d88(fio);
+				_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), file_path);
 			} catch(...) {
 				// failed to convert the disk image
 			}
+		} else if(check_file_extension(file_path, _T(".imd"))) {
+			// imagedisk image
+			try {
+				inserted = changed = imagedisk_to_d88(fio);
+				_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), file_path);
+			} catch(...) {
+				// failed to convert the disk image
+			}
+		} else if(check_file_extension(file_path, _T(".dsk"))) {
+			// cpdread image
+			try {
+				inserted = changed = cpdread_to_d88(fio);
+				_stprintf_s(dest_path, _MAX_PATH, _T("%s.D88"), file_path);
+			} catch(...) {
+				// failed to convert the disk image
+			}
+		} else if(check_file_extension(file_path, _T(".2d"))  && file_size.d == 40 * 2 * 16 * 256) {
+			// 2d image for SHARP X1 series
+			inserted = changed = is_solid_image = solid_to_d88(fio, MEDIA_TYPE_2D, 40, 2, 16, 256, true);
+		} else if(check_file_extension(file_path, _T(".sf7")) && file_size.d == 40 * 1 * 16 * 256) {
+			// sf7 image for SEGA SC-3000 + SF-7000
+			inserted = changed = is_solid_image = solid_to_d88(fio, MEDIA_TYPE_2D, 40, 1, 16, 256, true);
 		}
-file_loaded:
-		if(fi->IsOpened()) {
-			fi->Fclose();
+		if(!inserted) {
+			// check solid image file format
+			for(int i = 0;; i++) {
+				const fd_format_t *p = &fd_formats[i];
+				if(p->type == -1) {
+					break;
+				}
+				int len = p->ncyl * p->nside * p->nsec * p->size;
+				// 4096 bytes: FDI header ???
+				if(file_size.d == len || (file_size.d == (len + 4096) && (len == 655360 || len == 1261568))) {
+					if(file_size.d == len + 4096) {
+						is_fdi_image = true;
+						fio->Fread(fdi_header, 4096, 1);
+					}
+					if(solid_to_d88(fio, p->type, p->ncyl, p->nside, p->nsec, p->size, p->mfm)) {
+						inserted = changed = is_solid_image = true;
+						break;
+					}
+				}
+			}
 		}
-		if(temporary) {
-			FILEIO::RemoveFile(temp_path);
+		if(fio->IsOpened()) {
+			fio->Fclose();
 		}
 		if(inserted) {
 			if(buffer[0x1a] != 0) {
 				buffer[0x1a] = 0x10;
 				write_protected = true;
 			}
-#if 0
-			if(converted) {
-				// write image
-				FILEIO* fio = new FILEIO();
-				if(fio->Fopen(dest_path, FILEIO_WRITE_BINARY)) {
-					fio->Fwrite(buffer, file_size.d, 1);
-					fio->Fclose();
-				}
-				delete fio;
-			}
-#endif
 			crc32 = getcrc32(buffer, file_size.d);
 		}
 		if(media_type == MEDIA_TYPE_UNK) {
@@ -312,7 +288,7 @@ file_loaded:
 		}
 #endif
 	}
-	delete fi;
+	delete fio;
 }
 
 void DISK::close()
@@ -385,6 +361,9 @@ void DISK::close()
 						if(data_size.sd != solid_size) {
 							formatted = true;
 						}
+						if(t[6] != (solid_mfm ? 0 : 0x40)) {
+							formatted = true;
+						}
 						t += data_size.sd + 0x10;
 					}
 				}
@@ -400,7 +379,7 @@ void DISK::close()
 			if((FILEIO::IsFileExists(dest_path) && FILEIO::IsFileProtected(dest_path)) || !fio->Fopen(dest_path, FILEIO_WRITE_BINARY)) {
 				_TCHAR tmp_path[_MAX_PATH];
 				_stprintf_s(tmp_path, _MAX_PATH, _T("temporary_saved_floppy_disk_#%d.d88"), drive_num);
-				fio->Fopen(emu->bios_path(tmp_path), FILEIO_WRITE_BINARY);
+				fio->Fopen(bios_path(tmp_path), FILEIO_WRITE_BINARY);
 			}
 			if(fio->IsOpened()) {
 				if(pre_buffer) {
@@ -450,6 +429,28 @@ void DISK::close()
 	sector_size.sd = sector_num.sd = 0;
 	sector = NULL;
 }
+
+#ifdef _ANY2D88
+void DISK::save_as_d88(const _TCHAR* file_path)
+{
+	if(inserted) {
+		FILEIO* fio = new FILEIO();
+		if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+			if(is_1dd_image) {
+				memcpy(tmp_buffer, buffer + 0x20, 4 * 82);
+				for(int trk = 0; trk < 82; trk++) {
+					memcpy(buffer + 0x20 + (trk * 2 + 0) * 4, tmp_buffer + trk * 4, 4);
+					memset(buffer + 0x20 + (trk * 2 + 1) * 4, 0, 4);
+				}
+				buffer[0x1b] = MEDIA_TYPE_2DD;
+			}
+			fio->Fwrite(buffer, file_size.d, 1);
+			fio->Fclose();
+		}
+		delete fio;
+	}
+}
+#endif
 
 bool DISK::get_track(int trk, int side)
 {
@@ -1306,62 +1307,68 @@ typedef struct {
 	uint8 ctrl, crc;
 } td_sct_t;
 
-bool DISK::teledisk_to_d88()
+bool DISK::teledisk_to_d88(FILEIO *fio)
 {
 	td_hdr_t hdr;
 	td_cmt_t cmt;
 	td_trk_t trk;
 	td_sct_t sct;
-	d88_hdr_t d88_hdr;
-	d88_sct_t d88_sct;
 	uint8 obuf[512];
+	bool temporary = false;
 	
 	// check teledisk header
-	fi->Fseek(0, FILEIO_SEEK_SET);
-	fi->Fread(&hdr, sizeof(td_hdr_t), 1);
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	fio->Fread(&hdr, sizeof(td_hdr_t), 1);
 	if(hdr.sig[0] == 't' && hdr.sig[1] == 'd') {
+		// this image is compressed
 		// decompress to the temporary file
-		FILEIO* fo = new FILEIO();
-		if(!fo->Fopen(temp_path, FILEIO_WRITE_BINARY)) {
-			delete fo;
+		FILEIO* fio_tmp = new FILEIO();
+		if(!fio_tmp->Fopen(bios_path(_T("teledisk.$$$")), FILEIO_WRITE_BINARY)) {
+			delete fio_tmp;
 			return false;
 		}
 		int rd = 1;
 		td_init_decode();
 		do {
-			if((rd = td_decode(fi, obuf, 512)) > 0) {
-				fo->Fwrite(obuf, rd, 1);
+			if((rd = td_decode(fio, obuf, 512)) > 0) {
+				fio_tmp->Fwrite(obuf, rd, 1);
 			}
 		}
 		while(rd > 0);
-		fo->Fclose();
-		delete fo;
+		fio_tmp->Fclose();
+		delete fio_tmp;
 		temporary = true;
 		
 		// reopen the temporary file
-		fi->Fclose();
-		if(!fi->Fopen(temp_path, FILEIO_READ_BINARY)) {
+		fio->Fclose();
+		if(!fio->Fopen(_T("teledisk.$$$"), FILEIO_READ_BINARY)) {
 			return false;
 		}
+	} else if(hdr.sig[0] == 'T' && hdr.sig[1] == 'D') {
+		// this image is not compressed
+	} else {
+		return false;
 	}
 	if(hdr.flag & 0x80) {
 		// skip comment
-		fi->Fread(&cmt, sizeof(td_cmt_t), 1);
-		fi->Fseek(cmt.len, FILEIO_SEEK_CUR);
+		fio->Fread(&cmt, sizeof(td_cmt_t), 1);
+		fio->Fseek(cmt.len, FILEIO_SEEK_CUR);
 	}
 	
-	// create d88 image
-	file_size.d = 0;
-	
 	// create d88 header
+	d88_hdr_t d88_hdr;
+	d88_sct_t d88_sct;
+	
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
 	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "TELEDISK");
 	d88_hdr.protect = 0; // non-protected
+	
+	file_size.d = 0;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
 	int trkcnt = 0, trkptr = sizeof(d88_hdr_t);
-	fi->Fread(&trk, sizeof(td_trk_t), 1);
+	fio->Fread(&trk, sizeof(td_trk_t), 1);
 	while(trk.nsec != 0xff) {
 		d88_hdr.trkptr[trkcnt++] = trkptr;
 		if(hdr.sides == 1) {
@@ -1375,7 +1382,7 @@ bool DISK::teledisk_to_d88()
 			memset(dst, 0, sizeof(dst));
 			
 			// read sector header
-			fi->Fread(&sct, sizeof(td_sct_t), 1);
+			fio->Fread(&sct, sizeof(td_sct_t), 1);
 			
 			// create d88 sector header
 			memset(&d88_sct, 0, sizeof(d88_sct_t));
@@ -1395,10 +1402,10 @@ bool DISK::teledisk_to_d88()
 				d88_sct.size = 0;
 			} else {
 				// read sector source
-				int len = fi->Fgetc();
-				len += fi->Fgetc() * 256 - 1;
-				int flag = fi->Fgetc(), d = 0;
-				fi->Fread(buf, len, 1);
+				int len = fio->Fgetc();
+				len += fio->Fgetc() * 256 - 1;
+				int flag = fio->Fgetc(), d = 0;
+				fio->Fread(buf, len, 1);
 				
 				// convert
 				if(flag == 0) {
@@ -1447,41 +1454,53 @@ bool DISK::teledisk_to_d88()
 			trkptr += sizeof(d88_sct_t) + d88_sct.size;
 		}
 		// read next track
-		fi->Fread(&trk, sizeof(td_trk_t), 1);
+		fio->Fread(&trk, sizeof(td_trk_t), 1);
 	}
 	d88_hdr.type = ((hdr.dens & 3) == 2) ? MEDIA_TYPE_2HD : ((trkcnt >> 1) > 60) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
 	d88_hdr.size = trkptr;
 	memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
+	
+	if(temporary) {
+		FILEIO::RemoveFile(_T("teledisk.$$$"));
+	}
 	return true;
 }
 
 // imagedisk image decoder (from MESS formats/imd_dsk.c by Mr.Miodrag Milanovic)
 
-bool DISK::imagedisk_to_d88()
+bool DISK::imagedisk_to_d88(FILEIO *fio)
 {
-	d88_hdr_t d88_hdr;
-	d88_sct_t d88_sct;
+	int size = fio->FileLength();
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	fio->Fread(tmp_buffer, size, 1);
 	
-	int size = file_size.sd;
-	memcpy(tmp_buffer, buffer, file_size.d);
-	
-	// create d88 image
-	file_size.d = 0;
-	
-	// create d88 header
-	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "IMAGEDISK");
-	d88_hdr.protect = 0; // non-protected
-	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
-	
-	// create tracks
-	int trkptr = sizeof(d88_hdr_t);
-	int trkcnt = 0, img_mode = -1;
-	uint8 dst[8192];
+	if(memcmp(tmp_buffer, "IMD ", 4) != 0) {
+		return false;
+	}
 	
 	int pos;
 	for(pos = 0; pos < size && tmp_buffer[pos] != 0x1a; pos++);
 	pos++;
+	
+	if(pos >= size) {
+		return false;
+	}
+	
+	// create d88 header
+	d88_hdr_t d88_hdr;
+	d88_sct_t d88_sct;
+	
+	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "IMAGEDISK");
+	d88_hdr.protect = 0; // non-protected
+	
+	file_size.d = 0;
+	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
+	
+	// create tracks
+	int trkcnt = 0, trkptr = sizeof(d88_hdr_t);
+	int img_mode = -1;
+	uint8 dst[8192];
 	
 	while(pos < size) {
 		// check track header
@@ -1559,7 +1578,7 @@ bool DISK::imagedisk_to_d88()
 			}
 		}
 	}
-	d88_hdr.type = (img_mode == 0) ? MEDIA_TYPE_2HD : ((trkcnt >> 1) > 60) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
+	d88_hdr.type = (img_mode == 0) ? MEDIA_TYPE_2HD : (((trkcnt + 1) >> 1) > 60) ? MEDIA_TYPE_2DD : MEDIA_TYPE_2D;
 	d88_hdr.size = trkptr;
 	memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
 	return true;
@@ -1567,76 +1586,165 @@ bool DISK::imagedisk_to_d88()
 
 // cpdread image decoder (from MESS formats/dsk_dsk.c by Mr.Olivier Galibert)
 
-bool DISK::cpdread_to_d88(int extended)
+#define DSK_FORMAT_HEADER	"MV - CPC"
+#define EXT_FORMAT_HEADER	"EXTENDED CPC DSK"
+
+#pragma pack(1)
+struct track_header {
+	uint8 headertag[13];
+	uint16 unused1;
+	uint8 unused1b;
+	uint8 track_number;
+	uint8 side_number;
+	uint8 datarate;
+	uint8 rec_mode;
+	uint8 sector_size_code;
+	uint8 number_of_sector;
+	uint8 gap3_length;
+	uint8 filler_byte;
+};
+struct sector_header {
+	uint8 track;
+	uint8 side;
+	uint8 sector_id;
+	uint8 sector_size_code;
+	uint8 fdc_status_reg1;
+	uint8 fdc_status_reg2;
+	uint16 data_length;
+};
+#pragma pack()
+
+bool DISK::cpdread_to_d88(FILEIO *fio)
 {
-	d88_hdr_t d88_hdr;
-	d88_sct_t d88_sct;
-	int total = 0;
+	bool extendformat = false;
+	int image_size = fio->FileLength();
 	
-	// get cylinder number and side number
-	memcpy(tmp_buffer, buffer, file_size.d);
-	int ncyl = tmp_buffer[0x30];
-	int nside = tmp_buffer[0x31];
+	fio->Fseek(0, FILEIO_SEEK_SET);
+	fio->Fread(tmp_buffer, image_size, 1);
 	
-	// create d88 image
-	file_size.d = 0;
+	if(memcmp(tmp_buffer, EXT_FORMAT_HEADER, 16) == 0) {
+		extendformat = true;
+	} else if(memcmp(tmp_buffer, DSK_FORMAT_HEADER, 8) == 0) {
+		extendformat = false;
+	} else {
+		return false;
+	}
+	
+	int heads = tmp_buffer[0x31];
+	int skip = 1;
+	if(heads == 1) {
+		skip = 2;
+	}
+	int tracks = tmp_buffer[0x30];
+	int track_offsets[84 * 2];
+	bool track_offsets_error = false;
+	if(!extendformat) {
+		int cnt = 0, tmp = 0x100;
+		for(int i = 0; i < tracks * heads; i++) {
+			if(track_offsets_error = (memcmp(tmp_buffer + tmp, "Track-Info", 10) != 0)) {
+				break;
+			}
+			track_offsets[cnt] = tmp;
+			tmp += tmp_buffer[0x32] + tmp_buffer[0x33] * 256;
+			cnt += skip;
+		}
+	} else  {
+		int cnt = 0, tmp = 0x100;
+		for(int i = 0; i < tracks * heads; i++) {
+			int length = tmp_buffer[0x34 + i] << 8;
+			if(length != 0) {
+				if(track_offsets_error = (memcmp(tmp_buffer + tmp, "Track-Info", 10) != 0)) {
+					break;
+				}
+				track_offsets[cnt] = tmp;
+				tmp += length;
+			} else {
+				track_offsets[cnt] = image_size;
+			}
+			cnt += skip;
+		}
+	}
+	if(track_offsets_error) {
+		// I found the dsk image that the track size in table is 1100h, but the actual track size is 900h,
+		// so I modified this code to search "Track-Info" at the top of track information block
+		int cnt = 0, tmp = 0x100;
+		for(int i = 0; i < tracks * heads; i++) {
+			bool found = false;
+			for(; tmp < image_size; tmp += 0x10) {
+				if(found = (memcmp(tmp_buffer + tmp, "Track-Info", 10) == 0)) {
+					break;
+				}
+			}
+			if(found) {
+				track_offsets[cnt] = tmp;
+				tmp += 0x10;
+			} else {
+				track_offsets[cnt] = image_size;
+			}
+			cnt += skip;
+		}
+	}
 	
 	// create d88 header
+	d88_hdr_t d88_hdr;
+	d88_sct_t d88_sct;
+	
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "CPDRead");
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "CPDREAD");
 	d88_hdr.protect = 0; // non-protected
+	
+	file_size.d = 0;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// create tracks
-	int trkofs = 0x100, trkofs_ptr = 0x34;
-	int trkptr = sizeof(d88_hdr_t);
+	int total = 0, trkptr = sizeof(d88_hdr_t);
 	
-	for(int c = 0; c < ncyl; c++) {
-		for(int h = 0; h < nside; h++) {
-			// read sectors in this track
-			uint8 *track_info = tmp_buffer + trkofs;
-			int cyl = track_info[0x10];
-			int side = track_info[0x11] & 1;
-			int nsec = track_info[0x15];
-			int size = 1 << (track_info[0x14] + 7); // standard
-			int sctofs = trkofs + 0x100;
-			
-			if(nside == 1) {
-				side = 0;
+	for(int track = 0; track < tracks; track++) {
+		for(int side = 0; side < heads; side++) {
+			if(track_offsets[(track << 1) + side] >= image_size) {
+				continue;
 			}
-			d88_hdr.trkptr[2 * cyl + side] = trkptr;
+			if((track << 1) + side < 164) {
+				d88_hdr.trkptr[(track << 1) + side] = trkptr;
+			}
 			
-			for(int s = 0; s < nsec; s++) {
-				// get sector size
-				uint8 *sector_info = tmp_buffer + trkofs + 0x18 + s * 8;
-				if(extended) {
-					size = sector_info[6] + sector_info[7] * 256;
-				}
+			track_header tr;
+			memcpy(&tr, tmp_buffer + track_offsets[(track << 1) + side], sizeof(tr));
+			int pos = track_offsets[(track << 1) + side] + 0x100;
+			for(int j = 0; j < tr.number_of_sector; j++) {
+				sector_header sector;
+				memcpy(&sector, tmp_buffer + track_offsets[(track << 1) + side] + sizeof(tr) + (sizeof(sector) * j), sizeof(sector));
 				
 				// create d88 sector header
 				memset(&d88_sct, 0, sizeof(d88_sct_t));
-				d88_sct.c = sector_info[0];
-				d88_sct.h = sector_info[1];
-				d88_sct.r = sector_info[2];
-				d88_sct.n = sector_info[3];
-				d88_sct.nsec = nsec;
-				d88_sct.dens = 0;
-				d88_sct.del = (sector_info[5] == 0xb2) ? 0x10 : 0;
-				d88_sct.stat = (size == 0) ? 0xf0 : (sector_info[5] == 0xb5) ? 0xb0 : d88_sct.del;
-				d88_sct.size = size;
+				d88_sct.c = sector.track;
+				d88_sct.h = sector.side;
+				d88_sct.r = sector.sector_id;
+				d88_sct.n = sector.sector_size_code;
+				d88_sct.nsec = tr.number_of_sector;
+				if(extendformat) {
+					d88_sct.size = sector.data_length;
+					d88_sct.dens = (tr.rec_mode == 1) ? 0x40 : 0;
+				} else {
+					d88_sct.size = 128 << tr.sector_size_code;
+					d88_sct.dens = (tr.sector_size_code == 0) ? 0x40 : 0; // FIXME
+				}
+				d88_sct.del = (sector.fdc_status_reg1 == 0xb2) ? 0x10 : 0;
+				d88_sct.stat = (d88_sct.size == 0) ? 0xf0 : (sector.fdc_status_reg1 == 0xb5) ? 0xb0 : d88_sct.del;
 				
 				// copy to d88
-				COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
-				COPYBUFFER(tmp_buffer + sctofs, size);
-				trkptr += sizeof(d88_sct_t) + size;
-				sctofs += size;
-				total += size;
-			}
-			
-			if(extended) {
-				trkofs += tmp_buffer[trkofs_ptr++] * 256;
-			} else {
-				trkofs += tmp_buffer[0x32] + tmp_buffer[0x33] * 256;
+				if((track << 1) + side < 164) {
+					COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
+					COPYBUFFER(tmp_buffer + pos, d88_sct.size);
+					trkptr += sizeof(d88_sct_t) + d88_sct.size;
+				}
+				total += d88_sct.size;
+				
+				if(extendformat) {
+					pos += sector.data_length;
+				} else {
+					pos += 128 << tr.sector_size_code;
+				}
 			}
 		}
 	}
@@ -1648,25 +1756,26 @@ bool DISK::cpdread_to_d88(int extended)
 
 // solid image decoder
 
-bool DISK::solid_to_d88(int type, int ncyl, int nside, int nsec, int size)
+bool DISK::solid_to_d88(FILEIO *fio, int type, int ncyl, int nside, int nsec, int size, bool mfm)
 {
-	d88_hdr_t d88_hdr;
-	d88_sct_t d88_sct;
 	int n = 0, t = 0;
 	
+	media_type = type;
 	solid_ncyl = ncyl;
 	solid_nside = nside;
 	solid_nsec = nsec;
 	solid_size = size;
-	
-	file_size.d = 0;
+	solid_mfm = mfm;
 	
 	// create d88 header
+	d88_hdr_t d88_hdr;
+	d88_sct_t d88_sct;
+	
 	memset(&d88_hdr, 0, sizeof(d88_hdr_t));
-	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "STANDARD");
+	_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "SOLID");
 	d88_hdr.protect = 0; // non-protected
-	d88_hdr.type = (type == MEDIA_TYPE_144) ? MEDIA_TYPE_2HD : type;
-	media_type = type;
+	
+	file_size.d = 0;
 	COPYBUFFER(&d88_hdr, sizeof(d88_hdr_t));
 	
 	// sector length
@@ -1679,6 +1788,7 @@ bool DISK::solid_to_d88(int type, int ncyl, int nside, int nsec, int size)
 	
 	// create tracks
 	int trkptr = sizeof(d88_hdr_t);
+	
 	for(int c = 0; c < ncyl; c++) {
 		for(int h = 0; h < nside; h++) {
 			d88_hdr.trkptr[t++] = trkptr;
@@ -1703,7 +1813,7 @@ bool DISK::solid_to_d88(int type, int ncyl, int nside, int nsec, int size)
 				// create sector image
 				uint8 dst[16384];
 				memset(dst, 0xe5, sizeof(dst));
-				fi->Fread(dst, size, 1);
+				fio->Fread(dst, size, 1);
 				
 				// copy to d88
 				COPYBUFFER(&d88_sct, sizeof(d88_sct_t));
@@ -1712,12 +1822,13 @@ bool DISK::solid_to_d88(int type, int ncyl, int nside, int nsec, int size)
 			}
 		}
 	}
+	d88_hdr.type = (type == MEDIA_TYPE_144) ? MEDIA_TYPE_2HD : type;
 	d88_hdr.size = trkptr;
 	memcpy(buffer, &d88_hdr, sizeof(d88_hdr_t));
 	return true;
 }
 
-#define STATE_VERSION	8
+#define STATE_VERSION	9
 
 void DISK::save_state(FILEIO* state_fio)
 {
@@ -1738,6 +1849,7 @@ void DISK::save_state(FILEIO* state_fio)
 	state_fio->FputInt32(solid_nside);
 	state_fio->FputInt32(solid_nsec);
 	state_fio->FputInt32(solid_size);
+	state_fio->FputBool(solid_mfm);
 	state_fio->FputBool(inserted);
 	state_fio->FputBool(ejected);
 	state_fio->FputBool(write_protected);
@@ -1784,6 +1896,7 @@ bool DISK::load_state(FILEIO* state_fio)
 	solid_nside = state_fio->FgetInt32();
 	solid_nsec = state_fio->FgetInt32();
 	solid_size = state_fio->FgetInt32();
+	solid_mfm = state_fio->FgetBool();
 	inserted = state_fio->FgetBool();
 	ejected = state_fio->FgetBool();
 	write_protected = state_fio->FgetBool();

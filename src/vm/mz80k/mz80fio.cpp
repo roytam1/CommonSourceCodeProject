@@ -33,9 +33,9 @@ uint32 MZ80FIO::read_io8(uint32 addr)
 {
 	switch(addr & 0xff) {
 	case 0xf8:
-		d_fdc->write_signal(SIG_T3444A_DRIVE, addr, 0x0700);
-		d_fdc->write_signal(SIG_T3444A_MOTOR, addr, 0x0800);
-		d_fdc->write_signal(SIG_T3444A_TND,   addr, 0x1000);
+		d_fdc->write_signal(SIG_T3444A_DRIVE, addr >> 8, 0x07);
+		d_fdc->write_signal(SIG_T3444A_MOTOR, addr >> 8, 0x08);
+		d_fdc->write_signal(SIG_T3444A_TND,   addr >> 8, 0x10);
 		break;
 	case 0xf9:
 		return (d_fdc->read_signal(SIG_T3444A_DRDY) ? 4 : 0) |

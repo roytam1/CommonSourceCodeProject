@@ -1,3 +1,17 @@
+9/15/2015
+
+[TOOL/ANY2D88] add new utility any2d88 that converts any format image to d88
+
+[COMMON] add FileLength() function to FILEIO class
+[WIN32/DEBUGGER] disable ctrl-c on the debug console
+
+[VM/DATAREC] support to record tap format image
+[VM/DISK] simplify image loader
+[VM/DISK] improve cpdread converter for invalid track size table
+
+[MZ80K/MZ80FIO] fix drive number register (thanks Mr.masa and Mr.Suga)
+
+
 9/9/2015
 
 [COMMON] add batch file to merge manifest file for Windows Vista or later

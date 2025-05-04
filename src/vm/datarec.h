@@ -52,7 +52,7 @@ private:
 	int sound_buffer_length;
 	int16 *sound_buffer, sound_sample;
 #endif
-	bool is_wav;
+	bool is_wav, is_tap;
 	
 	int apss_buffer_length;
 	bool *apss_buffer;
