@@ -390,8 +390,8 @@ void* debugger_thread(void *lpx)
 					if(num == 3) {
 						uint32_t end_addr = my_hexatoi(params[2]) & prog_addr_mask;
 						while(dasm_addr <= end_addr) {
-							int len = cpu->debug_dasm(dasm_addr, buffer, 1024);
-							my_printf(p->osd, _T("%08X  "), dasm_addr);
+							int len = cpu->debug_dasm(dasm_addr & prog_addr_mask, buffer, 1024);
+							my_printf(p->osd, _T("%08X  "), dasm_addr & prog_addr_mask);
 							for(int i = 0; i < len; i++) {
 								my_printf(p->osd, _T("%02X"), cpu->read_debug_data8((dasm_addr + i) & data_addr_mask));
 							}
@@ -399,12 +399,12 @@ void* debugger_thread(void *lpx)
 								my_printf(p->osd, _T("  "));
 							}
 							my_printf(p->osd, _T("  %s\n"), buffer);
-							dasm_addr = (dasm_addr + len) & prog_addr_mask;
+							dasm_addr += len;
 						}
 					} else {
 						for(int i = 0; i < 16; i++) {
-							int len = cpu->debug_dasm(dasm_addr, buffer, 1024);
-							my_printf(p->osd, _T("%08X  "), dasm_addr);
+							int len = cpu->debug_dasm(dasm_addr & prog_addr_mask, buffer, 1024);
+							my_printf(p->osd, _T("%08X  "), dasm_addr & prog_addr_mask);
 							for(int i = 0; i < len; i++) {
 								my_printf(p->osd, _T("%02X"), cpu->read_debug_data8((dasm_addr + i) & data_addr_mask));
 							}
@@ -412,7 +412,7 @@ void* debugger_thread(void *lpx)
 								my_printf(p->osd, _T("  "));
 							}
 							my_printf(p->osd, _T("  %s\n"), buffer);
-							dasm_addr = (dasm_addr + len) & prog_addr_mask;
+							dasm_addr += len;
 						}
 					}
 					prev_command[1] = _T('\0'); // remove parameters to disassemble continuously
