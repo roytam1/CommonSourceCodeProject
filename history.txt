@@ -1,3 +1,8 @@
+5/17/2017
+
+[X1TURBOZ/DISPLAY] fix 64/4096 color mode (thanks Mr.Sato)
+
+
 5/15/2017
 
 [X1TURBOZ] support SHARP X1turboZ
