@@ -529,7 +529,7 @@ void save_config(const _TCHAR* config_path)
 	#endif
 }
 
-#define STATE_VERSION	5
+#define STATE_VERSION	6
 
 void save_config_state(void *f)
 {
@@ -576,6 +576,8 @@ void save_config_state(void *f)
 			state_fio->FputBool(config.ignore_disk_crc[drv]);
 		}
 	#endif
+	state_fio->FputInt32(config.sound_frequency);
+	state_fio->FputInt32(config.sound_latency);
 }
 
 bool load_config_state(void *f)
@@ -624,6 +626,8 @@ bool load_config_state(void *f)
 			config.ignore_disk_crc[drv] = state_fio->FgetBool();
 		}
 	#endif
+	config.sound_frequency = state_fio->FgetInt32();
+	config.sound_latency = state_fio->FgetInt32();
 	return true;
 }
 

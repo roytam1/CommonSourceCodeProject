@@ -23,6 +23,17 @@ extern CSP_Logger *csp_logger;
 // initialize
 // ----------------------------------------------------------------------------
 
+static const int sound_frequency_table[8] = {
+	2000, 4000, 8000, 11025, 22050, 44100,
+#ifdef OVERRIDE_SOUND_FREQ_48000HZ
+	OVERRIDE_SOUND_FREQ_48000HZ,
+#else
+	48000,
+#endif
+	96000,
+};
+static const double sound_latency_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
+
 #if defined(OSD_QT)
 EMU::EMU(class Ui_MainWindow *hwnd, GLDrawClass *hinst, USING_FLAGS *p)
 #elif defined(OSD_WIN32)
@@ -46,25 +57,16 @@ EMU::EMU()
 #endif
 	
 	// load sound config
-	static const int freq_table[8] = {
-		2000, 4000, 8000, 11025, 22050, 44100,
-#ifdef OVERRIDE_SOUND_FREQ_48000HZ
-		OVERRIDE_SOUND_FREQ_48000HZ,
-#else
-		48000,
-#endif
-		96000,
-	};
-	static const double late_table[5] = {0.05, 0.1, 0.2, 0.3, 0.4};
-	
 	if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
 		config.sound_frequency = 6;	// default: 48KHz
 	}
 	if(!(0 <= config.sound_latency && config.sound_latency < 5)) {
 		config.sound_latency = 1;	// default: 100msec
 	}
-	sound_rate = freq_table[config.sound_frequency];
-	sound_samples = (int)(sound_rate * late_table[config.sound_latency] + 0.5);
+	sound_frequency = config.sound_frequency;
+	sound_latency = config.sound_latency;
+	sound_rate = sound_frequency_table[config.sound_frequency];
+	sound_samples = (int)(sound_rate * sound_latency_table[config.sound_latency] + 0.5);
 	
 #ifdef USE_CPU_TYPE
 	cpu_type = config.cpu_type;
@@ -2766,6 +2768,17 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 				reinitialize |= (printer_type != config.printer_type);
 				printer_type = config.printer_type;
 #endif
+				if(!(0 <= config.sound_frequency && config.sound_frequency < 8)) {
+					config.sound_frequency = 6;	// default: 48KHz
+				}
+				if(!(0 <= config.sound_latency && config.sound_latency < 5)) {
+					config.sound_latency = 1;	// default: 100msec
+				}
+				reinitialize |= (sound_frequency != config.sound_frequency);
+				reinitialize |= (sound_latency != config.sound_latency);
+				sound_frequency = config.sound_frequency;
+				sound_latency = config.sound_latency;
+				
 				if(reinitialize) {
 					// stop sound
 					osd->stop_sound();
@@ -2776,6 +2789,8 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 #if defined(_USE_QT)
 					osd->reset_vm_node();
 #endif
+					sound_rate = sound_frequency_table[config.sound_frequency];
+					sound_samples = (int)(sound_rate * sound_latency_table[config.sound_latency] + 0.5);
 					vm->initialize_sound(sound_rate, sound_samples);
 #ifdef USE_SOUND_VOLUME
 					for(int i = 0; i < USE_SOUND_VOLUME; i++) {
