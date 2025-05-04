@@ -38,6 +38,8 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_CRT_FILTER
 #define USE_ACCESS_LAMP
+#define USE_PRINTER
+#define USE_PRINTER_TYPE	4
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -54,6 +56,7 @@ class I8259;
 class I286;
 class IO;
 class MB8877;
+class NOT;
 class PCM1BIT;
 class RP5C01;
 //class SASI;
@@ -68,6 +71,7 @@ class JOYSTICK;
 class KEYBOARD;
 class MEMORY;
 class MOUSE;
+class PRINTER;
 class RESET;
 class SERIAL;
 class SYSPORT;
@@ -86,6 +90,7 @@ protected:
 	I286* cpu;
 	IO* io;
 	MB8877* fdc;
+	NOT* not_busy;
 	PCM1BIT* pcm;
 	RP5C01* rtc;
 //	SASI* sasi;
@@ -100,6 +105,7 @@ protected:
 	KEYBOARD* keyboard;
 	MEMORY* memory;
 	MOUSE* mouse;
+	PRINTER* printer;
 	RESET* rst;
 	SERIAL* serial;
 	SYSPORT* sysport;

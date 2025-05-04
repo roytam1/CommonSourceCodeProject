@@ -542,7 +542,7 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 #elif defined(_RGB888)
 	typedef uint32 scrntype;
 	#define RGB_COLOR(r, g, b)	(((uint32)(r) << 16) | ((uint32)(g) << 8) | ((uint32)(b) << 0))
-	#define RGBA_COLOR(r, g, b, a)	(((uint32)(r) << 16) | ((uint32)(g) << 8) | ((uint32)(b) << 0) | ((uint32)(a) << 24))	
+	#define RGBA_COLOR(r, g, b, a)	(((uint32)(r) << 16) | ((uint32)(g) << 8) | ((uint32)(b) << 0) | ((uint32)(a) << 24))
 	#define R_OF_COLOR(c)		(((c) >> 16) & 0xff)
 	#define G_OF_COLOR(c)		(((c) >>  8) & 0xff)
 	#define B_OF_COLOR(c)		(((c)      ) & 0xff)

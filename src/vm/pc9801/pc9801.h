@@ -148,6 +148,7 @@
 #define USE_ACCESS_LAMP
 #define USE_SOUND_DEVICE_TYPE	4
 #define USE_PRINTER
+#define USE_PRINTER_TYPE	4
 #define USE_DEBUGGER
 #define USE_STATE
 
@@ -170,9 +171,7 @@ class I286;
 class IO;
 class LS244;
 class MEMORY;
-#if defined(HAS_I86) || defined(HAS_V30)
 class NOT;
-#endif
 #if !defined(SUPPORT_OLD_BUZZER)
 class PCM1BIT;
 #endif
@@ -240,6 +239,7 @@ protected:
 	LS244* dmareg0;
 	LS244* rtcreg;
 	MEMORY* memory;
+	NOT* not_busy;
 #if defined(HAS_I86) || defined(HAS_V30)
 	NOT* not_prn;
 #endif
