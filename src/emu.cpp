@@ -69,11 +69,11 @@ EMU::EMU()
 #ifdef USE_CPU_TYPE
 	cpu_type = config.cpu_type;
 #endif
-#ifdef USE_SOUND_DEVICE_TYPE
-	sound_device_type = config.sound_device_type;
+#ifdef USE_SOUND_TYPE
+	sound_type = config.sound_type;
 #endif
-#ifdef USE_PRINTER
-	printer_device_type = config.printer_device_type;
+#ifdef USE_PRINTER_TYPE
+	printer_type = config.printer_type;
 #endif
 	
 	// initialize osd
@@ -233,13 +233,13 @@ void EMU::reset()
 	reinitialize |= (cpu_type != config.cpu_type);
 	cpu_type = config.cpu_type;
 #endif
-#ifdef USE_SOUND_DEVICE_TYPE
-	reinitialize |= (sound_device_type != config.sound_device_type);
-	sound_device_type = config.sound_device_type;
+#ifdef USE_SOUND_TYPE
+	reinitialize |= (sound_type != config.sound_type);
+	sound_type = config.sound_type;
 #endif
-#ifdef USE_PRINTER
-	reinitialize |= (printer_device_type != config.printer_device_type);
-	printer_device_type = config.printer_device_type;
+#ifdef USE_PRINTER_TYPE
+	reinitialize |= (printer_type != config.printer_type);
+	printer_type = config.printer_type;
 #endif
 	if(reinitialize) {
 		// stop sound
@@ -609,7 +609,7 @@ scrntype_t* EMU::get_screen_buffer(int y)
 	return osd->get_vm_screen_buffer(y);
 }
 
-#ifdef USE_CRT_FILTER
+#ifdef USE_SCREEN_FILTER
 void EMU::screen_skip_line(bool skip_line)
 {
 	osd->screen_skip_line = skip_line;
@@ -643,6 +643,11 @@ void EMU::reload_bitmap()
 #endif
 
 #ifdef OSD_WIN32
+void EMU::invalidate_screen()
+{
+	osd->invalidate_screen();
+}
+
 void EMU::update_screen(HDC hdc)
 {
 	osd->update_screen(hdc);
@@ -1786,24 +1791,7 @@ void EMU::update_config()
 #ifdef USE_STATE
 #define STATE_VERSION	2
 
-void EMU::save_state()
-{
-	save_state_tmp(create_local_path(_T("%s.sta"), _T(CONFIG_NAME)));
-}
-
-void EMU::load_state()
-{
-	if(FILEIO::IsFileExisting(create_local_path(_T("%s.sta"), _T(CONFIG_NAME)))) {
-		save_state_tmp(create_local_path(_T("$temp$.sta")));
-		if(!load_state_tmp(create_local_path(_T("%s.sta"), _T(CONFIG_NAME)))) {
-			out_debug_log(_T("failed to load state file\n"));
-			load_state_tmp(create_local_path(_T("$temp$.sta")));
-		}
-		FILEIO::RemoveFile(create_local_path(_T("$temp$.sta")));
-	}
-}
-
-void EMU::save_state_tmp(const _TCHAR* file_path)
+void EMU::save_state(const _TCHAR* file_path)
 {
 	FILEIO* fio = new FILEIO();
 	osd->lock_vm();
@@ -1842,6 +1830,18 @@ void EMU::save_state_tmp(const _TCHAR* file_path)
 	delete fio;
 }
 
+void EMU::load_state(const _TCHAR* file_path)
+{
+	if(FILEIO::IsFileExisting(file_path)) {
+		save_state(create_local_path(_T("$temp$.sta")));
+		if(!load_state_tmp(file_path)) {
+			out_debug_log(_T("failed to load state file\n"));
+			load_state_tmp(create_local_path(_T("$temp$.sta")));
+		}
+		FILEIO::RemoveFile(create_local_path(_T("$temp$.sta")));
+	}
+}
+
 bool EMU::load_state_tmp(const _TCHAR* file_path)
 {
 	bool result = false;
@@ -1878,13 +1878,13 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 				reinitialize |= (cpu_type != config.cpu_type);
 				cpu_type = config.cpu_type;
 #endif
-#ifdef USE_SOUND_DEVICE_TYPE
-				reinitialize |= (sound_device_type != config.sound_device_type);
-				sound_device_type = config.sound_device_type;
+#ifdef USE_SOUND_TYPE
+				reinitialize |= (sound_type != config.sound_type);
+				sound_type = config.sound_type;
 #endif
-#ifdef USE_PRINTER
-				reinitialize |= (printer_device_type != config.printer_device_type);
-				printer_device_type = config.printer_device_type;
+#ifdef USE_PRINTER_TYPE
+				reinitialize |= (printer_type != config.printer_type);
+				printer_type = config.printer_type;
 #endif
 				if(reinitialize) {
 					// stop sound

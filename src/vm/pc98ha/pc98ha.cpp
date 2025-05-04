@@ -79,9 +79,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	fdc->set_context_noise_head_down(new NOISE(this, emu));
 	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	
-	if(config.printer_device_type == 0) {
+	if(config.printer_type == 0) {
 		printer = new PRNFILE(this, emu);
-//	} else if(config.printer_device_type == 1) {
+//	} else if(config.printer_type == 1) {
 //		printer = new PCPR201(this, emu);
 	} else {
 		printer = dummy;
@@ -118,10 +118,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pio_sys->set_context_port_c(beep, SIG_BEEP_MUTE, 8, 0);
 	pio_prn->set_context_port_a(printer, SIG_PRINTER_DATA, 0xff, 0);
 	pio_prn->set_context_port_c(printer, SIG_PRINTER_STROBE, 0x80, 0);
-	if(config.printer_device_type == 0) {
+	if(config.printer_type == 0) {
 		PRNFILE *prnfile = (PRNFILE *)printer;
 		prnfile->set_context_busy(not_busy, SIG_NOT_INPUT, 1);
-//	} else if(config.printer_device_type == 1) {
+//	} else if(config.printer_type == 1) {
 //		PRNFILE *pcpr201 = (PCPR201 *)printer;
 //		pcpr201->set_context_busy(not_busy, SIG_NOT_INPUT, 1);
 	}

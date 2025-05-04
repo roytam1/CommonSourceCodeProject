@@ -69,23 +69,23 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	pc88rtc = new UPD1990A(this, emu);
 //	pc88rtc->set_device_name(_T("uPD1990A RTC (PC-8801)"));
 //	pc88rtc->set_context_event_manager(pc88event);
-	// config.sound_device_type
+	// config.sound_type
 	// 	0: 44h:OPNA A4h:None		PC-8801FH/MH or later
 	// 	1: 44h:OPN  A4h:None		PC-8801mkIISR/TR/MR/FR
 	// 	2: 44h:OPN  A4h:OPNA		PC-8801mkIISR/TR/MR/FR + PC-8801-23
 	pc88opn = new YM2203(this, emu);
 //	pc88opn->set_context_event_manager(pc88event);
-#ifdef USE_SOUND_DEVICE_TYPE
+#ifdef USE_SOUND_TYPE
 #ifdef SUPPORT_PC88_OPNA
-	if(config.sound_device_type == 0) {
+	if(config.sound_type == 0) {
 		pc88opn->set_device_name(_T("YM2608 OPNA"));
 	} else {
 		pc88opn->set_device_name(_T("YM2203 OPN"));
 	}
-	pc88opn->is_ym2608 = (config.sound_device_type == 0);
+	pc88opn->is_ym2608 = (config.sound_type == 0);
 #endif
 #ifdef SUPPORT_PC88_SB2
-	if(config.sound_device_type == 2) {
+	if(config.sound_type == 2) {
 		pc88sb2 = new YM2203(this, emu);
 #ifdef SUPPORT_PC88_OPNA
 		pc88sb2->set_device_name(_T("YM2608 OPNA (SB2)"));
@@ -99,10 +99,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 #endif
 #endif
-	if(config.printer_device_type == 0) {
+	if(config.printer_type == 0) {
 		pc88prn = new PRNFILE(this, emu);
 //		pc88prn->set_context_event_manager(pc88event);
-//	} else if(config.printer_device_type == 1) {
+//	} else if(config.printer_type == 1) {
 //		pc88prn = new PCPR201(this, emu);
 //		pc88prn->set_context_event_manager(pc88event);
 	} else {
