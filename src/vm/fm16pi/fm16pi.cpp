@@ -12,6 +12,7 @@
 #include "../device.h"
 #include "../event.h"
 
+#include "../disk.h"
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8255.h"
@@ -227,6 +228,9 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
+	}
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		fdc->set_drive_type(i, DRIVE_TYPE_2D);
 	}
 }
 

@@ -379,11 +379,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
-#if defined(_MZ800) || defined(_MZ1500)
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
-	}
-#endif
 }
 
 VM::~VM()
@@ -417,6 +412,15 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
+#if defined(_MZ800) || defined(_MZ1500)
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		if(config.drive_type) {
+			fdc->set_drive_type(i, DRIVE_TYPE_2DD);
+		} else {
+			fdc->set_drive_type(i, DRIVE_TYPE_2D);
+		}
+	}
+#endif
 	and_int->write_signal(SIG_AND_BIT_0, 0, 1);	// CLOCK = L
 	and_int->write_signal(SIG_AND_BIT_1, 1, 1);	// INTMASK = H
 #if defined(_MZ800) || defined(_MZ1500)

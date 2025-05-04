@@ -98,7 +98,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	
 	// set contexts
-	event->set_context_cpu(cpu);
+	event->set_context_cpu(cpu, config.cpu_type ? CPU_CLOCKS_HIGH : CPU_CLOCKS);
 #ifdef SUPPORT_16BIT_BOARD
 	event->set_context_cpu(cpu_16, 5000000);
 #endif
@@ -245,10 +245,6 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
-	for(int i = 0; i < MAX_DRIVE; i++) {
-		fdc->set_drive_type(i, DRIVE_TYPE_2DD);
-//		fdc->set_drive_type(i, DRIVE_TYPE_2D);
-	}
 }
 
 VM::~VM()
@@ -281,6 +277,13 @@ void VM::reset()
 	// reset all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
+	}
+	for(int i = 0; i < MAX_DRIVE; i++) {
+		if(config.drive_type) {
+			fdc->set_drive_type(i, DRIVE_TYPE_2DD);
+		} else {
+			fdc->set_drive_type(i, DRIVE_TYPE_2D);
+		}
 	}
 }
 
