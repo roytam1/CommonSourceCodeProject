@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/11/2017
+								3/15/2017
 
 --- What's this ?
 
@@ -55,6 +55,7 @@ This archive includes the all source codes of emulators listed below:
 	National/Panasonic
 		yayaFS-A1	FS-A1 (by Mr.umaiboux)
 		eJR-100		JR-100
+		eJR-800		JR-800
 	NEC
 		ePC-2001	PC-2001
 		yaPC-6001	PC-6001 (by Mr.tanam)
@@ -181,6 +182,8 @@ See also COPYING.txt for more details about the license.
 	TDLZHUF for Teledisk floppy disk image decoder
 	MESS formats/dsk_dsk.c for CPDRead floppy disk image decorder
 	MESS formats/imd_dsk.c for ImageDisk floppy disk image decorder
+- vm/hd44102.*
+	MAME HD44102 core and soem modifications by PockEmul
 - vm/hd63484.*
 	MAME HD63484 core
 - vm/huc6280.*
@@ -284,6 +287,8 @@ See also COPYING.txt for more details about the license.
 	Mr.Dennis Heynlein for intelligent ram disk unit
 - vm/jr100/*
 	Mr.Enri for National JR-100 hardware design info
+- vm/jr800/*
+	PockEmul JR-800 driver
 - vm/m5/*
 	MESS sord driver
 	Mr.Moriya for Sord M5 hardware design info

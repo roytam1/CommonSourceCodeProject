@@ -192,12 +192,6 @@ void VM::draw_screen()
 	vdp->draw_screen();
 }
 
-///uint32_t VM::get_access_lamp_status()
-///{
-///	uint32_t status = fdc->read_signal(0);
-///	return (status & (1 | 4)) ? 1 : (status & (2 | 8)) ? 2 : 0;
-///}
-
 // ----------------------------------------------------------------------------
 // soud manager
 // ----------------------------------------------------------------------------
@@ -307,6 +301,11 @@ bool VM::is_cart_inserted(int drv)
 ///	return fdc->is_disk_protected(drv);
 ///}
 
+///uint32_t VM::is_floppy_disk_accessed()
+///{
+///	return fdc->read_signal(0);
+///}
+
 ///void VM::play_tape(const _TCHAR* file_path)
 ///{
 ///	drec->play_tape(file_path);
@@ -342,6 +341,11 @@ bool VM::is_cart_inserted(int drv)
 ///int VM::get_tape_position()
 ///{
 ///	return drec->get_tape_position();
+///}
+
+///const _TCHAR* VM::get_tape_message()
+///{
+///	return drec->get_message();
 ///}
 
 bool VM::is_frame_skippable()

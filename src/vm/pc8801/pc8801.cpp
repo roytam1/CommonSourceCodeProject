@@ -313,11 +313,6 @@ void VM::draw_screen()
 	pc88->draw_screen();
 }
 
-uint32_t VM::get_access_lamp_status()
-{
-	return pc88fdc_sub->read_signal(0);
-}
-
 // ----------------------------------------------------------------------------
 // soud manager
 // ----------------------------------------------------------------------------
@@ -449,6 +444,11 @@ void VM::is_floppy_disk_protected(int drv, bool value)
 bool VM::is_floppy_disk_protected(int drv)
 {
 	return pc88fdc_sub->is_disk_protected(drv);
+}
+
+uint32_t VM::is_floppy_disk_accessed()
+{
+	return pc88fdc_sub->read_signal(0);
 }
 
 void VM::play_tape(const _TCHAR* file_path)

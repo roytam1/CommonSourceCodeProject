@@ -56,7 +56,6 @@
 #define USE_ALT_F10_KEY
 #define USE_AUTO_KEY		5
 #define USE_AUTO_KEY_RELEASE	6
-#define USE_ACCESS_LAMP
 #define USE_SOUND_VOLUME	2
 
 #include "../../common.h"
@@ -146,7 +145,6 @@ public:
 	
 	// draw screen
 	void draw_screen();
-	uint32_t get_access_lamp_status();
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
@@ -166,6 +164,7 @@ public:
 	bool is_floppy_disk_inserted(int drv);
 	void is_floppy_disk_protected(int drv, bool value);
 	bool is_floppy_disk_protected(int drv);
+	uint32_t is_floppy_disk_accessed();
 	bool is_frame_skippable();
 	
 	void update_config();

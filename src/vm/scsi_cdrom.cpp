@@ -79,6 +79,7 @@ void SCSI_CDROM::event_callback(int event_id, int err)
 					fio_img->Fread(cdda_buffer, sizeof(cdda_buffer), 1);
 					cdda_buffer_ptr = 0;
 					cdda_playing_frame = cdda_start_frame;
+					access = true;
 				} else {
 					// stop
 					if(cdda_interrupt) {
@@ -90,6 +91,7 @@ void SCSI_CDROM::event_callback(int event_id, int err)
 				// refresh buffer
 				fio_img->Fread(cdda_buffer, sizeof(cdda_buffer), 1);
 				cdda_buffer_ptr = 0;
+				access = true;
 			}
 		}
 		break;
@@ -268,6 +270,7 @@ void SCSI_CDROM::start_command()
 				fio_img->Fread(cdda_buffer, sizeof(cdda_buffer), 1);
 				cdda_buffer_ptr = 0;
 				cdda_playing_frame = cdda_start_frame;
+				access = true;
 				
 				// change to status phase
 				set_dat(SCSI_STATUS_GOOD);
@@ -449,6 +452,7 @@ void SCSI_CDROM::read_buffer(int length)
 				position++;
 				offset = (offset + 1) % 2352;
 			}
+			access = true;
 		}
 	}
 }

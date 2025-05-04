@@ -76,9 +76,6 @@
 //#if defined(_MZ1500)
 #define USE_SCREEN_ROTATE
 //#endif
-#if defined(_MZ800) || defined(_MZ1500)
-#define USE_ACCESS_LAMP
-#endif
 #if defined(_MZ700)
 #define USE_SOUND_VOLUME	3
 #elif defined(_MZ800)
@@ -217,9 +214,6 @@ public:
 	
 	// draw screen
 	void draw_screen();
-#if defined(_MZ800) || defined(_MZ1500)
-	uint32_t get_access_lamp_status();
-#endif
 	
 	// sound generation
 	void initialize_sound(int rate, int samples);
@@ -237,6 +231,7 @@ public:
 	bool is_tape_playing();
 	bool is_tape_recording();
 	int get_tape_position();
+	const _TCHAR* get_tape_message();
 	void push_play();
 	void push_stop();
 	void push_fast_forward();
@@ -247,11 +242,13 @@ public:
 	void open_quick_disk(int drv, const _TCHAR* file_path);
 	void close_quick_disk(int drv);
 	bool is_quick_disk_inserted(int drv);
+	uint32_t is_quick_disk_accessed();
 	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
 	void close_floppy_disk(int drv);
 	bool is_floppy_disk_inserted(int drv);
 	void is_floppy_disk_protected(int drv, bool value);
 	bool is_floppy_disk_protected(int drv);
+	uint32_t is_floppy_disk_accessed();
 #endif
 	bool is_frame_skippable();
 	
