@@ -118,8 +118,12 @@ void OSD::mute_video_dev(bool l, bool r)
 #ifdef USE_MOVIE_PLAYER
 bool OSD::open_movie_file(const _TCHAR* file_path)
 {
+#ifdef _UNICODE
+	#define wFile file_path
+#else
 	WCHAR wFile[_MAX_PATH];
 	MultiByteToWideChar(CP_ACP, 0, file_path, -1, wFile, _MAX_PATH);
+#endif
 	
 	AM_MEDIA_TYPE video_mt;
 	ZeroMemory(&video_mt, sizeof(AM_MEDIA_TYPE));

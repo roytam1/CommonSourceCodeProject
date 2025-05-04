@@ -18,6 +18,7 @@
 #include <windowsx.h>
 #include <mmsystem.h>
 #include <process.h>
+#include <gdiplus.h>
 #include <d3d9.h>
 #include <d3dx9.h>
 #include <d3d9types.h>
@@ -32,11 +33,8 @@
 #include <winsock.h>
 #pragma comment(lib, "wsock32.lib")
 #endif
-#ifdef ONE_BOARD_MICRO_COMPUTER
-#include <gdiplus.h>
 #pragma comment(lib, "Gdiplus.lib")
 using namespace Gdiplus;
-#endif
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 #pragma comment(lib, "vfw32.lib")
@@ -134,6 +132,10 @@ public:
 
 typedef struct bitmap_s {
 	// common
+	inline bool initialized()
+	{
+		return (hdcDib != NULL);
+	}
 	inline scrntype* get_buffer(int y)
 	{
 		return lpBmp + width * (height - y - 1);
@@ -149,6 +151,10 @@ typedef struct bitmap_s {
 
 typedef struct font_s {
 	// common
+	inline bool initialized()
+	{
+		return (hFont != NULL);
+	}
 	_TCHAR family[64];
 	int width, height;
 	bool bold, italic;
@@ -158,6 +164,10 @@ typedef struct font_s {
 
 typedef struct pen_s {
 	// common
+	inline bool initialized()
+	{
+		return (hPen != NULL);
+	}
 	int width;
 	uint8 r, g, b;
 	// win32 dependent
@@ -263,10 +273,8 @@ private:
 	int vm_screen_width, vm_screen_height, vm_screen_width_aspect, vm_screen_height_aspect;
 	int draw_screen_width, draw_screen_height;
 	
-#ifdef ONE_BOARD_MICRO_COMPUTER
 	Gdiplus::GdiplusStartupInput gdiSI;
 	ULONG_PTR gdiToken;
-#endif
 	
 	LPDIRECT3D9 lpd3d9;
 	LPDIRECT3DDEVICE9 lpd3d9Device;
@@ -440,10 +448,7 @@ public:
 		first_invalidate = true;
 	}
 #endif
-	void capture_screen()
-	{
-		write_bitmap_to_file(&vm_screen_buffer);
-	}
+	void capture_screen();
 	bool start_rec_video(int fps);
 	void stop_rec_video();
 	void restart_rec_video();
@@ -508,23 +513,17 @@ public:
 	
 	// common printer
 #ifdef USE_PRINTER
-	void create_bitmap(bitmap_t *bitmap, int width, int height)
-	{
-		initialize_screen_buffer(bitmap, width, height, HALFTONE);
-	}
-	void release_bitmap(bitmap_t *bitmap)
-	{
-		release_screen_buffer(bitmap);
-	}
+	void create_bitmap(bitmap_t *bitmap, int width, int height, uint8 r, uint8 g, uint8 b);
+	void release_bitmap(bitmap_t *bitmap);
 	void create_font(font_t *font, const _TCHAR *family, int width, int height, bool bold, bool italic);
 	void release_font(font_t *font);
 	void create_pen(pen_t *pen, int width, uint8 r, uint8 g, uint8 b);
 	void release_pen(pen_t *pen);
-	void draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length);
+	void draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length, uint8 r, uint8 g, uint8 b);
 	void draw_line_to_bitmap(bitmap_t *bitmap, pen_t *pen, int sx, int sy, int ex, int ey);
 	void stretch_bitmap(bitmap_t *source, bitmap_t *dest);
 #endif
-	void write_bitmap_to_file(bitmap_t *bitmap);
+	void write_bitmap_to_file(bitmap_t *bitmap, const _TCHAR *file_path);
 	
 	// common socket
 #ifdef USE_SOCKET

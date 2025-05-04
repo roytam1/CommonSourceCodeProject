@@ -318,7 +318,7 @@
 				Filter="cpp"
 				>
 				<File
-					RelativePath="src\emu.cpp"
+					RelativePath="src\debugger.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -338,7 +338,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\debugger.cpp"
+					RelativePath="src\emu.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"

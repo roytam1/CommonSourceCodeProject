@@ -479,7 +479,7 @@ void OSD::initialize_screen_buffer(bitmap_t *buffer, int width, int height, int 
 
 void OSD::release_screen_buffer(bitmap_t *buffer)
 {
-	if(!(buffer->width == 0 && buffer->height == 0)) {
+	if(buffer->initialized()) {
 		if(buffer->hdcDib != NULL && buffer->hOldBmp != NULL) {
 			SelectObject(buffer->hdcDib, buffer->hOldBmp);
 		}
@@ -1107,6 +1107,12 @@ void OSD::copy_to_d3d9_surface(bitmap_t *buffer)
 	
 }
 
+void OSD::capture_screen()
+{
+//	write_bitmap_to_file(&vm_screen_buffer, create_date_file_path(_T("bmp")));
+	write_bitmap_to_file(&vm_screen_buffer, create_date_file_path(_T("png")));
+}
+
 bool OSD::start_rec_video(int fps)
 {
 	if(fps > 0) {
@@ -1307,6 +1313,24 @@ int OSD::add_video_frames()
 }
 
 #ifdef USE_PRINTER
+void OSD::create_bitmap(bitmap_t *bitmap, int width, int height, uint8 r, uint8 g, uint8 b)
+{
+	initialize_screen_buffer(bitmap, width, height, HALFTONE);
+	
+	scrntype c = RGB_COLOR(r, g, b);
+	for(int y = 0; y < height; y++) {
+		scrntype* p = bitmap->get_buffer(y);
+		for(int x = 0; x < width; x++) {
+			p[x] = c;
+		}
+	}
+}
+
+void OSD::release_bitmap(bitmap_t *bitmap)
+{
+	release_screen_buffer(bitmap);
+}
+
 void OSD::create_font(font_t *font, const _TCHAR *family, int width, int height, bool bold, bool italic)
 {
 	LOGFONT logfont;
@@ -1322,13 +1346,13 @@ void OSD::create_font(font_t *font, const _TCHAR *family, int width, int height,
 	logfont.lfQuality = DEFAULT_QUALITY; 
 	logfont.lfPitchAndFamily = FIXED_PITCH | FF_DONTCARE;
 	if(_tcsicmp(family, _T("Gothic")) == 0) {
-		my_strcpy_s(logfont.lfFaceName, LF_FACESIZE, "MS Gothic");
+		my_tcscpy_s(logfont.lfFaceName, LF_FACESIZE, _T("MS Gothic"));
 		my_tcscpy_s(font->family, 64, _T("Gothic"));
 	} else if(_tcsicmp(family, _T("Mincho")) == 0) {
-		my_strcpy_s(logfont.lfFaceName, LF_FACESIZE, "MS Mincho");
+		my_tcscpy_s(logfont.lfFaceName, LF_FACESIZE, _T("MS Mincho"));
 		my_tcscpy_s(font->family, 64, _T("Mincho"));
 	} else {
-		my_strcpy_s(logfont.lfFaceName, LF_FACESIZE, "MS Gothic");
+		my_tcscpy_s(logfont.lfFaceName, LF_FACESIZE, _T("MS Gothic"));
 		my_tcscpy_s(font->family, 64, _T("Gothic"));
 	}
 	logfont.lfHeight = font->height = height;
@@ -1338,7 +1362,10 @@ void OSD::create_font(font_t *font, const _TCHAR *family, int width, int height,
 
 void OSD::release_font(font_t *font)
 {
-	DeleteObject(font->hFont);
+	if(font->initialized()) {
+		DeleteObject(font->hFont);
+		font->hFont = NULL;
+	}
 }
 
 void OSD::create_pen(pen_t *pen, int width, uint8 r, uint8 g, uint8 b)
@@ -1348,12 +1375,17 @@ void OSD::create_pen(pen_t *pen, int width, uint8 r, uint8 g, uint8 b)
 
 void OSD::release_pen(pen_t *pen)
 {
-	DeleteObject(pen->hPen);
+	if(pen->initialized()) {
+		DeleteObject(pen->hPen);
+		pen->hPen = NULL;
+	}
 }
 
-void OSD::draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length)
+void OSD::draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length, uint8 r, uint8 g, uint8 b)
 {
 	HFONT hFontOld = (HFONT)SelectObject(bitmap->hdcDib, font->hFont);
+	SetBkMode(bitmap->hdcDib, TRANSPARENT);
+	SetTextColor(bitmap->hdcDib, RGB(r, g, b));
 	ExtTextOut(bitmap->hdcDib, x, y, NULL, NULL, text, length, NULL);
 	SelectObject(bitmap->hdcDib, hFontOld);
 }
@@ -1372,18 +1404,58 @@ void OSD::stretch_bitmap(bitmap_t *source, bitmap_t *dest)
 }
 #endif
 
-void OSD::write_bitmap_to_file(bitmap_t *bitmap)
+bool GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 {
-	// create bitmap
-	BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
-	bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-	bmFileHeader.bfSize = bmFileHeader.bfOffBits + bitmap->lpDib->bmiHeader.biSizeImage;
+	UINT num = 0, size = 0;
 	
-	DWORD dwSize;
-	HANDLE hFile = CreateFile(create_date_file_path(_T("bmp")), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwSize, NULL);
-	WriteFile(hFile, bitmap->lpDib, sizeof(BITMAPINFOHEADER), &dwSize, NULL);
-	WriteFile(hFile, bitmap->lpBmp, bitmap->lpDib->bmiHeader.biSizeImage, &dwSize, NULL);
-	CloseHandle(hFile);
+	GetImageEncodersSize(&num, &size);
+	if(size == 0) {
+		return false;
+	}
+	ImageCodecInfo* pImageCodecInfo = (ImageCodecInfo*)malloc(size);
+	if (pImageCodecInfo == NULL) {
+		return false;
+	}
+	GetImageEncoders(num, size, pImageCodecInfo);
+	
+	for(UINT j = 0; j < num; ++j) {
+		if(wcscmp(pImageCodecInfo[j].MimeType, format) == 0) {
+			*pClsid = pImageCodecInfo[j].Clsid;
+			free(pImageCodecInfo);
+			return true;
+		}
+	}
+	free(pImageCodecInfo);
+	return false;
+}
+
+void OSD::write_bitmap_to_file(bitmap_t *bitmap, const _TCHAR *file_path)
+{
+	if(check_file_extension(file_path, _T(".bmp"))) {
+		// save as bmp file
+		BITMAPFILEHEADER bmFileHeader = { (WORD)(TEXT('B') | TEXT('M') << 8) };
+		bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+		bmFileHeader.bfSize = bmFileHeader.bfOffBits + bitmap->lpDib->bmiHeader.biSizeImage;
+		
+		DWORD dwSize;
+		HANDLE hFile = CreateFile(file_path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwSize, NULL);
+		WriteFile(hFile, bitmap->lpDib, sizeof(BITMAPINFOHEADER), &dwSize, NULL);
+		WriteFile(hFile, bitmap->lpBmp, bitmap->lpDib->bmiHeader.biSizeImage, &dwSize, NULL);
+		CloseHandle(hFile);
+	} else if(check_file_extension(file_path, _T(".png"))) {
+		// save as png file
+		CLSID encoderClsid;
+		if(GetEncoderClsid(L"image/png", &encoderClsid)) {
+			Bitmap image(bitmap->hBmp, (HPALETTE)GetStockObject(DEFAULT_PALETTE));
+#ifdef _UNICODE
+			image.Save(file_path, &encoderClsid, NULL);
+#else
+			WCHAR wszFilePath[_MAX_PATH];
+			MultiByteToWideChar(CP_ACP, 0, file_path, -1, wszFilePath, _MAX_PATH);
+			image.Save(wszFilePath, &encoderClsid, NULL);
+#endif
+		}
+	}
 }
 

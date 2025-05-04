@@ -574,9 +574,9 @@ void EMU::set_capture_dev_channel(int ch)
 // ----------------------------------------------------------------------------
 
 #ifdef USE_PRINTER
-void EMU::create_bitmap(bitmap_t *bitmap, int width, int height)
+void EMU::create_bitmap(bitmap_t *bitmap, int width, int height, uint8 r, uint8 g, uint8 b)
 {
-	osd->create_bitmap(bitmap, width, height);
+	osd->create_bitmap(bitmap, width, height, r, g, b);
 }
 
 void EMU::release_bitmap(bitmap_t *bitmap)
@@ -604,9 +604,9 @@ void EMU::release_pen(pen_t *pen)
 	osd->release_pen(pen);
 }
 
-void EMU::draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length)
+void EMU::draw_text_to_bitmap(bitmap_t *bitmap, font_t *font, int x, int y, const _TCHAR *text, unsigned int length, uint8 r, uint8 g, uint8 b)
 {
-	osd->draw_text_to_bitmap(bitmap, font, x, y, text, length);
+	osd->draw_text_to_bitmap(bitmap, font, x, y, text, length, r, g, b);
 }
 
 void EMU::draw_line_to_bitmap(bitmap_t *bitmap, pen_t *pen, int sx, int sy, int ex, int ey)
@@ -619,9 +619,9 @@ void EMU::stretch_bitmap(bitmap_t *source, bitmap_t *dest)
 	osd->stretch_bitmap(source, dest);
 }
 
-void EMU::write_bitmap_to_file(bitmap_t *bitmap)
+void EMU::write_bitmap_to_file(bitmap_t *bitmap, const _TCHAR *file_path)
 {
-	osd->write_bitmap_to_file(bitmap);
+	osd->write_bitmap_to_file(bitmap, file_path);
 }
 #endif
 
@@ -1236,7 +1236,7 @@ void EMU::load_state()
 	if(FILEIO::IsFileExists(create_local_path(_T("%s.sta"), _T(CONFIG_NAME)))) {
 		save_state_tmp(create_local_path(_T("$temp$.sta")));
 		if(!load_state_tmp(create_local_path(_T("%s.sta"), _T(CONFIG_NAME)))) {
-			out_debug_log("failed to load state file\n");
+			out_debug_log(_T("failed to load state file\n"));
 			load_state_tmp(create_local_path(_T("$temp$.sta")));
 		}
 		FILEIO::RemoveFile(create_local_path(_T("$temp$.sta")));

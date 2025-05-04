@@ -240,7 +240,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		// load rom images after cpustate is allocated
 #ifdef _PC6601SR
 #else
-		cpu_sub->load_rom_image(create_local_path(SUB_CPU_ROM_FILE_NAME));
+		cpu_sub->load_rom_image(create_local_path(_T(SUB_CPU_ROM_FILE_NAME)));
 #endif
 	}
 	int drive_num = 0;

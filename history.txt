@@ -1,3 +1,14 @@
+12/23/2015
+
+[ALL] fix for UNICODE character set case
+
+[COMMON] improve create_local_path() and get_file_path_without_extensiton() not to overwrite previous result soon
+[EMU/OSD] improve to capture screen with png file format
+[EMU/OSD] improve functions to manipulate bitmaps and fonts
+
+[TOOL/MZ80K] support software keyboard for MZ-80K/C
+
+
 12/20/2015
 
 [EMU/OSD] remove functions for pinter interface

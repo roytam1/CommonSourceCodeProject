@@ -452,6 +452,9 @@ inline uint16 EndianToLittle_WORD(uint16 x);
 	#ifndef _tcstok
 		#define _tcstok strtok
 	#endif
+	#ifndef _tstoi
+		#define _tstoi atoi
+	#endif
 	#ifndef _tcstol
 		#define _tcstol strtol
 	#endif

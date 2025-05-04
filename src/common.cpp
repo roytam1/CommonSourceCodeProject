@@ -354,15 +354,17 @@ const _TCHAR *application_path()
 
 const _TCHAR *create_local_path(const _TCHAR* format, ...)
 {
-	static _TCHAR file_path[_MAX_PATH];
+	static _TCHAR file_path[8][_MAX_PATH];
+	static unsigned int table_index = 0;
+	unsigned int output_index = (table_index++) & 7;
 	_TCHAR file_name[_MAX_PATH];
 	va_list ap;
 	
 	va_start(ap, format);
 	my_vstprintf_s(file_name, _MAX_PATH, format, ap);
 	va_end(ap);
-	my_stprintf_s(file_path, _MAX_PATH, _T("%s%s"), application_path(), file_name);
-	return (const _TCHAR *)file_path;
+	my_stprintf_s(file_path[output_index], _MAX_PATH, _T("%s%s"), application_path(), file_name);
+	return (const _TCHAR *)file_path[output_index];
 }
 
 void create_local_path(_TCHAR *file_path, int length, const _TCHAR* format, ...)
@@ -378,7 +380,6 @@ void create_local_path(_TCHAR *file_path, int length, const _TCHAR* format, ...)
 
 const _TCHAR *create_date_file_path(const _TCHAR *extension)
 {
-	static _TCHAR file_path[_MAX_PATH];
 	cur_time_t cur_time;
 	
 	get_host_time(&cur_time);
@@ -400,18 +401,20 @@ bool check_file_extension(const _TCHAR* file_path, const _TCHAR* ext)
 
 _TCHAR *get_file_path_without_extensiton(const _TCHAR* file_path)
 {
-	static _TCHAR path[_MAX_PATH];
+	static _TCHAR path[8][_MAX_PATH];
+	static unsigned int table_index = 0;
+	unsigned int output_index = (table_index++) & 7;
 	
-	my_tcscpy_s(path, _MAX_PATH, file_path);
+	my_tcscpy_s(path[output_index], _MAX_PATH, file_path);
 #ifdef _WIN32
-	PathRemoveExtension(path);
+	PathRemoveExtension(path[output_index]);
 #else
-	_TCHAR *p = _tcsrchr(path, _T('.'));
+	_TCHAR *p = _tcsrchr(path[output_index], _T('.'));
 	if(p != NULL) {
 		*p = _T('\0');
 	}
 #endif
-	return path;
+	return path[output_index];
 }
 
 uint32 getcrc32(uint8 data[], int size)
