@@ -161,6 +161,10 @@
     <ClCompile Include="..\src\win32\winmain.cpp" />
     <ClCompile Include="..\src\vm\event.cpp" />
     <ClCompile Include="..\src\vm\huc6280.cpp" />
+    <ClCompile Include="..\src\vm\msm5205.cpp" />
+    <ClCompile Include="..\src\vm\scsi_cdrom.cpp" />
+    <ClCompile Include="..\src\vm\scsi_dev.cpp" />
+    <ClCompile Include="..\src\vm\scsi_host.cpp" />
     <ClCompile Include="..\src\vm\pcengine\pce.cpp" />
     <ClCompile Include="..\src\vm\pcengine\pcengine.cpp" />
   </ItemGroup>
@@ -175,6 +179,10 @@
     <ClInclude Include="..\src\vm\device.h" />
     <ClInclude Include="..\src\vm\event.h" />
     <ClInclude Include="..\src\vm\huc6280.h" />
+    <ClInclude Include="..\src\vm\msm5205.h" />
+    <ClInclude Include="..\src\vm\scsi_cdrom.h" />
+    <ClInclude Include="..\src\vm\scsi_dev.h" />
+    <ClInclude Include="..\src\vm\scsi_host.h" />
     <ClInclude Include="..\src\vm\vm.h" />
     <ClInclude Include="..\src\vm\pcengine\pce.h" />
     <ClInclude Include="..\src\vm\pcengine\pcengine.h" />
@@ -187,7 +195,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\src\res\pckd863g.ico" />
+    <Image Include="..\src\res\pcengine.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

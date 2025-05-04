@@ -165,6 +165,12 @@ void load_config(const _TCHAR* config_path)
 		MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath1_%d"), i + 1), _T(""), config.recent_tape_path[i], _MAX_PATH, config_path);
 	}
 #endif
+#ifdef USE_COMPACT_DISC
+	MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialCompactDiscDir"), _T(""), config.initial_compact_disc_dir, _MAX_PATH, config_path);
+	for(int i = 0; i < MAX_HISTORY; i++) {
+		MyGetPrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCompactDiscPath1_%d"), i + 1), _T(""), config.recent_compact_disc_path[i], _MAX_PATH, config_path);
+	}
+#endif
 #ifdef USE_LASER_DISC
 	MyGetPrivateProfileString(_T("RecentFiles"), _T("InitialLaserDiscDir"), _T(""), config.initial_laser_disc_dir, _MAX_PATH, config_path);
 	for(int i = 0; i < MAX_HISTORY; i++) {
@@ -297,6 +303,12 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialTapeDir"), config.initial_tape_dir, config_path);
 	for(int i = 0; i < MAX_HISTORY; i++) {
 		MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentTapePath1_%d"), i + 1), config.recent_tape_path[i], config_path);
+	}
+#endif
+#ifdef USE_COMPACT_DISC
+	MyWritePrivateProfileString(_T("RecentFiles"), _T("InitialCompactDiscDir"), config.initial_compact_disc_dir, config_path);
+	for(int i = 0; i < MAX_HISTORY; i++) {
+		MyWritePrivateProfileString(_T("RecentFiles"), create_string(_T("RecentCompactDiscPath1_%d"), i + 1), config.recent_compact_disc_path[i], config_path);
 	}
 #endif
 #ifdef USE_LASER_DISC

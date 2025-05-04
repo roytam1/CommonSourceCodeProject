@@ -102,6 +102,10 @@ typedef struct {
 	_TCHAR initial_tape_dir[_MAX_PATH];
 	_TCHAR recent_tape_path[MAX_HISTORY][_MAX_PATH];
 #endif
+#ifdef USE_COMPACT_DISC
+	_TCHAR initial_compact_disc_dir[_MAX_PATH];
+	_TCHAR recent_compact_disc_path[MAX_HISTORY][_MAX_PATH];
+#endif
 #ifdef USE_LASER_DISC
 	_TCHAR initial_laser_disc_dir[_MAX_PATH];
 	_TCHAR recent_laser_disc_path[MAX_HISTORY][_MAX_PATH];

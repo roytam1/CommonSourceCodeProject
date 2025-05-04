@@ -1067,6 +1067,9 @@ void EMU::initialize_media()
 #ifdef USE_TAPE
 	memset(&tape_status, 0, sizeof(tape_status));
 #endif
+#ifdef USE_COMPACT_DISC
+	memset(&compact_disc_status, 0, sizeof(compact_disc_status));
+#endif
 #ifdef USE_LASER_DISC
 	memset(&laser_disc_status, 0, sizeof(laser_disc_status));
 #endif
@@ -1098,6 +1101,12 @@ void EMU::update_media()
 			vm->rec_tape(tape_status.path);
 		}
 		out_message(_T("CMT: %s"), tape_status.path);
+	}
+#endif
+#ifdef USE_COMPACT_DISC
+	if(compact_disc_status.wait_count != 0 && --compact_disc_status.wait_count == 0) {
+		vm->open_compact_disc(compact_disc_status.path);
+		out_message(_T("CD: %s"), compact_disc_status.path);
 	}
 #endif
 #ifdef USE_LASER_DISC
@@ -1143,6 +1152,11 @@ void EMU::restore_media()
 		} else {
 			tape_status.path[0] = _T('\0');
 		}
+	}
+#endif
+#ifdef USE_COMPACT_DISC
+	if(compact_disc_status.path[0] != _T('\0')) {
+		vm->open_compact_disc(compact_disc_status.path);
 	}
 #endif
 #ifdef USE_LASER_DISC
@@ -1396,6 +1410,38 @@ void EMU::push_apss_rewind()
 #endif
 #endif
 
+#ifdef USE_COMPACT_DISC
+void EMU::open_compact_disc(const _TCHAR* file_path)
+{
+	if(vm->is_compact_disc_inserted()) {
+		vm->close_compact_disc();
+		// wait 0.5sec
+#ifdef SUPPORT_VARIABLE_TIMING
+		compact_disc_status.wait_count = (int)(vm->get_frame_rate() / 2);
+#else
+		compact_disc_status.wait_count = (int)(FRAMES_PER_SEC / 2);
+#endif
+		out_message(_T("CD: Ejected"));
+	} else if(compact_disc_status.wait_count == 0) {
+		vm->open_compact_disc(file_path);
+		out_message(_T("CD: %s"), file_path);
+	}
+	my_tcscpy_s(compact_disc_status.path, _MAX_PATH, file_path);
+}
+
+void EMU::close_compact_disc()
+{
+	vm->close_compact_disc();
+	clear_media_status(&compact_disc_status);
+	out_message(_T("CD: Ejected"));
+}
+
+bool EMU::is_compact_disc_inserted()
+{
+	return vm->is_compact_disc_inserted();
+}
+#endif
+
 #ifdef USE_LASER_DISC
 void EMU::open_laser_disc(const _TCHAR* file_path)
 {
@@ -1524,6 +1570,9 @@ void EMU::save_state_tmp(const _TCHAR* file_path)
 #ifdef USE_TAPE
 		fio->Fwrite(&tape_status, sizeof(tape_status), 1);
 #endif
+#ifdef USE_COMPACT_DISC
+		fio->Fwrite(&compact_disc_status, sizeof(compact_disc_status), 1);
+#endif
 #ifdef USE_LASER_DISC
 		fio->Fwrite(&laser_disc_status, sizeof(laser_disc_status), 1);
 #endif
@@ -1560,6 +1609,9 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 #endif
 #ifdef USE_TAPE
 				fio->Fread(&tape_status, sizeof(tape_status), 1);
+#endif
+#ifdef USE_COMPACT_DISC
+				fio->Fread(&compact_disc_status, sizeof(compact_disc_status), 1);
 #endif
 #ifdef USE_LASER_DISC
 				fio->Fread(&laser_disc_status, sizeof(laser_disc_status), 1);

@@ -142,6 +142,9 @@ private:
 #ifdef USE_TAPE
 	media_status_t tape_status;
 #endif
+#ifdef USE_COMPACT_DISC
+	media_status_t compact_disc_status;
+#endif
 #ifdef USE_LASER_DISC
 	media_status_t laser_disc_status;
 #endif
@@ -411,6 +414,11 @@ public:
 	void push_apss_forward();
 	void push_apss_rewind();
 #endif
+#endif
+#ifdef USE_COMPACT_DISC
+	void open_compact_disc(const _TCHAR* file_path);
+	void close_compact_disc();
+	bool is_compact_disc_inserted();
 #endif
 #ifdef USE_LASER_DISC
 	void open_laser_disc(const _TCHAR* file_path);
