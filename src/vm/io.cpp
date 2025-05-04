@@ -11,122 +11,101 @@
 
 void IO::write_io8(uint32_t addr, uint32_t data)
 {
-	int wait_tmp = 0;
-	write_port8(addr, data, false, &wait_tmp);
+	write_port8(addr, data, false);
 }
 
 uint32_t IO::read_io8(uint32_t addr)
 {
-	int wait_tmp = 0;
-	return read_port8(addr, false, &wait_tmp);
+	return read_port8(addr, false);
 }
 
 void IO::write_io16(uint32_t addr, uint32_t data)
 {
-	int wait_tmp = 0;
-	write_port16(addr, data, false, &wait_tmp);
+	write_port16(addr, data, false);
 }
 
 uint32_t IO::read_io16(uint32_t addr)
 {
-	int wait_tmp = 0;
-	return read_port16(addr, false, &wait_tmp);
+	return read_port16(addr, false);
 }
 
 void IO::write_io32(uint32_t addr, uint32_t data)
 {
-	int wait_tmp = 0;
-	write_port32(addr, data, false, &wait_tmp);
+	write_port32(addr, data, false);
 }
 
 uint32_t IO::read_io32(uint32_t addr)
 {
-	int wait_tmp = 0;
-	return read_port32(addr, false, &wait_tmp);
+	return read_port32(addr, false);
 }
 
 void IO::write_io8w(uint32_t addr, uint32_t data, int* wait)
 {
-	int wait_tmp = 0;
-	write_port8(addr, data, false, &wait_tmp);
-	*wait = (wait_tmp != 0) ? wait_tmp : wr_table[addr & IO_ADDR_MASK].wait;
+	*wait = wr_table[addr & IO_ADDR_MASK].wait;
+	write_port8(addr, data, false);
 }
 
 uint32_t IO::read_io8w(uint32_t addr, int* wait)
 {
-	int wait_tmp = 0;
-	uint32_t data = read_port8(addr, false, &wait_tmp);
-	*wait = (wait_tmp != 0) ? wait_tmp : rd_table[addr & IO_ADDR_MASK].wait;
-	return data;
+	*wait = rd_table[addr & IO_ADDR_MASK].wait;
+	return read_port8(addr, false);
 }
 
 void IO::write_io16w(uint32_t addr, uint32_t data, int* wait)
 {
-	int wait_tmp = 0;
-	write_port16(addr, data, false, &wait_tmp);
-	*wait = (wait_tmp != 0) ? wait_tmp : wr_table[addr & IO_ADDR_MASK].wait;
+	*wait = wr_table[addr & IO_ADDR_MASK].wait;
+	write_port16(addr, data, false);
 }
 
 uint32_t IO::read_io16w(uint32_t addr, int* wait)
 {
-	int wait_tmp = 0;
-	uint32_t data =  read_port16(addr, false, &wait_tmp);
-	*wait = (wait_tmp != 0) ? wait_tmp : rd_table[addr & IO_ADDR_MASK].wait;
-	return data;
+	*wait = rd_table[addr & IO_ADDR_MASK].wait;
+	return read_port16(addr, false);
 }
 
 void IO::write_io32w(uint32_t addr, uint32_t data, int* wait)
 {
-	int wait_tmp = 0;
-	write_port32(addr, data, false, &wait_tmp);
-	*wait = (wait_tmp != 0) ? wait_tmp : wr_table[addr & IO_ADDR_MASK].wait;
+	*wait = wr_table[addr & IO_ADDR_MASK].wait;
+	write_port32(addr, data, false);
 }
 
 uint32_t IO::read_io32w(uint32_t addr, int* wait)
 {
-	int wait_tmp = 0;
-	uint32_t data =  read_port32(addr, false, &wait_tmp);
-	*wait = (wait_tmp != 0) ? wait_tmp : rd_table[addr & IO_ADDR_MASK].wait;
-	return data;
+	*wait = rd_table[addr & IO_ADDR_MASK].wait;
+	return read_port32(addr, false);
 }
 
 void IO::write_dma_io8(uint32_t addr, uint32_t data)
 {
-	int wait_tmp = 0;
-	write_port8(addr, data, true, &wait_tmp);
+	write_port8(addr, data, true);
 }
 
 uint32_t IO::read_dma_io8(uint32_t addr)
 {
-	int wait_tmp = 0;
-	return read_port8(addr, true, &wait_tmp);
+	return read_port8(addr, true);
 }
 
 void IO::write_dma_io16(uint32_t addr, uint32_t data)
 {
-	int wait_tmp = 0;
-	write_port16(addr, data, true, &wait_tmp);
+	write_port16(addr, data, true);
 }
 
 uint32_t IO::read_dma_io16(uint32_t addr)
 {
-	int wait_tmp = 0;
-	return read_port16(addr, true, &wait_tmp);
+	return read_port16(addr, true);
 }
 
 void IO::write_dma_io32(uint32_t addr, uint32_t data)
 {
-	int wait_tmp = 0;
-	write_port32(addr, data, true, &wait_tmp);
+	write_port32(addr, data, true);
 }
 
 uint32_t IO::read_dma_io32(uint32_t addr)
 {
-	int wait_tmp = 0;
-	return read_port32(addr, true, &wait_tmp);
+	return read_port32(addr, true);
 }
 
-void IO::write_port8(uint32_t addr, uint32_t data, bool is_dma, int *wait)
+void IO::write_port8(uint32_t addr, uint32_t data, bool is_dma)
 {
 	uint32_t laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32_t addr2 = haddr | wr_table[laddr].addr;
@@ -139,17 +118,17 @@ void IO::write_port8(uint32_t addr, uint32_t data, bool is_dma, int *wait)
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xff;
 	} else if(is_dma) {
-		wr_table[laddr].dev->write_dma_io8w(addr2, data & 0xff, wait);
+		wr_table[laddr].dev->write_dma_io8(addr2, data & 0xff);
 	} else {
-		wr_table[laddr].dev->write_io8w(addr2, data & 0xff, wait);
+		wr_table[laddr].dev->write_io8(addr2, data & 0xff);
 	}
 }
 
-uint32_t IO::read_port8(uint32_t addr, bool is_dma, int *wait)
+uint32_t IO::read_port8(uint32_t addr, bool is_dma)
 {
 	uint32_t laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32_t addr2 = haddr | rd_table[laddr].addr;
-	uint32_t val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io8w(addr2, wait) : rd_table[laddr].dev->read_io8w(addr2, wait);
+	uint32_t val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io8(addr2) : rd_table[laddr].dev->read_io8(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
 		this->out_debug_log(_T("UNKNOWN:\t"));
@@ -159,7 +138,7 @@ uint32_t IO::read_port8(uint32_t addr, bool is_dma, int *wait)
 	return val & 0xff;
 }
 
-void IO::write_port16(uint32_t addr, uint32_t data, bool is_dma, int *wait)
+void IO::write_port16(uint32_t addr, uint32_t data, bool is_dma)
 {
 	uint32_t laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32_t addr2 = haddr | wr_table[laddr].addr;
@@ -172,17 +151,17 @@ void IO::write_port16(uint32_t addr, uint32_t data, bool is_dma, int *wait)
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data & 0xffff;
 	} else if(is_dma) {
-		wr_table[laddr].dev->write_dma_io16w(addr2, data & 0xffff, wait);
+		wr_table[laddr].dev->write_dma_io16(addr2, data & 0xffff);
 	} else {
-		wr_table[laddr].dev->write_io16w(addr2, data & 0xffff, wait);
+		wr_table[laddr].dev->write_io16(addr2, data & 0xffff);
 	}
 }
 
-uint32_t IO::read_port16(uint32_t addr, bool is_dma, int *wait)
+uint32_t IO::read_port16(uint32_t addr, bool is_dma)
 {
 	uint32_t laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32_t addr2 = haddr | rd_table[laddr].addr;
-	uint32_t val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io16w(addr2, wait) : rd_table[laddr].dev->read_io16w(addr2, wait);
+	uint32_t val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io16(addr2) : rd_table[laddr].dev->read_io16(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
 		this->out_debug_log(_T("UNKNOWN:\t"));
@@ -192,7 +171,7 @@ uint32_t IO::read_port16(uint32_t addr, bool is_dma, int *wait)
 	return val & 0xffff;
 }
 
-void IO::write_port32(uint32_t addr, uint32_t data, bool is_dma, int *wait)
+void IO::write_port32(uint32_t addr, uint32_t data, bool is_dma)
 {
 	uint32_t laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32_t addr2 = haddr | wr_table[laddr].addr;
@@ -205,17 +184,17 @@ void IO::write_port32(uint32_t addr, uint32_t data, bool is_dma, int *wait)
 	if(wr_table[laddr].is_flipflop) {
 		rd_table[laddr].value = data;
 	} else if(is_dma) {
-		wr_table[laddr].dev->write_dma_io32w(addr2, data, wait);
+		wr_table[laddr].dev->write_dma_io32(addr2, data);
 	} else {
-		wr_table[laddr].dev->write_io32w(addr2, data, wait);
+		wr_table[laddr].dev->write_io32(addr2, data);
 	}
 }
 
-uint32_t IO::read_port32(uint32_t addr, bool is_dma, int *wait)
+uint32_t IO::read_port32(uint32_t addr, bool is_dma)
 {
 	uint32_t laddr = addr & IO_ADDR_MASK, haddr = addr & ~IO_ADDR_MASK;
 	uint32_t addr2 = haddr | rd_table[laddr].addr;
-	uint32_t val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io32w(addr2, wait) : rd_table[laddr].dev->read_io32w(addr2, wait);
+	uint32_t val = rd_table[laddr].value_registered ? rd_table[laddr].value : is_dma ? rd_table[laddr].dev->read_dma_io32(addr2) : rd_table[laddr].dev->read_io32(addr2);
 #ifdef _IO_DEBUG_LOG
 	if(!rd_table[laddr].dev->this_device_id && !rd_table[laddr].value_registered) {
 		this->out_debug_log(_T("UNKNOWN:\t"));

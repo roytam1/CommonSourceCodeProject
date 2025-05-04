@@ -1,3 +1,9 @@
+4/16/2017
+
+[VM/IO] revert the fix in 4/15/2017
+[VM/SN76489AN] revert the fix in 4/15/2017
+
+
 4/15/2017
 
 [COMMON] add muldiv_s32 and muldiv_u32 to multiple 32bit integer

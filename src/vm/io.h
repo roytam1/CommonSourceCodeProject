@@ -38,12 +38,12 @@ private:
 		uint32_t value;
 	} rd_table[IO_ADDR_MAX];
 	
-	void write_port8(uint32_t addr, uint32_t data, bool is_dma, int* wait);
-	uint32_t read_port8(uint32_t addr, bool is_dma, int* wait);
-	void write_port16(uint32_t addr, uint32_t data, bool is_dma, int* wait);
-	uint32_t read_port16(uint32_t addr, bool is_dma, int* wait);
-	void write_port32(uint32_t addr, uint32_t data, bool is_dma, int* wait);
-	uint32_t read_port32(uint32_t addr, bool is_dma, int* wait);
+	void write_port8(uint32_t addr, uint32_t data, bool is_dma);
+	uint32_t read_port8(uint32_t addr, bool is_dma);
+	void write_port16(uint32_t addr, uint32_t data, bool is_dma);
+	uint32_t read_port16(uint32_t addr, bool is_dma);
+	void write_port32(uint32_t addr, uint32_t data, bool is_dma);
+	uint32_t read_port32(uint32_t addr, bool is_dma);
 	
 public:
 	IO(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
