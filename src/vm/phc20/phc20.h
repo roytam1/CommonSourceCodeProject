@@ -39,9 +39,6 @@
 static const _TCHAR *sound_device_caption[] = {
 	_T("CMT"),
 };
-static const bool sound_device_monophonic[] = {
-	false,
-};
 #endif
 
 class EMU;

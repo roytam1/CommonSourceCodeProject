@@ -66,9 +66,6 @@
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"),
 };
-static const bool sound_device_monophonic[] = {
-	false,
-};
 #endif
 
 class EMU;

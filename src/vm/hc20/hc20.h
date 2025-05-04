@@ -24,9 +24,7 @@
 #define HAS_UPD7201
 
 // device informations for win32
-#define WINDOW_WIDTH		(SCREEN_WIDTH * 3)
-#define WINDOW_HEIGHT		(SCREEN_HEIGHT * 3)
-
+#define WINDOW_MODE_BASE	3
 #define USE_DIPSWITCH
 #define DIPSWITCH_DEFAULT	0x0f
 #define USE_FD1
@@ -51,9 +49,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"),
-};
-static const bool sound_device_monophonic[] = {
-	false,
 };
 #endif
 

@@ -18,8 +18,8 @@
 #define LINES_PER_FRAME 	262
 #define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		192
-#define SCREEN_WIDTH_ASPECT	288
 #define SCREEN_HEIGHT		222
+#define WINDOW_WIDTH_ASPECT	288
 
 // memory wait
 //#define UPD7801_MEMORY_WAIT
@@ -36,9 +36,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"), _T("PCM"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

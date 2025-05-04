@@ -637,7 +637,7 @@ void Z80DMA::request_bus()
 #ifdef SINGLE_MODE_DMA
 			d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 #endif
-			d_cpu->set_extra_clock(3);
+			d_cpu->set_extra_clock(2);
 		}
 		bus_master = true;
 	}
@@ -651,9 +651,9 @@ void Z80DMA::release_bus()
 			d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
 #endif
 			if(OPERATING_MODE == OM_BYTE) {
-				d_cpu->set_extra_clock(2);
+				d_cpu->set_extra_clock(1);
 			} else {
-				d_cpu->set_extra_clock(3);
+				d_cpu->set_extra_clock(2);
 			}
 		}
 		bus_master = false;

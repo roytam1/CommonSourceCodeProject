@@ -368,25 +368,35 @@ void YM2203::set_volume(int ch, int decibel_l, int decibel_r)
 	if(ch == 0) {
 #ifdef HAS_YM2608
 		if(is_ym2608) {
-			opna->SetVolumeFM(base_decibel_fm + decibel_l);
+			opna->SetVolumeFM(base_decibel_fm + decibel_l, base_decibel_fm + decibel_r);
 		} else
 #endif
-		opn->SetVolumeFM(base_decibel_fm + decibel_l);
+		opn->SetVolumeFM(base_decibel_fm + decibel_l, base_decibel_fm + decibel_r);
+#ifdef SUPPORT_MAME_FM_DLL
+		if(dllchip) {
+			fmdll->SetVolumeFM(dllchip, base_decibel_fm + decibel_l);
+		}
+#endif
 	} else if(ch == 1) {
 #ifdef HAS_YM2608
 		if(is_ym2608) {
-			opna->SetVolumePSG(base_decibel_psg + decibel_l);
+			opna->SetVolumePSG(base_decibel_psg + decibel_l, base_decibel_psg + decibel_r);
 		} else
 #endif
-		opn->SetVolumePSG(base_decibel_psg + decibel_l);
+		opn->SetVolumePSG(base_decibel_psg + decibel_l, base_decibel_psg + decibel_r);
+#ifdef SUPPORT_MAME_FM_DLL
+		if(dllchip) {
+			fmdll->SetVolumePSG(dllchip, base_decibel_psg + decibel_l);
+		}
+#endif
 #ifdef HAS_YM2608
 	} else if(ch == 2) {
 		if(is_ym2608) {
-			opna->SetVolumeADPCM(decibel_l);
+			opna->SetVolumeADPCM(decibel_l, decibel_r);
 		}
 	} else if(ch == 3) {
 		if(is_ym2608) {
-			opna->SetVolumeRhythmTotal(decibel_l);
+			opna->SetVolumeRhythmTotal(decibel_l, decibel_r);
 		}
 #endif
 	}
@@ -397,13 +407,13 @@ void YM2203::init(int rate, int clock, int samples, int decibel_fm, int decibel_
 #ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->Init(clock, rate, false, application_path());
-		opna->SetVolumeFM(decibel_fm);
-		opna->SetVolumePSG(decibel_psg);
+		opna->SetVolumeFM(decibel_fm, decibel_fm);
+		opna->SetVolumePSG(decibel_psg, decibel_psg);
 	} else {
 #endif
 		opn->Init(clock, rate, false, NULL);
-		opn->SetVolumeFM(decibel_fm);
-		opn->SetVolumePSG(decibel_psg);
+		opn->SetVolumeFM(decibel_fm, decibel_fm);
+		opn->SetVolumePSG(decibel_psg, decibel_psg);
 #ifdef HAS_YM2608
 	}
 #endif

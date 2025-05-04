@@ -47,6 +47,7 @@
 #else
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #endif
 #define MAX_DRIVE		4
 #define SUPPORT_VARIABLE_TIMING
@@ -77,9 +78,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

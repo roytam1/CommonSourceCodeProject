@@ -379,14 +379,34 @@ int EMU::get_window_height(int mode)
 	return osd->get_window_height(mode);
 }
 
-void EMU::set_window_size(int width, int height, bool window_mode)
+void EMU::set_host_window_size(int window_width, int window_height, bool window_mode)
 {
-	osd->set_window_size(width, height, window_mode);
+	osd->set_host_window_size(window_width, window_height, window_mode);
 }
 
-void EMU::set_vm_screen_size(int sw, int sh, int swa, int sha, int ww, int wh)
+void EMU::set_vm_screen_size(int screen_width, int screen_height, int window_width, int window_height, int window_width_aspect, int window_height_aspect)
 {
-	osd->set_vm_screen_size(sw, sh, swa, sha, ww, wh);
+	osd->set_vm_screen_size(screen_width, screen_height, window_width, window_height, window_width_aspect, window_height_aspect);
+}
+
+int EMU::get_vm_window_width()
+{
+	return osd->get_vm_window_width();
+}
+
+int EMU::get_vm_window_height()
+{
+	return osd->get_vm_window_height();
+}
+
+int EMU::get_vm_window_width_aspect()
+{
+	return osd->get_vm_window_width_aspect();
+}
+
+int EMU::get_vm_window_height_aspect()
+{
+	return osd->get_vm_window_height_aspect();
 }
 
 #if defined(USE_MINIMUM_RENDERING)

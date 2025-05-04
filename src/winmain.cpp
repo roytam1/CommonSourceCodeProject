@@ -193,7 +193,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmdL
 	
 	// initialize emulation core
 	emu = new EMU(hWnd, hInstance);
-	emu->set_window_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
+	emu->set_host_window_size(WINDOW_WIDTH, WINDOW_HEIGHT, true);
 	
 #ifdef SUPPORT_DRAG_DROP
 	// open command line path
@@ -594,7 +594,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_RESIZE:
 		if(emu) {
 			if(now_fullscreen) {
-				emu->set_window_size(-1, -1, false);
+				emu->set_host_window_size(-1, -1, false);
 			} else {
 				set_window(hWnd, config.window_mode);
 			}
@@ -943,24 +943,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				set_window(hWnd, LOWORD(wParam) - ID_SCREEN_FULLSCREEN1 + MAX_WINDOW);
 			}
 			break;
+		case ID_SCREEN_WINDOW_STRETCH1: case ID_SCREEN_WINDOW_STRETCH2:
+			config.window_stretch_type = LOWORD(wParam) - ID_SCREEN_WINDOW_STRETCH1;
+			if(emu) {
+				if(!now_fullscreen) {
+					set_window(hWnd, prev_window_mode);
+				}
+			}
+			break;
+		case ID_SCREEN_FULLSCREEN_STRETCH1: case ID_SCREEN_FULLSCREEN_STRETCH2: case ID_SCREEN_FULLSCREEN_STRETCH3: case ID_SCREEN_FULLSCREEN_STRETCH4:
+			config.fullscreen_stretch_type = LOWORD(wParam) - ID_SCREEN_FULLSCREEN_STRETCH1;
+			if(emu) {
+				if(now_fullscreen) {
+					emu->set_host_window_size(-1, -1, false);
+				}
+			}
+			break;
 		case ID_SCREEN_USE_D3D9:
 			config.use_d3d9 = !config.use_d3d9;
 			if(emu) {
-				emu->set_window_size(-1, -1, !now_fullscreen);
+				emu->set_host_window_size(-1, -1, !now_fullscreen);
 			}
 			break;
 		case ID_SCREEN_WAIT_VSYNC:
 			config.wait_vsync = !config.wait_vsync;
 			if(emu) {
-				emu->set_window_size(-1, -1, !now_fullscreen);
-			}
-			break;
-		case ID_SCREEN_STRETCH_DOT:
-		case ID_SCREEN_STRETCH_ASPECT:
-		case ID_SCREEN_STRETCH_FILL:
-			config.stretch_type = LOWORD(wParam) - ID_SCREEN_STRETCH_DOT;
-			if(emu) {
-				emu->set_window_size(-1, -1, !now_fullscreen);
+				emu->set_host_window_size(-1, -1, !now_fullscreen);
 			}
 			break;
 		// accelerator
@@ -1005,7 +1013,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			config.rotate_type = LOWORD(wParam) - ID_SCREEN_ROTATE_0;
 			if(emu) {
 				if(now_fullscreen) {
-					emu->set_window_size(-1, -1, false);
+					emu->set_host_window_size(-1, -1, false);
 				} else {
 					set_window(hWnd, prev_window_mode);
 				}
@@ -1350,27 +1358,28 @@ void update_screen_menu(HMENU hMenu)
 	
 	// screen mode
 	UINT last = ID_SCREEN_WINDOW1;
+	_TCHAR buf[64];
+	MENUITEMINFO info;
+	
+	ZeroMemory(&info, sizeof(info));
+	info.cbSize = sizeof(info);
+	info.fMask = MIIM_TYPE;
+	info.fType = MFT_STRING;
+	info.dwTypeData = buf;
+	
 	for(int i = 1; i < MAX_WINDOW; i++) {
 		DeleteMenu(hMenu, ID_SCREEN_WINDOW1 + i, MF_BYCOMMAND);
 	}
 	for(int i = 1; i < MAX_WINDOW; i++) {
 		if(emu && emu->get_window_width(i) <= desktop_width && emu->get_window_height(i) <= desktop_height) {
-			_TCHAR buf[16];
-			my_stprintf_s(buf, 16, _T("Window x%d"), i + 1);
+			my_stprintf_s(buf, 64, _T("Window x%d"), i + 1);
 			InsertMenu(hMenu, ID_SCREEN_FULLSCREEN1, MF_BYCOMMAND | MF_STRING, ID_SCREEN_WINDOW1 + i, buf);
 			last = ID_SCREEN_WINDOW1 + i;
 		}
 	}
 	for(int i = 0; i < MAX_FULLSCREEN; i++) {
 		if(i < screen_mode_count) {
-			MENUITEMINFO info;
-			ZeroMemory(&info, sizeof(info));
-			info.cbSize = sizeof(info);
-			_TCHAR buf[64];
 			my_stprintf_s(buf, 64, _T("Fullscreen %dx%d"), screen_mode_width[i], screen_mode_height[i]);
-			info.fMask = MIIM_TYPE;
-			info.fType = MFT_STRING;
-			info.dwTypeData = buf;
 			SetMenuItemInfo(hMenu, ID_SCREEN_FULLSCREEN1 + i, FALSE, &info);
 			EnableMenuItem(hMenu, ID_SCREEN_FULLSCREEN1 + i, now_fullscreen ? MF_GRAYED : MF_ENABLED);
 			last = ID_SCREEN_FULLSCREEN1 + i;
@@ -1385,7 +1394,22 @@ void update_screen_menu(HMENU hMenu)
 	}
 	CheckMenuItem(hMenu, ID_SCREEN_USE_D3D9, config.use_d3d9 ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_SCREEN_WAIT_VSYNC, config.wait_vsync ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuRadioItem(hMenu, ID_SCREEN_STRETCH_DOT, ID_SCREEN_STRETCH_FILL, ID_SCREEN_STRETCH_DOT + config.stretch_type, MF_BYCOMMAND);
+	
+	my_stprintf_s(buf, 64, _T("Window: Aspect Ratio %d:%d"), emu->get_vm_window_width(), emu->get_vm_window_height());
+	SetMenuItemInfo(hMenu, ID_SCREEN_WINDOW_STRETCH1, FALSE, &info);
+	my_stprintf_s(buf, 64, _T("Window: Aspect Ratio %d:%d"), emu->get_vm_window_width_aspect(), emu->get_vm_window_height_aspect());
+	SetMenuItemInfo(hMenu, ID_SCREEN_WINDOW_STRETCH2, FALSE, &info);
+	CheckMenuRadioItem(hMenu, ID_SCREEN_WINDOW_STRETCH1, ID_SCREEN_WINDOW_STRETCH2, ID_SCREEN_WINDOW_STRETCH1 + config.window_stretch_type, MF_BYCOMMAND);
+	
+	my_stprintf_s(buf, 64, _T("Fullscreen: Dot By Dot"));
+	SetMenuItemInfo(hMenu, ID_SCREEN_FULLSCREEN_STRETCH1, FALSE, &info);
+	my_stprintf_s(buf, 64, _T("Fullscreen: Stretch (Aspect Ratio %d:%d)"), emu->get_vm_window_width(), emu->get_vm_window_height());
+	SetMenuItemInfo(hMenu, ID_SCREEN_FULLSCREEN_STRETCH2, FALSE, &info);
+	my_stprintf_s(buf, 64, _T("Fullscreen: Stretch (Aspect Ratio %d:%d)"), emu->get_vm_window_width_aspect(), emu->get_vm_window_height_aspect());
+	SetMenuItemInfo(hMenu, ID_SCREEN_FULLSCREEN_STRETCH3, FALSE, &info);
+	my_stprintf_s(buf, 64, _T("Fullscreen: Stretch (Fill)"));
+	SetMenuItemInfo(hMenu, ID_SCREEN_FULLSCREEN_STRETCH4, FALSE, &info);
+	CheckMenuRadioItem(hMenu, ID_SCREEN_FULLSCREEN_STRETCH1, ID_SCREEN_FULLSCREEN_STRETCH4, ID_SCREEN_FULLSCREEN_STRETCH1 + config.fullscreen_stretch_type, MF_BYCOMMAND);
 	
 #ifdef USE_MONITOR_TYPE
 	if(config.monitor_type >= 0 && config.monitor_type < USE_MONITOR_TYPE) {
@@ -2033,7 +2057,7 @@ void set_window(HWND hWnd, int mode)
 		config.window_mode = prev_window_mode = mode;
 		
 		// set screen size to emu class
-		emu->set_window_size(width, height, true);
+		emu->set_host_window_size(width, height, true);
 	} else if(!now_fullscreen) {
 		// fullscreen
 		int width = (mode == -1) ? desktop_width : screen_mode_width[mode - MAX_WINDOW];
@@ -2069,7 +2093,7 @@ void set_window(HWND hWnd, int mode)
 			hide_menu_bar(hWnd);
 			
 			// set screen size to emu class
-			emu->set_window_size(width, height, false);
+			emu->set_host_window_size(width, height, false);
 		}
 	}
 }
@@ -2094,9 +2118,9 @@ BOOL CALLBACK VolumeWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_VOLUME_PARAM_R0 + i, TBM_SETRANGE, TRUE, MAKELPARAM(-40, 0));
 			SendDlgItemMessage(hDlg, IDC_VOLUME_PARAM_L0 + i, TBM_SETPOS, TRUE, max(-40, min(0, config.sound_volume_l[i])));
 			SendDlgItemMessage(hDlg, IDC_VOLUME_PARAM_R0 + i, TBM_SETPOS, TRUE, max(-40, min(0, config.sound_volume_r[i])));
-			EnableWindow(GetDlgItem(hDlg, IDC_VOLUME_CAPTION0 + i), TRUE);
-			EnableWindow(GetDlgItem(hDlg, IDC_VOLUME_PARAM_L0 + i), TRUE);
-			EnableWindow(GetDlgItem(hDlg, IDC_VOLUME_PARAM_R0 + i), (BOOL)(!sound_device_monophonic[i]));
+//			EnableWindow(GetDlgItem(hDlg, IDC_VOLUME_CAPTION0 + i), TRUE);
+//			EnableWindow(GetDlgItem(hDlg, IDC_VOLUME_PARAM_L0 + i), TRUE);
+//			EnableWindow(GetDlgItem(hDlg, IDC_VOLUME_PARAM_R0 + i), TRUE);
 		}
 		break;
 	case WM_COMMAND:

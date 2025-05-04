@@ -56,9 +56,6 @@ SW3-1/2	ON ,ON  = 8000H-81FFH
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"),
 };
-static const bool sound_device_monophonic[] = {
-	false,
-};
 #endif
 
 #define LED_WIDTH	26

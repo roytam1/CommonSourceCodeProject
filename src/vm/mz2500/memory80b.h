@@ -58,7 +58,6 @@ private:
 	bool width80, reverse;
 	bool hblank;
 	void update_green_palette();
-	void draw_screen_sub(int offset, uint8 back, scrntype *palette);
 	
 public:
 	MEMORY(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}

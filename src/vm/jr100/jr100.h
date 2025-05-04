@@ -106,9 +106,6 @@ static const int vm_autokey_table_base[][2] = {
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"), _T("CMT"),
 };
-static const bool sound_device_monophonic[] = {
-	false, false,
-};
 #endif
 
 class EMU;

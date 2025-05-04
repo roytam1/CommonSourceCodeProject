@@ -1147,7 +1147,7 @@
 				>
 			</File>
 			<File
-				RelativePath="src\res\pasopia7.rc"
+				RelativePath="src\res\pasopia7lcd.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

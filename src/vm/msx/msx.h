@@ -82,12 +82,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("LD-700"),
 #endif
 };
-static const bool sound_device_monophonic[] = {
-	true, false, false,
-#if defined(_PX7)
-	false,
-#endif
-};
 #endif
 
 class EMU;

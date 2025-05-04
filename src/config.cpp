@@ -77,7 +77,7 @@ void init_config()
 #ifdef _WIN32
 	config.use_d3d9 = true;
 #endif
-	config.stretch_type = 1;	// Stretch (Aspect)
+	config.fullscreen_stretch_type = 1;	// Stretch (Aspect)
 #endif
 	
 	// sound
@@ -206,7 +206,8 @@ void load_config(const _TCHAR* config_path)
 	config.use_d3d9 = MyGetPrivateProfileBool(_T("Screen"), _T("UseD3D9"), config.use_d3d9, config_path);
 	config.wait_vsync = MyGetPrivateProfileBool(_T("Screen"), _T("WaitVSync"), config.wait_vsync, config_path);
 #endif
-	config.stretch_type = MyGetPrivateProfileInt(_T("Screen"), _T("StretchType"), config.stretch_type, config_path);
+	config.window_stretch_type = MyGetPrivateProfileInt(_T("Screen"), _T("WindowStretchType"), config.window_stretch_type, config_path);
+	config.fullscreen_stretch_type = MyGetPrivateProfileInt(_T("Screen"), _T("FullScreenStretchType"), config.fullscreen_stretch_type, config_path);
 #endif
 #ifdef USE_MONITOR_TYPE
 	config.monitor_type = MyGetPrivateProfileInt(_T("Screen"), _T("MonitorType"), config.monitor_type, config_path);
@@ -359,7 +360,8 @@ void save_config(const _TCHAR* config_path)
 	MyWritePrivateProfileBool(_T("Screen"), _T("UseD3D9"), config.use_d3d9, config_path);
 	MyWritePrivateProfileBool(_T("Screen"), _T("WaitVSync"), config.wait_vsync, config_path);
 #endif
-	MyWritePrivateProfileInt(_T("Screen"), _T("StretchType"), config.stretch_type, config_path);
+	MyWritePrivateProfileInt(_T("Screen"), _T("WindowStretchType"), config.window_stretch_type, config_path);
+	MyWritePrivateProfileInt(_T("Screen"), _T("FullScreenStretchType"), config.fullscreen_stretch_type, config_path);
 #endif
 #ifdef USE_MONITOR_TYPE
 	MyWritePrivateProfileInt(_T("Screen"), _T("MonitorType"), config.monitor_type, config_path);

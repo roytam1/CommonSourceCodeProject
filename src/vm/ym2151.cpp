@@ -156,13 +156,18 @@ void YM2151::mix(int32* buffer, int cnt)
 
 void YM2151::set_volume(int ch, int decibel_l, int decibel_r)
 {
-	opm->SetVolume(base_decibel + decibel_l);
+	opm->SetVolume(base_decibel + decibel_l, base_decibel + decibel_r);
+#ifdef SUPPORT_MAME_FM_DLL
+	if(dllchip) {
+		fmdll->SetVolumeFM(dllchip, base_decibel + decibel_l);
+	}
+#endif
 }
 
 void YM2151::init(int rate, int clock, int samples, int decibel)
 {
 	opm->Init(clock, rate, false);
-	opm->SetVolume(decibel);
+	opm->SetVolume(decibel, decibel);
 	base_decibel = decibel;
 	
 #ifdef SUPPORT_MAME_FM_DLL

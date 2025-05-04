@@ -38,6 +38,7 @@
 #define CPU_CLOCKS		2000000
 #define SCREEN_WIDTH		320
 #define SCREEN_HEIGHT		200
+#define WINDOW_HEIGHT_ASPECT	240
 #if defined(SUPPORT_MZ80AIF)
 #define HAS_MB8866
 #define MAX_DRIVE		4
@@ -76,9 +77,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

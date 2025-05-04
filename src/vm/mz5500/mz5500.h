@@ -31,6 +31,7 @@
 #endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
 #ifdef _MZ6550
 #define HAS_I286
@@ -72,9 +73,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"),
-};
-static const bool sound_device_monophonic[] = {
-	false,
 };
 #endif
 

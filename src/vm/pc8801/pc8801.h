@@ -47,6 +47,7 @@
 #define CPU_CLOCKS		3993624
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		2
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
 #if defined(_PC8801MA)
@@ -135,20 +136,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PCG-8100"),
 #endif
 	_T("Beep"),
-};
-static const bool sound_device_monophonic[] = {
-#ifdef SUPPORT_PC88_OPNA
-	true, true, true, true,
-#else
-	true, true,
-#endif
-#ifdef SUPPORT_PC88_SB2
-	true, true, true, true,
-#endif
-#ifdef SUPPORT_PC88_PCG8100
-	false,
-#endif
-	false,
 };
 #endif
 

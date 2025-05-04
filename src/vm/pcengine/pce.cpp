@@ -299,7 +299,7 @@ uint32 PCE::read_io8(uint32 addr)
 void PCE::draw_screen()
 {
 	int dx = (SCREEN_WIDTH - vdc[0].physical_width) / 2, sx = 0;
-	int dy = (SCREEN_HEIGHT - 238) / 2;
+	int dy = (SCREEN_HEIGHT - 240) / 2;
 	
 	if(dx < 0) {
 		sx = -dx;
@@ -313,7 +313,7 @@ void PCE::draw_screen()
 		prev_width = vdc[0].physical_width;
 	}
 #endif
-	for(int y = 0; y < 238; y++, dy++) {
+	for(int y = 0; y < 240; y++, dy++) {
 		scrntype* src = &vce.bmp[y + 17][86];
 		scrntype* dst = emu->screen_buffer(dy);
 		for(int x = sx, x2 = dx; x < vdc[0].physical_width && x2 < SCREEN_WIDTH; x++, x2++) {

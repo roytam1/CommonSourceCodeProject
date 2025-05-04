@@ -269,8 +269,9 @@ private:
 	
 	int host_window_width, host_window_height;
 	bool host_window_mode;
-	int base_window_width, base_window_height;
-	int vm_screen_width, vm_screen_height, vm_screen_width_aspect, vm_screen_height_aspect;
+	int vm_screen_width, vm_screen_height;
+	int vm_window_width, vm_window_height;
+	int vm_window_width_aspect, vm_window_height_aspect;
 	int draw_screen_width, draw_screen_height;
 	
 	Gdiplus::GdiplusStartupInput gdiSI;
@@ -442,8 +443,24 @@ public:
 	// common screen
 	int get_window_width(int mode);
 	int get_window_height(int mode);
-	void set_window_size(int window_width, int window_height, bool window_mode);
-	void set_vm_screen_size(int width, int height, int width_aspect, int height_aspect, int window_width, int window_height);
+	void set_host_window_size(int window_width, int window_height, bool window_mode);
+	void set_vm_screen_size(int screen_width, int screen_height, int window_width, int window_height, int window_width_aspect, int window_height_aspect);
+	int get_vm_window_width()
+	{
+		return vm_window_width;
+	}
+	int get_vm_window_height()
+	{
+		return vm_window_height;
+	}
+	int get_vm_window_width_aspect()
+	{
+		return vm_window_width_aspect;
+	}
+	int get_vm_window_height_aspect()
+	{
+		return vm_window_height_aspect;
+	}
 	scrntype* get_vm_screen_buffer(int y);
 	int draw_screen();
 #ifdef ONE_BOARD_MICRO_COMPUTER

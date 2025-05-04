@@ -19,6 +19,7 @@
 #define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
 #define UPD765A_WAIT_RESULT7
 #define UPD765A_EXT_DRVSEL
@@ -56,9 +57,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"),
-};
-static const bool sound_device_monophonic[] = {
-	false,
 };
 #endif
 

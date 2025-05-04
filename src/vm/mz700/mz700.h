@@ -39,6 +39,7 @@
 #endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define IO_ADDR_MAX		0x100
 #define Z80_MEMORY_WAIT
 #if defined(_MZ800) || defined(_MZ1500)
@@ -103,14 +104,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PSG #1"), _T("PSG #2"),
 #endif
 	_T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-#if defined(_MZ800)
-	false,
-#elif defined(_MZ1500)
-	false, false,
-#endif
-	false, false,
 };
 #endif
 

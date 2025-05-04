@@ -21,6 +21,7 @@
 #define CPU_CLOCKS		2500000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define SUPPORT_VARIABLE_TIMING
 #define HAS_MSM5832
 
@@ -44,9 +45,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

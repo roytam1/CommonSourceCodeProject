@@ -210,8 +210,12 @@ public:
 	// screen
 	int get_window_width(int mode);
 	int get_window_height(int mode);
-	void set_window_size(int width, int height, bool window_mode);
-	void set_vm_screen_size(int sw, int sh, int swa, int sha, int ww, int wh);
+	void set_host_window_size(int window_width, int window_height, bool window_mode);
+	void set_vm_screen_size(int screen_width, int screen_height, int window_width, int window_height, int window_width_aspect, int window_height_aspect);
+	int get_vm_window_width();
+	int get_vm_window_height();
+	int get_vm_window_width_aspect();
+	int get_vm_window_height_aspect();
 #if defined(USE_MINIMUM_RENDERING)
 	bool screen_changed();
 #endif

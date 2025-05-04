@@ -19,6 +19,7 @@
 #define CPU_CLOCKS		6988800
 #define SCREEN_WIDTH		720
 #define SCREEN_HEIGHT		512
+#define WINDOW_HEIGHT_ASPECT	540
 //720
 #define MAX_DRIVE		4
 #define HAS_I86
@@ -52,9 +53,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep #1"), _T("Beep #2"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

@@ -26,6 +26,7 @@
 #define CPU_CLOCKS		4027975
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		2
 #define MB8877_NO_BUSY_AFTER_SEEK
 #define SUPPORT_MEDIA_TYPE_1DD
@@ -127,9 +128,6 @@ static const int vm_autokey_table_base[][2] = {
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"), _T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false, false,
 };
 #endif
 

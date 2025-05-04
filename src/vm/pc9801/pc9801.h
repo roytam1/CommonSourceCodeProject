@@ -92,6 +92,7 @@
 #endif
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		2
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
 #if defined(_PC98DO) || defined(_PC98DOPLUS)
@@ -204,22 +205,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PC-88 OPN (FM)"), _T("PC-88 OPN (PSG)"),
 #endif
 	_T("PC-88 Beep"), 
-#endif
-};
-static const bool sound_device_monophonic[] = {
-#if defined(SUPPORT_PC98_OPNA)
-	true, true, true, true,
-#else
-	true, true,
-#endif
-	false, false,
-#if defined(_PC98DO) || defined(_PC98DOPLUS)
-#if defined(SUPPORT_PC88_OPNA)
-	true, true, true, true,
-#else
-	true, true,
-#endif
-	false,
 #endif
 };
 #endif

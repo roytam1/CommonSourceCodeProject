@@ -20,6 +20,8 @@
 #define CPU_CLOCKS		1789772
 #define SCREEN_WIDTH		256
 #define SCREEN_HEIGHT		240
+// pixel aspect should be 8:7
+#define WINDOW_HEIGHT_ASPECT	210
 #define HAS_N2A03
 
 // device informations for win32
@@ -39,9 +41,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("APU"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

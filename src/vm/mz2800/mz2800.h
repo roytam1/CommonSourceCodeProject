@@ -20,6 +20,7 @@
 #define CPU_CLOCKS		8000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
 #define HAS_I286
 #define I8259_MAX_CHIPS		2
@@ -50,9 +51,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("OPN (FM)"), _T("OPN (PSG)"), _T("Beep"),
-};
-static const bool sound_device_monophonic[] = {
-	true, true, false,
 };
 #endif
 

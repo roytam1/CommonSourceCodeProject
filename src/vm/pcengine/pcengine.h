@@ -17,7 +17,9 @@
 #define LINES_PER_FRAME 	262
 #define CPU_CLOCKS		7159090
 #define SCREEN_WIDTH		352
-#define SCREEN_HEIGHT		238
+#define SCREEN_HEIGHT		240
+// pixel aspect should be 8:7
+#define WINDOW_HEIGHT_ASPECT	210
 
 #define SUPPORT_SUPER_GFX
 #define SUPPORT_BACKUP_RAM
@@ -35,9 +37,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"),
-};
-static const bool sound_device_monophonic[] = {
-	false,
 };
 #endif
 

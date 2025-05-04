@@ -1,3 +1,17 @@
+2/17/2015
+
+[EMU] improve screen stretch modes
+[EMU/OSD] improve screen stretch modes
+
+[VM/FMGEN] support to set left/right volumes
+[VM/YM2151] support to set left/right volumes
+[VM/YM2203] support to set left/right volumes
+[VM/Z80DMA] fix timing of bus request and release
+
+[MZ2200/MEMORY80B] fix green monitor not to refer text/back color registers
+[MZ2200/MEMORY80B] support to swap left/right side of color and green monitors
+
+
 2/13/2015
 
 [VM/DISK] fix routine to calculate sector position for invalid format track

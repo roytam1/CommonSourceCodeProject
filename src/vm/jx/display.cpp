@@ -21,8 +21,8 @@ void DISPLAY::initialize()
 	palette_pc[8] = RGB_COLOR(127, 127, 127);
 	
 	hires_mode = 1;
-	prev_width = 640;
-	prev_height = 400;
+//	prev_width = 640;
+//	prev_height = 400;
 	
 	cblink = 0;
 	register_frame_event(this);
@@ -141,7 +141,7 @@ void DISPLAY::draw_screen()
 {
 	int mode1 = vgarray[0];
 	int mode2 = vgarray[3];
-	int screen_width, screen_height, width;
+	int screen_width, screen_height, window_height_aspect, width;
 	
 	memset(screen, 0, sizeof(screen));
 	
@@ -149,18 +149,20 @@ void DISPLAY::draw_screen()
 	if((hires_mode & 3) == 1) {
 		screen_width = width = 640;
 		screen_height = 400;
+		window_height_aspect = 480;
 	} else {
 		screen_width = width = 720;
 		screen_height = 512;
+		window_height_aspect = 540;
 	}
-	if(!(prev_width == screen_width && prev_height == screen_height)) {
-		emu->set_vm_screen_size(screen_width, screen_height, -1, -1, screen_width, screen_height);
-		prev_width = screen_width;
-		prev_height = screen_height;
+//	if(!(prev_width == screen_width && prev_height == screen_height)) {
+		emu->set_vm_screen_size(screen_width, screen_height, screen_width, screen_height, screen_width, window_height_aspect);
+//		prev_width = screen_width;
+//		prev_height = screen_height;
 		
 		// we need to wait until screen manager updates buffer size
-		return;
-	}
+//		return;
+//	}
 	
 	// render screen
 	if((hires_mode & 3) == 1) {

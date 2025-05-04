@@ -15,14 +15,16 @@
 
 void OSD::initialize_screen()
 {
-	host_window_width = base_window_width = WINDOW_WIDTH;
-	host_window_height = base_window_height = WINDOW_HEIGHT;
+	host_window_width = WINDOW_WIDTH;
+	host_window_height = WINDOW_HEIGHT;
 	host_window_mode = true;
 	
 	vm_screen_width = SCREEN_WIDTH;
 	vm_screen_height = SCREEN_HEIGHT;
-	vm_screen_width_aspect = SCREEN_WIDTH_ASPECT;
-	vm_screen_height_aspect = SCREEN_HEIGHT_ASPECT;
+	vm_window_width = WINDOW_WIDTH;
+	vm_window_height = WINDOW_HEIGHT;
+	vm_window_width_aspect = WINDOW_WIDTH_ASPECT;
+	vm_window_height_aspect = WINDOW_HEIGHT_ASPECT;
 	
 	memset(&vm_screen_buffer, 0, sizeof(bitmap_t));
 #ifdef USE_CRT_FILTER
@@ -73,23 +75,23 @@ int OSD::get_window_width(int mode)
 {
 #ifdef USE_SCREEN_ROTATE
 	if(config.rotate_type == 1 || config.rotate_type == 3) {
-		return base_window_height + vm_screen_height_aspect * mode;
+		return (config.window_stretch_type == 0 ? vm_window_height : vm_window_height_aspect) * (mode + WINDOW_MODE_BASE);
 	}
 #endif
-	return base_window_width + vm_screen_width_aspect * mode;
+	return (config.window_stretch_type == 0 ? vm_window_width : vm_window_width_aspect) * (mode + WINDOW_MODE_BASE);
 }
 
 int OSD::get_window_height(int mode)
 {
 #ifdef USE_SCREEN_ROTATE
 	if(config.rotate_type == 1 || config.rotate_type == 3) {
-		return base_window_width + vm_screen_width_aspect * mode;
+		return (config.window_stretch_type == 0 ? vm_window_width : vm_window_width_aspect) * (mode + WINDOW_MODE_BASE);
 	}
 #endif
-	return base_window_height + vm_screen_height_aspect * mode;
+	return (config.window_stretch_type == 0 ? vm_window_height : vm_window_height_aspect) * (mode + WINDOW_MODE_BASE);
 }
 
-void OSD::set_window_size(int window_width, int window_height, bool window_mode)
+void OSD::set_host_window_size(int window_width, int window_height, bool window_mode)
 {
 	if(window_width != -1) {
 		host_window_width = window_width;
@@ -103,21 +105,27 @@ void OSD::set_window_size(int window_width, int window_height, bool window_mode)
 	first_invalidate = true;
 }
 
-void OSD::set_vm_screen_size(int width, int height, int width_aspect, int height_aspect, int window_width, int window_height)
+void OSD::set_vm_screen_size(int screen_width, int screen_height, int window_width, int window_height, int window_width_aspect, int window_height_aspect)
 {
-	if(vm_screen_width != width || vm_screen_height != height) {
-		if(width_aspect == -1) {
-			width_aspect = width;
+	if(vm_screen_width != screen_width || vm_screen_height != screen_height) {
+		if(window_width == -1) {
+			window_width = screen_width;
 		}
-		if(height_aspect == -1) {
-			height_aspect = height;
+		if(window_height == -1) {
+			window_height = screen_height;
 		}
-		vm_screen_width = width;
-		vm_screen_height = height;
-		vm_screen_width_aspect = width_aspect;
-		vm_screen_height_aspect = height_aspect;
-		base_window_width = window_width;
-		base_window_height = window_height;
+		if(window_width_aspect == -1) {
+			window_width_aspect = window_width;
+		}
+		if(window_height_aspect == -1) {
+			window_height_aspect = window_height;
+		}
+		vm_screen_width = screen_width;
+		vm_screen_height = screen_height;
+		vm_window_width = window_width;
+		vm_window_height = window_height;
+		vm_window_width_aspect = window_width_aspect;
+		vm_window_height_aspect = window_height_aspect;
 		
 		// change the window size
 		PostMessage(main_window_handle, WM_RESIZE, 0L, 0L);
@@ -165,41 +173,56 @@ int OSD::draw_screen()
 	
 	// calculate screen size
 #ifdef USE_SCREEN_ROTATE
-	int tmp_width_aspect = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_screen_height_aspect : vm_screen_width_aspect;
-	int tmp_height_aspect = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_screen_width_aspect : vm_screen_height_aspect;
-	int tmp_width = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_screen_height : vm_screen_width;
-	int tmp_height = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_screen_width : vm_screen_height;
+	int tmp_width_aspect = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_window_height_aspect : vm_window_width_aspect;
+	int tmp_height_aspect = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_window_width_aspect : vm_window_height_aspect;
+	int tmp_width = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_window_height : vm_window_width;
+	int tmp_height = (config.rotate_type == 1 || config.rotate_type == 3) ? vm_window_width : vm_window_height;
 #else
-	#define tmp_width_aspect vm_screen_width_aspect
-	#define tmp_height_aspect vm_screen_height_aspect
-	#define tmp_width vm_screen_width
-	#define tmp_height vm_screen_height
+	#define tmp_width_aspect vm_window_width_aspect
+	#define tmp_height_aspect vm_window_height_aspect
+	#define tmp_width vm_window_width
+	#define tmp_height vm_window_height
 #endif
 	
-	if(config.stretch_type == 1 && !host_window_mode) {
-		// fit to full screen (aspect)
-		draw_screen_width = (host_window_height * tmp_width_aspect) / tmp_height_aspect;
-		draw_screen_height = host_window_height;
-		if(draw_screen_width > host_window_width) {
-			draw_screen_width = host_window_width;
-			draw_screen_height = (host_window_width * tmp_height_aspect) / tmp_width_aspect;
-		}
-	} else if(config.stretch_type == 2 && !host_window_mode) {
-		// fit to full screen (fill)
+	if(host_window_mode) {
+		// window mode
 		draw_screen_width = host_window_width;
 		draw_screen_height = host_window_height;
 	} else {
-		// dot by dot
-		int tmp_pow_x = host_window_width / tmp_width_aspect;
-		int tmp_pow_y = host_window_height / tmp_height_aspect;
-		int tmp_pow = 1;
-		if(tmp_pow_y >= tmp_pow_x && tmp_pow_x > 1) {
-			tmp_pow = tmp_pow_x;
-		} else if(tmp_pow_x >= tmp_pow_y && tmp_pow_y > 1) {
-			tmp_pow = tmp_pow_y;
+		// fullscreen mode
+		if(config.fullscreen_stretch_type == 0) {
+			// dot by dot
+			int tmp_pow_x = host_window_width / tmp_width;
+			int tmp_pow_y = host_window_height / tmp_height;
+			int tmp_pow = 1;
+			if(tmp_pow_y >= tmp_pow_x && tmp_pow_x > 1) {
+				tmp_pow = tmp_pow_x;
+			} else if(tmp_pow_x >= tmp_pow_y && tmp_pow_y > 1) {
+				tmp_pow = tmp_pow_y;
+			}
+			draw_screen_width = tmp_width * tmp_pow;
+			draw_screen_height = tmp_height * tmp_pow;
+		} else if(config.fullscreen_stretch_type == 1) {
+			// stretch (no aspect)
+			draw_screen_width = (host_window_height * tmp_width) / tmp_height;
+			draw_screen_height = host_window_height;
+			if(draw_screen_width > host_window_width) {
+				draw_screen_width = host_window_width;
+				draw_screen_height = (host_window_width * tmp_height) / tmp_width;
+			}
+		} else if(config.fullscreen_stretch_type == 2) {
+			// stretch (aspect)
+			draw_screen_width = (host_window_height * tmp_width_aspect) / tmp_height_aspect;
+			draw_screen_height = host_window_height;
+			if(draw_screen_width > host_window_width) {
+				draw_screen_width = host_window_width;
+				draw_screen_height = (host_window_width * tmp_height_aspect) / tmp_width_aspect;
+			}
+		} else if(config.fullscreen_stretch_type == 3) {
+			// stretch (fill)
+			draw_screen_width = host_window_width;
+			draw_screen_height = host_window_height;
 		}
-		draw_screen_width = tmp_width_aspect * tmp_pow;
-		draw_screen_height = tmp_height_aspect * tmp_pow;
 	}
 	int dest_pow_x = (int)ceil((double)draw_screen_width / (double)tmp_width);
 	int dest_pow_y = (int)ceil((double)draw_screen_height / (double)tmp_height);

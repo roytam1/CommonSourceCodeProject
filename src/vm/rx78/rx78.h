@@ -18,8 +18,8 @@
 #define LINES_PER_FRAME		262
 #define CPU_CLOCKS		4090909
 #define SCREEN_WIDTH		192
-#define SCREEN_WIDTH_ASPECT	288
 #define SCREEN_HEIGHT		184
+#define WINDOW_WIDTH_ASPECT	288
 
 // device informations for win32
 #define USE_CART1
@@ -38,9 +38,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

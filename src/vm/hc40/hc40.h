@@ -22,9 +22,7 @@
 #define MAX_DRIVE		4
 
 // device informations for win32
-#define WINDOW_WIDTH		(SCREEN_WIDTH * 2)
-#define WINDOW_HEIGHT		(SCREEN_HEIGHT * 2)
-
+#define WINDOW_MODE_BASE	2
 #define USE_SPECIAL_RESET
 #define USE_FD1
 #define USE_FD2
@@ -46,9 +44,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

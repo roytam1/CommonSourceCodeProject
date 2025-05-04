@@ -25,9 +25,7 @@
 #define MEMORY_BANK_SIZE	0x2000
 
 // device informations for win32
-#define WINDOW_WIDTH		(SCREEN_WIDTH * 2)
-#define WINDOW_HEIGHT		(SCREEN_HEIGHT * 2)
-
+#define WINDOW_MODE_BASE	2
 #define USE_BOOT_MODE		2
 #define USE_TAPE
 #define NOTIFY_KEY_DOWN
@@ -45,9 +43,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false,
 };
 #endif
 

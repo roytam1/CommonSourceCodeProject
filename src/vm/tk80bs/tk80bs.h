@@ -51,9 +51,6 @@
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep #1"), _T("Beep #2"),
 };
-static const bool sound_device_monophonic[] = {
-	false, false,
-};
 #endif
 
 const struct {

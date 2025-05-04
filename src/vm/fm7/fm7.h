@@ -26,12 +26,7 @@
 
 #define SCREEN_WIDTH 640 
 #define SCREEN_HEIGHT 400
-#define SCREEN_WIDTH_ASPECT 640 
-//#define SCREEN_HEIGHT_ASPECT 480
-#define SCREEN_HEIGHT_ASPECT 400
-#define WINDOW_WIDTH_ASPECT 640 
-//#define WINDOW_HEIGHT_ASPECT 480
-#define WINDOW_HEIGHT_ASPECT 400
+#define WINDOW_HEIGHT_ASPECT 480
 
 #define NOTIFY_KEY_DOWN
 //#define NOTIFY_KEY_UP
@@ -312,12 +307,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"),
 #endif
 	_T("OPN (FM)"), _T("OPN (PSG)"), _T("WHG (FM)"), _T("WHG (PSG)"), _T("THG (FM)"), _T("THG (PSG)"), _T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-#if !defined(_FM77AV_VARIANTS)
-	true,
-#endif
-	true, true, true, true, true, true, false, false,
 };
 #endif
 

@@ -47,6 +47,7 @@
 #define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
 #define IO_ADDR_MAX		0x10000
 #define HAS_AY_3_8910
@@ -128,12 +129,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("PSG"), _T("CZ-8BS1 #1"), _T("CZ-8BS1 #2"), _T("CMT"),
 #if defined(_X1TWIN)
 	_T("Voice"),
-#endif
-};
-static const bool sound_device_monophonic[] = {
-	true, true, true, false,
-#if defined(_X1TWIN)
-	false,
 #endif
 };
 #endif

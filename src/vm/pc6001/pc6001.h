@@ -28,6 +28,7 @@
 #define SUB_CPU_ROM_FILE_NAME	"SUBCPU.62"
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define CPU_CLOCKS		4000000
 #define HAS_AY_3_8910
 #elif defined(_PC6001MK2SR)
@@ -36,6 +37,7 @@
 #define SUB_CPU_ROM_FILE_NAME	"SUBCPU.68"
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define CPU_CLOCKS		3580000
 #elif defined(_PC6601)
 #define DEVICE_NAME		"NEC PC-6601"
@@ -43,6 +45,7 @@
 #define SUB_CPU_ROM_FILE_NAME	"SUBCPU.66"
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define CPU_CLOCKS		4000000
 #define HAS_AY_3_8910
 #elif defined(_PC6601SR)
@@ -53,6 +56,7 @@
 #define SUB_CPU_3_ROM_FILE_NAME	"SUBCPU3.68"
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define CPU_CLOCKS		3580000
 #endif
 
@@ -111,13 +115,6 @@ static const _TCHAR *sound_device_caption[] = {
 	_T("Voice"),
 #endif
 	_T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	true,
-#if !defined(_PC6001)
-	false,
-#endif
-	false,
 };
 #endif
 

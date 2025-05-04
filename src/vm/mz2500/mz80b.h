@@ -33,6 +33,7 @@
 #define CPU_CLOCKS		4000000
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
+#define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
 #define HAS_MB8876
 #ifdef SUPPORT_QUICK_DISK
@@ -64,7 +65,7 @@
 #define USE_AUTO_KEY_RELEASE	6
 #define USE_AUTO_KEY_CAPS
 #ifndef _MZ80B
-#define USE_MONITOR_TYPE	3
+#define USE_MONITOR_TYPE	4
 #define USE_CRT_FILTER
 #endif
 #define USE_SCANLINE
@@ -81,9 +82,6 @@
 #ifdef USE_SOUND_VOLUME
 static const _TCHAR *sound_device_caption[] = {
 	_T("Beep"), _T("CMT"),
-};
-static const bool sound_device_monophonic[] = {
-	false, false,
 };
 #endif
 

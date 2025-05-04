@@ -66,7 +66,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDR_ACCELERATOR1 ACCELERATORS DISCARDABLE 
 BEGIN
-    VK_RETURN,      ID_ACCEL_MOUSE,         VIRTKEY, CONTROL, NOINVERT
     VK_RETURN,      ID_ACCEL_SCREEN,        VIRTKEY, ALT, NOINVERT
 END
 
@@ -82,20 +81,11 @@ BEGIN
     BEGIN
         MENUITEM "Reset",                       ID_RESET
         MENUITEM SEPARATOR
-        MENUITEM "N80 mode"                     ID_BOOT_MODE0
-        MENUITEM "N80(SR) mode"                 ID_BOOT_MODE1
-        MENUITEM "N mode"                       ID_BOOT_MODE2
-        MENUITEM SEPARATOR
         MENUITEM "CPU x1",                      ID_CPU_POWER0
         MENUITEM "CPU x2",                      ID_CPU_POWER1
         MENUITEM "CPU x4",                      ID_CPU_POWER2
         MENUITEM "CPU x8",                      ID_CPU_POWER3
         MENUITEM "CPU x16",                     ID_CPU_POWER4
-        MENUITEM SEPARATOR
-        MENUITEM "Memory Wait",                 ID_DIPSWITCH0
-        MENUITEM SEPARATOR
-        MENUITEM "Joystick"                     ID_DEVICE_TYPE0
-        MENUITEM "Bus Mouse"                    ID_DEVICE_TYPE1
         MENUITEM SEPARATOR
         MENUITEM "Paste",                       ID_AUTOKEY_START
         MENUITEM "Stop",                        ID_AUTOKEY_STOP
@@ -104,7 +94,6 @@ BEGIN
         MENUITEM "Load State",                  ID_LOAD_STATE
         MENUITEM SEPARATOR
         MENUITEM "Debug Main CPU",              ID_OPEN_DEBUGGER0
-        MENUITEM "Debug PC-80S31K CPU",         ID_OPEN_DEBUGGER1
         MENUITEM "Close Debugger",              ID_CLOSE_DEBUGGER
         MENUITEM SEPARATOR
         MENUITEM "Exit",                        ID_EXIT
@@ -137,7 +126,22 @@ BEGIN
         MENUITEM "Rec",                         ID_REC_TAPE
         MENUITEM "Eject",                       ID_CLOSE_TAPE
         MENUITEM SEPARATOR
+        MENUITEM "Play Tape Sound",             ID_PLAY_TAPE_SOUND
+        MENUITEM "Waveform Shaper",             ID_USE_WAVE_SHAPER
+        MENUITEM SEPARATOR
         MENUITEM "Recent",                      ID_RECENT_TAPE
+    END
+    POPUP "RAMPAC1"
+    BEGIN
+        MENUITEM "Insert",                      ID_LOAD_BINARY1
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_BINARY1
+    END
+    POPUP "RAMPAC2"
+    BEGIN
+        MENUITEM "Insert",                      ID_LOAD_BINARY2
+        MENUITEM SEPARATOR
+        MENUITEM "Recent",                      ID_RECENT_BINARY2
     END
     POPUP "Screen"
     BEGIN
@@ -188,12 +192,8 @@ BEGIN
         MENUITEM "Fullscreen 31",               ID_SCREEN_FULLSCREEN31
         MENUITEM "Fullscreen 32",               ID_SCREEN_FULLSCREEN32
         MENUITEM SEPARATOR
-        MENUITEM "Window Stretch 1",            ID_SCREEN_WINDOW_STRETCH1
-        MENUITEM "Window Stretch 2",            ID_SCREEN_WINDOW_STRETCH2
-        MENUITEM SEPARATOR
         MENUITEM "Fullscreen Stretch 1",        ID_SCREEN_FULLSCREEN_STRETCH1
         MENUITEM "Fullscreen Stretch 2",        ID_SCREEN_FULLSCREEN_STRETCH2
-        MENUITEM "Fullscreen Stretch 3",        ID_SCREEN_FULLSCREEN_STRETCH3
         MENUITEM "Fullscreen Stretch 4",        ID_SCREEN_FULLSCREEN_STRETCH4
         MENUITEM SEPARATOR
         MENUITEM "Use Direct3D9",               ID_SCREEN_USE_D3D9
@@ -201,10 +201,6 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "CRT Filter",                  ID_SCREEN_CRT_FILTER
         MENUITEM "Scanline",                    ID_SCREEN_SCANLINE
-        MENUITEM SEPARATOR
-        MENUITEM "Rotate 0deg",                 ID_SCREEN_ROTATE_0
-        MENUITEM "Rotate +90deg",               ID_SCREEN_ROTATE_90
-        MENUITEM "Rotate -90deg",               ID_SCREEN_ROTATE_270
     END
     POPUP "Sound"
     BEGIN
@@ -217,7 +213,7 @@ BEGIN
         MENUITEM "11025Hz",                     ID_SOUND_FREQ3
         MENUITEM "22050Hz",                     ID_SOUND_FREQ4
         MENUITEM "44100Hz",                     ID_SOUND_FREQ5
-        MENUITEM "55467Hz",                     ID_SOUND_FREQ6
+        MENUITEM "48000Hz",                     ID_SOUND_FREQ6
         MENUITEM "96000Hz",                     ID_SOUND_FREQ7
         MENUITEM SEPARATOR
         MENUITEM "50msec",                      ID_SOUND_LATE0
@@ -246,7 +242,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "pc8001mk2sr.ico"
+IDI_ICON1               ICON    DISCARDABLE     "pasopia7.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
