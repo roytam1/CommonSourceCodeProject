@@ -442,8 +442,9 @@ void UPD765A::event_callback(int event_id, int err)
 		result7_id = -1;
 		shift_to_result7_event();
 	} else if(event_id == EVENT_INDEX) {
+		// index hole signal width is 5msec (thanks Mr.Sato)
 		int drv = hdu & DRIVE_MASK;
-		bool now_index = (disk[drv]->inserted && get_cur_position(drv) == 0);
+		bool now_index = (disk[drv]->inserted && get_cur_position(drv) < disk[drv]->get_bytes_per_usec(5000));
 		if(prev_index != now_index) {
 			write_signals(&outputs_index, now_index ? 0xffffffff : 0);
 			prev_index = now_index;

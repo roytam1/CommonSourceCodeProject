@@ -1,3 +1,13 @@
+9/23/2015
+
+[VM/UPD765A] fix index hole signal width to 5msec (thanks Mr.Sato)
+
+[MZ3500] support SHARP MZ-3500
+[MZ3500/KEYBOARD] implement keyboard
+[MZ3500/SUB] enlarge ram size of sub cpu
+[MZ3500/SUB] fix text screen renderer
+
+
 9/17/2015
 
 [TOOL/ANY2D88] support to convert solid image to 1dd
