@@ -296,13 +296,8 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 			break;
 #endif
 		case 0x1fd0:
-			{
-				uint8_t prev = mode1;
-				mode1 = data;
-				if((prev & 1) != (mode1 & 1)) {
-					update_crtc();
-				}
-			}
+			mode1 = data;
+			update_crtc();
 //			hireso = !((mode1 & 3) == 0 || (mode1 & 3) == 2);
 			break;
 		case 0x1fe0:
@@ -500,11 +495,8 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 			vblank_clock = get_current_clock();
 		}
 	} else if(id == SIG_DISPLAY_COLUMN40) {
-		bool prev = column40;
 		column40 = ((data & mask) != 0);
-		if(prev != column40) {
-			update_crtc();
-		}
+		update_crtc();
 	} else if(id == SIG_DISPLAY_DETECT_VBLANK) {
 		// hack: cpu detects vblank
 		vblank_clock = get_current_clock();
@@ -527,8 +519,7 @@ void DISPLAY::write_signal(int id, uint32_t data, uint32_t mask)
 			}
 			// restart cpu after pcg/cgrom/zpal is accessed
 //			d_cpu->write_signal(SIG_CPU_BUSREQ, 0, 0);
-			register_event_by_clock(this, EVENT_AFTER_BLANK, 8, false, NULL);
-//			register_event_by_clock(this, EVENT_AFTER_BLANK, 32, false, NULL);
+			register_event_by_clock(this, EVENT_AFTER_BLANK, 24, false, NULL);
 #endif
 		}
 	}
@@ -1521,6 +1512,10 @@ bool DISPLAY::load_state(FILEIO* state_fio)
 	st_addr = state_fio->FgetInt32();
 	vblank_clock = state_fio->FgetUint32();
 	cur_blank = state_fio->FgetBool();
+	
+	// post process
+	update_crtc(); // force update timing
+	
 	return true;
 }
 

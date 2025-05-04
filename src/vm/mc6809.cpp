@@ -633,7 +633,7 @@ void MC6809::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 #ifdef USE_DEBUGGER
 	my_stprintf_s(buffer, buffer_len,
-		 _T("PC = %04x PPC = %04x\nINTR = [%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x\nTotal CPU Clocks = %llu (%llu)"),
+		 _T("PC = %04x PPC = %04x\nINTR = [%s %s %s %s][%s %s %s %s %s] CC = [%c%c%c%c%c%c%c%c]\nA = %02x B = %02x DP = %02x X = %04x Y = %04x U = %04x S = %04x EA = %04x\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
 		 PC,
 		 PPC,
 		 ((int_state & MC6809_IRQ_BIT) == 0)   ? _T("----") : _T(" IRQ"),
@@ -656,7 +656,8 @@ void MC6809::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 		 A, B, DP,
 		 X, Y, U, S,
 		 EAD,
-		 total_icount, total_icount - prev_total_icount
+		 total_icount, total_icount - prev_total_icount,
+		 get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame()
 	 );
 	prev_total_icount = total_icount;
 #endif

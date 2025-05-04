@@ -1,3 +1,25 @@
+12/14/2017
+
+[RESOURCE] change accelerators for switching full speed and roman/kana input
+[WINMAIN] fix to call ImmAssociateContext() in WM_ACTIVATE (thanks PC8801MA‰ü)
+
+[VM/HD46505] fix to force update event timing when R0-R9 are modified
+[VM/HUC6280] support to show clocks since starting scanline in debugger
+[VM/I286] support to show clocks since starting scanline in debugger
+[VM/I386] support to show clocks since starting scanline in debugger
+[VM/M6502] support to show clocks since starting scanline in debugger
+[VM/MC6800] support to show clocks since starting scanline in debugger
+[VM/MC6809] support to show clocks since starting scanline in debugger
+[VM/MCS48] support to show clocks since starting scanline in debugger
+[VM/TMS9995] support to show clocks since starting scanline in debugger
+[VM/UPD7220] fix to force update event timing when sync are modified
+[VM/UPD7801] support to show clocks since starting scanline in debugger
+[VM/UPD7810] support to show clocks since starting scanline in debugger
+[VM/Z80] support to show clocks since starting scanline in debugger
+
+[X1TURBOZ/DISPLAY] fix pcg/analog palette access wait again (thanks Mr.Sato)
+
+
 12/12/2017
 
 [VM/DISK] fix crc in id/data field (thanks Mr.Sato)
