@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								3/15/2017
+								5/13/2017
 
 --- What's this ?
 
@@ -129,6 +129,8 @@ This archive includes the all source codes of emulators listed below:
 		EmuPIA7		PASOPIA7
 		eJ-3100GT	J-3100GT (work in progress)
 		eJ-3100SL	J-3100SL (work in progress)
+	YAMAHA
+		eYIS		YIS
 	Yuasa Kyouiku System
 		eYALKY		YALKY
 
@@ -178,6 +180,8 @@ See also COPYING.txt for more details about the license.
 	XM6 by Mr.PI.
 - vm/fmgen/*
 	M88/fmgen by Mr.CISC
+- vm/am9511.*
+	Xep128 APU core
 - vm/disk.*
 	TDLZHUF for Teledisk floppy disk image decoder
 	MESS formats/dsk_dsk.c for CPDRead floppy disk image decorder
@@ -341,6 +345,9 @@ See also COPYING.txt for more details about the license.
 	X millenium T-tune by Mr.Sato
 - vm/x1/display.*
 	KANJI ROM support by X1EMU
+- vm/yis/*
+	YAMAHA provided me some YIS manuals and software disks
+	Mr.Moriya analyzed the YIS hardware
 - vm/z80tvgame/*
 	This homebrew cnosole is designed by Mr.Ishizu
 	http://w01.tp1.jp/~a571632211/z80tvgame/index.html

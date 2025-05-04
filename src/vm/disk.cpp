@@ -57,6 +57,8 @@ static const fd_format_t fd_formats[] = {
 	{ MEDIA_TYPE_2D,  40, 1, 16,  256, MFM },	// 1D	160KB
 #elif defined(_SMC70) || defined(_SMC777)
 	{ MEDIA_TYPE_2DD, 70, 1, 16,  256, MFM },	// 1DD	280KB
+#elif defined(_YIS)
+	{ MEDIA_TYPE_2DD, 80, 1, 16,  256, MFM },	// 1DD	320KB
 #elif defined(_X1) || defined(_X1TWIN) || defined(_X1TURBO) || defined(_X1TURBOZ)
 	{ MEDIA_TYPE_2D,  40, 2, 16,  256, MFM },	// 2D	320KB
 #elif defined(_M5)
@@ -1177,7 +1179,9 @@ int DISK::get_rpm()
 
 int DISK::get_track_size()
 {
-	if(inserted) {
+	if(track_size != 0) {
+		return track_size;
+	} else if(inserted) {
 		return media_type == MEDIA_TYPE_144 ? 12500 : media_type == MEDIA_TYPE_2HD ? 10410 : track_mfm ? 6250 : 3100;
 	} else {
 		return drive_type == DRIVE_TYPE_144 ? 12500 : drive_type == DRIVE_TYPE_2HD ? 10410 : drive_mfm ? 6250 : 3100;

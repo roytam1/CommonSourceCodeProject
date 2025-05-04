@@ -188,6 +188,14 @@ void MSM58321::write_signal(int id, uint32_t data, uint32_t mask)
 	}
 }
 
+uint32_t MSM58321::read_signal(int ch)
+{
+	if(ch == SIG_MSM58321_DATA) {
+		return regs[regnum];
+	}
+	return 0;
+}
+
 void MSM58321::output_data()
 {
 	if(cs && rd) {

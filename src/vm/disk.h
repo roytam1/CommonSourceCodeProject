@@ -100,6 +100,7 @@ public:
 		drive_type = DRIVE_TYPE_UNK;
 		drive_rpm = 0;
 		drive_mfm = true;
+		track_size = 0;
 		static int num = 0;
 		drive_num = num++;
 		set_device_name(_T("Floppy Disk Drive #%d"), drive_num + 1);
@@ -172,6 +173,7 @@ public:
 	uint8_t drive_type;
 	int drive_rpm;
 	bool drive_mfm;
+	int track_size; // hack for YIS :-(
 	int drive_num;
 	bool correct_timing()
 	{

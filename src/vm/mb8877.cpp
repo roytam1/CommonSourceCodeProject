@@ -1620,6 +1620,13 @@ void MB8877::set_drive_mfm(int drv, bool mfm)
 	}
 }
 
+void MB8877::set_track_size(int drv, int size)
+{
+	if(drv < MAX_DRIVE) {
+		disk[drv]->track_size = size;
+	}
+}
+
 uint8_t MB8877::fdc_status()
 {
 	// for each virtual machines
