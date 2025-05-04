@@ -160,7 +160,7 @@ class SN76489AN;
 #endif
 class Z80;
 
-class IO;
+class MEMORY;
 
 class VM
 {
@@ -182,7 +182,7 @@ protected:
 #endif
 	Z80* cpu;
 	
-	IO* io;
+	MEMORY* memory;
 	
 public:
 	// ----------------------------------------

@@ -26,7 +26,10 @@ private:
 	bool select_kanji;
 	
 public:
-	MZ1R13(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	MZ1R13(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		set_device_name(_T("MZ-1R13 (Kanji ROM)"));
+	}
 	~MZ1R13() {}
 	
 	// common functions

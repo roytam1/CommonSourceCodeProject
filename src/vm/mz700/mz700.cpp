@@ -65,6 +65,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	event = new EVENT(this, emu);	// must be 2nd device
 	
 	and_int = new AND(this, emu);
+	and_int->set_device_name(_T("AND Gate (IRQ)"));
 	drec = new DATAREC(this, emu);
 	pit = new I8253(this, emu);
 	pio = new I8255(this, emu);
@@ -81,9 +82,11 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 #if defined(_MZ800) || defined(_MZ1500)
 	and_snd = new AND(this, emu);
+	and_snd->set_device_name(_T("AND Gate (Sound)"));
 	fdc = new MB8877(this, emu);	// mb8876
 #if defined(_MZ800)
 	not_pit = new NOT(this, emu);
+	not_pit->set_device_name(_T("NOT Gate (PIT)"));
 	psg = new SN76489AN(this, emu);
 #elif defined(_MZ1500)
 	if(config.printer_device_type == 0) {
@@ -94,9 +97,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 		printer = dummy;
 	}
 	not_reset = new NOT(this, emu);
+	not_reset->set_device_name(_T("NOT Gate (Reset)"));
 	not_strobe = new NOT(this, emu);
+	not_strobe->set_device_name(_T("NOT Gate (Strobe)"));
 	psg_l = new SN76489AN(this, emu);
+	psg_l->set_device_name(_T("SN76489AN PSG (Left)"));
 	psg_r = new SN76489AN(this, emu);
+	psg_r->set_device_name(_T("SN76489AN PSG (Right)"));
 #endif
 	pio_int = new Z80PIO(this, emu);
 	sio_rs = new Z80SIO(this, emu);

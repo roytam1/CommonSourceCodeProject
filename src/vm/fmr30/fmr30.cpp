@@ -51,9 +51,13 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	
 	dma = new I8237(this, emu);
 	sio_kb = new I8251(this, emu);	// keyboard
+	sio_kb->set_device_name(_T("8251 SIO (Keyboard)"));
 	sio_sub = new I8251(this, emu);	// sub display
+	sio_sub->set_device_name(_T("8251 SIO (Sub System)"));
 	sio_ch1 = new I8251(this, emu);	// RS-232C ch.1
+	sio_ch1->set_device_name(_T("8251 SIO (RS-232C #1)"));
 	sio_ch2 = new I8251(this, emu);	// RS-232C ch.2
+	sio_ch2->set_device_name(_T("8251 SIO (RS-232C #2)"));
 	pit = new I8253(this, emu);
 	pic = new I8259(this, emu);
 	cpu = new I286(this, emu);
@@ -63,6 +67,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	for(int i = 0; i < 7; i++) {
 		if(FILEIO::IsFileExisting(create_local_path(_T("SCSI%d.DAT"), i))) {
 			SCSI_HDD* scsi_hdd = new SCSI_HDD(this, emu);
+			scsi_hdd->set_device_name("SCSI Hard Disk Drive #%d", i + 1);
 			scsi_hdd->scsi_id = i;
 			scsi_hdd->set_context_interface(scsi_host);
 			scsi_host->set_context_target(scsi_hdd);

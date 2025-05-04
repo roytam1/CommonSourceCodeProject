@@ -6,7 +6,7 @@
 	Author : Takeda.Toshiya
 	Date   : 2013.05.01-
 
-	[ sub cpu ]
+	[ sub system ]
 */
 
 #ifndef _SUB_H_
@@ -43,7 +43,10 @@ private:
 	void update_intr();
 	
 public:
-	SUB(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu) {}
+	SUB(VM* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	{
+		set_device_name(_T("Sub System"));
+	}
 	~SUB() {}
 	
 	// common functions

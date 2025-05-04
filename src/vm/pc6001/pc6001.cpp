@@ -123,8 +123,10 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	if(support_sub_cpu) {
 		cpu_sub = new MCS48(this, emu);
+		cpu_sub->set_device_name(_T("MCS48 MCU (Sub)"));
 		sub = new SUB(this, emu);
 		drec = new DATAREC(this, emu);
+		drec->set_device_name(_T("Data Recorder (Sub)"));
 		event->set_context_cpu(cpu_sub, 8000000);
 		event->set_context_sound(drec);
 		cpu_sub->set_context_mem(new MCS48MEM(this, emu));
@@ -147,10 +149,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	}
 	if(support_pc80s31k) {
 		pio_fdd = new I8255(this, emu);
+		pio_fdd->set_device_name(_T("8255 PIO (FDD I/F)"));
 		pio_pc80s31k = new I8255(this, emu);
+		pio_pc80s31k->set_device_name(_T("8255 PIO (320KB FDD)"));
 		pc80s31k = new PC80S31K(this, emu);
+		pc80s31k->set_device_name(_T("PC-80S31K (320KB FDD)"));
 		fdc_pc80s31k = new UPD765A(this, emu);
+		fdc_pc80s31k->set_device_name(_T("uPD765A FDC (320KB FDD)"));
 		cpu_pc80s31k = new Z80(this, emu);
+		cpu_pc80s31k->set_device_name(_T("Z80 CPU (320KB FDD)"));
 		
 		event->set_context_cpu(cpu_pc80s31k, 4000000);
 		pc80s31k->set_context_cpu(cpu_pc80s31k);

@@ -56,15 +56,20 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	cpu = new I8080(this, emu);
 #if defined(_TK80BS)
 	sio_b = new I8251(this, emu);	// on TK-80BS
+	sio_b->set_device_name(_T("8251 SIO (TK-80BS)"));
 	pio_b = new I8255(this, emu);
+	pio_b->set_device_name(_T("8255 PIO (TK-80BS)"));
 	memio = new IO(this, emu);
+	memio->set_device_name(_T("Memory Mapped I/O (TK-80BS)"));
 #elif defined(_TK80) || defined(_TK85)
 	drec = new DATAREC(this, emu);
 #endif
 	pio_t = new I8255(this, emu);	// on TK-80
 //	memory = new MEMORY(this, emu);
 	pcm0 = new PCM1BIT(this, emu);
+	pcm0->set_device_name(_T("1-Bit PCM Sound #1"));
 	pcm1 = new PCM1BIT(this, emu);
+	pcm1->set_device_name(_T("1-Bit PCM Sound #2"));
 	
 #if defined(_TK80BS)
 	cmt = new CMT(this, emu);

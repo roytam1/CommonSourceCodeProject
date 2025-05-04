@@ -30,7 +30,7 @@
 #include "../debugger.h"
 #endif
 
-#include "io.h"
+#include "memory.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -55,7 +55,7 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	cpu = new Z80(this, emu);
 	
-	io = new IO(this, emu);
+	memory = new MEMORY(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -65,30 +65,30 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 #endif
 	event->set_context_sound(drec);
 	
-	drec->set_context_ear(io, SIG_IO_DATAREC_IN, 1);
-	crtc->set_context_disp(io, SIG_IO_CRTC_DISP, 1);
-	crtc->set_context_vsync(io, SIG_IO_CRTC_VSYNC, 1);
-	fdc->set_context_drq(io, SIG_IO_FDC_DRQ, 1);
-	fdc->set_context_irq(io, SIG_IO_FDC_IRQ, 1);
+	drec->set_context_ear(memory, SIG_MEMORY_DATAREC_IN, 1);
+	crtc->set_context_disp(memory, SIG_MEMORY_CRTC_DISP, 1);
+	crtc->set_context_vsync(memory, SIG_MEMORY_CRTC_VSYNC, 1);
+	fdc->set_context_drq(memory, SIG_MEMORY_FDC_DRQ, 1);
+	fdc->set_context_irq(memory, SIG_MEMORY_FDC_IRQ, 1);
 #if defined(_SMC70)
-	rtc->set_context_data(io, SIG_IO_RTC_DATA, 0x0f, 0);
-	rtc->set_context_busy(io, SIG_IO_RTC_BUSY, 1);
+	rtc->set_context_data(memory, SIG_MEMORY_RTC_DATA, 0x0f, 0);
+	rtc->set_context_busy(memory, SIG_MEMORY_RTC_BUSY, 1);
 #endif
 	
-	io->set_context_cpu(cpu);
-	io->set_context_crtc(crtc, crtc->get_regs());
-	io->set_context_drec(drec);
-	io->set_context_fdc(fdc);
-	io->set_context_pcm(pcm);
+	memory->set_context_cpu(cpu);
+	memory->set_context_crtc(crtc, crtc->get_regs());
+	memory->set_context_drec(drec);
+	memory->set_context_fdc(fdc);
+	memory->set_context_pcm(pcm);
 #if defined(_SMC70)
-	io->set_context_rtc(rtc);
+	memory->set_context_rtc(rtc);
 #elif defined(_SMC777)
-	io->set_context_psg(psg);
+	memory->set_context_psg(psg);
 #endif
 	
 	// cpu bus
-	cpu->set_context_mem(io);
-	cpu->set_context_io(io);
+	cpu->set_context_mem(memory);
+	cpu->set_context_io(memory);
 	cpu->set_context_intr(dummy);
 #ifdef USE_DEBUGGER
 	cpu->set_context_debugger(new DEBUGGER(this, emu));
@@ -136,7 +136,7 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-	io->warm_start = false;
+	memory->warm_start = false;
 }
 
 void VM::special_reset()
@@ -145,7 +145,7 @@ void VM::special_reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
-	io->warm_start = true;
+	memory->warm_start = true;
 }
 
 void VM::run()
@@ -178,7 +178,7 @@ DEVICE *VM::get_cpu(int index)
 
 void VM::draw_screen()
 {
-	io->draw_screen();
+	memory->draw_screen();
 }
 
 uint32_t VM::get_access_lamp_status()
@@ -236,13 +236,13 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 void VM::key_down(int code, bool repeat)
 {
 	if(!repeat) {
-		io->key_down_up(code, true);
+		memory->key_down_up(code, true);
 	}
 }
 
 void VM::key_up(int code)
 {
-	io->key_down_up(code, false);
+	memory->key_down_up(code, false);
 }
 
 // ----------------------------------------------------------------------------

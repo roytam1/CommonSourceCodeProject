@@ -748,12 +748,19 @@ public:
 		
 		emu->force_out_debug_log(_T("%s"), buffer);
 	}
-	void set_device_name(const _TCHAR *name)
+	void set_device_name(const _TCHAR* format, ...)
 	{
-		if(name != NULL) {
-			my_tcscpy_s(this_device_name, 128, name);
+		if(format != NULL) {
+			va_list ap;
+			_TCHAR buffer[1024];
+			
+			va_start(ap, format);
+			my_vstprintf_s(buffer, 1024, format, ap);
+			va_end(ap);
+			
+			my_tcscpy_s(this_device_name, 128, buffer);
 #ifdef _USE_QT
-			emu->get_osd()->set_vm_node(this_device_id, name);
+			emu->get_osd()->set_vm_node(this_device_id, buffer);
 #endif
 		}
 	}

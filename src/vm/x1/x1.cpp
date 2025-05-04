@@ -83,11 +83,15 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	sio = new Z80SIO(this, emu);
 	if(sound_device_type >= 1) {
 		opm1 = new YM2151(this, emu);
+		opm1->set_device_name(_T("YM2151 OPM (CZ-8BS1 #1)"));
 		ctc1 = new Z80CTC(this, emu);
+		ctc1->set_device_name(_T("Z80 CTC (CZ-8BS1 #1)"));
 	}
 	if(sound_device_type == 2) {
 		opm2 = new YM2151(this, emu);
+		opm2->set_device_name(_T("YM2151 OPM (CZ-8BS1 #2)"));
 		ctc2 = new Z80CTC(this, emu);
+		ctc2->set_device_name(_T("Z80 CTC (CZ-8BS1 #2)"));
 	}
 	if(config.printer_device_type == 0) {
 		printer = new PRNFILE(this, emu);
@@ -117,12 +121,16 @@ VM::VM(EMU* parent_emu) : emu(parent_emu)
 	} else {
 		// sub cpu
 		cpu_sub = new MCS48(this, emu);
+		cpu_sub->set_device_name(_T("MCS48 MCU (Sub)"));
 		pio_sub = new I8255(this, emu);
+		pio_sub->set_device_name(_T("8255 PIO (Sub)"));
 		rtc_sub = new UPD1990A(this, emu);
+		rtc_sub->set_device_name(_T("uPD1990A RTC (Sub)"));
 		sub = new SUB(this, emu);
 		
 		// keyboard
 		cpu_kbd = new MCS48(this, emu);
+		cpu_kbd->set_device_name(_T("MCS48 MCU (Keyboard)"));
 		kbd = new KEYBOARD(this, emu);
 	}
 	

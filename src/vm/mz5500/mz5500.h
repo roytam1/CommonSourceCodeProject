@@ -116,6 +116,7 @@ protected:
 	I286* cpu;
 	IO* io;
 	LS393* div;
+	NOT* not_data0;
 	NOT* not_data1;
 	NOT* not_data2;
 	NOT* not_data3;
@@ -123,7 +124,6 @@ protected:
 	NOT* not_data5;
 	NOT* not_data6;
 	NOT* not_data7;
-	NOT* not_data8;
 	NOT* not_busy;
 	RP5C01* rtc;
 	UPD7220* gdc;
