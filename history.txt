@@ -1,3 +1,8 @@
+12/2/2018
+
+[PC8801/PC88] fix not to apply reverse attribute to monochrome graphic screen
+
+
 12/1/2018
 
 [PC8801] enable/disable drawing scan line when monitor type is hireso/standard

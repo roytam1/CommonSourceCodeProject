@@ -2440,10 +2440,10 @@ void PC88::draw_320x200_attrib_graph()
 				              gvram_b1[addr] | gvram_r1[addr] | gvram_g1[addr];
 				uint8_t attrib = crtc.attrib.expand[cy][cx];
 				uint8_t color = (attrib >> 5) | color_mask;
-				bool reverse = ((attrib & 1) != 0);
-				if(reverse) {
-					brg ^= 0xff;
-				}
+//				bool reverse = ((attrib & 1) != 0);
+//				if(reverse) {
+//					brg ^= 0xff;
+//				}
 				addr++;
 				uint8_t *dest = &graph[y][x];
 				dest[ 0] = dest[ 1] = (brg & 0x80) ? color : 0;
@@ -2464,16 +2464,16 @@ void PC88::draw_320x200_attrib_graph()
 				              gvram_b1[addr] | gvram_r1[addr] | gvram_g1[addr];
 				uint8_t attrib_l = crtc.attrib.expand[cy][cx + 0];
 				uint8_t color_l = (attrib_l >> 5) | color_mask;
-				bool reverse_l = ((attrib_l & 1) != 0);
+//				bool reverse_l = ((attrib_l & 1) != 0);
 				uint8_t attrib_r = crtc.attrib.expand[cy][cx + 1];
 				uint8_t color_r = (attrib_r >> 5) | color_mask;
-				bool reverse_r = ((attrib_r & 1) != 0);
-				if(reverse_l) {
-					brg ^= 0xf0;
-				}
-				if(reverse_r) {
-					brg ^= 0x0f;
-				}
+//				bool reverse_r = ((attrib_r & 1) != 0);
+//				if(reverse_l) {
+//					brg ^= 0xf0;
+//				}
+//				if(reverse_r) {
+//					brg ^= 0x0f;
+//				}
 				addr++;
 				uint8_t *dest = &graph[y][x];
 				dest[ 0] = dest[ 1] = (brg & 0x80) ? color_l : 0;
@@ -2575,7 +2575,7 @@ void PC88::draw_640x200_attrib_graph()
 		char_height = 8;
 	}
 	uint8_t color_mask = Port30_COLOR ? 0 : 7, color;
-	bool reverse;
+//	bool reverse;
 	
 	for(int y = 0, addr = 0; y < 200; y++) {
 		int cy = y / char_height;
@@ -2586,11 +2586,11 @@ void PC88::draw_640x200_attrib_graph()
 			} else {
 				uint8_t attrib = crtc.attrib.expand[cy][cx];
 				color = (attrib >> 5) | color_mask;
-				reverse = ((attrib & 1) != 0);
+//				reverse = ((attrib & 1) != 0);
 			}
-			if(reverse) {
-				brg ^= 0xff;
-			}
+//			if(reverse) {
+//				brg ^= 0xff;
+//			}
 			addr++;
 			uint8_t *dest = &graph[y][x];
 			dest[0] = (brg & 0x80) ? color : 0;
@@ -2670,7 +2670,7 @@ void PC88::draw_640x400_attrib_graph()
 		char_height = 16;
 	}
 	uint8_t color_mask = Port30_COLOR ? 0 : 7, color;
-	bool reverse;
+//	bool reverse;
 	
 	for(int y = 0, addr = 0; y < 200; y++) {
 		int cy = y / char_height;
@@ -2681,11 +2681,11 @@ void PC88::draw_640x400_attrib_graph()
 			} else {
 				uint8_t attrib = crtc.attrib.expand[cy][cx];
 				color = (attrib >> 5) | color_mask;
-				reverse = ((attrib & 1) != 0);
+//				reverse = ((attrib & 1) != 0);
 			}
-			if(reverse) {
-				b ^= 0xff;
-			}
+//			if(reverse) {
+//				b ^= 0xff;
+//			}
 			addr++;
 			uint8_t *dest = &graph[y][x];
 			dest[0] = (b & 0x80) ? color : 0;
@@ -2707,11 +2707,11 @@ void PC88::draw_640x400_attrib_graph()
 			} else {
 				uint8_t attrib = crtc.attrib.expand[cy][cx];
 				color = (attrib >> 5) | color_mask;
-				reverse = ((attrib & 1) != 0);
+//				reverse = ((attrib & 1) != 0);
 			}
-			if(reverse) {
-				r ^= 0xff;
-			}
+//			if(reverse) {
+//				r ^= 0xff;
+//			}
 			addr++;
 			uint8_t *dest = &graph[y][x];
 			dest[0] = (r & 0x80) ? color : 0;
