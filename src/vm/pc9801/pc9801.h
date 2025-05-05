@@ -174,6 +174,8 @@
 	#endif
 	// PC-9801-86
 	#define SUPPORT_PC98_OPNA
+	#define SUPPORT_PC98_86PCM
+	#define SUPPORT_PC98_86PCM_IRQ
 #endif
 #if defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)
 	#define MEMORY_ADDR_MAX		0x1000000	// 16MB
@@ -286,7 +288,11 @@
 #endif
 #else
 #if defined(SUPPORT_PC98_OPNA)
+#if defined(SUPPORT_PC98_86PCM)
+#define USE_SOUND_VOLUME	(4 + 1 + 1 + 1 + 1)
+#else
 #define USE_SOUND_VOLUME	(4 + 1 + 1 + 1)
+#endif
 #else
 #define USE_SOUND_VOLUME	(2 + 1 + 1 + 1)
 #endif
@@ -306,6 +312,9 @@
 static const _TCHAR *sound_device_caption[] = {
 #if defined(SUPPORT_PC98_OPNA)
 	_T("OPNA (FM)"), _T("OPNA (PSG)"), _T("OPNA (ADPCM)"), _T("OPNA (Rhythm)"),
+#if defined(SUPPORT_PC98_86PCM)
+	_T("86-Type PCM"),
+#endif
 #else
 	_T("OPN (FM)"), _T("OPN (PSG)"),
 #endif

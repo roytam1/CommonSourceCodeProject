@@ -90,7 +90,7 @@ private:
 	void process_cmd();
 	
 	void cmd_reset();
-	void cmd_sync();
+	void cmd_sync(bool flag);
 	void cmd_master();
 	void cmd_slave();
 	void cmd_start();

@@ -109,15 +109,43 @@ static const uint8_t egc_bytemask_d1[8] = {
 	0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff,
 };
 
+/*
 static const uint16_t egc_maskword[16][4] = {
-	{0x0000, 0x0000, 0x0000, 0x0000}, {0xffff, 0x0000, 0x0000, 0x0000},
-	{0x0000, 0xffff, 0x0000, 0x0000}, {0xffff, 0xffff, 0x0000, 0x0000},
-	{0x0000, 0x0000, 0xffff, 0x0000}, {0xffff, 0x0000, 0xffff, 0x0000},
-	{0x0000, 0xffff, 0xffff, 0x0000}, {0xffff, 0xffff, 0xffff, 0x0000},
-	{0x0000, 0x0000, 0x0000, 0xffff}, {0xffff, 0x0000, 0x0000, 0xffff},
-	{0x0000, 0xffff, 0x0000, 0xffff}, {0xffff, 0xffff, 0x0000, 0xffff},
-	{0x0000, 0x0000, 0xffff, 0xffff}, {0xffff, 0x0000, 0xffff, 0xffff},
-	{0x0000, 0xffff, 0xffff, 0xffff}, {0xffff, 0xffff, 0xffff, 0xffff}
+	{0x0000, 0x0000, 0x0000, 0x0000},
+	{0xffff, 0x0000, 0x0000, 0x0000},
+	{0x0000, 0xffff, 0x0000, 0x0000},
+	{0xffff, 0xffff, 0x0000, 0x0000},
+	{0x0000, 0x0000, 0xffff, 0x0000},
+	{0xffff, 0x0000, 0xffff, 0x0000},
+	{0x0000, 0xffff, 0xffff, 0x0000},
+	{0xffff, 0xffff, 0xffff, 0x0000},
+	{0x0000, 0x0000, 0x0000, 0xffff},
+	{0xffff, 0x0000, 0x0000, 0xffff},
+	{0x0000, 0xffff, 0x0000, 0xffff},
+	{0xffff, 0xffff, 0x0000, 0xffff},
+	{0x0000, 0x0000, 0xffff, 0xffff},
+	{0xffff, 0x0000, 0xffff, 0xffff},
+	{0x0000, 0xffff, 0xffff, 0xffff},
+	{0xffff, 0xffff, 0xffff, 0xffff},
+};
+*/
+static const uint32_t egc_maskdword[16][2] = {
+	{0x00000000, 0x00000000},
+	{0x0000ffff, 0x00000000},
+	{0xffff0000, 0x00000000},
+	{0xffffffff, 0x00000000},
+	{0x00000000, 0x0000ffff},
+	{0x0000ffff, 0x0000ffff},
+	{0xffff0000, 0x0000ffff},
+	{0xffffffff, 0x0000ffff},
+	{0x00000000, 0xffff0000},
+	{0x0000ffff, 0xffff0000},
+	{0xffff0000, 0xffff0000},
+	{0xffffffff, 0xffff0000},
+	{0x00000000, 0xffffffff},
+	{0x0000ffff, 0xffffffff},
+	{0xffff0000, 0xffffffff},
+	{0xffffffff, 0xffffffff},
 };
 #endif
 
@@ -141,10 +169,16 @@ void DISPLAY::initialize()
 			if(i & (0x10 << j)) {
 				bit |= 0x0f0f0f0f;
 			}
-			*(uint32_t *)p = bit;
-			p += 4;
-			*(uint16_t *)q = (uint16_t)bit;
-			q += 2;
+//			*(uint32_t *)p = bit;
+//			p += 4;
+			*p++ = (bit >>  0);
+			*p++ = (bit >>  8);
+			*p++ = (bit >> 16);
+			*p++ = (bit >> 24);
+//			*(uint16_t *)q = (uint16_t)bit;
+//			q += 2;
+			*q++ = (bit >>  0);
+			*q++ = (bit >>  8);
 		}
 		q += 8;
 	}
@@ -217,16 +251,30 @@ void DISPLAY::initialize()
 #endif
 		for(int code = 0x20; code <= 0x7f; code++) {
 			for(int line = 0; line < 24; line++) {
-				uint16_t pattern = (*(uint16_t *)(&font[ANK_FONT_OFS + FONT_SIZE * code + line * 2])) & 0x3fff;
-				*(uint16_t *)(&font[FONT_SIZE * (0x09 | (code << 8)) + line * 2                ]) = pattern << 2;
-				*(uint16_t *)(&font[FONT_SIZE * (0x09 | (code << 8)) + line * 2 + KANJI_2ND_OFS]) = 0;
+//				uint16_t pattern = (*(uint16_t *)(&font[ANK_FONT_OFS + FONT_SIZE * code + line * 2])) & 0x3fff;
+//				*(uint16_t *)(&font[FONT_SIZE * (0x09 | (code << 8)) + line * 2                ]) = pattern << 2;
+//				*(uint16_t *)(&font[FONT_SIZE * (0x09 | (code << 8)) + line * 2 + KANJI_2ND_OFS]) = 0;
+				uint16_t pattern;
+				pattern  = (font[ANK_FONT_OFS + FONT_SIZE * code + line * 2 + 0]       );
+				pattern |= (font[ANK_FONT_OFS + FONT_SIZE * code + line * 2 + 1] & 0x3f) << 8;
+				font[FONT_SIZE * (0x09 | (code << 8)) + line * 2                 + 0] = pattern << 2;
+				font[FONT_SIZE * (0x09 | (code << 8)) + line * 2                 + 1] = pattern >> 6;
+				font[FONT_SIZE * (0x09 | (code << 8)) + line * 2 + KANJI_2ND_OFS + 0] = 0;
+				font[FONT_SIZE * (0x09 | (code << 8)) + line * 2 + KANJI_2ND_OFS + 1] = 0;
 			}
 		}
 		for(int code = 0xa0; code <= 0xff; code++) {
 			for(int line = 0; line < 24; line++) {
-				uint16_t pattern = (*(uint16_t *)(&font[ANK_FONT_OFS + FONT_SIZE * code + line * 2])) & 0x3fff;
-				*(uint16_t *)(&font[FONT_SIZE * (0x0a | (code << 8)) + line * 2                ]) = pattern << 2;
-				*(uint16_t *)(&font[FONT_SIZE * (0x0a | (code << 8)) + line * 2 + KANJI_2ND_OFS]) = 0;
+//				uint16_t pattern = (*(uint16_t *)(&font[ANK_FONT_OFS + FONT_SIZE * code + line * 2])) & 0x3fff;
+//				*(uint16_t *)(&font[FONT_SIZE * (0x0a | (code << 8)) + line * 2                ]) = pattern << 2;
+//				*(uint16_t *)(&font[FONT_SIZE * (0x0a | (code << 8)) + line * 2 + KANJI_2ND_OFS]) = 0;
+				uint16_t pattern;
+				pattern  = (font[ANK_FONT_OFS + FONT_SIZE * code + line * 2 + 0]       );
+				pattern |= (font[ANK_FONT_OFS + FONT_SIZE * code + line * 2 + 1] & 0x3f) << 8;
+				font[FONT_SIZE * (0x0a | (code << 8)) + line * 2                 + 0] = pattern << 2;
+				font[FONT_SIZE * (0x0a | (code << 8)) + line * 2                 + 1] = pattern >> 6;
+				font[FONT_SIZE * (0x0a | (code << 8)) + line * 2 + KANJI_2ND_OFS + 0] = 0;
+				font[FONT_SIZE * (0x0a | (code << 8)) + line * 2 + KANJI_2ND_OFS + 1] = 0;
 			}
 		}
 		memcpy(font + ANK_FONT_OFS + FONT_SIZE * 0x100, font + ANK_FONT_OFS, FONT_SIZE * 0x100);
@@ -587,8 +635,10 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		if((grcg_mode & GRCG_CG_MODE) && modereg2[MODE2_EGC]) {
 			egc_fg &= 0xff00;
 			egc_fg |= data;
-			egc_fgc.d[0] = *(uint32_t *)(egc_maskword[data & 0x0f] + 0);
-			egc_fgc.d[1] = *(uint32_t *)(egc_maskword[data & 0x0f] + 2);
+//			egc_fgc.d[0] = *(uint32_t *)(&egc_maskword[data & 0x0f][0]);
+//			egc_fgc.d[1] = *(uint32_t *)(&egc_maskword[data & 0x0f][2]);
+			egc_fgc.d[0] = egc_maskdword[data & 0x0f][0];
+			egc_fgc.d[1] = egc_maskdword[data & 0x0f][1];
 		}
 		break;
 	case 0x04a7:
@@ -615,8 +665,10 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		if((grcg_mode & GRCG_CG_MODE) && modereg2[MODE2_EGC]) {
 			egc_bg &= 0xff00;
 			egc_bg |= data;
-			egc_bgc.d[0] = *(uint32_t *)(egc_maskword[data & 0x0f] + 0);
-			egc_bgc.d[1] = *(uint32_t *)(egc_maskword[data & 0x0f] + 2);
+//			egc_bgc.d[0] = *(uint32_t *)(&egc_maskword[data & 0x0f][0]);
+//			egc_bgc.d[1] = *(uint32_t *)(&egc_maskword[data & 0x0f][2]);
+			egc_bgc.d[0] = egc_maskdword[data & 0x0f][0];
+			egc_bgc.d[1] = egc_maskdword[data & 0x0f][1];
 		}
 		break;
 	case 0x04ab:
@@ -762,7 +814,9 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 					return;
 				}
 				offset = ANK_FONT_OFS + FONT_SIZE * (font_code & 0xff) + line * 2;
-				pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+//				pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+				pattern  = (font[offset + 0]       );
+				pattern |= (font[offset + 1] & 0x3f) << 8;
 			} else {
 //				if((addr & 0x30) == 0x30 || ((addr & 0x40) && !(addr & 1))) {
 				if((addr & 0x30) == 0x30) {
@@ -772,7 +826,9 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 				uint16_t hi = (font_code >> 8) & 0x7f;
 				
 				offset = FONT_SIZE * (lo | (hi << 8)) + line * 2;
-				pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+//				pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+				pattern  = (font[offset + 0]       );
+				pattern |= (font[offset + 1] & 0x3f) << 8;
 				
 				if(lo == 0x56 || lo == 0x57) {
 					is_kanji = true;
@@ -784,7 +840,9 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 				}
 				if(is_kanji) {
 					pattern <<= 14;
-					pattern |= (*(uint16_t *)(&font[offset + KANJI_2ND_OFS])) & 0x3fff;
+//					pattern |= (*(uint16_t *)(&font[offset + KANJI_2ND_OFS])) & 0x3fff;
+					pattern |= (font[offset + KANJI_2ND_OFS + 0]       );
+					pattern |= (font[offset + KANJI_2ND_OFS + 1] & 0x3f) << 8;
 				}
 				shift += 2;
 				if(addr & 0x40) shift += 16;
@@ -794,10 +852,16 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 			pattern |= data << shift;
 			
 			if(is_kanji) {
-				*(uint16_t *)(&font[offset                ]) = (pattern >> 14) & 0x3fff;
-				*(uint16_t *)(&font[offset + KANJI_2ND_OFS]) = (pattern >>  0) & 0x3fff;
+//				*(uint16_t *)(&font[offset                ]) = (pattern >> 14) & 0x3fff;
+//				*(uint16_t *)(&font[offset + KANJI_2ND_OFS]) = (pattern >>  0) & 0x3fff;
+				font[offset                 + 0] = (pattern >> 14);
+				font[offset                 + 1] = (pattern >> 22) & 0x3f;
+				font[offset + KANJI_2ND_OFS + 0] = (pattern >>  0);
+				font[offset + KANJI_2ND_OFS + 1] = (pattern >>  8) & 0x3f;
 			} else {
-				*(uint16_t *)(&font[offset]) = pattern & 0x3fff;
+//				*(uint16_t *)(&font[offset]) = pattern & 0x3fff;
+				font[offset + 0] = (pattern >> 0);
+				font[offset + 1] = (pattern >> 8) & 0x3f;
 			}
 #endif
 		}
@@ -817,14 +881,7 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 
 void DISPLAY::write_memory_mapped_io16(uint32_t addr, uint32_t data)
 {
-	if(TVRAM_ADDRESS <= addr && addr < (TVRAM_ADDRESS + 0x3fe2)) {
-		*(uint16_t *)(&tvram[addr - TVRAM_ADDRESS]) = data;
-	} else if((TVRAM_ADDRESS + 0x3fe2) <= addr && addr < (TVRAM_ADDRESS + 0x4000)) {
-		// memory switch
-		if(modereg1[MODE1_MEMSW]) {
-			*(uint16_t *)(&tvram[addr - TVRAM_ADDRESS]) = data;
-		}
-	} else if((TVRAM_ADDRESS + 0x4000) <= addr && addr < (TVRAM_ADDRESS + 0x5000)) {
+	if(TVRAM_ADDRESS <= addr && addr < (TVRAM_ADDRESS + 0x5000)) {
 		write_memory_mapped_io8(addr + 0, (data >> 0) & 0xff);
 		write_memory_mapped_io8(addr + 1, (data >> 8) & 0xff);
 #if !defined(SUPPORT_HIRESO)
@@ -890,7 +947,9 @@ uint32_t DISPLAY::read_memory_mapped_io8(uint32_t addr)
 				return 0;
 			}
 			offset = ANK_FONT_OFS + FONT_SIZE * (font_code & 0xff) + line * 2;
-			pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+//			pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+			pattern  = (font[offset + 0]       );
+			pattern |= (font[offset + 1] & 0x3f) << 8;
 		} else {
 //			if((addr & 0x30) == 0x30 || ((addr & 0x40) && !(addr & 1))) {
 			if((addr & 0x30) == 0x30) {
@@ -900,7 +959,9 @@ uint32_t DISPLAY::read_memory_mapped_io8(uint32_t addr)
 			uint16_t hi = (font_code >> 8) & 0x7f;
 			
 			offset = FONT_SIZE * (lo | (hi << 8)) + line * 2;
-			pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+//			pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+			pattern  = (font[offset + 0]       );
+			pattern |= (font[offset + 1] & 0x3f) << 8;
 			
 			if(lo == 0x56 || lo == 0x57) {
 				is_kanji = true;
@@ -912,7 +973,9 @@ uint32_t DISPLAY::read_memory_mapped_io8(uint32_t addr)
 			}
 			if(is_kanji) {
 				pattern <<= 14;
-				pattern |= (*(uint16_t *)(&font[offset + KANJI_2ND_OFS])) & 0x3fff;
+//				pattern |= (*(uint16_t *)(&font[offset + KANJI_2ND_OFS])) & 0x3fff;
+				pattern |= (font[offset + KANJI_2ND_OFS + 0]       );
+				pattern |= (font[offset + KANJI_2ND_OFS + 1] & 0x3f) << 8;
 			}
 			shift += 2;
 			if(addr & 0x40) shift += 16;
@@ -937,14 +1000,7 @@ uint32_t DISPLAY::read_memory_mapped_io8(uint32_t addr)
 
 uint32_t DISPLAY::read_memory_mapped_io16(uint32_t addr)
 {
-	if(TVRAM_ADDRESS <= addr && addr < (TVRAM_ADDRESS + 0x2000)) {
-		return *(uint16_t *)(&tvram[addr - TVRAM_ADDRESS]);
-	} else if((TVRAM_ADDRESS + 0x2000) <= addr && addr < (TVRAM_ADDRESS + 0x4000)) {
-		if(addr & 1) {
-			return 0xffff;
-		}
-		return *(uint16_t *)(&tvram[addr - TVRAM_ADDRESS]);
-	} else if((TVRAM_ADDRESS + 0x4000) <= addr && addr < (TVRAM_ADDRESS + 0x5000)) {
+	if(TVRAM_ADDRESS <= addr && addr < (TVRAM_ADDRESS + 0x5000)) {
 		return read_memory_mapped_io8(addr) | (read_memory_mapped_io8(addr + 1) << 8);
 #if !defined(SUPPORT_HIRESO)
 	} else if(0xa8000 <= addr && addr < 0xc0000) {
@@ -1033,19 +1089,39 @@ void DISPLAY::write_dma_io16(uint32_t addr, uint32_t data)
 #endif
 	} else {
 #if !defined(SUPPORT_HIRESO)
-		*(uint16_t *)(&vram_draw[addr]) = data;
+		#ifdef __BIG_ENDIAN__
+			vram_draw_writew(addr, data);
+		#else
+			*(uint16_t *)(&vram_draw[addr]) = data;
+		#endif
 #else
 		if(!(grcg_mode & GRCG_PLANE_0)) {
-			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) = data;
+			#ifdef __BIG_ENDIAN__
+				vram_draw_writew(addr | VRAM_PLANE_ADDR_0, data);
+			#else
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) = data;
+			#endif
 		}
 		if(!(grcg_mode & GRCG_PLANE_1)) {
-			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) = data;
+			#ifdef __BIG_ENDIAN__
+				vram_draw_writew(addr | VRAM_PLANE_ADDR_1, data);
+			#else
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) = data;
+			#endif
 		}
 		if(!(grcg_mode & GRCG_PLANE_2)) {
-			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) = data;
+			#ifdef __BIG_ENDIAN__
+				vram_draw_writew(addr | VRAM_PLANE_ADDR_2, data);
+			#else
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) = data;
+			#endif
 		}
 		if(!(grcg_mode & GRCG_PLANE_3)) {
-			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) = data;
+			#ifdef __BIG_ENDIAN__
+				vram_draw_writew(addr | VRAM_PLANE_ADDR_3, data);
+			#else
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) = data;
+			#endif
 		}
 #endif
 	}
@@ -1097,13 +1173,37 @@ uint32_t DISPLAY::read_dma_io16(uint32_t addr)
 		return (uint32_t)(d.w);
 	} else {
 #if !defined(SUPPORT_HIRESO)
-		return *(uint16_t *)(&vram_draw[addr]);
+		#ifdef __BIG_ENDIAN__
+			return vram_draw_readw(addr);
+		#else
+			return *(uint16_t *)(&vram_draw[addr]);
+		#endif
 #else
 		int plane = (grcg_mode >> 4) & 3;
-		return *(uint16_t *)(&vram_draw[addr | (0x20000 * plane)]);
+		#ifdef __BIG_ENDIAN__
+			return vram_draw_readw(addr | (0x20000 * plane));
+		#else
+			return *(uint16_t *)(&vram_draw[addr | (0x20000 * plane)]);
+		#endif
 #endif
 	}
 }
+
+#ifdef __BIG_ENDIAN__
+inline void DISPLAY::vram_draw_writew(uint32_t addr, uint32_t data)
+{
+	vram_draw[addr    ] = (data     ) & 0xff;
+	vram_draw[addr + 1] = (data >> 8) & 0xff;
+}
+
+inline uint32_t DISPLAY::vram_draw_readw(uint32_t addr)
+{
+	uint32_t val;
+	val  = vram_draw[addr    ];
+	val |= vram_draw[addr + 1] << 8;
+	return val;
+}
+#endif
 
 // GRCG
 
@@ -1158,38 +1258,82 @@ void DISPLAY::grcg_writew(uint32_t addr1, uint32_t data)
 		if(grcg_mode & GRCG_RW_MODE) {
 			// RMW
 			if(!(grcg_mode & GRCG_PLANE_0)) {
-				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-				*p &= ~data;
-				*p |= grcg_tile_word[0] & data;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+					p &= ~data;
+					p |= grcg_tile_word[0] & data;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_0, p);
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+					*p &= ~data;
+					*p |= grcg_tile_word[0] & data;
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_1)) {
-				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-				*p &= ~data;
-				*p |= grcg_tile_word[1] & data;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+					p &= ~data;
+					p |= grcg_tile_word[1] & data;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_1, p);
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+					*p &= ~data;
+					*p |= grcg_tile_word[1] & data;
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_2)) {
-				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-				*p &= ~data;
-				*p |= grcg_tile_word[2] & data;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+					p &= ~data;
+					p |= grcg_tile_word[2] & data;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_2, p);
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+					*p &= ~data;
+					*p |= grcg_tile_word[2] & data;
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_3)) {
-				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
-				*p &= ~data;
-				*p |= grcg_tile_word[3] & data;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+					p &= ~data;
+					p |= grcg_tile_word[3] & data;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_3, p);
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+					*p &= ~data;
+					*p |= grcg_tile_word[3] & data;
+				#endif
 			}
 		} else {
 			// TDW
 			if(!(grcg_mode & GRCG_PLANE_0)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) = grcg_tile_word[0];
+				#ifdef __BIG_ENDIAN__
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_0, grcg_tile_word[0]);
+				#else
+					*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) = grcg_tile_word[0];
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_1)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) = grcg_tile_word[1];
+				#ifdef __BIG_ENDIAN__
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_1, grcg_tile_word[1]);
+				#else
+					*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) = grcg_tile_word[1];
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_2)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) = grcg_tile_word[2];
+				#ifdef __BIG_ENDIAN__
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_2, grcg_tile_word[2]);
+				#else
+					*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) = grcg_tile_word[2];
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_3)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) = grcg_tile_word[3];
+				#ifdef __BIG_ENDIAN__
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_3, grcg_tile_word[3]);
+				#else
+					*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) = grcg_tile_word[3];
+				#endif
 			}
 		}
 	}
@@ -1234,10 +1378,18 @@ uint32_t DISPLAY::grcg_readw(uint32_t addr1)
 		if(grcg_mode & GRCG_RW_MODE) {
 			// VRAM
 #if !defined(SUPPORT_HIRESO)
-			return *(uint16_t *)(&vram_draw[addr1 & 0x1ffff]);
+			#ifdef __BIG_ENDIAN__
+				return vram_draw_readw(addr1 & 0x1ffff);
+			#else
+				return *(uint16_t *)(&vram_draw[addr1 & 0x1ffff]);
+			#endif
 #else
 			int plane = (grcg_mode >> 4) & 3;
-			return *(uint16_t *)(&vram_draw[(addr1 & 0x1ffff) | (0x20000 * plane)]);
+			#ifdef __BIG_ENDIAN__
+				return vram_draw_readw((addr1 & 0x1ffff) | (0x20000 * plane));
+			#else
+				return *(uint16_t *)(&vram_draw[(addr1 & 0x1ffff) | (0x20000 * plane)]);
+			#endif
 #endif
 		} else {
 			// TCR
@@ -1245,16 +1397,32 @@ uint32_t DISPLAY::grcg_readw(uint32_t addr1)
 			uint16_t data = 0;
 			
 			if(!(grcg_mode & GRCG_PLANE_0)) {
-				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) ^ grcg_tile_word[0];
+				#ifdef __BIG_ENDIAN__
+					data |= vram_draw_readw(addr | VRAM_PLANE_ADDR_0) ^ grcg_tile_word[0];
+				#else
+					data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) ^ grcg_tile_word[0];
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_1)) {
-				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) ^ grcg_tile_word[1];
+				#ifdef __BIG_ENDIAN__
+					data |= vram_draw_readw(addr | VRAM_PLANE_ADDR_1) ^ grcg_tile_word[1];
+				#else
+					data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) ^ grcg_tile_word[1];
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_2)) {
-				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) ^ grcg_tile_word[2];
+				#ifdef __BIG_ENDIAN__
+					data |= vram_draw_readw(addr | VRAM_PLANE_ADDR_2) ^ grcg_tile_word[2];
+				#else
+					data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) ^ grcg_tile_word[2];
+				#endif
 			}
 			if(!(grcg_mode & GRCG_PLANE_3)) {
-				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) ^ grcg_tile_word[3];
+				#ifdef __BIG_ENDIAN__
+					data |= vram_draw_readw(addr | VRAM_PLANE_ADDR_3) ^ grcg_tile_word[3];
+				#else
+					data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) ^ grcg_tile_word[3];
+				#endif
 			}
 			return data ^ 0xffff;
 		}
@@ -1810,11 +1978,18 @@ uint64_t DISPLAY::egc_ope_0f(uint8_t ope, uint32_t addr)
 uint64_t DISPLAY::egc_ope_c0(uint8_t ope, uint32_t addr)
 {
 	egcquad_t dst;
-	
-	dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-	dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-	dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-	dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+
+	#ifdef __BIG_ENDIAN__
+		dst.w[0] = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+		dst.w[1] = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+		dst.w[2] = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+		dst.w[3] = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+	#else
+		dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+		dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+		dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+		dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#endif
 	egc_vram_data.d[0] = (egc_vram_src.d[0] & dst.d[0]);
 	egc_vram_data.d[1] = (egc_vram_src.d[1] & dst.d[1]);
 	return egc_vram_data.q;
@@ -1829,10 +2004,17 @@ uint64_t DISPLAY::egc_ope_fc(uint8_t ope, uint32_t addr)
 {
 	egcquad_t dst;
 
-	dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-	dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-	dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-	dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#ifdef __BIG_ENDIAN__
+		dst.w[0] = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+		dst.w[1] = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+		dst.w[2] = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+		dst.w[3] = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+	#else
+		dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+		dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+		dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+		dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#endif
 	egc_vram_data.d[0] = egc_vram_src.d[0];
 	egc_vram_data.d[0] |= ((~egc_vram_src.d[0]) & dst.d[0]);
 	egc_vram_data.d[1] = egc_vram_src.d[1];
@@ -1893,10 +2075,17 @@ uint64_t DISPLAY::egc_ope_np(uint8_t ope, uint32_t addr)
 {
 	egcquad_t dst;
 	
-	dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-	dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-	dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-	dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#ifdef __BIG_ENDIAN__
+		dst.w[0] = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+		dst.w[1] = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+		dst.w[2] = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+		dst.w[3] = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+	#else
+		dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+		dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+		dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+		dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#endif
 	
 	egc_vram_data.d[0] = 0;
 	egc_vram_data.d[1] = 0;
@@ -1943,10 +2132,17 @@ uint64_t DISPLAY::egc_ope_xx(uint8_t ope, uint32_t addr)
 		}
 		break;
 	}
-	dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-	dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-	dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-	dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#ifdef __BIG_ENDIAN__
+		dst.w[0] = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+		dst.w[1] = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+		dst.w[2] = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+		dst.w[3] = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+	#else
+		dst.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+		dst.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+		dst.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+		dst.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+	#endif
 	
 	egc_vram_data.d[0] = 0;
 	egc_vram_data.d[1] = 0;
@@ -2361,10 +2557,17 @@ uint32_t DISPLAY::egc_readw(uint32_t addr1)
 	uint32_t addr = addr1 & VRAM_PLANE_ADDR_MASK;
 	
 	if(!(addr & 1)) {
-		egc_lastvram.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-		egc_lastvram.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-		egc_lastvram.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-		egc_lastvram.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+		#ifdef __BIG_ENDIAN__
+			egc_lastvram.w[0] = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+			egc_lastvram.w[1] = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+			egc_lastvram.w[2] = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+			egc_lastvram.w[3] = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+		#else
+			egc_lastvram.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+			egc_lastvram.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+			egc_lastvram.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+			egc_lastvram.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+		#endif
 		
 		if(!(egc_ope & 0x400)) {
 			if(!(egc_sft & 0x1000)) {
@@ -2398,10 +2601,18 @@ uint32_t DISPLAY::egc_readw(uint32_t addr1)
 			if(!(egc_ope & 0x400)) {
 				return egc_vram_src.w[pl];
 			} else {
-				return *(uint16_t *)(&vram_draw[addr | (VRAM_PLANE_SIZE * pl)]);
+				#ifdef __BIG_ENDIAN__
+					return vram_draw_readw(addr | (VRAM_PLANE_SIZE * pl));
+				#else
+					return *(uint16_t *)(&vram_draw[addr | (VRAM_PLANE_SIZE * pl)]);
+				#endif
 			}
 		}
-		return *(uint16_t *)(&vram_draw[addr1]);
+		#ifdef __BIG_ENDIAN__
+			return vram_draw_readw(addr1);
+		#else
+			return *(uint16_t *)(&vram_draw[addr1]);
+		#endif
 	} else if(!(egc_sft & 0x1000)) {
 		uint16_t value = egc_readb(addr1);
 		value |= egc_readb(addr1 + 1) << 8;
@@ -2453,28 +2664,67 @@ void DISPLAY::egc_writew(uint32_t addr1, uint16_t value)
 	
 	if(!(addr & 1)) {
 		if((egc_ope & 0x0300) == 0x0200) {
-			egc_patreg.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
-			egc_patreg.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
-			egc_patreg.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
-			egc_patreg.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+			#ifdef __BIG_ENDIAN__
+				egc_patreg.w[0] = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+				egc_patreg.w[1] = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+				egc_patreg.w[2] = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+				egc_patreg.w[3] = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+			#else
+				egc_patreg.w[0] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+				egc_patreg.w[1] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+				egc_patreg.w[2] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+				egc_patreg.w[3] = *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+			#endif
 		}
 		data.q = egc_opew(addr, value);
 		if(egc_mask2.w) {
 			if(!(egc_access & 1)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) &= ~egc_mask2.w;
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) |= data.w[0] & egc_mask2.w;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_0);
+					p &= ~egc_mask2.w;
+					p |= data.w[0] & egc_mask2.w;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_0, p)
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+					*p &= ~egc_mask2.w;
+					*p |= data.w[0] & egc_mask2.w;
+				#endif
 			}
 			if(!(egc_access & 2)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) &= ~egc_mask2.w;
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) |= data.w[1] & egc_mask2.w;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_1);
+					p &= ~egc_mask2.w;
+					p |= data.w[1] & egc_mask2.w;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_1, p)
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+					*p &= ~egc_mask2.w;
+					*p |= data.w[1] & egc_mask2.w;
+				#endif
 			}
 			if(!(egc_access & 4)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) &= ~egc_mask2.w;
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) |= data.w[2] & egc_mask2.w;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_2);
+					p &= ~egc_mask2.w;
+					p |= data.w[2] & egc_mask2.w;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_2, p)
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+					*p &= ~egc_mask2.w;
+					*p |= data.w[2] & egc_mask2.w;
+				#endif
 			}
 			if(!(egc_access & 8)) {
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) &= ~egc_mask2.w;
-				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) |= data.w[3] & egc_mask2.w;
+				#ifdef __BIG_ENDIAN__
+					uint16_t p = vram_draw_readw(addr | VRAM_PLANE_ADDR_3);
+					p &= ~egc_mask2.w;
+					p |= data.w[3] & egc_mask2.w;
+					vram_draw_writew(addr | VRAM_PLANE_ADDR_3, p)
+				#else
+					uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+					*p &= ~egc_mask2.w;
+					*p |= data.w[3] & egc_mask2.w;
+				#endif
 			}
 		}
 	} else if(!(egc_sft & 0x1000)) {
@@ -2615,7 +2865,7 @@ void DISPLAY::draw_chr_screen()
 			ysdr = SCREEN_HEIGHT;
 		}
 		for(int x = 0, cx = 0; x < SCREEN_WIDTH && cx < 80; x += xofs, cx++) {
-			uint16_t code = *(uint16_t *)(tvram + (*addr));
+			uint16_t code = tvram[(*addr)] | (tvram[(*addr) + 1] << 8);
 			uint8_t attr = tvram[(*addr) | 0x2000];
 			uint8_t color = (attr & ATTR_COL) ? (attr >> 5) : 8;
 			bool cursor = ((*addr) == cursor_addr);
@@ -2658,7 +2908,7 @@ void DISPLAY::draw_chr_screen()
 #if !defined(SUPPORT_HIRESO)
 					uint8_t pattern = (l < cl && l < FONT_HEIGHT) ? font[offset + l] : 0;
 #else
-					uint16_t pattern = (l < cl && l < FONT_HEIGHT) ? *(uint16_t *)(&font[offset + l * 2]) : 0;
+					uint16_t pattern = (l < cl && l < FONT_HEIGHT) ? (font[offset + l * 2] | (font[offset + l * 2 + 1] << 8)) : 0;
 #endif
 					if(!(attr & ATTR_ST)) {
 						pattern = 0;

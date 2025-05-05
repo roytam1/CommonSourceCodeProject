@@ -13,7 +13,7 @@
 
 #include "cpureg.h"
 #if defined(SUPPORT_32BIT_ADDRESS)
-#include "../i386.h"
+#include "../i386_np21.h"
 #else
 #include "../i286.h"
 #endif

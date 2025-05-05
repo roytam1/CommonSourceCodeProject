@@ -364,7 +364,8 @@ void I386::write_debug_io8(uint32_t addr, uint32_t data)
 	d_io->write_io8w(addr, data, &wait);
 }
 
-uint32_t I386::read_debug_io8(uint32_t addr) {
+uint32_t I386::read_debug_io8(uint32_t addr)
+{
 	int wait;
 	return d_io->read_io8w(addr, &wait);
 }
@@ -375,7 +376,8 @@ void I386::write_debug_io16(uint32_t addr, uint32_t data)
 	d_io->write_io16w(addr, data, &wait);
 }
 
-uint32_t I386::read_debug_io16(uint32_t addr) {
+uint32_t I386::read_debug_io16(uint32_t addr)
+{
 	int wait;
 	return d_io->read_io16w(addr, &wait);
 }
@@ -386,7 +388,8 @@ void I386::write_debug_io32(uint32_t addr, uint32_t data)
 	d_io->write_io32w(addr, data, &wait);
 }
 
-uint32_t I386::read_debug_io32(uint32_t addr) {
+uint32_t I386::read_debug_io32(uint32_t addr)
+{
 	int wait;
 	return d_io->read_io32w(addr, &wait);
 }

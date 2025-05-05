@@ -142,6 +142,10 @@ private:
 	void ank_copy(int code, uint8_t *pattern);
 	void kanji_copy(int first, int second, uint8_t *pattern);
 #endif
+#ifdef __BIG_ENDIAN__
+	inline void vram_draw_writew(uint32_t addr, uint32_t data);
+	inline uint32_t vram_draw_readw(uint32_t addr);
+#endif
 #if defined(SUPPORT_GRCG)
 	void grcg_writeb(uint32_t addr1, uint32_t data);
 	void grcg_writew(uint32_t addr1, uint32_t data);

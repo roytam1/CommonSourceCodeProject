@@ -50,8 +50,6 @@ private:
 	int req_chip, req_level;
 	uint8_t req_bit;
 	
-	void update_intr();
-	
 public:
 	I8259(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
@@ -83,6 +81,7 @@ public:
 	{
 		d_cpu = device;
 	}
+	void update_intr();
 };
 
 #endif

@@ -18,13 +18,19 @@
 
 enum {
 	CMD_RESET	= 0x00,
-	CMD_SYNC	= 0x0e,
-	CMD_SLAVE	= 0x6e,
+	CMD_SYNC_OFF	= 0x0e,
+	CMD_SYNC_ON	= 0x0f,
 	CMD_MASTER	= 0x6f,
-	CMD_START	= 0x6b,
-	CMD_BCTRL	= 0x0c,
+	CMD_SLAVE	= 0x6e,
+
+	CMD_START_	= 0x6b,
+	CMD_START	= 0x0d,
+	CMD_STOP_	= 0x05,
+	CMD_STOP	= 0x0c,
+
 	CMD_ZOOM	= 0x46,
 	CMD_SCROLL	= 0x70,
+	CMD_CSRW	= 0x49,
 	CMD_CSRFORM	= 0x4b,
 	CMD_PITCH	= 0x47,
 	CMD_LPEN	= 0xc0,
@@ -32,9 +38,9 @@ enum {
 	CMD_VECTE	= 0x6c,
 	CMD_TEXTW	= 0x78,
 	CMD_TEXTE	= 0x68,
-	CMD_CSRW	= 0x49,
 	CMD_CSRR	= 0xe0,
 	CMD_MASK	= 0x4a,
+
 	CMD_WRITE	= 0x20,
 	CMD_READ	= 0xa0,
 	CMD_DMAR	= 0xa4,
@@ -343,10 +349,14 @@ void UPD7220::check_cmd()
 	case CMD_RESET:
 		cmd_reset();
 		break;
-	case CMD_SYNC + 0:
-	case CMD_SYNC + 1:
+	case CMD_SYNC_OFF:
 		if(params_count > 7) {
-			cmd_sync();
+			cmd_sync(false);
+		}
+		break;
+	case CMD_SYNC_ON:
+		if(params_count > 7) {
+			cmd_sync(true);
 		}
 		break;
 	case CMD_MASTER:
@@ -355,14 +365,13 @@ void UPD7220::check_cmd()
 	case CMD_SLAVE:
 		cmd_slave();
 		break;
+	case CMD_START_:
 	case CMD_START:
 		cmd_start();
 		break;
-	case CMD_BCTRL + 0:
+	case CMD_STOP_:
+	case CMD_STOP:
 		cmd_stop();
-		break;
-	case CMD_BCTRL + 1:
-		cmd_start();
 		break;
 	case CMD_ZOOM:
 		cmd_zoom();
@@ -498,9 +507,11 @@ void UPD7220::process_cmd()
 	case CMD_RESET:
 		cmd_reset();
 		break;
-	case CMD_SYNC + 0:
-	case CMD_SYNC + 1:
-		cmd_sync();
+	case CMD_SYNC_OFF:
+		cmd_sync(false);
+		break;
+	case CMD_SYNC_ON:
+		cmd_sync(true);
 		break;
 	case CMD_SCROLL + 0:
 	case CMD_SCROLL + 1:
@@ -578,15 +589,15 @@ void UPD7220::cmd_reset()
 	cmd_write_done = false;
 }
 
-void UPD7220::cmd_sync()
+void UPD7220::cmd_sync(bool flag)
 {
-	start = ((cmdreg & 1) != 0);
 	for(int i = 0; i < 8 && i < params_count; i++) {
 		if(sync[i] != params[i]) {
 			sync[i] = params[i];
 			sync_changed = true;
 		}
 	}
+	start = flag;
 	cmdreg = -1;
 }
 

@@ -25,15 +25,10 @@ class MEMORY : public DEVICE
 {
 private:
 	typedef struct {
-		DEVICE* dev;
-		uint8_t* memory;
+		DEVICE *device;
+		uint8_t *memory;
 		int wait;
 	} bank_t;
-	
-	bank_t *rd_table;
-	bank_t *wr_table;
-	
-	int addr_shift;
 	
 	uint8_t *rd_dummy;
 	uint8_t *wr_dummy;
@@ -109,8 +104,13 @@ public:
 	bool read_image(const _TCHAR *file_path, uint8_t *buffer, int size);
 	bool write_image(const _TCHAR *file_path, uint8_t *buffer, int size);
 	
-	int addr_max;
-	int bank_size;
+	uint32_t addr_max;
+	uint32_t bank_size;
+	
+	bank_t *rd_table;
+	bank_t *wr_table;
+	
+	int addr_shift;
 };
 
 #endif

@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								4/30/2019
+								2/1/2020
 
 --- What's this ?
 
@@ -213,6 +213,8 @@ See also COPYING.txt for more details about the license.
 	MAME i286 core
 - vm/i386.*
 	MAME i386 core
+- vm/i386_np21.*
+	Neko Project 21/W i386 core
 - vm/i8259.*
 	Neko Project 2 and MESS 8259 core
 - vm/ld700.*

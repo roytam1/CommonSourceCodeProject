@@ -374,45 +374,212 @@ uint32_t MEMBUS::read_io8(uint32_t addr)
 	#define UPPER_MEMORY_32BIT	0xfffc0000
 #endif
 
+#define ADDR_MASK (addr_max - 1)
+#define BANK_MASK (bank_size - 1)
+
+inline bool MEMBUS::get_memory_addr(uint32_t *addr)
+{
+	for(;;) {
+		if(*addr < 0x80000) {
+			return true;
+		}
+		if(*addr < 0xa0000) {
+			*addr = (*addr & 0x1ffff) | window_80000h;
+			return true;
+		}
+		if(*addr < 0xc0000) {
+			*addr = (*addr & 0x1ffff) | window_a0000h;
+			return true;
+		}
+		if(*addr < UPPER_MEMORY_24BIT) {
+			return true;
+		}
+#if defined(SUPPORT_24BIT_ADDRESS)
+		*addr &= 0xfffff;
+#else
+		if(*addr < 0x1000000 || *addr >= UPPER_MEMORY_32BIT) {
+			*addr &= 0xfffff;
+		} else {
+			return false;
+		}
+#endif
+	}
+	return false;
+}
+
 uint32_t MEMBUS::read_data8(uint32_t addr)
 {
-	if(addr < 0x80000) {
-		return MEMORY::read_data8(addr);
-	} else if(addr < 0xa0000) {
-		addr = (addr & 0x1ffff) | window_80000h;
-	} else if(addr < 0xc0000) {
-		addr = (addr & 0x1ffff) | window_a0000h;
+	if(!get_memory_addr(&addr)) {
+		return 0xff;
 	}
-	if(addr < UPPER_MEMORY_24BIT) {
-		return MEMORY::read_data8(addr);
-#if defined(SUPPORT_24BIT_ADDRESS)
+	int bank = (addr & ADDR_MASK) >> addr_shift;
+	
+	if(rd_table[bank].device != NULL) {
+		return rd_table[bank].device->read_memory_mapped_io8(addr);
 	} else {
-#else
-	} else if(addr < 0x1000000 || addr >= UPPER_MEMORY_32BIT) {
-#endif
-		return MEMORY::read_data8(addr & 0xfffff);
+		return rd_table[bank].memory[addr & BANK_MASK];
 	}
-	return 0xff;
 }
 
 void MEMBUS::write_data8(uint32_t addr, uint32_t data)
 {
-	if(addr < 0x80000) {
-		MEMORY::write_data8(addr, data);
+	if(!get_memory_addr(&addr)) {
 		return;
-	} else if(addr < 0xa0000) {
-		addr = (addr & 0x1ffff) | window_80000h;
-	} else if(addr < 0xc0000) {
-		addr = (addr & 0x1ffff) | window_a0000h;
 	}
-	if(addr < UPPER_MEMORY_24BIT) {
-		MEMORY::write_data8(addr, data);
-#if defined(SUPPORT_24BIT_ADDRESS)
+	int bank = (addr & ADDR_MASK) >> addr_shift;
+	
+	if(wr_table[bank].device != NULL) {
+		wr_table[bank].device->write_memory_mapped_io8(addr, data);
 	} else {
+		wr_table[bank].memory[addr & BANK_MASK] = data;
+	}
+}
+
+uint32_t MEMBUS::read_data16(uint32_t addr)
+{
+	uint32_t addr2 = addr & BANK_MASK;
+	
+	if(addr2 + 1 < bank_size) {
+		if(!get_memory_addr(&addr)) {
+			return 0xffff;
+		}
+		int bank = (addr & ADDR_MASK) >> addr_shift;
+		
+		if(rd_table[bank].device != NULL) {
+			return rd_table[bank].device->read_memory_mapped_io16(addr);
+		} else {
+			#ifdef __BIG_ENDIAN__
+				uint32_t val;
+				val  = rd_table[bank].memory[addr2    ];
+				val |= rd_table[bank].memory[addr2 + 1] <<  8;
+				return val;
+			#else
+				return *(uint16_t *)(rd_table[bank].memory + addr2);
+			#endif
+		}
+	} else {
+		uint32_t val;
+		val  = MEMBUS::read_data8(addr    );
+		val |= MEMBUS::read_data8(addr + 1) << 8;
+		return val;
+	}
+}
+
+void MEMBUS::write_data16(uint32_t addr, uint32_t data)
+{
+	uint32_t addr2 = addr & BANK_MASK;
+	
+	if(addr2 + 1 < bank_size) {
+		if(!get_memory_addr(&addr)) {
+			return;
+		}
+		int bank = (addr & ADDR_MASK) >> addr_shift;
+		
+		if(wr_table[bank].device != NULL) {
+			wr_table[bank].device->write_memory_mapped_io16(addr, data);
+		} else {
+			#ifdef __BIG_ENDIAN__
+				wr_table[bank].memory[addr2    ] = (data     ) & 0xff
+				wr_table[bank].memory[addr2 + 1] = (data >> 8) & 0xff
+			#else
+				*(uint16_t *)(wr_table[bank].memory + addr2) = data;
+			#endif
+		}
+	} else {
+		MEMBUS::write_data8(addr    , (data     ) & 0xff);
+		MEMBUS::write_data8(addr + 1, (data >> 8) & 0xff);
+	}
+}
+
+uint32_t MEMBUS::read_data32(uint32_t addr)
+{
+	uint32_t addr2 = addr & BANK_MASK;
+	
+	if(addr2 + 3 < bank_size) {
+		if(!get_memory_addr(&addr)) {
+			return 0xffffffff;
+		}
+		int bank = (addr & ADDR_MASK) >> addr_shift;
+		
+		if(rd_table[bank].device != NULL) {
+			return rd_table[bank].device->read_memory_mapped_io32(addr);
+		} else {
+			#ifdef __BIG_ENDIAN__
+				uint32_t val;
+				val  = rd_table[bank].memory[addr2    ];
+				val |= rd_table[bank].memory[addr2 + 1] <<  8;
+				val |= rd_table[bank].memory[addr2 + 2] << 16;
+				val |= rd_table[bank].memory[addr2 + 3] << 24;
+				return val;
+			#else
+				return *(uint32_t *)(rd_table[bank].memory + addr2);
+			#endif
+		}
+	} else if(!(addr & 1)) {
+		uint32_t val;
+		val  = MEMBUS::read_data16(addr    );
+		val |= MEMBUS::read_data16(addr + 2) << 16;
+		return val;
+	} else {
+		uint32_t val;
+		val  = MEMBUS::read_data8 (addr    );
+		val |= MEMBUS::read_data16(addr + 1) <<  8;
+		val |= MEMBUS::read_data8 (addr + 3) << 24;
+		return val;
+	}
+}
+
+void MEMBUS::write_data32(uint32_t addr, uint32_t data)
+{
+	uint32_t addr2 = addr & BANK_MASK;
+	
+	if(addr2 + 3 < bank_size) {
+		for(;;) {
+			if(addr < 0x80000) {
+				break;
+			}
+			if(addr < 0xa0000) {
+				addr = (addr & 0x1ffff) | window_80000h;
+				break;
+			}
+			if(addr < 0xc0000) {
+				addr = (addr & 0x1ffff) | window_a0000h;
+				break;
+			}
+			if(addr < UPPER_MEMORY_24BIT) {
+				break;
+			}
+#if defined(SUPPORT_24BIT_ADDRESS)
+			addr &= 0xfffff;
 #else
-	} else if(addr < 0x1000000 || addr >= UPPER_MEMORY_32BIT) {
+			if(addr < 0x1000000 || addr >= UPPER_MEMORY_32BIT) {
+				addr &= 0xfffff;
+			} else {
+				return;
+			}
 #endif
-		MEMORY::write_data8(addr & 0xfffff, data);
+		}
+		int bank = (addr & ADDR_MASK) >> addr_shift;
+		
+		if(wr_table[bank].device != NULL) {
+			wr_table[bank].device->write_memory_mapped_io32(addr, data);
+		} else {
+			#ifdef __BIG_ENDIAN__
+				wr_table[bank].memory[addr2    ] = (data      ) & 0xff
+				wr_table[bank].memory[addr2 + 1] = (data >>  8) & 0xff
+				wr_table[bank].memory[addr2 + 2] = (data >> 16) & 0xff
+				wr_table[bank].memory[addr2 + 3] = (data >> 24) & 0xff
+			#else
+				*(uint32_t *)(wr_table[bank].memory + addr2) = data;
+			#endif
+		}
+	} else if(!(addr & 1)) {
+		MEMBUS::write_data16(addr    , (data      ) & 0xffff);
+		MEMBUS::write_data16(addr + 2, (data >> 16) & 0xffff);
+	} else {
+		MEMBUS::write_data8 (addr    , (data      ) & 0x00ff);
+		MEMBUS::write_data16(addr + 1, (data >>  8) & 0xffff);
+		MEMBUS::write_data8 (addr + 3, (data >> 24) & 0x00ff);
 	}
 }
 

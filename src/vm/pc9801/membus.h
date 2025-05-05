@@ -107,6 +107,7 @@ private:
 	uint32_t window_80000h;
 	uint32_t window_a0000h;
 #endif
+	inline bool get_memory_addr(uint32_t *addr);
 	
 public:
 	MEMBUS(VM_TEMPLATE* parent_vm, EMU* parent_emu) : MEMORY(parent_vm, parent_emu)
@@ -123,6 +124,10 @@ public:
 #if defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)
 	uint32_t read_data8(uint32_t addr);
 	void write_data8(uint32_t addr, uint32_t data);
+	uint32_t read_data16(uint32_t addr);
+	void write_data16(uint32_t addr, uint32_t data);
+	uint32_t read_data32(uint32_t addr);
+	void write_data32(uint32_t addr, uint32_t data);
 	uint32_t read_dma_data8(uint32_t addr);
 	void write_dma_data8(uint32_t addr, uint32_t data);
 #endif
