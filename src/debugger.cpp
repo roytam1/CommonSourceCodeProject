@@ -47,11 +47,11 @@ const _TCHAR *my_absolute_path(const _TCHAR *file_name)
 
 void my_printf(OSD *osd, const _TCHAR *format, ...)
 {
-	_TCHAR buffer[1024];
+	_TCHAR buffer[8192];
 	va_list ap;
 	
 	va_start(ap, format);
-	my_vstprintf_s(buffer, 1024, format, ap);
+	my_vstprintf_s(buffer, array_length(buffer), format, ap);
 	va_end(ap);
 	
 	if(logfile != NULL && logfile->IsOpened()) {
@@ -76,7 +76,7 @@ uint32_t my_hexatoi(DEVICE *target, const _TCHAR *str)
 	if(str == NULL || _tcslen(str) == 0) {
 		return 0;
 	}
-	my_tcscpy_s(tmp, 1024, str);
+	my_tcscpy_s(tmp, array_length(tmp), str);
 	
 	if(target) {
 		DEBUGGER *debugger = (DEBUGGER *)target->get_debugger();
@@ -188,7 +188,7 @@ void* debugger_thread(void *lpx)
 	p->running = true;
 	
 	// initialize console
-	_TCHAR buffer[1024];
+	_TCHAR buffer[8192];
 	bool cp932 = (p->osd->get_console_code_page() == 932);
 	
 	p->osd->open_console(create_string(_T("Debugger - %s"), _T(DEVICE_NAME)));
@@ -214,14 +214,14 @@ void* debugger_thread(void *lpx)
 	uint32_t dasm_addr = cpu->get_next_pc();
 	
 	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-	cpu->get_debug_regs_info(buffer, 1024);
+	cpu->get_debug_regs_info(buffer, array_length(buffer));
 	my_printf(p->osd, _T("%s\n"), buffer);
 	
 	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 	my_printf(p->osd, _T("breaked at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
 	
 	p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-	cpu->debug_dasm(cpu->get_next_pc(), buffer, 1024);
+	cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 	my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
 	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 	
@@ -424,7 +424,7 @@ void* debugger_thread(void *lpx)
 			} else if(_tcsicmp(params[0], _T("EA")) == 0) {
 				if(num >= 3) {
 					uint32_t addr = my_hexatoi(target, params[1]) & target->get_debug_data_addr_mask();
-					my_tcscpy_s(buffer, 1024, prev_command);
+					my_tcscpy_s(buffer, array_length(buffer), prev_command);
 					if((token = my_tcstok_s(buffer, _T("\""), &context)) != NULL && (token = my_tcstok_s(NULL, _T("\""), &context)) != NULL) {
 						int len = _tcslen(token);
 						for(int i = 0; i < len; i++) {
@@ -475,7 +475,7 @@ void* debugger_thread(void *lpx)
 				}
 			} else if(_tcsicmp(params[0], _T("R")) == 0) {
 				if(num == 1) {
-					target->get_debug_regs_info(buffer, 1024);
+					target->get_debug_regs_info(buffer, array_length(buffer));
 					my_printf(p->osd, _T("%s\n"), buffer);
 				} else if(num == 3) {
 					if(!target->write_debug_reg(params[1], my_hexatoi(target, params[2]))) {
@@ -516,7 +516,7 @@ void* debugger_thread(void *lpx)
 						uint32_t end_addr = my_hexatoi(target, params[2]) & target->get_debug_prog_addr_mask();
 						while(dasm_addr <= end_addr) {
 							const _TCHAR *name = my_get_symbol(target, dasm_addr & target->get_debug_prog_addr_mask());
-							int len = target->debug_dasm(dasm_addr & target->get_debug_prog_addr_mask(), buffer, 1024);
+							int len = target->debug_dasm(dasm_addr & target->get_debug_prog_addr_mask(), buffer, array_length(buffer));
 							if(name != NULL) {
 								my_printf(p->osd, _T("%08X                  "), dasm_addr & target->get_debug_prog_addr_mask());
 								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
@@ -536,7 +536,7 @@ void* debugger_thread(void *lpx)
 					} else {
 						for(int i = 0; i < 16; i++) {
 							const _TCHAR *name = my_get_symbol(target, dasm_addr & target->get_debug_prog_addr_mask());
-							int len = target->debug_dasm(dasm_addr & target->get_debug_prog_addr_mask(), buffer, 1024);
+							int len = target->debug_dasm(dasm_addr & target->get_debug_prog_addr_mask(), buffer, array_length(buffer));
 							if(name != NULL) {
 								my_printf(p->osd, _T("%08X                  "), dasm_addr & target->get_debug_prog_addr_mask());
 								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
@@ -570,7 +570,7 @@ void* debugger_thread(void *lpx)
 						int index = (target_debugger->cpu_trace_ptr + i) & (MAX_CPU_TRACE - 1);
 						if(!(target_debugger->cpu_trace[index] & ~target->get_debug_prog_addr_mask())) {
 							const _TCHAR *name = my_get_symbol(target, target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask());
-							int len = target->debug_dasm(target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask(), buffer, 1024);
+							int len = target->debug_dasm(target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask(), buffer, array_length(buffer));
 							if(name != NULL) {
 								my_printf(p->osd, _T("%08X                  "), target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask());
 								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
@@ -600,7 +600,7 @@ void* debugger_thread(void *lpx)
 				}
 			} else if(_tcsicmp(params[0], _T("N")) == 0) {
 				if(num >= 2 && params[1][0] == _T('\"')) {
-					my_tcscpy_s(buffer, 1024, prev_command);
+					my_tcscpy_s(buffer, array_length(buffer), prev_command);
 					if((token = my_tcstok_s(buffer, _T("\""), &context)) != NULL && (token = my_tcstok_s(NULL, _T("\""), &context)) != NULL) {
 						my_tcscpy_s(debugger->file_path, _MAX_PATH, my_absolute_path(token));
 					} else {
@@ -871,7 +871,7 @@ void* debugger_thread(void *lpx)
 					bool break_points_stored = false;
 					if(_tcsicmp(params[0], _T("P")) == 0) {
 						debugger->store_break_points();
-						debugger->bp.table[0].addr = (cpu->get_next_pc() + cpu->debug_dasm(cpu->get_next_pc(), buffer, 1024)) & cpu->get_debug_prog_addr_mask();
+						debugger->bp.table[0].addr = (cpu->get_next_pc() + cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer))) & cpu->get_debug_prog_addr_mask();
 						debugger->bp.table[0].mask = cpu->get_debug_prog_addr_mask();
 						debugger->bp.table[0].status = 1;
 						debugger->bp.table[0].check_point = false;
@@ -918,19 +918,19 @@ RESTART_GO:
 					}
 					
 					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-					cpu->debug_dasm(cpu->get_pc(), buffer, 1024);
+					cpu->debug_dasm(cpu->get_pc(), buffer, array_length(buffer));
 					my_printf(p->osd, _T("done\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()), buffer);
 					
 					p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-					cpu->get_debug_regs_info(buffer, 1024);
+					cpu->get_debug_regs_info(buffer, array_length(buffer));
 					my_printf(p->osd, _T("%s\n"), buffer);
 					
 					if(cpu != target) {
 						p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-						if(target->debug_dasm(target->get_next_pc(), buffer, 1024) != 0) {
+						if(target->debug_dasm(target->get_next_pc(), buffer, array_length(buffer)) != 0) {
 							my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(target, _T("%08X"), target->get_next_pc()), buffer);
 						}
-						target->get_debug_regs_info(buffer, 1024);
+						target->get_debug_regs_info(buffer, array_length(buffer));
 						my_printf(p->osd, _T("%s\n"), buffer);
 					}
 					
@@ -975,7 +975,7 @@ RESTART_GO:
 						debugger->restore_break_points();
 					}
 					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-					cpu->debug_dasm(cpu->get_next_pc(), buffer, 1024);
+					cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 					my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
 					p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 				} else {
@@ -1003,19 +1003,19 @@ RESTART_GO:
 						}
 						
 						p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-						cpu->debug_dasm(cpu->get_pc(), buffer, 1024);
+						cpu->debug_dasm(cpu->get_pc(), buffer, array_length(buffer));
 						my_printf(p->osd, _T("done\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()), buffer);
 						
 						p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-						cpu->get_debug_regs_info(buffer, 1024);
+						cpu->get_debug_regs_info(buffer, array_length(buffer));
 						my_printf(p->osd, _T("%s\n"), buffer);
 						
 						if(cpu != target) {
 							p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-							if(target->debug_dasm(target->get_next_pc(), buffer, 1024) != 0) {
+							if(target->debug_dasm(target->get_next_pc(), buffer, array_length(buffer)) != 0) {
 								my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(target, _T("%08X"), target->get_next_pc()), buffer);
 							}
-							target->get_debug_regs_info(buffer, 1024);
+							target->get_debug_regs_info(buffer, array_length(buffer));
 							my_printf(p->osd, _T("%s\n"), buffer);
 						}
 						
@@ -1055,7 +1055,7 @@ RESTART_GO:
 						}
 					}
 					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-					cpu->debug_dasm(cpu->get_next_pc(), buffer, 1024);
+					cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 					my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
 					p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 				} else {
@@ -1193,14 +1193,14 @@ RESTART_GO:
 								dasm_addr = cpu->get_next_pc();
 								
 								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-								cpu->get_debug_regs_info(buffer, 1024);
+								cpu->get_debug_regs_info(buffer, array_length(buffer));
 								my_printf(p->osd, _T("%s\n"), buffer);
 								
 								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 								my_printf(p->osd, _T("breaked at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
 								
 								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-								cpu->debug_dasm(cpu->get_next_pc(), buffer, 1024);
+								cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 								my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
 								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 							}

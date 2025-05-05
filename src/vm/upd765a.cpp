@@ -1763,13 +1763,25 @@ void UPD765A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	int drv = hdu & DRIVE_MASK;
 	int side = (hdu >> 2) & 1;
+	int position = get_cur_position(drv);
 	
 	my_stprintf_s(buffer, buffer_len,
-	_T("CMD=%02X (%s) HDU=%02X C=%02X H=%02X R=%02X N=%02X EOT=%02X GPL=%02X DTL=%02X\nUNIT: DRIVE=%d TRACK=%2d(%2d) SIDE=%d SECTORS=%2d C=%02X H=%02X R=%02X N=%02X LENGTH=%d"),
+	_T("CMD=%02X (%s) HDU=%02X C=%02X H=%02X R=%02X N=%02X EOT=%02X GPL=%02X DTL=%02X\nUNIT: DRIVE=%d TRACK=%2d(%2d) SIDE=%d POSITION=%5d/%d"),
 	command, get_command_name(command), hdu,id[0], id[1], id[2], id[3], eot, gpl, dtl,
-	drv, fdc[drv].track, fdc[drv].cur_track, side, disk[drv]->sector_num.sd,
-	disk[drv]->id[0], disk[drv]->id[1], disk[drv]->id[2], disk[drv]->id[3],
-	disk[drv]->sector_size.sd);
+	drv, fdc[drv].track, fdc[drv].cur_track, side,
+	position, disk[drv]->get_track_size());
+	
+	for(int i = 0; i < disk[drv]->sector_num.sd; i++) {
+		uint8_t c, h, r, n;
+		int length;
+		if(disk[drv]->get_sector_info(-1, -1, i, &c, &h, &r, &n, &length)) {
+			my_tcscat_s(buffer, buffer_len,
+			create_string(_T("\nSECTOR %2d: C=%02X H=%02X R=%02X N=%02X SIZE=%4d AM1=%5d DATA=%5d"), i + 1, c, h, r, n, length, disk[drv]->am1_position[i], disk[drv]->data_position[i]));
+			if(position >= disk[drv]->am1_position[i] && position < disk[drv]->data_position[i] + length) {
+				my_tcscat_s(buffer, buffer_len, _T(" <==="));
+			}
+		}
+	}
 }
 #endif
 

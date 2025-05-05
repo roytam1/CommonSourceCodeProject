@@ -1542,8 +1542,10 @@ void MB8877::close_disk(int drv)
 {
 	if(drv < MAX_DRIVE) {
 		disk[drv]->close();
-		cmdtype = 0;
-		update_head_flag(drvreg, false);
+		if(drv == drvreg) {
+			cmdtype = 0;
+		}
+		update_head_flag(drv, false);
 	}
 }
 
@@ -1642,12 +1644,25 @@ void MB8877::update_config()
 #ifdef USE_DEBUGGER
 void MB8877::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
+	int position = get_cur_position();
+	
 	my_stprintf_s(buffer, buffer_len,
-	_T("CMDREG=%02X (%s) DATAREG=%02X DRVREG=%02X TRKREG=%02X SIDEREG=%d SECREG=%02X\nUNIT: DRIVE=%d TRACK=%2d SIDE=%d SECTORS=%2d C=%02X H=%02X R=%02X N=%02X LENGTH=%d"),
+	_T("CMDREG=%02X (%s) DATAREG=%02X DRVREG=%02X TRKREG=%02X SIDEREG=%d SECREG=%02X\nUNIT: DRIVE=%d TRACK=%2d SIDE=%d POSITION=%5d/%d"),
 	cmdreg, cmdstr[cmdreg >> 4], datareg, drvreg, trkreg, sidereg, secreg,
-	drvreg, fdc[drvreg].track, sidereg, disk[drvreg]->sector_num.sd,
-	disk[drvreg]->id[0], disk[drvreg]->id[1], disk[drvreg]->id[2], disk[drvreg]->id[3],
-	disk[drvreg]->sector_size.sd);
+	drvreg, fdc[drvreg].track, sidereg,
+	position, disk[drvreg]->get_track_size());
+	
+	for(int i = 0; i < disk[drvreg]->sector_num.sd; i++) {
+		uint8_t c, h, r, n;
+		int length;
+		if(disk[drvreg]->get_sector_info(-1, -1, i, &c, &h, &r, &n, &length)) {
+			my_tcscat_s(buffer, buffer_len,
+			create_string(_T("\nSECTOR %2d: C=%02X H=%02X R=%02X N=%02X SIZE=%4d AM1=%5d DATA=%5d"), i + 1, c, h, r, n, length, disk[drvreg]->am1_position[i], disk[drvreg]->data_position[i]));
+			if(position >= disk[drvreg]->am1_position[i] && position < disk[drvreg]->data_position[i] + length) {
+				my_tcscat_s(buffer, buffer_len, _T(" <==="));
+			}
+		}
+	}
 }
 #endif
 

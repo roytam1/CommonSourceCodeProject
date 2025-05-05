@@ -494,6 +494,17 @@ void VM::reset()
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->reset();
 	}
+	
+	// hack to force reset iei/oei
+#if 1
+	for(DEVICE* device = cpu; device; device = device->get_context_child()) {
+		device->reset();
+	}
+#else
+	cpu->get_context_child()->notify_intr_reti();
+	cpu->reset();
+#endif
+	
 	pio->write_signal(SIG_I8255_PORT_B, 0x00, 0x08);	// busy = low
 	psg->set_reg(0x2e, 0);	// set prescaler
 }

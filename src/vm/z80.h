@@ -187,6 +187,10 @@ public:
 	{
 		d_pic = device;
 	}
+	DEVICE *get_context_child()
+	{
+		return d_pic;
+	}
 #ifdef Z80_PSEUDO_BIOS
 	void set_context_bios(DEVICE* device)
 	{
