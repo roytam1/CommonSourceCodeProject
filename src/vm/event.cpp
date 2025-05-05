@@ -69,7 +69,7 @@ void EVENT::reset()
 		}
 	}
 	
-	event_remain = 0;
+	event_remain = event_extra = 0;
 	cpu_remain = cpu_accum = cpu_done = 0;
 	
 	// reset sound
@@ -146,6 +146,7 @@ void EVENT::drive()
 		while(event_remain > 0) {
 			int event_done = event_remain;
 			if(cpu_remain > 0) {
+				event_extra = 0;
 				int cpu_done_tmp;
 				if(dcount_cpu == 1) {
 					// run one opecode on primary cpu
@@ -159,7 +160,7 @@ void EVENT::drive()
 					
 					// sub cpu runs continuously and no events will be fired while the given clocks,
 					// so I need to give small enough clocks...
-					cpu_done_tmp = (cpu_done < 4) ? cpu_done : 4;
+					cpu_done_tmp = (event_extra > 0 || cpu_done < 4) ? cpu_done : 4;
 					cpu_done -= cpu_done_tmp;
 					
 					for(int i = 1; i < dcount_cpu; i++) {
@@ -176,16 +177,37 @@ void EVENT::drive()
 				cpu_accum += cpu_done_tmp;
 				event_done = cpu_accum >> power;
 				cpu_accum -= event_done << power;
+				event_done -= event_extra;
 			}
 			if(event_done > 0) {
-				if(event_done > event_remain) {
-					update_event(event_remain);
-				} else {
-					update_event(event_done);
+				if(event_remain > 0) {
+					if(event_done > event_remain) {
+						update_event(event_remain);
+					} else {
+						update_event(event_done);
+					}
 				}
 				event_remain -= event_done;
 			}
 		}
+	}
+}
+
+void EVENT::update_extra_event(int clock)
+{
+	// this is called from primary cpu while running one opecode
+	int event_done = clock >> power;
+	
+	if(event_done > 0) {
+		if(event_remain > 0) {
+			if(event_done > event_remain) {
+				update_event(event_remain);
+			} else {
+				update_event(event_done);
+			}
+		}
+		event_remain -= event_done;
+		event_extra += event_done;
 	}
 }
 
@@ -609,7 +631,7 @@ void EVENT::update_config()
 	}
 }
 
-#define STATE_VERSION	3
+#define STATE_VERSION	4
 
 bool EVENT::process_state(FILEIO* state_fio, bool loading)
 {
@@ -629,6 +651,7 @@ bool EVENT::process_state(FILEIO* state_fio, bool loading)
 	}
 	state_fio->StateArray(vclocks, sizeof(vclocks), 1);
 	state_fio->StateValue(event_remain);
+	state_fio->StateValue(event_extra);
 	state_fio->StateValue(cpu_remain);
 	state_fio->StateValue(cpu_accum);
 	state_fio->StateValue(cpu_done);

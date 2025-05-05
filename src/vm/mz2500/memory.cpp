@@ -169,6 +169,7 @@ void MEMORY::write_data8w(uint32_t addr, uint32_t data, int* wait)
 	int b = addr >> 13;
 	write_data8_tmp(b, addr, data);
 	
+/*
 	if(busreq) {
 		*wait = 0;
 		extra_wait += page_wait[b];
@@ -176,6 +177,8 @@ void MEMORY::write_data8w(uint32_t addr, uint32_t data, int* wait)
 		*wait = page_wait[b] + extra_wait;
 		extra_wait = 0;
 	}
+*/
+	*wait = page_wait[b];
 }
 
 uint32_t MEMORY::read_data8w(uint32_t addr, int* wait)
@@ -184,6 +187,7 @@ uint32_t MEMORY::read_data8w(uint32_t addr, int* wait)
 	int b = addr >> 13;
 	uint32_t data = read_data8_tmp(b, addr);
 	
+/*
 	if(busreq) {
 		*wait = 0;
 		extra_wait += page_wait[b];
@@ -191,6 +195,8 @@ uint32_t MEMORY::read_data8w(uint32_t addr, int* wait)
 		*wait = page_wait[b] + extra_wait;
 		extra_wait = 0;
 	}
+*/
+	*wait = page_wait[b];
 	return data;
 }
 
