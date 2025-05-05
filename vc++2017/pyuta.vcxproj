@@ -118,7 +118,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/pyuta.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -169,9 +169,8 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Debug/pyuta.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
+      <HeaderFileName />
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -222,7 +221,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/pyuta.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -274,9 +273,8 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Release/pyuta.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
+      <HeaderFileName />
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>

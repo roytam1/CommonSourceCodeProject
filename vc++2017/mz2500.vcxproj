@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{19644030-FB96-4EE0-8819-86D8D13C25A7}</ProjectGuid>
     <RootNamespace>mz2500</RootNamespace>
     <Keyword>Win32Proj</Keyword>
@@ -119,7 +118,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/mz2500.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -170,9 +169,8 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Debug/mz2500.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
+      <HeaderFileName />
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -223,7 +221,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/mz2500.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -275,9 +273,8 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Release/mz2500.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
+      <TypeLibraryName>$(IntDir)vc$(PlatformToolsetVersion)\$(targetname).tlb</TypeLibraryName>
+      <HeaderFileName />
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
