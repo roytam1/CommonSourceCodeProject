@@ -64,6 +64,9 @@
 #if defined(_MZ700) || defined(_MZ1500)
 #define USE_AUTO_KEY_NUMPAD
 #define USE_VM_AUTO_KEY_TABLE
+#define USE_JOYSTICK
+#define USE_JOYSTICK_TYPE	3
+#define USE_JOY_BUTTON_CAPTIONS
 #endif
 #if defined(_MZ800)
 #define USE_MONITOR_TYPE	2
@@ -173,6 +176,19 @@ static const _TCHAR *sound_device_caption[] = {
 };
 #endif
 
+#ifdef USE_JOY_BUTTON_CAPTIONS
+static const _TCHAR *joy_button_captions[] = {
+	_T("Up"),
+	_T("Down"),
+	_T("Left"),
+	_T("Right"),
+	_T("Button #1"),
+	_T("Button #2"),
+	_T("Run"),
+	_T("Select"),
+};
+#endif
+
 class EMU;
 class DEVICE;
 class EVENT;
@@ -203,6 +219,9 @@ class FLOPPY;
 class PSG;
 #endif
 class QUICKDISK;
+#endif
+#if defined(_MZ700) || defined(_MZ1500)
+class JOYSTICK;
 #endif
 
 class VM : public VM_TEMPLATE
@@ -250,6 +269,9 @@ protected:
 	PSG* psg;
 #endif
 	QUICKDISK* qd;
+#endif
+#if defined(_MZ700) || defined(_MZ1500)
+	JOYSTICK* joystick;
 #endif
 	
 #if defined(_MZ800)

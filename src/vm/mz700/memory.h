@@ -27,6 +27,9 @@ private:
 #if defined(_MZ800)
 	DEVICE *d_pio_int;
 #endif
+#if defined(_MZ700) || defined(_MZ1500)
+	DEVICE *d_joystick;
+#endif
 	
 	// memory
 	uint8_t* rbank[32];
@@ -154,6 +157,12 @@ public:
 	void set_context_pio_int(DEVICE* device)
 	{
 		d_pio_int = device;
+	}
+#endif
+#if defined(_MZ700) || defined(_MZ1500)
+	void set_context_joystick(DEVICE* device)
+	{
+		d_joystick = device;
 	}
 #endif
 	void draw_screen();

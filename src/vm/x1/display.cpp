@@ -548,11 +548,13 @@ void DISPLAY::event_frame()
 	hz_total = regs[0] + 1;
 	hz_disp = regs[1];
 	vt_disp = regs[6] & 0x7f;
+	vt_ofs = regs[5] & 0x1f;
 	st_addr = (regs[12] << 8) | regs[13];
 	
 #ifdef _X1TURBO_FEATURE
 	int vt_total = ((regs[4] & 0x7f) + 1) * ch_height + (regs[5] & 0x1f);
 	hireso = (vt_total > 400);
+	if(!hireso) vt_ofs = max(vt_ofs - 2, 0);
 #endif
 	
 	// initialize draw screen
@@ -765,6 +767,16 @@ void DISPLAY::draw_screen()
 #endif
 	}
 	
+	// total raster_adjust
+#ifdef _X1TURBO_FEATURE
+	for(int y = 0; y < vt_ofs * (hireso ? 1 : 2); y++) {
+#else
+	for(int y = 0; y < vt_ofs * 2; y++) {
+#endif
+		scrntype_t* dest = emu->get_screen_buffer(y);
+		memset(dest, 0, 640 * sizeof(scrntype_t));
+	}
+	
 	// copy to real screen
 #ifdef _X1TURBO_FEATURE
 	if(hireso) {
@@ -773,8 +785,8 @@ void DISPLAY::draw_screen()
 		
 		if(column40) {
 			// 40 columns
-			for(int y = 0; y < 400; y++) {
-				scrntype_t* dest = emu->get_screen_buffer(y);
+			for(int y = 0; y + vt_ofs < 400; y++) {
+				scrntype_t* dest = emu->get_screen_buffer(y + vt_ofs);
 				uint8_t* src_text = text[y];
 #ifdef _X1TURBOZ
 				if(aen_line[y]) {
@@ -802,8 +814,8 @@ void DISPLAY::draw_screen()
 			}
 		} else {
 			// 80 columns
-			for(int y = 0; y < 400; y++) {
-				scrntype_t* dest = emu->get_screen_buffer(y);
+			for(int y = 0; y + vt_ofs < 400; y++) {
+				scrntype_t* dest = emu->get_screen_buffer(y + vt_ofs);
 				uint8_t* src_text = text[y];
 #ifdef _X1TURBOZ
 				if(aen_line[y]) {
@@ -838,9 +850,9 @@ void DISPLAY::draw_screen()
 		
 		if(column40) {
 			// 40 columns
-			for(int y = 0; y < 200; y++) {
-				scrntype_t* dest0 = emu->get_screen_buffer(y * 2 + 0);
-				scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
+			for(int y = 0; y + vt_ofs < 200; y++) {
+				scrntype_t* dest0 = emu->get_screen_buffer((y + vt_ofs) * 2 + 0);
+				scrntype_t* dest1 = emu->get_screen_buffer((y + vt_ofs) * 2 + 1);
 				uint8_t* src_text = text[y];
 #ifdef _X1TURBOZ
 				if(aen_line[y]) {
@@ -883,9 +895,9 @@ void DISPLAY::draw_screen()
 			}
 		} else {
 			// 80 columns
-			for(int y = 0; y < 200; y++) {
-				scrntype_t* dest0 = emu->get_screen_buffer(y * 2 + 0);
-				scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
+			for(int y = 0; y + vt_ofs < 200; y++) {
+				scrntype_t* dest0 = emu->get_screen_buffer((y + vt_ofs) * 2 + 0);
+				scrntype_t* dest1 = emu->get_screen_buffer((y + vt_ofs) * 2 + 1);
 				uint8_t* src_text = text[y];
 #ifdef _X1TURBOZ
 				if(aen_line[y]) {

@@ -49,6 +49,9 @@
 #endif
 #include "quickdisk.h"
 #endif
+#if defined(_MZ700) || defined(_MZ1500)
+#include "joystick.h"
+#endif
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -122,6 +125,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 #endif
 	qd = new QUICKDISK(this, emu);
 #endif
+#if defined(_MZ700) || defined(_MZ1500)
+	joystick = new JOYSTICK(this, emu);
+#endif
 	
 	// set contexts
 	event->set_context_cpu(cpu);
@@ -161,6 +167,7 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 #else
 	// 8253:CLK#0 <- 895KHz
 	pit->set_constant_clock(0, CPU_CLOCKS / 4);
+	memory->set_context_joystick(joystick);
 #endif
 	
 #if defined(_MZ800) || defined(_MZ1500)

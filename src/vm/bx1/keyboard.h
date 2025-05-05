@@ -20,7 +20,6 @@ class KEYBOARD : public DEVICE
 {
 private:
 	FIFO *fifo_down;
-	FIFO *fifo_up;
 	
 public:
 	KEYBOARD(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
@@ -33,7 +32,6 @@ public:
 	void initialize();
 	void release();
 	void reset();
-	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	bool process_state(FILEIO* state_fio, bool loading);
 	

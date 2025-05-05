@@ -22,7 +22,7 @@ private:
 	uint8_t *ram;
 	FILEIO *fio;
 	uint8_t column, htab;
-	uint8_t e210, e211;
+	uint8_t strobe, outdata;
 	
 	void output(uint8_t);
 	
@@ -37,7 +37,6 @@ public:
 	void initialize();
 	void release();
 	void reset();
-	void event_frame();
 	void event_vline(int v, int clock);
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);

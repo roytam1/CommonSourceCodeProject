@@ -714,7 +714,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	7
+#define STATE_VERSION	8
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {
