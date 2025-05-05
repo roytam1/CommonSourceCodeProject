@@ -287,7 +287,7 @@ void MC6843::finish_STZ( )
 	m_GCR = 0;
 	m_SAR = 0;
 //	m_STRB |= img->floppy_tk00_r() << 4;
-	m_STRB |= (fdc[m_drive].track == 0) << 4;
+	m_STRB |= (fdc[m_drive].track != 0) << 4;
 
 	cmd_end( );
 }
@@ -381,6 +381,9 @@ int MC6843::address_search( chrn_id* id )
 			{
 				m_ISR |= 0x04; /* if no DMA, set Status Sense */
 			}
+#ifdef _FDC_DEBUG_LOG
+			this->out_debug_log(_T("FDC: FOUND C=%02X H=%02X R=%02X N=%02X\n"), id->C, id->H, id->R, id->N);
+#endif
 			return 1;
 		}
 	}
@@ -527,6 +530,7 @@ uint8_t MC6843::read(offs_t offset)
 	case 0: /* Data Input Register (DIR) */
 	{
 		int cmd = m_CMR & 0x0f;
+		int data_index = m_data_idx;
 
 //		LOG( "%f %s mc6843_r: data input cmd=%s(%i), pos=%i/%i, GCR=%i, ",
 //				machine().time().as_double(), machine().describe_context(),
@@ -590,6 +594,9 @@ uint8_t MC6843::read(offs_t offset)
 
 //		LOG( "data=%02X\n", data );
 
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: IN DIR=%02X IDX=%02X\n"), data, data_index);
+#endif
 		break;
 	}
 
@@ -598,6 +605,9 @@ uint8_t MC6843::read(offs_t offset)
 //		LOG( "%f %s mc6843_r: read CTAR %i (actual=%i)\n",
 //				machine().time().as_double(), machine().describe_context(), data,
 //				floppy_image()->floppy_drive_get_current_track());
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: IN CTAR=%02X\n"), data);
+#endif
 		break;
 
 	case 2: /* Interrupt Status Register (ISR) */
@@ -610,6 +620,9 @@ uint8_t MC6843::read(offs_t offset)
 		/* reset */
 		m_ISR &= 8; /* keep STRB */
 		status_update( );
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: IN ISR=%02X\n"), data);
+#endif
 		break;
 
 	case 3: /* Status Register A (STRA) */
@@ -623,7 +636,7 @@ uint8_t MC6843::read(offs_t offset)
 			m_STRA |= 0x04;
 
 //		m_STRA |= !img->floppy_tk00_r() << 3;
-		m_STRA |= (disk[m_drive]->inserted && fdc[m_drive].track != 0) << 3;
+		m_STRA |= (disk[m_drive]->inserted && fdc[m_drive].track == 0) << 3;
 //		m_STRA |= !img->floppy_wpt_r() << 4;
 		m_STRA |= (disk[m_drive]->inserted && disk[m_drive]->write_protected) << 4;
 
@@ -637,6 +650,9 @@ uint8_t MC6843::read(offs_t offset)
 //				machine().time().as_double(), machine().describe_context(), data,
 //				data & 1, (data >> 1) & 1, (data >> 2) & 1, (data >> 3) & 1,
 //				(data >> 4) & 1, (data >> 5) & 1, (data >> 6) & 1, (data >> 7) & 1 );
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: IN STRA=%02X\n"), data);
+#endif
 		break;
 	}
 
@@ -650,6 +666,9 @@ uint8_t MC6843::read(offs_t offset)
 		/* (partial) reset */
 		m_STRB &= ~0xfb;
 		status_update( );
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: IN STRB=%02X\n"), data);
+#endif
 		break;
 
 	case 7: /* Logical-Track Address Register (LTAR) */
@@ -657,6 +676,9 @@ uint8_t MC6843::read(offs_t offset)
 //		LOG( "%f %s mc6843_r: read LTAR %i (actual=%i)\n",
 //				machine().time().as_double(), machine().describe_context(), data,
 //				floppy_image()->floppy_drive_get_current_track());
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: IN LTAR=%02X\n"), data);
+#endif
 		break;
 
 //	default:
@@ -671,6 +693,9 @@ void MC6843::write(offs_t offset, uint8_t data)
 	switch ( offset ) {
 	case 0: /* Data Output Register (DOR) */
 	{
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT DOR=%02X IDX=%02X\n"), data, m_data_idx);
+#endif
 		int cmd = m_CMR & 0x0f;
 		int FWF = (m_CMR >> 4) & 1;
 
@@ -797,6 +822,9 @@ void MC6843::write(offs_t offset, uint8_t data)
 	}
 
 	case 1: /* Current-Track Address Register (CTAR) */
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT CTAR=%02X\n"), data);
+#endif
 		m_CTAR = data;
 //		LOG( "%f %s mc6843_w: set CTAR to %i %02X (actual=%i) \n",
 //				machine().time().as_double(), machine().describe_context(), m_CTAR, data,
@@ -805,6 +833,9 @@ void MC6843::write(offs_t offset, uint8_t data)
 
 	case 2: /* Command Register (CMR) */
 	{
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT CMR=%02X %s\n"), data, mc6843_cmd[data & 15]);
+#endif
 		int cmd = data & 15;
 
 //		LOG( "%f %s mc6843_w: set CMR to $%02X: cmd=%s(%i) FWF=%i DMA=%i ISR3-intr=%i fun-intr=%i\n",
@@ -844,6 +875,9 @@ void MC6843::write(offs_t offset, uint8_t data)
 			register_event(this, EVENT_SEEK, 64 * ((m_SUR >> 4) + 1), false, &m_seek_id);
 			// set target track number
 			fdc[m_drive].target_track = (cmd == CMD_STZ) ? 0 : m_GCR - (m_CTAR & 0x7F);
+#ifdef _FDC_DEBUG_LOG
+			this->out_debug_log(_T("FDC: SEEK DRIVE=%d TARGET=%d\n"), m_drive, fdc[m_drive].target_track);
+#endif
 			break;
 		case CMD_FFW:
 		case CMD_FFR:
@@ -858,6 +892,9 @@ void MC6843::write(offs_t offset, uint8_t data)
 	}
 
 	case 3: /* Set-Up Register (SUR) */
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT SUR=%02X\n"), data);
+#endif
 		m_SUR = data;
 
 		/* assume CLK freq = 1MHz (IBM 3740 compatibility) */
@@ -867,16 +904,25 @@ void MC6843::write(offs_t offset, uint8_t data)
 		break;
 
 	case 4: /* Sector Address Register (SAR) */
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT SAR=%02X\n"), data);
+#endif
 		m_SAR = data & 0x1f;
 //		LOG( "%f %s mc6843_w: set SAR to %i (%02X)\n", machine().time().as_double(), machine().describe_context(), m_SAR, data );
 		break;
 
 	case 5: /* General Count Register (GCR) */
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT GCR=%02X\n"), data);
+#endif
 		m_GCR = data & 0x7f;
 //		LOG( "%f %s mc6843_w: set GCR to %i (%02X)\n", machine().time().as_double(), machine().describe_context(), m_GCR, data );
 		break;
 
 	case 6: /* CRC Control Register (CCR) */
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT CCR=%02X\n"), data);
+#endif
 		m_CCR = data & 3;
 //		LOG( "%f %s mc6843_w: set CCR to %02X: CRC=%s shift=%i\n",
 //				machine().time().as_double(), machine().describe_context(), data,
@@ -884,6 +930,9 @@ void MC6843::write(offs_t offset, uint8_t data)
 		break;
 
 	case 7: /* Logical-Track Address Register (LTAR) */
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: OUT LTAR=%02X\n"), data);
+#endif
 		m_LTAR = data & 0x7f;
 //		LOG( "%f %s mc6843_w: set LTAR to %i %02X (actual=%i)\n",
 //				machine().time().as_double(), machine().describe_context(), m_LTAR, data,
@@ -1019,12 +1068,15 @@ void MC6843::event_callback(int event_id, int err)
 		break;
 	case EVENT_SEEK:
 		if(fdc[m_drive].track > fdc[m_drive].target_track) {
-			fdc[m_drive].track++;
-			if(d_noise_seek != NULL) d_noise_seek->play();
-		} else if(fdc[m_drive].track < fdc[m_drive].target_track) {
 			fdc[m_drive].track--;
 			if(d_noise_seek != NULL) d_noise_seek->play();
+		} else if(fdc[m_drive].track < fdc[m_drive].target_track) {
+			fdc[m_drive].track++;
+			if(d_noise_seek != NULL) d_noise_seek->play();
 		}
+#ifdef _FDC_DEBUG_LOG
+		this->out_debug_log(_T("FDC: SEEK DRIVE=%d TARGET=%d TRACK=%d\n"), m_drive, fdc[m_drive].target_track, fdc[m_drive].track);
+#endif
 		if(fdc[m_drive].track == fdc[m_drive].target_track) {
 			switch ( m_CMR & 0x0f )
 			{

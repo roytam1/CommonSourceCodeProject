@@ -1,3 +1,18 @@
+2/7/2021
+
+[WINMAIN] improve WM_KEYDOW/WM_KEYUP events for VK_PROCESSKEY case
+[WIN32/CONSLE] improve routine to change console size
+
+[VM/DISK] fix density flag when loading solid image with fm sectors
+[VM/MC6843] fix track zero flag in STRA
+[VM/MC6843] fix seek error flag in STRB
+[VM/MC6843] fix seek command
+
+[BX1/DISPLAY] improve for drawing digitron display
+[BX1/KEYBOARD] improve I/O ports for detecting key pressed/released
+[BX1/PRINTER] add ugly patch for printer process
+
+
 1/24/2021
 
 [VM/I8279] support 8279 (based on MAME)

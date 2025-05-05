@@ -15,11 +15,9 @@
 #include "../mc6800.h"
 #include "../io.h"
 #include "../memory.h"
-#include "../beep.h"
 #include "../disk.h"
 #include "../mc6843.h"
 #include "../mc6844.h"
-#include "../mc6850.h"
 #include "../noise.h"
 
 #ifdef USE_DEBUGGER
@@ -28,6 +26,7 @@
 
 #include "display.h"
 #include "keyboard.h"
+#include "printer.h"
 
 // ----------------------------------------------------------------------------
 // initialize
@@ -43,46 +42,40 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	cpu = new MC6800(this, emu);
 	io = new IO(this, emu);
 	memory = new MEMORY(this, emu);
-	beep = new BEEP(this, emu);
 	fdc = new MC6843(this, emu);	// HD46503
 	fdc->set_context_noise_seek(new NOISE(this, emu));
 	fdc->set_context_noise_head_down(new NOISE(this, emu));
 	fdc->set_context_noise_head_up(new NOISE(this, emu));
 	dma = new MC6844(this, emu);	// HD46504
-	acia = new MC6850(this, emu);
 	
 	display = new DISPLAY(this, emu);
 	keyboard = new KEYBOARD(this, emu);
+	printer = new PRINTER(this, emu);
 	
 	// set contexts
 	event->set_context_cpu(cpu);
-	event->set_context_sound(beep);
 	event->set_context_sound(fdc->get_context_noise_seek());
 	event->set_context_sound(fdc->get_context_noise_head_down());
 	event->set_context_sound(fdc->get_context_noise_head_up());
 	
+//	fdc->set_context_irq(cpu, SIG_CPU_IRQ, 1);
 	fdc->set_context_drq(dma, SIG_MC6844_TX_RQ_0, 1);
 	dma->set_context_memory(memory);
 	dma->set_context_ch0(fdc);
 	dma->set_context_ch1(display);
-
-
-/*
-	memory:
-*/
-
-	display->set_context_cpu(cpu);
+	
 	display->set_context_dma(dma);
-	display->set_context_ram(ram);
+	printer->set_context_ram(ram);
 	
 	// cpu bus
 	cpu->set_context_mem(memory);
 #ifdef USE_DEBUGGER
 	DEBUGGER *debugger = new DEBUGGER(this, emu);
 	cpu->set_context_debugger(debugger);
-
-	debugger->add_symbol(0x015c, _T("VRAM_TOP"));
-
+	
+//	debugger->add_symbol(0x015c, _T("VRAM_TOP"));
+	debugger->add_symbol(0xe121, _T("KEY_DOWN"));
+	debugger->add_symbol(0xe122, _T("KEY_UP"));
 	debugger->add_symbol(0xe140, _T("DMA[0].ADDR_HI"));
 	debugger->add_symbol(0xe141, _T("DMA[0].ADDR_LO"));
 	debugger->add_symbol(0xe142, _T("DMA[0].COUNT_HI"));
@@ -118,87 +111,23 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 	// memory bus
 	memset(ram, 0x00, sizeof(ram));
-	memset(basic, 0xff, sizeof(basic));
-	memset(boot, 0xff, sizeof(boot));
+	memset(bios_9000, 0xff, sizeof(bios_9000));
+	memset(bios_f000, 0xff, sizeof(bios_f000));
 	
-	memory->read_bios(_T("BASIC.ROM"), basic, sizeof(basic));
-	memory->read_bios(_T("BOOT.ROM"), boot, sizeof(boot));
+	memory->read_bios(_T("BIOS_9000.ROM"), bios_9000, sizeof(bios_9000));
+	memory->read_bios(_T("BIOS_F000.ROM"), bios_f000, sizeof(bios_f000));
 	
 	memory->set_memory_rw(0x0000, 0x3fff, ram);
-	memory->set_memory_r(0x9000, 0xdfff, basic);
+	memory->set_memory_r(0x9000, 0xdfff, bios_9000);
 	memory->set_memory_mapped_io_rw(0xe000, 0xefff, io);
-	memory->set_memory_r(0xf000, 0xffff, boot);
+	memory->set_memory_r(0xf000, 0xffff, bios_f000);
 	
 	// io bus
 	io->set_iomap_range_rw(0xe121, 0xe122, keyboard);
 	io->set_iomap_range_rw(0xe140, 0xe156, dma);
 	io->set_iomap_range_rw(0xe180, 0xe187, fdc);
+	io->set_iomap_range_rw(0xe210, 0xe212, printer); // ?????
 	
-/*
-	ram
-	0062		画面の桁数？
-	0063-0072	画面？
-
-dma[3]	15chから10hバイト
-
-	chain regでdma[3]→dma[1]に設定をコピー
-
-dma[2]	bfd5hから09hバイト	メモリ→
-
-	c7h c7h c7h c7h e2h d9h d9h d9h d9h
-
-dma[1]	15chから10hバイト	メモリ→DISPLAY？
-
-*/
-
-
-	
-	
-/*
-
-$E121		ram[$016e]
-$E122
-$E124
-$E128	w
-
-$E189	r
-$E18a	w
-
-$E210	rw
-$E211	rw
-$E212	rw
-
-$E387
-
-$E700
-
-outp(0xe210, 0x03);
-a  = inp(0xe211);
-a &= 0x1c;
-a |= 0x81 or 0xa1;
-outp(0xe210, a);
-*/
-
-//	io->set_iovalue_single_r(0xe189, 0);
-//	io->set_iovalue_single_r(0xe212, 0);
-
-/*
-	e121	スイッチ？
-
-
-	e122	スイッチ？
-		bit5 フロッピー読み込み？
-
-
-
-UNKNOWN:	00c0d0	IN8	e182 = ff
-UNKNOWN:	00b618	IN8	e184 = ff
-UNKNOWN:	00b61b	IN8	e180 = ff
-UNKNOWN:	00b61e	OUT8	e180,ff
-UNKNOWN:	00b667	OUT8	e18c,00
-
-*/
-
 	// initialize all devices
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
@@ -241,6 +170,7 @@ void VM::reset()
 void VM::run()
 {
 	event->drive();
+	cpu->write_signal(SIG_CPU_IRQ, 1, 1);
 }
 
 // ----------------------------------------------------------------------------
@@ -274,9 +204,6 @@ void VM::initialize_sound(int rate, int samples)
 {
 	// init sound manager
 	event->initialize_sound(rate, samples);
-	
-	// init sound gen
-	beep->initialize_sound(rate, 49152 / 0x80, 8000);
 }
 
 uint16_t* VM::create_sound(int* extra_frames)
@@ -293,8 +220,6 @@ int VM::get_sound_buffer_ptr()
 void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
-		beep->set_volume(0, decibel_l, decibel_r);
-	} else if(ch == 1) {
 		fdc->get_context_noise_seek()->set_volume(0, decibel_l, decibel_r);
 		fdc->get_context_noise_head_down()->set_volume(0, decibel_l, decibel_r);
 		fdc->get_context_noise_head_up()->set_volume(0, decibel_l, decibel_r);
@@ -308,13 +233,16 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 
 void VM::key_down(int code, bool repeat)
 {
-	keyboard->key_down(code);
-//	cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+	if(!repeat) {
+		keyboard->key_down(code);
+//		printer->key_down(code);
+	}
 }
 
 void VM::key_up(int code)
 {
 	keyboard->key_up(code);
+//	printer->key_up(code);
 }
 
 // ----------------------------------------------------------------------------
