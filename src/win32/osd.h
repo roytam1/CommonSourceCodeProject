@@ -263,6 +263,7 @@ private:
 	uint32_t joy_status[4];		// joystick #1-#4 (b0 = up, b1 = down, b2 = left, b3 = right, b4- = buttons
 	int joy_num;
 	uint32_t joy_mask[4];
+	bool joy_to_key_status[256];
 #endif
 	
 #ifdef USE_MOUSE
@@ -485,6 +486,7 @@ public:
 #endif
 	
 	// common screen
+	double get_window_mode_power(int mode);
 	int get_window_mode_width(int mode);
 	int get_window_mode_height(int mode);
 	void set_host_window_size(int window_width, int window_height, bool window_mode);

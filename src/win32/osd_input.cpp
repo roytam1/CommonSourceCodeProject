@@ -41,6 +41,7 @@ void OSD::initialize_input()
 	memset(key_status, 0, sizeof(key_status));
 #ifdef USE_JOYSTICK
 	memset(joy_status, 0, sizeof(joy_status));
+	memset(joy_to_key_status, 0, sizeof(joy_to_key_status));
 #endif
 #ifdef USE_MOUSE
 	memset(mouse_status, 0, sizeof(mouse_status));
@@ -262,6 +263,107 @@ void OSD::update_input()
 			if(joyinfo.dwXpos < 0x3fff) joy_status[i] |= 0x04;	// left
 			if(joyinfo.dwXpos > 0xbfff) joy_status[i] |= 0x08;	// right
 			joy_status[i] |= ((joyinfo.dwButtons & joy_mask[i]) << 4);
+		}
+	}
+	if(config.use_joy_to_key) {
+		if(config.joy_to_key_type == 0) {
+			static const int vk[] = {VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT};
+			for(int i = 0; i < 4; i++) {
+				if(joy_status[0] & (1 << i)) {
+					if(!(key_status[vk[i]] & 0x80)) {
+						key_down_native(vk[i], false);
+						joy_to_key_status[vk[i]] = true;
+					}
+				} else {
+					if(joy_to_key_status[vk[i]]) {
+						if(key_status[vk[i]] & 0x80) {
+							key_up_native(vk[i]);
+						}
+						joy_to_key_status[vk[i]] = false;
+					}
+				}
+			}
+		} else if(config.joy_to_key_type == 1) {
+			static const int vk[] = {VK_NUMPAD8, VK_NUMPAD2, VK_NUMPAD4, VK_NUMPAD6};
+			for(int i = 0; i < 4; i++) {
+				if(joy_status[0] & (1 << i)) {
+					if(!(key_status[vk[i]] & 0x80)) {
+						key_down_native(vk[i], false);
+						joy_to_key_status[vk[i]] = true;
+					}
+				} else {
+					if(joy_to_key_status[vk[i]]) {
+						if(key_status[vk[i]] & 0x80) {
+							key_up_native(vk[i]);
+						}
+						joy_to_key_status[vk[i]] = false;
+					}
+				}
+			}
+			if(config.joy_to_key_numpad5) {
+				if(!(joy_status[0] & 0x0f)) {
+					if(!(key_status[VK_NUMPAD5] & 0x80)) {
+						key_down_native(VK_NUMPAD5, false);
+						joy_to_key_status[VK_NUMPAD5] = true;
+					}
+				} else {
+					if(joy_to_key_status[VK_NUMPAD5]) {
+						if(key_status[VK_NUMPAD5] & 0x80) {
+							key_up_native(VK_NUMPAD5);
+						}
+						joy_to_key_status[VK_NUMPAD5] = false;
+					}
+				}
+			}
+		} else if(config.joy_to_key_type == 2) {
+			int numpad[10] = {0};
+			switch(joy_status[0] & 0x0f) {
+			case 0x02 + 0x04: numpad[1] = 1; break; // down-left
+			case 0x02       : numpad[2] = 1; break; // down
+			case 0x02 + 0x08: numpad[3] = 1; break; // down-right
+			case 0x00 + 0x04: numpad[4] = 1; break; // left
+			case 0x00       : numpad[5] = 1; break;
+			case 0x00 + 0x08: numpad[6] = 1; break; // right
+			case 0x01 + 0x04: numpad[7] = 1; break; // up-left
+			case 0x01       : numpad[8] = 1; break; // up
+			case 0x01 + 0x08: numpad[9] = 1; break; // up-right
+			}
+			for(int i = 1; i <= 9; i++) {
+				int vk = VK_NUMPAD0 + i;
+				if(i == 5 && !config.joy_to_key_numpad5) {
+					// skip
+				} else if(numpad[i]) {
+					if(!(key_status[vk] & 0x80)) {
+						key_down_native(vk, false);
+						joy_to_key_status[vk] = true;
+					}
+				} else {
+					if(joy_to_key_status[vk]) {
+						if(key_status[vk] & 0x80) {
+							key_up_native(vk);
+						}
+						joy_to_key_status[vk] = false;
+					}
+				}
+			}
+		}
+		for(int i = 0; i < 16; i++) {
+			if(config.joy_to_key_buttons[i] < 0) {
+				int vk = -config.joy_to_key_buttons[i];
+				if(joy_status[0] & (1 << (i + 4))) {
+					if(!(key_status[vk] & 0x80)) {
+						key_down_native(vk, false);
+						joy_to_key_status[vk] = true;
+					}
+				} else {
+					if(joy_to_key_status[vk]) {
+						if(key_status[vk] & 0x80) {
+							key_up_native(vk);
+						}
+						joy_to_key_status[vk] = false;
+					}
+				}
+			}
 		}
 	}
 #endif

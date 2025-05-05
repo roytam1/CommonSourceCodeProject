@@ -1,3 +1,11 @@
+11/27/2018
+
+[WIN32/INPUT] support joystick to keyboard function
+[WIN32/SCREEN] support Window x1.5 mode
+
+[PC8801/PC88] support PC key, that is mapped to F11
+
+
 11/23/2018
 
 [VM/I386] improve i386_limit_check to consider data size

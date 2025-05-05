@@ -138,6 +138,7 @@ BOOL CALLBACK VolumeWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 #endif
 #ifdef USE_JOYSTICK
 BOOL CALLBACK JoyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK JoyToKeyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 #endif
 
 // buttons
@@ -967,6 +968,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			{
 				LONG index = LOWORD(wParam) - ID_INPUT_JOYSTICK0;
 				DialogBoxParam((HINSTANCE)GetModuleHandle(0), MAKEINTRESOURCE(IDD_JOYSTICK), hWnd, JoyWndProc, (LPARAM)&index);
+			}
+			break;
+		case ID_INPUT_JOYTOKEY:
+			{
+				LONG index = 0;
+				DialogBoxParam((HINSTANCE)GetModuleHandle(0), MAKEINTRESOURCE(IDD_JOYTOKEY), hWnd, JoyToKeyWndProc, (LPARAM)&index);
 			}
 			break;
 #endif
@@ -1861,7 +1868,12 @@ void update_host_screen_menu(HMENU hMenu)
 	}
 	for(int i = 0; i < MAX_WINDOW; i++) {
 		if(i == 0 || (emu && emu->get_window_mode_width(i) <= desktop_width && emu->get_window_mode_height(i) <= desktop_height)) {
-			my_stprintf_s(buf, 64, _T("Window x%d"), i + 1);
+			double power = emu->get_window_mode_power(i);
+			if(power == (double)(int)power) {
+				my_stprintf_s(buf, 64, _T("Window x%d"), (int)power);
+			} else {
+				my_stprintf_s(buf, 64, _T("Window x%.1f"), power); // x1.5
+			}
 			InsertMenu(hMenu, position++, MF_BYPOSITION | MF_STRING, ID_SCREEN_WINDOW + i, buf);
 			last = ID_SCREEN_WINDOW + i;
 		}
@@ -3307,6 +3319,8 @@ void set_joy_button_text(int index)
 {
 	if(joy_button_params[index] < 0) {
 		SetDlgItemText(hJoyDlg, IDC_JOYSTICK_PARAM0 + index, vk_names[-joy_button_params[index]]);
+	} else if(joy_stick_index == -1) {
+			SetDlgItemText(hJoyDlg, IDC_JOYSTICK_PARAM0 + index, _T("(None)"));
 	} else {
 		SetDlgItemText(hJoyDlg, IDC_JOYSTICK_PARAM0 + index, create_string(_T("Joystick #%d - %s"), (joy_button_params[index] >> 4) + 1, joy_button_names[joy_button_params[index] & 15]));
 	}
@@ -3329,7 +3343,11 @@ LRESULT CALLBACK JoySubProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		return 0L;
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
-		joy_button_params[index] = -(int)LOBYTE(wParam);
+		if(joy_stick_index == -1 && LOBYTE(wParam) == VK_BACK) {
+			joy_button_params[index] = 0;
+		} else {
+			joy_button_params[index] = -(int)LOBYTE(wParam);
+		}
 		set_joy_button_text(index);
 		if(hJoyEdit[++index] == NULL) {
 			index = 0;
@@ -3402,6 +3420,86 @@ BOOL CALLBACK JoyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 						joy_button_index = 0;
 					}
 					SetFocus(hJoyEdit[joy_button_index]);
+					break;
+				}
+			}
+			joy_status[i] = status;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL CALLBACK JoyToKeyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(iMsg) {
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
+		break;
+	case WM_INITDIALOG:
+		hJoyDlg = hDlg;
+		joy_stick_index = -1;//(int)(*(LONG*)lParam);
+//		SetWindowText(hDlg, create_string(_T("Joystick To Keyboard #%d"), joy_stick_index + 1));
+		SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_CHECK0), BM_SETCHECK, (WPARAM)config.use_joy_to_key, 0L);
+		SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_RADIO0), BM_SETCHECK, (WPARAM)(config.joy_to_key_type == 0), 0L);
+		SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_RADIO1), BM_SETCHECK, (WPARAM)(config.joy_to_key_type == 1), 0L);
+		SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_RADIO2), BM_SETCHECK, (WPARAM)(config.joy_to_key_type == 2), 0L);
+		SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_CHECK1), BM_SETCHECK, (WPARAM)config.joy_to_key_numpad5, 0L);
+		for(int i = 0; i < 16; i++) {
+			joy_button_params[i] = config.joy_to_key_buttons[i];
+			if((hJoyEdit[i] = GetDlgItem(hDlg, IDC_JOYSTICK_PARAM0 + i)) != NULL) {
+				set_joy_button_text(i);
+				JoyOldProc[i] = (WNDPROC)GetWindowLong(hJoyEdit[i], GWL_WNDPROC);
+				SetWindowLong(hJoyEdit[i], GWL_WNDPROC, (LONG)JoySubProc);
+			}
+		}
+		memset(joy_status, 0, sizeof(joy_status));
+		SetTimer(hDlg, 1, 100, NULL);
+		break;
+	case WM_COMMAND:
+		switch(LOWORD(wParam)) {
+		case IDOK:
+			config.use_joy_to_key = (IsDlgButtonChecked(hDlg, IDC_JOYTOKEY_CHECK0) == BST_CHECKED);
+			if(IsDlgButtonChecked(hDlg, IDC_JOYTOKEY_RADIO0) == BST_CHECKED) {
+				config.joy_to_key_type = 0;
+			} else if(IsDlgButtonChecked(hDlg, IDC_JOYTOKEY_RADIO1) == BST_CHECKED) {
+				config.joy_to_key_type = 1;
+			} else {
+				config.joy_to_key_type = 2;
+			}
+			config.joy_to_key_numpad5 = (IsDlgButtonChecked(hDlg, IDC_JOYTOKEY_CHECK1) == BST_CHECKED);
+			for(int i = 0; i < 16; i++) {
+				config.joy_to_key_buttons[i] = joy_button_params[i];
+			}
+			EndDialog(hDlg, IDOK);
+			break;
+		case IDC_JOYSTICK_RESET:
+			SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_CHECK0), BM_SETCHECK, (WPARAM)false, 0L);
+			SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_RADIO0), BM_SETCHECK, (WPARAM)false, 0L);
+			SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_RADIO1), BM_SETCHECK, (WPARAM)false, 0L);
+			SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_RADIO2), BM_SETCHECK, (WPARAM)true,  0L);
+			SendMessage(GetDlgItem(hDlg, IDC_JOYTOKEY_CHECK1), BM_SETCHECK, (WPARAM)false, 0L);
+			for(int i = 0; i < 16; i++) {
+				joy_button_params[i] = (i == 0) ? -('Z') : (i == 1) ? -('X') : 0;
+				set_joy_button_text(i);
+			}
+			break;
+		default:
+			return FALSE;
+		}
+		break;
+	case WM_TIMER:
+		for(int i = 0; i < 1; i++) {
+			uint32_t status = get_joy_status(i);
+			for(int j = 0; j < 16; j++) {
+				uint32_t bit = 1 << (j + 4);
+				if(!(joy_status[i] & bit) && (status & bit)) {
+					if(hJoyEdit[j] != NULL) {
+						joy_button_index = j;
+						SetFocus(hJoyEdit[joy_button_index]);
+					}
 					break;
 				}
 			}

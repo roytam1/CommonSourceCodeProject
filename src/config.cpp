@@ -123,6 +123,11 @@ void initialize_config()
 				config.joy_buttons[i][j] = (i << 4) | j;
 			}
 		}
+		config.use_joy_to_key = false;
+		config.joy_to_key_type = 2;
+		config.joy_to_key_numpad5 = false;
+		config.joy_to_key_buttons[0] = -('Z');
+		config.joy_to_key_buttons[1] = -('X');
 	#endif
 	
 	// win32
@@ -325,6 +330,12 @@ void load_config(const _TCHAR* config_path)
 			for(int j = 0; j < 16; j++) {
 				config.joy_buttons[i][j] = MyGetPrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
 			}
+		}
+		config.use_joy_to_key = MyGetPrivateProfileBool(_T("Input"), _T("UseJoyToKey"), config.use_joy_to_key, config_path);
+		config.joy_to_key_type = MyGetPrivateProfileInt(_T("Input"), _T("JoyToKeyType"), config.joy_to_key_type, config_path);
+		config.joy_to_key_numpad5 = MyGetPrivateProfileBool(_T("Input"), _T("JoyToKeyNumPad5"), config.joy_to_key_numpad5, config_path);
+		for(int i = 0; i < 16; i++) {
+			config.joy_to_key_buttons[i] = MyGetPrivateProfileInt(_T("Input"), create_string(_T("JoyToKeyButtons%d"), i + 1), config.joy_to_key_buttons[i], config_path);
 		}
 	#endif
 	
@@ -529,6 +540,12 @@ void save_config(const _TCHAR* config_path)
 			for(int j = 0; j < 16; j++) {
 				MyWritePrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
 			}
+		}
+		MyWritePrivateProfileBool(_T("Input"), _T("UseJoyToKey"), config.use_joy_to_key, config_path);
+		MyWritePrivateProfileInt(_T("Input"), _T("JoyToKeyType"), config.joy_to_key_type, config_path);
+		MyWritePrivateProfileBool(_T("Input"), _T("JoyToKeyNumPad5"), config.joy_to_key_numpad5, config_path);
+		for(int i = 0; i < 16; i++) {
+			MyWritePrivateProfileInt(_T("Input"), create_string(_T("JoyToKeyButtons%d"), i + 1), config.joy_to_key_buttons[i], config_path);
 		}
 	#endif
 	

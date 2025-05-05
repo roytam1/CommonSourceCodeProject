@@ -1393,6 +1393,11 @@ const int32_t* EMU::get_mouse_buffer()
 // screen
 // ----------------------------------------------------------------------------
 
+double EMU::get_window_mode_power(int mode)
+{
+	return osd->get_window_mode_power(mode);
+}
+
 int EMU::get_window_mode_width(int mode)
 {
 	return osd->get_window_mode_width(mode);
