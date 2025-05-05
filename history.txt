@@ -1,3 +1,12 @@
+2/19/2019
+
+[VM/DEVICE] add is_primary_cpu() and update_extra_event()
+[VM/EVENT] support to udpate event while cpu is running one opecode
+[VM/Z80] improve to update event in every read/write cycle
+
+[MZ2500/MEMORY] improve pcgram wait in display timing
+
+
 2/16/2019
 
 [EMU/DEBUGGER] improve to enumerate devices that is debugger available

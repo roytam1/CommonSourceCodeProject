@@ -46,7 +46,6 @@
 #define DRIVE_MASK		(MAX_DRIVE - 1)
 
 #define DELAY_AFTER_HLD		(disk[drvreg]->drive_type == DRIVE_TYPE_2HD ? 15000 : 30000)
-#define DELAY_AFTER_SEEK	(disk[drvreg]->drive_type == DRIVE_TYPE_2HD ? 30000 : 60000)
 
 static const int seek_wait_hi[4] = {3000,  6000, 10000, 16000};	// 2MHz
 static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};	// 1MHz
@@ -1442,10 +1441,13 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 {
 	// get time from current position
 	double time = get_usec_to_next_trans_pos(first_sector && ((cmdreg & 4) != 0));
+	
+#ifdef MB8877_DELAY_AFTER_SEEK
 	// wait 60ms to start read/write after seek is finished (FM-Techknow, p.180)
-//	if(first_sector && time < DELAY_AFTER_SEEK - get_passed_usec(seekend_clock)) {
-//		time += disk[drvreg]->get_usec_per_track();
-//	}
+	if(first_sector && time < DELAY_AFTER_SEEK - get_passed_usec(seekend_clock)) {
+		time += disk[drvreg]->get_usec_per_track();
+	}
+#endif
 	return time;
 }
 

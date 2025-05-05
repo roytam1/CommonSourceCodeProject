@@ -225,15 +225,27 @@ static const uint8_t cc_ex[0x100] = {
 	} \
 } while(0)
 
+#define UPDATE_EXTRA_EVENT(clock) do { \
+	if(is_primary) { \
+		if(busreq) { \
+			busreq_icount += (clock); \
+		} \
+		update_extra_event(clock); \
+	} \
+} while(0)
+
 inline uint8_t Z80::RM8(uint32_t addr)
 {
 #ifdef Z80_MEMORY_WAIT
 	int wait;
 	uint8_t val = d_mem->read_data8w(addr, &wait);
 	icount -= wait;
+	UPDATE_EXTRA_EVENT(3 + wait);
 	return val;
 #else
-	return d_mem->read_data8(addr);
+	uint8_t val = d_mem->read_data8(addr);
+	UPDATE_EXTRA_EVENT(3);
+	return val;
 #endif
 }
 
@@ -243,8 +255,10 @@ inline void Z80::WM8(uint32_t addr, uint8_t val)
 	int wait;
 	d_mem->write_data8w(addr, val, &wait);
 	icount -= wait;
+	UPDATE_EXTRA_EVENT(3 + wait);
 #else
 	d_mem->write_data8(addr, val);
+	UPDATE_EXTRA_EVENT(3);
 #endif
 }
 
@@ -270,6 +284,7 @@ inline uint8_t Z80::FETCHOP()
 	int wait;
 	uint8_t val = d_mem->fetch_op(pctmp, &wait);
 	icount -= wait;
+	UPDATE_EXTRA_EVENT(4 + wait);
 	return val;
 }
 
@@ -289,21 +304,27 @@ inline uint32_t Z80::FETCH16()
 
 inline uint8_t Z80::IN8(uint32_t addr)
 {
+	UPDATE_EXTRA_EVENT(1);
 #ifdef Z80_IO_WAIT
 	int wait;
 	uint8_t val = d_io->read_io8w(addr, &wait);
 	icount -= wait;
+	UPDATE_EXTRA_EVENT(3 + wait);
 	return val;
 #else
-	return d_io->read_io8(addr);
+	uint8_t val = d_io->read_io8(addr);
+	UPDATE_EXTRA_EVENT(3);
+	return val;
 #endif
 }
 
 inline void Z80::OUT8(uint32_t addr, uint8_t val)
 {
+	UPDATE_EXTRA_EVENT(1);
 #ifdef HAS_NSC800
 	if((addr & 0xff) == 0xbb) {
 		icr = val;
+		UPDATE_EXTRA_EVENT(3);
 		return;
 	}
 #endif
@@ -311,8 +332,10 @@ inline void Z80::OUT8(uint32_t addr, uint8_t val)
 	int wait;
 	d_io->write_io8w(addr, val, &wait);
 	icount -= wait;
+	UPDATE_EXTRA_EVENT(3 + wait);
 #else
 	d_io->write_io8(addr, val);
+	UPDATE_EXTRA_EVENT(3);
 #endif
 }
 
@@ -2028,6 +2051,8 @@ void Z80::initialize()
 		}
 		flags_initialized = true;
 	}
+	is_primary = is_primary_cpu(this);
+	
 #ifdef USE_DEBUGGER
 	d_mem_stored = d_mem;
 	d_io_stored = d_io;
@@ -2053,7 +2078,7 @@ void Z80::reset()
 	after_ei = after_ldair = false;
 	intr_req_bit = intr_pend_bit = 0;
 	
-	icount = extra_icount = 0;
+	icount = extra_icount = busreq_icount = 0;
 }
 
 void Z80::write_signal(int id, uint32_t data, uint32_t mask)
@@ -2091,6 +2116,7 @@ uint32_t Z80::read_signal(int id)
 int Z80::run(int clock)
 {
 	if(clock == -1) {
+		// this is primary cpu
 		if(busreq) {
 			// run dma once
 			#ifdef SINGLE_MODE_DMA
@@ -2108,11 +2134,16 @@ int Z80::run(int clock)
 			return passed_icount;
 		} else {
 			// run only one opcode
-			#ifdef USE_DEBUGGER
-				total_icount += extra_icount;
-			#endif
+			if((extra_icount += busreq_icount) > 0) {
+				if(is_primary) {
+					update_extra_event(extra_icount);
+				}
+				#ifdef USE_DEBUGGER
+					total_icount += extra_icount;
+				#endif
+			}
 			icount = -extra_icount;
-			extra_icount = 0;
+			extra_icount = busreq_icount = 0;
 			run_one_opecode();
 			return -icount;
 		}
@@ -3951,7 +3982,7 @@ void dasm_fdcb(uint32_t pc, _TCHAR *buffer, size_t buffer_len, symbol_t *first_s
 }
 #endif
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 bool Z80::process_state(FILEIO* state_fio, bool loading)
 {
@@ -3966,6 +3997,7 @@ bool Z80::process_state(FILEIO* state_fio, bool loading)
 #endif
 	state_fio->StateValue(icount);
 	state_fio->StateValue(extra_icount);
+	state_fio->StateValue(busreq_icount);
 	state_fio->StateValue(prevpc);
 	state_fio->StateValue(pc.d);
 	state_fio->StateValue(sp.d);

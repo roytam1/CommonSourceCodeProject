@@ -3231,7 +3231,7 @@ BOOL CALLBACK VolumeWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hDlg, IDOK);
 			break;
 		case IDC_VOLUME_RESET:
-			for(int i = 0; i < 10; i++) {
+			for(int i = 0; i < USE_SOUND_VOLUME; i++) {
 				SendDlgItemMessage(hDlg, IDC_VOLUME_PARAM_L0 + i, TBM_SETPOS, TRUE, 0);
 				SendDlgItemMessage(hDlg, IDC_VOLUME_PARAM_R0 + i, TBM_SETPOS, TRUE, 0);
 			}

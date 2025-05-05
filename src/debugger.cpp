@@ -17,19 +17,6 @@
 
 #ifdef USE_DEBUGGER
 
-#ifndef FOREGROUND_BLUE
-#define FOREGROUND_BLUE      0x0001 // text color contains blue.
-#endif
-#ifndef FOREGROUND_GREEN
-#define FOREGROUND_GREEN     0x0002 // text color contains green.
-#endif
-#ifndef FOREGROUND_RED
-#define FOREGROUND_RED       0x0004 // text color contains red.
-#endif
-#ifndef FOREGROUND_INTENSITY
-#define FOREGROUND_INTENSITY 0x0008 // text color is intensified.
-#endif
-
 static FILEIO* logfile = NULL;
 static FILEIO* cmdfile = NULL;
 
@@ -183,7 +170,7 @@ void show_break_reason(OSD *osd, DEVICE *cpu, DEVICE *target, bool hide_bp)
 	DEBUGGER *cpu_debugger = (DEBUGGER *)cpu->get_debugger();
 	DEBUGGER *target_debugger = (DEBUGGER *)target->get_debugger();
 	
-	osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+	osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 	
 	if(cpu_debugger != NULL) {
 		if(cpu_debugger->bp.hit && !hide_bp) {
@@ -281,7 +268,7 @@ void* debugger_thread(void *lpx)
 	int wait_count = 0;
 	while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 		if((wait_count++) == 100) {
-			p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+			p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 			my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
 		}
 		p->osd->sleep(10);
@@ -290,18 +277,18 @@ void* debugger_thread(void *lpx)
 	uint32_t dump_addr = 0;
 	uint32_t dasm_addr = cpu->get_next_pc();
 	
-	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+	p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 	if(cpu->get_debug_regs_info(buffer, array_length(buffer))) {
 		my_printf(p->osd, _T("%s\n"), buffer);
 	}
 	
-	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+	p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 	my_printf(p->osd, _T("breaked at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
 	
-	p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+	p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 	cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 	my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
-	p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+	p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 	
 	// initialize files
 	logfile = NULL;
@@ -600,9 +587,9 @@ void* debugger_thread(void *lpx)
 							int len = target->debug_dasm(dasm_addr & target->get_debug_prog_addr_mask(), buffer, array_length(buffer));
 							if(name != NULL) {
 								my_printf(p->osd, _T("%08X                  "), dasm_addr & target->get_debug_prog_addr_mask());
-								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_INTENSITY);
 								my_printf(p->osd, _T("%s:\n"), name);
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 							}
 							my_printf(p->osd, _T("%08X  "), dasm_addr & target->get_debug_prog_addr_mask());
 							for(int i = 0; i < len; i++) {
@@ -620,9 +607,9 @@ void* debugger_thread(void *lpx)
 							int len = target->debug_dasm(dasm_addr & target->get_debug_prog_addr_mask(), buffer, array_length(buffer));
 							if(name != NULL) {
 								my_printf(p->osd, _T("%08X                  "), dasm_addr & target->get_debug_prog_addr_mask());
-								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_INTENSITY);
 								my_printf(p->osd, _T("%s:\n"), name);
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 							}
 							my_printf(p->osd, _T("%08X  "), dasm_addr & target->get_debug_prog_addr_mask());
 							for(int i = 0; i < len; i++) {
@@ -654,9 +641,9 @@ void* debugger_thread(void *lpx)
 							int len = target->debug_dasm(target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask(), buffer, array_length(buffer));
 							if(name != NULL) {
 								my_printf(p->osd, _T("%08X                  "), target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask());
-								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_INTENSITY);
 								my_printf(p->osd, _T("%s:\n"), name);
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 							}
 							my_printf(p->osd, _T("%08X  "), target_debugger->cpu_trace[index] & target->get_debug_prog_addr_mask());
 							for(int i = 0; i < len; i++) {
@@ -1042,7 +1029,7 @@ RESTART_GO:
 					wait_count = 0;
 					while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 						if((wait_count++) == 100) {
-							p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+							p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 							my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
 						}
 						p->osd->sleep(10);
@@ -1051,17 +1038,17 @@ RESTART_GO:
 						dasm_addr = cpu->get_next_pc();
 					}
 					
-					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 					cpu->debug_dasm(cpu->get_pc(), buffer, array_length(buffer));
 					my_printf(p->osd, _T("done\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()), buffer);
 					
-					p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 					if(cpu->get_debug_regs_info(buffer, array_length(buffer))) {
 						my_printf(p->osd, _T("%s\n"), buffer);
 					}
 					
 					if(target != cpu) {
-						p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+						p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_INTENSITY);
 						if(target->debug_dasm(target->get_next_pc(), buffer, array_length(buffer)) != 0) {
 							my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(target, _T("%08X"), target->get_next_pc()), buffer);
 						}
@@ -1076,16 +1063,16 @@ RESTART_GO:
 						cpu_debugger->clear_hit();
 						if(restart) goto RESTART_GO;
 					} else {
-						p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+						p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 						my_printf(p->osd, _T("breaked at %s: esc key was pressed\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
 					}
 					if(break_points_stored) {
 						cpu_debugger->restore_break_points();
 					}
-					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 					cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 					my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
-					p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 				} else {
 					my_printf(p->osd, _T("invalid parameter number\n"));
 				}
@@ -1101,7 +1088,7 @@ RESTART_GO:
 						wait_count = 0;
 						while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 							if((wait_count++) == 100) {
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 								my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
 							}
 							p->osd->sleep(10);
@@ -1110,17 +1097,17 @@ RESTART_GO:
 							dasm_addr = cpu->get_next_pc();
 						}
 						
-						p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+						p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 						cpu->debug_dasm(cpu->get_pc(), buffer, array_length(buffer));
 						my_printf(p->osd, _T("done\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()), buffer);
 						
-						p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+						p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 						if(cpu->get_debug_regs_info(buffer, array_length(buffer))) {
 							my_printf(p->osd, _T("%s\n"), buffer);
 						}
 						
 						if(target != cpu) {
-							p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+							p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_INTENSITY);
 							if(target->debug_dasm(target->get_next_pc(), buffer, array_length(buffer)) != 0) {
 								my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(target, _T("%08X"), target->get_next_pc()), buffer);
 							}
@@ -1138,10 +1125,10 @@ RESTART_GO:
 							break;
 						}
 					}
-					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 					cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 					my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
-					p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+					p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 				} else {
 					my_printf(p->osd, _T("invalid parameter number\n"));
 				}
@@ -1217,9 +1204,9 @@ RESTART_GO:
 							if(device->is_debugger_available()) {
 								my_printf(p->osd, _T("ID=%02X  %s"), device->this_device_id, device->this_device_name);
 								if(device == target) {
-									p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+									p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 									my_printf(p->osd, _T("  <=== target"));
-									p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+									p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 								}
 								my_printf(p->osd, _T("\n"));
 							}
@@ -1262,9 +1249,9 @@ RESTART_GO:
 							if(device->is_cpu() && device->get_debugger() != NULL) {
 								my_printf(p->osd, _T("ID=%02X  %s"), device->this_device_id, device->this_device_name);
 								if(device == cpu) {
-									p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+									p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 									my_printf(p->osd, _T("  <=== target"));
-									p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+									p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 								}
 								my_printf(p->osd, _T("\n"));
 							}
@@ -1288,7 +1275,7 @@ RESTART_GO:
 								wait_count = 0;
 								while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 									if((wait_count++) == 100) {
-										p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+										p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 										my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
 									}
 									p->osd->sleep(10);
@@ -1296,18 +1283,18 @@ RESTART_GO:
 								dump_addr = 0;
 								dasm_addr = cpu->get_next_pc();
 								
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 								if(cpu->get_debug_regs_info(buffer, array_length(buffer))) {
 									my_printf(p->osd, _T("%s\n"), buffer);
 								}
 								
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_INTENSITY);
 								my_printf(p->osd, _T("breaked at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
 								
-								p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 								cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
 								my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()), buffer);
-								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+								p->osd->set_console_text_attribute(OSD_CONSOLE_RED | OSD_CONSOLE_GREEN | OSD_CONSOLE_BLUE | OSD_CONSOLE_INTENSITY);
 							}
 						} else {
 							my_printf(p->osd, _T("device not found\n"));
