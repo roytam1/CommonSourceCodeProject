@@ -730,7 +730,7 @@ void DISPLAY::draw_line(int v)
 
 void DISPLAY::draw_screen()
 {
-	if(emu->get_osd()->in_debugger) {
+	if(emu->now_waiting_in_debugger) {
 		// draw lines
 #ifdef _X1TURBO_FEATURE
 		for(int v = 0; v < (hireso ? 400 : 200); v++) {

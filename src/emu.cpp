@@ -107,6 +107,7 @@ EMU::EMU()
 #ifdef USE_DEBUGGER
 	initialize_debugger();
 #endif
+	now_waiting_in_debugger = false;
 	initialize_media();
 	vm->initialize_sound(sound_rate, sound_samples);
 #ifdef USE_SOUND_VOLUME
@@ -1459,6 +1460,11 @@ bool EMU::is_screen_changed()
 
 int EMU::draw_screen()
 {
+#ifdef ONE_BOARD_MICRO_COMPUTER
+	if(now_waiting_in_debugger) {
+		osd->reload_bitmap();
+	}
+#endif
 	return osd->draw_screen();
 }
 
@@ -1905,21 +1911,6 @@ void EMU::out_message(const _TCHAR* format, ...)
 void EMU::sleep(uint32_t ms)
 {
 	osd->sleep(ms);
-}
-
-void EMU::override_wndproc()
-{
-	osd->override_wndproc();
-}
-
-void EMU::restore_wndproc()
-{
-	osd->restore_wndproc();
-}
-
-void EMU::run_wndproc()
-{
-	osd->run_wndproc();
 }
 
 // ----------------------------------------------------------------------------

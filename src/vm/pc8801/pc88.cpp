@@ -2786,7 +2786,7 @@ void PC88::draw_screen()
 
 void PC88::draw_text()
 {
-	if(emu->get_osd()->in_debugger) {
+	if(emu->now_waiting_in_debugger) {
 		// dmac.run
 		uint8_t buffer[120 * 200];
 		memset(buffer, 0, sizeof(buffer));

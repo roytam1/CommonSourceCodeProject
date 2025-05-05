@@ -235,9 +235,7 @@ void* debugger_thread(void *lpx)
 	memset(prev_command, 0, sizeof(prev_command));
 	
 	while(!p->request_terminate) {
-		p->osd->in_debugger = true;
-		p->osd->draw_screen();
-		p->osd->in_debugger = false;
+		p->emu->draw_screen();
 		
 		my_printf(p->osd, _T("- "));
 		
@@ -1315,7 +1313,7 @@ void EMU::open_debugger(int cpu_index)
 	if(!(now_debugging && debugger_thread_param.cpu_index == cpu_index)) {
 		close_debugger();
 		if(vm->get_cpu(cpu_index) != NULL && vm->get_cpu(cpu_index)->get_debugger() != NULL) {
-//			debugger_thread_param.emu = this;
+			debugger_thread_param.emu = this;
 			debugger_thread_param.osd = osd;
 			debugger_thread_param.vm = vm;
 			debugger_thread_param.cpu_index = cpu_index;
@@ -1352,6 +1350,25 @@ void EMU::close_debugger()
 bool EMU::is_debugger_enabled(int cpu_index)
 {
 	return (vm->get_cpu(cpu_index) != NULL && vm->get_cpu(cpu_index)->get_debugger() != NULL);
+}
+
+void EMU::start_waiting_in_debugger()
+{
+	now_waiting_in_debugger = true;
+	osd->mute_sound();
+	osd->start_waiting_in_debugger();
+}
+
+void EMU::finish_waiting_in_debugger()
+{
+	osd->finish_waiting_in_debugger();
+	now_waiting_in_debugger = false;
+}
+
+void EMU::process_waiting_in_debugger()
+{
+	osd->process_waiting_in_debugger();
+	osd->sleep(10);
 }
 
 #endif

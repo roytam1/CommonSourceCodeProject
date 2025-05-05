@@ -789,7 +789,7 @@ void MEMORY::event_vline(int v, int clock)
 
 void MEMORY::draw_screen()
 {
-	if(emu->get_osd()->in_debugger) {
+	if(emu->now_waiting_in_debugger) {
 		// draw lines
 		for(int v = 0; v < 200; v++) {
 			event_vline(v, 0);

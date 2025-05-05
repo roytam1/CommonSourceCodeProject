@@ -92,6 +92,7 @@ void OSD::sleep(uint32_t ms)
 	Sleep(ms);
 }
 
+#ifdef USE_DEBUGGER
 FARPROC hWndProc = NULL;
 OSD *my_osd = NULL;
 
@@ -115,7 +116,7 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, iMsg, wParam, lParam);
 }
 
-void OSD::override_wndproc()
+void OSD::start_waiting_in_debugger()
 {
 	HMENU hMenu = GetMenu(main_window_handle);
 	
@@ -131,7 +132,7 @@ void OSD::override_wndproc()
 	my_osd = this;
 }
 
-void OSD::restore_wndproc()
+void OSD::finish_waiting_in_debugger()
 {
 	HMENU hMenu = GetMenu(main_window_handle);
 	
@@ -146,7 +147,7 @@ void OSD::restore_wndproc()
 	my_osd = NULL;
 }
 
-void OSD::run_wndproc()
+void OSD::process_waiting_in_debugger()
 {
 	MSG msg;
 	
@@ -157,3 +158,4 @@ void OSD::run_wndproc()
 		}
 	}
 }
+#endif

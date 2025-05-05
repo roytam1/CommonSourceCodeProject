@@ -68,6 +68,7 @@ class CSP_Debugger;
 class CSP_DebuggerThread;
 #endif
 typedef struct {
+	EMU *emu;
 	OSD *osd;
 	VM_TEMPLATE *vm;
 	int cpu_index;
@@ -388,7 +389,11 @@ public:
 #else
 	int debugger_thread_id;
 #endif
+	void start_waiting_in_debugger();
+	void finish_waiting_in_debugger();
+	void process_waiting_in_debugger();
 #endif
+	bool now_waiting_in_debugger;
 	
 	// debug log
 	void out_debug_log(const _TCHAR* format, ...);
@@ -400,9 +405,6 @@ public:
 	
 	// misc
 	void sleep(uint32_t ms);
-	void override_wndproc();
-	void restore_wndproc();
-	void run_wndproc();
 	
 	// user interface
 #ifdef USE_CART

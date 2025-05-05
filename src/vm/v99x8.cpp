@@ -2770,43 +2770,19 @@ uint32_t V99X8::read_io8(uint32_t addr)
 
 void V99X8::draw_screen()
 {
-	if(emu->get_osd()->in_debugger) {
-		uint8_t status[V99X8_NSTAT];
-		int a, line;
-
-		memcpy(status, v99x8.status, sizeof(v99x8.status));
-
-		v99x8_refresh_clear();
-
-		for(int v = 0; v < 226; v++) {
-			line = v + (((v99x8.ctrl[18] >> 4) + 8) & 0x0f) - 8 - 7;
-			if (v99x8.ctrl[9] & 0x80)
-				a = 212;
-			else
-				a = 192, line -= 10;
-
-			if (v99x8.ctrl[1] & 0x40 && line >= 0 && line < a)
-			{
-				v99x8_update();
-
-				switch(v99x8.scr)
-				{
-				case V99X8_SCREEN_0: v99x8_refresh_sc0(line, 1); break;
-				case V99X8_SCREEN_1: v99x8_refresh_sc1(line, 1); break;
-				case V99X8_SCREEN_2: v99x8_refresh_sc4(line, 1); break;
-				case V99X8_SCREEN_3: v99x8_refresh_sc3(line, 1); break;
-				case V99X8_SCREEN_4: v99x8_refresh_sc4(line, 1); break;
-				case V99X8_SCREEN_5: v99x8_refresh_sc5(line, 1); break;
-				case V99X8_SCREEN_6: v99x8_refresh_sc6(line, 1); break;
-				case V99X8_SCREEN_7: v99x8_refresh_sc7(line, 1); break;
-				case V99X8_SCREEN_8: v99x8_refresh_sc8(line, 1); break;
-				case V99X8_SCREEN_A: v99x8_refresh_scc(line, 1); break;
-				case V99X8_SCREEN_C: v99x8_refresh_scc(line, 1); break;
-				case V99X8_SCREEN_X: v99x8_refresh_scx(line, 1); break;
-				}
-			}
+	if(emu->now_waiting_in_debugger) {
+		// store regs
+		v99x8_t tmp_v99x8 = v99x8;
+		bool tmp_intstat = intstat;
+		
+		// drive vlines
+		for(int v = /*get_cur_vline() + 1*/0; v < get_lines_per_frame(); v++) {
+			event_vline(v, 0);
 		}
-		memcpy(v99x8.status, status, sizeof(v99x8.status));
+		
+		// restore regs
+		v99x8 = tmp_v99x8;
+		intstat = tmp_intstat;
 	}
 	md_video_update(0, NULL);
 }
@@ -2822,7 +2798,9 @@ void V99X8::event_vline(int v, int clock)
 void V99X8::set_intstat(bool val)
 {
 	if(val != intstat) {
-		write_signals(&outputs_irq, val ? 0xffffffff : 0);
+		if(!emu->now_waiting_in_debugger) {
+			write_signals(&outputs_irq, val ? 0xffffffff : 0);
+		}
 		intstat = val;
 	}
 }

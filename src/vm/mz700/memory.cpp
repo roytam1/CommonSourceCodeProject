@@ -879,7 +879,7 @@ void MEMORY::draw_line(int v)
 
 void MEMORY::draw_screen()
 {
-	if(emu->get_osd()->in_debugger) {
+	if(emu->now_waiting_in_debugger) {
 		// draw lines
 		for(int v = 0; v < 200; v++) {
 			draw_line(v);
@@ -1048,7 +1048,7 @@ void MEMORY::draw_line_mz700(int v)
 
 void MEMORY::draw_screen()
 {
-	if(emu->get_osd()->in_debugger) {
+	if(emu->now_waiting_in_debugger) {
 		// draw lines
 		for(int v = 0; v < 200; v++) {
 			draw_line(v);

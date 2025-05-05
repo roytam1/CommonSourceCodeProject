@@ -471,72 +471,25 @@ uint32_t _315_5124::read_io8(uint32_t addr)
 
 void _315_5124::draw_screen()
 {
-	if(emu->get_osd()->in_debugger) {
-		uint8_t tmp = status_reg;
-		if (vdp_mode == 4) {
-			for(int v = 0; v < 192; v++) {
-				/* Ensure we're within the viewport range */
-				if(v < vp_y || v >= (vp_y + vp_h)) continue;
-				
-				/* Point to current line in output buffer */
-				linebuf = (uint8_t *)screen[v];
-				
-				/* Update pattern cache */
-				update_bg_pattern_cache();
-				
-				/* Blank line (full width) */
-				if (!(regs[1] & 0x40)) {
-					memset(linebuf, BACKDROP_COLOR, 256);
-				} else {
-					/* Draw background */
-					render_bg(v);
-					/* Draw sprites */
-					render_obj(v);
-					/* Blank leftmost column of display */
-					if (regs[0] & 0x20) {
-						memset(linebuf, BACKDROP_COLOR, 8);
-					}
-				}
-			}
-		} else {
-			// create virtual screen
-			if(regs[1] & 0x40) {
-				// draw character plane
-				int mode = (regs[0] & 2) | ((regs[1] & 0x10) >> 4) | ((regs[1] & 8) >> 1);
-				switch(mode)
-				{
-				case 0:
-					draw_mode0();
-					break;
-				case 1:
-					draw_mode1();
-					break;
-				case 2:
-					draw_mode2();
-					break;
-				case 3:
-					draw_mode12();
-					break;
-				case 4:
-					draw_mode3();
-					break;
-				case 6:
-					draw_mode23();
-					break;
-				case 5:
-				case 7:
-					draw_modebogus();
-					break;
-				}
-				// draw sprite plane
-				if((regs[1] & 0x50) == 0x40) {
-					draw_sprites();
-				}
-			} else {
-				memset(screen, 0, sizeof(screen));
-			}
+	if(emu->now_waiting_in_debugger) {
+		// store regs
+		uint16_t tmp_z80_icount = z80_icount;
+		uint16_t tmp_vcounter = vcounter;
+		uint8_t tmp_status_reg = status_reg;
+		uint16_t tmp_hlatch = hlatch;
+		bool tmp_intstat = intstat;
+		
+		// drive vlines
+		for(int v = /*get_cur_vline() + 1*/0; v < get_lines_per_frame(); v++) {
+			event_vline(v, 0);
 		}
-		status_reg = tmp;
+		
+		// restore regs
+		z80_icount = tmp_z80_icount;
+		vcounter = tmp_vcounter;
+		status_reg = tmp_status_reg;
+		hlatch = tmp_hlatch;
+		intstat = tmp_intstat;
 	}
 	
 	// update screen buffer
@@ -654,7 +607,9 @@ void _315_5124::event_vline(int v, int clock)
 void _315_5124::set_intstat(bool val)
 {
 	if(val != intstat) {
-		write_signals(&outputs_irq, val ? 0xffffffff : 0);
+		if(!emu->now_waiting_in_debugger) {
+			write_signals(&outputs_irq, val ? 0xffffffff : 0);
+		}
 		intstat = val;
 	}
 }

@@ -2158,13 +2158,11 @@ void Z80::run_one_opecode()
 		d_debugger->check_break_points(PC);
 		if(d_debugger->now_suspended) {
 			d_debugger->now_waiting = true;
-			emu->mute_sound();
-			emu->override_wndproc();
+			emu->start_waiting_in_debugger();
 			while(d_debugger->now_debugging && d_debugger->now_suspended) {
-				emu->run_wndproc();
-				emu->sleep(10);
+				emu->process_waiting_in_debugger();
 			}
-			emu->restore_wndproc();
+			emu->finish_waiting_in_debugger();
 			d_debugger->now_waiting = false;
 		}
 		if(d_debugger->now_debugging) {
@@ -2245,13 +2243,11 @@ void Z80::run_one_opecode()
 			d_debugger->check_break_points(PC);
 			if(d_debugger->now_suspended) {
 				d_debugger->now_waiting = true;
-				emu->mute_sound();
-				emu->override_wndproc();
+				emu->start_waiting_in_debugger();
 				while(d_debugger->now_debugging && d_debugger->now_suspended) {
-					emu->run_wndproc();
-					emu->sleep(10);
+					emu->process_waiting_in_debugger();
 				}
-				emu->restore_wndproc();
+				emu->finish_waiting_in_debugger();
 				d_debugger->now_waiting = false;
 			}
 			if(d_debugger->now_debugging) {

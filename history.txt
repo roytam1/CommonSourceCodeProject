@@ -1,10 +1,19 @@
+2/8/2019
+
+[EMU/*] simplify code to draw screen while debugging cpu
+[OSD/*] simplify code to draw screen while debugging cpu
+[VM/*] simplify code to draw screen while debugging cpu
+
+[BUBCOM80/DISPLAY] improve dmac
+[HC80/IO] fix slave-cpu command 0x27 and 0x29 (thanks Mr.Stefano Bodrato)
+
+
 2/7/2019
 
 [EMU/DEBUGGER] improve to draw screen while debugging cpu
 [EMU] add override/restore/run_wndproc() for debugger
 [EMU] add create_bank_floppy_disk()
 [OSD/WIN32] add override/restore/run_wndproc() for debugger
-[OSD/WIN32] improve read_console_input() not to wait key inputs
 
 [VM/315_5124] improve draw_screen() for debugger
 [VM/H6280] improve to run window procedure while suspending for debugger

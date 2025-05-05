@@ -46,27 +46,23 @@ void MC6809::run_one_opecode()
 			d_debugger->check_break_points(PC);
 			if(d_debugger->now_suspended) {
 				d_debugger->now_waiting = true;
-#ifdef _MSC_VER
-				emu->mute_sound();
-				emu->override_wndproc();
-#else
-				osd->mute_sound();
-				osd->override_wndproc();
-#endif
+//#ifdef _MSC_VER
+				emu->start_waiting_in_debugger();
+//#else
+//				osd->start_waiting_in_debugger();
+//#endif
 				while(d_debugger->now_debugging && d_debugger->now_suspended) {
-#ifdef _MSC_VER
-					emu->run_wndproc();
-					emu->sleep(10);
-#else
-					osd->run_wndproc();
-					osd->sleep(10);
-#endif
+//#ifdef _MSC_VER
+					emu->process_waiting_in_debugger();
+//#else
+//					osd->process_waiting_in_debugger();
+//#endif
 				}
-#ifdef _MSC_VER
-				emu->restore_wndproc();
-#else
-				osd->restore_wndproc();
-#endif
+//#ifdef _MSC_VER
+				emu->finish_waiting_in_debugger();
+//#else
+//				osd->finish_waiting_in_debugger();
+//#endif
 				d_debugger->now_waiting = false;
 			}
 			if(d_debugger->now_debugging) {
@@ -124,25 +120,21 @@ void MC6809::debugger_hook()
 			if(d_debugger->now_suspended) {
 				d_debugger->now_waiting = true;
 #ifdef _MSC_VER
-				emu->mute_sound();
-				emu->override_wndproc();
+				emu->start_waiting_in_debugger();
 #else
-				osd->mute_sound();
-				osd->override_wndproc();
+				osd->start_waiting_in_debugger();
 #endif
 				while(d_debugger->now_debugging && d_debugger->now_suspended) {
 #ifdef _MSC_VER
-					emu->run_wndproc();
-					emu->sleep(10);
+					emu->process_waiting_in_debugger();
 #else
-					osd->run_wndproc();
-					osd->sleep(10);
+					osd->process_waiting_in_debugger();
 #endif
 				}
 #ifdef _MSC_VER
-				emu->restore_wndproc();
+				emu->finish_waiting_in_debugger();
 #else
-				osd->restore_wndproc();
+				osd->finish_waiting_in_debugger();
 #endif
 				d_debugger->now_waiting = false;
 			}

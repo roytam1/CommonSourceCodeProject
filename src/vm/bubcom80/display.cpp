@@ -67,6 +67,13 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr) {
 	case 0x10:
+	case 0x12: // not full-decoded ?
+	case 0x14:
+	case 0x16:
+	case 0x18:
+	case 0x1a:
+	case 0x1c:
+	case 0x1e:
 		crtc.write_param(data);
 		if(crtc.timing_changed) {
 			update_timing();
@@ -74,6 +81,13 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		}
 		break;
 	case 0x11:
+	case 0x13: // not full-decoded ?
+	case 0x15:
+	case 0x17:
+	case 0x19:
+	case 0x1b:
+	case 0x1d:
+	case 0x1f:
 		crtc.write_cmd(data);
 		break;
 	case 0x20:
@@ -95,6 +109,13 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 	case 0x66:
 	case 0x67:
 	case 0x68:
+	case 0x69: // not full-decoded ?
+	case 0x6a:
+	case 0x6b:
+	case 0x6c:
+	case 0x6d:
+	case 0x6e:
+	case 0x6f:
 		dmac.write_io8(addr, data);
 		break;
 	case 0x3ff0:
@@ -114,8 +135,22 @@ uint32_t DISPLAY::read_io8(uint32_t addr)
 {
 	switch(addr) {
 	case 0x10:
+	case 0x12: // not full-decoded ?
+	case 0x14:
+	case 0x16:
+	case 0x18:
+	case 0x1a:
+	case 0x1c:
+	case 0x1e:
 		return crtc.read_param();
 	case 0x11:
+	case 0x13: // not full-decoded ?
+	case 0x15:
+	case 0x17:
+	case 0x19:
+	case 0x1b:
+	case 0x1d:
+	case 0x1f:
 		return crtc.read_status();
 	case 0x20:
 		return d_prn->read_signal(SIG_PRINTER_BUSY) & 0x40;
@@ -131,6 +166,13 @@ uint32_t DISPLAY::read_io8(uint32_t addr)
 	case 0x66:
 	case 0x67:
 	case 0x68:
+	case 0x69: // not full-decoded ?
+	case 0x6a:
+	case 0x6b:
+	case 0x6c:
+	case 0x6d:
+	case 0x6e:
+	case 0x6f:
 		return dmac.read_io8(addr);
 	case 0x3ff0:
 		return (crtc.vblank ? 0x40 : 0);
@@ -275,13 +317,13 @@ void DISPLAY::draw_screen()
 
 void DISPLAY::draw_text()
 {
-	if(emu->get_osd()->in_debugger) {
+	if(emu->now_waiting_in_debugger) {
 		// dmac.run
 		uint8_t buffer[120 * 200];
 		memset(buffer, 0, sizeof(buffer));
 		
 		for(int i = 0; i < dmac.ch[3].count.sd + 1; i++) {
-			buffer[i] = this->read_dma_data8(dmac.ch[3].addr.w.l + i);
+			buffer[i] = dmac.mem->read_dma_data8(dmac.ch[3].addr.w.l + i);
 		}
 		
 		// crtc.expand_buffer
@@ -741,10 +783,10 @@ void dmac_t::write_io8(uint32_t addr, uint32_t data)
 	int c = (addr >> 1) & 3;
 	
 	switch(addr & 0x0f) {
-	case 0:
-	case 2:
-	case 4:
-	case 6:
+	case 0x00:
+	case 0x02: case 0x0a:
+	case 0x04: case 0x0c:
+	case 0x06: case 0x0e:
 		if(!high_low) {
 			if((mode & 0x80) && c == 2) {
 				ch[3].addr.b.l = data;
@@ -753,15 +795,17 @@ void dmac_t::write_io8(uint32_t addr, uint32_t data)
 		} else {
 			if((mode & 0x80) && c == 2) {
 				ch[3].addr.b.h = data;
+				ch[3].addr.b.h2 = ch[3].addr.b.h3 = 0;
 			}
 			ch[c].addr.b.h = data;
+			ch[c].addr.b.h2 = ch[c].addr.b.h3 = 0;
 		}
 		high_low = !high_low;
 		break;
-	case 1:
-	case 3:
-	case 5:
-	case 7:
+	case 0x01: case 0x09:
+	case 0x03: case 0x0b:
+	case 0x05: case 0x0d:
+	case 0x07: case 0x0f:
 		if(!high_low) {
 			if((mode & 0x80) && c == 2) {
 				ch[3].count.b.l = data;
@@ -770,14 +814,16 @@ void dmac_t::write_io8(uint32_t addr, uint32_t data)
 		} else {
 			if((mode & 0x80) && c == 2) {
 				ch[3].count.b.h = data & 0x3f;
+				ch[3].count.b.h2 = ch[3].count.b.h3 = 0;
 				ch[3].mode = data & 0xc0;
 			}
 			ch[c].count.b.h = data & 0x3f;
+			ch[c].count.b.h2 = ch[c].count.b.h3 = 0;
 			ch[c].mode = data & 0xc0;
 		}
 		high_low = !high_low;
 		break;
-	case 8:
+	case 0x08:
 		mode = data;
 		high_low = false;
 		break;
@@ -790,10 +836,10 @@ uint32_t dmac_t::read_io8(uint32_t addr)
 	int c = (addr >> 1) & 3;
 	
 	switch(addr & 0x0f) {
-	case 0:
-	case 2:
-	case 4:
-	case 6:
+	case 0x00:
+	case 0x02: case 0x0a:
+	case 0x04: case 0x0c:
+	case 0x06: case 0x0e:
 		if(!high_low) {
 			val = ch[c].addr.b.l;
 		} else {
@@ -801,10 +847,10 @@ uint32_t dmac_t::read_io8(uint32_t addr)
 		}
 		high_low = !high_low;
 		break;
-	case 1:
-	case 3:
-	case 5:
-	case 7:
+	case 0x01: case 0x09:
+	case 0x03: case 0x0b:
+	case 0x05: case 0x0d:
+	case 0x07: case 0x0f:
 		if(!high_low) {
 			val = ch[c].count.b.l;
 		} else {
@@ -812,7 +858,7 @@ uint32_t dmac_t::read_io8(uint32_t addr)
 		}
 		high_low = !high_low;
 		break;
-	case 8:
+	case 0x08:
 		val = status;
 		status &= 0xf0;
 //		high_low = false;
@@ -831,15 +877,6 @@ void dmac_t::start(int c)
 	}
 }
 
-void dmac_t::finish(int c)
-{
-	if(ch[c].running) {
-		while(ch[c].count.sd >= 0) {
-			run(c);
-		}
-	}
-}
-
 void dmac_t::run(int c)
 {
 	if(ch[c].running) {
@@ -848,21 +885,41 @@ void dmac_t::run(int c)
 				ch[c].io->write_dma_io8(0, mem->read_dma_data8(ch[c].addr.w.l));
 			} else if(ch[c].mode == 0x40) {
 				mem->write_dma_data8(ch[c].addr.w.l, ch[c].io->read_dma_io8(0));
+			} else if(ch[c].mode == 0x00) {
+				ch[c].io->read_dma_io8(0); // verify
 			}
 			ch[c].addr.sd++;
 			ch[c].count.sd--;
 		}
 		if(ch[c].count.sd < 0) {
-			if((mode & 0x80) && c == 2) {
-				ch[2].addr.sd = ch[3].addr.sd;
-				ch[2].count.sd = ch[3].count.sd;
-				ch[2].mode = ch[3].mode;
-			} else if(mode & 0x40) {
-				mode &= ~(1 << c);
-			}
-			status |= (1 << c);
-			ch[c].running = false;
+			finish(c);
 		}
+	}
+}
+
+void dmac_t::finish(int c)
+{
+	if(ch[c].running) {
+		while(ch[c].count.sd >= 0) {
+			if(ch[c].mode == 0x80) {
+				ch[c].io->write_dma_io8(0, mem->read_dma_data8(ch[c].addr.w.l));
+			} else if(ch[c].mode == 0x40) {
+				mem->write_dma_data8(ch[c].addr.w.l, ch[c].io->read_dma_io8(0));
+			} else if(ch[c].mode == 0x00) {
+				ch[c].io->read_dma_io8(0); // verify
+			}
+			ch[c].addr.sd++;
+			ch[c].count.sd--;
+		}
+		if((mode & 0x80) && c == 2) {
+			ch[2].addr.sd = ch[3].addr.sd;
+			ch[2].count.sd = ch[3].count.sd;
+			ch[2].mode = ch[3].mode;
+		} else if(mode & 0x40) {
+			mode &= ~(1 << c);
+		}
+		status |= (1 << c);
+		ch[c].running = false;
 	}
 }
 
