@@ -144,7 +144,7 @@ int I286::run(int cycles)
 #ifdef SINGLE_MODE_DMA
 			if(device_dma != NULL) device_dma->do_dma();
 #endif
-			passed_cycles = max(1, extra_cycles);
+			passed_cycles = max(5, extra_cycles); // 80286 CPI: 4.8
 			extra_cycles = 0;
 		} else {
 			// run only one opcode

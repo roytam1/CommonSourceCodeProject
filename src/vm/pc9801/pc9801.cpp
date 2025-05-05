@@ -43,6 +43,9 @@
 #else
 #include "../i86.h"
 #endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+#include "../i86.h" // V30
+#endif
 #include "../io.h"
 #include "../ls244.h"
 #include "../memory.h"
@@ -113,27 +116,29 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	boot_mode = config.boot_mode;
 #endif
 	int cpu_clocks = CPU_CLOCKS;
+	int v30_clocks = 9984060;
 #if defined(PIT_CLOCK_8MHZ)
 	pit_clock_8mhz = true;
 #else
 	pit_clock_8mhz = false;
 #endif
 #if defined(_PC9801E)
-	if(config.cpu_type != 0) {
+	if(config.cpu_type == 1) {
 		// 8MHz -> 5MHz
 		cpu_clocks = 4992030;
 		pit_clock_8mhz = false;
 	}
 #elif defined(_PC9801VM) || defined(_PC98DO) || defined(_PC98DOPLUS) || defined(_PC9801VX) || defined(_PC98XL)
-	if(config.cpu_type != 0) {
+	if(config.cpu_type == 1 || config.cpu_type == 3) {
 		// 10MHz/16MHz -> 8MHz
-		cpu_clocks = 7987248;
+		cpu_clocks = v30_clocks = 7987248;
 		pit_clock_8mhz = true;
 	}
 #elif defined(_PC9801RA) || defined(_PC98RL)
-	if(config.cpu_type != 0) {
+	if(config.cpu_type == 1 || config.cpu_type == 3) {
 		// 20MHz -> 16MHz
 		cpu_clocks = 15974496;
+		v30_clocks = 7987248;
 		pit_clock_8mhz = true;
 	}
 #endif
@@ -193,6 +198,10 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 #elif defined(HAS_I486DX)
 	cpu = new I386(this, emu);
 	cpu->device_model = INTEL_I486DX;
+#endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	v30 = new I86(this, emu);
+	v30->device_model = NEC_V30;
 #endif
 	io = new IO(this, emu);
 	rtcreg = new LS244(this, emu);
@@ -357,6 +366,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 	// set contexts
 	event->set_context_cpu(cpu, cpu_clocks);
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	event->set_context_cpu(v30, v30_clocks);
+#endif
 #if defined(SUPPORT_320KB_FDD_IF)
 	if(cpu_sub) {
 		event->set_context_cpu(cpu_sub, 4000000);
@@ -449,7 +461,11 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	rtcreg->set_context_output(rtc, SIG_UPD1990A_DIN, 0x20, 0);
 	rtcreg->set_context_output(rtc, SIG_UPD1990A_STB, 0x08, 0);
 	rtcreg->set_context_output(rtc, SIG_UPD1990A_CLK, 0x10, 0);
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	pic->set_context_cpu(cpureg);
+#else
 	pic->set_context_cpu(cpu);
+#endif
 	rtc->set_context_dout(pio_sys, SIG_I8255_PORT_B, 1);
 	
 	if(sound_type == 0 || sound_type == 1) {
@@ -471,6 +487,11 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 #if defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)
 	cpureg->set_context_cpu(cpu);
+#if !defined(SUPPORT_HIRESO)
+	cpureg->set_context_v30(v30);
+	cpureg->set_context_pio(pio_prn);
+	cpureg->cpu_mode = (config.cpu_type == 2 || config.cpu_type == 3);
+#endif
 #endif
 	display->set_context_pic(pic);
 	display->set_context_gdc_chr(gdc_chr, gdc_chr->get_ra());
@@ -569,6 +590,17 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 #endif
 #ifdef USE_DEBUGGER
 	cpu->set_context_debugger(new DEBUGGER(this, emu));
+#endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	v30->set_context_mem(memory);
+	v30->set_context_io(io);
+	v30->set_context_intr(pic);
+#ifdef SINGLE_MODE_DMA
+	v30->set_context_dma(dma);
+#endif
+#ifdef USE_DEBUGGER
+	v30->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #endif
 	
 #if defined(SUPPORT_320KB_FDD_IF)
@@ -991,6 +1023,13 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	for(DEVICE* device = first_device; device; device = device->next_device) {
 		device->initialize();
 	}
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	if(config.cpu_type == 2 || config.cpu_type == 3) {
+		cpu->write_signal(SIG_CPU_BUSREQ,  1, 1);
+	} else {
+		v30->write_signal(SIG_CPU_BUSREQ,  1, 1);
+	}
+#endif
 #if defined(_PC9801) || defined(_PC9801E)
 	if(fdc_2hd) {
 		fdc_2hd->get_disk_handler(0)->drive_num = 0;
@@ -1088,7 +1127,7 @@ void VM::reset()
 	port_b |= 0x10; // DIP SW 3-3, 1 = DMA ch.0 for SASI-HDD
 #endif
 #if defined(USE_CPU_TYPE)
-	if(config.cpu_type != 0) {
+	if(config.cpu_type == 1 || config.cpu_type == 3) {
 #if !defined(SUPPORT_HIRESO)
 		port_b |= 0x02; // SPDSW, 1 = 10MHz, 0 = 12MHz
 #else
@@ -1103,6 +1142,11 @@ void VM::reset()
 #endif
 #if defined(HAS_V30) || defined(HAS_V33)
 	port_c |= 0x04; // DIP SW 3-8, 1 = V30, 0 = 80x86
+#endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	if(config.cpu_type == 2 || config.cpu_type == 3) {
+		port_c |= 0x04; // DIP SW 3-8, 1 = V30, 0 = 80x86
+	}
 #endif
 	pio_mouse->write_signal(SIG_I8255_PORT_A, port_a, 0xff);
 	pio_mouse->write_signal(SIG_I8255_PORT_B, port_b, 0xff);
@@ -1165,6 +1209,11 @@ void VM::reset()
 	port_b |= 0x04; // Printer BUSY#, 1 = Inactive, 0 = Active (BUSY)
 #if defined(HAS_V30) || defined(HAS_V33)
 	port_b |= 0x02; // CPUT, 1 = V30/V33, 0 = 80x86
+#endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	if(cpureg->cpu_mode) {
+		port_b |= 0x02; // CPUT, 1 = V30/V33, 0 = 80x86
+	}
 #endif
 #if defined(_PC9801VF) || defined(_PC9801U)
 	port_b |= 0x01; // VF, 1 = PC-9801VF/U
@@ -1242,8 +1291,10 @@ DEVICE *VM::get_cpu(int index)
 #else
 	if(index == 0) {
 		return cpu;
-#if defined(SUPPORT_320KB_FDD_IF)
 	} else if(index == 1) {
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+		return v30;
+#elif defined(SUPPORT_320KB_FDD_IF)
 		return cpu_sub;
 #endif
 	}
@@ -1687,7 +1738,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	17
+#define STATE_VERSION	18
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

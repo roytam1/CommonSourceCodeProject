@@ -104,7 +104,11 @@
 	#define PIT_CLOCK_5MHZ
 //	#define CPU_CLOCKS		7987248
 //	#define PIT_CLOCK_8MHZ
-	#define USE_CPU_TYPE		2
+	#if defined(_PC9801VX)
+		#define USE_CPU_TYPE		4
+	#else
+		#define USE_CPU_TYPE		2
+	#endif
 #elif defined(_PC98XA)
 	#define DEVICE_NAME		"NEC PC-98XA"
 	#define CONFIG_NAME		"pc98xa"
@@ -124,7 +128,11 @@
 	#define PIT_CLOCK_5MHZ
 //	#define CPU_CLOCKS		15974496
 //	#define PIT_CLOCK_8MHZ
-	#define USE_CPU_TYPE		2
+	#if defined(_PC9801RA)
+		#define USE_CPU_TYPE		4
+	#else
+		#define USE_CPU_TYPE		2
+	#endif
 #else
 	// unknown machines
 #endif
@@ -356,6 +364,9 @@ class I286;
 #else
 class I86;
 #endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+class I86; // V30
+#endif
 class IO;
 class LS244;
 //class MEMORY;
@@ -449,6 +460,9 @@ protected:
 	I286* cpu;
 #else
 	I86* cpu;
+#endif
+#if (defined(SUPPORT_24BIT_ADDRESS) || defined(SUPPORT_32BIT_ADDRESS)) && !defined(SUPPORT_HIRESO)
+	I86* v30;
 #endif
 	IO* io;
 	LS244* rtcreg;

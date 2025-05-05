@@ -19,6 +19,10 @@
 //#include "../i286_np21.h"
 #include "../i286.h"
 #endif
+#if !defined(SUPPORT_HIRESO)
+#include "../i86.h"
+#include "../i8255.h"
+#endif
 
 void CPUREG::reset()
 {
@@ -38,6 +42,13 @@ void CPUREG::write_io8(uint32_t addr, uint32_t data)
 	case 0x00f0:
 		d_cpu->reset();
 		d_cpu->set_address_mask(0x000fffff);
+#if !defined(SUPPORT_HIRESO)
+		d_cpu->write_signal(SIG_CPU_BUSREQ,  data, 1);
+		d_v30->reset();
+		d_v30->write_signal(SIG_CPU_BUSREQ, ~data, 1);
+		cpu_mode = ((data & 1) != 0);
+		d_pio->write_signal(SIG_I8255_PORT_B, data, 2);
+#endif
 		break;
 	case 0x00f2:
 //#if defined(SUPPORT_32BIT_ADDRESS)
@@ -87,6 +98,11 @@ uint32_t CPUREG::read_io8(uint32_t addr)
 #if defined(HAS_I86) || defined(HAS_V30)
 		value |= 0x02; // CPU mode, 1 = V30, 0 = 80286/80386
 #endif
+#if !defined(SUPPORT_HIRESO)
+		if(cpu_mode) {
+			value |= 0x02; // CPU mode, 1 = V30, 0 = 80286/80386
+		}
+#endif
 		value |= 0x01; // RAM access, 1 = Internal RAM, 0 = External-enhanced RAM
 		return value;
 	case 0x00f2:
@@ -106,7 +122,18 @@ uint32_t CPUREG::read_io8(uint32_t addr)
 	return 0xff;
 }
 
-#define STATE_VERSION	1
+#if !defined(SUPPORT_HIRESO)
+void CPUREG::set_intr_line(bool line, bool pending, uint32_t bit)
+{
+	if(cpu_mode) {
+		d_v30->set_intr_line(line, pending, bit);
+	} else {
+		d_cpu->set_intr_line(line, pending, bit);
+	}
+}
+#endif
+
+#define STATE_VERSION	2
 
 bool CPUREG::process_state(FILEIO* state_fio, bool loading)
 {
@@ -116,6 +143,9 @@ bool CPUREG::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
+#if !defined(SUPPORT_HIRESO)
+	state_fio->StateValue(cpu_mode);
+#endif
 	state_fio->StateValue(nmi_enabled);
 	return true;
 }
