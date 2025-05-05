@@ -4,27 +4,22 @@
 	Author : Takeda.Toshiya
 	Date   : 2008.04.10 -
 
-	[ memory ]
+	[ memory bus ]
 */
 
-#ifndef _MEMORY_H_
-#define _MEMORY_H_
+#ifndef _MEMBUS_H_
+#define _MEMBUS_H_
 
-#include "../vm.h"
-#include "../../emu.h"
-#include "../device.h"
+#include "../memory.h"
 
 #define SIG_MEMORY_BANK	0
 
-class MEMORY : public DEVICE
+class MEMBUS : public MEMORY
 {
 private:
-	DEVICE* d_cpu;
+	DEVICE *d_cpu;
+	DEVICE *d_dma;
 	
-	uint8_t* rbank[64];	// 1MB / 16KB
-	uint8_t* wbank[64];
-	uint8_t wdmy[0x4000];
-	uint8_t rdmy[0x4000];
 #ifdef _MZ6550
 	uint8_t ipl[0x8000];	// IPL 32KB
 #else
@@ -45,24 +40,19 @@ private:
 	uint8_t mz1r32[0x100000];	// MZ-1R32 512KB * 2
 #endif
 	uint8_t bank1, bank2;
-	uint32_t haddr;		// DMAC high-order address latch
 	
 	void update_bank();
 	
 public:
-	MEMORY(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MEMBUS(VM_TEMPLATE* parent_vm, EMU* parent_emu) : MEMORY(parent_vm, parent_emu)
 	{
 		set_device_name(_T("Memory Bus"));
 	}
-	~MEMORY() {}
+	~MEMBUS() {}
 	
-	// common functions
+	// common function
 	void initialize();
 	void reset();
-	void write_data8(uint32_t addr, uint32_t data);
-	uint32_t read_data8(uint32_t addr);
-	void write_dma_data8(uint32_t addr, uint32_t data);
-	uint32_t read_dma_data8(uint32_t addr);
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
@@ -73,6 +63,10 @@ public:
 	{
 		d_cpu = device;
 	}
+	void set_context_dma(DEVICE* device)
+	{
+		d_dma = device;
+	}
 	uint8_t* get_vram()
 	{
 		return vram;
@@ -80,4 +74,3 @@ public:
 };
 
 #endif
-

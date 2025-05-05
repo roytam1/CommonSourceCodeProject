@@ -8,26 +8,12 @@
 	[ memory ]
 */
 
-#include "memory.h"
+#include "membus.h"
 
-#define SET_BANK(s, e, w, r) { \
-	int sb = (s) >> 14, eb = (e) >> 14; \
-	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) { \
-			wbank[i] = wdmy; \
-		} else { \
-			wbank[i] = (w) + 0x4000 * (i - sb); \
-		} \
-		if((r) == rdmy) { \
-			rbank[i] = rdmy + 0x4000 * (i & 3); \
-		} else { \
-			rbank[i] = (r) + 0x4000 * (i - sb); \
-		} \
-	} \
-}
-
-void MEMORY::initialize()
+void MEMBUS::initialize()
 {
+	MEMORY::initialize();
+	
 	// init memory
 	memset(ram, 0, sizeof(ram));
 	memset(vram, 0, sizeof(vram));
@@ -87,7 +73,7 @@ void MEMORY::initialize()
 #endif
 }
 
-void MEMORY::release()
+void MEMBUS::release()
 {
 	// save ram images
 	FILEIO* fio = new FILEIO();
@@ -114,7 +100,7 @@ void MEMORY::release()
 	delete fio;
 }
 
-void MEMORY::reset()
+void MEMBUS::reset()
 {
 	// set memory bank
 	learn_bank = dic_bank = kanji_bank = romdrv_bank = 0;
@@ -126,25 +112,19 @@ void MEMORY::reset()
 	update_bank();
 }
 
-void MEMORY::write_data8(uint32_t addr, uint32_t data)
-{
-	addr &= 0xfffff;
-	wbank[addr >> 14][addr & 0x3fff] = data;
 #ifdef _PC98HA
+void MEMBUS::write_data8w(uint32_t addr, uint32_t data, int *wait)
+{
+	MEMORY::write_data8w(addr, data, wait);
+	
 	// patch for pcmcia
 	if(ram[0x59e] == 0x3e) {
 		ram[0x59e] &= ~0x20;
 	}
+}
 #endif
-}
 
-uint32_t MEMORY::read_data8(uint32_t addr)
-{
-	addr &= 0xfffff;
-	return rbank[addr >> 14][addr & 0x3fff];
-}
-
-void MEMORY::write_io8(uint32_t addr, uint32_t data)
+void MEMBUS::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr & 0xffff) {
 #ifdef _PC98HA
@@ -205,7 +185,7 @@ void MEMORY::write_io8(uint32_t addr, uint32_t data)
 	}
 }
 
-uint32_t MEMORY::read_io8(uint32_t addr)
+uint32_t MEMBUS::read_io8(uint32_t addr)
 {
 	switch(addr & 0xffff) {
 	case 0x0c10:
@@ -220,40 +200,43 @@ uint32_t MEMORY::read_io8(uint32_t addr)
 	return 0xff;
 }
 
-void MEMORY::update_bank()
+void MEMBUS::update_bank()
 {
-	SET_BANK(0x00000, 0xfffff, wdmy, rdmy);
-	
-	SET_BANK(0x00000, 0x9ffff, ram, ram);
-	SET_BANK(0xa8000, 0xaffff, vram, vram);
-#ifdef _PC98HA
-	SET_BANK(0xc0000, 0xc3fff, ems + 0x4000 * ems_bank[0], ems + 0x4000 * ems_bank[0]);
-	SET_BANK(0xc4000, 0xc7fff, ems + 0x4000 * ems_bank[1], ems + 0x4000 * ems_bank[1]);
-	SET_BANK(0xc8000, 0xcbfff, ems + 0x4000 * ems_bank[2], ems + 0x4000 * ems_bank[2]);
-	SET_BANK(0xcc000, 0xcffff, ems + 0x4000 * ems_bank[3], ems + 0x4000 * ems_bank[3]);
-#endif
-	SET_BANK(0xd0000, 0xd3fff, learn + 0x4000 * learn_bank, learn + 0x4000 * learn_bank);
-	if(dic_bank < 48) {
-		SET_BANK(0xd4000, 0xd7fff, wdmy, dic + 0x4000 * dic_bank);
+	for(uint32_t addr = 0; addr < 0x100000; addr += 0x10000) {
+		set_memory_r(addr, addr + 0xffff, rdmy);
 	}
-	SET_BANK(0xd8000, 0xdbfff, wdmy, kanji + 0x4000 * kanji_bank);
+	unset_memory_w(0x00000, 0xfffff);
+	
+	set_memory_rw(0x00000, 0x9ffff, ram);
+	set_memory_rw(0xa8000, 0xaffff, vram);
+#ifdef _PC98HA
+	set_memory_rw(0xc0000, 0xc3fff, ems + 0x4000 * ems_bank[0]);
+	set_memory_rw(0xc4000, 0xc7fff, ems + 0x4000 * ems_bank[1]);
+	set_memory_rw(0xc8000, 0xcbfff, ems + 0x4000 * ems_bank[2]);
+	set_memory_rw(0xcc000, 0xcffff, ems + 0x4000 * ems_bank[3]);
+#endif
+	set_memory_rw(0xd0000, 0xd3fff, learn + 0x4000 * learn_bank);
+	if(dic_bank < 48) {
+		set_memory_r(0xd4000, 0xd7fff, dic + 0x4000 * dic_bank);
+	}
+	set_memory_r(0xd8000, 0xdbfff, kanji + 0x4000 * kanji_bank);
 #ifdef _PC98HA
 	if(ramdrv_sel == 0x80) {
 		// ???
 	} else if(ramdrv_sel == 0x81 && ramdrv_bank < 88) {
-		SET_BANK(0xdc000, 0xdffff, ramdrv + 0x4000 * ramdrv_bank, ramdrv + 0x4000 * ramdrv_bank);
+		set_memory_rw(0xdc000, 0xdffff, ramdrv + 0x4000 * ramdrv_bank);
 	} else if(ramdrv_sel == 0x82) {
 		// memory card
-		SET_BANK(0xdc000, 0xdffff, memcard + 0x4000 * ramdrv_bank, memcard + 0x4000 * ramdrv_bank);
+		set_memory_rw(0xdc000, 0xdffff, memcard + 0x4000 * ramdrv_bank);
 	}
 #endif
 	if(romdrv_bank < 16) {
-		SET_BANK(0xe0000, 0xeffff, wdmy, romdrv + 0x10000 * romdrv_bank);
+		set_memory_r(0xe0000, 0xeffff, romdrv + 0x10000 * romdrv_bank);
 	}
-	SET_BANK(0xf0000, 0xfffff, wdmy, ipl);
+	set_memory_r(0xf0000, 0xfffff, ipl);
 }
 
-void MEMORY::draw_screen()
+void MEMBUS::draw_screen()
 {
 	// draw to real screen
 	scrntype_t cd = RGB_COLOR(48, 56, 16);
@@ -276,9 +259,9 @@ void MEMORY::draw_screen()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
-bool MEMORY::process_state(FILEIO* state_fio, bool loading)
+bool MEMBUS::process_state(FILEIO* state_fio, bool loading)
 {
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;

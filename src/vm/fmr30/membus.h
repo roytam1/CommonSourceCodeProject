@@ -7,25 +7,18 @@
 	[ memory ]
 */
 
-#ifndef _MEMORY_H_
-#define _MEMORY_H_
+#ifndef _MEMBUS_H_
+#define _MEMBUS_H_
 
-#include "../vm.h"
-#include "../../emu.h"
-#include "../device.h"
+#include "../memory.h"
 
 #define SIG_MEMORY_DISP		0
 #define SIG_MEMORY_VSYNC	1
 
-class MEMORY : public DEVICE
+class MEMBUS : public MEMORY
 {
 private:
 	DEVICE *d_cpu, *d_dma;
-	
-	uint8_t* rbank[4096];	// 16MB / 4KB
-	uint8_t* wbank[4096];
-	uint8_t wdmy[0x1000];
-	uint8_t rdmy[0x1000];
 	
 #if defined(HAS_I86)
 	uint8_t ram[0x100000];	// RAM 1MB
@@ -54,17 +47,15 @@ private:
 	void draw_cg();
 	
 public:
-	MEMORY(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MEMBUS(VM_TEMPLATE* parent_vm, EMU* parent_emu) : MEMORY(parent_vm, parent_emu)
 	{
 		set_device_name(_T("Memory Bus"));
 	}
-	~MEMORY() {}
+	~MEMBUS() {}
 	
 	// common functions
 	void initialize();
 	void reset();
-	void write_data8(uint32_t addr, uint32_t data);
-	uint32_t read_data8(uint32_t addr);
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	void event_frame();

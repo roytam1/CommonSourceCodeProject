@@ -8,21 +8,16 @@
 	[ memory ]
 */
 
-#ifndef _MEMORY_H_
-#define _MEMORY_H_
+#ifndef _MEMBUS_H_
+#define _MEMBUS_H_
 
-#include "../vm.h"
-#include "../../emu.h"
-#include "../device.h"
+#include "../memory.h"
 
 #define SIG_MEMORY_IR2	0
 
-class MEMORY : public DEVICE
+class MEMBUS : public MEMORY
 {
 private:
-	uint8_t* rbank[64];	// 1MB / 16KB
-	uint8_t* wbank[64];
-	uint8_t wdmy[0x4000];
 	uint8_t rdmy[0x10000];
 	
 	uint8_t ram[0xa0000];		// RAM 640KB
@@ -57,18 +52,19 @@ private:
 #endif
 	
 public:
-	MEMORY(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	MEMBUS(VM_TEMPLATE* parent_vm, EMU* parent_emu) : MEMORY(parent_vm, parent_emu)
 	{
 		set_device_name(_T("Memory Bus"));
 	}
-	~MEMORY() {}
+	~MEMBUS() {}
 	
 	// common functions
 	void initialize();
 	void release();
 	void reset();
-	void write_data8(uint32_t addr, uint32_t data);
-	uint32_t read_data8(uint32_t addr);
+#ifdef _PC98HA
+	void write_data8w(uint32_t addr, uint32_t data, int *wait);
+#endif
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	bool process_state(FILEIO* state_fio, bool loading);

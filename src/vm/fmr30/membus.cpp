@@ -7,7 +7,7 @@
 	[ memory and crtc ]
 */
 
-#include "memory.h"
+#include "membus.h"
 #include "../i8237.h"
 #if defined(HAS_I86)
 #include "../i86.h"
@@ -44,23 +44,7 @@ static const uint8_t bios2[] = {
 	0xcf				// iret
 };
 
-#define SET_BANK(s, e, w, r) { \
-	int sb = (s) >> 12, eb = (e) >> 12; \
-	for(int i = sb; i <= eb; i++) { \
-		if((w) == wdmy) { \
-			wbank[i] = wdmy; \
-		} else { \
-			wbank[i] = (w) + 0x1000 * (i - sb); \
-		} \
-		if((r) == rdmy) { \
-			rbank[i] = rdmy; \
-		} else { \
-			rbank[i] = (r) + 0x1000 * (i - sb); \
-		} \
-	} \
-}
-
-void MEMORY::initialize()
+void MEMBUS::initialize()
 {
 	// init memory
 	memset(ram, 0, sizeof(ram));
@@ -69,7 +53,6 @@ void MEMORY::initialize()
 	memset(kvram, 0, sizeof(kvram));
 	memset(ipl, 0xff, sizeof(ipl));
 	memset(kanji16, 0xff, sizeof(kanji16));
-	memset(rdmy, 0xff, sizeof(rdmy));
 	
 	// load rom image
 	FILEIO* fio = new FILEIO();
@@ -98,16 +81,17 @@ void MEMORY::initialize()
 	delete fio;
 	
 	// set memory
-	SET_BANK(0x000000, 0xffffff, wdmy, rdmy);
-	SET_BANK(0x000000, sizeof(ram) - 1, ram, ram);
-	SET_BANK(0x0f0000, 0x0fffff, wdmy, ipl);
-	SET_BANK(0xff0000, 0xffffff, wdmy, ipl);
+	set_memory_rw(0x000000, sizeof(ram) - 1, ram);
+	set_memory_r (0x0f0000, 0x0fffff, ipl);
+#if defined(HAS_I286)
+	set_memory_r (0xff0000, 0xffffff, ipl);
+#endif
 	
 	// register event
 	register_frame_event(this);
 }
 
-void MEMORY::reset()
+void MEMBUS::reset()
 {
 	// reset crtc
 	lcdadr = 0;
@@ -122,19 +106,7 @@ void MEMORY::reset()
 	update_bank();
 }
 
-void MEMORY::write_data8(uint32_t addr, uint32_t data)
-{
-	addr &= 0xffffff;
-	wbank[addr >> 12][addr & 0xfff] = data;
-}
-
-uint32_t MEMORY::read_data8(uint32_t addr)
-{
-	addr &= 0xffffff;
-	return rbank[addr >> 12][addr & 0xfff];
-}
-
-void MEMORY::write_io8(uint32_t addr, uint32_t data)
+void MEMBUS::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr & 0xffff) {
 	// memory controller
@@ -209,7 +181,7 @@ void MEMORY::write_io8(uint32_t addr, uint32_t data)
 	}
 }
 
-uint32_t MEMORY::read_io8(uint32_t addr)
+uint32_t MEMBUS::read_io8(uint32_t addr)
 {
 	uint32_t val = 0xff;
 	
@@ -246,32 +218,33 @@ uint32_t MEMORY::read_io8(uint32_t addr)
 	return 0xff;
 }
 
-void MEMORY::event_frame()
+void MEMBUS::event_frame()
 {
 	blinkcnt++;
 }
 
-void MEMORY::update_bank()
+void MEMBUS::update_bank()
 {
 	if(!(mcr2 & 1)) {
 		// $c0000-$cffff: vram
-		SET_BANK(0xc0000, 0xcffff, wdmy, rdmy);
+		unset_memory_rw(0xc0000, 0xcffff);
 		int bank = 0x8000 * ((dcr1 >> 10) & 3);
-		SET_BANK(0xc0000, 0xc7fff, vram + bank, vram + bank);
-		SET_BANK(0xc8000, 0xc8fff, cvram, cvram);
-		SET_BANK(0xca000, 0xcafff, kvram, kvram);
+		set_memory_rw(0xc0000, 0xc7fff, vram + bank);
+		set_memory_rw(0xc8000, 0xc8fff, cvram);
+		set_memory_rw(0xca000, 0xcafff, kvram);
 	} else {
-		SET_BANK(0xc0000, 0xcffff, ram + 0xc0000, ram + 0xc0000);
+		set_memory_rw(0xc0000, 0xcffff, ram + 0xc0000);
 	}
 	if(!(mcr1 & 1)) {
 		// $f000-$ffff: rom
-		SET_BANK(0xf0000, 0xfffff, wdmy, ipl);
+		unset_memory_w(0xf0000, 0xfffff);
+		set_memory_r (0xf0000, 0xfffff, ipl);
 	} else {
-		SET_BANK(0xf0000, 0xfffff, ram + 0xf0000, ram + 0xf0000);
+		set_memory_rw(0xf0000, 0xfffff, ram + 0xf0000);
 	}
 }
 
-void MEMORY::draw_screen()
+void MEMBUS::draw_screen()
 {
 	// render screen
 	memset(screen_txt, 0, sizeof(screen_txt));
@@ -300,7 +273,7 @@ void MEMORY::draw_screen()
 	}
 }
 
-void MEMORY::draw_text40()
+void MEMBUS::draw_text40()
 {
 	uint8_t *ank8 = ipl;
 	uint8_t *ank16 = ipl + 0x800;
@@ -398,7 +371,7 @@ void MEMORY::draw_text40()
 	}
 }
 
-void MEMORY::draw_text80()
+void MEMBUS::draw_text80()
 {
 	uint8_t *ank8 = ipl;
 	uint8_t *ank16 = ipl + 0x800;
@@ -496,7 +469,7 @@ void MEMORY::draw_text80()
 	}
 }
 
-void MEMORY::draw_cg()
+void MEMBUS::draw_cg()
 {
 	uint8_t* plane = vram + ((dcr1 >> 8) & 3) * 0x8000;
 	int ptr = 0;
@@ -518,9 +491,9 @@ void MEMORY::draw_cg()
 	}
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
-bool MEMORY::process_state(FILEIO* state_fio, bool loading)
+bool MEMBUS::process_state(FILEIO* state_fio, bool loading)
 {
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
