@@ -302,7 +302,7 @@ void SCSI_CDROM::start_command()
 						this->out_debug_log(_T("[SCSI_DEV:ID=%d] Track=%02x\n"), scsi_id, command[2]);
 					#endif
 					if(FROM_BCD(command[2]) <= track_num) {
-						cdda_start_frame = toc_table[max(FROM_BCD(command[2]), 1) - 1].index0;
+						cdda_start_frame = toc_table[max(FROM_BCD(command[2]), 1) - 1].index1;
 					} else {
 						cdda_start_frame = toc_table[track_num].index0;
 					}
@@ -342,15 +342,15 @@ void SCSI_CDROM::start_command()
 				// change to status phase
 				set_dat(SCSI_STATUS_GOOD);
 				set_phase_delay(SCSI_PHASE_STATUS, seek_time);
+				#ifdef _SCSI_DEBUG_LOG
+					uint32_t s_msf = lba_to_msf(cdda_start_frame);
+					uint32_t e_msf = lba_to_msf(cdda_end_frame);
+					this->out_debug_log(_T("[SCSI_DEV:ID=%d] Start=%02x:%02x:%02x End=%02x:%02x:%02x Mode=%d\n"), scsi_id,
+						(s_msf >> 16) & 0xff, (s_msf >> 8) & 0xff, s_msf & 0xff,
+						(e_msf >> 16) & 0xff, (e_msf >> 8) & 0xff, e_msf & 0xff, cdda_play_mode);
+				#endif
 				return;
 			}
-			#ifdef _SCSI_DEBUG_LOG
-				uint32_t s_msf = lba_to_msf(cdda_start_frame);
-				uint32_t e_msf = lba_to_msf(cdda_end_frame);
-				this->out_debug_log(_T("[SCSI_DEV:ID=%d] Start=%02x:%02x:%02x End=%02x:%02x:%02x Mode=%d\n"), scsi_id,
-					(s_msf >> 16) & 0xff, (s_msf >> 8) & 0xff, s_msf & 0xff,
-					(e_msf >> 16) & 0xff, (e_msf >> 8) & 0xff, e_msf & 0xff, cdda_play_mode);
-			#endif
 		}
 		// change to status phase
 		set_dat(is_device_ready() ? SCSI_STATUS_GOOD : SCSI_STATUS_CHKCOND);
