@@ -730,6 +730,17 @@ void DISPLAY::draw_line(int v)
 
 void DISPLAY::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		// draw lines
+#ifdef _X1TURBO_FEATURE
+		for(int v = 0; v < (hireso ? 400 : 200); v++) {
+#else
+		for(int v = 0; v < 200; v++) {
+#endif
+			draw_line(v);
+		}
+	}
+	
 	// copy to real screen
 #ifdef _X1TURBOZ
 	zpalette_pc[8 + 0] = zpalette_pc[16 + 0x000];

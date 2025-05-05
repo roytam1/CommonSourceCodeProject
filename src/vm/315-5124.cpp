@@ -471,6 +471,74 @@ uint32_t _315_5124::read_io8(uint32_t addr)
 
 void _315_5124::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		uint8_t tmp = status_reg;
+		if (vdp_mode == 4) {
+			for(int v = 0; v < 192; v++) {
+				/* Ensure we're within the viewport range */
+				if(v < vp_y || v >= (vp_y + vp_h)) continue;
+				
+				/* Point to current line in output buffer */
+				linebuf = (uint8_t *)screen[v];
+				
+				/* Update pattern cache */
+				update_bg_pattern_cache();
+				
+				/* Blank line (full width) */
+				if (!(regs[1] & 0x40)) {
+					memset(linebuf, BACKDROP_COLOR, 256);
+				} else {
+					/* Draw background */
+					render_bg(v);
+					/* Draw sprites */
+					render_obj(v);
+					/* Blank leftmost column of display */
+					if (regs[0] & 0x20) {
+						memset(linebuf, BACKDROP_COLOR, 8);
+					}
+				}
+			}
+		} else {
+			// create virtual screen
+			if(regs[1] & 0x40) {
+				// draw character plane
+				int mode = (regs[0] & 2) | ((regs[1] & 0x10) >> 4) | ((regs[1] & 8) >> 1);
+				switch(mode)
+				{
+				case 0:
+					draw_mode0();
+					break;
+				case 1:
+					draw_mode1();
+					break;
+				case 2:
+					draw_mode2();
+					break;
+				case 3:
+					draw_mode12();
+					break;
+				case 4:
+					draw_mode3();
+					break;
+				case 6:
+					draw_mode23();
+					break;
+				case 5:
+				case 7:
+					draw_modebogus();
+					break;
+				}
+				// draw sprite plane
+				if((regs[1] & 0x50) == 0x40) {
+					draw_sprites();
+				}
+			} else {
+				memset(screen, 0, sizeof(screen));
+			}
+		}
+		status_reg = tmp;
+	}
+	
 	// update screen buffer
 	for(int y = 0; y < 192; y++) {
 		scrntype_t* dest = emu->get_screen_buffer(y);
@@ -522,7 +590,7 @@ void _315_5124::event_vline(int v, int clock)
 		/* Point to current line in output buffer */
 		linebuf = (uint8_t *)screen[v];
 		
-	    /* Update pattern cache */
+		/* Update pattern cache */
 		update_bg_pattern_cache();
 		
 		/* Blank line (full width) */

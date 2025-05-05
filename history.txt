@@ -1,3 +1,38 @@
+2/7/2019
+
+[EMU/DEBUGGER] improve to draw screen while debugging cpu
+[EMU] add override/restore/run_wndproc() for debugger
+[EMU] add create_bank_floppy_disk()
+[OSD/WIN32] add override/restore/run_wndproc() for debugger
+[OSD/WIN32] improve read_console_input() not to wait key inputs
+
+[VM/315_5124] improve draw_screen() for debugger
+[VM/H6280] improve to run window procedure while suspending for debugger
+[VM/I286] improve to run window procedure while suspending for debugger
+[VM/I386] improve to run window procedure while suspending for debugger
+[VM/I8080] improve to run window procedure while suspending for debugger
+[VM/M6502] improve to run window procedure while suspending for debugger
+[VM/MC6800] improve to run window procedure while suspending for debugger
+[VM/MC6809] improve to run window procedure while suspending for debugger
+[VM/MCS48] improve to run window procedure while suspending for debugger
+[VM/TMS9918A] improve draw_screen() for debugger
+[VM/TMS9995] improve to run window procedure while suspending for debugger
+[VM/UPD7801] improve to run window procedure while suspending for debugger
+[VM/UPD7810] improve to run window procedure while suspending for debugger
+[VM/V9938] improve draw_screen() for debugger
+[VM/V99X8] improve draw_screen() for debugger
+[VM/Z80] improve to run window procedure while suspending for debugger
+
+[BUBCOM80/DISPLAY] improve draw_screen() for debugger
+[FAMILYBASIC/PPU] improve draw_screen() for debugger
+[MZ80K/DISPLAY] improve draw_screen() for debugger
+[MZ1500/MEMORY] improve draw_screen() for debugger
+[PC8801/PC88] improve draw_screen() for debugger
+[PCENGINE/PCE] improve draw_screen() for debugger
+[SMC777/MEMORY] improve draw_screen() for debugger
+[X1/DISPLAY] improve draw_screen() for debugger
+
+
 1/29/2019
 
 [MZ80K/MEMORY] support COLOR GAL 5 (thanks Mr.Suga)

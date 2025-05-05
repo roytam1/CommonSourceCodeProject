@@ -249,29 +249,7 @@ void MEMORY::event_vline(int v, int clock)
 	
 	// draw one line
 	if(v < 200) {
-#if defined(_MZ800)
-		switch(dmd & 0x0f) {
-		case 0x00:	// 320x200,4col
-		case 0x01:
-			draw_line_320x200_2bpp(v);
-			break;
-		case 0x02:	// 320x200,16col
-			draw_line_320x200_4bpp(v);
-			break;
-		case 0x04:	// 640x200,2col
-		case 0x05:
-			draw_line_640x200_1bpp(v);
-			break;
-		case 0x06:	// 640x200,4col
-			draw_line_640x200_2bpp(v);
-			break;
-		case 0x08:	// MZ-700
-			draw_line_mz700(v);
-			break;
-		}
-#else
 		draw_line(v);
-#endif
 	}
 }
 
@@ -901,6 +879,13 @@ void MEMORY::draw_line(int v)
 
 void MEMORY::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		// draw lines
+		for(int v = 0; v < 200; v++) {
+			draw_line(v);
+		}
+	}
+	
 	// copy to real screen
 	emu->set_vm_screen_lines(200);
 	
@@ -925,6 +910,29 @@ void MEMORY::draw_screen()
 	emu->screen_skip_line(true);
 }
 #else
+void MEMORY::draw_line(int v)
+{
+	switch(dmd & 0x0f) {
+	case 0x00:	// 320x200,4col
+	case 0x01:
+		draw_line_320x200_2bpp(v);
+		break;
+	case 0x02:	// 320x200,16col
+		draw_line_320x200_4bpp(v);
+		break;
+	case 0x04:	// 640x200,2col
+	case 0x05:
+		draw_line_640x200_1bpp(v);
+		break;
+	case 0x06:	// 640x200,4col
+		draw_line_640x200_2bpp(v);
+		break;
+	case 0x08:	// MZ-700
+		draw_line_mz700(v);
+		break;
+	}
+}
+
 void MEMORY::draw_line_320x200_2bpp(int v)
 {
 	int ofs1 = (dmd & 1) ? 0x4000 : 0;
@@ -1040,6 +1048,13 @@ void MEMORY::draw_line_mz700(int v)
 
 void MEMORY::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		// draw lines
+		for(int v = 0; v < 200; v++) {
+			draw_line(v);
+		}
+	}
+	
 	// copy to real screen
 	emu->set_vm_screen_lines(200);
 	

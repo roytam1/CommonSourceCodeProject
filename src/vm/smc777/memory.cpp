@@ -789,6 +789,13 @@ void MEMORY::event_vline(int v, int clock)
 
 void MEMORY::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		// draw lines
+		for(int v = 0; v < 200; v++) {
+			event_vline(v, 0);
+		}
+	}
+	
 #if defined(_SMC70)
 	if((gcw & 0x0c) == 0x0c) {
 		emu->screen_skip_line(false);

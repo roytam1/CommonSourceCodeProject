@@ -92,3 +92,68 @@ void OSD::sleep(uint32_t ms)
 	Sleep(ms);
 }
 
+FARPROC hWndProc = NULL;
+OSD *my_osd = NULL;
+
+LRESULT CALLBACK MyWndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(iMsg) {
+	case WM_CLOSE:
+		return 0;
+	case WM_PAINT:
+		if(my_osd) {
+			PAINTSTRUCT ps;
+			HDC hdc = BeginPaint(hWnd, &ps);
+#ifdef ONE_BOARD_MICRO_COMPUTER
+			my_osd->reload_bitmap();
+#endif
+			my_osd->update_screen(hdc);
+			EndPaint(hWnd, &ps);
+		}
+		return 0;
+	}
+	return DefWindowProc(hWnd, iMsg, wParam, lParam);
+}
+
+void OSD::override_wndproc()
+{
+	HMENU hMenu = GetMenu(main_window_handle);
+	
+	if(hMenu != NULL) {
+		for(int i = 0;; i++) {
+			if(EnableMenuItem(hMenu, i, MF_BYPOSITION | MF_GRAYED) == -1) {
+				break;
+			}
+		}
+	}
+	hWndProc = (FARPROC)GetWindowLong(main_window_handle, GWL_WNDPROC);
+	SetWindowLong(main_window_handle, GWL_WNDPROC, (LONG)MyWndProc);
+	my_osd = this;
+}
+
+void OSD::restore_wndproc()
+{
+	HMENU hMenu = GetMenu(main_window_handle);
+	
+	if(hMenu != NULL) {
+		for(int i = 0;; i++) {
+			if(EnableMenuItem(hMenu, i, MF_BYPOSITION | MF_ENABLED) == -1) {
+				break;
+			}
+		}
+	}
+	SetWindowLong(main_window_handle, GWL_WNDPROC, (LONG)hWndProc);
+	my_osd = NULL;
+}
+
+void OSD::run_wndproc()
+{
+	MSG msg;
+	
+	while(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		if(GetMessage(&msg, NULL, 0, 0)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
+}

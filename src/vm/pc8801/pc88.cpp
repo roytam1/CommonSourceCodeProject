@@ -2786,23 +2786,79 @@ void PC88::draw_screen()
 
 void PC88::draw_text()
 {
-	if(crtc.status & 0x88) {
-		// dma underrun
-		crtc.status &= ~0x80;
-		memset(crtc.text.expand, 0, 200 * 80);
-		memset(crtc.attrib.expand, crtc.reverse ? 3 : 2, 200 * 80);
-	}
-	// for Advanced Fantasian Opening (20line) (XM8 version 1.00)
-	if(!(crtc.status & 0x10) || Port53_TEXTDS) {
-//	if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
-		memset(crtc.text.expand, 0, 200 * 80);
-		for(int y = 0; y < 200; y++) {
-			for(int x = 0; x < 80; x++) {
-				crtc.attrib.expand[y][x] &= 0xe0;
-				crtc.attrib.expand[y][x] |= 0x02;
+	if(emu->get_osd()->in_debugger) {
+		// dmac.run
+		uint8_t buffer[120 * 200];
+		memset(buffer, 0, sizeof(buffer));
+		
+		for(int i = 0; i < dmac.ch[3].count.sd + 1; i++) {
+			buffer[i] = this->read_dma_data8(dmac.ch[3].addr.w.l + i);
+		}
+		
+		// crtc.expand_buffer
+		for(int cy = 0, ofs = 0; cy < crtc.height; cy++, ofs += 80 + crtc.attrib.num * 2) {
+			for(int cx = 0; cx < crtc.width; cx++) {
+				crtc.text.expand[cy][cx] = buffer[ofs + cx];
 			}
 		}
-//		memset(crtc.attrib.expand, 2, 200 * 80);
+		if(crtc.mode & 4) {
+			// non transparent
+			for(int cy = 0, ofs = 0; cy < crtc.height; cy++, ofs += 80 + crtc.attrib.num * 2) {
+				for(int cx = 0; cx < crtc.width; cx += 2) {
+					crtc.set_attrib(buffer[ofs + cx + 1]);
+					crtc.attrib.expand[cy][cx] = crtc.attrib.expand[cy][cx + 1] = crtc.attrib.data;
+				}
+			}
+		} else {
+			// transparent
+			if(crtc.mode & 1) {
+				memset(crtc.attrib.expand, 0xe0, sizeof(crtc.attrib.expand));
+			} else {
+				for(int cy = 0, ofs = 0; cy < crtc.height; cy++, ofs += 80 + crtc.attrib.num * 2) {
+					uint8_t flags[128];
+					memset(flags, 0, sizeof(flags));
+					for(int i = 2 * (crtc.attrib.num - 1); i >= 0; i -= 2) {
+						flags[buffer[ofs + i + 80] & 0x7f] = 1;
+					}
+					crtc.attrib.data &= 0xf3; // for PC-8801mkIIFR •t‘®ƒfƒ‚
+					
+					for(int cx = 0, pos = 0; cx < crtc.width; cx++) {
+						if(flags[cx]) {
+							crtc.set_attrib(buffer[ofs + pos + 81]);
+							pos += 2;
+						}
+						crtc.attrib.expand[cy][cx] = crtc.attrib.data;
+					}
+				}
+			}
+		}
+		if(crtc.cursor.x < 80 && crtc.cursor.y < 200) {
+			if((crtc.cursor.type & 1) && crtc.blink.cursor) {
+				// no cursor
+			} else {
+				static const uint8_t ctype[5] = {0, 8, 8, 1, 1};
+				crtc.attrib.expand[crtc.cursor.y][crtc.cursor.x] ^= ctype[crtc.cursor.type + 1];
+			}
+		}
+	} else {
+		if(crtc.status & 0x88) {
+			// dma underrun
+			crtc.status &= ~0x80;
+			memset(crtc.text.expand, 0, 200 * 80);
+			memset(crtc.attrib.expand, crtc.reverse ? 3 : 2, 200 * 80);
+		}
+		// for Advanced Fantasian Opening (20line) (XM8 version 1.00)
+		if(!(crtc.status & 0x10) || Port53_TEXTDS) {
+//		if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
+			memset(crtc.text.expand, 0, 200 * 80);
+			for(int y = 0; y < 200; y++) {
+				for(int x = 0; x < 80; x++) {
+					crtc.attrib.expand[y][x] &= 0xe0;
+					crtc.attrib.expand[y][x] |= 0x02;
+				}
+			}
+//			memset(crtc.attrib.expand, 2, 200 * 80);
+		}
 	}
 	
 	// for Xak2 opening

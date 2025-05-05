@@ -431,6 +431,7 @@ public:
 	OSD()
 	{
 		lock_count = 0;
+		in_debugger = false;
 	}
 	~OSD() {}
 	
@@ -450,6 +451,10 @@ public:
 	}
 	void force_unlock_vm();
 	void sleep(uint32_t ms);
+	void override_wndproc();
+	void restore_wndproc();
+	void run_wndproc();
+	bool in_debugger;
 	
 	// common console
 	void open_console(const _TCHAR* title);

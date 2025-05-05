@@ -337,6 +337,20 @@ uint32_t PCE::read_io8(uint32_t addr)
 
 void PCE::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		int tmp = vce.current_bitmap_line;
+		for(int v = 14; v < 14 + 242; v++) {
+			vce.current_bitmap_line = v;
+#ifdef SUPPORT_SUPER_GFX
+			if(support_sgfx) {
+				sgx_interrupt();
+			} else
+#endif
+			pce_interrupt();
+		}
+		vce.current_bitmap_line = tmp;
+	}
+	
 	int dx = (SCREEN_WIDTH - vdc[0].physical_width) / 2, sx = 0;
 	int dy = (SCREEN_HEIGHT - 240) / 2;
 	
@@ -488,8 +502,10 @@ void PCE::pce_interrupt()
 	}
 
 	/* bump current scanline */
-	vce.current_bitmap_line = ( vce.current_bitmap_line + 1 ) % VDC_LPF;
-	vdc_advance_line(0);
+	if(!emu->get_osd()->in_debugger) {
+		vce.current_bitmap_line = ( vce.current_bitmap_line + 1 ) % VDC_LPF;
+		vdc_advance_line(0);
+	}
 }
 
 #ifdef SUPPORT_SUPER_GFX
@@ -642,9 +658,11 @@ void PCE::sgx_interrupt()
 	}
 
 	/* bump current scanline */
-	vce.current_bitmap_line = ( vce.current_bitmap_line + 1 ) % VDC_LPF;
-	vdc_advance_line(0);
-	vdc_advance_line(1);
+	if(!emu->get_osd()->in_debugger) {
+		vce.current_bitmap_line = ( vce.current_bitmap_line + 1 ) % VDC_LPF;
+		vdc_advance_line(0);
+		vdc_advance_line(1);
+	}
 }
 #endif
 

@@ -1228,11 +1228,14 @@ void UPD7801::run_one_opecode_debugger()
 	if(now_debugging) {
 		d_debugger->check_break_points(PC);
 		if(d_debugger->now_suspended) {
-			emu->mute_sound();
 			d_debugger->now_waiting = true;
+			emu->mute_sound();
+			emu->override_wndproc();
 			while(d_debugger->now_debugging && d_debugger->now_suspended) {
+				emu->run_wndproc();
 				emu->sleep(10);
 			}
+			emu->restore_wndproc();
 			d_debugger->now_waiting = false;
 		}
 		if(d_debugger->now_debugging) {

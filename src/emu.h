@@ -194,10 +194,6 @@ public:
 #endif
 	~EMU();
 	
-#ifdef OSD_QT
-	// qt dependent
-	EmuThreadClass *get_parent_handler();
-	void set_parent_handler(EmuThreadClass *p, DrawThreadClass *q);
 	VM_TEMPLATE *get_vm()
 	{
 		return vm;
@@ -206,6 +202,10 @@ public:
 	{
 		return osd;
 	}
+#ifdef OSD_QT
+	// qt dependent
+	EmuThreadClass *get_parent_handler();
+	void set_parent_handler(EmuThreadClass *p, DrawThreadClass *q);
 	void set_host_cpus(int v);
 	int get_host_cpus();
 #endif
@@ -400,6 +400,9 @@ public:
 	
 	// misc
 	void sleep(uint32_t ms);
+	void override_wndproc();
+	void restore_wndproc();
+	void run_wndproc();
 	
 	// user interface
 #ifdef USE_CART
@@ -414,6 +417,7 @@ public:
 		int bank_num;
 		int cur_bank;
 	} d88_file[USE_FLOPPY_DISK];
+	void create_bank_floppy_disk(const _TCHAR* file_path, uint8_t type);
 	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
 	void close_floppy_disk(int drv);
 	bool is_floppy_disk_inserted(int drv);

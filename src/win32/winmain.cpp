@@ -1093,12 +1093,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case ID_SELECT_D88_BANK + 56: case ID_SELECT_D88_BANK + 57: case ID_SELECT_D88_BANK + 58: case ID_SELECT_D88_BANK + 59: \
 		case ID_SELECT_D88_BANK + 60: case ID_SELECT_D88_BANK + 61: case ID_SELECT_D88_BANK + 62: case ID_SELECT_D88_BANK + 63: \
 			if(emu) { \
-				select_d88_bank(drv, LOWORD(wParam) - ID_SELECT_D88_BANK) ; \
+				select_d88_bank(drv, LOWORD(wParam) - ID_SELECT_D88_BANK); \
 			} \
 			break; \
 		case ID_EJECT_D88_BANK: \
 			if(emu) { \
-				select_d88_bank(drv, -1) ; \
+				select_d88_bank(drv, -1); \
 			} \
 			break;
 		FD_MENU_ITEMS(0, ID_OPEN_FD1, ID_CLOSE_FD1, ID_OPEN_BLANK_2D_FD1, ID_OPEN_BLANK_2DD_FD1, ID_OPEN_BLANK_2HD_FD1, ID_WRITE_PROTECT_FD1, ID_CORRECT_TIMING_FD1, ID_IGNORE_CRC_FD1, ID_RECENT_FD1, ID_SELECT_D88_BANK1, ID_EJECT_D88_BANK1)
@@ -1411,7 +1411,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	}
-	return DefWindowProc(hWnd, iMsg, wParam, lParam) ;
+	return DefWindowProc(hWnd, iMsg, wParam, lParam);
 }
 
 // ----------------------------------------------------------------------------
@@ -2532,28 +2532,8 @@ void open_blank_floppy_disk_dialog(HWND hWnd, int drv, uint8_t type)
 	if(path) {
 		UPDATE_HISTORY(path, config.recent_floppy_disk_path[drv]);
 		my_tcscpy_s(config.initial_floppy_disk_dir, _MAX_PATH, get_parent_dir(path));
-		
-		struct {
-			char title[17];
-			uint8_t rsrv[9];
-			uint8_t protect;
-			uint8_t type;
-			uint32_t size;
-			uint32_t trkptr[164];
-		} d88_hdr;
-		
-		memset(&d88_hdr, 0, sizeof(d88_hdr));
-		my_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "BLANK");
-		d88_hdr.type = type;
-		d88_hdr.size = sizeof(d88_hdr);
-		
-		FILEIO *fio = new FILEIO();
-		if(fio->Fopen(path, FILEIO_WRITE_BINARY)) {
-			fio->Fwrite(&d88_hdr, sizeof(d88_hdr), 1);
-			fio->Fclose();
-			open_floppy_disk(drv, path, 0);
-		}
-		delete fio;
+		emu->create_bank_floppy_disk(path, type);
+		open_floppy_disk(drv, path, 0);
 	}
 }
 

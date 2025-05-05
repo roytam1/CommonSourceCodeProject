@@ -89,6 +89,8 @@ private:
 	uint8_t pcg_addr;
 	uint8_t pcg_ctrl;
 	
+	void draw_line(int v);
+	
 public:
 	MEMORY(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{

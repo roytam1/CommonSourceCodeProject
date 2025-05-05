@@ -323,7 +323,13 @@ void PPU::event_vline(int v, int clock)
 
 void PPU::draw_screen()
 {
-	
+	if(emu->get_osd()->in_debugger) {
+		uint16_t tmp = loopy_v;
+		for(int v = 0; v < 240; v++) {
+			render_scanline(v);
+		}
+		loopy_v = tmp;
+	}
 	for(int y = 0; y < 240; y++) {
 		scrntype_t* dest = emu->get_screen_buffer(y);
 		uint8_t* src = screen[y];
@@ -513,8 +519,10 @@ void PPU::render_spr(int v)
 	int num_sprites = 0;
 	int spr_height = sprites_8x16() ? 16 : 8;
 	
-	if(header.mapper() == 5) {
-		d_memory->mmc5_ppu_latch_render(0, 0);
+	if(!emu->get_osd()->in_debugger) {
+		if(header.mapper() == 5) {
+			d_memory->mmc5_ppu_latch_render(0, 0);
+		}
 	}
 	for(int s = 0; s < 64; s++) {
 		uint8_t* spr = &spr_ram[s << 2];
@@ -616,10 +624,12 @@ void PPU::render_spr(int v)
 			solid++;
 		}
 	}
-	if(num_sprites >= 8) {
-		regs[2] |= 0x20;
-	} else {
-		regs[2] &= ~0x20;
+	if(!emu->get_osd()->in_debugger) {
+		if(num_sprites >= 8) {
+			regs[2] |= 0x20;
+		} else {
+			regs[2] &= ~0x20;
+		}
 	}
 }
 

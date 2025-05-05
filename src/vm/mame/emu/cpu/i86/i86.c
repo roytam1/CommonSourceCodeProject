@@ -309,11 +309,14 @@ static CPU_EXECUTE( i8086 )
 		if(now_debugging) {
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
-				cpustate->emu->mute_sound();
 				cpustate->debugger->now_waiting = true;
+				cpustate->emu->mute_sound();
+				cpustate->emu->override_wndproc();
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					cpustate->emu->run_wndproc();
 					cpustate->emu->sleep(10);
 				}
+				cpustate->emu->restore_wndproc();
 				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
@@ -456,11 +459,14 @@ static CPU_EXECUTE( i80186 )
 		if(now_debugging) {
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
-				cpustate->emu->mute_sound();
 				cpustate->debugger->now_waiting = true;
+				cpustate->emu->mute_sound();
+				cpustate->emu->override_wndproc();
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					cpustate->emu->run_wndproc();
 					cpustate->emu->sleep(10);
 				}
+				cpustate->emu->restore_wndproc();
 				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {
@@ -598,11 +604,14 @@ static CPU_EXECUTE( v30 )
 		if(now_debugging) {
 			cpustate->debugger->check_break_points(cpustate->pc);
 			if(cpustate->debugger->now_suspended) {
-				cpustate->emu->mute_sound();
 				cpustate->debugger->now_waiting = true;
+				cpustate->emu->mute_sound();
+				cpustate->emu->override_wndproc();
 				while(cpustate->debugger->now_debugging && cpustate->debugger->now_suspended) {
+					cpustate->emu->run_wndproc();
 					cpustate->emu->sleep(10);
 				}
+				cpustate->emu->restore_wndproc();
 				cpustate->debugger->now_waiting = false;
 			}
 			if(cpustate->debugger->now_debugging) {

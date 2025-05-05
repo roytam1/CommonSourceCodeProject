@@ -3114,6 +3114,27 @@ MACHINE_CONFIG_END*/
 /* for common source code project */
 void v99x8_device::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		int scanine = m_scanline;
+		UINT8 stat_reg[10];
+
+		memcpy(stat_reg, m_stat_reg, sizeof(m_stat_reg));
+
+		for(int v = 0; v < m_height; v++) {
+			m_scanline = v;
+
+			int scanline = (m_scanline - (m_scanline_start + m_offset_y));
+
+			// render the current line
+			if (m_scanline < m_vblank_start)
+			{
+				refresh_line(scanline);
+			}
+		}
+		m_scanline = scanine;
+		memcpy(m_stat_reg, stat_reg, sizeof(m_stat_reg));
+	}
+	
 	scrntype_t *dst;
 	int y;
 	for(y=0; y<SCREEN_HEIGHT; y++) {

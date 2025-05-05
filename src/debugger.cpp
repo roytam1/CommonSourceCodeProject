@@ -235,6 +235,10 @@ void* debugger_thread(void *lpx)
 	memset(prev_command, 0, sizeof(prev_command));
 	
 	while(!p->request_terminate) {
+		p->osd->in_debugger = true;
+		p->osd->draw_screen();
+		p->osd->in_debugger = false;
+		
 		my_printf(p->osd, _T("- "));
 		
 		// get command

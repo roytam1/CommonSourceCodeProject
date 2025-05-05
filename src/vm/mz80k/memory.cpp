@@ -181,61 +181,7 @@ void MEMORY::event_vline(int v, int clock)
 {
 	// draw one line
 	if(0 <= v && v < 200) {
-#if defined(_MZ80A)
-		int ptr = (v >> 3) * 40 + (int)(e200 << 3);	// scroll
-#else
-		int ptr = (v >> 3) * 40;
-#endif
-		bool pcg_active = ((config.dipswitch & 1) && !(pcg_ctrl & 8));
-#if defined(_MZ1200)
-		uint8_t *pcg_ptr = pcg + ((pcg_ctrl & 4) ? 0x800 : 0);
-#else
-		#define pcg_ptr pcg
-#endif
-		
-		for(int x = 0; x < 320; x += 8) {
-#if defined(_MZ80K) || defined(_MZ1200)
-			// COLOR GAL 5 - 2019.01.24 Suga
-			int cc = gal5_vram[ptr & 0x7ff];
-			uint8_t bk = (cc >> 4) & 0x07;
-			uint8_t fw = cc & 0x07;
-			uint8_t* dtc = &gal5_screen[v][x];
-#endif
-			int code = vram[(ptr++) & 0x7ff] << 3;
-			uint8_t pat = pcg_active ? pcg_ptr[code | (v & 7)] : font[code | (v & 7)];
-			
-#if defined(_MZ80K) || defined(_MZ1200)
-			// COLOR GAL 5 - 2019.01.24 Suga
-			dtc[0] = (pat & 0x80) ? fw : bk;
-			dtc[1] = (pat & 0x40) ? fw : bk;
-			dtc[2] = (pat & 0x20) ? fw : bk;
-			dtc[3] = (pat & 0x10) ? fw : bk;
-			dtc[4] = (pat & 0x08) ? fw : bk;
-			dtc[5] = (pat & 0x04) ? fw : bk;
-			dtc[6] = (pat & 0x02) ? fw : bk;
-			dtc[7] = (pat & 0x01) ? fw : bk;
-#endif
-			
-			// 8255(PIO) PC0 is /V-GATE 2016.11.21 by Suga
-			if((d_pio->read_io8(2) & 0x01) == 0x00) {
-				pat = 0x00;
-			}
-#if defined(_MZ1200) || defined(_MZ80A)
-			if(reverse) {
-				pat = ~pat;
-			}
-#endif
-			uint8_t* dest = &screen[v][x];
-			
-			dest[0] = (pat & 0x80) >> 7;
-			dest[1] = (pat & 0x40) >> 6;
-			dest[2] = (pat & 0x20) >> 5;
-			dest[3] = (pat & 0x10) >> 4;
-			dest[4] = (pat & 0x08) >> 3;
-			dest[5] = (pat & 0x04) >> 2;
-			dest[6] = (pat & 0x02) >> 1;
-			dest[7] = (pat & 0x01) >> 0;
-		}
+		draw_line(v);
 	}
 	
 	// vblank
@@ -440,6 +386,13 @@ void MEMORY::update_config()
 
 void MEMORY::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		// draw lines
+		for(int v = 0; v < 200; v++) {
+			draw_line(v);
+		}
+	}
+	
 #if defined(_MZ80K) || defined(_MZ1200)
 	// COLOR GAL 5 - 2019.01.24 Suga
 	if((config.monitor_type & 3) == MONITOR_TYPE_MONOCHROME_COLOR || (config.monitor_type & 3) == MONITOR_TYPE_COLOR_MONOCHROME) {
@@ -497,6 +450,65 @@ void MEMORY::draw_screen()
 		}
 	}
 #endif
+}
+
+void MEMORY::draw_line(int v)
+{
+#if defined(_MZ80A)
+	int ptr = (v >> 3) * 40 + (int)(e200 << 3);	// scroll
+#else
+	int ptr = (v >> 3) * 40;
+#endif
+	bool pcg_active = ((config.dipswitch & 1) && !(pcg_ctrl & 8));
+#if defined(_MZ1200)
+	uint8_t *pcg_ptr = pcg + ((pcg_ctrl & 4) ? 0x800 : 0);
+#else
+	#define pcg_ptr pcg
+#endif
+	
+	for(int x = 0; x < 320; x += 8) {
+#if defined(_MZ80K) || defined(_MZ1200)
+		// COLOR GAL 5 - 2019.01.24 Suga
+		int cc = gal5_vram[ptr & 0x7ff];
+		uint8_t bk = (cc >> 4) & 0x07;
+		uint8_t fw = cc & 0x07;
+		uint8_t* dtc = &gal5_screen[v][x];
+#endif
+		int code = vram[(ptr++) & 0x7ff] << 3;
+		uint8_t pat = pcg_active ? pcg_ptr[code | (v & 7)] : font[code | (v & 7)];
+		
+#if defined(_MZ80K) || defined(_MZ1200)
+		// COLOR GAL 5 - 2019.01.24 Suga
+		dtc[0] = (pat & 0x80) ? fw : bk;
+		dtc[1] = (pat & 0x40) ? fw : bk;
+		dtc[2] = (pat & 0x20) ? fw : bk;
+		dtc[3] = (pat & 0x10) ? fw : bk;
+		dtc[4] = (pat & 0x08) ? fw : bk;
+		dtc[5] = (pat & 0x04) ? fw : bk;
+		dtc[6] = (pat & 0x02) ? fw : bk;
+		dtc[7] = (pat & 0x01) ? fw : bk;
+#endif
+		
+		// 8255(PIO) PC0 is /V-GATE 2016.11.21 by Suga
+		if((d_pio->read_io8(2) & 0x01) == 0x00) {
+			pat = 0x00;
+		}
+#if defined(_MZ1200) || defined(_MZ80A)
+		if(reverse) {
+			pat = ~pat;
+		}
+#endif
+		uint8_t* dest = &screen[v][x];
+		
+		dest[0] = (pat & 0x80) >> 7;
+		dest[1] = (pat & 0x40) >> 6;
+		dest[2] = (pat & 0x20) >> 5;
+		dest[3] = (pat & 0x10) >> 4;
+		dest[4] = (pat & 0x08) >> 3;
+		dest[5] = (pat & 0x04) >> 2;
+		dest[6] = (pat & 0x02) >> 1;
+		dest[7] = (pat & 0x01) >> 0;
+	}
 }
 
 #define STATE_VERSION	5

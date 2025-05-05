@@ -151,6 +151,46 @@ void TMS9918A::write_signal(int id, uint32_t data, uint32_t mask)
 
 void TMS9918A::draw_screen()
 {
+	if(emu->get_osd()->in_debugger) {
+		// create virtual screen
+		if(regs[1] & 0x40) {
+			// draw character plane
+			uint8_t tmp = status_reg;
+			int mode = (regs[0] & 2) | ((regs[1] & 0x10) >> 4) | ((regs[1] & 8) >> 1);
+			switch(mode) {
+			case 0:
+				draw_mode0();
+				break;
+			case 1:
+				draw_mode1();
+				break;
+			case 2:
+				draw_mode2();
+				break;
+			case 3:
+				draw_mode12();
+				break;
+			case 4:
+				draw_mode3();
+				break;
+			case 6:
+				draw_mode23();
+				break;
+			case 5:
+			case 7:
+				draw_modebogus();
+				break;
+			}
+			// draw sprite plane
+			if((regs[1] & 0x50) == 0x40) {
+				draw_sprites();
+			}
+			status_reg = tmp;
+		} else {
+			memset(screen, 0, sizeof(screen));
+		}
+	}
+	
 #ifdef TMS9918A_SUPER_IMPOSE
 	if(now_super_impose) {
 		emu->get_video_buffer();

@@ -1907,6 +1907,21 @@ void EMU::sleep(uint32_t ms)
 	osd->sleep(ms);
 }
 
+void EMU::override_wndproc()
+{
+	osd->override_wndproc();
+}
+
+void EMU::restore_wndproc()
+{
+	osd->restore_wndproc();
+}
+
+void EMU::run_wndproc()
+{
+	osd->run_wndproc();
+}
+
 // ----------------------------------------------------------------------------
 // user interface
 // ----------------------------------------------------------------------------
@@ -2213,6 +2228,33 @@ bool EMU::is_cart_inserted(int drv)
 #endif
 
 #ifdef USE_FLOPPY_DISK
+void EMU::create_bank_floppy_disk(const _TCHAR* file_path, uint8_t type)
+{
+	/*
+		type: 0x00 = 2D, 0x10 = 2DD, 0x20 = 2HD
+	*/
+	struct {
+		char title[17];
+		uint8_t rsrv[9];
+		uint8_t protect;
+		uint8_t type;
+		uint32_t size;
+		uint32_t trkptr[164];
+	} d88_hdr;
+	
+	memset(&d88_hdr, 0, sizeof(d88_hdr));
+	my_strcpy_s(d88_hdr.title, sizeof(d88_hdr.title), "BLANK");
+	d88_hdr.type = type;
+	d88_hdr.size = sizeof(d88_hdr);
+	
+	FILEIO *fio = new FILEIO();
+	if(fio->Fopen(file_path, FILEIO_WRITE_BINARY)) {
+		fio->Fwrite(&d88_hdr, sizeof(d88_hdr), 1);
+		fio->Fclose();
+	}
+	delete fio;
+}
+
 void EMU::open_floppy_disk(int drv, const _TCHAR* file_path, int bank)
 {
 	if(drv < USE_FLOPPY_DISK) {
