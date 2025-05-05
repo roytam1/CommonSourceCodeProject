@@ -35,6 +35,7 @@
 #define SUPPORT_PC88_HIGH_CLOCK
 #define SUPPORT_PC88_OPNA
 #define SUPPORT_PC88_SB2
+#define SUPPORT_PC88_HMB20
 #define PC88_EXRAM_BANKS	4
 #define HAS_UPD4990A
 #endif
@@ -52,9 +53,6 @@
 #define UPD765A_NO_ST1_EN_OR_FOR_RESULT7
 #if defined(_PC8801MA)
 #define PC80S31K_NO_WAIT
-#endif
-#if defined(SUPPORT_PC88_OPNA) || defined(SUPPORT_PC88_SB2)
-#define HAS_YM2608
 #endif
 #define Z80_MEMORY_WAIT
 #define OVERRIDE_SOUND_FREQ_48000HZ	55467
@@ -92,23 +90,27 @@
 #define USE_SOUND_TYPE		2
 #endif
 #endif
-#if    defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 4 + 1 + 1 + 1)
-#elif  defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 4 + 0 + 1 + 1)
-#elif  defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 0 + 1 + 1 + 1)
-#elif  defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(4 + 0 + 0 + 1 + 1)
-#elif !defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 2 + 1 + 1 + 1)
-#elif !defined(SUPPORT_PC88_OPNA) &&  defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 2 + 0 + 1 + 1)
-#elif !defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) &&  defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 0 + 1 + 1 + 1)
-#elif !defined(SUPPORT_PC88_OPNA) && !defined(SUPPORT_PC88_SB2) && !defined(SUPPORT_PC88_PCG8100)
-#define USE_SOUND_VOLUME	(2 + 0 + 0 + 1 + 1)
+#if defined(SUPPORT_PC88_OPNA)
+#define SOUND_VOLUME_OPNA	4
+#else
+#define SOUND_VOLUME_OPNA	2
 #endif
+#if defined(SUPPORT_PC88_SB2)
+#define SOUND_VOLME_SB2		SOUND_VOLUME_OPNA
+#else
+#define SOUND_VOLME_SB2		0
+#endif
+#if defined(SUPPORT_PC88_HMB20)
+#define SOUND_VOLUME_HMB20	1
+#else
+#define SOUND_VOLUME_HMB20	0
+#endif
+#if defined(SUPPORT_PC88_PCG8100)
+#define SOUND_VOLUME_PCG8100	1
+#else
+#define SOUND_VOLUME_PCG8100	0
+#endif
+#define USE_SOUND_VOLUME	(SOUND_VOLUME_OPNA + SOUND_VOLME_SB2 + SOUND_VOLUME_HMB20 + SOUND_VOLUME_PCG8100 + 1 + 1)
 #define USE_JOYSTICK
 #define USE_MOUSE
 #define USE_PRINTER
@@ -121,7 +123,7 @@
 #include "../vm_template.h"
 
 #ifdef USE_SOUND_VOLUME
-static const _TCHAR *sound_device_caption[] = {
+static const _TCHAR *sound_device_caption[USE_SOUND_VOLUME] = {
 #ifdef SUPPORT_PC88_OPNA
 	_T("OPNA (FM)"), _T("OPNA (PSG)"), _T("OPNA (ADPCM)"), _T("OPNA (Rhythm)"),
 #else
@@ -133,6 +135,9 @@ static const _TCHAR *sound_device_caption[] = {
 #else
 	_T("SB2 (FM)"), _T("SB2 (PSG)"),
 #endif
+#endif
+#ifdef SUPPORT_PC88_HMB20
+	_T("HMB-20"),
 #endif
 #ifdef SUPPORT_PC88_PCG8100
 	_T("PCG-8100"),
@@ -155,6 +160,10 @@ class Z80;
 
 class PC80S31K;
 class UPD765A;
+
+#ifdef SUPPORT_PC88_HMB20
+class YM2151;
+#endif
 
 #ifdef SUPPORT_PC88_PCG8100
 class I8253;
@@ -188,6 +197,10 @@ protected:
 	NOISE* pc88noise_head_down;
 	NOISE* pc88noise_head_up;
 	Z80* pc88cpu_sub;
+	
+#ifdef SUPPORT_PC88_HMB20
+	YM2151* pc88opm;
+#endif
 	
 #ifdef SUPPORT_PC88_PCG8100
 	I8253* pc88pit;

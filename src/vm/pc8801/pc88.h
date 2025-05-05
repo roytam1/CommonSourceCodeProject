@@ -107,6 +107,9 @@ private:
 #endif
 	Z80 *d_cpu;
 	DEVICE *d_pcm, *d_pio, *d_prn, *d_rtc, *d_sio;
+#ifdef SUPPORT_PC88_HMB20
+	DEVICE *d_opm;
+#endif
 #ifdef SUPPORT_PC88_PCG8100
 	DEVICE *d_pcg_pit, *d_pcg_pcm0, *d_pcg_pcm1, *d_pcg_pcm2;
 #endif
@@ -343,6 +346,12 @@ public:
 	{
 		d_sio = device;
 	}
+#ifdef SUPPORT_PC88_HMB20
+	void set_context_opm(DEVICE* device)
+	{
+		d_opm = device;
+	}
+#endif
 #ifdef SUPPORT_PC88_PCG8100
 	void set_context_pcg_pit(DEVICE* device)
 	{

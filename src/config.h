@@ -186,7 +186,8 @@ typedef struct {
 		int sound_volume_r[MAX_VOLUME_TMP];
 	#endif
 	#if defined(USE_SHARED_DLL) || defined(_WIN32)
-		_TCHAR fmgen_dll_path[_MAX_PATH];
+		_TCHAR mame2151_dll_path[_MAX_PATH];
+		_TCHAR mame2608_dll_path[_MAX_PATH];
 	#endif
 	
 	// input

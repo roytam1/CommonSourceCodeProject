@@ -690,6 +690,26 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\src\vm\ym2151.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\src\vm\ym2203.cpp"
 					>
 					<FileConfiguration
@@ -755,6 +775,26 @@
 					</File>
 					<File
 						RelativePath="..\src\vm\fmgen\fmtimer.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								PreprocessorDefinitions=""
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="..\src\vm\fmgen\opm.cpp"
 						>
 						<FileConfiguration
 							Name="Debug|Win32"
@@ -964,6 +1004,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\vm\ym2151.h"
+					>
+				</File>
+				<File
 					RelativePath="..\src\vm\ym2203.h"
 					>
 				</File>
@@ -996,6 +1040,10 @@
 					</File>
 					<File
 						RelativePath="..\src\vm\fmgen\misc.h"
+						>
+					</File>
+					<File
+						RelativePath="..\src\vm\fmgen\opm.h"
 						>
 					</File>
 					<File

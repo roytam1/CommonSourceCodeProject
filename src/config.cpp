@@ -321,7 +321,16 @@ void load_config(const _TCHAR* config_path)
 		}
 	#endif
 	#ifdef _WIN32
-		MyGetPrivateProfileString(_T("Sound"), _T("FMGenDll"), _T("mamefm.dll"), config.fmgen_dll_path, _MAX_PATH, config_path);
+		// for compatibilities
+		#ifdef _X1_H_
+			MyGetPrivateProfileString(_T("Sound"), _T("FMGenDll"), _T("mame2151.dll"), config.mame2151_dll_path, _MAX_PATH, config_path);
+			my_tcscpy_s(config.mame2608_dll_path, _MAX_PATH, _T("mamefm.dll"));
+		#else
+			MyGetPrivateProfileString(_T("Sound"), _T("FMGenDll"), _T("mamefm.dll"), config.mame2608_dll_path, _MAX_PATH, config_path);
+			my_tcscpy_s(config.mame2151_dll_path, _MAX_PATH, _T("mame2151.dll"));
+		#endif
+		MyGetPrivateProfileString(_T("Sound"), _T("YM2151GenDll"), config.mame2151_dll_path, config.mame2151_dll_path, _MAX_PATH, config_path);
+		MyGetPrivateProfileString(_T("Sound"), _T("YM2608GenDll"), config.mame2608_dll_path, config.mame2608_dll_path, _MAX_PATH, config_path);
 	#endif
 	
 	// input
@@ -535,6 +544,10 @@ void save_config(const _TCHAR* config_path)
 			MyWritePrivateProfileInt(_T("Sound"), create_string(_T("VolumeLeft%d"), i + 1), config.sound_volume_l[i], config_path);
 			MyWritePrivateProfileInt(_T("Sound"), create_string(_T("VolumeRight%d"), i + 1), config.sound_volume_r[i], config_path);
 		}
+	#endif
+	#ifdef _WIN32
+		MyWritePrivateProfileString(_T("Sound"), _T("YM2151GenDll"), config.mame2151_dll_path, config_path);
+		MyWritePrivateProfileString(_T("Sound"), _T("YM2608GenDll"), config.mame2608_dll_path, config_path);
 	#endif
 	
 	// input

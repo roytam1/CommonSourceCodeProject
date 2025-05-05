@@ -27,9 +27,7 @@
 class YM2203 : public DEVICE
 {
 private:
-#ifdef HAS_YM2608
 	FM::OPNA* opna;
-#endif
 	FM::OPN* opn;
 #ifdef SUPPORT_MAME_FM_DLL
 //	CFMDLL* fmdll;
@@ -43,10 +41,8 @@ private:
 	
 	uint8_t ch;
 	uint8_t fnum2;
-#ifdef HAS_YM2608
 	uint8_t ch1, data1;
 	uint8_t fnum21;
-#endif
 	
 	struct {
 		uint8_t wreg;
@@ -84,12 +80,11 @@ public:
 		}
 		initialize_output_signals(&outputs_irq);
 		base_decibel_fm = base_decibel_psg = 0;
-#if defined(HAS_YM2608)
-		is_ym2608 = true;
-		set_device_name(_T("YM2608 OPNA"));
-#else
-		set_device_name(_T("YM2203 OPN"));
-#endif
+		// default device type is YM2203
+		// please set is_ym2608 = true before YM2203::initializ() is called
+		is_ym2608 = false;
+//		set_device_name(_T("YM2203 OPN"));
+		this_device_name[0] = _T('\0');
 	}
 	~YM2203() {}
 	
@@ -122,9 +117,7 @@ public:
 	}
 	void initialize_sound(int rate, int clock, int samples, int decibel_fm, int decibel_psg);
 	void set_reg(uint32_t addr, uint32_t data); // for patch
-#ifdef HAS_YM2608
 	bool is_ym2608;
-#endif
 };
 
 #endif

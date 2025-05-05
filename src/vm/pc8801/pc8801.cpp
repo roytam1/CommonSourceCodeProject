@@ -31,6 +31,10 @@
 #include "../debugger.h"
 #endif
 
+#ifdef SUPPORT_PC88_HMB20
+#include "../ym2151.h"
+#endif
+
 #ifdef SUPPORT_PC88_PCG8100
 #include "../i8253.h"
 #endif
@@ -84,8 +88,10 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 		pc88opn->is_ym2608 = true;
 		pc88opn->set_device_name(_T("YM2608 OPNA"));
 	} else {
+#endif
 		pc88opn->is_ym2608 = false;
 		pc88opn->set_device_name(_T("YM2203 OPN"));
+#ifdef SUPPORT_PC88_OPNA
 	}
 #endif
 #ifdef SUPPORT_PC88_SB2
@@ -97,8 +103,8 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 			pc88sb2->is_ym2608 = true;
 			pc88sb2->set_device_name(_T("YM2608 OPNA (SB2)"));
 		} else {
-			pc88sb2->is_ym2608 = false;
 #endif
+			pc88sb2->is_ym2608 = false;
 			pc88sb2->set_device_name(_T("YM2203 OPN (SB2)"));
 #ifdef SUPPORT_PC88_OPNA
 		}
@@ -139,6 +145,11 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pc88cpu_sub->set_device_name(_T("Z80 CPU (Sub)"));
 //	pc88cpu_sub->set_context_event_manager(pc88event);
 	
+#ifdef SUPPORT_PC88_HMB20
+	pc88opm = new YM2151(this, emu);
+	pc88opm->set_device_name(_T("YM2151 OPM (HMB20)"));
+#endif
+	
 #ifdef SUPPORT_PC88_PCG8100
 	pc88pit = new I8253(this, emu);
 	pc88pit->set_device_name(_T("8253 PIT (PCG8100)"));
@@ -167,6 +178,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	}
 #endif
 	pc88event->set_context_sound(pc88pcm);
+#ifdef SUPPORT_PC88_HMB20
+	pc88event->set_context_sound(pc88opm);
+#endif
 #ifdef SUPPORT_PC88_PCG8100
 	pc88event->set_context_sound(pc88pcm0);
 	pc88event->set_context_sound(pc88pcm1);
@@ -186,6 +200,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pc88->set_context_prn(pc88prn);
 	pc88->set_context_rtc(pc88rtc);
 	pc88->set_context_sio(pc88sio);
+#ifdef SUPPORT_PC88_HMB20
+	pc88->set_context_opm(pc88opm);
+#endif
 #ifdef SUPPORT_PC88_PCG8100
 	pc88->set_context_pcg_pit(pc88pit);
 	pc88->set_context_pcg_pcm0(pc88pcm0);
@@ -332,23 +349,24 @@ void VM::initialize_sound(int rate, int samples)
 	pc88event->initialize_sound(rate, samples);
 	
 	// init sound gen
-#ifdef SUPPORT_PC88_OPNA
 	if(pc88opn->is_ym2608) {
 		pc88opn->initialize_sound(rate, 7987248, samples, 0, 0);
-	} else
-#endif
-	pc88opn->initialize_sound(rate, 3993624, samples, 0, 0);
+	} else {
+		pc88opn->initialize_sound(rate, 3993624, samples, 0, 0);
+	}
 #ifdef SUPPORT_PC88_SB2
 	if(pc88sb2 != NULL) {
-#ifdef SUPPORT_PC88_OPNA
 		if(pc88sb2->is_ym2608) {
 			pc88sb2->initialize_sound(rate, 7987248, samples, 0, 0);
-		} else
-#endif
-		pc88sb2->initialize_sound(rate, 3993624, samples, 0, 0);
+		} else {
+			pc88sb2->initialize_sound(rate, 3993624, samples, 0, 0);
+		}
 	}
 #endif
 	pc88pcm->initialize_sound(rate, 8000);
+#ifdef SUPPORT_PC88_HMB20
+	pc88opm->initialize_sound(rate, 4000000, samples, 0);
+#endif
 #ifdef SUPPORT_PC88_PCG8100
 	pc88pcm0->initialize_sound(rate, 8000);
 	pc88pcm1->initialize_sound(rate, 8000);
@@ -398,6 +416,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 			pc88sb2->set_volume(3, decibel_l, decibel_r);
 		}
 #endif
+#endif
+#ifdef SUPPORT_PC88_HMB20
+	} else if(ch-- == 0) {
+		pc88opm->set_volume(0, decibel_l, decibel_r);
 #endif
 #ifdef SUPPORT_PC88_PCG8100
 	} else if(ch-- == 0) {

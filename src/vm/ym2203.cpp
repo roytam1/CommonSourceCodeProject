@@ -21,16 +21,21 @@ static bool dont_create_multiple_chips = false;
 
 void YM2203::initialize()
 {
-#ifdef HAS_YM2608
 	if(is_ym2608) {
+		if(this_device_name[0] == _T('\0')) {
+			set_device_name(_T("YM2608 OPNA"));
+		}
 		opna = new FM::OPNA;
-	} else
-#endif
-	opn = new FM::OPN;
+	} else {
+		if(this_device_name[0] == _T('\0')) {
+			set_device_name(_T("YM2203 OPN"));
+		}
+		opn = new FM::OPN;
+	}
 #ifdef SUPPORT_MAME_FM_DLL
 	if(!fmdll) {
 //		fmdll = new CFMDLL(_T("mamefm.dll"));
-		fmdll = new CFMDLL(config.fmgen_dll_path);
+		fmdll = new CFMDLL(config.mame2608_dll_path);
 	}
 	dllchip = NULL;
 #endif
@@ -41,12 +46,11 @@ void YM2203::initialize()
 
 void YM2203::release()
 {
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		delete opna;
-	} else
-#endif
-	delete opn;
+	} else {
+		delete opn;
+	}
 #ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->Release(dllchip);
@@ -63,12 +67,11 @@ void YM2203::release()
 void YM2203::reset()
 {
 	touch_sound();
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->Reset();
-	} else
-#endif
-	opn->Reset();
+	} else {
+		opn->Reset();
+	}
 #ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->Reset(dllchip);
@@ -76,9 +79,7 @@ void YM2203::reset()
 	memset(port_log, 0, sizeof(port_log));
 #endif
 	fnum2 = 0;
-#ifdef HAS_YM2608
 	fnum21 = 0;
-#endif
 	
 	// stop timer
 	timer_event_id = -1;
@@ -86,19 +87,19 @@ void YM2203::reset()
 	
 	port[0].first = port[1].first = true;
 	port[0].wreg = port[1].wreg = 0;//0xff;
-#ifdef YM2203_PORT_MODE
-	mode = YM2203_PORT_MODE;
-#else
+//#ifdef YM2203_PORT_MODE
+//	mode = YM2203_PORT_MODE;
+//#else
 	mode = 0;
-#endif
+//#endif
 	irq_prev = busy = false;
 }
 
-#ifdef HAS_YM2608
+//#ifdef HAS_YM2608
 #define amask (is_ym2608 ? 3 : 1)
-#else
-#define amask 1
-#endif
+//#else
+//#define amask 1
+//#endif
 
 void YM2203::write_io8(uint32_t addr, uint32_t data)
 {
@@ -116,11 +117,11 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 		break;
 	case 1:
 		if(ch == 7) {
-#ifdef YM2203_PORT_MODE
-			mode = (data & 0x3f) | YM2203_PORT_MODE;
-#else
+//#ifdef YM2203_PORT_MODE
+//			mode = (data & 0x3f) | YM2203_PORT_MODE;
+//#else
 			mode = data;
-#endif
+//#endif
 		} else if(ch == 14) {
 			if(port[0].wreg != data || port[0].first) {
 				write_signals(&port[0].outputs, data);
@@ -154,7 +155,6 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 			busy = true;
 		}
 		break;
-#ifdef HAS_YM2608
 	case 2:
 		ch1 = data1 = data;
 		break;
@@ -175,7 +175,6 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 			busy = true;
 		}
 		break;
-#endif
 	}
 }
 
@@ -188,19 +187,14 @@ uint32_t YM2203::read_io8(uint32_t addr)
 			update_count();
 			update_interrupt();
 			uint32_t status;
-#ifdef HAS_YM2608
 			if(is_ym2608) {
 				status = opna->ReadStatus() & ~0x80;
-			} else
-#endif
-			status = opn->ReadStatus() & ~0x80;
+			} else {
+				status = opn->ReadStatus() & ~0x80;
+			}
 			if(busy) {
 				// from PC-88 machine language master bible (XM8 version 1.00)
-#ifdef HAS_YM2608
 				if(get_passed_usec(clock_busy) < (is_ym2608 ? 4.25 : 2.13)) {
-#else
-				if(get_passed_usec(clock_busy) < 2.13) {
-#endif
 					status |= 0x80;
 				} else {
 					busy = false;
@@ -214,13 +208,11 @@ uint32_t YM2203::read_io8(uint32_t addr)
 		} else if(ch == 15) {
 			return (mode & 0x80) ? port[1].wreg : port[1].rreg;
 		}
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			return opna->GetReg(ch);
-		} else
-#endif
-		return opn->GetReg(ch);
-#ifdef HAS_YM2608
+		} else {
+			return opn->GetReg(ch);
+		}
 	case 2:
 		{
 			/* BUSY : x : PCMBUSY : ZERO : BRDY : EOS : FLAGB : FLAGA */
@@ -244,7 +236,6 @@ uint32_t YM2203::read_io8(uint32_t addr)
 //			return 0x80; // from mame fm.c
 		}
 		return data1;
-#endif
 	}
 	return 0xff;
 }
@@ -279,12 +270,11 @@ void YM2203::update_count()
 	clock_accum += clock_const * get_passed_clock(clock_prev);
 	uint32_t count = clock_accum >> 20;
 	if(count) {
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			opna->Count(count);
-		} else
-#endif
-		opn->Count(count);
+		} else {
+			opn->Count(count);
+		}
 		clock_accum -= count << 20;
 	}
 	clock_prev = get_current_clock();
@@ -298,32 +288,28 @@ void YM2203::update_event()
 	}
 	
 	int count;
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		count = opna->GetNextEvent();
-	} else
-#endif
-	count = opn->GetNextEvent();
-	
+	} else {
+		count = opn->GetNextEvent();
+	}
 	if(count > 0) {
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			register_event(this, EVENT_FM_TIMER, 1000000.0 / (double)chip_clock * (double)count * 2.0, false, &timer_event_id);
-		} else
-#endif
-		register_event(this, EVENT_FM_TIMER, 1000000.0 / (double)chip_clock * (double)count, false, &timer_event_id);
+		} else {
+			register_event(this, EVENT_FM_TIMER, 1000000.0 / (double)chip_clock * (double)count, false, &timer_event_id);
+		}
 	}
 }
 
 void YM2203::update_interrupt()
 {
 	bool irq;
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		irq = opna->ReadIRQ();
-	} else
-#endif
-	irq = opn->ReadIRQ();
+	} else {
+		irq = opn->ReadIRQ();
+	}
 	if(!irq_prev && irq) {
 		write_signals(&outputs_irq, 0xffffffff);
 	} else if(irq_prev && !irq) {
@@ -335,12 +321,11 @@ void YM2203::update_interrupt()
 void YM2203::mix(int32_t* buffer, int cnt)
 {
 	if(cnt > 0 && !mute) {
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			opna->Mix(buffer, cnt);
-		} else
-#endif
-		opn->Mix(buffer, cnt);
+		} else {
+			opn->Mix(buffer, cnt);
+		}
 #ifdef SUPPORT_MAME_FM_DLL
 		if(dllchip) {
 			fmdll->Mix(dllchip, buffer, cnt);
@@ -352,30 +337,27 @@ void YM2203::mix(int32_t* buffer, int cnt)
 void YM2203::set_volume(int ch, int decibel_l, int decibel_r)
 {
 	if(ch == 0) {
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			opna->SetVolumeFM(base_decibel_fm + decibel_l, base_decibel_fm + decibel_r);
-		} else
-#endif
-		opn->SetVolumeFM(base_decibel_fm + decibel_l, base_decibel_fm + decibel_r);
+		} else {
+			opn->SetVolumeFM(base_decibel_fm + decibel_l, base_decibel_fm + decibel_r);
+		}
 #ifdef SUPPORT_MAME_FM_DLL
 		if(dllchip) {
 			fmdll->SetVolumeFM(dllchip, base_decibel_fm + decibel_l);
 		}
 #endif
 	} else if(ch == 1) {
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			opna->SetVolumePSG(base_decibel_psg + decibel_l, base_decibel_psg + decibel_r);
-		} else
-#endif
-		opn->SetVolumePSG(base_decibel_psg + decibel_l, base_decibel_psg + decibel_r);
+		} else {
+			opn->SetVolumePSG(base_decibel_psg + decibel_l, base_decibel_psg + decibel_r);
+		}
 #ifdef SUPPORT_MAME_FM_DLL
 		if(dllchip) {
 			fmdll->SetVolumePSG(dllchip, base_decibel_psg + decibel_l);
 		}
 #endif
-#ifdef HAS_YM2608
 	} else if(ch == 2) {
 		if(is_ym2608) {
 			opna->SetVolumeADPCM(decibel_l, decibel_r);
@@ -384,36 +366,30 @@ void YM2203::set_volume(int ch, int decibel_l, int decibel_r)
 		if(is_ym2608) {
 			opna->SetVolumeRhythmTotal(decibel_l, decibel_r);
 		}
-#endif
 	}
 }
 
 void YM2203::initialize_sound(int rate, int clock, int samples, int decibel_fm, int decibel_psg)
 {
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->Init(clock, rate, false, get_application_path());
 		opna->SetVolumeFM(decibel_fm, decibel_fm);
 		opna->SetVolumePSG(decibel_psg, decibel_psg);
 	} else {
-#endif
 		opn->Init(clock, rate, false, NULL);
 		opn->SetVolumeFM(decibel_fm, decibel_fm);
 		opn->SetVolumePSG(decibel_psg, decibel_psg);
-#ifdef HAS_YM2608
 	}
-#endif
 	base_decibel_fm = decibel_fm;
 	base_decibel_psg = decibel_psg;
 	
 #ifdef SUPPORT_MAME_FM_DLL
 	if(!dont_create_multiple_chips) {
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			fmdll->Create((LPVOID*)&dllchip, clock, rate);
-		} else
-#endif
-		fmdll->Create((LPVOID*)&dllchip, clock * 2, rate);
+		} else {
+			fmdll->Create((LPVOID*)&dllchip, clock * 2, rate);
+		}
 		if(dllchip) {
 			chip_reference_counter++;
 			
@@ -440,12 +416,11 @@ void YM2203::initialize_sound(int rate, int clock, int samples, int decibel_fm, 
 			if((dwCaps & SUPPORT_RHYTHM) == SUPPORT_RHYTHM) {
 				mask |= 0xfc00;
 			}
-#ifdef HAS_YM2608
 			if(is_ym2608) {
 				opna->SetChannelMask(mask);
-			} else
-#endif
-			opn->SetChannelMask(mask);
+			} else {
+				opn->SetChannelMask(mask);
+			}
 			fmdll->SetChannelMask(dllchip, ~mask);
 		}
 	}
@@ -456,11 +431,9 @@ void YM2203::initialize_sound(int rate, int clock, int samples, int decibel_fm, 
 void YM2203::set_reg(uint32_t addr, uint32_t data)
 {
 	touch_sound();
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		opna->SetReg(addr, data);
 	} else {
-#endif
 		if((addr & 0xf0) == 0x10) {
 			return;
 		}
@@ -472,9 +445,7 @@ void YM2203::set_reg(uint32_t addr, uint32_t data)
 			data = 0xc0;
 		}
 		opn->SetReg(addr, data);
-#ifdef HAS_YM2608
 	}
-#endif
 #ifdef SUPPORT_MAME_FM_DLL
 	if(dllchip) {
 		fmdll->SetReg(dllchip, addr, data);
@@ -489,15 +460,14 @@ void YM2203::set_reg(uint32_t addr, uint32_t data)
 
 void YM2203::update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame)
 {
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		clock_const = (uint32_t)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks / 2.0 + 0.5);
-	} else
-#endif
-	clock_const = (uint32_t)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks + 0.5);
+	} else {
+		clock_const = (uint32_t)((double)chip_clock * 1024.0 * 1024.0 / (double)new_clocks + 0.5);
+	}
 }
 
-#define STATE_VERSION	5
+#define STATE_VERSION	6
 
 bool YM2203::process_state(FILEIO* state_fio, bool loading)
 {
@@ -507,15 +477,14 @@ bool YM2203::process_state(FILEIO* state_fio, bool loading)
 	if(!state_fio->StateCheckInt32(this_device_id)) {
 		return false;
 	}
-#ifdef HAS_YM2608
 	if(is_ym2608) {
 		if(!opna->ProcessState((void *)state_fio, loading)) {
 			return false;
 		}
-	} else
-#endif
-	if(!opn->ProcessState((void *)state_fio, loading)) {
-		return false;
+	} else {
+		if(!opn->ProcessState((void *)state_fio, loading)) {
+			return false;
+		}
 	}
 #ifdef SUPPORT_MAME_FM_DLL
 	for(int i = 0; i < array_length(port_log); i++) {
@@ -525,11 +494,9 @@ bool YM2203::process_state(FILEIO* state_fio, bool loading)
 #endif
 	state_fio->StateValue(ch);
 	state_fio->StateValue(fnum2);
-#ifdef HAS_YM2608
 	state_fio->StateValue(ch1);
 	state_fio->StateValue(data1);
 	state_fio->StateValue(fnum21);
-#endif
 	for(int i = 0; i < 2; i++) {
 		state_fio->StateValue(port[i].wreg);
 		state_fio->StateValue(port[i].rreg);
@@ -557,14 +524,12 @@ bool YM2203::process_state(FILEIO* state_fio, bool loading)
 				fmdll->SetReg(dllchip, ch, port_log[ch].data);
 			}
 		}
-#ifdef HAS_YM2608
 		if(is_ym2608) {
 			BYTE *dest = fmdll->GetADPCMBuffer(dllchip);
 			if(dest != NULL) {
 				memcpy(dest, opna->GetADPCMBuffer(), 0x40000);
 			}
 		}
-#endif
 	}
 #endif
 	return true;

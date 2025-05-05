@@ -937,6 +937,12 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 	case 0x78:
 		Port70_TEXTWND++;
 		break;
+#ifdef SUPPORT_PC88_HMB20
+	case 0x88:
+	case 0x89:
+		d_opm->write_io8(addr, data);
+		break;
+#endif
 #ifdef SUPPORT_PC88_SB2
 	case 0xa8:
 	case 0xa9:
@@ -1152,6 +1158,12 @@ uint32_t PC88::read_io8_debug(uint32_t addr)
 #endif
 	case 0x71:
 		return port[0x71];
+#ifdef SUPPORT_PC88_HMB20
+//	case 0x88:
+	case 0x89:
+		return d_opm->read_io8(addr);
+		break;
+#endif
 #ifdef SUPPORT_PC88_SB2
 	case 0xa8:
 		if(d_sb2 != NULL) {

@@ -1,3 +1,12 @@
+12/4/2018
+
+[CONFIG] remove fmgen_dll_path and add mame2151_dll_path/mame2608_dll_path
+
+[VM/YM2203] remove HAS_YM2608 and YM2203_PORT_MODE to simplify code
+
+[PC8801] support HMB-20 sound board
+
+
 12/2/2018-2
 
 [PC8801/PC88] fix text/graph renderer again (thanks Mr.Bookworm)
