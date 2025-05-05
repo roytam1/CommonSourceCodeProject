@@ -1,3 +1,10 @@
+2/19/2019-2
+
+[VM/DEVICE] revirt fixes in 2/19/2019
+[VM/EVENT] revirt fixes in 2/19/2019
+[VM/Z80] revirt fixes in 2/19/2019
+
+
 2/19/2019
 
 [VM/DEVICE] add is_primary_cpu() and update_extra_event()

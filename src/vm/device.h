@@ -535,20 +535,6 @@ public:
 		}
 		return event_manager->this_device_id;
 	}
-	virtual bool is_primary_cpu(DEVICE* device)
-	{
-		if(event_manager == NULL) {
-			event_manager = vm->first_device->next_device;
-		}
-		return event_manager->is_primary_cpu(device);
-	}
-	virtual void update_extra_event(int clock)
-	{
-		if(event_manager == NULL) {
-			event_manager = vm->first_device->next_device;
-		}
-		event_manager->update_extra_event(clock);
-	}
 	virtual void register_event(DEVICE* device, int event_id, double usec, bool loop, int* register_id)
 	{
 		if(event_manager == NULL) {

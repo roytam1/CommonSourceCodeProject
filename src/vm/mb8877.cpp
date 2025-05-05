@@ -1444,7 +1444,7 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 	
 #ifdef MB8877_DELAY_AFTER_SEEK
 	// wait 60ms to start read/write after seek is finished (FM-Techknow, p.180)
-	if(first_sector && time < DELAY_AFTER_SEEK - get_passed_usec(seekend_clock)) {
+	if(first_sector && time < MB8877_DELAY_AFTER_SEEK - get_passed_usec(seekend_clock)) {
 		time += disk[drvreg]->get_usec_per_track();
 	}
 #endif

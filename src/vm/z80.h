@@ -46,8 +46,6 @@ private:
 #endif
 	outputs_t outputs_busack;
 	
-	bool is_primary;
-	
 	/* ---------------------------------------------------------------------------
 	registers
 	--------------------------------------------------------------------------- */
@@ -58,7 +56,6 @@ private:
 #endif
 	int icount;
 	int extra_icount;
-	int busreq_icount;
 	uint16_t prevpc;
 	pair32_t pc, sp, af, bc, de, hl, ix, iy, wz;
 	pair32_t af2, bc2, de2, hl2;
@@ -122,7 +119,6 @@ public:
 		d_dma = NULL;
 #endif
 		initialize_output_signals(&outputs_busack);
-		is_primary = false;
 		set_device_name(_T("Z80 CPU"));
 	}
 	~Z80() {}
