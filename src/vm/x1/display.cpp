@@ -82,8 +82,8 @@ void DISPLAY::initialize()
 #ifdef _X1TURBOZ
 	for(int i = 0; i < 8; i++) {
 		ztpal[i] = ((i & 1) ? 0x03 : 0) | ((i & 2) ? 0x0c : 0) | ((i & 4) ? 0x30 : 0);
-		zpalette_pc[i    ] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);	// text
-		zpalette_pc[i + 8] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);	// digital
+		zpalette_tmp[i    ] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);	// text
+		zpalette_tmp[i + 8] = RGB_COLOR((i & 2) ? 255 : 0, (i & 4) ? 255 : 0, (i & 1) ? 255 : 0);	// digital
 	}
 	for(int g = 0; g < 16; g++) {
 		for(int r = 0; r < 16; r++) {
@@ -92,10 +92,11 @@ void DISPLAY::initialize()
 				zpal[num].b = b;
 				zpal[num].r = r;
 				zpal[num].g = g;
-				zpalette_pc[num + 16] = RGB_COLOR((r * 255) / 15, (g * 255) / 15, (b * 255) / 15);
+				zpalette_tmp[num + 16] = RGB_COLOR((r * 255) / 15, (g * 255) / 15, (b * 255) / 15);
 			}
 		}
 	}
+	zpalette_changed = true;
 #endif
 	
 	// initialize regs
@@ -166,8 +167,11 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 					d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 				}
 				int num = get_zpal_num(addr, data);
-				zpal[num].b = data & 0x0f;
-				zpalette_pc[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+				if(zpal[num].b != data & 0x0f) {
+					zpal[num].b = data & 0x0f;
+					zpalette_tmp[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+					zpalette_changed = true;
+				}
 			} else if(APEN && APRD) {
 				zpal_num = get_zpal_num(addr, data);
 			}
@@ -187,8 +191,11 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 					d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 				}
 				int num = get_zpal_num(addr, data);
-				zpal[num].r = data & 0x0f;
-				zpalette_pc[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+				if(zpal[num].r != data & 0x0f) {
+					zpal[num].r = data & 0x0f;
+					zpalette_tmp[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+					zpalette_changed = true;
+				}
 			} else if(APEN && APRD) {
 //				zpal_num = get_zpal_num(addr, data);
 			}
@@ -208,8 +215,11 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 					d_cpu->write_signal(SIG_CPU_BUSREQ, 1, 1);
 				}
 				int num = get_zpal_num(addr, data);
-				zpal[num].g = data & 0x0f;
-				zpalette_pc[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+				if(zpal[num].g != data & 0x0f) {
+					zpal[num].g = data & 0x0f;
+					zpalette_tmp[num + 16] = RGB_COLOR((zpal[num].r * 255) / 15, (zpal[num].g * 255) / 15, (zpal[num].b * 255) / 15);
+					zpalette_changed = true;
+				}
 			} else if(APEN && APRD) {
 //				zpal_num = get_zpal_num(addr, data);
 			}
@@ -261,8 +271,11 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		case 0x1fbe:
 		case 0x1fbf:
 			if(AEN) {
-				ztpal[addr & 7] = data;
-				zpalette_pc[addr & 7] = RGB_COLOR((((data >> 2) & 3) * 255) / 3, (((data >> 4) & 3) * 255) / 3, (((data >> 0) & 3) * 255) / 3);
+				if(ztpal[addr & 7] != data) {
+					ztpal[addr & 7] = data;
+					zpalette_tmp[addr & 7] = RGB_COLOR((((data >> 2) & 3) * 255) / 3, (((data >> 4) & 3) * 255) / 3, (((data >> 0) & 3) * 255) / 3);
+					zpalette_changed = true;
+				}
 			}
 			break;
 		case 0x1fc0:
@@ -556,6 +569,12 @@ void DISPLAY::event_frame()
 
 void DISPLAY::event_vline(int v, int clock)
 {
+#ifdef _X1TURBOZ
+	if(zpalette_changed && v == (hireso ? 400 : 200)) {
+		update_zpalette();
+		zpalette_changed = false;
+	}
+#endif
 	cur_vline = v;
 }
 
@@ -698,9 +717,7 @@ void DISPLAY::get_cur_code_line()
 	
 	int addr = (hz_total * (clock % ht_clock)) / ht_clock;
 	addr += hz_disp * (int)(vt_line / ch_height);
-	if(addr > 0x7ff) {
-		addr = 0x7ff;
-	}
+	addr &= 0x7ff; // thanks Mr.YAT
 	addr += st_addr;
 	
 	cur_code = vram_t[addr & 0x7ff];
@@ -739,19 +756,15 @@ void DISPLAY::draw_screen()
 #endif
 			draw_line(v);
 		}
+#ifdef _X1TURBOZ
+		if(zpalette_changed && cur_vline < (hireso ? 400 : 200)) {
+			update_zpalette();
+			zpalette_changed = false;
+		}
+#endif
 	}
 	
 	// copy to real screen
-#ifdef _X1TURBOZ
-	zpalette_pc[8 + 0] = zpalette_pc[16 + 0x000];
-	zpalette_pc[8 + 1] = zpalette_pc[16 + 0x00f];
-	zpalette_pc[8 + 2] = zpalette_pc[16 + 0x0f0];
-	zpalette_pc[8 + 3] = zpalette_pc[16 + 0x0ff];
-	zpalette_pc[8 + 4] = zpalette_pc[16 + 0xf00];
-	zpalette_pc[8 + 5] = zpalette_pc[16 + 0xf0f];
-	zpalette_pc[8 + 6] = zpalette_pc[16 + 0xff0];
-	zpalette_pc[8 + 7] = zpalette_pc[16 + 0xfff];
-#endif
 #ifdef _X1TURBO_FEATURE
 	if(hireso) {
 		// 400 lines
@@ -907,7 +920,6 @@ void DISPLAY::draw_screen()
 #ifdef _X1TURBO_FEATURE
 	}
 #endif
-
 }
 
 void DISPLAY::draw_text(int y)
@@ -1185,6 +1197,19 @@ int DISPLAY::get_zpal_num(uint32_t addr, uint32_t data)
 		num |= num >> 2;
 	}
 	return num;
+}
+
+void DISPLAY::update_zpalette()
+{
+	memcpy(zpalette_pc, zpalette_tmp, sizeof(zpalette_pc));
+	zpalette_pc[8 + 0] = zpalette_pc[16 + 0x000];
+	zpalette_pc[8 + 1] = zpalette_pc[16 + 0x00f];
+	zpalette_pc[8 + 2] = zpalette_pc[16 + 0x0f0];
+	zpalette_pc[8 + 3] = zpalette_pc[16 + 0x0ff];
+	zpalette_pc[8 + 4] = zpalette_pc[16 + 0xf00];
+	zpalette_pc[8 + 5] = zpalette_pc[16 + 0xf0f];
+	zpalette_pc[8 + 6] = zpalette_pc[16 + 0xff0];
+	zpalette_pc[8 + 7] = zpalette_pc[16 + 0xfff];
 }
 
 scrntype_t DISPLAY::get_zpriority(uint8_t text, uint16_t cg0, uint16_t cg1)
@@ -1465,7 +1490,7 @@ bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 		state_fio->StateValue(zpal[i].b);
 	}
 	state_fio->StateValue(zpal_num);
-	state_fio->StateArray(zpalette_pc, sizeof(zpalette_pc), 1);
+	state_fio->StateArray(zpalette_tmp, sizeof(zpalette_tmp), 1);
 #endif
 	state_fio->StateValue(prev_vert_double);
 	state_fio->StateValue(raster);
@@ -1480,6 +1505,9 @@ bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 	
 	// post process
 	if(loading) {
+#ifdef _X1TURBOZ
+		zpalette_changed = true;
+#endif
 		update_crtc(); // force update timing
 	}
 	return true;

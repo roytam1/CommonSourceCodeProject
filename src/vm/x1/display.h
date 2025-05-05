@@ -89,6 +89,8 @@ private:
 #ifdef _X1TURBOZ
 	uint16_t zcg[2][400][640];
 	bool aen_line[400];
+	scrntype_t zpalette_tmp[8+8+4096];
+	bool zpalette_changed;
 	scrntype_t zpalette_pc[8+8+4096];	// 0-7:text, 8-15:cg, 16-:4096cg
 #endif
 	scrntype_t palette_pc[8+8];		// 0-7:text, 8-15:cg
@@ -114,6 +116,7 @@ private:
 	
 #ifdef _X1TURBOZ
 	int get_zpal_num(uint32_t addr, uint32_t data);
+	void update_zpalette();
 	scrntype_t get_zpriority(uint8_t text, uint16_t cg0, uint16_t cg1);
 #endif
 	

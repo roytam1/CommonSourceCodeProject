@@ -1,5 +1,5 @@
 retro pc emulator common source code
-								8/14/2020
+								8/16/2020
 
 --- What's this ?
 
@@ -137,6 +137,8 @@ This archive includes the all source codes of emulators listed below:
 		eSMC-777	SMC-777
 	SORD
 		Emu5		m5
+	SPECTRAVIDEO
+		yaSVI-3x8	SVI-3x8 (by Mr.tanam)
 	Systems Formulate
 		eBUBCOM80	BUBCOM80
 	TOMY
@@ -157,7 +159,7 @@ This archive includes the all source codes of emulators listed below:
 --- How to build
 
 Build the projects with the Microsoft Visual C++ 2008 with Service Pack 1 or
-the Microsoft Visual C++ 2013 with Update 5.
+the Microsoft Visual C++ 2017.
 
 The DirectX SDK is required.
 I recommend the DirectX 9.0 SDK Update (December 2004),
@@ -170,13 +172,7 @@ the definition of DIRECTINPUT_VERSION from 0x500 to 0x800 as follows:
 //#define DIRECTINPUT_VERSION	0x500
 #define DIRECTINPUT_VERSION	0x800
 
-When you use the Microsoft Visual C++ 2008 with Service Pack 1,
-the Windows SDK for Windows 8.1 is also required to get the mt.exe utility.
-The mt.exe is used to merge a manifest file for Windows Vista or later.
-
-https://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
-
-When you use the Microsoft Visual C++ 2013 with Update 5, the dir macros,
+When you use the Microsoft Visual C++ 2017, the dir macros,
 WindowsSDK_IncludePath, WindowsSDK_LibraryPath_x86, and DXSDK_DIR shoud be
 defined and should specifies the install directories of the Windows SDK
 and the DirectX SDK.
@@ -363,6 +359,8 @@ See also COPYING.txt for more details about the license.
 	Mr.Fred Han Kraan for EPSON QC-10/QX-10 hardware design info
 - vm/scv/*
 	Mr.Enri and Mr.333 for Epoch Super Cassette Vision hardware info
+- vm/svi3x8/*
+	yaSVI-3x8 by Mr.tanam
 - vm/tvboy/*
 	yaTVBOY by Mr.tanam
 - vm/x07/io.*
