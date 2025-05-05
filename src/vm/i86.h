@@ -1,27 +1,34 @@
 /*
 	Skelton for retropc emulator
 
+	Origin : MAME i286 core
 	Author : Takeda.Toshiya
-	Date  : 2012.10.18-
+	Date   : 2012.10.18-
 
-	[ i286 ]
+	[ 8086/8088/80186/V30 ]
 */
 
-#ifndef _I286_H_ 
-#define _I286_H_
+#ifndef _I86_H_
+#define _I86_H_
 
-#include "../vm.h"
-#include "../../emu.h"
-#include "../device.h"
+#include "vm.h"
+#include "../emu.h"
+#include "device.h"
 
 #define SIG_I86_TEST	0
-#define SIG_I286_A20	1
 
 #ifdef USE_DEBUGGER
 class DEBUGGER;
 #endif
 
-class I286 : public DEVICE
+enum {
+	INTEL_8086 = 0,
+	INTEL_8088,
+	INTEL_80186,
+	NEC_V30,
+};
+
+class I86 : public DEVICE
 {
 private:
 	DEVICE *d_mem, *d_io, *d_pic;
@@ -37,7 +44,7 @@ private:
 	void *opaque;
 	
 public:
-	I286(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
+	I86(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
 #ifdef I86_PSEUDO_BIOS
 		d_bios = NULL;
@@ -45,19 +52,8 @@ public:
 #ifdef SINGLE_MODE_DMA
 		d_dma = NULL;
 #endif
-#if defined(HAS_I86)
-		set_device_name(_T("8086 CPU"));
-#elif defined(HAS_I88)
-		set_device_name(_T("8088 CPU"));
-#elif defined(HAS_I186)
-		set_device_name(_T("80186 CPU"));
-#elif defined(HAS_V30)
-		set_device_name(_T("V30 CPU"));
-#elif defined(HAS_I286)
-		set_device_name(_T("80286 CPU"));
-#endif
 	}
-	~I286() {}
+	~I86() {}
 	
 	// common functions
 	void initialize();
@@ -85,19 +81,11 @@ public:
 	}
 	uint32_t get_debug_prog_addr_mask()
 	{
-#ifdef HAS_I286
-		return 0xffffff;
-#else
 		return 0xfffff;
-#endif
 	}
 	uint32_t get_debug_data_addr_mask()
 	{
-#ifdef HAS_I286
-		return 0xffffff;
-#else
 		return 0xfffff;
-#endif
 	}
 	void write_debug_data8(uint32_t addr, uint32_t data);
 	uint32_t read_debug_data8(uint32_t addr);
@@ -108,6 +96,7 @@ public:
 	void write_debug_io16(uint32_t addr, uint32_t data);
 	uint32_t read_debug_io16(uint32_t addr);
 	bool write_debug_reg(const _TCHAR *reg, uint32_t data);
+	uint32_t read_debug_reg(const _TCHAR *reg);
 	bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
 	int debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len);
 #endif
@@ -144,12 +133,7 @@ public:
 		d_debugger = device;
 	}
 #endif
-#ifdef HAS_I286
-	void set_address_mask(uint32_t mask);
-	uint32_t get_address_mask();
-	void set_shutdown_flag(int shutdown);
-	int get_shutdown_flag();
-#endif
+	int device_model;
 };
 
 #endif

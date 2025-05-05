@@ -30,7 +30,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		400
 #define MAX_DRIVE		1
-#define HAS_V30
 #define I86_PSEUDO_BIOS
 #define I8259_MAX_CHIPS		1
 //#define UPD765A_DMA_MODE
@@ -72,7 +71,7 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
-class I286;
+class I86;
 class IO;
 class NOT;
 #ifdef _PC98HA
@@ -106,7 +105,7 @@ protected:
 	I8255* pio_sys;
 	I8255* pio_prn;
 	I8259* pic;
-	I286* cpu;
+	I86* cpu;
 	IO* io;
 	NOT* not_busy;
 #ifdef _PC98HA

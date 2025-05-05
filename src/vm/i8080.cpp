@@ -1704,7 +1704,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0x05: my_stprintf_s(buffer, buffer_len, _T("dcr  b")); break;
 		case 0x06: my_stprintf_s(buffer, buffer_len, _T("mvi  b,$%02x"), ops[ptr++]); break;
 		case 0x07: my_stprintf_s(buffer, buffer_len, _T("rlc")); break;
-		case 0x08: my_stprintf_s(buffer, buffer_len, _T("dsub (*)")); break;
+#ifdef HAS_I8085
+		case 0x08: my_stprintf_s(buffer, buffer_len, _T("dsub")); break;
+#else
+		case 0x08: my_stprintf_s(buffer, buffer_len, _T("nop")); break;
+#endif
 		case 0x09: my_stprintf_s(buffer, buffer_len, _T("dad  b")); break;
 		case 0x0a: my_stprintf_s(buffer, buffer_len, _T("ldax b")); break;
 		case 0x0b: my_stprintf_s(buffer, buffer_len, _T("dcx  b")); break;
@@ -1712,7 +1716,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0x0d: my_stprintf_s(buffer, buffer_len, _T("dcr  c")); break;
 		case 0x0e: my_stprintf_s(buffer, buffer_len, _T("mvi  c,$%02x"), ops[ptr++]); break;
 		case 0x0f: my_stprintf_s(buffer, buffer_len, _T("rrc")); break;
-		case 0x10: my_stprintf_s(buffer, buffer_len, _T("asrh (*)")); break;
+#ifdef HAS_I8085
+		case 0x10: my_stprintf_s(buffer, buffer_len, _T("asrh")); break;
+#else
+		case 0x10: my_stprintf_s(buffer, buffer_len, _T("nop")); break;
+#endif
 		case 0x11: my_stprintf_s(buffer, buffer_len, _T("lxi  d,%s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0x12: my_stprintf_s(buffer, buffer_len, _T("stax d")); break;
 		case 0x13: my_stprintf_s(buffer, buffer_len, _T("inx  d")); break;
@@ -1720,7 +1728,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0x15: my_stprintf_s(buffer, buffer_len, _T("dcr  d")); break;
 		case 0x16: my_stprintf_s(buffer, buffer_len, _T("mvi  d,$%02x"), ops[ptr++]); break;
 		case 0x17: my_stprintf_s(buffer, buffer_len, _T("ral")); break;
-		case 0x18: my_stprintf_s(buffer, buffer_len, _T("rlde (*)")); break;
+#ifdef HAS_I8085
+		case 0x18: my_stprintf_s(buffer, buffer_len, _T("rlde")); break;
+#else
+		case 0x18: my_stprintf_s(buffer, buffer_len, _T("nop")); break;
+#endif
 		case 0x19: my_stprintf_s(buffer, buffer_len, _T("dad  d")); break;
 		case 0x1a: my_stprintf_s(buffer, buffer_len, _T("ldax d")); break;
 		case 0x1b: my_stprintf_s(buffer, buffer_len, _T("dcx  d")); break;
@@ -1736,7 +1748,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0x25: my_stprintf_s(buffer, buffer_len, _T("dcr  h")); break;
 		case 0x26: my_stprintf_s(buffer, buffer_len, _T("mvi  h,$%02x"), ops[ptr++]); break;
 		case 0x27: my_stprintf_s(buffer, buffer_len, _T("daa")); break;
-		case 0x28: my_stprintf_s(buffer, buffer_len, _T("ldeh $%02x (*)"), ops[ptr++]); break;
+#ifdef HAS_I8085
+		case 0x28: my_stprintf_s(buffer, buffer_len, _T("ldeh $%02x"), ops[ptr++]); break;
+#else
+		case 0x28: my_stprintf_s(buffer, buffer_len, _T("nop")); break;
+#endif
 		case 0x29: my_stprintf_s(buffer, buffer_len, _T("dad  h")); break;
 		case 0x2a: my_stprintf_s(buffer, buffer_len, _T("lhld %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0x2b: my_stprintf_s(buffer, buffer_len, _T("dcx  h")); break;
@@ -1899,7 +1915,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0xc8: my_stprintf_s(buffer, buffer_len, _T("rz")); break;
 		case 0xc9: my_stprintf_s(buffer, buffer_len, _T("ret")); break;
 		case 0xca: my_stprintf_s(buffer, buffer_len, _T("jz   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
-		case 0xcb: my_stprintf_s(buffer, buffer_len, _T("rstv 8 (*)")); break;
+#ifdef HAS_I8085
+		case 0xcb: my_stprintf_s(buffer, buffer_len, _T("rstv 8")); break;
+#else
+		case 0xcb: my_stprintf_s(buffer, buffer_len, _T("jmp  %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#endif
 		case 0xcc: my_stprintf_s(buffer, buffer_len, _T("cz   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0xcd: my_stprintf_s(buffer, buffer_len, _T("call %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0xce: my_stprintf_s(buffer, buffer_len, _T("aci  $%02x"), ops[ptr++]); break;
@@ -1913,11 +1933,19 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0xd6: my_stprintf_s(buffer, buffer_len, _T("sui  $%02x"), ops[ptr++]); break;
 		case 0xd7: my_stprintf_s(buffer, buffer_len, _T("rst  2")); break;
 		case 0xd8: my_stprintf_s(buffer, buffer_len, _T("rc")); break;
-		case 0xd9: my_stprintf_s(buffer, buffer_len, _T("shlx d (*)")); break;
+#ifdef HAS_I8085
+		case 0xd9: my_stprintf_s(buffer, buffer_len, _T("shlx d")); break;
+#else
+		case 0xd9: my_stprintf_s(buffer, buffer_len, _T("ret")); break;
+#endif
 		case 0xda: my_stprintf_s(buffer, buffer_len, _T("jc   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0xdb: my_stprintf_s(buffer, buffer_len, _T("in   $%02x"), ops[ptr++]); break;
 		case 0xdc: my_stprintf_s(buffer, buffer_len, _T("cc   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
-		case 0xdd: my_stprintf_s(buffer, buffer_len, _T("jnx  %s (*)"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#ifdef HAS_I8085
+		case 0xdd: my_stprintf_s(buffer, buffer_len, _T("jnx  %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#else
+		case 0xdd: my_stprintf_s(buffer, buffer_len, _T("call %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#endif
 		case 0xde: my_stprintf_s(buffer, buffer_len, _T("sbi  $%02x"), ops[ptr++]); break;
 		case 0xdf: my_stprintf_s(buffer, buffer_len, _T("rst  3")); break;
 		case 0xe0: my_stprintf_s(buffer, buffer_len, _T("rpo")); break;
@@ -1933,7 +1961,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0xea: my_stprintf_s(buffer, buffer_len, _T("jpe  %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0xeb: my_stprintf_s(buffer, buffer_len, _T("xchg")); break;
 		case 0xec: my_stprintf_s(buffer, buffer_len, _T("cpe  %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
-		case 0xed: my_stprintf_s(buffer, buffer_len, _T("lhlx d (*)")); break;
+#ifdef HAS_I8085
+		case 0xed: my_stprintf_s(buffer, buffer_len, _T("lhlx d")); break;
+#else
+		case 0xed: my_stprintf_s(buffer, buffer_len, _T("call %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#endif
 		case 0xee: my_stprintf_s(buffer, buffer_len, _T("xri  $%02x"), ops[ptr++]); break;
 		case 0xef: my_stprintf_s(buffer, buffer_len, _T("rst  5")); break;
 		case 0xf0: my_stprintf_s(buffer, buffer_len, _T("rp")); break;
@@ -1949,7 +1981,11 @@ int I8080::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 		case 0xfa: my_stprintf_s(buffer, buffer_len, _T("jm   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
 		case 0xfb: my_stprintf_s(buffer, buffer_len, _T("ei")); break;
 		case 0xfc: my_stprintf_s(buffer, buffer_len, _T("cm   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
-		case 0xfd: my_stprintf_s(buffer, buffer_len, _T("jx   %s (*)"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#ifdef HAS_I8085
+		case 0xfd: my_stprintf_s(buffer, buffer_len, _T("jx   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#else
+		case 0xfd: my_stprintf_s(buffer, buffer_len, _T("cm   %s"), get_value_or_symbol(d_debugger->first_symbol, _T("$%04x"), ops[ptr] | (ops[ptr + 1] << 8))); ptr += 2; break;
+#endif
 		case 0xfe: my_stprintf_s(buffer, buffer_len, _T("cpi  $%02x"), ops[ptr++]); break;
 		case 0xff: my_stprintf_s(buffer, buffer_len, _T("rst  7")); break;
 	}

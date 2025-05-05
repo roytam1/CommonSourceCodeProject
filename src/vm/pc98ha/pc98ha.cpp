@@ -18,7 +18,7 @@
 #include "../i8253.h"
 #include "../i8255.h"
 #include "../i8259.h"
-#include "../i286.h"
+#include "../i86.h"
 #include "../io.h"
 #include "../noise.h"
 #include "../not.h"
@@ -65,7 +65,8 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pio_prn = new I8255(this, emu);	// for printer
 	pio_prn->set_device_name(_T("8251 PIO (Printer)"));
 	pic = new I8259(this, emu);	// V50 internal
-	cpu = new I286(this, emu);	// V50
+	cpu = new I86(this, emu);	// V50
+	cpu->device_model = NEC_V30;
 	io = new IO(this, emu);
 	not_busy = new NOT(this, emu);
 #ifdef _PC98HA
@@ -390,7 +391,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	7
+#define STATE_VERSION	8
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

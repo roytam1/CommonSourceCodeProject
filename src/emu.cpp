@@ -2285,6 +2285,15 @@ void EMU::close_floppy_disk(int drv)
 	}
 }
 
+bool EMU::is_floppy_disk_connected(int drv)
+{
+	if(drv < USE_FLOPPY_DISK) {
+		return vm->is_floppy_disk_connected(drv);
+	} else {
+		return false;
+	}
+}
+
 bool EMU::is_floppy_disk_inserted(int drv)
 {
 	if(drv < USE_FLOPPY_DISK) {
@@ -2358,6 +2367,15 @@ bool EMU::is_quick_disk_inserted(int drv)
 {
 	if(drv < USE_QUICK_DISK) {
 		return vm->is_quick_disk_inserted(drv);
+	} else {
+		return false;
+	}
+}
+
+bool EMU::is_quick_disk_connected(int drv)
+{
+	if(drv < USE_QUICK_DISK) {
+		return vm->is_quick_disk_connected(drv);
 	} else {
 		return false;
 	}

@@ -22,7 +22,6 @@
 #define SCREEN_WIDTH		640
 #define SCREEN_HEIGHT		200
 #define MAX_DRIVE		4
-#define HAS_I86
 #define I8259_MAX_CHIPS		1
 #define MEMORY_ADDR_MAX		0x100000
 #define MEMORY_BANK_SIZE	0x4000
@@ -55,7 +54,7 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
-class I286;
+class I86;
 class IO;
 class MB8877;
 class MEMORY;
@@ -77,7 +76,7 @@ protected:
 	I8253* pit;
 	I8255* pio;
 	I8259* pic;
-	I286* cpu;
+	I86* cpu;
 	IO* io;
 	MB8877* fdc;
 	MEMORY* memory;

@@ -13,6 +13,9 @@
 #include "../disk.h"
 #include "../i8237.h"
 #include "../i8259.h"
+#ifdef HAS_I286
+#include "../i286.h"
+#endif
 #include "../mb8877.h"
 #include "../msm58321.h"
 #include "../pcm1bit.h"

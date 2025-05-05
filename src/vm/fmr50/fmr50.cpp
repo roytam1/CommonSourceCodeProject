@@ -22,9 +22,11 @@
 #include "../i8253.h"
 #include "../i8259.h"
 #if defined(HAS_I286)
+//#include "../i286_np21.h"
 #include "../i286.h"
 #else
 #include "../i386_np21.h"
+//#include "../i386.h"
 #endif
 #include "../io.h"
 #include "../mb8877.h"
@@ -111,8 +113,17 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 #if defined(HAS_I286)
 	cpu = new I286(this, emu);
-#else
+//	cpu->device_model = INTEL_80286;
+#elif defined(HAS_I386)
 	cpu = new I386(this, emu);
+	cpu->device_model = INTEL_80386;
+#elif defined(HAS_I486)
+	cpu = new I386(this, emu);
+#if defined(HAS_I486DX)
+	cpu->device_model = INTEL_I486DX;
+#else
+	cpu->device_model = INTEL_I486SX;
+#endif
 #endif
 	crtc = new HD46505(this, emu);
 #ifdef _FMR60

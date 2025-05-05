@@ -167,7 +167,7 @@
 
 #if defined(HAS_I286)
 	#define SUPPORT_24BIT_ADDRESS
-#elif defined(HAS_I386) || defined(HAS_I486)
+#elif defined(HAS_I386) || defined(HAS_I486SX) || defined(HAS_I486DX)
 	#define SUPPORT_32BIT_ADDRESS
 	#if !defined(SUPPORT_HIRESO)
 		#define SUPPORT_BIOS_RAM
@@ -244,6 +244,8 @@
 // device informations for win32
 #if defined(_PC9801) || defined(_PC9801E)
 #define USE_FLOPPY_DISK		6
+#define USE_DIPSWITCH
+#define DIPSWITCH_DEFAULT	(1 + 2 + 4)
 #elif defined(_PC98DO) || defined(_PC98DOPLUS)
 #define USE_BOOT_MODE		5
 #define USE_DIPSWITCH
@@ -347,10 +349,12 @@ class I8251;
 class I8253;
 class I8255;
 class I8259;
-#if defined(HAS_I386) || defined(HAS_I486)
+#if defined(HAS_I386) || defined(HAS_I486SX) || defined(HAS_I486DX)
 class I386;
-#else
+#elif defined(HAS_I286)
 class I286;
+#else
+class I86;
 #endif
 class IO;
 class LS244;
@@ -439,10 +443,12 @@ protected:
 	I8255* pio_sys;
 	I8255* pio_prn;
 	I8259* pic;
-#if defined(HAS_I386) || defined(HAS_I486)
+#if defined(HAS_I386) || defined(HAS_I486SX) || defined(HAS_I486DX)
 	I386* cpu;
-#else
+#elif defined(HAS_I286)
 	I286* cpu;
+#else
+	I86* cpu;
 #endif
 	IO* io;
 	LS244* rtcreg;
@@ -587,6 +593,9 @@ public:
 	// user interface
 	void open_floppy_disk(int drv, const _TCHAR* file_path, int bank);
 	void close_floppy_disk(int drv);
+#if defined(_PC9801) || defined(_PC9801E)
+	bool is_floppy_disk_connected(int drv);
+#endif
 	bool is_floppy_disk_inserted(int drv);
 	void is_floppy_disk_protected(int drv, bool value);
 	bool is_floppy_disk_protected(int drv);

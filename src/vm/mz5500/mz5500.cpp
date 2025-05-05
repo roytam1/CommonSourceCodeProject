@@ -16,7 +16,11 @@
 #include "../i8237.h"
 #include "../i8255.h"
 #include "../i8259.h"
+#if defined(_MZ6550)
 #include "../i286.h"
+#else
+#include "../i86.h"
+#endif
 #include "../io.h"
 #include "../ls393.h"
 #include "../mz1p17.h"
@@ -64,7 +68,12 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 #endif
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
+#if defined(_MZ6550)
 	cpu = new I286(this, emu);
+#else
+	cpu = new I86(this, emu);
+	cpu->device_model = INTEL_8086;
+#endif
 	io = new IO(this, emu);
 	div = new LS393(this, emu);
 	not_data0 = new NOT(this, emu);
@@ -421,7 +430,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	7
+#define STATE_VERSION	8
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

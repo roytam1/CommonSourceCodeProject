@@ -14,7 +14,9 @@
 #include "cpureg.h"
 #if defined(SUPPORT_32BIT_ADDRESS)
 #include "../i386_np21.h"
+//#include "../i386.h"
 #else
+//#include "../i286_np21.h"
 #include "../i286.h"
 #endif
 

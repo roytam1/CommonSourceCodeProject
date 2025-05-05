@@ -17,7 +17,11 @@
 #include "../i8251.h"
 #include "../i8253.h"
 #include "../i8259.h"
+#if defined(HAS_I86)
+#include "../i86.h"
+#elif defined(HAS_I286)
 #include "../i286.h"
+#endif
 #include "../io.h"
 #include "../mb8877.h"
 #include "../noise.h"
@@ -65,7 +69,12 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	sio_ch2->set_device_name(_T("8251 SIO (RS-232C #2)"));
 	pit = new I8253(this, emu);
 	pic = new I8259(this, emu);
+#if defined(HAS_I86)
+	cpu = new I86(this, emu);
+	cpu->device_model = INTEL_8086;
+#elif defined(HAS_I286)
 	cpu = new I286(this, emu);
+#endif
 	io = new IO(this, emu);
 	fdc = new MB8877(this, emu);
 	fdc->set_context_noise_seek(new NOISE(this, emu));
@@ -413,7 +422,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	8
+#define STATE_VERSION	9
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

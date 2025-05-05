@@ -33,11 +33,6 @@
 #define SCREEN_HEIGHT		400
 #define WINDOW_HEIGHT_ASPECT	480
 #define MAX_DRIVE		4
-#ifdef _MZ6550
-#define HAS_I286
-#else
-#define HAS_I86
-#endif
 #define I8259_MAX_CHIPS		2
 #define UPD7220_HORIZ_FREQ	24860
 #define Z80CTC_CLOCKS		2457600
@@ -79,7 +74,11 @@ class EVENT;
 class I8237;
 class I8255;
 class I8259;
+#if defined(_MZ6550)
 class I286;
+#else
+class I86;
+#endif
 class IO;
 class LS393;
 class NOT;
@@ -108,7 +107,11 @@ protected:
 	I8237* dma;
 	I8255* pio;
 	I8259* pic;	// includes 2chips
+#if defined(_MZ6550)
 	I286* cpu;
+#else
+	I86* cpu;
+#endif
 	IO* io;
 	LS393* div;
 	NOT* not_data0;

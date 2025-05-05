@@ -39,7 +39,8 @@ struct i8086_state
 	INT32 AuxVal, OverVal, SignVal, ZeroVal, CarryVal, DirVal;      /* 0 or non-0 valued flags */
 	UINT8 ParityVal;
 	UINT8 TF, IF;                  /* 0 or 1 valued flags */
-	UINT8 MF;                      /* V30 mode flag */
+	UINT8 MF, MF_WriteDisabled;    /* V30 mode flag */
+	UINT8 NF;                      /* 8080 N flag */
 
 	UINT8 int_vector;
 	INT8 nmi_state;
@@ -190,7 +191,8 @@ static CPU_RESET( i80186 )
 static CPU_RESET( v30 )
 {
 	CPU_RESET_CALL(i8086);
-	SetMD(1);
+	cpustate->MF = cpustate->MF_WriteDisabled = 1;
+	cpustate->NF = 0; /* is this correct ? */
 }
 
 /* ASG 971222 -- added these interface functions */
@@ -214,6 +216,7 @@ static void set_irq_line(i8086_state *cpustate, int irqline, int state)
 		if (state != CLEAR_LINE)
 		{
 			PREFIX(_interrupt)(cpustate, I8086_NMI_INT_VECTOR);
+			cpustate->MF = 1; /* enter native mode */
 			cpustate->nmi_state = CLEAR_LINE;
 		}
 	}
@@ -224,6 +227,7 @@ static void set_irq_line(i8086_state *cpustate, int irqline, int state)
 		/* if the IF is set, signal an interrupt */
 		if (state != CLEAR_LINE && cpustate->IF) {
 			PREFIX(_interrupt)(cpustate, (UINT32)-1);
+			cpustate->MF = 1; /* enter native mode */
 			cpustate->irq_state = CLEAR_LINE;
 		}
 	}
@@ -326,6 +330,7 @@ static CPU_EXECUTE( i8086 )
 			int first_icount = cpustate->icount;
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
+			cpustate->MF = 1; /* bit15 in flags is always 1 */
 			TABLE86;
 			cpustate->total_icount += first_icount - cpustate->icount;
 #ifdef SINGLE_MODE_DMA
@@ -346,6 +351,7 @@ static CPU_EXECUTE( i8086 )
 #endif
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
+			cpustate->MF = 1; /* bit15 in flags is always 1 */
 			TABLE86;
 #ifdef USE_DEBUGGER
 			cpustate->total_icount += first_icount - cpustate->icount;
@@ -474,6 +480,7 @@ static CPU_EXECUTE( i80186 )
 			int first_icount = cpustate->icount;
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
+			cpustate->MF = 1; /* bit15 in flags is always 1 */
 			TABLE186;
 			cpustate->total_icount += first_icount - cpustate->icount;
 #ifdef SINGLE_MODE_DMA
@@ -494,6 +501,7 @@ static CPU_EXECUTE( i80186 )
 #endif
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
+			cpustate->MF = 1; /* bit15 in flags is always 1 */
 			TABLE186;
 #ifdef USE_DEBUGGER
 			cpustate->total_icount += first_icount - cpustate->icount;
@@ -529,6 +537,7 @@ static CPU_EXECUTE( i80186 )
 #undef PREFIX
 #define PREFIX(name) v30##name
 #define PREFIXV30(name) v30##name
+#define PREFIX80(name) i8080##name
 
 #define I80186
 #include "instrv30.h"
@@ -617,7 +626,19 @@ static CPU_EXECUTE( v30 )
 			int first_icount = cpustate->icount;
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
-			TABLEV30;
+			if(cpustate->MF) {
+				TABLEV30;
+				if(cpustate->MF_WriteDisabled) cpustate->MF = 1;
+			} else {
+				UINT16 flags = (CompressFlags() & ~2) | (cpustate->NF << 1);
+				UINT8 ah = cpustate->regs.b[AH];
+				cpustate->regs.b[AH] = (UINT8)(flags & 0xff);
+				TABLE80;
+				flags = (cpustate->MF ? 0x8000 : 0) | (flags & 0x7f00) | cpustate->regs.b[AH];
+				ExpandFlags(flags);
+				cpustate->NF = (flags & 2) >> 1;
+				cpustate->regs.b[AH] = ah;
+			}
 			cpustate->total_icount += first_icount - cpustate->icount;
 #ifdef SINGLE_MODE_DMA
 			if (cpustate->dma != NULL) {
@@ -637,7 +658,19 @@ static CPU_EXECUTE( v30 )
 #endif
 			cpustate->seg_prefix = FALSE;
 			cpustate->prevpc = cpustate->pc;
-			TABLEV30;
+			if(cpustate->MF) {
+				TABLEV30;
+				if(cpustate->MF_WriteDisabled) cpustate->MF = 1;
+			} else {
+				UINT16 flags = (CompressFlags() & ~2) | (cpustate->NF << 1);
+				UINT8 ah = cpustate->regs.b[AH];
+				cpustate->regs.b[AH] = (UINT8)(flags & 0xff);
+				TABLE80;
+				flags = (cpustate->MF ? 0x8000 : 0) | (flags & 0x7f00) | cpustate->regs.b[AH];
+				ExpandFlags(flags);
+				cpustate->NF = (flags & 2) >> 1;
+				cpustate->regs.b[AH] = ah;
+			}
 #ifdef USE_DEBUGGER
 			cpustate->total_icount += first_icount - cpustate->icount;
 #endif

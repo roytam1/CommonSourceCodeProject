@@ -494,7 +494,7 @@ static void I386OP(call_abs16)(i386_state *cpustate)        // Opcode 0x9a
 
 	CYCLES(cpustate,CYCLES_CALL_INTERSEG);      /* TODO: Timing = 17 + m */
 
-#ifdef I386_PSEUDO_BIOS
+#ifdef I86_PSEUDO_BIOS
 	BIOS_CALL_FAR(((ptr << 4) + offset) & cpustate->a20_mask)
 #endif
 
@@ -3038,7 +3038,7 @@ static void I386OP(groupFF_16)(i386_state *cpustate)        // Opcode 0xff
 					address = READ16(cpustate,ea + 0);
 					selector = READ16(cpustate,ea + 2);
 					CYCLES(cpustate,CYCLES_CALL_MEM_INTERSEG);      /* TODO: Timing = 10 + m */
-#ifdef I386_PSEUDO_BIOS
+#ifdef I86_PSEUDO_BIOS
 					BIOS_CALL_FAR(((selector << 4) + address) & cpustate->a20_mask)
 #endif
 					if(PROTECTED_MODE && !V8086_MODE)

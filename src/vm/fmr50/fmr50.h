@@ -42,8 +42,8 @@
 #endif
 #if defined(HAS_I486)
 	#if !(defined(HAS_I486SX) || defined(HAS_I486DX))
-//		#define HAS_I486SX
-		#define HAS_I486DX
+		#define HAS_I486SX
+//		#define HAS_I486DX
 	#endif
 #else
 	#if (defined(HAS_I486SX) || defined(HAS_I486DX))
@@ -73,11 +73,7 @@
 #endif
 #define MAX_DRIVE		4
 #define MAX_MEMCARD		2
-#if defined(HAS_I286)
 #define I86_PSEUDO_BIOS
-#else
-#define I386_PSEUDO_BIOS
-#endif
 #define I8259_MAX_CHIPS		2
 #define SINGLE_MODE_DMA
 #define MB8877_NO_BUSY_AFTER_SEEK

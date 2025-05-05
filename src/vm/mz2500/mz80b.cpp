@@ -45,7 +45,7 @@
 #endif
 
 #ifdef SUPPORT_16BIT_BOARD
-#include "../i286.h"
+#include "../i86.h"
 #include "../i8259.h"
 #include "mz1m01.h"
 #endif
@@ -92,7 +92,8 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 #ifdef SUPPORT_16BIT_BOARD
 	pio_to16 = new Z80PIO(this, emu);
-	cpu_16 = new I286(this, emu);	// 8088
+	cpu_16 = new I86(this, emu);
+	cpu_16->device_model = INTEL_8088;
 	pic_16 = new I8259(this, emu);
 	mz1m01 = new MZ1M01(this, emu);
 #endif
@@ -559,7 +560,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

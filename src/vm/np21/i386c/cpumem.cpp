@@ -33,11 +33,15 @@ static void trace_fmt_ex(const char *fmt, ...)
 DEVICE *device_cpu;
 DEVICE *device_mem;
 DEVICE *device_io;
-#ifdef I386_PSEUDO_BIOS
+#ifdef I86_PSEUDO_BIOS
 DEVICE *device_bios = NULL;
 #endif
 #ifdef SINGLE_MODE_DMA
 DEVICE *device_dma = NULL;
+#endif
+#ifdef USE_DEBUGGER
+DEBUGGER *device_debugger;
+UINT32 codefetch_address;
 #endif
 
 // ----
@@ -62,8 +66,13 @@ UINT32 MEMCALL memp_read32(UINT32 address) {
 // ----
 REG8 MEMCALL memp_read8_codefetch(UINT32 address) {
 	
+#ifdef USE_DEBUGGER
+	codefetch_address = address & CPU_ADRSMASK;
+	return device_mem->read_data8(codefetch_address);
+#else
 	address = address & CPU_ADRSMASK;
 	return device_mem->read_data8(address);
+#endif
 }
 
 REG16 MEMCALL memp_read16_codefetch(UINT32 address) {
@@ -340,7 +349,7 @@ REG8 IOINPCALL iocore_inp8(UINT port)
 
 void IOOUTCALL iocore_out16(UINT port, REG16 dat)
 {
-	device_io->write_io16(port, dat);	
+	device_io->write_io16(port, dat);
 }
 
 REG16 IOINPCALL iocore_inp16(UINT port)
@@ -350,7 +359,7 @@ REG16 IOINPCALL iocore_inp16(UINT port)
 
 void IOOUTCALL iocore_out32(UINT port, UINT32 dat)
 {
-	device_io->write_io32(port, dat);	
+	device_io->write_io32(port, dat);
 }
 
 UINT32 IOINPCALL iocore_inp32(UINT port)
