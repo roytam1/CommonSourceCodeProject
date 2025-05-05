@@ -84,7 +84,7 @@ uint32_t FMSOUND::read_io8(uint32_t addr)
 #ifdef SUPPORT_PC98_OPNA
 #define STATE_VERSION	1
 
-bool MOUSE::process_state(FILEIO* state_fio, bool loading)
+bool FMSOUND::process_state(FILEIO* state_fio, bool loading)
 {
 	if(!state_fio->StateCheckUint32(STATE_VERSION)) {
 		return false;
