@@ -176,21 +176,22 @@ private:
 	int busreq_clocks;
 	
 	// screen
-	struct {
+	typedef struct palette_s {
 		uint8_t b, r, g;
-	} palette[9];
+	} palette_t;
+	palette_t palette[10]; // 8 = digital back color, 9 = analog back color
 	bool update_palette;
 	bool hireso;
 	
 	uint8_t sg_pattern[0x800];
-	uint8_t text[200][640];
-	uint8_t text_color[200][80];
-	bool text_reverse[200][80];
+	uint8_t text[400][640];
 	uint8_t graph[400][640];
-	scrntype_t palette_text_pc[9];	// 0 = back color for attrib mode, 8 = black
-	scrntype_t palette_graph_pc[9];
-	scrntype_t line_palette_text_pc[400][9];
-	scrntype_t line_palette_graph_pc[400][9];
+	
+	palette_t palette_digital[9];
+	palette_t palette_analog [9];
+	palette_t palette_line_digital[400][9];
+	palette_t palette_line_analog [400][9];
+	bool palette_line_changed[400];
 	
 	void draw_text();
 #if defined(_PC8001SR)

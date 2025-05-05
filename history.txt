@@ -1,3 +1,11 @@
+12/1/2018
+
+[PC8801] enable/disable drawing scan line when monitor type is hireso/standard
+[PC8801/PC88] improve text attributes/rederer (thanks ePC-8801MA‰ü)
+[PC8801/PC88] fix analog back color
+[PC8801/PC88] improve routine to change palette for each scan line
+
+
 11/28/2018
 
 [WIN32/INPUT] support joystick with multiple axes and hat key
