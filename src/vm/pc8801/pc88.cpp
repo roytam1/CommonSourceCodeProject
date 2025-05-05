@@ -104,6 +104,7 @@
 #define Port33_PR1	(port[0x33] & 0x04)	// PC-8001SR
 #define Port33_PR2	(port[0x33] & 0x08)	// PC-8001SR
 //#define Port33_SINTM	(port[0x33] & 0x02)	// PC-8001SR -> Port32_SINTM
+#define Port33_HIRA	(port[0x33] & 0x10)	// PC-8001SR
 //#define Port33_GVAM	(port[0x33] & 0x40)	// PC-8001SR -> Port32_GVAM
 #define Port33_N80SR	(port[0x33] & 0x80)	// PC-8001SR
 #endif
@@ -261,6 +262,7 @@ static const uint8_t intr_mask2_table[8] = {
 void PC88::initialize()
 {
 	memset(rdmy, 0xff, sizeof(rdmy));
+	
 //	memset(ram, 0, sizeof(ram));
 #ifdef PC88_EXRAM_BANKS
 	memset(exram, 0, sizeof(exram));
@@ -274,8 +276,18 @@ void PC88::initialize()
 #if defined(PC8801SR_VARIANT)
 	memset(tvram, 0, sizeof(tvram));
 #endif
+	
+//#ifdef SUPPORT_PC88_KANJI1
+	memset(kanji1, 0xff, sizeof(kanji1));
+//#endif
+#ifdef SUPPORT_PC88_KANJI2
+	memset(kanji2, 0xff, sizeof(kanji2));
+#endif
 #if defined(PC8001_VARIANT)
 	memset(n80rom, 0xff, sizeof(n80rom));
+#if defined(_PC8001MK2) || defined(_PC8001SR)
+	memset(n80erom, 0xff, sizeof(n80erom));
+#endif
 #if defined(_PC8001SR)
 	memset(n80srrom, 0xff, sizeof(n80srrom));
 #endif
@@ -283,13 +295,7 @@ void PC88::initialize()
 	memset(n88rom, 0xff, sizeof(n88rom));
 	memset(n88exrom, 0xff, sizeof(n88exrom));
 	memset(n80rom, 0xff, sizeof(n80rom));
-#endif
-//#ifdef SUPPORT_PC88_KANJI1
-	memset(kanji1, 0xff, sizeof(kanji1));
-//#endif
-#ifdef SUPPORT_PC88_KANJI2
-	memset(kanji2, 0xff, sizeof(kanji2));
-#endif
+	memset(n88erom, 0xff, sizeof(n88erom));
 #ifdef SUPPORT_PC88_DICTIONARY
 	memset(dicrom, 0xff, sizeof(dicrom));
 #endif
@@ -297,10 +303,27 @@ void PC88::initialize()
 	memset(cdbios, 0xff, sizeof(cdbios));
 	cdbios_loaded = false;
 #endif
+#endif
 	
 	// load rom images
 	FILEIO* fio = new FILEIO();
+//#ifdef SUPPORT_PC88_KANJI1
+	if(fio->Fopen(create_local_path(_T("KANJI1.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji1, 0x20000, 1);
+		fio->Fclose();
+	}
+//#endif
+#ifdef SUPPORT_PC88_KANJI2
+	if(fio->Fopen(create_local_path(_T("KANJI2.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji2, 0x20000, 1);
+		fio->Fclose();
+	}
+#endif
 #if defined(PC8001_VARIANT)
+	if(fio->Fopen(create_local_path(_T("N80.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(n80rom, 0x8000, 1);
+		fio->Fclose();
+	}
 #if defined(_PC8001)
 	if(fio->Fopen(create_local_path(_T("N80_1.ROM")), FILEIO_READ_BINARY)) {
 #else
@@ -309,11 +332,41 @@ void PC88::initialize()
 		fio->Fread(n80rom, 0x8000, 1);
 		fio->Fclose();
 	}
+#if defined(_PC8001MK2) || defined(_PC8001SR)
+	if(fio->Fopen(create_local_path(_T("E8.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(n80erom, 0x2000, 1);
+		fio->Fclose();
+	}
+#endif
 #if defined(_PC8001SR)
 	if(fio->Fopen(create_local_path(_T("N80_3.ROM")), FILEIO_READ_BINARY)) {
 		fio->Fread(n80srrom, 0xa000, 1);
 		fio->Fclose();
 	}
+	if(fio->Fopen(create_local_path(_T("N80SR.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(n80srrom, 0x8000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(create_local_path(_T("80SR_4TH.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(n80srrom + 0x8000, 0x2000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(create_local_path(_T("KANJI80R.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji1, 0x20000, 1);
+		fio->Fclose();
+	}
+	if(fio->Fopen(create_local_path(_T("80SRCG.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(kanji1 + 0x1000, 0x800, 1);
+		fio->Fseek(0xd00, FILEIO_SEEK_SET);
+		fio->Fread(hiragana, 0x200, 1);
+		fio->Fclose();
+	} else if(fio->Fopen(create_local_path(_T("HIRAFONT.ROM")), FILEIO_READ_BINARY)) {
+		fio->Fread(hiragana, 0x200, 1);
+		fio->Fclose();
+	} else {
+		memcpy(hiragana, kanji1 + 0x1500, 0x200); // hiragana font is missing :-(
+	}
+	memcpy(katakana, kanji1 + 0x1500, 0x200);
 #endif
 #else
 	if(fio->Fopen(create_local_path(_T("PC88.ROM")), FILEIO_READ_BINARY)) {
@@ -349,17 +402,17 @@ void PC88::initialize()
 		fio->Fread(n80rom, 0x8000, 1);
 		fio->Fclose();
 	}
-#endif
-//#ifdef SUPPORT_PC88_KANJI1
-	if(fio->Fopen(create_local_path(_T("KANJI1.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(kanji1, 0x20000, 1);
-		fio->Fclose();
+	for(int i = 1; i <= 8; i++) {
+		if(fio->Fopen(create_local_path(create_string(_T("E%d.ROM"), i)), FILEIO_READ_BINARY)) {
+			long length = fio->FileLength();
+			fio->Fread(n88erom[i], 0x2000, 1);
+			fio->Fclose();
+			if(length < 0x2000) memset(&n88erom[i][length], 0xff, 0x2000 - length);
+		}
 	}
-//#endif
-#ifdef SUPPORT_PC88_KANJI2
-	if(fio->Fopen(create_local_path(_T("KANJI2.ROM")), FILEIO_READ_BINARY)) {
-		fio->Fread(kanji2, 0x20000, 1);
-		fio->Fclose();
+#ifdef SUPPORT_M88_DISKDRV
+	if(d_diskio != NULL) {
+		memcpy(n88erom[0], n80rom + 0x6000, 0x2000);
 	}
 #endif
 #ifdef SUPPORT_PC88_DICTIONARY
@@ -374,6 +427,7 @@ void PC88::initialize()
 		fio->Fclose();
 		cdbios_loaded = true;
 	}
+#endif
 #endif
 	delete fio;
 	
@@ -477,7 +531,10 @@ void PC88::reset()
 	bool value = (config.monitor_type == 0);
 	if(hireso != value) {
 		// update config.scan_line when config.monitor_type is changed
-		hireso = config.scan_line = value;
+		if(config.scan_line_auto) {
+			config.scan_line = value;
+		}
+		hireso = value;
 	}
 #endif
 	
@@ -514,6 +571,22 @@ void PC88::reset()
 	}
 	SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
 #else
+#ifdef SUPPORT_M88_DISKDRV
+	if(d_diskio != NULL) {
+		if(config.boot_mode == MODE_PC88_N) {
+			// diskdv80/n80patch.cpp
+			static const uint8_t code[4] = { 0xc3, 0x07, 0x60, 0x55 };
+			size_t length = *((short*)(&n88erom[8][5]));
+			
+			if(length < 0x2000) {
+				memcpy(n80rom + 0x6000, n88erom[8], length);
+				memcpy(n80rom + 0x7ffc, code, 4);
+			}
+		} else {
+			memcpy(n80rom + 0x6000, n88erom[0], 0x2000);
+		}
+	}
+#endif
 	SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
 	update_low_write();
 	update_low_read();
@@ -564,10 +637,11 @@ void PC88::reset()
 	} else
 #endif
 #ifdef SUPPORT_PC88_FDD_8INCH
-	dmac.ch[1].io = d_fdc_8inch;
-#else
-	dmac.ch[1].io = vm->dummy;
+	if(d_fdc_8inch != NULL) {
+		dmac.ch[1].io = d_fdc_8inch;
+	} else
 #endif
+	dmac.ch[1].io = vm->dummy;
 	dmac.ch[2].io = dmac.mem = this;
 	dmac.ch[0].addr.b.l = 0x56;	// XM8 version 1.10
 	dmac.ch[0].addr.b.h = 0x56;
@@ -835,8 +909,9 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 #ifdef SUPPORT_PC88_PCG8100
 		pcg_data = data;
 #endif
+#ifdef SUPPORT_QUASIS88_CMT
 		// load tape image ??? (from QUASI88)
-		if(cmt_play) {
+		if((config.dipswitch & DIPSWITCH_QUASIS88_CMT) && cmt_play) {
 			while(cmt_buffer[cmt_bufptr++] != 0x3a) {
 				if(!(cmt_bufptr <= cmt_bufcnt)) return;
 			}
@@ -862,6 +937,7 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 				if((sum & 0xff) != 0) return;
 			}
 		}
+#endif
 		break;
 #ifdef SUPPORT_PC88_PCG8100
 	case 0x01:
@@ -1168,7 +1244,7 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 #endif
 #else
 	case 0x71:
-		if(mod & 0x01) {
+		if(mod) {
 			update_low_read();
 		}
 		break;
@@ -1323,6 +1399,14 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 		break;
 #endif
 #endif
+#ifdef SUPPORT_M88_DISKDRV
+	case 0xd0:
+	case 0xd1:
+		if(d_diskio != NULL) {
+			d_diskio->write_io8(addr, data);
+		}
+		break;
+#endif
 #if defined(PC88_EXRAM_BANKS)
 #if defined(PC8001_VARIANT)
 	case 0xe2:
@@ -1385,10 +1469,7 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 #endif
 #ifdef SUPPORT_PC88_FDD_8INCH
 	case 0xf7:
-#ifdef SUPPORT_PC88_CDROM
-		if(!(config.boot_mode == MODE_PC88_V2CD && cdbios_loaded))
-#endif
-		{
+		if(d_fdc_8inch != NULL) {
 			d_fdc_8inch->write_io8(addr, data);
 		}
 		break;
@@ -1709,7 +1790,7 @@ uint32_t PC88::read_io8_debug(uint32_t addr)
 					case 3:
 						return ((mouse_ly >> 0) & 0x0f) | 0xf0;
 					}
-					return 0xf0; // ???
+					return 0xff; // ???
 				}
 #endif
 				return 0xff;
@@ -1746,6 +1827,14 @@ uint32_t PC88::read_io8_debug(uint32_t addr)
 		}
 		break;
 #endif
+#ifdef SUPPORT_M88_DISKDRV
+	case 0xd0:
+	case 0xd1:
+		if(d_diskio != NULL) {
+			return d_diskio->read_io8(addr);
+		}
+		break;
+#endif
 #if defined(PC88_EXRAM_BANKS)
 	case 0xe2:
 		return (~port[0xe2]) | 0xee;
@@ -1768,19 +1857,13 @@ uint32_t PC88::read_io8_debug(uint32_t addr)
 #endif
 #ifdef SUPPORT_PC88_FDD_8INCH
 	case 0xf4:
-#ifdef SUPPORT_PC88_CDROM
-		if(!(config.boot_mode == MODE_PC88_V2CD && cdbios_loaded))
-#endif
-		{
+		if(d_fdc_8inch != NULL) {
 			return 0xfe; // bit0: 0 = DMA-Type 8inch FDD existing
 		}
 		break;
 	case 0xf6:
 	case 0xf7:
-#ifdef SUPPORT_PC88_CDROM
-		if(!(config.boot_mode == MODE_PC88_V2CD && cdbios_loaded))
-#endif
-		{
+		if(d_fdc_8inch != NULL) {
 			return d_fdc_8inch->read_io8(addr);
 		}
 		break;
@@ -2077,6 +2160,11 @@ void PC88::update_n80_read()
 #if defined(_PC8001MK2) || defined(_PC8001SR)
 	if(!(port[0x31] & 1)) {
 		SET_BANK_R(0x0000, 0x5fff, n80rom);
+#ifdef SUPPORT_M88_DISKDRV
+		if(d_diskio != NULL) {
+			SET_BANK_R(0x6000, 0x7fff, n80erom);
+		} else
+#endif
 		SET_BANK_R(0x6000, 0x7fff, rdmy);
 		return;
 	}
@@ -2118,6 +2206,11 @@ void PC88::update_low_read()
 		// N-88BASIC
 		SET_BANK_R(0x0000, 0x5fff, n88rom);
 		if(Port71_EROM & 1) {
+#ifdef SUPPORT_M88_DISKDRV
+			if(d_diskio != NULL && Port71_EROM == 0xfd) {
+				SET_BANK_R(0x6000, 0x7fff, n88erom[1]);
+			} else
+#endif
 			SET_BANK_R(0x6000, 0x7fff, n88rom + 0x6000);
 		} else {
 			SET_BANK_R(0x6000, 0x7fff, n88exrom + 0x2000 * Port32_EROMSL);
@@ -2174,17 +2267,11 @@ void PC88::write_signal(int id, uint32_t data, uint32_t mask)
 #endif
 #ifdef SUPPORT_PC88_FDD_8INCH
 	} else if(id == SIG_PC88_8INCH_IRQ) {
-#ifdef SUPPORT_PC88_CDROM
-		if(!(config.boot_mode == MODE_PC88_V2CD && cdbios_loaded))
-#endif
-		{
+		if(d_fdc_8inch != NULL) {
 			request_intr(IRQ_FDINT2, (data & mask) != 0);
 		}
 	} else if(id == SIG_PC88_8INCH_DRQ) {
-#ifdef SUPPORT_PC88_CDROM
-		if(!(config.boot_mode == MODE_PC88_V2CD && cdbios_loaded))
-#endif
-		{
+		if(d_fdc_8inch != NULL) {
 			if(data & mask) {
 				if(!dmac.ch[1].running) {
 					dmac.start(1);
@@ -2966,6 +3053,10 @@ void PC88::draw_text()
 #endif
 		attrib_graph = true;
 	}
+#if defined(_PC8001SR)
+	// select katakana or hiragana
+	memcpy(kanji1 + 0x1500, Port33_HIRA ? hiragana : katakana, 0x200);
+#endif
 //	for(int cy = 0, ytop = 0; cy < 64 && ytop < 400; cy++, ytop += char_height) {
 	for(int cy = 0, ytop = 0; cy < crtc.height && ytop < 400; cy++, ytop += char_height) {
 		for(int x = 0, cx = 0; cx < crtc.width; x += 8, cx++) {

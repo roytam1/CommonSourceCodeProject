@@ -215,6 +215,8 @@
 #if defined(_PC98DOPLUS)
 	#define SUPPORT_PC88_OPNA
 #endif
+	#define SUPPORT_QUASIS88_CMT
+	#define SUPPORT_M88_DISKDRV
 #endif
 
 // device informations for virtual machine
@@ -259,8 +261,10 @@
 #define USE_DIPSWITCH
 #define DIPSWITCH_MEMWAIT	0x01
 #define DIPSWITCH_CMDSING	0x10
-#define DIPSWITCH_DEFAULT	(/*DIPSWITCH_HMB20 + DIPSWITCH_GSX8800 + DIPSWITCH_PCG8100 + */DIPSWITCH_CMDSING)
 #define DIPSWITCH_PALETTE	0x20
+#define DIPSWITCH_M88_DISKDRV	0x100
+#define DIPSWITCH_QUASIS88_CMT	0x200
+#define DIPSWITCH_DEFAULT	(/*DIPSWITCH_HMB20 + DIPSWITCH_GSX8800 + DIPSWITCH_PCG8100 + */DIPSWITCH_CMDSING)
 #define USE_FLOPPY_DISK		4
 #else
 #define USE_FLOPPY_DISK		2
@@ -424,6 +428,9 @@ class Z80;
 class PC80S31K;
 class PC88;
 class Z80;
+#ifdef SUPPORT_M88_DISKDRV
+class DiskIO;
+#endif
 #endif
 
 class VM : public VM_TEMPLATE
@@ -557,6 +564,10 @@ protected:
 	NOISE* pc88noise_head_down;
 	NOISE* pc88noise_head_up;
 	Z80* pc88cpu_sub;
+	
+#ifdef SUPPORT_M88_DISKDRV
+	DiskIO* pc88diskio;
+#endif
 	
 	int boot_mode;
 #endif
