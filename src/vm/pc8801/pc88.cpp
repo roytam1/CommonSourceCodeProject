@@ -1981,6 +1981,7 @@ void PC88::draw_screen()
 	
 	// render graph screen
 	bool disp_color_graph = true;
+	bool draw_scanline_black = config.scan_line;
 #if defined(_PC8001SR)
 	if(config.boot_mode != MODE_PC80_V2) {
 		if(Port31_V1_320x200) {
@@ -1989,6 +1990,7 @@ void PC88::draw_screen()
 			draw_640x200_mono_graph();
 		} else {
 			draw_640x200_attrib_graph();
+			draw_scanline_black = false;
 		}
 		emu->set_vm_screen_lines(200);
 	} else {
@@ -2005,6 +2007,7 @@ void PC88::draw_screen()
 			} else {
 				draw_640x200_attrib_graph();
 			}
+			draw_scanline_black = false;
 			emu->set_vm_screen_lines(200);
 		}
 	}
@@ -2015,10 +2018,12 @@ void PC88::draw_screen()
 	} else if(!Port31_400LINE) {
 		draw_640x200_attrib_graph();
 //		draw_640x200_mono_graph();
+		draw_scanline_black = false;
 		emu->set_vm_screen_lines(200);
 	} else {
 		draw_640x400_attrib_graph();
 //		draw_640x400_mono_graph();
+		draw_scanline_black = false;
 		emu->set_vm_screen_lines(400);
 	}
 #endif
@@ -2110,12 +2115,12 @@ void PC88::draw_screen()
 				for(int x = 0; x < 640; x++) {
 					uint32_t t = src_t[x];
 					uint32_t g = src_g[x];
-					dest[x] = (!g && t) ? pal_t[t] : pal_g[g];
+					dest[x] = (!g && t) ? pal_t[t] : ((y & 1) && draw_scanline_black) ? 0 : pal_g[g];
 				}
 			} else {
 				for(int x = 0; x < 640; x++) {
 					uint32_t t = src_t[x];
-					dest[x] = t ? pal_t[t] : pal_g[src_g[x]];
+					dest[x] = t ? pal_t[t] : ((y & 1) && draw_scanline_black) ? 0 : pal_g[src_g[x]];
 				}
 			}
 #else
@@ -2131,7 +2136,7 @@ void PC88::draw_screen()
 			}
 			for(int x = 0; x < 640; x++) {
 				uint32_t t = src_t[x];
-				dest[x] = t ? pal_t[t] : pal_g[src_g[x]];
+				dest[x] = t ? pal_t[t] : ((y & 1) && draw_scanline_black) ? 0 : pal_g[src_g[x]];
 			}
 #endif
 		}

@@ -135,7 +135,9 @@ public:
 		d_noise_seek = NULL;
 		d_noise_head_down = NULL;
 		d_noise_head_up = NULL;
-		motor_on = false;
+		// these parameters may be modified before calling initialize()
+		drvreg = sidereg = 0;
+		motor_on = drive_sel = false;
 #if defined(HAS_MB89311)
 		set_device_name(_T("MB89311 FDC"));
 #elif defined(HAS_MB8866)

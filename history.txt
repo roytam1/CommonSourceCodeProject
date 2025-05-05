@@ -1,3 +1,16 @@
+12/5/2018
+
+[VM/MB8877] improve reset() to finish previous command and reset fdc completely
+[VM/Z80] add read_signal() to read irq status
+
+[PC8801/PC88] improve to render scan line with black if color graphic mode
+[SMC70/MEMORY] support 640x400 and 160x100 graphic mode
+[SMC777/MEMORY] fix issue that text blink is not working
+[SMC777/MEMORY] improve inport 21h to read vsync irq status
+[SMC777/MEMORY] improve inport 51h to read cursor and space keys as joystick #1
+[VM/*] improve tape interfaces for each virtual machine
+
+
 12/4/2018
 
 [CONFIG] remove fmgen_dll_path and add mame2151_dll_path/mame2608_dll_path

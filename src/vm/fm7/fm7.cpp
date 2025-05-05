@@ -1064,17 +1064,36 @@ uint32_t VM::is_floppy_disk_accessed()
 
 void VM::play_tape(int drv, const _TCHAR* file_path)
 {
-	if(drec != NULL) drec->play_tape(file_path);
+	if(drec != NULL) {
+		bool remote = drec->get_remote();
+		
+		if(drec->play_tape(file_path) && remote) {
+			// if machine already sets remote on, start playing now
+			push_play(drv);
+		}
+	}
 }
 
 void VM::rec_tape(int drv, const _TCHAR* file_path)
 {
-	if(drec != NULL) drec->rec_tape(file_path);
+	if(drec != NULL) {
+		bool remote = drec->get_remote();
+		
+		if(drec->rec_tape(file_path) && remote) {
+			// if machine already sets remote on, start recording now
+			push_play(drv);
+		}
+	}
 }
 
 void VM::close_tape(int drv)
 {
-	if(drec != NULL) drec->close_tape();
+	if(drec != NULL) {
+		emu->lock_vm();
+		drec->close_tape();
+		emu->unlock_vm();
+		drec->set_remote(false);
+	}
 }
 
 bool VM::is_tape_inserted(int drv)
@@ -1120,6 +1139,7 @@ const _TCHAR* VM::get_tape_message(int drv)
 void VM::push_play(int drv)
 {
 	if(drec != NULL) {
+		drec->set_remote(false);
 		drec->set_ff_rew(0);
 		drec->set_remote(true);
 	}
@@ -1136,6 +1156,7 @@ void VM::push_stop(int drv)
 void VM::push_fast_forward(int drv)
 {
 	if(drec != NULL) {
+		drec->set_remote(false);
 		drec->set_ff_rew(1);
 		drec->set_remote(true);
 	}
@@ -1144,6 +1165,7 @@ void VM::push_fast_forward(int drv)
 void VM::push_fast_rewind(int drv)
 {
 	if(drec != NULL) {
+		drec->set_remote(false);
 		drec->set_ff_rew(-1);
 		drec->set_remote(true);
 	}

@@ -222,6 +222,10 @@ public:
 	{
 		return message;
 	}
+	bool get_remote()
+	{
+		return remote;
+	}
 	void set_remote(bool value);
 	void set_ff_rew(int value);
 	bool do_apss(int value);

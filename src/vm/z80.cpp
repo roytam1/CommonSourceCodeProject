@@ -2080,6 +2080,14 @@ void Z80::write_signal(int id, uint32_t data, uint32_t mask)
 	}
 }
 
+uint32_t Z80::read_signal(int id)
+{
+	if(id == SIG_CPU_IRQ) {
+		return intr_req_bit;
+	}
+	return 0;
+}
+
 int Z80::run(int clock)
 {
 	if(clock == -1) {

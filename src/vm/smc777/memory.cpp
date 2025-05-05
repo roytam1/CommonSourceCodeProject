@@ -17,6 +17,10 @@
 #include "../pcm1bit.h"
 
 #define EVENT_KEY_REPEAT	0
+#define EVENT_TEXT_BLINK	1
+
+#define IRQ_BIT_VSYNC	1
+#define IRQ_BIT_KEYIN	2
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 14, eb = (e) >> 14; \
@@ -147,9 +151,6 @@ void MEMORY::initialize()
 	}
 #endif
 	delete fio;
-
-
-
 	
 	// initialize inputs
 	initialize_key();
@@ -166,14 +167,21 @@ void MEMORY::initialize()
 	for(int i = 0; i < 16 + 16; i++) {
 		palette_pc[i] = RGB_COLOR(color_table[i & 15][0], color_table[i & 15][1], color_table[i & 15][2]);
 	}
+#if defined(_SMC70)
+	palette_bw_pc[0] = RGB_COLOR(  0,   0,   0);
+	palette_bw_pc[1] = RGB_COLOR(255, 255, 255);
+#endif
+	
 	vsup = false;
 #if defined(_SMC777)
 	use_palette_text = use_palette_graph = false;
 	memset(pal, 0, sizeof(pal));
 #endif
+	vsync_irq = false;
 	
 	// register event
 	register_frame_event(this);
+	register_event(this, EVENT_TEXT_BLINK, 1000000.0 / 8.0, true, NULL); // 2.6Hz-4.4Hz
 }
 
 void MEMORY::reset()
@@ -187,10 +195,11 @@ void MEMORY::reset()
 	key_repeat_event = -1;
 	
 	gcw = 0x80;
-	vsync = disp = false;
+	vsync = disp = blink = false;
 	cblink = 0;
 	
 	ief_key = ief_vsync = false;//true;
+//	vsync_irq = false;
 	fdc_irq = fdc_drq = false;
 	drec_in = false;
 }
@@ -555,7 +564,13 @@ uint32_t MEMORY::read_io8_debug(uint32_t addr)
 			return gcw;
 		case 0x21:
 			// is this okay???
-			return ief_vsync ? 1 : 0;
+			{
+				uint32_t value = vsync_irq ? 1 : 0;
+				if(!(d_cpu->read_signal(SIG_CPU_IRQ) & IRQ_BIT_VSYNC)) {
+					vsync_irq = false;
+				}
+				return value;
+			}
 #if defined(_SMC70)
 		case 0x25:
 			return (rtc_busy ? 0x80 : 0) | (rtc_data & 0x0f);
@@ -582,6 +597,13 @@ uint32_t MEMORY::read_io8_debug(uint32_t addr)
 			// bit0: ~F		0 = joystick forward on
 			{
 				uint32_t stat = joy_stat[(addr & 0x100) ? 0 : 1];
+				if(addr & 0x100) {
+					if(key_stat[0x26]) stat |= 0x01; // up
+					if(key_stat[0x28]) stat |= 0x02; // down
+					if(key_stat[0x25]) stat |= 0x04; // left
+					if(key_stat[0x27]) stat |= 0x08; // right
+					if(key_stat[0x20]) stat |= 0x10; // space
+				}
 				return (~stat & 0x1f) | (disp ? 0x80 : 0);
 			}
 #endif
@@ -614,9 +636,11 @@ void MEMORY::write_signal(int id, uint32_t data, uint32_t mask)
 	} else if(id == SIG_MEMORY_CRTC_DISP) {
 		disp = ((data & mask) != 0);
 	} else if(id == SIG_MEMORY_CRTC_VSYNC) {
+		bool prev = vsync;
 		vsync = ((data & mask) != 0);
-		if((data & mask) && ief_vsync) {
-			d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+		if(prev && !vsync && ief_vsync) {
+			vsync_irq = true;
+			d_cpu->write_signal(SIG_CPU_IRQ, IRQ_BIT_VSYNC, IRQ_BIT_VSYNC);
 		}
 	} else if(id == SIG_MEMORY_DATAREC_IN) {
 		drec_in = ((data & mask) != 0);
@@ -684,7 +708,7 @@ void MEMORY::key_down_up(int code, bool down)
 		}
 		if(down && key_code != code) {
 			if(ief_key) {
-				d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+				d_cpu->write_signal(SIG_CPU_IRQ, IRQ_BIT_KEYIN, IRQ_BIT_KEYIN);
 			}
 			if(key_repeat_event != -1) {
 				cancel_event(this, key_repeat_event);
@@ -707,10 +731,12 @@ void MEMORY::event_callback(int event_id, int err)
 {
 	if(event_id == EVENT_KEY_REPEAT) {
 		if(ief_key) {
-			d_cpu->write_signal(SIG_CPU_IRQ, 1, 1);
+			d_cpu->write_signal(SIG_CPU_IRQ, IRQ_BIT_KEYIN, IRQ_BIT_KEYIN);
 		}
 		key_status |= 5;
 		register_event(this, EVENT_KEY_REPEAT, key_repeat_interval * 1000, false, &key_repeat_event);
+	} else if(event_id == EVENT_TEXT_BLINK) {
+		blink = !blink;
 	}
 }
 
@@ -721,6 +747,11 @@ void MEMORY::event_frame()
 
 void MEMORY::draw_screen()
 {
+#if defined(_SMC70)
+	if((gcw & 0x0c) == 0x0c) {
+		emu->screen_skip_line(false);
+	} else
+#endif
 	emu->screen_skip_line(true);
 	
 	if(vsup) {
@@ -740,21 +771,43 @@ void MEMORY::draw_screen()
 	} else {
 		draw_text_80x25();
 	}
+#if defined(_SMC777)
 	if(gcw & 0x08) {
 		draw_graph_640x200();
 	} else {
 		draw_graph_320x200();
 	}
+#else
+	switch(gcw & 0x0c) {
+	case 0x00: draw_graph_160x100(); break;
+	case 0x04: draw_graph_320x200(); break;
+	case 0x08: draw_graph_640x200(); break;
+	case 0x0c: draw_graph_640x400(); break;
+	}
+#endif
 	
 	// copy to screen buffer
 #if defined(_SMC777)
-	scrntype_t *palette_pc_text = &palette_pc[use_palette_text ? 16 : 0];
-	scrntype_t *palette_pc_graph = &palette_pc[use_palette_graph ? 16 : 0];
+	scrntype_t *palette_text_pc = &palette_pc[use_palette_text ? 16 : 0];
+	scrntype_t *palette_graph_pc = &palette_pc[use_palette_graph ? 16 : 0];
 #else
-	#define palette_pc_text  palette_pc
-	#define palette_pc_graph palette_pc
-#endif
+	#define palette_text_pc  palette_pc
+//	#define palette_graph_pc palette_pc
+	scrntype_t *palette_graph_pc = ((gcw & 0x0c) == 0x0c) ? palette_bw_pc : palette_pc;
 	
+	if((gcw & 0x0c) == 0x0c) {
+		for(int y = 0; y < 400; y++) {
+			scrntype_t* dest = emu->get_screen_buffer(y);
+			uint8_t* src_t = text[y >> 1];
+			uint8_t* src_g = graph[y];
+			
+			for(int x = 0; x < 640; x++) {
+				uint8_t t = src_t[x];
+				dest[x] = t ? palette_text_pc[t & 15] : palette_graph_pc[src_g[x]];
+			}
+		}
+	} else
+#endif
 	for(int y = 0; y < 200; y++) {
 		scrntype_t* dest0 = emu->get_screen_buffer(y * 2);
 		scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
@@ -763,7 +816,7 @@ void MEMORY::draw_screen()
 		
 		for(int x = 0; x < 640; x++) {
 			uint8_t t = src_t[x];
-			dest0[x] = t ? palette_pc_text[t & 15] : palette_pc_graph[src_g[x]];
+			dest0[x] = t ? palette_text_pc[t & 15] : palette_graph_pc[src_g[x]];
 		}
 		if(config.scan_line) {
 			memset(dest1, 0, 640 * sizeof(scrntype_t));
@@ -777,7 +830,7 @@ void MEMORY::draw_text_80x25()
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
-	int ht = (crtc_regs[9] & 0x1f) + 1;
+	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint8_t bp = crtc_regs[10] & 0x60;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	uint16_t cursor = (crtc_regs[14] << 8) | crtc_regs[15];
@@ -793,8 +846,8 @@ void MEMORY::draw_text_80x25()
 			if(attr & 0x80) {
 				attr = 7;
 			}
-			bool blink = ((attr & 0x40) && (cblink & 0x20));
-			bool reverse = (((attr & 0x20) != 0) != blink);
+			bool blink_tmp = ((attr & 0x40) && blink);
+			bool reverse = (((attr & 0x20) != 0) != blink_tmp);
 			
 			uint8_t front = (attr & 7) | 16, back;
 			switch((attr >> 3) & 3) {
@@ -846,7 +899,7 @@ void MEMORY::draw_text_40x25()
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
-	int ht = (crtc_regs[9] & 0x1f) + 1;
+	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint8_t bp = crtc_regs[10] & 0x60;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	uint16_t cursor = (crtc_regs[14] << 8) | crtc_regs[15];
@@ -863,8 +916,8 @@ void MEMORY::draw_text_40x25()
 			if(attr & 0x80) {
 				attr = 7;
 			}
-			bool blink = ((attr & 0x40) && (cblink & 0x20));
-			bool reverse = (((attr & 0x20) != 0) != blink);
+			bool blink_tmp = ((attr & 0x40) && blink);
+			bool reverse = (((attr & 0x20) != 0) != blink_tmp);
 			
 			uint8_t front = (attr & 7) | 16, back;
 			switch((attr >> 3) & 3) {
@@ -912,6 +965,47 @@ void MEMORY::draw_text_40x25()
 	}
 }
 
+void MEMORY::draw_graph_640x400()
+{
+	int hz = crtc_regs[1];
+	int vt = crtc_regs[6] & 0x7f;
+	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
+	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
+	
+	for(int y = 0; y < vt && y < 25; y++) {
+		for(int x = 0; x < hz && x < 80; x++) {
+			for(int l = 0; l < ht; l++) {
+				uint8_t pat0 = gram[(src + 0x1000 * l    ) & 0x7fff];
+				uint8_t pat1 = gram[(src + 0x1000 * l + 1) & 0x7fff];
+				int yy = y * ht + l;
+				if(yy >= 200) {
+					break;
+				}
+				uint8_t* d0 = &graph[2 * yy    ][x << 3];
+				uint8_t* d1 = &graph[2 * yy + 1][x << 3];
+				// FIXME: is this correct?
+				d0[0] = (pat0 >> 7)    ;
+				d0[1] = (pat0 >> 6) & 1;
+				d0[2] = (pat0 >> 5) & 1;
+				d0[3] = (pat0 >> 4) & 1;
+				d0[4] = (pat0 >> 3) & 1;
+				d0[5] = (pat0 >> 2) & 1;
+				d0[6] = (pat0 >> 1) & 1;
+				d0[7] = (pat0     ) & 1;
+				d1[0] = (pat1 >> 7)    ;
+				d1[1] = (pat1 >> 6) & 1;
+				d1[2] = (pat1 >> 5) & 1;
+				d1[3] = (pat1 >> 4) & 1;
+				d1[4] = (pat1 >> 3) & 1;
+				d1[5] = (pat1 >> 2) & 1;
+				d1[6] = (pat1 >> 1) & 1;
+				d1[7] = (pat1     ) & 1;
+			}
+			src += 2;
+		}
+	}
+}
+
 void MEMORY::draw_graph_640x200()
 {
 	static const uint8_t color_table[2][4] = {{0, 4, 2, 1}, {0, 4, 2, 7}};
@@ -919,7 +1013,7 @@ void MEMORY::draw_graph_640x200()
 	
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
-	int ht = (crtc_regs[9] & 0x1f) + 1;
+	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	
 	for(int y = 0; y < vt && y < 25; y++) {
@@ -950,7 +1044,7 @@ void MEMORY::draw_graph_320x200()
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
-	int ht = (crtc_regs[9] & 0x1f) + 1;
+	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	
 	for(int y = 0; y < vt && y < 25; y++) {
@@ -973,7 +1067,36 @@ void MEMORY::draw_graph_320x200()
 	}
 }
 
-#define STATE_VERSION	3
+void MEMORY::draw_graph_160x100()
+{
+	int hz = crtc_regs[1];
+	int vt = crtc_regs[6] & 0x7f;
+	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
+	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
+	
+	src += 0x1000 * ((gcw >> 1) & 1) + (gcw & 1);
+	
+	for(int y = 0; y < vt && y < 25; y++) {
+		for(int x = 0; x < hz && x < 80; x++) {
+			for(int l = 0; l < ht; l += 2) {
+				uint8_t pat = gram[(src + 0x1000 * l) & 0x7fff];
+				int yy = y * ht + l;
+				if(yy >= 200) {
+					break;
+				}
+				uint8_t* d0 = &graph[yy    ][x << 3];
+				uint8_t* d1 = &graph[yy + 1][x << 3];
+				d0[0] = d0[1] = d0[2] = d0[3] = 
+				d1[0] = d1[1] = d1[2] = d1[3] = pat >> 4;
+				d0[4] = d0[5] = d0[6] = d0[7] = 
+				d1[4] = d1[5] = d1[6] = d1[7] = pat & 15;
+			}
+			src += 2;
+		}
+	}
+}
+
+#define STATE_VERSION	4
 
 bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
@@ -1025,6 +1148,7 @@ bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 	state_fio->StateValue(kanji_lo);
 	state_fio->StateValue(ief_key);
 	state_fio->StateValue(ief_vsync);
+	state_fio->StateValue(vsync_irq);
 	state_fio->StateValue(fdc_irq);
 	state_fio->StateValue(fdc_drq);
 	state_fio->StateValue(drec_in);
