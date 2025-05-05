@@ -60,8 +60,14 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 	crtc = new HD46505(this, emu);
 	dma = new I8237(this, emu);
+#ifdef USE_DEBUGGER
+	dma->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #ifndef TYPE_SL
 	dma2 = new I8237(this, emu);
+#ifdef USE_DEBUGGER
+	dma2->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #endif
 //	sio = new I8250(this, emu);
 	pit = new I8253(this, emu);	// i8254
@@ -405,7 +411,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	1
+#define STATE_VERSION	2
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

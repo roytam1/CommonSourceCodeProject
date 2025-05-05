@@ -19,10 +19,17 @@
 #define SIG_MC6844_TX_RQ_2	2
 #define SIG_MC6844_TX_RQ_3	3
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class MC6844 : public DEVICE
 {
 private:
 	DEVICE* d_memory;
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+#endif
 	
 	struct {
 		DEVICE *device;
@@ -47,16 +54,34 @@ public:
 			dma[i].device = vm->dummy;
 		}
 		d_memory = vm->dummy;
+#ifdef USE_DEBUGGER
+		d_debugger = NULL;
+#endif
 		initialize_output_signals(&outputs_irq);
 		set_device_name(_T("MC6844 DMAC"));
 	}
 	~MC6844() {}
 	
 	// common functions
+	void initialize();
 	void reset();
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	void write_signal(int id, uint32_t data, uint32_t mask);
+	// for debug
+	void write_via_debugger_data8(uint32_t addr, uint32_t data);
+	uint32_t read_via_debugger_data8(uint32_t addr);
+#ifdef USE_DEBUGGER
+	bool is_debugger_available()
+	{
+		return true;
+	}
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
+#endif
 	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
@@ -80,6 +105,12 @@ public:
 	{
 		dma[3].device = device;
 	}
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
 };
 
 #endif

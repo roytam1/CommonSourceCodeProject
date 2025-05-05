@@ -697,6 +697,18 @@ public:
 	
 #ifdef USE_DEBUGGER
 	// debugger
+	virtual bool is_cpu()
+	{
+		return false;
+	}
+	virtual bool is_debugger()
+	{
+		return false;
+	}
+	virtual bool is_debugger_available()
+	{
+		return false;
+	}
 	virtual void *get_debugger()
 	{
 		return NULL;
@@ -792,11 +804,86 @@ public:
 	{
 		return 0;
 	}
-	virtual bool is_debugger()
-	{
-		return false;
-	}
 #endif
+/*
+	These functions are used for debugging non-cpu device
+	Insert debugger between standard read/write functions and these functions for checking breakpoints
+
+	void DEVICE::write_data8(uint32_t addr, uint32_t data)
+	{
+		if(debugger != NULL && debugger->now_device_debugging) {
+			// debugger->mem = this;
+			// debugger->mem->write_via_debugger_data8(addr, data)
+			debugger->write_via_debugger_data8(addr, data);
+		} else {
+			this->write_via_debugger_data8(addr, data);
+		}
+	}
+	void DEVICE::write_via_debugger_data8(uint32_t addr, uint32_t data)
+	{
+		// write memory
+	}
+*/
+	virtual void write_via_debugger_data8(uint32_t addr, uint32_t data) {}
+	virtual uint32_t read_via_debugger_data8(uint32_t addr)
+	{
+		return 0xff;
+	}
+	virtual void write_via_debugger_data16(uint32_t addr, uint32_t data) {}
+	virtual uint32_t read_via_debugger_data16(uint32_t addr)
+	{
+		return 0xffff;
+	}
+	virtual void write_via_debugger_data32(uint32_t addr, uint32_t data) {}
+	virtual uint32_t read_via_debugger_data32(uint32_t addr)
+	{
+		return 0xffffffff;
+	}
+	virtual void write_via_debugger_data8w(uint32_t addr, uint32_t data, int* wait) {}
+	virtual uint32_t read_via_debugger_data8w(uint32_t addr, int* wait)
+	{
+		return 0xff;
+	}
+	virtual void write_via_debugger_data16w(uint32_t addr, uint32_t data, int* wait) {}
+	virtual uint32_t read_via_debugger_data16w(uint32_t addr, int* wait)
+	{
+		return 0xffff;
+	}
+	virtual void write_via_debugger_data32w(uint32_t addr, uint32_t data, int* wait) {}
+	virtual uint32_t read_via_debugger_data32w(uint32_t addr, int* wait)
+	{
+		return 0xffffffff;
+	}
+	virtual void write_via_debugger_io8(uint32_t addr, uint32_t data) {}
+	virtual uint32_t read_via_debugger_io8(uint32_t addr)
+	{
+		return 0xff;
+	}
+	virtual void write_via_debugger_io16(uint32_t addr, uint32_t data) {}
+	virtual uint32_t read_via_debugger_io16(uint32_t addr)
+	{
+		return 0xffff;
+	}
+	virtual void write_via_debugger_io32(uint32_t addr, uint32_t data) {}
+	virtual uint32_t read_via_debugger_io32(uint32_t addr)
+	{
+		return 0xffffffff;
+	}
+	virtual void write_via_debugger_io8w(uint32_t addr, uint32_t data, int* wait) {}
+	virtual uint32_t read_via_debugger_io8w(uint32_t addr, int* wait)
+	{
+		return 0xff;
+	}
+	virtual void write_via_debugger_io16w(uint32_t addr, uint32_t data, int* wait) {}
+	virtual uint32_t read_via_debugger_io16w(uint32_t addr, int* wait)
+	{
+		return 0xffff;
+	}
+	virtual void write_via_debugger_io32w(uint32_t addr, uint32_t data, int* wait) {}
+	virtual uint32_t read_via_debugger_io32w(uint32_t addr, int* wait)
+	{
+		return 0xffffffff;
+	}
 	
 	// misc
 	virtual void out_debug_log(const _TCHAR* format, ...)

@@ -73,14 +73,20 @@ public:
 	void reset();
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
-	// for debugging vram
-	void write_data8(uint32_t addr, uint32_t data);
-	uint32_t read_data8(uint32_t addr);
+	// for debugging
+	void write_via_debugger_data8(uint32_t addr, uint32_t data);
+	uint32_t read_via_debugger_data8(uint32_t addr);
+	void write_via_debugger_io8(uint32_t addr, uint32_t data);
+	uint32_t read_via_debugger_io8(uint32_t addr);
 #ifdef TMS9918A_SUPER_IMPOSE
 	void write_signal(int id, uint32_t data, uint32_t mask);
 #endif
 	void event_vline(int v, int clock);
 #ifdef USE_DEBUGGER
+	bool is_debugger_available()
+	{
+		return true;
+	}
 	void *get_debugger()
 	{
 		return d_debugger;
@@ -92,13 +98,26 @@ public:
 	void write_debug_data8(uint32_t addr, uint32_t data)
 	{
 		if(addr < TMS9918A_VRAM_SIZE) {
-			vram[addr] = data;
+			write_via_debugger_data8(addr, data);
 		}
 	}
 	uint32_t read_debug_data8(uint32_t addr)
 	{
 		if(addr < TMS9918A_VRAM_SIZE) {
-			return vram[addr];
+			return read_via_debugger_data8(addr);
+		}
+		return 0;
+	}
+	void write_debug_io8(uint32_t addr, uint32_t data)
+	{
+		if(addr < 8) {
+			write_via_debugger_io8(addr, data);
+		}
+	}
+	uint32_t read_debug_io8(uint32_t addr)
+	{
+		if(addr < 8) {
+			return read_via_debugger_io8(addr);
 		}
 		return 0;
 	}

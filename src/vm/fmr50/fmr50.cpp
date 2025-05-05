@@ -141,6 +141,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 		scsi_host->set_context_target(scsi_hdd[i]);
 	}
 	dma = new UPD71071(this, emu);
+#ifdef USE_DEBUGGER
+	dma->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	
 	if(FILEIO::IsFileExisting(create_local_path(_T("IPL.ROM")))) {
 		bios = NULL;
@@ -523,7 +526,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	6
+#define STATE_VERSION	7
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

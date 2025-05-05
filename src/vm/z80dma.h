@@ -17,10 +17,17 @@
 
 #define SIG_Z80DMA_READY	0
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class Z80DMA : public DEVICE
 {
 private:
 	DEVICE *d_mem, *d_io;
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+#endif
 	
 	typedef union {
 		uint16_t m[7][8];
@@ -44,6 +51,11 @@ private:
 	int blocklen;
 	bool dma_stop;
 	bool bus_master;
+	
+	void write_memory(uint32_t addr, uint32_t data, int* wait);
+	uint32_t read_memory(uint32_t addr, int* wait);
+	void write_ioport(uint32_t addr, uint32_t data, int* wait);
+	uint32_t read_ioport(uint32_t addr, int* wait);
 	
 	// interrupt
 	bool req_intr;
@@ -69,16 +81,36 @@ public:
 			regs.t[i] = 0;
 		}
 		d_cpu = d_child = NULL;
+#ifdef USE_DEBUGGER
+		d_debugger = NULL;
+#endif
 		set_device_name(_T("Z80 DMA"));
 	}
 	~Z80DMA() {}
 	
 	// common functions
+	void initialize();
 	void reset();
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 	void write_signal(int id, uint32_t data, uint32_t mask);
 	void do_dma();
+	// for debug
+	void write_via_debugger_data8w(uint32_t addr, uint32_t data, int* wait);
+	uint32_t read_via_debugger_data8w(uint32_t addr, int* wait);
+	void write_via_debugger_io8w(uint32_t addr, uint32_t data, int* wait);
+	uint32_t read_via_debugger_io8w(uint32_t addr, int* wait);
+#ifdef USE_DEBUGGER
+	bool is_debugger_available()
+	{
+		return true;
+	}
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
+#endif
 	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// interrupt common functions
@@ -108,6 +140,12 @@ public:
 	{
 		d_io = device;
 	}
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
 };
 
 #endif

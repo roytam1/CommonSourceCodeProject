@@ -67,10 +67,10 @@ void AY_3_891X::write_io8(uint32_t addr, uint32_t data)
 	case 1:
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			d_debugger->write_data8(ch, data);
+			d_debugger->write_via_debugger_data8(ch, data);
 		} else
 #endif
-		this->write_data8(ch, data);
+		this->write_via_debugger_data8(ch, data);
 		break;
 	}
 }
@@ -81,15 +81,15 @@ uint32_t AY_3_891X::read_io8(uint32_t addr)
 	case 1:
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			return d_debugger->read_data8(ch);
+			return d_debugger->read_via_debugger_data8(ch);
 		} else
 #endif
-		return this->read_data8(ch);
+		return this->read_via_debugger_data8(ch);
 	}
 	return 0xff;
 }
 
-void AY_3_891X::write_data8(uint32_t addr, uint32_t data)
+void AY_3_891X::write_via_debugger_data8(uint32_t addr, uint32_t data)
 {
 	if(addr < 16) {
 #ifdef SUPPORT_AY_3_891X_PORT
@@ -122,7 +122,7 @@ void AY_3_891X::write_data8(uint32_t addr, uint32_t data)
 	}
 }
 
-uint32_t AY_3_891X::read_data8(uint32_t addr)
+uint32_t AY_3_891X::read_via_debugger_data8(uint32_t addr)
 {
 	if(addr < 16) {
 #ifdef SUPPORT_AY_3_891X_PORT

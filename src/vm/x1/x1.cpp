@@ -136,6 +136,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	}
 #ifdef _X1TURBO_FEATURE
 	dma = new Z80DMA(this, emu);
+#ifdef USE_DEBUGGER
+	dma->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #endif
 	
 	display = new DISPLAY(this, emu);
@@ -977,7 +980,7 @@ void VM::update_dipswitch()
 }
 #endif
 
-#define STATE_VERSION	10
+#define STATE_VERSION	11
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

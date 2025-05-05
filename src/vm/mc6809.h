@@ -546,6 +546,14 @@ public:
 	}
 	~MC6809_BASE() {}
 	
+	bool is_cpu()
+	{
+		return true;
+	}
+	bool is_debugger_available()
+	{
+		return true;
+	}
 	void *get_debugger()
 	{
 		return d_debugger;

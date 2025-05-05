@@ -60,58 +60,12 @@ void TMS9918A::write_io8(uint32_t addr, uint32_t data)
 		// register
 		if(latch) {
 			if(data & 0x80) {
-				switch(data & 7) {
-				case 0:
-					regs[0] = first_byte & 3;
-					if(regs[0] & 2) {
-						color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
-						color_mask = ((regs[3] & 0x7f) * 8) | 7;
-						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
-						pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
-					} else {
-						color_table = (regs[3] * 64) & ADDR_MASK;
-						pattern_table = (regs[4] * 2048) & ADDR_MASK;
-					}
-					break;
-				case 1:
-					regs[1] = first_byte & 0xfb;
-					set_intstat((regs[1] & 0x20) && (status_reg & 0x80));
-					break;
-				case 2:
-					regs[2] = first_byte & 0x0f;
-					name_table = (regs[2] * 1024) & ADDR_MASK;
-					break;
-				case 3:
-					regs[3] = first_byte;
-					if(regs[0] & 2) {
-						color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
-						color_mask = ((regs[3] & 0x7f) * 8) | 7;
-					} else {
-						color_table = (regs[3] * 64) & ADDR_MASK;
-					}
-					pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
-					break;
-				case 4:
-					regs[4] = first_byte & 7;
-					if(regs[0] & 2) {
-						pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
-						pattern_mask = ((regs[4] & 3) * 256) | 255;
-					} else {
-						pattern_table = (regs[4] * 2048) & ADDR_MASK;
-					}
-					break;
-				case 5:
-					regs[5] = first_byte & 0x7f;
-					sprite_attrib = (regs[5] * 128) & ADDR_MASK;
-					break;
-				case 6:
-					regs[6] = first_byte & 7;
-					sprite_pattern = (regs[6] * 2048) & ADDR_MASK;
-					break;
-				case 7:
-					regs[7] = first_byte;
-					break;
-				}
+#ifdef USE_DEBUGGER
+				if(d_debugger != NULL && d_debugger->now_device_debugging) {
+					d_debugger->write_via_debugger_io8(data, first_byte);
+				} else
+#endif
+				this->write_via_debugger_io8(data, first_byte);
 			} else {
 				vram_addr = ((data * 256) | first_byte) & ADDR_MASK;
 				if(!(data & 0x40)) {
@@ -127,10 +81,10 @@ void TMS9918A::write_io8(uint32_t addr, uint32_t data)
 		// vram
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			d_debugger->write_data8(vram_addr, data);
+			d_debugger->write_via_debugger_data8(vram_addr, data);
 		} else
 #endif
-		this->write_data8(vram_addr, data);
+		this->write_via_debugger_data8(vram_addr, data);
 //		vram[vram_addr] = data;
 		vram_addr = (vram_addr + 1) & ADDR_MASK;
 		read_ahead = data;
@@ -152,10 +106,10 @@ uint32_t TMS9918A::read_io8(uint32_t addr)
 		uint8_t val = read_ahead;
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			read_ahead = d_debugger->read_data8(vram_addr);
+			read_ahead = d_debugger->read_via_debugger_data8(vram_addr);
 		} else
 #endif
-		read_ahead = this->read_data8(vram_addr);
+		read_ahead = this->read_via_debugger_data8(vram_addr);
 //		read_ahead = vram[vram_addr];
 		vram_addr = (vram_addr + 1) & ADDR_MASK;
 		latch = false;
@@ -163,14 +117,75 @@ uint32_t TMS9918A::read_io8(uint32_t addr)
 	}
 }
 
-void TMS9918A::write_data8(uint32_t addr, uint32_t data)
+void TMS9918A::write_via_debugger_data8(uint32_t addr, uint32_t data)
 {
 	vram[addr & ADDR_MASK] = data;
 }
 
-uint32_t TMS9918A::read_data8(uint32_t addr)
+uint32_t TMS9918A::read_via_debugger_data8(uint32_t addr)
 {
 	return vram[addr & ADDR_MASK];
+}
+
+void TMS9918A::write_via_debugger_io8(uint32_t addr, uint32_t data)
+{
+	switch(addr & 7) {
+	case 0:
+		regs[0] = data & 3;
+		if(regs[0] & 2) {
+			color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
+			color_mask = ((regs[3] & 0x7f) * 8) | 7;
+			pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
+			pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
+		} else {
+			color_table = (regs[3] * 64) & ADDR_MASK;
+			pattern_table = (regs[4] * 2048) & ADDR_MASK;
+		}
+		break;
+	case 1:
+		regs[1] = data & 0xfb;
+		set_intstat((regs[1] & 0x20) && (status_reg & 0x80));
+		break;
+	case 2:
+		regs[2] = data & 0x0f;
+		name_table = (regs[2] * 1024) & ADDR_MASK;
+		break;
+	case 3:
+		regs[3] = data;
+		if(regs[0] & 2) {
+			color_table = ((regs[3] & 0x80) * 64) & ADDR_MASK;
+			color_mask = ((regs[3] & 0x7f) * 8) | 7;
+		} else {
+			color_table = (regs[3] * 64) & ADDR_MASK;
+		}
+		pattern_mask = ((regs[4] & 3) * 256) | (color_mask & 0xff);
+		break;
+	case 4:
+		regs[4] = data & 7;
+		if(regs[0] & 2) {
+			pattern_table = ((regs[4] & 4) * 2048) & ADDR_MASK;
+			pattern_mask = ((regs[4] & 3) * 256) | 255;
+		} else {
+			pattern_table = (regs[4] * 2048) & ADDR_MASK;
+		}
+		break;
+	case 5:
+		regs[5] = data & 0x7f;
+		sprite_attrib = (regs[5] * 128) & ADDR_MASK;
+		break;
+	case 6:
+		regs[6] = data & 7;
+		sprite_pattern = (regs[6] * 2048) & ADDR_MASK;
+		break;
+	case 7:
+		regs[7] = data;
+		break;
+	}
+}
+
+uint32_t TMS9918A::read_via_debugger_io8(uint32_t addr)
+{
+	return regs[addr & 7];
 }
 
 #ifdef TMS9918A_SUPER_IMPOSE

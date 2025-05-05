@@ -80,10 +80,10 @@ void YM2151::write_io8(uint32_t addr, uint32_t data)
 	if(addr & 1) {
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			d_debugger->write_data8(ch, data);
+			d_debugger->write_via_debugger_data8(ch, data);
 		} else
 #endif
-		this->write_data8(ch, data);
+		this->write_via_debugger_data8(ch, data);
 	} else {
 		ch = data;
 	}
@@ -107,7 +107,7 @@ uint32_t YM2151::read_io8(uint32_t addr)
 	return 0xff;
 }
 
-void YM2151::write_data8(uint32_t addr, uint32_t data)
+void YM2151::write_via_debugger_data8(uint32_t addr, uint32_t data)
 {
 	if(addr < 0x100) {
 		update_count();
@@ -121,7 +121,7 @@ void YM2151::write_data8(uint32_t addr, uint32_t data)
 	}
 }
 
-uint32_t YM2151::read_data8(uint32_t addr)
+uint32_t YM2151::read_via_debugger_data8(uint32_t addr)
 {
 	if(addr < 0x100) {
 		return port_log[addr].data;

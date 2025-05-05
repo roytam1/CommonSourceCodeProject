@@ -45,7 +45,8 @@
 
 #define DRIVE_MASK		(MAX_DRIVE - 1)
 
-#define DELAY_TIME		(disk[drvreg]->drive_type == DRIVE_TYPE_2HD ? 15000 : 30000)
+#define DELAY_AFTER_HLD		(disk[drvreg]->drive_type == DRIVE_TYPE_2HD ? 15000 : 30000)
+#define DELAY_AFTER_SEEK	(disk[drvreg]->drive_type == DRIVE_TYPE_2HD ? 30000 : 60000)
 
 static const int seek_wait_hi[4] = {3000,  6000, 10000, 16000};	// 2MHz
 static const int seek_wait_lo[4] = {6000, 12000, 20000, 30000};	// 1MHz
@@ -1090,7 +1091,7 @@ void MB8877::cmd_writedata(bool first_sector)
 	if(status_tmp & FDC_ST_RECNFND) {
 		time = get_usec_to_detect_index_hole(5, first_sector && ((cmdreg & 4) != 0));
 	} else if(status & FDC_ST_WRITEFAULT) {
-		time = (cmdreg & 4) ? DELAY_TIME : 1;
+		time = (cmdreg & 4) ? DELAY_AFTER_HLD : 1;
 	} else {
 		time = get_usec_to_start_trans(first_sector);
 	}
@@ -1147,12 +1148,12 @@ void MB8877::cmd_writetrack()
 	double time;
 	if(disk[drvreg]->write_protected) {
 		status_tmp = FDC_ST_WRITEFAULT;
-		time = (cmdreg & 4) ? DELAY_TIME : 1;
+		time = (cmdreg & 4) ? DELAY_AFTER_HLD : 1;
 	} else {
 		if(cmdreg & 4) {
 			// wait 15msec before raise first drq
-			fdc[drvreg].next_trans_position = (get_cur_position() + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
-			time = DELAY_TIME;
+			fdc[drvreg].next_trans_position = (get_cur_position() + disk[drvreg]->get_bytes_per_usec(DELAY_AFTER_HLD)) % disk[drvreg]->get_track_size();
+			time = DELAY_AFTER_HLD;
 		} else {
 			// raise first drq soon
 			fdc[drvreg].next_trans_position = (get_cur_position() + 1) % disk[drvreg]->get_track_size();
@@ -1181,7 +1182,7 @@ void MB8877::cmd_format()
 	now_search = true;
 	
 	status_tmp = FDC_ST_WRITEFAULT;
-	double time = (cmdreg & 4) ? DELAY_TIME : 1;
+	double time = (cmdreg & 4) ? DELAY_AFTER_HLD : 1;
 	
 	register_my_event(EVENT_SEARCH, time);
 	cancel_my_event(EVENT_LOST);
@@ -1441,9 +1442,10 @@ double MB8877::get_usec_to_start_trans(bool first_sector)
 {
 	// get time from current position
 	double time = get_usec_to_next_trans_pos(first_sector && ((cmdreg & 4) != 0));
-	if(first_sector && time < 60000 - get_passed_usec(seekend_clock)) {
-		time += disk[drvreg]->get_usec_per_track();
-	}
+	// wait 60ms to start read/write after seek is finished (FM-Techknow, p.180)
+//	if(first_sector && time < DELAY_AFTER_SEEK - get_passed_usec(seekend_clock)) {
+//		time += disk[drvreg]->get_usec_per_track();
+//	}
 	return time;
 }
 
@@ -1483,7 +1485,7 @@ double MB8877::get_usec_to_next_trans_pos(bool delay)
 		return 50000;
 	}
 	if(delay) {
-		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
+		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_AFTER_HLD)) % disk[drvreg]->get_track_size();
 	}
 	int bytes = fdc[drvreg].next_trans_position - position;
 	if(fdc[drvreg].next_am1_position < position || bytes < 0) {
@@ -1491,7 +1493,7 @@ double MB8877::get_usec_to_next_trans_pos(bool delay)
 	}
 	double time = disk[drvreg]->get_usec_per_bytes(bytes);
 	if(delay) {
-		time += DELAY_TIME;
+		time += DELAY_AFTER_HLD;
 	}
 	return time;
 }
@@ -1500,7 +1502,7 @@ double MB8877::get_usec_to_detect_index_hole(int count, bool delay)
 {
 	int position = get_cur_position();
 	if(delay) {
-		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_TIME)) % disk[drvreg]->get_track_size();
+		position = (position + disk[drvreg]->get_bytes_per_usec(DELAY_AFTER_HLD)) % disk[drvreg]->get_track_size();
 	}
 	int bytes = disk[drvreg]->get_track_size() * count - position;
 	if(bytes < 0) {
@@ -1508,7 +1510,7 @@ double MB8877::get_usec_to_detect_index_hole(int count, bool delay)
 	}
 	double time = disk[drvreg]->get_usec_per_bytes(bytes);
 	if(delay) {
-		time += DELAY_TIME;
+		time += DELAY_AFTER_HLD;
 	}
 	return time;
 }
@@ -1647,7 +1649,8 @@ bool MB8877::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 	int position = get_cur_position();
 	
 	my_stprintf_s(buffer, buffer_len,
-	_T("CMDREG=%02X (%s) DATAREG=%02X DRVREG=%02X TRKREG=%02X SIDEREG=%d SECREG=%02X\nUNIT: DRIVE=%d TRACK=%2d SIDE=%d POSITION=%5d/%d"),
+	_T("CMDREG=%02X (%s) DATAREG=%02X DRVREG=%02X TRKREG=%02X SIDEREG=%d SECREG=%02X\n")
+	_T("UNIT: DRIVE=%d TRACK=%2d SIDE=%d POSITION=%5d/%d"),
 	cmdreg, cmdstr[cmdreg >> 4], datareg, drvreg, trkreg, sidereg, secreg,
 	drvreg, fdc[drvreg].track, sidereg,
 	position, disk[drvreg]->get_track_size());

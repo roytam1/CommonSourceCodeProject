@@ -76,9 +76,13 @@ public:
 	void write_dma_io8w(uint32_t addr, uint32_t data, int* wait);
 	uint32_t read_dma_io8w(uint32_t addr, int* wait);
 	// for debugging vram
-	void write_data8(uint32_t addr, uint32_t data);
-	uint32_t read_data8(uint32_t addr);
+	void write_via_debugger_data8(uint32_t addr, uint32_t data);
+	uint32_t read_via_debugger_data8(uint32_t addr);
 #ifdef USE_DEBUGGER
+	bool is_debugger_available()
+	{
+		return true;
+	}
 	void *get_debugger()
 	{
 		return d_debugger;
@@ -90,13 +94,13 @@ public:
 	void write_debug_data8(uint32_t addr, uint32_t data)
 	{
 		if(addr < sizeof(vram)) {
-			vram[addr] = data;
+			write_via_debugger_data8(addr, data);
 		}
 	}
 	uint32_t read_debug_data8(uint32_t addr)
 	{
 		if(addr < sizeof(vram)) {
-			return vram[addr];
+			return read_via_debugger_data8(addr);
 		}
 		return 0;
 	}

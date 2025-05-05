@@ -2529,7 +2529,10 @@ Clocks = 0 (0) Since Scanline = 0/0 (0/0)
 */
 	int wait;
 	my_stprintf_s(buffer, buffer_len,
-	_T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  IX = %04X  IY = %04X\nF'= [%c%c%c%c%c%c%c%c]  A'= %02X  BC'= %04X  DE'= %04X  HL'= %04X  SP = %04X  PC = %04X\n        I = %02X  R = %02X (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X  %cI:IFF2=%d\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
+	_T("F = [%c%c%c%c%c%c%c%c]  A = %02X  BC = %04X  DE = %04X  HL = %04X  IX = %04X  IY = %04X\n")
+	_T("F'= [%c%c%c%c%c%c%c%c]  A'= %02X  BC'= %04X  DE'= %04X  HL'= %04X  SP = %04X  PC = %04X\n")
+	_T("        I = %02X  R = %02X (BC)= %04X (DE)= %04X (HL)= %04X (SP)= %04X  %cI:IFF2=%d\n")
+	_T("Clocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
 	(F & CF) ? _T('C') : _T('-'), (F & NF) ? _T('N') : _T('-'), (F & PF) ? _T('P') : _T('-'), (F & XF) ? _T('X') : _T('-'),
 	(F & HF) ? _T('H') : _T('-'), (F & YF) ? _T('Y') : _T('-'), (F & ZF) ? _T('Z') : _T('-'), (F & SF) ? _T('S') : _T('-'),
 	A, BC, DE, HL, IX, IY,

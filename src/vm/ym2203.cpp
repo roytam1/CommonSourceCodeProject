@@ -133,10 +133,10 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 	case 1:
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			d_debugger->write_data8(ch, data);
+			d_debugger->write_via_debugger_data8(ch, data);
 		} else
 #endif
-		this->write_data8(ch, data);
+		this->write_via_debugger_data8(ch, data);
 		break;
 	case 2:
 		ch1 = data1 = data;
@@ -144,10 +144,10 @@ void YM2203::write_io8(uint32_t addr, uint32_t data)
 	case 3:
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			d_debugger->write_data8(0x100 | ch1, data);
+			d_debugger->write_via_debugger_data8(0x100 | ch1, data);
 		} else
 #endif
-		this->write_data8(0x100 | ch1, data);
+		this->write_via_debugger_data8(0x100 | ch1, data);
 		break;
 	}
 }
@@ -179,10 +179,10 @@ uint32_t YM2203::read_io8(uint32_t addr)
 	case 1:
 #ifdef USE_DEBUGGER
 		if(d_debugger != NULL && d_debugger->now_device_debugging) {
-			return d_debugger->read_data8(ch);
+			return d_debugger->read_via_debugger_data8(ch);
 		} else
 #endif
-		return this->read_data8(ch);
+		return this->read_via_debugger_data8(ch);
 	case 2:
 		{
 			/* BUSY : x : PCMBUSY : ZERO : BRDY : EOS : FLAGB : FLAGA */
@@ -210,7 +210,7 @@ uint32_t YM2203::read_io8(uint32_t addr)
 	return 0xff;
 }
 
-void YM2203::write_data8(uint32_t addr, uint32_t data)
+void YM2203::write_via_debugger_data8(uint32_t addr, uint32_t data)
 {
 	if(addr < 0x100) {
 		// YM2203
@@ -272,7 +272,7 @@ void YM2203::write_data8(uint32_t addr, uint32_t data)
 	}
 }
 
-uint32_t YM2203::read_data8(uint32_t addr)
+uint32_t YM2203::read_via_debugger_data8(uint32_t addr)
 {
 	if(addr < 0x100) {
 		// YM2203

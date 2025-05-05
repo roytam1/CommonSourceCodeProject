@@ -2583,7 +2583,7 @@ void PC88::draw_screen()
 		disp_color_graph = draw_640x200_color_graph();
 		emu->set_vm_screen_lines(200);
 #if defined(PC8801SR_VARIANT)
-	} else if (Port31_400LINE) {
+	} else if(Port31_400LINE) {
 		if(hireso) {
 			draw_scanline_black = false;
 		}

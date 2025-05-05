@@ -79,6 +79,14 @@ public:
 	uint32_t get_pc();
 	uint32_t get_next_pc();
 #ifdef USE_DEBUGGER
+	bool is_cpu()
+	{
+		return true;
+	}
+	bool is_debugger_available()
+	{
+		return true;
+	}
 	void *get_debugger()
 	{
 		return d_debugger;

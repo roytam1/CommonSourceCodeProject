@@ -1613,7 +1613,11 @@ R8 = 0000 R9 = 0000 R10= 0000 R11= 0000 R12= 0000 R13= 0000 R14= 0000 R15= 0000
 Clocks = 0 (0) Since Scanline = 0/0 (0/0)
 */
 	my_stprintf_s(buffer, buffer_len,
-	_T("ST = %04X [LGT:%01X AGT:%01X EQ:%01X C:%01X OV:%01X OP:%01X X:%01X OVIE:%01X IM:%01X]\nPC = %04X WP = %04X\nR0 = %04X R1 = %04X R2 = %04X R3 = %04X R4 = %04X R5 = %04X R6 = %04X R7 = %04X\nR8 = %04X R9 = %04X R10= %04X R11= %04X R12= %04X R13= %04X R14= %04X R15= %04X\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
+	_T("ST = %04X [LGT:%01X AGT:%01X EQ:%01X C:%01X OV:%01X OP:%01X X:%01X OVIE:%01X IM:%01X]\n")
+	_T("PC = %04X WP = %04X\n")
+	_T("R0 = %04X R1 = %04X R2 = %04X R3 = %04X R4 = %04X R5 = %04X R6 = %04X R7 = %04X\n")
+	_T("R8 = %04X R9 = %04X R10= %04X R11= %04X R12= %04X R13= %04X R14= %04X R15= %04X\n")
+	_T("Clocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
 	ST,
 	(ST & ST_LGT ) ? 1 : 0,
 	(ST & ST_AGT ) ? 1 : 0,

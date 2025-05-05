@@ -59,6 +59,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 		printer = dummy;
 	}
 	dma = new I8237(this, emu);
+#ifdef USE_DEBUGGER
+	dma->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	pio = new I8255(this, emu);
 	pic = new I8259(this, emu);
 	cpu = new I286(this, emu);
@@ -418,7 +421,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	6
+#define STATE_VERSION	7
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

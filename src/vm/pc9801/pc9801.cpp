@@ -148,6 +148,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	beep = new PCM1BIT(this, emu);
 #endif
 	dma = new I8237(this, emu);
+#ifdef USE_DEBUGGER
+	dma->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #if defined(SUPPORT_CMT_IF)
 	sio_cmt = new I8251(this, emu);		// for cmt
 	sio_cmt->set_device_name(_T("8251 SIO (CMT)"));
@@ -1565,7 +1568,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	15
+#define STATE_VERSION	16
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

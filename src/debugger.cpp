@@ -68,7 +68,7 @@ void my_putch(OSD *osd, _TCHAR c)
 	osd->write_console(&c, 1);
 }
 
-uint32_t my_hexatoi(DEVICE *target, const _TCHAR *str)
+uint32_t my_hexatoi(DEVICE *device, const _TCHAR *str)
 {
 	_TCHAR tmp[1024], *s;
 	symbol_t *first_symbol = NULL;
@@ -78,9 +78,9 @@ uint32_t my_hexatoi(DEVICE *target, const _TCHAR *str)
 	}
 	my_tcscpy_s(tmp, array_length(tmp), str);
 	
-	if(target) {
-		DEBUGGER *debugger = (DEBUGGER *)target->get_debugger();
-		if(debugger) {
+	if(device != NULL) {
+		DEBUGGER *debugger = (DEBUGGER *)device->get_debugger();
+		if(debugger != NULL) {
 			first_symbol = debugger->first_symbol;
 		}
 	}
@@ -95,7 +95,7 @@ uint32_t my_hexatoi(DEVICE *target, const _TCHAR *str)
 	} else if((s = _tcsstr(tmp, _T(":"))) != NULL) {
 		// 0000:0000
 		s[0] = _T('\0');
-		return (my_hexatoi(target, tmp) << 4) + my_hexatoi(target, s + 1);
+		return (my_hexatoi(device, tmp) << 4) + my_hexatoi(device, s + 1);
 	} else if(tmp[0] == _T('%')) {
 		// decimal
 		return _tstoi(tmp + 1);
@@ -123,39 +123,39 @@ uint16_t my_hexatow(char *value)
 	return (uint16_t)strtoul(tmp, NULL, 16);
 }
 
-const _TCHAR *my_get_symbol(DEVICE *target, uint32_t addr)
+const _TCHAR *my_get_symbol(DEVICE *device, uint32_t addr)
 {
 	symbol_t *first_symbol = NULL;
 	
-	if(target) {
-		DEBUGGER *debugger = (DEBUGGER *)target->get_debugger();
-		if(debugger) {
+	if(device != NULL) {
+		DEBUGGER *debugger = (DEBUGGER *)device->get_debugger();
+		if(debugger != NULL) {
 			first_symbol = debugger->first_symbol;
 		}
 	}
 	return get_symbol(first_symbol, addr);
 }
 
-const _TCHAR *my_get_value_or_symbol(DEVICE *target, const _TCHAR *format, uint32_t addr)
+const _TCHAR *my_get_value_or_symbol(DEVICE *device, const _TCHAR *format, uint32_t addr)
 {
 	symbol_t *first_symbol = NULL;
 	
-	if(target) {
-		DEBUGGER *debugger = (DEBUGGER *)target->get_debugger();
-		if(debugger) {
+	if(device != NULL) {
+		DEBUGGER *debugger = (DEBUGGER *)device->get_debugger();
+		if(debugger != NULL) {
 			first_symbol = debugger->first_symbol;
 		}
 	}
 	return get_value_or_symbol(first_symbol, format, addr);
 }
 
-const _TCHAR *my_get_value_and_symbol(DEVICE *target, const _TCHAR *format, uint32_t addr)
+const _TCHAR *my_get_value_and_symbol(DEVICE *device, const _TCHAR *format, uint32_t addr)
 {
 	symbol_t *first_symbol = NULL;
 	
-	if(target) {
-		DEBUGGER *debugger = (DEBUGGER *)target->get_debugger();
-		if(debugger) {
+	if(device != NULL) {
+		DEBUGGER *debugger = (DEBUGGER *)device->get_debugger();
+		if(debugger != NULL) {
 			first_symbol = debugger->first_symbol;
 		}
 	}
@@ -178,15 +178,78 @@ break_point_t *get_break_point(DEBUGGER *debugger, const _TCHAR *command)
 	return NULL;
 }
 
-bool is_cpu(VM_TEMPLATE *vm, DEVICE *device)
+void show_break_reason(OSD *osd, DEVICE *cpu, DEVICE *target, bool hide_bp)
 {
-	for(int i = 0;; i++) {
-		DEVICE *cpu = vm->get_cpu(i);
-		if(cpu == NULL) {
-			return false;
+	DEBUGGER *cpu_debugger = (DEBUGGER *)cpu->get_debugger();
+	DEBUGGER *target_debugger = (DEBUGGER *)target->get_debugger();
+	
+	osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
+	
+	if(cpu_debugger != NULL) {
+		if(cpu_debugger->bp.hit && !hide_bp) {
+			my_printf(osd, _T("breaked at %s: breakpoint %s was hit\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu_debugger->bp.hit_addr));
 		}
-		if(cpu == device) {
-			return true;
+		if(cpu_debugger->rbp.hit) {
+			my_printf(osd, _T("breaked at %s: memory %s was read at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu_debugger->rbp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+		if(cpu_debugger->wbp.hit) {
+			my_printf(osd, _T("breaked at %s: memory %s was written at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu_debugger->wbp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+		if(cpu_debugger->ibp.hit) {
+			my_printf(osd, _T("breaked at %s: port %s was read at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu_debugger->ibp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+		if(cpu_debugger->obp.hit) {
+			my_printf(osd, _T("breaked at %s: port %s was written at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu_debugger->obp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+	}
+	if(target != cpu && target_debugger != NULL) {
+		if(target_debugger->bp.hit) {
+			my_printf(osd, _T("breaked at %s: %s breakpoint %s was hit\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				target->get_device_name(),
+				my_get_value_and_symbol(target, _T("%08X"), target_debugger->bp.hit_addr));
+		}
+		if(target_debugger->rbp.hit) {
+			my_printf(osd, _T("breaked at %s: %s memory %s was read at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				target->get_device_name(),
+				my_get_value_and_symbol(target, _T("%08X"), target_debugger->rbp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+		if(target_debugger->wbp.hit) {
+			my_printf(osd, _T("breaked at %s: %s memory %s was written at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				target->get_device_name(),
+				my_get_value_and_symbol(target, _T("%08X"), target_debugger->wbp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+		if(target_debugger->ibp.hit) {
+			my_printf(osd, _T("breaked at %s: %s port %s was read at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				target->get_device_name(),
+				my_get_value_and_symbol(target, _T("%08X"), target_debugger->ibp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
+		}
+		if(target_debugger->obp.hit) {
+			my_printf(osd, _T("breaked at %s: %s port %s was written at %s\n"),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
+				target->get_device_name(),
+				my_get_value_and_symbol(target, _T("%08X"), target_debugger->obp.hit_addr),
+				my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
 		}
 	}
 }
@@ -208,15 +271,15 @@ void* debugger_thread(void *lpx)
 	
 	// break cpu
 	DEVICE *cpu = p->vm->get_cpu(p->cpu_index);
-	DEBUGGER *debugger = (DEBUGGER *)cpu->get_debugger();
+	DEBUGGER *cpu_debugger = (DEBUGGER *)cpu->get_debugger();
 	DEVICE *target = cpu;
-	DEBUGGER *target_debugger = debugger;
+	DEBUGGER *target_debugger = cpu_debugger;
 	
-	debugger->set_context_device(NULL);
-	debugger->now_going = false;
-	debugger->now_debugging = true;
+	cpu_debugger->set_context_child(NULL);
+	cpu_debugger->now_going = false;
+	cpu_debugger->now_debugging = true;
 	int wait_count = 0;
-	while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
+	while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 		if((wait_count++) == 100) {
 			p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 			my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
@@ -296,10 +359,10 @@ void* debugger_thread(void *lpx)
 						} else if(enter_ptr > 0) {
 							command[enter_ptr] = _T('\0');
 							memcpy(prev_command, command, sizeof(command));
-							if(_tcsicmp(debugger->history[debugger->history_ptr], command) != 0) {
-								memcpy(debugger->history[debugger->history_ptr], command, sizeof(command));
-								if (++debugger->history_ptr >= MAX_COMMAND_HISTORY) {
-									debugger->history_ptr = 0;
+							if(_tcsicmp(cpu_debugger->history[cpu_debugger->history_ptr], command) != 0) {
+								memcpy(cpu_debugger->history[cpu_debugger->history_ptr], command, sizeof(command));
+								if(++cpu_debugger->history_ptr >= MAX_COMMAND_HISTORY) {
+									cpu_debugger->history_ptr = 0;
 								}
 							}
 							my_printf(p->osd, _T("\n"));
@@ -318,20 +381,20 @@ void* debugger_thread(void *lpx)
 									history_ptr = 0;
 								}
 							}
-							int index = debugger->history_ptr - history_ptr;
+							int index = cpu_debugger->history_ptr - history_ptr;
 							while(index < 0) {
 								index += MAX_COMMAND_HISTORY;
 							}
 							while(index >= MAX_COMMAND_HISTORY) {
 								index -= MAX_COMMAND_HISTORY;
 							}
-							if(debugger->history[index][0] != _T('\0')) {
+							if(cpu_debugger->history[index][0] != _T('\0')) {
 								for(int i = 0; i < enter_ptr; i++) {
 									my_putch(p->osd, 0x08);
 									my_putch(p->osd, _T(' '));
 									my_putch(p->osd, 0x08);
 								}
-								memcpy(command, debugger->history[index], sizeof(command));
+								memcpy(command, cpu_debugger->history[index], sizeof(command));
 								my_printf(p->osd, _T("%s"), command);
 								enter_ptr = _tcslen(command);
 							} else {
@@ -620,106 +683,110 @@ void* debugger_thread(void *lpx)
 				if(num >= 2 && params[1][0] == _T('\"')) {
 					my_tcscpy_s(buffer, array_length(buffer), prev_command);
 					if((token = my_tcstok_s(buffer, _T("\""), &context)) != NULL && (token = my_tcstok_s(NULL, _T("\""), &context)) != NULL) {
-						my_tcscpy_s(debugger->file_path, _MAX_PATH, my_absolute_path(token));
+						my_tcscpy_s(cpu_debugger->file_path, _MAX_PATH, my_absolute_path(token));
 					} else {
 						my_printf(p->osd, _T("invalid parameter\n"));
 					}
 				} else if(num == 2) {
-					my_tcscpy_s(debugger->file_path, _MAX_PATH, my_absolute_path(params[1]));
+					my_tcscpy_s(cpu_debugger->file_path, _MAX_PATH, my_absolute_path(params[1]));
 				} else {
 					my_printf(p->osd, _T("invalid parameter number\n"));
 				}
 			} else if(_tcsicmp(params[0], _T("L")) == 0) {
-				FILEIO* fio = new FILEIO();
-				if(check_file_extension(debugger->file_path, _T(".sym"))) {
-					if(target_debugger == NULL) {
-						my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
-					} else if(fio->Fopen(debugger->file_path, FILEIO_READ_ASCII)) {
-						target_debugger->release_symbols();
-						_TCHAR line[1024];
-						while(fio->Fgetts(line, array_length(line)) != NULL) {
-							_TCHAR *next = NULL;
-							_TCHAR *addr = my_tcstok_s(line, _T("\t #$*,;"), &next);
-							while(addr != NULL) {
-								if(_tcslen(addr) > 0) {
-									_TCHAR *name = my_tcstok_s(NULL, _T("\t #$*,;"), &next);
-									while(name != NULL) {
-										while(_tcslen(name) > 0 && (name[_tcslen(name) - 1] == 0x0d || name[_tcslen(name) - 1] == 0x0a)) {
-											name[_tcslen(name) - 1] = _T('\0');
-										}
-										if(_tcslen(name) > 0) {
-											target_debugger->add_symbol(my_hexatoi(NULL, addr), name);
-											break;
-										}
-										name = my_tcstok_s(NULL, _T("\t #$*,;"), &next);
-									}
-								}
-								addr = my_tcstok_s(NULL, _T("\t #$*,;"), &next);
-							}
-						}
-						fio->Fclose();
-					} else {
-						my_printf(p->osd, _T("can't open %s\n"), debugger->file_path);
-					}
-				} else if(check_file_extension(debugger->file_path, _T(".hex"))) {
-					if(fio->Fopen(debugger->file_path, FILEIO_READ_ASCII)) {
-						uint32_t start_addr = 0, linear = 0, segment = 0;
-						if(num >= 2) {
-							start_addr = my_hexatoi(target, params[1]);
-						}
-						char line[1024];
-						while(fio->Fgets(line, sizeof(line)) != NULL) {
-							if(line[0] != ':') continue;
-							int type = my_hexatob(line + 7);
-							if(type == 0x00) {
-								uint32_t bytes = my_hexatob(line + 1);
-								uint32_t addr = my_hexatow(line + 3) + start_addr + linear + segment;
-								for(uint32_t i = 0; i < bytes; i++) {
-									target->write_debug_data8((addr + i) % target->get_debug_data_addr_space(), my_hexatob(line + 9 + 2 * i));
-								}
-							} else if(type == 0x01) {
-								break;
-							} else if(type == 0x02) {
-								segment = my_hexatow(line + 9) << 4;
-								start_addr = 0;
-							} else if(type == 0x04) {
-								linear = my_hexatow(line + 9) << 16;
-								start_addr = 0;
-							}
-						}
-						fio->Fclose();
-					} else {
-						my_printf(p->osd, _T("can't open %s\n"), debugger->file_path);
-					}
+				if(target_debugger == NULL) {
+					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
 				} else {
-					if(fio->Fopen(debugger->file_path, FILEIO_READ_BINARY)) {
-						uint32_t start_addr = 0x100, end_addr = (uint32_t)(target->get_debug_data_addr_space() - 1);
-						if(num >= 2) {
-							start_addr = my_hexatoi(target, params[1]) % target->get_debug_data_addr_space();
-						}
-						if(num >= 3) {
-							end_addr = my_hexatoi(target, params[2]) % target->get_debug_data_addr_space();
-						}
-						for(uint32_t addr = start_addr; addr <= end_addr; addr++) {
-							int data = fio->Fgetc();
-							if(data == EOF) {
-								break;
+					FILEIO* fio = new FILEIO();
+					if(check_file_extension(cpu_debugger->file_path, _T(".sym"))) {
+						if(fio->Fopen(cpu_debugger->file_path, FILEIO_READ_ASCII)) {
+							target_debugger->release_symbols();
+							_TCHAR line[1024];
+							while(fio->Fgetts(line, array_length(line)) != NULL) {
+								_TCHAR *next = NULL;
+								_TCHAR *addr = my_tcstok_s(line, _T("\t #$*,;"), &next);
+								while(addr != NULL) {
+									if(_tcslen(addr) > 0) {
+										_TCHAR *name = my_tcstok_s(NULL, _T("\t #$*,;"), &next);
+										while(name != NULL) {
+											while(_tcslen(name) > 0 && (name[_tcslen(name) - 1] == 0x0d || name[_tcslen(name) - 1] == 0x0a)) {
+												name[_tcslen(name) - 1] = _T('\0');
+											}
+											if(_tcslen(name) > 0) {
+												target_debugger->add_symbol(my_hexatoi(NULL, addr), name);
+												break;
+											}
+											name = my_tcstok_s(NULL, _T("\t #$*,;"), &next);
+										}
+									}
+									addr = my_tcstok_s(NULL, _T("\t #$*,;"), &next);
+								}
 							}
-							target->write_debug_data8(addr % target->get_debug_data_addr_space(), data);
+							fio->Fclose();
+						} else {
+							my_printf(p->osd, _T("can't open %s\n"), cpu_debugger->file_path);
 						}
-						fio->Fclose();
+					} else if(check_file_extension(cpu_debugger->file_path, _T(".hex"))) {
+						if(fio->Fopen(cpu_debugger->file_path, FILEIO_READ_ASCII)) {
+							uint32_t start_addr = 0, linear = 0, segment = 0;
+							if(num >= 2) {
+								start_addr = my_hexatoi(target, params[1]);
+							}
+							char line[1024];
+							while(fio->Fgets(line, sizeof(line)) != NULL) {
+								if(line[0] != ':') continue;
+								int type = my_hexatob(line + 7);
+								if(type == 0x00) {
+									uint32_t bytes = my_hexatob(line + 1);
+									uint32_t addr = my_hexatow(line + 3) + start_addr + linear + segment;
+									for(uint32_t i = 0; i < bytes; i++) {
+										target->write_debug_data8((addr + i) % target->get_debug_data_addr_space(), my_hexatob(line + 9 + 2 * i));
+									}
+								} else if(type == 0x01) {
+									break;
+								} else if(type == 0x02) {
+									segment = my_hexatow(line + 9) << 4;
+									start_addr = 0;
+								} else if(type == 0x04) {
+									linear = my_hexatow(line + 9) << 16;
+									start_addr = 0;
+								}
+							}
+							fio->Fclose();
+						} else {
+							my_printf(p->osd, _T("can't open %s\n"), cpu_debugger->file_path);
+						}
 					} else {
-						my_printf(p->osd, _T("can't open %s\n"), debugger->file_path);
+						if(fio->Fopen(cpu_debugger->file_path, FILEIO_READ_BINARY)) {
+							uint32_t start_addr = 0x100, end_addr = (uint32_t)(target->get_debug_data_addr_space() - 1);
+							if(num >= 2) {
+								start_addr = my_hexatoi(target, params[1]) % target->get_debug_data_addr_space();
+							}
+							if(num >= 3) {
+								end_addr = my_hexatoi(target, params[2]) % target->get_debug_data_addr_space();
+							}
+							for(uint32_t addr = start_addr; addr <= end_addr; addr++) {
+								int data = fio->Fgetc();
+								if(data == EOF) {
+									break;
+								}
+								target->write_debug_data8(addr % target->get_debug_data_addr_space(), data);
+							}
+							fio->Fclose();
+						} else {
+							my_printf(p->osd, _T("can't open %s\n"), cpu_debugger->file_path);
+						}
 					}
+					delete fio;
 				}
-				delete fio;
 			} else if(_tcsicmp(params[0], _T("W")) == 0) {
-				if(num == 3) {
+				if(target_debugger == NULL) {
+					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
+				} else if(num == 3) {
 					uint32_t start_addr = my_hexatoi(target, params[1]) % target->get_debug_data_addr_space(), end_addr = my_hexatoi(target, params[2]) % target->get_debug_data_addr_space();
 					FILEIO* fio = new FILEIO();
-					if(check_file_extension(debugger->file_path, _T(".hex"))) {
+					if(check_file_extension(cpu_debugger->file_path, _T(".hex"))) {
 						// write intel hex format file
-						if(fio->Fopen(debugger->file_path, FILEIO_WRITE_ASCII)) {
+						if(fio->Fopen(cpu_debugger->file_path, FILEIO_WRITE_ASCII)) {
 							uint32_t addr = start_addr;
 							while(addr <= end_addr) {
 								uint32_t len = min(end_addr - addr + 1, (uint32_t)16);
@@ -735,16 +802,16 @@ void* debugger_thread(void *lpx)
 							fio->Fprintf(":00000001FF\n");
 							fio->Fclose();
 						} else {
-							my_printf(p->osd, _T("can't open %s\n"), debugger->file_path);
+							my_printf(p->osd, _T("can't open %s\n"), cpu_debugger->file_path);
 						}
 					} else {
-						if(fio->Fopen(debugger->file_path, FILEIO_WRITE_BINARY)) {
+						if(fio->Fopen(cpu_debugger->file_path, FILEIO_WRITE_BINARY)) {
 							for(uint32_t addr = start_addr; addr <= end_addr; addr++) {
 								fio->Fputc(target->read_debug_data8(addr % target->get_debug_data_addr_space()));
 							}
 							fio->Fclose();
 						} else {
-							my_printf(p->osd, _T("can't open %s\n"), debugger->file_path);
+							my_printf(p->osd, _T("can't open %s\n"), cpu_debugger->file_path);
 						}
 					}
 					delete fio;
@@ -763,7 +830,7 @@ void* debugger_thread(void *lpx)
 				if(target_debugger == NULL) {
 					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
 				} else if(num == 1) {
-					for(symbol_t* symbol = debugger->first_symbol; symbol; symbol = symbol->next_symbol) {
+					for(symbol_t* symbol = target_debugger->first_symbol; symbol; symbol = symbol->next_symbol) {
 						my_printf(p->osd, _T("%08X %s\n"), symbol->addr, symbol->name);
 					}
 				} else {
@@ -771,24 +838,28 @@ void* debugger_thread(void *lpx)
 				}
 			} else if(_tcsicmp(params[0], _T( "BP")) == 0 ||
 			          _tcsicmp(params[0], _T( "CP")) == 0) {
-				break_point_t *bp = get_break_point(debugger, params[0]);
-				if(num == 2) {
-					uint32_t addr = my_hexatoi(cpu, params[1]);
-					bool found = false;
-					for(int i = 0; i < MAX_BREAK_POINTS && !found; i++) {
-						if(bp->table[i].status == 0 || (bp->table[i].addr == addr && bp->table[i].mask == cpu->get_debug_prog_addr_mask())) {
-							bp->table[i].addr = addr;
-							bp->table[i].mask = cpu->get_debug_prog_addr_mask();
-							bp->table[i].status = 1;
-							bp->table[i].check_point = (params[0][0] == 'C' || params[0][0] == 'c' || params[0][1] == 'C' || params[0][1] == 'c');
-							found = true;
-						}
-					}
-					if(!found) {
-						my_printf(p->osd, _T("too many break points\n"));
-					}
+				if(target_debugger == NULL) {
+					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
 				} else {
-					my_printf(p->osd, _T("invalid parameter number\n"));
+					break_point_t *bp = get_break_point(target_debugger, params[0]);
+					if(num == 2) {
+						uint32_t addr = my_hexatoi(target, params[1]);
+						bool found = false;
+						for(int i = 0; i < MAX_BREAK_POINTS && !found; i++) {
+							if(bp->table[i].status == 0 || (bp->table[i].addr == addr && bp->table[i].mask == target->get_debug_prog_addr_mask())) {
+								bp->table[i].addr = addr;
+								bp->table[i].mask = target->get_debug_prog_addr_mask();
+								bp->table[i].status = 1;
+								bp->table[i].check_point = (params[0][0] == 'C' || params[0][0] == 'c' || params[0][1] == 'C' || params[0][1] == 'c');
+								found = true;
+							}
+						}
+						if(!found) {
+							my_printf(p->osd, _T("too many break points\n"));
+						}
+					} else {
+						my_printf(p->osd, _T("invalid parameter number\n"));
+					}
 				}
 			} else if(_tcsicmp(params[0], _T("RBP")) == 0 || _tcsicmp(params[0], _T("WBP")) == 0 ||
 			          _tcsicmp(params[0], _T("RCP")) == 0 || _tcsicmp(params[0], _T("WCP")) == 0) {
@@ -797,12 +868,12 @@ void* debugger_thread(void *lpx)
 				} else {
 					break_point_t *bp = get_break_point(target_debugger, params[0]);
 					if(num == 2) {
-						uint32_t addr = my_hexatoi(cpu, params[1]);
+						uint32_t addr = my_hexatoi(target, params[1]);
 						bool found = false;
 						for(int i = 0; i < MAX_BREAK_POINTS && !found; i++) {
-							if(bp->table[i].status == 0 || (bp->table[i].addr == addr && bp->table[i].mask == cpu->get_debug_prog_addr_mask())) {
+							if(bp->table[i].status == 0 || (bp->table[i].addr == addr && bp->table[i].mask == target->get_debug_data_addr_mask())) {
 								bp->table[i].addr = addr;
-								bp->table[i].mask = cpu->get_debug_prog_addr_mask();
+								bp->table[i].mask = target->get_debug_data_addr_mask();
 								bp->table[i].status = 1;
 								bp->table[i].check_point = (params[0][0] == 'C' || params[0][0] == 'c' || params[0][1] == 'C' || params[0][1] == 'c');
 								found = true;
@@ -822,9 +893,9 @@ void* debugger_thread(void *lpx)
 				} else {
 					break_point_t *bp = get_break_point(target_debugger, params[0]);
 					if(num == 2 || num == 3) {
-						uint32_t addr = my_hexatoi(cpu, params[1]), mask = 0xff;
+						uint32_t addr = my_hexatoi(target, params[1]), mask = 0xff;
 						if(num == 3) {
-							mask = my_hexatoi(cpu, params[2]);
+							mask = my_hexatoi(target, params[2]);
 						}
 						bool found = false;
 						for(int i = 0; i < MAX_BREAK_POINTS && !found; i++) {
@@ -843,24 +914,7 @@ void* debugger_thread(void *lpx)
 						my_printf(p->osd, _T("invalid parameter number\n"));
 					}
 				}
-			} else if(_tcsicmp(params[0], _T("BC")) == 0) {
-				break_point_t *bp = get_break_point(debugger, params[0]);
-				if(num == 2 && (_tcsicmp(params[1], _T("*")) == 0 || _tcsicmp(params[1], _T("ALL")) == 0)) {
-					memset(bp->table, 0, sizeof(bp->table));
-				} else if(num >= 2) {
-					for(int i = 1; i < num; i++) {
-						int index = my_hexatoi(cpu, params[i]);
-						if(!(index >= 0 && index < MAX_BREAK_POINTS)) {
-							my_printf(p->osd, _T("invalid index %x\n"), index);
-						} else {
-							bp->table[index].addr = bp->table[index].mask = 0;
-							bp->table[index].status = 0;
-						}
-					}
-				} else {
-					my_printf(p->osd, _T("invalid parameter number\n"));
-				}
-			} else if(_tcsicmp(params[0], _T("RBC")) == 0 || _tcsicmp(params[0], _T("WBC")) == 0 || _tcsicmp(params[0], _T("IBC")) == 0 || _tcsicmp(params[0], _T("OBC")) == 0) {
+			} else if(_tcsicmp(params[0], _T("BC")) == 0 || _tcsicmp(params[0], _T("RBC")) == 0 || _tcsicmp(params[0], _T("WBC")) == 0 || _tcsicmp(params[0], _T("IBC")) == 0 || _tcsicmp(params[0], _T("OBC")) == 0) {
 				if(target_debugger == NULL) {
 					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
 				} else {
@@ -869,7 +923,7 @@ void* debugger_thread(void *lpx)
 						memset(bp->table, 0, sizeof(bp->table));
 					} else if(num >= 2) {
 						for(int i = 1; i < num; i++) {
-							int index = my_hexatoi(cpu, params[i]);
+							int index = my_hexatoi(target, params[i]);
 							if(!(index >= 0 && index < MAX_BREAK_POINTS)) {
 								my_printf(p->osd, _T("invalid index %x\n"), index);
 							} else {
@@ -881,32 +935,8 @@ void* debugger_thread(void *lpx)
 						my_printf(p->osd, _T("invalid parameter number\n"));
 					}
 				}
-			} else if(_tcsicmp(params[0], _T("BD")) == 0 ||
-			          _tcsicmp(params[0], _T("BE")) == 0) {
-				break_point_t *bp = get_break_point(debugger, params[0]);
-				bool enabled = (params[0][1] == _T('E') || params[0][1] == _T('e') || params[0][2] == _T('E') || params[0][2] == _T('e'));
-				if(num == 2 && (_tcsicmp(params[1], _T("*")) == 0 || _tcsicmp(params[1], _T("ALL")) == 0)) {
-					for(int i = 0; i < MAX_BREAK_POINTS; i++) {
-						if(bp->table[i].status != 0) {
-							bp->table[i].status = enabled ? 1 : -1;
-						}
-					}
-				} else if(num >= 2) {
-					for(int i = 1; i < num; i++) {
-						int index = my_hexatoi(cpu, params[i]);
-						if(!(index >= 0 && index < MAX_BREAK_POINTS)) {
-							my_printf(p->osd, _T("invalid index %x\n"), index);
-						} else if(bp->table[index].status == 0) {
-							my_printf(p->osd, _T("break point %x is null\n"), index);
-						} else {
-							bp->table[index].status = enabled ? 1 : -1;
-						}
-					}
-				} else {
-					my_printf(p->osd, _T("invalid parameter number\n"));
-				}
-			} else if(_tcsicmp(params[0], _T("RBD")) == 0 || _tcsicmp(params[0], _T("WBD")) == 0 || _tcsicmp(params[0], _T("IBD")) == 0 || _tcsicmp(params[0], _T("OBD")) == 0 ||
-			          _tcsicmp(params[0], _T("RBE")) == 0 || _tcsicmp(params[0], _T("WBE")) == 0 || _tcsicmp(params[0], _T("IBE")) == 0 || _tcsicmp(params[0], _T("OBE")) == 0) {
+			} else if(_tcsicmp(params[0], _T("BD")) == 0 || _tcsicmp(params[0], _T("RBD")) == 0 || _tcsicmp(params[0], _T("WBD")) == 0 || _tcsicmp(params[0], _T("IBD")) == 0 || _tcsicmp(params[0], _T("OBD")) == 0 ||
+			          _tcsicmp(params[0], _T("BE")) == 0 || _tcsicmp(params[0], _T("RBE")) == 0 || _tcsicmp(params[0], _T("WBE")) == 0 || _tcsicmp(params[0], _T("IBE")) == 0 || _tcsicmp(params[0], _T("OBE")) == 0) {
 				if(target_debugger == NULL) {
 					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
 				} else {
@@ -920,7 +950,7 @@ void* debugger_thread(void *lpx)
 						}
 					} else if(num >= 2) {
 						for(int i = 1; i < num; i++) {
-							int index = my_hexatoi(cpu, params[i]);
+							int index = my_hexatoi(target, params[i]);
 							if(!(index >= 0 && index < MAX_BREAK_POINTS)) {
 								my_printf(p->osd, _T("invalid index %x\n"), index);
 							} else if(bp->table[index].status == 0) {
@@ -933,21 +963,7 @@ void* debugger_thread(void *lpx)
 						my_printf(p->osd, _T("invalid parameter number\n"));
 					}
 				}
-			} else if(_tcsicmp(params[0], _T("BL")) == 0) {
-				if(num == 1) {
-					break_point_t *bp = get_break_point(debugger, params[0]);
-					for(int i = 0; i < MAX_BREAK_POINTS; i++) {
-						if(bp->table[i].status) {
-							my_printf(p->osd, _T("%x %c %s %s\n"), i,
-								bp->table[i].status == 1 ? _T('e') : _T('d'),
-								my_get_value_and_symbol(cpu, _T("%08X"), bp->table[i].addr),
-								bp->table[i].check_point ? "checkpoint" : "");
-						}
-					}
-				} else {
-					my_printf(p->osd, _T("invalid parameter number\n"));
-				}
-			} else if(_tcsicmp(params[0], _T("RBL")) == 0 || _tcsicmp(params[0], _T("WBL")) == 0) {
+			} else if(_tcsicmp(params[0], _T("BL")) == 0 || _tcsicmp(params[0], _T("RBL")) == 0 || _tcsicmp(params[0], _T("WBL")) == 0) {
 				if(target_debugger == NULL) {
 					my_printf(p->osd, _T("debugger is not attached to target device %s\n"), target->this_device_name);
 				} else {
@@ -957,7 +973,7 @@ void* debugger_thread(void *lpx)
 							if(bp->table[i].status) {
 								my_printf(p->osd, _T("%x %c %s %s\n"), i,
 									bp->table[i].status == 1 ? _T('e') : _T('d'),
-									my_get_value_and_symbol(cpu, _T("%08X"), bp->table[i].addr),
+									my_get_value_and_symbol(target, _T("%08X"), bp->table[i].addr),
 									bp->table[i].check_point ? "checkpoint" : "");
 							}
 						}
@@ -975,7 +991,7 @@ void* debugger_thread(void *lpx)
 							if(bp->table[i].status) {
 								my_printf(p->osd, _T("%x %c %s %08X %s\n"), i,
 									bp->table[i].status == 1 ? _T('e') : _T('d'),
-									my_get_value_and_symbol(cpu, _T("%08X"), bp->table[i].addr),
+									my_get_value_and_symbol(target, _T("%08X"), bp->table[i].addr),
 									bp->table[i].mask,
 									bp->table[i].check_point ? "checkpoint" : "");
 							}
@@ -988,32 +1004,32 @@ void* debugger_thread(void *lpx)
 				if(num == 1 || num == 2) {
 					bool break_points_stored = false;
 					if(_tcsicmp(params[0], _T("P")) == 0) {
-						debugger->store_break_points();
-						debugger->bp.table[0].addr = (cpu->get_next_pc() + cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer))) & cpu->get_debug_prog_addr_mask();
-						debugger->bp.table[0].mask = cpu->get_debug_prog_addr_mask();
-						debugger->bp.table[0].status = 1;
-						debugger->bp.table[0].check_point = false;
+						cpu_debugger->store_break_points();
+						cpu_debugger->bp.table[0].addr = (cpu->get_next_pc() + cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer))) & cpu->get_debug_prog_addr_mask();
+						cpu_debugger->bp.table[0].mask = cpu->get_debug_prog_addr_mask();
+						cpu_debugger->bp.table[0].status = 1;
+						cpu_debugger->bp.table[0].check_point = false;
 						break_points_stored = true;
 					} else if(num >= 2) {
-						debugger->store_break_points();
-						debugger->bp.table[0].addr = my_hexatoi(cpu, params[1]) & cpu->get_debug_prog_addr_mask();
-						debugger->bp.table[0].mask = cpu->get_debug_prog_addr_mask();
-						debugger->bp.table[0].status = 1;
-						debugger->bp.table[0].check_point = false;
+						cpu_debugger->store_break_points();
+						cpu_debugger->bp.table[0].addr = my_hexatoi(cpu, params[1]) & cpu->get_debug_prog_addr_mask();
+						cpu_debugger->bp.table[0].mask = cpu->get_debug_prog_addr_mask();
+						cpu_debugger->bp.table[0].status = 1;
+						cpu_debugger->bp.table[0].check_point = false;
 						break_points_stored = true;
 					}
 RESTART_GO:
-					debugger->now_going = true;
-					debugger->now_suspended = false;
+					cpu_debugger->now_going = true;
+					cpu_debugger->now_suspended = false;
 #if defined(_MSC_VER)
-					while(!p->request_terminate && !debugger->now_suspended) {
+					while(!p->request_terminate && !cpu_debugger->now_suspended) {
 						if(p->osd->is_console_key_pressed(VK_ESCAPE) && p->osd->is_console_active()) {
 							break;
 						}
 						p->osd->sleep(10);
 					}
 #elif defined(OSD_QT)
-					while(!p->request_terminate && !debugger->now_suspended) {
+					while(!p->request_terminate && !cpu_debugger->now_suspended) {
 						if(p->osd->console_input_string() != NULL && p->osd->is_console_active()) {
 							p->osd->clear_console_input_string();
 							break;
@@ -1022,16 +1038,16 @@ RESTART_GO:
 					}
 #endif
 					// break cpu
-					debugger->now_going = false;
+					cpu_debugger->now_going = false;
 					wait_count = 0;
-					while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
+					while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 						if((wait_count++) == 100) {
 							p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 							my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
 						}
 						p->osd->sleep(10);
 					}
-					if(cpu == target) {
+					if(target == cpu) {
 						dasm_addr = cpu->get_next_pc();
 					}
 					
@@ -1044,7 +1060,7 @@ RESTART_GO:
 						my_printf(p->osd, _T("%s\n"), buffer);
 					}
 					
-					if(cpu != target) {
+					if(target != cpu) {
 						p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 						if(target->debug_dasm(target->get_next_pc(), buffer, array_length(buffer)) != 0) {
 							my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(target, _T("%08X"), target->get_next_pc()), buffer);
@@ -1054,73 +1070,17 @@ RESTART_GO:
 						}
 					}
 					
-					if(debugger->hit() || (target_debugger != NULL && target_debugger->hit())) {
-						p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
-						if(debugger->bp.hit) {
-							if(_tcsicmp(params[0], _T("G")) == 0) {
-								my_printf(p->osd, _T("breaked at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
-							}
-							debugger->clear_hit();
-							if(debugger->bp.restart) goto RESTART_GO;
-						} else if(debugger->rbp.hit) {
-							my_printf(p->osd, _T("breaked at %s: memory %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								my_get_value_and_symbol(cpu, _T("%08X"), debugger->rbp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							debugger->clear_hit();
-							if(debugger->rbp.restart) goto RESTART_GO;
-						} else if(debugger->wbp.hit) {
-							my_printf(p->osd, _T("breaked at %s: memory %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								my_get_value_and_symbol(cpu, _T("%08X"), debugger->wbp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							debugger->clear_hit();
-							if(debugger->wbp.restart) goto RESTART_GO;
-						} else if(debugger->ibp.hit) {
-							my_printf(p->osd, _T("breaked at %s: port %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								my_get_value_and_symbol(cpu, _T("%08X"), debugger->ibp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							debugger->clear_hit();
-							if(debugger->ibp.restart) goto RESTART_GO;
-						} else if(debugger->obp.hit) {
-							my_printf(p->osd, _T("breaked at %s: port %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								my_get_value_and_symbol(cpu, _T("%08X"), debugger->obp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							debugger->clear_hit();
-							if(debugger->obp.restart) goto RESTART_GO;
-						} else if(target_debugger != NULL && target_debugger->rbp.hit) {
-							my_printf(p->osd, _T("breaked at %s: %s memory %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								target->get_device_name(),
-								my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->rbp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							target_debugger->clear_hit();
-							if(target_debugger->rbp.restart) goto RESTART_GO;
-						} else if(target_debugger != NULL && target_debugger->wbp.hit) {
-							my_printf(p->osd, _T("breaked at %s: %s memory %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								target->get_device_name(),
-								my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->wbp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							target_debugger->clear_hit();
-							if(target_debugger->wbp.restart) goto RESTART_GO;
-						} else if(target_debugger != NULL && target_debugger->ibp.hit) {
-							my_printf(p->osd, _T("breaked at %s: %s port %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								target->get_device_name(),
-								my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->ibp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							target_debugger->clear_hit();
-							if(target_debugger->ibp.restart) goto RESTART_GO;
-						} else if(target_debugger != NULL && target_debugger->obp.hit) {
-							my_printf(p->osd, _T("breaked at %s: %s port %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-								target->get_device_name(),
-								my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->obp.hit_addr),
-								my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-							target_debugger->clear_hit();
-							if(target_debugger->obp.restart) goto RESTART_GO;
-						}
+					if(cpu_debugger->hit()) {
+						show_break_reason(p->osd, cpu, target, (_tcsicmp(params[0], _T("P")) == 0));
+						bool restart = cpu_debugger->restartable();
+						cpu_debugger->clear_hit();
+						if(restart) goto RESTART_GO;
 					} else {
 						p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 						my_printf(p->osd, _T("breaked at %s: esc key was pressed\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
 					}
 					if(break_points_stored) {
-						debugger->restore_break_points();
+						cpu_debugger->restore_break_points();
 					}
 					p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 					cpu->debug_dasm(cpu->get_next_pc(), buffer, array_length(buffer));
@@ -1136,17 +1096,17 @@ RESTART_GO:
 						steps = my_hexatoi(cpu, params[1]);
 					}
 					for(int i = 0; i < steps; i++) {
-						debugger->now_going = false;
-						debugger->now_suspended = false;
+						cpu_debugger->now_going = false;
+						cpu_debugger->now_suspended = false;
 						wait_count = 0;
-						while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
+						while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 							if((wait_count++) == 100) {
 								p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 								my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
 							}
 							p->osd->sleep(10);
 						}
-						if(cpu == target) {
+						if(target == cpu) {
 							dasm_addr = cpu->get_next_pc();
 						}
 						
@@ -1159,7 +1119,7 @@ RESTART_GO:
 							my_printf(p->osd, _T("%s\n"), buffer);
 						}
 						
-						if(cpu != target) {
+						if(target != cpu) {
 							p->osd->set_console_text_attribute(FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 							if(target->debug_dasm(target->get_next_pc(), buffer, array_length(buffer)) != 0) {
 								my_printf(p->osd, _T("next\t%s  %s\n"), my_get_value_and_symbol(target, _T("%08X"), target->get_next_pc()), buffer);
@@ -1169,65 +1129,11 @@ RESTART_GO:
 							}
 						}
 						
-						if(debugger->hit() || (target_debugger != NULL && target_debugger->hit())) {
-							p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
-							if(debugger->bp.hit) {
-								my_printf(p->osd, _T("breaked at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()));
-								debugger->clear_hit();
-								if(!debugger->bp.restart) break;
-							} else if(debugger->rbp.hit) {
-								my_printf(p->osd, _T("breaked at %s: memory %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									my_get_value_and_symbol(cpu, _T("%08X"), debugger->rbp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								debugger->clear_hit();
-								if(!debugger->rbp.restart) break;
-							} else if(debugger->wbp.hit) {
-								my_printf(p->osd, _T("breaked at %s: memory %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									my_get_value_and_symbol(cpu, _T("%08X"), debugger->wbp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								debugger->clear_hit();
-								if(!debugger->wbp.restart) break;
-							} else if(debugger->ibp.hit) {
-								my_printf(p->osd, _T("breaked at %s: port %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									my_get_value_and_symbol(cpu, _T("%08X"), debugger->ibp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								debugger->clear_hit();
-								if(!debugger->ibp.restart) break;
-							} else if(debugger->obp.hit) {
-								my_printf(p->osd, _T("breaked at %s: port %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									my_get_value_and_symbol(cpu, _T("%08X"), debugger->obp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								debugger->clear_hit();
-								if(!debugger->obp.restart) break;
-							} else if(target_debugger != NULL && target_debugger->rbp.hit) {
-								my_printf(p->osd, _T("breaked at %s: %s memory %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									target->get_device_name(),
-									my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->rbp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								target_debugger->clear_hit();
-								if(!target_debugger->rbp.restart) break;
-							} else if(target_debugger != NULL && target_debugger->wbp.hit) {
-								my_printf(p->osd, _T("breaked at %s: %s memory %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									target->get_device_name(),
-									my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->wbp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								target_debugger->clear_hit();
-								if(!target_debugger->wbp.restart) break;
-							} else if(target_debugger != NULL && target_debugger->ibp.hit) {
-								my_printf(p->osd, _T("breaked at %s: %s port %s was read at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									target->get_device_name(),
-									my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->ibp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								target_debugger->clear_hit();
-								if(!target_debugger->ibp.restart) break;
-							} else if(target_debugger != NULL && target_debugger->obp.hit) {
-								my_printf(p->osd, _T("breaked at %s: %s port %s was written at %s\n"), my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_next_pc()),
-									target->get_device_name(),
-									my_get_value_and_symbol(cpu, _T("%08X"), target_debugger->obp.hit_addr),
-									my_get_value_and_symbol(cpu, _T("%08X"), cpu->get_pc()));
-								target_debugger->clear_hit();
-								if(!target_debugger->obp.restart) break;
-							}
+						if(cpu_debugger->hit()) {
+							show_break_reason(p->osd, cpu, target, false);
+							bool restart = cpu_debugger->restartable();
+							cpu_debugger->clear_hit();
+							if(!restart) break;
 						} else if(p->osd->is_console_key_pressed(VK_ESCAPE) && p->osd->is_console_active()) {
 							break;
 						}
@@ -1308,7 +1214,7 @@ RESTART_GO:
 				} else if(_tcsicmp(params[1], _T("DEVICE")) == 0) {
 					if(num == 2) {
 						for(DEVICE* device = p->vm->first_device; device; device = device->next_device) {
-							if(!device->is_debugger()) {
+							if(device->is_debugger_available()) {
 								my_printf(p->osd, _T("ID=%02X  %s"), device->this_device_id, device->this_device_name);
 								if(device == target) {
 									p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
@@ -1325,18 +1231,18 @@ RESTART_GO:
 						} else {
 							device = p->vm->get_device(my_hexatoi(NULL, params[2]));
 						}
-						if(device != NULL && !device->is_debugger()) {
+						if(device != NULL && device->is_debugger_available()) {
 							if(device != target) {
 								if(target_debugger != NULL) {
 									target_debugger->now_device_debugging = false;
 								}
-								debugger->set_context_device(NULL);
+								cpu_debugger->set_context_child(NULL);
 								target = device;
 								target_debugger = (DEBUGGER *)target->get_debugger();
 								if(target_debugger != NULL) {
 									if(target != cpu) {
 										target_debugger->now_device_debugging = true;
-										debugger->set_context_device(target_debugger);
+										cpu_debugger->set_context_child(target_debugger);
 									} else {
 										target_debugger->now_device_debugging = false;
 									}
@@ -1353,7 +1259,7 @@ RESTART_GO:
 				} else if(_tcsicmp(params[1], _T("CPU")) == 0) {
 					if(num == 2) {
 						for(DEVICE* device = p->vm->first_device; device; device = device->next_device) {
-							if(is_cpu(p->vm, device) && !device->is_debugger() && device->get_debugger() != NULL) {
+							if(device->is_cpu() && device->get_debugger() != NULL) {
 								my_printf(p->osd, _T("ID=%02X  %s"), device->this_device_id, device->this_device_name);
 								if(device == cpu) {
 									p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
@@ -1365,22 +1271,22 @@ RESTART_GO:
 						}
 					} else if(num == 3) {
 						DEVICE *device = p->vm->get_device(my_hexatoi(NULL, params[2]));
-						if(device != NULL && is_cpu(p->vm, device) && !device->is_debugger() && device->get_debugger() != NULL) {
+						if(device != NULL && device->is_cpu() && device->get_debugger() != NULL) {
 							if(device != cpu) {
-								DEBUGGER *prev_debugger = debugger;
+								DEBUGGER *prev_debugger = cpu_debugger;
 								cpu = device;
-								debugger = (DEBUGGER *)cpu->get_debugger();
-								debugger->set_context_device(NULL);
-								debugger->now_going = false;
-								debugger->now_debugging = true;
+								cpu_debugger = (DEBUGGER *)cpu->get_debugger();
+								cpu_debugger->set_context_child(NULL);
+								cpu_debugger->now_going = false;
+								cpu_debugger->now_debugging = true;
 								prev_debugger->now_debugging = prev_debugger->now_going = prev_debugger->now_suspended = prev_debugger->now_waiting = false;
 								if(target_debugger != NULL) {
 									target_debugger->now_device_debugging = false;
 								}
-								target = device;
-								target_debugger = debugger;
+								target = cpu;
+								target_debugger = cpu_debugger;
 								wait_count = 0;
-								while(!p->request_terminate && !(debugger->now_suspended && debugger->now_waiting)) {
+								while(!p->request_terminate && !(cpu_debugger->now_suspended && cpu_debugger->now_waiting)) {
 									if((wait_count++) == 100) {
 										p->osd->set_console_text_attribute(FOREGROUND_RED | FOREGROUND_INTENSITY);
 										my_printf(p->osd, _T("waiting until cpu is suspended...\n"));
@@ -1412,6 +1318,8 @@ RESTART_GO:
 				} else {
 					my_printf(p->osd, _T("unknown command ! %s\n"), params[1]);
 				}
+			} else if(_tcsicmp(params[0], _T("!!")) == 0) {
+				// do nothing
 			} else if(_tcsicmp(params[0], _T("?")) == 0) {
 				my_printf(p->osd, _T("D [<range>] - dump memory\n"));
 				my_printf(p->osd, _T("E[{B,W,D}] <address> <list> - edit memory (byte,word,dword)\n"));
@@ -1436,12 +1344,12 @@ RESTART_GO:
 				my_printf(p->osd, _T("{R,W}BP <address> - set breakpoint (break at memory access)\n"));
 				my_printf(p->osd, _T("{I,O}BP <port> [<mask>] - set breakpoint (break at i/o access)\n"));
 				my_printf(p->osd, _T("[{R,W,I,O}]B{C,D,E} {*,<list>} - clear/disable/enable breakpoint(s)\n"));
-				my_printf(p->osd, _T("[{R,W,I,O}]BL - list breakpoint(s)\n"));
+				my_printf(p->osd, _T("[{R,W,I,O}]BL - list breakpoints\n"));
 				my_printf(p->osd, _T("[{R,W,I,O}]CP <address/port> [<mask>] - set checkpoint (don't break)\n"));
 				
 				my_printf(p->osd, _T("G - go (press esc key to break)\n"));
-				my_printf(p->osd, _T("G <address> - go and break at address\n"));
-				my_printf(p->osd, _T("P - trace one opcode (step over)\n"));
+				my_printf(p->osd, _T("G <address> - go and break at address (ignore breakpoints)\n"));
+				my_printf(p->osd, _T("P - trace one opcode (step over, ignore breakpoints)\n"));
 				my_printf(p->osd, _T("T [<count>] - trace (step in)\n"));
 				my_printf(p->osd, _T("Q - quit\n"));
 				
@@ -1450,10 +1358,11 @@ RESTART_GO:
 				
 				my_printf(p->osd, _T("! reset [all/cpu/target] - reset\n"));
 				my_printf(p->osd, _T("! key <code> [<msec>] - press key\n"));
-				my_printf(p->osd, _T("! device - enumerate device\n"));
+				my_printf(p->osd, _T("! device - enumerate debugger available device\n"));
 				my_printf(p->osd, _T("! device <id/cpu> - select target device\n"));
-				my_printf(p->osd, _T("! cpu - enumerate cpu\n"));
+				my_printf(p->osd, _T("! cpu - enumerate debugger available cpu\n"));
 				my_printf(p->osd, _T("! cpu <id> - select target cpu\n"));
+				my_printf(p->osd, _T("!! <remark> - do nothing\n"));
 				
 				my_printf(p->osd, _T("<value> - hexa, decimal(%%d), ascii('a')\n"));
 			} else {
@@ -1467,7 +1376,7 @@ RESTART_GO:
 		if(target_debugger != NULL) {
 			target_debugger->now_device_debugging = false;
 		}
-		debugger->now_debugging = debugger->now_going = debugger->now_suspended = debugger->now_waiting = false;
+		cpu_debugger->now_debugging = cpu_debugger->now_going = cpu_debugger->now_suspended = cpu_debugger->now_waiting = false;
 	} catch(...) {
 	}
 	

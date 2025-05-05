@@ -1204,7 +1204,8 @@ bool M6502::write_debug_reg(const _TCHAR *reg, uint32_t data)
 bool M6502::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	my_stprintf_s(buffer, buffer_len,
-	_T("PC = %04X  A = %02X  X = %02X  Y = %02X  S = %02X  P = %02X [%c%c%c%c%c%c%c%c]\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
+	_T("PC = %04X  A = %02X  X = %02X  Y = %02X  S = %02X  P = %02X [%c%c%c%c%c%c%c%c]\n")
+	_T("Clocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
 	PCW, A, X, Y, S, P,
 	(P & F_N) ? _T('N') : _T('-'), (P & F_V) ? _T('V') : _T('-'), (P & F_T) ? _T('T') : _T('-'), (P & F_B) ? _T('B') : _T('-'), 
 	(P & F_D) ? _T('D') : _T('-'), (P & F_I) ? _T('I') : _T('-'), (P & F_Z) ? _T('Z') : _T('-'), (P & F_C) ? _T('C') : _T('-'),

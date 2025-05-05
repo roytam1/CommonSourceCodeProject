@@ -38,6 +38,10 @@ public:
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
 #ifdef USE_DEBUGGER
+	bool is_debugger_available()
+	{
+		return true;
+	}
 	uint64_t get_debug_data_addr_space()
 	{
 		return EMM_BUFFER_SIZE;

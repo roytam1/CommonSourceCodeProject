@@ -2380,7 +2380,7 @@ void update_status_bar(HINSTANCE hInstance, LPDRAWITEMSTRUCT lpDrawItem)
 				GetTextExtentPoint32(lpDrawItem->hDC, _T("HD:"), 3, &size);
 				draw_left += size.cx + 4;
 				
-				for (int i = 0; i < USE_HARD_DISK; i++) {
+				for(int i = 0; i < USE_HARD_DISK; i++) {
 					int idx = (hd_status >> i) & 1;
 					SelectObject(hdcMem, hBitmap[idx]);
 					TransparentBlt(lpDrawItem->hDC, draw_left, bmp_top, bmp_width, bmp_height, hdcMem, 0, 0, bmp_width, bmp_height, 0);
@@ -2393,7 +2393,7 @@ void update_status_bar(HINSTANCE hInstance, LPDRAWITEMSTRUCT lpDrawItem)
 				GetTextExtentPoint32(lpDrawItem->hDC, _T("CD:"), 3, &size);
 				draw_left += size.cx + 4;
 				
-				for (int i = 0; i < USE_COMPACT_DISC; i++) {
+				for(int i = 0; i < USE_COMPACT_DISC; i++) {
 					int idx = (cd_status >> i) & 1;
 					SelectObject(hdcMem, hBitmap[idx]);
 					TransparentBlt(lpDrawItem->hDC, draw_left, bmp_top, bmp_width, bmp_height, hdcMem, 0, 0, bmp_width, bmp_height, 0);
@@ -2406,7 +2406,7 @@ void update_status_bar(HINSTANCE hInstance, LPDRAWITEMSTRUCT lpDrawItem)
 				GetTextExtentPoint32(lpDrawItem->hDC, _T("LD:"), 3, &size);
 				draw_left += size.cx + 4;
 				
-				for (int i = 0; i < USE_LASER_DISC; i++) {
+				for(int i = 0; i < USE_LASER_DISC; i++) {
 					int idx = (ld_status >> i) & 1;
 					SelectObject(hdcMem, hBitmap[idx]);
 					TransparentBlt(lpDrawItem->hDC, draw_left, bmp_top, bmp_width, bmp_height, hdcMem, 0, 0, bmp_width, bmp_height, 0);

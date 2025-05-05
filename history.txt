@@ -1,3 +1,19 @@
+2/16/2019
+
+[EMU/DEBUGGER] improve to enumerate devices that is debugger available
+[EMU/DEBUGGER] improve to show all breaked reasons
+[EMU/DEBUGGER] support breakpoint of cpu selected by "! device" command
+[EMU/*] simplify code for debugger
+[VM/*] simplify code for debugger
+
+[VM/I8237] support break point for direct memory access
+[VM/MB8877] fix not to wait 60ms to start read/write after seek is finished
+[VM/MC6844] support break point for direct memory access
+[VM/TMS9918A] support break point for registers and vram access
+[VM/UPD71071] support break point for direct memory access
+[VM/Z80DMA] support break point for direct i/o and memory access
+
+
 2/14/2019
 
 [EMU/DEBUGGER] support break point for non-cpu device

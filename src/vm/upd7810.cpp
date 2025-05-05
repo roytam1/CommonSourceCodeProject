@@ -338,7 +338,10 @@ Clocks = 0 (0)  Since Scanline = 0/0 (0/0)
 	upd7810_state *cpustate = (upd7810_state *)opaque;
 	int wait;
 	my_stprintf_s(buffer, buffer_len,
-	_T("VA = %04X  BC = %04X  DE = %04X HL = %04X  PSW= %02x [%s %s %s %s %s %s]\nVA'= %04X  BC'= %04X  DE'= %04X HL'= %04X  SP = %04X  PC = %04X\n          (BC)= %04X (DE)=%04X (HL)= %04X (SP)= %04X <%s>\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
+	_T("VA = %04X  BC = %04X  DE = %04X HL = %04X  PSW= %02x [%s %s %s %s %s %s]\n")
+	_T("VA'= %04X  BC'= %04X  DE'= %04X HL'= %04X  SP = %04X  PC = %04X\n")
+	_T("          (BC)= %04X (DE)=%04X (HL)= %04X (SP)= %04X <%s>\n")
+	_T("Clocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
 	VA, BC, DE, HL, PSW,
 	(PSW & Z) ? _T("Z") : _T("-"), (PSW & SK) ? _T("SK") : _T("--"), (PSW & HC) ? _T("HC") : _T("--"), (PSW & L1) ? _T("L1") : _T("--"), (PSW & L0) ? _T("L0") : _T("--"), (PSW & CY) ? _T("CY") : _T("--"),
 	VA2, BC2, DE2, HL2, SP, PC,
