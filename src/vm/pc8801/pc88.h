@@ -193,6 +193,7 @@ private:
 	palette_t palette_line_analog [400][9];
 	bool palette_line_changed[400];
 	
+	int get_char_height();
 	void draw_text();
 #if defined(_PC8001SR)
 	bool draw_320x200_color_graph();
