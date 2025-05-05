@@ -38,8 +38,8 @@ private:
 	int CasLength;
 	int CasSkipFlag;
 	
-//	const uint8_t* key_stat;
-	uint8_t key_stat[256];
+	const uint8_t* key_stat;
+//	uint8_t key_stat[256];
 	int kbFlagFunc;
 	int kbFlagGraph;
 	int kbFlagCtrl;
@@ -49,7 +49,7 @@ private:
 	int stick0;
 	int StrigIntFlag;
 	int StrigEventID;
-	void update_keyboard();
+	void update_keyboard(int code);
 	
 public:
 	PSUB(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)

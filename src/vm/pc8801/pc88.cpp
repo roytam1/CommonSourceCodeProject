@@ -18,7 +18,7 @@
 #include "../z80.h"
 
 #ifdef SUPPORT_PC88_CDROM
-//#include "../scsi_cdrom.h"
+#include "../scsi_cdrom.h"
 #include "../scsi_host.h"
 #endif
 
@@ -31,6 +31,10 @@
 #define EVENT_CMT_SEND	2
 #define EVENT_CMT_DCD	3
 #define EVENT_BEEP	4
+#ifdef SUPPORT_PC88_CDROM
+#define EVENT_FADE_IN	5
+#define EVENT_FADE_OUT	6
+#endif
 
 #define IRQ_USART	0
 #define IRQ_VRTC	1
@@ -377,6 +381,9 @@ void PC88::initialize()
 	// hack to update config.scan_line at first
 	hireso = !(config.monitor_type == 0);
 #endif
+#ifdef SUPPORT_PC88_CDROM
+	cdda_register_id = -1;
+#endif
 }
 
 void PC88::release()
@@ -408,7 +415,6 @@ void PC88::reset()
 	port[0x71] = port[0xf1] = 0xff;
 #if defined(SUPPORT_PC88_CDROM)
 	if (cdbios_loaded) {
-		port[0x31] |= 0x04; // force call update_low_memmap()
 		port[0x99]  = 0x10;
 	}
 #endif
@@ -424,8 +430,9 @@ void PC88::reset()
 	}
 	SET_BANK(0x8000, 0xffff, ram + 0x8000, ram + 0x8000);
 #else
-	SET_BANK(0x0000, 0x7fff, ram, n88rom);
+//	SET_BANK(0x0000, 0x7fff, ram, n88rom);
 	SET_BANK(0x8000, 0xefff, ram + 0x8000, ram + 0x8000);
+	update_low_memmap();
 	update_tvram_memmap();	// XM8 version 1.10
 #endif
 	
@@ -506,6 +513,14 @@ void PC88::reset()
 	write_io8(1, 0);
 	write_io8(2, 0);
 	write_io8(3, 0);
+#endif
+#ifdef SUPPORT_PC88_CDROM
+	if(cdda_register_id != -1) {
+		cancel_event(this, cdda_register_id);
+		cdda_register_id = -1;
+	}
+	cdda_volume = 100.0;
+	d_scsi_cdrom->set_volume((int)cdda_volume);
 #endif
 #ifdef NIPPY_PATCH
 	// dirty patch for NIPPY
@@ -983,7 +998,7 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 		break;
 #else
 	case 0x71:
-		if(mod) {
+		if(mod & 0x01) {
 			update_low_memmap();
 		}
 		break;
@@ -1022,6 +1037,54 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 			d_scsi_host->write_signal(SIG_SCSI_RST, data, 0x80);
 		}
 		break;
+	case 0x98:
+		if(cdbios_loaded) {
+			switch(data & 7) {
+			case 0:
+			case 1:
+				if(cdda_register_id != -1) {
+					cancel_event(this, cdda_register_id);
+				}
+				d_scsi_cdrom->set_volume((int)(cdda_volume = 100.0));
+				break;
+			case 2:
+			case 3:
+				if(cdda_register_id != -1) {
+					cancel_event(this, cdda_register_id);
+				}
+				d_scsi_cdrom->set_volume((int)(cdda_volume = 0.0));
+				break;
+			case 4:
+				if(cdda_register_id != -1) {
+					cancel_event(this, cdda_register_id);
+				}
+				register_event(this, EVENT_FADE_IN, 100, true, &cdda_register_id); // 100ms
+				d_scsi_cdrom->set_volume((int)(cdda_volume = 0.0));
+				break;
+			case 5:
+				if(cdda_register_id != -1) {
+					cancel_event(this, cdda_register_id);
+				}
+				register_event(this, EVENT_FADE_IN, 1500, true, &cdda_register_id); // 1500ms
+				d_scsi_cdrom->set_volume((int)(cdda_volume = 0.0));
+				break;
+			case 6:
+				if(cdda_register_id != -1) {
+					cancel_event(this, cdda_register_id);
+				}
+				register_event(this, EVENT_FADE_OUT, 100, true, &cdda_register_id); // 100ms
+				d_scsi_cdrom->set_volume((int)(cdda_volume = 100.0));
+				break;
+			case 7:
+				if(cdda_register_id != -1) {
+					cancel_event(this, cdda_register_id);
+				}
+				register_event(this, EVENT_FADE_OUT, 5000, true, &cdda_register_id); // 5000ms
+				d_scsi_cdrom->set_volume((int)(cdda_volume = 100.0));
+				break;
+			}
+		}
+		break;
 	case 0x99:
 		if(cdbios_loaded && (mod & 0x10)) {
 			update_low_memmap();
@@ -1057,8 +1120,14 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 		}
 		break;
 	case 0xe3:
+#ifdef PC88_IODATA_EXRAM
 		if(mod) {
-			update_low_memmap();
+#else
+		if(mod & 0x0f) {
+#endif
+			if(PortE2_RDEN || PortE2_WREN) {
+				update_low_memmap();
+			}
 		}
 		break;
 #endif
@@ -1810,6 +1879,24 @@ void PC88::event_callback(int event_id, int err)
 		beep_signal = !beep_signal;
 		d_pcm->write_signal(SIG_PCM1BIT_SIGNAL, ((beep_on && beep_signal) || sing_signal) ? 1 : 0, 1);
 		break;
+#ifdef SUPPORT_PC88_CDROM
+	case EVENT_FADE_IN:
+		if((cdda_volume += 0.1) >= 100.0) {
+			cancel_event(this, cdda_register_id);
+			cdda_register_id = -1;
+			cdda_volume = 100.0;
+		}
+		d_scsi_cdrom->set_volume((int)cdda_volume);
+		break;
+	case EVENT_FADE_OUT:
+		if((cdda_volume -= 0.1) <= 0) {
+			cancel_event(this, cdda_register_id);
+			cdda_register_id = -1;
+			cdda_volume = 0.0;
+		}
+		d_scsi_cdrom->set_volume((int)cdda_volume);
+		break;
+#endif
 	}
 }
 
@@ -3353,7 +3440,7 @@ void pc88_dmac_t::finish(int c)
 	}
 }
 
-#define STATE_VERSION	9
+#define STATE_VERSION	10
 
 bool PC88::process_state(FILEIO* state_fio, bool loading)
 {
@@ -3510,6 +3597,10 @@ bool PC88::process_state(FILEIO* state_fio, bool loading)
 	state_fio->StateValue(pcg_data);
 	state_fio->StateValue(pcg_ctrl);
 	state_fio->StateArray(pcg_pattern, sizeof(pcg_pattern), 1);
+#endif
+#ifdef SUPPORT_PC88_CDROM
+	state_fio->StateValue(cdda_register_id);
+	state_fio->StateValue(cdda_volume);
 #endif
 #ifdef NIPPY_PATCH
 	state_fio->StateValue(nippy_patch);

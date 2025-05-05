@@ -40,7 +40,7 @@ class YM2203;
 class Z80;
 #ifdef SUPPORT_PC88_CDROM
 class SCSI_HOST;
-//class SCSI_CDROM;
+class SCSI_CDROM;
 #endif
 
 typedef struct {
@@ -116,7 +116,7 @@ private:
 	DEVICE *d_pcm, *d_pio, *d_prn, *d_rtc, *d_sio;
 #ifdef SUPPORT_PC88_CDROM
 	SCSI_HOST* d_scsi_host;
-//	SCSI_CDROM* d_scsi_cdrom;
+	SCSI_CDROM* d_scsi_cdrom;
 #endif
 #ifdef SUPPORT_PC88_HMB20
 	DEVICE *d_opm;
@@ -281,6 +281,11 @@ private:
 	uint8_t pcg_pattern[0x800];
 #endif
 	
+#ifdef SUPPORT_PC88_CDROM
+	int cdda_register_id;
+	double cdda_volume;
+#endif
+	
 #ifdef NIPPY_PATCH
 	// dirty patch for NIPPY
 	bool nippy_patch;
@@ -371,10 +376,10 @@ public:
 	{
 		d_scsi_host = device;
 	}
-//	void set_context_scsi_cdrom(SCSI_CDROM* device)
-//	{
-//		d_scsi_cdrom = device;
-//	}
+	void set_context_scsi_cdrom(SCSI_CDROM* device)
+	{
+		d_scsi_cdrom = device;
+	}
 #endif
 #ifdef SUPPORT_PC88_HMB20
 	void set_context_opm(DEVICE* device)

@@ -1,3 +1,10 @@
+12/27/2018
+
+[PC6001/PSUB] improve keyboard irq
+[PC8801/PC88] improve initial memory map when CD BIOS is loaded
+[PC8801/PC88] support CD-DA fade in/out
+
+
 12/18/2018
 
 [VM/I386] improve i386 core based on MAME 0.204

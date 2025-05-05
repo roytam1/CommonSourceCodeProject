@@ -265,7 +265,7 @@ void DISPLAY::draw_screen2()
 				if(text_width40) {
 					xlim = 40;
 				} else {
-					ylim = 80;
+					xlim = 80;
 				}
 				
 				for(x = 0; x < xlim; x++) {
