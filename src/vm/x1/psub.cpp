@@ -665,6 +665,7 @@ void PSUB::process_cmd()
 				if(play) {
 					new_status = CMT_STOP;
 				} else if(rec) {
+					d_drec->set_ff_rew(0);
 					d_drec->set_remote(true);
 				} else {
 					new_status = CMT_EJECT;

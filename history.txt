@@ -1,3 +1,10 @@
+10/28/2019
+
+[X1/PSUB] improve tape recording
+[X1/SUB] improve tape stopping
+[X1/SUB] improve tape write-protected signal
+
+
 10/22/2019
 
 [X1/PSUB] improve tape end signal
