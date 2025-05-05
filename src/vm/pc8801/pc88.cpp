@@ -17,6 +17,11 @@
 #include "../ym2203.h"
 #include "../z80.h"
 
+#ifdef SUPPORT_PC88_CDROM
+//#include "../scsi_cdrom.h"
+#include "../scsi_host.h"
+#endif
+
 #define DEVICE_JOYSTICK	0
 #define DEVICE_MOUSE	1
 #define DEVICE_JOYMOUSE	2	// not supported yet
@@ -92,6 +97,10 @@
 
 #define Port71_EROM	port[0x71]
 
+#ifdef SUPPORT_PC88_CDROM
+#define Port99_CDREN	(port[0x99] & 0x10)
+#endif
+
 // XM8 version 1.20
 #define PortA8_OPNCH	port[0xa8]
 #define PortAA_S2INTM	(port[0xaa] & 0x80)
@@ -110,6 +119,12 @@
 
 #define PortF0_DICROMSL	(port[0xf0] & 0x1f)
 #define PortF1_DICROM	!(port[0xf1] & 0x01)
+
+#if defined(SUPPORT_PC88_VAB)
+// X88000
+#define PortB4_VAB_DISP	((port[0xb4] & 0x41) == 0x41)
+#define PortE3_VAB_SEL	(((port[0xe3] >> 2) & 3) == PC88_VAB_PAGE)
+#endif
 
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 12, eb = (e) >> 12; \
@@ -208,6 +223,10 @@ void PC88::initialize()
 #ifdef SUPPORT_PC88_DICTIONARY
 	memset(dicrom, 0xff, sizeof(dicrom));
 #endif
+#ifdef SUPPORT_PC88_CDROM
+	memset(cdbios, 0xff, sizeof(cdbios));
+	cdbios_loaded = false;
+#endif
 	
 	// load rom images
 	FILEIO* fio = new FILEIO();
@@ -269,6 +288,15 @@ void PC88::initialize()
 		fio->Fclose();
 	}
 #endif
+#ifdef SUPPORT_PC88_CDROM
+	if(config.boot_mode != MODE_PC88_N) {
+		if(fio->Fopen(create_local_path(_T("CDBIOS.ROM")), FILEIO_READ_BINARY)) {
+			fio->Fread(cdbios, 0x10000, 1);
+			fio->Fclose();
+			cdbios_loaded = true;
+		}
+	}
+#endif
 	delete fio;
 	
 	// memory pattern
@@ -308,6 +336,20 @@ void PC88::initialize()
 		dest[4] = dest[5] = ((i & 4) ? 0xf0 : 0) | ((i & 0x40) ? 0x0f : 0);
 		dest[6] = dest[7] = ((i & 8) ? 0xf0 : 0) | ((i & 0x80) ? 0x0f : 0);
 	}
+	
+#ifdef SUPPORT_PC88_VAB
+	// X88000
+	for(uint32_t g = 0; g < 64; g++) {
+		uint32_t gg = (255 * g) / 63;
+		for(uint32_t r = 0; r < 32; r++) {
+			uint32_t rr = (255 * r) / 31;
+			for(uint32_t b = 0; b < 32; b++) {
+				uint32_t bb = (255 * b) / 31;
+				palette_vab_pc[b | (r << 5) | (g << 10)] = RGB_COLOR(rr, gg, bb);
+			}
+		}
+	}
+#endif
 	
 #ifdef SUPPORT_PC88_HIGH_CLOCK
 	cpu_clock_low = (config.cpu_type == 1);		// 4MHz
@@ -411,8 +453,14 @@ void PC88::reset()
 	
 	// dma
 	memset(&dmac, 0, sizeof(dmac));
-	dmac.mem = dmac.ch[2].io = this;
-	dmac.ch[0].io = dmac.ch[1].io = dmac.ch[3].io = vm->dummy;
+	dmac.ch[0].io = dmac.ch[3].io = vm->dummy;
+#ifdef SUPPORT_PC88_CDROM
+	if(cdbios_loaded) {
+		dmac.ch[1].io = d_scsi_host;
+	} else
+#endif
+	dmac.ch[1].io = vm->dummy;;
+	dmac.ch[2].io = dmac.mem = this;
 	dmac.ch[0].addr.b.l = 0x56;	// XM8 version 1.10
 	dmac.ch[0].addr.b.h = 0x56;
 	dmac.ch[1].addr.b.l = 0x7a;
@@ -943,6 +991,38 @@ void PC88::write_io8(uint32_t addr, uint32_t data)
 		d_opm->write_io8(addr, data);
 		break;
 #endif
+#ifdef SUPPORT_PC88_CDROM
+	// M88 cdif
+	case 0x90:
+		if(cdbios_loaded && (mod & 0x01)) {
+			if(data & 0x01) {
+				if(port[0x9f] & 0x01) {
+					d_scsi_host->write_signal(SIG_SCSI_SEL, 0, 1);
+					d_scsi_host->write_signal(SIG_SCSI_SEL, 1, 1);
+					d_scsi_host->write_signal(SIG_SCSI_SEL, 0, 1);
+				}
+			} else {
+				d_scsi_host->write_signal(SIG_SCSI_SEL, 0, 1);
+			}
+//			d_scsi_host->write_signal(SIG_SCSI_SEL, data, 1);
+		}
+		break;
+	case 0x91:
+		if(cdbios_loaded) {
+			d_scsi_host->write_dma_io8(0, data);
+		}
+		break;
+	case 0x94:
+		if(cdbios_loaded) {
+			d_scsi_host->write_signal(SIG_SCSI_RST, data, 0x80);
+		}
+		break;
+	case 0x99:
+		if(cdbios_loaded && (mod & 0x10)) {
+			update_low_memmap();
+		}
+		break;
+#endif
 #ifdef SUPPORT_PC88_SB2
 	case 0xa8:
 	case 0xa9:
@@ -1162,6 +1242,51 @@ uint32_t PC88::read_io8_debug(uint32_t addr)
 //	case 0x88:
 	case 0x89:
 		return d_opm->read_io8(addr);
+#endif
+#ifdef SUPPORT_PC88_CDROM
+	// M88 cdif
+	case 0x90:
+		if(cdbios_loaded) {
+			val  = d_scsi_host->read_signal(SIG_SCSI_BSY) ? 0x80 : 0;
+			val |= d_scsi_host->read_signal(SIG_SCSI_REQ) ? 0x40 : 0;
+			val |= d_scsi_host->read_signal(SIG_SCSI_MSG) ? 0x20 : 0;
+			val |= d_scsi_host->read_signal(SIG_SCSI_CD ) ? 0x10 : 0;
+			val |= d_scsi_host->read_signal(SIG_SCSI_IO ) ? 0x08 : 0;
+			// do not show BSY,MSG,CxD,IxD when SEL=1 (M’·‚Ì–ì–] •«•—‰_˜^)
+			if(port[0x90] & 0x01) {
+				val &= ~(0x80 | 0x20 | 0x10 | 0x08);
+				val |= (port[0x9f] & 0x01); // correct ???
+			}
+#ifdef _SCSI_DEBUG_LOG
+			this->out_debug_log(_T("[SCSI_PC88] Status = %02X\n"), val);
+#endif
+			return val;
+		}
+		break;
+	case 0x91:
+		if(cdbios_loaded) {
+			return d_scsi_host->read_dma_io8(0);
+		}
+		break;
+	case 0x92:
+	case 0x93:
+	case 0x96:
+	case 0x99:
+		if(cdbios_loaded) {
+			return 0;
+		}
+		break;
+	case 0x98:
+		if(cdbios_loaded) {
+			port[0x98] ^= 0x80; // clock ???
+			return port[0x98];
+		}
+		break;
+	case 0x9b:
+	case 0x9d:
+		if(cdbios_loaded) {
+			return 60;
+		}
 		break;
 #endif
 #ifdef SUPPORT_PC88_SB2
@@ -1214,6 +1339,15 @@ uint32_t PC88::read_io8_debug(uint32_t addr)
 		}
 		break;
 #endif
+#endif
+#if defined(SUPPORT_PC88_VAB)
+	// X88000
+	case 0xb4:
+	case 0xb5:
+		if(PortE3_VAB_SEL) {
+			return port[addr];
+		}
+		break;
 #endif
 	case 0xe2:
 		return (~port[0xe2]) | 0xee;
@@ -1526,6 +1660,14 @@ void PC88::update_low_memmap()
 	} else if(Port31_MMODE) {
 		// 64K RAM
 		SET_BANK_R(0x0000, 0x7fff, ram);
+#ifdef SUPPORT_PC88_CDROM
+	} else if(cdbios_loaded && Port99_CDREN) {
+		if(Port31_RMODE) {
+			SET_BANK_R(0x0000, 0x7fff, cdbios + 0x8000);
+		} else {
+			SET_BANK_R(0x0000, 0x7fff, cdbios + 0x0000);
+		}
+#endif
 	} else if(Port31_RMODE) {
 		// N-BASIC
 		SET_BANK_R(0x0000, 0x7fff, n80rom);
@@ -1585,6 +1727,17 @@ void PC88::write_signal(int id, uint32_t data, uint32_t mask)
 		intr_req_sb2 = ((data & mask) != 0);
 		if(intr_req_sb2 && !PortAA_S2INTM) {
 			request_intr(IRQ_SOUND, true);
+		}
+#endif
+#ifdef SUPPORT_PC88_CDROM
+	} else if(id == SIG_PC88_SCSI_DRQ) {
+		if((data & mask) && cdbios_loaded) {
+			if(!dmac.ch[1].running) {
+				dmac.start(1);
+			}
+			if(dmac.ch[1].running) {
+				dmac.run(1, 1);
+			}
 		}
 #endif
 	} else if(id == SIG_PC88_USART_OUT) {
@@ -2099,8 +2252,58 @@ void PC88::draw_screen()
 	
 	// copy to screen buffer
 #if !defined(_PC8001SR)
-	if(Port31_HCOLOR || !Port31_400LINE) {
+#if defined(SUPPORT_PC88_VAB)
+	// X88000
+	if(PortB4_VAB_DISP) {
+		uint8_t *src = &exram[(0x8000 * 4) * PC88_VAB_PAGE];
+		
+		for(int y = 0; y < 400; y += 2) {
+			scrntype_t* dest0 = emu->get_screen_buffer(y);
+			scrntype_t* dest1 = emu->get_screen_buffer(y + 1);
+			
+			for(int x = 0; x < 640; x += 2) {
+				pair16_t c;
+				c.b.l = *src++;
+				c.b.h = *src++;
+				dest0[x] = dest0[x + 1] = palette_vab_pc[c.w];
+			}
+			if(config.scan_line) {
+				memset(dest1, 0, sizeof(scrntype_t) * 640);
+			} else {
+				memcpy(dest1, dest0, sizeof(scrntype_t) * 640);
+			}
+		}
+		emu->screen_skip_line(true);
+	} else
 #endif
+	if(!Port31_HCOLOR && Port31_400LINE) {
+		for(int y = 0; y < 400; y++) {
+			scrntype_t* dest = emu->get_screen_buffer(y);
+			uint8_t* src_t = text[y];
+			uint8_t* src_g = graph[y];
+			scrntype_t* pal_t;
+			scrntype_t* pal_g;
+			
+//			if(Port31_HCOLOR) {
+//				pal_t = palette_line_digital_text_pc [y];
+//				pal_g = palette_line_analog_graph_pc [y];
+//			} else
+			if(Port32_PMODE) {
+				pal_t = palette_line_analog_text_pc  [y];
+				pal_g = palette_line_analog_graph_pc [y];
+			} else {
+				pal_t = palette_line_digital_text_pc [y];
+				pal_g = palette_line_digital_graph_pc[y];
+			}
+			for(int x = 0; x < 640; x++) {
+				uint32_t t = src_t[x];
+				dest[x] = t ? pal_t[t] : pal_g[src_g[x]];
+			}
+		}
+		emu->screen_skip_line(false);
+	} else
+#endif
+	{
 		for(int y = 0; y < 400; y++) {
 			scrntype_t* dest = emu->get_screen_buffer(y);
 			uint8_t* src_t = text[y];
@@ -2141,34 +2344,7 @@ void PC88::draw_screen()
 #endif
 		}
 		emu->screen_skip_line(true);
-#if !defined(_PC8001SR)
-	} else {
-		for(int y = 0; y < 400; y++) {
-			scrntype_t* dest = emu->get_screen_buffer(y);
-			uint8_t* src_t = text[y];
-			uint8_t* src_g = graph[y];
-			scrntype_t* pal_t;
-			scrntype_t* pal_g;
-			
-//			if(Port31_HCOLOR) {
-//				pal_t = palette_line_digital_text_pc [y];
-//				pal_g = palette_line_analog_graph_pc [y];
-//			} else
-			if(Port32_PMODE) {
-				pal_t = palette_line_analog_text_pc  [y];
-				pal_g = palette_line_analog_graph_pc [y];
-			} else {
-				pal_t = palette_line_digital_text_pc [y];
-				pal_g = palette_line_digital_graph_pc[y];
-			}
-			for(int x = 0; x < 640; x++) {
-				uint32_t t = src_t[x];
-				dest[x] = t ? pal_t[t] : pal_g[src_g[x]];
-			}
-		}
-		emu->screen_skip_line(false);
 	}
-#endif
 }
 
 int PC88::get_char_height()
@@ -3170,6 +3346,11 @@ uint32_t pc88_dmac_t::read_io8(uint32_t addr)
 void pc88_dmac_t::start(int c)
 {
 	if(mode & (1 << c)) {
+#ifdef _SCSI_DEBUG_LOG
+		if(c == 1) {
+			mem->out_debug_log(_T("[SCSI_PC88] DMA Start\n"));
+		}
+#endif
 		status &= ~(1 << c);
 		ch[c].running = true;
 	} else {
@@ -3181,14 +3362,27 @@ void pc88_dmac_t::run(int c, int nbytes)
 {
 	if(ch[c].running) {
 		while(nbytes > 0 && ch[c].count.sd >= 0) {
-//			if(ch[c].mode == 0x80) {
+			if(ch[c].mode == 0x80) {
+#ifdef _SCSI_DEBUG_LOG
+				if(c == 1) {
+					mem->out_debug_log(_T("[SCSI_PC88] DMA Transfer Memory->I/O Addr=%04X\n"), ch[c].addr.w.l);
+				}
+#endif
 				ch[c].io->write_dma_io8(0, mem->read_dma_data8(ch[c].addr.w.l));
-//			} else if(ch[c].mode == 0x40) {
-//				mem->write_dma_data8(ch[c].addr.w.l, ch[c].io->read_dma_io8(0));
-//			}
+			} else if(ch[c].mode == 0x40) {
+#ifdef _SCSI_DEBUG_LOG
+				if(c == 1) {
+					mem->out_debug_log(_T("[SCSI_PC88] DMA Trasfer I/O->Memory Addr=%04X\n"), ch[c].addr.w.l);
+				}
+#endif
+				mem->write_dma_data8(ch[c].addr.w.l, ch[c].io->read_dma_io8(0));
+			}
 			ch[c].addr.sd++;
 			ch[c].count.sd--;
 			nbytes--;
+		}
+		if(ch[c].count.sd < 0) {
+			finish(c);
 		}
 	}
 }
@@ -3214,6 +3408,11 @@ void pc88_dmac_t::finish(int c)
 		}
 		status |= (1 << c);
 		ch[c].running = false;
+#ifdef _SCSI_DEBUG_LOG
+		if(c == 1) {
+			mem->out_debug_log(_T("[SCSI_PC88] DMA Finish\n"));
+		}
+#endif
 	}
 }
 

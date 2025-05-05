@@ -1,3 +1,11 @@
+12/9/2018
+
+[VM/SCSI_CDROM] add vendor specific command for NEC CD-ROM^2
+
+[PC8801/PC88] support CD-ROM drive (thanks M88/cdif)
+[PC8801/PC88] support Video Art Boad (thanks X88000)
+
+
 12/5/2018
 
 [VM/MB8877] improve reset() to finish previous command and reset fdc completely

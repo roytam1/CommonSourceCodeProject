@@ -21,7 +21,10 @@
 #ifdef SUPPORT_PC88_SB2
 #define SIG_PC88_SB2_IRQ	2
 #endif
-#define SIG_PC88_USART_OUT	3
+#ifdef SUPPORT_PC88_CDROM
+#define SIG_PC88_SCSI_DRQ	3
+#endif
+#define SIG_PC88_USART_OUT	4
 
 #define CMT_BUFFER_SIZE		0x40000
 
@@ -35,6 +38,10 @@
 
 class YM2203;
 class Z80;
+#ifdef SUPPORT_PC88_CDROM
+class SCSI_HOST;
+//class SCSI_CDROM;
+#endif
 
 typedef struct {
 	struct {
@@ -107,6 +114,10 @@ private:
 #endif
 	Z80 *d_cpu;
 	DEVICE *d_pcm, *d_pio, *d_prn, *d_rtc, *d_sio;
+#ifdef SUPPORT_PC88_CDROM
+	SCSI_HOST* d_scsi_host;
+//	SCSI_CDROM* d_scsi_cdrom;
+#endif
 #ifdef SUPPORT_PC88_HMB20
 	DEVICE *d_opm;
 #endif
@@ -138,6 +149,10 @@ private:
 	uint8_t kanji2[0x20000];
 #ifdef SUPPORT_PC88_DICTIONARY
 	uint8_t dicrom[0x80000];
+#endif
+#ifdef SUPPORT_PC88_CDROM
+	uint8_t cdbios[0x10000];
+	bool cdbios_loaded;
 #endif
 	
 	// i/o port
@@ -195,6 +210,9 @@ private:
 	palette_t palette_line_digital[400][9];
 	palette_t palette_line_analog [400][9];
 	bool palette_line_changed[400];
+#if defined(SUPPORT_PC88_VAB)
+	scrntype_t palette_vab_pc[0x10000];
+#endif
 	
 	int get_char_height();
 	void draw_text();
@@ -346,6 +364,16 @@ public:
 	{
 		d_sio = device;
 	}
+#ifdef SUPPORT_PC88_CDROM
+	void set_context_scsi_host(SCSI_HOST* device)
+	{
+		d_scsi_host = device;
+	}
+//	void set_context_scsi_cdrom(SCSI_CDROM* device)
+//	{
+//		d_scsi_cdrom = device;
+//	}
+#endif
 #ifdef SUPPORT_PC88_HMB20
 	void set_context_opm(DEVICE* device)
 	{

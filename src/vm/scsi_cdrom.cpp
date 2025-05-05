@@ -44,6 +44,7 @@ void SCSI_CDROM::reset()
 {
 	touch_sound();
 	SCSI_DEV::reset();
+	read_mode = false;
 	set_cdda_status(CDDA_OFF);
 }
 
@@ -210,6 +211,13 @@ void SCSI_CDROM::start_command()
 	case SCSI_CMD_READ12:
 		seek_time = 10;//get_seek_time(command[2] * 0x1000000 + command[3] * 0x10000 + command[4] * 0x100 + command[5]);
 		set_cdda_status(CDDA_OFF);
+		break;
+		
+	case SCSI_CMD_MODE_SEL6:
+		#ifdef _SCSI_DEBUG_LOG
+			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Read Mode Select 6-byte\n"), scsi_id);
+		#endif
+		read_mode = (command[4] != 0);
 		break;
 		
 	case 0xd8:
@@ -727,7 +735,7 @@ void SCSI_CDROM::set_volume(int volume)
 	volume_m = (int)(1024.0 * (max(0, min(100, volume)) / 100.0));
 }
 
-#define STATE_VERSION	2
+#define STATE_VERSION	3
 
 bool SCSI_CDROM::process_state(FILEIO* state_fio, bool loading)
 {
@@ -751,6 +759,7 @@ bool SCSI_CDROM::process_state(FILEIO* state_fio, bool loading)
 	state_fio->StateValue(cdda_sample_r);
 	state_fio->StateValue(event_cdda);
 //	state_fio->StateValue(mix_loop_num);
+	state_fio->StateValue(read_mode);
 	state_fio->StateValue(volume_m);
 	if(loading) {
 		offset = state_fio->FgetUint32_LE();

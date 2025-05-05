@@ -31,6 +31,11 @@
 #include "../debugger.h"
 #endif
 
+#ifdef SUPPORT_PC88_CDROM
+#include "../scsi_cdrom.h"
+#include "../scsi_host.h"
+#endif
+
 #ifdef SUPPORT_PC88_HMB20
 #include "../ym2151.h"
 #endif
@@ -145,9 +150,17 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pc88cpu_sub->set_device_name(_T("Z80 CPU (Sub)"));
 //	pc88cpu_sub->set_context_event_manager(pc88event);
 	
+#ifdef SUPPORT_PC88_CDROM
+	pc88scsi_host = new SCSI_HOST(this, emu);
+//	pc88scsi_host->set_context_event_manager(pc88event);
+	pc88scsi_cdrom = new SCSI_CDROM(this, emu);
+//	pc88scsi_cdrom->set_context_event_manager(pc88event);
+#endif
+	
 #ifdef SUPPORT_PC88_HMB20
 	pc88opm = new YM2151(this, emu);
 	pc88opm->set_device_name(_T("YM2151 OPM (HMB20)"));
+//	pc88opm->set_context_event_manager(pc88event);
 #endif
 	
 #ifdef SUPPORT_PC88_PCG8100
@@ -178,6 +191,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	}
 #endif
 	pc88event->set_context_sound(pc88pcm);
+#ifdef SUPPORT_PC88_CDROM
+	pc88event->set_context_sound(pc88scsi_cdrom);
+#endif
 #ifdef SUPPORT_PC88_HMB20
 	pc88event->set_context_sound(pc88opm);
 #endif
@@ -200,6 +216,10 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pc88->set_context_prn(pc88prn);
 	pc88->set_context_rtc(pc88rtc);
 	pc88->set_context_sio(pc88sio);
+#ifdef SUPPORT_PC88_CDROM
+	pc88->set_context_scsi_host(pc88scsi_host);
+//	pc88->set_context_scsi_cdrom(pc88scsi_cdrom);
+#endif
 #ifdef SUPPORT_PC88_HMB20
 	pc88->set_context_opm(pc88opm);
 #endif
@@ -248,6 +268,12 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pc88cpu_sub->set_context_debugger(new DEBUGGER(this, emu));
 #endif
 	
+#ifdef SUPPORT_PC88_CDROM
+	pc88scsi_cdrom->scsi_id = 0;
+	pc88scsi_cdrom->set_context_interface(pc88scsi_host);
+	pc88scsi_host->set_context_target(pc88scsi_cdrom);
+	pc88scsi_host->set_context_drq(pc88, SIG_PC88_SCSI_DRQ, 1);
+#endif
 #ifdef SUPPORT_PC88_PCG8100
 	pc88pit->set_context_ch0(pc88pcm0, SIG_PCM1BIT_SIGNAL, 1);
 	pc88pit->set_context_ch1(pc88pcm1, SIG_PCM1BIT_SIGNAL, 1);
@@ -417,6 +443,10 @@ void VM::set_sound_device_volume(int ch, int decibel_l, int decibel_r)
 		}
 #endif
 #endif
+#ifdef SUPPORT_PC88_CDROM
+	} else if(ch-- == 0) {
+		pc88scsi_cdrom->set_volume(0, decibel_l, decibel_r);
+#endif
 #ifdef SUPPORT_PC88_HMB20
 	} else if(ch-- == 0) {
 		pc88opm->set_volume(0, decibel_l, decibel_r);
@@ -514,6 +544,28 @@ bool VM::is_tape_inserted(int drv)
 	return pc88->is_tape_inserted();
 }
 
+#ifdef SUPPORT_PC88_CDROM
+void VM::open_compact_disc(int drv, const _TCHAR* file_path)
+{
+	pc88scsi_cdrom->open(file_path);
+}
+
+void VM::close_compact_disc(int drv)
+{
+	pc88scsi_cdrom->close();
+}
+
+bool VM::is_compact_disc_inserted(int drv)
+{
+	return pc88scsi_cdrom->mounted();
+}
+
+uint32_t VM::is_compact_disc_accessed()
+{
+	return pc88scsi_cdrom->accessed();
+}
+#endif
+
 bool VM::is_frame_skippable()
 {
 //	return event->is_frame_skippable();
@@ -533,7 +585,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	8
+#define STATE_VERSION	9
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

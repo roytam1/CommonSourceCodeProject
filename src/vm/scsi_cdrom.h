@@ -39,6 +39,7 @@ private:
 	int cdda_buffer_ptr;
 	int cdda_sample_l, cdda_sample_r;
 	int event_cdda, mix_loop_num;
+	bool read_mode;
 	
 	void set_cdda_status(uint8_t status);
 	int get_track(uint32_t lba);
@@ -89,7 +90,7 @@ public:
 	}
 	uint32_t logical_block_size()
 	{
-		return 2048;
+		return read_mode ? 2340 : 2048;
 	}
 	uint32_t max_logical_block_addr()
 	{
