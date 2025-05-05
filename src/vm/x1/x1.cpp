@@ -51,6 +51,7 @@
 #include "mouse.h"
 #include "psub.h"
 #include "sasi.h"
+#include "cz8rb.h"
 
 #include "../mcs48.h"
 #include "../upd1990a.h"
@@ -151,6 +152,7 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	memory = new MEMORY(this, emu);
 	mouse = new MOUSE(this, emu);
 	sasi = new SASI(this, emu);
+	cz8rb = new CZ8RB(this, emu);
 	
 	if(pseudo_sub_cpu) {
 		psub = new PSUB(this, emu);
@@ -372,6 +374,7 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	io->set_iomap_single_rw(0xb00, memory);
 #endif
 	io->set_iomap_range_rw(0xd00, 0xd03, emm);
+	io->set_iomap_range_rw(0xe00, 0xe03, cz8rb);
 	io->set_iomap_range_r(0xe80, 0xe81, display);
 	io->set_iomap_range_w(0xe80, 0xe82, display);
 	io->set_iomap_range_rw(0xfd0, 0xfd3, sasi);
@@ -982,7 +985,7 @@ void VM::update_dipswitch()
 }
 #endif
 
-#define STATE_VERSION	11
+#define STATE_VERSION	12
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

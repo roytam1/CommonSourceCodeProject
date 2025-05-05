@@ -85,9 +85,6 @@ void MEMBUS::initialize()
 	if(!read_bios(_T("IPL.ROM"), bios, sizeof(bios))) {
 		read_bios(_T("BIOS.ROM"), bios, sizeof(bios));
 	}
-#if defined(SUPPORT_BIOS_RAM)
-	memset(bios_ram, 0x00, sizeof(bios_ram));
-#endif
 #if defined(SUPPORT_ITF_ROM)
 	memset(itf, 0xff, sizeof(itf));
 	read_bios(_T("ITF.ROM"), itf, sizeof(itf));
@@ -610,16 +607,18 @@ void MEMBUS::update_bios()
 #if defined(SUPPORT_ITF_ROM)
 	if(itf_selected) {
 		set_memory_r(0x100000 - sizeof(itf), 0xfffff, itf);
+//		unset_memory_w(0x100000 - sizeof(itf), 0xfffff);
 	} else {
 #endif
 #if defined(SUPPORT_BIOS_RAM)
 		if(bios_ram_selected) {
-			set_memory_rw(0x100000 - sizeof(bios_ram), 0xfffff, bios_ram);
+			set_memory_rw(0x100000 - sizeof(bios), 0xfffff, ram + 0x100000 - sizeof(bios));
 		} else {
 #endif
 			set_memory_r(0x100000 - sizeof(bios), 0xfffff, bios);
+//			unset_memory_w(0x100000 - sizeof(bios), 0xfffff);
 #if defined(SUPPORT_BIOS_RAM)
-//			set_memory_w(0x100000 - sizeof(bios_ram), 0xfffff, bios_ram);
+			set_memory_w(0x100000 - sizeof(bios), 0xfffff, ram + 0x100000 - sizeof(bios));
 		}
 #endif
 #if defined(SUPPORT_ITF_ROM)
@@ -631,8 +630,8 @@ void MEMBUS::update_bios()
 void MEMBUS::update_sound_bios()
 {
 	if(sound_bios_selected) {
-//		if(sound_bios_selected) {
-//			set_memory_r(0xcc000, 0xcffff, sound_bios_ram);
+//		if(sound_bios_ram_selected) {
+//			set_memory_rw(0xcc000, 0xcffff, sound_bios_ram);
 //		} else {
 			set_memory_r(0xcc000, 0xcffff, sound_bios);
 			unset_memory_w(0xcc000, 0xcffff);
@@ -704,7 +703,7 @@ void MEMBUS::update_nec_ems()
 #endif
 #endif
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 bool MEMBUS::process_state(FILEIO* state_fio, bool loading)
 {
@@ -716,7 +715,6 @@ bool MEMBUS::process_state(FILEIO* state_fio, bool loading)
 	}
 	state_fio->StateArray(ram, sizeof(ram), 1);
 #if defined(SUPPORT_BIOS_RAM)
-	state_fio->StateArray(bios_ram, sizeof(bios_ram), 1);
 	state_fio->StateValue(bios_ram_selected);
 #endif
 #if defined(SUPPORT_ITF_ROM)

@@ -91,7 +91,7 @@
 #define KEYBOARD_TYPE_DEFAULT	1
 #define USE_DRIVE_TYPE		3
 #endif
-#define USE_FLOPPY_DISK		2
+#define USE_FLOPPY_DISK		4
 #define BASE_FLOPPY_DISK_NUM	0
 #define USE_HARD_DISK		4
 #define USE_TAPE		1
@@ -261,6 +261,7 @@ class MEMORY;
 class MOUSE;
 class PSUB;
 class SASI;
+class CZ8RB;
 
 class MCS48;
 class UPD1990A;
@@ -310,6 +311,7 @@ protected:
 	MOUSE* mouse;
 	PSUB* psub;
 	SASI* sasi;
+	CZ8RB* cz8rb;
 	
 	MCS48* cpu_sub;
 	UPD1990A* rtc_sub;

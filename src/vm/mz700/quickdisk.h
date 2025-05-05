@@ -52,6 +52,7 @@ private:
 	void set_protect(bool val);
 	void set_home(bool val);
 	void release_disk();
+	unsigned short calc_crc(int* buff, int size);
 	
 public:
 	QUICKDISK(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)

@@ -47,12 +47,6 @@ private:
 	uint8_t bios[0x10000];
 #endif
 #if defined(SUPPORT_BIOS_RAM)
-#if !defined(SUPPORT_HIRESO)
-	uint8_t bios_ram[0x18000];
-#else
-	uint8_t bios_ram[0x10000];
-#endif
-//	uint8_t bios_ram[sizeof(bios)];
 	bool bios_ram_selected;
 #endif
 #if defined(SUPPORT_ITF_ROM)
