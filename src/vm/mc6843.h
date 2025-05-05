@@ -1,11 +1,22 @@
 /*
 	Skelton for retropc emulator
 
+	Origin : MAME
 	Author : Takeda.Toshiya
-	Date   : 2020.08.22-
+	Date   : 2020.12.12-
 
 	[ MC6843 / HD46503 ]
 */
+
+// license:BSD-3-Clause
+// copyright-holders:Antoine Mine
+/**********************************************************************
+
+  Copyright (C) Antoine Mine' 2007
+
+  Motorola 6843 Floppy Disk Controller emulation.
+
+**********************************************************************/
 
 #ifndef _MC6843_H_ 
 #define _MC6843_H_
@@ -14,10 +25,12 @@
 #include "../emu.h"
 #include "device.h"
 
-#define SIG_MC6843_ACCESS	0
-#define SIG_MC6843_DRIVEREG	1
-#define SIG_MC6843_SIDEREG	2
-#define SIG_MC6843_MOTOR	3
+#ifndef offs_t
+	typedef UINT32	offs_t;
+#endif
+
+#define SIG_MC6843_DRIVEREG	0
+#define SIG_MC6843_SIDEREG	1
 
 class DISK;
 class NOISE;
@@ -25,99 +38,93 @@ class NOISE;
 class MC6843 : public DEVICE
 {
 private:
+//	optional_device_array<legacy_floppy_image_device, 4> m_floppy;
+	// drive info
+	struct {
+		int target_track;
+		int track;
+		int sector;
+		bool searching;
+		bool access;
+		bool head_load;
+	} fdc[MAX_DRIVE];
+	DISK* disk[MAX_DRIVE];
+
+//	devcb_write_line m_write_irq;
 	// output signals
 	outputs_t outputs_irq;
 	outputs_t outputs_drq;
-	
+
 	// drive noise
 	NOISE* d_noise_seek;
 	NOISE* d_noise_head_down;
 	NOISE* d_noise_head_up;
-	
-	// drive info
-	struct {
-		int track;
-		int index;
-		bool access;
-		bool head_load;
-		// write track
-		bool id_written;
-		bool sector_found;
-		int sector_length;
-		int sector_index;
-		int side;
-		bool side_changed;
-		// timing
-		int cur_position;
-		int next_trans_position;
-		int bytes_before_2nd_drq;
-		int next_am1_position;
-		uint32_t prev_clock;
-	} fdc[MAX_DRIVE];
-	DISK* disk[MAX_DRIVE];
-	
-	// registor
-	uint8_t stra, stra_tmp;
-	uint8_t cmr, cmr_tmp;
-	uint8_t ctar;
-	uint8_t sar;
 
-	uint8_t datareg;
-	uint8_t drvreg;
-	uint8_t sidereg;
-	
-	// event
-	int register_id[8];
-	
-	void cancel_my_event(int event);
-	void register_my_event(int event, double usec);
-	void register_seek_event(bool first);
-	void register_drq_event(int bytes);
-	void register_lost_event(int bytes);
-	
-	// status
-	bool now_search;
-	bool now_seek;
-	bool sector_changed;
-	int no_command;
-	int seektrk;
-	bool seekvct;
-	bool motor_on;
-	bool drive_sel;
-	
-	// timing
-	uint32_t prev_drq_clock;
-	uint32_t seekend_clock;
-	
-	int get_cur_position();
-	double get_usec_to_start_trans(bool first_sector);
-	double get_usec_to_next_trans_pos(bool delay);
-	double get_usec_to_detect_index_hole(int count, bool delay);
-	
-	// image handler
-	uint8_t search_track();
-	uint8_t search_sector();
-	uint8_t search_addr();
-	
-	// command
-	void process_cmd();
-	void cmd_restore();
-	void cmd_seek();
-	void cmd_step();
-	void cmd_stepin();
-	void cmd_stepout();
-	void cmd_readdata(bool first_sector);
-	void cmd_writedata(bool first_sector);
-	void cmd_readaddr();
-	void cmd_readtrack();
-	void cmd_writetrack();
-	void cmd_forceint();
+	// /devices/imagedev/flopdrv.h
+	struct chrn_id
+	{
+		unsigned char C;
+		unsigned char H;
+		unsigned char R;
+		unsigned char N;
+//		int data_id;            // id for read/write data command
+		unsigned long flags;
+	};
+
+	/* registers */
+	uint8_t m_CTAR;       /* current track */
+	uint8_t m_CMR;        /* command */
+	uint8_t m_ISR;        /* interrupt status */
+	uint8_t m_SUR;        /* set-up */
+	uint8_t m_STRA;       /* status */
+	uint8_t m_STRB;       /* status */
+	uint8_t m_SAR;        /* sector address */
+	uint8_t m_GCR;        /* general count */
+	uint8_t m_CCR;        /* CRC control */
+	uint8_t m_LTAR;       /* logical address track (=track destination) */
+
+	/* internal state */
+	uint8_t  m_drive;
+	uint8_t  m_side;
+	uint8_t  m_data[128];   /* sector buffer */
+	uint32_t m_data_size;   /* size of data */
+	uint32_t m_data_idx;    /* current read/write position in data */
+//	uint32_t m_data_id;     /* chrd_id for sector write */
+//	uint8_t  m_index_pulse;
+	uint32_t m_index_clock;
+
+	/* trigger delayed actions (bottom halves) */
+//	emu_timer* m_timer_cont;
+	int m_timer_id;
+	int m_seek_id;
+
+//	legacy_floppy_image_device* floppy_image();
+	void status_update();
+	void cmd_end();
+	void finish_STZ();
+	void finish_SEK();
+	int address_search(chrn_id* id);
+	int address_search_read(chrn_id* id);
+	void finish_RCR();
+	void cont_SR();
+	void cont_SW();
+
+	void mc6843_device();
+
+	// device-level overrides
+	void device_start();
+	void device_reset();
+	void device_timer();
+
+	uint8_t read(offs_t offset);
+	void write(offs_t offset, uint8_t data);
+
+	void set_drive(int drive);
+	void set_side(int side);
+//	void set_index_pulse(int index_pulse);
+
 	void update_head_flag(int drv, bool head_load);
-	
-	// irq/dma
-	void set_irq(bool val);
-	void set_drq(bool val);
-	
+
 public:
 	MC6843(VM_TEMPLATE* parent_vm, EMU* parent_emu) : DEVICE(parent_vm, parent_emu)
 	{
@@ -127,8 +134,7 @@ public:
 		d_noise_head_down = NULL;
 		d_noise_head_up = NULL;
 		// these parameters may be modified before calling initialize()
-		drvreg = sidereg = 0;
-		motor_on = drive_sel = false;
+		m_drive = m_side = 0;
 		set_device_name(_T("MC6843 FDC"));
 	}
 	~MC6843() {}
@@ -145,13 +151,6 @@ public:
 	uint32_t read_signal(int ch);
 	void event_callback(int event_id, int err);
 	void update_config();
-#ifdef USE_DEBUGGER
-	bool is_debugger_available()
-	{
-		return true;
-	}
-	bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
-#endif
 	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
@@ -202,6 +201,7 @@ public:
 	void set_drive_rpm(int drv, int rpm);
 	void set_drive_mfm(int drv, bool mfm);
 	void set_track_size(int drv, int size);
+	uint8_t fdc_status();
 };
 
 #endif
