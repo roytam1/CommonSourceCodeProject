@@ -1,3 +1,8 @@
+1/23/2020
+
+[VM/Z80DMA] fix byte couner read by read mask follows command (thanks Mr.Sato)
+
+
 12/31/2019
 
 [MZ2500/CRTC] apply crtc patch (thanks Mr.Koucha-Youkan)
