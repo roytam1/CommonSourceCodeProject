@@ -36,7 +36,7 @@ public:
 	{
 		set_device_name(_T("M88 DiskDrv"));
 	}
-	~DiskIO();
+	~DiskIO() {}
 
 	// common functions
 	void initialize();
