@@ -2519,7 +2519,7 @@ bool Z80::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void Z80::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool Z80::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 /*
 F = [--------]  A = 00  BC = 0000  DE = 0000  HL = 0000  IX = 0000  IY = 0000
@@ -2542,6 +2542,7 @@ Clocks = 0 (0) Since Scanline = 0/0 (0/0)
 	total_icount, total_icount - prev_total_icount,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_icount = total_icount;
+	return true;
 }
 
 // disassembler

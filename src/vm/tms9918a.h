@@ -18,9 +18,17 @@
 
 #define SIG_TMS9918A_SUPER_IMPOSE	0
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class TMS9918A : public DEVICE
 {
 private:
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+#endif
+	
 	// output signals
 	outputs_t outputs_irq;
 	
@@ -53,6 +61,9 @@ public:
 #ifdef TMS9918A_SUPER_IMPOSE
 		now_super_impose = false;
 #endif
+#ifdef USE_DEBUGGER
+		d_debugger = NULL;
+#endif
 		set_device_name(_T("TMS9918A VDP"));
 	}
 	~TMS9918A() {}
@@ -62,24 +73,36 @@ public:
 	void reset();
 	void write_io8(uint32_t addr, uint32_t data);
 	uint32_t read_io8(uint32_t addr);
+	// for debugging vram
+	void write_data8(uint32_t addr, uint32_t data);
+	uint32_t read_data8(uint32_t addr);
 #ifdef TMS9918A_SUPER_IMPOSE
 	void write_signal(int id, uint32_t data, uint32_t mask);
 #endif
 	void event_vline(int v, int clock);
 #ifdef USE_DEBUGGER
-	uint32_t get_debug_data_addr_mask()
+	void *get_debugger()
 	{
-		return TMS9918A_VRAM_SIZE - 1;
+		return d_debugger;
+	}
+	uint64_t get_debug_data_addr_space()
+	{
+		return TMS9918A_VRAM_SIZE;
 	}
 	void write_debug_data8(uint32_t addr, uint32_t data)
 	{
-		vram[addr & (TMS9918A_VRAM_SIZE - 1)] = data;
+		if(addr < TMS9918A_VRAM_SIZE) {
+			vram[addr] = data;
+		}
 	}
 	uint32_t read_debug_data8(uint32_t addr)
 	{
-		return vram[addr & (TMS9918A_VRAM_SIZE - 1)];
+		if(addr < TMS9918A_VRAM_SIZE) {
+			return vram[addr];
+		}
+		return 0;
 	}
-	void get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
+	bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
 #endif
 	bool process_state(FILEIO* state_fio, bool loading);
 	
@@ -88,6 +111,12 @@ public:
 	{
 		register_output_signal(&outputs_irq, device, id, mask);
 	}
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
 	void draw_screen();
 };
 

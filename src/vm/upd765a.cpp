@@ -1759,7 +1759,7 @@ void UPD765A::update_config()
 }
 
 #ifdef USE_DEBUGGER
-void UPD765A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool UPD765A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	int drv = hdu & DRIVE_MASK;
 	int side = (hdu >> 2) & 1;
@@ -1782,6 +1782,7 @@ void UPD765A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 			}
 		}
 	}
+	return true;
 }
 #endif
 

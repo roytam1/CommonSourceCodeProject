@@ -64,15 +64,15 @@ void MB8877::register_my_event(int event, double usec)
 	register_event(this, (event << 8) | (cmdtype & 0xff), usec, false, &register_id[event]);
 }
 
-void MB8877::register_seek_event()
+void MB8877::register_seek_event(bool first)
 {
 	cancel_my_event(EVENT_SEEK);
 	if(fdc[drvreg].track == seektrk) {
 		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), 1, false, &register_id[EVENT_SEEK]);
 	} else if(disk[drvreg]->drive_type == DRIVE_TYPE_2HD) {
-		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_hi[cmdreg & 3], false, &register_id[EVENT_SEEK]);
+		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_hi[cmdreg & 3] - (first ? 250 : 0), false, &register_id[EVENT_SEEK]);
 	} else {
-		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_lo[cmdreg & 3], false, &register_id[EVENT_SEEK]);
+		register_event(this, (EVENT_SEEK << 8) | (cmdtype & 0xff), seek_wait_lo[cmdreg & 3] - (first ? 500 : 0), false, &register_id[EVENT_SEEK]);
 	}
 	now_seek = true;
 }
@@ -674,7 +674,7 @@ void MB8877::event_callback(int event_id, int err)
 			trkreg = fdc[drvreg].track;
 		}
 		if(seektrk != fdc[drvreg].track) {
-			register_seek_event();
+			register_seek_event(false);
 			break;
 		}
 		seekend_clock = get_current_clock();
@@ -972,7 +972,7 @@ void MB8877::cmd_restore()
 	seektrk = 0;
 	seekvct = true;
 	
-	register_seek_event();
+	register_seek_event(true);
 }
 
 void MB8877::cmd_seek()
@@ -998,7 +998,7 @@ void MB8877::cmd_seek()
 			trkreg = fdc[drvreg].track;
 		}
 	}
-	register_seek_event();
+	register_seek_event(true);
 }
 
 void MB8877::cmd_step()
@@ -1032,7 +1032,7 @@ void MB8877::cmd_stepin()
 //			trkreg = fdc[drvreg].track;
 		}
 	}
-	register_seek_event();
+	register_seek_event(true);
 }
 
 void MB8877::cmd_stepout()
@@ -1056,7 +1056,7 @@ void MB8877::cmd_stepout()
 //			trkreg = fdc[drvreg].track;
 		}
 	}
-	register_seek_event();
+	register_seek_event(true);
 }
 
 void MB8877::cmd_readdata(bool first_sector)
@@ -1642,7 +1642,7 @@ void MB8877::update_config()
 }
 
 #ifdef USE_DEBUGGER
-void MB8877::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool MB8877::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	int position = get_cur_position();
 	
@@ -1663,6 +1663,7 @@ void MB8877::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 			}
 		}
 	}
+	return true;
 }
 #endif
 

@@ -72,7 +72,7 @@ private:
 	
 	void cancel_my_event(int event);
 	void register_my_event(int event, double usec);
-	void register_seek_event();
+	void register_seek_event(bool first);
 	void register_drq_event(int bytes);
 	void register_lost_event(int bytes);
 	
@@ -163,7 +163,7 @@ public:
 	void event_callback(int event_id, int err);
 	void update_config();
 #ifdef USE_DEBUGGER
-	void get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
+	bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len);
 #endif
 	bool process_state(FILEIO* state_fio, bool loading);
 	

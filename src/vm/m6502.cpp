@@ -1201,7 +1201,7 @@ bool M6502::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void M6502::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool M6502::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	my_stprintf_s(buffer, buffer_len,
 	_T("PC = %04X  A = %02X  X = %02X  Y = %02X  S = %02X  P = %02X [%c%c%c%c%c%c%c%c]\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
@@ -1211,6 +1211,7 @@ void M6502::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 	total_icount, total_icount - prev_total_icount,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_icount = total_icount;
+	return true;
 }
 
 // disassembler

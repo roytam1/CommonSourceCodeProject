@@ -88,8 +88,10 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	fdc->set_context_noise_seek(new NOISE(this, emu));
 	fdc->set_context_noise_head_down(new NOISE(this, emu));
 	fdc->set_context_noise_head_up(new NOISE(this, emu));
-//	psg = new YM2203(this, emu);
 	psg = new AY_3_891X(this, emu);	// AY-3-8912
+#ifdef USE_DEBUGGER
+	psg->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	ctc0 = new Z80CTC(this, emu);
 #if defined(_MZ6500) || defined(_MZ6550)
 	ctc1 = new Z80CTC(this, emu);
@@ -416,7 +418,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	5
+#define STATE_VERSION	6
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

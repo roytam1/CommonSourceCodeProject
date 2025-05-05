@@ -911,7 +911,7 @@ bool MC6800::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void MC6800::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool MC6800::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	my_stprintf_s(buffer, buffer_len,
 	_T("CCR = [%c%c%c%c%c%c]  A = %02X  B = %02X  IX = %04X  PC = %04X  SP = %04X\nClocks = %llu (%llu) Since Scanline = %d/%d (%d/%d)"),
@@ -920,6 +920,7 @@ void MC6800::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 	total_icount, total_icount - prev_total_icount,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_icount = total_icount;
+	return true;
 }
 
 /*

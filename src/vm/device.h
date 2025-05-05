@@ -709,9 +709,18 @@ public:
 	{
 		return 0;
 	}
-	virtual void write_debug_data8(uint32_t addr, uint32_t data) {}
+	virtual uint64_t get_debug_data_addr_space()
+	{
+		// override this function when memory space is not (2 << n)
+		return (uint64_t)get_debug_data_addr_mask() + 1;
+	}
+	virtual void write_debug_data8(uint32_t addr, uint32_t data)
+	{
+//		write_data8(addr, data);
+	}
 	virtual uint32_t read_debug_data8(uint32_t addr)
 	{
+//		return read_data8(addr);
 		return 0xff;
 	}
 	virtual void write_debug_data16(uint32_t addr, uint32_t data)
@@ -736,9 +745,13 @@ public:
 		val |= read_debug_data16(addr + 2) << 16;
 		return val;
 	}
-	virtual void write_debug_io8(uint32_t addr, uint32_t data) {}
+	virtual void write_debug_io8(uint32_t addr, uint32_t data)
+	{
+//		write_io8(addr, data);
+	}
 	virtual uint32_t read_debug_io8(uint32_t addr)
 	{
+//		return read_io8(addr);
 		return 0xff;
 	}
 	virtual void write_debug_io16(uint32_t addr, uint32_t data)
@@ -771,10 +784,17 @@ public:
 	{
 		return 0;
 	}
-	virtual void get_debug_regs_info(_TCHAR *buffer, size_t buffer_len) {}
+	virtual bool get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+	{
+		return false;
+	}
 	virtual int debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)
 	{
 		return 0;
+	}
+	virtual bool is_debugger()
+	{
+		return false;
 	}
 #endif
 	

@@ -983,7 +983,7 @@ bool MCS48::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void MCS48::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool MCS48::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 /*
 R0 = 00  R1 = 00  R2 = 00  R3 = 00 (R0)= 00 (R1)= 00 (SP-1)= 0000  PC = 0000
@@ -1005,6 +1005,7 @@ Clocks = 0 (0)  Since Scanline = 0/0 (0/0)
 	total_icount, total_icount - prev_total_icount,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_icount = total_icount;
+	return true;
 }
 
 // license:BSD-3-Clause

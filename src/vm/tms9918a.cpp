@@ -10,6 +10,9 @@
 */
 
 #include "tms9918a.h"
+#ifdef USE_DEBUGGER
+#include "debugger.h"
+#endif
 
 #define ADDR_MASK (TMS9918A_VRAM_SIZE - 1)
 
@@ -29,6 +32,14 @@ void TMS9918A::initialize()
 {
 	// register event
 	register_vline_event(this);
+	
+#ifdef USE_DEBUGGER
+	if(d_debugger != NULL) {
+		d_debugger->set_device_name(_T("Debugger (TMS9918A VDP)"));
+		d_debugger->set_context_mem(this);
+		d_debugger->set_context_io(vm->dummy);
+	}
+#endif
 }
 
 void TMS9918A::reset()
@@ -114,7 +125,13 @@ void TMS9918A::write_io8(uint32_t addr, uint32_t data)
 		}
 	} else {
 		// vram
-		vram[vram_addr] = data;
+#ifdef USE_DEBUGGER
+		if(d_debugger != NULL && d_debugger->now_device_debugging) {
+			d_debugger->write_data8(vram_addr, data);
+		} else
+#endif
+		this->write_data8(vram_addr, data);
+//		vram[vram_addr] = data;
 		vram_addr = (vram_addr + 1) & ADDR_MASK;
 		read_ahead = data;
 		latch = false;
@@ -133,11 +150,27 @@ uint32_t TMS9918A::read_io8(uint32_t addr)
 	} else {
 		// vram
 		uint8_t val = read_ahead;
-		read_ahead = vram[vram_addr];
+#ifdef USE_DEBUGGER
+		if(d_debugger != NULL && d_debugger->now_device_debugging) {
+			read_ahead = d_debugger->read_data8(vram_addr);
+		} else
+#endif
+		read_ahead = this->read_data8(vram_addr);
+//		read_ahead = vram[vram_addr];
 		vram_addr = (vram_addr + 1) & ADDR_MASK;
 		latch = false;
 		return val;
 	}
+}
+
+void TMS9918A::write_data8(uint32_t addr, uint32_t data)
+{
+	vram[addr & ADDR_MASK] = data;
+}
+
+uint32_t TMS9918A::read_data8(uint32_t addr)
+{
+	return vram[addr & ADDR_MASK];
 }
 
 #ifdef TMS9918A_SUPER_IMPOSE
@@ -564,12 +597,13 @@ void TMS9918A::draw_sprites()
 }
 
 #ifdef USE_DEBUGGER
-void TMS9918A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool TMS9918A::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	my_stprintf_s(buffer, buffer_len,
 	_T("REGS=%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X VRAM_ADDR=%04X STATUS=%02X"),
 	regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7],
 	vram_addr, status_reg);
+	return true;
 }
 #endif
 

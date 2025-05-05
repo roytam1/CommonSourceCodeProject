@@ -230,6 +230,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	
 	if(sound_type == 0 || sound_type == 1) {
 		opn = new YM2203(this, emu);
+#ifdef USE_DEBUGGER
+		opn->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #ifdef SUPPORT_PC98_OPNA
 		opn->set_device_name(_T("YM2608 OPNA (PC-9801-86)"));
 		opn->is_ym2608 = true;
@@ -796,6 +799,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pc88rtc->set_device_name(_T("uPD1990A RTC (PC-8801)"));
 	pc88rtc->set_context_event_manager(pc88event);
 	pc88opn1 = new YM2203(this, emu);
+#ifdef USE_DEBUGGER
+	pc88opn1->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 #ifdef SUPPORT_PC88_OPNA
 	pc88opn1->set_device_name(_T("YM2608 OPNA (PC-8801)"));
 	pc88opn1->is_ym2608 = true;
@@ -1559,7 +1565,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	14
+#define STATE_VERSION	15
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

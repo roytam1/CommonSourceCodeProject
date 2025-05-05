@@ -267,7 +267,7 @@ bool HUC6280::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void HUC6280::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool HUC6280::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	h6280_Regs *cpustate = (h6280_Regs *)opaque;
 	my_stprintf_s(buffer, buffer_len,
@@ -276,6 +276,7 @@ void HUC6280::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 	total_icount, total_icount - prev_total_icount,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_icount = total_icount;
+	return true;
 }
 
 // disassembler

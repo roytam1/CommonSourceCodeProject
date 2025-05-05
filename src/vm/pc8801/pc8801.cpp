@@ -186,6 +186,18 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 		#endif
 	#endif
 #endif
+#ifdef USE_DEBUGGER
+#ifdef SUPPORT_PC88_OPN1
+	if(pc88opn1 != NULL) {
+		pc88opn1->set_context_debugger(new DEBUGGER(this, emu));
+	}
+#endif
+#ifdef SUPPORT_PC88_OPN2
+	if(pc88opn2 != NULL) {
+		pc88opn2->set_context_debugger(new DEBUGGER(this, emu));
+	}
+#endif
+#endif
 	if(config.printer_type == 0) {
 		pc88prn = new PRNFILE(this, emu);
 //		pc88prn->set_context_event_manager(pc88event);
@@ -227,6 +239,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 #ifdef SUPPORT_PC88_HMB20
 	if(config.dipswitch & DIPSWITCH_HMB20) {
 		pc88opm = new YM2151(this, emu);
+#ifdef USE_DEBUGGER
+		pc88opm->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 		pc88opm->set_device_name(_T("YM2151 OPM (HMB-20)"));
 //		pc88opm->set_context_event_manager(pc88event);
 	} else {
@@ -251,6 +266,12 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 		pc88gsx_psg4 = new AY_3_891X(this, emu);
 		pc88gsx_psg4->set_device_name(_T("AY-3-8910 PSG #4 (GSX-8800)"));
 //		pc88gsx_psg4->set_context_event_manager(pc88event);
+#ifdef USE_DEBUGGER
+		pc88gsx_psg1->set_context_debugger(new DEBUGGER(this, emu));
+		pc88gsx_psg2->set_context_debugger(new DEBUGGER(this, emu));
+		pc88gsx_psg3->set_context_debugger(new DEBUGGER(this, emu));
+		pc88gsx_psg4->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	} else {
 //		pc88gsx_pit = NULL;
 		pc88gsx_psg1 = pc88gsx_psg2 = pc88gsx_psg3 = pc88gsx_psg4 = NULL;
@@ -813,7 +834,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	10
+#define STATE_VERSION	11
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

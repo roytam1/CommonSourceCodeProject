@@ -1,3 +1,23 @@
+2/14/2019
+
+[EMU/DEBUGGER] support break point for non-cpu device
+[EMU/DEBUGGER] change command length from 64 to 1024
+
+[VM/AY_3_891X] support break point
+[VM/DEVICE] add get_debug_data_addr_space()
+[VM/DEVICE] change type of get_debug_regs_info() from void to bool
+[VM/MB8877] fix to decrease first seek time by 500us (2D/2DD) or 250us (2HD)
+[VM/TMS9918A] support break point
+[VM/YM2151] support break point
+[VM/YM2203] support break point
+[VM/Z80CTC] fix to reset interrupt req/in service by bit2 of control register
+[VM/Z80DMA] fix to reset interrupt req/in service by reset command
+
+[X1TURBO/EMM] support to access vram as memory space from debugger
+[X1TURBO/IOBUS] support to access vram as memory space from debugger
+[X1TURBO/IOBUS] support break point
+
+
 2/9/2019
 
 [EMU/DEBUGGER] enlarge text buffer size

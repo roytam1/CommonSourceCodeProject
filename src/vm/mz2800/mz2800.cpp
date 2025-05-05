@@ -87,6 +87,9 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	}
 	dma = new UPD71071(this, emu);
 	opn = new YM2203(this, emu);
+#ifdef USE_DEBUGGER
+	opn->set_context_debugger(new DEBUGGER(this, emu));
+#endif
 	pio1 = new Z80PIO(this, emu);
 	sio = new Z80SIO(this, emu);
 	
@@ -445,7 +448,7 @@ void VM::update_config()
 	}
 }
 
-#define STATE_VERSION	6
+#define STATE_VERSION	7
 
 bool VM::process_state(FILEIO* state_fio, bool loading)
 {

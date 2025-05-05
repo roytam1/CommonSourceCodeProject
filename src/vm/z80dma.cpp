@@ -243,7 +243,7 @@ void Z80DMA::write_io8(uint32_t addr, uint32_t data)
 			case CMD_RESET:
 				enabled = false;
 				force_ready = false;
-				req_intr = false;
+				req_intr = in_service = false;
 				update_intr();
 				status = 0x30;
 				// reset timing

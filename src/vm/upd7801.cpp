@@ -1337,7 +1337,7 @@ bool UPD7801::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void UPD7801::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool UPD7801::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 /*
 VA = 0000  BC = 0000  DE = 0000 HL = 0000  PSW= 00 [Z SK HC L1 L0 CY]
@@ -1356,6 +1356,7 @@ Clocks = 0 (0)  Since Scanline = 0/0 (0/0)
 	total_count, total_count - prev_total_count,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_count = total_count;
+	return true;
 }
 
 // disassembler

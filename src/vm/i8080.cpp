@@ -1659,7 +1659,7 @@ bool I8080::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void I8080::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool I8080::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 /*
 F = [--------]  A = 00  BC = 0000  DE = 0000  HL = 0000  SP = 0000  PC = 0000
@@ -1678,6 +1678,7 @@ Clocks = 0 (0)  Since Scanline = 0/0 (0/0)
 	total_count, total_count - prev_total_count,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_count = total_count;
+	return true;
 }
 
 // disassembler

@@ -2840,25 +2840,24 @@ void PC88::draw_text()
 				crtc.attrib.expand[crtc.cursor.y][crtc.cursor.x] ^= ctype[crtc.cursor.type + 1];
 			}
 		}
-	} else {
-		if(crtc.status & 0x88) {
-			// dma underrun
-			crtc.status &= ~0x80;
-			memset(crtc.text.expand, 0, 200 * 80);
-			memset(crtc.attrib.expand, crtc.reverse ? 3 : 2, 200 * 80);
-		}
-		// for Advanced Fantasian Opening (20line) (XM8 version 1.00)
-		if(!(crtc.status & 0x10) || Port53_TEXTDS) {
-//		if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
-			memset(crtc.text.expand, 0, 200 * 80);
-			for(int y = 0; y < 200; y++) {
-				for(int x = 0; x < 80; x++) {
-					crtc.attrib.expand[y][x] &= 0xe0;
-					crtc.attrib.expand[y][x] |= 0x02;
-				}
+	}
+	if(crtc.status & 0x88) {
+		// dma underrun
+		crtc.status &= ~0x80;
+		memset(crtc.text.expand, 0, 200 * 80);
+		memset(crtc.attrib.expand, crtc.reverse ? 3 : 2, 200 * 80);
+	}
+	// for Advanced Fantasian Opening (20line) (XM8 version 1.00)
+	if(!(crtc.status & 0x10) || Port53_TEXTDS) {
+//	if(!(crtc.status & 0x10) || (crtc.status & 8) || Port53_TEXTDS) {
+		memset(crtc.text.expand, 0, 200 * 80);
+		for(int y = 0; y < 200; y++) {
+			for(int x = 0; x < 80; x++) {
+				crtc.attrib.expand[y][x] &= 0xe0;
+				crtc.attrib.expand[y][x] |= 0x02;
 			}
-//			memset(crtc.attrib.expand, 2, 200 * 80);
 		}
+//		memset(crtc.attrib.expand, 2, 200 * 80);
 	}
 	
 	// for Xak2 opening

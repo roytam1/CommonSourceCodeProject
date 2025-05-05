@@ -356,7 +356,7 @@ bool I286::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void I286::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool I286::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 	cpu_state *cpustate = (cpu_state *)opaque;
 	my_stprintf_s(buffer, buffer_len,
@@ -368,6 +368,7 @@ void I286::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 	cpustate->total_icount, cpustate->total_icount - cpustate->prev_total_icount,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	cpustate->prev_total_icount = cpustate->total_icount;
+	return true;
 }
 
 int I286::debug_dasm(uint32_t pc, _TCHAR *buffer, size_t buffer_len)

@@ -1603,7 +1603,7 @@ bool TMS9995::write_debug_reg(const _TCHAR *reg, uint32_t data)
 	return true;
 }
 
-void TMS9995::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
+bool TMS9995::get_debug_regs_info(_TCHAR *buffer, size_t buffer_len)
 {
 /*
 ST = 0000 [LGT:0 AGT:0 EQ:0 C:0 OV:0 OP:0 X:0 OVIE:0 IM:0]
@@ -1644,6 +1644,7 @@ Clocks = 0 (0) Since Scanline = 0/0 (0/0)
 	total_count, total_count - prev_total_count,
 	get_passed_clock_since_vline(), get_cur_vline_clocks(), get_cur_vline(), get_lines_per_frame());
 	prev_total_count = total_count;
+	return true;
 }
 
 // disassembler

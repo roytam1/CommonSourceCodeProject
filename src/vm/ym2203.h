@@ -24,19 +24,26 @@
 #define SIG_YM2203_PORT_B	1
 #define SIG_YM2203_MUTE		2
 
+#ifdef USE_DEBUGGER
+class DEBUGGER;
+#endif
+
 class YM2203 : public DEVICE
 {
 private:
+#ifdef USE_DEBUGGER
+	DEBUGGER *d_debugger;
+#endif
 	FM::OPNA* opna;
 	FM::OPN* opn;
 #ifdef SUPPORT_MAME_FM_DLL
 //	CFMDLL* fmdll;
 	LPVOID* dllchip;
+#endif
 	struct {
 		bool written;
 		uint8_t data;
 	} port_log[0x200];
-#endif
 	int base_decibel_fm, base_decibel_psg;
 	
 	uint8_t ch;
@@ -83,6 +90,9 @@ public:
 		// default device type is YM2203
 		// please set is_ym2608 = true before YM2203::initializ() is called
 		is_ym2608 = false;
+#ifdef USE_DEBUGGER
+		d_debugger = NULL;
+#endif
 //		set_device_name(_T("YM2203 OPN"));
 		this_device_name[0] = _T('\0');
 	}
@@ -100,6 +110,32 @@ public:
 	void mix(int32_t* buffer, int cnt);
 	void set_volume(int ch, int decibel_l, int decibel_r);
 	void update_timing(int new_clocks, double new_frames_per_sec, int new_lines_per_frame);
+	// for debugging
+	void write_data8(uint32_t addr, uint32_t data);
+	uint32_t read_data8(uint32_t addr);
+#ifdef USE_DEBUGGER
+	void *get_debugger()
+	{
+		return d_debugger;
+	}
+	uint64_t get_debug_data_addr_space()
+	{
+		return is_ym2608 ? 0x200 : 0x100;
+	}
+	void write_debug_data8(uint32_t addr, uint32_t data)
+	{
+		if(addr < (is_ym2608 ? 0x200 : 0x100)) {
+			write_data8(addr, data);
+		}
+	}
+	uint32_t read_debug_data8(uint32_t addr)
+	{
+		if(addr < (is_ym2608 ? 0x200 : 0x100)) {
+			return read_data8(addr);
+		}
+		return 0;
+	}
+#endif
 	bool process_state(FILEIO* state_fio, bool loading);
 	
 	// unique functions
@@ -115,6 +151,12 @@ public:
 	{
 		register_output_signal(&port[1].outputs, device, id, mask, shift);
 	}
+#ifdef USE_DEBUGGER
+	void set_context_debugger(DEBUGGER* device)
+	{
+		d_debugger = device;
+	}
+#endif
 	void initialize_sound(int rate, int clock, int samples, int decibel_fm, int decibel_psg);
 	void set_reg(uint32_t addr, uint32_t data); // for patch
 	bool is_ym2608;
