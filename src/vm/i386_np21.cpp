@@ -46,6 +46,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_80386;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_80386;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_80386;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_80386;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_80386;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_80386);
@@ -58,6 +59,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_I486SX;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_I486SX;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_I486SX;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_I486SX;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_I486SX;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_I486SX);
@@ -70,6 +72,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_I486DX;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_I486DX;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_I486DX;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_I486DX;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_I486DX;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_I486DX);
@@ -82,6 +85,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_PENTIUM;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_PENTIUM;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_PENTIUM;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_PENTIUM;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_PENTIUM;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_PENTIUM);
@@ -94,6 +98,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_MMX_PENTIUM;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_MMX_PENTIUM;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_MMX_PENTIUM;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_MMX_PENTIUM;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_MMX_PENTIUM;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_MMX_PENTIUM);
@@ -106,6 +111,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_PENTIUM_PRO;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_PENTIUM_PRO;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_PENTIUM_PRO;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_PENTIUM_PRO;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_PENTIUM_PRO;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_PENTIUM_PRO);
@@ -118,6 +124,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_PENTIUM_II;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_PENTIUM_II;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_PENTIUM_II;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_PENTIUM_II;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_PENTIUM_II;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_PENTIUM_II);
@@ -130,6 +137,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_PENTIUM_III;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_PENTIUM_III;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_PENTIUM_III;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_PENTIUM_III;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_PENTIUM_III;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_PENTIUM_III);
@@ -142,6 +150,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_PENTIUM_M;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_PENTIUM_M;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_PENTIUM_M;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_PENTIUM_M;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_PENTIUM_M;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_PENTIUM_M);
@@ -154,6 +163,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_PENTIUM_4;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_PENTIUM_4;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_PENTIUM_4;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_PENTIUM_4;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_PENTIUM_4;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_INTEL);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_PENTIUM_4);
@@ -166,6 +176,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_AMD_K6_2;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_AMD_K6_2;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_AMD_K6_2;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_AMD_K6_2;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_AMD_K6_2;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_AMD);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_AMD_K6_2);
@@ -178,6 +189,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_AMD_K6_III;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_AMD_K6_III;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_AMD_K6_III;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_AMD_K6_III;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_AMD_K6_III;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_AMD);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_AMD_K6_III);
@@ -190,6 +202,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_AMD_K7_ATHLON;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_AMD_K7_ATHLON;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_AMD_K7_ATHLON;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_AMD_K7_ATHLON;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_AMD_K7_ATHLON;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_AMD);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_AMD_K7_ATHLON);
@@ -202,6 +215,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_AMD_K7_ATHLON_XP;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_AMD_K7_ATHLON_XP;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_AMD_K7_ATHLON_XP;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK_AMD_K7_ATHLON_XP;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_AMD_K7_ATHLON_XP;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_AMD);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_AMD_K7_ATHLON_XP);
@@ -214,6 +228,7 @@ void I386::reset()
 		i386cpuid.cpu_feature = CPU_FEATURES_ALL;
 		i386cpuid.cpu_feature_ex = CPU_FEATURES_EX_ALL;
 		i386cpuid.cpu_feature_ecx = CPU_FEATURES_ECX_ALL;
+		i386cpuid.cpu_eflags_mask = CPU_EFLAGS_MASK;
 		i386cpuid.cpu_brandid = CPU_BRAND_ID_NEKOPRO2;
 		strcpy(i386cpuid.cpu_vendor, CPU_VENDOR_NEKOPRO);
 		strcpy(i386cpuid.cpu_brandstring, CPU_BRAND_STRING_NEKOPRO2);
