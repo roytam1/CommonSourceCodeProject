@@ -181,6 +181,7 @@ void MEMORY::initialize()
 	
 	// register event
 	register_frame_event(this);
+	register_vline_event(this);
 	register_event(this, EVENT_TEXT_BLINK, 1000000.0 / 8.0, true, NULL); // 2.6Hz-4.4Hz
 }
 
@@ -745,6 +746,47 @@ void MEMORY::event_frame()
 	cblink = (cblink + 1) & 0x1f;
 }
 
+void MEMORY::event_vline(int v, int clock)
+{
+	if(v < 200) {
+#if defined(_SMC777)
+		scrntype_t *palette_text_pc = &palette_pc[use_palette_text ? 16 : 0];
+		scrntype_t *palette_graph_pc = &palette_pc[use_palette_graph ? 16 : 0];
+		
+		memcpy(palette_line_text_pc[v], palette_text_pc, sizeof(scrntype_t) * 16);
+		memcpy(palette_line_graph_pc[v], palette_graph_pc, sizeof(scrntype_t) * 16);
+#endif
+		
+		// render text/graph screens
+		if(v == 0) {
+			memset(text, 0, sizeof(text));
+			memset(graph, 0, sizeof(graph));
+		}
+		if(vsup) {
+			return;
+		}
+		if(gcw & 0x80) {
+			draw_text_40x25(v);
+		} else {
+			draw_text_80x25(v);
+		}
+#if defined(_SMC777)
+		if(gcw & 0x08) {
+			draw_graph_640x200(v);
+		} else {
+			draw_graph_320x200(v);
+		}
+#else
+		switch(gcw & 0x0c) {
+		case 0x00: draw_graph_160x100(v); break;
+		case 0x04: draw_graph_320x200(v); break;
+		case 0x08: draw_graph_640x200(v); break;
+		case 0x0c: draw_graph_640x400(v); break;
+		}
+#endif
+	}
+}
+
 void MEMORY::draw_screen()
 {
 #if defined(_SMC70)
@@ -754,43 +796,8 @@ void MEMORY::draw_screen()
 #endif
 	emu->screen_skip_line(true);
 	
-	if(vsup) {
-		for(int y = 0; y < 400; y++) {
-			scrntype_t* dest = emu->get_screen_buffer(y);
-			memset(dest, 0, 640 * sizeof(scrntype_t));
-		}
-		return;
-	}
-	
-	// render text/graph screens
-	memset(text, 0, sizeof(text));
-	memset(graph, 0, sizeof(graph));
-	
-	if(gcw & 0x80) {
-		draw_text_40x25();
-	} else {
-		draw_text_80x25();
-	}
-#if defined(_SMC777)
-	if(gcw & 0x08) {
-		draw_graph_640x200();
-	} else {
-		draw_graph_320x200();
-	}
-#else
-	switch(gcw & 0x0c) {
-	case 0x00: draw_graph_160x100(); break;
-	case 0x04: draw_graph_320x200(); break;
-	case 0x08: draw_graph_640x200(); break;
-	case 0x0c: draw_graph_640x400(); break;
-	}
-#endif
-	
 	// copy to screen buffer
-#if defined(_SMC777)
-	scrntype_t *palette_text_pc = &palette_pc[use_palette_text ? 16 : 0];
-	scrntype_t *palette_graph_pc = &palette_pc[use_palette_graph ? 16 : 0];
-#else
+#if defined(_SMC70)
 	#define palette_text_pc  palette_pc
 //	#define palette_graph_pc palette_pc
 	scrntype_t *palette_graph_pc = ((gcw & 0x0c) == 0x0c) ? palette_bw_pc : palette_pc;
@@ -813,6 +820,10 @@ void MEMORY::draw_screen()
 		scrntype_t* dest1 = emu->get_screen_buffer(y * 2 + 1);
 		uint8_t* src_t = text[y];
 		uint8_t* src_g = graph[y];
+#if defined(_SMC777)
+		scrntype_t *palette_text_pc = palette_line_text_pc[y];
+		scrntype_t *palette_graph_pc = palette_line_graph_pc[y];
+#endif
 		
 		for(int x = 0; x < 640; x++) {
 			uint8_t t = src_t[x];
@@ -826,7 +837,7 @@ void MEMORY::draw_screen()
 	}
 }
 
-void MEMORY::draw_text_80x25()
+void MEMORY::draw_text_80x25(int v)
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
@@ -838,7 +849,13 @@ void MEMORY::draw_text_80x25()
 	src &= 0x7ff;
 	cursor &= 0x7ff;
 	
-	for(int y = 0; y < vt && y < 25; y++) {
+	int y = v / ht;
+	int l = v % ht;
+	
+	src += 80 * y;
+	src &= 0x7ff;
+	
+//	for(int y = 0; y < vt && y < 25; y++) {
 		for(int x = 0; x < hz && x < 80; x++) {
 			uint8_t code = cram[src];
 			uint8_t attr = aram[src];
@@ -858,7 +875,7 @@ void MEMORY::draw_text_80x25()
 			}
 			
 			// draw pattern
-			for(int l = 0; l < ht; l++) {
+//			for(int l = 0; l < ht; l++) {
 				uint8_t pat = (l < 8) ? pcg[(code << 3) + l] : 0;
 				if(reverse) pat = ~pat;
 				int yy = y * ht + l;
@@ -874,16 +891,16 @@ void MEMORY::draw_text_80x25()
 				d[5] = (pat & 0x04) ? front : back;
 				d[6] = (pat & 0x02) ? front : back;
 				d[7] = (pat & 0x01) ? front : back;
-			
-			}
+//			}
 			
 			// draw cursor
 			if(src == cursor) {
 				int s = crtc_regs[10] & 0x1f;
 				int e = crtc_regs[11] & 0x1f;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int l = s; l <= e && l < ht; l++) {
-						int yy = y * ht + l;
+//					for(int l = s; l <= e && l < ht; l++) {
+					if(l >= s && l <= e) {
+//						int yy = y * ht + l;
 						if(yy < 200) {
 							memset(&text[yy][x << 3], 7, 8);
 						}
@@ -892,10 +909,10 @@ void MEMORY::draw_text_80x25()
 			}
 			src = (src + 1) & 0x7ff;
 		}
-	}
+//	}
 }
 
-void MEMORY::draw_text_40x25()
+void MEMORY::draw_text_40x25(int v)
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
@@ -908,7 +925,13 @@ void MEMORY::draw_text_40x25()
 	src = (src & 0x7fe) | page;
 	cursor = (cursor & 0x7fe) | page;
 	
-	for(int y = 0; y < vt && y < 25; y++) {
+	int y = v / ht;
+	int l = v % ht;
+	
+	src += 80 * y;
+	src &= 0x7ff;
+	
+//	for(int y = 0; y < vt && y < 25; y++) {
 		for(int x = 0; x < hz && x < 80; x += 2) {
 			uint8_t code = cram[src];
 			uint8_t attr = aram[src];
@@ -928,7 +951,7 @@ void MEMORY::draw_text_40x25()
 			}
 			
 			// draw pattern
-			for(int l = 0; l < ht; l++) {
+//			for(int l = 0; l < ht; l++) {
 				uint8_t pat = (l < 8) ? pcg[(code << 3) + l] : 0;
 				if(reverse) pat = ~pat;
 				int yy = y * ht + l;
@@ -944,16 +967,16 @@ void MEMORY::draw_text_40x25()
 				d[10] = d[11] = (pat & 0x04) ? front : back;
 				d[12] = d[13] = (pat & 0x02) ? front : back;
 				d[14] = d[15] = (pat & 0x01) ? front : back;
-			
-			}
+//			}
 			
 			// draw cursor
 			if(src == cursor) {
 				int s = crtc_regs[10] & 0x1f;
 				int e = crtc_regs[11] & 0x1f;
 				if(bp == 0 || (bp == 0x40 && (cblink & 8)) || (bp == 0x60 && (cblink & 0x10))) {
-					for(int l = s; l <= e && l < ht; l++) {
-						int yy = y * ht + l;
+//					for(int l = s; l <= e && l < ht; l++) {
+					if(l >= s && l <= e) {
+//						int yy = y * ht + l;
 						if(yy < 200) {
 							memset(&text[yy][x << 3], 7, 16);
 						}
@@ -962,19 +985,24 @@ void MEMORY::draw_text_40x25()
 			}
 			src = (src + 2) & 0x7ff;
 		}
-	}
+//	}
 }
 
-void MEMORY::draw_graph_640x400()
+void MEMORY::draw_graph_640x400(int v)
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
 	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	
-	for(int y = 0; y < vt && y < 25; y++) {
+	int y = v / ht;
+	int l = v % ht;
+	
+	src += 160 * y;
+	
+//	for(int y = 0; y < vt && y < 25; y++) {
 		for(int x = 0; x < hz && x < 80; x++) {
-			for(int l = 0; l < ht; l++) {
+//			for(int l = 0; l < ht; l++) {
 				uint8_t pat0 = gram[(src + 0x1000 * l    ) & 0x7fff];
 				uint8_t pat1 = gram[(src + 0x1000 * l + 1) & 0x7fff];
 				int yy = y * ht + l;
@@ -1000,13 +1028,13 @@ void MEMORY::draw_graph_640x400()
 				d1[5] = (pat1 >> 2) & 1;
 				d1[6] = (pat1 >> 1) & 1;
 				d1[7] = (pat1     ) & 1;
-			}
+//			}
 			src += 2;
 		}
-	}
+//	}
 }
 
-void MEMORY::draw_graph_640x200()
+void MEMORY::draw_graph_640x200(int v)
 {
 	static const uint8_t color_table[2][4] = {{0, 4, 2, 1}, {0, 4, 2, 7}};
 	static const uint8_t* color_ptr = color_table[(gcw >> 5) & 1];
@@ -1016,9 +1044,14 @@ void MEMORY::draw_graph_640x200()
 	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	
-	for(int y = 0; y < vt && y < 25; y++) {
+	int y = v / ht;
+	int l = v % ht;
+	
+	src += 160 * y;
+	
+//	for(int y = 0; y < vt && y < 25; y++) {
 		for(int x = 0; x < hz && x < 80; x++) {
-			for(int l = 0; l < ht; l++) {
+//			for(int l = 0; l < ht; l++) {
 				uint8_t pat0 = gram[(src + 0x1000 * l    ) & 0x7fff];
 				uint8_t pat1 = gram[(src + 0x1000 * l + 1) & 0x7fff];
 				int yy = y * ht + l;
@@ -1034,22 +1067,27 @@ void MEMORY::draw_graph_640x200()
 				d[5] = color_ptr[(pat1 >> 4) & 3];
 				d[6] = color_ptr[(pat1 >> 2) & 3];
 				d[7] = color_ptr[(pat1     ) & 3];
-			}
+//			}
 			src += 2;
 		}
-	}
+//	}
 }
 
-void MEMORY::draw_graph_320x200()
+void MEMORY::draw_graph_320x200(int v)
 {
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
 	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
 	uint16_t src = (crtc_regs[12] << 8) | crtc_regs[13];
 	
-	for(int y = 0; y < vt && y < 25; y++) {
+	int y = v / ht;
+	int l = v % ht;
+	
+	src += 160 * y;
+	
+//	for(int y = 0; y < vt && y < 25; y++) {
 		for(int x = 0; x < hz && x < 80; x++) {
-			for(int l = 0; l < ht; l++) {
+//			for(int l = 0; l < ht; l++) {
 				uint8_t pat0 = gram[(src + 0x1000 * l    ) & 0x7fff];
 				uint8_t pat1 = gram[(src + 0x1000 * l + 1) & 0x7fff];
 				int yy = y * ht + l;
@@ -1061,14 +1099,17 @@ void MEMORY::draw_graph_320x200()
 				d[2] = d[3] = pat0 & 15;
 				d[4] = d[5] = pat1 >> 4;
 				d[6] = d[7] = pat1 & 15;
-			}
+//			}
 			src += 2;
 		}
-	}
+//	}
 }
 
-void MEMORY::draw_graph_160x100()
+void MEMORY::draw_graph_160x100(int v)
 {
+	if(v & 1) {
+		return;
+	}
 	int hz = crtc_regs[1];
 	int vt = crtc_regs[6] & 0x7f;
 	int ht = 8;// (crtc_regs[9] & 0x1f) + 1;
@@ -1076,9 +1117,14 @@ void MEMORY::draw_graph_160x100()
 	
 	src += 0x1000 * ((gcw >> 1) & 1) + (gcw & 1);
 	
-	for(int y = 0; y < vt && y < 25; y++) {
+	int y = v / ht;
+	int l = v % ht;
+	
+	src += 160 * y;
+	
+//	for(int y = 0; y < vt && y < 25; y++) {
 		for(int x = 0; x < hz && x < 80; x++) {
-			for(int l = 0; l < ht; l += 2) {
+//			for(int l = 0; l < ht; l += 2) {
 				uint8_t pat = gram[(src + 0x1000 * l) & 0x7fff];
 				int yy = y * ht + l;
 				if(yy >= 200) {
@@ -1090,10 +1136,10 @@ void MEMORY::draw_graph_160x100()
 				d1[0] = d1[1] = d1[2] = d1[3] = pat >> 4;
 				d0[4] = d0[5] = d0[6] = d0[7] = 
 				d1[4] = d1[5] = d1[6] = d1[7] = pat & 15;
-			}
+//			}
 			src += 2;
 		}
-	}
+//	}
 }
 
 #define STATE_VERSION	4

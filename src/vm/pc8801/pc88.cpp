@@ -398,6 +398,9 @@ void PC88::initialize()
 			ofs += 16;
 		}
 	}
+#ifdef PC8001_VARIANT
+	ram[0xff33] = 0; // DEMPA Galaxian
+#endif
 	
 	// create semi graphics pattern
 	for(int i = 0; i < 256; i++) {
