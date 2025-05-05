@@ -1,3 +1,9 @@
+11/28/2018
+
+[WIN32/INPUT] support joystick with multiple axes and hat key
+[WIN32/INPUT] improve joystick to keyboard function for numpad key 5
+
+
 11/27/2018
 
 [WIN32/INPUT] support joystick to keyboard function

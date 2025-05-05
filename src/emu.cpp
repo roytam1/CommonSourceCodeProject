@@ -1359,9 +1359,9 @@ void EMU::update_joystick()
 					joy_status[i] |= (1 << j);
 				}
 			} else {
-				int stick = config.joy_buttons[i][j] >> 4;
-				int button = config.joy_buttons[i][j] & 15;
-				if(stick < 2 && (joy_buffer[stick & 3] & (1 << button))) {
+				int stick = config.joy_buttons[i][j] >> 5;
+				int button = config.joy_buttons[i][j] & 0x1f;
+				if(stick < 4 && (joy_buffer[stick & 3] & (1 << button))) {
 					joy_status[i] |= (1 << j);
 				}
 			}

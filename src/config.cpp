@@ -120,7 +120,7 @@ void initialize_config()
 	#ifdef USE_JOYSTICK
 		for(int i = 0; i < 4; i++) {
 			for(int j = 0; j < 16; j++) {
-				config.joy_buttons[i][j] = (i << 4) | j;
+				config.joy_buttons[i][j] = (i << 5) | j;
 			}
 		}
 		config.use_joy_to_key = false;
@@ -328,7 +328,10 @@ void load_config(const _TCHAR* config_path)
 	#ifdef USE_JOYSTICK
 		for(int i = 0; i < 4; i++) {
 			for(int j = 0; j < 16; j++) {
-				config.joy_buttons[i][j] = MyGetPrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
+				int old = (i << 4) | j;
+				old = MyGetPrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), old, config_path);
+				old = ((old >> 4) << 5) | (old & 0x0f);
+				config.joy_buttons[i][j] = MyGetPrivateProfileInt(_T("Input"), create_string(_T("JoyButtonsEx%d_%d"), i + 1, j + 1), old, config_path);
 			}
 		}
 		config.use_joy_to_key = MyGetPrivateProfileBool(_T("Input"), _T("UseJoyToKey"), config.use_joy_to_key, config_path);
@@ -538,7 +541,7 @@ void save_config(const _TCHAR* config_path)
 	#ifdef USE_JOYSTICK
 		for(int i = 0; i < 8; i++) {
 			for(int j = 0; j < 16; j++) {
-				MyWritePrivateProfileInt(_T("Input"), create_string(_T("JoyButtons%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
+				MyWritePrivateProfileInt(_T("Input"), create_string(_T("JoyButtonsEx%d_%d"), i + 1, j + 1), config.joy_buttons[i][j], config_path);
 			}
 		}
 		MyWritePrivateProfileBool(_T("Input"), _T("UseJoyToKey"), config.use_joy_to_key, config_path);

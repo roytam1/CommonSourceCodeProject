@@ -3267,7 +3267,7 @@ static const _TCHAR *vk_names[] = {
 	_T("VK_NONAME"),		_T("VK_PA1"),			_T("VK_OEM_CLEAR"),		_T("VK_$FF"),			
 };
 
-static const _TCHAR *joy_button_names[16] = {
+static const _TCHAR *joy_button_names[32] = {
 	_T("Up"),
 	_T("Down"),
 	_T("Left"),
@@ -3284,6 +3284,22 @@ static const _TCHAR *joy_button_names[16] = {
 	_T("Button #10"),
 	_T("Button #11"),
 	_T("Button #12"),
+	_T("Button #13"),
+	_T("Button #14"),
+	_T("Button #15"),
+	_T("Button #16"),
+	_T("Z-Axis Low"),
+	_T("Z-Axis High"),
+	_T("R-Axis Low"),
+	_T("R-Axis High"),
+	_T("U-Axis Low"),
+	_T("U-Axis High"),
+	_T("V-Axis Low"),
+	_T("V-Axis High"),
+	_T("POV 0deg"),
+	_T("POV 90deg"),
+	_T("POV 180deg"),
+	_T("POV 270deg"),
 };
 
 HWND hJoyDlg;
@@ -3293,6 +3309,13 @@ int joy_stick_index;
 int joy_button_index;
 int joy_button_params[16];
 uint32_t joy_status[4];
+
+#define get_joy_range(min_value, max_value, lo_value, hi_value) \
+{ \
+	uint64_t center = ((uint64_t)min_value + (uint64_t)max_value) / 2; \
+	lo_value = (DWORD)((center + (uint64_t)min_value) / 2); \
+	hi_value = (DWORD)((center + (uint64_t)max_value) / 2); \
+}
 
 uint32_t get_joy_status(int index)
 {
@@ -3304,12 +3327,62 @@ uint32_t get_joy_status(int index)
 		joyinfo.dwSize = sizeof(JOYINFOEX);
 		joyinfo.dwFlags = JOY_RETURNALL;
 		if(joyGetPosEx(index, &joyinfo) == JOYERR_NOERROR) {
-			if(joyinfo.dwYpos < 0x3fff) status |= 0x01;
-			if(joyinfo.dwYpos > 0xbfff) status |= 0x02;
-			if(joyinfo.dwXpos < 0x3fff) status |= 0x04;
-			if(joyinfo.dwXpos > 0xbfff) status |= 0x08;
-			uint32_t mask = (1 << joycaps.wNumButtons) - 1;
-			status |= ((joyinfo.dwButtons & mask) << 4);
+			if(joycaps.wNumAxes >= 2) {
+				DWORD dwYposLo, dwYposHi;
+				get_joy_range(joycaps.wYmin, joycaps.wYmax, dwYposLo, dwYposHi);
+				if(joyinfo.dwYpos < dwYposLo) status |= 0x00000001;	// up
+				if(joyinfo.dwYpos > dwYposHi) status |= 0x00000002;	// down
+			}
+			if(joycaps.wNumAxes >= 1) {
+				DWORD dwXposLo, dwXposHi;
+				get_joy_range(joycaps.wXmin, joycaps.wXmax, dwXposLo, dwXposHi);
+				if(joyinfo.dwXpos < dwXposLo) status |= 0x00000004;	// left
+				if(joyinfo.dwXpos > dwXposHi) status |= 0x00000008;	// right
+			}
+			if(joycaps.wNumAxes >= 3) {
+				DWORD dwZposLo, dwZposHi;
+				get_joy_range(joycaps.wZmin, joycaps.wZmax, dwZposLo, dwZposHi);
+				if(joyinfo.dwZpos < dwZposLo) status |= 0x00100000;
+				if(joyinfo.dwZpos > dwZposHi) status |= 0x00200000;
+			}
+			if(joycaps.wNumAxes >= 4) {
+				DWORD dwRposLo, dwRposHi;
+				get_joy_range(joycaps.wRmin, joycaps.wRmax, dwRposLo, dwRposHi);
+				if(joyinfo.dwRpos < dwRposLo) status |= 0x00400000;
+				if(joyinfo.dwRpos > dwRposHi) status |= 0x00800000;
+			}
+			if(joycaps.wNumAxes >= 5) {
+				DWORD dwUposLo, dwUposHi;
+				get_joy_range(joycaps.wUmin, joycaps.wUmax, dwUposLo, dwUposHi);
+				if(joyinfo.dwUpos < dwUposLo) status |= 0x01000000;
+				if(joyinfo.dwUpos > dwUposHi) status |= 0x02000000;
+			}
+			if(joycaps.wNumAxes >= 6) {
+				DWORD dwVposLo, dwVposHi;
+				get_joy_range(joycaps.wVmin, joycaps.wVmax, dwVposLo, dwVposHi);
+				if(joyinfo.dwVpos < dwVposLo) status |= 0x04000000;
+				if(joyinfo.dwVpos > dwVposHi) status |= 0x08000000;
+			}
+			if(joyinfo.dwPOV != 0xffff) {
+				static const uint32_t dir[8] = {
+					0x10000000 + 0x00000000,
+					0x10000000 + 0x20000000,
+					0x00000000 + 0x20000000,
+					0x40000000 + 0x20000000,
+					0x40000000 + 0x00000000,
+					0x40000000 + 0x80000000,
+					0x00000000 + 0x80000000,
+					0x10000000 + 0x80000000,
+				};
+				for(int i = 0; i < 9; i++) {
+					if(joyinfo.dwPOV < (DWORD)(2250 + 4500 * i)) {
+						status |= dir[i & 7];
+						break;
+					}
+				}
+			}
+			DWORD dwButtonsMask = (1 << min(16, joycaps.wNumButtons)) - 1;
+			status |= ((joyinfo.dwButtons & dwButtonsMask) << 4);
 		}
 	}
 	return status;
@@ -3322,7 +3395,7 @@ void set_joy_button_text(int index)
 	} else if(joy_stick_index == -1) {
 			SetDlgItemText(hJoyDlg, IDC_JOYSTICK_PARAM0 + index, _T("(None)"));
 	} else {
-		SetDlgItemText(hJoyDlg, IDC_JOYSTICK_PARAM0 + index, create_string(_T("Joystick #%d - %s"), (joy_button_params[index] >> 4) + 1, joy_button_names[joy_button_params[index] & 15]));
+		SetDlgItemText(hJoyDlg, IDC_JOYSTICK_PARAM0 + index, create_string(_T("Joystick #%d - %s"), (joy_button_params[index] >> 5) + 1, joy_button_names[joy_button_params[index] & 0x1f]));
 	}
 }
 
@@ -3400,7 +3473,7 @@ BOOL CALLBACK JoyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case IDC_JOYSTICK_RESET:
 			for(int i = 0; i < 16; i++) {
-				joy_button_params[i] = (joy_stick_index << 4) | i;
+				joy_button_params[i] = (joy_stick_index << 5) | i;
 				set_joy_button_text(i);
 			}
 			break;
@@ -3411,10 +3484,10 @@ BOOL CALLBACK JoyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 		for(int i = 0; i < 4; i++) {
 			uint32_t status = get_joy_status(i);
-			for(int j = 0; j < 16; j++) {
+			for(int j = 0; j < 32; j++) {
 				uint32_t bit = 1 << j;
-				if(!(joy_status[i] & bit) && (status & bit)) {
-					joy_button_params[joy_button_index] = (i << 4) | j;
+				if((joy_status[i] & bit) && !(status & bit)) {
+					joy_button_params[joy_button_index] = (i << 5) | j;
 					set_joy_button_text(joy_button_index);
 					if(hJoyEdit[++joy_button_index] == NULL) {
 						joy_button_index = 0;
@@ -3495,7 +3568,7 @@ BOOL CALLBACK JoyToKeyWndProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 			uint32_t status = get_joy_status(i);
 			for(int j = 0; j < 16; j++) {
 				uint32_t bit = 1 << (j + 4);
-				if(!(joy_status[i] & bit) && (status & bit)) {
+				if((joy_status[i] & bit) && !(status & bit)) {
 					if(hJoyEdit[j] != NULL) {
 						joy_button_index = j;
 						SetFocus(hJoyEdit[joy_button_index]);
