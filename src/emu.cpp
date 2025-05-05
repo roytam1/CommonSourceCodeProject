@@ -70,6 +70,9 @@ EMU::EMU()
 #ifdef USE_CPU_TYPE
 	cpu_type = config.cpu_type;
 #endif
+#ifdef USE_DIPSWITCH
+	dipswitch = config.dipswitch;
+#endif
 #ifdef USE_SOUND_TYPE
 	sound_type = config.sound_type;
 #endif
@@ -237,6 +240,10 @@ void EMU::reset()
 #ifdef USE_CPU_TYPE
 	reinitialize |= (cpu_type != config.cpu_type);
 	cpu_type = config.cpu_type;
+#endif
+#ifdef USE_DIPSWITCH
+	reinitialize |= (dipswitch != config.dipswitch);
+	dipswitch = config.dipswitch;
 #endif
 #ifdef USE_SOUND_TYPE
 	reinitialize |= (sound_type != config.sound_type);
@@ -2880,6 +2887,10 @@ bool EMU::load_state_tmp(const _TCHAR* file_path)
 #ifdef USE_CPU_TYPE
 				reinitialize |= (cpu_type != config.cpu_type);
 				cpu_type = config.cpu_type;
+#endif
+#ifdef USE_DIPSWITCH
+				reinitialize |= (dipswitch != config.dipswitch);
+				dipswitch = config.dipswitch;
 #endif
 #ifdef USE_SOUND_TYPE
 				reinitialize |= (sound_type != config.sound_type);

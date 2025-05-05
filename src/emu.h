@@ -109,6 +109,9 @@ private:
 #ifdef USE_CPU_TYPE
 	int cpu_type;
 #endif
+#ifdef USE_DIPSWITCH
+	uint32_t dipswitch;
+#endif
 #ifdef USE_SOUND_TYPE
 	int sound_type;
 #endif

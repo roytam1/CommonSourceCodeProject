@@ -1,3 +1,14 @@
+1/16/2019
+
+[EMU] improve to reinitialize vm in reset when dipswitch is changed
+
+[VM/UPD765A] fix st3 in sence devstat command to set two-side bit (temporary)
+
+[PC8801] support GSX-8800
+[PC8801] support to enable/disable PC-8801-11/GSX-8800/PCG-8100
+[PC8801] fix some degradations
+
+
 1/11/2019
 
 [PC8001] support NEC PC-8001
