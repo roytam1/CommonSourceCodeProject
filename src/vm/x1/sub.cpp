@@ -212,7 +212,8 @@ void SUB::update_tape()
 {
 	if(rom_crc32 != CRC32_MSM80C49_277) {
 		uint32_t value = 0x10;
-		if(!(tape_play && tape_eot)) {
+//		if(!(tape_play && tape_eot)) {
+		if((tape_play || tape_rec) && !tape_eot) {
 			value |= 0x01;	// tape end
 		}
 		if(tape_play || tape_rec) {
