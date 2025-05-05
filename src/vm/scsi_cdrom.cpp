@@ -217,8 +217,25 @@ void SCSI_CDROM::start_command()
 		#ifdef _SCSI_DEBUG_LOG
 			this->out_debug_log(_T("[SCSI_DEV:ID=%d] Command: NEC Read Mode Select 6-byte\n"), scsi_id);
 		#endif
-		read_mode = (command[4] != 0);
-		break;
+		// start position
+//		position = (command[1] & 0x1f) * 0x10000 + command[2] * 0x100 + command[3];
+//		position *= physical_block_size();
+		position = 0;
+		// transfer length
+//		remain = command[4];// * logical_block_size();
+		remain = 11;
+		if(remain != 0) {
+			// clear data buffer
+			buffer->clear();
+			// change to data in phase
+			set_phase_delay(SCSI_PHASE_DATA_OUT, seek_time);
+		} else {
+			// transfer length is zero, change to status phase
+			set_dat(SCSI_STATUS_GOOD);
+			set_sense_code(SCSI_SENSE_NOSENSE);
+			set_phase_delay(SCSI_PHASE_STATUS, 10.0);
+		}
+		return;
 		
 	case 0xd8:
 		#ifdef _SCSI_DEBUG_LOG
@@ -394,6 +411,9 @@ void SCSI_CDROM::start_command()
 			case 0x00:      /* Get first and last track numbers */
 				buffer->write(TO_BCD(1));
 				buffer->write(TO_BCD(track_num));
+				// PC-8801 CD BIOS invites 4 bytes ?
+				buffer->write(0);
+				buffer->write(0);
 				break;
 			case 0x01:      /* Get total disk size in MSF format */
 				{
@@ -401,6 +421,8 @@ void SCSI_CDROM::start_command()
 					buffer->write((msf >> 16) & 0xff);
 					buffer->write((msf >>  8) & 0xff);
 					buffer->write((msf >>  0) & 0xff);
+					// PC-8801 CD BIOS invites 4 bytes ?
+					buffer->write(0);
 				}
 				break;
 			case 0x02:      /* Get track information */
@@ -456,15 +478,16 @@ bool SCSI_CDROM::read_buffer(int length)
 		return false;
 	}
 	while(length > 0) {
-		uint8_t tmp_buffer[SCSI_BUFFER_SIZE];
-		int tmp_length = min(length, (int)sizeof(tmp_buffer));
+		uint8_t tmp_buffer[2352];
+//		int tmp_length = min(length, (int)sizeof(tmp_buffer));
+		int tmp_length = 2352 - offset;
 		
 		if(fio_img->Fread(tmp_buffer, tmp_length, 1) != 1) {
 			set_sense_code(SCSI_SENSE_ILLGLBLKADDR); //SCSI_SENSE_NORECORDFND
 			return false;
 		}
-		for(int i = 0; i < tmp_length && length > 0; i++) {
-			if(offset >= 16 && offset < 16 + 2048) {
+		for(int i = 0; i < tmp_length; i++) {
+			if(offset >= 16 && offset < 16 + logical_block_size()) {
 				int value = tmp_buffer[i];
 				buffer->write(value);
 				length--;
@@ -473,6 +496,28 @@ bool SCSI_CDROM::read_buffer(int length)
 			offset = (offset + 1) % 2352;
 		}
 		access = true;
+	}
+	set_sense_code(SCSI_SENSE_NOSENSE);
+	return true;
+}
+
+bool SCSI_CDROM::write_buffer(int length)
+{
+	for(int i = 0; i < length; i++) {
+		int value = buffer->read();
+		if(command[0] == SCSI_CMD_MODE_SEL6) {
+			if(i == 4) {
+				#ifdef _SCSI_DEBUG_LOG
+					this->out_debug_log(_T("[SCSI_DEV:ID=%d] NEC Read Mode = %02X\n"), scsi_id, value);
+				#endif
+				read_mode = (value != 0);
+			} else if(i == 10) {
+				#ifdef _SCSI_DEBUG_LOG
+					this->out_debug_log(_T("[SCSI_DEV:ID=%d] NEC Retry Count = %02X\n"), scsi_id, value);
+				#endif
+			}
+		}
+		position++;
 	}
 	set_sense_code(SCSI_SENSE_NOSENSE);
 	return true;
