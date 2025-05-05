@@ -158,7 +158,7 @@ class FLOPPY;
 #endif
 class JOYSTICK;
 class MEMORY;
-class PSUB;
+//class PSUB;
 class SUB;
 class TIMER;
 
@@ -194,7 +194,7 @@ protected:
 #endif
 	JOYSTICK* joystick;
 	MEMORY* memory;
-	PSUB* psub;
+//	PSUB* psub;
 	TIMER* timer;
 	
 	MCS48* cpu_sub;

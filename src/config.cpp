@@ -116,7 +116,8 @@ void initialize_config()
 	#endif
 	#ifdef USE_TAPE
 		config.sound_noise_cmt = true;
-		config.sound_play_tape = true;
+		config.sound_tape_signal = true;
+		config.sound_tape_voice = true;
 	#endif
 	
 	// input
@@ -309,7 +310,8 @@ void load_config(const _TCHAR* config_path)
 	#endif
 	#ifdef USE_TAPE
 		config.sound_noise_cmt = MyGetPrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);;
-		config.sound_play_tape = MyGetPrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
+		config.sound_tape_signal = MyGetPrivateProfileBool(_T("Sound"), _T("TapeSignal"), config.sound_tape_signal, config_path);
+		config.sound_tape_voice = MyGetPrivateProfileBool(_T("Sound"), _T("TapeVoice"), config.sound_tape_voice, config_path);
 	#endif
 	#ifdef USE_SOUND_VOLUME
 		for(int i = 0; i < USE_SOUND_VOLUME; i++) {
@@ -544,7 +546,8 @@ void save_config(const _TCHAR* config_path)
 	#endif
 	#ifdef USE_TAPE
 		MyWritePrivateProfileBool(_T("Sound"), _T("NoiseCMT"), config.sound_noise_cmt, config_path);
-		MyWritePrivateProfileBool(_T("Sound"), _T("PlayTape"), config.sound_play_tape, config_path);
+		MyWritePrivateProfileBool(_T("Sound"), _T("TapeSignal"), config.sound_tape_signal, config_path);
+		MyWritePrivateProfileBool(_T("Sound"), _T("TapeVoice"), config.sound_tape_voice, config_path);
 	#endif
 	#ifdef USE_SOUND_VOLUME
 		for(int i = 0; i < USE_SOUND_VOLUME; i++) {

@@ -12,7 +12,7 @@
 void PRINTER::initialize()
 {
 	fio = new FILEIO();
-	emu->get_osd()->open_console(80, 30, create_string(_T("Printer - %s"), _T(DEVICE_NAME)));
+	emu->get_osd()->open_console(80, 25, create_string(_T("Printer - %s"), _T(DEVICE_NAME)));
 	
 	register_vline_event(this);
 }

@@ -109,8 +109,12 @@
 #include <string.h>
 #include <io.h>
 #include <math.h>
-#if defined(_MSC_VER) && (_MSC_VER < 1920)
-	#include <typeinfo.h>
+#ifdef _MSC_VER
+	#if _MSC_VER < 1920
+		#include <typeinfo.h>
+	#else
+		#include <vcruntime_typeinfo.h>
+	#endif
 #else
 	#include <typeinfo>
 #endif
