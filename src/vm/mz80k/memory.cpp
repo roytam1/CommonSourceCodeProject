@@ -20,6 +20,13 @@
 #define EVENT_BLINK	1
 #define EVENT_HBLANK	2
 
+#if defined(_MZ80K) || defined(_MZ1200)
+#define MONITOR_TYPE_MONOCHROME		0
+#define MONITOR_TYPE_COLOR		1
+#define MONITOR_TYPE_MONOCHROME_COLOR	2
+#define MONITOR_TYPE_COLOR_MONOCHROME	3
+#endif
+
 #define SET_BANK(s, e, w, r) { \
 	int sb = (s) >> 10, eb = (e) >> 10; \
 	for(int i = sb; i <= eb; i++) { \
@@ -45,6 +52,13 @@ void MEMORY::initialize()
 #if defined(_MZ1200) || defined(_MZ80A)
 	memset(ext, 0xff, sizeof(ext));
 #endif
+	
+#if defined(_MZ80K) || defined(_MZ1200)
+	// COLOR GAL 5 - 2019.01.24 Suga
+	memset(gal5_vram, 0x07, sizeof(gal5_vram));	// Color attribute RAM
+	gal5_wdat = 0x07;					// Color palette data
+#endif
+	
 #if defined(SUPPORT_MZ80AIF) || defined(SUPPORT_MZ80FIO)
 	memset(fdif, 0xff, sizeof(fdif));
 #endif
@@ -118,10 +132,17 @@ void MEMORY::initialize()
 #if defined(_MZ1200) || defined(_MZ80A)
 	palette_pc[1] = RGB_COLOR(0, 255, 0);
 #else
-	if(config.monitor_type) {
+	if(config.monitor_type & 4) {
 		palette_pc[1] = RGB_COLOR(0, 255, 0);
 	} else {
 		palette_pc[1] = RGB_COLOR(255, 255, 255);
+	}
+#endif
+	
+#if defined(_MZ80K) || defined(_MZ1200)
+	// COLOR GAL 5 - 2019.01.24 Suga
+	for(int i = 0; i < 8; i++) {
+		gal5_palette[i] = RGB_COLOR((i & 4) ? 255 : 0, (i & 2) ? 255 : 0, (i & 1) ? 255 : 0);	// RGB
 	}
 #endif
 	
@@ -173,8 +194,27 @@ void MEMORY::event_vline(int v, int clock)
 #endif
 		
 		for(int x = 0; x < 320; x += 8) {
+#if defined(_MZ80K) || defined(_MZ1200)
+			// COLOR GAL 5 - 2019.01.24 Suga
+			int cc = gal5_vram[ptr & 0x7ff];
+			uint8_t bk = (cc >> 4) & 0x07;
+			uint8_t fw = cc & 0x07;
+			uint8_t* dtc = &gal5_screen[v][x];
+#endif
 			int code = vram[(ptr++) & 0x7ff] << 3;
 			uint8_t pat = pcg_active ? pcg_ptr[code | (v & 7)] : font[code | (v & 7)];
+			
+#if defined(_MZ80K) || defined(_MZ1200)
+			// COLOR GAL 5 - 2019.01.24 Suga
+			dtc[0] = (pat & 0x80) ? fw : bk;
+			dtc[1] = (pat & 0x40) ? fw : bk;
+			dtc[2] = (pat & 0x20) ? fw : bk;
+			dtc[3] = (pat & 0x10) ? fw : bk;
+			dtc[4] = (pat & 0x08) ? fw : bk;
+			dtc[5] = (pat & 0x04) ? fw : bk;
+			dtc[6] = (pat & 0x02) ? fw : bk;
+			dtc[7] = (pat & 0x01) ? fw : bk;
+#endif
 			
 			// 8255(PIO) PC0 is /V-GATE 2016.11.21 by Suga
 			if((d_pio->read_io8(2) & 0x01) == 0x00) {
@@ -243,6 +283,12 @@ void MEMORY::write_data8(uint32_t addr, uint32_t data)
 			// 8253 gate0
 			d_ctc->write_signal(SIG_I8253_GATE_0, data, 1);
 			break;
+#if defined(_MZ80K) || defined(_MZ1200)
+		case 0xe00c: case 0xe00d: case 0xe00e: case 0xe00f:
+			// COLOR GAL 5 - 2019.01.24 Suga
+			gal5_wdat = (uint8_t)(data & 0xff);		// Color palette data
+			break;
+#endif
 		case 0xe010:
 			pcg_data = data;
 			break;
@@ -263,6 +309,12 @@ void MEMORY::write_data8(uint32_t addr, uint32_t data)
 		}
 		return;
 	}
+#if defined(_MZ80K) || defined(_MZ1200)
+	// COLOR GAL 5 - 2019.01.24 Suga
+	if(0xd000 <= addr && addr <= 0xdfff) {
+		gal5_vram[addr & 0x3ff] = gal5_wdat;		// Color attribute RAM
+	}
+#endif
 	wbank[addr >> 10][addr & 0x3ff] = data;
 }
 
@@ -378,7 +430,7 @@ void MEMORY::write_signal(int id, uint32_t data, uint32_t mask)
 #if defined(_MZ80K)
 void MEMORY::update_config()
 {
-	if(config.monitor_type) {
+	if(config.monitor_type & 4) {
 		palette_pc[1] = RGB_COLOR(0, 255, 0);
 	} else {
 		palette_pc[1] = RGB_COLOR(255, 255, 255);
@@ -388,27 +440,66 @@ void MEMORY::update_config()
 
 void MEMORY::draw_screen()
 {
+#if defined(_MZ80K) || defined(_MZ1200)
+	// COLOR GAL 5 - 2019.01.24 Suga
+	if((config.monitor_type & 3) == MONITOR_TYPE_MONOCHROME_COLOR || (config.monitor_type & 3) == MONITOR_TYPE_COLOR_MONOCHROME) {
+		emu->set_vm_screen_size(640, 200, 640, 200, 640, 240);
+	} else {
+		emu->set_vm_screen_size(320, 200, 320, 200, 320, 240);
+	}
+#endif
+	
 	// copy to real screen
 	emu->set_vm_screen_lines(200);
 	
+#if defined(_MZ80K) || defined(_MZ1200)
+	int offset_monochrome = 0;
+	int offset_color = 320;
+	if((config.monitor_type & 3) == MONITOR_TYPE_COLOR || (config.monitor_type & 3) == MONITOR_TYPE_COLOR_MONOCHROME) {
+		offset_monochrome = 320;
+		offset_color = 0;
+	}
+#else
+	int offset_monochrome = 0;
+#endif
+	
+#if defined(_MZ80K) || defined(_MZ1200)
+	if((config.monitor_type & 3) != MONITOR_TYPE_COLOR) {
+#endif
 	if(true || vgate) {
+			for(int y = 0; y < 200; y++) {
+				scrntype_t* dest = emu->get_screen_buffer(y);
+				uint8_t* src = screen[y];
+				
+				for(int x = 0; x < 320; x++) {
+					dest[x + offset_monochrome] = palette_pc[src[x] & 1];
+				}
+			}
+		} else {
+			for(int y = 0; y < 200; y++) {
+				scrntype_t* dest = emu->get_screen_buffer(y);
+				memset(dest, 0, sizeof(scrntype_t) * 320);
+				}
+			}
+#if defined(_MZ80K) || defined(_MZ1200)
+		}
+#endif
+	
+#if defined(_MZ80K) || defined(_MZ1200)
+	// COLOR GAL 5 - 2019.01.24 Suga
+	if((config.monitor_type & 3) != MONITOR_TYPE_MONOCHROME) {
 		for(int y = 0; y < 200; y++) {
 			scrntype_t* dest = emu->get_screen_buffer(y);
-			uint8_t* src = screen[y];
-			
+			uint8_t* srcg = gal5_screen[y];
 			for(int x = 0; x < 320; x++) {
-				dest[x] = palette_pc[src[x] & 1];
+				dest[x + offset_color] = gal5_palette[ srcg[x] ];
 			}
 		}
-	} else {
-		for(int y = 0; y < 200; y++) {
-			scrntype_t* dest = emu->get_screen_buffer(y);
-			memset(dest, 0, sizeof(scrntype_t) * 320);
-		}
 	}
+#endif
 }
 
-#define STATE_VERSION	4
+#define STATE_VERSION	5
 
 bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 {
@@ -444,6 +535,11 @@ bool MEMORY::process_state(FILEIO* state_fio, bool loading)
 	state_fio->StateValue(pcg_data);
 	state_fio->StateValue(pcg_addr);
 	state_fio->StateValue(pcg_ctrl);
+#if defined(_MZ80K) || defined(_MZ1200)
+	// COLOR GAL 5 - 2019.01.24 Suga
+	state_fio->StateArray(gal5_vram, sizeof(gal5_vram), 1);
+	state_fio->StateValue(gal5_wdat);
+#endif
 	
 	// post process
 	if(loading) {

@@ -109,8 +109,7 @@ void open_dropped_file(HDROP hDrop);
 void open_any_file(const _TCHAR* path);
 #endif
 
-_TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title, _TCHAR* dir, size_t dir_len);
-_TCHAR* get_save_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* file, const _TCHAR* title, _TCHAR* dir, size_t dir_len);
+_TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title, const _TCHAR* new_file, _TCHAR* dir, size_t dir_len);
 
 // screen
 int desktop_width;
@@ -2482,6 +2481,7 @@ void open_cart_dialog(HWND hWnd, int drv)
 		_T("Supported Files (*.rom;*.bin;*.hex)\0*.rom;*.bin;*.hex\0All Files (*.*)\0*.*\0\0"), 
 		_T("Game Cartridge"),
 #endif
+		NULL,
 		config.initial_cart_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2510,6 +2510,7 @@ void open_floppy_disk_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.d88;*.d77;*.1dd;*.td0;*.imd;*.dsk;*.nfd;*.fdi;*.hdm;*.hd5;*.hd4;*.hdb;*.dd9;*.dd6;*.tfd;*.xdf;*.2d;*.sf7;*.img;*.ima;*.vfd)\0*.d88;*.d77;*.1dd;*.td0;*.imd;*.dsk;*.nfd;*.fdi;*.hdm;*.hd5;*.hd4;*.hdb;*.dd9;*.dd6;*.tfd;*.xdf;*.2d;*.sf7;*.img;*.ima;*.vfd\0All Files (*.*)\0*.*\0\0"),
 		_T("Floppy Disk"),
+		NULL,
 		config.initial_floppy_disk_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2521,11 +2522,11 @@ void open_floppy_disk_dialog(HWND hWnd, int drv)
 
 void open_blank_floppy_disk_dialog(HWND hWnd, int drv, uint8_t type)
 {
-	_TCHAR* path = get_save_file_name(
+	_TCHAR* path = get_open_file_name(
 		hWnd,
 		_T("Supported Files (*.d88;*.d77)\0*.d88;*.d77\0All Files (*.*)\0*.*\0\0"),
-		create_date_file_name(_T("d88")),
 		_T("Floppy Disk"),
+		create_date_file_name(_T("d88")),
 		config.initial_floppy_disk_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2634,6 +2635,7 @@ void open_quick_disk_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.mzt;*.q20;*.qdf)\0*.mzt;*.q20;*.qdf\0All Files (*.*)\0*.*\0\0"),
 		_T("Quick Disk"),
+		NULL,
 		config.initial_quick_disk_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2662,6 +2664,7 @@ void open_hard_disk_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.thd;*.nhd;*.hdi;*.hdd;*.dat)\0*.thd;*.nhd;*.hdi;*.hdd;*.dat\0All Files (*.*)\0*.*\0\0"),
 		_T("Hard Disk"),
+		NULL,
 		config.initial_hard_disk_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2720,6 +2723,7 @@ void open_tape_dialog(HWND hWnd, int drv, bool play)
 		_T("Supported Files (*.cas;*.cmt)\0*.cas;*.cmt\0All Files (*.*)\0*.*\0\0"),
 #endif
 		play ? _T("Data Recorder Tape [Play]") : _T("Data Recorder Tape [Rec]"),
+		NULL,
 		config.initial_tape_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2752,6 +2756,7 @@ void open_compact_disc_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.ccd;*.cue)\0*.ccd;*.cue\0All Files (*.*)\0*.*\0\0"),
 		_T("Compact Disc"),
+		NULL,
 		config.initial_compact_disc_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2780,6 +2785,7 @@ void open_laser_disc_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.avi;*.mpg;*.mpeg;*.mp4;*.wmv;*.ogv)\0*.avi;*.mpg;*.mpeg;*.mp4;*.wmv;*.ogv\0All Files (*.*)\0*.*\0\0"),
 		_T("Laser Disc"),
+		NULL,
 		config.initial_laser_disc_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2812,6 +2818,7 @@ void open_binary_dialog(HWND hWnd, int drv, bool load)
 #else
 		_T("Memory Dump"),
 #endif
+		NULL,
 		config.initial_binary_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2844,6 +2851,7 @@ void open_bubble_casette_dialog(HWND hWnd, int drv)
 		hWnd,
 		_T("Supported Files (*.b77;*.bbl)\0*.b77;*.bbl\0All Files (*.*)\0*.*\0\0"),
 		_T("Bubble Casette"),
+		NULL,
 		config.initial_bubble_casette_dir, _MAX_PATH
 	);
 	if(path) {
@@ -2999,12 +3007,15 @@ void open_any_file(const _TCHAR* path)
 }
 #endif
 
-_TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title, _TCHAR* dir, size_t dir_len)
+_TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title, const _TCHAR* new_file, _TCHAR* dir, size_t dir_len)
 {
 	static _TCHAR path[_MAX_PATH];
 	_TCHAR tmp[_MAX_PATH] = _T("");
 	OPENFILENAME OpenFileName;
 	
+	if(new_file != NULL) {
+		my_tcscpy_s(tmp, _MAX_PATH, new_file);
+	}
 	memset(&OpenFileName, 0, sizeof(OpenFileName));
 	OpenFileName.lStructSize = sizeof(OPENFILENAME);
 	OpenFileName.hwndOwner = hWnd;
@@ -3012,7 +3023,6 @@ _TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title,
 	OpenFileName.lpstrFile = tmp;
 	OpenFileName.nMaxFile = _MAX_PATH;
 	OpenFileName.lpstrTitle = title;
-	OpenFileName.Flags = OFN_FILEMUSTEXIST;
 	if(dir[0]) {
 		OpenFileName.lpstrInitialDir = dir;
 	} else {
@@ -3021,36 +3031,6 @@ _TCHAR* get_open_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* title,
 		OpenFileName.lpstrInitialDir = get_parent_dir(app);
 	}
 	if(GetOpenFileName(&OpenFileName)) {
-		get_long_full_path_name(OpenFileName.lpstrFile, path, _MAX_PATH);
-		my_tcscpy_s(dir, dir_len, get_parent_dir(path));
-		return path;
-	}
-	return NULL;
-}
-
-_TCHAR* get_save_file_name(HWND hWnd, const _TCHAR* filter, const _TCHAR* file, const _TCHAR* title, _TCHAR* dir, size_t dir_len)
-{
-	static _TCHAR path[_MAX_PATH];
-	_TCHAR tmp[_MAX_PATH] = _T("");
-	OPENFILENAME OpenFileName;
-	
-	my_tcscpy_s(tmp, _MAX_PATH, file);
-	memset(&OpenFileName, 0, sizeof(OpenFileName));
-	OpenFileName.lStructSize = sizeof(OPENFILENAME);
-	OpenFileName.hwndOwner = hWnd;
-	OpenFileName.lpstrFilter = filter;
-	OpenFileName.lpstrFile = tmp;
-	OpenFileName.nMaxFile = _MAX_PATH;
-	OpenFileName.lpstrTitle = title;
-	OpenFileName.Flags = OFN_OVERWRITEPROMPT;
-	if(dir[0]) {
-		OpenFileName.lpstrInitialDir = dir;
-	} else {
-		_TCHAR app[_MAX_PATH];
-		GetModuleFileName(NULL, app, _MAX_PATH);
-		OpenFileName.lpstrInitialDir = get_parent_dir(app);
-	}
-	if(GetSaveFileName(&OpenFileName)) {
 		get_long_full_path_name(OpenFileName.lpstrFile, path, _MAX_PATH);
 		my_tcscpy_s(dir, dir_len, get_parent_dir(path));
 		return path;

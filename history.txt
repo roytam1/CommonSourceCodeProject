@@ -1,3 +1,9 @@
+1/29/2019
+
+[MZ80K/MEMORY] support COLOR GAL 5 (thanks Mr.Suga)
+[PC8001/PC88] fix issue that cursor is mistakenly hidden
+
+
 1/18/2019
 
 [PC8001/PC88] clear ram[0xff33] for DEMPA Galaxian

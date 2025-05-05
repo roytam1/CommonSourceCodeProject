@@ -2813,6 +2813,7 @@ void PC88::draw_text()
 	int char_height = crtc.char_height;
 	uint8_t color_mask = Port30_COLOR ? 0 : 7;
 	uint8_t code_expand, attr_expand;
+	bool attrib_graph = false;
 	
 	if(!hireso) {
 		char_height <<= 1;
@@ -2822,6 +2823,16 @@ void PC88::draw_text()
 //	}
 	if(crtc.skip_line) {
 		char_height <<= 1;
+	}
+	if(Port31_GRAPH && !Port31_HCOLOR) {
+#if defined(PC8001_VARIANT)
+		if(config.boot_mode != MODE_PC80_V2) {
+			if(!Port31_V1_320x200 && !Port31_V1_MONO) {
+				attrib_graph = true;
+			}
+		} else
+#endif
+		attrib_graph = true;
 	}
 //	for(int cy = 0, ytop = 0; cy < 64 && ytop < 400; cy++, ytop += char_height) {
 	for(int cy = 0, ytop = 0; cy < crtc.height && ytop < 400; cy++, ytop += char_height) {
@@ -2844,7 +2855,8 @@ void PC88::draw_text()
 			bool reverse_tmp = reverse;
 			
 			// from ePC-8801MA‰ü
-			if(Port31_GRAPH && !Port31_HCOLOR) {
+//			if(Port31_GRAPH && !Port31_HCOLOR) {
+			if(attrib_graph) {
 				if(reverse) {
 					reverse = false;
 					color = 8;
