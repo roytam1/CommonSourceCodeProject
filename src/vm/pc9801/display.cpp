@@ -124,7 +124,8 @@ static const uint16_t egc_maskword[16][4] = {
 void DISPLAY::initialize()
 {
 	// load font data
-	memset(font, 0xff, sizeof(font));
+//	memset(font, 0xff, sizeof(font));
+	memset(font, 0x00, sizeof(font));
 	
 	FILEIO* fio = new FILEIO();
 	
@@ -214,6 +215,20 @@ void DISPLAY::initialize()
 			}
 		}
 #endif
+		for(int code = 0x20; code <= 0x7f; code++) {
+			for(int line = 0; line < 24; line++) {
+				uint16_t pattern = (*(uint16_t *)(&font[ANK_FONT_OFS + FONT_SIZE * code + line * 2])) & 0x3fff;
+				*(uint16_t *)(&font[FONT_SIZE * (0x09 | (code << 8)) + line * 2                ]) = pattern << 2;
+				*(uint16_t *)(&font[FONT_SIZE * (0x09 | (code << 8)) + line * 2 + KANJI_2ND_OFS]) = 0;
+			}
+		}
+		for(int code = 0xa0; code <= 0xff; code++) {
+			for(int line = 0; line < 24; line++) {
+				uint16_t pattern = (*(uint16_t *)(&font[ANK_FONT_OFS + FONT_SIZE * code + line * 2])) & 0x3fff;
+				*(uint16_t *)(&font[FONT_SIZE * (0x0a | (code << 8)) + line * 2                ]) = pattern << 2;
+				*(uint16_t *)(&font[FONT_SIZE * (0x0a | (code << 8)) + line * 2 + KANJI_2ND_OFS]) = 0;
+			}
+		}
 		memcpy(font + ANK_FONT_OFS + FONT_SIZE * 0x100, font + ANK_FONT_OFS, FONT_SIZE * 0x100);
 		memcpy(font + ANK_FONT_OFS + FONT_SIZE * 0x200, font + ANK_FONT_OFS, FONT_SIZE * 0x100);
 		memcpy(font + ANK_FONT_OFS + FONT_SIZE * 0x300, font + ANK_FONT_OFS, FONT_SIZE * 0x100);
@@ -376,21 +391,22 @@ void DISPLAY::event_frame()
 void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 {
 	switch(addr) {
-	case 0x64:
+	case 0x0064:
 		crtv = 1;
 		break;
-	case 0x68:
+	case 0x0068:
 		modereg1[(data >> 1) & 7] = data & 1;
 		break;
 #if defined(SUPPORT_16_COLORS)
-	case 0x6a:
+	case 0x006a:
 		modereg2[(data >> 1) & 127] = data & 1;
 		break;
 #endif
-	case 0x6c:
+#if !defined(SUPPORT_HIRESO)
+	case 0x006c:
 //		border = (data >> 3) & 7;
 		break;
-	case 0x6e:
+	case 0x006e:
 //		border = (data >> 3) & 7;
 #if !defined(_PC9801)
 		if(data & 1) {
@@ -402,12 +418,13 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		}
 #endif
 		break;
-	case 0x70:
-	case 0x72:
-	case 0x74:
-	case 0x76:
-	case 0x78:
-	case 0x7a:
+#endif
+	case 0x0070:
+	case 0x0072:
+	case 0x0074:
+	case 0x0076:
+	case 0x0078:
+	case 0x007a:
 		scroll[(addr >> 1) & 7] = data;
 		break;
 #if defined(SUPPORT_GRCG)
@@ -425,6 +442,7 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 	case 0x00a6:
 #endif
 		grcg_tile[grcg_tile_ptr] = data;
+		grcg_tile_word[grcg_tile_ptr] = ((uint16_t)grcg_tile[grcg_tile_ptr]) | ((uint16_t)grcg_tile[grcg_tile_ptr] << 8);
 		grcg_tile_ptr = (grcg_tile_ptr + 1) & 3;
 		break;
 #endif
@@ -458,7 +476,7 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		break;
 #endif
 	// palette
-	case 0xa8:
+	case 0x00a8:
 #if defined(SUPPORT_16_COLORS)
 		if(modereg2[MODE2_16COLOR]) {
 			anapal_sel = data & 0x0f;
@@ -470,7 +488,7 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		data >>= 4;
 		palette_gfx8[3] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
-	case 0xaa:
+	case 0x00aa:
 #if defined(SUPPORT_16_COLORS)
 		if(modereg2[MODE2_16COLOR]) {
 			anapal[anapal_sel][0] = (data & 0x0f) << 4;
@@ -483,7 +501,7 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		data >>= 4;
 		palette_gfx8[1] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
-	case 0xac:
+	case 0x00ac:
 #if defined(SUPPORT_16_COLORS)
 		if(modereg2[MODE2_16COLOR]) {
 			anapal[anapal_sel][1] = (data & 0x0f) << 4;
@@ -496,7 +514,7 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		data >>= 4;
 		palette_gfx8[2] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
-	case 0xae:
+	case 0x00ae:
 #if defined(SUPPORT_16_COLORS)
 		if(modereg2[MODE2_16COLOR]) {
 			anapal[anapal_sel][2] = (data & 0x0f) << 4;
@@ -510,18 +528,18 @@ void DISPLAY::write_io8(uint32_t addr, uint32_t data)
 		palette_gfx8[0] = RGB_COLOR((data & 2) ? 0xff : 0, (data & 4) ? 0xff : 0, (data & 1) ? 0xff : 0);
 		break;
 	// cg window
-	case 0xa1:
+	case 0x00a1:
 		font_code = (data << 8) | (font_code & 0xff);
 		break;
-	case 0xa3:
+	case 0x00a3:
 		font_code = (font_code & 0xff00) | data;
 		break;
-	case 0xa5:
+	case 0x00a5:
 //		font_line = data & 0x1f;
 //		font_lr = ((~data) & 0x20) << 6;
 		font_line = data;
 		break;
-	case 0xa9:
+	case 0x00a9:
 		if((font_code & 0x7e) == 0x56) {
 			uint16_t font_lr = ((~font_line) & 0x20) << 6;
 			font[((font_code & 0x7f7f) << 4) + font_lr + (font_line & 0x0f)] = data;
@@ -654,22 +672,22 @@ uint32_t DISPLAY::read_io8(uint32_t addr)
 		return vram_draw_sel;
 #endif
 	// palette
-	case 0xa8:
+	case 0x00a8:
 		return digipal[0];
-	case 0xaa:
+	case 0x00aa:
 		return digipal[1];
-	case 0xac:
+	case 0x00ac:
 		return digipal[2];
-	case 0xae:
+	case 0x00ae:
 		return digipal[3];
 	// cg window
-	case 0xa1:
+	case 0x00a1:
 		return (font_code >> 8) & 0xff;
-	case 0xa3:
+	case 0x00a3:
 		return (font_code >> 0) & 0xff;
-	case 0xa5:
+	case 0x00a5:
 		return font_line;
-	case 0xa9:
+	case 0x00a9:
 		if((font_code & 0xff) >= 0x09 && (font_code & 0xff) < 0x0c) {
 			uint16_t font_lr = ((~font_line) & 0x20) << 6;
 			if(!font_lr) {
@@ -705,7 +723,7 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 		}
 	} else if((TVRAM_ADDRESS + 0x4000) <= addr && addr < (TVRAM_ADDRESS + 0x5000)) {
 		if((font_code & 0x7e) == 0x56) {
-			/* FIXME: need to fix for hireso */
+#if !defined(SUPPORT_HIRESO)
 			uint32_t low = 0x7fff0, high;
 			uint8_t code = font_code & 0x7f;
 			uint16_t lr = ((~font_line) & 0x20) << 6;
@@ -734,6 +752,54 @@ void DISPLAY::write_memory_mapped_io8(uint32_t addr, uint32_t data)
 			} else {
 				font[low  + ((addr >> 1) & 0x0f)] = data;
 			}
+#else
+			int line = (addr >> 1) & 31, shift = 0;
+			bool is_kanji = false;
+			uint32_t offset, pattern;
+			
+			if(!(font_code & 0xff00)) {
+				if((addr & 0x30) == 0x30 || (addr & 0x40)) {
+					return;
+				}
+				offset = ANK_FONT_OFS + FONT_SIZE * (font_code & 0xff) + line * 2;
+				pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+			} else {
+//				if((addr & 0x30) == 0x30 || ((addr & 0x40) && !(addr & 1))) {
+				if((addr & 0x30) == 0x30) {
+					return;
+				}
+				uint16_t lo = font_code & 0x7f;
+				uint16_t hi = (font_code >> 8) & 0x7f;
+				
+				offset = FONT_SIZE * (lo | (hi << 8)) + line * 2;
+				pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+				
+				if(lo == 0x56 || lo == 0x57) {
+					is_kanji = true;
+				} else {
+					uint16_t lo = font_code & 0xff;
+					if(lo < 0x09 || lo >= 0x0c) {
+						is_kanji = true;
+					}
+				}
+				if(is_kanji) {
+					pattern <<= 14;
+					pattern |= (*(uint16_t *)(&font[offset + KANJI_2ND_OFS])) & 0x3fff;
+				}
+				shift += 2;
+				if(addr & 0x40) shift += 16;
+			}
+			if(!(addr & 1)) shift += 8;
+			pattern &= ~(0xff << shift);
+			pattern |= data << shift;
+			
+			if(is_kanji) {
+				*(uint16_t *)(&font[offset                ]) = (pattern >> 14) & 0x3fff;
+				*(uint16_t *)(&font[offset + KANJI_2ND_OFS]) = (pattern >>  0) & 0x3fff;
+			} else {
+				*(uint16_t *)(&font[offset]) = pattern & 0x3fff;
+			}
+#endif
 		}
 #if !defined(SUPPORT_HIRESO)
 	} else if(0xa8000 <= addr && addr < 0xc0000) {
@@ -785,7 +851,7 @@ uint32_t DISPLAY::read_memory_mapped_io8(uint32_t addr)
 		}
 		return tvram[addr - TVRAM_ADDRESS];
 	} else if((TVRAM_ADDRESS + 0x4000) <= addr && addr < (TVRAM_ADDRESS + 0x5000)) {
-		/* FIXME: need to fix for hireso */
+#if !defined(SUPPORT_HIRESO)
 		uint32_t low = 0x7fff0, high;
 		uint8_t code = font_code & 0x7f;
 		uint16_t lr = ((~font_line) & 0x20) << 6;
@@ -814,6 +880,46 @@ uint32_t DISPLAY::read_memory_mapped_io8(uint32_t addr)
 		} else {
 			return font[low  + ((addr >> 1) & 0x0f)];
 		}
+#else
+		int line = (addr >> 1) & 31, shift = 0;
+		bool is_kanji = false;
+		uint32_t offset, pattern;
+		
+		if(!(font_code & 0xff00)) {
+			if((addr & 0x30) == 0x30 || (addr & 0x40)) {
+				return 0;
+			}
+			offset = ANK_FONT_OFS + FONT_SIZE * (font_code & 0xff) + line * 2;
+			pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+		} else {
+//			if((addr & 0x30) == 0x30 || ((addr & 0x40) && !(addr & 1))) {
+			if((addr & 0x30) == 0x30) {
+				return 0;
+			}
+			uint16_t lo = font_code & 0x7f;
+			uint16_t hi = (font_code >> 8) & 0x7f;
+			
+			offset = FONT_SIZE * (lo | (hi << 8)) + line * 2;
+			pattern = (*(uint16_t *)(&font[offset])) & 0x3fff;
+			
+			if(lo == 0x56 || lo == 0x57) {
+				is_kanji = true;
+			} else {
+				uint16_t lo = font_code & 0xff;
+				if(lo < 0x09 || lo >= 0x0c) {
+					is_kanji = true;
+				}
+			}
+			if(is_kanji) {
+				pattern <<= 14;
+				pattern |= (*(uint16_t *)(&font[offset + KANJI_2ND_OFS])) & 0x3fff;
+			}
+			shift += 2;
+			if(addr & 0x40) shift += 16;
+		}
+		if(!(addr & 1)) shift += 8;
+		return (pattern >> shift) & 0xff;
+#endif
 #if !defined(SUPPORT_HIRESO)
 	} else if(0xa8000 <= addr && addr < 0xc0000) {
 		return read_dma_io8(addr - 0xa0000);
@@ -867,9 +973,25 @@ void DISPLAY::write_dma_io8(uint32_t addr, uint32_t data)
 		} else
 #endif
 		grcg_writeb(addr, data);
-	} else
+		return;
+	}
 #endif
+#if !defined(SUPPORT_HIRESO)
 	vram_draw[addr & 0x1ffff] = data;
+#else
+	if(!(grcg_mode & GRCG_PLANE_0)) {
+		vram_draw[(addr & 0x1ffff) | VRAM_PLANE_ADDR_0] = data;
+	}
+	if(!(grcg_mode & GRCG_PLANE_1)) {
+		vram_draw[(addr & 0x1ffff) | VRAM_PLANE_ADDR_1] = data;
+	}
+	if(!(grcg_mode & GRCG_PLANE_2)) {
+		vram_draw[(addr & 0x1ffff) | VRAM_PLANE_ADDR_2] = data;
+	}
+	if(!(grcg_mode & GRCG_PLANE_3)) {
+		vram_draw[(addr & 0x1ffff) | VRAM_PLANE_ADDR_3] = data;
+	}
+#endif
 }
 
 void DISPLAY::write_dma_io16(uint32_t addr, uint32_t data)
@@ -882,9 +1004,51 @@ void DISPLAY::write_dma_io16(uint32_t addr, uint32_t data)
 		} else
 #endif
 		grcg_writew(addr, data);
-	} else
+		return;
+	}
 #endif
-	*(uint16_t *)(&vram_draw[addr & 0x1ffff]) = data;
+	if((addr &= 0x1ffff) == 0x1ffff) {
+		pair16_t d;
+		d.w = (uint16_t)data;
+#if !defined(SUPPORT_HIRESO)
+		vram_draw[0x1ffff] = d.b.l;
+		vram_draw[0x00000] = d.b.h;
+#else
+		if(!(grcg_mode & GRCG_PLANE_0)) {
+			vram_draw[0x1ffff | VRAM_PLANE_ADDR_0] = d.b.l;
+			vram_draw[0x00000 | VRAM_PLANE_ADDR_0] = d.b.h;
+		}
+		if(!(grcg_mode & GRCG_PLANE_1)) {
+			vram_draw[0x1ffff | VRAM_PLANE_ADDR_1] = d.b.l;
+			vram_draw[0x00000 | VRAM_PLANE_ADDR_1] = d.b.h;
+		}
+		if(!(grcg_mode & GRCG_PLANE_2)) {
+			vram_draw[0x1ffff | VRAM_PLANE_ADDR_2] = d.b.l;
+			vram_draw[0x00000 | VRAM_PLANE_ADDR_2] = d.b.h;
+		}
+		if(!(grcg_mode & GRCG_PLANE_3)) {
+			vram_draw[0x1ffff | VRAM_PLANE_ADDR_3] = d.b.l;
+			vram_draw[0x00000 | VRAM_PLANE_ADDR_3] = d.b.h;
+		}
+#endif
+	} else {
+#if !defined(SUPPORT_HIRESO)
+		*(uint16_t *)(&vram_draw[addr]) = data;
+#else
+		if(!(grcg_mode & GRCG_PLANE_0)) {
+			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) = data;
+		}
+		if(!(grcg_mode & GRCG_PLANE_1)) {
+			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) = data;
+		}
+		if(!(grcg_mode & GRCG_PLANE_2)) {
+			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) = data;
+		}
+		if(!(grcg_mode & GRCG_PLANE_3)) {
+			*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) = data;
+		}
+#endif
+	}
 }
 
 uint32_t DISPLAY::read_dma_io8(uint32_t addr)
@@ -899,7 +1063,12 @@ uint32_t DISPLAY::read_dma_io8(uint32_t addr)
 		return grcg_readb(addr);
 	}
 #endif
+#if !defined(SUPPORT_HIRESO)
 	return vram_draw[addr & 0x1ffff];
+#else
+	int plane = (grcg_mode >> 4) & 3;
+	return vram_draw[(addr & 0x1ffff) | (0x20000 * plane)];
+#endif
 }
 
 uint32_t DISPLAY::read_dma_io16(uint32_t addr)
@@ -914,7 +1083,26 @@ uint32_t DISPLAY::read_dma_io16(uint32_t addr)
 		return grcg_readw(addr);
 	}
 #endif
-	return *(uint16_t *)(&vram_draw[addr & 0x1ffff]);
+	if((addr &= 0x1ffff) == 0x1ffff) {
+		pair16_t d;
+		d.w = 0;
+#if !defined(SUPPORT_HIRESO)
+		d.b.l = vram_draw[0x1ffff];
+		d.b.h = vram_draw[0x00000];
+#else
+		int plane = (grcg_mode >> 4) & 3;
+		d.b.l = vram_draw[0x1ffff | (0x20000 * plane)];
+		d.b.h = vram_draw[0x00000 | (0x20000 * plane)];
+#endif
+		return (uint32_t)(d.w);
+	} else {
+#if !defined(SUPPORT_HIRESO)
+		return *(uint16_t *)(&vram_draw[addr]);
+#else
+		int plane = (grcg_mode >> 4) & 3;
+		return *(uint16_t *)(&vram_draw[addr | (0x20000 * plane)]);
+#endif
+	}
 }
 
 // GRCG
@@ -961,8 +1149,50 @@ void DISPLAY::grcg_writeb(uint32_t addr1, uint32_t data)
 
 void DISPLAY::grcg_writew(uint32_t addr1, uint32_t data)
 {
-	grcg_writeb(addr1 + 0, (data >> 0) & 0xff);
-	grcg_writeb(addr1 + 1, (data >> 8) & 0xff);
+	if(addr1 & 1) {
+		grcg_writeb(addr1 + 0, (data >> 0) & 0xff);
+		grcg_writeb(addr1 + 1, (data >> 8) & 0xff);
+	} else {
+		uint32_t addr = addr1 & VRAM_PLANE_ADDR_MASK;
+		
+		if(grcg_mode & GRCG_RW_MODE) {
+			// RMW
+			if(!(grcg_mode & GRCG_PLANE_0)) {
+				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]);
+				*p &= ~data;
+				*p |= grcg_tile_word[0] & data;
+			}
+			if(!(grcg_mode & GRCG_PLANE_1)) {
+				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]);
+				*p &= ~data;
+				*p |= grcg_tile_word[1] & data;
+			}
+			if(!(grcg_mode & GRCG_PLANE_2)) {
+				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]);
+				*p &= ~data;
+				*p |= grcg_tile_word[2] & data;
+			}
+			if(!(grcg_mode & GRCG_PLANE_3)) {
+				uint16_t *p = (uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]);
+				*p &= ~data;
+				*p |= grcg_tile_word[3] & data;
+			}
+		} else {
+			// TDW
+			if(!(grcg_mode & GRCG_PLANE_0)) {
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) = grcg_tile_word[0];
+			}
+			if(!(grcg_mode & GRCG_PLANE_1)) {
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) = grcg_tile_word[1];
+			}
+			if(!(grcg_mode & GRCG_PLANE_2)) {
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) = grcg_tile_word[2];
+			}
+			if(!(grcg_mode & GRCG_PLANE_3)) {
+				*(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) = grcg_tile_word[3];
+			}
+		}
+	}
 }
 
 uint32_t DISPLAY::grcg_readb(uint32_t addr1)
@@ -998,7 +1228,37 @@ uint32_t DISPLAY::grcg_readb(uint32_t addr1)
 
 uint32_t DISPLAY::grcg_readw(uint32_t addr1)
 {
-	return grcg_readb(addr1) | (grcg_readb(addr1 + 1) << 8);
+	if(addr1 & 1) {
+		return grcg_readb(addr1) | (grcg_readb(addr1 + 1) << 8);
+	} else {
+		if(grcg_mode & GRCG_RW_MODE) {
+			// VRAM
+#if !defined(SUPPORT_HIRESO)
+			return *(uint16_t *)(&vram_draw[addr1 & 0x1ffff]);
+#else
+			int plane = (grcg_mode >> 4) & 3;
+			return *(uint16_t *)(&vram_draw[(addr1 & 0x1ffff) | (0x20000 * plane)]);
+#endif
+		} else {
+			// TCR
+			uint32_t addr = addr1 & VRAM_PLANE_ADDR_MASK;
+			uint16_t data = 0;
+			
+			if(!(grcg_mode & GRCG_PLANE_0)) {
+				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_0]) ^ grcg_tile_word[0];
+			}
+			if(!(grcg_mode & GRCG_PLANE_1)) {
+				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_1]) ^ grcg_tile_word[1];
+			}
+			if(!(grcg_mode & GRCG_PLANE_2)) {
+				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_2]) ^ grcg_tile_word[2];
+			}
+			if(!(grcg_mode & GRCG_PLANE_3)) {
+				data |= *(uint16_t *)(&vram_draw[addr | VRAM_PLANE_ADDR_3]) ^ grcg_tile_word[3];
+			}
+			return data ^ 0xffff;
+		}
+	}
 }
 #endif
 
@@ -2008,9 +2268,10 @@ uint64_t DISPLAY::egc_opeb(uint32_t addr, uint8_t value)
 			return egc_bgc.q;
 		case 0x4000:
 			return egc_fgc.q;
-		default:
+		case 0x0000:
 			EGC_OPE_SHIFTB(addr, value);
 			egc_mask2.w &= egc_srcmask.w;
+		default:
 			return egc_vram_src.q;
 		}
 		break;
@@ -2042,9 +2303,10 @@ uint64_t DISPLAY::egc_opew(uint32_t addr, uint16_t value)
 			return egc_bgc.q;
 		case 0x4000:
 			return egc_fgc.q;
-		default:
+		case 0x0000:
 			EGC_OPE_SHIFTW(value);
 			egc_mask2.w &= egc_srcmask.w;
+		default:
 			return egc_vram_src.q;
 		}
 		break;
@@ -2483,16 +2745,15 @@ void DISPLAY::draw_gfx_screen()
 {
 	// address from gdc
 	uint32_t gdc_addr[SCREEN_HEIGHT][SCREEN_WIDTH >> 3] = {0};
+	int ytop = 0;
 	
-	for(int i = 0, ytop = 0; i < 4; i++) {
+	for(int i = 0; i < 4; i++) {
 		uint32_t ra = ra_gfx[i * 4];
 		ra |= ra_gfx[i * 4 + 1] << 8;
 		ra |= ra_gfx[i * 4 + 2] << 16;
 		ra |= ra_gfx[i * 4 + 3] << 24;
 		uint32_t sad = (ra << 1) & VRAM_PLANE_ADDR_MASK;
 		int len = (ra >> 20) & 0x3ff;
-		
-		if(!len) len = SCREEN_HEIGHT; // Madou Monogatari 1-2-3
 		
 		for(int y = ytop; y < (ytop + len) && y < SCREEN_HEIGHT; y++) {
 			for(int x = 0; x < (SCREEN_WIDTH >> 3); x++) {
@@ -2501,6 +2762,21 @@ void DISPLAY::draw_gfx_screen()
 			}
 		}
 		if((ytop += len) >= SCREEN_HEIGHT) break;
+	}
+	if(ytop < SCREEN_HEIGHT) {
+		// Madou Monogatari 1-2-3
+		uint32_t ra = ra_gfx[0];
+		ra |= ra_gfx[1] << 8;
+		ra |= ra_gfx[2] << 16;
+		ra |= ra_gfx[3] << 24;
+		uint32_t sad = (ra << 1) & VRAM_PLANE_ADDR_MASK;
+		
+		for(int y = 0; y < SCREEN_HEIGHT; y++) {
+			for(int x = 0; x < (SCREEN_WIDTH >> 3); x++) {
+				gdc_addr[y][x] = sad;
+				sad = (sad + 1) & VRAM_PLANE_ADDR_MASK;
+			}
+		}
 	}
 	uint32_t *addr = &gdc_addr[0][0];
 	uint8_t *dest = &screen_gfx[0][0];
@@ -2619,8 +2895,8 @@ bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 //	state_fio->StateValue(font_lr);
 	
 	// post process
-#if defined(SUPPORT_2ND_VRAM) && !defined(SUPPORT_HIRESO)
 	if(loading) {
+#if defined(SUPPORT_2ND_VRAM) && !defined(SUPPORT_HIRESO)
 		if(vram_disp_sel & 1) {
 			vram_disp_b = vram + 0x28000;
 			vram_disp_r = vram + 0x30000;
@@ -2641,8 +2917,13 @@ bool DISPLAY::process_state(FILEIO* state_fio, bool loading)
 		} else {
 			vram_draw = vram + 0x00000;
 		}
-	}
 #endif
+#if defined(SUPPORT_GRCG)
+		for(int i = 0; i < 4; i++) {
+			grcg_tile_word[i] = ((uint16_t)grcg_tile[i]) | ((uint16_t)grcg_tile[i] << 8);
+		}
+#endif
+	}
 	return true;
 }
 

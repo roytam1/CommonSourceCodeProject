@@ -36,13 +36,13 @@ private:
 	
 	uint8_t tvram[0x4000];
 #if !defined(SUPPORT_HIRESO)
-#if defined(SUPPORT_2ND_VRAM)
-	uint8_t vram[0x40000];
+#if !defined(SUPPORT_2ND_VRAM)
+	__DECL_ALIGNED(4) uint8_t vram[0x20000];
 #else
-	uint8_t vram[0x20000];
+	__DECL_ALIGNED(4) uint8_t vram[0x40000];
 #endif
 #else
-	uint8_t vram[0x80000];
+	__DECL_ALIGNED(4) uint8_t vram[0x80000];
 #endif
 	
 #if defined(SUPPORT_2ND_VRAM) && !defined(SUPPORT_HIRESO)
@@ -73,6 +73,7 @@ private:
 #endif
 #if defined(SUPPORT_GRCG)
 	uint8_t grcg_mode, grcg_tile_ptr, grcg_tile[4];
+	__DECL_ALIGNED(16) uint16_t grcg_tile_word[4];
 #endif
 #if defined(SUPPORT_EGC)
 	typedef union {

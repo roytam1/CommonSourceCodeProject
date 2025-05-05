@@ -976,6 +976,22 @@ int16_t DLL_PREFIX ExchangeEndianS16(uint16_t x);
 	#define A_OF_COLOR(c)		(((c) >> 24) & 0xff)
 #endif
 
+// 20181104 K.O:
+// Below routines aim to render common routine.
+
+#ifdef _MSC_VER
+	#define __DECL_ALIGNED(foo) __declspec(align(foo))
+	#ifndef __builtin_assume_aligned
+		#define __builtin_assume_aligned(foo, a) foo
+	#endif
+#elif defined(__GNUC__)
+	#define __DECL_ALIGNED(foo) __attribute__((aligned(foo)))
+#else
+	// ToDo
+	#define __builtin_assume_aligned(foo, a) foo
+	#define __DECL_ALIGNED(foo)
+#endif
+
 // wav file header
 #pragma pack(1)
 typedef struct {

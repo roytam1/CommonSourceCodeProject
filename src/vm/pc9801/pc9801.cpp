@@ -367,6 +367,8 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	pio_mouse->set_context_port_c(mouse, SIG_MOUSE_PORT_C, 0xf0, 0);
 #if defined(SUPPORT_HIRESO)
 	// sysport port.c bit7,5: sysport port.b bit4,3
+//	pio_sys->set_context_port_b(pio_sys, SIG_I8255_PORT_C, 0x10, +3); // SHUT0
+//	pio_sys->set_context_port_b(pio_sys, SIG_I8255_PORT_C, 0x08, +2); // SHUT1
 	pio_sys->set_context_port_c(pio_sys, SIG_I8255_PORT_B, 0x80, -3); // SHUT0
 	pio_sys->set_context_port_c(pio_sys, SIG_I8255_PORT_B, 0x20, -2); // SHUT1
 #endif
@@ -600,20 +602,21 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	io->set_iomap_alias_rw(0x0060, gdc_chr, 0);
 	io->set_iomap_alias_rw(0x0062, gdc_chr, 1);
 	
-	io->set_iomap_single_w(0x64, display);
-	io->set_iomap_single_w(0x68, display);
+	io->set_iomap_single_w(0x0064, display);
+	io->set_iomap_single_w(0x0068, display);
 #if defined(SUPPORT_16_COLORS)
-	io->set_iomap_single_w(0x6a, display);
+	io->set_iomap_single_w(0x006a, display);
 #endif
-	io->set_iomap_single_w(0x6c, display);
-	io->set_iomap_single_w(0x6e, display);
-	
-	io->set_iomap_single_w(0x70, display);
-	io->set_iomap_single_w(0x72, display);
-	io->set_iomap_single_w(0x74, display);
-	io->set_iomap_single_w(0x76, display);
-	io->set_iomap_single_w(0x78, display);
-	io->set_iomap_single_w(0x7a, display);
+#if !defined(SUPPORT_HIRESO)
+	io->set_iomap_single_w(0x006c, display);
+	io->set_iomap_single_w(0x006e, display);
+#endif
+	io->set_iomap_single_w(0x0070, display);
+	io->set_iomap_single_w(0x0072, display);
+	io->set_iomap_single_w(0x0074, display);
+	io->set_iomap_single_w(0x0076, display);
+	io->set_iomap_single_w(0x0078, display);
+	io->set_iomap_single_w(0x007a, display);
 #if defined(SUPPORT_GRCG)
 #if !defined(SUPPORT_HIRESO)
 	io->set_iomap_single_w(0x007c, display);
@@ -653,18 +656,18 @@ VM::VM(EMU* parent_emu) : VM_TEMPLATE(parent_emu)
 	io->set_iomap_single_rw(0x00a4, display);
 	io->set_iomap_single_rw(0x00a6, display);
 #endif
-	io->set_iomap_single_rw(0xa8, display);
-	io->set_iomap_single_rw(0xaa, display);
-	io->set_iomap_single_rw(0xac, display);
-	io->set_iomap_single_rw(0xae, display);
+	io->set_iomap_single_rw(0x00a8, display);
+	io->set_iomap_single_rw(0x00aa, display);
+	io->set_iomap_single_rw(0x00ac, display);
+	io->set_iomap_single_rw(0x00ae, display);
 	
-//	io->set_iomap_single_w(0xa1, display);
-//	io->set_iomap_single_w(0xa3, display);
-//	io->set_iomap_single_w(0xa5, display);
-	io->set_iomap_single_rw(0xa1, display);
-	io->set_iomap_single_rw(0xa3, display);
-	io->set_iomap_single_rw(0xa5, display);
-	io->set_iomap_single_rw(0xa9, display);
+//	io->set_iomap_single_w(0x00a1, display);
+//	io->set_iomap_single_w(0x00a3, display);
+//	io->set_iomap_single_w(0x00a5, display);
+	io->set_iomap_single_rw(0x00a1, display);
+	io->set_iomap_single_rw(0x00a3, display);
+	io->set_iomap_single_rw(0x00a5, display);
+	io->set_iomap_single_rw(0x00a9, display);
 #if defined(SUPPORT_EGC)
 	io->set_iomap_range_rw(0x04a0, 0x04af, display);
 #endif
@@ -1000,7 +1003,7 @@ void VM::reset()
 #endif
 	port_c  = 0x00;
 #if defined(SUPPORT_HIRESO)
-//	port_c |= 0x08; // MODSW, 1 = Normal Mode, 0 = Hirezo Mode
+//	port_c |= 0x08; // MODSW, 1 = Normal Mode, 0 = Hireso Mode
 #endif
 #if defined(HAS_V30) || defined(HAS_V33)
 	port_c |= 0x04; // DIP SW 3-8, 1 = V30, 0 = 80x86

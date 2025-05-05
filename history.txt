@@ -1,3 +1,12 @@
+11/3/2019
+
+[PC98RL] fix horizontal frequency
+[PC98RL/DISPLAY] fix not to change horizontal frequency
+[PC98RL/DISPLAY] fix cg window
+[PC98RL/DISPLAY] fix multiple vram planes accessing
+[PC9801/DISPLAY] fix vram word accessing (thanks Mr.Artane.)
+
+
 10/28/2019
 
 [X1/PSUB] improve tape recording
