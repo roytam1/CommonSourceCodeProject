@@ -2,47 +2,47 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{3daacec4-a433-44d8-87e4-305e983ff350}</UniqueIdentifier>
+      <UniqueIdentifier>{3bf62c27-f4cd-4d5b-81f1-fc15c313e0f0}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Source Files\EMU Source Files">
-      <UniqueIdentifier>{47328493-1ad2-42b2-8c9e-fd5f72b5ddd5}</UniqueIdentifier>
+      <UniqueIdentifier>{67680450-6fda-4fed-9b88-308ea949545a}</UniqueIdentifier>
       <Extensions>cpp</Extensions>
     </Filter>
     <Filter Include="Source Files\OSD Source Files">
-      <UniqueIdentifier>{452cd096-7993-4a52-ac66-31bda9a7b8bd}</UniqueIdentifier>
+      <UniqueIdentifier>{bfb9817c-9b88-4e6b-bd61-775c20e2410b}</UniqueIdentifier>
       <Extensions>cpp</Extensions>
     </Filter>
     <Filter Include="Source Files\VM Common Source Files">
-      <UniqueIdentifier>{a1f5d0ff-ba63-4a4e-9e52-fa91affaf7fa}</UniqueIdentifier>
+      <UniqueIdentifier>{a659f678-beda-4295-8e0c-175cb5ba80e5}</UniqueIdentifier>
       <Extensions>cpp</Extensions>
     </Filter>
     <Filter Include="Source Files\VM Driver Source Files">
-      <UniqueIdentifier>{eaf8bfbc-52a6-4232-b9d6-28ee2c4f736b}</UniqueIdentifier>
+      <UniqueIdentifier>{93c349a3-387f-4f68-8249-08d4f9b79ba4}</UniqueIdentifier>
       <Extensions>cpp</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{e7ecd121-d4ed-4954-b689-ac8c9eb1044b}</UniqueIdentifier>
+      <UniqueIdentifier>{058e17b9-93f2-4a36-b53b-1b24decdffda}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Header Files\EMU Header Files">
-      <UniqueIdentifier>{bb7504f8-8c81-46f8-9a3d-35cf233f8931}</UniqueIdentifier>
+      <UniqueIdentifier>{5e89f5f6-153f-4b3c-a8ef-36b4b085f944}</UniqueIdentifier>
       <Extensions>h</Extensions>
     </Filter>
     <Filter Include="Header Files\OSD Header Files">
-      <UniqueIdentifier>{f73567c5-079f-49e2-ae76-2326aa01ccc6}</UniqueIdentifier>
+      <UniqueIdentifier>{0588f095-bf3e-49b4-a2ea-8bdd7d47c3d6}</UniqueIdentifier>
       <Extensions>h</Extensions>
     </Filter>
     <Filter Include="Header Files\VM Common Header Files">
-      <UniqueIdentifier>{e71b21f5-2471-4876-9664-9a098569fdc3}</UniqueIdentifier>
+      <UniqueIdentifier>{add1ed6b-4660-440d-84a2-1d7c5eb210d8}</UniqueIdentifier>
       <Extensions>h</Extensions>
     </Filter>
     <Filter Include="Header Files\VM Driver Header Files">
-      <UniqueIdentifier>{f566c993-f760-456c-899d-a9e25b426431}</UniqueIdentifier>
+      <UniqueIdentifier>{b2780e51-b0db-4878-b25e-8884bffa0fd5}</UniqueIdentifier>
       <Extensions>h</Extensions>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{c6a21a66-d610-4dcb-b4ad-7a7831bdbb1f}</UniqueIdentifier>
+      <UniqueIdentifier>{b1c1f290-0b94-4933-b845-7c2667e0144a}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
   </ItemGroup>
@@ -83,7 +83,7 @@
     <ClCompile Include="..\src\win32\winmain.cpp">
       <Filter>Source Files\OSD Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\datarec.cpp">
+    <ClCompile Include="..\src\vm\am9511.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\vm\disk.cpp">
@@ -95,37 +95,58 @@
     <ClCompile Include="..\src\vm\hd46505.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\i8255.cpp">
-      <Filter>Source Files\VM Common Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\vm\io.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\vm\mb8877.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\msm58321.cpp">
+    <ClCompile Include="..\src\vm\memory.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\vm\noise.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\sn76489an.cpp">
+    <ClCompile Include="..\src\vm\not.cpp">
+      <Filter>Source Files\VM Common Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\pcm1bit.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\vm\z80.cpp">
       <Filter>Source Files\VM Common Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\mycomz80a\display.cpp">
+    <ClCompile Include="..\src\vm\z80ctc.cpp">
+      <Filter>Source Files\VM Common Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\z80dma.cpp">
+      <Filter>Source Files\VM Common Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\z80pio.cpp">
+      <Filter>Source Files\VM Common Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\z80sio.cpp">
+      <Filter>Source Files\VM Common Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\m23\apu.cpp">
       <Filter>Source Files\VM Driver Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\mycomz80a\keyboard.cpp">
+    <ClCompile Include="..\src\vm\m23\beep.cpp">
       <Filter>Source Files\VM Driver Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\mycomz80a\memory.cpp">
+    <ClCompile Include="..\src\vm\m23\display.cpp">
       <Filter>Source Files\VM Driver Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vm\mycomz80a\mycomz80a.cpp">
+    <ClCompile Include="..\src\vm\m23\floppy.cpp">
+      <Filter>Source Files\VM Driver Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\m23\keyboard.cpp">
+      <Filter>Source Files\VM Driver Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\m23\m23.cpp">
+      <Filter>Source Files\VM Driver Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vm\m23\membus.cpp">
       <Filter>Source Files\VM Driver Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -148,7 +169,7 @@
     <ClInclude Include="..\src\win32\osd.h">
       <Filter>Header Files\OSD Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\datarec.h">
+    <ClInclude Include="..\src\vm\am9511.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vm\debugger.h">
@@ -166,22 +187,22 @@
     <ClInclude Include="..\src\vm\hd46505.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\i8255.h">
-      <Filter>Header Files\VM Common Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\vm\io.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vm\mb8877.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\msm58321.h">
+    <ClInclude Include="..\src\vm\memory.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vm\noise.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\sn76489an.h">
+    <ClInclude Include="..\src\vm\not.h">
+      <Filter>Header Files\VM Common Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\pcm1bit.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\vm\vm.h">
@@ -193,16 +214,37 @@
     <ClInclude Include="..\src\vm\z80.h">
       <Filter>Header Files\VM Common Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\mycomz80a\display.h">
+    <ClInclude Include="..\src\vm\z80ctc.h">
+      <Filter>Header Files\VM Common Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\z80dma.h">
+      <Filter>Header Files\VM Common Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\z80pio.h">
+      <Filter>Header Files\VM Common Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\z80sio.h">
+      <Filter>Header Files\VM Common Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\m23\apu.h">
       <Filter>Header Files\VM Driver Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\mycomz80a\keyboard.h">
+    <ClInclude Include="..\src\vm\m23\beep.h">
       <Filter>Header Files\VM Driver Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\mycomz80a\memory.h">
+    <ClInclude Include="..\src\vm\m23\display.h">
       <Filter>Header Files\VM Driver Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vm\mycomz80a\mycomz80a.h">
+    <ClInclude Include="..\src\vm\m23\floppy.h">
+      <Filter>Header Files\VM Driver Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\m23\keyboard.h">
+      <Filter>Header Files\VM Driver Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\m23\m23.h">
+      <Filter>Header Files\VM Driver Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vm\m23\membus.h">
       <Filter>Header Files\VM Driver Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\res\resource.h">
@@ -219,12 +261,12 @@
     <Image Include="..\src\res\indicator\access_on.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\src\res\mycomz80a.ico">
+    <Image Include="..\src\res\m23.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\res\mycomz80a.rc">
+    <ResourceCompile Include="..\src\res\m23.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
