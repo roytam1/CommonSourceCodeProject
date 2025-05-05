@@ -133,6 +133,7 @@ void initialize_config()
 	// win32
 	#ifdef _WIN32
 		#ifndef ONE_BOARD_MICRO_COMPUTER
+//			config.use_d2d1 = true;
 			config.use_d3d9 = true;
 		#endif
 		config.use_dinput = true;
@@ -359,6 +360,7 @@ void load_config(const _TCHAR* config_path)
 	// win32
 	#ifdef _WIN32
 		#ifndef ONE_BOARD_MICRO_COMPUTER
+			config.use_d2d1 = MyGetPrivateProfileBool(_T("Win32"), _T("UseDirect2D1"), config.use_d2d1, config_path);
 			config.use_d3d9 = MyGetPrivateProfileBool(_T("Win32"), _T("UseDirect3D9"), config.use_d3d9, config_path);
 			config.wait_vsync = MyGetPrivateProfileBool(_T("Win32"), _T("WaitVSync"), config.wait_vsync, config_path);
 		#endif
@@ -568,6 +570,7 @@ void save_config(const _TCHAR* config_path)
 	// win32
 	#ifdef _WIN32
 		#ifndef ONE_BOARD_MICRO_COMPUTER
+			MyWritePrivateProfileBool(_T("Win32"), _T("UseDirect2D1"), config.use_d2d1, config_path);
 			MyWritePrivateProfileBool(_T("Win32"), _T("UseDirect3D9"), config.use_d3d9, config_path);
 			MyWritePrivateProfileBool(_T("Win32"), _T("WaitVSync"), config.wait_vsync, config_path);
 		#endif
