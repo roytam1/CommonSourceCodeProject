@@ -109,7 +109,7 @@
 #include <string.h>
 #include <io.h>
 #include <math.h>
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (_MSC_VER < 1920)
 	#include <typeinfo.h>
 #else
 	#include <typeinfo>
