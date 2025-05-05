@@ -1,3 +1,8 @@
+12/19/2020
+
+[VM/SCSI_CDROM] fix pre-gap of first track when it is audio track
+
+
 12/18/2020
 
 [VM/SCSI_CDROM] improve routine to get start/end frame of CD-DA playing
