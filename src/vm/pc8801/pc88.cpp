@@ -616,6 +616,7 @@ void PC88::reset()
 	tvram_wait_clocks_r = get_tvram_wait(true);
 	tvram_wait_clocks_w = get_tvram_wait(false);
 #endif
+	memcpy(prev_port, port, sizeof(port));
 	
 	// crtc
 	memset(&crtc, 0, sizeof(crtc));
@@ -2472,6 +2473,7 @@ void PC88::event_vline(int v, int clock)
 #if defined(SUPPORT_PC88_GVRAM)
 		update_gvram_wait();
 #endif
+		memcpy(prev_port, port, sizeof(port));
 	}
 	// update palette
 #if defined(PC8801SR_VARIANT)
@@ -2697,6 +2699,12 @@ bool PC88::check_data_carrier()
 
 void PC88::draw_screen()
 {
+	// copy port data at starting vblank
+	uint8_t cur_port[256];
+	
+	memcpy(cur_port, port, sizeof(port));
+	memcpy(port, prev_port, sizeof(port));
+	
 	// render text screen
 	draw_text();
 	
@@ -2938,6 +2946,9 @@ void PC88::draw_screen()
 		}
 		emu->screen_skip_line(true);
 	}
+	
+	// restore port
+	memcpy(port, cur_port, 256);
 }
 
 /*
@@ -4046,7 +4057,7 @@ void pc88_dmac_t::finish(int c)
 	}
 }
 
-#define STATE_VERSION	12
+#define STATE_VERSION	13
 
 bool PC88::process_state(FILEIO* state_fio, bool loading)
 {
@@ -4067,6 +4078,7 @@ bool PC88::process_state(FILEIO* state_fio, bool loading)
 	state_fio->StateArray(tvram, sizeof(tvram), 1);
 #endif
 	state_fio->StateArray(port, sizeof(port), 1);
+	state_fio->StateArray(prev_port, sizeof(prev_port), 1);
 	state_fio->StateValue(crtc.blink.rate);
 	state_fio->StateValue(crtc.blink.counter);
 	state_fio->StateValue(crtc.blink.cursor);
